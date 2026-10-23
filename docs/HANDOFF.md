@@ -2,6 +2,67 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-R2a - Side areas and field moves (and no deadline) - 2026-10-23
+Branch `track/regions` (fast-forwarded to RF-4's `track/reflavour` at e1e1479 on the coordinating session's word, then
+main merged in: RF-4, RF-5, RL-12b part 1, TC-4). Plan approved in Plan Mode with the owner's answers: walk in past the
+obstacle by a seam, a one-way way out to the next row, a detour or an alternate path but never both, badges by type,
+`fieldMoves.json`, RL-R2 split in two (this is R2a), and **drop the deadline** (the owner: "Why do I have deadlines").
+Mid-session the owner asked for the Cut moment to be "not as obtrusive, more like Pokémon with a little animation on the
+map": the sheets became the talk box and a burst on the map. Tag `rl-r2a-done` for the owner.
+- Where the docs were wrong (checked at 4a9b734, RF-4 at e1e1479):
+  - Badges were the old per-run `saveData.seats`, reset at every run's start and never awarded on a run
+    (`battle-rewards.js`: `if (st && !run)`). Nothing in the roguelite had ever won one.
+  - Rocco (Ground) is `crude.json`, not `rocco.json`.
+  - Surf was half built: v24's riding (`sc.ride`, `riderOf`, the Billie drawn under you) and badge gates on places
+    (`gate`, `canEnter`, `gateText`) were there, unused by runs. Both are reused.
+  - 9.3's "a side area can't hang off a scene's free side without breaking the seam rules" was half wrong: run scenes
+    use only their east and west sides, and mapgen makes north exits and edge strips; walking in by a north seam fits
+    the rules. What can't be promised is a seam back into a later main place (a loop), hence the one-way way out.
+  - There is no cave scene type (mapgen makes routes and towns); the island generator is reusable but makes a whole
+    island with no exits. A run's "map" is the 3D world map only (no 2D node map).
+  - The deadline did almost nothing: a chip, a song version; RL-13's hardening was never built.
+- Changed (one cause per commit):
+  - **The deadline goes** (3 commits): the run songs' deadline version (music.json, the tracker, the sound baseline's
+    renders, the Studio's card), the day chip (the day alone), then `run.deadline`, `runDeadline`, `runOverdue`,
+    `run.clock.slack` (check-data calls it "no such rule"), the map checks' clock argument, the debug log's field.
+  - **Data**: `fieldMoves.json` (Surf / Water / shore / lake, ridden; Rock Smash / Ground / boulder / ridge; Cut / Grass /
+    thorns / thicket; area names and lines drafted for the owner to edit) and `rules.json run.side` (detour 0.6, alt
+    0.15, places [2,4], altRows [2,3], altBoss 0.33, move weights, lean 2: placeholders). `meta.badges` by type.
+  - **logic/run-side.js**: `runSideAdd` after the main map (its own streams: the main path is the same with or without
+    a side), `runSideLinked`, `runSideOpen`, `fieldMoveState` (no badge, no Billie of the type, or yes),
+    `runSideProblems`. Side places are marked `side: 1` after the main path's; `run.map.side` holds the rest.
+    `validRun` checks them; no SAVE_VERSION bump (optional fields).
+  - **Scenes**: a north exit on the obstacle's place, the side's chain east to west, the obstacle prop 8 m in on the
+    north road (`act: 'field'`, `unless: opened:<move>`, a new condition kind), the way out at the last place's hub
+    (`act: 'fieldout'`), Surf's places ridden with coast water, the first place's `field` gate.
+  - **Foes and badges**: the side's own leader (one the region didn't pick, not of the move's type, so it can win a new
+    badge); a run leader's first win of a type keeps the badge (mini-bosses and bosses only: RL-12b's route trainers
+    are run foes too), its line on the win sheet; the trainer card's badge case reads it.
+  - **The page**: `game/js/field-moves.js` (the talk box, Yes / No, "Leafy used Cut!", leaves / dust / ripples on the
+    map, the way out), `walkPick`'s two acts, `canEnter`/`gateText` turning you back at the closed seam with the
+    obstacle's words.
+  - **Debug**: the debug menu forces a side area (each kind and move) and keeps every badge or none; the test run's
+    address takes `&side=detour_cut` and `&badges=all`.
+  - **In-game test**: a new phase, "A run's side area" (passed headless).
+- Verified: lint, typecheck, check:modules, format:check, check:data and the unit tests after every commit (826 -> 876
+  with main's); new tests run-side (9), run-side-world (both kinds x three moves: scenes, seam rules and agreement,
+  props, ride, gate, pools), battle-formats (the badge), run-test (the address), check-data's planted field moves.
+  Smoke 6 of 6. A headless browser walk of a Cut detour and a Surf alternate path (screens checked: the talk box, the
+  burst, inside, the way out, the map); the new in-game phase alone passed. Full quick check and the whole in-game
+  test not run (the owner's word: long checks skipped). check:fast: see the PR.
+- Risky / open:
+  - The obstacle sits 8 m in on the north road of a town or route; at night or in fog it can be hard to see. Its seam
+    gate does the blocking, so walking round the bramble still turns you back.
+  - Side places crowd the world map 2 lanes north of the line; at Expeditions III-V (up to 15 rows) they may overlap.
+  - The run sim, run preview and Studio Run Lab stay on the main path (no side areas): RL-R2b.
+  - Surf's water is coast water along a side of an ordinary route, not open sea; a cave is a ridge route. RL-R2b.
+  - A type renamed in the Studio orphans its kept badge in saves (meta.badges is keyed by the type's id).
+  - The talk box speaks as "Trainer" (the player); Pokémon's narration has no speaker.
+  - Playwright for the checks here must match the container's browser (1.63.0 for chromium 1243), not
+    requirements-check.txt's 1.56.0.
+- Next: RL-R2b (a cave scene type, an islet town for Surf, the travel moment, the Run Lab and sim with sides); RL-12b
+  part 2 (waystations) edits the run map after this merges.
+
 ### Test cleanup track, round 3 - TC-4: shared helpers, check-quick on fixtures and waits, the tiers - 2026-10-23
 Branch `track/test-cleanup` (pulled with --no-rebase before every push). TC-4 items 1, 2, 5 and 6, over two sessions
 (the first ran out of room). The owner said to make the recommended choices without waiting for plan approval. main

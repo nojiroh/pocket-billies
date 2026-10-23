@@ -29,7 +29,7 @@ are sessions of Claude's working time, not calendar time, and exclude the owner'
 | RL-12 | Relics and effects (RL-12a done 2026-10-22: effects, Loopholes, picks, shops; RL-12b next) | `relics.json`, `events.json`, `logic/effects.js`, picks | RL-11 (the owner: may go first, every Loophole on offer) | 1-2 | yes |
 | RO-1 | Roster: real pools and regional forms (done 2026-10-23, branch `track/roster`) | every run pool lists real lines, no stand-ins; `forms` on lines | none (alongside) | 1 | yes |
 | RL-R1 | Region generator (done 2026-10-23, branch `track/regions`) | a themed region per seed: zones on a biome graph, a regional dex, leaders by type, the region's name | RO-1 | 1-2 | yes |
-| RL-R2 | Side areas and field moves | detours and rare alternate paths behind Surf, Dig and Cut (type + a kept badge) | RL-R1 | 2 | yes |
+| RL-R2 | Side areas and field moves (RL-R2a done 2026-10-23 on `track/regions`: detours and alternate paths, Surf, Rock Smash and Cut, `meta.badges`, the deadline dropped; RL-R2b next: a real cave scene, an islet town for Surf, the Run Lab) | detours and rare alternate paths behind Surf, Rock Smash and Cut (type + a kept badge) | RL-R1 | 2 | yes |
 | RL-12b | Encounters (part 1 done 2026-10-23 on `track/encounters`: events, the reward pick, route trainers; part 2 next, after RL-R2: waystations, no two shops) | `events.json` with options and requirements, waystations, reward picks after trainer battles, route trainers | RL-R1 | 2 | yes |
 | RL-12c | Held items | one held-item slot per Billie (the owner's answer, 9.6 27): the data section, the slot in the save and the Team tab, effect rows at the battle hooks; the reward pick's `held` cards switched on | RL-12b | 1 | yes |
 | RL-S1 | Story director | `meta.history`, `lines.json`, the hub's line pick, the return-from-a-loss scene | RL-12b | 1-2 | yes |
@@ -155,7 +155,7 @@ moving files (answered in RL-5: moved to game/data/legacy, a read-only Studio li
 names and the building mapping (answered in RL-11: $ / Capital / Scrap / Audit Seals; Lab = Capital, Ranch and
 Workshop = Scrap, Airship = Seals); menu nodes (answered in RL-12: a normal-sized waystation place with a stand, built in RL-12b); the first cut's shape (answered in RL-8: the full 9-row map); battle formats by node type
 (answered in RL-8: wild single, mini-boss doubles, an Alpha boss; the turn cap was answered in RL-4: 40, a draw; a killed battle restarts from its seed); the clock's numbers (answered in
-RL-6: a day per arrival, backtracking included, deadline = the shortest walk + 3, no tick for healing or waiting); the token link, Remember me and deleting the
+RL-6: a day per arrival, backtracking included, deadline = the shortest walk + 3, no tick for healing or waiting; RL-R2: the owner dropped the deadline, the day clock stays); the token link, Remember me and deleting the
 versioned tools (RL-1); SAVE_VERSION 4 and the cloud key whitelist (RL-3; answered in RL-10b: yes, published after the build is live); the dex's place (RL-3); the relic
 cap (answered in RL-12: 6); the hub island's look (answered in RL-5: the bowl shows Copperleaf alone; its sea share is set in the Studio); the ranch cut order (answered in RL-9: the walkable yard and pens wait); the order after the first cut; the tuning
 cap (RL-12); the hub island's look (answered in RL-5: the bowl shows Copperleaf alone; RL-8b: as an island, worldmap.json sea.island); the ranch cut order (RL-9); the order after the first cut; the tuning
