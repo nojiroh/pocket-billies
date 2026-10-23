@@ -2414,6 +2414,13 @@ select.sm {
   image-rendering: pixelated;
   box-shadow: inset 0 0 0 1px var(--line);
 }
+.wd-th canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
 .wd-pv {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(220px, 300px);

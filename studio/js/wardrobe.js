@@ -336,11 +336,11 @@ async function mountWardrobe() {
   );
   frameTask('wdpv', wardrobePreviewLoop);
 }
+/* Studio plan T6.3: each thumbnail is a small canvas in its tile, not a PNG encoded for a background */
 function drawWardrobeThumbs() {
   $$('[data-th]').forEach(el => {
     const k = el.dataset.th,
       L = cleanLook(LOOK_PRESETS[0]);
-    let u = '';
     try {
       if (k !== 'body') {
         const it = editedWardrobe().items[k];
@@ -365,9 +365,8 @@ function drawWardrobeThumbs() {
         h = y1 - y0,
         c = makeCanvas(w, h);
       c.getContext('2d').drawImage(f, f.ax + x0, f.ay + y0, w, h, 0, 0, w, h);
-      u = c.toDataURL();
+      el.replaceChildren(c);
     } catch (e) {}
-    if (u) el.style.backgroundImage = `url(${u})`;
   });
 }
 function wardrobePreviewLoop(ts) {
