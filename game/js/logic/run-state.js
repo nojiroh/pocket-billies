@@ -301,7 +301,7 @@ export function runBegin(s, give) {
     for each node cleared and a win. Rates are rules.json run.payout (placeholders until the first play) */
 /**
  * @param {{ se: number, items: Record<string, number>, released: number, cleared: number, won: boolean }} end
- * @param {{ money: number, itemShare: number, released: number, node: number, win: number, winSeals: number,
+ * @param {{ money: number, itemShare: number, released: number, node: number, win: number, winCrests: number,
  *   scrapNode?: number, scrapWin?: number, research?: number }} rates research (RL-12, a Perk's): the Research times
  *   this, the difference as a line of its own
  * @param {(id: string) => number} itemPrice an item's shop price (Moneys), 0 for none
@@ -327,7 +327,7 @@ export function payoutOf(end, rates, itemPrice) {
   }
   return {
     research: lines.reduce((sum, l) => sum + l.research, 0),
-    crests: end.won ? rates.winSeals : 0,
+    crests: end.won ? rates.winCrests : 0,
     scrap: Math.max(0, end.cleared) * (rates.scrapNode || 0) + (end.won ? rates.scrapWin || 0 : 0),
     lines,
   };

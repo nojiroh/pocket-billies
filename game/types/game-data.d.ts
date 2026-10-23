@@ -946,8 +946,8 @@ export interface Rules {
       node: number;
       /** Research for a win */
       win: number;
-      /** Audit Seals for a win */
-      winSeals: number;
+      /** Crests for a win */
+      winCrests: number;
       /** RL-9: Scrap per node cleared, and for a win */
       scrapNode: number;
       scrapWin: number;

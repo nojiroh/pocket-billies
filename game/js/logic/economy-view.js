@@ -33,7 +33,7 @@ export const ECONOMY_PAYOUT = {
   released: ['research', 'Research per Billie caught on the run and released'],
   node: ['research', 'Research per place cleared'],
   win: ['research', 'Research for a win'],
-  winSeals: ['crests', 'Crests for a win'],
+  winCrests: ['crests', 'Crests for a win'],
   scrapNode: ['scrap', 'Scrap per place cleared'],
   scrapWin: ['scrap', 'Scrap for a win'],
 };

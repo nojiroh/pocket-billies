@@ -46,7 +46,7 @@ test('check-data: planted rules (battle, run, ranch)', t => {
       'rules.json': R => {
         const run = R.run;
         R.battle.turnCap = 5;
-        Object.assign(run.payout, { money: -1, bogus: 1, winSeals: 1.5, itemShare: 2 });
+        Object.assign(run.payout, { money: -1, bogus: 1, winCrests: 1.5, itemShare: 2 });
         Object.assign(R.ranch, { slots: [3, 2], bogus: 1, levelsPerHour: 0 });
         Object.assign(R.ranch.breed, { riskyCost: 50, extra: 1 });
         R.ranch.breed.odds.safe = 0.9;

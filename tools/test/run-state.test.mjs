@@ -9,7 +9,16 @@ const { newRun, validRun, runBegin, runEnd, runRestore, payoutOf, runNodeCount, 
   modules['run-state'];
 const { runReleasePays } = modules['run-loop'];
 const { newMeta } = modules['meta-state'];
-const RATES = { money: 0.1, itemShare: 0.5, released: 15, node: 10, win: 100, winSeals: 1, scrapNode: 2, scrapWin: 10 };
+const RATES = {
+  money: 0.1,
+  itemShare: 0.5,
+  released: 15,
+  node: 10,
+  win: 100,
+  winCrests: 1,
+  scrapNode: 2,
+  scrapWin: 10,
+};
 const PRICE = id => ({ potion: 200 })[id] || 0;
 const GIVE = { seed: 'ABCDE12345', tier: 1, mapgenV: 1, se: 300, items: { potion: 1 } };
 const copy = v => JSON.parse(JSON.stringify(v));
