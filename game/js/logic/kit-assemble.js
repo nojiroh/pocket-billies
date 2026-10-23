@@ -36,6 +36,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   kitBakeForm: [() => kitBakeForm, v => (kitBakeForm = v)],
   // @ts-expect-error -- replaced on purpose
+  kitBakeWhole: [() => kitBakeWhole, v => (kitBakeWhole = v)],
+  // @ts-expect-error -- replaced on purpose
   kitBounds: [() => kitBounds, v => (kitBounds = v)],
   // @ts-expect-error -- replaced on purpose
   kitBuildView: [() => kitBuildView, v => (kitBuildView = v)],
@@ -497,4 +499,15 @@ export function kitNativeParts(form, kindSlot, slotList) {
   const miss = slotList.filter(s => !(s in slots));
   if (miss.length) throw new Error(`${form.name}: no part fills ${miss}`);
   return Object.fromEntries(slotList.map(s => [s, slots[s]]));
+}
+/** one kit Billie baked from the game data, as `npm run bake:kits` and the Studio's Write Billie bake it: the stage
+ * scale, the sheet, the rig (both views), the piece layout and the stage's native parts
+ * @param {{ partKits: PartKits, kitBuilds: { bake: KitBake, colours: Record<string, number[]> },
+ *   rules: { parts: { slots: string[] } } }} D the game data (partKits.json, kitBuilds.json, rules.json)
+ * @param {KitForm} form @param {KitPartPixels} pics */
+export function kitBakeWhole(D, form, pics) {
+  const K = D.partKits,
+    B = D.kitBuilds,
+    made = kitBakeForm(K, form, B.colours, pics, B.bake);
+  return { ...made, parts: kitNativeParts(form, K.slots || {}, D.rules.parts.slots) };
 }

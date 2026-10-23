@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import vm from 'node:vm';
 import { DATA, PB_DATA, readJson, ROOT, writeFile } from './data-files.mjs';
 import { encodePng, readPng } from './test/png.mjs';
-import { kitBakeForm, kitNativeParts } from '../game/js/logic/kit-assemble.js';
+import { kitBakeWhole } from '../game/js/logic/kit-assemble.js';
 
 const ART = join(ROOT, 'game', 'art');
 const SHEETS = join(ART, 'next', 'billionaires');
@@ -50,7 +50,7 @@ function readRigs() {
 export function bakeKitBillies({ only = null, check = false, log = console.log } = {}) {
   const K = readJson('partKits.json'),
     B = readJson('kitBuilds.json'),
-    R = readJson('rules.json'),
+    data = { partKits: K, kitBuilds: B, rules: readJson('rules.json') },
     cache = new Map(),
     pics = (id, view) => {
       const key = id + '|' + view;
@@ -66,7 +66,7 @@ export function bakeKitBillies({ only = null, check = false, log = console.log }
   /** @type {Record<string, any>} */
   const lines = {};
   for (const form of forms) {
-    const made = kitBakeForm(K, form, B.colours, pics, B.bake),
+    const made = kitBakeWhole(data, form, pics),
       what = [],
       png = join(SHEETS, `${form.name}.png`),
       lay = join(SHEETS, `${form.name}.json`);
@@ -86,7 +86,7 @@ export function bakeKitBillies({ only = null, check = false, log = console.log }
       rigsChanged = true;
     }
     const L = (lines[form.line] ||= readJson(`lines/${form.line}.json`)),
-      parts = kitNativeParts(form, K.slots, R.parts.slots);
+      parts = made.parts;
     if (form.stage >= L.names.length)
       throw new Error(`${form.name}: stage ${form.stage}, ${form.line} has ${L.names.length}`);
     L.parts ||= [];

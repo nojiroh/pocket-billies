@@ -68,15 +68,13 @@ function pixelDiff(made, ref) {
 }
 
 test('every kit Billie bakes in JS as tools/build-kit-billies.py baked it', () => {
-  const C = B.colours,
-    D = B.bake,
-    problems = [];
+  const problems = [];
   assert.equal(B.forms.length, 24);
   for (const form of B.forms) {
     const where = `${form.name} (${form.rig})`;
     let made;
     try {
-      made = A.kitBakeForm(K, form, C, pics, D);
+      made = A.kitBakeWhole({ partKits: K, kitBuilds: B, rules: RULES }, form, pics);
     } catch (e) {
       problems.push(`${where}: ${e.stack.split('\n').slice(0, 3).join(' / ')}`);
       continue;
@@ -88,8 +86,7 @@ test('every kit Billie bakes in JS as tools/build-kit-billies.py baked it', () =
     const layout = JSON.parse(readFileSync(join(ROOT, `game/art/next/billionaires/${form.name}.json`), 'utf8'));
     for (const d of jsonDiff(JSON.parse(JSON.stringify(made.layout)), layout, 'layout')) problems.push(`${where} ${d}`);
     const line = JSON.parse(readFileSync(join(ROOT, `game/data/lines/${form.line}.json`), 'utf8'));
-    for (const d of jsonDiff(A.kitNativeParts(form, K.slots, RULES.parts.slots), line.parts[form.stage], 'parts'))
-      problems.push(`${where} ${d}`);
+    for (const d of jsonDiff(made.parts, line.parts[form.stage], 'parts')) problems.push(`${where} ${d}`);
   }
   assert.deepEqual(problems, []);
 });
