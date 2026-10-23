@@ -555,11 +555,10 @@ function debugAction(x) {
       saveData.ranch.trainees.forEach(t => {
         t.at = Math.max(0, t.at - 3600000);
       });
-      said = `${saveData.ranch.trainees.length} in training: an hour older.`;
       /* RL-10b: and its income counted an hour earlier */
       if (saveData.ranch.income.lastAt)
         saveData.ranch.income.lastAt = Math.max(1, saveData.ranch.income.lastAt - 3600000);
-      toast(`${saveData.ranch.trainees.length} training: an hour older.`);
+      said = `${saveData.ranch.trainees.length} in training and the income: an hour older.`;
       break;
     /* RL-10: every egg in the ranch's nursery ready to hatch now */
     case 'eggsready':
