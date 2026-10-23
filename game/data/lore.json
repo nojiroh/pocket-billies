@@ -4,31 +4,31 @@
    "id": "hollow",
    "title": "The Hollow Earth",
    "unlock": "start",
-   "text": "Inside the planet there is another world: a hollow shell with land on the inside, sea and sky in the middle, and the Inner Sun hanging at the centre of it all. Look up anywhere and you see more country curving overhead, hazy and blue. Things from the surface fall in through sinkholes now and then. Most of them land in Copperleaf, a hamlet one lane north of Marigold Town, which the people of Marigold Town regard as a business opportunity."
+   "text": "Inside the planet there is another world: a hollow shell with land on the inside, sea and sky in the middle, and the Inner Sun hanging at the centre of it all. Look up anywhere and you see more country curving overhead, hazy and blue. Things from the surface fall in through sinkholes now and then. Most of them land in Copperleaf, a hamlet one lane north of Marigold Town, which the people of Marigold Town regard as a paperwork opportunity."
   },
   {
    "id": "found",
    "title": "How it was found",
    "unlock": "start",
-   "text": "A mining company drilled too deep in 1971 and broke through the floor of the world. The first expedition planted a flag, then a toll booth, and the Hollow Earth was bought by a fund the same afternoon. It has changed hands eleven times since. Nobody who lives here has ever been asked."
+   "text": "A mining company drilled too deep in 1971 and broke through the floor of the world. The first expedition planted a flag, then a help desk, and the Hollow Earth was filed as “pending” the same afternoon. The file has been reassigned eleven times since. Nobody who lives here has ever been asked."
   },
   {
    "id": "billionaires",
    "title": "What Billies are",
    "unlock": "start",
-   "text": "Decades ago the world’s richest people paid a private lab, Legacy Labs (“Your fortune, backed up”), to clone them, as backups in case anything happened to the originals. To save money, the lab filled the gaps in the DNA with whatever animal was cheapest that week. The clones came out part tycoon, part creature, and refused to sign anything. Rather than admit it, the lab shipped them down here as “offshore storage”. They went wild, multiplied, and now they are the most common wildlife in the Hollow Earth. Most of them can only say their own name."
+   "text": "Decades ago the world’s richest people each hired a private lab, Legacy Labs (“You, again, but forever”), to clone them: a vanity project, a copy to show off and a spare in case anything happened to the original. To hit the launch date, the lab filled the gaps in the DNA with whatever animal was nearest. The clones came out part celebrity, part creature, and refused to sign the release form. Rather than admit it, the lab dropped them down a sinkhole and marked the project “archived”. They went wild, multiplied, and now they are the most common wildlife in the Hollow Earth. Most of them can only say their own name."
   },
   {
    "id": "coins",
    "title": "Why a pyramid catches them",
    "unlock": "start",
-   "text": "A Billie cannot resist a coin. Toss one and it will chase it, catch it and keep it, and while it is busy counting, it is yours. A Penny will do for a young one. Silver, Gold and Platinum (“Too Big To Fail”) coins hold the bigger and the stubborn ones. Nobody has found a Billie that turns money down."
+   "text": "Every cloning vat at Legacy Labs was a pyramid: one founder liked the shape, and the others copied it. So a Billie sees a pyramid and thinks it is going home. Throw one at a tired Billie and it climbs in. A Pyramid will do for a young one. Step Pyramids and Gold Pyramids hold the bigger and the stubborn ones, and a Capstone holds anything."
   },
   {
    "id": "money",
-   "title": "Money down here",
+   "title": "Moneys down here",
    "unlock": "start",
-   "text": "Down here money is coins, and coins are the one thing a Billie cannot resist, so every trainer’s purse is also a leash. Trainers pay each other after a battle, and a wild Billie you beat leaves a little prize behind. The banks of Verdigris City have tried for years to print coins of their own. So far, the Billies have refused to chase them."
+   "text": "Down here money is counted in Moneys. Nobody remembers who decided the plural. Trainers pay each other after a battle, and a wild Billie you beat leaves a little prize behind. The Bureau of Lost, Found and Beans has a form for appealing the plural. The appeal is still pending."
   },
   {
    "id": "sun",
@@ -54,7 +54,7 @@
    "id": "prologue",
    "stage": 0,
    "title": "The fall",
-   "text": "You were walking somewhere on the surface, late, with a lanyard round your neck and one coin in your pocket. The pavement opened. You fell through the crust, past the inner sky, with the Inner Sun blazing ahead, and woke in Copperleaf, a hamlet of round doors and beehives, with no memory of who you were. The Chosen, Copperleaf’s self-appointed professor, found you and gave you a Billie; his assistant Hazel made sure you were in one piece. Blake, his other student, picked the one that beats yours. Granny Juniper, the beekeeper, gave you a room."
+   "text": "You were walking somewhere on the surface, late, with a lanyard round your neck and one guitar pick in your pocket. The pavement opened. You fell through the crust, past the inner sky, with the Inner Sun blazing ahead, and woke in Copperleaf, a hamlet of round doors and beehives, with no memory of who you were. The Chosen, Copperleaf’s self-appointed professor, found you and gave you a Billie; his assistant Hazel made sure you were in one piece. Blake, his other student, picked the one that beats yours. Granny Juniper, the beekeeper, gave you a room."
   },
   {
    "id": "road1",
@@ -134,7 +134,7 @@
    "name": "You",
    "role": "A trainer who fell in",
    "unlock": "start",
-   "text": "You fell down a sinkhole on the surface and woke in Copperleaf with no memory and one coin. Who you were is the thread through the road ahead.",
+   "text": "You fell down a sinkhole on the surface and woke in Copperleaf with no memory and one guitar pick. Who you were is the thread through the road ahead.",
    "voice": "Whatever you choose to say."
   },
   "chosen": {
@@ -264,9 +264,9 @@
  "clues": [
   {
    "id": "coin",
-   "title": "One coin",
+   "title": "One guitar pick",
    "unlock": "start",
-   "text": "The only thing in your pocket when you woke. A surface coin, worn smooth on one side as if someone rubbed it for luck."
+   "text": "The only thing in your pocket when you woke. A guitar pick from the surface, worn smooth on one side as if someone rubbed it for luck."
   },
   {
    "id": "face",
