@@ -2,6 +2,41 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio plan Phase 6 - Performance, polish and docs - 2026-10-22
+Branch `claude/sr-6-polish`, from `ccr-81011a25-lf3exv` at 625dd55 (T1.2's `restoreParts` is in). Plan pre-approved by
+the owner's standing instruction; the recommended option is taken at each decision and recorded under the plan doc's
+"Decisions". Other sessions run at the same time (1c, 2b, 3, 4, 5b): this one leaves SECTION_LIST's order and groups,
+check.js's checks, data-checks.js, the publish and drafts code and the run, sim and workbench files alone.
+
+**Plan** (one cause per commit; a failing test first where a defect is fixed; unit tests, lint, typecheck,
+`check:modules`, `format:check` after each; `check-studio-github.py --only=sections,publish,drafts,studio_test,
+free_camera,tiles,polish` at the end of each ticket; timings from the self-test before and after):
+0. Tooling: `PB_STUDIO_TEST_OUT=<file>` makes `check-studio-github.py` write the self-test's report (the before/after
+   numbers); a new step `polish` holds this phase's browser checks.
+1. **T6.6** (one commit each):
+   - F16: `onField` runs the hook of the section in the field's own pane (a second-pane move rename updates its list).
+   - `renameType` moves to `game/js/logic/type-rename.js` unchanged, with unit tests; then F17: it also renames the
+     robots' parts and gems, the roster, `rules.ride.types` and relics' `fx[].type`, with a unit test that finds every
+     field holding a type id in the real data and renames each type. Deleting the first type no longer sets the shock
+     and spin types to the type being deleted (found while reading; its own commit).
+   - F20: the shop keeper's thank-you field gets its own prefix (`@thanks.`), then one ordered registry
+     (`pathPrefix`) replaces the chained `setReadPath`/`setWritePath` wrappers; a claim of a prefix another already
+     holds throws, and a unit test reads the claims in studio/js.
+   - D5 (`updateTopBar` stringifies the data): skipped, T1.2 fixed it ("a commit is pending").
+   - `renderPane` catches: a section that throws shows its error in the pane; global `error` and
+     `unhandledrejection` toasts.
+   - The pixel canvas's document listeners go when its canvas leaves the page (flat after 5 opens).
+   - The dead backups text (side footer, the Check's Backups card, STUDIO.md) goes.
+2. **T6.7**: `renderPane` moves an element marked `data-keep` into the redrawn pane's placeholder with the same mark;
+   the 3D placeholders (Walk scenes, Generate, Hub island, Props, Engine) share one, so one WebGL context lasts the
+   session. Test: 20 tool switches in Walk scenes make 1 context, no INVALID_OPERATION. Renderer files untouched
+   unless stale meshes remain (then only cache keys). `check:fast` for the game side.
+3. **T6.1**: Walk scenes' hook keeps the 2D map redraw on `input` and moves the walk view's rebuilds to a 300 ms
+   debounce; the other heavy hooks audited the same way.
+4. **T6.2**: undo/redo redraw only when the shown section(s) show a part that changed (`SECTION_PARTS`); a
+   `renderCard` helper for the busiest matrix and toggle actions.
+5. T6.3, T6.4, T6.5, T6.8 as time allows.
+
 ### Studio plan Phase 1, sessions C+D - One validator for CI and the Studio (T1.3) and Studio checks in CI (T1.4) - 2026-10-22
 Branch `ccr-81011a25-lf3exv` (PR #131). Plan pre-approved by the owner's standing instruction (recommended options
 taken; recorded under the plan doc's "Decisions"). Phase 1b (T1.2 undo, T1.5, People) works on the same branch at the

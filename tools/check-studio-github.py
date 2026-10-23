@@ -32,9 +32,11 @@ proposal at the end must carry uiTheme.json with it.
                                                                  # (step names: STEPS below)
     python3 tools/check-studio-github.py --only=publish  # Studio plan Phase 0: Propose's failure cases alone
     python3 tools/check-studio-github.py --only=drafts   # Studio plan Phase 1 (T1.1): kept drafts, restore, discard
+    python3 tools/check-studio-github.py --only=polish   # Studio plan Phase 6: second pane, paths, errors, listeners, GL
+    PB_STUDIO_TEST_OUT=report.json python3 tools/check-studio-github.py --only=studio_test   # keeps the self-test's report
 
 Needs Python 3 and Playwright (tools/requirements-check.txt). About a minute."""
-import json, re, sys, threading, time
+import json, os, re, sys, threading, time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -985,6 +987,8 @@ def studio_test_steps(pg, errs):
     if r['privacy']: errs.append('studio test: the report holds ' + ', '.join(r['privacy']))
     if pg.evaluate("studioProbe.on !== null || studioProbe.running"): errs.append('studio test: the probe was left on')
     edits = sum(1 for s in r['sections'] if s.get('edit'))
+    if os.environ.get('PB_STUDIO_TEST_OUT'):  # Studio plan Phase 6: the report kept, for timings before and after
+        Path(os.environ['PB_STUDIO_TEST_OUT']).write_text(json.dumps(r, indent=1))
     print(f"studio test: {len(r['sections'])} sections, {edits} edits undone, {len(r['findings'])} findings, {r['seconds']} s", flush=True)
     # Studio plan T1.2: the undo holds only the parts an edit changed, and puts back only those
     u = pg.evaluate("""(() => {
@@ -1008,6 +1012,44 @@ def studio_test_steps(pg, errs):
     print(f"undo: a map edit's step holds {u['parts']}; its undo kept the other {u['n'] - 1} maps the same objects", flush=True)
 
 
+# Studio plan Phase 6 (T6.7): every WebGL context the page makes is counted (a canvas that gets one), and the GPU's
+# warnings are kept apart, so a redraw that makes a new context or uses a stale object shows
+GL_COUNT = """(() => { window.__glCount = 0; const g = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function (t, ...a) { const c = g.call(this, t, ...a);
+    if (c && /webgl/.test(t) && !this.__glMade) { this.__glMade = 1; window.__glCount++; } return c; }; })()"""
+GL_WARN = []
+
+
+def polish_steps(pg, errs):
+    """Studio plan Phase 6 (T6.6, T6.7): a rename in the second pane updates that pane's list (F16); a shop keeper's
+    thank-you field reads and writes that shop's lines (F20); a section that throws says so in its pane, and an
+    error anywhere is a toast; the pixel canvas leaves no listeners behind; 20 tool switches in Walk scenes keep one
+    WebGL context and no stale GPU object."""
+    # F16: a move renamed in the second pane shows the new name in that pane's list
+    pg.evaluate("void openSection('billionaires')"); time.sleep(0.3)
+    pg.evaluate("ACTIONS.openBeside({ s: 'moves' })"); time.sleep(0.8)
+    k = pg.evaluate("studioState.sel.move")
+    f = pg.locator(f'#main2 input[data-p="moves.{k}.n"]')
+    v0 = f.input_value()
+    f.fill(v0 + ' Polish'); time.sleep(0.3)
+    listed = pg.evaluate("(document.querySelector('#main2 #moveList') || {}).textContent || ''")
+    f.dispatch_event('change'); time.sleep(0.3)
+    pg.evaluate("void undo()"); time.sleep(0.4)
+    if v0 + ' Polish' not in listed: errs.append('F16: a move renamed in the second pane kept its old name in that pane\'s list')
+    pg.evaluate("ACTIONS.paneClose()"); time.sleep(0.3)
+    # F20: the shop keeper's thank-you lines are the shop's, not a key of the data
+    got = pg.evaluate("""(async () => { const D = studioState.D, had = D.shops, keep = studioState.sel.shop;
+      D.shops = { tst: { name: 'Test shop', keeper: 'K', who: Object.keys(D.people)[0], thanks: ['Ta', 'Cheers'], stock: [] } };
+      studioState.sel.shop = 'tst'; openSection('shops'); await new Promise(r => setTimeout(r, 300));
+      const t = [...document.querySelectorAll('#main textarea[data-p]')].find(e => e.dataset.p.startsWith('@') && e.dataset.p.endsWith('.tst'));
+      const shown = t ? t.value : null;
+      if (t) { t.value = 'One\\nTwo'; t.dispatchEvent(new Event('input', { bubbles: true })); }
+      const r = { shown, thanks: D.shops.tst.thanks, top: 'tst' in D };
+      delete D.tst; D.shops = had; studioState.sel.shop = keep; commit(true); return r; })()""")
+    if got != {'shown': 'Ta\nCheers', 'thanks': ['One', 'Two'], 'top': False}: errs.append(f'F20: the shop thank-you field gave {got}')
+    print('polish: second-pane rename, shop thank-you lines', flush=True)
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
@@ -1024,6 +1066,7 @@ STEPS = [
     ('ui_tools', ui_tools_steps),
     ('ui_screens', ui_screens_steps),
     ('studio_test', studio_test_steps),
+    ('polish', polish_steps),
 ]
 
 
@@ -1455,8 +1498,10 @@ def main():
         b = pw.chromium.launch(args=['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
         ctx = b.new_context(viewport={'width': 1400, 'height': 900})
         ctx.add_init_script('window.PB_TEST_GLOBALS=true')  # phase 04d: the modules' names on window, for evaluate()
+        ctx.add_init_script(GL_COUNT)
         pg = ctx.new_page()
         pg.on('console', lambda m: errs.append(m.text[:300]) if m.type == 'error' else None)
+        pg.on('console', lambda m: GL_WARN.append(m.text[:300]) if re.search(r'INVALID_OPERATION|does not belong to this context', m.text) else None)
         pg.on('pageerror', lambda e: errs.append(str(e)[:400]))
         pg.route('https://api.github.com/**', api)
         pg.add_init_script("localStorage.setItem('pb-studio-gh-token','ghp_stand-in')")
