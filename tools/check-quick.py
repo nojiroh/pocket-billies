@@ -1412,8 +1412,8 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     nature_growth_exits()
 
-    @step('v43: the seamless world, flags, voxel props, the new light', 240)
-    def v43():
+    @step('Place views, flags, wind, voxel props, the light', 240)
+    def views_flags_wind_light():
         out = []
         # every place's view composes (phase 08b: the only kind of view; the road frame and its middle views are gone): no cut
         # tiles, parts on whole metres, sizes the distant ground picture can hold, the place's own tiles carried over exactly
@@ -1457,7 +1457,7 @@ def desktop_steps(b, base, R):
         out.append(f'sky-shaped ambient, two shadow cascades, god rays {"on" if lt["vol"] else "off"}, {lt["ao"]} occlusion, {lamps} lamp shadow map(s) at night')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
-    v43()
+    views_flags_wind_light()
 
     @step('v46: the world update — ground kit, buildings and their colours, rooms that open in place', 300)
     def v46():
