@@ -428,7 +428,7 @@ SECTIONS.scenes = () => {
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(id)}</small><h2>${escapeHtml(sc.name || id)}</h2></div><div class="seg-row"><button class="btn subtle" data-act="scDup">Duplicate</button><button class="btn danger" data-act="scDel">Delete</button></div></div>
  ${card(
    'Preview',
-   `<div class="sc-pv"><canvas id="scPv"></canvas><div class="sc-pv-load" id="scPvLoad">Loading…</div></div>
+   `<div class="sc-pv"><canvas id="scPv" data-keep="walk-gl"></canvas><div class="sc-pv-load" id="scPvLoad">Loading…</div></div>
   <div class="seg-row"><button class="seg ${mapEditor.pv === 'roam' ? 'on' : ''}" data-act="scPv" data-m="roam">Walk around</button><button class="seg ${mapEditor.pv === 'path' ? 'on' : ''}" data-act="scPv" data-m="path">Follow the path</button><button class="btn sm subtle" data-act="scPvHub">Back to the hub</button><button class="btn sm" data-act="scTestRun" title="Opens the game in a new tab, straight into this scene, with a throwaway save. Your edits show up there as you make them.">Test run in the game</button></div>
   <div class="seg-row sc-env"><select id="scEnvT" data-act-change="scEnv" aria-label="Time of day">${[
     ['', 'Midday'],

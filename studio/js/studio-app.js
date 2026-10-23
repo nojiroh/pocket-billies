@@ -704,6 +704,26 @@ export const paneRoot = () => renderingPane || $('#main');
 export function render() {
   renderPane($('#main'), studioState.sec);
 }
+/* Studio plan T6.7: an element marked data-keep="<key>" outlives a redraw. Before the pane is redrawn it is put
+   aside; the new HTML's placeholder with the same key is replaced by it, taking the placeholder's id and classes. The
+   3D previews' canvases share the key walk-gl, so the one WebGL context (and its programs and meshes) lasts the
+   session instead of a new one per redraw (F18, F19) */
+const keptElements = new Map();
+function keepAside(m) {
+  for (const el of m.querySelectorAll('[data-keep]')) keptElements.set(el.dataset.keep, el);
+}
+function keepPutBack(m) {
+  for (const ph of m.querySelectorAll('[data-keep]')) {
+    const el = keptElements.get(ph.dataset.keep);
+    if (!el || el === ph) continue;
+    /* gl: the renderer's mark; in: shown, kept only when it comes back to the same place */
+    const marks = ['gl', ...(el.id === ph.id ? ['in'] : [])].filter(c => el.classList.contains(c));
+    el.id = ph.id;
+    el.className = ph.className;
+    el.classList.add(...marks);
+    ph.replaceWith(el);
+  }
+}
 export function renderPane(m, sec) {
   const S = SECTIONS[sec];
   if (!S) return;
@@ -714,7 +734,9 @@ export function renderPane(m, sec) {
       t0 = P ? performance.now() : 0;
     const html = S();
     const t1 = P ? performance.now() : 0;
+    keepAside(m);
     m.innerHTML = html;
+    keepPutBack(m);
     const t2 = P ? performance.now() : 0;
     studioState.after.forEach(f => f());
     const t3 = P ? performance.now() : 0;

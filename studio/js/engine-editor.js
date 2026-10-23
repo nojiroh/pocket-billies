@@ -170,7 +170,7 @@ SECTIONS.engine = () => {
   return `<div class="eng-split"><div class="eng-set" id="engSet">${engineSettingsHTML()}</div>
  <div class="eng-side"><div class="card"><div class="card-b"><div class="eng-pvbar"><label class="fld"><span>Preview scene</span><select id="engScene">${opts}</select></label>
    <button class="btn sm" id="engCmp" title="Hold to see the built-in look without any of your settings">Hold to compare</button></div>
-  <div class="sc-pv eng-pv"><canvas id="engPv"></canvas><div class="sc-pv-load" id="engPvLoad">Loading…</div></div>
+  <div class="sc-pv eng-pv"><canvas id="engPv" data-keep="walk-gl"></canvas><div class="sc-pv-load" id="engPvLoad">Loading…</div></div>
   <div class="eng-meter" id="engMeter">–</div>
   <p class="help">Click the ground to walk, drag to turn, scroll to zoom. What you see is the game’s own renderer with your unsaved values. Battles happen inside the walk scene, so they follow its look.</p></div></div></div></div>`;
 };

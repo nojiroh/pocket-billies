@@ -1078,6 +1078,37 @@ def polish_steps(pg, errs):
         counts.append(doc_listeners())
     if counts[-1] != counts[0]: errs.append(f'pixel canvas: document listeners after each of 5 opens: {counts}')
     print('polish: second-pane rename, shop thank-you lines, prefixes, errors shown, pixel canvas listeners ' + str(counts), flush=True)
+    # T6.7: 20 tool switches in Walk scenes (each redraws the section) keep one WebGL context and use no stale object
+    ready = "walkView.ready && !!document.querySelector('#scPv')"
+    pg.evaluate("void openSection('scenes')")
+    t0 = time.time()
+    while time.time() - t0 < 90 and not pg.evaluate(ready): time.sleep(0.5)
+    c0, w0 = pg.evaluate("window.__glCount"), len(GL_WARN)
+    tools = pg.evaluate("[...document.querySelectorAll('#main [data-act=scTool]')].map(b => b.dataset.t)")
+    for i in range(20):
+        pg.evaluate(f"ACTIONS.scTool({{ t: {json.dumps(tools[i % len(tools)])} }})"); time.sleep(0.3)
+    pg.evaluate("const m = studioState.D.maps[currentMapId()]; m.name = (m.name || '') + ' x'; changed(); commit(true); undo()")
+    t0 = time.time()
+    while time.time() - t0 < 120 and not pg.evaluate(ready): time.sleep(0.5)
+    time.sleep(2)
+    made = pg.evaluate("window.__glCount") - c0
+    if made: errs.append(f'3D view: 20 tool switches and an undo in Walk scenes made {made} new WebGL contexts')
+    if len(GL_WARN) > w0: errs.append(f'3D view: stale GPU objects after redraws: {GL_WARN[w0:w0 + 2]}')
+    print(f'polish: 20 tool switches in Walk scenes made {made} new WebGL contexts, {len(GL_WARN) - w0} GPU warnings ({time.time() - t0:.0f} s to ready)', flush=True)
+    # the other 3D sections take the same canvas: one context for all of them, and each still draws
+    shown = []
+    for s, cv in [('engine', 'engPv'), ('hub', 'hubPv'), ('props', 'pedPv'), ('scenes', 'scPv')]:
+        pg.evaluate(f"void openSection('{s}')")
+        if s == 'props':  # the turntable shows a prop open in its editor
+            pg.evaluate("ACTIONS.propsPick({ k: document.querySelector('#main [data-act=propsPick]').dataset.k })")
+        t0 = time.time()
+        while time.time() - t0 < 90 and not pg.evaluate(f"walkView.ready && !!document.querySelector('#{cv}.in')"): time.sleep(0.5)
+        shown.append(s if pg.evaluate(f"walkView.ready && walkView.cv === document.querySelector('#{cv}')") else s + ' (not drawn)')
+        if s == 'props': pg.evaluate("ACTIONS.pedClose()")
+    made = pg.evaluate("window.__glCount") - c0
+    if made or any('not drawn' in x for x in shown): errs.append(f'3D view: across {shown}, {made} new WebGL contexts')
+    if len(GL_WARN) > w0: errs.append(f'3D view: stale GPU objects across the 3D sections: {GL_WARN[w0:w0 + 2]}')
+    print(f'polish: {", ".join(shown)} on one canvas, {made} new WebGL contexts, {len(GL_WARN) - w0} GPU warnings', flush=True)
 
 
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
