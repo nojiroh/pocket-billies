@@ -101,3 +101,39 @@ test("the run keeps its region, the save loads, and the debug menu's short map f
   // without its region data a start makes no region (the tests' own tables, and a run from before)
   assert.equal(runStartPlan('RLR1REAL', { ...DATA, region: undefined }, { unlocks: [] }).region, null);
 });
+
+test("a region run's places meet only its dex, in its varieties; its mini-bosses and boss are its leaders", () => {
+  const { runWorldTables } = modules['run-scenes'],
+    { runFoes } = modules['run-loop'],
+    WORLD = {
+      nodeTypes: GAME_DATA.nodeTypes,
+      biomes: GAME_DATA.biomes,
+      pools: GAME_DATA.pools,
+      scenery: GAME_DATA.scenery,
+      rules: GAME_DATA.rules.run,
+    },
+    TRAINERS = Object.entries(GAME_DATA.trainers).map(([id, T]) => ({ ...T, id }));
+  for (const seed of SEEDS.slice(0, 40)) {
+    reseed(1);
+    const s = fn('newSave')();
+    s.started = true;
+    s.starter = GAME_DATA.rules.start.starters[0];
+    s.team.push(fn('makeBilly')(s.starter + '0', GAME_DATA.rules.start.starterLevel));
+    hooks.provide({ saveData: s });
+    const run = runStartOn(s, runStartPlan(seed, DATA, { unlocks: [] }), { home: [s.team[0].uid] }),
+      dex = new Set(run.region.dex),
+      W = runWorldTables(run, GAME_DATA.locations[0], WORLD);
+    for (const [id, P] of Object.entries(W.pools)) {
+      assert.ok(P.list.length >= 1, `${seed}: ${id} has Billies to meet`);
+      assert.ok(
+        P.list.every(([sp]) => dex.has(sp)),
+        `${seed}: ${id} meets ${P.list.map(e => e[0])} of ${[...dex]}`
+      );
+      assert.equal(new Set(P.list.map(e => e[0])).size, P.list.length, `${seed}: ${id} lists a species once`);
+    }
+    const foes = Object.values(runFoes(run, { leaders: TRAINERS.filter(T => T.miniboss), rules: GAME_DATA.rules.run }))
+      .sort((a, b) => a.runNode - b.runNode)
+      .map(F => F.from);
+    assert.deepEqual(foes, run.region.leaders, `${seed}: the leaders in order`);
+  }
+});

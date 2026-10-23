@@ -56,7 +56,8 @@ expose({
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, Biome>, pools: Record<string, Pool>,
  *   scenery: any, rules: { scene: RunSceneRules, wild: { lv: [number, number], perRow: number, back: number } },
  *   dex?: string[] | null }} RunWorldData
- * RO-1: dex, a region's species (RL-R1), cuts each place's biome pool to them (logic/wild-pool.js)
+ * RO-1: dex, a region's species, cuts each place's biome pool to them (logic/wild-pool.js); RL-R1: without it, the
+ * run's region's (run.region.dex, its other varieties swapped to the region's)
  */
 /** a run node's place id (its row in the world tables, its wild Billies in saveData.wild) @param {number} i */
 export const runPlaceId = i => `run_${i}`;
@@ -196,6 +197,9 @@ export function runWildLevels(map, i, data) {
  * @returns {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, shops: Record<string, any> }} */
 export function runWorldTables(run, hub, data) {
   const map = /** @type {RunMap} */ (run.map),
+    /* RL-R1: the run's region: its dex (data.dex stands in when given) and its varieties */
+    region = run.region || null,
+    dex = data.dex !== undefined ? data.dex : region ? region.dex : null,
     /** @type {Record<string, Pool>} */
     pools = {},
     /** @type {RoadLink[]} */
@@ -210,7 +214,7 @@ export function runWorldTables(run, hub, data) {
       source = data.pools[B.pool] || data.pools[Object.keys(data.pools)[0]];
     pools[id] = {
       lv: runWildLevels(map, i, data),
-      list: wildPoolList(source.list, data.dex),
+      list: wildPoolList(source.list, dex, region ? region.swap : null),
     };
     /** @type {LocationData} */
     const row = {
