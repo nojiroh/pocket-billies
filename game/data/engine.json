@@ -44,7 +44,7 @@
   "grass": {"density":3,"height":0.55},
   "water": {"reflection":0.95,"ripples":0.3,"glints":1.35,"clarity":0.2,"caustics":0.4,"shallow":"#229ABF"},
   "camera": {"pixelGrid":false,"pitchAdd":-8,"fov":0.68},
-  "quality": {"resolution":1.5,"shadowMap":4096,"frameBlock":true,"edgeBleed":true}
+  "quality": {"resolution":1.5,"shadowMap":4096,"frameBlock":true,"edgeBleed":true,"minPropPx":3,"phonePropDistance":48}
  },
  "presets": {
   "test": {
