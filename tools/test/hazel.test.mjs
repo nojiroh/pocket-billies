@@ -1,4 +1,5 @@
-// Phase 06-2b: Professor Hazel's lines and rules in the new opening (game/js/logic/hazel.js).
+// Phase 06-2b: the professor's lines and rules in the new opening (game/js/logic/hazel.js); since 2026-10-23 the
+// professor is the Chosen.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fn, modules, data } from './setup-real.mjs';
@@ -14,10 +15,10 @@ test('every starter has hot takes, and tapping on runs into the annoyed ones and
   assert.equal(fn('hotTake')('nobody', 0), HAZEL.annoyed[0]);
 });
 
-test('her tips: the meta line first, then the matchup flipped, then the bad ones, never more than TIP_MAX', () => {
+test('his tips: the meta line first, then the matchup flipped, then the bad ones, never more than TIP_MAX', () => {
   const m = { weak: 'Grass', strong: 'Fire' };
   assert.equal(fn('hazelTip')(0, m), HAZEL.meta);
-  assert.equal(fn('hazelTip')(1, m), 'Grass beats Fire. Trust me, I’m a doctor.');
+  assert.equal(fn('hazelTip')(1, m), 'Grass beats Fire. It was foretold. In a forum post.');
   assert.equal(fn('hazelTip')(2, m), HAZEL.badTips[0]);
   assert.equal(fn('hazelTip')(TIP_MAX, m), null);
   assert.equal(fn('hazelTip')(1, null), HAZEL.badTips[0]);

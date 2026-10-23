@@ -330,7 +330,7 @@ async function openingDressingRoom() {
 /* throw-coins: Hazel's three coins fly to the starters' spots (star1-3) and pop open into the three Billies */
 async function openingThrowCoins() {
   const C = cutscene.set,
-    H = cutscene.actors[cutsceneLook('Hazel')];
+    H = cutscene.actors[cutsceneLook('Chosen')];
   if (typeof soundEffect === 'function') soundEffect('throw');
   cutscene.pickList.forEach((l, i) => {
     const p = cutscenePoint(C.spots['star' + (i + 1)], cutscene.off),
@@ -437,7 +437,7 @@ function openingLayer(items, parts, lights, now, t) {
 }
 /* during the pick: tap Hazel for a hot take about the starter you're looking at, in a bubble over her head */
 function hazelHotTake() {
-  const g = cutscene.actors[cutsceneLook('Hazel')],
+  const g = cutscene.actors[cutsceneLook('Chosen')],
     b = $('#csBubble');
   if (!g || !b || !walkView.C || !walkView.cv) return;
   const line = cutscene.pickList[cutscene.sel],
@@ -456,7 +456,7 @@ function hazelHotTake() {
   b.classList.remove('m-pop');
   void b.offsetWidth;
   b.classList.add('m-pop');
-  cutsceneAct(cutsceneLook('Hazel'), 'react', 700);
+  cutsceneAct(cutsceneLook('Chosen'), 'react', 700);
   clearTimeout(b._t);
   b._t = setTimeout(() => (b.hidden = true), 3600);
 }

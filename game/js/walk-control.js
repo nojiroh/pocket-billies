@@ -76,6 +76,7 @@ expose({
   roomFor: [() => roomFor, v => (roomFor = v)],
   roomFrontOf: [() => roomFrontOf, v => (roomFrontOf = v)],
   roomLayIn: [() => roomLayIn, v => (roomLayIn = v)],
+  roomPeople: [() => roomPeople, v => (roomPeople = v)],
   roomRefresh: [() => roomRefresh, v => ((roomRefresh = v), provide({ roomRefresh }))],
   roomState: [() => roomState, v => ((roomState = v), provide({ roomState }))],
   roomStepIn: [() => roomStepIn, v => (roomStepIn = v)],
@@ -354,6 +355,14 @@ function roomAct(h) {
     toast(c.length ? `“${c[Math.floor(Math.random() * c.length)]}”` : 'They wave hello.');
   }
 }
+/** the room's own people who only talk (its map's people, as a place's are), whose story conditions hold
+ * @param {any} sc the room's scene */
+function roomPeople(sc) {
+  const R = sc.roomOf ? mapById(sc.roomOf) : null;
+  return ((R && R.people) || []).filter(
+    (/** @type {any} */ P) => PEOPLE[P.who] && ((!P.when && !P.unless) || storyAllows(P))
+  );
+}
 export function roomState() {
   const I = uiState.inside;
   if (!I) return null;
@@ -377,7 +386,18 @@ export function roomState() {
     roam: true,
     who: 'me',
     enc: [],
-    npcs: sc.keeper ? [{ who: sc.keeper, id: '_keeper:' + I.id, done: true, exit: null, dir: 'down' }] : [],
+    npcs: [
+      ...(sc.keeper ? [{ who: sc.keeper, id: '_keeper:' + I.id, done: true, exit: null, dir: 'down' }] : []),
+      /* people who only talk in the room's own data (Hazel in the lab): they stand on the room's next npcSpots */
+      ...roomPeople(sc).map(P => ({
+        who: P.who,
+        id: '_talk:' + P.id,
+        talk: P,
+        done: true,
+        exit: null,
+        dir: P.dir || 'down',
+      })),
+    ],
     exits: [{ i: 0, to: -1, name: 'Outside', out: 1 }],
   };
 }

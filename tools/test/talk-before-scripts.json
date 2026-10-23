@@ -1,5 +1,5 @@
 {
- "about": "Project Story S2: what the game said before its conversations moved into scripts, recorded in the real game (?fixture=town, headless) with talkLine, startTrainer and healAll swapped for recorders, on main at 509c990: personTalk (each person, visit after visit), trainerTalk (first meeting, met, beaten; a trainer with intro lines runs rivalScene), talkHazel (Index 1/6/20, badges 0/1/3, Blake beaten on the golf course or not, the player named Rae), storyAfterRival (win, lose, skipped) and storyEnding. tools/test/story-snapshot.test.mjs plays the scripts against it. RL-5 (owner’s answer): the lines that sent you to the parked places were cut from Hazel’s, Granny Juniper’s and the townsfolk’s talk; their records here lost the same lines and nothing else.",
+ "about": "Project Story S2: what the game said before its conversations moved into scripts, recorded in the real game (?fixture=town, headless) with talkLine, startTrainer and healAll swapped for recorders, on main at 509c990: personTalk (each person, visit after visit), trainerTalk (first meeting, met, beaten; a trainer with intro lines runs rivalScene), talkHazel (Index 1/6/20, badges 0/1/3, Blake beaten on the golf course or not, the player named Rae), storyAfterRival (win, lose, skipped) and storyEnding. tools/test/story-snapshot.test.mjs plays the scripts against it. RL-5 (owner’s answer): the lines that sent you to the parked places were cut from Hazel’s, Granny Juniper’s and the townsfolk’s talk; their records here lost the same lines and nothing else. Redone on 2026-10-23 from the scripts for the owner’s new professor: hazel, after-rival and ending say the Chosen’s approved lines; person:hazel_lab (Hazel in the lab, his assistant) is new.",
  "person:juniper": [
   [
    {
@@ -1929,7 +1929,7 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 1 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 1 taxed so far."
     }
    ]
   },
@@ -1941,7 +1941,7 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 1 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 1 taxed so far."
     }
    ]
   },
@@ -1953,7 +1953,7 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 1 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 1 taxed so far."
     }
    ]
   },
@@ -1965,12 +1965,12 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 1 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 1 taxed so far."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "1 badge already. The arena leaders talk about you, you know."
+     "text": "1 badge already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -1982,12 +1982,12 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 1 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 1 taxed so far."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "1 badge already. The arena leaders talk about you, you know."
+     "text": "1 badge already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -1999,12 +1999,12 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 1 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 1 taxed so far."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "1 badge already. The arena leaders talk about you, you know."
+     "text": "1 badge already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -2016,12 +2016,12 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 1 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 1 taxed so far."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "3 badges already. The arena leaders talk about you, you know."
+     "text": "3 badges already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -2033,12 +2033,12 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 1 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 1 taxed so far."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "3 badges already. The arena leaders talk about you, you know."
+     "text": "3 badges already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -2050,12 +2050,12 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 1 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 1 taxed so far."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "3 badges already. The arena leaders talk about you, you know."
+     "text": "3 badges already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -2067,12 +2067,12 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 6 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 6 taxed so far."
     },
     {
      "who": "gini",
      "expr": "surprised",
-     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+     "text": "You’re getting good at this. Not chosen good. But good. Some of them only show up in caves or in the malls."
     }
    ]
   },
@@ -2084,12 +2084,12 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 6 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 6 taxed so far."
     },
     {
      "who": "gini",
      "expr": "surprised",
-     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+     "text": "You’re getting good at this. Not chosen good. But good. Some of them only show up in caves or in the malls."
     }
    ]
   },
@@ -2101,12 +2101,12 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 6 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 6 taxed so far."
     },
     {
      "who": "gini",
      "expr": "surprised",
-     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+     "text": "You’re getting good at this. Not chosen good. But good. Some of them only show up in caves or in the malls."
     }
    ]
   },
@@ -2118,17 +2118,17 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 6 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 6 taxed so far."
     },
     {
      "who": "gini",
      "expr": "surprised",
-     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+     "text": "You’re getting good at this. Not chosen good. But good. Some of them only show up in caves or in the malls."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "1 badge already. The arena leaders talk about you, you know."
+     "text": "1 badge already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -2140,17 +2140,17 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 6 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 6 taxed so far."
     },
     {
      "who": "gini",
      "expr": "surprised",
-     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+     "text": "You’re getting good at this. Not chosen good. But good. Some of them only show up in caves or in the malls."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "1 badge already. The arena leaders talk about you, you know."
+     "text": "1 badge already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -2162,17 +2162,17 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 6 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 6 taxed so far."
     },
     {
      "who": "gini",
      "expr": "surprised",
-     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+     "text": "You’re getting good at this. Not chosen good. But good. Some of them only show up in caves or in the malls."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "1 badge already. The arena leaders talk about you, you know."
+     "text": "1 badge already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -2184,17 +2184,17 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 6 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 6 taxed so far."
     },
     {
      "who": "gini",
      "expr": "surprised",
-     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+     "text": "You’re getting good at this. Not chosen good. But good. Some of them only show up in caves or in the malls."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "3 badges already. The arena leaders talk about you, you know."
+     "text": "3 badges already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -2206,17 +2206,17 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 6 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 6 taxed so far."
     },
     {
      "who": "gini",
      "expr": "surprised",
-     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+     "text": "You’re getting good at this. Not chosen good. But good. Some of them only show up in caves or in the malls."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "3 badges already. The arena leaders talk about you, you know."
+     "text": "3 badges already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -2228,17 +2228,17 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 6 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 6 taxed so far."
     },
     {
      "who": "gini",
      "expr": "surprised",
-     "text": "You’re getting good at this. Some of them only show up in caves or in the malls."
+     "text": "You’re getting good at this. Not chosen good. But good. Some of them only show up in caves or in the malls."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "3 badges already. The arena leaders talk about you, you know."
+     "text": "3 badges already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -2250,12 +2250,12 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 20 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 20 taxed so far."
     },
     {
      "who": "gini",
      "expr": "happy",
-     "text": "That’s a proper collection. I might have to cite you in my paper."
+     "text": "That’s a proper collection. Hazel says she might cite you in her paper. I said put me first."
     }
    ]
   },
@@ -2267,12 +2267,12 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 20 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 20 taxed so far."
     },
     {
      "who": "gini",
      "expr": "happy",
-     "text": "That’s a proper collection. I might have to cite you in my paper."
+     "text": "That’s a proper collection. Hazel says she might cite you in her paper. I said put me first."
     }
    ]
   },
@@ -2284,12 +2284,12 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 20 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 20 taxed so far."
     },
     {
      "who": "gini",
      "expr": "happy",
-     "text": "That’s a proper collection. I might have to cite you in my paper."
+     "text": "That’s a proper collection. Hazel says she might cite you in her paper. I said put me first."
     }
    ]
   },
@@ -2301,17 +2301,17 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 20 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 20 taxed so far."
     },
     {
      "who": "gini",
      "expr": "happy",
-     "text": "That’s a proper collection. I might have to cite you in my paper."
+     "text": "That’s a proper collection. Hazel says she might cite you in her paper. I said put me first."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "1 badge already. The arena leaders talk about you, you know."
+     "text": "1 badge already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -2323,17 +2323,17 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 20 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 20 taxed so far."
     },
     {
      "who": "gini",
      "expr": "happy",
-     "text": "That’s a proper collection. I might have to cite you in my paper."
+     "text": "That’s a proper collection. Hazel says she might cite you in her paper. I said put me first."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "1 badge already. The arena leaders talk about you, you know."
+     "text": "1 badge already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -2345,17 +2345,17 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 20 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 20 taxed so far."
     },
     {
      "who": "gini",
      "expr": "happy",
-     "text": "That’s a proper collection. I might have to cite you in my paper."
+     "text": "That’s a proper collection. Hazel says she might cite you in her paper. I said put me first."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "1 badge already. The arena leaders talk about you, you know."
+     "text": "1 badge already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -2367,17 +2367,17 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 20 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 20 taxed so far."
     },
     {
      "who": "gini",
      "expr": "happy",
-     "text": "That’s a proper collection. I might have to cite you in my paper."
+     "text": "That’s a proper collection. Hazel says she might cite you in her paper. I said put me first."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "3 badges already. The arena leaders talk about you, you know."
+     "text": "3 badges already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -2389,17 +2389,17 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 20 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 20 taxed so far."
     },
     {
      "who": "gini",
      "expr": "happy",
-     "text": "That’s a proper collection. I might have to cite you in my paper."
+     "text": "That’s a proper collection. Hazel says she might cite you in her paper. I said put me first."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "3 badges already. The arena leaders talk about you, you know."
+     "text": "3 badges already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   },
@@ -2411,17 +2411,17 @@
     {
      "who": "gini",
      "expr": "happy",
-     "text": "Rae! How's your Index coming along? 20 taxed so far."
+     "text": "Rae! My sidekick returns. How’s the Index? 20 taxed so far."
     },
     {
      "who": "gini",
      "expr": "happy",
-     "text": "That’s a proper collection. I might have to cite you in my paper."
+     "text": "That’s a proper collection. Hazel says she might cite you in her paper. I said put me first."
     },
     {
      "who": "gini",
      "expr": null,
-     "text": "3 badges already. The arena leaders talk about you, you know."
+     "text": "3 badges already. The arena leaders talk about you. Not as much as about me. But they talk."
     }
    ]
   }
@@ -2449,17 +2449,17 @@
    {
     "who": "gini",
     "expr": "happy",
-    "text": "There, good as new."
+    "text": "There. Good as new. I have healing hands. Hazel has a first-aid kit. Same thing."
    },
    {
     "who": "gini",
     "expr": null,
-    "text": "Granny Juniper has made up a room for you in her cottage, by the hives. A rest there does wonders."
+    "text": "Granny Juniper made up a room for you in her cottage, by the hives. Every hero needs a base."
    },
    {
     "who": "gini",
     "expr": null,
-    "text": "Now go and explore! The road teaches more than any book. Come back and see me any time."
+    "text": "Now go and explore! The road teaches more than any book. I’ve read zero books, and look at me."
    }
   ]
  ],
@@ -2486,17 +2486,17 @@
    {
     "who": "gini",
     "expr": "happy",
-    "text": "There, good as new."
+    "text": "There. Good as new. I have healing hands. Hazel has a first-aid kit. Same thing."
    },
    {
     "who": "gini",
     "expr": null,
-    "text": "Granny Juniper has made up a room for you in her cottage, by the hives. A rest there does wonders."
+    "text": "Granny Juniper made up a room for you in her cottage, by the hives. Every hero needs a base."
    },
    {
     "who": "gini",
     "expr": null,
-    "text": "Now go and explore! The road teaches more than any book. Come back and see me any time."
+    "text": "Now go and explore! The road teaches more than any book. I’ve read zero books, and look at me."
    }
   ]
  ],
@@ -2508,17 +2508,17 @@
    {
     "who": "gini",
     "expr": "happy",
-    "text": "There, good as new."
+    "text": "There. Good as new. I have healing hands. Hazel has a first-aid kit. Same thing."
    },
    {
     "who": "gini",
     "expr": null,
-    "text": "Granny Juniper has made up a room for you in her cottage, by the hives. A rest there does wonders."
+    "text": "Granny Juniper made up a room for you in her cottage, by the hives. Every hero needs a base."
    },
    {
     "who": "gini",
     "expr": null,
-    "text": "Now go and explore! The road teaches more than any book. Come back and see me any time."
+    "text": "Now go and explore! The road teaches more than any book. I’ve read zero books, and look at me."
    }
   ]
  ],
@@ -2532,7 +2532,7 @@
    {
     "who": "gini",
     "expr": "happy",
-    "text": "Aurumansa. The golden caravan. It always comes when something is about to get rare."
+    "text": "Aurumansa. The golden caravan. I foresaw this. I didn’t write it down, but I foresaw it."
    },
    {
     "who": "gini",
@@ -2558,6 +2558,57 @@
     "who": "gini",
     "expr": "happy",
     "text": "Welcome back. The sun is still up. It will be up tomorrow too."
+   }
+  ]
+ ],
+ "person:hazel_lab": [
+  [
+   {
+    "who": "hazel",
+    "expr": "happy",
+    "text": "Oh, you’re back. In one piece, too. That never stops being surprising."
+   }
+  ],
+  [
+   {
+    "who": "hazel",
+    "expr": null,
+    "text": "People don’t fall through the crust and live. You did, and you can still talk. I’m writing a paper about it."
+   }
+  ],
+  [
+   {
+    "who": "hazel",
+    "expr": null,
+    "text": "He isn’t a professor. He isn’t technically anything. But the Billies like him, so here we are."
+   }
+  ],
+  [
+   {
+    "who": "hazel",
+    "expr": null,
+    "text": "If he gives you a type tip, do the opposite. It works more often than you’d think."
+   }
+  ],
+  [
+   {
+    "who": "hazel",
+    "expr": null,
+    "text": "The katana has been at the cleaners for two years. Don’t ask."
+   }
+  ],
+  [
+   {
+    "who": "hazel",
+    "expr": null,
+    "text": "Granny Juniper sends honey. I hide it from him. You didn’t see that."
+   }
+  ],
+  [
+   {
+    "who": "hazel",
+    "expr": "happy",
+    "text": "Oh, you’re back. In one piece, too. That never stops being surprising."
    }
   ]
  ]

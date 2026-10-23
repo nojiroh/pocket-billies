@@ -186,7 +186,7 @@ document.addEventListener('pointerup', ev => {
   let best = -1,
     bd = 1e9;
   /* phase 06-2b: Hazel, nearer than any starter, gives a hot take */
-  const g = cutscene.actors[cutsceneLook('Hazel')],
+  const g = cutscene.actors[cutsceneLook('Chosen')],
     hq = g && worldToScreen(walkView.C, g.x, 1.0 + standingHeightAt(g.x, g.z), g.z),
     hd = hq ? Math.hypot(hq.x - sx, hq.y - sy) : 1e9;
   cutscene.stars.forEach((s, i) => {

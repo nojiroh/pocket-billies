@@ -115,7 +115,7 @@ export async function hazelFight(who) {
   await fightLog(fillLine(F.tackle, vars));
   const mv = box.querySelector('.csf-moves');
   if (mv) mv.hidden = false;
-  cutsceneAct(cutsceneLook('Hazel'), 'throw', 700);
+  cutsceneAct(cutsceneLook('Chosen'), 'throw', 700);
   await fightLog(F.hit);
   if (mv) mv.hidden = true;
   /* one hit: the plate drains to zero, the Billie flashes white and goes */
