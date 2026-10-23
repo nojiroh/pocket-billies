@@ -1406,6 +1406,15 @@ own message):
    `endBattle` and the simulator, rather than staying a named gap.
 3. **Scope:** session 1 does T3.1, T3.2 and T3.5; session 2 (Phase 3b) does T3.3 and T3.4's pure parts; T3.4's
    dashboard waits for Phase 2's worker (T2.4).
+4. **Phase 3b (T3.3 balance mode), the town-grass question** (recommended option, under the owner's standing
+   instruction to take the recommended decisions): balance mode stands in "every run place has tall grass" (a lite
+   map, `_lite.tiles: 't'`), because it did on every measured map: 344 of 344 towns and 650 of 650 routes over 80
+   maps, with no unlocks and every one. Rejected: making the town scenes only (a scene's edges need its parents', so
+   it is most of the cost), and changing the game's rule (a town without grass would get wild Billies). A test
+   checks the stand-in on real scenes, and the equality test plays the same seeds in both modes.
+5. **Phase 3b (T3.3), the policy's Loopholes** (recommended): `greedy` takes the rarest on offer (the lowest
+   `rules.run.relics.rarity` weight, then by id), buys a shop's when the money is there beyond `reserve`, and past
+   the cap only swaps for a rarer one; `never-pick` is the baseline that takes and buys none.
 
 ## Ask me before (owner decisions this plan needs)
 1. **T5.1:** recipe as the truth with a JS baker (recommended), or Python stays and Studio writes recipes.
