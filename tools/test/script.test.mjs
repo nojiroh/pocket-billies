@@ -55,7 +55,7 @@ test('mistakes are errors on their line, with "did you mean" for a command', () 
     [['cycle', '  Hi.'], 'only entries ("- ...") go under cycle', 1],
     [['give honey lots'], '"give": n is a number, not "lots"', 0],
     [['battle'], '"battle" takes trainer', 0],
-    [['heal now'], '"heal" takes nothing', 0],
+    [['end now'], '"end" takes nothing', 0],
     [['choice', '  > [if itme:x] Hm'], 'unknown term "itme:", did you mean "item:"? (in "itme:x", at 1)', 1],
     [['Hi, {nmae}.'], 'unknown slot "{nmae}", did you mean "{name}"?', 0],
     [['music'], '"music" takes piece', 0],

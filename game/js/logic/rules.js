@@ -124,6 +124,8 @@ expose({
   evolutionItemName: [() => evolutionItemName],
   // @ts-expect-error -- replaced on purpose
   evolve: [() => evolve, v => (evolve = v)],
+  // @ts-expect-error -- replaced on purpose
+  feedLevels: [() => feedLevels, v => (feedLevels = v)],
   findBilly: [() => findBilly],
   // @ts-expect-error -- replaced on purpose
   fitPart: [() => fitPart, v => (fitPart = v)],
@@ -517,6 +519,16 @@ export function gainXp(m, amt, say) {
       } else uiState.learnQ.push({ uid: m.uid, mv });
     }
   }
+}
+/** RL-12b: a Billie eats a level item (the Protein Bar): it gains `n` levels' worth of XP, learning moves on the way
+ * as a battle's XP would (gainXp); the levels gained (0 at the top level or for a robot) @param {any} m
+ * @param {number} n @param {(text: string, o?: any) => void} say */
+export function feedLevels(m, n, say) {
+  if (isRobot(m) || m.lvl >= maxLevel() || !(n > 0)) return 0;
+  const from = m.lvl,
+    to = Math.min(maxLevel(), m.lvl + Math.floor(n));
+  gainXp(m, Math.max(1, xpFor(to) - m.xp), say);
+  return m.lvl - from;
 }
 export function canEvolve(m) {
   const e = speciesOf(m).evo;

@@ -228,8 +228,12 @@ const storyGameStage = {
   say: async l => {
     await storyWindowsClosed();
     storyRun.line = l.id || null;
-    const who = storySpeaker(l.who || 'me');
-    return storySceneOn() ? cutsceneSay(who, l.text, l.expr) : talkLine(who, l.text, l.expr, {});
+    const who = storySpeaker(l.who || 'me'),
+      /* RL-12b: a run's class trainer (a route trainer) goes by its class's name, not its look's */
+      T = storyRun.id && storyRun.id.startsWith('trainer:') ? TRAINERS[storyRun.id.slice(8)] : null;
+    return storySceneOn()
+      ? cutsceneSay(who, l.text, l.expr)
+      : talkLine(who, l.text, l.expr, T && T.cls && who === T.who ? { name: T.name } : {});
   },
   choose: async options => {
     await storyWindowsClosed();

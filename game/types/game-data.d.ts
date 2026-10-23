@@ -56,6 +56,10 @@ export interface GameData {
   music?: Music;
   /** roguelite track RL-12: a run's Perks, each a list of effect rows (game/data/perks.json; logic/effects.js) */
   perks?: Record<DataId, Perk>;
+  /** RL-12b: events.json */
+  events?: EventsData;
+  /** RL-12b: rewards.json */
+  rewards?: Record<DataId, RewardRow>;
   /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
   currencies?: Partial<Record<CurrencyId, Currency>>;
   /** RL-11: Copperleaf's hub buildings (game/data/buildings.json) */
@@ -671,6 +675,8 @@ export interface Item {
   cure?: string;
   revive?: number;
   evoItem?: number;
+  /** RL-12b: levels a Billie gains when it eats one (the Protein Bar), used from its sheet, never in battle */
+  lvlUp?: number;
   mint?: boolean;
   /** phase 17: fixes a robot's parts (1 = all of their HP) */
   repair?: number;
@@ -983,6 +989,11 @@ export interface Rules {
     shop: { always: string[]; more: number; pick: Record<string, number> };
     /** RL-8: a mini-boss's and the boss's levels: `up` over the top wild level of their row; their reward in $ */
     foes: { miniboss: { up: number; reward: number }; boss: { up: number; reward: number } };
+    /** RL-12b: route trainers: how many a route (fewest, most), levels over the place's top wild level, what each
+     * pays, how far they see (m) */
+    trainers: { perRoute: [number, number]; up: number; reward: number; sight: number };
+    /** RL-12b: the reward pick after a trainer battle: cards, a reroll's first price, how it grows each time */
+    rewards: { pick: number; reroll: number; grow: number };
     /** RL-12: Perks: at most `cap` held, a pick of `pick` after a mini-boss, offered by `rarity` weight, sold in a
         run shop at `price` by rarity (placeholders) */
     perks: {
@@ -1707,6 +1718,44 @@ export type FxRow =
   | { kind: 'damage'; side: 'deal' | 'take'; cat?: 'H' | 'S'; type?: string; mult: number }
   | { kind: 'heal'; share: number }
   | { kind: 'payout'; what: 'research' | 'itemShare'; mult: number };
+/** events.json: a run's events, loot tables and trainer classes (roguelite track RL-12b; logic/encounters.js) */
+export interface EventsData {
+  loot: Record<DataId, Record<DataId, number>>;
+  classes: Record<DataId, TrainerClass>;
+  events: Record<DataId, RunEvent>;
+}
+/** rewards.json: a card of the reward pick (roguelite track RL-12b; logic/rewards.js) */
+export interface RewardRow {
+  kind: 'item' | 'candy' | 'evo' | 'tutor' | 'held';
+  item?: DataId;
+  pyramid?: DataId;
+  n?: number;
+  weight: number;
+}
+/** events.json classes: a kind of trainer (route trainers, the `foe` command) */
+export interface TrainerClass {
+  name: string;
+  who: DataId;
+  team: [number, number];
+  sight: string;
+  lose: string;
+}
+/** events.json events: one event, its intro and 2-3 options */
+export interface RunEvent {
+  title: string;
+  intro: string[];
+  weight: number;
+  repeat?: boolean;
+  biomes?: DataId[];
+  options: RunEventOption[];
+}
+export interface RunEventOption {
+  text: string;
+  need?: string;
+  needText?: string;
+  cost?: number;
+  then: string[];
+}
 /** perks.json: a Perk (roguelite track RL-12): held for one run, its effect rows apply while it is held */
 export interface Perk {
   /** what the player reads */

@@ -1,0 +1,20 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "rewards.schema.json",
+ "title": "game/data/rewards.json: the cards of the reward pick after a trainer battle (roguelite track RL-12b; logic/rewards.js)",
+ "type": "object",
+ "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+ "minProperties": 1,
+ "additionalProperties": {
+  "type": "object",
+  "required": ["kind", "weight"],
+  "additionalProperties": false,
+  "properties": {
+   "kind": {"description": "item: an item or pyramids into the bag; candy: a level item (lvlUp); evo: an evolution item (drawn only when a Billie of the team evolves with it); tutor: a move a Billie of the team can learn; held: a held item (RL-12c, keep its weight 0)", "enum": ["item", "candy", "evo", "tutor", "held"]},
+   "item": {"description": "the item (items.json)", "type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+   "pyramid": {"description": "or the pyramid (pyramids.json), for kind item", "type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+   "n": {"description": "how many (1 when left out)", "type": "integer", "minimum": 1, "maximum": 20},
+   "weight": {"description": "how often it is drawn against the others (0: never)", "type": "number", "minimum": 0, "maximum": 100}
+  }
+ }
+}

@@ -17,6 +17,7 @@ import {
   perkPickOpen,
   provide,
   render,
+  rewardPickOpen,
   runCatch,
   runOver,
   runReleaseSheet,
@@ -744,7 +745,7 @@ export function paintActions() {
       first = !activeBattle.plan.length,
       pyramids = Object.keys(PYRAMIDS).reduce((a, k) => a + (saveData.pyramids[k] || 0), 0),
       items = Object.keys(ITEMS)
-        .filter(k => saveData.items[k] > 0 && !ITEMS[k].evoItem)
+        .filter(k => saveData.items[k] > 0 && !ITEMS[k].evoItem && !ITEMS[k].lvlUp)
         .reduce((a, k) => a + saveData.items[k], 0),
       crew = saveData.team,
       alive = crew.filter(x => x.hp > 0).length;
@@ -787,7 +788,7 @@ export function paintActions() {
       })
       .join('')}</div>${backButtonHTML()}`;
   } else if (ph === 'items') {
-    const its = Object.keys(ITEMS).filter(k => saveData.items[k] > 0 && !ITEMS[k].evoItem);
+    const its = Object.keys(ITEMS).filter(k => saveData.items[k] > 0 && !ITEMS[k].evoItem && !ITEMS[k].lvlUp);
     h = `<div class="plist">${
       its.length
         ? its
@@ -982,7 +983,14 @@ export function endBattle() {
         btns: [
           {
             c: 'dark',
-            l: run && T.runFoe === 'boss' ? 'On to the payout' : run && run.offer ? 'Pick a Perk' : 'Keep walking',
+            l:
+              run && T.runFoe === 'boss'
+                ? 'On to the payout'
+                : run && run.offer
+                  ? 'Pick a Perk'
+                  : run && run.enc && run.enc.reward
+                    ? 'Pick a reward'
+                    : 'Keep walking',
             f:
               /* RL-8: the run's boss beaten: the run is won */
               run && T.runFoe === 'boss'
@@ -995,12 +1003,17 @@ export function endBattle() {
                       uiState.modal = null;
                       perkPickOpen();
                     }
-                  : first && (T.clue || T.ending) && typeof storyAfterWin === 'function'
+                  : run && run.enc && run.enc.reward
                     ? () => {
-                        closeModal();
-                        storyAfterWin(T);
+                        uiState.modal = null;
+                        rewardPickOpen();
                       }
-                    : closeModal,
+                    : first && (T.clue || T.ending) && typeof storyAfterWin === 'function'
+                      ? () => {
+                          closeModal();
+                          storyAfterWin(T);
+                        }
+                      : closeModal,
           },
         ],
       });

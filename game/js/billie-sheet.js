@@ -13,6 +13,7 @@ import {
   billyName,
   cleanName,
   evolutionHint,
+  feedLevels,
   findBilly,
   isPrime,
   maxHp,
@@ -157,6 +158,24 @@ function billySheet(m) {
       },
     });
   }
+  /* RL-12b: a level item (the Protein Bar), never in battle */
+  for (const ik of Object.keys(ITEMS).filter(k => ITEMS[k].lvlUp && saveData.items[k] > 0 && !isRobot(m)))
+    acts.push({
+      ic: 'plus',
+      l: `Feed a ${ITEMS[ik].n} (${saveData.items[ik]} left)`,
+      f: () => {
+        const said = /** @type {string[]} */ ([]);
+        if (!feedLevels(m, ITEMS[ik].lvlUp || 1, t => said.push(t))) {
+          toast(`${billyName(m)} can't grow any more.`);
+          return;
+        }
+        saveData.items[ik]--;
+        save();
+        closeModal();
+        render();
+        toast(said.join(' '));
+      },
+    });
   if (e && e.k === 'donate') {
     const it = donateItem();
     acts.push({
