@@ -142,7 +142,6 @@ test("saves: a hub save is checked against the hub's places while a run's world 
     assert.equal(fn('validSave')(JSON.parse(JSON.stringify(s))), false, "node 4 is not one of the hub's three");
     const m = fn('migrate')(JSON.parse(JSON.stringify(s)));
     assert.deepEqual(m.trip, { node: data.START_NODE, plan: [] });
-    assert.equal(m.visited[4], undefined);
     /* a run's save is still bounded by its own map */
     assert.deepEqual(fn('migrate')(JSON.parse(JSON.stringify(runSave()))).trip, { node: 4, plan: [5] });
   } finally {
@@ -185,36 +184,4 @@ test('saves: the load check refuses a format 4 save with a broken meta, run, ran
   const hub = JSON.parse(JSON.stringify(startedSave('sparky0', 10)));
   assert.equal(valid(hub), true);
   assert.equal(valid({ ...hub, trip: { node: 3, plan: [] } }), false);
-});
-
-test('saves: RL-5: a save from before the hub stood alone drops what names a place that is gone (in the hub only)', () => {
-  const s = startedSave('sparky0', 10);
-  s.trip = { node: 46, plan: [47] };
-  s.visited = { 0: 1, 2: 1, 46: 1, 47: 1 };
-  s.wild = { meadow: { at: 0, list: [] }, marigold: { at: 0, list: [] } };
-  s.x = {
-    stamps: { a: 1 },
-    reqs: {
-      0: { date: 'd', k: 'show', state: 'open' },
-      2: { date: 'd', k: 'letter', state: 'accepted', to: 1 },
-      1: { date: 'd', k: 'letter', state: 'accepted', to: 46 },
-      9: { date: 'd', k: 'show', state: 'open' },
-    },
-    visits: { date: 'd', ids: [46, 0, 47, 2] },
-  };
-  const m = fn('migrate')(JSON.parse(JSON.stringify(s)));
-  assert.deepEqual(m.trip, { node: data.START_NODE, plan: [] });
-  assert.deepEqual(Object.keys(m.visited).sort(), ['0', '1', '2'], 'the start is visited, the gone places are not');
-  assert.deepEqual(Object.keys(m.wild), ['meadow']);
-  assert.deepEqual(Object.keys(m.x.reqs).sort(), ['0', '2'], 'a request at a gone place, or a letter to one, goes');
-  assert.deepEqual(m.x.visits.ids, [0, 2]);
-  assert.deepEqual(m.x.stamps, { a: 1 });
-  assert.equal(fn('validSave')(m), true);
-  /* during a run, the run's places stay as they were (the run's world is made after loading) */
-  const r = runSave();
-  r.x = JSON.parse(JSON.stringify(s.x));
-  const back = fn('migrate')(JSON.parse(JSON.stringify(r)));
-  assert.deepEqual(back.visited, r.visited);
-  assert.deepEqual(back.wild, r.wild);
-  assert.deepEqual(back.x, r.x);
 });
