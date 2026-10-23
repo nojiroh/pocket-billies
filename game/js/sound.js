@@ -512,6 +512,7 @@ function cryPlay(sp, low) {
   const t = soundEngine.ctx.currentTime + 0.005,
     C = cryRecipe(sp, (SPECIES[sp] || {}).cry, CRIES),
     V = cryVoices(low ? cryLowHealth(C) : C);
+  soundLog('cry ' + sp + (low ? ' low' : ''));
   for (const v of V)
     synthVoice(soundEngine.fx, {
       type: v.type,
