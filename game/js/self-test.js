@@ -100,6 +100,7 @@ import { relicPickOpen } from './relic-screen.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
+import { renderWorldMapTab } from './map-tab.js';
 import { clinicHeal } from './walk-tab.js';
 import { leaveRoom, mapIdAt, walkCross, walkPick, walkState } from './walk-control.js';
 import { render } from './ui.js';
@@ -1013,6 +1014,15 @@ async function runFullTest(mode) {
               landing = 'w:' + LOCATIONS[1].mapId + '*';
             if (!(await wait(() => walkView.ready && walkView.id === landing, 15000)))
               throw new Error(`landed but the view is ${walkView.id}`);
+            /* RL-R1: the run's region: the short map's 5 rows in its zones, each place its zone's biome, its name on
+               the Map tab */
+            const G = saveData.run.region;
+            if (!G || G.zones.reduce((n, z) => n + z.rows, 0) !== 5)
+              throw new Error(`the run's region doesn't fit its 5 rows: ${JSON.stringify(G && G.zones)}`);
+            const off = saveData.run.map.nodes.find(n => !G.zones[n.zone] || G.zones[n.zone].biome !== n.biome);
+            if (off) throw new Error(`a place on row ${off.row + 1} isn't its zone's biome`);
+            if (!renderWorldMapTab().includes(escapeHtml(G.name)))
+              throw new Error('the Map tab doesn’t name the region');
             measureFromHere();
             uiState.modal = null;
             uiState.mq = [];
@@ -1058,6 +1068,8 @@ async function runFullTest(mode) {
             if (!runJump(mb)) throw new Error('couldn’t walk to the mini-boss');
             const MB = trainersAt(mb)[0];
             if (!MB || MB.runFoe !== 'miniboss') throw new Error('no mini-boss on its place');
+            if (MB.from !== G.leaders[0])
+              throw new Error(`the mini-boss is ${MB.from}, not the region's ${G.leaders[0]}`);
             startTrainer(MB.id, { talked: true });
             if (!activeBattle) throw new Error('the mini-boss battle didn’t start');
             stopTimers();
@@ -1099,7 +1111,7 @@ async function runFullTest(mode) {
             uiState.modal.btns[0].f();
             if (!(await wait(() => !saveData.run && LOCATIONS.length === gameData.locations.length, 10000)))
               throw new Error('the run didn’t end');
-            return `${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for $${cost}, a Loophole bought and one picked after the mini-boss, the boss; home with ${saveData.meta.capital} Capital`;
+            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for $${cost}, a Loophole bought and one picked after the mini-boss, the boss; home with ${saveData.meta.capital} Capital`;
           } finally {
             if (activeBattle) {
               stopTimers();
