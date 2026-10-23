@@ -113,6 +113,7 @@ expose({
   BOWL_SHADOW_GLSL: [() => BOWL_SHADOW_GLSL],
   BOWL_SHADOW_SIZE: [() => BOWL_SHADOW_SIZE],
   BOWL_SKY_GLSL: [() => BOWL_SKY_GLSL],
+  BOWL_STRUCTURE: [() => BOWL_STRUCTURE],
   BOWL_SUN: [() => BOWL_SUN],
   BOWL_SUN_NOW: [() => BOWL_SUN_NOW],
   BOWL_TREE_LOOK: [() => BOWL_TREE_LOOK],
@@ -140,6 +141,7 @@ expose({
   worldBowlMapId: [() => worldBowlMapId, v => (worldBowlMapId = v)],
   worldBowlMapOf: [() => worldBowlMapOf, v => (worldBowlMapOf = v)],
   worldBowlMesh: [() => worldBowlMesh, v => (worldBowlMesh = v)],
+  worldBowlModelInto: [() => worldBowlModelInto, v => (worldBowlModelInto = v)],
   worldBowlModelShape: [() => worldBowlModelShape, v => (worldBowlModelShape = v)],
   worldBowlOverlay: [() => worldBowlOverlay, v => (worldBowlOverlay = v)],
   worldBowlPick: [() => worldBowlPick, v => (worldBowlPick = v)],
@@ -1081,6 +1083,25 @@ function worldBowlModelShape(path) {
   }
   return out;
 }
+/* the town's smaller structures the bowl draws as their models though they are no buildings (no door, small) */
+const BOWL_STRUCTURE = /^(airship_station|airship_mast|well|fountain|clock_tower|greenhouse)$/;
+/* one model standing at (x, y) on the bowl: its scale and the map's east and north there (group 1, a map's own) */
+function worldBowlModelInto(W, model, x, y, k, east, north) {
+  const key = 'm:' + model;
+  W.models.add(model);
+  (W.inst[key] = W.inst[key] || []).push([
+    ...bowlToGpu(x, y, worldBowlSkyFloor(x, y)),
+    k,
+    east[0],
+    east[1],
+    north[0],
+    north[1],
+    1,
+    0.05 + ((0.9 * (((Math.sin(x * 9137.1 + y * 5711.3) * 43758.5) % 1) + 1)) % 1),
+    0,
+    0,
+  ]);
+}
 /* the things of one place, from its map: its landmark (far), its buildings and trees (close) */
 function worldBowlThingsOfPlace(W, i) {
   const l = LOCATIONS[i],
@@ -1094,12 +1115,17 @@ function worldBowlThingsOfPlace(W, i) {
     base = (x, y) => bowlToGpu(x, y, worldBowlSkyFloor(x, y)),
     /* the landmark from the place's own map (Copperleaf's oak until IS-5 moves the town onto its island) */
     lm = bowlLandmarkPick(l, own && own.props ? own : M, A);
-  if (lm && A[lm.k] && A[lm.k].img) W.stand.push({ i, k: lm.k, x: s.x, y: s.y, g: 0, s: lm.s || 1 });
+  /* a landmark with a model of its own is drawn as that model (where the map puts it), never as a flat picture */
+  const modelOf = (/** @type {any} */ a) => !!(a && a.model && /\.json$/.test(a.model));
+  if (lm && A[lm.k] && modelOf(A[lm.k])) {
+    if (!M.props.some(p => p.k === lm.k)) worldBowlModelInto(W, A[lm.k].model, s.x, s.y, k * (lm.s || 1), east, north);
+  } else if (lm && A[lm.k] && A[lm.k].img) W.stand.push({ i, k: lm.k, x: s.x, y: s.y, g: 0, s: lm.s || 1 });
   let n = 0;
   for (const p of M.props) {
     const art = A[p.k],
       cls = bowlPropClass(p.k, art);
-    if (!cls && !(art && art.landmark)) continue;
+    const structure = !!(art && BOWL_STRUCTURE.test(art.group || p.k) && modelOf(art));
+    if (!cls && !(art && art.landmark) && !structure) continue;
     const [x, y] = bowlMapPoint(s, M, p.x, p.z, BOWL_METRES);
     if (Math.hypot(x, y) > 0.99) continue;
     n++;
@@ -1117,21 +1143,8 @@ function worldBowlThingsOfPlace(W, i) {
         0,
         0,
       ]);
-    } else if (cls === 'building' && art.model && /\.json$/.test(art.model)) {
-      const key = 'm:' + art.model;
-      W.models.add(art.model);
-      (W.inst[key] = W.inst[key] || []).push([
-        ...base(x, y),
-        k * (p.s || 1),
-        east[0],
-        east[1],
-        north[0],
-        north[1],
-        1,
-        0.05 + ((0.9 * (((Math.sin(x * 9137.1 + y * 5711.3) * 43758.5) % 1) + 1)) % 1),
-        0,
-        0,
-      ]);
+    } else if ((cls === 'building' || art.landmark || structure) && modelOf(art)) {
+      worldBowlModelInto(W, art.model, x, y, k * (p.s || 1), east, north);
     } else if (art && art.img) W.stand.push({ i, k: p.k, x, y, g: 1, s: p.s || 1 });
   }
   /* IS-7: an island map's plots no building stands on yet get one of their kind, turned to face where the plot does */
