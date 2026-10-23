@@ -45,7 +45,7 @@ export const MAX_TURNS = 60;
  *   sheet picks the buddy by default)
  * - fights: wild Billies fought in a place, at most (the first of its stock; `fights` in the options)
  * - fightAbove: no wild fight while the party's HP is below this share of its full HP
- * - potionBelow: a Potion (taxbreak) on a Billie below this share of its HP, before each wild fight
+ * - potionBelow: a Potion (potion) on a Billie below this share of its HP, before each wild fight
  * - clinic: a town's clinic whenever someone is hurt and the money is there
  * - penniesUpTo, reserve: Copper Coins bought in a town shop up to this many held, keeping this much money
  * - taxWhileBelow: one throw at a wild Billie (not an Alpha) while the party is smaller than this
@@ -203,13 +203,13 @@ export function runSimOn(env) {
     hooks.provide({ saveData: s, activeBattle: null });
     s.team.push(fn('makeBilly')(s.starter + '0', RULES.start.starterLevel));
     for (let k = 1; k < (o.team ?? 1); k++) s.team.push(fn('makeBilly')(s.starter + '0', RULES.start.starterLevel));
-    s.items.taxbreak = o.pack ?? 0;
+    s.items.potion = o.pack ?? 0;
     const home = s.team
         .slice()
         .sort((/** @type {any} */ a, /** @type {any} */ b) => b.lvl - a.lvl)
         .slice(0, runByTier(R.home, 1))
         .map((/** @type {any} */ m) => m.uid),
-      pack = { items: { taxbreak: Math.min(o.pack ?? 0, runByTier(R.pack, 1)) }, pyramids: {} };
+      pack = { items: { potion: Math.min(o.pack ?? 0, runByTier(R.pack, 1)) }, pyramids: {} };
     /* Studio plan T2.1: started as the mast starts a run (logic/run-start.js), with what the save has unlocked: none (a
        fresh save, the default) or every unlock (unlocks: 'all') */
     if (o.unlocks === 'all') for (const id of Object.keys(UNLOCK_DATA.unlocks)) s.meta.unlocks[id] = 1;
@@ -316,8 +316,8 @@ export function runSimOn(env) {
         for (const q of stock) {
           /* a careful player: a Potion on a Billie below 60%, and no wild fight while the party is below 70% */
           for (const m of s.team)
-            if (m.hp > 0 && m.hp < fn('maxHp')(m) * P.potionBelow && (s.items.taxbreak || 0) > 0)
-              fn('applyItem')('taxbreak', m.uid, false); /* the bag's use out of battle, as the page's */
+            if (m.hp > 0 && m.hp < fn('maxHp')(m) * P.potionBelow && (s.items.potion || 0) > 0)
+              fn('applyItem')('potion', m.uid, false); /* the bag's use out of battle, as the page's */
           const hp = s.team.reduce((/** @type {number} */ a, /** @type {any} */ m) => a + m.hp, 0),
             full = s.team.reduce((/** @type {number} */ a, /** @type {any} */ m) => a + fn('maxHp')(m), 0);
           if (hp < full * P.fightAbove) break;

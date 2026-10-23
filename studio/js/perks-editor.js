@@ -440,7 +440,7 @@ ACTIONS.pickRelic = d => {
 };
 ACTIONS.relicNew = () => {
   const D = studioState.D,
-    k = uniqueKey('loophole', x => !!(D.perks || {})[x]);
+    k = uniqueKey('perk', x => !!(D.perks || {})[x]);
   D.perks[k] = { name: 'New Perk', d: 'Wins pay 10% more Moneys.', rarity: 'common', fx: [PERK_ROW_NEW.money()] };
   studioState.sel.relic = k;
   changed();

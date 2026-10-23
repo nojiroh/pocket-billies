@@ -109,10 +109,10 @@ test('unlocks: a run’s copy opens its shops and map; the same seed and copy ma
   s.meta.unlocks = { shop_bailout: 1, ranch_2: 1, biome_ridge: 1, airship_2: 1 };
   assert.deepEqual(K.runUnlocks(s, D), ['biome_ridge', 'shop_bailout'], 'only shop and biome rows, sorted');
   const none = K.unlockOpen(RUN.shop.pick, 'shop', [], D);
-  for (const k of ['settlement', 'appeal', 'bailout']) assert.ok(!(k in none), `${k} locked for a new player`);
-  assert.ok('pretzel' in none && 'loophole' in none, 'what no row grants stays open');
+  for (const k of ['nerve_tonic', 'wake_tea', 'revive']) assert.ok(!(k in none), `${k} locked for a new player`);
+  assert.ok('pretzel' in none && 'hi_potion' in none, 'what no row grants stays open');
   const some = K.unlockOpen(RUN.shop.pick, 'shop', K.runUnlocks(s, D), D);
-  assert.ok('bailout' in some && !('appeal' in some));
+  assert.ok('revive' in some && !('wake_tea' in some));
   assert.equal(K.unlockOpen(RUN.shop.pick, 'shop', undefined, D), RUN.shop.pick, 'a run from before RL-11: all open');
   const biomes = K.unlockOpen(RUN.map.biomes, 'biome', K.runUnlocks(s, D), D);
   assert.deepEqual(Object.keys(biomes).sort(), ['lake', 'meadow', 'ridge', 'thicket']);
@@ -133,7 +133,7 @@ test('unlocks: a run’s copy opens its shops and map; the same seed and copy ma
     const a = runShopStock(run, 3, day, rule);
     assert.deepEqual(runShopStock(run, 3, day, rule), a, `day ${day}: same stock`);
     assert.ok(
-      a.every(w => !w.item || w.item !== 'appeal'),
+      a.every(w => !w.item || w.item !== 'wake_tea'),
       'nothing it hasn’t unlocked'
     );
   }

@@ -57,7 +57,7 @@ test('unlock graph: a new save has nothing earned; runs and wins earn what unloc
   assert.equal(fresh.why.ranch_3, 'requires');
   assert.equal(fresh.why.first_run, 'earned');
   assert.ok(!fresh.biomes.includes('ridge') && fresh.biomes.includes('meadow'), 'locked biomes stay off the map');
-  assert.ok(!fresh.shop.includes('bailout'), 'locked wares stay off the shelves');
+  assert.ok(!fresh.shop.includes('revive'), 'locked wares stay off the shelves');
   const later = G.unlockSaveAfter(D, { runs: 5, wins: 1 });
   assert.deepEqual(later.earned.sort(), ['first_run', 'first_win', 'runs_5']);
   assert.equal(later.currencies.scrap, D.unlocks.first_run.grant.scrap);

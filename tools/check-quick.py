@@ -39,7 +39,7 @@ CLOCK = """(()=>{const D=Date,off=new D(2026,5,15,12,30,0).getTime()-D.now();cla
  FD.UTC=D.UTC;FD.parse=D.parse;window.Date=FD})()"""
 # RL-5: the shops were parked with their towns (game/data/legacy): the checks open a shop of their own to see the shop
 # screen (the stock Marigold's General Store had)
-CHECK_SHOP = "SHOPS.check_shop=SHOPS.check_shop||{name:'Corner Store',keeper:'Mabel Underhill',who:'clerk',greeting:'Welcome in! Potions on the left, coins on the right.',stock:[{item:'taxbreak',price:150},{item:'apology',price:200},{item:'settlement',price:200},{item:'appeal',price:200},{item:'trailmix',price:260},{coin:'pyramid',price:300}]};"
+CHECK_SHOP = "SHOPS.check_shop=SHOPS.check_shop||{name:'Corner Store',keeper:'Mabel Underhill',who:'clerk',greeting:'Welcome in! Potions on the left, coins on the right.',stock:[{item:'potion',price:150},{item:'burn_salve',price:200},{item:'nerve_tonic',price:200},{item:'wake_tea',price:200},{item:'trailmix',price:260},{coin:'pyramid',price:300}]};"
 NO_ACCOUNTS = "Object.defineProperty(window,'PB_FIREBASE',{get(){return null},set(){},configurable:false})"   # alpha 0.4.1: no Google sign-in during the checks
 # phase 04d: the modules' names on window (game/js/test-globals.js), only for the checks' page.evaluate() calls
 TEST_GLOBALS = "window.PB_TEST_GLOBALS=true"

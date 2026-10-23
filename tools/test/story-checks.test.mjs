@@ -62,7 +62,7 @@ test('each planted fault is found', () => {
       'warnings',
       'not in story.json',
     ],
-    ['items taken, never given', G => G.trainers.crude.script.push('take taxbreak'), 'warnings', 'given nowhere'],
+    ['items taken, never given', G => G.trainers.crude.script.push('take potion'), 'warnings', 'given nowhere'],
     [
       'a once key two scripts share',
       G => (

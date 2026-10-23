@@ -52,7 +52,7 @@ test('run fx: walking into a place on a run heals by the held Perks (runArriveFx
 
 test('run fx: a lost run’s payout with Field Notebook and Lost Property Form adds a Perks row; without them, as before', () => {
   /* a loss: RL-9b brings a win's items home, so they are paid (and Lost Property Form counts) only on a loss */
-  const end = { se: 1000, items: { taxbreak: 2 }, released: 1, cleared: 5, won: false },
+  const end = { se: 1000, items: { potion: 2 }, released: 1, cleared: 5, won: false },
     price = () => 100,
     plain = S.payoutOf(end, RATES, price),
     same = S.payoutOf(end, E.fxPayoutRates(null, RATES), price);

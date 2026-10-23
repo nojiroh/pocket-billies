@@ -43,7 +43,7 @@ test('run sim: a run starts as the mast starts it, with no unlocks or every one'
 });
 
 test("run sim: a run town's shop stocks only what the run has unlocked (Studio plan T3.3)", () => {
-  const locked = ['settlement', 'appeal', 'bailout'];
+  const locked = ['nerve_tonic', 'wake_tea', 'revive'];
   let towns = 0;
   for (let k = 0; k < 12; k++)
     for (const at of runSim(`SIMSHOP${k}`, B).log.places)

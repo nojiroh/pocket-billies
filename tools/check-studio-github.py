@@ -1223,12 +1223,12 @@ def run_lab_rules_steps(pg, errs):
     if pg.evaluate('studioState.D.rules.run.map.rows') != 7: errs.append('the rows field did not write rules.run.map.rows')
     name_was = pg.evaluate('studioState.D.nodeTypes.town.name')
     pg.fill('#main .rl-rules [data-p="nodeTypes.town.name"]', 'Market')
-    pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"taxbreak\"]').click()")
+    pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"potion\"]').click()")
     sent = pending()
     rules_text = pg.evaluate("(changedDataFiles(studioState.D).find(f=>/rules\\.json$/.test(f.path))||{}).text||''")
     if not any(p.endswith('rules.json') for p in sent) or not any(p.endswith('nodeTypes.json') for p in sent): errs.append(f'Propose would send {sent}, not rules.json and nodeTypes.json')
     elif '"rows": 7' not in rules_text.replace('"rows":7', '"rows": 7'): errs.append('the proposed rules.json does not hold rows 7')
-    if 'taxbreak' in pg.evaluate('studioState.D.rules.run.shop.always'): errs.append('unticking the Potion left it always on the shelves')
+    if 'potion' in pg.evaluate('studioState.D.rules.run.shop.always'): errs.append('unticking the Potion left it always on the shelves')
     # a value the map can't lay out (more mini-bosses than rows hold): the game's own error beside the map
     pg.fill('#main .rl-rules [data-p="rules.run.map.minibosses"]', '6')
     t0 = time.time()
@@ -1238,7 +1238,7 @@ def run_lab_rules_steps(pg, errs):
     pg.fill('#main .rl-rules [data-p="rules.run.map.minibosses"]', str(mb))
     pg.fill('#main .rl-rules [data-p="rules.run.map.rows"]', str(was))
     pg.fill('#main .rl-rules [data-p="nodeTypes.town.name"]', name_was)
-    pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"taxbreak\"]').click()")
+    pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"potion\"]').click()")
     left = pending()
     if left: errs.append(f'every rules card value put back, Propose would still send {left}')
     t0 = time.time()
@@ -1275,15 +1275,15 @@ def run_lab_logic_steps(pg, errs, want):
     if town['shop'] != P['town']['shop']: errs.append(f"town node {P['town']['i']}: the panel's shop {town['shop']}, Node {P['town']['shop']}")
     if pg.evaluate('logicWorker.made') != made: errs.append('a second click on the same data made a new logic worker')
     # an edit: a new worker on the new data, and the panel follows it (the town's first day sells no Potion)
-    pg.evaluate("studioState.D.rules.run.shop.always=studioState.D.rules.run.shop.always.filter(w=>w!=='taxbreak');"
+    pg.evaluate("studioState.D.rules.run.shop.always=studioState.D.rules.run.shop.always.filter(w=>w!=='potion');"
                 "document.querySelector('#main [data-runlab-logic]').removeAttribute('data-ready');runLabRedraw()")
     t0 = time.time()
     while time.time() - t0 < 30 and not pg.evaluate("!!document.querySelector('#main [data-runlab-logic][data-ready]')"): time.sleep(0.05)
     stock = pg.evaluate("[...document.querySelectorAll('#main [data-runlab-logic] [data-day]')].map(r=>r.dataset.stock)")
     more = pg.evaluate('logicWorker.made') - made
-    pg.evaluate("studioState.D.rules.run.shop.always.push('taxbreak');runLabRedraw()")
+    pg.evaluate("studioState.D.rules.run.shop.always.push('potion');runLabRedraw()")
     if more != 1: errs.append(f"an edit made {more} new logic workers (want 1)")
-    if not stock or any('taxbreak' in s.split(',') for s in stock): errs.append(f'after taking the Potion off the shop rules the panel still sells it: {stock}')
+    if not stock or any('potion' in s.split(',') for s in stock): errs.append(f'after taking the Potion off the shop rules the panel still sells it: {stock}')
     return f"the logic worker's panel equals runPreview (mini-boss {boss['foe'][0] if boss['foe'] else '?'}, a town's {len(town['shop'])} days, {len(P['offers'])} picks; {boss['ms']} ms), one worker per data version"
 RUN_LAB_SIM_NODE = """import { modules } from './tools/test/setup-real.mjs';
 import { runReport } from './tools/test/sim/run-sim.mjs';

@@ -1089,7 +1089,7 @@ SECTIONS.items = () => {
 ACTIONS.itemNew = () => {
   const D = studioState.D,
     k = uniqueKey('item', x => !!D.items[x]);
-  D.items[k] = { n: 'New Item', price: 200, hp: 30, d: 'Restores 30 HP.', icon: 'taxbreak', mint: true };
+  D.items[k] = { n: 'New Item', price: 200, hp: 30, d: 'Restores 30 HP.', icon: 'potion', mint: true };
   changed();
   render();
 };

@@ -4,17 +4,17 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
     "none": {
       "se": 600,
       "items": {
-        "taxbreak": 2,
-        "loophole": 0,
-        "apology": 0,
-        "settlement": 0,
-        "appeal": 0,
-        "bailout": 0,
+        "potion": 2,
+        "hi_potion": 0,
+        "burn_salve": 0,
+        "nerve_tonic": 0,
+        "wake_tea": 0,
+        "revive": 0,
         "bell": 0,
         "trailmix": 0,
         "pretzel": 0,
-        "spillkit": 0,
-        "parachute": 0,
+        "full_remedy": 0,
+        "max_revive": 0,
         "repairkit": 0
       },
       "pyramids": {
@@ -330,17 +330,17 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
     "all": {
       "se": 600,
       "items": {
-        "taxbreak": 2,
-        "loophole": 0,
-        "apology": 0,
-        "settlement": 0,
-        "appeal": 0,
-        "bailout": 0,
+        "potion": 2,
+        "hi_potion": 0,
+        "burn_salve": 0,
+        "nerve_tonic": 0,
+        "wake_tea": 0,
+        "revive": 0,
         "bell": 0,
         "trailmix": 0,
         "pretzel": 0,
-        "spillkit": 0,
-        "parachute": 0,
+        "full_remedy": 0,
+        "max_revive": 0,
         "repairkit": 0
       },
       "pyramids": {
@@ -659,17 +659,17 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
     "short": {
       "se": 600,
       "items": {
-        "taxbreak": 2,
-        "loophole": 0,
-        "apology": 0,
-        "settlement": 0,
-        "appeal": 0,
-        "bailout": 0,
+        "potion": 2,
+        "hi_potion": 0,
+        "burn_salve": 0,
+        "nerve_tonic": 0,
+        "wake_tea": 0,
+        "revive": 0,
         "bell": 0,
         "trailmix": 0,
         "pretzel": 0,
-        "spillkit": 0,
-        "parachute": 0,
+        "full_remedy": 0,
+        "max_revive": 0,
         "repairkit": 0
       },
       "pyramids": {
@@ -871,6 +871,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "9d6fcb1a87c9cfb2cc1931ce976cc23e70368c941939403953b479375d4c139f"
+  "all": "dea91c5b7cb85d6ef4c032487dc40c9e314e94f014b71664cdb9b47d1c1b513b"
 }
 `;

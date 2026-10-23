@@ -2,7 +2,7 @@
  "start": {
   "se": 600,
   "pyramids": {"pyramid":5,"step_pyramid":0,"gold_pyramid":0,"capstone":0},
-  "items": {"taxbreak":2},
+  "items": {"potion":2},
   "starters": ["musk","bezos","gates"],
   "starterLevel": 5,
   "starterEgg": 2,
@@ -160,15 +160,15 @@
   "start": {
    "se": 600,
    "pyramids": {"pyramid":5},
-   "items": {"taxbreak":2}
+   "items": {"potion":2}
   },
   "home": [1],
   "pack": [5],
   "healCost": 60,
   "shop": {
-   "always": ["coin:pyramid","taxbreak"],
+   "always": ["coin:pyramid","potion"],
    "more": 2,
-   "pick": {"pretzel":3,"loophole":2,"trailmix":2,"spillkit":2,"apology":1,"settlement":1,"appeal":1,"bailout":1}
+   "pick": {"pretzel":3,"hi_potion":2,"trailmix":2,"full_remedy":2,"burn_salve":1,"nerve_tonic":1,"wake_tea":1,"revive":1}
   },
   "foes": {
    "miniboss": {"up":3,"reward":300},

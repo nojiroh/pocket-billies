@@ -65,11 +65,11 @@ test("a run town's shop: always its wares, then more drawn by weight, the same o
   }
   assert.ok(stocks.size >= 3, `the stock changes with the day (${stocks.size} stocks in 12 days)`);
   /* a weight of 0 is never drawn; the record's layout doesn't change the draw */
-  const rule = { always: [], more: 2, pick: { pretzel: 1, loophole: 0, bailout: 1 } },
-    flipped = { always: [], more: 2, pick: { bailout: 1, loophole: 0, pretzel: 1 } };
+  const rule = { always: [], more: 2, pick: { pretzel: 1, hi_potion: 0, revive: 1 } },
+    flipped = { always: [], more: 2, pick: { revive: 1, hi_potion: 0, pretzel: 1 } };
   for (let day = 1; day <= 30; day++) {
     const a = L.runShopStock(run, 1, day, rule);
-    assert.ok(!a.some(w => w.item === 'loophole'));
+    assert.ok(!a.some(w => w.item === 'hi_potion'));
     assert.equal(new Set(a.map(w => w.item)).size, 2, 'both, none twice');
     assert.deepEqual(a, L.runShopStock(run, 1, day, flipped));
   }
@@ -78,7 +78,7 @@ test("a run town's shop: always its wares, then more drawn by weight, the same o
 test("Studio plan T3.3: a run town's wares through the run's own unlocks (runShopOpen: shop.js and the simulation)", () => {
   const run = runOf('SHOPOPEN'),
     UD = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings },
-    locked = ['settlement', 'appeal', 'bailout'],
+    locked = ['nerve_tonic', 'wake_tea', 'revive'],
     seen = new Set();
   run.unlocks = [];
   for (let day = 1; day <= 40; day++) {
@@ -218,8 +218,8 @@ test('releasing: a Billie caught on the run is paid at the end, one from home on
 });
 
 test("the payout screen's rows: payoutOf's lines with their words, the win row only on a win", () => {
-  const price = id => (id === 'taxbreak' ? 150 : 0),
-    end = { se: 750, items: { taxbreak: 2 }, released: 1, cleared: 6 },
+  const price = id => (id === 'potion' ? 150 : 0),
+    end = { se: 750, items: { potion: 2 }, released: 1, cleared: 6 },
     lost = L.runPayoutRows(payoutOf({ ...end, won: false }, R.payout, price), R.payout),
     won = L.runPayoutRows(payoutOf({ ...end, won: true }, R.payout, price), R.payout);
   assert.deepEqual(
