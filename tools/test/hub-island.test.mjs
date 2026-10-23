@@ -222,8 +222,9 @@ test('a draft’s figures: its size, the land, the coast walk and the plots', ()
   const sc = isleMap(),
     s = H.hubGenStats(sc);
   assert.equal(s.w, sc.w);
-  assert.ok(s.land[0] > 150 && s.land[0] < sc.w, `land ${s.land}`);
-  assert.ok(s.lap > 400 && s.lap < 700, `lap ${s.lap}`);
+  /* the look pass (the owner): ~150 m across, a lap of about two minutes */
+  assert.ok(s.land[0] > 120 && s.land[0] < sc.w, `land ${s.land}`);
+  assert.ok(s.lap > 300 && s.lap < 700, `lap ${s.lap}`);
   assert.equal(s.lapS, Math.round(s.lap / 3.4));
   assert.equal(s.plots.well, 1);
   assert.ok(s.plots.house > 3);
