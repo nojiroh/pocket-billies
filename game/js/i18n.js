@@ -118,7 +118,18 @@ World sounds|Geluiden van de wereld|Weltgeräusche|Sonidos del mundo|Sons du mon
 Sound|Geluid|Ton|Sonido|Son
 Volume|Volume|Lautstärke|Volumen|Volume
 Ambience|Sfeergeluiden|Atmosphäre|Ambiente|Ambiance
-Test|Test|Testen|Probar|Tester
+Display|Weergave|Anzeige|Pantalla|Affichage
+Controls|Besturing|Steuerung|Controles|Commandes
+Accessibility|Toegankelijkheid|Barrierefreiheit|Accesibilidad|Accessibilité
+Game|Spel|Spiel|Juego|Jeu
+Help|Hulp|Hilfe|Ayuda|Aide
+Report a problem|Een probleem melden|Problem melden|Informar de un problema|Signaler un problème
+Start over|Opnieuw beginnen|Neu anfangen|Empezar de nuevo|Recommencer
+Erases your team, Field Guide, money and the ranch. Settings stay.|Wist je team, veldgids, geld en de ranch. Instellingen blijven.|Löscht dein Team, den Feldführer, dein Geld und die Ranch. Einstellungen bleiben.|Borra tu equipo, la guía de campo, el dinero y el rancho. Los ajustes se quedan.|Efface ton équipe, ton guide de terrain, ton argent et le ranch. Les réglages restent.
+Mute music|Muziek dempen|Musik stumm|Silenciar la música|Couper la musique
+Mute sound effects|Geluidseffecten dempen|Soundeffekte stumm|Silenciar los efectos de sonido|Couper les effets sonores
+Mute world sounds|Geluiden van de wereld dempen|Weltgeräusche stumm|Silenciar los sonidos del mundo|Couper les sons du monde
+Mute ambience|Sfeergeluiden dempen|Atmosphäre stumm|Silenciar el ambiente|Couper l’ambiance
 Mute|Dempen|Stumm|Silenciar|Couper le son
 Sound on|Geluid aan|Ton an|Sonido activado|Son activé
 Sound off|Geluid uit|Ton aus|Sonido desactivado|Son coupé
@@ -126,8 +137,7 @@ Music volume|Muziekvolume|Musiklautstärke|Volumen de la música|Volume de la mu
 Sound effects volume|Volume van geluidseffecten|Lautstärke der Soundeffekte|Volumen de los efectos de sonido|Volume des effets sonores
 World sounds volume|Volume van de geluiden van de wereld|Lautstärke der Weltgeräusche|Volumen de los sonidos del mundo|Volume des sons du monde
 Ambience volume|Volume van de sfeergeluiden|Lautstärke der Atmosphäre|Volumen del ambiente|Volume de l’ambiance
-All of it at once. Mute keeps your levels for later.|Alles tegelijk. Dempen bewaart je niveaus voor later.|Alles auf einmal. Stumm behält deine Pegel für später.|Todo a la vez. Silenciar guarda tus niveles para después.|Tout à la fois. Couper le son garde tes niveaux pour plus tard.
-Everything together.|Alles samen.|Alles zusammen.|Todo junto.|Tout ensemble.
+Everything together. Mute keeps your levels for later.|Alles samen. Dempen bewaart je niveaus voor later.|Alles zusammen. Stumm behält deine Pegel für später.|Todo junto. Silenciar guarda tus niveles para después.|Tout ensemble. Couper le son garde tes niveaux pour plus tard.
 Tunes for each place and battle.|Melodieën voor elke plek en elk gevecht.|Melodien für jeden Ort und jeden Kampf.|Melodías para cada lugar y cada combate.|Des airs pour chaque lieu et chaque combat.
 Buttons, battles, coins, and the short tunes for a win or a level up.|Knoppen, gevechten, munten en de korte deuntjes bij een overwinning of een nieuw level.|Knöpfe, Kämpfe, Münzen und die kurzen Melodien bei einem Sieg oder einem Levelaufstieg.|Botones, combates, monedas y las melodías cortas al ganar o subir de nivel.|Boutons, combats, pièces, et les petits airs d’une victoire ou d’un niveau gagné.
 Water, fountains, fire, rain, wind and animals near you.|Water, fonteinen, vuur, regen, wind en dieren bij je in de buurt.|Wasser, Brunnen, Feuer, Regen, Wind und Tiere in deiner Nähe.|Agua, fuentes, fuego, lluvia, viento y animales cerca de ti.|L’eau, les fontaines, le feu, la pluie, le vent et les animaux près de toi.

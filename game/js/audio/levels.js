@@ -2,8 +2,9 @@
 /* ================= SOUND LEVELS =================
    The gain each sound bus gets from Settings → Sound (sound track SND-1). A slider's value (0 to 1, stored in the
    save's preferences) is squared, so half way along sounds about half as loud; 0 is silent. Mute silences the master
-   bus and keeps every level for later. The master bus leaves a little headroom for the compressor after it, and the
-   ambience bed sits a little under the world sounds. Pure: no audio and no page, so the unit tests run it in Node. */
+   bus and keeps every level for later; UI-7a: each other bus has its own mute too (preferences.mutes), which keeps
+   its level the same way. The master bus leaves a little headroom for the compressor after it, and the ambience bed
+   sits a little under the world sounds. Pure: no audio and no page, so the unit tests run it in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
@@ -27,7 +28,8 @@ export function soundLevel(prefs, k) {
 /* every bus's gain; world and ambience are multiplied by their fade-in where they are applied */
 export function soundLevels(prefs) {
   const p = prefs || {},
-    sq = k => soundLevel(p, k) * soundLevel(p, k);
+    mutes = p.mutes || {},
+    sq = k => (mutes[k] ? 0 : soundLevel(p, k) * soundLevel(p, k));
   return {
     master: p.mute ? 0 : MASTER_HEADROOM * sq('master'),
     music: sq('music'),

@@ -214,7 +214,7 @@ same phase:
   block (`frameBlockCheck`, engine/webgl.js) and checks the block's size and each member's offset, as this device's
   driver lays them out, against what engine/frame-block.js packs; smoke shows "N shaders; 14 with the Frame block".
 - **(13c)** The full test and the debug menu load on demand; the recording part of the debug log stays loaded.
-- The graphics test (Settings → Help → Run the graphics test, and the debug menu; `game/js/graphics-test.js`, loaded on
+- The graphics test (the debug menu's Performance section since UI-7b; Help had it before; `game/js/graphics-test.js`, loaded on
   demand) is run only by a person, by hand, on their own device: never from Claude Code, CI, a headless browser or
   a script, and no command-line runner, CI job or hook. It tries the shaders, each engine dial on its own (ENGINE_SPEC,
   moved away from its default), Balanced, Beautiful and each engine preset, in one scene, and saves a short .json
@@ -358,9 +358,11 @@ same phase:
 - **Sound track** (docs/phases/sound-track.md): the volume maths is pure (`game/js/audio/levels.js`) and tested in
   Node (`sound-levels.test.mjs`). The full check's "Sound settings" step (SND-1; alone with `--steps="sound
   settings"`, about 1 min) opens Settings → Sound on a phone page in the town, starts the audio with a touch, and
-  reads only connections and the targets the gains are given: each Test button reaches its own bus (a wrapper on
-  `AudioNode.connect`), each slider sets its bus while dragged (a wrapper on `AudioParam.setTargetAtTime`; the wanted
-  level comes from where the slider stands), the header mute silences the master and keeps the levels. Don't read
+  reads only connections and the targets the gains are given: each slider, let go, plays its sound on its own bus
+  (a wrapper on `AudioNode.connect`; the music is stopped first, as the music slider plays nothing over a song; UI-7a
+  replaced the Test buttons), each slider sets its bus while dragged (a wrapper on `AudioParam.setTargetAtTime`; the
+  wanted level comes from where the slider stands), each row's mute silences only its bus and keeps its level and a
+  drag on the muted slider unmutes it (UI-7a), the header mute silences the master and keeps the levels. Don't read
   `gain.value` for this: Chrome stops working out a gain no sound goes through, so an idle bus's value stops part
   way. A browser that won't start audio is reported, not failed.
   SND-2: **song fingerprints**. `python3 tools/check-sound.py` (about 1 min; `--only=meadow,victory` for some) renders

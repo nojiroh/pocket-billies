@@ -2,7 +2,7 @@
 
 The **Graphics test** measures what each graphics setting costs on the device it runs on. It steps every setting
 through a few values while everything else stays put, and reports the cost of each step. It is run by players only
-(Settings → Help, or the debug menu): Claude's checks never run it, because a headless browser draws in software and
+(the debug menu's Performance section; Settings → Help had it until UI-7b): Claude's checks never run it, because a headless browser draws in software and
 its numbers mean nothing. The checks never draw it either: the smoke check builds its step list, checks every setting
 and station spot from the data, and saves a report made from made-up numbers (graphics_test_ready in
 tools/check-quick.py); the full check walks the place's paths from the data.
@@ -35,7 +35,7 @@ square the night (22:00). Everything else is clear summer weather at 14:00.
 
 ## The settings
 
-The 15 Expert dials (Settings → Graphics → Expert) and four hidden ones that cost the most:
+The 15 Expert dials (Settings → Display → Expert) and four hidden ones that cost the most:
 
 - Expert: Shadows, Sun rays, Lamps, Low mist, Clouds, Cloud shadows,
   Particles, Grass, Far trees and hills, Water reflections, Depth of field, Glow, Dark corners, Film grain, Sharpness.

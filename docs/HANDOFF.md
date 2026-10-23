@@ -2,6 +2,57 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-7b - Settings: layout - 2026-10-23
+Branch `ccr-305ae8d3-6ivodu` (PR #147, with UI-7a). Decisions from the owner's question round (docs/phases/ui-track.md,
+UI-7).
+- Changed (one cause per commit):
+  - One `settingsReset` (moved from debug-menu.js to settings-screen.js) for Settings and the debug menu's Erase
+    save; it stops a battle in progress (Settings' own copy left it running under the new save).
+  - Start over: from the footer beside Done to a red section at the foot of the Save tab. The Save card shows runs
+    won (`meta.wins` of `meta.runs`) and Billies taxed, not km walked. Customize trainer left the Save tab (the
+    trainer card's Edit look does the same).
+  - Time, weather and season: out of Settings, into a debug-menu section (same preferences).
+  - Help: a Report a problem box (Full test, Export debug log); the diagnostics test joined the debug menu's
+    Performance row, which already had the graphics and cost tests (the bowl map test is under Trainers and world).
+  - Seven tabs: Sound, Display (key `graphics`), Controls, Accessibility (`access`), Game, Save, Help; they wrap onto
+    two rows at 390 px. Settings opens on the last tab used (`preferences.setTab`), else Sound.
+  - Translations (tab names, Report a problem, Start over and its note, shortened under the 80-character limit).
+  - Quick check: the screens step opens the seven tabs; High contrast is looked for under Accessibility.
+  - Docs: ui-track.md (as built), ROADMAP, CHANGELOG, TESTING, graphics-bench.md.
+- Risky or unfinished:
+  - CI's `smoke` (check-fast) is red on three camera checks (CAM-1 follow, CAM-2 moments, the debug log's camera
+    line): the same on main 1713a8c9 (reproduced in a worktree). Copperleaf's island orbit camera against checks
+    written for the walk camera; commented on PR #147 with two fixes for the owner to pick.
+  - Help's How to play still describes the legacy game (towns, roads, map arrows, eggs on real time).
+  - The debug menu still has the bowl map test twice and phase codes in its labels: UI-7c.
+- Verified: lint, typecheck, check:modules, format:check, unit tests (791); smoke (local, no problems); in a browser:
+  Start over during a battle (battle stopped, no errors), the Save tab and its Start over, the debug menu's time,
+  weather and season (preferences set), seven tabs at 390 px (no sideways scroll), the last tab kept, German labels.
+  The full-check steps that open Settings (safety, sound, desktop) were still running when this was written.
+- Next: UI-7c (the debug menu), in a new session at the owner's word.
+
+### UI track UI-7a - Settings: Sound - 2026-10-23
+Branch `ccr-305ae8d3-6ivodu`. The owner asked for clearer settings and debug menu; plan and a question round in Plan
+Mode, answers recorded in docs/phases/ui-track.md (UI-7). Three steps; this is the first.
+- Changed (one cause per commit):
+  - audio/levels.js: `preferences.mutes` (a muted bus is 0, its level kept); a unit test.
+  - Settings → Sound: the Test buttons go; a slider plays its sound once when let go (`testVolume` on `change`; the
+    music slider not while a song plays); a mute button per row (`.vol-mute`; the Volume row's is `preferences.mute`,
+    the header button's); a drag on a muted slider unmutes it; the effects slider's tick while dragging went.
+  - The Sound on/off switch went (it did what the Volume row's mute does); its hint moved to the Volume row.
+  - Translations for the four new mute labels; the Test string went.
+  - Quick check: the Sound settings step releases sliders instead of pressing Test, and checks each row's mute.
+  - Docs: ui-track.md (UI-7 decisions, UI-7a/b/c rows), ROADMAP, CHANGELOG, TESTING.
+- Risky or unfinished:
+  - Not heard on a phone. On iOS a slider's `change` comes when the finger lifts; check it sounds then.
+  - Keyboard arrows on a slider fire `change` on every step, so each press plays the sound.
+  - The music slider is silent when no song is playing only if `soundEngine.song` is null; while a song is fading out
+    after `musicStop` it may count as none.
+- Verified: lint, typecheck, check:modules, format:check, unit tests (791 pass); smoke check (no problems, before the
+  switch removal commit); the Sound settings step alone after each code commit; a 390 px screenshot of the tab; the
+  German labels read from the page.
+- Not run: the full quick check (due at the end of UI-7). Tag `ui-7a-done` (local; tags may not push).
+- Next: UI-7b (the settings tabs), at the owner's word.
 ### Actions sheet rework for the roguelite - 2026-10-23
 Branch `claude/bold-davinci-vrss2q`, pushed to main at the owner's word. The owner's picks: a bottom sheet; on a run
 the run status and this node's actions; in the hub, shortcuts (Start a run and the clinic open at once, the ranch and
