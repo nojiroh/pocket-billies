@@ -29,6 +29,7 @@ const worldData = () => ({
   pools: POOLS,
   scenery: gameData.scenery,
   rules: RULES.run,
+  region: modules['run-region'].runRegionData(gameData, TRAINERS),
 });
 
 /** what the game shows for a seed: the run on a save, then each part as the page asks for it */

@@ -15,6 +15,19 @@ kept aside in the browser).
   Loopholes are **Perks** and Brackets are **Expeditions** (Expedition I). The ten Perks have new names: Lucky Charm,
   Clinic Loyalty Card, Coupon Book, Steady Hand, Running Shoes, Power Gloves, Bubble Wrap, Trail Snacks, Field
   Notebook and Lost Property Form. A Billie that breaks free no longer offers you money to let it go: a miss is a miss.
+- Every run is a small region (roguelite track RL-R1): its seed picks a theme (Lakeland, Greenbelt, Wildwood,
+  Highland or Harvest Country; the last two need the Ridge or Autumn lands), names it ("Pendingvale", "Beta Basin",
+  "Hotfix Hollow") and walks it in three zones, each one biome over two or three rows of the map, one leading into
+  the next. A region has its own dex of four or five Billie lines (each as its normal look or its regional form, as
+  the region leans), and its mini-bosses and boss are leaders of the types it leans to. The world map shows the
+  region's name and each zone's own ground, and a place's card says which zone it is in.
+- Type abilities (reflavour track RF-3): each type's ability has a name, shown in the Guide's species page under
+  Abilities and in battle lines: Kindling (Fire), Undertow (Water), Regrowth (Grass), Live Wire (Electric), Bedrock
+  (Ground), Slipstream (Flying), Wild Mind (Psychic), Alloy (Steel), Parting Roar (Dragon). Three are new: Water's
+  Undertow (its Water moves hit 1.3× at a third of its HP or less; Water had none), Ground's Bedrock (once a battle a
+  hit that would knock it out from full HP leaves it at 1 HP; sharp stones still don't hurt it) and Dragon's Parting
+  Roar (when it faints, the next one in gets +1 Attack and +1 Sp. Atk, instead of the boosts it had). The rest work as
+  before.
 - Wild Billies by biome (roster track RO-1): every biome has its own wild pool of the seven Billie lines, met by
   rarity (the uncommon lines often, the starters' lines rarely, a line whose types suit the biome most), so a run
   meets real Billies everywhere instead of stand-ins. Four regional forms: Waterfront Gildlet (Water, by the lake),

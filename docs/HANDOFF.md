@@ -121,6 +121,107 @@ Perks' drafted names, the title's "Gotta tax 'em all!" stays, a flask for Resear
   the parked city's "Capital Tower/Hall" prop names; the title's tagline stays on purpose.
 - Next: RF-3 and RF-2 finish on this branch; then #160 to main; RF-4 alone.
 
+### Roguelite track RL-R1 - Region generator - 2026-10-23
+Branch `track/regions` (new, from main after PR #158; the owner's choice: RL-R1 and RL-R2 work here, BRANCHES.md and
+roguelite-track 9.4 say so). Plan approved in Plan Mode with the owner's answers: zones by Expedition 3/3/4/4/5, rows
+per zone 2-3 by seed and seamless across zones, 2 mini-bosses a run (not tied to zone edges), leader types in the
+trainer files, leader teams left for RL-13, dex 15-25 species, world map = zone grounds + the name, the theme and
+name drafts as written. Round 2 beside RF-1..RF-3. Tag `rl-r1-done` for the owner.
+- Where the docs were wrong (checked at 69c4ec5 + #158):
+  - `regions.json` was read as the old list of regions beyond the route: map-tab.js (a branch nothing could reach any
+    more) and the Studio's "Regions ahead (legacy)" card. Both went (the list is in legacy/regions.json).
+  - Leaders had no type field; only their badge text said it. 8 leaders for 8 of the 9 types (no Dragon leader).
+  - The roster is 7 lines (24 species) + 4 forms (12): a 15-25 dex is 4-5 lines, so regions differ mostly by which
+    2-3 lines are missing and which forms appear, until RO-2.
+  - Ridge and Autumn are unlocks: a fresh save can roll Lakeland, Greenbelt and Wildwood (Wildwood without autumn
+    walks thicket and meadow); Highland and Harvest need the unlocks.
+  - "About 30 minutes" was never measured; a 3-zone run is now 6-9 rows (it was 9).
+- Changed (one cause per commit):
+  - **regions.json** (+ schema, types, `dataRegions` in check-data and the Studio's Check: references, run biomes
+    only, leader types, a sweep over seeds, Expeditions and a fresh save's biomes): zones by Expedition, rows [2,3],
+    dex [15,25], the biome graph over the 5 finished biomes, 5 themes (start, biomes, type leanings, own name
+    endings and nouns), shared name parts.
+  - **logic/run-region.js** `runRegionMake(seed, data, {open, tier, guards, rows})`: theme, name from parts, zones on
+    the graph (never the same biome twice in a row), dex of whole lines in one variety each (base or form, by the
+    theme's types) with `swap` (every other variety to the region's), leaders by type (mini-bosses, then the boss).
+    `runRegionData(gameData, trainers)` builds its input.
+  - **Leader types**: `type` in the 8 trainer files (schema); the Studio's type rename rewrites it and a theme's lean.
+  - **run-map.js**: with `zones` in the rules, each row takes its zone's biome on both lanes, nodes carry `zone`;
+    shape, types and links are as without them. **run-start.js**: makes the region from the open biomes (the debug
+    short map's 5 rows become zones 3+2) and puts it on `run.region` (optional, `validRunRegion`; no SAVE_VERSION
+    bump; a run from before loads and plays as before).
+  - **Callers** hand the region data: run-world.js runWorldData (the mast, fixtures, self-test), run-preview, run-sim,
+    the Studio's Run Lab (its row roles now come from the plan).
+  - **Wild and foes**: runWorldTables swaps each pool to the region's varieties and cuts it to the dex
+    (wild-pool.js takes `swap`); runFoes gives the mini-bosses and boss the region's leaders in order.
+  - **World map**: a place's bowl region is its zone's (`zone0`..), each with its biome's ground and trees
+    (run-bowl.js); the Map header shows "World map / <region name>", a place's card "Zone 2 of 3 · Lakeside".
+  - **In-game test**: the run step checks the zones, biomes, the header and the first leader.
+  - Tests: new run-region.test.mjs (8, small tables) and run-region-real.test.mjs (5, game data); run-map.test.mjs
+    (zones), wild-pools.test.mjs (swap). Remade on purpose: run-start.test.mjs's snapshot (the frozen start now has
+    the region). run-sim.test.mjs: "a dearer clinic leaves less money" was an interval below 0 that held only for
+    that seed list (main at 80 seeds: hi 6.6); now "no more money on average" (the mean is 0 with regions' leaders,
+    every run being lost on the placeholders). run-rules-code names the new leaders line.
+  - A bug found by the new real-data test before commit: runFoes counted its leader inside a find callback.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build and the unit tests after every commit
+  (801 -> 816); test:slow 50 of 50; smoke before each game commit: 6 of 6, once 5 of 6 (the in-game step's download
+  timed out, 30 s; it passed on the re-run; on main it took 126 s against its 120 s budget). A browser look at phone
+  size (fixture run): the Map header "Spare Parts Commons", the card "Zone 1 of 3 · Thicket", the landing's wild
+  list cut to the dex with Folklore Swiftlet for Swiftlet, no page errors.
+  - Full quick check, in-game test (--selftest) and check:fast: started at the end; the coordinating session relayed
+    the owner's word to skip waiting for them, so this entry was written while they ran. Seen so far in the full
+    check: 21 steps passed, Sound effects "the payout, lost" failed (its log has the jingles, run_lost last: the same
+    timing kind as RO-1's "payout, won"; not yet compared on main). The results go on the PR when they finish.
+- Risky / open:
+  - Runs are 6-9 rows now (were 9): shorter runs on some seeds. Time one on the phone against "about 30 minutes".
+  - Expeditions III-V (4-5 zones) are untested in play: up to 15 rows, beyond the data check's 12-row rule and tight
+    on the bowl (RUN_BOWL step 0.10 at 15 rows; maps may overlap). Nothing sets a tier above 1 yet (RL-13).
+  - Joined names can be clumsy ("Deprecatedcrag"); the parts are for the owner to edit in regions.json.
+  - Leader teams are still legacy stand-ins: a Water leader doesn't field Water Billies (RL-13).
+  - The bowl's zone bands are only as visible as their biomes differ (meadow and thicket are both green).
+  - runMapSweep (data-checks.js, used by its tests only) still sweeps maps without regions.
+  - Overlap with round 2: the leaders' trainer files and the in-game test's run line (RF-1 edits words there too),
+    the Map tab's header line (RF-1's Capital/Seals labels sit two lines above).
+- Next: merge, then RF-4 (round 3). RL-R2 (side areas, field moves) on `track/regions`.
+
+### Reflavour track RF-3 - Type passives - 2026-10-23
+Branch `track/reflavour-rf-3` (reflavour-track.md has no `Branch:` line; roguelite-track 9.7 gives each round-2
+session its own branch and PR), PR #159. Plan approved in Plan Mode with the nine drafts. Tag `rf-3-done` is the
+owner's to push.
+- Where the plan file was wrong (checked against the code): only the passives' **ids** and rule keys were finance.
+  The effects were Pokémon ideas already (`subsidy` a Leftovers heal, `landlord` immunity to sharp stones, `inherit` a
+  Baton Pass on fainting; only `volatile` was a finance idea, crypto swings). They had names (Kindling, Regrowth...)
+  only in the Studio's dropdown; the player never saw one. No passive had a test. Water had none; Ground's only
+  mattered against the Gild line (the only stone movers, Ground themselves); Dragon's (one species, Marsox) fired only
+  with boosts.
+- Changed (one cause per commit):
+  - `types.json` `passiveName`/`passiveText` for all nine; `game-data.js` `PASSIVE_INFO`, `passiveName(types, id)`.
+  - **Undertow** (Water, new id `undertow`): its Water moves 1.3x at a third of its HP or less (`rules.json`
+    `undertowMult`, `undertowHp`).
+  - **Bedrock** (Ground, `landlord`): once a battle a knockout hit from full HP leaves 1 HP (moves and foreseen
+    attacks; `bedrockHolds`, each side's new `held` list); stone immunity kept.
+  - **Parting Roar** (Dragon, `inherit`): when it faints, the next in gets +1 Attack, +1 Sp. Atk (was: its own boosts).
+  - Battle lines name Regrowth, Slipstream, Bedrock, Parting Roar. Kindling, Live Wire (was Keen), Wild Mind (was
+    Erratic), Alloy work and stay silent as before.
+  - The Guide's species page: an Abilities panel under Type matchups.
+  - Studio: Ability labels, "Ability name" and "What it does" fields per type, Undertow's two numbers in World rules.
+  - `tools/test/type-passives-real.test.mjs` (10 tests, fixed roll lists).
+  - Snapshots remade on purpose: the golden record's Alpha battle (3 Regrowth lines, text only); battle-state (the
+    `held` field).
+- Strength (a scratch duel sweep, not committed: each type's Billies against every other species, 1v1 and 3v3, levels
+  10 and 25, same seeds before and after): no win rate moved more than 3 points (Dragon 3v3 L25 +3.0, Water +1.5).
+  Bedrock barely shows even 4 levels down: one more move rarely turns a loss. The run sim (200 seeds, --balance) came
+  out identical; its bot loses early with the Fire starter, so it can't show passives.
+- Verified: lint, typecheck, `npm test` 786/786, check:modules, format:check, check:data, build; smoke passes (one
+  earlier run timed out in the in-game test's download and passed on the re-run; main passed too); the Guide panel
+  and the Studio's Types editor looked at in a browser; PR CI green. Full quick check: 6 problems (a 16 px settings
+  input, the payout jingles, the bowl map camera, buildings without plans, six bush recipes, "Take off"), none in
+  battle code; compared with main below.
+- Risky: `rules.json`, `game-data.js`, `guide.js`, the CHANGELOG and this file conflict with RF-1/RF-2/RL-R1 (9.7):
+  merge one PR at a time, `npm run modules` after. RF-1 may reword battle text in battle-engine.js; my lines are the
+  four passive ones.
+- Next: RF-4 renames the passive ids and their rule keys (now listed in reflavour-track.md RF-4). RL-12b can lean on
+  the passives (RF-3 was its prerequisite).
 ### Roster track RO-1 - Real wild pools and regional forms - 2026-10-23
 Branch `track/roster` (new; the owner's choice: every RO session works here, BRANCHES.md and roguelite-track 9.4 say
 so). Plan approved in Plan Mode with the owner's answers: 4 forms (one per uncommon line, the drafts' names), weights

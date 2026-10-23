@@ -15,6 +15,7 @@ import * as rng from '../../game/js/logic/rng.js';
 import * as rules from '../../game/js/logic/rules.js';
 import * as runLoop from '../../game/js/logic/run-loop.js';
 import * as runMap from '../../game/js/logic/run-map.js';
+import * as runRegion from '../../game/js/logic/run-region.js';
 import * as runScenes from '../../game/js/logic/run-scenes.js';
 import * as runSim from '../../game/js/logic/run-sim.js';
 import * as runStart from '../../game/js/logic/run-start.js';
@@ -34,6 +35,7 @@ export function simWorkerEnv() {
       rules,
       'run-loop': runLoop,
       'run-map': runMap,
+      'run-region': runRegion,
       'run-scenes': runScenes,
       'run-sim': runSim,
       'run-start': runStart,

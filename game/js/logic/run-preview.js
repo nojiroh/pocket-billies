@@ -19,6 +19,7 @@ import { relicOfferMake, relicShelf } from './relics.js';
 import { runFoes, runShopStock } from './run-loop.js';
 import { runPlaceId, runWorldTables } from './run-scenes.js';
 import { runStartPlan } from './run-start.js';
+import { runRegionData } from './run-region.js';
 import { copyOf, newRun } from './run-state.js';
 import { unlockOpen } from './unlocks.js';
 
@@ -29,6 +30,7 @@ const runPreviewData = () => ({
   pools: POOLS,
   scenery: gameData.scenery,
   rules: RULES.run,
+  region: runRegionData(gameData, TRAINERS),
 });
 
 /**
@@ -45,6 +47,7 @@ export function runPreview(seed, o = {}) {
   run.map = copyOf(plan.map);
   run.deadline = plan.deadline;
   run.forecast = copyOf(plan.forecast);
+  if (plan.region) run.region = copyOf(plan.region);
   const map = /** @type {RunMap} */ (run.map),
     foes = runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run }),
     W = runWorldTables(run, gameData.locations[START_NODE], /** @type {any} */ (data)),

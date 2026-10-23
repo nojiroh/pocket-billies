@@ -3,6 +3,7 @@
  "who": "vault",
  "battleStage": "esc",
  "miniboss": true,
+ "type": "Fire",
  "blocks": false,
  "team": [
   {"sp":"ma1","lvl":41},

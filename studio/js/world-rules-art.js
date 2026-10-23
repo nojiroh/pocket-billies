@@ -179,7 +179,7 @@ SECTIONS.world = () => {
     ['pools', 'Wild encounters'],
     ['fishing', 'Fishing'],
     ['eggs', 'Eggs (legacy)'],
-    ['regions', 'Regions ahead (legacy)'],
+    ['regions', 'Map and notes (legacy)'],
     ['backdrops', 'Battle backdrops'],
     ['look', 'World map look (legacy)'],
   ];
@@ -657,27 +657,11 @@ function worldEggs() {
     )
     .join('');
 }
+/* RL-R1: the old regions beyond the route are in game/data/legacy/regions.json (the Inner Sun); regions.json is the
+   run's region themes now */
 function worldRegions() {
-  const D = studioState.D;
   afterRender(bindWorldMap);
   return (
-    card(
-      'Regions beyond the route',
-      D.regions
-        .map(
-          (g, i) =>
-            `<div class="item-row"><div class="item-ic"><small class="mono">${escapeHtml(g.t)}</small></div><div>${grid(
-              textField('Name', `regions.${i}.name`),
-              selectField(
-                'Look',
-                `regions.${i}.t`,
-                LOCATION_KINDS.concat(['sun']).map(k => [k, k])
-              )
-            )}${textField('Description', `regions.${i}.blurb`, { area: 1, rows: 2 })}</div></div>`
-        )
-        .join(''),
-      { sub: 'Shown fogged on the world map. The Inner Sun sits at the center.' }
-    ) +
     card('Map', worldMapHTML()) +
     card(
       'What’s new',
@@ -941,12 +925,14 @@ SECTIONS.rules = () => {
    ) +
      '<h4>Type abilities</h4>' +
      grid(
-       numberField('Erratic roll, low', `${bt}.cryptoRollMin`, { min: 0, max: 1, step: 0.05 }),
-       numberField('Erratic roll, high', `${bt}.cryptoRollMax`, { min: 1, max: 3, step: 0.05 }),
-       numberField('Keen: extra critical stages', `${bt}.mediaCrit`, { min: 0, max: 3, step: 1 }),
+       numberField('Wild Mind roll, low', `${bt}.cryptoRollMin`, { min: 0, max: 1, step: 0.05 }),
+       numberField('Wild Mind roll, high', `${bt}.cryptoRollMax`, { min: 1, max: 3, step: 0.05 }),
+       numberField('Live Wire: extra critical stages', `${bt}.mediaCrit`, { min: 0, max: 3, step: 1 }),
        numberField('Kindling: Attack boost per turn', `${bt}.financeRamp`, { min: 0, max: 1, step: 0.01 }),
        numberField('Kindling turns', `${bt}.financeRampTurns`, { min: 1, max: 30, step: 1 }),
        numberField('Alloy bonus per teammate', `${bt}.retailSynergy`, { min: 0, max: 1, step: 0.01 }),
+       numberField('Undertow boost', `${bt}.undertowMult`, { unit: '×', min: 1, max: 3, step: 0.05 }),
+       numberField('Undertow below this share of HP', `${bt}.undertowHp`, { min: 0, max: 1, step: 0.01 }),
        selectField('Sandstorm type', `${bt}.shockType`, typeOptions()),
        numberField('Sandstorm boost', `${bt}.oilShockMult`, { unit: '×', min: 1, max: 3, step: 0.05 }),
        numberField('Sandstorm turns', `${bt}.shockTurns`, { min: 1, max: 20, step: 1 }),

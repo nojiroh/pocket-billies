@@ -40,6 +40,8 @@ expose({
   validRun: [() => validRun, v => (validRun = v)],
   // @ts-expect-error -- replaced on purpose
   validRunFoe: [() => validRunFoe, v => (validRunFoe = v)],
+  // @ts-expect-error -- replaced on purpose
+  validRunRegion: [() => validRunRegion, v => (validRunRegion = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -105,6 +107,31 @@ export function newRun(seed, tier, mapgenV, start) {
 /** how many nodes the run's world has: Copperleaf (node 0) and the map's nodes (node i + 1 is map node i) */
 /** @param {Run | null | undefined} run */
 export const runNodeCount = run => 1 + (run && run.map && Array.isArray(run.map.nodes) ? run.map.nodes.length : 0);
+/** RL-R1: a run's region (logic/run-region.js runRegionMake), its shape only @param {any} R @returns {boolean} */
+export function validRunRegion(R) {
+  const plain = (/** @type {any} */ v) =>
+      !!v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__'),
+    id = (/** @type {any} */ v) => typeof v === 'string' && /^[a-z0-9_]{1,40}$/.test(v),
+    ids = (/** @type {any} */ v, /** @type {number} */ most) => Array.isArray(v) && v.length <= most && v.every(id);
+  return (
+    plain(R) &&
+    Object.keys(R).every(k => ['theme', 'name', 'zones', 'dex', 'swap', 'forms', 'leaders'].includes(k)) &&
+    id(R.theme) &&
+    typeof R.name === 'string' &&
+    R.name.length >= 1 &&
+    R.name.length <= 40 &&
+    Array.isArray(R.zones) &&
+    R.zones.length >= 1 &&
+    R.zones.length <= 8 &&
+    R.zones.every((/** @type {any} */ z) => plain(z) && id(z.biome) && wholeIn(z.rows, 1, RUN_NODES)) &&
+    ids(R.dex, 200) &&
+    recordOf(R.swap, 400, id) &&
+    Object.keys(R.swap).every(id) &&
+    recordOf(R.forms, 100, id) &&
+    Object.keys(R.forms).every(id) &&
+    ids(R.leaders, 16)
+  );
+}
 /** the load check for saveData.run: strict, like validSave (the Billies in run.start.team are checked there) */
 /** @param {any} o @returns {boolean} */
 export function validRun(o) {
@@ -128,10 +155,13 @@ export function validRun(o) {
         node.to.some(j => !wholeIn(j, 0, n - 1) || j === i) ||
         new Set(node.to).size !== node.to.length ||
         (node.seen !== undefined && !wholeIn(node.seen, 0, 2)) ||
-        (node.biome !== undefined && !id(node.biome))
+        (node.biome !== undefined && !id(node.biome)) ||
+        (node.zone !== undefined && !wholeIn(node.zone, 0, 7))
       )
         return false;
   }
+  /* RL-R1: the region (missing on a run from before regions) */
+  if (o.region !== undefined && !validRunRegion(o.region)) return false;
   const nodes = runNodeCount(o);
   if (!plain(o.at) || !RUN_PHASES.includes(o.at.phase) || !wholeIn(o.at.battle, -1, 1e6)) return false;
   /* RL-8: at the payout, whether the run was won; in a battle, its foe as it began (run.js runFoeRef); nothing else */

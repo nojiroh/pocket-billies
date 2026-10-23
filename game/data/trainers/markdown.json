@@ -3,6 +3,7 @@
  "who": "markdown",
  "battleStage": "mall",
  "miniboss": true,
+ "type": "Steel",
  "blocks": false,
  "team": [
   {"sp":"walton1","lvl":19},

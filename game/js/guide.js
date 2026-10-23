@@ -8,6 +8,7 @@ import {
   DEX_ORDER,
   LINE_BY_ID,
   LOCATIONS,
+  PASSIVE_INFO,
   POOLS,
   SPECIES,
   SPECIES_FORMS,
@@ -154,6 +155,11 @@ function renderDexEntry(id) {
   const strong = TYPES.filter(x => s.types.some(t => typeEffectiveness(t, [x]) > 1)),
     weak = TYPES.filter(x => typeEffectiveness(x, s.types) > 1),
     res = TYPES.filter(x => typeEffectiveness(x, s.types) < 1);
+  /* RF-3: what its types do in battle (types.json passiveName, passiveText) */
+  const abilities = s.types
+    .filter(t => PASSIVE_INFO[t] && PASSIVE_INFO[t].name)
+    .map(t => `<tr><td>${escapeHtml(PASSIVE_INFO[t].name)}</td><td>${escapeHtml(PASSIVE_INFO[t].text)}</td></tr>`)
+    .join('');
   const tot = s.base.reduce((a, b) => a + b, 0),
     mx = Math.max(...s.base);
   const chain = L.names
@@ -191,6 +197,7 @@ function renderDexEntry(id) {
   <section class="paper px k-panel lin"><h3>Evolution</h3><div class="chain">${chain}</div><p class="note">${escapeHtml(evolutionHint({ sp: id, lvl: 0 }))}</p></section>
   ${forms ? `<section class="paper px k-panel lin"><h3>Regional forms</h3><div class="chain">${forms}</div></section>` : ''}
   <section class="paper px k-panel"><h3>Type matchups</h3><table class="expo"><tbody><tr><td>Strong against</td><td>${strong.map(typeBadgeHTML).join('') || '—'}</td></tr><tr><td>Weak to</td><td>${weak.map(typeBadgeHTML).join('') || '—'}</td></tr><tr><td>Resists</td><td>${res.map(typeBadgeHTML).join('') || '—'}</td></tr></tbody></table></section>
+  <section class="paper px k-panel"><h3>Abilities</h3><table class="expo"><tbody>${abilities || '<tr><td>None</td><td>—</td></tr>'}</tbody></table></section>
   <section class="paper px k-panel"><h3>Where to look</h3><table class="expo"><tbody><tr><td>Found at</td><td>${where.length ? escapeHtml(where.join(', ')) : 'Not found in the wild'}</td></tr><tr><td>Hatches from</td><td>${bred ? 'A pair bred at the ranch' : '—'}</td></tr><tr><td>Tracks</td><td>${escapeHtml(TRACKS[D.plan] || 'Unremarkable')}</td></tr></tbody></table></section>
   ${got ? `<div class="sig"><span class="sigline">${escapeHtml(s.name)}</span><small>Recorded by Hazel. Signed by the Chosen.</small></div>` : ''}
  </article>`;

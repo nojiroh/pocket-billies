@@ -3,6 +3,7 @@
  "who": "marina",
  "battleStage": "beach",
  "miniboss": true,
+ "type": "Water",
  "blocks": false,
  "team": [
   {"sp":"ellison1","lvl":29},

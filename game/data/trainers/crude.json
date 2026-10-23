@@ -3,6 +3,7 @@
  "who": "crude",
  "battleStage": "grotto",
  "miniboss": true,
+ "type": "Ground",
  "blocks": false,
  "team": [
   {"sp":"ford0","lvl":12},

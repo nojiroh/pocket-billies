@@ -914,14 +914,15 @@ ACTIONS.moveDel = async () => {
 /* ================= TYPES ================= */
 const PASSIVES = [
   ['', 'No ability'],
-  ['pivot', 'Swift: switches out once per battle without losing the turn'],
-  ['volatile', 'Erratic: damage swings wildly'],
+  ['pivot', 'Slipstream: switches out once per battle without losing the turn'],
+  ['volatile', 'Wild Mind: damage swings wildly'],
   ['subsidy', 'Regrowth: restores a little HP each turn'],
   ['synergy', 'Alloy: +10% damage for each teammate of the same type'],
-  ['sharp', 'Keen: higher critical-hit chance'],
+  ['sharp', 'Live Wire: higher critical-hit chance'],
   ['ramp', 'Kindling: Attack rises every turn it stays in'],
-  ['inherit', 'Legacy: passes its stat boosts to the next teammate when it faints'],
-  ['landlord', 'Sure-footed: not hurt by sharp stones'],
+  ['inherit', 'Parting Roar: when it faints, the next teammate in gets +1 Attack and Sp. Atk'],
+  ['landlord', 'Bedrock: holds on at 1 HP from full once a battle; not hurt by sharp stones'],
+  ['undertow', 'Undertow: its moves of this type hit harder at a third of its HP or less'],
 ];
 /* Studio plan T6.3: an icon cut from the loaded icon atlas by CSS (scaled, pixelated), so a first open of Types does
    not encode a PNG per particle icon (toDataURL took most of its 0.5-2.7 s); iconURL while the atlas is not loaded */
@@ -970,7 +971,7 @@ SECTIONS.types = () => {
     (
       t,
       i
-    ) => `<div class="type-row">${typeChipHTML(t.id)}${grid(textField('Name', `types.${i}.id`, { max: 14, help: 'Renaming updates every move, Billie and rule that uses it.' }), colorField('Color', `types.${i}.color`), colorField('Text color', `types.${i}.text`), selectField('Ability', `types.${i}.passive`, PASSIVES))}
+    ) => `<div class="type-row">${typeChipHTML(t.id)}${grid(textField('Name', `types.${i}.id`, { max: 14, help: 'Renaming updates every move, Billie and rule that uses it.' }), colorField('Color', `types.${i}.color`), colorField('Text color', `types.${i}.text`), selectField('Ability', `types.${i}.passive`, PASSIVES), textField('Ability name', `types.${i}.passiveName`, { max: 20, help: 'What the player reads in the Guide and in battle.' }), textField('What it does', `types.${i}.passiveText`, { area: 1, rows: 2, help: 'One sentence for the Guide.' }))}
   <div class="fxpick"><span>Battle particles</span>${FX_ICONS.map(k => `<button class="icb ${(t.fx || []).includes(k) ? 'on' : ''}" data-act="typeFx" data-i="${i}" data-k="${k}" title="${k}">${iconSpriteHTML(k, 2, k)}</button>`).join('')}</div><button class="btn danger subtle" data-act="typeDel" data-i="${i}">Delete type</button></div>`
   ).join('');
   return `<div class="ed-col solo"><div class="ed-head"><h2>Types</h2><button class="btn primary" data-act="typeNew">+ New type</button></div>${card('Matchups', matrix)}${card('Types', rows + `<div class="type-row">${typeChipHTML('None')}${grid(colorField('Normal color', 'untyped.color'), colorField('Normal text', 'untyped.text'))}</div>`, { sub: 'Each type can have one ability. Abilities and their numbers are tuned under Rules → Battle.' })}</div>`;

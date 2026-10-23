@@ -28,6 +28,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
+import { runRegionData } from '../../game/js/logic/run-region.js';
 import { runBack, runMapRows, runNodeSeed, runWorldNode } from '../../game/js/logic/run-map.js';
 import { runUnlocks } from '../../game/js/logic/unlocks.js';
 import { runStartPlan } from '../../game/js/logic/run-start.js';
@@ -146,14 +147,14 @@ function runLabPlan(D) {
       biomes: D.biomes,
       rules: D.rules.run,
       unlockData: { unlocks: D.unlocks || {}, buildings: D.buildings || {} },
+      /* RL-R1: the run's region (its zones decide the map's rows) */
+      region: D.regions && D.regions.themes ? runRegionData(D, D.trainers || {}) : undefined,
     };
-    return {
-      plan: runStartPlan(runLab.seed, data, {
-        unlocks: runLabUnlocks(D),
-        map: runLab.short ? RUN_LAB_SHORT : undefined,
-      }),
-      roles: runMapRows({ ...D.rules.run.map, ...(runLab.short ? RUN_LAB_SHORT : {}) }),
-    };
+    const plan = runStartPlan(runLab.seed, data, {
+      unlocks: runLabUnlocks(D),
+      map: runLab.short ? RUN_LAB_SHORT : undefined,
+    });
+    return { plan, roles: runMapRows(plan.data.rules.map) };
   } catch (e) {
     return { error: e.message || String(e) };
   }

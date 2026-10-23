@@ -3,6 +3,7 @@
  "who": "alta",
  "battleStage": "snow",
  "miniboss": true,
+ "type": "Flying",
  "blocks": false,
  "team": [
   {"sp":"knight1","lvl":36},

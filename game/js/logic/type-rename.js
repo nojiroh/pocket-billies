@@ -63,4 +63,18 @@ export function renameTypeIn(D, from, to) {
     left = to || (D.types.find((/** @type {any} */ t) => t.id !== from) || { id: 'None' }).id;
   if (R.shockType === from) R.shockType = left;
   if (R.spinType === from) R.spinType = left;
+  /* RL-R1: a mini-boss leader's type (its badge's: a region picks its leaders by it) takes the first other one too, and
+     a region theme's lean goes with its type */
+  for (const T of Object.values(D.trainers || {}))
+    if (T && /** @type {any} */ (T).type === from) /** @type {any} */ (T).type = left;
+  for (const T of Object.values((D.regions && D.regions.themes) || {})) {
+    const lean = /** @type {any} */ (T).types || {};
+    if (!Object.hasOwn(lean, from)) continue;
+    /** @type {Record<string, number>} */
+    const out = {};
+    for (const [k, w] of Object.entries(lean))
+      if (k !== from) out[k] = w;
+      else if (to) out[to] = w;
+    /** @type {any} */ (T).types = out;
+  }
 }
