@@ -19,7 +19,7 @@ Numbers below were read at 2361848; verify again before each session.
 | Tone | **Satire, other targets**: bureaucracy and corporations, tech and influencer culture, RPG and Pokémon clichés, celebrity and clone ethics |
 | The run's relics | **Perks** (was Loopholes) |
 | Difficulty tiers | **Expeditions I-V** (was Brackets), each a story chapter (roguelite-track.md 9.2) |
-| Currencies | **Coins** (run money, its own symbol), **Research** (was Capital, spent at the Lab), **Scrap** (stays), **Crests** (was Audit Seals, from bosses, for the airship) |
+| Currencies | **Coins** (run money, its own symbol), **Research** (was Capital, spent at the Lab), **Scrap** (stays), **Crests** (was Audit Seals, from bosses, for the airship), and a fifth, **Beans** (gifts for hub characters, rare finds on runs; roguelite-track 9.6, 29) |
 | The organization | **A secret bureaucratic agency** (names in 4) |
 | Status ids | **Renamed internally** (`aud`, `sub`, `scn`; the player already sees Paralyzed, Asleep, Burned) |
 | The game's name | **Pocket B&B²** with the ² drawn as a small raised **B** (the owner, 2026-10-23): "Pocket B&B" and a superscript B in the logo |
