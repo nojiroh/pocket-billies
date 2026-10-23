@@ -84,6 +84,7 @@ expose({
   importSave: [() => importSave, v => (importSave = v)],
   muteButtonHTML: [() => muteButtonHTML, v => (muteButtonHTML = v)],
   openSettings: [() => openSettings, v => (openSettings = v)],
+  saveProgressLine: [() => saveProgressLine, v => (saveProgressLine = v)],
   segmentedHTML: [() => segmentedHTML, v => (segmentedHTML = v)],
   setVolumeMuted: [() => setVolumeMuted, v => (setVolumeMuted = v)],
   settingsHTML: [() => settingsHTML, v => (settingsHTML = v)],
@@ -358,6 +359,14 @@ function volumeMuteSync() {
     head.outerHTML = muteButtonHTML(saveData.preferences || {});
 }
 const VOLUME_KEYS = ['master', 'music', 'sfx', 'world', 'amb'];
+/* UI-7b: the Save tab's card shows a run game's progress (km walked went with step tracking); Customize trainer
+   went too, as the trainer card's Edit look does the same */
+function saveProgressLine() {
+  const m = saveData.meta || {},
+    runs = m.runs || 0,
+    taxed = Object.keys(saveData.caught || {}).length;
+  return `${runs ? `${m.wins || 0} of ${runs} ${runs === 1 ? 'run' : 'runs'} won` : 'No runs yet'} · ${taxed} taxed`;
+}
 function settingsHTML() {
   const p = saveData.preferences || {},
     tab = SETTINGS_TABS.some(t => t[0] === uiState.setTab) ? uiState.setTab : 'game',
@@ -553,10 +562,11 @@ function settingsHTML() {
         : '');
   } else if (tab === 'save')
     body =
-      `<div class="settings-profile">${personHTML('me', 52)}<div><b>${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)}</b><p class="note">${metresToKm((saveData.stats && saveData.stats.walked) || 0)} km walked · ${Object.keys(saveData.caught).length} taxed</p></div></div><button class="pb dark wide" data-a="open-customize">Customize trainer</button>` +
+      `<div class="settings-profile">${personHTML('me', 52)}<div><b>${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)}</b><p class="note">${saveProgressLine()}</p></div></div>` +
       (typeof accountSettingsHTML === 'function' ? accountSettingsHTML() : '') +
       (typeof accountSetAsideHTML === 'function' ? accountSetAsideHTML() : '') +
-      `<p class="note">${typeof account !== 'undefined' && account.user ? 'Your progress is saved to your account, and in this browser.' : 'Your progress is saved in this browser. Sign in to keep it online, or download a backup before changing device or clearing browser data.'}</p><div class="two"><button class="pb small" data-a="export-save">Export save</button><button class="pb small" data-a="import-save">Import save</button></div>`;
+      `<p class="note">${typeof account !== 'undefined' && account.user ? 'Your progress is saved to your account, and in this browser.' : 'Your progress is saved in this browser. Sign in to keep it online, or download a backup before changing device or clearing browser data.'}</p><div class="two"><button class="pb small" data-a="export-save">Export save</button><button class="pb small" data-a="import-save">Import save</button></div>` +
+      `<h3 class="set-sub set-danger">Start over</h3><p class="note">Erases your team, your Field Guide, your money and the ranch. Your settings stay.</p><button type="button" class="pb small red wide" data-a="start-over">Start over</button>`;
   else
     body = `<details class="help" open><summary>How to play</summary><p>Walk through towns and along the roads between them with the joystick, the D-pad or a tap on the ground. Tap a Billie in the grass to battle it; a win pays prize money, and more Billies come out while you play. The ranch breeds Billies into eggs that hatch on real time. Lower its HP, then throw a coin to tax it.</p><p>The map shows where to go next; pick a place and gold arrows guide you there.</p></details><div class="dbg-help"><b>Something look wrong or run slowly?</b><p class="note">The full test takes a few minutes: it walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more and more until your device can't keep up. Your save isn't changed. The debug log holds those numbers, errors and details about your device and graphics, plus a small picture of the scene. It has no save data or names. Send it to whoever is helping you. The graphics test tries each graphics setting on its own and saves a short report. The graphics cost test measures what each graphics setting costs on your device. The world map test opens the map and checks every place, the camera and the frame rate on your device.</p><div class="two"><button class="pb small" data-a="quicktest">Run the full test</button><button class="pb small" data-a="diagtest">Run the diagnostics test (2 min)</button><button class="pb small" data-a="gfxtest">Run the graphics test</button><button class="pb small" data-a="gfxbench">Run the graphics cost test (10 min)</button><button class="pb small" data-a="bowltest">Run the world map test (1 min)</button><button class="pb small" data-a="dbglog">Export debug log</button></div></div><button class="pb small quiet wide dbg-open" data-a="debug">${uiIconHTML('bug', 14)} Debug menu</button>`;
   return `<div class="set-top">${muteButtonHTML(p)}</div><div class="set-tabs" role="tablist">${SETTINGS_TABS.map(([k, n]) => `<button type="button" role="tab" aria-selected="${k === tab}" class="${k === tab ? 'on' : ''}" data-a="set-tab" data-k="${k}">${n}</button>`).join('')}</div><div class="set-body">${body}</div>`;
@@ -691,9 +701,9 @@ document.addEventListener('click', ev => {
     case 'customize':
       customizeTrainer();
       break;
-    case 'open-customize':
-      closeModal();
-      customizeTrainer();
+    case 'start-over':
+      uiState.modal = null;
+      settingsReset();
       break;
     case 'export-save':
       exportSave();
@@ -789,10 +799,7 @@ export function openSettings(tab) {
     settings: true,
     cls: 'set-sheet',
     html: settingsHTML(),
-    btns: [
-      { l: 'Done', c: 'dark', f: closeModal },
-      { l: 'Start over', c: 'quiet', f: () => ((uiState.modal = null), settingsReset()) },
-    ],
+    btns: [{ l: 'Done', c: 'dark', f: closeModal }],
   });
 }
 /* the one Start over (Settings and the debug menu's Erase save): a battle in progress stops first (UI-7b: Settings'

@@ -156,6 +156,13 @@
 .set-sub {
   font: 500 var(--fs-caption) / 1.4 var(--font-prose);
 }
+/* UI-7b: Start over at the foot of the Save tab, apart from everything else */
+.set-sub.set-danger {
+  margin-top: var(--s5);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--line);
+  color: var(--redink, var(--red));
+}
 .set-row .seg button,
 .set-body .seg button {
   min-height: 40px;
