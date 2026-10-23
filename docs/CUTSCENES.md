@@ -5,7 +5,8 @@ Each one is a single file, `game/data/cutscenes/<id>.json`, holding everything i
 named spots and shots, and its script. Maps stay pure level data, and a cutscene can be read, copied or deleted as a
 whole. The story layer's scripts (docs/SCRIPTS.md) are the language; this page covers what a cutscene adds.
 
-Today: `city` (the city at night, before the fall; New game plays it) and `opening` (Copperleaf, after the fall). The
+Today: `city` (the city at night, before the fall; not played since RL-8, and its map `city_opening` is parked in
+`game/data/legacy` since the test cleanup, kept for the story to bring back) and `opening` (Copperleaf, after the fall). The
 Studio's cutscene tools (save the free camera as a shot, drop spots as pins, a step list with Preview) are the plan's
 session 2, not built yet (docs/HANDOFF.md).
 

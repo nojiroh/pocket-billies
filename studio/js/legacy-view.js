@@ -122,6 +122,15 @@ SECTIONS.legacy = () => {
     })
     .join('');
   const count = (/** @type {any} */ v) => (Array.isArray(v) ? v.length : v ? Object.keys(v).length : 0);
+  /* test cleanup lane C: the maps parked without a place (the rooms only old places led to, the city of the opening) */
+  const placed = new Set(places.map(l => l.mapId)),
+    loose = L.mapIds.filter(id => !placed.has(id)),
+    looseRows = loose
+      .map(
+        id =>
+          `<tr><td class="mono">${escapeHtml(id)}</td><td><small>${/^int_/.test(id) ? 'a room' : 'a scene'}</small></td><td><button class="btn" data-act="legacyCopy" data-id="${escapeHtml(id)}" title="Bring this map into the game as a scene of its own">Copy into game</button></td></tr>`
+      )
+      .join('');
   return (
     card(
       'The parked world',
@@ -131,7 +140,16 @@ SECTIONS.legacy = () => {
       'Places',
       `<table class="tbl"><thead><tr><th>Old stop</th><th>Place</th><th>Trainers there</th><th>Roads to</th><th></th></tr></thead><tbody>${rows}</tbody></table>`,
       { sub: 'A place’s old stop is its number in legacy/locations.json (its trainers stand by it).' }
-    )
+    ) +
+    (loose.length
+      ? card(
+          'Rooms and scenes without a place',
+          `<table class="tbl"><thead><tr><th>Map</th><th>What</th><th></th></tr></thead><tbody>${looseRows}</tbody></table>`,
+          {
+            sub: 'Parked in the test cleanup (2026-10-23): rooms only the old places’ buildings opened, and the city of the opening (cutscenes/city.json is filmed on it). A building kind that names one of these rooms opens it again once it is copied back.',
+          }
+        )
+      : '')
   );
 };
 ACTIONS.legacyRetry = () => {
