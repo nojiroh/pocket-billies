@@ -13,6 +13,7 @@ expose({
   MASTER_HEADROOM: [() => MASTER_HEADROOM],
   MIX_DEFAULTS: [() => MIX_DEFAULTS],
   SOUND_DEFAULTS: [() => SOUND_DEFAULTS],
+  bedDuck: [() => bedDuck, v => (bedDuck = v)],
   mixTrim: [() => mixTrim, v => (mixTrim = v)],
   soundLevel: [() => soundLevel, v => (soundLevel = v)],
   soundLevels: [() => soundLevels, v => (soundLevels = v)],
@@ -33,6 +34,12 @@ export function soundLevel(prefs, k) {
 export function mixTrim(mix, k) {
   const v = mix && mix[k];
   return typeof v === 'number' ? v : MIX_DEFAULTS[k];
+}
+/* SND-6: what the world and ambience beds are multiplied by: music.json mix bedsUnderSong (dB) while a four-voice song
+   plays, else 1 */
+export function bedDuck(mix, songOn) {
+  const db = mix && typeof mix.bedsUnderSong === 'number' ? mix.bedsUnderSong : 0;
+  return songOn ? Math.pow(10, db / 20) : 1;
 }
 /* every bus's gain: the slider squared, times the mix's trim (SND-6); world and ambience are multiplied by their
    fade-in where they are applied */

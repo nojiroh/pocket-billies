@@ -832,7 +832,7 @@ def sound_step(b, base, R):
         bus = "({master:soundEngine.master,music:soundEngine.mus,sfx:soundEngine.fx,world:ambience.bus,amb:ambience.amb})"
         off = []
         for k, v in [('master', 70), ('music', 40), ('sfx', 30), ('world', 60), ('amb', 20)]:
-            want = f"(soundLevels({{{k}:{v / 100}}},MUSIC.mix).{k}*({'ambienceFadeIn()' if k in ('world', 'amb') else '1'}))"
+            want = f"(soundLevels({{{k}:{v / 100}}},MUSIC.mix).{k}*({'ambienceFadeIn()*soundBedDuck()' if k in ('world', 'amb') else '1'}))"
             pg.evaluate(f"(()=>{{const e=document.querySelector('input[data-preference={k}]');e.value='{v}';e.dispatchEvent(new Event('input',{{bubbles:true}}))}})();0")
             # no 'change' event: the level must follow while the slider is still held
             if not until(pg, f"Math.abs(__snd.to.get({bus}.{k}.gain)-{want})<0.02", 4):
@@ -994,7 +994,7 @@ def run_map_weather_step(b, base, R):
         ctx.close()
 
 
-@step("Sound effects and jingles: four UI sounds, a cry as a Billie comes out (its low-HP cry in the red zone), the run's day, reveal, Loophole and payout jingles (SND-6)", 300)
+@step("Sound effects and jingles: the beds under a song, four UI sounds, a cry as a Billie comes out (its low-HP cry in the red zone), the run's day, reveal, Loophole and payout jingles (SND-6)", 300)
 def sound_effects_step(b, base, R):
     """sound track SND-6: the run fixture on a phone, sound unlocked by a tap; soundEngine.log (in memory, never sent)
     says what played. A sheet's gold, quiet and disabled buttons and a tab make confirm, cancel, can't and select
@@ -1015,9 +1015,14 @@ def sound_effects_step(b, base, R):
         if not until(pg, "typeof walkView!=='undefined'&&walkView.ready&&!!saveData.run", 150): raise Exception('the run fixture never opened')
         pg.mouse.click(200, 300)
         if not until(pg, "!!soundEngine.ctx&&soundEngine.ctx.state==='running'", 8): return 'not checked: sound did not start in this browser'
-        # the four UI sounds, on a real sheet's buttons and the bottom bar's tab
+        # (the loader, then) the four UI sounds, on a real sheet's buttons and the bottom bar's tab
         pg.evaluate("modal({title:'Sounds',html:'<p>x</p>',btns:[{l:'Yes',c:'gold',f:closeModal},{l:'No',c:'quiet',f:closeModal},{l:'Locked',c:'dark',dis:1,f:closeModal}]});0")
         if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loader never went')
+        # the mix: under the run's song the world and ambience beds come down by music.json mix bedsUnderSong
+        if not until(pg, "!!soundEngine.tracker.song", 8): raise Exception('no song played on the run')
+        duck = pg.evaluate("[soundBedDuck(),Math.pow(10,MUSIC.mix.bedsUnderSong/20),soundEngine.tracker.song.name]")
+        if abs(duck[0] - duck[1]) > 1e-9 or duck[0] >= 1: raise Exception(f'under {duck[2]} the beds were x{duck[0]}, not x{duck[1]:.3f}')
+        out.append(f'beds x{duck[0]:.3f} under {duck[2]}')
         heard = {}; time.sleep(.6)   # the sheet slides in
         for i, want in ((2, 'cant'), (0, 'confirm')):
             clear(); pg.click(f'#ov [data-a="mb"][data-i="{i}"]', force=True); time.sleep(.3); heard[want] = log()

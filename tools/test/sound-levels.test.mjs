@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 globalThis.window ??= globalThis;
-const { mixTrim, soundLevel, soundLevels } = await import('../../game/js/audio/levels.js');
+const { bedDuck, mixTrim, soundLevel, soundLevels } = await import('../../game/js/audio/levels.js');
 const MIX = JSON.parse(
   (await import('node:fs')).readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8')
 ).mix;
@@ -59,4 +59,12 @@ test("SND-6: the trims are music.json's mix; the data's mix is today's trims, so
   near(soundLevels({}, { master: 1 }).master, 1);
   assert.equal(mixTrim({}, 'amb'), 0.9);
   assert.equal(mixTrim(null, 'master'), 0.9);
+});
+
+test("SND-6: the beds come down by the mix's dB while a four-voice song plays, not otherwise", () => {
+  near(bedDuck({ bedsUnderSong: -3 }, true), Math.pow(10, -3 / 20));
+  near(bedDuck({ bedsUnderSong: -3 }, false), 1);
+  near(bedDuck({}, true), 1);
+  near(bedDuck(MIX, true), Math.pow(10, MIX.bedsUnderSong / 20));
+  assert.ok(MIX.bedsUnderSong === -3);
 });

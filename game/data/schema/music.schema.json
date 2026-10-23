@@ -555,6 +555,12 @@
      "minimum": 0,
      "maximum": 1.5
     },
+    "bedsUnderSong": {
+     "description": "dB the world and ambience beds come down while a four-voice song plays (0: not at all)",
+     "type": "number",
+     "minimum": -24,
+     "maximum": 0
+    },
     "compressor": {
      "type": "object",
      "additionalProperties": false,

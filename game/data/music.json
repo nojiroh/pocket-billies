@@ -558,12 +558,13 @@
   "cancel": {"classes":["quiet","back"],"actions":["bback","baimback","dexback","leaveroom","stoptrip","scrim"]}
  },
  "mix": {
-  "about": "SND-6: the mix. Each bus's trim (x the square of its Settings slider): master leaves headroom for the compressor after it, amb sits the ambience a little under the world sounds. compressor: on the master, threshold in dB and ratio",
+  "about": "SND-6: the mix. Each bus's trim (x the square of its Settings slider): master leaves headroom for the compressor after it, amb sits the ambience a little under the world sounds. bedsUnderSong: dB the world and ambience beds come down while a four-voice song plays (not the title or the fall). compressor: on the master, threshold in dB and ratio",
   "master": 0.9,
   "music": 1,
   "sfx": 1,
   "world": 1,
   "amb": 0.9,
+  "bedsUnderSong": -3,
   "compressor": {"threshold":-14,"ratio":3}
  },
  "run": {

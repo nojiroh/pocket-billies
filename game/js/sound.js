@@ -31,7 +31,7 @@ import {
 } from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
-import { mixTrim, soundLevel, soundLevels } from './audio/levels.js';
+import { bedDuck, mixTrim, soundLevel, soundLevels } from './audio/levels.js';
 import { midiToFrequency, trackerCreate } from './audio/tracker.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -72,6 +72,7 @@ expose({
   playOwlCall: [() => playOwlCall, v => (playOwlCall = v)],
   playScrapClank: [() => playScrapClank, v => (playScrapClank = v)],
   runArriveSound: [() => runArriveSound, v => (runArriveSound = v)],
+  soundBedDuck: [() => soundBedDuck, v => (soundBedDuck = v)],
   soundEffect: [() => soundEffect, v => ((soundEffect = v), provide({ soundEffect }))],
   soundEffectAt: [() => soundEffectAt, v => ((soundEffectAt = v), provide({ soundEffectAt }))],
   soundEngine: [() => soundEngine],
@@ -755,10 +756,17 @@ function ambienceFadeIn() {
   if (!soundEngine.ctx) return 1;
   return clamp((soundEngine.ctx.currentTime - ambience.arrive) / 2.8, 0, 1);
 }
+/* SND-6: the world and ambience beds come down under a four-voice song (music.json mix bedsUnderSong; the title and the
+   fall, 'extra' songs, keep the beds as they were) */
+function soundBedDuck() {
+  const sg = soundEngine.tracker && soundEngine.tracker.song,
+    R = sg && SONGS[String(sg.name).split('@')[0]];
+  return bedDuck(MUSIC.mix, !!R && !R.extra);
+}
 function applyAmbienceVolume() {
   if (!ambience.bus || !soundEngine.ctx) return;
   const L = soundLevels(soundPreferences(), MUSIC.mix),
-    f = ambienceFadeIn(),
+    f = ambienceFadeIn() * soundBedDuck(),
     t = soundEngine.ctx.currentTime;
   ambience.bus.gain.setTargetAtTime(L.world * f, t, 0.1);
   if (ambience.amb) ambience.amb.gain.setTargetAtTime(L.amb * f, t, 0.1);
