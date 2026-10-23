@@ -12,7 +12,7 @@ import {
   wardrobeEditor,
 } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
-import { iconURL, makeCanvas } from '../../game/js/art.js';
+import { ART_CACHE, ICON_ATLAS, iconURL, makeCanvas } from '../../game/js/art.js';
 import {
   PERSON_ART_CACHE,
   bodySliders,
@@ -89,6 +89,7 @@ expose({
   baseStats: [() => baseStats, v => (baseStats = v)],
   cloneSpeciesArt: [() => cloneSpeciesArt, v => (cloneSpeciesArt = v)],
   evolutionRowHTML: [() => evolutionRowHTML, v => (evolutionRowHTML = v)],
+  iconSpriteHTML: [() => iconSpriteHTML, v => (iconSpriteHTML = v)],
   lineIndexOf: [() => lineIndexOf],
   personLook: [() => personLook, v => (personLook = v)],
   personPreviewHTML: [() => personPreviewHTML, v => (personPreviewHTML = v)],
@@ -917,6 +918,14 @@ const PASSIVES = [
   ['inherit', 'Legacy: passes its stat boosts to the next teammate when it faints'],
   ['landlord', 'Sure-footed: not hurt by sharp stones'],
 ];
+/* Studio plan T6.3: an icon cut from the loaded icon atlas by CSS (scaled, pixelated), so a first open of Types does
+   not encode a PNG per particle icon (toDataURL took most of its 0.5-2.7 s); iconURL while the atlas is not loaded */
+function iconSpriteHTML(key, scale, alt) {
+  const im = ART_CACHE.img[ICON_ATLAS],
+    r = ARTMAN.icons[key];
+  if (!r || !im || !im.naturalWidth) return `<img src="${iconURL(key, scale)}" alt="${escapeHtml(alt)}">`;
+  return `<span class="pix" role="img" aria-label="${escapeHtml(alt)}" style="display:inline-block;width:${r[2] * scale}px;height:${r[3] * scale}px;background:url('${im.src}') -${r[0] * scale}px -${r[1] * scale}px / ${im.naturalWidth * scale}px ${im.naturalHeight * scale}px no-repeat;image-rendering:pixelated"></span>`;
+}
 const FX_ICONS = [
   'bit',
   'up',
@@ -957,7 +966,7 @@ SECTIONS.types = () => {
       t,
       i
     ) => `<div class="type-row">${typeChipHTML(t.id)}${grid(textField('Name', `types.${i}.id`, { max: 14, help: 'Renaming updates every move, Billie and rule that uses it.' }), colorField('Color', `types.${i}.color`), colorField('Text color', `types.${i}.text`), selectField('Ability', `types.${i}.passive`, PASSIVES))}
-  <div class="fxpick"><span>Battle particles</span>${FX_ICONS.map(k => `<button class="icb ${(t.fx || []).includes(k) ? 'on' : ''}" data-act="typeFx" data-i="${i}" data-k="${k}" title="${k}"><img src="${iconURL(k, 2)}" alt="${k}"></button>`).join('')}</div><button class="btn danger subtle" data-act="typeDel" data-i="${i}">Delete type</button></div>`
+  <div class="fxpick"><span>Battle particles</span>${FX_ICONS.map(k => `<button class="icb ${(t.fx || []).includes(k) ? 'on' : ''}" data-act="typeFx" data-i="${i}" data-k="${k}" title="${k}">${iconSpriteHTML(k, 2, k)}</button>`).join('')}</div><button class="btn danger subtle" data-act="typeDel" data-i="${i}">Delete type</button></div>`
   ).join('');
   return `<div class="ed-col solo"><div class="ed-head"><h2>Types</h2><button class="btn primary" data-act="typeNew">+ New type</button></div>${card('Matchups', matrix)}${card('Types', rows + `<div class="type-row">${typeChipHTML('None')}${grid(colorField('Normal color', 'untyped.color'), colorField('Normal text', 'untyped.text'))}</div>`, { sub: 'Each type can have one ability. Abilities and their numbers are tuned under Rules → Battle.' })}</div>`;
 };
