@@ -1,0 +1,193 @@
+{
+ "grass": {
+  "lv": [3,5],
+  "list": [["swift0",26],["kardashian0",26],["zuck0",24],["trump0",16],["musk0",3],["bezos0",3],["gates0",3]]
+ },
+ "old_fairway": {
+  "lv": [5,8],
+  "list": [["trump0",30],["swift0",22],["kardashian0",20],["zuck0",20],["trump1",4],["musk0",2],["bezos0",2],["gates0",2]]
+ },
+ "shell": {
+  "lv": [7,10],
+  "list": [["zuck0",24],["kardashian0",22],["swift0",20],["trump0",16],["zuck1",5],["kardashian1",5],["swift1",5],["trump1",3]]
+ },
+ "fizzwell": {
+  "lv": [9,12],
+  "list": [
+   ["swift1",22],
+   ["kardashian1",22],
+   ["zuck1",22],
+   ["trump1",14],
+   ["swift0",6],
+   ["kardashian0",6],
+   ["zuck0",6],
+   ["musk1",2],
+   ["bezos1",2],
+   ["gates1",2]
+  ]
+ },
+ "esc": {
+  "lv": [11,14],
+  "list": [["kroc0",40],["ford0",35],["ambani0",25],["carnegie0",25],["saylor0",15]]
+ },
+ "clear": {
+  "lv": [12,15],
+  "list": [["ford0",40],["carnegie0",35],["slim0",30],["huang0",20],["saylor0",15]]
+ },
+ "food": {
+  "lv": [13,16],
+  "list": [["kroc0",45],["ma0",35],["walton0",30],["ek0",20],["son0",12]]
+ },
+ "lanternhall": {
+  "lv": [14,17],
+  "list": [["ortega0",45],["walton0",35],["lauren0",25],["jobs0",10],["thiel0",8]]
+ },
+ "willowmere": {
+  "lv": [15,18],
+  "list": [["ek0",45],["ellison0",35],["cuban0",30],["hughes0",20],["slim0",12]]
+ },
+ "clovercrest": {
+  "lv": [16,19],
+  "list": [["ford0",40],["saylor0",35],["lauren0",30],["bloomberg0",20],["walton0",15]]
+ },
+ "kitewind": {
+  "lv": [18,21],
+  "list": [["hughes0",40],["ambani0",30],["knight1",20],["carnegie1",15],["son0",15]]
+ },
+ "verdigris": {
+  "lv": [20,24],
+  "list": [["pagebrin0",35],["bloomberg1",30],["dorsey1",25],["ortega1",20],["son0",15],["buterin0",8]]
+ },
+ "sea": {
+  "lv": [22,26],
+  "list": [["cuban0",35],["winklevoss0",30],["yanai0",30],["ellison1",20],["chesky0",12],["schultz0",10]]
+ },
+ "island": {
+  "lv": [24,28],
+  "list": [["kashing0",35],["ellison1",25],["jayz0",25],["scott0",10],["federer0",8],["ponyma0",8]]
+ },
+ "cinderpeak": {
+  "lv": [26,30],
+  "list": [["mateschitz0",35],["ma1",30],["kroc1",25],["mittal0",10],["ballmer0",10],["forrest0",10]]
+ },
+ "hornpass": {
+  "lv": [28,32],
+  "list": [["rinehart0",35],["dangote0",30],["dell0",25],["hershey0",15],["dalio0",12],["hastings0",8]]
+ },
+ "frostcrown": {
+  "lv": [30,34],
+  "list": [["dyson0",30],["kamprad0",30],["altman0",15],["griffin0",8],["yiming0",15],["vanderbilt0",8]]
+ },
+ "mirrormere": {
+  "lv": [30,34],
+  "list": [["spielberg0",35],["woods0",25],["lebron0",15],["newell0",12],["schultz0",12],["ronaldo0",6]]
+ },
+ "fanfare_fields": {
+  "lv": [32,36],
+  "list": [["bloomberg1",30],["jayz0",30],["dorsey1",20],["son1",15],["ek1",15],["hastings0",8]]
+ },
+ "twinpetal": {
+  "lv": [32,35],
+  "list": [["jobs0",30],["woods0",30],["ortega1",25],["bloomberg1",15]]
+ },
+ "petalfall": {
+  "lv": [33,37],
+  "list": [["jobs1",30],["jayz0",25],["hughes1",25],["dell0",12],["scott0",8]]
+ },
+ "rootwater": {
+  "lv": [35,39],
+  "list": [["ek1",30],["spielberg0",25],["yanai1",25],["forrest0",12],["federer0",8]]
+ },
+ "grapevine_hills": {
+  "lv": [36,40],
+  "list": [["lauren1",30],["mateschitz0",25],["hershey0",20],["schultz0",15],["kroc1",15],["jayz1",8]]
+ },
+ "goldvine": {
+  "lv": [36,39],
+  "list": [["carnegie1",30],["walton1",25],["saylor1",25],["ambani1",15]]
+ },
+ "saltpan_flats": {
+  "lv": [37,41],
+  "list": [["rinehart1",30],["dangote1",25],["saylor1",20],["dalio0",12],["griffin0",8]]
+ },
+ "badlands": {
+  "lv": [39,43],
+  "list": [["ford2",25],["kroc2",20],["ambani1",25],["carnegie2",10],["mittal0",10],["ballmer0",10]]
+ },
+ "puffcap": {
+  "lv": [40,44],
+  "list": [["jobs1",30],["thiel0",25],["pagebrin0",20],["hastings0",12],["son1",15],["altman0",6]]
+ },
+ "capshade": {
+  "lv": [40,43],
+  "list": [["thiel1",25],["pagebrin1",25],["son1",25],["buterin1",15]]
+ },
+ "russetwood": {
+  "lv": [41,45],
+  "list": [["woods1",30],["lauren1",25],["kamprad1",20],["forrest0",15],["dell0",10]]
+ },
+ "tanglewild": {
+  "lv": [43,47],
+  "list": [["yiming0",25],["ortega2",20],["bloomberg2",20],["jobs2",10],["dell0",15],["altman0",10]]
+ },
+ "prism_chasm": {
+  "lv": [44,48],
+  "list": [["huang1",30],["slim1",25],["ambani1",20],["buterin0",15],["carnegie1",10],["vanderbilt0",4]]
+ },
+ "glimmershaft": {
+  "lv": [44,47],
+  "list": [["slim1",30],["rinehart1",25],["ambani2",20],["walton1",15],["dyson0",10]]
+ },
+ "gloomwater": {
+  "lv": [45,49],
+  "list": [["cuban1",30],["ek1",25],["spielberg1",20],["winklevoss1",15],["ponyma0",5]]
+ },
+ "rimefrost": {
+  "lv": [47,51],
+  "list": [["walton2",25],["ford1",25],["newell0",20],["slim2",15],["huang2",5]]
+ },
+ "conchshell": {
+  "lv": [48,52],
+  "list": [["winklevoss1",25],["yanai1",25],["chesky0",20],["cuban1",15],["spielberg1",10],["federer0",5]]
+ },
+ "kelpport": {
+  "lv": [48,51],
+  "list": [["ellison1",30],["newell0",25],["saylor1",25],["winklevoss1",20]]
+ },
+ "abyssal_trench": {
+  "lv": [50,54],
+  "list": [["ellison2",25],["spielberg1",25],["ek1",25],["ponyma0",15],["scott0",10]]
+ },
+ "vinyl_works": {
+  "lv": [52,55],
+  "list": [["jayz1",30],["son1",25],["newell0",25],["schultz0",20]]
+ },
+ "circuit_terraces": {
+  "lv": [53,57],
+  "list": [["dyson1",25],["vanderbilt0",15],["altman0",15],["yiming0",25],["pagebrin1",20]]
+ },
+ "nimbus": {
+  "lv": [53,56],
+  "list": [["kashing1",30],["hughes2",20],["knight2",20],["jayz1",30]]
+ },
+ "fizzpop": {
+  "lv": [54,58],
+  "list": [["son1",25],["hastings0",25],["dorsey1",25],["ronaldo0",10],["buterin1",15]]
+ },
+ "skygarden": {
+  "lv": [56,60],
+  "list": [["knight2",25],["hughes2",20],["griffin0",15],["federer0",15],["mateschitz1",25]]
+ },
+ "zenith_steps": {
+  "lv": [57,61],
+  "list": [["lebron1",25],["ma2",15],["mateschitz1",25],["kroc2",20],["ballmer0",15]]
+ },
+ "bellwether_rise": {
+  "lv": [58,62],
+  "list": [["ford2",25],["mittal0",20],["ronaldo0",15],["hershey0",20],["lebron1",20]]
+ },
+ "innersun": {
+  "lv": [60,64],
+  "list": [["ma2",25],["lebron1",25],["huang2",20],["ronaldo0",15],["mittal0",15]]
+ }
+}

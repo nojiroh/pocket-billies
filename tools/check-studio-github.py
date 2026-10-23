@@ -1950,8 +1950,8 @@ def unlocks_steps(pg, errs):
 
 def leaders_steps(pg, errs):
     """Studio plan T4.3: a mini-boss leader's run values in Trainers are runFoes's (leaderRunValues in Node), marked
-    overridden in runs; its reward field says outside runs only; a pool a run reads is tagged by its biomes; a legacy
-    species shows the stand-in the game uses; the miniboss box is an edit Propose carries and undo puts back."""
+    overridden in runs; its reward field says outside runs only; a pool a run reads is tagged by its biomes; no pool
+    marks a species legacy (RO-1: the pools list real lines and forms only); the miniboss box is an edit Propose carries and undo puts back."""
     W = content_want(errs)
     if not W: return
     n = len(errs)
@@ -1976,8 +1976,10 @@ def leaders_steps(pg, errs):
     if not wait_js(pg, "[...document.querySelectorAll('#main [data-standin]')].every(e=>'to' in e.dataset)", 30): errs.append('leaders: the stand-ins never came')
     marks = pg.evaluate("[...document.querySelectorAll('#main [data-standin]')].map(e=>[e.dataset.standin,e.dataset.to])")
     bad = [m for m in marks if (W['standIns'].get(m[0]) or {}).get('to', '') != m[1]]
-    if not marks or bad: errs.append(f"leaders: stand-ins {bad[:3] or 'none shown'} differ from the game's")
-    if len(errs) == n: print(f"leaders: {k}'s {len(got)} run places as runFoes makes them, overridden in runs; {sum(1 for t in tags if t)} pools a run reads; {len(marks)} legacy ids with the game's stand-in; the mini-boss box proposed and undone", flush=True)
+    if bad: errs.append(f"leaders: stand-ins {bad[:3]} differ from the game's")
+    # RO-1: every pool lists real lines (regional forms included), so none is marked legacy
+    if marks: errs.append(f"leaders: the pools mark {[m[0] for m in marks][:3]} as legacy; RO-1 lists only real lines")
+    if len(errs) == n: print(f"leaders: {k}'s {len(got)} run places as runFoes makes them, overridden in runs; {sum(1 for t in tags if t)} pools a run reads; no pool lists a legacy id; the mini-boss box proposed and undone", flush=True)
 
 
 def economy_steps(pg, errs):
