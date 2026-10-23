@@ -27,6 +27,8 @@ const src = readFileSync(new URL('../../game/art/next/rigs-next.js', import.meta
 const RIGS = JSON.parse(src.slice(src.indexOf('RIGS_NEXT=') + 10).replace(/;\s*$/, ''));
 const SPECIES = Object.keys(RIGS);
 const fresh = () => JSON.parse(JSON.stringify(RIGS));
+/* one species' view alone, as fresh() has it: the sweeps below copy only the rig they change */
+const freshOne = (sp, view) => RIGS[sp][view] && JSON.parse(JSON.stringify(RIGS[sp][view]));
 const VIEWS = ['front', 'back'];
 
 /* a rig as rigFor makes it, with pictures that are only their sizes */
@@ -171,8 +173,8 @@ test('rigSetPivot keeps every species drawn where it was (neutral pose, front an
 test('rigSetPivot gives the rig the builder’s own pivot drag gave', () => {
   for (const sp of SPECIES)
     for (const view of VIEWS) {
-      const A = fresh()[sp][view],
-        B = fresh()[sp][view];
+      const A = freshOne(sp, view),
+        B = freshOne(sp, view);
       if (!A) continue;
       for (const b of A.bones) {
         if (b.i < 0) continue;
@@ -213,7 +215,7 @@ test('a shared picture is split before its pivot moves', () => {
 
 test('rigSetBox: the pivot stays on its sheet pixel, every frame moves its edges by as much', () => {
   for (const sp of SPECIES.slice(0, 20)) {
-    const M = fresh()[sp].front;
+    const M = freshOne(sp, 'front');
     for (const [i, P] of M.imgs.entries()) {
       const [x, y, w, h] = rigBox(P),
         at = [x - P.ox, y - P.oy],

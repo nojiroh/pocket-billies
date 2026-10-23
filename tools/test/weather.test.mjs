@@ -13,40 +13,7 @@ import {
   wildOddsBy,
 } from '../../game/js/logic/weather.js';
 
-/** environmentWeatherFor's pick as it was before RL-6 (environment.js at 2a47ee1), with the hash's value as the roll */
-function pickBefore(climate, roll, ss) {
-  const odds = Object.assign({}, CLIMATE_WEATHER_ODDS[climate] || CLIMATE_WEATHER_ODDS.mild);
-  if (climate === 'mild' && ss === 'winter') {
-    odds.snow = (odds.rain || 0) * 0.7;
-    odds.rain = (odds.rain || 0) * 0.3;
-  }
-  if (climate === 'mild' && ss === 'summer') {
-    odds.clear += 12;
-    odds.storm = (odds.storm || 0) + 3;
-  }
-  const r = roll * Object.values(odds).reduce((a, b) => a + b, 0);
-  let acc = 0;
-  for (const [k, w] of Object.entries(odds)) {
-    acc += w;
-    if (r < acc) return k;
-  }
-  return 'clear';
-}
-
-test('the same pick as the page made before, for every roll its hash can give (k / 100000)', () => {
-  const climates = [...Object.keys(CLIMATE_WEATHER_ODDS), 'nowhere'],
-    seasons = [undefined, 'spring', 'summer', 'autumn', 'winter'];
-  let n = 0;
-  for (const c of climates)
-    for (const ss of seasons)
-      for (let k = 0; k < 100000; k++) {
-        const roll = k / 100000;
-        if (weatherPick(c, roll, ss) !== pickBefore(c, roll, ss))
-          assert.fail(`${c}, ${ss}, roll ${roll}: ${weatherPick(c, roll, ss)} (was ${pickBefore(c, roll, ss)})`);
-        n++;
-      }
-  assert.equal(n, 7 * 5 * 100000);
-});
+/* the pick against environment.js's as it was before RL-6, at every roll: weather-before.test.mjs (the slow tier) */
 
 test('the odds by roll: mild, a mild winter and summer, none, an unknown climate', () => {
   // mild: clear [0, 50), cloudy [50, 72), rain [72, 88), fog [88, 96), storm [96, 100)
