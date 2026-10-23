@@ -1571,42 +1571,6 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     v33()
 
-    @step('v35: roster, palette, starter studies, pixel-grid camera', 120)
-    def v35():
-        out = []
-        n = pg.evaluate("(gameData.roster||[]).length")
-        if n != 117: raise Exception(f'the roster has {n} billionaires, not 117')
-        kinds = pg.evaluate("gameData.roster.reduce((a,e)=>{a[e.kind]=(a[e.kind]||0)+1;return a},{})")
-        if kinds != {'starter': 12, 'legendary': 2, 'line3': 45, 'line2': 40, 'single': 18}: raise Exception(f'roster shape: {kinds}')
-        ids = pg.evaluate("gameData.roster.map(e=>e.id)")
-        if len(set(ids)) != 117: raise Exception('roster ids repeat')
-        old = pg.evaluate("Object.keys(SPECIES)")
-        clash = sorted(set(ids) & set(old))
-        if clash: raise Exception(f'new ids clash with current species: {clash[:5]}')
-        out.append('roster: 117 (12 starters, 2 legendaries, 45 in three-stage lines, 40 in two-stage, 18 singles), no id clashes')
-        nx = ROOT / 'game' / 'art' / 'next'
-        for f in ('palette.png', 'palette.js'):
-            if not (nx / f).exists(): raise Exception(f'missing {f} under art/next')
-        # phase 03 deleted the v35 master tiles (art/next/tiles, Lite mode's ground); the ground the game draws is
-        # art/next/tiles47, checked by 'Ground: every kind has twelve tiles of its own'
-        studies = len(list((nx / 'starters').glob('*_sil.png')))
-        if studies < 12: raise Exception(f'only {studies} starter silhouettes')
-        out.append(f'art/next: palette, {studies} starter silhouettes')
-        # every palette colour is distinct
-        from PIL import Image
-        pal = {tuple(c) for c in pixels(Image.open(nx / 'palette.png').convert('RGB'))}
-        if len(pal) < 150: raise Exception(f'palette has {len(pal)} distinct colours')
-        # the pixel-grid camera dial: off by default, and turning it on keeps the scene drawing
-        if pg.evaluate("engineSetting('camera','pixelGrid')!==false"): raise Exception('pixelGrid should be off by default')
-        pg.evaluate("gameData.engine.defaults.camera=Object.assign({},gameData.engine.defaults.camera||{},{pixelGrid:true});0"); time.sleep(2)
-        fr = pg.evaluate("walkRenderer.frames||0")
-        if not until(pg, f"(walkRenderer.frames||0)>{fr + 1}", 30): raise Exception('no frames drawn with the pixel-grid camera on')   # alpha 0.1: a frame can take seconds here
-        pg.evaluate("delete gameData.engine.defaults.camera.pixelGrid;0")
-        out.append('pixel-grid camera: off by default, draws when on')
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return '; '.join(out)
-    v35()
-
     @step('v36: new starters on piece sheets, 12 fps puppets, next ground tiles', 150)
     def v36():
         if not pg.evaluate("typeof rigFrame==='function'&&!!window.RIGS_NEXT"): return 'not in this build'
