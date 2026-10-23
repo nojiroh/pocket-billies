@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { runSim, runStats } from './sim/run-sim.mjs';
+import { GAME_DATA, modules } from './setup-real.mjs';
 
 test('run sim: a seed played twice is the same run, whatever util.js random draws meanwhile', () => {
   for (const seed of ['SIMREPLAY0', 'SIMREPLAY1']) {
@@ -46,4 +47,39 @@ test("run sim: a run town's shop stocks only what the run has unlocked (Studio p
         assert.ok(!at.shop.some(w => locked.includes(w)), `SIMSHOP${k} node ${at.i}: ${at.shop}`);
       }
   assert.ok(towns >= 2, `${towns} towns`);
+});
+
+test('run sim: the policy answers a Loophole on offer: greedy takes the rarest, never takes none (Studio plan T3.3)', () => {
+  const { simRelicChoice, SIM_POLICIES } = modules['run-sim'],
+    RELICS = GAME_DATA.relics,
+    rule = GAME_DATA.rules.run.relics,
+    greedy = SIM_POLICIES['greedy-forward'],
+    never = SIM_POLICIES['never-pick'];
+  assert.deepEqual(simRelicChoice(['offshore', 'hedge', 'insider'], [], RELICS, rule, greedy), { id: 'hedge' });
+  assert.deepEqual(simRelicChoice(['shelter', 'offshore'], [], RELICS, rule, greedy), { id: 'offshore' }, 'then by id');
+  assert.equal(simRelicChoice(['hedge'], [], RELICS, rule, never), null);
+  const full = ['offshore', 'shelter', 'lobbyist', 'fineprint', 'insider', 'severance'];
+  assert.equal(full.length, rule.cap);
+  assert.deepEqual(
+    simRelicChoice(['hedge'], full, RELICS, rule, greedy),
+    { id: 'hedge', drop: 'shelter' },
+    'past the cap'
+  );
+  assert.equal(
+    simRelicChoice(
+      ['offshore'],
+      ['insider', 'takeover', 'hedge', 'severance', 'options', 'writeoff'],
+      RELICS,
+      rule,
+      greedy
+    ),
+    null,
+    'no rarer'
+  );
+  /* and on a run: the pick answered through relics.js relicChoose, as relic-screen.js does */
+  const run = { seed: 'P', relics: [], offer: ['offshore', 'hedge', 'insider'] },
+    c = simRelicChoice(run.offer, run.relics, RELICS, rule, greedy);
+  assert.equal(modules.relics.relicChoose(run, c.id, RELICS, rule, c.drop), '');
+  assert.deepEqual(run.relics, ['hedge']);
+  assert.equal(run.offer, null);
 });

@@ -12,7 +12,8 @@
  * before each run.
  * @typedef {{ modules: Record<string, any>, fn: (name: string) => any, hooks: any, data: any, gameData: any,
  *   logic: any, beforeRun?: (o: SimOptions) => void }} SimEnv
- * @typedef {{ random?: number, fights?: number, team?: number, pack?: number, unlocks?: 'none' | 'all' }} SimOptions
+ * @typedef {{ random?: number, fights?: number, team?: number, pack?: number, unlocks?: 'none' | 'all',
+ *   policy?: string }} SimOptions
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -24,7 +25,9 @@ expose({
   brief: [() => brief],
   // @ts-expect-error -- replaced on purpose
   runSimOn: [() => runSimOn, v => (runSimOn = v)],
+  SIM_POLICIES: [() => SIM_POLICIES],
   simPolicy: [() => simPolicy],
+  simRelicChoice: [() => simRelicChoice],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -46,6 +49,10 @@ export const MAX_TURNS = 60;
  * - offer: a foe's offer after a miss: always refused
  * - lane: the next place drawn from the run's seed among the ones linked ahead (never back)
  * - keep: on a loss, the highest-level Billie comes home
+ * - relics: Loopholes (Studio plan T3.3). 'greedy': the pick after a mini-boss takes the rarest offered (the lowest
+ *   rules.json run.relics.rarity weight, then by id), and a town shop's Loophole is bought when the money is there
+ *   beyond `reserve`; past the cap only for a rarer one than the plainest held, which is let go. 'never': none taken
+ *   or bought (the "never pick" baseline)
  */
 export const SIM_POLICY = Object.freeze({
   name: 'greedy-forward',
@@ -61,9 +68,36 @@ export const SIM_POLICY = Object.freeze({
   offer: 'refuse',
   lane: 'seeded',
   keep: 'top-level',
+  relics: 'greedy',
+});
+/** the named policies a report can be asked for (`policy` in the options; greedy-forward by default) */
+export const SIM_POLICIES = Object.freeze({
+  'greedy-forward': SIM_POLICY,
+  'never-pick': Object.freeze({ ...SIM_POLICY, name: 'never-pick', relics: 'never' }),
 });
 /** the policy a run plays with these options (`fights` is the CLI's --fights) @param {SimOptions} o */
-export const simPolicy = o => ({ ...SIM_POLICY, ...(o.fights != null ? { fights: o.fights } : {}) });
+export function simPolicy(o) {
+  const P = o.policy ? /** @type {Record<string, any>} */ (SIM_POLICIES)[o.policy] : SIM_POLICY;
+  if (!P) throw new Error(`no simulation policy ${o.policy} (${Object.keys(SIM_POLICIES).join(', ')})`);
+  return { ...P, ...(o.fights != null ? { fights: o.fights } : {}) };
+}
+/**
+ * The policy's answer to a Loophole on offer (the pick's, or a shop's): which to take of `offer` and which held one to
+ * let go past the cap, or null to take none. 'greedy': the rarest (lowest rarity weight), then by id; past the cap
+ * only if it is rarer than the plainest held (the highest weight, then the last by id), which goes.
+ * @param {string[]} offer @param {string[]} held @param {Record<string, any>} relics
+ * @param {{ cap: number, rarity: Record<string, number> }} rule @param {{ relics: string }} P
+ * @returns {{ id: string, drop?: string } | null}
+ */
+export function simRelicChoice(offer, held, relics, rule, P) {
+  if (P.relics !== 'greedy' || !offer.length) return null;
+  const w = (/** @type {string} */ id) => rule.rarity[relics[id].rarity] || 0,
+    order = (/** @type {string} */ a, /** @type {string} */ b) => w(a) - w(b) || (a < b ? -1 : a > b ? 1 : 0),
+    id = offer.slice().sort(order)[0];
+  if (held.length < rule.cap) return { id };
+  const drop = held.slice().sort(order).pop();
+  return drop && w(id) < w(drop) ? { id, drop } : null;
+}
 /** the report's numbers that say more about the policy than about the game's balance */
 export const SIM_POLICY_DRIVEN = Object.freeze(['caught', 'healed', 'moneyLeft']);
 /** @param {any} m */
@@ -80,7 +114,8 @@ export function runSimOn(env) {
     { runArriveFx, runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen } = modules['run-loop'],
     { fxOfRun, fxPayoutRates, fxRunPrice } = modules.effects,
     { runStartOn, runStartPlan } = modules['run-start'],
-    { runUnlocks } = modules.unlocks;
+    { runUnlocks } = modules.unlocks,
+    { relicBuy, relicChoose, relicPrice, relicShelf } = modules.relics;
   const MAP_DATA = { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: R },
     UNLOCK_DATA = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings };
   const worldData = () => ({
@@ -307,6 +342,12 @@ export function runSimOn(env) {
           }
           /* its reward and flag; a mini-boss also makes the run's next pick of Loopholes (not answered yet) */
           fn('battleSettleWin')(B, s, pay, run);
+          /* the pick it made, answered as the policy says (relic-screen.js relicPickDone: relics.js relicChoose) */
+          if (run.offer) {
+            const c = simRelicChoice(run.offer, run.relics, data.RELICS, R.relics, P);
+            at.pick = { offer: run.offer.slice(), took: c ? c.id : null, ...(c && c.drop ? { drop: c.drop } : {}) };
+            relicChoose(run, c ? c.id : null, data.RELICS, R.relics, c ? c.drop : undefined);
+          }
           if (node.type === 'boss') {
             stats.won = true;
             return finish();
