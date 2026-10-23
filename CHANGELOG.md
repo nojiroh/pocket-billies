@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Wild Billies by biome (roster track RO-1): every biome has its own wild pool of the seven Billie lines, met by
+  rarity (the uncommon lines often, the starters' lines rarely, a line whose types suit the biome most), so a run
+  meets real Billies everywhere instead of stand-ins. Four regional forms: Waterfront Gildlet (Water, by the lake),
+  Cloud Facelet (Electric/Flying, on the ridge), Folklore Swiftlet (Grass/Psychic, in the autumn wood) and Festival
+  Kontourlet (Psychic/Ground, in the canyon), each line with its own colours and its own evolutions. The Guide shows
+  a line's regional forms on its page; catching one counts for that entry.
 - Things to do is gone (test cleanup track): the daily challenges, the townsfolk's requests and letters, the gold
   stamps (and their tile on the Trainer card), photo mode and your room in Granny Juniper's cottage are removed;
   her cottage no longer opens. The weather still changes battles.
