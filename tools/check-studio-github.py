@@ -2099,7 +2099,6 @@ STEPS = [
     ('generate', generate_steps),
     ('species_parts', species_part_steps),
     ('rig_preview', rig_preview_steps),
-    ('kit_write', kit_write_steps),
     ('library_swap', library_swap_steps),
     ('repack', repack_steps),
     ('density', density_steps),
@@ -2111,6 +2110,9 @@ STEPS = [
     ('studio_test', studio_test_steps),
     ('run_lab', run_lab_steps),
     ('run_lab_sim', run_lab_sim_steps),
+    # its bake stays pending for the proposal at the end (window.__kitWrite), so it runs after the music and the
+    # simulation, which want nothing pending
+    ('kit_write', kit_write_steps),
     ('relics', relics_steps),
     ('unlocks', unlocks_steps),
     ('leaders', leaders_steps),
