@@ -129,7 +129,7 @@ stands.
   `build-data.mjs` (makes `gamedata.js`), `to-module.mjs` (the modules' generated imports, `hooks.js` and `debug-log-names.js`), `gamedata.py` (the data for Python tools),
   `check-names.mjs` (the naming rules lint can't check), the renaming tools (`rename.mjs` for code names, prefixes,
   files and properties, `rename-data.mjs` for data keys and sections, `rename-strings.py` for the Python tools'
-  strings, `rename-ids.mjs` for the location ids; each proves a rename changed nothing else), and the Python scripts
+  strings; each proves a rename changed nothing else), and the Python scripts
   that drew the art and built the maps (the top of each says what it writes).
 - `docs/`: vision, roadmap, phases, naming, testing (`TESTING.md`: the tiers and what every phase tests), security
   review, handoff log, the Studio guide.

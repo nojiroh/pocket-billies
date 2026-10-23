@@ -137,6 +137,5 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
   word, where the selectors point), with a JSON-level proof.
 - `python3 tools/rename-strings.py`: the code names inside the Python tools' strings and comments (rename.mjs calls
   it).
-- `node tools/rename-ids.mjs map|apply|verify`: the location ids (the art named by an id moves with it).
 - One rename rule per commit (one name, one prefix family, one file, one data key or section), never mixed with a
   behaviour change.
