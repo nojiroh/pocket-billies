@@ -35,6 +35,9 @@ instruction, relayed by the parent session); this session's choices are decision
   check-studio-github.py and in CI. A planted wrong native part and a planted one-pixel sheet fault each failed it.
 - Step 2 done: tools/build-kit-billies.py and docs/samples/kit-billies.png deleted; parity test unchanged in what it
   checks (the committed art), its header says where that art came from.
+- Step 3 (T5.2) done: `rigGeo` (moved, equal on every view); `logic/rig-swap.js` with 6 unit tests on musk0, huang0,
+  trump0 and billie-library.test.mjs moved onto it; the Studio's Library uses it (greyed misfits, refit, frames, geo,
+  before/after strip); check-studio-github.py `library_swap`.
 
 ### Studio plan Phase 5, session 2 - The recipe in game/data, a Node bake CLI, the slot words (T5.1, T5.5) - 2026-10-22
 Branch `claude/sr-5-parts`, draft PR #139 (base `ccr-81011a25-lf3exv`). Plan pre-approved with its recommended options

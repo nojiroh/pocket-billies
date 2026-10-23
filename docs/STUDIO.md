@@ -403,15 +403,21 @@ menu.
 
 In Art workbench → Part → Billies, select a species and one of its pieces, then choose **Replace from Parts Library**.
 The picker filters by body group, kit (beasts, birds, fish), and part type. Groups are inferred from the existing bone;
-choose a group explicitly for custom bones. Select a thumbnail to stage the change. Front/back thumbnails compare the
-current and replacement piece; the assembled front/back previews show the result. Use Move and the idle/walk/attack/hurt
+choose a group explicitly for custom bones. A part that lacks a socket one of the bone's children hangs on (a torso's
+neck, shoulders, hips or tail) is greyed out, with the reason. Select a thumbnail to stage the change. The strip shows
+the Billie before (top row) and after, front and back, idle, blink, happy and hurt, as the game draws it; the assembled
+front/back previews show the result. Use Move and the idle/walk/attack/hurt
 selector to inspect motion. Scale, rotation and offsets are baked into the replacement picture around its library pivot.
 Match current part’s palette maps the new pixels to colours sampled from the old piece.
 
 For recognised paired limbs, Replace both sides uses each side's library art or its mirrored counterpart. Missing back
-art keeps the existing back piece, with a warning. A static library image replaces the selected bone's expression or
-squash/stretch frames; the picker warns about that before Apply. Existing children keep their positions, and the separate
-portrait remains unchanged. Socket-based child repositioning and assembly recipes are later steps.
+art keeps the existing back piece, with a warning. Frames (Studio plan Phase 5): a head's blink is made again from the
+new picture (the kit baker's rule; happy and hurt then show the new picture), unless **Keep the old blink, happy and
+hurt frames** is ticked; a torso gets its squash and stretch again. Children: one on a named socket moves to the new
+part's socket (scaled, turned and offset with the picture); any other (horns, ears, a crest) keeps its place in
+proportion to the picture. The size the Billie stands in the world (geo) moves by what the part changed, so a part of
+the same size leaves it as it was. The separate portrait remains unchanged. On a kit Billie the recipe is the truth: a
+swap by hand is lost at its next bake, so change the recipe instead (Kit recipe, above).
 
 Nothing changes until Apply. Apply appends the pieces to the species sheet and creates separate crop metadata, preserving
 bones, parents, animation roles, and draw order. Save to game writes the modified sheet(s) and rig through the existing

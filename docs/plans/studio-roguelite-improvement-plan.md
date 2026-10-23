@@ -1452,6 +1452,19 @@ The owner took the recommendation on every open question:
    - **CI's Studio checks run `kit_write`** (about 15 s): all 24 baked in the browser as committed, an edit proposed
      pixel-equal to the Node bake.
    - **docs/samples/kit-billies.png goes** with the Python builder: nothing would keep it up to date.
+12. **T5.2** (Phase 5, session 3; recommended options):
+   - **geo moves by what the swap changed** (the skeleton builder's framing, now `rigGeo`, before and after), not
+     recomputed whole. No stored geo equals the framing (all 258 views differ, by up to 20 px): every builder measured
+     the drawn pixels and took `mid` from the ground line, the framing measures picture boxes. A whole recompute would
+     move every Billie's world size on any swap; the change keeps "an equal-size part leaves the world size as it was".
+   - **Children with no named socket keep their place in proportion** to the picture (a head's horns, ears, crest: no
+     library head has a `top` socket), as the kit baker's anchors are fractions of the head. Only the torso's sockets
+     (neck, shoulders, hips, tail) are named, so the compatibility filter is about torsos in practice.
+   - **Frames:** a head's blink is made again (kitBlinkFrame) by default, the old frames kept on request; a torso gets
+     squash and stretch again (kitSquashFrames with kitBuilds `bake.pad`, `bake.squash`).
+   - **Found, not fixed** (behaviour change for the owner): the skeleton builder rewrites geo with box corners on
+     every drag, so editing any Billie there changes its world height by up to 20 px. Recommended: the builder moves
+     geo by its change, as the swap does (one small commit) after the owner agrees.
 
 Taken in Phase 1, sessions C+D (the recommended option each time, under the owner's standing instruction; numbered
 as in that branch):
