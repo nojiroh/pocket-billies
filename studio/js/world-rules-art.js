@@ -988,7 +988,7 @@ SECTIONS.rules = () => {
        }),
        numberField('Balances-on-its-tip chance (a sure catch)', `${ca}.edge`, { min: 0, max: 0.2, step: 0.005 }),
        numberField('Alpha catch rate', `${ca}.alpha`, { unit: '×', min: 0.05, max: 1, step: 0.05, ph: '0.4' }),
-       numberField('Pyramid penalty for luxury lines', `${ca}.luxuryPenny`, {
+       numberField('Pyramid penalty for luxury lines', `${ca}.luxuryPyramid`, {
          unit: '×',
          min: 0,
          max: 1,

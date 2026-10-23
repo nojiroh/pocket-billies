@@ -1202,7 +1202,7 @@ export function catchOdds(id, T, spin, b) {
     const e = fighter(1);
     if (COINS[id] && COINS[id].m === 0) return 1;
     let C = COINS[id].m;
-    if (id === 'pyramid' && CATCH_RULES.luxury.includes(speciesOf(e).line)) C *= CATCH_RULES.luxuryPenny;
+    if (id === 'pyramid' && CATCH_RULES.luxury.includes(speciesOf(e).line)) C *= CATCH_RULES.luxuryPyramid;
     const Sx = e.status === 'sub' ? CATCH_RULES.subpoena : e.status ? CATCH_RULES.status : 1;
     return Math.min(
       1,

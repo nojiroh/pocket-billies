@@ -919,9 +919,9 @@ export interface Rules {
     spin: number;
     ring: number;
     edge: number;
-    /** the lines that shrug off a Copper Coin (its odds times luxuryPenny) */
+    /** the lines that shrug off a plain Pyramid (its odds times luxuryPyramid) */
     luxury: DataId[];
-    luxuryPenny: number;
+    luxuryPyramid: number;
     alpha: number;
   };
   ride: { minHeight: number; types: TypeId[] };

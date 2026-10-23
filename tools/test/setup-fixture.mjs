@@ -78,7 +78,7 @@ export const FIXTURE = {
       spin: 1.1,
       edge: 0.01,
       luxury: [],
-      luxuryPenny: 0.5,
+      luxuryPyramid: 0.5,
       alpha: 0.4,
     },
     ride: { minHeight: 1.5, types: ['Water'] },
