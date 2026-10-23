@@ -129,10 +129,10 @@ Two rules hold everywhere:
   `legacy/index.json`, read by `readLegacyData()` in `tools/data-files.mjs`, null without one). A test that uses the
   old places as test data (the bowl's ground and landmarks, scripts said there) reads `oldWorld()`
   (`tools/test/old-world.mjs`: the game's places, roads, maps and trainers plus the parked ones), so parking or
-  bringing back a place doesn't change it. `world-tables-real.test.mjs` snapshots the tables `worldSetGraph` works out
-  on the game's data; `world-graph-set.test.mjs` puts a 3-place world in and the hub back (every table deep-equal, the
-  same objects); `saves-real` puts the old world in through `worldSetGraph` for its wild-stock cases and the hub back
-  after. A test that swaps the world puts the hub back in `finally`.
+  bringing back a place doesn't change it. `world-graph.test.mjs` snapshots the hub's graph and the tables
+  `worldSetGraph` works out on the game's data; `world-graph-set.test.mjs` puts a 3-place world in and the hub back
+  (every table deep-equal, the same objects); `saves-real` puts a run's world in through `worldPut` for its wild-stock
+  cases and the hub back after. A test that swaps the world puts the hub back in `finally`.
 - The map generator (MG-1, MG-2, TR-1; `tools/test/mapgen*.test.mjs`): `mapgen.test.mjs` the MG-1 invariants (format,
   determinism, a stage's own seed, the hub reaches every exit, nothing grows on paths or in water); `mapgen-golden`
   a hash per part of five unjoined scenes (`gen` left out), so a change says which part moved: remake it on purpose
