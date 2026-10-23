@@ -94,6 +94,7 @@ import '../../game/js/logic/type-rename.js';
 import '../../game/js/logic/ui-dials.js';
 import '../../game/js/logic/ui-inspect.js';
 import '../../game/js/logic/ui-lint.js';
+import '../../game/js/logic/ui-sounds.js';
 import '../../game/js/logic/ui-theme.js';
 import '../../game/js/logic/unlock-graph.js';
 import '../../game/js/logic/unlocks.js';

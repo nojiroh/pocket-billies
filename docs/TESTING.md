@@ -404,6 +404,19 @@ same phase:
   deadline, `musicWeatherCut`, `songVariant`'s order: battle tense; else deadline; else band then night).
   `check-studio-github.py --only=music` also draws an intro note, plays wild on its intro and as wild@tense, and sets
   an arc band's drums, all undone; it reads the where rules' places from the table.
+  SND-6: the fingerprints also render each cry's low-HP version (`cries.json` `<id>@low`, sound.js `cryPlay`), the
+  four UI sounds (`ui.json`, sound.js `uiSound`) and every jingle at its own tempo and wave (`jinglePlay`): 143.
+  The full check's "Sound effects and jingles" step (alone with `--steps="sound effects"`, about 65 s) taps sound on in
+  the run fixture on a phone and reads `soundEngine.log` (in memory, never sent): the world and ambience beds are
+  x0.708 under the run's song (music.json `mix.bedsUnderSong` -3 dB); a real sheet's gold, quiet and disabled buttons,
+  tapped, make confirm, cancel and can't, a tab select; a wild battle with the lead under a quarter: the wild Billie's
+  cry and the lead's low-HP cry as it comes out; walking into the next place: day, then reveal; a Loophole taken:
+  relic; the payout won: a coin per row, then `run_won` after the last coin; lost: `run_lost`. The "Sound settings"
+  step compares with `soundLevels(prefs, MUSIC.mix)` and the beds' duck. Unit tests: `cries.test.mjs` (the eight
+  kinds, a base's notes, the low-HP cry a minor third down and a quarter faster), `ui-sounds.test.mjs` (which button
+  makes which sound), `sound-levels.test.mjs` (the mix's trims, `bedDuck`), `music-studio.test.mjs` (placeholder base
+  cries and Billie cries). `check-studio-github.py --only=music` plays a base cry and a button sound on the Sounds
+  tab, changes the mix and undoes it, and changes a stage's own cry, hearing its base's notes and the low-HP version.
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo

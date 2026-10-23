@@ -39,6 +39,12 @@
   {"k":"split","at":32}
  ],
  "parody": "Elon Musk",
+ "cry": [
+  {"base":"beast","pitch":62,"length":0.8,"name":"placeholder: a spark of a snort (Claude's draft)"},
+  {"base":"machine","pitch":57,"length":1,"name":"placeholder: a booster's beeps (Claude's draft)"},
+  {"base":"beast","pitch":46,"length":1.5,"name":"placeholder: a dragon-ox roar (Claude's draft)"},
+  {"base":"ghost","pitch":55,"length":1.1,"name":"placeholder: a timeline's echo (Claude's draft)"}
+ ],
  "parts": [
   {"head":"bear_head","body":"bear_torso","front":"bear_arm","back":"bear_leg","sig":"fox_tail"},
   {"head":"bear_head","body":"bear_torso","front":"bear_arm","back":"bear_leg","sig":"fox_tail"},

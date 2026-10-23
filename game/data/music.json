@@ -1,5 +1,5 @@
 {
- "about": "Sound track SND-2: the music. songs: a recipe per song, composed into notes by the tracker (game/js/audio/tracker.js). jingles: short tunes that play once (note lists of [midi, sixteenths]). cries: the base cries a species picks from. where: which song plays, an ordered list of rules, the first that matches wins (logic/music-where.js).",
+ "about": "Sound track SND-2: the music. songs: a recipe per song, composed into notes by the tracker (game/js/audio/tracker.js). jingles: short tunes that play once (note lists of [midi, sixteenths]). cries: the base cries a species picks from (SND-6: eight kinds, each its own few notes). where: which song plays, an ordered list of rules, the first that matches wins (logic/music-where.js).",
  "songs": {
   "town": {
    "bpm": 100,
@@ -416,15 +416,156 @@
   "motif": {
    "name": "placeholder: the motif's first bar, home on D (Claude's draft)",
    "notes": [[74,3],[81,3],[79,2],[78,4],[76,2],[72,2],[74,8]]
+  },
+  "relic": {
+   "name": "placeholder: a Loophole taken, a sly run up (Claude's draft)",
+   "bpm": 170,
+   "notes": [[76,1],[79,1],[83,1],[88,3],[0,1],[87,1],[88,4]]
+  },
+  "reveal": {
+   "name": "placeholder: new places on the map, two pings (Claude's draft)",
+   "bpm": 140,
+   "wave": "p12",
+   "notes": [[84,2],[91,4]]
+  },
+  "day": {
+   "name": "placeholder: a day passing, the clock's tick and tock (Claude's draft)",
+   "bpm": 120,
+   "wave": "p12",
+   "notes": [[81,1],[0,3],[76,1]]
+  },
+  "run_won": {
+   "name": "placeholder: run won, the victory tune, then the motif (Claude's draft)",
+   "notes": [[72,2],[76,2],[79,2],[84,6],[83,2],[84,6],[0,2],[74,3],[81,3],[79,2],[78,4],[76,2],[72,2],[74,8]]
+  },
+  "run_lost": {
+   "name": "placeholder: run lost, the victory tune backwards in minor (Claude's draft)",
+   "bpm": 100,
+   "wave": "p12",
+   "notes": [[84,6],[82,2],[84,4],[79,2],[75,2],[72,8]]
+  },
+  "payout_coin": {
+   "name": "placeholder: a coin per payout row, a step higher each (Claude's draft)",
+   "bpm": 320,
+   "wave": "p50",
+   "notes": [[84,1],[91,2]]
   }
  },
  "cries": {
-  "bases": [
-   {"wave":"p25"},
-   {"wave":"p12"},
-   {"wave":"p50"},
-   {"wave":"square"}
-  ]
+  "about": "SND-6: the base cries, Gen 1 style: a species names one by its kind (lines/*.json cry base) with its own pitch and length. Each is a few notes: at (s from the cry's start), note (semitones over the species' pitch), len (s), and optionally wave (else the base's), vol, slide (where the note ends, x its frequency) and vib (a wobble's depth: 1 is 1.2 % of the note); at and len stretch with the species' length",
+  "bases": {
+   "beast": {
+    "name": "placeholder: a growl that rises into a bark (Claude's draft)",
+    "wave": "square",
+    "voices": [
+     {"at":0,"note":0,"len":0.22,"vol":0.07,"slide":1.6,"vib":2},
+     {"at":0.2,"note":7,"len":0.14,"wave":"p25","vol":0.06,"slide":0.55}
+    ]
+   },
+   "bird": {
+    "name": "placeholder: three chirps, the last one falling (Claude's draft)",
+    "wave": "p12",
+    "voices": [
+     {"at":0,"note":12,"len":0.06,"vol":0.06,"slide":1.5},
+     {"at":0.08,"note":16,"len":0.06,"vol":0.06,"slide":1.5},
+     {"at":0.16,"note":19,"len":0.14,"vol":0.06,"slide":0.8,"vib":1.5}
+    ]
+   },
+   "slime": {
+    "name": "placeholder: a bloop down and a blip back up (Claude's draft)",
+    "wave": "triangle",
+    "voices": [
+     {"at":0,"note":0,"len":0.25,"vol":0.09,"slide":0.5,"vib":1},
+     {"at":0.22,"note":-5,"len":0.16,"vol":0.08,"slide":1.8}
+    ]
+   },
+   "machine": {
+    "name": "placeholder: three square beeps, up and back (Claude's draft)",
+    "wave": "p50",
+    "voices": [
+     {"at":0,"note":0,"len":0.08,"vol":0.05},
+     {"at":0.1,"note":12,"len":0.08,"vol":0.05},
+     {"at":0.2,"note":7,"len":0.16,"vol":0.05,"slide":0.98}
+    ]
+   },
+   "fish": {
+    "name": "placeholder: a long warble rising (Claude's draft)",
+    "wave": "triangle",
+    "voices": [
+     {"at":0,"note":0,"len":0.32,"vol":0.09,"slide":1.8,"vib":3},
+     {"at":0.3,"note":7,"len":0.12,"wave":"p25","vol":0.05,"slide":0.7}
+    ]
+   },
+   "insect": {
+    "name": "placeholder: a high buzz (Claude's draft)",
+    "wave": "p12",
+    "voices": [
+     {"at":0,"note":12,"len":0.3,"vol":0.05,"slide":1.06,"vib":4},
+     {"at":0.28,"note":14,"len":0.1,"vol":0.04,"slide":0.9,"vib":4}
+    ]
+   },
+   "ghost": {
+    "name": "placeholder: a wail that bends up, then sinks (Claude's draft)",
+    "wave": "triangle",
+    "voices": [
+     {"at":0,"note":0,"len":0.45,"vol":0.08,"slide":1.3,"vib":2.5},
+     {"at":0.42,"note":-2,"len":0.32,"vol":0.07,"slide":0.7,"vib":2.5}
+    ]
+   },
+   "suit": {
+    "name": "placeholder: a smug heh-heh-heh up a chord (Claude's draft)",
+    "wave": "p25",
+    "voices": [
+     {"at":0,"note":0,"len":0.1,"vol":0.06,"slide":0.9},
+     {"at":0.12,"note":4,"len":0.1,"vol":0.06,"slide":0.9},
+     {"at":0.24,"note":7,"len":0.2,"vol":0.06,"slide":1.15,"vib":1}
+    ]
+   }
+  }
+ },
+ "ui": {
+  "about": "SND-6: the buttons' four sounds (logic/ui-sounds.js). sounds: each a few notes (at and len in s, midi, wave, vol, slide: where the note ends, x its frequency). A disabled button makes cant; one whose data-a or class cancel names makes cancel, then confirm the same way; any other select",
+  "sounds": {
+   "select": {
+    "name": "the tick (as before)",
+    "notes": [
+     {"at":0,"midi":88,"len":0.025,"wave":"p50","vol":0.05}
+    ]
+   },
+   "confirm": {
+    "name": "placeholder: a rising fifth (Claude's draft)",
+    "notes": [
+     {"at":0,"midi":81,"len":0.045,"wave":"p25","vol":0.05},
+     {"at":0.055,"midi":88,"len":0.07,"wave":"p25","vol":0.05}
+    ]
+   },
+   "cancel": {
+    "name": "placeholder: a falling fifth (Claude's draft)",
+    "notes": [
+     {"at":0,"midi":81,"len":0.045,"wave":"p25","vol":0.045},
+     {"at":0.055,"midi":74,"len":0.07,"wave":"p25","vol":0.045}
+    ]
+   },
+   "cant": {
+    "name": "placeholder: a dull buzz (Claude's draft)",
+    "notes": [
+     {"at":0,"midi":43,"len":0.13,"wave":"square","vol":0.05,"slide":0.97},
+     {"at":0,"midi":44,"len":0.13,"wave":"p25","vol":0.035}
+    ]
+   }
+  },
+  "confirm": {"classes":["gold","green","primary"],"actions":["shopbuy","runstart"]},
+  "cancel": {"classes":["quiet","back"],"actions":["bback","baimback","dexback","leaveroom","stoptrip","scrim"]}
+ },
+ "mix": {
+  "about": "SND-6: the mix. Each bus's trim (x the square of its Settings slider): master leaves headroom for the compressor after it, amb sits the ambience a little under the world sounds. bedsUnderSong: dB the world and ambience beds come down while a four-voice song plays (not the title or the fall). compressor: on the master, threshold in dB and ratio",
+  "master": 0.9,
+  "music": 1,
+  "sfx": 1,
+  "world": 1,
+  "amb": 0.9,
+  "bedsUnderSong": -3,
+  "compressor": {"threshold":-14,"ratio":3}
  },
  "run": {
   "about": "SND-5: the run's music. arc: bands of rows (row 0 is the landing; the mini-bosses stand on rows 3 and 6) and how a biome's song changes there, so a run builds as it goes; rows no band names play the song as written. deadlineDays: how many days before the deadline (the deadline day counts as 1) a run's songs play their deadline version; past the deadline they always do. weather: on the run's map tab the map song is muffled by today's forecast where you stand, a low-pass at these Hz (weather it doesn't name: open)",

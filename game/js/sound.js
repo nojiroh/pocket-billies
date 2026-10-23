@@ -13,7 +13,8 @@ import { LOCATIONS, MUSIC, SPECIES } from './game-data.js';
 import { maxHp } from './logic/rules.js';
 import { runWeather } from './logic/run-map.js';
 import { musicBattleKind, musicRedZone, musicWeatherCut, songFor, songVariant } from './logic/music-where.js';
-import { cryRecipe, cryVoices } from './logic/cries.js';
+import { cryLowHealth, cryRecipe, cryVoices } from './logic/cries.js';
+import { uiSoundFor, uiSoundVoices } from './logic/ui-sounds.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
@@ -30,7 +31,7 @@ import {
 } from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
-import { soundLevel, soundLevels } from './audio/levels.js';
+import { bedDuck, mixTrim, soundLevel, soundLevels } from './audio/levels.js';
 import { midiToFrequency, trackerCreate } from './audio/tracker.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -46,13 +47,16 @@ expose({
   ambienceOutput: [() => ambienceOutput, v => (ambienceOutput = v)],
   applyAmbienceVolume: [() => applyAmbienceVolume, v => ((applyAmbienceVolume = v), provide({ applyAmbienceVolume }))],
   applyVolumes: [() => applyVolumes, v => ((applyVolumes = v), provide({ applyVolumes }))],
+  battleCry: [() => battleCry, v => (battleCry = v)],
   battleDrumsIn: [() => battleDrumsIn, v => (battleDrumsIn = v)],
   battleMusicStart: [() => battleMusicStart, v => (battleMusicStart = v)],
   battleSoundEffect: [() => battleSoundEffect, v => ((battleSoundEffect = v), provide({ battleSoundEffect }))],
+  cryPlay: [() => cryPlay, v => (cryPlay = v)],
   footstepAt: [() => footstepAt, v => (footstepAt = v)],
   initAmbience: [() => initAmbience, v => (initAmbience = v)],
   initSound: [() => initSound, v => (initSound = v)],
   jingle: [() => jingle, v => ((jingle = v), provide({ jingle }))],
+  jinglePlay: [() => jinglePlay, v => (jinglePlay = v)],
   lowHpBeep: [() => lowHpBeep, v => (lowHpBeep = v)],
   music: [() => music, v => (music = v)],
   musicFor: [() => musicFor, v => (musicFor = v)],
@@ -67,6 +71,8 @@ expose({
   playClockTick: [() => playClockTick, v => (playClockTick = v)],
   playOwlCall: [() => playOwlCall, v => (playOwlCall = v)],
   playScrapClank: [() => playScrapClank, v => (playScrapClank = v)],
+  runArriveSound: [() => runArriveSound, v => (runArriveSound = v)],
+  soundBedDuck: [() => soundBedDuck, v => (soundBedDuck = v)],
   soundEffect: [() => soundEffect, v => ((soundEffect = v), provide({ soundEffect }))],
   soundEffectAt: [() => soundEffectAt, v => ((soundEffectAt = v), provide({ soundEffectAt }))],
   soundEngine: [() => soundEngine],
@@ -77,6 +83,8 @@ expose({
   synthNoise: [() => synthNoise, v => (synthNoise = v)],
   synthVoice: [() => synthVoice, v => (synthVoice = v)],
   testVolume: [() => testVolume, v => ((testVolume = v), provide({ testVolume }))],
+  uiButton: [() => uiButton, v => (uiButton = v)],
+  uiSound: [() => uiSound, v => (uiSound = v)],
   unlockSound: [() => unlockSound, v => (unlockSound = v)],
   updateAmbience: [() => updateAmbience, v => (updateAmbience = v)],
   volumePreference: [() => volumePreference, v => (volumePreference = v)],
@@ -121,12 +129,15 @@ function initSound() {
   try {
     const c = new AC();
     soundEngine.ctx = c;
-    const comp = c.createDynamicsCompressor();
-    comp.threshold.value = -14;
-    comp.ratio.value = 3;
+    /* SND-6: the compressor's settings and the master's trim are music.json mix */
+    const comp = c.createDynamicsCompressor(),
+      CM = (MUSIC.mix && MUSIC.mix.compressor) || {};
+    comp.threshold.value = CM.threshold ?? -14;
+    comp.ratio.value = CM.ratio ?? 3;
     comp.connect(c.destination);
+    soundEngine.comp = comp;
     soundEngine.master = c.createGain();
-    soundEngine.master.gain.value = 0.9;
+    soundEngine.master.gain.value = mixTrim(MUSIC.mix, 'master');
     soundEngine.master.connect(comp);
     soundEngine.mus = c.createGain();
     soundEngine.fx = c.createGain();
@@ -154,7 +165,7 @@ function initSound() {
 /* alpha 0.5: a master volume and mute over everything (music, effects, world sounds, ambience all go through the master) */
 function applyVolumes() {
   if (!soundEngine.ctx) return;
-  const L = soundLevels(soundPreferences()),
+  const L = soundLevels(soundPreferences(), MUSIC.mix),
     t = soundEngine.ctx.currentTime;
   soundEngine.master.gain.setTargetAtTime(L.master, t, 0.05);
   soundEngine.mus.gain.setTargetAtTime(L.music, t, 0.05);
@@ -329,6 +340,26 @@ export function jingle(notes, bpm = 150, type = 'p25', bus = null) {
   const end = soundEngine.tracker.jingle(notes, bpm, type, bus || soundEngine.fx) - soundEngine.ctx.currentTime;
   soundEngine.jingle = performance.now() + end * 1000 + 200;
 }
+/* SND-6: a jingle by its name, at its own tempo and wave (music.json jingles bpm, wave); o.shift moves it by
+   semitones, o.duck false plays it over the song without ducking it (and doesn't hold the music sync). Logs
+   'jingle <name>' in soundEngine.log (in memory, never sent). Returns how long it lasts (s), 0 when silent */
+export function jinglePlay(id, o = {}) {
+  const J = MUSIC.jingles[id];
+  if (!J || !initSound() || soundEngine.ctx.state !== 'running') return 0;
+  const out = o.bus || soundEngine.fx,
+    end =
+      soundEngine.tracker.jingle(J.notes, J.bpm || 150, J.wave || 'p25', out, { shift: o.shift, duck: o.duck }) -
+      soundEngine.ctx.currentTime;
+  if (o.duck !== false) soundEngine.jingle = performance.now() + end * 1000 + 200;
+  soundLog('jingle ' + id + (o.shift ? ' +' + o.shift : ''));
+  return end;
+}
+/* SND-6: walking into a run's next place: a day passes (the day jingle), then the reveal jingle when the map shows more
+   than it did */
+export function runArriveSound(revealed) {
+  const d = jinglePlay('day');
+  if (revealed && d) setTimeout(() => jinglePlay('reveal'), d * 1000 + 120);
+}
 /* SND-2: the jingles are data (music.json jingles); here each is its note list, as jingle() takes it */
 export const JINGLES = Object.fromEntries(Object.entries(MUSIC.jingles).map(([k, J]) => [k, J.notes]));
 provide({ JINGLES }); /* to-module */
@@ -342,7 +373,8 @@ export function soundEffect(name, o = {}) {
     F = soundEngine.fx;
   switch (name) {
     case 'tick':
-      synthVoice(F, { type: 'p50', freq: 1320, t, dur: 0.025, vol: 0.05, r: 0.02 });
+      /* SND-6: the tick is the UI's select sound (music.json ui) */
+      uiSound('select');
       break;
     case 'blip': {
       let h = 0;
@@ -480,21 +512,37 @@ export function soundEffect(name, o = {}) {
       synthNoise(F, { t, dur: 0.08, vol: 0.08, lp: 600 });
       synthNoise(F, { t: t + 0.1, dur: 0.06, vol: 0.06, lp: 500 });
       break;
-    case 'cry': {
-      /* SND-3: a species' cry from its own base, pitch and length (lines/*.json cry), else from its id as before */
-      for (const v of cryVoices(cryRecipe(o.sp, (SPECIES[o.sp] || {}).cry, CRIES)))
-        synthVoice(F, {
-          type: v.type,
-          freq: midiToFrequency(v.midi),
-          t: t + v.at,
-          dur: v.dur,
-          vol: v.vol,
-          slide: v.slide,
-          vib: v.vib,
-        });
+    case 'cry':
+      cryPlay(o.sp, !!o.low);
       break;
-    }
   }
+}
+/* SND-3: a species' cry from its own base, pitch and length (lines/*.json cry), else from its id. SND-6: low, its
+   low-HP version (faster and a third down: logic/cries.js cryLowHealth). Returns how long it lasts (s), 0 when silent */
+function cryPlay(sp, low) {
+  if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return 0;
+  const t = soundEngine.ctx.currentTime + 0.005,
+    C = cryRecipe(sp, (SPECIES[sp] || {}).cry, CRIES),
+    V = cryVoices(low ? cryLowHealth(C) : C);
+  soundLog('cry ' + sp + (low ? ' low' : ''));
+  for (const v of V)
+    synthVoice(soundEngine.fx, {
+      type: v.type,
+      freq: midiToFrequency(v.midi),
+      t: t + v.at,
+      dur: v.dur,
+      vol: v.vol,
+      slide: v.slide,
+      vib: v.vib,
+    });
+  return Math.max(0, ...V.map(v => v.at + v.dur));
+}
+/* SND-6: a Billie's cry in battle, from the line's snapshot of its slot (ev.s: its species and its HP then): its low-HP
+   cry in the red zone (logic/music-where.js musicRedZone, as the music's tense version); robots have no cry yet */
+function battleCry(ev, si, low) {
+  const sn = ev && ev.s && ev.s[si];
+  if (!sn || sn.bot || !sn.sp) return 0;
+  return cryPlay(sn.sp, low || musicRedZone(sn.hp, sn.max));
 }
 /* SND-5: the classic low-HP beep (Settings → Sound, off by default): twice a second-ish while the lead Billie is in the
    red zone, on the effects bus. The music's tense version plays either way */
@@ -519,8 +567,8 @@ function musicMapCut() {
   if (!r || r.runNode == null) return null;
   return musicWeatherCut(runWeather(run, r.runNode, run.clock), MUSIC.run);
 }
-/* battle animations make their sounds */
-function battleSoundEffect(an, r) {
+/* battle animations make their sounds. SND-6: ev is the line they belong to (its snapshot names who cries) */
+function battleSoundEffect(an, r, ev) {
   if (!an || !soundEngine.ctx) return;
   const at = (ms, f) => setTimeout(f, Math.max(0, ms / (typeof battleStage !== 'undefined' ? battleStage.speed : 1)));
   switch (an.k) {
@@ -533,17 +581,22 @@ function battleSoundEffect(an, r) {
       break;
     case 'cry': {
       const s = typeof battleStage !== 'undefined' && battleStage.s[an.si || 1];
-      soundEffect('cry', { sp: s && s.sp });
+      if (!battleCry(ev, an.si || 1)) soundEffect('cry', { sp: s && s.sp });
       break;
     }
     case 'enter':
       battleDrumsIn();
       soundEffect('throw');
       at(380, () => soundEffect('pop'));
+      /* SND-6: a Billie cries as it comes out (as in Gen 1), after the pop */
+      at(520, () => battleCry(ev, an.si));
       break;
-    case 'faint':
-      soundEffect('faint');
+    case 'faint': {
+      /* SND-6: its low-HP cry, then the fall */
+      const d = battleCry(ev, an.si, true);
+      at(d * 1000, () => soundEffect('faint'));
       break;
+    }
     case 'heal':
       soundEffect('heal');
       break;
@@ -639,12 +692,60 @@ document.addEventListener('input', ev => {
   applyVolumes();
   if (typeof applyAmbienceVolume === 'function') applyAmbienceVolume();
 });
-/* a soft tick on every button */
+/* SND-6: four UI sounds instead of one tick (music.json ui, logic/ui-sounds.js): a button picks one by its data-a and
+   classes, so no screen changes. k is select, confirm, cancel or cant */
+function uiSound(k) {
+  if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
+  const S = (MUSIC.ui && MUSIC.ui.sounds[k]) || null;
+  if (!S) return;
+  const t = soundEngine.ctx.currentTime + 0.005;
+  for (const v of uiSoundVoices(S))
+    synthVoice(soundEngine.fx, {
+      type: v.type,
+      freq: midiToFrequency(v.midi),
+      t: t + v.at,
+      dur: v.dur,
+      vol: v.vol,
+      slide: v.slide,
+      r: 0.02,
+    });
+  soundLog('ui ' + k);
+}
+/* the button a press was on: a button or tab (a kit button's host, whose data-a and kind it carries), or the sheet's
+   scrim when the press was on the scrim itself and the sheet can be closed that way. Disabled: the button or
+   aria-disabled */
+function uiButton(ev) {
+  const path = ev.composedPath ? ev.composedPath() : [ev.target];
+  for (const el of path) {
+    if (!(el instanceof Element)) continue;
+    if (el.matches('[data-a="scrim"]'))
+      return path[0] === el && uiState.modal && !uiState.modal.lock ? { a: 'scrim', cls: [], disabled: false } : null;
+    if (!el.matches('button,[role=tab]')) continue;
+    const root = el.getRootNode(),
+      host = root instanceof ShadowRoot ? root.host : null,
+      b = host && host.matches('[data-a],[kind]') ? host : el;
+    return {
+      a: b.getAttribute('data-a'),
+      cls: [...b.classList, b.getAttribute('kind') || ''].filter(Boolean),
+      disabled: !!(el.disabled || b.disabled || b.getAttribute('aria-disabled') === 'true'),
+    };
+  }
+  return null;
+}
 document.addEventListener(
   'click',
   ev => {
-    const b = ev.target.closest && ev.target.closest('button,[role=tab]');
-    if (b && !b.disabled) soundEffect('tick');
+    const b = uiButton(ev);
+    if (b && !b.disabled) uiSound(uiSoundFor(b, MUSIC.ui));
+  },
+  true
+);
+/* a disabled button gets no click, but the press still reaches it: the buzz then */
+document.addEventListener(
+  'pointerdown',
+  ev => {
+    const b = uiButton(ev);
+    if (b && b.disabled) uiSound('cant');
   },
   true
 );
@@ -662,10 +763,17 @@ function ambienceFadeIn() {
   if (!soundEngine.ctx) return 1;
   return clamp((soundEngine.ctx.currentTime - ambience.arrive) / 2.8, 0, 1);
 }
+/* SND-6: the world and ambience beds come down under a four-voice song (music.json mix bedsUnderSong; the title and the
+   fall, 'extra' songs, keep the beds as they were) */
+function soundBedDuck() {
+  const sg = soundEngine.tracker && soundEngine.tracker.song,
+    R = sg && SONGS[String(sg.name).split('@')[0]];
+  return bedDuck(MUSIC.mix, !!R && !R.extra);
+}
 function applyAmbienceVolume() {
   if (!ambience.bus || !soundEngine.ctx) return;
-  const L = soundLevels(soundPreferences()),
-    f = ambienceFadeIn(),
+  const L = soundLevels(soundPreferences(), MUSIC.mix),
+    f = ambienceFadeIn() * soundBedDuck(),
     t = soundEngine.ctx.currentTime;
   ambience.bus.gain.setTargetAtTime(L.world * f, t, 0.1);
   if (ambience.amb) ambience.amb.gain.setTargetAtTime(L.amb * f, t, 0.1);

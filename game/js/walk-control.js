@@ -47,7 +47,7 @@ import {
 import { battle3dLayout } from './battle-3d.js';
 import { worldMapWanted } from './world-bowl.js';
 import { openShop } from './shop.js';
-import { soundEffect } from './sound.js';
+import { runArriveSound, soundEffect } from './sound.js';
 import { talkChosen } from './talk.js';
 import { cutscene } from './cutscene/director.js';
 import { loreBook } from './lore.js';
@@ -80,6 +80,7 @@ expose({
   roomRefresh: [() => roomRefresh, v => ((roomRefresh = v), provide({ roomRefresh }))],
   roomState: [() => roomState, v => ((roomState = v), provide({ roomState }))],
   roomStepIn: [() => roomStepIn, v => (roomStepIn = v)],
+  runSeenSum: [() => runSeenSum, v => (runSeenSum = v)],
   walkCross: [() => walkCross, v => (walkCross = v)],
   walkMapSync: [() => walkMapSync, v => (walkMapSync = v)],
   walkPick: [() => walkPick, v => (walkPick = v)],
@@ -665,6 +666,7 @@ export function walkCross() {
         ? `${bl.name} is blocking the way. Beat them first.`
         : null;
     /* RL-7: in a run a crossing is an arrival (logic/run-map.js runArrive: a day, the path, what the map shows) */
+    const seen0 = runSeenSum();
     if (!why && saveData.run && !runArrive(saveData, runMapNode(n), runWorldData()))
       why = 'That way isn’t on the run’s map.';
     if (why) {
@@ -698,10 +700,17 @@ export function walkCross() {
       runArrivedFx();
       saveNow();
       runArrivedHint();
+      /* SND-6: the day's tick and tock, and the reveal's pings when the map shows more */
+      if (typeof runArriveSound === 'function') runArriveSound(runSeenSum() > seen0);
     } else save();
     render();
     return;
   }
+}
+/* SND-6: how much of the run's map shows (each node: 0 hidden, 1 a ?, 2 its icon), to hear when an arrival shows more */
+function runSeenSum() {
+  const map = saveData.run && saveData.run.map;
+  return map ? map.nodes.reduce((a, N) => a + (N.seen || 0), 0) : 0;
 }
 /* alpha 0.4.1: a view that was held until it was ready (seamless-world.js seamlessGate) takes over as soon as it is: walking yourself,
    nothing else would ask for it (a trip did, with each batch of steps) */

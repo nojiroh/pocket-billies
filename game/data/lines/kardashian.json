@@ -36,6 +36,11 @@
   {"k":"lvl","at":36}
  ],
  "parody": "Kim Kardashian",
+ "cry": [
+  {"base":"insect","pitch":70,"length":0.8,"name":"placeholder: a tiny buzz (Claude's draft)"},
+  {"base":"suit","pitch":60,"length":1,"name":"placeholder: a filtered heh-heh (Claude's draft)"},
+  {"base":"suit","pitch":55,"length":1.2,"name":"placeholder: a brand's smug laugh (Claude's draft)"}
+ ],
  "parts": [
   {"head":"reptile_head","body":"reptile_torso","front":"reptile_arm","back":"reptile_leg","sig":"reptile_tail"},
   {"head":"reptile_head","body":"reptile_torso","front":"reptile_arm","back":"reptile_leg","sig":"reptile_tail"},
