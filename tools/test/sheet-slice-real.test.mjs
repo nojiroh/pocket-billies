@@ -1,7 +1,7 @@
-// Studio track ST-3: the Studio slices the phase 16 kits exactly as tools/slice-part-kit.py did (retired in ST-3;
-// the parts in the game are what it made). Every kit sheet in tools/art-source/part-kit is cut with game/js/logic/sheet-slice.js and compared with what the Python slicer wrote
-// (game/data/partKits.json and game/art/next/parts): the same parts in the same order, sizes, sockets and manifest,
-// and every pixel the same (alpha exactly; colour where the pixel shows).
+// Studio track ST-3: the source sheets match the committed parts. Every kit sheet in tools/art-source/part-kit is cut
+// with game/js/logic/sheet-slice.js and compared with what the game holds (game/data/partKits.json and
+// game/art/next/parts): the same parts in the same order, sizes, sockets and manifest, and every pixel the same (alpha
+// exactly; colour where the pixel shows).
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -14,7 +14,7 @@ const SRC = join(ROOT, 'tools/art-source/part-kit');
 const cfg = JSON.parse(readFileSync(join(ROOT, 'game/data/partKits.json'), 'utf8'));
 const want = cfg.parts;
 
-test('the kits slice exactly as tools/slice-part-kit.py sliced them', () => {
+test('every kit sheet slices into exactly the parts the game holds', () => {
   const made = {};
   for (const [name, k] of Object.entries(cfg.kits)) {
     const kit = { name, ...k };

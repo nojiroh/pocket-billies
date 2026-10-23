@@ -115,16 +115,6 @@ test('relics: validRun refuses a broken offer counter or shelf', () => {
   }
 });
 
-test('relics: a run saved before Loopholes (no offerN, no shelf) loads and carries on', () => {
-  const r = run();
-  delete r.offerN;
-  delete r.shelf;
-  assert.equal(validRun(r), false);
-  const loaded = fn('migrate')(copy({ ...startedSave('musk0', 10), run: r }));
-  assert.ok(loaded.run, 'the run is still on');
-  assert.deepEqual([loaded.run.offerN, loaded.run.shelf], [0, {}]);
-});
-
 test('relics: a seed’s offer order (Studio plan T4.1) is the run’s picks in order, with nothing taken or one taken each time', () => {
   const picks = 4,
     none = R.relicOfferOrder('ORDER1', RELICS, RULE, picks),

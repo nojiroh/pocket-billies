@@ -6,8 +6,8 @@ Code runs it after a change and CI on every push.
     python3 tools/check-fast.py --workers=2      # browser checks side by side in this many browsers (default 2)
     python3 tools/check-fast.py --only=battle,save   # only the checks whose names hold these words
 
-Without a browser (Node): the game data is valid, and the world-map graph is unchanged (tools/test/world-graph.test.mjs
-and its snapshot). In a browser, each check opens its own page straight where it needs to be (?fixture=<name>,
+The data check and the unit tests (the world-map graph's snapshot among them) run in CI's lint job, not here. In a
+browser, each check opens its own page straight where it needs to be (?fixture=<name>,
 game/js/fixture.js), never through the opening and never waiting for every map: the game boots with no console or page
 errors; a town and a room each open and draw frames (RL-5: the hub, Copperleaf; the route and the cave were parked
 with their places); a run's world (RL-7) opens on its landing, its places on the bowl, and a walk over a seam arrives
@@ -131,28 +131,6 @@ def no_errors(errs):
     if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
 
 
-# ---------- the checks without a browser ----------
-
-def node_check(cmd):
-    r = subprocess.run(['node', *cmd], cwd=ROOT, capture_output=True, text=True)
-    out = (r.stdout + r.stderr).strip().splitlines()
-    if r.returncode:
-        # node --test: the tests that failed and why; anything else: its last lines
-        failed = [l.strip()[7:] for l in out if l.strip().startswith('not ok')]
-        why = [l.strip() for l in out if l.strip().startswith(("error: '", 'error: "'))]
-        raise Exception('; '.join(failed[:3] + why[:2]) if failed else ' | '.join(out[-3:]) or 'failed')
-    return out[-1][:160] if out else 'fine'
-
-
-def data_valid(_):
-    return node_check(['tools/check-data.mjs'])
-
-
-def world_graph(_):
-    node_check(['--test', 'tools/test/world-graph.test.mjs'])
-    return 'places, roads, edges, gates and lifts match the snapshot'
-
-
 # ---------- the checks in a browser ----------
 # Booting costs most of a check (the loading screen reads and decodes every picture, then the scene is made), so the
 # checks share four pages, each opened at its fixture: a check gets its page as the one before left it, and the errors
@@ -162,7 +140,10 @@ def boots(pg, base):
     """a new player's boot: the title over Copperleaf, drawing"""
     if not until(pg, "typeof titleScreen!=='undefined'&&titleScreen.on&&!document.getElementById('nogl')", 90): raise Exception('the title never showed')
     drawing(pg)
-    return f'title over {pg.evaluate("walkView.id")}, drawing'
+    # test cleanup lane C: the title draws Copperleaf for a new player too (city_opening is parked in game/data/legacy)
+    on = pg.evaluate("[walkView.id,walkView.sc&&walkView.sc.baseId,LOCATIONS[START_NODE].mapId]")
+    if on[2] not in (on[0], on[1]): raise Exception(f'the title is over {on[0]}, not the hub ({on[2]})')
+    return f'title over {on[0]}, drawing'
 
 
 def scene(node_id):
@@ -1142,7 +1123,6 @@ def screens(pg, base):
     return 'opened: ' + ', '.join(seen)
 
 
-NODE_CHECKS = [('Game data is valid', data_valid), ('The world-map graph is unchanged', world_graph)]
 def run_pack(pg, base):
     """RL-9b: from the ranch fixture (three Billies in storage), one of them training: the mast's start sheet picks it
     (a pick card tapped) and packs two Potions (+ tapped twice); "Take off": the party is that Billie alone, healed,
@@ -1389,10 +1369,8 @@ def main():
         from playwright.sync_api import sync_playwright
     except ImportError:
         print('Install Playwright first:  pip install -r tools/requirements-check.txt && python3 -m playwright install chromium'); sys.exit(1)
-    pick = lambda L: [c for c in L if not ONLY or any(w.lower() in c[0].lower() for w in ONLY)]
     # data/gamedata.js is made from the data files; make it from the files as they are now
     subprocess.run(['node', str(ROOT / 'tools' / 'build-data.mjs')], check=True, capture_output=True)
-    for name, fn in pick(NODE_CHECKS): record(name, fn, None)
     todo = [(f, [c for c in cs if not ONLY or any(w.lower() in c[0].lower() for w in ONLY)]) for f, cs in PAGES]
     todo = [(f, cs) for f, cs in todo if cs]
     game_srv, game_base = serve(GAME); root_srv, root_base = serve(ROOT)

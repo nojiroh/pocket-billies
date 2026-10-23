@@ -56,7 +56,7 @@ Two rules hold everywhere:
   and one battle per process (`hooks.js`). Tests in one file run in order and share that state.
 - Random numbers are seeded. A test that draws them calls `reseed()` first (or in `beforeEach`), so its result doesn't
   depend on the tests before it.
-- How randomness works today (RL-1 `tools/test/rng-baseline.test.mjs`, RL-2 `tools/test/rng.test.mjs`):
+- How randomness works today (RL-2 `tools/test/rng.test.mjs`):
   `game/js/util.js`'s `random` is `Math.random` as it is when util.js loads. On the page that is the browser's, so
   nothing in a real game is seedable yet; in Node, `load-logic.mjs` puts a Park-Miller stand-in on `Math.random`
   first, so the logic (the battle engine's ~16 rolls, `pickWeighted`) follows `reseed()` and two battles from one seed
@@ -80,7 +80,7 @@ Two rules hold everywhere:
   simulation does). The battle object's shape is snapshotted; a seeded battle must replay the same with other draws
   in between; the turn cap is tested with the cap lowered inside the test.
 - The save's run state (RL-3: `meta-state`, `ranch-state`, `run-state` and `saves.test.mjs`): run on the fixture's
-  three locations, so a save from a run sits at node 4, past `LOCATIONS`, to prove `migrate` keeps a run's trip by the
+  three locations, so a save from a run sits at node 4, past `LOCATIONS`, to prove `saveFill` keeps a run's trip by the
   run's map and not by today's places. Switching that branch off turns the run-save test red.
 - The run map and clock (RL-6: `run-map.test.mjs`, `run-map-real.test.mjs`, `weather.test.mjs`): run-map.test on
   small tables of its own (five node types, the five biomes as mild), run-map-real on the game's (nodeTypes.json,
@@ -126,13 +126,12 @@ Two rules hold everywhere:
   clinic and shop), its trainers in their own world and its bridges (both ends dry, a stream crossed square within
   25 degrees).
 - The world (RL-5): the game's world is Copperleaf alone; the old one is parked in `game/data/legacy` (its own
-  `legacy/index.json`, read by `readLegacyData()` in `tools/data-files.mjs`, null without one). A test that uses the
-  old places as test data (the bowl's ground and landmarks, scripts said there) reads `oldWorld()`
-  (`tools/test/old-world.mjs`: the game's places, roads, maps and trainers plus the parked ones), so parking or
-  bringing back a place doesn't change it. `world-tables-real.test.mjs` snapshots the tables `worldSetGraph` works out
-  on the game's data; `world-graph-set.test.mjs` puts a 3-place world in and the hub back (every table deep-equal, the
-  same objects); `saves-real` puts the old world in through `worldSetGraph` for its wild-stock cases and the hub back
-  after. A test that swaps the world puts the hub back in `finally`.
+  `legacy/index.json`, read by `readLegacyData()` in `tools/data-files.mjs`, null without one); no test uses it as
+  test data. The bowl's tests (ground, sea, land, things) run on a run's world made from a seed as the game makes it
+  (`runWorldTables`, `runScenesMake`, `runBowlLook`) and on Copperleaf's island. `world-graph.test.mjs` snapshots the hub's graph and the tables
+  `worldSetGraph` works out on the game's data; `world-graph-set.test.mjs` puts a 3-place world in and the hub back
+  (every table deep-equal, the same objects); `saves-real` puts a run's world in through `worldPut` for its wild-stock
+  cases and the hub back after. A test that swaps the world puts the hub back in `finally`.
 - The map generator (MG-1, MG-2, TR-1; `tools/test/mapgen*.test.mjs`): `mapgen.test.mjs` the MG-1 invariants (format,
   determinism, a stage's own seed, the hub reaches every exit, nothing grows on paths or in water); `mapgen-golden`
   a hash per part of five unjoined scenes (`gen` left out), so a change says which part moved: remake it on purpose
@@ -179,6 +178,11 @@ Two rules hold everywhere:
   reset what your step needs at its start).
 - **(13b)** Each step gets `areas=(...)` tags and joins a run group with a fixture instead of replaying the opening.
 - The checks never reach accounts or the network (`NO_ACCOUNTS`), and nothing they do is saved for real.
+- The test cleanup track's TC-1 (docs/phases/test-cleanup-track.md, lane B) deleted the steps another check already
+  covers (Code, Messages, Team, Studio opens, Shaders, Paths, Scenes, Crowd, RL-7's run roads, the joystick, Battles,
+  v36's split evolution) and the outdated ones (old place names, v34, v35, v37, v38, v39/v40, v44, v47, Things to do
+  with its system). What still mattered stayed as small steps: Data (only what check-data does not refuse), Battle
+  weather, Rooms (a floor each); the water step carries its two data rules. `--scenes` went with Scenes and Paths.
 
 ## The in-game full test and the debug log
 
@@ -287,7 +291,7 @@ same phase:
   a fifth golden battle holding three Loopholes; check-fast's "Loopholes" on `?fixture=relics`; the in-game run
   phase and quick check's RL-8 step buy a shop's Loophole or take a mini-boss's pick and see the boss's battle carry
   it.
-- **14 Studio**: `tools/check-studio-github.py` and smoke's "Studio opens" keep passing (local mode and
+- **14 Studio**: `tools/check-studio-github.py` and check-fast's "The Studio loads" keep passing (local mode and
   `check-quick.py --studio` were dropped, Studio plan T1.4). A new Studio feature adds a step function to its `STEPS`
   (UI-3), so it can also run alone with `--only=<name>`. Since T1.4 CI's smoke job runs
   `--only=sections,publish,drafts,studio_test,checks` on every pull request that touches `studio/` or
@@ -299,8 +303,8 @@ same phase:
   change meant to alter its words remakes it with `--test-update-snapshots`, said in the commit.
 - **15 Design and story**: write down the balance bounds the simulations will assert (with the owner).
 - **16 Billies**: write the breeding simulation first, against the prototype, before the full build (the owner
-  agreed in 13a's plan); agree its bounds. The roster steps (v35, v38, v39/v40) count today's 117 Billies: update
-  them with the slimmed roster, and move what is data into unit tests.
+  agreed in 13a's plan); agree its bounds. The roster steps (v35, v38, v39/v40) that counted the legacy roster were
+  deleted in TC-1; a roster check for the slimmed roster goes into unit tests.
 - **17 Robots**: the robot battle rules live in `game/js/logic/` with unit tests (`tools/test/robots.test.mjs`); the
   simulation (no build dominates) comes before the full build: `node tools/test/sim/robot-sim.mjs` fights every build
   the data allows against a reference set of robots and Billies and reports win rates per build and part
@@ -347,8 +351,8 @@ same phase:
   were retired with their places (each change is marked RL-5 in tools/check-quick.py). RL-7 brought a run's world
   back into the checks: the `run` fixture (the fixture's team on a run with the seed RL7FIXTURE, landed on day 1; its
   world is made at boot), the fast check's run page (the landing drawing, every place on the bowl, a seam walked a
-  day later; about 50 s), the full check's step "RL-7: a run's roads" (a run swapped in, a seam walked each way with
-  `cross()`, the hub swapped back) and the in-game test's "A run's road". `cross()` walks `run.seamIn` metres further
+  day later; about 50 s), the full check's step "RL-7: a run's roads" (deleted in TC-1: the fast check's run page covers
+  it) and the in-game test's "A run's road". `cross()` walks `run.seamIn` metres further
   in a run, where a crossing counts that far in. RL-8: smoke's phone flow taps Copperleaf's mast and opens the run's
   sheet; the fast check's second run page holds a run battle, reloads (`?fixture=stored`) into the same battle, loses,
   reloads at the payout, keeps one Billie and flies home; the full check's step "RL-8: a run from the mast" plays a run

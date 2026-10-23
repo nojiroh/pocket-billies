@@ -259,7 +259,7 @@ export const UI_LAYERS = /** @type {[string, number, string][]} */ ([
   ['--z-hud', 40, 'Joystick, d-pad, toasts, battle tips'],
   ['--z-float', 45, 'The dressing room, floating kit panels'],
   ['--z-wipe', 50, 'The screen-change wipe'],
-  ['--z-tool', 60, 'Debug tools, fishing and photo modes'],
+  ['--z-tool', 60, 'Debug tools and fishing mode'],
   ['--z-veil', 85, 'The lift’s veil'],
   ['--z-top', 2147483000, 'The no-WebGL notice'],
 ]);

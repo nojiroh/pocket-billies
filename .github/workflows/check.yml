@@ -1,8 +1,10 @@
 # Phase 01: the quick check on GitHub.
 # - Every push and pull request (the Studio's "Save to game" opens one): the data text guard and the fast check
-#   (tools/check-fast.py: only what must never break, one to three minutes). Studio plan T1.4: a pull request that
+#   (tools/check-fast.py: only what must never break; about 11 minutes on 23 Oct 2026, the test cleanup track's TC-4
+#   brings it back to its budget). Studio plan T1.4: a pull request that
 #   touches studio/ or game/js/logic/ also runs the Studio against a stand-in for GitHub (check-studio-github.py).
-# - Nightly, by hand (Actions -> Check -> Run workflow) and on phase-* tags: the full quick check (about 40 minutes).
+# - Nightly, by hand (Actions -> Check -> Run workflow) and on phase-* tags: the full quick check (about 35 minutes on
+#   23 Oct 2026; budget about 10, TC-4).
 # - Phase 02: the Firestore rules tests (firebase/, on the emulator) on every push and pull request, about a minute.
 # Pictures and results.json are uploaded as an artifact on every run. Picture differences are notes, never failures.
 # - Phase 04a: lint (ESLint: undefined names, names defined twice across scripts, recommended bug rules), the Prettier
@@ -210,6 +212,15 @@ jobs:
           (cd validation && zip -qr "$RUNNER_TEMP/quick-baseline.zip" quick-baseline)
           gh release view "baseline-$PB_VERSION_ID" >/dev/null 2>&1 || gh release create "baseline-$PB_VERSION_ID" --target "$GITHUB_SHA" --prerelease --title "Picture baseline $PB_VERSION_ID" --notes "Quick-check pictures from $GITHUB_REF_NAME ($GITHUB_SHA), made on the CI runner. Replaced by the next phase tag or a run with Make the picture baseline."
           gh release upload "baseline-$PB_VERSION_ID" "$RUNNER_TEMP/quick-baseline.zip" --clobber
+      # upload-artifact refuses a file name with " : < > | * ? or a line break (a scene id like w:copperleaf* once
+      # failed the whole upload): those characters become _
+      - name: Picture names the upload accepts
+        if: always()
+        run: |
+          [ -d validation/quick ] || exit 0
+          find validation/quick -depth -name '*[":<>|*?]*' | while IFS= read -r f; do
+            mv -- "$f" "$(dirname -- "$f")/$(basename -- "$f" | tr '":<>|*?' '_______')"
+          done
       - name: Upload pictures and results
         if: always()
         uses: actions/upload-artifact@v4

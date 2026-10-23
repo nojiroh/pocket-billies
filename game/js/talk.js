@@ -21,13 +21,12 @@ expose({
   SPEAKER_NAMES: [() => SPEAKER_NAMES],
   TALK_PORTRAIT_SCALE: [() => TALK_PORTRAIT_SCALE],
   drawTalkPortrait: [() => drawTalkPortrait, v => (drawTalkPortrait = v)],
-  setTalkFolk: [() => setTalkFolk, v => (setTalkFolk = v)],
   talk: [() => talk, v => (talk = v)],
   talkBox: [() => talkBox],
   talkChoose: [() => talkChoose, v => (talkChoose = v)],
   talkChosen: [() => talkChosen, v => (talkChosen = v)],
   talkEl: [() => talkEl, v => (talkEl = v)],
-  talkFolk: [() => talkFolk, v => setTalkFolk(v)],
+  talkFolk: [() => talkFolk, v => ((talkFolk = v), provide({ talkFolk }))],
   talkHide: [() => talkHide, v => (talkHide = v)],
   talkLine: [() => talkLine, v => (talkLine = v)],
   talkName: [() => talkName, v => (talkName = v)],
@@ -223,7 +222,7 @@ export function talkChoose(options) {
   });
 }
 /* a whole conversation: [[who,text,expr],…] or [{who,text,expr}] */
-export async function talk(lines, o = {}) {
+async function talk(lines, o = {}) {
   for (const l of lines) {
     const [who, text, expr] = Array.isArray(l) ? l : [l.who, l.text, l.expr];
     await talkLine(who, text, expr, o);
@@ -295,7 +294,7 @@ const FOLK_TALK = [
   '[happy] Lovely day under the Inner Sun.',
   'Careful in the tall grass. They hide in there.',
 ];
-export async function talkFolk(f) {
+async function talkFolk(f) {
   if (talkBox.on) return;
   const sc = walkView.sc,
     L = typeof mapChatLines === 'function' ? mapChatLines(FOLK_TALK) : sc.chat && sc.chat.length ? sc.chat : FOLK_TALK,
@@ -316,11 +315,6 @@ export async function talkFolk(f) {
     [who, b === a ? FOLK_TALK[0] : b],
   ]);
   f.wait = 2;
-}
-/* phase 04d: things-to-do.js answers the person who asked a favour */
-export function setTalkFolk(v) {
-  talkFolk = v; // eslint-disable-line no-func-assign
-  provide({ talkFolk });
 }
 /* Professor Chosen in his lab: his script (story.json scripts.chosen): your Index, your badges, where Blake went */
 export async function talkChosen() {

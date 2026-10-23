@@ -48,7 +48,7 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 | The ranch's training | `logic/ranch.js` (`ranchTrainStart`, `ranchCollect`, `ranchStop`, `ranchCap`, `ranchSlots`), its sheet `ranchOpen` (ranch-screen.js), the act and room `ranch` → `int_barn`, rules `rules.ranch` | RL-9. "Ranch", "Training board", "Scrap" |
 | Breeding at the ranch | `logic/breeding.js` (`breedCan`, `breedRoll`, `breedStart`, `breedHatch`, `breedNests`), the nursery `ranch.nursery` (each with its `egg`), `ranch.bred`, a bred Billie's mark `m.mut` (`quirk`, `abom`), rules `rules.ranch.breed`, the hatch window `hatchModal` | RL-10a. "Nursery", "Breed a pair", "Safe", "Risky", "Quirk", "Abomination" |
 | A run's start at the mast | the Billies from home `run.home` (`runHome`), the packed bag `run.pack`, rules `run.home` and `run.pack` by Bracket (`runByTier`), the sheet's `runPickNow` | RL-9b. "Who comes from home", "Pack the bag" |
-| The old world outside the hub | `legacy` (folder `game/data/legacy`, its own `legacy/index.json`; `readLegacyData()`, `oldWorld()` in tests; the Studio's `legacyView`) | RL-5: kept for the Studio, never loaded by the game |
+| The old world outside the hub | `legacy` (folder `game/data/legacy`, its own `legacy/index.json`; `readLegacyData()`; the Studio's `legacyView`) | RL-5: kept for the Studio, never loaded by the game |
 | A leader who stands on no stop | `miniboss` (a trainer's `miniboss: true`, no `node`) | RL-5: the eight badge leaders; RL-13 makes them the runs' mini-boss pool. A `tutorial` trainer stands nowhere too |
 | A run's node map | `run.map` (`{nodes}`), made by logic/run-map.js `runMapMake` (`runMap*`, `run*`); a node's `type` (data section `nodeTypes`), `row`, `lane`, `to`, `seen`, `biome`; its rows' plan `runMapRows` (`first`, `rest`, `guard`, `last`, as rules.json `run.map` names them) | RL-6. Map node i is world node i + 1 (`runWorldNode`, `runMapNode`): `run.path`, `to` and `runNodeSeed` count map nodes, `trip.node` and `run.forecast` the world's. Not `route` (a kind of place) or `road` (a seam between two) |
 | The run's day and deadline | `run.clock` (the day), `run.deadline`, `runOverdue` (days past it) | RL-6: a day per arrival, backtracking included |
@@ -124,9 +124,9 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 ## Enforced by lint (`npm run lint`)
 
 - ESLint's `camelcase` (eslint.config.js; properties may be anything: they are data keys).
-- tools/check-names.mjs: no top-level name of one or two characters (`$`, `$$` allowed); no top-level name phase 05
-  retired (tools/retired-names.json) and none with a retired prefix; kebab-case file names under game/js, game/css,
-  game/*.js, game/*.html and studio.
+- tools/check-names.mjs: no top-level name of one or two characters (`$`, `$$` allowed); kebab-case file names under
+  game/js, game/css, game/*.js, game/*.html and studio. (Its guard against phase 05's retired names went in the test
+  cleanup track: the rename is long finished.)
 
 ## Renaming tools
 
@@ -137,6 +137,5 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
   word, where the selectors point), with a JSON-level proof.
 - `python3 tools/rename-strings.py`: the code names inside the Python tools' strings and comments (rename.mjs calls
   it).
-- `node tools/rename-ids.mjs map|apply|verify`: the location ids (the art named by an id moves with it).
 - One rename rule per commit (one name, one prefix family, one file, one data key or section), never mixed with a
   behaviour change.

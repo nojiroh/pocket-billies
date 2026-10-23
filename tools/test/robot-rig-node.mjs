@@ -1,6 +1,6 @@
 // Studio track ST-5: loads game/js/robot-art.js in plain Node with the few browser names it touches, pictures that are
-// only their sizes (no pixels), and a stand-in canvas whose drawing does nothing. Used by robot-joints.test.mjs to
-// compare every robot's rig with how robotRig placed it before sockets could be stored (robot-rig-before.json).
+// only their sizes (no pixels), and a stand-in canvas whose drawing does nothing. Used by the robot and rig tests to
+// build and compare robots' rigs.
 import { createHash } from 'node:crypto';
 
 globalThis.window ??= globalThis;

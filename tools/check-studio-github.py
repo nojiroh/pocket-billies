@@ -65,7 +65,7 @@ class Quiet(SimpleHTTPRequestHandler):
 def play_from_here(pg, errs):
     """Project Story S3: Play from here opens the game in Copperleaf on the picked spot, at the preview's preset with a
     trainer switched to beaten, and with the Studio's unsaved script; nothing is saved there."""
-    pg.evaluate("studioState.D.trainers.crude.script.splice(1, 0, '  set s3_draft'); mapEditor.story.flags = {'beat:chad': true}; mapEditor.story.v++")
+    pg.evaluate("studioState.D.trainers.crude.script.splice(1, 0, '  set s3_draft'); mapEditor.story.flags = {'beat:crude': true}; mapEditor.story.v++")
     pg.locator('#scStory [data-act="scPlaySpot"]').click()
     pg.locator('#scMap').scroll_into_view_if_needed()
     box = pg.locator('#scMap').bounding_box()
@@ -81,11 +81,15 @@ def play_from_here(pg, errs):
             if gp.evaluate("typeof saveData!=='undefined' && typeof uiState!=='undefined' && uiState.tab==='walk' && !!saveData.started"): break
         except Exception: pass
         time.sleep(0.5)
+    # the game waits 2 s at most for the Studio's draft, then starts and takes it live when it comes (game/js/boot.js
+    # studioDraftReady); with software drawing the busy Studio page can answer later than that
+    t0 = time.time()
+    while time.time() - t0 < 15 and not gp.evaluate("gameData.trainers.crude.script.includes('  set s3_draft')"): time.sleep(0.5)
     got = gp.evaluate("""[LOCATIONS[saveData.trip.node].id, uiState.roam && [uiState.roam.x, uiState.roam.z], saveData.story.rival0,
-        saveData.flags.chad, gameData.trainers.crude.script.includes('  set s3_draft'), Object.keys(localStorage).filter(k => k.startsWith('networth-save'))]""")
+        saveData.flags.crude, gameData.trainers.crude.script.includes('  set s3_draft'), Object.keys(localStorage).filter(k => k.startsWith('networth-save'))]""")
     want = ['copperleaf', spot, 'win', 1, True, []]
     if got != want: errs.append(f'story: Play from here gave {got}, wanted {want}')
-    else: print(f'Play from here: Copperleaf at {spot}, after-opening, chad beaten, the draft script, no save', flush=True)
+    else: print(f'Play from here: Copperleaf at {spot}, after-opening, crude beaten, the draft script, no save', flush=True)
     gp.close()
     pg.evaluate("studioState.D.trainers.crude.script.splice(1, 1); mapEditor.story.flags = {}; mapEditor.playAt = null; mapEditor.story.v++")
 
@@ -182,16 +186,17 @@ def story_steps(pg, errs):
     pg.evaluate("studioState.sel.scene='copperleaf'; void openSection('scenes')")
     time.sleep(1)
     if not pg.locator('textarea[data-script="person:juniper"]').count(): errs.append('story: no script field for Juniper in Copperleaf')
-    # the story preview: Juniper only while met_blake0 holds; on at a new game she is hidden, the preset brings her back
-    pg.evaluate("studioState.D.maps.copperleaf.people[0].when = 'met_blake0'; render()")
+    # the story preview: Juniper only while a flag of this check's own holds (no story sets it); on at a new game she
+    # is hidden, the flag's chip brings her back, and picking a preset starts from its own flags again (hidden)
+    pg.evaluate("studioState.D.maps.copperleaf.people[0].when = 'check_flag'; render()")
     time.sleep(1)
     pg.locator('#scStoryOn').check()
     time.sleep(0.4)
     a = pg.locator('#scStory').inner_text()
-    pg.select_option('#scStoryPreset', 'after-opening')
+    pg.locator('#scStory [data-act="scStoryFlag"][data-f="check_flag"]').click()
     time.sleep(0.4)
     b = pg.locator('#scStory').inner_text()
-    pg.locator('#scStory [data-act="scStoryFlag"][data-f="met_blake0"]').click()
+    pg.select_option('#scStoryPreset', 'after-opening')
     time.sleep(0.4)
     c = pg.locator('#scStory').inner_text()
     if '1 hidden' not in a or 'Everyone is here' not in b or '1 hidden' not in c:
@@ -223,18 +228,19 @@ def split_steps(pg, errs):
         for (const i of new Set([...document.querySelectorAll('#main [id]')].map(e => e.id))) (by[i] = by[i] || []).push(k); }
       openSection(keep); return Object.entries(by).filter(([i, ks]) => ks.length > 1).map(([i, ks]) => i + ' in ' + ks.join(', ')); })()""")
     if shared: errs.append('split: sections share ids: ' + '; '.join(shared[:5]))
-    # the Check: none of the music's warnings on the game's data (once the parked world is read, variants is played by a
-    # parked place); a rule naming no song is an error and a song nothing plays a warning, and Show me opens them;
-    # the cries are one note
+    # the Check: no music error or warning on the game's data (notes, like the placeholders, are fine); a rule of the
+    # check's own naming no song (put first, then taken out) is an error and a song nothing plays a warning, and Show
+    # me opens them. The wait stays: the Studio's music Check holds its warnings until the parked world is read (a song
+    # only a parked place plays, like variants, isn't unused)
     pg.wait_for_function("legacyView.data !== null", timeout=30000)
     got = pg.evaluate("runCheck().filter(c => c.msg.startsWith('Music:') || c.msg.startsWith('Cries:')).map(c => [c.lvl, c.msg.slice(0, 40)])")
-    if len(got) != 1 or got[0][0] != 'info': errs.append(f'music: the Check on the game data says {got}')
-    pg.evaluate("studioState.D.music.where[2].song = 'nosuch'; studioState.D.music.songs.lonely = {...studioState.D.music.songs.town}")
-    found = pg.evaluate("runCheck().filter(c => c.go === 'music').map(c => [c.lvl, c.sel])")
-    if found != [['error', {'musicTab': 'where', 'musicRule': 2}], ['warn', {'musicTab': 'songs', 'musicSong': 'lonely'}]]: errs.append(f'music: the Check found {found}')
-    pg.evaluate("void openSection('music', {musicTab: 'where', musicRule: 2})")
-    if not pg.evaluate("!!document.querySelector('#musRule2.mus-hit')"): errs.append('music: Show me did not mark the rule')
-    pg.evaluate("studioState.D.music.where[2].song = 'trainer'; delete studioState.D.music.songs.lonely; void render()")
+    if any(lvl != 'info' for lvl, _ in got): errs.append(f'music: the Check on the game data says {got}')
+    pg.evaluate("studioState.D.music.where.unshift({battle: 'wild', song: 'nosuch'}); studioState.D.music.songs.lonely = {...studioState.D.music.songs.town}")
+    found = pg.evaluate("runCheck().filter(c => c.go === 'music' && c.lvl !== 'info').map(c => [c.lvl, c.sel])")
+    if found != [['error', {'musicTab': 'where', 'musicRule': 0}], ['warn', {'musicTab': 'songs', 'musicSong': 'lonely'}]]: errs.append(f'music: the Check found {found}')
+    pg.evaluate("void openSection('music', {musicTab: 'where', musicRule: 0})")
+    if not pg.evaluate("!!document.querySelector('#musRule0.mus-hit')"): errs.append('music: Show me did not mark the rule')
+    pg.evaluate("studioState.D.music.where.shift(); delete studioState.D.music.songs.lonely; void render()")
     pg.evaluate("void openSection('billionaires')"); time.sleep(0.3)
     pg.locator('.nav[data-s=moves]').click(modifiers=['Shift']); time.sleep(0.8)
     if pg.evaluate("[studioState.sec, studioState.sec2, document.querySelector('#main2').hidden]") != ['billionaires', 'moves', False]:
@@ -578,31 +584,30 @@ def robot_joint_steps(pg, errs):
 
 def generate_steps(pg, errs):
     """map generator MG-1: Walk scenes → Generate… draws a draft route in the game's renderer, the dials change it (a
-    biome, terraces, a new seed for the plants only) without touching the data or the undo history, and Add as a new
-    scene is one undo step (left in, so the proposal at the end carries a generated scene). MG-2: an exit joined to
-    Tallgrass Meadow's meets it, the pair is drawn side by side, the clinic dial puts a clinic at the hub. RL-5: Tallgrass
-    Meadow is parked (game/data/legacy), so it is brought back first with the Legacy section's Copy into game (one undo
-    step, before the counts below; the proposal carries it too)"""
+    biome, terraces, a new seed for the plants only, the clinic dial puts a clinic at the hub) without touching the data
+    or the undo history, and Add as a new scene is one undo step. MG-2: a second draft's exit joined to the first new
+    scene's meets it, the pair is drawn side by side, and it is added too (both left in, so the proposal at the end
+    carries generated scenes). The game's own scenes have no edge exit to join (Copperleaf is an island), so the
+    check joins to the scene it made; no legacy map is brought in."""
     n = len(errs)
-    pg.evaluate("void openSection('legacy')")
-    pg.wait_for_selector('[data-act=legacyCopy][data-id=tallgrass_meadow]', timeout=30000)
-    pg.click('[data-act=legacyCopy][data-id=tallgrass_meadow]')
-    pg.wait_for_selector('#lgName', timeout=15000)
-    pg.click('.dlg [data-dlg="1"]')
-    t0 = time.time()
-    while time.time() - t0 < 15 and not pg.evaluate("!!studioState.D.maps.tallgrass_meadow"):
-        time.sleep(0.3)
-    if not pg.evaluate("!!studioState.D.maps.tallgrass_meadow"):
-        errs.append('generate: Tallgrass Meadow could not be copied in from the Legacy section')
-        return
-    pg.evaluate("studioState.sel.scene='tallgrass_meadow';mapGen.on=false;void openSection('scenes')")
-    pg.wait_for_selector('[data-act=genOpen]', timeout=20000)
+
+    def draft():
+        pg.evaluate("mapGen.on=false;void openSection('scenes')")
+        pg.wait_for_selector('[data-act=genOpen]', timeout=20000)
+        pg.click('[data-act=genOpen]')
+        t0 = time.time()
+        while time.time() - t0 < 60 and not pg.evaluate("!!mapGen.draft&&walkView.id==='_gen'&&walkView.ready"):
+            time.sleep(0.3)
+        return pg.evaluate("!!mapGen.draft&&walkView.id==='_gen'")
+
+    def accept(name):
+        pg.click('[data-act=genAccept]')
+        pg.fill('#genName', name)
+        pg.click('#dlg [data-dlg="1"]'); time.sleep(0.5)
+
+    pg.evaluate("studioState.sel.scene='copperleaf'")
     maps0, undo0 = pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]")
-    pg.click('[data-act=genOpen]')
-    t0 = time.time()
-    while time.time() - t0 < 60 and not pg.evaluate("!!mapGen.draft&&walkView.id==='_gen'&&walkView.ready"):
-        time.sleep(0.3)
-    if not pg.evaluate("!!mapGen.draft&&walkView.id==='_gen'"):
+    if not draft():
         errs.append('generate: the draft never drew')
         return
     pg.select_option('select[data-gen=biome]', 'canyon')
@@ -612,36 +617,46 @@ def generate_steps(pg, errs):
     ground = pg.evaluate("JSON.stringify([mapGen.draft.tiles,mapGen.draft.edgeExits])")
     pg.click('[data-act=genReroll][data-st=plants]'); time.sleep(0.6)
     if pg.evaluate("JSON.stringify([mapGen.draft.tiles,mapGen.draft.edgeExits])") != ground: errs.append('generate: a new seed for the plants changed the ground or the road')
-    if pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]") != [maps0, undo0]: errs.append('generate: the draft reached the data or the undo history')
     if pg.evaluate("mapgenUnreachable(mapGen.draft, studioState.D.scenery).length"): errs.append('generate: the hub of the draft does not reach every exit')
-    # MG-2: the west exit joins Tallgrass Meadow's east exit (south2): it faces it a whole number of metres along, and
-    # the draft meets that edge (heights, step, a straight walk across); the pair side by side; the hub's buildings
-    pg.select_option('select[data-gen-join="0"]', 'tallgrass_meadow|south2')
+    if not pg.evaluate("!!document.querySelector('input[data-gen=\"props.clinic\"]')"): pg.click('[data-act=genOpenG][data-g=props]'); time.sleep(0.3)
+    pg.evaluate("(()=>{const c=document.querySelector('input[data-gen=\"props.clinic\"]');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}))})()")
+    t0 = time.time()
+    while time.time() - t0 < 30 and not pg.evaluate("mapGen.draft.props.some(p=>p.k==='clinic'&&p.act==='clinic')"): time.sleep(0.3)
+    if not pg.evaluate("mapGen.draft.props.some(p=>p.k==='clinic'&&p.act==='clinic')"): errs.append('generate: the clinic dial put no clinic at the hub')
+    if pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]") != [maps0, undo0]: errs.append('generate: the draft reached the data or the undo history')
+    accept('Check Trail')
+    if not pg.evaluate("!!studioState.D.maps.checktrail&&studioState.D.maps.checktrail.gen.params.biome==='canyon'&&studioState.D.maps.checktrail.props.every(p=>p.g===1)&&studioState.D.maps.checktrail.edgeExits.length>0"):
+        errs.append('generate: Add as a new scene made no scene with its dials and exits')
+        return
+    if pg.evaluate("studioState.undo.length") != undo0 + 1: errs.append('generate: adding the scene is not one undo step')
+    # MG-2: a second draft's first exit joins Check Trail's first exit: it faces it a whole number of metres along, and
+    # the draft meets that edge (heights, step, a straight walk across); the pair side by side
+    ex = pg.evaluate("studioState.D.maps.checktrail.edgeExits[0].id")
+    pg.evaluate("studioState.sel.scene='checktrail'")
+    if not draft():
+        errs.append('generate: the second draft never drew')
+        return
+    pg.select_option('select[data-gen-join="0"]', f'checktrail|{ex}')
     t0 = time.time()
     while time.time() - t0 < 60 and not pg.evaluate("mapGen.agree.length>0&&!!mapGen.agree[0].a&&walkView.ready"): time.sleep(0.3)
     a = pg.evaluate("mapGen.agree.length?mapGen.agree[0].a:null")
-    if not a or a['dhBand'] > 0.05 or abs(a['raiseExit']) > 0.05 or a['walk']: errs.append(f'generate: the joined exit does not meet Tallgrass Meadow: {a}')
-    rules = pg.evaluate("(()=>{const T=studioState.D.maps.tallgrass_meadow,d=mapGen.draft,g=mapGen.agree[0];return seamRulesPair(T,T.edgeExits.find(e=>e.id==='south2'),d,d.edgeExits.find(e=>e.id===g.id))})()")
+    if not a or a['dhBand'] > 0.05 or abs(a['raiseExit']) > 0.05 or a['walk']: errs.append(f'generate: the joined exit does not meet Check Trail: {a}')
+    rules = pg.evaluate(f"(()=>{{const T=studioState.D.maps.checktrail,d=mapGen.draft,g=mapGen.agree[0];return seamRulesPair(T,T.edgeExits.find(e=>e.id==={json.dumps(ex)}),d,d.edgeExits.find(e=>e.id===g.id))}})()")
     if rules: errs.append(f'generate: the joined pair breaks the seam rules: {rules}')
     pg.click('[data-act=genPair]')
     t0 = time.time()
     while time.time() - t0 < 60 and not pg.evaluate("!!mapGen.shown&&walkView.sc===mapGen.shown&&walkView.ready"): time.sleep(0.3)
     if not pg.evaluate("!!mapGen.shown&&walkView.sc===mapGen.shown"): errs.append('generate: Preview the pair drew nothing')
     pg.click('[data-act=genPair]'); time.sleep(0.5)
-    if not pg.evaluate("!!document.querySelector('input[data-gen=\"props.clinic\"]')"): pg.click('[data-act=genOpenG][data-g=props]'); time.sleep(0.3)
-    pg.evaluate("(()=>{const c=document.querySelector('input[data-gen=\"props.clinic\"]');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}))})()")
-    t0 = time.time()
-    while time.time() - t0 < 30 and not pg.evaluate("mapGen.draft.props.some(p=>p.k==='clinic'&&p.act==='clinic')"): time.sleep(0.3)
-    if not pg.evaluate("mapGen.draft.props.some(p=>p.k==='clinic'&&p.act==='clinic')"): errs.append('generate: the clinic dial put no clinic at the hub')
-    if pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]") != [maps0, undo0]: errs.append('generate: joining reached the data or the undo history')
-    pg.click('[data-act=genAccept]')
-    pg.fill('#genName', 'Check Trail')
-    pg.click('#dlg [data-dlg="1"]'); time.sleep(0.5)
-    if not pg.evaluate("!!studioState.D.maps.checktrail&&studioState.D.maps.checktrail.gen.params.biome==='canyon'&&studioState.D.maps.checktrail.props.every(p=>p.g===1)&&studioState.D.maps.checktrail.gen.params.edges[0].from.map==='tallgrass_meadow'"):
-        errs.append('generate: Add as a new scene made no scene with its dials')
-    elif pg.evaluate("studioState.undo.length") != undo0 + 1: errs.append('generate: adding the scene is not one undo step')
+    if pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]") != [maps0 + 1, undo0 + 1]: errs.append('generate: joining reached the data or the undo history')
+    accept('Check Spur')
+    if not pg.evaluate("!!studioState.D.maps.checkspur&&studioState.D.maps.checkspur.gen.params.edges[0].from.map==='checktrail'"):
+        errs.append('generate: the joined draft was not added with its join')
+    elif pg.evaluate("studioState.undo.length") != undo0 + 2: errs.append('generate: adding the joined scene is not one undo step')
     if len(errs) > n: errs[n:] = [f'generate: {e}' for e in errs[n:]]
-    else: print('generate: a canyon route drafted and drawn, dials and a plants reroll, joined to Tallgrass Meadow (meets it, the pair drawn), a clinic at the hub, added as a scene in one undo step', flush=True)
+    else: print('generate: a canyon route drafted and drawn, dials, a plants reroll and a clinic at the hub, added as a scene in one undo step; a second draft joined to it (meets it, the pair drawn), added too', flush=True)
+
+
 def species_part_steps(pg, errs):
     """Studio track ST-6: the skeleton builder zooms by whole steps with the pixel canvas's keys; the Billies section
     opens the species in Part mode; the head's pivot dragged and nudged keeps the figure drawn where it was (the rig

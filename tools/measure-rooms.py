@@ -21,7 +21,6 @@ SAMPLES = [
     ('marigold', 'market_hall', 'shop'),
     ('marigold', 'sign_shop', 'shop'),
     ('marigold', 'house_red', 'house'),
-    ('copperleaf', 'cottage_juniper', 'home'),
     ('verdigris', 'mansion', 'house'),
     ('verdigris', 'townhouse_red', 'house'),
 ]

@@ -1,5 +1,5 @@
 // Phase 04e: the save's format, for the type check (npm run typecheck). Types only: nothing here runs.
-// The save is what game-state.js newSave() makes and migrate() fills out and checks, kept as JSON in this browser
+// The save is what game-state.js newSave() makes and saveFill() fills out and checks, kept as JSON in this browser
 // (localStorage) and, when signed in, on the account (account.js stores it as one string). A backup file is
 // { game: 'Pocket Billies', format: 1, save } (settings-screen.js exportSave; validSave checks an import).
 // Save format 2 (SAVE_VERSION, phase 05): the player's travel along the roads is `trip` (was `route`); format 4

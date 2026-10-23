@@ -5,7 +5,7 @@
    any check, CI job or hook: in a headless browser the bowl is drawn in software and the frame numbers mean nothing.
    1. the bowl's shaders compile and link,
    2. the Map tab opens as the bowl and keeps drawing,
-   3. every place has a spot on the bowl (Pearlantis under Kelpport) and the whole-bowl view shows them,
+   3. every place has a spot on the bowl and the whole-bowl view shows them,
    4. tapping each place's pin opens that place's card,
    5. dragging, pinching, turning and tilting never take the camera below the rim line or out of the bowl,
    6. Home brings the camera back over where you are,
@@ -216,15 +216,16 @@ async function runBowlMapTest() {
         }
       const wet = LOCATIONS.filter((l, i) => {
         const s = worldBowl.spots[i];
-        return s && !s.under && bowlCoastAt(G, s.x, s.y) > 0;
+        return s && !s.off && bowlCoastAt(G, s.x, s.y) > 0;
       });
       const share = Math.round((sea / all) * 100);
       if (wet.length) return { ok: false, note: `under water: ${wet.map(l => l.id).join(', ')}` };
       if (!g.water) return { ok: false, note: "the water isn't drawn" };
-      /* RL-8b: an island world (the hub's island, a run's own land) is mostly sea */
-      if (g.isle ? share < 70 : share < 35 || share > 45)
-        return { ok: false, note: `the sea is ${share}% of the bowl${g.isle ? ' (an island world)' : ''}` };
-      return `${share}% of the bowl is sea${g.isle ? ' (an island world)' : ''}, every place on land; worked out in ${g.seaMs} ms; the water is ${g.water.n / 3} triangles`;
+      /* RL-8b: an island world (the hub's island, a run's own land) is mostly sea. Test cleanup lane C: every world is
+         one now (the old continent and its places under another went to game/data/legacy) */
+      if (!g.isle) return { ok: false, note: `not an island world (the sea is ${share}% of the bowl)` };
+      if (share < 70) return { ok: false, note: `the sea is ${share}% of the bowl (an island world)` };
+      return `${share}% of the bowl is sea (an island world), every place on land; worked out in ${g.seaMs} ms; the water is ${g.water.n / 3} triangles`;
     });
     await step('Light, shadows, routes and rivers', async () => {
       const g = worldBowl.ground,
@@ -234,7 +235,7 @@ async function runBowlMapTest() {
       if (!g.lines) return { ok: false, note: "the routes' line map is missing" };
       const n = (g.G.rivers || []).length;
       /* IS-7: the hub's island drawn from its map has its own streams, none made on it */
-      if (n < (g.islandMap ? 0 : g.isle ? 1 : 4)) return { ok: false, note: `only ${n} rivers` };
+      if (n < (g.islandMap ? 0 : 1)) return { ok: false, note: `only ${n} rivers` };
       return `shadow map drawn in ${g.shadow.ms} ms; route and river lines made in ${g.lines.ms} ms; ${n} rivers`;
     });
     await step('Clouds and weather', async () => {
@@ -350,9 +351,8 @@ async function runBowlMapTest() {
         seen = S.filter(s => {
           const q = bowlCamProject(v, bowlToGpu(s.x, s.y, s.h));
           return q && q.x >= 0 && q.x <= W() && q.y >= 0 && q.y <= H();
-        }).length,
-        under = S.filter(s => s.under).length;
-      return `${S.length} places (${under} under another); ${seen} on screen in the whole-bowl view`;
+        }).length;
+      return `${S.length} places; ${seen} on screen in the whole-bowl view`;
     });
     await step('Tapping each place opens its card', async () => {
       const r = worldMap.cv.getBoundingClientRect(),

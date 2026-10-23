@@ -3,9 +3,8 @@
 3D scenes in software and slowly). It is the check Claude runs while building a version; it takes a few minutes.
 
     python3 tools/check-quick.py                 # data, code, shaders, every scene once, the main flows
-    python3 tools/check-quick.py --smoke         # the fast subset: data and code, Start-Game on a phone + debug log, Studio opens
+    python3 tools/check-quick.py --smoke         # the fast subset: the data, Start-Game on a phone + debug log, the in-game test's first step
     python3 tools/check-quick.py --selftest      # the game's own full test and diagnostics test, whole (about 25 minutes)
-    python3 tools/check-quick.py --scenes=copperleaf   # only these walk scenes (by id), for a change to one place
     python3 tools/check-quick.py --steps=v34,battle   # only the steps whose names hold these words
     python3 tools/check-quick.py --tests         # also draw every test scene and take its pictures (the walking checks
                                                  # of the test scenes always run; they need no drawing)
@@ -21,7 +20,7 @@ Pictures go to validation/quick/ as WebP; the summary to validation/quick/result
 validation/quick-baseline/ (make one with --baseline), each picture is compared with it. Nothing in game/ or studio/
 is changed."""
 # RL-5: --closeups and --seams=all went with their steps (every close-up spot and every seam was in a parked place);
-# the --scenes example names the hub, the one place left
+# TC-1: --scenes went with the Scenes and Paths steps, the only ones that read it
 import io, json, math, os, re, shutil, socket, subprocess, sys, tempfile, threading, time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -46,12 +45,12 @@ NO_ACCOUNTS = "Object.defineProperty(window,'PB_FIREBASE',{get(){return null},se
 TEST_GLOBALS = "window.PB_TEST_GLOBALS=true"
 LOW_RENDER = "gameData.engine=gameData.engine||{};gameData.engine.defaults=Object.assign({},gameData.engine.defaults||{},{quality:{resolution:.34,shadowMap:1024,auto:false}});0"
 ARGS = sys.argv[1:]
-# phase 01: --smoke is the fast subset run after every change and on every push (about two minutes): the data and code
-# checks, Start-Game on a phone (with the debug log export) and the Studio opening. The full check runs nightly and per phase
+# phase 01: --smoke is a fast subset (the data checks, Start-Game on a phone with the debug log export, one step of the
+# in-game test, the actions sheet); every push runs tools/check-fast.py, which also opens the Studio. The full check
+# runs nightly and per phase
 SMOKE = '--smoke' in ARGS
 # where a point of the walk scene is on screen (the same projection the renderer uses)
 PROJ = "(([x,z])=>{const C=walkView.C,r=walkView.cv.getBoundingClientRect(),y=standingHeightAt(x,z)+(typeof worldCurveDrop==='function'?worldCurveDrop(x,z):0);if(C.vp){const m=C.vp,cx=m[0]*x+m[4]*y+m[8]*z+m[12],cy=m[1]*x+m[5]*y+m[9]*z+m[13],w=m[3]*x+m[7]*y+m[11]*z+m[15];return [r.left+(cx/w*.5+.5)*r.width,r.top+(1-(cy/w*.5+.5))*r.height]}const q=worldToScreen(C,x,y,z);return [r.left+q.x/walkView.cv.width*r.width,r.top+q.y/walkView.cv.height*r.height]})(%s)"
-ONLY = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--scenes=')), None)
 STEPS = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--steps=')), None)
 problems, notes, steps = [], [], []
 
@@ -166,31 +165,11 @@ def check_version():
     return f'{v}: README.md, CHANGELOG.md, the game, the Studio and the service worker agree'
 
 
-@step('Code: every script parses', 20)
-def check_code():
-    node = shutil.which('node')
-    if not node: return 'node not installed, skipped'
-    files = sorted(list((GAME / 'js').rglob('*.js')) + list((ROOT / 'studio' / 'js').glob('*.js')))
-    bad = []
-    for f in files:
-        r = subprocess.run([node, '--check', str(f)], capture_output=True, text=True)
-        if r.returncode: bad.append(f'{f.relative_to(ROOT)}: {r.stderr.strip().splitlines()[-1] if r.stderr.strip() else "error"}')
-    # v47: a function declared in two of the page's scripts: the later one silently replaces the other everywhere
-    # (walk-view.js's placeKind(act, prop), now openKind, for shop hours hid game-data.js's placeKind(id), now locationKind)
-    where = {}
-    for src in re.findall(r'<script (?:type="module" )?src="(js/[^"]+)"', (GAME / 'index.html').read_text(encoding='utf-8')):
-        f = GAME / src
-        if not f.exists(): continue
-        for m in re.finditer(r'^(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(', f.read_text(encoding='utf-8'), re.M):
-            where.setdefault(m.group(1), set()).add(src)
-    twice = {k: sorted(v) for k, v in where.items() if len(v) > 1}
-    bad += [f'{k}() is declared in {" and ".join(v)}' for k, v in twice.items()]
-    if bad: raise Exception('; '.join(bad[:5]))
-    return f'{len(files)} scripts, no function declared in two of them'
-
-
 @step('Data: game data, pictures and scenes', 20)
 def check_data():
+    """TC-1: only what check-data.mjs does not refuse: the scenery's pictures exist, and every place and scene says
+    what it is (check-data only prints these as warnings; the rules were tools/migrate-places.py's). Unknown ground
+    kinds and props and a stop's missing scene are check-data's errors, so they are not repeated here."""
     D = gamedata(); SY = D.get('scenery', {}); missing = set(); warn = []
     art = GAME / 'art'
     def need(p):
@@ -201,64 +180,38 @@ def check_data():
         need(P.get('img')); [need(l.get('img')) for l in P.get('layers', []) if isinstance(l, dict)]
     need(SY.get('wallArt', 'scene/build/walls.png'))
     for k in ('detail', 'rooms'): need((SY.get('buildArt') or {}).get(k))
+    if missing: warn.append('missing pictures: ' + ', '.join(sorted(missing)[:8]))
     import base64
     for k, s in D.get('maps', {}).items():
         if len(s.get('tiles', [])) != s['h']: warn.append(f'{k}: {len(s.get("tiles", []))} rows for height {s["h"]}')
         if s.get('steps') and len(base64.b64decode(s['steps'])) != s['w'] * 2 * s['h'] * 2 * 2: warn.append(f'{k}: step grid is the wrong size')
-        for p in s.get('props', []):
-            if p['k'] not in SY.get('props', {}): warn.append(f'{k}: unknown prop {p["k"]}')
-        # alpha 0.2: every square of the map names a ground kind (keys may now be accented letters, tools/groundkeys.py)
-        bad = {ch for row in s.get('tiles', []) for ch in row} - set(SY.get('terrains', {}))
-        if bad: warn.append(f'{k}: squares with no ground kind: {"".join(sorted(bad))[:12]}')
-    for r in D['locations']:
-        if r.get('mapId') and r['mapId'] not in D.get('maps', {}): warn.append(f'{r["name"]}: missing scene {r["mapId"]}')
-    if missing: warn.append('missing pictures: ' + ', '.join(sorted(missing)[:8]))
-    # v46: every place, scene and road says what it is (tools/migrate-places.py)
-    import importlib.util as ilu
-    sp = ilu.spec_from_file_location('mplaces', ROOT / 'tools' / 'migrate-places.py'); MP = ilu.module_from_spec(sp); sp.loader.exec_module(MP)
-    warn += MP.problems(D)
+    # v46: every place, scene and road says what it is
+    places = D['locations']
+    for n, p in enumerate(places):
+        if p.get('kind') not in ('town', 'route'): warn.append(f'place {n} ({p.get("name")}): no kind')
+        if p.get('id') != p.get('mapId'): warn.append(f'place {n} ({p.get("name")}): id {p.get("id")} is not its scene {p.get("mapId")}')
+        if p.get('kind') == 'town' and not p.get('town'): warn.append(f'{p.get("name")}: kind town but not marked town')
+        if p.get('kind') == 'route' and p.get('town'): warn.append(f'{p.get("name")}: kind route but marked town')
+    for sid, sc in D['maps'].items():
+        k = sc.get('kind')
+        if k not in ('town', 'route', 'room', 'test'): warn.append(f'scene {sid}: no kind'); continue
+        pl = next((p for p in places if p.get('mapId') == sid), None) if k in ('town', 'route') else None
+        if pl and pl.get('kind') != k: warn.append(f'scene {sid}: kind {k} but its place is a {pl.get("kind")}')
+        if k == 'room' and not sc.get('building'): warn.append(f'scene {sid}: a room without a building')
+    for i, L in enumerate(D['roads']):
+        r = GAMEDATA.road(D, L)
+        if not r['id'] or not all(isinstance(r[e], int) and 0 <= r[e] < len(places) for e in 'ab'): warn.append(f'road {i}: not named or its places unknown')
     if warn: raise Exception('; '.join(warn[:8]))
     kinds = {}
     for s in D.get('maps', {}).values(): kinds[s.get('kind')] = kinds.get(s.get('kind'), 0) + 1
     return f'{len(D.get("maps", {}))} scenes ({", ".join(f"{v} {k}s" for k, v in kinds.items())}), {len(SY.get("props", {}))} props, {len(D["roads"])} named roads'
 
 
-@step('alpha 0.4: no old place name left (the game data and what the game says)', 20)
-def old_names():
-    """the places were renamed in alpha 0.4 (tools/rename-places.py): no old name may be left where a player reads it,
-    in the game data (the Studio's old copies of places aside) or in the game's own texts (comments aside)"""
-    import importlib.util as ilu, re as _re
-    sp = ilu.spec_from_file_location('rnp', ROOT / 'tools' / 'rename-places.py'); RN = ilu.module_from_spec(sp); sp.loader.exec_module(RN)
-    rx = [_re.compile(r"\b" + (r"[Tt]he " if pid in RN.NEEDS_THE else "") + _re.escape(o) + r"\b") for pid, L in RN.OLD.items() for o in L]
-    keep = [_re.compile(k) for k in RN.KEEP]
-    def hits(t):
-        for k in keep: t = k.sub('', t)
-        return [m.group(0) for r in rx for m in r.finditer(t)]
-    D = gamedata(); bad = []
-    def walk(v, path):
-        if isinstance(v, dict):
-            for k, x in v.items():
-                if k in ('id', 'img', 'tile', 'scene', 'k', 'src', 'path') or (path[:1] == ['maps'] and len(path) == 1 and '@' in k): continue
-                walk(x, path + [k])
-        elif isinstance(v, list):
-            for i, x in enumerate(v): walk(x, path + [i])
-        elif isinstance(v, str):
-            for h in hits(v): bad.append(f"{'/'.join(map(str, path))}: {h}")
-    walk(D, [])
-    # phase 05: the engine's files and the Studio's too (the Studio's Engine section shows the engine's setting texts)
-    for f in sorted([*(GAME / 'js').rglob('*.js'), *(ROOT / 'studio' / 'js').glob('*.js')]):
-        code = _re.sub(r'/\*.*?\*/', '', f.read_text(encoding='utf-8'), flags=_re.S)
-        code = _re.sub(r'(?m)^\s*//.*$', '', code)
-        for h in hits(code): bad.append(f'{f.relative_to(ROOT)}: {h}')
-    if bad: raise Exception(f'{len(bad)} old names: ' + '; '.join(bad[:8]))
-    return f'{len(D["locations"])} places by their new names; none of the {len(rx)} old names left in the data or the game\'s texts'
-
-
 @step('Copperleaf Town, the hub on its own (from the data)', 20)
 def copperleaf_data():
     """a new game starts in Copperleaf (rules.start.locationId), the hub and the only place (RL-5: every other place is
-    parked in game/data/legacy), with no exit and no road out; the lab and your room are in Copperleaf and nowhere else
-    outdoors; Granny Juniper stands in her garden; no shop or clinic in the hamlet; nothing solid stands on the
+    parked in game/data/legacy), with no exit and no road out; the lab and Granny Juniper's cottage (act home; TC-1: no room of
+    its own now) are in Copperleaf and nowhere else outdoors; Granny Juniper stands in her garden; no shop or clinic in the hamlet; nothing solid stands on the
     opening's stage"""
     D = gamedata(); R = D['locations']; ix = {r['id']: i for i, r in enumerate(R)}; bad = []
     start = (D['rules'].get('start') or {}).get('locationId')
@@ -289,21 +242,96 @@ def copperleaf_data():
         lx, lz = own(p['x'], p['z'])
         if solid and d[0] + .8 < lx < d[0] + 9.6 and d[1] - 4.8 < lz < d[1] - 1.4: bad.append(f'{p["k"]} at {p["x"]},{p["z"]} stands on the opening’s stage')
     if bad: raise Exception('; '.join(bad[:6]))
-    return f'a new game starts in Copperleaf (node {ix["copperleaf"]}), the only place, with no road out; the lab and your room are there, Granny Juniper in her garden, no shop or clinic; the opening’s stage is clear'
+    return f'a new game starts in Copperleaf (node {ix["copperleaf"]}), the only place, with no road out; the lab and Granny Juniper’s cottage are there, she in her garden, no shop or clinic; the opening’s stage is clear'
+
+
+# alpha 0.4: the two data rules the water step needs, from the one-off tools/fix-marigold-stream.py and
+# tools/fix-piers.py (TC-1: copied here when those tools went)
+def buildings_in_water(D):
+    """every building whose footprint (turned as it stands) has water in it"""
+    C = D['scenery']['props']; out = []
+    for sid, sc in D['maps'].items():
+        if '@' in sid or not sc.get('tiles'): continue
+        T = sc['tiles']; H = len(T); W = len(T[0])
+        at = lambda x, z: T[H - 1 - z][x] if 0 <= x < W and 0 <= z < H else None
+        for p in sc.get('props', []):
+            M = C.get(p['k']) or {}
+            if not M.get('box') or not (M.get('build') or M.get('door')): continue
+            s0 = p.get('s', 1); w, d = M['box'][0] * s0, M['box'][1] * s0; r = math.radians(p.get('rot', 0)); c, sn = math.cos(r), math.sin(r)
+            wet = 0
+            for ix in range(1, int(w * 2)):
+                for iz in range(1, int(d * 2)):
+                    lx, lz = -w / 2 + ix / 2, iz / 2; x = p['x'] + lx * c - lz * sn; z = p['z'] + lx * sn + lz * c
+                    if at(int(math.floor(x)), int(math.floor(z))) in ('w', 'd'): wet += 1
+            if wet: out.append((sid, p['k'], p['x'], p['z'], wet))
+    return out
+
+
+def piers_of(sc):
+    """the strips of boards that run out into the water: [(cells over water, a, b, width)] in the place's metres"""
+    T = sc['tiles']; H = len(T); W = len(T[0])
+    at = lambda x, z: T[H - 1 - z][x] if 0 <= x < W and 0 <= z < H else None
+    cells = {(x, z) for z in range(H) for x in range(W) if at(x, z) == 'b'}
+    seen, out = set(), []
+    for c in sorted(cells):
+        if c in seen: continue
+        comp, st = [c], [c]; seen.add(c)
+        while st:
+            x, z = st.pop()
+            for q in ((x + 1, z), (x - 1, z), (x, z + 1), (x, z - 1)):
+                if q in cells and q not in seen: seen.add(q); st.append(q); comp.append(q)
+        if not any(at(*q) in ('w', 'd') for x, z in comp for q in ((x + 1, z), (x - 1, z), (x, z + 1), (x, z - 1))): continue
+        # the strip's axis: the longer way of its spread (principal axis of the squares' middles)
+        mx = sum(x + .5 for x, _ in comp) / len(comp); mz = sum(z + .5 for _, z in comp) / len(comp)
+        sxx = sum((x + .5 - mx) ** 2 for x, _ in comp); szz = sum((z + .5 - mz) ** 2 for _, z in comp); sxz = sum((x + .5 - mx) * (z + .5 - mz) for x, z in comp)
+        ang = .5 * math.atan2(2 * sxz, sxx - szz)
+        for a90 in (-math.pi, -math.pi / 2, 0, math.pi / 2, math.pi):     # a strip that is nearly square to the map runs square to it
+            if abs(ang - a90) < math.radians(10): ang = a90
+        ux, uz = math.cos(ang), math.sin(ang); px, pz = -uz, ux
+        rows = {}
+        for x, z in comp:
+            t = (x + .5 - mx) * ux + (z + .5 - mz) * uz; s = (x + .5 - mx) * px + (z + .5 - mz) * pz
+            rows.setdefault(int(math.floor(t + .5)), []).append((x, z, s))
+        def side_wet(row):
+            """both sides of this row of boards are water"""
+            lo = min(r[2] for r in row); hi = max(r[2] for r in row); tt = sum((r[0] + .5 - mx) * ux + (r[1] + .5 - mz) * uz for r in row) / len(row)
+            def wet(s):
+                x, z = mx + ux * tt + px * s, mz + uz * tt + pz * s
+                return at(int(math.floor(x)), int(math.floor(z))) in ('w', 'd')
+            return wet(lo - 1.0) and wet(hi + 1.0)
+        ks = sorted(rows); over = [k for k in ks if side_wet(rows[k])]
+        if not over: continue
+        t0, t1 = min(over), max(over)
+        land_lo = any(k < t0 for k in ks); land_hi = any(k > t1 for k in ks)
+        def beyond(t):
+            x, z = mx + ux * t, mz + uz * t
+            return at(int(math.floor(x)), int(math.floor(z)))
+        if not land_lo and not land_hi:                       # no boards on land: the bank is whichever end is dry
+            land_lo = beyond(t0 - 1.2) not in ('w', 'd')
+        if land_lo and land_hi: continue                      # boards across the water from bank to bank: a bridge, left alone
+        if land_lo: ta, tb = t0 - .5 - .6, t1 + .5          # from the bank (a little onto the boards there) out to the end
+        else: ta, tb = t1 + .5 + .6, t0 - .5
+        lat = [r[2] for k in over for r in rows[k]]; sm = (min(lat) + max(lat)) / 2
+        # its width: the squares under it over its length (a slanting strip of squares is wider than the boards were)
+        L = max(1.0, t1 - t0 + 1); w = len([1 for k in over for r in rows[k]]) / L
+        if abs(ux) > .2 and abs(uz) > .2: w = min(w * .62, 2.2)
+        w = max(1.2, round(w - .3, 2))
+        a = [round(mx + ux * ta + px * sm, 2), round(mz + uz * ta + pz * sm, 2)]; b = [round(mx + ux * tb + px * sm, 2), round(mz + uz * tb + pz * sm, 2)]
+        wet_cells = [(r[0], r[1]) for k in over for r in rows[k]]
+        out.append((wet_cells, a, b, w))
+    return out
 
 
 @step('alpha 0.4: no building stands in water; every jetty is a flat deck over water (from the data)', 20)
 def check_water():
     """a building's footprint (turned as it stands) holds no water; boards never run out over water as ground (a jetty is
-    a flat deck on posts with the water under it: scene.bridges, pier: 1, tools/fix-piers.py)"""
-    import importlib.util as ilu, math as _m
-    sp = ilu.spec_from_file_location('fms', ROOT / 'tools' / 'fix-marigold-stream.py'); FM = ilu.module_from_spec(sp); sp.loader.exec_module(FM)
-    sp2 = ilu.spec_from_file_location('fpi', ROOT / 'tools' / 'fix-piers.py'); FP = ilu.module_from_spec(sp2); sp2.loader.exec_module(FP)
-    D = gamedata(); bad = [f'{a}: {b} at {c},{d} has water in it' for a, b, c, d, e in FM.buildings_in_water(D)]
+    a flat deck on posts with the water under it: scene.bridges, pier: 1)"""
+    import math as _m
+    D = gamedata(); bad = [f'{a}: {b} at {c},{d} has water in it' for a, b, c, d, e in buildings_in_water(D)]
     piers = 0
     for sid, sc in D['maps'].items():
         if '@' in sid or not sc.get('tiles') or sc.get('kind') == 'room': continue
-        for cells, a, b, w in FP.piers_of(sc): bad.append(f'{sid}: boards run out over the water at {a} (python3 tools/fix-piers.py makes them a jetty)')
+        for cells, a, b, w in piers_of(sc): bad.append(f'{sid}: boards run out over the water at {a} (make it a jetty: scene.bridges, pier: 1)')
         for B_ in sc.get('bridges') or []:
             if B_.get('pier'):
                 piers += 1; T = sc['tiles']; H = len(T); x, z = B_['b']
@@ -393,6 +421,18 @@ def check_rooms():
         if over: bad.append(f'{sid}: {over} cells above the wall ({max(v) / 20:.1f} m, the wall is {wall / 20:.1f} m)')
     if bad: raise Exception('; '.join(bad[:6]))
     return f'{n} rooms, every wall at its room\'s height'
+
+
+@step('Rooms: a floor of its own each (from the data)', 10)
+def check_room_floors():
+    """v47: no two rooms share a floor (TC-1: the data half of the v47 step, kept when that step went)"""
+    import collections
+    floors = collections.defaultdict(list)
+    for sid, sc in gamedata()['maps'].items():
+        if sc.get('kind') == 'room' and '@' not in sid: floors[collections.Counter(''.join(sc['tiles'])).most_common(1)[0][0]].append(sid)
+    bad = [f'rooms sharing a floor ({k}): {", ".join(v)}' for k, v in floors.items() if len(v) > 1]
+    if bad: raise Exception('; '.join(bad[:6]))
+    return f'{len(floors)} rooms, a floor each'
 
 
 @step('Ground: every kind has twelve tiles of its own', 30)
@@ -535,9 +575,8 @@ def walk_in(pg, act, k):
     pg.evaluate(f"(()=>{{const p=walkView.sc.props.find(p=>p.act==='{act}'&&p.k==='{k}'),g=actionSpot(p,walkData().sc.props[p.k]);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({{k:'act',p,act:'{act}'}})}})();0")
 
 
-# RL-5: cross() and cross_to() were unused while the hub was the only place (no road, no seam, no neighbour); RL-7
-# walks a run's roads with them (a run's crossing counts rules.json run.seamIn metres in, so the walk goes that much
-# further)
+# RL-5: cross() was unused while the hub was the only place (no road, no seam, no neighbour); RL-8 walks a run's seam
+# with it (a run's crossing counts rules.json run.seamIn metres in, so the walk goes that much further)
 # phase 08: travel is walking. cross() walks from where you stand over the edge into the neighbour n1 the way a player
 # does: a path to 6 m past the exit (no search limit: a route view is long), the player put along it at most 0.8 m at a time, walkCross() after each (the a041
 # way: game time is too slow here to walk it for real). Returns the metres walked, the views seen on the way and how
@@ -577,16 +616,6 @@ def cross(pg, n1, sec=90, look=None, prep_ms=None, meter=None):
     raise Exception(f'walked {walked:.0f} m toward {pg.evaluate(f"LOCATIONS[{n1}].name")} and never crossed ({views})')
 
 
-# phase 08: a trip of several roads, walked: the guide is set to n, then each place on its plan is crossed into in turn
-def cross_to(pg, n):
-    plan = pg.evaluate(f"(()=>{{setTrip({n});return saveData.trip.plan.slice()}})()")
-    if not plan: raise Exception(f'no way to {pg.evaluate(f"LOCATIONS[{n}].name")}')
-    walked = 0; views = []; unready = 0
-    for n1 in plan:
-        w, v, u = cross(pg, n1); walked += w; unready += u; views += v if not views else [x for x in v if x != views[-1]]
-    return walked, views, unready
-
-
 def debug_picture_privacy(pg):
     # phase 13: the debug log keeps a picture of the scene, and what the buddy says names the Billie, so in the frame that
     # takes the picture speech is drawn after it (walk-view-gl.js). The buddy talks, the log takes its picture, and the
@@ -624,7 +653,7 @@ def start_for_in_game_test(pg):
 
 
 def run_in_game_test(pg, only, diag, sec):
-    pg.evaluate(f"selfTest.slow=3;selfTest.only={json.dumps(only)};{'runDiagnostics' if diag else 'runQuickTest'}();0")
+    pg.evaluate(f"selfTest.slow=3;selfTest.only={json.dumps(only)};{'runDiagnostics' if diag else 'runFullTest'}();0")
     if not until(pg, '!selfTest.on&&!!(debugLog.bench&&debugLog.bench.result)', sec): raise Exception(f'the in-game test didn’t finish in {sec} s (at {pg.evaluate("debugLog.bench&&debugLog.bench.step")})')
     r = json.loads(pg.evaluate("JSON.stringify((({kind,seconds,errors,phases})=>({kind,seconds,errors,phases:phases.map(p=>({name:p.name,ok:p.ok,why:p.why||p.note||''}))}))(debugLog.bench.result))"))
     late = [p for p in r['phases'] if not p['ok'] and p['why'].startswith('took longer than')]
@@ -695,73 +724,6 @@ def actions_sheet_step(b, base, R):
             out.append("a run's day, type and weather: " + ' / '.join(x for x in t.splitlines() if x.strip())[:120])
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
-    finally:
-        ctx.close()
-
-
-@step('Messages: toasts merge, notices wait behind the dot, choices wait for the world (phase 06)', 120)
-def messages_step(b, base, R):
-    errs = []
-    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS)
-    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
-    pg.on('pageerror', lambda e: errs.append(str(e)))
-    pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
-    try:
-        pg.goto(base + '/index.html?fixture=town'); pg.evaluate(LOW_RENDER)
-        # a waiting choice opens only once the world shows: no loader, the walk view ready
-        pg.wait_for_function("typeof whenWorldShows==='function'", timeout=60000)
-        pg.evaluate("window.__ws=null;whenWorldShows(()=>{const l=document.getElementById('loader');__ws={ready:walkView.ready,loader:!!(l&&!l.hidden&&l.offsetParent)}},200);0")
-        if not until(pg, 'window.__ws', 90): raise Exception('whenWorldShows never ran')
-        ws = pg.evaluate('__ws')
-        if not ws['ready'] or ws['loader']: raise Exception(f'a waiting choice would open before the world shows: {ws}')
-        # toasts: the same text joins the one showing, or the one waiting
-        r = pg.evaluate("""(()=>{uiState.modal=null;uiState.mq=[];uiState.toastQ=[];uiState.toastOn=false;renderOverlay();
-          toast('Found an item');toast('Found an item');toast('Saved');toast('Saved');toast('Found an item');
-          const t=document.getElementById('toast');
-          return {on:uiState.toastOn&&[uiState.toastOn.text,uiState.toastOn.count],q:uiState.toastQ.map(x=>[x.text,x.count]),el:!!t&&t.tagName}})()""")
-        if r['on'] != ['Found an item', 3] or r['q'] != [['Saved', 2]] or r['el'] != 'PB-TOAST':
-            raise Exception(f'toasts did not merge as expected: {r}')
-        pg.evaluate("uiState.toastQ=[];uiState.toastOn=false;renderOverlay();0")
-        if pg.evaluate("!!document.getElementById('toast')"): raise Exception('clearing uiState.toastOn left the toast on screen')
-        # notices: kept once, behind the dot; opening the dot shows them and clears it
-        n = pg.evaluate("""(()=>{uiState.inbox=[];notice({id:'qc',title:'A letter',html:'<p>Hello.</p>'});notice({id:'qc',title:'A letter',html:'<p>Hello.</p>'});render();
-          const d=document.querySelector('.tb-inbox');const before=[uiState.inbox.length,d&&d.innerText.trim()];d&&d.click();
-          return {before,title:document.querySelector('#ov .sheet h2')?.textContent,after:uiState.inbox.length,dot:!!document.querySelector('.tb-inbox')}})()""")
-        if n['before'] != [1, '1'] or n['title'] != 'A letter' or n['after'] != 0 or n['dot']:
-            raise Exception(f'the inbox did not behave: {n}')
-        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return 'toasts merged (×3 showing, ×2 waiting); one notice behind the dot, opened and cleared; the choice waited for the world'
-    finally:
-        ctx.close()
-
-
-@step('Team: the lead card, the rows, a Billie’s details and its Build tab (phase 06-2)', 120)
-def team_step(b, base, R):
-    errs = []
-    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS)
-    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
-    pg.on('pageerror', lambda e: errs.append(str(e)))
-    pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
-    try:
-        pg.goto(base + '/index.html?fixture=town'); pg.evaluate(LOW_RENDER)
-        if not until(pg, "typeof walkView!=='undefined'&&walkView.ready", 90): raise Exception('the town never opened')
-        t = pg.evaluate("""(()=>{uiState.modal=null;uiState.mq=[];renderOverlay();
-          const x=makeBilly(Object.keys(SPECIES).find(k=>/0$/.test(k)),8);x.build={head:'L',body:'L',front:'M',back:'S',sig:'M'};saveData.team.push(x);
-          uiState.tab='team';render();
-          return {hero:!!document.querySelector('.u-hero [data-a=mon]'),rows:document.querySelectorAll('.u-list .u-row[data-a=mon]').length,team:saveData.team.length}})()""")
-        if not t['hero'] or t['rows'] != t['team'] - 1: raise Exception(f'the Team screen is not the lead card plus one row each: {t}')
-        pg.click('.u-list .u-row[data-a=mon] >> nth=-1')
-        if not until(pg, "!!document.querySelector('#ov .mon-sheet')", 10): raise Exception('a row did not open its details')
-        pg.click('#ov [data-a=ms-tab][data-k=build]')
-        d = pg.evaluate("""(()=>{const on=[...document.querySelectorAll('.u-slots .u-dial .on')].map(e=>e.textContent);
-          return {slots:document.querySelectorAll('.u-slots li').length,want:partSlots().length,on,bal:!!document.querySelector('.u-bal-track i'),
-            pane:!document.querySelector('.ms-pane[data-k=build]').hidden}})()""")
-        if d['slots'] != d['want'] or d['on'] != ['L', 'L', 'M', 'S', 'M'] or not d['bal'] or not d['pane']:
-            raise Exception(f'the Build tab does not show the parts: {d}')
-        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f'lead card and {t["rows"]} rows; a row opens its details; Build shows {d["slots"]} slots (L L M S M) and the balance'
     finally:
         ctx.close()
 
@@ -1327,32 +1289,6 @@ def all_maps(pg, sec=180):
 def desktop_steps(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
     play(pg); pg.evaluate("uiState.tab='team';render();0"); time.sleep(1); all_maps(pg)
-    D = gamedata(); ids = [r.get('mapId') for r in D['locations']]
-    nodes = [i for i, s in enumerate(ids) if s and (not ONLY or s in ONLY)]
-
-    @step('Shaders: every program compiles, no clashing inputs', 30)
-    def shaders():
-        r = pg.evaluate("""(()=>{if(typeof gpuState==='undefined'||!gpuState.gl)return {skip:'no WebGL in this browser'};const sets={WALK_SHADERS:typeof WALK_SHADERS!=='undefined'?WALK_SHADERS:null,BUILDING_SHADERS:typeof BUILDING_SHADERS!=='undefined'?BUILDING_SHADERS:null,POST_EFFECT_SHADERS:typeof POST_EFFECT_SHADERS!=='undefined'?POST_EFFECT_SHADERS:null,WORLD_BOWL_SHADERS:typeof WORLD_BOWL_SHADERS!=='undefined'?WORLD_BOWL_SHADERS:null,SOLID_PROP_SHADERS:typeof SOLID_PROP_SHADERS!=='undefined'?SOLID_PROP_SHADERS:null};
-         const bad=[];let n=0;for(const [name,S] of Object.entries(sets)){if(!S)continue;for(const [k,v] of Object.entries(S)){n++;const c=attributeClashes(v[0]);if(c.length)bad.push(k+' clash: '+c.join(','));try{if(!gpuState.P[k])gpuState.P[k]=compileProgram(v,k)}catch(e){bad.push(String(e.message||e).slice(0,160))}}}return {n,bad}})()""")
-        if r.get('skip'): return r['skip']
-        if r['bad']: raise Exception('; '.join(r['bad'][:4]))
-        return f"{r['n']} programs"
-    shaders()
-
-    @step('Paths: exits, doors, bridges and stairs in every scene (from the data)', 40)
-    def paths():
-        r = pg.evaluate("""((ids)=>{const out={},keep=[walkView.sc,walkView.nav,walkView.gkey];
-         for(const id of ids){const sc=mapById(id);if(!sc)continue;walkView.sc=sc;walkView.nav=null;walkView.gkey='quick-'+id;const C0=walkData().sc,hub=mapHub(sc),bad=[],far=(q,p)=>{const e=q&&q[q.length-1];return !q||Math.hypot(e[0]-p[0],e[1]-p[1])>1.6};
-          for(const e of sc.exits||[])if(far(findPath(hub[0],hub[1],e[0],e[1]),e))bad.push('exit '+e.map(v=>v.toFixed(1)));
-          for(const p of sc.props||[])if(p.act&&!(p.act==='climb'&&typeof climbEnds==='function'&&[climbEnds(p).bot,climbEnds(p).top].some(g=>{const q=findPath(hub[0],hub[1],g[0],g[1]),e=q&&q[q.length-1];return e&&Math.hypot(e[0]-g[0],e[1]-g[1])<=1.6}))){const g=actionSpot(p,C0.props[p.k],C0.ppu||34);if(g&&far(findPath(hub[0],hub[1],g[0],g[1]),g))bad.push(p.k+' @'+p.x+','+p.z)}
-          for(const b of mapBridges(sc)||[]){const A=[b.a[0]-b.ux*.4,b.a[1]-b.uz*.4],B=b.pier?[b.b[0]-b.ux*.4,b.b[1]-b.uz*.4]:[b.b[0]+b.ux*.4,b.b[1]+b.uz*.4];if(far(findPath(A[0],A[1],B[0],B[1]),B))bad.push((b.pier?'jetty ':'bridge ')+b.a)}
-          const G=navGrid(),hc=navCellAt(hub[0],hub[1]);if(hc<0||G.blk[hc])bad.push('hub is blocked');out[id]=bad}
-         [walkView.sc,walkView.nav,walkView.gkey]=keep;return out})(%s)""" % json.dumps([ids[n] for n in nodes]))
-        bad = {k: v for k, v in r.items() if v}
-        R['paths'] = r
-        if bad: raise Exception('; '.join(f'{k}: {", ".join(v[:4])}' for k, v in bad.items()))
-        return f'{len(r)} scenes, all reachable'
-    paths()
 
     @step('Test scenes: walking rules (from the data)', 30)
     def test_checks():
@@ -1378,19 +1314,6 @@ def desktop_steps(b, base, R):
             if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
             return f'{len(tests)} test scenes, {n} pictures'
         test_draw()
-
-    @step('Scenes: each one opens and draws', 30 * max(1, len(nodes)))
-    def scenes():
-        drawn = []
-        for n in nodes:
-            go_scene(pg, n, 75); time.sleep(.4); sid = pg.evaluate('walkView.id'); shot(pg, f'scene-{sid}')   # alpha 0.2: a place's view holds its neighbours' edges too, bigger to paint in software
-            info = pg.evaluate("[typeof walkRenderer!=='undefined'&&walkRenderer.on,typeof structureState!=='undefined'&&!!structureState.mesh,typeof hasStructures==='function'&&hasStructures(walkView.sc),typeof buildingState!=='undefined'?(buildingState.fail||''):'',typeof buildingState!=='undefined'?buildingState.drawn||0:0]")
-            if info[0] and info[2] and not info[1]: raise Exception(f'{sid}: bridges and railings not drawn')
-            if info[3]: raise Exception(f'{sid}: 3D buildings off: {info[3][:100]}')
-            drawn.append(sid)
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return ', '.join(drawn)
-    scenes()
 
     # RL-5: 'Close-ups of cliffs, stairs, bridges and water' (--closeups) retired: every spot it pictured is in a parked place (a run's places get their close-ups when RL-7 builds them)
 
@@ -1436,16 +1359,6 @@ def desktop_steps(b, base, R):
         pg.evaluate("uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOverlay();0")
         return f'walked to {roam}'
     walking()
-
-    @step('Crowd: forty people in town draw about as fast as a few', 90)
-    def crowd():
-        go_scene(pg, 0); time.sleep(3)
-        rate = "(()=>{const f0=walkRenderer.frames,t0=performance.now();return new Promise(r=>setTimeout(()=>r((walkRenderer.frames-f0)/(performance.now()-t0)*1000),5000))})()"
-        a = pg.evaluate(rate); n0 = pg.evaluate("walkView.sc.folk"); pg.evaluate("walkView.sc.folk=40;0"); time.sleep(6)
-        b2 = pg.evaluate(rate); size = pg.evaluate("typeof PERSON_ART_CACHE!=='undefined'?PERSON_ART_CACHE.size:0"); pg.evaluate(f"walkView.sc.folk={n0 or 0};0")
-        if b2 < a * .45: raise Exception(f'{a:.1f} frames a second with {n0} people, {b2:.1f} with 40')
-        return f'{a:.1f} → {b2:.1f} frames a second (software drawing), {size} pictures of people kept'
-    crowd()
 
     @step('Time, weather and rooms: night, a storm, snow, autumn, walking into the lab', 240)   # RL-5: the dark cave (Fizzwell) is parked; the room is Hazel's lab (the hub has no shop)
     def atmosphere():
@@ -1514,48 +1427,16 @@ def desktop_steps(b, base, R):
         return f'animals at the pond: {", ".join(kinds)}; a rabbit bolted; {prints} footprints; world sounds: {snd}'   # RL-5: a rabbit, not a frog
     animals()
 
-    @step('Things to do: challenges, a request, a gold stamp, your room, a photo, weather in battle', 240)   # RL-5: the ladder (Kitewind Ridge) is parked
-    def things():
-        if not pg.evaluate("typeof challengesToday==='function'"): return 'not in this build'
-        out = []
-        pg.evaluate("environment.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0); time.sleep(2)   # RL-5: node 0 is Copperleaf now (was Marigold Town)
-        n = pg.evaluate("challengesToday().list.length")
-        if n != 3: raise Exception(f'{n} challenges today, not 3')
-        out.append('3 challenges: ' + pg.evaluate("challengesToday().list.map(challengeText).join('; ')"))
-        q = pg.evaluate("(()=>{const q=requestHere();return q?q.k+' '+q.t:null})()")
-        if not q: raise Exception('no request in Copperleaf today')   # RL-5: Copperleaf, not Marigold Town
-        out.append('request: ' + q + (' (someone is asking)' if pg.evaluate("!!requestAsker()") else ''))
-        # a gold stamp: stand on one
-        spots = pg.evaluate("stampSpots()")
-        if len(spots) < 1: raise Exception('no gold stamps in Copperleaf')   # RL-5: Copperleaf, not Marigold Town
-        c0 = pg.evaluate("stampCount()"); pg.evaluate(f"walkView.pl.route=null;walkView.pl.x={spots[0][0]};walkView.pl.z={spots[0][1]};0"); time.sleep(2)
-        if pg.evaluate("stampCount()") <= c0: raise Exception('standing on a gold stamp didn’t pick it up')
-        out.append(f'{len(spots)} stamps here, one picked up')
-        # your room (alpha 0.4: in Granny Juniper's cottage in Copperleaf): walk in, put a table in the middle
-        home = pg.evaluate("LOCATIONS.findIndex(r=>r.id==='copperleaf')")
-        if home < 0: home = 0
-        go_scene(pg, home); time.sleep(1.5)
-        pg.evaluate("uiState.toastQ=[];(()=>{const p=walkView.sc.props.find(p=>p.act==='home'),C=walkData().sc,g=actionSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({k:'act',p,act:'home'})})();0")
-        if not until(pg, "walkView.ready&&(walkView.id==='int_home'||(walkView.sc&&walkView.sc.roomOf==='int_home'))", 60): raise Exception('your room didn’t open')
-        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();thingsToDo().home.slots[5]='table_round';thingsToDo().home.slots[10]='rug_round';refreshHomeFurniture();0"); time.sleep(2.5); shot(pg, 'room-home')
-        if pg.evaluate("gameData.maps.int_home.props.length") < 2: raise Exception('furniture didn’t appear in your room')
-        pg.evaluate("leaveRoom();0"); until(pg, f"walkView.ready&&!walkView.sc.roomRect&&(walkView.id===LOCATIONS[{home}].mapId||(walkView.sc&&walkView.sc.baseId===LOCATIONS[{home}].mapId))", 30); time.sleep(1.5)
-        # a photo
-        pg.evaluate("window.__ph=null;photoStart();walkRenderer.photoReq=c=>{window.__ph=c?c.width:0};0"); until(pg, "window.__ph!==null", 15)
-        w = pg.evaluate("window.__ph"); pg.evaluate("photoEnd();0")
-        if not w: raise Exception('photo mode didn’t take a picture')
-        out.append(f'photo {w}px wide')
-        # RL-5: up a ladder at Kitewind Ridge is retired: no ladder stands anywhere in the game now (the hub, the rooms and
-        # the test scenes have none); a run's places with a ladder bring it back (RL-7)
-        # rain in battle
+    @step('Battle weather: rain where you stand makes Water moves stronger and Fire weaker', 120)
+    def battle_weather():
+        """TC-1: the part of the Things to do step that stays (that step went with the system)"""
         go_scene(pg, 0); pg.evaluate("environment.force={time:15,weather:'rain'};const q={id:'twx',sp:'swift1',lvl:8,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         wait_phase(pg, sec=60); bw = pg.evaluate("(()=>{const w=battleWeather();return w?[w.k,battleWeatherMultiplier('Water'),battleWeatherMultiplier('Fire'),document.getElementById('camWorld')?document.getElementById('camWorld').dataset.wx:''] :null})()")
         time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();activeBattle=null;battleStageStop();environment.force=null;render();0")
         if not bw or bw[0] != 'rain' or bw[1] <= 1 or bw[2] >= 1: raise Exception(f'rain didn’t change the battle ({bw})')
-        out.append(f'rain in battle: Water ×{bw[1]}, Fire ×{bw[2]}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return '; '.join(out)
-    things()
+        return f'rain in battle: Water ×{bw[1]}, Fire ×{bw[2]}'
+    battle_weather()
 
     @step('v31: shorelines, autumn, facing, rooms, settings tabs, place card, map camera', 300)   # RL-5: the fountains (Marigold Town's) are parked
     def v31():
@@ -1723,62 +1604,7 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     v33()
 
-    @step('v34: shadow cache, walk cycles', 300)
-    def v34():
-        out = []
-        # (v37: the 2x "detailed art" of v34 is retired; the ground is the 32 px tiles of v37) open a scene and read the renderer's counters
-        go_scene(pg, 0); time.sleep(6)   # RL-5: Copperleaf, the one place left (Verdigris City is parked)
-        r = json.loads(pg.evaluate("JSON.stringify({tp:(walkRenderer.ring&&walkRenderer.ring.TP)||(walkView.ground&&walkView.ground._TP),mb:Math.round((gpuState.texB||0)/1048576),sh:[walkRenderer.shHit||0,walkRenderer.shMiss||0],grid:walkRenderer.gridSkip||0,gpu:gpuState.gpuX?'timer':'no timer'})"))
-        if r['tp'] != 32: raise Exception(f'the ground isn’t painted from the 32 px tiles (tile {r["tp"]} px)')
-        shot(pg, 'v34-copperleaf')   # RL-5: was v34-verdigris
-        out.append(f"ground {r['tp']} px a tile, {r['mb']} MB of pictures on the card; shadow cache {r['sh'][0]} kept / {r['sh'][1]} drawn; {r['grid']} props skipped by the grid; GPU {r['gpu']}")
-        # walk cycles per body plan, front and back only
-        w = pg.evaluate("""(()=>{const plans={};for(const sp of Object.keys(SPECIES)){const R=typeof rigParts==='function'?rigParts(sp,1):null;if(!R||plans[R.plan])continue;const a=worldBillyFrame(sp,false,'front','walk',0,1),b=worldBillyFrame(sp,false,'front','walk',280,1);if(!a||!b)continue;
-          const d=(c)=>c.getContext('2d').getImageData(0,0,c.width,c.height).data;const x=d(a),y=d(b);let diff=0;for(let i=3;i<x.length;i+=16)if(x[i]!==y[i])diff++;plans[R.plan]=diff}return plans})()""")
-        still = [k for k, v in w.items() if v == 0]
-        if still: raise Exception(f'walk cycle doesn’t move for: {", ".join(still)}')
-        out.append('walk cycles move for ' + ', '.join(sorted(w)))
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return '; '.join(out)
-    v34()
-
-    @step('v35: roster, palette, starter studies, pixel-grid camera', 120)
-    def v35():
-        out = []
-        n = pg.evaluate("(gameData.roster||[]).length")
-        if n != 117: raise Exception(f'the roster has {n} billionaires, not 117')
-        kinds = pg.evaluate("gameData.roster.reduce((a,e)=>{a[e.kind]=(a[e.kind]||0)+1;return a},{})")
-        if kinds != {'starter': 12, 'legendary': 2, 'line3': 45, 'line2': 40, 'single': 18}: raise Exception(f'roster shape: {kinds}')
-        ids = pg.evaluate("gameData.roster.map(e=>e.id)")
-        if len(set(ids)) != 117: raise Exception('roster ids repeat')
-        old = pg.evaluate("Object.keys(SPECIES)")
-        clash = sorted(set(ids) & set(old))
-        if clash: raise Exception(f'new ids clash with current species: {clash[:5]}')
-        out.append('roster: 117 (12 starters, 2 legendaries, 45 in three-stage lines, 40 in two-stage, 18 singles), no id clashes')
-        nx = ROOT / 'game' / 'art' / 'next'
-        for f in ('palette.png', 'palette.js'):
-            if not (nx / f).exists(): raise Exception(f'missing {f} under art/next')
-        # phase 03 deleted the v35 master tiles (art/next/tiles, Lite mode's ground); the ground the game draws is
-        # art/next/tiles47, checked by 'Ground: every kind has twelve tiles of its own'
-        studies = len(list((nx / 'starters').glob('*_sil.png')))
-        if studies < 12: raise Exception(f'only {studies} starter silhouettes')
-        out.append(f'art/next: palette, {studies} starter silhouettes')
-        # every palette colour is distinct
-        from PIL import Image
-        pal = {tuple(c) for c in pixels(Image.open(nx / 'palette.png').convert('RGB'))}
-        if len(pal) < 150: raise Exception(f'palette has {len(pal)} distinct colours')
-        # the pixel-grid camera dial: off by default, and turning it on keeps the scene drawing
-        if pg.evaluate("engineSetting('camera','pixelGrid')!==false"): raise Exception('pixelGrid should be off by default')
-        pg.evaluate("gameData.engine.defaults.camera=Object.assign({},gameData.engine.defaults.camera||{},{pixelGrid:true});0"); time.sleep(2)
-        fr = pg.evaluate("walkRenderer.frames||0")
-        if not until(pg, f"(walkRenderer.frames||0)>{fr + 1}", 30): raise Exception('no frames drawn with the pixel-grid camera on')   # alpha 0.1: a frame can take seconds here
-        pg.evaluate("delete gameData.engine.defaults.camera.pixelGrid;0")
-        out.append('pixel-grid camera: off by default, draws when on')
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return '; '.join(out)
-    v35()
-
-    @step('v36: new starters on piece sheets, split evolution, 12 fps puppets, next ground tiles', 150)
+    @step('v36: new starters on piece sheets, 12 fps puppets, next ground tiles', 150)
     def v36():
         if not pg.evaluate("typeof rigFrame==='function'&&!!window.RIGS_NEXT"): return 'not in this build'
         out = []
@@ -1811,11 +1637,6 @@ def desktop_steps(b, base, R):
         if weak: raise Exception(f'walk or hurt leaves legs/head still for {weak}')
         plans = pg.evaluate("Object.keys(POSES_BY_PLAN).length")
         out.append(f"motion audit: every piece moves, legs walk and heads flinch on all 12; {plans} body plans")
-        # phase 08: split evolution: the middle stage goes the way you pick in the evolution window (Build: A, Hype: B)
-        e = json.loads(pg.evaluate("""(()=>{const a=makeBilly('musk1',32),b=makeBilly('musk1',32);const ra=canEvolve(a);uiState.modal=null;uiState.mq=[];evolutionModal(a);const btns=[...document.querySelectorAll('.modal button, .sheet button')].map(x=>x.textContent.trim());closeModal();evolve(a,'A');evolve(b,'B');return JSON.stringify({ra,btns,a:a.sp,b:b.sp,hint:evolutionHint(makeBilly('musk1',20))})})()"""))
-        if not (e['ra'] and e['a'] == 'musk2' and e['b'] == 'musk3'): raise Exception(f'split evolution: {e}')
-        if not any(t.startswith('Build') for t in e['btns']) or not any(t.startswith('Hype') for t in e['btns']): raise Exception(f"the evolution window doesn't offer both paths: {e['btns']}")
-        out.append(f"split at 32: Build → Marsox, Hype → Memeox (“{e['hint'][:60]}…”)")
         # a battle with the new starter on the 3D stage: the player's rig buffer has pixels
         pg.evaluate("saveData.team.unshift(makeBilly('gates0',14));saveData.team[0].hp=maxHp(saveData.team[0]);const q={id:'cq36',sp:'bezos1',lvl:12,no:1};encountersHere().push(q);startWild(q);0")
         if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, "activeBattle&&activeBattle.phase==='playing'&&tapMessage()"): raise Exception('the starter battle never reached the move menu')
@@ -1828,123 +1649,6 @@ def desktop_steps(b, base, R):
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
     v36()
-
-    @step('v37: 32 px ground, building budget, retired 2x art', 150)
-    def v37():
-        out = []
-        if pg.evaluate("typeof artHdOf==='function'||typeof dglHdAuto==='function'||!!window.NW_HD"): raise Exception('the v34 2x pipeline is still in the build')
-        if (GAME / 'art' / 'hd').exists() or (GAME / 'data' / 'hdart.js').exists(): raise Exception('art/hd or data/hdart.js still shipped')
-        # RL-5: the ground in Copperleaf (Marigold Town is parked)
-        go_scene(pg, 0); time.sleep(8)
-        tp = pg.evaluate("(walkRenderer.ring&&walkRenderer.ring.TP)||(walkView.ground&&walkView.ground._TP)")
-        if tp != 32: raise Exception(f'Copperleaf ground painted at {tp} px a tile')
-        shot(pg, 'v37-copperleaf')   # RL-5: was v37-marigold
-        # RL-5: the building budget in the small test town (test_hilltown, opened as a bench): the hub's cottages and lab
-        # are low-poly models, not buildings made from a 3D plan, and Marigold Town is parked
-        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.bench={id:'test_hilltown',test:1};render();0")
-        if not until(pg, "!!(walkView.ready&&walkView.id==='test_hilltown')", 40): raise Exception('test_hilltown didn’t open')
-        time.sleep(8)
-        r = json.loads(pg.evaluate("JSON.stringify({made:buildingState.made||0,drawn:buildingState.drawn||0,n:(walkView.sc.props||[]).filter(p=>{const M=gameData.scenery.props[p.k];return M&&M.build}).length})"))
-        pg.evaluate("uiState.bench=null;render();0"); go_scene(pg, 0)   # RL-5: back to the hub, where the steps after this one start
-        if r['made'] < 1: raise Exception('no 3D building model was built in test_hilltown')
-        out.append(f"Copperleaf: ground {tp} px a tile; test_hilltown: {r['made']} building models built over frames, {r['drawn']} drawn, {r['n']} buildings in the scene")
-        # v47: the 16 px dial is gone; the 32 px ground is the only full-mode ground
-        if pg.evaluate("engineSetting('world','nextArt')!==undefined"): raise Exception('the old 32 px ground dial is still in the settings')
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return '; '.join(out)
-    v37()
-
-    @step('v38: 61 roster species on piece sheets, rigs that draw, filled pools', 240)
-    def v38():
-        out = []
-        lines = ['huang', 'ellison', 'ma', 'walton', 'bloomberg', 'jobs', 'knight', 'kroc', 'ambani', 'ortega', 'hughes', 'carnegie', 'lauren', 'ford', 'slim', 'cuban', 'pagebrin', 'thiel', 'dorsey', 'ek', 'son', 'buterin', 'saylor']
-        ids = json.loads(pg.evaluate("JSON.stringify(Object.keys(SPECIES).filter(id=>%s.includes(SPECIES[id].line)))" % json.dumps(lines)))
-        if len(ids) != 61: raise Exception(f'{len(ids)} roster species in the data, not 61')
-        miss = [i for i in ids if not pg.evaluate(f"!!(RIGS['{i}']&&RIGS['{i}'].front&&RIGS['{i}'].back&&RIGS['{i}'].front.sheet)")]
-        if miss: raise Exception(f'missing rigs: {miss[:6]}')
-        nx = ROOT / 'game' / 'art' / 'next' / 'billionaires'
-        names = json.loads(pg.evaluate("JSON.stringify(gameData.roster.filter(e=>%s.includes(e.line)).map(e=>e.id))" % json.dumps(lines)))
-        bad = [n for n in names if not ((nx / f'{n}.png').exists() and (nx / f'{n}.json').exists())]
-        if bad: raise Exception(f'sheets missing: {bad[:6]}')
-        st = pg.evaluate("gameData.roster.filter(e=>e.state&&e.state.sheet&&e.state.rig).length")
-        if st < 73: raise Exception(f'roster board marks only {st} species as drawn and rigged')
-        out.append(f'61 species in 23 lines, numbered {pg.evaluate("SPECIES.huang0.no")} to {pg.evaluate("SPECIES.saylor1.no")}; {len(names)} sheets (png + json); roster board: {st} drawn and rigged')
-        pg.evaluate("rigPreload(%s.map(id=>[id,1]))" % json.dumps(ids)); time.sleep(4)
-        r = json.loads(pg.evaluate("""(ids=>{const out={};for(const id of ids){const o={};for(const v of ['front','back']){const R=rigParts(id,1);if(!R){o[v]=null;continue}
-          const c=makeCanvas(R.BW,R.BH),x=c.getContext('2d');x.clearRect(0,0,R.BW,R.BH);drawRig(x,R,rigFrame(R,null,0,1000,1),v);const d=x.getImageData(0,0,R.BW,R.BH).data;let s=0;for(let i=3;i<d.length;i+=4)if(d[i]>0)s++;o[v]=s}out[id]=o}return JSON.stringify(out)})(%s)""" % json.dumps(ids)))
-        weak = [k for k, v in r.items() if not v['front'] or v['front'] < 600 or not v['back'] or v['back'] < 400]
-        if weak: raise Exception(f'rigs draw too little: {weak[:6]} ({ {k: r[k] for k in weak[:3]} })')
-        au = json.loads(pg.evaluate("JSON.stringify(Object.fromEntries(%s.map(id=>[id,rigAudit(id,'front')])))" % json.dumps(ids)))
-        still = {k: v['still'] for k, v in au.items() if v and v['still']}
-        if still: raise Exception(f'pieces that never move: {dict(list(still.items())[:4])}')
-        plans = sorted(set(pg.evaluate(f"RIGS['{i}'].front.plan") for i in ids))
-        out.append(f"every rig draws front and back ({min(v['front'] for v in r.values())}+ px); every piece moves; body plans {', '.join(plans)}")
-        # the first twelve regions hold only new species; the rest only old ones
-        pools = json.loads(pg.evaluate("JSON.stringify(Object.fromEntries(Object.entries(POOLS).map(([k,p])=>[k,p.list.map(x=>SPECIES[x[0]].line)])))"))
-        new_all = set(json.loads(pg.evaluate("JSON.stringify(LINES.map(l=>l.id).filter(id=>!['musk','bezos','gates'].includes(id)))")))   # v39: every line beyond the starters is new roster
-        mixed = [k for k, L in pools.items() if any(l in new_all for l in L) and any(l not in new_all for l in L)]
-        if mixed: raise Exception(f'pools mixing old and new species: {mixed}')
-        new_pools = [k for k, L in pools.items() if all(l in new_all for l in L)]
-        if len(new_pools) < 12: raise Exception(f'only {len(new_pools)} pools filled with the new roster')
-        out.append(f'{len(new_pools)} regions filled with the new roster, {len(pools) - len(new_pools)} still old, none mixed')
-        # a wild battle with a new species on the 3D stage
-        pg.evaluate("(()=>{const q={id:'cq38',sp:'swift0',lvl:8,no:1};encountersHere().push(q);saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
-        until(pg, "(()=>{const a=actorBuffer(0),b=actorBuffer(1);return !!(a&&b)})()", 15); time.sleep(2)
-        px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=actorBuffer(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
-        shot(pg, 'v38-battle')
-        if px['1'] < 500: raise Exception(f'the wild Frylet drew nothing on the stage: {px}')
-        pg.evaluate("if(activeBattle){activeBattle.over='ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
-        out.append(f"wild Frylet on the 3D stage ({px['1']} px)")
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return '; '.join(out)
-    v38()
-
-    @step('v39/v40: the whole roster, old roster gone, signature moves, six-choice dressing room, busts', 300)   # RL-5: the legendary at the volcano is parked
-    def v39():
-        out = []
-        n = pg.evaluate("Object.keys(SPECIES).length"); ln = pg.evaluate("LINES.length")
-        if n != 117 or ln != 58: raise Exception(f'{n} species in {ln} lines (want 117 in 58)')
-        if pg.evaluate("!!(SPECIES.hood0||SPECIES.goss0||SPECIES.myth0||RIGS.hood0)"): raise Exception('old species still in the data')
-        if (GAME / 'art' / 'billionaires').exists(): raise Exception('art/billionaires still shipped')
-        ids = json.loads(pg.evaluate("JSON.stringify(Object.keys(SPECIES))"))
-        miss = [i for i in ids if not pg.evaluate(f"!!(RIGS['{i}']&&RIGS['{i}'].front&&RIGS['{i}'].back&&RIGS['{i}'].front.sheet&&RIGS['{i}'].front.portrait)")]
-        if miss: raise Exception(f'rigs or busts missing: {miss[:6]}')
-        nx = ROOT / 'game' / 'art' / 'next' / 'billionaires'
-        sheets = len(list(nx.glob('*.png')))
-        if sheets < 117: raise Exception(f'{sheets} sheets')
-        out.append(f'117 species in 58 lines, every one with a sheet, a rig and a bust; old roster and art/billionaires gone')
-        pools = json.loads(pg.evaluate("JSON.stringify(Object.values(POOLS).concat(Object.values(EGGS||{}),Object.values(gameData.fishing||{})).map(p=>p.list.map(x=>x[0])))"))
-        bad = [i for L in pools for i in L if i not in ids]
-        if bad: raise Exception(f'pools name species that are gone: {bad[:5]}')
-        sig = json.loads(pg.evaluate("JSON.stringify(LINES.filter(l=>!(l.learn||[]).some(([lv,m])=>MOVES[m]&&MOVES[m].sig===l.id)).map(l=>l.id))"))
-        if [x for x in sig if x not in ('musk', 'bezos', 'gates')]: raise Exception(f'lines without a signature move: {sig[:6]}')
-        nsig = pg.evaluate("Object.values(MOVES).filter(m=>m.sig).length")
-        out.append(f'{nsig} signature moves, one per new line; every pool, egg and fishing list names a living species')
-        # RL-5: the legendary at the volcano (Cinderpeak, 'v39-legend') is retired with its place: both legendaries of
-        # rules.json legends meet you in a parked scene (cinderpeak, frostcrown); they come back with a run's places (RL-7)
-        # the six-choice dressing room
-        pg.evaluate("openDressingRoom({});0"); time.sleep(1.5)
-        tabs = json.loads(pg.evaluate("JSON.stringify([...document.querySelectorAll('[data-a=dr-tab]')].map(b=>b.dataset.t))"))
-        if tabs != ['body', 'face', 'hair', 'outfit', 'hat', 'extras']: raise Exception(f'dressing room tabs: {tabs}')
-        pg.evaluate("dressingRoom.tab='face';refreshDressingRoom();document.querySelectorAll('[data-a=dr-face]')[3].click();0"); time.sleep(.5)
-        f = json.loads(pg.evaluate("JSON.stringify([dressingRoom.look.wear.eyes,dressingRoom.look.wear.brows,dressingRoom.look.wear.mouth])"))
-        pg.evaluate("dressingRoom.tab='outfit';refreshDressingRoom();0"); time.sleep(1)
-        no = pg.evaluate("document.querySelectorAll('[data-a=dr-outfit][data-w=\"0\"]').length")
-        pg.evaluate("[...document.querySelectorAll('[data-a=dr-outfit]')].find(e=>e.dataset.n==='Everyday'&&e.dataset.w==='1').click();0"); time.sleep(.5)
-        o = json.loads(pg.evaluate("JSON.stringify([dressingRoom.look.wear.top,dressingRoom.look.wear.bottom,dressingRoom.look.wear.shoes,(dressingRoom.look.colors.tee||[])[0]])"))
-        pg.evaluate("document.querySelector('[data-a=dr-more][data-t=outfit]').click();0"); time.sleep(.6)
-        more = pg.evaluate("document.querySelectorAll('[data-a=dr-wear][data-s=top]').length")
-        shot(pg, 'v40-dressing'); pg.evaluate("closeDressingRoom();0")
-        if f != ['eyes_sharp', 'brows_straight', 'mouth_smirk'] or no < 12 or o != ['tee', 'jeans', 'sneakers', '#C8323C'] or more < 10: raise Exception(f'dressing room: face {f}, {no} outfits, outfit {o}, more {more}')
-        out.append(f'dressing room: six tabs, 12 faces, {no} outfits in three colourways, every piece under More')
-        # busts in the Guide and the switch menu
-        pg.evaluate("saveData.seen['walton0']=1;uiState.tab='ledger';render();0"); time.sleep(1)
-        busts = pg.evaluate("document.querySelectorAll('.ledger .bust').length"); pg.evaluate("uiState.tab='walk';render();0")
-        if busts < 100: raise Exception(f'the Guide shows {busts} busts')
-        out.append(f'{busts} busts in the Guide')
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return '; '.join(out)
-    v39()
 
     @step('v42: nature props and the wild growth, edge-relative exits', 120)   # RL-5: the join table (roads between places) is retired: no road is left
     def v42():
@@ -2031,93 +1735,6 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     v43()
 
-    @step('v44: the light lab — the land, a room, props, the air, the night', 300)
-    def v44():
-        """the four light test scenes (tools/build-test-scenes.py) are opened and measured on the picture itself:
-        the ground normal map changes the picture, the sun-facing slope is brighter, a block throws a shadow that darkens
-        the ground, every kind of prop draws, a room has daylight from its window and lamp pools after dark, the god rays
-        add light in a misty wood, and no draw call is refused by WebGL"""
-        from PIL import Image
-        out = []
-        def bench(id, t, x=None, z=None, yaw=0, js='0'):
-            pg.evaluate(f"environment.force={{time:{t},weather:'clear',season:'summer'}};uiState.modal=null;uiState.mq=[];uiState.toastQ=[];renderOverlay();uiState.tab='walk';uiState.bench={{id:'{id}',test:1}};render();0")   # v46: no window from an earlier step over the picture
-            if not until(pg, f"!!(walkView.ready&&walkView.id==='{id}')", 40): raise Exception(f'{id} didn’t open')
-            f0 = pg.evaluate("walkRenderer.frames"); until(pg, f'walkRenderer.frames>={f0 + 6}', 30); time.sleep(1)
-            if x is not None: pg.evaluate(f"walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;walkRenderer.yawT={yaw};0")
-            # v47: wait for frames, not a fixed time: the camera eases to where you stand and the shadow map follows it
-            # a few frames later (a slow machine with many places visited draws a frame a second or less)
-            pg.evaluate(js); f1 = pg.evaluate("walkRenderer.frames"); until(pg, f'walkRenderer.frames>={f1 + 8}', 60); time.sleep(.5)
-        def picture():
-            pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();document.body.classList.add('photo');0"); time.sleep(.4)
-            im = Image.open(io.BytesIO(pg.screenshot())).convert('RGB'); pg.evaluate("document.body.classList.remove('photo');0"); return im
-        def lum(im, pts, r=6):
-            """mean brightness (0-255) of the picture round each world point (x, y, z), projected with the frame's camera"""
-            P = pg.evaluate(f"(()=>{{const C=walkView.C,m=C.vp,W=C.rw,H=C.rh;return {json.dumps(pts)}.map(([x,y,z])=>{{const X=m[0]*x+m[4]*y+m[8]*z+m[12],Y=m[1]*x+m[5]*y+m[9]*z+m[13],Wc=m[3]*x+m[7]*y+m[11]*z+m[15];return [(X/Wc*.5+.5)*W,(1-(Y/Wc*.5+.5))*H]}})}})()")
-            sx, sy = im.width / pg.evaluate("walkView.C.rw"), im.height / pg.evaluate("walkView.C.rh"); res = []
-            for X, Y in P:
-                X, Y = X * sx, Y * sy
-                if not (r < X < im.width - r and r < Y < im.height - r): res.append(None); continue
-                c = pixels(im.crop((int(X - r), int(Y - r), int(X + r), int(Y + r)))); res.append(sum(.3 * p[0] + .59 * p[1] + .11 * p[2] for p in c) / len(c))
-            return res
-        # GL draw calls that WebGL refuses (a sampler fed the wrong kind of texture) show as nothing drawn; count them
-        pg.evaluate("""(()=>{const gl=gpuState.gl;if(gl.__chk)return;gl.__chk={n:0,last:''};const proto=Object.getPrototypeOf(gl),ge=proto.getError;let cur=null;const ou=proto.useProgram;gl.useProgram=function(p){cur=p;return ou.call(gl,p)};
-         for(const k of ['drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced']){const f=proto[k];gl[k]=function(...a){const r=f.apply(gl,a);const e=ge.call(gl);if(e){gl.__chk.n++;gl.__chk.last=k+' '+e+' '+(Object.keys(gpuState.P).find(n=>gpuState.P[n].p===cur)||'?')}return r}}})()""")
-        unwrap = "(()=>{const gl=gpuState.gl;for(const k of ['useProgram','drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced'])delete gl[k];delete gl.__chk})()"   # the error check after every draw stalls software drawing: only for this step
-        try:
-            # 1. the land: the normal map, the slope toward the sun, the shadow of a block (the sun in the west at 17:00)
-            bench('test_light_terrain', 17, 30, 11, 0); lab = pg.evaluate("walkView.sc.lab"); im1 = picture()
-            pg.evaluate("ENGINE_DEFAULTS.world.groundBumps=0;0"); time.sleep(2); im0 = picture(); pg.evaluate("ENGINE_DEFAULTS.world.groundBumps=1;0")
-            from PIL import ImageChops
-            d = pixels(ImageChops.difference(im1, im0)); bump = sum(sum(p) for p in d) / (3 * len(d))
-            if bump < .6: raise Exception(f'the ground normal map changes the picture by only {bump:.2f}/255 (not in use?)')
-            rx, z0, z1 = lab['ridge']; zz = 16
-            hy = lambda x, z: pg.evaluate(f"standingHeightAt({x},{z})")
-            west, east, top = lum(im1, [[rx - 2.4, hy(rx - 2.4, zz), zz], [rx + 2.4, hy(rx + 2.4, zz), zz], [rx, hy(rx, zz), zz]])
-            if west is None or east is None or west < east * 1.1: raise Exception(f'the slope facing the sun is not brighter: west {west and round(west)}, east {east and round(east)}, top {top and round(top)}')
-            bench('test_light_terrain', 17, 9, 17, 0); im2 = picture(); bx0, bz0, bx1, bz1, bh = lab['block']
-            # the shadow runs east and away from the block (the sun is west and in front): the darkest of a few spots just
-            # east of it against the brightest of the same spots 7 m further east
-            zs = [bz0 + 1.5, bz0 + 2.5, bz0 + 3.5]
-            near = [v for v in lum(im2, [[bx1 + 1, hy(bx1 + 1, z), z] for z in zs], 4) if v is not None]; far = [v for v in lum(im2, [[bx1 + 7, hy(bx1 + 7, z), z] for z in zs], 4) if v is not None]
-            if not near or not far: raise Exception('the block’s shadow is off screen')
-            shade, lit = min(near), max(far)
-            if shade > lit * .85: raise Exception(f'the block’s shadow does not darken the ground: in it {round(shade)}, beside it {round(lit)}')
-            out.append(f'land: bumps change the picture by {bump:.1f}/255, the sunward slope is {west / east:.2f}× the far one, the block’s shadow {100 - 100 * shade / lit:.0f}% darker')
-            shot(pg, 'v44-land')
-            # 2. props: every kind draws (pictures, solids, voxels, buildings) and no draw is refused
-            bench('test_light_props', 16, 20, 7, 0); time.sleep(1)
-            c = json.loads(pg.evaluate("JSON.stringify({bld:buildingState.drawn,vox:propModelState.drawn,p3d:solidPropState.drawn,spr:walkRenderer.sprN||null,placed:(walkView.sc.props||[]).length,fails:[buildingState.fail,propModelState.fail,solidPropState.fail].filter(Boolean)})"))
-            if c['fails']: raise Exception('renderers off: ' + ' | '.join(c['fails']))
-            if c['bld'] < 3 or c['vox'] < 4 or c['p3d'] < 1: raise Exception(f'props scene: {c}')
-            shot(pg, 'v44-props'); out.append(f'props: {c["bld"]} buildings, {c["vox"]} voxel props, {c["p3d"]} solid props drawn of {c["placed"]} placed')
-            # 3. a room: daylight from the window makes a readable, not blown-out floor; after dark the lamps lay pools
-            bench('test_light_room', 13, 7, 2.2, 0); im = picture(); fl = lab = pg.evaluate("walkView.sc.lab")
-            floor = lum(im, [[x, 0, z] for x in (4, 7, 10) for z in (2.5, 4)])
-            if any(v is None for v in floor): raise Exception('the room floor is off screen')
-            if not (40 < min(floor) and max(floor) < 215): raise Exception(f'room floor brightness out of range: {[round(v) for v in floor]}')
-            bench('test_light_room', 23, 7, 2.2, 0); im = picture(); L = lab['lamps']
-            under = lum(im, [[L[0][0], 0, L[0][1] - 1.2], [L[1][0], 0, L[1][1] - 1.2]]); between = lum(im, [[7, 0, 2.2]])
-            if None in under or between[0] is None or min(under) < between[0] * 1.08: raise Exception(f'no lamp pools after dark: under {[round(v) for v in under]}, between {round(between[0])}')
-            shot(pg, 'v44-room'); out.append(f'room: floor {round(min(floor))}–{round(max(floor))}/255 by day, lamp pools {min(under) / between[0]:.2f}× the floor between them at night')
-            # 4. the air: god rays add light in the wood (the sun low behind the trees)
-            bench('test_light_air', 17.5, 18, 6, 0); imR = picture(); pg.evaluate("ENGINE_DEFAULTS.air.godRays=0;0"); time.sleep(2); imN = picture(); pg.evaluate("ENGINE_DEFAULTS.air.godRays=.5;0")
-            d = pixels(ImageChops.difference(imR, imN)); rays = sum(sum(p) for p in d) / (3 * len(d)); shot(pg, 'v44-air')
-            if rays < .3: raise Exception(f'the god rays change the picture by only {rays:.2f}/255')
-            out.append(f'air: god rays add {rays:.1f}/255')
-            # 5. the night: lamps lay pools on the ground
-            bench('test_night', 23, 16, 1.5, 0); im = picture()   # standing back so your own lantern does not light the spots
-            under = lum(im, [[13, 0, 8.2], [18.5, 0, 8.2]]); dark = lum(im, [[15.75, 0, 8.2]])     # lamps stand at x = 2 + 5.5 k, z = 9
-            if None in under or dark[0] is None or max(under) < dark[0] * 1.1: raise Exception(f'night: no pools under the lamps: {under} vs {dark[0]} between')
-            shot(pg, 'v44-night'); out.append(f'night: the ground under a lamp is {max(under) / dark[0]:.2f}× the ground between')
-            chk = json.loads(pg.evaluate("JSON.stringify(gpuState.gl.__chk)"))
-        finally:   # v47: never leave the check on (a failure above used to): it stalls every later step's drawing
-            pg.evaluate("(()=>{const gl=gpuState.gl;if(!gl||!gl.__chk)return;for(const k of ['useProgram','drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced'])delete gl[k];delete gl.__chk})()")
-        if chk['n']: raise Exception(f'{chk["n"]} draw calls refused by WebGL (last: {chk["last"]})')
-        pg.evaluate("uiState.bench=null;environment.force=null;walkRenderer.yawT=0;render();0")
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return '; '.join(out) + '; no draw call refused'
-    v44()
-
     @step('v46: the world update — ground kit, buildings and their colours, rooms that open in place', 300)
     def v46():
         """every ground kind has its 12 tiles; the new buildings and every colour variant load and have a 3D plan; each new
@@ -2179,55 +1796,6 @@ def desktop_steps(b, base, R):
         return '; '.join(out) + '; out again at the lab’s door'
     v46()
 
-    @step('v47: shop hours, the lore, room floors', 300)   # RL-5: the road east (its places, gates, shops and story) is parked
-    def v47():
-        """shops close at night and open at noon; the Guide's Lore page shows the places you've been; no two rooms share a
-        floor. RL-5: the road east is parked with its places (game/data/legacy): reaching every place along the roads,
-        the seven regions' songs, moods, lore, landmarks, shops and clinics, the Fanfare Fields and Rimefrost gates, each
-        new town's shop, and the story to its end (Cass Flow's clue, Vinylla at the Inner Sun, the ending) are retired
-        until a run's places and story bring them back (RL-7 and on)"""
-        import collections
-        out = []; D = gamedata(); RT = D['locations']
-        # RL-5: the roads reaching every place, and the 27 places of the seven regions (song, mood, lore, landmark, shop
-        # and clinic, a shop room of its own, somewhere to sit, animals) are retired: no road is left and those places
-        # are parked
-        bad = []
-        floors = collections.defaultdict(list)
-        for sid, sc in D['maps'].items():
-            if sc.get('kind') == 'room' and '@' not in sid: floors[collections.Counter(''.join(sc['tiles'])).most_common(1)[0][0]].append(sid)
-        bad += [f'rooms sharing a floor ({k}): {", ".join(v)}' for k, v in floors.items() if len(v) > 1]
-        if bad: raise Exception('; '.join(bad[:6]))
-        out.append(f'{len(floors)} rooms, a floor each')   # RL-5: the rooms alone (every room stays in the game data)
-        keep = pg.evaluate("JSON.stringify({seats:saveData.seats,story:saveData.story,flags:saveData.flags,visited:saveData.visited,beaten:saveData.beaten||null})")
-        try:
-            # RL-5: the gates (Fanfare Fields with Marina's badge, the Rimefrost Caves with Carat's), the new places' songs
-            # and the new towns' shop rooms are retired with their places
-            # shop hours: closed at night, open at noon (RL-5: the opening of each new town's shop is retired: those shops
-            # are parked, legacy/shops.json)
-            pg.evaluate("uiState.tab='team';render();environment.on=true;environment.force={time:23.5,weather:'clear',season:'summer'};PROP_CLOCK.t=0;0")
-            night = pg.evaluate("isOpenNow('shop')")
-            pg.evaluate("environment.force={time:12.5,weather:'clear',season:'summer'};PROP_CLOCK.t=0;0")
-            noon = pg.evaluate("isOpenNow('shop')")
-            if night or not noon: raise Exception(f'shop hours: open at 23:30 {night}, open at 12:30 {noon}')
-            out.append('shops closed at 23:30, open at 12:30')
-            # the Guide's Lore page shows the places you've been (RL-5: every place in the game, the hub alone, not the new
-            # places of the road east)
-            pg.evaluate("LOCATIONS.forEach((r,i)=>{saveData.visited[i]=1});uiState.tab='ledger';uiState.dex=null;uiState.guideTab='lore';uiState.loreSec='places';render();scrollTo(0,0);0")
-            names = pg.evaluate("[...document.querySelectorAll('.lore .lore-card h3')].map(e=>e.textContent)")
-            until(pg, "(m=>!!m&&getComputedStyle(m).opacity==='1')(document.querySelector('main.screen.s-ledger'))", 15)   # the screen fades in (slowly here)
-            pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0"); time.sleep(.6)                                   # an egg hatching or the like, not over the page
-            shot(pg, 'v47-lore-places')
-            gone = [r['name'] for r in RT if r['name'] not in names]
-            if gone: raise Exception(f'the Lore page doesn’t show {", ".join(gone[:5])}')
-            out.append(f'the Lore page shows {len(names)} places')
-            # RL-5: the story (Cass Flow's clue, Vinylla hidden at the Inner Sun until she's beaten on the Spire, the ending,
-            # 'v47-ending') is retired: Cass and Vinylla are parked trainers and the Inner Sun a parked place
-        finally:
-            pg.evaluate(f"(o=>{{saveData.seats=o.seats;saveData.story=o.story;saveData.flags=o.flags;saveData.visited=o.visited;if(o.beaten)saveData.beaten=o.beaten;uiState.modal=null;uiState.mq=[];if(typeof talkBox!=='undefined')talkBox.on=false;environment.force=null;PROP_CLOCK.t=0;uiState.guideTab=null;uiState.tab='walk';renderOverlay();render()}})({keep});0")
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return '; '.join(out)
-    v47()
-
     @step('alpha 0.1: the new name, Billies and taxing, rooms with their building\'s windows', 240)
     def a01():
         """Pocket Billies on the page and the title; the Guide counts the Billies you've taxed and the battle has a Tax!
@@ -2287,35 +1855,6 @@ def desktop_steps(b, base, R):
     # RL-5: 'alpha 0.2: places joined edge to edge — every seam walks straight across and both views agree there' retired: the hub has no neighbour, no road and no exit, so there is no seam, no stored walk and no underground neighbour to check (RL-7 joins a run's places)
 
     # RL-5: 'phase 08b: walking across seams — the next view ready ahead, no wait, no jump in the picture' retired: every seam it walked (and --seams=all) joined two parked places (RL-7 walks a run's roads, below)
-
-    @step("RL-7: a run's roads — its world made from the seed, a seam walked each way a day apiece, the hub back", 300)
-    def rl7_run_roads():
-        """a run put on the save as the mast will (RL-8): its map from the seed, landed on day 1; the save swapped in
-        brings its world (game/js/run-world.js: every scene made, the tables swapped, the old views let go); the
-        landing's north seam walked over (cross()) arrives at the next node on day 2 with its view; walked back, day 3
-        on the landing; the hub's save swapped back brings Copperleaf and no run scene"""
-        if not pg.evaluate("typeof runWorldSync==='function'"): return 'not in this build'
-        pg.evaluate("""(()=>{uiState.inside=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();
-          window.rl7Hub=JSON.parse(JSON.stringify(saveData));const s=JSON.parse(JSON.stringify(saveData)),data=runWorldData();
-          runBegin(s,{seed:'RL7ROADS',tier:1,mapgenV:MAPGEN_VERSION,se:300});runMapStart(s.run,data);runArrive(s,0,data);
-          s.visited[s.trip.node]=1;uiState.tab='walk';setSaveData(s);render()})();0""")
-        if not until(pg, "walkView.ready&&walkView.id==='w:'+LOCATIONS[1].mapId+'*'", 90): raise Exception(f'the landing’s view never opened (still {pg.evaluate("walkView.id")})')
-        made = pg.evaluate("[runWorld.scenes, runWorld.ms, LOCATIONS.length]")
-        n1 = pg.evaluate("runWorldNode(runNext(saveData.run.map,0)[0])")
-        walked, views, unready = cross(pg, n1)
-        day = pg.evaluate('saveData.run.clock')
-        if day != 2: raise Exception(f'walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day {day}, not 2')
-        cross(pg, 1)
-        back = pg.evaluate('[saveData.run.clock, saveData.run.path]')
-        if back[0] != 3: raise Exception(f'walked back to the landing on day {back[0]}, not 3 (path {back[1]})')
-        shot(pg, 'rl7-run-landing')
-        pg.evaluate("setSaveData(window.rl7Hub);render();0")
-        if not until(pg, "walkView.ready&&walkView.id==='w:'+mapIdAt(saveData.trip.node)+'*'&&!runWorld.seed", 90): raise Exception(f'the hub never came back (still {pg.evaluate("walkView.id")})')
-        left = pg.evaluate("Object.keys(worldExtraMaps()).length+'/'+LOCATIONS.length")
-        if left != '0/' + str(pg.evaluate('gameData.locations.length')): raise Exception(f'the run’s world stayed: {left}')
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f'{made[0]} scenes made in {made[1]} ms ({made[2]} places); {walked:.0f} m over the seam (views {len(views)}, {unready} not ready), day 2, back on day 3; the hub back'
-    rl7_run_roads()
 
     @step('RL-8: a run from the mast — the flight, a battle, a seam, a paid heal, the shop, a mini-boss and its Loophole pick (RL-12), the boss, the payout, home', 420)
     def rl8_run_from_mast():
@@ -2542,29 +2081,6 @@ def desktop_steps(b, base, R):
         return f'{r["b"]} buildings in 3D by night, {r["on"]} of {r["lamps"]} lamps on, {r["lit"]} of {r["fw"]} front windows lit; a rain front came in (its curtain at {c["e"]:.2f}, coming in: {c["into"]})'
     a04_lights()
 
-    @step('alpha 0.4.1: walk the world yourself — the joystick, the D-pad', 300)   # RL-5: walking over the edge onto Route 1 is parked
-    def a041_walk():
-        """the classic way (the only way since phase 08). The joystick moves you along the camera, the D-pad shows when chosen.
-        RL-5: walking out of Copperleaf over its edge onto Route 1 is retired (the hub has no edge to walk over, Route 1 is
-        parked; RL-7 walks a run's roads)"""
-        pg.evaluate("uiState.modal=null;uiState.mq=[];uiState.toastQ=[];renderOverlay();environment.force={time:12,weather:'clear',season:'summer'};0")
-        try:
-            n0 = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='copperleaf')")   # RL-5: no Hedgerow Lane to walk onto
-            if n0 < 0: return 'no Copperleaf in this build'
-            go_scene(pg, n0, 150); time.sleep(2)
-            p0 = pg.evaluate("[walkView.pl.x,walkView.pl.z]"); pg.evaluate("walkView.stick={x:0,y:1};0"); f0 = pg.evaluate("walkRenderer.frames"); until(pg, f"walkRenderer.frames>={f0 + 4}", 120)
-            pg.evaluate("walkView.stick=null;0"); p1 = pg.evaluate("[walkView.pl.x,walkView.pl.z]"); moved = ((p1[0] - p0[0]) ** 2 + (p1[1] - p0[1]) ** 2) ** .5
-            if moved < .2: raise Exception(f'the joystick moved the player {moved:.2f} m')
-            pg.evaluate("saveData.preferences.control='dpad';renderOverlay();render();0"); time.sleep(.8)
-            dp = pg.evaluate("!!document.querySelector('.dpad')"); pg.evaluate("saveData.preferences.control='stick';renderOverlay();render();0")
-            if not dp: raise Exception('no D-pad when the D-pad is chosen')
-            # RL-5: the walk over Copperleaf's edge onto Route 1 ('a041-walked-to-route1') is retired with Route 1
-            if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-            return f'the joystick moved the player {moved:.1f} m, the D-pad shows when chosen'
-        finally:
-            pg.evaluate("environment.force=null;0")
-    a041_walk()
-
     @step('phase 08: running — the joystick’s outer ring, the D-pad’s centre, Shift and "Always run"', 180)
     def run_speeds():
         """the walk speed a full push gives, and 1.7 times that when running; the ring and the D-pad's centre set the run from
@@ -2644,28 +2160,6 @@ def desktop_steps(b, base, R):
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
     settings()
-
-    @step('Battles: on the 3D stage, and a trainer battle played to the end', 330)
-    def battles():
-        pg.evaluate("screenWipe=f=>f();saveData.trip={node:0,plan:[]};uiState.tab='walk';render();0"); time.sleep(2)
-        pg.evaluate("const q={id:'t3d',sp:'swift1',lvl:12,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
-        if wait_phase(pg, sec=60) != 'choose': raise Exception('the 3D-stage battle never reached the move menu')
-        shot(pg, 'battle-3d'); stage = pg.evaluate("!!battleStage.gl")
-        pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
-        # battle animations at four times the speed (the Debug panel's speed setting), so the result comes quickly
-        pg.evaluate("battleStage.speed=4;saveData.team=[makeBilly('musk2',45),makeBilly('swift1',30)];saveData.trip.node=0;startTrainer('crude');0")   # RL-5: node 0, the hub (node 4 is parked; crude stands nowhere now)
-        end = time.time() + 300; won = None
-        while time.time() < end:
-            ph = wait_phase(pg, ('choose', 'switch', 'end'), 30)
-            if ph == 'end': won = pg.evaluate('activeBattle.over') == 'win'; break
-            if ph == 'switch': pg.evaluate("document.querySelector('[data-a=bswitch]:not([disabled])').click()"); continue
-            if ph == 'choose': pg.evaluate("document.querySelector('[data-a=bfight]')?.click();document.querySelector('[data-a=bmove]').click()")
-        pg.evaluate("battleStage.speed=1;if(activeBattle){stopTimers();activeBattle=null;battleStageStop()}render();0")
-        if won is None: raise Exception('the trainer battle didn’t finish in 300s')
-        if not won: raise Exception('the trainer battle was lost (it should be an easy win)')
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return ('3D stage' if stage else 'painted stage (no WebGL)') + ', trainer battle won'
-    battles()
     R['desktopErrors'] = errs[:10]; ctx.close()
 
 
@@ -2699,24 +2193,6 @@ def compare_pictures(R):
     elif diffs: notes.append(f'{len(diffs)} pictures match the baseline closely')
 
 
-@step('Studio: every script loads and the sign-in shows (GitHub mode)', 60)
-def studio_opens(b):
-    """phase 01: the Studio as GitHub Pages serves it (no Studio server): all its scripts run and it asks for a token.
-    The Studio's own checks are tools/check-studio-github.py (Studio plan T1.4; local mode was dropped)"""
-    srv, base = serve(ROOT); errs = []
-    ctx = b.new_context(viewport={'width': 1280, 'height': 860}); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS); pg = ctx.new_page()
-    pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
-    try:
-        pg.goto(base + '/studio/index.html'); pg.wait_for_selector('#ghTok', timeout=60000)
-        ok = pg.evaluate("[typeof openSection==='function',typeof githubMode==='object',typeof propLook==='function']")
-        if not all(ok): raise Exception(f'Studio scripts missing (openSection, githubMode, the shared renderer): {ok}')
-        shot(pg, 'studio-sign-in')
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return 'the Studio and the shared game scripts loaded; the GitHub sign-in is showing'
-    finally:
-        ctx.close(); srv.shutdown()
-
-
 def timing_report(R):
     """phase 01: the total and the slowest steps, so the time a check costs stays visible"""
     done = [s for s in steps if s.get('seconds')]
@@ -2736,7 +2212,7 @@ def main():
     R = {'when': time.strftime('%Y-%m-%d %H:%M'), 'render': 'software, a third of the resolution, 1024 shadow map'}
     # phase 04b: data/gamedata.js is generated from the data files; make it from the files as they are now
     subprocess.run(['node', str(ROOT / 'tools' / 'build-data.mjs')], check=True)
-    check_version(); check_code(); check_data(); old_names(); copperleaf_data(); check_water(); check_masts(); check_postcards(); check_rooms(); check_windows(); check_ground(); report_unused()
+    check_version(); check_data(); copperleaf_data(); check_water(); check_masts(); check_postcards(); check_rooms(); check_room_floors(); check_windows(); check_ground(); report_unused()
     srv, base = serve(GAME)
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
@@ -2746,11 +2222,7 @@ def main():
             phone_flow(b, base, R)
             in_game_test_step(b, base, R)
             actions_sheet_step(b, base, R)
-            if SMOKE:
-                studio_opens(b)
-            else:
-                messages_step(b, base, R)
-                team_step(b, base, R)
+            if not SMOKE:
                 safety_step(b, base, R)
                 targets_step(b, base, R)
                 sound_step(b, base, R)

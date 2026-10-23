@@ -103,20 +103,6 @@
 .bag-n {
   font-size: 17px;
 }
-.bag-prog {
-  display: block;
-  height: 8px;
-  border-radius: 6px;
-  background: rgba(46, 33, 64, 0.14);
-  overflow: hidden;
-  margin-top: 4px;
-}
-.bag-prog i {
-  display: block;
-  height: 100%;
-  background: var(--t-walk);
-  border-radius: 6px;
-}
 .bag-empty {
   margin: 18px 6px;
 }

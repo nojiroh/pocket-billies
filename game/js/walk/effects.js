@@ -12,7 +12,6 @@ import {
   litWindowFraction,
   provide,
   reducedMotion,
-  stampDraw,
   worldBillyGlows,
 } from '../hooks.js';
 import { placedTurn } from '../logic/prop-turn.js';
@@ -404,7 +403,6 @@ export function effectsPass(C, items, X, dark, t, dt) {
   drawRoomEffects(C, U, items, glows, t, rm);
   gl.uniform3fv(U.uRight, R);
   gl.uniform3fv(U.uUp, Up);
-  if (typeof stampDraw === 'function') stampDraw(quad, glows, t);
   if (typeof clueDraw === 'function') clueDraw(quad, glows, t);
   if (typeof worldBillyGlows === 'function' && !walkRenderer.bt) worldBillyGlows(glows, dt);
   if (!walkRenderer.bt && walkRenderer.encPos)

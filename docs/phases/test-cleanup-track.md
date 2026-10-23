@@ -1,5 +1,7 @@
 # Test cleanup track (TC) - checks and tests that fit the game as it is
 
+Branch: track/test-cleanup
+
 A side track, like the camera track. The owner asked (2026-10-23) how much work it would be to make every check and
 test fit the current game, and which are outdated or useless. This file is the answer as a plan: four sessions, about
 one phase, most of it deleting. Each session is tagged `tc-N-done` (the owner pushes tags). It finishes what phase 13b
@@ -174,7 +176,16 @@ nightly green with pictures compared.
 ## Running sessions in parallel (lanes)
 The sessions above are the work in order for one session at a time. To run several at once, split by which files a
 session owns instead of by TC number. `check-quick.py` is touched by every TC session, so it has one owner (lane B)
-who works through it in order. Each lane is its own branch and PR, with its own HANDOFF entry.
+who works through it in order. Each lane has its own HANDOFF entry.
+
+**One branch for every lane** (docs/BRANCHES.md): all lanes work on `track/test-cleanup`, since a cloud session can
+only push to the branch it was started on. The lanes own different files, so their commits don't conflict; to keep
+pushes clean: `git pull --no-rebase origin track/test-cleanup` before every push (a merge, never a rebase or a force
+push), and if a push is refused as not fast-forward, pull again and push. A lane never edits another lane's files; a
+change outside its files goes in its HANDOFF entry for the owning lane. HANDOFF entries: add yours at the top in one
+commit right before your last push, so a conflict there is a two-entry merge. Milestones go to main by pull request
+from `track/test-cleanup` (one open PR at a time, merge commit, the branch stays); each lane says in its HANDOFF entry
+that its part is pushed, and the owner merges when the lanes of a round are done.
 
 Before any lane starts: the camera fix (TC-1 item 0) is merged. The owner's answers are below ("The owner's
 answers").
@@ -183,13 +194,14 @@ answers").
 - **A, unit tests and save code:** `tools/test/` (TC-1 item 1, TC-2 item 1), `logic/saves.js` (TC-1 item 6), then
   delete `old-world.mjs`. Owns `tools/test/`, `game/js/logic/saves.js`, settings-screen.js's `lookFromOld`.
 - **B, check-quick deletions:** TC-1 item 2. Owns `tools/check-quick.py`.
-- **C, in-game tests:** TC-2 items 2-3, the debug menu labels, and moving the unreachable rooms if the owner says so.
+- **C, in-game tests:** TC-2 items 2-3, the debug menu labels, and moving the unreachable rooms and `city_opening` to legacy (the owner said yes).
   Owns `self-test.js`, `bowl-map-test.js`, `graphics-test.js`, `debug-menu.js`.
 - **D, lint, data check, Studio check, CI:** TC-1 items 3-5, TC-2 items 4-5. Owns `check-names.mjs`,
   `retired-names.json`, the rename tools, `check-data.mjs`, `unused-css.mjs`, `check-studio-github.py`,
   `.github/workflows/check.yml`, and the two checks dropped from `check-fast.py`.
 
-**Round 2, two sessions at once**
+**Round 2, two sessions at once** (started automatically when lanes B and D have pushed their round 1 HANDOFF
+entries; the owner, 2026-10-23)
 - **B continues:** TC-3, all of it.
 - **E:** TC-4 items 3-4: the IS-6a/IS-6b checks move from `check-fast.py` to `check-studio-github.py`, `island` folds
   into `hub_island`, `npm test` under 30 s (after A is merged).
@@ -205,8 +217,8 @@ answers").
 - The picture baseline is made last, once check-quick is settled.
 
 **What it costs**
-- Every lane edits `docs/HANDOFF.md` and probably `docs/TESTING.md`: simple conflicts at every merge, so merge one PR
-  at a time and merge main into the next before merging it.
+- Every lane edits `docs/HANDOFF.md` and probably `docs/TESTING.md`: simple conflicts when lanes pull each other's
+  pushes on the shared branch; resolve by keeping both sides.
 - CLAUDE.md says one phase per session and never start from an untagged state; parallel lanes bend that, as the other
   tracks do. Tags: `tc-lane-<A..E>-done` per lane, `tc-done` when round 3 ends.
 - About three rounds of waiting instead of 4-5 sessions one after another.
@@ -221,12 +233,17 @@ All seven "Ask me before" items are decided; lanes act on these without asking a
   stay in the Studio's Legacy section; VISION's "the city scene is kept in the data for the story to bring back" holds
   there). The title screen draws over Copperleaf instead of `city_opening`. Lane C does it; it touches the fast
   check's boot check ("title over city_opening"), opening-script's city test and the doors check in check-data, so
-  lane C coordinates those lines with lanes A and D (or takes them in its own PR).
+  lane C takes those lines too and says so in its HANDOFF entry, so lanes A and D leave them alone.
 - **Debug menu:** drop "Earn every badge" and "Reset trainer wins"; keep "Walk 1 km" with a note that it adds trainer
   card distance (lane C).
 - **Graphics test:** point it at test_graphics now (not `marigold`); merging it into the bench test is a later UI
   choice, not this track (lane C).
 - **The `city` and `mall` songs:** keep them and their sound fingerprints.
+- **The `variants` song** (asked by lane A; only parked places play it now): keep it, like `city` and `mall`
+  (the owner, 2026-10-23: "make the recommended choices").
+- **Lane A's corrections to this file:** the set-aside box stays (it also holds the other game when the account and
+  the browser hold different games); only the boot-time setting aside of an older save went. `lookFromOld` stays
+  (person-art.js calls it); only its boot use in settings-screen.js went.
 - **Parity tests:** delete `frame-allocations` and `fx-group`; keep `sheet-slice-parity` renamed to
   `sheet-slice-real` (the "source sheets match committed parts" half, without the Python wording) (lane A; the rename
   in its own commit).
