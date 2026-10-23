@@ -674,8 +674,8 @@ def relics(pg, base):
     if not until(pg, f"saveData.run.perks.length===6&&saveData.run.perks.includes('{took}')&&!saveData.run.offer&&!(uiState.modal&&uiState.modal.cls==='relic-pick')", 10):
         raise Exception(f'taking {took}: {pg.evaluate("JSON.stringify([saveData.run.perks,saveData.run.offer])")}')
     if len(stored()['perks']) != 6: raise Exception('the pick wasn’t stored')
-    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='relics';render();0")
-    if not until(pg, "document.querySelectorAll('.s-relics .bag-row').length===6", 10): raise Exception('the Perks tab doesn’t list six')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='perks';render();0")
+    if not until(pg, "document.querySelectorAll('.s-perks .bag-row').length===6", 10): raise Exception('the Perks tab doesn’t list six')
     pg.evaluate("uiState.tab='walk';render();0")
     st = pg.evaluate("startWild(encountersHere()[0]);[!!activeBattle.fx,activeBattle.sides[0].f[0].v.st.hus]")
     if st != [True, 1]: raise Exception(f'a battle’s Perks and Speed stage: {st}')

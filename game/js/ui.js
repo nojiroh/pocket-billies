@@ -66,7 +66,7 @@ export function setRender(v) {
 /* ---------- screens ---------- */
 /* the screens, in the order that decides which side a screen slides in from (UI-5: the bottom bar holds Map, Team
    and Bag, updateNav below; the world, the Guide and the Trainer card are reached otherwise) */
-const TABS = ['walk', 'map', 'team', 'ledger', 'bag', 'relics', 'lab'],
+const TABS = ['walk', 'map', 'team', 'ledger', 'bag', 'perks', 'lab'],
   SCREENS = [...TABS, 'profile'];
 function topbar() {
   const shut = !!(saveData.preferences && saveData.preferences.cardClosed),
@@ -116,7 +116,7 @@ export function render() {
             ? renderProfile()
             : T === 'bag'
               ? renderBag()
-              : T === 'relics'
+              : T === 'perks'
                 ? renderPerks()
                 : T === 'lab'
                   ? renderLabBoard()
@@ -189,7 +189,7 @@ function updateNav(show) {
   }
   n.hidden = !show;
   n.set = saveData.run ? 'run' : 'hub';
-  n.value = ['map', 'team', 'bag', 'relics', 'lab'].includes(uiState.tab) ? uiState.tab : '';
+  n.value = ['map', 'team', 'bag', 'perks', 'lab'].includes(uiState.tab) ? uiState.tab : '';
   /* its labels follow the language (i18nText) */
   if (typeof n.requestUpdate === 'function') n.requestUpdate();
 }

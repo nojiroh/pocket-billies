@@ -12,7 +12,7 @@
      <pb-payout rows='[{"label":"Moneys left","value":170}]' total="420" total-label="Research">   rows slam in, the
                                                        total counts up (play() runs it again); pb-payout-row
                                                        as each row shows, pb-payout-total as the total lands
-     <pb-nav-bar set="run|hub" value="map" badges="relics:2">   the bottom bar (pb-change)
+     <pb-nav-bar set="run|hub" value="map" badges="perks:2">   the bottom bar (pb-change)
    The motions here repeat css/motion.css's reward motions (m-slam, m-flip), as a component's styles can't see the
    page's; with reduced motion each one is a fade and numbers jump to their end. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -79,7 +79,7 @@ const RUN_NAV_SETS = {
     { id: 'map', label: 'Map', icon: 'map' },
     { id: 'team', label: 'Team', icon: 'team' },
     { id: 'bag', label: 'Bag', icon: 'bag' },
-    { id: 'relics', label: 'Perks', icon: 'relic' },
+    { id: 'perks', label: 'Perks', icon: 'relic' },
   ],
   hub: [
     { id: 'map', label: 'Map', icon: 'map' },
