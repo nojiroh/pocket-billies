@@ -1068,7 +1068,7 @@ def run_pack(pg, base):
     return f'a trainee from storage travelled alone with 2 Potions packed (training stopped, healed); given up and kept: back in storage once at Lv {lv}; a won run brought its bag home ({bag} Potions, no items row); a reload kept it'
 
 
-RUN_TEST_URL = '?debug&run=TESTSEED&unlocks=all&short=1&party=musk2@30,bezos1@20&relics=shelter,lobbyist'
+RUN_TEST_URL = '?debug&run=TESTSEED&unlocks=all&short=1&party=musk2@30,bezos1@20&relics=clinic_card,coupon_book'
 RUN_TEST_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
 const U = { unlocks: D.unlocks, buildings: D.buildings },
   un = modules.unlocks.runUnlocks({ meta: { unlocks: Object.fromEntries(Object.keys(D.unlocks).map(i => [i, 1])) } }, U),
@@ -1093,7 +1093,7 @@ def run_test(pg, base):
     if got['map'] != want['map'] or got['deadline'] != want['deadline']: raise Exception(f"its map isn't runStartPlan's: {len(got['map']['nodes'])} places, deadline {got['deadline']}; Node: {len(want['map']['nodes'])}, {want['deadline']}")
     if got['unlocks'] != want['unlocks']: raise Exception(f"its unlocks {got['unlocks']} aren't runStartPlan's {want['unlocks']}")
     if got['team'] != ['musk2@30', 'bezos1@20']: raise Exception(f"its party is {got['team']}, not musk2@30, bezos1@20")
-    if got['relics'] != ['shelter', 'lobbyist']: raise Exception(f"it holds {got['relics']}, not shelter, lobbyist")
+    if got['relics'] != ['clinic_card', 'coupon_book']: raise Exception(f"it holds {got['relics']}, not clinic_card, coupon_book")
     drawing(pg)
     saved = pg.evaluate("Object.keys(localStorage).filter(k => k.startsWith('networth-save'))")
     if saved: raise Exception(f'it wrote a save in this browser: {saved}')

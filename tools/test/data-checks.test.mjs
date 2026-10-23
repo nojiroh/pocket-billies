@@ -93,16 +93,16 @@ test('a planted fault is found by its family, in the file check-data names', () 
   found('dataPerks', D, 'run.perks.cap');
   // Studio plan T4.1: the code's limits (effects.js FX_LIMIT, FX_STAGES) on a row
   D = copy();
-  D.perks.offshore.fx[0].mult = 0.05;
-  found('dataPerks', D, "offshore.fx[0].mult: 0.05 is outside the code's limits, 0.1 to 4");
+  D.perks.lucky_charm.fx[0].mult = 0.05;
+  found('dataPerks', D, "lucky_charm.fx[0].mult: 0.05 is outside the code's limits, 0.1 to 4");
   D = copy();
-  D.perks.insider.fx[0].stages = 7;
-  found('dataPerks', D, 'insider.fx[0].stages: 7 is not a whole number of stages from -6 to 6');
-  D.perks.insider.fx[0].stages = 1.5;
-  found('dataPerks', D, 'insider.fx[0].stages: 1.5');
+  D.perks.running_shoes.fx[0].stages = 7;
+  found('dataPerks', D, 'running_shoes.fx[0].stages: 7 is not a whole number of stages from -6 to 6');
+  D.perks.running_shoes.fx[0].stages = 1.5;
+  found('dataPerks', D, 'running_shoes.fx[0].stages: 1.5');
   D = copy();
-  D.perks.offshore.fx[0].mult = 4;
-  D.perks.shelter.fx[0].mult = 0.1;
+  D.perks.lucky_charm.fx[0].mult = 4;
+  D.perks.clinic_card.fx[0].mult = 0.1;
   assert.deepEqual(C.dataPerks(D), [], 'the limits themselves are allowed');
   D = copy();
   D.currencies.research.kept = 'run';

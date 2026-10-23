@@ -1832,7 +1832,7 @@ const out = {};
 /* Studio plan Phase 4: what the content editors must show, from the game's logic in Node */
 out.offers = modules.perks.perkOfferOrder('LAB1', D.perks, D.rules.run.perks, D.rules.run.map.minibosses).map(p => p.offer.join(','));
 out.lab = modules['run-preview'].runPreview('LAB1', { unlocks: [] }).relicOffers.map(o => o.join(','));
-out.insider = modules['content-preview'].perkPreview(['insider'], { sp: D.lines[0].id + '1', lvl: 30 }).stats.find(s => s.id === 'hus');
+out.running_shoes = modules['content-preview'].perkPreview(['running_shoes'], { sp: D.lines[0].id + '1', lvl: 30 }).stats.find(s => s.id === 'hus');
 out.leaders = modules['content-preview'].leaderRunValues();
 out.standIns = modules['content-preview'].speciesStandIns(Object.values(D.pools).flatMap(P => P.list.map(e => e[0])));
 out.fresh = modules['unlock-graph'].unlockSaveAfter(D);
@@ -1886,38 +1886,38 @@ def relics_steps(pg, errs):
     W = content_want(errs)
     if not W: return
     n = len(errs)
-    pg.evaluate("void openSection('relics', { relic: 'insider' })")
+    pg.evaluate("void openSection('relics', { relic: 'running_shoes' })")
     pg.wait_for_selector('#main [data-relic-preview]', timeout=20000)
-    if not wait_js(pg, "!!document.querySelector('#main [data-relic-preview][data-ready=insider]')"):
+    if not wait_js(pg, "!!document.querySelector('#main [data-relic-preview][data-ready=running_shoes]')"):
         errs.append('perks: the sample build never came from the logic worker'); return
     hus = pg.evaluate("+(document.querySelector('#main [data-relic-preview] [data-stat=hus]')||{dataset:{}}).dataset.after")
-    if hus != W['insider']['after']: errs.append(f"perks: Running Shoes's Speed after is {hus}, the game's {W['insider']['after']}")
+    if hus != W['running_shoes']['after']: errs.append(f"perks: Running Shoes's Speed after is {hus}, the game's {W['running_shoes']['after']}")
     wait_js(pg, "!!document.querySelector('#main [data-relic-offers][data-ready]')")
     offers = pg.evaluate("[...document.querySelectorAll('#main [data-relic-offers] [data-offer]')].map(e=>e.dataset.offer)")
     if offers != W['offers'] or offers != W['lab'][:len(offers)]: errs.append(f"perks: LAB1's offer order {offers}, Node {W['offers']}, the Run Lab's {W['lab']}")
     # a stages edit: the preview follows, Propose carries perks.json, undo puts it back
-    sel = '#main [data-p="perks.insider.fx.0.stages"]'
+    sel = '#main [data-p="perks.running_shoes.fx.0.stages"]'
     pg.fill(sel, '2'); pg.dispatch_event(sel, 'change')
-    two = wait_js(pg, f"+(document.querySelector('#main [data-relic-preview] [data-stat=hus]')||{{dataset:{{}}}}).dataset.after==={W['insider']['before'] * 2}", 10)
+    two = wait_js(pg, f"+(document.querySelector('#main [data-relic-preview] [data-stat=hus]')||{{dataset:{{}}}}).dataset.after==={W['running_shoes']['before'] * 2}", 10)
     if not two: errs.append('perks: +2 stages did not double the preview’s Speed')
     pg.evaluate("undo()"); time.sleep(0.3)
-    edit_undo(pg, errs, 'perks', sel, 3, 'perks.insider.fx.0.stages', 'perks\\.json$')
+    edit_undo(pg, errs, 'perks', sel, 3, 'perks.running_shoes.fx.0.stages', 'perks\\.json$')
     # a factor under the code's limit: data-checks' message on its row
-    pg.evaluate("void openSection('relics', { relic: 'offshore' })"); time.sleep(0.3)
-    sel = '#main [data-p="perks.offshore.fx.0.mult"]'
+    pg.evaluate("void openSection('relics', { relic: 'lucky_charm' })"); time.sleep(0.3)
+    sel = '#main [data-p="perks.lucky_charm.fx.0.mult"]'
     pg.fill(sel, '0.05'); pg.dispatch_event(sel, 'change'); time.sleep(0.6)
     pg.evaluate("render()")
     msg = pg.evaluate("(document.querySelector('#main [data-relic-row=\"0\"] .relic-err')||{}).textContent||''")
     if "outside the code's limits" not in msg: errs.append(f'perks: a factor of 0.05 showed no limit message on its row ({msg!r})')
     pg.evaluate("undo()"); time.sleep(0.3)
     # a row's kind: the row becomes a stat row; undo makes it money again
-    pg.select_option('#main [data-relic-kind="offshore"][data-n="0"]', 'stat'); time.sleep(0.6)
-    kind = pg.evaluate("studioState.D.perks.offshore.fx[0].kind")
+    pg.select_option('#main [data-relic-kind="lucky_charm"][data-n="0"]', 'stat'); time.sleep(0.6)
+    kind = pg.evaluate("studioState.D.perks.lucky_charm.fx[0].kind")
     pg.evaluate("undo()"); time.sleep(0.3)
-    if kind != 'stat' or pg.evaluate("JSON.stringify(studioState.D.perks.offshore.fx)") != '[{"kind":"money","mult":1.2}]':
-        errs.append(f"perks: the kind change made {kind!r} and undo left {pg.evaluate('JSON.stringify(studioState.D.perks.offshore.fx)')}")
+    if kind != 'stat' or pg.evaluate("JSON.stringify(studioState.D.perks.lucky_charm.fx)") != '[{"kind":"money","mult":1.2}]':
+        errs.append(f"perks: the kind change made {kind!r} and undo left {pg.evaluate('JSON.stringify(studioState.D.perks.lucky_charm.fx)')}")
     if pending_files(pg, 'perks\\.json$'): errs.append('perks: after every undo Propose would still send perks.json')
-    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['insider']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone", flush=True)
+    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone", flush=True)
 
 
 def unlocks_steps(pg, errs):
@@ -1999,8 +1999,8 @@ def economy_steps(pg, errs):
     pg.click('#main [data-act="ecoGo"][data-path="unlocks.ranch_2.cost"]'); time.sleep(0.5)
     if pg.evaluate("studioState.sec") != 'unlocks' or not pg.locator('#main [data-p="unlocks.ranch_2.cost"]').count(): errs.append('economy: the ranch_2 cost link did not open its field')
     pg.evaluate("void openSection('economy')"); time.sleep(0.3)
-    pg.click('#main [data-act="ecoGo"][data-path="perks.offshore.fx.0.mult"]'); time.sleep(0.5)
-    if pg.evaluate("studioState.sec + ':' + studioState.sel.relic") != 'relics:offshore': errs.append('economy: the Lucky Charm link did not open that Perk')
+    pg.click('#main [data-act="ecoGo"][data-path="perks.lucky_charm.fx.0.mult"]'); time.sleep(0.5)
+    if pg.evaluate("studioState.sec + ':' + studioState.sel.relic") != 'relics:lucky_charm': errs.append('economy: the Lucky Charm link did not open that Perk')
     if len(errs) == n: print(f'economy: {rows} lines, links open their fields, the simulator placeholder shown', flush=True)
 
 

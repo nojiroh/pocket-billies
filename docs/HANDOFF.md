@@ -107,22 +107,26 @@ the owner's to push. The full list of what was renamed, kept and left is in refl
   (only the status ids in its events, 42 lines; no outcome moved).
 - Verified: after every commit `npm run modules`, check:modules, lint, typecheck, check:data, format:check and the
   unit tests (all pass, about 70 s a round). Smoke at the end: passed, no problems (202 s; the phone flow with the Guide, shop and a battle, the debug log with no names, the in-game test's first step). It ran on Python Playwright 1.63.0, not the pinned 1.56.0: this container's Chromium is build 1243, which only 1.63 drives. The one unused picture it notes (`scene/build/detail-a04.png`) is not this session's.
-  **Skipped, at the owner's word (speed):** the full quick check, the in-game test (`--selftest`), test:slow,
+  **Skipped, at the owner's word (speed; asked again after the PR opened: merge on CI):** the full quick check, the in-game test (`--selftest`), test:slow,
   check-fast and the Studio check (`tools/check-studio-github.py`, which this session edited for the new names
   without running it).
 - The exported debug log: no key changed (none was forced). Its run and meta summary keeps `relics`, `capital` and
   `seals` and reads the renamed fields (`run.perks`, `meta.research`, `meta.crests`); it never carries the save itself.
   Values that are ids now read the new ids (a status `par` where it said `aud`, an item `potion`).
 - Risky:
-  - **One rename changed behaviour:** runShopStock sorts a town's weighted wares by item id before its seeded draw, so
+  - **One rename changed behaviour (accepted by the owner):** runShopStock sorts a town's weighted wares by item id before its seeded draw, so
     the item rename changed which wares a seed's run shop stocks. No test pinned it; no saved run carries over.
   - The Studio check and check-fast were edited (new ids, tab names, selectors) but not run.
   - Phones: the first load after this sets the save aside (as decided). The renamed art files (`art/coins/pyramid_16.png`
     and the rest, `art/ui/research.svg`, `art/ui/crest.svg`) load under new paths, so nothing stale shows.
   - A `track/*` merge from a session that started before this one will conflict on these names: merge main and run
     `npm run modules`; `git grep` for the old names in the table of section 7.
-- Left for the owner (section 7): the ten Perk ids, which can't be renamed without changing every seed's offers
-  (perkPool sorts by id), so this needs a behaviour commit first; stat ids `lev`, `lob`, `hus`; most move ids.
+- The ten Perk ids (the owner's answer after the PR opened: rename now, in two commits): first a behaviour commit,
+  Perks drawn in perks.json's order instead of by id (perkPool, and the run sim's tie-break), so every seed's offers
+  change once on purpose; two run-sim tests updated with it (the Perk dropped past the cap is now `fineprint`, not
+  `shelter`; the dearer-clinic test asks for no significant gain in money left: its 40 seeds' mean went 0 -> +4.5, lo
+  -21.9). Then the ids alone (`lucky_charm`...). The shop-stock change below: accepted by the owner.
+- Left: stat ids `lev`, `lob`, `hus`; most move ids.
 - Next: RF-5 (the new tone in text), beside RL-S1. Tag `rf-4-done` on this entry's commit.
 
 ### UI icons - 49 icons redrawn at 36x36, "block and split" - 2026-10-23

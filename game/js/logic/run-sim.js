@@ -53,7 +53,7 @@ export const MAX_TURNS = 60;
  * - lane: the next place drawn from the run's seed among the ones linked ahead (never back)
  * - keep: on a loss, the highest-level Billie comes home
  * - perks: Perks (Studio plan T3.3). 'greedy': the pick after a mini-boss takes the rarest offered (the lowest
- *   rules.json run.perks.rarity weight, then by id), and a town shop's Perk is bought when the money is there
+ *   rules.json run.perks.rarity weight, then in perks.json's order), and a town shop's Perk is bought when the money is there
  *   beyond `reserve`; past the cap only for a rarer one than the plainest held, which is let go. 'never': none taken
  *   or bought (the "never pick" baseline)
  */
@@ -85,8 +85,8 @@ export function simPolicy(o) {
 }
 /**
  * The policy's answer to a Perk on offer (the pick's, or a shop's): which to take of `offer` and which held one to
- * let go past the cap, or null to take none. 'greedy': the rarest (lowest rarity weight), then by id; past the cap
- * only if it is rarer than the plainest held (the highest weight, then the last by id), which goes.
+ * let go past the cap, or null to take none. 'greedy': the rarest (lowest rarity weight), then in perks.json's order; past the cap
+ * only if it is rarer than the plainest held (the highest weight, then the last in perks.json's order), which goes.
  * @param {string[]} offer @param {string[]} held @param {Record<string, any>} perks
  * @param {{ cap: number, rarity: Record<string, number> }} rule @param {{ perks: string }} P
  * @returns {{ id: string, drop?: string } | null}
@@ -94,7 +94,8 @@ export function simPolicy(o) {
 export function simPerkChoice(offer, held, perks, rule, P) {
   if (P.perks !== 'greedy' || !offer.length) return null;
   const w = (/** @type {string} */ id) => rule.rarity[perks[id].rarity] || 0,
-    order = (/** @type {string} */ a, /** @type {string} */ b) => w(a) - w(b) || (a < b ? -1 : a > b ? 1 : 0),
+    at = Object.keys(perks),
+    order = (/** @type {string} */ a, /** @type {string} */ b) => w(a) - w(b) || at.indexOf(a) - at.indexOf(b),
     id = offer.slice().sort(order)[0];
   if (held.length < rule.cap) return { id };
   const drop = held.slice().sort(order).pop();

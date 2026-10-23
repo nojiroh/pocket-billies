@@ -16,8 +16,8 @@ kept aside in the browser).
   Beans are. The cow is called Synergy now.
 - Saves from before this change don't load (reflavour track RF-4, save format 5): the game's internal names moved off
   finance (Perks, Research, Crests, Pyramids, Expeditions, the item, status and ability names), so an older save is set
-  aside and a new game starts. Nothing you see changes, except that a run town's shop may stock different wares for
-  the same seed.
+  aside and a new game starts. Nothing you see changes, except that a seed's run may offer different Perks (they are
+  drawn in the data's order now) and its town shops may stock different wares.
 - New interface icons: all 49 UI icons (the bottom bar, currencies, weather, the run's day chip and map markers,
   buttons) are redrawn as larger, full-colour pixel art: little blocks with a diagonal light split, in the game's
   own greens, golds and reds. They look the same on the light and dark themes.

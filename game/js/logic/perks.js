@@ -40,12 +40,13 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** the Perks that may be drawn: in perks.json, not held, with a rarity weight above 0, by id
+/** the Perks that may be drawn: in perks.json, not held, with a rarity weight above 0, in perks.json's order (RF-4:
+ * was by id; the data's order lets an id change without changing a seed's offers)
  * @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule @param {string[]} [also] left out too */
 export const perkPool = (run, perks, rule, also = []) =>
-  Object.keys(perks)
-    .filter(id => !run.perks.includes(id) && !also.includes(id) && (rule.rarity[perks[id].rarity] || 0) > 0)
-    .sort();
+  Object.keys(perks).filter(
+    id => !run.perks.includes(id) && !also.includes(id) && (rule.rarity[perks[id].rarity] || 0) > 0
+  );
 
 /** draw up to n Perks from a stream, by rarity weight, none twice @param {{ pick: (w: Record<string, number>) => string }} g
  * @param {string[]} pool @param {Record<string, Perk>} perks @param {PerkRules} rule @param {number} n */
