@@ -41,13 +41,11 @@ import {
   moveOptions,
   numberField,
   openSection,
+  pathPrefix,
   peopleOptions,
   rangeField,
-  readPath,
   render,
   selectField,
-  setReadPath,
-  setWritePath,
   speciesName,
   speciesOptions,
   statOptions,
@@ -95,7 +93,6 @@ expose({
   personPreviewHTML: [() => personPreviewHTML, v => (personPreviewHTML = v)],
   poolName: [() => poolName],
   poolPercent: [() => poolPercent],
-  readPathBeforeShopThanks: [() => readPathBeforeShopThanks],
   refsTo: [() => refsTo, v => (refsTo = v)],
   removeRefs: [() => removeRefs, v => (removeRefs = v)],
   renameType: [() => renameType, v => (renameType = v)],
@@ -103,7 +100,6 @@ expose({
   statsCard: [() => statsCard, v => (statsCard = v)],
   trainerRobotHTML: [() => trainerRobotHTML, v => (trainerRobotHTML = v)],
   whereCard: [() => whereCard, v => (whereCard = v)],
-  writePathBeforeShopThanks: [() => writePathBeforeShopThanks],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -1204,28 +1200,22 @@ SECTIONS.shops = () => {
 };
 /* thank-you lines are stored as an array; edit them as text (Studio plan F20: their own prefix, @thanks.; lore's
    lists of lines have @lines.) */
-const readPathBeforeShopThanks = readPath;
-setReadPath(function (path, o) {
-  if (path && path.startsWith('@thanks.')) {
-    const s = studioState.D.shops[path.slice(8)];
+pathPrefix(
+  '@thanks.',
+  k => {
+    const s = studioState.D.shops[k];
     return s && s.thanks ? s.thanks.join('\n') : '';
-  }
-  return readPathBeforeShopThanks(path, o);
-});
-const writePathBeforeShopThanks = writePath;
-setWritePath(function (path, v, o) {
-  if (path && path.startsWith('@thanks.')) {
-    const s = studioState.D.shops[path.slice(8)];
+  },
+  (k, v) => {
+    const s = studioState.D.shops[k];
     const a = String(v || '')
       .split('\n')
       .map(x => x.trim())
       .filter(Boolean);
     if (a.length) s.thanks = a;
     else delete s.thanks;
-    return;
   }
-  return writePathBeforeShopThanks(path, v, o);
-});
+);
 document.addEventListener('change', ev => {
   const el = ev.target;
   if (el.dataset.actSel === 'stockKind') {

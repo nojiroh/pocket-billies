@@ -33,6 +33,7 @@ expose({
   ACTIONS: [() => ACTIONS],
   LIVE_UPDATE_CHANNEL: [() => LIVE_UPDATE_CHANNEL],
   PANE2_REFUSED: [() => PANE2_REFUSED],
+  PATH_PREFIXES: [() => PATH_PREFIXES],
   RANGE_FORMATS: [() => RANGE_FORMATS],
   SAVE_REPLACER: [() => SAVE_REPLACER],
   SECTIONS: [() => SECTIONS],
@@ -49,6 +50,7 @@ expose({
   changed: [() => changed, v => (changed = v)],
   checkBeforeSave: [() => checkBeforeSave, v => (checkBeforeSave = v)],
   checkboxField: [() => checkboxField, v => (checkboxField = v)],
+  claimedPrefix: [() => claimedPrefix],
   clone: [() => clone],
   coinOptions: [() => coinOptions],
   colorField: [() => colorField, v => (colorField = v)],
@@ -66,10 +68,11 @@ expose({
   onField: [() => onField, v => (onField = v)],
   openSection: [() => openSection, v => (openSection = v)],
   paneRoot: [() => paneRoot],
+  pathPrefix: [() => pathPrefix, v => (pathPrefix = v)],
   peopleOptions: [() => peopleOptions],
   rangeField: [() => rangeField, v => (rangeField = v)],
   readField: [() => readField, v => (readField = v)],
-  readPath: [() => readPath, v => setReadPath(v)],
+  readPath: [() => readPath, v => (readPath = v)],
   redo: [() => redo, v => (redo = v)],
   render: [() => render, v => setRender(v)],
   renderPane: [() => renderPane, v => (renderPane = v)],
@@ -81,11 +84,9 @@ expose({
   sectionShown: [() => sectionShown],
   selectField: [() => selectField, v => (selectField = v)],
   setApi: [() => setApi, v => (setApi = v)],
-  setReadPath: [() => setReadPath, v => (setReadPath = v)],
   setRender: [() => setRender, v => (setRender = v)],
   setSaveAll: [() => setSaveAll, v => (setSaveAll = v)],
   setToast: [() => setToast, v => (setToast = v)],
-  setWritePath: [() => setWritePath, v => (setWritePath = v)],
   snapshot: [() => snapshot],
   snapshotParts: [() => snapshotParts],
   speciesName: [() => speciesName],
@@ -103,7 +104,7 @@ expose({
   undo: [() => undo, v => (undo = v)],
   uniqueKey: [() => uniqueKey],
   updateTopBar: [() => updateTopBar, v => (updateTopBar = v)],
-  writePath: [() => writePath, v => setWritePath(v)],
+  writePath: [() => writePath, v => (writePath = v)],
   writeStaged: [() => writeStaged, v => (writeStaged = v)],
 });
 /* eslint-enable no-func-assign */
@@ -161,7 +162,19 @@ export const uniqueKey = (base, taken) => {
   return k + i;
 };
 /* ---------- paths ---------- */
+/* Studio plan F20: a field whose path starts with a claimed prefix (lore's @lines., the story's @script., a shop's
+   @thanks.) reads and writes its own way. One ordered list, and a prefix is claimed once: a claim that starts another
+   (or that another starts) throws, so two editors can't quietly take one prefix */
+const PATH_PREFIXES = [];
+export function pathPrefix(prefix, read, write) {
+  const clash = ['@rigs.', ...PATH_PREFIXES.map(c => c.prefix)].find(p => p.startsWith(prefix) || prefix.startsWith(p));
+  if (clash) throw new Error(`The path prefix ${prefix} clashes with ${clash}, which is claimed already`);
+  PATH_PREFIXES.push({ prefix, read, write });
+}
+const claimedPrefix = path => (path && path[0] === '@' ? PATH_PREFIXES.find(c => path.startsWith(c.prefix)) : null);
 export function readPath(path, o) {
+  const c = claimedPrefix(path);
+  if (c) return c.read(path.slice(c.prefix.length));
   if (o === undefined) {
     if (path.startsWith('@rigs.')) {
       o = studioState.rigs;
@@ -171,12 +184,9 @@ export function readPath(path, o) {
   if (path === '') return o;
   return path.split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);
 }
-/* phase 04d: data-editors.js and lore-editor.js read and write fields their own way */
-export function setReadPath(v) {
-  readPath = v; // eslint-disable-line no-func-assign
-  provide({ readPath });
-}
 export function writePath(path, val, o) {
+  const c = claimedPrefix(path);
+  if (c) return void c.write(path.slice(c.prefix.length), val);
   if (o === undefined) {
     if (path.startsWith('@rigs.')) {
       o = studioState.rigs;
@@ -195,11 +205,6 @@ export function writePath(path, val, o) {
     if (Array.isArray(a)) a[k] = undefined;
     else delete a[k];
   } else a[k] = val;
-}
-/* phase 04d: data-editors.js and lore-editor.js read and write fields their own way */
-export function setWritePath(v) {
-  writePath = v; // eslint-disable-line no-func-assign
-  provide({ writePath });
 }
 /* ---------- undo / dirty ---------- */
 /* caches kept on the data (keys starting with _, as the height cache's clock in a map) are left out, as saving does:

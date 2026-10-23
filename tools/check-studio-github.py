@@ -1047,6 +1047,13 @@ def polish_steps(pg, errs):
       const r = { shown, thanks: D.shops.tst.thanks, top: 'tst' in D };
       delete D.tst; D.shops = had; studioState.sel.shop = keep; commit(true); return r; })()""")
     if got != {'shown': 'Ta\nCheers', 'thanks': ['One', 'Two'], 'top': False}: errs.append(f'F20: the shop thank-you field gave {got}')
+    # F20: lore's lists of lines and a trainer's script read as text and write back the same
+    got = pg.evaluate("""(() => { const L = readPath('@lines.lore.loading'), S = readPath('@script.trainer:crude'),
+      a = JSON.stringify(studioState.D.lore.loading), b = JSON.stringify(studioState.D.trainers.crude.script);
+      writePath('@lines.lore.loading', L); writePath('@script.trainer:crude', S);
+      return [L.split('\\n').length > 1, S.split('\\n').length > 1, JSON.stringify(studioState.D.lore.loading) === a,
+        JSON.stringify(studioState.D.trainers.crude.script) === b]; })()""")
+    if got != [True, True, True, True]: errs.append(f'F20: @lines. and @script. read and wrote back {got}')
     print('polish: second-pane rename, shop thank-you lines', flush=True)
 
 
