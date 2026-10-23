@@ -1435,6 +1435,21 @@ The owner took the recommendation on every open question:
      (run in the worker). check-data.mjs doesn't run the 1,000-seed sweep yet (the unit test does); adding it is one
      line for whoever owns check-data next.
 
+Taken in Phase 1, session B (the recommended option each time, under the owner's standing instruction):
+9. **F14, a second write:** the new guard also caught People filling `look.colors` for the selected person on
+   opening (every look-style person lacked some). The colour fields now show those colours as a default and write
+   only on a change. No data change: the picture uses the same colours.
+10. **`look` required, old keys still allowed:** 25 people carry the old colour keys beside their look (the game
+    ignores them). `additionalProperties: false` would need a data cleanup of those 25; left for a later data-only
+    commit if wanted.
+11. **T1.2 parts are finer than files:** one text per second-level entry of every section (so `meta`, `rules`,
+    `scenery` split per key too), one per rig, and `@order`. A change to `@order` (an entry added or removed)
+    rebuilds the whole data; any other undo replaces only its entries.
+12. **`fullMB` measured:** the data the undo holds once (`last`) plus the step each self-test edit added, as if all
+    were kept, each text counted as the browser stores it (1 byte a character unless one is past U+00FF; the caps
+    keep the safer 2). The report format is 2, so runs before this don't compare.
+13. **T1.2 and its callers in one commit**, so no commit leaves the Studio's undo broken.
+
 ## Ask me before (owner decisions this plan needs)
 1. **T5.1:** recipe as the truth with a JS baker (recommended), or Python stays and Studio writes recipes.
 2. **T1.3:** which of today's Studio "errors" may block Propose. Recommended: only what CI already fails on.

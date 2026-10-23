@@ -200,6 +200,87 @@ save's); the simulator defaults to none with `--unlocks=all`; the Run Lab gets a
 - T2.5 after T1.3; T2.6 in its own session (game boot code, a check-fast step; add `run.unlocks` to the debug log).
 - Manual (owner): play the run fixture once on the phone; compare one seed in the Lab with the debug menu's run.
 - No phase tag: Phase 2 continues.
+### Studio plan Phase 1, session B - Undo per entry (T1.2) and the F14 hunt (T1.5) - 2026-10-22
+Branch `ccr-81011a25-lf3exv` (PR #131), on top of session A. Plan written by the previous Phase 1 session and
+reviewed by the parent session; further decisions took the recommended option and are in the plan doc's
+"Decisions" (items 9-13).
+
+**T1.2 has landed: the parent can start Phase 6.**
+
+**Changed** (one cause per commit):
+- **Self-test guard (T1.5).** After each section opens and settles, with no commit pending, the data must be the last
+  undo state; otherwise the run fails with "opening <section> changed the data outside an edit: <paths>"
+  (`studioTestChangedPaths` in studio-test-report.js, 1 unit test). The difference is then committed so each cause
+  is named once. On the old code it named `D.people.boy`. `commit()` now clears `snapT` when it runs, so "a commit is
+  pending" can be read.
+- **F14's cause, two writes on opening People:**
+  - The convert-on-open of old-style people (`personLook`, with `dirty` and no `changed()`). Data-only commit: boy,
+    broker, clerk, concierge, crude, girl, intern, markdown and miner converted once with the Studio's own
+    `personLook` in the headless Studio, written with `PB_DATA.text`, old keys dropped. Their person frames (3 views,
+    idle and walk, 4 phases, mirrored: 48 each) are the same pixels before and after. Then the convert-on-open went;
+    `personLook` stays for + New look.
+  - Found by the guard after the plan was written: People filled `look.colors` for the selected person on every
+    open (every look-style person lacked some). The colour fields now show those colours as a default
+    (`colorField` `o.def`) and write only on a change.
+  - person.schema.json: `look` is required (types too). The old colour keys beside a look stay allowed: 25 people
+    still carry them and the game ignores them (decision 10).
+- **Undo per entry (T1.2).** `game/js/logic/history.js` holds the data as parts: one text per second-level entry
+  (`D/maps/<id>`, `D/lines/<i>`, `D/meta/<key>`, `D/<key>` for a value), one per rig (`R/<species>`) and `@order`.
+  `last` is the parts, held once; a data step is `{ parts: { name: [before, after] } }`, null for an added or removed
+  part. Bytes count 2 a character; data steps have their own 64 MB cap (`HISTORY_DATA_BYTES`). API names unchanged;
+  art steps unchanged; a group's `snapshot` is the same diff. 11 unit tests (diffs, round trip, bytes, trim by
+  bytes, mixed order, a group with a data diff, the counter).
+  - studio-app.js: `snapshotParts`, `restoreParts` (only those parts, then `render()`; an `@order` change rebuilds
+    the whole data from `last`). The undo button reads "a commit is pending" instead of stringifying the data on
+    every top-bar update.
+  - pixel-canvas `artSteps` and the workbench's Apply hand parts; drafts.js and boot keep `last` as parts; Find's
+    index key is `last` plus the history's counter (`ver`). billie-library.test.mjs's stub follows.
+  - The self-test keeps `snapshot()` / `restore(text)` for its own checks and copies `last` (undo changes it in
+    place).
+- **`fullMB` is a measurement**: the data held once plus each self-test edit's step, as if all were kept, texts
+  counted as the browser stores them (1 byte a character unless one is past U+00FF). Report format 2.
+- check-studio-github.py: the guard's problems; a map edit's step holds only that map and its undo leaves the other
+  51 maps the same objects (`===`); the undo's size with the three biggest edits.
+- Docs: STUDIO.md "Undo", studio-self-test.md, CHANGELOG, TESTING.md (635 tests, about 47 s), the plan's decisions.
+
+**Where the plan was wrong or short**
+- The People section had a second write on opening (the colours), not only the convert.
+- "Make `look` required, so old-style people can't come back": done, but old keys beside a look are still legal.
+- Per entry, one entry still dominates: the **Copperleaf map is one part of
+  about 1.25 M characters**, so a Scenes edit there costs about 5 MB per step (both sides, two-byte text). Every other
+  self-test edit is 13 kB or less. With the 64 MB data cap that is about 12 Copperleaf steps (before: 80 whole copies
+  of 5.4 MB, uncapped).
+
+**Verified**
+- Unit tests 635 pass; lint, typecheck, `check:modules`, `format:check`, `check:data` after each commit.
+- The guard fails before the People fix ("opening people changed the data outside an edit: D.people.boy") and passes
+  after; with it gone, the Rules edit comes back with undo (F14 closed).
+- Three self-test runs in a row pass (`--only=studio_test`), and so did two more later.
+- `check-studio-github.py --only=sections,studio_test,publish,drafts`: 27 sections open, every edit comes back,
+  publish 0 problems, drafts 0 problems, ok.
+- The undo measures 9.3 MB after the self-test's 14 edits (under 10 MB): the data once 4.2 MB, the steps 5.0 MB.
+- An undo of a Copperleaf map edit puts back only `D/maps/copperleaf`; the other 51 maps stay the same objects.
+- A planted old-style `boy.json`: check-data fails it ("must have required property 'look'").
+- `check:fast`: all pass.
+- **Not run:** the full quick check (planned at the end of Phase 1) and the full chain of `check-studio-github.py`.
+
+**Risky**
+- **Undo replaces entries in place.** Code that holds a reference to a part of the data across an undo (a map, a
+  move) now keeps a live object for every entry the undo didn't touch, and a stale one for the entry it did. Before,
+  every undo replaced everything, so all references went stale together. The 27-section self-test and its 14 edits
+  pass; watch the map editor and the workbench on undo.
+- **An `@order` change rebuilds all**, as before (adding or deleting an entry). Its cost is the old restore's.
+- **Copperleaf edits are 5 MB a step** (above). Follow-up if it matters: split `maps` one level deeper.
+- `game/data/gamedata.js` is built, not in git: in a fresh clone the Roster section asks for it and
+  check-studio-github.py reports a 404 until `npm run data` has run.
+- **Not tested on a real phone or a real GitHub** (stand-in only). Manual: a long editing session on the iPad, watch
+  memory (Safari Web Inspector); undo and redo across Scenes, Rules and the workbench.
+
+**Next**
+- Phase 1 is complete: T1.3 (the shared validator; it unblocks Phase 4) and T1.4 (CI) landed in parallel on this
+  branch (sessions C+D, entry below) and were merged here. Their CI job runs `check-studio-github.py` with
+  `studio_test`, which now also fails on a section that writes outside an edit. Tag `sr-1-done` is the owner's.
+- Optional follow-ups: drop the old colour keys of the 25 people and make the schema strict; split big maps deeper.
 ### Studio plan Phase 1, sessions C+D - One validator for CI and the Studio (T1.3) and Studio checks in CI (T1.4) - 2026-10-22
 Branch `ccr-81011a25-lf3exv` (PR #131). Plan pre-approved by the owner's standing instruction (recommended options
 taken; recorded under the plan doc's "Decisions"). Phase 1b (T1.2 undo, T1.5, People) works on the same branch at the
