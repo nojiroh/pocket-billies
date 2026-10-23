@@ -11,6 +11,8 @@ import { readPng } from './png.mjs';
 import { rigBox, rigGeo } from '../../game/js/logic/rig-joints.js';
 import {
   rigRefit,
+  rigRepack,
+  rigRepackPixels,
   rigSwapApply,
   rigSwapMisfit,
   rigSwapNeeds,
@@ -245,4 +247,33 @@ test("rigRefit by a socket follows the picture's turn and scale", () => {
     { child: 'head', sockets: ['neck'] },
   ]);
   assert.deepEqual(M.bones[1].at, [10, 0]);
+});
+
+test('T5.4: every species repacked draws every frame and portrait pixel for pixel as before', () => {
+  let saved = 0,
+    n = 0;
+  for (const sp of Object.keys(RIGS)) {
+    const sheet = RIGS[sp].front.sheet,
+      old = readPng(join(ROOT, 'game/art', sheet)),
+      before = JSON.stringify(RIGS[sp]),
+      { rig, size, moves } = rigRepack(RIGS[sp], sheet, old.width),
+      S = rigRepackPixels(old, moves, size);
+    assert.equal(JSON.stringify(RIGS[sp]), before, `${sp}: the input changed`);
+    for (const v of ['front', 'back']) {
+      if (!rig[v]) continue;
+      assert.deepEqual(rig[v].size, size);
+      RIGS[sp][v].imgs.forEach((P, i) => {
+        for (const f of Object.keys(P.f))
+          assert.deepEqual(cut(S, rig[v].imgs[i].f[f]).data, cut(old, P.f[f]).data, `${sp} ${v} ${i} ${f}`);
+      });
+      if (RIGS[sp][v].portrait) assert.deepEqual(cut(S, rig[v].portrait).data, cut(old, RIGS[sp][v].portrait).data);
+      assert.deepEqual(
+        rig[v].bones.map(b => b.at),
+        RIGS[sp][v].bones.map(b => b.at)
+      );
+    }
+    saved += old.width * old.height - size[0] * size[1];
+    n++;
+  }
+  assert.ok(n > 100 && saved > 0, `${n} species, ${saved} pixels saved`);
 });

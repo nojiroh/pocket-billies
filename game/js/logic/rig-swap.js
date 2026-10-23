@@ -24,6 +24,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   rigRefit: [() => rigRefit, v => (rigRefit = v)],
   // @ts-expect-error -- replaced on purpose
+  rigRepack: [() => rigRepack, v => (rigRepack = v)],
+  // @ts-expect-error -- replaced on purpose
+  rigRepackPixels: [() => rigRepackPixels, v => (rigRepackPixels = v)],
+  // @ts-expect-error -- replaced on purpose
   rigSheetGrow: [() => rigSheetGrow, v => (rigSheetGrow = v)],
   // @ts-expect-error -- replaced on purpose
   rigSheetPut: [() => rigSheetPut, v => (rigSheetPut = v)],
@@ -240,4 +244,64 @@ export function rigSwapApply(rig, sheets, pathOf, prepared, geoOf) {
       G.mid = G.cy = +((G.top + out[view].base) / 2).toFixed(2);
   }
   return { rig: out, sheets: grown, how };
+}
+
+/* ---------- T5.4: a sheet packed again, without the pixels nothing shows ---------- */
+/**
+ * Packs a species' sheet again: every box the rig shows (each view's frames on that sheet, the portrait) once, the
+ * tallest first, in rows as the kit baker packs (logic/kit-assemble.js kitPack: 2 px apart), at the sheet's width.
+ * Returns the new rig (boxes and size), the moves (each old box and where it goes) and the new size; the input is
+ * left as it was. The pictures drawn are pixel for pixel the same (tools/test/rig-swap.test.mjs on every species).
+ * @param {Record<string, any>} rig a species' rig (front, back) @param {string} sheet the sheet's path in the rig
+ * @param {number} width
+ */
+export function rigRepack(rig, sheet, width) {
+  const out = JSON.parse(JSON.stringify(rig)),
+    /** @type {Map<string, number[]>} */ boxes = new Map(),
+    views = Object.keys(out).filter(v => out[v] && out[v].sheet === sheet);
+  const add = (/** @type {number[]} */ b) => boxes.set(String(b), b);
+  for (const v of views) {
+    for (const P of out[v].imgs) for (const b of Object.values(P.f)) add(/** @type {number[]} */ (b));
+    if (out[v].portrait) add(out[v].portrait);
+  }
+  const list = [...boxes.values()].sort((a, b) => b[3] - a[3] || b[2] - a[2]),
+    w = Math.max(width, ...list.map(b => b[2] + 4));
+  let x = 2,
+    y = 2,
+    rowh = 0;
+  /** @type {Map<string, [number, number]>} */
+  const spot = new Map();
+  for (const b of list) {
+    if (x + b[2] + 2 > w) {
+      x = 2;
+      y += rowh + 2;
+      rowh = 0;
+    }
+    spot.set(String(b), [x, y]);
+    x += b[2] + 2;
+    rowh = Math.max(rowh, b[3]);
+  }
+  const size = /** @type {[number, number]} */ ([w, y + rowh + 2]),
+    moved = (/** @type {number[]} */ b) => {
+      const [nx, ny] = /** @type {[number, number]} */ (spot.get(String(b)));
+      return [nx, ny, b[2], b[3]];
+    };
+  for (const v of views) {
+    for (const P of out[v].imgs) for (const f of Object.keys(P.f)) P.f[f] = moved(P.f[f]);
+    if (out[v].portrait) out[v].portrait = moved(out[v].portrait);
+    out[v].size = size;
+  }
+  return { rig: out, size, moves: list.map(b => [...b, .../** @type {[number, number]} */ (spot.get(String(b)))]) };
+}
+/** the packed sheet's pixels from the old one and rigRepack's moves (the Studio copies canvas to canvas instead)
+ * @param {Pixels} p @param {number[][]} moves @param {[number, number]} size @returns {Pixels} */
+export function rigRepackPixels(p, moves, size) {
+  const out = { width: size[0], height: size[1], data: new Uint8ClampedArray(size[0] * size[1] * 4) };
+  for (const [x, y, w, h, nx, ny] of moves)
+    for (let j = 0; j < h; j++)
+      out.data.set(
+        p.data.subarray(((y + j) * p.width + x) * 4, ((y + j) * p.width + x + w) * 4),
+        ((ny + j) * size[0] + nx) * 4
+      );
+  return out;
 }
