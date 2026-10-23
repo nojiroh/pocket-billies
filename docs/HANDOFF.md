@@ -2,6 +2,54 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Reflavour track RF-5 - The new tone in text - 2026-10-23
+Branch `track/reflavour-rf-5`, made from `track/reflavour` at e1e1479 while RF-4 was still finishing its docs (the
+coordinating session's word, confirmed by the owner); main merged in after RF-4's PR #165 landed. Plan approved with
+the owner's answers: **Legacy Labs stays** (the one lab every billionaire hired; its slogan is now "You, again, but
+forever"); the old campaign lore (Vinylla's arc) **loses its finance only**; the Bureau of Lost, Found and Beans in
+**hints only**; Chosen's table **unchanged**. Text only: no id, script logic or line id changed.
+- Where the brief was wrong (checked in the code):
+  - story.json holds three scripts and none had a finance joke; Chosen's table and Hazel's lines were already RPG and
+    chosen-one satire. Neither changed.
+  - There is no separate Index text: the Guide's species pages (bios about the clone, kept) and its Lore tab. The
+    clones' origin lived in lore "What Billies are", the opening's lines 38-39 and the brochure.
+  - The opening has no billboard any more (the owner): the slogan was only a comment in opening-fall.js.
+  - "Why a pyramid catches them" (RF-2 changed its title only) still told the coin lore.
+  - The Perk ids (`offshore`...) were not renamed by RF-4; no Perk text was touched here.
+- Changed (one cause per commit):
+  - **Lore, world:** the clones are Legacy Labs' vanity copies, cut with the nearest animal to hit a launch date,
+    dropped down a sinkhole and marked "archived"; pyramids catch them because every cloning vat was one (plain, no
+    pyramid-scheme joke); "Moneys down here" (the plural under appeal at the Bureau); the Hollow Earth "filed as
+    pending" and reassigned eleven times. The coin in your pocket is a **guitar pick** (clue, the fall, your bio; the
+    clue's id stays `coin`).
+  - **Books and loading tips:** Field Guide (cameras, not money), the brochure "You, Again, but Forever", "The Coin
+    Standard" is "The Moneys Question" (a Bureau Q&A; the Beans question "has not been received"), the Pearl Exchange
+    "inventory", the airship's lost property goes to the Bureau; nine loading tips, two of them Bureau hints.
+  - **People and leaders:** Blake's father founded "a company that makes apps for other apps"; Iris's terms of
+    service; Marina's no-photos island; Baron Vault's NDA, publicist and complaint in triplicate; Nacre's complaint
+    form; two story lines (backstage passes, Vault "lent" his vaults); the face clue (an email they thought they had
+    deleted).
+  - **Rooms:** the cow is Synergy; the shop's Capstone limit; the fireplace's terms and conditions
+    (tools/build-interiors.py's copy too, so a rerun keeps them).
+  - **The opening:** "A lab copied them for fun..."; "Then dropped them down here." (tools/test/opening-said.json
+    retargeted in the same commit).
+  - **Code:** folk chat (the Bureau and the umbrella; a Billie "tried to put its name on the sun"), the loading line
+    "Polishing the pyramids", the sound effects' description says catches (and its four translations).
+  - Docs: ROADMAP, reflavour-track.md (RF-5 done), CHANGELOG.
+- Kept on purpose: "Gotta tax 'em all!", the species' names, bios, notes and moves (about the clones), Vinylla's arc
+  (celebrity and scarcity satire), the shop's "stock", run money as Moneys.
+- Verified: lint, typecheck, unit tests (826; 827 after merging main), check:data with the story checks and
+  format:check after every commit; check:modules after the code commit; smoke 6 of 6 (183 s, before the merge). Long
+  checks skipped at the owner's word.
+- Risky:
+  - Not read on a phone: a few lines are longer (What Billies are, the pyramid entry, the brochure's first page).
+  - The legacy generator tools/build-regions-v47.py still holds Baron Vault's old lines; rerunning it
+    would bring them back.
+  - Translations exist only for the settings line; the new lore is English only, as before.
+- Out of scope, left for their sessions: regions.json name parts (RL-R1/RL-R2), events.json (RL-12b), the Bureau in
+  people's lines (RL-S1's lines.json).
+- Next: RF-6 (the game's name). Tag `rf-5-done` on this entry's commit (the owner pushes tags).
+
 ### Fix - the hub's "black screen" in the full quick check - 2026-10-23
 Branch `fix/hub-frame-wait` (one session, docs/BRANCHES.md). The failure in RL-R1's long checks (PR #161's comment):
 "Ground tiles, building plans and colours, rooms": `w:copperleaf* isn't drawing (black screen)`, under CPU load.
@@ -59,22 +107,26 @@ the owner's to push. The full list of what was renamed, kept and left is in refl
   (only the status ids in its events, 42 lines; no outcome moved).
 - Verified: after every commit `npm run modules`, check:modules, lint, typecheck, check:data, format:check and the
   unit tests (all pass, about 70 s a round). Smoke at the end: passed, no problems (202 s; the phone flow with the Guide, shop and a battle, the debug log with no names, the in-game test's first step). It ran on Python Playwright 1.63.0, not the pinned 1.56.0: this container's Chromium is build 1243, which only 1.63 drives. The one unused picture it notes (`scene/build/detail-a04.png`) is not this session's.
-  **Skipped, at the owner's word (speed):** the full quick check, the in-game test (`--selftest`), test:slow,
+  **Skipped, at the owner's word (speed; asked again after the PR opened: merge on CI):** the full quick check, the in-game test (`--selftest`), test:slow,
   check-fast and the Studio check (`tools/check-studio-github.py`, which this session edited for the new names
   without running it).
 - The exported debug log: no key changed (none was forced). Its run and meta summary keeps `relics`, `capital` and
   `seals` and reads the renamed fields (`run.perks`, `meta.research`, `meta.crests`); it never carries the save itself.
   Values that are ids now read the new ids (a status `par` where it said `aud`, an item `potion`).
 - Risky:
-  - **One rename changed behaviour:** runShopStock sorts a town's weighted wares by item id before its seeded draw, so
+  - **One rename changed behaviour (accepted by the owner):** runShopStock sorts a town's weighted wares by item id before its seeded draw, so
     the item rename changed which wares a seed's run shop stocks. No test pinned it; no saved run carries over.
   - The Studio check and check-fast were edited (new ids, tab names, selectors) but not run.
   - Phones: the first load after this sets the save aside (as decided). The renamed art files (`art/coins/pyramid_16.png`
     and the rest, `art/ui/research.svg`, `art/ui/crest.svg`) load under new paths, so nothing stale shows.
   - A `track/*` merge from a session that started before this one will conflict on these names: merge main and run
     `npm run modules`; `git grep` for the old names in the table of section 7.
-- Left for the owner (section 7): the ten Perk ids, which can't be renamed without changing every seed's offers
-  (perkPool sorts by id), so this needs a behaviour commit first; stat ids `lev`, `lob`, `hus`; most move ids.
+- The ten Perk ids (the owner's answer after the PR opened: rename now, in two commits): first a behaviour commit,
+  Perks drawn in perks.json's order instead of by id (perkPool, and the run sim's tie-break), so every seed's offers
+  change once on purpose; two run-sim tests updated with it (the Perk dropped past the cap is now `fineprint`, not
+  `shelter`; the dearer-clinic test asks for no significant gain in money left: its 40 seeds' mean went 0 -> +4.5, lo
+  -21.9). Then the ids alone (`lucky_charm`...). The shop-stock change below: accepted by the owner.
+- Left: stat ids `lev`, `lob`, `hus`; most move ids.
 - Next: RF-5 (the new tone in text), beside RL-S1. Tag `rf-4-done` on this entry's commit.
 
 ### UI icons - 49 icons redrawn at 36x36, "block and split" - 2026-10-23

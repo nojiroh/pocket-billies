@@ -134,7 +134,7 @@ plays the same.
 
 | Command | Does |
 |---|---|
-| `perk`, `perk rare`, `perk offshore` | offers one Perk (any, of a rarity, or that one); past the cap you let one go |
+| `perk`, `perk rare`, `perk lucky_charm` | offers one Perk (any, of a rarity, or that one); past the cap you let one go |
 | `money 150`, `money -50` | Moneys gained or lost (never below 0) |
 | `hurt 0.1`, `heal 0.25`, `heal` | every Billie standing loses / gains that share of its HP (never past 1 HP); `heal` alone heals all |
 | `status slp` | every Billie standing without a status gets one (par, slp, brn) |

@@ -56,7 +56,7 @@ Numbers below were read at 2361848; verify again before each session.
 | RF-2 | Pyramids | `coins.json`'s four coins become pyramids (names, text, icons, a low-poly pyramid for the throw, its tumble and landing, the sound); catch odds unchanged; the never-fail one stays a boss/badge reward | RF-1 | 1 |
 | RF-3 | Type passives (**done 2026-10-23**, section 6) | the nine passives get Pokémon-like names and, where the idea was finance (`landlord`, `subsidy`, `inherit`), a new effect; the golden battle record remade on purpose for the changed ones | RF-1 | 1 |
 | RF-4 | Internal renames (**done 2026-10-23**, section 7) | one rename per commit: `relics` → `perks` (data section, `run.relics`, `logic/relics.js`, `relic-screen.js`), `capital` → `research`, `seals` → `crests`, `brackets`/Bracket keys → `expeditions`, status ids, item ids, coin ids → pyramid ids, `ledger` tab id, the passive ids and their rule keys (6: `ramp`, `subsidy`, `sharp`, `landlord`, `pivot`, `volatile`, `synergy`, `inherit`; `financeRamp*`, `mediaCrit`, `cryptoRoll*`, `retailSynergy`, `rentFraction`, the stones' `fx.rent`/`sides.rent` and the move ids `renthike`/`eviction`); `npm run modules` and check:modules after each; SAVE_VERSION bumped once (old saves set aside, as CLAUDE.md allows) | RF-1..RF-3 | 2 |
-| RF-5 | The new tone in text | story.json, Chosen's and Hazel's tables, signs, lore, the opening, the Index text, the leaders' lines: satire moved onto bureaucracy, tech and influencers, RPG clichés and clone ethics; the clones' origin (billionaires' vanity cloning projects) written into the Index and lore; Claude drafts, the owner approves | RF-1 | 1-2 |
+| RF-5 | The new tone in text (**done 2026-10-23**, HANDOFF) | story.json, Chosen's and Hazel's tables, signs, lore, the opening, the Index text, the leaders' lines: satire moved onto bureaucracy, tech and influencers, RPG clichés and clone ethics; the clones' origin (billionaires' vanity cloning projects) written into the Index and lore; Claude drafts, the owner approves | RF-1 | 1-2 |
 | RF-6 | The game's name | **Pocket B&B²** (the raised B) in the title screen's logo, page titles, manifest, README, the changelog; storage keys untouched (or moved with a set-aside) | RF-1 | 1 |
 
 **Order with the roguelite track:** RF-1 and RF-2 before RO-1 (so new content is written in the new words), RF-3
@@ -138,7 +138,7 @@ more move rarely turns a loss).
 
 ## 7. RF-4 as built (2026-10-23)
 
-42 commits on `track/reflavour` (with this entry), each a single rename, except the first: SAVE_VERSION 5 (old saves set aside, no
+44 commits on `track/reflavour` (with the docs), each a single rename, except the first and the Perk order (below): SAVE_VERSION 5 (old saves set aside, no
 migration). The owner's answers to the plan: the money id stays `money`; `tier` becomes `expedition` now; the art folder
 `art/coins/` keeps its name; `foreclose` goes with the stone moves.
 
@@ -163,10 +163,11 @@ migration). The owner's answers to the plan: the money id stays `money`; `tier` 
   data-a keys and DOM ids (`bcoins`, `#aimCoin`, `shoprelic`), UI icon names `relic` and `ledger`, the art folder
   `art/coins/`, the opening's `coins` and `throw-coins`, the singular `coin` key of a ware or seat and the `coin:`
   condition, the offer stream's name `relic|`.
-- Not renamed, for the owner: the ten Perk ids (`offshore`, `shelter`, `lobbyist`, `fineprint`, `insider`, `takeover`,
-  `hedge`, `severance`, `options`, `writeoff`). perkPool sorts the pool by id before the seeded draw, so new ids would
-  change which Perks every seed offers: a behaviour change, not a rename. The way: first a behaviour commit that draws
-  in perks.json's order (offers change once, on purpose), then the ids. Also still finance: the stat ids `lev`, `lob`,
-  `hus` and most move ids (the moves stay, section 1).
+- The ten Perk ids, at the owner's word after the first PR text: perkPool sorted the pool by id before the seeded
+  draw (and the run sim broke ties by id), so a behaviour commit first makes both follow perks.json's order (every
+  seed's offers change once, on purpose), then the ids are renamed alone: `lucky_charm`, `clinic_card`, `coupon_book`,
+  `steady_hand`, `running_shoes`, `power_gloves`, `bubble_wrap`, `trail_snacks`, `field_notebook`, `lost_property`.
+  Still finance, left: the stat ids `lev`, `lob`, `hus` and most move ids (the moves stay, section 1).
 - One rename did change behaviour: runShopStock sorts a town's weighted wares by item id before its draw, so the item
   rename changed which wares a seed's run shop stocks. No test pinned it; SAVE_VERSION 5 means no saved run carries over.
+  The owner accepted it (RF-4).

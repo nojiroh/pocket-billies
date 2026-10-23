@@ -51,14 +51,19 @@ const run = (o = {}) => ({
 test('sim compare: a summary has the win rate, losses by type and row, money, Perks and leaders', () => {
   const S = C.simSummary([
     run(),
-    run({ won: true, lostAt: '', lostRow: null, perks: ['offshore'], foes: [{ leader: 'crude', won: true }] }),
-    run({ lostAt: 'miniboss', lostRow: 3, perks: ['offshore', 'hedge'], foes: [{ leader: 'crude', won: false }] }),
+    run({ won: true, lostAt: '', lostRow: null, perks: ['lucky_charm'], foes: [{ leader: 'crude', won: true }] }),
+    run({
+      lostAt: 'miniboss',
+      lostRow: 3,
+      perks: ['lucky_charm', 'bubble_wrap'],
+      foes: [{ leader: 'crude', won: false }],
+    }),
   ]);
   assert.equal(S.runs, 3);
   assert.equal(S.won.k, 1);
   assert.deepEqual(S.lostAt, { town: 1, miniboss: 1 });
   assert.deepEqual(S.lostRow, { 2: 1, 3: 1 });
-  assert.deepEqual(S.perks, { offshore: 2, hedge: 1 });
+  assert.deepEqual(S.perks, { lucky_charm: 2, bubble_wrap: 1 });
   assert.equal(S.leaders.crude.fought, 2);
   assert.equal(S.leaders.crude.beaten, 1);
   assert.equal(S.avg.perks, 1);

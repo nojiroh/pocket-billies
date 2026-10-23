@@ -104,7 +104,7 @@ test('relics: validRun refuses a broken offer counter or shelf', () => {
     r => (r.offerN = 1.5),
     r => delete r.offerN,
     r => (r.shelf = []),
-    r => (r.shelf = { x: 'shelter' }),
+    r => (r.shelf = { x: 'clinic_card' }),
     r => (r.shelf = { '3:4': 'Bad Id' }),
     r => (r.shelf = { '3:4': 5 }),
   ];

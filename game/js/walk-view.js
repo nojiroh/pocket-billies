@@ -347,11 +347,11 @@ export const EFFECT_FRAMES = {
 const FOLK_CHAT = [
   'Lovely day for a walk.',
   'Mind the tall grass. Something’s rustling in there.',
-  'I heard a Billie tried to buy the sun once.',
+  'I heard a Billie tried to put its name on the sun once.',
   'My grandma walks to the next town and back before breakfast.',
   'The clinic patches up your team for free, you know.',
   'Have you seen the windmill turn? Very relaxing.',
-  'Every coin counts, they say. Literally, here.',
+  'The Bureau lost my umbrella. Then it found it. Then it filed it.',
   'I’m saving up for a fancy hat.',
   'Watch out, trainers like to battle anyone who looks at them.',
 ];
