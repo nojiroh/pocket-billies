@@ -8,6 +8,7 @@ import {
   closeModal,
   giveRobotKit,
   modal,
+  pixelSky,
   playStoryScript,
   provide,
   relicPickOpen,
@@ -46,7 +47,7 @@ import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild 
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
-import { exportSave, settingsReset } from './settings-screen.js';
+import { applyPreferences, exportSave, settingsReset } from './settings-screen.js';
 import { battleStage, battleStageResize } from './battle-stage.js';
 import { mapById } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
@@ -54,6 +55,7 @@ import { paintBoxes, playTurnEvents } from './battle.js';
 import { worldMap } from './world-bowl.js';
 /* eslint-disable no-func-assign */
 expose({
+  DEBUG_LOOK: [() => DEBUG_LOOK],
   debugAction: [() => debugAction, v => (debugAction = v)],
   debugButtonHTML: [() => debugButtonHTML],
   debugFps: [() => debugFps, v => ((debugFps = v), provide({ debugFps }))],
@@ -74,9 +76,34 @@ const debugButtonHTML = (x, l, c = '') => `<button class="pb small ${c}" data-a=
 function debugSpeciesOptions() {
   return DEX_ORDER.map(id => [id, `${String(SPECIES[id].no).padStart(3, '0')} ${SPECIES[id].name}`]);
 }
+/* UI-7b: time, weather and season overrides, out of Settings (in a run game they are a cheat): the same preferences */
+const DEBUG_LOOK = {
+  time: [
+    ['real', 'Time: the clock'],
+    ['morning', 'Morning'],
+    ['day', 'Midday'],
+    ['evening', 'Evening'],
+    ['night', 'Night'],
+  ],
+  weather: [
+    ['auto', 'Weather: changes'],
+    ['clear', 'Fair'],
+    ['rain', 'Rain'],
+    ['snow', 'Snow'],
+    ['fog', 'Fog'],
+  ],
+  season: [
+    ['auto', 'Season: the calendar'],
+    ['spring', 'Spring'],
+    ['summer', 'Summer'],
+    ['autumn', 'Autumn'],
+    ['winter', 'Winter'],
+  ],
+};
 function debugHTML() {
   const inB = !!activeBattle,
-    node = saveData.trip.node;
+    node = saveData.trip.node,
+    p = saveData.preferences || {};
   return `<div class="dbg">
  <p class="note">Changes apply to this save right away. Export a backup first if you might want to undo.</p>
  <details open><summary>Performance</summary><div class="dbg-row">${debugButtonHTML('fps', debugMenu.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${frameScheduler.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="gfxtest">Graphics test</button><button class="pb small" data-a="gfxbench">Graphics cost test</button><button class="pb small" data-a="dbglog">Export debug log</button></div>
@@ -115,6 +142,15 @@ function debugHTML() {
        )}${debugButtonHTML('relicgive', 'Give a Loophole')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">RL-12: Loopholes held: ${saveData.run.relics.length} of ${RULES.run.relics.cap}${saveData.run.relics.length ? ` (${escapeHtml(saveData.run.relics.map(k => (RELICS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p>`
      : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run', 'gold')}</div><p class="note">From Copperleaf, as the mast does (Bracket I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (terrain TR-2, for a phone measurement; the debug log has the frame times).</p>`
  }</details>
+ <details><summary>Time, weather and season</summary><div class="dbg-row">${debugSelectHTML(
+   'dbgTime',
+   DEBUG_LOOK.time,
+   p.time || 'real'
+ )}${debugSelectHTML('dbgWeather', DEBUG_LOOK.weather, p.weather || 'auto')}${debugSelectHTML(
+   'dbgSeason',
+   DEBUG_LOOK.season,
+   p.season || 'auto'
+ )}${debugButtonHTML('look', 'Set')}</div><p class="note">Fixes the time, weather or season everywhere until set back (they change which Billies come out). Moved here from Settings (UI-7b).</p></details>
  <details><summary>Story scripts (Project Story)</summary><div class="dbg-row">${debugSelectHTML(
    'dbgScript',
    storyScriptIds().map(id => [id, id]),
@@ -258,6 +294,17 @@ function debugAction(x) {
     case 'heal':
       healAll();
       break;
+    case 'look': {
+      saveData.preferences = saveData.preferences || {};
+      const L = { time: v('dbgTime'), weather: v('dbgWeather'), season: v('dbgSeason') };
+      Object.entries(L).forEach(([k, val]) => {
+        if (val) saveData.preferences[k] = val;
+      });
+      applyPreferences();
+      if (typeof pixelSky !== 'undefined') pixelSky.dark = null;
+      save();
+      return refreshDebugMenu(`Time ${L.time}, weather ${L.weather}, season ${L.season}.`);
+    }
     case 'bowltest':
       closeModal();
       runBowlMapTest();

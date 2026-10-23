@@ -376,39 +376,6 @@ function settingsHTML() {
     body =
       `<h3 class="set-sub">Playing</h3>` +
       settingsRowHTML(
-        'Time of day',
-        'Evenings glow, lamps come on at night, and some Billies only come out after dark.',
-        segmentedHTML('time', p.time || 'real', [
-          ['real', 'My clock'],
-          ['morning', 'Morning'],
-          ['day', 'Midday'],
-          ['evening', 'Evening'],
-          ['night', 'Night'],
-        ])
-      ) +
-      settingsRowHTML(
-        'Weather',
-        'Rain brings out Water types; storms bring Electric ones.',
-        segmentedHTML('weather', p.weather || 'auto', [
-          ['auto', 'Changes'],
-          ['clear', 'Fair'],
-          ['rain', 'Rain'],
-          ['snow', 'Snow'],
-          ['fog', 'Fog'],
-        ])
-      ) +
-      settingsRowHTML(
-        'Season',
-        'Trees turn and snow falls with the calendar, or pick one.',
-        segmentedHTML('season', p.season || 'auto', [
-          ['auto', 'Calendar'],
-          ['spring', 'Spring'],
-          ['summer', 'Summer'],
-          ['autumn', 'Autumn'],
-          ['winter', 'Winter'],
-        ])
-      ) +
-      settingsRowHTML(
         'Battle speed',
         'How fast moves play out and lines move on. Tap still skips ahead at any speed.',
         segmentedHTML('battleSpeed', p.battleSpeed || 'normal', [
