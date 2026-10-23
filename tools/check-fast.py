@@ -19,7 +19,7 @@ pushes while you stay inside its soft zone, and settles again when you let go; t
 its state) drift in standing still, frame a talk as a two-shot, play a boss, lean by a door and zoom the encounter's
 swoop without touching your own zoom; the diorama blur (CAM-3, read from the renderer's state) focuses on you, between
 you and who you talk to, on an encounter, stands upright when fully tilted, stops at the player's Off and takes the
-cheap blur on the slowest setting; the Lab's unlock board (RL-11) grants, sells and keeps; the test island (island track) opens with its contract fields, and its orbit camera (IS-1) looks at the middle from 8 places, holds on the summit and walks a circle when you hold right; the Studio's Hub island editor draws, turns, paints and locks (IS-6a). The page is small (400x300) with every costly graphics dial
+cheap blur on the slowest setting; the Lab's unlock board (RL-11) grants, sells and keeps; the test island (island track) opens with its contract fields, and its orbit camera (IS-1) looks at the middle from 8 places, holds on the summit and walks a circle when you hold right(the Studio's Hub island editor, IS-6a/IS-6b, is in check-studio-github.py). The page is small (400x300) with every costly graphics dial
 off before it loads; nothing waits a fixed time, only for frames or the game's state. No pictures are taken.
 
 Graphics are not judged here: software drawing can't. The game's own graphics test (Settings → Help) is for a person
@@ -935,129 +935,6 @@ def studio_worldmap(pg, base):
     return f'the bowl drawn ({round(share * 100)}% sea), a brush stroke and its undo, the landmark field'
 
 
-HUB_STROKE = """((id,x0,z0,x1,z1,o)=>{const c=document.getElementById(id);c.setPointerCapture=()=>{};const sc=studioState.D.maps.test_island,r=c.getBoundingClientRect(),Z=r.width/sc.w,
- ev=(t,x,z)=>c.dispatchEvent(new PointerEvent(t,Object.assign({clientX:r.left+x*Z,clientY:r.top+(sc.h-z)*Z,pointerId:7,bubbles:true,button:0},o||{})));
- ev('pointerdown',x0,z0);for(let i=1;i<=4;i++)ev('pointermove',x0+(x1-x0)*i/4,z0+(z1-z0)*i/4);ev('pointerup',x1,z1)})"""
-
-
-def poll(pg, cond, sec):
-    """until(), asked from here: the island's frames take seconds each in a headless browser and come back to back,
-    which can starve the page's own timers that until()'s polling runs on (seen on a busy runner); an evaluate still
-    gets through between frames"""
-    end = time.time() + sec
-    while True:
-        if pg.evaluate(f'(()=>{{try{{return !!({cond})}}catch(e){{return false}}}})()'): return True
-        if time.time() > end: return False
-        time.sleep(0.25)
-
-
-def studio_hub(pg, base):
-    """island track IS-6a: the Hub island section opens on test_island and draws (the orbit view and the map), a drag
-    turns the orbit, a brush stroke paints; locking stores the hash and turns the tools off, here and in Walk scenes,
-    where props stay free; the Studio's Check catches a changed locked ground; unlocking (asked first) frees it.
-    The island's frames are slow in a headless browser (seconds each on a busy runner), so it waits with poll() and
-    as long as drawing() does"""
-    if not poll(pg, "typeof openSection==='function'&&typeof PB_DATA==='object'", 60): raise Exception('the Studio never loaded')
-    pg.evaluate(STUDIO_DATA)
-    # the section opens on the hub's own island by default (copperleaf, since IS-5); this check uses the small one
-    pg.evaluate("studioState.sel.hub='test_island';openSection('hub');0")
-    if not poll(pg, "studioState.sel.hub==='test_island'&&walkView.id==='test_island'&&!!document.getElementById('hubMap')", 40):
-        raise Exception('Hub island didn’t open on test_island: ' + str(pg.evaluate("[studioState.sel.hub,walkView.id]")))
-    if not poll(pg, "walkView.ready&&walkRenderer.on", 90): raise Exception('the orbit view never got ready')
-    f0 = pg.evaluate('walkRenderer.frames')
-    if not poll(pg, f'walkRenderer.frames>={f0 + 3}', 60): raise Exception('test_island isn’t drawing (black screen)')
-    if not poll(pg, "!!hubEd.goal", 40):
-        raise Exception('the orbit view never looked at the island: ' + pg.evaluate("JSON.stringify({sec:studioState.sec,mapId:hubEd.mapId,walk:hubEd.walk,look:walkView.opt.look&&walkView.opt.look.name,id:walkView.id,scw:walkView.sc&&walkView.sc.w,frames:walkRenderer.frames,cv:walkView.cv&&walkView.cv.id,ready:walkView.ready,bt:!!walkRenderer.bt,dir:!!walkView.director,bat:!!walkView.battle})"))
-    if not pg.evaluate("(()=>{const c=document.getElementById('hubMap');return c.width>100&&c.getContext('2d').getImageData(c.width>>1,c.height>>1,1,1).data[3]>0})()"):
-        raise Exception('the map drew nothing')
-    y0 = pg.evaluate("hubEd.goal.yaw")
-    pg.evaluate("""(()=>{const c=document.getElementById('hubPv');c.setPointerCapture=()=>{};const r=c.getBoundingClientRect(),ev=(t,x)=>c.dispatchEvent(new PointerEvent(t,{clientX:r.left+x,clientY:r.top+r.height/2,pointerId:8,bubbles:true,button:0}));
-      ev('pointerdown',20);ev('pointermove',60);ev('pointermove',120);ev('pointerup',120)})();0""")
-    if abs(pg.evaluate("hubEd.goal.yaw") - y0) < 0.1: raise Exception('a drag on the orbit view didn’t turn it')
-    rows = "JSON.stringify(studioState.D.maps.test_island.tiles)"
-    t0 = pg.evaluate(rows)
-    bound = lambda id: poll(pg, f"!!(document.getElementById('{id}')||{{}})._b", 40)   # the map's tools bind after its art loads
-    pg.evaluate("ACTIONS.hubTool({t:'paint'});ACTIONS.hubTer({c:'r'});0")
-    if not bound('hubMap'): raise Exception('the map’s tools never bound')
-    pg.evaluate(f"({HUB_STROKE})('hubMap',40,20,50,20);0")
-    if pg.evaluate(rows) == t0: raise Exception('a Paint ground stroke changed nothing')
-    pg.evaluate("undo();0")
-    if pg.evaluate(rows) != t0: raise Exception('Undo didn’t take the stroke back')
-    pg.evaluate("ACTIONS.hubLock();0")
-    bound('hubMap')
-    G = pg.evaluate("studioState.D.maps.test_island.islandGen")
-    if not (G.get('lock') and G.get('hash')): raise Exception(f'Lock the ground stored {G}')
-    if not pg.evaluate("[...document.querySelectorAll('[data-act=hubTool]')].every(b=>b.disabled)"): raise Exception('the tools stay on when locked')
-    pg.evaluate(f"({HUB_STROKE})('hubMap',40,20,50,20);0")
-    if pg.evaluate(rows) != t0: raise Exception('a locked ground took a brush stroke')
-    pg.evaluate("studioState.sel.scene='test_island';openSection('scenes');ACTIONS.scTool({t:'paint'});0")
-    if not poll(pg, "!!document.getElementById('scMap')&&!!document.querySelector('#main .hub-note')", 40): raise Exception('Walk scenes doesn’t say the ground is locked')
-    if not bound('scMap'): raise Exception('Walk scenes’ map never bound')
-    n0 = pg.evaluate("studioState.D.maps.test_island.props.length")
-    pg.evaluate(f"({HUB_STROKE})('scMap',40,20,50,20);ACTIONS.scTool({{t:'props'}});mapEditor.prop=Object.keys(sceneryCatalog().props)[0];0")
-    bound('scMap')
-    pg.evaluate(f"({HUB_STROKE})('scMap',45,25,45,25);0")
-    if pg.evaluate(rows) != t0: raise Exception('Walk scenes painted a locked ground')
-    if pg.evaluate("studioState.D.maps.test_island.props.length") != n0 + 1: raise Exception('Walk scenes didn’t place a prop on a locked island')
-    pg.evaluate("studioState.D.maps.test_island.heights[10][10]+=1;0")
-    if not pg.evaluate("runCheck().some(p=>p.go==='hub'&&/locked but changed/.test(p.msg))"): raise Exception('the Studio’s Check missed a changed locked ground')
-    pg.evaluate("studioState.D.maps.test_island.heights[10][10]-=1;openSection('hub');ACTIONS.hubUnlock();0")
-    if not poll(pg, "!!document.querySelector('#dlg button.primary')", 40): raise Exception('Unlock didn’t ask first')
-    pg.evaluate("document.querySelector('#dlg button.primary').click();0")
-    if not poll(pg, "!studioState.D.maps.test_island.islandGen.lock&&!studioState.D.maps.test_island.islandGen.hash", 40): raise Exception('Unlock left the lock')
-    if not poll(pg, "[...document.querySelectorAll('[data-act=hubTool]')].every(b=>!b.disabled)", 40): raise Exception('the tools stay off after Unlock')
-    return f'drawn, a drag turned it {abs(pg.evaluate("hubEd.goal.yaw") - y0):.2f} rad, a stroke and its undo, the lock here and in Walk scenes (props free), the Check, unlock'
-
-
-def studio_hub_dials(pg, base):
-    """island track IS-6b: the Hub island editor's dials on test_island (after studio_hub, on its page): the map's own
-    dials don't fit round its middle and say so; a slider makes a draft that the orbit view draws (`_hubgen`) while the
-    map's tools are off; the walk check runs; Use this island puts the draft's ground on the map with the locked town
-    zone as it was and the props kept; Undo takes it back; a locked ground shows the dials read-only, no draft"""
-    M = 'studioState.D.maps.test_island'
-    if not pg.evaluate("typeof studioState==='object'&&!!studioState.D"):   # run alone (--only): the Studio loads here
-        if not poll(pg, "typeof openSection==='function'&&typeof PB_DATA==='object'", 60): raise Exception('the Studio never loaded')
-        pg.evaluate(STUDIO_DATA)
-    pg.evaluate("studioState.sel.hub='test_island';openSection('hub');0")
-    if not poll(pg, "!!document.getElementById('hubGen')&&!!hubEd.goal", 60): raise Exception('Hub island didn’t open again')
-    t0 = pg.evaluate(f"JSON.stringify({M}.tiles)")
-    town = pg.evaluate(f"JSON.stringify({M}.zones.find(z=>z.k==='town'))")
-    props = pg.evaluate(f"JSON.stringify({M}.props)")
-    pg.evaluate("document.querySelector('[data-act=hubGenOpen]').click();0")
-    if not poll(pg, "hubGen.on&&!hubGen.busy&&(!!hubGen.draft||!!hubGen.err)", 90): raise Exception('the dials never made a draft')
-    if not pg.evaluate("/doesn’t fit round the map’s middle/.test(hubGen.err)"):
-        raise Exception('test_island’s own dials should not fit round its middle: ' + pg.evaluate("hubGen.err||'a draft'"))
-    # a small island fits round (60, 60); the last change goes through a slider, as a hand would
-    pg.evaluate("Object.assign(hubGen.dials,{mountain:{r:10,peak:12},town:{on:0},hamlet:{on:0},zones:[]});0")
-    if not pg.evaluate("(()=>{const r=document.querySelector('[data-hubgen=\"size.r\"]');if(!r)return false;r.value='30';r.dispatchEvent(new Event('input',{bubbles:true}));return true})()"):
-        raise Exception('no Land radius slider')
-    if not poll(pg, "!hubGen.busy&&!!hubGen.draft&&hubGen.draft.w===120", 90): raise Exception('the slider made no draft: ' + pg.evaluate("hubGen.err"))
-    if not poll(pg, "walkView.id==='_hubgen'&&walkView.ready", 60): raise Exception('the orbit view doesn’t show the draft')
-    drawing(pg, 2, 90)
-    if pg.evaluate(f"JSON.stringify({M}.tiles)") != t0: raise Exception('a draft changed the map')
-    if not pg.evaluate("[...document.querySelectorAll('[data-act=hubTool]')].every(b=>b.disabled)"): raise Exception('the map’s tools stay on over a draft')
-    pg.evaluate("ACTIONS.hubGenWalk();0")
-    if not pg.evaluate("Array.isArray(hubGen.walk)"): raise Exception('the walk check didn’t run')
-    walks = pg.evaluate("hubGen.walk.length")
-    pg.evaluate("document.querySelector('[data-act=hubGenUse]').click();0")
-    if not poll(pg, f"JSON.stringify({M}.tiles)!=={json.dumps(t0)}", 30): raise Exception('Use this island changed nothing')
-    if pg.evaluate(f"JSON.stringify({M}.zones.find(z=>z.k==='town'))") != town: raise Exception('the locked town zone changed')
-    if pg.evaluate(f"JSON.stringify({M}.props)") != props: raise Exception('the props changed')
-    if pg.evaluate(f"{M}.islandGen.dials.size.r") != 30: raise Exception('the dials weren’t stored in islandGen')
-    if not poll(pg, "walkView.id==='test_island'", 30): raise Exception('the orbit view stayed on the draft')
-    pg.evaluate("undo();0")
-    if pg.evaluate(f"JSON.stringify({M}.tiles)") != t0: raise Exception('Undo didn’t take the island back')
-    pg.evaluate("ACTIONS.hubGenClose();ACTIONS.hubLock();0")
-    if not poll(pg, f"!!{M}.islandGen.lock", 30): raise Exception('the ground didn’t lock')
-    pg.evaluate("hubGen.open.size=true;document.querySelector('[data-act=hubGenOpen]').click();0")
-    if not poll(pg, "hubGen.on&&!!document.querySelector('[data-hubgen=\"size.r\"]')", 30): raise Exception('a locked island’s dials didn’t show')
-    if not pg.evaluate("[...document.querySelectorAll('#hubGen [data-hubgen]')].every(e=>e.disabled)&&!document.querySelector('[data-act=hubGenUse]')"):
-        raise Exception('a locked island’s dials can be moved, or it offers Use this island')
-    if pg.evaluate("!!hubGen.draft||hubGen.busy"): raise Exception('a locked island made a draft')
-    pg.evaluate(f"hubUnlockGround({M});ACTIONS.hubGenClose();0")
-    return f'too big round the middle said so; a slider made a 120 m draft, drawn; {walks} walk problems; used (town zone and props kept), undone; locked: read-only'
-
-
 def run_shop(pg, base):
     """UI-5: a run town's shop opens with the day's wares (the hub has no shop since RL-5)"""
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();openShop(Object.keys(SHOPS)[0]);0")
@@ -1323,9 +1200,6 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('island', [('The test island opens and draws; its walking checks hold; the orbit camera (island track)', island)]),
     ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap)]),
     (RUN_TEST_URL, [('Play this seed: ?debug&run= takes off on that seed in a test run, nothing saved (Studio plan T2.6)', run_test)]),
-    # IS-6a: a page of its own (it runs beside the others): the island's 3D view draws slowly in a headless browser
-    ('studio', [("The Studio's Hub island: the orbit view, the map's tools, the ground lock (IS-6a)", studio_hub),
-                ("The Studio's Hub island dials: a draft, Use this island, locked read-only (IS-6b)", studio_hub_dials)]),
 ]
 
 
