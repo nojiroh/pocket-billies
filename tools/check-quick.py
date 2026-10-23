@@ -1833,6 +1833,8 @@ def desktop_steps(b, base, R):
             return max(out)
         gait = []
         walk = speed("walkView.stick={x:0,y:Y}", "walkView.stick=null")
+        # TC-3: a push that moved nothing gave 'float division by zero' below; say so, and what held you
+        if walk < .1: raise Exception('a full push of the joystick didn’t move you: ' + pg.evaluate("JSON.stringify({view:walkView.id,ready:walkView.ready,modal:uiState.modal&&uiState.modal.title,talk:typeof talkBox!=='undefined'&&talkBox.on,battle:!!activeBattle,inside:!!uiState.inside,pl:[walkView.pl.x,walkView.pl.z]})"))
         light = speed("walkView.stick={x:0,y:Y*0.4}", "walkView.stick=null")
         ring = speed("walkView.stick={x:0,y:Y};walkView.run=true", "walkView.stick=null;walkView.run=false")
         keys = speed("walkView.keys[Y>0?'u':'d']=1", "walkView.keys={}")
