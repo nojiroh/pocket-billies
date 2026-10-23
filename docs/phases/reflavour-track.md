@@ -88,12 +88,11 @@ coins. Names (5.3): **Pyramid** (was Copper Coin), **Step Pyramid** (Silver, 1.5
 2. **The Beans:** answered 2026-10-23: **a running joke, never explained.**
 3. **The pyramids' names:** answered 2026-10-23: **4's drafts** (Pyramid, Step Pyramid, Gold Pyramid, Capstone), their
    text **plain for now** (no pyramid-scheme joke).
-4. **The coins' symbol:** the ruble sign ₽ is a real currency sign (it's what "₽-style" would print), and Pokémon's
-   own sign is a custom glyph. Recommended: a small coin icon of the game's own beside the number, no text symbol /
-   "c" after the number / ₽ anyway.
-5. **The failed-catch bribe:** cut (recommended; catching is plain) / kept as "it drops some coins".
-6. **The new passives' ideas:** Claude drafts nine in RF-3's plan (recommended) / the owner writes them.
-7. **SAVE_VERSION bump in RF-4:** sets every save aside again (recommended: yes, with no migration, as CLAUDE.md
-   allows) / a one-off key migration.
-8. **Storage keys** (`networth-save-v1`, `nw-opening-done`) with the new name: leave (recommended; players never see
-   them) / move with a set-aside.
+4. **The coins' symbol:** answered 2026-10-23: **the game's own small coin icon** beside the number, no text symbol.
+5. **The failed-catch bribe:** answered: **cut** (RF-1 removes it with its text; catching works or it doesn't).
+6. **The new passives:** answered: **Claude drafts nine** in RF-3's plan, the owner approves.
+7. **SAVE_VERSION bump in RF-4:** answered: **yes**, old saves set aside, no migration.
+8. **Storage keys** (`networth-save-v1`, `nw-opening-done`, the `-set-aside` slots): answered: **remove them**. RF-6
+   moves to new keys named for the game and deletes the old ones on load (the saves are set aside by RF-4's bump
+   anyway). The debug log and the account's cloud document keep working; the per-device "offer Skip" flag starts
+   over once.

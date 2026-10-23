@@ -971,7 +971,7 @@ reflavour-track.md section 4).
 |---|---|
 | Run length | About 30 minutes at Bracket I; higher brackets add a zone or two |
 | Biomes in a run | A **region**: each seed rolls a theme with 3-4 zones in order; each zone is one biome over 2-3 rows; zones follow a **biome graph** (each biome lists its likely next ones) |
-| Run start | **Starter points from the first run**: every species you have caught can start a run, priced by strength, from a point budget (PokeRogue). Replaces RL-9b's "1 home Billie a run" pick |
+| Run start | **Starter points from the first run**: the Billies at the ranch (team and storage) can start a run, each priced by strength, from a point budget (PokeRogue's budget, the owner's pool: 9.6, 24). Replaces RL-9b's "1 home Billie a run" pick |
 | Reward picks | **After trainer battles** (route trainers, leaders, rival, boss): pick 1 of 3, a paid reroll. Wild battles pay money and catches only |
 | Side areas | **Both**: small detours (an island, a cave or a grove: 1-2 routes, a town, its own species, trainers and boss, then back to the main path) on most runs, and rare **alternate paths** that replace part of the main path with a different mini-boss and possibly a different final boss. "It has to be a bit like he's in Pokémon" |
 | Field moves | **Surf** (Water), **Dig / Rock Smash** (Ground), **Cut / Overgrowth** (Grass) first |
@@ -1060,22 +1060,27 @@ The bots fit any of them as "repossession units"; the Voltron as the first "Lot"
 ### 9.6 Ask me before (new; recommendation first)
 
 21. **The organization's name:** answered 2026-10-23: the Bureau of Lost, Found and Beans.
-22. **Kept badges vs badge Loopholes:** a permanent badge on the first win per leader, the Loophole pick stays the run's
-    prize (recommended) / badges run-only and field moves need only the type.
-23. **Starter points:** a budget of 10 at Bracket I, costs 1-5 by line rarity and stage, a ranch-trained Billie +1 per
-    5 trained levels (recommended, placeholders for the sim) / a flat cost per species / levels free.
-24. **Which species are startable:** caught ever (recommended, PokeRogue) / caught and kept at the ranch.
-25. **Side areas:** a detour on about 60% of runs, an alternate path on about 15% (recommended) / always one detour.
-26. **A side area's place count:** 2-4 (recommended) / 1-2.
-27. **Reward pick contents:** items, move tutors, candy levels, evolution items (recommended) / plus held items (a new
-    system: a slot on each Billie).
-28. **Route trainers on sight:** they walk to you when you cross their line, as in Pokémon (recommended) / a "!" and
-    you choose.
-29. **Relationship gifts:** paid in $ brought home? No: in Capital (recommended, one hub currency) / items / a fifth
-    currency (check-data refuses a fifth today).
-30. **The first chapter's end:** the Voltron as the OUP's (or the chosen name's) first Lot (recommended) / a leader as
-    Chapter 1's champion and the Voltron at Chapter 2.
-31. **Region names:** made from parts (prefix + suffix, satirical: "Bullmarket Basin") (recommended) / a fixed list.
-32. **Where `lines.json` lives:** a new data section beside `story.json` (recommended) / inside `story.json`.
+Answered by the owner, 2026-10-23:
+
+22. **Kept badges vs badge Loopholes:** **the recommendation**: the first win against a leader keeps its badge for
+    good (`meta.badges`, opens its field move); every leader win offers a pick of 3 Perks.
+23. **Starter points:** **the recommendation**: a budget of 10, costs 1-5 by rarity and stage, a ranch-trained Billie
+    +1 per 5 trained levels (placeholders for the sim).
+24. **Which Billies are startable:** **only the Billies at the ranch** (the team and storage), not every species ever
+    caught. Catching matters by bringing a Billie home (won runs, the keep-one), not by a dex unlock.
+25. **Side areas:** **the recommendation**: a detour on about 60% of runs, an alternate path on about 15%.
+26. **A detour's size:** **2-4 places.**
+27. **Reward pick contents:** **both**: items, move tutors, candy levels, evolution items, **and held items** (a new
+    system: one held-item slot per Billie, PokeRogue-like). Held items need their own work (data section, the slot in
+    the save and the Team tab, effect rows at the battle hooks): RL-12b grows to 2-3 sessions, or held items get their
+    own session RL-12c after it.
+28. **Route trainers:** **walk up on sight**, as in Pokémon (a '!' and they come to you).
+29. **Relationship gifts:** **a new gift currency, Beans**, earned as **rare finds on runs** (1-3 a run: hidden spots,
+    events, side areas, first boss wins; like Hades' Nectar). A fifth currency: `currencies.json` gets a fifth row
+    and check-data's four-row rule becomes five (RL-S2). It ties to the Bureau's unexplained Beans (reflavour-track 4).
+30. **Chapter 1's end:** **the Voltron**, the Bureau's first big retrieval unit, as the Alpha boss of Expedition I.
+31. **Region names:** **made from parts, satirical** in the new tone (tech, bureaucracy, clichés: "Pendingvale",
+    "Beta Basin").
+32. **Where the lines live:** **a new `lines.json` data section** beside `story.json`.
 
 The Smosh note in project-story.md still holds for Professor Chosen before any public release.
