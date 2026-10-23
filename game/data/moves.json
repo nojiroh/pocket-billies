@@ -291,7 +291,7 @@
   "d": "A violent, hard-to-aim storm.",
   "fx": {"spread":1}
  },
- "renthike": {
+ "scatterstones": {
   "n": "Scatter Stones",
   "t": "Ground",
   "c": "X",
@@ -308,8 +308,8 @@
   "fx": {"status":"par","chance":30},
   "d": "30% chance to paralyze the target."
  },
- "foreclose": {"n":"Boulder Toss","t":"Ground","c":"H","p":75,"a":100,"d":"Hurls a heavy rock."},
- "eviction": {
+ "bouldertoss": {"n":"Boulder Toss","t":"Ground","c":"H","p":75,"a":100,"d":"Hurls a heavy rock."},
+ "quakestomp": {
   "n": "Quake Stomp",
   "t": "Ground",
   "c": "H",
