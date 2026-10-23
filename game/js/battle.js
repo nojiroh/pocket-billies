@@ -970,7 +970,7 @@ export function endBattle() {
       }
       after.push({
         title: nu ? escapeHtml(st.title || 'Badge') : 'Rematch won',
-        top: `<div class="sheet-art">${coinHTML(st.coin || 'penny', 96, 32)}</div>`,
+        top: `<div class="sheet-art">${coinHTML(st.coin || 'pyramid', 96, 32)}</div>`,
         html: `<p>${escapeHtml(T.win || '')}</p><p>You earned ${moneyHTML(pay.reward)}${nu && st.rewardText ? `, ${escapeHtml(st.rewardText)}` : ''}${extra}.</p>${nu && st.unlockText ? `<p class="note">${escapeHtml(st.unlockText)}</p>` : ''}`,
         btns: [{ l: 'Back to walking', c: 'dark', f: closeModal }],
       });

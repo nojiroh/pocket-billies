@@ -316,7 +316,7 @@ function pyramidItem(C, O) {
   C.in3d = battleStage.t;
   /* the capstone glows a little; any pyramid glows as it seals */
   const glow = C.glow || 0;
-  if (C.kind === 'tbtf' || glow > 0.05)
+  if (C.kind === 'capstone' || glow > 0.05)
     it.light = { p: [x, y + 0.4, z - 0.3], r: 1.6 + glow * 1.6, c: [0.5 + glow, 0.55 + glow, 0.75 + glow * 0.6] };
   return it;
 }

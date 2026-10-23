@@ -75,7 +75,7 @@ test('if / elif / else, set, clear, give, take, quest, end', async () => {
     '  set met_juniper',
     'set rival0 win',
     'give honey 2',
-    'give coin:gold',
+    'give coin:gold_pyramid',
     'take potion 5',
     'quest ledger asked',
     'clear gone',
@@ -86,7 +86,7 @@ test('if / elif / else, set, clear, give, take, quest, end', async () => {
   assert.deepEqual(said, ['Juniper: Who are you?']);
   assert.deepEqual(save.story, { met_juniper: 1, rival0: 'win', quests: { ledger: 'asked' } });
   assert.deepEqual(save.items, { potion: 0, honey: 2 });
-  assert.deepEqual(save.coins, { gold: 1 });
+  assert.deepEqual(save.coins, { gold_pyramid: 1 });
   assert.deepEqual((await play(lines, { save })).said, ['Juniper: Back again.']);
 });
 

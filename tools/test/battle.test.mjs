@@ -33,7 +33,7 @@ test('battle: catching: lower HP and a status raise the odds, an Alpha lowers th
   startedSave('sparky0', 10);
   const foe = fn('makeBilly')('sprout0', 10);
   fn('newBattle')('wild', [foe]);
-  const odds = () => fn('catchOdds')('penny', 1, false);
+  const odds = () => fn('catchOdds')('pyramid', 1, false);
   const full = odds();
   foe.hp = 1;
   const low = odds();
@@ -47,9 +47,9 @@ test('battle: catching: lower HP and a status raise the odds, an Alpha lowers th
   fn('newBattle')('wild', [fn('makeAlpha')('sprout0', 10)]);
   assert.ok(fn('fighter')(1).boss, 'makeAlpha made no Alpha');
   assert.ok(odds() < full, `${odds()} for an Alpha, ${full} for a plain one`);
-  assert.equal(fn('catchOdds')('tbtf', 1, false), 1);
+  assert.equal(fn('catchOdds')('capstone', 1, false), 1);
   reseed();
-  for (let i = 0; i < 20; i++) assert.equal(fn('catchRoll')('tbtf', 1, false).caught, true);
+  for (let i = 0; i < 20; i++) assert.equal(fn('catchRoll')('capstone', 1, false).caught, true);
 });
 
 test('battle: the foe picks a move it knows, aimed at one of yours still standing; a smart trainer picks its best', () => {

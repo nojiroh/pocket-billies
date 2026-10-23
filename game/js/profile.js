@@ -32,7 +32,7 @@ function badgeSlots() {
   const known = own.map(T => ({
     name: String(T.seat.title || 'Badge').split(' · ')[0],
     leader: T.name,
-    coin: COINS[T.seat.coin] ? T.seat.coin : 'penny',
+    coin: COINS[T.seat.coin] ? T.seat.coin : 'pyramid',
     got: saveData.seats.includes(T.seat.id),
   }));
   return {
@@ -75,7 +75,7 @@ export function renderProfile() {
  </section>
  <section class="tpanel pf-stats"><div class="sec-h"><h2>Records</h2></div><div class="pf-grid">
   ${tile(uiIconHTML('run', 14), 'Distance walked', `${metresToKm((saveData.stats && saveData.stats.walked) || 0)} km`)}${tile(uiIconHTML('map', 14), 'Places visited', `${places}/${LOCATIONS.length}`, null, places / LOCATIONS.length)}
-  ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX_ORDER.length}`, null, seen / DEX_ORDER.length)}${tile(coinHTML('penny', 14), 'Caught', `${got}/${DEX_ORDER.length}`, null, got / DEX_ORDER.length)}
+  ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX_ORDER.length}`, null, seen / DEX_ORDER.length)}${tile(coinHTML('pyramid', 14), 'Caught', `${got}/${DEX_ORDER.length}`, null, got / DEX_ORDER.length)}
   ${tile(uiIconHTML('fight', 14), 'Trainers beaten', formatNumber(beat))}${tile(eggHTML(2, 12), 'Eggs hatched', formatNumber(saveData.hatched || 0), saveData.ranch.nursery.length ? `${plural(saveData.ranch.nursery.length, 'egg')} at the ranch` : 'No eggs right now')}
  </div></section></div>
  <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud k-card" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { build: bud.build, coat: bud.coat })}</span><span class="pf-bt"><b>${escapeHtml(billyName(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>Gets the full XP of every battle you win.</small></span></button></section>` : ''}

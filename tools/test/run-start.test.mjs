@@ -95,8 +95,8 @@ test('a run starts with run.start (copies), on its seed, tier and generator vers
     coins: GAME_DATA.rules.run.start.coins,
     items: GAME_DATA.rules.run.start.items,
   });
-  g.coins.penny = 99;
-  assert.notEqual(GAME_DATA.rules.run.start.coins.penny, 99);
+  g.coins.pyramid = 99;
+  assert.notEqual(GAME_DATA.rules.run.start.coins.pyramid, 99);
 });
 
 test('a plan touches nothing: the data stays as it was, the same seed plans the same run, a save it goes on is its own', () => {

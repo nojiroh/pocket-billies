@@ -1,7 +1,7 @@
 {
  "start": {
   "se": 600,
-  "coins": {"penny":5,"silver":0,"gold":0,"tbtf":0},
+  "coins": {"pyramid":5,"step_pyramid":0,"gold_pyramid":0,"capstone":0},
   "items": {"taxbreak":2},
   "starters": ["musk","bezos","gates"],
   "starterLevel": 5,
@@ -159,14 +159,14 @@
   "seamIn": 6,
   "start": {
    "se": 600,
-   "coins": {"penny":5},
+   "coins": {"pyramid":5},
    "items": {"taxbreak":2}
   },
   "home": [1],
   "pack": [5],
   "healCost": 60,
   "shop": {
-   "always": ["coin:penny","taxbreak"],
+   "always": ["coin:pyramid","taxbreak"],
    "more": 2,
    "pick": {"pretzel":3,"loophole":2,"trailmix":2,"spillkit":2,"apology":1,"settlement":1,"appeal":1,"bailout":1}
   },

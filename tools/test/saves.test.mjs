@@ -8,7 +8,7 @@ test('saves: a new save, load checks, saveFill, backup check', () => {
   const s = fn('newSave')();
   assert.equal(s.saveVersion, logic.SAVE_VERSION);
   assert.equal(s.gameVersion, globalThis.PB_VERSION);
-  assert.equal(s.coins.penny, 5);
+  assert.equal(s.coins.pyramid, 5);
   assert.equal(s.items.potion, 2);
   assert.equal(fn('saveAge')(s), 'ok');
   assert.equal(fn('saveAge')({}), 'old');

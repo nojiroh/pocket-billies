@@ -199,9 +199,10 @@ function darkCopy(c) {
 }
 /* ---- people are drawn in code by person-art.js ---- */
 /* ---- coins and Seed Rounds ---- */
-const COIN_KINDS = typeof COINS !== 'undefined' ? Object.keys(COINS) : ['penny', 'silver', 'gold', 'tbtf'];
+const COIN_KINDS =
+  typeof COINS !== 'undefined' ? Object.keys(COINS) : ['pyramid', 'step_pyramid', 'gold_pyramid', 'capstone'];
 export const COIN_ART = COIN_KINDS.flatMap(k => [`coins/${k}_16.png`, `coins/${k}_32.png`]);
-export function coinCanvas(kind = 'penny', size = 16) {
+export function coinCanvas(kind = 'pyramid', size = 16) {
   return ART_CACHE.img[`coins/${kind}_${size >= 32 ? 32 : 16}.png`] || artImg(`coins/${kind}_16.png`);
 }
 export function coinURL(kind, size = 16) {

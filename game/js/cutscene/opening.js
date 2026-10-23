@@ -151,7 +151,7 @@ export async function cutsceneStart(opts) {
     rigPreload(cutscene.pickList.map(l => [l + '0', 1])),
     artLoad(['coins/penny_32.png']),
     /* RF-2: the thrown pyramids' model, so the throws have it */
-    Promise.resolve(typeof loadPropModelRecipe === 'function' && loadPropModelRecipe('coins/penny.json')),
+    Promise.resolve(typeof loadPropModelRecipe === 'function' && loadPropModelRecipe('coins/pyramid.json')),
     prepareMap(id),
   ]).catch(() => {});
   /* the fall from the crust down to Copperleaf (opening-fall.js); it ends on a white screen. RL-8 (the owner's answer,
@@ -439,7 +439,7 @@ function openingLayer(items, parts, lights, now, t) {
       it =
         typeof pyramidWorldItem === 'function'
           ? pyramidWorldItem(
-              'penny',
+              'pyramid',
               x,
               y - mid * PYRAMID_SCALE * 0.8,
               z,

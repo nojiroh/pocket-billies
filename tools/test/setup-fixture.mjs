@@ -21,7 +21,7 @@ export const FIXTURE = {
   rules: {
     start: {
       se: 600,
-      coins: { penny: 5 },
+      coins: { pyramid: 5 },
       items: { potion: 2 },
       starters: ['sparky', 'sprout'],
       rival: { sparky: 'drip0', sprout: 'sparky0', drip: 'sprout0' },
@@ -162,7 +162,7 @@ export const FIXTURE = {
     { kind: 'seam', a: { map: 'meadow' }, b: { map: 'lake' } },
   ],
   eggs: { 2: { need: 100, lv: 5, list: [['sprout0', 1]] } },
-  coins: { penny: { n: 'Copper Coin', m: 1 }, tbtf: { n: 'Platinum Coin', m: 0 } },
+  coins: { pyramid: { n: 'Copper Coin', m: 1 }, capstone: { n: 'Platinum Coin', m: 0 } },
   items: { potion: { n: 'Potion', hp: 20 }, revive: { n: 'Revive', revive: 0.5 } },
   jobs: { barista: { n: 'Barista', out: ['item', 'potion', 1], quip: 'made forty lattes.' } },
   people: { chosen: {} },

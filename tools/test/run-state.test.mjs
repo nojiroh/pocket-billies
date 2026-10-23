@@ -278,20 +278,20 @@ test('run: a kept Billie from storage comes back to storage with its gains, once
 test('run: the packed bag leaves the hub, travels on top of the gift and comes home only on a win', () => {
   for (const won of [false, true]) {
     const s = hubSave(); // 4 potions at home
-    s.coins.penny = 2;
+    s.coins.pyramid = 2;
     const run = runBegin(s, {
       ...GIVE,
-      coins: { penny: 5 },
-      pack: { items: { potion: 3, ghost: 2 }, coins: { penny: 9 } },
+      coins: { pyramid: 5 },
+      pack: { items: { potion: 3, ghost: 2 }, coins: { pyramid: 9 } },
     });
-    assert.deepEqual(run.pack, { items: { potion: 3 }, coins: { penny: 2 } }, 'no more than the bag holds');
-    assert.deepEqual([run.start.items.potion, run.start.coins.penny], [1, 0], 'what stays home');
-    assert.deepEqual([s.items.potion, s.coins.penny], [1 + 3, 5 + 2], 'the gift and the pack');
+    assert.deepEqual(run.pack, { items: { potion: 3 }, coins: { pyramid: 2 } }, 'no more than the bag holds');
+    assert.deepEqual([run.start.items.potion, run.start.coins.pyramid], [1, 0], 'what stays home');
+    assert.deepEqual([s.items.potion, s.coins.pyramid], [1 + 3, 5 + 2], 'the gift and the pack');
     assert.equal(validRun(copy(run)), true);
     s.items.potion = 2; // one used on the way
-    s.coins.penny = 3;
+    s.coins.pyramid = 3;
     const pay = runEnd(s, { won, keep: [s.team[0].uid] }, RATES, PRICE);
-    assert.deepEqual([s.items.potion, s.coins.penny], won ? [1 + 2, 3] : [1, 0]);
+    assert.deepEqual([s.items.potion, s.coins.pyramid], won ? [1 + 2, 3] : [1, 0]);
     assert.equal(pay.lines[1].research, won ? 0 : Math.floor(2 * 200 * 0.5 * 0.1), 'a loss pays the bag');
   }
 });

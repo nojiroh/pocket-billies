@@ -298,14 +298,14 @@ export function runSimOn(env) {
           }
           at.shop = stock.map((/** @type {any} */ w) => w.coin || w.item);
           /* the shop's price, with the Perks' price rows (shop.js warePrice) */
-          const price = fxRunPrice(run, data.PERKS, 'shop', data.COINS.penny.price);
+          const price = fxRunPrice(run, data.PERKS, 'shop', data.COINS.pyramid.price);
           while (
-            stock.some((/** @type {any} */ w) => w.coin === 'penny') &&
-            (s.coins.penny || 0) < P.penniesUpTo &&
+            stock.some((/** @type {any} */ w) => w.coin === 'pyramid') &&
+            (s.coins.pyramid || 0) < P.penniesUpTo &&
             s.se >= price + P.reserve
           ) {
             s.se -= price;
-            s.coins.penny = (s.coins.penny || 0) + 1;
+            s.coins.pyramid = (s.coins.pyramid || 0) + 1;
             stats.spent += price;
             stats.moneyOut.shop += price;
           }
@@ -334,9 +334,9 @@ export function runSimOn(env) {
           const B = hooks.activeBattle;
           let res;
           /* catch it while the party is small and there are coins: one throw, then fight on */
-          if (s.team.length < P.taxWhileBelow && (s.coins.penny || 0) > 0 && !q.alpha) {
-            s.coins.penny--;
-            const c = fn('catchRoll')('penny', 1 + logic.CATCH_RULES.ring * P.ring, false); /* doThrow's T */
+          if (s.team.length < P.taxWhileBelow && (s.coins.pyramid || 0) > 0 && !q.alpha) {
+            s.coins.pyramid--;
+            const c = fn('catchRoll')('pyramid', 1 + logic.CATCH_RULES.ring * P.ring, false); /* doThrow's T */
             if (c.caught) {
               fn('catchKeep')(foe);
               stats.caught++;

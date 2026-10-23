@@ -1650,8 +1650,8 @@ ACTIONS.seatOn = () => {
   T.seat = {
     id: uniqueKey(T.name, k => Object.values(studioState.D.trainers).some(t => t.seat && t.seat.id === k)),
     title: `Badge ${n} of 8`,
-    coin: 'gold',
-    coins: { tbtf: 1 },
+    coin: 'gold_pyramid',
+    coins: { capstone: 1 },
     items: {},
     rewardText: 'a Capstone',
     unlockText: '',

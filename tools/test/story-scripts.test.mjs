@@ -77,7 +77,7 @@ test('start presets: place, flags, trainers beaten with their badges, coins and 
 });
 
 test('a save taken while a script runs writes the state from before it, and where to carry on', () => {
-  const s = { story: { met_chosen: 1 }, items: { honey: 1 }, coins: { gold: 0 }, flags: {}, team: [1] };
+  const s = { story: { met_chosen: 1 }, items: { honey: 1 }, coins: { gold_pyramid: 0 }, flags: {}, team: [1] };
   const base = runBase(s);
   s.story.met_juniper = 1;
   s.items.honey = 5;

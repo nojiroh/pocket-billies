@@ -18,10 +18,10 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "repairkit": 0
       },
       "coins": {
-        "penny": 5,
-        "silver": 0,
-        "gold": 0,
-        "tbtf": 0
+        "pyramid": 5,
+        "step_pyramid": 0,
+        "gold_pyramid": 0,
+        "capstone": 0
       },
       "seed": "S0START",
       "tier": 1,
@@ -344,10 +344,10 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "repairkit": 0
       },
       "coins": {
-        "penny": 5,
-        "silver": 0,
-        "gold": 0,
-        "tbtf": 0
+        "pyramid": 5,
+        "step_pyramid": 0,
+        "gold_pyramid": 0,
+        "capstone": 0
       },
       "seed": "S0START",
       "tier": 1,
@@ -673,10 +673,10 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "repairkit": 0
       },
       "coins": {
-        "penny": 5,
-        "silver": 0,
-        "gold": 0,
-        "tbtf": 0
+        "pyramid": 5,
+        "step_pyramid": 0,
+        "gold_pyramid": 0,
+        "capstone": 0
       },
       "seed": "S0START",
       "tier": 1,
@@ -871,6 +871,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "a5f7313d3743775546a090f4593db2432e184af291842ef5321756e7d07ebdc2"
+  "all": "5ba92a5b3f5ca3300b65596c2266d99050607d7940f6e3e9ad6febc9c8188475"
 }
 `;

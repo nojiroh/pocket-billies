@@ -145,7 +145,7 @@ test('the Studio’s story preview reads a preset as the game does after applySt
     'visited:vinyl_works',
     'billie:musk',
     'billie:swift1',
-    'coin:gold >= 3',
+    'coin:gold_pyramid >= 3',
   ];
   for (const preset of Object.keys(GAME_DATA.story.presets)) {
     const game = fn('newSave')();

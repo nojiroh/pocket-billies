@@ -20,8 +20,8 @@
  "seat": {
   "id": "vault",
   "title": "Fire Badge · 6 of 8",
-  "coin": "gold",
-  "coins": {"gold":4,"tbtf":2},
+  "coin": "gold_pyramid",
+  "coins": {"gold_pyramid":4,"capstone":2},
   "items": {"parachute":1},
   "rewardText": "a Max Revive, 4 Gold Pyramids and 2 Capstones",
   "unlockText": "The Grizzle Badlands, east of Goldvine Town, are open."

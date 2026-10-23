@@ -193,14 +193,14 @@ test('every catch item has its icons and its model; a missing or empty one is na
   const ART = join(import.meta.dirname, '../../game/art'),
     disk = (/** @type {string} */ p) => (existsSync(join(ART, p)) ? readFileSync(join(ART, p), 'utf8') : null);
   assert.deepEqual(C.dataCatchArt(GAME_DATA.coins, disk), []);
-  const gone = (/** @type {string} */ p) => (p === 'coins/gold_16.png' ? null : disk(p));
+  const gone = (/** @type {string} */ p) => (p === 'coins/gold_pyramid_16.png' ? null : disk(p));
   assert.deepEqual(C.dataCatchArt(GAME_DATA.coins, gone), [
-    ['coins.json', 'gold: no icon art/coins/gold_16.png (tools/build-pyramids.py)'],
+    ['coins.json', 'gold_pyramid: no icon art/coins/gold_pyramid_16.png (tools/build-pyramids.py)'],
   ]);
   const odd = (/** @type {string} */ p) =>
-    p === 'coins/silver.json' ? '{"layers":[]}' : p === 'coins/tbtf.json' ? 'not json' : disk(p);
+    p === 'coins/step_pyramid.json' ? '{"layers":[]}' : p === 'coins/capstone.json' ? 'not json' : disk(p);
   assert.deepEqual(C.dataCatchArt(GAME_DATA.coins, odd), [
-    ['coins.json', 'silver: its model art/coins/silver.json has no shapes'],
-    ['coins.json', 'tbtf: its model art/coins/tbtf.json is not JSON'],
+    ['coins.json', 'step_pyramid: its model art/coins/step_pyramid.json has no shapes'],
+    ['coins.json', 'capstone: its model art/coins/capstone.json is not JSON'],
   ]);
 });

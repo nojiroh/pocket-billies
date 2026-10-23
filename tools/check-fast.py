@@ -679,7 +679,7 @@ def relics(pg, base):
     pg.evaluate("uiState.tab='walk';render();0")
     st = pg.evaluate("startWild(encountersHere()[0]);[!!activeBattle.fx,activeBattle.sides[0].f[0].v.st.hus]")
     if st != [True, 1]: raise Exception(f'a battle’s Perks and Speed stage: {st}')
-    odds = pg.evaluate("[catchOdds('penny',1,false),(activeBattle.fx=null,catchOdds('penny',1,false))]")
+    odds = pg.evaluate("[catchOdds('pyramid',1,false),(activeBattle.fx=null,catchOdds('pyramid',1,false))]")
     if abs(odds[0] - min(1, odds[1] * 1.25)) > 1e-9: raise Exception(f'the catch row: {odds}')
     pg.evaluate("stopTimers();activeBattle.over='ran';endBattle();0")
     if not until(pg, "!activeBattle", 20): raise Exception('the battle didn’t end')
@@ -1016,7 +1016,7 @@ def run_pack(pg, base):
     buddy the hub's, the packed Potions gone. A second run (the default pick, one Potion packed), won: no items row on
     the payout, the run's bag added to Copperleaf's. A reload (?fixture=stored) keeps it all"""
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.ranch&&!document.getElementById('loader')&&walkView.ready", 90): raise Exception('the ranch fixture never booted')
-    pg.evaluate("uiState.inside=null;uiState.modal=null;uiState.mq=[];renderOverlay();saveData.items.taxbreak=3;saveData.coins.penny=2;0")
+    pg.evaluate("uiState.inside=null;uiState.modal=null;uiState.mq=[];renderOverlay();saveData.items.taxbreak=3;saveData.coins.pyramid=2;0")
     who = pg.evaluate("saveData.box[1].uid")
     if pg.evaluate(f"ranchTrainStart(saveData,'{who}',Date.now(),RULES.ranch)") != '': raise Exception('the fixture’s Billie couldn’t start training')
     pg.evaluate(f"saveData.box[1].hp=1;0")

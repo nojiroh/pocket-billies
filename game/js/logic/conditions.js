@@ -5,7 +5,7 @@
    parsed once into a tree and read against a plain story state (storyStateOf); it is never run as code.
      met_juniper            a story flag is set          !met_juniper, not met_juniper   it isn't
      rival0 = win           a story flag holds a word    beat:chad                      a trainer is beaten
-     item:honey >= 3        items in the bag             coin:gold > 0                  coins
+     item:honey >= 3        items in the bag             coin:gold_pyramid > 0                  coins
      quest:ledger = asked   a quest's stage (also >=, <: in the quest's order of stages; `none` before it starts)
      visits:juniper >= 2    times you have talked to someone
      visited:copperleaf     a place you have been        billie:musk                    a Billie of that line caught
@@ -62,7 +62,7 @@ expose({
 export const CONDITION_KINDS = {
   beat: { id: true, count: false, about: 'you beat this trainer: beat:chad' },
   item: { id: true, count: true, about: 'how many of an item you carry: item:honey >= 2' },
-  coin: { id: true, count: true, about: 'how many of a coin you have: coin:gold >= 3' },
+  coin: { id: true, count: true, about: 'how many of a coin you have: coin:gold_pyramid >= 3' },
   quest: { id: true, count: false, about: 'a quest’s stage, in the quest’s order: quest:lost_cat >= found' },
   visits: { id: true, count: true, about: 'times you have talked to someone: visits:juniper >= 2' },
   visited: { id: true, count: false, about: 'you have been to a place: visited:copperleaf' },

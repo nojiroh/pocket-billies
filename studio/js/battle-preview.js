@@ -469,7 +469,7 @@ ACTIONS.bp = d => {
     case 'catch':
     case 'escape':
       reset();
-      battleStageCatch('penny', { caught: x === 'catch', w: x === 'catch' ? 3 : 1 }, false, ok => {
+      battleStageCatch('pyramid', { caught: x === 'catch', w: x === 'catch' ? 3 : 1 }, false, ok => {
         if (ok) later(600, reset);
       });
       break;

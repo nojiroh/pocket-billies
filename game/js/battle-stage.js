@@ -1568,7 +1568,7 @@ export function battleStagePlay(an, ev) {
       const w = actorWorldPoint(i),
         from = si === 0 ? throwOrigin() : { x: w.x + 2.4, y: 2.2, z: w.z + 1.6 },
         to = { x: w.x, y: 0.4, z: w.z };
-      coinArc(from, to, 380, 'penny', C => {
+      coinArc(from, to, 380, 'pyramid', C => {
         C.show = false;
         s.show = true;
         const c = actorCenter(i);
