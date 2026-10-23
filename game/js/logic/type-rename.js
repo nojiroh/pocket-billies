@@ -13,8 +13,8 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** renames type `from` to `to` everywhere the data names it; `to` null removes it (a move becomes Normal, a Billie
- * loses it, a rule takes the first type left)
+/** renames type `from` to `to` everywhere the data names it; `to` null removes it (a move or robot part becomes Normal, a
+ * Billie loses it, a rule takes the first type left, a Loophole's damage row counts for any type)
  * @param {any} D the game data @param {string} from @param {string | null} to */
 export function renameTypeIn(D, from, to) {
   D.types.forEach((/** @type {any} */ t) => {
@@ -30,6 +30,23 @@ export function renameTypeIn(D, from, to) {
       return r.length ? r : ['None'];
     });
   });
+  /* Studio plan F17: the robots' parts and gems, the roster board, the types that ride on water and a Loophole's
+     damage row name types too */
+  const robots = D.robots || {};
+  for (const P of [...Object.values(robots.parts || {}), ...Object.values(robots.gems || {})])
+    if (/** @type {any} */ (P).type === from) /** @type {any} */ (P).type = to || 'None';
+  for (const r of D.roster || [])
+    if (Array.isArray(r.types))
+      r.types = r.types.map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
+  const ride = D.rules.ride;
+  if (ride && Array.isArray(ride.types))
+    ride.types = ride.types.map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
+  for (const L of Object.values(D.relics || {}))
+    for (const f of /** @type {any} */ (L).fx || [])
+      if (f.type === from) {
+        if (to) f.type = to;
+        else delete f.type; /* a damage row for any type */
+      }
   const R = D.rules.battle;
   if (R.shockType === from) R.shockType = to || D.types[0].id;
   if (R.spinType === from) R.spinType = to || D.types[0].id;
