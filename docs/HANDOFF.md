@@ -2,6 +2,54 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Reflavour track RF-5 - The new tone in text - 2026-10-23
+Branch `track/reflavour-rf-5`, made from `track/reflavour` at e1e1479 while RF-4 was still finishing its docs (the
+coordinating session's word, confirmed by the owner); main merged in after RF-4's PR #165 landed. Plan approved with
+the owner's answers: **Legacy Labs stays** (the one lab every billionaire hired; its slogan is now "You, again, but
+forever"); the old campaign lore (Vinylla's arc) **loses its finance only**; the Bureau of Lost, Found and Beans in
+**hints only**; Chosen's table **unchanged**. Text only: no id, script logic or line id changed.
+- Where the brief was wrong (checked in the code):
+  - story.json holds three scripts and none had a finance joke; Chosen's table and Hazel's lines were already RPG and
+    chosen-one satire. Neither changed.
+  - There is no separate Index text: the Guide's species pages (bios about the clone, kept) and its Lore tab. The
+    clones' origin lived in lore "What Billies are", the opening's lines 38-39 and the brochure.
+  - The opening has no billboard any more (the owner): the slogan was only a comment in opening-fall.js.
+  - "Why a pyramid catches them" (RF-2 changed its title only) still told the coin lore.
+  - The Perk ids (`offshore`...) were not renamed by RF-4; no Perk text was touched here.
+- Changed (one cause per commit):
+  - **Lore, world:** the clones are Legacy Labs' vanity copies, cut with the nearest animal to hit a launch date,
+    dropped down a sinkhole and marked "archived"; pyramids catch them because every cloning vat was one (plain, no
+    pyramid-scheme joke); "Moneys down here" (the plural under appeal at the Bureau); the Hollow Earth "filed as
+    pending" and reassigned eleven times. The coin in your pocket is a **guitar pick** (clue, the fall, your bio; the
+    clue's id stays `coin`).
+  - **Books and loading tips:** Field Guide (cameras, not money), the brochure "You, Again, but Forever", "The Coin
+    Standard" is "The Moneys Question" (a Bureau Q&A; the Beans question "has not been received"), the Pearl Exchange
+    "inventory", the airship's lost property goes to the Bureau; nine loading tips, two of them Bureau hints.
+  - **People and leaders:** Blake's father founded "a company that makes apps for other apps"; Iris's terms of
+    service; Marina's no-photos island; Baron Vault's NDA, publicist and complaint in triplicate; Nacre's complaint
+    form; two story lines (backstage passes, Vault "lent" his vaults); the face clue (an email they thought they had
+    deleted).
+  - **Rooms:** the cow is Synergy; the shop's Capstone limit; the fireplace's terms and conditions
+    (tools/build-interiors.py's copy too, so a rerun keeps them).
+  - **The opening:** "A lab copied them for fun..."; "Then dropped them down here." (tools/test/opening-said.json
+    retargeted in the same commit).
+  - **Code:** folk chat (the Bureau and the umbrella; a Billie "tried to put its name on the sun"), the loading line
+    "Polishing the pyramids", the sound effects' description says catches (and its four translations).
+  - Docs: ROADMAP, reflavour-track.md (RF-5 done), CHANGELOG.
+- Kept on purpose: "Gotta tax 'em all!", the species' names, bios, notes and moves (about the clones), Vinylla's arc
+  (celebrity and scarcity satire), the shop's "stock", run money as Moneys.
+- Verified: lint, typecheck, unit tests (826; 827 after merging main), check:data with the story checks and
+  format:check after every commit; check:modules after the code commit; smoke 6 of 6 (183 s, before the merge). Long
+  checks skipped at the owner's word.
+- Risky:
+  - Not read on a phone: a few lines are longer (What Billies are, the pyramid entry, the brochure's first page).
+  - The legacy generator tools/build-regions-v47.py still holds Baron Vault's old lines; rerunning it
+    would bring them back.
+  - Translations exist only for the settings line; the new lore is English only, as before.
+- Out of scope, left for their sessions: regions.json name parts (RL-R1/RL-R2), events.json (RL-12b), the Bureau in
+  people's lines (RL-S1's lines.json).
+- Next: RF-6 (the game's name). Tag `rf-5-done` on this entry's commit (the owner pushes tags).
+
 ### Fix - the hub's "black screen" in the full quick check - 2026-10-23
 Branch `fix/hub-frame-wait` (one session, docs/BRANCHES.md). The failure in RL-R1's long checks (PR #161's comment):
 "Ground tiles, building plans and colours, rooms": `w:copperleaf* isn't drawing (black screen)`, under CPU load.
