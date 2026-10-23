@@ -138,7 +138,7 @@ more move rarely turns a loss).
 
 ## 7. RF-4 as built (2026-10-23)
 
-42 commits on `track/reflavour` (with this entry), each a single rename, except the first: SAVE_VERSION 5 (old saves set aside, no
+44 commits on `track/reflavour` (with the docs), each a single rename, except the first and the Perk order (below): SAVE_VERSION 5 (old saves set aside, no
 migration). The owner's answers to the plan: the money id stays `money`; `tier` becomes `expedition` now; the art folder
 `art/coins/` keeps its name; `foreclose` goes with the stone moves.
 
@@ -163,10 +163,11 @@ migration). The owner's answers to the plan: the money id stays `money`; `tier` 
   data-a keys and DOM ids (`bcoins`, `#aimCoin`, `shoprelic`), UI icon names `relic` and `ledger`, the art folder
   `art/coins/`, the opening's `coins` and `throw-coins`, the singular `coin` key of a ware or seat and the `coin:`
   condition, the offer stream's name `relic|`.
-- Not renamed, for the owner: the ten Perk ids (`offshore`, `shelter`, `lobbyist`, `fineprint`, `insider`, `takeover`,
-  `hedge`, `severance`, `options`, `writeoff`). perkPool sorts the pool by id before the seeded draw, so new ids would
-  change which Perks every seed offers: a behaviour change, not a rename. The way: first a behaviour commit that draws
-  in perks.json's order (offers change once, on purpose), then the ids. Also still finance: the stat ids `lev`, `lob`,
-  `hus` and most move ids (the moves stay, section 1).
+- The ten Perk ids, at the owner's word after the first PR text: perkPool sorted the pool by id before the seeded
+  draw (and the run sim broke ties by id), so a behaviour commit first makes both follow perks.json's order (every
+  seed's offers change once, on purpose), then the ids are renamed alone: `lucky_charm`, `clinic_card`, `coupon_book`,
+  `steady_hand`, `running_shoes`, `power_gloves`, `bubble_wrap`, `trail_snacks`, `field_notebook`, `lost_property`.
+  Still finance, left: the stat ids `lev`, `lob`, `hus` and most move ids (the moves stay, section 1).
 - One rename did change behaviour: runShopStock sorts a town's weighted wares by item id before its draw, so the item
   rename changed which wares a seed's run shop stocks. No test pinned it; SAVE_VERSION 5 means no saved run carries over.
+  The owner accepted it (RF-4).
