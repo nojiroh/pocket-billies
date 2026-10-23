@@ -124,9 +124,9 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 ## Enforced by lint (`npm run lint`)
 
 - ESLint's `camelcase` (eslint.config.js; properties may be anything: they are data keys).
-- tools/check-names.mjs: no top-level name of one or two characters (`$`, `$$` allowed); no top-level name phase 05
-  retired (tools/retired-names.json) and none with a retired prefix; kebab-case file names under game/js, game/css,
-  game/*.js, game/*.html and studio.
+- tools/check-names.mjs: no top-level name of one or two characters (`$`, `$$` allowed); kebab-case file names under
+  game/js, game/css, game/*.js, game/*.html and studio. (Its guard against phase 05's retired names went in the test
+  cleanup track: the rename is long finished.)
 
 ## Renaming tools
 

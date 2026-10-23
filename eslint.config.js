@@ -120,7 +120,7 @@ const bugRules = {
   'no-useless-assignment': 'off',
   'preserve-caught-error': 'off',
   // phase 05 (docs/NAMING.md): camelCase or UPPER_SNAKE names; properties are data keys, so they may be anything.
-  // The rest of NAMING.md (no one- or two-letter top-level names, no retired name or prefix, kebab-case files) is
+  // The rest of NAMING.md (no one- or two-letter top-level names, kebab-case files) is
   // tools/check-names.mjs, which npm run lint runs after ESLint
   camelcase: ['error', { properties: 'never', ignoreDestructuring: true, ignoreImports: true }],
 };
