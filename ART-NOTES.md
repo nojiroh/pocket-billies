@@ -520,3 +520,18 @@ art pipeline (phase 17 task 11).
   bowl spots and kinds (game/js/logic/bowl.js, game/js/world-bowl.js); the walk scenes' sky shows the bowl's far wall
   worked out from the same ground. `map/airship.png` stays (the flight over the bowl).
 
+
+## UI icons, 36×36 "block and split" (2026-10-23)
+- All 49 interface icons in `game/art/ui/*.svg` are redrawn as 36×36 pixel art in fixed colours (they were 12×12
+  one-colour masks tinted by the text colour). The owner picked the look from samples: "P5", a mix of an extruded
+  block and a diagonal split.
+- `tools/build-ui-icons.py` holds each icon as a 34×34 grid of colour letters (its `PALETTE`: the light theme's
+  colours from `uiTheme.json` plus blue, ice, paper, cream, stone, steel, slate, wood, violet and cloud). The tool
+  adds the same treatment to every icon: a 2 px block side to the lower right in a darker shade of each colour, the
+  front split on the 45° line through its middle (paler above), a lit top/left edge and a darker seam where two
+  colours meet. Edit a grid and run the tool; `--check` (run by `tools/test/ui-icons.test.mjs`) fails if a file
+  differs.
+- Icons are objects: the same colours on both themes; shadows are always dark (never the theme's text colour,
+  which is light on the dark theme). The darkest colour is slate `#4A5544`, so nothing vanishes on dark panels.
+- Shapes keep the UI track's 45° rule: straight lines and 45° steps, octagons for circles. Strokes are 3 px or
+  more so the icons hold up at the 14–22 px the game mostly draws them.
