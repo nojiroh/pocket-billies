@@ -1364,6 +1364,38 @@ def unlocks_steps(pg, errs):
     if len(errs) == n: print(f"unlocks: {nodes} nodes with the expected edges, the circle ranch_2 -> ranch_3 -> ranch_2 refused, a new save as the game's, a run earns first_run, a cost edit proposed ({sent}) and undone", flush=True)
 
 
+def leaders_steps(pg, errs):
+    """Studio plan T4.3: a mini-boss leader's run values in Trainers are runFoes's (leaderRunValues in Node), marked
+    overridden in runs; its reward field says outside runs only; a pool a run reads is tagged by its biomes; a legacy
+    species shows the stand-in the game uses; the miniboss box is an edit Propose carries and undo puts back."""
+    W = content_want(errs)
+    if not W: return
+    n = len(errs)
+    k = sorted(W['leaders'])[0]
+    pg.evaluate(f"void openSection('trainers', {{ trainer: {json.dumps(k)} }})")
+    if not wait_js(pg, "!!document.querySelector('#main [data-run-leader][data-ready]')"):
+        errs.append('leaders: the run values never came from the logic worker'); return
+    got = pg.evaluate("[...document.querySelectorAll('#main .run-leader tr[data-kind]')].map(r=>[r.dataset.kind,+r.dataset.row,+r.dataset.reward,r.dataset.levels])")
+    want = [[r['kind'], r['row'], r['reward'], f"{r['levels'][0]}-{r['levels'][1]}"] for r in W['leaders'][k]]
+    if got != want: errs.append(f"leaders: {k}'s run values {got}, the game's {want}")
+    if 'overridden in runs' not in pg.evaluate("document.querySelector('#main').textContent"): errs.append('leaders: no "overridden in runs" label')
+    if 'outside runs only' not in pg.evaluate("document.querySelector('#main [data-p$=\".reward\"]').closest('label').textContent"): errs.append('leaders: the reward field does not say outside runs only')
+    box = f'#main [data-p="trainers.{k}.miniboss"]'
+    pg.uncheck(box); time.sleep(0.6)
+    if pg.evaluate(f"!!studioState.D.trainers[{json.dumps(k)}].miniboss"): errs.append('leaders: unticking the mini-boss box left it on')
+    if not pending_files(pg, f'trainers\\/{k}\\.json$'): errs.append(f'leaders: Propose would not send trainers/{k}.json')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if not pg.evaluate(f"!!studioState.D.trainers[{json.dumps(k)}].miniboss") or pending_files(pg, f'trainers\\/{k}\\.json$'): errs.append('leaders: undo did not put the mini-boss box back')
+    pg.evaluate("studioState.sel.wtab='pools'; void openSection('world')")
+    tags = pg.evaluate("[...document.querySelectorAll('#main [data-pool-run]')].map(e=>e.dataset.poolRun)")
+    if not any(tags): errs.append('leaders: no pool is tagged as one a run reads')
+    if not wait_js(pg, "[...document.querySelectorAll('#main [data-standin]')].every(e=>'to' in e.dataset)", 30): errs.append('leaders: the stand-ins never came')
+    marks = pg.evaluate("[...document.querySelectorAll('#main [data-standin]')].map(e=>[e.dataset.standin,e.dataset.to])")
+    bad = [m for m in marks if (W['standIns'].get(m[0]) or {}).get('to', '') != m[1]]
+    if not marks or bad: errs.append(f"leaders: stand-ins {bad[:3] or 'none shown'} differ from the game's")
+    if len(errs) == n: print(f"leaders: {k}'s {len(got)} run places as runFoes makes them, overridden in runs; {sum(1 for t in tags if t)} pools a run reads; {len(marks)} legacy ids with the game's stand-in; the mini-boss box proposed and undone", flush=True)
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
@@ -1383,6 +1415,7 @@ STEPS = [
     ('run_lab', run_lab_steps),
     ('relics', relics_steps),
     ('unlocks', unlocks_steps),
+    ('leaders', leaders_steps),
 ]
 
 

@@ -9,6 +9,7 @@ import {
   makeBlankBody,
   neutralPose,
   openSkeleton,
+  trainerRunHTML,
   wardrobeEditor,
 } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
@@ -1530,6 +1531,7 @@ SECTIONS.trainers = () => {
     : `<p class="help">Beating this trainer doesn’t award a badge.</p><button class="btn" data-act="seatOn">Award a badge</button>`;
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="trainerNew">+ New trainer</button></div><div class="llist">${list}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(T.name)}</h2></div><button class="btn danger" data-act="trainerDel">Delete</button></div>
+ ${trainerRunHTML(k, T)}
  ${card(
    'Who and where',
    `<div class="keeper"><div class="person-prev">${personPreviewHTML(T.who)}</div><div>${grid(
@@ -1548,7 +1550,7 @@ SECTIONS.trainers = () => {
        `${p}.battleStage`,
        Object.entries(D.battleStages).map(([b, v]) => [b, v.name || b])
      ),
-     numberField('Reward ($)', `${p}.reward`, { min: 0, step: 50 }),
+     numberField(T.miniboss ? 'Reward ($), outside runs only' : 'Reward ($)', `${p}.reward`, { min: 0, step: 50 }),
      selectField(
        'First-win egg',
        `${p}.egg`,

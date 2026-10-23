@@ -2,7 +2,7 @@
 /* ================= POCKET BILLIES STUDIO · world, rules, art ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { worldMapLookTab } from '../../game/js/hooks.js';
+import { poolRunTag, runValuesFill, standInMark, worldMapLookTab } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { WILD_TYPE_BOOSTS } from '../../game/js/logic/weather.js';
 import { bowlLandmarkPick, bowlPropClass } from '../../game/js/logic/bowl-things.js';
@@ -528,11 +528,13 @@ ACTIONS.stopDel = async () => {
   render();
 };
 function weightTable(base, P) {
+  /* Studio plan T4.3: a legacy id's stand-in, from the logic worker, once the table is on the page */
+  afterRender(runValuesFill);
   const tot = P.list.reduce((a, b) => a + (+b[1] || 0), 0);
   return `<table class="tbl"><thead><tr><th>Billie</th><th>Weight</th><th>Chance</th><th></th></tr></thead><tbody>${P.list
     .map(
       ([id, w], j) =>
-        `<tr><td>${spritePreviewHTML({ sp: id, still: 1, cls: 'mini' })} <select data-p="${base}.list.${j}.0" data-k="sel" data-rr="1">${speciesOptions()
+        `<tr><td>${spritePreviewHTML({ sp: id, still: 1, cls: 'mini' })}${standInMark(id)} <select data-p="${base}.list.${j}.0" data-k="sel" data-rr="1">${speciesOptions()
           .map(([v, n]) => `<option value="${v}" ${v === id ? 'selected' : ''}>${escapeHtml(n)}</option>`)
           .join(
             ''
@@ -557,7 +559,7 @@ function worldPools() {
     Object.entries(D.pools)
       .map(([k, P]) =>
         card(
-          `Pool “${escapeHtml(k)}”`,
+          `Pool “${escapeHtml(k)}” ${poolRunTag(k)}`,
           grid(
             numberField('Lowest level', `pools.${k}.lv.0`, { min: 1, max: 100, step: 1 }),
             numberField('Highest level', `pools.${k}.lv.1`, { min: 1, max: 100, step: 1 })
