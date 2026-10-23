@@ -925,12 +925,14 @@ SECTIONS.rules = () => {
    ) +
      '<h4>Type abilities</h4>' +
      grid(
-       numberField('Erratic roll, low', `${bt}.cryptoRollMin`, { min: 0, max: 1, step: 0.05 }),
-       numberField('Erratic roll, high', `${bt}.cryptoRollMax`, { min: 1, max: 3, step: 0.05 }),
-       numberField('Keen: extra critical stages', `${bt}.mediaCrit`, { min: 0, max: 3, step: 1 }),
+       numberField('Wild Mind roll, low', `${bt}.cryptoRollMin`, { min: 0, max: 1, step: 0.05 }),
+       numberField('Wild Mind roll, high', `${bt}.cryptoRollMax`, { min: 1, max: 3, step: 0.05 }),
+       numberField('Live Wire: extra critical stages', `${bt}.mediaCrit`, { min: 0, max: 3, step: 1 }),
        numberField('Kindling: Attack boost per turn', `${bt}.financeRamp`, { min: 0, max: 1, step: 0.01 }),
        numberField('Kindling turns', `${bt}.financeRampTurns`, { min: 1, max: 30, step: 1 }),
        numberField('Alloy bonus per teammate', `${bt}.retailSynergy`, { min: 0, max: 1, step: 0.01 }),
+       numberField('Undertow boost', `${bt}.undertowMult`, { unit: '×', min: 1, max: 3, step: 0.05 }),
+       numberField('Undertow below this share of HP', `${bt}.undertowHp`, { min: 0, max: 1, step: 0.01 }),
        selectField('Sandstorm type', `${bt}.shockType`, typeOptions()),
        numberField('Sandstorm boost', `${bt}.oilShockMult`, { unit: '×', min: 1, max: 3, step: 0.05 }),
        numberField('Sandstorm turns', `${bt}.shockTurns`, { min: 1, max: 20, step: 1 }),

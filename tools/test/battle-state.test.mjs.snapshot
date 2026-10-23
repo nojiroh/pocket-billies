@@ -92,6 +92,7 @@ exports[`battle object: alpha 1`] = `
       ],
       "rent": false,
       "pivot": false,
+      "held": [],
       "mail": [],
       "inh": null
     },
@@ -125,6 +126,7 @@ exports[`battle object: alpha 1`] = `
       ],
       "rent": false,
       "pivot": false,
+      "held": [],
       "mail": [],
       "inh": null
     }
@@ -204,6 +206,7 @@ exports[`battle object: double 1`] = `
       ],
       "rent": false,
       "pivot": false,
+      "held": [],
       "mail": [],
       "inh": null
     },
@@ -260,6 +263,7 @@ exports[`battle object: double 1`] = `
       ],
       "rent": false,
       "pivot": false,
+      "held": [],
       "mail": [],
       "inh": null
     }
@@ -317,6 +321,7 @@ exports[`battle object: single 1`] = `
       ],
       "rent": false,
       "pivot": false,
+      "held": [],
       "mail": [],
       "inh": null
     },
@@ -350,6 +355,7 @@ exports[`battle object: single 1`] = `
       ],
       "rent": false,
       "pivot": false,
+      "held": [],
       "mail": [],
       "inh": null
     }
