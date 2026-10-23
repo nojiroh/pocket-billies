@@ -323,9 +323,10 @@ export function movesAt(lid, lvl) {
   for (const [lv, mv] of LINE_BY_ID[lid].learn) if (lv <= lvl && !out.includes(mv)) out.push(mv);
   return out.slice(-moveSlotCount());
 }
-/** studio track ST-0: a coat's name before a Billie's, for the player's words ("Midnight "), or nothing
+/** studio track ST-0: a coat's name before a Billie's, for the player's words ("Midnight "), or nothing; RO-1: a
+ * regional form's coat adds none (the form's name says it)
  * @param {string | undefined} coat */
-export const coatPrefix = coat => (coat && COATS[coat] ? COATS[coat].name + ' ' : '');
+export const coatPrefix = coat => (coat && COATS[coat] && !COATS[coat].form ? COATS[coat].name + ' ' : '');
 /* alpha 0.5: a Billie remembers where and when it joined you (shown in its details) */
 export function makeBilly(sp, lvl, o = {}) {
   const m = {
@@ -341,7 +342,9 @@ export function makeBilly(sp, lvl, o = {}) {
     /* phase 16: sizes given (a wild one's), rolled (o.wild) or all M (starters, trainers) */
     build: o.build ? cleanBuild(o.build) : o.wild ? rollBuild() : primeBuild(),
   };
-  if (o.coat && COATS[o.coat]) m.coat = o.coat;
+  /* RO-1: a regional form wears its own coat unless it came with another */
+  const coat = o.coat || SPECIES[sp].coat;
+  if (coat && COATS[coat]) m.coat = coat;
   m.hp = maxHp(m);
   try {
     if (typeof saveData !== 'undefined' && saveData && saveData.trip && LOCATIONS[saveData.trip.node])
@@ -815,7 +818,7 @@ export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
     build: rollBuild(rnd),
   };
   /* studio track ST-0: a coat, once in its odds (none: never) */
-  const coat = coatRoll(COATS, 'wild', rnd);
+  const coat = coatRoll(COATS, 'wild', rnd) || SPECIES[sp].coat;
   if (coat) q.coat = coat;
   /* v33: now and then an Alpha (once you have two billionaires to stand with your lead) */
   if (!gentle && !force && saveData.team.length >= 2 && rnd() < 1 / (RULES.encounters.alphaOdds || 45)) q.alpha = true;

@@ -190,9 +190,10 @@ export default [
       ),
     },
   },
+  // RO-1: and logic/forms.js (the regional forms' species, made with the tables), which imports nothing back
   {
     files: ['game/js/game-data.js'],
-    rules: { 'no-restricted-imports': onlyImports(String.raw`\./(?:util|hooks|test-globals)\.js`) },
+    rules: { 'no-restricted-imports': onlyImports(String.raw`\./(?:util|hooks|test-globals|logic/forms)\.js`) },
   },
   {
     files: ['game/js/test-globals.js', 'game/js/hooks.js'],
