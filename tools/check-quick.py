@@ -1699,8 +1699,8 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     juniper_and_lab()
 
-    @step('alpha 0.4: airships — the airship moored in Copperleaf, the propellers turning', 240)   # RL-5: the flight to Marigold Town is parked
-    def a04_airships():
+    @step('The airship moored in Copperleaf: a low-poly model, its propellers turning', 240)   # RL-5: the flight to Marigold Town is parked
+    def airship_moored():
         """the mast's airship draws as a low-poly model, painted with the buildings' 32 px textures, its propellers turning.
         RL-5: the flight (the mast's list of towns you've been to, the fare, crossing the map, landing by the next town's
         mast) is retired: there is no other town to fly to; it comes back with RL-8's airship start"""
@@ -1719,7 +1719,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("environment.force=null;0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
-    a04_airships()
+    airship_moored()
 
     @step('alpha 0.4: props made of shapes are low-poly with the 32 px textures (voxels one to a pixel when switched)', 120)
     def a04_props():
