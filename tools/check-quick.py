@@ -1774,8 +1774,8 @@ def desktop_steps(b, base, R):
         return 'Copperleaf’s postcard came on the first visit, went into the Guide (1 card), and only its stamp the next time'   # RL-5: Copperleaf
     a04_postcards()
 
-    @step('alpha 0.4: the windows and lamps scene, by night; a weather front passing', 120)
-    def a04_lights():
+    @step('Windows and lamps by night; a weather front passing', 120)
+    def night_lights_and_front():
         """every building kind and every lamp in one scene (test_windows), opened at night: it draws, the buildings are 3D
         and the lamps are lit; then a front of rain comes in over Copperleaf (RL-5: was Marigold Town) and its curtain
         sweeps across"""
@@ -1803,7 +1803,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("environment.force=null;0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return f'{r["b"]} buildings in 3D by night, {r["on"]} of {r["lamps"]} lamps on, {r["lit"]} of {r["fw"]} front windows lit; a rain front came in (its curtain at {c["e"]:.2f}, coming in: {c["into"]})'
-    a04_lights()
+    night_lights_and_front()
 
     @step('phase 08: running — the joystick’s outer ring, the D-pad’s centre, Shift and "Always run"', 180)
     def run_speeds():
