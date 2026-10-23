@@ -99,7 +99,9 @@ export const propModelState = {
   recipes: new Map(),
   meshes: new Map(),
   fail: '',
+  /** props drawn last frame (voxel and low-poly), and of those the low-poly models (the full test's Light lab) */
   drawn: 0,
+  lowPoly: 0,
   VPM: 32,
   res: 0,
   fr: -1,
@@ -1336,6 +1338,7 @@ function drawLowPolyModels(C, X, L) {
     for (const q of m.more || []) drawPropModelMesh(q);
     drawSpinningParts(p, m);
     propModelState.drawn++;
+    propModelState.lowPoly++;
   }
   gl.bindVertexArray(null);
 }
@@ -1674,6 +1677,7 @@ function setPropModelUniforms(p, it) {
 }
 export function drawPropModels(C, items, X, hits, labels, PPU) {
   propModelState.drawn = 0;
+  propModelState.lowPoly = 0;
   if (!propModelsOn()) return;
   propModelGuard(() => {
     const gl = gpuState.gl;

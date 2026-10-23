@@ -20,6 +20,10 @@ kept aside in the browser).
     Shining Stone, or a move tutor), with a reroll for Moneys that doubles each time.
   - The **Protein Bar**: a Billie that eats one gains a level (from its sheet, not in battle).
   - Versewift and Feedopus now evolve with the **Shining Stone** from level 20 (they evolved at level 36).
+
+- Fix: the full test (Settings → Help) no longer fails three steps on every device while the game draws fine. Night,
+  weather and seasons now waits for Copperleaf to open before it starts; the Light lab counts the new low-poly
+  buildings; the opening's fall counts the frames the fall draws.
 - New jokes in the lore, the loading tips and people's lines (reflavour track RF-5): the satire moves off money onto
   bureaucracy, tech and influencers. The Guide's lore tells where the Billies came from (Legacy Labs, "You, again, but
   forever": the billionaires' vanity clones, dropped down a sinkhole when they came out wrong) and why a pyramid
