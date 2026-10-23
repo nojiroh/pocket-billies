@@ -80,6 +80,34 @@ publish code, run-lab.js internals, the sim files and the workbench: this one ad
   families directly, so they show the same messages either way.
 - The plan's "encounter preview of a node's wild table" is the Run Lab's node panel already (Phase 2); not repeated.
 
+**Verified**
+- Unit tests 676 pass (after the second base merge); lint, typecheck, `check:modules`, `format:check`, `check:data`,
+  `npm run build` (no logic sources left in dist).
+- `check-studio-github.py --only=sections,publish,drafts,studio_test`: **0 problems** (31 sections opened, the
+  self-test's 17 edits undone, publish 0, drafts 0). It needs `npm run data` first in a fresh checkout: without
+  game/data/gamedata.js the Roster board's 404 is reported, on the unchanged base too.
+- `--only=relics,unlocks,leaders,economy,checks`: 0 problems. Each new step opens its page, edits, checks Propose
+  carries the file, undoes, and compares the page with the game's logic in Node (Insider Tip's Speed 56 -> 84; LAB1's
+  offers equal the Run Lab's; a planted circle refused as `ranch_2 -> ranch_3 -> ranch_2`; a new save as
+  unlockSaveAfter; alta's run rows as runFoes; 213 legacy ids with standInSpecies's stand-in; 41 economy lines).
+- Looked at each page in headless screenshots (desktop width).
+- **Not run:** the full quick check (40 min) and the phone checks. Not tried on a phone.
+
+**Risky**
+- The Trainers card and the stand-in marks fill in from the logic worker after the page draws: a first open costs
+  the worker's data load (about a second here).
+- The graph's layout is by column and depth only: a building with many rows makes a tall column. Fine for today's 12
+  rows.
+- Economy lines link to the section that edits each field; a field in a Loophole or unlock opens that record first.
+  The Run Lab's rules card holds `rules.run.*`, so those links open the Run Lab.
+- `dataRelics`' new limit rule makes CI fail on a factor under 0.1 that the schema allows: intended (decision 10).
+
+**Next**
+- Phase 3 (T3.4): put the simulated runs' money in and out on the Economy page (`[data-eco-sim]` placeholder).
+- Phase 1c/the Check: relics.json, unlocks.json, buildings.json and currencies.json findings can now send Show me to
+  `relics` and `unlocks`.
+- Tag: `sr-4-done`.
+
 
 ### Studio plan Phase 2 (second session) - Logic worker, run rules card, Play this seed - 2026-10-22
 Branch `claude/sr-2-run-lab` (PR #135, against `ccr-81011a25-lf3exv`). Plans are pre-approved in these sessions: the
