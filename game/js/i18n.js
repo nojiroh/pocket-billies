@@ -70,7 +70,7 @@ Encounters|Ontmoetingen|Begegnungen|Encuentros|Rencontres
 Eggs|Eieren|Eier|Huevos|Œufs
 Empty incubator|Lege broedmachine|Leerer Brutkasten|Incubadora vacía|Couveuse vide
 Buddy|Maatje|Kumpel|Compañero|Compagnon
-Money|Geld|Geld|Dinero|Argent
+Moneys|Geld|Geld|Dinero|Argent
 Your team|Jouw team|Dein Team|Tu equipo|Ton équipe
 Party|Groep|Gruppe|Grupo|Groupe
 Storage|Opslag|Lager|Almacén|Stockage

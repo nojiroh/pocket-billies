@@ -22,7 +22,7 @@
   "coin": "gold",
   "coins": {"gold":3,"tbtf":2},
   "items": {"bailout":2},
-  "rewardText": "2 Bailouts, 3 Gold Pyramids and 2 Capstones",
+  "rewardText": "2 Revives, 3 Gold Pyramids and 2 Capstones",
   "unlockText": "The boardwalks of Rootwater Marsh, south-east of Twinpetal Town, are open."
  },
  "v47region": 1,
