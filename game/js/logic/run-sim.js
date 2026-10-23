@@ -103,7 +103,7 @@ export function simRelicChoice(offer, held, relics, rule, P) {
   return drop && w(id) < w(drop) ? { id, drop } : null;
 }
 /** the report's numbers that say more about the policy than about the game's balance */
-export const SIM_POLICY_DRIVEN = Object.freeze(['caught', 'healed', 'moneyLeft']);
+export const SIM_POLICY_DRIVEN = Object.freeze(['caught', 'healed', 'spent', 'moneyLeft', 'relics']);
 /** what every report says its numbers are good for */
 export const SIM_NOTE =
   'A bot policy, not a player: a regression detector, not a balance oracle (legacy stand-in species).';

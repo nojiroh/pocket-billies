@@ -28,6 +28,7 @@ test('run sim: the report has its numbers', () => {
   assert.equal(R.policy.fights, 2);
   assert.equal(runStats(1, { team: 3, fights: 4 }).policy.fights, 4);
   assert.ok(R.policyDriven.includes('caught') && /not a balance oracle/.test(R.note));
+  assert.ok(R.policyDriven.includes('spent') && R.policyDriven.includes('relics'), 'what the policy buys');
 });
 
 test('run sim: a run starts as the mast starts it, with no unlocks or every one', () => {
