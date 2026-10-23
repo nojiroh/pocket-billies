@@ -44,6 +44,7 @@ expose({
   battle3dWanted: [() => battle3dWanted, v => (battle3dWanted = v)],
   pyramidItem: [() => pyramidItem, v => (pyramidItem = v)],
   pyramidModelPath: [() => pyramidModelPath],
+  pyramidWorldItem: [() => pyramidWorldItem, v => (pyramidWorldItem = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ battle3dLayout, battle3dStart, battle3dStop });
@@ -292,23 +293,17 @@ function battle3dFrame() {
    PYRAMID_REST. The sizes are battle-stage.js's PYRAMID_* (its catch animation uses them too). */
 const pyramidModelPath = kind => `coins/${kind}.json`;
 function pyramidItem(C, O) {
-  if (typeof propModelsOn !== 'function' || !propModelsOn() || typeof COINS === 'undefined' || !COINS[C.kind])
-    return null;
-  const path = pyramidModelPath(C.kind),
-    rec = loadPropModelRecipe(path);
-  if (!rec || !(rec.layers || []).length) return null;
   const x = C.x + O[0],
     z = C.z + O[1],
     k = PYRAMID_SCALE,
-    mid = PYRAMID_LIFT + PYRAMID_HIGH / 2,
-    ground = standingHeightAt(x, z);
+    mid = PYRAMID_LIFT + PYRAMID_HIGH / 2;
   let y, spin;
   if (C.fly) {
     /* the middle follows the arc; the model's own middle is mid above its base point */
     y = battle3d.gy + C.y - mid * k;
     spin = { a: C.ax || [0.6, 0.48, 0.64], an: C.tum || 0, c: [0, mid, 0] };
   } else {
-    y = Math.max(ground, battle3d.gy + C.y - PYRAMID_REST) - PYRAMID_LIFT * k;
+    y = Math.max(standingHeightAt(x, z), battle3d.gy + C.y - PYRAMID_REST) - PYRAMID_LIFT * k;
     if (C.tip) spin = { a: [1, 0, 0], an: Math.PI + (C.rot || 0) * 0.5, c: [0, mid, 0] };
     else if (C.rot) {
       /* rocks on the base edge on the side it leans to */
@@ -316,15 +311,31 @@ function pyramidItem(C, O) {
       spin = { a: [0, 0, 1], an: C.rot, c: [C.rot > 0 ? -h : h, PYRAMID_LIFT, 0] };
     }
   }
+  const it = pyramidWorldItem(C.kind, x, y, z, spin, C.sz);
+  if (!it) return null;
   C.in3d = battleStage.t;
+  /* the capstone glows a little; any pyramid glows as it seals */
   const glow = C.glow || 0;
+  if (C.kind === 'tbtf' || glow > 0.05)
+    it.light = { p: [x, y + 0.4, z - 0.3], r: 1.6 + glow * 1.6, c: [0.5 + glow, 0.55 + glow, 0.75 + glow * 0.6] };
+  return it;
+}
+/* a catch pyramid's model as a world item, in the walk scene's metres: y its base point (the recipe's own lift
+   included), spin its turn (setItemSpin in prop-models.js); null while it can't be drawn (3D props off, the GPU
+   lost, its recipe not loaded yet). The opening's throws use it too (cutscene/opening.js) */
+export function pyramidWorldItem(kind, x, y, z, spin, size = 1) {
+  if (typeof propModelsOn !== 'function' || !propModelsOn() || typeof COINS === 'undefined' || !COINS[kind])
+    return null;
+  const path = pyramidModelPath(kind),
+    rec = loadPropModelRecipe(path);
+  if (!rec || !(rec.layers || []).length) return null;
   return {
     k: 'pyramid',
     /* its icon: never drawn (a model item), but the renderer sorts and keys items by their picture */
-    im: coinCanvas(C.kind, 32),
+    im: coinCanvas(kind, 32),
     vox: rec,
     voxPath: path,
-    p: { x, z, s: k * (C.sz || 1), rot: PYRAMID_YAW },
+    p: { x, z, s: PYRAMID_SCALE * size, rot: PYRAMID_YAW },
     x,
     y,
     z,
@@ -336,10 +347,6 @@ function pyramidItem(C, O) {
     flip: 1,
     fade: 1,
     spin,
-    /* the capstone glows a little; any pyramid glows as it seals */
-    light:
-      C.kind === 'tbtf' || glow > 0.05
-        ? { p: [x, y + 0.4, z - 0.3], r: 1.6 + glow * 1.6, c: [0.5 + glow, 0.55 + glow, 0.75 + glow * 0.6] }
-        : null,
+    light: null,
   };
 }
