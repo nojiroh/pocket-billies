@@ -498,6 +498,15 @@ body.on-walk .wh-foot > * {
   font-size: var(--fs-caption);
   color: var(--text2);
 }
+.ws-here .note {
+  margin: 0 0 var(--s2);
+}
+.ws-move {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: var(--s3) 0 0;
+}
 html:has(> body.on-walk) {
   overflow: hidden;
 }
