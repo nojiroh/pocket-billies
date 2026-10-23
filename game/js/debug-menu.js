@@ -108,7 +108,7 @@ function debugHTML() {
     node = saveData.trip.node,
     p = saveData.preferences || {},
     inTest = !!(uiState.bench && uiState.bench.test);
-  const tests = `<div class="dbg-row"><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="diagtest">Diagnostics test</button><button class="pb small" data-a="gfxtest">Graphics test</button><button class="pb small" data-a="gfxbench">Graphics cost test</button>${debugButtonHTML('bowltest', 'Bowl map test', 'gold')}<button class="pb small" data-a="dbglog">Export debug log</button></div><p class="note">The full test (a few minutes) walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more until the device can’t keep up. The diagnostics test (2 min) is a shorter run of the same. The graphics test tries each graphics setting on its own and saves a short report; the graphics cost test (10 min) measures what each one costs here. None of them changes the save.</p><p class="note">Phase 10: opens the bowl world map and checks its shaders, that every place is on it and opens its card when tapped, that the camera keeps above the rim, Home, and the frame rate on this device.</p>
+  const tests = `<div class="dbg-row"><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="diagtest">Diagnostics test</button><button class="pb small" data-a="gfxtest">Graphics test</button><button class="pb small" data-a="gfxbench">Graphics cost test</button>${debugButtonHTML('bowltest', 'Bowl map test')}<button class="pb small" data-a="dbglog">Export debug log</button></div><p class="note">The full test (a few minutes) walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more until the device can’t keep up. The diagnostics test (2 min) is a shorter run of the same. The graphics test tries each graphics setting on its own and saves a short report; the graphics cost test (10 min) measures what each one costs here. None of them changes the save.</p><p class="note">The bowl map test opens the bowl world map and checks its shaders, that every place is on it and opens its card when tapped, that the camera keeps above the rim, Home, and the frame rate on this device.</p>
   <div class="dbg-row">${debugButtonHTML('fps', debugMenu.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${frameScheduler.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span></div>
   <div class="dbg-row">${debugButtonHTML('q0', 'Force best quality')}${debugButtonHTML('qauto', 'Automatic quality')}</div>
   ${
@@ -118,33 +118,33 @@ function debugHTML() {
           .join('')}</ul>`
       : '<p class="note">Game data loaded with no warnings.</p>'
   }`;
-  const give = `<div class="dbg-row">${debugButtonHTML('se1', '+$1,000')}${debugButtonHTML('se10', '+$10,000')}${debugButtonHTML('coins', '+10 of every coin')}${debugButtonHTML('items', '+5 of every item')}</div>
-  <div class="dbg-row">${debugButtonHTML('scrap', '+50 Scrap')}${debugButtonHTML('capital', '+500 Capital, +2 Seals')}</div>`;
+  const give = `<div class="dbg-row">${debugButtonHTML('se1', '+$1,000', 'gold')}${debugButtonHTML('se10', '+$10,000', 'gold')}${debugButtonHTML('coins', '+10 of every coin', 'gold')}${debugButtonHTML('items', '+5 of every item', 'gold')}</div>
+  <div class="dbg-row">${debugButtonHTML('scrap', '+50 Scrap', 'gold')}${debugButtonHTML('capital', '+500 Capital, +2 Seals', 'gold')}</div>`;
   const billies = `<div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level">${debugSelectHTML('dbgCoat', [['', 'No coat'], ...Object.entries(COATS).map(([k, c]) => [k, c.name])], uiState.dbgCoat || '')}</div>
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
-  <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide')}</div>
-  <div class="dbg-row">${debugButtonHTML('bots', 'Give the robot kit (phase 17)', 'gold')}</div><p class="note">Two robots and one of every robot part and gem. Battle Tinker Rho (under Trainers) for a mixed team.</p>`;
+  <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels', 'gold')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide', 'gold')}</div>
+  <div class="dbg-row">${debugButtonHTML('bots', 'Give the robot kit', 'gold')}</div><p class="note">Two robots and one of every robot part and gem. Battle Tinker Rho (under Places and test scenes) for a mixed team.</p>`;
   const battle = `<div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div>`;
   const run = saveData.run
-    ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” above walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugSelectHTML(
+    ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” under Places and test scenes walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugSelectHTML(
         'dbgRelic',
         Object.keys(RELICS).map(k => [k, RELICS[k].name]),
         uiState.dbgRelic || Object.keys(RELICS)[0] || ''
-      )}${debugButtonHTML('relicgive', 'Give a Loophole')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">RL-12: Loopholes held: ${saveData.run.relics.length} of ${RULES.run.relics.cap}${saveData.run.relics.length ? ` (${escapeHtml(saveData.run.relics.map(k => (RELICS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p>`
-    : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run', 'gold')}</div><p class="note">From Copperleaf, as the mast does (Bracket I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (terrain TR-2, for a phone measurement; the debug log has the frame times).</p>`;
+      )}${debugButtonHTML('relicgive', 'Give a Loophole', 'gold')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">Loopholes held: ${saveData.run.relics.length} of ${RULES.run.relics.cap}${saveData.run.relics.length ? ` (${escapeHtml(saveData.run.relics.map(k => (RELICS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p>`
+    : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><p class="note">From Copperleaf, as the mast does (Bracket I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (for measuring on a phone; the debug log has the frame times).</p>`;
   const places = `<div class="dbg-row">${debugSelectHTML(
     'dbgNode',
     LOCATIONS.map((r, i) => [i, `${i}. ${r.name}`]),
     node
   )}${debugButtonHTML('jump', 'Go there')}</div>
-  <div class="dbg-row">${debugButtonHTML('fillq', 'Fill encounters here')}${debugButtonHTML('clearq', 'Clear encounters here')}</div>
-  <p class="note">Small places that each show one tricky situation: stairs, ledges at the limits, bridges, water, shadows, every prop, slopes, the camera in tight spots, night lights, a dense forest, tiny and huge maps, traffic, and the light lab (v44: light on the land, in a room, on props, in the air — the places the quick check measures the lighting in). Checks test the walking rules there (what should and shouldn't be reachable).</p>
+  <div class="dbg-row">${debugButtonHTML('fillq', 'Fill encounters here')}${debugButtonHTML('clearq', 'Clear encounters here', 'red')}</div>
+  <p class="note">Small places that each show one tricky situation: stairs, ledges at the limits, bridges, water, shadows, every prop, slopes, the camera in tight spots, night lights, a dense forest, tiny and huge maps, traffic, and the light lab (light on the land, in a room, on props, in the air — the places the quick check measures the lighting in). Checks test the walking rules there (what should and shouldn't be reachable).</p>
   <div class="dbg-row">${debugSelectHTML(
     'dbgTest',
     testMaps().map(k => [k, (mapById(k).name || k).replace(/^Test: /, '')]),
     uiState.dbgTest || testMaps()[0] || ''
-  )}${debugButtonHTML('test', 'Go there')}${debugButtonHTML('testchk', 'Run its checks')}${inTest ? debugButtonHTML('untest', 'Back to the game', 'gold') : ''}</div>
+  )}${debugButtonHTML('test', 'Go there')}${debugButtonHTML('testchk', 'Run its checks')}${inTest ? debugButtonHTML('untest', 'Back to the game') : ''}</div>
   ${uiState.testRes ? `<ul class="dbg-warn">${uiState.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${escapeHtml(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}
   <div class="dbg-row">${debugSelectHTML(
     'dbgTr',
@@ -155,16 +155,16 @@ function debugHTML() {
     'dbgWeather',
     DEBUG_LOOK.weather,
     p.weather || 'auto'
-  )}${debugSelectHTML('dbgSeason', DEBUG_LOOK.season, p.season || 'auto')}${debugButtonHTML('look', 'Set')}</div><p class="note">Fixes the time, weather or season everywhere until set back (they change which Billies come out). Moved here from Settings (UI-7b).</p>`;
+  )}${debugSelectHTML('dbgSeason', DEBUG_LOOK.season, p.season || 'auto')}${debugButtonHTML('look', 'Set')}</div><p class="note">Fixes the time, weather or season everywhere until set back (they change which Billies come out).</p>`;
   const story = `<div class="dbg-row">${debugSelectHTML(
     'dbgScript',
     storyScriptIds().map(id => [id, id]),
     ''
-  )}${debugButtonHTML('script', 'Play it')}</div><p class="note">The conversations written in the new script format. They play as written, flags and all; hold the dialogue box to skip. Walking and camera lines do nothing yet (S2).</p>`;
+  )}${debugButtonHTML('script', 'Play it')}</div><p class="note">The conversations written in the new script format. They play as written, flags and all; hold the dialogue box to skip. Walking and camera lines do nothing yet.</p>`;
   const ranch = `<div class="dbg-row">${debugButtonHTML('ranchhour', 'Age the ranch by an hour')}${debugButtonHTML('eggsready', 'Eggs ready now')}</div>`;
   const saveRow = `<div class="dbg-row">${debugButtonHTML('copy', 'Copy save as text')}${debugButtonHTML('export', 'Download backup')}${debugButtonHTML('wipe', 'Erase save', 'red')}</div>`;
   return `<div class="dbg">
- <p class="note">Changes apply to this save right away. Export a backup first if you might want to undo.</p>
+ <p class="note">Changes apply to this save right away. Export a backup first if you might want to undo. Gold buttons give you things; red ones erase something or start a battle.</p>
  ${[
    debugSection('tests', 'Tests and performance', tests, true),
    debugSection('give', 'Give me', give),
