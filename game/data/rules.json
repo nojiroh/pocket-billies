@@ -72,11 +72,6 @@
   "edge": 0.01,
   "luxury": ["logo"],
   "luxuryPenny": 0.5,
-  "offerChance": 0.45,
-  "offerMin": 600,
-  "offerMax": 900,
-  "integrityStep": 1.25,
-  "integrityMax": 1.5,
   "alpha": 0.4
  },
  "ride": {"minHeight":1.5,"types":["Water"]},

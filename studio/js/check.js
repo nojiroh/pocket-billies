@@ -315,7 +315,6 @@ export function runCheck() {
   }
   for (const it in R.start.items) if (!items[it]) warn(`Starting items include unknown ${it}.`, 'rules');
   if (R.battle.subpoenaMin > R.battle.subpoenaMax) warn('Sleep turns: least is above most.', 'rules');
-  if (R.catching.offerMin > R.catching.offerMax) warn('Bargain: least is above most.', 'rules');
   if (!types.has(R.battle.shockType)) warn('The sandstorm type doesn’t exist.', 'rules');
   if (!types.has(R.battle.spinType)) warn('The Soak type doesn’t exist.', 'rules');
   /* T1.3: the scene and road checks are logic/data-checks.js's, so check-data (CI) runs them too */

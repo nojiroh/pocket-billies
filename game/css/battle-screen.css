@@ -511,9 +511,6 @@
 .bt.team {
   background: linear-gradient(180deg, #7aa8ff, #3f6bd6);
 }
-.bt.fightish {
-  background: linear-gradient(180deg, #5a4a8a, #3a2e62);
-}
 .bt.end {
   background: linear-gradient(180deg, #5a4a8a, #30264f);
   min-height: 64px;
@@ -785,23 +782,6 @@
 }
 .aim .note {
   font-size: 13px;
-}
-.offer {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 4px 2px;
-  font-size: 15px;
-  justify-content: center;
-  flex: 1;
-}
-.offer p {
-  display: flex;
-  gap: 6px;
-  align-items: baseline;
-}
-.offer .uico {
-  align-self: center;
 }
 /* landscape: the dock becomes a column on the right */
 .battle[data-layout='landscape'] .dock {

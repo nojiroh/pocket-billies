@@ -117,10 +117,6 @@ expose({
   // @ts-expect-error -- replaced on purpose
   catchOdds: [() => catchOdds, v => (catchOdds = v)],
   // @ts-expect-error -- replaced on purpose
-  catchOffer: [() => catchOffer, v => (catchOffer = v)],
-  // @ts-expect-error -- replaced on purpose
-  catchOfferAnswer: [() => catchOfferAnswer, v => (catchOfferAnswer = v)],
-  // @ts-expect-error -- replaced on purpose
   catchRoll: [() => catchRoll, v => (catchRoll = v)],
   // @ts-expect-error -- replaced on purpose
   checkFaints: [() => checkFaints, v => (checkFaints = v)],
@@ -1181,7 +1177,6 @@ export function catchOdds(id, T, spin, b) {
         Sx *
         T *
         (spin ? CATCH_RULES.spin : 1) *
-        battleNow().integrity *
         (e.boss ? (CATCH_RULES.alpha ?? 0.4) : 1) *
         /* RL-12: a run's Loopholes (logic/effects.js) */
         (battleNow().fx ? fxCatch(battleNow().fx) : 1)
@@ -1216,28 +1211,6 @@ export function catchKeep(e) {
   const where = addBilly(e);
   battleNow().over = 'caught';
   return { where, alpha };
-}
-/** RL-4: after a missed throw the foe may offer money to be let go, as often as rules.catching.offerChance (the
- * battle's chance, battleRoll): the offer ($, in tens; on the battle as b.offer), or 0 */
-export function catchOffer() {
-  if (battleRoll() >= CATCH_RULES.offerChance) return 0;
-  const b = battleNow();
-  b.offer = Math.round((CATCH_RULES.offerMin + battleRoll() * (CATCH_RULES.offerMax - CATCH_RULES.offerMin)) / 10) * 10;
-  return b.offer;
-}
-/** the player's answer to an offer: yes takes the money and the battle is over ('bribed'); no raises the Focus Bonus
- * (b.integrity, within integrityMax) for the next throw. Returns the money taken (0 on a no) @param {boolean} yes */
-export function catchOfferAnswer(yes) {
-  const b = battleNow(),
-    amt = b.offer || 0;
-  b.offer = null;
-  if (yes) {
-    saveData.se += amt;
-    b.over = 'bribed';
-    return amt;
-  }
-  b.integrity = Math.min(CATCH_RULES.integrityMax, b.integrity * CATCH_RULES.integrityStep);
-  return 0;
 }
 /* the items: out of battle (b not given) on the save's team and bag; with a battle, on that battle's team and bag */
 export const teamNeedsHp = b => (b ? b.sides[0].team : saveData.team).some(m => m.hp > 0 && m.hp < maxHp(m));

@@ -1007,12 +1007,7 @@ SECTIONS.rules = () => {
          min: 0,
          max: 1,
          step: 0.05,
-       }),
-       numberField('Bargain chance', `${ca}.offerChance`, { min: 0, max: 1, step: 0.05 }),
-       numberField('Bargain, least ($)', `${ca}.offerMin`, { min: 0, step: 10 }),
-       numberField('Bargain, most ($)', `${ca}.offerMax`, { min: 0, step: 10 }),
-       numberField('Focus Bonus per refusal', `${ca}.integrityStep`, { unit: '×', min: 1, max: 3, step: 0.05 }),
-       numberField('Focus Bonus cap', `${ca}.integrityMax`, { unit: '×', min: 1, max: 5, step: 0.05 })
+       })
      ) +
      '<h4>Luxury lines (sneer at plain Pyramids)</h4>' +
      `<div class="chips">${D.lines.map(L => `<label class="chk-chip"><input type="checkbox" data-act-chk="luxury" value="${L.id}" ${R.catching.luxury.includes(L.id) ? 'checked' : ''}> ${escapeHtml(L.names[0])}</label>`).join('')}</div>`

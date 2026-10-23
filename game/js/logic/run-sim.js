@@ -50,7 +50,6 @@ export const MAX_TURNS = 60;
  * - penniesUpTo, reserve: Copper Coins bought in a town shop up to this many held, keeping this much money
  * - taxWhileBelow: one throw at a wild Billie (not an Alpha) while the party is smaller than this
  * - ring: the throw's ring timing (0 to 1, the page's ring phase; 0.5: a "Great throw")
- * - offer: a foe's offer after a miss: always refused
  * - lane: the next place drawn from the run's seed among the ones linked ahead (never back)
  * - keep: on a loss, the highest-level Billie comes home
  * - relics: Loopholes (Studio plan T3.3). 'greedy': the pick after a mini-boss takes the rarest offered (the lowest
@@ -69,7 +68,6 @@ export const SIM_POLICY = Object.freeze({
   reserve: 100,
   taxWhileBelow: 3,
   ring: 0.5,
-  offer: 'refuse',
   lane: 'seeded',
   keep: 'top-level',
   relics: 'greedy',
@@ -338,8 +336,7 @@ export function runSimOn(env) {
               stats.caught++;
               res = { over: 'caught', turns: B.turn };
             } else {
-              /* a miss: the foe's offer drawn as on the page (catchOffer), refused (the policy), then its turn */
-              if (fn('catchOffer')()) fn('catchOfferAnswer')(false);
+              /* a miss: the foe's turn */
               fn('enemyOnly')();
             }
           }

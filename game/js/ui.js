@@ -352,7 +352,6 @@ document.addEventListener('click', ev => {
     case 'bitem':
     case 'bitemon':
     case 'bswitch':
-    case 'boffer':
     case 'bend':
       battleAction(a, d);
       break;

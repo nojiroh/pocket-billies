@@ -51,7 +51,6 @@ import {
   canUse,
   catchKeep,
   catchOdds,
-  catchOffer,
   catchRoll,
   effectiveStat,
   enemyOnly,
@@ -583,11 +582,6 @@ function afterEvents() {
     paintActions();
     return;
   }
-  if (activeBattle.offer) {
-    activeBattle.phase = 'offer';
-    paintActions();
-    return;
-  }
   if (activeBattle.needSwitch && activeBattle.needSwitch.length) {
     activeBattle.phase = 'switch';
     activeBattle.cur = activeBattle.needSwitch[0];
@@ -823,15 +817,12 @@ export function paintActions() {
   else if (ph === 'aim') {
     h = `<div class="aim"><div class="aimcoin" id="aimCoin" role="button" tabindex="0" aria-label="Swipe up to throw">${coinHTML(activeBattle.coin, 96, 32)}<span class="aim-hint">${uiIconHTML('back', 14)}</span></div><p class="note">Swipe the pyramid up when the ring is small and green. A sideways swipe adds spin.</p><div class="two"><button class="bt coin" data-a="bthrow"><b>Throw it</b><kbd>Space</kbd></button><button class="bt back" data-a="baimback"><b>Put it away</b><kbd>Esc</kbd></button></div></div>`;
   } else if (ph === 'throwing') h = `<div class="aim"><p class="note">The pyramid is in the air…</p></div>`;
-  else if (ph === 'offer') {
-    h = `<div class="offer"><p>${uiIconHTML('coin', 16)} ${escapeHtml(billyName(fighter(1)))} is offering you <b class="tnum">$${formatNumber(activeBattle.offer)}</b> to let it go. Refusing gives your next throw a Focus Bonus.</p><div class="two"><button class="bt coin" data-a="boffer" data-y="1"><b>Take it</b></button><button class="bt fightish" data-a="boffer" data-y="0"><b>Refuse</b></button></div></div>`;
-  } else if (ph === 'end') {
+  else if (ph === 'end') {
     const t = {
       win: 'You won.',
       lose: 'Your team fainted.',
       caught: 'Taxed.',
       ran: 'You walked away.',
-      bribed: 'You took the money.',
       draw: 'A draw.',
     }[activeBattle.over];
     h = `<button class="bt end wide" data-a="bend"><b>${t} Continue</b><kbd>Enter</kbd></button>`;
@@ -887,10 +878,7 @@ export function showAim() {
   battleStage.ring = { t0: battleStage.t };
   camAt(1, 0.45, 0.16, 0.015, 320);
   battleStageFocus('foe');
-  $('#msgT').textContent =
-    activeBattle.integrity > 1
-      ? `Focus Bonus ×${+activeBattle.integrity.toFixed(2)} is active.`
-      : 'Line up your throw.';
+  $('#msgT').textContent = 'Line up your throw.';
 }
 export function doThrow(spin) {
   if (uiState.throwing || !activeBattle || activeBattle.phase !== 'aim') return;
@@ -929,12 +917,6 @@ function finishThrow(res, id, lab, spin) {
     return playTurnEvents();
   }
   battleSay(['It broke free right away.', 'It almost stayed in.', 'So close. It wobbled twice.'][res.w]);
-  /* RL-4: the bribe is the battle's chance (logic/battle-engine.js catchOffer, on battleRoll: its own stream when it
-     has a seed) */
-  if (catchOffer()) {
-    battleSay(`${billyName(e)} is offering you money to let it go.`, { k: 'cry', si: 1 });
-    return playTurnEvents();
-  }
   enemyOnly();
   playTurnEvents();
 }

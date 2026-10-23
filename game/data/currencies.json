@@ -5,7 +5,7 @@
   "one": "dollar",
   "icon": "coin",
   "kept": "run",
-  "about": "A run's money: wild prizes, trainers, bribes. Pays for healing and run shops; turns into Capital when the run ends."
+  "about": "A run's money: wild prizes and trainers. Pays for healing and run shops; turns into Capital when the run ends."
  },
  "capital": {
   "name": "Capital",
