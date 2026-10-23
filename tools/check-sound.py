@@ -16,6 +16,10 @@ SND-5: a song also renders its intro ('intro': the intro, then the song, as a ba
 sound.js musicParts names for it ('tense' for a battle song, 'mid', 'late' and 'deadline' for a run's songs), each as
 long as the recipe that plays (tracker.js trackerRecipe). On code without them, only day and night.
 
+SND-6: a species' cry also renders its low-HP version ('<id>@low', when sound.js has cryPlay), the four UI sounds
+render into ui.json (when sound.js has uiSound), and a jingle renders at its own tempo and wave as the game plays it
+(sound.js jinglePlay, music.json jingles' bpm and wave); on code without them, as before.
+
 A window may differ by 1% (or 0.0001) before it counts as changed. The baseline is committed: SND-4 and SND-5 write it
 again on purpose, like the picture baseline."""
 import json, sys, time
@@ -51,7 +55,10 @@ RENDER = r"""async ({jobs, rate, win}) => {
       spb = 60 / D.bpm / 4; len = 0.08 + steps * spb + 1.5; }
     else if (kind === 'song') { const D = play !== name ? trackerNight(songs[name]) : songs[name];
       spb = 60 / D.bpm / 4; steps = D.prog.length * 16; len = 0.08 + steps * spb + 1.5; }
-    else if (kind === 'jingle') { len = 0.05 + jingles[name].reduce((a, [, l]) => a + l, 0) * 60 / 150 / 4 + 1.2; }
+    else if (kind === 'jingle') {
+      /* SND-6: a jingle's own tempo (music.json jingles bpm), 150 when it has none */
+      const J = typeof MUSIC !== 'undefined' && MUSIC.jingles[name], bpm = (typeof jinglePlay === 'function' && J && J.bpm) || 150;
+      len = 0.05 + jingles[name].reduce((a, [, l]) => a + l, 0) * 60 / bpm / 4 + 1.2; }
     const oc = new OfflineAudioContext(1, Math.ceil(len * rate), rate);
     let now = 0;
     Object.defineProperty(oc, 'currentTime', { get: () => now, configurable: true });
@@ -67,7 +74,9 @@ RENDER = r"""async ({jobs, rate, win}) => {
         if (!E.song) throw new Error('no song started for ' + play);
         now = 0.08 + (steps - 0.5) * spb - 0.14;
         if (typeof musicTick === 'function') musicTick(); else E.tracker.tick();
-      } else if (kind === 'jingle') jingle(jingles[name]);
+      } else if (kind === 'jingle') { if (typeof jinglePlay === 'function') jinglePlay(name); else jingle(jingles[name]); }
+      else if (kind === 'ui') uiSound(name);
+      else if (part === 'low') cryPlay(name, true);
       else soundEffect('cry', { sp: name });
     } finally {
       if (E.timer) clearInterval(E.timer);
@@ -92,12 +101,15 @@ RENDER = r"""async ({jobs, rate, win}) => {
 
 
 def render_all(pg, only=None):
-    """{file name: {part: [rms, ...]}} for every song (day and night), jingle and cry"""
+    """{file name: {part: [rms, ...]}} for every song (day and night), jingle, cry (and its low-HP version) and UI sound"""
     N = pg.evaluate("({ songs: Object.keys(SONGS), jingles: Object.keys(JINGLES), cries: (gameData.lines || []).flatMap(L => L.names.map((n, i) => L.id + i)),"
+                    " low: typeof cryPlay === 'function', ui: typeof uiSound === 'function' && typeof UI_SOUND_NAMES !== 'undefined' ? UI_SOUND_NAMES : [],"
                     " parts: Object.fromEntries(Object.keys(SONGS).map(s => [s, ['day', 'night'].concat(typeof musicParts === 'function' ? musicParts(s) : [])])) })")
     keep = lambda n: not only or n in only
     jobs = [(s, p, {'kind': 'song', 'name': s, 'night': p == 'night', 'part': p}) for s in N['songs'] if keep(s) for p in N['parts'][s]]
-    jobs += [(file, n, {'kind': kind, 'name': n, 'night': False}) for kind, file in (('jingle', 'jingles'), ('cry', 'cries')) for n in N[file] if keep(n)]
+    jobs += [(file, n, {'kind': kind, 'name': n, 'night': False}) for kind, file in (('jingle', 'jingles'), ('cry', 'cries'), ('ui', 'ui')) for n in N[file] if keep(n)]
+    # SND-6: each cry's low-HP version, beside it in cries.json
+    if N['low']: jobs += [('cries', n + '@low', {'kind': 'cry', 'name': n, 'night': False, 'part': 'low'}) for n in N['cries'] if keep(n)]
     out = {}
     for i in range(0, len(jobs), 12):   # in batches, so a page never holds every render at once
         part = jobs[i:i + 12]
