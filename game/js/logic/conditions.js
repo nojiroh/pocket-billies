@@ -12,6 +12,7 @@
      robot                  you have a robot             badges >= 2                    badges won
      caught >= 15           kinds of Billie caught (the Index)
      unlock:shop_revive    an unlock is owned (RL-11)  runs >= 3, wins >= 1           runs ended, runs won (RL-11)
+     opened:cut            a run's field move obstacle is open (RL-R2)
    combined with `and`, `or`, `not` / `!` and parentheses (`and` binds tighter than `or`). A bare count term
    (`item:honey`, `visits:juniper`, `badges`) means more than 0. Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -55,7 +56,8 @@ expose({
 /** @typedef {{ flags: Record<string, any>, beaten: Record<string, any>, items: Record<string, number>,
  *   pyramids: Record<string, number>, quests: Record<string, string>, visits: Record<string, number>,
  *   visited: Record<string, any>, lines: Record<string, any>, robots: number, badges: number, caught: number,
- *   unlocks: Record<string, any>, runs: number, wins: number, questStages?: Record<string, string[]> }} StoryState */
+ *   unlocks: Record<string, any>, runs: number, wins: number, questStages?: Record<string, string[]>,
+ *   opened?: Record<string, number> }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
  * reads, for the Studio's reference (Project Story S3) */
@@ -73,6 +75,7 @@ export const CONDITION_KINDS = {
   unlock: { id: true, count: false, about: 'an unlock is owned (unlocks.json): unlock:ranch_2' },
   runs: { id: false, count: true, about: 'runs ended, won or lost: runs >= 3' },
   wins: { id: false, count: true, about: 'runs won: wins >= 1' },
+  opened: { id: true, count: false, about: 'a run’s field move obstacle is open (RL-R2): opened:cut' },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
 export const WORDS = new Set(['and', 'or', 'not']);
@@ -309,6 +312,8 @@ export function termValue(c, S) {
       return S.runs;
     case 'wins':
       return S.wins;
+    case 'opened':
+      return !!(S.opened || {})[c.id];
   }
 }
 /** whether a condition holds for the state @param {Cond | string} c @param {StoryState} S @returns {boolean} */
@@ -366,5 +371,8 @@ export function storyStateOf(save, o = {}) {
     runs: meta.runs || 0,
     wins: meta.wins || 0,
     questStages: o.questStages,
+    /* RL-R2: the run's side area's move, once its obstacle is open (logic/run-side.js) */
+    opened:
+      save.run && save.run.map && save.run.map.side && save.run.map.side.open ? { [save.run.map.side.move]: 1 } : {},
   };
 }
