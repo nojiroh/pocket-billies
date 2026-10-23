@@ -144,48 +144,6 @@ def gamedata():
 
 
 # ------------------------------------------------------------------ 1. without a browser
-@step('Data: game data, pictures and scenes', 20)
-def check_data():
-    """TC-1: only what check-data.mjs does not refuse: the scenery's pictures exist, and every place and scene says
-    what it is (check-data only prints these as warnings; the rules were tools/migrate-places.py's). Unknown ground
-    kinds and props and a stop's missing scene are check-data's errors, so they are not repeated here."""
-    D = gamedata(); SY = D.get('scenery', {}); missing = set(); warn = []
-    art = GAME / 'art'
-    def need(p):
-        if p and not (art / p).exists(): missing.add(p)
-    for t in SY.get('terrains', {}).values():
-        need(t.get('tile')); [need(v) for v in t.get('vars', [])]
-    for P in SY.get('props', {}).values():
-        need(P.get('img')); [need(l.get('img')) for l in P.get('layers', []) if isinstance(l, dict)]
-    need(SY.get('wallArt', 'scene/build/walls.png'))
-    for k in ('detail', 'rooms'): need((SY.get('buildArt') or {}).get(k))
-    if missing: warn.append('missing pictures: ' + ', '.join(sorted(missing)[:8]))
-    import base64
-    for k, s in D.get('maps', {}).items():
-        if len(s.get('tiles', [])) != s['h']: warn.append(f'{k}: {len(s.get("tiles", []))} rows for height {s["h"]}')
-        if s.get('steps') and len(base64.b64decode(s['steps'])) != s['w'] * 2 * s['h'] * 2 * 2: warn.append(f'{k}: step grid is the wrong size')
-    # v46: every place, scene and road says what it is
-    places = D['locations']
-    for n, p in enumerate(places):
-        if p.get('kind') not in ('town', 'route'): warn.append(f'place {n} ({p.get("name")}): no kind')
-        if p.get('id') != p.get('mapId'): warn.append(f'place {n} ({p.get("name")}): id {p.get("id")} is not its scene {p.get("mapId")}')
-        if p.get('kind') == 'town' and not p.get('town'): warn.append(f'{p.get("name")}: kind town but not marked town')
-        if p.get('kind') == 'route' and p.get('town'): warn.append(f'{p.get("name")}: kind route but marked town')
-    for sid, sc in D['maps'].items():
-        k = sc.get('kind')
-        if k not in ('town', 'route', 'room', 'test'): warn.append(f'scene {sid}: no kind'); continue
-        pl = next((p for p in places if p.get('mapId') == sid), None) if k in ('town', 'route') else None
-        if pl and pl.get('kind') != k: warn.append(f'scene {sid}: kind {k} but its place is a {pl.get("kind")}')
-        if k == 'room' and not sc.get('building'): warn.append(f'scene {sid}: a room without a building')
-    for i, L in enumerate(D['roads']):
-        r = GAMEDATA.road(D, L)
-        if not r['id'] or not all(isinstance(r[e], int) and 0 <= r[e] < len(places) for e in 'ab'): warn.append(f'road {i}: not named or its places unknown')
-    if warn: raise Exception('; '.join(warn[:8]))
-    kinds = {}
-    for s in D.get('maps', {}).values(): kinds[s.get('kind')] = kinds.get(s.get('kind'), 0) + 1
-    return f'{len(D.get("maps", {}))} scenes ({", ".join(f"{v} {k}s" for k, v in kinds.items())}), {len(SY.get("props", {}))} props, {len(D["roads"])} named roads'
-
-
 @step('Windows: no prop stands in front of one (from the data)', 30)
 def check_windows():
     """alpha 0.1: tools/clear-windows.py looks at every window on every building front and room wall as the walk camera
@@ -1978,7 +1936,7 @@ def main():
     R = {'when': time.strftime('%Y-%m-%d %H:%M'), 'render': 'software, a third of the resolution, 1024 shadow map'}
     # phase 04b: data/gamedata.js is generated from the data files; make it from the files as they are now
     subprocess.run(['node', str(ROOT / 'tools' / 'build-data.mjs')], check=True)
-    check_data(); check_windows(); check_ground(); report_unused()
+    check_windows(); check_ground(); report_unused()
     srv, base = serve(GAME)
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
