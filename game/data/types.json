@@ -5,7 +5,7 @@
   "text": "#fff",
   "strong": ["Grass","Steel"],
   "weak": ["Fire","Water","Ground","Dragon"],
-  "passive": "ramp",
+  "passive": "kindling",
   "passiveName": "Kindling",
   "passiveText": "Its Attack rises a little every turn it stays in battle.",
   "fx": ["flame","spark"]

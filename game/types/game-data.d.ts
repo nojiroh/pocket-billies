@@ -863,8 +863,8 @@ export interface Rules {
     cryptoRollMin: number;
     cryptoRollMax: number;
     mediaCrit: number;
-    financeRamp: number;
-    financeRampTurns: number;
+    kindlingBoost: number;
+    kindlingTurns: number;
     retailSynergy: number;
     /** RF-3 Undertow (Water): its Water moves hit this much harder at or below this share of its HP */
     undertowMult: number;

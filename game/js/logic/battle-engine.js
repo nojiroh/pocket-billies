@@ -275,8 +275,8 @@ export function effectiveStat(k, s2) {
   x *= stageFactor(s);
   if (s2 === 'lev') {
     if (m.status === 'brn') x *= 0.5;
-    if (hasPassive(actorTypes(k), 'ramp'))
-      x *= 1 + BATTLE_RULES.financeRamp * Math.min(BATTLE_RULES.financeRampTurns, v.turnsIn);
+    if (hasPassive(actorTypes(k), 'kindling'))
+      x *= 1 + BATTLE_RULES.kindlingBoost * Math.min(BATTLE_RULES.kindlingTurns, v.turnsIn);
   }
   if (s2 === 'hus' && m.status === 'par') x *= 0.5;
   /* phase 17: a robot with broken legs is slow */

@@ -38,7 +38,7 @@ const plainMove = (t, c) =>
   );
 
 test('every type names its passive and says what it does; the ids are the nine the engine knows', () => {
-  const known = ['ramp', 'undertow', 'subsidy', 'sharp', 'landlord', 'pivot', 'volatile', 'synergy', 'inherit'];
+  const known = ['kindling', 'undertow', 'subsidy', 'sharp', 'landlord', 'pivot', 'volatile', 'synergy', 'inherit'];
   assert.deepEqual(
     TYPES.map(t => data.PASSIVE[t]),
     known
@@ -60,8 +60,8 @@ test('Kindling (Fire): Attack +10% a turn in, up to +100%', () => {
   const v = fn('fieldState')(0),
     at = n => ((v.turnsIn = n), fn('effectiveStat')(0, 'lev'));
   const a0 = at(0);
-  assert.ok(Math.abs(at(3) / a0 - (1 + 3 * R.financeRamp)) < 0.01);
-  assert.ok(Math.abs(at(50) / a0 - (1 + R.financeRampTurns * R.financeRamp)) < 0.01, 'it stops at the cap');
+  assert.ok(Math.abs(at(3) / a0 - (1 + 3 * R.kindlingBoost)) < 0.01);
+  assert.ok(Math.abs(at(50) / a0 - (1 + R.kindlingTurns * R.kindlingBoost)) < 0.01, 'it stops at the cap');
   battle(['gates0'], ['musk0']);
   const w = fn('fieldState')(0),
     g0 = fn('effectiveStat')(0, 'lev');
