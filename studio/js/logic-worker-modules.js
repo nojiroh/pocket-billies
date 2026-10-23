@@ -34,6 +34,7 @@ import '../../game/js/logic/data-checks.js';
 import '../../game/js/logic/draft-record.js';
 import '../../game/js/logic/economy-view.js';
 import '../../game/js/logic/effects.js';
+import '../../game/js/logic/encounters.js';
 import '../../game/js/logic/fighters.js';
 import '../../game/js/logic/forms.js';
 import '../../game/js/logic/free-camera.js';
