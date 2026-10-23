@@ -1072,7 +1072,8 @@ RUN_TEST_URL = '?debug&run=TESTSEED&unlocks=all&short=1&party=musk2@30,bezos1@20
 RUN_TEST_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
 const U = { unlocks: D.unlocks, buildings: D.buildings },
   un = modules.unlocks.runUnlocks({ meta: { unlocks: Object.fromEntries(Object.keys(D.unlocks).map(i => [i, 1])) } }, U),
-  p = modules['run-start'].runStartPlan('TESTSEED', { nodeTypes: D.nodeTypes, biomes: D.biomes, rules: D.rules.run, unlockData: U },
+  p = modules['run-start'].runStartPlan('TESTSEED', { nodeTypes: D.nodeTypes, biomes: D.biomes, rules: D.rules.run, unlockData: U,
+      region: modules['run-region'].runRegionData(D, D.trainers), fieldMoves: D.fieldMoves.moves },
     { unlocks: un, map: { rows: 5, minibosses: 1 } });
 console.log(JSON.stringify({ map: p.map, unlocks: p.unlocks }));"""
 

@@ -16,6 +16,7 @@
 import { expose } from './test-globals.js';
 import { provide, toast } from './hooks.js';
 import {
+  FIELD_MOVES,
   LOCATION_BY_ID,
   NODE_TYPES,
   POOLS,
@@ -66,6 +67,8 @@ export function runWorldData() {
     scenery: gameData.scenery,
     rules: RULES.run,
     region: runRegionData(gameData, TRAINERS),
+    /* RL-R2: the field moves that open a run's side area (logic/run-side.js) */
+    fieldMoves: FIELD_MOVES,
   };
 }
 /** put in the world the save needs, if it isn't in yet: the run's while one is on with its map, else the hub's.

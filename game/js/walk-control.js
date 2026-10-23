@@ -54,6 +54,7 @@ import { loreBook } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
 import { runWorldData } from './run-world.js';
 import { runArrivedFx, runArrivedHint } from './run.js';
+import { fieldMoveOpen, fieldWayOut } from './field-moves.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBoardOpen } from './lab-board.js';
 import { postcardCheck } from './postcards.js';
@@ -540,6 +541,15 @@ export function walkPick(h) {
     }
     if (a === 'lift' && typeof rideGlassLift === 'function') {
       rideGlassLift(p);
+      return;
+    }
+    /* RL-R2: a field move's obstacle (Cut, Rock Smash, Surf) and a side area's way out (field-moves.js) */
+    if (a === 'field' && typeof fieldMoveOpen === 'function') {
+      fieldMoveOpen(p);
+      return;
+    }
+    if (a === 'fieldout' && typeof fieldWayOut === 'function') {
+      fieldWayOut();
       return;
     }
     /* v47: shops and the like keep opening hours */

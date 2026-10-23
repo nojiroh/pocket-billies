@@ -25,6 +25,7 @@
 /** @import { FieldMove, RunSideRules } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 import { rngFrom } from './rng.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -32,7 +33,7 @@ expose({
   RUN_SIDE_MOD: [() => RUN_SIDE_MOD],
   fieldBadgeKey: [() => fieldBadgeKey],
   // @ts-expect-error -- replaced on purpose
-  fieldMoveState: [() => fieldMoveState, v => (fieldMoveState = v)],
+  fieldMoveState: [() => fieldMoveState, v => ((fieldMoveState = v), provide({ fieldMoveState }))],
   fieldMoveText: [() => fieldMoveText],
   // @ts-expect-error -- replaced on purpose
   runSideAdd: [() => runSideAdd, v => (runSideAdd = v)],
@@ -53,6 +54,7 @@ expose({
   runSideTypes: [() => runSideTypes, v => (runSideTypes = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ fieldMoveState });
 /* to-module: end */
 /** the kinds of side area: a detour off the main path and back, or an alternate path alongside it */
 export const RUN_SIDE_KINDS = ['detour', 'alt'];
@@ -245,6 +247,7 @@ export const fieldMoveText = (M, which, billie = '') =>
   String(M[which] || '')
     .replaceAll('{badge}', `${M.type} Badge`)
     .replaceAll('{billie}', billie);
+provide({ fieldMoveText }); /* to-module */
 /** what is wrong with a map's side area, as sentences (none for a map without one): its places come after the main
  * path's, are marked and chained, its obstacle stands on the main path below its first place's row, its way out
  * goes to a main place of the row it comes back to (a detour's: the row after its obstacle's; an alternate path's:
