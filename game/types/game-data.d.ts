@@ -823,6 +823,9 @@ export interface Rules {
     financeRamp: number;
     financeRampTurns: number;
     retailSynergy: number;
+    /** RF-3 Undertow (Water): its Water moves hit this much harder at or below this share of its HP */
+    undertowMult: number;
+    undertowHp: number;
     oilShockMult: number;
     drainFraction: number;
     rentFraction: number;

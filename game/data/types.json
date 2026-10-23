@@ -16,7 +16,7 @@
   "text": "#fff",
   "strong": ["Fire","Ground"],
   "weak": ["Water","Grass","Dragon"],
-  "passive": "",
+  "passive": "undertow",
   "passiveName": "Undertow",
   "passiveText": "Its Water moves hit harder when its HP is low.",
   "fx": ["drop","bubble"]

@@ -368,6 +368,9 @@ export function calcDamage(k, tk, mid, src) {
           sd.team.filter(m => m !== me && m.hp > 0 && speciesOf(m).types.some(t => syn.includes(t))).length;
     }
   }
+  /* RF-3 Undertow (Water): its moves of a type with Undertow hit harder at a third of its HP or less */
+  const low = !src && fighter(k).hp <= maxHp(fighter(k)) * BATTLE_RULES.undertowHp,
+    tow = low && PASSIVE[M.t] === 'undertow' && aty.includes(M.t) ? BATTLE_RULES.undertowMult : 1;
   const wx = battleHost().weather(M.t); /* v28: the weather where you stand */
   /* phase 17: a robot's move of its gem's type hits harder */
   const me = src ? null : fighter(k),
@@ -380,7 +383,7 @@ export function calcDamage(k, tk, mid, src) {
   return {
     dmg: Math.max(
       1,
-      Math.floor(base * stab * te * roll * (crit ? BATTLE_RULES.critMult : 1) * mk * eco * wx * gx * fm)
+      Math.floor(base * stab * te * roll * (crit ? BATTLE_RULES.critMult : 1) * mk * eco * tow * wx * gx * fm)
     ),
     te,
     crit,
