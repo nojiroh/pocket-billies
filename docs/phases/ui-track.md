@@ -188,10 +188,31 @@ Works like the Engine section (dials in groups, ↺ per dial, presets, Hold to c
 | UI-4 (done 2026-10-21) | Run parts | day and deadline chip, forecast icon row, node markers, the four currency chips, the relic and keep-one card, payout rows with their motion, the hub/run bottom bar | gallery only | RL-7 and RL-8 can use them with no CSS of their own |
 | UI-5 (done 2026-10-22) | Every screen onto the kit | after the RL-8 play test: every screen, including ones the roguelite replaces, moves out of ui.js and the old CSS, one screen per commit, moves only (absorbs 06-5) | every remaining screen | each moved screen passes its UI test; the unused-CSS list shrinks |
 | UI-6 | Old layers gone | style, polish, screens and v05 emptied and deleted; lint and the blur budget enforced (fail when raw values rise); accessibility pass; then `phase-06-done` and `ui-6-done` | none intended | ui-lint at or near zero; full quick check green apart from known reds |
+| UI-7a (done 2026-10-23) | Settings: Sound | the Test buttons go; a slider plays its sound once when let go (the music slider not over a song); each row has its own mute (the Volume row's is the master mute); dragging a muted slider unmutes it; the duplicate on/off switch goes | a mute icon on each sound row, no Test buttons | quick check's Sound settings step passes; phone check by the owner |
+| UI-7b | Settings: layout | seven tabs (Sound, Display, Controls, Accessibility, Game, Save, Help), opening on the last one used; time, weather and season to the debug menu; Start over into the Save tab's red section, one shared reset that stops a battle; Save card: runs won and taxed; Customize trainer to the trainer card; Help: a Report a problem box (Full test, Export debug log) | the new tabs | quick check green, settings screenshots remade on purpose |
+| UI-7c | Debug menu | grouped by task (tests, give me, Billies, battle, run, places, story, ranch and time, save); one copy of each test; no phase codes in labels; a search box; open sections remembered; a message saying what changed; the four old buttons gone once checked unused | the new menu | quick check green |
 
 UI-2 is the biggest; if it runs long, split it: shapes, edge line, wipes and battle cards first, then icons, glyphs,
 portraits and the bot plate. About 6-8 sessions of Claude's working time, plus the owner's phone checks after UI-2,
 UI-4 and UI-5.
+
+## UI-7: settings and the debug menu (owner's decisions, 2026-10-23)
+Asked for by the owner: settings and the debug menu clearer for players. Decided in a question round: a slider plays
+its sound when let go (not while dragged); the music slider skips it while a song plays; a drag unmutes a muted row
+(unmuting plays nothing, a slider at 0 keeps the plain icon, a muted row doesn't grey out); World sounds and Ambience
+stay two sliders; seven tabs, opening on the last one used; time, weather and season overrides move to the debug menu
+(they change which Billies appear, a cheat in a roguelite); Start over into the Save tab; the Save card shows runs won
+and Billies taxed (no km walked); Customize trainer moves to the trainer card; Help keeps only Full test and Export
+debug log; the debug menu stays at the bottom of Help (and Ctrl+Shift+D, `?debug`), gets a search box, remembers its
+open sections, says what each button changed; Walk 1 km, Earn every badge, Reset trainer wins, Lead +3 win streak
+and Age storage go once each is checked unused (badges and storage ageing are still read by the game: ask again if
+they turn out useful). Three steps, a tag each (`ui-7a-done` …).
+
+UI-7a as built: `preferences.mutes` (audio/levels.js gives a muted bus 0 and keeps its level; unit-tested), a
+`.vol-mute` button per row in settings-screen.js (the master row's sets `preferences.mute`, the header button's
+preference), `testVolume` called on a slider's `change`, the effects slider's drag tick removed, the on/off switch
+removed (its hint moved to the Volume row), translations. Found while reading: the debug menu's Erase save and
+Settings' Start over are two copies of the reset, and only the debug one stops a battle in progress (UI-7b).
 
 ## Risks
 - Clip-path shapes plus blur on many surfaces can cost frames on phones: measure with the Graphics bench after UI-2.

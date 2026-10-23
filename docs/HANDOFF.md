@@ -2,6 +2,29 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-7a - Settings: Sound - 2026-10-23
+Branch `ccr-305ae8d3-6ivodu`. The owner asked for clearer settings and debug menu; plan and a question round in Plan
+Mode, answers recorded in docs/phases/ui-track.md (UI-7). Three steps; this is the first.
+- Changed (one cause per commit):
+  - audio/levels.js: `preferences.mutes` (a muted bus is 0, its level kept); a unit test.
+  - Settings → Sound: the Test buttons go; a slider plays its sound once when let go (`testVolume` on `change`; the
+    music slider not while a song plays); a mute button per row (`.vol-mute`; the Volume row's is `preferences.mute`,
+    the header button's); a drag on a muted slider unmutes it; the effects slider's tick while dragging went.
+  - The Sound on/off switch went (it did what the Volume row's mute does); its hint moved to the Volume row.
+  - Translations for the four new mute labels; the Test string went.
+  - Quick check: the Sound settings step releases sliders instead of pressing Test, and checks each row's mute.
+  - Docs: ui-track.md (UI-7 decisions, UI-7a/b/c rows), ROADMAP, CHANGELOG, TESTING.
+- Risky or unfinished:
+  - Not heard on a phone. On iOS a slider's `change` comes when the finger lifts; check it sounds then.
+  - Keyboard arrows on a slider fire `change` on every step, so each press plays the sound.
+  - The music slider is silent when no song is playing only if `soundEngine.song` is null; while a song is fading out
+    after `musicStop` it may count as none.
+- Verified: lint, typecheck, check:modules, format:check, unit tests (791 pass); smoke check (no problems, before the
+  switch removal commit); the Sound settings step alone after each code commit; a 390 px screenshot of the tab; the
+  German labels read from the page.
+- Not run: the full quick check (due at the end of UI-7). Tag `ui-7a-done` (local; tags may not push).
+- Next: UI-7b (the settings tabs), at the owner's word.
+
 ### Sound track SND-5 - Battle and run music - 2026-10-22
 Branch `sound` (PR #120). Plan approved by the owner's "Start", without picks on the two "Ask me before" items, so
 the recommendations were taken (and named as such in the commits): **the red zone plays a tense variant of the battle
