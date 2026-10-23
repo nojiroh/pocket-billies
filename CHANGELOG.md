@@ -9,6 +9,10 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Five new Billies (roster track RO-2b): **Cliplet**, a yellow kit that copies every dance it sees, evolving at level
+  18 into **Tiktokferret**, an Electric/Psychic ferret that loops in fifteen seconds; **Cublet**, a tiger cub that
+  could putt before it could walk, evolving at level 24 into **Tigerwoods**, a Ground/Grass tiger in Sunday red; and
+  **Peacouture**, a rare Fire/Flying peacock whose fan is made of other birds' feathers.
 - Eight new Billies (roster track RO-2a): **Gosling**, **Sprucegoose** and **Aviatorgoose**, the goose you meet on
   almost every route; **Flatpackrat** and **Kamprat**, a rat that assembles itself; **Pupfin**, a goldfish that won't
   stop pitching, until it evolves at level 20 into **Sharktank**, a Water/Dragon shark; and **Altmowl**, a rare owl

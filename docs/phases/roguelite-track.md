@@ -1042,11 +1042,13 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   - **RO-2a** (done 2026-10-23, HANDOFF): Hughes goose (Gosling → Sprucegoose → Aviatorgoose, early bird, common,
     Flying → Flying/Steel), Kamprad rat (Flatpackrat → Kamprat, early rodent, common, Steel → Steel/Grass), Cuban
     (Pupfin → Sharktank, the joke fish, common, Water → Water/Dragon), Altmowl (single, rare, Psychic/Electric).
-  - **RO-2b:** a Yiming ferret (the Electric mascot, fox parts, a new first stage to name), Woods tiger (Cublet →
-    Tigerwoods, Grass/Ground, cat parts), a new single: a Bernard Arnault peacock (luxury jokes, Fire/Flying, plume and
-    crown). Names and bios as drafts for the owner.
+  - **RO-2b** (done 2026-10-23, HANDOFF): Yiming ferret (Cliplet → Tiktokferret, the Electric mascot, common,
+    Electric → Electric/Psychic, fox parts on a cat head), Woods tiger (Cublet → Tigerwoods, common, Ground →
+    Ground/Grass, cat parts), Peacouture (the Arnault peacock, single, rare, Fire/Flying, bird parts, crown and a plume
+    fan). Names and bios are drafts for the owner.
   - **RO-2c:** Huang gecko (Siliclet → Jenzard → Gigajenzard, the Dragon pseudo-legend, Electric → Electric/Dragon),
-    regional forms for the new commons, a balance pass with the run sim, the full quick check.
+    regional forms for the new commons, a balance pass with the run sim (Sharktank's 400, a 2-stage final's middle
+    total; evolution levels against runs that reach about level 13), the full quick check.
   - Later, outside the 40: the critters kit (beetle, spider, snake, frog, crab, octopus) and the hooves kit (horse,
     deer, ox, goat, elephant, camel) open the lines the kits can't make; historic tycoons as legendary or boss
     Billies; an Eevee-style Billie whose evolution follows its parts.
