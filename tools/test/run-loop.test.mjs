@@ -138,6 +138,16 @@ test("a run battle's start: its seed, the forecast's weather (clear is sunny), t
   assert.equal(L.runBattleExtra(run, 0, 0, GAME_DATA.rules.env, fx).fx, fx);
 });
 
+test("the run's end keeps the whole party on a win, only the one picked on a loss; items count at their shop price", () => {
+  const team = [{ uid: 'a' }, { uid: 'b' }, { uid: 'c' }];
+  assert.deepEqual(L.runKept(team, true, 'b'), ['a', 'b', 'c']);
+  assert.deepEqual(L.runKept(team, false, 'b'), ['b']);
+  assert.deepEqual(L.runKept(team, false, 'z'), [], 'not in the party: none');
+  const id = Object.keys(data.ITEMS).find(k => data.ITEMS[k].price > 0);
+  assert.equal(L.runItemPrice(id), data.ITEMS[id].price);
+  assert.equal(L.runItemPrice('no-such-item'), 0);
+});
+
 test('releasing: a Billie caught on the run is paid at the end, one from home only leaves the party', () => {
   reseed();
   const s = startedSave('musk0', 10),

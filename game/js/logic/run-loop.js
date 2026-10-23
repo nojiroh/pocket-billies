@@ -15,6 +15,7 @@
 /** @import { Run, RunMap, SaveData, Billy } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { ITEMS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
 import { healAll, maxHp } from './rules.js';
@@ -37,6 +38,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runHealCost: [() => runHealCost, v => (runHealCost = v)],
   runHurt: [() => runHurt],
+  runItemPrice: [() => runItemPrice],
+  runKept: [() => runKept],
   // @ts-expect-error -- replaced on purpose
   runPayoutRows: [() => runPayoutRows, v => (runPayoutRows = v)],
   // @ts-expect-error -- replaced on purpose
@@ -188,6 +191,13 @@ export function runRelease(s, m) {
   if (runReleasePays(run, m)) run.released.push({ sp: m.sp, lvl: m.lvl });
 }
 
+/** Studio plan T3.2: who comes home from a run's end (run-payout.js and the run's simulation): the whole party on a
+ * win, else only the one picked (none when it isn't in the party) @param {{ uid: string }[]} team @param {boolean} won
+ * @param {string | null} pick @returns {string[]} */
+export const runKept = (team, won, pick) =>
+  won ? team.map(m => m.uid) : team.filter(m => m.uid === pick).map(m => m.uid);
+/** an item's shop price, for the payout's items line (0 for none) @param {string} id */
+export const runItemPrice = id => (ITEMS[id] && ITEMS[id].price) || 0;
 /** the payout screen's rows from payoutOf's lines: a label, a note and the Capital each brings (the win row only on a
  * win; RL-9b: the items row only on a loss, a win takes the bag home) @param {{ lines: { what: string, n: number, capital: number }[] }} pay
  * @param {{ money: number, itemShare: number, released: number, node: number }} rates */
