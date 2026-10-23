@@ -58,6 +58,7 @@ expose({
   DEBUG_OPEN_KEY: [() => DEBUG_OPEN_KEY],
   debugAction: [() => debugAction, v => (debugAction = v)],
   debugButtonHTML: [() => debugButtonHTML],
+  debugFind: [() => debugFind, v => (debugFind = v)],
   debugFps: [() => debugFps, v => ((debugFps = v), provide({ debugFps }))],
   debugHTML: [() => debugHTML, v => (debugHTML = v)],
   debugMenu: [() => debugMenu],
@@ -191,6 +192,7 @@ function debugHTML() {
   const ranch = `<div class="dbg-row">${debugButtonHTML('ranchhour', 'Age the ranch by an hour')}${debugButtonHTML('eggsready', 'Eggs ready now')}</div>`;
   const saveRow = `<div class="dbg-row">${debugButtonHTML('copy', 'Copy save as text')}${debugButtonHTML('export', 'Download backup')}${debugButtonHTML('wipe', 'Erase save', 'red')}</div>`;
   return `<div class="dbg">
+ <input id="dbgFind" type="search" placeholder="Find a button" aria-label="Find a button" autocomplete="off" value="${escapeHtml(uiState.dbgFind || '')}">
  <p class="note">Changes apply to this save right away. Export a backup first if you might want to undo. Gold buttons give you things; red ones erase something or start a battle.</p>
  ${[
    debugSection('tests', 'Tests and performance', tests, true),
@@ -205,7 +207,41 @@ function debugHTML() {
  ].join('\n ')}
  </div>`;
 }
+/* the search box: only the buttons whose words hold what was typed stay, in their sections, opened; rows left with no
+   button go, and so do the notes. A section's title matching keeps all of it. Empty: the sections as they were */
+function debugFind(text) {
+  const root = $('.dbg');
+  if (!root) return;
+  const q = String(text || '')
+    .trim()
+    .toLowerCase();
+  const was = root.classList.contains('finding');
+  root.classList.toggle('finding', !!q);
+  $$('.dbg details[data-k]').forEach(d => {
+    if (q && !was) d.dataset.was = d.open ? '1' : '';
+    const title = !!q && d.querySelector('summary').textContent.toLowerCase().includes(q);
+    let any = false;
+    d.querySelectorAll('button').forEach(b => {
+      const hit = !q || title || b.textContent.toLowerCase().includes(q);
+      b.hidden = !hit;
+      if (hit) any = true;
+    });
+    d.querySelectorAll('.dbg-row').forEach(r => {
+      const bs = r.querySelectorAll('button');
+      r.hidden = !!q && bs.length > 0 && [...bs].every(b => b.hidden);
+    });
+    d.querySelectorAll('.note, .dbg-warn').forEach(n => (n.hidden = !!q && !title));
+    d.hidden = !!q && !any;
+    if (q) d.open = any;
+    else if (was && d.dataset.was != null) {
+      d.open = d.dataset.was === '1';
+      delete d.dataset.was;
+    }
+  });
+  root.querySelectorAll(':scope > .note').forEach(n => (n.hidden = !!q));
+}
 function openDebug() {
+  uiState.dbgFind = '';
   uiState.modal = null;
   uiState.mq = uiState.mq.filter(m => !m.dbg);
   modal({
@@ -221,12 +257,16 @@ function refreshDebugMenu(msg) {
   if (!activeBattle) render();
   const M = uiState.modal;
   if (M && M.dbg) {
-    const open = Object.fromEntries($$('.dbg details[data-k]').map(d => [d.dataset.k, d.open]));
+    /* while searching, what was open before the search (debugFind keeps it in data-was) */
+    const open = Object.fromEntries(
+      $$('.dbg details[data-k]').map(d => [d.dataset.k, d.dataset.was != null ? d.dataset.was === '1' : d.open])
+    );
     M.html = debugHTML();
     renderOverlay();
     $$('.dbg details[data-k]').forEach(d => {
       if (open[d.dataset.k] != null) d.open = open[d.dataset.k];
     });
+    if (uiState.dbgFind) debugFind(uiState.dbgFind);
   }
 }
 function debugFps() {
@@ -574,11 +614,23 @@ document.addEventListener(
   'toggle',
   ev => {
     const d = ev.target;
-    if (d instanceof HTMLDetailsElement && d.dataset.k && !d.dataset.force && d.closest('.dbg'))
+    if (
+      d instanceof HTMLDetailsElement &&
+      d.dataset.k &&
+      !d.dataset.force &&
+      d.closest('.dbg') &&
+      !d.closest('.dbg.finding')
+    )
       debugOpenKeep(d.dataset.k, d.open);
   },
   true
 );
+document.addEventListener('input', ev => {
+  const el = ev.target;
+  if (!(el instanceof HTMLInputElement) || el.id !== 'dbgFind') return;
+  uiState.dbgFind = el.value;
+  debugFind(el.value);
+});
 document.addEventListener('keydown', ev => {
   if (ev.ctrlKey && ev.shiftKey && (ev.key === 'D' || ev.key === 'd')) {
     ev.preventDefault();
