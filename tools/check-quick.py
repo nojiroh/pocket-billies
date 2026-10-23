@@ -1374,8 +1374,8 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     v36()
 
-    @step('v42: nature props and the wild growth, edge-relative exits', 120)   # RL-5: the join table (roads between places) is retired: no road is left
-    def v42():
+    @step('Nature props, the wild growth, edge-relative exits', 120)   # RL-5: the join table (roads between places) is retired: no road is left
+    def nature_growth_exits():
         out = []
         # the seventy nature props: in the catalogue, on disk, with a family and the ground they grow on
         nat = json.loads(pg.evaluate("JSON.stringify(Object.entries(walkData().sc.props).filter(([k,M])=>M.family).map(([k,M])=>[k,M.family,M.grow,M.img]))"))
@@ -1410,7 +1410,7 @@ def desktop_steps(b, base, R):
         out.append('a resized scene keeps its exits on their edges')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
-    v42()
+    nature_growth_exits()
 
     @step('v43: the seamless world, flags, voxel props, the new light', 240)
     def v43():
