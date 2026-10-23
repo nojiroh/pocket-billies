@@ -89,9 +89,9 @@ def free_camera_steps(pg, errs):
     pg.evaluate("studioState.sel.scene='copperleaf'; void openSection('scenes')")
     time.sleep(4)
     # Studio plan T6.7: the kept WebGL context draws at once, and a software-drawn frame can take seconds, so the
-    # scroll doesn't wait for two frames with the same box
+    # scroll and the clicks don't wait for two frames with the same box
     pg.evaluate("document.querySelector('#scPv').scrollIntoView({ block: 'nearest' })")
-    pg.locator('#scFreeCam [data-act="fcOn"]').click()
+    pg.locator('#scFreeCam [data-act="fcOn"]').click(force=True)
     time.sleep(1.5)
     G = lambda: pg.evaluate("JSON.parse(JSON.stringify(freeCamera.goal))")
     ground = lambda x, y: pg.evaluate(f"(() => {{ const p = canvasPoint({{ clientX: {x}, clientY: {y} }}); const g = screenToGround(p[0], p[1]); return g && [g.x, g.z]; }})()")
@@ -116,7 +116,7 @@ def free_camera_steps(pg, errs):
     pg.mouse.up(button='right')
     g1 = G()
     if not (g1['yaw'] > g0['yaw'] + 0.3 and g1['pitch'] < g0['pitch']): errs.append(f'free camera: right-drag {g0} -> {g1}')
-    pg.locator('#scFreeCam [data-act="fcTop"]').click()
+    pg.locator('#scFreeCam [data-act="fcTop"]').click(force=True)
     if G()['pitch'] != 89: errs.append('free camera: Top view doesn\'t look down')
     g0 = G()
     pg.mouse.move(cx, cy)
@@ -135,7 +135,7 @@ def free_camera_steps(pg, errs):
       e('pointerup', 11, 0, 0); e('pointerup', 12, 0, 0); }})()""")
     g1 = G()
     if not (g1['dist'] < g0['dist'] * 0.7 and abs(abs(g1['yaw'] - g0['yaw']) - 3.14159 / 2) < 0.2): errs.append(f'free camera: pinch and twist {g0} -> {g1}')
-    pg.locator('#scFreeCam [data-act="fcOn"]').first.click()
+    pg.locator('#scFreeCam [data-act="fcOn"]').first.click(force=True)
     time.sleep(0.5)
     if pg.evaluate("freeCamera.on") or pg.evaluate("walkView.opt.look(0.016)") is not None: errs.append('free camera: still on after Back to the walker')
     print('free camera: drag keeps the ground, wheel, right-drag, top view, keys, pinch and twist, back to the walker', flush=True)
@@ -1134,6 +1134,7 @@ def polish_steps(pg, errs):
     if made or any('not drawn' in x for x in shown): errs.append(f'3D view: across {shown}, {made} new WebGL contexts')
     if len(GL_WARN) > w0: errs.append(f'3D view: stale GPU objects across the 3D sections: {GL_WARN[w0:w0 + 2]}')
     print(f'polish: {", ".join(shown)} on one canvas, {made} new WebGL contexts, {len(GL_WARN) - w0} GPU warnings', flush=True)
+    pg.evaluate("void openSection('jobs')")  # a section with no 3D view, so its frames don't slow the steps after
 
 
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
