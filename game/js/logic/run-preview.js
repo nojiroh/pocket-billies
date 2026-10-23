@@ -62,7 +62,7 @@ export function runPreview(seed, o = {}) {
         shop.push({
           day,
           stock: runShopStock(run, i, day, shopRule),
-          relic: perkShelf(run, i, day, PERKS, RULES.run.relics),
+          relic: perkShelf(run, i, day, PERKS, RULES.run.perks),
         });
     }
     return {
@@ -73,7 +73,7 @@ export function runPreview(seed, o = {}) {
   });
   const relicOffers = [],
     guards = new Set(map.nodes.filter(n => n.type === 'miniboss').map(n => n.row)).size;
-  for (let k = 0; k < guards; k++) relicOffers.push(perkOfferMake(run, PERKS, RULES.run.relics) || []);
+  for (let k = 0; k < guards; k++) relicOffers.push(perkOfferMake(run, PERKS, RULES.run.perks) || []);
   return {
     seed,
     tier: plan.give.tier,

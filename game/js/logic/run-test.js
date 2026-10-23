@@ -7,7 +7,7 @@
      &unlocks=none|all|<ids>   what the save has unlocked (none: a fresh save's, the default)
      &short=1                  the debug menu's short map (RUN_TEST_SHORT)
      &party=<sp@lv,...>        who flies (species ids at a level, 1-100); none: the first starter, as a new game
-     &relics=<ids>             Perks held from the start (rules.json run.relics.cap at most)
+     &relics=<ids>             Perks held from the start (rules.json run.perks.cap at most)
      &draft=1                  the open Studio's unsaved data first (boot.js studioDraftReady)
    An id the data doesn't know is left out and named in `left`. Logic only: no DOM (tools/test/run-test.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */

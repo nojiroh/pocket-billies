@@ -57,7 +57,7 @@ test("run sim: a run town's shop stocks only what the run has unlocked (Studio p
 test('run sim: the policy answers a Perk on offer: greedy takes the rarest, never takes none (Studio plan T3.3)', () => {
   const { simPerkChoice, SIM_POLICIES } = modules['run-sim'],
     PERKS = GAME_DATA.perks,
-    rule = GAME_DATA.rules.run.relics,
+    rule = GAME_DATA.rules.run.perks,
     greedy = SIM_POLICIES['greedy-forward'],
     never = SIM_POLICIES['never-pick'];
   assert.deepEqual(simPerkChoice(['offshore', 'hedge', 'insider'], [], PERKS, rule, greedy), { id: 'hedge' });

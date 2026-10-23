@@ -169,7 +169,7 @@ function debugHTML() {
         'dbgRelic',
         Object.keys(PERKS).map(k => [k, PERKS[k].name]),
         uiState.dbgRelic || Object.keys(PERKS)[0] || ''
-      )}${debugButtonHTML('relicgive', 'Give a Perk', 'gold')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">Perks held: ${saveData.run.relics.length} of ${RULES.run.relics.cap}${saveData.run.relics.length ? ` (${escapeHtml(saveData.run.relics.map(k => (PERKS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p>`
+      )}${debugButtonHTML('relicgive', 'Give a Perk', 'gold')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">Perks held: ${saveData.run.relics.length} of ${RULES.run.perks.cap}${saveData.run.relics.length ? ` (${escapeHtml(saveData.run.relics.map(k => (PERKS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p>`
     : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><p class="note">From Copperleaf, as the mast does (Expedition I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (for measuring on a phone; the debug log has the frame times).</p>`;
   const places = `<div class="dbg-row">${debugSelectHTML(
     'dbgNode',
@@ -519,8 +519,8 @@ function debugAction(x) {
         run,
         id,
         PERKS,
-        RULES.run.relics,
-        run.relics.length >= RULES.run.relics.cap ? run.relics[0] : undefined
+        RULES.run.perks,
+        run.relics.length >= RULES.run.perks.cap ? run.relics[0] : undefined
       );
       if (why) return refreshDebugMenu(why === 'held' ? 'Already held.' : 'That Perk can’t be given.');
       saveNow();
@@ -528,7 +528,7 @@ function debugAction(x) {
     }
     case 'relicpick':
       if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
-      if (!perkOfferMake(saveData.run, PERKS, RULES.run.relics)) return refreshDebugMenu('Every Perk is held.');
+      if (!perkOfferMake(saveData.run, PERKS, RULES.run.perks)) return refreshDebugMenu('Every Perk is held.');
       saveNow();
       uiState.modal = null;
       perkPickOpen();

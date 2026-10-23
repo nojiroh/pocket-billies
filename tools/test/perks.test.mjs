@@ -9,7 +9,7 @@ import { GAME_DATA, fn, modules, startedSave } from './setup-real.mjs';
 const R = modules.perks,
   { runBegin, validRun } = modules['run-state'],
   PERKS = GAME_DATA.perks,
-  RULE = GAME_DATA.rules.run.relics,
+  RULE = GAME_DATA.rules.run.perks,
   copy = v => JSON.parse(JSON.stringify(v));
 /** a run as runBegin starts one from a hub save (validRun checks the hub's copy too) */
 function run(seed = 'RELIC12345') {

@@ -100,7 +100,7 @@ export function battleSettleWin(b, s, pay, run) {
   if (b.kind === 'wild' && pay.prize > 0) s.se += pay.prize;
   if (b.kind === 'trainer') {
     s.se += pay.reward;
-    if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, PERKS, RULES.run.relics);
+    if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, PERKS, RULES.run.perks);
     s.flags[b.tid] = 1;
   }
 }

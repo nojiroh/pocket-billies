@@ -1,7 +1,7 @@
 'use strict';
 /* ================= PERKS (Studio plan Phase 4, T4.1) =================
    perks.json, a run's Perks ("relic" is the data's word; the player and this page say Perk), and the rules
-   that offer them (rules.json run.relics). What the JSON can't show:
+   that offer them (rules.json run.perks). What the JSON can't show:
    - each effect row by its kind (logic/effects.js FX_KINDS), with the limits that live in the code (FX_LIMIT for a
      factor, FX_STAGES for stages) beside the field, and data-checks.js dataPerks's messages on the row they are about;
    - the rarity table's coverage: each rarity's weight and price, how many Perks have it, and a Perk's chance to
@@ -88,7 +88,7 @@ const PERK_ROW_NEW = {
 };
 const PERK_RARITIES = ['common', 'uncommon', 'rare'];
 
-/** the data checks' messages about perks.json and rules.json run.relics (dataPerks, as CI runs it) */
+/** the data checks' messages about perks.json and rules.json run.perks (dataPerks, as CI runs it) */
 const perkProblems = () => {
   try {
     return dataPerks(studioState.D).map(([f, m]) => ({ f, m }));
@@ -103,7 +103,7 @@ const perkProblemHTML = (/** @type {{ f: string, m: string }[]} */ P, /** @type 
     .join('');
 /** each rarity's weight and how many Perks have it, and each Perk's chance to be drawn first */
 function perkCoverage(/** @type {any} */ D) {
-  const RR = D.rules.run.relics,
+  const RR = D.rules.run.perks,
     ids = Object.keys(D.perks || {}),
     w = id => RR.rarity[D.perks[id].rarity] || 0,
     total = ids.reduce((a, id) => a + w(id), 0);
@@ -193,7 +193,7 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
 
 /** the rarity table: weights, prices, coverage, and the pick rules */
 function perkRarityHTML(/** @type {any} */ D, /** @type {any} */ cov, /** @type {any} */ P) {
-  const RR = D.rules.run.relics,
+  const RR = D.rules.run.perks,
     rows = PERK_RARITIES.map(r => {
       const w = RR.rarity[r] || 0,
         c = cov.count[r],
@@ -205,7 +205,7 @@ function perkRarityHTML(/** @type {any} */ D, /** @type {any} */ cov, /** @type 
               : cov.total
                 ? `each one ${perkPct(w / cov.total)} to be drawn first`
                 : '';
-      return `<tr data-rarity="${r}" data-count="${c}"><th>${r}</th><td>${numberField('', `rules.run.relics.rarity.${r}`, { min: 0, step: 1 })}</td><td>${numberField('', `rules.run.relics.price.${r}`, { min: 0, step: 10, unit: '$' })}</td><td>${c}</td><td>${note}</td></tr>`;
+      return `<tr data-rarity="${r}" data-count="${c}"><th>${r}</th><td>${numberField('', `rules.run.perks.rarity.${r}`, { min: 0, step: 1 })}</td><td>${numberField('', `rules.run.perks.price.${r}`, { min: 0, step: 10, unit: '$' })}</td><td>${c}</td><td>${note}</td></tr>`;
     }).join('');
   const rules = P.filter((/** @type {any} */ p) => p.f === 'rules.json')
     .map((/** @type {any} */ p) => `<p class="err">${escapeHtml(p.m)}</p>`)
@@ -213,11 +213,11 @@ function perkRarityHTML(/** @type {any} */ D, /** @type {any} */ cov, /** @type 
   return card(
     'Rarity and the picks',
     `<table class="tbl relic-rarity"><thead><tr><th>Rarity</th><th>Weight</th><th>Shop price</th><th>Perks</th><th></th></tr></thead><tbody>${rows}</tbody></table>${grid(
-      numberField('Held at most', 'rules.run.relics.cap', { min: 1, max: 12, step: 1 }),
-      numberField('Offered at each pick', 'rules.run.relics.pick', { min: 1, max: 5, step: 1 })
+      numberField('Held at most', 'rules.run.perks.cap', { min: 1, max: 12, step: 1 }),
+      numberField('Offered at each pick', 'rules.run.perks.pick', { min: 1, max: 5, step: 1 })
     )}${rules}`,
     {
-      sub: 'rules.json run.relics. A pick after each mini-boss draws this many by weight, none held; each run town’s shop has one a day at its rarity’s price.',
+      sub: 'rules.json run.perks. A pick after each mini-boss draws this many by weight, none held; each run town’s shop has one a day at its rarity’s price.',
     }
   );
 }
@@ -234,7 +234,7 @@ SECTIONS.relics = () => {
   const list = ks
     .map(
       x =>
-        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickRelic" data-id="${escapeHtml(x)}"><span class="lt"><b>${escapeHtml(L[x].name || x)}${P.some(p => p.f === 'perks.json' && p.m.startsWith(x + '.')) ? ' <span class="warn">⚠</span>' : ''}</b><small>${escapeHtml(L[x].rarity)} · weight ${D.rules.run.relics.rarity[L[x].rarity] || 0} · ${perkPct(cov.chance[x])} first</small></span></button>`
+        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickRelic" data-id="${escapeHtml(x)}"><span class="lt"><b>${escapeHtml(L[x].name || x)}${P.some(p => p.f === 'perks.json' && p.m.startsWith(x + '.')) ? ' <span class="warn">⚠</span>' : ''}</b><small>${escapeHtml(L[x].rarity)} · weight ${D.rules.run.perks.rarity[L[x].rarity] || 0} · ${perkPct(cov.chance[x])} first</small></span></button>`
     )
     .join('');
   const head = `<div class="list-head"><button class="btn primary" data-act="relicNew">+ New Perk</button></div>`;
@@ -262,7 +262,7 @@ SECTIONS.relics = () => {
      textField('What it does (one sentence)', `${p}.d`, { area: 1, rows: 2, max: 160 }) +
      perkProblemHTML(P, `${k}.`, `${k}.fx[`),
    {
-     sub: `${escapeHtml(R.rarity)}: ${perkPct(cov.chance[k])} to be drawn first at a pick; a shop asks ${D.rules.run.relics.price[R.rarity] || 0} Moneys.`,
+     sub: `${escapeHtml(R.rarity)}: ${perkPct(cov.chance[k])} to be drawn first at a pick; a shop asks ${D.rules.run.perks.price[R.rarity] || 0} Moneys.`,
    }
  )}
  ${card(
@@ -336,7 +336,7 @@ function perkFill() {
       'perkOfferOrder',
       perkEd.seed,
       D.perks,
-      D.rules.run.relics,
+      D.rules.run.perks,
       perkEd.picks,
       perkEd.take === 'this' ? k : perkEd.take
     ).then(

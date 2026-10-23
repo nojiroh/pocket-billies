@@ -75,7 +75,7 @@ function shopPerk(sh) {
   if (sh.runNode == null || !run) return null;
   const id = run.shelf[sh.runNode + ':' + run.clock];
   if (!id || !PERKS[id]) return null;
-  return { id, price: fxRunPrice(run, PERKS, 'shop', perkPrice(PERKS[id], RULES.run.relics)) };
+  return { id, price: fxRunPrice(run, PERKS, 'shop', perkPrice(PERKS[id], RULES.run.perks)) };
 }
 /** RL-12: the Perk's row: what it does, its rarity and price, Buy */
 function shopPerkHTML(id, sh) {
@@ -83,7 +83,7 @@ function shopPerkHTML(id, sh) {
   if (!L) return '';
   const R = PERKS[L.id],
     can = saveData.se >= L.price;
-  return `<div class="ware2 k-card"><span class="w-ic">${uiIconHTML('relic', 36)}</span><span class="w-t"><b>${escapeHtml(R.name)}</b><small>${escapeHtml(R.d)}</small><small class="note">A Perk, for the rest of the run · you hold ${saveData.run.relics.length} of ${RULES.run.relics.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
+  return `<div class="ware2 k-card"><span class="w-ic">${uiIconHTML('relic', 36)}</span><span class="w-t"><b>${escapeHtml(R.name)}</b><small>${escapeHtml(R.d)}</small><small class="note">A Perk, for the rest of the run · you hold ${saveData.run.relics.length} of ${RULES.run.perks.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
 }
 function shopHTML(id) {
   const sh = SHOPS[id],
@@ -132,7 +132,7 @@ export function openShop(id) {
     /* RL-11: only the wares the run has unlocked (its copy, run.unlocks) */
     sh.stock = runShopOpen(saveData.run, sh.runNode, saveData.run.clock, RULES.run.shop, UNLOCK_DATA);
     /* RL-12: and a Perk, drawn the first time it opens today (kept on the run, saved with the next save) */
-    perkShelf(saveData.run, sh.runNode, saveData.run.clock, PERKS, RULES.run.relics);
+    perkShelf(saveData.run, sh.runNode, saveData.run.clock, PERKS, RULES.run.perks);
   }
   uiState.shopLine = null;
   uiState.shopQty = {};
@@ -190,7 +190,7 @@ function shopPerkBuy(id, drop) {
     toast('Not enough Moneys for that one.');
     return;
   }
-  if (drop == null && run.relics.length >= RULES.run.relics.cap) {
+  if (drop == null && run.relics.length >= RULES.run.perks.cap) {
     perkDropOpen(
       L.id,
       d => {
@@ -201,7 +201,7 @@ function shopPerkBuy(id, drop) {
     );
     return;
   }
-  if (perkBuy(run, sh.runNode, run.clock, PERKS, RULES.run.relics, drop)) return;
+  if (perkBuy(run, sh.runNode, run.clock, PERKS, RULES.run.perks, drop)) return;
   saveData.se -= L.price;
   if (typeof soundEffect === 'function') soundEffect('buy');
   saveNow();

@@ -55,7 +55,7 @@ function perkCardsOn(f) {
 export function perkPickOpen() {
   const run = saveData.run;
   if (!run || !run.offer) return;
-  const rule = RULES.run.relics,
+  const rule = RULES.run.perks,
     ids = run.offer.filter(id => PERKS[id]),
     sel = ids.includes(uiState.relicSel) ? uiState.relicSel : null;
   perkSheet({
@@ -79,14 +79,14 @@ export function perkPickOpen() {
 function perkPickTake(id) {
   const run = saveData.run;
   if (!run || !run.offer || !id) return;
-  if (run.relics.length >= RULES.run.relics.cap) perkDropOpen(id, drop => perkPickDone(id, drop), perkPickOpen);
+  if (run.relics.length >= RULES.run.perks.cap) perkDropOpen(id, drop => perkPickDone(id, drop), perkPickOpen);
   else perkPickDone(id);
 }
 /** the pick answered (a Perk, or none): saved, the sheet closed */
 function perkPickDone(id, drop) {
   const run = saveData.run;
   if (!run) return;
-  const why = perkChoose(run, id, PERKS, RULES.run.relics, drop);
+  const why = perkChoose(run, id, PERKS, RULES.run.perks, drop);
   if (why) {
     toast('That Perk can’t be taken.');
     return;
@@ -113,7 +113,7 @@ function perkDropOpen(id, then, back) {
     title: 'Let one go',
     cls: 'relic-drop',
     lock: true,
-    html: `<p>You can hold ${RULES.run.relics.cap} Perks. Tap one to let it go for ${escapeHtml(PERKS[id].name)}.</p><div class="relic-cards">${run.relics
+    html: `<p>You can hold ${RULES.run.perks.cap} Perks. Tap one to let it go for ${escapeHtml(PERKS[id].name)}.</p><div class="relic-cards">${run.relics
       .filter(k => PERKS[k])
       .map(k => perkCardHTML(k, false))
       .join('')}</div>`,
@@ -139,7 +139,7 @@ function perkDropOpen(id, then, back) {
 /** the run's Perks, each with what it does */
 export function renderPerks() {
   const run = saveData.run,
-    cap = RULES.run.relics.cap;
+    cap = RULES.run.perks.cap;
   if (!run) return `<p class="note bag-empty">Perks come with a run. Start one at the airship mast.</p>`;
   const held = run.relics.filter(id => PERKS[id]);
   return `<section class="tpanel relics"><div class="sec-h"><h2>Perks</h2><span class="count tnum">${held.length} of ${cap}</span></div>${
@@ -150,6 +150,6 @@ export function renderPerks() {
               `<div class="bag-row k-card"><span class="bag-ic">${uiIconHTML('relic', 30)}</span><span class="bag-t"><b>${escapeHtml(PERKS[id].name)}</b><small>${escapeHtml(PERKS[id].d)}</small></span><small class="note">${PERK_RARITY[PERKS[id].rarity] || ''}</small></div>`
           )
           .join('')}</div>`
-      : `<p class="note bag-empty">None yet. Beat a mini-boss for a pick of ${RULES.run.relics.pick}, or buy one in a town’s shop. They last the run.</p>`
+      : `<p class="note bag-empty">None yet. Beat a mini-boss for a pick of ${RULES.run.perks.pick}, or buy one in a town’s shop. They last the run.</p>`
   }</section>`;
 }

@@ -139,7 +139,7 @@ function fixtureSave() {
   if (FIXTURE === 'relics') {
     s.run.relics = FIXTURE_PERKS.filter(id => PERKS[id]);
     s.se = 2000;
-    perkOfferMake(s.run, PERKS, RULES.run.relics);
+    perkOfferMake(s.run, PERKS, RULES.run.perks);
   }
   return s;
 }

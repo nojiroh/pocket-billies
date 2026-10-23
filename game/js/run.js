@@ -507,7 +507,7 @@ const RUN_HINTS = {
   miniboss: () => 'A mini-boss blocks the way north. Beat them to go on.',
   boss: () => 'The boss. Beat it and the run is won.',
   relic: () =>
-    `Perks last the run: hold up to ${RULES.run.relics.cap}. The Perks tab shows what each one does; town shops sell them too.`,
+    `Perks last the run: hold up to ${RULES.run.perks.cap}. The Perks tab shows what each one does; town shops sell them too.`,
 };
 /** show a first-run hint once (nothing on a later run, or once shown) @param {keyof typeof RUN_HINTS} id */
 export function runHint(id) {

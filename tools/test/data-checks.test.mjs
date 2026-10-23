@@ -89,8 +89,8 @@ test('a planted fault is found by its family, in the file check-data names', () 
   D.nodeTypes.landing.mark = 'bogus';
   found('dataNodeTypes', D, 'no marker "bogus"');
   D = copy();
-  D.rules.run.relics.cap = 0;
-  found('dataPerks', D, 'run.relics.cap');
+  D.rules.run.perks.cap = 0;
+  found('dataPerks', D, 'run.perks.cap');
   // Studio plan T4.1: the code's limits (effects.js FX_LIMIT, FX_STAGES) on a row
   D = copy();
   D.perks.offshore.fx[0].mult = 0.05;

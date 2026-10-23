@@ -10,7 +10,7 @@ const D = {
     species: Object.fromEntries(GAME_DATA.lines.flatMap(L => L.names.map((_, i) => [L.id + i, 1]))),
     unlocks: GAME_DATA.unlocks,
     perks: GAME_DATA.perks,
-    cap: GAME_DATA.rules.run.relics.cap,
+    cap: GAME_DATA.rules.run.perks.cap,
   },
   of = (/** @type {string} */ q) => runTestOf(new URLSearchParams(q), D);
 

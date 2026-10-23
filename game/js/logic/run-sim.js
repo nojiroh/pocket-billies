@@ -53,7 +53,7 @@ export const MAX_TURNS = 60;
  * - lane: the next place drawn from the run's seed among the ones linked ahead (never back)
  * - keep: on a loss, the highest-level Billie comes home
  * - relics: Perks (Studio plan T3.3). 'greedy': the pick after a mini-boss takes the rarest offered (the lowest
- *   rules.json run.relics.rarity weight, then by id), and a town shop's Perk is bought when the money is there
+ *   rules.json run.perks.rarity weight, then by id), and a town shop's Perk is bought when the money is there
  *   beyond `reserve`; past the cap only for a rarer one than the plainest held, which is let go. 'never': none taken
  *   or bought (the "never pick" baseline)
  */
@@ -284,12 +284,12 @@ export function runSimOn(env) {
           const stock = runShopOpen(run, i, run.clock, R.shop, UNLOCK_DATA);
           /* the shop's Perk, drawn as the shop opens (perks.js perkShelf), bought as the policy says, keeping the
              reserve (shop.js shopPerkBuy: its price with the price rows) */
-          const shelf = perkShelf(run, i, run.clock, data.PERKS, R.relics);
+          const shelf = perkShelf(run, i, run.clock, data.PERKS, R.perks);
           if (shelf) {
-            const cost = fxRunPrice(run, data.PERKS, 'shop', perkPrice(data.PERKS[shelf], R.relics)),
-              c = s.se >= cost + P.reserve ? simPerkChoice([shelf], run.relics, data.PERKS, R.relics, P) : null;
+            const cost = fxRunPrice(run, data.PERKS, 'shop', perkPrice(data.PERKS[shelf], R.perks)),
+              c = s.se >= cost + P.reserve ? simPerkChoice([shelf], run.relics, data.PERKS, R.perks, P) : null;
             at.relic = { id: shelf, price: cost };
-            if (c && !perkBuy(run, i, run.clock, data.PERKS, R.relics, c.drop)) {
+            if (c && !perkBuy(run, i, run.clock, data.PERKS, R.perks, c.drop)) {
               s.se -= cost;
               stats.spent += cost;
               stats.moneyOut.relics += cost;
@@ -395,9 +395,9 @@ export function runSimOn(env) {
           stats.moneyIn.reward += pay.reward;
           /* the pick it made, answered as the policy says (perk-screen.js perkPickDone: perks.js perkChoose) */
           if (run.offer) {
-            const c = simPerkChoice(run.offer, run.relics, data.PERKS, R.relics, P);
+            const c = simPerkChoice(run.offer, run.relics, data.PERKS, R.perks, P);
             at.pick = { offer: run.offer.slice(), took: c ? c.id : null, ...(c && c.drop ? { drop: c.drop } : {}) };
-            perkChoose(run, c ? c.id : null, data.PERKS, R.relics, c ? c.drop : undefined);
+            perkChoose(run, c ? c.id : null, data.PERKS, R.perks, c ? c.drop : undefined);
           }
           if (node.type === 'boss') {
             stats.won = true;

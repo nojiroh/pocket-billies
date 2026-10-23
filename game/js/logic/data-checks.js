@@ -299,7 +299,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'healCost',
   'shop',
   'foes',
-  'relics',
+  'perks',
 ]);
 /** RL-6: rules.json run.clock, run.reveal and the run keys @param {any} D @returns {DataProblem[]} */
 export function dataRunClock(D) {
@@ -656,16 +656,16 @@ export function dataNodeTypes(D, valid = () => true) {
   }
   return out;
 }
-// RL-12: Perks (relics): the schema, the types their damage rows name; rules.json run.relics: a cap of 1-12 held, a
+// RL-12: Perks (relics): the schema, the types their damage rows name; rules.json run.perks: a cap of 1-12 held, a
 // pick of 1-5 (run.offer holds up to 5), a weight of 0 or more and a whole price ($0-100,000) for each rarity, and
 // something to offer
-/** RL-12: perks.json and rules.json run.relics @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+/** RL-12: perks.json and rules.json run.perks @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataPerks(D, valid = () => true) {
   /** @type {DataProblem[]} */
   const out = [],
     problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]);
   {
-    const RR = D.rules && D.rules.run && D.rules.run.relics,
+    const RR = D.rules && D.rules.run && D.rules.run.perks,
       RARITIES = ['common', 'uncommon', 'rare'],
       whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi,
       types = new Set((D.types || []).map(t => t.id)),
@@ -691,25 +691,25 @@ export function dataPerks(D, valid = () => true) {
           if (f.kind === 'stat' && (f.stat === 'hp' || !stats.has(f.stat)))
             problem('perks.json', `${k}.fx[${n}].stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
         });
-    if (!RR || typeof RR !== 'object' || Array.isArray(RR)) problem('rules.json', 'run.relics missing');
+    if (!RR || typeof RR !== 'object' || Array.isArray(RR)) problem('rules.json', 'run.perks missing');
     else {
       for (const k of Object.keys(RR))
-        if (!['cap', 'pick', 'rarity', 'price'].includes(k)) problem('rules.json', `run.relics.${k}: no such rule`);
-      if (!whole(RR.cap, 1, 12)) problem('rules.json', 'run.relics.cap is not a whole number from 1 to 12');
-      if (!whole(RR.pick, 1, 5)) problem('rules.json', 'run.relics.pick is not a whole number from 1 to 5');
+        if (!['cap', 'pick', 'rarity', 'price'].includes(k)) problem('rules.json', `run.perks.${k}: no such rule`);
+      if (!whole(RR.cap, 1, 12)) problem('rules.json', 'run.perks.cap is not a whole number from 1 to 12');
+      if (!whole(RR.pick, 1, 5)) problem('rules.json', 'run.perks.pick is not a whole number from 1 to 5');
       for (const g of ['rarity', 'price']) {
         const G = RR[g] && typeof RR[g] === 'object' ? RR[g] : {};
         for (const k of Object.keys(G))
-          if (!RARITIES.includes(k)) problem('rules.json', `run.relics.${g}.${k}: no such rarity`);
+          if (!RARITIES.includes(k)) problem('rules.json', `run.perks.${g}.${k}: no such rarity`);
         for (const r of RARITIES)
           if (g === 'rarity' ? !(typeof G[r] === 'number' && G[r] >= 0) : !whole(G[r], 0, 100000))
             problem(
               'rules.json',
-              `run.relics.${g}.${r} is not ${g === 'rarity' ? 'a weight of 0 or more' : 'a whole price (0-100,000 Moneys)'}`
+              `run.perks.${g}.${r} is not ${g === 'rarity' ? 'a weight of 0 or more' : 'a whole price (0-100,000 Moneys)'}`
             );
       }
       if (D.perks && !Object.values(D.perks).some(R => (RR.rarity || {})[R.rarity] > 0))
-        problem('rules.json', 'run.relics.rarity gives every Perk in perks.json a weight of 0: nothing can be offered');
+        problem('rules.json', 'run.perks.rarity gives every Perk in perks.json a weight of 0: nothing can be offered');
     }
   }
   return out;

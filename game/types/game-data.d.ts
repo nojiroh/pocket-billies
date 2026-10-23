@@ -985,7 +985,7 @@ export interface Rules {
     foes: { miniboss: { up: number; reward: number }; boss: { up: number; reward: number } };
     /** RL-12: Loopholes: at most `cap` held, a pick of `pick` after a mini-boss, offered by `rarity` weight, sold in a
         run shop at `price` by rarity (placeholders) */
-    relics: {
+    perks: {
       cap: number;
       pick: number;
       rarity: Record<PerkRarity, number>;
@@ -1696,7 +1696,7 @@ export interface Music {
   where: MusicWhere[];
 }
 
-/** perks.json: how often a Loophole is offered and what a shop asks for it (rules.json run.relics) */
+/** perks.json: how often a Loophole is offered and what a shop asks for it (rules.json run.perks) */
 export type PerkRarity = 'common' | 'uncommon' | 'rare';
 /** perks.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes) */
 export type FxRow =

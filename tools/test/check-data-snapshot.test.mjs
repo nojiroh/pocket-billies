@@ -68,9 +68,9 @@ test('check-data: planted rules (battle, run, ranch)', t => {
         run.shop.pick['coin:nosuch'] = 1;
         run.foes.boss.up = 99;
         run.foes.extra = {};
-        run.relics.cap = 0;
-        run.relics.rarity.mythic = 1;
-        run.relics.price.rare = 1.5;
+        run.perks.cap = 0;
+        run.perks.rarity.mythic = 1;
+        run.perks.price.rare = 1.5;
       },
     })
   );

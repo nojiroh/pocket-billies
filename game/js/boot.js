@@ -766,7 +766,7 @@ const TEST_RUN = (() => {
   try {
     const q = new URLSearchParams(location.search),
       at = (q.get('at') || '').split(',').map(Number),
-      run = runTestOf(q, { species: SPECIES, unlocks: UNLOCKS, perks: PERKS, cap: RULES.run.relics.cap });
+      run = runTestOf(q, { species: SPECIES, unlocks: UNLOCKS, perks: PERKS, cap: RULES.run.perks.cap });
     return q.get('test') || q.get('story') || run
       ? {
           run,

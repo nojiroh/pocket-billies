@@ -2,12 +2,12 @@
 'use strict';
 /* ================= PERKS ON A RUN (roguelite track RL-12) =================
    Where a run's Perks (perks.json) come from and how many are held:
-   - a pick after each mini-boss: run.relics.pick Perks drawn by rarity weight from the run's own stream
+   - a pick after each mini-boss: run.perks.pick Perks drawn by rarity weight from the run's own stream
      (rngFrom(run.seed, 'relic|' + run.offerN)), none already held. The offer is put in run.offer and saved before it
      is shown, so a reload shows the same ones; choosing one (or none) clears it;
    - one in each run shop, a day: drawn from the shop's node and the day the first time the shop opens that day, kept in
      run.shelf (so buying it doesn't put another on the shelf), '' once bought; its price by rarity;
-   - at most run.relics.cap held: a new one past the cap takes the place of one the player lets go.
+   - at most run.perks.cap held: a new one past the cap takes the place of one the player lets go.
    They last the run: nothing of them is kept at the payout. Every Perk is on offer from the first run (the owner,
    RL-12); RL-11's unlocks may narrow the pool later.
    Logic only: no DOM, no Date, no Math.random (tools/test/perks.test.mjs). */

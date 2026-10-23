@@ -1408,7 +1408,7 @@ def checks_steps(pg, errs):
     for m in base: errs.append(f'the game data has a Check error: {m}')
     pg.evaluate("window.__ckD = JSON.stringify(studioState.D)")
     plants = {
-        'run.relics.cap': "studioState.D.rules.run.relics.cap = 0",
+        'run.perks.cap': "studioState.D.rules.run.perks.cap = 0",
         'goes round in a circle': "(() => { const U = studioState.D.unlocks, [a, b] = Object.keys(U); U[a].requires = [b]; U[b].requires = [a]; })()",
         'run.typo: no such rule': "studioState.D.rules.run.typo = 1",
         'nosuchmove, no such move': "Object.values(studioState.D.robots.gems)[0].move = 'nosuchmove'",
@@ -1830,7 +1830,7 @@ def music_steps(pg, errs):
 CONTENT_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
 const out = {};
 /* Studio plan Phase 4: what the content editors must show, from the game's logic in Node */
-out.offers = modules.perks.perkOfferOrder('LAB1', D.perks, D.rules.run.relics, D.rules.run.map.minibosses).map(p => p.offer.join(','));
+out.offers = modules.perks.perkOfferOrder('LAB1', D.perks, D.rules.run.perks, D.rules.run.map.minibosses).map(p => p.offer.join(','));
 out.lab = modules['run-preview'].runPreview('LAB1', { unlocks: [] }).relicOffers.map(o => o.join(','));
 out.insider = modules['content-preview'].perkPreview(['insider'], { sp: D.lines[0].id + '1', lvl: 30 }).stats.find(s => s.id === 'hus');
 out.leaders = modules['content-preview'].leaderRunValues();

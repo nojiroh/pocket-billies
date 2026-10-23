@@ -5,7 +5,7 @@
    Economy page can list them with a link to each field (the plan's "economy editor": no economy data model of its own).
    - money ($, a run's): wild prizes (rules.json encounters.prizePerLevel x the level, logic/rules.js wildPrize), the
      mini-boss's and boss's rewards (run.foes), Perks' money rows; spent at the clinic (run.healCost a hurt Billie),
-     on run shop wares (items.json and coins.json price; what run.shop can stock) and shop Perks (run.relics.price);
+     on run shop wares (items.json and coins.json price; what run.shop can stock) and shop Perks (run.perks.price);
    - at the payout (logic/run-state.js payoutOf) money, items, released Billies, places and a win turn into Research,
      Scrap and Crests (run.payout);
    - Research, Scrap and Crests (kept between runs): the earned unlock rows' grants, and each building's unlock costs
@@ -104,13 +104,13 @@ export function economyLines(D) {
         section: 'items',
       });
   }
-  for (const [r, p] of Object.entries((R.relics && R.relics.price) || {}))
+  for (const [r, p] of Object.entries((R.perks && R.perks.price) || {}))
     add({
       currency: 'money',
       side: 'out',
       what: `Run shop: a ${r} Perk`,
       value: /** @type {number} */ (p),
-      path: `rules.run.relics.price.${r}`,
+      path: `rules.run.perks.price.${r}`,
       section: 'relics',
     });
   for (const [k, v] of Object.entries(R.payout || {}))

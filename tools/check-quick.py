@@ -1653,9 +1653,9 @@ def desktop_steps(b, base, R):
             if not until(pg, f"!activeBattle&&!blockerAt({mb})", 30): raise Exception('beaten, the mini-boss still blocks')
             # RL-12: its pick of Perks, stored before the sheet; tapped through
             if not until(pg, "uiState.modal&&uiState.modal.btns&&uiState.modal.btns[0].l==='Pick a Perk'", 30): raise Exception('no “Pick a Perk” after the mini-boss')
-            if len(pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).run.offer||[]")) != pg.evaluate('RULES.run.relics.pick'): raise Exception('the pick isn’t stored before it shows')
+            if len(pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).run.offer||[]")) != pg.evaluate('RULES.run.perks.pick'): raise Exception('the pick isn’t stored before it shows')
             pg.click('#ov [data-a=mb][data-i="0"]')
-            if not until(pg, "uiState.modal&&uiState.modal.cls==='relic-pick'&&document.querySelectorAll('#ov pb-pick-card').length===RULES.run.relics.pick", 10): raise Exception('the pick didn’t open')
+            if not until(pg, "uiState.modal&&uiState.modal.cls==='relic-pick'&&document.querySelectorAll('#ov pb-pick-card').length===RULES.run.perks.pick", 10): raise Exception('the pick didn’t open')
             pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
             if not until(pg, "!document.querySelector('#ov [data-a=mb][data-i=\"0\"]').disabled", 10): raise Exception('a card didn’t enable “Take it”')
             shot(pg, 'rl12-pick')
