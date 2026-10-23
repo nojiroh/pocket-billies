@@ -208,7 +208,14 @@ export function runSimOn(env) {
       trainers: foes,
     });
     /** @type {any} */
-    const log = { seed, unlocks: run.unlocks, scenes: scenes.map((/** @type {any} */ sc) => sc.gen.seed), places: [] },
+    const log = {
+        seed,
+        unlocks: run.unlocks,
+        /* the map as runStartPlan made it: each node's type and biome */
+        nodes: run.map.nodes.map((/** @type {any} */ n) => `${n.type}:${n.biome}`),
+        scenes: scenes.map((/** @type {any} */ sc) => sc.gen.seed),
+        places: [],
+      },
       stats = {
         battles: 0,
         turns: 0,

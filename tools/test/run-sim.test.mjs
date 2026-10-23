@@ -96,3 +96,22 @@ test('run sim: a town shop’s Loophole is bought under greedy-forward and never
   assert.ok(shelves >= 2 && bought >= 1, `${bought} bought of ${shelves} on a shelf`);
   assert.throws(() => runSim('X', { policy: 'nobody' }), /no simulation policy nobody/);
 });
+
+test("run sim: the run's map is runStartPlan's for the save's unlocks: no locked biome without them (Studio plan T3.3)", () => {
+  const { runStartPlan } = modules['run-start'],
+    R = GAME_DATA.rules.run,
+    D = {
+      nodeTypes: GAME_DATA.nodeTypes,
+      biomes: GAME_DATA.biomes,
+      rules: R,
+      unlockData: { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings },
+    },
+    nodes = plan => plan.map.nodes.map(n => `${n.type}:${n.biome}`);
+  for (const seed of ['SIMPLAN0', 'SIMPLAN1', 'SIMPLAN2']) {
+    const none = runSim(seed, { team: 3 }).log,
+      all = runSim(seed, { team: 3, unlocks: 'all' }).log;
+    assert.deepEqual(none.nodes, nodes(runStartPlan(seed, D, { unlocks: [] })), seed);
+    assert.deepEqual(all.nodes, nodes(runStartPlan(seed, D, { unlocks: all.unlocks })), seed);
+    assert.ok(!none.nodes.some(n => /:(ridge|autumn)$/.test(n)), `${seed}: ${none.nodes}`);
+  }
+});
