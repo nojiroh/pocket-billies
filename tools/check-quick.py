@@ -1739,7 +1739,7 @@ def desktop_steps(b, base, R):
         until(pg, "!!(walkView.ready&&walkView.id==='test_props')", 60); pg.evaluate("walkView.pl.x=12;walkView.pl.z=21;walkView.pl.route=null;0"); time.sleep(3)
         m = pg.evaluate("(()=>{const v=[...propModelState.meshes.values()].filter(Boolean);return {lp:v.filter(m=>m.lowpoly).length,vox:v.filter(m=>!m.model).length,drawn:propModelState.drawn}})()")
         if not m['lp'] or m['vox']: raise Exception(f'the every-prop scene drew {m["lp"]} low-poly props and {m["vox"]} voxel ones')
-        shot(pg, 'a04-props-lowpoly')
+        shot(pg, 'props-lowpoly')
         pg.evaluate("uiState.bench=null;render();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return f'{r["n"]} recipes: {r["lp"]} triangles low-poly, {r["q"]} quads as voxels at 32 to the metre; the every-prop scene draws {m["lp"]} as low-poly models'
