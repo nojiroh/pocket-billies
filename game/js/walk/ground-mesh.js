@@ -589,7 +589,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
   /* v31: the shoreline: the water mask at 8 samples a metre, softened twice and nudged by noise, so the water's edge
     curves round corners instead of following the tiles; the water shader fills to its 0.5 line, the ground shader
     darkens a wet rim just outside it and paints a bed under it */
-  shoreField(sc, isW, T);
+  yield* shoreField(sc, isW, T);
   yield;
   if (T === walkRenderer) groundOcclusion(sc);
   else {

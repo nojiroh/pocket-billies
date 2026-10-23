@@ -273,7 +273,10 @@ export function grassWork(ms = 4) {
   const J = walkRenderer.grassJob;
   if (!J) return;
   if (J.sc !== walkView.sc) {
+    /* 0.1.0 alpha: the scene changed while planting; it is planted again for the one on screen (the key used to stay
+       set, so the place kept no grass at all, also when it came back from the scene cache: the iPad's log) */
     walkRenderer.grassJob = null;
+    walkRenderer.grassKey = null;
     return;
   }
   const t0 = performance.now(),

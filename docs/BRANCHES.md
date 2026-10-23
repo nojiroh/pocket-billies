@@ -2,6 +2,45 @@
 
 What each branch on GitHub is for. Written 2026-10-21 in a clean-up session; update it when a branch is added or merged.
 
+## Naming and long plans
+
+Every new branch has a name that says what it holds. A plan that takes more than one session lives on **one** branch
+for its whole life, and every session of that plan works on that branch.
+
+| Kind | Name | Lives | Example |
+|---|---|---|---|
+| The game | `main` | always | |
+| The old build | `legacy` | always, reference only | |
+| A plan that takes several sessions (a track or a long phase) | `track/<plan>`, `<plan>` = the plan file's name without `-track.md` or `.md` | until the plan is done | `track/sound` (docs/phases/sound-track.md) |
+| One session's work, not part of a plan | `<area>/<what>`, area one of `fix`, `tools`, `docs`, `art`, `props`, `studio` | until its PR merges | `fix/battle-hp-bar` |
+| The Studio's "Propose changes" | `studio/<login>-<YYYYMMDDHHMM>` (made by the Studio) | until its PR merges | |
+| Parked work | `archive/<what>` | until you delete it | `archive/phase-17-robots` |
+
+Lowercase, digits and dashes, one `/`. `claude/<words>` and `ccr-<id>` names are given to a session automatically:
+they say nothing about the work, so plan work never stays on one. Names are internal; player-facing words don't change.
+
+### How a long plan stays on its branch
+1. **Planning session.** The plan file says which branch it lives on, in a line under its title:
+   `Branch: track/<plan>`. The branch starts from main; the owner makes it (GitHub: the branch menu, type the name,
+   "Create branch") and starts the planning session on it, so the plan file is written there.
+2. **Every later session of the plan is started on that branch.** A cloud session can only push to the branch it was
+   started on (the git proxy refuses any other, HTTP 403). So it can't move its work to the right branch itself.
+3. **At the start of a session** (in the plan, before any edit): check `git branch --show-current` against the plan
+   file's `Branch:` line. If they differ, say so and stop: don't start the plan's work on another branch. Then merge
+   main into the branch (a merge, not a rebase: other sessions' clones stay valid) and push.
+4. **Milestones go to main by pull request** from `track/<plan>`, merged with a merge commit (not squash, so the next
+   merge has no conflicts). After the merge **the branch stays**: don't press "Delete branch", and keep GitHub's
+   "Automatically delete head branches" off, since it would delete the branch on every merge. The Repo admin workflow
+   never deletes `track/*`.
+5. **Each session's HANDOFF entry** names the branch and the session's part of the plan (e.g. `SND-6`). The tag
+   `<id>-done` marks where each part ended.
+6. **When the plan is done** (its file and ROADMAP say so, the last PR is merged): tag `<plan>-done`, then delete the
+   branch by hand on GitHub's Branches page. Unfinished work that is being parked goes to `archive/<plan>` instead.
+
+The branches made before this rule (`sound`, `RL-10b`, `terrain-generation`, `CAM*`, `claude/sr-*`, ...) keep their
+names until their plans end: renaming a branch breaks the sessions working on it. A plan that starts after
+2026-10-23 uses `track/<plan>`.
+
 ## Keep
 
 | Branch | What it is |
@@ -33,7 +72,7 @@ What each branch on GitHub is for. Written 2026-10-21 in a clean-up session; upd
 
 ## To delete
 
-Sessions can't delete branches or push tags (the git proxy only allows the session's own branch), so these are for the owner to run. The commit id is kept so any branch can be brought back: `git push origin <id>:refs/heads/<name>`.
+Sessions can't delete branches or push tags through git (the git proxy only allows the session's own branch, HTTP 403). They use the **Repo admin** workflow instead (.github/workflows/repo-admin.yml: Actions -> Repo admin -> Run workflow): `delete-branches` never touches main, legacy, archive/* or a branch with an open pull request, and writes each deleted branch's last commit in the run summary; `create-tag` makes `legacy` or `<name>-done` tags and never moves one. Both have a dry run, on by default. The owner can still run the commands below by hand. The commit id is kept so any branch can be brought back: `git push origin <id>:refs/heads/<name>`.
 
 ### 1. Already in main (nothing lost)
 
@@ -243,6 +282,7 @@ Group 4 (after the UI-3, TR-1, ST-T and RL-1 sessions are done; check first that
 git push origin --delete ccr-dc41c006-00p8dj ccr-be1fe0b2-8j7yqr ccr-f4c5aa48-ofajfu ccr-a09a396b-vfdptc
 ```
 
-Tags still waiting to be pushed from your machine (see HANDOFF): `legacy`, `phase-04-done`, `phase-05-done`, `rl-1-done` .. `rl-5-done`, `ui-2-done`, the `st-N-done` tags.
+Tags still waiting to be made (with the Repo admin workflow, or from your machine; see HANDOFF): `legacy`, `phase-04-done`, `phase-05-done`, `rl-1-done` .. `rl-5-done`, `ui-2-done`, the `st-N-done` tags.
 
-Tip: GitHub's Settings > General > "Automatically delete head branches" removes a PR's branch when it merges, so merged branches stop piling up.
+Keep GitHub's Settings > General > "Automatically delete head branches" off: it would also delete a `track/*` branch
+each time one of its pull requests merges. Merged one-session branches are cleared with the Repo admin workflow instead.
