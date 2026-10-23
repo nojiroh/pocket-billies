@@ -131,9 +131,15 @@ export function runSimOn(env) {
     { runArriveFx, runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen } = modules['run-loop'],
     { fxOfRun, fxPayoutRates, fxRunPrice } = modules.effects,
     { runStartOn, runStartPlan } = modules['run-start'],
+    { runRegionData } = modules['run-region'],
     { runUnlocks } = modules.unlocks,
     { relicBuy, relicChoose, relicPrice, relicShelf } = modules.relics;
-  const MAP_DATA = { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: R },
+  const MAP_DATA = {
+      nodeTypes: GAME_DATA.nodeTypes,
+      biomes: GAME_DATA.biomes,
+      rules: R,
+      region: runRegionData(GAME_DATA, TRAINERS),
+    },
     UNLOCK_DATA = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings };
   const worldData = () => ({
     nodeTypes: GAME_DATA.nodeTypes,
