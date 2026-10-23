@@ -41,8 +41,15 @@ published after the build is live).
   faults caught); the emulator rules tests 14 of 14 here (the new one failed on the old rule first); check-fast ranch,
   Income, Breeding, Packing, Lab and pasture after the merge (the ranch step failed with the old `t.at = now`, Income
   with the clock's turned-back rule removed); the in-game ranch phases alone headless; headless pictures (390 x 760)
-  of the Income row and the clock-behind note; CI green on the PR before the merge. The full quick check against a
-  local baseline of main: see the next commit.
+  of the Income row and the clock-behind note; CI green on the PR before the merge. The full quick check (34 min)
+  against a local baseline of main 29e6601: main 50 of 59, this branch 49 of 59 at first; the one more red was
+  this session's ("In-game full test: one step headless": the quick check's stand-in account has no `firebase`
+  global, so building the save document threw and no write went; fixed, that step passes alone). The other 9 red are
+  main's: v31 bowl map camera (new on main since #143), v34 biped walk cycle, v35/v38/v39 roster counts, v44 props
+  scene, v46 buildings without a plan, alpha 0.4 empty bush recipes, phase 08 running (v43 now passes on main).
+- CI's smoke after the merge: red in three camera steps (CAM-1 follow settled, CAM-2 two-shot, the debug log's
+  camera line), red the same way on main 29e6601 since #143; not this PR's (commented on #144). Every ranch step
+  passes there.
 - Risky / open:
   - **Publish order**: publish the new `saves` rule in the Firebase console only once this build is live; a copy of
     the game open from before can't save to the account until it reloads.
