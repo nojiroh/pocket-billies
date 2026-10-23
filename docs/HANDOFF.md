@@ -2,6 +2,44 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Reflavour track RF-3 - Type passives - 2026-10-23
+Branch `track/reflavour-rf-3` (reflavour-track.md has no `Branch:` line; roguelite-track 9.7 gives each round-2
+session its own branch and PR), PR #159. Plan approved in Plan Mode with the nine drafts. Tag `rf-3-done` is the
+owner's to push.
+- Where the plan file was wrong (checked against the code): only the passives' **ids** and rule keys were finance.
+  The effects were Pokémon ideas already (`subsidy` a Leftovers heal, `landlord` immunity to sharp stones, `inherit` a
+  Baton Pass on fainting; only `volatile` was a finance idea, crypto swings). They had names (Kindling, Regrowth...)
+  only in the Studio's dropdown; the player never saw one. No passive had a test. Water had none; Ground's only
+  mattered against the Gild line (the only stone movers, Ground themselves); Dragon's (one species, Marsox) fired only
+  with boosts.
+- Changed (one cause per commit):
+  - `types.json` `passiveName`/`passiveText` for all nine; `game-data.js` `PASSIVE_INFO`, `passiveName(types, id)`.
+  - **Undertow** (Water, new id `undertow`): its Water moves 1.3x at a third of its HP or less (`rules.json`
+    `undertowMult`, `undertowHp`).
+  - **Bedrock** (Ground, `landlord`): once a battle a knockout hit from full HP leaves 1 HP (moves and foreseen
+    attacks; `bedrockHolds`, each side's new `held` list); stone immunity kept.
+  - **Parting Roar** (Dragon, `inherit`): when it faints, the next in gets +1 Attack, +1 Sp. Atk (was: its own boosts).
+  - Battle lines name Regrowth, Slipstream, Bedrock, Parting Roar. Kindling, Live Wire (was Keen), Wild Mind (was
+    Erratic), Alloy work and stay silent as before.
+  - The Guide's species page: an Abilities panel under Type matchups.
+  - Studio: Ability labels, "Ability name" and "What it does" fields per type, Undertow's two numbers in World rules.
+  - `tools/test/type-passives-real.test.mjs` (10 tests, fixed roll lists).
+  - Snapshots remade on purpose: the golden record's Alpha battle (3 Regrowth lines, text only); battle-state (the
+    `held` field).
+- Strength (a scratch duel sweep, not committed: each type's Billies against every other species, 1v1 and 3v3, levels
+  10 and 25, same seeds before and after): no win rate moved more than 3 points (Dragon 3v3 L25 +3.0, Water +1.5).
+  Bedrock barely shows even 4 levels down: one more move rarely turns a loss. The run sim (200 seeds, --balance) came
+  out identical; its bot loses early with the Fire starter, so it can't show passives.
+- Verified: lint, typecheck, `npm test` 786/786, check:modules, format:check, check:data, build; smoke passes (one
+  earlier run timed out in the in-game test's download and passed on the re-run; main passed too); the Guide panel
+  and the Studio's Types editor looked at in a browser; PR CI green. Full quick check: 6 problems (a 16 px settings
+  input, the payout jingles, the bowl map camera, buildings without plans, six bush recipes, "Take off"), none in
+  battle code; compared with main below.
+- Risky: `rules.json`, `game-data.js`, `guide.js`, the CHANGELOG and this file conflict with RF-1/RF-2/RL-R1 (9.7):
+  merge one PR at a time, `npm run modules` after. RF-1 may reword battle text in battle-engine.js; my lines are the
+  four passive ones.
+- Next: RF-4 renames the passive ids and their rule keys (now listed in reflavour-track.md RF-4). RL-12b can lean on
+  the passives (RF-3 was its prerequisite).
 ### Roster track RO-1 - Real wild pools and regional forms - 2026-10-23
 Branch `track/roster` (new; the owner's choice: every RO session works here, BRANCHES.md and roguelite-track 9.4 say
 so). Plan approved in Plan Mode with the owner's answers: 4 forms (one per uncommon line, the drafts' names), weights

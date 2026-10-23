@@ -37,6 +37,7 @@ import {
   STAT_NAMES,
   TRAINERS,
   hasPassive,
+  passiveName,
   trainerTeam,
   typeEffectiveness,
 } from '../game-data.js';
@@ -107,6 +108,8 @@ expose({
   battleSeen: [() => battleSeen],
   // @ts-expect-error -- replaced on purpose
   battleStageKey: [() => battleStageKey, v => (battleStageKey = v)],
+  // @ts-expect-error -- replaced on purpose
+  bedrockHolds: [() => bedrockHolds, v => (bedrockHolds = v)],
   // @ts-expect-error -- replaced on purpose
   benchCandidates: [() => benchCandidates, v => (benchCandidates = v)],
   // @ts-expect-error -- replaced on purpose
@@ -368,6 +371,9 @@ export function calcDamage(k, tk, mid, src) {
           sd.team.filter(m => m !== me && m.hp > 0 && speciesOf(m).types.some(t => syn.includes(t))).length;
     }
   }
+  /* RF-3 Undertow (Water): its moves of a type with Undertow hit harder at a third of its HP or less */
+  const low = !src && fighter(k).hp <= maxHp(fighter(k)) * BATTLE_RULES.undertowHp,
+    tow = low && PASSIVE[M.t] === 'undertow' && aty.includes(M.t) ? BATTLE_RULES.undertowMult : 1;
   const wx = battleHost().weather(M.t); /* v28: the weather where you stand */
   /* phase 17: a robot's move of its gem's type hits harder */
   const me = src ? null : fighter(k),
@@ -380,11 +386,25 @@ export function calcDamage(k, tk, mid, src) {
   return {
     dmg: Math.max(
       1,
-      Math.floor(base * stab * te * roll * (crit ? BATTLE_RULES.critMult : 1) * mk * eco * wx * gx * fm)
+      Math.floor(base * stab * te * roll * (crit ? BATTLE_RULES.critMult : 1) * mk * eco * tow * wx * gx * fm)
     ),
     te,
     crit,
   };
+}
+/** RF-3 Bedrock (Ground): once a battle, a hit that would knock a fighter out from full HP leaves it at 1 HP (the
+ * side's `held` lists the team places that have used it). Lowers r.dmg; true when it held. @param {number} tk
+ * @param {{ dmg: number }} r */
+export function bedrockHolds(tk, r) {
+  const t = fighter(tk),
+    sd = battleNow().sides[ACTOR_SIDE[tk]],
+    at = fieldSlot(tk).act,
+    mx = maxHp(t);
+  if (r.dmg < t.hp || t.hp < mx || mx < 2 || !hasPassive(actorTypes(tk), 'landlord')) return false;
+  if ((sd.held || (sd.held = [])).includes(at)) return false;
+  sd.held.push(at);
+  r.dmg = t.hp - 1;
+  return true;
 }
 export function applyStatStages(k, obj) {
   const v = fieldState(k),
@@ -545,6 +565,7 @@ export function useMove(k, mid, tk0, part) {
         r.dmg = Math.max(1, Math.floor(r.dmg * (BATTLE_RULES.alphaShieldMult ?? 0.5)));
         r.shield = 1;
       }
+      const held = bedrockHolds(tk2, r);
       t2.hp = Math.max(0, t2.hp - r.dmg);
       alphaPhase(tk2);
       /* phase 17: a hit on a robot also lands on one of its parts (an aimed move on the one picked) */
@@ -559,6 +580,11 @@ export function useMove(k, mid, tk0, part) {
       if (r.crit) battleSay('A critical hit!', { k: 'crit', si: tk2 });
       if (r.te > 1) battleSay('It’s super effective!');
       else if (r.te < 1) battleSay('It’s not very effective.');
+      if (held)
+        battleSay(`${billyName(t2)} held on with ${passiveName(actorTypes(tk2), 'landlord')}!`, {
+          k: 'block',
+          si: tk2,
+        });
       if (fx.drain && u.hp < maxHp(u)) {
         const g = Math.max(1, Math.floor(r.dmg * fx.drain));
         u.hp = Math.min(maxHp(u), u.hp + g);
@@ -664,7 +690,7 @@ export function endTurn() {
     if (m.hp > 0 && hasPassive(ty, 'subsidy') && m.hp < mx) {
       const g = Math.min(mx - m.hp, Math.max(1, Math.floor(mx / fr)));
       m.hp += g;
-      battleSay(`${billyName(m)} regrew a little HP.`, { k: 'heal', si: k, amt: g });
+      battleSay(`${billyName(m)}’s ${passiveName(ty, 'subsidy')} restored a little HP.`, { k: 'heal', si: k, amt: g });
     }
     f.v.turnsIn++;
     f.v.protect = false;
@@ -681,7 +707,8 @@ export function endTurn() {
         tk = L[0];
       const t = tk != null ? fighter(tk) : null;
       if (t && t.hp > 0) {
-        const r = calcDamage(actorIndex(1 - si, 0), tk, h.mid || 'twoday', h);
+        const r = calcDamage(actorIndex(1 - si, 0), tk, h.mid || 'twoday', h),
+          held = bedrockHolds(tk, r);
         t.hp = Math.max(0, t.hp - r.dmg);
         battleSay(`${h.from}’s ${(MOVES[h.mid] || MOVES.twoday || { n: 'attack' }).n} struck ${billyName(t)}.`, {
           k: 'hurt',
@@ -692,6 +719,8 @@ export function endTurn() {
         });
         if (r.te > 1) battleSay('It’s super effective!');
         else if (r.te < 1) battleSay('It’s not very effective.');
+        if (held)
+          battleSay(`${billyName(t)} held on with ${passiveName(actorTypes(tk), 'landlord')}!`, { k: 'block', si: tk });
       }
       return false;
     });
@@ -729,17 +758,17 @@ export function award(e) {
     battleSay(`The rest of the team gained ${formatNumber(share)} XP.`);
   }
 }
+/** RF-3 Parting Roar (Dragon, id `inherit`): when it faints, the next teammate in gets +1 Attack and +1 Sp. Atk
+ * (before RF-3 it passed on its own boosts, if it had any) */
 export function inherit(k) {
-  const sd = battleNow().sides[ACTOR_SIDE[k]];
-  if (!hasPassive(speciesOf(fighter(k)).types, 'inherit')) return;
-  const st = {};
-  let any = false;
-  for (const s2 in fieldState(k).st)
-    if (fieldState(k).st[s2] > 0) {
-      st[s2] = fieldState(k).st[s2];
-      any = true;
-    }
-  if (any) sd.inh = st;
+  const ty = speciesOf(fighter(k)).types;
+  if (!hasPassive(ty, 'inherit')) return;
+  battleNow().sides[ACTOR_SIDE[k]].inh = {
+    lev: 1,
+    lob: 1,
+    from: billyName(fighter(k)),
+    name: passiveName(ty, 'inherit'),
+  };
 }
 /* who on a side could still come in: alive, not at work, not on the field and not already called in this turn */
 export function benchCandidates(si, also = [], b) {
@@ -781,8 +810,9 @@ export function doSwitch(k, idx, b) {
       battleSay(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'rent', dmg: d });
     }
     if (inh) {
-      Object.assign(f.v.st, inh);
-      battleSay(`${billyName(m)} took up its teammate’s boosts.`, { k: 'stat', si: k, up: true });
+      f.v.st.lev += inh.lev;
+      f.v.st.lob += inh.lob;
+      battleSay(`${inh.from}’s ${inh.name} fired up ${billyName(m)}!`, { k: 'stat', si: k, up: true });
     }
   });
 }
@@ -1093,10 +1123,15 @@ export function runTurn(plan, b) {
       if (!out) continue;
       const free = hasPassive(actorTypes(p.who), 'pivot') && !battleNow().sides[0].pivot;
       if (free) battleNow().sides[0].pivot = true;
-      battleSay(free ? `${billyName(out)} darted out without losing the turn.` : `${billyName(out)}, come back.`, {
-        k: 'recall',
-        si: p.who,
-      });
+      battleSay(
+        free
+          ? `${billyName(out)} rode its ${passiveName(actorTypes(p.who), 'pivot')} back without losing the turn.`
+          : `${billyName(out)}, come back.`,
+        {
+          k: 'recall',
+          si: p.who,
+        }
+      );
       doSwitch(p.who, p.i);
       p.free = free;
     }
