@@ -35,7 +35,8 @@ Branch `track/test-cleanup` (pulled with --no-rebase before every push). TC-4 it
   opens (a lost tap; that commit also carries check-fast's docstring times).
 - **Fixed on main's behalf**: check-fast's "Play this seed" built its Node plan without the run's region (RL-R1), so it
   failed on main since #167 and on this PR; it passes the region now. check-data-text treats an event option's `need`
-  as a condition, as it does an unlock's `when` (RL-12b's `team >= 2` stopped CI's smoke job). main's #170 fixed the in-game test's two false
+  as a condition, as it does an unlock's `when` (RL-12b's `team >= 2` stopped CI's smoke job); main's #173 made the
+  same change (and reads then/intro as scripts), and the merge keeps main's file. main's #170 fixed the in-game test's two false
   failures the baseline run's selftest job hit (merged in).
 - Tried and reverted: steps that share a fixture sharing a page (13 pages to 10) saved 66 s of 1338 and broke Run
   music, which needs the run's landing untouched.
