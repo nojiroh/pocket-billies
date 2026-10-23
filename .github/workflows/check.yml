@@ -80,7 +80,8 @@ jobs:
         run: python tools/check-fast.py
       # Studio plan T1.4: on a pull request that touches the Studio or the game's logic, the Studio against a stand-in
       # for GitHub (tools/check-studio-github.py: every section opens, Propose's failure cases, kept drafts, the
-      # Studio's self-test, the shared checks and an error blocking Propose; about 3-5 minutes)
+      # Studio's self-test, the shared checks and an error blocking Propose, a kit Billie baked and proposed equal to the
+      # Node bake; about 3-5 minutes)
       - name: Does this pull request touch the Studio or the logic
         id: studio
         if: github.event_name == 'pull_request'
@@ -93,7 +94,7 @@ jobs:
         if: steps.studio.outputs.run == 'true'
         run: |
           npm run data
-          python tools/check-studio-github.py --only=sections,publish,drafts,studio_test,checks
+          python tools/check-studio-github.py --only=sections,publish,drafts,studio_test,checks,kit_write
       - name: Upload the results
         if: always()
         uses: actions/upload-artifact@v4
