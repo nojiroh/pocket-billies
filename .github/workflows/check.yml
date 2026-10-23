@@ -104,6 +104,8 @@ jobs:
         run: npm run typecheck
       - name: Unit tests (tools/test/, plain Node, no browser)
         run: npm test
+      - name: Slow unit tests (the scene sweeps, tools/unit-tests.mjs)
+        run: npm run test:slow
       - name: Game data (files, schemas, references)
         run: npm run check:data
       - name: Modules (generated imports, hooks.js and debug-log-names.js up to date; load order)
