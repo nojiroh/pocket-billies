@@ -979,8 +979,9 @@ def run_pack(pg, base):
 def hub_island(pg, base):
     """island track IS-5: Copperleaf is the island. Its walking checks hold (the island's: from the square to the barn,
     the pasture, the hamlet, each plot's door, up the trail to the summit, the dock; the sea not), with its houses on
-    their plots; from where you arrive a tap walks to every door in one go (findPath's budget grows with the map); the
-    wild Billies wait only in the tall grass patches; the camera orbits"""
+    their plots; from where you arrive a tap walks to every door in one go (findPath's budget grows with the map), and
+    (IS-9) right across the island to the coast at 8 bearings; the wild Billies wait only in the tall grass patches; the
+    dressing (IS-9) is there and stays out of the pasture; the camera orbits"""
     drawing(pg)
     if not pg.evaluate("!!(walkView.sc.island&&walkView.sc.cam&&walkView.sc.cam.orbit&&(walkView.sc.grassPatches||[]).length)"): raise Exception('Copperleaf has no island fields')
     res = pg.evaluate("testMapChecks('copperleaf')")
@@ -991,11 +992,23 @@ def hub_island(pg, base):
         const t=performance.now(),q=findPath(hub[0],hub[1],g[0],g[1]);ms=Math.max(ms,performance.now()-t);const e=q&&q[q.length-1];
         if(!e||Math.hypot(e[0]-g[0],e[1]-g[1])>1.6)out.push(p.k+' at '+p.x+','+p.z)}
       const P=sc.grassPatches,cand=encounterCandidates(sc),off=cand.filter(c=>!P.some(g=>Math.hypot(g.x-c[0],g.z-c[1])<=g.r)).length;
-      return {n,bad:out,ms:Math.round(ms),cand:cand.length,off,orbit:!!walkRenderer.orbit}})()""")
+      /* IS-9: a tap from the square walks right across the island, to the coast road at 8 bearings round the middle */
+      const c=sc.island.c,C2=sc.island.coast,far=[];let coastMs=0;
+      const inside=(x,z)=>{let o=false;for(let i=0,j=C2.length-1;i<C2.length;j=i++){const [xi,zi]=C2[i],[xj,zj]=C2[j];if((zi>z)!==(zj>z)&&x<((xj-xi)*(z-zi))/(zj-zi)+xi)o=!o}return o};
+      for(let k=0;k<8;k++){const a=k*Math.PI/4,dx=Math.sin(a),dz=Math.cos(a);let rr=0;while(rr<400&&inside(c[0]+dx*(rr+1),c[1]+dz*(rr+1)))rr++;
+        const g=walkablePointNear(c[0]+dx*Math.max(4,rr-12),c[1]+dz*Math.max(4,rr-12));if(!g){far.push(k*45+'° none');continue}
+        const t=performance.now(),q=findPath(hub[0],hub[1],g[0],g[1]);coastMs=Math.max(coastMs,performance.now()-t);const e=q&&q[q.length-1];
+        if(!e||Math.hypot(e[0]-g[0],e[1]-g[1])>1.6)far.push(k*45+'°')}
+      /* IS-9: the dressing stays out of the pasture (IS-8's) */
+      const pz=(sc.zones||[]).filter(Z=>Z.k==='pasture'),inP=(Z,x,z)=>{let o=false;const Q=Z.poly;for(let i=0,j=Q.length-1;i<Q.length;j=i++){const [xi,zi]=Q[i],[xj,zj]=Q[j];if((zi>z)!==(zj>z)&&x<((xj-xi)*(z-zi))/(zj-zi)+xi)o=!o}return o};
+      const dressed=sc.props.filter(p=>p.dress),inPasture=dressed.filter(p=>pz.some(Z=>inP(Z,p.x,p.z))).length;
+      return {n,bad:out,ms:Math.round(ms),cand:cand.length,off,orbit:!!walkRenderer.orbit,far,coastMs:Math.round(coastMs),dressed:dressed.length,inPasture}})()""")
     if r['bad']: raise Exception(f"from where you arrive a tap doesn't reach {len(r['bad'])} of {r['n']} doors: {r['bad'][:3]}")
+    if r['far']: raise Exception(f"a tap from where you arrive doesn't reach the coast at {r['far']}")
+    if not r['dressed'] or r['inPasture']: raise Exception(f"the dressing: {r['dressed']} props, {r['inPasture']} in the pasture")
     if not r['cand'] or r['off']: raise Exception(f"wild Billies' spots: {r['cand']}, {r['off']} outside the tall grass patches")
     if not r['orbit']: raise Exception('the camera doesn’t orbit on the hub')
-    return f"{len(res)} walking checks hold; a tap reaches all {r['n']} doors from where you arrive (the longest search {r['ms']} ms); {r['cand']} wild spots, all in the patches; the camera orbits"
+    return f"{len(res)} walking checks hold; a tap reaches all {r['n']} doors from where you arrive (the longest search {r['ms']} ms) and the coast at 8 bearings ({r['coastMs']} ms); {r['cand']} wild spots, all in the patches; {r['dressed']} dressing props, none in the pasture; the camera orbits"
 
 
 def pasture(pg, base):

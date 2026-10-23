@@ -20,6 +20,7 @@ import { readGameData, ROOT } from './data-files.mjs';
 import { islandPointIn, islandProblems } from '../game/js/logic/island.js';
 import { hashString } from '../game/js/logic/rng.js';
 import { pastureProps } from './build-pasture.mjs';
+import { islandDress } from './island-dress.mjs';
 
 const INPUT = join(ROOT, 'tools/data/copperleaf-town.json');
 const D = readGameData(),
@@ -397,6 +398,54 @@ const life = TOWN.life.map(L => {
   const { area, ...rest } = L;
   return AREA[L.k] ? { ...rest, area: AREA[L.k] } : rest;
 });
+/* IS-9: gulls over the beaches and crabs on their wet sand (the owner: 4-6 of each). Spots spread along each beach's
+   wet sand, as far apart as they come (the first: the sand's middle); gulls in a wide box (they fly), crabs in a small
+   one by the water's edge (they only walk where you can) */
+{
+  const wetIn = poly => {
+    const out = [];
+    for (let j = 0; j < G.h; j++)
+      for (let i = 0; i < G.w; i++) {
+        const x = i + 0.5,
+          z = j + 0.5;
+        if (tileAt(x, z) === 'S' && islandPointIn(poly, x, z)) out.push([x, z]);
+      }
+    return out;
+  };
+  const spread = (pts, n) => {
+    if (!pts.length) return [];
+    const m = pts.reduce((a, p) => [a[0] + p[0] / pts.length, a[1] + p[1] / pts.length], [0, 0]),
+      pick = [
+        pts.reduce((b, p) => (Math.hypot(p[0] - m[0], p[1] - m[1]) < Math.hypot(b[0] - m[0], b[1] - m[1]) ? p : b)),
+      ];
+    while (pick.length < n) {
+      let best = null,
+        bd = -1;
+      for (const p of pts) {
+        const d = Math.min(...pick.map(q => Math.hypot(p[0] - q[0], p[1] - q[1])));
+        if (d > bd) {
+          bd = d;
+          best = p;
+        }
+      }
+      if (!best || bd < 8) break;
+      pick.push(best);
+    }
+    return pick;
+  };
+  /* the bigger beach first */
+  const beaches = G.zones
+    .filter(Z => Z.k === 'beach')
+    .map(Z => wetIn(Z.poly))
+    .sort((a, b) => b.length - a.length);
+  /* gulls 3 + 2; crabs: two spots a beach, 2 each on the big beach, 1 on the other (6) */
+  const gullN = [3, 2];
+  beaches.slice(0, 2).forEach((wet, b) => {
+    const [g] = spread(wet, 1);
+    if (g) life.push({ k: 'gull', n: gullN[b], area: box(g[0], g[1], 12) });
+    for (const c of spread(wet, 2)) life.push({ k: 'crab', n: b ? 1 : 2, area: box(c[0], c[1], 4) });
+  });
+}
 
 /* ---------- the opening (cutscenes/opening.json): you wake outside the lab, so its spots, shots and the stage it keeps
    clear move and turn with the lab's door (the shots' heights are above the ground: they stay) ---------- */
@@ -487,6 +536,15 @@ sc.checks = (G.checks || []).map(c => {
     what: c.what.replace(/(\(\d+ of \d+\))?$/, "'s door $1").replace(/ +$/, ''),
   };
 });
+/* IS-9: the dressing, last (tools/island-dress.mjs): the forest and its floor, the shore, the mountain, the heath and
+   meadows; never the pasture or the barn's zone (IS-8's), the town, its plots, streets or doors. --no-dress leaves it
+   off. Its dials are the input file's `dress` (trees: the share of the forest's trees kept, 0-1; each tree is 4-5 draw
+   calls on the phone) */
+let dressed = null;
+if (!process.argv.includes('--no-dress')) {
+  dressed = islandDress(sc, D.scenery, TOWN.dress || {});
+  sc.props = [...sc.props, ...dressed.props];
+}
 const bad = islandProblems(sc);
 if (bad.length) {
   console.error('copperleaf: the island fails its checks:\n  ' + bad.join('\n  '));
@@ -502,5 +560,20 @@ console.log(
   `wrote game/data/maps/copperleaf.json: ${sc.w} x ${sc.h} m, ${kept.length} props (${pairs.length + 1} buildings: ` +
     `${n('cottage_moss') + n('cottage_solar')} cottages), ${people.length} people; left out: ${left.street} on streets, ` +
     `${left.water} in water, ${left.plot} on other plots, ${left.door} before doors; ${loose.length} props of the old ` +
-    `town belonged to no building (IS-9 dresses the island)`
+    `town belonged to no building`
 );
+if (dressed) {
+  const c = dressed.counts,
+    trees = Object.keys(c)
+      .filter(k => k.startsWith('tree_'))
+      .reduce((a, k) => a + c[k], 0);
+  console.log(
+    `  dressed: ${dressed.props.length} props (${trees} trees; ` +
+      Object.entries(c)
+        .filter(([k, n]) => n && !k.startsWith('tree_'))
+        .map(([k, n]) => `${n} ${k}`)
+        .join(', ') +
+      ')'
+  );
+  for (const n of dressed.notes) console.log('  note: ' + n);
+}

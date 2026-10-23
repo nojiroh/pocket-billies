@@ -44,6 +44,13 @@ kept aside in the browser).
   standing open so you can walk in, a water trough and a hay rack with round bales. Up to six of your Billies at home
   (the ones training first) wander in it, poking about the hay and now and then hopping. Tap one, or the gate, and
   the ranch opens. A Billie you take onto your team or on a run leaves the field.
+- Copperleaf's island is dressed (island track IS-9): a mixed forest from the north-west round to the north-east
+  (oaks, beeches, birches, hazels and rowans low down, pines and larches up the mountain's foot), with ferns, bracken,
+  mushrooms, mossy logs and glades; flowers in the meadows and the odd lone tree; juniper on the heath; beach grass on
+  the dunes, driftwood and shells on the sand, rocks on the shore; boulders and scree on the mountain, cairns along the
+  trail and a lookout on the summit. Gulls wheel over both beaches and crabs scuttle on the wet sand. Six patches of
+  tall grass by the woods and on the heath hide wild Billies. Two corners of the mountain by the summit that you
+  couldn't climb onto can be walked to now (the rounded terrace edges no longer make a gentle slope too steep to step).
 - The Studio's Hub island section has the island generator's dials (IS-6b): size, coast, mountain, cove, beaches,
   cliffs, forest, stream, paths, the town and the hamlet, a seed and a seed for each part. A draft shows in the
   orbit view and on the map as you change them, with its size, the walk round the coast and a walking check. "Use

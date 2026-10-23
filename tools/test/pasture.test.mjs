@@ -184,6 +184,8 @@ test('pasture: the build step: every prop in the zone, the fence closed but for 
 });
 
 test('pasture: the hub as built carries the pasture (rerun tools/build-copperleaf.mjs if this fails)', () => {
-  const out = pastureProps(HUB, SC);
-  assert.deepEqual(out.props, HUB.props);
+  /* the build adds the pasture before IS-9's dressing (props marked dress), so it is checked on the hub without it */
+  const town = { ...HUB, props: HUB.props.filter(p => !p.dress) };
+  const out = pastureProps(town, SC);
+  assert.deepEqual(out.props, town.props);
 });

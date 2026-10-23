@@ -2481,6 +2481,9 @@ export function stepEdgeShape(sc, E) {
         }
       }
   };
+  /* the land under each cell's middle (IS-9: a slope's rise counts toward a step on one level) */
+  const L = new Float32Array(w * h);
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) L[j * w + i] = rawHeightAt(sc, (i + 0.5) / 2, (j + 0.5) / 2);
   for (let it = 0; it < 10; it++) {
     let ch = 0;
     for (let q = 0; q < w * h; q++)
@@ -2507,7 +2510,25 @@ export function stepEdgeShape(sc, E) {
           if (ii >= w || jj >= h) continue;
           const r = jj * w + ii,
             D = Math.abs(H[q] - H[r]);
-          if (D <= 0.05) continue;
+          if (D <= 0.05) {
+            /* IS-9: on one level the land's own slope counts too: a rise you could walk up (land and shaping
+               together, cell middle to cell middle) stays one you can (it was 0.13 m on a slope, 0.38 m shaped) */
+            const land = L[q] - L[r];
+            if (Math.abs(land) > MAX_STEP_RISE) continue;
+            const av = c => (SN[c * 4] + SN[c * 4 + 1] + SN[c * 4 + 2] + SN[c * 4 + 3]) / 4,
+              base = H[q] - H[r] + land,
+              dv = av(q) - av(r),
+              lim = Math.max(Math.abs(base), 0.3);
+            if (Math.abs(base + dv) > lim + 1e-4) {
+              const tt = clamp(dv > 0 ? (lim - base) / dv : (-lim - base) / dv, 0, 1);
+              for (let k = 0; k < 4; k++) {
+                SN[q * 4 + k] *= tt;
+                SN[r * 4 + k] *= tt;
+              }
+              ch++;
+            }
+            continue;
+          }
           /* a step you could take stays one you can take (0.3 m, or as it was); one you couldn't keeps at least 0.45 m (or all of a lower one) */
           for (let n = 0; n < 2; n++) {
             const A = q * 4 + ka[n],
