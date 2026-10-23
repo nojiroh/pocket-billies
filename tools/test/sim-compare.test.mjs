@@ -39,9 +39,9 @@ const run = (o = {}) => ({
   healed: 60,
   spent: 30,
   se: 500,
-  capital: 80,
+  research: 80,
   top: 9,
-  relics: [],
+  perks: [],
   foes: [],
   moneyIn: { prize: 100 },
   moneyOut: { heal: 60 },
@@ -51,17 +51,17 @@ const run = (o = {}) => ({
 test('sim compare: a summary has the win rate, losses by type and row, money, Perks and leaders', () => {
   const S = C.simSummary([
     run(),
-    run({ won: true, lostAt: '', lostRow: null, relics: ['offshore'], foes: [{ leader: 'crude', won: true }] }),
-    run({ lostAt: 'miniboss', lostRow: 3, relics: ['offshore', 'hedge'], foes: [{ leader: 'crude', won: false }] }),
+    run({ won: true, lostAt: '', lostRow: null, perks: ['offshore'], foes: [{ leader: 'crude', won: true }] }),
+    run({ lostAt: 'miniboss', lostRow: 3, perks: ['offshore', 'hedge'], foes: [{ leader: 'crude', won: false }] }),
   ]);
   assert.equal(S.runs, 3);
   assert.equal(S.won.k, 1);
   assert.deepEqual(S.lostAt, { town: 1, miniboss: 1 });
   assert.deepEqual(S.lostRow, { 2: 1, 3: 1 });
-  assert.deepEqual(S.relics, { offshore: 2, hedge: 1 });
+  assert.deepEqual(S.perks, { offshore: 2, hedge: 1 });
   assert.equal(S.leaders.crude.fought, 2);
   assert.equal(S.leaders.crude.beaten, 1);
-  assert.equal(S.avg.relics, 1);
+  assert.equal(S.avg.perks, 1);
   assert.equal(S.avg.moneyLeft, 500);
   assert.deepEqual(S.moneyIn, { prize: 100 });
   assert.deepEqual(S.moneyOut, { heal: 60 });

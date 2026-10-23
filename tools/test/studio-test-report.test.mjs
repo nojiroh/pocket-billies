@@ -172,8 +172,8 @@ test('a file path keeps no host, query or GitHub owner', () => {
     'studio/js/map-editor.js'
   );
   assert.equal(
-    studioTestFilePath('http://127.0.0.1:8000/game/art/coins/penny_32.png#x'),
-    'game/art/coins/penny_32.png'
+    studioTestFilePath('http://127.0.0.1:8000/game/art/coins/pyramid_32.png#x'),
+    'game/art/coins/pyramid_32.png'
   );
   assert.equal(studioTestFilePath('https://fonts.example.com/css/font%20face.woff2'), 'font face.woff2');
   assert.equal(studioTestFilePath(''), '');

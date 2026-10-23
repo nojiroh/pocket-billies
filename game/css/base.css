@@ -640,7 +640,7 @@ html[data-targets='big'] .set-tabs button {
   --t-walk: #3e8a3a;
   --t-map: #2f74c6;
   --t-team: #d9532f;
-  --t-ledger: #7d52c2;
+  --t-guide: #7d52c2;
   --t-bag: #b97a12;
   --t-profile: #c24a86;
   --spring: cubic-bezier(0.3, 1.6, 0.5, 1);
@@ -662,7 +662,7 @@ html[data-targets='big'] .set-tabs button {
     --t-walk: #7bd371;
     --t-map: #7fb2f5;
     --t-team: #ff8a66;
-    --t-ledger: #b795f2;
+    --t-guide: #b795f2;
     --t-bag: #f2c14e;
     --t-profile: #f08cc0;
   }
@@ -683,7 +683,7 @@ html[data-targets='big'] .set-tabs button {
   --t-walk: #7bd371;
   --t-map: #7fb2f5;
   --t-team: #ff8a66;
-  --t-ledger: #b795f2;
+  --t-guide: #b795f2;
   --t-bag: #f2c14e;
   --t-profile: #f08cc0;
 }

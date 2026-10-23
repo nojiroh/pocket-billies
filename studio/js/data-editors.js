@@ -36,7 +36,6 @@ import {
   changed,
   checkboxField,
   clone,
-  coinOptions,
   colorField,
   dialog,
   formatThousands,
@@ -47,6 +46,7 @@ import {
   openSection,
   pathPrefix,
   peopleOptions,
+  pyramidOptions,
   rangeField,
   render,
   selectField,
@@ -831,7 +831,7 @@ SECTIONS.moves = () => {
   ${checkboxField('Blocks one attack (fails twice in a row)', `${p}.fx.protect`, { num: 1 })}${checkboxField('Delayed attack (lands a few turns later)', `${p}.fx.delay`, { num: 1 })}${checkboxField('Doubles each turn it’s used in a row', `${p}.fx.hold`, { num: 1 })}
   ${checkboxField('Confuses the target (it may hit itself)', `${p}.fx.hype`, { num: 1 })}${checkboxField(`Soak: turns the target ${escapeHtml(D.rules.battle.spinType)} type`, `${p}.fx.spin`, { num: 1 })}${checkboxField('Removes the target’s stat boosts', `${p}.fx.wipe`, { num: 1 })}
   ${checkboxField('Robots: aims at a part the attacker picks', `${p}.fx.aim`, { num: 1, help: 'Phase 17. On a robot the player (or the computer) picks the arm or legs to hit.' })}${numberField('Robots: part damage ×', `${p}.fx.breaker`, { opt: 1, min: 0.5, max: 4, step: 0.25, help: 'A robot part it hits loses this many times the usual damage.' })}${numberField('Robots: repairs its parts', `${p}.fx.repair`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fixes this share of each of its own parts’ HP (1 = all).' })}
-  ${checkboxField('Scatters sharp stones on the other side', `${p}.fx.rent`, { num: 1 })}${checkboxField(`Starts a sandstorm (${escapeHtml(D.rules.battle.shockType)} moves hit harder)`, `${p}.fx.market`, { num: 1 })}</div>`;
+  ${checkboxField('Scatters sharp stones on the other side', `${p}.fx.stones`, { num: 1 })}${checkboxField(`Starts a sandstorm (${escapeHtml(D.rules.battle.shockType)} moves hit harder)`, `${p}.fx.market`, { num: 1 })}</div>`;
   return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search moves" data-search="mq" data-list="moveList" value="${escapeHtml(studioState.sel.mq || '')}"><button class="btn primary" data-act="moveNew">+ New move</button></div><div class="llist" id="moveList">${SIDE_LIST_RENDERERS.mq()}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(M.n)}</h2></div><div class="seg-row"><button class="btn" data-act="bpMove" data-id="${escapeHtml(k)}" title="Play this move on the battle stage">▶ Preview animation</button><button class="btn subtle" data-act="moveDup">Duplicate</button><button class="btn danger" data-act="moveDel">Delete</button></div></div>
  ${card('Basics', grid(textField('Name', `${p}.n`, { max: 28 }), selectField('Type', `${p}.t`, typeOptions(true), { rr: 1 }), selectField('Kind', `${p}.c`, MOVE_CATEGORIES, { rr: 1 }), numberField('Power', `${p}.p`, { opt: 1, min: 0, max: 250, step: 5, help: M.c === 'X' ? 'Status moves usually have no power.' : '' }), numberField('Accuracy', `${p}.a`, { unit: '%', min: 0, max: 100, step: 5, help: '0 means it never misses.' }), numberField('Priority', `${p}.pr`, { opt: 1, min: -3, max: 5, step: 1, help: 'Higher goes first. Guard uses 4.' })) + textField('Description', `${p}.d`, { area: 1, rows: 2 }))}
@@ -914,14 +914,14 @@ ACTIONS.moveDel = async () => {
 /* ================= TYPES ================= */
 const PASSIVES = [
   ['', 'No ability'],
-  ['pivot', 'Slipstream: switches out once per battle without losing the turn'],
-  ['volatile', 'Wild Mind: damage swings wildly'],
-  ['subsidy', 'Regrowth: restores a little HP each turn'],
-  ['synergy', 'Alloy: +10% damage for each teammate of the same type'],
-  ['sharp', 'Live Wire: higher critical-hit chance'],
-  ['ramp', 'Kindling: Attack rises every turn it stays in'],
-  ['inherit', 'Parting Roar: when it faints, the next teammate in gets +1 Attack and Sp. Atk'],
-  ['landlord', 'Bedrock: holds on at 1 HP from full once a battle; not hurt by sharp stones'],
+  ['slipstream', 'Slipstream: switches out once per battle without losing the turn'],
+  ['wildmind', 'Wild Mind: damage swings wildly'],
+  ['regrowth', 'Regrowth: restores a little HP each turn'],
+  ['alloy', 'Alloy: +10% damage for each teammate of the same type'],
+  ['livewire', 'Live Wire: higher critical-hit chance'],
+  ['kindling', 'Kindling: Attack rises every turn it stays in'],
+  ['partingroar', 'Parting Roar: when it faints, the next teammate in gets +1 Attack and Sp. Atk'],
+  ['bedrock', 'Bedrock: holds on at 1 HP from full once a battle; not hurt by sharp stones'],
   ['undertow', 'Undertow: its moves of this type hit harder at a third of its HP or less'],
 ];
 /* Studio plan T6.3: an icon cut from the loaded icon atlas by CSS (scaled, pixelated), so a first open of Types does
@@ -1053,7 +1053,7 @@ document.addEventListener('change', ev => {
     }
   }
 });
-/* ================= ITEMS & COINS ================= */
+/* ================= ITEMS & PYRAMIDS ================= */
 const ITEM_ICONS = Object.keys(ARTMAN.icons)
   .filter(k => k.startsWith('i_'))
   .map(k => k.slice(2));
@@ -1078,18 +1078,18 @@ SECTIONS.items = () => {
   ${textField('Description', `${p}.d`, { area: 1, rows: 2 })}<div class="seg-row"><button class="btn subtle" data-act="itemImg" data-k="${k}">Upload a custom icon</button>${I.img ? `<button class="btn subtle" data-act="itemImgOff" data-k="${k}">Use an atlas icon</button>` : ''}<span class="grow"></span><button class="btn danger subtle" data-act="itemDel" data-k="${k}">Delete</button></div></div></div>`;
     })
     .join('');
-  const coins = Object.entries(D.coins)
+  const pyramids = Object.entries(D.pyramids)
     .map(([k, C]) => {
-      const p = `coins.${k}`;
+      const p = `pyramids.${k}`;
       return `<div class="item-row"><div class="item-ic"><img src="../game/art/coins/${k}_32.png" width="40" height="40" class="pix" onerror="this.style.opacity=.2"><small class="mono">${escapeHtml(k)}</small></div><div>${grid(textField('Name', `${p}.n`), numberField('Catch multiplier', `${p}.m`, { min: 0, max: 10, step: 0.1, help: '0 means it always catches.' }), numberField('Shop price (Moneys)', `${p}.price`, { min: 0, step: 10, help: '0 means it can’t be bought.' }), numberField('Badges needed', `${p}.need`, { opt: 1, min: 0, max: 8, step: 1 }))}${textField('Description', `${p}.d`, { area: 1, rows: 2 })}</div></div>`;
     })
     .join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Items & pyramids</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Pyramids', coins, { sub: 'Pyramid icons are art/coins/<id>_16.png and _32.png (tools/build-pyramids.py). Replace them under Art files.' })}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Items & pyramids</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Pyramids', pyramids, { sub: 'Pyramid icons are art/coins/<id>_16.png and _32.png (tools/build-pyramids.py). Replace them under Art files.' })}</div>`;
 };
 ACTIONS.itemNew = () => {
   const D = studioState.D,
     k = uniqueKey('item', x => !!D.items[x]);
-  D.items[k] = { n: 'New Item', price: 200, hp: 30, d: 'Restores 30 HP.', icon: 'taxbreak', mint: true };
+  D.items[k] = { n: 'New Item', price: 200, hp: 30, d: 'Restores 30 HP.', icon: 'potion', mint: true };
   changed();
   render();
 };
@@ -1147,14 +1147,14 @@ SECTIONS.shops = () => {
       .map((w, i) => {
         const isC = !!w.coin,
           key = w.coin || w.item,
-          base = isC ? (D.coins[key] || {}).price : (D.items[key] || {}).price;
+          base = isC ? (D.pyramids[key] || {}).price : (D.items[key] || {}).price;
         return `<tr><td><select data-act-sel="stockKind" data-i="${i}">${[
           ['item', 'Item'],
           ['coin', 'Pyramid'],
         ]
           .map(([v, n]) => `<option value="${v}" ${(isC ? 'coin' : 'item') === v ? 'selected' : ''}>${n}</option>`)
           .join('')}</select></td>
-  <td><select data-p="${p}.stock.${i}.${isC ? 'coin' : 'item'}" data-k="sel" data-rr="1">${(isC ? coinOptions() : itemOptions()).map(([v, n]) => `<option value="${v}" ${v === key ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="0" step="10" data-p="${p}.stock.${i}.price" data-k="num" data-opt="1" value="${w.price ?? ''}" placeholder="${base ?? ''}"></td><td><small>${base != null ? `Shop price: ${base} Moneys` : ''}</small></td>
+  <td><select data-p="${p}.stock.${i}.${isC ? 'coin' : 'item'}" data-k="sel" data-rr="1">${(isC ? pyramidOptions() : itemOptions()).map(([v, n]) => `<option value="${v}" ${v === key ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="0" step="10" data-p="${p}.stock.${i}.price" data-k="num" data-opt="1" value="${w.price ?? ''}" placeholder="${base ?? ''}"></td><td><small>${base != null ? `Shop price: ${base} Moneys` : ''}</small></td>
   <td><button class="x" data-act="stockMove" data-i="${i}" data-d="-1">↑</button><button class="x" data-act="stockDel" data-i="${i}">✕</button></td></tr>`;
       })
       .join('');
@@ -1218,7 +1218,7 @@ document.addEventListener('change', ev => {
     const w = studioState.D.shops[studioState.sel.shop].stock[+el.dataset.i];
     if (el.value === 'coin') {
       delete w.item;
-      w.coin = Object.keys(studioState.D.coins)[0];
+      w.coin = Object.keys(studioState.D.pyramids)[0];
     } else {
       delete w.coin;
       w.item = Object.keys(studioState.D.items)[0];
@@ -1435,7 +1435,7 @@ SECTIONS.jobs = () => {
         ]
           .map(([v, n]) => `<option value="${v}" ${kind === v ? 'selected' : ''}>${n}</option>`)
           .join('')}</select></label>`,
-        kind === 'se' ? '' : selectField('Which', `${p}.out.1`, kind === 'item' ? itemOptions() : coinOptions()),
+        kind === 'se' ? '' : selectField('Which', `${p}.out.1`, kind === 'item' ? itemOptions() : pyramidOptions()),
         numberField('Amount per pay', `${p}.out.2`, { min: 1, step: 1 }),
         textField('Pay label', `${p}.pay`, { help: 'Shown when hiring, like “1 Potion”.' })
       )}${textField('What it did (after the Billie’s name)', `${p}.quip`, { help: '“Hoodini made 40 lattes. Most were wrong.”' })}<button class="btn danger subtle" data-act="jobDel" data-k="${k}">Delete job</button></div></div>`;
@@ -1450,7 +1450,7 @@ document.addEventListener('change', ev => {
     const v = el.value;
     J.out = [
       v,
-      v === 'se' ? 'se' : v === 'item' ? Object.keys(studioState.D.items)[0] : Object.keys(studioState.D.coins)[0],
+      v === 'se' ? 'se' : v === 'item' ? Object.keys(studioState.D.items)[0] : Object.keys(studioState.D.pyramids)[0],
       J.out[2] || 1,
     ];
     changed();
@@ -1504,10 +1504,10 @@ SECTIONS.trainers = () => {
     ? grid(
         textField('Badge id', `${p}.seat.id`, { help: 'Route gates refer to this.' }),
         textField('Title', `${p}.seat.title`),
-        selectField('Pyramid shown', `${p}.seat.coin`, coinOptions())
+        selectField('Pyramid shown', `${p}.seat.coin`, pyramidOptions())
       ) +
-      `<div class="grid">${Object.keys(D.coins)
-        .map(c => numberField(`${D.coins[c].n} reward`, `${p}.seat.coins.${c}`, { opt: 1, min: 0, step: 1 }))
+      `<div class="grid">${Object.keys(D.pyramids)
+        .map(c => numberField(`${D.pyramids[c].n} reward`, `${p}.seat.pyramids.${c}`, { opt: 1, min: 0, step: 1 }))
         .join('')}${Object.keys(D.items)
         .map(it => numberField(`${D.items[it].n} reward`, `${p}.seat.items.${it}`, { opt: 1, min: 0, step: 1 }))
         .join('')}</div>` +
@@ -1650,8 +1650,8 @@ ACTIONS.seatOn = () => {
   T.seat = {
     id: uniqueKey(T.name, k => Object.values(studioState.D.trainers).some(t => t.seat && t.seat.id === k)),
     title: `Badge ${n} of 8`,
-    coin: 'gold',
-    coins: { tbtf: 1 },
+    coin: 'gold_pyramid',
+    pyramids: { capstone: 1 },
     items: {},
     rewardText: 'a Capstone',
     unlockText: '',

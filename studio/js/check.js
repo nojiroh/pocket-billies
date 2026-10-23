@@ -25,9 +25,9 @@ import {
   dataBuildings,
   dataCurrencies,
   dataNodeTypes,
+  dataPerks,
   dataRanchRules,
   dataRegions,
-  dataRelics,
   dataRigs,
   dataRoadFindings,
   dataRobotProblems,
@@ -86,7 +86,7 @@ export function runCheck() {
     sp = new Set(D.lines.flatMap(L => lineSpeciesIds(L))),
     moves = D.moves,
     items = D.items,
-    coins = D.coins;
+    pyramids = D.pyramids;
   /* phase 16: a Billie from a line moved to game/data/legacy is stood in for by the game, so it is one warning per
      section, not an error per place. T1.3: check-data's rule (logic/data-checks.js dataSpeciesKind), with the legacy
      line ids the Legacy section reads; until they are read (or if they can't be), any name like walton0 whose line
@@ -241,8 +241,8 @@ export function runCheck() {
     });
     if (!D.people[T.who]) warn(`${T.name} uses an unknown look.`, 'trainers', g);
     if (T.seat) {
-      for (const c in T.seat.coins || {})
-        if (!coins[c]) warn(`${T.name}’s badge gives an unknown pyramid.`, 'trainers', g);
+      for (const c in T.seat.pyramids || {})
+        if (!pyramids[c]) warn(`${T.name}’s badge gives an unknown pyramid.`, 'trainers', g);
       for (const it in T.seat.items || {})
         if (!items[it]) warn(`${T.name}’s badge gives an unknown item.`, 'trainers', g);
     }
@@ -274,12 +274,12 @@ export function runCheck() {
   for (const [k, s] of Object.entries(D.shops || {}))
     (s.stock || []).forEach(w => {
       if (w.item && !items[w.item]) warn(`${s.name} sells an item that doesn’t exist.`, 'shops', { shop: k });
-      if (w.coin && !coins[w.coin]) warn(`${s.name} sells a pyramid that doesn’t exist.`, 'shops', { shop: k });
+      if (w.coin && !pyramids[w.coin]) warn(`${s.name} sells a pyramid that doesn’t exist.`, 'shops', { shop: k });
     });
   for (const [k, J] of Object.entries(D.jobs)) {
     const [kind, key] = J.out;
     if (kind === 'item' && !items[key]) warn(`Job ${J.n} pays an unknown item.`, 'jobs');
-    if (kind === 'coin' && !coins[key]) warn(`Job ${J.n} pays an unknown pyramid.`, 'jobs');
+    if (kind === 'coin' && !pyramids[key]) warn(`Job ${J.n} pays an unknown pyramid.`, 'jobs');
   }
   const R = D.rules;
   R.start.starters.forEach(l => {
@@ -407,7 +407,7 @@ const STUDIO_DATA_FAMILIES = /** @type {[string, (D: any) => [string, string][]]
   ['biome', dataBiomes],
   ['region', dataRegions],
   ['node type', dataNodeTypes],
-  ['relic', dataRelics],
+  ['relic', dataPerks],
   ['currency', dataCurrencies],
   ['building', dataBuildings],
   ['unlock', dataUnlocks],

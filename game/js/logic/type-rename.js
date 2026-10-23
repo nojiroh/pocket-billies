@@ -52,7 +52,7 @@ export function renameTypeIn(D, from, to) {
   const ride = D.rules.ride;
   if (ride && Array.isArray(ride.types))
     ride.types = ride.types.map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
-  for (const L of Object.values(D.relics || {}))
+  for (const L of Object.values(D.perks || {}))
     for (const f of /** @type {any} */ (L).fx || [])
       if (f.type === from) {
         if (to) f.type = to;

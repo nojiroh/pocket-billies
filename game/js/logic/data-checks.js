@@ -41,11 +41,11 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataNodeTypes: [() => dataNodeTypes, v => (dataNodeTypes = v)],
   // @ts-expect-error -- replaced on purpose
+  dataPerks: [() => dataPerks, v => (dataPerks = v)],
+  // @ts-expect-error -- replaced on purpose
   dataRanchRules: [() => dataRanchRules, v => (dataRanchRules = v)],
   // @ts-expect-error -- replaced on purpose
   dataRegions: [() => dataRegions, v => (dataRegions = v)],
-  // @ts-expect-error -- replaced on purpose
-  dataRelics: [() => dataRelics, v => (dataRelics = v)],
   // @ts-expect-error -- replaced on purpose
   dataRigs: [() => dataRigs, v => (dataRigs = v)],
   // @ts-expect-error -- replaced on purpose
@@ -109,7 +109,7 @@ export function dataBattleRules(D) {
   return out;
 }
 // roguelite track RL-3: what a run pays when it ends (logic/run-state.js payoutOf): every rate a number, none below 0,
-// the items' share of their price at most 1, the seals for a win a whole number
+// the items' share of their price at most 1, the crests for a win a whole number
 /** RL-3: rules.json run.payout @param {any} D @returns {DataProblem[]} */
 export function dataRunPayout(D) {
   /** @type {DataProblem[]} */
@@ -117,7 +117,7 @@ export function dataRunPayout(D) {
     problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]);
   {
     const pay = D.rules && D.rules.run && D.rules.run.payout,
-      RATES = ['money', 'itemShare', 'released', 'node', 'win', 'winSeals', 'scrapNode', 'scrapWin'];
+      RATES = ['money', 'itemShare', 'released', 'node', 'win', 'winCrests', 'scrapNode', 'scrapWin'];
     if (!pay || typeof pay !== 'object') problem('rules.json', 'run.payout missing');
     else {
       for (const k of RATES)
@@ -126,7 +126,7 @@ export function dataRunPayout(D) {
       for (const k of Object.keys(pay)) if (!RATES.includes(k)) problem('rules.json', `run.payout.${k}: no such rate`);
       if (pay.itemShare > 1)
         problem('rules.json', 'run.payout.itemShare is more than 1 (items would pay over their price)');
-      for (const k of ['winSeals', 'scrapNode', 'scrapWin'])
+      for (const k of ['winCrests', 'scrapNode', 'scrapWin'])
         if (!Number.isInteger(pay[k])) problem('rules.json', `run.payout.${k} is not a whole number`);
     }
   }
@@ -299,7 +299,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'healCost',
   'shop',
   'foes',
-  'relics',
+  'perks',
 ]);
 /** RL-6: rules.json run.clock, run.reveal and the run keys @param {any} D @returns {DataProblem[]} */
 export function dataRunClock(D) {
@@ -401,7 +401,7 @@ export function dataRunScene(D) {
   }
   return out;
 }
-// RL-8: the run loop's numbers (placeholders): what a run starts with (money, known coins and items, whole counts), a
+// RL-8: the run loop's numbers (placeholders): what a run starts with (money, known pyramids and items, whole counts), a
 // run town's heal price per hurt Billie, its shop (wares that exist: an item id or coin:<id>; `more` drawn by weight
 // from `pick`, with something to pick when more is above 0), a mini-boss's and the boss's levels over their row and
 // their reward; nothing else in each
@@ -418,23 +418,23 @@ export function dataRunLoop(D) {
         for (const k of Object.keys(o)) if (!keys.includes(k)) problem('rules.json', `${at}.${k}: no such rule`);
       },
       ware = w =>
-        typeof w === 'string' && (w.startsWith('coin:') ? !!(D.coins || {})[w.slice(5)] : !!(D.items || {})[w]),
+        typeof w === 'string' && (w.startsWith('coin:') ? !!(D.pyramids || {})[w.slice(5)] : !!(D.items || {})[w]),
       ST = R.start,
       SH = R.shop,
       F = R.foes;
-    if (!rec(ST) || !whole(ST.se, 0, 1e6) || !rec(ST.coins) || !rec(ST.items))
-      problem('rules.json', 'run.start: se (whole, 0-1,000,000), coins and items (records) are needed');
+    if (!rec(ST) || !whole(ST.se, 0, 1e6) || !rec(ST.pyramids) || !rec(ST.items))
+      problem('rules.json', 'run.start: se (whole, 0-1,000,000), pyramids and items (records) are needed');
     else {
-      only(ST, ['se', 'coins', 'items'], 'run.start');
-      for (const [k, n] of Object.entries(ST.coins))
-        if (!(D.coins || {})[k] || !whole(n, 0, 999))
-          problem('rules.json', `run.start.coins.${k}: no such coin, or not a whole count`);
+      only(ST, ['se', 'pyramids', 'items'], 'run.start');
+      for (const [k, n] of Object.entries(ST.pyramids))
+        if (!(D.pyramids || {})[k] || !whole(n, 0, 999))
+          problem('rules.json', `run.start.pyramids.${k}: no such coin, or not a whole count`);
       for (const [k, n] of Object.entries(ST.items))
         if (!(D.items || {})[k] || !whole(n, 0, 999))
           problem('rules.json', `run.start.items.${k}: no such item, or not a whole count`);
     }
     // RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): Billies from home a run takes (1-6, never fewer
-    // than the Expedition before) and the things packed from Copperleaf's bag (0-99 items and coins in all)
+    // than the Expedition before) and the things packed from Copperleaf's bag (0-99 items and pyramids in all)
     for (const [k, lo, hi, what] of [
       ['home', 1, 6, 'Billies from home'],
       ['pack', 0, 99, 'things packed'],
@@ -613,15 +613,19 @@ export function dataRegions(D, valid = () => true) {
     ['a fresh save', every.filter(b => !granted.has(b))],
     ['every run biome', every],
   ])
-    for (let tier = 1; tier <= R.zones.length; tier++)
+    for (let expedition = 1; expedition <= R.zones.length; expedition++)
       for (let k = 0; k < 40; k++) {
         const seed = `REGIONCHECK${k}`,
           note = (/** @type {string} */ text) => {
             if (seen.has(text)) return;
             seen.add(text);
-            problem('regions.json', `${text} (${what}, Expedition ${tier}, seed ${seed})`);
+            problem('regions.json', `${text} (${what}, Expedition ${expedition}, seed ${seed})`);
           },
-          G = runRegionMake(seed, data, { open: /** @type {string[]} */ (open), tier, guards: M.minibosses || 0 });
+          G = runRegionMake(seed, data, {
+            open: /** @type {string[]} */ (open),
+            expedition,
+            guards: M.minibosses || 0,
+          });
         if (!G) {
           note(`no theme can roll with only ${/** @type {string[]} */ (open).join(', ')} open`);
           continue;
@@ -656,76 +660,73 @@ export function dataNodeTypes(D, valid = () => true) {
   }
   return out;
 }
-// RL-12: Perks (relics): the schema, the types their damage rows name; rules.json run.relics: a cap of 1-12 held, a
+// RL-12: Perks (relics): the schema, the types their damage rows name; rules.json run.perks: a cap of 1-12 held, a
 // pick of 1-5 (run.offer holds up to 5), a weight of 0 or more and a whole price ($0-100,000) for each rarity, and
 // something to offer
-/** RL-12: relics.json and rules.json run.relics @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
-export function dataRelics(D, valid = () => true) {
+/** RL-12: perks.json and rules.json run.perks @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataPerks(D, valid = () => true) {
   /** @type {DataProblem[]} */
   const out = [],
     problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]);
   {
-    const RR = D.rules && D.rules.run && D.rules.run.relics,
+    const RR = D.rules && D.rules.run && D.rules.run.perks,
       RARITIES = ['common', 'uncommon', 'rare'],
       whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi,
       types = new Set((D.types || []).map(t => t.id)),
       stats = new Set((D.stats || []).map(t => t.id));
-    if (D.relics && valid('relics.schema.json', D.relics, 'relics.json'))
-      for (const [k, R] of Object.entries(D.relics))
+    if (D.perks && valid('perks.schema.json', D.perks, 'perks.json'))
+      for (const [k, R] of Object.entries(D.perks))
         R.fx.forEach((f, n) => {
           if (f.type && !types.has(f.type))
-            problem('relics.json', `${k}.fx[${n}].type: no type "${f.type}" (types.json)`);
+            problem('perks.json', `${k}.fx[${n}].type: no type "${f.type}" (types.json)`);
           // Studio plan T4.1: the limits that live in the code (effects.js): a factor within FX_LIMIT, stages within
           // FX_STAGES (the schema allows 0-4 and -6 to 6; a factor under FX_LIMIT.lo would be clamped up)
           if ('mult' in f && !(typeof f.mult === 'number' && f.mult >= FX_LIMIT.lo && f.mult <= FX_LIMIT.hi))
             problem(
-              'relics.json',
+              'perks.json',
               `${k}.fx[${n}].mult: ${f.mult} is outside the code's limits, ${FX_LIMIT.lo} to ${FX_LIMIT.hi} (effects.js FX_LIMIT)`
             );
           if ('stages' in f && !(Number.isInteger(f.stages) && Math.abs(f.stages) <= FX_STAGES))
             problem(
-              'relics.json',
+              'perks.json',
               `${k}.fx[${n}].stages: ${f.stages} is not a whole number of stages from -${FX_STAGES} to ${FX_STAGES} (effects.js FX_STAGES)`
             );
           /* T1.3: the stats from stats.json (a stage of HP means nothing), not a list in the schema */
           if (f.kind === 'stat' && (f.stat === 'hp' || !stats.has(f.stat)))
-            problem('relics.json', `${k}.fx[${n}].stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
+            problem('perks.json', `${k}.fx[${n}].stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
         });
-    if (!RR || typeof RR !== 'object' || Array.isArray(RR)) problem('rules.json', 'run.relics missing');
+    if (!RR || typeof RR !== 'object' || Array.isArray(RR)) problem('rules.json', 'run.perks missing');
     else {
       for (const k of Object.keys(RR))
-        if (!['cap', 'pick', 'rarity', 'price'].includes(k)) problem('rules.json', `run.relics.${k}: no such rule`);
-      if (!whole(RR.cap, 1, 12)) problem('rules.json', 'run.relics.cap is not a whole number from 1 to 12');
-      if (!whole(RR.pick, 1, 5)) problem('rules.json', 'run.relics.pick is not a whole number from 1 to 5');
+        if (!['cap', 'pick', 'rarity', 'price'].includes(k)) problem('rules.json', `run.perks.${k}: no such rule`);
+      if (!whole(RR.cap, 1, 12)) problem('rules.json', 'run.perks.cap is not a whole number from 1 to 12');
+      if (!whole(RR.pick, 1, 5)) problem('rules.json', 'run.perks.pick is not a whole number from 1 to 5');
       for (const g of ['rarity', 'price']) {
         const G = RR[g] && typeof RR[g] === 'object' ? RR[g] : {};
         for (const k of Object.keys(G))
-          if (!RARITIES.includes(k)) problem('rules.json', `run.relics.${g}.${k}: no such rarity`);
+          if (!RARITIES.includes(k)) problem('rules.json', `run.perks.${g}.${k}: no such rarity`);
         for (const r of RARITIES)
           if (g === 'rarity' ? !(typeof G[r] === 'number' && G[r] >= 0) : !whole(G[r], 0, 100000))
             problem(
               'rules.json',
-              `run.relics.${g}.${r} is not ${g === 'rarity' ? 'a weight of 0 or more' : 'a whole price (0-100,000 Moneys)'}`
+              `run.perks.${g}.${r} is not ${g === 'rarity' ? 'a weight of 0 or more' : 'a whole price (0-100,000 Moneys)'}`
             );
       }
-      if (D.relics && !Object.values(D.relics).some(R => (RR.rarity || {})[R.rarity] > 0))
-        problem(
-          'rules.json',
-          'run.relics.rarity gives every Perk in relics.json a weight of 0: nothing can be offered'
-        );
+      if (D.perks && !Object.values(D.perks).some(R => (RR.rarity || {})[R.rarity] > 0))
+        problem('rules.json', 'run.perks.rarity gives every Perk in perks.json a weight of 0: nothing can be offered');
     }
   }
   return out;
 }
-// RF-2: every catch item (coins.json; the ids stay the coins' until RF-4) has its icons and the model it is thrown as
+// RF-2: every catch item (pyramids.json; the ids stay the pyramids' until RF-4) has its icons and the model it is thrown as
 // (art/coins/<id>_16.png, _32.png and <id>.json, made by tools/build-pyramids.py): a recipe with at least one shape
-/** RF-2: coins.json against its art @param {any} coins @param {(path: string) => string | null} read the file under
+/** RF-2: pyramids.json against its art @param {any} pyramids @param {(path: string) => string | null} read the file under
  * game/art, or null when it isn't there @returns {DataProblem[]} */
-export function dataCatchArt(coins, read) {
+export function dataCatchArt(pyramids, read) {
   /** @type {DataProblem[]} */
   const out = [],
-    problem = (/** @type {string} */ what) => out.push(['coins.json', what]);
-  for (const k of Object.keys(coins || {})) {
+    problem = (/** @type {string} */ what) => out.push(['pyramids.json', what]);
+  for (const k of Object.keys(pyramids || {})) {
     for (const f of [`coins/${k}_16.png`, `coins/${k}_32.png`])
       if (read(f) == null) problem(`${k}: no icon art/${f} (tools/build-pyramids.py)`);
     const t = read(`coins/${k}.json`);

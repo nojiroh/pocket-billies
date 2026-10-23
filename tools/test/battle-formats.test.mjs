@@ -195,7 +195,7 @@ test("a run's mini-boss beaten (battleSettleWin): its reward, its flag and a pic
   const B = hooks.activeBattle;
   B.over = 'win';
   B.T = { ...B.T, runFoe: 'miniboss', reward: 77 };
-  const run = { offer: null, offerN: 0, relics: [], seed: 'SETTLE' },
+  const run = { offer: null, offerN: 0, perks: [], seed: 'SETTLE' },
     { pay } = fn('battleSettle')(B, s),
     se = s.se;
   fn('battleSettleWin')(B, s, pay, run);

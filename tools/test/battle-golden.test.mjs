@@ -118,7 +118,7 @@ test('golden: a robot against a Billie (aimed moves, parts that break)', t => {
 test('golden: a single wild battle holding Loopholes (RL-12: stages at the start, damage dealt and taken)', t => {
   reseed(101);
   startedSave(starter(), 10);
-  const fx = fn('fxRows')(['insider', 'takeover', 'hedge'], data.RELICS);
+  const fx = fn('fxRows')(['insider', 'takeover', 'hedge'], data.PERKS);
   fn('newBattle')('wild', [fn('makeBilly')(wildSpecies(), 12)], { fmt: 'single', seed: 'golden-fx', fx });
   fn('sayBattleFx')();
   t.assert.snapshot(play());

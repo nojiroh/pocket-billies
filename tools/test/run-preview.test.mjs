@@ -12,8 +12,8 @@ const { runStartOn, runStartPlan } = modules['run-start'];
 const { runUnlocks, unlockOpen } = modules.unlocks;
 const { runFoes, runShopStock } = modules['run-loop'];
 const { runWorldTables, runPlaceId } = modules['run-scenes'];
-const { relicOfferMake, relicShelf } = modules.relics;
-const { NODE_TYPES, POOLS, RELICS, RULES, START_NODE, TRAINERS, UNLOCK_DATA, gameData } = data;
+const { perkOfferMake, perkShelf } = modules.perks;
+const { NODE_TYPES, POOLS, PERKS, RULES, START_NODE, TRAINERS, UNLOCK_DATA, gameData } = data;
 
 const SEEDS = ['LAB1', 'TESTSEED', 'Q7', 'ZZTOP99', 'PREVIEW-3'],
   CASES = {
@@ -60,14 +60,14 @@ function theGame(/** @type {string} */ seed, /** @type {{ unlocks: string[], map
           ...rule,
           pick: unlockOpen(rule.pick, 'shop', run.unlocks, UNLOCK_DATA),
         });
-        shop.push({ day, stock, relic: relicShelf(run, i, run.clock, RELICS, RULES.run.relics) });
+        shop.push({ day, stock, relic: perkShelf(run, i, run.clock, PERKS, RULES.run.perks) });
       }
     const foe = Object.values(foes).find(F => F.runNode === i) || null;
     return { wild: W.pools[runPlaceId(i)], foe, shop: n.type === 'town' ? shop : null };
   });
   const offers = [],
     guards = new Set(run.map.nodes.filter(n => n.type === 'miniboss').map(n => n.row)).size;
-  for (let k = 0; k < guards; k++) offers.push(relicOfferMake(run, RELICS, RULES.run.relics) || []);
+  for (let k = 0; k < guards; k++) offers.push(perkOfferMake(run, PERKS, RULES.run.perks) || []);
   return { map: run.map, deadline: run.deadline, unlocks: run.unlocks, nodes, offers };
 }
 

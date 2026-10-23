@@ -49,7 +49,7 @@ document.addEventListener('click', ev => {
     if (c.facedown) c.reveal();
     else c.facedown = true;
   } else if (b.id === 'gCoinUp') {
-    const c = /** @type {any} */ (document.querySelector('pb-coin[kind="capital"]'));
+    const c = /** @type {any} */ (document.querySelector('pb-coin[kind="research"]'));
     c.value += 1000;
   }
 });

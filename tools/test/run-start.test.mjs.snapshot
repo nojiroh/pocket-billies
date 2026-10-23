@@ -4,27 +4,27 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
     "none": {
       "se": 600,
       "items": {
-        "taxbreak": 2,
-        "loophole": 0,
-        "apology": 0,
-        "settlement": 0,
-        "appeal": 0,
-        "bailout": 0,
+        "potion": 2,
+        "hi_potion": 0,
+        "burn_salve": 0,
+        "nerve_tonic": 0,
+        "wake_tea": 0,
+        "revive": 0,
         "bell": 0,
         "trailmix": 0,
         "pretzel": 0,
-        "spillkit": 0,
-        "parachute": 0,
+        "full_remedy": 0,
+        "max_revive": 0,
         "repairkit": 0
       },
-      "coins": {
-        "penny": 5,
-        "silver": 0,
-        "gold": 0,
-        "tbtf": 0
+      "pyramids": {
+        "pyramid": 5,
+        "step_pyramid": 0,
+        "gold_pyramid": 0,
+        "capstone": 0
       },
       "seed": "S0START",
-      "tier": 1,
+      "expedition": 1,
       "mapgenV": 6,
       "unlocks": [],
       "mods": [],
@@ -330,34 +330,34 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
     "all": {
       "se": 600,
       "items": {
-        "taxbreak": 2,
-        "loophole": 0,
-        "apology": 0,
-        "settlement": 0,
-        "appeal": 0,
-        "bailout": 0,
+        "potion": 2,
+        "hi_potion": 0,
+        "burn_salve": 0,
+        "nerve_tonic": 0,
+        "wake_tea": 0,
+        "revive": 0,
         "bell": 0,
         "trailmix": 0,
         "pretzel": 0,
-        "spillkit": 0,
-        "parachute": 0,
+        "full_remedy": 0,
+        "max_revive": 0,
         "repairkit": 0
       },
-      "coins": {
-        "penny": 5,
-        "silver": 0,
-        "gold": 0,
-        "tbtf": 0
+      "pyramids": {
+        "pyramid": 5,
+        "step_pyramid": 0,
+        "gold_pyramid": 0,
+        "capstone": 0
       },
       "seed": "S0START",
-      "tier": 1,
+      "expedition": 1,
       "mapgenV": 6,
       "unlocks": [
         "biome_autumn",
         "biome_ridge",
-        "shop_appeal",
-        "shop_bailout",
-        "shop_settlement"
+        "shop_nerve_tonic",
+        "shop_revive",
+        "shop_wake_tea"
       ],
       "mods": [],
       "clock": 1,
@@ -659,27 +659,27 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
     "short": {
       "se": 600,
       "items": {
-        "taxbreak": 2,
-        "loophole": 0,
-        "apology": 0,
-        "settlement": 0,
-        "appeal": 0,
-        "bailout": 0,
+        "potion": 2,
+        "hi_potion": 0,
+        "burn_salve": 0,
+        "nerve_tonic": 0,
+        "wake_tea": 0,
+        "revive": 0,
         "bell": 0,
         "trailmix": 0,
         "pretzel": 0,
-        "spillkit": 0,
-        "parachute": 0,
+        "full_remedy": 0,
+        "max_revive": 0,
         "repairkit": 0
       },
-      "coins": {
-        "penny": 5,
-        "silver": 0,
-        "gold": 0,
-        "tbtf": 0
+      "pyramids": {
+        "pyramid": 5,
+        "step_pyramid": 0,
+        "gold_pyramid": 0,
+        "capstone": 0
       },
       "seed": "S0START",
-      "tier": 1,
+      "expedition": 1,
       "mapgenV": 6,
       "unlocks": [],
       "mods": [],
@@ -871,6 +871,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "a5f7313d3743775546a090f4593db2432e184af291842ef5321756e7d07ebdc2"
+  "all": "7f61cfeef9b2a73587d64314ca3d279cee1933eac9abd7904af63eaa8ae2209a"
 }
 `;

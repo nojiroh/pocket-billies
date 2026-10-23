@@ -1,8 +1,8 @@
 {
  "start": {
   "se": 600,
-  "coins": {"penny":5,"silver":0,"gold":0,"tbtf":0},
-  "items": {"taxbreak":2},
+  "pyramids": {"pyramid":5,"step_pyramid":0,"gold_pyramid":0,"capstone":0},
+  "items": {"potion":2},
   "starters": ["musk","bezos","gates"],
   "starterLevel": 5,
   "starterEgg": 2,
@@ -25,18 +25,18 @@
   "critChances": [0.0625,0.125,0.25,0.5],
   "critMult": 1.5,
   "rollMin": 0.85,
-  "cryptoRollMin": 0.25,
-  "cryptoRollMax": 1.6,
-  "mediaCrit": 1,
-  "financeRamp": 0.1,
-  "financeRampTurns": 10,
-  "retailSynergy": 0.1,
+  "wildMindRollMin": 0.25,
+  "wildMindRollMax": 1.6,
+  "liveWireCrit": 1,
+  "kindlingBoost": 0.1,
+  "kindlingTurns": 10,
+  "alloyBoost": 0.1,
   "undertowMult": 1.3,
   "undertowHp": 0.3334,
   "oilShockMult": 1.5,
   "drainFraction": 16,
-  "rentFraction": 8,
-  "auditSkip": 0.25,
+  "stonesFraction": 8,
+  "paralysisSkip": 0.25,
   "hypeTurns": 3,
   "hypeSelfHit": 0.3333,
   "subpoenaMin": 2,
@@ -67,13 +67,13 @@
   "rarity": {"starter":0.45,"common":0.45,"uncommon":0.25,"rare":0.1,"mythical":0.03},
   "evolved": [0.12,0.05],
   "hpFactor": 0.6667,
-  "subpoena": 2,
+  "asleepCatch": 2,
   "status": 1.5,
   "spin": 1.1,
   "ring": 0.3,
   "edge": 0.01,
   "luxury": ["logo"],
-  "luxuryPenny": 0.5,
+  "luxuryPyramid": 0.5,
   "alpha": 0.4
  },
  "ride": {"minHeight":1.5,"types":["Water"]},
@@ -127,7 +127,7 @@
   "xpYield": 150
  },
  "run": {
-  "payout": {"money":0.1,"itemShare":0.5,"released":15,"node":10,"win":100,"winSeals":1,"scrapNode":2,"scrapWin":10},
+  "payout": {"money":0.1,"itemShare":0.5,"released":15,"node":10,"win":100,"winCrests":1,"scrapNode":2,"scrapWin":10},
   "map": {
    "rows": 9,
    "minibosses": 2,
@@ -159,22 +159,22 @@
   "seamIn": 6,
   "start": {
    "se": 600,
-   "coins": {"penny":5},
-   "items": {"taxbreak":2}
+   "pyramids": {"pyramid":5},
+   "items": {"potion":2}
   },
   "home": [1],
   "pack": [5],
   "healCost": 60,
   "shop": {
-   "always": ["coin:penny","taxbreak"],
+   "always": ["coin:pyramid","potion"],
    "more": 2,
-   "pick": {"pretzel":3,"loophole":2,"trailmix":2,"spillkit":2,"apology":1,"settlement":1,"appeal":1,"bailout":1}
+   "pick": {"pretzel":3,"hi_potion":2,"trailmix":2,"full_remedy":2,"burn_salve":1,"nerve_tonic":1,"wake_tea":1,"revive":1}
   },
   "foes": {
    "miniboss": {"up":3,"reward":300},
    "boss": {"up":5,"reward":600}
   },
-  "relics": {
+  "perks": {
    "cap": 6,
    "pick": 3,
    "rarity": {"common":6,"uncommon":3,"rare":1},

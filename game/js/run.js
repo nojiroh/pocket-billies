@@ -14,18 +14,18 @@ import {
   labMilestones,
   mapIdAt,
   modal,
+  perkPickOpen,
   provide,
-  relicPickOpen,
   render,
   renderOverlay,
   runPayoutOpen,
   toast,
 } from './hooks.js';
-import { COINS, ITEMS, RELICS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
+import { ITEMS, PERKS, PYRAMIDS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchStop } from './logic/ranch.js';
-import { runByTier, runEnd } from './logic/run-state.js';
+import { runByExpedition, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runNext } from './logic/run-map.js';
 import { runArriveFx, runBattleExtra, runRelease, runReleasePays } from './logic/run-loop.js';
 import { fxOfRun, fxPayoutRates, fxRunPrice } from './logic/effects.js';
@@ -42,7 +42,7 @@ import { runUnlocks } from './logic/unlocks.js';
 import { runStartOn, runStartPlan } from './logic/run-start.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
-import { coinHTML } from './art.js';
+import { pyramidHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
 import { JINGLES, jingle } from './sound.js';
@@ -163,7 +163,7 @@ export function runGiveUp() {
 export function runEndHome(won, keep, itemPrice) {
   if (!saveData.run) return;
   /* RL-12: the Perks' payout rows, read before the run ends */
-  const rates = fxPayoutRates(fxOfRun(saveData.run, RELICS), RULES.run.payout),
+  const rates = fxPayoutRates(fxOfRun(saveData.run, PERKS), RULES.run.payout),
     pay = runEnd(saveData, { won, keep }, rates, itemPrice);
   /* a move waiting to be learned names a Billie by its uid, which a run's copy shares with the hub's */
   uiState.learnQ = [];
@@ -182,9 +182,9 @@ export function runEndHome(won, keep, itemPrice) {
   closeModal();
   render();
   if (typeof debugLog !== 'undefined')
-    debugLog.add('scene', `back in the hub: +${pay.capital} Research, +${pay.seals} Crests, +${pay.scrap} Scrap`);
+    debugLog.add('scene', `back in the hub: +${pay.research} Research, +${pay.crests} Crests, +${pay.scrap} Scrap`);
   toast(
-    `+${formatNumber(pay.capital)} Research${pay.scrap ? `, ${formatNumber(pay.scrap)} Scrap` : ''}${pay.seals ? ` and ${plural(pay.seals, 'Crest')}` : ''}. You have ${formatNumber(saveData.meta.capital)} Research.`
+    `+${formatNumber(pay.research)} Research${pay.scrap ? `, ${formatNumber(pay.scrap)} Scrap` : ''}${pay.crests ? ` and ${plural(pay.crests, 'Crest')}` : ''}. You have ${formatNumber(saveData.meta.research)} Research.`
   );
   /* RL-11: milestones the run has met (ended runs, wins), each with its own toast after this one */
   if (typeof labMilestones === 'function') labMilestones();
@@ -197,7 +197,7 @@ export function runResume() {
   if (!run) return;
   if (run.at.phase === 'payout') runPayoutOpen();
   /* RL-12: a mini-boss's pick not answered yet (the offer was saved before it showed) */
-  else if (run.offer && run.at.phase === 'walk') relicPickOpen();
+  else if (run.offer && run.at.phase === 'walk') perkPickOpen();
   /* killed mid-battle: the same battle again, from its seed (the owner's answer, roguelite-track.md 8.7) */
   if (run.at.phase === 'battle') runBattleAgain();
   /* killed mid-flight: you are on the landing (runArrive ran before the flight) */
@@ -233,16 +233,16 @@ function runPickDefault() {
 }
 /** the start sheet's choice as it stands (uiState.runPick, runPack), kept to what is at home, what the bag holds and
  * the Expedition's counts (rules.json run.home, run.pack): the Billies from home (the default pick when none), the pack
- * and how many things are in it @param {number} [tier] */
-function runPickNow(tier = 1) {
+ * and how many things are in it @param {number} [expedition] */
+function runPickNow(expedition = 1) {
   const all = runHomeList(),
-    cap = runByTier(RULES.run.home, tier),
-    most = runByTier(RULES.run.pack, tier);
+    cap = runByExpedition(RULES.run.home, expedition),
+    most = runByExpedition(RULES.run.pack, expedition);
   let home = (uiState.runPick || []).filter(u => all.some(m => m.uid === u)).slice(0, cap);
   if (!home.length) home = [runPickDefault()].filter(u => !!u);
-  const pack = { items: {}, coins: {} };
+  const pack = { items: {}, pyramids: {} };
   let n = 0;
-  for (const kind of ['items', 'coins'])
+  for (const kind of ['items', 'pyramids'])
     for (const [k, v] of Object.entries((uiState.runPack || {})[kind] || {})) {
       const take = Math.max(0, Math.min(v, saveData[kind][k] || 0, most - n));
       if (!take) continue;
@@ -275,7 +275,7 @@ export function runStartSheet() {
     P = runPickNow(),
     gifts = [
       plural(S.se, 'Money'),
-      ...Object.entries(S.coins).map(([k, n]) => `${n} ${COINS[k] ? COINS[k].n : k}${n === 1 ? '' : 's'}`),
+      ...Object.entries(S.pyramids).map(([k, n]) => `${n} ${PYRAMIDS[k] ? PYRAMIDS[k].n : k}${n === 1 ? '' : 's'}`),
       ...Object.entries(S.items).map(([k, n]) => `${n} ${ITEMS[k] ? ITEMS[k].n : k}${n === 1 ? '' : 's'}`),
     ],
     trains = uid => !!(saveData.ranch && saveData.ranch.trainees.some(t => t.uid === uid)),
@@ -285,9 +285,9 @@ export function runStartSheet() {
       ...Object.keys(ITEMS)
         .filter(k => saveData.items[k] > 0)
         .map(k => ['items', k, ITEMS[k].n, itemIcon(k, 30)]),
-      ...Object.keys(COINS)
-        .filter(k => saveData.coins[k] > 0)
-        .map(k => ['coins', k, COINS[k].n, coinHTML(k, 30)]),
+      ...Object.keys(PYRAMIDS)
+        .filter(k => saveData.pyramids[k] > 0)
+        .map(k => ['pyramids', k, PYRAMIDS[k].n, pyramidHTML(k, 30)]),
     ],
     row = ([kind, k, name, icon]) => {
       const n = P.pack[kind][k] || 0,
@@ -348,11 +348,11 @@ export function runStartSheet() {
  * everyone at home is healed first (the hub's healing is free), so the travellers leave healed.
  * @param {string} [seed] @param {Partial<import('../types/game-data').RunMapRules>} [map] the map's rules changed (the
  * debug menu's short run) @param {string[]} [mods] the run's mods (the debug menu's mountains run: RUN_MOD_MOUNTAINS)
- * @param {{ home: string[], pack: { items: Record<string, number>, coins: Record<string, number> } }} [pick]
+ * @param {{ home: string[], pack: { items: Record<string, number>, pyramids: Record<string, number> } }} [pick]
  */
 export function runTakeOff(seed, map, mods, pick) {
   if (!runStartable()) return;
-  const P = pick || { home: [runPickDefault()].filter(u => !!u), pack: { items: {}, coins: {} } };
+  const P = pick || { home: [runPickDefault()].filter(u => !!u), pack: { items: {}, pyramids: {} } };
   if (!P.home.length) return;
   uiState.runPick = uiState.runPack = null;
   closeModal();
@@ -445,7 +445,7 @@ function runBattleStart(kind, foe, extra) {
       ...extra,
       /* its seed, the forecast's weather and (RL-12) the Perks held: none, no fx, the battle as before
          (logic/run-loop.js runBattleExtra, which the run's simulation plays too) */
-      ...runBattleExtra(run, i, k, RULES.env, fxOfRun(run, RELICS)),
+      ...runBattleExtra(run, i, k, RULES.env, fxOfRun(run, PERKS)),
     },
     begun: b => {
       if (!again) run.battleN = k + 1;
@@ -489,10 +489,10 @@ function runBattleAgain() {
 
 /* ---------- Perks on the walk (RL-12, logic/effects.js) ---------- */
 /** a run town's clinic: $ a hurt Billie, with the Perks' heal price rows */
-export const runClinicEach = () => fxRunPrice(saveData.run, RELICS, 'heal', RULES.run.healCost);
+export const runClinicEach = () => fxRunPrice(saveData.run, PERKS, 'heal', RULES.run.healCost);
 /** walking into a place on a run: a Perk's heal row heals the team (before the arrival's save) */
 export function runArrivedFx() {
-  const gained = runArriveFx(saveData, RELICS);
+  const gained = runArriveFx(saveData, PERKS);
   if (gained > 0) toast(`Your Perks paid out: your team healed ${formatNumber(gained)} HP.`);
 }
 
@@ -507,7 +507,7 @@ const RUN_HINTS = {
   miniboss: () => 'A mini-boss blocks the way north. Beat them to go on.',
   boss: () => 'The boss. Beat it and the run is won.',
   relic: () =>
-    `Perks last the run: hold up to ${RULES.run.relics.cap}. The Perks tab shows what each one does; town shops sell them too.`,
+    `Perks last the run: hold up to ${RULES.run.perks.cap}. The Perks tab shows what each one does; town shops sell them too.`,
 };
 /** show a first-run hint once (nothing on a later run, or once shown) @param {keyof typeof RUN_HINTS} id */
 export function runHint(id) {

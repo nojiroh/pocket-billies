@@ -8,10 +8,10 @@
    endBattle as it was (tools/test/battle-rewards.test.mjs). Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { RELICS, RULES } from '../game-data.js';
+import { PERKS, RULES } from '../game-data.js';
 import { dropEncounter, findBilly, wildPrize } from './rules.js';
 import { fxMoney } from './effects.js';
-import { relicOfferMake } from './relics.js';
+import { perkOfferMake } from './perks.js';
 import { battleRoll } from './battle-engine.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -38,7 +38,7 @@ export const battleOutcome = (kind, over) => (over === 'draw' ? (kind === 'wild'
  * @param {(() => number) | null} roll unused since RL-10
  * @param {{ battle: { loseFee: number } }} [rules]
  * @returns {{ o: string | null, fee: number, prize: number, reward: number, first: boolean,
- *   seat: null | { id: string, nu: boolean, coins: Record<string, number>, items: Record<string, number> } }}
+ *   seat: null | { id: string, nu: boolean, pyramids: Record<string, number>, items: Record<string, number> } }}
  */
 export function battleRewards(b, s, roll, rules = RULES) {
   const o = battleOutcome(b.kind, b.over),
@@ -57,7 +57,7 @@ export function battleRewards(b, s, roll, rules = RULES) {
     out.first = !s.flags[b.tid || ''];
     const st = b.T.seat;
     if (st && !run)
-      out.seat = { id: st.id, nu: !s.seats.includes(st.id), coins: st.coins || {}, items: st.items || {} };
+      out.seat = { id: st.id, nu: !s.seats.includes(st.id), pyramids: st.pyramids || {}, items: st.items || {} };
   }
   return out;
 }
@@ -92,7 +92,7 @@ export function battleSettle(b, s) {
 /**
  * A win's money and marks (after battleSettle; not for the opening's tutorial battle): a wild win's prize, a
  * trainer's reward and flag, and on a run (`run`) a mini-boss beaten makes the next pick of Perks
- * (logic/relics.js relicOfferMake, saved on the run before it shows).
+ * (logic/perks.js perkOfferMake, saved on the run before it shows).
  * @param {any} b @param {any} s @param {{ o: string | null, prize: number, reward: number }} pay @param {any} run
  */
 export function battleSettleWin(b, s, pay, run) {
@@ -100,7 +100,7 @@ export function battleSettleWin(b, s, pay, run) {
   if (b.kind === 'wild' && pay.prize > 0) s.se += pay.prize;
   if (b.kind === 'trainer') {
     s.se += pay.reward;
-    if (run && b.T && b.T.runFoe === 'miniboss') relicOfferMake(run, RELICS, RULES.run.relics);
+    if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, PERKS, RULES.run.perks);
     s.flags[b.tid] = 1;
   }
 }

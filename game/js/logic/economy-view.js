@@ -5,7 +5,7 @@
    Economy page can list them with a link to each field (the plan's "economy editor": no economy data model of its own).
    - money ($, a run's): wild prizes (rules.json encounters.prizePerLevel x the level, logic/rules.js wildPrize), the
      mini-boss's and boss's rewards (run.foes), Perks' money rows; spent at the clinic (run.healCost a hurt Billie),
-     on run shop wares (items.json and coins.json price; what run.shop can stock) and shop Perks (run.relics.price);
+     on run shop wares (items.json and pyramids.json price; what run.shop can stock) and shop Perks (run.perks.price);
    - at the payout (logic/run-state.js payoutOf) money, items, released Billies, places and a win turn into Research,
      Scrap and Crests (run.payout);
    - Research, Scrap and Crests (kept between runs): the earned unlock rows' grants, and each building's unlock costs
@@ -28,12 +28,12 @@ expose({
 
 /** the payout's rates: what each turns into, and of what @type {Record<string, [string, string]>} */
 export const ECONOMY_PAYOUT = {
-  money: ['capital', 'Research per Money brought home'],
-  itemShare: ['capital', 'Share of an item’s price, as Research'],
-  released: ['capital', 'Research per Billie caught on the run and released'],
-  node: ['capital', 'Research per place cleared'],
-  win: ['capital', 'Research for a win'],
-  winSeals: ['seals', 'Crests for a win'],
+  money: ['research', 'Research per Money brought home'],
+  itemShare: ['research', 'Share of an item’s price, as Research'],
+  released: ['research', 'Research per Billie caught on the run and released'],
+  node: ['research', 'Research per place cleared'],
+  win: ['research', 'Research for a win'],
+  winCrests: ['crests', 'Crests for a win'],
   scrapNode: ['scrap', 'Scrap per place cleared'],
   scrapWin: ['scrap', 'Scrap for a win'],
 };
@@ -68,7 +68,7 @@ export function economyLines(D) {
       path: `rules.run.foes.${k}.reward`,
       section: 'runlab',
     });
-  for (const [k, L] of Object.entries(D.relics || {}))
+  for (const [k, L] of Object.entries(D.perks || {}))
     /** @type {any} */ (L.fx || []).forEach((/** @type {any} */ f, n) => {
       if (f.kind === 'money')
         add({
@@ -77,7 +77,7 @@ export function economyLines(D) {
           what: `Perk ${L.name || k}: wins pay ×${f.mult}`,
           value: f.mult,
           unit: '×',
-          path: `relics.${k}.fx.${n}.mult`,
+          path: `perks.${k}.fx.${n}.mult`,
           section: 'relics',
         });
     });
@@ -93,24 +93,24 @@ export function economyLines(D) {
   for (const id of [...stocked].sort()) {
     const coin = id.startsWith('coin:'),
       k = coin ? id.slice(5) : id,
-      T = coin ? D.coins && D.coins[k] : D.items && D.items[k];
+      T = coin ? D.pyramids && D.pyramids[k] : D.items && D.items[k];
     if (T)
       add({
         currency: 'money',
         side: 'out',
         what: `Run shop: ${T.n || k}${(shop.always || []).includes(id) ? ' (always stocked)' : ''}`,
         value: T.price,
-        path: `${coin ? 'coins' : 'items'}.${k}.price`,
+        path: `${coin ? 'pyramids' : 'items'}.${k}.price`,
         section: 'items',
       });
   }
-  for (const [r, p] of Object.entries((R.relics && R.relics.price) || {}))
+  for (const [r, p] of Object.entries((R.perks && R.perks.price) || {}))
     add({
       currency: 'money',
       side: 'out',
       what: `Run shop: a ${r} Perk`,
       value: /** @type {number} */ (p),
-      path: `rules.run.relics.price.${r}`,
+      path: `rules.run.perks.price.${r}`,
       section: 'relics',
     });
   for (const [k, v] of Object.entries(R.payout || {}))
@@ -126,7 +126,7 @@ export function economyLines(D) {
   const B = D.buildings || {};
   for (const [k, U] of Object.entries(D.unlocks || {})) {
     const G = /** @type {any} */ (U).grant || {};
-    for (const c of ['capital', 'scrap', 'seals'])
+    for (const c of ['research', 'scrap', 'crests'])
       if (G[c])
         add({
           currency: c,

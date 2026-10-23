@@ -38,15 +38,15 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** what runBegin is given: the run's seed, tier and generator version, and its money, coins and items (run.start)
- * @param {string} seed @param {number} tier @param {number} mapgenV
- * @param {{ se: number, coins: Record<string, number>, items: Record<string, number> }} start */
-export const runGive = (seed, tier, mapgenV, start) => ({
+/** what runBegin is given: the run's seed, expedition and generator version, and its money, pyramids and items (run.start)
+ * @param {string} seed @param {number} expedition @param {number} mapgenV
+ * @param {{ se: number, pyramids: Record<string, number>, items: Record<string, number> }} start */
+export const runGive = (seed, expedition, mapgenV, start) => ({
   seed,
-  tier,
+  expedition,
   mapgenV,
   se: start.se,
-  coins: { ...start.coins },
+  pyramids: { ...start.pyramids },
   items: { ...start.items },
 });
 
@@ -55,11 +55,11 @@ export const runGive = (seed, tier, mapgenV, start) => ({
  * runUnlocks of the save; [] a fresh save's), `map` overrides rules.json run.map (the debug menu's short map), `mods`
  * the run's mods (they don't change the map)
  * @param {string} seed @param {RunStartData} data
- * @param {{ unlocks?: string[], map?: Partial<RunMapRules>, mods?: string[], tier?: number }} [o]
+ * @param {{ unlocks?: string[], map?: Partial<RunMapRules>, mods?: string[], expedition?: number }} [o]
  * @returns {RunStartPlan}
  */
 export function runStartPlan(seed, data, o = {}) {
-  const tier = o.tier || 1,
+  const expedition = o.expedition || 1,
     unlocks = (o.unlocks || []).slice(),
     rules = { ...data.rules.map, ...(o.map || {}) },
     biomes = unlockOpen(rules.biomes, 'biome', unlocks, data.unlockData),
@@ -67,7 +67,7 @@ export function runStartPlan(seed, data, o = {}) {
     region = data.region
       ? runRegionMake(seed, data.region, {
           open: Object.keys(biomes).filter(b => biomes[b] > 0),
-          tier,
+          expedition,
           guards: rules.minibosses,
           rows: o.map && o.map.rows,
         })
@@ -78,10 +78,10 @@ export function runStartPlan(seed, data, o = {}) {
       biomes: data.biomes,
       rules: { ...data.rules, map: { ...rules, biomes, ...zoned } },
     },
-    scratch = newRun(seed, tier, MAPGEN_VERSION, /** @type {any} */ ({}));
+    scratch = newRun(seed, expedition, MAPGEN_VERSION, /** @type {any} */ ({}));
   runMapStart(scratch, mapData);
   return {
-    give: runGive(seed, tier, MAPGEN_VERSION, data.rules.start),
+    give: runGive(seed, expedition, MAPGEN_VERSION, data.rules.start),
     unlocks,
     mods: (o.mods || []).slice(),
     data: mapData,
@@ -95,7 +95,7 @@ export function runStartPlan(seed, data, o = {}) {
 /** put a plan on a save: the run begins (runBegin: who travels from home, the packed bag) with the plan's money,
  * items, unlocks, mods, map, deadline and forecast. Returns the run
  * @param {SaveData} s @param {RunStartPlan} plan
- * @param {{ home?: string[], pack?: { items: Record<string, number>, coins: Record<string, number> } }} [pick]
+ * @param {{ home?: string[], pack?: { items: Record<string, number>, pyramids: Record<string, number> } }} [pick]
  * @returns {Run} */
 export function runStartOn(s, plan, pick = {}) {
   const run = runBegin(s, { ...plan.give, home: pick.home, pack: pick.pack });
