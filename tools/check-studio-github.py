@@ -1188,7 +1188,10 @@ def publish_checks(b, url, errs):
     st['log'].clear(); st['fail'] = {}
     make_edits('bad-id')
     pg.evaluate("studioState.D.maps['Bad id!'] = {}")
+    # T1.3: the Check refuses that map before anything is built; this case is about the building, so it steps past it
+    pg.evaluate("window.__ckBefore = checkBeforeSave; void (checkBeforeSave = async () => true)")
     start('publish check: bad id'); settle()
+    pg.evaluate("void (checkBeforeSave = window.__ckBefore)")
     if st['log']: errs.append(f"publish: a proposal that could not be built still sent {[k for k, _ in st['log']]}")
     left = pg.evaluate(pending)
     if not all(left.values()): errs.append(f'publish: a proposal that could not be built dropped pending changes: {left}')
