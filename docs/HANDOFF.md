@@ -89,6 +89,7 @@ families (scenes, roads) and change some words (fx.stat, currencies), not the sh
 - Unit tests 645 pass (about 42 s); lint, typecheck, `check:modules`, `format:check`, `check:data`, `build`.
 - `check-studio-github.py --only=sections,publish,drafts,studio_test,checks` (CI's command): 0 problems, 5 min 42 s.
   `--only=publish,drafts`: 0 problems.
+- `check:fast`: 25 of 25 pass.
 - Not run: the full quick check, and CI itself (the new step runs on the PR's next push).
 
 **Risky**
