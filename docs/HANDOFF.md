@@ -11,6 +11,11 @@ branches (the git proxy refuses both with HTTP 403).
   Check also runs the selftest job, which a pushed tag doesn't). `delete-branches`: never main, legacy, the default
   branch, archive/* or a branch with an open pull request; the run summary lists each branch's last commit.
   `dry_run` is on by default. docs/BRANCHES.md says to use it.
+- Branch naming (owner's ask): docs/BRANCHES.md "Naming and long plans" (the kinds of branch and their names; a
+  plan of several sessions lives on one `track/<plan>` branch named in its plan file, every session starts on it and
+  checks it, the branch stays after its PRs merge) and a CLAUDE.md line pointing there. The workflow never deletes
+  `track/*`. The old tip to turn on "Automatically delete head branches" is reversed: it would delete a track branch
+  on every merge. Existing long branches (`sound`, `RL-10b`, ...) keep their names until their plans end.
 - Risky: the workflow can delete branches and runs with `contents: write`. Anyone who can push could edit it on a
   branch and run that copy; only people with write access can run workflows at all. To limit it to main's copy, give
   the job a GitHub environment that only allows main (Settings -> Environments).
