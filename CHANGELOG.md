@@ -13,6 +13,9 @@ kept aside in the browser).
   finance (Perks, Research, Crests, Pyramids, Expeditions, the item, status and ability names), so an older save is set
   aside and a new game starts. Nothing you see changes, except that a seed's run may offer different Perks (they are
   drawn in the data's order now) and its town shops may stock different wares.
+- New interface icons: all 49 UI icons (the bottom bar, currencies, weather, the run's day chip and map markers,
+  buttons) are redrawn as larger, full-colour pixel art: little blocks with a diagonal light split, in the game's
+  own greens, golds and reds. They look the same on the light and dark themes.
 - Fewer finance words (reflavour track RF-1): you **catch** Billies now ("Catch it", "Caught!", the Guide's Caught
   count), and nothing says "tax" except the title's "Gotta tax 'em all!". Run money is **Moneys** (1 Money), shown
   with a small gold coin instead of a $; Capital is **Research** (with a flask icon), Audit Seals are **Crests**,
