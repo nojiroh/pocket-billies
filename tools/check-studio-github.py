@@ -1243,6 +1243,66 @@ def run_lab_logic_steps(pg, errs, want):
     if more != 1: errs.append(f"an edit made {more} new logic workers (want 1)")
     if not stock or any('taxbreak' in s.split(',') for s in stock): errs.append(f'after taking the Potion off the shop rules the panel still sells it: {stock}')
     return f"the logic worker's panel equals runPreview (mini-boss {boss['foe'][0] if boss['foe'] else '?'}, a town's {len(town['shop'])} days, {len(P['offers'])} picks; {boss['ms']} ms), one worker per data version"
+RUN_LAB_SIM_NODE = """import { modules } from './tools/test/setup-real.mjs';
+import { runReport } from './tools/test/sim/run-sim.mjs';
+const R = runReport(modules['sim-compare'].simSeeds(5), { team: 1, unlocks: 'none', policy: 'greedy-forward', scenes: 'skip' });
+console.log(JSON.stringify(R.summary));"""
+
+
+def run_lab_sim_steps(pg, errs):
+    """Studio plan T3.4: the Run Lab's Simulate card plays 5 seeds on Base (the data as loaded) and Draft in two logic
+    workers. With no changes every run is the same on both sides, both hashes match, and Base's numbers are the CLI's
+    in Node; every table carries the policy banner and the policy-driven rows say so. An unsaved dearer clinic
+    (rules.run.healCost doubled, 60 -> 120 on the game's data) shows a paired difference with its interval and a new Draft hash. The seed count
+    stops at 200."""
+    n = len(errs)
+    tree = ROOT if (ROOT / 'tools/test/setup-real.mjs').is_file() else REPO
+    r = subprocess.run(['node', '--input-type=module', '-e', RUN_LAB_SIM_NODE], cwd=tree, capture_output=True, text=True)
+    try: want = json.loads(r.stdout.strip().splitlines()[-1])
+    except Exception: errs.append(f'simulate: the Node report failed: {r.stderr[-400:]}'); return
+    pg.evaluate("void openSection('runlab')")
+    pg.wait_for_selector('#rlSimN', timeout=20000)
+    pg.fill('#rlSimN', '5')
+    pg.dispatch_event('#rlSimN', 'change')
+    def simulate():
+        pg.evaluate("document.querySelector('#main [data-runlab-sim]').removeAttribute('data-ready')")
+        pg.click('#main [data-act=runLabSimulate]')
+        t0 = time.time()
+        while time.time() - t0 < 60 and not pg.evaluate("!!document.querySelector('#main [data-runlab-sim][data-ready]')"):
+            if pg.evaluate("runLabSim.error"): break
+            time.sleep(0.05)
+        return pg.evaluate("runLabSim.error ? {error: runLabSim.error} : runLabSim.result")
+    C = simulate()
+    if not C or 'error' in C: errs.append(f"simulate: no compare came back: {(C or {}).get('error')}"); return
+    zero = all(C['diff'][k]['changed'] == 0 for k in C['diff'])
+    if not (C['same'] and zero and C['hash']['base'] == C['hash']['draft']):
+        errs.append(f"simulate: with no changes, same={C['same']}, hashes {C['hash']}, differences {[k for k in C['diff'] if C['diff'][k]['changed']]}")
+    if C['base'] != want: errs.append(f"simulate: Base's numbers are not the CLI's in Node: {json.dumps(C['base'])[:300]} against {json.dumps(want)[:300]}")
+    banner = f"Bot policy {C['policy']['name']}: a lower bound on a careful player, not a prediction"
+    marks = pg.evaluate("""b=>{const o=document.querySelector('#main [data-runlab-sim]');return {tables:o.querySelectorAll('.rl-sim-table').length,
+      banners:[...o.querySelectorAll('.rl-sim-banner')].filter(e=>e.textContent===b).length,
+      driven:[...o.querySelectorAll('tr[data-metric] .rl-sim-driven')].map(e=>e.closest('tr').dataset.metric)}}""", banner)
+    if marks['tables'] < 5 or marks['banners'] != marks['tables']: errs.append(f"simulate: {marks['banners']} banners on {marks['tables']} tables")
+    if sorted(marks['driven']) != sorted(C['policyDriven']): errs.append(f"simulate: policy-driven rows {marks['driven']}, the report's {C['policyDriven']}")
+    base_made = pg.evaluate('logicWorkerBase.made')
+    heal = pg.evaluate("studioState.D.rules.run.healCost")
+    pg.evaluate(f"studioState.D.rules.run.healCost = {heal * 2}")
+    try: D = simulate()
+    finally: pg.evaluate(f"studioState.D.rules.run.healCost = {heal}")
+    if not D or 'error' in D: errs.append(f"simulate: no compare after the clinic edit: {(D or {}).get('error')}"); return
+    h = D['diff']['healed']
+    if D['same'] or not (h['changed'] > 0 and h['mean'] > 0) or D['hash']['draft'] == D['hash']['base'] or D['hash']['base'] != C['hash']['base']:
+        errs.append(f"simulate: healCost {heal * 2} gave same={D['same']}, healed {h}, hashes {D['hash']}")
+    if pg.evaluate('logicWorkerBase.made') != base_made: errs.append('simulate: the Base worker was made again for the same loaded data')
+    pg.fill('#rlSimN', '500')
+    pg.dispatch_event('#rlSimN', 'change')
+    if pg.input_value('#rlSimN') != '200' or pg.evaluate('runLabSim.n') != 200: errs.append(f"simulate: 500 seeds asked kept {pg.input_value('#rlSimN')} (the browser's cap is 200)")
+    pg.fill('#rlSimN', '200')
+    pg.dispatch_event('#rlSimN', 'change')
+    if len(errs) > n: errs[n:] = [f'run lab: {e}' for e in errs[n:]]
+    else: print(f"run lab simulate: 5 seeds the same on Base and Draft ({C['hash']['base']}), Base equals the CLI's report; a banner on each of {marks['tables']} tables; healCost {heal} -> {heal * 2} healed +{h['mean']} [{h['lo']}, {h['hi']}] (Draft {D['hash']['draft']}); capped at 200", flush=True)
+
+
 def checks_steps(pg, errs):
     """Studio plan Phase 1 (T1.3): the Check runs check-data's checks (logic/data-checks.js) and an error blocks
     Propose. The game data has no error; a planted relic, unlock, run rule and robot problem, and a pool typo, are
@@ -1303,6 +1363,7 @@ STEPS = [
     ('ui_screens', ui_screens_steps),
     ('studio_test', studio_test_steps),
     ('run_lab', run_lab_steps),
+    ('run_lab_sim', run_lab_sim_steps),
     ('checks', checks_steps),
 ]
 
