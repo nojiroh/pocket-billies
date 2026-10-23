@@ -483,12 +483,7 @@ function settingsHTML() {
       );
   else if (tab === 'sound')
     body =
-      settingsRowHTML(
-        'Sound',
-        'All of it at once. Mute keeps your levels for later.',
-        switchHTML('mute', !p.mute, '', '1')
-      ) +
-      volumeSliderHTML('master', 'Volume', 'Everything together.', 1) +
+      volumeSliderHTML('master', 'Volume', 'Everything together. Mute keeps your levels for later.', 1) +
       volumeSliderHTML('music', 'Music', 'Tunes for each place and battle.', 0.55) +
       volumeSliderHTML(
         'sfx',
@@ -564,7 +559,7 @@ function settingsHTML() {
 }
 /* SND-1: mute from any tab, beside the sheet's title (the title is drawn by ui.js, which the UI track keeps until
    UI-5, so the button comes first in the sheet's body and menus.css lifts it into the title's row); the same
-   preference as the Sound tab's switch, through the same click handler */
+   preference as the Volume row's mute (UI-7a; the Sound tab's on/off switch went, as it did the same) */
 function muteButtonHTML(p) {
   const muted = !!p.mute;
   return `<button type="button" class="pb small quiet set-mute" data-pref-set="mute" data-v="${muted ? '' : '1'}" aria-pressed="${muted}" aria-label="Mute" title="${muted ? 'Sound off' : 'Sound on'}">${uiIconHTML(muted ? 'sound-off' : 'sound', 18)}</button>`;
