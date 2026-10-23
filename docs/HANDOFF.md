@@ -2,6 +2,24 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Tooling - Repo admin workflow (tags and branch deletion for cloud sessions) - 2026-10-23
+Branch `claude/optimistic-maxwell-vhge6s`. Not a phase: asked for by the owner so sessions can make tags and clean up
+branches (the git proxy refuses both with HTTP 403).
+- Changed: `.github/workflows/repo-admin.yml`, run by hand (workflow_dispatch). `create-tag`: a lightweight tag on a
+  commit, names `legacy` or `<name>-done` only, an existing tag is never moved; on a `phase-*` tag it starts the Check
+  workflow on the tag with `baseline=true`, since a tag made with GitHub's own token starts no workflows (a dispatched
+  Check also runs the selftest job, which a pushed tag doesn't). `delete-branches`: never main, legacy, the default
+  branch, archive/* or a branch with an open pull request; the run summary lists each branch's last commit.
+  `dry_run` is on by default. docs/BRANCHES.md says to use it.
+- Risky: the workflow can delete branches and runs with `contents: write`. Anyone who can push could edit it on a
+  branch and run that copy; only people with write access can run workflows at all. To limit it to main's copy, give
+  the job a GitHub environment that only allows main (Settings -> Environments).
+- Verified: actionlint clean; both scripts run against a stand-in `gh` (protected names, open PRs, missing branches,
+  dry run, empty list, bad and existing tag names, the phase-tag Check start). Not run on GitHub yet: it must be on
+  main first.
+- Next: after the merge, a dry run of each action, then the `legacy` tag and the branch cleanup (docs/BRANCHES.md is
+  out of date: 156 branches on 2026-10-23).
+
 ### Sound track SND-5 - Battle and run music - 2026-10-22
 Branch `sound` (PR #120). Plan approved by the owner's "Start", without picks on the two "Ask me before" items, so
 the recommendations were taken (and named as such in the commits): **the red zone plays a tense variant of the battle

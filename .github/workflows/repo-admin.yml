@@ -1,0 +1,123 @@
+# Repository housekeeping that cloud sessions can't do through git: their git proxy only lets them push to their own
+# branch, so pushing a tag or deleting a branch gets HTTP 403. A session (or you) runs this by hand instead:
+# Actions -> Repo admin -> Run workflow, or the GitHub tools' "run workflow". Running it needs write access to the repo.
+# - create-tag: a lightweight tag on a commit (default main). Only `legacy` and `<something>-done` names; a tag that
+#   already exists is never moved. A tag made here doesn't start other workflows (GitHub's rule for its own token), so
+#   for a phase-* tag this workflow starts the Check workflow on the tag itself, the run a pushed phase tag starts.
+# - delete-branches: deletes the listed branches (spaces, commas or new lines between names). Never main, legacy, an
+#   archive/* branch or a branch with an open pull request. Each deleted branch's last commit goes in the run summary,
+#   so any branch can be brought back: git push origin <commit>:refs/heads/<name>.
+# dry_run (on by default) only reports what would happen.
+name: Repo admin
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: What to do
+        type: choice
+        options: [create-tag, delete-branches]
+      tag:
+        description: 'create-tag: the tag name (legacy or <something>-done)'
+        type: string
+        default: ''
+      commit:
+        description: 'create-tag: the commit id or branch to tag'
+        type: string
+        default: main
+      branches:
+        description: 'delete-branches: the branch names'
+        type: string
+        default: ''
+      dry_run:
+        description: Only report what would happen
+        type: boolean
+        default: true
+
+permissions:
+  contents: write # make tags, delete branches
+  pull-requests: read # skip branches with an open pull request
+  actions: write # start the Check workflow on a phase-* tag
+
+concurrency:
+  group: repo-admin
+  cancel-in-progress: false
+
+jobs:
+  admin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      ACTION: ${{ inputs.action }}
+      TAG: ${{ inputs.tag }}
+      COMMIT: ${{ inputs.commit }}
+      BRANCHES: ${{ inputs.branches }}
+      DRY_RUN: ${{ inputs.dry_run }}
+    steps:
+      - name: Create a tag
+        if: inputs.action == 'create-tag'
+        run: |
+          set -euo pipefail
+          if ! [[ "$TAG" =~ ^(legacy|[a-z0-9]+(-[a-z0-9]+)*-done)$ ]]; then
+            echo "::error::Tag name '$TAG' not allowed: only legacy or <something>-done (lowercase, digits, dashes)"
+            exit 1
+          fi
+          if gh api "repos/$REPO/git/ref/tags/$TAG" > /dev/null 2>&1; then
+            echo "::error::Tag $TAG already exists; tags are never moved here"
+            exit 1
+          fi
+          sha=$(gh api "repos/$REPO/commits/$COMMIT" -q .sha)
+          subject=$(gh api "repos/$REPO/commits/$sha" -q '.commit.message | split("\n")[0]')
+          echo "Tag $TAG -> $sha ($subject)" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Dry run: nothing made." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          gh api "repos/$REPO/git/refs" -f "ref=refs/tags/$TAG" -f "sha=$sha" > /dev/null
+          echo "Made." | tee -a "$GITHUB_STEP_SUMMARY"
+          if [[ "$TAG" == phase-* ]]; then
+            gh workflow run check.yml --repo "$REPO" --ref "$TAG" -f baseline=true
+            echo "Started the Check workflow on $TAG (makes the picture baseline, as a pushed phase tag does)." \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Delete branches
+        if: inputs.action == 'delete-branches'
+        run: |
+          set -euo pipefail
+          default=$(gh api "repos/$REPO" -q .default_branch)
+          open=$(gh pr list --repo "$REPO" --state open --limit 500 --json headRefName -q '.[].headRefName')
+          read -r -a names <<< "$(echo "$BRANCHES" | tr ',\n' '  ')"
+          if [ "${#names[@]}" -eq 0 ]; then
+            echo "::error::No branch names given"
+            exit 1
+          fi
+          {
+            echo "| Branch | Last commit | Result |"
+            echo "|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          failed=0
+          for b in "${names[@]}"; do
+            result=""
+            sha=""
+            if [ "$b" = "main" ] || [ "$b" = "legacy" ] || [ "$b" = "$default" ] || [[ "$b" == archive/* ]]; then
+              result="kept: protected name"
+            elif grep -qxF -- "$b" <<< "$open"; then
+              result="kept: has an open pull request"
+            elif ! sha=$(gh api "repos/$REPO/git/ref/heads/$b" -q .object.sha 2> /dev/null); then
+              sha=""
+              result="not found"
+            elif [ "$DRY_RUN" = "true" ]; then
+              result="would delete"
+            elif gh api -X DELETE "repos/$REPO/git/refs/heads/$b" > /dev/null; then
+              result="deleted"
+            else
+              result="FAILED"
+              failed=1
+            fi
+            echo "$b ${sha:-—} $result"
+            echo "| \`$b\` | \`${sha:-—}\` | $result |" >> "$GITHUB_STEP_SUMMARY"
+          done
+          exit $failed

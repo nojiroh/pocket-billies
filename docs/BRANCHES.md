@@ -33,7 +33,7 @@ What each branch on GitHub is for. Written 2026-10-21 in a clean-up session; upd
 
 ## To delete
 
-Sessions can't delete branches or push tags (the git proxy only allows the session's own branch), so these are for the owner to run. The commit id is kept so any branch can be brought back: `git push origin <id>:refs/heads/<name>`.
+Sessions can't delete branches or push tags through git (the git proxy only allows the session's own branch, HTTP 403). They use the **Repo admin** workflow instead (.github/workflows/repo-admin.yml: Actions -> Repo admin -> Run workflow): `delete-branches` never touches main, legacy, archive/* or a branch with an open pull request, and writes each deleted branch's last commit in the run summary; `create-tag` makes `legacy` or `<name>-done` tags and never moves one. Both have a dry run, on by default. The owner can still run the commands below by hand. The commit id is kept so any branch can be brought back: `git push origin <id>:refs/heads/<name>`.
 
 ### 1. Already in main (nothing lost)
 
@@ -243,6 +243,6 @@ Group 4 (after the UI-3, TR-1, ST-T and RL-1 sessions are done; check first that
 git push origin --delete ccr-dc41c006-00p8dj ccr-be1fe0b2-8j7yqr ccr-f4c5aa48-ofajfu ccr-a09a396b-vfdptc
 ```
 
-Tags still waiting to be pushed from your machine (see HANDOFF): `legacy`, `phase-04-done`, `phase-05-done`, `rl-1-done` .. `rl-5-done`, `ui-2-done`, the `st-N-done` tags.
+Tags still waiting to be made (with the Repo admin workflow, or from your machine; see HANDOFF): `legacy`, `phase-04-done`, `phase-05-done`, `rl-1-done` .. `rl-5-done`, `ui-2-done`, the `st-N-done` tags.
 
 Tip: GitHub's Settings > General > "Automatically delete head branches" removes a PR's branch when it merges, so merged branches stop piling up.
