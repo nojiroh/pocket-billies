@@ -61,6 +61,7 @@ expose({
   drawSoonQueue: [() => drawSoonQueue],
   errorToast: [() => errorToast, v => (errorToast = v)],
   fieldOutputId: [() => fieldOutputId],
+  focusSelector: [() => focusSelector, v => (focusSelector = v)],
   foldedSectionGroups: [() => foldedSectionGroups],
   formatThousands: [() => formatThousands],
   grid: [() => grid],
@@ -741,10 +742,27 @@ function keepPutBack(m) {
     ph.replaceWith(el);
   }
 }
+/* Studio plan T6.2, F21: a redraw of the same section keeps the focused control (found again by its data-p, or by its
+   tag and data attributes) and the pane's scroll, so a matchup click or a select that redraws doesn't drop you */
+function focusSelector(el) {
+  if (!el || !el.dataset) return null;
+  const tag = el.tagName.toLowerCase();
+  if (el.dataset.p) return `${tag}[data-p="${CSS.escape(el.dataset.p)}"]`;
+  const ks = Object.keys(el.dataset);
+  if (!ks.length) return el.id ? '#' + CSS.escape(el.id) : null;
+  return (
+    tag +
+    ks.map(k => `[data-${k.replace(/[A-Z]/g, c => '-' + c.toLowerCase())}="${CSS.escape(el.dataset[k])}"]`).join('')
+  );
+}
 export function renderPane(m, sec) {
   const S = SECTIONS[sec];
   if (!S) return;
   renderingPane = m;
+  const same = m.dataset.sec === sec,
+    a = document.activeElement,
+    refocus = same && a && a !== document.body && m.contains(a) ? focusSelector(a) : null,
+    y = m.scrollTop;
   try {
     studioState.after = [];
     const P = studioProbe.on,
@@ -758,6 +776,10 @@ export function renderPane(m, sec) {
     studioState.after.forEach(f => f());
     const t3 = P ? performance.now() : 0;
     mountPreviews(m);
+    m.dataset.sec = sec;
+    if (same) m.scrollTop = y;
+    const f = refocus && m.querySelector(refocus);
+    if (f) f.focus({ preventScroll: true });
     if (P)
       P('render', { sec, pane: m.id, html: t1 - t0, dom: t2 - t1, after: t3 - t2, previews: performance.now() - t3 });
   } catch (e) {

@@ -1078,6 +1078,17 @@ def polish_steps(pg, errs):
         counts.append(doc_listeners())
     if counts[-1] != counts[0]: errs.append(f'pixel canvas: document listeners after each of 5 opens: {counts}')
     print('polish: second-pane rename, shop thank-you lines, prefixes, errors shown, pixel canvas listeners ' + str(counts), flush=True)
+    # T6.2, F21: a redraw keeps the focus and the scroll: a matchup click in Types, a select that redraws in Moves
+    got = pg.evaluate("""(async () => { openSection('types'); await new Promise(r => setTimeout(r, 300));
+      const m = document.querySelector('#main'), b = m.querySelectorAll('[data-act=mx]')[30];
+      b.scrollIntoView({ block: 'center' }); const y = m.scrollTop; b.focus(); b.click();
+      const a = document.activeElement, r = { mx: !!(a && a.dataset.act === 'mx' && a.dataset.a === b.dataset.a && a.dataset.b === b.dataset.b), scroll: Math.abs(m.scrollTop - y) < 2 };
+      undo(); openSection('moves'); await new Promise(r => setTimeout(r, 300));
+      const s = m.querySelector('select[data-rr][data-p$=".t"]');
+      if (s) { s.focus(); s.dispatchEvent(new Event('change', { bubbles: true })); const f = document.activeElement; r.select = !!(f && f.dataset.p === s.dataset.p); undo(); }
+      else r.select = 'no select';
+      return r; })()""")
+    if got != {'mx': True, 'scroll': True, 'select': True}: errs.append(f'focus: a redraw kept focus and scroll as {got}')
     # T6.7: 20 tool switches in Walk scenes (each redraws the section) keep one WebGL context and use no stale object
     ready = "walkView.ready && !!document.querySelector('#scPv')"
     pg.evaluate("void openSection('scenes')")
