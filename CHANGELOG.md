@@ -15,6 +15,13 @@ kept aside in the browser).
   nine older people to the new look and fill in clothing colours every time, which then rode along with the next
   edit and made its undo take more back than it should (seen as an undo in Rules failing). Those nine people are now
   stored in the new look once (they look exactly the same), and a person without a look is a data error.
+- The Studio's Check and the game data check in CI are one set of checks (Studio plan Phase 1). The Check now also
+  checks the run rules, the ranch, robots, biomes, node types, Loopholes, currencies, buildings and unlocks, in the
+  same words as CI; CI now also checks what only the Studio used to (scenes and roads, as notes). Propose changes
+  refuses while the Check lists a problem, so a proposal can no longer fail CI on something the Studio didn't show;
+  everything else is a note that never gets in the way. A typo in a Billie's name is a problem now, not a "legacy"
+  note. CI runs the Studio's own checks on pull requests that change the Studio or the game's logic. The Studio's
+  local mode (never in this repository) is gone from the docs and the tests.
 - The Studio keeps what you haven't proposed yet in the browser (Studio plan Phase 1). Closing the tab, a crash or a
   phone dropping the page no longer loses work: the next time the Studio opens it offers the changes back (Restore,
   Later or Discard), at the commit they were made on, so nothing merged since is put back. Only the changed files and

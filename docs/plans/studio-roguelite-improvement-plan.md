@@ -1413,6 +1413,14 @@ The owner took the recommendation on every open question:
    - Convert the 9 old-style people to `look` in one data-only commit.
    - Remove the convert-on-open.
    - Make `look` required.
+9. **T1.3 severity, applied** (Phase 1 sessions C+D, recommended option taken): an `error` is exactly what
+   check-data already refused; every other Studio "error" became a warning (the list is in HANDOFF). No Studio check
+   was turned into a new block. The UI rules over their ceiling are a warning (a lint failure, not check-data's).
+10. **T1.3 enums, applied:** relic `fx.stat` and the currencies of buildings and unlock grants are checked against
+    stats.json and currencies.json; currencies.schema.json keeps the four ids as the one list (the game's code reads
+    them). Recommended option taken.
+11. **T1.4 path filter, applied:** a pull request's changed files are compared with its base commit in the smoke
+    job (no third-party action). Recommended option taken.
 
 Taken in Phase 1, session B (the recommended option each time, under the owner's standing instruction):
 9. **F14, a second write:** the new guard also caught People filling `look.colors` for the selected person on
