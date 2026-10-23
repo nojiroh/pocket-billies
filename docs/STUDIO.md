@@ -2,9 +2,8 @@
 
 The Studio edits the game's data, skeletons and art. It runs from the game's site (`…/studio/`): sign in with a GitHub
 token, and **Propose changes** puts your changes on a new branch with a pull request, so nothing changes in the game
-until the owner merges it. Started from `start-studio.py` on your own computer, saves would go straight into
-`game/data` and `game/art`, but that server is **not in this repository** (see the end of this file); the GitHub
-route is the one that works.
+until the owner merges it. That is the only way it runs: the old local mode (a server on your own computer that
+saved straight into `game/data`) was dropped (Studio plan, owner's decision 2026-10-22).
 
 ## Propose changes: what it does, and what happens when it fails (Studio plan Phase 0)
 
@@ -44,11 +43,17 @@ route is the one that works.
 - The kept changes stay in this browser on this device. They are never sent anywhere; another browser or computer
   doesn't see them. GitHub mode only.
 
-## Local mode (start-studio.py, not in this repository)
+## The Check: problems and notes (Studio plan Phase 1, T1.3)
 
-Double-click `Start-Studio.bat` / `Start-Studio.command`, or run
-`python3 start-studio.py`. It opens at **http://localhost:8001**. The server is not in this repository, so this mode
-can't be used from a clone of it today.
+- The Check runs the same checks as `npm run check:data` (CI) where they overlap: they live in
+  `game/js/logic/data-checks.js`, so the run rules, ranch, robots, biomes, node types, relics (Loopholes), currencies,
+  buildings, unlocks, scenes and roads are checked the same way in both.
+- A **Problem** (an error) is something check-data fails on. **Propose changes refuses while there is one**: it names
+  the first few, and Show me opens the Check. Nothing is sent and your changes stay unsaved until you fix it.
+- A **Note** (a warning) is something the game works around (a missing picture, an unknown shop, a stop no road
+  reaches). It is shown and never blocks. check-data prints the scene and road notes too, and never fails on them.
+- A Billie named from a line parked in `game/data/legacy` is a note (the game stands a new line's Billie in for it).
+  A name that is in neither, like a typo, is a problem.
 
 ## Layout (studio track ST-1)
 
@@ -256,17 +261,17 @@ logic/island.js's contract (docs/phases/island-track.md). It opens on the left o
   says so: try another seed, or a smaller island. A **locked** ground shows its dials read-only and is never made
   again. Copperleaf has no coast yet, so it has no dials until IS-5.
 
-## Run Lab (Studio plan Phase 2, T2.2)
+## Run Lab (Studio plan Phase 2, T2.2-T2.6)
 
 Runs → **Run Lab** shows a run's map from its seed, made by the game's own start (`runStartPlan` in
 game/js/logic/run-start.js, the one taking off from the mast calls) on the Studio's data as it is now, unsaved changes
 included. It changes nothing.
 
-- **Seed.** Type it, roll one (🎲), or **Paste a debug log…**: the log's run seed and the save's unlocks are read,
-  nothing else. A seed is cleaned as the game's debug menu cleans it (letters, digits, `_` and `-`, 20 at most), so the
+- **Seed.** Type it, roll one (🎲), or **Paste a debug log…**: the log's run seed and the run's own unlocks are read
+  (an older log has only the save's), nothing else. A seed is cleaned as the game's debug menu cleans it (letters, digits, `_` and `-`, 20 at most), so the
   same text makes the same run there.
-- **Unlocks.** None (a fresh save), All, or the pasted log's. Only unlocks that open a biome change the map. The log
-  has the save's unlocks when it was taken, not the run's at take-off, and a short map isn't logged.
+- **Unlocks.** None (a fresh save), All, or the pasted log's. Only unlocks that open a biome change the map (those
+  that open shop wares change the shops). A short map isn't logged: tick it yourself.
 - **Short map** is the debug menu's (5 rows, 1 mini-boss).
 - **The map.** Rows from the landing (left) to the boss (right), lane 0 below. A node's fill is its biome's haze
   colour (`look.haze`), its letter and ring colour its type. A dashed ring is what the landing shows as `?`, a faint
@@ -280,8 +285,23 @@ included. It changes nothing.
   changes, for a bug report.
 - An edit made in the other pane (Rules beside it, for example) redraws the map at once.
 
-Not yet: map checks over many seeds (T2.3), foes, shop stock and wild tables per node (T2.4), a run rules editor
-beside the map (T2.5), and "Play this seed" in the game (T2.6).
+- **From the game's logic** (under a clicked place): its wild Billies (levels and odds), its mini-boss's or boss's
+  leader and team, a town's stock and Loophole on every day it can be open, and the run's Loophole picks after each
+  mini-boss with none held. The game's own code works these out on your unsaved data in a background worker
+  (`studio/js/logic-worker.js`); the first answer after an edit takes a moment longer.
+- **Over 1,000 seeds** (under the map): the map checks (every place reachable, no dead end, each role row holding the
+  type the game looks for, a deadline after the shortest walk), each problem with a seed that shows it, and the
+  figures: places, place types, towns on a walk, towns made against routes, biomes, and seeds worth a look. **Open**
+  draws that seed.
+- **Run rules** (beside the map): rules.json `run` (map, clock, what the map shows, wild levels, foes, the town shop
+  and clinic, the payout) and nodeTypes (names and weights). Each change redraws the map, the logic and the checks, and
+  is saved and proposed like any other field. **In the code (read-only)** lists what the code decides, not the data
+  (two lanes at most, where mini-boss rows fall, the exits, the buildings…), each with its file and line.
+- **▶ Play this seed** opens the game on this seed with these unlocks and this map size, after your unsaved changes,
+  in a test run: a new game that takes off at once from the mast, never saved and never signed in. Edits made while it
+  runs (a clinic's price, a shop's wares) reach it half a second later. By hand: add
+  `?debug&run=<seed>&unlocks=none|all|<ids>&short=1&party=<species@level,…>&relics=<ids>&draft=1` to the game's
+  address.
 
 ## Roguelite content editors (Studio plan Phase 4)
 
@@ -378,7 +398,7 @@ Game → **UI look** edits game/data/uiTheme.json, the look of the game's menus 
 | **Engine** | Every dial of the 3D renderer, with a live preview of any walk scene: lens (sharp band, blur in front and behind, round highlights, chromatic aberration, vignette, grain, sharpen), color (exposure, highlight roll-off, contrast, saturation, warmth, bloom), sun and sky (direction, height, color, real-clock sun, sky light, ground bounce, clouds and their shadows, light shafts), shadows (strength, softness, color, contact shadows, solid building shadows, ambient occlusion), lights, haze and mist, horizon curve, ground bumpiness and shine, world map mountains, grass and wind, water, camera (including distance and tilt) and quality, plus colour grades. Set them for the **whole game**, override them for **one scene** (battles there follow it) or for the **world map**; ↺ puts back a single dial. Ready-made presets (Sunny, Overcast, Golden hour, Cave, Mall), your own presets, a "Hold to compare" button that shows the built-in look, and a frame meter. |
 | **Map art** (under World) | Paint `world.png` with a brush, fill, color picker, clone and "fill with terrain". Remove the painted trail and repaint it along the stops in the exact path the game walks. Drag a stop and its painted patch moves with it, with the old spot filled from the terrain around it. A preview shows the stop from the game's map camera. |
 | **Trainers, People** | Trainer teams, their script (checked as you type), when they're there, rewards, badges, sandstorms; trainer and shopkeeper looks with a live preview. **Mini-boss** (RL-5): the trainer stands on no stop (the eight badge leaders, for the runs, RL-13); Stands at is hidden. |
-| **Run Lab** (group Runs) | Studio plan T2.2: a run's map from a seed, on your unsaved data and beside the loaded data; click a node for its type, biome, day, seed and forecast (see Run Lab above). Read-only. |
+| **Run Lab** (group Runs) | Studio plan Phase 2: a run's map from a seed, on your unsaved data and beside the loaded data; a place's foes, shops and wild Billies from the game's logic; checks over 1,000 seeds; the run rules beside it; Play this seed (see Run Lab above). |
 | **Loopholes, Unlocks & hub, Economy** (group Runs) | Studio plan Phase 4: a run's Loopholes with a sample build and a seed's offers, the unlock graph with what a new save has, and every source and sink of each currency (see Roguelite content editors above). |
 | **Legacy world** (group Legacy) | RL-5: the old world outside the hub, parked in `game/data/legacy`, read-only: the 48 places with their old stop numbers, the trainers who stood there and their roads, plus counts of the parked shops, jobs and lore. It is read beside the Studio, or from GitHub when signed in, and never enters the Studio's data, so Save, Undo and the Check never touch it. **Copy into game** brings a place's map back as a walk scene of its own (no place, no roads) in one undo step and opens it in Walk scenes; whatever its people name that the game no longer has shows in the Check. |
 | **Story scripts** | Project Story S3: story.json's own scripts (Hazel's lab, after Blake's first battle, the ending): add, rename, remove and edit them in the script field; the story's flags, start presets (with ▶ Play) and quests to read. |
@@ -386,7 +406,7 @@ Game → **UI look** edits game/data/uiTheme.json, the look of the game's menus 
 | **UI look** | The menus' look (uiTheme.json): colours light and dark with contrast grades, glass, depth, shapes, space, type and motion, for the whole game or one screen's colours and shapes; presets, Hold to compare, the UI gallery as a live preview. UI track UI-3, above. |
 | **Rules** | Every number that tunes the game: starting items, starters and rival, wild Billies per place and how fast they come back, prize money, leveling curve, team size, eggs, damage, critical hits, type abilities, taxing, bargains. |
 | **Art files** | Browse, download and replace any image. |
-| **Check & backups** | Lists problems with "Show me" links; restores earlier versions. |
+| **Check & backups** | Lists problems with "Show me" links (see "The Check" below). The backups list is from the dropped local mode and is always empty on GitHub. |
 | **Find and Connections** | Ctrl+K finds any setting or thing and takes you to it; Ctrl+L shows what the thing you're editing uses and what uses it, or, for an engine dial, where its value comes from and what it depends on. |
 
 ## Saving in local mode
@@ -407,8 +427,6 @@ you changed. You can also edit them by hand; `npm run check:data` checks them (a
 The game tolerates mistakes. It skips anything it can't use and lists it in the debug
 menu.
 
-Local mode needs `start-studio.py`, which is not in the repository; it still reads and writes
-the old single `gamedata.js` and would have to be changed to the data files (phase 04b).
 
 
 ## Notes and limits

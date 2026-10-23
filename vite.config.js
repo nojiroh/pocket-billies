@@ -68,6 +68,42 @@ async function bundlePage(outDir, page) {
   return [...srcs, ...ids.filter(id => id.startsWith(ROOT + '/'))].map(s => relative(ROOT, s));
 }
 
+// Studio plan T2.4: a module that isn't on a page (the logic worker's modules) as one file in its own place, its
+// imports inlined in order; returns the sources it took in (left out of dist/), not itself
+async function bundleModule(outDir, file) {
+  const out = await build({
+    configFile: false,
+    root: ROOT,
+    logLevel: 'warn',
+    publicDir: false,
+    build: {
+      write: false,
+      minify: false,
+      sourcemap: true,
+      target: 'esnext',
+      modulePreload: false,
+      copyPublicDir: false,
+      rollupOptions: {
+        input: resolve(ROOT, file),
+        // the worker reads what it exports (an app build would drop an entry's exports)
+        preserveEntrySignatures: 'strict',
+        output: { format: 'es', codeSplitting: false },
+      },
+    },
+  });
+  const chunks = (Array.isArray(out) ? out : [out]).flatMap(o => o.output).filter(o => o.type === 'chunk');
+  if (chunks.length !== 1) throw new Error(`${file}: expected one bundle, got ${chunks.length}`);
+  const [chunk] = chunks,
+    name = file.split('/').pop();
+  writeFileSync(resolve(outDir, file), chunk.code + `\n//# sourceMappingURL=${name}.map\n`);
+  writeFileSync(resolve(outDir, file) + '.map', JSON.stringify({ ...chunk.map, file: name }));
+  const ids = chunk.moduleIds || Object.keys(chunk.modules || {});
+  return ids
+    .filter(id => id.startsWith(ROOT + '/'))
+    .map(s => relative(ROOT, s))
+    .filter(f => f !== file);
+}
+
 // The owner, 2026-10-22: a phone must play the latest deploy. Each build is named (the commit on GitHub, else the
 // time) in dist's version.js (PB_BUILD, read by the game and the service worker, so a new build is a new worker) and
 // in build.json, which the game asks for to see whether the site has a newer one (game/js/update-check.js).
@@ -106,6 +142,8 @@ function copySite() {
       buildData(resolve(outDir, 'game', 'data'));
       const sources = new Set(['game/js/test-globals.js', 'game/js/hooks.js']);
       for (const page of PAGES) for (const f of await bundlePage(outDir, page)) sources.add(f);
+      // Studio plan T2.4: the Studio's logic worker loads its modules as one file too (it loads it once GAMEDATA is set)
+      for (const f of await bundleModule(outDir, 'studio/js/logic-worker-modules.js')) sources.add(f);
       for (const f of sources) rmSync(resolve(outDir, f), { force: true });
       // the folder the engine's modules came from, now empty (phase 04e: and the logic's, once it has modules)
       rmdirSync(resolve(outDir, 'game/js/engine'));

@@ -3,7 +3,10 @@
    and every logic module, in the order tools/test/load-logic.mjs imports them in Node (game-data.js, then
    game/js/logic/ by name), so the logic sees in the worker what it sees in the unit tests. Static imports: the browser
    fetches them all at once and runs them in this order. On no page (game-data.js would read the Studio's data as the
-   game's); tools/test/logic-worker.test.mjs keeps the list equal to game/js/logic/: a new logic module goes here too. */
+   game's); tools/test/logic-worker.test.mjs keeps the list equal to game/js/logic/: a new logic module goes here too.
+   First the page stand-ins (logic-worker-page.js), as load-logic.mjs gives them before anything loads. The built site
+   bundles this file into one (vite.config.js), with the one hooks.js its modules share. */
+import './logic-worker-page.js';
 import '../../game/js/game-data.js';
 import '../../game/js/logic/battle-engine.js';
 import '../../game/js/logic/battle-rewards.js';

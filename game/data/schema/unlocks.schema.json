@@ -140,23 +140,22 @@
       "type": "object",
       "minProperties": 1,
       "maxProperties": 1,
-      "additionalProperties": false,
-      "properties": {
-       "capital": {
-        "type": "integer",
-        "minimum": 1,
-        "maximum": 1000000
-       },
-       "scrap": {
-        "type": "integer",
-        "minimum": 1,
-        "maximum": 1000000
-       },
-       "seals": {
-        "type": "integer",
-        "minimum": 1,
-        "maximum": 1000000
+      "propertyNames": {
+       "description": "a currency kept between runs (currencies.json; check-data and the Studio check it)",
+       "pattern": "^[a-z][a-z0-9_]*$",
+       "not": {
+        "enum": [
+         "building",
+         "level",
+         "shop",
+         "biome"
+        ]
        }
+      },
+      "additionalProperties": {
+       "type": "integer",
+       "minimum": 1,
+       "maximum": 1000000
       }
      }
     ]

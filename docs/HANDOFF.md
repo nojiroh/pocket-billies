@@ -81,43 +81,6 @@ publish code, run-lab.js internals, the sim files and the workbench: this one ad
 - The plan's "encounter preview of a node's wild table" is the Run Lab's node panel already (Phase 2); not repeated.
 
 
-### Studio plan Phase 1, sessions C+D - One validator for CI and the Studio (T1.3) and Studio checks in CI (T1.4) - 2026-10-22
-Branch `ccr-81011a25-lf3exv` (PR #131). Plan pre-approved by the owner's standing instruction (recommended options
-taken; recorded under the plan doc's "Decisions"). Phase 1b (T1.2 undo, T1.5, People) works on the same branch at the
-same time: this session stays out of history.js, studio-app.js's undo, studio-test.js, studio-test-report.js,
-data-editors.js and the person schema, and merges (never rebases) before every push.
-
-**Plan** (one cause per commit, checks after each):
-1. `tools/data-files.mjs` reads `PB_DATA_DIR` when set (so a test can run check-data on a planted copy).
-2. Snapshot test first: `tools/test/check-data-snapshot.test.mjs` plants bad data in every family T1.3 moves (in a
-   temp copy of game/data) and compares check-data's whole output with a committed snapshot, made on the old code.
-3. The move: check-data's battle.turnCap, run (payout, map, clock, reveal, scene, wild, seamIn, start, home, pack,
-   healCost, shop, foes, relics), ranch, robots, biomes, nodeTypes, relics, currencies, buildings and unlocks checks go
-   to `game/js/logic/data-checks.js` as pure functions of the data that return `[file, message]` pairs; schema checks
-   stay in check-data (passed in as a callback, so the order of lines is kept). Snapshot identical; unit tests per
-   family with planted bad data.
-4. The Studio's Check runs the same functions (a family that throws on malformed data reports that it stopped).
-5. One legacy-species rule (check-data's: a species is known when its line is loaded or is a line in
-   game/data/legacy), in the module; the Studio passes the legacy line ids its Legacy section reads.
-6. Enums to data: relic `fx.stat` against stats.json (schema enum removed); currency ids from currencies.json
-   (buildings' and unlock costs' enums removed); one exported `RUN_RULE_KEYS`.
-7. The Studio-only scene and road checks move into the module (same words); check-data runs them, so CI gains them.
-8. Severity: `error` = check:data fails = Propose is blocked; the Studio's other "errors" become warnings. check-data
-   prints the warnings and never fails on them.
-9. Propose refuses while the Check has an error ("Show me" opens the Check); a stand-in step `checks` in
-   check-studio-github.py (planted pool typo blocks, a warning does not).
-10. CI: the smoke job runs `check-studio-github.py --only=sections,publish,drafts,studio_test,checks` on pull requests
-    that touch `studio/` or `game/js/logic/`.
-11. Local mode dropped: `check-quick.py --studio` and the remaining start-studio.py text go.
-12. Docs: STUDIO.md, TESTING.md, CHANGELOG, the plan's Decisions, this entry.
-
-**Status for the parent session: `game/js/logic/data-checks.js` has the moved checks and is pushed** (step 3 above,
-commit "Move: check-data's run, ranch, ..."). Phase 4 (content editors) can start on it: each family is
-`dataX(D, valid?)` returning `[file, message]` pairs (dataRunPayout, dataRanchRules, dataRunMapRules, dataRunClock,
-dataRunScene, dataRunLoop, dataRobots, dataUiTheme, dataBiomes, dataNodeTypes, dataRelics, dataCurrencies,
-dataBuildings, dataUnlocks, dataBattleRules; dataRobotProblems for a trainer's robot). The later steps here add
-families (scenes, roads) and change some words (fx.stat, currencies), not the shape.
-
 ### Studio plan Phase 2 (second session) - Logic worker, run rules card, Play this seed - 2026-10-22
 Branch `claude/sr-2-run-lab` (PR #135, against `ccr-81011a25-lf3exv`). Plans are pre-approved in these sessions: the
 recommended option is taken for every decision and recorded in the plan doc's "Decisions".
@@ -183,6 +146,65 @@ recommended option is taken for every decision and recorded in the plan doc's "D
   - util.js's `$` and `$$` default to `document`, but only when called (the logic never calls them).
 - They need `globalThis.GAMEDATA` before game-data.js loads (it reads the tables once) and `PB_VERSION` (a new save's
   gameVersion), both set by the worker.
+
+**Changed** (one cause per commit; two merges of the Phase 1 base)
+- **T2.4** run-preview.js + test (equals the game's own path for 5 seeds x none/all/short); the worker
+  (logic-worker.js, logic-worker-modules.js, unit test); logic-client.js and the Lab's "From the game's logic" panel.
+- **T2.5** logic/run-rules-code.js (11 rules in code, snippet + unit test) and the "Run rules" card beside the map.
+- **T2.6** logic/run-test.js (the address, unit test); boot.js: `?debug&run=` is a TEST_RUN that takes off through
+  runTakeOff (runTestStart); the live channel carries rules, nodeTypes, relics, unlocks, items (applied only in a test
+  run); the debug log's `state.run.unlocks`; the Lab's "▶ Play this seed"; check-fast step "Play this seed".
+- **T2.3** data-checks.js runMapProblems / runMapSweep (after Phase 1's moved checks) + unit test (1,000 seeds, about
+  150 ms); the Lab's "Over 1,000 seeds" block, run in the worker and cached while its rules stay the same.
+- check-studio-github.py `run_lab`: the panel against runPreview in Node, one worker per data version, the rules card
+  (redraw, Propose carries rules.json and nodeTypes.json, the game's error, put back leaves nothing), the code lines,
+  the sweep (clean; a planted "last row a mini-boss" named with a seed that opens), reading both log forms, Play this
+  seed in a popup (the Lab's map, an unsaved clinic price 77, a live edit to 88, no save keys on the channel).
+- Docs: STUDIO.md Run Lab, CHANGELOG, the plan's Decisions (item 9).
+
+**Where the plan doc was wrong or short**
+- The worker needs no data-version counter: the draft's JSON text is 2.4 MB now (legacy maps moved out) and
+  stringifies in about 20 ms, so it is the version.
+- `tier=` does nothing for a run's map or start today (first session's finding); left out of the address.
+- "run-map.js:102" in T2.5 is right for the lanes rule today; the card finds it by searching, not by number.
+- T2.3's "a guard row on the last row" can't be planted as written: runMapRowsFit refuses it and runMapMake throws,
+  which the sweep reports as "these rules can't make a map" with a seed. The check that matters on a map is "the last
+  row is not the boss" (rules.run.map.last), which the stand-in step plants.
+- runTakeOff calls saveNow, which calls flushAccountSave directly (setNoSaving doesn't stub it). A test run is safe
+  only because accountOn() is off for TEST_RUN; "Play this seed" relies on that, so it is a TEST_RUN.
+
+**Verified**
+- Unit tests 660 (after the second merge); lint, typecheck, check:modules, format:check, check:data.
+- `check-studio-github.py --only=run_lab,publish`: run_lab passes; publish 0 problems.
+- `check:fast`: 25 of 26 on the first full run; "Packing for a run" failed once ("no start sheet") while I was
+  editing files under the running check, then passed alone with Play this seed; after the merge, the Studio pages and
+  Play this seed pass (5 of 5).
+- Screenshots of the Lab at 1400 px: the map and rules card side by side; the logic panel.
+- **The built site** (`npm run build`, as GitHub Pages serves it): CI's build failed at first (run-preview.js, on no
+  page, was left in dist and the worker would have imported deleted sources); vite.config.js now bundles the worker's
+  module list into one file. By hand, the worker served from dist/ answered runPreview('LAB1') exactly as Node. That
+  check is not automated.
+- PR #135's CI green on afea581 (lint with the build, rules, smoke). After the third merge of the Phase 1 base: unit
+  tests 664, lint, typecheck, check:data, format, build; `check-studio-github.py --only=run_lab,checks,publish,drafts`
+  0 problems.
+- **Not run:** the full quick check (end of Phase 2), the full check-studio-github chain, a real phone or iPad.
+
+**Risky**
+- **Module workers on the owner's iPad** (Safari 15+ has them). Without one, the panel says the logic can't run; the
+  map, rules card and Play this seed still work.
+- A test run takes the Studio's rules, nodeTypes, relics, unlocks and items in place; a table the game derives from
+  them once at load (none found for the run's needs) would keep the old values.
+- The Studio page is about 900 px wide on a phone already (the top bar; every section), so the rules card sits beside
+  the map there too.
+- data-checks.js now holds Phase 1's checks and T2.3's; Phase 4 and later sessions add to the same file.
+
+**Next**
+- Phase 3: the worker's message shape above; add runSim to LOGIC_WORKER_FNS and logic-worker-modules.js's exports.
+- check-data.mjs could run runMapSweep over 1,000 seeds (CI) — one line, for its owner.
+- Manual (owner): Play this seed from the Studio on the phone; an unsaved clinic price in a run town; the Lab's
+  logic panel on the iPad.
+- **Done:** Phase 2's tickets T2.1-T2.6 are all in PR #135. Left to close the phase: the full quick check and the tag
+  `sr-2-done` (and an automated check of the built worker, if wanted: serve dist/ and ask it once).
 
 ### Studio plan Phase 2 (first session) - One run start, Run Lab v1 - 2026-10-22
 Branch `claude/sr-2-run-lab`, from the Phase 0 branch `ccr-81011a25-lf3exv` (PR #131, where the plan doc lives); PR
@@ -257,6 +279,110 @@ save's); the simulator defaults to none with `--unlocks=all`; the Run Lab gets a
 - T2.5 after T1.3; T2.6 in its own session (game boot code, a check-fast step; add `run.unlocks` to the debug log).
 - Manual (owner): play the run fixture once on the phone; compare one seed in the Lab with the debug menu's run.
 - No phase tag: Phase 2 continues.
+### Studio plan Phase 1, sessions C+D - One validator for CI and the Studio (T1.3) and Studio checks in CI (T1.4) - 2026-10-22
+Branch `ccr-81011a25-lf3exv` (PR #131). Plan pre-approved by the owner's standing instruction (recommended options
+taken; recorded under the plan doc's "Decisions"). Phase 1b (T1.2 undo, T1.5, People) works on the same branch at the
+same time: this session stays out of history.js, studio-app.js's undo, studio-test.js, studio-test-report.js,
+data-editors.js and the person schema, and merges (never rebases) before every push.
+
+**Plan** (one cause per commit, checks after each):
+1. `tools/data-files.mjs` reads `PB_DATA_DIR` when set (so a test can run check-data on a planted copy).
+2. Snapshot test first: `tools/test/check-data-snapshot.test.mjs` plants bad data in every family T1.3 moves (in a
+   temp copy of game/data) and compares check-data's whole output with a committed snapshot, made on the old code.
+3. The move: check-data's battle.turnCap, run (payout, map, clock, reveal, scene, wild, seamIn, start, home, pack,
+   healCost, shop, foes, relics), ranch, robots, biomes, nodeTypes, relics, currencies, buildings and unlocks checks go
+   to `game/js/logic/data-checks.js` as pure functions of the data that return `[file, message]` pairs; schema checks
+   stay in check-data (passed in as a callback, so the order of lines is kept). Snapshot identical; unit tests per
+   family with planted bad data.
+4. The Studio's Check runs the same functions (a family that throws on malformed data reports that it stopped).
+5. One legacy-species rule (check-data's: a species is known when its line is loaded or is a line in
+   game/data/legacy), in the module; the Studio passes the legacy line ids its Legacy section reads.
+6. Enums to data: relic `fx.stat` against stats.json (schema enum removed); currency ids from currencies.json
+   (buildings' and unlock costs' enums removed); one exported `RUN_RULE_KEYS`.
+7. The Studio-only scene and road checks move into the module (same words); check-data runs them, so CI gains them.
+8. Severity: `error` = check:data fails = Propose is blocked; the Studio's other "errors" become warnings. check-data
+   prints the warnings and never fails on them.
+9. Propose refuses while the Check has an error ("Show me" opens the Check); a stand-in step `checks` in
+   check-studio-github.py (planted pool typo blocks, a warning does not).
+10. CI: the smoke job runs `check-studio-github.py --only=sections,publish,drafts,studio_test,checks` on pull requests
+    that touch `studio/` or `game/js/logic/`.
+11. Local mode dropped: `check-quick.py --studio` and the remaining start-studio.py text go.
+12. Docs: STUDIO.md, TESTING.md, CHANGELOG, the plan's Decisions, this entry.
+
+**Status for the parent session: `game/js/logic/data-checks.js` has the moved checks and is pushed** (step 3 above,
+commit "Move: check-data's run, ranch, ..."). Phase 4 (content editors) can start on it: each family is
+`dataX(D, valid?)` returning `[file, message]` pairs (dataRunPayout, dataRanchRules, dataRunMapRules, dataRunClock,
+dataRunScene, dataRunLoop, dataRobots, dataUiTheme, dataBiomes, dataNodeTypes, dataRelics, dataCurrencies,
+dataBuildings, dataUnlocks, dataBattleRules; dataRobotProblems for a trainer's robot). The later steps here add
+families (scenes, roads) and change some words (fx.stat, currencies), not the shape.
+
+**Changed** (one cause per commit; all 12 steps done):
+- **Shared checks (T1.3).** `game/js/logic/data-checks.js` holds check-data's battle, run, ranch, robot, UI look,
+  biome, node type, relic, currency, building and unlock families (moved verbatim; the snapshot test, made first on the
+  old code, stayed byte-identical), `dataRobotProblems`, `dataSpeciesKind`, `RUN_RULE_KEYS`, and the Studio's scene and
+  road checks (`dataSceneFindings`, `dataRoadFindings`, which return `{lvl, where, msg, go, sel}`).
+  - check-data calls them in its old order and hands in its schema check; it now also runs the scene and road
+    checks: errors fail, warnings are printed (`  warning: maps/…: …`; two today, bridges ending in water).
+  - The Studio's Check runs the same families (in check-data's words, file first; Show me via `CHECK_FILE_SECTIONS`,
+    which Phase 4 extends for its new sections) and a trainer's robot.
+  - The Studio page now loads run-marks, meta-state, run-state and run-map (data-checks.js needs run-map's
+    `runMapRowsFit` and run-marks' list); data-checks.js moved after mapgen.js.
+- **One legacy-species rule**: check-data's. The Studio passes the legacy line ids from `legacy-view.js`
+  (`legacyLineIds`, `legacyLineIdsRead`); any stage of a parked line counts there (it reads only legacy/index.json),
+  while check-data counts the exact stages. Until the ids are read, the old pattern rule holds and a note says so;
+  Propose waits for the read.
+- **Enums to data**: relic `fx.stat` against stats.json (not hp; the schema enum went), a building's and an unlock
+  grant's currency against currencies.json (kept between runs), `RUN_RULE_KEYS`; a scene's life against
+  scenery.json's `life` (the old list of five called Copperleaf's rabbit, squirrel and cat unknown).
+- **Severity** (owner's decision): an error is only what check-data already refused. Stay errors: a line's stages and
+  names, a move a line learns, wild pool and trainer species, a stop's map and named pool, a trainer's stop and team,
+  the world map look's ground, a scene's kind, ground, props and islands, the roads (seam-rules), the UI look's
+  contrast, the story, every data-checks.js family. Became warnings: types, moves, line ids, skeletons and art,
+  rarity, evolution items, fishing and egg species, backdrops, shops, gates, badges, jobs, starters, part sizes, the
+  weather types, a scene's kind against its stop's, a stop's kind, a room's keeper, the UI rules over their ceiling.
+- **Propose refuses on an error** (`checkBeforeSave` in studio-app.js; github.js asks it before the summary box):
+  a dialog names the first five, Show me opens the Check. "Save anyway" is gone. Also fixed: the Check called a
+  trainer's robot "a species that doesn't exist" (it blocked Propose on the real data once errors blocked).
+- **Tests**: `check-data-snapshot.test.mjs` (+ `PB_DATA_DIR` in tools/data-files.mjs), 9 new unit tests in
+  `data-checks.test.mjs`, `check-studio-github.py --only=checks` (6 problems on the old code, 0 now). The publish
+  checks' "cannot be built" case steps past the Check, which now refuses its planted map first.
+- **CI (T1.4)**: the smoke job compares a pull request's files with its base commit and, when `studio/` or
+  `game/js/logic/` changed, runs `npm run data` and `check-studio-github.py --only=sections,publish,drafts,
+  studio_test,checks`. The smoke job's limit is 30 minutes (was 20).
+- **Local mode dropped**: `check-quick.py --studio` (`studio_round_trip`) and the start-studio.py text in STUDIO.md,
+  github.js and the Studio's load error.
+- Docs: STUDIO.md "The Check", TESTING.md (Studio tier, data checks), CHANGELOG, the plan's Decisions 9-11.
+
+**Where the plan doc was wrong or short**
+- The Studio has no sections yet for relics, unlocks, buildings, currencies, node types or biomes: their problems show
+  in the Check without Show me until Phase 4 adds editors.
+- "Currency ids in three places": the third was an unlock's grant (not a cost); currencies.schema.json stays the list.
+- Every Studio-only scene and road check that became shared is a warning, so CI gained notes, not new failures; the
+  scene and road errors duplicate check-data rules, so a fault there prints two lines in CI.
+- The Check's Backups card is local mode's: on GitHub it is always empty. Left for the owner (drop it, or show the
+  repository's history).
+
+**Verified**
+- Unit tests 645 pass (about 42 s); lint, typecheck, `check:modules`, `format:check`, `check:data`, `build`.
+- `check-studio-github.py --only=sections,publish,drafts,studio_test,checks` (CI's command): 0 problems, 5 min 42 s.
+  `--only=publish,drafts`: 0 problems.
+- `check:fast`: 25 of 25 pass.
+- Not run: the full quick check, and CI itself (the new step runs on the PR's next push).
+
+**Risky**
+- **Propose can now be refused.** Any error the Check finds blocks it, including a family that stops on data in a
+  shape it doesn't expect. If a real proposal is refused for something that looks wrong, the message names it; the
+  rule to relax is in data-checks.js or check.js.
+- **Phase 1b and this session both touched studio-app.js** (undo there, `checkBeforeSave` here): merged without
+  conflict so far.
+- **The parallel Run Lab session** may add run-map.js to the Studio page too: its merge must keep one tag, before
+  data-checks.js.
+- **CI time**: Studio and logic pull requests take about 6 minutes more.
+
+**Next**
+- Phase 4 (content editors) on data-checks.js: add each new section to `CHECK_FILE_SECTIONS`.
+- Tag `sr-1-done` once Phase 1b's entry is in (the owner's).
+
 ### Studio plan Phase 1, session A - Local drafts (T1.1) and hygiene (T1.6) - 2026-10-22
 Branch `ccr-81011a25-lf3exv`, on top of Phase 0 (PR #131, not merged yet). Approved in Plan Mode with Phase 1 split
 over four sessions: **A** T1.1 + T1.6 (this one); **B** T1.2 undo per file + T1.5 the F14 hunt; **C** T1.3 part 1 (move

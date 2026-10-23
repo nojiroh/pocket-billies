@@ -105,12 +105,14 @@ test('check-data: planted robots, biomes, node types, relics, currencies, buildi
       'buildings.json': B => {
         B.ranch.act = 'nosuchact';
         B.ranch.levels = 9;
+        B.lab.currency = 'gold';
       },
       'unlocks.json': U => {
         U.shop_settlement.at = 'nosuchbuilding';
         U.shop_settlement.requires = ['caught_15'];
         U.caught_15.requires = ['shop_settlement'];
         U.caught_15.when = 'unlock:nosuchunlock';
+        U.caught_15.grant = { money: 100 };
       },
     })
   );

@@ -9,6 +9,7 @@ import { test } from 'node:test';
 import { hooks, modules, ROOT } from './setup-real.mjs';
 
 const worker = await import('../../studio/js/logic-worker.js');
+const page = await import('../../studio/js/logic-worker-page.js');
 
 test('the worker loads game-data.js and every logic module, in load-logic.mjs’s order', () => {
   const text = readFileSync(join(ROOT, 'studio/js/logic-worker-modules.js'), 'utf8'),
@@ -28,7 +29,7 @@ test('the worker stands in for the page as load-logic.mjs does', () => {
   const src = readFileSync(join(ROOT, 'tools/test/load-logic.mjs'), 'utf8'),
     block = /const page = \{([\s\S]*?)\n {2}\};/.exec(src)[1],
     names = [...block.matchAll(/^ {4}(\w+):/gm)].map(m => m[1]).sort();
-  assert.deepEqual(Object.keys(worker.logicWorkerPage(hooks)).sort(), names);
+  assert.deepEqual(Object.keys(page.logicWorkerPage(hooks.provide)).sort(), names);
 });
 
 test('an ask for runPreview answers what a direct call returns', () => {

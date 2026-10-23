@@ -7,6 +7,7 @@ import {
   artStepPut,
   draftNow,
   draftSoon,
+  legacyLineIdsRead,
   mountPreviews,
   provide,
   runCheck,
@@ -384,21 +385,27 @@ export function updateTopBar() {
    first error) and only then marks saved what is still as it was sent (confirmStaged, logic/publish-plan.js). A failed
    save leaves everything unsaved; a picture painted or data edited during the send stays unsaved. */
 export const SAVE_REPLACER = (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v);
-/** Check's problems before a save: true to go on (none, or "Save anyway"); false opens the Check */
+/** Studio plan T1.3: the Check before a save. An error (what check-data, and so CI, fails on) refuses it: the dialog
+ * names the first few and Show me opens the Check. Warnings never stop a save. true to go on */
 export async function checkBeforeSave() {
+  await legacyLineIdsRead(); /* the legacy-species rule needs the parked lines (an error if read, else the old rule) */
   const errs = runCheck().filter(p => p.lvl === 'error');
-  if (
-    errs.length &&
-    !(await ask(
-      `There ${errs.length === 1 ? 'is 1 problem' : 'are ' + errs.length + ' problems'} the game can work around, but you’ll probably want to fix ${errs.length === 1 ? 'it' : 'them'}. Save anyway?`,
-      'Save anyway',
-      'Review problems'
-    ))
-  ) {
-    openSection('check');
-    return false;
-  }
-  return true;
+  if (!errs.length) return true;
+  const n = errs.length,
+    list = errs
+      .slice(0, 5)
+      .map(p => `<li>${escapeHtml(p.msg)}</li>`)
+      .join('');
+  const go = await dialog(
+    n === 1 ? 'Fix 1 problem first' : `Fix ${n} problems first`,
+    `<p>${n === 1 ? 'This would fail' : 'These would fail'} the game data check every proposal must pass, so nothing is sent. Your changes stay here, unsaved.</p><ul class="checks">${list}</ul>${n > 5 ? `<p>And ${n - 5} more in the Check.</p>` : ''}`,
+    [
+      { l: 'Close', v: null },
+      { l: 'Show me', c: 'primary', v: 'show' },
+    ]
+  );
+  if (go === 'show') openSection('check');
+  return false;
 }
 /** what a save will send, without marking anything saved: each unsaved picture with its version, the rigs' text, the
  * data's text (with meta.artVersion one up when pictures go too; the data itself changes only on confirm) */
@@ -852,7 +859,7 @@ export async function boot() {
     performance.mark('studio-first-draw');
   } catch (e) {
     $('#main').innerHTML =
-      `<div class="loading err"><h2>The Studio couldn’t load the game data</h2><p>${escapeHtml(e.message)}</p><p>From the game's site: check your connection and reload; if it says the sign-in expired, sign out and in again. Local mode (<code>start-studio.py</code>) is not in this repository.</p></div>`;
+      `<div class="loading err"><h2>The Studio couldn’t load the game data</h2><p>${escapeHtml(e.message)}</p><p>From the game's site: check your connection and reload; if it says the sign-in expired, sign out and in again.</p></div>`;
   }
 }
 addEventListener('load', boot);
