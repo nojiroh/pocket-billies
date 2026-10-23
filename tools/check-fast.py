@@ -200,6 +200,8 @@ def hub_orbit(pg, base):
     the test cleanup track, TC-4): the island contract's fields reach the scene (not islandGen, the Studio's); the sea skirt reaches the horizon at
     the sea's level and the scene draws looking in from over the sea at 8 angles; the orbit camera looks at the
     middle from 8 places, holds on the summit and walks a circle when you hold right. You are put back after"""
+    # TC-4: from a plain camera, whatever the check before left on this page (a CAM-2 failure left it mid-swoop)
+    pg.evaluate("walkRenderer.swoop=null;walkRenderer.momentTest=null;walkRenderer.camT=null;0")
     drawing(pg)
     # islandGen (the Studio's generator dials) stays in the map's data, not in the walk scene; the Studio check has it
     if not pg.evaluate("!!(walkView.sc.cam&&walkView.sc.cam.orbit&&walkView.sc.island&&walkView.sc.zones)"): raise Exception('the island contract fields didn’t reach the scene')
@@ -475,7 +477,10 @@ def camera_moments(pg, base):
     z0 = pg.evaluate('walkRenderer.zoomT')
     stand(pg, *sp['quiet'], 5)
     pg.evaluate("(()=>{const P=walkView.pl;walkRenderer.swoop={x:P.x,z:P.z+1,px:P.x,pz:P.z,ex:P.x,ez:P.z+2.5,zoom:engineSetting('camera','encZoom'),arrived:false};return 0})()")
-    if not until(pg, 'walkRenderer.swoop&&walkRenderer.swoop.arrived', 10): raise Exception('the encounter shot never arrived')
+    # TC-4: 30 s, not 10: the swoop moves with the frames drawn, and a busy CI runner draws few (the flake lanes D and
+    # E recorded, red again on 23 Oct); it costs nothing where frames come fast
+    if not until(pg, 'walkRenderer.swoop&&walkRenderer.swoop.arrived', 30):
+        pg.evaluate('walkRenderer.swoop=null;0'); raise Exception('the encounter shot never arrived')
     g = pg.evaluate(cam)
     pg.evaluate('walkRenderer.swoop=null;0')
     if not g['zoom'] < a['zoom'] * 0.75 or pg.evaluate('walkRenderer.zoomT') != z0: raise Exception(f'the encounter shot: {g}, your zoom {z0} -> {pg.evaluate("walkRenderer.zoomT")}')
