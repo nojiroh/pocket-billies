@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Ranch income (RL-10b): the ranch earns Scrap by itself, 1 an hour at Lv 1 (2 at Lv 2, 3 at Lv 3), banking up to
+  24 hours; the ranch's sheet shows the pile and how long until it is full, and Collect pays it. It counts from the
+  first time you open the ranch, and works offline. Every ranch timer (training, eggs, income) now shares one clock:
+  turning the device's clock back stops them until it catches up (the sheet says so), and turning it forward again
+  no longer pays the gap to training. Signed in, the account's save carries the server's time, so a clock set ahead
+  counts at the real pace. (Firebase rules: only publish the new saves rule once this version is live.)
 - Battle and run music (sound track SND-5): a battle's song starts on the encounter's flash with a short intro
   run and holds its drums until your first Billie is sent out. A run's mini-bosses have a song of their own (the
   title's theme in a minor key) and its boss another. While your lead Billie is under a quarter of its HP, the battle

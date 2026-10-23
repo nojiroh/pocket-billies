@@ -254,7 +254,15 @@ same phase:
   paying, hatching, a clock turned back, the save's checks), check-fast's "Breeding" on `?fixture=ranch` (the safe
   egg shown is the one bred, hatched through the hatch window after `breed.hours`; a risky pair; the clock turned
   back; a reload), the in-game test's "The ranch: breeding a pair", and the breeding sim (`tools/test/sim/
-  breeding-sim.mjs`, report only; `breeding-sim.test.mjs` runs it small).
+  breeding-sim.mjs`, report only; `breeding-sim.test.mjs` runs it small). RL-10b: `tools/test/ranch-clock.test.mjs`
+  (the high-water mark, a clock turned back standing still, the cloud save's server time and the session floor, the
+  skew), `tools/test/ranch-income.test.mjs` (the rate by level, the first opening, the carried part of a Scrap, the
+  cap, an upgrade at the old rate, a clock turned back, a run), the ranch test's clock turned back and forward
+  (training's gap); check-fast's ranch step turns the clock back and forward and "Income" on `?fixture=ranch` (Collect
+  after five hours, a day back showing nothing and saying so, an hour forward paying the hour, a reload); the in-game
+  test's "The ranch: income and a clock turned back"; the Firestore rules' `saves/{uid}` whitelist and `t ==
+  request.time` in `firebase/test/rules.test.mjs` (`cd firebase && npm ci && npm test`; Java 21). The account path
+  (`t` written, the floor on reading, the skew read back) needs a signed-in phone: no Firebase project here.
 - **RL-11 Unlocks**: `tools/test/unlocks.test.mjs` (doors and currencies, buying once, refusals, milestones never on a
   run, the tidy-up on load, a run's copy making the same map and stock), the new condition kinds in
   `conditions.test.mjs`, `run.unlocks` in `run-state.test.mjs`; check-data's blocks for `currencies`, `buildings` and
