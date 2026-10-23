@@ -5,7 +5,6 @@
     python3 tools/check-quick.py                 # data, code, shaders, every scene once, the main flows
     python3 tools/check-quick.py --smoke         # the fast subset: the data, Start-Game on a phone + debug log, the in-game test's first step
     python3 tools/check-quick.py --selftest      # the game's own full test and diagnostics test, whole (about 25 minutes)
-    python3 tools/check-quick.py --scenes=copperleaf   # only these walk scenes (by id), for a change to one place
     python3 tools/check-quick.py --steps=v34,battle   # only the steps whose names hold these words
     python3 tools/check-quick.py --tests         # also draw every test scene and take its pictures (the walking checks
                                                  # of the test scenes always run; they need no drawing)
@@ -21,7 +20,7 @@ Pictures go to validation/quick/ as WebP; the summary to validation/quick/result
 validation/quick-baseline/ (make one with --baseline), each picture is compared with it. Nothing in game/ or studio/
 is changed."""
 # RL-5: --closeups and --seams=all went with their steps (every close-up spot and every seam was in a parked place);
-# the --scenes example names the hub, the one place left
+# TC-1: --scenes went with the Scenes and Paths steps, the only ones that read it
 import io, json, math, os, re, shutil, socket, subprocess, sys, tempfile, threading, time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -52,7 +51,6 @@ ARGS = sys.argv[1:]
 SMOKE = '--smoke' in ARGS
 # where a point of the walk scene is on screen (the same projection the renderer uses)
 PROJ = "(([x,z])=>{const C=walkView.C,r=walkView.cv.getBoundingClientRect(),y=standingHeightAt(x,z)+(typeof worldCurveDrop==='function'?worldCurveDrop(x,z):0);if(C.vp){const m=C.vp,cx=m[0]*x+m[4]*y+m[8]*z+m[12],cy=m[1]*x+m[5]*y+m[9]*z+m[13],w=m[3]*x+m[7]*y+m[11]*z+m[15];return [r.left+(cx/w*.5+.5)*r.width,r.top+(1-(cy/w*.5+.5))*r.height]}const q=worldToScreen(C,x,y,z);return [r.left+q.x/walkView.cv.width*r.width,r.top+q.y/walkView.cv.height*r.height]})(%s)"
-ONLY = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--scenes=')), None)
 STEPS = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--steps=')), None)
 problems, notes, steps = [], [], []
 
@@ -1289,8 +1287,6 @@ def all_maps(pg, sec=180):
 def desktop_steps(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
     play(pg); pg.evaluate("uiState.tab='team';render();0"); time.sleep(1); all_maps(pg)
-    D = gamedata(); ids = [r.get('mapId') for r in D['locations']]
-    nodes = [i for i, s in enumerate(ids) if s and (not ONLY or s in ONLY)]
 
     @step('Test scenes: walking rules (from the data)', 30)
     def test_checks():
@@ -1316,19 +1312,6 @@ def desktop_steps(b, base, R):
             if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
             return f'{len(tests)} test scenes, {n} pictures'
         test_draw()
-
-    @step('Scenes: each one opens and draws', 30 * max(1, len(nodes)))
-    def scenes():
-        drawn = []
-        for n in nodes:
-            go_scene(pg, n, 75); time.sleep(.4); sid = pg.evaluate('walkView.id'); shot(pg, f'scene-{sid}')   # alpha 0.2: a place's view holds its neighbours' edges too, bigger to paint in software
-            info = pg.evaluate("[typeof walkRenderer!=='undefined'&&walkRenderer.on,typeof structureState!=='undefined'&&!!structureState.mesh,typeof hasStructures==='function'&&hasStructures(walkView.sc),typeof buildingState!=='undefined'?(buildingState.fail||''):'',typeof buildingState!=='undefined'?buildingState.drawn||0:0]")
-            if info[0] and info[2] and not info[1]: raise Exception(f'{sid}: bridges and railings not drawn')
-            if info[3]: raise Exception(f'{sid}: 3D buildings off: {info[3][:100]}')
-            drawn.append(sid)
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return ', '.join(drawn)
-    scenes()
 
     # RL-5: 'Close-ups of cliffs, stairs, bridges and water' (--closeups) retired: every spot it pictured is in a parked place (a run's places get their close-ups when RL-7 builds them)
 
