@@ -14,6 +14,7 @@ import { maxHp } from './logic/rules.js';
 import { runWeather } from './logic/run-map.js';
 import { musicBattleKind, musicRedZone, musicWeatherCut, songFor, songVariant } from './logic/music-where.js';
 import { cryLowHealth, cryRecipe, cryVoices } from './logic/cries.js';
+import { uiSoundFor, uiSoundVoices } from './logic/ui-sounds.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
@@ -79,6 +80,8 @@ expose({
   synthNoise: [() => synthNoise, v => (synthNoise = v)],
   synthVoice: [() => synthVoice, v => (synthVoice = v)],
   testVolume: [() => testVolume, v => ((testVolume = v), provide({ testVolume }))],
+  uiButton: [() => uiButton, v => (uiButton = v)],
+  uiSound: [() => uiSound, v => (uiSound = v)],
   unlockSound: [() => unlockSound, v => (unlockSound = v)],
   updateAmbience: [() => updateAmbience, v => (updateAmbience = v)],
   volumePreference: [() => volumePreference, v => (volumePreference = v)],
@@ -344,7 +347,8 @@ export function soundEffect(name, o = {}) {
     F = soundEngine.fx;
   switch (name) {
     case 'tick':
-      synthVoice(F, { type: 'p50', freq: 1320, t, dur: 0.025, vol: 0.05, r: 0.02 });
+      /* SND-6: the tick is the UI's select sound (music.json ui) */
+      uiSound('select');
       break;
     case 'blip': {
       let h = 0;
@@ -654,12 +658,60 @@ document.addEventListener('input', ev => {
   if (typeof applyAmbienceVolume === 'function') applyAmbienceVolume();
   if (k === 'sfx') soundEffect('tick');
 });
-/* a soft tick on every button */
+/* SND-6: four UI sounds instead of one tick (music.json ui, logic/ui-sounds.js): a button picks one by its data-a and
+   classes, so no screen changes. k is select, confirm, cancel or cant */
+function uiSound(k) {
+  if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
+  const S = (MUSIC.ui && MUSIC.ui.sounds[k]) || null;
+  if (!S) return;
+  const t = soundEngine.ctx.currentTime + 0.005;
+  for (const v of uiSoundVoices(S))
+    synthVoice(soundEngine.fx, {
+      type: v.type,
+      freq: midiToFrequency(v.midi),
+      t: t + v.at,
+      dur: v.dur,
+      vol: v.vol,
+      slide: v.slide,
+      r: 0.02,
+    });
+  soundLog('ui ' + k);
+}
+/* the button a press was on: a button or tab (a kit button's host, whose data-a and kind it carries), or the sheet's
+   scrim when the press was on the scrim itself and the sheet can be closed that way. Disabled: the button or
+   aria-disabled */
+function uiButton(ev) {
+  const path = ev.composedPath ? ev.composedPath() : [ev.target];
+  for (const el of path) {
+    if (!(el instanceof Element)) continue;
+    if (el.matches('[data-a="scrim"]'))
+      return path[0] === el && uiState.modal && !uiState.modal.lock ? { a: 'scrim', cls: [], disabled: false } : null;
+    if (!el.matches('button,[role=tab]')) continue;
+    const root = el.getRootNode(),
+      host = root instanceof ShadowRoot ? root.host : null,
+      b = host && host.matches('[data-a],[kind]') ? host : el;
+    return {
+      a: b.getAttribute('data-a'),
+      cls: [...b.classList, b.getAttribute('kind') || ''].filter(Boolean),
+      disabled: !!(el.disabled || b.disabled || b.getAttribute('aria-disabled') === 'true'),
+    };
+  }
+  return null;
+}
 document.addEventListener(
   'click',
   ev => {
-    const b = ev.target.closest && ev.target.closest('button,[role=tab]');
-    if (b && !b.disabled) soundEffect('tick');
+    const b = uiButton(ev);
+    if (b && !b.disabled) uiSound(uiSoundFor(b, MUSIC.ui));
+  },
+  true
+);
+/* a disabled button gets no click, but the press still reaches it: the buzz then */
+document.addEventListener(
+  'pointerdown',
+  ev => {
+    const b = uiButton(ev);
+    if (b && b.disabled) uiSound('cant');
   },
   true
 );

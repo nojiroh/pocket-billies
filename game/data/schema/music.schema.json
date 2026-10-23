@@ -11,6 +11,25 @@
  ],
  "additionalProperties": false,
  "$defs": {
+  "uiPick": {
+   "description": "SND-6: the buttons that make this sound: by class (a kit button's kind counts) or by data-a",
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "classes": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "actions": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   }
+  },
   "id": {
    "type": "string",
    "pattern": "^[a-z][a-z0-9_]*$"
@@ -396,6 +415,95 @@
        }
       }
      }
+    }
+   }
+  },
+  "ui": {
+   "description": "SND-6: the buttons' four sounds and which button makes which (logic/ui-sounds.js)",
+   "type": "object",
+   "required": [
+    "sounds"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "about": {
+     "type": "string"
+    },
+    "sounds": {
+     "type": "object",
+     "required": [
+      "select",
+      "confirm",
+      "cancel",
+      "cant"
+     ],
+     "additionalProperties": false,
+     "patternProperties": {
+      "^(select|confirm|cancel|cant)$": {
+       "type": "object",
+       "required": [
+        "notes"
+       ],
+       "additionalProperties": false,
+       "properties": {
+        "name": {
+         "description": "Claude's drafts start with \"placeholder\" (the Studio's Check lists them)",
+         "type": "string",
+         "maxLength": 80
+        },
+        "notes": {
+         "type": "array",
+         "minItems": 1,
+         "maxItems": 6,
+         "items": {
+          "type": "object",
+          "required": [
+           "at",
+           "midi",
+           "len"
+          ],
+          "additionalProperties": false,
+          "properties": {
+           "at": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+           },
+           "midi": {
+            "type": "integer",
+            "minimum": 24,
+            "maximum": 108
+           },
+           "len": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 1
+           },
+           "wave": {
+            "$ref": "#/$defs/wave"
+           },
+           "vol": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 0.2
+           },
+           "slide": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 4
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "confirm": {
+     "$ref": "#/$defs/uiPick"
+    },
+    "cancel": {
+     "$ref": "#/$defs/uiPick"
     }
    }
   },
