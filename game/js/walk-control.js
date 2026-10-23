@@ -872,8 +872,13 @@ export function walkMapSync() {
               : uiState.tab !== 'walk'
                 ? 'screen'
                 : '';
+        /* 0.1.0 alpha: behind a full screen (Team, Guide, Bag...) the world settles for 0.8 s, then nearly stops (1 a
+           second): a still canvas lets the browser keep its blurred backdrop instead of blurring it again every frame,
+           which made a phone's menus crawl */
+        if (w !== walkView.held) walkView.heldT = performance.now();
         walkView.held = w;
-        return w === 'hidden' ? 1 : w === 'window' ? 20 : w === 'screen' ? 24 : userFps();
+        if (w === 'screen') return performance.now() - (walkView.heldT || 0) > 800 ? 1 : 24;
+        return w === 'hidden' ? 1 : w === 'window' ? 20 : userFps();
       },
     }).then(() => cv.classList.add('in'));
   }
