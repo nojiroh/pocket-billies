@@ -22,7 +22,9 @@ third of the resolution with a small shadow map, set before the boot; scene logi
 drawing; steps wait on the game's state (until, ui, drawn), never a fixed time except where the wait is the point;
 every step has a time limit (the page's boot, held by its first step, left out), so a slow step is a note. A page
 error fails the step it came in. Pictures go to validation/quick/ as WebP; the summary to
-validation/quick/results.json. With a baseline in validation/quick-baseline/ (make one with --baseline; CI keeps it as
+validation/quick/results.json. Measured on 23 Oct 2026 in a 4-core cloud container (TC-4): the full check about 20
+minutes (1217 s, 37 steps on 13 pages, 2 browsers; 41 minutes before), smoke about 3 (188 s); the budgets (10 and 1-2
+minutes) are missed for the reasons docs/TESTING.md gives under the tiers. With a baseline in validation/quick-baseline/ (make one with --baseline; CI keeps it as
 the release baseline-<version>), each picture is compared with it. Nothing in game/ or studio/ is changed."""
 # RL-5: --closeups and --seams=all went with their steps (every close-up spot and every seam was in a parked place);
 # TC-1: --scenes went with the Scenes and Paths steps, the only ones that read it
