@@ -318,6 +318,16 @@
        "maxItems": 2
       }
      },
+     "bpm": {
+      "description": "SND-6: its tempo (150 when left out), as sound.js jinglePlay plays it",
+      "type": "number",
+      "minimum": 40,
+      "maximum": 400
+     },
+     "wave": {
+      "description": "SND-6: the lead's wave (p25 when left out)",
+      "$ref": "#/$defs/wave"
+     },
      "name": {
       "description": "SND-4: a name for the jingle. Claude's drafts start with \"placeholder\" (the Studio's Check lists them)",
       "type": "string",

@@ -56,6 +56,7 @@ expose({
   initAmbience: [() => initAmbience, v => (initAmbience = v)],
   initSound: [() => initSound, v => (initSound = v)],
   jingle: [() => jingle, v => ((jingle = v), provide({ jingle }))],
+  jinglePlay: [() => jinglePlay, v => (jinglePlay = v)],
   lowHpBeep: [() => lowHpBeep, v => (lowHpBeep = v)],
   music: [() => music, v => (music = v)],
   musicFor: [() => musicFor, v => (musicFor = v)],
@@ -333,6 +334,20 @@ export function jingle(notes, bpm = 150, type = 'p25', bus = null) {
   if (!initSound() || soundEngine.ctx.state !== 'running') return;
   const end = soundEngine.tracker.jingle(notes, bpm, type, bus || soundEngine.fx) - soundEngine.ctx.currentTime;
   soundEngine.jingle = performance.now() + end * 1000 + 200;
+}
+/* SND-6: a jingle by its name, at its own tempo and wave (music.json jingles bpm, wave); o.shift moves it by
+   semitones, o.duck false plays it over the song without ducking it (and doesn't hold the music sync). Logs
+   'jingle <name>' in soundEngine.log (in memory, never sent). Returns how long it lasts (s), 0 when silent */
+function jinglePlay(id, o = {}) {
+  const J = MUSIC.jingles[id];
+  if (!J || !initSound() || soundEngine.ctx.state !== 'running') return 0;
+  const out = o.bus || soundEngine.fx,
+    end =
+      soundEngine.tracker.jingle(J.notes, J.bpm || 150, J.wave || 'p25', out, { shift: o.shift, duck: o.duck }) -
+      soundEngine.ctx.currentTime;
+  if (o.duck !== false) soundEngine.jingle = performance.now() + end * 1000 + 200;
+  soundLog('jingle ' + id + (o.shift ? ' +' + o.shift : ''));
+  return end;
 }
 /* SND-2: the jingles are data (music.json jingles); here each is its note list, as jingle() takes it */
 export const JINGLES = Object.fromEntries(Object.entries(MUSIC.jingles).map(([k, J]) => [k, J.notes]));

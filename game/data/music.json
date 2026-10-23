@@ -416,6 +416,39 @@
   "motif": {
    "name": "placeholder: the motif's first bar, home on D (Claude's draft)",
    "notes": [[74,3],[81,3],[79,2],[78,4],[76,2],[72,2],[74,8]]
+  },
+  "relic": {
+   "name": "placeholder: a Loophole taken, a sly run up (Claude's draft)",
+   "bpm": 170,
+   "notes": [[76,1],[79,1],[83,1],[88,3],[0,1],[87,1],[88,4]]
+  },
+  "reveal": {
+   "name": "placeholder: new places on the map, two pings (Claude's draft)",
+   "bpm": 140,
+   "wave": "p12",
+   "notes": [[84,2],[91,4]]
+  },
+  "day": {
+   "name": "placeholder: a day passing, the clock's tick and tock (Claude's draft)",
+   "bpm": 120,
+   "wave": "p12",
+   "notes": [[81,1],[0,3],[76,1]]
+  },
+  "run_won": {
+   "name": "placeholder: run won, the victory tune, then the motif (Claude's draft)",
+   "notes": [[72,2],[76,2],[79,2],[84,6],[83,2],[84,6],[0,2],[74,3],[81,3],[79,2],[78,4],[76,2],[72,2],[74,8]]
+  },
+  "run_lost": {
+   "name": "placeholder: run lost, the victory tune backwards in minor (Claude's draft)",
+   "bpm": 100,
+   "wave": "p12",
+   "notes": [[84,6],[82,2],[84,4],[79,2],[75,2],[72,8]]
+  },
+  "payout_coin": {
+   "name": "placeholder: a coin per payout row, a step higher each (Claude's draft)",
+   "bpm": 320,
+   "wave": "p50",
+   "notes": [[84,1],[91,2]]
   }
  },
  "cries": {

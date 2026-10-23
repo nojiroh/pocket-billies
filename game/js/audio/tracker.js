@@ -680,12 +680,15 @@ export function trackerCreate(ctx, bus, opts = {}) {
     }
   };
   /* a short tune that plays once over a lead and a bass an octave down, on the bus it is given; the song ducks to 0.15
-     for its length. Returns when it ends (on the context's clock) */
-  T.jingle = (notes, bpm, type, out) => {
+     for its length. Returns when it ends (on the context's clock). SND-6: o.shift moves it by semitones, o.duck false
+     leaves the song alone (a coin on the payout) */
+  T.jingle = (notes, bpm, type, out, o = {}) => {
     const spb = 60 / bpm / 4,
-      t0 = c.currentTime + 0.05;
+      t0 = c.currentTime + 0.05,
+      up = o.shift || 0,
+      duck = o.duck !== false;
     let t = t0;
-    if (T.song) {
+    if (T.song && duck) {
       const g = T.song.gain.gain;
       g.cancelScheduledValues(t0);
       g.setValueAtTime(g.value, t0);
@@ -695,7 +698,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
       if (n)
         (T.synthVoice(out, {
           type,
-          freq: midiToFrequency(n),
+          freq: midiToFrequency(n + up),
           t,
           dur: l * spb * 0.9,
           vol: 0.12,
@@ -705,14 +708,14 @@ export function trackerCreate(ctx, bus, opts = {}) {
           n &&
             T.synthVoice(out, {
               type: 'triangle',
-              freq: midiToFrequency(n - 12),
+              freq: midiToFrequency(n + up - 12),
               t,
               dur: l * spb * 0.9,
               vol: 0.12,
             }));
       t += l * spb;
     }
-    if (T.song) {
+    if (T.song && duck) {
       const g = T.song.gain.gain;
       g.linearRampToValueAtTime(0.15, t);
       g.linearRampToValueAtTime(1, t + 0.8);
