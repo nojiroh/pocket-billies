@@ -2,9 +2,8 @@
 
 The Studio edits the game's data, skeletons and art. It runs from the game's site (`…/studio/`): sign in with a GitHub
 token, and **Propose changes** puts your changes on a new branch with a pull request, so nothing changes in the game
-until the owner merges it. Started from `start-studio.py` on your own computer, saves would go straight into
-`game/data` and `game/art`, but that server is **not in this repository** (see the end of this file); the GitHub
-route is the one that works.
+until the owner merges it. That is the only way it runs: the old local mode (a server on your own computer that
+saved straight into `game/data`) was dropped (Studio plan, owner's decision 2026-10-22).
 
 ## Propose changes: what it does, and what happens when it fails (Studio plan Phase 0)
 
@@ -44,11 +43,32 @@ route is the one that works.
 - The kept changes stay in this browser on this device. They are never sent anywhere; another browser or computer
   doesn't see them. GitHub mode only.
 
-## Local mode (start-studio.py, not in this repository)
+## Undo (Studio plan Phase 1, T1.2)
 
-Double-click `Start-Studio.bat` / `Start-Studio.command`, or run
-`python3 start-studio.py`. It opens at **http://localhost:8001**. The server is not in this repository, so this mode
-can't be used from a clone of it today.
+- **One undo for everything**, in the order you made it: every data edit, every picture stroke, and a picture change
+  that also changed the data (a replaced part) as one step. Up to 80 steps.
+- **A step keeps only what the edit changed.** The undo holds the data once, as one text per entry (each map, move,
+  person, rig, each entry of meta and the other sections) plus the order of the keys; a step holds the entries it
+  changed, before and after. A field edit costs a few kilobytes, not a copy of the whole game; an edit to a very big
+  map costs more (Copperleaf's, about 5 MB a step). Data steps and pictures each have a 64 MB cap; past it the
+  oldest steps go.
+- **Undo puts back only those entries.** Undoing a map edit replaces that map and nothing else; adding or deleting
+  an entry puts back the whole data.
+- **Opening a section never changes the data.** The self-test checks it for every section: a write outside an edit
+  would ride along with your next edit, and its undo would take it back too (this is what made an undo in Rules fail
+  after People had been opened). Keys starting with `_` are caches: never kept by the undo, as by saving.
+
+## The Check: problems and notes (Studio plan Phase 1, T1.3)
+
+- The Check runs the same checks as `npm run check:data` (CI) where they overlap: they live in
+  `game/js/logic/data-checks.js`, so the run rules, ranch, robots, biomes, node types, relics (Loopholes), currencies,
+  buildings, unlocks, scenes and roads are checked the same way in both.
+- A **Problem** (an error) is something check-data fails on. **Propose changes refuses while there is one**: it names
+  the first few, and Show me opens the Check. Nothing is sent and your changes stay unsaved until you fix it.
+- A **Note** (a warning) is something the game works around (a missing picture, an unknown shop, a stop no road
+  reaches). It is shown and never blocks. check-data prints the scene and road notes too, and never fails on them.
+- A Billie named from a line parked in `game/data/legacy` is a note (the game stands a new line's Billie in for it).
+  A name that is in neither, like a typo, is a problem.
 
 ## How a section draws (for contributors; Studio plan Phase 6)
 
@@ -339,7 +359,7 @@ Game → **UI look** edits game/data/uiTheme.json, the look of the game's menus 
 | **UI look** | The menus' look (uiTheme.json): colours light and dark with contrast grades, glass, depth, shapes, space, type and motion, for the whole game or one screen's colours and shapes; presets, Hold to compare, the UI gallery as a live preview. UI track UI-3, above. |
 | **Rules** | Every number that tunes the game: starting items, starters and rival, wild Billies per place and how fast they come back, prize money, leveling curve, team size, eggs, damage, critical hits, type abilities, taxing, bargains. |
 | **Art files** | Browse, download and replace any image. |
-| **Check** | Lists problems with "Show me" links; downloads or loads the game data; runs the Studio test. Earlier versions are in git: a proposal is a pull request. |
+| **Check** | Lists problems with "Show me" links (see "The Check" below); downloads or loads the game data; runs the Studio test. Earlier versions are in git: a proposal is a pull request. |
 | **Find and Connections** | Ctrl+K finds any setting or thing and takes you to it; Ctrl+L shows what the thing you're editing uses and what uses it, or, for an engine dial, where its value comes from and what it depends on. |
 
 ## Saving in local mode
@@ -360,8 +380,6 @@ you changed. You can also edit them by hand; `npm run check:data` checks them (a
 The game tolerates mistakes. It skips anything it can't use and lists it in the debug
 menu.
 
-Local mode needs `start-studio.py`, which is not in the repository; it still reads and writes
-the old single `gamedata.js` and would have to be changed to the data files (phase 04b).
 
 
 ## Notes and limits

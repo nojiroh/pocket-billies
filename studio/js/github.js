@@ -7,7 +7,7 @@
    - The game data, skeletons and art are read from the repository's main branch.
    - Save to game: everything you changed goes on a new branch as one commit, and a pull request is opened. Nothing in
      the game changes until the repository's owner merges it (GitHub → Pull requests).
-   Started from start-studio.py on your own computer, none of this is used: saves go straight into the game folder. */
+   This is the Studio's only mode: local mode (a server that saved into the game folder) was dropped (Studio plan). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { draftOffer, draftStart } from '../../game/js/hooks.js';
@@ -471,6 +471,7 @@ if (githubMode.on) {
     }
   });
   const proposeChanges = async btn => {
+    if (!(await checkBeforeSave())) return; /* T1.3: before the summary is asked for, so nothing typed is wasted */
     const what = await dialog(
       'Propose these changes',
       '<label class="fld"><span>What did you change? (the owner sees this)</span><input type="text" id="ghSum" maxlength="90" placeholder="New props in Copperleaf, brighter lamps"></label>',
@@ -484,7 +485,6 @@ if (githubMode.on) {
       ]
     );
     if (!what) return;
-    if (!(await checkBeforeSave())) return;
     const staged = stageChanges();
     if (publishEmpty(staged)) return toast('Nothing to send: everything is as it is in the game.');
     let pr = null;
