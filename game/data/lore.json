@@ -204,8 +204,8 @@
    "who": "marina",
    "role": "Water arena, Palmhaven Town",
    "unlock": "meet:marina",
-   "text": "Runs the island arena where nobody asks questions. She knows exactly who is in every yacht photo in the harbour, and who was cropped out, and she has never told.",
-   "voice": "“Relax. Nobody here asks questions.”"
+   "text": "Runs the island arena where photos are not allowed. She knows exactly who is on every yacht in the harbour, and where they told their followers they were, and she has never told.",
+   "voice": "“Relax. No photos on my island.”"
   },
   "poppy": {
    "name": "Leader Poppy",
