@@ -21,7 +21,6 @@ import {
   turnHeightRows,
   turnTileRows,
 } from './logic/room-turn.js';
-import { uiState } from './game-state.js';
 import { artLoad, hexToRgb } from './art.js';
 import {
   GROUND_CACHE,
@@ -1744,7 +1743,7 @@ function seamlessHeldEnds() {
 /* alpha 0.2: going into or out of an underground place the picture dips to dark for a moment (you step into a cave) */
 function seamlessUndergroundVeil() {
   const cv = walkView.cv;
-  if (!cv || !cv.isConnected || (typeof uiState !== 'undefined' && uiState.photo)) return;
+  if (!cv || !cv.isConnected) return;
   let v = document.getElementById('wrVeil');
   if (!v) {
     v = document.createElement('div');

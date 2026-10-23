@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Things to do is gone (test cleanup track): the daily challenges, the townsfolk's requests and letters, the gold
+  stamps (and their tile on the Trainer card), photo mode and your room in Granny Juniper's cottage are removed;
+  her cottage no longer opens. The weather still changes battles.
+- The title screen shows Copperleaf for a new player too (the city at night is parked with the opening's city, kept
+  for the story). The in-game full test walks Copperleaf and the rooms its doors and a run town's open, not rooms no
+  door leads to any more; the diagnostics test walks the hub and its busiest room and one generated run road. The
+  debug menu's Earn every badge and Reset trainer wins are gone.
 - Sound effects and jingles (sound track SND-6): each Billie has a cry of its own, built from eight kinds (beast,
   bird, slime, machine, fish, insect, ghost, suit) with its own pitch and length per stage, and cries as it is sent
   out; a Billie under a quarter of its HP cries its low-HP cry (a quarter faster and a third down), and a fainting one

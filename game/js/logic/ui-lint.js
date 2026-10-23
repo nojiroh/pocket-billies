@@ -76,18 +76,18 @@ export const UI_LINT_RULES = [
    rewrites this block. Totals, not per file: moving a rule from one sheet to another changes nothing here. */
 // ceiling: start
 export const UI_LINT_CEILING = {
-  radius: 148,
-  space: 1009,
+  radius: 146,
+  space: 999,
   shadow: 178,
   keyframes: 77,
   duration: 269,
   font: 18,
   colour: 671,
-  important: 195,
-  zindex: 61,
+  important: 194,
+  zindex: 60,
   blur: 29,
-  jsColour: 593,
-  innerHtml: 56,
+  jsColour: 592,
+  innerHtml: 55,
   styleAttr: 41,
 };
 // ceiling: end

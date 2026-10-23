@@ -110,7 +110,24 @@
     "bellwether_rise",
     "innersun",
     "hedgerow",
-    "pearlantis"
+    "pearlantis",
+    "int_assay_office",
+    "int_bakery",
+    "int_bank",
+    "int_bullion_exchange",
+    "int_cap_market",
+    "int_chandlery",
+    "int_fire_station",
+    "int_greenhouse",
+    "int_inn",
+    "int_library",
+    "int_mansion",
+    "int_market_hall",
+    "int_night_market",
+    "int_school",
+    "int_ski_lodge",
+    "int_twinpetal_market",
+    "city_opening"
    ]
   },
   "trainers": {

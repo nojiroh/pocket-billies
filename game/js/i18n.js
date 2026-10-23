@@ -54,7 +54,6 @@ Start|Start|Start|Empezar|Commencer
 Save|Opslaan|Speichern|Guardar|Enregistrer
 Clear|Wissen|Leeren|Borrar|Effacer
 Claim|Ophalen|Abholen|Reclamar|Réclamer
-Claimed|Opgehaald|Abgeholt|Reclamado|Réclamé
 Details|Details|Details|Detalles|Détails
 Fight|Vechten|Kämpfen|Luchar|Combattre
 Tax!|Belasten!|Besteuern!|¡Gravar!|Taxer !
@@ -64,12 +63,8 @@ Heal|Genezen|Heilen|Curar|Soigner
 Fish|Vissen|Angeln|Pescar|Pêcher
 Strike!|Aanslaan!|Anschlagen!|¡Tira!|Ferrez !
 Stop fishing|Stop met vissen|Angeln beenden|Dejar de pescar|Arrêter de pêcher
-Decorate|Inrichten|Einrichten|Decorar|Décorer
 Go outside|Naar buiten|Nach draußen|Salir|Sortir
 Labels|Labels|Beschriftung|Etiquetas|Étiquettes
-Take photo|Foto maken|Foto machen|Hacer foto|Prendre une photo
-Today’s challenges|Uitdagingen van vandaag|Heutige Herausforderungen|Retos de hoy|Défis du jour
-New challenges every day.|Elke dag nieuwe uitdagingen.|Jeden Tag neue Herausforderungen.|Retos nuevos cada día.|De nouveaux défis chaque jour.
 Requests you’re helping with|Verzoeken waar je mee helpt|Bitten, bei denen du hilfst|Peticiones en las que ayudas|Demandes en cours
 Encounters|Ontmoetingen|Begegnungen|Encuentros|Rencontres
 Eggs|Eieren|Eier|Huevos|Œufs
@@ -103,7 +98,6 @@ Distance walked|Afgelegde afstand|Zurückgelegte Strecke|Distancia recorrida|Dis
 Places visited|Bezochte plekken|Besuchte Orte|Lugares visitados|Lieux visités
 Trainers beaten|Verslagen trainers|Besiegte Trainer|Entrenadores vencidos|Dresseurs battus
 Eggs hatched|Uitgekomen eieren|Geschlüpfte Eier|Huevos eclosionados|Œufs éclos
-Gold stamps|Gouden zegels|Goldmarken|Sellos de oro|Timbres d’or
 Theme|Thema|Design|Tema|Thème
 Animation|Animatie|Animation|Animación|Animation
 Scene tilt|Kantelen|Neigung|Inclinación|Inclinaison
@@ -205,10 +199,6 @@ Back to walking|Terug naar het lopen|Zurück zum Gehen|Volver a caminar|Reprendr
 Let’s go|Daar gaan we|Los geht’s|¡Vamos!|C’est parti
 Leave the shop|De winkel verlaten|Laden verlassen|Salir de la tienda|Quitter la boutique
 I’ll do it|Ik doe het|Mach ich|Lo haré|Je m’en occupe
-Save picture|Foto bewaren|Bild speichern|Guardar imagen|Enregistrer l’image
-Keep shooting|Verder fotograferen|Weiter fotografieren|Seguir haciendo fotos|Continuer
-Your photo|Jouw foto|Dein Foto|Tu foto|Ta photo
-Decorate your room|Richt je kamer in|Richte dein Zimmer ein|Decora tu habitación|Décore ta chambre
 Nothing|Niets|Nichts|Nada|Rien
 `;
 const I18N = (() => {

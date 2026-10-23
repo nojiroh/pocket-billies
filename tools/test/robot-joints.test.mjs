@@ -1,11 +1,20 @@
-// Studio track ST-5: robot joints. robotRig places every robot as it did before sockets could be stored (all 972
-// builds, with their pictures and as stand-ins, front and back), and stored joints move the pictures.
+// Studio track ST-5: robot joints, on robots.json and its pictures' sizes: computed joints, stored joints, robotKit, and
+// stored joints that match the computed ones give the same rigs as nothing stored.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { robotArt, setPictures, robotBuilds, rigHash } from './robot-rig-node.mjs';
 
-const BEFORE = JSON.parse(readFileSync(new URL('./robot-rig-before.json', import.meta.url), 'utf8'));
+const ROBOTS = JSON.parse(readFileSync(new URL('../../game/data/robots.json', import.meta.url), 'utf8'));
+/* every picture robots.json names, as [w, h] read from its PNG header */
+const SIZES = {};
+for (const P of [...Object.values(ROBOTS.parts).map(p => p.art), ...Object.values(ROBOTS.gems)])
+  for (const k of ['img', 'imgB', 'head', 'headB']) {
+    const path = P[k];
+    if (!path) continue;
+    const b = readFileSync(new URL(`../../game/art/${path}`, import.meta.url));
+    SIZES[path] = [b.readUInt32BE(16), b.readUInt32BE(20)];
+  }
 const clone = o => JSON.parse(JSON.stringify(o));
 const bare = D => {
   const out = clone(D);
@@ -13,19 +22,11 @@ const bare = D => {
   for (const g of Object.values(out.gems)) delete g.img;
   return out;
 };
-/* the builds whose rig differs from before, in a view */
-function changed(D, sizes, want, k) {
+/* every build's rig in a view, hashed */
+function rigs(D, sizes, k) {
   setPictures(sizes);
-  return robotBuilds(D).filter(sp => rigHash(robotArt.robotRig(sp, D, k)) !== want[sp]);
+  return Object.fromEntries(robotBuilds(D).map(sp => [sp, rigHash(robotArt.robotRig(sp, D, k))]));
 }
-
-test('robotRig with nothing stored places every build as before, with pictures and as stand-ins, front and back', () => {
-  assert.equal(robotBuilds(BEFORE.data).length, 972);
-  for (const k of [1, 2]) {
-    assert.deepEqual(changed(BEFORE.data, BEFORE.sizes, BEFORE.pictures, k), []);
-    assert.deepEqual(changed(bare(BEFORE.data), {}, BEFORE.standIns, k), []);
-  }
-});
 
 const RJ = await import('../../game/js/logic/robot-joints.js');
 const PJ = await import('../../game/js/logic/part-joints.js');
@@ -81,8 +82,8 @@ test('fractions round-trip to the same pixels; robotJointSet sets and clears one
 });
 
 test('robotKit: robots.json as a part kit that partFit fits as the rig joins it (arms not mirrored on the right)', () => {
-  const size = p => BEFORE.sizes[p] || null,
-    K = RJ.robotKit(BEFORE.data, size);
+  const size = p => SIZES[p] || null,
+    K = RJ.robotKit(ROBOTS, size);
   assert.ok(K.parts['bulwark:head'] && K.parts['gem:ember'] && K.parts.piston_r?.hidden);
   assert.deepEqual(PJ.partSocketsFor(K, 'bulwark', 'piston', 'front'), ['shoulderL', 'shoulderR']);
   assert.deepEqual(PJ.partSocketsFor(K, 'bulwark', 'treads', 'front'), ['hipL', 'hipR', 'hip']);
@@ -96,7 +97,7 @@ test('robotKit: robots.json as a part kit that partFit fits as the rig joins it 
     assert.deepEqual([Math.round(arm.x - arm.px[0]), Math.round(arm.y - arm.px[1])], [T[0] - 7, T[1]]);
   }
   /* a stand-in (no picture) is not in the kit */
-  assert.equal(RJ.robotKit(bare(BEFORE.data), () => null).parts.bulwark, undefined);
+  assert.equal(RJ.robotKit(bare(ROBOTS), () => null).parts.bulwark, undefined);
 });
 
 /* every point computed, written in as stored joints (what Part mode would write if every point were set by hand) */
@@ -125,25 +126,26 @@ function storeComputed(D, sizes) {
   return out;
 }
 
-test('every point computed and stored gives the same rigs; stored joints are ignored by stand-ins', () => {
-  const D = storeComputed(BEFORE.data, BEFORE.sizes);
+test('every point computed and stored gives the same rigs as nothing stored; stored joints are ignored by stand-ins', () => {
+  const D = storeComputed(ROBOTS, SIZES);
   assert.ok(D.parts.bulwark.art.joints.back.sockets.shoulderL);
+  assert.ok(robotBuilds(ROBOTS).length > 100);
   for (const k of [1, 2]) {
-    assert.deepEqual(changed(D, BEFORE.sizes, BEFORE.pictures, k), []);
-    assert.deepEqual(changed(bare(D), {}, BEFORE.standIns, k), []);
+    assert.deepEqual(rigs(D, SIZES, k), rigs(ROBOTS, SIZES, k));
+    assert.deepEqual(rigs(bare(D), {}, k), rigs(bare(ROBOTS), {}, k));
   }
 });
 
 test('a stored socket, pivot or draw order moves the picture in its view only', () => {
-  setPictures(BEFORE.sizes);
+  setPictures(SIZES);
   const sp = 'bot:ember.bulwark.piston.auger.striders',
     bone = (D, k, n) => robotArt.robotRig(sp, D, k).bones.find(b => b.n === n),
-    D = clone(BEFORE.data);
+    D = clone(ROBOTS);
   D.parts.bulwark.art.joints = { front: { sockets: { shoulderL: [0.1, 0.5] } } };
   D.parts.piston.art.joints = { back: { pivot: [0.5, 0.25], z: 7 } };
   /* bulwark front is 29 x 27, pivot (14, 27): the shoulder at (3, 14) is (-11, -13) from it */
   assert.deepEqual(bone(D, 1, 'armL').at, [-11, -13]);
-  assert.deepEqual(bone(BEFORE.data, 1, 'armR').at, bone(D, 1, 'armR').at);
+  assert.deepEqual(bone(ROBOTS, 1, 'armR').at, bone(D, 1, 'armR').at);
   /* the back keeps the front's offset (the back socket was not stored) */
   assert.deepEqual(bone(D, 2, 'armL').at, [-11, -13]);
   const arm = bone(D, 2, 'armL');

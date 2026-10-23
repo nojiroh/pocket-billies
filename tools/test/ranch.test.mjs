@@ -130,7 +130,7 @@ test('ranch: Stop collects and ends; the team move collects and ends; gone Billi
   K.ranchTidy(s);
   assert.deepEqual(s.ranch.trainees, [{ uid: b.uid, at: 0 }], 'twice and gone: dropped');
   s.box = s.box.filter(x => x !== b);
-  const loaded = fn('migrate')(
+  const loaded = fn('saveFill')(
     JSON.parse(JSON.stringify({ ...s, ranch: { ...s.ranch, trainees: [{ uid: b.uid, at: 0 }] } }))
   );
   assert.deepEqual(loaded.ranch.trainees, [], 'a save whose trainee left storage loads without it');

@@ -2,6 +2,75 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Test cleanup track, round 1, lane A - Unit tests and save code - 2026-10-23
+Branch `track/test-cleanup` (shared with lanes B-D; pulled with --no-rebase before every push). Plan approved in Plan
+Mode; the owner said yes to lane A taking the old-save set-aside code (game-state.js, boot.js's notice) too.
+Lane A's part is pushed.
+- Where the track file was wrong (checked against the code):
+  - The set-aside box is not only for old saves: account.js puts the other game there when your account and this
+    browser hold different games. Only the old-save path went; the box stays.
+  - robot-joints had 7 tests, and robot-rig-before.json was also the robot data tests 5-7 ran on. They now read
+    robots.json and the PNG sizes.
+  - lookFromOld can't be deleted: person-art.js's cleanTrainer and personLook still call it. Only settings-screen's
+    boot call went.
+  - 144 test files (not 147); 813 tests at the start, not 783. Only 4 tests imported old-world.mjs.
+- Changed (one cause per commit):
+  - **TC-1 item 1, deleted:** rng-baseline, rig-calls, frame-allocations, fx-group; story-snapshot +
+    talk-before-scripts.json (52 KB); battle-rewards' move proof (its one uncovered case, a beaten trainer's seat,
+    moved into test 2); opening-script test 1 now compares with opening-said.json alone, and
+    opening-before-scripts.json goes; robot-joints test 1 + robot-rig-before.json (123 KB); set-aside and
+    set-aside-latest. Renamed sheet-slice-parity -> sheet-slice-real, then its wording (the sheets match the
+    committed parts).
+  - **TC-1 item 6, save code:** saves.js drops the RL-5 pruning (with its test and one line of the RL-7 test that
+    checked it), the RL-12 offerN/shelf fill (a run without them now fails validRun and is left, like any broken run),
+    and the 06-3 battleStage/battleHud deletes.
+    - game-state.js no longer sets an unloadable save aside at boot. An older save is replaced by the new game; the
+      title's notice says so without "kept aside". A newer save is still held and never written over.
+    - New save-guard.test.mjs: the guard, and the slot's one writer.
+    - settings-screen.js: `cleanLook(avatar)` instead of `cleanLook(lookFromOld(avatar, gender))`. A new game's
+      empty avatar is now LOOK_PRESETS[0], which is what the dressing room starts from. No boy/girl conversion.
+    - Rename `migrate` -> `saveFill` (alone in its commit).
+  - **TC-2 item 1, rewrites:**
+    - saves-real's wild stock test runs on a run's world: Copperleaf 2, a run route 4, a run town 2, the same town
+      with its grass taken out 0.
+    - story-scripts plays Juniper instead of Curator Nacre.
+    - music-studio checks songs against the game's places only.
+    - bowl-layout keeps the curve and "Copperleaf at the centre" (world-bowl.js still uses the spot).
+    - world-graph keeps the hub test and one snapshot, with world-tables-real merged in (same values).
+    - bowl-sea: water on the curve, on the hub's island and three runs. The 40% continent and the "maps/roads on land"
+      tests went (a run's straight lines do cross water).
+    - bowl-land on three runs' land.
+    - bowl-ground on a run's world: "a ridge stands up, a lake dips" replaces Frostcrown and the trench.
+    - bowl-things: Copperleaf's landmark, every run town's landmark, and clumps worked out as world-bowl.js does.
+    - old-world.mjs deleted. TESTING.md and NAMING.md updated.
+- Verified:
+  - Every commit: lint, typecheck, check:modules, format:check, check:data and `npm test`. 813 tests at the start,
+    776 now, all pass.
+  - The changed tests' new checks fail when broken: robot-joints with a pivot moved 2 px.
+  - The smoke subset after the settings change: 15 of 16. The one problem (the in-game full test's graphics-report
+    download times out) is the same with my change stashed, so it was already on the branch.
+  - The fast check on the merged branch (0683559): 1027 s, 31 checks, 29 passed. CAM-2 ("the encounter shot never
+    arrived") and UI-5 ("the evolution window: not there") failed while `npm test` ran beside it. Both pass when run
+    alone (`--only`, 115 s): load, not lane A.
+  - `npm test` alone: 776 tests in 57 s, about the same as the 57 s at the start (this container; the budget is 30 s).
+  - Not tried on a phone.
+- Risky:
+  - An older save is now replaced without a copy. The owner chose this; the notice says a new game starts.
+  - A new player's avatar before the dressing room is the first preset, not the old-format default. It is only seen
+    before the opening's dressing room, if at all.
+  - Run tests use fixed seeds (G0/G2/G4 need a ridge and a lake; T0/T3 need towns). A change to run map generation can
+    fail them for a seed that no longer fits; each test says what it needs.
+- For other lanes:
+  - Lane C: the smoke step "In-game full test: one step headless" fails on the branch (the graphics-report download
+    times out after 30 s in `graphics_test_ready`). It isn't from lane A; graphics-test.js points at test_graphics now.
+  - Lane D: check-fast's "World-map graph unchanged" still runs world-graph.test.mjs, which now has 2 tests (the file
+    stays). world-tables-real.test.mjs is gone, in case smoke or CI named it.
+  - boot.js line ~626 still adds a `boy` class to the loading screen for `gender === 'boy'`, which no save has any
+    more. Left alone (not lane A's).
+- For the owner: the `variants` song is played only by parked places (music-studio lists it as PARKED_ONLY). Keep it
+  with them, or delete it?
+- Next: round 2 (lane B's TC-3; lane E: `npm test` under 30 s).
+
 ### Test cleanup track TC-1 item 0 - The three camera checks on main - 2026-10-23
 Branch `fix/camera-checks-orbit`, from main a569bed, its own PR. Plan approved in Plan Mode.
 - Cause: the checks, not the camera. CAM-1 and CAM-2 were written and passed on branches without IS-5 (2328edc,

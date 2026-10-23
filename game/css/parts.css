@@ -1206,12 +1206,6 @@ section > h2::before,
 .tr-por img {
   image-rendering: pixelated;
 }
-/* v28: today's challenges and requests */
-.chal {
-  padding: 14px;
-  border-radius: var(--r, 14px);
-  margin-bottom: 12px;
-}
 @keyframes wxRain {
   to {
     background-position: -30px 120px;

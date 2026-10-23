@@ -10,7 +10,6 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
-  arrivedAt,
   buildingRowsHTML,
   closeModal,
   mapIdAt,
@@ -155,7 +154,6 @@ export function startAirshipFlight(i, o = {}) {
     saveData.se -= f;
     saveData.trip = { node: i, plan: [] };
     saveData.visited[i] = 1;
-    if (typeof arrivedAt === 'function') arrivedAt(i);
   }
   uiState.inside = null;
   uiState.goingIn = null;
@@ -389,7 +387,6 @@ export function rideGlassLift(p) {
       await ready;
       saveData.trip = { node: i, plan: [] };
       saveData.visited[i] = 1;
-      if (typeof arrivedAt === 'function') arrivedAt(i);
       uiState.inside = null;
       uiState.goingIn = null;
       uiState.backAt = null;

@@ -22,8 +22,7 @@ The debug menu's "Story scripts" row plays any of them.
 Code: `game/js/logic/conditions.js` (conditions), `game/js/logic/script.js` (parser, runner, flags, presets, safe
 runs, `when` / `unless`, chapters), `game/js/story-stage.js` (the game's stage). Data: `game/data/story.json`.
 Tools: `npm run story:ids` (line ids), `tools/story-checks.mjs` (run by `npm run check:data`). Tests:
-`tools/test/conditions`, `script`, `story-data`, `story-scripts`, `story-snapshot` (every conversation against what
-the game said before S2, `talk-before-scripts.json`) and `story-checks`.
+`tools/test/conditions`, `script`, `story-data`, `story-scripts` and `story-checks`.
 
 ## Lines
 

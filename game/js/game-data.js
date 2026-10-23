@@ -301,7 +301,7 @@ export function roadMetres(a, b, j) {
 export const roadEndNode = (/** @type {string} */ m) => LOCATIONS.findIndex(r => r.mapId === m || r.id === m);
 /** @type {Road[]} */
 export const ROADS = [];
-/* v46: what each place, scene and road is (tools/migrate-places.py fills these): use these instead of id prefixes */
+/* v46: what each place, scene and road is (the one-off tools/migrate-places.py filled these): use these instead of id prefixes */
 /* copies made before board is filled in (below), so they have none: read LOCATIONS[node].board */
 /** @type {Record<string, LocationData & { node: number, trainers: string[] }>} */
 export const LOCATION_BY_ID = {};

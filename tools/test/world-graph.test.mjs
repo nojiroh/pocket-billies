@@ -1,157 +1,51 @@
-// Phase 13: the world-map graph on the game's own data: locations, the roads between them, the map edges each road
-// joins, gates and lifts. Phases 08 and 10 rework travel and the world map; whatever they change, the places, their
-// connections and their gates stay (the snapshot leaves out costs, which may change). RL-5: the game's world is the hub,
-// Copperleaf, alone; the old world outside it is parked in game/data/legacy (the last test here checks it holds
-// together). The snapshot is in
-// world-graph.test.mjs.snapshot; when a change to the graph is meant, remake it with
+// Phase 13: the world on the game's own data. RL-5: the game's world is the hub, Copperleaf, alone (the old world is
+// parked in game/data/legacy; a run's world is checked in run-world-real.test.mjs). Its place names its map and the
+// map names it back, and the snapshot holds the graph (places, roads with their exits, gates, lifts; no costs) and
+// the world tables game/js/game-data.js works out from it (the places with what it fills in, the roads with their
+// metres, the roads from each place, the places by id, where a new game starts). When a change is meant, remake it with
 //   node --test --test-update-snapshots tools/test/world-graph.test.mjs
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { PB_DATA, readLegacyData } from '../data-files.mjs';
+import { PB_DATA } from '../data-files.mjs';
 import { data, GAME_DATA } from './setup-real.mjs';
 
-const { locations, maps, trainers } = GAME_DATA;
+const { locations, maps } = GAME_DATA;
 const at = i => locations[i];
-const mapOf = loc => maps[loc.mapId];
 // phase 08b: the roads as the Studio and the tools read them (PB_DATA.road): seams and the glass lift
-const links = GAME_DATA.roads.map(l => PB_DATA.road(GAME_DATA, l)),
-  roads = links.filter(r => r.kind === 'seam'),
-  // the glass lift goes both ways: [from place id, to place id] each way
-  lifts = links
-    .filter(r => r.kind === 'lift')
-    .flatMap(r => [
-      [at(r.a).id, at(r.b).id],
-      [at(r.b).id, at(r.a).id],
-    ]);
+const links = GAME_DATA.roads.map(l => PB_DATA.road(GAME_DATA, l));
 
 test('every location has its own id and its map, and the map names it back', () => {
   const ids = locations.map(l => l.id);
   assert.equal(new Set(ids).size, ids.length, 'two locations share an id');
   for (const l of locations) {
-    assert.ok(mapOf(l), `${l.id}: no map ${l.mapId}`);
-    assert.equal(mapOf(l).locationId, l.id, `${l.mapId} names ${mapOf(l).locationId}`);
+    assert.ok(maps[l.mapId], `${l.id}: no map ${l.mapId}`);
+    assert.equal(maps[l.mapId].locationId, l.id, `${l.mapId} names ${maps[l.mapId].locationId}`);
   }
 });
 
-test('every road joins two different places once, and names them as its numbers do', () => {
-  const seenIds = new Set(),
-    pairs = new Set();
-  links.forEach(({ a, b, ...r }) => {
-    assert.ok(at(a) && at(b), `${r.id}: a place it joins does not exist`);
-    assert.notEqual(a, b, `${r.id} goes nowhere`);
-    assert.ok(!seenIds.has(r.id), `two roads are ${r.id}`);
-    seenIds.add(r.id);
-    const pair = [a, b].sort((x, y) => x - y).join('-');
-    assert.ok(!pairs.has(pair), `${at(a).id} and ${at(b).id} are joined twice`);
-    pairs.add(pair);
-    // phase 08b: a road names its places by their maps, and its id by their ids
-    assert.equal(
-      r.id,
-      `${r.kind === 'lift' ? 'lift' : 'road'}:${at(a).id}-${at(b).id}`,
-      `${r.id} joins ${at(a).id} and ${at(b).id}`
-    );
-  });
-});
-
-test('each road leaves by an exit on the edge of each map, and each map exit has exactly one road', () => {
-  const used = new Map();
-  for (const r of roads)
-    for (const [loc, exit] of [
-      [at(r.a), r.exitA],
-      [at(r.b), r.exitB],
-    ]) {
-      const m = mapOf(loc),
-        e = (m.edgeExits || []).find(x => x.id === exit);
-      assert.ok(e, `${r.id}: ${loc.mapId} has no exit ${exit}`);
-      const key = `${loc.mapId}:${exit}`;
-      assert.ok(!used.has(key), `${key} is used by ${used.get(key)} and ${r.id}`);
-      used.set(key, r.id);
-    }
-  for (const l of locations) {
-    const m = mapOf(l);
-    for (const e of m.edgeExits || [])
-      assert.ok(used.has(`${l.mapId}:${e.id}`), `${l.mapId}: exit ${e.id} has no road`);
-    assert.equal((m.exits || []).length, (m.edgeExits || []).length, `${l.mapId}: stored exits and edge exits differ`);
-  }
-});
-
-test('every exit lies on its side of the map, where its path ends', () => {
-  for (const l of locations) {
-    const m = mapOf(l);
-    for (const e of m.edgeExits || []) {
-      const [x, z] = e.path.at(-1),
-        want = { W: [x, e.in], E: [x, m.w - e.in], S: [z, e.in], N: [z, m.h - e.in] }[e.side];
-      assert.ok(want, `${l.mapId}: exit ${e.id} has no side`);
-      assert.ok(Math.abs(want[0] - want[1]) < 0.05, `${l.mapId}: exit ${e.id} (${e.side}) ends at ${x}, ${z}`);
-    }
-  }
-});
-
-test('every gate has the trainer whose badge opens it; a lift link has a lift at each end, to the other', () => {
-  const seats = new Set(
-    Object.values(trainers)
-      .map(t => t.seat && t.seat.id)
-      .filter(Boolean)
-  );
-  for (const l of locations.filter(l => l.gate))
-    assert.ok(seats.has(l.gate), `${l.id}: nobody holds the ${l.gate} gate`);
-  for (const [from, to] of lifts)
-    assert.ok(
-      (mapOf(locations.find(l => l.id === from)).props || []).some(p => p.act === 'lift' && p.to === to),
-      `${from} has no lift to ${to}`
-    );
-});
-
-test('every place can be reached from the start, by road or by lift', () => {
-  const next = locations.map(() => []);
-  for (const { a, b } of roads) (next[a].push(b), next[b].push(a));
-  for (const [from, to] of lifts)
-    next[locations.findIndex(l => l.id === from)].push(locations.findIndex(l => l.id === to));
-  const seen = new Set([data.START_NODE]),
-    todo = [data.START_NODE];
-  while (todo.length) for (const n of next[todo.pop()]) if (!seen.has(n)) (seen.add(n), todo.push(n));
-  assert.deepEqual(
-    locations.filter((l, i) => !seen.has(i)).map(l => l.id),
-    []
-  );
-});
-
-test('the graph is the one in the snapshot (places, roads with their exits, gates, lifts; no costs)', t => {
+test('the graph and its world tables are the ones in the snapshot', t => {
+  const L = data.LOCATIONS;
   t.assert.snapshot({
     start: at(data.START_NODE).id,
     places: locations.map(l => `${l.id} (${l.kind})${l.gate ? ' gate ' + l.gate : ''}${l.ride ? ' ride' : ''}`),
-    roads: roads.map(r => `${r.id}: ${at(r.a).id}.${r.exitA} - ${at(r.b).id}.${r.exitB}`).sort(),
-    lifts: lifts.map(([a, b]) => `${a} -> ${b}`).sort(),
+    roads: links.map(r => `${r.kind} ${r.id}: ${at(r.a).id}.${r.exitA} - ${at(r.b).id}.${r.exitB}`).sort(),
+    tables: {
+      start: data.START_NODE,
+      places: L.map(
+        (l, i) =>
+          `${i} ${l.id} pool ${l.pool} stage ${l.battleStage}` +
+          (l.trainers.length ? ` trainers ${l.trainers.join(',')}` : '') +
+          (l.board ? ` board ${l.board}` : '')
+      ),
+      roads: data.ROADS.map(
+        ([a, b, m, j]) => `${a}-${b} ${m} m` + (j ? ` ${j.id} ${j.a}/${j.b} ${j.from}-${j.to} ${j.name || ''}` : '')
+      ),
+      byNode: data.ROADS_BY_NODE.map((list, i) => `${i}: ${list.map(e => `${e.to}/${e.cost}/${e.i}`).join(' ')}`),
+      /* the copies by id are made before the boards are filled in, and share the place's trainer list */
+      byId: Object.entries(data.LOCATION_BY_ID).map(
+        ([k, v]) =>
+          `${k} ${v.node}${'board' in v ? ' board' : ''}${v.trainers === (L[v.node] || {}).trainers ? ' its trainers' : ''}`
+      ),
+    },
   });
-});
-
-test('phase 08: every road is measured in metres, from each place’s middle to the exit it leaves by', () => {
-  for (const [a, b, len, ends] of data.ROADS) {
-    const exit = (i, id) => (mapOf(at(i)).edgeExits || []).find(e => e.id === id);
-    const ea = exit(a, ends.a),
-      eb = exit(b, ends.b);
-    assert.ok(ea && eb, `${ends.id}: an exit it names is missing`);
-    assert.equal(len, Math.round(ea.len + eb.len), ends.id);
-    assert.ok(len >= 20 && len <= 400, `${ends.id} is ${len} m`);
-  }
-});
-
-test('RL-5: the parked world holds together: each place has its map naming it back, each road joins two of its places (or Copperleaf), each trainer stands on one of its places', () => {
-  const L = readLegacyData();
-  assert.ok(L, 'game/data/legacy/index.json');
-  const ids = new Set(L.locations.map(l => l.id));
-  for (const l of L.locations) assert.equal((L.maps[l.mapId] || {}).locationId, l.id, l.id);
-  for (const r of L.roads)
-    for (const end of [r.a, r.b]) assert.ok(ids.has(end.map) || end.map === 'copperleaf', `${r.id}: ${end.map}`);
-  for (const [id, T] of Object.entries(L.trainers)) assert.ok(L.locations[T.node], `${id} stands on ${T.node}`);
-  for (const id of ids)
-    assert.equal(
-      locations.find(l => l.id === id),
-      undefined,
-      `${id} is in the game too`
-    );
-  assert.deepEqual(
-    [L.locations.length, L.roads.length, Object.keys(L.trainers).length, L.lines.length],
-    [48, 57, 39, 55]
-  );
 });

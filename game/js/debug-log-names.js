@@ -95,7 +95,6 @@ import { ambience, soundEngine } from './sound.js';
 import { cutsceneStart, setCutsceneStart } from './cutscene/opening.js';
 import { runWorld } from './run-world.js';
 import { account } from './account.js';
-import { challengesToday, stampCount } from './things-to-do.js';
 import { renderOverlay, setRenderOverlay, toast } from './overlay.js';
 import { render, setRender } from './ui.js';
 Object.defineProperties(GAME, {
@@ -116,7 +115,6 @@ Object.defineProperties(GAME, {
   buildSolidTree: { get: () => buildSolidTree, set: setBuildSolidTree },
   buildingItems: { get: () => buildingItems, set: setBuildingItems },
   buildingState: { get: () => buildingState },
-  challengesToday: { get: () => challengesToday },
   cutsceneStart: { get: () => cutsceneStart, set: setCutsceneStart },
   drawBoxFaces: { get: () => drawBoxFaces, set: setDrawBoxFaces },
   drawBuildings: { get: () => drawBuildings, set: setDrawBuildings },
@@ -174,7 +172,6 @@ Object.defineProperties(GAME, {
   shadowPass: { get: () => shadowPass, set: setShadowPass },
   solidPropState: { get: () => solidPropState },
   soundEngine: { get: () => soundEngine },
-  stampCount: { get: () => stampCount },
   swapMapCache: { get: () => swapMapCache, set: setSwapMapCache },
   toast: { get: () => toast },
   uiState: { get: () => uiState },

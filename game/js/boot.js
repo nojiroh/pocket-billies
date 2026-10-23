@@ -993,7 +993,7 @@ else
         notice({
           id: 'save-found',
           title: SAVE_FOUND === 'old' ? 'A new game' : 'A newer save',
-          html: `<p>${SAVE_FOUND === 'old' ? SAVE_OLD_MSG + ' It is kept aside in this browser and a new game starts here. To keep a copy, download it from Settings > Save.' : SAVE_NEW_MSG}</p>`,
+          html: `<p>${SAVE_FOUND === 'old' ? SAVE_OLD_MSG + ' A new game starts here.' : SAVE_NEW_MSG}</p>`,
         });
       /* phase 06: a waiting choice (hatch, learn a move, evolve) opens only once the world is showing */
       if (saveData.started && !TEST_RUN && !FIXTURE) whenWorldShows(showPendingWindows);

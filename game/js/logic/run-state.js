@@ -345,7 +345,7 @@ export function runEnd(s, how, rates, itemPrice) {
   return pay;
 }
 /** put the hub's working fields back from run.start and leave the run, paying nothing (runEnd's last step; also a
-    run that can't be resumed, saves.js migrate) */
+    run that can't be resumed, saves.js saveFill) */
 /** @param {SaveData} s */
 export function runRestore(s) {
   const start = s.run && s.run.start;

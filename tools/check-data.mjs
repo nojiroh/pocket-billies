@@ -140,9 +140,22 @@ if (existsSync(join(DATA, 'legacy', 'index.json'))) {
         if (!here.has(`${dir}/${f}`)) problem(at(`${dir}/${f}`), 'not listed in legacy/index.json');
 }
 
+// test cleanup TC lane C: a map parked in game/data/legacy (the Legacy section copies it back into the game), by id;
+// a cutscene may be filmed on one and a kind of building's room may be one, kept for the story or the Studio
+const parkedMaps = (() => {
+  const file = join(DATA, 'legacy', 'index.json');
+  if (!existsSync(file)) return new Map();
+  const ids = ((JSON.parse(readFileSync(file, 'utf8')).split || {}).maps || {}).ids || [];
+  return new Map(
+    ids
+      .filter(id => existsSync(join(DATA, 'legacy', 'maps', id + '.json')))
+      .map(id => [id, JSON.parse(readFileSync(join(DATA, 'legacy', 'maps', id + '.json'), 'utf8'))])
+  );
+})();
 // cutscenes: the map each is filmed on, the spots its paths join (their scripts: the story checks below)
 for (const [id, C] of Object.entries(D.cutscenes || {})) {
-  if (!(D.maps || {})[C.map]) problem(`cutscenes/${id}.json`, `filmed on map ${C.map}, no such map`);
+  if (!(D.maps || {})[C.map] && !parkedMaps.has(C.map))
+    problem(`cutscenes/${id}.json`, `filmed on map ${C.map}, no such map`);
   for (const [a, b] of (C.clear && C.clear.paths) || [])
     for (const s of [a, b])
       if (!C.spots[s]) problem(`cutscenes/${id}.json`, `clear path names spot ${s}, no such spot`);
@@ -221,7 +234,8 @@ check('roads.schema.json', D.roads || [], 'roads.json');
     isRoom = id => S[id] && S[id].kind === 'room',
     seen = new Set();
   for (const [k, M] of Object.entries(P))
-    if (M && M.room && !isRoom(M.room)) problem('scenery.json', `${k}'s room ${M.room} isn't a room`);
+    if (M && M.room && !isRoom(M.room) && (parkedMaps.get(M.room) || {}).kind !== 'room')
+      problem('scenery.json', `${k}'s room ${M.room} isn't a room`);
   for (const r of route) {
     const sc = S[r.mapId];
     if (!sc || sc.kind === 'room') continue;
