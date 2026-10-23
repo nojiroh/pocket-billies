@@ -54,8 +54,8 @@
   box-shadow:
     0 0 0 2px #0b0912,
     0 4px 10px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: var(--blur-button, blur(6px));
+  -webkit-backdrop-filter: var(--blur-button, blur(6px));
 }
 .mbtn:active {
   transform: translateY(1px);
