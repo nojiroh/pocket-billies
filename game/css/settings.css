@@ -194,6 +194,9 @@ html[data-contrast='high'] small {
 .vol input {
   flex: 1;
   min-width: 0;
+  /* TC-3: a tap target 40 px tall like every other control (phase 06-4); the track stays drawn in its middle */
+  height: 40px;
+  margin: 0;
 }
 .vol-n {
   width: 2.4em;

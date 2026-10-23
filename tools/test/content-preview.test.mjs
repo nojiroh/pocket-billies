@@ -4,6 +4,7 @@
 // standInSpecies'.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { readGameData } from '../data-files.mjs';
 import { data, fn, GAME_DATA, modules } from './setup-real.mjs';
 
 const P = modules['content-preview'],
@@ -83,10 +84,12 @@ test('leader run values: runFoes on each mini-boss row and the boss row, for eve
 });
 
 test('species stand-ins: the game’s standInSpecies for ids it lacks; ids it has left out', () => {
-  const legacy = Object.values(GAME_DATA.pools)
-    .flatMap(P => P.list.map(([id]) => id))
-    .find(id => !SPECIES[id]);
-  assert.ok(legacy, 'the pools still list a legacy id');
+  /* RO-1: the wild pools list only real lines now; the trainers still name legacy ids (in the data as read: the game
+     puts its stand-ins in its own copy) */
+  const legacy = Object.values(readGameData().trainers)
+    .flatMap(T => (T.team || []).map(m => m.sp))
+    .find(id => typeof id === 'string' && !SPECIES[id] && !/^@rival|^robot$/.test(id));
+  assert.ok(legacy, 'a trainer still names a legacy id');
   const S = P.speciesStandIns([SP, legacy, '@rival', 'robot']);
   assert.deepEqual(Object.keys(S), [legacy]);
   assert.equal(S[legacy].to, standInSpecies(legacy));

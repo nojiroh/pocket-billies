@@ -11,6 +11,7 @@
 /** @typedef {(schema: string, value: unknown, where: string) => boolean} DataValid */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { lineSpeciesIds } from './forms.js';
 import { CLIMATE_WEATHER_ODDS } from './weather.js';
 import { uiThemeContrast } from './ui-theme.js';
 import { RUN_MARK_TYPES } from './run-marks.js';
@@ -797,14 +798,16 @@ export function dataUnlocks(D, valid = () => true) {
 }
 /** phase 16 (Studio plan T1.3: one rule for check-data and the Studio): what a species id names: 'line' for a stage
  * of a loaded line, 'legacy' for one of a line parked in game/data/legacy (the game stands in a new line's Billie for
- * it), '' for nothing. A legacy line given with its names has that many stages; given as an id alone (the Studio
+ * it), '' for nothing; RO-1: a loaded line's regional forms (logic/forms.js) count as its stages. A legacy line given
+ * with its names has that many stages; given as an id alone (the Studio
  * reads only legacy/index.json), any stage counts
  * @param {{ id: string, names?: unknown[] }[]} lines @param {{ id: string, names?: unknown[] }[]} legacyLines
  * @returns {(sp: unknown) => 'line' | 'legacy' | ''} */
 export function dataSpeciesKind(lines, legacyLines) {
   const stages = (/** @type {{ id: string, names?: unknown[] }[]} */ L) =>
       new Set(L.flatMap(l => (l.names || []).map((_, i) => l.id + i))),
-    here = stages(lines || []),
+    /* RO-1: and its regional forms' stages */
+    here = new Set((lines || []).flatMap(l => lineSpeciesIds(/** @type {any} */ (l)))),
     parked = stages(legacyLines || []),
     anyStage = new Set((legacyLines || []).filter(l => !l.names).map(l => l.id));
   return sp => {

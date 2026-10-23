@@ -1029,7 +1029,8 @@ section 4 stand for RL-1..RL-12a; from here the order is this table's. If the sc
 RL-S1, then play; side areas, the rival and relationships next; endless last.
 
 **Each session's shape**, for its own Plan Mode:
-- **RO-1.** Files: `biomes.json` pools (one per biome, the 7 real lines by rarity), `pools.json` (legacy pools parked),
+- **The roster sessions (RO-1, RO-2..)** live on one branch. Branch: track/roster
+- **RO-1** (done 2026-10-23; HANDOFF has what changed and where this shape was wrong). Files: `biomes.json` pools (one per biome, the 7 real lines by rarity), `pools.json` (legacy pools parked),
   `lines/*.json` `forms`, `game-data.js` (`standInSpecies` not used for a run), `logic/rules.js spawn`. Tests: every
   run pool resolves without a stand-in; a form's types and name. Could break: wild battles, the dex, the Studio's
   line editor.

@@ -10,8 +10,8 @@ those sessions; until then, follow the rule next to them.
 | Tier | Command | Now | Budget | When |
 |---|---|---|---|---|
 | (a) lint, types | `npm run lint`, `npm run typecheck` | 4 s warm (9 s cold) + 0.6 s | under 10 s | after every edit (the Claude Code hook runs it) |
-| (b) unit tests | `npm test` | about 23-28 s in a cloud container (Studio plan Phase 6: 611 tests, the quick tier) | under 30 s | after every edit to logic, data or tests (the hook) |
-| (b2) slow unit tests | `npm run test:slow` | about 39 s (42 tests: the scene sweeps that generate whole maps and islands, `SLOW_TESTS` in tools/unit-tests.mjs) | none | in CI beside `npm test`; `npm run test:all` runs both |
+| (b) unit tests | `npm test` | about 26 s in a cloud container (TC-4, 23 Oct 2026: 769 tests, the quick tier; 72 s before) | under 30 s | after every edit to logic, data or tests (the hook) |
+| (b2) slow unit tests | `npm run test:slow` | about 58 s (50 tests: the scene sweeps that generate whole maps and islands, runs played with their scenes, the weather's every-roll sweep; `SLOW_TESTS` in tools/unit-tests.mjs) | none | in CI beside `npm test`; `npm run test:all` runs both |
 | before a commit | `npm run check:modules`, `npm run format:check`, `npm run check:data`, `npm run build` | about 15 s | none | every commit |
 | UI pictures (UI-2) | `npm run check:ui` | about 1.5 min | none | after a change to the kit, its CSS, uiTheme.json or studio/gallery.html |
 | style diff (UI-5) | `python3 tools/style-diff.py` (`--only=<screens>`, `--ref=<rev>`) | about 8 min (16 screens, 2 browsers) | none | a commit that moves CSS or screen code and must change nothing on screen: 0 differences against HEAD |
@@ -92,7 +92,7 @@ Two rules hold everywhere:
   lane switch, which the rows' spacing can't keep within 30. RL-8b: the run runs east to west across the bowl, maps
   facing north, no two places' maps overlapping; `run-bowl.test.mjs` checks a run's own map (land under every place's
   whole map, sea at the rim, the same seed the same look), `bowl-seed.test.mjs` the seed's noise (0 moves nothing) and
-  `bowl-sea.test.mjs` the island world (one island round Copperleaf, the game's hub an island). weather.test checks `weatherPick` against the page's old
+  `bowl-sea.test.mjs` the island world (one island round Copperleaf, the game's hub an island). weather-before.test (the slow tier) checks `weatherPick` against the page's old
   pick for every roll its hash can give: a change to the weather's odds or its order fails it on purpose.
 - The run's world (RL-7: `run-scenes.test.mjs`, `run-world-real.test.mjs`): run-scenes.test on small tables of its
   own (a node's exits in the order its scene is made with them and the ids the generator gives them, the dials drawn
@@ -107,7 +107,7 @@ Two rules hold everywhere:
 - The run loop (RL-8): `battle-rewards.test.mjs` proves `battleRewards` gives what `endBattle` worked out before the
   move (every outcome, both kinds, seeded egg rolls); `run-loop.test.mjs` the start's give, the heal price, a town's
   stock for a day (the same after a reload), the run's foes (none twice, levels by row, the boss an Alpha), battle
-  seeds, release pay, the payout rows and a run's ids; `run-sim.test.mjs` plays whole runs with
+  seeds, release pay, the payout rows and a run's ids; `run-sim.test.mjs` plays whole runs in balance mode with
   `tools/test/sim/run-sim.mjs` (one seed twice the same whatever util.js random does; the report's numbers and its
   bot policy). Studio plan Phase 3: the simulation itself is `game/js/logic/run-sim.js` (`runSimOn`, handed the logic
   and data); the CLI is its Node host. It plays the game's own rules (`runBattleExtra`, `runClinic`, `fxRunPrice`,
@@ -117,8 +117,8 @@ Two rules hold everywhere:
   bounds wait for the owner). Studio plan Phase 3b: the bot answers a Loophole pick and buys a shop's (`relics` in the
   policy; `--policy=never-pick` is the baseline that takes none), walking in heals by the held Loopholes
   (`runArriveFx`) and a town's wares come through the run's unlocks (`runShopOpen`). `--balance` makes no scenes
-  (each place a lite map with tall grass: ~250 times faster, the same outcomes; `run-sim.test.mjs` plays seeds in both
-  modes and checks the stand-in on real scenes). `--out=base.json` writes the report with every run's stats;
+  (each place a lite map with tall grass: ~250 times faster, the same outcomes; `run-sim-scenes.test.mjs`, the slow tier, plays seeds in both
+  modes, the full-mode replay, and checks the stand-in on real scenes). `--out=base.json` writes the report with every run's stats;
   `--compare=base.json` plays its seeds with its options on the data as it is now and writes the paired compare
   (validation/sim/compare.json; `logic/sim-compare.js`: Wilson intervals, paired differences, flips, a data hash,
   tested in `sim-compare.test.mjs`). The habit for a change that may move the numbers:

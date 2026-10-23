@@ -2,6 +2,190 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roster track RO-1 - Real wild pools and regional forms - 2026-10-23
+Branch `track/roster` (new; the owner's choice: every RO session works here, BRANCHES.md and roguelite-track 9.4 say
+so). Plan approved in Plan Mode with the owner's answers: 4 forms (one per uncommon line, the drafts' names), weights
+written by hand in pools.json, forms on their base's dex page. Round 1 beside TC-1 (already merged as PR #155, so no
+overlap). Tag `ro-1-done` for the owner.
+- Where the docs were wrong (checked at 5ddd0f8):
+  - Nine biomes used legacy pools, not three: canyon, volcano, tundra, sea, badlands and jungle too (only meadow and
+    thicket listed real lines). Two of the legacy pool ids (`sea`, `badlands`) are also biome ids.
+  - "By rarity": the 7 lines are only 3 `starter` and 4 `uncommon`; there is no common or rare line yet.
+  - Only 9 types exist, so a form swaps among those (no Ice, Bug...).
+  - `game/data/regions.json` already exists (empty `[]`); RL-R1 fills it.
+  - `SPECIES[id].form` was already taken (a split line's 'A'/'B'); the new species keys are `formOf` and `coat`.
+  - Runs never called `standInSpecies` themselves: run-world.js hands the run POOLS, which game-data.js had already
+    stood in. Pointing the biomes at real pools was enough; run-scenes.js changed by one line (the dex hook).
+- Changed (one cause per commit):
+  - **logic/forms.js** (new): a line's `forms` (`{id, name, swap, coat}`, line.schema.json) make a species per stage,
+    `<line>_<form><stage>` (trump_waterfront0), named "<name> <stage name>", types swapped, the base stage's stats
+    (a copy), dex number and rig, its own next stage. Not in DEX_ORDER; `SPECIES_FORMS` lists a base's forms.
+    game-data.js may import it (eslint.config.js allows that one import: it imports nothing back).
+  - **Coats**: a coats.json coat marked `form` (schema) is never rolled and adds no word before the name
+    (`coatPrefix`); `makeBilly` and `spawn` give a form its coat unless it has another. skeleton-rig.js points a
+    form's rig at its base's.
+  - **Four forms** (drafts, the owner may rename): Waterfront (trump, Ground -> Water), Cloud (zuck, Water ->
+    Flying), Folklore (swift, Flying -> Grass), Festival (kardashian, Steel -> Ground), coats of the same names.
+  - **pools.json**: one pool per biome, named after it, the 7 lines' first stages: uncommon lines about 20 (28 where
+    their types fit the biome), starters 2-5; a form in place of its base line where its biome is (lake, ridge,
+    autumn, canyon). biomes.json points each biome at its own pool. Thicket's middle stages (weight 5) went: runs
+    reach about level 13 and middle stages evolve at 16.
+  - **Parked**: the 45 old pools, as they were (sea and badlands with their old lists), in `legacy/pools.json`
+    (legacy/index.json, README `_pools`). pools.json keeps hedgerow (the hub) and the 11 biome pools.
+  - **logic/wild-pool.js** (new): `wildPoolList(list, dex)`: a copy, cut to the species a region's dex names (all of
+    it with no dex or none named). runWorldTables reads an optional `data.dex` (RunWorldData); nothing sets it yet.
+  - **The Guide**: `dexSeen`/`dexCaught` (rules.js): an entry counts when one of its forms is seen or caught (list,
+    counts, profile); a base stage's page has a "Regional forms" section (seen: picture, name, types; else ???).
+  - **Checks**: check-data and the Studio's Check know form ids (`lineSpeciesIds`) and run `formProblems` (coat
+    exists and is marked form, swaps name real types, some stage changes); dataSpeciesKind counts forms as a line's;
+    the Studio's type rename rewrites a form's swap; the Studio's legacy mark no longer marks a form as legacy (a
+    bug found on the way: it would have shown "legacy trump_waterfront0" in the Pools tab); conditions.js counts a
+    form's catch for its line.
+  - **Tests**: new tools/test/wild-pools.test.mjs (8 tests: every biome pool covers the 7 lines with first stages,
+    uncommon above starter, five seeds' run places use their biome's pool with no stand-in, each form's species,
+    the four drafts, a form's coat and prefix, the dex cut, dexSeen/dexCaught). content-preview's stand-in test
+    finds its legacy id in the trainers (as read; the game stands in its own copy). check-studio-github's leaders
+    step now wants no legacy mark in the pools (it wanted at least one).
+- Verified: lint, typecheck, check:data, check:modules, format:check and the unit tests after every commit (776 ->
+  784); smoke 14 of 14; the full quick check 40 of 45 (1,971 s here): Tap targets, v31 bowl map camera, v46
+  buildings without a plan and alpha 0.4 bush recipes are the four lane B found red on main too; Sound effects'
+  "payout, won" failed again alone (its log holds `jingle run_won`, after the 15 s wait: timing, lane B saw this step
+  flip; not yet compared on main). The fast check 28 of 29: CAM-2 "the encounter shot never arrived", the flake lane
+  D noted. A browser look (phone size): forms in the team list and a wild battle with their names, types and coats;
+  the Guide's "Regional forms" section; coat renders checked against the sheets.
+- Risky / open:
+  - **Cloud Facelet and Festival Kontourlet** keep their first stage's single type (Electric, Psychic): the swap
+    names a type stage 1 doesn't have, so they differ from the base only in colour until they evolve. Options: a
+    per-stage `types` override on a form, or swaps that hit stage 1 (the owner's call).
+  - **Festival's coat** recolours Kontourlet well but Filterleon and Kardashleon only partly: much of their art is
+    off the shared palette (the coat can only swap palette ramps). An exact-colour `swap` list or hand-painted art
+    in coats.json would finish it. Waterfront's first draft turned the belly violet; redone (teal fur, sandy belly).
+  - **Breeding**: an egg from a form parent is its line's base first stage (breeding.js reads the line). Forms
+    don't breed true; fine for now, a choice for RL-10's follow-ups.
+  - The Studio's connections graph and parts editor parse `<line><digits>`; a form id doesn't resolve there (no
+    crash, just no link). A forms editor in the Studio's line editor waits for RL-16; edit `forms` as JSON for now.
+  - Pool `lv` is [3,6] for the biome pools: runs ignore it (rules.json run.wild sets levels by row).
+  - Trainers, eggs and legends still name legacy ids and still go through `standInSpecies` (their own sessions).
+  - Not tried on a phone: a form in a run's grass, the Guide's forms section, the coats on a real screen.
+- For RL-R1: put the region's dex in `runWorldData()` as `dex` (run-world.js) and every place's list is cut to it;
+  the region's dex can name form ids. Pools are per biome now, so a zone's biome gives its pool.
+- Next: RL-R1 (round 2). RO-2.. (new lines) on this branch.
+### Test cleanup track, round 2, lane B - TC-3: check-quick renamed, moved, fixed - 2026-10-23
+Branch `track/test-cleanup` (shared with lane E; pulled with --no-rebase before every push). Plan approved in Plan
+Mode ("Yes": the recommended choices: the props budget through Node stand-ins, not a code move; the masts step to
+Node too; the postcards' solarpunk half dropped). Lane B's part is pushed.
+- Where the track file was wrong (checked against the code):
+  - There is no "alpha 0.4.1" step (0.4.1 was only in comments) and no RL-7 step any more (round 1 deleted it).
+  - The masts and postcard data steps looped over towns: Copperleaf alone. The solarpunk rule skipped Copperleaf, so
+    it checked nothing.
+  - `testMapChecks` is not pure: it runs the walk's nav grid and path finder on walkView, and loading it in Node pulls
+    in self-test.js's UI (Lit, the page's globals). It stays in the browser (1 s, no drawing).
+  - The low-poly budget was one total over every recipe (15,000 triangles, 40,000 voxel quads), set when only small
+    props had recipes. Today's 164 recipes total about 138,000 triangles and 2.26 million quads (the city's three
+    towers 1 million of them); the step never got that far because six bushes failed first.
+  - Terraces, phase 08 running, RL-8 and postcards did not fail here (baseline and final runs); the last nightly
+    (23 Oct) predates round 1, so there is no newer CI evidence. See "Risky".
+- **Moved out of check-quick** (the new check first, then the step's deletion, each its own commit):
+  - Node tests (quick tier, about 1.5 s together): `version-source` (Version), `hub-data` (Copperleaf on its own),
+    `room-data` (wall height, a floor each), `water-data` (buildings in water, piers, jetties: `buildingsInWater` and
+    `piersOf` are the Python helpers in JS, compared on the 65 parked maps and 300 random scenes with planted boards
+    and buildings: the same 156 piers and 584 wet buildings), `airship-data` (the masts step), `postcard-data` (the
+    postcard files), `lowpoly-props` (see below). game/version.js's comment names its test.
+  - **check-data.mjs** (lane D's file in round 1) fails now on what the Data step held: the step grid's size, a room
+    without a building, a place's kind against its scene and its town mark, a place's id, an unnamed road, a
+    missing scenery picture. The Studio's Check still only warns about some of these (data-checks.js unchanged).
+  - **Low-poly props**: prop-models.js loads in Node through walk-renderer.mjs's stand-ins (no game code moved). Every
+    recipe of shapes builds a model; the budget is per prop: a building 10,000 triangles, another prop 4,000 (largest
+    today 8,573 and 3,798); voxels at 32 to the metre for eight Copperleaf props, 50,000 quads each (all 160 take six
+    minutes here, the towers five). The browser step keeps the every-prop scene drawing them low-poly: 302 s to 6 s.
+- **Renamed** (one per commit, a step's name with its function): v31, v32, v33, v36, v42, v43, v46, alpha 0.1, alpha
+  0.2, the five alpha 0.4 browser steps, phase 08 (e.g. v46 is "Ground tiles, building plans and colours, rooms laid
+  in at their doors"). The steps' version-stamped picture names too (`v46-room-in-place` to `room-in-place`...; no
+  baseline holds them yet). The `--steps` example names steps that exist.
+- **Fixed** (each commit says whether the check or the game was wrong):
+  - Tap targets: **the game**. Settings' volume sliders were 16 px tall; their box is 40 px now (settings.css).
+  - v31's world map camera: **the check**. Over the hub island the camera backs off to 0.49 to keep the eye above
+    the rim (bowlCamClamp); the check wanted 0.46. It now wants "as close as the camera may come there".
+  - v46: **the check**. Six kinds are drawn from low-poly models now, not build plans; ten kinds' rooms are parked
+    (lane C, the owner's choice). The colour pick is checked on the house.
+  - The bushes ("these recipes make nothing"): **the check**. A recipe of picture layers alone is drawn as cut-out
+    cards on purpose (propModelImageItems).
+  - Running: a push that moves nothing now fails with what held you, not `float division by zero`.
+  - Sound effects: **the check**. It waited 15 s for the payout's `run_won`; in the final run the jingle came just
+    after (it was in the failure's own log). 40 s now.
+- **Time, weather and rooms** reads `environment` (night, lamps, storm and rain, snow falling and lying, autumn
+  colour) after a frame drawn with each look, not screenshot brightness. The old "lamps 0.00 at night" was read
+  before a frame had applied the forced night (the state changes per drawn frame); it reads 1.00 now.
+- Verified: lint, typecheck, check:data, check:modules, format:check, `npm test` (793 after lane E's merge, 21 s)
+  after every code commit. The full quick check here (the scratch runner with a 300 s title wait):
+  **before** (5ddd0f8, the merged main, 2308 s, 44 steps, 4 red: Tap targets, v31, v46, the bushes) and
+  **after** (4068190, merged with lane E: 1872 s, 38 steps, 1 red: Sound effects' payout wait, fixed in fe64b93 and green alone after; the slowest steps: Double and Alpha battles 298 s, Running 163 s, Phone 108 s, RL-8 107 s). Each fix also passed alone before it was committed.
+- Risky / open:
+  - RL-8, postcards, terraces and running were green in both full runs here; if the nightly shows them red after
+    other steps, the failure message now says more (running) but no reset was added without a failure to look at.
+  - `npm test`'s after-edit hook times out at 50 s while a browser check runs beside it (it ran 66 s); it passes
+    alone. Not changed (tools/after-edit.mjs).
+  - The voxel budget is a sample; a full voxel sweep belongs in the slow tier if wanted (unit-tests.mjs SLOW_TESTS).
+  - The per-prop budgets (10,000 / 4,000 triangles, 50,000 quads) are my numbers from today's largest props, not a
+    phone measurement. Say if you want others.
+  - The graphics settings' dials (`.gfx-dial` sliders) are 16 px tall too; Tap targets only opens the Sound tab.
+- For others:
+  - Round 3 (TESTING.md): its lines 174 and 246-253 still name v31..alpha 0.4.1 and steps round 1 deleted; the
+    tiers table could take the new data tests. check-quick's step list and times are in this entry.
+  - Lane D's area: check-data.mjs has a TC-3 block (above).
+- Next: round 3 (TC-4 items 1, 2, 5, 6).
+
+### Test cleanup track, round 2, lane E - check-fast's island checks, the quick unit tier - 2026-10-23
+Branch `track/test-cleanup` (shared with lane B; pulled with --no-rebase before every push). TC-4 items 3-4. The owner
+said to make the recommended choices without waiting for plan approval. Lane E's part is pushed.
+- Where the track file was wrong (checked against the code):
+  - `npm test` took 72 s in this container (the track says 47 s, the lane brief 57 s). One file was most of it:
+    `run-sim.test.mjs`, 45 s alone, not a scene sweep by name and not in the slow tier.
+  - `hub_island` did not check the orbit: only that `walkRenderer.orbit` exists. The orbit and sea-skirt checks were
+    test_island's only.
+  - check-studio-github runs in CI with an `--only` list, so moving checks into it does nothing unless the list
+    names them: `hub` is added in check.yml (lane D's file in round 1; that lane is done).
+- Changed (one cause per commit):
+  - **Unit tests, quick tier 72 s to 25-26 s here (769 tests); slow tier 58 s (50 tests). No test dropped.**
+    - run-sim: the decision tests (shop stock, Loophole bought, plan, money, unlocks, report) play in balance mode. The
+      full-mode replay, "balance mode plays every seed as the full mode does" and the 20x check move to
+      `run-sim-scenes.test.mjs` (slow). The first two together are what lets the quick ones use balance mode. A
+      balance-mode replay stays in the quick tier.
+    - rig-joints: the pivot sweeps copy only the rig they change, not every rig twice per bone (6 s to 1 s, the same
+      checks).
+    - Slow tier now: `mapgen-roads`, `mapgen-lots` (each builds a whole map), `mapgen-dials.test.mjs` (mapgen's 40
+      random dial sets), `weather-before.test.mjs` (3.5 million weather picks against the pre-RL-6 code).
+  - **check-studio-github.py**: the Studio's Hub island (IS-6a) and its dials (IS-6b) moved over as they were, on a page
+    of their own after the proposal: 400x300, data read from the files, every GitHub call answered 404. Run with
+    `--only=hub`. CI's Studio step (studio/ and logic pull requests) now names it.
+  - **check-fast.py**: `island` (test_island) is gone. Its checks run on Copperleaf as a new check on the camera page,
+    "Copperleaf is the island: the sea skirt from 8 angles; the orbit camera...": contract fields (not `islandGen`,
+    which the walk scene doesn't carry), the sea skirt at the sea's level, 8 looks in from over the sea, the orbit
+    from 8 places, held on the summit (the orbit's middle, 85, 95), holding right on a 30 m circle. Nearer the
+    summit (12-20 m) the slopes slide you 1-3 m in, so the check's 1 m drift rule fails there. The player is put
+    back after.
+  - TESTING.md: the (b)/(b2) tier rows and the run-sim/weather lines.
+- Verified: lint, typecheck, npm test and test:slow green after each change. check-studio-github `--only=hub` ok
+  (IS-6a 332 s, IS-6b 42 s here, with a probe running beside it for part of that). The full fast check: 976 s, 27
+  checks, 24 passed. Then:
+  - CAM-2 "the encounter shot never arrived": the flake lane D recorded. It passed on rerun.
+  - The new orbit check failed after CAM-2's failure on the same page ("aims 59.5 m from you"; CAM-2 had left the
+    camera mid-shot). It passed on rerun after a passing CAM-2 (53 s).
+  - "A battle plays to the end: stuck at playing": this one is not from this lane. It fails the same way on main
+    (5ddd0f8) when it runs beside the camera page, and passes alone on both. Its 30 s wait for each battle step runs
+    out under software drawing on a busy machine.
+- Risky:
+  - The fast check is not faster here: about 195 s of Studio checks and 114 s of island checks left, but the
+    slowest pages (camera, run loop) decide the total with 2 workers. In CI the island and Studio pages were among
+    the longest, so expect a gain there. Measure on the next CI run.
+  - The orbit check now runs after CAM-1/CAM-2 on the same page, so a CAM-2 failure can cascade into it. It could get
+    a page of its own (one more boot, about 40 s) if that keeps happening.
+  - Quick-tier margin: 26 s against a 30 s budget in a container that ran the old tier at 72 s. Next to cut if it
+    creeps up: check-data-snapshot (4.8 s), sheet-slice-real (4 s).
+- For other lanes / round 3: battle()'s per-step wait (above) and CAM-2's encounter wait belong with "until instead
+  of sleeps" (TC-4 item 2). check-fast's docstring still says "one to three minutes" (TC-4 item 6).
+- Next: round 3 (TC-4 items 1, 2, 5, 6).
+
 ### Test cleanup track, round 1, lane D - Lint, data check, Studio check, CI - 2026-10-23
 Branch `track/test-cleanup` (shared with lanes A-C; pulled with --no-rebase before every push). Plan approved in Plan
 Mode with the owner's answers: keep the general rename tools, delete the unused CSS rules, add the upload guard.

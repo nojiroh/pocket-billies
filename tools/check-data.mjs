@@ -8,6 +8,9 @@
 // - what refers to what exists: moves a line learns, species in pools and teams, a stop's map and wild pool, the
 //   ground kinds and props a map uses, the stops of links and trainers, a trainer's look,
 // - a map's ground is h rows of w, its heights (h+1) rows of w+1, its island fields sound (island track),
+// - TC-3 (was check-quick's Data step): a map's step grid is its size, a room names its building, a place says whether
+//   it is a town or a route (as its scene and its town mark do) under its scene's id, a road has a name, and every
+//   picture the scenery names exists,
 // - phase 07: portraits.json against its schema, and every picture, part and frame it names exists,
 // - studio track ST-3: partKits.json against its schema, and every part's picture is there at its size,
 // - phase 08b: the links between places (roads.json) join them as the walk needs, and every door opens a room (below),
@@ -21,6 +24,7 @@ import { DATA, PB_DATA } from './data-files.mjs';
 import { musicFindings } from '../game/js/logic/music-studio.js';
 import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js';
 import { islandProblems } from '../game/js/logic/island.js';
+import { formProblems, lineSpeciesIds } from '../game/js/logic/forms.js';
 import {
   dataBattleRules,
   dataBiomes,
@@ -171,7 +175,10 @@ const S = D.maps || {},
   scenery = D.scenery || { terrains: {}, props: {} };
 const species = new Set();
 for (const L of D.lines || []) {
-  (L.names || []).forEach((n, i) => species.add(L.id + i));
+  for (const id of lineSpeciesIds(L)) species.add(id);
+  // RO-1: regional forms: a coat marked form, swaps between real types, a change to some stage's types
+  for (const p of formProblems(L, D.coats || {}, (D.types || []).map(t => t.id)))
+    problem(`lines/${L.id}.json`, p);
   for (const [lv, m] of L.learn || [])
     if (!moves[m]) problem(`lines/${L.id}.json`, `learns ${m} at ${lv}, no such move`);
   // phase 16: native parts: one per stage, every slot filled with a part the kits have
@@ -325,7 +332,7 @@ if (D.coats && check('coats.schema.json', D.coats, 'coats.json')) {
       .replace(/^[^=]*=/, '')
       .replace(/;\s*$/, '')
   );
-  const species = new Set((D.lines || []).flatMap(L => L.names.map((_, i) => L.id + i)));
+  const species = new Set((D.lines || []).flatMap(L => lineSpeciesIds(L)));
   for (const [id, C] of Object.entries(D.coats)) {
     for (const [a, b] of Object.entries(C.ramps || {}))
       for (const r of [a, b])
@@ -504,6 +511,43 @@ for (const [id, sc] of Object.entries(S)) {
   for (const k of props) if (!scenery.props[k]) problem(where, `prop ${k} isn't in scenery.props`);
   // island track IS-0: the island fields beyond their shapes (logic/island.js)
   for (const p of islandProblems(sc)) problem(where, p);
+  // TC-3 (was check-quick's Data step): the step grid is two half-metre cells a metre each way, two bytes a cell
+  if (sc.steps && Buffer.from(sc.steps, 'base64').length !== sc.w * 2 * sc.h * 2 * 2)
+    problem(where, `the step grid isn't ${sc.w * 2} by ${sc.h * 2} cells`);
+  // and what the Studio's Check only warns about fails here: a room says which building it is the inside of, and a
+  // town or route scene is the kind its place is
+  if (sc.kind === 'room' && !sc.building) problem(where, 'a room without a building');
+  const pl = route.find(r => r.mapId === id);
+  if (pl && ['town', 'route'].includes(sc.kind) && pl.kind !== sc.kind)
+    problem(where, `a ${sc.kind} scene, its place ${pl.id} is a ${pl.kind}`);
+}
+// TC-3 (was check-quick's Data step): every place says whether it is a town or a route, as its town mark does, and
+// its id is its scene's; every road has a name
+route.forEach((p, n) => {
+  const where = `locations.json place ${n} (${p.name})`;
+  if (!['town', 'route'].includes(p.kind)) problem(where, 'no kind (town or route)');
+  if (p.id !== p.mapId) problem(where, `id ${p.id} is not its scene ${p.mapId}`);
+  if ((p.kind === 'town') !== !!p.town) problem(where, `kind ${p.kind} but ${p.town ? '' : 'not '}marked town`);
+});
+(D.roads || []).forEach((L, i) => {
+  if (!PB_DATA.road(D, L).id) problem('roads.json', `road ${i}: no name`);
+});
+// TC-3 (was check-quick's Data step): every picture the scenery names exists
+{
+  const ART = join(DATA, '..', 'art'),
+    need = (/** @type {string | undefined} */ p, /** @type {string} */ what) => {
+      if (p && !existsSync(join(ART, p))) problem('scenery.json', `${what}: no picture ${p}`);
+    };
+  for (const [k, T] of Object.entries(scenery.terrains || {})) {
+    need(T.tile, `ground ${k}`);
+    for (const v of T.vars || []) need(v, `ground ${k}`);
+  }
+  for (const [k, P] of Object.entries(scenery.props || {})) {
+    need(P.img, `prop ${k}`);
+    for (const l of P.layers || []) if (l && typeof l === 'object') need(l.img, `prop ${k}`);
+  }
+  need(scenery.wallArt || 'scene/build/walls.png', 'the walls');
+  for (const k of ['detail', 'rooms']) need((scenery.buildArt || {})[k], `buildArt.${k}`);
 }
 
 // Studio plan Phase 5 (T5.3): the rigs (game/art/next/rigs-next.js and art/rigs.js) hold together: boxes inside their
