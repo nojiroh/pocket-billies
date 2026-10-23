@@ -109,7 +109,7 @@ export function simValue(r, k) {
 
 /**
  * One report's numbers from its runs (runSim's stats, one per seed): win rate with its interval, where runs were lost
- * (by node type and by row), the averages, money in and out, the Loopholes taken, and each leader's record.
+ * (by node type and by row), the averages, money in and out, the Perks taken, and each leader's record.
  * @param {any[]} runs
  */
 export function simSummary(runs) {

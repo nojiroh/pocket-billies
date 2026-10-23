@@ -1,10 +1,10 @@
 'use strict';
-/* ================= LOOPHOLES ON SCREEN (roguelite track RL-12) =================
-   A run's Loopholes (relics.json; logic/relics.js, logic/effects.js) as the player sees them:
+/* ================= PERKS ON SCREEN (roguelite track RL-12) =================
+   A run's Perks (relics.json; logic/relics.js, logic/effects.js) as the player sees them:
    - the pick after a mini-boss: the offer (saved on the run before it shows) as face-up pick cards; tap one, then
      "Take it", or "Take none". It can't be closed any other way, and a reload opens it again (run.js runResume);
-   - past the cap a second sheet asks which Loophole to let go (the pick's and the shop's);
-   - the Loopholes tab of a run's bottom bar: what you hold and what each does, "n of 6".
+   - past the cap a second sheet asks which Perk to let go (the pick's and the shop's);
+   - the Perks tab of a run's bottom bar: what you hold and what each does, "n of 6".
    Every change is saved at once (saveNow), as every other choice on a run. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
@@ -32,7 +32,7 @@ provide({ relicDropOpen, relicPickOpen });
 /* to-module: end */
 /** a rarity as the player reads it */
 const RELIC_RARITY = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare' };
-/** a Loophole as a pick card (the pick, letting one go) @param {string} id @param {boolean} on */
+/** a Perk as a pick card (the pick, letting one go) @param {string} id @param {boolean} on */
 function relicCardHTML(id, on) {
   const R = RELICS[id];
   return `<pb-pick-card data-id="${escapeHtml(id)}" heading="${escapeHtml(R.name)}" sub="${RELIC_RARITY[R.rarity] || ''}"${on ? ' selected' : ''}><span slot="art">${uiIconHTML('relic', 40)}</span>${escapeHtml(R.d)}</pb-pick-card>`;
@@ -44,7 +44,7 @@ function relicSheet(M) {
   uiState.modal = M;
   renderOverlay();
 }
-/** a pick card tapped on the open sheet: f(its Loophole's id) */
+/** a pick card tapped on the open sheet: f(its Perk's id) */
 function relicCardsOn(f) {
   for (const c of document.querySelectorAll('#ov pb-pick-card[data-id]'))
     c.addEventListener('pb-pick', () => f(/** @type {HTMLElement} */ (c).dataset.id));
@@ -59,10 +59,10 @@ export function relicPickOpen() {
     ids = run.offer.filter(id => RELICS[id]),
     sel = ids.includes(uiState.relicSel) ? uiState.relicSel : null;
   relicSheet({
-    title: 'Pick a Loophole',
+    title: 'Pick a Perk',
     cls: 'relic-pick',
     lock: true,
-    html: `<p>The mini-boss left a few loopholes behind. Take one for the rest of the run.</p><p class="note">You hold ${run.relics.length} of ${rule.cap}.${run.relics.length >= rule.cap ? ' Taking one means letting another go.' : ''}</p><div class="relic-cards">${ids.map(id => relicCardHTML(id, id === sel)).join('')}</div>`,
+    html: `<p>The mini-boss left a few perks behind. Take one for the rest of the run.</p><p class="note">You hold ${run.relics.length} of ${rule.cap}.${run.relics.length >= rule.cap ? ' Taking one means letting another go.' : ''}</p><div class="relic-cards">${ids.map(id => relicCardHTML(id, id === sel)).join('')}</div>`,
     btns: [
       { l: 'Take it', c: 'gold', dis: !sel, f: () => relicPickTake(/** @type {string} */ (sel)) },
       { l: 'Take none', c: 'quiet', f: () => relicPickDone(null) },
@@ -82,29 +82,28 @@ function relicPickTake(id) {
   if (run.relics.length >= RULES.run.relics.cap) relicDropOpen(id, drop => relicPickDone(id, drop), relicPickOpen);
   else relicPickDone(id);
 }
-/** the pick answered (a Loophole, or none): saved, the sheet closed */
+/** the pick answered (a Perk, or none): saved, the sheet closed */
 function relicPickDone(id, drop) {
   const run = saveData.run;
   if (!run) return;
   const why = relicChoose(run, id, RELICS, RULES.run.relics, drop);
   if (why) {
-    toast('That Loophole can’t be taken.');
+    toast('That Perk can’t be taken.');
     return;
   }
   uiState.relicSel = null;
   saveNow();
-  if (typeof debugLog !== 'undefined')
-    debugLog.add('scene', `Loophole pick: ${id || 'none'}${drop ? ` for ${drop}` : ''}`);
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', `Perk pick: ${id || 'none'}${drop ? ` for ${drop}` : ''}`);
   closeModal();
   render();
   if (id) toast(`${RELICS[id].name}: ${RELICS[id].d}`);
-  /* SND-6: a Loophole taken has a jingle of its own */
+  /* SND-6: a Perk taken has a jingle of its own */
   if (id && typeof jinglePlay === 'function') jinglePlay('relic');
 }
 
 /* ---------- past the cap: let one go ---------- */
 /**
- * Which Loophole to let go for `id`: the held ones as cards; a tap answers `then(itsId)`; "Keep them" goes `back`.
+ * Which Perk to let go for `id`: the held ones as cards; a tap answers `then(itsId)`; "Keep them" goes `back`.
  * @param {string} id @param {(drop: string) => void} then @param {() => void} back
  */
 function relicDropOpen(id, then, back) {
@@ -114,7 +113,7 @@ function relicDropOpen(id, then, back) {
     title: 'Let one go',
     cls: 'relic-drop',
     lock: true,
-    html: `<p>You can hold ${RULES.run.relics.cap} Loopholes. Tap one to let it go for ${escapeHtml(RELICS[id].name)}.</p><div class="relic-cards">${run.relics
+    html: `<p>You can hold ${RULES.run.relics.cap} Perks. Tap one to let it go for ${escapeHtml(RELICS[id].name)}.</p><div class="relic-cards">${run.relics
       .filter(k => RELICS[k])
       .map(k => relicCardHTML(k, false))
       .join('')}</div>`,
@@ -136,14 +135,14 @@ function relicDropOpen(id, then, back) {
   });
 }
 
-/* ---------- the Loopholes tab ---------- */
-/** the run's Loopholes, each with what it does */
+/* ---------- the Perks tab ---------- */
+/** the run's Perks, each with what it does */
 export function renderRelics() {
   const run = saveData.run,
     cap = RULES.run.relics.cap;
-  if (!run) return `<p class="note bag-empty">Loopholes come with a run. Start one at the airship mast.</p>`;
+  if (!run) return `<p class="note bag-empty">Perks come with a run. Start one at the airship mast.</p>`;
   const held = run.relics.filter(id => RELICS[id]);
-  return `<section class="tpanel relics"><div class="sec-h"><h2>Loopholes</h2><span class="count tnum">${held.length} of ${cap}</span></div>${
+  return `<section class="tpanel relics"><div class="sec-h"><h2>Perks</h2><span class="count tnum">${held.length} of ${cap}</span></div>${
     held.length
       ? `<div class="bag-list">${held
           .map(

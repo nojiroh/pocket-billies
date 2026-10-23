@@ -6,7 +6,7 @@ import { provide } from './hooks.js';
 import { $, $$ } from './util.js';
 import { LOCATIONS, RULES, START_NODE, TRAINERS } from './game-data.js';
 import { speciesOf } from './logic/fighters.js';
-import { formatNumber, makeBilly, spawn } from './logic/rules.js';
+import { formatNumber, makeBilly, plural, spawn } from './logic/rules.js';
 import { pbFloat, pbInboxDot, pbInboxPop } from './ui-kit.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
@@ -71,7 +71,7 @@ const TABS = ['walk', 'map', 'team', 'ledger', 'bag', 'relics', 'lab'],
 function topbar() {
   const shut = !!(saveData.preferences && saveData.preferences.cardClosed),
     walk = uiState.tab === 'walk';
-  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${escapeHtml(LOCATIONS[saveData.trip.node].name)}">${escapeHtml(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState() ? uiState.inside.name || LOCATIONS[saveData.trip.node].name : LOCATIONS[saveData.trip.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${escapeHtml(LOCATIONS[saveData.trip.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny', 16)}<small>$</small><b data-count="tse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${uiState.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button>${pbInboxDot(uiState.inbox.length)}</div>`;
+  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${escapeHtml(LOCATIONS[saveData.trip.node].name)}">${escapeHtml(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState() ? uiState.inside.name || LOCATIONS[saveData.trip.node].name : LOCATIONS[saveData.trip.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${escapeHtml(LOCATIONS[saveData.trip.node].name)}</span>`}<span class="tb-chip tnum" title="Moneys"><span class="money">${uiIconHTML('coin', 16)}</span><b data-count="tse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${uiState.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button>${pbInboxDot(uiState.inbox.length)}</div>`;
 }
 export function render() {
   const app = $('#app');
@@ -139,7 +139,8 @@ export function render() {
       from = uiState.disp[k];
     uiState.disp[k] = to;
     /* phase 06: money earned rises from the money chip instead of a toast */
-    if (k === 'tse' && from != null && to > from) pbFloat(el.closest('.tb-chip') || el, '+$' + formatNumber(to - from));
+    if (k === 'tse' && from != null && to > from)
+      pbFloat(el.closest('.tb-chip') || el, '+' + plural(to - from, 'Money'));
     if (from == null || from === to || reducedMotion) {
       el.textContent = formatNumber(to);
       return;
@@ -174,7 +175,7 @@ function openTab(t) {
 }
 /* UI-5: the bottom bar is the kit's <pb-nav-bar> (ui-run-kit.js): the hub's tabs, or a run's; the world itself is the
    base view (no Walk tab: the open tab tapped again, or Esc, goes back to it) and the Guide opens from the Trainer
-   card. Lab is the unlock board (RL-11, lab-board.js); a run's Loopholes tab is RL-12's (relic-screen.js). */
+   card. Lab is the unlock board (RL-11, lab-board.js); a run's Perks tab is RL-12's (relic-screen.js). */
 const NAV_HIDDEN = '';
 function updateNav(show) {
   let n = /** @type {any} */ ($('#nav'));
@@ -230,7 +231,7 @@ export function startGame(l, o = {}) {
   const W = {
     title: `${speciesOf(m).name} joined your team`,
     top: `<div class="sheet-art">${rigCanvasHTML(m.sp, 128)}</div>`,
-    html: `${nE ? `<p>${words[nE] || nE} Billie${nE === 1 ? ' is' : 's are'} already rustling in the grass. Tap one to battle it, then flick a coin.</p>` : ''}<p>When you’re ready, the airship at the mast flies you out on a run.</p>`,
+    html: `${nE ? `<p>${words[nE] || nE} Billie${nE === 1 ? ' is' : 's are'} already rustling in the grass. Tap one to battle it, then throw a pyramid.</p>` : ''}<p>When you’re ready, the airship at the mast flies you out on a run.</p>`,
     btns: [{ l: 'Let’s go', c: 'dark', f: closeModal }],
   };
   if (o.rival && TRAINERS.blake0 && typeof storyRivalBattle === 'function') {
@@ -352,7 +353,6 @@ document.addEventListener('click', ev => {
     case 'bitem':
     case 'bitemon':
     case 'bswitch':
-    case 'boffer':
     case 'bend':
       battleAction(a, d);
       break;

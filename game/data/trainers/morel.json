@@ -23,7 +23,7 @@
   "coin": "gold",
   "coins": {"gold":4,"tbtf":2},
   "items": {"bailout":3},
-  "rewardText": "3 Bailouts, 4 Gold Coins and 2 Platinum Coins",
+  "rewardText": "3 Revives, 4 Gold Pyramids and 2 Capstones",
   "unlockText": "Tanglewild Jungle, east of Capshade Town, is open."
  },
  "v47region": 1,

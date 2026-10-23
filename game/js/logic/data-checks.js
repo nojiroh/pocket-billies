@@ -35,6 +35,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataBuildings: [() => dataBuildings, v => (dataBuildings = v)],
   // @ts-expect-error -- replaced on purpose
+  dataCatchArt: [() => dataCatchArt, v => (dataCatchArt = v)],
+  // @ts-expect-error -- replaced on purpose
   dataCurrencies: [() => dataCurrencies, v => (dataCurrencies = v)],
   // @ts-expect-error -- replaced on purpose
   dataNodeTypes: [() => dataNodeTypes, v => (dataNodeTypes = v)],
@@ -431,8 +433,8 @@ export function dataRunLoop(D) {
         if (!(D.items || {})[k] || !whole(n, 0, 999))
           problem('rules.json', `run.start.items.${k}: no such item, or not a whole count`);
     }
-    // RL-9b: by Bracket (index 0 = Bracket I; past the end, the last): Billies from home a run takes (1-6, never fewer
-    // than the Bracket before) and the things packed from Copperleaf's bag (0-99 items and coins in all)
+    // RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): Billies from home a run takes (1-6, never fewer
+    // than the Expedition before) and the things packed from Copperleaf's bag (0-99 items and coins in all)
     for (const [k, lo, hi, what] of [
       ['home', 1, 6, 'Billies from home'],
       ['pack', 0, 99, 'things packed'],
@@ -446,10 +448,11 @@ export function dataRunLoop(D) {
       )
         problem(
           'rules.json',
-          `run.${k} is not a list of 1-9 whole numbers (${what}, ${lo}-${hi}), one a Bracket, none fewer than the one before`
+          `run.${k} is not a list of 1-9 whole numbers (${what}, ${lo}-${hi}), one a Expedition, none fewer than the one before`
         );
     }
-    if (!whole(R.healCost, 0, 100000)) problem('rules.json', 'run.healCost is not a whole number of $ (0-100,000)');
+    if (!whole(R.healCost, 0, 100000))
+      problem('rules.json', 'run.healCost is not a whole number of Moneys (0-100,000)');
     if (!rec(SH) || !Array.isArray(SH.always) || !whole(SH.more, 0, 12) || !rec(SH.pick))
       problem('rules.json', 'run.shop: always (a list), more (whole, 0-12) and pick (weights) are needed');
     else {
@@ -469,7 +472,7 @@ export function dataRunLoop(D) {
       for (const k of ['miniboss', 'boss']) {
         const f = F[k];
         if (!rec(f) || !whole(f.up, -20, 50) || !whole(f.reward, 0, 1e6))
-          problem('rules.json', `run.foes.${k}: up (whole, -20-50) and reward (whole $, 0-1,000,000) are needed`);
+          problem('rules.json', `run.foes.${k}: up (whole, -20-50) and reward (whole Moneys, 0-1,000,000) are needed`);
         else only(f, ['up', 'reward'], `run.foes.${k}`);
       }
     }
@@ -653,7 +656,7 @@ export function dataNodeTypes(D, valid = () => true) {
   }
   return out;
 }
-// RL-12: Loopholes (relics): the schema, the types their damage rows name; rules.json run.relics: a cap of 1-12 held, a
+// RL-12: Perks (relics): the schema, the types their damage rows name; rules.json run.relics: a cap of 1-12 held, a
 // pick of 1-5 (run.offer holds up to 5), a weight of 0 or more and a whole price ($0-100,000) for each rarity, and
 // something to offer
 /** RL-12: relics.json and rules.json run.relics @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
@@ -702,15 +705,44 @@ export function dataRelics(D, valid = () => true) {
           if (g === 'rarity' ? !(typeof G[r] === 'number' && G[r] >= 0) : !whole(G[r], 0, 100000))
             problem(
               'rules.json',
-              `run.relics.${g}.${r} is not ${g === 'rarity' ? 'a weight of 0 or more' : 'a whole price ($0-100,000)'}`
+              `run.relics.${g}.${r} is not ${g === 'rarity' ? 'a weight of 0 or more' : 'a whole price (0-100,000 Moneys)'}`
             );
       }
       if (D.relics && !Object.values(D.relics).some(R => (RR.rarity || {})[R.rarity] > 0))
         problem(
           'rules.json',
-          'run.relics.rarity gives every Loophole in relics.json a weight of 0: nothing can be offered'
+          'run.relics.rarity gives every Perk in relics.json a weight of 0: nothing can be offered'
         );
     }
+  }
+  return out;
+}
+// RF-2: every catch item (coins.json; the ids stay the coins' until RF-4) has its icons and the model it is thrown as
+// (art/coins/<id>_16.png, _32.png and <id>.json, made by tools/build-pyramids.py): a recipe with at least one shape
+/** RF-2: coins.json against its art @param {any} coins @param {(path: string) => string | null} read the file under
+ * game/art, or null when it isn't there @returns {DataProblem[]} */
+export function dataCatchArt(coins, read) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['coins.json', what]);
+  for (const k of Object.keys(coins || {})) {
+    for (const f of [`coins/${k}_16.png`, `coins/${k}_32.png`])
+      if (read(f) == null) problem(`${k}: no icon art/${f} (tools/build-pyramids.py)`);
+    const t = read(`coins/${k}.json`);
+    if (t == null) {
+      problem(`${k}: no model art/coins/${k}.json (tools/build-pyramids.py)`);
+      continue;
+    }
+    /** @type {any} */
+    let rec = null;
+    try {
+      rec = JSON.parse(t);
+    } catch (e) {
+      problem(`${k}: its model art/coins/${k}.json is not JSON`);
+      continue;
+    }
+    if (!rec || !Array.isArray(rec.layers) || !rec.layers.length)
+      problem(`${k}: its model art/coins/${k}.json has no shapes`);
   }
   return out;
 }

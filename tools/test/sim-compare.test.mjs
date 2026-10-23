@@ -48,7 +48,7 @@ const run = (o = {}) => ({
   ...o,
 });
 
-test('sim compare: a summary has the win rate, losses by type and row, money, Loopholes and leaders', () => {
+test('sim compare: a summary has the win rate, losses by type and row, money, Perks and leaders', () => {
   const S = C.simSummary([
     run(),
     run({ won: true, lostAt: '', lostRow: null, relics: ['offshore'], foes: [{ leader: 'crude', won: true }] }),

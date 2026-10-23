@@ -43,7 +43,7 @@ test('unlocks: buying pays once, in the right currency, and grants', () => {
   assert.equal(s.meta.scrap, 50 - D.unlocks.ranch_2.cost, 'the ranch is paid in Scrap');
   assert.equal(K.buildingLevel(s, 'ranch'), 2);
   assert.equal(modules.ranch.ranchLevel(s), 2, 'the ranch reads its new level');
-  assert.equal(K.unlockReady(s, 'airship_2', D), 'cost', 'no Seals');
+  assert.equal(K.unlockReady(s, 'airship_2', D), 'cost', 'no Crests');
   assert.equal(K.unlockReady(s, 'nope', D), 'unknown');
 });
 

@@ -19,7 +19,7 @@ import { fxHealShare, fxOfRun, unlockOpen } from '../hooks.js';
 import { ITEMS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
-import { healAll, maxHp } from './rules.js';
+import { healAll, maxHp, plural } from './rules.js';
 import { RUN_DAYS, runHome } from './run-state.js';
 import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
@@ -80,7 +80,7 @@ export function runArriveHeal(team, share) {
   return gained;
 }
 /** Studio plan T3.3: walking into a place on a run (walk-control.js through run.js runArrivedFx, and the run's
- * simulation): the held Loopholes' heal rows heal the team (runArriveHeal); returns the HP gained (0: none)
+ * simulation): the held Perks' heal rows heal the team (runArriveHeal); returns the HP gained (0: none)
  * @param {SaveData} s @param {Record<string, any>} relics relics.json */
 export function runArriveFx(s, relics) {
   const share = fxHealShare(fxOfRun(s.run, relics));
@@ -230,7 +230,7 @@ export function runSheetStatus(run, i, env) {
 }
 /** Studio plan T3.2: what a run battle starts with, on the page (run.js runBattleStart) and in the simulation (logic/
  * run-sim.js): its seed, the place's forecast for today as the battle's weather (clear is sunny: a run has no hour),
- * and the Loopholes' effect rows when any are held (logic/effects.js fxOfRun: null when none)
+ * and the Perks' effect rows when any are held (logic/effects.js fxOfRun: null when none)
  * @param {Run} run @param {number} i the map node @param {number} k the battle's number in the run
  * @param {any} env rules.json env @param {any[] | null} fx */
 export function runBattleExtra(run, i, k, env, fx) {
@@ -260,18 +260,18 @@ export const runKept = (team, won, pick) =>
   won ? team.map(m => m.uid) : team.filter(m => m.uid === pick).map(m => m.uid);
 /** an item's shop price, for the payout's items line (0 for none) @param {string} id */
 export const runItemPrice = id => (ITEMS[id] && ITEMS[id].price) || 0;
-/** the payout screen's rows from payoutOf's lines: a label, a note and the Capital each brings (the win row only on a
+/** the payout screen's rows from payoutOf's lines: a label, a note and the Research each brings (the win row only on a
  * win; RL-9b: the items row only on a loss, a win takes the bag home) @param {{ lines: { what: string, n: number, capital: number }[] }} pay
  * @param {{ money: number, itemShare: number, released: number, node: number }} rates */
 export function runPayoutRows(pay, rates) {
   const pct = Math.round(rates.money * 100),
     say = {
-      money: (/** @type {number} */ n) => ['Money left', `$${n.toLocaleString('en')} at ${pct}%`],
-      items: n => ['Items in the bag', `worth $${n.toLocaleString('en')} at ${pct}%`],
+      money: (/** @type {number} */ n) => ['Moneys left', `${plural(n, 'Money')} at ${pct}%`],
+      items: n => ['Items in the bag', `worth ${plural(n, 'Money')} at ${pct}%`],
       released: n => ['Billies released', `${n} × ${rates.released}`],
       nodes: n => ['Places reached', `${n} × ${rates.node}`],
       win: () => ['The boss beaten', ''],
-      fx: n => ['Loopholes', `${n > 0 ? '+' : ''}${n}%`],
+      fx: n => ['Perks', `${n > 0 ? '+' : ''}${n}%`],
     };
   const won = pay.lines.some(l => l.what === 'win' && l.n > 0);
   return pay.lines

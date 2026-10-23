@@ -68,6 +68,7 @@ expose({
   propModelShaders: [() => propModelShaders, v => ((propModelShaders = v), provide({ propModelShaders }))],
   propModelState: [() => propModelState],
   propModelsOn: [() => propModelsOn, v => (propModelsOn = v)],
+  setItemSpin: [() => setItemSpin, v => (setItemSpin = v)],
   setPropModelUniforms: [() => setPropModelUniforms, v => (setPropModelUniforms = v)],
   swappedRecipe: [() => swappedRecipe, v => (swappedRecipe = v)],
   tagPropModel: [() => tagPropModel, v => ((tagPropModel = v), provide({ tagPropModel }))],
@@ -165,7 +166,7 @@ const PROP_MODEL_SHAPES = [
   ['limb', 'Limb (from x, y, z to x2, y2, z2)'],
   ['dome', 'Dome'],
 ];
-function propModelsOn() {
+export function propModelsOn() {
   return typeof engineSetting === 'function' && (engineSetting('world', 'voxelProps') ?? true) && !propModelState.fail;
 }
 function propModelGuard(fn) {
@@ -1330,8 +1331,7 @@ function drawLowPolyModels(C, X, L) {
     if (p.U.uCel) gl.uniform1f(p.U.uCel, it.vox && it.vox.cel != null ? it.vox.cel : 0.75);
     if (typeof setPropLookUniforms === 'function') setPropLookUniforms(p.U, it.lk, [it.x, it.y, it.z]);
     setPropModelUniforms(p, it);
-    gl.uniform4f(p.U.uSpin, 1, 0, 0, 0);
-    gl.uniform3f(p.U.uSpinC, 0, 0, 0);
+    setItemSpin(p, it);
     drawPropModelMesh(m);
     for (const q of m.more || []) drawPropModelMesh(q);
     drawSpinningParts(p, m);
@@ -1649,6 +1649,19 @@ function mooredBob(it) {
     Math.sin(t * 0.29 + ph) * 0.03 * (1 + w * 0.4),
   ];
 }
+/* RF-2: a whole model turned about any axis (a thrown pyramid tumbling, rocking on a base edge): it.spin {a: a unit
+   axis, up as y; an: radians; c: the pivot in the model's metres, up as y}; else not turned */
+function setItemSpin(p, it) {
+  const gl = gpuState.gl,
+    S = it.spin;
+  if (S) {
+    gl.uniform4f(p.U.uSpin, S.a[0], S.a[1], S.a[2], S.an);
+    gl.uniform3fv(p.U.uSpinC, S.c);
+  } else {
+    gl.uniform4f(p.U.uSpin, 1, 0, 0, 0);
+    gl.uniform3f(p.U.uSpinC, 0, 0, 0);
+  }
+}
 function setPropModelUniforms(p, it) {
   const gl = gpuState.gl,
     U = p.U,
@@ -1687,8 +1700,7 @@ export function drawPropModels(C, items, X, hits, labels, PPU) {
       gl.uniform1f(p.U.uEmit, it.glow ? it.glow : 0);
       setPropModelUniforms(p, it);
       gl.uniform1f(p.U.uQ, m.q || 1);
-      gl.uniform4f(p.U.uSpin, 1, 0, 0, 0);
-      gl.uniform3f(p.U.uSpinC, 0, 0, 0);
+      setItemSpin(p, it);
       drawPropModelMesh(m);
       drawSpinningParts(p, m);
       propModelState.drawn++;
@@ -1719,8 +1731,7 @@ function drawPropModelShadows(SH, items) {
       }
       setPropModelUniforms(p, it);
       gl.uniform1f(p.U.uQ, m.q || 1);
-      gl.uniform4f(p.U.uSpin, 1, 0, 0, 0);
-      gl.uniform3f(p.U.uSpinC, 0, 0, 0);
+      setItemSpin(p, it);
       drawPropModelMesh(m);
       for (const q of m.more || []) drawPropModelMesh(q);
       drawSpinningParts(p, m);

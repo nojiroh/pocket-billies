@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Fewer finance words (reflavour track RF-1): you **catch** Billies now ("Catch it", "Caught!", the Guide's Caught
+  count), and nothing says "tax" except the title's "Gotta tax 'em all!". Run money is **Moneys** (1 Money), shown
+  with a small gold coin instead of a $; Capital is **Research** (with a flask icon), Audit Seals are **Crests**,
+  Loopholes are **Perks** and Brackets are **Expeditions** (Expedition I). The ten Perks have new names: Lucky Charm,
+  Clinic Loyalty Card, Coupon Book, Steady Hand, Running Shoes, Power Gloves, Bubble Wrap, Trail Snacks, Field
+  Notebook and Lost Property Form. A Billie that breaks free no longer offers you money to let it go: a miss is a miss.
 - Every run is a small region (roguelite track RL-R1): its seed picks a theme (Lakeland, Greenbelt, Wildwood,
   Highland or Harvest Country; the last two need the Ridge or Autumn lands), names it ("Pendingvale", "Beta Basin",
   "Hotfix Hollow") and walks it in three zones, each one biome over two or three rows of the map, one leading into
@@ -28,6 +34,12 @@ kept aside in the browser).
   Cloud Facelet (Electric/Flying, on the ridge), Folklore Swiftlet (Grass/Psychic, in the autumn wood) and Festival
   Kontourlet (Psychic/Ground, in the canyon), each line with its own colours and its own evolutions. The Guide shows
   a line's regional forms on its page; catching one counts for that entry.
+- Catching with pyramids (reflavour track RF-2): the four catch coins are now the Pyramid, the Step Pyramid, the
+  Gold Pyramid and the Capstone (never fails, from badges), with new icons; the catch odds are the same. The throw is
+  a small lit 3D pyramid that tumbles through the air, rights itself as it drops, lands point up, rocks on an edge
+  once a wobble and seals with light climbing to its point; a critical catch lands balanced on its point. The throw
+  has sounds now (the throw, a stone landing, the wobbles, the seal, the pop when a Billie breaks out). Billies are
+  sent out of pyramids, and the professor throws three in the opening. The bag's pocket is Pyramids.
 - Things to do is gone (test cleanup track): the daily challenges, the townsfolk's requests and letters, the gold
   stamps (and their tile on the Trainer card), photo mode and your room in Granny Juniper's cottage are removed;
   her cottage no longer opens. The weather still changes battles.

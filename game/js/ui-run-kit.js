@@ -7,9 +7,9 @@
      <pb-day-chip day="3" deadline="7">               "Day 3 · deadline day 7"; gold on the last day, red past it
      <pb-forecast items="clear:Clear,rain:Rain" from="3" value="3">   the weather by day, today marked
      <pb-node type="town" state="seen" weather="rain" label="Marrow Town">   a run map marker (js/logic/run-marks.js)
-     <pb-coin kind="money|capital|scrap|seals" value="340" label="$">   a currency chip that counts to a new value
+     <pb-coin kind="money|capital|scrap|seals" value="340" label="Moneys">   a currency chip that counts to a new value
      <pb-pick-card heading="..." facedown selected>   the relic pick and keep-one card; turning it face up flips it
-     <pb-payout rows='[{"label":"Money left","value":170}]' total="420" total-label="Capital">   rows slam in, the
+     <pb-payout rows='[{"label":"Moneys left","value":170}]' total="420" total-label="Research">   rows slam in, the
                                                        total counts up (play() runs it again); pb-payout-row
                                                        as each row shows, pb-payout-total as the total lands
      <pb-nav-bar set="run|hub" value="map" badges="relics:2">   the bottom bar (pb-change)
@@ -79,7 +79,7 @@ const RUN_NAV_SETS = {
     { id: 'map', label: 'Map', icon: 'map' },
     { id: 'team', label: 'Team', icon: 'team' },
     { id: 'bag', label: 'Bag', icon: 'bag' },
-    { id: 'relics', label: 'Loopholes', icon: 'relic' },
+    { id: 'relics', label: 'Perks', icon: 'relic' },
   ],
   hub: [
     { id: 'map', label: 'Map', icon: 'map' },
@@ -787,7 +787,7 @@ const PbPayout = class extends LitElement {
     super();
     this.rows = [];
     this.total = 0;
-    this.totalLabel = 'Capital';
+    this.totalLabel = 'Research';
     this.kind = 'capital';
     this._n = Infinity;
     this._t = null;

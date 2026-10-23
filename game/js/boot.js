@@ -136,6 +136,7 @@ const UI_ICONS = [
   'chev',
   'close',
   'coin',
+  'pyramid',
   'fight',
   'gauge',
   'gear',
@@ -180,7 +181,7 @@ const LOAD_TIPS = [
   'Clinics heal your whole team for free. Just walk up to the door.',
   'A Billie hides in the grass with only its level showing. You find out who it is when the battle starts.',
   'Fire beats Grass, Grass beats Water, Water beats Fire. The classics never go out of style.',
-  'Flick a coin at a tired Billie to tax it.',
+  'Throw a pyramid at a tired Billie to catch it.',
   'The world map shows every road. Pick a place, and gold arrows lead you there.',
   'Road signs at the edge of town tell you where each road goes.',
 ];
@@ -760,7 +761,7 @@ function loaderHide() {
    starts you in the real place (its people, trainers and exits; not the scene alone), &at=x,z on that spot,
    &flags=a,!b,beat:chad switches flags and trainers on top of the preset, and &draft=1 waits for the open Studio's
    unsaved data (2 s at most) before starting. Studio plan T2.6, "Play this seed": ?debug&run=<seed> (logic/run-test.js:
-   the unlocks, short map, party and Loopholes) is a test run that takes off at once on that seed (runTestStart). */
+   the unlocks, short map, party and Perks) is a test run that takes off at once on that seed (runTestStart). */
 const TEST_RUN = (() => {
   try {
     const q = new URLSearchParams(location.search),
@@ -828,7 +829,7 @@ function studioTestStart() {
 }
 /** Studio plan T2.6, "Play this seed": a new game (the party asked for, else the first starter) with the unlocks asked
  * for takes off from the mast at once on the seed, through runTakeOff as the mast does (logic/run-start.js), every
- * Billie in the party flying; then the Loopholes asked for are held. A test run: nothing is saved, no account
+ * Billie in the party flying; then the Perks asked for are held. A test run: nothing is saved, no account
  * @param {NonNullable<ReturnType<typeof runTestOf>>} R */
 function runTestStart(R) {
   uiState.pg = 'girl';

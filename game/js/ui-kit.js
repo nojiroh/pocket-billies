@@ -995,7 +995,7 @@ for (const [tag, cls] of /** @type {const} */ ([
 ]))
   if (!customElements.get(tag)) customElements.define(tag, cls);
 
-/* a number (+$120) rising from an element: feedback where the action happened, instead of a toast */
+/* a number (+120 Moneys) rising from an element: feedback where the action happened, instead of a toast */
 export function pbFloat(anchor, text, tone) {
   if (!anchor || !anchor.isConnected) return;
   const r = anchor.getBoundingClientRect(),

@@ -85,7 +85,7 @@ function boxSection() {
          ''
        )}</span></span></button><button class="qk k-btn" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`
  ).join('')}</div>`
-      : '<div class="empty tm-empty">Storage is empty. When your team is full, new Billies you tax and hatchlings rest here.</div>'
+      : '<div class="empty tm-empty">Storage is empty. When your team is full, new Billies you catch and hatchlings rest here.</div>'
   }</section>`;
 }
 export function renderTeam() {
@@ -97,7 +97,7 @@ export function renderTeam() {
   const slots = open
     ? unitOpenRowHTML(
         open,
-        free ? 'Bring someone back from storage.' : 'Tax more in the grass, or hatch an egg.',
+        free ? 'Bring someone back from storage.' : 'Catch more in the grass, or hatch an egg.',
         free ? '<button class="pb small" data-a="tmadd">Add</button>' : ''
       )
     : '';

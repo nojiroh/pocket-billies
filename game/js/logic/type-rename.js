@@ -14,7 +14,7 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /** renames type `from` to `to` everywhere the data names it; `to` null removes it (a move or robot part becomes Normal, a
- * Billie loses it, a rule takes the first type left, a Loophole's damage row counts for any type)
+ * Billie loses it, a rule takes the first type left, a Perk's damage row counts for any type)
  * @param {any} D the game data @param {string} from @param {string | null} to */
 export function renameTypeIn(D, from, to) {
   D.types.forEach((/** @type {any} */ t) => {
@@ -41,7 +41,7 @@ export function renameTypeIn(D, from, to) {
       F.swap = swap;
     }
   });
-  /* Studio plan F17: the robots' parts and gems, the roster board, the types that ride on water and a Loophole's
+  /* Studio plan F17: the robots' parts and gems, the roster board, the types that ride on water and a Perk's
      damage row name types too */
   const robots = D.robots || {};
   for (const P of [...Object.values(robots.parts || {}), ...Object.values(robots.gems || {})])

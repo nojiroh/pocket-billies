@@ -54,7 +54,7 @@ test("run sim: a run town's shop stocks only what the run has unlocked (Studio p
   assert.ok(towns >= 2, `${towns} towns`);
 });
 
-test('run sim: the policy answers a Loophole on offer: greedy takes the rarest, never takes none (Studio plan T3.3)', () => {
+test('run sim: the policy answers a Perk on offer: greedy takes the rarest, never takes none (Studio plan T3.3)', () => {
   const { simRelicChoice, SIM_POLICIES } = modules['run-sim'],
     RELICS = GAME_DATA.relics,
     rule = GAME_DATA.rules.run.relics,
@@ -89,7 +89,7 @@ test('run sim: the policy answers a Loophole on offer: greedy takes the rarest, 
   assert.equal(run.offer, null);
 });
 
-test('run sim: a town shop’s Loophole is bought under greedy-forward and never under never-pick (Studio plan T3.3)', () => {
+test('run sim: a town shop’s Perk is bought under greedy-forward and never under never-pick (Studio plan T3.3)', () => {
   let bought = 0,
     shelves = 0;
   for (let k = 0; k < 12; k++) {
@@ -122,7 +122,7 @@ test("run sim: the run's map is runStartPlan's for the save's unlocks: no locked
   }
 });
 
-test('run sim: money in and out add up to what is left; a loss names its row; foes and Loopholes are listed (T3.4)', () => {
+test('run sim: money in and out add up to what is left; a loss names its row; foes and Perks are listed (T3.4)', () => {
   const start = GAME_DATA.rules.run.start.se,
     sum = o => Object.values(o).reduce((a, x) => a + x, 0);
   let towns = 0;

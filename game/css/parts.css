@@ -543,6 +543,16 @@ section > h2,
   -webkit-mask: var(--ico) center/contain no-repeat;
   mask: var(--ico) center/contain no-repeat;
 }
+/* RF-1: a run's money: the coin icon beside the number (art.js moneyHTML) */
+.money {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  white-space: nowrap;
+}
+.money .uico {
+  color: var(--gold-b);
+}
 .boot {
   min-height: 70vh;
   display: grid;

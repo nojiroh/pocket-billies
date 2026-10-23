@@ -922,11 +922,6 @@ export interface Rules {
     /** the lines that shrug off a Copper Coin (its odds times luxuryPenny) */
     luxury: DataId[];
     luxuryPenny: number;
-    offerChance: number;
-    offerMin: number;
-    offerMax: number;
-    integrityStep: number;
-    integrityMax: number;
     alpha: number;
   };
   ride: { minHeight: number; types: TypeId[] };

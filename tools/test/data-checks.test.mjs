@@ -2,6 +2,8 @@
 // file is found wherever it is (the Studio's save would drop it).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { PB_DATA } from '../data-files.mjs';
 import { GAME_DATA, modules } from './setup-real.mjs';
 
@@ -184,4 +186,21 @@ test('a planted unknown ground, a stop with no walk scene and a road to itself a
     map = R.locations[0].mapId;
   R.roads = [{ id: 'loop', a: { map, exit: 'e1' }, b: { map, exit: 'e2' } }];
   assert.ok(errorsOf(C.dataRoadFindings(R, roadOf)).some(m => m.includes('has a road to itself')));
+});
+
+// RF-2: the catch pyramids' icons and models (art/coins), read through a stand-in for the files
+test('every catch item has its icons and its model; a missing or empty one is named', () => {
+  const ART = join(import.meta.dirname, '../../game/art'),
+    disk = (/** @type {string} */ p) => (existsSync(join(ART, p)) ? readFileSync(join(ART, p), 'utf8') : null);
+  assert.deepEqual(C.dataCatchArt(GAME_DATA.coins, disk), []);
+  const gone = (/** @type {string} */ p) => (p === 'coins/gold_16.png' ? null : disk(p));
+  assert.deepEqual(C.dataCatchArt(GAME_DATA.coins, gone), [
+    ['coins.json', 'gold: no icon art/coins/gold_16.png (tools/build-pyramids.py)'],
+  ]);
+  const odd = (/** @type {string} */ p) =>
+    p === 'coins/silver.json' ? '{"layers":[]}' : p === 'coins/tbtf.json' ? 'not json' : disk(p);
+  assert.deepEqual(C.dataCatchArt(GAME_DATA.coins, odd), [
+    ['coins.json', 'silver: its model art/coins/silver.json has no shapes'],
+    ['coins.json', 'tbtf: its model art/coins/tbtf.json is not JSON'],
+  ]);
 });

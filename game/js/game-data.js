@@ -392,7 +392,7 @@ export const SHOPS = gameData.shops || {};
 export const NODE_TYPES = gameData.nodeTypes || {};
 /* sound track SND-2: the songs, jingles, cries' bases and where each song plays (music.json; audio/tracker.js plays them) */
 export const MUSIC = gameData.music || { songs: {}, jingles: {}, cries: { bases: [] }, where: [] };
-/* roguelite track RL-12: a run's Loopholes (relics) and their effect rows (logic/effects.js) */
+/* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const RELICS = /** @type {Record<string, Relic>} */ (gameData.relics || {});
 /* roguelite track RL-11: the four currencies (currencies.json) */
 export const CURRENCIES = gameData.currencies || {};

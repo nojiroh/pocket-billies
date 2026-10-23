@@ -1,14 +1,14 @@
 // @ts-check
 'use strict';
-/* ================= LOOPHOLES ON A RUN (roguelite track RL-12) =================
-   Where a run's Loopholes (relics.json) come from and how many are held:
-   - a pick after each mini-boss: run.relics.pick Loopholes drawn by rarity weight from the run's own stream
+/* ================= PERKS ON A RUN (roguelite track RL-12) =================
+   Where a run's Perks (relics.json) come from and how many are held:
+   - a pick after each mini-boss: run.relics.pick Perks drawn by rarity weight from the run's own stream
      (rngFrom(run.seed, 'relic|' + run.offerN)), none already held. The offer is put in run.offer and saved before it
      is shown, so a reload shows the same ones; choosing one (or none) clears it;
    - one in each run shop, a day: drawn from the shop's node and the day the first time the shop opens that day, kept in
      run.shelf (so buying it doesn't put another on the shelf), '' once bought; its price by rarity;
    - at most run.relics.cap held: a new one past the cap takes the place of one the player lets go.
-   They last the run: nothing of them is kept at the payout. Every Loophole is on offer from the first run (the owner,
+   They last the run: nothing of them is kept at the payout. Every Perk is on offer from the first run (the owner,
    RL-12); RL-11's unlocks may narrow the pool later.
    Logic only: no DOM, no Date, no Math.random (tools/test/relics.test.mjs). */
 /** @import { Run } from '../../types/save-data' */
@@ -40,14 +40,14 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** the Loopholes that may be drawn: in relics.json, not held, with a rarity weight above 0, by id
+/** the Perks that may be drawn: in relics.json, not held, with a rarity weight above 0, by id
  * @param {Run} run @param {Record<string, Relic>} relics @param {RelicRules} rule @param {string[]} [also] left out too */
 export const relicPool = (run, relics, rule, also = []) =>
   Object.keys(relics)
     .filter(id => !run.relics.includes(id) && !also.includes(id) && (rule.rarity[relics[id].rarity] || 0) > 0)
     .sort();
 
-/** draw up to n Loopholes from a stream, by rarity weight, none twice @param {{ pick: (w: Record<string, number>) => string }} g
+/** draw up to n Perks from a stream, by rarity weight, none twice @param {{ pick: (w: Record<string, number>) => string }} g
  * @param {string[]} pool @param {Record<string, Relic>} relics @param {RelicRules} rule @param {number} n */
 export function relicDraw(g, pool, relics, rule, n) {
   const out = [];
@@ -60,7 +60,7 @@ export function relicDraw(g, pool, relics, rule, n) {
   return out;
 }
 
-/** the next pick's Loopholes (the run is not changed): run.offerN's stream, rule.pick of them, none held
+/** the next pick's Perks (the run is not changed): run.offerN's stream, rule.pick of them, none held
  * @param {Run} run @param {Record<string, Relic>} relics @param {RelicRules} rule @returns {string[]} */
 export const relicOffer = (run, relics, rule) =>
   relicDraw(rngFrom(run.seed, 'relic|' + run.offerN), relicPool(run, relics, rule), relics, rule, rule.pick);
@@ -74,7 +74,7 @@ export function relicOfferMake(run, relics, rule) {
   return run.offer;
 }
 
-/** a run shop's Loophole on a day ('' when bought or none is left): drawn once from the shop's node and the day, then
+/** a run shop's Perk on a day ('' when bought or none is left): drawn once from the shop's node and the day, then
  * kept in run.shelf @param {Run} run @param {number} i the shop's map node @param {number} day
  * @param {Record<string, Relic>} relics @param {RelicRules} rule @returns {string} */
 export function relicShelf(run, i, day, relics, rule) {
@@ -91,11 +91,11 @@ export function relicShelf(run, i, day, relics, rule) {
   return run.shelf[key];
 }
 
-/** what a shop asks for a Loophole ($, by its rarity) @param {Relic} R @param {RelicRules} rule */
+/** what a shop asks for a Perk ($, by its rarity) @param {Relic} R @param {RelicRules} rule */
 export const relicPrice = (R, rule) => rule.price[R.rarity] || 0;
 
 /**
- * Hold a Loophole: '' when done, or why not: 'none' (no such Loophole), 'held' (already), 'full' (at the cap and no
+ * Hold a Perk: '' when done, or why not: 'none' (no such Perk), 'held' (already), 'full' (at the cap and no
  * `drop` given), 'drop' (`drop` isn't held). With `drop`, it takes that one's place.
  * @param {Run} run @param {string} id @param {Record<string, Relic>} relics @param {RelicRules} rule @param {string} [drop]
  */
@@ -131,7 +131,7 @@ export function relicChoose(run, id, relics, rule, drop) {
 }
 
 /**
- * Buy the shop's Loophole for a day: '' when done (the shelf empties, the money is the caller's), or why not ('gone',
+ * Buy the shop's Perk for a day: '' when done (the shelf empties, the money is the caller's), or why not ('gone',
  * or relicTake's reasons).
  * @param {Run} run @param {number} i @param {number} day @param {Record<string, Relic>} relics @param {RelicRules} rule
  * @param {string} [drop]
@@ -146,9 +146,9 @@ export function relicBuy(run, i, day, relics, rule, drop) {
 }
 
 /**
- * Studio plan T4.1: a seed's Loophole picks in order, as the game makes them after each mini-boss (relicOfferMake on a
+ * Studio plan T4.1: a seed's Perk picks in order, as the game makes them after each mini-boss (relicOfferMake on a
  * run of that seed, then relicChoose): what is offered at each pick and what is taken. `take` is who chooses: 'none'
- * takes nothing (the Run Lab's preview), 'first' the first offered, or a Loophole's id, taken when offered (else
+ * takes nothing (the Run Lab's preview), 'first' the first offered, or a Perk's id, taken when offered (else
  * nothing). A taken one leaves the pool of the picks after it; past the cap nothing more is taken. Shops are left out.
  * @param {string} seed @param {Record<string, Relic>} relics @param {RelicRules} rule @param {number} picks
  * @param {string} [take] @returns {{ offer: string[], took: string | null }[]}

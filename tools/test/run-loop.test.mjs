@@ -145,7 +145,7 @@ test("a battle's seed is its node's and its number's", () => {
   assert.notEqual(L.runBattleSeed(run, 2, 5), L.runBattleSeed(run, 2, 6));
 });
 
-test("a run battle's start: its seed, the forecast's weather (clear is sunny), the Loopholes' rows when held", () => {
+test("a run battle's start: its seed, the forecast's weather (clear is sunny), the Perks' rows when held", () => {
   const run = runOf('RL8BATTLEX'),
     { runWeather } = modules['run-map'],
     { battleWeatherOf } = modules.weather;
@@ -154,7 +154,7 @@ test("a run battle's start: its seed, the forecast's weather (clear is sunny), t
       x = L.runBattleExtra(run, i, 4, GAME_DATA.rules.env, null);
     assert.equal(x.seed, L.runBattleSeed(run, i, 4));
     assert.deepEqual(x.wx, battleWeatherOf(w === 'clear' ? 'sunny' : w, GAME_DATA.rules.env), `node ${i}: ${w}`);
-    assert.ok(!('fx' in x), 'no Loopholes: no fx');
+    assert.ok(!('fx' in x), 'no Perks: no fx');
   }
   const fx = [{ kind: 'money', mult: 1.2, src: 'x' }];
   assert.equal(L.runBattleExtra(run, 0, 0, GAME_DATA.rules.env, fx).fx, fx);
@@ -224,13 +224,13 @@ test("the payout screen's rows: payoutOf's lines with their words, the win row o
     won = L.runPayoutRows(payoutOf({ ...end, won: true }, R.payout, price), R.payout);
   assert.deepEqual(
     lost.map(r => r.label),
-    ['Money left', 'Items in the bag', 'Billies released', 'Places reached']
+    ['Moneys left', 'Items in the bag', 'Billies released', 'Places reached']
   );
   assert.equal(won.at(-1).label, 'The boss beaten');
   assert.ok(!won.some(r => r.label === 'Items in the bag'), 'RL-9b: a win takes the bag home, not paid');
   assert.equal(won.at(-1).value, R.payout.win);
   assert.equal(lost[0].value, Math.floor(750 * R.payout.money));
-  assert.match(lost[0].note, /\$750 at 10%/);
+  assert.match(lost[0].note, /750 Moneys at 10%/);
 });
 
 test('during a run storage stays in Copperleaf: only the party counts, nothing moves in or out, a 7th waits', () => {

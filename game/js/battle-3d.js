@@ -7,11 +7,17 @@
    above. phase 06-3: the only stage (the painted one is gone); a battle waits until the walk scene is ready. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
+import { COINS, activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
 import { $, clamp } from './util.js';
-import { hexToRgb } from './art.js';
+import { coinCanvas, hexToRgb } from './art.js';
 import {
   FOCAL_LENGTH,
+  PYRAMID_HIGH,
+  PYRAMID_LIFT,
+  PYRAMID_REST,
+  PYRAMID_SCALE,
+  PYRAMID_SIDE,
+  PYRAMID_YAW,
   actionCenter,
   actorBuffer,
   actorMetersPerPixel,
@@ -26,6 +32,7 @@ import { stopWalkView, walkData, walkView } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
+import { loadPropModelRecipe, propModelsOn } from './prop-models.js';
 /* eslint-disable no-func-assign */
 expose({
   battle3d: [() => battle3d],
@@ -35,6 +42,9 @@ expose({
   battle3dStart: [() => battle3dStart, v => ((battle3dStart = v), provide({ battle3dStart }))],
   battle3dStop: [() => battle3dStop, v => ((battle3dStop = v), provide({ battle3dStop }))],
   battle3dWanted: [() => battle3dWanted, v => (battle3dWanted = v)],
+  pyramidItem: [() => pyramidItem, v => (pyramidItem = v)],
+  pyramidModelPath: [() => pyramidModelPath],
+  pyramidWorldItem: [() => pyramidWorldItem, v => (pyramidWorldItem = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ battle3dLayout, battle3dStart, battle3dStop });
@@ -91,6 +101,8 @@ export function battle3dAttach(o = {}) {
   if (walkRenderer.ui) walkRenderer.ui.hidden = true;
   battleStage.leafy = [];
   battleStage.glint = [];
+  /* RF-2: the catch pyramids' models, so the first throw has them */
+  if (typeof COINS !== 'undefined') for (const k of Object.keys(COINS)) loadPropModelRecipe(pyramidModelPath(k));
   walkView.battle = { frame: battle3dFrame };
   battle3d.on = true;
   if (typeof debugLog !== 'undefined') debugLog.add('battle', '3D stage in ' + walkView.id);
@@ -249,6 +261,12 @@ function battle3dFrame() {
       glow: !!p.glow,
     });
   }
+  /* RF-2: the thrown pyramid, a lit 3D model; battle-stage.js draws its flat icon instead while it can't be */
+  const py = battleStage.coin && battleStage.coin.show ? pyramidItem(battleStage.coin, O) : null;
+  if (py) {
+    items.push(py);
+    if (py.light) lights.push(py.light);
+  }
   const d = battleStage.dof;
   return {
     parts,
@@ -263,5 +281,72 @@ function battle3dFrame() {
     focus: d.zf,
     blur: reducedMotion ? 0 : clamp(d.ap / 1.35, 0, 1) * 0.8,
     center: [actionCenter.x + O[0], actionCenter.z + O[1]],
+  };
+}
+/* ================= RF-2: THE THROWN PYRAMID =================
+   battleStage.coin (battle-stage.js coinArc and the catch) says where it is and how it lies:
+   - in the air (C.fly): it tumbles about a tilted axis through its middle (C.tum radians, C.ax the axis);
+   - on the ground: it stands point up, rocked on one edge of its base by C.rot (the wobbles: + one way, - the other);
+   - C.tip: it landed balanced on its point (the critical catch).
+   Its recipe (art/coins/<id>.json, tools/build-pyramids.py) stands PYRAMID_LIFT up, so the model is put that much
+   lower. C.y is its middle's height in the battle, the ground at 0 (as the particles'); on the ground that is
+   PYRAMID_REST. The sizes are battle-stage.js's PYRAMID_* (its catch animation uses them too). */
+const pyramidModelPath = kind => `coins/${kind}.json`;
+function pyramidItem(C, O) {
+  const x = C.x + O[0],
+    z = C.z + O[1],
+    k = PYRAMID_SCALE,
+    mid = PYRAMID_LIFT + PYRAMID_HIGH / 2;
+  let y, spin;
+  if (C.fly) {
+    /* the middle follows the arc; the model's own middle is mid above its base point */
+    y = battle3d.gy + C.y - mid * k;
+    spin = { a: C.ax || [0.6, 0.48, 0.64], an: C.tum || 0, c: [0, mid, 0] };
+  } else {
+    y = Math.max(standingHeightAt(x, z), battle3d.gy + C.y - PYRAMID_REST) - PYRAMID_LIFT * k;
+    if (C.tip) spin = { a: [1, 0, 0], an: Math.PI + (C.rot || 0) * 0.5, c: [0, mid, 0] };
+    else if (C.rot) {
+      /* rocks on the base edge on the side it leans to */
+      const h = PYRAMID_SIDE / 2;
+      spin = { a: [0, 0, 1], an: C.rot, c: [C.rot > 0 ? -h : h, PYRAMID_LIFT, 0] };
+    }
+  }
+  const it = pyramidWorldItem(C.kind, x, y, z, spin, C.sz);
+  if (!it) return null;
+  C.in3d = battleStage.t;
+  /* the capstone glows a little; any pyramid glows as it seals */
+  const glow = C.glow || 0;
+  if (C.kind === 'tbtf' || glow > 0.05)
+    it.light = { p: [x, y + 0.4, z - 0.3], r: 1.6 + glow * 1.6, c: [0.5 + glow, 0.55 + glow, 0.75 + glow * 0.6] };
+  return it;
+}
+/* a catch pyramid's model as a world item, in the walk scene's metres: y its base point (the recipe's own lift
+   included), spin its turn (setItemSpin in prop-models.js); null while it can't be drawn (3D props off, the GPU
+   lost, its recipe not loaded yet). The opening's throws use it too (cutscene/opening.js) */
+export function pyramidWorldItem(kind, x, y, z, spin, size = 1) {
+  if (typeof propModelsOn !== 'function' || !propModelsOn() || typeof COINS === 'undefined' || !COINS[kind])
+    return null;
+  const path = pyramidModelPath(kind),
+    rec = loadPropModelRecipe(path);
+  if (!rec || !(rec.layers || []).length) return null;
+  return {
+    k: 'pyramid',
+    /* its icon: never drawn (a model item), but the renderer sorts and keys items by their picture */
+    im: coinCanvas(kind, 32),
+    vox: rec,
+    voxPath: path,
+    p: { x, z, s: PYRAMID_SCALE * size, rot: PYRAMID_YAW },
+    x,
+    y,
+    z,
+    w: 16,
+    h: 16,
+    mpp: 0.03,
+    ox: -8,
+    oy: -16,
+    flip: 1,
+    fade: 1,
+    spin,
+    light: null,
   };
 }

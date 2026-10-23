@@ -63,10 +63,8 @@ export function makeBattle(kind, team, foe, extra) {
       ev: 0,
       phase: 'playing',
       market: null,
-      integrity: 1,
       over: null,
       needSwitch: [],
-      offer: null,
       foeName: '',
       lead: team[able[0]].uid,
       turn: 0,
@@ -93,7 +91,7 @@ export function makeBattle(kind, team, foe, extra) {
   );
   addAct(b.sides[0]);
   addAct(b.sides[1]);
-  /* RL-12: a run's Loopholes (b.fx, logic/effects.js): stat stages for yours on the field as it starts */
+  /* RL-12: a run's Perks (b.fx, logic/effects.js): stat stages for yours on the field as it starts */
   if (b.fx) {
     const up = fxStages(b.fx),
       most = RULES.battle.stageMax;
