@@ -14,7 +14,7 @@ import { expose } from './test-globals.js';
 import { openingDone, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { START_NODE, typeEffectiveness } from './game-data.js';
-import { CHOSEN, FAST_PICKS, FAST_PICK_MS, hazelTip, speedWatch } from './logic/chosen.js';
+import { CHOSEN, FAST_PICKS, FAST_PICK_MS, chosenTip, speedWatch } from './logic/chosen.js';
 import { actorTypes } from './logic/battle-engine.js';
 import { bowlSun } from './logic/bowl.js';
 import { bowlCamLookView, bowlToGpu } from './logic/bowl-camera.js';
@@ -818,7 +818,7 @@ function battleTutor() {
   if (!activeBattle || !activeBattle.T || !activeBattle.T.tutorial || activeBattle.over) return;
   if (!activeBattle.pickWatch) activeBattle.pickWatch = speedWatch(FAST_PICK_MS, FAST_PICKS, CHOSEN.tooFastPicks);
   const i = activeBattle.tipN || 0,
-    text = hazelTip(i, tutorMatchup());
+    text = chosenTip(i, tutorMatchup());
   if (!text) return;
   activeBattle.tipN = i + 1;
   battleTip(

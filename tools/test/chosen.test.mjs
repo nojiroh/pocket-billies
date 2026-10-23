@@ -17,11 +17,11 @@ test('every starter has hot takes, and tapping on runs into the annoyed ones and
 
 test('his tips: the meta line first, then the matchup flipped, then the bad ones, never more than TIP_MAX', () => {
   const m = { weak: 'Grass', strong: 'Fire' };
-  assert.equal(fn('hazelTip')(0, m), CHOSEN.meta);
-  assert.equal(fn('hazelTip')(1, m), 'Grass beats Fire. It was foretold. In a forum post.');
-  assert.equal(fn('hazelTip')(2, m), CHOSEN.badTips[0]);
-  assert.equal(fn('hazelTip')(TIP_MAX, m), null);
-  assert.equal(fn('hazelTip')(1, null), CHOSEN.badTips[0]);
+  assert.equal(fn('chosenTip')(0, m), CHOSEN.meta);
+  assert.equal(fn('chosenTip')(1, m), 'Grass beats Fire. It was foretold. In a forum post.');
+  assert.equal(fn('chosenTip')(2, m), CHOSEN.badTips[0]);
+  assert.equal(fn('chosenTip')(TIP_MAX, m), null);
+  assert.equal(fn('chosenTip')(1, null), CHOSEN.badTips[0]);
 });
 
 test('too fast: a comment only after enough fast ones in a row; a slow one starts over; each comment once', () => {

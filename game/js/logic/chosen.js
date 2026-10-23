@@ -17,9 +17,9 @@ expose({
   FAST_SKIP_MS: [() => FAST_SKIP_MS],
   TIP_MAX: [() => TIP_MAX],
   // @ts-expect-error -- replaced on purpose
-  fillLine: [() => fillLine, v => (fillLine = v)],
+  chosenTip: [() => chosenTip, v => (chosenTip = v)],
   // @ts-expect-error -- replaced on purpose
-  hazelTip: [() => hazelTip, v => (hazelTip = v)],
+  fillLine: [() => fillLine, v => (fillLine = v)],
   // @ts-expect-error -- replaced on purpose
   hotTake: [() => hotTake, v => (hotTake = v)],
   // @ts-expect-error -- replaced on purpose
@@ -107,7 +107,7 @@ export function hotTake(line, n) {
 /** the i-th tip in Blake's battle (0-based): the meta line, then a type tip flipped from the real matchup when there is
  * one, then the canned bad tips; null when she is out of tips.
  * @param {number} i @param {{ weak: string, strong: string } | null} matchup the real one: strong beats weak */
-export function hazelTip(i, matchup) {
+export function chosenTip(i, matchup) {
   if (i >= TIP_MAX) return null;
   const L = [CHOSEN.meta];
   if (matchup) L.push(fillLine(CHOSEN.flippedTip, { weak: matchup.weak, strong: matchup.strong }));
