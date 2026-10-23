@@ -403,6 +403,10 @@ export interface LocationData {
   noFly?: number;
   /** roguelite track RL-7: a run's place: its node on the run's map (logic/run-scenes.js; world node runNode + 1) */
   runNode?: number;
+  /** RL-R2: a side area's first place: closed until the run's field move obstacle (this move) is open */
+  field?: DataId;
+  /** RL-R2: 1 on a side area's place */
+  side?: 1;
   v47region?: number;
   a04place?: number;
   a04pearl?: number;
