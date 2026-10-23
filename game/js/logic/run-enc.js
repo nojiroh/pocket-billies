@@ -20,6 +20,8 @@ expose({
   encBoonRows: [() => encBoonRows],
   // @ts-expect-error -- replaced on purpose
   encOf: [() => encOf, v => (encOf = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxRowOf: [() => fxRowOf, v => (fxRowOf = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ encArrive });
@@ -44,4 +46,21 @@ export function encBoon(run, fx, places, src) {
 export function encArrive(run) {
   if (!run.enc) return;
   run.enc.boons = run.enc.boons.filter(b => b.left-- > 0);
+}
+
+/** an effect row from the `fx` command's words: the kind, then key=value (numbers read as numbers):
+ * ['price', 'what=shop', 'mult=1.25'] -> { kind: 'price', what: 'shop', mult: 1.25 } @param {string[]} words
+ * @returns {Record<string, any>} */
+export function fxRowOf(words) {
+  /** @type {Record<string, any>} */
+  const row = { kind: words[0] || '' };
+  for (const w of words.slice(1)) {
+    const i = w.indexOf('=');
+    if (i <= 0) continue;
+    const k = w.slice(0, i),
+      v = w.slice(i + 1);
+    if (k === 'kind' || k === '__proto__') continue;
+    row[k] = /^-?\d+(\.\d+)?$/.test(v) ? +v : v;
+  }
+  return row;
 }

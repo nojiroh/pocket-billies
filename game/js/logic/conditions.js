@@ -13,6 +13,7 @@
      caught >= 15           kinds of Billie caught (the Index)
      unlock:shop_revive    an unlock is owned (RL-11)  runs >= 3, wins >= 1           runs ended, runs won (RL-11)
      type:Water >= 2       Billies of a type in the team (RL-12b)        money >= 200     Moneys on hand (RL-12b)
+     team >= 2             Billies in the team (RL-12b)
      badge:Water           a badge of that type is won (RL-12b: meta.badges, or a leader's seat)
    combined with `and`, `or`, `not` / `!` and parentheses (`and` binds tighter than `or`). A bare count term
    (`item:honey`, `visits:juniper`, `badges`) means more than 0. Logic only: no DOM, runs in Node. */
@@ -62,7 +63,7 @@ expose({
  *   pyramids: Record<string, number>, quests: Record<string, string>, visits: Record<string, number>,
  *   visited: Record<string, any>, lines: Record<string, any>, robots: number, badges: number, caught: number,
  *   unlocks: Record<string, any>, runs: number, wins: number, questStages?: Record<string, string[]>,
- *   types?: Record<string, number>, money?: number, badgeTypes?: Record<string, number> }} StoryState */
+ *   types?: Record<string, number>, money?: number, team?: number, badgeTypes?: Record<string, number> }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
  * reads, for the Studio's reference (Project Story S3) */
@@ -82,6 +83,7 @@ export const CONDITION_KINDS = {
   wins: { id: false, count: true, about: 'runs won: wins >= 1' },
   type: { id: true, count: true, about: 'Billies of a type in your team: type:Water, type:Fire >= 2' },
   money: { id: false, count: true, about: 'Moneys on hand: money >= 200' },
+  team: { id: false, count: true, about: 'Billies in your team: team >= 2' },
   badge: { id: true, count: false, about: 'a badge of that type is won: badge:Water' },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
@@ -323,6 +325,8 @@ export function termValue(c, S) {
       return (S.types || {})[c.id.toLowerCase()] || 0;
     case 'money':
       return S.money || 0;
+    case 'team':
+      return S.team || 0;
     case 'badge':
       return !!(S.badgeTypes || {})[c.id.toLowerCase()];
   }
@@ -387,6 +391,7 @@ export function storyStateOf(save, o = {}) {
     questStages: o.questStages,
     types: teamTypes(save.team || [], o.typesOf),
     money: save.se || 0,
+    team: (save.team || []).length,
     badgeTypes: badgeTypesOf(save, o.badgeTypes || {}),
   };
 }

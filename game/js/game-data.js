@@ -26,6 +26,7 @@ expose({
   DEX_ORDER: [() => DEX_ORDER],
   EGGS: [() => EGGS],
   EGG_TIERS: [() => EGG_TIERS],
+  EVENTS: [() => EVENTS],
   HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   HUB_LOCATIONS: [() => HUB_LOCATIONS],
   ITEMS: [() => ITEMS],
@@ -394,6 +395,10 @@ export const NODE_TYPES = gameData.nodeTypes || {};
 export const MUSIC = gameData.music || { songs: {}, jingles: {}, cries: { bases: [] }, where: [] };
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
+/** RL-12b: a run's events, loot tables and trainer classes */
+export const EVENTS = /** @type {import('../types/game-data').EventsData} */ (
+  gameData.events || { loot: {}, classes: {}, events: {} }
+);
 /* roguelite track RL-11: the four currencies (currencies.json) */
 export const CURRENCIES = gameData.currencies || {};
 /* RL-11: the hub's buildings, each upgraded with one currency (buildings.json; levels are unlocks.json rows) */

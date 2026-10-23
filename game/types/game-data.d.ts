@@ -56,6 +56,8 @@ export interface GameData {
   music?: Music;
   /** roguelite track RL-12: a run's Perks, each a list of effect rows (game/data/perks.json; logic/effects.js) */
   perks?: Record<DataId, Perk>;
+  /** RL-12b: events.json */
+  events?: EventsData;
   /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
   currencies?: Partial<Record<CurrencyId, Currency>>;
   /** RL-11: Copperleaf's hub buildings (game/data/buildings.json) */
@@ -1709,6 +1711,36 @@ export type FxRow =
   | { kind: 'damage'; side: 'deal' | 'take'; cat?: 'H' | 'S'; type?: string; mult: number }
   | { kind: 'heal'; share: number }
   | { kind: 'payout'; what: 'research' | 'itemShare'; mult: number };
+/** events.json: a run's events, loot tables and trainer classes (roguelite track RL-12b; logic/encounters.js) */
+export interface EventsData {
+  loot: Record<DataId, Record<DataId, number>>;
+  classes: Record<DataId, TrainerClass>;
+  events: Record<DataId, RunEvent>;
+}
+/** events.json classes: a kind of trainer (route trainers, the `foe` command) */
+export interface TrainerClass {
+  name: string;
+  who: DataId;
+  team: [number, number];
+  sight: string;
+  lose: string;
+}
+/** events.json events: one event, its intro and 2-3 options */
+export interface RunEvent {
+  title: string;
+  intro: string[];
+  weight: number;
+  repeat?: boolean;
+  biomes?: DataId[];
+  options: RunEventOption[];
+}
+export interface RunEventOption {
+  text: string;
+  need?: string;
+  needText?: string;
+  cost?: number;
+  then: string[];
+}
 /** perks.json: a Perk (roguelite track RL-12): held for one run, its effect rows apply while it is held */
 export interface Perk {
   /** what the player reads */

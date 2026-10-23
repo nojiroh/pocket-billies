@@ -38,6 +38,7 @@ const FAMILIES = [
   'dataBiomes',
   'dataNodeTypes',
   'dataPerks',
+  'dataEvents',
   'dataCurrencies',
   'dataBuildings',
   'dataUnlocks',
@@ -91,6 +92,28 @@ test('a planted fault is found by its family, in the file check-data names', () 
   D = copy();
   D.rules.run.perks.cap = 0;
   found('dataPerks', D, 'run.perks.cap');
+  /* RL-12b: events.json */
+  for (const [plant, text] of [
+    [E => (E.events.form_27b.options[0].then[0] = 'teleport home'), 'unknown command "teleport"'],
+    [E => (E.events.form_27b.options[0].then[0] = 'loot nosuchtable'), 'no loot table "nosuchtable"'],
+    [E => (E.events.form_27b.options[0].then[0] = 'give nosuchitem'), 'no item or pyramid "nosuchitem"'],
+    [E => (E.events.form_27b.options[0].then[0] = 'foe nosuchclass'), 'no class "nosuchclass"'],
+    [E => (E.events.form_27b.options[0].then[0] = 'fx 1 bogus mult=2'), 'no effect kind "bogus"'],
+    [E => (E.events.form_27b.options[0].then[0] = 'fx 1 stat stat=hp stages=1'), 'not hp'],
+    [E => (E.events.form_27b.options[0].then[0] = 'status bogus'), 'no status "bogus"'],
+    [E => (E.events.form_27b.options[0].then[0] = 'wager 100'), '1-99 percent'],
+    [E => (E.events.form_27b.options[0].then[0] = 'perk legendary'), 'not a rarity'],
+    [E => (E.events.form_27b.options[1].need = 'type:Plastic'), 'no type "Plastic"'],
+    [E => (E.events.form_27b.options[1].need = 'typo:Fire'), 'unknown term'],
+    [E => (E.events.form_27b.intro[0] = 'money 5'), 'lines only'],
+    [E => (E.loot.common.nosuchitem = 1), 'loot.common: no item "nosuchitem"'],
+    [E => (E.classes.intern.who = 'nobody'), 'no person "nobody"'],
+  ]) {
+    D = copy();
+    plant(D.events);
+    found('dataEvents', D, text);
+  }
+  assert.deepEqual(C.dataEvents(copy()), []);
   // Studio plan T4.1: the code's limits (effects.js FX_LIMIT, FX_STAGES) on a row
   D = copy();
   D.perks.offshore.fx[0].mult = 0.05;

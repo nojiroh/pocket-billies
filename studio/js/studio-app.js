@@ -356,7 +356,7 @@ export function restore(s) {
 /* Studio plan T6.2: data no picture is drawn from (top-level keys of D). An undo that changes only these keeps the
    art caches: a Wardrobe opened after undoing a move edit no longer bakes every clothes thumbnail again */
 const TEXT_ONLY_DATA = new Set(
-  'moves items pyramids lore story jobs stats statuses rarities perks currencies unlocks shops pools eggs meta uiTheme'.split(
+  'moves items pyramids lore story jobs stats statuses rarities perks events currencies unlocks shops pools eggs meta uiTheme'.split(
     ' '
   )
 );

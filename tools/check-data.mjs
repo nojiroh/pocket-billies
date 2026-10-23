@@ -35,6 +35,7 @@ import {
   dataRanchRules,
   dataRegions,
   dataPerks,
+  dataEvents,
   dataRoadFindings,
   dataRobotProblems,
   dataRigs,
@@ -178,7 +179,11 @@ const species = new Set();
 for (const L of D.lines || []) {
   for (const id of lineSpeciesIds(L)) species.add(id);
   // RO-1: regional forms: a coat marked form, swaps between real types, a change to some stage's types
-  for (const p of formProblems(L, D.coats || {}, (D.types || []).map(t => t.id)))
+  for (const p of formProblems(
+    L,
+    D.coats || {},
+    (D.types || []).map(t => t.id)
+  ))
     problem(`lines/${L.id}.json`, p);
   for (const [lv, m] of L.learn || [])
     if (!moves[m]) problem(`lines/${L.id}.json`, `learns ${m} at ${lv}, no such move`);
@@ -287,6 +292,7 @@ for (const family of [
   dataRegions,
   dataNodeTypes,
   dataPerks,
+  dataEvents,
   dataCurrencies,
   dataBuildings,
   dataUnlocks,
@@ -598,7 +604,8 @@ if (D.story) {
     if (!places.has(P.place)) problem(at, `starts in ${P.place}, no such place`);
     for (const t of P.beaten || []) if (!trainers[t]) problem(at, `has beaten ${t}, no such trainer`);
     for (const m of P.team || []) if (!species.has(m.sp)) problem(at, `has ${m.sp}, no such species`);
-    for (const c of Object.keys(P.pyramids || {})) if (!(D.pyramids || {})[c]) problem(at, `has coin ${c}, no such coin`);
+    for (const c of Object.keys(P.pyramids || {}))
+      if (!(D.pyramids || {})[c]) problem(at, `has coin ${c}, no such coin`);
     for (const i of Object.keys(P.items || {})) if (!(D.items || {})[i]) problem(at, `has item ${i}, no such item`);
   }
 } else problem('story.json', 'missing');

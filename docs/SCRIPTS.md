@@ -96,6 +96,7 @@ An entry of `cycle` or `seq` starts after `- `; its other lines go under it, two
 | `unlock:ranch_2`, `runs >= 3`, `wins >= 1` | an unlock is owned (unlocks.json); runs ended; runs won (RL-11: what lasts between runs, the same in a run and in the hub) |
 | `type:Water`, `type:Fire >= 2` | Billies of that type in the team, fainted ones too (RL-12b) |
 | `money >= 200` | Moneys on hand (RL-12b) |
+| `team >= 2` | Billies in the team (RL-12b) |
 | `badge:Water` | a badge of that type is won: `meta.badges` (RL-R2) or a leader's seat (RL-12b) |
 
 Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than `or`. A count on its own
