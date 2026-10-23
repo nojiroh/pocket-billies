@@ -368,7 +368,6 @@ body.on-walk #app {
   backdrop-filter: none !important;
 }
 body.on-walk #app .topbar,
-body.on-walk .walk-sheet,
 body.on-walk .wh-card,
 body.on-walk .wh-foot > * {
   pointer-events: auto;
@@ -457,23 +456,13 @@ body.on-walk .wh-foot > * {
 .wh-down .uico {
   transform: rotate(90deg);
 }
-.walk-sheet {
-  position: relative;
-  margin: 0 -10px;
-  padding: 18px 10px 8px;
-  border-radius: 24px 24px 0 0;
-  background: var(--bg);
-  box-shadow:
-    0 -2px 0 2px var(--line),
-    0 -24px 40px -24px rgba(0, 0, 0, 0.45);
+/* the Actions sheet (walk-tab.js walkSheetSync): the kit's <pb-sheet>, about half the screen tall; the world under
+   it doesn't scroll, so a mouse wheel or a trackpad never brings it up */
+#walkSheet {
+  --sheet-max: 58vh;
 }
-.ws-grip {
-  display: block;
-  width: 44px;
-  height: 5px;
-  border-radius: 9px;
-  margin: -8px auto 10px;
-  background: var(--line);
+html:has(> body.on-walk) {
+  overflow: hidden;
 }
 .enc.hidden-enc .enc-hide {
   position: relative;
@@ -505,11 +494,6 @@ body.on-walk .wh-foot > * {
 @media (min-width: 900px) {
   .walk-hero {
     height: calc(100vh - 90px);
-  }
-  .walk-sheet {
-    margin: 0;
-    padding: 22px 22px 10px;
-    border-radius: 24px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

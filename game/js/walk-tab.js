@@ -18,7 +18,7 @@ import {
 } from './logic/rules.js';
 import { runClinic, runHealCost } from './logic/run-loop.js';
 import { startWild } from './logic/battle-engine.js';
-import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
+import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { artURL, uiIconHTML } from './art.js';
 import { cleanTrainer, personHTML } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
@@ -45,6 +45,11 @@ expose({
   tripDest: [() => tripDest],
   tripStatus: [() => tripStatus, v => ((tripStatus = v), provide({ tripStatus }))],
   walkHero: [() => walkHero, v => (walkHero = v)],
+  walkSheetClose: [() => walkSheetClose, v => (walkSheetClose = v)],
+  walkSheetHTML: [() => walkSheetHTML, v => (walkSheetHTML = v)],
+  walkSheetOpen: [() => walkSheetOpen, v => (walkSheetOpen = v)],
+  walkSheetSync: [() => walkSheetSync, v => (walkSheetSync = v)],
+  walkSheetWanted: [() => walkSheetWanted],
   walkTabAction: [() => walkTabAction, v => (walkTabAction = v)],
 });
 /* eslint-enable no-func-assign */
@@ -206,10 +211,15 @@ function walkHero() {
   <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIconHTML('camera', 14)}</button><button class="wh-down glass k-btn" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
 }
 export function renderWalk() {
+  return walkHero();
+}
+/* the Actions sheet: a <pb-sheet> of its own on the page (ui-kit.js), opened only by the Actions button. It used to be
+   part of the page under the scene, so any scroll (a mouse wheel, a trackpad) slid it into view. Its content is made
+   again on every render while it is open; leaving the world (another tab, a battle) closes it */
+function walkSheetHTML() {
   const q = encountersHere(),
     cap = encounterStock(saveData.trip.node);
-  return `${walkHero()}<div class="walk-sheet k-panel"><span class="ws-grip" aria-hidden="true"></span>
- <div class="cols"><div class="col">
+  return `<div class="cols"><div class="col">
  <div class="today px glass k-card"><div class="today-top"><div class="se"><div class="mid tnum">$<span data-count="se" data-to="${saveData.se}">${formatNumber(saveData.se)}</span></div><div class="lbl">Money</div></div></div>
   <p class="note">Beat wild Billies and trainers to earn more.</p></div>
  <section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place.</p></section>
@@ -217,7 +227,40 @@ export function renderWalk() {
  <section class="pending"><div class="sec-h"><h2>Encounters here</h2><span class="count tnum">${q.length}/${cap}</span></div>
   <p class="note">${!cap ? 'No wild Billies live here. Try a route or a town with tall grass.' : q.length >= cap ? 'This place is full. Battle or tax a few to make room.' : 'Another one wanders over about every minute.'} You only see their level until the battle starts.</p>
   ${q.length ? `<div class="queue">${q.map(encounterCardHTML).join('')}</div>` : `<div class="empty px">No Billies nearby.${cap ? ' Give it a minute and one will wander over.' : ''}</div>`}</section>
- ${buddyCard()}</div></div></div>`;
+ ${buddyCard()}</div></div>`;
+}
+const walkSheetWanted = () =>
+  uiState.walkSheet && uiState.tab === 'walk' && !!saveData.started && !activeBattle && !uiState.title;
+export function walkSheetSync() {
+  let el = /** @type {any} */ ($('#walkSheet'));
+  if (!el && !walkSheetWanted()) return;
+  if (!el) {
+    el = document.createElement('pb-sheet');
+    el.id = 'walkSheet';
+    el.addEventListener('pb-close', () => {
+      uiState.walkSheet = false;
+      walkSheetSync();
+    });
+    document.body.appendChild(el);
+  }
+  if (!walkSheetWanted()) {
+    uiState.walkSheet = false;
+    el.open = false;
+    el.replaceChildren();
+    return;
+  }
+  el.heading = LOCATIONS[saveData.trip.node].name;
+  el.innerHTML = walkSheetHTML();
+  el.open = true;
+}
+export function walkSheetOpen() {
+  uiState.walkSheet = true;
+  walkSheetSync();
+}
+function walkSheetClose() {
+  if (!uiState.walkSheet) return;
+  uiState.walkSheet = false;
+  walkSheetSync();
 }
 /* the Walk tab's buttons (UI-5: the cases of ui.js's click switch, as they were) */
 export function walkTabAction(a, d) {

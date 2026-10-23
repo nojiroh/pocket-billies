@@ -41,7 +41,7 @@ import { guideAction, renderGuide } from './guide.js';
 import { renderTeam, teamAction } from './team.js';
 import { billieSheetAction } from './billie-sheet.js';
 import { mapTabAction, renderWorldMapTab } from './map-tab.js';
-import { renderWalk, walkTabAction } from './walk-tab.js';
+import { renderWalk, walkSheetOpen, walkSheetSync, walkTabAction } from './walk-tab.js';
 import { leaveRoom, roomState, walkMapSync } from './walk-control.js';
 import { battleAction } from './battle-input.js';
 /* eslint-disable no-func-assign */
@@ -75,6 +75,8 @@ function topbar() {
 }
 export function render() {
   const app = $('#app');
+  /* the Actions sheet first: a title, a battle or another tab closes it */
+  walkSheetSync();
   if (uiState.title && typeof renderTitle === 'function') {
     app.innerHTML = renderTitle();
     uiState.lastTab = null;
@@ -280,12 +282,9 @@ document.addEventListener('click', ev => {
     case 'leaveroom':
       leaveRoom();
       break;
-    case 'walkdown': {
-      const w = $('.walk-sheet');
-      if (w)
-        scrollTo({ top: w.getBoundingClientRect().top + scrollY - 70, behavior: reducedMotion ? 'auto' : 'smooth' });
+    case 'walkdown':
+      walkSheetOpen();
       break;
-    }
     case 'settings':
       openSettings();
       break;
