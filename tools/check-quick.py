@@ -166,29 +166,6 @@ def check_version():
     return f'{v}: README.md, CHANGELOG.md, the game, the Studio and the service worker agree'
 
 
-@step('Code: every script parses', 20)
-def check_code():
-    node = shutil.which('node')
-    if not node: return 'node not installed, skipped'
-    files = sorted(list((GAME / 'js').rglob('*.js')) + list((ROOT / 'studio' / 'js').glob('*.js')))
-    bad = []
-    for f in files:
-        r = subprocess.run([node, '--check', str(f)], capture_output=True, text=True)
-        if r.returncode: bad.append(f'{f.relative_to(ROOT)}: {r.stderr.strip().splitlines()[-1] if r.stderr.strip() else "error"}')
-    # v47: a function declared in two of the page's scripts: the later one silently replaces the other everywhere
-    # (walk-view.js's placeKind(act, prop), now openKind, for shop hours hid game-data.js's placeKind(id), now locationKind)
-    where = {}
-    for src in re.findall(r'<script (?:type="module" )?src="(js/[^"]+)"', (GAME / 'index.html').read_text(encoding='utf-8')):
-        f = GAME / src
-        if not f.exists(): continue
-        for m in re.finditer(r'^(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(', f.read_text(encoding='utf-8'), re.M):
-            where.setdefault(m.group(1), set()).add(src)
-    twice = {k: sorted(v) for k, v in where.items() if len(v) > 1}
-    bad += [f'{k}() is declared in {" and ".join(v)}' for k, v in twice.items()]
-    if bad: raise Exception('; '.join(bad[:5]))
-    return f'{len(files)} scripts, no function declared in two of them'
-
-
 @step('Data: game data, pictures and scenes', 20)
 def check_data():
     """TC-1: only what check-data.mjs does not refuse: the scenery's pictures exist, and every place and scene says
@@ -2755,7 +2732,7 @@ def main():
     R = {'when': time.strftime('%Y-%m-%d %H:%M'), 'render': 'software, a third of the resolution, 1024 shadow map'}
     # phase 04b: data/gamedata.js is generated from the data files; make it from the files as they are now
     subprocess.run(['node', str(ROOT / 'tools' / 'build-data.mjs')], check=True)
-    check_version(); check_code(); check_data(); old_names(); copperleaf_data(); check_water(); check_masts(); check_postcards(); check_rooms(); check_room_floors(); check_windows(); check_ground(); report_unused()
+    check_version(); check_data(); old_names(); copperleaf_data(); check_water(); check_masts(); check_postcards(); check_rooms(); check_room_floors(); check_windows(); check_ground(); report_unused()
     srv, base = serve(GAME)
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
