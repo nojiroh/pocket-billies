@@ -8,7 +8,7 @@ const { newRanch, validRanch, ranchFill } = modules['ranch-state'];
 
 test('ranch: a new one is empty and passes the check', () => {
   const r = newRanch();
-  assert.deepEqual(r, { pens: [], trainees: [], nursery: [], bred: 0, income: { rate: 0, bank: 0, lastAt: 0 } });
+  assert.deepEqual(r, { pens: [], trainees: [], nursery: [], bred: 0, income: { bank: 0, lastAt: 0 }, seen: 0 });
   assert.equal(validRanch(r), true);
 });
 
@@ -18,7 +18,8 @@ test('ranch: a filled one passes; broken or tampered shapes are refused', () => 
     trainees: [{ uid: 'u1', at: 1000 }],
     nursery: [{ a: 'u1', b: 'u2', mode: 'risky', at: 1000, ready: 5000, egg: { uid: 'e1' } }],
     bred: 3,
-    income: { rate: 2.5, bank: 40, lastAt: 1000 },
+    income: { bank: 40, lastAt: 1000 },
+    seen: 2000,
   };
   assert.equal(validRanch(ok), true);
   const nurse = ok.nursery[0];
@@ -37,7 +38,9 @@ test('ranch: a filled one passes; broken or tampered shapes are refused', () => 
     { ...ok, nursery: [{ ...nurse, egg: null }] }, // RL-10: a pair without its egg (validSave checks the egg itself)
     { ...ok, bred: -1 },
     { ...ok, bred: 1.5 },
-    { ...ok, income: { ...ok.income, rate: -1 } },
+    { ...ok, seen: -1 },
+    { ...ok, seen: 1.5 },
+    { ...ok, seen: null },
     { ...ok, income: { ...ok.income, bank: 0.5 } },
     { ...ok, income: { ...ok.income, lastAt: null } },
     { ...ok, income: null },
@@ -49,7 +52,12 @@ test('ranch: a filled one passes; broken or tampered shapes are refused', () => 
 
 test('ranch: a stored one is filled out with new fields; one still broken starts again', () => {
   assert.deepEqual(ranchFill({ pens: ['u1'] }), { ...newRanch(), pens: ['u1'] });
-  assert.deepEqual(ranchFill({ income: { bank: 3 } }), { ...newRanch(), income: { rate: 0, bank: 3, lastAt: 0 } });
+  assert.deepEqual(ranchFill({ income: { bank: 3 } }), { ...newRanch(), income: { bank: 3, lastAt: 0 } });
+  // RL-10b: a stored rate (before the rate came from rules.json) is dropped
+  assert.deepEqual(ranchFill({ income: { rate: 2, bank: 3, lastAt: 9 } }), {
+    ...newRanch(),
+    income: { bank: 3, lastAt: 9 },
+  });
   assert.deepEqual(ranchFill(null), newRanch());
   assert.deepEqual(ranchFill({ pens: 'all' }), newRanch());
 });

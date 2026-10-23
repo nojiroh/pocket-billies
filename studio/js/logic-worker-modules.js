@@ -56,6 +56,8 @@ import '../../game/js/logic/pixel-ops.js';
 import '../../game/js/logic/pixel-snap.js';
 import '../../game/js/logic/prop-turn.js';
 import '../../game/js/logic/publish-plan.js';
+import '../../game/js/logic/ranch-clock.js';
+import '../../game/js/logic/ranch-income.js';
 import '../../game/js/logic/ranch-state.js';
 import '../../game/js/logic/ranch.js';
 import '../../game/js/logic/relics.js';
