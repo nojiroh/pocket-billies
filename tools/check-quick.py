@@ -1792,14 +1792,14 @@ def desktop_steps(b, base, R):
         # alpha 0.4: at ten at night every lamp is on, and some (not all, not none) of the front windows are lit
         if r['on'] < r['lamps']: raise Exception(f'only {r["on"]} of {r["lamps"]} lamps are on at night')
         if r['fw'] and not (0 < r['lit'] < r['fw']): raise Exception(f'{r["lit"]} of {r["fw"]} front windows lit at night')
-        shot(pg, 'a04-windows-night')
+        shot(pg, 'windows-night')
         # a front: the weather changes while you're in a place, the curtain comes across
         sd = pg.evaluate("LOCATION_BY_ID.copperleaf.node")   # RL-5: over the hub (Marigold Town is parked)
         pg.evaluate("uiState.bench=null;environment.force={time:13,weather:'clear',season:'summer',front:1};0"); go_scene(pg, sd); time.sleep(2)
         pg.evaluate("environment.force={time:13,weather:'rain',season:'summer',front:1};0")
         if not until(pg, "!!(environment.front&&environment.curtain)", 15): raise Exception('no front came in when the weather turned to rain')
         time.sleep(3); c = pg.evaluate("({e:environment.curtain?environment.curtain.e:null,into:environment.curtain?environment.curtain.into:null,cloud:environment.cloud})")
-        shot(pg, 'a04-rain-front')
+        shot(pg, 'rain-front')
         pg.evaluate("environment.force=null;0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return f'{r["b"]} buildings in 3D by night, {r["on"]} of {r["lamps"]} lamps on, {r["lit"]} of {r["fw"]} front windows lit; a rain front came in (its curtain at {c["e"]:.2f}, coming in: {c["into"]})'
