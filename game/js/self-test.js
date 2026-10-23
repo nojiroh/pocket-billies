@@ -114,8 +114,7 @@ expose({
   emptyDiagnosticsReport: [() => emptyDiagnosticsReport],
   exportDiagnosticsReport: [() => exportDiagnosticsReport, v => (exportDiagnosticsReport = v)],
   runDiagnostics: [() => runDiagnostics, v => ((runDiagnostics = v), provide({ runDiagnostics }))],
-  runFullTest: [() => runFullTest, v => (runFullTest = v)],
-  runQuickTest: [() => runQuickTest],
+  runFullTest: [() => runFullTest, v => ((runFullTest = v), provide({ runFullTest }))],
   selfTest: [() => selfTest],
   selfTestFrameStats: [() => selfTestFrameStats, v => (selfTestFrameStats = v)],
   selfTestSleep: [() => selfTestSleep, v => (selfTestSleep = v)],
@@ -125,7 +124,7 @@ expose({
   testMaps: [() => testMaps, v => ((testMaps = v), provide({ testMaps }))],
 });
 /* eslint-enable no-func-assign */
-provide({ runDiagnostics, testMapChecks, testMaps });
+provide({ runDiagnostics, runFullTest, testMapChecks, testMaps });
 /* to-module: end */
 /* phase 13: slow stretches every wait and time limit of the test, for a machine that draws a frame or two a second
    (the checks' headless browser draws in software: selfTest.slow = 3 there); 1 on a phone or a computer */
@@ -1963,8 +1962,8 @@ async function runFullTest(mode) {
         ],
   });
 }
-const runQuickTest = runFullTest;
-provide({ runQuickTest }); /* to-module */
+/* test cleanup lane C: the old name, kept only for tools/check-quick.py's in-game test step until it calls runFullTest */
+expose({ runQuickTest: [() => runFullTest] });
 
 /* ================= DIAGNOSTICS TEST (alpha 0.4) =================
    Next to the full test in Settings, about two minutes: the device and how the automatic quality chose its level, the hub

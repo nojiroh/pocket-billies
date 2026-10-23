@@ -34,8 +34,8 @@ import {
   renderOverlay,
   runBowlMapTest,
   runDiagnostics,
+  runFullTest,
   runGraphicsBench,
-  runQuickTest,
   selfTest,
   stopTimers,
   testVolume,
@@ -692,7 +692,7 @@ document.addEventListener('click', ev => {
       uiState.modal = null;
       uiState.mq = [];
       renderOverlay();
-      runQuickTest();
+      runFullTest();
       break;
     case 'diagtest':
       uiState.modal = null;
