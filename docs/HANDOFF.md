@@ -2,6 +2,47 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Reflavour track RF-4 - Internal renames - 2026-10-23
+Branch `track/reflavour` (main fast-forwarded in first; round 3, alone). Plan approved in Plan Mode, the owner's
+answers relayed by the coordinating session: keep the money id `money`; rename `tier` to `expedition` now; keep the
+art folder `art/coins/`; rename `foreclose` with the stone moves; long checks skipped for speed. Tag `rf-4-done` is
+the owner's to push. The full list of what was renamed, kept and left is in reflavour-track.md section 7.
+- Where the plan and the track file were wrong (checked in the code): there were no Bracket keys (the difficulty was
+  `tier`); the shop unlock ids embedded item ids (`shop_settlement`...); more rule keys were finance than listed
+  (`auditSkip`, `subpoena`, `luxuryPenny`, `winSeals`); the repo has no retired-names lint list any more (the test
+  cleanup track removed it), so none was added to.
+- Changed: SAVE_VERSION 5 first (the only behaviour commit: an older save gets the "older version" message and is set
+  aside). Then one rename per commit: perks (files, data, code names, rules, save, tab), research, crests, the
+  pyramid ids and the `pyramids` section and pocket, item ids, unlock ids, status ids, the nine passives with their
+  rule keys and battle-side fields, the stones, the stone moves, `expedition`, the `guide` tab, run-sim's options and
+  report keys, the `taxed` local. Three small commits fixed spots a rename had missed (the Studio's live channel and
+  undo list for `perks`; four `coins/penny_32.png` paths: the opening and the Studio's brand and login images). Where
+  a concept had several keys (a passive and its rule numbers, the two status rule keys), they share a commit.
+- Renaming tools: `tools/rename.mjs` (file, prefix, name, with `verify` on the prefix renames) and
+  `tools/rename-data.mjs` (sections, keys); the rest by scripted regex with the contexts listed, then each diff read.
+- Snapshots remade on purpose, each in its rename's commit: check-data (messages name perks.json, run.perks),
+  run-start (ids and keys), battle-state (the side flags `slipstream`, `roar`, `stones`), the battle golden record
+  (only the status ids in its events, 42 lines; no outcome moved).
+- Verified: after every commit `npm run modules`, check:modules, lint, typecheck, check:data, format:check and the
+  unit tests (all pass, about 70 s a round). Smoke at the end: passed, no problems (202 s; the phone flow with the Guide, shop and a battle, the debug log with no names, the in-game test's first step). It ran on Python Playwright 1.63.0, not the pinned 1.56.0: this container's Chromium is build 1243, which only 1.63 drives. The one unused picture it notes (`scene/build/detail-a04.png`) is not this session's.
+  **Skipped, at the owner's word (speed):** the full quick check, the in-game test (`--selftest`), test:slow,
+  check-fast and the Studio check (`tools/check-studio-github.py`, which this session edited for the new names
+  without running it).
+- The exported debug log: no key changed (none was forced). Its run and meta summary keeps `relics`, `capital` and
+  `seals` and reads the renamed fields (`run.perks`, `meta.research`, `meta.crests`); it never carries the save itself.
+  Values that are ids now read the new ids (a status `par` where it said `aud`, an item `potion`).
+- Risky:
+  - **One rename changed behaviour:** runShopStock sorts a town's weighted wares by item id before its seeded draw, so
+    the item rename changed which wares a seed's run shop stocks. No test pinned it; no saved run carries over.
+  - The Studio check and check-fast were edited (new ids, tab names, selectors) but not run.
+  - Phones: the first load after this sets the save aside (as decided). The renamed art files (`art/coins/pyramid_16.png`
+    and the rest, `art/ui/research.svg`, `art/ui/crest.svg`) load under new paths, so nothing stale shows.
+  - A `track/*` merge from a session that started before this one will conflict on these names: merge main and run
+    `npm run modules`; `git grep` for the old names in the table of section 7.
+- Left for the owner (section 7): the ten Perk ids, which can't be renamed without changing every seed's offers
+  (perkPool sorts by id), so this needs a behaviour commit first; stat ids `lev`, `lob`, `hus`; most move ids.
+- Next: RF-5 (the new tone in text), beside RL-S1. Tag `rf-4-done` on this entry's commit.
+
 ### Reflavour track RF-2 - Pyramids - 2026-10-23
 Branch `track/reflavour` (made this session from main and named in reflavour-track.md's `Branch:` line; RF-1 works
 here too and merged RF-2's pushed commits into its own, so the two sit on one line of history; PR #160). Plan approved with the owner's picks, all the recommended
