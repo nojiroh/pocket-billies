@@ -650,7 +650,7 @@ export const SECTION_LIST = [
   ['moves', 'Moves', 'Attacks and their effects'],
   ['preview', 'Battle preview', 'Watch moves, backdrops and Billies on the real battle stage'],
   ['types', 'Types', 'Colors, matchups and type abilities'],
-  ['items', 'Items & coins', 'Shop goods, tax coins'],
+  ['items', 'Items & pyramids', 'Shop goods, catch pyramids'],
   ['shops', 'Town shops', 'Legacy: keepers and what they sell (runs stock from the run rules)'],
   [
     'world',

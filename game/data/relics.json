@@ -25,7 +25,7 @@
  },
  "fineprint": {
   "name": "Fine Print",
-  "d": "Coins catch 25% more often.",
+  "d": "Pyramids catch 25% more often.",
   "rarity": "common",
   "fx": [
    {"kind":"catch","mult":1.25}

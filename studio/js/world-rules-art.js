@@ -804,7 +804,7 @@ SECTIONS.rules = () => {
        { num: 1, none: 'None', opt: 1 }
      )
    ) +
-     '<h4>Coins and items</h4>' +
+     '<h4>Pyramids and items</h4>' +
      coinsStart +
      '<h4>Starter choices</h4>' +
      starters +
@@ -1000,9 +1000,9 @@ SECTIONS.rules = () => {
          step: 0.05,
          help: 'A perfect throw multiplies the odds by 1 + this.',
        }),
-       numberField('Lands-on-edge chance', `${ca}.edge`, { min: 0, max: 0.2, step: 0.005 }),
-       numberField('Alpha tax rate', `${ca}.alpha`, { unit: '×', min: 0.05, max: 1, step: 0.05, ph: '0.4' }),
-       numberField('Copper Coin penalty for luxury lines', `${ca}.luxuryPenny`, {
+       numberField('Balances-on-its-tip chance (a sure catch)', `${ca}.edge`, { min: 0, max: 0.2, step: 0.005 }),
+       numberField('Alpha catch rate', `${ca}.alpha`, { unit: '×', min: 0.05, max: 1, step: 0.05, ph: '0.4' }),
+       numberField('Pyramid penalty for luxury lines', `${ca}.luxuryPenny`, {
          unit: '×',
          min: 0,
          max: 1,
@@ -1014,7 +1014,7 @@ SECTIONS.rules = () => {
        numberField('Focus Bonus per refusal', `${ca}.integrityStep`, { unit: '×', min: 1, max: 3, step: 0.05 }),
        numberField('Focus Bonus cap', `${ca}.integrityMax`, { unit: '×', min: 1, max: 5, step: 0.05 })
      ) +
-     '<h4>Luxury lines (sneer at Copper Coins)</h4>' +
+     '<h4>Luxury lines (sneer at plain Pyramids)</h4>' +
      `<div class="chips">${D.lines.map(L => `<label class="chk-chip"><input type="checkbox" data-act-chk="luxury" value="${L.id}" ${R.catching.luxury.includes(L.id) ? 'checked' : ''}> ${escapeHtml(L.names[0])}</label>`).join('')}</div>`
  )}</div>`;
 };
@@ -1055,7 +1055,7 @@ const ART_GROUPS = [
   ['billionaires', 'Billies', 'Four sheets per stage. Edit them in Billies → Edit pixels.'],
   ['battle', 'Battle backdrops', 'Ground, far land, walls, props, clouds, foregrounds'],
   ['background', 'Menus and title', 'Title picture, sky, clouds, islands'],
-  ['coins', 'Coins', ''],
+  ['coins', 'Pyramids', 'The catch items’ icons (folder coins until RF-4)'],
   ['eggs', 'Eggs', ''],
   ['icons', 'Icon atlas', 'All item and effect icons on one sheet'],
   ['map', 'World map', 'The inside of the sphere (equirectangular)'],

@@ -1,6 +1,11 @@
 {
- "penny": {"n":"Copper Coin","m":1,"price":300,"d":"The everyday taxing coin. A few picky Billies shrug it off."},
- "silver": {"n":"Silver Coin","m":1.5,"price":800,"need":1,"d":"1.5× tax odds. Sold once you earn your first badge."},
- "gold": {"n":"Gold Coin","m":2,"price":2000,"need":2,"d":"2× tax odds. Sold once you earn your second badge."},
- "tbtf": {"n":"Platinum Coin","m":0,"price":0,"d":"Never fails. Earned from badges, never sold."}
+ "penny": {
+  "n": "Pyramid",
+  "m": 1,
+  "price": 300,
+  "d": "The everyday pyramid. Throw it at a tired Billie to catch it. A few picky Billies shrug it off."
+ },
+ "silver": {"n":"Step Pyramid","m":1.5,"price":800,"need":1,"d":"1.5× catch odds. Sold once you earn your first badge."},
+ "gold": {"n":"Gold Pyramid","m":2,"price":2000,"need":2,"d":"2× catch odds. Sold once you earn your second badge."},
+ "tbtf": {"n":"Capstone","m":0,"price":0,"d":"Never fails. Earned from badges, never sold."}
 }

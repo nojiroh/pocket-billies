@@ -1080,10 +1080,10 @@ SECTIONS.items = () => {
   const coins = Object.entries(D.coins)
     .map(([k, C]) => {
       const p = `coins.${k}`;
-      return `<div class="item-row"><div class="item-ic"><img src="../game/art/coins/${k}_32.png" width="40" height="40" class="pix" onerror="this.style.opacity=.2"><small class="mono">${escapeHtml(k)}</small></div><div>${grid(textField('Name', `${p}.n`), numberField('Tax multiplier', `${p}.m`, { min: 0, max: 10, step: 0.1, help: '0 means it always taxes.' }), numberField('Shop price ($)', `${p}.price`, { min: 0, step: 10, help: '0 means it can’t be bought.' }), numberField('Badges needed', `${p}.need`, { opt: 1, min: 0, max: 8, step: 1 }))}${textField('Description', `${p}.d`, { area: 1, rows: 2 })}</div></div>`;
+      return `<div class="item-row"><div class="item-ic"><img src="../game/art/coins/${k}_32.png" width="40" height="40" class="pix" onerror="this.style.opacity=.2"><small class="mono">${escapeHtml(k)}</small></div><div>${grid(textField('Name', `${p}.n`), numberField('Catch multiplier', `${p}.m`, { min: 0, max: 10, step: 0.1, help: '0 means it always catches.' }), numberField('Shop price ($)', `${p}.price`, { min: 0, step: 10, help: '0 means it can’t be bought.' }), numberField('Badges needed', `${p}.need`, { opt: 1, min: 0, max: 8, step: 1 }))}${textField('Description', `${p}.d`, { area: 1, rows: 2 })}</div></div>`;
     })
     .join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Items & coins</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Tax coins', coins, { sub: 'Coin art is art/coins/<id>_16.png and _32.png. Replace it under Art files.' })}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Items & pyramids</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Pyramids', coins, { sub: 'Pyramid icons are art/coins/<id>_16.png and _32.png (tools/build-pyramid-icons.py). Replace them under Art files.' })}</div>`;
 };
 ACTIONS.itemNew = () => {
   const D = studioState.D,
@@ -1149,7 +1149,7 @@ SECTIONS.shops = () => {
           base = isC ? (D.coins[key] || {}).price : (D.items[key] || {}).price;
         return `<tr><td><select data-act-sel="stockKind" data-i="${i}">${[
           ['item', 'Item'],
-          ['coin', 'Coin'],
+          ['coin', 'Pyramid'],
         ]
           .map(([v, n]) => `<option value="${v}" ${(isC ? 'coin' : 'item') === v ? 'selected' : ''}>${n}</option>`)
           .join('')}</select></td>
@@ -1180,7 +1180,7 @@ SECTIONS.shops = () => {
      : card(
          'Stock',
          `<table class="tbl"><thead><tr><th>Kind</th><th>What</th><th>Price ($)</th><th></th><th></th></tr></thead><tbody>${stock}</tbody></table><div class="seg-row"><button class="btn" data-act="stockAdd">Add to the shelves</button></div>`,
-         { sub: 'Leave the price empty to use the normal Shop price. Coins that need badges stay locked here too.' }
+         { sub: 'Leave the price empty to use the normal Shop price. Pyramids that need badges stay locked here too.' }
        )
  }
  ${card(
@@ -1429,7 +1429,7 @@ SECTIONS.jobs = () => {
         textField('Where', `${p}.where`),
         `<label class="fld"><span>Pays in</span><select data-act-sel="jobKind" data-k="${k}">${[
           ['item', 'Items'],
-          ['coin', 'Coins'],
+          ['coin', 'Pyramids'],
           ['se', 'Money'],
         ]
           .map(([v, n]) => `<option value="${v}" ${kind === v ? 'selected' : ''}>${n}</option>`)
@@ -1503,7 +1503,7 @@ SECTIONS.trainers = () => {
     ? grid(
         textField('Badge id', `${p}.seat.id`, { help: 'Route gates refer to this.' }),
         textField('Title', `${p}.seat.title`),
-        selectField('Coin shown', `${p}.seat.coin`, coinOptions())
+        selectField('Pyramid shown', `${p}.seat.coin`, coinOptions())
       ) +
       `<div class="grid">${Object.keys(D.coins)
         .map(c => numberField(`${D.coins[c].n} reward`, `${p}.seat.coins.${c}`, { opt: 1, min: 0, step: 1 }))
@@ -1649,7 +1649,7 @@ ACTIONS.seatOn = () => {
     coin: 'gold',
     coins: { tbtf: 1 },
     items: {},
-    rewardText: 'a Platinum Coin',
+    rewardText: 'a Capstone',
     unlockText: '',
   };
   changed();

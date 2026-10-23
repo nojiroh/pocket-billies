@@ -22,7 +22,7 @@
   "coin": "gold",
   "coins": {"gold":3,"tbtf":1},
   "items": {"bailout":2},
-  "rewardText": "2 Bailouts, 3 Gold Coins and a Platinum Coin",
+  "rewardText": "2 Bailouts, 3 Gold Pyramids and a Capstone",
   "unlockText": "Your team can now take on the island leader in Palmhaven Town, across the sea from Marigold Town."
  },
  "script": [
