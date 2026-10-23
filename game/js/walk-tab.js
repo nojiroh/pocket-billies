@@ -6,33 +6,21 @@ import { expose } from './test-globals.js';
 import { provide, render, roomState } from './hooks.js';
 import { $, $$ } from './util.js';
 import { LOCATIONS, SHOPS, locationSubtitle, trainersAt } from './game-data.js';
-import {
-  billyName,
-  encounterStock,
-  encountersHere,
-  findBilly,
-  formatNumber,
-  healAll,
-  plural,
-  xpFor,
-} from './logic/rules.js';
+import { encounterStock, encountersHere, formatNumber, healAll, plural } from './logic/rules.js';
 import { runClinic, runHealCost } from './logic/run-loop.js';
 import { startWild } from './logic/battle-engine.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { artURL, uiIconHTML } from './art.js';
 import { cleanTrainer, personHTML } from './person-art.js';
-import { rigCanvasHTML } from './skeleton-rig.js';
 import { mapById } from './walk-view.js';
 import { environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
 import { runClinicEach, runGiveUp } from './run.js';
 import { trainerTalk } from './story.js';
 import { challengeCardHTML } from './things-to-do.js';
-import { progressBarHTML } from './ui-bits.js';
 import { closeModal, modal, toast } from './overlay.js';
 /* eslint-disable no-func-assign */
 expose({
   boardNote: [() => boardNote, v => (boardNote = v)],
-  buddyCard: [() => buddyCard, v => (buddyCard = v)],
   clinicHeal: [() => clinicHeal, v => (clinicHeal = v)],
   encounterCardHTML: [() => encounterCardHTML, v => (encounterCardHTML = v)],
   environmentLine: [() => environmentLine, v => (environmentLine = v)],
@@ -154,13 +142,6 @@ function hereCard() {
     here = LOCATIONS[node];
   return `<section class="here px glass k-card"><div class="route-art"${here.banner ? ` style="background-image:url('${artURL(here.banner)}')"` : ''}><span>${personHTML('me', 64)}</span><button class="route-profile" data-a="customize">${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)} · Edit look</button></div><div class="sec-h"><div><div class="sub">${escapeHtml(locationSubtitle(here))}</div><h2>${here.name}</h2></div><button class="pb small quiet" data-a="tab" data-t="map">Open map</button></div><p class="note">${here.blurb}</p>${boardNote(node)}${nodeActions(node)}</section>`;
 }
-function buddyCard() {
-  const m = findBilly(saveData.buddy);
-  if (!m) return '';
-  const a = xpFor(m.lvl),
-    b = xpFor(m.lvl + 1);
-  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px k-card" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { build: m.build, coat: m.coat })}<div class="bd"><div class="bn">${escapeHtml(billyName(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Gets the full XP of every battle you win, even when it sits one out. ${formatNumber(b - m.xp)} XP to level ${m.lvl + 1}.</div>${progressBarHTML((m.xp - a) / (b - a), 'xpb')}</div></div></section>`;
-}
 function roomHero() {
   const I = uiState.inside,
     sc = mapById(I.id) || {},
@@ -221,7 +202,7 @@ function walkSheetHTML() {
  <section class="pending"><div class="sec-h"><h2>Encounters here</h2><span class="count tnum">${q.length}/${cap}</span></div>
   <p class="note">${!cap ? 'No wild Billies live here. Try a route or a town with tall grass.' : q.length >= cap ? 'This place is full. Battle or tax a few to make room.' : 'Another one wanders over about every minute.'} You only see their level until the battle starts.</p>
   ${q.length ? `<div class="queue">${q.map(encounterCardHTML).join('')}</div>` : `<div class="empty px">No Billies nearby.${cap ? ' Give it a minute and one will wander over.' : ''}</div>`}</section>
- ${buddyCard()}</div></div>`;
+ </div></div>`;
 }
 const walkSheetWanted = () =>
   uiState.walkSheet && uiState.tab === 'walk' && !!saveData.started && !activeBattle && !uiState.title;
