@@ -692,7 +692,8 @@ def battle_music_step(P):
     def fight(start, kind, song):
         pg.evaluate("soundEngine.log.length=0;0")
         pg.evaluate(start)
-        if not until(pg, "soundEngine.log.some(e=>e.e.startsWith('battle '))", 6): raise Exception(f'{kind}: no battle cue')
+        # TC-4: 20 s, not 6: the cue comes on the encounter's flash, which a busy machine draws late (the before run's failure)
+        if not until(pg, "soundEngine.log.some(e=>e.e.startsWith('battle '))", 20): raise Exception(f'{kind}: no battle cue')
         held = pg.evaluate("!!(soundEngine.song&&soundEngine.song.hold)")
         # the player taps through the opening lines; the throw ('enter') lets the drums in
         # (in a run the battle can begin again from its seed at once, "The battle starts again.": its cue comes again)
@@ -805,7 +806,9 @@ def sound_effects_step(P):
     if len(coins) != rows: raise Exception(f'{len(coins)} coins for {rows} payout rows: {L}')
     if L.index('jingle run_won') < max(i for i, e in enumerate(L) if e.startswith('jingle payout_coin')): raise Exception(f'run_won before the last coin: {L}')
     clear(); pg.evaluate("closeModal();saveData.run.at={phase:'walk',battle:-1};uiState.runPayoutPlayed=false;uiState.runPayoutSung=false;runOver(false);0")
-    if not until(pg, "soundEngine.log.some(e=>e.e==='jingle run_lost')", 15): raise Exception(f'the payout, lost: {log()}')
+    # TC-4: 40 s, as for the won payout: the coins come a row at a time and run_lost after the last (the before run's
+    # failure had four coins in its log and no jingle yet at 15 s)
+    if not until(pg, "soundEngine.log.some(e=>e.e==='jingle run_lost')", 40): raise Exception(f'the payout, lost: {log()}')
     out.append(f'payout: {len(coins)} coins ({coins[-1].split(" ", 2)[-1] if coins else ""} last), run_won; lost: run_lost')
     return '; '.join(out)
 
