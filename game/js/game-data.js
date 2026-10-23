@@ -248,6 +248,7 @@ LINES.forEach(L => {
     if (!(gameData.coats || {})[F.coat]) warnData(`${L.id}'s form ${F.id} has unknown coat ${F.coat}.`);
     L.names.forEach((_, st0) => {
       const S = formSpeciesOf(SPECIES[L.id + st0], L, F);
+      S.base = S.base.slice();
       S.types = S.types.filter(t => TYPE_COLORS[t]);
       if (!S.types.length) S.types = ['None'];
       SPECIES[S.id] = S;

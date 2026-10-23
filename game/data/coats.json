@@ -2,5 +2,25 @@
  "midnight": {
   "name": "Midnight",
   "ramps": {"ember":"indigo","crimson":"violet","gold":"sky","straw":"mint","leaf":"pine","rust":"cobalt"}
+ },
+ "waterfront": {
+  "name": "Waterfront",
+  "form": true,
+  "ramps": {"rust":"teal","ember":"cobalt","straw":"sky","gold":"mint"}
+ },
+ "cloud": {
+  "name": "Cloud",
+  "form": true,
+  "ramps": {"steel":"sky","stone":"white"}
+ },
+ "folklore": {
+  "name": "Folklore",
+  "form": true,
+  "ramps": {"steel":"olive","stone":"straw","orchid":"rust","rose":"ember","violet":"crimson"}
+ },
+ "festival": {
+  "name": "Festival",
+  "form": true,
+  "ramps": {"stone":"gold","rose":"ember","orchid":"crimson"}
  }
 }
