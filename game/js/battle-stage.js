@@ -59,7 +59,7 @@ expose({
   HIT_SPRITES_BY_TYPE: [() => HIT_SPRITES_BY_TYPE],
   HORIZON_IN_FRAME: [() => HORIZON_IN_FRAME],
   LEAF_COLORS: [() => LEAF_COLORS],
-  MONEY_COIN: [() => MONEY_COIN],
+  MONEY_ICON: [() => MONEY_ICON],
   PULL_BACK_CAMERA: [() => PULL_BACK_CAMERA],
   PYRAMID_HIGH: [() => PYRAMID_HIGH],
   PYRAMID_LIFT: [() => PYRAMID_LIFT],
@@ -1272,7 +1272,7 @@ function battleStageDrawEffects(c, skip0) {
       q = battleStageProject(C.x, C.y, C.z);
     if (q) {
       /* the mail move's coin: the money icon (not a catch item) */
-      const cc = C.kind === MONEY_COIN ? iconCanvas('coin', 3) : pyramidCanvas(C.kind, 16),
+      const cc = C.kind === MONEY_ICON ? iconCanvas('coin', 3) : pyramidCanvas(C.kind, 16),
         k = clamp((q.s / 30) * (C.k || 1), 0.6, 4);
       c.save();
       c.translate(Math.round(q.x), Math.round(q.y));
@@ -1424,9 +1424,9 @@ export const camAt = (i, amt = 0.45, z = 0.14, rr = 0, d = 260, e = 'io') => {
   camTo(c, d, e);
   tween(battleStage.css, 'r', rr, d, e);
 };
-/* RF-2: a pyramid (a catch item's id: its model or its icon) or the mail move's coin (MONEY_COIN) flies an arc. A
+/* RF-2: a pyramid (a catch item's id: its model or its icon) or the mail move's coin (MONEY_ICON) flies an arc. A
    pyramid tumbles about a tilted axis (C.ax, C.tum; faster with spin) while C.fly; battle-3d.js pyramidItem draws it */
-const MONEY_COIN = '$coin';
+const MONEY_ICON = '$coin';
 function pyramidArc(from, to, dur, kind, onLand, spin) {
   const C = {
     kind,
@@ -1840,7 +1840,7 @@ export function battleStagePlay(an, ev) {
           );
       if (an.fx === 'mail') {
         battleStageFocus(actorTeam(an.si) === 0 ? 'me' : 'foe');
-        pyramidArc({ x: T.x + 3, y: 4, z: T.z + 2 }, T, 380, MONEY_COIN, C => {
+        pyramidArc({ x: T.x + 3, y: 4, z: T.z + 2 }, T, 380, MONEY_ICON, C => {
           C.show = false;
           hitFx(an.si, { te: an.te, t: 'Retail' });
         });
