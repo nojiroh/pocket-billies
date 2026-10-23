@@ -2,6 +2,23 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Test cleanup track TC-1 item 0 - The three camera checks on main - 2026-10-23
+Branch `fix/camera-checks-orbit`, from main a569bed, its own PR. Plan approved in Plan Mode.
+- Cause: the checks, not the camera. CAM-1 and CAM-2 were written and passed on branches without IS-5 (2328edc,
+  Copperleaf onto the island), so Copperleaf's camera reported `mode: 'walk'`. The merge that brought CAM-1..3 to main
+  (#143) put them on the island, where the camera reports `orbit`. CAM-1's camera was settled (off ~1e-15, lead 0) and
+  the debug log's camera line was complete: only the `mode == 'walk'` test failed. CAM-2's talk check put the talker
+  3 m world east and wanted the aim 0.8-2.2 m east; the game aims at the middle and nudges every aim up the screen
+  (CAM-2's merge with the orbit), and with the orbit turned ~56 degrees off north that nudge pulled the aim west.
+- Changed (tools/check-fast.py only): CAM-1 and the debug log check take `walk` or `orbit`; CAM-2's talker stands
+  3 m along the camera's screen-right (`camInfo.right`) and the aim is read along it. No game code changed.
+- Verified: the three checks failed here with CI's values first, then pass; with the talk aim broken on purpose (aimed
+  at you) CAM-2 fails again (along the right ~0). Lint, typecheck, check:modules, unit tests (807); the whole fast
+  check: see the PR.
+- Risky: none in the game. Locally the pinned Playwright (1.56) wants Chromium 1194 and the container has 1243; ran
+  through a scratch PLAYWRIGHT_BROWSERS_PATH link, nothing in the repo.
+- Next: lanes A-D of the test cleanup track can start once this is merged.
+
 ### Roguelite track RL-10b - Ranch B, second half: passive income, one ranch clock, the cloud anchor - 2026-10-23
 Branch `RL-10b` (PR #144), from main 303f074; main (29e6601: CAM-1..3, the island look, IS-8's pasture, Studio plan
 Phases 5 and 6) merged in near the end. Plan approved in Plan Mode with the owner's answers: income in Scrap by ranch

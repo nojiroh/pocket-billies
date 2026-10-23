@@ -23,7 +23,7 @@ below against main and report what differs. They come from a read-only audit on 
   (CAM-1) "standing, the camera isn't settled on its aim", Camera moments (CAM-2) "talking, no two-shot", and the
   debug log check (CAM-1..3) "the debug log has no camera line". The camera state reads `mode: 'orbit'`; a guess, not
   verified: the checks expect the follow camera and Copperleaf took the orbit camera in IS-5. Every PR is red until
-  this is fixed.
+  this is fixed. **Fixed in TC-1 item 0** (the checks were wrong, not the camera; see its "as built" line).
 - `npm test` (quick tier): 783 tests, about 47 s in a cloud container (budget 30 s).
 - `game/data/locations.json` holds only `copperleaf` and `roads.json` is `[]`, so tests and checks that loop over
   places or roads pass while checking almost nothing.
@@ -117,6 +117,10 @@ Useless (proofs that a finished refactor changed nothing, kept long after):
 ### TC-1 - Delete (1 session, all small)
 0. First, alone, so every later PR can go green: find why the three camera checks fail on main (the checks or the
    camera) and fix it, in its own PR.
+   **As built (2026-10-23, branch `fix/camera-checks-orbit`):** the checks were wrong. CAM-1/CAM-2 were written on
+   branches without IS-5, where Copperleaf's camera reported `walk`; since the merge (#143) it reports `orbit`. CAM-1
+   and the debug log check now take `walk` or `orbit`; CAM-2's talker stands 3 m to the screen's right and the aim is
+   read along it (the game nudges every aim up the screen, which on the turned orbit camera moves it off world east).
 1. Unit tests: delete `rng-baseline`, `rig-calls`, `story-snapshot` and `talk-before-scripts.json`, the parity test 1
    of `opening-script` (now a plain snapshot), `robot-joints` and `battle-rewards`, the two JSON records, and (if the
    owner agrees) `frame-allocations`, `fx-group`, `sheet-slice-parity`. Delete the RL-5 saves test with its code.
