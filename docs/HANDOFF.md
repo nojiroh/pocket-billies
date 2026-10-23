@@ -2,6 +2,57 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Test cleanup track, round 2, lane E - check-fast's island checks, the quick unit tier - 2026-10-23
+Branch `track/test-cleanup` (shared with lane B; pulled with --no-rebase before every push). TC-4 items 3-4. The owner
+said to make the recommended choices without waiting for plan approval. Lane E's part is pushed.
+- Where the track file was wrong (checked against the code):
+  - `npm test` took 72 s in this container (the track says 47 s, the lane brief 57 s). One file was most of it:
+    `run-sim.test.mjs`, 45 s alone, not a scene sweep by name and not in the slow tier.
+  - `hub_island` did not check the orbit: only that `walkRenderer.orbit` exists. The orbit and sea-skirt checks were
+    test_island's only.
+  - check-studio-github runs in CI with an `--only` list, so moving checks into it does nothing unless the list
+    names them: `hub` is added in check.yml (lane D's file in round 1; that lane is done).
+- Changed (one cause per commit):
+  - **Unit tests, quick tier 72 s to 25-26 s here (769 tests); slow tier 58 s (50 tests). No test dropped.**
+    - run-sim: the decision tests (shop stock, Loophole bought, plan, money, unlocks, report) play in balance mode. The
+      full-mode replay, "balance mode plays every seed as the full mode does" and the 20x check move to
+      `run-sim-scenes.test.mjs` (slow). The first two together are what lets the quick ones use balance mode. A
+      balance-mode replay stays in the quick tier.
+    - rig-joints: the pivot sweeps copy only the rig they change, not every rig twice per bone (6 s to 1 s, the same
+      checks).
+    - Slow tier now: `mapgen-roads`, `mapgen-lots` (each builds a whole map), `mapgen-dials.test.mjs` (mapgen's 40
+      random dial sets), `weather-before.test.mjs` (3.5 million weather picks against the pre-RL-6 code).
+  - **check-studio-github.py**: the Studio's Hub island (IS-6a) and its dials (IS-6b) moved over as they were, on a page
+    of their own after the proposal: 400x300, data read from the files, every GitHub call answered 404. Run with
+    `--only=hub`. CI's Studio step (studio/ and logic pull requests) now names it.
+  - **check-fast.py**: `island` (test_island) is gone. Its checks run on Copperleaf as a new check on the camera page,
+    "Copperleaf is the island: the sea skirt from 8 angles; the orbit camera...": contract fields (not `islandGen`,
+    which the walk scene doesn't carry), the sea skirt at the sea's level, 8 looks in from over the sea, the orbit
+    from 8 places, held on the summit (the orbit's middle, 85, 95), holding right on a 30 m circle. Nearer the
+    summit (12-20 m) the slopes slide you 1-3 m in, so the check's 1 m drift rule fails there. The player is put
+    back after.
+  - TESTING.md: the (b)/(b2) tier rows and the run-sim/weather lines.
+- Verified: lint, typecheck, npm test and test:slow green after each change. check-studio-github `--only=hub` ok
+  (IS-6a 332 s, IS-6b 42 s here, with a probe running beside it for part of that). The full fast check: 976 s, 27
+  checks, 24 passed. Then:
+  - CAM-2 "the encounter shot never arrived": the flake lane D recorded. It passed on rerun.
+  - The new orbit check failed after CAM-2's failure on the same page ("aims 59.5 m from you"; CAM-2 had left the
+    camera mid-shot). It passed on rerun after a passing CAM-2 (53 s).
+  - "A battle plays to the end: stuck at playing": this one is not from this lane. It fails the same way on main
+    (5ddd0f8) when it runs beside the camera page, and passes alone on both. Its 30 s wait for each battle step runs
+    out under software drawing on a busy machine.
+- Risky:
+  - The fast check is not faster here: about 195 s of Studio checks and 114 s of island checks left, but the
+    slowest pages (camera, run loop) decide the total with 2 workers. In CI the island and Studio pages were among
+    the longest, so expect a gain there. Measure on the next CI run.
+  - The orbit check now runs after CAM-1/CAM-2 on the same page, so a CAM-2 failure can cascade into it. It could get
+    a page of its own (one more boot, about 40 s) if that keeps happening.
+  - Quick-tier margin: 26 s against a 30 s budget in a container that ran the old tier at 72 s. Next to cut if it
+    creeps up: check-data-snapshot (4.8 s), sheet-slice-real (4 s).
+- For other lanes / round 3: battle()'s per-step wait (above) and CAM-2's encounter wait belong with "until instead
+  of sleeps" (TC-4 item 2). check-fast's docstring still says "one to three minutes" (TC-4 item 6).
+- Next: round 3 (TC-4 items 1, 2, 5, 6).
+
 ### Test cleanup track, round 1, lane D - Lint, data check, Studio check, CI - 2026-10-23
 Branch `track/test-cleanup` (shared with lanes A-C; pulled with --no-rebase before every push). Plan approved in Plan
 Mode with the owner's answers: keep the general rename tools, delete the unused CSS rules, add the upload guard.
