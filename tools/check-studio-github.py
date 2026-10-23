@@ -88,7 +88,9 @@ def free_camera_steps(pg, errs):
     turns and tilts, Top view looks down, W moves, two fingers pinch and twist, and it hands back to the walker."""
     pg.evaluate("studioState.sel.scene='copperleaf'; void openSection('scenes')")
     time.sleep(4)
-    pg.locator('#scPv').scroll_into_view_if_needed()
+    # Studio plan T6.7: the kept WebGL context draws at once, and a software-drawn frame can take seconds, so the
+    # scroll doesn't wait for two frames with the same box
+    pg.evaluate("document.querySelector('#scPv').scrollIntoView({ block: 'nearest' })")
     pg.locator('#scFreeCam [data-act="fcOn"]').click()
     time.sleep(1.5)
     G = lambda: pg.evaluate("JSON.parse(JSON.stringify(freeCamera.goal))")
