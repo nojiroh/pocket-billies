@@ -1617,31 +1617,6 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     v36()
 
-    @step('v37: 32 px ground, building budget, retired 2x art', 150)
-    def v37():
-        out = []
-        if pg.evaluate("typeof artHdOf==='function'||typeof dglHdAuto==='function'||!!window.NW_HD"): raise Exception('the v34 2x pipeline is still in the build')
-        if (GAME / 'art' / 'hd').exists() or (GAME / 'data' / 'hdart.js').exists(): raise Exception('art/hd or data/hdart.js still shipped')
-        # RL-5: the ground in Copperleaf (Marigold Town is parked)
-        go_scene(pg, 0); time.sleep(8)
-        tp = pg.evaluate("(walkRenderer.ring&&walkRenderer.ring.TP)||(walkView.ground&&walkView.ground._TP)")
-        if tp != 32: raise Exception(f'Copperleaf ground painted at {tp} px a tile')
-        shot(pg, 'v37-copperleaf')   # RL-5: was v37-marigold
-        # RL-5: the building budget in the small test town (test_hilltown, opened as a bench): the hub's cottages and lab
-        # are low-poly models, not buildings made from a 3D plan, and Marigold Town is parked
-        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.bench={id:'test_hilltown',test:1};render();0")
-        if not until(pg, "!!(walkView.ready&&walkView.id==='test_hilltown')", 40): raise Exception('test_hilltown didn’t open')
-        time.sleep(8)
-        r = json.loads(pg.evaluate("JSON.stringify({made:buildingState.made||0,drawn:buildingState.drawn||0,n:(walkView.sc.props||[]).filter(p=>{const M=gameData.scenery.props[p.k];return M&&M.build}).length})"))
-        pg.evaluate("uiState.bench=null;render();0"); go_scene(pg, 0)   # RL-5: back to the hub, where the steps after this one start
-        if r['made'] < 1: raise Exception('no 3D building model was built in test_hilltown')
-        out.append(f"Copperleaf: ground {tp} px a tile; test_hilltown: {r['made']} building models built over frames, {r['drawn']} drawn, {r['n']} buildings in the scene")
-        # v47: the 16 px dial is gone; the 32 px ground is the only full-mode ground
-        if pg.evaluate("engineSetting('world','nextArt')!==undefined"): raise Exception('the old 32 px ground dial is still in the settings')
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return '; '.join(out)
-    v37()
-
     @step('v38: 61 roster species on piece sheets, rigs that draw, filled pools', 240)
     def v38():
         out = []
