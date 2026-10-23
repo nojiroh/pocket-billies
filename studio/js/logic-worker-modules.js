@@ -22,6 +22,7 @@ import '../../game/js/logic/conditions.js';
 import '../../game/js/logic/cutscene-set.js';
 import '../../game/js/logic/data-checks.js';
 import '../../game/js/logic/draft-record.js';
+import '../../game/js/logic/economy-view.js';
 import '../../game/js/logic/effects.js';
 import '../../game/js/logic/fighters.js';
 import '../../game/js/logic/free-camera.js';
