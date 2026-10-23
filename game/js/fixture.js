@@ -11,6 +11,7 @@
      run     on a run (RL-7): standing on its landing on day 1, its world made from the seed RL7FIXTURE
      mountains   the same run with the debug menu's mountains mod (TR-3: mountains north and south, for the camera)
      ranch   inside Copperleaf's ranch (RL-9): three Billies in storage (one two levels under the cap), 50 Scrap
+     pasture the ranch's save, standing outside the pasture's gate by the barn (IS-8: the three wander inside)
      relics  the run, holding five Loopholes (RL-12: one under the cap), $2,000, a mini-boss's pick waiting
      lab     Copperleaf after a run (RL-11): 500 Capital, 60 Scrap, 2 Audit Seals, one run ended (a milestone met)
      island  the test island (island track IS-0: test_island, the map with the island contract's fields)
@@ -23,16 +24,16 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
-import { LOCATIONS, RELICS, RULES, SPECIES, START_NODE, TRAINERS } from './game-data.js';
+import { LOCATIONS, RELICS, RULES, SPECIES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
 import { makeBilly } from './logic/rules.js';
 import { applyUiTheme } from './theme-sheet.js';
-import { runBegin } from './logic/run-state.js';
-import { runArrive, runMapStart } from './logic/run-map.js';
-import { MAPGEN_VERSION } from './logic/mapgen.js';
+import { runArrive } from './logic/run-map.js';
 import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
 import { relicOfferMake } from './logic/relics.js';
 import { newSave } from './logic/saves.js';
 import { startTrainer } from './logic/battle-engine.js';
+import { runUnlocks } from './logic/unlocks.js';
+import { runStartOn, runStartPlan } from './logic/run-start.js';
 import { FIXTURE, saveData, setSaveData, uiState } from './game-state.js';
 import { LOOK_PRESETS, cleanLook } from './person-art.js';
 import { applyPreferences } from './settings-screen.js';
@@ -67,6 +68,7 @@ const FIXTURE_PLACES = {
   mountains: 'copperleaf',
   relics: 'copperleaf',
   ranch: 'copperleaf',
+  pasture: 'copperleaf',
   lab: 'copperleaf',
   island: 'copperleaf',
 };
@@ -99,7 +101,7 @@ function fixtureSave() {
   s.buddy = lead.uid;
   for (const m of s.team) s.caught[m.sp] = s.seen[m.sp] = 1;
   /* RL-9: the ranch's fixture has Billies resting in storage and Scrap to train them */
-  if (FIXTURE === 'ranch') {
+  if (FIXTURE === 'ranch' || FIXTURE === 'pasture') {
     const R = RULES.ranch;
     s.meta.scrap = 50;
     for (const lvl of [5, 8, R.capBase - 2]) {
@@ -120,10 +122,14 @@ function fixtureSave() {
      world goes in at boot (run-world.js) */
   if (FIXTURE === 'run' || FIXTURE === 'mountains' || FIXTURE === 'relics') {
     const data = runWorldData();
-    /* RL-9b: one Billie from home at Bracket I, the lead (the second stays in Copperleaf) */
-    runBegin(s, { seed: FIXTURE_RUN_SEED, tier: 1, mapgenV: MAPGEN_VERSION, se: RULES.start.se, home: [lead.uid] });
-    if (FIXTURE === 'mountains') s.run.mods = [RUN_MOD_MOUNTAINS];
-    runMapStart(s.run, data);
+    /* RL-9b: one Billie from home at Bracket I, the lead (the second stays in Copperleaf). Studio plan T2.1: started
+       as the mast starts a run (logic/run-start.js), with a fresh save's unlocks (none: no ridge or autumn) */
+    const plan = runStartPlan(
+      FIXTURE_RUN_SEED,
+      { ...data, unlockData: UNLOCK_DATA },
+      { unlocks: runUnlocks(s, UNLOCK_DATA), mods: FIXTURE === 'mountains' ? [RUN_MOD_MOUNTAINS] : [] }
+    );
+    runStartOn(s, plan, { home: [lead.uid] });
     runArrive(s, 0, data);
     s.run.at.phase = 'walk';
     s.visited[s.trip.node] = 1;
@@ -161,6 +167,21 @@ export function fixtureStart() {
       walkView.pl.x = g[0];
       walkView.pl.z = g[1];
       enterRoom(act, p);
+    };
+    go();
+  }
+  /* IS-8: outside the pasture's gate, the field in front of you */
+  if (FIXTURE === 'pasture') {
+    const go = (n = 0) => {
+      const p = walkView.ready && walkView.sc && !walkView.pl.fresh && walkView.sc.props.find(q => q.act === 'pasture');
+      if (!p) {
+        if (n < 600) setTimeout(() => go(n + 1), 100);
+        return;
+      }
+      const g = actionSpot(p, walkData().sc.props[p.k]);
+      walkView.pl.route = null;
+      walkView.pl.x = g[0];
+      walkView.pl.z = g[1];
     };
     go();
   }

@@ -173,8 +173,9 @@ test("the sea's settings: the share, another seed, the game's own file", () => {
   /* RL-8b: the game's hub is Copperleaf's island alone (sea.island): mostly sea, one piece of land */
   const g = gameSea(GAME_DATA.worldmap.sea);
   assert.ok(GAME_DATA.worldmap.sea.island > 0, 'the hub is an island');
-  /* IS-5: the hub's island is drawn at its own size from its coast (IS-7): about 1% of the bowl */
-  assert.ok(seaShare(g) > 0.9 && seaShare(g) < 0.995, `the game’s island is a sensible size (${seaShare(g)})`);
+  /* IS-5: the hub's island is drawn at its own size from its coast (IS-7): about 1% of the bowl (half that since the
+     look pass made it ~150 m across) */
+  assert.ok(seaShare(g) > 0.9 && seaShare(g) < 0.998, `the game’s island is a sensible size (${seaShare(g)})`);
   assert.equal(landBodies(g).length, 1, 'one island');
 });
 

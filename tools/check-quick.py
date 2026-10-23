@@ -4,7 +4,6 @@
 
     python3 tools/check-quick.py                 # data, code, shaders, every scene once, the main flows
     python3 tools/check-quick.py --smoke         # the fast subset: data and code, Start-Game on a phone + debug log, Studio opens
-    python3 tools/check-quick.py --studio        # also the Studio round trip on a temporary copy
     python3 tools/check-quick.py --selftest      # the game's own full test and diagnostics test, whole (about 25 minutes)
     python3 tools/check-quick.py --scenes=copperleaf   # only these walk scenes (by id), for a change to one place
     python3 tools/check-quick.py --steps=v34,battle   # only the steps whose names hold these words
@@ -644,6 +643,62 @@ SAVE_SPY = r"""(()=>{window.__st={w:[],ls:[]};account.user={uid:'check',name:'Ch
   save();__st.team=saveData.team.map(m=>m.uid)})();0"""
 
 
+@step('Actions sheet: a wheel never opens it; its button and Tab do; Esc, Tab and its buttons close it; the hub marker; a run\'s status', 150)
+def actions_sheet_step(b, base, R):
+    """the Actions sheet (walk-tab.js walkSheetSync) is a <pb-sheet> over the world: it used to be page content under the
+    scene, so a mouse wheel scrolled it into view. In the hub: wheel, button, Esc, Tab, a "show me the way" that closes
+    it and marks the ranch. The full check also opens a run's sheet for its day, type and weather"""
+    errs = []
+    ctx = b.new_context(viewport={'width': 1280, 'height': 800}, device_scale_factor=1); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
+    is_open = "[uiState.walkSheet,!!document.querySelector('#walkSheet[open]')]"
+    def ready(fix):
+        pg.goto(base + f'/index.html?fixture={fix}'); pg.evaluate(LOW_RENDER)
+        pg.wait_for_function("typeof walkView!=='undefined'&&walkView.ready&&!!document.querySelector('.wh-down')", timeout=90000)
+        # a waiting window or a postcard would take the clicks: none
+        pg.evaluate("uiState.modal=null;uiState.mq=[];uiState.toastQ=[];uiState.toastOn=false;renderOverlay();document.querySelectorAll('.pcard-wrap').forEach(e=>e.remove());0")
+    try:
+        ready('town')
+        pg.mouse.move(640, 400)
+        for dy in (400, 400, -400, 400): pg.mouse.wheel(0, dy); time.sleep(.15)
+        if pg.evaluate(is_open) != [False, False] or pg.evaluate('scrollY') != 0:
+            raise Exception(f'a mouse wheel opened the sheet or scrolled the page: {pg.evaluate(is_open)}, scrollY {pg.evaluate("scrollY")}')
+        pg.evaluate("document.querySelector('.wh-down').click()")
+        if not until(pg, "!!document.querySelector('#walkSheet[open]')", 5): raise Exception('the Actions button did not open the sheet')
+        acts = pg.evaluate("[...document.querySelectorAll('#walkSheet [data-a]')].map(e=>e.dataset.a)")
+        for want in ('walkrun', 'walkmark'):
+            if want not in acts: raise Exception(f'the hub sheet has no {want} button: {acts}')
+        for gone in ('stoptrip', 'rest', 'customize'):
+            if gone in acts: raise Exception(f'the sheet still has {gone}: {acts}')
+        pg.keyboard.press('Escape')
+        if not until(pg, "!uiState.walkSheet&&!document.querySelector('#walkSheet[open]')", 5): raise Exception('Esc did not close the sheet')
+        pg.evaluate("document.activeElement&&document.activeElement.blur&&document.activeElement.blur();0")
+        pg.keyboard.press('Tab')
+        if not until(pg, "!!document.querySelector('#walkSheet[open]')", 5): raise Exception('Tab did not open the sheet')
+        if not until(pg, "!!document.activeElement&&!!document.activeElement.closest('#walkSheet')", 5): raise Exception('Tab opened the sheet without its first button taking the focus')
+        pg.keyboard.press('Tab')
+        if not until(pg, "!uiState.walkSheet", 5): raise Exception('Tab did not close the sheet')
+        pg.evaluate("document.querySelector('.wh-down').click()"); until(pg, "!!document.querySelector('#walkSheet [data-a=walkmark][data-k=ranch]')", 5)
+        pg.evaluate("document.querySelector('#walkSheet [data-a=walkmark][data-k=ranch]').click()")
+        m = pg.evaluate("[uiState.walkSheet, walkView.mark&&walkView.mark.act]")
+        if m != [False, 'ranch']: raise Exception(f'"show me the way" to the ranch: sheet open, marker {m}')
+        out = ['wheel ×4: closed, no scroll', 'button, Esc, Tab, Tab', 'the ranch marked, the sheet closed']
+        if not SMOKE:
+            ready('run')
+            pg.evaluate("document.querySelector('.wh-down').click()")
+            if not until(pg, "!!document.querySelector('#walkSheet .ws-status pb-day-chip')", 5): raise Exception("a run's sheet has no day chip")
+            t = pg.evaluate("document.querySelector('#walkSheet .ws-status').innerText")
+            if 'Today' not in t or not pg.evaluate("!!document.querySelector('#walkSheet [data-a=tab][data-t=map]')"):
+                raise Exception(f"a run's sheet lacks today's weather or the way on: {t!r}")
+            out.append("a run's day, type and weather: " + ' / '.join(x for x in t.splitlines() if x.strip())[:120])
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return '; '.join(out)
+    finally:
+        ctx.close()
+
+
 @step('Messages: toasts merge, notices wait behind the dot, choices wait for the world (phase 06)', 120)
 def messages_step(b, base, R):
     errs = []
@@ -743,7 +798,7 @@ def safety_step(b, base, R):
         for k in ['sum', 'build', 'moves', 'evo']:
             pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();billySheet(saveData.team[0]);document.querySelector('[data-a=ms-tab][data-k={k}]')?.click();0"); time.sleep(.3); check('details ' + k)
         shown.append('details')
-        for k in ['sound', 'graphics', 'game', 'save', 'help']:
+        for k in ['sound', 'graphics', 'controls', 'access', 'game', 'save', 'help']:
             pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();openSettings();document.querySelector('[data-a=set-tab][data-k={k}]')?.click();0"); time.sleep(.3); check('settings ' + k)
         shown.append('settings')
         pg.evaluate(CHECK_SHOP + "uiState.modal=null;uiState.mq=[];renderOverlay();openShop('check_shop');0"); time.sleep(.4); check('shop'); shown.append('shop')
@@ -793,12 +848,13 @@ def targets_step(b, base, R):
         ctx.close()
 
 
-@step('Sound settings: each slider sets its bus, each Test plays on its bus, the header mute keeps the levels (SND-1)', 120)
+@step('Sound settings: each slider sets its bus and sounds on it when let go, each row mutes its bus, the header mute keeps the levels (SND-1, UI-7a)', 120)
 def sound_step(b, base, R):
-    """sound track SND-1: Settings → Sound on a 390 px phone. Each Test button must reach its own bus (a wrapper on
-    AudioNode.connect lists what each press connects to; every button's tick also reaches the effects bus); each slider,
-    dragged, must set its bus to soundLevels() at once; the mute button beside the title silences the master and keeps
-    every level. Nothing is heard: only the connections and the targets the gains are given are read. A browser that won't start audio is
+    """sound track SND-1: Settings → Sound on a 390 px phone. UI-7a: each slider, let go, must play its sound on its own
+    bus (a wrapper on AudioNode.connect lists what each release connects to; the music is stopped first, as the music
+    slider plays nothing over a song); each slider, dragged, must set its bus to soundLevels() at once; each row's mute
+    button silences its own bus and keeps its level, and dragging the muted slider unmutes it; the mute button beside
+    the title silences the master and keeps every level. Nothing is heard: only the connections and the targets the gains are given are read. A browser that won't start audio is
     reported, not failed, like the world-sounds step"""
     errs = []
     ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1, is_mobile=True, has_touch=True)
@@ -818,13 +874,15 @@ def sound_step(b, base, R):
           window.__snd={B,hit:new Set(),to:new Map()};const c=AudioNode.prototype.connect;window.__sndConnect=c;
           const st=AudioParam.prototype.setTargetAtTime;window.__sndTarget=st;AudioParam.prototype.setTargetAtTime=function(v,...a){__snd.to.set(this,v);return st.call(this,v,...a)};
           AudioNode.prototype.connect=function(d,...a){for(const [k,L] of Object.entries(__snd.B))if(L.includes(d))__snd.hit.add(k);return c.call(this,d,...a)}})();0""")
+        if pg.query_selector('[data-a=aud-test]'): raise Exception('a Test button is still in the Sound tab')
         missed = []
         for k in ['master', 'music', 'sfx', 'world', 'amb']:
-            pg.evaluate("__snd.hit=new Set();0")
-            pg.click(f'[data-a=aud-test][data-k={k}]'); until(pg, f"__snd.hit.has('{k}')", 4)   # the test sound starts 60 ms after the press
+            pg.evaluate("musicStop();__snd.hit=new Set();0")
+            pg.evaluate(f"document.querySelector('input[data-preference={k}]').dispatchEvent(new Event('change',{{bubbles:true}}));0")
+            until(pg, f"__snd.hit.has('{k}')", 4)   # the sound starts 60 ms after the slider is let go
             hit = pg.evaluate("[...__snd.hit]")
-            if k not in hit: missed.append(f'{k} Test reached {", ".join(sorted(hit)) or "no bus"}')
-        if missed: raise Exception('a Test button played somewhere else: ' + '; '.join(missed))
+            if k not in hit: missed.append(f'{k} slider reached {", ".join(sorted(hit)) or "no bus"}')
+        if missed: raise Exception('a slider, let go, played somewhere else: ' + '; '.join(missed))
         # what the bus must be set to is worked out from where the slider stands, not from the saved preference: without
         # the live listener neither moves while the slider is held, so the two would agree. The target each gain is
         # given is read (the setTargetAtTime wrapper), not gain.value: Chrome stops working out a gain no sound goes
@@ -839,16 +897,28 @@ def sound_step(b, base, R):
                 have, w = pg.evaluate(f"[__snd.to.has({bus}.{k}.gain)?+__snd.to.get({bus}.{k}.gain).toFixed(3):'not set',+{want}.toFixed(3)]")
                 off.append(f'{k} at {v}: bus set to {have}, wanted {w}')
         if off: raise Exception('a slider didn’t set its bus while dragged: ' + '; '.join(off))
+        # UI-7a: each row's own mute (the Volume row's is the master mute)
+        rows = []
+        for k in ['music', 'sfx', 'world', 'amb', 'master']:
+            lv = pg.evaluate(f"saveData.preferences.{k}")
+            pg.click(f'.vol-mute[data-k={k}]')
+            if not until(pg, f"__snd.to.get({bus}.{k}.gain)===0", 4): rows.append(f'{k}: its mute didn’t silence its bus'); continue
+            r = pg.evaluate(f"({{pressed:document.querySelector('.vol-mute[data-k={k}]').getAttribute('aria-pressed'),lv:saveData.preferences.{k},others:['music','sfx','world','amb'].filter(o=>o!=='{k}'&&'{k}'!=='master'&&__snd.to.get({bus}[o].gain)===0)}})")
+            if r['pressed'] != 'true' or r['lv'] != lv or r['others']: rows.append(f'{k}: {r}')
+            pg.evaluate(f"(()=>{{const e=document.querySelector('input[data-preference={k}]');e.dispatchEvent(new Event('input',{{bubbles:true}}))}})();0")
+            if not until(pg, f"__snd.to.get({bus}.{k}.gain)>0&&document.querySelector('.vol-mute[data-k={k}]').getAttribute('aria-pressed')==='false'", 4):
+                rows.append(f'{k}: dragging the muted slider didn’t unmute it')
+        if rows: raise Exception('a row’s mute went wrong: ' + '; '.join(rows))
         levels = pg.evaluate("JSON.stringify(['master','music','sfx','world','amb'].map(k=>saveData.preferences[k]))")
         pg.click('.set-mute'); until(pg, "!!saveData.preferences.mute&&__snd.to.get(soundEngine.master.gain)===0", 5)
-        m = pg.evaluate("({mute:!!saveData.preferences.mute,pressed:document.querySelector('.set-mute').getAttribute('aria-pressed'),sw:document.querySelector('[data-pref-set=mute].sw').getAttribute('aria-checked'),master:__snd.to.get(soundEngine.master.gain),levels:JSON.stringify(['master','music','sfx','world','amb'].map(k=>saveData.preferences[k]))})")
-        if not m['mute'] or m['pressed'] != 'true' or m['sw'] != 'false' or m['master'] > 0.01: raise Exception(f'the header mute didn’t mute: {m}')
+        m = pg.evaluate("({mute:!!saveData.preferences.mute,pressed:document.querySelector('.set-mute').getAttribute('aria-pressed'),row:document.querySelector('.vol-mute[data-k=master]').getAttribute('aria-pressed'),master:__snd.to.get(soundEngine.master.gain),levels:JSON.stringify(['master','music','sfx','world','amb'].map(k=>saveData.preferences[k]))})")
+        if not m['mute'] or m['pressed'] != 'true' or m['row'] != 'true' or m['master'] > 0.01: raise Exception(f'the header mute didn’t mute: {m}')
         if m['levels'] != levels: raise Exception(f'muting changed the levels: {levels} became {m["levels"]}')
         pg.click('.set-mute'); until(pg, "!saveData.preferences.mute&&Math.abs(__snd.to.get(soundEngine.master.gain)-soundLevels(saveData.preferences,MUSIC.mix).master)<0.02", 5)
         back = pg.evaluate("[!!saveData.preferences.mute,+__snd.to.get(soundEngine.master.gain).toFixed(3),+soundLevels(saveData.preferences,MUSIC.mix).master.toFixed(3)]")
         if back[0] or abs(back[1] - back[2]) > 0.02: raise Exception(f'the header mute didn’t unmute: mute {back[0]}, master {back[1]}, wanted {back[2]}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return 'five Test buttons on their own buses; five sliders set their bus while dragged; the header mute silenced the master, kept the levels and came back'
+        return 'five sliders sounded on their own buses when let go and set their bus while dragged; five row mutes silenced their own bus and came back on a drag; the header mute silenced the master, kept the levels and came back'
     finally:
         try: pg.evaluate("window.__sndConnect&&(AudioNode.prototype.connect=__sndConnect);window.__sndTarget&&(AudioParam.prototype.setTargetAtTime=__sndTarget);0")
         except Exception: pass
@@ -1473,14 +1543,15 @@ def desktop_steps(b, base, R):
         # settings in tabs, every tab fits the phone width; a switch flips
         # a message waiting on screen (an egg hatching, in steps mode) would queue Settings behind it
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';render();openSettings('game');0"); time.sleep(.6); tabs = []
-        # alpha 0.5: the tabs are whatever the game lists (sound, graphics, game, save, help); contrast is under Game
+        # alpha 0.5: the tabs are whatever the game lists (UI-7b: sound, graphics, controls, access, game, save, help);
+        # contrast is under Accessibility
         names = pg.evaluate("SETTINGS_TABS.map(t=>t[0])")
         for t in names:
             pg.evaluate(f"document.querySelector('[data-a=set-tab][data-k={t}]').click();0"); time.sleep(.3)
             tabs.append(pg.evaluate("[document.querySelectorAll('.set-body .set-row,.set-body .settings-profile,.set-body details').length,(()=>{const b=document.querySelector('.sheet .body');return b.scrollWidth-b.clientWidth})()]"))
             if t == 'graphics': shot(pg, 'settings-graphics')
-        if len(names) < 5 or any(n == 0 for n, _ in tabs) or any(o > 4 for _, o in tabs): raise Exception(f'settings tabs {names}: {tabs}')
-        pg.evaluate("document.querySelector('[data-a=set-tab][data-k=game]').click();0"); time.sleep(.2)
+        if len(names) < 7 or any(n == 0 for n, _ in tabs) or any(o > 4 for _, o in tabs): raise Exception(f'settings tabs {names}: {tabs}')
+        pg.evaluate("document.querySelector('[data-a=set-tab][data-k=access]').click();0"); time.sleep(.2)
         c0 = pg.evaluate("saveData.preferences.contrast||'normal'"); pg.evaluate("document.querySelector('[data-pref-set=contrast]').click();0"); time.sleep(.2); c1 = pg.evaluate("saveData.preferences.contrast")
         pg.evaluate("document.querySelector('[data-pref-set=contrast]').click();uiState.modal=null;uiState.mq=[];renderOverlay();0")
         if c0 == c1: raise Exception('the High contrast switch did nothing')
@@ -1673,9 +1744,12 @@ def desktop_steps(b, base, R):
         miss = [i for i in ids if not pg.evaluate(f"!!(SPECIES['{i}']&&RIGS['{i}']&&RIGS['{i}'].front&&RIGS['{i}'].back)")]
         if miss: raise Exception(f'missing species or rigs: {miss}')
         nx = ROOT / 'game' / 'art' / 'next' / 'billionaires'
-        sheets = [n for n in ('emberox', 'boostox', 'marsox', 'memeox', 'cartotter', 'primotter', 'orbitotter', 'everyotter', 'kidling', 'billgoat', 'windowgoat', 'harvestgoat') if (nx / f'{n}.png').exists() and (nx / f'{n}.json').exists()]
-        if len(sheets) < 12: raise Exception(f'only {len(sheets)} piece sheets with layout')
-        out.append('12 starter species, 12 sheets (png + json), rigs for front and back')
+        sheets = [n for n in ('emberox', 'boostox', 'marsox', 'memeox', 'cartotter', 'primotter', 'orbitotter', 'everyotter', 'kidling', 'billgoat', 'windowgoat', 'harvestgoat') if (nx / f'{n}.png').exists()]
+        if len(sheets) < 12: raise Exception(f'only {len(sheets)} starter sheets')
+        # Studio plan Phase 5: the kit Billies' piece layouts (<name>.json) retired; the rig names the sheet
+        unrigged = [n for n in sheets if not pg.evaluate(f"Object.values(RIGS).some(r => r.front && r.front.sheet === 'next/billionaires/{n}.png')")]
+        if unrigged: raise Exception(f'starter sheets no rig draws from: {unrigged}')
+        out.append('12 starter species, 12 sheets, each drawn by a rig; rigs for front and back')
         pg.evaluate("rigPreload(%s.flatMap(id=>[[id,1],[id,1.4]]))" % json.dumps(ids)); time.sleep(3)
         r = json.loads(pg.evaluate("""(ids=>{const out={};for(const id of ids){const o={};for(const [v,k] of [['front',1],['back',1.4]]){const R=rigParts(id,k);if(!R){o[v]=null;continue}
           const c=makeCanvas(R.BW,R.BH),x=c.getContext('2d');const n=(P)=>{x.clearRect(0,0,R.BW,R.BH);drawRig(x,R,P,v);const d=x.getImageData(0,0,R.BW,R.BH).data;let s=0;for(let i=3;i<d.length;i+=4)if(d[i]>0)s++;return s};
@@ -2551,71 +2625,6 @@ def desktop_steps(b, base, R):
     R['desktopErrors'] = errs[:10]; ctx.close()
 
 
-def studio_round_trip(pw, R):
-    """the Studio on a temporary copy: open every section, change a move, add a Billie, save, see both in the game"""
-    @step('Studio: sections, an edit and a new Billie reach the game', 360)
-    def run():
-        tmp = Path(tempfile.mkdtemp(prefix='networth-quick-'))
-        for d in ('game', 'studio'): shutil.copytree(ROOT / d, tmp / d)
-        shutil.copy2(ROOT / 'start-studio.py', tmp / 'start-studio.py'); port = free_port()
-        proc = subprocess.Popen([sys.executable, str(tmp / 'start-studio.py'), '--no-browser'], env={**os.environ, 'NETWORTH_STUDIO_PORT': str(port)}, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']); errs = []
-        try:
-            time.sleep(1.5); ctx = b.new_context(viewport={'width': 1280, 'height': 860}); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS); ctx.set_default_timeout(90000); pg = ctx.new_page()
-            pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
-            pg.goto(f'http://localhost:{port}/studio/index.html'); pg.wait_for_selector('.split', timeout=30000); time.sleep(1)
-            for sec in ['billionaires', 'moves', 'preview', 'types', 'items', 'shops', 'world', 'scenes', 'engine', 'wardrobe', 'trainers', 'lore', 'people', 'jobs', 'rules', 'art', 'check']:
-                pg.evaluate(f"openSection('{sec}')"); time.sleep(1.6 if sec in ('preview', 'scenes', 'engine') else .4)
-                if sec in ('scenes', 'check'): shot(pg, f'studio-{sec}')
-                if sec == 'lore':   # v47: every tab of Lore & story opens
-                    for t in ['world', 'story', 'people', 'places', 'legends', 'clues', 'books', 'loading', 'chat']:
-                        pg.evaluate(f"ACTIONS.loreTab({{k:'{t}'}});0"); time.sleep(.2)
-                    shot(pg, 'studio-lore')
-            # v29 scene tools: scatter, copy and paste, a block stamp, a curved road, a smooth path; then a test run that sees the edits live
-            extra = ''
-            if pg.evaluate("typeof scatterProps==='function'"):
-                pg.evaluate("openSection('scenes');ACTIONS.scPick({k:'copperleaf'});0"); time.sleep(2.5)   # RL-5: the hub's scene (Willowmere is parked; the copy is thrown away)
-                r = pg.evaluate("""(()=>{const sc=currentMap(),n0=sc.props.length,t0=sc.tiles.join('');mapEditor.prop=Object.keys(sceneryCatalog().props).find(k=>/bush|flower/.test(k));mapEditor.scat.dens=1.5;mapEditor.brush=3;
-                  const D={n:0};for(let i=0;i<4;i++)scatterProps(sc,{x:6+i,z:6},D);const n1=sc.props.length;mapEditor.multi=new Set([0,1]);copySelectedProps();mapEditor.mouse=[sc.w/2,sc.h/2];pasteProps();const n2=sc.props.length;
-                  stampBlockAt(sc,{name:'t',props:[{k:sc.props[0].k,x:0,z:0},{k:sc.props[1].k,x:1,z:0}]},4,4,false);const n3=sc.props.length;
-                  mapEditor.ter='p';mapEditor.road=[[2,3],[sc.w/2,sc.h/2],[sc.w-3,4]];layCurvedRoad(sc);const roadOk=sc.tiles.join('')!==t0;const p0=(sc.path||[]).length;ACTIONS.scxSmoothPath();changed();
-                  return {scattered:n1-n0,pasted:n2-n1,stamped:n3-n2,road:roadOk,path:[p0,(sc.path||[]).length],n:sc.props.length}})()""")
-                if r['scattered'] < 3 or r['pasted'] != 2 or r['stamped'] != 2 or not r['road']: raise Exception(f'scene tools: {r}')
-                pg.evaluate("openSection('rules');0")          # the Studio's scene preview would otherwise share the software renderer with the test run
-                # RL-5: the test run opens Copperleaf's scene on its own (a bench, walkView.id 'copperleaf'; was Willowmere, parked)
-                g = ctx.new_page(); g.goto(f'http://localhost:{port}/game/index.html?test=1&scene=copperleaf'); g.wait_for_selector('#walkHero', timeout=240000)
-                ok = False
-                for _ in range(120):
-                    st = g.evaluate("[typeof walkView!=='undefined'&&walkView.id,gameData.maps.copperleaf.props.length,typeof TEST_RUN!=='undefined'&&!!TEST_RUN]")
-                    if st[0] == 'copperleaf' and st[1] == r['n']: ok = True; break
-                    time.sleep(.5)
-                saved = g.evaluate("(()=>{try{return localStorage.getItem(SAVE_KEY)}catch(e){return 'x'}})()")
-                g.close()
-                if not ok: raise Exception(f'the test run didn’t open Copperleaf with the Studio’s edits ({st}, Studio has {r["n"]} props)')
-                if saved: raise Exception('the test run wrote a save')
-                extra = f"; scene tools: {r['scattered']} scattered, 2 pasted, a block stamped, a road laid, path {r['path'][0]}→{r['path'][1]} points; a test run opened Copperleaf with the unsaved edits and saved nothing"
-            pg.evaluate("openSection('rules')"); time.sleep(.5)
-            pg.evaluate("openSection('moves',{move:'lawsuit'})"); pg.fill('input[data-p="moves.lawsuit.p"]', '77'); pg.dispatch_event('input[data-p="moves.lawsuit.p"]', 'change')
-            pg.evaluate("openSection('billionaires')"); pg.click('[data-act=newLine]'); time.sleep(.5); pg.fill('#nwName', 'Checko'); pg.click('.dlg-btns .btn.primary')
-            pg.wait_for_selector('.skel', timeout=10000); time.sleep(.6); pg.click('[data-sk=close]'); time.sleep(.3)
-            pg.click('#saveBtn'); time.sleep(4); pg.evaluate("openSection('rules')")
-            g = ctx.new_page(); g.on('pageerror', lambda e: errs.append('game: ' + str(e))); g.on('console', lambda m: errs.append('game: ' + m.text) if m.type == 'error' else None)
-            g.goto(f'http://localhost:{port}/game/index.html?boot=normal')
-            try: g.wait_for_selector('.ttl,.title', timeout=60000)
-            except Exception: raise Exception('after saving, the game didn’t reach its title: ' + (' | '.join(errs[:4]) or g.evaluate("document.querySelector('.ld-phase')&&document.querySelector('.ld-phase').textContent")))
-            seen = g.evaluate("[MOVES.lawsuit.p,!!SPECIES.checko0]")
-            if seen != [77, True]: raise Exception(f'after saving, the game sees move power {seen[0]} and new Billie {seen[1]}')
-            # v37: the save put the piece-sheet rigs back in rigs-next.js and the rest in rigs.js
-            rn = (tmp / 'game' / 'art' / 'next' / 'rigs-next.js').read_text(); ro = (tmp / 'game' / 'art' / 'rigs.js').read_text()
-            if '"musk0"' not in rn or '"musk0"' in ro or '"checko0"' not in ro: raise Exception('rigs were not split between rigs-next.js and rigs.js on save')
-            if g.evaluate("!(RIGS.musk0&&RIGS.checko0)"): raise Exception('the game lost a rig after the Studio saved')
-            if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-            return 'edit and new Billie seen in the game; rigs saved to rigs-next.js and rigs.js' + extra
-        finally:
-            R['studioErrors'] = errs[:10]; b.close(); proc.terminate(); shutil.rmtree(tmp, ignore_errors=True)
-    run()
-
-
 BASE = ROOT / 'validation' / 'quick-baseline'
 
 
@@ -2649,7 +2658,7 @@ def compare_pictures(R):
 @step('Studio: every script loads and the sign-in shows (GitHub mode)', 60)
 def studio_opens(b):
     """phase 01: the Studio as GitHub Pages serves it (no Studio server): all its scripts run and it asks for a token.
-    The full round trip (--studio) needs start-studio.py"""
+    The Studio's own checks are tools/check-studio-github.py (Studio plan T1.4; local mode was dropped)"""
     srv, base = serve(ROOT); errs = []
     ctx = b.new_context(viewport={'width': 1280, 'height': 860}); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS); pg = ctx.new_page()
     pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
@@ -2689,9 +2698,10 @@ def main():
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
         if '--selftest' in ARGS:
             in_game_test_whole(b, base, R)
-        elif '--studio-only' not in ARGS:
+        else:
             phone_flow(b, base, R)
             in_game_test_step(b, base, R)
+            actions_sheet_step(b, base, R)
             if SMOKE:
                 studio_opens(b)
             else:
@@ -2710,7 +2720,6 @@ def main():
                 except Exception as e:
                     problems.append(f'desktop: {str(e).splitlines()[0][:200]}')
         b.close()
-        if '--studio' in ARGS or '--studio-only' in ARGS: studio_round_trip(pw, R)
     srv.shutdown()
     if '--props' in ARGS:
         log('Props: every prop on contact sheets (validation/props/)')

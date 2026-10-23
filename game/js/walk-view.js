@@ -2,8 +2,9 @@
 /* ================= WALK SCENE: a tilt-shift diorama of the current route stop =================
    The ground is a tile map (scene.tiles, one character per tile) painted into a texture and projected row by row,
    like a camera looking down at a model railway. Props, people and hidden encounters are upright pixel billboards
-   that cast soft sun shadows. Distant hills (scene.far) stand behind the scene, haze grows with distance and a blur
-   that grows toward the top and bottom of the screen gives the miniature (tilt-shift) look.
+   that cast soft sun shadows. Distant hills (scene.far) stand behind the scene, haze grows with distance and a
+   depth blur (engine/post-effects.js, sharp round a plane of focus through what the camera is about, softer in front
+   and behind; CAM-3: the plane can lean upright, logic/lens-focus.js) gives the miniature look.
    v10: the player walks around freely (tap the ground, a building, a trainer, a road sign), townsfolk wander,
    chimneys smoke, fountains splash, windmills turn, butterflies and leaves drift by.
    Scenes and the prop catalog live in game data (scenes, scenery) and are edited in Pocket Billies Studio. */
@@ -32,6 +33,7 @@ import {
   needMaps,
   paintGroundRect,
   paintWorkerState,
+  pastureTap,
   propModelArtPaths,
   provide,
   rawHeightAt,
@@ -72,6 +74,7 @@ expose({
   GROUND_BUILDS_PENDING: [() => GROUND_BUILDS_PENDING],
   GROUND_CACHE: [() => GROUND_CACHE],
   GROUND_CACHE_SIZE: [() => GROUND_CACHE_SIZE],
+  LABEL_GOLD: [() => LABEL_GOLD],
   MAX_HOP_DOWN: [() => MAX_HOP_DOWN],
   MAX_STEP_RISE: [() => MAX_STEP_RISE],
   NATURAL_EDGE_WALLS: [() => NATURAL_EDGE_WALLS],
@@ -132,6 +135,7 @@ expose({
   drawSpeech: [() => drawSpeech, v => (drawSpeech = v)],
   drawSpeechTail: [() => drawSpeechTail, v => (drawSpeechTail = v)],
   drawTapMark: [() => drawTapMark, v => (drawTapMark = v)],
+  drawWalkMark: [() => drawWalkMark, v => (drawWalkMark = v)],
   encodeBase64Array: [() => encodeBase64Array, v => (encodeBase64Array = v)],
   encounterCandidates: [() => encounterCandidates, v => (encounterCandidates = v)],
   encounterSpot: [() => encounterSpot, v => (encounterSpot = v)],
@@ -252,6 +256,8 @@ export function setUpdatePlayer(v) {
 export const walkView = {
   cv: null,
   x: null,
+  /* the Actions sheet's marker over a hub building ({ act, label }: walk-tab.js walkMarkTo, drawn by drawWalkMark) */
+  mark: /** @type {{ act: string, label: string } | null} */ (null),
   id: null,
   sc: null,
   ground: null,
@@ -2267,7 +2273,7 @@ export function mapHub(sc) {
 export const STEP_GRID_CACHE = new WeakMap(),
   MAX_STEP_RISE = 0.34,
   MAX_HOP_DOWN = 1.8;
-export function decodeBase64Array(s, Type) {
+function decodeBase64Array(s, Type) {
   if (!s) return null;
   try {
     const b = atob(s),
@@ -2480,6 +2486,9 @@ export function stepEdgeShape(sc, E) {
         }
       }
   };
+  /* the land under each cell's middle (IS-9: a slope's rise counts toward a step on one level) */
+  const L = new Float32Array(w * h);
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) L[j * w + i] = rawHeightAt(sc, (i + 0.5) / 2, (j + 0.5) / 2);
   for (let it = 0; it < 10; it++) {
     let ch = 0;
     for (let q = 0; q < w * h; q++)
@@ -2506,7 +2515,25 @@ export function stepEdgeShape(sc, E) {
           if (ii >= w || jj >= h) continue;
           const r = jj * w + ii,
             D = Math.abs(H[q] - H[r]);
-          if (D <= 0.05) continue;
+          if (D <= 0.05) {
+            /* IS-9: on one level the land's own slope counts too: a rise you could walk up (land and shaping
+               together, cell middle to cell middle) stays one you can (it was 0.13 m on a slope, 0.38 m shaped) */
+            const land = L[q] - L[r];
+            if (Math.abs(land) > MAX_STEP_RISE) continue;
+            const av = c => (SN[c * 4] + SN[c * 4 + 1] + SN[c * 4 + 2] + SN[c * 4 + 3]) / 4,
+              base = H[q] - H[r] + land,
+              dv = av(q) - av(r),
+              lim = Math.max(Math.abs(base), 0.3);
+            if (Math.abs(base + dv) > lim + 1e-4) {
+              const tt = clamp(dv > 0 ? (lim - base) / dv : (-lim - base) / dv, 0, 1);
+              for (let k = 0; k < 4; k++) {
+                SN[q * 4 + k] *= tt;
+                SN[r * 4 + k] *= tt;
+              }
+              ch++;
+            }
+            continue;
+          }
           /* a step you could take stays one you can take (0.3 m, or as it was); one you couldn't keeps at least 0.45 m (or all of a lower one) */
           for (let n = 0; n < 2; n++) {
             const A = q * 4 + ka[n],
@@ -2806,7 +2833,15 @@ export function navGrid() {
       if (M && M.box && !M.walk) {
         const w = M.box[0] * (p.s || 1),
           d = M.box[1] * (p.s || 1);
-        each(p.x - w / 2, p.z - 0.1, p.x + w / 2, p.z + d, q => (blk[q] = 1));
+        /* the look pass: a turned building blocks its turned footprint here too (it blocked its unturned box, which
+           can lie over its own door) */
+        if (p.rot) {
+          const B = turnedBounds(p, -w / 2, -0.1, w / 2, d);
+          each(B[0], B[1], B[2], B[3], (q, x, z) => {
+            const [lx, lz] = pointInProp(p, x, z);
+            if (lx >= -w / 2 && lx <= w / 2 && lz >= -0.1 && lz <= d) blk[q] = 1;
+          });
+        } else each(p.x - w / 2, p.z - 0.1, p.x + w / 2, p.z + d, q => (blk[q] = 1));
       }
     }
   /* arches: you walk between the piers, not through them */
@@ -3151,6 +3186,10 @@ export function handleWalkClick(ev) {
     P = walkView.pl;
   if (h && h.k === 'buddy') {
     if (typeof buddyTap === 'function') buddyTap();
+    return;
+  }
+  if (h && h.k === 'ranchBilly') {
+    if (typeof pastureTap === 'function') pastureTap(h.uid);
     return;
   }
   if (h && h.k === 'folk') {
@@ -3520,8 +3559,10 @@ function movePlayer(st, dt) {
       }
       /* phase 08: a light push walks slowly, a full push walks; running (the ring, the d-pad's centre, Shift, or a full
          push with "Always run") is RUN_FACTOR faster. The keys and the d-pad push fully. */
-      const run = walkView.run || K.run || (km > 0.92 && alwaysRun()) ? RUN_FACTOR : km < 0.5 ? 0.6 : 1,
-        s = WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l);
+      const run = walkView.run || K.run || (km > 0.92 && alwaysRun()) ? RUN_FACTOR : km < 0.5 ? 0.6 : 1;
+      /* CAM-2: whether you run, for the camera's ease out (walk/camera.js) */
+      P.running = run === RUN_FACTOR;
+      const s = WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l);
       let nx = P.x + (wx / l) * s,
         nz = P.z + (wz / l) * s;
       if (OrbM) [nx, nz] = orbitWalkStep(OrbM.c, P.x, P.z, wx / l, wz / l, s, OrbM.dead || 0);
@@ -3532,6 +3573,7 @@ function movePlayer(st, dt) {
     } else if (P.route) {
       const tg0 = P.route[P.ri],
         d0 = Math.hypot(tg0[0] - P.x, tg0[1] - P.z) || 1;
+      P.running = !!(K.run || alwaysRun());
       let left =
         WALK_SPEED *
         (P.rush || 1) *
@@ -4011,7 +4053,7 @@ export function drawExitLabels(C, st, hits, hub) {
       lx,
       ly,
       txt,
-      e.locked ? '#B54A55' : e.dest ? '#C99A1E' : '#2E7D5B',
+      e.locked ? '#B54A55' : e.dest ? LABEL_GOLD : '#2E7D5B',
       e.locked ? '🔒' : null
     );
     hits.push({
@@ -4025,6 +4067,46 @@ export function drawExitLabels(C, st, hits, hub) {
       go: walkablePointNear(pt[0], pt[1]),
     });
   }
+}
+/* a label's gold: an exit you're headed for, the Actions sheet's marker */
+const LABEL_GOLD = '#C99A1E';
+/* the Actions sheet's marker (walk-tab.js walkMarkTo): a gold label bobbing over the building with that act, above its
+   own label when that shows; at the screen's edge, pointing the way, when the building is off screen. It goes once
+   you stand near the building, or when the building isn't in this map (a room, a run) */
+export function drawWalkMark(C, t, labels) {
+  const M = walkView.mark,
+    sc = walkView.sc;
+  if (!M) return;
+  const p = sc && (sc.props || []).find(q => q.act === M.act);
+  if (!p || Math.hypot(walkView.pl.x - p.x, walkView.pl.z - p.z) < 6) {
+    walkView.mark = null;
+    return;
+  }
+  const x = walkView.x,
+    m = Math.max(10, C.rw / 40),
+    sf = walkView.opt.safe ? walkView.opt.safe() : [0.1, 0.85],
+    top = Math.max(64, C.rh * 0.12, sf[0] * C.rh),
+    bot = Math.min(C.rh - m * 4, sf[1] * C.rh - 8),
+    bob = reducedMotion ? 0 : Math.round(Math.sin(t / 260) * canvasPixels(4)),
+    own = labels.find(l => l.k === 'act' && l.act === M.act),
+    q = own ? { x: own.x, y: own.y - canvasPixels(26) } : worldToScreen(C, p.x, standingHeightAt(p.x, p.z) + 5, p.z),
+    gold = LABEL_GOLD;
+  if (q && q.x > m && q.x < C.rw - m && q.y > top && q.y < bot) {
+    drawLabelPill(x, q.x, q.y + bob, `${M.label} ↓`, gold);
+    return;
+  }
+  /* off screen: the way to it, from the screen's middle (or, behind the camera, from you along the ground) */
+  const dx = q ? q.x - C.rw / 2 : p.x - walkView.pl.x,
+    dy = q ? q.y - C.rh / 2 : p.z - walkView.pl.z,
+    side = Math.abs(dx) > Math.abs(dy) * 1.2,
+    txt = side ? (dx > 0 ? `${M.label} →` : `← ${M.label}`) : dy > 0 ? `${M.label} ↓` : `${M.label} ↑`,
+    S = labelPillSize(x, txt, null),
+    half = S.w / 2,
+    cy = (top + bot) / 2,
+    k = Math.min(Math.abs((C.rw / 2 - m - half) / (dx || 1e-6)), Math.abs((bot - cy) / (dy || 1e-6))),
+    lx = clamp(C.rw / 2 + dx * k, m + half, C.rw - m - half),
+    ly = clamp(cy + dy * k, top + S.h + 4, bot);
+  drawLabelPill(x, lx, ly + (side ? 0 : bob), txt, gold);
 }
 export function drawTapMark(C, t) {
   const T = walkView.tap;

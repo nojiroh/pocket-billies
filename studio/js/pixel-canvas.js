@@ -61,6 +61,7 @@ expose({
   gamePalette: [() => gamePalette, v => (gamePalette = v)],
   gamePaletteMemo: [() => gamePaletteMemo, v => (gamePaletteMemo = v)],
   imageOf: [() => imageOf],
+  livePixelCanvases: [() => livePixelCanvases],
   pictureImage: [() => pictureImage],
   pixelCanvas: [() => pixelCanvas, v => (pixelCanvas = v)],
   pixelCanvasAct: [() => pixelCanvasAct, v => (pixelCanvasAct = v)],
@@ -68,7 +69,9 @@ expose({
   pixelCanvasColor: [() => pixelCanvasColor, v => (pixelCanvasColor = v)],
   pixelCanvasDeselect: [() => pixelCanvasDeselect, v => (pixelCanvasDeselect = v)],
   pixelCanvasFit: [() => pixelCanvasFit, v => (pixelCanvasFit = v)],
+  pixelCanvasGone: [() => pixelCanvasGone],
   pixelCanvasInk: [() => pixelCanvasInk],
+  pixelCanvasLive: [() => pixelCanvasLive, v => (pixelCanvasLive = v)],
   pixelCanvasLock: [() => pixelCanvasLock, v => (pixelCanvasLock = v)],
   pixelCanvasOnion: [() => pixelCanvasOnion, v => (pixelCanvasOnion = v)],
   pixelCanvasPanel: [() => pixelCanvasPanel, v => (pixelCanvasPanel = v)],
@@ -93,6 +96,21 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ artStepPut });
 /* to-module: end */
+/* Studio plan T6.6: a canvas's listeners on document go as soon as its canvas leaves the page (a closed editor, a
+   redrawn pane), not at the next key: each kept a detached canvas alive. One observer, on while a canvas is live */
+const livePixelCanvases = new Set();
+const pixelCanvasGone = new MutationObserver(() => {
+  for (const P of livePixelCanvases)
+    if (!P.cv.isConnected) {
+      P.off.abort();
+      livePixelCanvases.delete(P);
+    }
+  if (!livePixelCanvases.size) pixelCanvasGone.disconnect();
+});
+function pixelCanvasLive(P) {
+  if (!livePixelCanvases.size) pixelCanvasGone.observe(document.body, { childList: true, subtree: true });
+  livePixelCanvases.add(P);
+}
 export function pixelCanvas(stage, o) {
   const id = n => (o.ids ? ` id="${o.ids}${n}"` : '');
   stage.innerHTML = `<div class="px-wrap"${id('Wrap')}><canvas class="pc-art"${id('Cv')}></canvas><div class="px-grid"${id('Grid')}></div><svg class="pc-over"${id('Parts')}></svg></div>`;
@@ -118,15 +136,16 @@ export function pixelCanvas(stage, o) {
     showOff: false /* pixels not on the game palette show in magenta */,
     showOnion: false,
   };
+  P.off = new AbortController();
+  pixelCanvasLive(P);
   bindPixelCanvasEvents(P);
   const onArt = ev => {
-    if (!P.cv.isConnected) return document.removeEventListener('studio-art', onArt);
     if (P.o.path && ev.detail.path === P.o.path()) {
       if (P.o.changed) P.o.changed(P);
       drawPixelCanvas(P);
     }
   };
-  document.addEventListener('studio-art', onArt);
+  document.addEventListener('studio-art', onArt, { signal: P.off.signal });
   return P;
 }
 /* ---------- the panel the hosts put beside the canvas: symmetry (and the palette and onion skin) ---------- */
@@ -233,13 +252,16 @@ export function artStep(path, before, after) {
   updateTopBar();
 }
 /* studio track ST-3: several pictures changed at once, one step of the undo; [path, before, after] each, before null
-   for a new picture (undoing it drops the picture) */
-export function artSteps(list, snapshot) {
+   for a new picture (undoing it drops the picture). `parts`: the data as it is now (snapshotParts), when the pictures
+   changed data too; the data's change since the last step is then undone with them (Studio plan T1.2) */
+export function artSteps(list, parts) {
   const steps = list.map(([path, before, after]) => artStepOf(path, before, after)).filter(Boolean);
   if (!steps.length) return;
-  if (snapshot) clearTimeout(studioState.snapT);
-  else commit(true);
-  historyArtGroup(studioState, steps, snapshot);
+  if (parts) {
+    clearTimeout(studioState.snapT);
+    studioState.snapT = null;
+  } else commit(true);
+  historyArtGroup(studioState, steps, parts);
   updateTopBar();
 }
 function artStepOf(path, before, after) {
@@ -669,16 +691,11 @@ function bindPixelCanvasEvents(P) {
   P.stage.addEventListener('pointerup', panEnd);
   P.stage.addEventListener('pointercancel', panEnd);
   const space = ev => {
-    if (!P.cv.isConnected) {
-      document.removeEventListener('keydown', space);
-      document.removeEventListener('keyup', space);
-      return;
-    }
     if (ev.key !== ' ' || (ev.target.closest && ev.target.closest('input,textarea,select,button'))) return;
     ev.preventDefault();
     P.space = ev.type === 'keydown';
     P.stage.classList.toggle('pan-ready', P.space);
   };
-  document.addEventListener('keydown', space);
-  document.addEventListener('keyup', space);
+  document.addEventListener('keydown', space, { signal: P.off.signal });
+  document.addEventListener('keyup', space, { signal: P.off.signal });
 }

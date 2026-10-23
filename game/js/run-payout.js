@@ -10,10 +10,10 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, renderOverlay } from './hooks.js';
-import { ITEMS, RELICS, RULES } from './game-data.js';
+import { RELICS, RULES } from './game-data.js';
 import { billyName } from './logic/rules.js';
 import { payoutOf } from './logic/run-state.js';
-import { runPayoutRows, runReleasePays } from './logic/run-loop.js';
+import { runItemPrice, runKept, runPayoutRows, runReleasePays } from './logic/run-loop.js';
 import { fxOfRun, fxPayoutRates } from './logic/effects.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
@@ -21,7 +21,6 @@ import { jinglePlay } from './sound.js';
 import { runEndHome } from './run.js';
 /* eslint-disable no-func-assign */
 expose({
-  runItemPrice: [() => runItemPrice],
   runPayoutDone: [() => runPayoutDone, v => (runPayoutDone = v)],
   runPayoutNow: [() => runPayoutNow, v => (runPayoutNow = v)],
   runPayoutOpen: [() => runPayoutOpen, v => ((runPayoutOpen = v), provide({ runPayoutOpen }))],
@@ -29,8 +28,6 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ runPayoutOpen });
 /* to-module: end */
-/** an item's shop price, for the payout's items line (0 for none) @param {string} id */
-const runItemPrice = id => (ITEMS[id] && ITEMS[id].price) || 0;
 /** what the run pays as it stands: the same sum runEnd pays */
 function runPayoutNow() {
   const s = saveData,
@@ -100,7 +97,7 @@ function runPayoutDone() {
   const run = saveData.run;
   if (!run) return;
   const won = !!run.at.won,
-    keep = won ? saveData.team.map(m => m.uid) : saveData.team.filter(m => m.uid === uiState.runKeep).map(m => m.uid);
+    keep = runKept(saveData.team, won, uiState.runKeep);
   if (!won && !keep.length) return;
   uiState.runKeep = null;
   uiState.runPayoutPlayed = false;

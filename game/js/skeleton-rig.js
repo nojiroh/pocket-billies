@@ -40,6 +40,7 @@ expose({
   rigCanvasAnimator: [() => rigCanvasAnimator],
   rigCanvasHTML: [() => rigCanvasHTML, v => (rigCanvasHTML = v)],
   rigFrame: [() => rigFrame, v => (rigFrame = v)],
+  rigFromMeta: [() => rigFromMeta, v => (rigFromMeta = v)],
   rigMatrices: [() => rigMatrices, v => (rigMatrices = v)],
   rigParts: [() => rigParts, v => setRigParts(v)],
   rigPose: [() => rigPose, v => (rigPose = v)],
@@ -509,8 +510,15 @@ export function rigParts(sp, k = 1, coat) {
   artImg(path);
   if (!artReady(path)) return null;
   const atlas = coatAtlas(ART_CACHE.img[path], path, sp, view, coat);
+  return (RIG_PARTS_CACHE[key] = rigFromMeta(meta, atlas));
+}
+/* studio plan T5.6: a rig put together from one view of its metadata (rigs-next.js) and its sheet: the pieces cut
+   out, the bones given their pictures, its clock and lag. The game's rigParts and the Studio's previews (sprites.js
+   rigFor, on the Studio's own rigs and pictures) both use it, so both animate the same way. */
+export function rigFromMeta(meta, atlas) {
+  /* at least 1 x 1: a box the Studio is editing can be empty for a moment (no rig in the game has one) */
   const cut = ([x, y, w, h]) => {
-    const c = makeCanvas(w, h);
+    const c = makeCanvas(Math.max(1, w), Math.max(1, h));
     c.getContext('2d').drawImage(atlas, x, y, w, h, 0, 0, w, h);
     return c;
   };
@@ -522,7 +530,7 @@ export function rigParts(sp, k = 1, coat) {
     return { ox: e.ox, oy: e.oy, v, c: v.idle || v[names[0]] };
   });
   const bones = meta.bones.map(b => Object.assign({}, b, { img: b.i >= 0 ? imgs[b.i] : null }));
-  return (RIG_PARTS_CACHE[key] = {
+  return {
     k: meta.k,
     BW: meta.BW,
     BH: meta.BH,
@@ -532,10 +540,10 @@ export function rigParts(sp, k = 1, coat) {
     plan: meta.plan,
     geo: meta.geo,
     bones,
-    anim: animFor(meta.plan, meta.q),
+    anim: animFor(meta.plan, meta.q || {}),
     clock: meta.clock || 0,
     lag: bones.some(b => b.lag),
-  });
+  };
 }
 /* phase 17: a robot's rig, drawn from its parts (robot-art.js); the game hands over robots.json as ROBOTS, the Studio
    its own copy (setRobotRigData). While its pictures load it is drawn with stand-ins and asked for again. */

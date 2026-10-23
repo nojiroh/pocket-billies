@@ -2,6 +2,113 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-7b - Settings: layout - 2026-10-23
+Branch `ccr-305ae8d3-6ivodu` (PR #147, with UI-7a). Decisions from the owner's question round (docs/phases/ui-track.md,
+UI-7).
+- Changed (one cause per commit):
+  - One `settingsReset` (moved from debug-menu.js to settings-screen.js) for Settings and the debug menu's Erase
+    save; it stops a battle in progress (Settings' own copy left it running under the new save).
+  - Start over: from the footer beside Done to a red section at the foot of the Save tab. The Save card shows runs
+    won (`meta.wins` of `meta.runs`) and Billies taxed, not km walked. Customize trainer left the Save tab (the
+    trainer card's Edit look does the same).
+  - Time, weather and season: out of Settings, into a debug-menu section (same preferences).
+  - Help: a Report a problem box (Full test, Export debug log); the diagnostics test joined the debug menu's
+    Performance row, which already had the graphics and cost tests (the bowl map test is under Trainers and world).
+  - Seven tabs: Sound, Display (key `graphics`), Controls, Accessibility (`access`), Game, Save, Help; they wrap onto
+    two rows at 390 px. Settings opens on the last tab used (`preferences.setTab`), else Sound.
+  - Translations (tab names, Report a problem, Start over and its note, shortened under the 80-character limit).
+  - Quick check: the screens step opens the seven tabs; High contrast is looked for under Accessibility.
+  - Docs: ui-track.md (as built), ROADMAP, CHANGELOG, TESTING, graphics-bench.md.
+- Risky or unfinished:
+  - CI's `smoke` (check-fast) is red on three camera checks (CAM-1 follow, CAM-2 moments, the debug log's camera
+    line): the same on main 1713a8c9 (reproduced in a worktree). Copperleaf's island orbit camera against checks
+    written for the walk camera; commented on PR #147 with two fixes for the owner to pick.
+  - Help's How to play still describes the legacy game (towns, roads, map arrows, eggs on real time).
+  - The debug menu still has the bowl map test twice and phase codes in its labels: UI-7c.
+- Verified: lint, typecheck, check:modules, format:check, unit tests (791); smoke (local, no problems); in a browser:
+  Start over during a battle (battle stopped, no errors), the Save tab and its Start over, the debug menu's time,
+  weather and season (preferences set), seven tabs at 390 px (no sideways scroll), the last tab kept, German labels.
+  The full-check steps that open Settings (safety, sound, desktop) were still running when this was written.
+- Next: UI-7c (the debug menu), in a new session at the owner's word.
+
+### UI track UI-7a - Settings: Sound - 2026-10-23
+Branch `ccr-305ae8d3-6ivodu`. The owner asked for clearer settings and debug menu; plan and a question round in Plan
+Mode, answers recorded in docs/phases/ui-track.md (UI-7). Three steps; this is the first.
+- Changed (one cause per commit):
+  - audio/levels.js: `preferences.mutes` (a muted bus is 0, its level kept); a unit test.
+  - Settings → Sound: the Test buttons go; a slider plays its sound once when let go (`testVolume` on `change`; the
+    music slider not while a song plays); a mute button per row (`.vol-mute`; the Volume row's is `preferences.mute`,
+    the header button's); a drag on a muted slider unmutes it; the effects slider's tick while dragging went.
+  - The Sound on/off switch went (it did what the Volume row's mute does); its hint moved to the Volume row.
+  - Translations for the four new mute labels; the Test string went.
+  - Quick check: the Sound settings step releases sliders instead of pressing Test, and checks each row's mute.
+  - Docs: ui-track.md (UI-7 decisions, UI-7a/b/c rows), ROADMAP, CHANGELOG, TESTING.
+- Risky or unfinished:
+  - Not heard on a phone. On iOS a slider's `change` comes when the finger lifts; check it sounds then.
+  - Keyboard arrows on a slider fire `change` on every step, so each press plays the sound.
+  - The music slider is silent when no song is playing only if `soundEngine.song` is null; while a song is fading out
+    after `musicStop` it may count as none.
+- Verified: lint, typecheck, check:modules, format:check, unit tests (791 pass); smoke check (no problems, before the
+  switch removal commit); the Sound settings step alone after each code commit; a 390 px screenshot of the tab; the
+  German labels read from the page.
+- Not run: the full quick check (due at the end of UI-7). Tag `ui-7a-done` (local; tags may not push).
+- Next: UI-7b (the settings tabs), at the owner's word.
+### Actions sheet rework for the roguelite - 2026-10-23
+Branch `claude/bold-davinci-vrss2q`, pushed to main at the owner's word. The owner's picks: a bottom sheet; on a run
+the run status and this node's actions; in the hub, shortcuts (Start a run and the clinic open at once, the ranch and
+the lab get a marker to walk to); Tab on a computer; keep the "?" cards; challenges hidden for now; no Actions
+indoors; buddy card, requests, rest stop, money card, gold-arrow buttons and the joystick note removed; Give up the
+run stays on the Map tab; the place card shows name, type and weather; the label stays "Actions"; a tap closes it.
+- Changed (one cause per commit):
+  - The sheet was page content under the scene, so any scroll (a mouse wheel, a trackpad) slid it up. It is now the
+    kit's `<pb-sheet id="walkSheet">` (walk-tab.js `walkSheetSync`, `uiState.walkSheet`), opened by the Actions
+    button or Tab, closed by Esc, Tab, the scrim, a drag down, any button in it, or a render that leaves the world.
+    The walk screen no longer scrolls. pb-sheet takes `--sheet-max` (58vh here).
+  - Run: day chip, node type, today's and tomorrow's weather with its move effect (logic/run-loop.js
+    `runSheetStatus`, `weatherEffectText`, `runBattleWeather`; unit tests), What's here (nodeActions), Wild Billies
+    here, Open the map to move on. Hub: Start a run (`walkrun`), ranch and Hazel's lab marked in the world
+    (`walkView.mark`, walk-view.js `drawWalkMark`; gone within 6 m, in another map, or when the sheet opens).
+  - Removed: gold-arrow buttons, money card, joystick note (now a one-time toast, `preferences.walkTip`), paid rest
+    stop, requests list, buddy card; challenges hidden (`CHALLENGES_SHOWN` false: no card, no toast, still counted).
+  - Fixed: a new encounter card had class `pop`, which battle-screen.css uses for damage numbers, so it hung over
+    the heading (now `enc-new`). Walk keys stop while the sheet is open (was a test on scrollY).
+  - Check: smoke and full `actions_sheet_step` (TESTING.md). Dead CSS dropped; ui-lint ceilings lowered.
+- Risky or unfinished:
+  - Not tried on a phone. Tab is taken only while nothing outside the sheet has the focus; Shift+Tab never.
+  - The full quick check was not run (the owner asked to push first); the in-game full test neither.
+  - Tags can't be pushed from here (403 before); no tag made for this rework (not a numbered phase).
+  - rules.json `battle.restCost` stays, unread. The loading tip "gold arrows lead you there" is stale.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build, unit tests 794; smoke 16 of 16 (168 s);
+  check-fast: three camera steps fail (CAM-1, CAM-2, debug log camera line), the same on the base commit 29e66011;
+  check:ui: run-hud 0.2% off, the same on the base commit.
+- Questions waiting for the owner: bring challenges back (hub only) or drop them; should the sheet show the team's
+  HP or the held Loopholes later; remove `restCost` from the data.
+- Next session starts with: the owner's phone test of the sheet, then the full quick check.
+### Tooling - Repo admin workflow (tags and branch deletion for cloud sessions) - 2026-10-23
+Branch `claude/optimistic-maxwell-vhge6s`. Not a phase: asked for by the owner so sessions can make tags and clean up
+branches (the git proxy refuses both with HTTP 403).
+- Changed: `.github/workflows/repo-admin.yml`, run by hand (workflow_dispatch). `create-tag`: a lightweight tag on a
+  commit, names `legacy` or `<name>-done` only, an existing tag is never moved; on a `phase-*` tag it starts the Check
+  workflow on the tag with `baseline=true`, since a tag made with GitHub's own token starts no workflows (a dispatched
+  Check also runs the selftest job, which a pushed tag doesn't). `delete-branches`: never main, legacy, the default
+  branch, archive/* or a branch with an open pull request; the run summary lists each branch's last commit.
+  `dry_run` is on by default. docs/BRANCHES.md says to use it.
+- Branch naming (owner's ask): docs/BRANCHES.md "Naming and long plans" (the kinds of branch and their names; a
+  plan of several sessions lives on one `track/<plan>` branch named in its plan file, every session starts on it and
+  checks it, the branch stays after its PRs merge) and a CLAUDE.md line pointing there. The workflow never deletes
+  `track/*`. The old tip to turn on "Automatically delete head branches" is reversed: it would delete a track branch
+  on every merge. Existing long branches (`sound`, `RL-10b`, ...) keep their names until their plans end.
+- Risky: the workflow can delete branches and runs with `contents: write`. Anyone who can push could edit it on a
+  branch and run that copy; only people with write access can run workflows at all. To limit it to main's copy, give
+  the job a GitHub environment that only allows main (Settings -> Environments).
+- Verified: actionlint clean; both scripts run against a stand-in `gh` (protected names, open PRs, missing branches,
+  dry run, empty list, bad and existing tag names, the phase-tag Check start). Not run on GitHub yet: it must be on
+  main first.
+- Done after the merge (PR #146): dry runs of both actions on GitHub, then the `legacy` tag (0314a22) and the
+  clean-up, 157 branches down to 22 (docs/BRANCHES.md lists what is left and why; each deleted branch's commit is in
+  the Repo admin run summaries). Found: "Automatically delete head branches" is on (the owner should turn it off, see
+  BRANCHES.md); `sound` holds SND-6, 13 commits, not merged and with no PR.
+
 ### Sound track SND-5 - Battle and run music - 2026-10-22
 Branch `sound` (PR #120). Plan approved by the owner's "Start", without picks on the two "Ask me before" items, so
 the recommendations were taken (and named as such in the commits): **the red zone plays a tense variant of the battle
@@ -285,6 +392,1486 @@ stay on Sound effects, volumes stay in the save, the mute goes in the settings s
 - Questions waiting for the owner: none new. The track's later asks (SND-2's biome-to-song mapping) come with SND-2.
 - Next session starts with: SND-2, the tracker as data (docs/phases/sound-track.md): the fingerprint baseline first,
   then the split into `game/js/audio/tracker.js`, `music.json`, `songFor`, biome music in a run, idle timers.
+### Island track IS-8 - Barn and pasture - 2026-10-22
+Branch `claude/is-8-pasture`, from `claude/island-look` (the look pass, PR #133, not merged yet); the PR goes against
+main, so its diff shrinks once #133 merges (then merge main in). Ran beside IS-9 (dressing, variety and the phone pass)
+and the look pass. Plan approved in Plan Mode; question 8 answered: **the ranch's Billies roam, up to ~6**.
+- Changed (one cause per commit):
+  - **The pasture, a build step of its own** (tools/build-pasture.mjs, `pastureProps`): build-copperleaf.mjs runs it
+    just before writing the map, and it runs alone on the map as it stands (`node tools/build-pasture.mjs`). It takes
+    every prop off the pasture zone, then lays the fence along the zone's outline made straight and 1.2 m inside it
+    (logic/pasture.js `pastureFenceLine`): `fence_wood` sections (overlapping a little, never a gap), a
+    `fence_wood_post` at each corner; a 2.4 m gap on the side nearest the barn's door with `fence_gate` (act
+    `pasture`, label Pasture) swung open into the field; the `water_trough` by the gap; the `hay_feeder` with two
+    `hay_round` in the middle; two more bales. 65 props on Copperleaf. Only `props` changes, only inside the zone; a
+    rerun writes nothing. Unit-tested (tools/test/pasture.test.mjs): every prop in the zone, outside untouched, a rerun
+    the same, the fence closed but for the gap (a flood fill on the game's blocking rules, seen failing with any rail
+    left out), the hub as built carries it.
+  - **The Billies** (logic/pasture.js, unit-tested; world-billies.js `pastureItems`, beside the buddy and drawn the
+    same way): up to `rules.ranch.pasture` (6, a placeholder; check-data 0-12, types) of the Billies in storage, the
+    trainees first, then the highest levels, never the buddy. Each wanders inside a line 1.1 m inside the fence, in
+    straight walks that never cross it and keep clear of the trough and the hay; now and then a hop. Who's out is read
+    every second (a Billie moved to the team or packed for a run leaves). Nothing is saved: they spread out afresh when
+    the map opens. Not drawn from more than 75 m away.
+  - **Taps**: a pasture Billie is a tap target (`ranchBilly`): it hops and cries, then the ranch's sheet opens. The
+    gate's act `pasture` opens the sheet where you stand. The Studio's act list has it.
+  - **Checks and debug**: `?fixture=pasture` (the ranch's save at the gate); check-fast "The pasture" (three wander
+    inside the fence and stay there; the one beside you is a tap target and a tap opens the sheet; the gate opens it
+    without walking into the barn; one moved to the team leaves; seen failing with the tap target removed); the in-game
+    "The ranch" phase checks the trainee comes first and the gate stands in its zone; the debug log's ranch line has
+    `pasture` (a count).
+  - Docs: the track file ("Done in IS-8", question 8 answered), ROADMAP, CHANGELOG.
+- Where the plan was wrong or short: see the track file's "Done in IS-8" (a gate with act `ranch` walks into the barn;
+  a prop's box blocks for every placement, so the gate stands open; `ranch.pens` is unused). The fixture's Billies are
+  a first-stage species, about rabbit size on the field: that is the species' own size (the wild ones are the same).
+- Verified: unit tests 623 (5 new); lint, typecheck, check:modules, format:check, check:data (a planted `pasture: 13` caught);
+  check-fast 26 of 26 (Copperleaf's walking checks pass through the gate); smoke no problems; headless phone pictures
+  (390 x 760) of the gate, inside the field and round the fence. The full quick check (at 926fee5, 34 min): 10 problems,
+  none this PR's: the 8 stale steps red on main too (roster counts 117/61 in v35/v38/v39, the v34 biped walk cycle,
+  v44's props scene, v46's buildings without a plan, alpha 0.4's empty bush recipes, phase 08's running), IS-5's
+  Copperleaf terraces (596 cells, the same on the base: 58419→57823 there, 58233→57637 here, the fence's own cells
+  the only difference) and v31's bowl map camera (red on the base commit 5044991 too, run alone on both).
+  CI's smoke was red once on "The pasture": reproduced with the page's CPU slowed, it showed who's out was re-read by
+  frame time (capped a frame), so a Billie moved to the team lingered on slow frames; now the real clock, and the
+  check taps a point that answers as the Billie with the buddy's walk off (3 of 3 pass slowed 4x and 6x).
+- Risky:
+  - Up to six more rigs drawn on the hub (the buddy's frame cache, 320 frames, is shared); not measured on a phone
+    (IS-9 measures frame times).
+  - The rabbits' `life` area is the pasture's box, so they hop over the fence now and then (life doesn't walk the nav
+    grid). Left alone: IS-9 owns the animals.
+  - Rerunning build-copperleaf or build-pasture rewrites the pasture's props: hand edits to them in the Studio are lost.
+  - If the look pass or IS-9 moves or reshapes the pasture zone, rerun build-island then build-copperleaf: the fence
+    and the Billies' line both follow the zone.
+- For the sessions alongside: **IS-9**: the pasture step clears its zone first, so dressing there is taken off; leave
+  the pasture zone out of the dressing step. When the branches meet, build-copperleaf.mjs's only change here is one
+  import and one call line; rerun the tools, never hand-merge copperleaf.json (or hooks.js: `npm run modules`).
+- Phone check wanted: walk to the barn and its pasture; look at the fence from round it; walk in through the gate; tap
+  a Billie (some in storage first: the ranch's sheet, or the debug menu) and the gate; move one to the team and see it
+  leave; export the debug log (`ranch.pasture`).
+- Next: IS-9 (dressing and the phone pass). Tag `is-8-done` is the owner's to push.
+
+### Island track IS-9 - Dressing, variety and the phone pass - 2026-10-22
+Branch `claude/is-9-dressing`, from `claude/island-look` (the look pass, PR #133, not merged yet); PR #136 against main
+(merge main in once #133 lands). Ran beside IS-8 (the barn's pasture: its zone is left alone). Plan approved in Plan
+Mode with the owner's answers: a **mixed, dense forest**; **steps up to the cut-off shelves** (the rest dressed as rock);
+**4-6 gulls and 4-6 crabs**; **5-6 wild patches** by the woods and heath (question 5); **far trees flat** if the phone is
+slow.
+- Changed (one cause per commit):
+  - **Terrace rounding keeps a slope's step walkable** (walk-view.js `stepEdgeShape`): on one level the land's own
+    rise between half-metre cells now counts toward the step the rounding may make. It promised "a step you could take
+    stays one you can" but checked the terrace's height alone; on a slope 0.13-0.22 m rises became 0.34-0.40 m (over
+    `MAX_STEP_RISE` 0.34). Every map's terraces go through it; only cells on a slope beside a rounded face change.
+  - **Copperleaf's ground** (build-island --dials, then build-copperleaf): forest span 120 -> 200, deep 18 -> 40,
+    density 0.7 -> 0.9 (forest ground 1,650 -> 2,692 m², north-west round to north-east); `wild.n` 4 -> 6, each patch by
+    the forest or the heath. Ground letters, patches and the walking checks only; heights, steps and plots identical.
+  - **tools/island-dress.mjs**, build-copperleaf's last step (`--no-dress` leaves it off; its dials are
+    tools/data/copperleaf-town.json `dress`): 428 props, each `dress: 1`. 151 trees (oak, beech, birch, hazel, rowan
+    low; pines and larch from 2.5 m and 6 m up), thinner to the forest's edge, glades by noise, a few stepping onto the
+    meadow; the forest floor; meadow flowers and lone trees; heath bushes; beach grass on the dunes, driftwood, shells,
+    shore rocks; boulders, scree at the foot of the shelves' faces, cairns every 25 m of trail, the summit lookout on
+    the top. Never in the pasture's, barn's or town's zone, on a plot, street, path, the trail, water, by a bridge,
+    before a door, on the hub or a person's spot, solid in the wild grass, on a slope or a shelf edge; a solid prop
+    that shuts walkable ground in is taken out again (the walk grid with and without). New island-dress.test.
+  - **Gulls and crabs**: 3 + 2 gulls over the two beaches, 6 crabs at two spots on each beach's wet sand.
+  - **check-fast's Copperleaf step**: a tap from the square reaches the coast at 8 bearings; the dressing is there and
+    none of it in the pasture.
+  - **tools/island-perf.py**: frame cost at the 8 coast places, headless (draws per pass, props drawn, frame times).
+- Where the brief was wrong or short (the track file's "Checked in IS-9"): the forest had no trees at all; the cut-off
+  shelves were ~150 m² in two pockets (IS-5's 1,500 m² was the old seed) and their cause was the engine's rounding, so
+  no stairs or rock dressing were needed; the three house fronts aren't blocked (fences either side of a ~2 m gap,
+  stepping stones; every door a tap away); far trees are already pictures past ~20 m (Engine > World > tree detail and
+  tree count), so that fallback is a setting.
+- Verified: unit tests 621; lint, typecheck, check:modules, format, check:data; check-fast's Copperleaf step (14
+  walking checks, 13 doors, the coast at 8 bearings, 159 wild spots all in the patches); the reach with and without
+  the rounding equal (58,419 cells); headless pictures (coast N, E, W, NW, the summit, from above; three house fronts).
+  check-fast 25 of 25; smoke no problems; full quick check (32 min): 9 problems, the 9 on main (roster counts 117/61,
+  the biped walk cycle, empty bush recipes, buildings without a plan, the props scene, the bowl map camera, the running
+  step's division by zero); **the terrace step passes on Copperleaf now** (IS-5's finding 1) and RL-7 and RL-8 pass
+  after it (IS-5's finding 2 gone with it). CI green.
+- **Frame cost** (tools/island-perf.py, 390 x 760, low graphics, software drawing: the milliseconds compare builds
+  only; draws carry over):
+
+  | Coast | N | NE | E | SE | S | SW | W | NW |
+  |---|---|---|---|---|---|---|---|---|
+  | Draws, bare island | 243 | 164 | 275 | 351 | 303 | 228 | 178 | 445 |
+  | Draws, dressed | 843 | 1045 | 1333 | 1284 | 1082 | 1002 | 1100 | 1313 |
+  | of which sprites | 399 | 605 | 855 | 761 | 643 | 589 | 665 | 616 |
+  | Dressing without trees | 371 | 350 | 469 | 466 | 397 | 383 | 359 | 563 |
+  | ms headless, bare -> dressed | 321 -> 368 | 255 -> 380 | 262 -> 342 | 311 -> 381 | 300 -> 398 | 283 -> 367 | 257 -> 348 | 294 -> 438 |
+
+  The game's own graphics draw about the same (823-1,296 where measured). Boot to the first frame 10.6 s -> 10.8 s.
+  **For the phone**: A8 measured the Android phone (Adreno 750) at about 1.1-1.5 ms of processor time per 100 draws,
+  and the owner's budget is **400 draws a frame on phones** (A8, 2026-10-19). The bare island was already over it
+  facing north-west; dressed it is 2-3x over: expect roughly 12-20 ms of processor time in draws alone, so likely under
+  30 fps at the game's own values, while that phone also waits on its graphics chip. The trees are three quarters of
+  it (4-5 draws each: crossed pictures, shadow, reflection). Levers: `dress.trees` (0.5: 77 trees, about -300 draws;
+  0.35: 59), Engine > World > tree count and detail, or phase 20's batching (sprites one call each today).
+- Risky:
+  - The rounding fix touches every map's terraces (on slopes beside a face); the full quick check's terrace step
+    compares the walk on every place.
+  - Rerunning build-copperleaf rewrites every prop, dressing included: hand edits to Copperleaf's props are lost
+    unless folded into the input file or the tools (IS-5's note stands).
+  - IS-8 adds the pasture's props: it should do it in build-copperleaf before the dressing step (the dressing keeps
+    out of the zone anyway), so the two meet by rebuilding.
+  - The ground is meant to be locked after the owner's play test: lock it in the Studio's Hub island editor then
+    (build-island refuses a locked map).
+- **Phone test for the owner** (Start Game, on the island):
+  1. Debug menu > Performance > Show FPS meter.
+  2. Walk the coast road a full lap holding right on the joystick (about 2 minutes); stop for 5 seconds at each of the
+     8 compass points (the camera faces the middle: north is the forest side, the town is south-east).
+  3. Walk into the forest on the north side, then up the trail to the summit and the lookout; try the two corners of
+     the summit's top that used to be cut off.
+  4. From the square tap the far west beach (a long tap-walk across the island); watch the gulls and crabs there.
+  5. Go into the lab and out again (it faces west).
+  6. Debug menu > Export debug log, and send it. It holds each second's frame times, draw calls per pass (`dc`,
+     `dcp`), the orbit's angle and the scene; no save data or names. If it runs under 30 fps, say so and pick: fewer
+     trees (`dress.trees`), Engine > World > tree count, or phase 20's batching next.
+- Next: the owner's phone test and debug log; then lock the ground (Hub island editor); IS-8 meets this branch by
+  rebuilding. Tag `is-9-done` is the owner's to push.
+
+### Camera track CAM-3 - The diorama blur - 2026-10-22
+Branch `CAM-3`, from `CAM-2` (draft PR #132, not merged; its later commits, the HANDOFF entry among them, merged in).
+Draft PR #134 against `CAM-2`. Plan approved in Plan Mode; the owner chose to start before `cam-2-done` was pushed
+(it still isn't), the talk focus between you both, the slider replacing the Expert dial, a tilt of about 0.7 from
+pictures with no edge blur and Miniature as a preset only.
+- Changed (one cause per commit):
+  - **The blur timed on its own**: `drawDepthOfField` and `drawPostRest` (diagnostics "blur" and "final pass").
+  - **The plane of focus tilts** (logic/lens-focus.js, 9 unit tests; Engine > Lens > Tilt of the sharp zone): a
+    pixel's distance from any plane is `z*(g0+gx*u+gy*v)-h`, so no extra pass; tilt 0 is the old slab to the bit.
+  - **Samples count where their blur reaches** (Gustafsson): no halo round sharp things; a blurred thing in front
+    spills over sharp pixels; in front of the focus everything behind counts as before.
+  - **The blur's amount at full size** in the composite (no blocky edges).
+  - **A cheap blur on the slowest setting** (dual Kawase) instead of none.
+  - **Edge blur** (0), **Miniature look** dial and a **Miniature** preset, **Focus moves in** (0.35 s).
+  - **Settings > Graphics > Blur** (Off, Low, Medium, Strong; walks and battles); the Expert "Depth of field" dial
+    is gone.
+  - **The focus follows the moments**: the middle of you and who you talk to (whole talk), the encounter's spot in
+    the swoop, a boss as revealed, a tapped spot as before.
+  - **Studio**: Blur guides (the sharp ground tinted, the focus point, a status line) and Blur heatmap.
+  - **Debug log**: a `lens` section (path, focus on, focus, lean, tilt, blur, slider; no names). check-fast "Blur
+    focus" (planted fault caught); the debug log step wants `lens`. tools/look-blur.py (pictures).
+  - **The game's look**: engine.json `focusTilt` 0.7. Fixes on the way: the blur's dead `st.focusY` factor; the
+    slider's word stuck out of the Graphics tab (v31 caught it).
+- Where the plan was wrong (camera-track.md "CAM-3 as built"): a player blur dial already existed (Expert, an
+  override); no background clamp ever; the composite drew the amount up bilinearly; talking moved the focus 2.6 s
+  only and the swoop never; no per-pass GPU time in play; the plan's prep pass isn't needed.
+- Verified: unit tests 602; lint, typecheck, modules, format, check-data; check-fast 24 of 24 (Tall ground still
+  16.9 m of rock, 18.0 degrees); tools/look-tall-ground.py the same numbers before and after, pictures within 1.1 of
+  255; CI's smoke, lint and rules green on the PR. In one frame, tilt 0 drew as before to float rounding (then made
+  exact). Headless Studio: Blur guides and heatmap drawn, no errors. tools/look-blur.py: 12 pictures, each path as
+  meant (full, off at the slider's Off, cheap at quality 4), no errors. Full quick check against a local baseline
+  from the starting commit: the same 9 steps red as before (v34, v35, v38, v39/v40, v43, v44, v46, alpha 0.4
+  recipes, phase 08 running). 14 of 56 pictures differ clearly, all looked at: timing (battles at another moment,
+  screens caught mid-change or with the postcard up, you mid-walk in a04-airship-mast and v34-copperleaf) and, in
+  the walk scenes, the tilt (the mast and what stands where you are a little sharper).
+- Risky / open:
+  - **Not measured on a phone.** The blur pass reads 4 more depth samples a pixel (the probes) and works out the
+    plane per sample; the composite reads full-size depth once more. Measure: Settings > Help > the diagnostics test
+    (the "blur" and "final pass" times) on `cam-2-done`'s build and on this one, or the debug overlay's GPU ms
+    standing in Copperleaf, the slider at Medium then Off.
+  - Not tuned on a phone: the tilt (0.7), the talk focus between you both, Focus moves in, the cheap blur's
+    strength. Battles keep the slab (no tilt).
+  - The Studio's heatmap flag (`walkView.opt.dofView`) stays on if you leave the Engine section with it on (other
+    Studio previews would show it until it's turned off).
+  - CI's picture baseline is stale after the merge: Actions > Check > Run workflow > "Make the picture baseline".
+- Phone check wanted: Copperleaf with the slider at each step (Off must look plain, Strong soft); talk to someone
+  (both of you sharp); a wild battle's swoop (the spot sharp); the GPU time as above; the Studio's Engine > Lens
+  dials, the Miniature preset, Blur guides and heatmap; export the debug log (`lens`).
+- Next: the owner pushes `cam-2-done` and `cam-3-done`; the camera track is done. The next session: RL-10b (Ranch B,
+  passive income).
+
+### Camera track CAM-2 - Moments of interest - 2026-10-22
+Branch `CAM-2`, from `CAM` (CAM-1, PR #127, not merged yet). Draft PR #132 against `CAM`. Plan approved in Plan Mode
+with every recommendation: moments multiply your pinch zoom; the encounter hands over when the camera arrives (at most
+900 ms); camera zones as a tool only, none placed. The CAM-1 HANDOFF entry reached `CAM` during planning; `cam-1-done`
+is still to be pushed.
+- Changed (one cause per commit):
+  - **One zoom** (logic/camera-zoom.js, 7 tests): tilt, distance and field of view from one zoom along curves (Engine >
+    Camera > Zoom curve); defaults equal the old zoom. The zoom used = your zoom x the goals' (`blendGoals` `zoom`).
+  - **Encounter shot and the pull back out** (battle.js, walk/camera.js): goals instead of writing `zoomT`; the
+    battle comes up once the camera arrives (400-900 ms).
+  - **Points of interest** (logic/camera-interest.js, 6 tests; walk/sprites.js `interestPoints`): landmarks, shop,
+    clinic, lab and ranch doors, or a catalogue `interest`; the strongest leans the aim (at most 1.5 m) and zooms.
+  - **Moments** (logic/camera-moments.js, 9 tests): talk (two-shot), a run's boss (once), interest, standing still
+    (drift in), running (ease out); none after a sharp turn; reduced motion: drift and ease off, the rest at half.
+  - **Camera zones**: `camZones` in a scene (schema), carried by the seamless world; Studio Walk scenes > Camera zones.
+  - **Studio**: dials; Camera guides draw interest rings, zones and the moment; "Play moment" (talk, encounter, boss,
+    standing still). The Engine preview asks for moments (`walkView.opt.moments`), other previews don't.
+  - **Debug log**: `camera` adds `zoomEff`, `moment`, `interest`, `zone`, `still`.
+  - **Checks**: check-fast "Camera moments" (planted fault caught); the debug log step wants the moment.
+  - Fixes found on the way: a camera cut restarts standing still; your own zoom is never clamped (the Studio's free
+    camera zooms to 3.2); a finished talk's spot is forgotten (a sign's box later isn't framed toward it).
+- Where the plan was wrong (camera-track.md "CAM-2 as built"): no boss gate in the walk (the boss is a run trainer);
+  no door nearness, no idle timer, no talk-ended hook; zoom never changed the field of view; the swoop wrote your
+  zoom; Copperleaf has no shop or clinic (the lab and ranch doors count instead); the Engine preview is a free camera.
+- Verified: unit tests 593; lint, typecheck, modules, format, check-data; check-fast 23 of 23 (Tall ground still
+  16.9 m of rock, 18.0 degrees); tools/look-tall-ground.py the same numbers before and after, pictures within 0.6 of
+  255; CI's smoke, lint and rules green on the PR. Headless Studio: Play moment talk and boss show in the guides
+  (moment and zoom on the line), a camera zone drawn, edited and undone, no errors. Full quick check against a local
+  baseline from the starting commit: the same 9 steps red as before (v34, v35, v38, v39/v40, v43, v44, v46, alpha 0.4
+  recipes, phase 08 running). 13 of 56 pictures differ clearly, all looked at: battles at another moment of the turn
+  (battle-3d, -alpha, -double, -rain, v36-starter-battle), screens caught mid-change (phone-opening-pick,
+  phone-mast, phone-map, v47-lore-places, rl12-pick), life-copperleaf a different rabbit, room-lab darker but framed
+  the same (no moments indoors); a04-airship-mast is the camera: it leans toward the airship mast, a landmark.
+- Risky / open:
+  - Not tuned on a phone: the zooms (talk 0.75, idle 0.9, run 1.06), the interest lean and radius, the boss reveal.
+    The landmark lean (0.5 weight, 14 m) may feel busy in a town full of landmarks; Engine > Camera has every dial.
+  - The boss reveal needs a real run to be seen (check-fast plays it through "Play moment"). The Studio preview's
+    free camera never reports the encounter shot as arrived; there it lets go after Encounter shot: longest + 0.6 s.
+  - CI's picture baseline is stale after the merge: Actions > Check > Run workflow > "Make the picture baseline".
+- Phone check wanted: talk to someone in Copperleaf (the two-shot), stand still 5 s (the drift in; it should go the
+  moment you move), run (the ease out), walk past the lab door and the airship mast (the lean), a wild battle (the
+  swoop, and your zoom kept after), a run's boss; Studio Engine > Camera guides and Play moment; Walk scenes > Camera
+  zones; export the debug log (`camera`).
+- Merged `CAM` again at the end (main's island track, IS-1's orbit camera): CAM-2's aim points now go up the screen
+  along the orbit's direction, not north. After the merge: unit tests 643, lint, typecheck, modules, data; check-fast
+  25 of 25 (the orbit camera and Studio Hub island steps with CAM-2's, Tall ground 16.9 m and 18.0 degrees).
+- Next: the owner pushes `cam-2-done`; CAM-3 (the diorama blur) has its own session, waiting on this entry and the
+  tag.
+
+### Camera track CAM-1 - The follow - 2026-10-22
+Branch `CAM`, from the plan's branch `ccr-3d24989e-9cyftq` (PR #121, not merged yet). Draft PR #127. Plan approved in
+Plan Mode with every recommendation: with no joystick the look-ahead follows the walking direction; defaults match
+today's framing (tune in the Studio); rising ground ahead kept as a goal.
+- Changed (one cause per commit):
+  - **Blur focus** (walk-view-gl.js): 12% a frame at 60 fps, as an exact rate (was 12% of every frame).
+  - **logic/camera-follow.js** (new, 12 unit tests): an exact critically damped spring (30/60/144 fps agree to
+    0.00001 m), dead and soft zones as shares of the screen along its axes (the dead zone closes when you stop, a hard
+    limit at the soft zone), a look-ahead with its own spring (x1.5 sideways on a tall screen), a ground band, goals
+    whose weights ramp and blend (a goal no longer asked for fades as it last was).
+  - **Dials** (Engine > Camera): Look-ahead (was "Leads your walk"), its smoothing and sideways reach, Follow smoothing,
+    Dead and Soft zone width and height, Ignore ground changes under, Camera goals blend.
+  - **walk/camera.js**: the aim follows the spring; the look-ahead comes from the joystick or d-pad, else the keys,
+    else the way you walk; one goal blends the tilt, indoors, rising ground ahead, the landmark tilt, the room
+    framing and the swoop. TR-3's rise keeps its ramp and code. Yaw, zoom and the scene's tilt/height glide are exact
+    eases. The dead `st.focus` branch is gone. A room's door saves the follow's state too.
+  - **Re-anchor** (seamless-world.js): the follow's last targets, the goals' aim points, the swoop and `px/pz` shift.
+  - **Studio**: "Camera guides" on the Engine preview (zones, aim, you, goal, look-ahead arrow, mode and goals; drag
+    a zone's edge to set its dial, one undo step).
+  - **Debug log**: a `camera` section (mode, zoom, yaw, pitch, rise, goals, lead, off, moving). No names.
+  - **Checks**: check-fast "Camera follow" (planted fault caught); the debug log step wants the camera line.
+  - **Docs**: walk-view.js's blur note, CHANGELOG, camera-track.md "CAM-1 as built".
+- Where the plan was wrong (camera-track.md "CAM-1 as built"): four forces missing from the list (ground ahead, the
+  scene's tilt glide, the scene-edge clamp, the indoor wall pull); `st.focus` and `opt.instant` never set; the blur
+  numbers quoted were the code's fallbacks; no picture baseline in the repo (a CI release asset, remade by hand); the
+  Studio preview has no joystick.
+- Verified: unit tests 571; lint, typecheck, modules, format; check-fast 22 of 22 (Tall ground gives TR-3's numbers:
+  16.9 m of rock, 18.0 degrees); smoke; CI's smoke, lint and rules green on the PR. The Studio guides in a headless
+  Studio (drawn; a drag set the dead zone to 0.33). Full quick check against a local baseline made from the starting
+  commit: the same 9 steps red as before the change (v34, v35, v38, v39/v40, v43, v44, v46, alpha 0.4 recipes, phase
+  08 running); phase 08 running passes alone on both (full push 3.45 m/s), so its failure in the full run is load. A
+  first full run on a loaded machine timed out page loads in six steps; rerun quiet, they passed.
+  Pictures against that baseline (a third, quiet run): 17 of 56 differ clearly, all looked at. Most are timing, not
+  the camera: rl12-pick's "before" was still black (loading), phone-map caught the postcard, the battles a different
+  moment of the turn, life-copperleaf a different rabbit (picked at random) and so a different spot. The walk scenes
+  that move the player and take the picture a second or two later (water-edge, a04-copperleaf, autumn) frame a
+  little differently because the spring's catch-up curve differs: measured after a 10 m jump, 1.42 m left at 0.5 s
+  (old 1.46 m), 0.25 m at 0.8 s (old 0.50), 0.03 m at 1.2 s (old 0.14). Standing still the framing is as before.
+- Risky / open:
+  - The feel isn't tuned: at a slow walk the dead zone eats most of the look-ahead (headless: the aim 0.07 m ahead of
+    you against 0.34 m before). Tune Dead zone and Look-ahead on the phone with the Studio guides.
+  - The swoop still halves `zoomT` (one zoom curve is CAM-2); room and swoop pulls now ramp in 0.15 s on top of the
+    spring, so a swoop arrives a little later than before.
+  - CI's picture baseline (release `baseline-0.1.0-alpha`) is stale after the merge: Actions > Check > Run workflow >
+    "Make the picture baseline".
+- Phone check wanted: walk Copperleaf with the joystick both ways and in portrait (the look-ahead, no lurch when you
+  stop), a landmark (the tilt fades in and out), into a room laid into the place and out, a battle's swoop, the
+  Mountains run (TR-3 as before); the Studio's Engine > Camera guides; export the debug log (`camera`).
+- Merged with main after the entry above (main had gained the island track, IS-1..IS-4, IS-6a, IS-7): the IS-1 orbit
+  sets the base direction and the follow turns with it (camera-track.md, "CAM-1 as built"). Conflicts: walk/camera.js
+  (both kept), the pages' module lists, check-fast's header, CHANGELOG, HANDOFF and ROADMAP (both kept). After the
+  merge: unit tests 621, lint, typecheck, modules, format, check-data; check-fast 24 of 24. **Open, the owner's call**:
+  the orbit's own yaw lag and dead zone and the follow's spring are still two smoothing models; making them one
+  changes the island camera's feel.
+- Next: the owner pushes `cam-1-done`; CAM-2 (moments of interest) has its own session, waiting on this entry and the
+  tag.
+
+### Camera track - planned - 2026-10-22
+Branch `ccr-3d24989e-9cyftq`. A planning session only: no code changed.
+- Changed: docs/phases/camera-track.md (new: verified facts about the walk camera and the blur, outside research,
+  the owner's answers, sessions CAM-1..CAM-3); ROADMAP.md lists the track.
+- Where the brief's picture was wrong: the blur is already depth based (not a screen band, as walk-view.js's header
+  still says); talking only moves the blur's focus, not the camera.
+- Verified: nothing to run (docs only).
+- Next: CAM-1 (the follow), starting in Plan Mode.
+
+### Studio plan Phase 3b - Loopholes, balance mode, compare, the Simulate card (T3.3, T3.4) - 2026-10-23
+Branch `claude/sr-3-sim-balance` (draft PR #138). Plan pre-approved with the recommended options (the owner's
+standing instruction, relayed by the parent session); decisions recorded in the plan doc, "Decisions (owner, Phase 3)".
+
+**Plan** (one cause per commit, failing test first where a rule moves; commit and push after every ticket)
+1. T3.3, the simulator's gaps:
+   - the arrival heal (`runArrivedFx`) moves into logic (`run-loop.js runArriveFx`), shared by the page and the sim;
+   - a run shop's wares through the run's unlocks: one logic function (`runShopOpen`) for shop.js and the sim (the sim
+     drew from the unfiltered table);
+   - the pick after a mini-boss answered by the policy: `relics: 'greedy'` (rarest, then id; past the cap only for a
+     rarer one, letting the plainest go) or `'never'` (the "never pick" baseline policy, `never-pick`);
+   - a run shop's Loophole bought under the same setting, keeping the policy's reserve;
+   - a test that the sim's run starts through `runStartPlan` with the save's unlocks (biomes);
+   - the stats the dashboard needs: lost row, money in and out, Loopholes held, foes by leader;
+   - balance mode (`scenes: 'skip'`): no `runScenesMake`; each place is a lite map (the game's own `_lite`) whose ground
+     includes tall grass. **Town grass decision (recommended):** stand in "every run place has tall grass"; measured
+     344 of 344 towns and 650 of 650 routes over 80 maps (none and all unlocks). The equality test runs the same
+     seeds in both modes and fails if a generator change ever breaks it. Acceptance: same outcomes, >= 20x faster.
+2. T3.4 pure parts: `logic/sim-compare.js` (Wilson 95%, paired differences, flips, a data hash); the CLI's `--out`,
+   `--compare=base.json`, `--balance`, `--policy`; unit tests.
+3. T3.4 dashboard: merge `origin/claude/sr-2-run-lab` (merge commit); a "Simulate" card in the Run Lab with two workers
+   (Base: the loaded data, Draft) on the same seeds, the policy banner on every table, policy-driven metrics marked,
+   at most 200 seeds; a stand-in step running 5 seeds in check-studio-github.py.
+
+**Changed** (one cause per commit; the scratch harness compared every run's log for SIM0-SIM49 at three setups,
+defaults / team 3 + all unlocks / team 3 + 5 Potions + 4 fights, after each simulator commit)
+- **T3.3, the game's side** (each a logic function the page and the simulator both call; check:fast after each):
+  - `run-loop.js runArriveFx`: the arrival heal's composition (run.js `runArrivedFx` was `fxHealShare` + `runArriveHeal`).
+  - `run-loop.js runShopOpen`: a run town's wares through the run's unlocks (shop.js did `unlockOpen` itself).
+- **T3.3, the simulator** (`game/js/logic/run-sim.js`):
+  - a town's wares through `runShopOpen` (it drew from the unfiltered table: 12 of 50 logs' shop lists change, no
+    outcome);
+  - walking in heals by the held Loopholes (`runArriveFx`): output-neutral (none held then);
+  - `SIM_POLICY.relics`: `greedy` (rarest by `rules.run.relics.rarity` weight, then id; past the cap only for a rarer
+    one, letting the plainest go) and `SIM_POLICIES['never-pick']`; `simRelicChoice` is the pure choice. The pick after
+    a mini-boss goes through `relicChoose`: output-neutral, because **none of 150 runs beats a mini-boss**;
+  - a town shop's Loophole (`relicShelf`, `relicBuy`, its price with the price rows), bought keeping `reserve`: 16 of
+    50 runs change at the defaults, 11 and 15 at the other setups; where runs are lost doesn't move; Capital 81.6 ->
+    81.2, 82.4 -> 81.8, 117.2 -> 116.2 (money spent before a loss pays less). 48 of 49 shelves are bought;
+  - the log names the map's nodes (type:biome), and a test checks they are `runStartPlan`'s for the save's unlocks;
+  - stats: `lostRow`, `moneyIn` {prize, reward}, `moneyOut` {heal, shop, relics}, `foes` [{leader, type, won}],
+    `relics` held at the end (a test: start money + in - out = money left);
+  - **balance mode** (`scenes: 'skip'`, CLI `--balance`): no `runScenesMake`; each place is `{ _lite: { tiles: 't' } }`
+    (`SIM_LITE_PLACE`, the game's own lite map). **150 of 150 runs equal to the full mode** (every log and stat but
+    the scenes' seeds); **266 times faster** (2.2 ms a run against 573 ms here). Tests: equality on 12 seeds at two
+    setups, the speed (>= 20x), and the tall-grass stand-in on real scenes.
+- **T3.4, pure:** `game/js/logic/sim-compare.js` (`simWilson`, `simPaired`, `simSummary`, `simCompare`,
+  `simCompareReports`, `simSeeds`, `simBanner`, `simDataHash` (FNV-1a of the data without `maps`), `SIM_BROWSER_CAP`
+  200) and its unit test; `runReport(seeds, o)` in the core (the report the CLI writes and the card shows: runStats's
+  numbers, seeds, options, mode, data hash, every run's stats as `results`, the summary); `spent` and `relics` are
+  policy-driven too; the CLI's `--balance`, `--policy`, `--out`, `--compare=base.json`. On the Studio page beside
+  run-sim.js (the pages must reach every file the lint reads).
+- **T3.4, dashboard:** merge of `origin/claude/sr-2-run-lab` (a merge commit; HANDOFF, the plan's decisions and
+  studio/index.html both kept; the worker's module list gains run-sim.js and sim-compare.js). Then:
+  - **the worker, extended (not rewritten):** `logic-client.js` has a second slot, `logicWorkerBase`, and
+    `logicAskBase(fn, ...args)`, on `studioState.loadedText` (the whole data as loaded, as JSON text the way
+    `logicDataText` makes it, kept at boot beside `studioState.loaded`, which holds only five tables).
+    `logicWorkerStart`/`logicWorkerStop` take the slot (the draft's by default). Message shapes unchanged.
+    `LOGIC_WORKER_FNS.runSimReport` (`studio/js/logic-worker-sim.js`: the simulator's env from the modules the worker
+    already loaded, named; at most 200 seeds); a unit test: the worker's answer equals the CLI's report.
+  - **the Simulate card** (`studio/js/run-lab-sim.js`; run-lab.js only adds the card): seeds (5-200), policy, party
+    (one / three / three + 5 Potions), unlocks; Base and Draft in parallel; tables per run, losses by place and by
+    row, money in and out, Loopholes held, leaders beaten; the banner on every table; policy-driven rows marked; both
+    hashes; Export JSON.
+  - **stand-in step** `run_lab_sim` in check-studio-github.py: 5 seeds; no changes -> the same runs, the same hashes,
+    Base equals the CLI's summary in Node; a banner on each table, the policy-driven rows as the report names them;
+    the clinic price doubled (unsaved) -> a paired difference and a new Draft hash, the Base worker not made again;
+    500 seeds asked -> 200.
+- Docs: STUDIO.md (Simulate), TESTING.md (the CLI flags and tests), CHANGELOG, the plan's decisions 4 and 5.
+
+**Acceptance (T3.4)**, CLI, 200 seeds, team 3, balance mode: the same data compares as "the same runs" (every
+difference 0, one hash); `healCost` 60 -> 120 gives healed +18.2 [13.2, 23.2], money left -10.3 [-16.1, -4.6],
+Capital -1.0 [-1.6, -0.4], 49 runs changed, won 0 -> 0. In the card (5 seeds): healed +12 [-11.5, 35.5]. A unit test
+does the same on 40 seeds.
+
+**Where the plan doc was wrong or short**
+- A6's "no unlock filtering": the map was already through `runStartPlan` (T2.1); the shop stock was not.
+- "keep-one": done in T3.2 (`runKept`). "fx in battles and payout": done in T3.2 too; the arrival heal was the gap.
+- The Loophole pick moves no number today: no simulated run beats a mini-boss (0 of 150; 0 wins in every setup).
+  Shop Loopholes are the only Loopholes the numbers see until the roster or the policy changes.
+- Balance mode's speedup is bigger than "20x": the scenes are ~99.6% of a run here.
+- "Base, the loaded commit's data": the Studio holds the data it loaded; Base is that (kept as text at boot), not a
+  fetch of the commit.
+
+**Verified**
+- Unit tests: 691 pass (`npm test`); lint, typecheck, `check:modules`, `format:check` after each change.
+- check:fast after the arrival heal (25 checks; one problem, UI-5's team screen, passed alone: a timing flake while
+  another check:fast was running), after the shop (the run, Loopholes, Lab and room checks), and at the end: one run
+  failed UI-5 again (the bag screen this time; it passed alone twice), the next full run passed 26 of 26. The commit
+  this session started from passed 25 of 25. UI-5 looks timing-sensitive in full runs on this machine (a full run
+  takes ~12 minutes here); worth watching in CI.
+- `check-studio-github.py --only=publish,run_lab,run_lab_sim`: publish 0 problems, run_lab and run_lab_sim pass.
+- On the build (`npm run build`, `check-studio-github.py dist --only=run_lab_sim`): the card works; the page logs 404s
+  for the Run Lab's "rules in code", which reads source files the build leaves out (Phase 2's, also with `run_lab`
+  alone; on dist `run_lab` also reports those lines and a 136 ms redraw).
+- **Not run:** the full quick check (no quick-check baseline in this container; 40 min), the phone and iPad checks.
+
+**Risky**
+- Game code: run.js `runArrivedFx` and shop.js `openShop` now call logic functions (the same steps as before).
+- The Base worker holds a second copy of the data (~2.5 MB text, plus the worker's own); on an iPad two workers run
+  at once while simulating.
+- Simulated numbers are a bot on legacy stand-in species: the banner says so on every table.
+
+**Next**
+- Close Phase 3: the full quick check, then the tag `sr-3-done`.
+- Owner's manual check: in the Run Lab, Simulate with 200 seeds; change `healCost` and Simulate again; say whether
+  the compare is understandable (T3.4's manual acceptance); on the iPad, how long 200 seeds take.
+- Policies the plan named but this session didn't add: `cautious` (undefined) and `never-catch` (easy:
+  `taxWhileBelow: 0`).
+- The Run Lab's "rules in code" on the built site (404s): read the lines at build time, or hide the list there.
+
+### Studio plan Phase 3 (first session) - The simulator on the game's own rules (T3.1, T3.2, T3.5) - 2026-10-23
+Branch `claude/sr-3-sim-balance`, draft PR #138 against Phase 2's `claude/sr-2-run-lab` (PR #135). The plan was approved
+with its recommended options (the owner, through the parent session; recorded in the plan doc, "Decisions (owner,
+Phase 3)"): this session T3.1, T3.2 and T3.5; Phase 3b (next session) T3.3 and T3.4's pure parts; T3.4's dashboard
+after Phase 2's worker (T2.4). The session stopped once on the usage limit and went on from the same branch.
+
+**Changed** (one cause per commit; tests first where a rule moved):
+- **T3.1.** `game/js/logic/run-sim.js` `runSimOn(env)`: the core, handed `{modules, fn, hooks, data, gameData, logic,
+  beforeRun}` instead of importing them (no imports, so no load-order effect; on the Studio page beside run-start.js
+  for the worker). `tools/test/sim/run-sim.mjs` is its Node host: it loads the logic, reseeds util.js random before
+  each run (`beforeRun`) and writes the report. Proof: the report (without `seconds`) and every run's log for
+  SIM0-SIM49, at the defaults and at `--team=3 --unlocks=all`, byte-identical before and after.
+- **T3.2, the game's rules, shared** (each a logic function the page and the simulator both call):
+  - `run-loop.js runBattleExtra`: a run battle's seed, weather (clear is sunny) and Loopholes; run.js's
+    `runBattleWeather` is gone.
+  - `run-loop.js runClinic` + `effects.js fxRunPrice`: the clinic (walk-tab.js) and run prices with Loophole rows
+    (run.js `runClinicEach`, shop.js `warePrice`/`shopRelic`). The simulator used `rules.run.healCost` and the coin's
+    base price without Loopholes.
+  - Potions: the game's `applyItem`.
+  - `battle-engine.js startWild/startTrainer(…, {host, extra})`: the simulator starts battles through them (the boss
+    team, format, doubles and the market opening came from its own copies; the market never applied).
+  - `battle-engine.js catchKeep/catchOffer/catchOfferAnswer`: battle.js `finishThrow` and battle-input.js's offer
+    buttons. The simulator now draws the foe's offer after a miss (and refuses it), as the page does.
+  - `battle-rewards.js battleSettle/battleSettleWin` (owner's decision): `endBattle`'s save side (rewards with the
+    battle's Loopholes, a run battle's checkpoint, Hype counter, lead streak, encounter, prize, reward, flag, a
+    mini-boss's pick of Loopholes). The sheets, seats and the tutorial stay in battle.js, in the same order.
+  - `run-loop.js runKept/runItemPrice`: run-payout.js; the simulator ends through `runEnd` with
+    `fxPayoutRates` (it summed `payoutOf` itself).
+  - `SIM_POLICY` (`greedy-forward`): every number in run-sim.js that isn't a game rule is a named setting (home, fights,
+    fightAbove, potionBelow, clinic, penniesUpTo, reserve, taxWhileBelow, ring, offer, lane, keep). The report
+    carries `policy`, `policyDriven` (caught, healed, moneyLeft) and a note: a regression detector, not a balance
+    oracle. `MAX_TURNS` (60) is labelled a loop guard: the game ends battles at `rules.battle.turnCap` (40).
+- **T3.5.** `tools/balance-report.py` deleted (owner's decision).
+- Docs: TESTING.md, CHANGELOG, the plan's decisions.
+
+**What moved in the numbers** (50 seeds each; 0 wins in every setup before and after):
+- Only one commit changed outcomes: the offer drawn after a missed throw. It shifts the rest of that battle's draws
+  onto the page's stream. Defaults: 46 of 50 runs changed; lost at landing 28->26, town 8->13, route 10->8, mini-boss
+  4->3; Capital 84.4->81.6. `--team=3 --unlocks=all`: 49 changed. Team 3, 5 Potions, 4 fights: 46 changed.
+- Every other rule was output-neutral on these seeds. The reasons are named, not assumed: no Loopholes are held
+  (T3.3 adds picks), and none of the 150 runs fought the one leader with a market (`crude`; few runs reach a
+  mini-boss). Unit tests cover those paths.
+
+**Where the plan doc was wrong or short**
+- `runs.json` holds `seconds`, so "byte-identical" means the report without it, plus every run's log (stronger).
+- 50 runs at defaults were landing 28 / route 10 / town 8 / mini-boss 4 after T2.1, not the review's 31/7/11/1.
+- A run is ~300 ms here, 98% of it `runScenesMake` (2,887 of 2,953 ms over 10 runs): the ratio the plan gave.
+- The simulator copied more rules than the four F13 named, and two of the named four were already wrong (the clinic
+  and coin prices ignored Loopholes). The boss team matched the game but was a copy.
+- `startTrainer` with a host could not get a run battle's seed (run.js `runBattleStart` returns null when a host is
+  given), hence `o.extra`.
+- `encounterStock` reads a run town's scene tiles (tall grass decides whether a town has wild Billies): T3.3's
+  balance mode must answer that before skipping scenes. `worldPut` takes `maps: {}` fine.
+- T3.5: balance-report.py was a species report, not a run tool; "replace it with a simulator mode" did not fit.
+
+**Verified**
+- Unit tests: 636 pass (`npm test`, 71 s here); lint, typecheck, `check:modules`, `format:check` after every commit.
+- `check:fast` after each game-side change (battle extras, clinic, catch, settle) and at the end: 25 of 25.
+- CI green on the pushed heads so far.
+- **Not run:** the full quick check (Phase 3 isn't finished: Phase 3b ends it), the phone checks.
+
+**Risky**
+- Game code changed in battle.js `endBattle`/`finishThrow`, battle-input.js's offer buttons, walk-tab.js's clinic,
+  run.js's battle start, shop.js prices and run-payout.js. Each one now calls the same function as before through
+  logic, and check:fast passed after each. The browser's catch and offer screens are only covered by the full quick
+  check (v33/v34) and by hand: **owner's manual check:** on a run, miss a throw until a foe offers money, refuse once
+  and take once; catch an Alpha; beat a mini-boss and see the Loophole pick.
+- `startWild/startTrainer` spread `o.extra` last into newBattle's options: a caller passing `extra` without a host on
+  a run gets runBattleStart's values instead (the page's own path), as intended.
+- The simulator's mini-boss wins now leave `run.offer` set (unanswered) until T3.3 answers it.
+
+**Next (Phase 3b)**
+- T3.3: answer the Loophole pick (greedy by rarity then id, and a never-pick baseline); shop Loopholes; the arrival
+  heal (`runArrivedFx`'s `runArriveHeal` + `fxHealShare`: still page-only composition, move it to logic first);
+  unlocks already go through `runStartPlan` (add a test); keep-one is done here. Balance mode: decide the town-grass
+  question first (`encounterStock`), then prove outcome equality and ≥ 20× speed.
+- T3.4 pure parts: `logic/sim-compare.js` (Wilson, paired differences, flips), `--out`, `--compare base.json`, a
+  data hash; the dashboard after T2.4.
+- My scratch harness (not committed): three setups × 50 seeds, every log compared against the previous commit. Phase
+  3b should keep that habit: commit it as a CLI flag (`--out` covers it).
+- No phase tag: Phase 3 continues in 3b.
+
+### Studio plan Phase 4 - Roguelite content editors (T4.1-T4.5) - 2026-10-22
+Branch `claude/sr-4-content-editors`, from `ccr-81011a25-lf3exv` (PR #131) with `origin/claude/sr-2-run-lab` (PR #135)
+merged in first (a merge commit). Plan pre-approved by the owner's standing instruction; the recommended option is
+taken for each decision and recorded in the plan doc's "Decisions". Other sessions own history.js, the save/undo/
+publish code, run-lab.js internals, the sim files and the workbench: this one adds beside them.
+
+**Plan** (one cause per commit; lint, typecheck, unit tests after each; the stand-in check at the end):
+0. Merge sr-2-run-lab; regenerate hooks.js with `npm run modules`.
+1. **T4.5 navigation.** Runs group: Run Lab, Loopholes (`relics`), Unlocks & hub (`unlocks`), Economy (`economy`).
+   Town shops and Jobs (both `{}`) move to Legacy with a note. World & encounters says what a run reads (the pools its
+   biomes name) and marks the rest legacy. Find indexes the new sections and their records.
+2. **Data check:** a Loophole row's factor outside effects.js `FX_LIMIT` (0.1-4) or stages past `FX_STAGES` (6) is a
+   `dataRelics` error (CI fails on it; the Studio shows it on the row).
+3. **Logic (pure, unit-tested):**
+   - relics.js `relicOfferOrder(seed, relics, rule, picks, take)`: a seed's picks in order (nothing taken, the first
+     offered, or one Loophole when offered), with the game's relicOfferMake/relicChoose.
+   - `logic/unlock-graph.js` (on the Studio page): the graph's nodes and edges, the cycle a `requires` edit would make
+     (with its path), and "what a save has" after N runs and W wins (newMeta, unlockAuto, unlockReady, runUnlocks,
+     unlockOpen).
+   - `logic/economy-view.js` (on the Studio page): every source and sink of each currency with the data path it
+     reads.
+   - `logic/content-preview.js` (worker only, like run-preview.js): `relicPreview` (fxRows, fxMult and the other fx
+     readers on a sample Billie made by rules.js, its stats before and after with the battle's stage factor),
+     `leaderRunValues` (run-loop.js runFoes on each mini-boss and boss row), `speciesStandIns` (game-data.js
+     standInSpecies).
+   - The worker's `LOGIC_WORKER_FNS` gains these four (the message shape is unchanged; documented here).
+4. **T4.1 Loopholes editor** (`studio/js/relics-editor.js`): list with rarity, weight and chance; rarity coverage
+   table; a row editor per fx kind with the code limits; data-check messages on their row; the sample-build preview;
+   the offer order for a seed.
+5. **T4.2 Unlocks & hub** (`studio/js/unlocks-editor.js`): SVG graph (a column per building, earned rows apart,
+   requires edges, currency colours); click to edit; a requires edit that closes a circle is refused naming the path;
+   buildings and currencies cards; "what a save has" after N runs / W wins.
+6. **T4.3 Leaders and encounters** (`studio/js/run-values.js` + one call each in Trainers and World): an editable
+   `miniboss` box; for a mini-boss leader the run reward and level range per row, labelled "overridden in runs"; pools
+   marked "a run reads this" by biome; legacy stand-in species marked with the stand-in the game uses (worker).
+7. **T4.4 Economy view** (`studio/js/economy-view.js`): sources and sinks by currency, each linked to its field. Phase
+   3's simulator numbers have not landed (no T3.4 dashboard on `claude/sr-3-sim-balance`): a placeholder says so.
+8. Stand-in steps in check-studio-github.py per editor (open, edit, undo, Propose carries the file); the required run
+   `--only=sections,publish,drafts,studio_test` at 0 problems.
+9. Docs: STUDIO.md, CHANGELOG, the plan's Decisions, this entry (results below once done).
+
+**Changed** (one cause per commit)
+- **Navigation (T4.5).** Runs: Run Lab, Loopholes (`relics`), Unlocks & hub (`unlocks`), Economy (`economy`). Town
+  shops and Jobs moved to Legacy (descriptions and empty-page notes say why). World & encounters has a note on what a
+  run reads and its legacy tabs say "(legacy)". Find indexes Loopholes, unlocks, buildings and currencies. No other
+  section moved.
+- **Data check.** `dataRelics`: a row's `mult` outside `FX_LIMIT` or `stages` past `FX_STAGES` is an error (the
+  Studio page loads effects.js before data-checks.js). The check-data snapshot is unchanged.
+- **Logic** (unit tests: relics, unlock-graph, economy-view, content-preview):
+  - relics.js `relicOfferOrder` (equals the run's picks; nothing / first / one id taken; cap respected);
+  - `logic/unlock-graph.js` (on the Studio page): `unlockGraph`, `unlockDepths`, `unlockCycle`, `unlockSaveAfter`;
+  - `logic/economy-view.js` (on the Studio page): `economyLines`, every line's path holds its value;
+  - `logic/content-preview.js` (worker only): `relicPreview`, `leaderRunValues` (runFoes on a one-place map per
+    mini-boss row and the boss row), `speciesStandIns`;
+  - battle-engine.js `stageFactor`: the stage multiplier `effectiveStat` used inline, now named (no behaviour change).
+- **The logic worker's message shape is unchanged.** `LOGIC_WORKER_FNS` gains `relicPreview`, `relicOfferOrder`,
+  `leaderRunValues`, `speciesStandIns`; logic-worker-modules.js imports content-preview.js, unlock-graph.js and
+  economy-view.js and re-exports the four. Ask as before: `logicAsk('relicPreview', ids, { sp, lvl })`,
+  `logicAsk('relicOfferOrder', seed, relics, rule, picks, take)`, `logicAsk('leaderRunValues', ids?)`,
+  `logicAsk('speciesStandIns', ids)`.
+- **Studio pages:** `studio/js/relics-editor.js`, `unlocks-editor.js`, `economy-page.js`, `run-values.js` (Trainers'
+  "In runs" card for a mini-boss leader, pool tags and stand-in marks; one call each in data-editors.js and
+  world-rules-art.js). Styles at the end of studio.css.
+- **check-studio-github.py:** steps `relics`, `unlocks`, `leaders`, `economy` (each: open, edit, undo, Propose carries
+  the file, plus the editor's own facts checked against the game's logic in Node).
+
+**Where the plan doc was wrong or short**
+- "An editable `miniboss` checkbox": Trainers already had one ("Mini-boss: stands on no stop", under Who and where).
+  Phase 4 adds the run values beside it instead of a second box.
+- "Rarity table coverage (check-data 525)": dataRelics only checked that something can be offered; the per-rarity
+  coverage (a rarity with a weight but no Loophole, Loopholes with weight 0) is shown on the page, not made an error.
+- The schema allows a factor of 0-4, but the code clamps a product to 0.1-4: a lone row under 0.1 never did what it
+  said. Now an error.
+- Ranch costs had no Studio field anywhere; now under Unlocks & hub.
+- The Studio's Check on this base did not yet call data-checks.js (Phase 1's later commits do): the editors call the
+  families directly, so they show the same messages either way.
+- The plan's "encounter preview of a node's wild table" is the Run Lab's node panel already (Phase 2); not repeated.
+
+**Verified**
+- Unit tests 676 pass (after the second base merge); lint, typecheck, `check:modules`, `format:check`, `check:data`,
+  `npm run build` (no logic sources left in dist).
+- `check-studio-github.py --only=sections,publish,drafts,studio_test`: **0 problems** (31 sections opened, the
+  self-test's 17 edits undone, publish 0, drafts 0). It needs `npm run data` first in a fresh checkout: without
+  game/data/gamedata.js the Roster board's 404 is reported, on the unchanged base too.
+- `--only=relics,unlocks,leaders,economy,checks`: 0 problems. Each new step opens its page, edits, checks Propose
+  carries the file, undoes, and compares the page with the game's logic in Node (Insider Tip's Speed 56 -> 84; LAB1's
+  offers equal the Run Lab's; a planted circle refused as `ranch_2 -> ranch_3 -> ranch_2`; a new save as
+  unlockSaveAfter; alta's run rows as runFoes; 213 legacy ids with standInSpecies's stand-in; 41 economy lines).
+- Looked at each page in headless screenshots (desktop width).
+- **Not run:** the full quick check (40 min) and the phone checks. Not tried on a phone.
+
+**Risky**
+- The Trainers card and the stand-in marks fill in from the logic worker after the page draws: a first open costs
+  the worker's data load (about a second here).
+- The graph's layout is by column and depth only: a building with many rows makes a tall column. Fine for today's 12
+  rows.
+- Economy lines link to the section that edits each field; a field in a Loophole or unlock opens that record first.
+  The Run Lab's rules card holds `rules.run.*`, so those links open the Run Lab.
+- `dataRelics`' new limit rule makes CI fail on a factor under 0.1 that the schema allows: intended (plan decision 15).
+
+**Next**
+- Phase 3 (T3.4): put the simulated runs' money in and out on the Economy page (`[data-eco-sim]` placeholder).
+- Phase 1c/the Check: relics.json, unlocks.json, buildings.json and currencies.json findings can now send Show me to
+  `relics` and `unlocks`.
+- Tag: `sr-4-done`.
+
+
+### Studio plan Phase 2 (second session) - Logic worker, run rules card, Play this seed - 2026-10-22
+Branch `claude/sr-2-run-lab` (PR #135, against `ccr-81011a25-lf3exv`). Plans are pre-approved in these sessions: the
+recommended option is taken for every decision and recorded in the plan doc's "Decisions".
+
+**Plan**
+0. Merge the Phase 1 base (drafts, the first `data-checks.js`, the owner's decisions) into this branch.
+1. **T2.4 spike:** what game-data.js, rules.js, run-loop.js, battle-engine.js (and what they import) touch outside a
+   Web Worker. Result below.
+2. **T2.4:** the game's logic in a module worker on the draft data.
+   - `game/js/logic/run-preview.js` (pure; reads the tables from game-data.js as the game does, so it is on no page):
+     `runPreview(seed, {unlocks, map, tier})` = the plan, foes per node (`runFoes` with the leaders run-world.js
+     passes), each town's stock per day from the day it can first be reached to the deadline (`runShopStock` with the
+     run's shop unlocks, as shop.js) and its shelf's Loophole, wild tables per node (`runWorldTables` pools), and the
+     relic offer order (`relicOffer` for picks 0..n with nothing held).
+   - `studio/js/logic-worker.js` (module worker, on no page): GAMEDATA = the draft, the page stand-ins
+     load-logic.mjs gives, then game-data.js and every logic module in load-logic.mjs's order (a unit test keeps its
+     list equal to game/js/logic/).
+   - `studio/js/logic-client.js` (Studio page): `logicAsk(fn, ...args)`; one worker per data version (the draft's JSON
+     text), made on the first ask, terminated when an ask comes with other data.
+   - The Run Lab's node panel shows the place's wild table, leader and team, shop stock by day; the run's Loophole
+     offers.
+   - Tests: a Node test that `runPreview` equals the game's own path (runStartOn on a save, then the calls run-world.js,
+     shop.js and battle.js make); a stand-in step in check-studio-github.py (`run_lab`) that opens the panel and
+     compares it with Node.
+3. **T2.5:** a "Run rules" card in the Run Lab: rules.run map, clock, reveal, wild, foes, shop, healCost, payout and
+   nodeTypes weights and names with the standard field helpers; each change redraws the map. Code-only constants
+   (lanes, the cross-link side, RUN_EXIT_T, RUN_BUILDINGS...) read-only with file:line, found by searching the source
+   so the line can't go stale (a unit test). Stand-in step: edit a rule, the map redraws, the field round-trips.
+4. **T2.6:** "Play this seed".
+   - Game, behind ?debug only: `?debug&run=<seed>&unlocks=none|all|<ids>&short=1&tier=&party=<sp@lv,...>&relics=<ids>`
+     starts a run on a fresh test save that is never saved (as TEST_RUN does), through runStartPlan/runStartOn.
+   - Studio live channel: also rules, nodeTypes, relics, unlocks, items, trainers (no save data); the game applies them
+     before the run starts (`&draft=1` waits for them as the test run does).
+   - The Run Lab's "Play this seed" button opens it.
+   - check-fast step: `?debug&run=TESTSEED&party=...` and the map equals runStartPlan's.
+   - The debug log gets `run.unlocks` (ids only), so the Lab reads the run's own unlocks.
+5. **T2.3** only if Phase 1's data-checks.js has landed: it has (one function so far; T1.3 itself has not moved
+   check-data's checks yet). Map invariants over 1,000 seeds as pure functions in data-checks.js, shown in the Lab.
+
+**The logic worker's messages (fixed; Phase 3's dashboard builds on them)**
+- Page side: `logicAsk(fn, ...args)` in `studio/js/logic-client.js` returns a Promise of the value. It sends the
+  Studio's data as it is now (`studioState.D` as JSON text, `_` keys left out); that text is the data version: the
+  same text reuses the worker, other text ends it (its waiting asks reject with `replaced`) and starts a new one.
+  `logicWorker` holds `state` ('off' | 'loading' | 'ready' | 'failed'), `loadMs`, `error`, `made`.
+- page -> worker: `{ kind: 'data', v, version, json }` once (GAMEDATA = JSON.parse(json), PB_VERSION = version), then
+  `{ kind: 'ask', id, fn, args }`.
+- worker -> page: `{ kind: 'ready', v, ms }` or `{ kind: 'failed', v, error }`; `{ kind: 'answer', id, ok: true, value,
+  ms }` or `{ kind: 'answer', id, ok: false, error }`. An ask sent before the data loaded waits for it.
+- What may be asked: `LOGIC_WORKER_FNS` in `studio/js/logic-worker.js`, name -> (modules) => function; the modules are
+  `studio/js/logic-worker-modules.js`'s exports. To add runSim: export it there, add `runSim: m => m.runSim`. The
+  worker loads game-data.js and every logic module in load-logic.mjs's order (a unit test keeps the list equal to
+  game/js/logic/: a new or moved logic module must be listed there too) and stands in for the page's hooks as
+  load-logic.mjs does (no Math.random seeding: the logic's streams are seeded).
+- `runPreview(seed, { unlocks, map, tier })` (game/js/logic/run-preview.js) returns `{ seed, tier, unlocks, map,
+  deadline, forecast, nodes: [{ wild: { lv, list }, foe, shop: null | [{ day, stock, relic }] }], relicOffers }`.
+
+**T2.4 spike: what the logic touches outside a worker**
+- game-data.js, rules.js, run-loop.js, battle-engine.js, run-scenes.js, run-start.js, run-map.js, relics.js and all
+  they import (hooks.js, test-globals.js, util.js, rng, effects, fighters, battle-state, conditions, mapgen, parts,
+  robot-math, meta-state, run-state, unlocks, weather): no `window`, `document`, `localStorage`, `navigator` or
+  `location` while loading or running, except:
+  - test-globals.js reads `window.PB_TEST_GLOBALS` and `location.search` inside a try: in a worker it is off;
+  - util.js's `$` and `$$` default to `document`, but only when called (the logic never calls them).
+- They need `globalThis.GAMEDATA` before game-data.js loads (it reads the tables once) and `PB_VERSION` (a new save's
+  gameVersion), both set by the worker.
+
+**Changed** (one cause per commit; two merges of the Phase 1 base)
+- **T2.4** run-preview.js + test (equals the game's own path for 5 seeds x none/all/short); the worker
+  (logic-worker.js, logic-worker-modules.js, unit test); logic-client.js and the Lab's "From the game's logic" panel.
+- **T2.5** logic/run-rules-code.js (11 rules in code, snippet + unit test) and the "Run rules" card beside the map.
+- **T2.6** logic/run-test.js (the address, unit test); boot.js: `?debug&run=` is a TEST_RUN that takes off through
+  runTakeOff (runTestStart); the live channel carries rules, nodeTypes, relics, unlocks, items (applied only in a test
+  run); the debug log's `state.run.unlocks`; the Lab's "▶ Play this seed"; check-fast step "Play this seed".
+- **T2.3** data-checks.js runMapProblems / runMapSweep (after Phase 1's moved checks) + unit test (1,000 seeds, about
+  150 ms); the Lab's "Over 1,000 seeds" block, run in the worker and cached while its rules stay the same.
+- check-studio-github.py `run_lab`: the panel against runPreview in Node, one worker per data version, the rules card
+  (redraw, Propose carries rules.json and nodeTypes.json, the game's error, put back leaves nothing), the code lines,
+  the sweep (clean; a planted "last row a mini-boss" named with a seed that opens), reading both log forms, Play this
+  seed in a popup (the Lab's map, an unsaved clinic price 77, a live edit to 88, no save keys on the channel).
+- Docs: STUDIO.md Run Lab, CHANGELOG, the plan's Decisions (item 9).
+
+**Where the plan doc was wrong or short**
+- The worker needs no data-version counter: the draft's JSON text is 2.4 MB now (legacy maps moved out) and
+  stringifies in about 20 ms, so it is the version.
+- `tier=` does nothing for a run's map or start today (first session's finding); left out of the address.
+- "run-map.js:102" in T2.5 is right for the lanes rule today; the card finds it by searching, not by number.
+- T2.3's "a guard row on the last row" can't be planted as written: runMapRowsFit refuses it and runMapMake throws,
+  which the sweep reports as "these rules can't make a map" with a seed. The check that matters on a map is "the last
+  row is not the boss" (rules.run.map.last), which the stand-in step plants.
+- runTakeOff calls saveNow, which calls flushAccountSave directly (setNoSaving doesn't stub it). A test run is safe
+  only because accountOn() is off for TEST_RUN; "Play this seed" relies on that, so it is a TEST_RUN.
+
+**Verified**
+- Unit tests 660 (after the second merge); lint, typecheck, check:modules, format:check, check:data.
+- `check-studio-github.py --only=run_lab,publish`: run_lab passes; publish 0 problems.
+- `check:fast`: 25 of 26 on the first full run; "Packing for a run" failed once ("no start sheet") while I was
+  editing files under the running check, then passed alone with Play this seed; after the merge, the Studio pages and
+  Play this seed pass (5 of 5).
+- Screenshots of the Lab at 1400 px: the map and rules card side by side; the logic panel.
+- **The built site** (`npm run build`, as GitHub Pages serves it): CI's build failed at first (run-preview.js, on no
+  page, was left in dist and the worker would have imported deleted sources); vite.config.js now bundles the worker's
+  module list into one file. By hand, the worker served from dist/ answered runPreview('LAB1') exactly as Node. That
+  check is not automated.
+- PR #135's CI green on afea581 (lint with the build, rules, smoke). After the third merge of the Phase 1 base: unit
+  tests 664, lint, typecheck, check:data, format, build; `check-studio-github.py --only=run_lab,checks,publish,drafts`
+  0 problems.
+- **Not run:** the full quick check (end of Phase 2), the full check-studio-github chain, a real phone or iPad.
+
+**Risky**
+- **Module workers on the owner's iPad** (Safari 15+ has them). Without one, the panel says the logic can't run; the
+  map, rules card and Play this seed still work.
+- A test run takes the Studio's rules, nodeTypes, relics, unlocks and items in place; a table the game derives from
+  them once at load (none found for the run's needs) would keep the old values.
+- The Studio page is about 900 px wide on a phone already (the top bar; every section), so the rules card sits beside
+  the map there too.
+- data-checks.js now holds Phase 1's checks and T2.3's; Phase 4 and later sessions add to the same file.
+
+**Next**
+- Phase 3: the worker's message shape above; add runSim to LOGIC_WORKER_FNS and logic-worker-modules.js's exports.
+- check-data.mjs could run runMapSweep over 1,000 seeds (CI) — one line, for its owner.
+- Manual (owner): Play this seed from the Studio on the phone; an unsaved clinic price in a run town; the Lab's
+  logic panel on the iPad.
+- **Done:** Phase 2's tickets T2.1-T2.6 are all in PR #135. Left to close the phase: the full quick check and the tag
+  `sr-2-done` (and an automated check of the built worker, if wanted: serve dist/ and ask it once).
+
+### Studio plan Phase 2 (first session) - One run start, Run Lab v1 - 2026-10-22
+Branch `claude/sr-2-run-lab`, from the Phase 0 branch `ccr-81011a25-lf3exv` (PR #131, where the plan doc lives); PR
+#135 goes against that branch. Phase 1 runs at the same time in another session from the same branch: this session
+left check.js, history.js, check-data.mjs and the save/undo code alone. Expect small merges in studio/index.html,
+studio-app.js (SECTION_LIST, groups, boot) and hooks.js (regenerate with `npm run modules`).
+The plan was approved in Plan Mode with the owner's answers: the fixture and self-test runs carry no unlocks (a fresh
+save's); the simulator defaults to none with `--unlocks=all`; the Run Lab gets a new "Runs" group; scope T2.1 + T2.2.
+
+**Changed** (one cause per commit):
+- **T2.1, one run start.** `game/js/logic/run-start.js`:
+  - `runStartPlan(seed, data, {unlocks, map, mods, tier})` decides the start without a save: `runGive`, the unlocks,
+    the map rules with only the unlocked biomes, the map, deadline, what the landing shows, the forecast.
+  - `runStartOn(s, plan, {home, pack})` puts it on a save (runBegin, mods, unlocks, a copy of the map).
+  - Commits: a frozen test of `runTakeOff`'s start first (`run-start.test.mjs`, 200 seeds x none/all/short map); the
+    move of `runGive` out of run-loop.js (it loads rules.js, which needs GAMEDATA); `runTakeOff`; the run fixtures;
+    the self-test's "A run's road"; the simulator. The frozen snapshot never changed.
+  - `runTakeOff` now makes the map before the save changes: rules that can't make a map stop the take-off with
+    nothing changed (it used to throw after runBegin, leaving a run without a map).
+  - **Fixtures** (run, mountains, relics): no unlocks, so no ridge or autumn, and `rules.run.start`'s money and items
+    (was `rules.start.se`, no items). Their pictures change.
+  - **Self-test** "A run's road": no unlocks, `rules.run.start`'s money (was 300).
+  - **Simulator**: `--unlocks=none|all`, default none; the report and each run's log name them. 50 runs, team 3: the
+    old numbers equal `--unlocks=all` exactly; the default moves a little (places 1.6 -> 1.7, battles 2.2 -> 2.4,
+    Capital 82.3 -> 84.4; 0 wins both).
+- **T2.2, Run Lab** (`studio/js/run-lab.js`, group Runs): seed (typed, 🎲, or a pasted debug log's run seed and save
+  unlocks), unlocks none/all/the log's, the debug menu's short map; an SVG map; a node's type, role, biome, links,
+  day, deadline, node seed and forecast; the same seed on the data as loaded (`studioState.loaded`, copied at boot);
+  "Copy seed + data version". An edit in the other pane redraws it (32 ms headless). The Studio page now also loads
+  meta-state, run-state, run-map, unlocks and run-start.
+- **check-studio-github.py `run_lab`**: the map node for node (type:biome) against the game's start in Node
+  (setup-real.mjs) with no unlocks and with all, the redraw after a nodeTypes edit (< 100 ms), node 3's seed, the
+  second map.
+- Docs: STUDIO.md (Run Lab), CHANGELOG.
+
+**Where the plan doc was wrong or short**
+- F13 is right, and there is no fifth start: the debug menu's run and the self-test's airship run already went
+  through `runTakeOff`.
+- The fixture changed more than biomes (money and items too). The quick-check baseline is gitignored, so "regenerate
+  the fixture's baseline in its own commit" can't be a commit: remake it locally with `--baseline`.
+- run-map.js also imports hooks.js and run-state.js (-> meta-state.js); the shared start needs unlocks.js (->
+  conditions.js) too.
+- "The cross-link 0.5" in T2.5: the cross-link chance is data (`rules.run.map.cross`, 0.25); 0.5 only picks which way
+  it crosses. In code: at most two lanes, and the exit points (`RUN_EXIT_T`).
+- Tier changes no map today (runMapMake doesn't read it), so the Lab has no tier input yet.
+- The debug log has the run's seed and the save's unlocks, not the run's own `run.unlocks` or a short map; a log taken
+  after buying an unlock mid-run would draw another map. Adding `run.unlocks` (ids only) to the log is a small game
+  change for T2.6.
+
+**Verified**
+- Unit tests 627; lint, typecheck, `check:modules`, `format:check`.
+- `check:fast` on the T2.1 code: 25 of 25.
+- In-game "A run's road" and "A run: airship, nodes, payout", headless: pass.
+- `check-studio-github.py --only=sections,studio_test,run_lab,publish`: 28 sections open; run_lab passes; publish 0
+  problems; one problem, the studio test's Rules edit not coming back with undo. It fails the same way on this
+  branch without the Run Lab: the plan's F14, T1.5's.
+- `check:smoke` (after T2.2): no problems in 158 s (Start-Game on a phone, the in-game test step, the Studio in GitHub mode).
+- **Not run:** the full quick check (Phase 2 isn't finished; it runs at the phase's end).
+
+**Risky**
+- The fixtures' and self-test's runs changed on purpose (above): any picture baseline or note that expected ridge or
+  autumn in RL7FIXTURE needs remaking.
+- `studioState.loaded` is copied right after the data loads. Phase 1's drafts (T1.1) restore into D at boot: they
+  must land after that copy, or "beside the loaded data" would compare drafts with drafts.
+- The Lab reads `D.rules.run`, `nodeTypes`, `biomes`, `unlocks` and `buildings` straight from the data; bad drafts
+  show the game's own error ("This data can't make a run") instead of a map.
+
+**Next**
+- T2.3 (map checks over 1,000 seeds) after Phase 1's T1.3, or as pure functions that move into data-checks.js later.
+- T2.4 (logic worker, spike first): only 7 lines touching window/document/localStorage in game-data.js, rules.js,
+  battle-engine.js, run-loop.js and run-scenes.js together.
+- T2.5 after T1.3; T2.6 in its own session (game boot code, a check-fast step; add `run.unlocks` to the debug log).
+- Manual (owner): play the run fixture once on the phone; compare one seed in the Lab with the debug menu's run.
+- No phase tag: Phase 2 continues.
+### Studio plan Phase 5, session 3 - The Studio bakes kit Billies ("Write Billie"), the Python builder retires, then T5.2 - 2026-10-23
+Branch `claude/sr-5-parts`, draft PR #139. Plan pre-approved with its recommended options (decision 9's standing
+instruction, relayed by the parent session); this session's choices are decision 11 in the plan doc. First merged
+`origin/ccr-81011a25-lf3exv` (Phase 1 sessions B-D: the moved checks, CI), conflicts in docs and the checks only.
+
+**Plan** (commit and push after every ticket)
+1. **T5.1 step 3, the Studio bakes.**
+   - `kitBakeWhole` in kit-assemble.js: one form's sheet, layout, rig and native parts from the data, shared by
+     `npm run bake:kits` and the Studio (the CLI moves onto it, no output change).
+   - The kit Billies' piece layouts (`game/art/next/billionaires/<kit form>.json`) retire: the game never reads them,
+     Propose has no way to send a JSON beside the art, and the one reader (the Roster board's silhouette) falls back to
+     the rig. The bake CLI and the parity test stop writing and comparing them (the rig is still compared whole).
+   - `studio/js/kit-recipe.js`: Part mode on a kit Billie shows its recipe (scale; per bone kind the part, size and
+     colour; the extras). A change bakes at once in the browser (part pictures through canvas ImageData, the game's
+     baker): the recipe, the sheet (a Studio picture), the rig and the line's native parts change together as one
+     undo step. "Write Billie" bakes the shown recipe again (after a part picture was repainted); nothing changes when
+     it bakes as it is. Propose then carries the PNG, rigs-next.js, kitBuilds.json and the line.
+   - check-studio-github.py `kit_write`: a recipe part edited in the Studio; Propose's batch has the sheet, the rigs,
+     kitBuilds.json and the line; the proposed sheet is pixel-equal to the Node bake of the same recipe and the rig
+     equal; Write Billie on an unedited recipe changes nothing; undo takes the recipe and its bake back together.
+2. **The Python builder retires** (tools/build-kit-billies.py and its preview sheet docs/samples/kit-billies.png),
+   once step 1 holds parity. The parity test compares with the committed art, so no Python fixture is needed.
+3. **T5.2** (part swap keeps the Billie whole): `skeletonFraming`'s `geo` maths into logic/rig-joints.js; refit the
+   children to the new part's sockets; keep or regenerate the blink frame; the compatibility filter with reasons; a
+   before/after preview through rigParts/rigFrame; unit tests on 3 real species.
+4. **T5.3** rig consistency checks into data-checks.js; then T5.4 and T5.7 if time allows.
+
+**Changed** (one cause per commit; the plan's choices are decisions 11-14 in the plan doc)
+- **T5.1 step 3, the Studio bakes.**
+  - `kitBakeWhole` (kit-assemble.js): one form's sheet, rig and native parts from the data; `npm run bake:kits`, the
+    parity test and the Studio all bake through it.
+  - The kit Billies' piece layouts (24 `game/art/next/billionaires/<kit form>.json`) retired: nothing in the game read
+    them and Propose can't send them. The Roster silhouette draws kit Billies from the rig; the full quick check asks
+    for each starter sheet to be drawn by a rig.
+  - `studio/js/kit-recipe.js`: Part mode on a kit Billie shows **Kit recipe** (scale, each bone kind's part, size,
+    colour, the extras). A change bakes at once in the browser: recipe, sheet, rig and native parts as one undo step,
+    so a recipe never leaves without its bake. **Write Billie** re-bakes it as it is (nothing changes when baked).
+  - check-studio-github.py `kit_write` (in CI): all 24 baked in the browser as committed; an edit proposed carries the
+    sheet (pixel-equal to the Node bake), rigs-next.js, kitBuilds.json and the line.
+- **The Python builder retired:** tools/build-kit-billies.py and docs/samples/kit-billies.png deleted. The parity test
+  needs no Python fixture (it compares with the committed art, which was the builder's output byte for byte).
+- **T5.2, part swap keeps the Billie whole.**
+  - `rigGeo` (rig-joints.js): skeletonFraming's maths moved, equal on every view.
+  - `logic/rig-swap.js`: which parts fit (the sockets the children need, with the reason), children refit (named
+    socket, else in proportion), frames (blink made again or old frames kept; torso squash again), the sheet grown
+    below, geo moved by what changed. The Studio's **Replace from Parts Library** uses it, greys misfits, and shows a
+    before/after strip (front and back × idle, blink, happy, hurt, through rigFromMeta/rigFrame).
+  - Tests: rig-swap.test.mjs on musk0, huang0, trump0; billie-library.test.mjs moved onto the logic;
+    check-studio-github.py `library_swap`.
+- **T5.3, rig checks:** `dataRigs` in data-checks.js, run by check-data and the Studio's Check (an error: blocks
+  Propose). 0 problems on today's rigs. The skeleton builder now writes `mid = cy = (top + base) / 2`.
+- **T5.4:** `rigRepack` and **Repack sheet** in Part mode (one undo step; refuses kit Billies and coat-own sheets).
+- **T5.7:** `logic/pixel-density.js` (the world's metres per pixel moved there from world-billies.js) and the Roster
+  board's **Pixel density** report. Measure only.
+- Merged `origin/ccr-81011a25-lf3exv` (Phase 1 sessions B-D) first.
+
+**Where the plan doc was wrong or short**
+- "Propose carries the PNG, rigs-next.js and the recipe": a bake also writes the line's native parts and (until now)
+  a piece layout; the layout had no way through Propose, so it retired (decision 11).
+- "geo equals what the skeleton builder computes": no stored geo does (all 258 views differ, up to 20 px): every
+  builder measured drawn pixels and took mid from the ground line. A swap moves geo by its change instead (decision
+  12), and T5.3 checks geo as far as the data agrees (decision 13).
+- "Its crest stays on the new head's crest socket": no library head has a socket for extras (heads have only `chin`;
+  only torsos have named child sockets). Horns, ears and crests keep their place in proportion, as the baker's anchors.
+- "Refit by socket through the shared slot table": partKits `socketRules` already maps sockets to slots; sides come
+  from the bone names (quad legs: near = L).
+- T5.3 "geo up to date (recompute and compare)" can't be literal (above); hw can't be checked per view (the builders
+  copied the front's to the back).
+- T5.7 battle density depends on the camera, so the report covers the world and the kit parts only.
+- **Found, not fixed (owner's call):** the skeleton builder rewrites geo's top and hw from picture boxes on every drag,
+  so an edit there changes a Billie's world height by up to 20 px. Recommended: move geo by the change, as the swap.
+
+**Verified**
+- Unit tests 665 pass; lint, typecheck, `check:modules`, `format:check`, `check:data` (0 rig problems).
+- Parity green at every commit; `bake-kit-billies.mjs --check`: every form as committed.
+- `check:fast`: every check ok (after the world-billies move).
+- `check-studio-github.py --only=publish,workbench,part_mode,robot_joints,species_parts,wardrobe,rig_preview`: 0
+  problems, with kit_write, library_swap, repack, density, and CI's list (sections, publish, drafts, studio_test,
+  checks). Planted faults failed each new check (a wrong native part, a one-pixel sheet, a refit, a geo, a one-pixel
+  repack move, nine rig faults).
+- **Full quick check** (end of Phase 5, about 40 min): 14 problems, none from this work. 10 fail the same way on the
+  session's starting commit f9c5080 (roster counts that expect the legacy 117 Billies, the bowl map camera, walk
+  cycles, the light lab's props, buildings without a plan, shaped terraces, bush recipes, phase 08's division by zero).
+  RL-7, RL-8 and the postcard step fail only inside the full run; on their own they pass on this branch's head (and
+  on f9c5080), so they depend on what earlier steps leave behind. Those 14 need their own session (scope reset tests).
+- CI's Studio list (sections, publish, drafts, studio_test, checks, kit_write, library_swap, repack, density): ok.
+
+**Risky**
+- Browser decoding: the Studio bake reads part pictures through canvas; exact today (no part or kit sheet has a
+  semi-transparent pixel, and kit_write proves the 24 equal). A part repainted with soft edges could break exactness.
+- A swap or a pixel edit on a kit Billie by hand is lost at its next bake (documented in STUDIO.md).
+- The new Check errors (rigs) block Propose; a rig made broken elsewhere would now stop proposals until fixed.
+- studio/index.html gained three script tags (kit-recipe, rig-swap, pixel-density) and check-studio-github.py five
+  groups: expect merges with the Phase 4 and 6 sessions there and in workbench-species.js / check.js.
+- **Not tested on a real phone or a real GitHub** (stand-in only).
+
+**Next**
+- Owner decisions: the skeleton builder's geo (above); whether to repack the 122 sheets; a target density (T5.7).
+- Phase 5 is done. **The tag `sr-5-done` could not be pushed from this session** (its git access takes only its own
+  branch): tag the merge of PR #139 `sr-5-done`. T1.4 note: CI's Studio list grew by kit_write, library_swap, repack and density.
+
+### Studio plan Phase 5, session 2 - The recipe in game/data, a Node bake CLI, the slot words (T5.1, T5.5) - 2026-10-22
+Branch `claude/sr-5-parts`, draft PR #139 (base `ccr-81011a25-lf3exv`). Plan pre-approved with its recommended options
+(decision 9's standing instruction); this session's choices are decision 10 in the plan doc.
+
+**Plan**
+1. Rename-only: `tools/art-source/part-kit/builds.json` -> `game/data/kitBuilds.json`, listed in index.json, written
+   in the data files' layout (PB_DATA.text); the parity test and the Python builder read the new path.
+2. `game/data/schema/kitBuilds.schema.json`, its type in game-data.d.ts, and check-data coverage (parts, colours,
+   anchors, rigs, lines and stages). In tools/check-data.mjs (Phase 1c has not moved the checks yet).
+3. `KIT_BAKE` moves into kitBuilds.json `bake` (box, margins, squash, tail aims, arm rest, foot gap, chin drop,
+   anchors). Parity green.
+4. `tools/bake-kit-billies.mjs`: bakes every recipe (or `--only`) and writes what changed (sheet PNG, layout, rig in
+   rigs-next.js, the line's `parts`); `--check` only reports. On today's tree it writes nothing.
+5. `tools/rename-data.mjs` value mode (its own commit), then `signature` -> `sig`, `head-extra` -> `headExtra`,
+   `body-extra` -> `bodyExtra`, one per commit (data, schema, types, Studio, tests together).
+6. The baker's slot table gives way to partKits `slots` and rules.json `parts.slots`. Parity green.
+7. Docs: NAMING.md, the plan's decisions, CHANGELOG, this entry.
+If time allows: session 3's first step (the Studio bakes on "Write Billie"). (Not done: there is no "Write Billie"
+yet, it is a new Studio flow, and decision 9 gives it to session 3.) Steps 2 and 3 ran in the order 3, 2, so the schema
+covers `bake` from the start.
+
+**Changed** (one cause per commit):
+- `game/data/kitBuilds.json` (was `tools/art-source/part-kit/builds.json`), in index.json, with `bake` (the builder's
+  constants), `colours`, `forms`. Schema `kitBuilds.schema.json`; types `KitBuilds`, `KitBake`, `KitBuildForm`.
+- check-data (tools/check-data.mjs, **for Phase 1c's successor to move into data-checks.js**): the parts, colours,
+  anchors, tail aims and slots a recipe names; its line and stage; one recipe per stage of a line; each stage's
+  `parts` equal to what its recipe gives. 11 planted faults, each named.
+- kit-assemble.js: every function takes `bake` (`D`) as an argument; `kitNativeParts(form, kindSlot, slotList)` gets
+  partKits `slots` and rules.json `parts.slots`. `KIT_BAKE` and the slot table are gone.
+- `tools/bake-kit-billies.mjs` (`npm run bake:kits`, `--only=`, `--check`): bakes and writes only what changed.
+  png.mjs gains `encodePng` (round-trip test). About 1 s for all 24.
+- rename-data: `value` mode; and a bug fix: its save deleted `game/data/legacy/` (any rename did; caught before
+  commit).
+- T5.5: `signature` -> `sig` (28 places), `head-extra` -> `headExtra` (33), `body-extra` -> `bodyExtra` (7), each its
+  own commit with the schema, `PartSlot`, the Studio's slot buttons and library mapping, tests.
+- rigs-next.js reformatted as the Studio writes it (no-op), then the kit rigs' and layouts' `kit` value
+  `builds.json` -> `kitBuilds.json` (parse-level proof that nothing else changed).
+- Docs: NAMING.md (slot words, kitBuilds, rename-data value), decision 10, CHANGELOG.
+
+**Where the plan or session 1 was wrong or short**
+- "Tail aims per part in partKits": kept in the recipe (decision 10): the Workbench rebuilds partKits entries.
+- rename-data's save deleted the legacy world: a latent bug since RL-5, now fixed.
+- partKits had no other readers of the slot words in game code: the renames touched only the Studio, types and tests.
+
+**Verified**
+- Unit tests 634 pass; lint, typecheck, `check:modules`, `format:check`, `check:data`.
+- Parity green at every commit; `bake-kit-billies.mjs --check`: every form as committed.
+- The Python builder, re-run in a scratch worktree after the move: byte for byte the committed art.
+- `check:fast`: rc 0, every check ok.
+- `check-studio-github.py --only=publish,workbench,part_mode,robot_joints,species_parts,wardrobe,rig_preview`: 0
+  problems.
+- **Not run:** the full quick check (end of the phase).
+
+**Risky**
+- The Python builder keeps its own constants (with a note) until it retires; editing `bake` and then running Python
+  would disagree. Parity would show it.
+- check-data now fails when a recipe is edited without a bake: intended, but the Studio cannot bake yet (session 3).
+- The bake CLI rewrites rigs-next.js whole when a rig changes (as the Studio's Propose does).
+- check-data.mjs gained a block that Phase 1c is moving; expect a merge there.
+
+**Next (session 3)**
+- The Studio bakes kit Billies (a browser bake equal to the Node one: pictures through canvas ImageData, the sheet as
+  a Studio picture, rig and lines through the model, one undo step), then retire `tools/build-kit-billies.py` once
+  parity has held through the Studio flow. The preview sheet docs/samples/kit-billies.png goes with it unless wanted.
+
+### Studio plan Phase 5, session 1 - Previews on the game's rig path (T5.6) and the JS kit baker with parity (T5.1, step 1) - 2026-10-22
+Branch `claude/sr-5-parts`, from `ccr-81011a25-lf3exv` (the plan's PR #131, not merged yet); its own draft PR. The plan
+was approved with its recommended options (the owner told the plan's parent session to approve the Phase sessions'
+plans that way; recorded as decision 9 in docs/plans/studio-roguelite-improvement-plan.md, with the split over 5
+sessions, the recipe moving to `game/data/kitBuilds.json`, and the T5.5 slot words).
+
+**Changed** (one cause per commit):
+- **T5.6 (F10).**
+  - `skeleton-rig.js` `rigFromMeta(meta, atlas)`: the rig put together from one view's metadata and its sheet (cut
+    pieces, bones with pictures, `clock`, `lag`). `rigParts` uses it (no change in the game: every rig has `q`, none
+    has an empty box).
+  - The Studio's `rigFor` builds through it, from the Studio's own rigs and pictures, so its rigs have `clock` and `lag`.
+  - The animated sprite previews and Parts' "As drawn" use `rigFrame` (12 fps, lagging tails). The skeleton builder
+    keeps `rigPose`: it has its own 12 fps grid, pause and frame steps.
+  - `check-studio-github.py --only=rig_preview`: a kit Billie, front and back, 7 fixed clocks: the Studio preview is
+    pixel-equal to the game's drawing. Before the fix it reported 7 of 7 frames differing in both views.
+- **T5.1, step 1 (F12).**
+  - `game/js/logic/kit-pixels.js`: the builder's picture steps, number for number with Pillow 12.3.0, numpy and
+    colorsys (part scaling with Pillow's double premultiply, recolour and face mask, blink, squash frames, mirrors,
+    Pillow's nearest affine in its scaling and 16.16 fixed-point paths). Reuses sheet-slice.js's box filter and
+    Python rounding. 4 unit tests; a scratch fuzz of 300 random cases against Pillow was all equal (not committed:
+    it needs Python and Pillow).
+  - `game/js/logic/kit-assemble.js`: `build_view`, `fit_form`, `build_form`, `native_parts` ported. Mirroring comes
+    from partKits `sides` (`partForSide`), the main bones' z from partKits `z` (`partZ`). The extras' anchors, the tail
+    aims and the rest are in `KIT_BAKE` for now.
+  - `tools/test/kit-bake-parity.test.mjs`: all 24 recipes baked and compared with the committed sheet (alpha exact,
+    colour where shown), rig (values and key order), layout and the line's `parts`. **Green on the first run** (under
+    1 s), so it never failed "first"; instead five planted faults (arm angle, chin drop, tail sweep, an ear's z, the
+    blink frame) each failed it with the form and pixel named.
+
+**Where the plan doc was wrong or short**
+- "z from partKits": true for head, torso, limbs and tail; the extras' z comes from where they sit (ear 8 vs partKits
+  10, crest 11 vs 10, beard 10/4, pack 4/6, collar 8.5), so the anchors carry their own z.
+- "Grow `partFit`": the builder lays out a whole figure (leg length sets the torso's height, the hip gap, the chin
+  drop, anchors that are not sockets, rest tilts from pixels). That is kit-assemble.js; `partFit` gets only per-socket
+  maths, later.
+- "Replace `rigFor` with `rigParts`": `rigParts` reads the game's globals and caches forever; the Studio must draw its
+  unsaved rigs. Both now share `rigFromMeta`.
+- `tools/rename-data.mjs` renames keys and sections, not values; T5.5 needs a value mode first.
+- `logic/pixel-ops.js` already exists, so the new module is `kit-pixels.js`.
+- The committed kit art is exactly what the Python builder writes today (re-run in a scratch worktree: every sheet,
+  layout, rig and line byte for byte), so the parity test compares against the repository, not a Python run.
+
+**Verified**
+- Unit tests 633 pass (the parity test about 1 s); lint, typecheck, `check:modules`, `format:check`.
+- `check:fast`: every check passes.
+- `check-studio-github.py --only=publish,workbench,part_mode,robot_joints,species_parts,wardrobe,rig_preview`:
+  0 problems (rig_preview pixel-equal on 7 clocks, front and back; publish 0).
+- **Not run:** the full quick check (at the end of the phase).
+
+**Risky**
+- The parity rests on Pillow 12.3.0's arithmetic. If the builder is re-run with another Pillow before it retires, the
+  committed art may move and the test with it; re-check then.
+- Previews now step at 12 fps: a designer may read that as the Studio being slower. It is what the game shows.
+- `studio/index.html` gained two script tags (`kit-pixels.js`, `kit-assemble.js`) beside Phase 1's; expect a merge there.
+
+**Next (session 2)**
+- Move `KIT_BAKE` and builds.json into data (`game/data/kitBuilds.json` with a schema and check-data; the tail aims
+  per part in partKits), parity still green; a Node CLI that bakes and writes (sheet PNG, layout, rigs-next.js, lines).
+- Then T5.5: the `rename-data` value mode, then `signature` → `sig`, `head-extra` → `headExtra`, `body-extra` →
+  `bodyExtra`, one per commit.
+
+### Studio plan Phase 1, session B - Undo per entry (T1.2) and the F14 hunt (T1.5) - 2026-10-22
+Branch `ccr-81011a25-lf3exv` (PR #131), on top of session A. Plan written by the previous Phase 1 session and
+reviewed by the parent session; further decisions took the recommended option and are in the plan doc's
+"Decisions" (items 9-13).
+
+**T1.2 has landed: the parent can start Phase 6.**
+
+**Changed** (one cause per commit):
+- **Self-test guard (T1.5).** After each section opens and settles, with no commit pending, the data must be the last
+  undo state; otherwise the run fails with "opening <section> changed the data outside an edit: <paths>"
+  (`studioTestChangedPaths` in studio-test-report.js, 1 unit test). The difference is then committed so each cause
+  is named once. On the old code it named `D.people.boy`. `commit()` now clears `snapT` when it runs, so "a commit is
+  pending" can be read.
+- **F14's cause, two writes on opening People:**
+  - The convert-on-open of old-style people (`personLook`, with `dirty` and no `changed()`). Data-only commit: boy,
+    broker, clerk, concierge, crude, girl, intern, markdown and miner converted once with the Studio's own
+    `personLook` in the headless Studio, written with `PB_DATA.text`, old keys dropped. Their person frames (3 views,
+    idle and walk, 4 phases, mirrored: 48 each) are the same pixels before and after. Then the convert-on-open went;
+    `personLook` stays for + New look.
+  - Found by the guard after the plan was written: People filled `look.colors` for the selected person on every
+    open (every look-style person lacked some). The colour fields now show those colours as a default
+    (`colorField` `o.def`) and write only on a change.
+  - person.schema.json: `look` is required (types too). The old colour keys beside a look stay allowed: 25 people
+    still carry them and the game ignores them (decision 10).
+- **Undo per entry (T1.2).** `game/js/logic/history.js` holds the data as parts: one text per second-level entry
+  (`D/maps/<id>`, `D/lines/<i>`, `D/meta/<key>`, `D/<key>` for a value), one per rig (`R/<species>`) and `@order`.
+  `last` is the parts, held once; a data step is `{ parts: { name: [before, after] } }`, null for an added or removed
+  part. Bytes count 2 a character; data steps have their own 64 MB cap (`HISTORY_DATA_BYTES`). API names unchanged;
+  art steps unchanged; a group's `snapshot` is the same diff. 11 unit tests (diffs, round trip, bytes, trim by
+  bytes, mixed order, a group with a data diff, the counter).
+  - studio-app.js: `snapshotParts`, `restoreParts` (only those parts, then `render()`; an `@order` change rebuilds
+    the whole data from `last`). The undo button reads "a commit is pending" instead of stringifying the data on
+    every top-bar update.
+  - pixel-canvas `artSteps` and the workbench's Apply hand parts; drafts.js and boot keep `last` as parts; Find's
+    index key is `last` plus the history's counter (`ver`). billie-library.test.mjs's stub follows.
+  - The self-test keeps `snapshot()` / `restore(text)` for its own checks and copies `last` (undo changes it in
+    place).
+- **`fullMB` is a measurement**: the data held once plus each self-test edit's step, as if all were kept, texts
+  counted as the browser stores them (1 byte a character unless one is past U+00FF). Report format 2.
+- check-studio-github.py: the guard's problems; a map edit's step holds only that map and its undo leaves the other
+  51 maps the same objects (`===`); the undo's size with the three biggest edits.
+- Docs: STUDIO.md "Undo", studio-self-test.md, CHANGELOG, TESTING.md (635 tests, about 47 s), the plan's decisions.
+
+**Where the plan was wrong or short**
+- The People section had a second write on opening (the colours), not only the convert.
+- "Make `look` required, so old-style people can't come back": done, but old keys beside a look are still legal.
+- Per entry, one entry still dominates: the **Copperleaf map is one part of
+  about 1.25 M characters**, so a Scenes edit there costs about 5 MB per step (both sides, two-byte text). Every other
+  self-test edit is 13 kB or less. With the 64 MB data cap that is about 12 Copperleaf steps (before: 80 whole copies
+  of 5.4 MB, uncapped).
+
+**Verified**
+- Unit tests 635 pass; lint, typecheck, `check:modules`, `format:check`, `check:data` after each commit.
+- The guard fails before the People fix ("opening people changed the data outside an edit: D.people.boy") and passes
+  after; with it gone, the Rules edit comes back with undo (F14 closed).
+- Three self-test runs in a row pass (`--only=studio_test`), and so did two more later.
+- `check-studio-github.py --only=sections,studio_test,publish,drafts`: 27 sections open, every edit comes back,
+  publish 0 problems, drafts 0 problems, ok.
+- The undo measures 9.3 MB after the self-test's 14 edits (under 10 MB): the data once 4.2 MB, the steps 5.0 MB.
+- An undo of a Copperleaf map edit puts back only `D/maps/copperleaf`; the other 51 maps stay the same objects.
+- A planted old-style `boy.json`: check-data fails it ("must have required property 'look'").
+- `check:fast`: all pass.
+- **Not run:** the full quick check (planned at the end of Phase 1) and the full chain of `check-studio-github.py`.
+
+**Risky**
+- **Undo replaces entries in place.** Code that holds a reference to a part of the data across an undo (a map, a
+  move) now keeps a live object for every entry the undo didn't touch, and a stale one for the entry it did. Before,
+  every undo replaced everything, so all references went stale together. The 27-section self-test and its 14 edits
+  pass; watch the map editor and the workbench on undo.
+- **An `@order` change rebuilds all**, as before (adding or deleting an entry). Its cost is the old restore's.
+- **Copperleaf edits are 5 MB a step** (above). Follow-up if it matters: split `maps` one level deeper.
+- `game/data/gamedata.js` is built, not in git: in a fresh clone the Roster section asks for it and
+  check-studio-github.py reports a 404 until `npm run data` has run.
+- **Not tested on a real phone or a real GitHub** (stand-in only). Manual: a long editing session on the iPad, watch
+  memory (Safari Web Inspector); undo and redo across Scenes, Rules and the workbench.
+
+**Next**
+- Phase 1 is complete: T1.3 (the shared validator; it unblocks Phase 4) and T1.4 (CI) landed in parallel on this
+  branch (sessions C+D, entry below) and were merged here. Their CI job runs `check-studio-github.py` with
+  `studio_test`, which now also fails on a section that writes outside an edit. Tag `sr-1-done` is the owner's.
+- Optional follow-ups: drop the old colour keys of the 25 people and make the schema strict; split big maps deeper.
+### Studio plan Phase 6 - Performance, polish and docs - 2026-10-22
+Branch `claude/sr-6-polish`, from `ccr-81011a25-lf3exv` at 625dd55 (T1.2's `restoreParts` is in). Plan pre-approved by
+the owner's standing instruction; the recommended option is taken at each decision and recorded under the plan doc's
+"Decisions". Other sessions run at the same time (1c, 2b, 3, 4, 5b): this one leaves SECTION_LIST's order and groups,
+check.js's checks, data-checks.js, the publish and drafts code and the run, sim and workbench files alone.
+
+**Plan** (one cause per commit; a failing test first where a defect is fixed; unit tests, lint, typecheck,
+`check:modules`, `format:check` after each; `check-studio-github.py --only=sections,publish,drafts,studio_test,
+free_camera,tiles,polish` at the end of each ticket; timings from the self-test before and after):
+0. Tooling: `PB_STUDIO_TEST_OUT=<file>` makes `check-studio-github.py` write the self-test's report (the before/after
+   numbers); a new step `polish` holds this phase's browser checks.
+1. **T6.6** (one commit each):
+   - F16: `onField` runs the hook of the section in the field's own pane (a second-pane move rename updates its list).
+   - `renameType` moves to `game/js/logic/type-rename.js` unchanged, with unit tests; then F17: it also renames the
+     robots' parts and gems, the roster, `rules.ride.types` and relics' `fx[].type`, with a unit test that finds every
+     field holding a type id in the real data and renames each type. Deleting the first type no longer sets the shock
+     and spin types to the type being deleted (found while reading; its own commit).
+   - F20: the shop keeper's thank-you field gets its own prefix (`@thanks.`), then one ordered registry
+     (`pathPrefix`) replaces the chained `setReadPath`/`setWritePath` wrappers; a claim of a prefix another already
+     holds throws, and a unit test reads the claims in studio/js.
+   - D5 (`updateTopBar` stringifies the data): skipped, T1.2 fixed it ("a commit is pending").
+   - `renderPane` catches: a section that throws shows its error in the pane; global `error` and
+     `unhandledrejection` toasts.
+   - The pixel canvas's document listeners go when its canvas leaves the page (flat after 5 opens).
+   - The dead backups text (side footer, the Check's Backups card, STUDIO.md) goes.
+2. **T6.7**: `renderPane` moves an element marked `data-keep` into the redrawn pane's placeholder with the same mark;
+   the 3D placeholders (Walk scenes, Generate, Hub island, Props, Engine) share one, so one WebGL context lasts the
+   session. Test: 20 tool switches in Walk scenes make 1 context, no INVALID_OPERATION. Renderer files untouched
+   unless stale meshes remain (then only cache keys). `check:fast` for the game side.
+3. **T6.1**: Walk scenes' hook keeps the 2D map redraw on `input` and moves the walk view's rebuilds to a 300 ms
+   debounce; the other heavy hooks audited the same way.
+4. **T6.2**: undo/redo redraw only when the shown section(s) show a part that changed (`SECTION_PARTS`); a
+   `renderCard` helper for the busiest matrix and toggle actions.
+5. T6.3, T6.4, T6.5, T6.8 as time allows.
+
+**Changed** (one cause per commit; each defect's browser check or unit test fails on the old code):
+- **T6.6**
+  - F16: `onField` runs the hook of the field's own pane's section.
+  - F17: `renameType` moved to `game/js/logic/type-rename.js` (`renameTypeIn`). It now also renames robot parts and
+    gems, the roster, `rules.ride.types` and Loopholes' damage rows. Unit tests walk every field of the real data
+    whose text is a type id (terrain names aside), and the robot and Loophole data checks give the same results after
+    a rename. Found while moving it: deleting the first type left the battle's shock and spin types on the deleted
+    type (its own commit).
+  - F20: a shop keeper's lines take `@thanks.` (lore's `@lines.` won before, so the field showed empty and wrote a
+    top-level key). Then `pathPrefix(prefix, read, write)` replaced the chained setReadPath/setWritePath wrappers; a
+    clashing claim throws; a unit test reads every claim.
+  - D5 was already fixed by T1.2.
+  - `renderPane` catches a throwing section and shows its error in the pane. Uncaught errors and refused promises
+    are toasts.
+  - Pixel canvas: its document listeners share an AbortController, aborted by a MutationObserver when the canvas
+    leaves the page. Over 5 opens: 92 → 104 listeners before, 89 flat now.
+  - The dead backups text is gone (side footer, the Check's Backups card and Restore, the empty route); the section is
+    now called "Check".
+- **T6.7** (F18, F19): `renderPane` keeps `data-keep` elements across redraws. The five 3D placeholders share
+  `walk-gl`, so one canvas and one WebGL context last the session. No renderer file changed. 20 tool switches and an
+  undo in Walk scenes: 21 new contexts and 4114 "object does not belong to this context" warnings before, 0 and 0
+  now. Engine, Hub island, Props and Walk scenes all draw on the one canvas.
+- **T6.1**: `drawSoon(key, f)` (once per frame). Walk scenes draws its 2D map that way and rebuilds the walk view's
+  paths and ground after 300 ms of stillness. The Wardrobe hook draws the same way.
+- **T6.2**: a redraw of the same section keeps focus and scroll (Types matchup click, a `data-rr` select; F21's focus
+  item). An undo that changes only text data keeps the picture caches (`spriteCacheClear(false)`). No per-section
+  part list: see Decisions 9 in the plan doc.
+- **T6.3**: Types' particle icons are CSS sprites from the icon atlas: a cold open went 527 → 33 ms, of which
+  `toDataURL` had been 491 ms. Person art (game/js/person-art.js, cache keys only): a sheet's pixels and a recoloured
+  piece are keyed by the picture object and its `_ver`, and by everything a piece is made from. `forgetPersonLooks()`
+  replaces the Studio's ten full clears. Wardrobe thumbnails are canvases, not data URLs. Wardrobe undo: 750-1030 ms
+  → 180-237 ms.
+- **T6.4**: `tools/unit-tests.mjs`. `npm test` is the quick tier (606 tests, 23 s here); `npm run test:slow` runs the
+  six scene sweeps (42 tests, 39 s); CI runs both. The after-edit hook runs an edited slow test on its own.
+  TESTING.md updated.
+- **T6.8**: labels "People" → "Looks" and "Parts" → "Part sizes" (ids unchanged). STUDIO.md's Map art entry is gone.
+- **T6.5**: STUDIO.md "How a section draws (for contributors)".
+- Tooling: `check-studio-github.py` step `polish` (this phase's checks), `PB_STUDIO_TEST_OUT` (keeps the self-test's
+  report), WebGL contexts counted on every page. The free-camera scroll no longer waits for two identical frames.
+
+**Self-test timings** (headless Chromium, software GL; run-to-run noise is up to ±50%, so only large changes count):
+- A Walk scenes edit: 490 → 32-47 ms. Typing no longer draws; the 2D map draws once in the next frame.
+- A cold Types open: 165-527 → 27-33 ms.
+- Engine's long tasks: 8.1 s → 0.25-14.7 s. This spread is the noise; in this setup frames are bound by the software
+  renderer.
+- A Wardrobe undo (profiled alone): 750-1030 → 180-237 ms.
+- Not verified on a desktop or the iPad: the plan wants desktop numbers. Run Check → Run the Studio test there.
+
+**Where the plan doc was wrong or short**
+- F19's "buildings likely stop drawing" didn't need the fallback's cache keys: with one context nothing is stale.
+- T6.2's `SECTION_FILES` would not reach its own acceptance: Wardrobe undo changes a part Wardrobe shows. The cost
+  was person-art's cache keys (the global art version, which every undo bumps) plus PNG encoding.
+- T6.3: Types' cost was PNG encoding, not the icon cache itself: the cache was already per icon.
+- T6.4: `// @ts-check` for publish, drafts, run-lab and logic-worker was not added. drafts.js is in this branch but
+  its code is off limits to this session, and the other modules live on other branches.
+- T6.5: Run Lab, Simulate, Relics and Unlocks are on other branches (Phases 2-4); their sessions document them.
+- The self-test's "undo would hold 216 MB" is still `snapMB × 80` (Phase 1 asked for a measurement).
+
+**Risky**
+- **The kept 3D canvas** moves between sections. Anything that binds to a 3D canvas on each mount would bind twice;
+  none does today (the section listeners are on the 2D canvases). The battle preview still makes its own canvas, so
+  it still creates a context per open.
+- **Walk scenes with a prop open** shows two 3D placeholders: the kept canvas goes to the first, and the turntable
+  gets a fresh canvas, as before.
+- **Person-art keys**: a picture changed in place without `markArt` would now show stale pixels. Every Studio path
+  found uses `markArt`, and the polish step checks one. In the game, pictures never change.
+- **`drawSoon`** draws in the next animation frame, so code that reads the 2D map right after a field event sees the
+  old drawing (none found).
+- The free camera's "W didn't move it" fails now and then on both the base and this branch: it needs a frame within
+  6 s, and software frames take 4-5 s.
+
+**Verified**
+- Unit tests 648 (quick 606, slow 42), 653 after merging the base (Phase 1 C+D); lint, typecheck, `check:modules`, `format:check` after each commit.
+- `check:fast` 25 of 25.
+- `check-studio-github.py --only=sections,publish,drafts,studio_test,free_camera,tiles,polish`, last full run:
+  sections, the art tools, free camera (all of it; the HANDOFF's earlier "ground moved" failure passed too), tiles,
+  the studio test (14 edits undone, no problem), the T1.2 undo check and polish pass, and the proposal is sent.
+  Publish and drafts failed in that run, but on reruns of `--only=polish,publish,drafts` both give 0 problems:
+  polish had left Walk scenes drawing software frames under them. Polish now ends on Jobs. A drafts click timeout
+  also happened once on the untouched base in this container.
+- Before and after: the studio test's report (`PB_STUDIO_TEST_OUT`) on the base worktree and on this branch.
+- **Not run:** the full quick check, and the self-test on a desktop or the iPad.
+
+**Next**
+- The owner: the Studio test on the iPad (3D sections, Wardrobe undo, typing in Walk scenes).
+- The battle preview could take the kept canvas too (it builds `#bpDio` itself).
+- T6.4's `// @ts-check` on the new Studio modules, once Phases 2-4 land.
+
+### Studio plan Phase 1, sessions C+D - One validator for CI and the Studio (T1.3) and Studio checks in CI (T1.4) - 2026-10-22
+Branch `ccr-81011a25-lf3exv` (PR #131). Plan pre-approved by the owner's standing instruction (recommended options
+taken; recorded under the plan doc's "Decisions"). Phase 1b (T1.2 undo, T1.5, People) works on the same branch at the
+same time: this session stays out of history.js, studio-app.js's undo, studio-test.js, studio-test-report.js,
+data-editors.js and the person schema, and merges (never rebases) before every push.
+
+**Plan** (one cause per commit, checks after each):
+1. `tools/data-files.mjs` reads `PB_DATA_DIR` when set (so a test can run check-data on a planted copy).
+2. Snapshot test first: `tools/test/check-data-snapshot.test.mjs` plants bad data in every family T1.3 moves (in a
+   temp copy of game/data) and compares check-data's whole output with a committed snapshot, made on the old code.
+3. The move: check-data's battle.turnCap, run (payout, map, clock, reveal, scene, wild, seamIn, start, home, pack,
+   healCost, shop, foes, relics), ranch, robots, biomes, nodeTypes, relics, currencies, buildings and unlocks checks go
+   to `game/js/logic/data-checks.js` as pure functions of the data that return `[file, message]` pairs; schema checks
+   stay in check-data (passed in as a callback, so the order of lines is kept). Snapshot identical; unit tests per
+   family with planted bad data.
+4. The Studio's Check runs the same functions (a family that throws on malformed data reports that it stopped).
+5. One legacy-species rule (check-data's: a species is known when its line is loaded or is a line in
+   game/data/legacy), in the module; the Studio passes the legacy line ids its Legacy section reads.
+6. Enums to data: relic `fx.stat` against stats.json (schema enum removed); currency ids from currencies.json
+   (buildings' and unlock costs' enums removed); one exported `RUN_RULE_KEYS`.
+7. The Studio-only scene and road checks move into the module (same words); check-data runs them, so CI gains them.
+8. Severity: `error` = check:data fails = Propose is blocked; the Studio's other "errors" become warnings. check-data
+   prints the warnings and never fails on them.
+9. Propose refuses while the Check has an error ("Show me" opens the Check); a stand-in step `checks` in
+   check-studio-github.py (planted pool typo blocks, a warning does not).
+10. CI: the smoke job runs `check-studio-github.py --only=sections,publish,drafts,studio_test,checks` on pull requests
+    that touch `studio/` or `game/js/logic/`.
+11. Local mode dropped: `check-quick.py --studio` and the remaining start-studio.py text go.
+12. Docs: STUDIO.md, TESTING.md, CHANGELOG, the plan's Decisions, this entry.
+
+**Status for the parent session: `game/js/logic/data-checks.js` has the moved checks and is pushed** (step 3 above,
+commit "Move: check-data's run, ranch, ..."). Phase 4 (content editors) can start on it: each family is
+`dataX(D, valid?)` returning `[file, message]` pairs (dataRunPayout, dataRanchRules, dataRunMapRules, dataRunClock,
+dataRunScene, dataRunLoop, dataRobots, dataUiTheme, dataBiomes, dataNodeTypes, dataRelics, dataCurrencies,
+dataBuildings, dataUnlocks, dataBattleRules; dataRobotProblems for a trainer's robot). The later steps here add
+families (scenes, roads) and change some words (fx.stat, currencies), not the shape.
+
+**Changed** (one cause per commit; all 12 steps done):
+- **Shared checks (T1.3).** `game/js/logic/data-checks.js` holds check-data's battle, run, ranch, robot, UI look,
+  biome, node type, relic, currency, building and unlock families (moved verbatim; the snapshot test, made first on the
+  old code, stayed byte-identical), `dataRobotProblems`, `dataSpeciesKind`, `RUN_RULE_KEYS`, and the Studio's scene and
+  road checks (`dataSceneFindings`, `dataRoadFindings`, which return `{lvl, where, msg, go, sel}`).
+  - check-data calls them in its old order and hands in its schema check; it now also runs the scene and road
+    checks: errors fail, warnings are printed (`  warning: maps/…: …`; two today, bridges ending in water).
+  - The Studio's Check runs the same families (in check-data's words, file first; Show me via `CHECK_FILE_SECTIONS`,
+    which Phase 4 extends for its new sections) and a trainer's robot.
+  - The Studio page now loads run-marks, meta-state, run-state and run-map (data-checks.js needs run-map's
+    `runMapRowsFit` and run-marks' list); data-checks.js moved after mapgen.js.
+- **One legacy-species rule**: check-data's. The Studio passes the legacy line ids from `legacy-view.js`
+  (`legacyLineIds`, `legacyLineIdsRead`); any stage of a parked line counts there (it reads only legacy/index.json),
+  while check-data counts the exact stages. Until the ids are read, the old pattern rule holds and a note says so;
+  Propose waits for the read.
+- **Enums to data**: relic `fx.stat` against stats.json (not hp; the schema enum went), a building's and an unlock
+  grant's currency against currencies.json (kept between runs), `RUN_RULE_KEYS`; a scene's life against
+  scenery.json's `life` (the old list of five called Copperleaf's rabbit, squirrel and cat unknown).
+- **Severity** (owner's decision): an error is only what check-data already refused. Stay errors: a line's stages and
+  names, a move a line learns, wild pool and trainer species, a stop's map and named pool, a trainer's stop and team,
+  the world map look's ground, a scene's kind, ground, props and islands, the roads (seam-rules), the UI look's
+  contrast, the story, every data-checks.js family. Became warnings: types, moves, line ids, skeletons and art,
+  rarity, evolution items, fishing and egg species, backdrops, shops, gates, badges, jobs, starters, part sizes, the
+  weather types, a scene's kind against its stop's, a stop's kind, a room's keeper, the UI rules over their ceiling.
+- **Propose refuses on an error** (`checkBeforeSave` in studio-app.js; github.js asks it before the summary box):
+  a dialog names the first five, Show me opens the Check. "Save anyway" is gone. Also fixed: the Check called a
+  trainer's robot "a species that doesn't exist" (it blocked Propose on the real data once errors blocked).
+- **Tests**: `check-data-snapshot.test.mjs` (+ `PB_DATA_DIR` in tools/data-files.mjs), 9 new unit tests in
+  `data-checks.test.mjs`, `check-studio-github.py --only=checks` (6 problems on the old code, 0 now). The publish
+  checks' "cannot be built" case steps past the Check, which now refuses its planted map first.
+- **CI (T1.4)**: the smoke job compares a pull request's files with its base commit and, when `studio/` or
+  `game/js/logic/` changed, runs `npm run data` and `check-studio-github.py --only=sections,publish,drafts,
+  studio_test,checks`. The smoke job's limit is 30 minutes (was 20).
+- **Local mode dropped**: `check-quick.py --studio` (`studio_round_trip`) and the start-studio.py text in STUDIO.md,
+  github.js and the Studio's load error.
+- Docs: STUDIO.md "The Check", TESTING.md (Studio tier, data checks), CHANGELOG, the plan's Decisions 9-11.
+
+**Where the plan doc was wrong or short**
+- The Studio has no sections yet for relics, unlocks, buildings, currencies, node types or biomes: their problems show
+  in the Check without Show me until Phase 4 adds editors.
+- "Currency ids in three places": the third was an unlock's grant (not a cost); currencies.schema.json stays the list.
+- Every Studio-only scene and road check that became shared is a warning, so CI gained notes, not new failures; the
+  scene and road errors duplicate check-data rules, so a fault there prints two lines in CI.
+- The Check's Backups card is local mode's: on GitHub it is always empty. Left for the owner (drop it, or show the
+  repository's history).
+
+**Verified**
+- Unit tests 645 pass (about 42 s); lint, typecheck, `check:modules`, `format:check`, `check:data`, `build`.
+- `check-studio-github.py --only=sections,publish,drafts,studio_test,checks` (CI's command): 0 problems, 5 min 42 s.
+  `--only=publish,drafts`: 0 problems.
+- `check:fast`: 25 of 25 pass.
+- Not run: the full quick check, and CI itself (the new step runs on the PR's next push).
+
+**Risky**
+- **Propose can now be refused.** Any error the Check finds blocks it, including a family that stops on data in a
+  shape it doesn't expect. If a real proposal is refused for something that looks wrong, the message names it; the
+  rule to relax is in data-checks.js or check.js.
+- **Phase 1b and this session both touched studio-app.js** (undo there, `checkBeforeSave` here): merged without
+  conflict so far.
+- **The parallel Run Lab session** may add run-map.js to the Studio page too: its merge must keep one tag, before
+  data-checks.js.
+- **CI time**: Studio and logic pull requests take about 6 minutes more.
+
+**Next**
+- Phase 4 (content editors) on data-checks.js: add each new section to `CHECK_FILE_SECTIONS`.
+- Tag `sr-1-done` once Phase 1b's entry is in (the owner's).
+
+### Studio plan Phase 1, session A - Local drafts (T1.1) and hygiene (T1.6) - 2026-10-22
+Branch `ccr-81011a25-lf3exv`, on top of Phase 0 (PR #131, not merged yet). Approved in Plan Mode with Phase 1 split
+over four sessions: **A** T1.1 + T1.6 (this one); **B** T1.2 undo per file + T1.5 the F14 hunt; **C** T1.3 part 1 (move
+check-data's checks into `game/js/logic/data-checks.js`, output byte-identical); **D** T1.3 part 2 (the Studio's Check
+uses them, the severity review) + T1.4 CI, then tag `sr-1-done`. Owner's decision: a draft made on an older commit is
+restored **at that commit** (not laid over today's main).
+
+**Changed** (one cause per commit):
+- **Drafts (T1.1).** `studio/js/drafts.js` (new) and `game/js/logic/draft-record.js` (new, 4 unit tests).
+  - Written to IndexedDB (`pb-studio-drafts`, one record per `owner/repo@branch`) 2 s after the last change
+    (`updateTopBar` calls `draftSoon`) and when the tab is hidden. Holds only what is pending: the data files whose
+    text differs from the loaded commit (`changedDataFiles`, index.json included, so deletions come back), the rigs
+    when they differ from what loaded, each unsaved picture as a Blob (re-encoded only when its `_ver` changes), the
+    base commit, the login, the time. No token.
+  - `confirmStaged` writes at once: the draft goes when a proposal took everything, or keeps what changed meanwhile.
+    A failed proposal leaves it.
+  - Boot (github.js): sign-in → `draftOffer` (Restore / Later / Discard, before any data is read) → boot → `draftStart`.
+    Restore sets `githubMode.baseP` to the draft's commit, so every read and the proposal use it and T0.2's question
+    names files main changed since. The draft is applied all or nothing; undo starts empty. Later keeps the draft and
+    writes nothing over it this session; Discard asks again, then deletes.
+  - No IndexedDB (private window, blocked storage): the Studio works and the top bar shows "⚠ Not kept if the tab
+    closes".
+- **check-studio-github.py `drafts_checks`** (`--only=drafts`): restore of a data, a rig and a picture edit after
+  `page.close()`; the restored draft proposes all four files and the draft goes; a failed proposal keeps it; main
+  moved (the question says so, every read at the draft's commit, Propose names meta.json); Later; Discard; a browser
+  without IndexedDB. With the restore turned off it reports 6 problems; as committed, 0.
+- **T1.6.**
+  - check-data: a `_` key in a data file listed by index.json is an error (F7). The rule is the first function of
+    `game/js/logic/data-checks.js`, T1.3's module (2 unit tests; it is on the Studio page so the page lint test is
+    happy).
+  - TESTING.md: the unit tier is 628 tests in about 42 s here, over its 30 s budget.
+  - ESLint now lints `tools/*.mjs` with the unit tests' rules: 0 findings, so no code changed.
+- Docs: STUDIO.md "Unsent changes are kept in this browser", CHANGELOG.
+
+**Where the plan doc was wrong or short**
+- "Mirrors the ledger": there is no ledger since Phase 0; the draft is built from the same per-file diff Propose uses.
+- "Different base: restore with the overlap warning" would put back main's older text in the shared files; restoring at
+  the draft's commit avoids that (owner approved).
+- T1.2's acceptance uses `fullMB`, which studio-test.js computes as `snapMB x 80` (an estimate). Session B must make
+  it a measurement first. `updateTopBar` also stringifies the whole model on every call (`last === snapshot()`).
+- T1.4: `check-quick.py --studio` needs `start-studio.py`, which is not in the repository.
+- T1.6 `_` keys: only schema/ (`_help`) and legacy/README.json (`_world`) have them, neither listed in index.json.
+
+**Verified**
+- Unit tests 628 pass; lint, typecheck, `check:modules`, `format:check`, `check:data`.
+- `check-studio-github.py --only=publish`: 0 problems (Phase 0's regression check). `--only=drafts`: 0 problems.
+- A planted `_planted` key in meta.json: check-data names it.
+- `check:fast`: 25 of 25 pass.
+- `check-studio-github.py --only=sections,studio_test,publish,drafts`: 27 sections open, publish 0, drafts 0 (a write
+  took 63 ms in that run). One problem: "the edit in rules did not come back with undo", the plan's F14, which Phase 0
+  also saw on unchanged main; session B (T1.5) hunts it.
+- **Not run:** the full quick check (planned at the end of Phase 1, session D) and the full chain of
+  `check-studio-github.py` (it stalls at the story preview in this container, as noted in Phase 0).
+
+**Risky**
+- **Cost of a write.** A draft write takes 84-208 ms in headless Chromium here (stringify, split and format of the
+  data, then IndexedDB), once per pause in editing. On a phone it may be a visible hitch. Measure on the iPad.
+- **Two Studio tabs** on the same browser share one draft: the last to write wins. Each tab's own memory is unaffected.
+- **Proposals add up.** After a proposal the data still differs from the loaded commit; an undo marks it unsaved and
+  the draft then keeps those files too (as the next proposal would send them).
+- **Not tested on a real phone or a real GitHub** (stand-in only). Manual check: edit, close the tab, reopen.
+
+**Next**
+- Session B: T1.2 (undo per file; first make `fullMB` a measurement) and T1.5 (F14).
+- Owner decisions still open for C/D: T1.3 which Studio errors may block Propose (recommended: only what CI fails on);
+  T1.4 CI time (recommended: yes); local mode and `--studio` (recommended: drop).
+
+### Studio plan Phase 0 - Reliability and data safety on publish - 2026-10-22
+Branch `ccr-81011a25-lf3exv`, PR #131. The PR also carries the plan itself,
+`docs/plans/studio-roguelite-improvement-plan.md`: a review of the Studio at 5a30303d with Phases 0-6 and tickets.
+The plan was approved in Plan Mode as written: tickets T0.1-T0.4 with a smaller design than the plan doc's "ledger".
+
+**Changed** (one cause per commit; the test came first and failed on the old code):
+- **check-studio-github.py `publish_checks`.** It runs on its own page with an injectable stand-in, after the main
+  flow, or alone with `--only=publish`. The cases:
+  - a 502 at blobs, trees, commits, refs and pulls (retry);
+  - a proposal that can't be built;
+  - a held send (a second Ctrl+S, and an edit made meanwhile);
+  - every read at the loaded commit;
+  - main moved on, sharing a file or not;
+  - branch reuse and branch names;
+  - a 401, with cancel or with a new token.
+
+  On the old code it reported **14 problems**: art and rigs dropped after every failure, and a partial proposal sent.
+  Now it reports 0.
+- **`game/js/logic/publish-plan.js`** (4 unit tests): `publishConfirm`, `publishEmpty`, `publishOverlap`,
+  `publishBranchName`.
+- **`studio/js/studio-app.js`.** `saveAll` is now `checkBeforeSave` → `stageChanges` → `writeStaged` → `confirmStaged`:
+  - Nothing is marked saved before the server answers.
+  - Then only what is unchanged is marked saved: pictures are matched by `c._ver`, which `markArt` already bumps;
+    data and rigs by their text.
+  - `meta.artVersion` goes up in the sent text and is set in `D` on confirm.
+- **`studio/js/github.js`.**
+  - **One proposal at a time.** The batch is built whole before anything is sent; an error sends nothing.
+  - **Pinned reads.** Everything is read at the commit main was on when the Studio loaded (`githubBase`), including
+    rigs-next.js, which used to come from the deployed page and was then written back whole.
+  - **Pinned proposal.** The proposal's parent is that commit. If main changed files the proposal also writes, a
+    question names them (Propose anyway / Cancel).
+  - **Branches.** Names are `studio/<login>-<date>-<time>-<4 letters>`. A branch left by a failed pull request is
+    reused (PATCH), and a 422 on pulls finds the PR that is already open.
+  - **Expired sign-in.** A 401 opens the sign-in card (now with Cancel) over the Studio, then resends the same
+    changes. A new token replaces an expired one kept in the other browser store.
+- **Docs.**
+  - STUDIO.md: "Propose changes: what it does, and what happens when it fails".
+  - Local mode is marked "not in this repository", in STUDIO.md and in the Studio's load-error text.
+  - CHANGELOG.
+
+**Where the plan doc was wrong or short**
+- `artDirty` is read in about 12 places as "the unsaved picture", so it stays. The ledger became a stage plus a
+  confirm-by-version-or-text.
+- The local-mode path could not be tested: there is no server in the repository.
+
+**Verified**
+- Unit tests: 622 pass.
+- lint, typecheck, `check:modules`, `format:check`.
+- `check-studio-github.py --only=publish`: 0 problems.
+- `check:fast`: 25 of 25 pass.
+- The full `check-studio-github.py` stopped in `story_steps`:
+  - First at `#scStoryOn`, then at the "Play from here" click.
+  - The same step fails on unchanged origin/main in this container, at the wait for the game's tab. This is the known
+    stall noted beside `--only`, not this phase.
+  - Every other step was run with `--only`:
+    - The publish checks, the UI steps, the uiTheme proposal and the self-test's restore all pass.
+    - Two problems, both also on origin/main:
+      - free camera "the ground under the pointer moved"; origin/main fails the same step alone in this container;
+      - the self-test's Rules edit not coming back with undo. That is the plan's F14, seen on main during the review;
+        the plan's T1.5 tracks it.
+- **Not run:** the full quick check. It was stopped at the owner's word, so the next session starts without waiting
+  for it.
+
+**Risky**
+- **Undo and confirm.** Undoing a change after it was proposed marks it unsaved again, as before; that is fine. A
+  restore (undo) during a send can make data differ from the sent text, so it stays unsaved: the safe direction.
+- **New requests.** GitHub mode now makes one extra request at load (the ref) and one or two at proposal time (the
+  ref, and compare when main moved).
+- **Tested only against the stand-in.** The API paths used are GitHub's documented ones: `git/ref/heads`,
+  `compare/a...b`, `PATCH git/refs/heads/<branch>`, `pulls?head=owner:branch`. One real proposal from the Pages Studio
+  is the owner's check.
+
+**Next**
+- Phase 1 (T1.1 drafts in IndexedDB first; then T1.2 undo per file, T1.3 shared checks, T1.4 Studio checks in CI).
+- Tag `sr-0-done` is the owner's.
+
 ### Island track IS-6b - Hub editor dials - 2026-10-22
 Branch `claude/is-6b-hub-dials`, from the wave-2 base `claude/new-session-3qlesh` (main plus IS-2, IS-3, IS-4 and IS-6a,
 PRs #122, #124, #123, #126, not merged yet); the PR goes against main, so its diff shrinks as those merge (then merge

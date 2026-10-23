@@ -349,7 +349,7 @@ function genViewHTML() {
  <div class="ed-col"><div class="ed-head"><div><small class="mono">draft, not saved</small><h2>Generate a route</h2></div><div class="seg-row"><button class="btn primary" data-act="genAccept" title="Adds it to the Walk scenes as a new scene (one undo step); Ctrl+S saves it">Add as a new scene</button></div></div>
  ${card(
    'Preview',
-   `<div class="sc-pv"><canvas id="genPv"></canvas><div class="sc-pv-load" id="genPvLoad">Loading…</div></div>
+   `<div class="sc-pv"><canvas id="genPv" data-keep="walk-gl"></canvas><div class="sc-pv-load" id="genPvLoad">Loading…</div></div>
   <div class="seg-row"><button class="btn sm subtle" data-act="genHub">Back to the hub</button>${Object.keys(mapGen.joins).length ? `<button class="btn sm ${mapGen.pair ? 'on' : 'subtle'}" data-act="genPair" title="Both scenes side by side, as the game lays them, nothing eased">${mapGen.pair ? 'Show the draft alone' : 'Preview the pair'}</button>` : ''}</div><div id="genStats">${genStatsHTML()}</div>`,
    {
      sub: 'The draft as the game draws it. Walk with W A S D or click the ground; the dials change it as you move them.',

@@ -483,6 +483,9 @@ debugLog.state = () => {
             /* TR-2: the run's mods (dbg_mountains: the debug menu's mountains run), this place's mountains dial and
                its ground's triangles (the land and the step grid's walls; to weigh frame times against) */
             mods: (run.mods || []).slice(),
+            /* Studio plan T2.6: the unlocks the run carries (unlocks.json ids: they choose its biomes and shop wares),
+               so the Studio's Run Lab draws this run's map from the log */
+            unlocks: (run.unlocks || []).slice(),
             mountains: placeLand.mountains || 0,
             groundTris: GAME.walkRenderer && GAME.walkRenderer.mesh ? Math.round(GAME.walkRenderer.mesh.n / 3) : null,
             /* TR-3: the camera's extra tilt on tall ground right now (degrees) */
@@ -518,6 +521,11 @@ debugLog.state = () => {
           /* RL-10: the nursery (numbers only): each egg's mode and hours left, and how many pairs have bred */
           eggs: (ranch.nursery || []).map(n => [n.mode, +Math.max(0, (n.ready - Date.now()) / 3600000).toFixed(1)]),
           bred: ranch.bred || 0,
+          /* IS-8: how many of them wander in the hub's pasture right now (a count only) */
+          pasture:
+            typeof GAME.worldBillies !== 'undefined' && GAME.worldBillies.pasture
+              ? Object.keys(GAME.worldBillies.pasture.mons).length
+              : 0,
         }
       : null;
     s.frameHz = GAME.frameScheduler.hz;
@@ -593,6 +601,54 @@ debugLog.more = () => {
         const d = v => Math.round(((((v * 180) / Math.PI + 180) % 360) + 360) % 360) - 180;
         return { yaw: d(S.yaw), turn: d(R.yaw || 0), hold: !!S.hold, stickLocked: !!S.lock };
       })(),
+    };
+  });
+  /* CAM-1: what the walking camera is doing: its mode (walk, indoor, room, swoop, free), zoom, turn, tilt, the rise on
+     tall ground, the goals in play with their weights, the look-ahead and how far the aim is from its goal (metres).
+     CAM-2: the zoom the camera uses (yours times the goals'), the moment (talk, boss, interest, idle, run, or none),
+     the points of interest in reach and the strongest's weight, the camera zone you stand in (its index, -1 for none)
+     and how long you have stood still (seconds). Only numbers and ids, no names */
+  t('camera', () => {
+    const W = typeof GAME.walkRenderer !== 'undefined' ? GAME.walkRenderer : null,
+      I = W && W.camInfo,
+      T = W && W.camT,
+      C = typeof GAME.walkView !== 'undefined' ? GAME.walkView.C : null;
+    if (!I || !T) return null;
+    const r = v => +v.toFixed(2);
+    return {
+      mode: I.mode,
+      zoom: r(W.zoom),
+      yaw: C && C.yaw != null ? r((C.yaw * 180) / Math.PI) : null,
+      pitch: C && C.sp != null ? r((Math.asin(C.sp) * 180) / Math.PI) : null,
+      rise: W.occT != null ? r(W.occT) : null,
+      goals: I.goals.map(([id, w]) => [id, r(w)]),
+      lead: [r(I.lead[0]), r(I.lead[1])],
+      off: [r(I.goal[0] - T[0]), r(I.goal[1] - T[1])],
+      moving: r(I.move),
+      zoomEff: I.zoom != null ? r(I.zoom) : null,
+      moment: I.moment ?? null,
+      interest: I.interest ? [I.interest[0], r(I.interest[1])] : null,
+      zone: I.zone ?? -1,
+      still: W.mom ? r(W.mom.still) : null,
+    };
+  });
+  /* CAM-3: the blur this frame: its path (full, fast, cheap, off), what the focus is on (you, tap, talk, encounter,
+     boss, battle), the focus distance, how far the focus leans from you, the tilt, the blur in use and the player's
+     slider (no names, no places) */
+  t('lens', () => {
+    const W = typeof GAME.walkRenderer !== 'undefined' ? GAME.walkRenderer : null,
+      L = W && W.lensInfo;
+    if (!L) return null;
+    const r = v => +(+v).toFixed(2),
+      lean = W.focusLean || [0, 0];
+    return {
+      path: L.path,
+      on: L.on,
+      focus: r(L.focus),
+      lean: [r(lean[0]), r(lean[1])],
+      tilt: r(L.tilt),
+      blur: r(L.blur),
+      slider: r(L.slider),
     };
   });
   t('caches', () => ({
@@ -860,6 +916,9 @@ debugLog.hook = () => {
     ['drawStructures', 'structures'],
     ['drawPlayerSilhouette', 'silhouette'],
     ['drawPostEffects', 'post'],
+    /* CAM-3: the blur and the rest of the post chain, apart (inside drawPostEffects) */
+    ['drawDepthOfField', 'blur'],
+    ['drawPostRest', 'post rest'],
     ['drawGround', 'ground'],
     ['reflectionPass', 'reflections'],
     ['drawWater', 'water'],

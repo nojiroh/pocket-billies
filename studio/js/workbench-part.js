@@ -139,7 +139,7 @@ expose({
 provide({ wbPartSection });
 /* to-module: end */
 const WBP_SIZES = ['S', 'M', 'L'];
-const WBP_SLOTS = ['head', 'head-extra', 'body', 'body-extra', 'front', 'back', 'signature'];
+const WBP_SLOTS = ['head', 'headExtra', 'body', 'bodyExtra', 'front', 'back', 'sig'];
 /* one colour per socket name, the same in both views */
 const WBP_COLORS = ['#c8323c', '#1f6e6f', '#6a3fb5', '#c77a12', '#2f7d32', '#b23a8a', '#2b5fb8', '#7a5c2e'];
 export const wbPart = {

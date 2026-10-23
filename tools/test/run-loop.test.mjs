@@ -1,4 +1,4 @@
-// RL-8: the run loop's rules (game/js/logic/run-loop.js) on the game's own data: what a run starts with, a run town's
+// RL-8: the run loop's rules (game/js/logic/run-loop.js) on the game's own data: a run town's
 // heal price and shop, the mini-bosses and the boss, a battle's seed, releasing a Billie and the payout screen's rows.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -18,13 +18,6 @@ function runOf(seed) {
   return run;
 }
 
-test('a run starts with run.start (copies), on its seed, tier and generator version', () => {
-  const g = L.runGive('S', 1, 7, R.start);
-  assert.deepEqual(g, { seed: 'S', tier: 1, mapgenV: 7, se: R.start.se, coins: R.start.coins, items: R.start.items });
-  g.coins.penny = 99;
-  assert.notEqual(R.start.coins.penny, 99);
-});
-
 test("a run town's clinic charges for each hurt Billie: below full HP, fainted, with a status", () => {
   reseed();
   const s = startedSave('musk0', 10),
@@ -36,6 +29,25 @@ test("a run town's clinic charges for each hurt Billie: below full HP, fainted, 
   s.team[2].status = 'scn';
   assert.deepEqual(L.runHealCost(s.team, 60), { hurt: 3, cost: 180 });
   assert.deepEqual(L.runHealCost(s.team, 0), { hurt: 3, cost: 0 });
+});
+
+test("a run town's clinic: paid and healed when hurt and the money is there, else nothing changes", () => {
+  reseed();
+  const s = startedSave('musk0', 10),
+    mk = () => fn('makeBilly')('musk0', 10);
+  s.team.push(mk());
+  s.se = 100;
+  assert.deepEqual(L.runClinic(s, 60), { hurt: 0, cost: 0, paid: 0 }, 'nobody hurt: nothing to pay');
+  s.team[0].hp = 1;
+  s.team[1].status = 'scn';
+  assert.deepEqual(L.runClinic(s, 60), { hurt: 2, cost: 120, paid: 0 }, 'too little money');
+  assert.equal(s.se, 100);
+  assert.equal(s.team[0].hp, 1);
+  s.se = 130;
+  assert.deepEqual(L.runClinic(s, 60), { hurt: 2, cost: 120, paid: 120 });
+  assert.equal(s.se, 10);
+  assert.equal(s.team[0].hp, fn('maxHp')(s.team[0]));
+  assert.equal(s.team[1].status, null);
 });
 
 test("a run town's shop: always its wares, then more drawn by weight, the same on a reload, by day", () => {
@@ -61,6 +73,28 @@ test("a run town's shop: always its wares, then more drawn by weight, the same o
     assert.equal(new Set(a.map(w => w.item)).size, 2, 'both, none twice');
     assert.deepEqual(a, L.runShopStock(run, 1, day, flipped));
   }
+});
+
+test("Studio plan T3.3: a run town's wares through the run's own unlocks (runShopOpen: shop.js and the simulation)", () => {
+  const run = runOf('SHOPOPEN'),
+    UD = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings },
+    locked = ['settlement', 'appeal', 'bailout'],
+    seen = new Set();
+  run.unlocks = [];
+  for (let day = 1; day <= 40; day++) {
+    const a = L.runShopOpen(run, 3, day, R.shop, UD);
+    assert.ok(!a.some(w => locked.includes(w.item)), `day ${day}: nothing the run hasn't unlocked`);
+    const open = modules.unlocks.unlockOpen(R.shop.pick, 'shop', [], UD);
+    assert.deepEqual(a, L.runShopStock(run, 3, day, { ...R.shop, pick: open }), 'the stock of the open wares');
+  }
+  run.unlocks = ['shop_appeal', 'shop_bailout', 'shop_settlement'];
+  for (let day = 1; day <= 40; day++) for (const w of L.runShopOpen(run, 3, day, R.shop, UD)) seen.add(w.item);
+  assert.ok(
+    locked.some(k => seen.has(k)),
+    'unlocked, they can be stocked'
+  );
+  run.unlocks = undefined;
+  assert.deepEqual(L.runShopOpen(run, 3, 2, R.shop, UD), L.runShopStock(run, 3, 2, R.shop), 'no copy: all open');
 });
 
 test("the run's foes: a leader on every mini-boss node and the boss's, none twice, at their row's levels", () => {
@@ -109,6 +143,64 @@ test("a battle's seed is its node's and its number's", () => {
   const run = runOf('SEEDRUN');
   assert.equal(L.runBattleSeed(run, 2, 5), 'SEEDRUN|n2|battle|5');
   assert.notEqual(L.runBattleSeed(run, 2, 5), L.runBattleSeed(run, 2, 6));
+});
+
+test("a run battle's start: its seed, the forecast's weather (clear is sunny), the Loopholes' rows when held", () => {
+  const run = runOf('RL8BATTLEX'),
+    { runWeather } = modules['run-map'],
+    { battleWeatherOf } = modules.weather;
+  for (let i = 0; i < run.map.nodes.length; i++) {
+    const w = runWeather(run, i, run.clock) || 'clear',
+      x = L.runBattleExtra(run, i, 4, GAME_DATA.rules.env, null);
+    assert.equal(x.seed, L.runBattleSeed(run, i, 4));
+    assert.deepEqual(x.wx, battleWeatherOf(w === 'clear' ? 'sunny' : w, GAME_DATA.rules.env), `node ${i}: ${w}`);
+    assert.ok(!('fx' in x), 'no Loopholes: no fx');
+  }
+  const fx = [{ kind: 'money', mult: 1.2, src: 'x' }];
+  assert.equal(L.runBattleExtra(run, 0, 0, GAME_DATA.rules.env, fx).fx, fx);
+});
+
+test("the Actions sheet's weather words: boosts first, then cuts, in whole percent; nothing when it changes nothing", () => {
+  assert.equal(L.weatherEffectText({ k: 'rain', m: { Fire: 0.8, Water: 1.2 } }), 'Water +20%, Fire −20%');
+  assert.equal(L.weatherEffectText({ k: 'x', m: { Steel: 1.1, Grass: 0.9, Ice: 1 } }), 'Steel +10%, Grass −10%');
+  assert.equal(L.weatherEffectText({ k: 'x', m: { B: 1.15, A: 1.15 } }), 'A +15%, B +15%', 'equal: by name');
+  assert.equal(L.weatherEffectText(null), '');
+});
+
+test("the Actions sheet's run status: the day, the deadline, the node's type, its weather today and tomorrow", () => {
+  const run = runOf('RLSHEET01'),
+    { runWeather } = modules['run-map'],
+    env = GAME_DATA.rules.env;
+  for (let i = 0; i < run.map.nodes.length; i++) {
+    const st = L.runSheetStatus(run, i, env);
+    assert.ok(st, `node ${i}`);
+    assert.equal(st.day, run.clock);
+    assert.equal(st.deadline, run.deadline);
+    assert.equal(st.type, run.map.nodes[i].type);
+    assert.deepEqual(
+      st.days.map(d => [d.day, d.w]),
+      [run.clock, run.clock + 1].map(d => [d, runWeather(run, i, d)]),
+      'the forecast a week ahead holds both days'
+    );
+    for (const d of st.days) assert.deepEqual(d.wx, L.runBattleWeather(run, i, d.day, env));
+  }
+  assert.deepEqual(
+    L.runBattleExtra(run, 1, 2, env, null).wx,
+    L.runSheetStatus(run, 1, env).days[0].wx,
+    "today's words are the battle's own weather"
+  );
+  assert.equal(L.runSheetStatus(run, 999, env), null, 'no such node');
+  assert.equal(L.runSheetStatus({ ...run, map: null }, 0, env), null, 'no map yet');
+});
+
+test("the run's end keeps the whole party on a win, only the one picked on a loss; items count at their shop price", () => {
+  const team = [{ uid: 'a' }, { uid: 'b' }, { uid: 'c' }];
+  assert.deepEqual(L.runKept(team, true, 'b'), ['a', 'b', 'c']);
+  assert.deepEqual(L.runKept(team, false, 'b'), ['b']);
+  assert.deepEqual(L.runKept(team, false, 'z'), [], 'not in the party: none');
+  const id = Object.keys(data.ITEMS).find(k => data.ITEMS[k].price > 0);
+  assert.equal(L.runItemPrice(id), data.ITEMS[id].price);
+  assert.equal(L.runItemPrice('no-such-item'), 0);
 });
 
 test('releasing: a Billie caught on the run is paid at the end, one from home only leaves the party', () => {

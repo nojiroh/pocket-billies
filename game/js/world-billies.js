@@ -10,16 +10,25 @@
    frame. A species' rig art is loaded the first time it's needed; until then it simply isn't shown. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide, soundEffect } from './hooks.js';
+import { provide, ranchOpen, soundEffect } from './hooks.js';
 import { clamp } from './util.js';
-import { SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
+import { RULES, SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
 import { billyName, encountersHere, findBilly, maxHp } from './logic/rules.js';
+import {
+  pastureBillies,
+  pastureIn,
+  pastureRoamLine,
+  pastureSpot,
+  pastureWander,
+  pastureZone,
+} from './logic/pasture.js';
 import { battleStageKey } from './logic/battle-engine.js';
+import { densityWorldMpp } from './logic/pixel-density.js';
 import { save, saveData, uiState } from './game-state.js';
 import { makeCanvas } from './art.js';
 import { RIG_BACK_VIEW, buildCode, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { battleStagePrepare } from './battle-stage.js';
-import { walkView, walkablePointNear, worldToScreen } from './walk-view.js';
+import { walkData, walkView, walkablePointNear, worldToScreen } from './walk-view.js';
 import { environment } from './environment.js';
 import { standingHeightAt } from './walk/heights.js';
 /* eslint-disable no-func-assign */
@@ -30,6 +39,9 @@ expose({
   buddyTap: [() => buddyTap, v => ((buddyTap = v), provide({ buddyTap }))],
   companionItems: [() => companionItems, v => ((companionItems = v), provide({ companionItems }))],
   companionSpecies: [() => companionSpecies, v => (companionSpecies = v)],
+  pastureItems: [() => pastureItems, v => ((pastureItems = v), provide({ pastureItems }))],
+  pastureRounds: [() => pastureRounds, v => (pastureRounds = v)],
+  pastureTap: [() => pastureTap, v => ((pastureTap = v), provide({ pastureTap }))],
   shiftWorldBillies: [() => shiftWorldBillies, v => (shiftWorldBillies = v)],
   warmWorldBillies: [() => warmWorldBillies, v => ((warmWorldBillies = v), provide({ warmWorldBillies }))],
   wildBillyItem: [() => wildBillyItem, v => ((wildBillyItem = v), provide({ wildBillyItem }))],
@@ -46,6 +58,8 @@ provide({
   buddyItems,
   buddyTap,
   companionItems,
+  pastureItems,
+  pastureTap,
   warmWorldBillies,
   wildBillyItem,
   worldBillyGlows,
@@ -63,6 +77,7 @@ export const worldBillies = {
   sayT: 0,
   lastTap: 0,
   mons: {},
+  pasture: null,
   fx: [],
 };
 provide({ worldBillies }); /* to-module */
@@ -121,18 +136,10 @@ function worldBillyFrame(sp, view, pose, t, seed, build, coat) {
   }
   return c;
 }
-/* metres per rig pixel: a billionaire stands about 0.9 of its listed height, between 0.6 and 2 m */
-/* v34: and sized so its pixels sit on the art grid: one art pixel (1/68 m) holds a whole number of quarter rig pixels
-   (2, 2.25, 2.5 ...), never off by more than 6% of the height it would otherwise have, so its pixels line up with the
-   props' instead of beating against them */
+/* metres per rig pixel: a billionaire stands about 0.9 of its listed height, between 0.6 and 2 m, on the art grid
+   (v34); the maths is logic/pixel-density.js densityWorldMpp (Studio plan Phase 5, T5.7: the Studio reports it) */
 function worldBillyMetersPerPixel(sp, R, big = 1) {
-  const h = clamp((SPECIES[sp].ht || 1) * 0.9, 0.6, 2) * big,
-    px = Math.max(20, R.geo.base - R.geo.top || R.BH * 0.7),
-    m = h / px;
-  const r = 1 / (m * 68),
-    rq = r >= 1 ? Math.round(r * 4) / 4 : 1 / (Math.round(4 / r) / 4),
-    mq = 1 / (rq * 68);
-  return Math.abs(mq / m - 1) <= 0.06 ? mq : m;
+  return densityWorldMpp(SPECIES[sp].ht, R.geo, R.BH, big);
 }
 export function worldBillyItem(k, sp, view, pose, t, seed, x, z, o = {}) {
   const im = worldBillyFrame(sp, view, pose, t, seed, o.build, o.coat);
@@ -350,6 +357,121 @@ export function buddyTap() {
       });
   if (typeof soundEffect === 'function') soundEffect('cry', { sp: m.sp });
   save();
+}
+/* ---------- the pasture (IS-8): the ranch's Billies wander in the hub's fenced field ---------- */
+/* up to rules.ranch.pasture of the Billies at home (logic/pasture.js pastureBillies: the trainees first), each
+   wandering inside the fence (pastureRoamLine, the line the build tool fenced) round the trough and the hay; now and
+   then a hop. Where each stands isn't kept: they spread out afresh when the map is walked again */
+function pastureRounds(sc, zone) {
+  const C = walkData().sc.props,
+    out = [];
+  for (const p of sc.props || []) {
+    const M = C[p.k];
+    if (!M || /^fence_/.test(p.k) || !pastureIn(zone, p.x, p.z)) continue;
+    const r = M.solid != null ? M.solid : M.box ? Math.hypot(M.box[0], M.box[1]) / 2 : 0;
+    if (r > 0.3) out.push([p.x, p.z, r * (p.s || 1) + 0.5]);
+  }
+  return out;
+}
+function pastureItems(out, t, dt) {
+  const sc = walkView.sc,
+    zone = sc && !uiState.inside && !uiState.bench ? pastureZone(sc) : null;
+  if (!zone) {
+    worldBillies.pasture = null;
+    return;
+  }
+  let F = worldBillies.pasture;
+  if (!F || F.sc !== walkView.id) {
+    const line = pastureRoamLine(zone);
+    F = worldBillies.pasture = {
+      sc: walkView.id,
+      line,
+      rounds: pastureRounds(sc, zone),
+      mid: line.reduce((a, p) => [a[0] + p[0] / line.length, a[1] + p[1] / line.length], [0, 0]),
+      list: [],
+      listAt: -1e9,
+      mons: {},
+    };
+  }
+  /* who's out: looked at again every real second, however slow the frames (the walk's own clock is held back on a
+     slow frame); storage changes at the ranch's sheet, the Team tab, a run */
+  const now = performance.now();
+  if (!(now - F.listAt < 1000 && now >= F.listAt)) {
+    F.list = pastureBillies(saveData, (RULES.ranch && RULES.ranch.pasture) ?? 6);
+    F.listAt = now;
+    const keep = new Set(F.list.map(m => m.uid));
+    for (const u of Object.keys(F.mons)) if (!keep.has(u)) delete F.mons[u];
+  }
+  /* nothing drawn from far off (their frames are made when first seen) */
+  const P = walkView.pl;
+  if (!P || Math.hypot(P.x - F.mid[0], P.z - F.mid[1]) > 75) return;
+  for (const m of F.list) {
+    let b = F.mons[m.uid];
+    if (!b) {
+      const at = pastureSpot(F.line, F.rounds, Math.random);
+      if (!at) continue;
+      b = F.mons[m.uid] = {
+        x: at[0],
+        z: at[1],
+        tx: null,
+        tz: null,
+        wait: 0.5 + Math.random() * 4,
+        flip: Math.random() < 0.5 ? 1 : -1,
+        back: false,
+        react: null,
+        seed: Math.abs(m.uid.split('').reduce((a, c) => a * 31 + c.charCodeAt(0), 11)) % 997,
+      };
+    }
+    b.wait -= dt;
+    if (b.tx == null && b.wait <= 0) {
+      const g = pastureWander(F.line, F.rounds, [b.x, b.z], Math.random);
+      if (g) [b.tx, b.tz] = g;
+      b.wait = 3 + Math.random() * 7;
+    }
+    let walk = false;
+    if (b.tx != null) {
+      const dx = b.tx - b.x,
+        dz = b.tz - b.z,
+        d = Math.hypot(dx, dz);
+      if (d < 0.05) b.tx = null;
+      else {
+        const s = Math.min(d, 0.75 * dt);
+        b.x += (dx / d) * s;
+        b.z += (dz / d) * s;
+        if (Math.abs(dx) > 0.02) b.flip = dx > 0 ? -1 : 1;
+        b.back = dz > 0.12 && Math.abs(dz) > Math.abs(dx);
+        walk = true;
+      }
+    } else if (!b.react && Math.random() < dt * 0.04) b.react = { pose: 'cheer', t0: t };
+    if (b.react && t - b.react.t0 > 900) b.react = null;
+    const pose = b.react ? b.react.pose : null,
+      it = worldBillyItem(
+        'ranchBilly',
+        m.sp,
+        b.back && !pose && walk ? 'back' : 'front',
+        pose || (walk ? 'walk' : null),
+        pose ? t - b.react.t0 : t + b.seed * 37,
+        b.seed,
+        b.x,
+        b.z,
+        { flip: b.flip, big: m.alpha ? 1.12 : 1, build: m.build, coat: m.coat, extra: { mon: m, uid: m.uid } }
+      );
+    if (it) out.push(it);
+  }
+}
+/* tapping a Billie in the pasture: it hops and cries, then the ranch's sheet opens */
+function pastureTap(uid) {
+  const F = worldBillies.pasture,
+    b = F && F.mons[uid],
+    m = F && F.list.find(q => q.uid === uid);
+  if (b) {
+    b.react = { pose: 'cheer', t0: walkView.t };
+    b.tx = null;
+  }
+  if (m && typeof soundEffect === 'function') soundEffect('cry', { sp: m.sp });
+  setTimeout(() => {
+    if (typeof ranchOpen === 'function') ranchOpen();
+  }, 380);
 }
 /* ---------- world trainers' companions ---------- */
 export function companionSpecies(T) {

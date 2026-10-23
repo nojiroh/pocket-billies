@@ -11,20 +11,22 @@ import {
   musicCryTidy,
   neutralPose,
   openSkeleton,
+  trainerRunHTML,
   wardrobeEditor,
 } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
-import { iconURL, makeCanvas } from '../../game/js/art.js';
+import { ART_CACHE, ICON_ATLAS, iconURL, makeCanvas } from '../../game/js/art.js';
 import {
-  PERSON_ART_CACHE,
   bodySliders,
   cleanLook,
+  forgetPersonLooks,
   lookFromOld,
   personSheet,
   wornColors,
 } from '../../game/js/person-art.js';
 import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { renameTypeIn } from '../../game/js/logic/type-rename.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -43,13 +45,11 @@ import {
   moveOptions,
   numberField,
   openSection,
+  pathPrefix,
   peopleOptions,
   rangeField,
-  readPath,
   render,
   selectField,
-  setReadPath,
-  setWritePath,
   speciesName,
   speciesOptions,
   statOptions,
@@ -92,20 +92,18 @@ expose({
   baseStats: [() => baseStats, v => (baseStats = v)],
   cloneSpeciesArt: [() => cloneSpeciesArt, v => (cloneSpeciesArt = v)],
   evolutionRowHTML: [() => evolutionRowHTML, v => (evolutionRowHTML = v)],
+  iconSpriteHTML: [() => iconSpriteHTML, v => (iconSpriteHTML = v)],
   lineIndexOf: [() => lineIndexOf],
   personLook: [() => personLook, v => (personLook = v)],
   personPreviewHTML: [() => personPreviewHTML, v => (personPreviewHTML = v)],
   poolName: [() => poolName],
   poolPercent: [() => poolPercent],
-  readPathBeforeShopThanks: [() => readPathBeforeShopThanks],
   refsTo: [() => refsTo, v => (refsTo = v)],
   removeRefs: [() => removeRefs, v => (removeRefs = v)],
-  renameType: [() => renameType, v => (renameType = v)],
   selectedLineIndex: [() => selectedLineIndex],
   statsCard: [() => statsCard, v => (statsCard = v)],
   trainerRobotHTML: [() => trainerRobotHTML, v => (trainerRobotHTML = v)],
   whereCard: [() => whereCard, v => (whereCard = v)],
-  writePathBeforeShopThanks: [() => writePathBeforeShopThanks],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -925,6 +923,14 @@ const PASSIVES = [
   ['inherit', 'Legacy: passes its stat boosts to the next teammate when it faints'],
   ['landlord', 'Sure-footed: not hurt by sharp stones'],
 ];
+/* Studio plan T6.3: an icon cut from the loaded icon atlas by CSS (scaled, pixelated), so a first open of Types does
+   not encode a PNG per particle icon (toDataURL took most of its 0.5-2.7 s); iconURL while the atlas is not loaded */
+function iconSpriteHTML(key, scale, alt) {
+  const im = ART_CACHE.img[ICON_ATLAS],
+    r = ARTMAN.icons[key];
+  if (!r || !im || !im.naturalWidth) return `<img src="${iconURL(key, scale)}" alt="${escapeHtml(alt)}">`;
+  return `<span class="pix" role="img" aria-label="${escapeHtml(alt)}" style="display:inline-block;width:${r[2] * scale}px;height:${r[3] * scale}px;background:url('${im.src}') -${r[0] * scale}px -${r[1] * scale}px / ${im.naturalWidth * scale}px ${im.naturalHeight * scale}px no-repeat;image-rendering:pixelated"></span>`;
+}
 const FX_ICONS = [
   'bit',
   'up',
@@ -965,7 +971,7 @@ SECTIONS.types = () => {
       t,
       i
     ) => `<div class="type-row">${typeChipHTML(t.id)}${grid(textField('Name', `types.${i}.id`, { max: 14, help: 'Renaming updates every move, Billie and rule that uses it.' }), colorField('Color', `types.${i}.color`), colorField('Text color', `types.${i}.text`), selectField('Ability', `types.${i}.passive`, PASSIVES))}
-  <div class="fxpick"><span>Battle particles</span>${FX_ICONS.map(k => `<button class="icb ${(t.fx || []).includes(k) ? 'on' : ''}" data-act="typeFx" data-i="${i}" data-k="${k}" title="${k}"><img src="${iconURL(k, 2)}" alt="${k}"></button>`).join('')}</div><button class="btn danger subtle" data-act="typeDel" data-i="${i}">Delete type</button></div>`
+  <div class="fxpick"><span>Battle particles</span>${FX_ICONS.map(k => `<button class="icb ${(t.fx || []).includes(k) ? 'on' : ''}" data-act="typeFx" data-i="${i}" data-k="${k}" title="${k}">${iconSpriteHTML(k, 2, k)}</button>`).join('')}</div><button class="btn danger subtle" data-act="typeDel" data-i="${i}">Delete type</button></div>`
   ).join('');
   return `<div class="ed-col solo"><div class="ed-head"><h2>Types</h2><button class="btn primary" data-act="typeNew">+ New type</button></div>${card('Matchups', matrix)}${card('Types', rows + `<div class="type-row">${typeChipHTML('None')}${grid(colorField('Normal color', 'untyped.color'), colorField('Normal text', 'untyped.text'))}</div>`, { sub: 'Each type can have one ability. Abilities and their numbers are tuned under Rules → Battle.' })}</div>`;
 };
@@ -1011,30 +1017,11 @@ ACTIONS.typeDel = async d => {
     !(await ask(`Delete the ${escapeHtml(t.id)} type? Moves of this type become Normal and Billies lose it.`, 'Delete'))
   )
     return;
-  renameType(t.id, null);
+  renameTypeIn(D, t.id, null);
   D.types.splice(+d.i, 1);
   changed();
   render();
 };
-function renameType(from, to) {
-  const D = studioState.D;
-  D.types.forEach(t => {
-    t.strong = t.strong.map(x => (x === from ? to : x)).filter(Boolean);
-    t.weak = t.weak.map(x => (x === from ? to : x)).filter(Boolean);
-  });
-  Object.values(D.moves).forEach(m => {
-    if (m.t === from) m.t = to || 'None';
-  });
-  D.lines.forEach(L => {
-    L.types = L.types.map(a => {
-      const r = a.map(x => (x === from ? to : x)).filter(Boolean);
-      return r.length ? r : ['None'];
-    });
-  });
-  const R = D.rules.battle;
-  if (R.shockType === from) R.shockType = to || D.types[0].id;
-  if (R.spinType === from) R.spinType = to || D.types[0].id;
-}
 studioState.hooks.types = (path, v) => {
   const m = path.match(/^types\.(\d+)\.id$/);
   if (m) {
@@ -1059,7 +1046,7 @@ document.addEventListener('change', ev => {
         el.value = old;
         return;
       }
-      renameType(old, nu);
+      renameTypeIn(studioState.D, old, nu);
       changed();
       render();
     }
@@ -1152,7 +1139,7 @@ SECTIONS.shops = () => {
     )
     .join('');
   if (!sh)
-    return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="shopNew">+ New shop</button><button class="btn" data-act="boutiqueNew">+ New boutique</button></div></aside><div class="ed-col"><p class="help">No shops yet.</p></div></div>`;
+    return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="shopNew">+ New shop</button><button class="btn" data-act="boutiqueNew">+ New boutique</button></div></aside><div class="ed-col"><p class="help">No shops yet. Legacy: shops.json is the old world’s town shops; a run’s towns stock from the run rules (rules.json run.shop, in the Run Lab).</p></div></div>`;
   const wardrobe = sh.kind === 'wardrobe',
     p = `shops.${k}`,
     stock = (sh.stock || [])
@@ -1172,7 +1159,7 @@ SECTIONS.shops = () => {
       .join('');
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="shopNew">+ New shop</button><button class="btn" data-act="boutiqueNew">+ New boutique</button></div><div class="llist">${list}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(sh.name)}</h2></div><button class="btn danger" data-act="shopDel">Delete</button></div>
- ${card('Shop', `<div class="keeper"><div class="person-prev">${personPreviewHTML(sh.who)}</div><div>${grid(textField('Shop name', `${p}.name`), textField('Keeper', `${p}.keeper`), selectField('Keeper’s look', `${p}.who`, peopleOptions(), { rr: 1, help: 'Edit looks under People.' }))}${textField('Greeting', `${p}.greeting`, { area: 1, rows: 2 })}${textField('Thank-you lines (one per line)', '@lines.' + k, { area: 1, rows: 3, ph: 'Leave empty for the default lines.' })}</div></div>`)}
+ ${card('Shop', `<div class="keeper"><div class="person-prev">${personPreviewHTML(sh.who)}</div><div>${grid(textField('Shop name', `${p}.name`), textField('Keeper', `${p}.keeper`), selectField('Keeper’s look', `${p}.who`, peopleOptions(), { rr: 1, help: 'Edit looks under Looks.' }))}${textField('Greeting', `${p}.greeting`, { area: 1, rows: 2 })}${textField('Thank-you lines (one per line)', '@thanks.' + k, { area: 1, rows: 3, ph: 'Leave empty for the default lines.' })}</div></div>`)}
  ${
    wardrobe
      ? card(
@@ -1206,29 +1193,24 @@ SECTIONS.shops = () => {
    )}. Choose a shop or boutique for a stop under World & encounters.</p>`
  )}</div></div>`;
 };
-/* thank-you lines are stored as an array; edit them as text */
-const readPathBeforeShopThanks = readPath;
-setReadPath(function (path, o) {
-  if (path && path.startsWith('@lines.')) {
-    const s = studioState.D.shops[path.slice(7)];
+/* thank-you lines are stored as an array; edit them as text (Studio plan F20: their own prefix, @thanks.; lore's
+   lists of lines have @lines.) */
+pathPrefix(
+  '@thanks.',
+  k => {
+    const s = studioState.D.shops[k];
     return s && s.thanks ? s.thanks.join('\n') : '';
-  }
-  return readPathBeforeShopThanks(path, o);
-});
-const writePathBeforeShopThanks = writePath;
-setWritePath(function (path, v, o) {
-  if (path && path.startsWith('@lines.')) {
-    const s = studioState.D.shops[path.slice(7)];
+  },
+  (k, v) => {
+    const s = studioState.D.shops[k];
     const a = String(v || '')
       .split('\n')
       .map(x => x.trim())
       .filter(Boolean);
     if (a.length) s.thanks = a;
     else delete s.thanks;
-    return;
   }
-  return writePathBeforeShopThanks(path, v, o);
-});
+);
 document.addEventListener('change', ev => {
   const el = ev.target;
   if (el.dataset.actSel === 'stockKind') {
@@ -1337,20 +1319,15 @@ SECTIONS.people = () => {
   const k = studioState.sel.person,
     P = D.people[k],
     W = D.wardrobe;
-  if (!P.look) {
-    personLook(k);
-    studioState.dirty = true;
-    updateTopBar();
-  }
-  const L = P.look,
+  /* every person has a look (person.schema.json); opening the section never writes to the data (Studio plan F14) */
+  const L = P.look || cleanLook(null),
     p = `people.${k}.look`;
-  L.colors = L.colors || {};
-  for (const id of Object.values(L.wear || {}))
-    if (id && W.items[id] && !L.colors[id]) L.colors[id] = wornColors(cleanLook(L), id);
+  /* an item's colours not set yet show the ones it is drawn with, without writing them (Studio plan F14) */
+  const shown = cleanLook(L);
   afterRender(() => {
     if (typeof loadWardrobe === 'function' && !wardrobeEditor.loaded)
       loadWardrobe().then(() => {
-        PERSON_ART_CACHE.clear();
+        forgetPersonLooks();
         const b = $('#personPrev');
         if (b) b.innerHTML = personPreviewHTML(k);
       });
@@ -1371,8 +1348,9 @@ SECTIONS.people = () => {
     .join('');
   const wear = W.slots
     .map(s => {
-      const id = L.wear[s.id],
-        it = id && W.items[id];
+      const id = (L.wear || {})[s.id],
+        it = id && W.items[id],
+        worn = it ? wornColors(shown, id) : [];
       return `<div class="wd-prow">${selectField(
         s.name,
         `${p}.wear.${s.id}`,
@@ -1381,7 +1359,7 @@ SECTIONS.people = () => {
           .map(([i, x]) => [i, x.name]),
         { none: s.empty ? 'None' : undefined, opt: s.empty, rr: 1 }
       )}
-  ${it ? `<div class="grid colors">${it.colors.map((c, ci) => (it.slot === 'hair' || it.slot === 'eyes' || (it.link && it.link[String(ci + 1)]) ? '' : colorField(c[0], `${p}.colors.${id}.${ci}`))).join('')}</div>` : ''}</div>`;
+  ${it ? `<div class="grid colors">${it.colors.map((c, ci) => (it.slot === 'hair' || it.slot === 'eyes' || (it.link && it.link[String(ci + 1)]) ? '' : colorField(c[0], `${p}.colors.${id}.${ci}`, { def: worn[ci] }))).join('')}</div>` : ''}</div>`;
     })
     .join('');
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="personNew">+ New look</button></div><div class="llist">${list}</div></aside>
@@ -1406,7 +1384,7 @@ SECTIONS.people = () => {
 };
 studioState.hooks.people = path => {
   if (/^people\./.test(path)) {
-    PERSON_ART_CACHE.clear();
+    forgetPersonLooks();
     const b = $('#personPrev');
     if (b) b.innerHTML = personPreviewHTML(studioState.sel.person);
   }
@@ -1462,7 +1440,7 @@ SECTIONS.jobs = () => {
       )}${textField('What it did (after the Billie’s name)', `${p}.quip`, { help: '“Hoodini made 40 lattes. Most were wrong.”' })}<button class="btn danger subtle" data-act="jobDel" data-k="${k}">Delete job</button></div></div>`;
     })
     .join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Jobs</h2><button class="btn primary" data-act="jobNew">+ New job</button></div>${card('Jobs', rows, { sub: 'Kept for the ranch (phase 12): the game has no jobs for now, so nothing here is used yet.' })}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Jobs</h2><button class="btn primary" data-act="jobNew">+ New job</button></div>${card('Jobs', rows, { sub: 'Legacy: kept for the ranch (phase 12). The game has no jobs, so nothing here is used.' })}</div>`;
 };
 document.addEventListener('change', ev => {
   const el = ev.target;
@@ -1538,6 +1516,7 @@ SECTIONS.trainers = () => {
     : `<p class="help">Beating this trainer doesn’t award a badge.</p><button class="btn" data-act="seatOn">Award a badge</button>`;
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="trainerNew">+ New trainer</button></div><div class="llist">${list}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(T.name)}</h2></div><button class="btn danger" data-act="trainerDel">Delete</button></div>
+ ${trainerRunHTML(k, T)}
  ${card(
    'Who and where',
    `<div class="keeper"><div class="person-prev">${personPreviewHTML(T.who)}</div><div>${grid(
@@ -1556,7 +1535,7 @@ SECTIONS.trainers = () => {
        `${p}.battleStage`,
        Object.entries(D.battleStages).map(([b, v]) => [b, v.name || b])
      ),
-     numberField('Reward ($)', `${p}.reward`, { min: 0, step: 50 }),
+     numberField(T.miniboss ? 'Reward ($), outside runs only' : 'Reward ($)', `${p}.reward`, { min: 0, step: 50 }),
      selectField(
        'First-win egg',
        `${p}.egg`,

@@ -28,13 +28,10 @@ import {
   typeBadgeHTML,
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
-import { COINS, ITEMS, MOVES, RELICS, RULES, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
+import { COINS, ITEMS, MOVES, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
 import {
-  addBilly,
   billyName,
-  dropEncounter,
-  findBilly,
   formatNumber,
   healAll,
   maxHp,
@@ -44,17 +41,17 @@ import {
   partMaxHp,
   plural,
 } from './logic/rules.js';
-import { relicOfferMake } from './logic/relics.js';
 import {
   ACTOR_SIDE,
   BATTLE_RULES,
   CATCH_RULES,
   actorTypes,
   allSnapshots,
-  battleRoll,
   battleSay,
   canUse,
+  catchKeep,
   catchOdds,
+  catchOffer,
   catchRoll,
   effectiveStat,
   enemyOnly,
@@ -65,7 +62,7 @@ import {
   shockName,
   teamNeedsHp,
 } from './logic/battle-engine.js';
-import { battleRewards } from './logic/battle-rewards.js';
+import { battleSettle, battleSettleWin } from './logic/battle-rewards.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
 import { artURL, coinHTML, iconURL, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
@@ -90,6 +87,7 @@ import {
   camAt,
 } from './battle-stage.js';
 import { walkView } from './walk-view.js';
+import { engineSetting } from './engine/settings.js';
 import { WEATHER_NAMES, currentLocationMap, environment, environmentState } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { addRipple, waterAt } from './walk/water.js';
@@ -150,7 +148,7 @@ expose({
   stagePlatesOn: [() => stagePlatesOn],
   stageTap: [() => stageTap, v => (stageTap = v)],
   statShortName: [() => statShortName],
-  stopTimers: [() => stopTimers, v => (stopTimers = v)],
+  stopTimers: [() => stopTimers, v => ((stopTimers = v), provide({ stopTimers }))],
   tapMessage: [() => tapMessage, v => (tapMessage = v)],
   teamPick: [() => teamPick, v => (teamPick = v)],
   tickerUpdate: [() => tickerUpdate, v => (tickerUpdate = v)],
@@ -158,7 +156,7 @@ expose({
   typeText: [() => typeText, v => (typeText = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop, openBattle, platesTick, playTurnEvents });
+provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop, openBattle, platesTick, playTurnEvents, stopTimers });
 export function setPaintActions(v) {
   paintActions = v; // eslint-disable-line no-func-assign
   provide({ paintActions });
@@ -280,8 +278,18 @@ function battleSwoop(go) {
   uiState.encAt = null;
   const fx = e ? P.x * 0.6 + e[0] * 0.4 : P.x,
     fz = e ? P.z * 0.6 + e[1] * 0.4 : P.z;
-  walkRenderer.swoop = { x: fx, z: fz, z0: walkRenderer.zoomT };
-  walkRenderer.zoomT = Math.max(0.42, walkRenderer.zoomT * 0.5);
+  /* CAM-2: the swoop is a camera goal (walk/camera.js) that frames you and the spot and zooms in; your own zoom
+     (zoomT) stays as it is */
+  walkRenderer.swoop = {
+    x: fx,
+    z: fz,
+    px: P.x,
+    pz: P.z,
+    ex: e ? e[0] : P.x,
+    ez: e ? e[1] : P.z,
+    zoom: engineSetting('camera', 'encZoom'),
+    arrived: false,
+  };
   P.route = null;
   P.walk = 0;
   if (e) {
@@ -305,12 +313,19 @@ function battleSwoop(go) {
     if (typeof addRipple === 'function' && typeof waterAt === 'function' && waterAt(e[0], e[1]))
       addRipple(e[0], e[1], 1);
   }
-  setTimeout(() => {
-    const S0 = walkRenderer.swoop;
-    walkRenderer.swoop = null;
-    if (S0) walkRenderer.zoomT = S0.z0;
-    go();
-  }, 720);
+  /* CAM-2: the battle comes up once the camera has arrived (walk/camera.js sets `arrived`), not before Engine >
+     Camera > Encounter shot: shortest, and no later than its longest */
+  const t0 = performance.now(),
+    S = walkRenderer.swoop,
+    cam = k => engineSetting('camera', k),
+    wait = () => {
+      const t = performance.now() - t0;
+      if (walkRenderer.swoop === S && !((S.arrived && t >= cam('encMin')) || t >= cam('encMax')))
+        return void setTimeout(wait, 30);
+      if (walkRenderer.swoop === S) walkRenderer.swoop = null;
+      go();
+    };
+  setTimeout(wait, 30);
 }
 function battleRise() {
   const el = $('#battle');
@@ -325,9 +340,8 @@ function battleLeave(mid) {
   el.classList.add('bt-leave');
   setTimeout(() => {
     mid();
-    if (typeof walkRenderer !== 'undefined') {
-      walkRenderer.zoom = Math.max(0.42, (walkRenderer.zoomT || 1) * 0.55);
-    }
+    /* CAM-2: the camera pulls back out as a goal (walk/camera.js `leave`), not by changing the zoom */
+    if (typeof walkRenderer !== 'undefined') walkRenderer.leaveAt = walkView.t;
   }, 360);
 }
 function screenWipe(mid) {
@@ -902,30 +916,22 @@ function finishThrow(res, id, lab, spin) {
   if (res.edge) battleSay('It landed on its edge. Critical tax!');
   if (res.caught) {
     battleSay(`Gotcha! ${billyName(e)} was taxed.`, { k: 'caught' });
-    if (e.boss) {
-      const f = e.hp / maxHp(e);
-      delete e.boss;
-      e.alpha = true;
-      e.hp = Math.max(1, Math.round(maxHp(e) * f));
-      battleSay(`${billyName(e)} is an Alpha: a little bigger and stronger than others of its kind.`);
-    }
-    e.hp = Math.max(1, e.hp);
-    const where = addBilly(e);
+    /* logic/battle-engine.js catchKeep: an Alpha stays one, at least 1 HP, addBilly; the battle is over */
+    const { where, alpha } = catchKeep(e);
+    if (alpha) battleSay(`${billyName(e)} is an Alpha: a little bigger and stronger than others of its kind.`);
     if (where === 'box') battleSay(`${billyName(e)} went to storage. Your team is full.`);
     /* RL-8: a run's party is full: after the battle, one of the seven leaves the party (run.js) */
     if (where === 'full') {
       runCatch.m = e;
       battleSay(`Your party is full. After the battle, pick who leaves it.`);
     }
-    activeBattle.over = 'caught';
     save();
     return playTurnEvents();
   }
   battleSay(['It broke free right away.', 'It almost stayed in.', 'So close. It wobbled twice.'][res.w]);
-  /* RL-4: the bribe is the battle's chance (battleRoll: its own stream when it has a seed) */
-  if (battleRoll() < CATCH_RULES.offerChance) {
-    activeBattle.offer =
-      Math.round((CATCH_RULES.offerMin + battleRoll() * (CATCH_RULES.offerMax - CATCH_RULES.offerMin)) / 10) * 10;
+  /* RL-4: the bribe is the battle's chance (logic/battle-engine.js catchOffer, on battleRoll: its own stream when it
+     has a seed) */
+  if (catchOffer()) {
     battleSay(`${billyName(e)} is offering you money to let it go.`, { k: 'cry', si: 1 });
     return playTurnEvents();
   }
@@ -938,25 +944,12 @@ export function endBattle() {
     T = activeBattle.T,
     tid = activeBattle.tid,
     /* RL-8: what it pays and costs (logic/battle-rewards.js); RL-4: a battle called off at the turn cap ends as if you
-       walked away (wild) or lost (a trainer) */
-    pay = battleRewards(
-      { kind, over: activeBattle.over, T, tid, foe: activeBattle.sides[1].team, fx: activeBattle.fx },
-      saveData,
-      battleRoll
-    ),
-    o = pay.o,
-    lead = findBilly(activeBattle.lead),
-    /* RL-8: a run's battle (run.js): it has ended, so the save may be written again (game-state.js saveHeld) */
-    run = saveData.run && activeBattle.runK != null ? saveData.run : null;
-  if (run) run.at = { phase: 'walk', battle: -1 };
+       walked away (wild) or lost (a trainer). Studio plan T3.2: battleSettle also does what it does to the save (a
+       run battle's checkpoint, the Hype counter, the encounter, the lead's streak), as the run's simulation does */
+    { pay, run } = battleSettle(activeBattle, saveData),
+    o = pay.o;
   if (o === 'win' && typeof jingle === 'function') jingle(JINGLES.victory);
-  if (o === 'win') for (const m of saveData.team) if (m.hp > 0) m.wins = (m.wins || 0) + 1; /* v36: the Hype counter */
   if (typeof battleTipHide === 'function') battleTipHide();
-  if (kind === 'wild') dropEncounter(activeBattle.qid);
-  if (lead) {
-    if (o === 'win') lead.streak = (lead.streak || 0) + 1;
-    else if (o === 'lose') lead.streak = 0;
-  }
   /* v47: Blake's first battle, in the opening: no fee and no sheet, win or lose; the story picks it up (story.js) */
   if (T && T.tutorial) {
     if (o === 'win') saveData.flags[tid] = 1;
@@ -988,20 +981,12 @@ export function endBattle() {
       btns: [{ l: 'Back to walking', c: 'dark', f: closeModal }],
     });
   }
-  /* phase 08: beating a wild Billie pays prize money (steps paid before) */
-  if (kind === 'wild' && o === 'win') {
-    const prize = pay.prize;
-    if (prize > 0) {
-      saveData.se += prize;
-      toast(`You earned $${formatNumber(prize)}.`);
-    }
-  }
+  /* phase 08: beating a wild Billie pays prize money (steps paid before); a trainer its reward and its flag, and RL-12:
+     a run's mini-boss a pick of Loopholes, saved on the run before it shows (logic/battle-rewards.js battleSettleWin) */
+  battleSettleWin(activeBattle, saveData, pay, run);
+  if (kind === 'wild' && o === 'win' && pay.prize > 0) toast(`You earned $${formatNumber(pay.prize)}.`);
   if (kind === 'trainer' && o === 'win') {
-    saveData.se += pay.reward;
-    /* RL-12: a run's mini-boss beaten: a pick of Loopholes, saved on the run before it shows (logic/relics.js) */
-    if (run && T && T.runFoe === 'miniboss') relicOfferMake(run, RELICS, RULES.run.relics);
     const first = pay.first;
-    saveData.flags[tid] = 1;
     let extra = '';
     const st = T.seat;
     if (st && pay.seat) {

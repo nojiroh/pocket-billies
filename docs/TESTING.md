@@ -10,7 +10,8 @@ those sessions; until then, follow the rule next to them.
 | Tier | Command | Now | Budget | When |
 |---|---|---|---|---|
 | (a) lint, types | `npm run lint`, `npm run typecheck` | 4 s warm (9 s cold) + 0.6 s | under 10 s | after every edit (the Claude Code hook runs it) |
-| (b) unit tests | `npm test` | about 30 s (RL-8: 474 tests; the scene sweeps take most) | under 30 s | after every edit to logic, data or tests (the hook) |
+| (b) unit tests | `npm test` | about 23-28 s in a cloud container (Studio plan Phase 6: 611 tests, the quick tier) | under 30 s | after every edit to logic, data or tests (the hook) |
+| (b2) slow unit tests | `npm run test:slow` | about 39 s (42 tests: the scene sweeps that generate whole maps and islands, `SLOW_TESTS` in tools/unit-tests.mjs) | none | in CI beside `npm test`; `npm run test:all` runs both |
 | before a commit | `npm run check:modules`, `npm run format:check`, `npm run check:data`, `npm run build` | about 15 s | none | every commit |
 | UI pictures (UI-2) | `npm run check:ui` | about 1.5 min | none | after a change to the kit, its CSS, uiTheme.json or studio/gallery.html |
 | style diff (UI-5) | `python3 tools/style-diff.py` (`--only=<screens>`, `--ref=<rev>`) | about 8 min (16 screens, 2 browsers) | none | a commit that moves CSS or screen code and must change nothing on screen: 0 differences against HEAD |
@@ -107,9 +108,21 @@ Two rules hold everywhere:
   move (every outcome, both kinds, seeded egg rolls); `run-loop.test.mjs` the start's give, the heal price, a town's
   stock for a day (the same after a reload), the run's foes (none twice, levels by row, the boss an Alpha), battle
   seeds, release pay, the payout rows and a run's ids; `run-sim.test.mjs` plays whole runs with
-  `tools/test/sim/run-sim.mjs` (one seed twice the same whatever util.js random does; the report's numbers). The
+  `tools/test/sim/run-sim.mjs` (one seed twice the same whatever util.js random does; the report's numbers and its
+  bot policy). Studio plan Phase 3: the simulation itself is `game/js/logic/run-sim.js` (`runSimOn`, handed the logic
+  and data); the CLI is its Node host. It plays the game's own rules (`runBattleExtra`, `runClinic`, `fxRunPrice`,
+  `startWild`/`startTrainer`, `catchKeep`/`catchOffer`, `battleSettle`, `runEnd`); what the player does is
+  `SIM_POLICY` (battle-formats and run-loop test those rules). The
   simulation's full report: `node tools/test/sim/run-sim.mjs --runs=50 --team=1` (validation/sim/runs.json; it reports,
-  bounds wait for the owner). `run-world-real.test.mjs` also checks a run's buildings (the landing's mast, a town's
+  bounds wait for the owner). Studio plan Phase 3b: the bot answers a Loophole pick and buys a shop's (`relics` in the
+  policy; `--policy=never-pick` is the baseline that takes none), walking in heals by the held Loopholes
+  (`runArriveFx`) and a town's wares come through the run's unlocks (`runShopOpen`). `--balance` makes no scenes
+  (each place a lite map with tall grass: ~250 times faster, the same outcomes; `run-sim.test.mjs` plays seeds in both
+  modes and checks the stand-in on real scenes). `--out=base.json` writes the report with every run's stats;
+  `--compare=base.json` plays its seeds with its options on the data as it is now and writes the paired compare
+  (validation/sim/compare.json; `logic/sim-compare.js`: Wilson intervals, paired differences, flips, a data hash,
+  tested in `sim-compare.test.mjs`). The habit for a change that may move the numbers:
+  `node tools/test/sim/run-sim.mjs --runs=200 --balance --out=base.json` before, `--compare=base.json` after. `run-world-real.test.mjs` also checks a run's buildings (the landing's mast, a town's
   clinic and shop), its trainers in their own world and its bridges (both ends dry, a stream crossed square within
   25 degrees).
 - The world (RL-5): the game's world is Copperleaf alone; the old one is parked in `game/data/legacy` (its own
@@ -201,7 +214,7 @@ same phase:
   block (`frameBlockCheck`, engine/webgl.js) and checks the block's size and each member's offset, as this device's
   driver lays them out, against what engine/frame-block.js packs; smoke shows "N shaders; 14 with the Frame block".
 - **(13c)** The full test and the debug menu load on demand; the recording part of the debug log stays loaded.
-- The graphics test (Settings → Help → Run the graphics test, and the debug menu; `game/js/graphics-test.js`, loaded on
+- The graphics test (the debug menu's Performance section since UI-7b; Help had it before; `game/js/graphics-test.js`, loaded on
   demand) is run only by a person, by hand, on their own device: never from Claude Code, CI, a headless browser or
   a script, and no command-line runner, CI job or hook. It tries the shaders, each engine dial on its own (ENGINE_SPEC,
   moved away from its default), Balanced, Beautiful and each engine preset, in one scene, and saves a short .json
@@ -266,9 +279,16 @@ same phase:
   a fifth golden battle holding three Loopholes; check-fast's "Loopholes" on `?fixture=relics`; the in-game run
   phase and quick check's RL-8 step buy a shop's Loophole or take a mini-boss's pick and see the boss's battle carry
   it.
-- **14 Studio**: `tools/check-studio-github.py` and smoke's "Studio opens" keep passing; `--studio` follows the
-  Studio local mode decision. A new Studio feature adds a step function to its `STEPS` (UI-3), so it can also run
-  alone with `--only=<name>`.
+- **14 Studio**: `tools/check-studio-github.py` and smoke's "Studio opens" keep passing (local mode and
+  `check-quick.py --studio` were dropped, Studio plan T1.4). A new Studio feature adds a step function to its `STEPS`
+  (UI-3), so it can also run alone with `--only=<name>`. Since T1.4 CI's smoke job runs
+  `--only=sections,publish,drafts,studio_test,checks` on every pull request that touches `studio/` or
+  `game/js/logic/` (about 6 minutes here).
+- **Data checks (Studio plan T1.3)**: check-data and the Studio's Check share `game/js/logic/data-checks.js`. A new
+  rule goes there as a pure function of the data, with a unit test in `data-checks.test.mjs`; an `error` fails
+  check-data and blocks the Studio's Propose, a `warn` is shown and never blocks. `check-data-snapshot.test.mjs` holds
+  check-data's whole output on the game data and on two planted copies (in a temp copy made with `PB_DATA_DIR`): a
+  change meant to alter its words remakes it with `--test-update-snapshots`, said in the commit.
 - **15 Design and story**: write down the balance bounds the simulations will assert (with the owner).
 - **16 Billies**: write the breeding simulation first, against the prototype, before the full build (the owner
   agreed in 13a's plan); agree its bounds. The roster steps (v35, v38, v39/v40) count today's 117 Billies: update
@@ -306,6 +326,13 @@ same phase:
   alone with `python3 tools/check-studio-github.py --only=ui` (about a minute; `--only=` takes any names from its
   `STEPS`, plus `sections` and `art` for the two blocks before them). A new uiTheme.json group needs its schema,
   its dials in logic/ui-dials.js and its writer in logic/ui-theme.js together, or the tests fail.
+  The Actions sheet (walk-tab.js walkSheetSync, a `<pb-sheet id="walkSheet">` over the world since 2026-10-23):
+  smoke and the full check run "Actions sheet: ..." (`actions_sheet_step`, about 22 s in smoke) on the `town`
+  fixture at 1280x800: four mouse-wheel turns leave it closed and the page unscrolled; the Actions button opens it;
+  Esc closes it; Tab opens it with the focus on its first button and closes it; "show me the way" to the ranch closes
+  it and sets `walkView.mark`. The full check also opens it on the `run` fixture for the day chip, today's weather
+  and "Open the map to move on". The words (logic/run-loop.js `runSheetStatus`, `weatherEffectText`) are unit-tested
+  in run-loop.test.mjs.
 - **Roguelite track** (docs/phases/roguelite-track.md): RL-5 parked every place but Copperleaf. The fast check
   (`tools/check-fast.py`, CI) and its fixtures start there (`town`, `room` = Hazel's lab, `battle` = Leader Rocco); the
   `route` and `cave` fixtures and checks, the full check's road walks, seams, close-ups and the flight to another town
@@ -331,9 +358,11 @@ same phase:
 - **Sound track** (docs/phases/sound-track.md): the volume maths is pure (`game/js/audio/levels.js`) and tested in
   Node (`sound-levels.test.mjs`). The full check's "Sound settings" step (SND-1; alone with `--steps="sound
   settings"`, about 1 min) opens Settings → Sound on a phone page in the town, starts the audio with a touch, and
-  reads only connections and the targets the gains are given: each Test button reaches its own bus (a wrapper on
-  `AudioNode.connect`), each slider sets its bus while dragged (a wrapper on `AudioParam.setTargetAtTime`; the wanted
-  level comes from where the slider stands), the header mute silences the master and keeps the levels. Don't read
+  reads only connections and the targets the gains are given: each slider, let go, plays its sound on its own bus
+  (a wrapper on `AudioNode.connect`; the music is stopped first, as the music slider plays nothing over a song; UI-7a
+  replaced the Test buttons), each slider sets its bus while dragged (a wrapper on `AudioParam.setTargetAtTime`; the
+  wanted level comes from where the slider stands), each row's mute silences only its bus and keeps its level and a
+  drag on the muted slider unmutes it (UI-7a), the header mute silences the master and keeps the levels. Don't read
   `gain.value` for this: Chrome stops working out a gain no sound goes through, so an idle bus's value stops part
   way. A browser that won't start audio is reported, not failed.
   SND-2: **song fingerprints**. `python3 tools/check-sound.py` (about 1 min; `--only=meadow,victory` for some) renders

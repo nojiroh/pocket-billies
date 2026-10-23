@@ -41,7 +41,7 @@ import { guideAction, renderGuide } from './guide.js';
 import { renderTeam, teamAction } from './team.js';
 import { billieSheetAction } from './billie-sheet.js';
 import { mapTabAction, renderWorldMapTab } from './map-tab.js';
-import { renderWalk, walkTabAction } from './walk-tab.js';
+import { renderWalk, walkSheetClose, walkSheetOpen, walkSheetSync, walkTabAction, walkTipOnce } from './walk-tab.js';
 import { leaveRoom, roomState, walkMapSync } from './walk-control.js';
 import { battleAction } from './battle-input.js';
 /* eslint-disable no-func-assign */
@@ -75,6 +75,8 @@ function topbar() {
 }
 export function render() {
   const app = $('#app');
+  /* the Actions sheet first: a title, a battle or another tab closes it */
+  walkSheetSync();
   if (uiState.title && typeof renderTitle === 'function') {
     app.innerHTML = renderTitle();
     uiState.lastTab = null;
@@ -85,7 +87,7 @@ export function render() {
   }
   if (!saveData.started) {
     if (typeof cutscene !== 'undefined' && cutscene.on) {
-      app.innerHTML = '';
+      app.replaceChildren();
       updateNav(false);
       return;
     }
@@ -129,6 +131,7 @@ export function render() {
   walkMapSync();
   document.body.classList.toggle('on-map', T === 'map');
   if (T === 'map') worldMapMount();
+  if (T === 'walk') walkTipOnce();
   pbInboxPop(uiState.inbox.length);
   $$('[data-count]').forEach(el => {
     const k = el.dataset.count,
@@ -244,6 +247,8 @@ document.addEventListener('click', ev => {
   if (!el) return;
   const a = el.dataset.a,
     d = el.dataset;
+  /* a button in the Actions sheet closes it first, then does its thing (a shop, the clinic, a battle, the map) */
+  if (el.closest('#walkSheet')) walkSheetClose();
   if (a === 'scrim') {
     if (ev.target === el && uiState.modal && !uiState.modal.lock) {
       const c =
@@ -280,12 +285,9 @@ document.addEventListener('click', ev => {
     case 'leaveroom':
       leaveRoom();
       break;
-    case 'walkdown': {
-      const w = $('.walk-sheet');
-      if (w)
-        scrollTo({ top: w.getBoundingClientRect().top + scrollY - 70, behavior: reducedMotion ? 'auto' : 'smooth' });
+    case 'walkdown':
+      walkSheetOpen();
       break;
-    }
     case 'settings':
       openSettings();
       break;
@@ -296,9 +298,10 @@ document.addEventListener('click', ev => {
     case 'card-open':
     case 'enc':
     case 'clinic':
-    case 'rest':
     case 'trainer':
     case 'rungiveup':
+    case 'walkrun':
+    case 'walkmark':
       walkTabAction(a, d);
       break;
     case 'mon':
@@ -439,6 +442,38 @@ document.addEventListener('keydown', ev => {
     ev.preventDefault();
     first.focus();
   }
+});
+/* the Actions sheet on a computer: Tab opens and closes it while the world shows and nothing else has the focus (once
+   a button outside it has the focus, Tab moves on as usual; Shift+Tab is never taken); open, Tab closes it. Opened by Tab, its first button
+   takes the focus; the arrow keys move between its buttons */
+document.addEventListener('keydown', ev => {
+  const sh = $('#walkSheet'),
+    a = document.activeElement;
+  if (uiState.walkSheet && sh && (ev.key === 'ArrowDown' || ev.key === 'ArrowUp')) {
+    const els = $$('button:not(:disabled),[role=button],summary', sh).filter(e => e.getClientRects().length);
+    if (!els.length) return;
+    ev.preventDefault();
+    const i = els.indexOf(/** @type {any} */ (a)),
+      j = i < 0 ? 0 : (i + (ev.key === 'ArrowDown' ? 1 : -1) + els.length) % els.length;
+    /** @type {HTMLElement} */ (els[j]).focus();
+    return;
+  }
+  if (ev.key !== 'Tab' || ev.shiftKey || ev.altKey || ev.ctrlKey || ev.metaKey) return;
+  if (uiState.modal || activeBattle || uiState.title || !saveData.started || uiState.tab !== 'walk') return;
+  if (!$('.wh-down') && !uiState.walkSheet) return;
+  if (!uiState.walkSheet && a && a !== document.body && a.tagName !== 'CANVAS') return;
+  ev.preventDefault();
+  if (uiState.walkSheet) {
+    walkSheetClose();
+    return;
+  }
+  walkSheetOpen();
+  const el = /** @type {any} */ ($('#walkSheet'));
+  if (el)
+    el.updateComplete.then(() => {
+      const b = $$('button:not(:disabled),[role=button]', el).find(e => e.getClientRects().length);
+      if (b) /** @type {HTMLElement} */ (b).focus({ preventScroll: true });
+    });
 });
 // Enter in the nickname field saves it.
 document.addEventListener('keydown', ev => {

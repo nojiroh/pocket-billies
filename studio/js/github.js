@@ -7,23 +7,26 @@
    - The game data, skeletons and art are read from the repository's main branch.
    - Save to game: everything you changed goes on a new branch as one commit, and a pull request is opened. Nothing in
      the game changes until the repository's owner merges it (GitHub → Pull requests).
-   Started from start-studio.py on your own computer, none of this is used: saves go straight into the game folder. */
+   This is the Studio's only mode: local mode (a server that saved into the game folder) was dropped (Studio plan). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
+import { draftOffer, draftStart } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { publishBranchName, publishEmpty, publishOverlap } from '../../game/js/logic/publish-plan.js';
 import {
   ACTIONS,
   ask,
   boot,
+  checkBeforeSave,
+  confirmStaged,
   dialog,
-  saveAll,
   setApi,
   setSaveAll,
-  setToast,
+  stageChanges,
   studioState,
   toast,
-  updateTopBar,
+  writeStaged,
 } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -33,6 +36,7 @@ expose({
   changedDataFiles: [() => changedDataFiles, v => (changedDataFiles = v)],
   checkGithubToken: [() => checkGithubToken, v => (checkGithubToken = v)],
   gameFilePath: [() => gameFilePath],
+  githubBase: [() => githubBase, v => (githubBase = v)],
   githubDataText: [() => githubDataText],
   githubFetch: [() => githubFetch, v => (githubFetch = v)],
   githubLogin: [() => githubLogin, v => (githubLogin = v)],
@@ -59,6 +63,9 @@ export const githubMode = {
   login: '',
   batch: null,
   tree: null,
+  base: '', // the commit the Studio loaded (githubBase)
+  openBranch: '', // a proposal's branch whose pull request failed: the retry reuses it
+  baseP: null,
   data: {}, // the text of each data file as read, to send only the ones that change
 };
 const GITHUB_TOKEN_KEY = 'pb-studio-gh-token';
@@ -66,7 +73,7 @@ const RIG_FILE_HEADERS = {
   rigs: '/* Billionaire skeletons (bones, pivots, draw order) for art/billionaires/*.png. Edited by Pocket Billies Studio. */\n',
   next: '/* v36: rigs for the new piece sheets (art/next/billionaires), made by tools/build-starter-sheets.py and edited by Pocket Billies Studio. k=1: pieces at the final scale. */\n',
 };
-async function githubFetch(path, opt = {}, raw) {
+export async function githubFetch(path, opt = {}, raw) {
   const r = await fetch('https://api.github.com/' + path, {
     ...opt,
     headers: {
@@ -87,8 +94,8 @@ async function githubFetch(path, opt = {}, raw) {
   }
   return raw ? r.text() : r.status === 204 ? null : r.json();
 }
-const repoApiPath = p => `repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}${p ? '/' + p : ''}`;
-const gameFilePath = p => (GITHUB_CONFIG.game ? GITHUB_CONFIG.game + '/' : '') + p;
+export const repoApiPath = p => `repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}${p ? '/' + p : ''}`;
+export const gameFilePath = p => (GITHUB_CONFIG.game ? GITHUB_CONFIG.game + '/' : '') + p;
 const parseScriptJson = (t, name) => {
   const i = t.indexOf(name + '=');
   if (i < 0) throw new Error(`${name} not found`);
@@ -128,7 +135,7 @@ async function checkGithubToken(token) {
   githubMode.login = me.login;
   return me;
 }
-function githubLoginHTML(err) {
+function githubLoginHTML(err, cancel = false) {
   /* SECURITY.md option A (RL-1): a fine-grained token for this one repository, so a stolen one can't touch others */
   const tok = `https://github.com/settings/personal-access-tokens/new?name=${encodeURIComponent('Pocket Billies Studio')}&expires_in=90&contents=write&pull_requests=write`;
   return `<div class="gh-login"><div class="gh-card"><img src="../game/art/coins/penny_32.png" width="40" height="40" alt=""><h2>Pocket Billies Studio</h2>
@@ -138,10 +145,12 @@ function githubLoginHTML(err) {
  <li>Click <b>Generate token</b>, copy it (it starts with <code>github_pat_</code>) and paste it here.</li></ol>
  <label class="fld"><span>GitHub token</span><input type="password" id="ghTok" autocomplete="off" placeholder="github_pat_…"></label>
  <label class="fld chk"><input type="checkbox" id="ghKeep"><span>Remember me on this computer</span></label>
- ${err ? `<p class="gh-err">${escapeHtml(err)}</p>` : ''}<button class="btn primary" id="ghGo">Sign in</button>
+ ${err ? `<p class="gh-err">${escapeHtml(err)}</p>` : ''}${cancel ? '<button class="btn" id="ghCancel">Cancel</button> ' : ''}<button class="btn primary" id="ghGo">Sign in</button>
  <p class="help">The token is only sent to GitHub. Without “Remember me” it is forgotten when this tab closes; with it, it stays in this browser. To sign out, use the button at the top; to cut it off for good, delete it on GitHub (Settings → Developer settings → Tokens).</p></div></div>`;
 }
-function githubLogin(err) {
+/* T0.3: with `cancel` (a proposal hit an expired sign-in) the card opens over the Studio, whose changes stay in
+   memory, and has a Cancel; resolves true once signed in, false when cancelled */
+function githubLogin(err, cancel = false) {
   return new Promise(res => {
     let w = $('#ghLogin');
     if (!w) {
@@ -149,7 +158,8 @@ function githubLogin(err) {
       w.id = 'ghLogin';
       document.body.appendChild(w);
     }
-    w.innerHTML = githubLoginHTML(err);
+    const before = githubMode.token;
+    w.innerHTML = githubLoginHTML(err, cancel);
     const go = async () => {
       const t = $('#ghTok').value.trim();
       if (!t) return;
@@ -158,21 +168,30 @@ function githubLogin(err) {
       try {
         await checkGithubToken(t);
         try {
-          if ($('#ghKeep').checked) localStorage.setItem(GITHUB_TOKEN_KEY, t);
-          else sessionStorage.setItem(GITHUB_TOKEN_KEY, t);
+          /* the new token replaces an expired one kept in the other store, which would be read first next time */
+          const [keep, drop] = $('#ghKeep').checked ? [localStorage, sessionStorage] : [sessionStorage, localStorage];
+          keep.setItem(GITHUB_TOKEN_KEY, t);
+          drop.removeItem(GITHUB_TOKEN_KEY);
         } catch (e) {}
         w.remove();
-        res();
+        res(true);
       } catch (e) {
         githubMode.token = '';
         w.innerHTML = githubLoginHTML(
-          e.status === 401 ? 'GitHub didn’t accept that token. Copy it again, all of it.' : e.message
+          e.status === 401 ? 'GitHub didn’t accept that token. Copy it again, all of it.' : e.message,
+          cancel
         );
         bind();
       }
     };
     const bind = () => {
       $('#ghGo').onclick = go;
+      if (cancel)
+        $('#ghCancel').onclick = () => {
+          githubMode.token = before;
+          w.remove();
+          res(false);
+        };
       $('#ghTok').onkeydown = e => {
         if (e.key === 'Enter') go();
       };
@@ -225,8 +244,18 @@ ACTIONS.ghOut = async () => {
    that changed (and removes the files of entries that were deleted). */
 /* a data file's text from the branch (RL-5: the Legacy section reads the parked world with it; it stays out of
    githubMode.data, so Save never writes or removes what it reads) */
-export const githubDataText = (/** @type {string} */ path) =>
-  githubFetch(repoApiPath(`contents/${gameFilePath('data/' + path)}?ref=${GITHUB_CONFIG.branch}`), {}, true);
+export const githubDataText = async (/** @type {string} */ path) =>
+  githubFetch(repoApiPath(`contents/${gameFilePath('data/' + path)}?ref=${await githubBase()}`), {}, true);
+/* Studio plan Phase 0 (T0.2): the commit the Studio loaded, resolved once. Everything is read at it (the data, the
+   rigs, rigs-next.js, the art list) and a proposal is made on it, so a file changed on main since then shows as a
+   conflict on the pull request instead of being silently put back */
+function githubBase() {
+  if (!githubMode.baseP)
+    githubMode.baseP = githubFetch(repoApiPath(`git/ref/heads/${GITHUB_CONFIG.branch}`)).then(
+      r => (githubMode.base = r.object.sha)
+    );
+  return githubMode.baseP;
+}
 async function readGithubData() {
   const read = githubDataText;
   const index = JSON.parse(await read('index.json')),
@@ -251,7 +280,7 @@ async function readGithubData() {
   performance.mark('studio-data-assembled');
   return D;
 }
-function changedDataFiles(D) {
+export function changedDataFiles(D) {
   const { index, files } = PB_DATA.split(D),
     now = { 'index.json': PB_DATA.text(index) },
     out = [];
@@ -270,15 +299,19 @@ async function studioApiViaGithub(path, opt = {}) {
   if (!post) {
     if (p === 'gamedata') return readGithubData();
     if (p === 'rigs') {
-      const R = parseScriptJson(
-        await githubFetch(repoApiPath(`contents/${gameFilePath('art/rigs.js')}?ref=${GITHUB_CONFIG.branch}`), {}, true),
-        'window.RIGS'
-      );
+      const at = await githubBase(),
+        read = (/** @type {string} */ f) => githubFetch(repoApiPath(`contents/${gameFilePath(f)}?ref=${at}`), {}, true);
+      const [R, N] = await Promise.all([
+        read('art/rigs.js').then(t => parseScriptJson(t, 'window.RIGS')),
+        read('art/next/rigs-next.js').then(t => parseScriptJson(t, 'window.RIGS_NEXT')),
+      ]);
+      /* the rigs at the loaded commit, not the copy the deployed page carries: Save writes rigs-next.js back whole */
+      window.RIGS_NEXT = N;
       return R;
     }
     if (p === 'files') {
       if (!githubMode.tree)
-        githubMode.tree = (await githubFetch(repoApiPath(`git/trees/${GITHUB_CONFIG.branch}?recursive=1`))).tree;
+        githubMode.tree = (await githubFetch(repoApiPath(`git/trees/${await githubBase()}?recursive=1`))).tree;
       const pre = gameFilePath('art/' + (q.get('dir') || '').replace(/^\/|\/$/g, '')).replace(/\/$/, '') + '/';
       return githubMode.tree
         .filter(
@@ -294,7 +327,6 @@ async function studioApiViaGithub(path, opt = {}) {
           mtime: 0,
         }));
     }
-    if (p === 'backups') return [];
     throw new Error('Unknown request.');
   }
   if (!githubMode.batch) throw new Error('Saving goes through “Propose changes”.');
@@ -333,13 +365,30 @@ async function studioApiViaGithub(path, opt = {}) {
   throw new Error('Unknown request.');
 }
 /* everything saved in one go: a branch, one commit, a pull request */
-async function proposeOnGithub(summary) {
-  const files = githubMode.batch;
-  githubMode.batch = null;
+async function proposeOnGithub(summary, files) {
   if (!files.length) return null;
-  const base = await githubFetch(repoApiPath(`git/ref/heads/${GITHUB_CONFIG.branch}`)),
-    baseSha = base.object.sha,
-    baseCommit = await githubFetch(repoApiPath(`git/commits/${baseSha}`));
+  /* T0.2: made on the commit the Studio loaded; if main has moved on and changed files this proposal also writes,
+     say which before anything is sent (the pull request will show them as conflicts) */
+  const baseSha = await githubBase(),
+    head = (await githubFetch(repoApiPath(`git/ref/heads/${GITHUB_CONFIG.branch}`))).object.sha;
+  if (head !== baseSha) {
+    const cmp = await githubFetch(repoApiPath(`compare/${baseSha}...${head}`)),
+      both = publishOverlap(
+        files.map(f => f.path),
+        (cmp.files || []).map((/** @type {{ filename: string }} */ f) => f.filename)
+      );
+    if (
+      both.length &&
+      !(await ask(
+        `Since you opened the Studio, main has new commits that changed ${both.length === 1 ? 'a file' : both.length + ' files'} this proposal also writes: ${both.map(f => '<code>' + escapeHtml(f) + '</code>').join(', ')}. Your pull request will show ${both.length === 1 ? 'it' : 'them'} as conflicts for the owner to settle. To start from the new version instead, cancel, reload the Studio and make the change again. Propose anyway?`,
+        'Propose anyway',
+        'Cancel',
+        'Main has moved on'
+      ))
+    )
+      throw Object.assign(new Error('Not sent.'), { cancelled: true });
+  }
+  const baseCommit = await githubFetch(repoApiPath(`git/commits/${baseSha}`));
   const tree = [];
   for (const f of files) {
     if (f.gone) {
@@ -356,8 +405,10 @@ async function proposeOnGithub(summary) {
     method: 'POST',
     body: JSON.stringify({ base_tree: baseCommit.tree.sha, tree }),
   });
-  const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, ''),
-    branch = `studio/${githubMode.login}-${stamp}`;
+  /* T0.3: a branch name to the second with a random tail; a branch made by a proposal whose pull request then failed
+     is reused (moved to the new commit), so a retry neither collides nor leaves a branch behind */
+  const branch =
+    githubMode.openBranch || publishBranchName(githubMode.login, new Date(), Math.random().toString(36).slice(2, 6));
   const c = await githubFetch(repoApiPath('git/commits'), {
     method: 'POST',
     body: JSON.stringify({
@@ -366,10 +417,18 @@ async function proposeOnGithub(summary) {
       parents: [baseSha],
     }),
   });
-  await githubFetch(repoApiPath('git/refs'), {
-    method: 'POST',
-    body: JSON.stringify({ ref: 'refs/heads/' + branch, sha: c.sha }),
-  });
+  if (githubMode.openBranch)
+    await githubFetch(repoApiPath('git/refs/heads/' + branch), {
+      method: 'PATCH',
+      body: JSON.stringify({ sha: c.sha, force: true }),
+    });
+  else {
+    await githubFetch(repoApiPath('git/refs'), {
+      method: 'POST',
+      body: JSON.stringify({ ref: 'refs/heads/' + branch, sha: c.sha }),
+    });
+    githubMode.openBranch = branch;
+  }
   const pr = await githubFetch(repoApiPath('pulls'), {
     method: 'POST',
     body: JSON.stringify({
@@ -378,15 +437,41 @@ async function proposeOnGithub(summary) {
       base: GITHUB_CONFIG.branch,
       body: `Proposed by @${githubMode.login} in Pocket Billies Studio.\n\nChanged files:\n${files.map(f => '- `' + f.path + '`').join('\n')}\n\nMerge this pull request to put the changes in the game; close it to turn them down.`,
     }),
+  }).catch(async e => {
+    /* the pull request was opened but its answer lost: the branch already has one */
+    if (e.status !== 422) throw e;
+    const open = await githubFetch(
+      repoApiPath(`pulls?state=open&head=${encodeURIComponent(GITHUB_CONFIG.owner + ':' + branch)}`)
+    );
+    if (!open || !open.length) throw e;
+    return open[0];
   });
+  githubMode.openBranch = '';
   return pr;
 }
 /* the Studio's own api() and saveAll() take this route when it runs from GitHub */
 if (githubMode.on) {
   setApi(studioApiViaGithub);
-  const save0 = saveAll;
+  /* Studio plan Phase 0: one proposal at a time, from the summary to the answer. Staging and the batch are built
+     whole before anything is sent (an error there sends nothing); unsaved marks are cleared only after GitHub opened
+     the pull request, and only for what is still as it was sent */
+  let proposing = false;
   setSaveAll(async function () {
-    if ($('#saveBtn').disabled) return;
+    const btn = $('#saveBtn');
+    if (proposing || btn.disabled) return;
+    proposing = true;
+    btn.disabled = true;
+    try {
+      await proposeChanges(btn);
+    } finally {
+      proposing = false;
+      githubMode.batch = null;
+      btn.textContent = 'Propose changes';
+      btn.disabled = false;
+    }
+  });
+  const proposeChanges = async btn => {
+    if (!(await checkBeforeSave())) return; /* T1.3: before the summary is asked for, so nothing typed is wasted */
     const what = await dialog(
       'Propose these changes',
       '<label class="fld"><span>What did you change? (the owner sees this)</span><input type="text" id="ghSum" maxlength="90" placeholder="New props in Copperleaf, brighter lamps"></label>',
@@ -400,48 +485,53 @@ if (githubMode.on) {
       ]
     );
     if (!what) return;
-    githubMode.batch = [];
-    const t0 = toast;
-    let pr = null,
-      err = null;
-    setToast((t, k) => {
-      if (k === 'err') t0(t, k);
-    });
-    let none = false;
-    try {
-      await save0();
-      none = !(githubMode.batch && githubMode.batch.length);
-      if (!none) {
-        $('#saveBtn').textContent = 'Sending…';
-        pr = await proposeOnGithub(what);
+    const staged = stageChanges();
+    if (publishEmpty(staged)) return toast('Nothing to send: everything is as it is in the game.');
+    let pr = null;
+    for (let signedIn = false; ;) {
+      try {
+        githubMode.batch = [];
+        await writeStaged(staged);
+        const files = githubMode.batch;
+        githubMode.batch = null;
+        btn.textContent = 'Sending…';
+        pr = await proposeOnGithub(what, files);
+        break;
+      } catch (e) {
+        if (e.cancelled) return toast('Not sent: everything is still unsaved.');
+        /* T0.3: an expired or revoked sign-in: sign in again over the Studio and send the same changes, once */
+        if (e.status === 401 && !signedIn) {
+          btn.textContent = 'Signing in…';
+          signedIn = await githubLogin(
+            'Your GitHub sign-in has expired. Sign in again to send your changes: nothing was lost, they are still here.',
+            true
+          );
+          if (signedIn) continue;
+          return toast('Not sent: everything is still unsaved. Propose again once you are signed in.');
+        }
+        return toast(
+          `Couldn’t send the changes: ${e.message}. Nothing was lost: everything is still unsaved, so Propose again.`,
+          'err'
+        );
       }
-    } catch (e) {
-      err = e;
-    } finally {
-      setToast(t0);
-      githubMode.batch = null;
-      $('#saveBtn').textContent = 'Propose changes';
-      $('#saveBtn').disabled = false;
     }
-    if (err) {
-      studioState.dirty = true;
-      updateTopBar();
-      return toast('Couldn’t send the changes: ' + err.message, 'err');
-    }
-    if (pr) {
+    confirmStaged(staged);
+    if (pr)
       await dialog(
         'Sent for approval',
         `<p>Your changes are pull request <b>#${pr.number}</b>. They go into the game when ${escapeHtml(GITHUB_CONFIG.owner)} merges it. Until then the Studio (and the game) show the game as it is now.</p><p><a href="${escapeHtml(pr.html_url)}" target="_blank" rel="noopener">Open the pull request on GitHub</a></p>`,
         [{ l: 'OK', c: 'primary', v: 1 }]
       );
-    } else if (none && !(studioState.dirty || studioState.rigsDirty || studioState.artDirty.size))
-      toast('Nothing to send: everything is as it is in the game.');
-  });
+    else toast('Nothing to send: everything is as it is in the game.');
+  };
   /* the Studio waits for sign-in before it loads anything */
   const boot0 = boot;
   removeEventListener('load', boot);
   addEventListener('load', async () => {
     await startGithubMode();
-    boot0();
+    /* T1.1: unsent changes from an earlier visit are offered before the data loads (a restore reads at their commit) */
+    const draft = await draftOffer();
+    await boot0();
+    await draftStart(draft);
   });
 }

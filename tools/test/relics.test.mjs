@@ -124,3 +124,33 @@ test('relics: a run saved before Loopholes (no offerN, no shelf) loads and carri
   assert.ok(loaded.run, 'the run is still on');
   assert.deepEqual([loaded.run.offerN, loaded.run.shelf], [0, {}]);
 });
+
+test('relics: a seed’s offer order (Studio plan T4.1) is the run’s picks in order, with nothing taken or one taken each time', () => {
+  const picks = 4,
+    none = R.relicOfferOrder('ORDER1', RELICS, RULE, picks),
+    r = run('ORDER1'),
+    game = [];
+  for (let k = 0; k < picks; k++) game.push(R.relicOfferMake(r, RELICS, RULE) || []);
+  assert.deepEqual(
+    none.map(p => p.offer),
+    game,
+    'nothing taken: the picks the game makes on a run of that seed'
+  );
+  assert.ok(none.every(p => p.took === null));
+  const first = R.relicOfferOrder('ORDER1', RELICS, RULE, picks, 'first');
+  assert.deepEqual(first[0].offer, none[0].offer, 'the first pick is the same');
+  assert.equal(first[0].took, first[0].offer[0]);
+  const taken = first.map(p => p.took);
+  assert.equal(new Set(taken).size, picks, 'a taken Loophole is never offered again');
+  first.forEach((p, k) => assert.ok(!taken.slice(0, k).some(id => p.offer.includes(id)), `pick ${k}`));
+  const one = none[0].offer[1],
+    want = R.relicOfferOrder('ORDER1', RELICS, RULE, picks, one);
+  assert.equal(want[0].took, one, 'a chosen Loophole is taken when it is offered');
+  assert.ok(want.slice(1).every(p => p.took === null && !p.offer.includes(one)));
+  const capped = R.relicOfferOrder('ORDER1', RELICS, { ...RULE, cap: 1 }, picks, 'first');
+  assert.deepEqual(
+    capped.map(p => !!p.took),
+    [true, false, false, false],
+    'past the cap nothing more is taken'
+  );
+});

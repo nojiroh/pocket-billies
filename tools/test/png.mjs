@@ -1,8 +1,8 @@
 // Studio track ST-3: a PNG as RGBA bytes in Node (no browser, no packages), for the tests that compare pictures.
 // Reads 8-bit, non-interlaced PNGs: grey, grey + alpha, RGB, RGBA and palette (with tRNS), which is what Pillow and
-// the Studio write.
+// the Studio write. Studio plan Phase 5: writes RGBA PNGs too (tools/bake-kit-billies.mjs).
 import { readFileSync } from 'node:fs';
-import { inflateSync } from 'node:zlib';
+import { crc32, deflateSync, inflateSync } from 'node:zlib';
 
 const CHANNELS = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };
 
@@ -78,4 +78,63 @@ export function readPng(path) {
     }
   }
   return { width, height, data };
+}
+
+/** an RGBA picture ({ width, height, data }) as PNG bytes: 8-bit RGBA, each row with the filter that packs it best
+ * (the smallest sum of bytes as signed values, as libpng picks), deflated at level 9 */
+export function encodePng({ width, height, data }) {
+  const stride = width * 4,
+    raw = Buffer.alloc((stride + 1) * height),
+    px = Buffer.from(data.buffer, data.byteOffset, data.byteLength),
+    row = Buffer.alloc(stride);
+  for (let y = 0; y < height; y++) {
+    const o = y * stride;
+    let bestSum = Infinity;
+    for (let f = 0; f < 5; f++) {
+      let sum = 0;
+      for (let x = 0; x < stride; x++) {
+        const a = x >= 4 ? px[o + x - 4] : 0,
+          up = y ? px[o - stride + x] : 0,
+          c = y && x >= 4 ? px[o - stride + x - 4] : 0;
+        let p = 0;
+        if (f === 1) p = a;
+        else if (f === 2) p = up;
+        else if (f === 3) p = (a + up) >> 1;
+        else if (f === 4) {
+          const q = a + up - c,
+            pa = Math.abs(q - a),
+            pb = Math.abs(q - up),
+            pc = Math.abs(q - c);
+          p = pa <= pb && pa <= pc ? a : pb <= pc ? up : c;
+        }
+        const v = (px[o + x] - p) & 255;
+        row[x] = v;
+        sum += v < 128 ? v : 256 - v;
+      }
+      if (sum < bestSum) {
+        bestSum = sum;
+        raw[y * (stride + 1)] = f;
+        row.copy(raw, y * (stride + 1) + 1);
+      }
+    }
+  }
+  const chunk = (kind, body) => {
+    const head = Buffer.alloc(8);
+    head.writeUInt32BE(body.length, 0);
+    head.write(kind, 4, 'latin1');
+    const crc = Buffer.alloc(4);
+    crc.writeUInt32BE(crc32(Buffer.concat([head.subarray(4), body])) >>> 0, 0);
+    return Buffer.concat([head, body, crc]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 6;
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    chunk('IHDR', ihdr),
+    chunk('IDAT', deflateSync(raw, { level: 9 })),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
 }

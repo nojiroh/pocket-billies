@@ -19,6 +19,7 @@ import {
   applyAmbienceVolume,
   applyVolumes,
   attributeClashes,
+  battleStageStop,
   closeModal,
   compileProgram,
   engineSetting,
@@ -36,6 +37,7 @@ import {
   runGraphicsBench,
   runQuickTest,
   selfTest,
+  stopTimers,
   testVolume,
   toast,
   walkRenderer,
@@ -53,6 +55,7 @@ import {
   resumeSaving,
   save,
   saveData,
+  setActiveBattle,
   setReducedMotion,
   setSave,
   setSaveData,
@@ -69,7 +72,11 @@ expose({
   GRAPHICS_DIALS: [() => GRAPHICS_DIALS],
   HOST_THEME: [() => HOST_THEME],
   SETTINGS_TABS: [() => SETTINGS_TABS],
+  VOLUME_KEYS: [() => VOLUME_KEYS],
+  VOLUME_MUTE_LABELS: [() => VOLUME_MUTE_LABELS],
   applyPreferences: [() => applyPreferences, v => (applyPreferences = v)],
+  blurSliderHTML: [() => blurSliderHTML, v => (blurSliderHTML = v)],
+  blurWord: [() => blurWord, v => (blurWord = v)],
   changePreference: [() => changePreference, v => (changePreference = v)],
   customizeTrainer: [() => customizeTrainer, v => (customizeTrainer = v)],
   exportSave: [() => exportSave, v => (exportSave = v)],
@@ -77,13 +84,19 @@ expose({
   importSave: [() => importSave, v => (importSave = v)],
   muteButtonHTML: [() => muteButtonHTML, v => (muteButtonHTML = v)],
   openSettings: [() => openSettings, v => (openSettings = v)],
+  saveProgressLine: [() => saveProgressLine, v => (saveProgressLine = v)],
   segmentedHTML: [() => segmentedHTML, v => (segmentedHTML = v)],
+  setVolumeMuted: [() => setVolumeMuted, v => (setVolumeMuted = v)],
   settingsHTML: [() => settingsHTML, v => (settingsHTML = v)],
   settingsRefresh: [() => settingsRefresh, v => (settingsRefresh = v)],
+  settingsReset: [() => settingsReset, v => (settingsReset = v)],
   settingsRowHTML: [() => settingsRowHTML, v => (settingsRowHTML = v)],
   startGraphicsTest: [() => startGraphicsTest, v => (startGraphicsTest = v)],
   switchHTML: [() => switchHTML, v => (switchHTML = v)],
   themeOwned: [() => themeOwned, v => (themeOwned = v)],
+  volumeMuteHTML: [() => volumeMuteHTML, v => (volumeMuteHTML = v)],
+  volumeMuteSync: [() => volumeMuteSync, v => (volumeMuteSync = v)],
+  volumeMuted: [() => volumeMuted, v => setVolumeMuted(v)],
   volumeSliderHTML: [() => volumeSliderHTML, v => (volumeSliderHTML = v)],
 });
 /* eslint-enable no-func-assign */
@@ -228,10 +241,14 @@ function importSave() {
 }
 /* v31: settings in tabs (Game, Look, Sound, Controls, Save, Help), each choice a row with a one-line explanation and
    segmented buttons or a switch, so every option shows what it does and what it's set to without opening a menu */
-/* alpha 0.5: settings in five groups: Sound, Graphics, Game, Save, Help */
+/* alpha 0.5: settings in five groups: Sound, Graphics, Game, Save, Help. UI-7b: seven, so the Game tab's three
+   headings each have a tab of their own: Sound, Display (the graphics tab, its key kept), Controls, Accessibility,
+   Game, Save, Help */
 const SETTINGS_TABS = [
   ['sound', 'Sound'],
-  ['graphics', 'Graphics'],
+  ['graphics', 'Display'],
+  ['controls', 'Controls'],
+  ['access', 'Accessibility'],
   ['game', 'Game'],
   ['save', 'Save'],
   ['help', 'Help'],
@@ -266,7 +283,6 @@ export const GRAPHICS_DIALS = [
   [
     'Effects',
     [
-      ['lens.blur', 'Depth of field', 'Far and near things go soft', 'medium', 0, 3, 0.05],
       ['color.bloom', 'Glow', 'Bright lights glow', 'low', 0, 2, 0.05],
       ['lens.vignette', 'Dark corners', 'The edges of the picture darken a little', 'low', 0, 1, 0.05],
       ['lens.grain', 'Film grain', 'A fine grain over the picture', 'low', 0, 0.15, 0.005],
@@ -290,56 +306,80 @@ function segmentedHTML(k, cur, opts) {
 function switchHTML(k, on, onV, offV) {
   return `<button type="button" class="sw ${on ? 'on' : ''}" role="switch" aria-checked="${!!on}" aria-label="${escapeHtml(k)}" data-pref-set="${k}" data-v="${escapeHtml(String(on ? offV : onV))}"><i></i></button>`;
 }
+/* CAM-3: the player's blur slider (preferences.blur: 0 off, 1 the game's own look, 1.5 strong) */
+function blurWord(v) {
+  return v < 0.05 ? 'Off' : v < 0.75 ? 'Low' : v < 1.25 ? 'Medium' : 'Strong';
+}
+function blurSliderHTML() {
+  const v = Math.round((saveData.preferences.blur ?? 1) * 100);
+  return settingsRowHTML(
+    'Blur',
+    'How soft far and near things go round the sharp strip where you stand (Medium is the game’s own look). Off costs nothing.',
+    `<div class="vol"><input type="range" min="0" max="150" step="5" data-preference="blur" value="${v}" aria-label="Blur"><span class="vol-n vol-word">${blurWord(v / 100)}</span></div>`
+  );
+}
+/* UI-7a: each volume row has its own mute where its Test button was (the Volume row's is the master mute, the same
+   preference as the button beside the title); letting go of a slider plays its sound once at the new level */
+const VOLUME_MUTE_LABELS = {
+  master: 'Mute',
+  music: 'Mute music',
+  sfx: 'Mute sound effects',
+  world: 'Mute world sounds',
+  amb: 'Mute ambience',
+};
+function volumeMuted(k, p = saveData.preferences || {}) {
+  return k === 'master' ? !!p.mute : !!(p.mutes && p.mutes[k]);
+}
+function setVolumeMuted(k, on) {
+  const p = (saveData.preferences = saveData.preferences || {});
+  if (k === 'master') p.mute = on;
+  else {
+    p.mutes = p.mutes || {};
+    if (on) p.mutes[k] = true;
+    else delete p.mutes[k];
+    if (!Object.keys(p.mutes).length) delete p.mutes;
+  }
+}
+function volumeMuteHTML(k, muted) {
+  return `<button type="button" class="pb small quiet vol-mute" data-a="vol-mute" data-k="${k}" aria-pressed="${muted}" aria-label="${VOLUME_MUTE_LABELS[k]}" title="${muted ? 'Sound off' : 'Sound on'}">${uiIconHTML(muted ? 'sound-off' : 'sound', 18)}</button>`;
+}
 function volumeSliderHTML(k, label, hint, def) {
   const p = saveData.preferences || {},
     v = Math.round((p[k] ?? def) * 100);
   return settingsRowHTML(
     label,
     hint,
-    `<div class="vol"><input type="range" min="0" max="100" step="5" data-preference="${k}" value="${v}" aria-label="${escapeHtml(k === 'master' ? label : label + ' volume')}"><span class="vol-n">${v}</span><button type="button" class="pb small quiet" data-a="aud-test" data-k="${k}">Test</button></div>`
+    `<div class="vol"><input type="range" min="0" max="100" step="5" data-preference="${k}" value="${v}" aria-label="${escapeHtml(k === 'master' ? label : label + ' volume')}"><span class="vol-n">${v}</span>${volumeMuteHTML(k, volumeMuted(k, p))}</div>`
   );
+}
+/* the mute buttons drawn again in place (the sheet isn't redrawn while a slider is held) */
+function volumeMuteSync() {
+  document.querySelectorAll('.vol-mute').forEach(b => {
+    const muted = volumeMuted(b.dataset.k);
+    if (b.getAttribute('aria-pressed') !== String(muted)) b.outerHTML = volumeMuteHTML(b.dataset.k, muted);
+  });
+  const head = document.querySelector('.set-mute');
+  if (head && head.getAttribute('aria-pressed') !== String(volumeMuted('master')))
+    head.outerHTML = muteButtonHTML(saveData.preferences || {});
+}
+const VOLUME_KEYS = ['master', 'music', 'sfx', 'world', 'amb'];
+/* UI-7b: the Save tab's card shows a run game's progress (km walked went with step tracking); Customize trainer
+   went too, as the trainer card's Edit look does the same */
+function saveProgressLine() {
+  const m = saveData.meta || {},
+    runs = m.runs || 0,
+    taxed = Object.keys(saveData.caught || {}).length;
+  return `${runs ? `${m.wins || 0} of ${runs} ${runs === 1 ? 'run' : 'runs'} won` : 'No runs yet'} · ${taxed} taxed`;
 }
 function settingsHTML() {
   const p = saveData.preferences || {},
-    tab = SETTINGS_TABS.some(t => t[0] === uiState.setTab) ? uiState.setTab : 'game',
+    /* UI-7b: the last tab used (kept with the preferences, so it lasts past a reload), else Sound */
+    want = uiState.setTab || p.setTab,
+    tab = SETTINGS_TABS.some(t => t[0] === want) ? want : 'sound',
     hz = frameScheduler.hz || 60;
   let body = '';
   if (tab === 'game')
     body =
-      `<h3 class="set-sub">Playing</h3>` +
-      settingsRowHTML(
-        'Time of day',
-        'Evenings glow, lamps come on at night, and some Billies only come out after dark.',
-        segmentedHTML('time', p.time || 'real', [
-          ['real', 'My clock'],
-          ['morning', 'Morning'],
-          ['day', 'Midday'],
-          ['evening', 'Evening'],
-          ['night', 'Night'],
-        ])
-      ) +
-      settingsRowHTML(
-        'Weather',
-        'Rain brings out Water types; storms bring Electric ones.',
-        segmentedHTML('weather', p.weather || 'auto', [
-          ['auto', 'Changes'],
-          ['clear', 'Fair'],
-          ['rain', 'Rain'],
-          ['snow', 'Snow'],
-          ['fog', 'Fog'],
-        ])
-      ) +
-      settingsRowHTML(
-        'Season',
-        'Trees turn and snow falls with the calendar, or pick one.',
-        segmentedHTML('season', p.season || 'auto', [
-          ['auto', 'Calendar'],
-          ['spring', 'Spring'],
-          ['summer', 'Summer'],
-          ['autumn', 'Autumn'],
-          ['winter', 'Winter'],
-        ])
-      ) +
       settingsRowHTML(
         'Battle speed',
         'How fast moves play out and lines move on. Tap still skips ahead at any speed.',
@@ -358,8 +398,9 @@ function settingsHTML() {
         'Language',
         'Menus and buttons. Stories and names stay in English.',
         `<select data-preference="lang">${(typeof I18N_LANGS !== 'undefined' ? I18N_LANGS : [['en', 'English']]).map(([v, n]) => `<option value="${v}" ${(p.lang || 'en') === v ? 'selected' : ''}>${n}</option>`).join('')}</select>`
-      ) +
-      `<h3 class="set-sub">Moving about</h3>` +
+      );
+  else if (tab === 'controls')
+    body =
       settingsRowHTML(
         'Moving about',
         'Joystick: drag anywhere on the scene and a stick appears under your thumb; push past its rim into the outer ring to run. D-pad: a fixed pad in the corner; hold its centre to run. Either way, tapping the ground walks you there too.',
@@ -379,7 +420,6 @@ function settingsHTML() {
         'Tilt your phone to look a little around the scene.',
         switchHTML('tilt', p.tilt !== false, 'on', 'off')
       ) +
-      settingsRowHTML('Bigger buttons', 'Easier to tap.', switchHTML('bigTargets', !!p.bigTargets, '1', '')) +
       ('vibrate' in navigator
         ? settingsRowHTML(
             'Vibration',
@@ -387,16 +427,28 @@ function settingsHTML() {
             switchHTML('haptics', p.haptics !== false, 'on', 'off')
           )
         : '') +
-      `<details class="help"><summary>Moving around</summary><p>Drag on the scene for the joystick (or use the D-pad), or tap the ground to walk there. Tap people to talk and glowing spots to act. Two fingers turn the camera and pinch to zoom; with a mouse, drag with the right button to turn and Ctrl+scroll to zoom. On a keyboard: arrow keys or WASD walk, hold Shift to run, Q and E turn, Enter talks.</p></details>` +
-      `<h3 class="set-sub">Screen and comfort</h3>` +
+      `<details class="help"><summary>Moving around</summary><p>Drag on the scene for the joystick (or use the D-pad), or tap the ground to walk there. Tap people to talk and glowing spots to act. Two fingers turn the camera and pinch to zoom; with a mouse, drag with the right button to turn and Ctrl+scroll to zoom. On a keyboard: arrow keys or WASD walk, hold Shift to run, Q and E turn, Enter talks.</p></details>`;
+  else if (tab === 'access')
+    body =
       settingsRowHTML(
-        'Theme',
-        'Menus in light or dark colours.',
-        segmentedHTML('theme', p.theme || 'system', [
-          ['system', 'Device'],
-          ['light', 'Light'],
-          ['dark', 'Dark'],
+        'Text size',
+        'Bigger words in menus and talk.',
+        segmentedHTML('textSize', p.textSize || 'normal', [
+          ['normal', 'Normal'],
+          ['large', 'Large'],
+          ['xlarge', 'Larger'],
         ])
+      ) +
+      settingsRowHTML('Bigger buttons', 'Easier to tap.', switchHTML('bigTargets', !!p.bigTargets, '1', '')) +
+      settingsRowHTML(
+        'High contrast',
+        'Stronger outlines and plainer backgrounds behind text.',
+        switchHTML('contrast', p.contrast === 'high', 'high', 'normal')
+      ) +
+      settingsRowHTML(
+        'Flashes',
+        'Lightning and bright battle flashes. Turn off if flashing bothers you.',
+        switchHTML('flashes', (p.flashes || 'on') === 'on', 'on', 'off')
       ) +
       settingsRowHTML(
         'Animation',
@@ -408,32 +460,17 @@ function settingsHTML() {
         ])
       ) +
       settingsRowHTML(
-        'Text size',
-        'Bigger words in menus and talk.',
-        segmentedHTML('textSize', p.textSize || 'normal', [
-          ['normal', 'Normal'],
-          ['large', 'Large'],
-          ['xlarge', 'Larger'],
+        'Theme',
+        'Menus in light or dark colours.',
+        segmentedHTML('theme', p.theme || 'system', [
+          ['system', 'Device'],
+          ['light', 'Light'],
+          ['dark', 'Dark'],
         ])
-      ) +
-      settingsRowHTML(
-        'High contrast',
-        'Stronger outlines and plainer backgrounds behind text.',
-        switchHTML('contrast', p.contrast === 'high', 'high', 'normal')
-      ) +
-      settingsRowHTML(
-        'Flashes',
-        'Lightning and bright battle flashes. Turn off if flashing bothers you.',
-        switchHTML('flashes', (p.flashes || 'on') === 'on', 'on', 'off')
       );
   else if (tab === 'sound')
     body =
-      settingsRowHTML(
-        'Sound',
-        'All of it at once. Mute keeps your levels for later.',
-        switchHTML('mute', !p.mute, '', '1')
-      ) +
-      volumeSliderHTML('master', 'Volume', 'Everything together.', 1) +
+      volumeSliderHTML('master', 'Volume', 'Everything together. Mute keeps your levels for later.', 1) +
       volumeSliderHTML('music', 'Music', 'Tunes for each place and battle.', 0.55) +
       volumeSliderHTML(
         'sfx',
@@ -475,6 +512,7 @@ function settingsHTML() {
           [120, '120'],
         ])
       ) +
+      blurSliderHTML() +
       settingsRowHTML(
         'World map clouds',
         'Clouds, rain, snow and lightning over the world map, from each place’s own weather. Auto follows the look above.',
@@ -498,17 +536,18 @@ function settingsHTML() {
         : '');
   } else if (tab === 'save')
     body =
-      `<div class="settings-profile">${personHTML('me', 52)}<div><b>${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)}</b><p class="note">${metresToKm((saveData.stats && saveData.stats.walked) || 0)} km walked · ${Object.keys(saveData.caught).length} taxed</p></div></div><button class="pb dark wide" data-a="open-customize">Customize trainer</button>` +
+      `<div class="settings-profile">${personHTML('me', 52)}<div><b>${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)}</b><p class="note">${saveProgressLine()}</p></div></div>` +
       (typeof accountSettingsHTML === 'function' ? accountSettingsHTML() : '') +
       (typeof accountSetAsideHTML === 'function' ? accountSetAsideHTML() : '') +
-      `<p class="note">${typeof account !== 'undefined' && account.user ? 'Your progress is saved to your account, and in this browser.' : 'Your progress is saved in this browser. Sign in to keep it online, or download a backup before changing device or clearing browser data.'}</p><div class="two"><button class="pb small" data-a="export-save">Export save</button><button class="pb small" data-a="import-save">Import save</button></div>`;
+      `<p class="note">${typeof account !== 'undefined' && account.user ? 'Your progress is saved to your account, and in this browser.' : 'Your progress is saved in this browser. Sign in to keep it online, or download a backup before changing device or clearing browser data.'}</p><div class="two"><button class="pb small" data-a="export-save">Export save</button><button class="pb small" data-a="import-save">Import save</button></div>` +
+      `<h3 class="set-sub set-danger">Start over</h3><p class="note">Erases your team, Field Guide, money and the ranch. Settings stay.</p><button type="button" class="pb small red wide" data-a="start-over">Start over</button>`;
   else
-    body = `<details class="help" open><summary>How to play</summary><p>Walk through towns and along the roads between them with the joystick, the D-pad or a tap on the ground. Tap a Billie in the grass to battle it; a win pays prize money, and more Billies come out while you play. The ranch breeds Billies into eggs that hatch on real time. Lower its HP, then throw a coin to tax it.</p><p>The map shows where to go next; pick a place and gold arrows guide you there.</p></details><div class="dbg-help"><b>Something look wrong or run slowly?</b><p class="note">The full test takes a few minutes: it walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more and more until your device can't keep up. Your save isn't changed. The debug log holds those numbers, errors and details about your device and graphics, plus a small picture of the scene. It has no save data or names. Send it to whoever is helping you. The graphics test tries each graphics setting on its own and saves a short report. The graphics cost test measures what each graphics setting costs on your device. The world map test opens the map and checks every place, the camera and the frame rate on your device.</p><div class="two"><button class="pb small" data-a="quicktest">Run the full test</button><button class="pb small" data-a="diagtest">Run the diagnostics test (2 min)</button><button class="pb small" data-a="gfxtest">Run the graphics test</button><button class="pb small" data-a="gfxbench">Run the graphics cost test (10 min)</button><button class="pb small" data-a="bowltest">Run the world map test (1 min)</button><button class="pb small" data-a="dbglog">Export debug log</button></div></div><button class="pb small quiet wide dbg-open" data-a="debug">${uiIconHTML('bug', 14)} Debug menu</button>`;
+    body = `<details class="help" open><summary>How to play</summary><p>Walk through towns and along the roads between them with the joystick, the D-pad or a tap on the ground. Tap a Billie in the grass to battle it; a win pays prize money, and more Billies come out while you play. The ranch breeds Billies into eggs that hatch on real time. Lower its HP, then throw a coin to tax it.</p><p>The map shows where to go next; pick a place and gold arrows guide you there.</p></details><div class="dbg-help"><b>Report a problem</b><p class="note">Something look wrong or run slowly? Run the full test: for a few minutes it walks through every place and room, plays battles, the map and the opening, and checks each for errors and speed. Your save isn’t changed. Then export the debug log and send it to whoever is helping you. It holds those numbers, errors, details about your device and graphics, and a small picture of the scene; no save data or names.</p><div class="two"><button class="pb small" data-a="quicktest">Run the full test</button><button class="pb small" data-a="dbglog">Export debug log</button></div></div><button class="pb small quiet wide dbg-open" data-a="debug">${uiIconHTML('bug', 14)} Debug menu</button>`;
   return `<div class="set-top">${muteButtonHTML(p)}</div><div class="set-tabs" role="tablist">${SETTINGS_TABS.map(([k, n]) => `<button type="button" role="tab" aria-selected="${k === tab}" class="${k === tab ? 'on' : ''}" data-a="set-tab" data-k="${k}">${n}</button>`).join('')}</div><div class="set-body">${body}</div>`;
 }
 /* SND-1: mute from any tab, beside the sheet's title (the title is drawn by ui.js, which the UI track keeps until
    UI-5, so the button comes first in the sheet's body and menus.css lifts it into the title's row); the same
-   preference as the Sound tab's switch, through the same click handler */
+   preference as the Volume row's mute (UI-7a; the Sound tab's on/off switch went, as it did the same) */
 function muteButtonHTML(p) {
   const muted = !!p.mute;
   return `<button type="button" class="pb small quiet set-mute" data-pref-set="mute" data-v="${muted ? '' : '1'}" aria-pressed="${muted}" aria-label="Mute" title="${muted ? 'Sound off' : 'Sound on'}">${uiIconHTML(muted ? 'sound-off' : 'sound', 18)}</button>`;
@@ -534,7 +573,7 @@ function changePreference(k, v) {
     return changePreference('effects', 'full');
   }
   if (k === 'fps') v = +v;
-  if (k === 'music' || k === 'sfx' || k === 'world' || k === 'amb') v = +v / 100;
+  if (k === 'music' || k === 'sfx' || k === 'world' || k === 'amb' || k === 'blur') v = +v / 100;
   if (k === 'master') {
     saveData.preferences.master = v;
     applyPreferences();
@@ -578,15 +617,25 @@ document.addEventListener('input', ev => {
   const k = ev.target.dataset && ev.target.dataset.preference;
   if (k && ev.target.type === 'range') {
     const n = ev.target.parentNode.querySelector('.vol-n');
-    if (n) n.textContent = ev.target.value;
+    if (n) n.textContent = k === 'blur' ? blurWord(+ev.target.value / 100) : ev.target.value;
+  }
+  /* UI-7a: moving a muted slider unmutes it, as a phone's volume does */
+  if (VOLUME_KEYS.includes(k) && volumeMuted(k)) {
+    setVolumeMuted(k, false);
+    if (typeof applyVolumes === 'function') applyVolumes();
+    if (typeof applyAmbienceVolume === 'function') applyAmbienceVolume();
+    volumeMuteSync();
   }
 });
 document.addEventListener('click', ev => {
-  const el = ev.target.closest && ev.target.closest('[data-pref-set],[data-a="set-tab"],[data-a="aud-test"]');
+  const el = ev.target.closest && ev.target.closest('[data-pref-set],[data-a="set-tab"],[data-a="vol-mute"]');
   if (!el) return;
   const d = el.dataset;
   if (d.a === 'set-tab') {
     uiState.setTab = d.k;
+    saveData.preferences = saveData.preferences || {};
+    saveData.preferences.setTab = d.k;
+    save();
     settingsRefresh();
     requestAnimationFrame(() => {
       const t = document.querySelector('.set-tabs .on');
@@ -594,8 +643,16 @@ document.addEventListener('click', ev => {
     });
     return;
   }
-  if (d.a === 'aud-test') {
-    if (typeof testVolume === 'function') testVolume(d.k);
+  if (d.a === 'vol-mute') {
+    setVolumeMuted(d.k, !volumeMuted(d.k));
+    save();
+    if (typeof applyVolumes === 'function') applyVolumes();
+    if (typeof applyAmbienceVolume === 'function') applyAmbienceVolume();
+    settingsRefresh();
+    requestAnimationFrame(() => {
+      const t = document.querySelector(`.vol-mute[data-k="${d.k}"]`);
+      if (t) t.focus({ preventScroll: true });
+    });
     return;
   }
   const head = el.classList.contains('set-mute');
@@ -611,6 +668,7 @@ document.addEventListener('click', ev => {
 document.addEventListener('change', ev => {
   const k = ev.target.dataset.preference;
   if (k) changePreference(k, ev.target.value);
+  if (VOLUME_KEYS.includes(k) && typeof testVolume === 'function') testVolume(k);
 });
 document.addEventListener('click', ev => {
   const el = ev.target.closest('[data-a]');
@@ -620,9 +678,9 @@ document.addEventListener('click', ev => {
     case 'customize':
       customizeTrainer();
       break;
-    case 'open-customize':
-      closeModal();
-      customizeTrainer();
+    case 'start-over':
+      uiState.modal = null;
+      settingsReset();
       break;
     case 'export-save':
       exportSave();
@@ -718,40 +776,40 @@ export function openSettings(tab) {
     settings: true,
     cls: 'set-sheet',
     html: settingsHTML(),
+    btns: [{ l: 'Done', c: 'dark', f: closeModal }],
+  });
+}
+/* the one Start over (Settings and the debug menu's Erase save): a battle in progress stops first (UI-7b: Settings'
+   own copy left it running under the new save) */
+export function settingsReset() {
+  modal({
+    title: 'Start over?',
+    html: '<p>This erases your team, Field Guide and money.</p>',
     btns: [
-      { l: 'Done', c: 'dark', f: closeModal },
       {
-        l: 'Start over',
-        c: 'quiet',
+        l: 'Erase and start over',
+        c: 'red',
         f: () => {
-          uiState.modal = null;
-          modal({
-            title: 'Start over?',
-            html: '<p>This erases your team, Field Guide and money.</p>',
-            btns: [
-              {
-                l: 'Erase and start over',
-                c: 'red',
-                f: () => {
-                  setSaveData(newSaveKeepingPreferences());
-                  saveData.savedAt = Date.now();
-                  writeStoredSave(saveData);
-                  flushSave();
-                  uiState.intro = 0;
-                  uiState.pg = null;
-                  uiState.avatarDraft = null;
-                  uiState.trainerDraft = null;
-                  uiState.tab = 'walk';
-                  applyPreferences();
-                  closeModal();
-                  render();
-                },
-              },
-              { l: 'Keep my progress', c: 'quiet', f: closeModal },
-            ],
-          });
+          if (activeBattle) {
+            stopTimers();
+            setActiveBattle(null);
+            battleStageStop();
+          }
+          setSaveData(newSaveKeepingPreferences());
+          saveData.savedAt = Date.now();
+          writeStoredSave(saveData);
+          flushSave();
+          uiState.intro = 0;
+          uiState.pg = null;
+          uiState.avatarDraft = null;
+          uiState.trainerDraft = null;
+          uiState.tab = 'walk';
+          applyPreferences();
+          closeModal();
+          render();
         },
       },
+      { l: 'Keep my progress', c: 'quiet', f: closeModal },
     ],
   });
 }

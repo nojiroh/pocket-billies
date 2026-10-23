@@ -817,6 +817,11 @@ function seamlessCompose(id, F) {
       );
     if (S.npcSpots && !band)
       sc.npcSpots = (sc.npcSpots || []).concat(S.npcSpots.map(q => (Array.isArray(q) ? tr(q[0], q[1]) : q)));
+    /* CAM-2: the camera zones, moved with their place (not a neighbour's band) */
+    if (S.camZones && !band)
+      sc.camZones = (sc.camZones || []).concat(
+        S.camZones.map(o => Object.assign({}, o, { x: o.x + O[0], z: o.z + O[1] }))
+      );
     if (S.cliff && !sc.cliff) sc.cliff = S.cliff;
     if (S.ride && !band) sc.ride = S.ride;
     if (S.wallCol && !sc.wallCol) sc.wallCol = S.wallCol;
@@ -1809,6 +1814,29 @@ export function shiftWalkView(id, dx, dz) {
     if (walkRenderer.camT) {
       walkRenderer.camT[0] += dx;
       walkRenderer.camT[1] += dz;
+    }
+    /* CAM-1: the follow's last targets and the goals' aim points move with the world (its look-ahead and speeds are
+       relative), and so does where you were last frame, so the shift isn't read as a step */
+    const F = walkRenderer.fol;
+    if (F) {
+      if (F.tg[0] != null) F.tg[0] += dx;
+      if (F.tg[1] != null) F.tg[1] += dz;
+      for (const g of Object.values(F.last)) if (g.at) g.at = [g.at[0] + dx, g.at[1] + dz];
+    }
+    if (walkRenderer.px != null) walkRenderer.px += dx;
+    if (walkRenderer.pz != null) walkRenderer.pz += dz;
+    if (walkRenderer.swoop) {
+      walkRenderer.swoop.x += dx;
+      walkRenderer.swoop.z += dz;
+      /* CAM-2: where you and the encounter were */
+      for (const [kx, kz] of [
+        ['px', 'pz'],
+        ['ex', 'ez'],
+      ])
+        if (walkRenderer.swoop[kx] != null) {
+          walkRenderer.swoop[kx] += dx;
+          walkRenderer.swoop[kz] += dz;
+        }
     }
     if (walkRenderer.focusT) {
       walkRenderer.focusT.x += dx;

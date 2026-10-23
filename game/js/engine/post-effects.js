@@ -18,15 +18,27 @@ expose({
   COLOR_GRADES: [() => COLOR_GRADES],
   POST_EFFECT_SHADERS: [() => POST_EFFECT_SHADERS],
   colorGrade: [() => colorGrade, v => (colorGrade = v)],
+  drawDepthOfField: [() => drawDepthOfField, v => setDrawDepthOfField(v)],
   drawPostEffects: [() => drawPostEffects, v => setDrawPostEffects(v)],
+  drawPostRest: [() => drawPostRest, v => setDrawPostRest(v)],
+  postTex: [() => postTex, v => (postTex = v)],
+  postUse: [() => postUse, v => (postUse = v)],
   projectToScreenUv: [() => projectToScreenUv, v => (projectToScreenUv = v)],
   screenSnapshot: [() => screenSnapshot, v => setScreenSnapshot(v)],
   sunScreenPosition: [() => sunScreenPosition, v => (sunScreenPosition = v)],
 });
 /* eslint-enable no-func-assign */
+export function setDrawDepthOfField(v) {
+  drawDepthOfField = v; // eslint-disable-line no-func-assign
+  provide({ drawDepthOfField });
+}
 export function setDrawPostEffects(v) {
   drawPostEffects = v; // eslint-disable-line no-func-assign
   provide({ drawPostEffects });
+}
+export function setDrawPostRest(v) {
+  drawPostRest = v; // eslint-disable-line no-func-assign
+  provide({ drawPostRest });
 }
 export function setScreenSnapshot(v) {
   screenSnapshot = v; // eslint-disable-line no-func-assign
@@ -38,13 +50,24 @@ export const POST_EFFECT_SHADERS = {
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDep;uniform vec2 uPx;uniform float uN,uF,uFocus,uBand,uRampF,uRampN,uMaxR,uBokeh;uniform int uTaps;
+precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDep;uniform vec2 uPx;uniform float uN,uF,uBand,uRampF,uRampN,uMaxR,uBokeh,uEdge;uniform vec4 uPlane;uniform int uTaps;
 float lin(float d){float z=d*2.-1.;return 2.*uN*uF/(uF+uN-z*(uF-uN));}
-float coc(float z){float dz=z-uFocus;return dz>0.?smoothstep(uBand,uBand+uRampF,dz):smoothstep(uBand*.6,uBand*.6+uRampN,-dz);}
-void main(){float zc=lin(texture(uDep,vUV).r),cc=coc(zc);vec3 acc=texture(uCol,vUV).rgb;float ws=1.;
- if(cc>.02){float nt=float(uTaps);for(int i=0;i<28;i++){if(i>=uTaps)break;float a=float(i)*2.39996,r=sqrt((float(i)+.5)/nt);vec2 q=vUV+vec2(cos(a),sin(a))*r*uMaxR*cc*uPx;
-  float zs=lin(texture(uDep,q).r),cs=coc(zs);float w=zs<zc?max(cs,cc*.35):cc;vec3 s=texture(uCol,q).rgb;float l=dot(s,vec3(.3,.59,.11));w*=1.+smoothstep(.8,1.6,l)*2.5*uBokeh;acc+=s*w;ws+=w;}}
- o=vec4(acc/ws,cc);}`,
+/* CAM-3: the distance from the plane of focus at screen place q and view depth z (logic/lens-focus.js; tilt 0: z - focus) */
+float pd(vec2 q,float z){return z*dot(vec3(1.,q),uPlane.xyz)-uPlane.w;}
+float cocd(float dz){return dz>0.?smoothstep(uBand,uBand+uRampF,dz):smoothstep(uBand*.6,uBand*.6+uRampN,-dz);}
+/* CAM-3: Engine > Lens > Edge blur: none in the middle of the screen, the most in the corners (logic/lens-focus.js edgeBlur) */
+float edge(vec2 q){vec2 e=(q-.5)*2.;return uEdge*smoothstep(.6,1.25,length(vec2(e.x,e.y*.85)));}
+float coc(vec2 q,float z){return max(cocd(pd(q,z)),edge(q));}
+/* CAM-3: a sample counts where its own blur reaches this pixel (scatter as gather, after Dennis Gustafsson): a sharp
+   thing in front keeps out of the blur behind it (no halo round it), a sample behind counts with its blur held to
+   twice this pixel's (only behind the focus: in front of it, as before, everything behind counts), and a blurred thing in front spills over the sharp pixels beside it (four probes at the widest
+   reach find it, then the gather is as wide as its blur). The alpha is the spill only: the composite works out each pixel's own blur at full size. */
+float cover(float s,float d){return clamp((s-d)*12.+.5,0.,1.);}
+void main(){float zc=lin(texture(uDep,vUV).r),dc=pd(vUV,zc),cc=max(cocd(dc),edge(vUV)),R=cc;bool far=dc>0.;vec3 acc=texture(uCol,vUV).rgb;float ws=1.,wn=0.;
+ for(int k=0;k<4;k++){vec2 q=vUV+vec2(k<2?-.6:.6,k==0||k==2?-.6:.6)*uMaxR*uPx;float zs=lin(texture(uDep,q).r);if(zs<zc)R=max(R,coc(q,zs));}
+ if(R>.02){float nt=float(uTaps);for(int i=0;i<28;i++){if(i>=uTaps)break;float a=float(i)*2.39996,r=sqrt((float(i)+.5)/nt);vec2 q=vUV+vec2(cos(a),sin(a))*r*uMaxR*R*uPx;
+  float zs=lin(texture(uDep,q).r),cs=coc(q,zs),d=r*R;bool fr=zs<zc;float w=fr?cover(cs,d):far?cover(min(cs,cc*2.),d):1.;vec3 s=texture(uCol,q).rgb;float l=dot(s,vec3(.3,.59,.11));w*=1.+smoothstep(.8,1.6,l)*2.5*uBokeh;acc+=s*w;ws+=w;if(fr)wn+=w;}}
+ o=vec4(acc/ws,R>cc+.01?min(1.,wn/ws*2.)*R:0.);}`,
   ],
   bright: [
     `#version 300 es
@@ -129,7 +152,7 @@ void main(){float d0=texture(uDep,vUV).r;vec4 wp=uIVP*vec4(vUV*2.-1.,min(d0,.999
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform float uVolK,uExp,uShoulder,uCon,uSat,uWarm,uVig,uCA,uGrain,uSharp,uBloomK,uTime,uDofOn,uAOK,uRaysK,uTone,uHeat,uInk,uNear,uFar,uGlare;uniform vec3 uLift,uGam,uGain,uShT,uHiT,uRayC,uSunP;
+precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform vec4 uDofPl,uDofB;uniform float uDofView;uniform float uVolK,uExp,uShoulder,uCon,uSat,uWarm,uVig,uCA,uGrain,uSharp,uBloomK,uTime,uDofOn,uAOK,uRaysK,uTone,uHeat,uInk,uNear,uFar,uGlare;uniform vec3 uLift,uGam,uGain,uShT,uHiT,uRayC,uSunP;
 float linz(float d){float z=d*2.-1.;return 2.*uNear*uFar/(uFar+uNear-z*(uFar-uNear));}
 /* film grain (2026-10): a hash without sine (Dave Hoskins), steady on phone graphics chips where the sine one makes
    patterns; soft grains about 1.5 pixels across, a new field 24 times a second, mostly brightness with a little colour,
@@ -149,7 +172,11 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
  for(int i=0;i<6;i++){if(float(i)>=uHeatN)break;vec4 hs=uHeatS[i];vec2 q=(uv-hs.xy)/hs.zw;float m=smoothstep(1.,.25,length(q))*step(0.,q.y+.35);if(m>0.){float w=sin(uv.y/hs.w*9.+uTime*.009+float(i)*2.3);uv.x+=floor(w*1.6+.5)/2.*uPx.x*1.1*m;}}
  vec2 d=uv-.5;vec2 ca=d*dot(d,d)*uCA*uPx*6.;vec3 s=vec3(texture(uCol,uv-ca).r,texture(uCol,uv).g,texture(uCol,uv+ca).b);
  if(uSharp>0.){vec3 n=texture(uCol,vUV+vec2(uPx.x,0)).rgb+texture(uCol,vUV-vec2(uPx.x,0)).rgb+texture(uCol,vUV+vec2(0,uPx.y)).rgb+texture(uCol,vUV-vec2(0,uPx.y)).rgb;s+=(s-n*.25)*uSharp;}
- vec4 b=texture(uDof,vUV);vec3 c=uDofOn>.5?mix(s,b.rgb,smoothstep(.02,.4,b.a)):s;
+ /* CAM-3: the blur's amount worked out here at full size from the full-size depth (the same plane of focus as the
+    blur pass), so the edge between sharp and blurred follows the real edges; the half-size alpha adds only the spill
+    of a blurred thing in front */
+ vec4 b=texture(uDof,vUV);vec3 c=s;float kb=0.;if(uDofOn>.5){float dz=linz(texture(uDep,vUV).r)*dot(vec3(1.,vUV),uDofPl.xyz)-uDofPl.w,
+  k=dz>0.?smoothstep(uDofB.x,uDofB.x+uDofB.y,dz):smoothstep(uDofB.x*.6,uDofB.x*.6+uDofB.z,-dz);{vec2 e=(vUV-.5)*2.;k=max(k,uDofB.w*smoothstep(.6,1.25,length(vec2(e.x,e.y*.85))));}kb=uDofOn>1.5?k:max(k,b.a);c=mix(s,b.rgb,smoothstep(.02,.4,kb));}
  if(uAOK>0.){vec2 e=uPx*1.5;float ao=texture(uAO,vUV).r*.4+(texture(uAO,vUV+vec2(e.x,e.y)).r+texture(uAO,vUV-vec2(e.x,e.y)).r+texture(uAO,vUV+vec2(e.x,-e.y)).r+texture(uAO,vUV+vec2(-e.x,e.y)).r)*.15;c*=1.-clamp(ao*uAOK,0.,.75);}
  /* v33: ink outlines where depth jumps (silhouettes of props, people and billionaires), thinner with distance */
  if(uInk>0.){float d0=texture(uDep,vUV).r;if(d0<.9999){float z0=linz(d0),e=0.;vec2 q=uPx*1.;float zs[4];zs[0]=linz(texture(uDep,vUV+vec2(q.x,0)).r);zs[1]=linz(texture(uDep,vUV-vec2(q.x,0)).r);zs[2]=linz(texture(uDep,vUV+vec2(0,q.y)).r);zs[3]=linz(texture(uDep,vUV-vec2(0,q.y)).r);
@@ -162,10 +189,28 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
  else if(uGlare>0.&&uSunP.z<0.){vec2 a=vec2(uPx.y/uPx.x,1.);vec2 e=clamp(uSunP.xy,-.05,1.05);float r=length((vUV-e)*a);c+=uRayC*(exp(-r*2.6)*.16+exp(-r*7.)*.1)*-uSunP.z*uGlare;}
  c=uTone>.5?mix(roll(c*uExp),film(c*uExp*1.25),uTone>1.5?1.:.85):roll(c*uExp);if(uTone>1.5)c=(c-.5)*1.08+.5;c.r*=1.+uWarm*.08;c.b*=1.-uWarm*.1;float l=dot(c,vec3(.3,.59,.11));c=mix(vec3(l),c,uSat);c=(c-.5)*uCon+.5;
  c=pow(max(c*uGain+uLift*(1.-c),0.),1./uGam);float lg=clamp(dot(c,vec3(.3,.59,.11)),0.,1.);c+=uShT*(1.-lg)*(1.-lg)+uHiT*lg*lg;
- c*=1.-uVig*pow(length(d*vec2(1.,.85))*1.25,2.6);if(uGrain>0.)c=grain(c);/* v34: a fixed half-step dither against banding in sky gradients, fog and dusk light */{vec2 q=floor(gl_FragCoord.xy);float bd=fract(52.9829189*fract(dot(q,vec2(.06711056,.00583715))));c+=(bd-.5)/255.;}o=vec4(c,1.);}`,
+ c*=1.-uVig*pow(length(d*vec2(1.,.85))*1.25,2.6);if(uGrain>0.)c=grain(c);/* v34: a fixed half-step dither against banding in sky gradients, fog and dusk light */{vec2 q=floor(gl_FragCoord.xy);float bd=fract(52.9829189*fract(dot(q,vec2(.06711056,.00583715))));c+=(bd-.5)/255.;}
+ /* CAM-3: the Studio's blur heatmap (Engine > Blur heatmap): sharp green, then yellow, then red at full blur */
+ if(uDofView>.5){vec3 hm=kb<.02?vec3(.1,.85,.3):kb<.5?mix(vec3(.95,.9,.15),vec3(1.,.55,.1),kb*2.):mix(vec3(1.,.55,.1),vec3(.9,.1,.1),kb*2.-1.);c=mix(c,hm,.55);}
+ o=vec4(c,1.);}`,
   ],
 };
 provide({ POST_EFFECT_SHADERS }); /* to-module */
+/* a post pass: its program on target F (null: the screen) at w x h; returns the uniforms */
+function postUse(name, F, w, h) {
+  const gl = gpuState.gl,
+    p = gpuState.P[name];
+  gl.bindFramebuffer(gl.FRAMEBUFFER, F ? F.f : null);
+  gl.viewport(0, 0, w, h);
+  gl.useProgram(p.p);
+  return p.U;
+}
+function postTex(U, name, unit, t) {
+  const gl = gpuState.gl;
+  gl.activeTexture(gl.TEXTURE0 + unit);
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.uniform1i(U[name], unit);
+}
 /* draws the post chain from scene target S (color + depth) to the screen */
 export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   const gl = gpuState.gl;
@@ -173,41 +218,88 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   gl.disable(gl.DEPTH_TEST);
   gl.disable(gl.BLEND);
   bindQuad();
-  const hw = Math.max(16, rw >> 1),
+  const F = drawDepthOfField(S, C, focusDist, rw, rh, o);
+  drawPostRest(S, C, rw, rh, o, F);
+  return F;
+}
+/* CAM-3: the blur on its own (the diagnostics test times it apart from the rest of the post chain) */
+export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
+  const gl = gpuState.gl,
+    hw = Math.max(16, rw >> 1),
     hh = Math.max(16, rh >> 1),
-    use = (name, F, w, h) => {
-      const p = gpuState.P[name];
-      gl.bindFramebuffer(gl.FRAMEBUFFER, F ? F.f : null);
-      gl.viewport(0, 0, w, h);
-      gl.useProgram(p.p);
-      return p.U;
-    },
-    tex = (U, name, unit, t) => {
-      gl.activeTexture(gl.TEXTURE0 + unit);
-      gl.bindTexture(gl.TEXTURE_2D, t);
-      gl.uniform1i(U[name], unit);
-    };
+    use = postUse,
+    tex = postTex;
   /* depth of field */
   const blur = (o.blur ?? 1) * engineSetting('lens', 'blur'),
     dofOn = blur > 0.01 && !o.noDof,
-    D = renderTarget('dof', hw, hh, { hdr: true });
-  if (dofOn) {
+    /* CAM-3: slow phones (o.cheapDof, quality 4) get a cheap blur instead of none: two dual-Kawase steps down and
+       one up (the bloom's own down and up passes), blended by the same full-size amount */
+    cheap = dofOn && !!o.cheapDof,
+    D = renderTarget('dof', hw, hh, { hdr: true }),
+    /* the plane of focus (logic/lens-focus.js focusPlane): o.plane [g0, gx, gy, h], else facing the camera */
+    pl = o.plane || [1, 0, 0, focusDist],
+    dr = o.dofRef ?? C.df,
+    /* the sharp band and the ramps behind and in front, in metres, and the edge blur */
+    band = [
+      dr * engineSetting('lens', 'focusBand'),
+      dr * engineSetting('lens', 'blurFar'),
+      dr * engineSetting('lens', 'blurNear'),
+      engineSetting('lens', 'edgeBlur') || 0,
+    ];
+  if (cheap) {
+    const qw = Math.max(8, hw >> 1),
+      qh = Math.max(8, hh >> 1),
+      K0 = renderTarget('dofk0', hw, hh, { hdr: true }),
+      K1 = renderTarget('dofk1', qw, qh, { hdr: true });
+    let U = use('down', K0, hw, hh);
+    tex(U, 'uCol', 0, S.c);
+    gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    U = use('down', K1, qw, qh);
+    tex(U, 'uCol', 0, K0.c);
+    gl.uniform2f(U.uPx, 1 / hw, 1 / hh);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    U = use('up', D, hw, hh);
+    tex(U, 'uCol', 0, K1.c);
+    gl.uniform2f(U.uPx, 1 / qw, 1 / qh);
+    gl.uniform1f(U.uR, Math.min(3, 0.5 + blur));
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  } else if (dofOn) {
     const U = use('dof', D, hw, hh);
     tex(U, 'uCol', 0, S.c);
     tex(U, 'uDep', 1, S.d);
     gl.uniform2f(U.uPx, 1 / hw, 1 / hh);
     gl.uniform1f(U.uN, C.near);
     gl.uniform1f(U.uF, C.far);
-    gl.uniform1f(U.uFocus, focusDist);
-    const dr = o.dofRef ?? C.df;
-    gl.uniform1f(U.uBand, dr * engineSetting('lens', 'focusBand'));
-    gl.uniform1f(U.uRampF, dr * engineSetting('lens', 'blurFar'));
-    gl.uniform1f(U.uRampN, dr * engineSetting('lens', 'blurNear'));
+    gl.uniform4f(U.uPlane, pl[0], pl[1], pl[2], pl[3]);
+    gl.uniform1f(U.uBand, band[0]);
+    gl.uniform1f(U.uRampF, band[1]);
+    gl.uniform1f(U.uRampN, band[2]);
+    gl.uniform1f(U.uEdge, band[3]);
     gl.uniform1f(U.uMaxR, Math.max(3, hh / (o.dofRef ? 50 : 70)) * blur); /* (the walk view's blur a little wider) */
     gl.uniform1f(U.uBokeh, engineSetting('lens', 'bokeh'));
     gl.uniform1i(U.uTaps, o.fast ? 14 : 28);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
+  return {
+    D,
+    dofOn,
+    cheap,
+    pl,
+    band,
+    scale: dofOn ? Math.min(1.5, o.blur ?? 1) : 0,
+    path: !dofOn ? 'off' : cheap ? 'cheap' : o.fast ? 'fast' : 'full',
+  };
+}
+/* the rest of the post chain: bloom, AO, shafts, light in the air, then the grade to the screen with the blur F
+   (drawDepthOfField's: its target D, whether it's on, its plane and band) */
+export function drawPostRest(S, C, rw, rh, o, F) {
+  const { D, dofOn } = F;
+  const gl = gpuState.gl,
+    hw = Math.max(16, rw >> 1),
+    hh = Math.max(16, rh >> 1),
+    use = postUse,
+    tex = postTex;
   /* bloom: bright pass at half size, down to 1/16, back up */
   const bk = engineSetting('color', 'bloom') * (o.bloom ?? 1),
     chain = [];
@@ -310,7 +402,10 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   tex(U, 'uDof', 1, D.c);
   tex(U, 'uBloom', 2, bk > 0.01 ? chain[0].c : gpuState.white);
   gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
-  gl.uniform1f(U.uDofOn, dofOn ? 1 : 0);
+  gl.uniform1f(U.uDofOn, !dofOn ? 0 : F.cheap ? 2 : 1);
+  gl.uniform4f(U.uDofPl, F.pl[0], F.pl[1], F.pl[2], F.pl[3]);
+  gl.uniform4f(U.uDofB, F.band[0], F.band[1], F.band[2], F.band[3]);
+  gl.uniform1f(U.uDofView, o.dofView ? 1 : 0);
   gl.uniform1f(U.uBloomK, bk > 0.01 ? bk * 0.6 : 0);
   gl.uniform1f(U.uExp, engineSetting('color', 'exposure'));
   if (U.uTone) {
@@ -325,10 +420,12 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   }
   gl.uniform1f(U.uShoulder, engineSetting('color', 'shoulder'));
   const MO = o.mood;
-  gl.uniform1f(U.uCon, engineSetting('color', 'contrast') * (MO ? MO.con : 1));
-  gl.uniform1f(U.uSat, engineSetting('color', 'saturation') * (MO ? MO.sat : 1));
+  /* CAM-3: Engine > Lens > Miniature look: saturation, contrast and vignette, as much as the blur in use */
+  const mini = (engineSetting('lens', 'miniature') || 0) * F.scale;
+  gl.uniform1f(U.uCon, engineSetting('color', 'contrast') * (MO ? MO.con : 1) * (1 + mini * 0.12));
+  gl.uniform1f(U.uSat, engineSetting('color', 'saturation') * (MO ? MO.sat : 1) * (1 + mini * 0.25));
   gl.uniform1f(U.uWarm, engineSetting('color', 'warmth') + (MO ? MO.warm : 0));
-  gl.uniform1f(U.uVig, engineSetting('lens', 'vignette'));
+  gl.uniform1f(U.uVig, Math.min(1, engineSetting('lens', 'vignette') + mini * 0.2));
   gl.uniform1f(U.uCA, engineSetting('lens', 'aberration'));
   gl.uniform1f(U.uGrain, reducedMotion ? 0 : engineSetting('lens', 'grain'));
   gl.uniform1f(U.uSharp, engineSetting('lens', 'sharpen'));

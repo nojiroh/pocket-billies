@@ -7,6 +7,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import {
   blocksToolBarHTML,
+  camZoneToolBarHTML,
   drawExtraTools,
   drawPropEditor,
   extraMapTools,
@@ -67,6 +68,7 @@ import {
   colorField,
   commit,
   dialog,
+  drawSoon,
   grid,
   numberField,
   peopleOptions,
@@ -338,6 +340,7 @@ SECTIONS.scenes = () => {
         ['house', 'Show a message (house)'],
         ['home', 'Your room (walk into it)'],
         ['ranch', 'The ranch (walk in; training and storage)'],
+        ['pasture', 'The pasture’s gate (opens the ranch’s sheet)'],
         ['board', 'The Lab’s unlock board (opens the Lab tab)'],
         ['climb', 'A ladder to climb'],
         ['sign', 'Show a message (sign)'],
@@ -428,7 +431,7 @@ SECTIONS.scenes = () => {
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(id)}</small><h2>${escapeHtml(sc.name || id)}</h2></div><div class="seg-row"><button class="btn subtle" data-act="scDup">Duplicate</button><button class="btn danger" data-act="scDel">Delete</button></div></div>
  ${card(
    'Preview',
-   `<div class="sc-pv"><canvas id="scPv"></canvas><div class="sc-pv-load" id="scPvLoad">Loading…</div></div>
+   `<div class="sc-pv"><canvas id="scPv" data-keep="walk-gl"></canvas><div class="sc-pv-load" id="scPvLoad">Loading…</div></div>
   <div class="seg-row"><button class="seg ${mapEditor.pv === 'roam' ? 'on' : ''}" data-act="scPv" data-m="roam">Walk around</button><button class="seg ${mapEditor.pv === 'path' ? 'on' : ''}" data-act="scPv" data-m="path">Follow the path</button><button class="btn sm subtle" data-act="scPvHub">Back to the hub</button><button class="btn sm" data-act="scTestRun" title="Opens the game in a new tab, straight into this scene, with a throwaway save. Your edits show up there as you make them.">Test run in the game</button></div>
   <div class="seg-row sc-env"><select id="scEnvT" data-act-change="scEnv" aria-label="Time of day">${[
     ['', 'Midday'],
@@ -487,21 +490,23 @@ SECTIONS.scenes = () => {
           ? scatterToolBarHTML()
           : mapEditor.tool === 'stamp' && typeof blocksToolBarHTML === 'function'
             ? blocksToolBarHTML()
-            : mapEditor.tool === 'height'
-              ? `<div class="sc-hbar">${[
-                  ['raise', 'Raise'],
-                  ['lower', 'Lower'],
-                  ['smooth', 'Smooth'],
-                  ['flatten', 'Flatten'],
-                ]
-                  .map(
-                    ([k, n]) =>
-                      `<button class="seg ${mapEditor.hmode === k ? 'on' : ''}" data-act="scHMode" data-m="${k}">${n}</button>`
-                  )
-                  .join(
-                    ''
-                  )}<label class="mp-size"><span>Strength</span><input type="range" id="scHStr" min=".05" max=".8" step=".05" value="${mapEditor.hstr}"></label><button class="btn sm subtle" data-act="scHFlat">Make it all flat</button></div>`
-              : `<div class="sc-ters">${terr}</div>`
+            : mapEditor.tool === 'camzone' && typeof camZoneToolBarHTML === 'function'
+              ? camZoneToolBarHTML()
+              : mapEditor.tool === 'height'
+                ? `<div class="sc-hbar">${[
+                    ['raise', 'Raise'],
+                    ['lower', 'Lower'],
+                    ['smooth', 'Smooth'],
+                    ['flatten', 'Flatten'],
+                  ]
+                    .map(
+                      ([k, n]) =>
+                        `<button class="seg ${mapEditor.hmode === k ? 'on' : ''}" data-act="scHMode" data-m="${k}">${n}</button>`
+                    )
+                    .join(
+                      ''
+                    )}<label class="mp-size"><span>Strength</span><input type="range" id="scHStr" min=".05" max=".8" step=".05" value="${mapEditor.hstr}"></label><button class="btn sm subtle" data-act="scHFlat">Make it all flat</button></div>`
+                : `<div class="sc-ters">${terr}</div>`
   }
   <div class="sc-stage" id="scStage"><canvas id="scMap"></canvas></div>
   <p class="help" id="scHint">${mapToolHint()}</p>${mapEditor.tool === 'path' ? `<div class="seg-row"><button class="btn sm" data-act="scxSmoothPath">Smooth the path into a curve</button></div>` : ''}${selCard}`,
@@ -1806,14 +1811,22 @@ document.addEventListener('keydown', ev => {
   }
 });
 /* field edits for the current scene update the map and preview */
+/* Studio plan T6.1: the 2D map (and the prop editor, the terrain thumbnails) redraw in the next frame, once however
+   many events came; the walk view rebuilds its paths and ground once the field has been still for 300 ms */
 studioState.hooks.scenes = path => {
-  if (mapEditor.ped && typeof drawPropEditor === 'function') drawPropEditor();
+  if (mapEditor.ped && typeof drawPropEditor === 'function') drawSoon('propEditor', drawPropEditor);
   if (path.startsWith('maps.') || path.startsWith('scenery.')) {
-    walkView.nav = null;
-    walkView.cand = null;
-    if (/\.(edge|w|h)$/.test(path) || path.startsWith('scenery.terrains')) walkView.gkey = '';
-    drawEditorMap();
-    if (path.startsWith('scenery.terrains')) drawSceneryThumbs();
+    const ground = /\.(edge|w|h)$/.test(path) || path.startsWith('scenery.terrains');
+    mapEditor.rebuildGround = mapEditor.rebuildGround || ground;
+    clearTimeout(mapEditor.rebuildT);
+    mapEditor.rebuildT = setTimeout(() => {
+      walkView.nav = null;
+      walkView.cand = null;
+      if (mapEditor.rebuildGround) walkView.gkey = '';
+      mapEditor.rebuildGround = false;
+    }, 300);
+    drawSoon('editorMap', drawEditorMap);
+    if (path.startsWith('scenery.terrains')) drawSoon('sceneryThumbs', drawSceneryThumbs);
   }
 };
 /* ---------- actions ---------- */

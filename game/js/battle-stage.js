@@ -94,7 +94,7 @@ expose({
   battleStageRingPhase: [() => battleStageRingPhase],
   battleStageSelect: [() => battleStageSelect, v => (battleStageSelect = v)],
   battleStageStart: [() => battleStageStart, v => setBattleStageStart(v)],
-  battleStageStop: [() => battleStageStop, v => (battleStageStop = v)],
+  battleStageStop: [() => battleStageStop, v => ((battleStageStop = v), provide({ battleStageStop }))],
   battleStageTargets: [() => battleStageTargets, v => (battleStageTargets = v)],
   battleStageToCss: [() => battleStageToCss, v => (battleStageToCss = v)],
   blinkActor: [() => blinkActor, v => (blinkActor = v)],
@@ -143,7 +143,7 @@ expose({
   typeSprite: [() => typeSprite],
 });
 /* eslint-enable no-func-assign */
-provide({ buzz });
+provide({ battleStageStop, buzz });
 export function setBattleStageResize(v) {
   battleStageResize = v; // eslint-disable-line no-func-assign
   provide({ battleStageResize });

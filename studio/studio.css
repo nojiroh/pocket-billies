@@ -2168,6 +2168,20 @@ select.sm {
 .eng-pv {
   aspect-ratio: 16/10;
 }
+/* CAM-1: the camera's guides over the preview; only a zone's edge takes the pointer (engine-editor.js) */
+.sc-pv canvas.eng-guides {
+  pointer-events: none;
+}
+.sc-pv canvas.eng-guides[hidden] {
+  display: none;
+}
+#engGuidesBtn.on,
+#engBlurBtn.on,
+#engHeatBtn.on {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: #fff;
+}
 .eng-meter {
   margin-top: 8px;
   font-size: 12.5px;
@@ -2413,6 +2427,13 @@ select.sm {
   background: var(--panel2) center/contain no-repeat;
   image-rendering: pixelated;
   box-shadow: inset 0 0 0 1px var(--line);
+}
+.wd-th canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 .wd-pv {
   display: grid;
@@ -4785,4 +4806,222 @@ body.wb-dropping::after {
 .hub-gen-row b {
   align-self: center;
   min-width: 56px;
+}
+
+/* Studio plan T2.2: the Run Lab's map */
+.rl-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: end;
+}
+.rl-scroll {
+  overflow-x: auto;
+}
+.rl-map .rl-link {
+  stroke: var(--line2);
+  stroke-width: 3;
+}
+.rl-map .rl-node {
+  cursor: pointer;
+}
+.rl-map .rl-node text {
+  font:
+    700 14px system-ui,
+    sans-serif;
+  fill: #222;
+  pointer-events: none;
+}
+.rl-map .rl-node.on circle {
+  stroke-width: 7;
+}
+.rl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 6px 0 10px;
+  font-size: 12px;
+}
+.rl-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 3px solid;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: -2px;
+}
+.rl-node-info th,
+.rl-logic-node th {
+  text-align: left;
+  white-space: nowrap;
+  padding-right: 10px;
+}
+.rl-logic-node th {
+  vertical-align: top;
+}
+.rl-offers {
+  margin: 4px 0 0;
+  padding-left: 22px;
+}
+.rl-side {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+.rl-side > .card {
+  flex: 1 1 min(420px, 100%);
+  min-width: 0;
+}
+.rl-code th {
+  text-align: left;
+  vertical-align: top;
+  padding-right: 10px;
+}
+.rl-sweep-figures th {
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+  padding-right: 10px;
+}
+.rl-sweep-problems {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+/* Studio plan T3.4: the Run Lab's Simulate card */
+.rl-sim-banner {
+  margin: 0.2em 0;
+  font-size: 0.85em;
+  font-style: italic;
+  opacity: 0.8;
+}
+.rl-sim-table td,
+.rl-sim-table th {
+  text-align: right;
+  padding: 0.1em 0.6em;
+}
+.rl-sim-table th:first-child {
+  text-align: left;
+}
+.rl-sim-driven {
+  font-size: 0.75em;
+  padding: 0 0.4em;
+  border: 1px solid currentColor;
+  border-radius: 0.6em;
+  opacity: 0.7;
+}
+.rl-sim-same {
+  opacity: 0.5;
+}
+.rl-sim-table td.help {
+  text-align: left;
+}
+/* Studio plan Phase 4: the roguelite content editors (relics-editor.js, unlocks-editor.js, economy-view.js,
+   run-values.js) */
+.relic-row {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  background: var(--panel2);
+}
+.relic-row-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.relic-row-head select {
+  flex: 1;
+}
+.relic-err,
+.run-err {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+.relic-prev {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.relic-prev .tbl {
+  flex: 1 1 260px;
+}
+.relic-offers li {
+  margin: 2px 0;
+}
+.relic-this {
+  font-weight: 700;
+  color: var(--acc);
+}
+.ug-scroll {
+  overflow-x: auto;
+}
+.ug-map .ug-edge {
+  stroke: var(--line2);
+  stroke-width: 2;
+  fill: none;
+}
+.ug-map .ug-node {
+  cursor: pointer;
+}
+.ug-map .ug-node rect {
+  fill: var(--panel);
+  stroke: var(--line2);
+  stroke-width: 2;
+}
+.ug-map .ug-node.on rect {
+  stroke: var(--acc);
+  stroke-width: 4;
+}
+.ug-map .ug-node.owned rect {
+  fill: var(--acc2);
+}
+.ug-map .ug-node.bad rect {
+  stroke: var(--red);
+}
+.ug-map text {
+  font:
+    600 12px system-ui,
+    sans-serif;
+  fill: var(--text);
+  pointer-events: none;
+}
+.ug-map .ug-col {
+  font-weight: 700;
+  fill: var(--text2);
+}
+.ug-cur-capital {
+  fill: var(--gold);
+}
+.ug-cur-scrap {
+  fill: var(--text2);
+}
+.ug-cur-seals {
+  fill: var(--acc);
+}
+.ug-cur-none {
+  fill: var(--ok);
+}
+.run-over {
+  border-left: 3px solid var(--warn);
+  padding-left: 10px;
+}
+.run-tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--acc2);
+  color: var(--acc);
+}
+.run-tag.legacy {
+  background: var(--panel2);
+  color: var(--warn);
+}
+.eco-side {
+  font-size: 11px;
+  color: var(--text2);
+  text-transform: uppercase;
 }

@@ -12,6 +12,7 @@ import {
   companionItems,
   friendWorldItems,
   lifeSprites,
+  pastureItems,
   propModelImageItems,
   provide,
   reducedMotion,
@@ -256,6 +257,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
   }
   walkRenderer.gridSkip = gs;
   for (const p of walkRenderer.farProps) prop(p, 1);
+  /* CAM-2: where a run's boss stands in this place (walk/camera.js, its reveal) */
+  walkRenderer.bossAt = null;
   (st.npcs || []).forEach((n, i) => {
     let pos = walkView.npcAt[n.id];
     if (!pos && n.at) pos = walkView.npcAt[n.id] = walkablePointNear(n.at[0], n.at[1]);
@@ -285,10 +288,12 @@ export function gatherFrameItems(st, C, PPU, C0) {
       nim = typeof pickWalkFrame === 'function' ? pickWalkFrame(nset, false, 0) : nset[0];
     if (nim) out.push(personItem('npc', nim, pos[0], pos[1], C0, { n }));
     npcPos.push([n, pos]);
+    if (n.boss && !n.done) walkRenderer.bossAt = { id: n.id, x: pos[0], z: pos[1] };
   });
   if (ow) {
     companionItems(out, t, npcPos);
     buddyItems(out, t, odt);
+    pastureItems(out, t, odt);
     if (typeof friendWorldItems === 'function')
       try {
         friendWorldItems(out, t, C0);

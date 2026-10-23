@@ -683,7 +683,6 @@ document.addEventListener('input', ev => {
   saveData.preferences[k] = +ev.target.value / 100;
   applyVolumes();
   if (typeof applyAmbienceVolume === 'function') applyAmbienceVolume();
-  if (k === 'sfx') soundEffect('tick');
 });
 /* SND-6: four UI sounds instead of one tick (music.json ui, logic/ui-sounds.js): a button picks one by its data-a and
    classes, so no screen changes. k is select, confirm, cancel or cant */
@@ -1487,8 +1486,10 @@ function playClockTick(t, tock) {
   const g = ambienceOutput(0.15, true);
   synthNoise(g, { t, dur: 0.018, vol: 0.05, bp: tock ? 2600 : 3400, q: 4 });
 }
-/* Settings → Sound: hear each volume */
+/* Settings → Sound: hear each volume (UI-7a: once, when its slider is let go; the music slider plays nothing while a
+   song is on, which is heard changing already) */
 function testVolume(k) {
+  if (k === 'music' && soundEngine.song) return;
   unlockSound();
   setTimeout(() => {
     if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return;

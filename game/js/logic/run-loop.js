@@ -3,7 +3,6 @@
 /* ================= THE RUN LOOP'S RULES (roguelite track RL-8) =================
    What the run loop works out, kept apart from the page (game/js/run.js, run-payout.js) so a run's simulation plays the
    same rules (tools/test/sim/run-sim.mjs):
-   - what a run starts with (rules.json run.start), the hub's team travelling as it is;
    - a run town's clinic: rules.json run.healCost per hurt Billie;
    - a run town's shop: run.shop's `always` wares and `more` drawn by weight, from the town's own stream for the day
      (rngFrom(its node's seed, 'shop|' + day)), so a reload or another device sees the same stock;
@@ -16,46 +15,52 @@
 /** @import { Run, RunMap, SaveData, Billy } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { fxHealShare, fxOfRun, unlockOpen } from '../hooks.js';
+import { ITEMS } from '../game-data.js';
 import { rngFrom } from './rng.js';
-import { maxHp } from './rules.js';
-import { runHome } from './run-state.js';
-import { runNodeSeed, runWorldNode } from './run-map.js';
+import { battleWeatherOf } from './weather.js';
+import { healAll, maxHp } from './rules.js';
+import { RUN_DAYS, runHome } from './run-state.js';
+import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
+  runArriveFx: [() => runArriveFx, v => (runArriveFx = v)],
+  // @ts-expect-error -- replaced on purpose
   runArriveHeal: [() => runArriveHeal, v => (runArriveHeal = v)],
+  // @ts-expect-error -- replaced on purpose
+  runBattleExtra: [() => runBattleExtra, v => (runBattleExtra = v)],
   runBattleSeed: [() => runBattleSeed],
+  // @ts-expect-error -- replaced on purpose
+  runBattleWeather: [() => runBattleWeather, v => (runBattleWeather = v)],
+  // @ts-expect-error -- replaced on purpose
+  runClinic: [() => runClinic, v => (runClinic = v)],
   runFoeId: [() => runFoeId],
   runFoeWinText: [() => runFoeWinText],
   // @ts-expect-error -- replaced on purpose
   runFoes: [() => runFoes, v => (runFoes = v)],
-  runGive: [() => runGive],
   // @ts-expect-error -- replaced on purpose
   runHealCost: [() => runHealCost, v => (runHealCost = v)],
   runHurt: [() => runHurt],
+  runItemPrice: [() => runItemPrice],
+  runKept: [() => runKept],
   // @ts-expect-error -- replaced on purpose
   runPayoutRows: [() => runPayoutRows, v => (runPayoutRows = v)],
   // @ts-expect-error -- replaced on purpose
   runRelease: [() => runRelease, v => (runRelease = v)],
   runReleasePays: [() => runReleasePays],
   // @ts-expect-error -- replaced on purpose
+  runSheetStatus: [() => runSheetStatus, v => (runSheetStatus = v)],
+  // @ts-expect-error -- replaced on purpose
+  runShopOpen: [() => runShopOpen, v => (runShopOpen = v)],
+  // @ts-expect-error -- replaced on purpose
   runShopStock: [() => runShopStock, v => (runShopStock = v)],
+  // @ts-expect-error -- replaced on purpose
+  weatherEffectText: [() => weatherEffectText, v => (weatherEffectText = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** what runBegin is given: the run's seed, tier and generator version, and its money, coins and items (run.start)
- * @param {string} seed @param {number} tier @param {number} mapgenV
- * @param {{ se: number, coins: Record<string, number>, items: Record<string, number> }} start */
-export const runGive = (seed, tier, mapgenV, start) => ({
-  seed,
-  tier,
-  mapgenV,
-  se: start.se,
-  coins: { ...start.coins },
-  items: { ...start.items },
-});
-
 /** is a Billie hurt: below its full HP, fainted, with a status, or (a robot) with a damaged part @param {Billy} m */
 export const runHurt = m =>
   m.hp < maxHp(m) || !!m.status || Object.values(m.partDmg || {}).some(d => /** @type {number} */ (d) > 0);
@@ -74,11 +79,29 @@ export function runArriveHeal(team, share) {
   }
   return gained;
 }
+/** Studio plan T3.3: walking into a place on a run (walk-control.js through run.js runArrivedFx, and the run's
+ * simulation): the held Loopholes' heal rows heal the team (runArriveHeal); returns the HP gained (0: none)
+ * @param {SaveData} s @param {Record<string, any>} relics relics.json */
+export function runArriveFx(s, relics) {
+  const share = fxHealShare(fxOfRun(s.run, relics));
+  return share ? runArriveHeal(s.team, share) : 0;
+}
 /** what a run town's clinic charges to heal the party: `each` per hurt Billie @param {Billy[]} team
  * @param {number} each @returns {{ hurt: number, cost: number }} */
 export function runHealCost(team, each) {
   const hurt = team.filter(runHurt).length;
   return { hurt, cost: hurt * each };
+}
+/** Studio plan T3.2: a run town's clinic, after the player's yes (walk-tab.js clinicHeal, and the run's simulation):
+ * when a Billie is hurt and the money is there, pay `each` per hurt Billie and heal everyone (healAll: the save in
+ * play, `s`); else nothing changes. Returns what was hurt, what it costs and what was paid (0: nothing done)
+ * @param {SaveData} s @param {number} each @returns {{ hurt: number, cost: number, paid: number }} */
+export function runClinic(s, each) {
+  const { hurt, cost } = runHealCost(s.team, each);
+  if (!hurt || s.se < cost) return { hurt, cost, paid: 0 };
+  s.se -= cost;
+  healAll();
+  return { hurt, cost, paid: cost };
 }
 
 /** a run town's wares on a day: `always`, then `more` drawn by weight from `pick` (none twice, none already there),
@@ -94,6 +117,15 @@ export function runShopStock(run, i, day, rule) {
     delete left[w];
   }
   return out.map(w => (w.startsWith('coin:') ? { coin: w.slice(5) } : { item: w }));
+}
+
+/** Studio plan T3.3: a run town's wares on a day as its shop opens them (shop.js openShop, and the run's simulation):
+ * runShopStock with only the wares the run has unlocked (its copy, run.unlocks; RL-11)
+ * @param {Run} run @param {number} i @param {number} day
+ * @param {{ always: string[], more: number, pick: Record<string, number> }} rule
+ * @param {import('./unlocks.js').UnlockData} unlockData */
+export function runShopOpen(run, i, day, rule, unlockData) {
+  return runShopStock(run, i, day, { ...rule, pick: unlockOpen(rule.pick, 'shop', run.unlocks, unlockData) });
 }
 
 /** a leader's win line without its badge (the run gives none): the sentences naming a Badge left out
@@ -160,6 +192,48 @@ export function runFoes(run, data) {
 /** a run battle's seed: its node's seed and its number in the run (run.battleN when it began), the stream the
  * battle draws its chances from (battle-state.js makeBattle) @param {Run} run @param {number} i @param {number} k */
 export const runBattleSeed = (run, i, k) => `${runNodeSeed(run.seed, i)}|battle|${k}`;
+/** a run place's battle weather on a day: its forecast (clear when not rolled), clear being sunny (a run has no hour),
+ * as battle.wx holds it (null when it changes nothing) @param {Run} run @param {number} i the map node
+ * @param {number} day @param {any} env rules.json env */
+export function runBattleWeather(run, i, day, env) {
+  const w = runWeather(run, i, day) || 'clear';
+  return battleWeatherOf(w === 'clear' ? 'sunny' : w, env);
+}
+/** what a battle's weather does to moves, in words, the boosts first: "Water +20%, Fire −20%" ('' when nothing)
+ * @param {{ k: string, m: Record<string, number> } | null} wx */
+export function weatherEffectText(wx) {
+  if (!wx) return '';
+  return Object.entries(wx.m)
+    .filter(([, v]) => v !== 1)
+    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))
+    .map(([t, v]) => `${t} ${v > 1 ? '+' : '−'}${Math.round(Math.abs(v - 1) * 100)}%`)
+    .join(', ');
+}
+/** the Actions sheet's run status at map node i: the day, the deadline, the node's type, and its weather today and
+ * tomorrow (the forecast's word and what a battle there would feel; tomorrow left out past the run's last day or when
+ * not rolled) @param {Run} run @param {number} i the map node @param {any} env rules.json env
+ * @returns {{ day: number, deadline: number, type: string, days: { day: number, w: string, wx: { k: string, m: Record<string, number> } | null }[] } | null} */
+export function runSheetStatus(run, i, env) {
+  const node = run.map && run.map.nodes[i];
+  if (!node) return null;
+  const days = [run.clock, run.clock + 1]
+    .filter(d => d <= RUN_DAYS)
+    .map(d => ({ day: d, w: runWeather(run, i, d), wx: runBattleWeather(run, i, d, env) }))
+    .filter(d => d.w);
+  return { day: run.clock, deadline: run.deadline, type: node.type, days };
+}
+/** Studio plan T3.2: what a run battle starts with, on the page (run.js runBattleStart) and in the simulation (logic/
+ * run-sim.js): its seed, the place's forecast for today as the battle's weather (clear is sunny: a run has no hour),
+ * and the Loopholes' effect rows when any are held (logic/effects.js fxOfRun: null when none)
+ * @param {Run} run @param {number} i the map node @param {number} k the battle's number in the run
+ * @param {any} env rules.json env @param {any[] | null} fx */
+export function runBattleExtra(run, i, k, env, fx) {
+  return {
+    seed: runBattleSeed(run, i, k),
+    wx: runBattleWeather(run, i, run.clock, env),
+    ...(fx ? { fx } : {}),
+  };
+}
 
 /** may this Billie be paid for as released: only one caught on the run (one from home comes back at the end anyway;
  * RL-9b: from the team or storage, run-state.js runHome) @param {Run} run @param {Billy} m */
@@ -173,6 +247,13 @@ export function runRelease(s, m) {
   if (runReleasePays(run, m)) run.released.push({ sp: m.sp, lvl: m.lvl });
 }
 
+/** Studio plan T3.2: who comes home from a run's end (run-payout.js and the run's simulation): the whole party on a
+ * win, else only the one picked (none when it isn't in the party) @param {{ uid: string }[]} team @param {boolean} won
+ * @param {string | null} pick @returns {string[]} */
+export const runKept = (team, won, pick) =>
+  won ? team.map(m => m.uid) : team.filter(m => m.uid === pick).map(m => m.uid);
+/** an item's shop price, for the payout's items line (0 for none) @param {string} id */
+export const runItemPrice = id => (ITEMS[id] && ITEMS[id].price) || 0;
 /** the payout screen's rows from payoutOf's lines: a label, a note and the Capital each brings (the win row only on a
  * win; RL-9b: the items row only on a loss, a win takes the bag home) @param {{ lines: { what: string, n: number, capital: number }[] }} pay
  * @param {{ money: number, itemShare: number, released: number, node: number }} rates */

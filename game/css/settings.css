@@ -201,6 +201,10 @@ html[data-contrast='high'] small {
   font-variant-numeric: tabular-nums;
   color: var(--text2);
 }
+/* CAM-3: the blur slider shows a word (Off, Low, Medium, Strong), not a number */
+.vol-n.vol-word {
+  width: 4.4em;
+}
 @media (prefers-reduced-motion: reduce) {
   .sw,
   .sw i {

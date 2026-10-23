@@ -1,14 +1,98 @@
 # Pocket Billies Studio
 
 The Studio edits the game's data, skeletons and art. It runs from the game's site (`…/studio/`): sign in with a GitHub
-token, and **Save to game** puts your changes on a new branch with a pull request, so nothing changes in the game
-until the owner merges it. Started from `start-studio.py` on your own computer (not in this repository yet), saves go
-straight into `game/data` and `game/art`.
+token, and **Propose changes** puts your changes on a new branch with a pull request, so nothing changes in the game
+until the owner merges it. That is the only way it runs: the old local mode (a server on your own computer that
+saved straight into `game/data`) was dropped (Studio plan, owner's decision 2026-10-22).
 
-## Local mode (start-studio.py)
+## Propose changes: what it does, and what happens when it fails (Studio plan Phase 0)
 
-Double-click `Start-Studio.bat` / `Start-Studio.command`, or run
-`python3 start-studio.py`. It opens at **http://localhost:8001**.
+- **What is sent.** Every picture, the rigs and the data you changed, as one commit on a new branch
+  (`studio/<you>-<date>-<time>-<4 letters>`) and a pull request against main. Nothing is marked saved until GitHub
+  has opened the pull request; then only what is still as it was sent is. A picture you paint, or a field you change,
+  while it is sending stays unsaved for the next proposal.
+- **When it fails** (no connection, GitHub busy, a permission missing), the toast says so and **nothing is lost**:
+  everything stays unsaved ("Unsaved changes" stays in the top bar) and Propose sends all of it again. If the branch was made before the
+  failure, the retry reuses it.
+- **An expired sign-in** opens the sign-in card over the Studio. Sign in with a new token and the same changes are
+  sent; Cancel keeps them unsaved. There is no need to sign out (Sign out does lose unsaved changes).
+- **If something can't be packed** (a bad id, a picture that won't encode), nothing is sent and the toast names it.
+- **Main has moved on.** The Studio reads the game at the commit main was on when you opened it, and makes your
+  proposal on that commit. If main has new commits that changed files your proposal also writes, a question names
+  them first: *Propose anyway* (the pull request shows them as conflicts for the owner to settle) or *Cancel* (reload
+  the Studio and make the change again on the new version). New commits that touch other files ask nothing.
+- **One at a time.** Propose (and Ctrl+S) does nothing while a proposal is on its way.
+- **Proposals add up.** Until the Studio is reloaded, a new proposal also carries the data changes of your earlier
+  ones (it compares with the commit it loaded); pictures and rigs go in the proposal they were changed for.
+- **Closing the tab loses nothing** (Studio plan Phase 1, T1.1): see the next part.
+
+## Unsent changes are kept in this browser (Studio plan Phase 1)
+
+- **What is kept.** Two seconds after your last change, and whenever the tab is hidden, the Studio keeps what you
+  haven't proposed yet in this browser (IndexedDB): the data files that differ from the commit it opened on, the
+  skeletons if they changed, each unsaved picture, and that commit. Not the whole game, and never your token.
+- **Opening the Studio again** with kept changes asks first: **Restore** puts them back as unsaved (undo starts
+  empty), **Later** opens without them and keeps them for next time (nothing new is kept until then: the top bar says
+  "Not kept if the tab closes"), **Discard** deletes them after a second question.
+- **Main moved on since.** Restore opens the Studio at the commit the changes were made on, so nothing merged since is
+  put back; Propose then names any file main changed too, as above.
+- **When the draft goes.** When a proposal took everything (what was changed during the send stays kept), or on
+  Discard. A failed proposal keeps it.
+- **A browser that can't keep it** (some private windows, blocked site data): the Studio works as before and the top
+  bar says "Not kept if the tab closes".
+- The kept changes stay in this browser on this device. They are never sent anywhere; another browser or computer
+  doesn't see them. GitHub mode only.
+
+## Undo (Studio plan Phase 1, T1.2)
+
+- **One undo for everything**, in the order you made it: every data edit, every picture stroke, and a picture change
+  that also changed the data (a replaced part) as one step. Up to 80 steps.
+- **A step keeps only what the edit changed.** The undo holds the data once, as one text per entry (each map, move,
+  person, rig, each entry of meta and the other sections) plus the order of the keys; a step holds the entries it
+  changed, before and after. A field edit costs a few kilobytes, not a copy of the whole game; an edit to a very big
+  map costs more (Copperleaf's, about 5 MB a step). Data steps and pictures each have a 64 MB cap; past it the
+  oldest steps go.
+- **Undo puts back only those entries.** Undoing a map edit replaces that map and nothing else; adding or deleting
+  an entry puts back the whole data.
+- **Opening a section never changes the data.** The self-test checks it for every section: a write outside an edit
+  would ride along with your next edit, and its undo would take it back too (this is what made an undo in Rules fail
+  after People had been opened). Keys starting with `_` are caches: never kept by the undo, as by saving.
+
+## The Check: problems and notes (Studio plan Phase 1, T1.3)
+
+- The Check runs the same checks as `npm run check:data` (CI) where they overlap: they live in
+  `game/js/logic/data-checks.js`, so the run rules, ranch, robots, biomes, node types, relics (Loopholes), currencies,
+  buildings, unlocks, scenes and roads are checked the same way in both.
+- A **Problem** (an error) is something check-data fails on. **Propose changes refuses while there is one**: it names
+  the first few, and Show me opens the Check. Nothing is sent and your changes stay unsaved until you fix it.
+- A **Note** (a warning) is something the game works around (a missing picture, an unknown shop, a stop no road
+  reaches). It is shown and never blocks. check-data prints the scene and road notes too, and never fails on them.
+- The rigs (Studio plan Phase 5, T5.3) are checked too, in both: every picture's box inside its sheet, the rig's size
+  the sheet's, every bone's parent and picture there, the same bones front and back, and `geo` (the size a Billie
+  stands in the world) as the builders made it: mid and cy halfway from its top to the ground line, the top inside the
+  pictures and above the ground. A rig fault is a problem.
+- A Billie named from a line parked in `game/data/legacy` is a note (the game stands a new line's Billie in for it).
+  A name that is in neither, like a typo, is a problem.
+
+## How a section draws (for contributors; Studio plan Phase 6)
+
+- A section is a function returning HTML; `renderPane` puts it in its pane, then runs `afterRender` steps. If the
+  section throws, the pane says so (and the console has the error); an error nothing caught elsewhere is a toast.
+- A redraw of the section a pane already shows keeps the focused control (found again by its `data-p`, or its tag and
+  `data-*`) and the pane's scroll.
+- **Keep an element across redraws** with `data-keep="<key>"`: before the redraw it is put aside, then it replaces
+  the new HTML's placeholder with the same key (taking the placeholder's id and classes). The 3D previews (Walk scenes,
+  Generate, Hub island, Props, Engine) share `walk-gl`: one canvas, so one WebGL context, for the whole session. A new
+  3D section needs only `<canvas id="..." data-keep="walk-gl">`.
+- **Section hooks** (`studioState.hooks[sec]`) run on every input event of a field in that section's pane (the second
+  pane's own section, too). Expensive drawing goes through `drawSoon(key, f)`: once in the next frame, however many
+  events came. Rebuilds that may wait (Walk scenes' walk-view paths and ground) wait for 300 ms of stillness.
+- **Paths that read and write their own way** (`@lines.` lore lists, `@script.` scripts, `@thanks.` a shop keeper's
+  lines): `pathPrefix(prefix, read, write)`. A prefix is claimed once; a claim that starts another throws at load,
+  and a unit test reads every claim in studio/js.
+- **Person pictures** (game/js/person-art.js) keep a sheet's pixels and each recoloured piece per picture
+  (`markArt` bumps the picture's `_ver`); after a data edit call `forgetPersonLooks()`, not `PERSON_ART_CACHE.clear()`.
+- An undo that changes only text data (moves, items, lore, story and the like) keeps the picture caches.
 
 ## Layout (studio track ST-1)
 
@@ -140,8 +224,40 @@ that species.
   with the rigs.
 - **As drawn**: the species front and back as the game draws it, the part picked marked; **Move** plays its idle.
 
+### A kit Billie's recipe (Studio plan Phase 5)
+
+The 24 kit Billies (game/data/kitBuilds.json) are baked from a recipe: which kit part sits on each bone, at what size
+and colour, plus extras (horns, ears, a crest, a shell). On a kit Billie Part mode shows **Kit recipe** above the
+part's numbers (and when no part is picked): the stage scale, each bone kind's part, size and colour, and the extras
+(part, where it sits, size, colour, a mirrored pair; **Add an extra**, ✕ to take one off).
+
+- **A change bakes at once** with the game's own baker (the code `npm run bake:kits` runs): the recipe, the sheet,
+  the rig and the line's native parts change together, as **one undo step**. Propose then carries all of them, so a
+  recipe never leaves without its bake (CI fails a recipe sent without one).
+- **Write Billie** bakes the recipe as it is again: after a kit part's picture was repainted, for example. When the
+  Billie already is as baked it says so and changes nothing.
+- A recipe the baker can't make (a slot left empty, a missing picture) is not written; the card says why.
+- Edits by hand to a kit Billie's sheet or rig (pixels, pivots) are lost at its next bake: the recipe is the truth.
+
+### Repack sheet (Studio plan Phase 5, T5.4)
+
+**Repack sheet** (beside Skeleton builder and Paint pixels) packs the species' sheet again without the pixels no frame
+shows: every picture's frames and the portrait once, tallest first, as the kit baker packs. The Billie is drawn pixel for
+pixel the same; only the boxes and the sheet's size change, as one undo step. It refuses a kit Billie (its recipe packs
+its sheet when it is written) and a species a coat has its own sheet for (that sheet is laid out like this one). On
+today's sheets 122 of 129 would get smaller; nothing is repacked until someone presses it.
+
 The skeleton builder zooms by whole steps (+, −, 0 to fit, 1 to 6 for 1x to 32x, as on the pixel canvas; O for the
 onion), fits its window when opened, and **Paint pixels** opens the sheet with the part picked in focus.
+
+## Pixel density (Studio plan Phase 5, T5.7)
+
+The Roster board's **Pixel density** lists, per Billie of the game's lines, how many of its rig pixels go into a metre in
+the world, how many fall in one pixel of the art grid (68 a metre, the props') and of the ground (32 a metre), and the
+grid it sits on (whole, quarter, or off grid when its listed height won over the grid). A kit Billie also shows the stage
+scale it was baked at and the parts scaled more than 25% off its torso. Every Billie's S and L parts are drawn at 0.85
+and 1.2 (not whole). It only measures: nothing changes until a target density is set (an art direction call). The maths
+is game/js/logic/pixel-density.js, which the game sizes Billies in the world with.
 
 ## Wardrobe on the pixel canvas (studio track ST-6)
 
@@ -215,6 +331,104 @@ logic/island.js's contract (docs/phases/island-track.md). It opens on the left o
   The map keeps its middle (so nothing on it moves), so a seed whose coast would cross the map's west or south edge
   says so: try another seed, or a smaller island. A **locked** ground shows its dials read-only and is never made
   again. Copperleaf has no coast yet, so it has no dials until IS-5.
+
+## Run Lab (Studio plan Phase 2, T2.2-T2.6)
+
+Runs → **Run Lab** shows a run's map from its seed, made by the game's own start (`runStartPlan` in
+game/js/logic/run-start.js, the one taking off from the mast calls) on the Studio's data as it is now, unsaved changes
+included. It changes nothing.
+
+- **Seed.** Type it, roll one (🎲), or **Paste a debug log…**: the log's run seed and the run's own unlocks are read
+  (an older log has only the save's), nothing else. A seed is cleaned as the game's debug menu cleans it (letters, digits, `_` and `-`, 20 at most), so the
+  same text makes the same run there.
+- **Unlocks.** None (a fresh save), All, or the pasted log's. Only unlocks that open a biome change the map (those
+  that open shop wares change the shops). A short map isn't logged: tick it yourself.
+- **Short map** is the debug menu's (5 rows, 1 mini-boss).
+- **The map.** Rows from the landing (left) to the boss (right), lane 0 below. A node's fill is its biome's haze
+  colour (`look.haze`), its letter and ring colour its type. A dashed ring is what the landing shows as `?`, a faint
+  one what it doesn't show yet.
+- **A node** (click it): its type, row and role (landing, filler, rest stop, mini-boss, boss), biome and climate,
+  links both ways, the day the shortest walk reaches it, the deadline, its node seed (what its scene, wild Billies,
+  shop and weather are drawn from) and its forecast.
+- **Beside the loaded data** draws the same seed on the data as the Studio loaded it, so an edit to rules.run,
+  nodeTypes or biomes shows as two maps.
+- **Copy seed + data version** copies the seed, unlocks, data version, the loaded commit and whether there are unsaved
+  changes, for a bug report.
+- An edit made in the other pane (Rules beside it, for example) redraws the map at once.
+
+- **From the game's logic** (under a clicked place): its wild Billies (levels and odds), its mini-boss's or boss's
+  leader and team, a town's stock and Loophole on every day it can be open, and the run's Loophole picks after each
+  mini-boss with none held. The game's own code works these out on your unsaved data in a background worker
+  (`studio/js/logic-worker.js`); the first answer after an edit takes a moment longer.
+- **Over 1,000 seeds** (under the map): the map checks (every place reachable, no dead end, each role row holding the
+  type the game looks for, a deadline after the shortest walk), each problem with a seed that shows it, and the
+  figures: places, place types, towns on a walk, towns made against routes, biomes, and seeds worth a look. **Open**
+  draws that seed.
+- **Run rules** (beside the map): rules.json `run` (map, clock, what the map shows, wild levels, foes, the town shop
+  and clinic, the payout) and nodeTypes (names and weights). Each change redraws the map, the logic and the checks, and
+  is saved and proposed like any other field. **In the code (read-only)** lists what the code decides, not the data
+  (two lanes at most, where mini-boss rows fall, the exits, the buildings…), each with its file and line.
+- **▶ Play this seed** opens the game on this seed with these unlocks and this map size, after your unsaved changes,
+  in a test run: a new game that takes off at once from the mast, never saved and never signed in. Edits made while it
+  runs (a clinic's price, a shop's wares) reach it half a second later. By hand: add
+  `?debug&run=<seed>&unlocks=none|all|<ids>&short=1&party=<species@level,…>&relics=<ids>&draft=1` to the game's
+  address.
+
+### Simulate (Studio plan Phase 3, T3.4)
+
+The Run Lab's **Simulate** card plays whole runs with the game's own rules and a bot in the player's place
+(`game/js/logic/run-sim.js`, balance mode: no scenes are made, the same outcomes), on a fixed seed list (SIM0, SIM1,
+...; at most 200 here, the CLI runs more). It plays the same seeds twice, in two logic workers: **Base**, the data as
+the Studio loaded it, and **Draft**, the data with your unsaved changes. Every difference is paired, seed by seed, so
+a small change shows without the noise of two separate samples.
+- Choices: seeds, the bot policy (`greedy-forward`, or `never-pick`, which takes and buys no Loophole), the party (who
+  waits at home, Potions packed) and the unlocks (none or all).
+- Tables: per run (won with its 95% Wilson interval; days, places, battles, catches, clinic and shop money, money left,
+  Capital, Loopholes held, top level, each with Draft − Base and a 95% interval and how many runs changed); where runs
+  were lost, by place and by row; money in and out; the Loopholes held at the end; the leaders beaten. Every table
+  carries the banner "Bot policy X: a lower bound on a careful player, not a prediction"; the rows the policy mostly
+  decides say **policy-driven**.
+- Each side shows its data's hash. The same data gives "Every run is the same on both sides"; a re-run gives the same
+  numbers.
+- **Export JSON** saves the compare; `node tools/test/sim/run-sim.mjs --compare=base.json` writes the same JSON.
+- The numbers measure the bot on legacy stand-in species. Use them to see what a change does, not to judge balance.
+
+## Roguelite content editors (Studio plan Phase 4)
+
+The Runs group holds the Run Lab and three pages for what a run is made of. Each shows something the JSON can't: the
+game's own logic on your unsaved data (most of it in the Studio's logic worker), the limits that live in the code, a
+graph, or a value a run overrides. Edits are ordinary fields: saved, undone and proposed like any other.
+
+- **Loopholes** (relics.json, rules.json `run.relics`). The list shows each one's rarity, its weight and its chance to
+  be drawn first at a pick. Each effect row is edited by its kind (money, price, catch, stat, damage, heal, payout;
+  changing the kind puts that kind's fields in), with the code's limits beside the field: a factor from x0.1 to x4
+  (effects.js `FX_LIMIT`), stages from -6 to +6 (`FX_STAGES`). A row outside them is a data error (check:data fails;
+  the message shows on the row). **On a sample build**: pick a Billie, a level and other Loopholes held with it; its
+  stats before and as a battle starts, and what wins pay, shop and clinic prices, catch chance, damage, healing and
+  the payout become, from the game's effect code; a kind whose rows multiply past the limit says what the code uses.
+  **Offer order for a seed**: the picks after each mini-boss on a run of that seed (nothing taken, the first offered,
+  or this one when offered), the same as the Run Lab's for that seed. **Rarity and the picks**: each rarity's weight,
+  shop price and how many Loopholes have it (a rarity nobody has, or Loopholes never offered, are flagged), the cap and
+  how many are offered.
+- **Unlocks & hub** (unlocks.json, buildings.json, currencies.json, rules.json `ranch` costs). The **unlock graph**: a
+  column per building with the rows sold there and their cost in its currency, the earned rows apart, an arrow from
+  each row a row needs; click a row to edit it (name, bought or earned, where and for how much or when, what it gives,
+  what it needs). A need that would close a circle is refused, and the message names it (`ranch_2 -> ranch_3 ->
+  ranch_2`). **What a new save has** after a number of runs, wins and catches: the earned rows (the game's
+  `unlockAuto`), its currencies and building levels, what it can buy, and the biomes and wares a run can draw; the
+  graph shades what it owns. Buildings and currencies are below, with their data-check messages.
+- **Economy** (read-mostly). Every source and sink of each currency (wild prizes, mini-boss and boss rewards, money
+  Loopholes, the clinic, run shop wares and Loopholes, the payout's rates, earned unlocks, unlock costs, the ranch),
+  each with its value and a link to the field that sets it. The money in and out of simulated runs (Phase 3's balance
+  dashboard) will show here; until it lands the page says so.
+- **Trainers**: a mini-boss leader's card **In runs (overridden in runs)** shows what a run makes of it on each
+  mini-boss row and the boss's row: the run's reward and its team's levels (the game's `runFoes`). Its own reward
+  field says "outside runs only".
+- **World & encounters** says what a run reads: each pool is tagged with the biomes whose run places draw from it, or
+  "legacy"; a species id whose line is in game/data/legacy shows the species the game puts in for it. Route stops,
+  eggs, regions and the world map are marked legacy.
+- **Town shops** and **Jobs** moved to the Legacy group: shops.json and jobs.json are empty (run shops stock from
+  `run.shop`; the game has no jobs).
 
 ## UI look (UI track UI-3)
 
@@ -301,15 +515,16 @@ only after a click). It stops by itself when the section is off screen.
 | **Robots** | Phase 17. Torsos, arms, legs and gems: names, types, weight, toughness, what the legs carry, the move each part gives, stats, and pictures (front and back, a torso's head, a gem's chest picture), with a colour and shape for the stand-in when a part has no picture. Rules: the stat floor, upgrades, the gem's type bonus, weight, part HP and where hits land. **Try a build** draws any gem and parts as the game does and shows its types, weight, stats and moves. A trainer's team entry can be a robot (Trainers). |
 | **Moves** | Name, type, kind, power, accuracy, priority, description and an effects builder (status, stat changes, healing, draining, hedging, hype, rent, market shock, delayed delivery and more). |
 | **Types** | Colors, the full matchup chart (click to cycle 2× / ½×), each type's battle ability and particle effects. Renaming a type updates everything that uses it. |
-| **Items & coins, Town shops, Day Jobs** | Prices, effects, icons (or upload your own), what each shop sells, keepers, greetings, job pay (jobs are kept for the ranch, phase 12, and unused for now). Since RL-5 Town shops and Day Jobs are empty: the old ones were parked with their towns (Legacy). |
+| **Items & coins, Town shops, Day Jobs** | Prices, effects, icons (or upload your own), what each shop sells, keepers, greetings, job pay (jobs are kept for the ranch, phase 12, and unused for now). Since RL-5 Town shops and Day Jobs are empty: the old ones were parked with their towns. Since Studio plan T4.5 both are in the Legacy group. |
 | **World & encounters** | Stops on a drag-and-drop world map and the **roads** between them (add, remove, re-point, pick the exit it leaves by at each end: both must face each other, or the Check lists it as an error; a road's length is measured from its two exits; the glass lift is set on its lift props); gates, shops, backdrops; wild encounter tables; eggs; regions ahead; which walk scene each stop uses; battle backdrop colors and ambience. Since RL-5 the game's world is one stop, Copperleaf, with no roads or regions (the rest is in Legacy); a run's stops are made at run time (RL-7). |
 | **Prop editor** (in Walk scenes) | Open any prop and edit everything about it on its picture: drag the base point, click to add lamp glows, lit windows, fires, smoke, water spray and sparkles exactly where they belong (drag to move, Delete to remove), set the door, see the footprint. Add **layers** (from a PNG or a copy of the main picture) and place each one in front of or behind the main picture in meters, shift it, make it face the camera, stay put as the world turns, or lie flat, and let it glow. A 3D turntable shows the prop in the game's renderer while you work. |
 | **Walk scenes** | The scene for each stop: shape the land (raise, lower, smooth, flatten); paint the ground tiles; place, move, resize and mirror props; drag the **hub** (where you stand when you stay) and the **exits** roads leave through; choose what a prop does when tapped (shop, clinic, a message), its label and its words; distant hills, townsfolk and what they say, wind, sun rays, sky, haze, shade, tilt-shift blur and camera. The live preview runs the game's renderer: walk around in it and tap things. Paint prop pictures and ground tiles pixel by pixel; set a prop's shadow, sway, solid footprint, door and walkable area; add new props (blank or from a PNG) and new ground types. **People who talk** edit each person's id, spot, facing, `when` / `unless` and script. **Story preview**: pick a start preset and switch flags; who isn't there for them is hidden in the 3D preview and faded on the map. **Play from here** opens the game in this place on the spot you pick (Pick the spot, or where the preview's walker stands), at the preview's preset and flags, with your unsaved changes. **Free camera** (🎥 under the preview, or C): the camera leaves the walker and flies over the scene like a map app: drag to move (the ground stays under the pointer), right-drag to turn and tilt, the wheel to zoom towards the pointer, double-click to look at a spot; on a phone one finger moves, pinch zooms, twist turns, two fingers up or down tilt; W A S D, Q E, R F and Page Up/Down too. **Top view**, ▲ ▼, **Walker here** and **Back to the walker**; each scene keeps its camera while the Studio is open, and Play from here starts where it looks. |
 | **Generate** (in Walk scenes) | Map generator MG-1: **Generate…** beside + New scene makes a whole route from dials and a seed: the biome (ground, plants, water kind, sky and animals from game/data/biomes.json), size presets, hilliness, terraces and their height, mountains (terrain TR-2: up to 20 m on the sides chosen, rock shelves and cliffs, a footpath winding up each to a summit marked in `spots`), water (stream, pond, coast) and how much, the road's entry and exit edges (side, place along it, width; written to edgeExits with the walk length), its shape (straight, gentle winding, S-curve, switchback), wobble, width, surface and verge, trees, wild growth (the grow-wild rules), tall grass (the encounters), clearings, one feature (stream and bridge, lookout, jetty, glade, lava flow, terraces) and props (signposts, lamps, benches, bins, townsfolk spots). ↺ puts a dial back, Reset a group; 🎲 New seed, or a new seed for one part only (land and water, mountains, ground, road, plants, feature, props) keeping the rest. The draft is drawn by the game's renderer (walk around it) and from above (click to walk there); it is not game data, not in Undo and not saved until **Add as a new scene** (one undo step; Ctrl+S saves it). Every generated prop carries `g: 1` and the scene keeps its dials in `gen`. **Joins…** (map generator MG-2) under each exit joins it to an exit of any scene: the exit turns to face it, a whole number of metres along from it and as wide (its side, place and width are then locked; **Unjoin** frees them), and the draft takes that scene's edge (its heights, step raise and natural ground over the stretch a neighbour shows, 26 m either side of the exit; the dials keep the edge, so an added scene keeps it in `gen`). The stats say how the two meet (heights along the band, the step, a straight walk across), and warn when the exits break the data's rules for a place's map (two a side, 44 m apart). **Preview the pair** shows both side by side as the game lays them, nothing eased. Props → **Airship mast / Clinic / Shop at the hub** put them beside the main road near the hub facing the camera, on level ground with a path to the door (🎲 Buildings rerolls where). Terraces come down to ground level by every exit, and roads climb them as ramps (terrain track TR-1). Coming: towns (MG-3), presets and regenerating only what was generated (MG-4). The place and its roads (the old MG-2 Accept) are parked: every map outside the hub is legacy. |
 | **Hub island** | Island track IS-6a: the hub's island in an orbit view and on a map: paint the ground, shape the land, move the coast's and zones' points, set a zone's kind and lock, place the orbit's pivot and dead zone; Walk the coast; lock the ground once it is right (Walk scenes then refuses its ground tools; props stay free). IS-6b: the generator's dials with a live draft and Use this island (locked zones kept; refused while the ground is locked). Above. |
 | **Engine** | Every dial of the 3D renderer, with a live preview of any walk scene: lens (sharp band, blur in front and behind, round highlights, chromatic aberration, vignette, grain, sharpen), color (exposure, highlight roll-off, contrast, saturation, warmth, bloom), sun and sky (direction, height, color, real-clock sun, sky light, ground bounce, clouds and their shadows, light shafts), shadows (strength, softness, color, contact shadows, solid building shadows, ambient occlusion), lights, haze and mist, horizon curve, ground bumpiness and shine, world map mountains, grass and wind, water, camera (including distance and tilt) and quality, plus colour grades. Set them for the **whole game**, override them for **one scene** (battles there follow it) or for the **world map**; ↺ puts back a single dial. Ready-made presets (Sunny, Overcast, Golden hour, Cave, Mall), your own presets, a "Hold to compare" button that shows the built-in look, and a frame meter. |
-| **Map art** (under World) | Paint `world.png` with a brush, fill, color picker, clone and "fill with terrain". Remove the painted trail and repaint it along the stops in the exact path the game walks. Drag a stop and its painted patch moves with it, with the old spot filled from the terrain around it. A preview shows the stop from the game's map camera. |
-| **Trainers, People** | Trainer teams, their script (checked as you type), when they're there, rewards, badges, sandstorms; trainer and shopkeeper looks with a live preview. **Mini-boss** (RL-5): the trainer stands on no stop (the eight badge leaders, for the runs, RL-13); Stands at is hidden. |
+| **Trainers, Looks** | Trainer teams, their script (checked as you type), when they're there, rewards, badges, sandstorms; trainer and shopkeeper looks with a live preview. **Mini-boss** (RL-5): the trainer stands on no stop (the eight badge leaders, for the runs, RL-13); Stands at is hidden. |
+| **Run Lab** (group Runs) | Studio plan Phase 2: a run's map from a seed, on your unsaved data and beside the loaded data; a place's foes, shops and wild Billies from the game's logic; checks over 1,000 seeds; the run rules beside it; Play this seed; Simulate, Base against Draft (see Run Lab above). |
+| **Loopholes, Unlocks & hub, Economy** (group Runs) | Studio plan Phase 4: a run's Loopholes with a sample build and a seed's offers, the unlock graph with what a new save has, and every source and sink of each currency (see Roguelite content editors above). |
 | **Legacy world** (group Legacy) | RL-5: the old world outside the hub, parked in `game/data/legacy`, read-only: the 48 places with their old stop numbers, the trainers who stood there and their roads, plus counts of the parked shops, jobs and lore. It is read beside the Studio, or from GitHub when signed in, and never enters the Studio's data, so Save, Undo and the Check never touch it. **Copy into game** brings a place's map back as a walk scene of its own (no place, no roads) in one undo step and opens it in Walk scenes; whatever its people name that the game no longer has shows in the Check. |
 | **Story scripts** | Project Story S3: story.json's own scripts (Hazel's lab, after Blake's first battle, the ending): add, rename, remove and edit them in the script field; the story's flags, start presets (with ▶ Play) and quests to read. |
 | **Scripts everywhere** | Every script field (a trainer's, a person's, story.json's) shows the parser's error at once and the story checks a moment later, each on its line (click to go there); **Add line ids**; **Commands**, a reference built from the parser's own tables that puts a command in the script. Condition fields (when, unless, a place's requires) are checked the same way, and the Check lists every story finding. docs/SCRIPTS.md. |
@@ -317,13 +532,13 @@ only after a click). It stops by itself when the section is off screen.
 | **Music & sound** (group Sound) | The songs (play, loop, the recipe's dials heard at once, a hook and countermelody roll), the where table with Try a place, the jingles, and (SND-6) the base cries, the button sounds and the mix (music.json). A Billy's cry is on its Billies page. Sound track SND-3, above. |
 | **Rules** | Every number that tunes the game: starting items, starters and rival, wild Billies per place and how fast they come back, prize money, leveling curve, team size, eggs, damage, critical hits, type abilities, taxing, bargains. |
 | **Art files** | Browse, download and replace any image. |
-| **Check & backups** | Lists problems with "Show me" links; restores earlier versions. |
+| **Check** | Lists problems with "Show me" links (see "The Check" below); downloads or loads the game data; runs the Studio test. Earlier versions are in git: a proposal is a pull request. |
 | **Find and Connections** | Ctrl+K finds any setting or thing and takes you to it; Ctrl+L shows what the thing you're editing uses and what uses it, or, for an engine dial, where its value comes from and what it depends on. |
 
 ## Saving in local mode
 
 **Save to game** (Ctrl+S) writes the game data, `game/art/rigs.js` and the
-changed images. Each save keeps the previous file in `backups/`. Undo/redo cover every
+changed images. Undo/redo cover every
 edit in the session. **Play test** opens the game with the debug menu at
 `localhost:8001`, which keeps a separate save from your normal game. Reload the game tab
 to see saved changes.
@@ -338,19 +553,11 @@ you changed. You can also edit them by hand; `npm run check:data` checks them (a
 The game tolerates mistakes. It skips anything it can't use and lists it in the debug
 menu.
 
-Local mode needs `start-studio.py`, which is not in the repository; it still reads and writes
-the old single `gamedata.js` and would have to be changed to the data files (phase 04b).
 
 
 ## Notes and limits
 
-- Moving a stop under Route stops moves only its marker and the walking path. Move it
-  under Map art to carry its painted patch along, then repaint the trail. Patch moving
-  keeps the colors that stand out from the ring around the stop, so a patch larger than
-  the patch-size setting is only partly carried.
-- Blank bodies are simple colored shapes meant to be painted over. Removing the trail
-  and moving patches fill holes from the surrounding terrain, which suits the map's flat
-  color areas; touch up with the brush or clone tool where needed.
+- Blank bodies are simple colored shapes meant to be painted over.
 - New parts make sheets taller. They are never packed tighter automatically, so a
   heavily edited billionaire's sheet can grow a little each time you add parts.
 - Checked in Chromium at phone, tablet, desktop and phone-landscape sizes, in light
@@ -367,15 +574,21 @@ the old single `gamedata.js` and would have to be changed to the data files (pha
 
 In Art workbench → Part → Billies, select a species and one of its pieces, then choose **Replace from Parts Library**.
 The picker filters by body group, kit (beasts, birds, fish), and part type. Groups are inferred from the existing bone;
-choose a group explicitly for custom bones. Select a thumbnail to stage the change. Front/back thumbnails compare the
-current and replacement piece; the assembled front/back previews show the result. Use Move and the idle/walk/attack/hurt
+choose a group explicitly for custom bones. A part that lacks a socket one of the bone's children hangs on (a torso's
+neck, shoulders, hips or tail) is greyed out, with the reason. Select a thumbnail to stage the change. The strip shows
+the Billie before (top row) and after, front and back, idle, blink, happy and hurt, as the game draws it; the assembled
+front/back previews show the result. Use Move and the idle/walk/attack/hurt
 selector to inspect motion. Scale, rotation and offsets are baked into the replacement picture around its library pivot.
 Match current part’s palette maps the new pixels to colours sampled from the old piece.
 
 For recognised paired limbs, Replace both sides uses each side's library art or its mirrored counterpart. Missing back
-art keeps the existing back piece, with a warning. A static library image replaces the selected bone's expression or
-squash/stretch frames; the picker warns about that before Apply. Existing children keep their positions, and the separate
-portrait remains unchanged. Socket-based child repositioning and assembly recipes are later steps.
+art keeps the existing back piece, with a warning. Frames (Studio plan Phase 5): a head's blink is made again from the
+new picture (the kit baker's rule; happy and hurt then show the new picture), unless **Keep the old blink, happy and
+hurt frames** is ticked; a torso gets its squash and stretch again. Children: one on a named socket moves to the new
+part's socket (scaled, turned and offset with the picture); any other (horns, ears, a crest) keeps its place in
+proportion to the picture. The size the Billie stands in the world (geo) moves by what the part changed, so a part of
+the same size leaves it as it was. The separate portrait remains unchanged. On a kit Billie the recipe is the truth: a
+swap by hand is lost at its next bake, so change the recipe instead (Kit recipe, above).
 
 Nothing changes until Apply. Apply appends the pieces to the species sheet and creates separate crop metadata, preserving
 bones, parents, animation roles, and draw order. Save to game writes the modified sheet(s) and rig through the existing
