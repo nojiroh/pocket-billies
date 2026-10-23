@@ -1,7 +1,7 @@
 // Studio plan Phase 5 (T5.1): bakes the kit Billies from their recipes (game/data/kitBuilds.json) with the game's
 // own baker (game/js/logic/kit-assemble.js), as tools/build-kit-billies.py did. For each form it writes what changed:
 // - game/art/next/billionaires/<name>.png, the sheet (written only when a shown pixel differs: alpha, and colour
-//   where alpha is not 0), and <name>.json, its piece layout;
+//   where alpha is not 0);
 // - its rig in game/art/next/rigs-next.js (the file is written as the Studio writes it, and only when a rig changed);
 // - the stage's native parts in game/data/lines/<line>.json "parts".
 // Nothing is written for a recipe that bakes as committed, so a run on an unchanged tree changes no file.
@@ -10,7 +10,8 @@
 //   node tools/bake-kit-billies.mjs --only=emberox,... only these forms
 //   node tools/bake-kit-billies.mjs --check            write nothing; list what would change (exit 1 if anything)
 //
-// Unlike the Python builder it draws no preview sheet (docs/samples/kit-billies.png).
+// Unlike the Python builder it draws no preview sheet (docs/samples/kit-billies.png) and no piece layout (<name>.json):
+// the rig holds all a layout did.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import vm from 'node:vm';
@@ -68,16 +69,10 @@ export function bakeKitBillies({ only = null, check = false, log = console.log }
   for (const form of forms) {
     const made = kitBakeWhole(data, form, pics),
       what = [],
-      png = join(SHEETS, `${form.name}.png`),
-      lay = join(SHEETS, `${form.name}.json`);
+      png = join(SHEETS, `${form.name}.png`);
     if (!existsSync(png) || !sameShown(made.sheet, readPng(png))) {
       what.push('sheet');
       if (!check) writeFileSync(png, encodePng(made.sheet));
-    }
-    const layout = JSON.parse(JSON.stringify(made.layout));
-    if (!existsSync(lay) || !same(JSON.parse(readFileSync(lay, 'utf8')), layout)) {
-      what.push('layout');
-      if (!check) writeFileSync(lay, JSON.stringify(layout));
     }
     const rig = JSON.parse(JSON.stringify(made.rig));
     if (!same(rigs[form.rig], rig)) {

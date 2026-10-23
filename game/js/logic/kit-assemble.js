@@ -5,8 +5,8 @@
    size and colour, plus extras such as horns, ears, a crest or a shell), as tools/build-kit-billies.py builds it,
    number for number: the pieces of each view (legs set the torso's height, arms and extras mirrored by the kinds'
    sides in partKits.json, draw order from partKits' z, a tail turned to its aim, the head on the neck with its blink),
-   the stage scale that fits both views in the stage box, the packed sheet, the rig of each view, the piece layout and
-   the stage's native parts. tools/test/kit-bake-parity.test.mjs checks all 24 against what the Python builder wrote.
+   the stage scale that fits both views in the stage box, the packed sheet, the rig of each view and the stage's native
+   parts (the piece layout <name>.json the Python builder also wrote retired: nothing read it the rig does not hold). tools/test/kit-bake-parity.test.mjs checks all 24 against what the Python builder wrote.
    Logic only: no DOM, runs in Node. A picture is ImageData-shaped. */
 /** @import { KitBake, PartKits } from '../../types/game-data' */
 /** @typedef {import('./kit-pixels.js').Pixels} Pixels */
@@ -349,7 +349,7 @@ export function kitBounds(img) {
   return [x0, y0, x1 + 1, y1 + 1];
 }
 
-/* ---------- one form: fit, sheet, rig, layout ---------- */
+/* ---------- one form: fit, sheet, rig ---------- */
 /** fit_form: the stage scale that keeps both views inside the stage box (shrunk from the recipe's if it doesn't fit)
  * @param {PartKits} K @param {KitForm} form @param {Record<string, number[]>} C @param {KitPartPixels} pics
  * @param {KitBake} D */
@@ -387,8 +387,8 @@ export function kitPack(images, width) {
   images.forEach((im, i) => kitPaste(sheet, im, spots[i][0], spots[i][1]));
   return { sheet, spots };
 }
-/** build_form: a kit Billie baked from its recipe: its stage scale, both views' pieces, the sheet, the rig (both
- * views, as rigs-next.js holds it) and the piece layout (game/art/next/billionaires/<name>.json)
+/** build_form: a kit Billie baked from its recipe: its stage scale, both views' pieces, the sheet and the rig (both
+ * views, as rigs-next.js holds it)
  * @param {PartKits} K @param {KitForm} form @param {Record<string, number[]>} C @param {KitPartPixels} pics
  * @param {KitBake} D */
 export function kitBakeForm(K, form, C, pics, D) {
@@ -408,17 +408,7 @@ export function kitBakeForm(K, form, C, pics, D) {
   }
   const { sheet, spots } = kitPack(pics2, D.sheetW),
     place = Object.fromEntries(where.map((w, i) => [w, [...spots[i], pics2[i].width, pics2[i].height]])),
-    /** @type {Record<string, any>} */ rig = {},
-    layout = {
-      id: form.name,
-      w: BW,
-      h: BH,
-      cx: CX,
-      base: BASE,
-      plan: 'biped',
-      kit: 'kitBuilds.json',
-      pieces: /** @type {any[]} */ ([]),
-    };
+    /** @type {Record<string, any>} */ rig = {};
   for (const v of ['front', 'back']) {
     const ps = views[v],
       imgs = [],
@@ -451,31 +441,8 @@ export function kitBakeForm(K, form, C, pics, D) {
       sheet: `next/billionaires/${form.name}.png`,
       kit: 'kitBuilds.json',
     };
-    /* the piece layout: rest-pose boxes without turns */
-    /** @type {Record<string, number[]>} */
-    const pos = { root: [CX, BASE] };
-    bones.forEach((b, i) => {
-      const e = imgs[i],
-        pp = pos[b.par],
-        q = [pp[0] + b.at[0], pp[1] + b.at[1]];
-      pos[b.n] = q;
-      const [x, y, w, h] = e.f.main || e.f.idle;
-      layout.pieces.push({
-        n: b.n,
-        v: 'main',
-        group: v,
-        x,
-        y,
-        w,
-        h,
-        px: q[0] + e.ox,
-        py: q[1] + e.oy,
-        pivot: [-e.ox, -e.oy],
-        par: b.par,
-      });
-    });
   }
-  return { k, views, sheet, rig, layout };
+  return { k, views, sheet, rig };
 }
 /** native_parts: the stage's fitting set, the kit part on the bone that fills each slot of rules.json parts.slots
  * (`slotList`); a bone kind fills its partKits.json "slots" one (`kindSlot`) unless the form's "slots" or an extra's
@@ -501,7 +468,7 @@ export function kitNativeParts(form, kindSlot, slotList) {
   return Object.fromEntries(slotList.map(s => [s, slots[s]]));
 }
 /** one kit Billie baked from the game data, as `npm run bake:kits` and the Studio's Write Billie bake it: the stage
- * scale, the sheet, the rig (both views), the piece layout and the stage's native parts
+ * scale, the sheet, the rig (both views) and the stage's native parts
  * @param {{ partKits: PartKits, kitBuilds: { bake: KitBake, colours: Record<string, number[]> },
  *   rules: { parts: { slots: string[] } } }} D the game data (partKits.json, kitBuilds.json, rules.json)
  * @param {KitForm} form @param {KitPartPixels} pics */

@@ -1,8 +1,7 @@
 // Studio plan Phase 5, T5.1: the kit Billies bake in JS exactly as tools/build-kit-billies.py baked them. Each of the
 // 24 recipes in game/data/kitBuilds.json are baked with game/js/logic/kit-assemble.js and compared with
 // what the Python builder wrote: the sheet (game/art/next/billionaires/<name>.png, alpha exactly and colour where a
-// pixel shows), the rig (game/art/next/rigs-next.js, both views, values and key order), the piece layout (<name>.json)
-// and the stage's native parts (game/data/lines/<line>.json "parts"). The committed files are the Python builder's
+// pixel shows), the rig (game/art/next/rigs-next.js, both views, values and key order) and the stage's native parts (game/data/lines/<line>.json "parts"). The committed files are the Python builder's
 // output byte for byte (checked when this test was written: Pillow 12.3.0), so the builder need not run here.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -83,8 +82,6 @@ test('every kit Billie bakes in JS as tools/build-kit-billies.py baked it', () =
     if (sheet) problems.push(`${where} sheet: ${sheet}`);
     for (const d of jsonDiff(JSON.parse(JSON.stringify(made.rig)), RIGS[form.rig], 'rig'))
       problems.push(`${where} ${d}`);
-    const layout = JSON.parse(readFileSync(join(ROOT, `game/art/next/billionaires/${form.name}.json`), 'utf8'));
-    for (const d of jsonDiff(JSON.parse(JSON.stringify(made.layout)), layout, 'layout')) problems.push(`${where} ${d}`);
     const line = JSON.parse(readFileSync(join(ROOT, `game/data/lines/${form.line}.json`), 'utf8'));
     for (const d of jsonDiff(made.parts, line.parts[form.stage], 'parts')) problems.push(`${where} ${d}`);
   }
