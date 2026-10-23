@@ -69,6 +69,8 @@ export interface GameData {
   locations: LocationData[];
   /** RL-R1: the run's region themes (logic/run-region.js) */
   regions: RegionsData;
+  /** RL-R2: the field moves that open a run's side areas */
+  fieldMoves?: { about?: string; moves: Record<DataId, FieldMove> };
   pools: Record<DataId, Pool>;
   /** the egg tiers, keyed by the distance in km that hatches them ('2', '5', '10') */
   eggs: Record<string, EggTier>;
@@ -990,6 +992,8 @@ export interface Rules {
       rarity: Record<PerkRarity, number>;
       price: Record<PerkRarity, number>;
     };
+    /** RL-R2: side areas (logic/run-side.js) */
+    side?: RunSideRules;
   };
   /** roguelite track RL-9: the ranch (logic/ranch.js). Placeholders until the owner has played it */
   ranch: RanchRules;
@@ -1844,4 +1848,35 @@ export interface UiTheme {
   presets?: Record<string, UiLook>;
   /** per screen: colour and shape only */
   overrides?: Record<string, Pick<UiLook, 'color' | 'shape'>>;
+}
+
+/** RL-R2: a field move (fieldMoves.json): what opens a run's side area (logic/run-side.js) */
+export interface FieldMove {
+  name: string;
+  /** the type a Billie needs, and whose badge (meta.badges, by the type's id in lower case) */
+  type: string;
+  obstacle: 'shore' | 'boulder' | 'thorns';
+  /** the side area's biome */
+  biome: string;
+  /** its places are ridden (water walkable) */
+  ride?: boolean;
+  areas: string[];
+  look: string;
+  needBadge: string;
+  needType: string;
+  ask: string;
+  used: string;
+  out: string;
+}
+/** RL-R2: rules.json run.side: the chance a run has a detour or an alternate path (never both), a detour's places, an
+ * alternate path's rows and the chance it ends at a boss of its own, each move's weight and the lean toward a move of
+ * the region's types */
+export interface RunSideRules {
+  detour: number;
+  alt: number;
+  places: [number, number];
+  altRows: [number, number];
+  altBoss: number;
+  moves: Record<string, number>;
+  lean: number;
 }

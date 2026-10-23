@@ -179,6 +179,15 @@
    "pick": 3,
    "rarity": {"common":6,"uncommon":3,"rare":1},
    "price": {"common":150,"uncommon":250,"rare":400}
+  },
+  "side": {
+   "detour": 0.6,
+   "alt": 0.15,
+   "places": [2,4],
+   "altRows": [2,3],
+   "altBoss": 0.33,
+   "moves": {"surf":1,"smash":1,"cut":1},
+   "lean": 2
   }
  },
  "ranch": {

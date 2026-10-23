@@ -1,0 +1,117 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "fieldMoves.schema.json",
+ "title": "game/data/fieldMoves.json: field moves that open a run's side areas (roguelite track RL-R2; logic/run-side.js)",
+ "type": "object",
+ "required": [
+  "moves"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "about": {
+   "type": "string"
+  },
+  "moves": {
+   "type": "object",
+   "minProperties": 1,
+   "propertyNames": {
+    "pattern": "^[a-z][a-z0-9_]*$"
+   },
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "name",
+     "type",
+     "obstacle",
+     "biome",
+     "areas",
+     "look",
+     "needBadge",
+     "needType",
+     "ask",
+     "used",
+     "out"
+    ],
+    "properties": {
+     "name": {
+      "description": "what the player reads (Surf)",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 30
+     },
+     "type": {
+      "description": "the type a Billie needs to use it, and whose badge (meta.badges, by the type's id in lower case) opens it: a types.json name",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20
+     },
+     "obstacle": {
+      "description": "what stands in the way on the main path (logic/mapgen.js MAPGEN_FIELD_OBSTACLES)",
+      "enum": [
+       "shore",
+       "boulder",
+       "thorns"
+      ]
+     },
+     "biome": {
+      "description": "the side area's biome: a run biome (rules.json run.map.biomes)",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+     },
+     "ride": {
+      "description": "true: its places are ridden (water walkable, you sit on the Water Billie: walk/prop-look.js rideMountItem)",
+      "type": "boolean"
+     },
+     "areas": {
+      "description": "the side area's names, one picked by the run's seed",
+      "type": "array",
+      "items": {
+       "type": "string",
+       "minLength": 1,
+       "maxLength": 40
+      },
+      "minItems": 1,
+      "uniqueItems": true
+     },
+     "look": {
+      "description": "the obstacle, before any badge of its type is kept",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+     },
+     "needBadge": {
+      "description": "the obstacle without the badge ({badge}: the badge's name)",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+     },
+     "needType": {
+      "description": "the obstacle with the badge but no Billie of the type in the team",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+     },
+     "ask": {
+      "description": "the obstacle when it can be opened (a yes opens it)",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+     },
+     "used": {
+      "description": "as it opens ({billie}: the Billie's name)",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+     },
+     "out": {
+      "description": "the side area's way out, back to the main path",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+     }
+    }
+   }
+  }
+ }
+}

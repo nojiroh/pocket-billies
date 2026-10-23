@@ -39,6 +39,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataCurrencies: [() => dataCurrencies, v => (dataCurrencies = v)],
   // @ts-expect-error -- replaced on purpose
+  dataFieldMoves: [() => dataFieldMoves, v => (dataFieldMoves = v)],
+  // @ts-expect-error -- replaced on purpose
   dataNodeTypes: [() => dataNodeTypes, v => (dataNodeTypes = v)],
   // @ts-expect-error -- replaced on purpose
   dataPerks: [() => dataPerks, v => (dataPerks = v)],
@@ -300,6 +302,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'shop',
   'foes',
   'perks',
+  'side',
 ]);
 /** RL-6: rules.json run.clock, run.reveal and the run keys @param {any} D @returns {DataProblem[]} */
 export function dataRunClock(D) {
@@ -656,6 +659,52 @@ export function dataNodeTypes(D, valid = () => true) {
     if (!Object.values(D.nodeTypes).some(T => (T.weight || 0) > 0))
       problem('nodeTypes.json', 'no type has a weight, so nothing can fill a free row of the run map');
   }
+  return out;
+}
+// RL-R2: field moves (fieldMoves.json): the schema, a real type and a run biome each; rules.json run.side: the chances
+// of a detour and of an alternate path (each 0-1, together at most 1), a detour's places [2-6], an alternate path's
+// rows [2-6] and the chance it ends at a boss of its own, a weight of 0 or more for moves that exist (one above 0), and
+// the lean (0-10) toward a move of the region's types
+/** RL-R2: fieldMoves.json and rules.json run.side @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataFieldMoves(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]),
+    FM = D.fieldMoves,
+    moves = FM && FM.moves ? FM.moves : {},
+    types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
+    runBiomes = (D.rules && D.rules.run && D.rules.run.map && D.rules.run.map.biomes) || {};
+  if (FM && valid('fieldMoves.schema.json', FM, 'fieldMoves.json'))
+    for (const [k, M] of Object.entries(moves)) {
+      if (!types.has(M.type)) problem('fieldMoves.json', `moves.${k}: no type "${M.type}" (types.json)`);
+      if (!(D.biomes || {})[M.biome]) problem('fieldMoves.json', `moves.${k}: no biome "${M.biome}" (biomes.json)`);
+      else if (!runBiomes[M.biome])
+        problem('fieldMoves.json', `moves.${k}: "${M.biome}" is not a run biome (rules.json run.map.biomes)`);
+    }
+  const S = D.rules && D.rules.run && D.rules.run.side;
+  if (!S) return out;
+  const chance = (/** @type {any} */ v) => typeof v === 'number' && v >= 0 && v <= 1,
+    span = (/** @type {any} */ v) =>
+      Array.isArray(v) && v.length === 2 && v.every(n => Number.isInteger(n) && n >= 2 && n <= 6) && v[0] <= v[1];
+  for (const k of Object.keys(S))
+    if (!['detour', 'alt', 'places', 'altRows', 'altBoss', 'moves', 'lean'].includes(k))
+      problem('rules.json', `run.side.${k}: no such rule`);
+  if (!chance(S.detour) || !chance(S.alt) || !chance(S.altBoss) || S.detour + S.alt > 1)
+    problem(
+      'rules.json',
+      'run.side: detour, alt and altBoss are not chances from 0 to 1 (detour and alt at most 1 together)'
+    );
+  if (!span(S.places)) problem('rules.json', 'run.side.places is not [fewest, most] whole places from 2 to 6');
+  if (!span(S.altRows)) problem('rules.json', 'run.side.altRows is not [fewest, most] whole rows from 2 to 6');
+  if (!(typeof S.lean === 'number' && S.lean >= 0 && S.lean <= 10))
+    problem('rules.json', 'run.side.lean is not a number from 0 to 10');
+  const W = S.moves && typeof S.moves === 'object' ? S.moves : {};
+  for (const [k, w] of Object.entries(W)) {
+    if (!moves[k]) problem('rules.json', `run.side.moves: no field move "${k}" (fieldMoves.json)`);
+    if (!(typeof w === 'number' && w >= 0)) problem('rules.json', `run.side.moves.${k} is not a weight of 0 or more`);
+  }
+  if (!Object.values(W).some(w => typeof w === 'number' && w > 0))
+    problem('rules.json', 'run.side.moves: no move has a weight, so no side area can be made');
   return out;
 }
 // RL-12: Perks (relics): the schema, the types their damage rows name; rules.json run.perks: a cap of 1-12 held, a

@@ -117,3 +117,19 @@ test('check-data: planted robots, biomes, node types, relics, currencies, buildi
     })
   );
 });
+
+test('check-data: planted field moves and side areas (RL-R2)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'fieldMoves.json': F => {
+        F.moves.surf.type = 'Plasma';
+        F.moves.smash.biome = 'nosuchbiome';
+        F.moves.cut.biome = 'volcano';
+      },
+      'rules.json': R => {
+        Object.assign(R.run.side, { detour: 0.9, alt: 0.2, places: [1, 9], lean: -1, extra: 1 });
+        R.run.side.moves = { surf: 0, nosuchmove: 1 };
+      },
+    })
+  );
+});
