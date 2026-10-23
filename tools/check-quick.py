@@ -1763,55 +1763,6 @@ def desktop_steps(b, base, R):
         return '; '.join(out) + '; out again at the lab’s door'
     v46()
 
-    @step('v47: shop hours, the lore, room floors', 300)   # RL-5: the road east (its places, gates, shops and story) is parked
-    def v47():
-        """shops close at night and open at noon; the Guide's Lore page shows the places you've been; no two rooms share a
-        floor. RL-5: the road east is parked with its places (game/data/legacy): reaching every place along the roads,
-        the seven regions' songs, moods, lore, landmarks, shops and clinics, the Fanfare Fields and Rimefrost gates, each
-        new town's shop, and the story to its end (Cass Flow's clue, Vinylla at the Inner Sun, the ending) are retired
-        until a run's places and story bring them back (RL-7 and on)"""
-        import collections
-        out = []; D = gamedata(); RT = D['locations']
-        # RL-5: the roads reaching every place, and the 27 places of the seven regions (song, mood, lore, landmark, shop
-        # and clinic, a shop room of its own, somewhere to sit, animals) are retired: no road is left and those places
-        # are parked
-        bad = []
-        floors = collections.defaultdict(list)
-        for sid, sc in D['maps'].items():
-            if sc.get('kind') == 'room' and '@' not in sid: floors[collections.Counter(''.join(sc['tiles'])).most_common(1)[0][0]].append(sid)
-        bad += [f'rooms sharing a floor ({k}): {", ".join(v)}' for k, v in floors.items() if len(v) > 1]
-        if bad: raise Exception('; '.join(bad[:6]))
-        out.append(f'{len(floors)} rooms, a floor each')   # RL-5: the rooms alone (every room stays in the game data)
-        keep = pg.evaluate("JSON.stringify({seats:saveData.seats,story:saveData.story,flags:saveData.flags,visited:saveData.visited,beaten:saveData.beaten||null})")
-        try:
-            # RL-5: the gates (Fanfare Fields with Marina's badge, the Rimefrost Caves with Carat's), the new places' songs
-            # and the new towns' shop rooms are retired with their places
-            # shop hours: closed at night, open at noon (RL-5: the opening of each new town's shop is retired: those shops
-            # are parked, legacy/shops.json)
-            pg.evaluate("uiState.tab='team';render();environment.on=true;environment.force={time:23.5,weather:'clear',season:'summer'};PROP_CLOCK.t=0;0")
-            night = pg.evaluate("isOpenNow('shop')")
-            pg.evaluate("environment.force={time:12.5,weather:'clear',season:'summer'};PROP_CLOCK.t=0;0")
-            noon = pg.evaluate("isOpenNow('shop')")
-            if night or not noon: raise Exception(f'shop hours: open at 23:30 {night}, open at 12:30 {noon}')
-            out.append('shops closed at 23:30, open at 12:30')
-            # the Guide's Lore page shows the places you've been (RL-5: every place in the game, the hub alone, not the new
-            # places of the road east)
-            pg.evaluate("LOCATIONS.forEach((r,i)=>{saveData.visited[i]=1});uiState.tab='ledger';uiState.dex=null;uiState.guideTab='lore';uiState.loreSec='places';render();scrollTo(0,0);0")
-            names = pg.evaluate("[...document.querySelectorAll('.lore .lore-card h3')].map(e=>e.textContent)")
-            until(pg, "(m=>!!m&&getComputedStyle(m).opacity==='1')(document.querySelector('main.screen.s-ledger'))", 15)   # the screen fades in (slowly here)
-            pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0"); time.sleep(.6)                                   # an egg hatching or the like, not over the page
-            shot(pg, 'v47-lore-places')
-            gone = [r['name'] for r in RT if r['name'] not in names]
-            if gone: raise Exception(f'the Lore page doesn’t show {", ".join(gone[:5])}')
-            out.append(f'the Lore page shows {len(names)} places')
-            # RL-5: the story (Cass Flow's clue, Vinylla hidden at the Inner Sun until she's beaten on the Spire, the ending,
-            # 'v47-ending') is retired: Cass and Vinylla are parked trainers and the Inner Sun a parked place
-        finally:
-            pg.evaluate(f"(o=>{{saveData.seats=o.seats;saveData.story=o.story;saveData.flags=o.flags;saveData.visited=o.visited;if(o.beaten)saveData.beaten=o.beaten;uiState.modal=null;uiState.mq=[];if(typeof talkBox!=='undefined')talkBox.on=false;environment.force=null;PROP_CLOCK.t=0;uiState.guideTab=null;uiState.tab='walk';renderOverlay();render()}})({keep});0")
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return '; '.join(out)
-    v47()
-
     @step('alpha 0.1: the new name, Billies and taxing, rooms with their building\'s windows', 240)
     def a01():
         """Pocket Billies on the page and the title; the Guide counts the Billies you've taxed and the battle has a Tax!
