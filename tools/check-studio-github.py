@@ -23,6 +23,8 @@ Studio track ST-T: the Studio self-test runs whole and must pass (no errors, eve
 no token in its report); its times are not judged here.
 Studio plan Phase 5 (T5.1): a kit Billie's recipe edited in Part mode bakes at once (one undo step), and the proposal
 carries its sheet (pixel-equal to the Node bake), rigs-next.js, kitBuilds.json and its line.
+Studio plan Phase 5 (T5.2): Replace from Parts Library greys a part a child can't hang on, shows before and after,
+and a head swapped keeps a blink as one undo step.
 Studio plan Phase 1 (T1.3): the Check lists check-data's own problems (planted), and an error blocks Propose.
 UI track UI-3: the UI look section: a colour dial changed shows in the preview frame, Undo puts the data and the
 preview back; a screen's own colour shows on that screen only and ↺ takes it away; a preset applies and undoes; Find
@@ -1218,6 +1220,60 @@ def kit_write_sent(pg, bodies, errs):
     else: print(f"kit write: the proposal carries {k['name']}.png (pixel-equal to the Node bake), rigs-next.js (the rig equal), kitBuilds.json and lines/{k['line']}.json", flush=True)
 
 
+def library_swap_steps(pg, errs):
+    """Studio plan Phase 5 (T5.2): Replace from Parts Library keeps the Billie whole. On a kit Billie's torso, a library
+    torso without a tail socket is greyed out with the reason; on its head, a library head prepared shows the
+    before/after strip (front and back), and applied it is one undo step: the head keeps a blink, its horns move with
+    it, geo is updated; undo puts the rig back."""
+    n = len(errs)
+    sp = pg.evaluate("studioState.D.kitBuilds.forms[0].rig")
+    rig = f"JSON.stringify(studioState.rigs[{json.dumps(sp)}])"
+    rig0 = pg.evaluate(rig)
+    pg.evaluate(f"wbPart.src = 'species'; wbPart.sp = {json.dumps(sp)}; wbPart.id = ''; workbench.mode = 'part'; void openSection('workbench')")
+    pg.wait_for_selector(f'[data-kit-form]', timeout=20000)
+
+    def library(bone):
+        pg.evaluate(f"ACTIONS.wbpPick({{ id: '{bone}' }})"); time.sleep(0.5)
+        pg.evaluate("void wbsLibrary.open()")
+        pg.wait_for_selector('[data-act=wbsLibraryPick]', timeout=20000)
+
+    # a torso without a tail socket: greyed, with the reason
+    library('torso')
+    pg.evaluate("window.__lsK = JSON.stringify(studioState.D.partKits); delete studioState.D.partKits.parts.cat_torso.views.front.sockets.tail; render()")
+    time.sleep(0.3)
+    why = pg.evaluate("(b => b && [b.disabled, b.title])(document.querySelector('[data-act=wbsLibraryPick][data-id=cat_torso]'))")
+    if not why or not why[0] or 'no tail socket for tail' not in why[1]: errs.append(f'a torso without a tail socket is not greyed with its reason: {why}')
+    ok = pg.evaluate("(b => b && !b.disabled)(document.querySelector('[data-act=wbsLibraryPick][data-id=bear_torso]'))")
+    if not ok: errs.append('a torso with every socket is greyed')
+    pg.evaluate("studioState.D.partKits = JSON.parse(window.__lsK); delete window.__lsK; ACTIONS.wbsLibraryCancel()")
+    # a head: prepared, before and after, applied as one step
+    library('head')
+    steps0 = pg.evaluate("studioState.undo.length")
+    horn0 = pg.evaluate(f"studioState.rigs[{json.dumps(sp)}].front.bones.find(b => b.n === 'hornL').at")
+    pg.evaluate("ACTIONS.wbsLibraryPick({ id: 'cat_head' })")
+    t0 = time.time()
+    while time.time() - t0 < 20 and not pg.evaluate("!!wbsLibrary.active() && !wbsLibrary.active().busy && !!wbsLibrary.active().after"): time.sleep(0.2)
+    strips = pg.evaluate("[...document.querySelectorAll('[data-wbs-swap]')].map(i => [i.dataset.wbsSwap, i.naturalWidth > 0 || i.src.startsWith('data:image/png')])")
+    if sorted(s[0] for s in strips) != ['back', 'front'] or not all(s[1] for s in strips): errs.append(f'the before/after strip is not shown for both views: {strips}')
+    if pg.evaluate(rig) != rig0: errs.append('preparing a swap changed the rig')
+    pg.evaluate("ACTIONS.wbsLibraryApply()"); time.sleep(0.5)
+    R = json.loads(pg.evaluate(rig))
+    R0 = json.loads(rig0)
+    for view in ['front', 'back']:
+        h = next(b for b in R[view]['bones'] if b['n'] == 'head')
+        f = R[view]['imgs'][h['i']]['f']
+        h0 = next(b for b in R0[view]['bones'] if b['n'] == 'head')
+        if 'blink' in R0[view]['imgs'][h0['i']]['f'] and 'blink' not in f: errs.append(f'{view}: the swapped head lost its blink ({list(f)})')
+    if R['front']['bones'][[b['n'] for b in R['front']['bones']].index('hornL')]['at'] == horn0: errs.append('the horn did not move with the new head')
+    if R['front']['geo'] == R0['front']['geo']: errs.append('geo was not updated')
+    if pg.evaluate("studioState.undo.length") != steps0 + 1: errs.append(f"the swap made {pg.evaluate('studioState.undo.length') - steps0} undo steps, not 1")
+    pg.evaluate("undo()"); time.sleep(0.5)
+    if pg.evaluate(rig) != rig0: errs.append('undo did not put the rig back')
+    pg.evaluate("wbPart.src = 'kits'; wbPart.id = ''; workbench.mode = 'sheet'")
+    if len(errs) > n: errs[n:] = [f'library swap: {e}' for e in errs[n:]]
+    print(f'library swap: {sp}: a torso without a tail socket greyed with its reason; a head swapped with a before/after strip, a blink kept, horns moved, geo updated, one undo step, undone', flush=True)
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
@@ -1231,6 +1287,7 @@ STEPS = [
     ('species_parts', species_part_steps),
     ('rig_preview', rig_preview_steps),
     ('kit_write', kit_write_steps),
+    ('library_swap', library_swap_steps),
     ('wardrobe', wardrobe_steps),
     ('ui', ui_steps),
     ('ui_tools', ui_tools_steps),
