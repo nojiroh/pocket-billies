@@ -3,7 +3,7 @@
 /* ================= META STATE (roguelite track RL-3) =================
    What lasts between runs, kept in the save as saveData.meta: the three currencies other than money (Research, the
    unlock currency; Scrap, the building material; Crests, the rare boss currency), the unlocks, each hub
-   building's level, how many runs were played and won, and the highest difficulty tier (Expedition) open. Money ($,
+   building's level, how many runs were played and won, and the highest Expedition (the difficulty) open. Money ($,
    saveData.se) is not here: it is the run's working field. Logic only: no DOM, runs in Node
    (tools/test/meta-state.test.mjs). The sections that spend these (unlocks.json, buildings.json) come in RL-11. */
 /** @import { Meta } from '../../types/save-data' */
@@ -28,7 +28,7 @@ expose({
 /** a new player's meta state: nothing earned, Expedition I open */
 /** @returns {Meta} */
 export function newMeta() {
-  return { research: 0, scrap: 0, crests: 0, unlocks: {}, buildings: {}, runs: 0, wins: 0, tier: 1 };
+  return { research: 0, scrap: 0, crests: 0, unlocks: {}, buildings: {}, runs: 0, wins: 0, expedition: 1 };
 }
 export const META_MAX = 1e12,
   META_IDS = 200,
@@ -51,7 +51,7 @@ export function validMeta(o) {
   for (const k of ['research', 'scrap', 'crests', 'runs', 'wins']) if (!wholeIn(o[k], 0, META_MAX)) return false;
   return (
     o.wins <= o.runs &&
-    wholeIn(o.tier, 1, META_TIERS) &&
+    wholeIn(o.expedition, 1, META_TIERS) &&
     recordOf(o.unlocks, META_IDS, v => v === 1) &&
     recordOf(o.buildings, META_IDS, v => wholeIn(v, 0, 99))
   );

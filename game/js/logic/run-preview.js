@@ -35,14 +35,18 @@ const runPreviewData = () => ({
 
 /**
  * a run's preview from its seed. `unlocks` is what the run carries (unlocks.js runUnlocks), `map` overrides rules.json
- * run.map (the debug menu's short map), `tier` the run's Expedition
- * @param {string} seed @param {{ unlocks?: string[], map?: object, tier?: number }} [o]
+ * run.map (the debug menu's short map), `expedition` the run's Expedition
+ * @param {string} seed @param {{ unlocks?: string[], map?: object, expedition?: number }} [o]
  */
 export function runPreview(seed, o = {}) {
   const data = runPreviewData(),
-    plan = runStartPlan(seed, { ...data, unlockData: UNLOCK_DATA }, { unlocks: o.unlocks, map: o.map, tier: o.tier }),
+    plan = runStartPlan(
+      seed,
+      { ...data, unlockData: UNLOCK_DATA },
+      { unlocks: o.unlocks, map: o.map, expedition: o.expedition }
+    ),
     /** @type {Run} */
-    run = newRun(seed, plan.give.tier, MAPGEN_VERSION, /** @type {any} */ ({}));
+    run = newRun(seed, plan.give.expedition, MAPGEN_VERSION, /** @type {any} */ ({}));
   run.unlocks = plan.unlocks.slice();
   run.map = copyOf(plan.map);
   run.deadline = plan.deadline;
@@ -76,7 +80,7 @@ export function runPreview(seed, o = {}) {
   for (let k = 0; k < guards; k++) relicOffers.push(perkOfferMake(run, PERKS, RULES.run.perks) || []);
   return {
     seed,
-    tier: plan.give.tier,
+    expedition: plan.give.expedition,
     unlocks: run.unlocks,
     map,
     deadline: run.deadline,

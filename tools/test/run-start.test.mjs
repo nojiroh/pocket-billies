@@ -56,7 +56,7 @@ const started = s => ({
   items: s.items,
   pyramids: s.pyramids,
   seed: s.run.seed,
-  tier: s.run.tier,
+  expedition: s.run.expedition,
   mapgenV: s.run.mapgenV,
   unlocks: s.run.unlocks,
   mods: s.run.mods,
@@ -85,11 +85,11 @@ test('the unlocks a run carries open its biomes: none leaves out ridge and autum
   assert.deepEqual([...biomes(CASES.all)].sort(), ['autumn', 'lake', 'meadow', 'ridge', 'thicket']);
 });
 
-test('a run starts with run.start (copies), on its seed, tier and generator version', () => {
+test('a run starts with run.start (copies), on its seed, expedition and generator version', () => {
   const g = runGive('S', 1, 7, GAME_DATA.rules.run.start);
   assert.deepEqual(g, {
     seed: 'S',
-    tier: 1,
+    expedition: 1,
     mapgenV: 7,
     se: GAME_DATA.rules.run.start.se,
     pyramids: GAME_DATA.rules.run.start.pyramids,

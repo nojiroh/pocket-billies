@@ -613,15 +613,19 @@ export function dataRegions(D, valid = () => true) {
     ['a fresh save', every.filter(b => !granted.has(b))],
     ['every run biome', every],
   ])
-    for (let tier = 1; tier <= R.zones.length; tier++)
+    for (let expedition = 1; expedition <= R.zones.length; expedition++)
       for (let k = 0; k < 40; k++) {
         const seed = `REGIONCHECK${k}`,
           note = (/** @type {string} */ text) => {
             if (seen.has(text)) return;
             seen.add(text);
-            problem('regions.json', `${text} (${what}, Expedition ${tier}, seed ${seed})`);
+            problem('regions.json', `${text} (${what}, Expedition ${expedition}, seed ${seed})`);
           },
-          G = runRegionMake(seed, data, { open: /** @type {string[]} */ (open), tier, guards: M.minibosses || 0 });
+          G = runRegionMake(seed, data, {
+            open: /** @type {string[]} */ (open),
+            expedition,
+            guards: M.minibosses || 0,
+          });
         if (!G) {
           note(`no theme can roll with only ${/** @type {string[]} */ (open).join(', ')} open`);
           continue;

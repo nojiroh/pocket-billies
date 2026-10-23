@@ -69,8 +69,9 @@ export function runRegionData(G, trainers) {
 }
 
 /** how many zones a region has at an Expedition (regions.json zones, one per Expedition; past the last, the last)
- * @param {RegionsData} R @param {number} tier */
-export const runRegionZoneCount = (R, tier) => R.zones[Math.max(0, Math.min(R.zones.length - 1, (tier || 1) - 1))];
+ * @param {RegionsData} R @param {number} expedition */
+export const runRegionZoneCount = (R, expedition) =>
+  R.zones[Math.max(0, Math.min(R.zones.length - 1, (expedition || 1) - 1))];
 
 /** the themes that can roll with these biomes open: the start biome and one more of its biomes
  * @param {RegionsData} R @param {string[]} open @returns {Record<string, number>} a weight each */
@@ -205,11 +206,11 @@ export function regionLeaders(seed, T, leaders, n) {
 }
 
 /**
- * a seed's region. open: the biomes the run can use (rules.json run.map.biomes as the unlocks leave it), tier: the
+ * a seed's region. open: the biomes the run can use (rules.json run.map.biomes as the unlocks leave it), expedition: the
  * Expedition, guards: the map's mini-bosses (the leaders are one more: the boss), rows: the map's rows when they are
  * given (the debug menu's short map), else the zones decide them. Null when no theme can roll with these biomes
  * @param {string} seed @param {RunRegionData} data
- * @param {{ open: string[], tier?: number, guards: number, rows?: number }} o @returns {RunRegion | null}
+ * @param {{ open: string[], expedition?: number, guards: number, rows?: number }} o @returns {RunRegion | null}
  */
 export function runRegionMake(seed, data, o) {
   const R = data.regions,
@@ -218,7 +219,7 @@ export function runRegionMake(seed, data, o) {
   if (!Object.keys(themes).length) return null;
   const theme = rngFrom(seed, 'region|theme').pick(themes),
     T = R.themes[theme],
-    rows = zoneRows(seed, R.rows, runRegionZoneCount(R, o.tier || 1), o.rows),
+    rows = zoneRows(seed, R.rows, runRegionZoneCount(R, o.expedition || 1), o.rows),
     biomes = zoneBiomes(seed, R, T, open, rows.length),
     { dex, swap, forms } = regionDex(seed, R, T, data.lines);
   return {

@@ -65,9 +65,10 @@ export const RUN_PHASES = ['fly', 'walk', 'battle', 'menu', 'payout'],
   RUN_LIST = 5000,
   RUN_TIERS = 9;
 export const copyOf = v => JSON.parse(JSON.stringify(v));
-/** RL-9b: a rule by Expedition (rules.json run.home, run.pack): the tier's entry, past the list's end its last */
-/** @param {number[]} list @param {number} tier */
-export const runByTier = (list, tier) => list[Math.max(0, Math.min(list.length, Math.floor(tier) || 1) - 1)];
+/** RL-9b: a rule by Expedition (rules.json run.home, run.pack): the expedition's entry, past the list's end its last */
+/** @param {number[]} list @param {number} expedition */
+export const runByTier = (list, expedition) =>
+  list[Math.max(0, Math.min(list.length, Math.floor(expedition) || 1) - 1)];
 /** RL-9b: the uids of the Billies that came from home (picked at the mast); a run saved before RL-9b took the hub's
     whole team */
 /** @param {Run} run @returns {string[]} */
@@ -77,11 +78,11 @@ export const runHome = run => (Array.isArray(run.home) ? run.home : run.start.te
 export const runSnapshot = s =>
   /** @type {RunStart} */ (Object.fromEntries(RUN_FIELDS.map(k => [k, copyOf(s[k] === undefined ? null : s[k])])));
 /** a run as it starts; `start` is the hub's working fields at that moment */
-/** @param {string} seed @param {number} tier @param {number} mapgenV @param {RunStart} start @returns {Run} */
-export function newRun(seed, tier, mapgenV, start) {
+/** @param {string} seed @param {number} expedition @param {number} mapgenV @param {RunStart} start @returns {Run} */
+export function newRun(seed, expedition, mapgenV, start) {
   return {
     seed,
-    tier,
+    expedition,
     mapgenV,
     map: null,
     at: { phase: 'fly', battle: -1 },
@@ -141,7 +142,7 @@ export function validRun(o) {
     money = v => Number.isFinite(v) && v >= 0 && v <= META_MAX;
   if (!plain(o)) return false;
   if (typeof o.seed !== 'string' || !/^[A-Za-z0-9|_-]{1,40}$/.test(o.seed)) return false;
-  if (!wholeIn(o.tier, 1, RUN_TIERS) || !wholeIn(o.mapgenV, 1, 1e6)) return false;
+  if (!wholeIn(o.expedition, 1, RUN_TIERS) || !wholeIn(o.mapgenV, 1, 1e6)) return false;
   if (o.map !== null) {
     if (!plain(o.map) || !list(o.map.nodes, RUN_NODES) || !o.map.nodes.length) return false;
     const n = o.map.nodes.length;
@@ -251,7 +252,7 @@ export function validRunFoe(f) {
     the run */
 /**
  * @param {SaveData} s
- * @param {{ seed: string, tier: number, mapgenV: number, se: number, items?: Record<string, number>,
+ * @param {{ seed: string, expedition: number, mapgenV: number, se: number, items?: Record<string, number>,
  *   pyramids?: Record<string, number>, home?: string[],
  *   pack?: { items?: Record<string, number>, pyramids?: Record<string, number> } }} give
  * @returns {Run}
@@ -275,7 +276,7 @@ export function runBegin(s, give) {
       have[k] -= take;
       pack[kind][k] = take;
     }
-  const run = (s.run = newRun(give.seed, give.tier, give.mapgenV, start)),
+  const run = (s.run = newRun(give.seed, give.expedition, give.mapgenV, start)),
     add = (/** @type {Record<string, number>} */ to, /** @type {Record<string, number>} */ more) => {
       for (const [k, n] of Object.entries(more)) to[k] = (to[k] || 0) + n;
       return to;

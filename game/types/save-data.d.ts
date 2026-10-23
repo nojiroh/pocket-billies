@@ -98,8 +98,8 @@ export interface Meta {
   /** runs ended (won or lost) and runs won */
   runs: number;
   wins: number;
-  /** the highest difficulty tier (Bracket) open, from 1 */
-  tier: number;
+  /** the highest Expedition open, from 1 */
+  expedition: number;
 }
 
 /** roguelite track RL-3: the ranch, a hub building (logic/ranch-state.js; filled in RL-9 and RL-10) */
@@ -190,8 +190,8 @@ export interface RunStart {
 export interface Run {
   /** the run's seed (10 base32 characters; 'd' + a UTC date for a daily); everything else regenerates from it */
   seed: string;
-  /** the difficulty tier (Bracket) */
-  tier: number;
+  /** the Expedition (the difficulty, from 1) */
+  expedition: number;
   /** the map generator's version when the run started (a run made by another version is abandoned) */
   mapgenV: number;
   /** the node map; null until the run gets it at the mast (logic/run-map.js runMapStart) */

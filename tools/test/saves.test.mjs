@@ -67,7 +67,7 @@ test('saves: a started save comes back from its JSON (loading again changes noth
 
 // RL-3 (save format 4): meta, run and ranch in the save; a run's trip is on the run's world, not today's LOCATIONS
 const { runBegin } = modules['run-state'];
-const GIVE = { seed: 'ABCDE12345', tier: 1, mapgenV: 1, se: 300 };
+const GIVE = { seed: 'ABCDE12345', expedition: 1, mapgenV: 1, se: 300 };
 const RUN_MAP = {
   nodes: [
     { type: 'landing', row: 0, lane: 0, to: [1, 2] },

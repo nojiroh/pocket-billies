@@ -20,7 +20,7 @@ const RATES = {
   scrapWin: 10,
 };
 const PRICE = id => ({ potion: 200 })[id] || 0;
-const GIVE = { seed: 'ABCDE12345', tier: 1, mapgenV: 1, se: 300, items: { potion: 1 } };
+const GIVE = { seed: 'ABCDE12345', expedition: 1, mapgenV: 1, se: 300, items: { potion: 1 } };
 const copy = v => JSON.parse(JSON.stringify(v));
 
 /** a hub save with meta, as newSave makes from RL-3 on */
@@ -50,7 +50,7 @@ const MAP = {
 test('run: a new run starts on day 1 at the airship with nothing held', () => {
   const r = newRun('ABCDE12345', 2, 1, { team: [] });
   assert.equal(r.seed, 'ABCDE12345');
-  assert.equal(r.tier, 2);
+  assert.equal(r.expedition, 2);
   assert.equal(r.clock, 1);
   assert.deepEqual(r.at, { phase: 'fly', battle: -1 });
   assert.equal(r.map, null);
@@ -103,7 +103,7 @@ test('run: the load check refuses broken or tampered runs', () => {
     { ...ok, seed: '' },
     { ...ok, seed: 'has space' },
     { ...ok, seed: 'x'.repeat(41) },
-    { ...ok, tier: 0 },
+    { ...ok, expedition: 0 },
     { ...ok, mapgenV: 0 },
     { ...ok, map: { nodes: [] } },
     { ...ok, map: { nodes: [{ ...MAP.nodes[0], to: [9] }] } }, // a link off the map

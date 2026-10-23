@@ -233,11 +233,11 @@ function runPickDefault() {
 }
 /** the start sheet's choice as it stands (uiState.runPick, runPack), kept to what is at home, what the bag holds and
  * the Expedition's counts (rules.json run.home, run.pack): the Billies from home (the default pick when none), the pack
- * and how many things are in it @param {number} [tier] */
-function runPickNow(tier = 1) {
+ * and how many things are in it @param {number} [expedition] */
+function runPickNow(expedition = 1) {
   const all = runHomeList(),
-    cap = runByTier(RULES.run.home, tier),
-    most = runByTier(RULES.run.pack, tier);
+    cap = runByTier(RULES.run.home, expedition),
+    most = runByTier(RULES.run.pack, expedition);
   let home = (uiState.runPick || []).filter(u => all.some(m => m.uid === u)).slice(0, cap);
   if (!home.length) home = [runPickDefault()].filter(u => !!u);
   const pack = { items: {}, pyramids: {} };
