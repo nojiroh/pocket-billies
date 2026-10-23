@@ -31,6 +31,8 @@
   "financeRamp": 0.1,
   "financeRampTurns": 10,
   "retailSynergy": 0.1,
+  "undertowMult": 1.3,
+  "undertowHp": 0.3334,
   "oilShockMult": 1.5,
   "drainFraction": 16,
   "rentFraction": 8,

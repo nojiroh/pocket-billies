@@ -172,6 +172,9 @@ export interface BillyType {
   weak?: TypeId[];
   /** a battle rule its Billies share ('' for none) */
   passive?: string;
+  /** RF-3: the passive's name and what it does, as the player reads them */
+  passiveName?: string;
+  passiveText?: string;
   /** hit effects (default pow, star) */
   fx?: string[];
 }
@@ -838,6 +841,9 @@ export interface Rules {
     financeRamp: number;
     financeRampTurns: number;
     retailSynergy: number;
+    /** RF-3 Undertow (Water): its Water moves hit this much harder at or below this share of its HP */
+    undertowMult: number;
+    undertowHp: number;
     oilShockMult: number;
     drainFraction: number;
     rentFraction: number;
