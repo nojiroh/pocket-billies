@@ -435,11 +435,14 @@ function debugAction(x) {
       });
       break;
     /* RL-9: the ranch's trainees started an hour earlier (an hour's training, collected when the ranch opens), and
-       Scrap to train with */
+       Scrap to train with; RL-10b: an hour more of income */
     case 'ranchhour':
       saveData.ranch.trainees.forEach(t => {
         t.at = Math.max(0, t.at - 3600000);
       });
+      /* RL-10b: and its income counted an hour earlier */
+      if (saveData.ranch.income.lastAt)
+        saveData.ranch.income.lastAt = Math.max(1, saveData.ranch.income.lastAt - 3600000);
       toast(`${saveData.ranch.trainees.length} training: an hour older.`);
       break;
     /* RL-10: every egg in the ranch's nursery ready to hatch now */
