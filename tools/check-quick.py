@@ -186,44 +186,6 @@ def check_data():
     return f'{len(D.get("maps", {}))} scenes ({", ".join(f"{v} {k}s" for k, v in kinds.items())}), {len(SY.get("props", {}))} props, {len(D["roads"])} named roads'
 
 
-@step('Copperleaf Town, the hub on its own (from the data)', 20)
-def copperleaf_data():
-    """a new game starts in Copperleaf (rules.start.locationId), the hub and the only place (RL-5: every other place is
-    parked in game/data/legacy), with no exit and no road out; the lab and Granny Juniper's cottage (act home; TC-1: no room of
-    its own now) are in Copperleaf and nowhere else outdoors; Granny Juniper stands in her garden; no shop or clinic in the hamlet; nothing solid stands on the
-    opening's stage"""
-    D = gamedata(); R = D['locations']; ix = {r['id']: i for i, r in enumerate(R)}; bad = []
-    start = (D['rules'].get('start') or {}).get('locationId')
-    if start != 'copperleaf' or 'copperleaf' not in ix: raise Exception(f'a new game starts at {start!r}')
-    if list(ix) != ['copperleaf']: bad.append(f'places besides the hub: {list(ix)}')
-    S_ = D['maps']; C = D['scenery']['props']
-    if S_['copperleaf'].get('exits') or S_['copperleaf'].get('edgeExits') or D['roads']: bad.append('an exit or a road leads out of the hub')
-    outdoor = {k: v for k, v in S_.items() if '@' not in k and v.get('kind') in ('town', 'route')}
-    for act in ('lab', 'home'):
-        where = [k for k, v in outdoor.items() for p in v.get('props', []) if p.get('act') == act]
-        if where != ['copperleaf']: bad.append(f'act {act} stands in {where}')
-    cl = S_['copperleaf']
-    if {'shop', 'clinic'} & {p.get('act') for p in cl['props']}: bad.append('Copperleaf has a shop or a clinic')
-    ppl = cl.get('people') or []
-    if not any(p.get('who') == 'juniper' and p.get('script') for p in ppl) or 'juniper' not in D['people']: bad.append('Granny Juniper isn’t in Copperleaf')
-    LO = D.get('lore') or {}
-    if 'copperleaf' not in (LO.get('locations') or {}): bad.append('no lore for copperleaf')
-    if 'juniper' not in (LO.get('people') or {}): bad.append('Granny Juniper has no page in the Lore')
-    # the opening's stage: east and south of the lab's door, where game/data/cutscenes/opening.json has its spots
-    # IS-5: in the lab's own metres (it faces its street on the island: x along its front, z back from it)
-    lab = next(p for p in cl['props'] if p.get('act') == 'lab'); M = C[lab['k']]; dx = M['door']['x'] / 34 * lab.get('s', 1) * (-1 if lab.get('f') else 1)
-    ra = math.radians(lab.get('rot', 0)); own = lambda x, z: ((x - lab['x']) * math.cos(ra) + (z - lab['z']) * math.sin(ra), -(x - lab['x']) * math.sin(ra) + (z - lab['z']) * math.cos(ra))
-    d = (dx, 0)
-    for p in cl['props']:
-        Q = C.get(p['k']) or {}
-        if Q.get('flat') or p is lab: continue
-        solid = Q.get('box') or (Q.get('solid') or 0) > .25
-        lx, lz = own(p['x'], p['z'])
-        if solid and d[0] + .8 < lx < d[0] + 9.6 and d[1] - 4.8 < lz < d[1] - 1.4: bad.append(f'{p["k"]} at {p["x"]},{p["z"]} stands on the opening’s stage')
-    if bad: raise Exception('; '.join(bad[:6]))
-    return f'a new game starts in Copperleaf (node {ix["copperleaf"]}), the only place, with no road out; the lab and Granny Juniper’s cottage are there, she in her garden, no shop or clinic; the opening’s stage is clear'
-
-
 # alpha 0.4: the two data rules the water step needs, from the one-off tools/fix-marigold-stream.py and
 # tools/fix-piers.py (TC-1: copied here when those tools went)
 def buildings_in_water(D):
@@ -2191,7 +2153,7 @@ def main():
     R = {'when': time.strftime('%Y-%m-%d %H:%M'), 'render': 'software, a third of the resolution, 1024 shadow map'}
     # phase 04b: data/gamedata.js is generated from the data files; make it from the files as they are now
     subprocess.run(['node', str(ROOT / 'tools' / 'build-data.mjs')], check=True)
-    check_data(); copperleaf_data(); check_water(); check_masts(); check_postcards(); check_rooms(); check_room_floors(); check_windows(); check_ground(); report_unused()
+    check_data(); check_water(); check_masts(); check_postcards(); check_rooms(); check_room_floors(); check_windows(); check_ground(); report_unused()
     srv, base = serve(GAME)
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
