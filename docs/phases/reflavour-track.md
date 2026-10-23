@@ -69,7 +69,7 @@ keep its keys, change only the text), the Studio's labels for these sections, th
 
 **The game: Pocket B&B².** The ² is a small raised capital **B**, not a 2: the logo reads "Pocket B&B" with a
 superscript B. Where text can't raise a letter (page titles, the manifest, file names, the debug log) it needs a plain
-form (5).
+form: "Pocket B&Bᴮ" (5.1).
 
 **The organization: the Bureau of Lost, Found and Beans.** Secret and bureaucratic (nothing from Control or the SCP
 Foundation). It files everything that falls through a portal, you included, as "lost", and "returns" it to the drop
@@ -78,18 +78,16 @@ the Beans are. The clones are the billionaires' doing; the Bureau contains and s
 "retrieval units" (roguelite-track.md 9.2).
 
 **The capsules: pyramids.** Thrown at a tired Billie; it tumbles, lands point up and seals. Four tiers replace the four
-coins. Draft names (5): **Pyramid** (was Copper Coin), **Step Pyramid** (Silver, 1.5×), **Gold Pyramid** (Gold, 2×),
+coins. Names (5.3): **Pyramid** (was Copper Coin), **Step Pyramid** (Silver, 1.5×), **Gold Pyramid** (Gold, 2×),
 **Capstone** (Platinum: never fails, from badges and bosses).
 
 ## 5. Ask me before
 
-1. **The game's name in plain text** (where a raised B can't be drawn): "Pocket B&Bᴮ" with the Unicode modifier
-   letter ᴮ (recommended; it may draw small or missing in some fonts) / "Pocket B&B^B" / "Pocket B&BB" / "Pocket B&B²"
-   as written.
-2. **The Beans:** a running joke never explained (recommended) / a story clue (what the Bureau really collects) /
-   decide in RL-S1.
-3. **The pyramids' names:** 4's drafts (recommended) / your own. The owner may want the pyramid-scheme joke in their
-   text or not (the Billies are the one finance thing left).
+1. **The game's name in plain text:** answered 2026-10-23: **"Pocket B&Bᴮ"** (the Unicode modifier letter ᴮ) wherever
+   a raised B can't be drawn; check it on the phone's fonts in RF-6.
+2. **The Beans:** answered 2026-10-23: **a running joke, never explained.**
+3. **The pyramids' names:** answered 2026-10-23: **4's drafts** (Pyramid, Step Pyramid, Gold Pyramid, Capstone), their
+   text **plain for now** (no pyramid-scheme joke).
 4. **The coins' symbol:** the ruble sign ₽ is a real currency sign (it's what "₽-style" would print), and Pokémon's
    own sign is a custom glyph. Recommended: a small coin icon of the game's own beside the number, no text symbol /
    "c" after the number / ₽ anyway.
