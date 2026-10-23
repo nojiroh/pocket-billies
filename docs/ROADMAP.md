@@ -72,7 +72,9 @@ town node needs it.
 - **Test cleanup track** (docs/phases/test-cleanup-track.md, planned 2026-10-23): make every check and test fit the
   roguelite game. TC-1 delete the outdated and useless ones, TC-2 rewrite the rest onto the hub and run worlds (off
   the parked old world), TC-3 rename and fix what stays in check-quick, TC-4 speed (shared helpers, fixtures, the
-  budgets, the picture baseline). About 4-5 sessions; seven "Ask me before" items. Tags `tc-N-done`.
+  budgets, the picture baseline). About 4-5 sessions; seven "Ask me before" items. Tags `tc-N-done`. First, alone:
+  fix the three camera checks main's fast check fails. Can also run as lanes A-E in three rounds (the file's
+  "Running sessions in parallel").
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all
