@@ -5,7 +5,7 @@
     python3 tools/check-quick.py                 # data, code, shaders, every scene once, the main flows
     python3 tools/check-quick.py --smoke         # the fast subset: the data, Start-Game on a phone + debug log, the in-game test's first step
     python3 tools/check-quick.py --selftest      # the game's own full test and diagnostics test, whole (about 25 minutes)
-    python3 tools/check-quick.py --steps=v34,battle   # only the steps whose names hold these words
+    python3 tools/check-quick.py --steps=running,lamps # only the steps whose names hold these words
     python3 tools/check-quick.py --tests         # also draw every test scene and take its pictures (the walking checks
                                                  # of the test scenes always run; they need no drawing)
 
@@ -81,7 +81,7 @@ def step(name, limit):
     happened in our code, what was on screen, and a picture (fail-<step>.webp)"""
     def wrap(fn):
         def run(*a, **k):
-            # v34: --steps=v34,battle runs only the steps whose name holds one of those words (the scenes still load)
+            # v34: --steps=running,lamps runs only the steps whose name holds one of those words (the scenes still load)
             if STEPS and not any(w.lower() in name.lower() for w in STEPS):
                 return None
             log(name); t = time.time(); ok = True; note = ''; t0 = page_now(); where = ''
