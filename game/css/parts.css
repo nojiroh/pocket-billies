@@ -536,12 +536,11 @@ section > h2,
   gap: 8px;
   margin-top: 12px;
 }
+/* a UI icon: fixed-colour pixel art (tools/build-ui-icons.py), shown as it is on both themes */
 .uico {
   display: inline-block;
   flex: none;
-  background: currentColor;
-  -webkit-mask: var(--ico) center/contain no-repeat;
-  mask: var(--ico) center/contain no-repeat;
+  background: var(--ico) center/contain no-repeat;
 }
 .boot {
   min-height: 70vh;

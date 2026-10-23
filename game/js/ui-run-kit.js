@@ -44,7 +44,7 @@ expose({
 /* Lit's html, css, LitElement and nothing, and reduced(), come from js/ui-kit.js (one name each on the page) */
 const runSvg = /** @type {any} */ (self).PB_LIT.svg;
 
-/* a UI icon (game/art/ui/<key>.svg) as a mask tinted by the text colour, found as art.js finds it (the bundled
+/* a UI icon (game/art/ui/<key>.svg), fixed-colour pixel art shown as an image, found as art.js finds it (the bundled
    build inlines them in NW_ART; a page outside game/ sets NW_ARTDIR) */
 const runIconURL = (/** @type {string} */ k) => {
   const w = /** @type {any} */ (self);
@@ -124,9 +124,7 @@ const runKitBase = css`
     flex: none;
     width: 18px;
     height: 18px;
-    background: currentColor;
-    -webkit-mask: var(--ico) center / contain no-repeat;
-    mask: var(--ico) center / contain no-repeat;
+    background: var(--ico) center / contain no-repeat;
   }
 `;
 /* the reward motions (css/motion.css m-slam, m-flip), repeated for the shadow styles */
