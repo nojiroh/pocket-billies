@@ -31,15 +31,15 @@ test('effects: no rows change nothing (exactly the number given)', () => {
 });
 
 test('effects: fxRows tags each row with its Perk, in the order held; an unknown id gives none', () => {
-  const fx = E.fxRows(['shelter', 'nope', 'offshore'], PERKS);
+  const fx = E.fxRows(['clinic_card', 'nope', 'lucky_charm'], PERKS);
   assert.deepEqual(
     fx.map(f => [f.src, f.kind]),
     [
-      ['shelter', 'price'],
-      ['offshore', 'money'],
+      ['clinic_card', 'price'],
+      ['lucky_charm', 'money'],
     ]
   );
-  assert.equal(PERKS.shelter.fx[0].src, undefined, 'the data is not changed');
+  assert.equal(PERKS.clinic_card.fx[0].src, undefined, 'the data is not changed');
 });
 
 test('effects: each kind at its point, and only there', () => {

@@ -32,7 +32,7 @@ test('economy: the run’s rewards, clinic, shop, Perk prices, payout and unlock
   for (const k of Object.keys(R.perks.price)) assert.ok(paths.has(`rules.run.perks.price.${k}`));
   for (const k of Object.keys(R.payout)) assert.ok(paths.has(`rules.run.payout.${k}`));
   for (const [k, U] of Object.entries(GAME_DATA.unlocks)) if (!U.when) assert.ok(paths.has(`unlocks.${k}.cost`), k);
-  assert.ok(paths.has('perks.offshore.fx.0.mult'), 'a money Perk');
+  assert.ok(paths.has('perks.lucky_charm.fx.0.mult'), 'a money Perk');
   const ranch = economyLines(GAME_DATA).find(l => l.path === 'unlocks.ranch_2.cost');
   assert.equal(ranch.currency, 'scrap', 'paid in its building’s currency');
 });

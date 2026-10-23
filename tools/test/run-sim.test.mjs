@@ -60,24 +60,26 @@ test('run sim: the policy answers a Perk on offer: greedy takes the rarest, neve
     rule = GAME_DATA.rules.run.perks,
     greedy = SIM_POLICIES['greedy-forward'],
     never = SIM_POLICIES['never-pick'];
-  assert.deepEqual(simPerkChoice(['offshore', 'hedge', 'insider'], [], PERKS, rule, greedy), { id: 'hedge' });
+  assert.deepEqual(simPerkChoice(['lucky_charm', 'bubble_wrap', 'running_shoes'], [], PERKS, rule, greedy), {
+    id: 'bubble_wrap',
+  });
   assert.deepEqual(
-    simPerkChoice(['shelter', 'offshore'], [], PERKS, rule, greedy),
-    { id: 'offshore' },
+    simPerkChoice(['clinic_card', 'lucky_charm'], [], PERKS, rule, greedy),
+    { id: 'lucky_charm' },
     'then in perks.json order'
   );
-  assert.equal(simPerkChoice(['hedge'], [], PERKS, rule, never), null);
-  const full = ['offshore', 'shelter', 'lobbyist', 'fineprint', 'insider', 'severance'];
+  assert.equal(simPerkChoice(['bubble_wrap'], [], PERKS, rule, never), null);
+  const full = ['lucky_charm', 'clinic_card', 'coupon_book', 'steady_hand', 'running_shoes', 'trail_snacks'];
   assert.equal(full.length, rule.cap);
   assert.deepEqual(
-    simPerkChoice(['hedge'], full, PERKS, rule, greedy),
-    { id: 'hedge', drop: 'fineprint' },
+    simPerkChoice(['bubble_wrap'], full, PERKS, rule, greedy),
+    { id: 'bubble_wrap', drop: 'steady_hand' },
     'past the cap: the last common one in perks.json'
   );
   assert.equal(
     simPerkChoice(
-      ['offshore'],
-      ['insider', 'takeover', 'hedge', 'severance', 'options', 'writeoff'],
+      ['lucky_charm'],
+      ['running_shoes', 'power_gloves', 'bubble_wrap', 'trail_snacks', 'field_notebook', 'lost_property'],
       PERKS,
       rule,
       greedy
@@ -86,10 +88,10 @@ test('run sim: the policy answers a Perk on offer: greedy takes the rarest, neve
     'no rarer'
   );
   /* and on a run: the pick answered through perks.js perkChoose, as perk-screen.js does */
-  const run = { seed: 'P', perks: [], offer: ['offshore', 'hedge', 'insider'] },
+  const run = { seed: 'P', perks: [], offer: ['lucky_charm', 'bubble_wrap', 'running_shoes'] },
     c = simPerkChoice(run.offer, run.perks, PERKS, rule, greedy);
   assert.equal(modules.perks.perkChoose(run, c.id, PERKS, rule, c.drop), '');
-  assert.deepEqual(run.perks, ['hedge']);
+  assert.deepEqual(run.perks, ['bubble_wrap']);
   assert.equal(run.offer, null);
 });
 
