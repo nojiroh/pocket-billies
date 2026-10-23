@@ -250,11 +250,13 @@ async function runFullTest(mode) {
       'Frame budget',
       'Rain and night',
       'Battle on the 3D stage',
+      /* 0.1.0 alpha: the map's first open, timed (the owner finds it slow) */
+      'World map',
       'Memory',
     ];
   }
   const total = diag
-    ? scenes.length * 4 + 1 + 1 + 6 + 10 + 6 + 1
+    ? scenes.length * 4 + 1 + 1 + 6 + 10 + 6 + 8 + 1
     : scenes.length * 4 + 1 + 5 + 8 + 6 + 5 + 8 + 8 + 6 + 6 + 10 + 8 + 8 + 1 + 40;
   let done = 0;
   const tick = s => {
