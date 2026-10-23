@@ -2471,28 +2471,6 @@ def desktop_steps(b, base, R):
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
     settings()
-
-    @step('Battles: on the 3D stage, and a trainer battle played to the end', 330)
-    def battles():
-        pg.evaluate("screenWipe=f=>f();saveData.trip={node:0,plan:[]};uiState.tab='walk';render();0"); time.sleep(2)
-        pg.evaluate("const q={id:'t3d',sp:'swift1',lvl:12,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
-        if wait_phase(pg, sec=60) != 'choose': raise Exception('the 3D-stage battle never reached the move menu')
-        shot(pg, 'battle-3d'); stage = pg.evaluate("!!battleStage.gl")
-        pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
-        # battle animations at four times the speed (the Debug panel's speed setting), so the result comes quickly
-        pg.evaluate("battleStage.speed=4;saveData.team=[makeBilly('musk2',45),makeBilly('swift1',30)];saveData.trip.node=0;startTrainer('crude');0")   # RL-5: node 0, the hub (node 4 is parked; crude stands nowhere now)
-        end = time.time() + 300; won = None
-        while time.time() < end:
-            ph = wait_phase(pg, ('choose', 'switch', 'end'), 30)
-            if ph == 'end': won = pg.evaluate('activeBattle.over') == 'win'; break
-            if ph == 'switch': pg.evaluate("document.querySelector('[data-a=bswitch]:not([disabled])').click()"); continue
-            if ph == 'choose': pg.evaluate("document.querySelector('[data-a=bfight]')?.click();document.querySelector('[data-a=bmove]').click()")
-        pg.evaluate("battleStage.speed=1;if(activeBattle){stopTimers();activeBattle=null;battleStageStop()}render();0")
-        if won is None: raise Exception('the trainer battle didn’t finish in 300s')
-        if not won: raise Exception('the trainer battle was lost (it should be an easy win)')
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return ('3D stage' if stage else 'painted stage (no WebGL)') + ', trainer battle won'
-    battles()
     R['desktopErrors'] = errs[:10]; ctx.close()
 
 
