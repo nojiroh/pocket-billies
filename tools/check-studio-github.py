@@ -65,7 +65,7 @@ class Quiet(SimpleHTTPRequestHandler):
 def play_from_here(pg, errs):
     """Project Story S3: Play from here opens the game in Copperleaf on the picked spot, at the preview's preset with a
     trainer switched to beaten, and with the Studio's unsaved script; nothing is saved there."""
-    pg.evaluate("studioState.D.trainers.crude.script.splice(1, 0, '  set s3_draft'); mapEditor.story.flags = {'beat:chad': true}; mapEditor.story.v++")
+    pg.evaluate("studioState.D.trainers.crude.script.splice(1, 0, '  set s3_draft'); mapEditor.story.flags = {'beat:crude': true}; mapEditor.story.v++")
     pg.locator('#scStory [data-act="scPlaySpot"]').click()
     pg.locator('#scMap').scroll_into_view_if_needed()
     box = pg.locator('#scMap').bounding_box()
@@ -81,11 +81,15 @@ def play_from_here(pg, errs):
             if gp.evaluate("typeof saveData!=='undefined' && typeof uiState!=='undefined' && uiState.tab==='walk' && !!saveData.started"): break
         except Exception: pass
         time.sleep(0.5)
+    # the game waits 2 s at most for the Studio's draft, then starts and takes it live when it comes (game/js/boot.js
+    # studioDraftReady); with software drawing the busy Studio page can answer later than that
+    t0 = time.time()
+    while time.time() - t0 < 15 and not gp.evaluate("gameData.trainers.crude.script.includes('  set s3_draft')"): time.sleep(0.5)
     got = gp.evaluate("""[LOCATIONS[saveData.trip.node].id, uiState.roam && [uiState.roam.x, uiState.roam.z], saveData.story.rival0,
-        saveData.flags.chad, gameData.trainers.crude.script.includes('  set s3_draft'), Object.keys(localStorage).filter(k => k.startsWith('networth-save'))]""")
+        saveData.flags.crude, gameData.trainers.crude.script.includes('  set s3_draft'), Object.keys(localStorage).filter(k => k.startsWith('networth-save'))]""")
     want = ['copperleaf', spot, 'win', 1, True, []]
     if got != want: errs.append(f'story: Play from here gave {got}, wanted {want}')
-    else: print(f'Play from here: Copperleaf at {spot}, after-opening, chad beaten, the draft script, no save', flush=True)
+    else: print(f'Play from here: Copperleaf at {spot}, after-opening, crude beaten, the draft script, no save', flush=True)
     gp.close()
     pg.evaluate("studioState.D.trainers.crude.script.splice(1, 1); mapEditor.story.flags = {}; mapEditor.playAt = null; mapEditor.story.v++")
 
@@ -182,16 +186,17 @@ def story_steps(pg, errs):
     pg.evaluate("studioState.sel.scene='copperleaf'; void openSection('scenes')")
     time.sleep(1)
     if not pg.locator('textarea[data-script="person:juniper"]').count(): errs.append('story: no script field for Juniper in Copperleaf')
-    # the story preview: Juniper only while met_blake0 holds; on at a new game she is hidden, the preset brings her back
-    pg.evaluate("studioState.D.maps.copperleaf.people[0].when = 'met_blake0'; render()")
+    # the story preview: Juniper only while a flag of this check's own holds (no story sets it); on at a new game she
+    # is hidden, the flag's chip brings her back, and picking a preset starts from its own flags again (hidden)
+    pg.evaluate("studioState.D.maps.copperleaf.people[0].when = 'check_flag'; render()")
     time.sleep(1)
     pg.locator('#scStoryOn').check()
     time.sleep(0.4)
     a = pg.locator('#scStory').inner_text()
-    pg.select_option('#scStoryPreset', 'after-opening')
+    pg.locator('#scStory [data-act="scStoryFlag"][data-f="check_flag"]').click()
     time.sleep(0.4)
     b = pg.locator('#scStory').inner_text()
-    pg.locator('#scStory [data-act="scStoryFlag"][data-f="met_blake0"]').click()
+    pg.select_option('#scStoryPreset', 'after-opening')
     time.sleep(0.4)
     c = pg.locator('#scStory').inner_text()
     if '1 hidden' not in a or 'Everyone is here' not in b or '1 hidden' not in c:
