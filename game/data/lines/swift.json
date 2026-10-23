@@ -36,6 +36,11 @@
   {"k":"lvl","at":36}
  ],
  "parody": "Taylor Swift",
+ "cry": [
+  {"base":"bird","pitch":72,"length":0.7,"name":"placeholder: a fledgling's peep (Claude's draft)"},
+  {"base":"bird","pitch":67,"length":0.9,"name":"placeholder: a sung chirp (Claude's draft)"},
+  {"base":"bird","pitch":62,"length":1.1,"name":"placeholder: an era's long call (Claude's draft)"}
+ ],
  "parts": [
   {"head":"sparrow_head","body":"sparrow_torso","front":"hawk_wing","back":"sparrow_foot","sig":"duck_tail"},
   {"head":"sparrow_head","body":"sparrow_torso","front":"hawk_wing","back":"sparrow_foot","sig":"duck_tail"},

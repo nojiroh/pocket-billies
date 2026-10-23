@@ -39,6 +39,12 @@
   {"k":"split","at":32}
  ],
  "parody": "Bill Gates",
+ "cry": [
+  {"base":"beast","pitch":64,"length":0.8,"name":"placeholder: a kid goat's bleat (Claude's draft)"},
+  {"base":"beast","pitch":57,"length":1,"name":"placeholder: a goat's bleat (Claude's draft)"},
+  {"base":"machine","pitch":58,"length":1.1,"name":"placeholder: a start-up chime (Claude's draft)"},
+  {"base":"beast","pitch":48,"length":1.4,"name":"placeholder: a deep, slow bleat (Claude's draft)"}
+ ],
  "parts": [
   {"head":"rabbit_head","body":"rabbit_torso","front":"rabbit_arm","back":"rabbit_leg","sig":"rabbit_tail"},
   {"head":"rabbit_head","body":"rabbit_torso","front":"rabbit_arm","back":"rabbit_leg","sig":"rabbit_tail"},

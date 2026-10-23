@@ -157,13 +157,13 @@ export function musicSongUses(music, more = {}) {
  * the music's problems: errors (a rule names no song, a node type or biome that doesn't exist, a last rule that
  * doesn't always match, a place's song that isn't one) and warnings (a song nothing plays). Each says which song or
  * rule (its index) it is about, so the Studio can show it. SND-4: notes (info) on hooks and jingles still named as
- * placeholders
- * @param {{songs: Record<string, any>, where: Record<string, any>[], jingles?: Record<string, any>}} music
- * @param {{nodeTypes?: Record<string, unknown>, biomes?: Record<string, unknown>, locations?: any[], scriptText?: string}} [more]
- * @returns {{lvl: 'error' | 'warn' | 'info', msg: string, song?: string, jingle?: string, rule?: number, place?: string}[]}
+ * placeholders; SND-6: on base cries and the species' cries (more.lines) too
+ * @param {{songs: Record<string, any>, where: Record<string, any>[], jingles?: Record<string, any>, cries?: {bases?: Record<string, any>}}} music
+ * @param {{nodeTypes?: Record<string, unknown>, biomes?: Record<string, unknown>, locations?: any[], scriptText?: string, lines?: {id: string, names: string[], cry?: any[]}[]}} [more]
+ * @returns {{lvl: 'error' | 'warn' | 'info', msg: string, song?: string, jingle?: string, cry?: string, rule?: number, place?: string}[]}
  */
 export function musicFindings(music, more = {}) {
-  /** @type {{lvl: 'error' | 'warn' | 'info', msg: string, song?: string, jingle?: string, rule?: number, place?: string}[]} */
+  /** @type {{lvl: 'error' | 'warn' | 'info', msg: string, song?: string, jingle?: string, cry?: string, rule?: number, place?: string}[]} */
   const out = [];
   const songs = music.songs || {},
     where = music.where || [];
@@ -203,6 +203,23 @@ export function musicFindings(music, more = {}) {
       lvl: 'info',
       msg: `placeholder jingles (${jinglesLeft.length}): ${jinglesLeft.join(', ')}. Keep, change or rename each`,
       jingle: jinglesLeft[0],
+    });
+  /* SND-6: base cries and the species' own cries still named as placeholders */
+  const bases = (music.cries && music.cries.bases) || {},
+    basesLeft = Object.keys(bases).filter(k => isMusicPlaceholder(bases[k] && bases[k].name));
+  if (basesLeft.length)
+    out.push({
+      lvl: 'info',
+      msg: `placeholder base cries (${basesLeft.length}): ${basesLeft.join(', ')}. Keep, change or rename each`,
+      cry: basesLeft[0],
+    });
+  const criesLeft = (more.lines || []).flatMap(L =>
+    L.names.filter((n, i) => isMusicPlaceholder(((L.cry || [])[i] || {}).name)).map(n => n)
+  );
+  if (criesLeft.length)
+    out.push({
+      lvl: 'info',
+      msg: `placeholder Billie cries (${criesLeft.length}): ${criesLeft.join(', ')}. Keep, change or rename each in its Cry card`,
     });
   return out;
 }

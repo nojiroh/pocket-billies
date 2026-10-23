@@ -14,7 +14,7 @@
   "evo": {"type": "array"},
   "split": {"type": "boolean"},
   "parody": {"type": "string"},
-  "cry": {"description": "SND-3: each stage's cry: a base (SND-6: a kind in music.json cries.bases, e.g. beast), a pitch (the first note, midi) and a length (1 as long as the cries made from the id); null, or a key left out, takes what the id makes", "type": "array", "items": {"oneOf": [{"type": "null"}, {"type": "object", "additionalProperties": false, "properties": {"base": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}, "pitch": {"type": "integer", "minimum": 24, "maximum": 96}, "length": {"type": "number", "minimum": 0.25, "maximum": 4}}}]}},
+  "cry": {"description": "SND-3: each stage's cry: a base (SND-6: a kind in music.json cries.bases, e.g. beast), a pitch (the first note, midi) and a length (1 as long as the cries made from the id); null, or a key left out, takes what the id makes", "type": "array", "items": {"oneOf": [{"type": "null"}, {"type": "object", "additionalProperties": false, "properties": {"base": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}, "pitch": {"type": "integer", "minimum": 24, "maximum": 96}, "length": {"type": "number", "minimum": 0.25, "maximum": 4}, "name": {"description": "SND-6: a name for the cry. Claude's drafts start with \"placeholder\" (the Studio's Check lists them)", "type": "string", "maxLength": 80}}}]}},
   "parts": {"description": "phase 16: each stage's native parts (its fitting set), a kit part id (partKits.json parts) per slot of rules.json parts.slots; written by tools/build-kit-billies.py", "type": "array", "items": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[a-z0-9_]+$"}}}
  }
 }

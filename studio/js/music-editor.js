@@ -589,7 +589,12 @@ function musicCryCardHTML(L, li, st) {
         ph: `${made.pitch} (${musicNoteName(made.pitch)}, from its id)`,
         help: 'The first note, as a midi note (60 is middle C).',
       }),
-      numberField('Length', `${p}.length`, { opt: 1, min: 0.25, max: 4, step: 0.05, ph: '1 (from its id)', unit: '×' })
+      numberField('Length', `${p}.length`, { opt: 1, min: 0.25, max: 4, step: 0.05, ph: '1 (from its id)', unit: '×' }),
+      textField('Name', `${p}.name`, {
+        opt: 1,
+        ph: 'unnamed',
+        help: 'Claude’s drafts start with “placeholder”; the Check lists them until you rename them.',
+      })
     ) +
     `<div class="seg-row"><button class="btn primary" data-act="musCry" data-sp="${escapeHtml(sp)}" data-li="${li}" data-st="${st}">▶ Cry</button><button class="btn" data-act="musCry" data-sp="${escapeHtml(sp)}" data-li="${li}" data-st="${st}" data-low="1" title="A preview: what the game does with it comes in SND-6">▶ Low on health</button>${own ? `<button class="btn subtle" data-act="musCryReset" data-li="${li}" data-st="${st}">Use the cry its id makes</button>` : ''}</div>`;
   return card('Cry', body, {
@@ -647,6 +652,7 @@ function musicCheckFindings() {
     biomes: D.biomes || {},
     locations: [...(D.locations || []), ...parked],
     scriptText: JSON.stringify([D.story, D.trainers, D.cutscenes, legacyView.data ? legacyView.data.trainers : null]),
+    lines: D.lines,
   })) {
     if (f.lvl === 'warn' && !legacyView.data) continue;
     const sel = f.song
@@ -656,6 +662,12 @@ function musicCheckFindings() {
         : f.rule != null
           ? { musicTab: 'where', musicRule: f.rule }
           : {};
+    /* SND-6: the Billies' own cries are edited on the Billies page; the base cries on the Sounds tab */
+    if (/^placeholder Billie cries/.test(f.msg)) {
+      out.push({ lvl: f.lvl, msg: `Music: ${f.msg}`, go: 'billionaires', sel: {} });
+      continue;
+    }
+    if (f.cry) sel.musicTab = 'sounds';
     out.push({ lvl: f.lvl, msg: `Music: ${f.msg}`, go: f.place ? 'world' : 'music', sel: f.place ? {} : sel });
   }
   const species = D.lines.flatMap(L => L.names.map((n, i) => (L.cry || [])[i])),
@@ -663,7 +675,7 @@ function musicCheckFindings() {
   if (own < species.length)
     out.push({
       lvl: 'info',
-      msg: `Cries: ${species.length - own} of ${species.length} Billies use the cry their id makes. Set one in a Billy’s Cry card (sound track SND-6 gives each its own).`,
+      msg: `Cries: ${species.length - own} of ${species.length} Billies use the cry their id makes. Set one in a Billy’s Cry card.`,
       go: 'billionaires',
       sel: {},
     });
