@@ -2,7 +2,7 @@
    0.1.0 alpha (the owner: "around 5 specific times of day that I can tweak and stylize in the Studio"): the light of a
    walk scene comes from five looks, dawn, day, golden hour, dusk and night, blended by the hour. Each look is an engine
    group (todDawn ... todNight in ENGINE_DEFAULTS, game/data/engine.json, the Studio's Engine page). A look sits at an
-   hour tied to the season's sunrise or sunset (dawn: sunrise; day: midday; golden hour, dusk and night: sunset) plus its
+   hour tied to the season's sunrise or sunset (dawn and day: sunrise; golden hour, dusk and night: sunset) plus its
    own `at` (hours, may be negative), and is reached over its `blend` hours: before that the previous look holds. Colours
    blend in linear light. Weather, the scene's own look and the player's dials stay on top (environment.js). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -34,7 +34,7 @@ export const TIME_OF_DAY_GROUPS = {
   dusk: 'todDusk',
   night: 'todNight',
 };
-export const ANCHOR = { dawn: 'rise', day: 'noon', golden: 'set', dusk: 'set', night: 'set' };
+export const ANCHOR = { dawn: 'rise', day: 'rise', golden: 'set', dusk: 'set', night: 'set' };
 /** the fields that are colours ('#rrggbb'); every other field is a number */
 export const TIME_OF_DAY_COLOURS = [
   'skyTop',
@@ -79,8 +79,8 @@ export const TIME_OF_DAY_DEFAULTS = {
     stars: 0.15,
   },
   day: {
-    at: 0,
-    blend: 3,
+    at: 3,
+    blend: 2.5,
     skyTop: null,
     skyMid: null,
     skyLow: null,
@@ -213,7 +213,7 @@ export const wrap = h => ((h % 24) + 24) % 24;
  * @param {number} set sunset hour
  */
 export function timeOfDayHours(T, rise, set) {
-  const base = { rise, noon: (rise + set) / 2, set };
+  const base = { rise, set };
   return TIME_OF_DAY_KEYS.map(k => {
     const o = { ...TIME_OF_DAY_DEFAULTS[k], ...((T && T[k]) || {}) };
     return { k, at: wrap(base[ANCHOR[k]] + (+o.at || 0)), blend: Math.max(0.05, +o.blend || 0) };

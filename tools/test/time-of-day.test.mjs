@@ -30,7 +30,7 @@ test('each look sits at its anchor plus its own offset, in the day’s order', (
   );
   const at = Object.fromEntries(H.map(e => [e.k, e.at]));
   near(at.dawn, rise + TIME_OF_DAY_DEFAULTS.dawn.at);
-  near(at.day, (rise + set) / 2);
+  near(at.day, rise + TIME_OF_DAY_DEFAULTS.day.at);
   near(at.golden, set + TIME_OF_DAY_DEFAULTS.golden.at);
   near(at.dusk, set + TIME_OF_DAY_DEFAULTS.dusk.at);
   near(at.night, (set + TIME_OF_DAY_DEFAULTS.night.at) % 24);

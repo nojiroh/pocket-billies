@@ -427,6 +427,7 @@ function drawWalkFrame(ts, dtm) {
   /* v26: the hour, the weather and the season (environment.js) lean on the engine dials while this frame draws */
   engineContext.env = !sc.plain && typeof environment !== 'undefined' && (environment.on || !!environment.force);
   if (engineContext.env) environmentFrame(sc, dt);
+  else if (typeof environment !== 'undefined') environment.look = null; /* no time-of-day look left over */
   const gq = beginGpuTimer();
   try {
     drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0);

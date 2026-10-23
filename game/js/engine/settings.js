@@ -262,7 +262,7 @@ for (const k of TIME_OF_DAY_KEYS) ENGINE_DEFAULTS[TIME_OF_DAY_GROUPS[k]] = { ...
 /* 0.1.0 alpha: the dials of one time-of-day look, for the Studio */
 const TOD_NAMES = { dawn: 'dawn', day: 'day', golden: 'golden hour', dusk: 'dusk', night: 'night' };
 function todFields(k) {
-  const from = k === 'dawn' ? 'sunrise' : k === 'day' ? 'midday' : 'sunset';
+  const from = k === 'dawn' || k === 'day' ? 'sunrise' : 'sunset';
   return [
     [
       'at',
