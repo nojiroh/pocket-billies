@@ -1551,8 +1551,8 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     name_taxed_room_windows()
 
-    @step('alpha 0.2: the ground — natural terraces leave walking as it was, nothing floats', 600)
-    def a02_ground():
+    @step('Terraces leave walking as it was, nothing floats', 600)
+    def terraces_and_floating():
         """the land between metre corners is smooth and terraces of rock round off at the top and fan out at the foot:
         from every place's hub you reach exactly the same half-metre cells and exits as without that shaping, and no
         prop's base is more than 15 cm above the ground under its footprint (fences and the like follow the slope)"""
@@ -1574,7 +1574,7 @@ def desktop_steps(b, base, R):
         # only waited 60 s for a scene that no longer opens
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return f'{len(R2)} places: the same cells and exits reachable with natural terraces as without, no prop more than 15 cm off the ground'
-    a02_ground()
+    terraces_and_floating()
 
     # RL-5: 'alpha 0.2: places joined edge to edge — every seam walks straight across and both views agree there' retired: the hub has no neighbour, no road and no exit, so there is no seam, no stored walk and no underground neighbour to check (RL-7 joins a run's places)
 
