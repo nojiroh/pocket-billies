@@ -3,6 +3,7 @@
  "who": "poppy",
  "battleStage": "grass",
  "miniboss": true,
+ "type": "Grass",
  "blocks": false,
  "team": [
   {"sp":"bloomberg1","lvl":36},
