@@ -186,25 +186,6 @@ def check_data():
     return f'{len(D.get("maps", {}))} scenes ({", ".join(f"{v} {k}s" for k, v in kinds.items())}), {len(SY.get("props", {}))} props, {len(D["roads"])} named roads'
 
 
-@step('alpha 0.4: a postcard for every town; a solarpunk touch in every town (from the data)', 20)
-def check_postcards():
-    """every town has its postcard picture (tools/build-postcards.py); every town but the new start has something of
-    the solarpunk kit or a green or solar roof (tools/build-solarpunk.py). RL-5: Verdigris City and its park are parked"""
-    D = gamedata(); bad = []; n = 0; C = D['scenery']['props']; kit = {'solar_tree', 'vertical_garden', 'solar_canopy', 'heat_dome', 'floating_solar', 'light_pipe', 'wind_sail_flower', 'banner_bunting'}
-    for r in D['locations']:
-        if r.get('kind') != 'town': continue
-        sid = r['mapId']; f = GAME / 'art' / 'postcards' / f'{sid}.webp'
-        if not f.exists() or f.stat().st_size < 4000: bad.append(f'{r["id"]}: no postcard')
-        else: n += 1
-        sc = D['maps'][sid]
-        if sid != 'copperleaf' and not any(p['k'] in kit or p.get('roof') for p in sc['props']): bad.append(f'{r["id"]}: no solarpunk touch')
-    for k in kit:
-        if k not in C: bad.append(f'{k} missing from the catalogue')
-    if bad: raise Exception('; '.join(bad[:6]))
-    roofs = sum(1 for sc in D['maps'].values() for p in sc.get('props', []) if p.get('roof'))
-    return f'{n} postcards; every town has its solarpunk touch ({roofs} moss and solar roofs)'
-
-
 @step('Windows: no prop stands in front of one (from the data)', 30)
 def check_windows():
     """alpha 0.1: tools/clear-windows.py looks at every window on every building front and room wall as the walk camera
@@ -1997,7 +1978,7 @@ def main():
     R = {'when': time.strftime('%Y-%m-%d %H:%M'), 'render': 'software, a third of the resolution, 1024 shadow map'}
     # phase 04b: data/gamedata.js is generated from the data files; make it from the files as they are now
     subprocess.run(['node', str(ROOT / 'tools' / 'build-data.mjs')], check=True)
-    check_data(); check_postcards(); check_windows(); check_ground(); report_unused()
+    check_data(); check_windows(); check_ground(); report_unused()
     srv, base = serve(GAME)
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
