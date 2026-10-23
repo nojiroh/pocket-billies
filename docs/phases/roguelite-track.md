@@ -9,7 +9,8 @@ RL-0, planning only; nothing was built). It is a track like the Studio and Map g
 row of the table in section 1, each in Plan Mode first, one cause per commit, the quick check tiers of
 docs/TESTING.md after every change, a docs/HANDOFF.md entry and a tag `rl-N-done` at the end (tags are pushed from
 the owner's machine; sessions can't push them). Every number and line below was read at HEAD e3df43a; verify again
-before each session and correct this file where the code disagrees.
+before each session and correct this file where the code disagrees. **Section 9 (2026-10-23) restructures the track
+after RL-12a around regions, encounters and a story director; its order wins over section 1's.**
 
 ## 0. What the repo says today (verified at HEAD e3df43a, 2026-10-20)
 
@@ -477,6 +478,9 @@ Count: 14 parked items, 10 on the path.
 
 ## 1. The reworked roadmap (what docs/ROADMAP.md becomes when the plan is approved)
 
+**Restructured 2026-10-23 (section 9):** after RL-12a the order is section 9.4's (regions, encounters, story, then
+brackets, bots, online). The table below is the original plan.
+
 - The roguelite rework is the spine: one track, `docs/phases/roguelite-track.md`, sessions **RL-1..RL-16** (plus
   MG-2 pulled onto the path), each one session unless marked, tagged `rl-N-done`, a HANDOFF entry per session, Plan
   Mode first, one cause per commit, the quick check tiers of docs/TESTING.md after every change.
@@ -934,3 +938,172 @@ Decided this session: the rework is a track RL-N (`rl-N-done`); parked phases ar
 20. **Opening:** keep city → fall → Hazel/Blake and add Hazel's "the airship is waiting" lines (recommended) / shorten
     to the fall only for a faster first run. **Answered in RL-8: the fall only**, Blake cut from it (his data kept),
     Hazel's new lines send you to the mast.
+
+## 9. Regions, encounters and story: the restructure (the owner, 2026-10-23)
+
+A review of the track after RL-12a (planning only; nothing built). The owner's goal: a run should feel like a small
+Pokémon region, with ideas taken from PokeRogue, and the story should react to your runs the way Hades does. This
+section records the owner's answers, the new and changed sessions, and the new "Ask me before" items. Numbers below
+were read at 2361848; verify again before each session.
+
+**Words (2026-10-23, docs/phases/reflavour-track.md):** the owner moved the game off finance. Read Loopholes as
+**Perks**, Brackets as **Expeditions**, Capital as **Research**, Audit Seals as **Crests**, $ as **Coins**; catching is
+with pyramids. The organization is the Bureau of Lost, Found and Beans; the game is Pocket B&B² (9.5 is superseded by
+reflavour-track.md section 4).
+
+### 9.1 Why runs feel the same today (verified at 2361848)
+
+- **Wild Billies are the same 4 lines almost everywhere.** biomes.json points each biome at a legacy pool
+  (`lake` → `willowmere`, `ridge` → `kitewind`, `autumn` → `russetwood`); those pools list parked species (`ek0`,
+  `hughes0`, `woods1`...) that `standInSpecies` maps by hash onto the 4 uncommon lines. Only `grass` (meadow) and
+  `shell` (thicket) list the 7 real lines.
+- **Each place rolls its own biome** (rules.json `run.map.biomes`, 5 of the 11 biomes), so a run has no regional shape.
+- **One shape:** 9 rows, 5 node types (`landing`, `route`, `town`, `miniboss`, `boss`); the mini-bosses are the 8 old
+  leaders, whose teams are also mostly legacy ids.
+- **No story inside a run:** the professor, Hazel and Blake speak in the opening and the hub only; nothing reads a
+  run's history.
+- **Roster:** 7 lines, 24 species, 121 moves, 9 types.
+- **Balance:** the run sim loses every run on the placeholders (HANDOFF RL-8); content added before tuning hides this.
+
+### 9.2 The owner's answers
+
+| Topic | Answer |
+|---|---|
+| Run length | About 30 minutes at Bracket I; higher brackets add a zone or two |
+| Biomes in a run | A **region**: each seed rolls a theme with 3-4 zones in order; each zone is one biome over 2-3 rows; zones follow a **biome graph** (each biome lists its likely next ones) |
+| Run start | **Starter points from the first run**: the Billies at the ranch (team and storage) can start a run, each priced by strength, from a point budget (PokeRogue's budget, the owner's pool: 9.6, 24). Replaces RL-9b's "1 home Billie a run" pick |
+| Reward picks | **After trainer battles** (route trainers, leaders, rival, boss): pick 1 of 3, a paid reroll. Wild battles pay money and catches only |
+| Side areas | **Both**: small detours (an island, a cave or a grove: 1-2 routes, a town, its own species, trainers and boss, then back to the main path) on most runs, and rare **alternate paths** that replace part of the main path with a different mini-boss and possibly a different final boss. "It has to be a bit like he's in Pokémon" |
+| Field moves | **Surf** (Water), **Dig / Rock Smash** (Ground), **Cut / Overgrowth** (Grass) first |
+| Field move requirement | A Billie of the type **plus that type's badge** |
+| Badges | **Carry over** between runs (meta): a field move opens for good once its badge is won |
+| Why you return after losing | **Both**: Professor Chosen loudly takes credit for "saving" you; Hazel quietly finds the organization's portal is the real cause. Funny up front, eerie underneath |
+| The organization | **The villain team of the runs, bots are its army**; the Voltron is its first big weapon. Claude drafts 3 name options (9.5) |
+| Blake | **A rival in runs**: 1-2 times a run, his team built against your starter, growing over your runs, lines that remember past fights |
+| Hub characters | **Lines and relationships** (Hades): they react to your run history; gifts or favours unlock lines, cosmetics or small run bonuses |
+| Story arc | **One chapter per bracket** (five); each ends with its boss and reveals part of the mystery; hub lines fill in between |
+| Roster | **About 40 species plus regional forms** (a coat and a type swap) |
+| Challenge and endless modes | Challenges (mono-type, no healing...) in RL-13 as modifiers; endless mode after RL-15 |
+| Writing | Claude drafts events and lines in the house tone; the owner edits and approves before they go in |
+| Order | **Region → encounters → story**, then the rest |
+
+### 9.3 Conflicts the answers create (recommendations; the owner decides, 9.6)
+
+- **Kept badges vs badge Loopholes (section 3, RL-13).** A badge can't be both a permanent unlock and a run-only
+  Loophole. Recommended: the first win against a leader of a type records the badge in `meta.badges` (permanent, opens
+  that field move); the leader's prize in the run is the existing pick of 3 Loopholes. Section 3's "the badge as a run
+  relic" is dropped.
+- **Starter points vs RL-9b.** The mast's "pick 1 home Billie" screen becomes the starter-points screen; the packed bag
+  stays. A ranch-trained Billie keeps its trained level on the run; its cost must account for that (9.6).
+- **Kept badges vs runs only 2 leaders.** With 2 mini-bosses a run, the three field-move badges (Marina: Water,
+  Rocco: Ground, Poppy: Grass) take several runs to collect. That is the intended unlock curve; the region picks its
+  leaders from its types, so a coastal region tends to offer Marina.
+- **Side areas vs the seam model.** A side area can't hang off a 112 x 64 scene's free sides without breaking the
+  seam rules. Recommended: a side area is its own small branch of the run map, entered by a **field link** (a dock,
+  a cave mouth, an overgrown arch: a prop with an act, like the airship's mast) that plays a short travel moment and
+  puts you at the area's first place. Its places are ordinary run scenes joined by seams among themselves. It costs
+  days on the clock like any place.
+- **Biome art.** Only meadow, lake, thicket, ridge and autumn have finished plants. A region theme can only use
+  finished biomes; a sea or cave side area needs its kit (a cove/beach scene from the island track's work, a cave
+  scene type). Volcanic, frozen and jungle themes wait for their biomes' props (phase 09 / terrain track).
+
+### 9.4 The new and changed sessions (order as the owner chose)
+
+| # | Session | Goal | Depends on | Sessions |
+|---|---|---|---|---|
+| RO-1 | Roster: real pools and regional forms | every biome pool lists real lines (no stand-ins in runs); `forms` on lines (a coat and a type swap, a regional name); the run's wild pick reads the region's dex | none (alongside) | 1 |
+| RL-R1 | Region generator | `regions.json` themes (zones, biome graph, type leanings, name parts); `runRegionMake(seed)` → name, zones, regional dex (15-25 species and forms), leader picks by type; `run.map` rows follow the zones; the bowl shows zone bands and the region's name | RO-1 | 1-2 |
+| RL-R2 | Side areas and field moves | `run.map` side branches (detours on most runs, rare alternate paths with their own mini-boss/boss); field links (dock, cave mouth, overgrown arch) with a travel moment; `meta.badges`; Surf, Dig, Cut checks (type + badge); a cave scene type and a cove scene from the island kit | RL-R1 | 2 |
+| RL-12b | Encounters (was "events and waystations") | `events.json` PokeRogue-style: 2-3 options with requirements (a type in the team, an item, money, a badge, a relationship) and outcomes as effect rows and script commands (`relic`, `wager`, `give`, `battle`); waystation places; **reward picks after trainer battles** (`rewards.json`: items, move tutors, candy levels, evolution items; a paid reroll); route trainers who battle on sight; the no-two-shops rule; first 15-20 events drafted by Claude, approved by the owner | RL-R1 | 2 |
+| RL-S1 | Story director | `meta.history` (the last 20 runs: seed, region, result, what beat you, team, Loopholes, leaders, rival result); `lines.json` (who, text, `when`, priority, `once`, cooldown, `must`) on the story layer's conditions plus new kinds (`last:`, `history:`, `rel:`, `chapter:`); `storyPick(who)` on each return to the hub; leaders and agents' in-run lines from the same table; the return-from-a-loss scene (Chosen's credit, Hazel's doubt) | RL-12b | 1-2 |
+| RL-S2 | Rival and relationships | Blake as a `rival` node (shared with RL-15's ghost node): `rivalTeam(starter, history, row)` counters your starter and grows over runs; `meta.rel` per hub character, gifts and favours, what each level unlocks; Chapter 1's beats | RL-S1 | 1-2 |
+| RL-13 | Brackets, challenges, starter points | `modifiers.json` brackets I-V (as section 3), challenge modes as modifiers (mono-type, no healing, ...); **starter points**: species unlocked by catching, a cost per species and stage, a budget by bracket, the mast's pick reworked; the region's leaders as the mini-boss pool | RL-R2 | 1-2 |
+| RL-14 | The organization's bots, salvage, the Voltron | as section 4, with the bots as the organization's army: its agents as trainers and events, the Voltron as Chapter 1's boss | RL-13, RL-S1 | 2 |
+| RL-15 | Online | as section 4; the ghost node shares RL-S2's `rival` node | RL-14 | 2 |
+| RL-16 | Content packs and Studio editors | as section 4, plus editors for `regions`, `events`, `rewards`, `lines` | RL-11 | 1-2 |
+| RO-2.. | Roster: new lines | from 7 lines (24 species) to about 40 species, through the Studio's kit bake; one or two lines a session, art first | RO-1 | 4-6 |
+| RL-E | Endless mode | after RL-15 | RL-15 | 1 |
+
+About 14-19 sessions after RL-12a (was 8-10), plus the roster sessions alongside. Section 1's table and the order in
+section 4 stand for RL-1..RL-12a; from here the order is this table's. If the scope is too big: RO-1, RL-R1, RL-12b,
+RL-S1, then play; side areas, the rival and relationships next; endless last.
+
+**Each session's shape**, for its own Plan Mode:
+- **RO-1.** Files: `biomes.json` pools (one per biome, the 7 real lines by rarity), `pools.json` (legacy pools parked),
+  `lines/*.json` `forms`, `game-data.js` (`standInSpecies` not used for a run), `logic/rules.js spawn`. Tests: every
+  run pool resolves without a stand-in; a form's types and name. Could break: wild battles, the dex, the Studio's
+  line editor.
+- **RL-R1.** Files: new `game/data/regions.json` + schema, type, check, export; new `logic/run-region.js`;
+  `logic/run-map.js` (rows from zones); `logic/run-bowl.js` (zone bands); the Map tab's header. Tests: same seed same
+  region; zones follow the graph; every dex entry resolvable; leaders match the region's types. Could break: the run
+  map's snapshot tests (remade on purpose), the run sim.
+- **RL-R2.** Files: `logic/run-map.js` (branches), `logic/run-scenes.js` (cave and cove kinds), mapgen (field-link
+  props), `run.js` (the travel moment), `meta-state.js` (`badges`), `rules.json run.side`. Tests: every side area
+  reachable only through its link; the clock counts it; an alternate path still reaches a boss; a field link refused
+  without the type or the badge. Could break: seams, the bowl's run layout, the in-game test's run phase.
+- **RL-12b, RL-S1, RL-S2, RL-13:** files and tests as their rows say; each adds a fast-check page and an in-game test
+  step, as earlier RL sessions did.
+
+### 9.5 The organization: three name options (superseded 2026-10-23: finance names; see reflavour-track.md section 4)
+
+1. **The Office of Unclaimed Property (OUP)** (recommended). It files everything that falls through a portal as
+   unclaimed property, you included, and "returns" lost property to the drop point: Copperleaf. That is why a lost
+   run ends there (Hazel's discovery), and why Chosen's credit is wrong. Logo: a luggage tag with a keyhole. Terms:
+   "claims", "lots", "the Register". Goal: catalogue the Hollow Earth, then auction it.
+2. **The Escrow.** Holds the anomalous "in escrow" until a buyer appears. Logo: a sealed envelope with a wax eye.
+   Goal: sell the Inner Sun to the surface's billionaires.
+3. **Quiet Holdings.** A holding company that owns things nobody is allowed to know exist. Logo: a hollow circle with
+   a notch. Goal: hold the Hollow Earth off every map.
+
+The bots fit any of them as "repossession units"; the Voltron as the first "Lot".
+
+### 9.6 Ask me before (new; recommendation first)
+
+21. **The organization's name:** answered 2026-10-23: the Bureau of Lost, Found and Beans.
+Answered by the owner, 2026-10-23:
+
+22. **Kept badges vs badge Loopholes:** **the recommendation**: the first win against a leader keeps its badge for
+    good (`meta.badges`, opens its field move); every leader win offers a pick of 3 Perks.
+23. **Starter points:** **the recommendation**: a budget of 10, costs 1-5 by rarity and stage, a ranch-trained Billie
+    +1 per 5 trained levels (placeholders for the sim).
+24. **Which Billies are startable:** **only the Billies at the ranch** (the team and storage), not every species ever
+    caught. Catching matters by bringing a Billie home (won runs, the keep-one), not by a dex unlock.
+25. **Side areas:** **the recommendation**: a detour on about 60% of runs, an alternate path on about 15%.
+26. **A detour's size:** **2-4 places.**
+27. **Reward pick contents:** **both**: items, move tutors, candy levels, evolution items, **and held items** (a new
+    system: one held-item slot per Billie, PokeRogue-like). Held items need their own work (data section, the slot in
+    the save and the Team tab, effect rows at the battle hooks): RL-12b grows to 2-3 sessions, or held items get their
+    own session RL-12c after it.
+28. **Route trainers:** **walk up on sight**, as in Pokémon (a '!' and they come to you).
+29. **Relationship gifts:** **a new gift currency, Beans**, earned as **rare finds on runs** (1-3 a run: hidden spots,
+    events, side areas, first boss wins; like Hades' Nectar). A fifth currency: `currencies.json` gets a fifth row
+    and check-data's four-row rule becomes five (RL-S2). It ties to the Bureau's unexplained Beans (reflavour-track 4).
+30. **Chapter 1's end:** **the Voltron**, the Bureau's first big retrieval unit, as the Alpha boss of Expedition I.
+31. **Region names:** **made from parts, satirical** in the new tone (tech, bureaucracy, clichés: "Pendingvale",
+    "Beta Basin").
+32. **Where the lines live:** **a new `lines.json` data section** beside `story.json`.
+
+### 9.7 Running sessions in parallel (the owner, 2026-10-23)
+
+Split by the files a session owns, as docs/phases/test-cleanup-track.md does: each session is its own branch and PR
+with its own HANDOFF entry. Every PR conflicts on `docs/HANDOFF.md`, `docs/ROADMAP.md`, the changelog,
+`game/js/hooks.js` and often `rules.json`: merge one PR at a time and merge main into the next before merging it;
+regenerate hooks.js with `npm run modules`, never by hand. One SAVE_VERSION bump per round.
+
+- **Round 1: RO-1 + TC-1** (the owner: RL-16's pack merge and the art sessions wait). TC-1 is test-cleanup's deletions
+  only (its lanes A-D, deletions only); TC-2..TC-4 (the rewrites, speed, the picture baseline) move to after RF-4, so
+  they're done once with the new names. RO-1 owns `biomes.json` pools, `pools.json`, `lines/*.json`,
+  `game-data.js standInSpecies`, `logic/rules.js spawn` and its own new test file; it doesn't edit the checks TC-1
+  deletes.
+- **Round 2: RF-1, RF-2, RF-3, RL-R1** at once. RF-1 owns player-facing text and the checks that read it; RF-2 the
+  catch items' data, the throw's model and sound; RF-3 `types.json`, the passives' engine code and the golden record;
+  RL-R1 `run-map.js`, the new `regions.json`, `run-bowl.js`.
+- **Round 3: RF-4 alone** (renames touch nearly every file), then TC-2..TC-4 on the new names (test-cleanup's own
+  lanes and rounds).
+- **Round 4: RL-R2, RL-12b, RF-5** at once; RL-12b's waystation edits to the run map after RL-R2 merges; RL-12c (held
+  items) after RL-12b.
+- **Round 5: RL-S1 + RL-13** (both touch the run's start and end: merge one, then main into the other), RF-6 beside
+  them if no save change is open; then **RL-S2 + RL-14** (the Voltron's story scene last).
+- **Then:** RL-15, RL-E in order; RL-16 when the new sections exist. RO-2.. (art) beside any round but 3.
+
+The Smosh note in project-story.md still holds for Professor Chosen before any public release.

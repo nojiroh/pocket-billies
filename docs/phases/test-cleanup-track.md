@@ -174,6 +174,9 @@ Done when: full check about 10 min (or each miss documented), fast check in its 
 nightly green with pictures compared.
 
 ## Running sessions in parallel (lanes)
+**Changed 2026-10-23 (the owner):** only TC-1 (the deletions) runs now, beside RO-1 (roguelite-track.md 9.7, round
+1). TC-2..TC-4 wait until the reflavour track's internal renames (RF-4) are merged, so the rewrites use the new names.
+
 The sessions above are the work in order for one session at a time. To run several at once, split by which files a
 session owns instead of by TC number. `check-quick.py` is touched by every TC session, so it has one owner (lane B)
 who works through it in order. Each lane has its own HANDOFF entry.
