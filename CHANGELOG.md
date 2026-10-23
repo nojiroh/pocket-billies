@@ -16,6 +16,11 @@ kept aside in the browser).
   for the story). The in-game full test walks Copperleaf and the rooms its doors and a run town's open, not rooms no
   door leads to any more; the diagnostics test walks the hub and its busiest room and one generated run road. The
   debug menu's Earn every badge and Reset trainer wins are gone.
+- The debug menu, tidied (UI-7c): nine sections by task (Tests and performance, Give me, Billies, Battle, Run, Places
+  and test scenes, Story, Ranch and time, Save), a search box at the top that filters the buttons, the sections you
+  open remembered in this browser, and each button saying what it changed instead of "Done.". Gold buttons give you
+  things, red ones erase or start a battle. Labels lost their phase codes. Walk 1 km, Earn every badge, Reset
+  trainer wins, Lead +3 win streak and Age storage by a day are gone (nothing left to test with them).
 - Sound effects and jingles (sound track SND-6): each Billie has a cry of its own, built from eight kinds (beast,
   bird, slime, machine, fish, insect, ghost, suit) with its own pitch and length per stage, and cries as it is sent
   out; a Billie under a quarter of its HP cries its low-HP cry (a quarter faster and a third down), and a fainting one

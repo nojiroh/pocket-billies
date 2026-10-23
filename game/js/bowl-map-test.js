@@ -1,6 +1,6 @@
 'use strict';
 /* ================= WORLD MAP TEST (phase 10) =================
-   Settings → Help → "Run the world map test", and the debug menu's "Bowl map test": checks the bowl world map
+   The debug menu's "Bowl map test" checks the bowl world map
    (world-bowl.js) on this device, by hand. It is not part of
    any check, CI job or hook: in a headless browser the bowl is drawn in software and the frame numbers mean nothing.
    1. the bowl's shaders compile and link,

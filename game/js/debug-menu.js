@@ -30,7 +30,6 @@ import { COATS, COINS, DATA_WARN, DEX_ORDER, ITEMS, LOCATIONS, RELICS, RULES, SP
 import { speciesOf } from './logic/fighters.js';
 import {
   addBilly,
-  addWalked,
   encounterStock,
   encountersHere,
   gainXp,
@@ -57,11 +56,17 @@ import { worldMap } from './world-bowl.js';
 /* eslint-disable no-func-assign */
 expose({
   DEBUG_LOOK: [() => DEBUG_LOOK],
+  DEBUG_OPEN_KEY: [() => DEBUG_OPEN_KEY],
   debugAction: [() => debugAction, v => (debugAction = v)],
   debugButtonHTML: [() => debugButtonHTML],
+  debugFind: [() => debugFind, v => (debugFind = v)],
   debugFps: [() => debugFps, v => ((debugFps = v), provide({ debugFps }))],
   debugHTML: [() => debugHTML, v => (debugHTML = v)],
   debugMenu: [() => debugMenu],
+  debugOpenKeep: [() => debugOpenKeep, v => (debugOpenKeep = v)],
+  debugOpenRead: [() => debugOpenRead, v => (debugOpenRead = v)],
+  debugSceneName: [() => debugSceneName],
+  debugSection: [() => debugSection],
   debugSelectHTML: [() => debugSelectHTML],
   debugSpeciesOptions: [() => debugSpeciesOptions, v => (debugSpeciesOptions = v)],
   openDebug: [() => openDebug, v => (openDebug = v)],
@@ -101,13 +106,47 @@ const DEBUG_LOOK = {
     ['winter', 'Winter'],
   ],
 };
+/* which sections are open, kept in this browser across openings and reloads (never in the save, so never in an
+   export or a cloud save); a section never toggled uses its default */
+const DEBUG_OPEN_KEY = 'pb-debug-open';
+function debugOpenRead() {
+  try {
+    const o = JSON.parse(localStorage.getItem(DEBUG_OPEN_KEY) || '{}');
+    return o && typeof o === 'object' ? o : {};
+  } catch {
+    return {};
+  }
+}
+function debugOpenKeep(k, open) {
+  const o = debugOpenRead();
+  o[k] = !!open;
+  try {
+    localStorage.setItem(DEBUG_OPEN_KEY, JSON.stringify(o));
+  } catch {
+    /* storage blocked: the menu still works, it just forgets */
+  }
+}
+/* one section of the menu: a key (data-k), its title, what it holds, and whether it is open when never toggled;
+   force opens it whatever was kept (the Battle section during a battle) */
+const debugSection = (k, title, body, open = false, force = false) => {
+  const kept = debugOpenRead()[k];
+  /* a forced section isn't remembered as open: the toggle its open attribute fires is skipped (data-force) */
+  return `<details data-k="${k}"${force ? ' data-force="1"' : ''}${force || (kept == null ? open : kept) ? ' open' : ''}><summary>${title}</summary>${body}</details>`;
+};
+/* a test scene's name without "Test: " and without a bracketed note naming a phase or track (the map data keeps it
+   for the Studio): "props in the new style (phase 09)" is "props in the new style" here */
+const debugSceneName = k =>
+  (mapById(k).name || k)
+    .replace(/^Test: /, '')
+    .replace(/\s*\([^)]*\b(?:phase|track|Project Story)\b[^)]*\)/gi, '')
+    .trim() || k;
 function debugHTML() {
   const inB = !!activeBattle,
     node = saveData.trip.node,
-    p = saveData.preferences || {};
-  return `<div class="dbg">
- <p class="note">Changes apply to this save right away. Export a backup first if you might want to undo.</p>
- <details open><summary>Performance</summary><div class="dbg-row">${debugButtonHTML('fps', debugMenu.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${frameScheduler.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="gfxtest">Graphics test</button><button class="pb small" data-a="gfxbench">Graphics cost test</button><button class="pb small" data-a="diagtest">Diagnostics test</button><button class="pb small" data-a="dbglog">Export debug log</button></div><p class="note">The full test (a few minutes) walks Copperleaf and every room its doors and a run town’s open, a run’s road, plays battles, the map and the opening’s fall, checks each for errors, then piles on more until the device can’t keep up. The diagnostics test (2 min) is a shorter run of the same. The graphics test tries each graphics setting on its own and saves a short report; the graphics cost test (10 min) measures what each one costs here. The bowl map test is under Trainers and world. None of them changes the save.</p>
+    p = saveData.preferences || {},
+    inTest = !!(uiState.bench && uiState.bench.test);
+  const tests = `<div class="dbg-row"><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="diagtest">Diagnostics test</button><button class="pb small" data-a="gfxtest">Graphics test</button><button class="pb small" data-a="gfxbench">Graphics cost test</button>${debugButtonHTML('bowltest', 'Bowl map test')}<button class="pb small" data-a="dbglog">Export debug log</button></div><p class="note">The full test (a few minutes) walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more until the device can’t keep up. The diagnostics test (2 min) is a shorter run of the same. The graphics test tries each graphics setting on its own and saves a short report; the graphics cost test (10 min) measures what each one costs here. None of them changes the save.</p><p class="note">The bowl map test opens the bowl world map and checks its shaders, that every place is on it and opens its card when tapped, that the camera keeps above the rim, Home, and the frame rate on this device.</p>
+  <div class="dbg-row">${debugButtonHTML('fps', debugMenu.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${frameScheduler.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span></div>
   <div class="dbg-row">${debugButtonHTML('q0', 'Force best quality')}${debugButtonHTML('qauto', 'Automatic quality')}</div>
   ${
     DATA_WARN.length
@@ -115,63 +154,103 @@ function debugHTML() {
           .map(w => `<li>${escapeHtml(w)}</li>`)
           .join('')}</ul>`
       : '<p class="note">Game data loaded with no warnings.</p>'
-  }</details>
- <details><summary>Wallet and walking</summary><div class="dbg-row">${debugButtonHTML('se1', '+$1,000')}${debugButtonHTML('se10', '+$10,000')}${debugButtonHTML('walk1', 'Walk 1 km')}<span class="note">Walk 1 km adds to the distance on your trainer card.</span></div>
-  <div class="dbg-row">${debugButtonHTML('coins', '+10 of every coin')}${debugButtonHTML('items', '+5 of every item')}</div></details>
- <details><summary>Billies</summary><div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level">${debugSelectHTML('dbgCoat', [['', 'No coat'], ...Object.entries(COATS).map(([k, c]) => [k, c.name])], uiState.dbgCoat || '')}</div>
+  }`;
+  const give = `<div class="dbg-row">${debugButtonHTML('se1', '+$1,000', 'gold')}${debugButtonHTML('se10', '+$10,000', 'gold')}${debugButtonHTML('coins', '+10 of every coin', 'gold')}${debugButtonHTML('items', '+5 of every item', 'gold')}</div>
+  <div class="dbg-row">${debugButtonHTML('scrap', '+50 Scrap', 'gold')}${debugButtonHTML('capital', '+500 Capital, +2 Seals', 'gold')}</div>`;
+  const billies = `<div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level">${debugSelectHTML('dbgCoat', [['', 'No coat'], ...Object.entries(COATS).map(([k, c]) => [k, c.name])], uiState.dbgCoat || '')}</div>
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
-  <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide')}</div>
-  <div class="dbg-row">${debugButtonHTML('bots', 'Give the robot kit (phase 17)', 'gold')}</div><p class="note">Two robots and one of every robot part and gem. Battle Tinker Rho (under Trainers) for a mixed team.</p></details>
- <details><summary>Trainers and world</summary><div class="dbg-row">${debugSelectHTML(
-   'dbgTr',
-   Object.values(TRAINERS).map(T => [T.id, T.name]),
-   ''
- )}${debugButtonHTML('trainer', 'Battle trainer', 'red')}${debugButtonHTML('trainer2', 'As a double battle', 'red')}</div>
-  <div class="dbg-row">${debugSelectHTML(
+  <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels', 'gold')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide', 'gold')}</div>
+  <div class="dbg-row">${debugButtonHTML('bots', 'Give the robot kit', 'gold')}</div><p class="note">Two robots and one of every robot part and gem. Battle Tinker Rho (under Places and test scenes) for a mixed team.</p>`;
+  const battle = `<div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
+  <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div>`;
+  const run = saveData.run
+    ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” under Places and test scenes walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugSelectHTML(
+        'dbgRelic',
+        Object.keys(RELICS).map(k => [k, RELICS[k].name]),
+        uiState.dbgRelic || Object.keys(RELICS)[0] || ''
+      )}${debugButtonHTML('relicgive', 'Give a Loophole', 'gold')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">Loopholes held: ${saveData.run.relics.length} of ${RULES.run.relics.cap}${saveData.run.relics.length ? ` (${escapeHtml(saveData.run.relics.map(k => (RELICS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p>`
+    : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><p class="note">From Copperleaf, as the mast does (Bracket I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (for measuring on a phone; the debug log has the frame times).</p>`;
+  const places = `<div class="dbg-row">${debugSelectHTML(
     'dbgNode',
     LOCATIONS.map((r, i) => [i, `${i}. ${r.name}`]),
     node
   )}${debugButtonHTML('jump', 'Go there')}</div>
-  <div class="dbg-row">${debugButtonHTML('bowltest', 'Bowl map test', 'gold')}</div><p class="note">Phase 10: opens the bowl world map and checks its shaders, that every place is on it and opens its card when tapped, that the camera keeps above the rim, Home, and the frame rate on this device.</p>
-  <div class="dbg-row">${debugButtonHTML('fillq', 'Fill encounters here')}${debugButtonHTML('clearq', 'Clear encounters here')}</div></details>
- <details><summary>Runs (roguelite track)</summary>${
-   saveData.run
-     ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” above walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugSelectHTML(
-         'dbgRelic',
-         Object.keys(RELICS).map(k => [k, RELICS[k].name]),
-         uiState.dbgRelic || Object.keys(RELICS)[0] || ''
-       )}${debugButtonHTML('relicgive', 'Give a Loophole')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">RL-12: Loopholes held: ${saveData.run.relics.length} of ${RULES.run.relics.cap}${saveData.run.relics.length ? ` (${escapeHtml(saveData.run.relics.map(k => (RELICS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p>`
-     : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run', 'gold')}</div><p class="note">From Copperleaf, as the mast does (Bracket I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (terrain TR-2, for a phone measurement; the debug log has the frame times).</p>`
- }</details>
- <details><summary>Time, weather and season</summary><div class="dbg-row">${debugSelectHTML(
-   'dbgTime',
-   DEBUG_LOOK.time,
-   p.time || 'real'
- )}${debugSelectHTML('dbgWeather', DEBUG_LOOK.weather, p.weather || 'auto')}${debugSelectHTML(
-   'dbgSeason',
-   DEBUG_LOOK.season,
-   p.season || 'auto'
- )}${debugButtonHTML('look', 'Set')}</div><p class="note">Fixes the time, weather or season everywhere until set back (they change which Billies come out). Moved here from Settings (UI-7b).</p></details>
- <details><summary>Story scripts (Project Story)</summary><div class="dbg-row">${debugSelectHTML(
-   'dbgScript',
-   storyScriptIds().map(id => [id, id]),
-   ''
- )}${debugButtonHTML('script', 'Play it')}</div><p class="note">The conversations written in the new script format. They play as written, flags and all; hold the dialogue box to skip. Walking and camera lines do nothing yet (S2).</p></details>
- <details ${uiState.bench && uiState.bench.test ? 'open' : ''}><summary>Test scenes</summary><p class="note">Small places that each show one tricky situation: stairs, ledges at the limits, bridges, water, shadows, every prop, slopes, the camera in tight spots, night lights, a dense forest, tiny and huge maps, traffic, and the light lab (v44: light on the land, in a room, on props, in the air — the places the quick check measures the lighting in). Checks test the walking rules there (what should and shouldn't be reachable).</p>
+  <div class="dbg-row">${debugButtonHTML('fillq', 'Fill encounters here')}${debugButtonHTML('clearq', 'Clear encounters here', 'red')}</div>
+  <p class="note">Small places that each show one tricky situation: stairs, ledges at the limits, bridges, water, shadows, every prop, slopes, the camera in tight spots, night lights, a dense forest, tiny and huge maps, traffic, and the light lab (light on the land, in a room, on props, in the air — the places the quick check measures the lighting in). Checks test the walking rules there (what should and shouldn't be reachable).</p>
   <div class="dbg-row">${debugSelectHTML(
     'dbgTest',
-    testMaps().map(k => [k, (mapById(k).name || k).replace(/^Test: /, '')]),
+    testMaps().map(k => [k, debugSceneName(k)]),
     uiState.dbgTest || testMaps()[0] || ''
-  )}${debugButtonHTML('test', 'Go there')}${debugButtonHTML('testchk', 'Run its checks')}${uiState.bench && uiState.bench.test ? debugButtonHTML('untest', 'Back to the game', 'gold') : ''}</div>
-  ${uiState.testRes ? `<ul class="dbg-warn">${uiState.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${escapeHtml(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}</details>
- <details><summary>Storage, the ranch and evolution</summary><div class="dbg-row">${debugButtonHTML('idle', 'Age storage by a day')}${debugButtonHTML('streak', 'Lead +3 win streak')}</div>
-  <div class="dbg-row">${debugButtonHTML('ranchhour', 'Age the ranch by an hour')}${debugButtonHTML('scrap', '+50 Scrap')}${debugButtonHTML('eggsready', 'Eggs ready now')}${debugButtonHTML('capital', '+500 Capital, +2 Seals')}</div></details>
- <details ${inB ? 'open' : ''}><summary>Battle${inB ? '' : ' (start one first)'}</summary><div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
-  <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div></details>
- <details><summary>Save</summary><div class="dbg-row">${debugButtonHTML('copy', 'Copy save as text')}${debugButtonHTML('export', 'Download backup')}${debugButtonHTML('wipe', 'Erase save', 'red')}</div></details>
+  )}${debugButtonHTML('test', 'Go there')}${debugButtonHTML('testchk', 'Run its checks')}${inTest ? debugButtonHTML('untest', 'Back to the game') : ''}</div>
+  ${uiState.testRes ? `<ul class="dbg-warn">${uiState.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${escapeHtml(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}
+  <div class="dbg-row">${debugSelectHTML(
+    'dbgTr',
+    Object.values(TRAINERS).map(T => [T.id, T.name]),
+    ''
+  )}${debugButtonHTML('trainer', 'Battle trainer', 'red')}${debugButtonHTML('trainer2', 'As a double battle', 'red')}</div>
+  <div class="dbg-row">${debugSelectHTML('dbgTime', DEBUG_LOOK.time, p.time || 'real')}${debugSelectHTML(
+    'dbgWeather',
+    DEBUG_LOOK.weather,
+    p.weather || 'auto'
+  )}${debugSelectHTML('dbgSeason', DEBUG_LOOK.season, p.season || 'auto')}${debugButtonHTML('look', 'Set')}</div><p class="note">Fixes the time, weather or season everywhere until set back (they change which Billies come out).</p>`;
+  const story = `<div class="dbg-row">${debugSelectHTML(
+    'dbgScript',
+    storyScriptIds().map(id => [id, id]),
+    ''
+  )}${debugButtonHTML('script', 'Play it')}</div><p class="note">The conversations written in the new script format. They play as written, flags and all; hold the dialogue box to skip. Walking and camera lines do nothing yet.</p>`;
+  const ranch = `<div class="dbg-row">${debugButtonHTML('ranchhour', 'Age the ranch by an hour')}${debugButtonHTML('eggsready', 'Eggs ready now')}</div>`;
+  const saveRow = `<div class="dbg-row">${debugButtonHTML('copy', 'Copy save as text')}${debugButtonHTML('export', 'Download backup')}${debugButtonHTML('wipe', 'Erase save', 'red')}</div>`;
+  return `<div class="dbg">
+ <input id="dbgFind" type="search" placeholder="Find a button" aria-label="Find a button" autocomplete="off" value="${escapeHtml(uiState.dbgFind || '')}">
+ <p class="note">Changes apply to this save right away. Export a backup first if you might want to undo. Gold buttons give you things; red ones erase something or start a battle.</p>
+ ${[
+   debugSection('tests', 'Tests and performance', tests, true),
+   debugSection('give', 'Give me', give),
+   debugSection('billies', 'Billies', billies),
+   debugSection('battle', `Battle${inB ? '' : ' (start one first)'}`, battle, false, inB),
+   debugSection('run', 'Run', run),
+   debugSection('places', 'Places and test scenes', places, false, inTest),
+   debugSection('story', 'Story', story),
+   debugSection('ranch', 'Ranch and time', ranch),
+   debugSection('save', 'Save', saveRow),
+ ].join('\n ')}
  </div>`;
 }
+/* the search box: only the buttons whose words hold what was typed stay, in their sections, opened; rows left with no
+   button go, and so do the notes. A section's title matching keeps all of it. Empty: the sections as they were */
+function debugFind(text) {
+  const root = $('.dbg');
+  if (!root) return;
+  const q = String(text || '')
+    .trim()
+    .toLowerCase();
+  const was = root.classList.contains('finding');
+  root.classList.toggle('finding', !!q);
+  $$('.dbg details[data-k]').forEach(d => {
+    if (q && !was) d.dataset.was = d.open ? '1' : '';
+    const title = !!q && d.querySelector('summary').textContent.toLowerCase().includes(q);
+    let any = false;
+    d.querySelectorAll('button').forEach(b => {
+      const hit = !q || title || b.textContent.toLowerCase().includes(q);
+      b.hidden = !hit;
+      if (hit) any = true;
+    });
+    d.querySelectorAll('.dbg-row').forEach(r => {
+      const bs = r.querySelectorAll('button');
+      r.hidden = !!q && bs.length > 0 && [...bs].every(b => b.hidden);
+    });
+    d.querySelectorAll('.note, .dbg-warn').forEach(n => (n.hidden = !!q && !title));
+    d.hidden = !!q && !any;
+    if (q) d.open = any;
+    else if (was && d.dataset.was != null) {
+      d.open = d.dataset.was === '1';
+      delete d.dataset.was;
+    }
+  });
+  root.querySelectorAll(':scope > .note').forEach(n => (n.hidden = !!q));
+}
 function openDebug() {
+  uiState.dbgFind = '';
   uiState.modal = null;
   uiState.mq = uiState.mq.filter(m => !m.dbg);
   modal({
@@ -187,12 +266,16 @@ function refreshDebugMenu(msg) {
   if (!activeBattle) render();
   const M = uiState.modal;
   if (M && M.dbg) {
-    const open = $$('.dbg details').map(d => d.open);
+    /* while searching, what was open before the search (debugFind keeps it in data-was) */
+    const open = Object.fromEntries(
+      $$('.dbg details[data-k]').map(d => [d.dataset.k, d.dataset.was != null ? d.dataset.was === '1' : d.open])
+    );
     M.html = debugHTML();
     renderOverlay();
-    $$('.dbg details').forEach((d, i) => {
-      if (open[i] != null) d.open = open[i];
+    $$('.dbg details[data-k]').forEach(d => {
+      if (open[d.dataset.k] != null) d.open = open[d.dataset.k];
     });
+    if (uiState.dbgFind) debugFind(uiState.dbgFind);
   }
 }
 function debugFps() {
@@ -212,7 +295,10 @@ function debugAction(x) {
       return e ? e.value : null;
     },
     sp = v('dbgSp'),
-    lv = clamp(+v('dbgLv') || 10, 1, maxLevel());
+    lv = clamp(+v('dbgLv') || 10, 1, maxLevel()),
+    money = () => `$${saveData.se.toLocaleString('en-US')}`;
+  /* what the button changed, said once the save is written (the cases that break) */
+  let said = '';
   if (sp) {
     uiState.dbgSp = sp;
     uiState.dbgLv = lv;
@@ -239,19 +325,19 @@ function debugAction(x) {
       return refreshDebugMenu('Battle quality adapts to frame time again.');
     case 'se1':
       saveData.se += 1000;
+      said = `+$1,000: you have ${money()}.`;
       break;
     case 'se10':
       saveData.se += 10000;
-      break;
-    case 'walk1':
-      /* phase 08: as if you walked a kilometre outdoors: it adds trainer card distance (ranch eggs keep their own time) */
-      addWalked(1000);
+      said = `+$10,000: you have ${money()}.`;
       break;
     case 'coins':
       Object.keys(COINS).forEach(k => (saveData.coins[k] = (saveData.coins[k] || 0) + 10));
+      said = `+10 of each of ${Object.keys(COINS).length} coins.`;
       break;
     case 'items':
       Object.keys(ITEMS).forEach(k => (saveData.items[k] = (saveData.items[k] || 0) + 5));
+      said = `+5 of each of ${Object.keys(ITEMS).length} items.`;
       break;
     case 'give': {
       const m = makeBilly(sp, lv, { coat: $('#dbgCoat').value || undefined });
@@ -267,6 +353,7 @@ function debugAction(x) {
         coat: $('#dbgCoat').value || undefined,
         no: ++saveData.serial,
       });
+      said = `${SPECIES[sp].name} (level ${lv}) added to the encounters here: ${encountersHere().length} now.`;
       break;
     }
     case 'alpha': {
@@ -294,6 +381,7 @@ function debugAction(x) {
     }
     case 'heal':
       healAll();
+      said = `Healed: ${saveData.team.length} on your team.`;
       break;
     case 'look': {
       saveData.preferences = saveData.preferences || {};
@@ -321,6 +409,9 @@ function debugAction(x) {
         const t = Math.min(maxLevel(), m.lvl + 5);
         gainXp(m, xpFor(t) - m.xp, () => {});
       });
+      said = saveData.team.length
+        ? `Team +5 levels: now ${saveData.team.map(m => m.lvl).join(', ')}.`
+        : 'No team to level up.';
       break;
     case 'evo': {
       const m = saveData.team[0];
@@ -334,6 +425,7 @@ function debugAction(x) {
         saveData.seen[id] = 1;
         saveData.caught[id] = 1;
       });
+      said = `Field Guide filled: ${DEX_ORDER.length} Billies seen and taxed.`;
       break;
     case 'trainer2': {
       const id = v('dbgTr');
@@ -357,7 +449,7 @@ function debugAction(x) {
     }
     case 'test': {
       const id = v('dbgTest');
-      if (!id || !mapById(id)) break;
+      if (!id || !mapById(id)) return refreshDebugMenu('Pick a test scene first.');
       uiState.dbgTest = id;
       uiState.testRes = null;
       uiState.bench = { id, test: 1 };
@@ -378,19 +470,21 @@ function debugAction(x) {
       const id = v('dbgTest') || uiState.dbgTest;
       uiState.dbgTest = id;
       uiState.testRes = testMapChecks(id);
+      said = `${(mapById(id) && mapById(id).name) || id}: ${uiState.testRes.filter(r => r.ok).length} of ${uiState.testRes.length} checks passed.`;
       break;
     }
     case 'jump': {
       const n = clamp(+v('dbgNode'), 0, LOCATIONS.length - 1);
       /* RL-8: on a run, walked there as you would (a day a place, the path, what the map shows) */
       if (saveData.run) {
-        if (!runJump(n)) toast('That place can’t be walked to on this run.');
+        said = runJump(n) ? `Walked to ${LOCATIONS[n].name}.` : 'That place can’t be walked to on this run.';
         saveData.mapSeen = null;
         break;
       }
       saveData.trip = { node: n, plan: [] };
       saveData.visited[n] = 1;
       saveData.mapSeen = null;
+      said = `Moved to ${LOCATIONS[n].name}.`;
       break;
     }
     /* RL-8: runs */
@@ -448,15 +542,12 @@ function debugAction(x) {
       /* a town without wild Billies gets a route's worth, so there is always something to test with */
       const q = encountersHere();
       while (q.length < Math.max(encounterStock(saveData.trip.node), RULES.encounters.route)) spawn();
+      said = `${q.length} encounters here.`;
       break;
     }
     case 'clearq':
       encountersHere().length = 0;
-      break;
-    case 'idle':
-      saveData.box.forEach(m => {
-        if (m.boxedAt) m.boxedAt -= 864e5;
-      });
+      said = 'Encounters here cleared.';
       break;
     /* RL-9: the ranch's trainees started an hour earlier (an hour's training, collected when the ranch opens), and
        Scrap to train with; RL-10b: an hour more of income */
@@ -467,27 +558,24 @@ function debugAction(x) {
       /* RL-10b: and its income counted an hour earlier */
       if (saveData.ranch.income.lastAt)
         saveData.ranch.income.lastAt = Math.max(1, saveData.ranch.income.lastAt - 3600000);
-      toast(`${saveData.ranch.trainees.length} training: an hour older.`);
+      said = `${saveData.ranch.trainees.length} in training and the income: an hour older.`;
       break;
     /* RL-10: every egg in the ranch's nursery ready to hatch now */
     case 'eggsready':
       saveData.ranch.nursery.forEach(n => {
         n.ready = Math.max(n.at, Math.min(n.ready, ranchNow(saveData, Date.now(), RULES.ranch).now));
       });
-      toast(`${saveData.ranch.nursery.length} egg(s) ready to hatch at the ranch.`);
+      said = `${saveData.ranch.nursery.length} egg(s) ready to hatch at the ranch.`;
       break;
     case 'scrap':
       saveData.meta.scrap += 50;
-      toast(`${saveData.meta.scrap} Scrap.`);
+      said = `+50 Scrap: you have ${saveData.meta.scrap}.`;
       break;
     /* RL-11: Capital and Seals to try the Lab's board and the airship's upgrades with */
     case 'capital':
       saveData.meta.capital += 500;
       saveData.meta.seals += 2;
-      toast(`${saveData.meta.capital} Capital, ${saveData.meta.seals} Audit Seals.`);
-      break;
-    case 'streak':
-      if (saveData.team[0]) saveData.team[0].streak = (saveData.team[0].streak || 0) + 3;
+      said = `+500 Capital, +2 Audit Seals: you have ${saveData.meta.capital} and ${saveData.meta.seals}.`;
       break;
     case 'win':
       if (!activeBattle || activeBattle.phase === 'playing' || activeBattle.over)
@@ -511,9 +599,10 @@ function debugAction(x) {
       playTurnEvents();
       return;
     case 'foe1':
-      if (!activeBattle) return;
+      if (!activeBattle) return toast('Start a battle first.');
       fighter(1).hp = 1;
       paintBoxes(allSnapshots(), activeBattle.market);
+      said = 'The foe is at 1 HP.';
       break;
     case 'catch':
       uiState.dbgCatch = !uiState.dbgCatch;
@@ -542,13 +631,35 @@ function debugAction(x) {
       return;
   }
   save();
-  refreshDebugMenu('Done.');
+  refreshDebugMenu(said);
 }
 document.addEventListener('click', ev => {
   const el = ev.target.closest('[data-a]');
   if (!el) return;
   if (el.dataset.a === 'dbg') debugAction(el.dataset.x);
   else if (el.dataset.a === 'debug') openDebug();
+});
+/* a section opened or closed by hand is remembered (toggle doesn't bubble: caught on the way down) */
+document.addEventListener(
+  'toggle',
+  ev => {
+    const d = ev.target;
+    if (
+      d instanceof HTMLDetailsElement &&
+      d.dataset.k &&
+      !d.dataset.force &&
+      d.closest('.dbg') &&
+      !d.closest('.dbg.finding')
+    )
+      debugOpenKeep(d.dataset.k, d.open);
+  },
+  true
+);
+document.addEventListener('input', ev => {
+  const el = ev.target;
+  if (!(el instanceof HTMLInputElement) || el.id !== 'dbgFind') return;
+  uiState.dbgFind = el.value;
+  debugFind(el.value);
 });
 document.addEventListener('keydown', ev => {
   if (ev.ctrlKey && ev.shiftKey && (ev.key === 'D' || ev.key === 'd')) {

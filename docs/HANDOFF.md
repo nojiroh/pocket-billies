@@ -235,6 +235,36 @@ Lane A's part is pushed.
 - For the owner: the `variants` song is played only by parked places (music-studio lists it as PARKED_ONLY). Keep it
   with them, or delete it?
 - Next: round 2 (lane B's TC-3; lane E: `npm test` under 30 s).
+### UI track UI-7c - The debug menu - 2026-10-23
+Branch `ui-7c-debug-menu` (PR #153, merged by the owner); this entry and one fix pushed to main afterwards. Plan
+approved in Plan Mode; the one open pick (where open sections are kept) went to the recommendation, this browser.
+- Changed (one cause per commit):
+  - Removed Walk 1 km, Earn every badge, Reset trainer wins, Lead +3 win streak, Age storage by a day, after a
+    check: no species evolves by storage time or win streak (61 by level, 3 split), no shop item or place needs
+    badges, walking only adds to the trainer card. The game code reading them stays.
+  - Settings' leftover bowl map test handler (no button since UI-7b): the brief's "twice" was this.
+  - Nine sections by task with keys (`debugSection`, `data-k`); plain labels and notes (no phase or track codes;
+    test scene names lose a bracketed phase note in the menu only); gold gives, red erases or starts a battle.
+  - Open sections kept in localStorage `pb-debug-open` (never in the save); Battle forced open in a battle.
+  - A search box (`#dbgFind`, `debugFind`); clearing it restores the sections; searching isn't remembered.
+  - Each button says what it changed instead of "Done.".
+  - Quick check: a "Debug menu" step (full check only). Docs: ui-track (as built), ROADMAP, CHANGELOG, TESTING.
+  - After the merge: main's merge of main into the branch kept the old ranch toast beside the new message (two
+    messages on Age the ranch by an hour); fixed on main.
+- Risky or unfinished:
+  - The trainer list still offers the legacy leaders (Rocco and the rest).
+  - The quick check's Tap targets step now fails on Settings: it opens on the Sound tab (UI-7b), whose volume
+    slider is 16 px tall (INPUT 203x16). Not from UI-7c; a slider's height, or the step skipping range inputs, would
+    fix it. Owner's call.
+  - Not tried on a phone.
+- Verified: after each code commit lint, typecheck, check:modules, format:check, unit tests and the smoke check
+  (the Settings handler commit's smoke ran with the next one); in a 390 px browser the memory across closing and
+  reloading, the search (with a button pressed mid-search), every message. Full quick check on the branch
+  (ad87757): 60 steps, 50 passed; Debug menu and Sound settings pass; problems: Tap targets (above) and the nine
+  known ones (v31 bowl camera, v34, v35, v38, v39/40, v44, v46, alpha 0.4 recipes, phase 08). On main with the fix:
+  lint, typecheck, check:modules, format:check, unit tests, check:data, smoke (no problems), the Debug menu step.
+- Tag `ui-7c-done` (local; sessions can't push tags).
+- Next: UI-6 (old layers gone), or whatever the owner picks.
 
 ### Test cleanup track TC-1 item 0 - The three camera checks on main - 2026-10-23
 Branch `fix/camera-checks-orbit`, from main a569bed, its own PR. Plan approved in Plan Mode.

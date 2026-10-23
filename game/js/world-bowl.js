@@ -5,7 +5,7 @@
    far wall the walk scenes see at their horizon (walk/sky.js). The old sphere map is gone (session E-map-4).
    The ground is a low-poly mesh over the grid in logic/bowl.js: the bowl's floor and walls, each place's bump or dip
    (gentle, owner 2026-10-19), coloured by region with the roads laid into it. Places are pins (owner: no miniatures
-   yet); the camera's arithmetic is logic/bowl-camera.js. The debug menu's and Settings' "Bowl map test"
+   yet); the camera's arithmetic is logic/bowl-camera.js. The debug menu's "Bowl map test"
    (bowl-map-test.js) checks it on a device.
    Controls: one finger drags the land; two fingers pinch to zoom, twist to turn and slide up or down to tilt; on a
    computer the wheel zooms and the right button (or Shift) turns and tilts; arrows or WASD pan, Q and E turn. Home goes

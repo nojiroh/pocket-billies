@@ -748,7 +748,8 @@ section > h2,
   margin: 0;
 }
 .dbg select,
-.dbg input[type='number'] {
+.dbg input[type='number'],
+.dbg input[type='search'] {
   font: inherit;
   font-size: 14px;
   padding: 8px;
@@ -911,7 +912,8 @@ section > h2::before,
 .settings-fields select,
 .option,
 .dbg select,
-.dbg input[type='number'] {
+.dbg input[type='number'],
+.dbg input[type='search'] {
   border-color: color-mix(in srgb, var(--line) 55%, var(--panel-s));
   border-radius: var(--r-s);
 }

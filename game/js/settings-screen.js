@@ -32,7 +32,6 @@ import {
   rebuildFromSettings,
   render,
   renderOverlay,
-  runBowlMapTest,
   runDiagnostics,
   runFullTest,
   runGraphicsBench,
@@ -705,12 +704,6 @@ document.addEventListener('click', ev => {
       uiState.mq = [];
       renderOverlay();
       startGraphicsTest();
-      break;
-    case 'bowltest':
-      uiState.modal = null;
-      uiState.mq = [];
-      renderOverlay();
-      runBowlMapTest();
       break;
     case 'gfxbench':
       uiState.modal = null;

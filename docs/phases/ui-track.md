@@ -190,7 +190,7 @@ Works like the Engine section (dials in groups, ↺ per dial, presets, Hold to c
 | UI-6 | Old layers gone | style, polish, screens and v05 emptied and deleted; lint and the blur budget enforced (fail when raw values rise); accessibility pass; then `phase-06-done` and `ui-6-done` | none intended | ui-lint at or near zero; full quick check green apart from known reds |
 | UI-7a (done 2026-10-23) | Settings: Sound | the Test buttons go; a slider plays its sound once when let go (the music slider not over a song); each row has its own mute (the Volume row's is the master mute); dragging a muted slider unmutes it; the duplicate on/off switch goes | a mute icon on each sound row, no Test buttons | quick check's Sound settings step passes; phone check by the owner |
 | UI-7b (done 2026-10-23) | Settings: layout | seven tabs (Sound, Display, Controls, Accessibility, Game, Save, Help), opening on the last one used; time, weather and season to the debug menu; Start over into the Save tab's red section, one shared reset that stops a battle; Save card: runs won and taxed; Customize trainer to the trainer card; Help: a Report a problem box (Full test, Export debug log) | the new tabs | quick check green, settings screenshots remade on purpose |
-| UI-7c | Debug menu | grouped by task (tests, give me, Billies, battle, run, places, story, ranch and time, save); one copy of each test; no phase codes in labels; a search box; open sections remembered; a message saying what changed; the four old buttons gone once checked unused | the new menu | quick check green |
+| UI-7c (done 2026-10-23) | Debug menu | grouped by task (tests, give me, Billies, battle, run, places, story, ranch and time, save); one copy of each test; no phase codes in labels; a search box; open sections remembered; a message saying what changed; the four old buttons gone once checked unused | the new menu | quick check green |
 
 UI-2 is the biggest; if it runs long, split it: shapes, edge line, wipes and battle cards first, then icons, glyphs,
 portraits and the bot plate. About 6-8 sessions of Claude's working time, plus the owner's phone checks after UI-2,
@@ -223,6 +223,23 @@ there already); seven tabs (keys `sound`, `graphics` shown as Display, `controls
 wrapping onto two rows at 390 px; the last tab used is `preferences.setTab` (Sound with none); translations.
 Not changed, worth a look: Help's How to play still describes the legacy game (towns and roads, map arrows, eggs on
 real time).
+
+UI-7c as built: the five old buttons went after a check (no species evolves by storage time or win streak: 61 by
+level, 3 split; no shop item or place needs badges; walking only adds to the trainer card's distance), their game
+code stays. The brief's "bowl map test twice" was by then one button and Settings' leftover handler, removed. Nine
+sections, each `<details data-k>` built by `debugSection` (keys `tests`, `give`, `billies`, `battle`, `run`,
+`places`, `story`, `ranch`, `save`); Tests and performance open by default, Battle forced open during a battle,
+Places during a test scene. Open sections are kept in localStorage `pb-debug-open` (this browser, never in the save,
+so never exported or synced; the owner's pick of the two); a refresh keeps them by key. The search box (`#dbgFind`,
+`debugFind`) hides buttons whose words don't hold the text, rows and sections left empty and the notes, opens the
+matching sections, keeps a section whole when its title matches, and puts the sections back when cleared; searching
+isn't remembered as opening or closing. Each button's message says what it changed (money and currencies what you
+have, the team its levels, a test scene's checks how many passed). Colour key: gold gives (money, items,
+currencies, a Billie, levels, the Field Guide, the robot kit, a Loophole, Win now, Win the run), red erases or
+starts a battle (Battle it now, As an Alpha, trainers, Clear encounters, Lose the run, Erase save); a note at the top
+says so. Phase and track codes went from labels and notes; test scene names lose a bracketed phase note in the menu
+only (the map data keeps it for the Studio). The quick check's new Debug menu step checks it.
+Found while reading, not changed: the trainer list still offers the legacy leaders (Rocco and the rest).
 
 ## Risks
 - Clip-path shapes plus blur on many surfaces can cost frames on phones: measure with the Graphics bench after UI-2.
