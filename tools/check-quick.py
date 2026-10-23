@@ -2392,29 +2392,6 @@ def desktop_steps(b, base, R):
         return f'{r["b"]} buildings in 3D by night, {r["on"]} of {r["lamps"]} lamps on, {r["lit"]} of {r["fw"]} front windows lit; a rain front came in (its curtain at {c["e"]:.2f}, coming in: {c["into"]})'
     a04_lights()
 
-    @step('alpha 0.4.1: walk the world yourself — the joystick, the D-pad', 300)   # RL-5: walking over the edge onto Route 1 is parked
-    def a041_walk():
-        """the classic way (the only way since phase 08). The joystick moves you along the camera, the D-pad shows when chosen.
-        RL-5: walking out of Copperleaf over its edge onto Route 1 is retired (the hub has no edge to walk over, Route 1 is
-        parked; RL-7 walks a run's roads)"""
-        pg.evaluate("uiState.modal=null;uiState.mq=[];uiState.toastQ=[];renderOverlay();environment.force={time:12,weather:'clear',season:'summer'};0")
-        try:
-            n0 = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='copperleaf')")   # RL-5: no Hedgerow Lane to walk onto
-            if n0 < 0: return 'no Copperleaf in this build'
-            go_scene(pg, n0, 150); time.sleep(2)
-            p0 = pg.evaluate("[walkView.pl.x,walkView.pl.z]"); pg.evaluate("walkView.stick={x:0,y:1};0"); f0 = pg.evaluate("walkRenderer.frames"); until(pg, f"walkRenderer.frames>={f0 + 4}", 120)
-            pg.evaluate("walkView.stick=null;0"); p1 = pg.evaluate("[walkView.pl.x,walkView.pl.z]"); moved = ((p1[0] - p0[0]) ** 2 + (p1[1] - p0[1]) ** 2) ** .5
-            if moved < .2: raise Exception(f'the joystick moved the player {moved:.2f} m')
-            pg.evaluate("saveData.preferences.control='dpad';renderOverlay();render();0"); time.sleep(.8)
-            dp = pg.evaluate("!!document.querySelector('.dpad')"); pg.evaluate("saveData.preferences.control='stick';renderOverlay();render();0")
-            if not dp: raise Exception('no D-pad when the D-pad is chosen')
-            # RL-5: the walk over Copperleaf's edge onto Route 1 ('a041-walked-to-route1') is retired with Route 1
-            if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-            return f'the joystick moved the player {moved:.1f} m, the D-pad shows when chosen'
-        finally:
-            pg.evaluate("environment.force=null;0")
-    a041_walk()
-
     @step('phase 08: running — the joystick’s outer ring, the D-pad’s centre, Shift and "Always run"', 180)
     def run_speeds():
         """the walk speed a full push gives, and 1.7 times that when running; the ring and the D-pad's centre set the run from
