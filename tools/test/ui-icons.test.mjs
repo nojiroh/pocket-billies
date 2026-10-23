@@ -24,7 +24,7 @@ const svgOf = rows => {
 };
 
 test('every icon file is what its grid in tools/build-ui-icons.py makes', () => {
-  assert.equal(Object.keys(ICONS).length, 46);
+  assert.equal(Object.keys(ICONS).length, 47);
   for (const [name, rows] of Object.entries(ICONS))
     assert.equal(readFileSync(join(ROOT, `game/art/ui/${name}.svg`), 'utf8'), svgOf(rows), name);
 });
