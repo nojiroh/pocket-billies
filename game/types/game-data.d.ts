@@ -172,6 +172,9 @@ export interface BillyType {
   weak?: TypeId[];
   /** a battle rule its Billies share ('' for none) */
   passive?: string;
+  /** RF-3: the passive's name and what it does, as the player reads them */
+  passiveName?: string;
+  passiveText?: string;
   /** hit effects (default pow, star) */
   fx?: string[];
 }

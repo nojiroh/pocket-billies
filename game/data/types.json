@@ -6,6 +6,8 @@
   "strong": ["Grass","Steel"],
   "weak": ["Fire","Water","Ground","Dragon"],
   "passive": "ramp",
+  "passiveName": "Kindling",
+  "passiveText": "Its Attack rises a little every turn it stays in battle.",
   "fx": ["flame","spark"]
  },
  {
@@ -15,6 +17,8 @@
   "strong": ["Fire","Ground"],
   "weak": ["Water","Grass","Dragon"],
   "passive": "",
+  "passiveName": "Undertow",
+  "passiveText": "Its Water moves hit harder when its HP is low.",
   "fx": ["drop","bubble"]
  },
  {
@@ -24,6 +28,8 @@
   "strong": ["Water","Ground"],
   "weak": ["Fire","Grass","Flying","Steel","Dragon"],
   "passive": "subsidy",
+  "passiveName": "Regrowth",
+  "passiveText": "It restores a little HP at the end of every turn.",
   "fx": ["leaf","leaf","spark"]
  },
  {
@@ -33,6 +39,8 @@
   "strong": ["Water","Flying"],
   "weak": ["Electric","Grass","Ground","Dragon"],
   "passive": "sharp",
+  "passiveName": "Live Wire",
+  "passiveText": "Its hits land critically more often.",
   "fx": ["bolt","spark"]
  },
  {
@@ -42,6 +50,8 @@
   "strong": ["Fire","Electric","Steel"],
   "weak": ["Grass","Flying"],
   "passive": "landlord",
+  "passiveName": "Bedrock",
+  "passiveText": "Once a battle, it holds on at 1 HP when a hit from full HP would knock it out. Sharp stones don’t hurt it.",
   "fx": ["pebble","pebble","pow"]
  },
  {
@@ -51,6 +61,8 @@
   "strong": ["Grass"],
   "weak": ["Electric","Steel"],
   "passive": "pivot",
+  "passiveName": "Slipstream",
+  "passiveText": "Once a battle, it can switch out without losing the turn.",
   "fx": ["feather","up"]
  },
  {
@@ -60,6 +72,8 @@
   "strong": ["Electric","Dragon"],
   "weak": ["Psychic","Steel"],
   "passive": "volatile",
+  "passiveName": "Wild Mind",
+  "passiveText": "Its damage swings wildly, from a scratch to a huge hit.",
   "fx": ["orb","star"]
  },
  {
@@ -69,6 +83,8 @@
   "strong": ["Psychic","Flying"],
   "weak": ["Fire","Water","Electric","Steel"],
   "passive": "synergy",
+  "passiveName": "Alloy",
+  "passiveText": "It hits harder for each teammate on its feet that shares its Steel type.",
   "fx": ["cog","spark"]
  },
  {
@@ -78,6 +94,8 @@
   "strong": ["Dragon"],
   "weak": ["Steel"],
   "passive": "inherit",
+  "passiveName": "Parting Roar",
+  "passiveText": "When it faints, the teammate who comes in next gets its Attack and Sp. Atk raised.",
   "fx": ["scale","flame"]
  }
 ]
