@@ -63,6 +63,10 @@ town node needs it.
   night versions; placeholder hooks for the owner to edit) done 2026-10-22 at the owner's word; SND-5 (battle and run
   music: intros timed to the throw, leader and boss songs, the red zone's tense version, the run's arc by row, the
   deadline version, the map song's forecast) done 2026-10-22; SND-6 next.
+- **Camera track** (docs/phases/camera-track.md, the owner's brief and answers 2026-10-22): a follow with dead and
+  soft zones and a joystick look-ahead (CAM-1), zooms for moments of interest (CAM-2), a diorama tilt-shift blur with
+  a player slider (CAM-3); each session brings its Studio dials and preview overlays. Runs now, beside the RL track.
+  CAM-1 next. Tags `cam-N-done`.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all

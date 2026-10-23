@@ -422,6 +422,15 @@ slow.
 - Next: the owner's phone test and debug log; then lock the ground (Hub island editor); IS-8 meets this branch by
   rebuilding. Tag `is-9-done` is the owner's to push.
 
+### Camera track - planned - 2026-10-22
+Branch `ccr-3d24989e-9cyftq`. A planning session only: no code changed.
+- Changed: docs/phases/camera-track.md (new: verified facts about the walk camera and the blur, outside research,
+  the owner's answers, sessions CAM-1..CAM-3); ROADMAP.md lists the track.
+- Where the brief's picture was wrong: the blur is already depth based (not a screen band, as walk-view.js's header
+  still says); talking only moves the blur's focus, not the camera.
+- Verified: nothing to run (docs only).
+- Next: CAM-1 (the follow), starting in Plan Mode.
+
 ### Island track IS-6b - Hub editor dials - 2026-10-22
 Branch `claude/is-6b-hub-dials`, from the wave-2 base `claude/new-session-3qlesh` (main plus IS-2, IS-3, IS-4 and IS-6a,
 PRs #122, #124, #123, #126, not merged yet); the PR goes against main, so its diff shrinks as those merge (then merge
