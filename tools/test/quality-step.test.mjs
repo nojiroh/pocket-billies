@@ -1,0 +1,48 @@
+// The automatic quality's step (game/js/logic/quality-step.js), fed the frame patterns of the owner's debug logs of
+// 2026-10-23: the Android phone (frames 50-60 ms, nearly all of it main-thread time, as the GPU process's wait shows up
+// there), the iPad (frames slow, main thread light), a fast desktop. No graphics.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { qualityStep } from '../../game/js/logic/quality-step.js';
+
+const T = 1000 / 60;
+/** run the step once a second for n seconds with the same numbers; returns the state */
+function run(input, n, s = { q: 0, R: 1 }) {
+  for (let k = 1; k <= n; k++) qualityStep(s, { target: T, now: k * 1300, ...input });
+  return s;
+}
+
+test('a light frame on a fast machine keeps everything on', () => {
+  const s = run({ int: 16.7, slow: 6 }, 30);
+  assert.equal(s.q, 0);
+  assert.equal(s.R, 1);
+});
+
+test('a slow frame with a light main thread (the iPad) takes the effects first, then the resolution', () => {
+  const s = run({ int: 40, slow: 8 }, 30);
+  assert.equal(s.q, 4);
+  assert.ok(s.R < 1, `R ${s.R}`);
+  assert.ok(s.R >= 0.5);
+});
+
+test('a slow frame with a busy main thread on a computer keeps the resolution and stops at step 2', () => {
+  const s = run({ int: 40, slow: 30 }, 30, { q: 0, R: 0.8 });
+  assert.equal(s.q, 2);
+  assert.equal(s.R, 1);
+});
+
+test('it never steps more than once in 1.2 s', () => {
+  const s = { q: 0, R: 1 };
+  qualityStep(s, { int: 40, slow: 8, target: T, now: 5000 });
+  qualityStep(s, { int: 40, slow: 8, target: T, now: 5500 });
+  assert.equal(s.q, 1);
+});
+
+test('with room to spare it climbs back: resolution first, then the effects', () => {
+  const s = run({ int: 16, slow: 4 }, 3, { q: 3, R: 0.7 });
+  assert.ok(s.R > 0.7);
+  assert.equal(s.q, 3);
+  run({ int: 16, slow: 4 }, 30, s);
+  assert.equal(s.R, 1);
+  assert.equal(s.q, 0);
+});

@@ -5,6 +5,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { gameData, provide, saveData } from '../hooks.js';
+import { qualityStep } from '../logic/quality-step.js';
 import { frameScheduler } from '../frame-scheduler.js';
 import { mapMoodName, walkView } from '../walk-view.js';
 import { engineContext, engineSetting } from '../engine/settings.js';
@@ -164,47 +165,25 @@ export function adaptQuality(dtm, work) {
       typeof saveData !== 'undefined' && saveData && saveData.preferences && saveData.preferences.aim === 'smooth',
     target = 1000 / Math.min(cap, frameScheduler.hz || 60, smooth ? 999 : 60);
   walkRenderer.int = walkRenderer.int ? walkRenderer.int * 0.92 + dtm * 0.08 : dtm;
-  /* alpha 0.4: in every log the picture sat on the lowest step outdoors most of the time: a place's first seconds
-    (its ground painting, its grass planting) pushed it down, and it only came back up on frames under 8 ms of work,
-    which a phone outdoors rarely has. Now the first 3 s after a view changes don't push it down, it comes back up
-    while the frames keep the beat with work under 60% of a frame, and a step that proved too much is held off for
-    half a minute (no see-sawing) */
-  const slow = walkRenderer.int > target * 1.3 || walkView.slow > target * 0.85,
-    room = walkRenderer.int < target * 1.1 && walkView.slow < target * 0.6;
-  const now = performance.now();
-  if (now - (walkRenderer.adaptT || 0) < (slow ? 1200 : 900)) return;
-  walkRenderer.adaptT = now;
-  walkRenderer.q = walkRenderer.q || 0;
-  /* alpha 0.4.1: when the frame's own work on the main thread is what holds it back (a big place in a wide window, the
-    laptop in the diagnostics), taking away god rays, bloom steps, depth of field or resolution doesn't help: those cost
-    the graphics chip. Then only the steps that save work here are taken (shadows and reflections every other frame,
-    steps 1-2), and the ones above come back. Before, such a machine sat on the lowest step with the effects off. */
-  const cpu = walkView.slow > target * 0.7;
-  if (slow && cpu) {
-    if (walkRenderer.q > 2) {
-      walkRenderer.q = 2;
-      walkRenderer.raiseT = now;
-    } else if (walkRenderer.q < 2 && now - (walkRenderer.swapT || 0) >= 3000) walkRenderer.q++;
-    walkRenderer.roomN = 0;
-    if (walkView.R < 1) walkView.R = Math.min(1, walkView.R + 0.1);
-    return;
-  }
-  if (slow) {
-    if (now - (walkRenderer.swapT || 0) < 3000) return;
-    if (now - (walkRenderer.raiseT || -1e9) < 5000) walkRenderer.holdT = now + 30000;
-    walkRenderer.roomN = 0;
-    if (walkRenderer.q < 4) walkRenderer.q++;
-    else if (walkView.R > 0.55) walkView.R = Math.max(0.5, walkView.R - 0.1);
-  } else if (room && now > (walkRenderer.holdT || 0)) {
-    if (walkView.R < 1) {
-      walkView.R = Math.min(1, walkView.R + 0.1);
-      walkRenderer.raiseT = now;
-    } else if (walkRenderer.q > 0 && (walkRenderer.roomN = (walkRenderer.roomN || 0) + 1) >= 2) {
-      walkRenderer.q--;
-      walkRenderer.roomN = 0;
-      walkRenderer.raiseT = now;
-    }
-  }
+  /* the step itself: logic/quality-step.js */
+  const st = qualityStep(
+    {
+      q: walkRenderer.q,
+      R: walkView.R,
+      adaptT: walkRenderer.adaptT,
+      swapT: walkRenderer.swapT,
+      raiseT: walkRenderer.raiseT,
+      holdT: walkRenderer.holdT,
+      roomN: walkRenderer.roomN,
+    },
+    { int: walkRenderer.int, slow: walkView.slow, target, now: performance.now() }
+  );
+  walkRenderer.q = st.q;
+  walkView.R = st.R;
+  walkRenderer.adaptT = st.adaptT;
+  walkRenderer.raiseT = st.raiseT;
+  walkRenderer.holdT = st.holdT;
+  walkRenderer.roomN = st.roomN;
 }
 /* phase 04d: the Studio swaps in its own (studio/js/engine-editor.js and viewport.js) */
 export function setAdaptQuality(v) {
