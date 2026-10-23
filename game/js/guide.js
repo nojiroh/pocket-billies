@@ -1,6 +1,6 @@
 'use strict';
 /* ================= GUIDE ================= */
-/* UI-5: the Guide (the ledger tab: the list, an entry's page, its Lore tab), moved from ui.js as it was; its buttons in guideAction, called from ui.js's click switch at the same place */
+/* UI-5: the Guide (the guide tab: the list, an entry's page, its Lore tab), moved from ui.js as it was; its buttons in guideAction, called from ui.js's click switch at the same place */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { render } from './hooks.js';
@@ -212,7 +212,7 @@ export function guideAction(a, d) {
         break;
       }
       uiState.dex = d.s;
-      uiState.lastTab = 'ledger';
+      uiState.lastTab = 'guide';
       render();
       scrollTo(0, 0);
       break;

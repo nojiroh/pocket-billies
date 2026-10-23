@@ -479,7 +479,7 @@ def safety_step(b, base, R):
               return n+(window.__pwn||0)})()""")
             if n: raise Exception(f'markup from a name got into the page at: {where}')
         shown = []
-        for tab in ['walk', 'team', 'ledger', 'profile', 'bag']:
+        for tab in ['walk', 'team', 'guide', 'profile', 'bag']:
             pg.evaluate(f"uiState.tab='{tab}';render();0"); time.sleep(.5); check(tab); shown.append(tab)
         for k in ['sum', 'build', 'moves', 'evo']:
             pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();billySheet(saveData.team[0]);document.querySelector('[data-a=ms-tab][data-k={k}]')?.click();0"); time.sleep(.3); check('details ' + k)
@@ -521,7 +521,7 @@ def targets_step(b, base, R):
         pg.add_style_tag(content='*,*::before,*::after{animation:none!important;transition:none!important}')
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();saveData.team.forEach(m=>{m.evoNo=m.lvl});0")
         bad = []
-        for tab in ['walk', 'team', 'ledger', 'profile', 'bag']:
+        for tab in ['walk', 'team', 'guide', 'profile', 'bag']:
             pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(.6)
             bad += pg.evaluate(small, tab)
         for name, js in [('details', "billySheet(saveData.team[0])"), ('settings', "openSettings()"), ('shop', CHECK_SHOP + "openShop('check_shop')"), ('dressing room', "openDressingRoom({})")]:
@@ -974,7 +974,7 @@ def phone_flow(b, base, R):
         play(pg)
         # UI-1: how many surfaces blur what's behind them on each screen (the plan's budget is 3); a report, not a failure
         blur = {}
-        for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
+        for tab in ['walk', 'map', 'team', 'guide', 'profile']:
             pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(2.5 if tab in ('walk', 'map') else .6); shot(pg, f'phone-{tab}')
             blur[tab] = pg.evaluate('uiBlurCount()')
         pg.evaluate(CHECK_SHOP + "uiState.tab='walk';saveData.trip.node=0;render();openShop('check_shop');0"); time.sleep(.6); shot(pg, 'phone-shop')
@@ -1543,7 +1543,7 @@ def desktop_steps(b, base, R):
         out = []
         t = pg.evaluate("[document.title,renderTitle().includes('<span>POCKET</span><span>BILLIES</span>')?'POCKET BILLIES':'',gameData.meta.title]")
         if 'Pocket Billies' not in t[0] or 'POCKETBILLIES' not in t[1].replace(' ', '') or t[2] != 'Pocket Billies': raise Exception(f'the name: {t}')
-        g = pg.evaluate("(()=>{uiState.tab='ledger';uiState.dex=null;uiState.guideTab='dex';render();const h=document.body.innerText;uiState.tab='walk';render();return [h.includes('Caught'),h.includes('Taxed')]})()")
+        g = pg.evaluate("(()=>{uiState.tab='guide';uiState.dex=null;uiState.guideTab='dex';render();const h=document.body.innerText;uiState.tab='walk';render();return [h.includes('Caught'),h.includes('Taxed')]})()")
         if not g[0] or g[1]: raise Exception(f'the Guide: Caught shown {g[0]}, Taxed still shown {g[1]}')
         out.append('Pocket Billies on the page, the title screen and in the data; the Guide counts Caught')
         pg.evaluate("uiState.inside=null;uiState.goingIn=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();0"); go_scene(pg, 0); time.sleep(1)
@@ -1769,7 +1769,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("(()=>{const w=document.querySelector('.pcard-wrap');if(w)w.click()})();0"); time.sleep(.8)   # it may have slid away by itself (9 s)
         got = pg.evaluate("Object.keys(saveData.cards||{})")
         if got != ['copperleaf']: raise Exception(f'the Guide keeps {got}')   # RL-5: Copperleaf's card
-        pg.evaluate("uiState.tab='ledger';uiState.guideTab='cards';render();0"); time.sleep(.6)
+        pg.evaluate("uiState.tab='guide';uiState.guideTab='cards';render();0"); time.sleep(.6)
         n = pg.evaluate("document.querySelectorAll('.pc-thumb:not(.none)').length")
         if n != 1: raise Exception(f'the Postcards page shows {n} cards')
         shot(pg, 'postcards-page')

@@ -66,7 +66,7 @@ export function setRender(v) {
 /* ---------- screens ---------- */
 /* the screens, in the order that decides which side a screen slides in from (UI-5: the bottom bar holds Map, Team
    and Bag, updateNav below; the world, the Guide and the Trainer card are reached otherwise) */
-const TABS = ['walk', 'map', 'team', 'ledger', 'bag', 'perks', 'lab'],
+const TABS = ['walk', 'map', 'team', 'guide', 'bag', 'perks', 'lab'],
   SCREENS = [...TABS, 'profile'];
 function topbar() {
   const shut = !!(saveData.preferences && saveData.preferences.cardClosed),
@@ -110,7 +110,7 @@ export function render() {
     body =
       T === 'team'
         ? renderTeam()
-        : T === 'ledger'
+        : T === 'guide'
           ? renderGuide()
           : T === 'profile'
             ? renderProfile()
@@ -167,7 +167,7 @@ function openTab(t) {
     if (t !== 'map') uiState.mapSel = null;
     render();
     scrollTo(0, 0);
-  } else if (t === 'ledger' && uiState.dex) {
+  } else if (t === 'guide' && uiState.dex) {
     uiState.dex = null;
     render();
     scrollTo(0, 0);

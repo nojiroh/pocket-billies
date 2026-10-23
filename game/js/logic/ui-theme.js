@@ -377,7 +377,7 @@ export const UI_SCREENS = {
   walk: { name: 'Walk', sel: '.screen.s-walk' },
   map: { name: 'Map', sel: '.screen.s-map' },
   team: { name: 'Team', sel: '.screen.s-team' },
-  ledger: { name: 'Guide', sel: '.screen.s-ledger' },
+  guide: { name: 'Guide', sel: '.screen.s-guide' },
   bag: { name: 'Bag', sel: '.screen.s-bag' },
   profile: { name: 'Trainer card', sel: '.screen.s-profile' },
   battle: { name: 'Battle', sel: '#battle' },
