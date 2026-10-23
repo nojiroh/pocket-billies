@@ -617,16 +617,6 @@ def cross(pg, n1, sec=90, look=None, prep_ms=None, meter=None):
     raise Exception(f'walked {walked:.0f} m toward {pg.evaluate(f"LOCATIONS[{n1}].name")} and never crossed ({views})')
 
 
-# phase 08: a trip of several roads, walked: the guide is set to n, then each place on its plan is crossed into in turn
-def cross_to(pg, n):
-    plan = pg.evaluate(f"(()=>{{setTrip({n});return saveData.trip.plan.slice()}})()")
-    if not plan: raise Exception(f'no way to {pg.evaluate(f"LOCATIONS[{n}].name")}')
-    walked = 0; views = []; unready = 0
-    for n1 in plan:
-        w, v, u = cross(pg, n1); walked += w; unready += u; views += v if not views else [x for x in v if x != views[-1]]
-    return walked, views, unready
-
-
 def debug_picture_privacy(pg):
     # phase 13: the debug log keeps a picture of the scene, and what the buddy says names the Billie, so in the frame that
     # takes the picture speech is drawn after it (walk-view-gl.js). The buddy talks, the log takes its picture, and the
