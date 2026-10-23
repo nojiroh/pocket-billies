@@ -5,46 +5,166 @@
  },
  "meadow": {
   "lv": [3,6],
-  "list": [["swift0",26],["kardashian0",26],["zuck0",24],["trump0",16],["musk0",3],["bezos0",3],["gates0",3]]
+  "list": [
+   ["hughes0",30],
+   ["swift0",26],
+   ["kardashian0",26],
+   ["zuck0",24],
+   ["kamprad0",24],
+   ["trump0",16],
+   ["cuban0",8],
+   ["musk0",3],
+   ["bezos0",3],
+   ["gates0",3]
+  ]
  },
  "thicket": {
   "lv": [3,6],
-  "list": [["zuck0",24],["kardashian0",22],["swift0",20],["trump0",16],["gates0",5],["musk0",3],["bezos0",3]]
+  "list": [
+   ["kamprad0",28],
+   ["zuck0",24],
+   ["kardashian0",22],
+   ["swift0",20],
+   ["trump0",16],
+   ["hughes0",16],
+   ["cuban0",12],
+   ["gates0",5],
+   ["altman0",4],
+   ["musk0",3],
+   ["bezos0",3]
+  ]
  },
  "lake": {
   "lv": [3,6],
-  "list": [["trump_waterfront0",28],["zuck0",26],["swift0",18],["kardashian0",14],["bezos0",5],["gates0",3],["musk0",2]]
+  "list": [
+   ["cuban0",34],
+   ["trump_waterfront0",28],
+   ["zuck0",26],
+   ["hughes0",24],
+   ["swift0",18],
+   ["kardashian0",14],
+   ["kamprad0",10],
+   ["bezos0",5],
+   ["gates0",3],
+   ["musk0",2]
+  ]
  },
  "ridge": {
   "lv": [3,6],
-  "list": [["zuck_cloud0",28],["swift0",26],["trump0",18],["kardashian0",14],["musk0",3],["bezos0",3],["gates0",3]]
+  "list": [
+   ["hughes0",30],
+   ["zuck_cloud0",28],
+   ["swift0",26],
+   ["trump0",18],
+   ["kamprad0",18],
+   ["kardashian0",14],
+   ["altman0",4],
+   ["musk0",3],
+   ["bezos0",3],
+   ["gates0",3]
+  ]
  },
  "autumn": {
   "lv": [3,6],
-  "list": [["swift_folklore0",28],["kardashian0",24],["trump0",16],["zuck0",14],["gates0",5],["musk0",3],["bezos0",2]]
+  "list": [
+   ["swift_folklore0",28],
+   ["kamprad0",28],
+   ["kardashian0",24],
+   ["hughes0",22],
+   ["trump0",16],
+   ["zuck0",14],
+   ["cuban0",6],
+   ["gates0",5],
+   ["altman0",4],
+   ["musk0",3],
+   ["bezos0",2]
+  ]
  },
  "canyon": {
   "lv": [3,6],
-  "list": [["kardashian_festival0",28],["trump0",26],["swift0",16],["zuck0",14],["musk0",5],["gates0",3],["bezos0",2]]
+  "list": [
+   ["kardashian_festival0",28],
+   ["trump0",26],
+   ["kamprad0",24],
+   ["swift0",16],
+   ["zuck0",14],
+   ["hughes0",14],
+   ["musk0",5],
+   ["gates0",3],
+   ["bezos0",2]
+  ]
  },
  "volcano": {
   "lv": [3,6],
-  "list": [["trump0",28],["kardashian0",20],["swift0",18],["zuck0",14],["musk0",5],["gates0",2],["bezos0",2]]
+  "list": [
+   ["trump0",28],
+   ["kamprad0",22],
+   ["kardashian0",20],
+   ["swift0",18],
+   ["zuck0",14],
+   ["hughes0",10],
+   ["musk0",5],
+   ["gates0",2],
+   ["bezos0",2]
+  ]
  },
  "tundra": {
   "lv": [3,6],
-  "list": [["swift0",28],["kardashian0",20],["trump0",20],["zuck0",16],["bezos0",4],["gates0",3],["musk0",2]]
+  "list": [
+   ["swift0",28],
+   ["hughes0",26],
+   ["kardashian0",20],
+   ["trump0",20],
+   ["zuck0",16],
+   ["kamprad0",16],
+   ["bezos0",4],
+   ["gates0",3],
+   ["altman0",3],
+   ["musk0",2]
+  ]
  },
  "sea": {
   "lv": [3,6],
-  "list": [["zuck0",28],["trump0",20],["swift0",20],["kardashian0",14],["bezos0",5],["musk0",2],["gates0",2]]
+  "list": [
+   ["cuban0",34],
+   ["zuck0",28],
+   ["trump0",20],
+   ["swift0",20],
+   ["hughes0",18],
+   ["kardashian0",14],
+   ["bezos0",5],
+   ["musk0",2],
+   ["gates0",2]
+  ]
  },
  "badlands": {
   "lv": [3,6],
-  "list": [["trump0",28],["kardashian0",20],["swift0",18],["zuck0",14],["musk0",5],["gates0",2],["bezos0",2]]
+  "list": [
+   ["trump0",28],
+   ["kamprad0",26],
+   ["kardashian0",20],
+   ["swift0",18],
+   ["zuck0",14],
+   ["hughes0",12],
+   ["musk0",5],
+   ["gates0",2],
+   ["bezos0",2]
+  ]
  },
  "jungle": {
   "lv": [3,6],
-  "list": [["swift0",22],["zuck0",22],["kardashian0",18],["trump0",16],["gates0",5],["bezos0",3],["musk0",2]]
+  "list": [
+   ["swift0",22],
+   ["zuck0",22],
+   ["kamprad0",22],
+   ["kardashian0",18],
+   ["trump0",16],
+   ["cuban0",16],
+   ["hughes0",14],
+   ["gates0",5],
+   ["bezos0",3],
+   ["altman0",3],
+   ["musk0",2]
+  ]
  }
 }

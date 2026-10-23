@@ -292,5 +292,101 @@
   "types": ["Electric","Water"],
   "design": "Visor-shaped brow ridge, builds its own reef",
   "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "gosling",
+  "name": "Gosling",
+  "no": 25,
+  "line": "hughes",
+  "stage": 1,
+  "kind": "line3",
+  "parody": "Howard Hughes",
+  "types": ["Flying"],
+  "design": "Yellow gosling with goggle rings round its eyes",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "sprucegoose",
+  "name": "Sprucegoose",
+  "no": 26,
+  "line": "hughes",
+  "stage": 2,
+  "kind": "line3",
+  "parody": "Howard Hughes",
+  "types": ["Flying","Steel"],
+  "design": "Wooden goose with wings far too big for it",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "aviatorgoose",
+  "name": "Aviatorgoose",
+  "no": 27,
+  "line": "hughes",
+  "stage": 3,
+  "kind": "line3",
+  "parody": "Howard Hughes",
+  "types": ["Flying","Steel"],
+  "design": "Steel-grey goose with a vast wingspan and a white ruff",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "flatpackrat",
+  "name": "Flatpackrat",
+  "no": 28,
+  "line": "kamprad",
+  "stage": 1,
+  "kind": "line2",
+  "parody": "Ingvar Kamprad",
+  "types": ["Steel"],
+  "design": "Blue rat with round ears, came flat in a box",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "kamprat",
+  "name": "Kamprat",
+  "no": 29,
+  "line": "kamprad",
+  "stage": 2,
+  "kind": "line2",
+  "parody": "Ingvar Kamprad",
+  "types": ["Steel","Grass"],
+  "design": "Chunky blue rat carrying a flat yellow panel",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "pupfin",
+  "name": "Pupfin",
+  "no": 30,
+  "line": "cuban",
+  "stage": 1,
+  "kind": "line2",
+  "parody": "Mark Cuban",
+  "types": ["Water"],
+  "design": "Little orange goldfish that pitches to anyone",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "sharktank",
+  "name": "Sharktank",
+  "no": 31,
+  "line": "cuban",
+  "stage": 2,
+  "kind": "line2",
+  "parody": "Mark Cuban",
+  "types": ["Water","Dragon"],
+  "design": "Grey shark with horns and a tall back fin",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "altmowl",
+  "name": "Altmowl",
+  "no": 32,
+  "line": "altman",
+  "stage": 1,
+  "kind": "single",
+  "parody": "Sam Altman",
+  "types": ["Psychic","Electric"],
+  "design": "Cloud-white owl with a cloud for a crest",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  }
 ]

@@ -1,0 +1,35 @@
+{
+ "id": "altman",
+ "names": ["Altmowl"],
+ "types": [["Psychic","Electric"]],
+ "prof": [0.85,0.8,0.9,1.4,1.1,1.05],
+ "rar": "rare",
+ "learn": [
+  [1,"handshake"],
+  [1,"pump"],
+  [1,"hype"],
+  [8,"fud"],
+  [14,"movefast"],
+  [20,"disrupt"],
+  [26,"hallucinate"],
+  [32,"overclock"],
+  [38,"overload"],
+  [44,"moon"]
+ ],
+ "cat": ["Oracle Billie"],
+ "ht": [0.9],
+ "wt": [9],
+ "hab": ["Server halls that hum all night"],
+ "diet": ["Everything anyone has ever written"],
+ "bio": [
+  "An owl with a cloud where its brain should be. Ask it anything and it answers at once, at length and with total confidence, and some of it is even right."
+ ],
+ "note": ["Answers before you finish asking."],
+ "parody": "Sam Altman",
+ "cry": [
+  {"base":"bird","pitch":58,"length":1.2,"name":"placeholder: a hoot that sounds sure of itself (Claude's draft)"}
+ ],
+ "parts": [
+  {"head":"owl_head","body":"owl_torso","front":"owl_wing","back":"owl_foot","sig":"owl_tail"}
+ ]
+}
