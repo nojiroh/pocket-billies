@@ -56,7 +56,6 @@ expose({
   checkboxField: [() => checkboxField, v => (checkboxField = v)],
   claimedPrefix: [() => claimedPrefix],
   clone: [() => clone],
-  coinOptions: [() => coinOptions],
   colorField: [() => colorField, v => (colorField = v)],
   commit: [() => commit, v => (commit = v)],
   confirmStaged: [() => confirmStaged, v => (confirmStaged = v)],
@@ -82,6 +81,7 @@ expose({
   paneRoot: [() => paneRoot],
   pathPrefix: [() => pathPrefix, v => (pathPrefix = v)],
   peopleOptions: [() => peopleOptions],
+  pyramidOptions: [() => pyramidOptions],
   rangeField: [() => rangeField, v => (rangeField = v)],
   readField: [() => readField, v => (readField = v)],
   readPath: [() => readPath, v => (readPath = v)],
@@ -916,7 +916,7 @@ export const moveOptions = () =>
     .sort((a, b) => studioState.D.moves[a].n.localeCompare(studioState.D.moves[b].n))
     .map(k => [k, `${studioState.D.moves[k].n} · ${studioState.D.moves[k].t}`]);
 export const itemOptions = () => Object.keys(studioState.D.items).map(k => [k, studioState.D.items[k].n]);
-export const coinOptions = () => Object.keys(studioState.D.pyramids).map(k => [k, studioState.D.pyramids[k].n]);
+export const pyramidOptions = () => Object.keys(studioState.D.pyramids).map(k => [k, studioState.D.pyramids[k].n]);
 export const peopleOptions = () => Object.keys(studioState.D.people).map(k => [k, k]);
 export const statusOptions = () => studioState.D.statuses.map(s => [s.id, s.name]);
 export const statOptions = () => studioState.D.stats.filter(s => s.id !== 'hp').map(s => [s.id, s.name]);

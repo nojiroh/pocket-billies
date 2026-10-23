@@ -32,7 +32,7 @@ import {
 } from './hooks.js';
 import { $, clamp, random } from './util.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
-import { coinCanvas, iconCanvas, makeCanvas, whiteCopy } from './art.js';
+import { iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
 import { ROBOT_PART_BONES } from './robot-art.js';
 import { personBattleFrames, personBattlePose, wardrobeData } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigTint } from './skeleton-rig.js';
@@ -118,7 +118,6 @@ expose({
   cameraGuardPose: [() => cameraGuardPose],
   cameraOverflow: [() => cameraOverflow, v => (cameraOverflow = v)],
   catchSound: [() => catchSound],
-  coinArc: [() => coinArc, v => (coinArc = v)],
   drawForegrounds: [() => drawForegrounds, v => (drawForegrounds = v)],
   drawList: [() => drawList],
   drawListLength: [() => drawListLength, v => (drawListLength = v)],
@@ -137,6 +136,7 @@ expose({
   newActorState: [() => newActorState],
   particleSprite: [() => particleSprite, v => (particleSprite = v)],
   punch: [() => punch, v => (punch = v)],
+  pyramidArc: [() => pyramidArc, v => (pyramidArc = v)],
   ringFx: [() => ringFx, v => (ringFx = v)],
   scheduleAt: [() => scheduleAt, v => (scheduleAt = v)],
   setActorAction: [() => setActorAction, v => (setActorAction = v)],
@@ -1272,7 +1272,7 @@ function battleStageDrawEffects(c, skip0) {
       q = battleStageProject(C.x, C.y, C.z);
     if (q) {
       /* the mail move's coin: the money icon (not a catch item) */
-      const cc = C.kind === MONEY_COIN ? iconCanvas('coin', 3) : coinCanvas(C.kind, 16),
+      const cc = C.kind === MONEY_COIN ? iconCanvas('coin', 3) : pyramidCanvas(C.kind, 16),
         k = clamp((q.s / 30) * (C.k || 1), 0.6, 4);
       c.save();
       c.translate(Math.round(q.x), Math.round(q.y));
@@ -1427,7 +1427,7 @@ export const camAt = (i, amt = 0.45, z = 0.14, rr = 0, d = 260, e = 'io') => {
 /* RF-2: a pyramid (a catch item's id: its model or its icon) or the mail move's coin (MONEY_COIN) flies an arc. A
    pyramid tumbles about a tilted axis (C.ax, C.tum; faster with spin) while C.fly; battle-3d.js pyramidItem draws it */
 const MONEY_COIN = '$coin';
-function coinArc(from, to, dur, kind, onLand, spin) {
+function pyramidArc(from, to, dur, kind, onLand, spin) {
   const C = {
     kind,
     x: from.x,
@@ -1568,7 +1568,7 @@ export function battleStagePlay(an, ev) {
       const w = actorWorldPoint(i),
         from = si === 0 ? throwOrigin() : { x: w.x + 2.4, y: 2.2, z: w.z + 1.6 },
         to = { x: w.x, y: 0.4, z: w.z };
-      coinArc(from, to, 380, 'pyramid', C => {
+      pyramidArc(from, to, 380, 'pyramid', C => {
         C.show = false;
         s.show = true;
         const c = actorCenter(i);
@@ -1840,7 +1840,7 @@ export function battleStagePlay(an, ev) {
           );
       if (an.fx === 'mail') {
         battleStageFocus(actorTeam(an.si) === 0 ? 'me' : 'foe');
-        coinArc({ x: T.x + 3, y: 4, z: T.z + 2 }, T, 380, MONEY_COIN, C => {
+        pyramidArc({ x: T.x + 3, y: 4, z: T.z + 2 }, T, 380, MONEY_COIN, C => {
           C.show = false;
           hitFx(an.si, { te: an.te, t: 'Retail' });
         });
@@ -2101,7 +2101,7 @@ export function battleStageCatch(kind, res, spin, done) {
   camAt(1, 0.5, 0.18, 0.02, 320);
   battleStageFocus('foe');
   catchSound('throw');
-  coinArc(
+  pyramidArc(
     throwOrigin(),
     { x: o.x, y: o.y, z: o.z },
     480,

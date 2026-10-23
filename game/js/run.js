@@ -42,7 +42,7 @@ import { runUnlocks } from './logic/unlocks.js';
 import { runStartOn, runStartPlan } from './logic/run-start.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
-import { coinHTML } from './art.js';
+import { pyramidHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
 import { JINGLES, jingle } from './sound.js';
@@ -287,7 +287,7 @@ export function runStartSheet() {
         .map(k => ['items', k, ITEMS[k].n, itemIcon(k, 30)]),
       ...Object.keys(PYRAMIDS)
         .filter(k => saveData.pyramids[k] > 0)
-        .map(k => ['pyramids', k, PYRAMIDS[k].n, coinHTML(k, 30)]),
+        .map(k => ['pyramids', k, PYRAMIDS[k].n, pyramidHTML(k, 30)]),
     ],
     row = ([kind, k, name, icon]) => {
       const n = P.pack[kind][k] || 0,

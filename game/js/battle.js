@@ -53,7 +53,7 @@ import {
 } from './logic/battle-engine.js';
 import { battleSettle, battleSettleWin } from './logic/battle-rewards.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
-import { artURL, coinHTML, iconURL, moneyHTML, uiIconHTML } from './art.js';
+import { artURL, iconURL, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
@@ -783,7 +783,7 @@ export function paintActions() {
         const c = PYRAMIDS[k],
           have = saveData.pyramids[k] || 0,
           odds = Math.round(catchOdds(k, 1 + CATCH_RULES.ring * 0.5, false) * 100);
-        return `<button class="ccard" data-a="bcoin" data-c="${k}" ${have ? '' : 'disabled'}>${coinHTML(k, 34)}<span class="cc-t"><b>${escapeHtml(c.n)}</b><small class="tnum">${c.m === 0 ? 'Guaranteed' : `~${odds}% catch`} · ${have} left</small></span><span class="cc-bar"><i style="width:${c.m === 0 ? 100 : clamp(odds, 2, 100)}%"></i></span></button>`;
+        return `<button class="ccard" data-a="bcoin" data-c="${k}" ${have ? '' : 'disabled'}>${pyramidHTML(k, 34)}<span class="cc-t"><b>${escapeHtml(c.n)}</b><small class="tnum">${c.m === 0 ? 'Guaranteed' : `~${odds}% catch`} · ${have} left</small></span><span class="cc-bar"><i style="width:${c.m === 0 ? 100 : clamp(odds, 2, 100)}%"></i></span></button>`;
       })
       .join('')}</div>${backButtonHTML()}`;
   } else if (ph === 'items') {
@@ -805,7 +805,7 @@ export function paintActions() {
   } else if (ph === 'team') h = teamPick(true);
   else if (ph === 'switch') h = teamPick(false);
   else if (ph === 'aim') {
-    h = `<div class="aim"><div class="aimcoin" id="aimCoin" role="button" tabindex="0" aria-label="Swipe up to throw">${coinHTML(activeBattle.coin, 96, 32)}<span class="aim-hint">${uiIconHTML('back', 14)}</span></div><p class="note">Swipe the pyramid up when the ring is small and green. A sideways swipe adds spin.</p><div class="two"><button class="bt coin" data-a="bthrow"><b>Throw it</b><kbd>Space</kbd></button><button class="bt back" data-a="baimback"><b>Put it away</b><kbd>Esc</kbd></button></div></div>`;
+    h = `<div class="aim"><div class="aimcoin" id="aimCoin" role="button" tabindex="0" aria-label="Swipe up to throw">${pyramidHTML(activeBattle.coin, 96, 32)}<span class="aim-hint">${uiIconHTML('back', 14)}</span></div><p class="note">Swipe the pyramid up when the ring is small and green. A sideways swipe adds spin.</p><div class="two"><button class="bt coin" data-a="bthrow"><b>Throw it</b><kbd>Space</kbd></button><button class="bt back" data-a="baimback"><b>Put it away</b><kbd>Esc</kbd></button></div></div>`;
   } else if (ph === 'throwing') h = `<div class="aim"><p class="note">The pyramid is in the air…</p></div>`;
   else if (ph === 'end') {
     const t = {
@@ -970,7 +970,7 @@ export function endBattle() {
       }
       after.push({
         title: nu ? escapeHtml(st.title || 'Badge') : 'Rematch won',
-        top: `<div class="sheet-art">${coinHTML(st.coin || 'pyramid', 96, 32)}</div>`,
+        top: `<div class="sheet-art">${pyramidHTML(st.coin || 'pyramid', 96, 32)}</div>`,
         html: `<p>${escapeHtml(T.win || '')}</p><p>You earned ${moneyHTML(pay.reward)}${nu && st.rewardText ? `, ${escapeHtml(st.rewardText)}` : ''}${extra}.</p>${nu && st.unlockText ? `<p class="note">${escapeHtml(st.unlockText)}</p>` : ''}`,
         btns: [{ l: 'Back to walking', c: 'dark', f: closeModal }],
       });

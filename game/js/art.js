@@ -11,11 +11,11 @@ expose({
   ART_CACHE: [() => ART_CACHE],
   ART_DIR: [() => ART_DIR],
   BAYER_4X4: [() => BAYER_4X4],
-  COIN_ART: [() => COIN_ART],
-  COIN_KINDS: [() => COIN_KINDS],
   EGG_ART: [() => EGG_ART],
   ICON_ATLAS: [() => ICON_ATLAS],
   ICON_CACHE: [() => ICON_CACHE],
+  PYRAMID_ART: [() => PYRAMID_ART],
+  PYRAMID_KINDS: [() => PYRAMID_KINDS],
   artBoot: [() => artBoot, v => (artBoot = v)],
   artImg: [() => artImg, v => (artImg = v)],
   artLoad: [() => artLoad, v => setArtLoad(v)],
@@ -23,9 +23,6 @@ expose({
   artReady: [() => artReady],
   artURL: [() => artURL],
   bayerThreshold: [() => bayerThreshold],
-  coinCanvas: [() => coinCanvas, v => (coinCanvas = v)],
-  coinHTML: [() => coinHTML, v => (coinHTML = v)],
-  coinURL: [() => coinURL, v => (coinURL = v)],
   darkCopy: [() => darkCopy, v => (darkCopy = v)],
   eggCanvas: [() => eggCanvas, v => (eggCanvas = v)],
   eggHTML: [() => eggHTML, v => (eggHTML = v)],
@@ -41,6 +38,9 @@ expose({
   moneyHTML: [() => moneyHTML, v => (moneyHTML = v)],
   packHexPixel: [() => packHexPixel],
   packPixel: [() => packPixel],
+  pyramidCanvas: [() => pyramidCanvas, v => (pyramidCanvas = v)],
+  pyramidHTML: [() => pyramidHTML, v => (pyramidHTML = v)],
+  pyramidURL: [() => pyramidURL, v => (pyramidURL = v)],
   setArtLoad: [() => setArtLoad, v => (setArtLoad = v)],
   shadeHex: [() => shadeHex, v => (shadeHex = v)],
   tintedCopy: [() => tintedCopy, v => (tintedCopy = v)],
@@ -199,17 +199,17 @@ function darkCopy(c) {
 }
 /* ---- people are drawn in code by person-art.js ---- */
 /* ---- pyramids and Seed Rounds ---- */
-const COIN_KINDS =
+const PYRAMID_KINDS =
   typeof PYRAMIDS !== 'undefined' ? Object.keys(PYRAMIDS) : ['pyramid', 'step_pyramid', 'gold_pyramid', 'capstone'];
-export const COIN_ART = COIN_KINDS.flatMap(k => [`coins/${k}_16.png`, `coins/${k}_32.png`]);
-export function coinCanvas(kind = 'pyramid', size = 16) {
+export const PYRAMID_ART = PYRAMID_KINDS.flatMap(k => [`coins/${k}_16.png`, `coins/${k}_32.png`]);
+export function pyramidCanvas(kind = 'pyramid', size = 16) {
   return ART_CACHE.img[`coins/${kind}_${size >= 32 ? 32 : 16}.png`] || artImg(`coins/${kind}_16.png`);
 }
-export function coinURL(kind, size = 16) {
+export function pyramidURL(kind, size = 16) {
   return artURL(`coins/${kind}_${size >= 32 ? 32 : 16}.png`);
 }
-export function coinHTML(kind, css = 32, size = 16) {
-  return `<img class="pxi" src="${coinURL(kind, size)}" width="${css}" height="${css}" alt="">`;
+export function pyramidHTML(kind, css = 32, size = 16) {
+  return `<img class="pxi" src="${pyramidURL(kind, size)}" width="${css}" height="${css}" alt="">`;
 }
 export const EGG_ART = [2, 5, 10].flatMap(t => [`eggs/egg_${t}.png`, `eggs/egg_${t}_cracked.png`]);
 function eggCanvas(tier, crack) {
@@ -220,5 +220,5 @@ export function eggHTML(tier, css = 40, cls = '') {
 }
 /* everything the menus need before the first screen draws */
 export function artBoot() {
-  return artLoad([ICON_ATLAS, ...COIN_ART, ...EGG_ART]);
+  return artLoad([ICON_ATLAS, ...PYRAMID_ART, ...EGG_ART]);
 }

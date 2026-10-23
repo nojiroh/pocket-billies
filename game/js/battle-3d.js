@@ -9,7 +9,7 @@
 import { expose } from './test-globals.js';
 import { PYRAMIDS, activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
 import { $, clamp } from './util.js';
-import { coinCanvas, hexToRgb } from './art.js';
+import { hexToRgb, pyramidCanvas } from './art.js';
 import {
   FOCAL_LENGTH,
   PYRAMID_HIGH,
@@ -284,7 +284,7 @@ function battle3dFrame() {
   };
 }
 /* ================= RF-2: THE THROWN PYRAMID =================
-   battleStage.coin (battle-stage.js coinArc and the catch) says where it is and how it lies:
+   battleStage.coin (battle-stage.js pyramidArc and the catch) says where it is and how it lies:
    - in the air (C.fly): it tumbles about a tilted axis through its middle (C.tum radians, C.ax the axis);
    - on the ground: it stands point up, rocked on one edge of its base by C.rot (the wobbles: + one way, - the other);
    - C.tip: it landed balanced on its point (the critical catch).
@@ -332,7 +332,7 @@ export function pyramidWorldItem(kind, x, y, z, spin, size = 1) {
   return {
     k: 'pyramid',
     /* its icon: never drawn (a model item), but the renderer sorts and keys items by their picture */
-    im: coinCanvas(kind, 32),
+    im: pyramidCanvas(kind, 32),
     vox: rec,
     voxPath: path,
     p: { x, z, s: PYRAMID_SCALE * size, rot: PYRAMID_YAW },

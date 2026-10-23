@@ -6,7 +6,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide, sceneryArtPaths, sceneryCatalog } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
-import { COIN_ART, artLoad } from '../../game/js/art.js';
+import { PYRAMID_ART, artLoad } from '../../game/js/art.js';
 import { robotArtFiles } from '../../game/js/robot-art.js';
 import { robotRigParts, setRigParts, setRobotRigData } from '../../game/js/skeleton-rig.js';
 import {
@@ -249,7 +249,7 @@ async function startBattlePreview() {
   try {
     await Promise.all([
       battleStagePrepare(battlePreview.area),
-      artLoad(COIN_ART),
+      artLoad(PYRAMID_ART),
       loadFighterArt(battlePreview.me, 'back'),
       loadFighterArt(battlePreview.foe, 'front'),
     ]);

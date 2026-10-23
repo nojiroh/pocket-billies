@@ -10,7 +10,7 @@ import { ITEMS, PYRAMIDS, STATUS_NAMES } from './game-data.js';
 import { billyName, formatNumber, maxHp } from './logic/rules.js';
 import { applyItem, canUse, teamNeedsHp } from './logic/battle-engine.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
-import { coinHTML, uiIconHTML } from './art.js';
+import { pyramidHTML, uiIconHTML } from './art.js';
 import { bustHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
 /* eslint-disable no-func-assign */
@@ -53,7 +53,7 @@ export function renderBag() {
           const I = p === 'pyramids' ? PYRAMIDS[k] : ITEMS[k],
             n = p === 'pyramids' ? saveData.pyramids[k] : saveData.items[k],
             on = sel === k;
-          return `<button class="bag-row k-card ${on ? 'on' : ''}" data-a="bag-sel" data-k="${escapeHtml(k)}" aria-pressed="${on}"><span class="bag-ic">${p === 'pyramids' ? coinHTML(k, 30) : itemIcon(k, 30)}</span><span class="bag-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d || '')}</small></span><b class="bag-n tnum">×${formatNumber(n)}</b></button>`;
+          return `<button class="bag-row k-card ${on ? 'on' : ''}" data-a="bag-sel" data-k="${escapeHtml(k)}" aria-pressed="${on}"><span class="bag-ic">${p === 'pyramids' ? pyramidHTML(k, 30) : itemIcon(k, 30)}</span><span class="bag-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d || '')}</small></span><b class="bag-n tnum">×${formatNumber(n)}</b></button>`;
         }).join('')}</div>`
       : `<p class="note bag-empty">${p === 'pyramids' ? 'No pyramids. Shops sell them.' : p === 'special' ? 'Nothing special yet.' : 'No healing items. Shops sell them.'}</p>`;
   /* what the chosen thing can do */

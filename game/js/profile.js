@@ -8,7 +8,7 @@ import { clamp } from './util.js';
 import { DEX_ORDER, ITEMS, LOCATIONS, PYRAMIDS, TRAINERS } from './game-data.js';
 import { billyName, dexCaught, dexSeen, findBilly, formatNumber, metresToKm, plural } from './logic/rules.js';
 import { escapeHtml, saveData } from './game-state.js';
-import { coinHTML, eggHTML, moneyHTML, uiIconHTML } from './art.js';
+import { eggHTML, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { cleanTrainer, personHTML } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
@@ -42,7 +42,7 @@ function badgeSlots() {
       known
         .map(b =>
           b.got
-            ? `<li class="bdg got"><span class="bdg-m" title="${escapeHtml(b.name)}, from ${escapeHtml(b.leader)}">${coinHTML(b.coin, 30, 32)}</span><small>${escapeHtml(b.name.replace(/ Badge$/, ''))}</small></li>`
+            ? `<li class="bdg got"><span class="bdg-m" title="${escapeHtml(b.name)}, from ${escapeHtml(b.leader)}">${pyramidHTML(b.coin, 30, 32)}</span><small>${escapeHtml(b.name.replace(/ Badge$/, ''))}</small></li>`
             : `<li class="bdg"><span class="bdg-m" title="Beat ${escapeHtml(b.leader)} to earn it">?</span><small>${escapeHtml(b.leader.replace(/^Leader /, ''))}</small></li>`
         )
         .join('') +
@@ -75,7 +75,7 @@ export function renderProfile() {
  </section>
  <section class="tpanel pf-stats"><div class="sec-h"><h2>Records</h2></div><div class="pf-grid">
   ${tile(uiIconHTML('run', 14), 'Distance walked', `${metresToKm((saveData.stats && saveData.stats.walked) || 0)} km`)}${tile(uiIconHTML('map', 14), 'Places visited', `${places}/${LOCATIONS.length}`, null, places / LOCATIONS.length)}
-  ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX_ORDER.length}`, null, seen / DEX_ORDER.length)}${tile(coinHTML('pyramid', 14), 'Caught', `${got}/${DEX_ORDER.length}`, null, got / DEX_ORDER.length)}
+  ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX_ORDER.length}`, null, seen / DEX_ORDER.length)}${tile(pyramidHTML('pyramid', 14), 'Caught', `${got}/${DEX_ORDER.length}`, null, got / DEX_ORDER.length)}
   ${tile(uiIconHTML('fight', 14), 'Trainers beaten', formatNumber(beat))}${tile(eggHTML(2, 12), 'Eggs hatched', formatNumber(saveData.hatched || 0), saveData.ranch.nursery.length ? `${plural(saveData.ranch.nursery.length, 'egg')} at the ranch` : 'No eggs right now')}
  </div></section></div>
  <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud k-card" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { build: bud.build, coat: bud.coat })}</span><span class="pf-bt"><b>${escapeHtml(billyName(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>Gets the full XP of every battle you win.</small></span></button></section>` : ''}
@@ -83,7 +83,7 @@ export function renderProfile() {
   <div class="pf-coins">${Object.keys(PYRAMIDS)
     .map(
       k =>
-        `<span class="pf-coin${saveData.pyramids[k] ? '' : ' none'}" title="${escapeHtml(PYRAMIDS[k].n)}">${coinHTML(k, 22, 32)}<small>${escapeHtml(PYRAMIDS[k].n.replace(/ Coins?$/, ''))}</small><b class="tnum">${formatNumber(saveData.pyramids[k] || 0)}</b></span>`
+        `<span class="pf-coin${saveData.pyramids[k] ? '' : ' none'}" title="${escapeHtml(PYRAMIDS[k].n)}">${pyramidHTML(k, 22, 32)}<small>${escapeHtml(PYRAMIDS[k].n.replace(/ Coins?$/, ''))}</small><b class="tnum">${formatNumber(saveData.pyramids[k] || 0)}</b></span>`
     )
     .join('')}</div>
   ${items.length ? `<ul class="pf-items">${items.map(k => `<li>${itemIcon(k, 24)}<span>${escapeHtml(ITEMS[k].n)}</span><b class="tnum">×${formatNumber(saveData.items[k])}</b></li>`).join('')}</ul>` : '<p class="note">No items yet.</p>'}

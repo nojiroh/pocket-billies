@@ -36,7 +36,6 @@ import {
   changed,
   checkboxField,
   clone,
-  coinOptions,
   colorField,
   dialog,
   formatThousands,
@@ -47,6 +46,7 @@ import {
   openSection,
   pathPrefix,
   peopleOptions,
+  pyramidOptions,
   rangeField,
   render,
   selectField,
@@ -1154,7 +1154,7 @@ SECTIONS.shops = () => {
         ]
           .map(([v, n]) => `<option value="${v}" ${(isC ? 'coin' : 'item') === v ? 'selected' : ''}>${n}</option>`)
           .join('')}</select></td>
-  <td><select data-p="${p}.stock.${i}.${isC ? 'coin' : 'item'}" data-k="sel" data-rr="1">${(isC ? coinOptions() : itemOptions()).map(([v, n]) => `<option value="${v}" ${v === key ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="0" step="10" data-p="${p}.stock.${i}.price" data-k="num" data-opt="1" value="${w.price ?? ''}" placeholder="${base ?? ''}"></td><td><small>${base != null ? `Shop price: ${base} Moneys` : ''}</small></td>
+  <td><select data-p="${p}.stock.${i}.${isC ? 'coin' : 'item'}" data-k="sel" data-rr="1">${(isC ? pyramidOptions() : itemOptions()).map(([v, n]) => `<option value="${v}" ${v === key ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="0" step="10" data-p="${p}.stock.${i}.price" data-k="num" data-opt="1" value="${w.price ?? ''}" placeholder="${base ?? ''}"></td><td><small>${base != null ? `Shop price: ${base} Moneys` : ''}</small></td>
   <td><button class="x" data-act="stockMove" data-i="${i}" data-d="-1">↑</button><button class="x" data-act="stockDel" data-i="${i}">✕</button></td></tr>`;
       })
       .join('');
@@ -1435,7 +1435,7 @@ SECTIONS.jobs = () => {
         ]
           .map(([v, n]) => `<option value="${v}" ${kind === v ? 'selected' : ''}>${n}</option>`)
           .join('')}</select></label>`,
-        kind === 'se' ? '' : selectField('Which', `${p}.out.1`, kind === 'item' ? itemOptions() : coinOptions()),
+        kind === 'se' ? '' : selectField('Which', `${p}.out.1`, kind === 'item' ? itemOptions() : pyramidOptions()),
         numberField('Amount per pay', `${p}.out.2`, { min: 1, step: 1 }),
         textField('Pay label', `${p}.pay`, { help: 'Shown when hiring, like “1 Potion”.' })
       )}${textField('What it did (after the Billie’s name)', `${p}.quip`, { help: '“Hoodini made 40 lattes. Most were wrong.”' })}<button class="btn danger subtle" data-act="jobDel" data-k="${k}">Delete job</button></div></div>`;
@@ -1504,7 +1504,7 @@ SECTIONS.trainers = () => {
     ? grid(
         textField('Badge id', `${p}.seat.id`, { help: 'Route gates refer to this.' }),
         textField('Title', `${p}.seat.title`),
-        selectField('Pyramid shown', `${p}.seat.coin`, coinOptions())
+        selectField('Pyramid shown', `${p}.seat.coin`, pyramidOptions())
       ) +
       `<div class="grid">${Object.keys(D.pyramids)
         .map(c => numberField(`${D.pyramids[c].n} reward`, `${p}.seat.pyramids.${c}`, { opt: 1, min: 0, step: 1 }))

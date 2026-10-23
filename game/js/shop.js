@@ -12,7 +12,7 @@ import { runShopOpen } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
 import { perkBuy, perkPrice, perkShelf } from './logic/perks.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
-import { coinHTML, moneyHTML, uiIconHTML } from './art.js';
+import { moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { openDressingRoom } from './dressing-room.js';
 import { buzz } from './battle-stage.js';
@@ -99,7 +99,7 @@ function shopHTML(id) {
         locked = it.need && seats < it.need,
         cost = price * n,
         deal = price < it.base;
-      return `<div class="ware2 k-card${locked ? ' locked' : ''}"><span class="w-ic">${it.kind === 'coin' ? coinHTML(it.key, 36) : itemIcon(it.key, 36)}</span><span class="w-t"><b>${escapeHtml(it.n)}</b><small>${escapeHtml(it.d)}</small><small class="w-own tnum">You have ${it.have}${deal ? ` · <em>Shop price ${moneyHTML(it.base)}</em>` : ''}</small></span>
+      return `<div class="ware2 k-card${locked ? ' locked' : ''}"><span class="w-ic">${it.kind === 'coin' ? pyramidHTML(it.key, 36) : itemIcon(it.key, 36)}</span><span class="w-t"><b>${escapeHtml(it.n)}</b><small>${escapeHtml(it.d)}</small><small class="w-own tnum">You have ${it.have}${deal ? ` · <em>Shop price ${moneyHTML(it.base)}</em>` : ''}</small></span>
   <span class="w-buy">${
     locked
       ? `<span class="note">Needs ${plural(it.need, 'badge')}</span>`
@@ -113,7 +113,7 @@ function shopHTML(id) {
  <div class="shop-bag"><span>In your bag</span>${Object.keys(PYRAMIDS)
    .map(
      k =>
-       `<span class="sb-c${saveData.pyramids[k] ? '' : ' none'}" role="img" title="${escapeHtml(PYRAMIDS[k].n)}" aria-label="${escapeHtml(PYRAMIDS[k].n)}: ${formatNumber(saveData.pyramids[k] || 0)}">${coinHTML(k, 18, 32)}<b class="tnum">${formatNumber(saveData.pyramids[k] || 0)}</b></span>`
+       `<span class="sb-c${saveData.pyramids[k] ? '' : ' none'}" role="img" title="${escapeHtml(PYRAMIDS[k].n)}" aria-label="${escapeHtml(PYRAMIDS[k].n)}: ${formatNumber(saveData.pyramids[k] || 0)}">${pyramidHTML(k, 18, 32)}<b class="tnum">${formatNumber(saveData.pyramids[k] || 0)}</b></span>`
    )
    .join(
      ''
