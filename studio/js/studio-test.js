@@ -122,7 +122,7 @@ export async function runStudioTest(G, opts = {}) {
 
   try {
     const keys = G.SECTION_LIST.map(n => n[0]).filter(k => G.SECTIONS[k]);
-    const total = keys.length * 2 + 9; /* first pass, second pane, eight tools, second pass */
+    const total = keys.length * 2 + 10; /* first pass, second pane, nine tools, second pass */
     let i = 0;
     /* the leak check's starting point: the quiet section, its loops and memory */
     G.openSection(QUIET_SECTION);
@@ -404,6 +404,29 @@ async function tools(G, T, fail, stopped, step) {
       L = G.sheetIslands(img, { gap: 1, conn: 8 });
     T.slice = { ms: r1(now() - a), pieces: L.length };
   });
+  /* SND-3: a song plays for a second through the Music & sound section's own AudioContext, then stops with no timer
+     left. A browser starts sound only after a click: started without one (?selftest), a context that won't run is
+     reported, not failed */
+  if (G.musicPlay && D.music) {
+    await run('music', async () => {
+      const a = now(),
+        song = Object.keys(D.music.songs)[0],
+        clicked = !!(navigator.userActivation && navigator.userActivation.hasBeenActive);
+      G.openSection('music');
+      await frames(1);
+      G.musicPlay(song);
+      await wait(1000);
+      const state = G.musicStudio.ctx ? G.musicStudio.ctx.state : 'none',
+        playing = G.musicPlaying(),
+        steps = G.musicStudio.tracker && G.musicStudio.tracker.song ? G.musicStudio.tracker.song.step : 0;
+      G.musicStop();
+      await wait(50);
+      T.music = { ms: r1(now() - a), song, state, clicked, steps, timerLeft: !!G.musicStudio.tracker.timer };
+      if (playing !== song) throw new Error(`${song} did not play (playing: ${playing || 'nothing'})`);
+      if (clicked && state !== 'running') throw new Error(`the AudioContext is ${state} after a click`);
+      if (T.music.timerLeft) throw new Error('Stop left the scheduler running');
+    });
+  }
   const sp = D.lines && D.lines[0] ? D.lines[0].id + '0' : null;
   if (sp) {
     await run('pixel', async () => {

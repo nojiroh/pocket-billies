@@ -1,0 +1,478 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "music.schema.json",
+ "title": "game/data/music.json: the songs, the jingles, the cries' bases and where each song plays (sound track SND-2; game/js/audio/tracker.js, logic/music-where.js)",
+ "type": "object",
+ "required": [
+  "songs",
+  "jingles",
+  "cries",
+  "where"
+ ],
+ "additionalProperties": false,
+ "$defs": {
+  "id": {
+   "type": "string",
+   "pattern": "^[a-z][a-z0-9_]*$"
+  },
+  "wave": {
+   "description": "p12, p25, p50: pulse waves of 12.5, 25 and 50 %; or one of the browser's own",
+   "enum": [
+    "p12",
+    "p25",
+    "p50",
+    "square",
+    "triangle",
+    "sine",
+    "sawtooth"
+   ]
+  },
+  "line": {
+   "description": "a written line of notes: [step from the song's start (16 a bar), midi note, length in steps]",
+   "type": "array",
+   "items": {
+    "type": "array",
+    "prefixItems": [
+     {
+      "type": "integer",
+      "minimum": 0
+     },
+     {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 127
+     },
+     {
+      "type": "integer",
+      "minimum": 1
+     }
+    ],
+    "minItems": 3,
+    "maxItems": 3
+   }
+  },
+  "recipe": {
+   "type": "object",
+   "properties": {
+    "bpm": {
+     "type": "number",
+     "minimum": 30,
+     "maximum": 300
+    },
+    "key": {
+     "description": "the home note, as a midi note (60 is middle C)",
+     "type": "integer",
+     "minimum": 24,
+     "maximum": 96
+    },
+    "scale": {
+     "enum": [
+      "major",
+      "minor",
+      "dorian",
+      "lydian",
+      "mixo"
+     ]
+    },
+    "prog": {
+     "description": "the chord of each bar, as a scale degree from 0 (I) to 6 (vii); eight bars",
+     "type": "array",
+     "items": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 6
+     },
+     "minItems": 8,
+     "maxItems": 8
+    },
+    "lead": {
+     "$ref": "#/$defs/wave"
+    },
+    "bass": {
+     "enum": [
+      "bounce",
+      "gallop",
+      "long",
+      "walk",
+      "drive",
+      "pedal",
+      "none"
+     ]
+    },
+    "arp": {
+     "enum": [
+      "up",
+      "updown",
+      "drip",
+      "chord7",
+      "none"
+     ]
+    },
+    "drums": {
+     "enum": [
+      "soft",
+      "skip",
+      "drive",
+      "march",
+      "bossa",
+      "none"
+     ]
+    },
+    "seed": {
+     "description": "the lead's random walk starts here: the same seed, the same tune",
+     "type": "integer"
+    },
+    "swing": {
+     "description": "how late every other sixteenth plays, as a share of a sixteenth",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 0.5
+    },
+    "echo": {
+     "description": "how much of the lead goes to the echo (0.15 when left out)",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "seventh": {
+     "description": "1: the arpeggios and chords add the seventh",
+     "enum": [
+      0,
+      1
+     ]
+    },
+    "extra": {
+     "description": "SND-4: keep the thicker mix (sine arps and chords, the night pad) instead of four voices; the title and the fall only",
+     "type": "boolean"
+    },
+    "pluck": {
+     "description": "SND-4: a music-box lead: every note short, with no vibrato (Copperleaf)",
+     "type": "boolean"
+    },
+    "arpOctave": {
+     "description": "SND-5: lift the arp by octaves (the run's later rows)",
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "counterAuto": {
+     "description": "SND-5: with no counter written, make one from the hook (each note on a chord tone a third or more below it; the run's last rows)",
+     "type": "boolean"
+    }
+   }
+  }
+ },
+ "properties": {
+  "about": {
+   "type": "string"
+  },
+  "songs": {
+   "type": "object",
+   "propertyNames": {
+    "$ref": "#/$defs/id"
+   },
+   "minProperties": 1,
+   "additionalProperties": {
+    "allOf": [
+     {
+      "$ref": "#/$defs/recipe"
+     },
+     {
+      "required": [
+       "bpm",
+       "key",
+       "scale",
+       "prog",
+       "lead",
+       "bass",
+       "arp",
+       "drums",
+       "seed"
+      ],
+      "properties": {
+       "bpm": true,
+       "key": true,
+       "scale": true,
+       "prog": true,
+       "lead": true,
+       "bass": true,
+       "arp": true,
+       "drums": true,
+       "seed": true,
+       "swing": true,
+       "echo": true,
+       "seventh": true,
+       "hook": {
+        "description": "SND-4: a written hook for bars 1-2 (none yet: the lead is composed)",
+        "$ref": "#/$defs/line"
+       },
+       "counter": {
+        "description": "SND-4: a countermelody under the hook (none yet)",
+        "$ref": "#/$defs/line"
+       },
+       "intro": {
+        "description": "SND-5: one or two bars on the lead alone that play once before the song when a battle starts it (the chromatic run); steps 0-31",
+        "$ref": "#/$defs/line"
+       },
+       "night": {
+        "description": "SND-4: the night version (played outdoors at night, logic/music-where.js songVariant): the recipe's changes. With none written, 8 bpm slower, a fourth down, soft drums (audio/tracker.js trackerNight). false: no night version (battle songs, indoor songs, the title)",
+        "anyOf": [
+         {
+          "const": false
+         },
+         {
+          "$ref": "#/$defs/recipe"
+         }
+        ]
+       },
+       "tense": {
+        "description": "SND-5: the tense version of a battle song (played while the lead Billie is under a quarter of its HP, logic/music-where.js songVariant): the recipe's changes. With none written, 16 bpm faster, march drums, a pedal bass (audio/tracker.js trackerTense). false: no tense version",
+        "anyOf": [
+         {
+          "const": false
+         },
+         {
+          "$ref": "#/$defs/recipe"
+         }
+        ]
+       },
+       "extra": true,
+       "pluck": true,
+       "hookName": {
+        "description": "SND-4: a name for the hook and its countermelody. Claude's drafts start with \"placeholder\" (the Studio's Check lists them)",
+        "type": "string",
+        "maxLength": 80
+       },
+       "arpOctave": true,
+       "counterAuto": true,
+       "arc": {
+        "description": "SND-5: false: the run's arc bands (music.json run.arc) leave this song as written",
+        "const": false
+       },
+       "deadline": {
+        "description": "SND-5: the deadline version (a run's last days, logic/music-where.js songVariant): the recipe's changes. With none written, the drums and the hook on the triangle alone (audio/tracker.js trackerDeadline). false: no deadline version",
+        "anyOf": [
+         {
+          "const": false
+         },
+         {
+          "$ref": "#/$defs/recipe"
+         }
+        ]
+       }
+      },
+      "additionalProperties": false
+     }
+    ]
+   }
+  },
+  "jingles": {
+   "type": "object",
+   "propertyNames": {
+    "$ref": "#/$defs/id"
+   },
+   "additionalProperties": {
+    "type": "object",
+    "required": [
+     "notes"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "notes": {
+      "description": "[midi note, length in sixteenths]; a rest is note 0",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+       "type": "array",
+       "prefixItems": [
+        {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 127
+        },
+        {
+         "type": "number",
+         "exclusiveMinimum": 0
+        }
+       ],
+       "minItems": 2,
+       "maxItems": 2
+      }
+     },
+     "name": {
+      "description": "SND-4: a name for the jingle. Claude's drafts start with \"placeholder\" (the Studio's Check lists them)",
+      "type": "string",
+      "maxLength": 80
+     }
+    }
+   }
+  },
+  "cries": {
+   "type": "object",
+   "required": [
+    "bases"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "bases": {
+     "description": "the base cries; a species picks one by its name until roster.json names one (SND-6)",
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "type": "object",
+      "required": [
+       "wave"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "wave": {
+        "$ref": "#/$defs/wave"
+       }
+      }
+     }
+    }
+   }
+  },
+  "run": {
+   "description": "SND-5: the run's music (logic/music-where.js musicArcBand, audio/tracker.js trackerArc)",
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "about": {
+     "type": "string"
+    },
+    "arc": {
+     "description": "bands of a run's rows (row 0 is the landing) and the changes to a biome's song there; a song plays as 'meadow@mid'",
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "name",
+       "row",
+       "changes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "name": {
+        "description": "the band's name, the song's part ('meadow@late'); not night, tense or deadline",
+        "$ref": "#/$defs/id",
+        "not": {
+         "enum": [
+          "night",
+          "tense",
+          "deadline",
+          "intro",
+          "day"
+         ]
+        }
+       },
+       "row": {
+        "description": "the rows, from and to",
+        "type": "array",
+        "items": {
+         "type": "integer",
+         "minimum": 0
+        },
+        "minItems": 2,
+        "maxItems": 2
+       },
+       "changes": {
+        "description": "the recipe's changes in these rows",
+        "$ref": "#/$defs/recipe"
+       }
+      }
+     }
+    },
+    "deadlineDays": {
+     "description": "the run's last days that play a song's deadline version (1: the deadline day alone); past the deadline it always plays",
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 3
+    },
+    "weather": {
+     "description": "the low-pass on the music (Hz) for each weather on a run's map tab (logic/music-where.js musicWeatherCut); weather not named plays open",
+     "type": "object",
+     "additionalProperties": {
+      "type": "number",
+      "minimum": 200,
+      "maximum": 20000
+     }
+    }
+   }
+  },
+  "where": {
+   "description": "which song plays: the first rule whose every key matches wins; a rule with only a song matches always",
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "object",
+    "required": [
+     "song"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "started": {
+      "description": "false: before the game has started (the title, the opening)",
+      "type": "boolean"
+     },
+     "battle": {
+      "description": "the kind of battle: wild, trainer, rival (Chad), leader (a run's mini-boss), boss (a run's boss)",
+      "$ref": "#/$defs/id"
+     },
+     "tab": {
+      "description": "the open tab (map: the world map)",
+      "$ref": "#/$defs/id"
+     },
+     "indoor": {
+      "description": "inside a room",
+      "type": "boolean"
+     },
+     "map": {
+      "description": "any of these maps",
+      "type": "array",
+      "items": {
+       "$ref": "#/$defs/id"
+      },
+      "minItems": 1
+     },
+     "placeKind": {
+      "description": "the place is a city or a town (locations.json t: city, town)",
+      "enum": [
+       "city",
+       "town"
+      ]
+     },
+     "nodeType": {
+      "description": "a run's node type (nodeTypes.json)",
+      "$ref": "#/$defs/id"
+     },
+     "biome": {
+      "description": "a run's biome (biomes.json)",
+      "$ref": "#/$defs/id"
+     },
+     "row": {
+      "description": "SND-5: a run's rows, from and to (1 is the landing)",
+      "type": "array",
+      "items": {
+       "type": "integer",
+       "minimum": 0
+      },
+      "minItems": 2,
+      "maxItems": 2
+     },
+     "song": {
+      "description": "a song of songs; $place: the place's own song (locations.json music), when it has one",
+      "anyOf": [
+       {
+        "$ref": "#/$defs/id"
+       },
+       {
+        "const": "$place"
+       }
+      ]
+     }
+    }
+   }
+  }
+ }
+}

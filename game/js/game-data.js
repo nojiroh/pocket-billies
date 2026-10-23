@@ -34,6 +34,7 @@ expose({
   LOCATIONS: [() => LOCATIONS],
   LOCATION_BY_ID: [() => LOCATION_BY_ID],
   MOVES: [() => MOVES],
+  MUSIC: [() => MUSIC],
   NODE_TYPES: [() => NODE_TYPES],
   PASSIVE: [() => PASSIVE],
   PEOPLE: [() => PEOPLE],
@@ -216,6 +217,8 @@ LINES.forEach(L => {
       diet: at(L.diet, ''),
       blurb: at(L.bio, ''),
       note: at(L.note, ''),
+      /* SND-3: its own cry (base, pitch, length), or null for the one its id makes; a stage doesn't take another's */
+      cry: (Array.isArray(L.cry) && L.cry[st0]) || null,
       cr:
         L.catchRate != null
           ? L.catchRate
@@ -358,6 +361,8 @@ provide({ PEOPLE }); /* to-module */
 export const SHOPS = gameData.shops || {};
 /* roguelite track RL-6: the kinds of node on a run's map (logic/run-map.js takes them as an argument) */
 export const NODE_TYPES = gameData.nodeTypes || {};
+/* sound track SND-2: the songs, jingles, cries' bases and where each song plays (music.json; audio/tracker.js plays them) */
+export const MUSIC = gameData.music || { songs: {}, jingles: {}, cries: { bases: [] }, where: [] };
 /* roguelite track RL-12: a run's Loopholes (relics) and their effect rows (logic/effects.js) */
 export const RELICS = /** @type {Record<string, Relic>} */ (gameData.relics || {});
 /* roguelite track RL-11: the four currencies (currencies.json) */

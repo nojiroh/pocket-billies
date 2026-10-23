@@ -126,6 +126,21 @@
 .set-tabs {
   margin-bottom: var(--s4);
 }
+/* SND-1: the mute button sits in a box of no height just before the tabs, lifted into the row of the sheet's title,
+   and scrolls away with the title; the tabs keep their sticky row to themselves */
+.set-top {
+  position: relative;
+  height: 0;
+}
+.set-mute {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: var(--tap);
+  min-width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+}
 .set-tabs button {
   min-height: var(--tap);
 }

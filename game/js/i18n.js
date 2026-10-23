@@ -115,6 +115,26 @@ Smoothest|Vloeiendst|Am flüssigsten|Más fluido|Plus fluide
 Music|Muziek|Musik|Música|Musique
 Sound effects|Geluidseffecten|Soundeffekte|Efectos de sonido|Effets sonores
 World sounds|Geluiden van de wereld|Weltgeräusche|Sonidos del mundo|Sons du monde
+Sound|Geluid|Ton|Sonido|Son
+Volume|Volume|Lautstärke|Volumen|Volume
+Ambience|Sfeergeluiden|Atmosphäre|Ambiente|Ambiance
+Test|Test|Testen|Probar|Tester
+Mute|Dempen|Stumm|Silenciar|Couper le son
+Sound on|Geluid aan|Ton an|Sonido activado|Son activé
+Sound off|Geluid uit|Ton aus|Sonido desactivado|Son coupé
+Music volume|Muziekvolume|Musiklautstärke|Volumen de la música|Volume de la musique
+Sound effects volume|Volume van geluidseffecten|Lautstärke der Soundeffekte|Volumen de los efectos de sonido|Volume des effets sonores
+World sounds volume|Volume van de geluiden van de wereld|Lautstärke der Weltgeräusche|Volumen de los sonidos del mundo|Volume des sons du monde
+Ambience volume|Volume van de sfeergeluiden|Lautstärke der Atmosphäre|Volumen del ambiente|Volume de l’ambiance
+All of it at once. Mute keeps your levels for later.|Alles tegelijk. Dempen bewaart je niveaus voor later.|Alles auf einmal. Stumm behält deine Pegel für später.|Todo a la vez. Silenciar guarda tus niveles para después.|Tout à la fois. Couper le son garde tes niveaux pour plus tard.
+Everything together.|Alles samen.|Alles zusammen.|Todo junto.|Tout ensemble.
+Tunes for each place and battle.|Melodieën voor elke plek en elk gevecht.|Melodien für jeden Ort und jeden Kampf.|Melodías para cada lugar y cada combate.|Des airs pour chaque lieu et chaque combat.
+Buttons, battles, coins, and the short tunes for a win or a level up.|Knoppen, gevechten, munten en de korte deuntjes bij een overwinning of een nieuw level.|Knöpfe, Kämpfe, Münzen und die kurzen Melodien bei einem Sieg oder einem Levelaufstieg.|Botones, combates, monedas y las melodías cortas al ganar o subir de nivel.|Boutons, combats, pièces, et les petits airs d’une victoire ou d’un niveau gagné.
+Water, fountains, fire, rain, wind and animals near you.|Water, fonteinen, vuur, regen, wind en dieren bij je in de buurt.|Wasser, Brunnen, Feuer, Regen, Wind und Tiere in deiner Nähe.|Agua, fuentes, fuego, lluvia, viento y animales cerca de ti.|L’eau, les fontaines, le feu, la pluie, le vent et les animaux près de toi.
+Birdsong by day, crickets at night, leaves, a town’s murmur, a room’s clock.|Vogelzang overdag, krekels ’s nachts, bladeren, het geroezemoes van een stad, de klok in een kamer.|Vogelgesang am Tag, Grillen in der Nacht, Blätter, das Murmeln einer Stadt, die Uhr eines Zimmers.|Pájaros de día, grillos de noche, hojas, el murmullo de un pueblo, el reloj de una habitación.|Les oiseaux le jour, les grillons la nuit, les feuilles, la rumeur d’une ville, l’horloge d’une pièce.
+Low HP beep|Piep bij weinig HP|Piepton bei wenig KP|Pitido de PS bajos|Bip de PV faibles
+The classic beep while your lead Billie is under a quarter of its HP. The battle music turns tense either way.|De klassieke piep zolang je voorste Billie minder dan een kwart van zijn HP heeft. De gevechtsmuziek wordt hoe dan ook gespannen.|Der klassische Piepton, solange dein vorderster Billie unter einem Viertel seiner KP ist. Die Kampfmusik wird so oder so angespannt.|El pitido clásico mientras tu Billie de cabeza tenga menos de una cuarta parte de sus PS. La música de combate se vuelve tensa de todos modos.|Le bip classique tant que ton Billie de tête a moins d’un quart de ses PV. La musique de combat devient tendue de toute façon.
+Sounds fade in when you arrive somewhere.|Geluiden komen langzaam op als je ergens aankomt.|Geräusche werden langsam lauter, wenn du irgendwo ankommst.|Los sonidos suben poco a poco al llegar a un sitio.|Les sons montent doucement quand tu arrives quelque part.
 Visual effects|Visuele effecten|Visuelle Effekte|Efectos visuales|Effets visuels
 Vibration|Trillen|Vibration|Vibración|Vibration
 Time of day|Tijd van de dag|Tageszeit|Hora del día|Moment de la journée

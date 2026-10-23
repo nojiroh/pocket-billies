@@ -498,6 +498,7 @@ export const SECTION_LIST = [
   ['rules', 'Rules', 'Every number that tunes the game'],
   ['ui', 'UI look', 'The menus’ look: colours, glass, shapes, space, type and motion, for the game or one screen'],
   ['art', 'Art files', 'Browse and replace any image'],
+  ['music', 'Music & sound', 'Play and edit the songs, where each one plays, and the jingles'],
   ['check', 'Check & backups', 'Problems, backups and restore'],
   ['legacy', 'Legacy world', 'The places parked outside the hub, read-only: copy a map into the game'],
 ];
@@ -512,6 +513,8 @@ const SECTION_GROUPS = [
   ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
   ['Money', ['items', 'shops', 'jobs']],
   ['Game', ['rules', 'ui', 'art', 'check']],
+  /* SND-3: the songs, the where table and the jingles (music-editor.js); the cries are on the Billies page */
+  ['Sound', ['music']],
   /* RL-5: the old world outside the hub, parked in game/data/legacy (legacy-view.js) */
   ['Legacy', ['legacy']],
 ];

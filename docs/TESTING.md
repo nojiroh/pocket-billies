@@ -328,6 +328,56 @@ same phase:
   `talk` (game/js/fixture.js) open those screens for the Studio's preview. The Studio check's `ui_tools` step (rule
   report, inspect, Connections, overlays; about 30 s) and `ui_screens` (each real screen and before/after; about 4
   min, as each screen boots the game) run with `--only=ui_tools,ui_screens`.
+- **Sound track** (docs/phases/sound-track.md): the volume maths is pure (`game/js/audio/levels.js`) and tested in
+  Node (`sound-levels.test.mjs`). The full check's "Sound settings" step (SND-1; alone with `--steps="sound
+  settings"`, about 1 min) opens Settings → Sound on a phone page in the town, starts the audio with a touch, and
+  reads only connections and the targets the gains are given: each Test button reaches its own bus (a wrapper on
+  `AudioNode.connect`), each slider sets its bus while dragged (a wrapper on `AudioParam.setTargetAtTime`; the wanted
+  level comes from where the slider stands), the header mute silences the master and keeps the levels. Don't read
+  `gain.value` for this: Chrome stops working out a gain no sound goes through, so an idle bus's value stops part
+  way. A browser that won't start audio is reported, not failed.
+  SND-2: **song fingerprints**. `python3 tools/check-sound.py` (about 1 min; `--only=meadow,victory` for some) renders
+  8 bars of every song (by day, and at night with the pad), every jingle and every species' cry through an
+  `OfflineAudioContext`, through the game's own `initSound`, `music`, `jingle` and `soundEffect`, and compares the
+  loudness of each 50 ms window with `validation/sound-baseline/` (committed; 1% or 0.0001 per window). Run it after
+  any change to `sound.js`, `audio/tracker.js` or `music.json`: a refactor that changes a fingerprint is a bug.
+  `--baseline` writes it again, only when a change to the sound is on purpose (SND-4, SND-5), in its own commit.
+  It seeds `Math.random` (the drums' noise uses it) and holds the context's clock still while one tick schedules all 8
+  bars. The full check runs it as "Song fingerprints". Which song plays where is `logic/music-where.js` `songFor`,
+  tested in Node on the real table (`sound.test.mjs`); the full check's "Run music" step (alone with `--steps="run
+  music"`, about 20 s) opens the run fixture and checks each place's pick and that the sync asks for a biome's song
+  (`soundEngine.want`: nothing is heard). The Unused report lists songs nothing plays.
+  SND-4: the night fingerprint is the song's night version (sound.js `musicVariant`, `trackerNight`), rendered as long
+  as that recipe; songs with `night: false` render by day with the pad as before. The baseline was written again on
+  purpose (four voices, the hooks, the night versions). Night versions by day/night level: `songVariant` in
+  `sound.test.mjs`; the composer's answer and `trackerNight` in `tracker.test.mjs`; placeholders in
+  `music-studio.test.mjs`.
+  SND-5: a song also renders its intro (`intro`), a battle song its tense version (`tense`), a biome's song its arc
+  bands (`mid`, `late`) and a run's song its deadline version (`deadline`): sound.js `musicParts` names them, each
+  rendered as long as `trackerRecipe` makes it (109 fingerprints). To check a commit against the one before (not the
+  baseline), render the earlier commit's fingerprints in a worktree with `--baseline` and compare against those.
+  Full-check steps: "Run music" also expects each node's arc band and, on the deadline day, the deadline version;
+  "Battle music" (alone with `--steps="battle music"`, about 30 s) taps sound on in the run fixture, starts a wild
+  battle and the first mini-boss and reads `soundEngine.log` (the music's battle cues, in memory, never sent): the
+  song with its intro on the flash, the drums held, then in on the first throw (not the 8 s fallback), the mini-boss
+  on the leader song; "Run map music" (`--steps="run map music"`, about 20 s) sets today's forecast to storm, rain and
+  clear on the map tab and reads the low-pass each gives (a wrapper on `setTargetAtTime`). Unit tests:
+  `tracker.test.mjs` (the intro, the hold and `restart`, `trackerTense`, `trackerArc`, `counterAuto`,
+  `trackerDeadline`, `trackerRecipe`), `sound.test.mjs` (`musicBattleKind`, `musicRedZone`, `musicArcBand`, the
+  deadline, `musicWeatherCut`, `songVariant`'s order: battle tense; else deadline; else band then night).
+  `check-studio-github.py --only=music` also draws an intro note, plays wild on its intro and as wild@tense, and sets
+  an arc band's drums, all undone; it reads the where rules' places from the table.
+  SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
+  names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
+  --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo
+  and a chord while it plays and undoes them, draws a hook and a counter note on the roll and hears them, moves,
+  adds and undoes where-rules with Try a place following, plays and lengthens a jingle, sets and empties a Billy's
+  cry, checks the Check's music findings and Show me, and that leaving the section stops the song; each part ends with
+  nothing left to propose. The Studio self-test has a `music` tool row (a song for a second, no timer left; a context
+  that won't run is failed only when the test was started by a click). Unit tests: `music-studio.test.mjs` (numerals,
+  rules in words, where songs play, the findings, the schema's choices, jingles as notes and back),
+  `tracker.test.mjs` (the hook and counter; the tracker is a page module, so it is read through the test globals),
+  `cries.test.mjs`.
 - **18 Trading and battles with friends**: every new Firestore rule gets emulator tests in `firebase/test/`;
   trade validation is logic with unit tests.
 

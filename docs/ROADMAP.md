@@ -55,6 +55,14 @@ town node needs it.
   TR-2b (mountain trails) done 2026-10-21, after the Gen 3-5 route research; TR-2c next. Runs now go east to west (the
   owner, TR-2 session). TR-3 (the camera on tall ground) done 2026-10-22 (PR #108). TR-2c split by the owner: part 1 (grass patches, wild Billies in any patch, the dust puff) done 2026-10-22; part 2 (the road pathfinder through tiers and the massif, the four mountain route types) next. TR-4..TR-7 alongside RL-9..RL-11
   after the first cut; the gameplay sessions TR-8..TR-11 wait for their RL parts. Tags `tr-N-done`.
+- **Sound track** (docs/phases/sound-track.md, planned 2026-10-21): settings fixes, the tracker as data, a Studio
+  section for music and cries, then a Pokémon-style rework (four voices, written hooks, battle intros, a cry per
+  species). SND-1 to SND-3 beside RL-8; SND-4 to SND-6 after the RL-8 play test. Tags `snd-N-done`. SND-1 (settings
+  and routing), SND-2 (the tracker as data, biome music in a run) and SND-3 (the Studio's Music & sound section, a cry
+  per stage) done 2026-10-22; SND-4 (the themes: four voices, hooks answered, the motif, Copperleaf as Pallet Town,
+  night versions; placeholder hooks for the owner to edit) done 2026-10-22 at the owner's word; SND-5 (battle and run
+  music: intros timed to the throw, leader and boss songs, the red zone's tense version, the run's arc by row, the
+  deadline version, the map song's forecast) done 2026-10-22; SND-6 next.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all

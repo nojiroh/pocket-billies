@@ -33,7 +33,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const legacyView = { data: null, loading: null, error: '' };
+export const legacyView = { data: null, loading: null, error: '' };
 
 /** a file of game/data/legacy as text: from the site the Studio is served from (beside the game), else from GitHub
     when signed in @param {string} path */
@@ -48,7 +48,7 @@ async function legacyText(path) {
 const legacyJson = async (/** @type {string} */ path) => JSON.parse(await legacyText(path));
 
 /* the parked world without its maps (a map is read when it is copied) */
-function legacyLoad() {
+export function legacyLoad() {
   if (legacyView.data || legacyView.loading) return legacyView.loading;
   legacyView.error = '';
   legacyView.loading = (async () => {

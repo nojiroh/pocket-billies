@@ -2,6 +2,289 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-5 - Battle and run music - 2026-10-22
+Branch `sound` (PR #120). Plan approved by the owner's "Start", without picks on the two "Ask me before" items, so
+the recommendations were taken (and named as such in the commits): **the red zone plays a tense variant of the battle
+song, with the classic beep as a Settings switch, off by default**; **the deadline version plays on the deadline day
+alone (and every day past it)**; also **no ghost song before RL-15** and **the map song's weather filter in**.
+- Changed (one cause per commit; each checked against the commit before it):
+  - Tool: `check-sound.py` renders intros and the variants `musicParts` names (tense, mid, late, deadline).
+  - Tracker: `intro` (one or two bars on the lead, played once), drums held until the throw (`hold`, `drumsIn`, 8 s
+    fallback), `restart`, `trackerRecipe` for names with parts, `trackerTense` (+ `pedal` bass), `trackerArc`
+    (`arpOctave`, `counterAuto`), `trackerDeadline`.
+  - Where: `musicBattleKind` (a run's mini-boss `leader`, its boss `boss`), `musicRedZone`, `musicArcBand`,
+    `musicWeatherCut`; `songVariant`: in battle the tense version; out of it the deadline version, else the band then
+    night.
+  - sound.js: the battle's song starts on its flash with its intro and holds the drums until the first throw
+    (`battleMusicStart`, `battleDrumsIn`); the sync waits 2.5 s for a battle's flash; `soundEngine.log` (in memory,
+    never sent); `lowHpBeep`; `musicMapCut`; `daysLeft` and `redZone` in `musicState`.
+  - Data: hooks and intros for wild, trainer, rival; new `leader` (the motif in D minor) and `boss` songs; music.json
+    `run` (`arc`: rows 3-5 mid, 6-8 late; `deadlineDays` 1; `weather` cuts); schema for all.
+  - Settings → Sound: Low HP beep (off), translated.
+  - Studio: Intro roll, a Version pick (tense, deadline, a band), an In a run card.
+  - Checks: full-check steps Battle music and Run map music; Run music expects bands and the deadline;
+    check-studio-github `--only=music` reads the rules' places from the table (the new rules had moved them; it was
+    failing from 58306bf) and tries the new parts. Baseline 109 fingerprints (72 before), its own commit.
+  - Docs: sound-track.md (SND-5 as built, corrections), ROADMAP, CHANGELOG, TESTING.
+- Risky or unfinished:
+  - Nobody has heard any of it. Every battle hook and intro is a placeholder; the leader song's minor motif, the boss
+    song, the tense and deadline defaults and the arc's march are guesses. Please play wild, trainer, leader, boss
+    (Version: as written and tense) and meadow (mid, late, deadline) in Studio → Sound → Music & sound, and a run on
+    the phone.
+  - The drums wait for the first throw; tapping slowly through a long opening leaves them out up to 8 s.
+  - In a run a battle can begin again at once from its seed ("The battle starts again."): its song restarts with the
+    intro (`restart`), so a player hears the intro twice when that happens.
+  - CI: `smoke` failed once on 751e9d9 ("A battle plays to the end: stuck at playing") and the PR run was cancelled at
+    20 min, while many other branches' runs were cancelled too (runners overloaded). Locally the whole check-fast
+    passes and that battle check is not slower (41.5 s vs 50.1 s on 81490b3). Commented on the PR; the next push
+    reruns it.
+  - Tags can't be pushed (HTTP 403): `snd-5-done` exists only in this container.
+- Verified (what ran, what passed):
+  - Every code commit: lint, typecheck, check:modules, check:data, format:check; unit tests 670 (653 before).
+  - Song fingerprints commit by commit against the commit before (a worktree rendering the earlier commit with
+    --baseline): only what each commit should change changed; the new baseline rendered twice is byte-identical.
+  - Smoke on 33f2927, ab4c96f, bebec9a (one Studio GitHub screenshot timed out while fingerprints rendered beside it).
+  - check-fast.py whole on the final code: 25 of 25.
+  - Full quick check on the final code: 2265 s, 59 steps, 46 passed. Problems: the known v31 (bowl map camera), v34,
+    v35, v38, v39/40, v44, v46, alpha 0.2 (Copperleaf terraces), alpha 0.4 (recipes), phase 08, RL-8 (passes
+    alone); and RL-7 (roads) and alpha 0.4 postcards, which also pass alone (RL-7, postcards and RL-8 run together:
+    all pass). The sound steps all pass: Sound settings, Song fingerprints (109, 0 changed), Run music (3 mid, 3 late,
+    the deadline day), Battle music (wild and leader on their intros, drums in ~5.6-5.9 s later on the throw), Run
+    map music (storm 1400, rain 2200, clear open).
+  - check-studio-github.py --only=music passes; the Studio self-test: 28 sections, the one known Rules undo problem.
+  - `check-quick.py --selftest` (the in-game full test, which plays battles): every phase but two, Light lab (props:
+    0 of 0 buildings) and Opening (the fall drew 0 frames); main (5a30303) fails the same two the same way.
+  - Not tried on a phone.
+- Decisions I made (and why):
+  - The lead Billie for the red zone is the player's first still standing (in doubles, the first slot's).
+  - The arc applies on a run's walkable nodes, not town nodes or the map tab; the deadline version on town nodes too.
+  - A tense version takes the drum hold of the song it replaces, so the red zone during an intro still waits for the
+    throw.
+  - The deadline's default drums: soft or none become a march (urgency); others stay.
+- Questions waiting for the owner: how the placeholders and the defaults sound; whether the deadline should start a
+  day earlier (`run.deadlineDays` 2); whether the arc should touch town nodes.
+- Next session starts with: SND-6, sound effects and jingles (started in a new session at the owner's word).
+
+### Sound track SND-4 - The Pokémon rework: themes - 2026-10-22
+Branch `sound` (PR #120). Started before the owner's word on the RL-8 play test, at the owner's request (main's ROADMAP
+already had RL-8 done and played). Plan approved in Plan Mode; the owner's answers: **placeholder hooks the owner
+edits, clearly named as placeholders**; **the motif on the hub and the run's bookends**; **merge main first**; **item 6
+(two new biome songs) deferred**.
+- Changed (one cause per commit):
+  - Merged main (RL-8, RL-9, RL-11, RL-12a, the island track): both sides kept in 10 files.
+  - check-sound.py renders the night version (`musicVariant`); four voices and bars 3-4 answering a hook (tracker.js;
+    `extra` keeps the title and the fall thick; `pluck`, bass/arp `none`); night versions by data (`trackerNight`,
+    `songVariant`, `night: false` on battle, indoor, hazel, title, fall; the Studio's Night switch; the first touch
+    starts on the night version); `hookName` and jingle `name` with the Check's placeholder notes; the title in D
+    mixolydian with the motif hook and a `motif` jingle; Copperleaf as a two-voice music box over the motif; placeholder
+    hooks for ten place songs; the motif on the run's take-off and the payout.
+  - Tests fixed for the new data (CI's lint job caught three); the Studio music check draws on hills.
+  - Song fingerprint baseline written again (72: + the motif jingle). Docs: sound-track.md, ROADMAP, CHANGELOG, TESTING.
+- Risky or unfinished:
+  - Nobody has heard any of it. Every hook is a placeholder by Claude, who can't listen: please play the title,
+    Copperleaf (day and Night), town, route and a run's biome songs in Studio → Sound → Music & sound, and on the phone.
+  - No song has its own night changes (the plan said "tuned by ear"): all use the default (−8 bpm, a fourth down, soft
+    drums). Write a `night` in the Studio where the default sounds wrong.
+  - Copperleaf has no bass or drums now, by design (Pallet Town); bars 7-8 are the composed lead alone.
+  - Battle songs and the legacy songs (city, mall, variants, innersun, hills) have no hooks; SND-5 does the battles.
+  - Tags can't be pushed (HTTP 403): `snd-4-done` exists only in this container.
+- Verified (what ran, what passed):
+  - Every commit: lint, typecheck, check:modules, check:data, format:check; unit tests 653 (647 before).
+  - Song fingerprints commit by commit, each against the commit before (a worktree): only the songs each commit should
+    change changed (the list is in the baseline commit, d4e9058); the baseline rendered twice is byte-identical.
+  - Full quick check on the merge (7f21679): 2043 s, 57 steps, 46 passed; the 11 problems are the known ones (v34,
+    v35, v38, v39/40, v44, v46, alpha 0.4, phase 08) and main's (Copperleaf terraces; RL-8 after the terraces step;
+    v31 "bowl map camera", which fails the same way alone on main).
+  - On the final code: smoke 15 of 15 (143 s); the full check's Sound settings, Song fingerprints (72, 0 changed) and
+    Run music steps; RL-8 alone (the run with the take-off and the payout) passes; check-studio-github.py
+    --only=music passes; the Studio self-test: 28 sections, the one known Rules undo problem.
+  - CI on 5b59e16: green. Not run: a second full quick check on the final code (only sound and the Studio's music
+    section changed after the merge, and their steps ran). Not tried on a phone.
+- Decisions I made (and why):
+  - The pad goes in four-voice songs (the triangle is the bass); the night version is the night's colour.
+  - A triangle lead keeps the triangle and moves the bass to the second pulse, rather than rewriting six songs' leads.
+  - "On the mast" is the run's take-off from the mast, not every town-to-town flight.
+  - Night switches at a night level of 0.6 and back below 0.4, so dusk doesn't flip the song.
+- Questions waiting for the owner: how the placeholders sound (keep, change or rename each; the Check lists them);
+  whether Copperleaf should keep a soft bass; whether to delete the legacy mall/verdigris where-rules.
+- Next session starts with: SND-5, battle and run music (the owner, 2026-10-22).
+
+### Sound track SND-3 - The Studio's Music & sound section - 2026-10-22
+Branch `sound` (PR #120). Plan approved at the start in Plan Mode; the owner's answers: **a Sound group of its own**,
+**the tracker plays a hook and a counter now** (not from SND-4), **a cry per stage in lines/*.json, read by the game**.
+Mid-session: the Studio is for a computer, not a phone (no phone layout work).
+- Changed (one cause per commit):
+  - `tracker.refresh(songs)`: an edited recipe is heard at once, the song keeps its place.
+  - `game/js/logic/music-studio.js` (numerals, note names, rules in words, where each song plays, findings, the
+    schema's choices, jingles as notes and back); check-data's music errors come from it.
+  - `studio/js/music-editor.js`, group Sound: the song list and player (the Studio's own AudioContext, made on the
+    first ▶; it stops itself off screen), the recipe card, the where table (one line per rule, ↑ ↓, Try a place), the
+    hook roll (hook and countermelody, its own canvas), the jingle editor, the Cry card on the Billies page, the
+    Check's music findings with Show me, a self-test row.
+  - The tracker plays `hook` (bars 1-2 and 5-6) and `counter` (a quieter 12.5 % pulse). No song has either.
+  - `logic/cries.js`; `cry` per stage in line.schema.json; SPECIES[id].cry; sound.js plays it. No species sets one.
+  - music.json's note `_help` renamed `about` (the Studio drops `_` keys on undo and save).
+  - Song fingerprints: cries by species id (bezos0), as the game asks; `cries.json` rewritten (they were roster names
+    the game never plays).
+  - Docs: sound-track.md (as built, corrections), STUDIO.md, TESTING.md, ROADMAP, CHANGELOG.
+- Risky or unfinished:
+  - Nobody has heard the section yet: please open Studio → Sound → Music & sound, play a few songs, change a tempo
+    while one plays, draw a hook, and set a cry on a Billy.
+  - The hook replaces bars 1-2 and 5-6 only; bars 3-4 answering it is SND-4. A hook outside the roll's rows (lower
+    than a fourth above the key or higher than about two octaves) is kept but not drawn.
+  - The low-health cry is a Studio preview only; the game's use is SND-6.
+  - Seen, not mine (also on the pre-session commit eb42280): the Studio self-test's "the edit in rules did not come
+    back with undo". And any undo marks the rigs as changed, so a proposal after an undo carries rigs.js.
+  - Tags can't be pushed (HTTP 403): `snd-3-done` exists only in this container.
+- Verified (what ran, what passed):
+  - After each change: lint, typecheck, check:modules, unit tests (467 before, 484 after: music-studio 10, tracker
+    4, cries 3), check:data, format:check. Fingerprints after every commit touching the tracker, sound.js or the data:
+    71, none changed; a cry set on bezos0 changes its fingerprint alone; a base 9 and a rule naming no song fail
+    check-data.
+  - `python3 tools/check-studio-github.py --only=music`: passes (play with a real click and the context running,
+    tempo and chord while playing, hook and counter drawn and heard, where-rules moved and added with Try a place,
+    a jingle played and lengthened, a cry set and heard, the Check and Show me, leaving stops the song; each part
+    undone with nothing left to propose).
+  - The self-test via `--only=studio_test`: 27 sections, music among them; the one problem is the Rules one above.
+  - Smoke on d6facb9: 179 s, no problems. The full quick check on d6facb9: 1640 s, the 9 known problems only (v34, v35,
+    v38, v39/40, v43, v44, v46, alpha 0.4, phase 08 running); Sound settings, Song fingerprints (71, 0 changed), Run
+    music, Unused (0 songs) and Studio: ok.
+  - Screenshots at 1400 px of each tab and the Cry card.
+- Decisions I made (and why):
+  - The music findings are built in music-editor.js (it can read the parked world, so a song only parked places play
+    isn't called unused); its warnings wait until the parked world (284 KB without maps) is read.
+  - Cries are one Check note, not 24 warnings, until SND-6.
+  - The where table shows only each rule's own conditions: twelve columns of selects were too wide to read.
+  - The self-test fails a context that won't run only when it was started by a click (?selftest has none).
+- Questions waiting for the owner: how the section feels to use; whether the hook should be heard in bars 5-6 too
+  (as now) before SND-4 writes bars 3-4.
+- Next session starts with: SND-4 waits for the RL-8 play test (the track file). Pick the next session from ROADMAP.
+
+### Sound track SND-2 - The tracker as data - 2026-10-22
+Branch `sound` (PR #120). Plan approved at the start in Plan Mode; the owner's answer to its one question: the
+biome-to-song mapping as the track file first guessed it (not waiting to hear the pairs in SND-3).
+- Changed (one cause per commit):
+  - `tools/check-sound.py` and the committed `validation/sound-baseline/` (71 fingerprints: 21 songs by day and at
+    night, 5 jingles, 24 cries), made before anything moved; the full check's "Song fingerprints" step.
+  - `game/js/audio/tracker.js` in three moves: instruments, composer (`trackerCompose`, which no longer writes notes
+    into the recipe), player (`play`, `stop`, `tick`, `jingle`). It imports nothing; sound.js keeps every exported name.
+  - `game/data/music.json` + `music.schema.json` (songs, jingles, cries.bases, where), `MUSIC` in game-data.js, types,
+    check-data rules; sound.js reads it.
+  - `game/js/logic/music-where.js` `songFor`; `musicFor` builds the state; `tools/test/sound.test.mjs` (the musicFor
+    test SND-1 left).
+  - Biome music in a run (the owner's mapping), a town node town, the landing route; the full check's "Run music" step.
+  - The tracker's 25 ms timer stops with no song and while the page is hidden; the footstep poller skips its work
+    while no sound can play.
+  - The Unused report lists songs nothing plays (none).
+  - Docs: sound-track.md (as built, corrections), ROADMAP, TESTING, CHANGELOG.
+- Risky or unfinished:
+  - Only five biomes reach a run (meadow, lake, thicket, ridge, autumn): a run plays meadow, trench, spore, crystal and
+    spire. Nobody has heard these songs in a run yet: please listen on the phone (`?fixture=run`, then walk on).
+  - `musicSync` was not made event-driven (planned): the calls would go in ui.js, the battle and the cutscenes, which
+    the track keeps out of, and a 1 s sync that finds the same song costs nothing. The footstep poller was not moved
+    onto the walk view: it already did nothing on the title, in battle and hidden.
+  - The fingerprints compare loudness per 50 ms, not the waveform: a change that keeps every window within 1% (a
+    wave swapped for one as loud) would pass. A changed seed fails at once (seen).
+  - `JINGLES.item` (lore.js) still doesn't exist; seen in SND-1, not changed.
+  - The first full run here failed "Run music" (it passed alone): the step moved trip.node by hand and the walk view
+    put it back before the 1 s sync. The step now calls the sync itself (75333d0).
+  - Tags can't be pushed (HTTP 403): `snd-1-done` (4f7ace1, re-made here: the clone didn't have it) and `snd-2-done`
+    exist only in this container; please tag after merging.
+- Verified (what ran, what passed):
+  - After each edit: lint, typecheck, check:modules; before each commit format:check, check:data; unit tests 467
+    (459 before: 8 in sound.test.mjs). Fingerprints after every commit from the first move on: 71, none changed.
+  - Planted faults: a song's seed changed by one fails its fingerprints only; a where-rule naming no song and a last
+    rule that doesn't always match fail check-data; "Run music" fails on the code before the biome rules; an extra
+    song shows in the Unused report.
+  - In a browser: the old and new musicFor agree on every place of the town fixture; hiding the page stops the
+    scheduler and suspends the audio, showing it brings both back; a faked walk works out no step before sound
+    starts and plays steps once it runs.
+  - Smoke, each run alone in a worktree: 6d79857 (after the split) 255 s, no problems; 187ff03 270 s, no problems.
+  - The full quick check on 187ff03: 1928 s, 56 steps, 46 passed; 9 of the 10 problems are the known ones (v34, v35,
+    v38, v39/40, v43, v44, v46, alpha 0.4, phase 08 running), the tenth "Run music" (fixed above). Sound settings,
+    Song fingerprints (41 s) and Unused: ok. Again on 75333d0 (the step fixed): 1959 s, 56 steps, 47 passed, the 9 known problems only; Song fingerprints 30 s, Run music 19 s.
+  - Not run: `--selftest`. Not tried on a phone.
+- Decisions I made (and why):
+  - Fingerprints go through the game's own initSound with a stand-in AudioContext (the same tool before and after
+    the split, so it proves the split), renders in batches of 12 in parallel (7 minutes became 1).
+  - A cry base holds only its wave; the cry's shape stays code until SND-6 gives species their own.
+  - The legacy map rules (mall, verdigris) are kept as data so nothing changes; recommend deleting them in SND-4.
+- Questions waiting for the owner: how do the biome songs sound in a run on your phone? Is `musicSync` at 1 s fine
+  to keep (my recommendation), or do you want it event-driven when UI-5 opens ui.js?
+- Next session starts with: SND-3, the Studio's Music & sound section (ask first: a Game-group section or a Sound
+  group of its own).
+
+### Sound track SND-1 - Settings and routing - 2026-10-22
+Branch `sound` (made by the owner's request from the session branch, which holds the track plan: docs/phases/sound-track.md,
+two commits on main 1d35666). Plan approved at the start in Plan Mode; the owner answered its three questions: jingles
+stay on Sound effects, volumes stay in the save, the mute goes in the settings sheet's header.
+- Changed (one cause per commit):
+  - `game/js/audio/levels.js` (new, pure): `soundLevel`, `soundLevels` (the five bus gains: squared, the master's 0.9
+    headroom, mute on the master only, the ambience bed's 0.9 trim). sound.js `applyVolumes`, `applyAmbienceVolume`
+    and `volumePreference` read through it; on the page before sound.js. No change in what you hear.
+  - The Volume (master) Test button plays a two-note chime on the master bus (it played nothing).
+  - The Music Test button plays the level-up phrase on the music bus: `jingle(notes, bpm, type, bus)` (the effects bus
+    when no bus is given, so every jingle in the game is where it was).
+  - Volume and Ambience apply while dragging (`LIVE_VOLUMES`: all five sliders).
+  - `unlockSound` resumes the audio from any state but running or closed (iOS Safari's `interrupted` after a call or
+    Siri), ignoring a refused resume.
+  - A mute button beside the Settings title on every tab: `game/art/ui/sound.svg` and `sound-off.svg` (12x12, like the
+    gear), `settings-screen.js` `muteButtonHTML` (the same `mute` preference and click handler as the Sound tab's
+    switch, `aria-pressed`, "Sound on"/"Sound off", focus back on it after the refresh), menus.css `.set-top` and
+    `.set-mute`. ui.js draws the title and stays closed until UI-5, so the button comes first in the sheet's body in a
+    box of no height and CSS lifts it into the title's row; it scrolls away with the title.
+  - The Sound tab's words: Sound effects names the short tunes for a win or a level up; the "0 mutes" note went; the
+    Volume slider is announced "Volume", not "Volume volume".
+  - i18n.js: a row for every Sound-tab string and the button's labels in nl, de, es, fr (informal, as the table is).
+  - `tools/test/sound-levels.test.mjs`; the full quick check's "Sound settings" step.
+  - Docs: sound-track.md (SND-1 as built, corrections), ROADMAP (the sound track), TESTING, CHANGELOG.
+- Risky or unfinished:
+  - The iOS resume is a claim: only the owner's iPhone can show sound coming back after a call or Siri.
+  - The sheet focuses its first button when it opens (ui.js); that is now the mute button, not the Sound tab, and it
+    shows the same focus ring the tab did. A keyboard Enter right after opening mutes (undone the same way).
+  - The button is placed by CSS relative to the tab strip; UI-5, moving Settings onto the kit, should put it in the
+    sheet's own header and drop `.set-top`.
+  - ui-lint (report only): unchanged from the session's start (the mute commit's message says "two more token
+    spaces": true of a first try, not of the CSS committed).
+  - The icons are my pixel art; redraw them in the Studio if they don't fit.
+  - Seen on the way, not changed (before this session, outside SND-1): the Graphics, Game and Help tab names have no
+    translations; every settings switch is announced by its preference key ("mute", "expert"), `switchHTML`'s
+    aria-label; in the dark theme a scrolled sheet shows content above the sticky tabs and the panel's fill ends part
+    way down, and the selected segment's text is unreadable (white on white) on the Game tab; lore.js asks for
+    `JINGLES.item`, which doesn't exist (its guard keeps it silent).
+  - Tags can't be pushed (HTTP 403, as before): `snd-1-done` exists only in this container; please tag after merging.
+- Verified (what ran, what passed):
+  - After each edit: lint, typecheck, check:modules; before each commit format:check, check:data, build; unit tests
+    459 (455 before, plus the 4 in sound-levels.test.mjs).
+  - Smoke (each run alone in a worktree of its commit): the untouched branch 214 s, no problems; c4e14dd (levels)
+    209 s, no problems; aba4a61 (the mute, over the four sound.js fixes before it) 215 s, no problems; the tip
+    f678001 176 s, no problems. A run on 11c5ec3 (translations) overlapped two other browsers here and timed out in
+    the in-game step and a Studio screenshot (573 s); the tip's run alone, which holds that commit, passed.
+  - The full quick check on f678001: 1666 s, 54 steps, 45 passed; the 9 problems are 9 of the 10 known since RL-1
+    (v34, v35, v38, v39/40, v43, v44, v46, alpha 0.4, phase 08 running; v31 fountain passed this time). New "Sound
+    settings" step: ok (29 s). Safety (13 screens with Settings) and the 40 px tap targets: ok. World sounds: ok.
+  - The step proven: on c4e14dd (before the Test fixes) it fails "master Test reached sfx; music Test reached sfx";
+    with Volume and Ambience taken out of the live listener it fails "master at 70" and "amb at 20", nothing else.
+  - Headless screenshots at 390 px, light and dark, against main: the mute button beside the title (44 x 44, a tap at
+    its centre lands on it), all five tabs fit as on main, the sheet scrolled matches main; muting sets aria-pressed,
+    the Sound switch follows, focus comes back to the button (this browser draws about 3 frames a second, so focus
+    lands about a second later). Dutch and French: every Sound-tab text and label translated, the tabs still fit.
+  - ui-lint compared with the session's start: no change.
+  - Not run: `--selftest` (SND-1 doesn't touch what it plays; smoke's in-game step passed). Not tried on a phone.
+- Decisions I made (and why):
+  - The `musicFor` unit test moved to SND-2: sound.js imports the walk view, the renderer and the battle stage, so it
+    can't load in Node; SND-2 makes the choice a pure function (`songFor`).
+  - The debug log needed nothing: it already exports every preference, the volumes and mute among them.
+  - The mute button went beside the title, not at the end of the tab strip (the first try): at 390 px the strip then
+    cut the Help tab off.
+  - The Sound settings step reads the targets the gains are given, not `gain.value`: its first version compared each bus
+    with the saved preference and missed an undone drag fix (planted, it passed); reading `gain.value` then stopped
+    part way on an idle bus (Chrome stops working out a gain no sound goes through). Fixed in its own commit.
+  - Smoke ran on commits in a separate worktree while I kept editing, and once per group of small sound.js commits
+    (the master Test, the Music Test, live drag and resume, under the mute commit's run) rather than before each.
+- Questions waiting for the owner: none new. The track's later asks (SND-2's biome-to-song mapping) come with SND-2.
+- Next session starts with: SND-2, the tracker as data (docs/phases/sound-track.md): the fingerprint baseline first,
+  then the split into `game/js/audio/tracker.js`, `music.json`, `songFor`, biome music in a run, idle timers.
 ### Island track IS-6b - Hub editor dials - 2026-10-22
 Branch `claude/is-6b-hub-dials`, from the wave-2 base `claude/new-session-3qlesh` (main plus IS-2, IS-3, IS-4 and IS-6a,
 PRs #122, #124, #123, #126, not merged yet); the PR goes against main, so its diff shrinks as those merge (then merge

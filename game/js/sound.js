@@ -9,7 +9,12 @@
 import { expose } from './test-globals.js';
 import { cutscene, mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
-import { LOCATIONS } from './game-data.js';
+import { LOCATIONS, MUSIC, SPECIES } from './game-data.js';
+import { maxHp } from './logic/rules.js';
+import { runWeather } from './logic/run-map.js';
+import { musicBattleKind, musicRedZone, musicWeatherCut, songFor, songVariant } from './logic/music-where.js';
+import { cryRecipe, cryVoices } from './logic/cries.js';
+import { fighter, liveActors } from './logic/battle-engine.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
 import {
@@ -25,12 +30,15 @@ import {
 } from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
+import { soundLevel, soundLevels } from './audio/levels.js';
+import { midiToFrequency, trackerCreate } from './audio/tracker.js';
 /* eslint-disable no-func-assign */
 expose({
   BIRD_CALLS: [() => BIRD_CALLS],
+  CRIES: [() => CRIES],
   JINGLES: [() => JINGLES],
+  LIVE_VOLUMES: [() => LIVE_VOLUMES],
   RARE_BIRDS: [() => RARE_BIRDS],
-  SCALES: [() => SCALES],
   SONGS: [() => SONGS],
   ambience: [() => ambience],
   ambienceBeds: [() => ambienceBeds, v => (ambienceBeds = v)],
@@ -38,28 +46,33 @@ expose({
   ambienceOutput: [() => ambienceOutput, v => (ambienceOutput = v)],
   applyAmbienceVolume: [() => applyAmbienceVolume, v => ((applyAmbienceVolume = v), provide({ applyAmbienceVolume }))],
   applyVolumes: [() => applyVolumes, v => ((applyVolumes = v), provide({ applyVolumes }))],
+  battleDrumsIn: [() => battleDrumsIn, v => (battleDrumsIn = v)],
+  battleMusicStart: [() => battleMusicStart, v => (battleMusicStart = v)],
   battleSoundEffect: [() => battleSoundEffect, v => ((battleSoundEffect = v), provide({ battleSoundEffect }))],
-  composeSong: [() => composeSong, v => (composeSong = v)],
   footstepAt: [() => footstepAt, v => (footstepAt = v)],
   initAmbience: [() => initAmbience, v => (initAmbience = v)],
   initSound: [() => initSound, v => (initSound = v)],
   jingle: [() => jingle, v => ((jingle = v), provide({ jingle }))],
-  midiToFrequency: [() => midiToFrequency],
+  lowHpBeep: [() => lowHpBeep, v => (lowHpBeep = v)],
   music: [() => music, v => (music = v)],
   musicFor: [() => musicFor, v => (musicFor = v)],
+  musicMapCut: [() => musicMapCut, v => (musicMapCut = v)],
+  musicParts: [() => musicParts, v => (musicParts = v)],
+  musicState: [() => musicState, v => (musicState = v)],
   musicStop: [() => musicStop, v => (musicStop = v)],
   musicSync: [() => musicSync, v => (musicSync = v)],
-  musicTick: [() => musicTick, v => (musicTick = v)],
+  musicVariant: [() => musicVariant, v => (musicVariant = v)],
   nearestSoundSource: [() => nearestSoundSource, v => (nearestSoundSource = v)],
   playBirdCall: [() => playBirdCall, v => (playBirdCall = v)],
   playClockTick: [() => playClockTick, v => (playClockTick = v)],
   playOwlCall: [() => playOwlCall, v => (playOwlCall = v)],
   playScrapClank: [() => playScrapClank, v => (playScrapClank = v)],
-  songRandom: [() => songRandom, v => (songRandom = v)],
   soundEffect: [() => soundEffect, v => ((soundEffect = v), provide({ soundEffect }))],
   soundEffectAt: [() => soundEffectAt, v => ((soundEffectAt = v), provide({ soundEffectAt }))],
   soundEngine: [() => soundEngine],
+  soundLog: [() => soundLog, v => (soundLog = v)],
   soundPlacement: [() => soundPlacement, v => (soundPlacement = v)],
+  soundPreferences: [() => soundPreferences],
   synthKick: [() => synthKick, v => (synthKick = v)],
   synthNoise: [() => synthNoise, v => (synthNoise = v)],
   synthVoice: [() => synthVoice, v => (synthVoice = v)],
@@ -85,10 +98,21 @@ export const soundEngine = {
   next: 0,
   voices: [],
   lastStep: 0,
+  /* SND-5: the battle whose song started on its flash (battleMusicStart), the battle seen without one, and a short
+     log of the music's battle cues for the checks (kept here, never sent anywhere) */
+  cued: null,
+  seen: null,
+  log: [],
 };
-function volumePreference(k, def) {
-  const p = (typeof saveData !== 'undefined' && saveData && saveData.preferences) || {};
-  return p[k] == null ? def : +p[k];
+function soundLog(e) {
+  const L = soundEngine.log;
+  L.push({ at: Math.round(performance.now()), e });
+  if (L.length > 40) L.shift();
+}
+/* SND-1: the volume maths is audio/levels.js (soundLevel, soundLevels); this reads the save's preferences for it */
+const soundPreferences = () => (typeof saveData !== 'undefined' && saveData && saveData.preferences) || {};
+function volumePreference(k) {
+  return soundLevel(soundPreferences(), k);
 }
 function initSound() {
   if (soundEngine.ctx) return true;
@@ -113,34 +137,13 @@ function initSound() {
     soundEngine.musLP.connect(soundEngine.master);
     soundEngine.fx.connect(soundEngine.master);
     applyVolumes();
-    /* a soft echo for the music (caves get more of it) */
-    const d = c.createDelay(1),
-      fb = c.createGain(),
-      wet = c.createGain();
-    d.delayTime.value = 0.27;
-    fb.gain.value = 0.28;
-    wet.gain.value = 0.16;
-    soundEngine.echoIn = c.createGain();
-    soundEngine.echoIn.connect(d);
-    d.connect(fb);
-    fb.connect(d);
-    d.connect(wet);
-    wet.connect(soundEngine.mus);
-    soundEngine.echoWet = wet;
-    const n = c.createBuffer(1, c.sampleRate, c.sampleRate),
-      nd = n.getChannelData(0);
-    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
-    soundEngine.noise = n;
-    const pw = duty => {
-      const N = 32,
-        re = new Float32Array(N),
-        im = new Float32Array(N);
-      for (let k = 1; k < N; k++) im[k] = (2 / (k * Math.PI)) * Math.sin(k * Math.PI * duty);
-      return c.createPeriodicWave(re, im);
-    };
-    soundEngine.waves.p25 = pw(0.25);
-    soundEngine.waves.p12 = pw(0.125);
-    soundEngine.waves.p50 = pw(0.5);
+    /* SND-2: the echo, the noise and the waves are the tracker's (audio/tracker.js), on the music bus */
+    const T = trackerCreate(c, soundEngine.mus, { songs: SONGS, run: MUSIC.run, levels: () => soundEngine.L });
+    soundEngine.tracker = T;
+    soundEngine.echoIn = T.echoIn;
+    soundEngine.echoWet = T.echoWet;
+    soundEngine.noise = T.noise;
+    soundEngine.waves = T.waves;
     if (typeof debugLog !== 'undefined') debugLog.add('audio', 'ready ' + c.sampleRate + ' Hz');
     return true;
   } catch (e) {
@@ -151,682 +154,168 @@ function initSound() {
 /* alpha 0.5: a master volume and mute over everything (music, effects, world sounds, ambience all go through the master) */
 function applyVolumes() {
   if (!soundEngine.ctx) return;
-  const m = volumePreference('music', 0.55),
-    f = volumePreference('sfx', 0.8),
-    t = soundEngine.ctx.currentTime,
-    mv = saveData.preferences && saveData.preferences.mute ? 0 : volumePreference('master', 1);
-  soundEngine.master.gain.setTargetAtTime(0.9 * mv * mv, t, 0.05);
-  soundEngine.mus.gain.setTargetAtTime(m * m, t, 0.05);
-  soundEngine.fx.gain.setTargetAtTime(f * f, t, 0.05);
+  const L = soundLevels(soundPreferences()),
+    t = soundEngine.ctx.currentTime;
+  soundEngine.master.gain.setTargetAtTime(L.master, t, 0.05);
+  soundEngine.mus.gain.setTargetAtTime(L.music, t, 0.05);
+  soundEngine.fx.gain.setTargetAtTime(L.sfx, t, 0.05);
 }
-/* the first touch unlocks sound; the song that was asked for starts then */
+/* the first touch unlocks sound; the song that was asked for starts then. SND-1: any touch also wakes sound that
+   stopped for something else, as iOS Safari does after a call or Siri (its state is then 'interrupted', not
+   'suspended') */
 function unlockSound() {
   if (!initSound()) return;
-  if (soundEngine.ctx.state === 'suspended') soundEngine.ctx.resume();
-  if (soundEngine.want && !soundEngine.song) music(soundEngine.want);
+  const st = soundEngine.ctx.state;
+  if (st !== 'running' && st !== 'closed') soundEngine.ctx.resume().catch(() => {});
+  if (soundEngine.want && !soundEngine.song) {
+    /* SND-4: the night level first (updateAmbience), so a night starts on the night version, not a second of day */
+    if (!soundEngine.L && soundEngine.ctx.state === 'running')
+      try {
+        updateAmbience();
+      } catch (e) {}
+    const w = soundEngine.want;
+    music(w.includes('@') ? w : songVariant(w, musicState(), SONGS, null, MUSIC.run));
+  }
 }
 ['pointerdown', 'keydown', 'touchend'].forEach(e => addEventListener(e, unlockSound, { capture: true, passive: true }));
 document.addEventListener('visibilitychange', () => {
   if (!soundEngine.ctx) return;
-  if (document.hidden) soundEngine.ctx.suspend();
-  else soundEngine.ctx.resume();
+  /* SND-2: the music's scheduler stops too while hidden (it ran every 25 ms with nothing to do) */
+  const T = soundEngine.tracker;
+  if (document.hidden) {
+    soundEngine.ctx.suspend();
+    if (T) T.idle();
+  } else {
+    soundEngine.ctx.resume();
+    if (T) T.wake();
+  }
+  soundEngine.timer = T ? T.timer : null;
 });
-const midiToFrequency = m => 440 * Math.pow(2, (m - 69) / 12);
-/* ---------- instruments ---------- */
-function synthVoice(
-  bus,
-  {
-    type = 'p25',
-    freq,
-    t,
-    dur,
-    vol = 0.1,
-    a = 0.005,
-    d = 0.08,
-    s = 0.6,
-    r = 0.08,
-    slide = 0,
-    vib = 0,
-    cut = 0,
-    echo = 0,
-  }
-) {
-  const c = soundEngine.ctx,
-    o = c.createOscillator(),
-    g = c.createGain();
-  if (soundEngine.waves[type]) o.setPeriodicWave(soundEngine.waves[type]);
-  else o.type = type;
-  o.frequency.setValueAtTime(freq, t);
-  if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, freq * slide), t + dur);
-  if (vib) {
-    const l = c.createOscillator(),
-      lg = c.createGain();
-    l.frequency.value = 5.5;
-    lg.gain.value = freq * 0.012 * vib;
-    l.connect(lg);
-    lg.connect(o.frequency);
-    l.start(t + 0.08);
-    l.stop(t + dur + r);
-  }
-  g.gain.setValueAtTime(0, t);
-  g.gain.linearRampToValueAtTime(vol, t + a);
-  g.gain.linearRampToValueAtTime(vol * s, t + a + d);
-  g.gain.setValueAtTime(vol * s, t + Math.max(a + d, dur));
-  g.gain.linearRampToValueAtTime(0, t + Math.max(a + d, dur) + r);
-  let out = g;
-  if (cut) {
-    const f = c.createBiquadFilter();
-    f.type = 'lowpass';
-    f.frequency.value = cut;
-    g.connect(f);
-    out = f;
-  }
-  o.connect(g);
-  out.connect(bus);
-  if (echo && soundEngine.echoIn) {
-    const e = c.createGain();
-    e.gain.value = echo;
-    out.connect(e);
-    e.connect(soundEngine.echoIn);
-  }
-  o.start(t);
-  o.stop(t + Math.max(a + d, dur) + r + 0.02);
+/* ---------- instruments (SND-2: the tracker's, audio/tracker.js; every sound plays through them) ---------- */
+function synthVoice(bus, o) {
+  soundEngine.tracker.synthVoice(bus, o);
 }
-function synthNoise(bus, { t, dur = 0.05, vol = 0.2, hp = 0, lp = 0, bp = 0, q = 1 }) {
-  const c = soundEngine.ctx,
-    s = c.createBufferSource(),
-    g = c.createGain();
-  s.buffer = soundEngine.noise;
-  s.loop = true;
-  /* v47: longer than the one-second buffer (the fall) */ let n = s;
-  for (const [type, f] of [
-    ['highpass', hp],
-    ['lowpass', lp],
-    ['bandpass', bp],
-  ])
-    if (f) {
-      const F = c.createBiquadFilter();
-      F.type = type;
-      F.frequency.value = f;
-      F.Q.value = q;
-      n.connect(F);
-      n = F;
-    }
-  g.gain.setValueAtTime(vol, t);
-  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-  n.connect(g);
-  g.connect(bus);
-  s.start(t, Math.random() * 0.5);
-  s.stop(t + dur + 0.02);
+function synthNoise(bus, o) {
+  soundEngine.tracker.synthNoise(bus, o);
 }
-function synthKick(bus, t, v = 0.5) {
-  const c = soundEngine.ctx,
-    o = c.createOscillator(),
-    g = c.createGain();
-  o.frequency.setValueAtTime(140, t);
-  o.frequency.exponentialRampToValueAtTime(42, t + 0.12);
-  g.gain.setValueAtTime(v, t);
-  g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-  o.connect(g);
-  g.connect(bus);
-  o.start(t);
-  o.stop(t + 0.22);
+function synthKick(bus, t, v) {
+  soundEngine.tracker.synthKick(bus, t, v);
 }
 
 /* ---------- songs ---------- */
-const SCALES = {
-  major: [0, 2, 4, 5, 7, 9, 11],
-  minor: [0, 2, 3, 5, 7, 8, 10],
-  dorian: [0, 2, 3, 5, 7, 9, 10],
-  lydian: [0, 2, 4, 6, 7, 9, 11],
-  mixo: [0, 2, 4, 5, 7, 9, 10],
-};
-const SONGS = {
-  town: {
-    bpm: 100,
-    key: 60,
-    scale: 'major',
-    prog: [0, 5, 3, 4, 0, 5, 1, 4],
-    lead: 'p25',
-    bass: 'bounce',
-    arp: 'up',
-    drums: 'soft',
-    seed: 3,
-    swing: 0.08,
-  },
-  route: {
-    bpm: 122,
-    key: 67,
-    scale: 'major',
-    prog: [0, 3, 5, 4, 0, 3, 1, 4],
-    lead: 'p25',
-    bass: 'gallop',
-    arp: 'updown',
-    drums: 'skip',
-    seed: 11,
-  },
-  cave: {
-    bpm: 80,
-    key: 57,
-    scale: 'dorian',
-    prog: [0, 6, 5, 6, 0, 3, 6, 4],
-    lead: 'triangle',
-    bass: 'long',
-    arp: 'drip',
-    drums: 'none',
-    seed: 21,
-    echo: 0.55,
-  },
-  city: {
-    bpm: 116,
-    key: 63,
-    scale: 'mixo',
-    prog: [0, 3, 4, 3, 0, 5, 3, 4],
-    lead: 'p50',
-    bass: 'walk',
-    arp: 'chord7',
-    drums: 'skip',
-    seed: 91,
-    seventh: 1,
-    swing: 0.06,
-  },
-  mall: {
-    bpm: 108,
-    key: 65,
-    scale: 'lydian',
-    prog: [0, 1, 2, 1, 0, 1, 3, 4],
-    lead: 'p50',
-    bass: 'walk',
-    arp: 'chord7',
-    drums: 'bossa',
-    seed: 31,
-    seventh: 1,
-  },
-  hazel: {
-    bpm: 88,
-    key: 65,
-    scale: 'major',
-    prog: [0, 3, 4, 0, 5, 3, 1, 4],
-    lead: 'triangle',
-    bass: 'long',
-    arp: 'up',
-    drums: 'none',
-    seed: 41,
-    echo: 0.3,
-  },
-  map: {
-    bpm: 96,
-    key: 62,
-    scale: 'mixo',
-    prog: [0, 6, 3, 0, 0, 6, 4, 4],
-    lead: 'p25',
-    bass: 'long',
-    arp: 'updown',
-    drums: 'soft',
-    seed: 51,
-  },
-  wild: {
-    bpm: 152,
-    key: 64,
-    scale: 'minor',
-    prog: [0, 5, 6, 0, 0, 5, 3, 4],
-    lead: 'p25',
-    bass: 'drive',
-    arp: 'up',
-    drums: 'drive',
-    seed: 61,
-  },
-  trainer: {
-    bpm: 162,
-    key: 62,
-    scale: 'minor',
-    prog: [0, 3, 6, 2, 0, 3, 4, 4],
-    lead: 'p12',
-    bass: 'drive',
-    arp: 'updown',
-    drums: 'march',
-    seed: 71,
-  },
-  rival: {
-    bpm: 146,
-    key: 59,
-    scale: 'minor',
-    prog: [0, 6, 5, 6, 0, 6, 3, 4],
-    lead: 'p25',
-    bass: 'drive',
-    arp: 'up',
-    drums: 'drive',
-    seed: 81,
-  },
-  /* v47: the title, the fall into the Hollow Earth, the Variants, the Inner Sun */
-  title: {
-    bpm: 92,
-    key: 62,
-    scale: 'major',
-    prog: [0, 4, 5, 3, 0, 4, 1, 4],
-    lead: 'p25',
-    bass: 'long',
-    arp: 'updown',
-    drums: 'soft',
-    seed: 7,
-    echo: 0.35,
-  },
-  fall: {
-    bpm: 72,
-    key: 57,
-    scale: 'dorian',
-    prog: [0, 6, 5, 6, 0, 3, 6, 4],
-    lead: 'triangle',
-    bass: 'long',
-    arp: 'drip',
-    drums: 'none',
-    seed: 13,
-    echo: 0.6,
-  },
-  variants: {
-    bpm: 132,
-    key: 61,
-    scale: 'minor',
-    prog: [0, 5, 3, 6, 0, 5, 4, 4],
-    lead: 'p12',
-    bass: 'bounce',
-    arp: 'chord7',
-    drums: 'march',
-    seed: 23,
-    seventh: 1,
-  },
-  innersun: {
-    bpm: 140,
-    key: 64,
-    scale: 'mixo',
-    prog: [0, 6, 3, 4, 0, 6, 5, 4],
-    lead: 'p25',
-    bass: 'drive',
-    arp: 'updown',
-    drums: 'drive',
-    seed: 29,
-  },
-  /* v47 part 4: a song for each region (a place names it as "music") */
-  meadow: {
-    bpm: 112,
-    key: 67,
-    scale: 'lydian',
-    prog: [0, 3, 4, 0, 5, 3, 4, 4],
-    lead: 'triangle',
-    bass: 'bounce',
-    arp: 'updown',
-    drums: 'soft',
-    seed: 101,
-    swing: 0.1,
-  },
-  hills: {
-    bpm: 100,
-    key: 65,
-    scale: 'mixo',
-    prog: [0, 4, 3, 0, 5, 4, 3, 4],
-    lead: 'p50',
-    bass: 'walk',
-    arp: 'chord7',
-    drums: 'bossa',
-    seed: 111,
-    seventh: 1,
-    swing: 0.08,
-  },
-  spore: {
-    bpm: 84,
-    key: 59,
-    scale: 'dorian',
-    prog: [0, 3, 6, 3, 0, 5, 6, 4],
-    lead: 'triangle',
-    bass: 'long',
-    arp: 'drip',
-    drums: 'soft',
-    seed: 121,
-    echo: 0.45,
-  },
-  crystal: {
-    bpm: 90,
-    key: 57,
-    scale: 'dorian',
-    prog: [0, 5, 3, 6, 0, 5, 4, 4],
-    lead: 'triangle',
-    bass: 'long',
-    arp: 'drip',
-    drums: 'soft',
-    seed: 131,
-    echo: 0.5,
-  },
-  trench: {
-    bpm: 84,
-    key: 55,
-    scale: 'minor',
-    prog: [0, 6, 3, 4, 0, 6, 5, 4],
-    lead: 'p50',
-    bass: 'long',
-    arp: 'updown',
-    drums: 'soft',
-    seed: 141,
-    echo: 0.45,
-    swing: 0.06,
-  },
-  spire: {
-    bpm: 124,
-    key: 62,
-    scale: 'lydian',
-    prog: [0, 4, 5, 3, 0, 4, 1, 4],
-    lead: 'p12',
-    bass: 'bounce',
-    arp: 'chord7',
-    drums: 'skip',
-    seed: 151,
-    seventh: 1,
-  },
-  /* alpha 0.4: Copperleaf, the hamlet where it all starts: an easy, swinging tune for round doors and beehives */
-  copperleaf: {
-    bpm: 94,
-    key: 67,
-    scale: 'major',
-    prog: [0, 4, 5, 3, 0, 4, 3, 4],
-    lead: 'p25',
-    bass: 'bounce',
-    arp: 'up',
-    drums: 'soft',
-    seed: 171,
-    swing: 0.14,
-    echo: 0.25,
-  },
-};
-/* a seeded random number generator, so a song is composed the same way every time */
-function songRandom(seed) {
-  let s = seed * 9301 + 49297;
-  return () => {
-    s = (s * 9301 + 49297) % 233280;
-    return s / 233280;
-  };
-}
-function composeSong(name) {
-  const D = SONGS[name];
-  if (!D) return null;
-  if (D.notes) return D;
-  const sc = SCALES[D.scale],
-    R = songRandom(D.seed),
-    deg = n => {
-      const o = Math.floor(n / 7),
-        i = ((n % 7) + 7) % 7;
-      return D.key + 12 * o + sc[i];
-    };
-  const bars = D.prog.length,
-    steps = bars * 16,
-    lead = new Array(steps).fill(null);
-  const rhythms = [
-    [0, 4, 6, 8, 12],
-    [0, 2, 4, 8, 10, 12],
-    [0, 3, 6, 8, 12, 14],
-    [0, 4, 8, 10, 12],
-    [0, 6, 8, 12],
-    [0, 2, 4, 6, 8, 12],
-  ];
-  const makeBar = (b, rng) => {
-    const ch = D.prog[b],
-      rh = rhythms[Math.floor(rng() * rhythms.length)];
-    let cur = ch + 7 + [0, 2, 4][Math.floor(rng() * 3)];
-    const out = [];
-    rh.forEach((st, i) => {
-      const strong = st % 8 === 0;
-      if (strong) {
-        const tones = [ch, ch + 2, ch + 4].map(x => x + 7);
-        cur = tones.reduce((a, b) => (Math.abs(b - cur) < Math.abs(a - cur) ? b : a));
-      } else cur += [-2, -1, 1, 2, 1, -1][Math.floor(rng() * 6)];
-      const len = (rh[i + 1] ?? 16) - st;
-      out.push([st, deg(cur), len]);
-    });
-    return out;
-  };
-  /* bars 1-4 a phrase, 5-6 repeat its start, 7-8 a cadence that lands on the home note */
-  const A = [0, 1, 2, 3].map(b => makeBar(b, R)),
-    R2 = songRandom(D.seed + 7);
-  for (let b = 0; b < bars; b++) {
-    let bar = b < 4 ? A[b] : b < 6 ? A[b - 4] : makeBar(b, R2);
-    if (b === bars - 1)
-      bar = [
-        [0, deg(D.prog[b] + 7 + 2), 4],
-        [4, deg(D.prog[b] + 7), 4],
-        [8, deg(7), 8],
-      ];
-    const sh = D.key >= 64 ? -12 : 0;
-    bar.forEach(([s, n, l]) => {
-      lead[b * 16 + s] = [n + sh, l];
-    });
-  }
-  return Object.assign(D, { notes: lead, steps, deg });
-}
-export function music(name) {
+/* SND-2: the songs' recipes are data (music.json songs) */
+const SONGS = MUSIC.songs;
+/* SND-2: the song plays on the tracker (audio/tracker.js); this keeps what was asked for (the first touch starts it) */
+/* SND-5: o as the tracker's play takes it ({ intro, hold, restart }: a battle's start) */
+export function music(name, o) {
   soundEngine.want = name;
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') {
     return;
   }
-  if (soundEngine.song && soundEngine.song.name === name) return;
-  const D = composeSong(name);
-  if (!D) return;
-  if (soundEngine.song) {
-    const old = soundEngine.song;
-    old.fade = soundEngine.ctx.currentTime;
-  }
-  soundEngine.song = { name, D, step: 0, next: soundEngine.ctx.currentTime + 0.08, gain: soundEngine.ctx.createGain() };
-  soundEngine.song.gain.connect(soundEngine.mus);
-  soundEngine.song.drums = soundEngine.ctx.createGain();
-  soundEngine.song.drums.gain.value = soundEngine.L ? soundEngine.L.drums : 1;
-  soundEngine.song.drums.connect(soundEngine.song.gain);
-  soundEngine.song.gain.gain.setValueAtTime(0, soundEngine.ctx.currentTime);
-  soundEngine.song.gain.gain.linearRampToValueAtTime(1, soundEngine.ctx.currentTime + 0.6);
-  for (const v of soundEngine.voices) {
-    const t = soundEngine.ctx.currentTime;
-    v.gain.gain.cancelScheduledValues(t);
-    v.gain.gain.setValueAtTime(v.gain.gain.value, t);
-    v.gain.gain.linearRampToValueAtTime(0, t + 0.5);
-    setTimeout(() => v.gain.disconnect(), 700);
-  }
-  soundEngine.voices = [soundEngine.song];
-  if (!soundEngine.timer) soundEngine.timer = setInterval(musicTick, 25);
+  const T = soundEngine.tracker;
+  T.play(name, o);
+  soundEngine.song = T.song;
+  soundEngine.voices = T.voices;
+  soundEngine.timer = T.timer;
 }
 function musicStop() {
-  if (soundEngine.song) {
-    const t = soundEngine.ctx.currentTime,
-      g = soundEngine.song.gain;
-    g.gain.setValueAtTime(g.gain.value, t);
-    g.gain.linearRampToValueAtTime(0, t + 0.4);
-    setTimeout(() => g.disconnect(), 600);
-  }
+  if (soundEngine.tracker) soundEngine.tracker.stop();
+  soundEngine.timer = null;
   soundEngine.song = null;
   soundEngine.want = null;
   soundEngine.voices = [];
 }
-function musicTick() {
-  const c = soundEngine.ctx,
-    sg = soundEngine.song;
-  if (!c || !sg) return;
-  const D = sg.D,
-    spb = 60 / D.bpm / 4;
-  while (sg.next < c.currentTime + 0.14) {
-    const st = sg.step % D.steps,
-      b = Math.floor(st / 16),
-      i = st % 16,
-      t = sg.next + (i % 2 ? spb * (D.swing || 0) : 0),
-      bus = sg.gain,
-      ch = D.prog[b],
-      dg = D.deg;
-    /* lead */ const L = D.notes[st];
-    if (L)
-      synthVoice(bus, {
-        type: D.lead,
-        freq: midiToFrequency(L[0]),
-        t,
-        dur: L[1] * spb * 0.9,
-        vol: D.lead === 'triangle' ? 0.13 : 0.075,
-        d: 0.1,
-        s: 0.55,
-        r: 0.06,
-        vib: L[1] >= 6 ? 1 : 0,
-        echo: D.echo || 0.15,
-      });
-    /* bass */ const bs = D.bass,
-      root = dg(ch) - 24;
-    if (bs === 'bounce' && i % 4 === 0)
-      synthVoice(bus, {
-        type: 'triangle',
-        freq: midiToFrequency(i % 8 ? root + 7 : root),
-        t,
-        dur: spb * 3,
-        vol: 0.2,
-        s: 0.7,
-      });
-    else if (bs === 'gallop' && [0, 3, 4, 8, 11, 12].includes(i))
-      synthVoice(bus, {
-        type: 'triangle',
-        freq: midiToFrequency(i % 8 === 4 ? root + 12 : root),
-        t,
-        dur: spb * 1.5,
-        vol: 0.2,
-      });
-    else if (bs === 'long' && i === 0)
-      synthVoice(bus, {
-        type: 'triangle',
-        freq: midiToFrequency(root),
-        t,
-        dur: spb * 15,
-        vol: 0.16,
-        a: 0.2,
-        s: 0.8,
-        r: 0.4,
-      });
-    else if (bs === 'walk' && i % 4 === 0)
-      synthVoice(bus, {
-        type: 'triangle',
-        freq: midiToFrequency(dg(ch + [0, 2, 4, 5][i / 4]) - 24),
-        t,
-        dur: spb * 3.5,
-        vol: 0.2,
-      });
-    else if (bs === 'drive' && i % 2 === 0)
-      synthVoice(bus, {
-        type: 'p50',
-        freq: midiToFrequency(root + (i % 8 === 6 ? 12 : 0)),
-        t,
-        dur: spb * 1.6,
-        vol: 0.07,
-        cut: 900,
-      });
-    /* harmony */ const ar = D.arp,
-      tri = [0, 2, 4, D.seventh ? 6 : 7].map(x => dg(ch + x)),
-      pick = k => tri[((k % 4) + 4) % 4];
-    if (ar === 'up' && i % 2 === 0)
-      synthVoice(bus, {
-        type: 'p12',
-        freq: midiToFrequency(pick(i / 2) + 12),
-        t,
-        dur: spb * 1.2,
-        vol: 0.035,
-        s: 0.3,
-        echo: 0.2,
-      });
-    else if (ar === 'updown' && i % 2 === 0) {
-      const k = i / 2,
-        seq = [0, 1, 2, 3, 2, 1, 0, 1];
-      synthVoice(bus, {
-        type: 'p12',
-        freq: midiToFrequency(pick(seq[k % 8]) + 12),
-        t,
-        dur: spb * 1.2,
-        vol: 0.035,
-        s: 0.3,
-        echo: 0.15,
-      });
-    } else if (ar === 'drip' && (i === 0 || i === 6 || i === 11))
-      synthVoice(bus, {
-        type: 'sine',
-        freq: midiToFrequency(pick(i) + 24),
-        t,
-        dur: spb * 2,
-        vol: 0.05,
-        s: 0.2,
-        r: 0.3,
-        echo: 0.7,
-      });
-    else if (ar === 'chord7' && (i === 0 || i === 6 || i === 10))
-      tri.forEach(n =>
-        synthVoice(bus, {
-          type: 'sine',
-          freq: midiToFrequency(n + 12),
-          t,
-          dur: spb * (i === 0 ? 5 : 3),
-          vol: 0.03,
-          a: 0.02,
-          s: 0.5,
-          r: 0.2,
-        })
-      );
-    /* drums (v27: on their own bus, softer when you stand still or at night) */ const dr = D.drums,
-      db = sg.drums || bus;
-    if (dr === 'soft') {
-      if (i === 0 || i === 8) synthKick(db, t, 0.25);
-      if (i === 4 || i === 12) synthNoise(db, { t, dur: 0.08, vol: 0.08, bp: 1800, q: 0.8 });
-      if (i % 4 === 2) synthNoise(db, { t, dur: 0.03, vol: 0.04, hp: 7000 });
-    } else if (dr === 'skip') {
-      if (i === 0 || i === 10) synthKick(db, t, 0.3);
-      if (i === 4 || i === 12) synthNoise(db, { t, dur: 0.1, vol: 0.1, bp: 2000, q: 0.7 });
-      if (i % 2 === 0) synthNoise(db, { t, dur: 0.025, vol: 0.035, hp: 8000 });
-    } else if (dr === 'drive') {
-      if (i % 4 === 0) synthKick(db, t, 0.42);
-      if (i === 4 || i === 12) synthNoise(db, { t, dur: 0.12, vol: 0.14, bp: 1800, q: 0.6 });
-      synthNoise(db, { t, dur: 0.02, vol: i % 2 ? 0.025 : 0.045, hp: 8000 });
-    } else if (dr === 'march') {
-      if (i === 0 || i === 8 || i === 11) synthKick(db, t, 0.42);
-      if (i % 4 === 2 || i === 14 || i === 15) synthNoise(db, { t, dur: 0.07, vol: 0.11, bp: 2400, q: 0.8 });
-      if (i % 2 === 0) synthNoise(db, { t, dur: 0.02, vol: 0.03, hp: 9000 });
-    } else if (dr === 'bossa') {
-      if (i === 0 || i === 6 || i === 8 || i === 14) synthKick(db, t, 0.2);
-      if ([3, 6, 10, 13].includes(i)) synthNoise(db, { t, dur: 0.03, vol: 0.05, bp: 3500, q: 2 });
-    }
-    /* v27: a soft pad under the night */ if (i === 0 && soundEngine.L && soundEngine.L.pad > 0.05)
-      [0, 2, 4].forEach(x =>
-        synthVoice(bus, {
-          type: 'sine',
-          freq: midiToFrequency(dg(ch + x) - 12),
-          t,
-          dur: spb * 15,
-          vol: 0.022 * soundEngine.L.pad,
-          a: 0.6,
-          s: 0.9,
-          r: 0.8,
-        })
-      );
-    sg.step++;
-    sg.next += spb;
-  }
-}
-/* the music that fits where you are */
+/* the music that fits where you are. SND-2: music.json's where table picks it (logic/music-where.js songFor) */
 export function musicFor() {
-  if (typeof saveData === 'undefined' || !saveData || !saveData.started) return 'hazel';
-  if (typeof activeBattle !== 'undefined' && activeBattle)
-    return activeBattle.kind === 'trainer'
-      ? activeBattle.T && activeBattle.T.who === 'chad'
-        ? 'rival'
-        : 'trainer'
-      : 'wild';
-  if (uiState.tab === 'map') return 'map';
-  const id = typeof mapIdAt === 'function' ? mapIdAt(saveData.trip.node) : null,
+  return songFor(musicState(), MUSIC.where, SONGS);
+}
+/* what the where table matches on */
+function musicState() {
+  if (typeof saveData === 'undefined' || !saveData || !saveData.started) return { started: false };
+  const B = typeof activeBattle !== 'undefined' && activeBattle,
+    battle = musicBattleKind(B),
+    /* SND-5: the lead Billie, the first of the player's side still standing, for the red zone */
+    lead = B ? liveActors(0)[0] : undefined,
+    L = lead != null ? fighter(lead) : null,
+    id = typeof mapIdAt === 'function' ? mapIdAt(saveData.trip.node) : null,
     sc = id && mapById(id),
-    r = LOCATIONS[saveData.trip.node];
-  if (sc && sc.indoor) return /lanternhall|pepperpot/.test(id) ? 'mall' : 'cave';
-  if (r && r.music && SONGS[r.music]) return r.music;
-  /* v47: a place's own song */ if (/lanternhall|pepperpot/.test(id || '')) return 'mall';
-  if (id === 'verdigris' || (r && r.t === 'city')) return 'city';
-  return r && r.town ? 'town' : 'route';
+    r = LOCATIONS[saveData.trip.node],
+    run = saveData.run,
+    node = run && run.map && r && r.runNode != null ? run.map.nodes[r.runNode] : null;
+  return {
+    started: true,
+    battle,
+    redZone: !!L && musicRedZone(L.hp, maxHp(L)),
+    /* SND-4: the environment's night level outdoors (updateAmbience), for songVariant */
+    night: soundEngine.L ? soundEngine.L.night || 0 : 0,
+    tab: uiState.tab,
+    indoor: !!(sc && sc.indoor),
+    map: id,
+    placeKind: r && r.t === 'city' ? 'city' : r && r.town ? 'town' : null,
+    placeMusic: (r && r.music) || null,
+    /* a run's place: its node's type, biome and row (logic/run-map.js) */
+    nodeType: node ? node.type : null,
+    biome: node ? node.biome || null : null,
+    row: node ? node.row : null,
+    /* SND-5: the days left to the run's deadline, today included (1 on the deadline day, 0 or less past it) */
+    daysLeft: run && run.deadline ? run.deadline - run.clock + 1 : null,
+  };
 }
 function musicSync() {
   if (typeof cutscene !== 'undefined' && cutscene.on) return;
   if (soundEngine.jingle && performance.now() < soundEngine.jingle) return;
-  music(musicFor());
+  /* SND-4: at night outdoors, the song's night version (logic/music-where.js songVariant); the switch crossfades */
+  const st = musicState();
+  /* SND-5: a battle's song starts on its flash, with its intro (battleMusicStart); until then the walk's song plays on,
+     for at most 2.5 s (a battle that never shows its flash then gets its song without one) */
+  const B = typeof activeBattle !== 'undefined' && activeBattle;
+  if (st.battle && B && soundEngine.cued !== B) {
+    const now = performance.now();
+    if (!soundEngine.seen || soundEngine.seen.B !== B) soundEngine.seen = { B, at: now };
+    if (now - soundEngine.seen.at < 2500) return;
+    soundEngine.cued = B;
+    soundLog('battle ' + st.battle + ': no flash, the song without its intro');
+  }
+  music(songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, soundEngine.want, MUSIC.run));
+}
+/* SND-5: a battle's music, timed as Masuda timed it: the song starts on the encounter's flash (or the trainer coming
+   in) with its intro, and the drums wait for the first throw (battleDrumsIn) */
+function battleMusicStart() {
+  const B = typeof activeBattle !== 'undefined' && activeBattle;
+  if (!B || soundEngine.cued === B) return;
+  soundEngine.cued = B;
+  const st = musicState(),
+    name = songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, null, MUSIC.run);
+  if (!name) return;
+  music(name, { intro: true, hold: true, restart: true });
+  const sg = soundEngine.song;
+  soundLog('battle ' + st.battle + ': ' + name + (sg && sg.name === name && sg.D.introSteps ? ', its intro' : ''));
+}
+function battleDrumsIn() {
+  const T = soundEngine.tracker;
+  if (T && T.song && T.song.hold) {
+    T.drumsIn();
+    soundLog('drums in');
+  }
+}
+/* SND-5: the parts of a song the fingerprints (tools/check-sound.py) render besides day and night: its intro, its tense
+   version, its run arc bands, its deadline version */
+function musicParts(name) {
+  const S = SONGS[name];
+  const out = S && S.intro && S.intro.length ? ['intro'] : [];
+  /* a battle song's tense version */
+  if (S && S.tense !== false && MUSIC.where.some(W => W.battle && W.song === name)) out.push('tense');
+  /* a run's songs (a biome's): each arc band */
+  if (S && S.arc !== false && MUSIC.where.some(W => W.biome && W.song === name))
+    for (const B of (MUSIC.run && MUSIC.run.arc) || []) out.push(B.name);
+  /* a run's songs near the deadline */
+  if (S && S.deadline !== false && MUSIC.where.some(W => (W.biome || W.nodeType) && W.song === name))
+    out.push('deadline');
+  return out;
+}
+/* SND-4: a song's name as it plays at this night level (1 night, 0 day): 'town@night' or the name itself */
+function musicVariant(name, night) {
+  return songVariant(name, { night }, SONGS, null);
 }
 setInterval(() => {
   try {
@@ -834,85 +323,18 @@ setInterval(() => {
   } catch (e) {}
 }, 1000);
 /* a short tune that plays once (victory, level up, evolution), after which the place's music comes back */
-export function jingle(notes, bpm = 150, type = 'p25') {
+/* SND-1: bus is where it plays, the effects bus unless asked (Settings → Sound → Music's Test plays one on the music bus) */
+export function jingle(notes, bpm = 150, type = 'p25', bus = null) {
   if (!initSound() || soundEngine.ctx.state !== 'running') return;
-  const c = soundEngine.ctx,
-    spb = 60 / bpm / 4,
-    t0 = c.currentTime + 0.05;
-  let t = t0;
-  if (soundEngine.song) {
-    const g = soundEngine.song.gain.gain;
-    g.cancelScheduledValues(t0);
-    g.setValueAtTime(g.value, t0);
-    g.linearRampToValueAtTime(0.15, t0 + 0.1);
-  }
-  for (const [n, l] of notes) {
-    if (n)
-      (synthVoice(soundEngine.fx, {
-        type,
-        freq: midiToFrequency(n),
-        t,
-        dur: l * spb * 0.9,
-        vol: 0.12,
-        s: 0.6,
-        echo: 0.2,
-      }),
-        n &&
-          synthVoice(soundEngine.fx, {
-            type: 'triangle',
-            freq: midiToFrequency(n - 12),
-            t,
-            dur: l * spb * 0.9,
-            vol: 0.12,
-          }));
-    t += l * spb;
-  }
-  const end = t - c.currentTime;
+  const end = soundEngine.tracker.jingle(notes, bpm, type, bus || soundEngine.fx) - soundEngine.ctx.currentTime;
   soundEngine.jingle = performance.now() + end * 1000 + 200;
-  if (soundEngine.song) {
-    const g = soundEngine.song.gain.gain;
-    g.linearRampToValueAtTime(0.15, t);
-    g.linearRampToValueAtTime(1, t + 0.8);
-  }
 }
-export const JINGLES = {
-  victory: [
-    [72, 2],
-    [76, 2],
-    [79, 2],
-    [84, 6],
-    [83, 2],
-    [84, 8],
-  ],
-  levelup: [
-    [72, 1],
-    [76, 1],
-    [79, 1],
-    [84, 3],
-  ],
-  evolve: [
-    [67, 2],
-    [71, 2],
-    [74, 2],
-    [79, 2],
-    [83, 2],
-    [86, 6],
-  ],
-  caught: [
-    [79, 2],
-    [84, 2],
-    [88, 4],
-    [86, 2],
-    [88, 6],
-  ],
-  hatch: [
-    [76, 2],
-    [79, 2],
-    [84, 4],
-  ],
-};
+/* SND-2: the jingles are data (music.json jingles); here each is its note list, as jingle() takes it */
+export const JINGLES = Object.fromEntries(Object.entries(MUSIC.jingles).map(([k, J]) => [k, J.notes]));
 provide({ JINGLES }); /* to-module */
 /* ---------- sound effects ---------- */
+/* SND-2: the base cries are data (music.json cries.bases); a species picks one by its name */
+const CRIES = MUSIC.cries.bases;
 export function soundEffect(name, o = {}) {
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
   const c = soundEngine.ctx,
@@ -1051,22 +473,43 @@ export function soundEffect(name, o = {}) {
       synthNoise(F, { t: t + 0.1, dur: 0.06, vol: 0.06, lp: 500 });
       break;
     case 'cry': {
-      let h = 0;
-      for (const ch of String(o.sp || '')) h = (h * 31 + ch.charCodeAt(0)) % 997;
-      const b = 48 + (h % 24);
-      synthVoice(F, {
-        type: ['p25', 'p12', 'p50', 'square'][h % 4],
-        freq: midiToFrequency(b),
-        t,
-        dur: 0.18,
-        vol: 0.07,
-        slide: 1.5 + (h % 5) * 0.2,
-        vib: 2,
-      });
-      synthVoice(F, { type: 'p25', freq: midiToFrequency(b + 5), t: t + 0.17, dur: 0.2, vol: 0.06, slide: 0.6 });
+      /* SND-3: a species' cry from its own base, pitch and length (lines/*.json cry), else from its id as before */
+      for (const v of cryVoices(cryRecipe(o.sp, (SPECIES[o.sp] || {}).cry, CRIES)))
+        synthVoice(F, {
+          type: v.type,
+          freq: midiToFrequency(v.midi),
+          t: t + v.at,
+          dur: v.dur,
+          vol: v.vol,
+          slide: v.slide,
+          vib: v.vib,
+        });
       break;
     }
   }
+}
+/* SND-5: the classic low-HP beep (Settings → Sound, off by default): twice a second-ish while the lead Billie is in the
+   red zone, on the effects bus. The music's tense version plays either way */
+function lowHpBeep() {
+  if (!soundPreferences().lowHpBeep || !soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
+  const B = typeof activeBattle !== 'undefined' && activeBattle,
+    k = B ? liveActors(0)[0] : undefined,
+    L = k != null ? fighter(k) : null,
+    now = performance.now();
+  if (!L || !musicRedZone(L.hp, maxHp(L)) || now < (soundEngine.beepAt || 0)) return;
+  soundEngine.beepAt = now + 900;
+  const t = soundEngine.ctx.currentTime + 0.01;
+  synthVoice(soundEngine.fx, { type: 'p50', freq: 1760, t, dur: 0.07, vol: 0.035, r: 0.02 });
+  synthVoice(soundEngine.fx, { type: 'p50', freq: 1318.5, t: t + 0.11, dur: 0.07, vol: 0.035, r: 0.02 });
+}
+/* SND-5: on a run's map tab the map song is muffled by today's forecast where you stand (logic/run-map.js runWeather,
+   music.json run.weather); null off the map tab or out of a run */
+function musicMapCut() {
+  const run = typeof saveData !== 'undefined' && saveData && saveData.run;
+  if (!run || !run.map || uiState.tab !== 'map' || (typeof activeBattle !== 'undefined' && activeBattle)) return null;
+  const r = LOCATIONS[saveData.trip.node];
+  if (!r || r.runNode == null) return null;
+  return musicWeatherCut(runWeather(run, r.runNode, run.clock), MUSIC.run);
 }
 /* battle animations make their sounds */
 function battleSoundEffect(an, r) {
@@ -1075,6 +518,10 @@ function battleSoundEffect(an, r) {
   switch (an.k) {
     case 'wild':
       soundEffect('enc');
+      battleMusicStart();
+      break;
+    case 'trainerIn':
+      battleMusicStart();
       break;
     case 'cry': {
       const s = typeof battleStage !== 'undefined' && battleStage.s[an.si || 1];
@@ -1082,6 +529,7 @@ function battleSoundEffect(an, r) {
       break;
     }
     case 'enter':
+      battleDrumsIn();
       soundEffect('throw');
       at(380, () => soundEffect('pop'));
       break;
@@ -1123,7 +571,10 @@ function battleSoundEffect(an, r) {
 let footstepAt = 0;
 setInterval(() => {
   try {
+    /* SND-2: nothing to work out while no sound can play (before the first touch, or suspended) */
     if (
+      !soundEngine.ctx ||
+      soundEngine.ctx.state !== 'running' ||
       typeof walkView === 'undefined' ||
       !walkView.ready ||
       !walkView.pl ||
@@ -1170,10 +621,11 @@ setInterval(() => {
     soundEffect('step', { ter });
   } catch (e) {}
 }, 50);
-/* volume sliders apply while you drag */
+/* volume sliders apply while you drag (SND-1: all five; Volume and Ambience only applied when you let go) */
+const LIVE_VOLUMES = ['master', 'music', 'sfx', 'world', 'amb'];
 document.addEventListener('input', ev => {
   const k = ev.target.dataset && ev.target.dataset.preference;
-  if (k !== 'music' && k !== 'sfx' && k !== 'world') return;
+  if (!LIVE_VOLUMES.includes(k)) return;
   saveData.preferences = saveData.preferences || {};
   saveData.preferences[k] = +ev.target.value / 100;
   applyVolumes();
@@ -1205,12 +657,11 @@ function ambienceFadeIn() {
 }
 function applyAmbienceVolume() {
   if (!ambience.bus || !soundEngine.ctx) return;
-  const v = volumePreference('world', 0.5),
-    a = volumePreference('amb', 0.5),
+  const L = soundLevels(soundPreferences()),
     f = ambienceFadeIn(),
     t = soundEngine.ctx.currentTime;
-  ambience.bus.gain.setTargetAtTime(v * v * f, t, 0.1);
-  if (ambience.amb) ambience.amb.gain.setTargetAtTime(a * a * 0.9 * f, t, 0.1);
+  ambience.bus.gain.setTargetAtTime(L.world * f, t, 0.1);
+  if (ambience.amb) ambience.amb.gain.setTargetAtTime(L.amb * f, t, 0.1);
 }
 function initAmbience() {
   if (ambience.bus) return true;
@@ -1548,15 +999,23 @@ function updateAmbience() {
   soundEngine.L = {
     drums: (moving || (typeof activeBattle !== 'undefined' && activeBattle) ? 1 : 0.45) * (1 - night * 0.4),
     pad: sc && !sc.indoor ? night : 0,
+    night: sc && !sc.indoor ? night : 0,
   };
   if (soundEngine.song && soundEngine.song.drums)
     soundEngine.song.drums.gain.setTargetAtTime(soundEngine.L.drums, t, 0.6);
-  if (soundEngine.musLP)
-    soundEngine.musLP.frequency.setTargetAtTime(E && sc && !sc.indoor && E.rain > 0.3 ? 2200 : 20000, t, 0.8);
+  if (soundEngine.musLP) {
+    const cut = musicMapCut();
+    soundEngine.musLP.frequency.setTargetAtTime(
+      cut != null ? cut : E && sc && !sc.indoor && E.rain > 0.3 ? 2200 : 20000,
+      t,
+      0.8
+    );
+  }
 }
 setInterval(() => {
   try {
     updateAmbience();
+    lowHpBeep();
   } catch (e) {}
 }, 200);
 /* the ambience: which beds play here, and the occasional bird, owl and clock tick */
@@ -1929,7 +1388,12 @@ function testVolume(k) {
     ambience.arrive = -9;
     applyAmbienceVolume();
     const t = soundEngine.ctx.currentTime + 0.05;
-    if (k === 'music') jingle(JINGLES.levelup);
+    /* SND-1: the master volume plays a chime straight on the master bus, so it sounds whatever the other sliders are */
+    if (k === 'master')
+      [72, 79].forEach((n, i) =>
+        synthVoice(soundEngine.master, { type: 'p25', freq: midiToFrequency(n), t: t + i * 0.12, dur: 0.14, vol: 0.06 })
+      );
+    else if (k === 'music') jingle(JINGLES.levelup, 150, 'p25', soundEngine.mus);
     else if (k === 'sfx') soundEffect('coin');
     else if (k === 'world') {
       synthNoise(ambience.bus, { t, dur: 1.2, vol: 0.35, bp: 1500, q: 0.9 });

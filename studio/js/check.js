@@ -3,7 +3,7 @@
    The game repairs or skips anything broken when it loads, but these checks point at it first. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { provide, uiRulesCheckLine } from '../../game/js/hooks.js';
+import { musicCheckFindings, provide, uiRulesCheckLine } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { uiThemeContrast } from '../../game/js/logic/ui-theme.js';
 import { islandProblems } from '../../game/js/logic/island.js';
@@ -483,6 +483,8 @@ export function runCheck() {
      error when a rule is over its ceiling */
   const rules = uiRulesCheckLine();
   if (rules) P.push({ lvl: rules.over ? 'error' : 'info', msg: rules.msg, go: 'ui', sel: { uiRules: 1 } });
+  /* SND-3: the music (music-editor.js): a rule naming no song, a song nothing plays; a note on the cries */
+  for (const f of musicCheckFindings()) P.push(f);
   /* Project Story S3: the story checks, the same ones check-data runs (game/js/logic/story-checks.js) */
   try {
     for (const f of storyFindings(D)) {

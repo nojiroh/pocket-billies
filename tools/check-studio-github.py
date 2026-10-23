@@ -210,6 +210,18 @@ def split_steps(pg, errs):
         for (const i of new Set([...document.querySelectorAll('#main [id]')].map(e => e.id))) (by[i] = by[i] || []).push(k); }
       openSection(keep); return Object.entries(by).filter(([i, ks]) => ks.length > 1).map(([i, ks]) => i + ' in ' + ks.join(', ')); })()""")
     if shared: errs.append('split: sections share ids: ' + '; '.join(shared[:5]))
+    # the Check: none of the music's warnings on the game's data (once the parked world is read, variants is played by a
+    # parked place); a rule naming no song is an error and a song nothing plays a warning, and Show me opens them;
+    # the cries are one note
+    pg.wait_for_function("legacyView.data !== null", timeout=30000)
+    got = pg.evaluate("runCheck().filter(c => c.msg.startsWith('Music:') || c.msg.startsWith('Cries:')).map(c => [c.lvl, c.msg.slice(0, 40)])")
+    if len(got) != 1 or got[0][0] != 'info': errs.append(f'music: the Check on the game data says {got}')
+    pg.evaluate("studioState.D.music.where[2].song = 'nosuch'; studioState.D.music.songs.lonely = {...studioState.D.music.songs.town}")
+    found = pg.evaluate("runCheck().filter(c => c.go === 'music').map(c => [c.lvl, c.sel])")
+    if found != [['error', {'musicTab': 'where', 'musicRule': 2}], ['warn', {'musicTab': 'songs', 'musicSong': 'lonely'}]]: errs.append(f'music: the Check found {found}')
+    pg.evaluate("void openSection('music', {musicTab: 'where', musicRule: 2})")
+    if not pg.evaluate("!!document.querySelector('#musRule2.mus-hit')"): errs.append('music: Show me did not mark the rule')
+    pg.evaluate("studioState.D.music.where[2].song = 'trainer'; delete studioState.D.music.songs.lonely; void render()")
     pg.evaluate("void openSection('billionaires')"); time.sleep(0.3)
     pg.locator('.nav[data-s=moves]').click(modifiers=['Shift']); time.sleep(0.8)
     if pg.evaluate("[studioState.sec, studioState.sec2, document.querySelector('#main2').hidden]") != ['billionaires', 'moves', False]:
@@ -985,6 +997,152 @@ def studio_test_steps(pg, errs):
     print(f"studio test: {len(r['sections'])} sections, {edits} edits undone, {len(r['findings'])} findings, {r['seconds']} s", flush=True)
 
 
+def music_steps(pg, errs):
+    """SND-3: the Music & sound section (studio/js/music-editor.js): a song plays through the game's tracker on the
+    Studio's own AudioContext (a real click starts it), the bar playing shows, Stop stops it, and leaving the section
+    stops it too (no scheduler left running)."""
+    n = len(errs)
+    pg.evaluate("void openSection('music')")
+    try: pg.wait_for_selector('#musList [data-act=musPlay][data-song=town]', timeout=20000)
+    except Exception:
+        errs.append('music: the song list never showed'); return
+    pg.click('#musList [data-act=musPlay][data-song=town]')
+    time.sleep(1.2)
+    state = pg.evaluate("[musicStudio.ctx && musicStudio.ctx.state, musicPlaying(), document.querySelector('#musNow').textContent, !!musicStudio.tracker.timer]")
+    if state[0] != 'running': errs.append(f'music: the AudioContext is {state[0]!r}, not running')
+    if state[1] != 'town' or not state[2].startswith('\u25b6 town · bar'): errs.append(f'music: playing {state[1]!r}, shown {state[2]!r}')
+    if not state[3]: errs.append('music: the scheduler is not running')
+    # the recipe: a tempo typed in while it plays reaches the song playing, which keeps its place; Undo too
+    pg.click('#musList [data-act=musPick][data-song=town]')
+    box = pg.locator('#main input[data-p="music.songs.town.bpm"]')
+    box.fill('140'); box.press('Tab'); time.sleep(0.3)
+    got = pg.evaluate("[musicPlaying(), musicStudio.tracker.song.D.bpm, studioState.D.music.songs.town.bpm, musicStudio.tracker.song.step > 4]")
+    if got != ['town', 140, 140, True]: errs.append(f'music: a tempo change while playing gave {got}')
+    pg.select_option('#main select[data-p="music.songs.town.prog.1"]', '3'); time.sleep(0.3)
+    if pg.evaluate("musicStudio.tracker.song.D.prog[1]") != 3: errs.append('music: a chord change did not reach the song playing')
+    pg.click('#undoBtn'); pg.click('#undoBtn'); time.sleep(0.3)
+    got = pg.evaluate("[musicPlaying(), musicStudio.tracker.song.D.bpm, musicStudio.tracker.song.D.prog[1], studioState.D.music.songs.town.bpm]")
+    if got != ['town', 100, 5, 100]: errs.append(f'music: undo gave {got} (playing, its tempo and second chord, the data’s tempo)')
+    left = pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)")
+    if left: errs.append(f'music: after the undo these still differ from GitHub: {left}')
+    # the hook roll: a click on an empty cell of the roll writes a note, a drag makes it longer, and the song playing
+    # plays the hook at once; a click on the note takes it away; the countermelody is its own line; all undone
+    # SND-4: on hills, whose rolls are empty (town has a placeholder hook and counter now), played and picked first
+    pg.click('#musList [data-act=musPick][data-song=hills]'); pg.click('#musList [data-act=musPlay][data-song=hills]'); time.sleep(0.3)
+    undo0 = pg.evaluate("studioState.undo.length")
+    pg.locator('#musRoll').scroll_into_view_if_needed(); box = pg.locator('#musRoll').bounding_box()
+    cell = lambda st, row: (box['x'] + 40 + st * 22 + 11, box['y'] + 18 + row * 16 + 8)
+    x, y = cell(4, 3); pg.mouse.click(x, y)
+    hook = pg.evaluate("studioState.D.music.songs.hills.hook")
+    if not hook or len(hook) != 1 or hook[0][0] != 4 or hook[0][2] != 2: errs.append(f'music: a click on the roll wrote {hook}')
+    elif pg.evaluate("JSON.stringify(musicStudio.tracker.song.D.notes.slice(0, 32).filter(Boolean))") != json.dumps([[hook[0][1], 2]], separators=(',', ':')):
+        errs.append('music: the song playing does not play the hook')
+    pg.locator('#musRoll').scroll_into_view_if_needed(); box = pg.locator('#musRoll').bounding_box()
+    x, y = cell(4, 3); pg.mouse.click(x, y)
+    if pg.evaluate("'hook' in studioState.D.music.songs.hills"): errs.append('music: a click on the note did not take it away')
+    pg.click('[data-act=musLine][data-l=counter]')
+    pg.locator('#musRoll').scroll_into_view_if_needed(); box = pg.locator('#musRoll').bounding_box()
+    x, y = cell(8, 10); x2, _ = cell(13, 10)
+    pg.mouse.move(x, y); pg.mouse.down(); pg.mouse.move(x2, y, steps=4); pg.mouse.up()
+    ctr = pg.evaluate("studioState.D.music.songs.hills.counter")
+    if not ctr or ctr[0][0] != 8 or ctr[0][2] != 6: errs.append(f'music: a drag on the counter roll wrote {ctr}')
+    elif pg.evaluate("musicStudio.tracker.song.D.counterNotes[8]") != [ctr[0][1], 6]: errs.append('music: the song playing does not play the counter')
+    while pg.evaluate("studioState.undo.length") > undo0: pg.click('#undoBtn')
+    if pg.evaluate("['hook', 'counter'].some(k => k in studioState.D.music.songs.hills)"): errs.append('music: undo left a hook or counter')
+    # SND-5: the intro on the roll (every semitone a row), drawn and undone; a battle song plays its intro first, and
+    # its tense version with Version set to it
+    pg.click('[data-act=musLine][data-l=intro]')
+    pg.locator('#musRoll').scroll_into_view_if_needed(); box = pg.locator('#musRoll').bounding_box()
+    x, y = cell(0, 5); pg.mouse.click(x, y)
+    intro = pg.evaluate("studioState.D.music.songs.hills.intro")
+    if not intro or intro[0][0] != 0: errs.append(f'music: a click on the intro roll wrote {intro}')
+    while pg.evaluate("studioState.undo.length") > undo0: pg.click('#undoBtn')
+    if pg.evaluate("'intro' in studioState.D.music.songs.hills"): errs.append('music: undo left an intro')
+    pg.click('[data-act=musLine][data-l=hook]')
+    pg.evaluate("void musicPlay('wild')"); time.sleep(0.3)
+    if not pg.evaluate("musicStudio.tracker.song.step < 0 || musicStudio.tracker.song.step < 20"): errs.append('music: wild did not start on its intro')
+    pg.select_option('#musPart', 'tense'); time.sleep(0.3)
+    if pg.evaluate("musicPlaying()") != 'wild@tense': errs.append(f"music: Version tense played {pg.evaluate('musicPlaying()')!r}, not wild@tense")
+    pg.evaluate("void musicPlay('hazel')"); time.sleep(0.3)
+    if pg.evaluate("musicPlaying()") != 'hazel@tense' and pg.evaluate("musicPlaying()") != 'hazel': errs.append(f"music: a song with Version tense played {pg.evaluate('musicPlaying()')!r}")
+    pg.select_option('#musPart', ''); time.sleep(0.2)
+    pg.click('.ed-head [data-act=musStop]')
+    time.sleep(0.3)
+    if pg.evaluate("musicPlaying()") != '': errs.append('music: Stop did not stop the song')
+    # the where table: Try a place answers; a rule moved below the one it beat changes the answer; a condition
+    # added and taken away; a rule added before the last; all undone, nothing left to propose
+    pg.click('[data-act=musTab][data-t=where]')
+    pg.wait_for_selector('#musTryOut')
+    pg.select_option('select[data-mt=nodeType]', 'town'); pg.select_option('select[data-mt=biome]', 'lake')
+    pick = lambda: pg.evaluate("document.querySelector('#musTryOut').textContent")
+    undo0 = pg.evaluate("studioState.undo.length")
+    # SND-5: the rules' places are read from the table (new battle rules moved them)
+    town = pg.evaluate("studioState.D.music.where.findIndex(w => w.nodeType === 'town')") + 1
+    wild = pg.evaluate("studioState.D.music.where.findIndex(w => w.battle === 'wild')")
+    n0 = pg.evaluate("studioState.D.music.where.length")
+    if pick() != f'Rule {town} picks town': errs.append(f'music: a lake town gave {pick()!r}')
+    lake = pg.evaluate("studioState.D.music.where.findIndex(w => w.biome === 'lake')")
+    for _ in range(lake - town + 1): pg.click(f'#musRule{lake} [data-act=musRuleMove][data-d="-1"]'); lake -= 1
+    if pg.evaluate(f"studioState.D.music.where[{lake}].biome") != 'lake' or pick() != f'Rule {town} picks trench':
+        errs.append(f'music: the lake rule moved to {lake + 1} gave {pick()!r}, wanted trench')
+    pg.select_option(f'#musRule{wild} select[data-mk="+"]', 'indoor')
+    if pg.evaluate(f"studioState.D.music.where[{wild}]") != {'battle': 'wild', 'indoor': True, 'song': 'wild'}: errs.append(f"music: adding a condition gave {pg.evaluate(f'studioState.D.music.where[{wild}]')}")
+    pg.click(f'#musRule{wild} [data-act=musCondDel][data-k=indoor]')
+    pg.click('[data-act=musRuleAdd]')
+    W = pg.evaluate("studioState.D.music.where")
+    if len(W) != n0 + 1 or W[-1] != {'song': 'route'}: errs.append(f'music: a new rule went to {len(W)} (last {W[-1]})')
+    if pg.evaluate("runCheck().filter(c => c.go === 'music' && c.lvl === 'error').length"): errs.append('music: the Check finds errors in a table only moved and added to')
+    pg.click(f'#musRule{n0 - 1} [data-act=musRulePlay]'); time.sleep(0.4)
+    if pg.evaluate("musicPlaying()") != pg.evaluate(f"studioState.D.music.where[{n0 - 1}].song"): errs.append('music: a rule’s ▶ did not play its song')
+    # SND-5: the run's arc in the In a run card: a band's drums set, then undone with the rest
+    pg.select_option('select[data-p="music.run.arc.0.changes.drums"]', 'drive')
+    if pg.evaluate("studioState.D.music.run.arc[0].changes.drums") != 'drive': errs.append('music: the arc band\'s drums did not change')
+    while pg.evaluate("studioState.undo.length") > undo0: pg.click('#undoBtn')
+    if pick() != f'Rule {town} picks town' or pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"):
+        errs.append(f'music: undoing the table gave {pick()!r} and left {pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)")}')
+    # the jingles: one plays (its voices start on the context), a note drawn after its end lengthens it with a rest
+    # between, undone
+    pg.click('[data-act=musTab][data-t=jingles]')
+    pg.click('[data-act=musJinglePick][data-j=hatch]')
+    pg.click('.list-head [data-act=musStop]'); time.sleep(0.6)
+    pg.evaluate("(() => { const T = musicStudio.tracker, f = T.synthVoice; window.__mv = 0; T.synthVoice = (...a) => { window.__mv++; return f(...a); }; window.__mvf = f })()")
+    pg.click('.card [data-act=musJinglePlay][data-j=hatch].primary'); time.sleep(0.2)
+    if pg.evaluate("window.__mv") != 6: errs.append(f'music: the hatch jingle started {pg.evaluate("window.__mv")} voices, not 6 (3 notes, each with its bass)')
+    pg.evaluate("void (musicStudio.tracker.synthVoice = window.__mvf)")
+    pg.locator('#musJRoll').scroll_into_view_if_needed(); box = pg.locator('#musJRoll').bounding_box()
+    pg.mouse.click(box['x'] + 40 + 10 * 22 + 11, box['y'] + 18 + 2 * 16 + 8)
+    got = pg.evaluate("studioState.D.music.jingles.hatch.notes")
+    if len(got) != 5 or got[3] != [0, 2] or got[4][1] != 2: errs.append(f'music: a note after the hatch jingle gave {got}')
+    pg.click('#undoBtn')
+    if pg.evaluate("studioState.D.music.jingles.hatch.notes") != [[76, 2], [79, 2], [84, 4]]: errs.append('music: undo did not put the jingle back')
+    # a Billy's cry (the Billies page): a pitch typed in is the stage's own cry and plays its two notes there; the
+    # field emptied leaves the line with no cry list; nothing to propose
+    pg.evaluate("void openSection('billionaires')")
+    pg.wait_for_selector('#main input[data-p$=".cry.0.pitch"]', timeout=20000)
+    li = pg.evaluate("+document.querySelector('#main input[data-p$=\".cry.0.pitch\"]').dataset.p.split('.')[1]")
+    box = pg.locator(f'#main input[data-p="lines.{li}.cry.0.pitch"]')
+    box.fill('60'); box.press('Tab')
+    if pg.evaluate(f"studioState.D.lines[{li}].cry") != [{'pitch': 60}]: errs.append(f"music: a cry pitch gave {pg.evaluate(f'studioState.D.lines[{li}].cry')}")
+    pg.evaluate("(() => { const T = musicStudio.tracker, f = T.synthVoice; window.__mv = []; T.synthVoice = (o, v) => { window.__mv.push(v); return f(o, v); }; window.__mvf = f })()")
+    pg.click('#main [data-act=musCry]:not([data-low])'); pg.click('#main [data-act=musCry][data-low]')
+    heard = pg.evaluate("window.__mv.map(v => Math.round(12 * Math.log2(v.freq / 440) + 69))")
+    pg.evaluate("void (musicStudio.tracker.synthVoice = window.__mvf)")
+    if heard[:2] != [60, 65] or len(heard) != 4 or heard[2] >= 60: errs.append(f'music: the cry and its low-health preview played notes {heard}')
+    box = pg.locator(f'#main input[data-p="lines.{li}.cry.0.pitch"]')
+    box.fill(''); box.press('Tab')
+    if pg.evaluate(f"'cry' in studioState.D.lines[{li}]") or pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"):
+        errs.append('music: an emptied cry left the line a cry list, or something to propose')
+    pg.evaluate("void openSection('music')")
+    pg.click('[data-act=musTab][data-t=songs]')
+    pg.click('#musList [data-act=musPlay][data-song=meadow]')
+    time.sleep(0.5)
+    pg.evaluate("void openSection('rules')")
+    time.sleep(0.5)
+    if pg.evaluate("[musicPlaying(), !!musicStudio.tracker.timer]") != ['', False]: errs.append('music: leaving the section left the song playing')
+    if len(errs) > n: errs[n:] = [f'music: {e}' if not e.startswith('music:') else e for e in errs[n:]]
+    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; a cry set, heard (and low on health) and emptied; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
@@ -1000,6 +1158,7 @@ STEPS = [
     ('ui', ui_steps),
     ('ui_tools', ui_tools_steps),
     ('ui_screens', ui_screens_steps),
+    ('music', music_steps),
     ('studio_test', studio_test_steps),
 ]
 

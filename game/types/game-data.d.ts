@@ -50,6 +50,8 @@ export interface GameData {
   biomes?: Record<DataId, Biome>;
   /** roguelite track RL-6: the kinds of node on a run's map (game/data/nodeTypes.json; logic/run-map.js) */
   nodeTypes?: Record<DataId, NodeType>;
+  /** sound track SND-2: the songs, jingles, cries' bases and where each song plays (game/data/music.json) */
+  music?: Music;
   /** roguelite track RL-12: a run's Loopholes (relics), each a list of effect rows (game/data/relics.json; logic/effects.js) */
   relics?: Record<DataId, Relic>;
   /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
@@ -267,6 +269,16 @@ export interface Line {
   note?: string[];
   /** phase 16: each stage's native parts (its fitting set): a kit part id (partKits.json) per part slot */
   parts?: Record<string, string>[];
+  /** SND-3: each stage's cry (null: the one its id makes) */
+  cry?: (SpeciesCry | null)[];
+}
+
+/** SND-3: a species' own cry: a base (music.json cries.bases), the first note's pitch (midi) and a length (1 as made
+    from the id); a key left out comes from the id (logic/cries.js) */
+export interface SpeciesCry {
+  base?: number;
+  pitch?: number;
+  length?: number;
 }
 
 /** a species, made from its line at load (game-data.js SPECIES) */
@@ -300,6 +312,8 @@ export interface Species {
   rar: string;
   /** a split line's finals: 'A' (Build) or 'B' (Hype) */
   form: 'A' | 'B' | null;
+  /** SND-3: its own cry, or null for the one its id makes */
+  cry: SpeciesCry | null;
 }
 
 /** roster.json: the art and design state of each species (the Studio's Billies section) */
@@ -1509,6 +1523,63 @@ export interface NodeType {
   engine: 'scene' | 'menu';
   /** how often it fills a free row (rules.json run.map gives the other rows their types); 0 or none: never */
   weight?: number;
+}
+
+/** music.json: a song's recipe, composed into notes by the tracker (game/js/audio/tracker.js; sound track SND-2) */
+export interface SongRecipe {
+  bpm: number;
+  /** the home note, as a midi note */
+  key: number;
+  scale: 'major' | 'minor' | 'dorian' | 'lydian' | 'mixo';
+  /** each bar's chord, as a scale degree (0 is I) */
+  prog: number[];
+  lead: string;
+  bass: 'bounce' | 'gallop' | 'long' | 'walk' | 'drive' | 'none';
+  arp: 'up' | 'updown' | 'drip' | 'chord7' | 'none';
+  drums: 'soft' | 'skip' | 'drive' | 'march' | 'bossa' | 'none';
+  seed: number;
+  swing?: number;
+  echo?: number;
+  seventh?: 0 | 1;
+  /** SND-4: keep the thicker mix (sine arps, the night pad) instead of four voices: the title and the fall */
+  extra?: boolean;
+  /** SND-4: a music-box lead: short notes, no vibrato (Copperleaf) */
+  pluck?: boolean;
+  /** SND-4 and SND-5 (none yet): written lines of [step, midi, length], intro bars, night changes */
+  hook?: [number, number, number][];
+  counter?: [number, number, number][];
+  intro?: number;
+  /** SND-4: one name for the hook and counter; Claude's drafts start with "placeholder" */
+  hookName?: string;
+  /** SND-4: the night version's changes; false: none (audio/tracker.js trackerNight) */
+  night?: Partial<SongRecipe> | false;
+}
+
+/** music.json: a rule of the where table; the first whose every key matches picks the song (logic/music-where.js) */
+export interface MusicWhere {
+  started?: boolean;
+  battle?: string;
+  tab?: string;
+  indoor?: boolean;
+  map?: string[];
+  placeKind?: 'city' | 'town';
+  nodeType?: string;
+  biome?: string;
+  row?: [number, number];
+  /** a song, or $place: the place's own song */
+  song: string;
+}
+
+/** music.json (sound track SND-2) */
+export interface Music {
+  songs: Record<DataId, SongRecipe>;
+  /** [midi note, length in sixteenths]; note 0 rests */
+  jingles: Record<
+    DataId,
+    { notes: [number, number][]; /** SND-4: Claude's drafts start with "placeholder" */ name?: string }
+  >;
+  cries: { bases: { wave: string }[] };
+  where: MusicWhere[];
 }
 
 /** relics.json: how often a Loophole is offered and what a shop asks for it (rules.json run.relics) */

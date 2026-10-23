@@ -9,6 +9,37 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Battle and run music (sound track SND-5): a battle's song starts on the encounter's flash with a short intro
+  run and holds its drums until your first Billie is sent out. A run's mini-bosses have a song of their own (the
+  title's theme in a minor key) and its boss another. While your lead Billie is under a quarter of its HP, the battle
+  song turns tense (faster, marching drums), back when healed; Settings → Sound has the classic low-HP beep as a
+  switch, off by default. A run's music builds as you go: from the first mini-boss's row the biome's song marches
+  with its arpeggio higher, from the second it adds a countermelody; on the deadline day and after it, the songs drop
+  to drums and the tune alone. On the run's map tab the map song is muffled by today's rain, storm, snow, fog or ash
+  where you stand. The battle songs' hooks and intros are drafts, named "placeholder" in the Studio, which can now
+  edit intros, play each version and edit the run's settings.
+- The music's first rework toward the Game Boy Pokémon sound (sound track SND-4): every song plays on four voices
+  (two pulse waves, a triangle bass, noise drums), except the title and the fall, which keep their fuller sound. A
+  written hook comes back answered in bars 3-4. The title has a theme of its own (I-bVII-I) that returns under
+  Copperleaf's song, as the airship takes off on a run and on the payout screen. Copperleaf is a two-voice music box
+  with no drums. Outdoors at night a song plays its night version: slower, lower, softer drums. Ten place songs have
+  draft hooks, each named "placeholder" in the Studio until it is rewritten; the Studio's player has a Night switch.
+- The Studio's Music & sound section (sound track SND-3): play and loop any song and change its recipe while it
+  plays (tempo, key, scale, the chords as numerals, the instruments, swing, echo, a new tune from a seed); write a
+  two-bar hook and a countermelody on a piano roll, which the game now plays in place of the composed tune's first
+  bars; edit the table of which song plays where, with Try a place to hear what it picks; edit the jingles. Each
+  Billy can have its own cry (base, pitch and length) on its Billies page, with a low-health preview; until one is
+  set, every cry sounds as before. The Studio's Check flags a where-rule that names no song and a song nothing plays.
+- Music in a run (sound track SND-2): each place on a run's map plays its biome's song (a meadow its own, a lake the
+  trench song, a thicket spore, a ridge crystal, an autumn wood spire), a run's town the town song and the landing
+  the route song. The songs, jingles and cries are now data (game/data/music.json) and play exactly as before; the
+  music's timer stops while the game is in the background.
+- Settings → Sound (sound track SND-1): the Volume and Music Test buttons play again (Volume played nothing; Music
+  was silent when Sound effects was at 0). Volume and Ambience change while you drag them, like the others. A
+  speaker button beside the Settings title mutes everything from any tab, keeping your levels. Sound comes back with
+  the next tap after a phone call or Siri on an iPhone. The Sound tab reads in Dutch, German, Spanish and French.
+- A run's world (roguelite track RL-7), not playable yet (a run starts at the airship from RL-8; to look at one, open
+  the game with `?fixture=run`): each place on a run's map is a walkable route made from the run's seed, joined
 - The Studio's Hub island section has the island generator's dials (IS-6b): size, coast, mountain, cove, beaches,
   cliffs, forest, stream, paths, the town and the hamlet, a seed and a seed for each part. A draft shows in the
   orbit view and on the map as you change them, with its size, the walk round the coast and a walking check. "Use

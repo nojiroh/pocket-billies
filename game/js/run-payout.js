@@ -17,6 +17,7 @@ import { runPayoutRows, runReleasePays } from './logic/run-loop.js';
 import { fxOfRun, fxPayoutRates } from './logic/effects.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
+import { JINGLES, jingle } from './sound.js';
 import { runEndHome } from './run.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -67,6 +68,8 @@ function runPayoutOpen() {
       if (el && !uiState.runPayoutPlayed && typeof el.play === 'function') {
         uiState.runPayoutPlayed = true;
         el.play();
+        /* SND-4: the run's last bookend, the title's motif (the first plays as the airship leaves the mast) */
+        if (typeof jingle === 'function' && JINGLES.motif) jingle(JINGLES.motif);
       } else if (el && typeof el.finish === 'function') el.finish();
       for (const c of document.querySelectorAll('#ov pb-pick-card'))
         c.addEventListener('pb-pick', () => {

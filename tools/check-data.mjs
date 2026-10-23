@@ -18,6 +18,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DATA, PB_DATA } from './data-files.mjs';
 import { uiThemeContrast } from '../game/js/logic/ui-theme.js';
+import { musicFindings } from '../game/js/logic/music-studio.js';
 import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js';
 import { CLIMATE_WEATHER_ODDS } from '../game/js/logic/weather.js';
 import { RUN_MARK_TYPES } from '../game/js/logic/run-marks.js';
@@ -496,6 +497,19 @@ if (D.nodeTypes && check('nodeTypes.schema.json', D.nodeTypes, 'nodeTypes.json')
   }
   if (!Object.values(D.nodeTypes).some(T => (T.weight || 0) > 0))
     problem('nodeTypes.json', 'no type has a weight, so nothing can fill a free row of the run map');
+}
+// SND-2: the music: the schema, then every song a where-rule or a place names is a song, and the where table ends in a
+// rule that always matches (so something always plays). SND-3: the rules are logic/music-studio.js musicFindings, which
+// the Studio's Check shows too; its warnings (a song nothing plays) are the quick check's Unused report here
+if (D.music && check('music.schema.json', D.music, 'music.json')) {
+  for (const F of musicFindings(D.music, { nodeTypes: D.nodeTypes || {}, biomes: D.biomes || {}, locations: D.locations || [] }))
+    if (F.lvl === 'error') problem(F.place ? 'locations.json' : 'music.json', F.msg);
+  // SND-3: a species' own cry names a base that exists
+  const bases = (D.music.cries || {}).bases || [];
+  for (const L of D.lines || [])
+    (L.cry || []).forEach((C, st) => {
+      if (C && C.base != null && C.base >= bases.length) problem(`lines/${L.id}.json`, `cry ${st}: no base ${C.base} (music.json cries.bases has ${bases.length})`);
+    });
 }
 // RL-12: Loopholes (relics): the schema, the types their damage rows name; rules.json run.relics: a cap of 1-12 held, a
 // pick of 1-5 (run.offer holds up to 5), a weight of 0 or more and a whole price ($0-100,000) for each rarity, and

@@ -4555,6 +4555,112 @@ body.wb-dropping::after {
   font-size: 12px;
   color: var(--text2);
 }
+/* Sound track SND-3: the Music & sound section (studio/js/music-editor.js) */
+.mus-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mus-row .lcard {
+  flex: 1;
+  min-width: 0;
+}
+.mus-row.on .lcard {
+  background: var(--acc2);
+  border-color: color-mix(in srgb, var(--acc) 40%, transparent);
+}
+.mus-play {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+}
+.mus-play.on {
+  background: var(--acc);
+  color: #fff;
+}
+.mus-loop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+}
+.mus-uses {
+  margin: 0;
+  padding-left: 18px;
+}
+.mus-chords {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+.mus-where-wrap {
+  overflow-x: auto;
+}
+.mus-where td {
+  vertical-align: middle;
+}
+.mus-where select,
+.mus-where input {
+  width: auto;
+  min-width: 0;
+  min-height: 34px;
+}
+.mus-where input[type='number'] {
+  width: 56px;
+}
+.mus-when > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.mus-cond {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel2);
+}
+.mus-cond small {
+  color: var(--text2);
+}
+.mus-where .mus-acts {
+  white-space: nowrap;
+}
+.mus-where .mus-acts .btn {
+  min-width: 34px;
+  padding: 0 6px;
+}
+.mus-where tr.mus-hit {
+  background: var(--acc2);
+}
+.mus-try {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.mus-roll-wrap {
+  overflow-x: auto;
+  margin-top: 8px;
+}
+.mus-roll {
+  display: block;
+  cursor: crosshair;
+  touch-action: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.mus-jpick {
+  display: inline-flex;
+  gap: 2px;
+}
 /* ---------- island track IS-6a: the Hub island editor (js/hub-island.js) ---------- */
 .hub-grid {
   display: grid;

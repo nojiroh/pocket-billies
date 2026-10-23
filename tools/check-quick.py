@@ -425,7 +425,7 @@ def check_ground():
     return f'{len(SY["terrains"])} kinds x 12 tiles in next/{folder.name}, all distinct'
 
 
-@step('Unused: art and props nothing names', 30)
+@step('Unused: art, props and songs nothing names', 30)
 def report_unused():
     """v47: lists pictures and sounds no code, page or data names, and catalogue props no place uses and no code
     names, so old things don't build up again. A report, not a failure. A folder the code builds names in (battle/
@@ -458,9 +458,19 @@ def report_unused():
     ctok = set(re.findall(r'[\'"`]([A-Za-z0-9_]+)[\'"`]', code)) | set(re.findall(r'[\'"`]([A-Za-z0-9_]+)[|,]', code))
     props = [k for k in SY.get('props', {}) if k not in placed and k not in ctok]
     spare = len([k for k in SY.get('props', {}) if k not in placed])
-    (OUT / 'unused.txt').write_text('Pictures and sounds nothing names:\n' + '\n'.join(sorted(unused)) + '\n\nCatalogue props no place uses and no code names:\n' + '\n'.join(sorted(props)) + '\n')
-    if unused or props: notes.append(f'unused: {len(unused)} pictures/sounds and {len(props)} props nothing names (validation/quick/unused.txt)')
-    return f'{len(unused)} pictures/sounds, {len(props)} props nothing names; {spare} props kept for the Studio palette, placed nowhere yet'
+    # SND-2: songs no where-rule, no place (locations' music, the parked ones too), no story script (`music <song>`) and no
+    # code (music('<song>')) names
+    M = D.get('music') or {}
+    named = {W['song'] for W in M.get('where', [])}
+    for f in [GAME / 'data' / 'locations.json', GAME / 'data' / 'legacy' / 'locations.json']:
+        if f.exists(): named |= set(re.findall(r'"music"\s*:\s*"([a-z0-9_]+)"', f.read_text(encoding='utf-8')))
+    for f in (GAME / 'data').rglob('*.json'):
+        if f.name != 'music.json': named |= set(re.findall(r'\bmusic ([a-z0-9_]+)', f.read_text(encoding='utf-8', errors='ignore')))
+    named |= set(re.findall(r"\bmusic\(\s*'([a-z0-9_]+)'", code))
+    songs = [k for k in M.get('songs', {}) if k not in named]
+    (OUT / 'unused.txt').write_text('Pictures and sounds nothing names:\n' + '\n'.join(sorted(unused)) + '\n\nCatalogue props no place uses and no code names:\n' + '\n'.join(sorted(props)) + '\n\nSongs no where-rule, place, script or code plays (music.json):\n' + '\n'.join(sorted(songs)) + '\n')
+    if unused or props or songs: notes.append(f'unused: {len(unused)} pictures/sounds, {len(props)} props and {len(songs)} songs nothing names (validation/quick/unused.txt)')
+    return f'{len(unused)} pictures/sounds, {len(props)} props, {len(songs)} songs ({", ".join(songs) or "none"}) nothing names; {spare} props kept for the Studio palette, placed nowhere yet'
 
 
 # ------------------------------------------------------------------ 2. in the browser
@@ -779,6 +789,207 @@ def targets_step(b, base, R):
         if bad: raise Exception(f'{len(bad)} controls too small to tap: ' + '; '.join(bad[:8]))
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return 'every control on 9 screens is 40 px or more, or an icon with its 7 px tap margin'
+    finally:
+        ctx.close()
+
+
+@step('Sound settings: each slider sets its bus, each Test plays on its bus, the header mute keeps the levels (SND-1)', 120)
+def sound_step(b, base, R):
+    """sound track SND-1: Settings → Sound on a 390 px phone. Each Test button must reach its own bus (a wrapper on
+    AudioNode.connect lists what each press connects to; every button's tick also reaches the effects bus); each slider,
+    dragged, must set its bus to soundLevels() at once; the mute button beside the title silences the master and keeps
+    every level. Nothing is heard: only the connections and the targets the gains are given are read. A browser that won't start audio is
+    reported, not failed, like the world-sounds step"""
+    errs = []
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1, is_mobile=True, has_touch=True)
+    for s in (CLOCK, NO_ACCOUNTS, TEST_GLOBALS): ctx.add_init_script(s)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    try:
+        pg.goto(base + '/index.html?fixture=town'); pg.evaluate(LOW_RENDER)
+        if not until(pg, "typeof walkView!=='undefined'&&walkView.ready", 120): raise Exception('the town never opened')
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();openSettings('sound');0"); time.sleep(.8)
+        pg.click('.sheet h2')   # a touch unlocks sound, as on a phone
+        until(pg, "typeof soundEngine!=='undefined'&&!!soundEngine.ctx&&soundEngine.ctx.state==='running'", 8)
+        state = pg.evaluate("typeof soundEngine==='undefined'||!soundEngine.ctx?'no sound in this browser':soundEngine.ctx.state")
+        if state != 'running': return f'not checked: {state if state.startswith("no ") else "sound not started (" + state + ")"}'
+        if not until(pg, "!!ambience.bus&&!!ambience.amb", 10): raise Exception('the world and ambience buses never started in the town')
+        pg.evaluate("""(()=>{const B={master:[soundEngine.master],music:[soundEngine.mus],sfx:[soundEngine.fx],world:[ambience.bus],amb:[ambience.amb,ambience.lpA].filter(Boolean)};
+          window.__snd={B,hit:new Set(),to:new Map()};const c=AudioNode.prototype.connect;window.__sndConnect=c;
+          const st=AudioParam.prototype.setTargetAtTime;window.__sndTarget=st;AudioParam.prototype.setTargetAtTime=function(v,...a){__snd.to.set(this,v);return st.call(this,v,...a)};
+          AudioNode.prototype.connect=function(d,...a){for(const [k,L] of Object.entries(__snd.B))if(L.includes(d))__snd.hit.add(k);return c.call(this,d,...a)}})();0""")
+        missed = []
+        for k in ['master', 'music', 'sfx', 'world', 'amb']:
+            pg.evaluate("__snd.hit=new Set();0")
+            pg.click(f'[data-a=aud-test][data-k={k}]'); until(pg, f"__snd.hit.has('{k}')", 4)   # the test sound starts 60 ms after the press
+            hit = pg.evaluate("[...__snd.hit]")
+            if k not in hit: missed.append(f'{k} Test reached {", ".join(sorted(hit)) or "no bus"}')
+        if missed: raise Exception('a Test button played somewhere else: ' + '; '.join(missed))
+        # what the bus must be set to is worked out from where the slider stands, not from the saved preference: without
+        # the live listener neither moves while the slider is held, so the two would agree. The target each gain is
+        # given is read (the setTargetAtTime wrapper), not gain.value: Chrome stops working out a gain no sound goes
+        # through, so an idle bus's value can stop part way (seen on the effects bus at 0.13 on its way to 0.09)
+        bus = "({master:soundEngine.master,music:soundEngine.mus,sfx:soundEngine.fx,world:ambience.bus,amb:ambience.amb})"
+        off = []
+        for k, v in [('master', 70), ('music', 40), ('sfx', 30), ('world', 60), ('amb', 20)]:
+            want = f"(soundLevels({{{k}:{v / 100}}}).{k}*({'ambienceFadeIn()' if k in ('world', 'amb') else '1'}))"
+            pg.evaluate(f"(()=>{{const e=document.querySelector('input[data-preference={k}]');e.value='{v}';e.dispatchEvent(new Event('input',{{bubbles:true}}))}})();0")
+            # no 'change' event: the level must follow while the slider is still held
+            if not until(pg, f"Math.abs(__snd.to.get({bus}.{k}.gain)-{want})<0.02", 4):
+                have, w = pg.evaluate(f"[__snd.to.has({bus}.{k}.gain)?+__snd.to.get({bus}.{k}.gain).toFixed(3):'not set',+{want}.toFixed(3)]")
+                off.append(f'{k} at {v}: bus set to {have}, wanted {w}')
+        if off: raise Exception('a slider didn’t set its bus while dragged: ' + '; '.join(off))
+        levels = pg.evaluate("JSON.stringify(['master','music','sfx','world','amb'].map(k=>saveData.preferences[k]))")
+        pg.click('.set-mute'); until(pg, "!!saveData.preferences.mute&&__snd.to.get(soundEngine.master.gain)===0", 5)
+        m = pg.evaluate("({mute:!!saveData.preferences.mute,pressed:document.querySelector('.set-mute').getAttribute('aria-pressed'),sw:document.querySelector('[data-pref-set=mute].sw').getAttribute('aria-checked'),master:__snd.to.get(soundEngine.master.gain),levels:JSON.stringify(['master','music','sfx','world','amb'].map(k=>saveData.preferences[k]))})")
+        if not m['mute'] or m['pressed'] != 'true' or m['sw'] != 'false' or m['master'] > 0.01: raise Exception(f'the header mute didn’t mute: {m}')
+        if m['levels'] != levels: raise Exception(f'muting changed the levels: {levels} became {m["levels"]}')
+        pg.click('.set-mute'); until(pg, "!saveData.preferences.mute&&Math.abs(__snd.to.get(soundEngine.master.gain)-soundLevels(saveData.preferences).master)<0.02", 5)
+        back = pg.evaluate("[!!saveData.preferences.mute,+__snd.to.get(soundEngine.master.gain).toFixed(3),+soundLevels(saveData.preferences).master.toFixed(3)]")
+        if back[0] or abs(back[1] - back[2]) > 0.02: raise Exception(f'the header mute didn’t unmute: mute {back[0]}, master {back[1]}, wanted {back[2]}')
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return 'five Test buttons on their own buses; five sliders set their bus while dragged; the header mute silenced the master, kept the levels and came back'
+    finally:
+        try: pg.evaluate("window.__sndConnect&&(AudioNode.prototype.connect=__sndConnect);window.__sndTarget&&(AudioParam.prototype.setTargetAtTime=__sndTarget);0")
+        except Exception: pass
+        ctx.close()
+
+
+@step('Song fingerprints: every song, jingle and cry renders as in validation/sound-baseline (SND-2)', 180)
+def sound_fingerprints(b, base, R):
+    """sound track SND-2: tools/check-sound.py on this browser. Every song (day and night), jingle and cry is rendered
+    offline through the game's own sound code and compared, 50 ms at a time, with the committed baseline. A change
+    in what the music sounds like is a problem here unless the baseline was written again on purpose (--baseline)"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('check_sound', ROOT / 'tools' / 'check-sound.py')
+    cs = importlib.util.module_from_spec(spec); spec.loader.exec_module(cs)
+    bad, line = cs.run(b, base)
+    if bad: raise Exception(f'{line}: ' + '; '.join(bad[:4]))
+    return line
+
+
+BIOME_SONGS = {'meadow': 'meadow', 'thicket': 'spore', 'jungle': 'spore', 'lake': 'trench', 'sea': 'trench', 'canyon': 'hills',
+               'badlands': 'hills', 'volcano': 'innersun', 'tundra': 'crystal', 'ridge': 'crystal', 'autumn': 'spire'}
+
+
+@step("Run music: the run fixture's landing plays route, each node its biome's song, a town node town (SND-2), in its row's arc band (SND-5)", 180)
+def run_music_step(b, base, R):
+    """sound track SND-2: the run fixture (seed RL7FIXTURE, the landing on day 1). musicFor picks route on the landing;
+    for every place of the run, what it picks follows its node (a town node town, the landing route, any other node its
+    biome's song, the owner's mapping); on a route node, the music sync (musicSync, called there) asks for that biome's
+    song. SND-5: each walkable node plays its row's arc band (music.json run.arc: 'meadow@mid' on rows 3-5,
+    '@late' on 6-8), a town node and the landing the song as written; the sync asks for the band, and on the deadline
+    day for the deadline version. Nothing is
+    heard: soundEngine.want is what the game asked to play (headless, sound never starts without a touch)"""
+    errs = []
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
+    for s in (CLOCK, NO_ACCOUNTS, TEST_GLOBALS): ctx.add_init_script(s)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    try:
+        pg.goto(base + '/index.html?fixture=run'); pg.evaluate(LOW_RENDER)
+        if not until(pg, "typeof walkView!=='undefined'&&walkView.ready&&!!saveData.run", 150): raise Exception('the run fixture never opened')
+        if pg.evaluate('saveData.trip.node') != 1: raise Exception('not on the landing')
+        if not until(pg, "soundEngine.want==='route'", 10): raise Exception(f'the landing asked for {pg.evaluate("soundEngine.want")!r}, not route')
+        places = pg.evaluate("""(()=>{const n0=saveData.trip.node,out=[];
+          for(let n=1;n<LOCATIONS.length;n++){const L=LOCATIONS[n],N=saveData.run.map.nodes[L.runNode];
+            saveData.trip.node=n;const st=musicState();out.push({n,name:L.name,type:N.type,biome:N.biome||'',row:N.row,song:musicFor(),
+              plays:songVariant(musicFor(),{...st,night:0},SONGS,null,MUSIC.run)})}
+          saveData.trip.node=n0;return out})()""")
+        bad = []; seen = {}
+        for P in places:
+            want = 'town' if P['type'] == 'town' else 'route' if P['type'] == 'landing' else BIOME_SONGS.get(P['biome'])
+            seen[P['song']] = seen.get(P['song'], 0) + 1
+            if P['song'] != want: bad.append(f"{P['name']} ({P['type']}, {P['biome']}): {P['song']}, not {want}")
+            band = None if P['type'] in ('town', 'landing') else 'mid' if 3 <= P['row'] <= 5 else 'late' if 6 <= P['row'] <= 8 else None
+            if P['plays'] != (want + '@' + band if band else want): bad.append(f"{P['name']} (row {P['row']}): plays {P['plays']}, not in its band {band}")
+            if band: seen['@' + band] = seen.get('@' + band, 0) + 1
+        if bad: raise Exception('; '.join(bad[:5]))
+        route = next((P for P in places if P['type'] == 'route' and P['row'] >= 3), None) or next((P for P in places if P['type'] == 'route'), None)
+        if not route: raise Exception('the fixture run has no route node')
+        # the node and the sync in one go: the walk view puts trip.node back where the player stands (the landing)
+        got = pg.evaluate(f"(()=>{{const n0=saveData.trip.node;saveData.trip.node={route['n']};musicSync();const w=soundEngine.want;saveData.trip.node=n0;return w}})()")
+        if got != route['plays']: raise Exception(f"standing in {route['name']} the music sync asked for {got!r}, not {route['plays']}")
+        # SND-5: on the deadline day (music.json run.deadlineDays 1) the sync asks for the deadline version
+        late = pg.evaluate(f"(()=>{{const R=saveData.run,c=R.clock,n0=saveData.trip.node;R.clock=R.deadline;saveData.trip.node={route['n']};musicSync();const w=soundEngine.want;R.clock=c;saveData.trip.node=n0;return [w,R.deadline]}})()")
+        if late[0] != route['song'] + '@deadline': raise Exception(f"on the deadline day (day {late[1]}) the sync asked for {late[0]!r}, not {route['song']}@deadline")
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return f"{len(places)} places: " + ', '.join(f'{k} {v}' for k, v in sorted(seen.items())) + f"; in {route['name']} ({route['biome']}, row {route['row']}) the sync asked for {route['plays']}, on the deadline day (day {late[1]}) for {late[0]}"
+    finally:
+        ctx.close()
+
+
+@step("Battle music: the song starts on the flash with its intro, the drums wait for the throw; a mini-boss plays the leader song (SND-5)", 180)
+def battle_music_step(b, base, R):
+    """sound track SND-5: the run fixture, sound unlocked by a tap. A wild battle: soundEngine.log (the music's cues,
+    in memory) must show the battle's song starting with its intro on the encounter's flash, and the drums coming in
+    on the first throw, after the player taps through to it (not by the 8 s fallback); then the run's first mini-boss
+    plays the leader song the same way"""
+    errs = []
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
+    for s in (CLOCK, NO_ACCOUNTS, TEST_GLOBALS): ctx.add_init_script(s)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    def fight(start, kind, song):
+        pg.evaluate("soundEngine.log.length=0;0")
+        pg.evaluate(start)
+        if not until(pg, "soundEngine.log.some(e=>e.e.startsWith('battle '))", 6): raise Exception(f'{kind}: no battle cue')
+        held = pg.evaluate("!!(soundEngine.song&&soundEngine.song.hold)")
+        # the player taps through the opening lines; the throw ('enter') lets the drums in
+        # (in a run the battle can begin again from its seed at once, "The battle starts again.": its cue comes again)
+        if not until(pg, "soundEngine.log.some(e=>e.e==='drums in')", 15, "uiState.evReady&&nextEvent()"): raise Exception(f'{kind}: the drums never came in on a throw ({pg.evaluate("JSON.stringify(soundEngine.log)")})')
+        L = pg.evaluate("soundEngine.log.map(e=>e.e)"); T = pg.evaluate("soundEngine.log.map(e=>e.at)")
+        d = L.index('drums in'); c = max(i for i in range(d) if L[i].startswith('battle '))
+        cue = L[c]
+        if cue != f'battle {kind}: {song}, its intro': raise Exception(f'{kind}: the cue was {cue!r}')
+        if not held: raise Exception(f'{kind}: the drums were not held at the flash')
+        gap = T[d] - T[c]
+        if gap >= 8000: raise Exception(f'{kind}: the drums came in {gap} ms after the flash, past the 8 s fallback')
+        return f"{song} with its intro, drums in {gap} ms later on the throw"
+    try:
+        pg.goto(base + '/index.html?fixture=run'); pg.evaluate(LOW_RENDER)
+        if not until(pg, "typeof walkView!=='undefined'&&walkView.ready&&!!saveData.run", 150): raise Exception('the run fixture never opened')
+        pg.mouse.click(200, 300)
+        if not until(pg, "!!soundEngine.ctx&&soundEngine.ctx.state==='running'", 8): return 'not checked: sound did not start in this browser'
+        a = fight("screenWipe=f=>f();const q={id:'tbm',sp:'swift1',lvl:3,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0", 'wild', 'wild')
+        pg.evaluate("closeModal();activeBattle=null;0")
+        boss = pg.evaluate("Object.keys(TRAINERS).find(k=>TRAINERS[k].runFoe==='miniboss')")
+        if not boss: raise Exception('the run fixture has no mini-boss')
+        c = fight(f"saveData.team.forEach(m=>{{m.hp=maxHp(m)}});startTrainer('{boss}');0", 'leader', 'leader')
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return f'wild: {a}; mini-boss {boss}: {c}'
+    finally:
+        ctx.close()
+
+
+@step("Run map music hears the forecast: on a run's map tab, today's storm or rain where you stand muffles the map song, clear opens it (SND-5)", 180)
+def run_map_weather_step(b, base, R):
+    """sound track SND-5: the run fixture, sound unlocked by a tap. Today's forecast where the player stands is set to
+    storm, then rain, then clear; on the map tab the music's low-pass is given music.json run.weather's cut for it
+    (read through a wrapper on setTargetAtTime, as the Sound settings step does: Chrome stops working out a param no
+    sound goes through). Back on the walk tab the old rain filter decides again"""
+    errs = []
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
+    for s in (CLOCK, NO_ACCOUNTS, TEST_GLOBALS): ctx.add_init_script(s)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    try:
+        pg.goto(base + '/index.html?fixture=run'); pg.evaluate(LOW_RENDER)
+        if not until(pg, "typeof walkView!=='undefined'&&walkView.ready&&!!saveData.run", 150): raise Exception('the run fixture never opened')
+        pg.mouse.click(200, 300)
+        if not until(pg, "!!soundEngine.ctx&&soundEngine.ctx.state==='running'", 8): return 'not checked: sound did not start in this browser'
+        pg.evaluate("window.__cut=[];const f=soundEngine.musLP.frequency,o=f.setTargetAtTime.bind(f);f.setTargetAtTime=(v,t,c)=>{__cut.push(v);return o(v,t,c)};0")
+        setw = "(w=>{const R=saveData.run,i=LOCATIONS[saveData.trip.node].runNode;R.forecast[runWorldNode(i)][R.clock-1]=w})"
+        pg.evaluate("uiState.tab='map';render();0"); seen = []
+        for w in ('storm', 'rain', 'clear'):
+            want = pg.evaluate(f"{setw}('{w}');musicWeatherCut('{w}',MUSIC.run)")
+            if not until(pg, f"__cut.length&&__cut[__cut.length-1]==={want}", 4): raise Exception(f"{w} on the map tab: the low-pass was given {pg.evaluate('__cut.slice(-1)[0]')}, not {want}")
+            seen.append(f'{w} {want} Hz')
+        if pg.evaluate('soundEngine.want') != 'map': raise Exception(f"the map tab asked for {pg.evaluate('soundEngine.want')!r}, not map")
+        pg.evaluate(f"{setw}('storm');uiState.tab='walk';render();0")
+        if not until(pg, "__cut[__cut.length-1]!==1400", 4): raise Exception('back on the walk tab the forecast still muffled the music')
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return 'map tab: ' + ', '.join(seen) + f"; walk tab: {pg.evaluate('__cut.slice(-1)[0]')} Hz (the place's own weather)"
     finally:
         ctx.close()
 
@@ -2410,6 +2621,11 @@ def main():
                 team_step(b, base, R)
                 safety_step(b, base, R)
                 targets_step(b, base, R)
+                sound_step(b, base, R)
+                sound_fingerprints(b, base, R)
+                run_music_step(b, base, R)
+                battle_music_step(b, base, R)
+                run_map_weather_step(b, base, R)
                 try:
                     desktop_steps(b, base, R)
                 except Exception as e:
