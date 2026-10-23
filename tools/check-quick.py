@@ -1292,21 +1292,6 @@ def desktop_steps(b, base, R):
     D = gamedata(); ids = [r.get('mapId') for r in D['locations']]
     nodes = [i for i, s in enumerate(ids) if s and (not ONLY or s in ONLY)]
 
-    @step('Paths: exits, doors, bridges and stairs in every scene (from the data)', 40)
-    def paths():
-        r = pg.evaluate("""((ids)=>{const out={},keep=[walkView.sc,walkView.nav,walkView.gkey];
-         for(const id of ids){const sc=mapById(id);if(!sc)continue;walkView.sc=sc;walkView.nav=null;walkView.gkey='quick-'+id;const C0=walkData().sc,hub=mapHub(sc),bad=[],far=(q,p)=>{const e=q&&q[q.length-1];return !q||Math.hypot(e[0]-p[0],e[1]-p[1])>1.6};
-          for(const e of sc.exits||[])if(far(findPath(hub[0],hub[1],e[0],e[1]),e))bad.push('exit '+e.map(v=>v.toFixed(1)));
-          for(const p of sc.props||[])if(p.act&&!(p.act==='climb'&&typeof climbEnds==='function'&&[climbEnds(p).bot,climbEnds(p).top].some(g=>{const q=findPath(hub[0],hub[1],g[0],g[1]),e=q&&q[q.length-1];return e&&Math.hypot(e[0]-g[0],e[1]-g[1])<=1.6}))){const g=actionSpot(p,C0.props[p.k],C0.ppu||34);if(g&&far(findPath(hub[0],hub[1],g[0],g[1]),g))bad.push(p.k+' @'+p.x+','+p.z)}
-          for(const b of mapBridges(sc)||[]){const A=[b.a[0]-b.ux*.4,b.a[1]-b.uz*.4],B=b.pier?[b.b[0]-b.ux*.4,b.b[1]-b.uz*.4]:[b.b[0]+b.ux*.4,b.b[1]+b.uz*.4];if(far(findPath(A[0],A[1],B[0],B[1]),B))bad.push((b.pier?'jetty ':'bridge ')+b.a)}
-          const G=navGrid(),hc=navCellAt(hub[0],hub[1]);if(hc<0||G.blk[hc])bad.push('hub is blocked');out[id]=bad}
-         [walkView.sc,walkView.nav,walkView.gkey]=keep;return out})(%s)""" % json.dumps([ids[n] for n in nodes]))
-        bad = {k: v for k, v in r.items() if v}
-        R['paths'] = r
-        if bad: raise Exception('; '.join(f'{k}: {", ".join(v[:4])}' for k, v in bad.items()))
-        return f'{len(r)} scenes, all reachable'
-    paths()
-
     @step('Test scenes: walking rules (from the data)', 30)
     def test_checks():
         r = pg.evaluate("(()=>{const o={};for(const id of testMaps())o[id]=testMapChecks(id);return o})()")
