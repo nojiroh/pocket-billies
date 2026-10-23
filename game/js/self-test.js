@@ -24,12 +24,13 @@ import {
   gameData,
   trainersAt,
 } from './game-data.js';
-import { encountersHere, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
+import { canEnter, encountersHere, gateText, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
 import { incomeRate } from './logic/ranch-income.js';
 import { pastureBillies, pastureIn, pastureZone } from './logic/pasture.js';
 import { runRestore } from './logic/run-state.js';
+import { RUN_SIDE_MOD, runSideOpen } from './logic/run-side.js';
 import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
 import { runHealCost } from './logic/run-loop.js';
@@ -67,6 +68,7 @@ import {
   mapHub,
   navCellAt,
   navGrid,
+  propShown,
   stepGrid,
   stopWalkView,
   walkData,
@@ -96,6 +98,7 @@ import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
 import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 import { runClinicEach, runJump, runTakeOff } from './run.js';
+import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
@@ -965,6 +968,81 @@ async function runFullTest(mode) {
         },
         8,
         150
+      );
+    /* RL-R2: a run's side area (forced: a detour behind Cut), on a copy of the save: the obstacle stands on its place's
+       north road and the seam behind it turns you back; with the Grass Badge and a Grass Billie it opens (the obstacle
+       gone); the side's places are walked in a day each and its way out sets you down on the main path's next row.
+       Then the save as it was */
+    if (typeof runWorldSync === 'function' && typeof fieldWayOutGo === 'function' && !selfTest.stop)
+      await phase(
+        "A run's side area",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            view = async (/** @type {number} */ n) => {
+              const id = 'w:' + LOCATIONS[n].mapId + '*';
+              for (let i = 0; i < 600 && !(walkView.ready && walkView.id === id); i++) await selfTestSleep(100);
+              if (walkView.id !== id) throw new Error(`${LOCATIONS[n].name} isn't shown (still ${walkView.id})`);
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            runStartOn(
+              s,
+              runStartPlan(
+                'SELFTESTSIDE',
+                { ...data, unlockData: UNLOCK_DATA },
+                { unlocks: [], mods: [RUN_SIDE_MOD + 'detour_cut'] }
+              )
+            );
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            s.meta.badges = {};
+            setSaveData(s);
+            const S = s.run.map.side;
+            if (!S || S.move !== 'cut') throw new Error('the forced detour behind Cut was not made');
+            if (!runJump(runWorldNode(S.from))) throw new Error('couldn’t walk to the obstacle’s place');
+            render();
+            await view(runWorldNode(S.from));
+            const ob = (walkView.sc.props || []).find(p => p.act === 'field');
+            if (!ob || !propShown(ob)) throw new Error('no obstacle on the north road');
+            const first = runWorldNode(S.nodes[0]);
+            if (canEnter(first)) throw new Error('the side area is open before its obstacle');
+            if (!/Grass Badge/.test(gateText(LOCATIONS[first])))
+              throw new Error('the closed seam doesn’t name the badge');
+            saveData.meta.badges.grass = 1;
+            saveData.team.push(makeBilly('gates0', 10));
+            if (runSideOpen(saveData.run.map) !== true) throw new Error('the obstacle didn’t open');
+            await selfTestSleep(400);
+            if (propShown(ob)) throw new Error('the obstacle still stands once open');
+            if (!canEnter(first)) throw new Error('the seam is still closed once open');
+            const day = saveData.run.clock;
+            for (const i of S.nodes)
+              if (!runArrive(saveData, i, data)) throw new Error(`couldn’t walk into side place ${i}`);
+            uiState.roam = null;
+            render();
+            await view(runWorldNode(S.nodes[S.nodes.length - 1]));
+            if (!(walkView.sc.props || []).some(p => p.act === 'fieldout'))
+              throw new Error('no way out at the last place');
+            fieldWayOutGo();
+            if (saveData.trip.node !== runWorldNode(S.to))
+              throw new Error('the way out didn’t lead back to the main path');
+            await view(runWorldNode(S.to));
+            const days = saveData.run.clock - day;
+            if (days !== S.nodes.length + 1)
+              throw new Error(`the side area took ${days} days, not ${S.nodes.length + 1}`);
+            return `${S.name}: ${S.nodes.length} places behind Cut, opened with the Grass Badge, out on day ${saveData.run.clock}`;
+          } finally {
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        180
       );
     /* RL-8: a run from the mast to the payout, on a copy of the save (nothing is written while the test runs): a short
        run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the

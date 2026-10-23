@@ -33,7 +33,9 @@ function badgeSlots() {
     name: String(T.seat.title || 'Badge').split(' · ')[0],
     leader: T.name,
     coin: PYRAMIDS[T.seat.coin] ? T.seat.coin : 'pyramid',
-    got: saveData.seats.includes(T.seat.id),
+    /* RL-R2: a badge kept for good by type (meta.badges: a run leader of that type beaten), or the old seat */
+    got:
+      saveData.seats.includes(T.seat.id) || !!((saveData.meta || {}).badges || {})[String(T.type || '').toLowerCase()],
   }));
   return {
     got: known.filter(b => b.got).length,
