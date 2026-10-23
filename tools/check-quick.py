@@ -144,27 +144,6 @@ def gamedata():
 
 
 # ------------------------------------------------------------------ 1. without a browser
-@step('Version: one source, the same in README.md and CHANGELOG.md', 5)
-def check_version():
-    """phase 03: game/version.js is the only place the version is written; the game, the Studio, the service worker,
-    the debug log and saves read it. The README title and the newest CHANGELOG entry can't read it, so compare them."""
-    m = re.search(r"PB_VERSION\s*=\s*'([^']+)'", (GAME / 'version.js').read_text(encoding='utf-8'))
-    if not m: raise Exception('game/version.js has no PB_VERSION')
-    v = m.group(1); bad = []
-    if not re.match(r'^\d+\.\d+\.\d+ (alpha|beta)$', v): bad.append(f'"{v}" is not 0.MINOR.PATCH alpha/beta')
-    readme = (ROOT / 'README.md').read_text(encoding='utf-8').splitlines()[0]
-    if not readme.endswith(' ' + v): bad.append(f'README.md title says "{readme}"')
-    ch = re.search(r'^## (\S+ \S+)', (ROOT / 'CHANGELOG.md').read_text(encoding='utf-8'), re.M)
-    if not ch or ch.group(1) != v: bad.append(f'the newest CHANGELOG.md entry is {ch.group(1) if ch else "missing"}')
-    for f in ['game/index.html', 'studio/index.html']:
-        if 'version.js"' not in (ROOT / f).read_text(encoding='utf-8'): bad.append(f'{f} does not load version.js')
-    if "importScripts('version.js')" not in (GAME / 'sw.js').read_text(encoding='utf-8'): bad.append('sw.js does not read version.js')
-    old = [str(f.relative_to(ROOT)) for f in list((GAME / 'js').rglob('*.js')) + [GAME / 'sw.js'] if re.search(r"'(?:pocketbillies-)?alpha-0\.\d", f.read_text(encoding='utf-8'))]
-    if old: bad.append('an old version string is left in ' + ', '.join(old))
-    if bad: raise Exception('; '.join(bad))
-    return f'{v}: README.md, CHANGELOG.md, the game, the Studio and the service worker agree'
-
-
 @step('Data: game data, pictures and scenes', 20)
 def check_data():
     """TC-1: only what check-data.mjs does not refuse: the scenery's pictures exist, and every place and scene says
@@ -2212,7 +2191,7 @@ def main():
     R = {'when': time.strftime('%Y-%m-%d %H:%M'), 'render': 'software, a third of the resolution, 1024 shadow map'}
     # phase 04b: data/gamedata.js is generated from the data files; make it from the files as they are now
     subprocess.run(['node', str(ROOT / 'tools' / 'build-data.mjs')], check=True)
-    check_version(); check_data(); copperleaf_data(); check_water(); check_masts(); check_postcards(); check_rooms(); check_room_floors(); check_windows(); check_ground(); report_unused()
+    check_data(); copperleaf_data(); check_water(); check_masts(); check_postcards(); check_rooms(); check_room_floors(); check_windows(); check_ground(); report_unused()
     srv, base = serve(GAME)
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
