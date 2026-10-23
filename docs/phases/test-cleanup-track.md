@@ -19,6 +19,11 @@ below against main and report what differs. They come from a read-only audit on 
   nightly compares no pictures ("No baseline for 0.1.0-alpha yet").
 - The nightly's "Upload pictures and results" fails: the Scenes step saves `scene-{walkView.id}`, which gives
   `scene-w:copperleaf*.webp`, and upload-artifact rejects `:` and `*`. Only the selftest artifact uploads.
+- Main's fast check is red on three camera checks (same values on 29e66011 and on PR #148, docs only): Camera follow
+  (CAM-1) "standing, the camera isn't settled on its aim", Camera moments (CAM-2) "talking, no two-shot", and the
+  debug log check (CAM-1..3) "the debug log has no camera line". The camera state reads `mode: 'orbit'`; a guess, not
+  verified: the checks expect the follow camera and Copperleaf took the orbit camera in IS-5. Every PR is red until
+  this is fixed.
 - `npm test` (quick tier): 783 tests, about 47 s in a cloud container (budget 30 s).
 - `game/data/locations.json` holds only `copperleaf` and `roads.json` is `[]`, so tests and checks that loop over
   places or roads pass while checking almost nothing.
@@ -110,6 +115,8 @@ Useless (proofs that a finished refactor changed nothing, kept long after):
 ## Sessions
 
 ### TC-1 - Delete (1 session, all small)
+0. First, alone, so every later PR can go green: find why the three camera checks fail on main (the checks or the
+   camera) and fix it, in its own PR.
 1. Unit tests: delete `rng-baseline`, `rig-calls`, `story-snapshot` and `talk-before-scripts.json`, the parity test 1
    of `opening-script` (now a plain snapshot), `robot-joints` and `battle-rewards`, the two JSON records, and (if the
    owner agrees) `frame-allocations`, `fx-group`, `sheet-slice-parity`. Delete the RL-5 saves test with its code.
@@ -159,6 +166,46 @@ Done when: the full check has no red step that is not a real bug, and no step de
 6. Update TESTING.md's tiers table and the docstrings with measured times.
 Done when: full check about 10 min (or each miss documented), fast check in its stated time, `npm test` under 30 s,
 nightly green with pictures compared.
+
+## Running sessions in parallel (lanes)
+The sessions above are the work in order for one session at a time. To run several at once, split by which files a
+session owns instead of by TC number. `check-quick.py` is touched by every TC session, so it has one owner (lane B)
+who works through it in order. Each lane is its own branch and PR, with its own HANDOFF entry.
+
+Before any lane starts: the camera fix (TC-1 item 0) is merged, and the owner has answered the "Ask me before" items;
+three of them would stall a lane halfway (Things to do: B; the set-aside box: A; the unreachable rooms: C).
+
+**Round 1, four sessions at once**
+- **A, unit tests and save code:** `tools/test/` (TC-1 item 1, TC-2 item 1), `logic/saves.js` (TC-1 item 6), then
+  delete `old-world.mjs`. Owns `tools/test/`, `game/js/logic/saves.js`, settings-screen.js's `lookFromOld`.
+- **B, check-quick deletions:** TC-1 item 2. Owns `tools/check-quick.py`.
+- **C, in-game tests:** TC-2 items 2-3, the debug menu labels, and moving the unreachable rooms if the owner says so.
+  Owns `self-test.js`, `bowl-map-test.js`, `graphics-test.js`, `debug-menu.js`.
+- **D, lint, data check, Studio check, CI:** TC-1 items 3-5, TC-2 items 4-5. Owns `check-names.mjs`,
+  `retired-names.json`, the rename tools, `check-data.mjs`, `unused-css.mjs`, `check-studio-github.py`,
+  `.github/workflows/check.yml`, and the two checks dropped from `check-fast.py`.
+
+**Round 2, two sessions at once**
+- **B continues:** TC-3, all of it.
+- **E:** TC-4 items 3-4: the IS-6a/IS-6b checks move from `check-fast.py` to `check-studio-github.py`, `island` folds
+  into `hub_island`, `npm test` under 30 s (after A is merged).
+
+**Round 3, one session**
+- TC-4 items 1, 2, 5, 6: the shared helper module, fixtures and waits in check-quick, the picture baseline, the
+  tiers table. It touches every check file, so it runs alone and last.
+
+**Order across lanes**
+- The legacy Python helpers (`rename-places.py`, `migrate-places.py`, `fix-marigold-stream.py`, `fix-piers.py`) are
+  deleted by B, after the steps that load them are gone, not by D.
+- `rename.mjs` goes only after D has moved `units()` into `check-names.mjs`.
+- The picture baseline is made last, once check-quick is settled.
+
+**What it costs**
+- Every lane edits `docs/HANDOFF.md` and probably `docs/TESTING.md`: simple conflicts at every merge, so merge one PR
+  at a time and merge main into the next before merging it.
+- CLAUDE.md says one phase per session and never start from an untagged state; parallel lanes bend that, as the other
+  tracks do. Tags: `tc-lane-<A..E>-done` per lane, `tc-done` when round 3 ends.
+- About three rounds of waiting instead of 4-5 sessions one after another.
 
 ## Ask me before
 - Delete Things to do (the open-world challenges, request, gold stamp, home room, photo) and its check step?
