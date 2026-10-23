@@ -113,8 +113,13 @@ export interface Ranch {
   nursery: { a: string; b: string; mode: 'safe' | 'risky'; at: number; ready: number; egg: Billy }[];
   /** RL-10: how many pairs have bred (part of each egg's seed) */
   bred: number;
-  /** passive income: per hour, banked so far, the last time it was counted (Date.now(); only moves forward) */
-  income: { rate: number; bank: number; lastAt: number };
+  /** RL-10b: passive income (logic/ranch-income.js): whole Scrap banked at an old rate (before an upgrade) and the
+      last time it was counted (the ranch clock's ms; 0 = not started; only moves forward). The rate is rules.json
+      ranch.income's by ranch level */
+  income: { bank: number; lastAt: number };
+  /** RL-10b: the ranch clock's high-water mark (logic/ranch-clock.js): the latest time any ranch timer counted to,
+      raised by the cloud save's server time; a clock further behind it pays nothing until it passes it */
+  seen: number;
 }
 
 /** roguelite track RL-3: one node of a run's map (logic/run-map.js makes them, RL-6) */

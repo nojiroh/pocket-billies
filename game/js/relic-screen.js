@@ -13,6 +13,7 @@ import { RELICS, RULES } from './game-data.js';
 import { relicChoose } from './logic/relics.js';
 import { escapeHtml, saveData, saveNow, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
+import { jinglePlay } from './sound.js';
 import { runHint } from './run.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -97,6 +98,8 @@ function relicPickDone(id, drop) {
   closeModal();
   render();
   if (id) toast(`${RELICS[id].name}: ${RELICS[id].d}`);
+  /* SND-6: a Loophole taken has a jingle of its own */
+  if (id && typeof jinglePlay === 'function') jinglePlay('relic');
 }
 
 /* ---------- past the cap: let one go ---------- */

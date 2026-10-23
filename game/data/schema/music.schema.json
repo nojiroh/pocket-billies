@@ -11,6 +11,25 @@
  ],
  "additionalProperties": false,
  "$defs": {
+  "uiPick": {
+   "description": "SND-6: the buttons that make this sound: by class (a kit button's kind counts) or by data-a",
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "classes": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "actions": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   }
+  },
   "id": {
    "type": "string",
    "pattern": "^[a-z][a-z0-9_]*$"
@@ -299,6 +318,16 @@
        "maxItems": 2
       }
      },
+     "bpm": {
+      "description": "SND-6: its tempo (150 when left out), as sound.js jinglePlay plays it",
+      "type": "number",
+      "minimum": 40,
+      "maximum": 400
+     },
+     "wave": {
+      "description": "SND-6: the lead's wave (p25 when left out)",
+      "$ref": "#/$defs/wave"
+     },
      "name": {
       "description": "SND-4: a name for the jingle. Claude's drafts start with \"placeholder\" (the Studio's Check lists them)",
       "type": "string",
@@ -314,20 +343,238 @@
    ],
    "additionalProperties": false,
    "properties": {
+    "about": {
+     "type": "string"
+    },
     "bases": {
-     "description": "the base cries; a species picks one by its name until roster.json names one (SND-6)",
-     "type": "array",
-     "minItems": 1,
-     "items": {
+     "description": "SND-6: the base cries by kind (beast, bird, ...); a species names one in lines/*.json cry, with its own pitch and length (logic/cries.js)",
+     "type": "object",
+     "minProperties": 1,
+     "propertyNames": {
+      "$ref": "#/$defs/id"
+     },
+     "additionalProperties": {
       "type": "object",
       "required": [
-       "wave"
+       "wave",
+       "voices"
       ],
       "additionalProperties": false,
       "properties": {
+       "name": {
+        "description": "a name for the cry. Claude's drafts start with \"placeholder\" (the Studio's Check lists them)",
+        "type": "string",
+        "maxLength": 80
+       },
        "wave": {
         "$ref": "#/$defs/wave"
+       },
+       "voices": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 6,
+        "items": {
+         "type": "object",
+         "required": [
+          "at",
+          "note",
+          "len"
+         ],
+         "additionalProperties": false,
+         "properties": {
+          "at": {
+           "description": "when it starts, in seconds from the cry's start (x the species' length)",
+           "type": "number",
+           "minimum": 0,
+           "maximum": 2
+          },
+          "note": {
+           "description": "semitones over the species' pitch",
+           "type": "integer",
+           "minimum": -24,
+           "maximum": 24
+          },
+          "len": {
+           "description": "seconds (x the species' length)",
+           "type": "number",
+           "exclusiveMinimum": 0,
+           "maximum": 2
+          },
+          "wave": {
+           "$ref": "#/$defs/wave"
+          },
+          "vol": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 0.2
+          },
+          "slide": {
+           "description": "where the note ends, x its frequency (1: no slide)",
+           "type": "number",
+           "minimum": 0.1,
+           "maximum": 4
+          },
+          "vib": {
+           "description": "a wobble's depth: 1 is 1.2 % of the note, at 5.5 Hz (0: none)",
+           "type": "number",
+           "minimum": 0,
+           "maximum": 10
+          }
+         }
+        }
        }
+      }
+     }
+    }
+   }
+  },
+  "ui": {
+   "description": "SND-6: the buttons' four sounds and which button makes which (logic/ui-sounds.js)",
+   "type": "object",
+   "required": [
+    "sounds"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "about": {
+     "type": "string"
+    },
+    "sounds": {
+     "type": "object",
+     "required": [
+      "select",
+      "confirm",
+      "cancel",
+      "cant"
+     ],
+     "additionalProperties": false,
+     "patternProperties": {
+      "^(select|confirm|cancel|cant)$": {
+       "type": "object",
+       "required": [
+        "notes"
+       ],
+       "additionalProperties": false,
+       "properties": {
+        "name": {
+         "description": "Claude's drafts start with \"placeholder\" (the Studio's Check lists them)",
+         "type": "string",
+         "maxLength": 80
+        },
+        "notes": {
+         "type": "array",
+         "minItems": 1,
+         "maxItems": 6,
+         "items": {
+          "type": "object",
+          "required": [
+           "at",
+           "midi",
+           "len"
+          ],
+          "additionalProperties": false,
+          "properties": {
+           "at": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+           },
+           "midi": {
+            "type": "integer",
+            "minimum": 24,
+            "maximum": 108
+           },
+           "len": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 1
+           },
+           "wave": {
+            "$ref": "#/$defs/wave"
+           },
+           "vol": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 0.2
+           },
+           "slide": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 4
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "confirm": {
+     "$ref": "#/$defs/uiPick"
+    },
+    "cancel": {
+     "$ref": "#/$defs/uiPick"
+    }
+   }
+  },
+  "mix": {
+   "description": "SND-6: the mix: each bus's trim (x the square of its Settings slider; logic: audio/levels.js) and the compressor on the master",
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "about": {
+     "type": "string"
+    },
+    "master": {
+     "description": "the master's trim (0.9 leaves headroom for the compressor)",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1.5
+    },
+    "music": {
+     "description": "the music bus",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1.5
+    },
+    "sfx": {
+     "description": "the sound effects bus (jingles, cries, the buttons)",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1.5
+    },
+    "world": {
+     "description": "the world sounds (water, fire, rain, animals)",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1.5
+    },
+    "amb": {
+     "description": "the ambience (birds, crickets, a town)",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1.5
+    },
+    "bedsUnderSong": {
+     "description": "dB the world and ambience beds come down while a four-voice song plays (0: not at all)",
+     "type": "number",
+     "minimum": -24,
+     "maximum": 0
+    },
+    "compressor": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "threshold": {
+       "description": "dB",
+       "type": "number",
+       "minimum": -60,
+       "maximum": 0
+      },
+      "ratio": {
+       "type": "number",
+       "minimum": 1,
+       "maximum": 20
       }
      }
     }

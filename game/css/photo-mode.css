@@ -2,7 +2,7 @@
 /* v28: photo mode: everything but the scene steps aside */
 body.photo .walk-hero,
 body.photo #nav,
-body.photo .walk-sheet,
+body.photo #walkSheet,
 body.photo header.top,
 body.photo .topbar,
 body.photo #toast {
@@ -38,9 +38,9 @@ body.photo #toast {
 }
 /* v30: save slots */
 /* v30: accessibility */
-html[data-text='large'] :is(.walk-hero, .walk-sheet, #ov, #nav, .topbar, .talk, .photo-ui, main) {
+html[data-text='large'] :is(.walk-hero, #walkSheet, #ov, #nav, .topbar, .talk, .photo-ui, main) {
   zoom: 1.12;
 }
-html[data-text='xlarge'] :is(.walk-hero, .walk-sheet, #ov, #nav, .topbar, .talk, .photo-ui, main) {
+html[data-text='xlarge'] :is(.walk-hero, #walkSheet, #ov, #nav, .topbar, .talk, .photo-ui, main) {
   zoom: 1.25;
 }

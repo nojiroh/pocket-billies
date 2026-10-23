@@ -487,13 +487,20 @@ only after a click). It stops by itself when the section is off screen.
   own), ▶, ↑ ↓ to reorder and ✕ to remove; **+ Add a rule** goes before the last, which must fit everywhere. **Try a
   place** (above it): set where you are (battle, tab, room, node, biome, row, the place's own song) and it names the
   rule that wins and plays its song.
-- **Jingles**: each jingle with ▶ (150 bpm on a 25 % pulse with a triangle an octave down, as the game plays them),
-  and a roll for the one picked: one note at a time, a gap a rest.
-- **Cry** card on the Billies page (after Stats): the stage's base cry, pitch and length, each shown as its id makes it
-  until set; ▶ **Cry**, ▶ **Low on health** (a preview; the game's use comes in SND-6), **Use the cry its id makes**.
-  Saved per stage as `cry` in lines/*.json.
+- **Jingles**: each jingle with ▶ (at its own **Tempo** and **Wave** when it sets them, else 150 bpm on a 25 % pulse,
+  with a triangle an octave down, as the game plays them), its name, and a roll for the one picked: one note at a
+  time, a gap a rest.
+- **Sounds** (SND-6): the eight **base cries** (beast, bird, slime, machine, fish, insect, ghost, suit), each opened
+  to its name, wave and notes (when each starts, its note over the Billie's pitch, length, volume, slide, wobble,
+  wave), ▶ at middle C and ▶ **Low on health**; the **button sounds** (select, confirm, cancel, can't: ▶, their
+  names, and which classes and actions make confirm and cancel); the **Mix** (each bus's trim, how far the world and
+  ambience come down under a song, the compressor). The game uses the mix; the Studio's own player doesn't.
+- **Cry** card on the Billies page (after Stats): the stage's base cry (a kind), pitch, length and name, each shown as
+  its id makes it until set; ▶ **Cry**, ▶ **Low on health** (as the game plays it in the red zone: a quarter faster,
+  a minor third down), **Use the cry its id makes**. Saved per stage as `cry` in lines/*.json.
 - The Check lists a where-rule that names no song (an error, as check-data) and a song nothing plays (a warning),
-  with Show me, and one note on how many Billies use the cry their id makes.
+  with Show me, one note on how many Billies use the cry their id makes, and notes listing the hooks, jingles, base
+  cries and Billie cries still named "placeholder".
 
 ## Sections
 
@@ -522,7 +529,7 @@ only after a click). It stops by itself when the section is off screen.
 | **Story scripts** | Project Story S3: story.json's own scripts (Hazel's lab, after Blake's first battle, the ending): add, rename, remove and edit them in the script field; the story's flags, start presets (with ▶ Play) and quests to read. |
 | **Scripts everywhere** | Every script field (a trainer's, a person's, story.json's) shows the parser's error at once and the story checks a moment later, each on its line (click to go there); **Add line ids**; **Commands**, a reference built from the parser's own tables that puts a command in the script. Condition fields (when, unless, a place's requires) are checked the same way, and the Check lists every story finding. docs/SCRIPTS.md. |
 | **UI look** | The menus' look (uiTheme.json): colours light and dark with contrast grades, glass, depth, shapes, space, type and motion, for the whole game or one screen's colours and shapes; presets, Hold to compare, the UI gallery as a live preview. UI track UI-3, above. |
-| **Music & sound** (group Sound) | The songs (play, loop, the recipe's dials heard at once, a hook and countermelody roll), the where table with Try a place, and the jingles (music.json). A Billy's cry is on its Billies page. Sound track SND-3, above. |
+| **Music & sound** (group Sound) | The songs (play, loop, the recipe's dials heard at once, a hook and countermelody roll), the where table with Try a place, the jingles, and (SND-6) the base cries, the button sounds and the mix (music.json). A Billy's cry is on its Billies page. Sound track SND-3, above. |
 | **Rules** | Every number that tunes the game: starting items, starters and rival, wild Billies per place and how fast they come back, prize money, leveling curve, team size, eggs, damage, critical hits, type abilities, taxing, bargains. |
 | **Art files** | Browse, download and replace any image. |
 | **Check** | Lists problems with "Show me" links (see "The Check" below); downloads or loads the game data; runs the Studio test. Earlier versions are in git: a proposal is a pull request. |

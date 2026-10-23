@@ -202,6 +202,7 @@
    "odds": {"safe":0.6,"quirk":0.3,"abom":0.1},
    "abomUp": 1.3,
    "abomDown": 0.75
-  }
+  },
+  "income": {"rate":[1,2,3],"capHours":24}
  }
 }

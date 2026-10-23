@@ -482,7 +482,7 @@ def camera_follow(pg, base):
     wait = lambda ms: until(pg, f'walkView.t>{pg.evaluate("walkView.t") + ms}', 60) or (_ for _ in ()).throw(Exception('the page stopped drawing'))
     wait(1500)
     a = pg.evaluate(info)
-    if a['mode'] != 'walk' or max(abs(v) for v in a['off'] + a['lead']) > 0.05: raise Exception(f'standing, the camera isn’t settled on its aim: {a}')
+    if a['mode'] not in ('walk', 'orbit') or max(abs(v) for v in a['off'] + a['lead']) > 0.05: raise Exception(f'standing, the camera isn’t settled on its aim: {a}')
     for sx, sy in ((1, 0), (-1, 0), (0, -1), (0, 1)):
         stand(pg, home[0], home[1], 5)
         pg.evaluate(f'walkView.stick={{x:{sx},y:{sy}}};0')
@@ -529,7 +529,7 @@ def camera_moments(pg, base):
     drawing(pg)
     sp = pg.evaluate(MOMENT_SPOTS)
     if not sp['quiet']: raise Exception('no reachable spot without a point of interest near the hub')
-    cam = "(()=>{const I=walkRenderer.camInfo;return {moment:I.moment,zoom:I.zoom,user:walkRenderer.zoom,goal:I.goal,P:[walkView.pl.x,walkView.pl.z],w:Object.assign({},walkRenderer.fol.w),interest:I.interest}})()"
+    cam = "(()=>{const I=walkRenderer.camInfo;return {moment:I.moment,zoom:I.zoom,user:walkRenderer.zoom,goal:I.goal,P:[walkView.pl.x,walkView.pl.z],right:I.right,w:Object.assign({},walkRenderer.fol.w),interest:I.interest}})()"
     # the game's clock runs slower than real time when the page draws slowly (CI), so the waits get room
     wait = lambda ms: until(pg, f'walkView.t>{pg.evaluate("walkView.t") + ms}', 150) or (_ for _ in ()).throw(Exception(f'the page stopped drawing (waiting {ms} ms of game time)'))
     delay = pg.evaluate("engineSetting('camera','idleDelay')") * 1000
@@ -547,13 +547,15 @@ def camera_moments(pg, base):
     c = pg.evaluate(cam)
     pg.evaluate('walkView.stick=null;0')
     if c['moment'] == 'idle' or c['w'].get('idle', 0) > 0.4: raise Exception(f'moving, the drift in didn’t go at once: {c}')
-    # someone talks to you, 3 m east
+    # someone talks to you, 3 m to the screen's right (the orbit camera turns, so not world east); the two-shot's aim is
+    # between you on screen, read along the screen's right (the game also nudges every aim up the screen)
     stand(pg, *sp['quiet'], 5)
-    pg.evaluate("(()=>{const P=walkView.pl;walkRenderer.talkAt={x:P.x+3,z:P.z,t:walkView.t};talkBox.on=true;return 0})()")
+    pg.evaluate("(()=>{const P=walkView.pl,R=walkRenderer.camInfo.right;walkRenderer.talkAt={x:P.x+3*R[0],z:P.z+3*R[1],t:walkView.t};talkBox.on=true;return 0})()")
     wait(1500)
     d = pg.evaluate(cam)
     pg.evaluate("talkBox.on=false;walkRenderer.talkAt=null;0")
-    if d['moment'] != 'talk' or not d['zoom'] < a['zoom'] * 0.85 or not 0.8 < d['goal'][0] - d['P'][0] < 2.2: raise Exception(f'talking, no two-shot: {d}')
+    d['across'] = (d['goal'][0] - d['P'][0]) * d['right'][0] + (d['goal'][1] - d['P'][1]) * d['right'][1]
+    if d['moment'] != 'talk' or not d['zoom'] < a['zoom'] * 0.85 or not 0.8 < d['across'] < 2.2: raise Exception(f'talking, no two-shot: {d}')
     # a played boss moment (the Studio's Play moment), 4 m north
     pg.evaluate("(()=>{const P=walkView.pl;walkRenderer.momentTest={id:'boss',at:[P.x,P.z+4],until:walkView.t+3000};return 0})()")
     wait(1200)
@@ -627,7 +629,8 @@ def ranch(pg, base):
     """RL-9: the ranch fixture stands in Copperleaf's barn. The training board opens the ranch's sheet; Train on a
     stored Billie pays the Scrap and starts it; two hours later (the page's clock moved on) the sheet opened again has
     collected a level; the one two levels under the cap, trained for a whole bank, stops at the cap; the clock turned
-    back gains nothing and starts the trainees again; a reload (?fixture=stored) keeps it all"""
+    back gains nothing and leaves the trainees' starts where they were; forward again a minute past them pays only that
+    minute (RL-10b: RL-9 moved the starts back, so this paid a whole bank); a reload (?fixture=stored) keeps it all"""
     if not until(pg, "!!uiState.inside&&uiState.inside.kind==='ranch'&&walkView.ready", 60): raise Exception(f'not in the ranch: {pg.evaluate("walkView.id")}')
     pg.evaluate("window.__d0=Date.now;window.__shift=0;Date.now=()=>__d0.call(Date)+__shift;0")
     board = "(()=>{const p=walkView.sc.props.find(q=>q.act==='ranch'&&q.k==='blackboard');uiState.modal=null;uiState.mq=[];walkPick({k:'act',p,act:'ranch'});return !!(uiState.modal&&uiState.modal.cls==='ranch-sheet'&&document.querySelector('#ov .ranch-sheet'))})()"
@@ -649,16 +652,20 @@ def ranch(pg, base):
     if lv(2) != cap: raise Exception(f'trained a whole bank from Lv {last}: Lv {lv(2)}, the cap is {cap}')
     if lv(0) > first + 1 + R['bankHours'] * R['levelsPerHour']: raise Exception(f'more than a bank: Lv {lv(0)}')
     got = lv(0)
+    at0 = pg.evaluate("saveData.ranch.trainees.map(t=>t.at)")
     pg.evaluate(f"__shift={-30 * H};0")
     pg.evaluate(board)
     at = pg.evaluate("saveData.ranch.trainees.map(t=>t.at)")
-    if lv(0) != got or any(abs(a - pg.evaluate("Date.now()")) > 60000 for a in at): raise Exception(f'the clock turned back: Lv {got} → {lv(0)}, starts {at}')
+    if lv(0) != got or at != at0: raise Exception(f'the clock turned back: Lv {got} → {lv(0)}, starts {at0} → {at}')
+    pg.evaluate(f"__shift={20 * H + 60000};0")
+    pg.evaluate(board)
+    if lv(0) != got: raise Exception(f'forward again a minute past the starts: Lv {got} → {lv(0)} (the gap paid)')
     keep = pg.evaluate("JSON.stringify([saveData.meta.scrap,saveData.ranch.trainees.map(t=>t.uid),saveData.box.map(m=>m.lvl)])")
     pg.goto(base + '/index.html?fixture=stored')
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.ranch&&!document.getElementById('loader')", 90): raise Exception('the reload never booted')
     back = pg.evaluate("JSON.stringify([saveData.meta.scrap,saveData.ranch.trainees.map(t=>t.uid),saveData.box.map(m=>m.lvl)])")
     if back != keep: raise Exception(f'after a reload {back}, not {keep}')
-    return f'Train paid {R["trainCost"]} Scrap each; a level’s time: Lv {first} → {first + 1}; a whole bank from Lv {last} stopped at the cap ({cap}); the clock turned back gained nothing; a reload kept it'
+    return f'Train paid {R["trainCost"]} Scrap each; a level’s time: Lv {first} → {first + 1}; a whole bank from Lv {last} stopped at the cap ({cap}); the clock turned back gained nothing, and forward again paid no gap; a reload kept it'
 
 
 def relics(pg, base):
@@ -724,6 +731,44 @@ def relics(pg, base):
     pg.evaluate("document.querySelectorAll('#ov [data-a=mb]')[1].click();0")
     if not until(pg, "!saveData.run.offer&&!(uiState.modal&&uiState.modal.cls==='relic-pick')", 10): raise Exception('Take none didn’t clear the pick')
     return f'the pick ({", ".join(offer)}), {took} taken; six on the tab; a battle with Speed +1 and catch x1.25; walking in healed to {heal} HP; the clinic ${clinic[0]}; {shelf} bought for ${price} in place of {held[0]}; a mini-boss beaten: a stored pick ({", ".join(offer2)}), the same after a reload, none taken'
+
+
+def income(pg, base):
+    """RL-10b: the ranch fixture stands in the barn. The training board opens the ranch's sheet, which starts the
+    income (a new save has none waiting); five hours later the Income row shows five hours' Scrap and Collect pays it;
+    the clock turned back a day shows nothing waiting and moves nothing back; forward again an hour past where it was
+    pays that hour only; a reload (?fixture=stored) keeps the Scrap and the income's time"""
+    if not until(pg, "!!uiState.inside&&uiState.inside.kind==='ranch'&&walkView.ready", 60): raise Exception(f'not in the ranch: {pg.evaluate("walkView.id")}')
+    pg.evaluate("window.__d0=Date.now;window.__shift=0;Date.now=()=>__d0.call(Date)+__shift;0")
+    board = "(()=>{const p=walkView.sc.props.find(q=>q.act==='ranch'&&q.k==='blackboard');uiState.modal=null;uiState.mq=[];walkPick({k:'act',p,act:'ranch'});return !!(uiState.modal&&uiState.modal.cls==='ranch-sheet'&&document.querySelector('#ov .ranch-sheet .ranch-income'))})()"
+    H = 3600000
+    rate = pg.evaluate("incomeRate(saveData,RULES.ranch)")
+    if not pg.evaluate(board): raise Exception('the sheet has no Income row')
+    if pg.evaluate("incomePile(saveData,Date.now(),RULES.ranch).scrap") != 0 or not pg.evaluate("saveData.ranch.income.lastAt"): raise Exception('a new save’s income didn’t start at the first opening (or started full)')
+    if not pg.evaluate("document.querySelector('#ov .ranch-income [data-r=collect]').disabled"): raise Exception('Collect is open with nothing waiting')
+    s0 = pg.evaluate("saveData.meta.scrap")
+    pg.evaluate(f"__shift={5 * H};0")
+    pg.evaluate(board)
+    want = int(5 * rate)
+    shown = pg.evaluate("document.querySelector('#ov .ranch-income .count').textContent")
+    if shown != f'{want} Scrap': raise Exception(f'five hours shows “{shown}”, not {want} Scrap')
+    pg.click("#ov .ranch-income [data-r=collect]")
+    if pg.evaluate("saveData.meta.scrap") != s0 + want: raise Exception(f'Collect paid {pg.evaluate("saveData.meta.scrap") - s0}, not {want}')
+    last = pg.evaluate("saveData.ranch.income.lastAt")
+    pg.evaluate(f"__shift={5 * H - 24 * H};0")
+    pg.evaluate(board)
+    if pg.evaluate("document.querySelector('#ov .ranch-income .count').textContent") != '0 Scrap' or pg.evaluate("saveData.ranch.income.lastAt") != last: raise Exception('the clock turned back a day: Scrap waiting, or the income’s time moved back')
+    if not pg.evaluate("!!document.querySelector('#ov .ranch-back')"): raise Exception('the sheet didn’t say the clock is behind')
+    pg.evaluate(f"__shift={6 * H};0")
+    pg.evaluate(board)
+    pg.click("#ov .ranch-income [data-r=collect]")
+    if pg.evaluate("saveData.meta.scrap") != s0 + want + int(rate): raise Exception(f'forward again an hour past: Scrap {pg.evaluate("saveData.meta.scrap")}, not {s0 + want + int(rate)} (the gap paid?)')
+    keep = pg.evaluate("JSON.stringify([saveData.meta.scrap,saveData.ranch.income,saveData.ranch.seen])")
+    pg.goto(base + '/index.html?fixture=stored')
+    if not until(pg, "typeof saveData!=='undefined'&&!!saveData.ranch&&!document.getElementById('loader')", 90): raise Exception('the reload never booted')
+    back = pg.evaluate("JSON.stringify([saveData.meta.scrap,saveData.ranch.income,saveData.ranch.seen])")
+    if back != keep: raise Exception(f'after a reload {back}, not {keep}')
+    return f'started at the first opening; five hours showed and paid {want} Scrap ({rate} an hour); a day back showed nothing and said so; forward again an hour paid {int(rate)}; a reload kept it'
 
 
 def breed(pg, base):
@@ -853,7 +898,7 @@ def debug_log(pg, base):
                 if r: return r
         return None
     cam = find(log_)
-    if not cam or cam.get('mode') != 'walk' or 'goals' not in cam: raise Exception(f'the debug log has no camera line: {cam}')
+    if not cam or cam.get('mode') not in ('walk', 'orbit') or 'goals' not in cam: raise Exception(f'the debug log has no camera line: {cam}')
     # CAM-2: the moment, the zoom the camera uses, the zone
     if not all(k in cam for k in ('moment', 'zoomEff', 'zone')): raise Exception(f'the camera line has no moment, zoom or zone: {cam}')
     # CAM-3: the blur's line (its path, what the focus is on, the tilt, the player's slider)
@@ -1281,10 +1326,11 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
               ('Camera moments: a drift in standing, a two-shot talking, a boss, a door, the encounter shot (CAM-2)', camera_moments)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('town', [('Blur focus: on you, between you in a talk, on the encounter; the slider at Off; the cheap blur (CAM-3)', blur_focus)]),
-    ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back, a reload (RL-9)', ranch)]),
+    ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back and forward, a reload (RL-9, RL-10b)', ranch)]),
     ('pasture', [('The pasture: Billies wander inside the fence, a tap on one or the gate opens the ranch (IS-8)', pasture)]),
     ('relics', [("Loopholes: the pick (again after a reload), the tab, a battle's and a walk's effects, a town's prices, buying at the cap (RL-12)", relics)]),
     ('ranch', [('Breeding: a safe egg shown and hatched, a risky pair, a clock turned back, a reload (RL-10)', breed)]),
+    ('ranch', [('Income: started at the first opening, Collect, a clock turned back and forward, a reload (RL-10b)', income)]),
     ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the mast, a reload (RL-11)', lab)]),
     ('ranch', [('Packing for a run: a Billie from storage, a packed bag; kept on a loss, the bag home on a win (RL-9b)', run_pack)]),
     ('battle', [('A battle plays to the end', battle)]),

@@ -6,7 +6,8 @@ JSON array of lines in the data, next to the thing that owns it:
 - a person in a map's `people` list: `script` (id `person:<id>`),
 - a trainer, `game/data/trainers/<id>.json`: `script` (id `trainer:<id>`).
 - the story itself, `game/data/story.json` `scripts`: `{ "who": <who talks>, "script": [...] }` (id `story:<id>`):
-  Hazel in the lab, after Blake's first battle, the ending.
+  Professor Chosen in the lab (`story:chosen`), after Blake's first battle, the ending. Hazel's own lab talk is a
+  person in the lab room's map (`person:hazel_lab`, maps/int_lab.json): a room may hold talking people besides its keeper.
 - a cutscene, `game/data/cutscenes/<id>.json` `script` (id `cutscene:<id>`): the opening. A cutscene has commands of
   its own (people, named shots and spots, captions): docs/CUTSCENES.md.
 
@@ -14,7 +15,7 @@ A line or a choice waits until the windows on screen (a battle's result) are clo
 trainer counts one visit (`visits:<id>`).
 
 Since S2 every conversation is a script: people, trainers (what they say before a battle; the battle ends the
-script), the ones who run up to you (`"runsUp": true` on the trainer: Blake, Cass, Vinylla), Hazel in the lab, what
+script), the ones who run up to you (`"runsUp": true` on the trainer: Blake, Cass, Vinylla), Professor Chosen and Hazel in the lab, what
 comes after Blake's first battle and the ending. Townsfolk chatter and favours stay as they are (made up from lists).
 The debug menu's "Story scripts" row plays any of them.
 
@@ -32,7 +33,7 @@ One string per line. Indentation is two spaces per level, inside the string.
 |---|---|
 | `There you are, dear.` | a line said by the one the script belongs to |
 | `[happy] There you are, dear.` | with an expression (happy, surprised, sad, angry, blink, talk) |
-| `Hazel: Another one!` / `[happy] Hazel: ...` | said by someone else: a speaker from story.json `speakers` (Hazel, Blake, Juniper, Nacre, Cass, You) or a person id (`gini: ...`) |
+| `Hazel: Another one!` / `[happy] Hazel: ...` | said by someone else: a speaker from story.json `speakers` (Chosen, Hazel, Blake, Juniper, Nacre, Cass, You) or a person id (`chosen: ...`) |
 | `set met_juniper` | a command (below) |
 
 A line (or a command) may hold slots, filled in as it is said: `{name}` (your name; Trainer before you have one),

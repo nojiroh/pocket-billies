@@ -27,7 +27,9 @@ import {
   worldExtraMaps,
 } from './game-data.js';
 import { encountersHere, makeBilly, maxHp, spawn } from './logic/rules.js';
+import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
+import { incomeRate } from './logic/ranch-income.js';
 import { pastureBillies, pastureIn, pastureZone } from './logic/pasture.js';
 import { runRestore } from './logic/run-state.js';
 import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
@@ -50,7 +52,7 @@ import {
   uiState,
 } from './game-state.js';
 import { gpuCountBegin, gpuCountEnd } from './engine/gpu-counters.js';
-import { frameScheduler } from './frame-scheduler.js';
+import { frameScheduler, userFps } from './frame-scheduler.js';
 import { PERSON_ART_CACHE } from './person-art.js';
 import { closeDressingRoom, dressingRoom } from './dressing-room.js';
 import { battleStage, battleStageStop } from './battle-stage.js';
@@ -86,7 +88,7 @@ import { propModelShaders, propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { seamlessRoomMap, seamlessWorld } from './seamless-world.js';
 import { endBattle, pickMove, pickTarget, stopTimers, tapMessage } from './battle.js';
-import { WORLD_BOWL_SHADERS, worldBowl, worldMap, worldMapReset } from './world-bowl.js';
+import { WORLD_BOWL_SHADERS, worldBowl, worldBowlReset, worldMap, worldMapReset } from './world-bowl.js';
 import { openShop } from './shop.js';
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene/director.js';
@@ -250,11 +252,13 @@ async function runFullTest(mode) {
       'Frame budget',
       'Rain and night',
       'Battle on the 3D stage',
+      /* 0.1.0 alpha: the map's first open, timed (the owner finds it slow) */
+      'World map',
       'Memory',
     ];
   }
   const total = diag
-    ? scenes.length * 4 + 1 + 1 + 6 + 10 + 6 + 1
+    ? scenes.length * 4 + 1 + 1 + 6 + 10 + 6 + 8 + 1
     : scenes.length * 4 + 1 + 5 + 8 + 6 + 5 + 8 + 8 + 6 + 6 + 10 + 8 + 8 + 1 + 40;
   let done = 0;
   const tick = s => {
@@ -517,9 +521,12 @@ async function runFullTest(mode) {
             resolution: typeof walkView !== 'undefined' ? walkView.R : null,
             level: typeof walkRenderer !== 'undefined' ? (walkRenderer.q ?? null) : null,
             screenHz: typeof frameScheduler !== 'undefined' ? frameScheduler.hz : null,
+            /* the player's Settings → Frame rate (the save's own value) and the cap it gives */
+            fpsSetting: (saveData && saveData.preferences && saveData.preferences.fps) ?? null,
+            fpsCap: userFps(),
             why: ev,
           };
-          return `${String(g.renderer || g.gpu || 'graphics unknown').slice(0, 60)} · resolution ×${diagnosticsReport.device.resolution ?? '?'} · quality level ${diagnosticsReport.device.level ?? '?'}${ev.length ? ' · ' + ev.slice(-1)[0] : ''}`;
+          return `${String(g.renderer || g.gpu || 'graphics unknown').slice(0, 60)} · resolution ×${diagnosticsReport.device.resolution ?? '?'} · quality level ${diagnosticsReport.device.level ?? '?'} · cap ${diagnosticsReport.device.fpsCap} FPS${ev.length ? ' · ' + ev.slice(-1)[0] : ''}`;
         },
         1
       );
@@ -1238,6 +1245,56 @@ async function runFullTest(mode) {
         3,
         60
       );
+    /* RL-10b: the ranch's passive income, on a copy of the save (nothing is written while the test runs): counted for
+       three hours, the sheet's Income row shows three hours' Scrap and Collect pays it; then the ranch clock's mark two
+       hours ahead of the device (as after a clock set forward, collected, and turned back): the sheet says the clock
+       is behind, nothing waits and Collect is shut. Then the save as it was */
+    if (typeof ranchOpen === 'function' && RULES.ranch && RULES.ranch.income && !saveData.run && !selfTest.stop)
+      await phase(
+        'The ranch: income and a clock turned back',
+        'dio',
+        async () => {
+          const was = saveData,
+            R = RULES.ranch,
+            H = 3600000;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              now = ranchNow(s, Date.now(), R).now,
+              rate = incomeRate(s, R),
+              want = Math.floor(3 * rate);
+            s.meta.scrap = 0;
+            s.ranch.income = { bank: 0, lastAt: now - 3 * H };
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            ranchOpen();
+            const count = () => (document.querySelector('#ov .ranch-income .count') || { textContent: '' }).textContent,
+              collect = () =>
+                /** @type {HTMLButtonElement | null} */ (document.querySelector('#ov .ranch-income [data-r=collect]'));
+            if (count() !== `${want} Scrap`) throw new Error(`three hours show “${count()}”, not ${want} Scrap`);
+            const c = collect();
+            if (!c || c.disabled) throw new Error('Collect is shut with Scrap waiting');
+            c.click();
+            if (s.meta.scrap !== want) throw new Error(`Collect paid ${s.meta.scrap}, not ${want}`);
+            s.ranch.seen = s.ranch.income.lastAt = Date.now() + 2 * H;
+            uiState.modal = null;
+            ranchOpen();
+            if (!document.querySelector('#ov .ranch-back')) throw new Error('the sheet didn’t say the clock is behind');
+            if (count() !== '0 Scrap' || !collect() || !(/** @type {HTMLButtonElement} */ (collect()).disabled))
+              throw new Error(`the clock behind: “${count()}” waiting`);
+            if (s.ranch.income.lastAt !== s.ranch.seen) throw new Error('the income’s time moved back');
+            return `three hours showed and paid ${want} Scrap (${rate} an hour); a clock two hours behind paid nothing and said so`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
     /* RL-11: the Lab's unlock board, on a copy of the save (nothing is written while the test runs): the Lab tab draws
        every row of unlocks.json; a board row bought pays its Capital; the ranch's upgrade raises its level and slots;
        a milestone met is granted once; a run's copy holds the shop unlock. Then the save as it was */
@@ -1294,7 +1351,7 @@ async function runFullTest(mode) {
         3,
         60
       );
-    /* v46: a room that opens in place: into a building and out again, without leaving the town (RL-5: Professor Hazel's
+    /* v46: a room that opens in place: into a building and out again, without leaving the town (RL-5: Professor Chosen's
        lab in Copperleaf, the hub; it was Marigold's shop) */
     if (typeof seamlessRoomMap === 'function' && LOCATIONS[START_NODE] && !selfTest.stop)
       await phase(
@@ -1613,9 +1670,17 @@ async function runFullTest(mode) {
       'World map',
       'map',
       async () => {
+        /* 0.1.0 alpha: opened from cold (its ground made again), timed until its textured ground is ready: the owner
+           finds the map slow to open, and the bowl was usually already built by the time this step ran */
+        worldBowlReset();
+        const t0 = performance.now();
         uiState.tab = 'map';
         render();
-        await selfTestSleep(3000);
+        await selfTestSleep(500);
+        while (worldBowl.on && !(worldBowl.ground && worldBowl.ground.ok) && performance.now() - t0 < 30000)
+          await selfTestSleep(100);
+        const readyMs = worldBowl.ground && worldBowl.ground.ok ? Math.round(performance.now() - t0) : null;
+        await selfTestSleep(1000);
         if (!worldBowl.on) {
           uiState.tab = 'walk';
           render();
@@ -1632,7 +1697,7 @@ async function runFullTest(mode) {
         render();
         await selfTestSleep(500);
         if (n < 5) throw new Error(`the bowl drew ${n} frames while turning`);
-        return `the bowl drew ${n} frames turning round and coming back`;
+        return `${readyMs == null ? 'its ground wasn’t ready in 30 s' : `ready in ${readyMs} ms from cold`}; the bowl drew ${n} frames turning round and coming back`;
       },
       8
     );
@@ -2078,6 +2143,7 @@ function diagnosticsSummary() {
     frame: (R.diag || diagnosticsReport).passes,
     rainAndNight: (R.diag || diagnosticsReport).weather,
     battle: one('Battle on the 3D stage'),
+    worldMap: one('World map'),
     memory: one('Memory'),
     errors: R.errors,
   };

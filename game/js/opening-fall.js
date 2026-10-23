@@ -7,14 +7,14 @@
    3. The inner sky: you come out high in the Hollow Earth, fall past the Inner Sun and down into the bowl (the world
       map's own ground, world-bowl.js), towards Copperleaf.
    4. A white flash, and the walk scene takes over (cutscene/opening.js, playing game/data/cutscenes/opening.json): you
-      wake in the dust outside Hazel's lab, the papers that fell with you still fluttering down.
+      wake in the dust outside Professor Chosen's lab, the papers that fell with you still fluttering down.
    Skip ends the fall at once; if the opening can't run, a Try again screen (ui.js renderIntro). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { openingDone, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { START_NODE, typeEffectiveness } from './game-data.js';
-import { FAST_PICKS, FAST_PICK_MS, HAZEL, hazelTip, speedWatch } from './logic/hazel.js';
+import { CHOSEN, FAST_PICKS, FAST_PICK_MS, chosenTip, speedWatch } from './logic/chosen.js';
 import { actorTypes } from './logic/battle-engine.js';
 import { bowlSun } from './logic/bowl.js';
 import { bowlCamLookView, bowlToGpu } from './logic/bowl-camera.js';
@@ -801,11 +801,11 @@ function landingFrame(now, parts) {
 
 /* ================= THE FIRST BATTLE: BLAKE, OUTSIDE THE LAB =================
    Right after you choose, Blake picks the starter that beats yours (rules.start.rival) and battles you on the spot
-   (trainer blake0: tutorial). His billionaire is as new as yours and only knows Tackle. Hazel explains as it happens:
+   (trainer blake0: tutorial). His billionaire is as new as yours and only knows Tackle. the Chosen explains as it happens:
    moves and types, switching and items, and the coin you'd throw at a wild one. Win or lose the story goes on
    (story.js: storyAfterRival) with your team healed and no fee. The self-test's run of the opening stops before it. */
 /* phase 06-2b: no tutorial in Blake's battle. Hazel "helps": a meta line, then type tips that are wrong on purpose
-   (js/logic/hazel.js), one per turn, as a big HOT TIP that covers everything, the move buttons too, until tapped */
+   (js/logic/chosen.js), one per turn, as a big HOT TIP that covers everything, the move buttons too, until tapped */
 /* the real matchup between the two out front: which type beats which (strong beats weak), or null */
 function tutorMatchup() {
   const a = actorTypes(0),
@@ -816,23 +816,23 @@ function tutorMatchup() {
 }
 function battleTutor() {
   if (!activeBattle || !activeBattle.T || !activeBattle.T.tutorial || activeBattle.over) return;
-  if (!activeBattle.pickWatch) activeBattle.pickWatch = speedWatch(FAST_PICK_MS, FAST_PICKS, HAZEL.tooFastPicks);
+  if (!activeBattle.pickWatch) activeBattle.pickWatch = speedWatch(FAST_PICK_MS, FAST_PICKS, CHOSEN.tooFastPicks);
   const i = activeBattle.tipN || 0,
-    text = hazelTip(i, tutorMatchup());
+    text = chosenTip(i, tutorMatchup());
   if (!text) return;
   activeBattle.tipN = i + 1;
   battleTip(
-    'gini',
+    'chosen',
     text,
     i === 0 && typeof openingDone === 'function' && openingDone() ? { l: 'Skip this battle', a: 'tutskip' } : null,
     true
   );
 }
-/* a move picked: in Blake's battle, picking instantly (twice in a row) gets a comment from Hazel */
+/* a move picked: in Blake's battle, picking instantly (twice in a row) gets a comment from the Chosen */
 export function tutorPicked() {
   if (!activeBattle || !activeBattle.T || !activeBattle.T.tutorial || !activeBattle.pickWatch) return;
   const c = activeBattle.pickWatch.record(performance.now() - (activeBattle.menuT || 0));
-  if (c) battleTip('gini', c, null, true);
+  if (c) battleTip('chosen', c, null, true);
 }
 /* seen it all before: Blake's battle ends at once, and the story carries on */
 function tutorSkip() {
@@ -842,7 +842,7 @@ function tutorSkip() {
   endBattle();
 }
 /* a word from someone at the top of the battle, without stopping it; it goes after a while, or with a tap.
-   phase 06-2b: hot = Hazel's HOT TIP: big, in the middle, over everything (the move buttons too), until tapped */
+   phase 06-2b: hot = the professor's HOT TIP: big, in the middle, over everything (the move buttons too), until tapped */
 function battleTip(who, text, btn, hot) {
   let el = $('#btip');
   if (!el) {
@@ -857,7 +857,7 @@ function battleTip(who, text, btn, hot) {
     ex = m[1];
     text = text.slice(m[0].length);
   }
-  const name = who === 'gini' ? 'Professor Hazel' : escapeHtml(who),
+  const name = who === 'chosen' ? 'Professor Chosen' : escapeHtml(who),
     face = typeof portraitHTML === 'function' ? portraitHTML(who, hot ? 72 : 44, ex) : '',
     b = btn ? `<button class="pb small quiet btip-b" data-a="${btn.a}">${escapeHtml(btn.l)}</button>` : '';
   el.className = hot ? 'btip hot' : 'btip';

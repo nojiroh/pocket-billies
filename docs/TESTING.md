@@ -267,7 +267,15 @@ same phase:
   paying, hatching, a clock turned back, the save's checks), check-fast's "Breeding" on `?fixture=ranch` (the safe
   egg shown is the one bred, hatched through the hatch window after `breed.hours`; a risky pair; the clock turned
   back; a reload), the in-game test's "The ranch: breeding a pair", and the breeding sim (`tools/test/sim/
-  breeding-sim.mjs`, report only; `breeding-sim.test.mjs` runs it small).
+  breeding-sim.mjs`, report only; `breeding-sim.test.mjs` runs it small). RL-10b: `tools/test/ranch-clock.test.mjs`
+  (the high-water mark, a clock turned back standing still, the cloud save's server time and the session floor, the
+  skew), `tools/test/ranch-income.test.mjs` (the rate by level, the first opening, the carried part of a Scrap, the
+  cap, an upgrade at the old rate, a clock turned back, a run), the ranch test's clock turned back and forward
+  (training's gap); check-fast's ranch step turns the clock back and forward and "Income" on `?fixture=ranch` (Collect
+  after five hours, a day back showing nothing and saying so, an hour forward paying the hour, a reload); the in-game
+  test's "The ranch: income and a clock turned back"; the Firestore rules' `saves/{uid}` whitelist and `t ==
+  request.time` in `firebase/test/rules.test.mjs` (`cd firebase && npm ci && npm test`; Java 21). The account path
+  (`t` written, the floor on reading, the skew read back) needs a signed-in phone: no Firebase project here.
 - **RL-11 Unlocks**: `tools/test/unlocks.test.mjs` (doors and currencies, buying once, refusals, milestones never on a
   run, the tidy-up on load, a run's copy making the same map and stock), the new condition kinds in
   `conditions.test.mjs`, `run.unlocks` in `run-state.test.mjs`; check-data's blocks for `currencies`, `buildings` and
@@ -326,6 +334,13 @@ same phase:
   alone with `python3 tools/check-studio-github.py --only=ui` (about a minute; `--only=` takes any names from its
   `STEPS`, plus `sections` and `art` for the two blocks before them). A new uiTheme.json group needs its schema,
   its dials in logic/ui-dials.js and its writer in logic/ui-theme.js together, or the tests fail.
+  The Actions sheet (walk-tab.js walkSheetSync, a `<pb-sheet id="walkSheet">` over the world since 2026-10-23):
+  smoke and the full check run "Actions sheet: ..." (`actions_sheet_step`, about 22 s in smoke) on the `town`
+  fixture at 1280x800: four mouse-wheel turns leave it closed and the page unscrolled; the Actions button opens it;
+  Esc closes it; Tab opens it with the focus on its first button and closes it; "show me the way" to the ranch closes
+  it and sets `walkView.mark`. The full check also opens it on the `run` fixture for the day chip, today's weather
+  and "Open the map to move on". The words (logic/run-loop.js `runSheetStatus`, `weatherEffectText`) are unit-tested
+  in run-loop.test.mjs.
 - **Roguelite track** (docs/phases/roguelite-track.md): RL-5 parked every place but Copperleaf. The fast check
   (`tools/check-fast.py`, CI) and its fixtures start there (`town`, `room` = Hazel's lab, `battle` = Leader Rocco); the
   `route` and `cave` fixtures and checks, the full check's road walks, seams, close-ups and the flight to another town
@@ -394,6 +409,19 @@ same phase:
   deadline, `musicWeatherCut`, `songVariant`'s order: battle tense; else deadline; else band then night).
   `check-studio-github.py --only=music` also draws an intro note, plays wild on its intro and as wild@tense, and sets
   an arc band's drums, all undone; it reads the where rules' places from the table.
+  SND-6: the fingerprints also render each cry's low-HP version (`cries.json` `<id>@low`, sound.js `cryPlay`), the
+  four UI sounds (`ui.json`, sound.js `uiSound`) and every jingle at its own tempo and wave (`jinglePlay`): 143.
+  The full check's "Sound effects and jingles" step (alone with `--steps="sound effects"`, about 65 s) taps sound on in
+  the run fixture on a phone and reads `soundEngine.log` (in memory, never sent): the world and ambience beds are
+  x0.708 under the run's song (music.json `mix.bedsUnderSong` -3 dB); a real sheet's gold, quiet and disabled buttons,
+  tapped, make confirm, cancel and can't, a tab select; a wild battle with the lead under a quarter: the wild Billie's
+  cry and the lead's low-HP cry as it comes out; walking into the next place: day, then reveal; a Loophole taken:
+  relic; the payout won: a coin per row, then `run_won` after the last coin; lost: `run_lost`. The "Sound settings"
+  step compares with `soundLevels(prefs, MUSIC.mix)` and the beds' duck. Unit tests: `cries.test.mjs` (the eight
+  kinds, a base's notes, the low-HP cry a minor third down and a quarter faster), `ui-sounds.test.mjs` (which button
+  makes which sound), `sound-levels.test.mjs` (the mix's trims, `bedDuck`), `music-studio.test.mjs` (placeholder base
+  cries and Billie cries). `check-studio-github.py --only=music` plays a base cry and a button sound on the Sounds
+  tab, changes the mix and undoes it, and changes a stage's own cry, hearing its base's notes and the low-HP version.
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo

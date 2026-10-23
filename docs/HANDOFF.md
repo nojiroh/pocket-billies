@@ -2,6 +2,121 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Test cleanup track TC-1 item 0 - The three camera checks on main - 2026-10-23
+Branch `fix/camera-checks-orbit`, from main a569bed, its own PR. Plan approved in Plan Mode.
+- Cause: the checks, not the camera. CAM-1 and CAM-2 were written and passed on branches without IS-5 (2328edc,
+  Copperleaf onto the island), so Copperleaf's camera reported `mode: 'walk'`. The merge that brought CAM-1..3 to main
+  (#143) put them on the island, where the camera reports `orbit`. CAM-1's camera was settled (off ~1e-15, lead 0) and
+  the debug log's camera line was complete: only the `mode == 'walk'` test failed. CAM-2's talk check put the talker
+  3 m world east and wanted the aim 0.8-2.2 m east; the game aims at the middle and nudges every aim up the screen
+  (CAM-2's merge with the orbit), and with the orbit turned ~56 degrees off north that nudge pulled the aim west.
+- Changed (tools/check-fast.py only): CAM-1 and the debug log check take `walk` or `orbit`; CAM-2's talker stands
+  3 m along the camera's screen-right (`camInfo.right`) and the aim is read along it. No game code changed.
+- Verified: the three checks failed here with CI's values first, then pass; with the talk aim broken on purpose (aimed
+  at you) CAM-2 fails again (along the right ~0). Lint, typecheck, check:modules, unit tests (807); the whole fast
+  check: see the PR.
+- Risky: none in the game. Locally the pinned Playwright (1.56) wants Chromium 1194 and the container has 1243; ran
+  through a scratch PLAYWRIGHT_BROWSERS_PATH link, nothing in the repo.
+- Next: lanes A-D of the test cleanup track can start once this is merged.
+
+### Side session - Professor Chosen replaces Professor Hazel - 2026-10-23
+Branch `ccr-9023a485-qr0fhf` (PR #142). The owner's request: the Chosen (the Smosh sketch character) as a
+Pokémon-style professor. Owner answers: name tag "Professor Chosen"; Hazel stays as his tired assistant; the
+organization link is dropped for now (S4 decides); internal renames now; the wolf-print tee and katana art later;
+the drafted lines approved as written.
+- Changed (one cause per commit):
+  - `hazel`: a new person, Hazel's old look. `gini` (now `chosen`) gets his look from today's wardrobe.
+  - Lines: the opening (Hazel follows him out to a new spot `assist` and has five lines), logic/chosen.js's tables,
+    the lab talk, the talk after Blake's battle, his line in the ending. Rooms can now hold their map's own talking
+    people besides the keeper (walk-control.js `roomPeople`); int_lab has Hazel at the right-hand desk.
+  - Names: name tags, the lab's sign and label, the Field Guide, lore (people `chosen` and `hazel`), blurbs, the
+    lab tab's hint, his voice blip (64; Hazel 72), the Studio's gallery and look fallback.
+  - Renames, one per commit: person `gini` -> `chosen` (its unused sprites gini_*.png -> hazel_*.png, the look
+    they show), logic/hazel.js -> chosen.js (test too), HAZEL -> CHOSEN, hazelTip -> chosenTip, hazelHotTake ->
+    chosenHotTake, hazelFight -> chosenFight, talkHazel -> talkChosen, story script `hazel` -> `chosen`.
+  - Tests: the story snapshot redone on purpose for these scripts (talk-before-scripts.json, `person:hazel_lab` new);
+    the opening compared with opening-said.json, its commands still in the old order.
+  - Docs: project-story.md owner decisions (2026-10-23), SCRIPTS, CUTSCENES, ROADMAP, CHANGELOG.
+- Risky or unfinished:
+  - tools/build-copperleaf.mjs rewrites the opening's spots from its input: a new opening spot must also go in
+    tools/data/copperleaf-town.json (old town metres), or a rerun drops it. That happened once here (smoke caught it);
+    `assist` is in the input now and a rerun writes both files unchanged.
+  - Kept on purpose with the old names: opening-before-scripts.json (a record), the music song `hazel` (the
+    professor's theme), the opening's spot `hazel` and shot `hazelRuns`, docs/phases/04e, build-regions-v47.py.
+  - The Chosen is Smosh's character: fine privately; his name and costume are what to change before a public release.
+  - A room's talking people stand on its npcSpots after the keeper's; a room with people but no keeper starts at 0.
+  - Not tried on a phone. Please play the opening and the lab, and listen to his voice blip.
+- Verified:
+  - Every commit: lint, typecheck, check:modules, format:check, check:data, unit tests 670, smoke (code commits).
+  - The opening played through headless (test boot and the smoke's phone flow); screenshots of Hazel at the door,
+    the coins and the lab; tapping both of them in the lab plays their scripts.
+  - Full quick check at 854c5af: 2588 s, 59 steps, 45 passed. Problems: the known v31, v34, v35, v38, v39/40, v44,
+    v46, alpha 0.2, alpha 0.4 (recipes, postcards), phase 08, RL-7; plus v33 (3 nameplates of 4), which passes alone
+    on this branch, and RL-8 ("no path to the exit to Meadow Route"), which fails the same alone on this branch's base
+    303f074 and passes on main 1713a8c (main fixed it since).
+- Next: the wolf-print tee and the katana (wardrobe pieces, the katana on the back in the bag slot); then S4 decides
+  the organization and both characters' pasts.
+### Roguelite track RL-10b - Ranch B, second half: passive income, one ranch clock, the cloud anchor - 2026-10-23
+Branch `RL-10b` (PR #144), from main 303f074; main (29e6601: CAM-1..3, the island look, IS-8's pasture, Studio plan
+Phases 5 and 6) merged in near the end. Plan approved in Plan Mode with the owner's answers: income in Scrap by ranch
+level (1/2/3 an hour, 24 h banked), a Collect button, the cloud anchor plus a measured skew, 8.12 yes (the rule
+published after the build is live).
+- Changed (one cause per commit):
+  - **Rules**: `rules.ranch.income` `{rate: [1,2,3], capHours: 24}` (placeholders); types, data checks (now in
+    `logic/data-checks.js` after the merge).
+  - **Save**: `ranch.seen` (the ranch clock's high-water mark); `ranch.income` is `{bank, lastAt}` (the stored rate
+    dropped: it comes from the rules by level, so an upgrade counts at once).
+  - **logic/ranch-clock.js**: `ranchNow` (the phone time less the session's skew; more than `guardMs` behind the mark,
+    time stands still at the mark until the clock passes it), `ranchAnchor`, `clockSkew`, the session's `ranchSkew` and
+    `ranchFloor` (memory only).
+  - **Training's rollback bug fixed** (RL-10a found it): a trainee's start never moves back; turning the clock back and
+    forward no longer pays the gap.
+  - **Every ranch timer on the clock**: the sheet (collect, Train, Stop, breeding, egg times, Hatch), the mast's
+    take-off, the team move, the debug menu's Eggs ready now. Turned back, the sheet says the device's clock is behind.
+  - **logic/ranch-income.js** and the sheet's **Income** row: the pile, its rate, full in n h, Collect. Income starts at
+    the ranch's first opening; the part of a Scrap carries over; full counts again from now; buying an unlock banks
+    the income first (an upgrade pays the old level's time at the old rate). Age the ranch by an hour ages it too.
+  - **firestore.rules** (8.12): `saves/{uid}` takes only `json, savedAt, saveVersion, name, game, t`, and `t ==
+    request.time`.
+  - **account.js**: both cloud writes send one document (`accountSaveDoc`) with `t: serverTimestamp()`; reading the save
+    sets the clock's floor; after the session's first write the save is read back once from the server and the
+    phone clock's skew measured (under `guardMs`: none); signing out clears both.
+  - **Checks and debug**: unit tests ranch-clock (7), ranch-income (7), the ranch rollback test rewritten; check-fast's
+    ranch step turns the clock back and forward, a new "Income" step; the in-game "The ranch: income and a clock
+    turned back"; 14 emulator rules tests (13 before); the debug log's ranch line has the income, how far the clock
+    is behind the mark and the skew (numbers only).
+- Where the plan was wrong: see roguelite-track.md "Corrected in RL-10b" (the save already had an income shape and
+  no cap; a new save's `lastAt` 0 would have paid a full pile; `lastAt = max(lastAt, t)` alone doesn't stop a clock
+  set forward; offline needed nothing new, the service worker was there; RL-10's `account.js:331-351` is two writes).
+- Merging main: index.html and the debug log kept both (income and the pasture); run.js took main's one run start with
+  the ranch clock on the take-off; the ranch's data checks had moved to `logic/data-checks.js`, so the income block
+  moved with them; the Studio's logic worker lists the two new modules (its test caught it).
+- Verified: unit tests 804 after the merge (684 before it); lint, typecheck, modules, format, check-data (planted rule
+  faults caught); the emulator rules tests 14 of 14 here (the new one failed on the old rule first); check-fast ranch,
+  Income, Breeding, Packing, Lab and pasture after the merge (the ranch step failed with the old `t.at = now`, Income
+  with the clock's turned-back rule removed); the in-game ranch phases alone headless; headless pictures (390 x 760)
+  of the Income row and the clock-behind note; CI green on the PR before the merge. The full quick check (34 min)
+  against a local baseline of main 29e6601: main 50 of 59, this branch 49 of 59 at first; the one more red was
+  this session's ("In-game full test: one step headless": the quick check's stand-in account has no `firebase`
+  global, so building the save document threw and no write went; fixed, that step passes alone). The other 9 red are
+  main's: v31 bowl map camera (new on main since #143), v34 biped walk cycle, v35/v38/v39 roster counts, v44 props
+  scene, v46 buildings without a plan, alpha 0.4 empty bush recipes, phase 08 running (v43 now passes on main).
+- CI's smoke after the merge: red in three camera steps (CAM-1 follow settled, CAM-2 two-shot, the debug log's
+  camera line), red the same way on main 29e6601 since #143; not this PR's (commented on #144). Every ranch step
+  passes there.
+- Risky / open:
+  - **Publish order**: publish the new `saves` rule in the Firebase console only once this build is live; a copy of
+    the game open from before can't save to the account until it reloads.
+  - The account path (`t` written, the floor, the skew read back) was not run end to end: no Firebase project here.
+  - A clock set ahead while offline still banks up to the cap early; then time stands still until the real time
+    catches up (nothing paid twice).
+  - The skew costs one extra Firestore read a session. Every number is a placeholder.
+- Phone check wanted: at the ranch, the Income row (it starts at the first opening); "Age the ranch by an hour" a few
+  times, Collect; set the phone's clock back a day and open the ranch (the note, nothing waiting), forward again (only
+  real time); signed in, play a little, export the debug log (`income`, `behind`, `skew`); after publishing the rule,
+  a save on the account still works.
+- Next: the owner publishes the rule after the build is live and pushes `rl-10-done`; then RL-12b or RL-13.
+
 ### UI track UI-7b - Settings: layout - 2026-10-23
 Branch `ccr-305ae8d3-6ivodu` (PR #147, with UI-7a). Decisions from the owner's question round (docs/phases/ui-track.md,
 UI-7).
@@ -53,6 +168,61 @@ Mode, answers recorded in docs/phases/ui-track.md (UI-7). Three steps; this is t
   German labels read from the page.
 - Not run: the full quick check (due at the end of UI-7). Tag `ui-7a-done` (local; tags may not push).
 - Next: UI-7b (the settings tabs), at the owner's word.
+### Actions sheet rework for the roguelite - 2026-10-23
+Branch `claude/bold-davinci-vrss2q`, pushed to main at the owner's word. The owner's picks: a bottom sheet; on a run
+the run status and this node's actions; in the hub, shortcuts (Start a run and the clinic open at once, the ranch and
+the lab get a marker to walk to); Tab on a computer; keep the "?" cards; challenges hidden for now; no Actions
+indoors; buddy card, requests, rest stop, money card, gold-arrow buttons and the joystick note removed; Give up the
+run stays on the Map tab; the place card shows name, type and weather; the label stays "Actions"; a tap closes it.
+- Changed (one cause per commit):
+  - The sheet was page content under the scene, so any scroll (a mouse wheel, a trackpad) slid it up. It is now the
+    kit's `<pb-sheet id="walkSheet">` (walk-tab.js `walkSheetSync`, `uiState.walkSheet`), opened by the Actions
+    button or Tab, closed by Esc, Tab, the scrim, a drag down, any button in it, or a render that leaves the world.
+    The walk screen no longer scrolls. pb-sheet takes `--sheet-max` (58vh here).
+  - Run: day chip, node type, today's and tomorrow's weather with its move effect (logic/run-loop.js
+    `runSheetStatus`, `weatherEffectText`, `runBattleWeather`; unit tests), What's here (nodeActions), Wild Billies
+    here, Open the map to move on. Hub: Start a run (`walkrun`), ranch and Hazel's lab marked in the world
+    (`walkView.mark`, walk-view.js `drawWalkMark`; gone within 6 m, in another map, or when the sheet opens).
+  - Removed: gold-arrow buttons, money card, joystick note (now a one-time toast, `preferences.walkTip`), paid rest
+    stop, requests list, buddy card; challenges hidden (`CHALLENGES_SHOWN` false: no card, no toast, still counted).
+  - Fixed: a new encounter card had class `pop`, which battle-screen.css uses for damage numbers, so it hung over
+    the heading (now `enc-new`). Walk keys stop while the sheet is open (was a test on scrollY).
+  - Check: smoke and full `actions_sheet_step` (TESTING.md). Dead CSS dropped; ui-lint ceilings lowered.
+- Risky or unfinished:
+  - Not tried on a phone. Tab is taken only while nothing outside the sheet has the focus; Shift+Tab never.
+  - The full quick check was not run (the owner asked to push first); the in-game full test neither.
+  - Tags can't be pushed from here (403 before); no tag made for this rework (not a numbered phase).
+  - rules.json `battle.restCost` stays, unread. The loading tip "gold arrows lead you there" is stale.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build, unit tests 794; smoke 16 of 16 (168 s);
+  check-fast: three camera steps fail (CAM-1, CAM-2, debug log camera line), the same on the base commit 29e66011;
+  check:ui: run-hud 0.2% off, the same on the base commit.
+- Questions waiting for the owner: bring challenges back (hub only) or drop them; should the sheet show the team's
+  HP or the held Loopholes later; remove `restCost` from the data.
+- Next session starts with: the owner's phone test of the sheet, then the full quick check.
+### Tooling - Repo admin workflow (tags and branch deletion for cloud sessions) - 2026-10-23
+Branch `claude/optimistic-maxwell-vhge6s`. Not a phase: asked for by the owner so sessions can make tags and clean up
+branches (the git proxy refuses both with HTTP 403).
+- Changed: `.github/workflows/repo-admin.yml`, run by hand (workflow_dispatch). `create-tag`: a lightweight tag on a
+  commit, names `legacy` or `<name>-done` only, an existing tag is never moved; on a `phase-*` tag it starts the Check
+  workflow on the tag with `baseline=true`, since a tag made with GitHub's own token starts no workflows (a dispatched
+  Check also runs the selftest job, which a pushed tag doesn't). `delete-branches`: never main, legacy, the default
+  branch, archive/* or a branch with an open pull request; the run summary lists each branch's last commit.
+  `dry_run` is on by default. docs/BRANCHES.md says to use it.
+- Branch naming (owner's ask): docs/BRANCHES.md "Naming and long plans" (the kinds of branch and their names; a
+  plan of several sessions lives on one `track/<plan>` branch named in its plan file, every session starts on it and
+  checks it, the branch stays after its PRs merge) and a CLAUDE.md line pointing there. The workflow never deletes
+  `track/*`. The old tip to turn on "Automatically delete head branches" is reversed: it would delete a track branch
+  on every merge. Existing long branches (`sound`, `RL-10b`, ...) keep their names until their plans end.
+- Risky: the workflow can delete branches and runs with `contents: write`. Anyone who can push could edit it on a
+  branch and run that copy; only people with write access can run workflows at all. To limit it to main's copy, give
+  the job a GitHub environment that only allows main (Settings -> Environments).
+- Verified: actionlint clean; both scripts run against a stand-in `gh` (protected names, open PRs, missing branches,
+  dry run, empty list, bad and existing tag names, the phase-tag Check start). Not run on GitHub yet: it must be on
+  main first.
+- Done after the merge (PR #146): dry runs of both actions on GitHub, then the `legacy` tag (0314a22) and the
+  clean-up, 157 branches down to 22 (docs/BRANCHES.md lists what is left and why; each deleted branch's commit is in
+  the Repo admin run summaries). Found: "Automatically delete head branches" is on (the owner should turn it off, see
+  BRANCHES.md); `sound` holds SND-6, 13 commits, not merged and with no PR.
 
 ### Sound track SND-5 - Battle and run music - 2026-10-22
 Branch `sound` (PR #120). Plan approved by the owner's "Start", without picks on the two "Ask me before" items, so

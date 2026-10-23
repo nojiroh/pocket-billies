@@ -4,48 +4,47 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, render, roomState } from './hooks.js';
-import { $ } from './util.js';
-import { LOCATIONS, RULES, SHOPS, locationSubtitle, trainersAt } from './game-data.js';
-import {
-  billyName,
-  encounterStock,
-  encountersHere,
-  findBilly,
-  formatNumber,
-  healAll,
-  plural,
-  xpFor,
-} from './logic/rules.js';
-import { runClinic, runHealCost } from './logic/run-loop.js';
+import { $, $$ } from './util.js';
+import { LOCATIONS, NODE_TYPES, RULES, SHOPS, locationSubtitle, trainersAt } from './game-data.js';
+import { encounterStock, encountersHere, formatNumber, healAll, plural } from './logic/rules.js';
+import { runClinic, runHealCost, runSheetStatus, weatherEffectText } from './logic/run-loop.js';
 import { startWild } from './logic/battle-engine.js';
-import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
+import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { artURL, uiIconHTML } from './art.js';
-import { cleanTrainer, personHTML } from './person-art.js';
-import { rigCanvasHTML } from './skeleton-rig.js';
-import { mapById } from './walk-view.js';
-import { environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
-import { runClinicEach, runGiveUp } from './run.js';
+import { mapById, walkView } from './walk-view.js';
+import { WEATHER_NAMES, environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
+import { runClinicEach, runGiveUp, runStartSheet } from './run.js';
 import { trainerTalk } from './story.js';
-import { challengeCardHTML, requestListHTML } from './things-to-do.js';
-import { progressBarHTML } from './ui-bits.js';
+import { challengeCardHTML } from './things-to-do.js';
 import { closeModal, modal, toast } from './overlay.js';
 /* eslint-disable no-func-assign */
 expose({
+  HUB_MARKS: [() => HUB_MARKS],
+  WEATHER_ICONS: [() => WEATHER_ICONS],
   boardNote: [() => boardNote, v => (boardNote = v)],
-  buddyCard: [() => buddyCard, v => (buddyCard = v)],
   clinicHeal: [() => clinicHeal, v => (clinicHeal = v)],
   encounterCardHTML: [() => encounterCardHTML, v => (encounterCardHTML = v)],
+  encountersHTML: [() => encountersHTML, v => (encountersHTML = v)],
   environmentLine: [() => environmentLine, v => (environmentLine = v)],
-  hereCard: [() => hereCard, v => (hereCard = v)],
+  hereHTML: [() => hereHTML, v => (hereHTML = v)],
+  hubHTML: [() => hubHTML, v => (hubHTML = v)],
   locationCardHTML: [() => locationCardHTML, v => (locationCardHTML = v)],
   nodeActions: [() => nodeActions, v => ((nodeActions = v), provide({ nodeActions }))],
   renderWalk: [() => renderWalk, v => (renderWalk = v)],
   roomHero: [() => roomHero, v => (roomHero = v)],
+  runStatusHTML: [() => runStatusHTML, v => (runStatusHTML = v)],
   tripButtons: [() => tripButtons, v => ((tripButtons = v), provide({ tripButtons }))],
   tripDest: [() => tripDest],
   tripStatus: [() => tripStatus, v => ((tripStatus = v), provide({ tripStatus }))],
   walkHero: [() => walkHero, v => (walkHero = v)],
+  walkMarkTo: [() => walkMarkTo, v => (walkMarkTo = v)],
+  walkSheetClose: [() => walkSheetClose, v => (walkSheetClose = v)],
+  walkSheetHTML: [() => walkSheetHTML, v => (walkSheetHTML = v)],
+  walkSheetOpen: [() => walkSheetOpen, v => (walkSheetOpen = v)],
+  walkSheetSync: [() => walkSheetSync, v => (walkSheetSync = v)],
+  walkSheetWanted: [() => walkSheetWanted],
   walkTabAction: [() => walkTabAction, v => (walkTabAction = v)],
+  walkTipOnce: [() => walkTipOnce, v => (walkTipOnce = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ nodeActions, tripButtons, tripStatus });
@@ -53,7 +52,7 @@ provide({ nodeActions, tripButtons, tripStatus });
 function encounterCardHTML(q) {
   const nu = !uiState.seenEnc.has(q.id);
   uiState.seenEnc.add(q.id);
-  return `<button class="enc px k-card hidden-enc${nu ? ' pop' : ''}" data-a="enc" data-id="${q.id}" aria-label="Unknown Billie, level ${q.lvl}"><span class="no tnum">No. ${q.no}</span><span class="denom tnum">Lv ${q.lvl}</span><span class="stage-glow"></span><span class="enc-hide"><img class="pxi" src="${artURL('scene/props/tallgrass.png')}" alt=""><i>?</i></span><b>Unknown</b></button>`;
+  return `<button class="enc px k-card hidden-enc${nu ? ' enc-new' : ''}" data-a="enc" data-id="${q.id}" aria-label="Unknown Billie, level ${q.lvl}"><span class="no tnum">No. ${q.no}</span><span class="denom tnum">Lv ${q.lvl}</span><span class="stage-glow"></span><span class="enc-hide"><img class="pxi" src="${artURL('scene/props/tallgrass.png')}" alt=""><i>?</i></span><b>Unknown</b></button>`;
 }
 const tripDest = () => (saveData.trip.plan.length ? saveData.trip.plan[saveData.trip.plan.length - 1] : null);
 provide({ tripDest }); /* to-module */
@@ -128,10 +127,7 @@ function nodeActions(i) {
         ? `<button class="pb small" data-a="clinic">Clinic: heal ${plural(hurt, 'Billie')} for $${formatNumber(cost)}</button>`
         : '<button class="pb small quiet" data-a="clinic">Clinic: everyone is fine</button>';
     }
-  } else
-    x += n.town
-      ? '<button class="pb small" data-a="clinic">Rest at the clinic, free</button>'
-      : `<button class="pb small quiet" data-a="rest">Rest stop, $${formatNumber(RULES.battle.restCost)}</button>`;
+  } else if (n.town) x += '<button class="pb small" data-a="clinic">Rest at the clinic, free</button>';
   trainersAt(i).forEach(T => {
     const done = saveData.flags[T.id];
     if (T.blocks && done && !T.seat) return;
@@ -146,19 +142,6 @@ function boardNote(i) {
     .map(T => `<p class="note">${escapeHtml(T.hint)}</p>`)
     .join('');
 }
-function hereCard() {
-  const node = saveData.trip.node,
-    here = LOCATIONS[node],
-    prog = `<p class="note">Open the map to pick a place to walk to; gold arrows show you the way.</p>`;
-  return `<section class="here px glass k-card"><div class="route-art"${here.banner ? ` style="background-image:url('${artURL(here.banner)}')"` : ''}><span>${personHTML('me', 64)}</span><button class="route-profile" data-a="customize">${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)} · Edit look</button></div><div class="sec-h"><div><div class="sub">${escapeHtml(locationSubtitle(here))}</div><h2>${here.name}</h2></div><button class="pb small quiet" data-a="tab" data-t="map">Open map</button></div><p class="note">${here.blurb}</p>${boardNote(node)}${prog}<div class="racts">${tripButtons()}</div>${nodeActions(node)}</section>`;
-}
-function buddyCard() {
-  const m = findBilly(saveData.buddy);
-  if (!m) return '';
-  const a = xpFor(m.lvl),
-    b = xpFor(m.lvl + 1);
-  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px k-card" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { build: m.build, coat: m.coat })}<div class="bd"><div class="bn">${escapeHtml(billyName(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Gets the full XP of every battle you win, even when it sits one out. ${formatNumber(b - m.xp)} XP to level ${m.lvl + 1}.</div>${progressBarHTML((m.xp - a) / (b - a), 'xpb')}</div></div></section>`;
-}
 function roomHero() {
   const I = uiState.inside,
     sc = mapById(I.id) || {},
@@ -167,13 +150,13 @@ function roomHero() {
       {
         shop: 'Tap the counter to shop.',
         clinic: 'Tap the desk and your team is patched up, free.',
-        lab: 'Tap the professor to talk, or the unlock board to spend Capital.',
+        lab: 'Tap Professor Chosen or Hazel to talk, or the unlock board to spend Capital.',
         house: 'Tap whoever lives here to chat.',
         home: 'Your room in Granny Juniper’s cottage. Decorate it with what you’ve found.',
         ranch: 'Tap the training board or the rancher to train your Billies.',
       }[I.kind] || '';
   return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(here.name), escapeHtml(I.name || sc.name || 'Inside'), `<p class="wh-gate">${escapeHtml(what)}</p>`, (I.kind === 'home' ? `<button class="pb small gold" data-a="decorate">Decorate</button>` : '') + `<button class="pb small" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>`)}
- <div class="wh-foot"><div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass k-btn" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
+ <div class="wh-foot"><div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button></div></div></div>`;
 }
 /* v31: the place card: compact (where, the hour and weather, staying or walking, one main button; the rest folded
    under More), closable with ×, and brought back by tapping the place's name in the top bar. Closed stays closed. */
@@ -182,7 +165,7 @@ function locationCardHTML(sub, name, mid, btns) {
   const all = String(btns).match(/<button[\s\S]*?<\/button>/g) || [],
     main = all[0] || '',
     more = all.slice(1).join('');
-  return `<div class="wh-card glass compact k-panel"><div class="wh-top"><div class="sub">${sub}</div><button class="wh-x" data-a="card-close" aria-label="Hide this card"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div><h1 class="where">${name}</h1>${mid}<div class="wh-acts">${main}${more ? `<details class="wh-more"><summary>More</summary><div class="wh-more-b">${more}</div></details>` : ''}</div></div>`;
+  return `<div class="wh-card glass compact k-panel"><div class="wh-top"><div class="sub">${sub}</div><button class="wh-x" data-a="card-close" aria-label="Hide this card"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div><h1 class="where">${name}</h1>${mid}${main ? `<div class="wh-acts">${main}${more ? `<details class="wh-more"><summary>More</summary><div class="wh-more-b">${more}</div></details>` : ''}</div>` : ''}</div>`;
 }
 function environmentLine() {
   if (typeof environmentLabel !== 'function' || !environment.on) return '';
@@ -199,25 +182,133 @@ function walkHero() {
   }
   const node = saveData.trip.node,
     here = LOCATIONS[node],
-    q = encountersHere(),
-    next = `<p class="wh-gate">${escapeHtml(tripStatus().t)}</p>`;
-  return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(locationSubtitle(here)), escapeHtml(here.name), environmentLine() + next, tripButtons())}
+    q = encountersHere();
+  return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(locationSubtitle(here)), escapeHtml(here.name), environmentLine(), '')}
  <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIconHTML('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : `<p class="wh-hint glass">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>`}
   <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIconHTML('camera', 14)}</button><button class="wh-down glass k-btn" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
 }
 export function renderWalk() {
+  return walkHero();
+}
+/* the Actions sheet: a <pb-sheet> of its own on the page (ui-kit.js), opened only by the Actions button. It used to be
+   part of the page under the scene, so any scroll (a mouse wheel, a trackpad) slid it into view. Its content is made
+   again on every render while it is open; leaving the world (another tab, a battle) closes it */
+function walkSheetHTML() {
+  return `${runStatusHTML()}${hubHTML()}${hereHTML()}${encountersHTML()}${challengeCardHTML()}${
+    saveData.run
+      ? `<button class="pb gold wide ws-move" data-a="tab" data-t="map">${uiIconHTML('map', 16)} Open the map to move on</button>`
+      : ''
+  }`;
+}
+/* the hub's buildings the sheet can point you to (a marker in the world: walkMarkTo), by their act */
+const HUB_MARKS = [
+  ['ranch', 'Ranch', 'Train and breed your Billies'],
+  ['lab', 'Hazel’s lab', 'Talk to the professor'],
+];
+/** in the hub: start a run (the mast's sheet, opened here), and the ranch and the lab, marked in the world to walk to */
+function hubHTML() {
+  if (saveData.run) return '';
+  const props = (walkView.sc && walkView.sc.props) || [],
+    can = saveData.team.length + saveData.box.length > 0,
+    marks = HUB_MARKS.filter(([act]) => props.some(p => p.act === act))
+      .map(
+        ([act, name, what]) =>
+          `<button class="pb ws-go" data-a="walkmark" data-k="${act}">${uiIconHTML('walk', 16)}<span><b>${escapeHtml(name)}</b><small>${escapeHtml(what)} · show me the way</small></span></button>`
+      )
+      .join('');
+  return `<section class="ws-hub"><button class="pb gold wide ws-move" data-a="walkrun"${can ? '' : ' disabled'}>${uiIconHTML('map', 16)} Start a run</button>${can ? '' : '<p class="note">Someone has to come along: a Billie in your team or in storage.</p>'}${marks ? `<div class="ws-gos">${marks}</div>` : ''}</section>`;
+}
+/** mark a hub building in the world (walk-view.js drawWalkMark) and close the sheet so you can walk there */
+function walkMarkTo(act) {
+  const H = HUB_MARKS.find(([a]) => a === act),
+    p = H && walkView.sc && (walkView.sc.props || []).find(q => q.act === act);
+  if (!p) return;
+  walkView.mark = { act, label: H[1] };
+}
+/** what this place offers: its line, a trainer's hint, and its buttons (nodeActions: a shop, the clinic, its trainers
+    or a run's mini-boss) */
+function hereHTML() {
+  const node = saveData.trip.node,
+    here = LOCATIONS[node],
+    acts = nodeActions(node).replace('<div class="racts"></div>', '');
+  return `<section class="ws-here"><div class="sec-h"><h2>What’s here</h2></div>${here.blurb ? `<p class="note">${here.blurb}</p>` : ''}${boardNote(node)}${acts || '<p class="note">Nothing to buy or fight here. Look around, then move on.</p>'}</section>`;
+}
+/** the wild Billies hiding here, each a card that starts its battle; nothing where none live */
+function encountersHTML() {
   const q = encountersHere(),
     cap = encounterStock(saveData.trip.node);
-  return `${walkHero()}<div class="walk-sheet k-panel"><span class="ws-grip" aria-hidden="true"></span>
- <div class="cols"><div class="col">
- <div class="today px glass k-card"><div class="today-top"><div class="se"><div class="mid tnum">$<span data-count="se" data-to="${saveData.se}">${formatNumber(saveData.se)}</span></div><div class="lbl">Money</div></div></div>
-  <p class="note">Beat wild Billies and trainers to earn more.</p></div>
- <section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place.</p></section>
- ${typeof challengeCardHTML === 'function' ? challengeCardHTML() : ''}${typeof requestListHTML === 'function' && requestListHTML() ? `<section class="chal px glass k-card"><div class="sec-h"><h2>Requests you’re helping with</h2></div>${requestListHTML()}</section>` : ''}${hereCard()}</div><div class="col">
- <section class="pending"><div class="sec-h"><h2>Encounters here</h2><span class="count tnum">${q.length}/${cap}</span></div>
-  <p class="note">${!cap ? 'No wild Billies live here. Try a route or a town with tall grass.' : q.length >= cap ? 'This place is full. Battle or tax a few to make room.' : 'Another one wanders over about every minute.'} You only see their level until the battle starts.</p>
-  ${q.length ? `<div class="queue">${q.map(encounterCardHTML).join('')}</div>` : `<div class="empty px">No Billies nearby.${cap ? ' Give it a minute and one will wander over.' : ''}</div>`}</section>
- ${buddyCard()}</div></div></div>`;
+  if (!cap) return '';
+  return `<section class="pending"><div class="sec-h"><h2>Wild Billies here</h2><span class="count tnum">${q.length}/${cap}</span></div>
+  <p class="note">${q.length >= cap ? 'This place is full. Battle or tax a few to make room.' : 'Another one wanders over about every minute.'} You only see their level until the battle starts.</p>
+  ${q.length ? `<div class="queue">${q.map(encounterCardHTML).join('')}</div>` : '<div class="empty px">No Billies nearby. Give it a minute and one will wander over.</div>'}</section>`;
+}
+/* the forecast's word to a UI icon (environment.js environmentIcon's, by day) */
+const WEATHER_ICONS = { rain: 'rain', storm: 'rain', snow: 'snow', fog: 'fog', ash: 'ash', cloudy: 'cloud' };
+/** on a run: the day and deadline, the place's type, and its weather today and tomorrow with what it does to moves
+    (logic/run-loop.js runSheetStatus) */
+function runStatusHTML() {
+  const run = saveData.run,
+    L = LOCATIONS[saveData.trip.node],
+    st = run && run.map && L && L.runNode != null ? runSheetStatus(run, L.runNode, RULES.env) : null;
+  if (!st) return '';
+  const T = NODE_TYPES[st.type],
+    rows = st.days
+      .map(d => {
+        const fx = weatherEffectText(d.wx);
+        return `<li>${uiIconHTML(WEATHER_ICONS[d.w] || 'sun', 16)}<b>${d.day === st.day ? 'Today' : 'Tomorrow'}</b><span>${escapeHtml(WEATHER_NAMES[d.w] || d.w)}</span><small>${fx ? escapeHtml(fx) : 'No effect on moves'}</small></li>`;
+      })
+      .join('');
+  return `<section class="ws-status k-card"><div class="ws-top"><pb-day-chip day="${st.day}" deadline="${st.deadline}"></pb-day-chip><span class="ws-type">${escapeHtml(T ? T.name : st.type)}</span></div>${rows ? `<ul class="ws-wx">${rows}</ul>` : ''}</section>`;
+}
+const walkSheetWanted = () =>
+  uiState.walkSheet && uiState.tab === 'walk' && !!saveData.started && !activeBattle && !uiState.title;
+export function walkSheetSync() {
+  let el = /** @type {any} */ ($('#walkSheet'));
+  if (!el && !walkSheetWanted()) return;
+  if (!el) {
+    el = document.createElement('pb-sheet');
+    el.id = 'walkSheet';
+    el.addEventListener('pb-close', () => {
+      uiState.walkSheet = false;
+      walkSheetSync();
+    });
+    document.body.appendChild(el);
+  }
+  if (!walkSheetWanted()) {
+    uiState.walkSheet = false;
+    el.open = false;
+    el.replaceChildren();
+    return;
+  }
+  /* made again on every render: the keyboard's place is kept (the same button, by its place in the sheet) */
+  const keys = () => $$('button:not(:disabled),[role=button],summary', el),
+    had = keys().indexOf(/** @type {any} */ (document.activeElement));
+  el.heading = LOCATIONS[saveData.trip.node].name;
+  el.innerHTML = walkSheetHTML();
+  el.open = true;
+  if (had >= 0) {
+    const b = keys()[had];
+    if (b) /** @type {HTMLElement} */ (b).focus({ preventScroll: true });
+  }
+}
+/* how to walk, said once (it used to be a note in the sheet every time): the first time the world shows, kept in the
+   save's preferences like the closed place card */
+export function walkTipOnce() {
+  const P = (saveData.preferences = saveData.preferences || {});
+  if (P.walkTip || uiState.modal) return;
+  P.walkTip = 1;
+  save();
+  toast('Drag anywhere on the scene to walk, or tap where you want to go. The arrows at the edges lead on.');
+}
+export function walkSheetOpen() {
+  walkView.mark = null;
+  uiState.walkSheet = true;
+  walkSheetSync();
+}
+export function walkSheetClose() {
+  if (!uiState.walkSheet) return;
+  uiState.walkSheet = false;
+  walkSheetSync();
 }
 /* the Walk tab's buttons (UI-5: the cases of ui.js's click switch, as they were) */
 export function walkTabAction(a, d) {
@@ -246,24 +337,17 @@ export function walkTabAction(a, d) {
     case 'clinic':
       clinicHeal();
       break;
-    case 'rest': {
-      const c = RULES.battle.restCost;
-      if (saveData.se < c) {
-        toast(`A rest stop costs $${formatNumber(c)}. Win a battle first.`);
-        break;
-      }
-      saveData.se -= c;
-      healAll();
-      save();
-      render();
-      toast(`Everyone rested up for $${formatNumber(c)}.`);
-      break;
-    }
     case 'trainer':
       trainerTalk(d.t);
       break;
     case 'rungiveup':
       runGiveUp();
+      break;
+    case 'walkrun':
+      runStartSheet();
+      break;
+    case 'walkmark':
+      walkMarkTo(d.k);
       break;
   }
 }

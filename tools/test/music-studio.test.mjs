@@ -167,3 +167,22 @@ test('SND-4: placeholder hooks and jingles are listed once each, as notes', () =
   assert.equal(F[1].jingle, 'motif');
   assert.equal(isMusicPlaceholder('placeholders'), false);
 });
+
+test('SND-6: placeholder base cries and Billie cries are listed once each, as notes', () => {
+  const music = {
+    songs: { a: {} },
+    where: [{ song: 'a' }],
+    cries: {
+      bases: { beast: { name: 'placeholder: a growl', wave: 'square', voices: [] }, bird: { wave: 'p12', voices: [] } },
+    },
+  };
+  const lines = [
+    { id: 'x', names: ['Xa', 'Xb'], cry: [{ name: 'placeholder: a bleat' }, { name: 'Bleat' }] },
+    { id: 'y', names: ['Ya'] },
+  ];
+  const F = musicFindings(music, { lines }).filter(f => f.lvl === 'info');
+  assert.equal(F.length, 2);
+  assert.match(F[0].msg, /placeholder base cries \(1\): beast/);
+  assert.equal(F[0].cry, 'beast');
+  assert.match(F[1].msg, /placeholder Billie cries \(1\): Xa\./);
+});

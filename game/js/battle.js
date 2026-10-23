@@ -423,7 +423,7 @@ function showEvent() {
   showSpeakerFace(ev.face);
   const tt = ev.t ? typeText(ev.t) : 0,
     r = ev.an ? battleStagePlay(ev.an, ev) : { dur: 0, hit: 0 };
-  if (ev.an && typeof battleSoundEffect === 'function') battleSoundEffect(ev.an, r);
+  if (ev.an && typeof battleSoundEffect === 'function') battleSoundEffect(ev.an, r, ev);
   boxAnims(ev);
   const k = 1 / battleStage.speed;
   afterStageTime('hpT', r.hit >= 999 ? 0 : r.hit, 0, () => paintBoxes(ev.s, ev.mk, true));
@@ -598,12 +598,12 @@ function afterEvents() {
   activeBattle.plan = [];
   activeBattle.cur = liveActors(0)[0];
   activeBattle.phase = 'choose';
-  activeBattle.menuT = performance.now(); /* phase 06-2b: for Hazel's "instant picks" comment (opening-fall.js) */
+  activeBattle.menuT = performance.now(); /* phase 06-2b: for the "instant picks" comment (opening-fall.js) */
   chooseMessage();
   paintBoxes(allSnapshots(), activeBattle.market);
   paintActions();
   if (activeBattle.T && activeBattle.T.tutorial && typeof battleTutor === 'function')
-    battleTutor(); /* v47: Hazel's tips in Blake's first battle */
+    battleTutor(); /* v47: the professor's tips in Blake's first battle */
 }
 /* v33: with two or three of yours out, each picks in turn; the one choosing stands in a ring */
 export function chooseMessage() {

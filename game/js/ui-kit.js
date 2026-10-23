@@ -417,8 +417,9 @@ const PbSheet = class extends LitElement {
         clip-path: var(--edge-panel);
         background: var(--edge);
       }
+      /* --sheet-max: a page's own sheet may be shorter (the Actions sheet, walk-tab.css) */
       .sheet {
-        max-height: calc(88vh - var(--gutter));
+        max-height: var(--sheet-max, calc(88vh - var(--gutter)));
         overflow: auto;
         padding: var(--s3) var(--pad-panel) var(--pad-panel);
         clip-path: var(--clip-panel);

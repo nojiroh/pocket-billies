@@ -1,15 +1,17 @@
 'use strict';
 /* ================= THE LAB BOARD (roguelite track RL-11) =================
    The unlock table on screen (logic/unlocks.js, game/data/unlocks.json), in the hub's Lab tab (also opened by the
-   machine in Hazel's lab): the three meta currencies, then each building of buildings.json with its level and its
+   machine in Professor Chosen's lab): the three meta currencies, then each building of buildings.json with its level and its
    rows (the Lab's are bought here; the others show here and are bought at their building), the Workshop as coming
    later, and the milestones (earned, or what earns them). Milestones are granted in the hub after a run and on load,
    with a toast for each. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, render, toast } from './hooks.js';
-import { CURRENCIES, UNLOCK_DATA } from './game-data.js';
+import { CURRENCIES, RULES, UNLOCK_DATA } from './game-data.js';
 import { formatNumber } from './logic/rules.js';
+import { ranchNow } from './logic/ranch-clock.js';
+import { incomeBank } from './logic/ranch-income.js';
 import { buildingLevel, unlockAuto, unlockBuy, unlockCurrency, unlockReady, unlockRows } from './logic/unlocks.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
@@ -153,6 +155,9 @@ export function labBuy(id) {
     );
     return false;
   }
+  /* RL-10b: the ranch's income so far banked at the old level's rate before an upgrade changes it */
+  if (RULES.ranch && RULES.ranch.income && saveData.ranch.income.lastAt)
+    incomeBank(saveData, ranchNow(saveData, Date.now(), RULES.ranch).now, RULES.ranch);
   unlockBuy(saveData, id, UNLOCK_DATA);
   if (typeof debugLog !== 'undefined') debugLog.add('meta', `bought ${id}`);
   toast(`Unlocked: ${R.name}.`);
@@ -160,7 +165,7 @@ export function labBuy(id) {
   render();
   return true;
 }
-/** the machine in Hazel's lab: the board, in the hub */
+/** the machine in the Chosen's lab: the board, in the hub */
 export function labBoardOpen() {
   if (saveData.run) {
     toast('The Lab’s board waits for you in Copperleaf.');

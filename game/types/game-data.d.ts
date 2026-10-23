@@ -686,7 +686,7 @@ export interface PersonLook {
 /** trainers/<id>.json (trainer.schema.json): a trainer you can battle */
 export interface Trainer {
   name: string;
-  /** their look, a key of gameData.people ('gini' when unknown) */
+  /** their look, a key of gameData.people ('chosen' when unknown) */
   who: DataId;
   /** their battle stage, a key of gameData.battleStages */
   battleStage?: DataId;
@@ -971,6 +971,16 @@ export interface RanchRules {
   pasture: number;
   /** RL-10: breeding at the ranch (logic/breeding.js) */
   breed: BreedRules;
+  /** RL-10b: the ranch's passive income (logic/ranch-income.js) */
+  income: IncomeRules;
+}
+
+/** rules.json ranch.income: Scrap the ranch earns by itself on real time, up to a cap (RL-10b) */
+export interface IncomeRules {
+  /** Scrap an hour by ranch level (index 0 = level 1; past the end, the last) */
+  rate: number[];
+  /** the most hours the ranch banks between collections */
+  capHours: number;
 }
 
 /** rules.json ranch.breed: two Billies from home make an egg that hatches at the ranch (RL-10) */

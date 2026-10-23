@@ -643,6 +643,62 @@ SAVE_SPY = r"""(()=>{window.__st={w:[],ls:[]};account.user={uid:'check',name:'Ch
   save();__st.team=saveData.team.map(m=>m.uid)})();0"""
 
 
+@step('Actions sheet: a wheel never opens it; its button and Tab do; Esc, Tab and its buttons close it; the hub marker; a run\'s status', 150)
+def actions_sheet_step(b, base, R):
+    """the Actions sheet (walk-tab.js walkSheetSync) is a <pb-sheet> over the world: it used to be page content under the
+    scene, so a mouse wheel scrolled it into view. In the hub: wheel, button, Esc, Tab, a "show me the way" that closes
+    it and marks the ranch. The full check also opens a run's sheet for its day, type and weather"""
+    errs = []
+    ctx = b.new_context(viewport={'width': 1280, 'height': 800}, device_scale_factor=1); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
+    is_open = "[uiState.walkSheet,!!document.querySelector('#walkSheet[open]')]"
+    def ready(fix):
+        pg.goto(base + f'/index.html?fixture={fix}'); pg.evaluate(LOW_RENDER)
+        pg.wait_for_function("typeof walkView!=='undefined'&&walkView.ready&&!!document.querySelector('.wh-down')", timeout=90000)
+        # a waiting window or a postcard would take the clicks: none
+        pg.evaluate("uiState.modal=null;uiState.mq=[];uiState.toastQ=[];uiState.toastOn=false;renderOverlay();document.querySelectorAll('.pcard-wrap').forEach(e=>e.remove());0")
+    try:
+        ready('town')
+        pg.mouse.move(640, 400)
+        for dy in (400, 400, -400, 400): pg.mouse.wheel(0, dy); time.sleep(.15)
+        if pg.evaluate(is_open) != [False, False] or pg.evaluate('scrollY') != 0:
+            raise Exception(f'a mouse wheel opened the sheet or scrolled the page: {pg.evaluate(is_open)}, scrollY {pg.evaluate("scrollY")}')
+        pg.evaluate("document.querySelector('.wh-down').click()")
+        if not until(pg, "!!document.querySelector('#walkSheet[open]')", 5): raise Exception('the Actions button did not open the sheet')
+        acts = pg.evaluate("[...document.querySelectorAll('#walkSheet [data-a]')].map(e=>e.dataset.a)")
+        for want in ('walkrun', 'walkmark'):
+            if want not in acts: raise Exception(f'the hub sheet has no {want} button: {acts}')
+        for gone in ('stoptrip', 'rest', 'customize'):
+            if gone in acts: raise Exception(f'the sheet still has {gone}: {acts}')
+        pg.keyboard.press('Escape')
+        if not until(pg, "!uiState.walkSheet&&!document.querySelector('#walkSheet[open]')", 5): raise Exception('Esc did not close the sheet')
+        pg.evaluate("document.activeElement&&document.activeElement.blur&&document.activeElement.blur();0")
+        pg.keyboard.press('Tab')
+        if not until(pg, "!!document.querySelector('#walkSheet[open]')", 5): raise Exception('Tab did not open the sheet')
+        if not until(pg, "!!document.activeElement&&!!document.activeElement.closest('#walkSheet')", 5): raise Exception('Tab opened the sheet without its first button taking the focus')
+        pg.keyboard.press('Tab')
+        if not until(pg, "!uiState.walkSheet", 5): raise Exception('Tab did not close the sheet')
+        pg.evaluate("document.querySelector('.wh-down').click()"); until(pg, "!!document.querySelector('#walkSheet [data-a=walkmark][data-k=ranch]')", 5)
+        pg.evaluate("document.querySelector('#walkSheet [data-a=walkmark][data-k=ranch]').click()")
+        m = pg.evaluate("[uiState.walkSheet, walkView.mark&&walkView.mark.act]")
+        if m != [False, 'ranch']: raise Exception(f'"show me the way" to the ranch: sheet open, marker {m}')
+        out = ['wheel ×4: closed, no scroll', 'button, Esc, Tab, Tab', 'the ranch marked, the sheet closed']
+        if not SMOKE:
+            ready('run')
+            pg.evaluate("document.querySelector('.wh-down').click()")
+            if not until(pg, "!!document.querySelector('#walkSheet .ws-status pb-day-chip')", 5): raise Exception("a run's sheet has no day chip")
+            t = pg.evaluate("document.querySelector('#walkSheet .ws-status').innerText")
+            if 'Today' not in t or not pg.evaluate("!!document.querySelector('#walkSheet [data-a=tab][data-t=map]')"):
+                raise Exception(f"a run's sheet lacks today's weather or the way on: {t!r}")
+            out.append("a run's day, type and weather: " + ' / '.join(x for x in t.splitlines() if x.strip())[:120])
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return '; '.join(out)
+    finally:
+        ctx.close()
+
+
 @step('Messages: toasts merge, notices wait behind the dot, choices wait for the world (phase 06)', 120)
 def messages_step(b, base, R):
     errs = []
@@ -834,7 +890,7 @@ def sound_step(b, base, R):
         bus = "({master:soundEngine.master,music:soundEngine.mus,sfx:soundEngine.fx,world:ambience.bus,amb:ambience.amb})"
         off = []
         for k, v in [('master', 70), ('music', 40), ('sfx', 30), ('world', 60), ('amb', 20)]:
-            want = f"(soundLevels({{{k}:{v / 100}}}).{k}*({'ambienceFadeIn()' if k in ('world', 'amb') else '1'}))"
+            want = f"(soundLevels({{{k}:{v / 100}}},MUSIC.mix).{k}*({'ambienceFadeIn()*soundBedDuck()' if k in ('world', 'amb') else '1'}))"
             pg.evaluate(f"(()=>{{const e=document.querySelector('input[data-preference={k}]');e.value='{v}';e.dispatchEvent(new Event('input',{{bubbles:true}}))}})();0")
             # no 'change' event: the level must follow while the slider is still held
             if not until(pg, f"Math.abs(__snd.to.get({bus}.{k}.gain)-{want})<0.02", 4):
@@ -858,8 +914,8 @@ def sound_step(b, base, R):
         m = pg.evaluate("({mute:!!saveData.preferences.mute,pressed:document.querySelector('.set-mute').getAttribute('aria-pressed'),row:document.querySelector('.vol-mute[data-k=master]').getAttribute('aria-pressed'),master:__snd.to.get(soundEngine.master.gain),levels:JSON.stringify(['master','music','sfx','world','amb'].map(k=>saveData.preferences[k]))})")
         if not m['mute'] or m['pressed'] != 'true' or m['row'] != 'true' or m['master'] > 0.01: raise Exception(f'the header mute didn’t mute: {m}')
         if m['levels'] != levels: raise Exception(f'muting changed the levels: {levels} became {m["levels"]}')
-        pg.click('.set-mute'); until(pg, "!saveData.preferences.mute&&Math.abs(__snd.to.get(soundEngine.master.gain)-soundLevels(saveData.preferences).master)<0.02", 5)
-        back = pg.evaluate("[!!saveData.preferences.mute,+__snd.to.get(soundEngine.master.gain).toFixed(3),+soundLevels(saveData.preferences).master.toFixed(3)]")
+        pg.click('.set-mute'); until(pg, "!saveData.preferences.mute&&Math.abs(__snd.to.get(soundEngine.master.gain)-soundLevels(saveData.preferences,MUSIC.mix).master)<0.02", 5)
+        back = pg.evaluate("[!!saveData.preferences.mute,+__snd.to.get(soundEngine.master.gain).toFixed(3),+soundLevels(saveData.preferences,MUSIC.mix).master.toFixed(3)]")
         if back[0] or abs(back[1] - back[2]) > 0.02: raise Exception(f'the header mute didn’t unmute: mute {back[0]}, master {back[1]}, wanted {back[2]}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return 'five sliders sounded on their own buses when let go and set their bus while dragged; five row mutes silenced their own bus and came back on a drag; the header mute silenced the master, kept the levels and came back'
@@ -1048,6 +1104,84 @@ def run_map_weather_step(b, base, R):
         if not until(pg, "__cut[__cut.length-1]!==1400", 4): raise Exception('back on the walk tab the forecast still muffled the music')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return 'map tab: ' + ', '.join(seen) + f"; walk tab: {pg.evaluate('__cut.slice(-1)[0]')} Hz (the place's own weather)"
+    finally:
+        ctx.close()
+
+
+@step("Sound effects and jingles: the beds under a song, four UI sounds, a cry as a Billie comes out (its low-HP cry in the red zone), the run's day, reveal, Loophole and payout jingles (SND-6)", 300)
+def sound_effects_step(b, base, R):
+    """sound track SND-6: the run fixture on a phone, sound unlocked by a tap; soundEngine.log (in memory, never sent)
+    says what played. A sheet's gold, quiet and disabled buttons and a tab make confirm, cancel, can't and select
+    (tapped, as a player taps). A wild battle with the lead Billie under a quarter: it cries its low-HP cry as it comes
+    out, the wild one its own. Walking into the next place: the day jingle, then the reveal jingle (the map shows the
+    next rows). A Loophole taken: its jingle. The payout, won: a coin per row a step higher each, then run_won after the
+    last coin; lost: run_lost"""
+    errs = []
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1, has_touch=False)
+    for s in (CLOCK, NO_ACCOUNTS, TEST_GLOBALS): ctx.add_init_script(s)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    log = lambda: pg.evaluate("soundEngine.log.map(e=>e.e)")
+    clear = lambda: pg.evaluate("soundEngine.log.length=0;0")
+    out = []
+    try:
+        pg.goto(base + '/index.html?fixture=run'); pg.evaluate(LOW_RENDER)
+        if not until(pg, "typeof walkView!=='undefined'&&walkView.ready&&!!saveData.run", 150): raise Exception('the run fixture never opened')
+        pg.mouse.click(200, 300)
+        if not until(pg, "!!soundEngine.ctx&&soundEngine.ctx.state==='running'", 8): return 'not checked: sound did not start in this browser'
+        # (the loader, then) the four UI sounds, on a real sheet's buttons and the bottom bar's tab
+        pg.evaluate("modal({title:'Sounds',html:'<p>x</p>',btns:[{l:'Yes',c:'gold',f:closeModal},{l:'No',c:'quiet',f:closeModal},{l:'Locked',c:'dark',dis:1,f:closeModal}]});0")
+        if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loader never went')
+        # the mix: under the run's song the world and ambience beds come down by music.json mix bedsUnderSong
+        if not until(pg, "!!soundEngine.tracker.song", 8): raise Exception('no song played on the run')
+        duck = pg.evaluate("[soundBedDuck(),Math.pow(10,MUSIC.mix.bedsUnderSong/20),soundEngine.tracker.song.name]")
+        if abs(duck[0] - duck[1]) > 1e-9 or duck[0] >= 1: raise Exception(f'under {duck[2]} the beds were x{duck[0]}, not x{duck[1]:.3f}')
+        out.append(f'beds x{duck[0]:.3f} under {duck[2]}')
+        heard = {}; time.sleep(.6)   # the sheet slides in
+        for i, want in ((2, 'cant'), (0, 'confirm')):
+            clear(); pg.click(f'#ov [data-a="mb"][data-i="{i}"]', force=True); time.sleep(.3); heard[want] = log()
+            if not heard[want]: heard[want] = [pg.evaluate(f"(()=>{{const e=document.querySelector('#ov [data-a=\"mb\"][data-i=\"{i}\"]'),r=e.getBoundingClientRect(),h=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return 'at '+Math.round(r.x)+','+Math.round(r.y)+' '+(h&&h.outerHTML.slice(0,80))}})()")]
+        pg.evaluate("modal({title:'Sounds',html:'<p>x</p>',btns:[{l:'Yes',c:'gold',f:closeModal},{l:'No',c:'quiet',f:closeModal}]});0")
+        clear(); pg.click('#ov [data-a="mb"][data-i="1"]'); time.sleep(.3); heard['cancel'] = log()
+        clear(); pg.evaluate("(()=>{const t=document.querySelector('[data-a=tab],pb-nav-bar');t&&t.click()})();0"); time.sleep(.3)
+        tab = log()
+        for want, got in heard.items():
+            if ('ui ' + want) not in got: raise Exception(f"the sheet's {want} button made {got}, not ui {want}")
+        out.append('buttons: confirm, cancel, cant' + (', a tab select' if 'ui select' in tab else ''))
+        # a cry as each side's Billie comes out; the lead in the red zone cries low
+        clear()
+        pg.evaluate("screenWipe=f=>f();const q={id:'tse',sp:'swift1',lvl:3,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});saveData.team[0].hp=1;startWild(q);0")
+        if not until(pg, "soundEngine.log.some(e=>e.e.startsWith('cry ')&&e.e.endsWith(' low'))", 20, "uiState.evReady&&nextEvent()"): raise Exception(f'no low-HP cry as the lead came out: {log()}')
+        cries = [e for e in log() if e.startswith('cry ')]
+        if 'cry swift1' not in cries: raise Exception(f'the wild Swift did not cry: {cries}')
+        out.append('cries: ' + ', '.join(cries[:3]))
+        pg.evaluate("closeModal();activeBattle=null;saveData.team.forEach(m=>{m.hp=maxHp(m)});0")
+        # walking into the next place: a day, then the reveal
+        n1 = pg.evaluate("(()=>{const R=saveData.run,i=runMapNode(saveData.trip.node);return runWorldNode(runNext(R.map,i)[0])})()")
+        day0 = pg.evaluate('saveData.run.clock'); clear()
+        try: cross(pg, n1, sec=20)
+        except Exception as e:   # the arrival is what counts here; a next view slow to draw headless doesn't
+            if pg.evaluate('saveData.trip.node') != n1: raise
+        if not until(pg, "soundEngine.log.some(e=>e.e==='jingle reveal')", 6): raise Exception(f'walking into the next place: {log()}')
+        L = log()
+        if L.index('jingle day') > L.index('jingle reveal'): raise Exception(f'the reveal came before the day: {L}')
+        out.append(f"day {day0} to {pg.evaluate('saveData.run.clock')}: day, reveal")
+        # a Loophole taken
+        clear(); pg.evaluate("(()=>{const R=saveData.run;R.offer=Object.keys(RELICS).slice(0,3);relicPickOpen();relicPickDone(R.offer[0])})();0")
+        if 'jingle relic' not in log(): raise Exception(f'a Loophole taken: {log()}')
+        out.append('Loophole: relic')
+        # the payout: a coin per row, rising, then run_won after the last; then a loss plays run_lost
+        clear(); pg.evaluate("closeModal();runOver(true);0")
+        if not until(pg, "soundEngine.log.some(e=>e.e==='jingle run_won')", 15): raise Exception(f'the payout, won: {log()}')
+        L = log(); coins = [e for e in L if e.startswith('jingle payout_coin')]
+        rows = pg.evaluate("JSON.parse(document.querySelector('#ov pb-payout').getAttribute('rows')||'[]').length")
+        if len(coins) != rows: raise Exception(f'{len(coins)} coins for {rows} payout rows: {L}')
+        if L.index('jingle run_won') < max(i for i, e in enumerate(L) if e.startswith('jingle payout_coin')): raise Exception(f'run_won before the last coin: {L}')
+        clear(); pg.evaluate("closeModal();saveData.run.at={phase:'walk',battle:-1};uiState.runPayoutPlayed=false;uiState.runPayoutSung=false;runOver(false);0")
+        if not until(pg, "soundEngine.log.some(e=>e.e==='jingle run_lost')", 15): raise Exception(f'the payout, lost: {log()}')
+        out.append(f'payout: {len(coins)} coins ({coins[-1].split(" ", 2)[-1] if coins else ""} last), run_won; lost: run_lost')
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return '; '.join(out)
     finally:
         ctx.close()
 
@@ -2611,6 +2745,7 @@ def main():
         else:
             phone_flow(b, base, R)
             in_game_test_step(b, base, R)
+            actions_sheet_step(b, base, R)
             if SMOKE:
                 studio_opens(b)
             else:
@@ -2624,6 +2759,7 @@ def main():
                 run_music_step(b, base, R)
                 battle_music_step(b, base, R)
                 run_map_weather_step(b, base, R)
+                sound_effects_step(b, base, R)
                 try:
                     desktop_steps(b, base, R)
                 except Exception as e:

@@ -1,6 +1,6 @@
 'use strict';
 /* ================= CONVERSATIONS =================
-   One dialogue box for everyone who talks: Professor Hazel, your rival Blake, townsfolk, trainers and the opening cutscene.
+   One dialogue box for everyone who talks: Professor Chosen and Hazel, your rival Blake, townsfolk, trainers and the opening cutscene.
    A portrait that blinks and moves its mouth while the line types out, the speaker's name, a voice blip per few
    letters (sound.js), tap or Enter to finish the line or go on. Lines may start with an expression in brackets:
    "[happy] Nice to meet you!" (happy, surprised, sad, angry, blink, talk). */
@@ -25,9 +25,9 @@ expose({
   talk: [() => talk, v => (talk = v)],
   talkBox: [() => talkBox],
   talkChoose: [() => talkChoose, v => (talkChoose = v)],
+  talkChosen: [() => talkChosen, v => (talkChosen = v)],
   talkEl: [() => talkEl, v => (talkEl = v)],
   talkFolk: [() => talkFolk, v => setTalkFolk(v)],
-  talkHazel: [() => talkHazel, v => (talkHazel = v)],
   talkHide: [() => talkHide, v => (talkHide = v)],
   talkLine: [() => talkLine, v => (talkLine = v)],
   talkName: [() => talkName, v => (talkName = v)],
@@ -47,7 +47,7 @@ export const talkBox = {
   choice: /** @type {{ pick: (i: number) => void, n: number } | null} */ (null),
 };
 provide({ talkBox }); /* to-module */
-const SPEAKER_NAMES = { gini: 'Professor Hazel' };
+const SPEAKER_NAMES = { chosen: 'Professor Chosen' };
 const FOLK_NAMES = [
   'Ada',
   'Bram',
@@ -322,8 +322,8 @@ export function setTalkFolk(v) {
   talkFolk = v; // eslint-disable-line no-func-assign
   provide({ talkFolk });
 }
-/* Hazel in her lab: her script (story.json scripts.hazel): your Index, your badges, where Blake went */
-export async function talkHazel() {
+/* Professor Chosen in his lab: his script (story.json scripts.chosen): your Index, your badges, where Blake went */
+export async function talkChosen() {
   if (talkBox.on) return;
-  await playStoryScript('story:hazel');
+  await playStoryScript('story:chosen');
 }

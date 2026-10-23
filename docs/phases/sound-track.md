@@ -77,7 +77,7 @@ Everything is synthesized in `game/js/sound.js` (2,013 lines) with the Web Audio
 | SND-3 (done 2026-10-22) | The Studio's Music & sound section | play and loop any song, the recipe's dials, a piano roll for the hook, the where table, a cry card on Billies, check warnings | SND-2 | 1-2 | Studio self-test; quick check; the owner plays it |
 | SND-4 (done 2026-10-22) | The Pokémon rework: themes | four voices, written hooks and countermelodies, the title motif as a leitmotif, Copperleaf as two voices, night variants | SND-3, RL-8 played | 1-2 | fingerprints updated on purpose; the owner listens on the phone |
 | SND-5 (done 2026-10-22) | Battle and run music | intros timed to the throw, wild/trainer/leader/boss/rival/ghost, biome × row variants, the deadline variant, the red zone | SND-4, RL-8 | 1-2 | battle fixture; run fixture; phone |
-| SND-6 | Sound effects and jingles | a cry per species with a low-HP cry, four UI sounds, jingles for the run's beats, a mix pass | SND-4, RL-12 for relics | 1 | battle golden record untouched; phone |
+| SND-6 (done 2026-10-23) | Sound effects and jingles | a cry per species with a low-HP cry, four UI sounds, jingles for the run's beats, a mix pass | SND-4, RL-12 for relics | 1 | battle golden record untouched; phone |
 
 Budget: SND-1 to SND-3 are three to five sessions before the play test; SND-4 to SND-6 three to five after. Tiers
 and time budgets follow docs/phases/13: lint, type-check and unit tests after each change, the smoke subset after
@@ -361,6 +361,54 @@ Corrections to this section's plan, found in SND-5:
 5. Verified by: the battle golden record is untouched (sounds are not in it); the fingerprint baseline for the
    jingles; the owner's phone.
 
+### SND-6 as built (2026-10-23, branch `sound`, tag `snd-6-done` local)
+SND-6 had no "Ask me before" item; the owner's standing instruction for the session approved the plan in advance.
+One cause per commit, each checked against the commit before it (fingerprints rendered in a worktree):
+1. `check-sound.py` renders each cry's low-HP version, the four UI sounds and every jingle at its own tempo and wave,
+   when the code has them. Tool only.
+2. **Eight base cries** by kind in `music.json` `cries.bases` (beast, bird, slime, machine, fish, insect, ghost, suit),
+   each a few notes (`at`, `note` over the species' pitch, `len`; `wave`, `vol`, `slide`, `vib`), named as Claude's
+   placeholders; `logic/cries.js` plays a base's notes (the two-note shape left the code); a stage's `cry.base` is a
+   kind's name.
+3. **A cry per stage** for the 24 Billies (`lines/*.json` `cry`: base, pitch, length, a `name` marked placeholder);
+   the Studio's Check lists the placeholder base cries and Billie cries.
+4. **The low-HP cry**: a quarter faster and a minor third down (`CRY_LOW`); sound.js `cryPlay`. A Billie cries as it
+   comes out (after the pop, as in Gen 1) and as it faints; in the red zone (the music's quarter, from the line's
+   snapshot) it cries low.
+5. **Four UI sounds** (`music.json` `ui`, `logic/ui-sounds.js`): select (the tick), confirm (a rising fifth: gold,
+   green, primary, `shopbuy`, `runstart`), cancel (a falling fifth: quiet, back, `bback`, `baimback`, `dexback`,
+   `leaveroom`, `stoptrip`, the scrim), can't (a buzz: a disabled button, on the press). The button is read from the
+   event's path, so kit buttons count by their host's `data-a` and kind.
+6. **Run-beat jingles** as data: `relic`, `reveal`, `day`, `run_won`, `run_lost`, `payout_coin`; a jingle may set its
+   `bpm` and `wave`; `jinglePlay(id, {shift, duck})`.
+7. Played at the beats: an arrival plays `day`, then `reveal` when the map shows more; a mini-boss's Loophole taken
+   `relic`; the payout a coin per row (two semitones higher each, over the song), then `run_won` or `run_lost` as the
+   total lands (`pb-payout` tells the page: `pb-payout-row`, `pb-payout-total`).
+8. The full check's "Sound effects and jingles" step (`soundEngine.log` now logs UI sounds, jingles and cries).
+9. **The mix** as data (`music.json` `mix`: the bus trims, master 0.9 and ambience 0.9 as before, the compressor);
+   then the world and ambience beds 3 dB down under a four-voice song (`bedsUnderSong`, not the title or the fall).
+10. The Studio: a Sounds tab (base cries, button sounds, mix); the Jingles card edits tempo and wave.
+11. The fingerprint baseline written again (143), in its own commit.
+
+Corrections to this section's plan, found in SND-6:
+- Item 1's "a robot's cry comes from its torso part": no robot is heard crying anywhere today (only a wild Billie cried,
+  as it appeared, and bots are never wild before RL-14); a robot in battle stays silent. RL-14 adds it.
+- Item 1's low-HP cry had nowhere to be heard: the game cried only for a wild Billie appearing, at full health. A
+  Billie now cries as it comes out and as it faints; SND-3's `cryLowHealth` (slower, a preview only) became the
+  plan's faster version.
+- Item 1's "about eight base cries ... the Studio card from SND-3 edits them": the card picks a kind; the bases' notes
+  are edited on the new Sounds tab.
+- Item 2: a disabled button gets no click, so can't plays on the press (pointerdown). Kit buttons (`pb-button`) made
+  no tick before: the listener looked for a `<button>` around the shadow host.
+- Item 3's "relic picked" is a mini-boss's pick; a shop's Loophole keeps its buy chime. "Run won (the victory tune plus
+  the motif)" replaces the payout's plain motif (SND-4's bookend is kept, at its end); the boss battle still plays its
+  own victory tune when it ends, before the payout. "Node revealed" plays after the day's tock on the same arrival.
+- Item 4's "the master's 0.9" was in two places (`levels.js` and `initSound`) beside the ambience's own 0.9 trim; all
+  three are the mix now. "The compressor's threshold follows": nobody has heard the new balance, so it stays at -14 dB
+  in the mix, where the Studio sets it.
+- Jingle ids must be lowercase (the schema's id pattern): `run_won`, `run_lost`, `payout_coin`.
+- SND-2's note that the cries' shape was "still code, for SND-6": it is data now.
+
 ## Ask me before (collected)
 - SND-1 (answered 2026-10-22): jingles stay on Sound effects; volumes stay in the save; the mute beside the sheet's title.
 - SND-2 (answered 2026-10-22): the mapping as first guessed (below), not waiting for the Studio; SND-3 lets you hear the pairs, SND-4 revises it.
@@ -371,6 +419,7 @@ Corrections to this section's plan, found in SND-5:
 - SND-5 (taken as recommended when the owner said Start, 2026-10-22): the tense variant, the beep a switch off by
   default; the deadline version on the deadline day alone (`run.deadlineDays`, 2 for two); no ghost song before RL-15;
   the weather filter in.
+- SND-6: no "Ask me before" item; the plan was approved in advance by the owner's standing instruction (2026-10-23).
 - The order of SND-4 to SND-6 after the play test, and whether any of them should go before it.
 
 ## Not in this track

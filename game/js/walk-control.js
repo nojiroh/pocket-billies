@@ -47,8 +47,8 @@ import {
 import { battle3dLayout } from './battle-3d.js';
 import { worldMapWanted } from './world-bowl.js';
 import { openShop } from './shop.js';
-import { soundEffect } from './sound.js';
-import { talkHazel } from './talk.js';
+import { runArriveSound, soundEffect } from './sound.js';
+import { talkChosen } from './talk.js';
 import { cutscene } from './cutscene/director.js';
 import { loreBook } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
@@ -76,9 +76,11 @@ expose({
   roomFor: [() => roomFor, v => (roomFor = v)],
   roomFrontOf: [() => roomFrontOf, v => (roomFrontOf = v)],
   roomLayIn: [() => roomLayIn, v => (roomLayIn = v)],
+  roomPeople: [() => roomPeople, v => (roomPeople = v)],
   roomRefresh: [() => roomRefresh, v => ((roomRefresh = v), provide({ roomRefresh }))],
   roomState: [() => roomState, v => ((roomState = v), provide({ roomState }))],
   roomStepIn: [() => roomStepIn, v => (roomStepIn = v)],
+  runSeenSum: [() => runSeenSum, v => (runSeenSum = v)],
   walkCross: [() => walkCross, v => (walkCross = v)],
   walkMapSync: [() => walkMapSync, v => (walkMapSync = v)],
   walkPick: [() => walkPick, v => (walkPick = v)],
@@ -321,7 +323,7 @@ function roomAct(h) {
     flyMenu(h.p);
     return;
   }
-  /* RL-11: the unlock board in Hazel's lab opens the Lab tab */
+  /* RL-11: the unlock board in the Chosen's lab opens the Lab tab */
   if (pa === 'board' && typeof labBoardOpen === 'function') {
     labBoardOpen();
     return;
@@ -349,13 +351,21 @@ function roomAct(h) {
     if (I.shop && SHOPS[I.shop]) openShop(I.shop);
     else toast(I.p.say || 'The shop is closed today.');
   } else if (I.kind === 'clinic') clinicHeal(I.p.say);
-  else if (I.kind === 'lab' && typeof talkHazel === 'function') talkHazel(I.p);
+  else if (I.kind === 'lab' && typeof talkChosen === 'function') talkChosen(I.p);
   else if (I.kind === 'home' && typeof homeDecorate === 'function') homeDecorate();
   else if (I.kind === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
   else {
     const c = (mapById(I.id) || {}).chat || [];
     toast(c.length ? `“${c[Math.floor(Math.random() * c.length)]}”` : 'They wave hello.');
   }
+}
+/** the room's own people who only talk (its map's people, as a place's are), whose story conditions hold
+ * @param {any} sc the room's scene */
+function roomPeople(sc) {
+  const R = sc.roomOf ? mapById(sc.roomOf) : null;
+  return ((R && R.people) || []).filter(
+    (/** @type {any} */ P) => PEOPLE[P.who] && ((!P.when && !P.unless) || storyAllows(P))
+  );
 }
 export function roomState() {
   const I = uiState.inside;
@@ -380,7 +390,18 @@ export function roomState() {
     roam: true,
     who: 'me',
     enc: [],
-    npcs: sc.keeper ? [{ who: sc.keeper, id: '_keeper:' + I.id, done: true, exit: null, dir: 'down' }] : [],
+    npcs: [
+      ...(sc.keeper ? [{ who: sc.keeper, id: '_keeper:' + I.id, done: true, exit: null, dir: 'down' }] : []),
+      /* people who only talk in the room's own data (Hazel in the lab): they stand on the room's next npcSpots */
+      ...roomPeople(sc).map(P => ({
+        who: P.who,
+        id: '_talk:' + P.id,
+        talk: P,
+        done: true,
+        exit: null,
+        dir: P.dir || 'down',
+      })),
+    ],
     exits: [{ i: 0, to: -1, name: 'Outside', out: 1 }],
   };
 }
@@ -543,7 +564,7 @@ export function walkPick(h) {
       if (id && SHOPS[id]) openShop(id);
       else toast(p.say || 'The shop is closed today.');
     } else if (a === 'clinic') clinicHeal(p.say);
-    else if (a === 'lab' && typeof talkHazel === 'function') talkHazel(p);
+    else if (a === 'lab' && typeof talkChosen === 'function') talkChosen(p);
     else if (a === 'read' && typeof loreBook === 'function') loreBook(p.book);
     else if (a === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
     else if (a === 'board' && typeof labBoardOpen === 'function') labBoardOpen();
@@ -645,6 +666,7 @@ export function walkCross() {
         ? `${bl.name} is blocking the way. Beat them first.`
         : null;
     /* RL-7: in a run a crossing is an arrival (logic/run-map.js runArrive: a day, the path, what the map shows) */
+    const seen0 = runSeenSum();
     if (!why && saveData.run && !runArrive(saveData, runMapNode(n), runWorldData()))
       why = 'That way isn’t on the run’s map.';
     if (why) {
@@ -678,10 +700,17 @@ export function walkCross() {
       runArrivedFx();
       saveNow();
       runArrivedHint();
+      /* SND-6: the day's tick and tock, and the reveal's pings when the map shows more */
+      if (typeof runArriveSound === 'function') runArriveSound(runSeenSum() > seen0);
     } else save();
     render();
     return;
   }
+}
+/* SND-6: how much of the run's map shows (each node: 0 hidden, 1 a ?, 2 its icon), to hear when an arrival shows more */
+function runSeenSum() {
+  const map = saveData.run && saveData.run.map;
+  return map ? map.nodes.reduce((a, N) => a + (N.seen || 0), 0) : 0;
 }
 /* alpha 0.4.1: a view that was held until it was ready (seamless-world.js seamlessGate) takes over as soon as it is: walking yourself,
    nothing else would ask for it (a trip did, with each batch of steps) */
@@ -797,7 +826,7 @@ export function walkMapSync() {
           z: z - o[1],
         };
       },
-      keys: () => !uiState.modal && uiState.tab === 'walk' && scrollY < innerHeight * 0.3,
+      keys: () => !uiState.modal && uiState.tab === 'walk' && !uiState.walkSheet,
       active: () => uiState.tab === 'walk' && !uiState.modal,
       safe: () => {
         const a = $('.wh-card'),
@@ -808,6 +837,8 @@ export function walkMapSync() {
           b ? clamp(b.getBoundingClientRect().top / H, 0.5, 1) : 0.88,
         ];
       },
+      /* behind a menu the world runs at 20 a second: a frame stays under the 60 ms a frame may count
+         (walk-view-gl.js drawWalkFrame), so it keeps its speed (at 10 it ran at 60% of it) */
       cap: () => {
         const w = document.hidden
           ? 'hidden'
@@ -817,11 +848,9 @@ export function walkMapSync() {
               ? 'window'
               : uiState.tab !== 'walk'
                 ? 'screen'
-                : scrollY > innerHeight * 0.7
-                  ? 'scrolled'
-                  : '';
+                : '';
         walkView.held = w;
-        return w === 'hidden' ? 1 : w === 'window' ? 10 : w === 'screen' ? 24 : w === 'scrolled' ? 4 : userFps();
+        return w === 'hidden' ? 1 : w === 'window' ? 20 : w === 'screen' ? 24 : userFps();
       },
     }).then(() => cv.classList.add('in'));
   }

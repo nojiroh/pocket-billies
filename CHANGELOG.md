@@ -14,6 +14,28 @@ kept aside in the browser).
   open remembered in this browser, and each button saying what it changed instead of "Done.". Gold buttons give you
   things, red ones erase or start a battle. Labels lost their phase codes. Walk 1 km, Earn every badge, Reset
   trainer wins, Lead +3 win streak and Age storage by a day are gone (nothing left to test with them).
+- Sound effects and jingles (sound track SND-6): each Billie has a cry of its own, built from eight kinds (beast,
+  bird, slime, machine, fish, insect, ghost, suit) with its own pitch and length per stage, and cries as it is sent
+  out; a Billie under a quarter of its HP cries its low-HP cry (a quarter faster and a third down), and a fainting one
+  too. Buttons make four sounds instead of one tick: select, confirm (a rising fifth), cancel (a falling one) and
+  a buzz for one you can't press yet. A run has jingles for its beats: a tick and tock as each day passes, two pings
+  when the map shows more, a jingle for a Loophole taken, a coin for each payout row (higher each row), then the
+  victory tune and the title's theme on a win, or the victory tune backwards in a minor key on a loss. The water,
+  wind and birds come down a little while a song plays. Every new cry, jingle and button sound is a draft, named
+  "placeholder" in the Studio, whose Music & sound section has a Sounds tab for the base cries, the button sounds and
+  the mix, and plays each jingle at its own tempo.
+- A new professor: Professor Chosen runs the lab in Copperleaf. He finds you after the fall, hands out the starters,
+  gives his (chosen) opinion of each and sends you to the airship; he is sure he is the main character and is wrong
+  about most things, his type tips especially. Hazel stays as his assistant: she follows him out of the lab in the
+  opening, corrects him, and has her own things to say at her desk in the lab. Name tags, the lab's sign, the Field
+  Guide (recorded by Hazel, signed by the Chosen) and the lore follow. His look uses today's wardrobe; his wolf shirt
+  and katana come later.
+- Ranch income (RL-10b): the ranch earns Scrap by itself, 1 an hour at Lv 1 (2 at Lv 2, 3 at Lv 3), banking up to
+  24 hours; the ranch's sheet shows the pile and how long until it is full, and Collect pays it. It counts from the
+  first time you open the ranch, and works offline. Every ranch timer (training, eggs, income) now shares one clock:
+  turning the device's clock back stops them until it catches up (the sheet says so), and turning it forward again
+  no longer pays the gap to training. Signed in, the account's save carries the server's time, so a clock set ahead
+  counts at the real pace. (Firebase rules: only publish the new saves rule once this version is live.)
 - Settings in seven tabs (UI-7b): Sound, Display, Controls, Accessibility, Game, Save, Help, opening on the last one
   you used. Start over moved from beside Done to the foot of the Save tab, and now also ends a battle in progress.
   The Save card shows runs won and Billies taxed. Help has a Report a problem box (the full test and the debug log);
