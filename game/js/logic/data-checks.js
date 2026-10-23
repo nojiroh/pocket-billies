@@ -33,6 +33,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataBuildings: [() => dataBuildings, v => (dataBuildings = v)],
   // @ts-expect-error -- replaced on purpose
+  dataCatchArt: [() => dataCatchArt, v => (dataCatchArt = v)],
+  // @ts-expect-error -- replaced on purpose
   dataCurrencies: [() => dataCurrencies, v => (dataCurrencies = v)],
   // @ts-expect-error -- replaced on purpose
   dataNodeTypes: [() => dataNodeTypes, v => (dataNodeTypes = v)],
@@ -632,6 +634,35 @@ export function dataRelics(D, valid = () => true) {
           'run.relics.rarity gives every Loophole in relics.json a weight of 0: nothing can be offered'
         );
     }
+  }
+  return out;
+}
+// RF-2: every catch item (coins.json; the ids stay the coins' until RF-4) has its icons and the model it is thrown as
+// (art/coins/<id>_16.png, _32.png and <id>.json, made by tools/build-pyramids.py): a recipe with at least one shape
+/** RF-2: coins.json against its art @param {any} coins @param {(path: string) => string | null} read the file under
+ * game/art, or null when it isn't there @returns {DataProblem[]} */
+export function dataCatchArt(coins, read) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['coins.json', what]);
+  for (const k of Object.keys(coins || {})) {
+    for (const f of [`coins/${k}_16.png`, `coins/${k}_32.png`])
+      if (read(f) == null) problem(`${k}: no icon art/${f} (tools/build-pyramids.py)`);
+    const t = read(`coins/${k}.json`);
+    if (t == null) {
+      problem(`${k}: no model art/coins/${k}.json (tools/build-pyramids.py)`);
+      continue;
+    }
+    /** @type {any} */
+    let rec = null;
+    try {
+      rec = JSON.parse(t);
+    } catch (e) {
+      problem(`${k}: its model art/coins/${k}.json is not JSON`);
+      continue;
+    }
+    if (!rec || !Array.isArray(rec.layers) || !rec.layers.length)
+      problem(`${k}: its model art/coins/${k}.json has no shapes`);
   }
   return out;
 }
