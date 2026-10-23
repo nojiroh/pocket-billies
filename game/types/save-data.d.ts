@@ -213,10 +213,10 @@ export interface Run {
   relics: string[];
   offer: string[] | null;
   mods: string[];
-  /** RL-12: Loophole offers made so far (the next offer's stream, logic/perks.js relicOffer) */
+  /** RL-12: Loophole offers made so far (the next offer's stream, logic/perks.js perkOffer) */
   offerN: number;
   /** RL-12: each run shop's Loophole for a day, by '<map node>:<day>' ('' once bought), drawn when the shop first
-      opens that day (logic/perks.js relicShelf) */
+      opens that day (logic/perks.js perkShelf) */
   shelf: Record<string, string>;
   /** the hub's working fields as the run started */
   start: RunStart;

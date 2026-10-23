@@ -4,13 +4,13 @@
    Each shop has a keeper (drawn by the trainer renderer from PEOPLE), a greeting and a stock list. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, modal, provide, relicDropOpen, renderOverlay, soundEffect, toast } from './hooks.js';
+import { closeModal, modal, perkDropOpen, provide, renderOverlay, soundEffect, toast } from './hooks.js';
 import { clamp, random } from './util.js';
 import { COINS, ITEMS, RELICS, RULES, SHOPS, UNLOCK_DATA } from './game-data.js';
 import { formatNumber, plural } from './logic/rules.js';
 import { runShopOpen } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
-import { relicBuy, relicPrice, relicShelf } from './logic/perks.js';
+import { perkBuy, perkPrice, perkShelf } from './logic/perks.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { coinHTML, moneyHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
@@ -68,14 +68,14 @@ const warePrice = (sh, w, it) => {
   const p = w.price ?? it.base;
   return sh.runNode != null && saveData.run ? fxRunPrice(saveData.run, RELICS, 'shop', p) : p;
 };
-/** RL-12: a run shop's Perk today (logic/perks.js relicShelf, drawn when the shop opened): its id and price, or
+/** RL-12: a run shop's Perk today (logic/perks.js perkShelf, drawn when the shop opened): its id and price, or
  * null (not a run shop, bought, or none left) */
 function shopRelic(sh) {
   const run = saveData.run;
   if (sh.runNode == null || !run) return null;
   const id = run.shelf[sh.runNode + ':' + run.clock];
   if (!id || !RELICS[id]) return null;
-  return { id, price: fxRunPrice(run, RELICS, 'shop', relicPrice(RELICS[id], RULES.run.relics)) };
+  return { id, price: fxRunPrice(run, RELICS, 'shop', perkPrice(RELICS[id], RULES.run.relics)) };
 }
 /** RL-12: the Perk's row: what it does, its rarity and price, Buy */
 function shopRelicHTML(id, sh) {
@@ -132,7 +132,7 @@ export function openShop(id) {
     /* RL-11: only the wares the run has unlocked (its copy, run.unlocks) */
     sh.stock = runShopOpen(saveData.run, sh.runNode, saveData.run.clock, RULES.run.shop, UNLOCK_DATA);
     /* RL-12: and a Perk, drawn the first time it opens today (kept on the run, saved with the next save) */
-    relicShelf(saveData.run, sh.runNode, saveData.run.clock, RELICS, RULES.run.relics);
+    perkShelf(saveData.run, sh.runNode, saveData.run.clock, RELICS, RULES.run.relics);
   }
   uiState.shopLine = null;
   uiState.shopQty = {};
@@ -191,7 +191,7 @@ function shopRelicBuy(id, drop) {
     return;
   }
   if (drop == null && run.relics.length >= RULES.run.relics.cap) {
-    relicDropOpen(
+    perkDropOpen(
       L.id,
       d => {
         openShop(id);
@@ -201,7 +201,7 @@ function shopRelicBuy(id, drop) {
     );
     return;
   }
-  if (relicBuy(run, sh.runNode, run.clock, RELICS, RULES.run.relics, drop)) return;
+  if (perkBuy(run, sh.runNode, run.clock, RELICS, RULES.run.relics, drop)) return;
   saveData.se -= L.price;
   if (typeof soundEffect === 'function') soundEffect('buy');
   saveNow();

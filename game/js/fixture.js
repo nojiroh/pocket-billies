@@ -29,7 +29,7 @@ import { makeBilly } from './logic/rules.js';
 import { applyUiTheme } from './theme-sheet.js';
 import { runArrive } from './logic/run-map.js';
 import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
-import { relicOfferMake } from './logic/perks.js';
+import { perkOfferMake } from './logic/perks.js';
 import { newSave } from './logic/saves.js';
 import { startTrainer } from './logic/battle-engine.js';
 import { runUnlocks } from './logic/unlocks.js';
@@ -139,7 +139,7 @@ function fixtureSave() {
   if (FIXTURE === 'relics') {
     s.run.relics = FIXTURE_RELICS.filter(id => RELICS[id]);
     s.se = 2000;
-    relicOfferMake(s.run, RELICS, RULES.run.relics);
+    perkOfferMake(s.run, RELICS, RULES.run.relics);
   }
   return s;
 }

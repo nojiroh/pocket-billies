@@ -151,9 +151,9 @@ expose({
   // @ts-expect-error -- replaced on purpose
   movePower: [() => movePower, v => (movePower = v)],
   newBattle: [() => newBattle, v => setNewBattle(v)],
+  perkNamesFor: [() => perkNamesFor],
   // @ts-expect-error -- replaced on purpose
   refreshLastSnapshot: [() => refreshLastSnapshot, v => (refreshLastSnapshot = v)],
-  relicNamesFor: [() => relicNamesFor],
   // @ts-expect-error -- replaced on purpose
   retarget: [() => retarget, v => (retarget = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1088,11 +1088,11 @@ export function sayBattleFx() {
     K = liveActors(0);
   for (const s in up)
     battleSay(
-      `${relicNamesFor(b.fx, s)}: ${K.length > 1 ? 'your team’s' : `${billyName(fighter(K[0]))}’s`} ${STAT_NAMES[s]} ${up[s] > 0 ? 'rose' : 'fell'}${Math.abs(up[s]) > 1 ? ' sharply' : ''}.`
+      `${perkNamesFor(b.fx, s)}: ${K.length > 1 ? 'your team’s' : `${billyName(fighter(K[0]))}’s`} ${STAT_NAMES[s]} ${up[s] > 0 ? 'rose' : 'fell'}${Math.abs(up[s]) > 1 ? ' sharply' : ''}.`
     );
 }
 /** the names of the Perks whose stat rows change stat s ("A and B") */
-export const relicNamesFor = (fx, s) =>
+export const perkNamesFor = (fx, s) =>
   [
     ...new Set(fx.filter(f => f.kind === 'stat' && f.stat === s).map(f => (RELICS[f.src] || { name: f.src }).name)),
   ].join(' and ');

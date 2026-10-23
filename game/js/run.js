@@ -14,8 +14,8 @@ import {
   labMilestones,
   mapIdAt,
   modal,
+  perkPickOpen,
   provide,
-  relicPickOpen,
   render,
   renderOverlay,
   runPayoutOpen,
@@ -197,7 +197,7 @@ export function runResume() {
   if (!run) return;
   if (run.at.phase === 'payout') runPayoutOpen();
   /* RL-12: a mini-boss's pick not answered yet (the offer was saved before it showed) */
-  else if (run.offer && run.at.phase === 'walk') relicPickOpen();
+  else if (run.offer && run.at.phase === 'walk') perkPickOpen();
   /* killed mid-battle: the same battle again, from its seed (the owner's answer, roguelite-track.md 8.7) */
   if (run.at.phase === 'battle') runBattleAgain();
   /* killed mid-flight: you are on the landing (runArrive ran before the flight) */

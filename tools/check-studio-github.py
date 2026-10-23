@@ -1830,7 +1830,7 @@ def music_steps(pg, errs):
 CONTENT_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
 const out = {};
 /* Studio plan Phase 4: what the content editors must show, from the game's logic in Node */
-out.offers = modules.perks.relicOfferOrder('LAB1', D.relics, D.rules.run.relics, D.rules.run.map.minibosses).map(p => p.offer.join(','));
+out.offers = modules.perks.perkOfferOrder('LAB1', D.relics, D.rules.run.relics, D.rules.run.map.minibosses).map(p => p.offer.join(','));
 out.lab = modules['run-preview'].runPreview('LAB1', { unlocks: [] }).relicOffers.map(o => o.join(','));
 out.insider = modules['content-preview'].relicPreview(['insider'], { sp: D.lines[0].id + '1', lvl: 30 }).stats.find(s => s.id === 'hus');
 out.leaders = modules['content-preview'].leaderRunValues();

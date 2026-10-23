@@ -131,7 +131,7 @@ export function runSimOn(env) {
     { runStartOn, runStartPlan } = modules['run-start'],
     { runRegionData } = modules['run-region'],
     { runUnlocks } = modules.unlocks,
-    { relicBuy, relicChoose, relicPrice, relicShelf } = modules.perks;
+    { perkBuy, perkChoose, perkPrice, perkShelf } = modules.perks;
   const MAP_DATA = {
       nodeTypes: GAME_DATA.nodeTypes,
       biomes: GAME_DATA.biomes,
@@ -282,14 +282,14 @@ export function runSimOn(env) {
           }
           /* the day's wares as the shop opens them: only what the run has unlocked (run-loop.js runShopOpen) */
           const stock = runShopOpen(run, i, run.clock, R.shop, UNLOCK_DATA);
-          /* the shop's Perk, drawn as the shop opens (perks.js relicShelf), bought as the policy says, keeping the
+          /* the shop's Perk, drawn as the shop opens (perks.js perkShelf), bought as the policy says, keeping the
              reserve (shop.js shopRelicBuy: its price with the price rows) */
-          const shelf = relicShelf(run, i, run.clock, data.RELICS, R.relics);
+          const shelf = perkShelf(run, i, run.clock, data.RELICS, R.relics);
           if (shelf) {
-            const cost = fxRunPrice(run, data.RELICS, 'shop', relicPrice(data.RELICS[shelf], R.relics)),
+            const cost = fxRunPrice(run, data.RELICS, 'shop', perkPrice(data.RELICS[shelf], R.relics)),
               c = s.se >= cost + P.reserve ? simRelicChoice([shelf], run.relics, data.RELICS, R.relics, P) : null;
             at.relic = { id: shelf, price: cost };
-            if (c && !relicBuy(run, i, run.clock, data.RELICS, R.relics, c.drop)) {
+            if (c && !perkBuy(run, i, run.clock, data.RELICS, R.relics, c.drop)) {
               s.se -= cost;
               stats.spent += cost;
               stats.moneyOut.relics += cost;
@@ -393,11 +393,11 @@ export function runSimOn(env) {
           /* its reward and flag; a mini-boss also makes the run's next pick of Perks (not answered yet) */
           fn('battleSettleWin')(B, s, pay, run);
           stats.moneyIn.reward += pay.reward;
-          /* the pick it made, answered as the policy says (perk-screen.js relicPickDone: perks.js relicChoose) */
+          /* the pick it made, answered as the policy says (perk-screen.js perkPickDone: perks.js perkChoose) */
           if (run.offer) {
             const c = simRelicChoice(run.offer, run.relics, data.RELICS, R.relics, P);
             at.pick = { offer: run.offer.slice(), took: c ? c.id : null, ...(c && c.drop ? { drop: c.drop } : {}) };
-            relicChoose(run, c ? c.id : null, data.RELICS, R.relics, c ? c.drop : undefined);
+            perkChoose(run, c ? c.id : null, data.RELICS, R.relics, c ? c.drop : undefined);
           }
           if (node.type === 'boss') {
             stats.won = true;

@@ -8,10 +8,10 @@ import {
   closeModal,
   giveRobotKit,
   modal,
+  perkPickOpen,
   pixelSky,
   playStoryScript,
   provide,
-  relicPickOpen,
   render,
   renderOverlay,
   runBowlMapTest,
@@ -43,7 +43,7 @@ import {
 } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
-import { relicOfferMake, relicTake } from './logic/perks.js';
+import { perkOfferMake, perkTake } from './logic/perks.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
@@ -515,7 +515,7 @@ function debugAction(x) {
         id = v('dbgRelic');
       uiState.dbgRelic = id;
       if (!run) return refreshDebugMenu('No run.');
-      const why = relicTake(
+      const why = perkTake(
         run,
         id,
         RELICS,
@@ -528,10 +528,10 @@ function debugAction(x) {
     }
     case 'relicpick':
       if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
-      if (!relicOfferMake(saveData.run, RELICS, RULES.run.relics)) return refreshDebugMenu('Every Perk is held.');
+      if (!perkOfferMake(saveData.run, RELICS, RULES.run.relics)) return refreshDebugMenu('Every Perk is held.');
       saveNow();
       uiState.modal = null;
-      relicPickOpen();
+      perkPickOpen();
       return;
     case 'runwin':
     case 'runlose':

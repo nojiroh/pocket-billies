@@ -14,8 +14,8 @@ import {
   jingle,
   limbPipsHTML,
   modal,
+  perkPickOpen,
   provide,
-  relicPickOpen,
   render,
   runCatch,
   runOver,
@@ -993,7 +993,7 @@ export function endBattle() {
                 : run && run.offer
                   ? () => {
                       uiState.modal = null;
-                      relicPickOpen();
+                      perkPickOpen();
                     }
                   : first && (T.clue || T.ending) && typeof storyAfterWin === 'function'
                     ? () => {

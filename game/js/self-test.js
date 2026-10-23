@@ -96,7 +96,7 @@ import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
 import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 import { runClinicEach, runJump, runTakeOff } from './run.js';
-import { relicPickOpen } from './perk-screen.js';
+import { perkPickOpen } from './perk-screen.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
@@ -1084,7 +1084,7 @@ async function runFullTest(mode) {
               throw new Error('the pick didn’t open');
             const took = saveData.run.offer[0];
             uiState.relicSel = took;
-            relicPickOpen();
+            perkPickOpen();
             uiState.modal.btns[0].f();
             if (saveData.run.relics.length !== 2 || !saveData.run.relics.includes(took) || saveData.run.offer)
               throw new Error('the pick wasn’t taken');

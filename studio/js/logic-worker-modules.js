@@ -108,4 +108,4 @@ export { runMapSweep } from '../../game/js/logic/data-checks.js';
 export { runSimReport } from './logic-worker-sim.js';
 /* Studio plan Phase 4: the content editors' previews */
 export { relicPreview, leaderRunValues, speciesStandIns } from '../../game/js/logic/content-preview.js';
-export { relicOfferOrder } from '../../game/js/logic/perks.js';
+export { perkOfferOrder } from '../../game/js/logic/perks.js';
