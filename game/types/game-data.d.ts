@@ -936,15 +936,15 @@ export interface Rules {
       placeholders until the owner has played the first cut (roguelite-track.md 8.18) */
   run: {
     payout: {
-      /** Capital per $ left */
+      /** Research per Money left */
       money: number;
       /** items count at this share of their price, then at the money rate */
       itemShare: number;
-      /** Capital per Billie released in the run */
+      /** Research per Billie released in the run */
       released: number;
-      /** Capital per node cleared (each node once, however often it was walked back to; RL-6) */
+      /** Research per node cleared (each node once, however often it was walked back to; RL-6) */
       node: number;
-      /** Capital for a win */
+      /** Research for a win */
       win: number;
       /** Audit Seals for a win */
       winSeals: number;
@@ -1706,7 +1706,7 @@ export type FxRow =
   | { kind: 'stat'; stat: 'lev' | 'law' | 'lob' | 'pr' | 'hus'; stages: number }
   | { kind: 'damage'; side: 'deal' | 'take'; cat?: 'H' | 'S'; type?: string; mult: number }
   | { kind: 'heal'; share: number }
-  | { kind: 'payout'; what: 'capital' | 'itemShare'; mult: number };
+  | { kind: 'payout'; what: 'research' | 'itemShare'; mult: number };
 /** perks.json: a Loophole (roguelite track RL-12): held for one run, its effect rows apply while it is held */
 export interface Perk {
   /** what the player reads */
@@ -1718,7 +1718,7 @@ export interface Perk {
 }
 
 /** currencies.json: one of the game's four currencies (roguelite track RL-11) */
-export type CurrencyId = 'money' | 'capital' | 'scrap' | 'seals';
+export type CurrencyId = 'money' | 'research' | 'scrap' | 'seals';
 export interface Currency {
   /** what the player reads; `long` where the short name is a sign ($); `one` for a count of one */
   name: string;
@@ -1749,7 +1749,7 @@ export type UnlockGrant =
   | { building: string; level: number }
   | { shop: string }
   | { biome: string }
-  | { capital: number }
+  | { research: number }
   | { scrap: number }
   | { seals: number };
 /** unlocks.json: one row of the unlock table (roguelite track RL-11): sold at a building (at + cost, in its currency;

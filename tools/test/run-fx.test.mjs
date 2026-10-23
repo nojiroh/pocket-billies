@@ -62,10 +62,10 @@ test('run fx: a lost run’s payout with Field Notebook and Lost Property Form a
     items = pay.lines.find(l => l.what === 'items'),
     row = pay.lines.find(l => l.what === 'fx');
   assert.equal(items.n, 200, 'items at their full price');
-  const before = pay.lines.filter(l => l.what !== 'fx').reduce((a, l) => a + l.capital, 0);
+  const before = pay.lines.filter(l => l.what !== 'fx').reduce((a, l) => a + l.research, 0);
   assert.equal(row.n, 15);
-  assert.equal(row.capital, Math.floor(before * 1.15) - before);
-  assert.equal(pay.capital, before + row.capital, 'the rows add up to the total');
+  assert.equal(row.research, Math.floor(before * 1.15) - before);
+  assert.equal(pay.research, before + row.research, 'the rows add up to the total');
   const shown = L.runPayoutRows(pay, RATES).find(r => r.label === 'Perks');
-  assert.deepEqual(shown, { label: 'Perks', note: '+15%', value: row.capital });
+  assert.deepEqual(shown, { label: 'Perks', note: '+15%', value: row.research });
 });

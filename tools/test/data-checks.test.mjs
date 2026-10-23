@@ -105,8 +105,8 @@ test('a planted fault is found by its family, in the file check-data names', () 
   D.perks.shelter.fx[0].mult = 0.1;
   assert.deepEqual(C.dataPerks(D), [], 'the limits themselves are allowed');
   D = copy();
-  D.currencies.capital.kept = 'run';
-  found('dataCurrencies', D, 'capital.kept');
+  D.currencies.research.kept = 'run';
+  found('dataCurrencies', D, 'research.kept');
   D = copy();
   D.buildings.ranch.act = 'nosuchact';
   found('dataBuildings', D, 'act "nosuchact"');

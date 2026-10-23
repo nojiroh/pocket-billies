@@ -20,7 +20,7 @@ test('unlock graph: a column per building then the earned rows; edges from what 
   assert.equal(node.ranch_3.depth, 1);
   assert.equal(node.ranch_2.depth, 0);
   assert.equal(node.first_run.col, 'earned');
-  assert.equal(node.shop_bailout.currency, 'capital');
+  assert.equal(node.shop_bailout.currency, 'research');
   assert.equal(node.airship_2.currency, 'seals');
   const has = (from, to) => g.edges.some(e => e.from === from && e.to === to);
   assert.ok(has('ranch_2', 'ranch_3') && has('airship_2', 'biome_ridge') && has('airship_2', 'biome_autumn'));
@@ -51,7 +51,7 @@ test('unlock graph: a circle a requires edit would close is named by its path', 
 test('unlock graph: a new save has nothing earned; runs and wins earn what unlockAuto grants', () => {
   const fresh = G.unlockSaveAfter(D);
   assert.deepEqual(fresh.owned, []);
-  assert.deepEqual(fresh.currencies, { capital: 0, scrap: 0, seals: 0 });
+  assert.deepEqual(fresh.currencies, { research: 0, scrap: 0, seals: 0 });
   assert.equal(fresh.buildings.ranch, 1);
   assert.equal(fresh.why.shop_bailout, 'cost');
   assert.equal(fresh.why.ranch_3, 'requires');
@@ -61,7 +61,7 @@ test('unlock graph: a new save has nothing earned; runs and wins earn what unloc
   const later = G.unlockSaveAfter(D, { runs: 5, wins: 1 });
   assert.deepEqual(later.earned.sort(), ['first_run', 'first_win', 'runs_5']);
   assert.equal(later.currencies.scrap, D.unlocks.first_run.grant.scrap);
-  assert.equal(later.currencies.capital, D.unlocks.runs_5.grant.capital);
+  assert.equal(later.currencies.research, D.unlocks.runs_5.grant.research);
   assert.equal(later.currencies.seals, D.unlocks.first_win.grant.seals);
   assert.equal(later.why.airship_2, null, 'the Crest of a win buys the airship’s level');
   assert.ok(G.unlockSaveAfter(D, { caught: 15 }).owned.includes('caught_15'));

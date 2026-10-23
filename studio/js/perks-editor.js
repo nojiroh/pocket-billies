@@ -84,7 +84,7 @@ const PERK_ROW_NEW = {
   stat: () => ({ kind: 'stat', stat: 'lev', stages: 1 }),
   damage: () => ({ kind: 'damage', side: 'deal', mult: 1.1 }),
   heal: () => ({ kind: 'heal', share: 0.1 }),
-  payout: () => ({ kind: 'payout', what: 'capital', mult: 1.1 }),
+  payout: () => ({ kind: 'payout', what: 'research', mult: 1.1 }),
 };
 const PERK_RARITIES = ['common', 'uncommon', 'rare'];
 
@@ -176,7 +176,7 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
       ],
       payout: () => [
         selectField('Which', `${p}.what`, [
-          ['capital', 'The payout’s Research'],
+          ['research', 'The payout’s Research'],
           ['itemShare', 'The share of their price items count at (never above 1)'],
         ]),
         mult('×'),
@@ -379,7 +379,7 @@ function perkPreviewHTML(/** @type {any} */ v) {
       'Healed walking into a place',
       v.heal.share ? `${perkPct(v.heal.share)} (${v.heal.hp} of ${v.sample.hp} HP)` : 'nothing'
     ),
-    one('Payout: Research', perkX(v.payout.capital)),
+    one('Payout: Research', perkX(v.payout.research)),
     one(
       'Payout: items count at',
       `${perkPct(v.payout.itemShare[0])}${v.payout.itemShare[1] !== v.payout.itemShare[0] ? ` → <b>${perkPct(v.payout.itemShare[1])}</b>` : ''} of their price`

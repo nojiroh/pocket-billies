@@ -88,7 +88,7 @@ export interface SaveData {
 /** roguelite track RL-3: what lasts between runs (logic/meta-state.js) */
 export interface Meta {
   /** the unlock currency, the building material, the rare boss currency (money is saveData.se) */
-  capital: number;
+  research: number;
   scrap: number;
   seals: number;
   /** unlock ids: 1 (unlocks.json, RL-11) */
@@ -226,7 +226,7 @@ export interface Run {
   /** the nodes arrived at, in order (map indices); the player's choices, in order */
   path: number[];
   log: string[];
-  /** Billies released during the run (paid as Capital at the payout) */
+  /** Billies released during the run (paid as Research at the payout) */
   released: { sp: SpeciesId; lvl: number }[];
   /** the one-time hints already shown */
   hints: Record<string, 1>;

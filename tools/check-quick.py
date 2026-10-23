@@ -1677,7 +1677,7 @@ def desktop_steps(b, base, R):
             shot(pg, 'rl8-payout')
             pg.click('#ov [data-a=mb][data-i="0"]')
             if not until(pg, "!saveData.run&&LOCATIONS.length===gameData.locations.length&&walkView.ready&&walkView.id==='w:'+mapIdAt(saveData.trip.node)+'*'", 90): raise Exception('Fly home didn’t bring you back to Copperleaf')
-            home = pg.evaluate("[saveData.meta.runs, saveData.meta.wins, saveData.meta.capital, saveData.meta.seals]")
+            home = pg.evaluate("[saveData.meta.runs, saveData.meta.wins, saveData.meta.research, saveData.meta.seals]")
             if home[0] < 1 or home[1] < 1 or home[2] <= 0: raise Exception(f'home: {home}')
             if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
             return f'seed {land[0]}: {land[4]} scenes, landed day 1 by the mast; a battle won; day 2 over the seam; healed for {heal[0]} Moneys; {wares} wares and a Perk; {foe[1]} beaten (doubles), {relic} picked; the boss (an Alpha) beaten; payout; home: {home[2]} Research, {home[3]} Seal'

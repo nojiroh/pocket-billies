@@ -7,7 +7,7 @@
      <pb-day-chip day="3" deadline="7">               "Day 3 · deadline day 7"; gold on the last day, red past it
      <pb-forecast items="clear:Clear,rain:Rain" from="3" value="3">   the weather by day, today marked
      <pb-node type="town" state="seen" weather="rain" label="Marrow Town">   a run map marker (js/logic/run-marks.js)
-     <pb-coin kind="money|capital|scrap|seals" value="340" label="Moneys">   a currency chip that counts to a new value
+     <pb-coin kind="money|research|scrap|seals" value="340" label="Moneys">   a currency chip that counts to a new value
      <pb-pick-card heading="..." facedown selected>   the relic pick and keep-one card; turning it face up flips it
      <pb-payout rows='[{"label":"Moneys left","value":170}]' total="420" total-label="Research">   rows slam in, the
                                                        total counts up (play() runs it again); pb-payout-row
@@ -72,7 +72,7 @@ const RUN_WEATHER_ICONS = {
   ash: 'ash',
 };
 /* the four currencies' icons (names are placeholders until currencies.json, roguelite-track.md 8.5) */
-const RUN_CURRENCY_ICONS = { money: 'coin', capital: 'capital', scrap: 'scrap', seals: 'seal' };
+const RUN_CURRENCY_ICONS = { money: 'coin', research: 'research', scrap: 'scrap', seals: 'seal' };
 /* the bottom bar's two sets (owner's decision: one bar whose tabs change) */
 const RUN_NAV_SETS = {
   run: [
@@ -430,7 +430,7 @@ const PbCoin = class extends LitElement {
         display: inline-block;
         --tone: var(--gold-b);
       }
-      :host([kind='capital']) {
+      :host([kind='research']) {
         --tone: var(--c-primary);
       }
       :host([kind='scrap']) {
@@ -788,7 +788,7 @@ const PbPayout = class extends LitElement {
     this.rows = [];
     this.total = 0;
     this.totalLabel = 'Research';
-    this.kind = 'capital';
+    this.kind = 'research';
     this._n = Infinity;
     this._t = null;
     this._timers = [];
@@ -862,7 +862,7 @@ const PbPayout = class extends LitElement {
     const rows = this.rows || [],
       n = Math.min(this._n, rows.length),
       t = this._t ?? this.total,
-      k = /** @type {any} */ (RUN_CURRENCY_ICONS)[this.kind] || 'capital';
+      k = /** @type {any} */ (RUN_CURRENCY_ICONS)[this.kind] || 'research';
     return html`<ol aria-label="Payout" @click=${() => this.finish()}>
         ${rows.map((r, i) => {
           const v = Number(r.value) || 0;

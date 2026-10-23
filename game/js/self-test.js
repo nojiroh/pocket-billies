@@ -1112,7 +1112,7 @@ async function runFullTest(mode) {
             uiState.modal.btns[0].f();
             if (!(await wait(() => !saveData.run && LOCATIONS.length === gameData.locations.length, 10000)))
               throw new Error('the run didn’t end');
-            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; home with ${saveData.meta.capital} Research`;
+            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; home with ${saveData.meta.research} Research`;
           } finally {
             if (activeBattle) {
               stopTimers();
@@ -1319,7 +1319,7 @@ async function runFullTest(mode) {
           try {
             const s = JSON.parse(JSON.stringify(saveData));
             Object.assign(s.meta, {
-              capital: 1000,
+              research: 1000,
               scrap: 200,
               seals: 0,
               unlocks: {},
@@ -1340,8 +1340,8 @@ async function runFullTest(mode) {
             );
             if (!buy) throw new Error('no Buy on Nerve Tonic');
             buy.click();
-            if (!s.meta.unlocks.shop_settlement || s.meta.capital !== 1000 - D.unlocks.shop_settlement.cost)
-              throw new Error(`buying Nerve Tonic left ${s.meta.capital} Research`);
+            if (!s.meta.unlocks.shop_settlement || s.meta.research !== 1000 - D.unlocks.shop_settlement.cost)
+              throw new Error(`buying Nerve Tonic left ${s.meta.research} Research`);
             if (!labBuy('ranch_2') || ranchLevel(s) !== 2 || ranchSlots(s, RULES.ranch) !== RULES.ranch.slots[1])
               throw new Error('the ranch’s upgrade didn’t raise its level and slots');
             const got = labMilestones();

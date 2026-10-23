@@ -30,14 +30,14 @@ test('unlocks: each row is sold at its building in that building’s currency, o
 });
 
 test('unlocks: buying pays once, in the right currency, and grants', () => {
-  const s = hubSave({ capital: 200, scrap: 50, seals: 0 });
+  const s = hubSave({ research: 200, scrap: 50, seals: 0 });
   assert.equal(K.unlockReady(s, 'shop_bailout', D), null);
   assert.equal(K.unlockBuy(s, 'shop_bailout', D), true);
-  assert.equal(s.meta.capital, 200 - D.unlocks.shop_bailout.cost);
+  assert.equal(s.meta.research, 200 - D.unlocks.shop_bailout.cost);
   assert.equal(s.meta.unlocks.shop_bailout, 1);
   assert.equal(K.unlockReady(s, 'shop_bailout', D), 'owned');
   assert.equal(K.unlockBuy(s, 'shop_bailout', D), false, 'never twice');
-  assert.equal(s.meta.capital, 200 - D.unlocks.shop_bailout.cost);
+  assert.equal(s.meta.research, 200 - D.unlocks.shop_bailout.cost);
   assert.equal(K.buildingLevel(s, 'ranch'), 1);
   assert.equal(K.unlockBuy(s, 'ranch_2', D), true);
   assert.equal(s.meta.scrap, 50 - D.unlocks.ranch_2.cost, 'the ranch is paid in Scrap');
@@ -48,7 +48,7 @@ test('unlocks: buying pays once, in the right currency, and grants', () => {
 });
 
 test('unlocks: what a row needs, earned rows, and the run refuse a purchase', () => {
-  const s = hubSave({ capital: 1e6, scrap: 1e6, seals: 9 });
+  const s = hubSave({ research: 1e6, scrap: 1e6, seals: 9 });
   assert.equal(K.unlockReady(s, 'ranch_3', D), 'requires');
   assert.equal(K.unlockReady(s, 'biome_ridge', D), 'requires');
   assert.equal(K.unlockReady(s, 'first_run', D), 'earned', 'an earned row is not sold');
@@ -81,13 +81,13 @@ test('unlocks: earned rows are granted when their condition holds, once, in the 
   const chain = {
     ...D,
     unlocks: {
-      a: { name: 'a', about: 'a', when: 'unlock:b', grant: { capital: 1 } },
-      b: { name: 'b', about: 'b', when: 'runs >= 1', grant: { capital: 2 } },
+      a: { name: 'a', about: 'a', when: 'unlock:b', grant: { research: 1 } },
+      b: { name: 'b', about: 'b', when: 'runs >= 1', grant: { research: 2 } },
     },
   };
-  const t = hubSave({ runs: 1, capital: 0 });
+  const t = hubSave({ runs: 1, research: 0 });
   assert.deepEqual(K.unlockAuto(t, chain), ['b', 'a'], 'a condition reading another unlock follows it');
-  assert.equal(t.meta.capital, 3);
+  assert.equal(t.meta.research, 3);
 });
 
 test('unlocks: tidy forgets rows the table lost and rebuilds the buildings’ levels from what is owned', () => {

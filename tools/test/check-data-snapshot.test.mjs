@@ -100,7 +100,7 @@ test('check-data: planted robots, biomes, node types, relics, currencies, buildi
         R.takeover.fx[0].type = 'Plasma';
       },
       'currencies.json': C => {
-        C.capital.kept = 'run';
+        C.research.kept = 'run';
       },
       'buildings.json': B => {
         B.ranch.act = 'nosuchact';

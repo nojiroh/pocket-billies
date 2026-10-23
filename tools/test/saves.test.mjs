@@ -173,7 +173,7 @@ test('saves: the load check refuses a format 4 save with a broken meta, run, ran
     ['no run key', { ...s, run: undefined }],
     ['a broken run', { ...s, run: { ...s.run, clock: 0 } }],
     ['no meta', { ...s, meta: undefined }],
-    ['a broken meta', { ...s, meta: { ...s.meta, capital: -1 } }],
+    ['a broken meta', { ...s, meta: { ...s.meta, research: -1 } }],
     ['no ranch', { ...s, ranch: null }],
     ['the trip off the run world', { ...s, trip: { node: 6, plan: [] } }],
     ['a broken Billie in the hub team', { ...s, run: { ...s.run, start: { ...s.run.start, team: [badBilly] } } }],

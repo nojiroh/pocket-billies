@@ -157,7 +157,7 @@ function debugHTML() {
       : '<p class="note">Game data loaded with no warnings.</p>'
   }`;
   const give = `<div class="dbg-row">${debugButtonHTML('se1', '+1,000 Moneys', 'gold')}${debugButtonHTML('se10', '+10,000 Moneys', 'gold')}${debugButtonHTML('coins', '+10 of every pyramid', 'gold')}${debugButtonHTML('items', '+5 of every item', 'gold')}</div>
-  <div class="dbg-row">${debugButtonHTML('scrap', '+50 Scrap', 'gold')}${debugButtonHTML('capital', '+500 Research, +2 Crests', 'gold')}</div>`;
+  <div class="dbg-row">${debugButtonHTML('scrap', '+50 Scrap', 'gold')}${debugButtonHTML('research', '+500 Research, +2 Crests', 'gold')}</div>`;
   const billies = `<div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level">${debugSelectHTML('dbgCoat', [['', 'No coat'], ...Object.entries(COATS).map(([k, c]) => [k, c.name])], uiState.dbgCoat || '')}</div>
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
   <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels', 'gold')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide', 'gold')}</div>
@@ -573,10 +573,10 @@ function debugAction(x) {
       said = `+50 Scrap: you have ${saveData.meta.scrap}.`;
       break;
     /* RL-11: Research and Crests to try the Lab's board and the airship's upgrades with */
-    case 'capital':
-      saveData.meta.capital += 500;
+    case 'research':
+      saveData.meta.research += 500;
       saveData.meta.seals += 2;
-      said = `+500 Research, +2 Crests: you have ${saveData.meta.capital} and ${saveData.meta.seals}.`;
+      said = `+500 Research, +2 Crests: you have ${saveData.meta.research} and ${saveData.meta.seals}.`;
       break;
     case 'win':
       if (!activeBattle || activeBattle.phase === 'playing' || activeBattle.over)

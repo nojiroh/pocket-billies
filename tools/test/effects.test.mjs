@@ -26,7 +26,7 @@ test('effects: no rows change nothing (exactly the number given)', () => {
     assert.deepEqual(E.fxStages(fx), {});
     assert.equal(E.fxHealShare(fx), 0);
     const r = { money: 0.1, itemShare: 0.5 };
-    assert.deepEqual(E.fxPayoutRates(fx, r), { ...r, capital: 1 });
+    assert.deepEqual(E.fxPayoutRates(fx, r), { ...r, research: 1 });
   }
 });
 
@@ -50,7 +50,7 @@ test('effects: each kind at its point, and only there', () => {
     { kind: 'catch', mult: 1.25 },
     { kind: 'stat', stat: 'hus', stages: 1 },
     { kind: 'heal', share: 0.15 },
-    { kind: 'payout', what: 'capital', mult: 1.15 },
+    { kind: 'payout', what: 'research', mult: 1.15 },
     { kind: 'payout', what: 'itemShare', mult: 2 }
   );
   assert.equal(E.fxMoney(fx, 100), 120);
@@ -61,7 +61,7 @@ test('effects: each kind at its point, and only there', () => {
   assert.deepEqual(E.fxStages(fx), { hus: 1 });
   assert.equal(E.fxHealShare(fx), 0.15);
   const p = E.fxPayoutRates(fx, { money: 0.1, itemShare: 0.5, win: 100 });
-  assert.deepEqual(p, { money: 0.1, itemShare: 1, win: 100, capital: 1.15 });
+  assert.deepEqual(p, { money: 0.1, itemShare: 1, win: 100, research: 1.15 });
   assert.equal(E.fxDamage(fx, hit()), 1, 'no damage rows');
 });
 

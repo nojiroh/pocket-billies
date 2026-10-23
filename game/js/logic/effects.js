@@ -132,15 +132,15 @@ provide({ fxHealShare }); /* to-module */
 
 /**
  * The payout's rates with the payout rows: `itemShare` times its rows (at most 1: an item never counts above its
- * price) and `capital`, what the payout's Research is multiplied by (1 when none). The other rates as they were.
+ * price) and `research`, what the payout's Research is multiplied by (1 when none). The other rates as they were.
  * @template {{ itemShare: number }} R
- * @param {Fx[] | null | undefined} fx @param {R} rates @returns {R & { capital: number }}
+ * @param {Fx[] | null | undefined} fx @param {R} rates @returns {R & { research: number }}
  */
 export function fxPayoutRates(fx, rates) {
   const share = fxMult(fx, f => f.kind === 'payout' && f.what === 'itemShare');
   return {
     ...rates,
     itemShare: share === 1 ? rates.itemShare : Math.min(1, rates.itemShare * share),
-    capital: fxMult(fx, f => f.kind === 'payout' && f.what === 'capital'),
+    research: fxMult(fx, f => f.kind === 'payout' && f.what === 'research'),
   };
 }

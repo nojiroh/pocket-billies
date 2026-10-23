@@ -182,9 +182,9 @@ export function runEndHome(won, keep, itemPrice) {
   closeModal();
   render();
   if (typeof debugLog !== 'undefined')
-    debugLog.add('scene', `back in the hub: +${pay.capital} Research, +${pay.seals} Crests, +${pay.scrap} Scrap`);
+    debugLog.add('scene', `back in the hub: +${pay.research} Research, +${pay.seals} Crests, +${pay.scrap} Scrap`);
   toast(
-    `+${formatNumber(pay.capital)} Research${pay.scrap ? `, ${formatNumber(pay.scrap)} Scrap` : ''}${pay.seals ? ` and ${plural(pay.seals, 'Crest')}` : ''}. You have ${formatNumber(saveData.meta.capital)} Research.`
+    `+${formatNumber(pay.research)} Research${pay.scrap ? `, ${formatNumber(pay.scrap)} Scrap` : ''}${pay.seals ? ` and ${plural(pay.seals, 'Crest')}` : ''}. You have ${formatNumber(saveData.meta.research)} Research.`
   );
   /* RL-11: milestones the run has met (ended runs, wins), each with its own toast after this one */
   if (typeof labMilestones === 'function') labMilestones();

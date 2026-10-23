@@ -39,7 +39,7 @@ const run = (o = {}) => ({
   healed: 60,
   spent: 30,
   se: 500,
-  capital: 80,
+  research: 80,
   top: 9,
   relics: [],
   foes: [],

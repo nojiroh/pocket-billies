@@ -302,10 +302,10 @@ export function runBegin(s, give) {
 /**
  * @param {{ se: number, items: Record<string, number>, released: number, cleared: number, won: boolean }} end
  * @param {{ money: number, itemShare: number, released: number, node: number, win: number, winSeals: number,
- *   scrapNode?: number, scrapWin?: number, capital?: number }} rates capital (RL-12, a Perk's): the Research times
+ *   scrapNode?: number, scrapWin?: number, research?: number }} rates research (RL-12, a Perk's): the Research times
  *   this, the difference as a line of its own
  * @param {(id: string) => number} itemPrice an item's shop price (Moneys), 0 for none
- * @returns {{ capital: number, seals: number, scrap: number, lines: { what: string, n: number, capital: number }[] }}
+ * @returns {{ research: number, seals: number, scrap: number, lines: { what: string, n: number, research: number }[] }}
  */
 export function payoutOf(end, rates, itemPrice) {
   const itemValue = Object.entries(end.won ? {} : end.items || {}).reduce(
@@ -313,20 +313,20 @@ export function payoutOf(end, rates, itemPrice) {
     0
   );
   const lines = [
-    { what: 'money', n: Math.max(0, end.se), capital: Math.floor(Math.max(0, end.se) * rates.money) },
-    { what: 'items', n: Math.floor(itemValue), capital: Math.floor(itemValue * rates.money) },
-    { what: 'released', n: end.released, capital: end.released * rates.released },
-    { what: 'nodes', n: end.cleared, capital: end.cleared * rates.node },
-    { what: 'win', n: end.won ? 1 : 0, capital: end.won ? rates.win : 0 },
+    { what: 'money', n: Math.max(0, end.se), research: Math.floor(Math.max(0, end.se) * rates.money) },
+    { what: 'items', n: Math.floor(itemValue), research: Math.floor(itemValue * rates.money) },
+    { what: 'released', n: end.released, research: end.released * rates.released },
+    { what: 'nodes', n: end.cleared, research: end.cleared * rates.node },
+    { what: 'win', n: end.won ? 1 : 0, research: end.won ? rates.win : 0 },
   ];
-  /* RL-12: a Perk's payout row (logic/effects.js fxPayoutRates): the Research above times rates.capital, as a row */
-  const k = rates.capital ?? 1;
+  /* RL-12: a Perk's payout row (logic/effects.js fxPayoutRates): the Research above times rates.research, as a row */
+  const k = rates.research ?? 1;
   if (k !== 1) {
-    const sum = lines.reduce((a, l) => a + l.capital, 0);
-    lines.push({ what: 'fx', n: Math.round((k - 1) * 100), capital: Math.floor(sum * k) - sum });
+    const sum = lines.reduce((a, l) => a + l.research, 0);
+    lines.push({ what: 'fx', n: Math.round((k - 1) * 100), research: Math.floor(sum * k) - sum });
   }
   return {
-    capital: lines.reduce((sum, l) => sum + l.capital, 0),
+    research: lines.reduce((sum, l) => sum + l.research, 0),
     seals: end.won ? rates.winSeals : 0,
     scrap: Math.max(0, end.cleared) * (rates.scrapNode || 0) + (end.won ? rates.scrapWin || 0 : 0),
     lines,
@@ -367,7 +367,7 @@ export function runEnd(s, how, rates, itemPrice) {
   if (bag)
     for (const kind of /** @type {const} */ (['items', 'coins']))
       for (const [k, n] of Object.entries(bag[kind])) if (n > 0) s[kind][k] = (s[kind][k] || 0) + n;
-  s.meta.capital += pay.capital;
+  s.meta.research += pay.research;
   s.meta.seals += pay.seals;
   s.meta.scrap += pay.scrap;
   s.meta.runs += 1;

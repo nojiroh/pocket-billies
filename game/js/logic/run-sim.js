@@ -434,7 +434,7 @@ export function runSimOn(env) {
         days: run.clock,
         places: run.path.length,
         se,
-        capital: pay.capital,
+        research: pay.research,
         party,
         top: top ? top.lvl : 0,
         relics: run.perks.slice(),
@@ -483,7 +483,7 @@ export function runSimOn(env) {
       caught: avg(x => x.caught),
       healed: avg(x => x.healed),
       moneyLeft: avg(x => x.se),
-      capital: avg(x => x.capital),
+      research: avg(x => x.research),
       topLevel: avg(x => x.top),
     };
   }

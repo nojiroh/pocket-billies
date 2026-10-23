@@ -406,8 +406,8 @@ def run_loop(pg, base):
     if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('picking a card didn’t enable Fly home')
     pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
     if not until(pg, "!saveData.run&&LOCATIONS.length===1&&saveData.meta.runs===1", 30): raise Exception('Fly home didn’t end the run')
-    home = pg.evaluate("[saveData.meta.capital, !!uiState.roam, saveData.trip.node]")
-    if home[0] <= 0 or not home[1] or home[2] != 0: raise Exception(f'home: capital {home[0]}, by the mast {home[1]}, node {home[2]}')
+    home = pg.evaluate("[saveData.meta.research, !!uiState.roam, saveData.trip.node]")
+    if home[0] <= 0 or not home[1] or home[2] != 0: raise Exception(f'home: research {home[0]}, by the mast {home[1]}, node {home[2]}')
     return f'a battle held as it began ({seed}), started again after a reload, lost: the payout ({rows} rows, {cards} cards), again after a reload, home with {home[0]} Research'
 
 
@@ -829,7 +829,7 @@ def lab(pg, base):
     if rows != want: raise Exception(f'the board shows {rows} rows of {want}')
     cost = pg.evaluate("UNLOCK_DATA.unlocks.shop_bailout.cost")
     pg.click(".s-lab [data-a=lab-buy][data-k=shop_bailout]")
-    st = pg.evaluate("[saveData.meta.capital,!!saveData.meta.unlocks.shop_bailout]")
+    st = pg.evaluate("[saveData.meta.research,!!saveData.meta.unlocks.shop_bailout]")
     if st != [500 - cost, True]: raise Exception(f'buying Revives: Research and owned {st}')
     pg.evaluate("uiState.tab='walk';render();uiState.modal=null;uiState.mq=[];ranchOpen();0")
     pg.click("#ov .ranch-sheet [data-a=lab-buy][data-k=ranch_2]")

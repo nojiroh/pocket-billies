@@ -6,7 +6,7 @@
  "propertyNames": {
   "enum": [
    "money",
-   "capital",
+   "research",
    "scrap",
    "seals"
   ]

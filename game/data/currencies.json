@@ -7,10 +7,10 @@
   "kept": "run",
   "about": "A run's Moneys: wild prizes and trainers. Pays for healing and run shops; turns into Research when the run ends."
  },
- "capital": {
+ "research": {
   "name": "Research",
   "one": "Research",
-  "icon": "capital",
+  "icon": "research",
   "kept": "meta",
   "about": "What a run brings home. Spent on the Lab's unlock board."
  },

@@ -68,7 +68,7 @@
   "name": "Frequent flyer",
   "about": "End five runs.",
   "when": "runs >= 5",
-  "grant": {"capital":50}
+  "grant": {"research":50}
  },
  "first_win": {
   "name": "First Crest",
@@ -80,6 +80,6 @@
   "name": "Index of fifteen",
   "about": "Catch fifteen kinds of Billie.",
   "when": "caught >= 15",
-  "grant": {"capital":100}
+  "grant": {"research":100}
  }
 }

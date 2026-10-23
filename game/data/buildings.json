@@ -1,7 +1,7 @@
 {
  "lab": {
   "name": "Lab",
-  "currency": "capital",
+  "currency": "research",
   "act": "lab",
   "levels": 1,
   "about": "Professor Chosen's lab (his assistant Hazel does the work). Its board sells unlocks for Research."

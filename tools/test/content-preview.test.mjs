@@ -23,7 +23,7 @@ test('relic preview: nothing held changes nothing', () => {
   for (const s of p.stats) assert.equal(s.after, s.before, s.id);
   assert.deepEqual(p.money.prize[0], p.money.prize[1]);
   assert.equal(p.catch, 1);
-  assert.deepEqual([p.damage.dealH, p.damage.take, p.heal.share, p.payout.capital], [1, 1, 0, 1]);
+  assert.deepEqual([p.damage.dealH, p.damage.take, p.heal.share, p.payout.research], [1, 1, 0, 1]);
   assert.deepEqual(p.limited, []);
 });
 
@@ -43,7 +43,7 @@ test('relic preview: each kind reads its rows through the game’s fx functions'
   assert.equal(p.damage.dealS, 1);
   assert.equal(p.damage.take, 0.9);
   assert.equal(p.heal.share, 0.15);
-  assert.equal(p.payout.capital, 1.15);
+  assert.equal(p.payout.research, 1.15);
   assert.equal(p.payout.itemShare[1], Math.min(1, RULES.run.payout.itemShare * 2));
 });
 

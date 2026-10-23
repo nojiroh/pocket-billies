@@ -502,7 +502,7 @@ debugLog.state = () => {
       ? {
           runs: meta.runs,
           wins: meta.wins,
-          capital: meta.capital,
+          capital: meta.research,
           seals: meta.seals,
           scrap: meta.scrap,
           /* RL-11: the unlock ids owned (game data ids, no names) and the buildings' levels */

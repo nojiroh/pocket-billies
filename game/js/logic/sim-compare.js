@@ -52,7 +52,7 @@ export const SIM_METRICS = Object.freeze([
   'healed',
   'spent',
   'moneyLeft',
-  'capital',
+  'research',
   'relics',
   'topLevel',
 ]);

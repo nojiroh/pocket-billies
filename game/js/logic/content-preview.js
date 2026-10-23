@@ -87,7 +87,7 @@ export function perkPreview(ids, sample) {
       types: types.map(t => ({ type: t, deal: hit('H', t, true), take: hit('H', t, false) })),
     },
     heal: { share: fxHealShare(fx), hp: Math.floor(hp * fxHealShare(fx)) },
-    payout: { itemShare: [R.payout.itemShare, pay.itemShare], capital: pay.capital },
+    payout: { itemShare: [R.payout.itemShare, pay.itemShare], research: pay.research },
     limited,
   };
 }

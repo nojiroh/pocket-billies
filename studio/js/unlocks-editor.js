@@ -64,11 +64,11 @@ const UNLOCK_GRANTS = {
   building: 'A building’s level',
   shop: 'An item in run shops',
   biome: 'A biome on run maps',
-  capital: 'Research',
+  research: 'Research',
   scrap: 'Scrap',
   seals: 'Crests',
 };
-const unlockGrantKind = (/** @type {any} */ G) => Object.keys(UNLOCK_GRANTS).find(k => G && k in G) || 'capital';
+const unlockGrantKind = (/** @type {any} */ G) => Object.keys(UNLOCK_GRANTS).find(k => G && k in G) || 'research';
 function unlockGrantNew(/** @type {string} */ kind) {
   const D = studioState.D;
   if (kind === 'building') {
@@ -419,7 +419,7 @@ ACTIONS.unlockNew = () => {
   const D = studioState.D,
     k = uniqueKey('unlock', x => !!D.unlocks[x]),
     at = Object.keys(D.buildings).find(b => !D.buildings[b].soon) || 'lab';
-  D.unlocks[k] = { name: 'New unlock', about: 'What it opens.', at, cost: 10, grant: { capital: 10 } };
+  D.unlocks[k] = { name: 'New unlock', about: 'What it opens.', at, cost: 10, grant: { research: 10 } };
   studioState.sel.unlock = k;
   changed();
   render();

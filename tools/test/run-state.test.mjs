@@ -136,7 +136,7 @@ test('run: the load check refuses broken or tampered runs', () => {
 test('run: the payout converts money, items, releases, nodes and a win into Research, and a win into a Crest', () => {
   const p = payoutOf({ se: 455, items: { potion: 3, nothing: 2 }, released: 2, cleared: 4, won: true }, RATES, PRICE);
   assert.deepEqual(
-    p.lines.map(l => [l.what, l.n, l.capital]),
+    p.lines.map(l => [l.what, l.n, l.research]),
     [
       ['money', 455, 45],
       ['items', 0, 0],
@@ -151,12 +151,12 @@ test('run: the payout converts money, items, releases, nodes and a win into Rese
     RATES,
     PRICE
   );
-  assert.deepEqual(lostBag.lines[1], { what: 'items', n: 300, capital: 30 }, 'a loss pays the bag at half price');
-  assert.equal(p.capital, 215);
+  assert.deepEqual(lostBag.lines[1], { what: 'items', n: 300, research: 30 }, 'a loss pays the bag at half price');
+  assert.equal(p.research, 215);
   assert.equal(p.seals, 1);
   assert.equal(p.scrap, 4 * 2 + 10, 'RL-9: Scrap a node cleared, more for a win');
   const lost = payoutOf({ se: 0, items: {}, released: 0, cleared: 1, won: false }, RATES, PRICE);
-  assert.deepEqual([lost.capital, lost.seals, lost.scrap], [10, 0, 2]);
+  assert.deepEqual([lost.research, lost.seals, lost.scrap], [10, 0, 2]);
 });
 
 test('run: ending one pays into meta, puts the hub back and keeps the chosen Billies', () => {
@@ -174,8 +174,8 @@ test('run: ending one pays into meta, puts the hub back and keeps the chosen Bil
   s.flags.run_flag = 1;
   const pay = runEnd(s, { won: false, keep: [s.team[0].uid] }, RATES, PRICE);
   assert.equal(s.run, null);
-  assert.equal(pay.capital, 50 + 20 + 15 + 30);
-  assert.deepEqual(s.meta, { ...newMeta(), capital: pay.capital, scrap: 3 * 2, runs: 1 });
+  assert.equal(pay.research, 50 + 20 + 15 + 30);
+  assert.deepEqual(s.meta, { ...newMeta(), research: pay.research, scrap: 3 * 2, runs: 1 });
   for (const k of RUN_FIELDS.filter(k => k !== 'team')) assert.deepEqual(s[k], hub[k], `${k} is the hub's again`);
   assert.equal(s.team.length, 2, 'the Billie caught in the run is gone');
   assert.equal(s.team[0].lvl, 14, 'the kept traveller keeps its gains');
@@ -283,7 +283,7 @@ test('run: the packed bag leaves the hub, travels on top of the gift and comes h
     s.coins.penny = 3;
     const pay = runEnd(s, { won, keep: [s.team[0].uid] }, RATES, PRICE);
     assert.deepEqual([s.items.potion, s.coins.penny], won ? [1 + 2, 3] : [1, 0]);
-    assert.equal(pay.lines[1].capital, won ? 0 : Math.floor(2 * 200 * 0.5 * 0.1), 'a loss pays the bag');
+    assert.equal(pay.lines[1].research, won ? 0 : Math.floor(2 * 200 * 0.5 * 0.1), 'a loss pays the bag');
   }
 });
 

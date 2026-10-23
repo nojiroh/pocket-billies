@@ -28,11 +28,11 @@ expose({
 
 /** the payout's rates: what each turns into, and of what @type {Record<string, [string, string]>} */
 export const ECONOMY_PAYOUT = {
-  money: ['capital', 'Research per Money brought home'],
-  itemShare: ['capital', 'Share of an item’s price, as Research'],
-  released: ['capital', 'Research per Billie caught on the run and released'],
-  node: ['capital', 'Research per place cleared'],
-  win: ['capital', 'Research for a win'],
+  money: ['research', 'Research per Money brought home'],
+  itemShare: ['research', 'Share of an item’s price, as Research'],
+  released: ['research', 'Research per Billie caught on the run and released'],
+  node: ['research', 'Research per place cleared'],
+  win: ['research', 'Research for a win'],
   winSeals: ['seals', 'Crests for a win'],
   scrapNode: ['scrap', 'Scrap per place cleared'],
   scrapWin: ['scrap', 'Scrap for a win'],
@@ -126,7 +126,7 @@ export function economyLines(D) {
   const B = D.buildings || {};
   for (const [k, U] of Object.entries(D.unlocks || {})) {
     const G = /** @type {any} */ (U).grant || {};
-    for (const c of ['capital', 'scrap', 'seals'])
+    for (const c of ['research', 'scrap', 'seals'])
       if (G[c])
         add({
           currency: c,
