@@ -1218,6 +1218,9 @@ def battles_and_world_billies(P):
     out = []
     pg.evaluate("saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null;m.lvl=Math.max(m.lvl,12)});while(saveData.team.length<3)saveData.team.push(makeBilly(DEX_ORDER[(saveData.team.length*5+3)%DEX_ORDER.length],10));saveData.team.forEach(m=>m.hp=maxHp(m));0")
     tap = "activeBattle&&activeBattle.phase==='playing'&&tapMessage()"
+    # TC-4: the animations at four times their speed, as check-fast's battle check plays them (the debug menu's own
+    # speed switch, uiState.dbgSpeed, keeps a battle's start from setting it back); this step took five minutes
+    pg.evaluate("uiState.dbgSpeed=true;battleStage.speed=4;0")
     for kind in ('double', 'alpha'):
         if kind == 'double':
             tid = pg.evaluate("Object.keys(TRAINERS).find(k=>TRAINERS[k].team.length>=2)||''")
@@ -1263,6 +1266,7 @@ def battles_and_world_billies(P):
     pg.evaluate("buddyTap();0"); until(pg, "!!worldBillies.say", 5); drawn(pg, 2); shot(pg, 'world-buddy')
     said = pg.evaluate("worldBillies.say")
     pets = pg.evaluate("Object.values(TRAINERS).filter(T=>companionSpecies(T)).length")
+    pg.evaluate("uiState.dbgSpeed=false;battleStage.speed=1;0")
     out.append(f"world: {w['shown']} in the grass (none left its spot in 5 s, Alpha {'there' if w['alpha'] else 'not rolled'}), buddy {gap:.1f} m behind and says “{said[:50]}”, {pets} trainers with a companion")
     return '; '.join(out)
 
