@@ -9,6 +9,10 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The Studio can repack a Billie's sheet (Studio plan Phase 5): Repack sheet in Part mode drops the pixels no frame
+  shows, and the Billie looks exactly the same. The Roster board has a Pixel density report: how many of each Billie's
+  pixels go into a metre in the world against the props' and the ground's, and which kit parts were scaled more than
+  their body. It only measures. No change in the game.
 - Replacing a Billie's part from the Parts Library keeps the Billie whole (Studio plan Phase 5). The body parts
   hanging on the old part move to the new part's neck, shoulders, hips and tail (horns, ears and crests keep their
   place on a new head); a new head blinks (the blink is drawn again from it) unless you keep the old faces; a new
