@@ -568,8 +568,7 @@
   "compressor": {"threshold":-14,"ratio":3}
  },
  "run": {
-  "about": "SND-5: the run's music. arc: bands of rows (row 0 is the landing; the mini-bosses stand on rows 3 and 6) and how a biome's song changes there, so a run builds as it goes; rows no band names play the song as written. deadlineDays: how many days before the deadline (the deadline day counts as 1) a run's songs play their deadline version; past the deadline they always do. weather: on the run's map tab the map song is muffled by today's forecast where you stand, a low-pass at these Hz (weather it doesn't name: open)",
-  "deadlineDays": 1,
+  "about": "SND-5: the run's music. arc: bands of rows (row 0 is the landing; the mini-bosses stand on rows 3 and 6) and how a biome's song changes there, so a run builds as it goes; rows no band names play the song as written. weather: on the run's map tab the map song is muffled by today's forecast where you stand, a low-pass at these Hz (weather it doesn't name: open)",
   "weather": {"rain":2200,"storm":1400,"snow":3200,"fog":2800,"ash":2400},
   "arc": [
    {

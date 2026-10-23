@@ -103,7 +103,7 @@ export const musicStudio = {
   /** @type {any} */ tracker: null,
   loop: true,
   /** SND-4: play songs' night versions (town@night) */ night: false,
-  /** SND-5: play another version: tense, deadline or a run arc band ('' as written) */ part: '',
+  /** SND-5: play another version: tense or a run arc band ('' as written) */ part: '',
   shown: '',
   /** the where rule last moved, added or shown (marked in the table) */ picked: -1,
   /** the line the hook roll edits: hook, counter or (SND-5) intro */ line: 'hook',
@@ -176,11 +176,11 @@ export function musicPlay(name) {
   if (musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
   T.refresh(musicData().songs);
   if (T.song) T.stop();
-  /* SND-4: with Night on, the night version, if the song has one. SND-5: the version picked (tense, deadline, an arc
-     band; night over a band, not over tense or deadline), else the song as written; its intro first */
+  /* SND-4: with Night on, the night version, if the song has one. SND-5: the version picked (tense, an arc
+     band; night over a band, not over tense), else the song as written; its intro first */
   const S = musicData().songs[name],
     part = musicStudio.part,
-    night = musicStudio.night && S && S.night !== false && !['tense', 'deadline'].includes(part),
+    night = musicStudio.night && S && S.night !== false && part !== 'tense',
     want = name + (part ? '@' + part : '') + (night ? '@night' : '');
   if (!T.play(want, { intro: true })) T.play(night ? name + '@night' : name, { intro: true });
   musicNowShow();
@@ -870,7 +870,7 @@ function musicWhereHTML() {
     musicRunHTML()
   );
 }
-/* SND-5: the run's music: the arc's bands (a biome's song busier in later rows), the deadline days, the map song's
+/* SND-5: the run's music: the arc's bands (a biome's song busier in later rows), the map song's
    weather. Fields on music.json run; ▶ Play with Version set to a band plays it */
 function musicRunHTML() {
   const R = musicData().run;
@@ -891,24 +891,9 @@ function musicRunHTML() {
     weather = Object.keys(R.weather || {})
       .map(w => numberField(w, `${p}.weather.${w}`, { min: 200, max: 20000, step: 100, unit: 'Hz' }))
       .join('');
-  return card(
-    'In a run',
-    `<h4>The arc</h4>${bands}<h4>The deadline</h4>${grid(
-      selectField(
-        'Deadline version from',
-        `${p}.deadlineDays`,
-        [
-          [1, 'the deadline day'],
-          [2, 'two days before'],
-          [3, 'three days before'],
-        ],
-        { num: 1, help: 'And every day past the deadline. The drums and the hook on the triangle alone.' }
-      )
-    )}<h4>The map song hears the forecast</h4>${grid(weather)}`,
-    {
-      sub: 'Row 0 is the landing; the mini-bosses stand on rows 3 and 6. A biome’s song plays as written on rows no band names, a town node always does. Battles keep their own songs (and their tense version in the red zone).',
-    }
-  );
+  return card('In a run', `<h4>The arc</h4>${bands}<h4>The map song hears the forecast</h4>${grid(weather)}`, {
+    sub: 'Row 0 is the landing; the mini-bosses stand on rows 3 and 6. A biome’s song plays as written on rows no band names, a town node always does. Battles keep their own songs (and their tense version in the red zone).',
+  });
 }
 /* try a place: a made-up state, the rule that wins and its song */
 function musicTryHTML() {
@@ -1099,13 +1084,12 @@ SECTIONS.music = () => {
 };
 const musicLoopHTML = () =>
   `<label class="mus-loop" title="Off: a song stops after its last bar"><input type="checkbox" id="musLoop" ${musicStudio.loop ? 'checked' : ''}>Loop</label><label class="mus-loop" title="On: the night version, as outdoors at night (slower and lower unless the song writes its own)"><input type="checkbox" id="musNight" ${musicStudio.night ? 'checked' : ''}>Night</label>${musicPartHTML()}`;
-/* SND-5: which version ▶ plays: as written, a battle song's tense version, a run song's deadline version or its arc
+/* SND-5: which version ▶ plays: as written, a battle song's tense version, or a run song's arc
    band (Night goes over a band) */
 const musicPartHTML = () =>
   `<label class="mus-loop" title="Which version ▶ plays (a song without it plays as written)">Version <select id="musPart">${[
     ['', 'as written'],
     ['tense', 'tense (red zone)'],
-    ['deadline', 'deadline'],
     ...((musicData().run && musicData().run.arc) || []).map(B => [B.name, `rows ${B.row[0]}-${B.row[1]} (${B.name})`]),
   ]
     .map(

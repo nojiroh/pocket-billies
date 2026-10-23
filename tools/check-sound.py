@@ -13,7 +13,7 @@ held still while the notes are scheduled, so one tick schedules all 8 bars. Each
 of each 50 ms window. Nothing is heard and nothing in game/ is changed.
 
 SND-5: a song also renders its intro ('intro': the intro, then the song, as a battle starts it) and the variants
-sound.js musicParts names for it ('tense' for a battle song, 'mid', 'late' and 'deadline' for a run's songs), each as
+sound.js musicParts names for it ('tense' for a battle song, 'mid' and 'late' for a run's songs), each as
 long as the recipe that plays (tracker.js trackerRecipe). On code without them, only day and night.
 
 SND-6: a species' cry also renders its low-HP version ('<id>@low', when sound.js has cryPlay), the four UI sounds
