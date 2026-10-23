@@ -261,7 +261,7 @@ export const foeSide = k => 1 - ACTOR_SIDE[k];
 export const actorTypes = k => fieldState(k).ov || speciesOf(fighter(k)).types;
 export const shockName = () => BATTLE_RULES.shockName || `${BATTLE_RULES.shockType} storm`;
 export const isMulti = () => !!battleNow() && (battleNow().sides[0].f.length > 1 || battleNow().sides[1].f.length > 1);
-/** what a stat's stages multiply it by in battle: +1 is x1.5, -1 is x2/3 (Studio plan T4.1: the Loophole preview
+/** what a stat's stages multiply it by in battle: +1 is x1.5, -1 is x2/3 (Studio plan T4.1: the Perk preview
  * reads it too) @param {number} s */
 export const stageFactor = s => (s >= 0 ? (2 + s) / 2 : 2 / (2 - s));
 export function effectiveStat(k, s2) {
@@ -369,7 +369,7 @@ export function calcDamage(k, tk, mid, src) {
   const me = src ? null : fighter(k),
     gem = isRobot(me) ? robotGemDef(me.gem) : null,
     gx = gem && gem.type === M.t ? robotRules().gemAffinity : 1;
-  /* RL-12: a run's Loopholes (logic/effects.js): what yours deal and take; 1 without any */
+  /* RL-12: a run's Perks (logic/effects.js): what yours deal and take; 1 without any */
   const fm = battleNow().fx
     ? fxDamage(battleNow().fx, { cat: M.c, type: M.t, deal: !src && ACTOR_SIDE[k] === 0, take: ACTOR_SIDE[tk] === 0 })
     : 1;
@@ -974,7 +974,7 @@ export function makeAlpha(sp, lvl, o = {}) {
   m.hp = maxHp(m);
   return m;
 }
-/** a wild Billie's battle. Studio plan T3.2: `o.host` and `o.extra` (a run battle's seed, weather and Loopholes:
+/** a wild Billie's battle. Studio plan T3.2: `o.host` and `o.extra` (a run battle's seed, weather and Perks:
  * logic/run-loop.js runBattleExtra) as for startTrainer, so the run's simulation starts it as the page does */
 export function startWild(q, o = {}) {
   const made = { build: encounterBuild(q), coat: q.coat },
@@ -1024,7 +1024,7 @@ export function startTrainer(id, o = {}) {
       area: BATTLE_STAGES[/** @type {string} */ (T.battleStage)] ? T.battleStage : battleStageKey(),
       fmt: T.alpha ? 'alpha' : dbl ? 'double' : 'single',
       ...(o.host && { host: o.host }),
-      /* Studio plan T3.2: a run battle's seed, weather and Loopholes given with a host (the run's simulation; the
+      /* Studio plan T3.2: a run battle's seed, weather and Perks given with a host (the run's simulation; the
          page's own run battles get them from run.js runBattleStart) */
       ...o.extra,
     })
@@ -1049,7 +1049,7 @@ export function startTrainer(id, o = {}) {
   sayBattleFx();
   battleHost().open();
 }
-/** RL-12: a run's Loopholes that raised stats as the battle started (makeBattle): one line each, after the sides
+/** RL-12: a run's Perks that raised stats as the battle started (makeBattle): one line each, after the sides
  * come out */
 export function sayBattleFx() {
   const b = battleNow();
@@ -1061,7 +1061,7 @@ export function sayBattleFx() {
       `${relicNamesFor(b.fx, s)}: ${K.length > 1 ? 'your team’s' : `${billyName(fighter(K[0]))}’s`} ${STAT_NAMES[s]} ${up[s] > 0 ? 'rose' : 'fell'}${Math.abs(up[s]) > 1 ? ' sharply' : ''}.`
     );
 }
-/** the names of the Loopholes whose stat rows change stat s ("A and B") */
+/** the names of the Perks whose stat rows change stat s ("A and B") */
 export const relicNamesFor = (fx, s) =>
   [
     ...new Set(fx.filter(f => f.kind === 'stat' && f.stat === s).map(f => (RELICS[f.src] || { name: f.src }).name)),
@@ -1178,7 +1178,7 @@ export function catchOdds(id, T, spin, b) {
         T *
         (spin ? CATCH_RULES.spin : 1) *
         (e.boss ? (CATCH_RULES.alpha ?? 0.4) : 1) *
-        /* RL-12: a run's Loopholes (logic/effects.js) */
+        /* RL-12: a run's Perks (logic/effects.js) */
         (battleNow().fx ? fxCatch(battleNow().fx) : 1)
     );
   });

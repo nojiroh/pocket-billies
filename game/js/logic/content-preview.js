@@ -4,7 +4,7 @@
    The Studio's content editors ask the game's own logic, through the logic worker (studio/js/logic-worker.js, where
    GAMEDATA is the Studio's draft), what an edit does. On no page, like run-preview.js: game-data.js would read the
    Studio's data as the game's.
-   - relicPreview (T4.1): what some Loopholes do to a sample Billie (made by rules.js makeBilly at a level) and to the
+   - relicPreview (T4.1): what some Perks do to a sample Billie (made by rules.js makeBilly at a level) and to the
      numbers of a run: fxRows, then fxStages with the battle's stageFactor on its stats, fxMoney on a wild prize and a
      mini-boss's reward, fxPrice on a shop ware and the clinic, fxCatch, fxDamage, fxHealShare and fxPayoutRates. Where
      a kind's product passes FX_LIMIT, the product before and after the clamp.
@@ -30,7 +30,7 @@ import { runMapRows } from './run-map.js';
 import { runFoes } from './run-loop.js';
 
 /**
- * What the Loopholes `ids` do to a sample Billie of species `sp` at level `lvl`, and to a run's numbers.
+ * What the Perks `ids` do to a sample Billie of species `sp` at level `lvl`, and to a run's numbers.
  * @param {string[]} ids @param {{ sp: string, lvl: number }} sample
  */
 export function relicPreview(ids, sample) {

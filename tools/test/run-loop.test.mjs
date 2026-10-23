@@ -145,7 +145,7 @@ test("a battle's seed is its node's and its number's", () => {
   assert.notEqual(L.runBattleSeed(run, 2, 5), L.runBattleSeed(run, 2, 6));
 });
 
-test("a run battle's start: its seed, the forecast's weather (clear is sunny), the Loopholes' rows when held", () => {
+test("a run battle's start: its seed, the forecast's weather (clear is sunny), the Perks' rows when held", () => {
   const run = runOf('RL8BATTLEX'),
     { runWeather } = modules['run-map'],
     { battleWeatherOf } = modules.weather;
@@ -154,7 +154,7 @@ test("a run battle's start: its seed, the forecast's weather (clear is sunny), t
       x = L.runBattleExtra(run, i, 4, GAME_DATA.rules.env, null);
     assert.equal(x.seed, L.runBattleSeed(run, i, 4));
     assert.deepEqual(x.wx, battleWeatherOf(w === 'clear' ? 'sunny' : w, GAME_DATA.rules.env), `node ${i}: ${w}`);
-    assert.ok(!('fx' in x), 'no Loopholes: no fx');
+    assert.ok(!('fx' in x), 'no Perks: no fx');
   }
   const fx = [{ kind: 'money', mult: 1.2, src: 'x' }];
   assert.equal(L.runBattleExtra(run, 0, 0, GAME_DATA.rules.env, fx).fx, fx);

@@ -110,7 +110,7 @@ test('phase 08: your buddy gets the full XP of a win even when it sat out; the r
   assert.equal(got[1], Math.floor(got[0] * RULES.progression.teamXpShare));
 });
 
-test("a battle's start takes a host and the run's extras (seed, weather, Loopholes), trainer and wild alike", () => {
+test("a battle's start takes a host and the run's extras (seed, weather, Perks), trainer and wild alike", () => {
   const SILENT = logic.SILENT_HOST;
   teamOfThree();
   const tid = Object.keys(TRAINERS).find(k => TRAINERS[k].market && TRAINERS[k].team.length) || doubleTrainer(),
@@ -188,7 +188,7 @@ test("a battle's end on the save (battleSettle): the Hype counter and the lead's
   assert.equal(fn('findBilly')(B2.lead).streak, 0);
 });
 
-test("a run's mini-boss beaten (battleSettleWin): its reward, its flag and a pick of Loopholes made on the run", () => {
+test("a run's mini-boss beaten (battleSettleWin): its reward, its flag and a pick of Perks made on the run", () => {
   const s = teamOfThree(),
     tid = doubleTrainer();
   fn('startTrainer')(tid, { talked: true });
@@ -201,6 +201,6 @@ test("a run's mini-boss beaten (battleSettleWin): its reward, its flag and a pic
   fn('battleSettleWin')(B, s, pay, run);
   assert.equal(s.se, se + 77);
   assert.equal(s.flags[tid], 1);
-  assert.ok(Array.isArray(run.offer) && run.offer.length > 0, 'a pick of Loopholes');
+  assert.ok(Array.isArray(run.offer) && run.offer.length > 0, 'a pick of Perks');
   assert.equal(run.offerN, 1);
 });

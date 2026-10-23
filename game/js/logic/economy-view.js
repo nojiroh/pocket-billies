@@ -4,8 +4,8 @@
    Where each currency comes from and where it goes, read from the data the game reads it from, so the Studio's
    Economy page can list them with a link to each field (the plan's "economy editor": no economy data model of its own).
    - money ($, a run's): wild prizes (rules.json encounters.prizePerLevel x the level, logic/rules.js wildPrize), the
-     mini-boss's and boss's rewards (run.foes), Loopholes' money rows; spent at the clinic (run.healCost a hurt Billie),
-     on run shop wares (items.json and coins.json price; what run.shop can stock) and shop Loopholes (run.relics.price);
+     mini-boss's and boss's rewards (run.foes), Perks' money rows; spent at the clinic (run.healCost a hurt Billie),
+     on run shop wares (items.json and coins.json price; what run.shop can stock) and shop Perks (run.relics.price);
    - at the payout (logic/run-state.js payoutOf) money, items, released Billies, places and a win turn into Research,
      Scrap and Crests (run.payout);
    - Research, Scrap and Crests (kept between runs): the earned unlock rows' grants, and each building's unlock costs
@@ -74,7 +74,7 @@ export function economyLines(D) {
         add({
           currency: 'money',
           side: 'in',
-          what: `Loophole ${L.name || k}: wins pay ×${f.mult}`,
+          what: `Perk ${L.name || k}: wins pay ×${f.mult}`,
           value: f.mult,
           unit: '×',
           path: `relics.${k}.fx.${n}.mult`,
@@ -108,7 +108,7 @@ export function economyLines(D) {
     add({
       currency: 'money',
       side: 'out',
-      what: `Run shop: a ${r} Loophole`,
+      what: `Run shop: a ${r} Perk`,
       value: /** @type {number} */ (p),
       path: `rules.run.relics.price.${r}`,
       section: 'relics',

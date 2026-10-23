@@ -72,7 +72,7 @@ test('a deleted type is named nowhere', () => {
   }
 });
 
-test('after a rename the robots and Loopholes still pass the data checks', () => {
+test('after a rename the robots and Perks still pass the data checks', () => {
   const C = modules['data-checks'],
     checks = D => [...C.dataRobots(D), ...C.dataRelics(D)].map(p => p.join(': '));
   const was = checks(copy());

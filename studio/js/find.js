@@ -197,11 +197,11 @@ export function buildSearchIndex() {
       k
     )
   );
-  /* Studio plan Phase 4: the run's Loopholes, unlocks, buildings and currencies */
+  /* Studio plan Phase 4: the run's Perks, unlocks, buildings and currencies */
   Object.entries(D.relics || {}).forEach(([k, R]) =>
     add(
       R.name || k,
-      `Loophole · ${R.rarity || ''}`,
+      `Perk · ${R.rarity || ''}`,
       'relic',
       () => openSection('relics', { relic: k }),
       `${k} ${R.d || ''}`
@@ -293,7 +293,7 @@ const FIND_KIND_LABELS = {
   scene: 'Place',
   stop: 'Stop',
   prop: 'Prop',
-  relic: 'Loophole',
+  relic: 'Perk',
   unlock: 'Unlock',
   building: 'Building',
   currency: 'Currency',

@@ -658,10 +658,10 @@ def ranch(pg, base):
 
 
 def relics(pg, base):
-    """RL-12: the relics fixture is on a run holding five Loopholes with a mini-boss's pick waiting: the pick opens once
-    the world shows, three cards; one taken: six held, the pick gone, stored; the Loopholes tab lists them; a battle
+    """RL-12: the relics fixture is on a run holding five Perks with a mini-boss's pick waiting: the pick opens once
+    the world shows, three cards; one taken: six held, the pick gone, stored; the Perks tab lists them; a battle
     starts with the Speed stage and the catch row; walking in heals; a town's clinic charges half and its shop sells the
-    day's Loophole 15% cheaper; bought at the cap, one is let go; a mini-boss beaten stores a new pick before its sheet,
+    day's Perk 15% cheaper; bought at the cap, one is let go; a mini-boss beaten stores a new pick before its sheet,
     whose button opens it; a reload (?fixture=stored) opens the same pick; Take none clears it"""
     pick = "!!uiState.modal&&uiState.modal.cls==='relic-pick'&&document.querySelectorAll('#ov pb-pick-card').length===3"
     stored = lambda: pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).run")
@@ -675,10 +675,10 @@ def relics(pg, base):
         raise Exception(f'taking {took}: {pg.evaluate("JSON.stringify([saveData.run.relics,saveData.run.offer])")}')
     if len(stored()['relics']) != 6: raise Exception('the pick wasn’t stored')
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='relics';render();0")
-    if not until(pg, "document.querySelectorAll('.s-relics .bag-row').length===6", 10): raise Exception('the Loopholes tab doesn’t list six')
+    if not until(pg, "document.querySelectorAll('.s-relics .bag-row').length===6", 10): raise Exception('the Perks tab doesn’t list six')
     pg.evaluate("uiState.tab='walk';render();0")
     st = pg.evaluate("startWild(encountersHere()[0]);[!!activeBattle.fx,activeBattle.sides[0].f[0].v.st.hus]")
-    if st != [True, 1]: raise Exception(f'a battle’s Loopholes and Speed stage: {st}')
+    if st != [True, 1]: raise Exception(f'a battle’s Perks and Speed stage: {st}')
     odds = pg.evaluate("[catchOdds('penny',1,false),(activeBattle.fx=null,catchOdds('penny',1,false))]")
     if abs(odds[0] - min(1, odds[1] * 1.25)) > 1e-9: raise Exception(f'the catch row: {odds}')
     pg.evaluate("stopTimers();activeBattle.over='ran';endBattle();0")
@@ -691,14 +691,14 @@ def relics(pg, base):
     if clinic[0] != round(clinic[1] / 2): raise Exception(f'the clinic charges {clinic[0]} a Billie, not half of {clinic[1]}')
     sid = pg.evaluate(f"Object.keys(SHOPS).find(k=>SHOPS[k].runNode==={town})")
     pg.evaluate(f"uiState.modal=null;uiState.mq=[];openShop('{sid}');0")
-    if not until(pg, "!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')", 10): raise Exception('the town’s shop has no Loophole')
+    if not until(pg, "!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')", 10): raise Exception('the town’s shop has no Perk')
     shelf = pg.evaluate("Object.values(saveData.run.shelf)[0]")
     price = pg.evaluate(f"Math.round(RULES.run.relics.price[RELICS['{shelf}'].rarity]*0.85)")
     se, held = pg.evaluate("[saveData.se,saveData.run.relics.slice()]")
     pg.evaluate("document.querySelector('#ov [data-a=shoprelic]').click();0")
     if not until(pg, "!!uiState.modal&&uiState.modal.cls==='relic-drop'&&document.querySelectorAll('#ov pb-pick-card').length===6", 10): raise Exception('buying at the cap didn’t ask which to let go')
     pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
-    if not until(pg, f"saveData.run.relics.includes('{shelf}')&&!saveData.run.relics.includes('{held[0]}')", 10): raise Exception('the Loophole wasn’t bought')
+    if not until(pg, f"saveData.run.relics.includes('{shelf}')&&!saveData.run.relics.includes('{held[0]}')", 10): raise Exception('the Perk wasn’t bought')
     after = pg.evaluate("[saveData.se,saveData.run.relics.length,Object.values(saveData.run.shelf)[0],!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')]")
     if after != [se - price, 6, '', False]: raise Exception(f'after buying: money, held, shelf, row {after} (paid {se - after[0]}, price {price})')
     if stored()['shelf'] != {f'{town}:{pg.evaluate("saveData.run.clock")}': ''}: raise Exception(f'the bought shelf isn’t stored: {stored()["shelf"]}')
@@ -708,11 +708,11 @@ def relics(pg, base):
     pg.evaluate(f"startTrainer(runFoeId({mb}),{{talked:true}});0")
     if not until(pg, "!!activeBattle&&activeBattle.T&&activeBattle.T.runFoe==='miniboss'", 20): raise Exception('the mini-boss battle didn’t start')
     pg.evaluate("stopTimers();activeBattle.over='win';endBattle();0")
-    if not until(pg, "!activeBattle&&!!uiState.modal&&!!(uiState.modal.btns||[]).find(b=>b.l==='Pick a Loophole')", 30):
-        raise Exception(f'no “Pick a Loophole” after the mini-boss: {pg.evaluate("uiState.modal&&uiState.modal.title")}')
+    if not until(pg, "!activeBattle&&!!uiState.modal&&!!(uiState.modal.btns||[]).find(b=>b.l==='Pick a Perk')", 30):
+        raise Exception(f'no “Pick a Perk” after the mini-boss: {pg.evaluate("uiState.modal&&uiState.modal.title")}')
     offer2 = stored()['offer']
     if not offer2 or len(offer2) != 3 or offer2 != pg.evaluate("saveData.run.offer"): raise Exception(f'the new pick isn’t stored: {offer2}')
-    pg.evaluate("uiState.modal.btns.find(b=>b.l==='Pick a Loophole').f();0")
+    pg.evaluate("uiState.modal.btns.find(b=>b.l==='Pick a Perk').f();0")
     if not until(pg, pick, 10): raise Exception('the button didn’t open the pick')
     pg.goto(base + '/index.html?fixture=stored')
     if not until(pg, pick, 90): raise Exception('a reload didn’t open the pick again')
@@ -1079,8 +1079,8 @@ console.log(JSON.stringify({ map: p.map, deadline: p.deadline, unlocks: p.unlock
 
 def run_test(pg, base):
     """Studio plan T2.6, "Play this seed": ?debug&run=TESTSEED (every unlock, the short map, a party of two, two
-    Loopholes) is a test run that takes off at once: its map is runStartPlan's in Node for the same seed and unlocks,
-    the party and Loopholes are the ones asked for, it lands and draws, and nothing is written to this browser's save"""
+    Perks) is a test run that takes off at once: its map is runStartPlan's in Node for the same seed and unlocks,
+    the party and Perks are the ones asked for, it lands and draws, and nothing is written to this browser's save"""
     r = subprocess.run(['node', '--input-type=module', '-e', RUN_TEST_NODE], cwd=ROOT, capture_output=True, text=True)
     want = json.loads(r.stdout.strip().splitlines()[-1])
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.run&&runWorld.seed==='TESTSEED'", 90):
@@ -1102,7 +1102,7 @@ def run_test(pg, base):
         pg.evaluate('exportDebugLog();0')
     logged = (json.loads(Path(dl.value.path()).read_text(encoding='utf-8')).get('state') or {}).get('run') or {}
     if logged.get('seed') != 'TESTSEED' or logged.get('unlocks') != want['unlocks']: raise Exception(f"the debug log's run is {logged.get('seed')!r} with unlocks {logged.get('unlocks')}, not the run's {want['unlocks']}")
-    return f"TESTSEED took off: {len(got['map']['nodes'])} places as runStartPlan makes them, {len(got['unlocks'])} unlocks (in the debug log too), the party and Loopholes asked for; nothing saved"
+    return f"TESTSEED took off: {len(got['map']['nodes'])} places as runStartPlan makes them, {len(got['unlocks'])} unlocks (in the debug log too), the party and Perks asked for; nothing saved"
 
 
 def hub_island(pg, base):
@@ -1194,7 +1194,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('town', [('Blur focus: on you, between you in a talk, on the encounter; the slider at Off; the cheap blur (CAM-3)', blur_focus)]),
     ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back and forward, a reload (RL-9, RL-10b)', ranch)]),
     ('pasture', [('The pasture: Billies wander inside the fence, a tap on one or the gate opens the ranch (IS-8)', pasture)]),
-    ('relics', [("Loopholes: the pick (again after a reload), the tab, a battle's and a walk's effects, a town's prices, buying at the cap (RL-12)", relics)]),
+    ('relics', [("Perks: the pick (again after a reload), the tab, a battle's and a walk's effects, a town's prices, buying at the cap (RL-12)", relics)]),
     ('ranch', [('Breeding: a safe egg shown and hatched, a risky pair, a clock turned back, a reload (RL-10)', breed)]),
     ('ranch', [('Income: started at the first opening, Collect, a clock turned back and forward, a reload (RL-10b)', income)]),
     ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the mast, a reload (RL-11)', lab)]),

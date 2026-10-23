@@ -162,7 +162,7 @@ export function runGiveUp() {
  * Copperleaf's mast @param {boolean} won @param {string[]} keep @param {(id: string) => number} itemPrice */
 export function runEndHome(won, keep, itemPrice) {
   if (!saveData.run) return;
-  /* RL-12: the Loopholes' payout rows, read before the run ends */
+  /* RL-12: the Perks' payout rows, read before the run ends */
   const rates = fxPayoutRates(fxOfRun(saveData.run, RELICS), RULES.run.payout),
     pay = runEnd(saveData, { won, keep }, rates, itemPrice);
   /* a move waiting to be learned names a Billie by its uid, which a run's copy shares with the hub's */
@@ -443,7 +443,7 @@ function runBattleStart(kind, foe, extra) {
   return {
     extra: {
       ...extra,
-      /* its seed, the forecast's weather and (RL-12) the Loopholes held: none, no fx, the battle as before
+      /* its seed, the forecast's weather and (RL-12) the Perks held: none, no fx, the battle as before
          (logic/run-loop.js runBattleExtra, which the run's simulation plays too) */
       ...runBattleExtra(run, i, k, RULES.env, fxOfRun(run, RELICS)),
     },
@@ -487,13 +487,13 @@ function runBattleAgain() {
   battleHost().open();
 }
 
-/* ---------- Loopholes on the walk (RL-12, logic/effects.js) ---------- */
-/** a run town's clinic: $ a hurt Billie, with the Loopholes' heal price rows */
+/* ---------- Perks on the walk (RL-12, logic/effects.js) ---------- */
+/** a run town's clinic: $ a hurt Billie, with the Perks' heal price rows */
 export const runClinicEach = () => fxRunPrice(saveData.run, RELICS, 'heal', RULES.run.healCost);
-/** walking into a place on a run: a Loophole's heal row heals the team (before the arrival's save) */
+/** walking into a place on a run: a Perk's heal row heals the team (before the arrival's save) */
 export function runArrivedFx() {
   const gained = runArriveFx(saveData, RELICS);
-  if (gained > 0) toast(`Your Loopholes paid out: your team healed ${formatNumber(gained)} HP.`);
+  if (gained > 0) toast(`Your Perks paid out: your team healed ${formatNumber(gained)} HP.`);
 }
 
 /* ---------- hints, on a player's first run only ---------- */
@@ -507,7 +507,7 @@ const RUN_HINTS = {
   miniboss: () => 'A mini-boss blocks the way north. Beat them to go on.',
   boss: () => 'The boss. Beat it and the run is won.',
   relic: () =>
-    `Loopholes last the run: hold up to ${RULES.run.relics.cap}. The Loopholes tab shows what each one does; town shops sell them too.`,
+    `Perks last the run: hold up to ${RULES.run.relics.cap}. The Perks tab shows what each one does; town shops sell them too.`,
 };
 /** show a first-run hint once (nothing on a later run, or once shown) @param {keyof typeof RUN_HINTS} id */
 export function runHint(id) {

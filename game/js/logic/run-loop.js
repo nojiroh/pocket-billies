@@ -80,7 +80,7 @@ export function runArriveHeal(team, share) {
   return gained;
 }
 /** Studio plan T3.3: walking into a place on a run (walk-control.js through run.js runArrivedFx, and the run's
- * simulation): the held Loopholes' heal rows heal the team (runArriveHeal); returns the HP gained (0: none)
+ * simulation): the held Perks' heal rows heal the team (runArriveHeal); returns the HP gained (0: none)
  * @param {SaveData} s @param {Record<string, any>} relics relics.json */
 export function runArriveFx(s, relics) {
   const share = fxHealShare(fxOfRun(s.run, relics));
@@ -224,7 +224,7 @@ export function runSheetStatus(run, i, env) {
 }
 /** Studio plan T3.2: what a run battle starts with, on the page (run.js runBattleStart) and in the simulation (logic/
  * run-sim.js): its seed, the place's forecast for today as the battle's weather (clear is sunny: a run has no hour),
- * and the Loopholes' effect rows when any are held (logic/effects.js fxOfRun: null when none)
+ * and the Perks' effect rows when any are held (logic/effects.js fxOfRun: null when none)
  * @param {Run} run @param {number} i the map node @param {number} k the battle's number in the run
  * @param {any} env rules.json env @param {any[] | null} fx */
 export function runBattleExtra(run, i, k, env, fx) {
@@ -265,7 +265,7 @@ export function runPayoutRows(pay, rates) {
       released: n => ['Billies released', `${n} × ${rates.released}`],
       nodes: n => ['Places reached', `${n} × ${rates.node}`],
       win: () => ['The boss beaten', ''],
-      fx: n => ['Loopholes', `${n > 0 ? '+' : ''}${n}%`],
+      fx: n => ['Perks', `${n > 0 ? '+' : ''}${n}%`],
     };
   const won = pay.lines.some(l => l.what === 'win' && l.n > 0);
   return pay.lines

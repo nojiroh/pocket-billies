@@ -960,8 +960,8 @@ async function runFullTest(mode) {
     /* RL-8: a run from the mast to the payout, on a copy of the save (nothing is written while the test runs): a short
        run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the
        airship's flight to the landing, a wild battle there, "Go there" to the town (a paid heal; RL-12: its shop's
-       Loophole bought), the mini-boss (beaten: a Loophole picked), to the boss (an Alpha, its battle carrying the
-       Loopholes) and its payout, then home: Copperleaf without the run. Then the save as it was */
+       Perk bought), the mini-boss (beaten: a Perk picked), to the boss (an Alpha, its battle carrying the
+       Perks) and its payout, then home: Copperleaf without the run. Then the save as it was */
     if (typeof runTakeOff === 'function' && !selfTest.stop)
       await phase(
         'A run: airship, nodes, payout',
@@ -1040,7 +1040,7 @@ async function runFullTest(mode) {
             uiState.modal.btns[0].f();
             if (saveData.se !== se - cost)
               throw new Error(`the clinic took ${plural(se - saveData.se, 'Money')}, not ${cost}`);
-            /* RL-12: the town's shop sells the day's Loophole; the mini-boss leaves a pick; the boss's battle carries
+            /* RL-12: the town's shop sells the day's Perk; the mini-boss leaves a pick; the boss's battle carries
                both */
             uiState.modal = null;
             uiState.mq = [];
@@ -1050,9 +1050,9 @@ async function runFullTest(mode) {
             const buy = /** @type {HTMLElement | null} */ (
               document.querySelector('#ov .shop-sheet [data-a=shoprelic]')
             );
-            if (!buy) throw new Error('the town’s shop has no Loophole');
+            if (!buy) throw new Error('the town’s shop has no Perk');
             buy.click();
-            if (saveData.run.relics.length !== 1) throw new Error('the shop’s Loophole wasn’t bought');
+            if (saveData.run.relics.length !== 1) throw new Error('the shop’s Perk wasn’t bought');
             uiState.modal = null;
             uiState.mq = [];
             const mb = runWorldNode(map.nodes.findIndex(n => n.type === 'miniboss'));
@@ -1064,7 +1064,7 @@ async function runFullTest(mode) {
             stopTimers();
             activeBattle.over = 'win';
             endBattle();
-            const pickBtn = () => uiState.modal && (uiState.modal.btns || []).find(b => b.l === 'Pick a Loophole');
+            const pickBtn = () => uiState.modal && (uiState.modal.btns || []).find(b => b.l === 'Pick a Perk');
             if (!(await wait(() => !activeBattle && !!pickBtn(), 15000)))
               throw new Error('no pick after the mini-boss');
             pickBtn().f();
@@ -1086,7 +1086,7 @@ async function runFullTest(mode) {
             uiState.mq = [];
             startTrainer(B.id, { talked: true });
             if (!activeBattle || activeBattle.fmt !== 'alpha') throw new Error('the boss isn’t an Alpha battle');
-            if (!activeBattle.fx || !activeBattle.fx.length) throw new Error('the boss’s battle has no Loopholes');
+            if (!activeBattle.fx || !activeBattle.fx.length) throw new Error('the boss’s battle has no Perks');
             stopTimers();
             activeBattle.over = 'win';
             endBattle();
@@ -1100,7 +1100,7 @@ async function runFullTest(mode) {
             uiState.modal.btns[0].f();
             if (!(await wait(() => !saveData.run && LOCATIONS.length === gameData.locations.length, 10000)))
               throw new Error('the run didn’t end');
-            return `${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Loophole bought and one picked after the mini-boss, the boss; home with ${saveData.meta.capital} Research`;
+            return `${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; home with ${saveData.meta.capital} Research`;
           } finally {
             if (activeBattle) {
               stopTimers();

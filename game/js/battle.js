@@ -954,7 +954,7 @@ export function endBattle() {
     });
   }
   /* phase 08: beating a wild Billie pays prize money (steps paid before); a trainer its reward and its flag, and RL-12:
-     a run's mini-boss a pick of Loopholes, saved on the run before it shows (logic/battle-rewards.js battleSettleWin) */
+     a run's mini-boss a pick of Perks, saved on the run before it shows (logic/battle-rewards.js battleSettleWin) */
   battleSettleWin(activeBattle, saveData, pay, run);
   if (kind === 'wild' && o === 'win' && pay.prize > 0) toast(`You earned ${plural(pay.prize, 'Money')}.`);
   if (kind === 'trainer' && o === 'win') {
@@ -982,7 +982,7 @@ export function endBattle() {
         btns: [
           {
             c: 'dark',
-            l: run && T.runFoe === 'boss' ? 'On to the payout' : run && run.offer ? 'Pick a Loophole' : 'Keep walking',
+            l: run && T.runFoe === 'boss' ? 'On to the payout' : run && run.offer ? 'Pick a Perk' : 'Keep walking',
             f:
               /* RL-8: the run's boss beaten: the run is won */
               run && T.runFoe === 'boss'

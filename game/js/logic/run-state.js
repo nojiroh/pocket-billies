@@ -142,7 +142,7 @@ export function validRun(o) {
   if (!list(o.forecast, nodes) || o.forecast.some(days => !list(days, RUN_DAYS) || !days.every(id))) return false;
   if (!list(o.relics, 32) || !o.relics.every(id) || !list(o.mods, 32) || !o.mods.every(id)) return false;
   if (o.offer !== null && (!list(o.offer, 5) || !o.offer.every(id))) return false;
-  /* RL-12: the offers made, and the run shops' Loopholes by '<map node>:<day>' ('' once bought) */
+  /* RL-12: the offers made, and the run shops' Perks by '<map node>:<day>' ('' once bought) */
   if (!wholeIn(o.offerN, 0, 1e6)) return false;
   if (
     !recordOf(o.shelf, RUN_LIST, v => v === '' || id(v)) ||
@@ -272,7 +272,7 @@ export function runBegin(s, give) {
 /**
  * @param {{ se: number, items: Record<string, number>, released: number, cleared: number, won: boolean }} end
  * @param {{ money: number, itemShare: number, released: number, node: number, win: number, winSeals: number,
- *   scrapNode?: number, scrapWin?: number, capital?: number }} rates capital (RL-12, a Loophole's): the Research times
+ *   scrapNode?: number, scrapWin?: number, capital?: number }} rates capital (RL-12, a Perk's): the Research times
  *   this, the difference as a line of its own
  * @param {(id: string) => number} itemPrice an item's shop price (Moneys), 0 for none
  * @returns {{ capital: number, seals: number, scrap: number, lines: { what: string, n: number, capital: number }[] }}
@@ -289,7 +289,7 @@ export function payoutOf(end, rates, itemPrice) {
     { what: 'nodes', n: end.cleared, capital: end.cleared * rates.node },
     { what: 'win', n: end.won ? 1 : 0, capital: end.won ? rates.win : 0 },
   ];
-  /* RL-12: a Loophole's payout row (logic/effects.js fxPayoutRates): the Research above times rates.capital, as a row */
+  /* RL-12: a Perk's payout row (logic/effects.js fxPayoutRates): the Research above times rates.capital, as a row */
   const k = rates.capital ?? 1;
   if (k !== 1) {
     const sum = lines.reduce((a, l) => a + l.capital, 0);

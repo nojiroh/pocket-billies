@@ -1,5 +1,5 @@
 // Studio plan Phase 4: logic/content-preview.js, what the Studio's content editors ask the logic worker. Each answer is
-// the game's own logic: the Loophole preview's stats are rules.js stat times the battle's stage factor, its numbers
+// the game's own logic: the Perk preview's stats are rules.js stat times the battle's stage factor, its numbers
 // the fx readers' (clamped products named); a leader's run values are runFoes on that row; the stand-ins are
 // standInSpecies'.
 import assert from 'node:assert/strict';

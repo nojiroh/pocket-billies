@@ -578,7 +578,7 @@ export function dataNodeTypes(D, valid = () => true) {
   }
   return out;
 }
-// RL-12: Loopholes (relics): the schema, the types their damage rows name; rules.json run.relics: a cap of 1-12 held, a
+// RL-12: Perks (relics): the schema, the types their damage rows name; rules.json run.relics: a cap of 1-12 held, a
 // pick of 1-5 (run.offer holds up to 5), a weight of 0 or more and a whole price ($0-100,000) for each rarity, and
 // something to offer
 /** RL-12: relics.json and rules.json run.relics @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
@@ -633,7 +633,7 @@ export function dataRelics(D, valid = () => true) {
       if (D.relics && !Object.values(D.relics).some(R => (RR.rarity || {})[R.rarity] > 0))
         problem(
           'rules.json',
-          'run.relics.rarity gives every Loophole in relics.json a weight of 0: nothing can be offered'
+          'run.relics.rarity gives every Perk in relics.json a weight of 0: nothing can be offered'
         );
     }
   }

@@ -5,10 +5,10 @@
    POOLS with stand-ins, TRAINERS, RELICS, RULES): the start (run-start.js runStartPlan, as the mast takes off), then
    - each mini-boss's and the boss's foe (run-loop.js runFoes, with the leaders run-world.js passes);
    - each town's stock on every day from the first it can be reached (its row + 1) to the deadline (runShopStock with
-     the run's shop unlocks, as shop.js opens it) and its shelf's Loophole that day (relicShelf);
+     the run's shop unlocks, as shop.js opens it) and its shelf's Perk that day (relicShelf);
    - each place's wild table (run-scenes.js runWorldTables: its biome's pool at its row's levels);
-   - the Loophole picks after each mini-boss row, in order (relicOfferMake), with nothing held.
-   Held Loopholes change the shelves and the picks; the preview holds none. The Studio's Run Lab asks for it through its
+   - the Perk picks after each mini-boss row, in order (relicOfferMake), with nothing held.
+   Held Perks change the shelves and the picks; the preview holds none. The Studio's Run Lab asks for it through its
    logic worker (studio/js/logic-worker.js), where GAMEDATA is the Studio's draft; it is on no page, since game-data.js
    would read the Studio's data as the game's (tools/test/run-preview.test.mjs compares it with the game's own path).
    Logic only: no DOM, no Date, no Math.random. */
