@@ -2,6 +2,52 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Test cleanup track, round 1, lane B - check-quick deletions and the Things to do system - 2026-10-23
+Branch `track/test-cleanup` (shared with lanes A, C, D; merged by pull, never rebased). Plan approved in Plan Mode
+with the owner's choices: Time/weather/rooms stays for TC-3; the Things to do code goes this session; photo mode
+and your room go with it. Lane B's part is pushed.
+- **check-quick.py** (2,740 -> about 2,200 lines, 62 -> 44 steps):
+  - Deleted, covered elsewhere (checked one by one): Code parses (ESLint parses every script; modules can't clash),
+    Messages and Team (check-fast's Every screen, messages.test.mjs), Studio opens (check-fast's The Studio loads),
+    Shaders, Paths and Scenes (phases of the in-game full test), Crowd (a software frame-rate ratio), RL-7 run roads
+    (check-fast's run world), the alpha 0.4.1 joystick (CAM-1 and the kept running step), Battles (check-fast's
+    battle and run checks), v36's split evolution (rules.test.mjs). `--scenes` went with Scenes and Paths.
+  - Deleted, outdated: old place names, v34, v35, v37, v38, v39/v40, v44, v47, the dead `cross_to`, Things to do.
+  - Kept as small steps first, in their own commits: Data (only what check-data doesn't refuse: the scenery's
+    pictures, rows and step grid, the place/scene kind rules, which check-data only warns about), Battle weather
+    (Things to do's rain-in-battle part), Rooms: a floor each (v47's data half). The water step carries
+    `buildings_in_water` and `piers_of`, copied from the two one-off tools.
+  - The in-game test step calls `runFullTest()` (lane C's ask), so self-test.js's `runQuickTest` alias can go.
+  - The nightly's upload: the `scene-w:copperleaf*` picture went with the Scenes step; no other picture name has a
+    `:` or `*` (checked), so upload-artifact should take the whole folder again (TC-1 item 5; check.yml untouched).
+- **The Things to do system is gone** (the owner's answer): `things-to-do.js` and its CSS, challenges, requests and
+  letters, gold stamps (their glow, the Trainer card tile), photo mode (the button, its CSS rules; the renderer's
+  `photoReq` stays for the Studio's engine editor), the debug log's `today` line, ten i18n strings, style-diff's
+  photo view. Battle weather moved first, unchanged, to `game/js/battle-weather.js`. **Your room** (`int_home`)
+  is gone; Granny Juniper's cottage keeps act `home` (build-copperleaf.mjs and the island tools find her cottage
+  by it) and opens nothing: tapping it says the houses' "Nobody answers the door." ui-lint ceilings lowered.
+- **Deleted helpers**: `rename-places.py`, `migrate-places.py`, `fix-marigold-stream.py`, `fix-piers.py`.
+- **Outside lane B's files** (needed to keep CI green or by the system's deletion): check-data's snapshot (lane A's
+  folder) remade twice, file counts only (now 129 with lane C's rooms); `photo-mode.css` keeps only the text-size
+  rules (a rename is for later, its own commit).
+- Verified: lint, typecheck, check:modules, format, check:data and the unit tests after every code commit and both
+  merges (813, then 776 after lane A's deletions); PR #155's CI green (lint, rules, smoke) on 3eb1440, with lanes
+  A and C. The full quick check on an untouched copy (5b677a5) and on lane B's work (a20f844, before the merges),
+  here: **before** 3,422 s, 61 steps, 46 passed, 15 problems; **after** 2,340 s, 44 steps, 40 passed, 4 problems:
+  Tap targets (a settings slider 16 px tall), v31 bowl map camera, v46 buildings without a plan, alpha 0.4 bush
+  recipes. All four were red before too and are TC-3's. In-game test step, Battle music, Sound effects and phase 08
+  running were red in the before run and passed after; they look timing- or order-dependent here, not fixed.
+- Risky / open:
+  - Gaps left by the deletions, small: the "choice waits for the world" timing, notices de-duplicated and the Build
+    tab's slot values were only in the Messages and Team steps; the evolution window's Build/Hype buttons only in v36.
+  - This container draws the desktop title in more than 60 s, so `open_game`'s 60 s wait skips every desktop step
+    here; both runs used a scratch copy with 300 s. Not changed in the repo (TC-4's speed work).
+  - Not tried on a phone: the walk screen without the photo button, Juniper's cottage, the Trainer card.
+- For lane A: logic/saves.js no longer has `saveData.x`'s readers; an old save's `x` (Things to do) is ignored and
+  could be dropped. For lane D: check-data could fail (not warn) on scene/place kinds and check the scenery's
+  pictures, so check-quick's Data step can go in TC-3; rename-ids.mjs still names the four deleted helpers.
+- Next: round 2, lane B's TC-3 (renames, moves to Node, the real failures in kept steps, Time/weather/rooms).
+
 ### Test cleanup track, round 1, lane C - In-game tests and the unreachable rooms to legacy - 2026-10-23
 Branch `track/test-cleanup` (shared with lanes A, B, D; merged by pull, never rebased). Plan approved in Plan Mode
 (runQuickTest: option a). Lane C's part is pushed.
