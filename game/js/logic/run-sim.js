@@ -211,11 +211,10 @@ export function runSimOn(env) {
             }
           }
           res = res || playOut();
-          const pay = modules['battle-rewards'].battleRewards({ kind: 'wild', over: res.over, foe: [foe] }, s, () =>
-            B.rng()
-          );
-          s.se += pay.prize;
-          fn('dropEncounter')(q.id);
+          /* its end on the save as the page's endBattle does it (battle-rewards.js battleSettle, battleSettleWin) */
+          B.over = res.over;
+          const { pay } = fn('battleSettle')(B, s);
+          fn('battleSettleWin')(B, s, pay, run);
           hooks.provide({ activeBattle: null });
           hooks.uiState.learnQ.length = 0;
           stats.battles++;
@@ -243,12 +242,9 @@ export function runSimOn(env) {
           run.battleN = k + 1;
           const team = hooks.activeBattle.sides[1].team;
           const res = playOut(),
-            B = hooks.activeBattle,
-            pay = modules['battle-rewards'].battleRewards(
-              { kind: 'trainer', over: res.over, T: TRAINERS[T.id], tid: T.id, foe: team },
-              s,
-              () => B.rng()
-            );
+            B = hooks.activeBattle;
+          B.over = res.over;
+          const { pay } = fn('battleSettle')(B, s);
           hooks.provide({ activeBattle: null });
           hooks.uiState.learnQ.length = 0;
           stats.battles++;
@@ -265,8 +261,8 @@ export function runSimOn(env) {
             stats.lostAt = node.type;
             return finish();
           }
-          s.se += pay.reward;
-          s.flags[T.id] = 1;
+          /* its reward and flag; a mini-boss also makes the run's next pick of Loopholes (not answered yet) */
+          fn('battleSettleWin')(B, s, pay, run);
           if (node.type === 'boss') {
             stats.won = true;
             return finish();
