@@ -2,6 +2,62 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Test cleanup track, round 1, lane D - Lint, data check, Studio check, CI - 2026-10-23
+Branch `track/test-cleanup` (shared with lanes A-C; pulled with --no-rebase before every push). Plan approved in Plan
+Mode with the owner's answers: keep the general rename tools, delete the unused CSS rules, add the upload guard.
+Lane D's part is pushed.
+- Where the track file was wrong (checked against the code):
+  - The "one-off rename tools" are not all one-offs. rename.mjs, rename-data.mjs and rename-strings.py are what
+    docs/NAMING.md gives as the proof a rename changed nothing else (rename-data.mjs was used 22 Oct). They stay.
+    split-data.mjs, rename-ids.mjs and move-names.mjs were one-offs and went.
+  - unused-css.mjs listed 7 rules, not 6: `.egg-e` x2, `.bag-prog` x2, `.lbl`, `.m-sheet`, `.m-done path`.
+  - The nightly's bad shot name came from check-quick's Scenes step (lane B's file, deleted there). "Smoke's copies"
+    of check:data and world-graph were check-fast's two Node checks (the smoke job runs check-fast).
+  - split_steps' wait for the legacy view can't go: the Studio's own music Check holds its warnings until the parked
+    world is read, so a song only parked places play isn't called unused. Only its comment changed.
+- Changed (one cause per commit):
+  - **check-fast.py** (TC-1 item 3): "Game data is valid" and "The world-map graph is unchanged" are gone; the lint
+    job runs both.
+  - **Lint** (TC-1 item 4): retired-names.json and the retired name/prefix rule are gone; the short-name and
+    kebab-case rules stay. check-names.mjs has its own units(): the same 269 scripts and 4,653 names as rename.mjs's.
+    NAMING.md, README, eslint.config.js comments updated.
+  - **check-data.mjs** (TC-2 item 5): the bowl `under` rule is gone (Pearlantis only). A place's spot under another
+    would now fail as a bad spot.
+  - **CSS** (TC-2 item 5): `.egg-e`, `.bag-prog`, `.bag-prog i` and `.lbl` deleted. `unused-css.mjs --check` now runs
+    in `npm run lint`. `.m-sheet` and `.m-done` stay on a KEEP list: they are two of motion.css's eight named
+    motions (phase 06), kept on purpose. UI-lint ceilings lowered to match.
+  - **check.yml** (TC-1 item 5): a step before the full job's upload turns `" : < > | * ?` in file names into `_`,
+    so a name like `scene-w:copperleaf*.webp` can't cost the nightly its artifact again. The header's times say what
+    CI measured on 23 Oct.
+  - **check-studio-github.py** (TC-2 item 4):
+    - generate: no Legacy copy-in. A first draft goes in as Check Trail, then a second draft is joined to its exit
+      (meets it, seam rules, the pair drawn) and goes in as Check Spur. Copperleaf has no edge exit to join.
+    - story: the preview uses a flag of the check's own instead of met_blake0.
+    - Found failing before this lane, fixed:
+      - Play from here beat `chad`, a parked trainer the game skips; it beats `crude` now.
+      - The game waits 2 s at most for the Studio's draft, then takes it live; under software drawing the busy
+        Studio page often answers later, so the check waits up to 15 s for it.
+      - split's music Check planted its error on where[2] and "restored" it to `trainer`. where[2] is now the
+        leader rule, so `leader` looked unused and the final proposal carried the leader rule playing the trainer
+        song. It now plants a rule of its own first and takes it out after. Placeholder notes are allowed.
+- Verified: lint, typecheck, check:data, check:modules, format:check, build, npm test (813 before the merge, 776 on
+  the merged tree with lane A's deletions); the fast check 29 of 29 (1004 s here) before the merge, 28 of 29 on the
+  merged tree (933 s): CAM-2 "the encounter shot never arrived", which then passed alone twice (a timing flake under
+  load, not in lane D's files; worth watching in CI); the Studio's
+  story, split and generate steps pass (they failed on the base with the three problems above); style-diff: the
+  screens that differ do so the same with no change at all (HEAD against HEAD), none on a deleted class.
+- Risky:
+  - The Studio check's draft wait hides a 2 s race in Play from here on a slow device. The game says so in its toast
+    ("the Studio's edits didn't come") and takes them live after; a longer wait in boot.js is a game choice.
+  - Locally the pinned Playwright (1.56) wants Chromium 1194; ran through a scratch PLAYWRIGHT_BROWSERS_PATH with
+    links to the container's 1243 (nothing in the repo).
+- For other lanes:
+  - Lane B: check-quick still runs its own data check (`check_data()`) in smoke, as the lint job does; drop or
+    slim it in TC-3 if it holds nothing check-data.mjs doesn't. rename-ids.mjs (gone) no longer names the legacy
+    Python helpers.
+  - Round 3 (TESTING.md tiers): check-fast no longer runs Node checks; the lint job now runs unused-css.
+- Next: round 2 (lane B's TC-3, lane E).
+
 ### Test cleanup track, round 1, lane A - Unit tests and save code - 2026-10-23
 Branch `track/test-cleanup` (shared with lanes B-D; pulled with --no-rebase before every push). Plan approved in Plan
 Mode; the owner said yes to lane A taking the old-save set-aside code (game-state.js, boot.js's notice) too.
