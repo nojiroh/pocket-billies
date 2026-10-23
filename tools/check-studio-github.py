@@ -1065,7 +1065,19 @@ def polish_steps(pg, errs):
       return { pane, thrown: t.includes('planted throw'), refused: t.includes('planted refusal') }; })()""")
     errs[n:] = [e for e in errs[n:] if 'planted' not in e]
     if got != {'pane': True, 'thrown': True, 'refused': True}: errs.append(f'errors: a throwing section, a throw and a refusal showed {got}')
-    print('polish: second-pane rename, shop thank-you lines, prefixes, errors shown', flush=True)
+    # the pixel canvas's listeners on document go with its canvas: the count is flat over 5 opens of the pixel editor
+    cdp = pg.context.new_cdp_session(pg)
+    def doc_listeners():
+        o = cdp.send('Runtime.evaluate', {'expression': 'document'})['result']['objectId']
+        return len(cdp.send('DOMDebugger.getEventListeners', {'objectId': o})['listeners'])
+    sp = pg.evaluate("studioState.D.lines[0].id + '0'")
+    counts = []
+    for _ in range(5):
+        pg.evaluate(f"void openPixelEditor({json.dumps(sp)}, 'front')"); pg.wait_for_selector('#pxCv', timeout=20000); time.sleep(0.3)
+        pg.click('.pxed [data-pe=close]'); time.sleep(0.3)
+        counts.append(doc_listeners())
+    if counts[-1] != counts[0]: errs.append(f'pixel canvas: document listeners after each of 5 opens: {counts}')
+    print('polish: second-pane rename, shop thank-you lines, prefixes, errors shown, pixel canvas listeners ' + str(counts), flush=True)
 
 
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
