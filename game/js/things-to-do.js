@@ -33,6 +33,7 @@ import { soundEffect } from './sound.js';
 import { setTalkFolk, talk, talkBox, talkFolk } from './talk.js';
 /* eslint-disable no-func-assign */
 expose({
+  CHALLENGES_SHOWN: [() => CHALLENGES_SHOWN],
   CHALLENGE_KINDS: [() => CHALLENGE_KINDS],
   FURNITURE: [() => FURNITURE],
   HOME_SLOTS: [() => HOME_SLOTS],
@@ -130,6 +131,9 @@ function thingsToDoReward(k = 1) {
 }
 
 /* ---------- daily challenges ---------- */
+/* hidden for now (the Actions sheet's rework for the roguelite): no card and no "Challenge done" toast; the counting and
+   the code stay, so turning this back on brings them back as they were */
+const CHALLENGES_SHOWN = false;
 const CHALLENGE_KINDS = [
   /* phase 08: in the place the steps challenge had, so each day's picks stay what they were */
   {
@@ -208,7 +212,7 @@ function recordThingsToDoEvent(k, o = {}) {
     if (c.k === 'catchT' && !(o.types || []).includes(c.t)) continue;
     c.have++;
     ch = true;
-    if (challengeProgress(c) >= c.need && !c.told) {
+    if (CHALLENGES_SHOWN && challengeProgress(c) >= c.need && !c.told) {
       c.told = 1;
       toast(`Challenge done: ${challengeText(c)}. Claim it on the Walk tab.`);
     }
@@ -222,7 +226,7 @@ function recordThingsToDoEvent(k, o = {}) {
   if (ch) save();
 }
 export function challengeCardHTML() {
-  if (!saveData.started || saveData.run) return '';
+  if (!CHALLENGES_SHOWN || !saveData.started || saveData.run) return '';
   const C = challengesToday();
   return `<section class="chal px glass k-card"><div class="sec-h"><h2>Today’s challenges</h2><span class="count tnum">${C.list.filter(c => c.claimed).length}/${C.list.length}</span></div>${C.list
     .map((c, i) => {
