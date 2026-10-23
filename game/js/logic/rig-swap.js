@@ -10,8 +10,9 @@
      kept, its happy and hurt then fall back to the new picture; a torso gets its squash and stretch again (the kit
      baker's, padded); any other bone has the one picture;
    - the pictures go below the sheet (nothing is taken away, as before), each frame its own box;
-   - geo moves by what the swap changed (the skeleton builder's framing before and after), so a part of the same size
-     leaves the Billie's world size as it was, whatever way its geo was first measured.
+   - geo's top and hw move by what the swap changed (the skeleton builder's framing before and after), so a part of
+     the same size leaves the Billie's world size as it was, whatever way its geo was first measured; mid and cy stay
+     halfway from the top to the ground line, as every builder made them.
    Logic only: no DOM, runs in Node. A picture is ImageData-shaped (logic/kit-pixels.js Pixels). */
 /** @import { PartKits } from '../../types/game-data' */
 /** @typedef {import('./kit-pixels.js').Pixels} Pixels */
@@ -233,8 +234,10 @@ export function rigSwapApply(rig, sheets, pathOf, prepared, geoOf) {
       g = geoOf(out[view], view),
       G = out[view].geo;
     if (!a || !g || !G) continue;
-    for (const key of ['top', 'mid', 'cy', 'hw'])
-      if (typeof G[key] === 'number') G[key] = +(G[key] + g[key] - a[key]).toFixed(2);
+    /* every builder keeps mid = cy = (top + base) / 2 (logic/data-checks.js dataRigs checks it) */
+    for (const key of ['top', 'hw']) if (typeof G[key] === 'number') G[key] = +(G[key] + g[key] - a[key]).toFixed(2);
+    if (typeof G.top === 'number' && typeof out[view].base === 'number')
+      G.mid = G.cy = +((G.top + out[view].base) / 2).toFixed(2);
   }
   return { rig: out, sheets: grown, how };
 }
