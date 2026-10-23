@@ -1681,7 +1681,7 @@ def desktop_steps(b, base, R):
         go_scene(pg, node); time.sleep(2)
         j = pg.evaluate("(()=>{const p=walkView.npcAt['_talk:juniper'];return p?[+p[0].toFixed(1),+p[1].toFixed(1)]:null})()")
         if not j: raise Exception('Granny Juniper isn’t standing in Copperleaf')
-        shot(pg, 'a04-copperleaf')
+        shot(pg, 'copperleaf-juniper')
         pg.evaluate("personTalk(walkState().npcs.find(n=>n.id==='_talk:juniper').talk);0")
         if not until(pg, '!!talkBox.cur', 15): raise Exception('Granny Juniper didn’t say anything')
         first = pg.evaluate("talkBox.cur&&talkBox.cur.text||''")
