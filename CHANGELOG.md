@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Eight new Billies (roster track RO-2a): **Gosling**, **Sprucegoose** and **Aviatorgoose**, the goose you meet on
+  almost every route; **Flatpackrat** and **Kamprat**, a rat that assembles itself; **Pupfin**, a goldfish that won't
+  stop pitching, until it evolves at level 20 into **Sharktank**, a Water/Dragon shark; and **Altmowl**, a rare owl
+  with a cloud for a brain. They're the first common and rare Billies, so each run's region differs more, and fishing
+  and eggs that used to give a stand-in now give these.
 - New jokes in the lore, the loading tips and people's lines (reflavour track RF-5): the satire moves off money onto
   bureaucracy, tech and influencers. The Guide's lore tells where the Billies came from (Legacy Labs, "You, again, but
   forever": the billionaires' vanity clones, dropped down a sinkhole when they came out wrong) and why a pyramid
