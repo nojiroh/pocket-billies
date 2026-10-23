@@ -1398,6 +1398,15 @@ The unit tier is already 80 s against a 30 s budget. New tests must stay fast; T
 | Type-checking all Studio JS at once | Add `// @ts-check` file by file as tickets touch them (T6). |
 | Content packs (`mergeInto`, RL-16) | Belongs to RL-16. This plan's editors should land first, so RL-16 only adds the pack filter. |
 
+## Decisions (owner, Phase 3, 2026-10-22)
+The owner approved the Phase 3 plan with its recommended options (relayed by the parent session, from the owner's
+own message):
+1. **T3.5:** delete `tools/balance-report.py` (a species-roster report on stand-ins, STAB hard-coded; nothing uses it).
+2. **T3.2:** the after-battle bookkeeping (Hype counter, the lead's streak) moves into logic (`battleSettle`), shared by
+   `endBattle` and the simulator, rather than staying a named gap.
+3. **Scope:** session 1 does T3.1, T3.2 and T3.5; session 2 (Phase 3b) does T3.3 and T3.4's pure parts; T3.4's
+   dashboard waits for Phase 2's worker (T2.4).
+
 ## Ask me before (owner decisions this plan needs)
 1. **T5.1:** recipe as the truth with a JS baker (recommended), or Python stays and Studio writes recipes.
 2. **T1.3:** which of today's Studio "errors" may block Propose. Recommended: only what CI already fails on.

@@ -107,7 +107,11 @@ Two rules hold everywhere:
   move (every outcome, both kinds, seeded egg rolls); `run-loop.test.mjs` the start's give, the heal price, a town's
   stock for a day (the same after a reload), the run's foes (none twice, levels by row, the boss an Alpha), battle
   seeds, release pay, the payout rows and a run's ids; `run-sim.test.mjs` plays whole runs with
-  `tools/test/sim/run-sim.mjs` (one seed twice the same whatever util.js random does; the report's numbers). The
+  `tools/test/sim/run-sim.mjs` (one seed twice the same whatever util.js random does; the report's numbers and its
+  bot policy). Studio plan Phase 3: the simulation itself is `game/js/logic/run-sim.js` (`runSimOn`, handed the logic
+  and data); the CLI is its Node host. It plays the game's own rules (`runBattleExtra`, `runClinic`, `fxRunPrice`,
+  `startWild`/`startTrainer`, `catchKeep`/`catchOffer`, `battleSettle`, `runEnd`); what the player does is
+  `SIM_POLICY` (battle-formats and run-loop test those rules). The
   simulation's full report: `node tools/test/sim/run-sim.mjs --runs=50 --team=1` (validation/sim/runs.json; it reports,
   bounds wait for the owner). `run-world-real.test.mjs` also checks a run's buildings (the landing's mast, a town's
   clinic and shop), its trainers in their own world and its bridges (both ends dry, a stream crossed square within

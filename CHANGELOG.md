@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The run simulator plays by the game's own rules (Studio plan Phase 3, first part): the clinic, Potions, shop
+  prices, how battles start and end, catching (a miss can now bring the foe's money offer, which the simulator
+  refuses), and the payout all run the same code as the game. What the simulated player decides is one named bot
+  policy, printed with every report, with a note that the numbers catch changes rather than judge balance. The core
+  now lives with the game's logic so the Studio can run it later. The old species balance report
+  (tools/balance-report.py) is gone.
 - The Studio has a Run Lab (Studio plan Phase 2): type or roll a seed, or paste a debug log, and see that run's map
   as the game makes it, with your unsaved changes, and beside the data as loaded. Click a place for its type, biome,
   the day you reach it, its seed and its weather. Every run now starts the same way, from the mast, the test runs and
