@@ -149,7 +149,7 @@ export async function cutsceneStart(opts) {
   updateNav(false);
   const pre = Promise.all([
     rigPreload(cutscene.pickList.map(l => [l + '0', 1])),
-    artLoad(['coins/penny_32.png']),
+    artLoad(['coins/pyramid_32.png']),
     /* RF-2: the thrown pyramids' model, so the throws have it */
     Promise.resolve(typeof loadPropModelRecipe === 'function' && loadPropModelRecipe('coins/pyramid.json')),
     prepareMap(id),
@@ -422,7 +422,7 @@ function openingLayer(items, parts, lights, now, t) {
       lights.push({ p: [s.x, 0.35 + standingHeightAt(s.x, s.z), s.z - 0.2], r: 1.7, c: [0.55, 0.48, 0.3] });
   });
   /* RF-2: the throws are pyramids: the model (battle-3d.js pyramidWorldItem), tumbling; the flat icon while it can't */
-  const coin = artImage('coins/penny_32.png'),
+  const coin = artImage('coins/pyramid_32.png'),
     mid = PYRAMID_LIFT + PYRAMID_HIGH / 2;
   for (const c of cutscene.coins) {
     const k = cutscene.skip ? 1 : clamp((now - c.t0) / c.dur, 0, 1);
