@@ -474,7 +474,7 @@ function settingsHTML() {
       volumeSliderHTML(
         'sfx',
         'Sound effects',
-        'Buttons, battles, coins, and the short tunes for a win or a level up.',
+        'Buttons, battles, catches, and the short tunes for a win or a level up.',
         0.8
       ) +
       volumeSliderHTML('world', 'World sounds', 'Water, fountains, fire, rain, wind and animals near you.', 0.5) +
