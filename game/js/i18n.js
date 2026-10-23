@@ -118,6 +118,14 @@ World sounds|Geluiden van de wereld|Weltgeräusche|Sonidos del mundo|Sons du mon
 Sound|Geluid|Ton|Sonido|Son
 Volume|Volume|Lautstärke|Volumen|Volume
 Ambience|Sfeergeluiden|Atmosphäre|Ambiente|Ambiance
+Display|Weergave|Anzeige|Pantalla|Affichage
+Controls|Besturing|Steuerung|Controles|Commandes
+Accessibility|Toegankelijkheid|Barrierefreiheit|Accesibilidad|Accessibilité
+Game|Spel|Spiel|Juego|Jeu
+Help|Hulp|Hilfe|Ayuda|Aide
+Report a problem|Een probleem melden|Problem melden|Informar de un problema|Signaler un problème
+Start over|Opnieuw beginnen|Neu anfangen|Empezar de nuevo|Recommencer
+Erases your team, Field Guide, money and the ranch. Settings stay.|Wist je team, veldgids, geld en de ranch. Instellingen blijven.|Löscht dein Team, den Feldführer, dein Geld und die Ranch. Einstellungen bleiben.|Borra tu equipo, la guía de campo, el dinero y el rancho. Los ajustes se quedan.|Efface ton équipe, ton guide de terrain, ton argent et le ranch. Les réglages restent.
 Mute music|Muziek dempen|Musik stumm|Silenciar la música|Couper la musique
 Mute sound effects|Geluidseffecten dempen|Soundeffekte stumm|Silenciar los efectos de sonido|Couper les effets sonores
 Mute world sounds|Geluiden van de wereld dempen|Weltgeräusche stumm|Silenciar los sonidos del mundo|Couper les sons du monde
