@@ -1723,18 +1723,10 @@ def desktop_steps(b, base, R):
 
     @step('Props made of shapes: low-poly with the 32 px textures (voxels one to a pixel when switched)', 120)
     def lowpoly_props():
-        """every voxel recipe of shapes builds as a low-poly model painted from the building sheet, and as voxels at the
-        art's scale (32 to the metre) when "Props as low-poly" is off; both within a budget a phone can carry; in the
-        every-prop scene they draw as models"""
+        """in the every-prop scene the props made of shapes draw as low-poly models, none as voxels. TC-3: that each recipe
+        builds and the budget a phone can carry are tools/test/lowpoly-props.test.mjs's (this step took five minutes
+        building every recipe as voxels)"""
         if not pg.evaluate("typeof lowPolyFromRecipe==='function'"): return 'not in this build'
-        pg.evaluate("window.__P=Object.entries(gameData.scenery.props).filter(([k,M])=>typeof M.model==='string').map(([k,M])=>M.model);__P.forEach(p=>loadPropModelRecipe(p));0")
-        until(pg, "__P.every(p=>propModelState.recipes.get(p))", 30)
-        r = pg.evaluate("""(()=>{let n=0,lp=0,q=0,bad=[];for(const p of __P){const rec=propModelState.recipes.get(p);if(!rec||rec.kind==='mesh')continue;n++;
-          const L=lowPolyFromRecipe(rec),V=greedyVoxelMesh(voxelise(rec,32),32);if(!L||!V){bad.push(p.split('/').pop());continue}lp+=L.tris;q+=V.quads}return {n,lp,q,bad,on:!!engineSetting('world','voxelLowPoly'),res:propModelState.VPM}})()""")
-        if r['bad']: raise Exception(f'these recipes make nothing: {r["bad"][:6]}')
-        if not r['on']: raise Exception('props aren’t low-poly by default')
-        if r['res'] != 32: raise Exception(f'voxels are {r["res"]} to the metre, not 32')
-        if r['lp'] > 15000 or r['q'] > 40000: raise Exception(f'too heavy: {r["lp"]} low-poly triangles, {r["q"]} voxel quads')
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';uiState.inside=null;uiState.bench={id:'test_props',test:1};render();0")
         until(pg, "!!(walkView.ready&&walkView.id==='test_props')", 60); pg.evaluate("walkView.pl.x=12;walkView.pl.z=21;walkView.pl.route=null;0"); time.sleep(3)
         m = pg.evaluate("(()=>{const v=[...propModelState.meshes.values()].filter(Boolean);return {lp:v.filter(m=>m.lowpoly).length,vox:v.filter(m=>!m.model).length,drawn:propModelState.drawn}})()")
@@ -1742,7 +1734,7 @@ def desktop_steps(b, base, R):
         shot(pg, 'props-lowpoly')
         pg.evaluate("uiState.bench=null;render();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f'{r["n"]} recipes: {r["lp"]} triangles low-poly, {r["q"]} quads as voxels at 32 to the metre; the every-prop scene draws {m["lp"]} as low-poly models'
+        return f'the every-prop scene draws {m["lp"]} props as low-poly models, none as voxels'
     lowpoly_props()
 
     @step('Postcards: the first visit brings the card, the Guide keeps it', 90)
