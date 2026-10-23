@@ -38,7 +38,7 @@
   "You": "me"
  },
  "scripts": {
-  "hazel": {
+  "chosen": {
    "about": "Professor Chosen in his lab (talk.js talkChosen): your Index, your badges, where Blake went",
    "who": "chosen",
    "script": [

@@ -49,7 +49,7 @@ test('trainers: the first meeting (a run-up scene for some), met, beaten; then t
 });
 
 test('Hazel in the lab: the Index, badges and where Blake went', async () => {
-  const H = STORY.scripts.hazel;
+  const H = STORY.scripts.chosen;
   for (const c of BEFORE.hazel) {
     const save = blank();
     save.caught = Object.fromEntries(
@@ -60,7 +60,7 @@ test('Hazel in the lab: the Index, badges and where Blake went', async () => {
     save.seats = ['a', 'b', 'c'].slice(0, c.badges);
     if (c.blake !== 'none') save.flags.chad = 1;
     if (c.blake === 'chad2') save.flags.chad2 = 1;
-    assert.deepEqual(await play('story:hazel', H.script, H.who, save), c.said, JSON.stringify(c));
+    assert.deepEqual(await play('story:chosen', H.script, H.who, save), c.said, JSON.stringify(c));
   }
 });
 

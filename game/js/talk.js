@@ -317,8 +317,8 @@ export function setTalkFolk(v) {
   talkFolk = v; // eslint-disable-line no-func-assign
   provide({ talkFolk });
 }
-/* Professor Chosen in his lab: his script (story.json scripts.hazel): your Index, your badges, where Blake went */
+/* Professor Chosen in his lab: his script (story.json scripts.chosen): your Index, your badges, where Blake went */
 export async function talkChosen() {
   if (talkBox.on) return;
-  await playStoryScript('story:hazel');
+  await playStoryScript('story:chosen');
 }
