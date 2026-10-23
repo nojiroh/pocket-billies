@@ -28,6 +28,7 @@ DATA = 'game/data'
 ANY = re.compile(r'[<>`]')
 NAME_KEYS = {'id', 'name', 'n', 'names', 'title', 'locationId'}
 OPS = re.compile(r'>=|<=|!=|==|[<>]')
+COND_KEYS = {'when', 'need'}
 WHEN_OPS = re.compile(r'\s(?:>=|<=|!=|==|[<>])\s')
 
 
@@ -41,7 +42,9 @@ def script_text(line):
 
 def walk(v, path, key, out):
     if isinstance(v, str):
-        if ANY.search(WHEN_OPS.sub(' ', v) if key == 'when' else v) or (key in NAME_KEYS and '"' in v):
+        # a condition (an unlock's when, an event option's need: RL-12b) is never shown as it is: its comparisons with a
+        # space each side are syntax
+        if ANY.search(WHEN_OPS.sub(' ', v) if key in COND_KEYS else v) or (key in NAME_KEYS and '"' in v):
             out.append((path, v[:80]))
     elif isinstance(v, dict):
         for k, x in v.items():
