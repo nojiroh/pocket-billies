@@ -216,12 +216,12 @@ test('save: robots and parts survive a save and load; a part the data lost is dr
   s.team.push(robot());
   fn('addPart')('hover');
   assert.equal(fn('validSave')(JSON.parse(JSON.stringify(s))), true);
-  // as for a Billie whose species the data lost: validSave refuses it, migrate drops it
+  // as for a Billie whose species the data lost: validSave refuses it, saveFill drops it
   s.parts.push({ uid: 'x1', id: 'nosuchpart', up: 0 });
   s.box.push({ ...robot(), gem: 'nosuchgem' });
   const o = JSON.parse(JSON.stringify(s));
   assert.equal(fn('validSave')(o), false);
-  const back = fn('migrate')(o);
+  const back = fn('saveFill')(o);
   assert.equal(back.team[1].kind, 'robot');
   assert.equal(back.team[1].sp, 'bot:volt.vane.tesla.auger.striders');
   assert.deepEqual(
@@ -233,7 +233,7 @@ test('save: robots and parts survive a save and load; a part the data lost is dr
   const old = JSON.parse(JSON.stringify(back));
   delete old.parts;
   assert.equal(fn('validSave')(old), true);
-  assert.deepEqual(fn('migrate')(old).parts, []);
+  assert.deepEqual(fn('saveFill')(old).parts, []);
 });
 
 for (const [slot, replacement] of [

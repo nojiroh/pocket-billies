@@ -45,7 +45,7 @@ import {
 } from './hooks.js';
 import { gameData } from './game-data.js';
 import { metresToKm, today } from './logic/rules.js';
-import { SAVE_NEW_MSG, SAVE_OLD_MSG, migrate, newSaveKeepingPreferences, saveAge, validSave } from './logic/saves.js';
+import { SAVE_NEW_MSG, SAVE_OLD_MSG, newSaveKeepingPreferences, saveAge, saveFill, validSave } from './logic/saves.js';
 import {
   activeBattle,
   escapeHtml,
@@ -66,7 +66,7 @@ import { I18N_LANGS, i18nSet } from './i18n.js';
 import { gpuCountBegin, gpuCountEnd } from './engine/gpu-counters.js';
 import { frameScheduler } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
-import { cleanLook, cleanTrainer, lookFromOld, personHTML } from './person-art.js';
+import { cleanLook, cleanTrainer, personHTML } from './person-art.js';
 /* eslint-disable no-func-assign */
 expose({
   GRAPHICS_DIALS: [() => GRAPHICS_DIALS],
@@ -206,7 +206,7 @@ function importSave() {
         return;
       }
       if (!validSave(candidate)) throw new Error();
-      const next = migrate(candidate);
+      const next = saveFill(candidate);
       uiState.modal = null;
       modal({
         title: 'Restore this backup?',
@@ -723,8 +723,9 @@ document.addEventListener('click', ev => {
       break;
   }
 });
-saveData.avatar = cleanLook(lookFromOld(saveData.avatar, saveData.gender));
-if (!saveData.gender || saveData.gender === 'boy' || saveData.gender === 'girl') saveData.gender = 'me';
+/* a new game's empty avatar is the first preset, as the dressing room starts from */
+saveData.avatar = cleanLook(saveData.avatar);
+if (!saveData.gender) saveData.gender = 'me';
 applyPreferences();
 
 /* alpha 0.5: the expert graphics dials: a change shows at once (the ground, grass and far things are rebuilt when they need it) */

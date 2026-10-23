@@ -184,7 +184,7 @@ test('breeding: a save with an egg in the nursery passes the checks and loads wi
   K.breedStart(s, a.uid, mate.uid, 'risky', 0, B);
   const copy = () => JSON.parse(JSON.stringify(s));
   assert.equal(fn('validSave')(copy()), true);
-  const loaded = fn('migrate')(copy());
+  const loaded = fn('saveFill')(copy());
   assert.equal(loaded.ranch.nursery.length, 1);
   assert.equal(loaded.ranch.bred, 1);
   const twin = copy();

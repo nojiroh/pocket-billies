@@ -56,7 +56,7 @@ Two rules hold everywhere:
   and one battle per process (`hooks.js`). Tests in one file run in order and share that state.
 - Random numbers are seeded. A test that draws them calls `reseed()` first (or in `beforeEach`), so its result doesn't
   depend on the tests before it.
-- How randomness works today (RL-1 `tools/test/rng-baseline.test.mjs`, RL-2 `tools/test/rng.test.mjs`):
+- How randomness works today (RL-2 `tools/test/rng.test.mjs`):
   `game/js/util.js`'s `random` is `Math.random` as it is when util.js loads. On the page that is the browser's, so
   nothing in a real game is seedable yet; in Node, `load-logic.mjs` puts a Park-Miller stand-in on `Math.random`
   first, so the logic (the battle engine's ~16 rolls, `pickWeighted`) follows `reseed()` and two battles from one seed
@@ -80,7 +80,7 @@ Two rules hold everywhere:
   simulation does). The battle object's shape is snapshotted; a seeded battle must replay the same with other draws
   in between; the turn cap is tested with the cap lowered inside the test.
 - The save's run state (RL-3: `meta-state`, `ranch-state`, `run-state` and `saves.test.mjs`): run on the fixture's
-  three locations, so a save from a run sits at node 4, past `LOCATIONS`, to prove `migrate` keeps a run's trip by the
+  three locations, so a save from a run sits at node 4, past `LOCATIONS`, to prove `saveFill` keeps a run's trip by the
   run's map and not by today's places. Switching that branch off turns the run-save test red.
 - The run map and clock (RL-6: `run-map.test.mjs`, `run-map-real.test.mjs`, `weather.test.mjs`): run-map.test on
   small tables of its own (five node types, the five biomes as mild), run-map-real on the game's (nodeTypes.json,

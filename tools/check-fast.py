@@ -162,7 +162,10 @@ def boots(pg, base):
     """a new player's boot: the title over Copperleaf, drawing"""
     if not until(pg, "typeof titleScreen!=='undefined'&&titleScreen.on&&!document.getElementById('nogl')", 90): raise Exception('the title never showed')
     drawing(pg)
-    return f'title over {pg.evaluate("walkView.id")}, drawing'
+    # test cleanup lane C: the title draws Copperleaf for a new player too (city_opening is parked in game/data/legacy)
+    on = pg.evaluate("[walkView.id,walkView.sc&&walkView.sc.baseId,LOCATIONS[START_NODE].mapId]")
+    if on[2] not in (on[0], on[1]): raise Exception(f'the title is over {on[0]}, not the hub ({on[2]})')
+    return f'title over {on[0]}, drawing'
 
 
 def scene(node_id):

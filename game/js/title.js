@@ -1,8 +1,8 @@
 'use strict';
 /* ================= TITLE SCREEN =================
    After loading: the Pocket Billies logo in pixel lettering and title music over a slow camera on a real scene, drawn
-   by the game: Copperleaf from above the rooftops at your local time of day when you have a game, the city of the
-   opening at night in the rain when you don't (cutscenes/city.json). Without the 3D scene, the painted sky.
+   by the game: Copperleaf from above the rooftops at your local time of day (test cleanup lane C: for a new player
+   too; the city of the opening is parked in game/data/legacy). Without the 3D scene, the painted sky.
    2026-10-19 (the owner): signed out, a glass card offers Sign in with Google or Play without an account (folded to a
    corner chip for this visit); signed in, your account chip in the corner (tap: email, where the save is, Sign out).
    With a game: the Continue card (portrait, name, place, time played), New game and Settings quiet under it; signed in,
@@ -25,7 +25,7 @@ import {
 } from './hooks.js';
 import { $, clamp } from './util.js';
 import { TEST_BOOT } from './test-boot.js';
-import { CUTSCENES, LOCATIONS, START_NODE, gameData } from './game-data.js';
+import { LOCATIONS, START_NODE, gameData } from './game-data.js';
 import { encountersHere } from './logic/rules.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
@@ -44,7 +44,6 @@ import { uiIconHTML } from './art.js';
 import { personHTML } from './person-art.js';
 import { applyPreferences, openSettings } from './settings-screen.js';
 import { mapById, stopWalkView, walkView } from './walk-view.js';
-import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
 import { mountWalkView } from './walk-view-gl.js';
@@ -61,7 +60,6 @@ expose({
   titleAccounts: [() => titleAccounts],
   titleAutoCheck: [() => titleAutoCheck, v => (titleAutoCheck = v)],
   titleAutoStop: [() => titleAutoStop, v => (titleAutoStop = v)],
-  titleCityFrame: [() => titleCityFrame, v => (titleCityFrame = v)],
   titleContinue: [() => titleContinue, v => (titleContinue = v)],
   titleEnd: [() => titleEnd, v => (titleEnd = v)],
   titleFrame: [() => titleFrame, v => (titleFrame = v)],
@@ -85,7 +83,6 @@ export const titleScreen = {
   guest: false,
   autoT: 0,
   autoOff: false,
-  city: false,
 };
 /* how long Continue waits before it presses itself, signed in */
 const TITLE_AUTO_MS = 4000;
@@ -99,7 +96,6 @@ export function titleWanted() {
 /* the camera: a slow drift along the front of the town, high above the rooftops, looking up the main street */
 function titleFrame() {
   if (!titleScreen.on || !walkView.sc) return null;
-  if (titleScreen.city) return titleCityFrame();
   const sc = walkView.sc,
     now = performance.now(),
     k = reducedMotion ? 0.5 : 0.5 - 0.5 * Math.cos(((now - titleScreen.t0) / 1000) * 0.05),
@@ -120,29 +116,6 @@ function titleFrame() {
     hide: null,
     focus: fd,
     blur: 0.12,
-    center: [tgt[0], tgt[2]],
-    cut: 2.6,
-  };
-}
-/* the city behind the title for a new player: down the avenue from the opening's canyon shot, gliding on slowly */
-function titleCityFrame() {
-  const C = CUTSCENES.city,
-    K = C && C.shots.canyon;
-  if (!K) return null;
-  const now = performance.now(),
-    k = reducedMotion ? 0.3 : 0.5 - 0.5 * Math.cos(((now - titleScreen.t0) / 1000) * 0.035),
-    dz = 26 * k,
-    eye = [K.eye[0], K.eye[1] + 4 - 6 * k, K.eye[2] + dz],
-    tgt = [K.tgt[0], K.tgt[1] + 6, K.tgt[2] + dz + 20],
-    fd = Math.hypot(tgt[0] - eye[0], tgt[1] - eye[1], tgt[2] - eye[2]);
-  return {
-    look: { eye, tgt, fov: K.fov || 45, w: 0 },
-    items: [],
-    lights: [],
-    parts: [],
-    hide: null,
-    focus: fd,
-    blur: 0.1,
     center: [tgt[0], tgt[2]],
     cut: 2.6,
   };
@@ -240,8 +213,7 @@ function titleNews() {
     btns: [{ l: 'OK', c: 'gold', f: closeModal }],
   });
 }
-/* the scene behind the title: Copperleaf with a game, the city at night without one, drawn by the walk renderer
-   with the title camera */
+/* the scene behind the title: Copperleaf, drawn by the walk renderer with the title camera */
 export async function titleMount() {
   if (titleScreen.mounted || !titleScreen.on) return;
   titleScreen.mounted = true;
@@ -265,16 +237,9 @@ export async function titleMount() {
     (typeof cutsceneStartName === 'function' ? cutsceneStartName() : 'The town') + ', from above the rooftops'
   );
   titleScreen.t0 = performance.now();
-  const C = CUTSCENES.city;
-  titleScreen.city = !saveData.started && !!C && !!mapById(C.map);
-  if (titleScreen.city) {
-    cv.setAttribute('aria-label', 'A city at night, in the rain');
-    titleScreen.force = environment.force;
-    environment.force = { ...(environment.force || {}), ...(C.look || {}) };
-  }
   walkView.director = { frame: titleFrame };
   try {
-    const id = titleScreen.city ? C.map : typeof cutsceneMapId === 'function' ? cutsceneMapId() : mapIdAt(START_NODE);
+    const id = typeof cutsceneMapId === 'function' ? cutsceneMapId() : mapIdAt(START_NODE);
     await mountWalkView(cv, id, {
       state: () => ({ who: null, npcs: [], enc: [], mode: 'line' }),
       keys: () => false,
@@ -319,10 +284,6 @@ function titleEnd() {
   clearTimeout(titleScreen.autoT);
   titleScreen.autoT = 0;
   document.body.classList.remove('ttl-auto');
-  if (titleScreen.city) {
-    environment.force = titleScreen.force || null;
-    titleScreen.city = false;
-  }
   document.body.classList.remove('in-title', 'ttl-live', 'ttl-flat');
   if (walkView.director && walkView.director.frame === titleFrame) {
     walkView.director = null;
