@@ -100,6 +100,8 @@ export interface Meta {
   wins: number;
   /** the highest Expedition open, from 1 */
   expedition: number;
+  /** RL-R2: badges kept for good, by type id in lower case (`water`): the first win over a leader of the type */
+  badges: Record<string, 1>;
 }
 
 /** roguelite track RL-3: the ranch, a hub building (logic/ranch-state.js; filled in RL-9 and RL-10) */
