@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Settings in seven tabs (UI-7b): Sound, Display, Controls, Accessibility, Game, Save, Help, opening on the last one
+  you used. Start over moved from beside Done to the foot of the Save tab, and now also ends a battle in progress.
+  The Save card shows runs won and Billies taxed. Help has a Report a problem box (the full test and the debug log);
+  the other tests, and the time, weather and season overrides, moved to the debug menu. Customize trainer left
+  Settings (Edit look on the trainer card does it).
 - Settings → Sound (UI-7a): the Test buttons are gone; letting go of a slider plays its sound once at the new level
   (the Music slider plays nothing while a song is on, as you hear it change). Each sound has its own mute button
   where Test was, which keeps its level; moving a muted slider unmutes it. The Volume row's mute is the same as the

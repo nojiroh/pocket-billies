@@ -189,7 +189,7 @@ Works like the Engine section (dials in groups, ↺ per dial, presets, Hold to c
 | UI-5 (done 2026-10-22) | Every screen onto the kit | after the RL-8 play test: every screen, including ones the roguelite replaces, moves out of ui.js and the old CSS, one screen per commit, moves only (absorbs 06-5) | every remaining screen | each moved screen passes its UI test; the unused-CSS list shrinks |
 | UI-6 | Old layers gone | style, polish, screens and v05 emptied and deleted; lint and the blur budget enforced (fail when raw values rise); accessibility pass; then `phase-06-done` and `ui-6-done` | none intended | ui-lint at or near zero; full quick check green apart from known reds |
 | UI-7a (done 2026-10-23) | Settings: Sound | the Test buttons go; a slider plays its sound once when let go (the music slider not over a song); each row has its own mute (the Volume row's is the master mute); dragging a muted slider unmutes it; the duplicate on/off switch goes | a mute icon on each sound row, no Test buttons | quick check's Sound settings step passes; phone check by the owner |
-| UI-7b | Settings: layout | seven tabs (Sound, Display, Controls, Accessibility, Game, Save, Help), opening on the last one used; time, weather and season to the debug menu; Start over into the Save tab's red section, one shared reset that stops a battle; Save card: runs won and taxed; Customize trainer to the trainer card; Help: a Report a problem box (Full test, Export debug log) | the new tabs | quick check green, settings screenshots remade on purpose |
+| UI-7b (done 2026-10-23) | Settings: layout | seven tabs (Sound, Display, Controls, Accessibility, Game, Save, Help), opening on the last one used; time, weather and season to the debug menu; Start over into the Save tab's red section, one shared reset that stops a battle; Save card: runs won and taxed; Customize trainer to the trainer card; Help: a Report a problem box (Full test, Export debug log) | the new tabs | quick check green, settings screenshots remade on purpose |
 | UI-7c | Debug menu | grouped by task (tests, give me, Billies, battle, run, places, story, ranch and time, save); one copy of each test; no phase codes in labels; a search box; open sections remembered; a message saying what changed; the four old buttons gone once checked unused | the new menu | quick check green |
 
 UI-2 is the biggest; if it runs long, split it: shapes, edge line, wipes and battle cards first, then icons, glyphs,
@@ -213,6 +213,16 @@ UI-7a as built: `preferences.mutes` (audio/levels.js gives a muted bus 0 and kee
 preference), `testVolume` called on a slider's `change`, the effects slider's drag tick removed, the on/off switch
 removed (its hint moved to the Volume row), translations. Found while reading: the debug menu's Erase save and
 Settings' Start over are two copies of the reset, and only the debug one stops a battle in progress (UI-7b).
+
+UI-7b as built: one `settingsReset` (moved to settings-screen.js; stops a battle, which Settings' copy didn't); Start
+over leaves the footer for a red section at the foot of the Save tab; the Save card reads `meta.wins` of `meta.runs`
+and the Field Guide's taxed count; Customize trainer left the Save tab (the trainer card's Edit look opens the same
+dressing room); time, weather and season are a debug-menu section (same preferences); Help's Report a problem box
+holds Full test and Export debug log, the diagnostics test joined the debug menu's Performance row (the others were
+there already); seven tabs (keys `sound`, `graphics` shown as Display, `controls`, `access`, `game`, `save`, `help`),
+wrapping onto two rows at 390 px; the last tab used is `preferences.setTab` (Sound with none); translations.
+Not changed, worth a look: Help's How to play still describes the legacy game (towns and roads, map arrows, eggs on
+real time).
 
 ## Risks
 - Clip-path shapes plus blur on many surfaces can cost frames on phones: measure with the Graphics bench after UI-2.

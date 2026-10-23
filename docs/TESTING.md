@@ -214,7 +214,7 @@ same phase:
   block (`frameBlockCheck`, engine/webgl.js) and checks the block's size and each member's offset, as this device's
   driver lays them out, against what engine/frame-block.js packs; smoke shows "N shaders; 14 with the Frame block".
 - **(13c)** The full test and the debug menu load on demand; the recording part of the debug log stays loaded.
-- The graphics test (Settings → Help → Run the graphics test, and the debug menu; `game/js/graphics-test.js`, loaded on
+- The graphics test (the debug menu's Performance section since UI-7b; Help had it before; `game/js/graphics-test.js`, loaded on
   demand) is run only by a person, by hand, on their own device: never from Claude Code, CI, a headless browser or
   a script, and no command-line runner, CI job or hook. It tries the shaders, each engine dial on its own (ENGINE_SPEC,
   moved away from its default), Balanced, Beautiful and each engine preset, in one scene, and saves a short .json
