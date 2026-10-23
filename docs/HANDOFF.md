@@ -2,6 +2,33 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio plan Phase 5, session 3 - The Studio bakes kit Billies ("Write Billie"), the Python builder retires, then T5.2 - 2026-10-23
+Branch `claude/sr-5-parts`, draft PR #139. Plan pre-approved with its recommended options (decision 9's standing
+instruction, relayed by the parent session); this session's choices are decision 11 in the plan doc. First merged
+`origin/ccr-81011a25-lf3exv` (Phase 1 sessions B-D: the moved checks, CI), conflicts in docs and the checks only.
+
+**Plan** (commit and push after every ticket)
+1. **T5.1 step 3, the Studio bakes.**
+   - `kitBakeWhole` in kit-assemble.js: one form's sheet, layout, rig and native parts from the data, shared by
+     `npm run bake:kits` and the Studio (the CLI moves onto it, no output change).
+   - The kit Billies' piece layouts (`game/art/next/billionaires/<kit form>.json`) retire: the game never reads them,
+     Propose has no way to send a JSON beside the art, and the one reader (the Roster board's silhouette) falls back to
+     the rig. The bake CLI and the parity test stop writing and comparing them (the rig is still compared whole).
+   - `studio/js/kit-recipe.js`: Part mode on a kit Billie shows its recipe (scale; per bone kind the part, size and
+     colour; the extras). A change bakes at once in the browser (part pictures through canvas ImageData, the game's
+     baker): the recipe, the sheet (a Studio picture), the rig and the line's native parts change together as one
+     undo step. "Write Billie" bakes the shown recipe again (after a part picture was repainted); nothing changes when
+     it bakes as it is. Propose then carries the PNG, rigs-next.js, kitBuilds.json and the line.
+   - check-studio-github.py `kit_write`: a recipe part edited in the Studio; Propose's batch has the sheet, the rigs,
+     kitBuilds.json and the line; the proposed sheet is pixel-equal to the Node bake of the same recipe and the rig
+     equal; Write Billie on an unedited recipe changes nothing; undo takes the recipe and its bake back together.
+2. **The Python builder retires** (tools/build-kit-billies.py and its preview sheet docs/samples/kit-billies.png),
+   once step 1 holds parity. The parity test compares with the committed art, so no Python fixture is needed.
+3. **T5.2** (part swap keeps the Billie whole): `skeletonFraming`'s `geo` maths into logic/rig-joints.js; refit the
+   children to the new part's sockets; keep or regenerate the blink frame; the compatibility filter with reasons; a
+   before/after preview through rigParts/rigFrame; unit tests on 3 real species.
+4. **T5.3** rig consistency checks into data-checks.js; then T5.4 and T5.7 if time allows.
+
 ### Studio plan Phase 5, session 2 - The recipe in game/data, a Node bake CLI, the slot words (T5.1, T5.5) - 2026-10-22
 Branch `claude/sr-5-parts`, draft PR #139 (base `ccr-81011a25-lf3exv`). Plan pre-approved with its recommended options
 (decision 9's standing instruction); this session's choices are decision 10 in the plan doc.
