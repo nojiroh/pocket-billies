@@ -9,6 +9,17 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Five times of day**: the light outdoors now comes from five looks, dawn, day, golden hour, dusk and night, that
+  blend into each other with the clock (and move with sunrise and sunset through the seasons). Golden hour is warm
+  with teal shadows, dusk pink and violet, night deep blue with warm lamps and stars; day keeps each place's own sky.
+  Each look (its sky, light, fill, haze, mist, exposure, colour, shadow tints, glow, lamps and stars) can be tuned in
+  the Studio's Engine page, which can now show any hour, weather and season and play a whole day in 20 seconds.
+- **Calmer effects**: half the depth-of-field blur and a wider sharp band, much weaker colour fringes and vignette,
+  less bloom, glare, saturation and mist. The blur behind menus on a phone is lighter too.
+- **Faster on phones**: menus no longer redraw the moving 3D world behind them (it settles, then holds still), glass
+  panels blur less, Billie pictures redraw less often, things too small to see aren't drawn, a phone skips small props
+  far off in the haze, effects of things off screen aren't drawn, and the automatic quality on a phone now lowers the
+  effects and then the resolution when frames are slow (it used to keep the full resolution on the Android phone).
 - Encounters on a run (roguelite track RL-12b, part 1):
   - **Events**: eighteen of them, in the new tone (a Bureau desk wanting Form 27-B, an unpaid intern guarding a Revive,
     a crate that says DO NOT OPEN: BEANS, a pay-to-wish fountain...). Each has two or three choices; some need a Billie

@@ -12,7 +12,7 @@ import { hash2d, walkView } from '../walk-view.js';
 import { ENGINE_DEFAULTS, engineContext, engineSetting } from '../engine/settings.js';
 import { normalize3, smooth01 } from '../engine/webgl.js';
 import { lightContext, pickPointLights } from '../engine/light.js';
-import { environment, environmentSky, environmentWindowLit } from '../environment.js';
+import { environment, environmentHaze, environmentWindowLit } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
 import { worldCurveArgs } from './draw-common.js';
@@ -240,7 +240,7 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
   const lights = pickPointLights(L, P.x, P.z, 16),
     sky = skyColors(sc);
   let hz = hexToRgb(engineSetting('air', 'haze') || sc.haze || (sc.sky || [])[2] || '#EAD9C0').map(v => v / 255);
-  if (E && !sc.indoor) hz = environmentSky([hz, hz, hz], false)[2];
+  if (E && !sc.indoor) hz = environmentHaze(hz);
   const tint = sc.tint && sc.tint !== '#000000' ? hexToRgb(sc.tint).map(v => 0.35 + (v / 255) * 1.3) : null;
   let ambTop = sc.indoor
       ? [0.62, 0.58, 0.52]
@@ -257,7 +257,14 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
     const hor = wc.map(v => v * wk * 0.85);
     roomSH = { top: ambTop, hor, gnd: ambBot };
   }
-  if (E && !sc.indoor) {
+  const TL = E && !sc.indoor ? E.look : null;
+  if (TL) {
+    /* 0.1.0 alpha: the time-of-day look's fill light and its colour */
+    const gk = 1 + E.grey * 0.12,
+      ac = TL.ambientColor;
+    ambTop = ambTop.map((v, i) => v * TL.ambient * ac[i] * gk);
+    ambBot = ambBot.map((v, i) => v * TL.ambient * ac[i]);
+  } else if (E && !sc.indoor) {
     const nk = 1 - night * 0.5,
       gk = 1 + E.grey * 0.12;
     ambTop = ambTop.map((v, i) => v * nk * gk * (i === 2 ? 1 + night * 0.25 : 1));
@@ -276,7 +283,7 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
     : sc.indoor
       ? ambTop.map((v, i) => v * 0.9 + ambBot[i] * 0.1)
       : [0.3 + sky[2][0] * 0.26, 0.32 + sky[2][1] * 0.26, 0.34 + sky[2][2] * 0.26].map(
-          (v, i) => v * (E ? 1 - night * 0.5 : 1)
+          (v, i) => v * (TL ? TL.ambient * TL.ambientColor[i] : E ? 1 - night * 0.5 : 1)
         ); /* v43: the horizon's colour for the sky-shaped ambient */
   const RD = BT ? null : roomDimming(sc);
   return lightContext({
@@ -290,7 +297,7 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
     noSunLobe: !!roomSH,
     haze: hz,
     fogStart: C.df * engineSetting('air', 'hazeStart') * (E && !sc.indoor ? 1 - E.fog * 0.35 : 1),
-    fogD: (engineSetting('air', 'hazeDistance') ?? (sc.hazeD || 34)) * 1.15 * fogK,
+    fogD: (engineSetting('air', 'hazeDistance') ?? (sc.hazeD || 34)) * 1.15 * fogK * (TL ? TL.hazeDistance : 1),
     tint,
     valley: walkRenderer.valley || null,
     /* a place with mist of its own: the dial scales it (it was ignored there: 24 of 93 maps) */

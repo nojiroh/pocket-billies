@@ -1,13 +1,13 @@
 {
  "defaults": {
-  "lens": {"grain":0.015,"vignette":0.72,"aberration":1.15,"bokeh":1.25,"blur":2,"blurFar":2.6,"focusBand":0.62,"focusTilt":0.7},
+  "lens": {"grain":0.015,"vignette":0.4,"aberration":0.35,"bokeh":1.25,"blur":1,"blurFar":1.4,"focusBand":0.8,"focusTilt":0.7},
   "color": {
    "exposure": 1.1,
-   "saturation": 1.2,
+   "saturation": 1.1,
    "contrast": 1.08,
    "warmth": 0.16,
    "outlines": 1,
-   "bloom": 0.8,
+   "bloom": 0.6,
    "grade": "film",
    "tone": "soft",
    "ink": 0.2
@@ -21,7 +21,7 @@
    "clouds": 0.38,
    "cloudSpeed": 1.6,
    "cloudShadows": 0.19,
-   "glare": 0.9
+   "glare": 0.6
   },
   "shadows": {
    "strength": 0.84,
@@ -40,11 +40,52 @@
    "groundAO": 0.6
   },
   "lights": {"roomLight":false},
-  "air": {"hazeStart":0.97,"mist":0.16,"godRays":0},
+  "air": {"hazeStart":0.97,"mist":0.08,"godRays":0},
   "grass": {"density":3,"height":0.55},
   "water": {"reflection":0.95,"ripples":0.3,"glints":1.35,"clarity":0.2,"caustics":0.4,"shallow":"#229ABF"},
   "camera": {"pixelGrid":false,"pitchAdd":-8,"fov":0.68},
-  "quality": {"resolution":1.5,"shadowMap":4096,"frameBlock":true,"edgeBleed":true}
+  "quality": {"resolution":1.5,"shadowMap":4096,"frameBlock":true,"edgeBleed":true,"minPropPx":3,"phonePropDistance":48},
+  "todDawn": {
+   "skyTop": "#5b6fb8",
+   "skyMid": "#e9a5b0",
+   "skyLow": "#ffd6a3",
+   "sunColor": "#ffc7a0",
+   "ambientColor": "#c9cff2",
+   "haze": "#f2c9b8",
+   "shadowTint": "#6a78b8",
+   "lightTint": "#ffc09a"
+  },
+  "todDay": {"sunColor":"#fff4e2"},
+  "todGolden": {
+   "skyTop": "#6fa0d8",
+   "skyMid": "#f2c38a",
+   "skyLow": "#ffb060",
+   "sunColor": "#ffb869",
+   "ambientColor": "#9fc4d8",
+   "haze": "#f4c27e",
+   "shadowTint": "#3f7f8c",
+   "lightTint": "#ffb15c"
+  },
+  "todDusk": {
+   "skyTop": "#2e2f6e",
+   "skyMid": "#b4618f",
+   "skyLow": "#ff9068",
+   "sunColor": "#ff8a70",
+   "ambientColor": "#a79bd6",
+   "haze": "#c27e9a",
+   "shadowTint": "#5b4a9c",
+   "lightTint": "#ff9a78"
+  },
+  "todNight": {
+   "skyTop": "#060a24",
+   "skyMid": "#111b45",
+   "skyLow": "#26356a",
+   "sunColor": "#8fa6ff",
+   "ambientColor": "#8ea2e0",
+   "haze": "#1e2a55",
+   "shadowTint": "#23306e",
+   "lightTint": "#ffc27a"
+  }
  },
  "presets": {
   "test": {
