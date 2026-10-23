@@ -576,7 +576,9 @@ function onField(ev) {
   const out = document.getElementById(fieldOutputId(el.dataset.p));
   if (out) out.textContent = el.dataset.show && RANGE_FORMATS[el.dataset.show] ? RANGE_FORMATS[el.dataset.show](v) : v;
   changed(el.dataset.p.startsWith('@rigs'));
-  const hk = studioState.hooks[studioState.sec];
+  /* Studio plan F16: the hook of the section in the field's own pane (a dialog's field belongs to the left one) */
+  const pane = el.closest('.pane'),
+    hk = studioState.hooks[pane && pane.dataset.pane === '2' ? studioState.sec2 : studioState.sec];
   if (hk) hk(el.dataset.p, v);
   if (el.dataset.rr && ev.type === 'change') render();
 }
