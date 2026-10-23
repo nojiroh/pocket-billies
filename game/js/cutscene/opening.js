@@ -55,13 +55,13 @@ import { chooseStarter, cutsceneStarterItem } from './starter-pick.js';
 import { hazelFight } from './staged-fight.js';
 /* eslint-disable no-func-assign */
 expose({
+  chosenHotTake: [() => chosenHotTake, v => ((chosenHotTake = v), provide({ chosenHotTake }))],
   cutsceneAbort: [() => cutsceneAbort, v => (cutsceneAbort = v)],
   cutsceneEnd: [() => cutsceneEnd, v => (cutsceneEnd = v)],
   cutsceneMapId: [() => cutsceneMapId, v => (cutsceneMapId = v)],
   cutsceneStart: [() => cutsceneStart, v => setCutsceneStart(v)],
   cutsceneStartName: [() => cutsceneStartName],
   cutsceneWanted: [() => cutsceneWanted, v => (cutsceneWanted = v)],
-  hazelHotTake: [() => hazelHotTake, v => ((hazelHotTake = v), provide({ hazelHotTake }))],
   openingCity: [() => openingCity, v => (openingCity = v)],
   openingDressingRoom: [() => openingDressingRoom, v => (openingDressingRoom = v)],
   openingLayer: [() => openingLayer, v => (openingLayer = v)],
@@ -70,7 +70,7 @@ expose({
   openingThrowCoins: [() => openingThrowCoins, v => (openingThrowCoins = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ hazelHotTake });
+provide({ chosenHotTake });
 export function setCutsceneStart(v) {
   cutsceneStart = v; // eslint-disable-line no-func-assign
   provide({ cutsceneStart });
@@ -436,7 +436,7 @@ function openingLayer(items, parts, lights, now, t) {
   }
 }
 /* during the pick: tap the Chosen for a hot take about the starter you're looking at, in a bubble over his head */
-function hazelHotTake() {
+function chosenHotTake() {
   const g = cutscene.actors[cutsceneLook('Chosen')],
     b = $('#csBubble');
   if (!g || !b || !walkView.C || !walkView.cv) return;

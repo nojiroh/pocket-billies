@@ -5,7 +5,7 @@
    hot take (opening.js). Split from cutscene.js. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { hazelHotTake, typeBadgeHTML } from '../hooks.js';
+import { chosenHotTake, typeBadgeHTML } from '../hooks.js';
 import { $, clamp } from '../util.js';
 import { SPECIES, TYPES, typeEffectiveness } from '../game-data.js';
 import { CHOSEN } from '../logic/chosen.js';
@@ -199,7 +199,7 @@ document.addEventListener('pointerup', ev => {
     }
   });
   if (hd < bd && hd < walkView.cv.height * 0.16) {
-    hazelHotTake();
+    chosenHotTake();
     return;
   }
   if (best >= 0 && bd < walkView.cv.height * 0.18 && best !== cutscene.sel) {
