@@ -18,6 +18,7 @@ import {
   provide,
   render,
   renderOverlay,
+  rewardPickOpen,
   runPayoutOpen,
   toast,
 } from './hooks.js';
@@ -198,6 +199,8 @@ export function runResume() {
   if (run.at.phase === 'payout') runPayoutOpen();
   /* RL-12: a mini-boss's pick not answered yet (the offer was saved before it showed) */
   else if (run.offer && run.at.phase === 'walk') perkPickOpen();
+  /* RL-12b: a reward pick not answered yet (saved before it showed) */
+  else if (run.enc && run.enc.reward && run.at.phase === 'walk') rewardPickOpen();
   /* killed mid-battle: the same battle again, from its seed (the owner's answer, roguelite-track.md 8.7) */
   if (run.at.phase === 'battle') runBattleAgain();
   /* killed mid-flight: you are on the landing (runArrive ran before the flight) */

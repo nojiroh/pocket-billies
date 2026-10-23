@@ -233,6 +233,20 @@ the seams; the owner chose a normal-sized place with a stand (RL-12b). RL-9b (me
 items home, so Write-off (items at full price) counts only on a loss. Names: "Loophole" on screen, `relics` in the data
 (the item id `loophole` is the Hi-Potion).
 
+**Corrected in RL-12b (part 1, 2026-10-23, branch `track/encounters`).** Checked in the code first: nothing read
+nodeTypes' `engine: "menu"` or the run's `menu` phase (both left for part 2); the map had no rule against two shops in
+a row (a town is forced before each mini-boss, and filler rows roll towns too); there were no route trainers, no line
+of sight and no "!" until spotted (the only walk-up was the story's `runsUp`); only a mini-boss win left a pick;
+there was one evolution item (the Shining Stone) and no line used it, no candy, no tutor; conditions couldn't test
+money or a type in the team; `give` handled items only. Built: `events.json` (the owner's 18 events, loot tables,
+seven trainer classes) with options as conditions, costs and scripts in the story language; the event commands
+(`perk`, `money`, `hurt`, `heal`, `status`, `fx`, `wager`, `loot`, `level`, `recall`, `foe`, `wild`, `reward`) and
+conditions (`type:`, `money`, `team`, `badge:`); `run.enc` (no SAVE_VERSION bump: missing on an older run) with timed
+boons read by `fxOfRun`; the reward pick (`rewards.json`, a paid reroll that doubles; the owner's option B: Versewift
+and Feedopus evolve with the Shining Stone from level 20); route trainers on every route who walk up on sight. Not
+"a day passes": RL-R2 drops the deadline, so the drafts' day costs became a tenth of the team's HP. Part 2 (after
+RL-R2 merges): the waystation places, the no-two-shops rule, the check-fast page and the in-game test's step.
+
 **Changed in the TR-2 session (2026-10-21, the owner: "runs should go from east to west").** A run scene is entered
 by its east side and left ahead by its west: `east`/`east2` back, `west`/`west2` ahead (logic/run-scenes.js
 runSceneExits; runExits' `ahead`/`back`, renamed from north/south). Two links a side sit 10 m and 54 m along the 64 m
@@ -1043,6 +1057,10 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   props), `run.js` (the travel moment), `meta-state.js` (`badges`), `rules.json run.side`. Tests: every side area
   reachable only through its link; the clock counts it; an alternate path still reaches a boss; a field link refused
   without the type or the badge. Could break: seams, the bowl's run layout, the in-game test's run phase.
+- **The encounter sessions (RL-12b's two parts, RL-12c)** live on one branch (the owner, 2026-10-23). Branch: track/encounters
+- **RL-12b part 1** (done 2026-10-23; HANDOFF and section 0 "Corrected in RL-12b" have what changed). Part 2 (after
+  RL-R2 merges): the `event` and `stall` waystation node types and their stand, the no-two-shops rule in run-map.js,
+  the run sim and preview, a check-fast page and the in-game test's step. RL-12c: held items (9.6 27).
 - **RL-12b, RL-S1, RL-S2, RL-13:** files and tests as their rows say; each adds a fast-check page and an in-game test
   step, as earlier RL sessions did.
 

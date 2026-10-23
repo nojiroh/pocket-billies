@@ -59,6 +59,82 @@ Branch `track/test-cleanup` (pulled with --no-rebase before every push). TC-4 it
   checked. "Save the picture baseline" in check.yml runs only when the full check passes.
 - Next: the owner tags `tc-done`; the nightly full run compares pictures with the baseline. The fast check's budget
   needs its 19 pages to share boots (a check-fast restructure, not in this track).
+### Roguelite track RL-12b part 1 - Encounters: events, reward picks, route trainers - 2026-10-23
+Branch `track/encounters` (new; made from `track/reflavour` at e1e1479, RF-4's renames, at the owner's word in this
+session, before RF-4's PR merged; main merged in twice since, the last after #167). Plan approved in Plan Mode, the
+owner's answers relayed by the coordinating session and the branch base confirmed by the owner here: held items are
+RL-12c; leaders keep the 3-Perk pick, route trainers and the rival get the reward pick, the boss none; evolution items
+by option B (lines get a stone evolution); the Protein Bar a bag item; tutor moves from the line above its level or of
+its types; reroll 50 Moneys doubling; sight 6 m straight, 1-2 trainers a route; outcomes in the script language;
+waystations `event` and `stall`, no two shops counting both; the 18 events and 7 trainer classes as drafted. Round 4
+beside RL-R2 and RF-5; this part touches no run-map file. Tag `rl-12b1-done` (or as the owner names it) for the owner.
+- Where the docs were wrong (checked in the code; roguelite-track.md section 0 "Corrected in RL-12b"):
+  - Nothing read nodeTypes' `engine: "menu"` or the run's `menu` phase: both unused until part 2.
+  - No rule kept two shops apart: a town is forced before each mini-boss and filler rows roll towns too (seed
+    SCENE00001's map: landing, town, miniboss, route, town, town, ...).
+  - No route trainers, no line of sight; every unbeaten trainer showed a "!" from the start.
+  - Only a mini-boss win made a pick. One evolution item (the Shining Stone) and no line used it; no candy, no tutor.
+  - Conditions couldn't test money or a type in the team (`billie:` is "caught"); `give` handled items only.
+  - The drafts' "a day passes" can't be a command (RL-R2 drops the deadline; the day drives the forecast and shops):
+    Form 27-B, the Side Quest Giver and the surveyor's rope cost a tenth of the team's HP instead.
+- Changed (one cause per commit):
+  - **Stone evolutions (option B)**: swift's Versewift -> Erastar and zuck's Feedopus -> Metapus evolve with the Shining
+    Stone (`bell`) from level 20 (were level 36); their forms (Folklore, Cloud) follow. The sheet's "Use Shining
+    Stone", the Guide's chain and the hint were already there.
+  - **Conditions**: `type:<Type>` (Billies of it in the team), `money`, `team`, `badge:<Type>` (meta.badges when RL-R2
+    adds it, as a list or keys of types, leader ids or seat ids; until then the leaders' seats by their file's type).
+  - **The Protein Bar** (`protein_bar`, lvlUp 1, the trail mix's icon for now): "Feed a Protein Bar" on the Billie
+    sheet (rules.js feedLevels: whole levels through gainXp, so moves and evolutions follow), never in battle.
+  - **run.enc** (logic/run-enc.js; no SAVE_VERSION bump, missing on an older run): events drawn, each waystation's
+    event, the events played, timed boons (effect rows for this place and N more: fxOfRun reads them after the Perks;
+    runArriveFx counts them down), reward picks, the event playing. validRunEnc.
+  - **events.json** (schema, types, EVENTS, the Studio's JSON list, check-data/Studio Check `dataEvents`): the 18
+    events, 3 loot tables, 7 classes. Event commands in SCRIPT_COMMANDS (group event; docs/SCRIPTS.md): perk, money,
+    hurt, heal [share], status, fx, wager, loot, level, recall, foe, wild, reward.
+  - **logic/encounters.js**: which event a place holds (its node's stream, by weight, of its biome, none twice a run),
+    whether an option is open and why not in words, what each command does, the region's foes (encClassFoe, shared
+    with route trainers), the summary. Every chance from the run's events stream.
+  - **encounter-screen.js**: the sheet (intro, options greyed with the reason, lines one at a time, a battle in the
+    middle, a Perk or reward pick in its own sheet, what changed at the end). A reload mid-event: the battle starts
+    again (run-world.js puts the event's foe back) and the event goes on after it (script.js `beforeCheckpoint`,
+    showPendingWindows -> encounterResume).
+  - **The reward pick** (logic/rewards.js, rewards.json, reward-screen.js; rules.json run.rewards 3 cards, 50, x2):
+    items, pyramids, the Protein Bar (candy), the Shining Stone (only when a Billie evolves with it), a move tutor
+    (only moves a Billie can learn); a `held` card at weight 0 for RL-12c. Route trainers' (and the rival's, when RL-S2
+    adds it) wins store it with the battle's end; the win sheet's button opens it; a reload reopens it.
+  - **Route trainers** (logic/route-trainers.js, route-sight.js; rules.json run.trainers 1-2 a route, up 0, 150
+    Moneys, sight 6 m): of different classes, the region's Billies at the place's top wild level; they stand along the
+    road to the way ahead, by turns to each side, facing it. In their line: the "!" (only then), the reveal sting, you
+    stop, they walk up, say their line under their class's name, battle. They never block the way.
+  - The Perk pick takes an event's line and a callback ("Leave it" for a single Perk). Debug menu (Runs): "Play this
+    event", "A trainer's reward pick". The debug log's run line: events played, playing, draws, boons, picks (ids and
+    counts only), who is walking up.
+- Verified: lint, typecheck, unit tests, check:modules, format:check, check:data, build after every commit (826 ->
+  848 tests: conditions, rules, run-enc, encounters, rewards, route-trainers, data-checks' planted faults); smoke 6 of
+  6 (174 s) on the merged tree. Headless browser runs (scratch Playwright scripts, `?fixture=relics`, 390 x 760):
+  three events through to their end (a closed option's reason, a Perk, a tutor taught), the intern's manager battle
+  and its tail, a reload in the middle of that battle (it restarted, the event went on and gave the Max Revive), a
+  route trainer spotting the player, walking up, its line under "Hustle Coach", the battle and the reward pick after
+  it; no page errors. Long checks skipped at the owner's word (full quick check, in-game test, check-fast).
+- Risky / open:
+  - Not tried on a phone: the sheets' tall cards need a scroll to reach the buttons (as the Perk pick); the walk-up's
+    speed; the sight line is straight from the trainer to the hub-ahead line, so a road that bends far off it can let
+    you slip past (6 m covers 3 m either side of that line).
+  - Every number is a placeholder (rewards' weights, reroll, trainers' reward and count, event costs).
+  - `recall` won't take a Billie from home (the billboard keeps only run catches), so on a run with only home
+    Billies it does nothing but say so.
+  - A route trainer's sprite is its class's look (people/<who>); route trainers stand on `route` nodes only (towns and
+    waystations have none).
+  - The run sim doesn't fight route trainers or play events yet: its numbers don't move.
+  - The event foe after a reload restarts with the same Billies; a page reload while the event's reward or Perk sheet
+    is up reopens the sheet, and the event goes on once it is answered.
+- Overlap: RL-R2 (track/regions) edits run-map.js, run-scenes.js and mapgen: this part touched none of them. run.js
+  (one resume line), battle.js (the win button), battle-rewards.js (one hook), walk-control.js (route trainers' spots),
+  data-checks.js, rules.json, index.json, CHANGELOG, ROADMAP and this file will conflict as additions only.
+- Next: part 2 after RL-R2 merges: the `event` and `stall` waystations (normal places with a stand, fewer wild
+  Billies), the no-two-shops rule, run-sim and run-preview, a check-fast "Encounters" page and the in-game test's
+  step. Then RL-12c (held items).
+
 ### Reflavour track RF-5 - The new tone in text - 2026-10-23
 Branch `track/reflavour-rf-5`, made from `track/reflavour` at e1e1479 while RF-4 was still finishing its docs (the
 coordinating session's word, confirmed by the owner); main merged in after RF-4's PR #165 landed. Plan approved with

@@ -1,0 +1,15 @@
+{
+ "potions": {"kind":"item","item":"potion","n":2,"weight":6},
+ "hi_potion": {"kind":"item","item":"hi_potion","weight":4},
+ "full_remedy": {"kind":"item","item":"full_remedy","weight":3},
+ "trailmix": {"kind":"item","item":"trailmix","weight":2},
+ "revive": {"kind":"item","item":"revive","weight":3},
+ "max_revive": {"kind":"item","item":"max_revive","weight":1},
+ "step_pyramids": {"kind":"item","pyramid":"step_pyramid","n":2,"weight":3},
+ "gold_pyramid": {"kind":"item","pyramid":"gold_pyramid","weight":1},
+ "protein_bar": {"kind":"candy","item":"protein_bar","weight":4},
+ "protein_bars": {"kind":"candy","item":"protein_bar","n":2,"weight":1},
+ "shining_stone": {"kind":"evo","item":"bell","weight":3},
+ "tutor": {"kind":"tutor","weight":5},
+ "held": {"kind":"held","weight":0}
+}

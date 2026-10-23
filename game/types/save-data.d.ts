@@ -238,6 +238,45 @@ export interface Run {
   home?: string[];
   /** RL-9b: what was packed from Copperleaf's bag at the mast */
   pack?: { items: Record<DataId, number>; pyramids: Record<DataId, number> };
+  /** RL-12b: its events and reward picks (logic/run-enc.js); missing on a run from before */
+  enc?: RunEnc;
+}
+
+/** RL-12b: a run's events and reward picks (logic/run-enc.js, logic/encounters.js, logic/rewards.js) */
+export interface RunEnc {
+  /** draws from the events' stream so far (wagers, loot, picks of an event) */
+  n: number;
+  /** each waystation's event by map node ('' once played) */
+  node: Record<string, string>;
+  /** the events played this run, in order */
+  seen: string[];
+  /** effect rows an event left: this place and `left` more */
+  boons: { fx: import('./game-data').FxRow[]; left: number; src: string }[];
+  /** reward picks made so far (the next pick's stream) */
+  rewardN: number;
+  /** the reward pick waiting (saved before it shows), or null */
+  reward: RunReward | null;
+  /** the event playing: its id, its map node (-1: from the debug menu), the option, the script's last checkpoint and
+   * an event foe's class (so a reload makes the same foe); missing or null when none */
+  play?: { id: string; i: number; opt: number; at: number[]; foe?: { cls: string; up: number; n: number } } | null;
+}
+/** RL-12b: a reward pick after a trainer battle: its cards, the rerolls paid, who left it */
+export interface RunReward {
+  cards: RewardCard[];
+  rolls: number;
+  from: string;
+  /** an event's pick of one kind, and of how many cards (a reroll keeps them) */
+  kind?: string;
+  n?: number;
+}
+/** RL-12b: one card of a reward pick (rewards.json): an item into the bag (a candy and an evolution item are items
+ * too), or a move a Billie of the team may learn */
+export interface RewardCard {
+  id: string;
+  kind: 'item' | 'candy' | 'evo' | 'tutor' | 'held';
+  item?: string;
+  n?: number;
+  move?: string;
 }
 
 /** the player's travel: where you are, and the locations still ahead (the gold arrows' guide) */

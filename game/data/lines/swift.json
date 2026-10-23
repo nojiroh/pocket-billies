@@ -33,7 +33,7 @@
  ],
  "evo": [
   {"k":"lvl","at":16},
-  {"k":"lvl","at":36}
+  {"k":"item","item":"bell","min":20}
  ],
  "forms": [
   {

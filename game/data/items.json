@@ -12,6 +12,14 @@
   "d": "A glittering stone that makes certain Billies evolve.",
   "icon": "stone"
  },
+ "protein_bar": {
+  "n": "Protein Bar",
+  "price": 800,
+  "lvlUp": 1,
+  "d": "Sponsored, chalky, effective. One level up for the Billie that eats it.",
+  "mint": false,
+  "icon": "trailmix"
+ },
  "trailmix": {"n":"Trail Mix","price":260,"hpAll":25,"d":"Restores 25 HP to everyone on your team.","mint":false,"icon":"trailmix"},
  "pretzel": {"n":"Pretzel","price":60,"hp":35,"d":"Restores 35 HP.","mint":false,"icon":"pretzel"},
  "full_remedy": {

@@ -9,6 +9,21 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Encounters on a run (roguelite track RL-12b, part 1):
+  - **Events**: eighteen of them, in the new tone (a Bureau desk wanting Form 27-B, an unpaid intern guarding a Revive,
+    a crate that says DO NOT OPEN: BEANS, a pay-to-wish fountain...). Each has two or three choices; some need a Billie
+    of a type, an item, Moneys or a badge, and say so when you can't pick them. Outcomes give items, Moneys, Perks,
+    battles, a move tutor, or a while of cheaper or dearer prices. For now they open from the debug menu; places that
+    hold them come next.
+  - **Route trainers**: one or two stand by every route's road. Walk into their line of sight and they spot you, walk
+    up and battle. Beating one lets you **pick a reward**: one of three cards (items, pyramids, a Protein Bar, the
+    Shining Stone, or a move tutor), with a reroll for Moneys that doubles each time.
+  - The **Protein Bar**: a Billie that eats one gains a level (from its sheet, not in battle).
+  - Versewift and Feedopus now evolve with the **Shining Stone** from level 20 (they evolved at level 36).
+
+- Fix: the full test (Settings → Help) no longer fails three steps on every device while the game draws fine. Night,
+  weather and seasons now waits for Copperleaf to open before it starts; the Light lab counts the new low-poly
+  buildings; the opening's fall counts the frames the fall draws.
 - New jokes in the lore, the loading tips and people's lines (reflavour track RF-5): the satire moves off money onto
   bureaucracy, tech and influencers. The Guide's lore tells where the Billies came from (Legacy Labs, "You, again, but
   forever": the billionaires' vanity clones, dropped down a sinkhole when they came out wrong) and why a pyramid
