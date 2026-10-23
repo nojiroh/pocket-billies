@@ -2,6 +2,35 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-7b - Settings: layout - 2026-10-23
+Branch `ccr-305ae8d3-6ivodu` (PR #147, with UI-7a). Decisions from the owner's question round (docs/phases/ui-track.md,
+UI-7).
+- Changed (one cause per commit):
+  - One `settingsReset` (moved from debug-menu.js to settings-screen.js) for Settings and the debug menu's Erase
+    save; it stops a battle in progress (Settings' own copy left it running under the new save).
+  - Start over: from the footer beside Done to a red section at the foot of the Save tab. The Save card shows runs
+    won (`meta.wins` of `meta.runs`) and Billies taxed, not km walked. Customize trainer left the Save tab (the
+    trainer card's Edit look does the same).
+  - Time, weather and season: out of Settings, into a debug-menu section (same preferences).
+  - Help: a Report a problem box (Full test, Export debug log); the diagnostics test joined the debug menu's
+    Performance row, which already had the graphics and cost tests (the bowl map test is under Trainers and world).
+  - Seven tabs: Sound, Display (key `graphics`), Controls, Accessibility (`access`), Game, Save, Help; they wrap onto
+    two rows at 390 px. Settings opens on the last tab used (`preferences.setTab`), else Sound.
+  - Translations (tab names, Report a problem, Start over and its note, shortened under the 80-character limit).
+  - Quick check: the screens step opens the seven tabs; High contrast is looked for under Accessibility.
+  - Docs: ui-track.md (as built), ROADMAP, CHANGELOG, TESTING, graphics-bench.md.
+- Risky or unfinished:
+  - CI's `smoke` (check-fast) is red on three camera checks (CAM-1 follow, CAM-2 moments, the debug log's camera
+    line): the same on main 1713a8c9 (reproduced in a worktree). Copperleaf's island orbit camera against checks
+    written for the walk camera; commented on PR #147 with two fixes for the owner to pick.
+  - Help's How to play still describes the legacy game (towns, roads, map arrows, eggs on real time).
+  - The debug menu still has the bowl map test twice and phase codes in its labels: UI-7c.
+- Verified: lint, typecheck, check:modules, format:check, unit tests (791); smoke (local, no problems); in a browser:
+  Start over during a battle (battle stopped, no errors), the Save tab and its Start over, the debug menu's time,
+  weather and season (preferences set), seven tabs at 390 px (no sideways scroll), the last tab kept, German labels.
+  The full-check steps that open Settings (safety, sound, desktop) were still running when this was written.
+- Next: UI-7c (the debug menu), in a new session at the owner's word.
+
 ### UI track UI-7a - Settings: Sound - 2026-10-23
 Branch `ccr-305ae8d3-6ivodu`. The owner asked for clearer settings and debug menu; plan and a question round in Plan
 Mode, answers recorded in docs/phases/ui-track.md (UI-7). Three steps; this is the first.
