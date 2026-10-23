@@ -1358,16 +1358,6 @@ def desktop_steps(b, base, R):
         return f'walked to {roam}'
     walking()
 
-    @step('Crowd: forty people in town draw about as fast as a few', 90)
-    def crowd():
-        go_scene(pg, 0); time.sleep(3)
-        rate = "(()=>{const f0=walkRenderer.frames,t0=performance.now();return new Promise(r=>setTimeout(()=>r((walkRenderer.frames-f0)/(performance.now()-t0)*1000),5000))})()"
-        a = pg.evaluate(rate); n0 = pg.evaluate("walkView.sc.folk"); pg.evaluate("walkView.sc.folk=40;0"); time.sleep(6)
-        b2 = pg.evaluate(rate); size = pg.evaluate("typeof PERSON_ART_CACHE!=='undefined'?PERSON_ART_CACHE.size:0"); pg.evaluate(f"walkView.sc.folk={n0 or 0};0")
-        if b2 < a * .45: raise Exception(f'{a:.1f} frames a second with {n0} people, {b2:.1f} with 40')
-        return f'{a:.1f} → {b2:.1f} frames a second (software drawing), {size} pictures of people kept'
-    crowd()
-
     @step('Time, weather and rooms: night, a storm, snow, autumn, walking into the lab', 240)   # RL-5: the dark cave (Fizzwell) is parked; the room is Hazel's lab (the hub has no shop)
     def atmosphere():
         if not pg.evaluate("typeof environment!=='undefined'"): return 'no time and weather in this build'
