@@ -47,7 +47,9 @@ export function renameTypeIn(D, from, to) {
         if (to) f.type = to;
         else delete f.type; /* a damage row for any type */
       }
-  const R = D.rules.battle;
-  if (R.shockType === from) R.shockType = to || D.types[0].id;
-  if (R.spinType === from) R.spinType = to || D.types[0].id;
+  /* a deleted type is still in D.types here (the Studio removes it after): the rules take the first other one */
+  const R = D.rules.battle,
+    left = to || (D.types.find((/** @type {any} */ t) => t.id !== from) || { id: 'None' }).id;
+  if (R.shockType === from) R.shockType = left;
+  if (R.spinType === from) R.spinType = left;
 }

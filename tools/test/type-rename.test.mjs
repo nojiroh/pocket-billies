@@ -83,3 +83,17 @@ test('after a rename the robots and Loopholes still pass the data checks', () =>
     assert.deepEqual(checks(D), was, id);
   }
 });
+
+test('deleting the type the battle rules name gives them a type that is left', () => {
+  for (const { id } of GAME_DATA.types) {
+    const D = copy();
+    D.rules.battle.shockType = D.rules.battle.spinType = id;
+    T.renameTypeIn(D, id, null);
+    D.types = D.types.filter(t => t.id !== id);
+    for (const k of ['shockType', 'spinType'])
+      assert.ok(
+        D.types.some(t => t.id === D.rules.battle[k]),
+        `${id}: ${k}`
+      );
+  }
+});
