@@ -40,6 +40,7 @@ expose({
   SECTION_GROUPS: [() => SECTION_GROUPS],
   SECTION_LIST: [() => SECTION_LIST],
   STUDIO_SERVER_KEY: [() => STUDIO_SERVER_KEY],
+  TEXT_ONLY_DATA: [() => TEXT_ONLY_DATA],
   afterRender: [() => afterRender],
   api: [() => api, v => setApi(v)],
   ask: [() => ask],
@@ -48,6 +49,7 @@ expose({
   boot: [() => boot, v => (boot = v)],
   card: [() => card],
   changed: [() => changed, v => (changed = v)],
+  changesPictures: [() => changesPictures],
   checkBeforeSave: [() => checkBeforeSave, v => (checkBeforeSave = v)],
   checkboxField: [() => checkboxField, v => (checkboxField = v)],
   claimedPrefix: [() => claimedPrefix],
@@ -337,6 +339,15 @@ export function restore(s) {
   scheduleCheck();
   if (P) P('restore', { parseMs: b - a, ms: performance.now() - a });
 }
+/* Studio plan T6.2: data no picture is drawn from (top-level keys of D). An undo that changes only these keeps the
+   art caches: a Wardrobe opened after undoing a move edit no longer bakes every clothes thumbnail again */
+const TEXT_ONLY_DATA = new Set(
+  'moves items coins lore story jobs stats statuses rarities relics currencies unlocks shops pools eggs meta uiTheme'.split(
+    ' '
+  )
+);
+const changesPictures = put =>
+  Object.keys(put).some(n => !n.startsWith('D/') || !TEXT_ONLY_DATA.has(n.slice(2).split('/')[0]));
 /* Studio plan T1.2: an undo or redo puts back only the parts it holds (logic/history.js has already put them in
    `last`); a change to the keys or their order (@order) rebuilds the whole data from `last` */
 function restoreParts(put) {
@@ -370,7 +381,7 @@ function restoreParts(put) {
     S.rigsDirty = true;
     window.RIGS = S.rigs;
   }
-  spriteCacheClear();
+  spriteCacheClear(changesPictures(put));
   render();
   updateTopBar();
   scheduleCheck();

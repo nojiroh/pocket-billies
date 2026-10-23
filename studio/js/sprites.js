@@ -94,9 +94,11 @@ export const atlasPath = (sp, view) => {
   if (m && m.sheet) return 'art/' + m.sheet;
   return `art/billionaires/${sp}${view === 'back' ? '_back' : ''}.png`;
 };
-export function spriteCacheClear() {
+/* pictures false (Studio plan T6.2): only data no picture is drawn from changed, so the art caches keyed by
+   atlasVersion (people, the walk view, buildings) stay */
+export function spriteCacheClear(pictures = true) {
   RIG_CACHE.clear();
-  atlasVersion++;
+  if (pictures) atlasVersion++;
 }
 export function loadImage(src) {
   return new Promise((res, rej) => {
