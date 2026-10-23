@@ -4,7 +4,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, render, roomState } from './hooks.js';
-import { $ } from './util.js';
+import { $, $$ } from './util.js';
 import { LOCATIONS, RULES, SHOPS, locationSubtitle, trainersAt } from './game-data.js';
 import {
   billyName,
@@ -249,15 +249,22 @@ export function walkSheetSync() {
     el.replaceChildren();
     return;
   }
+  /* made again on every render: the keyboard's place is kept (the same button, by its place in the sheet) */
+  const keys = () => $$('button:not(:disabled),[role=button],summary', el),
+    had = keys().indexOf(/** @type {any} */ (document.activeElement));
   el.heading = LOCATIONS[saveData.trip.node].name;
   el.innerHTML = walkSheetHTML();
   el.open = true;
+  if (had >= 0) {
+    const b = keys()[had];
+    if (b) /** @type {HTMLElement} */ (b).focus({ preventScroll: true });
+  }
 }
 export function walkSheetOpen() {
   uiState.walkSheet = true;
   walkSheetSync();
 }
-function walkSheetClose() {
+export function walkSheetClose() {
   if (!uiState.walkSheet) return;
   uiState.walkSheet = false;
   walkSheetSync();

@@ -797,7 +797,7 @@ export function walkMapSync() {
           z: z - o[1],
         };
       },
-      keys: () => !uiState.modal && uiState.tab === 'walk' && scrollY < innerHeight * 0.3,
+      keys: () => !uiState.modal && uiState.tab === 'walk' && !uiState.walkSheet,
       active: () => uiState.tab === 'walk' && !uiState.modal,
       safe: () => {
         const a = $('.wh-card'),
@@ -817,11 +817,9 @@ export function walkMapSync() {
               ? 'window'
               : uiState.tab !== 'walk'
                 ? 'screen'
-                : scrollY > innerHeight * 0.7
-                  ? 'scrolled'
-                  : '';
+                : '';
         walkView.held = w;
-        return w === 'hidden' ? 1 : w === 'window' ? 10 : w === 'screen' ? 24 : w === 'scrolled' ? 4 : userFps();
+        return w === 'hidden' ? 1 : w === 'window' ? 10 : w === 'screen' ? 24 : userFps();
       },
     }).then(() => cv.classList.add('in'));
   }
