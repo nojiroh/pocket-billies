@@ -39,6 +39,7 @@ expose({
   runRegionZoneCount: [() => runRegionZoneCount],
   // @ts-expect-error -- replaced on purpose
   runZoneOf: [() => runZoneOf, v => (runZoneOf = v)],
+  runZoneRegion: [() => runZoneRegion],
   // @ts-expect-error -- replaced on purpose
   zoneBiomes: [() => zoneBiomes, v => (zoneBiomes = v)],
   // @ts-expect-error -- replaced on purpose
@@ -230,6 +231,10 @@ export function runRegionMake(seed, data, o) {
     leaders: regionLeaders(seed, T, data.leaders, o.guards + 1),
   };
 }
+
+/** RL-R1: a zone's region on the run's world map (logic/run-bowl.js gives it the zone's biome's ground and trees; a
+ * run place's `region`) @param {number} k */
+export const runZoneRegion = k => `zone${k}`;
 
 /** the zone a map row is in (the zones' rows in order; past the last, the last) @param {{ rows: number }[]} zones
  * @param {number} row */

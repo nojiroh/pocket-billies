@@ -21,6 +21,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { hashString, rngFrom } from './rng.js';
+import { runZoneRegion } from './run-region.js';
 import { runExits, runNodeSeed, runSpot } from './run-map.js';
 import { MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
 import { wildPoolList } from './wild-pool.js';
@@ -232,6 +233,8 @@ export function runWorldTables(run, hub, data) {
       bowl: runSpot(map, i),
       runNode: i,
     };
+    /* RL-R1: its zone's ground on the world map (run-bowl.js), so the run's land reads as bands of zones */
+    if (node.zone !== undefined) row.region = runZoneRegion(node.zone);
     if (town) {
       row.town = 1;
       /* RL-8: its shop (stocked by the day when it opens: logic/run-loop.js runShopStock) */

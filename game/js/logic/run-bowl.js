@@ -9,13 +9,15 @@
      sea. Its coast and noise seeds come from the seed (bowlSeedShift), so another run has other hills, patches,
      trees and clouds.
    - Ground: near each place its biome's own ground (biomes.json ground: the base three times, the patches by their
-     share), between them the run's commonest biome's, with its trees.
+     share), between them the run's commonest biome's, with its trees. RL-R1: a run with a region has a world-map
+     region per zone (its biome's ground and trees between its places), so the land reads as bands of zones.
    The same seed and the same data give the same look. Logic only: no DOM, runs in Node
    (tools/test/run-bowl.test.mjs); every table comes in as an argument. */
 /** @import { RunMap } from '../../types/save-data' */
 /** @import { Biome } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { runZoneRegion } from './run-region.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_BOWL_LAND: [() => RUN_BOWL_LAND],
@@ -114,20 +116,27 @@ export function runBowlLook(seed, map, spots, biomes, hub, styleOf, rng) {
   }
   const hubRegions = (hub && hub.regions) || {},
     start = hubRegions.starter || {},
-    region = g
-      ? {
-          ground: runBowlGround(MB) || start.ground,
-          wet: `${g.floor || g.base}${g.base}`,
-          dry: `${g.base}${g.verge || g.base}`,
-          high: `${g.rock || 'r'}${g.base}`,
-          trees: runBowlTrees(MB, styleOf),
-        }
-      : start;
+    regionOf = (/** @type {Biome | undefined} */ B) => {
+      const G = (B && B.ground) || null;
+      return G
+        ? {
+            ground: runBowlGround(B) || start.ground,
+            wet: `${G.floor || G.base}${G.base}`,
+            dry: `${G.base}${G.verge || G.base}`,
+            high: `${G.rock || 'r'}${G.base}`,
+            trees: runBowlTrees(B, styleOf),
+          }
+        : start;
+    },
+    region = regionOf(MB),
+    /* RL-R1: each zone's own (a run place's region is its zone's: logic/run-scenes.js) */
+    /** @type {Record<string, any>} */ zones = {};
+  for (const n of map.nodes) if (n.zone !== undefined) zones[runZoneRegion(n.zone)] = regionOf(biomes[n.biome || '']);
   return {
     seed: R.int(1, 9972),
     sea: { ...((hub && hub.sea) || {}), seed: R.int(0, 9999), island: 0, rough: L.rough, isles, paint: [] },
     relief: (hub && hub.relief) || null,
-    regions: { ...hubRegions, starter: region },
+    regions: { ...hubRegions, starter: region, ...zones },
     kinds: { ...((hub && hub.kinds) || {}), ...kinds },
   };
 }

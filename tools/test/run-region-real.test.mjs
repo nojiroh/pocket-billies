@@ -137,3 +137,34 @@ test("a region run's places meet only its dex, in its varieties; its mini-bosses
     assert.deepEqual(foes, run.region.leaders, `${seed}: the leaders in order`);
   }
 });
+
+test("the world map: each zone's places stand in a region of their own, with their zone's biome's ground", () => {
+  const { runWorldTables } = modules['run-scenes'],
+    { runBowlLook, runBowlGround } = modules['run-bowl'],
+    { runSpot } = modules['run-map'],
+    { rngFrom } = modules.rng,
+    { bowlXY } = modules.bowl,
+    WORLD = {
+      nodeTypes: GAME_DATA.nodeTypes,
+      biomes: GAME_DATA.biomes,
+      pools: GAME_DATA.pools,
+      scenery: GAME_DATA.scenery,
+      rules: GAME_DATA.rules.run,
+    };
+  for (const seed of SEEDS.slice(0, 10)) {
+    const plan = runStartPlan(seed, DATA, { unlocks: [] }),
+      run = { seed, map: plan.map, region: plan.region },
+      W = runWorldTables(run, GAME_DATA.locations[0], WORLD),
+      spots = plan.map.nodes.map((_, i) => {
+        const s = runSpot(plan.map, i);
+        return bowlXY(s.a, s.r);
+      }),
+      look = runBowlLook(seed, plan.map, spots, GAME_DATA.biomes, GAME_DATA.worldmap, () => 'round', rngFrom);
+    W.locations.slice(1).forEach((p, i) => {
+      const node = plan.map.nodes[i];
+      assert.equal(p.region, `zone${node.zone}`, `${seed}: place ${i}`);
+      assert.equal(look.regions[p.region].ground, runBowlGround(GAME_DATA.biomes[node.biome]), `${seed}: ${p.region}`);
+    });
+    assert.ok(look.regions.starter, `${seed}: the starter region stays (between the zones)`);
+  }
+});
