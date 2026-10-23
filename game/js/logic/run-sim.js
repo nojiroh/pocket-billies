@@ -77,7 +77,7 @@ export function runSimOn(env) {
     { runArrive, runNext, runWorldNode, runWeather } = modules['run-map'],
     { runByTier, runEnd } = modules['run-state'],
     { runScenesMake, runWorldTables } = modules['run-scenes'],
-    { runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen } = modules['run-loop'],
+    { runArriveFx, runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen } = modules['run-loop'],
     { fxOfRun, fxPayoutRates, fxRunPrice } = modules.effects,
     { runStartOn, runStartPlan } = modules['run-start'],
     { runUnlocks } = modules.unlocks;
@@ -186,12 +186,14 @@ export function runSimOn(env) {
       };
     try {
       runArrive(s, 0, MAP_DATA);
-      let i = 0;
+      let i = 0,
+        fxHealed = 0;
       for (;;) {
         const node = run.map.nodes[i],
           wn = runWorldNode(i),
           /** @type {any} */
           at = { i, type: node.type, day: run.clock, weather: runWeather(run, i, run.clock), battles: [] };
+        if (fxHealed) at.fxHealed = fxHealed;
         log.places.push(at);
         /* a town: heal when hurt, then the day's shop (Copper Coins up to five) */
         if (node.type === 'town') {
@@ -315,6 +317,8 @@ export function runSimOn(env) {
         if (!next.length) return finish();
         i = next[modules.rng.rngFrom(seed, 'sim|path|' + i).int(0, next.length - 1)];
         runArrive(s, i, MAP_DATA);
+        /* walking in: the Loopholes' heal rows (run-loop.js runArriveFx, as walk-control.js through runArrivedFx) */
+        fxHealed = runArriveFx(s, data.RELICS);
       }
     } finally {
       data.worldHubBack();
