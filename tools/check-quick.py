@@ -244,10 +244,11 @@ SETTLE = "uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=
 class Page:
     """a page of the check, opened at a fixture (?fixture=<name>, game/js/fixture.js) by its first step: straight where
     the steps need to be, no opening and no title. 'title' is a new player's boot (?boot=normal) on the title screen;
-    None is no page (the step opens what it needs with P.b)"""
-    def __init__(self, b, base, R, fixture, width=1100, height=700, mobile=False, console=True):
+    None is no page (the step opens what it needs with P.b). low: check-fast's graphics settings (browser_check's
+    LOW_GRAPHICS: no grass, mist, god rays or extra shadows) for pages whose steps read the game's state, not its looks"""
+    def __init__(self, b, base, R, fixture, width=1100, height=700, mobile=False, console=True, low=False):
         self.b, self.base, self.R, self.fixture = b, base, R, fixture
-        self.width, self.height, self.mobile, self.console = width, height, mobile, console
+        self.width, self.height, self.mobile, self.console, self.low = width, height, mobile, console, low
         self.errs, self.ctx, self.pg = [], None, None
 
     def url(self, fixture):
@@ -255,8 +256,9 @@ class Page:
 
     def open(self):
         if self.fixture is None: return
-        self.ctx, self.pg = new_page(self.b, self.errs, self.width, self.height, self.mobile, low=False, timeout=90000,
-                                     console=self.console, init=(QUICK_RENDER,))
+        # LOW_GRAPHICS sets its own resolution and shadow map; both scripts hook GAMEDATA's setter, so only one is given
+        self.ctx, self.pg = new_page(self.b, self.errs, self.width, self.height, self.mobile, low=self.low, timeout=90000,
+                                     console=self.console, init=() if self.low else (QUICK_RENDER,))
         self.goto(self.fixture)
 
     def goto(self, fixture):
@@ -1876,13 +1878,16 @@ def pages():
                      ('town', {}, [in_game_test_step])]
     else:
         phone = {'width': 390, 'height': 844, 'console': False}   # these steps only ever failed on page errors
+        # TC-4: pages whose steps read the game's state (battles, a run, speeds) draw with check-fast's graphics settings:
+        # in software a frame there took 1.6 s, and their waits are counted in frames (the game clock moves 60 ms a frame)
+        low = {'low': True}
         L = [('town', {}, [in_game_test_step, test_checks] + ([test_draw] if '--tests' in ARGS else []) +
                           [nature_growth_exits, views_flags_wind_light, terraces_and_floating, name_taxed_room_windows]),
-             ('town', {}, [battles_and_world_billies, starter_rigs, battle_weather]),
-             ('town', {}, [rl8_run_from_mast, juniper_and_lab, airship_moored]),
+             ('town', low, [battles_and_world_billies, starter_rigs, battle_weather]),
+             ('town', low, [rl8_run_from_mast, juniper_and_lab, airship_moored]),
              ('town', {}, [walking, atmosphere, animals, frames_rooms_settings_map]),
              ('town', {}, [culling_cache_wear, buildings_and_rooms, lowpoly_props, night_lights_and_front]),
-             ('town', {}, [postcard_visit, run_speeds, settings]),
+             ('town', low, [postcard_visit, run_speeds, settings]),
              ('title', {'width': 390, 'height': 844, 'mobile': True}, [phone_flow]),
              ('run', phone, [sound_effects_step]),
              ('run', phone, [run_music_step, run_map_weather_step, battle_music_step]),
@@ -1909,7 +1914,7 @@ def main():
         print('Install Playwright first:  pip install -r tools/requirements-check.txt && python3 -m playwright install chromium'); sys.exit(1)
     if OUT.exists(): shutil.rmtree(OUT)
     OUT.mkdir(parents=True)
-    R = {'when': time.strftime('%Y-%m-%d %H:%M'), 'render': 'software, a third of the resolution, 1024 shadow map', 'workers': WORKERS}
+    R = {'when': time.strftime('%Y-%m-%d %H:%M'), 'render': 'software, a third of the resolution, 1024 shadow map (pages marked low: check-fast\'s graphics settings)', 'workers': WORKERS}
     # phase 04b: data/gamedata.js is generated from the data files; make it from the files as they are now
     subprocess.run(['node', str(ROOT / 'tools' / 'build-data.mjs')], check=True)
     if '--selftest' not in ARGS:
