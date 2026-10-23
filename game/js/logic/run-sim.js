@@ -29,9 +29,9 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runSimOn: [() => runSimOn, v => (runSimOn = v)],
   // @ts-expect-error -- replaced on purpose
-  simPolicy: [() => simPolicy, v => (simPolicy = v)],
+  simPerkChoice: [() => simPerkChoice, v => (simPerkChoice = v)],
   // @ts-expect-error -- replaced on purpose
-  simRelicChoice: [() => simRelicChoice, v => (simRelicChoice = v)],
+  simPolicy: [() => simPolicy, v => (simPolicy = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -91,7 +91,7 @@ export function simPolicy(o) {
  * @param {{ cap: number, rarity: Record<string, number> }} rule @param {{ relics: string }} P
  * @returns {{ id: string, drop?: string } | null}
  */
-export function simRelicChoice(offer, held, relics, rule, P) {
+export function simPerkChoice(offer, held, relics, rule, P) {
   if (P.relics !== 'greedy' || !offer.length) return null;
   const w = (/** @type {string} */ id) => rule.rarity[relics[id].rarity] || 0,
     order = (/** @type {string} */ a, /** @type {string} */ b) => w(a) - w(b) || (a < b ? -1 : a > b ? 1 : 0),
@@ -274,7 +274,7 @@ export function runSimOn(env) {
         log.places.push(at);
         /* a town: heal when hurt, then the day's shop (Copper Coins up to five) */
         if (node.type === 'town') {
-          const { paid } = runClinic(s, fxRunPrice(run, data.RELICS, 'heal', R.healCost));
+          const { paid } = runClinic(s, fxRunPrice(run, data.PERKS, 'heal', R.healCost));
           if (paid) {
             stats.healed += paid;
             stats.moneyOut.heal += paid;
@@ -283,13 +283,13 @@ export function runSimOn(env) {
           /* the day's wares as the shop opens them: only what the run has unlocked (run-loop.js runShopOpen) */
           const stock = runShopOpen(run, i, run.clock, R.shop, UNLOCK_DATA);
           /* the shop's Perk, drawn as the shop opens (perks.js perkShelf), bought as the policy says, keeping the
-             reserve (shop.js shopRelicBuy: its price with the price rows) */
-          const shelf = perkShelf(run, i, run.clock, data.RELICS, R.relics);
+             reserve (shop.js shopPerkBuy: its price with the price rows) */
+          const shelf = perkShelf(run, i, run.clock, data.PERKS, R.relics);
           if (shelf) {
-            const cost = fxRunPrice(run, data.RELICS, 'shop', perkPrice(data.RELICS[shelf], R.relics)),
-              c = s.se >= cost + P.reserve ? simRelicChoice([shelf], run.relics, data.RELICS, R.relics, P) : null;
+            const cost = fxRunPrice(run, data.PERKS, 'shop', perkPrice(data.PERKS[shelf], R.relics)),
+              c = s.se >= cost + P.reserve ? simPerkChoice([shelf], run.relics, data.PERKS, R.relics, P) : null;
             at.relic = { id: shelf, price: cost };
-            if (c && !perkBuy(run, i, run.clock, data.RELICS, R.relics, c.drop)) {
+            if (c && !perkBuy(run, i, run.clock, data.PERKS, R.relics, c.drop)) {
               s.se -= cost;
               stats.spent += cost;
               stats.moneyOut.relics += cost;
@@ -298,7 +298,7 @@ export function runSimOn(env) {
           }
           at.shop = stock.map((/** @type {any} */ w) => w.coin || w.item);
           /* the shop's price, with the Perks' price rows (shop.js warePrice) */
-          const price = fxRunPrice(run, data.RELICS, 'shop', data.COINS.penny.price);
+          const price = fxRunPrice(run, data.PERKS, 'shop', data.COINS.penny.price);
           while (
             stock.some((/** @type {any} */ w) => w.coin === 'penny') &&
             (s.coins.penny || 0) < P.penniesUpTo &&
@@ -326,7 +326,7 @@ export function runSimOn(env) {
           const k = run.battleN;
           fn('startWild')(q, {
             host: SIM_HOST,
-            extra: runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.RELICS)),
+            extra: runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.PERKS)),
           });
           if (!hooks.activeBattle) break;
           run.battleN = k + 1;
@@ -368,7 +368,7 @@ export function runSimOn(env) {
           const k = run.battleN;
           fn('startTrainer')(T.id, {
             host: SIM_HOST,
-            extra: runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.RELICS)),
+            extra: runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.PERKS)),
           });
           run.battleN = k + 1;
           const team = hooks.activeBattle.sides[1].team;
@@ -395,9 +395,9 @@ export function runSimOn(env) {
           stats.moneyIn.reward += pay.reward;
           /* the pick it made, answered as the policy says (perk-screen.js perkPickDone: perks.js perkChoose) */
           if (run.offer) {
-            const c = simRelicChoice(run.offer, run.relics, data.RELICS, R.relics, P);
+            const c = simPerkChoice(run.offer, run.relics, data.PERKS, R.relics, P);
             at.pick = { offer: run.offer.slice(), took: c ? c.id : null, ...(c && c.drop ? { drop: c.drop } : {}) };
-            perkChoose(run, c ? c.id : null, data.RELICS, R.relics, c ? c.drop : undefined);
+            perkChoose(run, c ? c.id : null, data.PERKS, R.relics, c ? c.drop : undefined);
           }
           if (node.type === 'boss') {
             stats.won = true;
@@ -410,7 +410,7 @@ export function runSimOn(env) {
         i = next[modules.rng.rngFrom(seed, 'sim|path|' + i).int(0, next.length - 1)];
         runArrive(s, i, MAP_DATA);
         /* walking in: the Perks' heal rows (run-loop.js runArriveFx, as walk-control.js through runArrivedFx) */
-        fxHealed = runArriveFx(s, data.RELICS);
+        fxHealed = runArriveFx(s, data.PERKS);
       }
     } finally {
       data.worldHubBack();
@@ -429,7 +429,7 @@ export function runSimOn(env) {
         party = s.team.length,
         top = s.team.reduce((/** @type {any} */ a, /** @type {any} */ m) => (m.lvl > a.lvl ? m : a), s.team[0]),
         keep = runKept(s.team, stats.won, top ? top.uid : null),
-        pay = runEnd(s, { won: stats.won, keep }, fxPayoutRates(fxOfRun(run, data.RELICS), R.payout), runItemPrice);
+        pay = runEnd(s, { won: stats.won, keep }, fxPayoutRates(fxOfRun(run, data.PERKS), R.payout), runItemPrice);
       Object.assign(stats, {
         days: run.clock,
         places: run.path.length,

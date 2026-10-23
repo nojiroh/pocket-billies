@@ -30,7 +30,7 @@ import { worldMapAction, worldMapFit, worldMapMount, worldMapOpenFromWalk } from
 import { cutscene } from './cutscene/director.js';
 import { cutsceneStart, cutsceneWanted } from './cutscene/opening.js';
 import { renderTitle, titleMount } from './title.js';
-import { renderRelics } from './perk-screen.js';
+import { renderPerks } from './perk-screen.js';
 import { labAction, renderLabBoard } from './lab-board.js';
 import { renderBag } from './bag.js';
 import { storyRivalBattle } from './story.js';
@@ -117,7 +117,7 @@ export function render() {
             : T === 'bag'
               ? renderBag()
               : T === 'relics'
-                ? renderRelics()
+                ? renderPerks()
                 : T === 'lab'
                   ? renderLabBoard()
                   : T === 'map'

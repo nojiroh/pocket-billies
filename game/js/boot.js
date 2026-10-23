@@ -10,7 +10,7 @@ import { TEST_BOOT } from './test-boot.js';
 import {
   DATA_WARN,
   LOCATIONS,
-  RELICS,
+  PERKS,
   RULES,
   SPECIES,
   START_NODE,
@@ -766,7 +766,7 @@ const TEST_RUN = (() => {
   try {
     const q = new URLSearchParams(location.search),
       at = (q.get('at') || '').split(',').map(Number),
-      run = runTestOf(q, { species: SPECIES, unlocks: UNLOCKS, relics: RELICS, cap: RULES.run.relics.cap });
+      run = runTestOf(q, { species: SPECIES, unlocks: UNLOCKS, relics: PERKS, cap: RULES.run.relics.cap });
     return q.get('test') || q.get('story') || run
       ? {
           run,
@@ -895,7 +895,7 @@ function studioLive(D) {
   }
   /* Project Story S3: the story and the trainers, in place (STORY_DATA and TRAINERS are these objects). Studio plan
      T2.6: in a test run (never a player's game, which would save what draft rules gave) also what a run is made of,
-     before a Play this seed run takes off (&draft=1) and while it goes: RULES, NODE_TYPES, RELICS, UNLOCKS and ITEMS
+     before a Play this seed run takes off (&draft=1) and while it goes: RULES, NODE_TYPES, PERKS, UNLOCKS and ITEMS
      are these objects too, so a clinic's price or a shop's wares follow an unsaved edit */
   for (const k of TEST_RUN
     ? ['story', 'trainers', 'rules', 'nodeTypes', 'relics', 'unlocks', 'items']

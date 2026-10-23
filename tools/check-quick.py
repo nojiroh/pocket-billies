@@ -853,7 +853,7 @@ def sound_effects_step(b, base, R):
         if L.index('jingle day') > L.index('jingle reveal'): raise Exception(f'the reveal came before the day: {L}')
         out.append(f"day {day0} to {pg.evaluate('saveData.run.clock')}: day, reveal")
         # a Perk taken
-        clear(); pg.evaluate("(()=>{const R=saveData.run;R.offer=Object.keys(RELICS).slice(0,3);perkPickOpen();perkPickDone(R.offer[0])})();0")
+        clear(); pg.evaluate("(()=>{const R=saveData.run;R.offer=Object.keys(PERKS).slice(0,3);perkPickOpen();perkPickDone(R.offer[0])})();0")
         if 'jingle relic' not in log(): raise Exception(f'a Perk taken: {log()}')
         out.append('Perk: relic')
         # the payout: a coin per row, rising, then run_won after the last; then a loss plays run_lost

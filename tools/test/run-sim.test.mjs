@@ -55,26 +55,26 @@ test("run sim: a run town's shop stocks only what the run has unlocked (Studio p
 });
 
 test('run sim: the policy answers a Perk on offer: greedy takes the rarest, never takes none (Studio plan T3.3)', () => {
-  const { simRelicChoice, SIM_POLICIES } = modules['run-sim'],
-    RELICS = GAME_DATA.relics,
+  const { simPerkChoice, SIM_POLICIES } = modules['run-sim'],
+    PERKS = GAME_DATA.relics,
     rule = GAME_DATA.rules.run.relics,
     greedy = SIM_POLICIES['greedy-forward'],
     never = SIM_POLICIES['never-pick'];
-  assert.deepEqual(simRelicChoice(['offshore', 'hedge', 'insider'], [], RELICS, rule, greedy), { id: 'hedge' });
-  assert.deepEqual(simRelicChoice(['shelter', 'offshore'], [], RELICS, rule, greedy), { id: 'offshore' }, 'then by id');
-  assert.equal(simRelicChoice(['hedge'], [], RELICS, rule, never), null);
+  assert.deepEqual(simPerkChoice(['offshore', 'hedge', 'insider'], [], PERKS, rule, greedy), { id: 'hedge' });
+  assert.deepEqual(simPerkChoice(['shelter', 'offshore'], [], PERKS, rule, greedy), { id: 'offshore' }, 'then by id');
+  assert.equal(simPerkChoice(['hedge'], [], PERKS, rule, never), null);
   const full = ['offshore', 'shelter', 'lobbyist', 'fineprint', 'insider', 'severance'];
   assert.equal(full.length, rule.cap);
   assert.deepEqual(
-    simRelicChoice(['hedge'], full, RELICS, rule, greedy),
+    simPerkChoice(['hedge'], full, PERKS, rule, greedy),
     { id: 'hedge', drop: 'shelter' },
     'past the cap'
   );
   assert.equal(
-    simRelicChoice(
+    simPerkChoice(
       ['offshore'],
       ['insider', 'takeover', 'hedge', 'severance', 'options', 'writeoff'],
-      RELICS,
+      PERKS,
       rule,
       greedy
     ),
@@ -83,8 +83,8 @@ test('run sim: the policy answers a Perk on offer: greedy takes the rarest, neve
   );
   /* and on a run: the pick answered through perks.js perkChoose, as perk-screen.js does */
   const run = { seed: 'P', relics: [], offer: ['offshore', 'hedge', 'insider'] },
-    c = simRelicChoice(run.offer, run.relics, RELICS, rule, greedy);
-  assert.equal(modules.perks.perkChoose(run, c.id, RELICS, rule, c.drop), '');
+    c = simPerkChoice(run.offer, run.relics, PERKS, rule, greedy);
+  assert.equal(modules.perks.perkChoose(run, c.id, PERKS, rule, c.drop), '');
   assert.deepEqual(run.relics, ['hedge']);
   assert.equal(run.offer, null);
 });

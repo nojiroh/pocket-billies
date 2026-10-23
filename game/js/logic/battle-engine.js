@@ -30,7 +30,7 @@ import {
   ITEMS,
   MOVES,
   PASSIVE,
-  RELICS,
+  PERKS,
   RULES,
   SPECIES,
   STATUS_NAMES,
@@ -1093,9 +1093,9 @@ export function sayBattleFx() {
 }
 /** the names of the Perks whose stat rows change stat s ("A and B") */
 export const perkNamesFor = (fx, s) =>
-  [
-    ...new Set(fx.filter(f => f.kind === 'stat' && f.stat === s).map(f => (RELICS[f.src] || { name: f.src }).name)),
-  ].join(' and ');
+  [...new Set(fx.filter(f => f.kind === 'stat' && f.stat === s).map(f => (PERKS[f.src] || { name: f.src }).name))].join(
+    ' and '
+  );
 export function battleStageKey() {
   return hereLocation().battleStage;
 }

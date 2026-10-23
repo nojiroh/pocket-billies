@@ -8,7 +8,7 @@ import { GAME_DATA, fn, modules, startedSave } from './setup-real.mjs';
 
 const R = modules.perks,
   { runBegin, validRun } = modules['run-state'],
-  RELICS = GAME_DATA.relics,
+  PERKS = GAME_DATA.relics,
   RULE = GAME_DATA.rules.run.relics,
   copy = v => JSON.parse(JSON.stringify(v));
 /** a run as runBegin starts one from a hub save (validRun checks the hub's copy too) */
@@ -27,57 +27,57 @@ test('relics: a new run holds none, has made no offer and has nothing on a shelf
 test('relics: an offer is the same for the same run and counter, of distinct Perks, none held', () => {
   const a = run(),
     b = run();
-  assert.deepEqual(R.perkOffer(a, RELICS, RULE), R.perkOffer(b, RELICS, RULE));
-  const ids = R.perkOffer(a, RELICS, RULE);
+  assert.deepEqual(R.perkOffer(a, PERKS, RULE), R.perkOffer(b, PERKS, RULE));
+  const ids = R.perkOffer(a, PERKS, RULE);
   assert.equal(ids.length, RULE.pick);
   assert.equal(new Set(ids).size, ids.length);
   a.relics.push(ids[0]);
-  assert.ok(!R.perkOffer(a, RELICS, RULE).includes(ids[0]), 'one held is never offered');
+  assert.ok(!R.perkOffer(a, PERKS, RULE).includes(ids[0]), 'one held is never offered');
   const seen = new Set();
   for (let n = 0; n < 40; n++) {
     const c = run('S' + n);
-    for (const id of R.perkOffer(c, RELICS, RULE)) seen.add(id);
+    for (const id of R.perkOffer(c, PERKS, RULE)) seen.add(id);
   }
-  assert.ok(seen.size >= Object.keys(RELICS).length - 2, `most Perks turn up over 40 runs (${seen.size})`);
+  assert.ok(seen.size >= Object.keys(PERKS).length - 2, `most Perks turn up over 40 runs (${seen.size})`);
 });
 
 test('relics: making an offer saves it on the run and moves the counter; the next differs', () => {
   const r = run(),
-    first = R.perkOfferMake(r, RELICS, RULE);
+    first = R.perkOfferMake(r, PERKS, RULE);
   assert.deepEqual(r.offer, first);
   assert.equal(r.offerN, 1);
   assert.equal(validRun(r), true);
   const again = copy(r);
   assert.deepEqual(again.offer, first, 'a reload shows the same');
-  assert.equal(R.perkChoose(r, first[1], RELICS, RULE), '');
+  assert.equal(R.perkChoose(r, first[1], PERKS, RULE), '');
   assert.deepEqual([r.relics, r.offer], [[first[1]], null]);
-  const second = R.perkOfferMake(r, RELICS, RULE);
+  const second = R.perkOfferMake(r, PERKS, RULE);
   assert.notDeepEqual(second, first);
-  assert.equal(R.perkChoose(r, 'not-offered', RELICS, RULE), 'offer');
-  assert.equal(R.perkChoose(r, null, RELICS, RULE), '', 'take none');
+  assert.equal(R.perkChoose(r, 'not-offered', PERKS, RULE), 'offer');
+  assert.equal(R.perkChoose(r, null, PERKS, RULE), '', 'take none');
   assert.equal(r.offer, null);
-  assert.equal(R.perkChoose(r, null, RELICS, RULE), 'offer', 'nothing to answer');
+  assert.equal(R.perkChoose(r, null, PERKS, RULE), 'offer', 'nothing to answer');
 });
 
 test('relics: when every Perk is held there is nothing to offer', () => {
   const r = run();
-  r.relics = Object.keys(RELICS);
-  assert.deepEqual(R.perkOffer(r, RELICS, RULE), []);
-  assert.equal(R.perkOfferMake(r, RELICS, RULE), null);
+  r.relics = Object.keys(PERKS);
+  assert.deepEqual(R.perkOffer(r, PERKS, RULE), []);
+  assert.equal(R.perkOfferMake(r, PERKS, RULE), null);
   assert.equal(r.offer, null);
-  assert.equal(R.perkShelf(r, 2, 3, RELICS, RULE), '');
+  assert.equal(R.perkShelf(r, 2, 3, PERKS, RULE), '');
 });
 
 test('relics: at most the cap; past it a new one takes the place of one let go', () => {
   const r = run(),
-    ids = Object.keys(RELICS);
-  for (const id of ids.slice(0, RULE.cap)) assert.equal(R.perkTake(r, id, RELICS, RULE), '');
-  assert.equal(R.perkTake(r, ids[0], RELICS, RULE), 'held');
-  assert.equal(R.perkTake(r, 'nope', RELICS, RULE), 'none');
+    ids = Object.keys(PERKS);
+  for (const id of ids.slice(0, RULE.cap)) assert.equal(R.perkTake(r, id, PERKS, RULE), '');
+  assert.equal(R.perkTake(r, ids[0], PERKS, RULE), 'held');
+  assert.equal(R.perkTake(r, 'nope', PERKS, RULE), 'none');
   const next = ids[RULE.cap];
-  assert.equal(R.perkTake(r, next, RELICS, RULE), 'full');
-  assert.equal(R.perkTake(r, next, RELICS, RULE, 'nope'), 'drop');
-  assert.equal(R.perkTake(r, next, RELICS, RULE, ids[2]), '');
+  assert.equal(R.perkTake(r, next, PERKS, RULE), 'full');
+  assert.equal(R.perkTake(r, next, PERKS, RULE, 'nope'), 'drop');
+  assert.equal(R.perkTake(r, next, PERKS, RULE, ids[2]), '');
   assert.equal(r.relics.length, RULE.cap);
   assert.equal(r.relics[2], next, 'in the place of the one let go');
   assert.ok(!r.relics.includes(ids[2]));
@@ -85,16 +85,16 @@ test('relics: at most the cap; past it a new one takes the place of one let go',
 
 test('relics: a shop’s Perk for a day is drawn once, kept, priced by rarity and gone once bought', () => {
   const r = run(),
-    id = R.perkShelf(r, 3, 4, RELICS, RULE);
-  assert.ok(RELICS[id]);
+    id = R.perkShelf(r, 3, 4, PERKS, RULE);
+  assert.ok(PERKS[id]);
   assert.deepEqual(r.shelf, { '3:4': id });
-  assert.equal(R.perkShelf(run(), 3, 4, RELICS, RULE), id, 'the same shop and day in the same run');
-  assert.equal(R.perkPrice(RELICS[id], RULE), RULE.price[RELICS[id].rarity]);
+  assert.equal(R.perkShelf(run(), 3, 4, PERKS, RULE), id, 'the same shop and day in the same run');
+  assert.equal(R.perkPrice(PERKS[id], RULE), RULE.price[PERKS[id].rarity]);
   assert.equal(validRun(r), true);
-  assert.equal(R.perkBuy(r, 3, 4, RELICS, RULE), '');
+  assert.equal(R.perkBuy(r, 3, 4, PERKS, RULE), '');
   assert.deepEqual([r.relics, r.shelf['3:4']], [[id], '']);
-  assert.equal(R.perkShelf(r, 3, 4, RELICS, RULE), '', 'nothing new on the shelf that day');
-  assert.equal(R.perkBuy(r, 3, 4, RELICS, RULE), 'gone');
+  assert.equal(R.perkShelf(r, 3, 4, PERKS, RULE), '', 'nothing new on the shelf that day');
+  assert.equal(R.perkBuy(r, 3, 4, PERKS, RULE), 'gone');
   assert.equal(validRun(r), true);
 });
 
@@ -117,27 +117,27 @@ test('relics: validRun refuses a broken offer counter or shelf', () => {
 
 test('relics: a seed’s offer order (Studio plan T4.1) is the run’s picks in order, with nothing taken or one taken each time', () => {
   const picks = 4,
-    none = R.perkOfferOrder('ORDER1', RELICS, RULE, picks),
+    none = R.perkOfferOrder('ORDER1', PERKS, RULE, picks),
     r = run('ORDER1'),
     game = [];
-  for (let k = 0; k < picks; k++) game.push(R.perkOfferMake(r, RELICS, RULE) || []);
+  for (let k = 0; k < picks; k++) game.push(R.perkOfferMake(r, PERKS, RULE) || []);
   assert.deepEqual(
     none.map(p => p.offer),
     game,
     'nothing taken: the picks the game makes on a run of that seed'
   );
   assert.ok(none.every(p => p.took === null));
-  const first = R.perkOfferOrder('ORDER1', RELICS, RULE, picks, 'first');
+  const first = R.perkOfferOrder('ORDER1', PERKS, RULE, picks, 'first');
   assert.deepEqual(first[0].offer, none[0].offer, 'the first pick is the same');
   assert.equal(first[0].took, first[0].offer[0]);
   const taken = first.map(p => p.took);
   assert.equal(new Set(taken).size, picks, 'a taken Perk is never offered again');
   first.forEach((p, k) => assert.ok(!taken.slice(0, k).some(id => p.offer.includes(id)), `pick ${k}`));
   const one = none[0].offer[1],
-    want = R.perkOfferOrder('ORDER1', RELICS, RULE, picks, one);
+    want = R.perkOfferOrder('ORDER1', PERKS, RULE, picks, one);
   assert.equal(want[0].took, one, 'a chosen Perk is taken when it is offered');
   assert.ok(want.slice(1).every(p => p.took === null && !p.offer.includes(one)));
-  const capped = R.perkOfferOrder('ORDER1', RELICS, { ...RULE, cap: 1 }, picks, 'first');
+  const capped = R.perkOfferOrder('ORDER1', PERKS, { ...RULE, cap: 1 }, picks, 'first');
   assert.deepEqual(
     capped.map(p => !!p.took),
     [true, false, false, false],

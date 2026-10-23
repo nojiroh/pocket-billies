@@ -41,11 +41,11 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataNodeTypes: [() => dataNodeTypes, v => (dataNodeTypes = v)],
   // @ts-expect-error -- replaced on purpose
+  dataPerks: [() => dataPerks, v => (dataPerks = v)],
+  // @ts-expect-error -- replaced on purpose
   dataRanchRules: [() => dataRanchRules, v => (dataRanchRules = v)],
   // @ts-expect-error -- replaced on purpose
   dataRegions: [() => dataRegions, v => (dataRegions = v)],
-  // @ts-expect-error -- replaced on purpose
-  dataRelics: [() => dataRelics, v => (dataRelics = v)],
   // @ts-expect-error -- replaced on purpose
   dataRigs: [() => dataRigs, v => (dataRigs = v)],
   // @ts-expect-error -- replaced on purpose
@@ -660,7 +660,7 @@ export function dataNodeTypes(D, valid = () => true) {
 // pick of 1-5 (run.offer holds up to 5), a weight of 0 or more and a whole price ($0-100,000) for each rarity, and
 // something to offer
 /** RL-12: relics.json and rules.json run.relics @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
-export function dataRelics(D, valid = () => true) {
+export function dataPerks(D, valid = () => true) {
   /** @type {DataProblem[]} */
   const out = [],
     problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]);

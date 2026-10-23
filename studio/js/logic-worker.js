@@ -23,7 +23,7 @@ export const LOGIC_WORKER_FNS = {
   /* T3.4: the run simulation's report over a seed list (logic-worker-sim.js), for the Simulate card's Base and Draft */
   runSimReport: (/** @type {any} */ m) => m.runSimReport,
   /* Studio plan Phase 4: the content editors (logic/content-preview.js; perks.js perkOfferOrder) */
-  relicPreview: (/** @type {any} */ m) => m.relicPreview,
+  perkPreview: (/** @type {any} */ m) => m.perkPreview,
   perkOfferOrder: (/** @type {any} */ m) => m.perkOfferOrder,
   leaderRunValues: (/** @type {any} */ m) => m.leaderRunValues,
   speciesStandIns: (/** @type {any} */ m) => m.speciesStandIns,

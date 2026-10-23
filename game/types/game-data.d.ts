@@ -55,7 +55,7 @@ export interface GameData {
   /** sound track SND-2: the songs, jingles, cries' bases and where each song plays (game/data/music.json) */
   music?: Music;
   /** roguelite track RL-12: a run's Loopholes (relics), each a list of effect rows (game/data/relics.json; logic/effects.js) */
-  relics?: Record<DataId, Relic>;
+  relics?: Record<DataId, Perk>;
   /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
   currencies?: Partial<Record<CurrencyId, Currency>>;
   /** RL-11: Copperleaf's hub buildings (game/data/buildings.json) */
@@ -988,8 +988,8 @@ export interface Rules {
     relics: {
       cap: number;
       pick: number;
-      rarity: Record<RelicRarity, number>;
-      price: Record<RelicRarity, number>;
+      rarity: Record<PerkRarity, number>;
+      price: Record<PerkRarity, number>;
     };
   };
   /** roguelite track RL-9: the ranch (logic/ranch.js). Placeholders until the owner has played it */
@@ -1697,7 +1697,7 @@ export interface Music {
 }
 
 /** relics.json: how often a Loophole is offered and what a shop asks for it (rules.json run.relics) */
-export type RelicRarity = 'common' | 'uncommon' | 'rare';
+export type PerkRarity = 'common' | 'uncommon' | 'rare';
 /** relics.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes) */
 export type FxRow =
   | { kind: 'money'; mult: number }
@@ -1708,12 +1708,12 @@ export type FxRow =
   | { kind: 'heal'; share: number }
   | { kind: 'payout'; what: 'capital' | 'itemShare'; mult: number };
 /** relics.json: a Loophole (roguelite track RL-12): held for one run, its effect rows apply while it is held */
-export interface Relic {
+export interface Perk {
   /** what the player reads */
   name: string;
   /** what it does, in one sentence */
   d: string;
-  rarity: RelicRarity;
+  rarity: PerkRarity;
   fx: FxRow[];
 }
 

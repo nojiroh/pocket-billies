@@ -8,7 +8,7 @@
    endBattle as it was (tools/test/battle-rewards.test.mjs). Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { RELICS, RULES } from '../game-data.js';
+import { PERKS, RULES } from '../game-data.js';
 import { dropEncounter, findBilly, wildPrize } from './rules.js';
 import { fxMoney } from './effects.js';
 import { perkOfferMake } from './perks.js';
@@ -100,7 +100,7 @@ export function battleSettleWin(b, s, pay, run) {
   if (b.kind === 'wild' && pay.prize > 0) s.se += pay.prize;
   if (b.kind === 'trainer') {
     s.se += pay.reward;
-    if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, RELICS, RULES.run.relics);
+    if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, PERKS, RULES.run.relics);
     s.flags[b.tid] = 1;
   }
 }

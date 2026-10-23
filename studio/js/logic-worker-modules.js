@@ -107,5 +107,5 @@ export { runMapSweep } from '../../game/js/logic/data-checks.js';
 /* Studio plan T3.4: the run simulation (the modules above, named for it) */
 export { runSimReport } from './logic-worker-sim.js';
 /* Studio plan Phase 4: the content editors' previews */
-export { relicPreview, leaderRunValues, speciesStandIns } from '../../game/js/logic/content-preview.js';
+export { perkPreview, leaderRunValues, speciesStandIns } from '../../game/js/logic/content-preview.js';
 export { perkOfferOrder } from '../../game/js/logic/perks.js';

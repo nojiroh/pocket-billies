@@ -9,7 +9,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOverlay, toast } from './hooks.js';
-import { RELICS, RULES } from './game-data.js';
+import { PERKS, RULES } from './game-data.js';
 import { perkChoose } from './logic/perks.js';
 import { escapeHtml, saveData, saveNow, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
@@ -25,7 +25,7 @@ expose({
   perkPickOpen: [() => perkPickOpen, v => ((perkPickOpen = v), provide({ perkPickOpen }))],
   perkPickTake: [() => perkPickTake, v => (perkPickTake = v)],
   perkSheet: [() => perkSheet, v => (perkSheet = v)],
-  renderRelics: [() => renderRelics, v => (renderRelics = v)],
+  renderPerks: [() => renderPerks, v => (renderPerks = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ perkDropOpen, perkPickOpen });
@@ -34,7 +34,7 @@ provide({ perkDropOpen, perkPickOpen });
 const PERK_RARITY = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare' };
 /** a Perk as a pick card (the pick, letting one go) @param {string} id @param {boolean} on */
 function perkCardHTML(id, on) {
-  const R = RELICS[id];
+  const R = PERKS[id];
   return `<pb-pick-card data-id="${escapeHtml(id)}" heading="${escapeHtml(R.name)}" sub="${PERK_RARITY[R.rarity] || ''}"${on ? ' selected' : ''}><span slot="art">${uiIconHTML('relic', 40)}</span>${escapeHtml(R.d)}</pb-pick-card>`;
 }
 /** show a sheet of this class in place when it is already up; otherwise ahead of any other (as the payout does) */
@@ -56,7 +56,7 @@ export function perkPickOpen() {
   const run = saveData.run;
   if (!run || !run.offer) return;
   const rule = RULES.run.relics,
-    ids = run.offer.filter(id => RELICS[id]),
+    ids = run.offer.filter(id => PERKS[id]),
     sel = ids.includes(uiState.relicSel) ? uiState.relicSel : null;
   perkSheet({
     title: 'Pick a Perk',
@@ -86,7 +86,7 @@ function perkPickTake(id) {
 function perkPickDone(id, drop) {
   const run = saveData.run;
   if (!run) return;
-  const why = perkChoose(run, id, RELICS, RULES.run.relics, drop);
+  const why = perkChoose(run, id, PERKS, RULES.run.relics, drop);
   if (why) {
     toast('That Perk can’t be taken.');
     return;
@@ -96,7 +96,7 @@ function perkPickDone(id, drop) {
   if (typeof debugLog !== 'undefined') debugLog.add('scene', `Perk pick: ${id || 'none'}${drop ? ` for ${drop}` : ''}`);
   closeModal();
   render();
-  if (id) toast(`${RELICS[id].name}: ${RELICS[id].d}`);
+  if (id) toast(`${PERKS[id].name}: ${PERKS[id].d}`);
   /* SND-6: a Perk taken has a jingle of its own */
   if (id && typeof jinglePlay === 'function') jinglePlay('relic');
 }
@@ -108,13 +108,13 @@ function perkPickDone(id, drop) {
  */
 function perkDropOpen(id, then, back) {
   const run = saveData.run;
-  if (!run || !RELICS[id]) return;
+  if (!run || !PERKS[id]) return;
   perkSheet({
     title: 'Let one go',
     cls: 'relic-drop',
     lock: true,
-    html: `<p>You can hold ${RULES.run.relics.cap} Perks. Tap one to let it go for ${escapeHtml(RELICS[id].name)}.</p><div class="relic-cards">${run.relics
-      .filter(k => RELICS[k])
+    html: `<p>You can hold ${RULES.run.relics.cap} Perks. Tap one to let it go for ${escapeHtml(PERKS[id].name)}.</p><div class="relic-cards">${run.relics
+      .filter(k => PERKS[k])
       .map(k => perkCardHTML(k, false))
       .join('')}</div>`,
     btns: [
@@ -137,17 +137,17 @@ function perkDropOpen(id, then, back) {
 
 /* ---------- the Perks tab ---------- */
 /** the run's Perks, each with what it does */
-export function renderRelics() {
+export function renderPerks() {
   const run = saveData.run,
     cap = RULES.run.relics.cap;
   if (!run) return `<p class="note bag-empty">Perks come with a run. Start one at the airship mast.</p>`;
-  const held = run.relics.filter(id => RELICS[id]);
+  const held = run.relics.filter(id => PERKS[id]);
   return `<section class="tpanel relics"><div class="sec-h"><h2>Perks</h2><span class="count tnum">${held.length} of ${cap}</span></div>${
     held.length
       ? `<div class="bag-list">${held
           .map(
             id =>
-              `<div class="bag-row k-card"><span class="bag-ic">${uiIconHTML('relic', 30)}</span><span class="bag-t"><b>${escapeHtml(RELICS[id].name)}</b><small>${escapeHtml(RELICS[id].d)}</small></span><small class="note">${PERK_RARITY[RELICS[id].rarity] || ''}</small></div>`
+              `<div class="bag-row k-card"><span class="bag-ic">${uiIconHTML('relic', 30)}</span><span class="bag-t"><b>${escapeHtml(PERKS[id].name)}</b><small>${escapeHtml(PERKS[id].d)}</small></span><small class="note">${PERK_RARITY[PERKS[id].rarity] || ''}</small></div>`
           )
           .join('')}</div>`
       : `<p class="note bag-empty">None yet. Beat a mini-boss for a pick of ${RULES.run.relics.pick}, or buy one in a town’s shop. They last the run.</p>`

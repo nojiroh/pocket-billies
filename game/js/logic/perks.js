@@ -12,8 +12,8 @@
    RL-12); RL-11's unlocks may narrow the pool later.
    Logic only: no DOM, no Date, no Math.random (tools/test/perks.test.mjs). */
 /** @import { Run } from '../../types/save-data' */
-/** @import { Relic } from '../../types/game-data' */
-/** @typedef {{ cap: number, pick: number, rarity: Record<string, number>, price: Record<string, number> }} RelicRules */
+/** @import { Perk } from '../../types/game-data' */
+/** @typedef {{ cap: number, pick: number, rarity: Record<string, number>, price: Record<string, number> }} PerkRules */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
@@ -41,14 +41,14 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /** the Perks that may be drawn: in relics.json, not held, with a rarity weight above 0, by id
- * @param {Run} run @param {Record<string, Relic>} relics @param {RelicRules} rule @param {string[]} [also] left out too */
+ * @param {Run} run @param {Record<string, Perk>} relics @param {PerkRules} rule @param {string[]} [also] left out too */
 export const perkPool = (run, relics, rule, also = []) =>
   Object.keys(relics)
     .filter(id => !run.relics.includes(id) && !also.includes(id) && (rule.rarity[relics[id].rarity] || 0) > 0)
     .sort();
 
 /** draw up to n Perks from a stream, by rarity weight, none twice @param {{ pick: (w: Record<string, number>) => string }} g
- * @param {string[]} pool @param {Record<string, Relic>} relics @param {RelicRules} rule @param {number} n */
+ * @param {string[]} pool @param {Record<string, Perk>} relics @param {PerkRules} rule @param {number} n */
 export function perkDraw(g, pool, relics, rule, n) {
   const out = [];
   let left = pool.slice();
@@ -61,12 +61,12 @@ export function perkDraw(g, pool, relics, rule, n) {
 }
 
 /** the next pick's Perks (the run is not changed): run.offerN's stream, rule.pick of them, none held
- * @param {Run} run @param {Record<string, Relic>} relics @param {RelicRules} rule @returns {string[]} */
+ * @param {Run} run @param {Record<string, Perk>} relics @param {PerkRules} rule @returns {string[]} */
 export const perkOffer = (run, relics, rule) =>
   perkDraw(rngFrom(run.seed, 'relic|' + run.offerN), perkPool(run, relics, rule), relics, rule, rule.pick);
 
 /** make the next pick: run.offer is set (null when nothing is left to offer) and the counter moves on; the caller
- * saves before showing it @param {Run} run @param {Record<string, Relic>} relics @param {RelicRules} rule */
+ * saves before showing it @param {Run} run @param {Record<string, Perk>} relics @param {PerkRules} rule */
 export function perkOfferMake(run, relics, rule) {
   const ids = perkOffer(run, relics, rule);
   run.offerN++;
@@ -76,7 +76,7 @@ export function perkOfferMake(run, relics, rule) {
 
 /** a run shop's Perk on a day ('' when bought or none is left): drawn once from the shop's node and the day, then
  * kept in run.shelf @param {Run} run @param {number} i the shop's map node @param {number} day
- * @param {Record<string, Relic>} relics @param {RelicRules} rule @returns {string} */
+ * @param {Record<string, Perk>} relics @param {PerkRules} rule @returns {string} */
 export function perkShelf(run, i, day, relics, rule) {
   const key = i + ':' + day;
   if (Object.hasOwn(run.shelf, key)) return run.shelf[key];
@@ -91,13 +91,13 @@ export function perkShelf(run, i, day, relics, rule) {
   return run.shelf[key];
 }
 
-/** what a shop asks for a Perk ($, by its rarity) @param {Relic} R @param {RelicRules} rule */
+/** what a shop asks for a Perk ($, by its rarity) @param {Perk} R @param {PerkRules} rule */
 export const perkPrice = (R, rule) => rule.price[R.rarity] || 0;
 
 /**
  * Hold a Perk: '' when done, or why not: 'none' (no such Perk), 'held' (already), 'full' (at the cap and no
  * `drop` given), 'drop' (`drop` isn't held). With `drop`, it takes that one's place.
- * @param {Run} run @param {string} id @param {Record<string, Relic>} relics @param {RelicRules} rule @param {string} [drop]
+ * @param {Run} run @param {string} id @param {Record<string, Perk>} relics @param {PerkRules} rule @param {string} [drop]
  */
 export function perkTake(run, id, relics, rule, drop) {
   if (!relics[id]) return 'none';
@@ -116,7 +116,7 @@ export function perkTake(run, id, relics, rule, drop) {
 /**
  * The player's answer to the pick: one of the offer (with `drop` when at the cap), or null to take none. The offer
  * is cleared once answered; '' when done, else why not (perkTake's reasons, or 'offer': not one offered).
- * @param {Run} run @param {string | null} id @param {Record<string, Relic>} relics @param {RelicRules} rule
+ * @param {Run} run @param {string | null} id @param {Record<string, Perk>} relics @param {PerkRules} rule
  * @param {string} [drop]
  */
 export function perkChoose(run, id, relics, rule, drop) {
@@ -133,7 +133,7 @@ export function perkChoose(run, id, relics, rule, drop) {
 /**
  * Buy the shop's Perk for a day: '' when done (the shelf empties, the money is the caller's), or why not ('gone',
  * or perkTake's reasons).
- * @param {Run} run @param {number} i @param {number} day @param {Record<string, Relic>} relics @param {RelicRules} rule
+ * @param {Run} run @param {number} i @param {number} day @param {Record<string, Perk>} relics @param {PerkRules} rule
  * @param {string} [drop]
  */
 export function perkBuy(run, i, day, relics, rule, drop) {
@@ -150,7 +150,7 @@ export function perkBuy(run, i, day, relics, rule, drop) {
  * run of that seed, then perkChoose): what is offered at each pick and what is taken. `take` is who chooses: 'none'
  * takes nothing (the Run Lab's preview), 'first' the first offered, or a Perk's id, taken when offered (else
  * nothing). A taken one leaves the pool of the picks after it; past the cap nothing more is taken. Shops are left out.
- * @param {string} seed @param {Record<string, Relic>} relics @param {RelicRules} rule @param {number} picks
+ * @param {string} seed @param {Record<string, Perk>} relics @param {PerkRules} rule @param {number} picks
  * @param {string} [take] @returns {{ offer: string[], took: string | null }[]}
  */
 export function perkOfferOrder(seed, relics, rule, picks, take = 'none') {

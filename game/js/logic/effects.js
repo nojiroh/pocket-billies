@@ -14,7 +14,7 @@
    battle or a run without Perks is the same as before them. Later sessions add rows from other places into the same
    list (RL-11 building levels, RL-13 expeditions).
    Logic only: no DOM, no Date, no Math.random (tools/test/effects.test.mjs). */
-/** @import { FxRow, Relic } from '../../types/game-data' */
+/** @import { FxRow, Perk } from '../../types/game-data' */
 /** @typedef {FxRow & { src: string }} Fx */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -49,12 +49,12 @@ export const FX_LIMIT = { lo: 0.1, hi: 4 };
 export const FX_STAGES = 6;
 
 /** the effect rows of the Perks held, in the order held, each tagged with its Perk's id; an id with no entry
- * gives none @param {string[]} ids @param {Record<string, Relic>} relics @returns {Fx[]} */
+ * gives none @param {string[]} ids @param {Record<string, Perk>} relics @returns {Fx[]} */
 export const fxRows = (ids, relics) =>
   ids.flatMap(id => (relics[id] ? relics[id].fx.map(f => /** @type {Fx} */ ({ ...f, src: id })) : []));
 
 /** the effect rows of a run's Perks (null in the hub, or with none held) @param {{ relics: string[] } | null | undefined} run
- * @param {Record<string, Relic>} relics @returns {Fx[] | null} */
+ * @param {Record<string, Perk>} relics @returns {Fx[] | null} */
 export const fxOfRun = (run, relics) => (run && run.relics.length ? fxRows(run.relics, relics) : null);
 provide({ fxOfRun }); /* to-module */
 
@@ -85,7 +85,7 @@ export const fxPrice = (fx, what, n) => {
 
 /** Studio plan T3.2: a price on a run with its Perks' price rows of `what` (the page's clinic and shops, and the
  * run's simulation): the price itself with no run or none held @param {{ relics: string[] } | null | undefined} run
- * @param {Record<string, Relic>} relics @param {'shop' | 'heal'} what @param {number} n */
+ * @param {Record<string, Perk>} relics @param {'shop' | 'heal'} what @param {number} n */
 export const fxRunPrice = (run, relics, what, n) => fxPrice(fxOfRun(run, relics), what, n);
 
 /** what multiplies a coin's chance to catch (the chance itself stays at most 1) @param {Fx[] | null | undefined} fx */

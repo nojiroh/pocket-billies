@@ -693,7 +693,7 @@ def relics(pg, base):
     pg.evaluate(f"uiState.modal=null;uiState.mq=[];openShop('{sid}');0")
     if not until(pg, "!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')", 10): raise Exception('the town’s shop has no Perk')
     shelf = pg.evaluate("Object.values(saveData.run.shelf)[0]")
-    price = pg.evaluate(f"Math.round(RULES.run.relics.price[RELICS['{shelf}'].rarity]*0.85)")
+    price = pg.evaluate(f"Math.round(RULES.run.relics.price[PERKS['{shelf}'].rarity]*0.85)")
     se, held = pg.evaluate("[saveData.se,saveData.run.relics.slice()]")
     pg.evaluate("document.querySelector('#ov [data-a=shoprelic]').click();0")
     if not until(pg, "!!uiState.modal&&uiState.modal.cls==='relic-drop'&&document.querySelectorAll('#ov pb-pick-card').length===6", 10): raise Exception('buying at the cap didn’t ask which to let go')

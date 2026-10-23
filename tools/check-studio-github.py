@@ -1832,7 +1832,7 @@ const out = {};
 /* Studio plan Phase 4: what the content editors must show, from the game's logic in Node */
 out.offers = modules.perks.perkOfferOrder('LAB1', D.relics, D.rules.run.relics, D.rules.run.map.minibosses).map(p => p.offer.join(','));
 out.lab = modules['run-preview'].runPreview('LAB1', { unlocks: [] }).relicOffers.map(o => o.join(','));
-out.insider = modules['content-preview'].relicPreview(['insider'], { sp: D.lines[0].id + '1', lvl: 30 }).stats.find(s => s.id === 'hus');
+out.insider = modules['content-preview'].perkPreview(['insider'], { sp: D.lines[0].id + '1', lvl: 30 }).stats.find(s => s.id === 'hus');
 out.leaders = modules['content-preview'].leaderRunValues();
 out.standIns = modules['content-preview'].speciesStandIns(Object.values(D.pools).flatMap(P => P.list.map(e => e[0])));
 out.fresh = modules['unlock-graph'].unlockSaveAfter(D);
@@ -1880,7 +1880,7 @@ def edit_undo(pg, errs, where, sel, value, path, rx):
 
 
 def relics_steps(pg, errs):
-    """Studio plan T4.1: the Perks editor. The sample build's Speed with Running Shoes is the game's (relicPreview in
+    """Studio plan T4.1: the Perks editor. The sample build's Speed with Running Shoes is the game's (perkPreview in
     Node); the offer order for LAB1 is the Run Lab's picks; a stages edit redraws the preview and is in relics.json; a
     factor under FX_LIMIT shows data-checks' message on its row; a row's kind change and the edits all undo."""
     W = content_want(errs)

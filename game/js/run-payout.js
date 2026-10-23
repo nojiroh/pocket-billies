@@ -10,7 +10,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, renderOverlay } from './hooks.js';
-import { RELICS, RULES } from './game-data.js';
+import { PERKS, RULES } from './game-data.js';
 import { billyName } from './logic/rules.js';
 import { payoutOf } from './logic/run-state.js';
 import { runItemPrice, runKept, runPayoutRows, runReleasePays } from './logic/run-loop.js';
@@ -34,7 +34,7 @@ function runPayoutNow() {
     run = s.run;
   return payoutOf(
     { se: s.se, items: s.items, released: run.released.length, cleared: new Set(run.path).size, won: !!run.at.won },
-    fxPayoutRates(fxOfRun(run, RELICS), RULES.run.payout),
+    fxPayoutRates(fxOfRun(run, PERKS), RULES.run.payout),
     runItemPrice
   );
 }

@@ -21,7 +21,7 @@ import {
   runPayoutOpen,
   toast,
 } from './hooks.js';
-import { COINS, ITEMS, RELICS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
+import { COINS, ITEMS, PERKS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchStop } from './logic/ranch.js';
@@ -163,7 +163,7 @@ export function runGiveUp() {
 export function runEndHome(won, keep, itemPrice) {
   if (!saveData.run) return;
   /* RL-12: the Perks' payout rows, read before the run ends */
-  const rates = fxPayoutRates(fxOfRun(saveData.run, RELICS), RULES.run.payout),
+  const rates = fxPayoutRates(fxOfRun(saveData.run, PERKS), RULES.run.payout),
     pay = runEnd(saveData, { won, keep }, rates, itemPrice);
   /* a move waiting to be learned names a Billie by its uid, which a run's copy shares with the hub's */
   uiState.learnQ = [];
@@ -445,7 +445,7 @@ function runBattleStart(kind, foe, extra) {
       ...extra,
       /* its seed, the forecast's weather and (RL-12) the Perks held: none, no fx, the battle as before
          (logic/run-loop.js runBattleExtra, which the run's simulation plays too) */
-      ...runBattleExtra(run, i, k, RULES.env, fxOfRun(run, RELICS)),
+      ...runBattleExtra(run, i, k, RULES.env, fxOfRun(run, PERKS)),
     },
     begun: b => {
       if (!again) run.battleN = k + 1;
@@ -489,10 +489,10 @@ function runBattleAgain() {
 
 /* ---------- Perks on the walk (RL-12, logic/effects.js) ---------- */
 /** a run town's clinic: $ a hurt Billie, with the Perks' heal price rows */
-export const runClinicEach = () => fxRunPrice(saveData.run, RELICS, 'heal', RULES.run.healCost);
+export const runClinicEach = () => fxRunPrice(saveData.run, PERKS, 'heal', RULES.run.healCost);
 /** walking into a place on a run: a Perk's heal row heals the team (before the arrival's save) */
 export function runArrivedFx() {
-  const gained = runArriveFx(saveData, RELICS);
+  const gained = runArriveFx(saveData, PERKS);
   if (gained > 0) toast(`Your Perks paid out: your team healed ${formatNumber(gained)} HP.`);
 }
 

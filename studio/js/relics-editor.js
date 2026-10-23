@@ -3,11 +3,11 @@
    relics.json, a run's Perks ("relic" is the data's word; the player and this page say Perk), and the rules
    that offer them (rules.json run.relics). What the JSON can't show:
    - each effect row by its kind (logic/effects.js FX_KINDS), with the limits that live in the code (FX_LIMIT for a
-     factor, FX_STAGES for stages) beside the field, and data-checks.js dataRelics's messages on the row they are about;
+     factor, FX_STAGES for stages) beside the field, and data-checks.js dataPerks's messages on the row they are about;
    - the rarity table's coverage: each rarity's weight and price, how many Perks have it, and a Perk's chance to
      be drawn first (its weight over the pool's);
    - the effect on a sample build: the game's fx functions on a Billie made by rules.js (logic/content-preview.js
-     relicPreview, in the Studio's logic worker on the data as it is now), with stats before and after;
+     perkPreview, in the Studio's logic worker on the data as it is now), with stats before and after;
    - the offer order for a seed: the picks after each mini-boss, as the game makes them (perks.js perkOfferOrder in
      the worker), taking nothing, the first offered, or this Perk when offered.
    Edits are ordinary fields (saved, undone and proposed like any other); a row's kind is changed by its own select,
@@ -16,7 +16,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { FX_LIMIT, FX_STAGES } from '../../game/js/logic/effects.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { dataRelics } from '../../game/js/logic/data-checks.js';
+import { dataPerks } from '../../game/js/logic/data-checks.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -88,10 +88,10 @@ const PERK_ROW_NEW = {
 };
 const PERK_RARITIES = ['common', 'uncommon', 'rare'];
 
-/** the data checks' messages about relics.json and rules.json run.relics (dataRelics, as CI runs it) */
+/** the data checks' messages about relics.json and rules.json run.relics (dataPerks, as CI runs it) */
 const perkProblems = () => {
   try {
-    return dataRelics(studioState.D).map(([f, m]) => ({ f, m }));
+    return dataPerks(studioState.D).map(([f, m]) => ({ f, m }));
   } catch (e) {
     return [{ f: 'relics.json', m: `the check stopped: ${e.message || e}` }];
   }
@@ -324,7 +324,7 @@ function perkFill() {
     pv = document.querySelector('[data-relic-preview]'),
     of = document.querySelector('[data-relic-offers]');
   if (pv)
-    logicAsk('relicPreview', [k, ...perkEd.also], { sp: perkEd.sp, lvl: perkEd.lvl }).then(
+    logicAsk('perkPreview', [k, ...perkEd.also], { sp: perkEd.sp, lvl: perkEd.lvl }).then(
       v => n === perkEd.n && pv.isConnected && ((pv.innerHTML = perkPreviewHTML(v)), (pv.dataset.ready = k)),
       e =>
         n === perkEd.n &&
@@ -351,7 +351,7 @@ function perkFill() {
 const perkX = (/** @type {number} */ v) => `×${Math.round(v * 1000) / 1000}`;
 const perkPair = (/** @type {[number, number]} */ [a, b], pre = '$') =>
   a === b ? `${pre}${a}` : `${pre}${a} → <b>${pre}${b}</b>`;
-/** relicPreview's answer as tables */
+/** perkPreview's answer as tables */
 function perkPreviewHTML(/** @type {any} */ v) {
   const D = studioState.D,
     names = Object.fromEntries((D.stats || []).map((/** @type {any} */ s) => [s.id, s.name])),

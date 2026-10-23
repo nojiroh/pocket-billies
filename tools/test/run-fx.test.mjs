@@ -7,15 +7,15 @@ import { GAME_DATA, fn, modules, reseed, startedSave } from './setup-real.mjs';
 const E = modules.effects,
   L = modules['run-loop'],
   S = modules['run-state'],
-  RELICS = GAME_DATA.relics,
+  PERKS = GAME_DATA.relics,
   RATES = GAME_DATA.rules.run.payout;
 const maxHp = fn('maxHp');
 
 test('run fx: a run without Perks has no rows; the hub has none', () => {
-  assert.equal(E.fxOfRun(null, RELICS), null);
-  assert.equal(E.fxOfRun({ relics: [] }, RELICS), null);
+  assert.equal(E.fxOfRun(null, PERKS), null);
+  assert.equal(E.fxOfRun({ relics: [] }, PERKS), null);
   assert.deepEqual(
-    E.fxOfRun({ relics: ['shelter'] }, RELICS).map(f => f.src),
+    E.fxOfRun({ relics: ['shelter'] }, PERKS).map(f => f.src),
     ['shelter']
   );
 });
@@ -42,12 +42,12 @@ test('run fx: walking into a place on a run heals by the held Perks (runArriveFx
   const top = maxHp(s.team[0]);
   s.team[0].hp = 1;
   s.run = { relics: [] };
-  assert.equal(L.runArriveFx(s, RELICS), 0, 'no Perks: nothing');
+  assert.equal(L.runArriveFx(s, PERKS), 0, 'no Perks: nothing');
   assert.equal(s.team[0].hp, 1);
   s.run.relics = ['severance'];
-  assert.equal(L.runArriveFx(s, RELICS), Math.ceil(top * 0.15));
+  assert.equal(L.runArriveFx(s, PERKS), Math.ceil(top * 0.15));
   assert.equal(s.team[0].hp, 1 + Math.ceil(top * 0.15));
-  assert.equal(L.runArriveFx({ team: s.team, run: null }, RELICS), 0, 'not on a run: nothing');
+  assert.equal(L.runArriveFx({ team: s.team, run: null }, PERKS), 0, 'not on a run: nothing');
 });
 
 test('run fx: a lost run’s payout with Field Notebook and Lost Property Form adds a Perks row; without them, as before', () => {
@@ -57,7 +57,7 @@ test('run fx: a lost run’s payout with Field Notebook and Lost Property Form a
     plain = S.payoutOf(end, RATES, price),
     same = S.payoutOf(end, E.fxPayoutRates(null, RATES), price);
   assert.deepEqual(same, plain, 'no rows: the same payout');
-  const fx = E.fxRows(['options', 'writeoff'], RELICS),
+  const fx = E.fxRows(['options', 'writeoff'], PERKS),
     pay = S.payoutOf(end, E.fxPayoutRates(fx, RATES), price),
     items = pay.lines.find(l => l.what === 'items'),
     row = pay.lines.find(l => l.what === 'fx');

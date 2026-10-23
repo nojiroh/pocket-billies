@@ -2,7 +2,7 @@
 'use strict';
 /* ================= A RUN'S PREVIEW (Studio plan Phase 2, T2.4) =================
    What a run from a seed holds, worked out by the game's own logic on the game data as game-data.js reads it (its
-   POOLS with stand-ins, TRAINERS, RELICS, RULES): the start (run-start.js runStartPlan, as the mast takes off), then
+   POOLS with stand-ins, TRAINERS, PERKS, RULES): the start (run-start.js runStartPlan, as the mast takes off), then
    - each mini-boss's and the boss's foe (run-loop.js runFoes, with the leaders run-world.js passes);
    - each town's stock on every day from the first it can be reached (its row + 1) to the deadline (runShopStock with
      the run's shop unlocks, as shop.js opens it) and its shelf's Perk that day (perkShelf);
@@ -13,7 +13,7 @@
    would read the Studio's data as the game's (tools/test/run-preview.test.mjs compares it with the game's own path).
    Logic only: no DOM, no Date, no Math.random. */
 /** @import { Run, RunMap } from '../../types/save-data' */
-import { POOLS, NODE_TYPES, RELICS, RULES, START_NODE, TRAINERS, UNLOCK_DATA, gameData } from '../game-data.js';
+import { POOLS, NODE_TYPES, PERKS, RULES, START_NODE, TRAINERS, UNLOCK_DATA, gameData } from '../game-data.js';
 import { MAPGEN_VERSION } from './mapgen.js';
 import { perkOfferMake, perkShelf } from './perks.js';
 import { runFoes, runShopStock } from './run-loop.js';
@@ -62,7 +62,7 @@ export function runPreview(seed, o = {}) {
         shop.push({
           day,
           stock: runShopStock(run, i, day, shopRule),
-          relic: perkShelf(run, i, day, RELICS, RULES.run.relics),
+          relic: perkShelf(run, i, day, PERKS, RULES.run.relics),
         });
     }
     return {
@@ -73,7 +73,7 @@ export function runPreview(seed, o = {}) {
   });
   const relicOffers = [],
     guards = new Set(map.nodes.filter(n => n.type === 'miniboss').map(n => n.row)).size;
-  for (let k = 0; k < guards; k++) relicOffers.push(perkOfferMake(run, RELICS, RULES.run.relics) || []);
+  for (let k = 0; k < guards; k++) relicOffers.push(perkOfferMake(run, PERKS, RULES.run.relics) || []);
   return {
     seed,
     tier: plan.give.tier,
