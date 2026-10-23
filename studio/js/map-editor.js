@@ -67,6 +67,7 @@ import {
   colorField,
   commit,
   dialog,
+  drawSoon,
   grid,
   numberField,
   peopleOptions,
@@ -1806,14 +1807,22 @@ document.addEventListener('keydown', ev => {
   }
 });
 /* field edits for the current scene update the map and preview */
+/* Studio plan T6.1: the 2D map (and the prop editor, the terrain thumbnails) redraw in the next frame, once however
+   many events came; the walk view rebuilds its paths and ground once the field has been still for 300 ms */
 studioState.hooks.scenes = path => {
-  if (mapEditor.ped && typeof drawPropEditor === 'function') drawPropEditor();
+  if (mapEditor.ped && typeof drawPropEditor === 'function') drawSoon('propEditor', drawPropEditor);
   if (path.startsWith('maps.') || path.startsWith('scenery.')) {
-    walkView.nav = null;
-    walkView.cand = null;
-    if (/\.(edge|w|h)$/.test(path) || path.startsWith('scenery.terrains')) walkView.gkey = '';
-    drawEditorMap();
-    if (path.startsWith('scenery.terrains')) drawSceneryThumbs();
+    const ground = /\.(edge|w|h)$/.test(path) || path.startsWith('scenery.terrains');
+    mapEditor.rebuildGround = mapEditor.rebuildGround || ground;
+    clearTimeout(mapEditor.rebuildT);
+    mapEditor.rebuildT = setTimeout(() => {
+      walkView.nav = null;
+      walkView.cand = null;
+      if (mapEditor.rebuildGround) walkView.gkey = '';
+      mapEditor.rebuildGround = false;
+    }, 300);
+    drawSoon('editorMap', drawEditorMap);
+    if (path.startsWith('scenery.terrains')) drawSoon('sceneryThumbs', drawSceneryThumbs);
   }
 };
 /* ---------- actions ---------- */

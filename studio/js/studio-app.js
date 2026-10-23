@@ -57,6 +57,8 @@ expose({
   commit: [() => commit, v => (commit = v)],
   confirmStaged: [() => confirmStaged, v => (confirmStaged = v)],
   dialog: [() => dialog, v => (dialog = v)],
+  drawSoon: [() => drawSoon, v => (drawSoon = v)],
+  drawSoonQueue: [() => drawSoonQueue],
   errorToast: [() => errorToast, v => (errorToast = v)],
   fieldOutputId: [() => fieldOutputId],
   foldedSectionGroups: [() => foldedSectionGroups],
@@ -591,6 +593,18 @@ function onField(ev) {
     hk = studioState.hooks[pane && pane.dataset.pane === '2' ? studioState.sec2 : studioState.sec];
   if (hk) hk(el.dataset.p, v);
   if (el.dataset.rr && ev.type === 'change') render();
+}
+/* Studio plan T6.1: drawing a hook asks for runs once in the next frame, however many input events come first (a
+   typed word, or a field's input and then its change): the last request for a key wins */
+const drawSoonQueue = new Map();
+export function drawSoon(key, f) {
+  if (!drawSoonQueue.size)
+    requestAnimationFrame(() => {
+      const q = [...drawSoonQueue.values()];
+      drawSoonQueue.clear();
+      q.forEach(g => g());
+    });
+  drawSoonQueue.set(key, f);
 }
 const RANGE_FORMATS = { pct: v => Math.round(v * 100) + '%', x: v => '×' + (+v).toFixed(2), mul: v => (+v).toFixed(2) };
 /* ---------- navigation ---------- */
