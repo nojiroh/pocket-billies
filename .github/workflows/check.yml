@@ -94,7 +94,7 @@ jobs:
         if: steps.studio.outputs.run == 'true'
         run: |
           npm run data
-          python tools/check-studio-github.py --only=sections,publish,drafts,studio_test,checks,kit_write
+          python tools/check-studio-github.py --only=sections,publish,drafts,studio_test,checks,kit_write,library_swap,repack,density
       - name: Upload the results
         if: always()
         uses: actions/upload-artifact@v4
