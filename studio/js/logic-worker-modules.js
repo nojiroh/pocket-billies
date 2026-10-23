@@ -81,3 +81,5 @@ import '../../game/js/logic/unlocks.js';
 import '../../game/js/logic/weather.js';
 export { runPreview } from '../../game/js/logic/run-preview.js';
 export { runMapSweep } from '../../game/js/logic/data-checks.js';
+/* Studio plan T3.4: the run simulation (the modules above, named for it) */
+export { runSimReport } from './logic-worker-sim.js';

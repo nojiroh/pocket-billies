@@ -15,6 +15,7 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  SIM_BROWSER_CAP: [() => SIM_BROWSER_CAP],
   SIM_METRICS: [() => SIM_METRICS],
   SIM_Z95: [() => SIM_Z95],
   round: [() => round],
@@ -37,6 +38,8 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
+/** the most seeds a report runs in the browser (the Run Lab's Simulate card; CPU on an iPad); the CLI runs more */
+export const SIM_BROWSER_CAP = 200;
 /** z for a two-sided 95% interval */
 export const SIM_Z95 = 1.959964;
 /** the per-run numbers simPaired compares, in the order the tables show them */
