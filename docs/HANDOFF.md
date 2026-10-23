@@ -2,6 +2,38 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Actions sheet rework for the roguelite - 2026-10-23
+Branch `claude/bold-davinci-vrss2q`, pushed to main at the owner's word. The owner's picks: a bottom sheet; on a run
+the run status and this node's actions; in the hub, shortcuts (Start a run and the clinic open at once, the ranch and
+the lab get a marker to walk to); Tab on a computer; keep the "?" cards; challenges hidden for now; no Actions
+indoors; buddy card, requests, rest stop, money card, gold-arrow buttons and the joystick note removed; Give up the
+run stays on the Map tab; the place card shows name, type and weather; the label stays "Actions"; a tap closes it.
+- Changed (one cause per commit):
+  - The sheet was page content under the scene, so any scroll (a mouse wheel, a trackpad) slid it up. It is now the
+    kit's `<pb-sheet id="walkSheet">` (walk-tab.js `walkSheetSync`, `uiState.walkSheet`), opened by the Actions
+    button or Tab, closed by Esc, Tab, the scrim, a drag down, any button in it, or a render that leaves the world.
+    The walk screen no longer scrolls. pb-sheet takes `--sheet-max` (58vh here).
+  - Run: day chip, node type, today's and tomorrow's weather with its move effect (logic/run-loop.js
+    `runSheetStatus`, `weatherEffectText`, `runBattleWeather`; unit tests), What's here (nodeActions), Wild Billies
+    here, Open the map to move on. Hub: Start a run (`walkrun`), ranch and Hazel's lab marked in the world
+    (`walkView.mark`, walk-view.js `drawWalkMark`; gone within 6 m, in another map, or when the sheet opens).
+  - Removed: gold-arrow buttons, money card, joystick note (now a one-time toast, `preferences.walkTip`), paid rest
+    stop, requests list, buddy card; challenges hidden (`CHALLENGES_SHOWN` false: no card, no toast, still counted).
+  - Fixed: a new encounter card had class `pop`, which battle-screen.css uses for damage numbers, so it hung over
+    the heading (now `enc-new`). Walk keys stop while the sheet is open (was a test on scrollY).
+  - Check: smoke and full `actions_sheet_step` (TESTING.md). Dead CSS dropped; ui-lint ceilings lowered.
+- Risky or unfinished:
+  - Not tried on a phone. Tab is taken only while nothing outside the sheet has the focus; Shift+Tab never.
+  - The full quick check was not run (the owner asked to push first); the in-game full test neither.
+  - Tags can't be pushed from here (403 before); no tag made for this rework (not a numbered phase).
+  - rules.json `battle.restCost` stays, unread. The loading tip "gold arrows lead you there" is stale.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build, unit tests 794; smoke 16 of 16 (168 s);
+  check-fast: three camera steps fail (CAM-1, CAM-2, debug log camera line), the same on the base commit 29e66011;
+  check:ui: run-hud 0.2% off, the same on the base commit.
+- Questions waiting for the owner: bring challenges back (hub only) or drop them; should the sheet show the team's
+  HP or the held Loopholes later; remove `restCost` from the data.
+- Next session starts with: the owner's phone test of the sheet, then the full quick check.
+
 ### Sound track SND-5 - Battle and run music - 2026-10-22
 Branch `sound` (PR #120). Plan approved by the owner's "Start", without picks on the two "Ask me before" items, so
 the recommendations were taken (and named as such in the commits): **the red zone plays a tense variant of the battle
