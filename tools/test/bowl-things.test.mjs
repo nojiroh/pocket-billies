@@ -1,11 +1,10 @@
 // Phase 10, the look, session 4: landmarks, buildings and trees on the world map (game/js/logic/bowl-things.js).
+// RL-8b: on the worlds the game draws: Copperleaf's own map, and a run's world put in as the game does (its scenes,
+// places and roads, worldPut) with the run's look, the clumps worked out as world-bowl.js does.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { PB_DATA } from '../data-files.mjs';
-import './setup-real.mjs';
-import { oldWorld } from './old-world.mjs';
+import { data, GAME_DATA, modules } from './setup-real.mjs';
 import {
-  BOWL_REGION_TREES,
   bowlClumps,
   bowlLandmarkPick,
   bowlMapPoint,
@@ -23,23 +22,63 @@ import {
   bowlWaterLevel,
   bowlXY,
 } from '../../game/js/logic/bowl.js';
+import { runBowlLook } from '../../game/js/logic/run-bowl.js';
+import { runSpot } from '../../game/js/logic/run-map.js';
+import { rngFrom } from '../../game/js/logic/rng.js';
 
-/* RL-5: the old world (the game's places and the ones parked in game/data/legacy), with whole maps */
-const OLD = oldWorld();
-const { locations, maps } = OLD;
-const ART = OLD.scenery.props;
-const byId = id => locations.find(l => l.id === id);
-const spotOf = l => {
-  const s = bowlSpotOf(l, byId),
-    [x, y] = bowlXY(s.a, s.r);
-  return { x, y, under: s.under };
+const { runMapStart } = modules['run-map'];
+const { newRun } = modules['run-state'];
+const { MAPGEN_VERSION } = modules.mapgen;
+const { runScenesMake, runWorldTables } = modules['run-scenes'];
+const ART = GAME_DATA.scenery.props;
+const R = GAME_DATA.rules.run,
+  WD = {
+    nodeTypes: GAME_DATA.nodeTypes,
+    biomes: GAME_DATA.biomes,
+    pools: data.POOLS,
+    scenery: GAME_DATA.scenery,
+    rules: R,
+  },
+  START = {
+    team: [],
+    se: 0,
+    items: {},
+    coins: {},
+    trip: { node: 0, plan: [] },
+    wild: {},
+    eggs: [],
+    flags: {},
+    seats: [],
+    visited: {},
+  };
+/* a run's world as the game makes it from the seed (run-world.js runWorldSync): its places with their whole scenes,
+   and its look */
+const runWorld = seed => {
+  const run = newRun(seed, 1, MAPGEN_VERSION, START);
+  runMapStart(run, { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: R });
+  const W = runWorldTables(run, data.LOCATIONS[0], WD),
+    made = runScenesMake(run, WD),
+    maps = Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, made[i]])),
+    spots = run.map.nodes.map((_, i) => {
+      const s = runSpot(run.map, i);
+      return bowlXY(s.a, s.r);
+    }),
+    look = runBowlLook(seed, run.map, spots, GAME_DATA.biomes, GAME_DATA.worldmap, bowlTreeStyle, rngFrom);
+  return { W, maps, look };
 };
-/* the full walk maps (props), from either data folder (the page's game data may hold only their outlines) */
-const fullMap = id => maps[id];
+const RUNS = ['T0', 'T3'].map(runWorld);
+const spotIn = (/** @type {any[]} */ locations) => {
+  const byId = id => locations.find(l => l.id === id);
+  return l => {
+    const s = bowlSpotOf(l, byId),
+      [x, y] = bowlXY(s.a, s.r);
+    return { x, y, under: s.under, off: !!s.off };
+  };
+};
 
 test('a walk map lies on the bowl as the terrain stamps it: its middle on the place, its north to the centre', () => {
-  const l = byId('marigold'),
-    s = spotOf(l),
+  const { W } = RUNS[0],
+    s = spotIn(W.locations)(W.locations[1]),
     M = { w: 120, h: 84 },
     mid = bowlMapPoint(s, M, 60, 42),
     up = bowlMapPoint(s, M, 60, 84);
@@ -62,54 +101,65 @@ test('what props are on the map: trees, buildings, nothing', () => {
   assert.equal(bowlTreeStyle('tree_oak'), 'round');
 });
 
-test('each place gets its own landmark when its map has one', () => {
-  const want = {
-    clovercrest: 'windmill',
-    palmhaven: 'lighthouse',
-    capshade: 'mushroom_colossal',
-    marigold: 'clock_tower',
-  };
-  for (const [id, k] of Object.entries(want)) {
-    const l = byId(id),
-      lm = bowlLandmarkPick(l, fullMap(l.mapId), ART);
-    assert.equal(lm && lm.k, k, id);
-  }
+test('each place gets its own landmark when its map has one: Copperleaf its tree, every run town one', () => {
+  const hub = GAME_DATA.locations[0],
+    hubMap = GAME_DATA.maps[hub.mapId];
+  assert.equal(bowlLandmarkPick(hub, hubMap, ART).k, 'tree_giant_swing');
   /* a place's own choice wins */
-  const l = byId('clovercrest');
-  assert.equal(bowlLandmarkPick({ ...l, landmark: 'tree_giant' }, fullMap(l.mapId), ART).k, 'tree_giant');
-  /* most places have one */
-  const have = locations.filter(l => bowlLandmarkPick(l, fullMap(l.mapId), ART)).length;
-  assert.ok(have >= 40, `${have} of ${locations.length} places have a landmark`);
+  assert.equal(bowlLandmarkPick({ ...hub, landmark: 'tree_giant' }, hubMap, ART).k, 'tree_giant');
+  for (const { W, maps } of RUNS) {
+    const towns = W.locations.slice(1).filter(l => l.kind === 'town');
+    assert.ok(towns.length, 'the run needs a town');
+    for (const l of towns) assert.ok(bowlLandmarkPick(l, maps[l.mapId], ART), `${l.id} (${l.name}) has no landmark`);
+  }
 });
 
 test('clumps grow on dry land between places, off the routes, in their region’s kinds', () => {
-  const roads = OLD.roads
-      .map(r => PB_DATA.road(OLD, r))
-      .filter(r => r.kind === 'seam')
-      .map(r => [r.a, r.b]),
-    S = bowlSeaInput(locations, roads, l => maps[l.mapId] || null),
-    G = bowlGroundGrid(bowlReliefFeatures(locations), 320, S),
-    places = locations
-      .map(l => ({ l, s: spotOf(l) }))
-      .filter(q => !q.s.under)
-      .map(({ l, s }) => {
-        const m = maps[l.mapId];
-        return { x: s.x, y: s.y, reach: m ? Math.hypot(m.w, m.h) / 2000 : 0.06, region: l.region || 'starter' };
-      }),
-    segs = S.roads,
-    rel = (x, y) => bowlGridHeight(G, x, y) - bowlWaterLevel(x, y),
-    T = bowlClumps(G, places, segs, rel);
-  assert.ok(T.length > 300 && T.length < 5000, `${T.length} trees`);
-  assert.deepEqual(T.slice(0, 20), bowlClumps(G, places, segs, rel).slice(0, 20), 'not the same twice');
-  for (const t of T) {
-    assert.ok(bowlCoastAt(G, t.x, t.y) < 0, `a tree in the sea at ${t.x},${t.y}`);
-    for (const p of places) assert.ok(Math.hypot(t.x - p.x, t.y - p.y) > p.reach, 'a tree on a place’s own ground');
-    for (const [ax, ay, bx, by] of segs) {
-      const vx = bx - ax,
-        vy = by - ay,
-        k = Math.max(0, Math.min(1, ((t.x - ax) * vx + (t.y - ay) * vy) / (vx * vx + vy * vy)));
-      assert.ok(Math.hypot(t.x - ax - vx * k, t.y - ay - vy * k) > 0.012, 'a tree on a route');
+  for (const { W, maps, look } of RUNS) {
+    data.worldPut({ ...W, look, maps });
+    try {
+      const L = data.LOCATIONS,
+        at = spotIn(L),
+        S = bowlSeaInput(
+          L,
+          data.ROADS.map(r => [r[0], r[1]]),
+          l => maps[l.mapId] || null,
+          1000,
+          look.sea
+        ),
+        G = bowlGroundGrid(bowlReliefFeatures(L, look.relief, look.seed), undefined, S),
+        spots = L.map(at),
+        places = L.flatMap((l, i) => {
+          const s = spots[i],
+            m = maps[l.mapId];
+          return s.off || s.under
+            ? []
+            : [{ x: s.x, y: s.y, reach: m ? Math.hypot(m.w, m.h) / 2000 : 0.06, region: l.region || 'starter' }];
+        }),
+        segs = data.ROADS.filter(([a, b]) => !spots[a].off && !spots[b].off).map(([a, b]) => [
+          spots[a].x,
+          spots[a].y,
+          spots[b].x,
+          spots[b].y,
+        ]),
+        trees = Object.fromEntries(Object.entries(look.regions).map(([k, Rg]) => [k, Rg.trees])),
+        rel = (x, y) => bowlGridHeight(G, x, y) - bowlWaterLevel(x, y),
+        T = bowlClumps(G, places, segs, rel, undefined, trees, look.seed);
+      assert.ok(T.length > 200 && T.length < 5000, `${T.length} trees`);
+      assert.deepEqual(T.slice(0, 20), bowlClumps(G, places, segs, rel, undefined, trees, look.seed).slice(0, 20));
+      for (const t of T) {
+        assert.ok(bowlCoastAt(G, t.x, t.y) < 0, `a tree in the sea at ${t.x},${t.y}`);
+        for (const p of places) assert.ok(Math.hypot(t.x - p.x, t.y - p.y) > p.reach, 'a tree on a place’s own ground');
+        for (const [ax, ay, bx, by] of segs) {
+          const vx = bx - ax,
+            vy = by - ay,
+            k = Math.max(0, Math.min(1, ((t.x - ax) * vx + (t.y - ay) * vy) / (vx * vx + vy * vy)));
+          assert.ok(Math.hypot(t.x - ax - vx * k, t.y - ay - vy * k) > 0.012, 'a tree on a route');
+        }
+        assert.ok((trees[t.region] || trees.starter).includes(t.style), `${t.style} in ${t.region}`);
+      }
+    } finally {
+      data.worldHubBack();
     }
-    assert.ok((BOWL_REGION_TREES[t.region] || BOWL_REGION_TREES.starter).includes(t.style));
   }
 });
