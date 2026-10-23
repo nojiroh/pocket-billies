@@ -35,3 +35,15 @@ test('run sim: a run starts as the mast starts it, with no unlocks or every one'
   assert.deepEqual(none.log.unlocks, []);
   assert.ok(all.log.unlocks.includes('biome_ridge') && all.log.unlocks.includes('shop_settlement'));
 });
+
+test("run sim: a run town's shop stocks only what the run has unlocked (Studio plan T3.3)", () => {
+  const locked = ['settlement', 'appeal', 'bailout'];
+  let towns = 0;
+  for (let k = 0; k < 12; k++)
+    for (const at of runSim(`SIMSHOP${k}`, { team: 3 }).log.places)
+      if (at.shop) {
+        towns++;
+        assert.ok(!at.shop.some(w => locked.includes(w)), `SIMSHOP${k} node ${at.i}: ${at.shop}`);
+      }
+  assert.ok(towns >= 2, `${towns} towns`);
+});

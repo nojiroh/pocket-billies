@@ -77,7 +77,7 @@ export function runSimOn(env) {
     { runArrive, runNext, runWorldNode, runWeather } = modules['run-map'],
     { runByTier, runEnd } = modules['run-state'],
     { runScenesMake, runWorldTables } = modules['run-scenes'],
-    { runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopStock } = modules['run-loop'],
+    { runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen } = modules['run-loop'],
     { fxOfRun, fxPayoutRates, fxRunPrice } = modules.effects,
     { runStartOn, runStartPlan } = modules['run-start'],
     { runUnlocks } = modules.unlocks;
@@ -200,7 +200,8 @@ export function runSimOn(env) {
             stats.healed += paid;
             at.healed = paid;
           }
-          const stock = runShopStock(run, i, run.clock, R.shop);
+          /* the day's wares as the shop opens them: only what the run has unlocked (run-loop.js runShopOpen) */
+          const stock = runShopOpen(run, i, run.clock, R.shop, UNLOCK_DATA);
           at.shop = stock.map((/** @type {any} */ w) => w.coin || w.item);
           /* the shop's price, with the Loopholes' price rows (shop.js warePrice) */
           const price = fxRunPrice(run, data.RELICS, 'shop', data.COINS.penny.price);
