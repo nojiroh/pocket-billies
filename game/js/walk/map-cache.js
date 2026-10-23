@@ -505,6 +505,9 @@ export function swapMapCache(oldKey, key) {
     /* v46: a view prepared ahead plants its grass now (sliced, a few ms a frame) */ if (hit.prepared) {
       walkRenderer.grass = null;
       walkRenderer.grassKey = null;
+    } else if (!walkRenderer.grass) {
+      /* 0.1.0 alpha: a view left while its grass was still being planted kept none (marked planted); planted now */
+      walkRenderer.grassKey = null;
     }
   } else {
     if (hit) {
