@@ -349,7 +349,7 @@ export function calcDamage(k, tk, mid, src) {
   const base = ((0.4 * L + 2) * P * At) / Dt / 50 + 2;
   const stab = M.t !== 'None' && aty.includes(M.t) ? BATTLE_RULES.stab : 1,
     te = typeEffectiveness(M.t, actorTypes(tk));
-  const cs = (fx.crit || 0) + (hasPassive(aty, 'sharp') ? BATTLE_RULES.mediaCrit : 0);
+  const cs = (fx.crit || 0) + (hasPassive(aty, 'livewire') ? BATTLE_RULES.liveWireCrit : 0);
   const crit = !src && battleRoll() < BATTLE_RULES.critChances[clamp(cs, 0, BATTLE_RULES.critChances.length - 1)];
   const roll = hasPassive(aty, 'volatile')
     ? BATTLE_RULES.cryptoRollMin + battleRoll() * (BATTLE_RULES.cryptoRollMax - BATTLE_RULES.cryptoRollMin)

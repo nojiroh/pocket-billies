@@ -38,7 +38,7 @@
   "text": "#2A1D05",
   "strong": ["Water","Flying"],
   "weak": ["Electric","Grass","Ground","Dragon"],
-  "passive": "sharp",
+  "passive": "livewire",
   "passiveName": "Live Wire",
   "passiveText": "Its hits land critically more often.",
   "fx": ["bolt","spark"]

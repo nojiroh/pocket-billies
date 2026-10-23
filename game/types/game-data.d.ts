@@ -862,7 +862,7 @@ export interface Rules {
     rollMin: number;
     cryptoRollMin: number;
     cryptoRollMax: number;
-    mediaCrit: number;
+    liveWireCrit: number;
     kindlingBoost: number;
     kindlingTurns: number;
     retailSynergy: number;

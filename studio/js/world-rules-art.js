@@ -927,7 +927,7 @@ SECTIONS.rules = () => {
      grid(
        numberField('Wild Mind roll, low', `${bt}.cryptoRollMin`, { min: 0, max: 1, step: 0.05 }),
        numberField('Wild Mind roll, high', `${bt}.cryptoRollMax`, { min: 1, max: 3, step: 0.05 }),
-       numberField('Live Wire: extra critical stages', `${bt}.mediaCrit`, { min: 0, max: 3, step: 1 }),
+       numberField('Live Wire: extra critical stages', `${bt}.liveWireCrit`, { min: 0, max: 3, step: 1 }),
        numberField('Kindling: Attack boost per turn', `${bt}.kindlingBoost`, { min: 0, max: 1, step: 0.01 }),
        numberField('Kindling turns', `${bt}.kindlingTurns`, { min: 1, max: 30, step: 1 }),
        numberField('Alloy bonus per teammate', `${bt}.retailSynergy`, { min: 0, max: 1, step: 0.01 }),

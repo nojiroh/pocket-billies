@@ -918,7 +918,7 @@ const PASSIVES = [
   ['volatile', 'Wild Mind: damage swings wildly'],
   ['regrowth', 'Regrowth: restores a little HP each turn'],
   ['synergy', 'Alloy: +10% damage for each teammate of the same type'],
-  ['sharp', 'Live Wire: higher critical-hit chance'],
+  ['livewire', 'Live Wire: higher critical-hit chance'],
   ['kindling', 'Kindling: Attack rises every turn it stays in'],
   ['inherit', 'Parting Roar: when it faints, the next teammate in gets +1 Attack and Sp. Atk'],
   ['landlord', 'Bedrock: holds on at 1 HP from full once a battle; not hurt by sharp stones'],
