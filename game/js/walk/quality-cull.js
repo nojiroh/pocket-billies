@@ -63,6 +63,7 @@ export function inFrustum(F, x, y, z, r) {
 }
 export function cullItems(items, C) {
   const F = computeFrustum(C.vp);
+  walkRenderer.frustum = F;
   let n = 0,
     k = 0;
   const on = engineSetting('quality', 'cull') ?? true;
