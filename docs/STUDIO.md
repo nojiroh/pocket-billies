@@ -44,6 +44,21 @@ route is the one that works.
 - The kept changes stay in this browser on this device. They are never sent anywhere; another browser or computer
   doesn't see them. GitHub mode only.
 
+## Undo (Studio plan Phase 1, T1.2)
+
+- **One undo for everything**, in the order you made it: every data edit, every picture stroke, and a picture change
+  that also changed the data (a replaced part) as one step. Up to 80 steps.
+- **A step keeps only what the edit changed.** The undo holds the data once, as one text per entry (each map, move,
+  person, rig, each entry of meta and the other sections) plus the order of the keys; a step holds the entries it
+  changed, before and after. A field edit costs a few kilobytes, not a copy of the whole game; an edit to a very big
+  map costs more (Copperleaf's, about 5 MB a step). Data steps and pictures each have a 64 MB cap; past it the
+  oldest steps go.
+- **Undo puts back only those entries.** Undoing a map edit replaces that map and nothing else; adding or deleting
+  an entry puts back the whole data.
+- **Opening a section never changes the data.** The self-test checks it for every section: a write outside an edit
+  would ride along with your next edit, and its undo would take it back too (this is what made an undo in Rules fail
+  after People had been opened). Keys starting with `_` are caches: never kept by the undo, as by saving.
+
 ## Local mode (start-studio.py, not in this repository)
 
 Double-click `Start-Studio.bat` / `Start-Studio.command`, or run

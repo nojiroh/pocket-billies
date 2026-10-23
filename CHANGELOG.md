@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The Studio's undo is lighter and more exact (Studio plan Phase 1). A step keeps only what the edit changed instead
+  of a copy of the whole game data, so a long editing session no longer fills the memory, and undoing an edit puts
+  back only what it changed. Opening the People section no longer changes the data by itself: it used to convert
+  nine older people to the new look and fill in clothing colours every time, which then rode along with the next
+  edit and made its undo take more back than it should (seen as an undo in Rules failing). Those nine people are now
+  stored in the new look once (they look exactly the same), and a person without a look is a data error.
 - The Studio keeps what you haven't proposed yet in the browser (Studio plan Phase 1). Closing the tab, a crash or a
   phone dropping the page no longer loses work: the next time the Studio opens it offers the changes back (Restore,
   Later or Discard), at the commit they were made on, so nothing merged since is put back. Only the changed files and
