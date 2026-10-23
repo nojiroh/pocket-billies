@@ -1617,51 +1617,6 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     v36()
 
-    @step('v38: 61 roster species on piece sheets, rigs that draw, filled pools', 240)
-    def v38():
-        out = []
-        lines = ['huang', 'ellison', 'ma', 'walton', 'bloomberg', 'jobs', 'knight', 'kroc', 'ambani', 'ortega', 'hughes', 'carnegie', 'lauren', 'ford', 'slim', 'cuban', 'pagebrin', 'thiel', 'dorsey', 'ek', 'son', 'buterin', 'saylor']
-        ids = json.loads(pg.evaluate("JSON.stringify(Object.keys(SPECIES).filter(id=>%s.includes(SPECIES[id].line)))" % json.dumps(lines)))
-        if len(ids) != 61: raise Exception(f'{len(ids)} roster species in the data, not 61')
-        miss = [i for i in ids if not pg.evaluate(f"!!(RIGS['{i}']&&RIGS['{i}'].front&&RIGS['{i}'].back&&RIGS['{i}'].front.sheet)")]
-        if miss: raise Exception(f'missing rigs: {miss[:6]}')
-        nx = ROOT / 'game' / 'art' / 'next' / 'billionaires'
-        names = json.loads(pg.evaluate("JSON.stringify(gameData.roster.filter(e=>%s.includes(e.line)).map(e=>e.id))" % json.dumps(lines)))
-        bad = [n for n in names if not ((nx / f'{n}.png').exists() and (nx / f'{n}.json').exists())]
-        if bad: raise Exception(f'sheets missing: {bad[:6]}')
-        st = pg.evaluate("gameData.roster.filter(e=>e.state&&e.state.sheet&&e.state.rig).length")
-        if st < 73: raise Exception(f'roster board marks only {st} species as drawn and rigged')
-        out.append(f'61 species in 23 lines, numbered {pg.evaluate("SPECIES.huang0.no")} to {pg.evaluate("SPECIES.saylor1.no")}; {len(names)} sheets (png + json); roster board: {st} drawn and rigged')
-        pg.evaluate("rigPreload(%s.map(id=>[id,1]))" % json.dumps(ids)); time.sleep(4)
-        r = json.loads(pg.evaluate("""(ids=>{const out={};for(const id of ids){const o={};for(const v of ['front','back']){const R=rigParts(id,1);if(!R){o[v]=null;continue}
-          const c=makeCanvas(R.BW,R.BH),x=c.getContext('2d');x.clearRect(0,0,R.BW,R.BH);drawRig(x,R,rigFrame(R,null,0,1000,1),v);const d=x.getImageData(0,0,R.BW,R.BH).data;let s=0;for(let i=3;i<d.length;i+=4)if(d[i]>0)s++;o[v]=s}out[id]=o}return JSON.stringify(out)})(%s)""" % json.dumps(ids)))
-        weak = [k for k, v in r.items() if not v['front'] or v['front'] < 600 or not v['back'] or v['back'] < 400]
-        if weak: raise Exception(f'rigs draw too little: {weak[:6]} ({ {k: r[k] for k in weak[:3]} })')
-        au = json.loads(pg.evaluate("JSON.stringify(Object.fromEntries(%s.map(id=>[id,rigAudit(id,'front')])))" % json.dumps(ids)))
-        still = {k: v['still'] for k, v in au.items() if v and v['still']}
-        if still: raise Exception(f'pieces that never move: {dict(list(still.items())[:4])}')
-        plans = sorted(set(pg.evaluate(f"RIGS['{i}'].front.plan") for i in ids))
-        out.append(f"every rig draws front and back ({min(v['front'] for v in r.values())}+ px); every piece moves; body plans {', '.join(plans)}")
-        # the first twelve regions hold only new species; the rest only old ones
-        pools = json.loads(pg.evaluate("JSON.stringify(Object.fromEntries(Object.entries(POOLS).map(([k,p])=>[k,p.list.map(x=>SPECIES[x[0]].line)])))"))
-        new_all = set(json.loads(pg.evaluate("JSON.stringify(LINES.map(l=>l.id).filter(id=>!['musk','bezos','gates'].includes(id)))")))   # v39: every line beyond the starters is new roster
-        mixed = [k for k, L in pools.items() if any(l in new_all for l in L) and any(l not in new_all for l in L)]
-        if mixed: raise Exception(f'pools mixing old and new species: {mixed}')
-        new_pools = [k for k, L in pools.items() if all(l in new_all for l in L)]
-        if len(new_pools) < 12: raise Exception(f'only {len(new_pools)} pools filled with the new roster')
-        out.append(f'{len(new_pools)} regions filled with the new roster, {len(pools) - len(new_pools)} still old, none mixed')
-        # a wild battle with a new species on the 3D stage
-        pg.evaluate("(()=>{const q={id:'cq38',sp:'swift0',lvl:8,no:1};encountersHere().push(q);saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
-        until(pg, "(()=>{const a=actorBuffer(0),b=actorBuffer(1);return !!(a&&b)})()", 15); time.sleep(2)
-        px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=actorBuffer(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
-        shot(pg, 'v38-battle')
-        if px['1'] < 500: raise Exception(f'the wild Frylet drew nothing on the stage: {px}')
-        pg.evaluate("if(activeBattle){activeBattle.over='ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
-        out.append(f"wild Frylet on the 3D stage ({px['1']} px)")
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return '; '.join(out)
-    v38()
-
     @step('v39/v40: the whole roster, old roster gone, signature moves, six-choice dressing room, busts', 300)   # RL-5: the legendary at the volcano is parked
     def v39():
         out = []
