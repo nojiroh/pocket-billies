@@ -2,9 +2,8 @@
 
 The Studio edits the game's data, skeletons and art. It runs from the game's site (`…/studio/`): sign in with a GitHub
 token, and **Propose changes** puts your changes on a new branch with a pull request, so nothing changes in the game
-until the owner merges it. Started from `start-studio.py` on your own computer, saves would go straight into
-`game/data` and `game/art`, but that server is **not in this repository** (see the end of this file); the GitHub
-route is the one that works.
+until the owner merges it. That is the only way it runs: the old local mode (a server on your own computer that
+saved straight into `game/data`) was dropped (Studio plan, owner's decision 2026-10-22).
 
 ## Propose changes: what it does, and what happens when it fails (Studio plan Phase 0)
 
@@ -43,12 +42,6 @@ route is the one that works.
   bar says "Not kept if the tab closes".
 - The kept changes stay in this browser on this device. They are never sent anywhere; another browser or computer
   doesn't see them. GitHub mode only.
-
-## Local mode (start-studio.py, not in this repository)
-
-Double-click `Start-Studio.bat` / `Start-Studio.command`, or run
-`python3 start-studio.py`. It opens at **http://localhost:8001**. The server is not in this repository, so this mode
-can't be used from a clone of it today.
 
 ## Layout (studio track ST-1)
 
@@ -341,8 +334,6 @@ you changed. You can also edit them by hand; `npm run check:data` checks them (a
 The game tolerates mistakes. It skips anything it can't use and lists it in the debug
 menu.
 
-Local mode needs `start-studio.py`, which is not in the repository; it still reads and writes
-the old single `gamedata.js` and would have to be changed to the data files (phase 04b).
 
 
 ## Notes and limits
