@@ -188,7 +188,7 @@ export function runSimOn(env) {
    * One run from its seed, played by the policy. Returns a log of everything that was drawn and how it went, and the
    * run's numbers. What the player does is a fixed policy: walk forward along a lane drawn from the seed, fight up to
    * `fights` of a place's wild Billies while the party is above 70% of its HP (a Potion on a Billie below 60%; catch the
-   * first ones while the party is small), heal in towns when hurt, keep a few Copper Coins, beat the mini-boss, then
+   * first ones while the party is small), heal in towns when hurt, keep a few Pyramids, beat the mini-boss, then
    * the boss. It starts as the mast does: the highest-level Billies from home (rules.json run.home at Expedition I;
    * `team` is how many starters wait at home) and a bag packed with Potions from home (`pack` of them at home, as many
    * as run.pack lets).
@@ -272,7 +272,7 @@ export function runSimOn(env) {
           at = { i, type: node.type, day: run.clock, weather: runWeather(run, i, run.clock), battles: [] };
         if (fxHealed) at.fxHealed = fxHealed;
         log.places.push(at);
-        /* a town: heal when hurt, then the day's shop (Copper Coins up to five) */
+        /* a town: heal when hurt, then the day's shop (Pyramids up to five) */
         if (node.type === 'town') {
           const { paid } = runClinic(s, fxRunPrice(run, data.PERKS, 'heal', R.healCost));
           if (paid) {

@@ -54,7 +54,7 @@ export interface GameData {
   nodeTypes?: Record<DataId, NodeType>;
   /** sound track SND-2: the songs, jingles, cries' bases and where each song plays (game/data/music.json) */
   music?: Music;
-  /** roguelite track RL-12: a run's Loopholes each a list of effect rows (game/data/perks.json; logic/effects.js) */
+  /** roguelite track RL-12: a run's Perks, each a list of effect rows (game/data/perks.json; logic/effects.js) */
   perks?: Record<DataId, Perk>;
   /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
   currencies?: Partial<Record<CurrencyId, Currency>>;
@@ -972,7 +972,7 @@ export interface Rules {
     seamIn: number;
     /** RL-8: what a run starts with, besides the Billies from home and the packed bag: its money, pyramids and items (placeholders) */
     start: { se: number; pyramids: Record<string, number>; items: Record<string, number> };
-    /** RL-9b: by Bracket (index 0 = Bracket I; past the end, the last): how many Billies from home a run takes, and
+    /** RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): how many Billies from home a run takes, and
         how many items and pyramids (in all) are packed from Copperleaf's bag at the mast (placeholders) */
     home: number[];
     pack: number[];
@@ -983,7 +983,7 @@ export interface Rules {
     shop: { always: string[]; more: number; pick: Record<string, number> };
     /** RL-8: a mini-boss's and the boss's levels: `up` over the top wild level of their row; their reward in $ */
     foes: { miniboss: { up: number; reward: number }; boss: { up: number; reward: number } };
-    /** RL-12: Loopholes: at most `cap` held, a pick of `pick` after a mini-boss, offered by `rarity` weight, sold in a
+    /** RL-12: Perks: at most `cap` held, a pick of `pick` after a mini-boss, offered by `rarity` weight, sold in a
         run shop at `price` by rarity (placeholders) */
     perks: {
       cap: number;
@@ -1696,7 +1696,7 @@ export interface Music {
   where: MusicWhere[];
 }
 
-/** perks.json: how often a Loophole is offered and what a shop asks for it (rules.json run.perks) */
+/** perks.json: how often a Perk is offered and what a shop asks for it (rules.json run.perks) */
 export type PerkRarity = 'common' | 'uncommon' | 'rare';
 /** perks.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes) */
 export type FxRow =
@@ -1707,7 +1707,7 @@ export type FxRow =
   | { kind: 'damage'; side: 'deal' | 'take'; cat?: 'H' | 'S'; type?: string; mult: number }
   | { kind: 'heal'; share: number }
   | { kind: 'payout'; what: 'research' | 'itemShare'; mult: number };
-/** perks.json: a Loophole (roguelite track RL-12): held for one run, its effect rows apply while it is held */
+/** perks.json: a Perk (roguelite track RL-12): held for one run, its effect rows apply while it is held */
 export interface Perk {
   /** what the player reads */
   name: string;
