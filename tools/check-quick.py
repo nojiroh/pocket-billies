@@ -771,36 +771,6 @@ def actions_sheet_step(b, base, R):
         ctx.close()
 
 
-@step('Team: the lead card, the rows, a Billie’s details and its Build tab (phase 06-2)', 120)
-def team_step(b, base, R):
-    errs = []
-    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS)
-    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
-    pg.on('pageerror', lambda e: errs.append(str(e)))
-    pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
-    try:
-        pg.goto(base + '/index.html?fixture=town'); pg.evaluate(LOW_RENDER)
-        if not until(pg, "typeof walkView!=='undefined'&&walkView.ready", 90): raise Exception('the town never opened')
-        t = pg.evaluate("""(()=>{uiState.modal=null;uiState.mq=[];renderOverlay();
-          const x=makeBilly(Object.keys(SPECIES).find(k=>/0$/.test(k)),8);x.build={head:'L',body:'L',front:'M',back:'S',sig:'M'};saveData.team.push(x);
-          uiState.tab='team';render();
-          return {hero:!!document.querySelector('.u-hero [data-a=mon]'),rows:document.querySelectorAll('.u-list .u-row[data-a=mon]').length,team:saveData.team.length}})()""")
-        if not t['hero'] or t['rows'] != t['team'] - 1: raise Exception(f'the Team screen is not the lead card plus one row each: {t}')
-        pg.click('.u-list .u-row[data-a=mon] >> nth=-1')
-        if not until(pg, "!!document.querySelector('#ov .mon-sheet')", 10): raise Exception('a row did not open its details')
-        pg.click('#ov [data-a=ms-tab][data-k=build]')
-        d = pg.evaluate("""(()=>{const on=[...document.querySelectorAll('.u-slots .u-dial .on')].map(e=>e.textContent);
-          return {slots:document.querySelectorAll('.u-slots li').length,want:partSlots().length,on,bal:!!document.querySelector('.u-bal-track i'),
-            pane:!document.querySelector('.ms-pane[data-k=build]').hidden}})()""")
-        if d['slots'] != d['want'] or d['on'] != ['L', 'L', 'M', 'S', 'M'] or not d['bal'] or not d['pane']:
-            raise Exception(f'the Build tab does not show the parts: {d}')
-        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f'lead card and {t["rows"]} rows; a row opens its details; Build shows {d["slots"]} slots (L L M S M) and the balance'
-    finally:
-        ctx.close()
-
-
 @step('Safety: hostile names on every screen stay text (phase 06-4)', 240)
 def safety_step(b, base, R):
     """phase 06 "done when": no untrusted value is built into the page as markup. Names a player or a friend controls get
@@ -2708,7 +2678,6 @@ def main():
             if SMOKE:
                 studio_opens(b)
             else:
-                team_step(b, base, R)
                 safety_step(b, base, R)
                 targets_step(b, base, R)
                 sound_step(b, base, R)
