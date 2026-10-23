@@ -44,6 +44,7 @@ import {
   ROADS_BY_NODE,
   RULES,
   SPECIES,
+  SPECIES_FORMS,
   STAT_IDS,
   TRAINERS,
   gameData,
@@ -101,6 +102,8 @@ expose({
   cleanBuild: [() => cleanBuild, v => (cleanBuild = v)],
   cleanName: [() => cleanName],
   coatPrefix: [() => coatPrefix],
+  dexCaught: [() => dexCaught],
+  dexSeen: [() => dexSeen],
   distanceText: [() => distanceText],
   // @ts-expect-error -- replaced on purpose
   dropEncounter: [() => dropEncounter, v => (dropEncounter = v)],
@@ -327,6 +330,10 @@ export function movesAt(lid, lvl) {
  * regional form's coat adds none (the form's name says it)
  * @param {string | undefined} coat */
 export const coatPrefix = coat => (coat && COATS[coat] && !COATS[coat].form ? COATS[coat].name + ' ' : '');
+/** RO-1: a dex entry (a DEX_ORDER id) counts as seen when it or one of its regional forms is @param {string} id */
+export const dexSeen = id => !!saveData.seen[id] || (SPECIES_FORMS[id] || []).some(f => saveData.seen[f]);
+/** RO-1: and as caught the same way @param {string} id */
+export const dexCaught = id => !!saveData.caught[id] || (SPECIES_FORMS[id] || []).some(f => saveData.caught[f]);
 /* alpha 0.5: a Billie remembers where and when it joined you (shown in its details) */
 export function makeBilly(sp, lvl, o = {}) {
   const m = {

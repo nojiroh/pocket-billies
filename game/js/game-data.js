@@ -50,6 +50,7 @@ expose({
   SEATS: [() => SEATS],
   SHOPS: [() => SHOPS],
   SPECIES: [() => SPECIES],
+  SPECIES_FORMS: [() => SPECIES_FORMS],
   STAND_IN_LINES: [() => STAND_IN_LINES],
   START_NODE: [() => START_NODE],
   STATUS_NAMES: [() => STATUS_NAMES],
@@ -242,7 +243,9 @@ LINES.forEach(L => {
   });
 });
 /* RO-1: a line's regional forms, a species per stage (logic/forms.js), after every line's own: each keeps its base
-   stage's dex number and stays out of DEX_ORDER (the Guide shows it on its base's page) */
+   stage's dex number and stays out of DEX_ORDER (the Guide shows it on its base's page, SPECIES_FORMS: a base stage's
+   form species) */
+export const SPECIES_FORMS = /** @type {Record<string, string[]>} */ ({});
 LINES.forEach(L => {
   for (const F of L.forms || []) {
     if (!(gameData.coats || {})[F.coat]) warnData(`${L.id}'s form ${F.id} has unknown coat ${F.coat}.`);
@@ -252,6 +255,7 @@ LINES.forEach(L => {
       S.types = S.types.filter(t => TYPE_COLORS[t]);
       if (!S.types.length) S.types = ['None'];
       SPECIES[S.id] = S;
+      (SPECIES_FORMS[S.formOf] || (SPECIES_FORMS[S.formOf] = [])).push(S.id);
     });
   }
 });

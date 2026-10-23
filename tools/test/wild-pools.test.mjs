@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readGameData } from '../data-files.mjs';
-import { data, GAME_DATA, modules } from './setup-real.mjs';
+import { data, GAME_DATA, modules, startedSave } from './setup-real.mjs';
 
 const { SPECIES, POOLS, DEX_ORDER, COATS, standInSpecies } = data,
   { formSpeciesId, formTypes, lineSpeciesIds } = modules.forms,
@@ -14,7 +14,7 @@ const { SPECIES, POOLS, DEX_ORDER, COATS, standInSpecies } = data,
   { newRun } = modules['run-state'],
   { MAPGEN_VERSION } = modules.mapgen,
   { runWorldTables } = modules['run-scenes'],
-  { makeBilly, coatPrefix } = modules.rules;
+  { makeBilly, coatPrefix, dexSeen, dexCaught } = modules.rules;
 /* the data as read, before the game puts in its stand-ins */
 const RAW = readGameData(),
   LINES = RAW.lines,
@@ -131,4 +131,15 @@ test('a region’s dex cuts a place’s list; no dex, or one naming none of it, 
   ]);
   assert.deepEqual(wildPoolList(list, ['nobody0']), list);
   assert.deepEqual(wildPoolList(list, []), list);
+});
+
+test('the dex counts a base stage as seen or caught when one of its forms is; a form has no entry of its own', () => {
+  const s = startedSave('musk0', 5);
+  assert.deepEqual(data.SPECIES_FORMS.trump0, ['trump_waterfront0']);
+  assert.ok(!dexSeen('trump0') && !dexCaught('trump0'));
+  s.seen.trump_waterfront0 = 1;
+  assert.ok(dexSeen('trump0') && !dexCaught('trump0'));
+  s.caught.trump_waterfront0 = 1;
+  assert.ok(dexCaught('trump0'));
+  assert.ok(!dexSeen('trump1'), 'only its own stage');
 });
