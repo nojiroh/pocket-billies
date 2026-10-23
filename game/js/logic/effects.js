@@ -19,6 +19,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
+import { encBoonRows } from './run-enc.js';
 /* eslint-disable no-func-assign */
 expose({
   FX_KINDS: [() => FX_KINDS],
@@ -53,9 +54,13 @@ export const FX_STAGES = 6;
 export const fxRows = (ids, perks) =>
   ids.flatMap(id => (perks[id] ? perks[id].fx.map(f => /** @type {Fx} */ ({ ...f, src: id })) : []));
 
-/** the effect rows of a run's Perks (null in the hub, or with none held) @param {{ perks: string[] } | null | undefined} run
+/** the effect rows of a run's Perks and its events' boons (null in the hub, or with none) @param {{ perks: string[] } | null | undefined} run
  * @param {Record<string, Perk>} perks @returns {Fx[] | null} */
-export const fxOfRun = (run, perks) => (run && run.perks.length ? fxRows(run.perks, perks) : null);
+export const fxOfRun = (run, perks) => {
+  /* RL-12b: an event's boons (logic/run-enc.js) after the Perks' rows */
+  const rows = run ? [...fxRows(run.perks, perks), ...encBoonRows(/** @type {any} */ (run))] : [];
+  return rows.length ? rows : null;
+};
 provide({ fxOfRun }); /* to-module */
 
 /** the product of the multipliers of the rows that pass `test`, smallest first, within FX_LIMIT (1 when none)

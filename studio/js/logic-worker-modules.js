@@ -70,6 +70,7 @@ import '../../game/js/logic/robot-math.js';
 import '../../game/js/logic/room-turn.js';
 import '../../game/js/logic/rules.js';
 import '../../game/js/logic/run-bowl.js';
+import '../../game/js/logic/run-enc.js';
 import '../../game/js/logic/run-loop.js';
 import '../../game/js/logic/run-map.js';
 import '../../game/js/logic/run-marks.js';
