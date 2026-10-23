@@ -247,6 +247,8 @@ document.addEventListener('click', ev => {
   if (!el) return;
   const a = el.dataset.a,
     d = el.dataset;
+  /* a button in the Actions sheet closes it first, then does its thing (a shop, the clinic, a battle, the map) */
+  if (el.closest('#walkSheet')) walkSheetClose();
   if (a === 'scrim') {
     if (ev.target === el && uiState.modal && !uiState.modal.lock) {
       const c =
