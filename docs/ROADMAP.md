@@ -62,7 +62,9 @@ town node needs it.
   per stage) done 2026-10-22; SND-4 (the themes: four voices, hooks answered, the motif, Copperleaf as Pallet Town,
   night versions; placeholder hooks for the owner to edit) done 2026-10-22 at the owner's word; SND-5 (battle and run
   music: intros timed to the throw, leader and boss songs, the red zone's tense version, the run's arc by row, the
-  deadline version, the map song's forecast) done 2026-10-22; SND-6 next.
+  deadline version, the map song's forecast) done 2026-10-22; SND-6 (a cry per Billie from eight kinds with a low-HP
+  cry, four UI sounds, jingles for the run's beats, the mix as data; every new sound a placeholder) done 2026-10-23.
+  The track's planned sessions are done; what's next is the owner's listening pass.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all

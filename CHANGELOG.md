@@ -9,6 +9,16 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Sound effects and jingles (sound track SND-6): each Billie has a cry of its own, built from eight kinds (beast,
+  bird, slime, machine, fish, insect, ghost, suit) with its own pitch and length per stage, and cries as it is sent
+  out; a Billie under a quarter of its HP cries its low-HP cry (a quarter faster and a third down), and a fainting one
+  too. Buttons make four sounds instead of one tick: select, confirm (a rising fifth), cancel (a falling one) and
+  a buzz for one you can't press yet. A run has jingles for its beats: a tick and tock as each day passes, two pings
+  when the map shows more, a jingle for a Loophole taken, a coin for each payout row (higher each row), then the
+  victory tune and the title's theme on a win, or the victory tune backwards in a minor key on a loss. The water,
+  wind and birds come down a little while a song plays. Every new cry, jingle and button sound is a draft, named
+  "placeholder" in the Studio, whose Music & sound section has a Sounds tab for the base cries, the button sounds and
+  the mix, and plays each jingle at its own tempo.
 - Battle and run music (sound track SND-5): a battle's song starts on the encounter's flash with a short intro
   run and holds its drums until your first Billie is sent out. A run's mini-bosses have a song of their own (the
   title's theme in a minor key) and its boss another. While your lead Billie is under a quarter of its HP, the battle
