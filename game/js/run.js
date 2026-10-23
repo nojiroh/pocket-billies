@@ -500,7 +500,7 @@ export function runArrivedFx() {
 /** the first run's hints, each shown once (run.hints) as a toast */
 const RUN_HINTS = {
   landing: run =>
-    `Day 1 of the run. Walk north into the next place: each place you walk into takes a day. The boss waits at the far end; the deadline is day ${run.deadline}.`,
+    `Day 1 of the run. Walk north into the next place: each place you walk into takes a day. The boss waits at the far end.`,
   map: () => 'The map shows the places ahead and their weather. A ? is further on. The boss is always shown.',
   town: () =>
     `A town: its clinic heals for ${plural(runClinicEach(), 'Money')} a Billie, and its shop has new stock every day.`,

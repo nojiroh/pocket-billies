@@ -4,7 +4,7 @@
    Lit web components like js/ui-kit.js, on its tokens only; nothing in the game uses them yet (the UI gallery shows
    every state). Values come in as attributes or properties: no game data is read here, so the currency and node
    names stay the caller's (currencies.json and nodeTypes.json come later).
-     <pb-day-chip day="3" deadline="7">               "Day 3 · deadline day 7"; gold on the last day, red past it
+     <pb-day-chip day="3">                            "Day 3" (RL-R2: the owner dropped the deadline)
      <pb-forecast items="clear:Clear,rain:Rain" from="3" value="3">   the weather by day, today marked
      <pb-node type="town" state="seen" weather="rain" label="Marrow Town">   a run map marker (js/logic/run-marks.js)
      <pb-coin kind="money|research|scrap|crests" value="340" label="Moneys">   a currency chip that counts to a new value
@@ -158,9 +158,9 @@ const runKitMotion = css`
   }
 `;
 
-/* ---------- the day and deadline chip ---------- */
+/* ---------- the day chip (RL-R2: the owner dropped the deadline; the day clock stays) ---------- */
 const PbDayChip = class extends LitElement {
-  static properties = { day: { type: Number }, deadline: { type: Number } };
+  static properties = { day: { type: Number } };
   static styles = [
     runKitBase,
     css`
@@ -168,14 +168,6 @@ const PbDayChip = class extends LitElement {
         display: inline-block;
         --tone: var(--c-surface);
         --ink: var(--text);
-      }
-      :host([tone='last']) {
-        --tone: var(--gold-b);
-        --ink: var(--goldink, #3a2408);
-      }
-      :host([tone='over']) {
-        --tone: var(--c-danger);
-        --ink: var(--c-surface); /* reads on danger in both themes (white fails on the dark side) */
       }
       .chip {
         display: inline-flex;
@@ -194,39 +186,15 @@ const PbDayChip = class extends LitElement {
         font-weight: 400;
         font-size: 20px;
       }
-      .sep {
-        opacity: 0.6;
-      }
     `,
   ];
   constructor() {
     super();
     this.day = 1;
-    this.deadline = 0;
-  }
-  /** calm, last (the deadline is today) or over (past it) */
-  get tone() {
-    return !this.deadline ? 'calm' : this.day > this.deadline ? 'over' : this.day === this.deadline ? 'last' : 'calm';
-  }
-  updated() {
-    this.setAttribute('tone', this.tone);
   }
   render() {
-    const t = this.tone,
-      late = this.day - this.deadline,
-      said = !this.deadline
-        ? `Day ${this.day}`
-        : t === 'over'
-          ? `Day ${this.day}, ${late} ${late === 1 ? 'day' : 'days'} past the deadline`
-          : t === 'last'
-            ? `Day ${this.day}, the deadline is today`
-            : `Day ${this.day}, deadline day ${this.deadline}`;
-    return html`<span class="chip" role="status" aria-label=${said}
-      >${runIcon('clock')}<span>Day <b>${this.day}</b></span>${
-        this.deadline
-          ? html`<span class="sep" aria-hidden="true">·</span><span>deadline day ${this.deadline}</span>`
-          : nothing
-      }</span
+    return html`<span class="chip" role="status" aria-label=${`Day ${this.day}`}
+      >${runIcon('clock')}<span>Day <b>${this.day}</b></span></span
     >`;
   }
 };
