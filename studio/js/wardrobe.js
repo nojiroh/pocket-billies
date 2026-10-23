@@ -38,6 +38,7 @@ import {
   colorField,
   commit,
   dialog,
+  drawSoon,
   formatThousands,
   grid,
   numberField,
@@ -1085,5 +1086,5 @@ ACTIONS.wdColDel = d => {
 };
 studioState.hooks.wardrobe = () => {
   PERSON_ART_CACHE.clear();
-  drawWardrobeEditor();
+  drawSoon('wardrobeEditor', drawWardrobeEditor); /* Studio plan T6.1: once per frame, not per event */
 };
