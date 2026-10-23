@@ -250,7 +250,7 @@ check('roads.schema.json', D.roads || [], 'roads.json');
 {
   const RA = D.rules && D.rules.ranch,
     whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi,
-    KEYS = ['slots', 'capBase', 'capStep', 'bankHours', 'levelsPerHour', 'trainCost', 'guardMs', 'breed'];
+    KEYS = ['slots', 'capBase', 'capStep', 'bankHours', 'levelsPerHour', 'trainCost', 'guardMs', 'breed', 'income'];
   if (!RA || typeof RA !== 'object' || Array.isArray(RA)) problem('rules.json', 'ranch missing');
   else {
     for (const k of Object.keys(RA)) if (!KEYS.includes(k)) problem('rules.json', `ranch.${k}: no such rule`);
@@ -294,6 +294,22 @@ check('roads.schema.json', D.roads || [], 'roads.json');
         problem('rules.json', 'ranch.breed.abomUp is not a number from 1 to 3');
       if (typeof B.abomDown !== 'number' || !(B.abomDown >= 0.1 && B.abomDown <= 1))
         problem('rules.json', 'ranch.breed.abomDown is not a number from 0.1 to 1');
+    }
+    // RL-10b: passive income (logic/ranch-income.js): Scrap an hour by ranch level (1-12 levels, each 0-1,000, never
+    // less than the level before), the hours it banks (1-168); nothing else
+    const I = RA.income;
+    if (!I || typeof I !== 'object' || Array.isArray(I)) problem('rules.json', 'ranch.income missing');
+    else {
+      for (const k of Object.keys(I)) if (!['rate', 'capHours'].includes(k)) problem('rules.json', `ranch.income.${k}: no such rule`);
+      const R = I.rate;
+      if (
+        !Array.isArray(R) ||
+        R.length < 1 ||
+        R.length > 12 ||
+        !R.every((n, i) => typeof n === 'number' && n >= 0 && n <= 1000 && (!i || n >= R[i - 1]))
+      )
+        problem('rules.json', 'ranch.income.rate is not a list of 1-12 numbers (0-1,000), none less than the one before');
+      if (!whole(I.capHours, 1, 168)) problem('rules.json', 'ranch.income.capHours is not a whole number of hours (1-168)');
     }
   }
 }
