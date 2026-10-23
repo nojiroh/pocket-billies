@@ -2,6 +2,19 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-12b part 2 - Waystations (IN PROGRESS, handed to a new session) - 2026-10-24
+Branch `track/encounters` (main at 25e447e, RL-R2a, fast-forwarded in). The owner asked to continue in a new session.
+- Done (pushed): `event` (Waystation) and `stall` node types, a `shop` flag on town and stall, `runMapNoTwoShops` in
+  run-map.js, `runMapProblems(map, M, nodeTypes)` naming two shops in a row; run-start's snapshot remade; 877 tests.
+  Their scenes are still plain routes.
+- Left, as planned: run-scenes.js `RUN_BUILDINGS` for event (a stand prop, act `event`) and stall (a stand with act
+  `shop`) plus mapgen's `MAPGEN_HUB_BUILDINGS` row; `runWorldTables` giving a stall a shop (like a town's, no clinic)
+  and both fewer wild Billies (`rules.run.wild` key, `encounterStock` in rules.js); walk-control.js `walkPick` act
+  `event` -> `encounterOpen(runMapNode(...))`; run.js hints; run-sim.js and run-preview.js treating a stall as a shop;
+  a check-fast "Encounters" page and the in-game test's step; HANDOFF, ROADMAP, CHANGELOG; smoke; PR ready for review.
+- Notes: side places (RL-R2a, `side: 1`) aren't run through the no-two-shops pass. Two camera checks in check-fast fail
+  on main (a fix session has them). The checks' Playwright must match the container's Chromium (see RL-R2a's entry).
+
 ### Roguelite track RL-R2a - Side areas and field moves (and no deadline) - 2026-10-23
 Branch `track/regions` (fast-forwarded to RF-4's `track/reflavour` at e1e1479 on the coordinating session's word, then
 main merged in: RF-4, RF-5, RL-12b part 1, TC-4). Plan approved in Plan Mode with the owner's answers: walk in past the
