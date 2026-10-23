@@ -165,7 +165,7 @@ function locationCardHTML(sub, name, mid, btns) {
   const all = String(btns).match(/<button[\s\S]*?<\/button>/g) || [],
     main = all[0] || '',
     more = all.slice(1).join('');
-  return `<div class="wh-card glass compact k-panel"><div class="wh-top"><div class="sub">${sub}</div><button class="wh-x" data-a="card-close" aria-label="Hide this card"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div><h1 class="where">${name}</h1>${mid}<div class="wh-acts">${main}${more ? `<details class="wh-more"><summary>More</summary><div class="wh-more-b">${more}</div></details>` : ''}</div></div>`;
+  return `<div class="wh-card glass compact k-panel"><div class="wh-top"><div class="sub">${sub}</div><button class="wh-x" data-a="card-close" aria-label="Hide this card"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div><h1 class="where">${name}</h1>${mid}${main ? `<div class="wh-acts">${main}${more ? `<details class="wh-more"><summary>More</summary><div class="wh-more-b">${more}</div></details>` : ''}</div>` : ''}</div>`;
 }
 function environmentLine() {
   if (typeof environmentLabel !== 'function' || !environment.on) return '';
@@ -182,9 +182,8 @@ function walkHero() {
   }
   const node = saveData.trip.node,
     here = LOCATIONS[node],
-    q = encountersHere(),
-    next = `<p class="wh-gate">${escapeHtml(tripStatus().t)}</p>`;
-  return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(locationSubtitle(here)), escapeHtml(here.name), environmentLine() + next, '')}
+    q = encountersHere();
+  return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(locationSubtitle(here)), escapeHtml(here.name), environmentLine(), '')}
  <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIconHTML('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : `<p class="wh-hint glass">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>`}
   <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIconHTML('camera', 14)}</button><button class="wh-down glass k-btn" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
 }
