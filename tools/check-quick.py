@@ -1712,7 +1712,7 @@ def desktop_steps(b, base, R):
         until(pg, "propModelState.meshes.has('scene/models/airship.json')&&!!propModelState.meshes.get('scene/models/airship.json')", 60); time.sleep(2)
         v = pg.evaluate("(()=>{const m=propModelState.meshes.get('scene/models/airship.json');return m?{spins:(m.spins||[]).length,model:!!m.model,tris:m.n/3,drawn:propModelState.drawn}:null})()")
         if not v or not v['model'] or v['spins'] != 2: raise Exception(f'the airship isn’t drawn as a low-poly model with two turning propellers: {v}')
-        shot(pg, 'a04-airship-mast')
+        shot(pg, 'airship-mast')
         out.append(f'the airship drawn as a low-poly model ({v["tris"]:.0f} triangles, the buildings’ textures), {v["spins"]} propellers turning')
         # RL-5: the flight to Marigold Town (the mast's list, the fare, 'a04-airship-flight', landing by its mast) is retired:
         # Marigold Town is parked and the hub is the only town (RL-8's airship start brings a flight back)
