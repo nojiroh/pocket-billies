@@ -80,7 +80,7 @@ Two rules hold everywhere:
   simulation does). The battle object's shape is snapshotted; a seeded battle must replay the same with other draws
   in between; the turn cap is tested with the cap lowered inside the test.
 - The save's run state (RL-3: `meta-state`, `ranch-state`, `run-state` and `saves.test.mjs`): run on the fixture's
-  three locations, so a save from a run sits at node 4, past `LOCATIONS`, to prove `migrate` keeps a run's trip by the
+  three locations, so a save from a run sits at node 4, past `LOCATIONS`, to prove `saveFill` keeps a run's trip by the
   run's map and not by today's places. Switching that branch off turns the run-save test red.
 - The run map and clock (RL-6: `run-map.test.mjs`, `run-map-real.test.mjs`, `weather.test.mjs`): run-map.test on
   small tables of its own (five node types, the five biomes as mild), run-map-real on the game's (nodeTypes.json,

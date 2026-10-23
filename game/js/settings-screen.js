@@ -45,7 +45,7 @@ import {
 } from './hooks.js';
 import { gameData } from './game-data.js';
 import { metresToKm, today } from './logic/rules.js';
-import { SAVE_NEW_MSG, SAVE_OLD_MSG, migrate, newSaveKeepingPreferences, saveAge, validSave } from './logic/saves.js';
+import { SAVE_NEW_MSG, SAVE_OLD_MSG, newSaveKeepingPreferences, saveAge, saveFill, validSave } from './logic/saves.js';
 import {
   activeBattle,
   escapeHtml,
@@ -206,7 +206,7 @@ function importSave() {
         return;
       }
       if (!validSave(candidate)) throw new Error();
-      const next = migrate(candidate);
+      const next = saveFill(candidate);
       uiState.modal = null;
       modal({
         title: 'Restore this backup?',
