@@ -326,6 +326,13 @@ same phase:
   alone with `python3 tools/check-studio-github.py --only=ui` (about a minute; `--only=` takes any names from its
   `STEPS`, plus `sections` and `art` for the two blocks before them). A new uiTheme.json group needs its schema,
   its dials in logic/ui-dials.js and its writer in logic/ui-theme.js together, or the tests fail.
+  The Actions sheet (walk-tab.js walkSheetSync, a `<pb-sheet id="walkSheet">` over the world since 2026-10-23):
+  smoke and the full check run "Actions sheet: ..." (`actions_sheet_step`, about 22 s in smoke) on the `town`
+  fixture at 1280x800: four mouse-wheel turns leave it closed and the page unscrolled; the Actions button opens it;
+  Esc closes it; Tab opens it with the focus on its first button and closes it; "show me the way" to the ranch closes
+  it and sets `walkView.mark`. The full check also opens it on the `run` fixture for the day chip, today's weather
+  and "Open the map to move on". The words (logic/run-loop.js `runSheetStatus`, `weatherEffectText`) are unit-tested
+  in run-loop.test.mjs.
 - **Roguelite track** (docs/phases/roguelite-track.md): RL-5 parked every place but Copperleaf. The fast check
   (`tools/check-fast.py`, CI) and its fixtures start there (`town`, `room` = Hazel's lab, `battle` = Leader Rocco); the
   `route` and `cave` fixtures and checks, the full check's road walks, seams, close-ups and the flight to another town
