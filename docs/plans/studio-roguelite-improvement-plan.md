@@ -1468,6 +1468,20 @@ Taken in Phase 1, session B (the recommended option each time, under the owner's
     keep the safer 2). The report format is 2, so runs before this don't compare.
 13. **T1.2 and its callers in one commit**, so no commit leaves the Studio's undo broken.
 
+### Phase 4 (content editors), recommended options taken (2026-10-22)
+14. **Names.** The relics page is "Loopholes" on screen (docs/NAMING.md: never "relic" for the player), section id
+   `relics`; the others are "Unlocks & hub" (`unlocks`) and "Economy" (`economy`).
+15. **The code's limits are data errors.** A Loophole row's factor outside effects.js `FX_LIMIT` (0.1-4) or stages past
+    `FX_STAGES` is a `dataRelics` error, so check:data fails and Propose is blocked (decision 2). The schema's 0-4 stays.
+16. **Offer order** takes nothing by default (as the Run Lab shows), with "the first offered" and "this Loophole when
+    offered" as choices; shops are left out.
+17. **A circle is refused at the edit**, not only reported: the "needs" box that would close it un-ticks and the
+    message names the path. A circle planted in the JSON still shows as dataUnlocks's error.
+18. **Ranch costs** (`rules.ranch.trainCost`, `breed.safeCost`, `breed.riskyCost`) had no Studio field: they are edited
+    beside the buildings in Unlocks & hub, where the Economy page links them.
+19. **Economy numbers**: T3.4 has not landed, so the page has a placeholder; Phase 3 fills it.
+20. **Town shops and Jobs** stay editable in the Legacy group (no data deleted).
+
 ## Ask me before (owner decisions this plan needs)
 1. **T5.1:** recipe as the truth with a JS baker (recommended), or Python stays and Studio writes recipes.
 2. **T1.3:** which of today's Studio "errors" may block Propose. Recommended: only what CI already fails on.

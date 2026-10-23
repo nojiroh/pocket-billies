@@ -65,6 +65,14 @@ kept aside in the browser).
 - The Studio's Run Lab has a Simulate card: it plays up to 200 runs on the data as loaded and on your unsaved
   changes, side by side, and shows what changed (wins, where runs were lost, money in and out, Loopholes, leaders),
   each table marked as a bot's results rather than a prediction. The results can be saved as JSON.
+- The Studio has pages for what a run is made of (Studio plan Phase 4), in the Runs group beside the Run Lab.
+  **Loopholes**: each effect edited by its kind with the code's limits beside it, what a set of Loopholes does to a
+  Billie's stats and to a run's prices and payouts, and the order they are offered in for a seed. **Unlocks & hub**:
+  the unlock table as a graph by building, refusing a "needs" that would go round in a circle, and what a new save has
+  after a few runs. **Economy**: every way each currency comes in and goes out, with a link to the number. Trainers
+  shows what a run gives a mini-boss leader instead of its own reward and levels, and World & encounters which pools a
+  run reads and which Billie stands in for a legacy one. Town shops and Jobs moved to the Legacy group. A Loophole
+  factor outside the game's limits (x0.1 to x4) is now a data error.
 - The Studio has a Run Lab (Studio plan Phase 2): type or roll a seed, or paste a debug log, and see that run's map
   as the game makes it, with your unsaved changes, and beside the data as loaded. Click a place for its type, biome,
   the day you reach it, its seed and its weather. Every run now starts the same way, from the mast, the test runs and

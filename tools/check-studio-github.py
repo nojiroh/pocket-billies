@@ -1504,6 +1504,181 @@ def music_steps(pg, errs):
     else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; a cry set, heard (and low on health) and emptied; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
 
 
+CONTENT_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
+const out = {};
+/* Studio plan Phase 4: what the content editors must show, from the game's logic in Node */
+out.offers = modules.relics.relicOfferOrder('LAB1', D.relics, D.rules.run.relics, D.rules.run.map.minibosses).map(p => p.offer.join(','));
+out.lab = modules['run-preview'].runPreview('LAB1', { unlocks: [] }).relicOffers.map(o => o.join(','));
+out.insider = modules['content-preview'].relicPreview(['insider'], { sp: D.lines[0].id + '1', lvl: 30 }).stats.find(s => s.id === 'hus');
+out.leaders = modules['content-preview'].leaderRunValues();
+out.standIns = modules['content-preview'].speciesStandIns(Object.values(D.pools).flatMap(P => P.list.map(e => e[0])));
+out.fresh = modules['unlock-graph'].unlockSaveAfter(D);
+console.log(JSON.stringify(out));"""
+
+
+def content_want(errs):
+    """the content editors' expectations, worked out by the game's logic in Node (once)"""
+    if not hasattr(content_want, 'v'):
+        tree = ROOT if (ROOT / 'tools/test/setup-real.mjs').is_file() else REPO
+        r = subprocess.run(['node', '--input-type=module', '-e', CONTENT_NODE], cwd=tree, capture_output=True, text=True)
+        try: content_want.v = json.loads(r.stdout.strip().splitlines()[-1])
+        except Exception: errs.append(f'content editors: the Node logic failed: {r.stderr[-400:]}'); content_want.v = None
+    return content_want.v
+
+
+def wait_js(pg, js, secs=30):
+    t0 = time.time()
+    while time.time() - t0 < secs and not pg.evaluate(js): time.sleep(0.05)
+    return pg.evaluate(js)
+
+
+def pending_files(pg, rx):
+    return pg.evaluate(f"changedDataFiles(studioState.D).map(f=>f.path).filter(p=>/{rx}/.test(p)).sort()")
+
+
+def edit_undo(pg, errs, where, sel, value, path, rx):
+    """type a value into a field: the data has it and Propose would send its file; undo puts it back and leaves
+    nothing to send in that file"""
+    was = pg.evaluate(f"JSON.stringify(readPath({json.dumps(path)}))")
+    pg.fill(sel, str(value))
+    pg.dispatch_event(sel, 'change')
+    time.sleep(0.6)
+    now = pg.evaluate(f"readPath({json.dumps(path)})")
+    if now != value: errs.append(f'{where}: typing {value} left {path} at {now!r}')
+    sent = pending_files(pg, rx)
+    if not sent: errs.append(f'{where}: after the edit Propose would not send {rx}')
+    pg.evaluate("undo()")
+    time.sleep(0.3)
+    back = pg.evaluate(f"JSON.stringify(readPath({json.dumps(path)}))")
+    if back != was: errs.append(f'{where}: undo left {path} at {back}, not {was}')
+    left = pending_files(pg, rx)
+    if left: errs.append(f'{where}: after the undo Propose would still send {left}')
+    return sent
+
+
+def relics_steps(pg, errs):
+    """Studio plan T4.1: the Loopholes editor. The sample build's Speed with Insider Tip is the game's (relicPreview in
+    Node); the offer order for LAB1 is the Run Lab's picks; a stages edit redraws the preview and is in relics.json; a
+    factor under FX_LIMIT shows data-checks' message on its row; a row's kind change and the edits all undo."""
+    W = content_want(errs)
+    if not W: return
+    n = len(errs)
+    pg.evaluate("void openSection('relics', { relic: 'insider' })")
+    pg.wait_for_selector('#main [data-relic-preview]', timeout=20000)
+    if not wait_js(pg, "!!document.querySelector('#main [data-relic-preview][data-ready=insider]')"):
+        errs.append('loopholes: the sample build never came from the logic worker'); return
+    hus = pg.evaluate("+(document.querySelector('#main [data-relic-preview] [data-stat=hus]')||{dataset:{}}).dataset.after")
+    if hus != W['insider']['after']: errs.append(f"loopholes: Insider Tip's Speed after is {hus}, the game's {W['insider']['after']}")
+    wait_js(pg, "!!document.querySelector('#main [data-relic-offers][data-ready]')")
+    offers = pg.evaluate("[...document.querySelectorAll('#main [data-relic-offers] [data-offer]')].map(e=>e.dataset.offer)")
+    if offers != W['offers'] or offers != W['lab'][:len(offers)]: errs.append(f"loopholes: LAB1's offer order {offers}, Node {W['offers']}, the Run Lab's {W['lab']}")
+    # a stages edit: the preview follows, Propose carries relics.json, undo puts it back
+    sel = '#main [data-p="relics.insider.fx.0.stages"]'
+    pg.fill(sel, '2'); pg.dispatch_event(sel, 'change')
+    two = wait_js(pg, f"+(document.querySelector('#main [data-relic-preview] [data-stat=hus]')||{{dataset:{{}}}}).dataset.after==={W['insider']['before'] * 2}", 10)
+    if not two: errs.append('loopholes: +2 stages did not double the preview’s Speed')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    edit_undo(pg, errs, 'loopholes', sel, 3, 'relics.insider.fx.0.stages', 'relics\\.json$')
+    # a factor under the code's limit: data-checks' message on its row
+    pg.evaluate("void openSection('relics', { relic: 'offshore' })"); time.sleep(0.3)
+    sel = '#main [data-p="relics.offshore.fx.0.mult"]'
+    pg.fill(sel, '0.05'); pg.dispatch_event(sel, 'change'); time.sleep(0.6)
+    pg.evaluate("render()")
+    msg = pg.evaluate("(document.querySelector('#main [data-relic-row=\"0\"] .relic-err')||{}).textContent||''")
+    if "outside the code's limits" not in msg: errs.append(f'loopholes: a factor of 0.05 showed no limit message on its row ({msg!r})')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    # a row's kind: the row becomes a stat row; undo makes it money again
+    pg.select_option('#main [data-relic-kind="offshore"][data-n="0"]', 'stat'); time.sleep(0.6)
+    kind = pg.evaluate("studioState.D.relics.offshore.fx[0].kind")
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if kind != 'stat' or pg.evaluate("JSON.stringify(studioState.D.relics.offshore.fx)") != '[{"kind":"money","mult":1.2}]':
+        errs.append(f"loopholes: the kind change made {kind!r} and undo left {pg.evaluate('JSON.stringify(studioState.D.relics.offshore.fx)')}")
+    if pending_files(pg, 'relics\\.json$'): errs.append('loopholes: after every undo Propose would still send relics.json')
+    if len(errs) == n: print(f"loopholes: Insider Tip's Speed {W['insider']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone", flush=True)
+
+
+def unlocks_steps(pg, errs):
+    """Studio plan T4.2: Unlocks & hub. The graph has a node per row and the edges unlocks.test.mjs expects; a need that
+    would close a circle is refused, the data unchanged and the message naming the path; "what a new save has" is the
+    game's (unlockSaveAfter in Node) and follows runs; a cost edit is in unlocks.json and undoes."""
+    W = content_want(errs)
+    if not W: return
+    n = len(errs)
+    pg.evaluate("void openSection('unlocks', { unlock: 'ranch_2' })")
+    pg.wait_for_selector('#main .ug-map', timeout=20000)
+    nodes = pg.evaluate("document.querySelectorAll('#main .ug-map .ug-node').length")
+    want_nodes = pg.evaluate("Object.keys(studioState.D.unlocks).length")
+    if nodes != want_nodes: errs.append(f'unlocks: the graph has {nodes} nodes, the table {want_nodes} rows')
+    edges = pg.evaluate("[...document.querySelectorAll('#main .ug-map [data-edge]')].map(e=>e.dataset.edge)")
+    for e in ['ranch_2>ranch_3', 'airship_2>biome_ridge', 'airship_2>biome_autumn']:
+        if e not in edges: errs.append(f'unlocks: no edge {e} in the graph ({edges})')
+    owned = pg.evaluate("document.querySelector('#main .ug-save').dataset.owned")
+    if owned != ','.join(W['fresh']['owned']): errs.append(f"unlocks: a new save owns {owned!r}, the game's {W['fresh']['owned']}")
+    # a planted circle: ranch_2 needs ranch_3 (which needs ranch_2)
+    before = pg.evaluate("JSON.stringify(studioState.D.unlocks)")
+    pg.evaluate("""document.querySelector('#main [data-ug-req="ranch_2"][value="ranch_3"]').click()"""); time.sleep(0.3)
+    said = pg.evaluate("(document.querySelector('#main .ug-refused')||{}).textContent||''")
+    if 'ranch_2 -> ranch_3 -> ranch_2' not in said: errs.append(f'unlocks: the circle was not refused with its path ({said!r})')
+    if pg.evaluate("JSON.stringify(studioState.D.unlocks)") != before: errs.append('unlocks: the refused need changed the data')
+    # the save after a run: First flight earned
+    pg.fill('#main [data-ug-ed="runs"]', '1'); pg.dispatch_event('#main [data-ug-ed="runs"]', 'change'); time.sleep(0.3)
+    if 'first_run' not in pg.evaluate("document.querySelector('#main .ug-save').dataset.owned"): errs.append('unlocks: after a run the save did not earn first_run')
+    pg.fill('#main [data-ug-ed="runs"]', '0'); pg.dispatch_event('#main [data-ug-ed="runs"]', 'change'); time.sleep(0.3)
+    sent = edit_undo(pg, errs, 'unlocks', '#main [data-p="unlocks.ranch_2.cost"]', 77, 'unlocks.ranch_2.cost', 'unlocks\\.json$')
+    edit_undo(pg, errs, 'unlocks: buildings', '#main [data-p="buildings.ranch.name"]', 'Barn', 'buildings.ranch.name', 'buildings\\.json$')
+    if len(errs) == n: print(f"unlocks: {nodes} nodes with the expected edges, the circle ranch_2 -> ranch_3 -> ranch_2 refused, a new save as the game's, a run earns first_run, a cost edit proposed ({sent}) and undone", flush=True)
+
+
+def leaders_steps(pg, errs):
+    """Studio plan T4.3: a mini-boss leader's run values in Trainers are runFoes's (leaderRunValues in Node), marked
+    overridden in runs; its reward field says outside runs only; a pool a run reads is tagged by its biomes; a legacy
+    species shows the stand-in the game uses; the miniboss box is an edit Propose carries and undo puts back."""
+    W = content_want(errs)
+    if not W: return
+    n = len(errs)
+    k = sorted(W['leaders'])[0]
+    pg.evaluate(f"void openSection('trainers', {{ trainer: {json.dumps(k)} }})")
+    if not wait_js(pg, "!!document.querySelector('#main [data-run-leader][data-ready]')"):
+        errs.append('leaders: the run values never came from the logic worker'); return
+    got = pg.evaluate("[...document.querySelectorAll('#main .run-leader tr[data-kind]')].map(r=>[r.dataset.kind,+r.dataset.row,+r.dataset.reward,r.dataset.levels])")
+    want = [[r['kind'], r['row'], r['reward'], f"{r['levels'][0]}-{r['levels'][1]}"] for r in W['leaders'][k]]
+    if got != want: errs.append(f"leaders: {k}'s run values {got}, the game's {want}")
+    if 'overridden in runs' not in pg.evaluate("document.querySelector('#main').textContent"): errs.append('leaders: no "overridden in runs" label')
+    if 'outside runs only' not in pg.evaluate("document.querySelector('#main [data-p$=\".reward\"]').closest('label').textContent"): errs.append('leaders: the reward field does not say outside runs only')
+    box = f'#main [data-p="trainers.{k}.miniboss"]'
+    pg.uncheck(box); time.sleep(0.6)
+    if pg.evaluate(f"!!studioState.D.trainers[{json.dumps(k)}].miniboss"): errs.append('leaders: unticking the mini-boss box left it on')
+    if not pending_files(pg, f'trainers\\/{k}\\.json$'): errs.append(f'leaders: Propose would not send trainers/{k}.json')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if not pg.evaluate(f"!!studioState.D.trainers[{json.dumps(k)}].miniboss") or pending_files(pg, f'trainers\\/{k}\\.json$'): errs.append('leaders: undo did not put the mini-boss box back')
+    pg.evaluate("studioState.sel.wtab='pools'; void openSection('world')")
+    tags = pg.evaluate("[...document.querySelectorAll('#main [data-pool-run]')].map(e=>e.dataset.poolRun)")
+    if not any(tags): errs.append('leaders: no pool is tagged as one a run reads')
+    if not wait_js(pg, "[...document.querySelectorAll('#main [data-standin]')].every(e=>'to' in e.dataset)", 30): errs.append('leaders: the stand-ins never came')
+    marks = pg.evaluate("[...document.querySelectorAll('#main [data-standin]')].map(e=>[e.dataset.standin,e.dataset.to])")
+    bad = [m for m in marks if (W['standIns'].get(m[0]) or {}).get('to', '') != m[1]]
+    if not marks or bad: errs.append(f"leaders: stand-ins {bad[:3] or 'none shown'} differ from the game's")
+    if len(errs) == n: print(f"leaders: {k}'s {len(got)} run places as runFoes makes them, overridden in runs; {sum(1 for t in tags if t)} pools a run reads; {len(marks)} legacy ids with the game's stand-in; the mini-boss box proposed and undone", flush=True)
+
+
+def economy_steps(pg, errs):
+    """Studio plan T4.4: the Economy page lists a line per source and sink with its value; a link opens the field;
+    the simulator's numbers are a placeholder that says so."""
+    n = len(errs)
+    pg.evaluate("void openSection('economy')")
+    pg.wait_for_selector('#main .eco', timeout=20000)
+    rows = pg.evaluate("document.querySelectorAll('#main [data-eco]').length")
+    want = pg.evaluate("economyLines(studioState.D).length")
+    if rows != want or rows < 20: errs.append(f'economy: {rows} lines shown, economyLines gives {want}')
+    if not pg.locator('#main [data-eco-sim="none"]').count(): errs.append('economy: no placeholder for the simulator numbers')
+    pg.click('#main [data-act="ecoGo"][data-path="unlocks.ranch_2.cost"]'); time.sleep(0.5)
+    if pg.evaluate("studioState.sec") != 'unlocks' or not pg.locator('#main [data-p="unlocks.ranch_2.cost"]').count(): errs.append('economy: the ranch_2 cost link did not open its field')
+    pg.evaluate("void openSection('economy')"); time.sleep(0.3)
+    pg.click('#main [data-act="ecoGo"][data-path="relics.offshore.fx.0.mult"]'); time.sleep(0.5)
+    if pg.evaluate("studioState.sec + ':' + studioState.sel.relic") != 'relics:offshore': errs.append('economy: the Offshore Account link did not open that Loophole')
+    if len(errs) == n: print(f'economy: {rows} lines, links open their fields, the simulator placeholder shown', flush=True)
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
@@ -1523,6 +1698,10 @@ STEPS = [
     ('studio_test', studio_test_steps),
     ('run_lab', run_lab_steps),
     ('run_lab_sim', run_lab_sim_steps),
+    ('relics', relics_steps),
+    ('unlocks', unlocks_steps),
+    ('leaders', leaders_steps),
+    ('economy', economy_steps),
     ('checks', checks_steps),
 ]
 

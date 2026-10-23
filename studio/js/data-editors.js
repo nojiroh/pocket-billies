@@ -11,6 +11,7 @@ import {
   musicCryTidy,
   neutralPose,
   openSkeleton,
+  trainerRunHTML,
   wardrobeEditor,
 } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
@@ -1152,7 +1153,7 @@ SECTIONS.shops = () => {
     )
     .join('');
   if (!sh)
-    return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="shopNew">+ New shop</button><button class="btn" data-act="boutiqueNew">+ New boutique</button></div></aside><div class="ed-col"><p class="help">No shops yet.</p></div></div>`;
+    return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="shopNew">+ New shop</button><button class="btn" data-act="boutiqueNew">+ New boutique</button></div></aside><div class="ed-col"><p class="help">No shops yet. Legacy: shops.json is the old world’s town shops; a run’s towns stock from the run rules (rules.json run.shop, in the Run Lab).</p></div></div>`;
   const wardrobe = sh.kind === 'wardrobe',
     p = `shops.${k}`,
     stock = (sh.stock || [])
@@ -1458,7 +1459,7 @@ SECTIONS.jobs = () => {
       )}${textField('What it did (after the Billie’s name)', `${p}.quip`, { help: '“Hoodini made 40 lattes. Most were wrong.”' })}<button class="btn danger subtle" data-act="jobDel" data-k="${k}">Delete job</button></div></div>`;
     })
     .join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Jobs</h2><button class="btn primary" data-act="jobNew">+ New job</button></div>${card('Jobs', rows, { sub: 'Kept for the ranch (phase 12): the game has no jobs for now, so nothing here is used yet.' })}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Jobs</h2><button class="btn primary" data-act="jobNew">+ New job</button></div>${card('Jobs', rows, { sub: 'Legacy: kept for the ranch (phase 12). The game has no jobs, so nothing here is used.' })}</div>`;
 };
 document.addEventListener('change', ev => {
   const el = ev.target;
@@ -1534,6 +1535,7 @@ SECTIONS.trainers = () => {
     : `<p class="help">Beating this trainer doesn’t award a badge.</p><button class="btn" data-act="seatOn">Award a badge</button>`;
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="trainerNew">+ New trainer</button></div><div class="llist">${list}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(T.name)}</h2></div><button class="btn danger" data-act="trainerDel">Delete</button></div>
+ ${trainerRunHTML(k, T)}
  ${card(
    'Who and where',
    `<div class="keeper"><div class="person-prev">${personPreviewHTML(T.who)}</div><div>${grid(
@@ -1552,7 +1554,7 @@ SECTIONS.trainers = () => {
        `${p}.battleStage`,
        Object.entries(D.battleStages).map(([b, v]) => [b, v.name || b])
      ),
-     numberField('Reward ($)', `${p}.reward`, { min: 0, step: 50 }),
+     numberField(T.miniboss ? 'Reward ($), outside runs only' : 'Reward ($)', `${p}.reward`, { min: 0, step: 50 }),
      selectField(
        'First-win egg',
        `${p}.egg`,

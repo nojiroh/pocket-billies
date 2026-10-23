@@ -22,6 +22,11 @@ export const LOGIC_WORKER_FNS = {
   runMapSweep: (/** @type {any} */ m) => m.runMapSweep,
   /* T3.4: the run simulation's report over a seed list (logic-worker-sim.js), for the Simulate card's Base and Draft */
   runSimReport: (/** @type {any} */ m) => m.runSimReport,
+  /* Studio plan Phase 4: the content editors (logic/content-preview.js; relics.js relicOfferOrder) */
+  relicPreview: (/** @type {any} */ m) => m.relicPreview,
+  relicOfferOrder: (/** @type {any} */ m) => m.relicOfferOrder,
+  leaderRunValues: (/** @type {any} */ m) => m.leaderRunValues,
+  speciesStandIns: (/** @type {any} */ m) => m.speciesStandIns,
 };
 
 /** an ask's answer: the function called on the loaded modules (m), or why not

@@ -16,6 +16,7 @@ import { uiThemeContrast } from './ui-theme.js';
 import { RUN_MARK_TYPES } from './run-marks.js';
 import { runMapMake, runMapRows, runMapRowsFit } from './run-map.js';
 import { MAPGEN_DEFAULTS, MAPGEN_FEATURES, MAPGEN_SHAPES, MAPGEN_SURFACES, MAPGEN_WATER } from './mapgen.js';
+import { FX_LIMIT, FX_STAGES } from './effects.js';
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
 import { islandProblems } from './island.js';
 /* eslint-disable no-func-assign */
@@ -558,6 +559,18 @@ export function dataRelics(D, valid = () => true) {
         R.fx.forEach((f, n) => {
           if (f.type && !types.has(f.type))
             problem('relics.json', `${k}.fx[${n}].type: no type "${f.type}" (types.json)`);
+          // Studio plan T4.1: the limits that live in the code (effects.js): a factor within FX_LIMIT, stages within
+          // FX_STAGES (the schema allows 0-4 and -6 to 6; a factor under FX_LIMIT.lo would be clamped up)
+          if ('mult' in f && !(typeof f.mult === 'number' && f.mult >= FX_LIMIT.lo && f.mult <= FX_LIMIT.hi))
+            problem(
+              'relics.json',
+              `${k}.fx[${n}].mult: ${f.mult} is outside the code's limits, ${FX_LIMIT.lo} to ${FX_LIMIT.hi} (effects.js FX_LIMIT)`
+            );
+          if ('stages' in f && !(Number.isInteger(f.stages) && Math.abs(f.stages) <= FX_STAGES))
+            problem(
+              'relics.json',
+              `${k}.fx[${n}].stages: ${f.stages} is not a whole number of stages from -${FX_STAGES} to ${FX_STAGES} (effects.js FX_STAGES)`
+            );
           /* T1.3: the stats from stats.json (a stage of HP means nothing), not a list in the schema */
           if (f.kind === 'stat' && (f.stat === 'hp' || !stats.has(f.stat)))
             problem('relics.json', `${k}.fx[${n}].stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);

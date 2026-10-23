@@ -22,10 +22,12 @@ import '../../game/js/logic/camera-rise.js';
 import '../../game/js/logic/coats.js';
 import '../../game/js/logic/colors.js';
 import '../../game/js/logic/conditions.js';
+import '../../game/js/logic/content-preview.js';
 import '../../game/js/logic/cries.js';
 import '../../game/js/logic/cutscene-set.js';
 import '../../game/js/logic/data-checks.js';
 import '../../game/js/logic/draft-record.js';
+import '../../game/js/logic/economy-view.js';
 import '../../game/js/logic/effects.js';
 import '../../game/js/logic/fighters.js';
 import '../../game/js/logic/free-camera.js';
@@ -81,9 +83,13 @@ import '../../game/js/logic/ui-dials.js';
 import '../../game/js/logic/ui-inspect.js';
 import '../../game/js/logic/ui-lint.js';
 import '../../game/js/logic/ui-theme.js';
+import '../../game/js/logic/unlock-graph.js';
 import '../../game/js/logic/unlocks.js';
 import '../../game/js/logic/weather.js';
 export { runPreview } from '../../game/js/logic/run-preview.js';
 export { runMapSweep } from '../../game/js/logic/data-checks.js';
 /* Studio plan T3.4: the run simulation (the modules above, named for it) */
 export { runSimReport } from './logic-worker-sim.js';
+/* Studio plan Phase 4: the content editors' previews */
+export { relicPreview, leaderRunValues, speciesStandIns } from '../../game/js/logic/content-preview.js';
+export { relicOfferOrder } from '../../game/js/logic/relics.js';

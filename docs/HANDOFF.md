@@ -624,6 +624,113 @@ after Phase 2's worker (T2.4). The session stopped once on the usage limit and w
   3b should keep that habit: commit it as a CLI flag (`--out` covers it).
 - No phase tag: Phase 3 continues in 3b.
 
+### Studio plan Phase 4 - Roguelite content editors (T4.1-T4.5) - 2026-10-22
+Branch `claude/sr-4-content-editors`, from `ccr-81011a25-lf3exv` (PR #131) with `origin/claude/sr-2-run-lab` (PR #135)
+merged in first (a merge commit). Plan pre-approved by the owner's standing instruction; the recommended option is
+taken for each decision and recorded in the plan doc's "Decisions". Other sessions own history.js, the save/undo/
+publish code, run-lab.js internals, the sim files and the workbench: this one adds beside them.
+
+**Plan** (one cause per commit; lint, typecheck, unit tests after each; the stand-in check at the end):
+0. Merge sr-2-run-lab; regenerate hooks.js with `npm run modules`.
+1. **T4.5 navigation.** Runs group: Run Lab, Loopholes (`relics`), Unlocks & hub (`unlocks`), Economy (`economy`).
+   Town shops and Jobs (both `{}`) move to Legacy with a note. World & encounters says what a run reads (the pools its
+   biomes name) and marks the rest legacy. Find indexes the new sections and their records.
+2. **Data check:** a Loophole row's factor outside effects.js `FX_LIMIT` (0.1-4) or stages past `FX_STAGES` (6) is a
+   `dataRelics` error (CI fails on it; the Studio shows it on the row).
+3. **Logic (pure, unit-tested):**
+   - relics.js `relicOfferOrder(seed, relics, rule, picks, take)`: a seed's picks in order (nothing taken, the first
+     offered, or one Loophole when offered), with the game's relicOfferMake/relicChoose.
+   - `logic/unlock-graph.js` (on the Studio page): the graph's nodes and edges, the cycle a `requires` edit would make
+     (with its path), and "what a save has" after N runs and W wins (newMeta, unlockAuto, unlockReady, runUnlocks,
+     unlockOpen).
+   - `logic/economy-view.js` (on the Studio page): every source and sink of each currency with the data path it
+     reads.
+   - `logic/content-preview.js` (worker only, like run-preview.js): `relicPreview` (fxRows, fxMult and the other fx
+     readers on a sample Billie made by rules.js, its stats before and after with the battle's stage factor),
+     `leaderRunValues` (run-loop.js runFoes on each mini-boss and boss row), `speciesStandIns` (game-data.js
+     standInSpecies).
+   - The worker's `LOGIC_WORKER_FNS` gains these four (the message shape is unchanged; documented here).
+4. **T4.1 Loopholes editor** (`studio/js/relics-editor.js`): list with rarity, weight and chance; rarity coverage
+   table; a row editor per fx kind with the code limits; data-check messages on their row; the sample-build preview;
+   the offer order for a seed.
+5. **T4.2 Unlocks & hub** (`studio/js/unlocks-editor.js`): SVG graph (a column per building, earned rows apart,
+   requires edges, currency colours); click to edit; a requires edit that closes a circle is refused naming the path;
+   buildings and currencies cards; "what a save has" after N runs / W wins.
+6. **T4.3 Leaders and encounters** (`studio/js/run-values.js` + one call each in Trainers and World): an editable
+   `miniboss` box; for a mini-boss leader the run reward and level range per row, labelled "overridden in runs"; pools
+   marked "a run reads this" by biome; legacy stand-in species marked with the stand-in the game uses (worker).
+7. **T4.4 Economy view** (`studio/js/economy-view.js`): sources and sinks by currency, each linked to its field. Phase
+   3's simulator numbers have not landed (no T3.4 dashboard on `claude/sr-3-sim-balance`): a placeholder says so.
+8. Stand-in steps in check-studio-github.py per editor (open, edit, undo, Propose carries the file); the required run
+   `--only=sections,publish,drafts,studio_test` at 0 problems.
+9. Docs: STUDIO.md, CHANGELOG, the plan's Decisions, this entry (results below once done).
+
+**Changed** (one cause per commit)
+- **Navigation (T4.5).** Runs: Run Lab, Loopholes (`relics`), Unlocks & hub (`unlocks`), Economy (`economy`). Town
+  shops and Jobs moved to Legacy (descriptions and empty-page notes say why). World & encounters has a note on what a
+  run reads and its legacy tabs say "(legacy)". Find indexes Loopholes, unlocks, buildings and currencies. No other
+  section moved.
+- **Data check.** `dataRelics`: a row's `mult` outside `FX_LIMIT` or `stages` past `FX_STAGES` is an error (the
+  Studio page loads effects.js before data-checks.js). The check-data snapshot is unchanged.
+- **Logic** (unit tests: relics, unlock-graph, economy-view, content-preview):
+  - relics.js `relicOfferOrder` (equals the run's picks; nothing / first / one id taken; cap respected);
+  - `logic/unlock-graph.js` (on the Studio page): `unlockGraph`, `unlockDepths`, `unlockCycle`, `unlockSaveAfter`;
+  - `logic/economy-view.js` (on the Studio page): `economyLines`, every line's path holds its value;
+  - `logic/content-preview.js` (worker only): `relicPreview`, `leaderRunValues` (runFoes on a one-place map per
+    mini-boss row and the boss row), `speciesStandIns`;
+  - battle-engine.js `stageFactor`: the stage multiplier `effectiveStat` used inline, now named (no behaviour change).
+- **The logic worker's message shape is unchanged.** `LOGIC_WORKER_FNS` gains `relicPreview`, `relicOfferOrder`,
+  `leaderRunValues`, `speciesStandIns`; logic-worker-modules.js imports content-preview.js, unlock-graph.js and
+  economy-view.js and re-exports the four. Ask as before: `logicAsk('relicPreview', ids, { sp, lvl })`,
+  `logicAsk('relicOfferOrder', seed, relics, rule, picks, take)`, `logicAsk('leaderRunValues', ids?)`,
+  `logicAsk('speciesStandIns', ids)`.
+- **Studio pages:** `studio/js/relics-editor.js`, `unlocks-editor.js`, `economy-page.js`, `run-values.js` (Trainers'
+  "In runs" card for a mini-boss leader, pool tags and stand-in marks; one call each in data-editors.js and
+  world-rules-art.js). Styles at the end of studio.css.
+- **check-studio-github.py:** steps `relics`, `unlocks`, `leaders`, `economy` (each: open, edit, undo, Propose carries
+  the file, plus the editor's own facts checked against the game's logic in Node).
+
+**Where the plan doc was wrong or short**
+- "An editable `miniboss` checkbox": Trainers already had one ("Mini-boss: stands on no stop", under Who and where).
+  Phase 4 adds the run values beside it instead of a second box.
+- "Rarity table coverage (check-data 525)": dataRelics only checked that something can be offered; the per-rarity
+  coverage (a rarity with a weight but no Loophole, Loopholes with weight 0) is shown on the page, not made an error.
+- The schema allows a factor of 0-4, but the code clamps a product to 0.1-4: a lone row under 0.1 never did what it
+  said. Now an error.
+- Ranch costs had no Studio field anywhere; now under Unlocks & hub.
+- The Studio's Check on this base did not yet call data-checks.js (Phase 1's later commits do): the editors call the
+  families directly, so they show the same messages either way.
+- The plan's "encounter preview of a node's wild table" is the Run Lab's node panel already (Phase 2); not repeated.
+
+**Verified**
+- Unit tests 676 pass (after the second base merge); lint, typecheck, `check:modules`, `format:check`, `check:data`,
+  `npm run build` (no logic sources left in dist).
+- `check-studio-github.py --only=sections,publish,drafts,studio_test`: **0 problems** (31 sections opened, the
+  self-test's 17 edits undone, publish 0, drafts 0). It needs `npm run data` first in a fresh checkout: without
+  game/data/gamedata.js the Roster board's 404 is reported, on the unchanged base too.
+- `--only=relics,unlocks,leaders,economy,checks`: 0 problems. Each new step opens its page, edits, checks Propose
+  carries the file, undoes, and compares the page with the game's logic in Node (Insider Tip's Speed 56 -> 84; LAB1's
+  offers equal the Run Lab's; a planted circle refused as `ranch_2 -> ranch_3 -> ranch_2`; a new save as
+  unlockSaveAfter; alta's run rows as runFoes; 213 legacy ids with standInSpecies's stand-in; 41 economy lines).
+- Looked at each page in headless screenshots (desktop width).
+- **Not run:** the full quick check (40 min) and the phone checks. Not tried on a phone.
+
+**Risky**
+- The Trainers card and the stand-in marks fill in from the logic worker after the page draws: a first open costs
+  the worker's data load (about a second here).
+- The graph's layout is by column and depth only: a building with many rows makes a tall column. Fine for today's 12
+  rows.
+- Economy lines link to the section that edits each field; a field in a Loophole or unlock opens that record first.
+  The Run Lab's rules card holds `rules.run.*`, so those links open the Run Lab.
+- `dataRelics`' new limit rule makes CI fail on a factor under 0.1 that the schema allows: intended (plan decision 15).
+
+**Next**
+- Phase 3 (T3.4): put the simulated runs' money in and out on the Economy page (`[data-eco-sim]` placeholder).
+- Phase 1c/the Check: relics.json, unlocks.json, buildings.json and currencies.json findings can now send Show me to
+  `relics` and `unlocks`.
+- Tag: `sr-4-done`.
+
+
 ### Studio plan Phase 2 (second session) - Logic worker, run rules card, Play this seed - 2026-10-22
 Branch `claude/sr-2-run-lab` (PR #135, against `ccr-81011a25-lf3exv`). Plans are pre-approved in these sessions: the
 recommended option is taken for every decision and recorded in the plan doc's "Decisions".

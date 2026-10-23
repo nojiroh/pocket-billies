@@ -613,8 +613,12 @@ export const SECTION_LIST = [
   ['preview', 'Battle preview', 'Watch moves, backdrops and Billies on the real battle stage'],
   ['types', 'Types', 'Colors, matchups and type abilities'],
   ['items', 'Items & coins', 'Shop goods, tax coins'],
-  ['shops', 'Town shops', 'Keepers and what they sell'],
-  ['world', 'World & encounters', 'Route stops, who appears where, eggs, map'],
+  ['shops', 'Town shops', 'Legacy: keepers and what they sell (runs stock from the run rules)'],
+  [
+    'world',
+    'World & encounters',
+    'Who appears where (runs read the pools their biomes name); route stops, eggs, map: legacy',
+  ],
   ['scenes', 'Walk scenes', 'Towns and routes on the Walk screen: ground, props and camera'],
   ['hub', 'Hub island', 'The hub’s island: an orbit view, its ground, coast, zones and pivot, and the ground lock'],
   ['props', 'Props', 'Every prop: its picture, 3D model, leaves, variants, and where it stands'],
@@ -624,7 +628,7 @@ export const SECTION_LIST = [
   ['lore', 'Lore & story', 'The world, the story, people, places, legends, clues, books and what people say'],
   ['story', 'Story scripts', 'The story’s own scripts (story.json), its flags, start presets and quests'],
   ['people', 'People', 'Looks for trainers and shopkeepers'],
-  ['jobs', 'Jobs', 'What working Billies earn (not in the game until the ranch)'],
+  ['jobs', 'Jobs', 'Legacy: what working Billies earn (the game has no jobs)'],
   ['rules', 'Rules', 'Every number that tunes the game'],
   ['ui', 'UI look', 'The menus’ look: colours, glass, shapes, space, type and motion, for the game or one screen'],
   ['art', 'Art files', 'Browse and replace any image'],
@@ -632,6 +636,13 @@ export const SECTION_LIST = [
   ['check', 'Check & backups', 'Problems, backups and restore'],
   ['legacy', 'Legacy world', 'The places parked outside the hub, read-only: copy a map into the game'],
   ['runlab', 'Run Lab', 'A run’s map from its seed, as the game makes it, on your unsaved data'],
+  ['economy', 'Economy', 'Every source and sink of each currency, with a link to its field'],
+  ['unlocks', 'Unlocks & hub', 'The unlock graph, the hub’s buildings and currencies, and what a new save has'],
+  [
+    'relics',
+    'Loopholes',
+    'A run’s Loopholes: effects by kind, the code’s limits, a sample build, the offer order for a seed',
+  ],
 ];
 /* alpha 0.4.1: the sections in five groups that fold away; the one you're in always shows. The descriptions show as
    a tooltip and under the section you're in, so the list is short enough to see at once */
@@ -642,14 +653,15 @@ const SECTION_GROUPS = [
   ],
   ['World & places', ['scenes', 'hub', 'props', 'engine', 'world']],
   ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
-  ['Money', ['items', 'shops', 'jobs']],
+  ['Money', ['items']],
   ['Game', ['rules', 'ui', 'art', 'check']],
   /* SND-3: the songs, the where table and the jingles (music-editor.js); the cries are on the Billies page */
   ['Sound', ['music']],
   /* Studio plan Phase 2: runs (T2.2's Run Lab; the run rules editor and Phase 4's roguelite editors join it) */
-  ['Runs', ['runlab']],
-  /* RL-5: the old world outside the hub, parked in game/data/legacy (legacy-view.js) */
-  ['Legacy', ['legacy']],
+  ['Runs', ['runlab', 'relics', 'unlocks', 'economy']],
+  /* RL-5: the old world outside the hub, parked in game/data/legacy (legacy-view.js); Studio plan T4.5: Town shops and
+     Jobs edit shops.json and jobs.json, both {} (run shops come from rules.json run.shop; the game has no jobs) */
+  ['Legacy', ['legacy', 'shops', 'jobs']],
 ];
 const foldedSectionGroups = (() => {
   try {

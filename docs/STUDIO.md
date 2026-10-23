@@ -337,6 +337,43 @@ a small change shows without the noise of two separate samples.
 - **Export JSON** saves the compare; `node tools/test/sim/run-sim.mjs --compare=base.json` writes the same JSON.
 - The numbers measure the bot on legacy stand-in species. Use them to see what a change does, not to judge balance.
 
+## Roguelite content editors (Studio plan Phase 4)
+
+The Runs group holds the Run Lab and three pages for what a run is made of. Each shows something the JSON can't: the
+game's own logic on your unsaved data (most of it in the Studio's logic worker), the limits that live in the code, a
+graph, or a value a run overrides. Edits are ordinary fields: saved, undone and proposed like any other.
+
+- **Loopholes** (relics.json, rules.json `run.relics`). The list shows each one's rarity, its weight and its chance to
+  be drawn first at a pick. Each effect row is edited by its kind (money, price, catch, stat, damage, heal, payout;
+  changing the kind puts that kind's fields in), with the code's limits beside the field: a factor from x0.1 to x4
+  (effects.js `FX_LIMIT`), stages from -6 to +6 (`FX_STAGES`). A row outside them is a data error (check:data fails;
+  the message shows on the row). **On a sample build**: pick a Billie, a level and other Loopholes held with it; its
+  stats before and as a battle starts, and what wins pay, shop and clinic prices, catch chance, damage, healing and
+  the payout become, from the game's effect code; a kind whose rows multiply past the limit says what the code uses.
+  **Offer order for a seed**: the picks after each mini-boss on a run of that seed (nothing taken, the first offered,
+  or this one when offered), the same as the Run Lab's for that seed. **Rarity and the picks**: each rarity's weight,
+  shop price and how many Loopholes have it (a rarity nobody has, or Loopholes never offered, are flagged), the cap and
+  how many are offered.
+- **Unlocks & hub** (unlocks.json, buildings.json, currencies.json, rules.json `ranch` costs). The **unlock graph**: a
+  column per building with the rows sold there and their cost in its currency, the earned rows apart, an arrow from
+  each row a row needs; click a row to edit it (name, bought or earned, where and for how much or when, what it gives,
+  what it needs). A need that would close a circle is refused, and the message names it (`ranch_2 -> ranch_3 ->
+  ranch_2`). **What a new save has** after a number of runs, wins and catches: the earned rows (the game's
+  `unlockAuto`), its currencies and building levels, what it can buy, and the biomes and wares a run can draw; the
+  graph shades what it owns. Buildings and currencies are below, with their data-check messages.
+- **Economy** (read-mostly). Every source and sink of each currency (wild prizes, mini-boss and boss rewards, money
+  Loopholes, the clinic, run shop wares and Loopholes, the payout's rates, earned unlocks, unlock costs, the ranch),
+  each with its value and a link to the field that sets it. The money in and out of simulated runs (Phase 3's balance
+  dashboard) will show here; until it lands the page says so.
+- **Trainers**: a mini-boss leader's card **In runs (overridden in runs)** shows what a run makes of it on each
+  mini-boss row and the boss's row: the run's reward and its team's levels (the game's `runFoes`). Its own reward
+  field says "outside runs only".
+- **World & encounters** says what a run reads: each pool is tagged with the biomes whose run places draw from it, or
+  "legacy"; a species id whose line is in game/data/legacy shows the species the game puts in for it. Route stops,
+  eggs, regions and the world map are marked legacy.
+- **Town shops** and **Jobs** moved to the Legacy group: shops.json and jobs.json are empty (run shops stock from
+  `run.shop`; the game has no jobs).
+
 ## UI look (UI track UI-3)
 
 Game → **UI look** edits game/data/uiTheme.json, the look of the game's menus (not the 3D scenes: that is Engine).
@@ -415,7 +452,7 @@ only after a click). It stops by itself when the section is off screen.
 | **Robots** | Phase 17. Torsos, arms, legs and gems: names, types, weight, toughness, what the legs carry, the move each part gives, stats, and pictures (front and back, a torso's head, a gem's chest picture), with a colour and shape for the stand-in when a part has no picture. Rules: the stat floor, upgrades, the gem's type bonus, weight, part HP and where hits land. **Try a build** draws any gem and parts as the game does and shows its types, weight, stats and moves. A trainer's team entry can be a robot (Trainers). |
 | **Moves** | Name, type, kind, power, accuracy, priority, description and an effects builder (status, stat changes, healing, draining, hedging, hype, rent, market shock, delayed delivery and more). |
 | **Types** | Colors, the full matchup chart (click to cycle 2× / ½×), each type's battle ability and particle effects. Renaming a type updates everything that uses it. |
-| **Items & coins, Town shops, Day Jobs** | Prices, effects, icons (or upload your own), what each shop sells, keepers, greetings, job pay (jobs are kept for the ranch, phase 12, and unused for now). Since RL-5 Town shops and Day Jobs are empty: the old ones were parked with their towns (Legacy). |
+| **Items & coins, Town shops, Day Jobs** | Prices, effects, icons (or upload your own), what each shop sells, keepers, greetings, job pay (jobs are kept for the ranch, phase 12, and unused for now). Since RL-5 Town shops and Day Jobs are empty: the old ones were parked with their towns. Since Studio plan T4.5 both are in the Legacy group. |
 | **World & encounters** | Stops on a drag-and-drop world map and the **roads** between them (add, remove, re-point, pick the exit it leaves by at each end: both must face each other, or the Check lists it as an error; a road's length is measured from its two exits; the glass lift is set on its lift props); gates, shops, backdrops; wild encounter tables; eggs; regions ahead; which walk scene each stop uses; battle backdrop colors and ambience. Since RL-5 the game's world is one stop, Copperleaf, with no roads or regions (the rest is in Legacy); a run's stops are made at run time (RL-7). |
 | **Prop editor** (in Walk scenes) | Open any prop and edit everything about it on its picture: drag the base point, click to add lamp glows, lit windows, fires, smoke, water spray and sparkles exactly where they belong (drag to move, Delete to remove), set the door, see the footprint. Add **layers** (from a PNG or a copy of the main picture) and place each one in front of or behind the main picture in meters, shift it, make it face the camera, stay put as the world turns, or lie flat, and let it glow. A 3D turntable shows the prop in the game's renderer while you work. |
 | **Walk scenes** | The scene for each stop: shape the land (raise, lower, smooth, flatten); paint the ground tiles; place, move, resize and mirror props; drag the **hub** (where you stand when you stay) and the **exits** roads leave through; choose what a prop does when tapped (shop, clinic, a message), its label and its words; distant hills, townsfolk and what they say, wind, sun rays, sky, haze, shade, tilt-shift blur and camera. The live preview runs the game's renderer: walk around in it and tap things. Paint prop pictures and ground tiles pixel by pixel; set a prop's shadow, sway, solid footprint, door and walkable area; add new props (blank or from a PNG) and new ground types. **People who talk** edit each person's id, spot, facing, `when` / `unless` and script. **Story preview**: pick a start preset and switch flags; who isn't there for them is hidden in the 3D preview and faded on the map. **Play from here** opens the game in this place on the spot you pick (Pick the spot, or where the preview's walker stands), at the preview's preset and flags, with your unsaved changes. **Free camera** (🎥 under the preview, or C): the camera leaves the walker and flies over the scene like a map app: drag to move (the ground stays under the pointer), right-drag to turn and tilt, the wheel to zoom towards the pointer, double-click to look at a spot; on a phone one finger moves, pinch zooms, twist turns, two fingers up or down tilt; W A S D, Q E, R F and Page Up/Down too. **Top view**, ▲ ▼, **Walker here** and **Back to the walker**; each scene keeps its camera while the Studio is open, and Play from here starts where it looks. |
@@ -425,6 +462,7 @@ only after a click). It stops by itself when the section is off screen.
 | **Map art** (under World) | Paint `world.png` with a brush, fill, color picker, clone and "fill with terrain". Remove the painted trail and repaint it along the stops in the exact path the game walks. Drag a stop and its painted patch moves with it, with the old spot filled from the terrain around it. A preview shows the stop from the game's map camera. |
 | **Trainers, People** | Trainer teams, their script (checked as you type), when they're there, rewards, badges, sandstorms; trainer and shopkeeper looks with a live preview. **Mini-boss** (RL-5): the trainer stands on no stop (the eight badge leaders, for the runs, RL-13); Stands at is hidden. |
 | **Run Lab** (group Runs) | Studio plan Phase 2: a run's map from a seed, on your unsaved data and beside the loaded data; a place's foes, shops and wild Billies from the game's logic; checks over 1,000 seeds; the run rules beside it; Play this seed; Simulate, Base against Draft (see Run Lab above). |
+| **Loopholes, Unlocks & hub, Economy** (group Runs) | Studio plan Phase 4: a run's Loopholes with a sample build and a seed's offers, the unlock graph with what a new save has, and every source and sink of each currency (see Roguelite content editors above). |
 | **Legacy world** (group Legacy) | RL-5: the old world outside the hub, parked in `game/data/legacy`, read-only: the 48 places with their old stop numbers, the trainers who stood there and their roads, plus counts of the parked shops, jobs and lore. It is read beside the Studio, or from GitHub when signed in, and never enters the Studio's data, so Save, Undo and the Check never touch it. **Copy into game** brings a place's map back as a walk scene of its own (no place, no roads) in one undo step and opens it in Walk scenes; whatever its people name that the game no longer has shows in the Check. |
 | **Story scripts** | Project Story S3: story.json's own scripts (Hazel's lab, after Blake's first battle, the ending): add, rename, remove and edit them in the script field; the story's flags, start presets (with ▶ Play) and quests to read. |
 | **Scripts everywhere** | Every script field (a trainer's, a person's, story.json's) shows the parser's error at once and the story checks a moment later, each on its line (click to go there); **Add line ids**; **Commands**, a reference built from the parser's own tables that puts a command in the script. Condition fields (when, unless, a place's requires) are checked the same way, and the Check lists every story finding. docs/SCRIPTS.md. |
