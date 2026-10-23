@@ -12,7 +12,17 @@
    rolls it the same however often it is asked), a risky pair's odds spelled out instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { buildingRowsHTML, closeModal, hatchModal, modal, render, renderOverlay, toast, xpProgress } from './hooks.js';
+import {
+  buildingRowsHTML,
+  closeModal,
+  hatchModal,
+  modal,
+  provide,
+  render,
+  renderOverlay,
+  toast,
+  xpProgress,
+} from './hooks.js';
 import { COATS, RULES, SPECIES } from './game-data.js';
 import { billyName, teamSize, toTeam } from './logic/rules.js';
 import {
@@ -50,9 +60,10 @@ expose({
   breedPickNow: [() => breedPickNow, v => (breedPickNow = v)],
   ranchCardHTML: [() => ranchCardHTML, v => (ranchCardHTML = v)],
   ranchDo: [() => ranchDo, v => (ranchDo = v)],
-  ranchOpen: [() => ranchOpen, v => (ranchOpen = v)],
+  ranchOpen: [() => ranchOpen, v => ((ranchOpen = v), provide({ ranchOpen }))],
 });
 /* eslint-enable no-func-assign */
+provide({ ranchOpen });
 /* to-module: end */
 const RANCH_WHY = {
   run: 'Storage stays home on a run',

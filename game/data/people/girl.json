@@ -1,12 +1,31 @@
 {
- "hair": "#8C3A1F",
- "style": "pony",
- "hat": "#F2C14E",
- "top": "#8E5BD6",
- "top2": "#5E3A9C",
- "bottom": "#3E6FB0",
- "shoe": "#F4F4F4",
- "pack": "#E2546E",
- "skin": "#F0BE94",
- "shorts": 1
+ "look": {
+  "name": "Trainer",
+  "body": {"height":1,"legs":1,"arms":1,"body":1,"shoulders":0.95,"hips":1.06,"chest":0.5,"head":1},
+  "skin": "#F0BE94",
+  "hair": "#8C3A1F",
+  "eyes": "#4A7BBB",
+  "wear": {
+   "hair": "hair_pony",
+   "eyes": "eyes_round",
+   "brows": "brows_soft",
+   "mouth": "mouth_smile",
+   "facial": null,
+   "top": "tee",
+   "outer": null,
+   "bottom": "shorts",
+   "shoes": "sneakers",
+   "hat": "hat_hardhat",
+   "glasses": null,
+   "neck": null,
+   "bag": "backpack"
+  },
+  "colors": {
+   "tee": ["#8E5BD6"],
+   "shorts": ["#3E6FB0"],
+   "sneakers": ["#F4F4F4","#F2F0EA"],
+   "hat_hardhat": ["#F2C14E"],
+   "backpack": ["#E2546E","#8A5A2A"]
+  }
+ }
 }

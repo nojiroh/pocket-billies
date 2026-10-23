@@ -1240,8 +1240,11 @@ export function mapgenPaintDisc(G, cx, cz, r, fn) {
     }
 }
 export function mapgenLowerWater(G) {
-  /* water corners sit a little under their bank, each body levelled to its lowest corner */
+  /* water corners sit a little under their bank, each body levelled to its lowest corner. A corner is shared by up to
+     four water cells: it is lowered once, from its height before (each visit lowering it again sank a stream's and a
+     coast's water up to 1.8 m under its banks) */
   const { w, h } = G,
+    H0 = Float32Array.from(G.H),
     isW = (i, j) => i >= 0 && j >= 0 && i < w && j < h && G.F[j * w + i] & 4;
   const seen = new Uint8Array(w * h);
   for (let q0 = 0; q0 < w * h; q0++) {
@@ -1277,7 +1280,7 @@ export function mapgenLowerWater(G) {
       ]) {
         const c = cj * (w + 1) + ci,
           inside = isW(ci, cj) && isW(ci - 1, cj) && isW(ci, cj - 1) && isW(ci - 1, cj - 1);
-        const target = flow ? G.H[c] - (inside ? 0.45 : 0.15) : lo - (inside ? 0.45 : 0.15);
+        const target = flow ? H0[c] - (inside ? 0.45 : 0.15) : lo - (inside ? 0.45 : 0.15);
         G.H[c] = Math.min(G.H[c], target);
       }
     }

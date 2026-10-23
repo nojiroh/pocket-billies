@@ -262,6 +262,8 @@ function roomStepIn(info, n = 0) {
     info.cam = {
       T: walkRenderer.camT.slice(),
       cpe: walkRenderer.cpe ? walkRenderer.cpe.slice() : null,
+      /* CAM-1: the follow's state (its speeds, look-ahead and goals) */
+      fol: walkRenderer.fol ? JSON.parse(JSON.stringify(walkRenderer.fol)) : null,
       yaw: walkRenderer.yawT,
       zoom: walkRenderer.zoomT,
     };
@@ -302,6 +304,7 @@ export function leaveRoom() {
   if (I.cam && typeof walkRenderer !== 'undefined') {
     walkRenderer.camT = I.cam.T.slice();
     if (I.cam.cpe) walkRenderer.cpe = I.cam.cpe.slice();
+    if (I.cam.fol) walkRenderer.fol = JSON.parse(JSON.stringify(I.cam.fol));
     walkRenderer.yawT = walkRenderer.yaw = I.cam.yaw;
     walkRenderer.zoomT = walkRenderer.zoom = I.cam.zoom;
   }
@@ -467,7 +470,7 @@ export function walkState() {
         const e = v.exits.find(e => !saveData.visited[e.to]);
         if (e && sc.exits) exit = sc.exits[e.i];
       }
-      return { who: T.who, id: T.id, done: !!saveData.flags[T.id], exit, dir: 'down' };
+      return { who: T.who, id: T.id, done: !!saveData.flags[T.id], exit, dir: 'down', boss: T.runFoe === 'boss' };
     });
   /* alpha 0.4: people who only talk (Granny Juniper in her garden): the place's own (scene.people), in the view's metres */
   {
@@ -517,6 +520,9 @@ export function walkPick(h) {
       startWild(q);
     }
   } else if (h.k === 'npc') {
+    /* CAM-2: who you talk to, for the camera's two-shot (walk/camera.js) */
+    const at = h.n && walkView.npcAt[h.n.id];
+    if (at) walkRenderer.talkAt = { x: at[0], z: at[1], t: walkView.t };
     if (h.n && h.n.talk && typeof personTalk === 'function') {
       personTalk(h.n.talk);
       return;
@@ -545,6 +551,11 @@ export function walkPick(h) {
         toast(closedText(kind));
         return;
       }
+    }
+    /* IS-8: the pasture's gate opens the ranch's sheet where you stand (the barn's door walks you in) */
+    if (a === 'pasture' && typeof ranchOpen === 'function') {
+      ranchOpen();
+      return;
     }
     if (ROOM_BY_USE[a] && enterRoom(a, p)) return;
     if (a === 'shop') {
@@ -817,6 +828,8 @@ export function walkMapSync() {
           b ? clamp(b.getBoundingClientRect().top / H, 0.5, 1) : 0.88,
         ];
       },
+      /* behind a menu the world runs at 20 a second: a frame stays under the 60 ms a frame may count
+         (walk-view-gl.js drawWalkFrame), so it keeps its speed (at 10 it ran at 60% of it) */
       cap: () => {
         const w = document.hidden
           ? 'hidden'
@@ -830,7 +843,7 @@ export function walkMapSync() {
                   ? 'scrolled'
                   : '';
         walkView.held = w;
-        return w === 'hidden' ? 1 : w === 'window' ? 10 : w === 'screen' ? 24 : w === 'scrolled' ? 4 : userFps();
+        return w === 'hidden' ? 1 : w === 'window' ? 20 : w === 'screen' ? 24 : w === 'scrolled' ? 4 : userFps();
       },
     }).then(() => cv.classList.add('in'));
   }

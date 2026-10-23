@@ -1,0 +1,767 @@
+exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlock, the short map 1`] = `
+{
+  "first": {
+    "none": {
+      "se": 600,
+      "items": {
+        "taxbreak": 2,
+        "loophole": 0,
+        "apology": 0,
+        "settlement": 0,
+        "appeal": 0,
+        "bailout": 0,
+        "bell": 0,
+        "trailmix": 0,
+        "pretzel": 0,
+        "spillkit": 0,
+        "parachute": 0,
+        "repairkit": 0
+      },
+      "coins": {
+        "penny": 5,
+        "silver": 0,
+        "gold": 0,
+        "tbtf": 0
+      },
+      "seed": "S0START",
+      "tier": 1,
+      "mapgenV": 6,
+      "unlocks": [],
+      "mods": [],
+      "clock": 1,
+      "deadline": 12,
+      "map": {
+        "nodes": [
+          {
+            "type": "landing",
+            "row": 0,
+            "lane": 0,
+            "to": [
+              1
+            ],
+            "seen": 2,
+            "biome": "meadow"
+          },
+          {
+            "type": "route",
+            "row": 1,
+            "lane": 0,
+            "to": [
+              2,
+              3
+            ],
+            "seen": 2,
+            "biome": "thicket"
+          },
+          {
+            "type": "town",
+            "row": 2,
+            "lane": 0,
+            "to": [
+              4
+            ],
+            "seen": 1,
+            "biome": "meadow"
+          },
+          {
+            "type": "town",
+            "row": 2,
+            "lane": 1,
+            "to": [
+              4
+            ],
+            "seen": 1,
+            "biome": "thicket"
+          },
+          {
+            "type": "miniboss",
+            "row": 3,
+            "lane": 0,
+            "to": [
+              5,
+              6
+            ],
+            "seen": 0,
+            "biome": "meadow"
+          },
+          {
+            "type": "town",
+            "row": 4,
+            "lane": 0,
+            "to": [
+              7,
+              8
+            ],
+            "seen": 0,
+            "biome": "lake"
+          },
+          {
+            "type": "route",
+            "row": 4,
+            "lane": 1,
+            "to": [
+              8
+            ],
+            "seen": 0,
+            "biome": "thicket"
+          },
+          {
+            "type": "town",
+            "row": 5,
+            "lane": 0,
+            "to": [
+              9
+            ],
+            "seen": 0,
+            "biome": "lake"
+          },
+          {
+            "type": "town",
+            "row": 5,
+            "lane": 1,
+            "to": [
+              9
+            ],
+            "seen": 0,
+            "biome": "lake"
+          },
+          {
+            "type": "miniboss",
+            "row": 6,
+            "lane": 0,
+            "to": [
+              10,
+              11
+            ],
+            "seen": 0,
+            "biome": "meadow"
+          },
+          {
+            "type": "route",
+            "row": 7,
+            "lane": 0,
+            "to": [
+              12
+            ],
+            "seen": 0,
+            "biome": "meadow"
+          },
+          {
+            "type": "route",
+            "row": 7,
+            "lane": 1,
+            "to": [
+              12
+            ],
+            "seen": 0,
+            "biome": "meadow"
+          },
+          {
+            "type": "boss",
+            "row": 8,
+            "lane": 0,
+            "to": [],
+            "seen": 2,
+            "biome": "meadow"
+          }
+        ]
+      },
+      "forecast": [
+        [],
+        [
+          "fog",
+          "rain",
+          "clear",
+          "cloudy",
+          "rain",
+          "cloudy",
+          "cloudy",
+          "clear"
+        ],
+        [
+          "cloudy",
+          "rain",
+          "rain",
+          "cloudy",
+          "rain",
+          "fog",
+          "clear",
+          "clear"
+        ],
+        [
+          "clear",
+          "clear",
+          "clear",
+          "rain",
+          "cloudy",
+          "storm",
+          "fog",
+          "cloudy"
+        ],
+        [
+          "clear",
+          "clear",
+          "clear",
+          "clear",
+          "storm",
+          "clear",
+          "clear",
+          "clear"
+        ],
+        [
+          "fog",
+          "clear",
+          "cloudy",
+          "clear",
+          "cloudy",
+          "clear",
+          "storm",
+          "rain"
+        ],
+        [
+          "storm",
+          "cloudy",
+          "clear",
+          "clear",
+          "rain",
+          "clear",
+          "rain",
+          "cloudy"
+        ],
+        [
+          "cloudy",
+          "clear",
+          "clear",
+          "clear",
+          "clear",
+          "clear",
+          "fog",
+          "clear"
+        ],
+        [
+          "clear",
+          "rain",
+          "storm",
+          "rain",
+          "cloudy",
+          "clear",
+          "cloudy",
+          "rain"
+        ],
+        [
+          "rain",
+          "rain",
+          "clear",
+          "rain",
+          "clear",
+          "clear",
+          "clear",
+          "clear"
+        ],
+        [
+          "rain",
+          "cloudy",
+          "clear",
+          "cloudy",
+          "rain",
+          "clear",
+          "clear",
+          "clear"
+        ],
+        [
+          "clear",
+          "clear",
+          "fog",
+          "clear",
+          "clear",
+          "clear",
+          "cloudy",
+          "clear"
+        ],
+        [
+          "clear",
+          "clear",
+          "fog",
+          "cloudy",
+          "rain",
+          "cloudy",
+          "clear",
+          "fog"
+        ],
+        [
+          "clear",
+          "rain",
+          "clear",
+          "cloudy",
+          "clear",
+          "rain",
+          "clear",
+          "rain"
+        ]
+      ]
+    },
+    "all": {
+      "se": 600,
+      "items": {
+        "taxbreak": 2,
+        "loophole": 0,
+        "apology": 0,
+        "settlement": 0,
+        "appeal": 0,
+        "bailout": 0,
+        "bell": 0,
+        "trailmix": 0,
+        "pretzel": 0,
+        "spillkit": 0,
+        "parachute": 0,
+        "repairkit": 0
+      },
+      "coins": {
+        "penny": 5,
+        "silver": 0,
+        "gold": 0,
+        "tbtf": 0
+      },
+      "seed": "S0START",
+      "tier": 1,
+      "mapgenV": 6,
+      "unlocks": [
+        "biome_autumn",
+        "biome_ridge",
+        "shop_appeal",
+        "shop_bailout",
+        "shop_settlement"
+      ],
+      "mods": [],
+      "clock": 1,
+      "deadline": 12,
+      "map": {
+        "nodes": [
+          {
+            "type": "landing",
+            "row": 0,
+            "lane": 0,
+            "to": [
+              1
+            ],
+            "seen": 2,
+            "biome": "lake"
+          },
+          {
+            "type": "route",
+            "row": 1,
+            "lane": 0,
+            "to": [
+              2,
+              3
+            ],
+            "seen": 2,
+            "biome": "ridge"
+          },
+          {
+            "type": "town",
+            "row": 2,
+            "lane": 0,
+            "to": [
+              4
+            ],
+            "seen": 1,
+            "biome": "meadow"
+          },
+          {
+            "type": "town",
+            "row": 2,
+            "lane": 1,
+            "to": [
+              4
+            ],
+            "seen": 1,
+            "biome": "autumn"
+          },
+          {
+            "type": "miniboss",
+            "row": 3,
+            "lane": 0,
+            "to": [
+              5,
+              6
+            ],
+            "seen": 0,
+            "biome": "meadow"
+          },
+          {
+            "type": "town",
+            "row": 4,
+            "lane": 0,
+            "to": [
+              7,
+              8
+            ],
+            "seen": 0,
+            "biome": "thicket"
+          },
+          {
+            "type": "route",
+            "row": 4,
+            "lane": 1,
+            "to": [
+              8
+            ],
+            "seen": 0,
+            "biome": "ridge"
+          },
+          {
+            "type": "town",
+            "row": 5,
+            "lane": 0,
+            "to": [
+              9
+            ],
+            "seen": 0,
+            "biome": "thicket"
+          },
+          {
+            "type": "town",
+            "row": 5,
+            "lane": 1,
+            "to": [
+              9
+            ],
+            "seen": 0,
+            "biome": "thicket"
+          },
+          {
+            "type": "miniboss",
+            "row": 6,
+            "lane": 0,
+            "to": [
+              10,
+              11
+            ],
+            "seen": 0,
+            "biome": "lake"
+          },
+          {
+            "type": "route",
+            "row": 7,
+            "lane": 0,
+            "to": [
+              12
+            ],
+            "seen": 0,
+            "biome": "lake"
+          },
+          {
+            "type": "route",
+            "row": 7,
+            "lane": 1,
+            "to": [
+              12
+            ],
+            "seen": 0,
+            "biome": "meadow"
+          },
+          {
+            "type": "boss",
+            "row": 8,
+            "lane": 0,
+            "to": [],
+            "seen": 2,
+            "biome": "meadow"
+          }
+        ]
+      },
+      "forecast": [
+        [],
+        [
+          "fog",
+          "rain",
+          "clear",
+          "cloudy",
+          "rain",
+          "cloudy",
+          "cloudy",
+          "clear"
+        ],
+        [
+          "cloudy",
+          "rain",
+          "rain",
+          "cloudy",
+          "rain",
+          "fog",
+          "clear",
+          "clear"
+        ],
+        [
+          "clear",
+          "clear",
+          "clear",
+          "rain",
+          "cloudy",
+          "storm",
+          "fog",
+          "cloudy"
+        ],
+        [
+          "clear",
+          "clear",
+          "clear",
+          "clear",
+          "storm",
+          "clear",
+          "clear",
+          "clear"
+        ],
+        [
+          "fog",
+          "clear",
+          "cloudy",
+          "clear",
+          "cloudy",
+          "clear",
+          "storm",
+          "rain"
+        ],
+        [
+          "storm",
+          "cloudy",
+          "clear",
+          "clear",
+          "rain",
+          "clear",
+          "rain",
+          "cloudy"
+        ],
+        [
+          "cloudy",
+          "clear",
+          "clear",
+          "clear",
+          "clear",
+          "clear",
+          "fog",
+          "clear"
+        ],
+        [
+          "clear",
+          "rain",
+          "storm",
+          "rain",
+          "cloudy",
+          "clear",
+          "cloudy",
+          "rain"
+        ],
+        [
+          "rain",
+          "rain",
+          "clear",
+          "rain",
+          "clear",
+          "clear",
+          "clear",
+          "clear"
+        ],
+        [
+          "rain",
+          "cloudy",
+          "clear",
+          "cloudy",
+          "rain",
+          "clear",
+          "clear",
+          "clear"
+        ],
+        [
+          "clear",
+          "clear",
+          "fog",
+          "clear",
+          "clear",
+          "clear",
+          "cloudy",
+          "clear"
+        ],
+        [
+          "clear",
+          "clear",
+          "fog",
+          "cloudy",
+          "rain",
+          "cloudy",
+          "clear",
+          "fog"
+        ],
+        [
+          "clear",
+          "rain",
+          "clear",
+          "cloudy",
+          "clear",
+          "rain",
+          "clear",
+          "rain"
+        ]
+      ]
+    },
+    "short": {
+      "se": 600,
+      "items": {
+        "taxbreak": 2,
+        "loophole": 0,
+        "apology": 0,
+        "settlement": 0,
+        "appeal": 0,
+        "bailout": 0,
+        "bell": 0,
+        "trailmix": 0,
+        "pretzel": 0,
+        "spillkit": 0,
+        "parachute": 0,
+        "repairkit": 0
+      },
+      "coins": {
+        "penny": 5,
+        "silver": 0,
+        "gold": 0,
+        "tbtf": 0
+      },
+      "seed": "S0START",
+      "tier": 1,
+      "mapgenV": 6,
+      "unlocks": [],
+      "mods": [],
+      "clock": 1,
+      "deadline": 8,
+      "map": {
+        "nodes": [
+          {
+            "type": "landing",
+            "row": 0,
+            "lane": 0,
+            "to": [
+              1
+            ],
+            "seen": 2,
+            "biome": "meadow"
+          },
+          {
+            "type": "route",
+            "row": 1,
+            "lane": 0,
+            "to": [
+              2,
+              3
+            ],
+            "seen": 2,
+            "biome": "thicket"
+          },
+          {
+            "type": "town",
+            "row": 2,
+            "lane": 0,
+            "to": [
+              4
+            ],
+            "seen": 1,
+            "biome": "meadow"
+          },
+          {
+            "type": "town",
+            "row": 2,
+            "lane": 1,
+            "to": [
+              4
+            ],
+            "seen": 1,
+            "biome": "thicket"
+          },
+          {
+            "type": "miniboss",
+            "row": 3,
+            "lane": 0,
+            "to": [
+              5
+            ],
+            "seen": 0,
+            "biome": "meadow"
+          },
+          {
+            "type": "boss",
+            "row": 4,
+            "lane": 0,
+            "to": [],
+            "seen": 2,
+            "biome": "lake"
+          }
+        ]
+      },
+      "forecast": [
+        [],
+        [
+          "fog",
+          "rain",
+          "clear",
+          "cloudy",
+          "rain",
+          "cloudy",
+          "cloudy",
+          "clear"
+        ],
+        [
+          "cloudy",
+          "rain",
+          "rain",
+          "cloudy",
+          "rain",
+          "fog",
+          "clear",
+          "clear"
+        ],
+        [
+          "clear",
+          "clear",
+          "clear",
+          "rain",
+          "cloudy",
+          "storm",
+          "fog",
+          "cloudy"
+        ],
+        [
+          "clear",
+          "clear",
+          "clear",
+          "clear",
+          "storm",
+          "clear",
+          "clear",
+          "clear"
+        ],
+        [
+          "fog",
+          "clear",
+          "cloudy",
+          "clear",
+          "cloudy",
+          "clear",
+          "storm",
+          "rain"
+        ],
+        [
+          "storm",
+          "cloudy",
+          "clear",
+          "clear",
+          "rain",
+          "clear",
+          "rain",
+          "cloudy"
+        ]
+      ]
+    }
+  },
+  "all": "3ed6570ebebfd3fb9ce2b6cca15156f341b5c8de7ac7a1992b0f368265298bee"
+}
+`;

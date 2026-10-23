@@ -40,12 +40,14 @@ expose({
   drawPortrait: [() => drawPortrait, v => (drawPortrait = v)],
   folkFrames: [() => folkFrames],
   folkLook: [() => folkLook, v => (folkLook = v)],
+  forgetPersonLooks: [() => forgetPersonLooks, v => (forgetPersonLooks = v)],
   headCenter: [() => headCenter, v => (headCenter = v)],
   hslToRgb: [() => hslToRgb, v => (hslToRgb = v)],
   imageLoaded: [() => imageLoaded],
   lookFromOld: [() => lookFromOld, v => (lookFromOld = v)],
   lookKey: [() => lookKey, v => (lookKey = v)],
   lookOf: [() => lookOf, v => (lookOf = v)],
+  nextPictureId: [() => nextPictureId, v => (nextPictureId = v)],
   opaqueBox: [() => opaqueBox, v => (opaqueBox = v)],
   personAnimation: [() => personAnimation, v => (personAnimation = v)],
   personArtImage: [() => personArtImage, v => (personArtImage = v)],
@@ -61,6 +63,8 @@ expose({
   personWalkFrames: [() => personWalkFrames, v => (personWalkFrames = v)],
   personWarmup: [() => personWarmup],
   pickWalkFrame: [() => pickWalkFrame, v => (pickWalkFrame = v)],
+  pictureIds: [() => pictureIds],
+  pictureKey: [() => pictureKey, v => (pictureKey = v)],
   portraitHTML: [() => portraitHTML, v => (portraitHTML = v)],
   portraitRect: [() => portraitRect, v => (portraitRect = v)],
   portraitURL: [() => portraitURL, v => (portraitURL = v)],
@@ -378,10 +382,26 @@ function personArtImage(path) {
   return im;
 }
 const imageLoaded = im => !!(im && (im.naturalWidth || im.width));
+/* Studio plan T6.3: a sheet's pixels and a recoloured piece are kept per picture (the image object, and the Studio's
+   edit count _ver on it), not per art version: every Studio undo bumps that version, and reading every sheet again
+   was most of a Wardrobe undo. A piece's key holds all it is made from (the pictures, its box, the default and the
+   wanted colours), so these two kinds survive a data edit (forgetPersonLooks). A picture not loaded yet is not kept,
+   so it is read once it has loaded */
+const pictureIds = new WeakMap();
+let nextPictureId = 1;
+function pictureKey(im) {
+  if (!pictureIds.has(im)) pictureIds.set(im, nextPictureId++);
+  return pictureIds.get(im) + '.' + (im._ver || 0);
+}
+/** forgets every person picture made from the data (rigs, frames, sheets, portraits); keeps the sheets' pixels and
+ * the recoloured pieces, whose keys hold everything they are made from */
+export function forgetPersonLooks() {
+  for (const k of PERSON_ART_CACHE.keys()) if (!k.startsWith('px|') && !k.startsWith('pc|')) PERSON_ART_CACHE.delete(k);
+}
 function personArtPixels(path) {
-  return cachedPersonArt('px|' + path + '|' + personArtVersion(), () => {
-    const im = personArtImage(path);
-    if (!imageLoaded(im)) return null;
+  const im = personArtImage(path);
+  if (!imageLoaded(im)) return null;
+  return cachedPersonArt('px|' + path + '|' + pictureKey(im), () => {
     const w = im.naturalWidth || im.width,
       h = im.naturalHeight || im.height,
       c = makeCanvas(w, h),
@@ -419,7 +439,11 @@ function hslToRgb(h, s, l) {
 }
 /* one piece of a sheet, its colour areas moved from the default colours to the wanted ones (shading kept) */
 function recolorPiece(src, p, defs, want) {
-  const key = 'pc|' + src.img + '|' + p.r.join(',') + '|' + want.join(',') + '|' + personArtVersion();
+  const im = personArtImage(src.img),
+    mask = src.mask ? personArtImage(src.mask) : null;
+  if (!imageLoaded(im) || (src.mask && !imageLoaded(mask))) return null;
+  const key =
+    'pc|' + src.img + '.' + pictureKey(im) + '|' + (mask ? pictureKey(mask) : '') + '|' + p.r + '|' + defs + '|' + want;
   return cachedPersonArt(key, () => {
     const P = personArtPixels(src.img),
       M = personArtPixels(src.mask);

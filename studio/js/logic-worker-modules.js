@@ -1,0 +1,105 @@
+/* ================= THE LOGIC WORKER'S MODULES (Studio plan Phase 2, T2.4) =================
+   What the Studio's logic worker (logic-worker.js) loads once it has set GAMEDATA to the Studio's draft: game-data.js
+   and every logic module, in the order tools/test/load-logic.mjs imports them in Node (game-data.js, then
+   game/js/logic/ by name), so the logic sees in the worker what it sees in the unit tests. Static imports: the browser
+   fetches them all at once and runs them in this order. On no page (game-data.js would read the Studio's data as the
+   game's); tools/test/logic-worker.test.mjs keeps the list equal to game/js/logic/: a new logic module goes here too.
+   First the page stand-ins (logic-worker-page.js), as load-logic.mjs gives them before anything loads. The built site
+   bundles this file into one (vite.config.js), with the one hooks.js its modules share. */
+import './logic-worker-page.js';
+import '../../game/js/game-data.js';
+import '../../game/js/logic/battle-engine.js';
+import '../../game/js/logic/battle-rewards.js';
+import '../../game/js/logic/battle-state.js';
+import '../../game/js/logic/bowl-camera.js';
+import '../../game/js/logic/bowl-island.js';
+import '../../game/js/logic/bowl-things.js';
+import '../../game/js/logic/bowl-weather.js';
+import '../../game/js/logic/bowl.js';
+import '../../game/js/logic/breeding.js';
+import '../../game/js/logic/camera-follow.js';
+import '../../game/js/logic/camera-interest.js';
+import '../../game/js/logic/camera-moments.js';
+import '../../game/js/logic/camera-orbit.js';
+import '../../game/js/logic/camera-rise.js';
+import '../../game/js/logic/camera-zoom.js';
+import '../../game/js/logic/chosen.js';
+import '../../game/js/logic/coats.js';
+import '../../game/js/logic/colors.js';
+import '../../game/js/logic/conditions.js';
+import '../../game/js/logic/content-preview.js';
+import '../../game/js/logic/cries.js';
+import '../../game/js/logic/cutscene-set.js';
+import '../../game/js/logic/data-checks.js';
+import '../../game/js/logic/draft-record.js';
+import '../../game/js/logic/economy-view.js';
+import '../../game/js/logic/effects.js';
+import '../../game/js/logic/fighters.js';
+import '../../game/js/logic/free-camera.js';
+import '../../game/js/logic/history.js';
+import '../../game/js/logic/hub-island.js';
+import '../../game/js/logic/island-gen.js';
+import '../../game/js/logic/island.js';
+import '../../game/js/logic/kit-assemble.js';
+import '../../game/js/logic/kit-pixels.js';
+import '../../game/js/logic/lens-focus.js';
+import '../../game/js/logic/mapgen.js';
+import '../../game/js/logic/messages.js';
+import '../../game/js/logic/meta-state.js';
+import '../../game/js/logic/music-studio.js';
+import '../../game/js/logic/music-where.js';
+import '../../game/js/logic/part-joints.js';
+import '../../game/js/logic/parts.js';
+import '../../game/js/logic/pasture.js';
+import '../../game/js/logic/pixel-density.js';
+import '../../game/js/logic/pixel-ops.js';
+import '../../game/js/logic/pixel-snap.js';
+import '../../game/js/logic/prop-turn.js';
+import '../../game/js/logic/publish-plan.js';
+import '../../game/js/logic/ranch-state.js';
+import '../../game/js/logic/ranch.js';
+import '../../game/js/logic/relics.js';
+import '../../game/js/logic/rig-joints.js';
+import '../../game/js/logic/rig-swap.js';
+import '../../game/js/logic/rng.js';
+import '../../game/js/logic/robot-joints.js';
+import '../../game/js/logic/robot-math.js';
+import '../../game/js/logic/room-turn.js';
+import '../../game/js/logic/rules.js';
+import '../../game/js/logic/run-bowl.js';
+import '../../game/js/logic/run-loop.js';
+import '../../game/js/logic/run-map.js';
+import '../../game/js/logic/run-marks.js';
+import '../../game/js/logic/run-preview.js';
+import '../../game/js/logic/run-rules-code.js';
+import '../../game/js/logic/run-scenes.js';
+import '../../game/js/logic/run-sim.js';
+import '../../game/js/logic/run-start.js';
+import '../../game/js/logic/run-state.js';
+import '../../game/js/logic/run-test.js';
+import '../../game/js/logic/saves.js';
+import '../../game/js/logic/script-parse.js';
+import '../../game/js/logic/script.js';
+import '../../game/js/logic/sea.js';
+import '../../game/js/logic/seam-rules.js';
+import '../../game/js/logic/sheet-slice.js';
+import '../../game/js/logic/sim-compare.js';
+import '../../game/js/logic/step-grid.js';
+import '../../game/js/logic/story-checks.js';
+import '../../game/js/logic/studio-layout.js';
+import '../../game/js/logic/studio-test-report.js';
+import '../../game/js/logic/type-rename.js';
+import '../../game/js/logic/ui-dials.js';
+import '../../game/js/logic/ui-inspect.js';
+import '../../game/js/logic/ui-lint.js';
+import '../../game/js/logic/ui-theme.js';
+import '../../game/js/logic/unlock-graph.js';
+import '../../game/js/logic/unlocks.js';
+import '../../game/js/logic/weather.js';
+export { runPreview } from '../../game/js/logic/run-preview.js';
+export { runMapSweep } from '../../game/js/logic/data-checks.js';
+/* Studio plan T3.4: the run simulation (the modules above, named for it) */
+export { runSimReport } from './logic-worker-sim.js';
+/* Studio plan Phase 4: the content editors' previews */
+export { relicPreview, leaderRunValues, speciesStandIns } from '../../game/js/logic/content-preview.js';
+export { relicOfferOrder } from '../../game/js/logic/relics.js';

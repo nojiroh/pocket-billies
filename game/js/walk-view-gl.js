@@ -13,6 +13,7 @@ import { expose } from './test-globals.js';
 import {
   BUILDING_SHADERS,
   SOLID_PROP_SHADERS,
+  WORLD_BOWL_SHADERS,
   drawBuildings,
   drawPropModels,
   drawSolidProps,
@@ -25,6 +26,7 @@ import {
   seamlessPrepareAhead,
   worldBillyLabels,
 } from './hooks.js';
+import { focusAim, focusPlane, leanStep } from './logic/lens-focus.js';
 import { gpuPass } from './engine/gpu-counters.js';
 import { frameCount, frameTask, userFps } from './frame-scheduler.js';
 import {
@@ -52,7 +54,14 @@ import {
   walkView,
   worldToScreen,
 } from './walk-view.js';
-import { PLAIN_LOOK, beginFrameSettings, endFrameSettings, engineContext, engineSetting } from './engine/settings.js';
+import {
+  PLAIN_LOOK,
+  beginFrameSettings,
+  endFrameSettings,
+  engineContext,
+  engineSetting,
+  playerBlur,
+} from './engine/settings.js';
 import {
   beginGpuTimer,
   endGpuTimer,
@@ -66,7 +75,6 @@ import {
   renderTarget,
   runNormalMapJobs,
   setFrameBlockMode,
-  smooth01,
   trimTextures,
   webgl2Supported,
 } from './engine/webgl.js';
@@ -79,7 +87,15 @@ import { WALK_SHADERS } from './walk/walk-shaders.js';
 import { worldCurveDrop } from './walk/draw-common.js';
 import { groundOcclusionWork } from './walk/ground-textures.js';
 import { buildFarProps, buildGrass, grassWork } from './walk/grass-build.js';
-import { MAP_CACHE_FIELDS, groundPrepWork, mapCacheKey, swapMapCache, updateNearRing } from './walk/map-cache.js';
+import {
+  MAP_CACHE_FIELDS,
+  groundPrepWork,
+  isGroundPrepared,
+  mapCacheKey,
+  prepareMapGround,
+  swapMapCache,
+  updateNearRing,
+} from './walk/map-cache.js';
 import { adaptQuality, cullItems, easedMood, heatHaze, heatSources } from './walk/quality-cull.js';
 import { drawSky } from './walk/sky.js';
 import { drawRoomFront } from './walk/rooms.js';
@@ -95,12 +111,14 @@ import { effectsPass } from './walk/effects.js';
 import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
 expose({
+  GROUND_SLICE_MS: [() => GROUND_SLICE_MS],
   baseStopWalkView: [() => baseStopWalkView],
   canvasForContext: [() => canvasForContext, v => (canvasForContext = v)],
   drawWalkFrame: [() => drawWalkFrame, v => (drawWalkFrame = v)],
   drawWalkFrameInner: [() => drawWalkFrameInner, v => (drawWalkFrameInner = v)],
   ensureLitPrograms: [() => ensureLitPrograms, v => (ensureLitPrograms = v)],
   ensureWalkGl: [() => ensureWalkGl, v => (ensureWalkGl = v)],
+  groundBuiltBeforeShow: [() => groundBuiltBeforeShow, v => (groundBuiltBeforeShow = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
@@ -198,6 +216,10 @@ export function mountWalkView(cv, id, opt = {}) {
       if (walkView.id !== id) return;
       walkView.sc = sc;
       ensureGround();
+      return groundBuiltBeforeShow(id, sc);
+    })
+    .then(() => {
+      if (walkView.id !== id) return;
       walkView.ready = true;
       frameTask('dio', drawWalkFrame, () => (walkView.opt.cap ? walkView.opt.cap() : userFps()));
       cv.classList.add('in');
@@ -206,6 +228,40 @@ export function mountWalkView(cv, id, opt = {}) {
       walkView.err = e;
       console.error(e);
     });
+}
+/* 0.1.0 alpha: a place's ground is built on the card a slice at a time before its view is shown. It was built in one go
+   on the view's first frame: in the owner's logs entering Copperleaf (and the opening, which waits for that ground) froze
+   2 s on a phone, 3 s on a laptop and 12 s on an iPad. Now the page keeps answering while it is built, and the first
+   frame only swaps it in (swapMapCache). A room's floor is small and is built as before; so is a view whose job is
+   dropped (it failed), or one still not ready after 30 s. */
+const GROUND_SLICE_MS = 10; /* an urgent job gets twice this (groundPrepWork) */
+function groundBuiltBeforeShow(id, sc) {
+  if (!walkRenderer.on || !walkView.ground || sc.groundOf || sc.roomScene) return Promise.resolve();
+  const key = mapCacheKey(id, sc, walkView.gkey),
+    t0 = performance.now();
+  let ours = false;
+  return new Promise(done => {
+    const step = () => {
+      const J = walkRenderer.prep;
+      if (walkView.id !== id) {
+        /* another view was asked for meanwhile: this one goes on as a look-ahead, which an urgent one may stop */
+        if (J && J.hk === key) J.urgent = 0;
+        return done();
+      }
+      if (!walkRenderer.on || gpuState.lost || isGroundPrepared(id, sc, walkView.gkey)) return done();
+      if (J && J.hk === key) ours = true;
+      else if (ours) return done();
+      else prepareMapGround(id, sc, walkView.ground, true);
+      groundPrepWork(GROUND_SLICE_MS);
+      if (performance.now() - t0 > 30000) {
+        if (typeof debugLog !== 'undefined')
+          debugLog.add('scene', `${id}: its ground wasn't ready in 30 s; built on the spot`);
+        return done();
+      }
+      setTimeout(step, 0);
+    };
+    step();
+  });
 }
 /* phase 04d: the Studio swaps in its own (studio/js/engine-editor.js and viewport.js) */
 export function setMountWalkView(v) {
@@ -238,6 +294,8 @@ export function ensureWalkGl(cv) {
       typeof BUILDING_SHADERS !== 'undefined' && BUILDING_SHADERS,
       typeof SOLID_PROP_SHADERS !== 'undefined' && SOLID_PROP_SHADERS,
       typeof propModelShaders === 'function' && propModelShaders(),
+      /* 0.1.0 alpha: the world map's too: its first open compiled its eight programs on the spot */
+      typeof WORLD_BOWL_SHADERS !== 'undefined' && WORLD_BOWL_SHADERS,
     ])
       if (d)
         precompilePrograms(
@@ -506,36 +564,62 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   /* focus: on you, or on what you tapped for a moment */
   let fx = BT ? BT.center[0] : P.x,
     fz = BT ? BT.center[1] : P.z;
-  const ft = BT ? null : walkRenderer.focusT;
-  if (ft && walkView.t - ft.t < 2600) {
-    const kf = smooth01((walkView.t - ft.t) / 350) * (1 - smooth01((walkView.t - ft.t - 1800) / 800));
-    fx = P.x + (ft.x - P.x) * kf;
-    fz = P.z + (ft.z - P.z) * kf;
+  if (!BT) {
+    /* CAM-3: the focus follows the camera's moments: the middle of you and who you talk to, the encounter's spot
+       while the camera swoops, a boss as it is revealed, else the spot you tapped (logic/lens-focus.js focusAim). It
+       leans away from you over Engine > Lens > Focus moves in, measured from you so walking never leaves it behind */
+    const ms = walkRenderer.momSpots,
+      sw = walkRenderer.swoop,
+      A = focusAim({
+        px: P.x,
+        pz: P.z,
+        t: walkView.t,
+        moment: walkRenderer.camInfo ? walkRenderer.camInfo.moment : null,
+        talk: ms ? ms.talk : null,
+        boss: ms ? ms.boss : null,
+        swoop: sw && isFinite(sw.ex) && isFinite(sw.ez) ? sw : null,
+        tap: walkRenderer.focusT,
+      }),
+      L0 = walkRenderer.focus == null || !walkRenderer.focusLean ? [A.x - P.x, A.z - P.z] : walkRenderer.focusLean;
+    walkRenderer.focusLean = leanStep(L0, [A.x - P.x, A.z - P.z], dt, engineSetting('lens', 'focusEase') ?? 0.35);
+    walkRenderer.focusKind = A.kind;
+    fx = P.x + walkRenderer.focusLean[0];
+    fz = P.z + walkRenderer.focusLean[1];
   }
   const fy = standingHeightAt(fx, fz) + 0.8,
     v = [fx - C.eye[0], fy - C.eye[1], fz - C.eye[2]],
     dir = normalize3([C.tgt[0] - C.eye[0], C.tgt[1] - C.eye[1], C.tgt[2] - C.eye[2]]),
     fd = v[0] * dir[0] + v[1] * dir[1] + v[2] * dir[2];
+  /* CAM-1: the focus moves 12% of the way a frame at 60 fps, and as fast at any frame rate (was 12% of every frame) */
   walkRenderer.focus = BT
     ? BT.focus
     : walkRenderer.focus == null
       ? fd
-      : walkRenderer.focus + (fd - walkRenderer.focus) * 0.12;
+      : walkRenderer.focus + (fd - walkRenderer.focus) * (1 - Math.pow(0.88, dt * 60));
+  /* CAM-3: the plane of focus through that point, leaning by Engine > Lens > Tilt of the sharp zone (0: facing the
+     camera, as before); battles keep the slab */
+  const tilt = BT ? 0 : engineSetting('lens', 'focusTilt') || 0,
+    FP = BT || !C.ivp ? null : focusPlane(C, [fx, fy, fz], walkRenderer.focus, tilt);
+  walkRenderer.lensPlane = FP;
+  let LF = null;
   if (D.noPost) {
     gl.bindFramebuffer(gl.READ_FRAMEBUFFER, S.f);
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
     gl.blitFramebuffer(0, 0, rw, rh, 0, 0, rw, rh, gl.COLOR_BUFFER_BIT, gl.NEAREST);
   } else
-    drawPostEffects(S, C, walkRenderer.focus, rw, rh, {
-      blur: BT ? BT.blur : sc.plain ? 0 : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (st.focusY != null ? 0.6 : 1),
+    LF = drawPostEffects(S, C, walkRenderer.focus, rw, rh, {
+      /* CAM-3: times the player's blur slider (Settings → Graphics → Blur), in battles too */
+      blur: (BT ? BT.blur : sc.plain ? 0 : (sc.blur ?? 1) * (walkView.opt.blur ?? 1)) * playerBlur(),
       fast: walkView.R < 0.75 || QE >= 1,
       noAO: QE >= 1,
       noRays: QE >= 3,
       bloomN: QE >= 3 ? 3 : 5,
-      noDof: QE >= 4,
+      cheapDof: QE >= 4 /* CAM-3: a cheap blur on the slowest setting, not none */,
       /* the sharp zone and the blur's growth in metres as if the camera stood 16 m off, whatever the zoom: measured
          from the real distance (36 m at zoom 1, 58 m at 1.6) the blur only built up past the edge of the place */
       dofRef: BT ? null : 16,
+      dofView: !!walkView.opt.dofView /* CAM-3: the Studio's blur heatmap */,
+      plane: FP && tilt > 0 ? [FP.g[0], FP.g[1], FP.g[2], FP.h] : null /* (tilt 0: the old slab, to the bit) */,
       heat: heatHaze(sc),
       heatS: heatSources(C),
       mood: easedMood(sc),
@@ -545,6 +629,16 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       noVol: QE >= 3 || (!!sc.indoor && !dark),
       volDens: sc.indoor ? 0.5 : 1 + (engineContext.env ? environment.fog * 1.5 + environment.rain * 0.4 : 0),
     });
+  /* CAM-3: what the blur did this frame, for the debug log, the Studio's blur guides and the checks (no names) */
+  walkRenderer.lensInfo = {
+    path: LF ? LF.path : 'off',
+    on: BT ? 'battle' : walkRenderer.focusKind,
+    focus: Math.round(walkRenderer.focus * 100) / 100,
+    at: [Math.round(fx * 100) / 100, Math.round(fz * 100) / 100],
+    tilt,
+    blur: LF ? Math.round(LF.scale * 100) / 100 : 0,
+    slider: playerBlur(),
+  };
   gpuPass('other');
   /* labels and markers stay sharp on the layer above */
   const x = walkView.x;

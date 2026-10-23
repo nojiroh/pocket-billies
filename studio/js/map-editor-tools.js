@@ -17,6 +17,7 @@ import { walkView } from '../../game/js/walk-view.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { ACTIONS, ask, changed, clone, commit, dialog, render, studioState, toast, uniqueKey } from './studio-app.js';
 import { currentMap, drawEditorMap, mapEditor, paintMapTile, propAtPointer, sceneryCatalog } from './map-editor.js';
+import { camZonePointerDown, camZonePointerMove, camZonePointerUp, drawCamZones } from './camera-zones-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   blocksToolBarHTML: [() => blocksToolBarHTML, v => ((blocksToolBarHTML = v), provide({ blocksToolBarHTML }))],
@@ -78,6 +79,8 @@ function extraMapTools() {
     ['scatter', 'Scatter brush', 'S'],
     ['stamp', 'Stamp a block', 'K'],
     ['road', 'Curved road', 'R'],
+    /* CAM-2: camera-zones-editor.js */
+    ['camzone', 'Camera zones', 'J'],
   ];
 }
 function extraToolHint(t) {
@@ -86,6 +89,8 @@ function extraToolHint(t) {
       scatter: 'Drag to scatter the chosen prop (or its group). Alt-drag clears them. Brush size and density below.',
       stamp: 'Pick a block below, then click the map to place it. Shift-click places it mirrored.',
       road: 'Click to add points along the road, double-click or press Enter to lay it with the chosen ground and the brush’s width. Escape cancels.',
+      camzone:
+        'Drag a rectangle (or a circle, from its centre) where the camera should frame differently. Standing in it, the camera takes its zoom, tilt and aim offset. Click a zone to set its numbers, drag it to move it, right-click (or Alt-click) to remove it. Where zones overlap the highest priority wins.',
     }[t] || ''
   );
 }
@@ -143,6 +148,7 @@ function extraToolPointerDown(sc, m, ev) {
     stampBlockAt(sc, b, m.x, m.z, ev.shiftKey);
     return true;
   }
+  if (t === 'camzone') return camZonePointerDown(sc, m, ev);
   if (t === 'road') {
     if (ev.detail >= 2 && mapEditor.road && mapEditor.road.length > 1) {
       layCurvedRoad(sc);
@@ -157,6 +163,7 @@ function extraToolPointerDown(sc, m, ev) {
 function extraToolPointerMove(sc, m, D, ev) {
   mapEditor.mouse = [m.x, m.z];
   if (!D) return false;
+  if (D.k === 'czdraw' || D.k === 'czmove') return camZonePointerMove(sc, m, D);
   if (D.k === 'band') {
     D.b = [m.mx, m.my];
     drawEditorMap();
@@ -188,6 +195,7 @@ function extraToolPointerMove(sc, m, D, ev) {
 }
 function extraToolPointerUp(sc, D) {
   if (!D) return false;
+  if (D.k === 'czdraw' || D.k === 'czmove') return camZonePointerUp(sc, D);
   if (D.k === 'band') {
     for (const i of boxesInBand(D.a, D.b)) mapEditor.multi.add(i);
     mapEditor.sel = null;
@@ -306,7 +314,7 @@ document.addEventListener(
       ev.preventDefault();
     }
     if (!ev.ctrlKey && !ev.metaKey && !ev.altKey) {
-      const T = { s: 'scatter', k: 'stamp', r: 'road' }[k];
+      const T = { s: 'scatter', k: 'stamp', r: 'road', j: 'camzone' }[k];
       if (T) {
         mapEditor.tool = T;
         render();
@@ -596,6 +604,7 @@ ACTIONS.scxSmoothPath = () => {
 /* ---------- drawn over the map ---------- */
 function drawExtraTools(x, sc, Z) {
   const H = sc.h;
+  drawCamZones(x, sc, Z);
   if (mapEditor.multi.size) {
     x.strokeStyle = '#E2B92C';
     x.lineWidth = 2;

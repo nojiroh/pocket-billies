@@ -1,6 +1,7 @@
 # Phase 01: the quick check on GitHub.
 # - Every push and pull request (the Studio's "Save to game" opens one): the data text guard and the fast check
-#   (tools/check-fast.py: only what must never break, one to three minutes).
+#   (tools/check-fast.py: only what must never break, one to three minutes). Studio plan T1.4: a pull request that
+#   touches studio/ or game/js/logic/ also runs the Studio against a stand-in for GitHub (check-studio-github.py).
 # - Nightly, by hand (Actions -> Check -> Run workflow) and on phase-* tags: the full quick check (about 40 minutes).
 # - Phase 02: the Firestore rules tests (firebase/, on the emulator) on every push and pull request, about a minute.
 # Pictures and results.json are uploaded as an artifact on every run. Picture differences are notes, never failures.
@@ -45,7 +46,7 @@ jobs:
   smoke:
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_type == 'branch')
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30   # T1.4: the Studio checks add about 5 minutes on Studio and logic pull requests
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4   # tools/build-data.mjs makes data/gamedata.js; tools/check-data.mjs checks the files
@@ -77,6 +78,23 @@ jobs:
         run: python tools/check-data-text.py
       - name: Fast check
         run: python tools/check-fast.py
+      # Studio plan T1.4: on a pull request that touches the Studio or the game's logic, the Studio against a stand-in
+      # for GitHub (tools/check-studio-github.py: every section opens, Propose's failure cases, kept drafts, the
+      # Studio's self-test, the shared checks and an error blocking Propose, a kit Billie baked and proposed equal to the
+      # Node bake; about 3-5 minutes)
+      - name: Does this pull request touch the Studio or the logic
+        id: studio
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE"
+          if git diff --name-only "$BASE" HEAD | grep -qE '^(studio/|game/js/logic/)'; then echo "run=true" >> "$GITHUB_OUTPUT"; fi
+      - name: Studio checks (stand-in GitHub)
+        if: steps.studio.outputs.run == 'true'
+        run: |
+          npm run data
+          python tools/check-studio-github.py --only=sections,publish,drafts,studio_test,checks,kit_write,library_swap,repack,density
       - name: Upload the results
         if: always()
         uses: actions/upload-artifact@v4
@@ -104,6 +122,8 @@ jobs:
         run: npm run typecheck
       - name: Unit tests (tools/test/, plain Node, no browser)
         run: npm test
+      - name: Slow unit tests (the scene sweeps, tools/unit-tests.mjs)
+        run: npm run test:slow
       - name: Game data (files, schemas, references)
         run: npm run check:data
       - name: Modules (generated imports, hooks.js and debug-log-names.js up to date; load order)

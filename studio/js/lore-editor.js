@@ -17,12 +17,11 @@ import {
   dialog,
   grid,
   numberField,
+  pathPrefix,
   peopleOptions,
   readPath,
   render,
   selectField,
-  setReadPath,
-  setWritePath,
   studioState,
   textField,
   uniqueKey,
@@ -49,30 +48,21 @@ const LORE_TABS = [
 const LORE_UNLOCK =
   'start (from the beginning) · location:&lt;stop id&gt; (been there) · meet:&lt;look id&gt; (met them) · flag:&lt;story flag&gt; · badges:&lt;number&gt;';
 /* a list of lines at a path, edited one per line */
-{
-  const g = readPath,
-    st = writePath;
-  setReadPath(function (path, o) {
-    if (path && path.startsWith('@lines.')) {
-      const v = g(path.slice(7));
-      return Array.isArray(v) ? v.join('\n') : '';
-    }
-    return g(path, o);
-  });
-  setWritePath(function (path, v, o) {
-    if (path && path.startsWith('@lines.')) {
-      st(
-        path.slice(7),
-        String(v || '')
-          .split('\n')
-          .map(x => x.trim())
-          .filter(Boolean)
-      );
-      return;
-    }
-    return st(path, v, o);
-  });
-}
+pathPrefix(
+  '@lines.',
+  path => {
+    const v = readPath(path);
+    return Array.isArray(v) ? v.join('\n') : '';
+  },
+  (path, v) =>
+    writePath(
+      path,
+      String(v || '')
+        .split('\n')
+        .map(x => x.trim())
+        .filter(Boolean)
+    )
+);
 const loreMapOptions = () =>
   Object.keys(studioState.D.maps || {})
     .filter(k => !studioState.D.maps[k].test && !k.includes('@'))

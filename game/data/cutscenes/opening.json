@@ -2,31 +2,31 @@
  "about": "The opening in Copperleaf, after the fall: you wake outside Professor Chosen’s lab, he comes running and his assistant Hazel follows him out, you make yourself up, three coins pop open into the starters, you pick one, and the Chosen sends you to the airship mast. Started by New game (cutscene/opening.js); the fall before it is opening-fall.js. RL-8 (the owner's \"fall only\"): Blake's entrance, the Chosen's fight with him and his battle left the opening; his spots and shots stay for the story.",
  "map": "copperleaf",
  "spots": {
-  "door": [186.87,109.61],
-  "hazel": [184.66,107.78],
-  "assist": [186.05,108.75],
-  "me": [184.31,106.04],
-  "meFrom": [183.65,102.5],
-  "star1": [182.98,108.33],
-  "star2": [182.59,106.99],
-  "star3": [182.9,105.63],
-  "blake": [184.01,104.54],
-  "blakeFrom": [183.3,100.71]
+  "door": [146.08,66.36],
+  "hazel": [146.68,63.55],
+  "assist": [146.45,65.24],
+  "me": [148.05,62.43],
+  "meFrom": [150.88,60.21],
+  "star1": [145.41,62.32],
+  "star2": [146.41,61.35],
+  "star3": [147.76,60.99],
+  "blake": [149.24,61.48],
+  "blakeFrom": [152.3,59.06]
  },
  "shots": {
-  "wake": {"eye":[183.99,0.4,105.98],"tgt":[189.64,3.9,103.48],"fov":58,"w":1.3},
-  "door": {"eye":[183.99,0.62,105.98],"tgt":[186.87,1.25,109.61],"fov":52,"w":1.3},
-  "hazelRuns": {"eye":[183.99,0.78,105.98],"tgt":[184.66,1.08,107.78],"fov":58,"w":1.3},
-  "standing": {"eye":[179.38,1.25,106.83],"tgt":[184.28,0.55,106.89],"fov":40,"w":3.8},
-  "coins": {"eye":[178.69,1,107.1],"tgt":[183.29,0.2,106.97],"fov":40,"w":4.4},
-  "trio": {"eye":[179.11,1.9,106.31],"tgt":[184.31,1,106.16],"fov":40,"w":5.9},
-  "picked": {"eye":[179.38,0.95,106.83],"tgt":[183.58,0.35,106.71],"fov":40,"w":3.6}
+  "wake": {"eye":[147.95,0.4,62.12],"tgt":[152.79,3.9,65.96],"fov":58,"w":1.3},
+  "door": {"eye":[147.95,0.62,62.12],"tgt":[146.08,1.25,66.36],"fov":52,"w":1.3},
+  "hazelRuns": {"eye":[147.95,0.78,62.12],"tgt":[146.68,1.08,63.55],"fov":58,"w":1.3},
+  "standing": {"eye":[145.06,1.25,58.44],"tgt":[147.29,0.55,62.8],"fov":40,"w":3.8},
+  "coins": {"eye":[144.5,1,57.95],"tgt":[146.75,0.2,61.96],"fov":40,"w":4.4},
+  "trio": {"eye":[145.4,1.9,57.96],"tgt":[147.95,1,62.49],"fov":40,"w":5.9},
+  "picked": {"eye":[145.06,0.95,58.44],"tgt":[147.12,0.35,62.1],"fov":40,"w":3.6}
  },
  "clear": {
-  "areas": [[181.05,104.16,185.2,109.28]],
+  "areas": [[143.66,61.06,150.13,62.35]],
   "paths": [["blakeFrom","blake"]],
   "pathWidth": 1.1,
-  "eyes": [[177.52,104.69],[179.78,106.72],[179.38,106.83],[178.69,107.1]],
+  "eyes": [[146.09,55.79],[145.34,58.74],[145.06,58.44],[144.5,57.95]],
   "eyeRadius": 2.3
  },
  "script": [

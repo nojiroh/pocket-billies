@@ -1,5 +1,8 @@
 {
  "about": "Copperleaf Town as it stood before the island (IS-5): the input of tools/build-copperleaf.mjs",
+ "dress": {
+  "trees": 1
+ },
  "name": "Copperleaf Town",
  "sky": [
   "#8EC4E8",

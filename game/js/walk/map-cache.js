@@ -434,6 +434,8 @@ export const MAP_CACHE_FIELDS = [
   'flowAt',
   'wlevels',
   'wlevel',
+  /* 0.1.0 alpha: the sea's skirt out to the horizon (it stayed behind when a view prepared ahead was swapped in) */
+  'seaSkirt',
   'grass',
   'grassKey',
 ];
@@ -504,6 +506,9 @@ export function swapMapCache(oldKey, key) {
     if (!walkRenderer.gaoTex && walkView.sc) groundOcclusion(walkView.sc);
     /* v46: a view prepared ahead plants its grass now (sliced, a few ms a frame) */ if (hit.prepared) {
       walkRenderer.grass = null;
+      walkRenderer.grassKey = null;
+    } else if (!walkRenderer.grass) {
+      /* 0.1.0 alpha: a view left while its grass was still being planted kept none (marked planted); planted now */
       walkRenderer.grassKey = null;
     }
   } else {

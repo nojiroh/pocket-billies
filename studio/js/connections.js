@@ -90,6 +90,10 @@ const DIAL_NEEDS = {
   'water.foam': ['water.ripples'],
   'water.rings': ['water.ripples'],
   'camera.zoomMin': ['camera.zoomMax'],
+  'camera.leadSmooth': ['camera.lead'],
+  'camera.leadSide': ['camera.lead'],
+  'camera.softW': ['camera.deadW'],
+  'camera.softH': ['camera.deadH'],
 };
 const DIALS_OFF_BY_QUALITY = {
   'shadows.ao': 'step 1',

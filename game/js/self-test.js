@@ -28,12 +28,13 @@ import {
 } from './game-data.js';
 import { encountersHere, makeBilly, maxHp, spawn } from './logic/rules.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
-import { runBegin, runRestore } from './logic/run-state.js';
-import { runArrive, runMapStart, runNext, runWorldNode } from './logic/run-map.js';
-import { MAPGEN_VERSION } from './logic/mapgen.js';
+import { pastureBillies, pastureIn, pastureZone } from './logic/pasture.js';
+import { runRestore } from './logic/run-state.js';
+import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
 import { runHealCost } from './logic/run-loop.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { runUnlocks } from './logic/unlocks.js';
+import { runStartOn, runStartPlan } from './logic/run-start.js';
 import { loadAllMaps } from './map-files.js';
 import {
   activeBattle,
@@ -49,7 +50,7 @@ import {
   uiState,
 } from './game-state.js';
 import { gpuCountBegin, gpuCountEnd } from './engine/gpu-counters.js';
-import { frameScheduler } from './frame-scheduler.js';
+import { frameScheduler, userFps } from './frame-scheduler.js';
 import { PERSON_ART_CACHE } from './person-art.js';
 import { closeDressingRoom, dressingRoom } from './dressing-room.js';
 import { battleStage, battleStageStop } from './battle-stage.js';
@@ -85,7 +86,7 @@ import { propModelShaders, propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { seamlessRoomMap, seamlessWorld } from './seamless-world.js';
 import { endBattle, pickMove, pickTarget, stopTimers, tapMessage } from './battle.js';
-import { WORLD_BOWL_SHADERS, worldBowl, worldMap, worldMapReset } from './world-bowl.js';
+import { WORLD_BOWL_SHADERS, worldBowl, worldBowlReset, worldMap, worldMapReset } from './world-bowl.js';
 import { openShop } from './shop.js';
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene/director.js';
@@ -249,11 +250,13 @@ async function runFullTest(mode) {
       'Frame budget',
       'Rain and night',
       'Battle on the 3D stage',
+      /* 0.1.0 alpha: the map's first open, timed (the owner finds it slow) */
+      'World map',
       'Memory',
     ];
   }
   const total = diag
-    ? scenes.length * 4 + 1 + 1 + 6 + 10 + 6 + 1
+    ? scenes.length * 4 + 1 + 1 + 6 + 10 + 6 + 8 + 1
     : scenes.length * 4 + 1 + 5 + 8 + 6 + 5 + 8 + 8 + 6 + 6 + 10 + 8 + 8 + 1 + 40;
   let done = 0;
   const tick = s => {
@@ -516,9 +519,12 @@ async function runFullTest(mode) {
             resolution: typeof walkView !== 'undefined' ? walkView.R : null,
             level: typeof walkRenderer !== 'undefined' ? (walkRenderer.q ?? null) : null,
             screenHz: typeof frameScheduler !== 'undefined' ? frameScheduler.hz : null,
+            /* the player's Settings → Frame rate (the save's own value) and the cap it gives */
+            fpsSetting: (saveData && saveData.preferences && saveData.preferences.fps) ?? null,
+            fpsCap: userFps(),
             why: ev,
           };
-          return `${String(g.renderer || g.gpu || 'graphics unknown').slice(0, 60)} · resolution ×${diagnosticsReport.device.resolution ?? '?'} · quality level ${diagnosticsReport.device.level ?? '?'}${ev.length ? ' · ' + ev.slice(-1)[0] : ''}`;
+          return `${String(g.renderer || g.gpu || 'graphics unknown').slice(0, 60)} · resolution ×${diagnosticsReport.device.resolution ?? '?'} · quality level ${diagnosticsReport.device.level ?? '?'} · cap ${diagnosticsReport.device.fpsCap} FPS${ev.length ? ' · ' + ev.slice(-1)[0] : ''}`;
         },
         1
       );
@@ -899,8 +905,8 @@ async function runFullTest(mode) {
             uiState.goingIn = null;
             uiState.tab = 'walk';
             if (s.run) runRestore(s);
-            runBegin(s, { seed: 'SELFTESTRUN', tier: 1, mapgenV: MAPGEN_VERSION, se: 300 });
-            runMapStart(s.run, data);
+            /* Studio plan T2.1: started as the mast starts a run (logic/run-start.js), a fresh save's unlocks */
+            runStartOn(s, runStartPlan('SELFTESTRUN', { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
             runArrive(s, 0, data);
             s.visited[s.trip.node] = 1;
             setSaveData(s);
@@ -1141,6 +1147,14 @@ async function runFullTest(mode) {
             if (why) throw new Error('training didn’t start: ' + why);
             if (s.meta.scrap !== 0)
               throw new Error(`training cost ${R.trainCost - s.meta.scrap} Scrap, not ${R.trainCost}`);
+            /* IS-8: the trainee wanders in the pasture first; the pasture's gate is in its zone */
+            const out = pastureBillies(s, R.pasture);
+            if (R.pasture > 0 && (!out.length || out[0].uid !== m.uid))
+              throw new Error('the trainee isn’t the first in the pasture');
+            const zone = pastureZone(hub),
+              gate = (hub.props || []).find(p => p.act === 'pasture');
+            if (zone && (!gate || !pastureIn(zone, gate.x, gate.z)))
+              throw new Error('the pasture has no gate in its zone');
             ranchOpen();
             if (!uiState.modal || uiState.modal.cls !== 'ranch-sheet' || !document.querySelector('#ov .ranch-sheet'))
               throw new Error('the ranch’s sheet didn’t open');
@@ -1151,7 +1165,7 @@ async function runFullTest(mode) {
             if (!stop) throw new Error('no Stop on the trainee’s card');
             stop.click();
             if (s.ranch.trainees.length) throw new Error('Stop left it training');
-            return `the barn leads into ${rooms.find(id => mapById(id))}; trained a level for ${R.trainCost} Scrap; Stop ended it`;
+            return `the barn leads into ${rooms.find(id => mapById(id))}; trained a level for ${R.trainCost} Scrap; Stop ended it; the trainee first in the pasture${zone ? ', its gate in place' : ''}`;
           } finally {
             uiState.modal = null;
             uiState.mq = [];
@@ -1604,9 +1618,17 @@ async function runFullTest(mode) {
       'World map',
       'map',
       async () => {
+        /* 0.1.0 alpha: opened from cold (its ground made again), timed until its textured ground is ready: the owner
+           finds the map slow to open, and the bowl was usually already built by the time this step ran */
+        worldBowlReset();
+        const t0 = performance.now();
         uiState.tab = 'map';
         render();
-        await selfTestSleep(3000);
+        await selfTestSleep(500);
+        while (worldBowl.on && !(worldBowl.ground && worldBowl.ground.ok) && performance.now() - t0 < 30000)
+          await selfTestSleep(100);
+        const readyMs = worldBowl.ground && worldBowl.ground.ok ? Math.round(performance.now() - t0) : null;
+        await selfTestSleep(1000);
         if (!worldBowl.on) {
           uiState.tab = 'walk';
           render();
@@ -1623,7 +1645,7 @@ async function runFullTest(mode) {
         render();
         await selfTestSleep(500);
         if (n < 5) throw new Error(`the bowl drew ${n} frames while turning`);
-        return `the bowl drew ${n} frames turning round and coming back`;
+        return `${readyMs == null ? 'its ground wasn’t ready in 30 s' : `ready in ${readyMs} ms from cold`}; the bowl drew ${n} frames turning round and coming back`;
       },
       8
     );
@@ -1943,7 +1965,10 @@ const DIAGNOSTICS_PASSES = {
   ],
   water: ['reflectionPass', 'drawWater'],
   effects: ['effectsPass'],
-  'final pass': ['drawPostEffects'],
+  /* CAM-3: the blur timed on its own; "final pass" is the rest of the post chain (both run inside drawPostEffects, one
+     after the other, so the graphics chip's timers never nest) */
+  blur: ['drawDepthOfField'],
+  'final pass': ['drawPostRest'],
 };
 export function diagnosticsTimersOn() {
   const gl = typeof gpuState !== 'undefined' ? gpuState.gl : null,
@@ -2066,6 +2091,7 @@ function diagnosticsSummary() {
     frame: (R.diag || diagnosticsReport).passes,
     rainAndNight: (R.diag || diagnosticsReport).weather,
     battle: one('Battle on the 3D stage'),
+    worldMap: one('World map'),
     memory: one('Memory'),
     errors: R.errors,
   };
