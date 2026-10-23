@@ -35,7 +35,7 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /** the recipe of a species' rig, with its index in kitBuilds.json forms */
-function kitFormOf(sp) {
+export function kitFormOf(sp) {
   const forms = studioState.D?.kitBuilds?.forms || [],
     i = forms.findIndex(f => f.rig === sp);
   return i < 0 ? null : { form: forms[i], i };

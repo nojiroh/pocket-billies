@@ -11,6 +11,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
+import { coatArt } from '../../game/js/logic/coats.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { animFor } from '../../game/js/body-plan-animation.js';
 import { boneSlot, drawRig, rigFrame, rigFromMeta, rigMatrices } from '../../game/js/skeleton-rig.js';
@@ -27,6 +28,7 @@ import {
   rigSetZ,
 } from '../../game/js/logic/rig-joints.js';
 import {
+  rigRepack,
   rigSwapApply,
   rigSwapMisfit,
   rigSwapNeeds,
@@ -52,7 +54,7 @@ import { atlasGet, atlasPath, loadedAtlas, markArt, openPixelEditor, rigFor } fr
 import { neutralPose, openSkeleton } from './skeleton.js';
 import { WB_VIEWS, workbench } from './workbench.js';
 import { wbPart, wbpColor, wbpN, wbpRefreshSide, wbpRoot } from './workbench-part.js';
-import { kitRecipeHTML } from './kit-recipe.js';
+import { kitFormOf, kitRecipeHTML } from './kit-recipe.js';
 /* eslint-disable no-func-assign */
 expose({
   WBS_CROPS: [() => WBS_CROPS],
@@ -355,7 +357,7 @@ function wbsSideHTML() {
   if (!Pt) return '<div class="px-sec"><p class="help">Pick a part on the left.</p></div>' + kitRecipeHTML(sp);
   const fb = wbsBone('front') || wbsBone('back'),
     frames = [...new Set(WB_VIEWS.flatMap(v => Pt.rig[v]?.frames || []))];
-  const head = `<div class="px-sec"><h4 class="mono">${escapeHtml(id)}</h4><p class="help">${escapeHtml(speciesName(sp))} (<span class="mono">${escapeHtml(sp)}</span>) · hangs from <b class="mono">${escapeHtml(fb.par || 'root')}</b>${fb.a && fb.a !== id ? ` · moves as ${escapeHtml(fb.a)}` : ''}. rigs-next.js; the back view is drawn mirrored in the game.</p><div class="seg-row"><button class="btn sm" data-act="wbsSkeleton">Skeleton builder</button><button class="btn sm" data-act="wbsPaint">Paint pixels</button></div></div>`;
+  const head = `<div class="px-sec"><h4 class="mono">${escapeHtml(id)}</h4><p class="help">${escapeHtml(speciesName(sp))} (<span class="mono">${escapeHtml(sp)}</span>) · hangs from <b class="mono">${escapeHtml(fb.par || 'root')}</b>${fb.a && fb.a !== id ? ` · moves as ${escapeHtml(fb.a)}` : ''}. rigs-next.js; the back view is drawn mirrored in the game.</p><div class="seg-row"><button class="btn sm" data-act="wbsSkeleton">Skeleton builder</button><button class="btn sm" data-act="wbsPaint">Paint pixels</button><button class="btn sm" data-act="wbsRepack" title="Pack the sheet again without the pixels no frame shows (the Billie is drawn the same)">Repack sheet</button></div></div>`;
   const frame =
     frames.length > 1
       ? `<div class="px-sec"><h4>Frame</h4><div class="seg-row">${['', ...frames].map(f => `<button class="seg sm ${f === wbPart.frame ? 'on' : ''}" data-act="wbsFrame" data-f="${escapeHtml(f)}">${f ? escapeHtml(f) : 'all frames'}</button>`).join('')}</div><p class="help">All frames: a box change moves every frame’s edges by as much. One frame: only its box changes.</p></div>`
@@ -456,6 +458,46 @@ ACTIONS.wbsFrame = d => {
   render();
 };
 ACTIONS.wbsSkeleton = () => openSkeleton(wbsSp(), 'front');
+/* Studio plan Phase 5 (T5.4): the species' sheet packed again without the pixels no frame shows (logic/rig-swap.js
+   rigRepack), the boxes copied canvas to canvas so the Billie is drawn pixel for pixel the same; one undo step */
+ACTIONS.wbsRepack = async () => {
+  const sp = wbsSp(),
+    R = studioState.rigs[sp];
+  if (!R) return;
+  if (kitFormOf(sp))
+    return toast('A kit Billie’s sheet is baked from its recipe (Kit recipe): Write Billie packs it.', 'err');
+  const own = Object.entries(studioState.D.coats || {}).find(([, C]) => WB_VIEWS.some(v => coatArt(C, sp, v)));
+  if (own) return toast(`The ${own[0]} coat has its own sheet laid out like this one, so it can’t be repacked.`, 'err');
+  let rig = R,
+    before = 0,
+    after = 0;
+  const steps = [],
+    made = [];
+  for (const sheet of new Set(WB_VIEWS.map(v => R[v]?.sheet).filter(Boolean))) {
+    const path = 'art/' + sheet,
+      old = await atlasGet(path),
+      pack = rigRepack(rig, sheet, old.width);
+    if (pack.size[0] * pack.size[1] >= old.width * old.height) continue;
+    const c = makeCanvas(pack.size[0], pack.size[1]),
+      x = c.getContext('2d');
+    for (const [bx, by, w, h, nx, ny] of pack.moves) x.drawImage(old, bx, by, w, h, nx, ny, w, h);
+    before += old.width * old.height;
+    after += pack.size[0] * pack.size[1];
+    rig = pack.rig;
+    steps.push([path, pictureImage(old), pictureImage(c)]);
+    made.push([path, c]);
+  }
+  if (!made.length) return toast('Already packed: no pixels to drop.');
+  if (studioState.rigs[sp] !== R) return toast('The rig changed meanwhile. Repack again.', 'err');
+  commit(true);
+  for (const [path, c] of made) markArt(path, c);
+  studioState.rigs = { ...studioState.rigs, [sp]: rig };
+  window.RIGS = studioState.rigs;
+  changed(true);
+  artSteps(steps, snapshotParts());
+  render();
+  toast(`Sheet repacked: ${before} → ${after} pixels, drawn the same. Undo puts it back.`);
+};
 ACTIONS.wbsPaint = () => openPixelEditor(wbsSp(), wbPart.sel?.view || 'front');
 /* opens Part mode on a species (the Billies section's button) */
 ACTIONS.wbsOpen = d => {
