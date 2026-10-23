@@ -21,28 +21,19 @@ validation/quick-baseline/ (make one with --baseline), each picture is compared 
 is changed."""
 # RL-5: --closeups and --seams=all went with their steps (every close-up spot and every seam was in a parked place);
 # TC-1: --scenes went with the Scenes and Paths steps, the only ones that read it
-import io, json, math, os, re, shutil, socket, subprocess, sys, tempfile, threading, time
-from functools import partial
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+import io, json, math, re, shutil, subprocess, sys, time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gamedata as GAMEDATA  # noqa: E402
+# TC-4: the set-up every browser check shares (tools/browser_check.py): the clock (every page lives on 15 June at half
+# past twelve, so the pictures are always taken at the same time of day), no accounts, the test globals, the server
+from browser_check import CLOCK, GAME, NO_ACCOUNTS, ROOT, T0, TEST_GLOBALS, console_text, go_scene, log, serve  # noqa: E402
 
-ROOT = Path(__file__).resolve().parent.parent
-GAME = ROOT / 'game'
 OUT = ROOT / 'validation' / 'quick'
-T0 = time.time()
-# alpha 0.1: every page the check opens lives on 15 June at half past twelve (the clock still runs), so the pictures
-# are always taken at the same time of day and compare with the baseline
-CLOCK = """(()=>{const D=Date,off=new D(2026,5,15,12,30,0).getTime()-D.now();class FD extends D{constructor(...a){if(a.length)super(...a);else super(D.now()+off)}static now(){return D.now()+off}}
- FD.UTC=D.UTC;FD.parse=D.parse;window.Date=FD})()"""
 # RL-5: the shops were parked with their towns (game/data/legacy): the checks open a shop of their own to see the shop
 # screen (the stock Marigold's General Store had)
 CHECK_SHOP = "SHOPS.check_shop=SHOPS.check_shop||{name:'Corner Store',keeper:'Mabel Underhill',who:'clerk',greeting:'Welcome in! Potions on the left, coins on the right.',stock:[{item:'taxbreak',price:150},{item:'apology',price:200},{item:'settlement',price:200},{item:'appeal',price:200},{item:'trailmix',price:260},{coin:'penny',price:300}]};"
-NO_ACCOUNTS = "Object.defineProperty(window,'PB_FIREBASE',{get(){return null},set(){},configurable:false})"   # alpha 0.4.1: no Google sign-in during the checks
-# phase 04d: the modules' names on window (game/js/test-globals.js), only for the checks' page.evaluate() calls
-TEST_GLOBALS = "window.PB_TEST_GLOBALS=true"
 LOW_RENDER = "gameData.engine=gameData.engine||{};gameData.engine.defaults=Object.assign({},gameData.engine.defaults||{},{quality:{resolution:.34,shadowMap:1024,auto:false}});0"
 ARGS = sys.argv[1:]
 # phase 01: --smoke is a fast subset (the data checks, Start-Game on a phone with the debug log export, one step of the
@@ -53,10 +44,6 @@ SMOKE = '--smoke' in ARGS
 PROJ = "(([x,z])=>{const C=walkView.C,r=walkView.cv.getBoundingClientRect(),y=standingHeightAt(x,z)+(typeof worldCurveDrop==='function'?worldCurveDrop(x,z):0);if(C.vp){const m=C.vp,cx=m[0]*x+m[4]*y+m[8]*z+m[12],cy=m[1]*x+m[5]*y+m[9]*z+m[13],w=m[3]*x+m[7]*y+m[11]*z+m[15];return [r.left+(cx/w*.5+.5)*r.width,r.top+(1-(cy/w*.5+.5))*r.height]}const q=worldToScreen(C,x,y,z);return [r.left+q.x/walkView.cv.width*r.width,r.top+q.y/walkView.cv.height*r.height]})(%s)"
 STEPS = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--steps=')), None)
 problems, notes, steps = [], [], []
-
-
-def log(msg):
-    print(f'[{time.time() - T0:6.1f}s] {msg}', flush=True)
 
 
 CUR = {'pg': None}
@@ -124,19 +111,6 @@ def shot(pg, name):
     im = Image.open(io.BytesIO(pg.screenshot())).convert('RGB')
     if max(im.size) > 1400: im.thumbnail((1400, 1400))
     im.save(OUT / f'{name}.webp', 'WEBP', quality=78)
-
-
-def free_port():
-    s = socket.socket(); s.bind(('127.0.0.1', 0)); p = s.getsockname()[1]; s.close(); return p
-
-
-def serve(directory):
-    port = free_port()
-    class Quiet(SimpleHTTPRequestHandler):
-        def log_message(self, *a): pass
-    srv = ThreadingHTTPServer(('127.0.0.1', port), partial(Quiet, directory=str(directory)))
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
-    return srv, f'http://127.0.0.1:{port}'
 
 
 def gamedata():
@@ -237,15 +211,6 @@ def report_unused():
 
 
 # ------------------------------------------------------------------ 2. in the browser
-def console_text(m):
-    """v47: a failed load says which file (the browser's own message doesn't)"""
-    from urllib.parse import urlparse
-    t = m.text
-    try:
-        if 'Failed to load' in t and m.location and m.location.get('url'): t += f' ({urlparse(m.location["url"]).path.lstrip("/")})'
-    except Exception: pass
-    return t
-
 
 def open_game(b, base, w, h, mobile, errs):
     ctx = b.new_context(viewport={'width': w, 'height': h}, device_scale_factor=1, is_mobile=mobile, has_touch=mobile); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS)
@@ -281,17 +246,6 @@ def play(pg):
     # alpha 0.2: the legendaries count as met today, so passing through their places doesn't leave one waiting in a later
     # step (RL-5: the v39 step no longer brings the volcano's back: the volcano is parked)
     pg.evaluate("for(const l of (RULES.legends||[]))saveData.story['legend_'+l.sp]=today();0")
-
-
-def go_scene(pg, node, sec=40):
-    # alpha 0.4: a jump, not a walk: a neighbour whose middle is near this view's would otherwise wait for its view to be
-    # prepared a few milliseconds a frame (seamless-world.js seamlessGate), which at a frame every few seconds here takes minutes
-    pg.evaluate(f"uiState.inside=null;uiState.tab='walk';saveData.trip={{node:{node},plan:[]}};saveData.visited[{node}]=1;uiState.roam=null;if(typeof walkView!=='undefined'&&walkView.pl)walkView.pl.fresh=true;render();0")
-    if not until(pg, f'!!(walkView.ready&&(walkView.id===LOCATIONS[{node}].mapId||(walkView.sc&&walkView.sc.baseId===LOCATIONS[{node}].mapId)))', sec):   # v43: the hub may sit near an exit, so the view may be the scene with its road
-        raise Exception(f'{pg.evaluate(f"LOCATIONS[{node}].mapId")} didn’t open in {sec}s')
-    f0 = pg.evaluate("typeof walkRenderer!=='undefined'&&walkRenderer.on?walkRenderer.frames:-1")
-    if f0 >= 0 and not until(pg, f'walkRenderer.frames>={f0 + 2}', 30): raise Exception(f'{pg.evaluate("walkView.id")} isn’t drawing (black screen)')
-
 
 
 def walk_in(pg, act, k):

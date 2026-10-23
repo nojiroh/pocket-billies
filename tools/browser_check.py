@@ -70,11 +70,11 @@ def collect_errors(pg, errs, console=True):
     if console: pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
 
 
-def new_page(b, errs, width=400, height=300, mobile=False, low=True, timeout=60000, console=True, **context):
-    """a page with the check set-up: the clock, no accounts, the test globals and (low) the graphics off; its errors
-    go into errs. Not opened yet: (context, page)"""
+def new_page(b, errs, width=400, height=300, mobile=False, low=True, timeout=60000, console=True, init=(), **context):
+    """a page with the check set-up: the clock, no accounts, the test globals, (low) the graphics off and the scripts
+    in init; its errors go into errs. Not opened yet: (context, page)"""
     ctx = b.new_context(viewport={'width': width, 'height': height}, device_scale_factor=1, is_mobile=mobile, has_touch=mobile, **context)
-    for s in (CLOCK, NO_ACCOUNTS, TEST_GLOBALS) + ((LOW_GRAPHICS,) if low else ()): ctx.add_init_script(s)
+    for s in (CLOCK, NO_ACCOUNTS, TEST_GLOBALS) + ((LOW_GRAPHICS,) if low else ()) + tuple(init): ctx.add_init_script(s)
     ctx.set_default_timeout(timeout); pg = ctx.new_page()
     collect_errors(pg, errs, console)
     return ctx, pg
