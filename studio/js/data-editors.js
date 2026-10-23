@@ -1427,7 +1427,7 @@ ACTIONS.personDel = async () => {
   const D = studioState.D,
     k = studioState.sel.person;
   if (
-    !(await ask(`Delete the look “${escapeHtml(k)}”? Anyone using it falls back to Professor Hazel’s look.`, 'Delete'))
+    !(await ask(`Delete the look “${escapeHtml(k)}”? Anyone using it falls back to Professor Chosen’s look.`, 'Delete'))
   )
     return;
   delete D.people[k];

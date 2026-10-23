@@ -54,13 +54,13 @@
    "id": "prologue",
    "stage": 0,
    "title": "The fall",
-   "text": "You were walking somewhere on the surface, late, with a lanyard round your neck and one coin in your pocket. The pavement opened. You fell through the crust, past the inner sky, with the Inner Sun blazing ahead, and woke in Copperleaf, a hamlet of round doors and beehives, with no memory of who you were. Professor Hazel found you, gave you a Billie, and her other student, Blake, picked the one that beats yours. Granny Juniper, the beekeeper, gave you a room."
+   "text": "You were walking somewhere on the surface, late, with a lanyard round your neck and one coin in your pocket. The pavement opened. You fell through the crust, past the inner sky, with the Inner Sun blazing ahead, and woke in Copperleaf, a hamlet of round doors and beehives, with no memory of who you were. The Chosen, Copperleaf’s self-appointed professor, found you and gave you a Billie; his assistant Hazel made sure you were in one piece. Blake, his other student, picked the one that beats yours. Granny Juniper, the beekeeper, gave you a room."
   },
   {
    "id": "road1",
    "stage": 0,
    "title": "Route 1",
-   "text": "Hazel asked you to explore: the road teaches more than any book. Route 1, Hedgerow Lane, runs down from Copperleaf to Marigold Town. When someone falls in, their things come down too, and they scatter along Tallgrass Meadow beyond it. Something of yours might still be out there."
+   "text": "The Chosen sent you to explore: the road teaches more than any book. Route 1, Hedgerow Lane, runs down from Copperleaf to Marigold Town. When someone falls in, their things come down too, and they scatter along Tallgrass Meadow beyond it. Something of yours might still be out there."
   },
   {
    "id": "badges",
@@ -137,13 +137,21 @@
    "text": "You fell down a sinkhole on the surface and woke in Copperleaf with no memory and one coin. Who you were is the thread through the road ahead.",
    "voice": "Whatever you choose to say."
   },
-  "hazel": {
-   "name": "Professor Hazel",
+  "chosen": {
+   "name": "Professor Chosen",
    "who": "gini",
-   "role": "Billie researcher, Copperleaf Town",
+   "role": "Billie professor (self-appointed), Copperleaf Town",
    "unlock": "start",
-   "text": "An outsider who came down from the surface to study the clones, and stayed because the clones turned out to be the honest part. She has never trusted the people who made them. Her lab stands at the top of the green in Copperleaf, down the lane from Granny Juniper’s hives.",
-   "voice": "Dry, kind and precise. “Classic fall-related amnesia. Very common down here.”"
+   "text": "A boy who is certain he’s the main character of the Hollow Earth, and Copperleaf’s professor because he said so first. He wears a lab coat over a wolf shirt and talks about his katana, which is at the cleaners. The lab at the top of the green, down the lane from Granny Juniper’s hives, is his; the work in it is mostly Hazel’s.",
+   "voice": "Loud, sure and wrong. “Amnesia. Classic origin story. I’d be jealous, but I already have one.”"
+  },
+  "hazel": {
+   "name": "Hazel",
+   "who": "hazel",
+   "role": "The Chosen’s assistant, Copperleaf Town",
+   "unlock": "start",
+   "text": "An outsider who came down from the surface to study the clones, and stayed because the clones turned out to be the honest part. She does the real research in the Chosen’s lab and translates him for visitors.",
+   "voice": "Dry, kind and tired. “Fall-related amnesia. Very common down here.”"
   },
   "blake": {
    "name": "Blake",
@@ -247,7 +255,7 @@
  "locations": {
   "copperleaf": {
    "history": "A hamlet that grew where the sinkholes drop things. The first settlers built with what fell: the copper came down as pipes and wire, and the moss came by itself.",
-   "known": "Professor Hazel’s lab, Granny Juniper’s bees, round doors, and a sky that sends down furniture every week or so.",
+   "known": "Professor Chosen’s lab, Granny Juniper’s bees, round doors, and a sky that sends down furniture every week or so.",
    "landmark": "The great oak on the green, with a swing nobody remembers hanging.",
    "legend": "The flower on the knoll turns even when there is no wind. Granny Juniper says it is listening for the next one to fall."
   }
@@ -276,7 +284,7 @@
  "books": {
   "fieldguide": {
    "title": "A Field Guide to the Hollow Earth",
-   "by": "Prof. Hazel",
+   "by": "Hazel (Prof. Chosen on the cover)",
    "pages": [
     "Billies are not dangerous unless you are holding money, are standing between them and money, or are money.",
     "They live everywhere: tall grass, caves, canyons, malls and the bottom of the sea. Each kind keeps to what its original loved most.",
@@ -362,7 +370,7 @@
   "Down here, value is measured in coins, because a Billie will chase nothing else.",
   "Aurumansa gives its gold away. The banks call it a disaster.",
   "The soup of the day in Pepperpot Town has been the same soup since 1971.",
-  "Professor Hazel has a map of the sinkholes. It looks a lot like a map of banks.",
+  "Hazel has a map of the sinkholes. It looks a lot like a map of banks.",
   "Billies are not dangerous unless you are holding money, or are money.",
   "Blake picked the one that beats yours. No offence. Well, a little offence.",
   "The Hollow Earth has changed hands eleven times. Nobody who lives here was asked.",
@@ -377,7 +385,7 @@
   "copperleaf": {
    "0": [
     "You’re the one who fell in? Granny Juniper said you’d be up soon.",
-    "Hazel’s lab is at the top of the green. You can’t miss it: it’s the one that hums.",
+    "Professor Chosen’s lab is at the top of the green. You can’t miss it: it’s the one that hums. Or him. He hums too.",
     "The swing on the oak is for anyone. Grown-ups too, when nobody’s looking."
    ],
    "4": ["Four badges already? We knew you’d do well. Things that fall here usually do."]

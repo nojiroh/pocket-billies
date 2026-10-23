@@ -1,7 +1,7 @@
 // @ts-check
 'use strict';
 /* ================= HAZEL (phase 06-2b) =================
-   What Professor Hazel says around the opening that isn't a line of its script (game/data/cutscenes/opening.json
+   What the professor (Professor Chosen, since 2026-10-23) says around the opening that isn't a line of its script (game/data/cutscenes/opening.json
    holds those): the staged fight's log, the pick card's note, her hot takes, her tips in Blake's battle and her
    comments on tapping too fast, in one table, and the small rules around them: which hot take comes next when you tap
    her during the pick, her (wrong on purpose) type tips, and when she comments on tapping too fast.

@@ -1,8 +1,8 @@
 'use strict';
 /* ================= CUTSCENES: THE OPENING =================
    Starts with New game on the title screen: first the fall (opening-fall.js), then Copperleaf, filmed with the walk-scene
-   engine: you wake in the dust outside Professor Hazel's lab and she comes running; you make yourself up in the dressing
-   room; Blake barges in and Hazel fights him herself; three coins pop open into the starters; you pick one, Blake takes
+   engine: you wake in the dust outside Professor Chosen's lab and he comes running, his assistant Hazel behind him; you make yourself up in the dressing
+   room; Blake barges in and the Chosen fights him himself; three coins pop open into the starters; you pick one, Blake takes
    the one that beats it and battles you on the spot (opening-fall.js battleTutor, story.js storyAfterRival). If it can't
    run or stops, a Try again screen (ui.js renderIntro). What happens and in which order is the cutscene's file,
    game/data/cutscenes/opening.json (docs/CUTSCENES.md); this module mounts the view, clears the set, plays it on the
@@ -106,7 +106,7 @@ export const cutsceneStartName = () =>
 
 /* ---------- the cutscene ---------- */
 /* opts.quick (phase 16 test boot, js/test-boot.js): no fall, and the dressing room keeps a random look on its own,
-   so the game opens on Hazel's scene and goes on to the coins and the starter pick */
+   so the game opens on the professor's scene and goes on to the coins and the starter pick */
 export async function cutsceneStart(opts) {
   if (cutscene.on) return;
   const id = cutsceneMapId();
@@ -327,7 +327,7 @@ async function openingDressingRoom() {
   uiState.avatarDraft = cleanLook(uiState.trainerDraft || LOOK_PRESETS[0]);
   uiState.trainerDraft = uiState.avatarDraft;
 }
-/* throw-coins: Hazel's three coins fly to the starters' spots (star1-3) and pop open into the three Billies */
+/* throw-coins: the Chosen's three coins fly to the starters' spots (star1-3) and pop open into the three Billies */
 async function openingThrowCoins() {
   const C = cutscene.set,
     H = cutscene.actors[cutsceneLook('Chosen')];
@@ -435,7 +435,7 @@ function openingLayer(items, parts, lights, now, t) {
     lights.push({ p: [x, y, z], r: 1.1, c: [0.5, 0.4, 0.12] });
   }
 }
-/* during the pick: tap Hazel for a hot take about the starter you're looking at, in a bubble over her head */
+/* during the pick: tap the Chosen for a hot take about the starter you're looking at, in a bubble over his head */
 function hazelHotTake() {
   const g = cutscene.actors[cutsceneLook('Chosen')],
     b = $('#csBubble');
@@ -448,7 +448,7 @@ function hazelHotTake() {
     r = walkView.cv.getBoundingClientRect();
   b.hidden = false;
   if (q) {
-    /* over her head, but kept fully on screen */
+    /* over his head, but kept fully on screen */
     const half = b.offsetWidth / 2 + 16;
     b.style.left = clamp(r.left + (q.x / walkView.cv.width) * r.width, half, innerWidth - half) + 'px';
     b.style.top = Math.max(b.offsetHeight + 70, r.top + (q.y / walkView.cv.height) * r.height) + 'px';

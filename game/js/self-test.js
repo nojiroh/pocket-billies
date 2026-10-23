@@ -1285,7 +1285,7 @@ async function runFullTest(mode) {
         3,
         60
       );
-    /* v46: a room that opens in place: into a building and out again, without leaving the town (RL-5: Professor Hazel's
+    /* v46: a room that opens in place: into a building and out again, without leaving the town (RL-5: Professor Chosen's
        lab in Copperleaf, the hub; it was Marigold's shop) */
     if (typeof seamlessRoomMap === 'function' && LOCATIONS[START_NODE] && !selfTest.stop)
       await phase(

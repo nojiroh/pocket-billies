@@ -338,7 +338,7 @@ export function cutsceneSay(who, text, expr) {
   cutscene.sayT = performance.now();
   return pr.then(() => {
     if (cutscene.say && !cutscene.say.typing) cutscene.say = null;
-    /* phase 06-2b: skipped several lines fast? Hazel says something about it, once */
+    /* phase 06-2b: skipped several lines fast? The Chosen says something about it, once */
     const q = cutscene.quip;
     cutscene.quip = null;
     if (q && !cutscene.skip && cutscene.on) return cutsceneSay('gini', q, 'surprised');
@@ -362,7 +362,7 @@ function cutsceneTap(ev) {
   if (!cutscene.on) return;
   if (ev && ev.target.closest && ev.target.closest('button,input,.cs-pick,.cs-fight')) return;
   if (talkBox.cur) {
-    /* phase 06-2b: a tap that cuts a line short counts towards Hazel's "too fast" comment */
+    /* phase 06-2b: a tap that cuts a line short counts towards the Chosen's "too fast" comment */
     if (talkBox.cur.typing && cutscene.skipWatch && !cutscene.quip)
       cutscene.quip = cutscene.skipWatch.record(performance.now() - (cutscene.sayT || 0));
     talkBox.cur.tap();

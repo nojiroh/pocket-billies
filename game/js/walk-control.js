@@ -319,7 +319,7 @@ function roomAct(h) {
     flyMenu(h.p);
     return;
   }
-  /* RL-11: the unlock board in Hazel's lab opens the Lab tab */
+  /* RL-11: the unlock board in the Chosen's lab opens the Lab tab */
   if (pa === 'board' && typeof labBoardOpen === 'function') {
     labBoardOpen();
     return;

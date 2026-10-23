@@ -1,7 +1,7 @@
 'use strict';
 /* ================= CUTSCENES: THE STARTER PICK =================
    The opening's three starters drawn with their rigs, and the pick card: arrows either side of the name, dots, the
-   blurb, what it beats and what beats it, one gold button; tap a starter in the scene to look at it, tap Hazel for a
+   blurb, what it beats and what beats it, one gold button; tap a starter in the scene to look at it, tap the Chosen for a
    hot take (opening.js). Split from cutscene.js. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -185,7 +185,7 @@ document.addEventListener('pointerup', ev => {
     sy = ((ev.clientY - r.top) / r.height) * walkView.cv.height;
   let best = -1,
     bd = 1e9;
-  /* phase 06-2b: Hazel, nearer than any starter, gives a hot take */
+  /* phase 06-2b: the Chosen, nearer than any starter, gives a hot take */
   const g = cutscene.actors[cutsceneLook('Chosen')],
     hq = g && worldToScreen(walkView.C, g.x, 1.0 + standingHeightAt(g.x, g.z), g.z),
     hd = hq ? Math.hypot(hq.x - sx, hq.y - sy) : 1e9;

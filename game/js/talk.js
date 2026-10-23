@@ -1,6 +1,6 @@
 'use strict';
 /* ================= CONVERSATIONS =================
-   One dialogue box for everyone who talks: Professor Hazel, your rival Blake, townsfolk, trainers and the opening cutscene.
+   One dialogue box for everyone who talks: Professor Chosen and Hazel, your rival Blake, townsfolk, trainers and the opening cutscene.
    A portrait that blinks and moves its mouth while the line types out, the speaker's name, a voice blip per few
    letters (sound.js), tap or Enter to finish the line or go on. Lines may start with an expression in brackets:
    "[happy] Nice to meet you!" (happy, surprised, sad, angry, blink, talk). */
@@ -46,7 +46,7 @@ export const talkBox = {
   /* Project Story: the choice on screen (talkChoose), if any */
   choice: /** @type {{ pick: (i: number) => void, n: number } | null} */ (null),
 };
-const SPEAKER_NAMES = { gini: 'Professor Hazel' };
+const SPEAKER_NAMES = { gini: 'Professor Chosen' };
 const FOLK_NAMES = [
   'Ada',
   'Bram',
@@ -317,7 +317,7 @@ export function setTalkFolk(v) {
   talkFolk = v; // eslint-disable-line no-func-assign
   provide({ talkFolk });
 }
-/* Hazel in her lab: her script (story.json scripts.hazel): your Index, your badges, where Blake went */
+/* Professor Chosen in his lab: his script (story.json scripts.hazel): your Index, your badges, where Blake went */
 export async function talkHazel() {
   if (talkBox.on) return;
   await playStoryScript('story:hazel');

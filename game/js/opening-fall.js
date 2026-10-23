@@ -7,7 +7,7 @@
    3. The inner sky: you come out high in the Hollow Earth, fall past the Inner Sun and down into the bowl (the world
       map's own ground, world-bowl.js), towards Copperleaf.
    4. A white flash, and the walk scene takes over (cutscene/opening.js, playing game/data/cutscenes/opening.json): you
-      wake in the dust outside Hazel's lab, the papers that fell with you still fluttering down.
+      wake in the dust outside Professor Chosen's lab, the papers that fell with you still fluttering down.
    Skip ends the fall at once; if the opening can't run, a Try again screen (ui.js renderIntro). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
@@ -801,7 +801,7 @@ function landingFrame(now, parts) {
 
 /* ================= THE FIRST BATTLE: BLAKE, OUTSIDE THE LAB =================
    Right after you choose, Blake picks the starter that beats yours (rules.start.rival) and battles you on the spot
-   (trainer blake0: tutorial). His billionaire is as new as yours and only knows Tackle. Hazel explains as it happens:
+   (trainer blake0: tutorial). His billionaire is as new as yours and only knows Tackle. the Chosen explains as it happens:
    moves and types, switching and items, and the coin you'd throw at a wild one. Win or lose the story goes on
    (story.js: storyAfterRival) with your team healed and no fee. The self-test's run of the opening stops before it. */
 /* phase 06-2b: no tutorial in Blake's battle. Hazel "helps": a meta line, then type tips that are wrong on purpose
@@ -828,7 +828,7 @@ function battleTutor() {
     true
   );
 }
-/* a move picked: in Blake's battle, picking instantly (twice in a row) gets a comment from Hazel */
+/* a move picked: in Blake's battle, picking instantly (twice in a row) gets a comment from the Chosen */
 export function tutorPicked() {
   if (!activeBattle || !activeBattle.T || !activeBattle.T.tutorial || !activeBattle.pickWatch) return;
   const c = activeBattle.pickWatch.record(performance.now() - (activeBattle.menuT || 0));
@@ -842,7 +842,7 @@ function tutorSkip() {
   endBattle();
 }
 /* a word from someone at the top of the battle, without stopping it; it goes after a while, or with a tap.
-   phase 06-2b: hot = Hazel's HOT TIP: big, in the middle, over everything (the move buttons too), until tapped */
+   phase 06-2b: hot = the professor's HOT TIP: big, in the middle, over everything (the move buttons too), until tapped */
 function battleTip(who, text, btn, hot) {
   let el = $('#btip');
   if (!el) {
@@ -857,7 +857,7 @@ function battleTip(who, text, btn, hot) {
     ex = m[1];
     text = text.slice(m[0].length);
   }
-  const name = who === 'gini' ? 'Professor Hazel' : escapeHtml(who),
+  const name = who === 'gini' ? 'Professor Chosen' : escapeHtml(who),
     face = typeof portraitHTML === 'function' ? portraitHTML(who, hot ? 72 : 44, ex) : '',
     b = btn ? `<button class="pb small quiet btip-b" data-a="${btn.a}">${escapeHtml(btn.l)}</button>` : '';
   el.className = hot ? 'btip hot' : 'btip';

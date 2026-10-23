@@ -921,7 +921,7 @@ else
       if (typeof debugLog !== 'undefined') debugLog.hook();
       initPixelSky();
       if (typeof titleWanted === 'function' && titleWanted()) titleStart();
-      /* phase 16 test boot (js/test-boot.js): no title; the opening cutscene starts on Hazel's scene (below), or,
+      /* phase 16 test boot (js/test-boot.js): no title; the opening cutscene starts on the professor's scene (below), or,
          where it can't run, the Try again screen */
       const quickOpening = TEST_BOOT && !TEST_RUN && !FIXTURE && !saveData.started;
       if (quickOpening && !(typeof cutsceneWanted === 'function' && cutsceneWanted())) uiState.openingFailed = 'cant';
@@ -953,7 +953,7 @@ else
       /* RL-11: milestones met since the last visit (in the hub) */
       if (saveData.started && !saveData.run && !TEST_RUN) whenWorldShows(labMilestones);
       if (TEST_BOOT && !TEST_RUN && !FIXTURE)
-        setTimeout(() => toast('Test boot: the opening with Professor Hazel, nothing is saved.'), 900);
+        setTimeout(() => toast('Test boot: the opening with Professor Chosen, nothing is saved.'), 900);
       if (location.protocol === 'file:')
         setTimeout(
           () => toast('Battles and the map need a local web server. Open the game with Start-Game (see README).'),
