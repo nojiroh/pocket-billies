@@ -1,5 +1,6 @@
 // RL-10b: logic/ranch-clock.js, the one clock every ranch timer reads: the high-water mark, a clock turned back
-// (time stands still at the mark), the cloud save's server time raising the mark, and the phone clock's skew.
+// (time stands still at the mark), the cloud save's server time raising the mark (and the session floor), and the
+// phone clock's skew.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { modules } from './setup-fixture.mjs';
@@ -58,4 +59,17 @@ test('ranch clock: a skew under guardMs (the round trip) counts as none; nonsens
   assert.equal(clockSkew(1000, 500, 1000 + 9 * H, R), 0, 'after before before');
   assert.equal(clockSkew(NaN, 1, 1, R), 0);
   assert.equal(ranchNow(save(), 7 * H, R, NaN).now, 7 * H);
+});
+
+test('ranch clock: the session floor (the cloud save server time) raises any playing save to it', () => {
+  const { setRanchFloor } = modules['ranch-clock'],
+    s = save(2 * H);
+  setRanchFloor(9 * H);
+  try {
+    assert.deepEqual(ranchNow(s, 5 * H, R, 0), { now: 9 * H, back: true });
+    assert.equal(s.ranch.seen, 9 * H);
+  } finally {
+    setRanchFloor(0);
+  }
+  assert.deepEqual(ranchNow(save(), 5 * H, R, 0), { now: 5 * H, back: false }, 'signed out: no floor');
 });

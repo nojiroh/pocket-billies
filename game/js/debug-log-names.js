@@ -3,6 +3,7 @@
 // object, and a setter (the module's own) for each function it wraps. The last module of the game's page.
 import { LOCATIONS, gameData } from './game-data.js';
 import { encountersHere, setSetTrip, setTrip } from './logic/rules.js';
+import { ranchSkew } from './logic/ranch-clock.js';
 import { battleStageKey, newBattle, setNewBattle } from './logic/battle-engine.js';
 import { mapFiles } from './map-files.js';
 import { activeBattle, save, saveData, saveHeld, setSave, uiState } from './game-state.js';
@@ -146,6 +147,7 @@ Object.defineProperties(GAME, {
   paintWorkerReport: { get: () => paintWorkerReport },
   personBattleFrames: { get: () => personBattleFrames, set: setPersonBattleFrames },
   prepareMap: { get: () => prepareMap, set: setPrepareMap },
+  ranchSkew: { get: () => ranchSkew },
   reflectionPass: { get: () => reflectionPass, set: setReflectionPass },
   render: { get: () => render, set: setRender },
   renderOverlay: { get: () => renderOverlay, set: setRenderOverlay },

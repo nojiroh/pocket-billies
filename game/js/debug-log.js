@@ -518,6 +518,17 @@ debugLog.state = () => {
           /* RL-10: the nursery (numbers only): each egg's mode and hours left, and how many pairs have bred */
           eggs: (ranch.nursery || []).map(n => [n.mode, +Math.max(0, (n.ready - Date.now()) / 3600000).toFixed(1)]),
           bred: ranch.bred || 0,
+          /* RL-10b (numbers only): the income waiting (whole Scrap banked, hours since it was counted; null before it
+             started), how far the device's clock is behind the ranch clock's mark (hours; > 0 means turned back), and
+             the clock against the server this session (skew in hours, or null when not measured) */
+          income: ranch.income
+            ? [
+                ranch.income.bank,
+                ranch.income.lastAt ? +((Date.now() - ranch.income.lastAt) / 3600000).toFixed(1) : null,
+              ]
+            : null,
+          behind: +Math.max(0, ((ranch.seen || 0) - Date.now()) / 3600000).toFixed(2),
+          skew: GAME.account && GAME.account.clock === 'known' ? +((GAME.ranchSkew || 0) / 3600000).toFixed(2) : null,
         }
       : null;
     s.frameHz = GAME.frameScheduler.hz;

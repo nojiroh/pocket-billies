@@ -9,8 +9,9 @@
 import { expose } from './test-globals.js';
 import { TEST_RUN, closeModal, modal, provide, render, toast } from './hooks.js';
 import { TEST_BOOT } from './test-boot.js';
-import { LOCATIONS } from './game-data.js';
+import { LOCATIONS, RULES } from './game-data.js';
 import { metresToKm } from './logic/rules.js';
+import { clockSkew, ranchFloor, setRanchFloor, setRanchSkew } from './logic/ranch-clock.js';
 import { SAVE_NEW_MSG, SAVE_OLD_MSG, SAVE_VERSION, loadSave, saveAge } from './logic/saves.js';
 import {
   ACCOUNT_ID,
@@ -44,9 +45,12 @@ expose({
   accountChanged: [() => accountChanged, v => (accountChanged = v)],
   accountChipHTML: [() => accountChipHTML, v => ((accountChipHTML = v), provide({ accountChipHTML }))],
   accountError: [() => accountError, v => (accountError = v)],
+  accountMeasureClock: [() => accountMeasureClock, v => (accountMeasureClock = v)],
   accountOn: [() => accountOn, v => ((accountOn = v), provide({ accountOn }))],
   accountPickSave: [() => accountPickSave, v => (accountPickSave = v)],
   accountSaveCardHTML: [() => accountSaveCardHTML, v => (accountSaveCardHTML = v)],
+  accountSaveDoc: [() => accountSaveDoc, v => (accountSaveDoc = v)],
+  accountServerMs: [() => accountServerMs],
   accountSetAsideHTML: [() => accountSetAsideHTML, v => ((accountSetAsideHTML = v), provide({ accountSetAsideHTML }))],
   accountSettingsHTML: [() => accountSettingsHTML, v => ((accountSettingsHTML = v), provide({ accountSettingsHTML }))],
   accountSignIn: [() => accountSignIn, v => (accountSignIn = v)],
@@ -72,6 +76,8 @@ export const account = {
   err: '',
   /* the save online has been looked at (and any question about it answered): the title may continue by itself */
   pulled: false,
+  /* RL-10b: the phone clock against the server's, this session: '' not yet, 'measuring', 'known' */
+  clock: '',
 };
 provide({ account }); /* to-module */
 const FIREBASE_SDK_URL = 'https://cdn.jsdelivr.net/npm/firebase@10.12.5/';
@@ -167,6 +173,8 @@ async function pullAccountSaveNow() {
     }
   })();
   if (snap && snap.exists) {
+    /* RL-10b: the server's time of the last write is the ranch clock's floor for whichever save plays on */
+    setRanchFloor(Math.max(ranchFloor, accountServerMs(snap.data())));
     let remote = null,
       age = null;
     try {
@@ -316,6 +324,45 @@ function accountSetAsideHTML() {
     return `<div class="acc-box acc-aside"><div class="acc-t"><b>Set aside: ${name}</b><span class="note">The game from ${escapeHtml(A.from)}, set aside ${when}. ${escapeHtml(saveAge(O) === 'new' ? SAVE_NEW_MSG : SAVE_OLD_MSG)}</span></div><div class="two"><button class="pb small quiet" data-a="acc-aside-save">Download it</button></div></div>`;
   return `<div class="acc-box acc-aside"><div class="acc-t"><b>Set aside: ${name}</b><span class="note">The game from ${escapeHtml(A.from)}, set aside ${when}. Bringing it back sets this one aside instead.</span></div><div class="two"><button class="pb small" data-a="acc-aside-back">Bring it back</button><button class="pb small quiet" data-a="acc-aside-save">Download it</button></div></div>`;
 }
+/* the save's document online (firestore.rules saves/{uid} takes these keys only). RL-10b: t is the server's time of
+   the write, the ranch clock's anchor (logic/ranch-clock.js) */
+function accountSaveDoc() {
+  return {
+    json: JSON.stringify(saveData),
+    savedAt: saveData.savedAt || Date.now(),
+    saveVersion: SAVE_VERSION,
+    name: (saveData.avatar && saveData.avatar.name) || '',
+    game: 'Pocket Billies',
+    t: firebase.firestore.FieldValue.serverTimestamp(),
+  };
+}
+/* RL-10b: the server's time on the save (a Firestore Timestamp) in ms, or 0 */
+const accountServerMs = d => (d && d.t && typeof d.t.toMillis === 'function' ? d.t.toMillis() : 0);
+/* RL-10b: after this session's first write, the save read back once: its server time against the phone's clock
+   around the write is the clock's skew (ranchSkew, memory only), and the server time is the ranch clock's floor */
+function accountMeasureClock(before) {
+  if (account.clock) return;
+  account.clock = 'measuring';
+  const after = Date.now(),
+    R = RULES.ranch || { guardMs: 60000 };
+  account.db
+    .collection('saves')
+    .doc(account.user.uid)
+    .get({ source: 'server' })
+    .then(snap => {
+      const ms = accountServerMs(snap.exists ? snap.data() : null);
+      if (!ms) {
+        account.clock = '';
+        return;
+      }
+      setRanchSkew(clockSkew(before, after, ms, R));
+      setRanchFloor(Math.max(ranchFloor, ms));
+      account.clock = 'known';
+    })
+    .catch(() => {
+      account.clock = '';
+    });
+}
 /* called by save()'s flush: writes to the account (a moment later, so a burst of saves is one write) */
 function flushAccountSave(now) {
   if (!account.user || !account.db) return false;
@@ -324,16 +371,12 @@ function flushAccountSave(now) {
   const go = () => {
     /* RL-8: not mid-way through a run's battle (game-state.js saveHeld): the account keeps its start */
     if (!account.user || saveHold || saveHeld()) return;
+    const before = Date.now();
     account.db
       .collection('saves')
       .doc(account.user.uid)
-      .set({
-        json: JSON.stringify(saveData),
-        savedAt: saveData.savedAt || Date.now(),
-        saveVersion: SAVE_VERSION,
-        name: (saveData.avatar && saveData.avatar.name) || '',
-        game: 'Pocket Billies',
-      })
+      .set(accountSaveDoc())
+      .then(() => accountMeasureClock(before))
       .catch(accountError);
   };
   if (now) go();
@@ -373,19 +416,13 @@ async function accountSignOut() {
     save();
     if (!saveHold)
       await new Promise(r => {
-        account.db
-          .collection('saves')
-          .doc(account.user.uid)
-          .set({
-            json: JSON.stringify(saveData),
-            savedAt: saveData.savedAt || Date.now(),
-            saveVersion: SAVE_VERSION,
-            name: (saveData.avatar && saveData.avatar.name) || '',
-            game: 'Pocket Billies',
-          })
-          .then(r, r);
+        account.db.collection('saves').doc(account.user.uid).set(accountSaveDoc()).then(r, r);
       });
     await account.auth.signOut();
+    /* RL-10b: this browser's own game counts on its own clock again */
+    setRanchSkew(0);
+    setRanchFloor(0);
+    account.clock = '';
   } catch (e) {
     accountError(e);
   }

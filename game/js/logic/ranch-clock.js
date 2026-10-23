@@ -20,9 +20,12 @@ expose({
   clockSkew: [() => clockSkew, v => (clockSkew = v)],
   // @ts-expect-error -- replaced on purpose
   ranchAnchor: [() => ranchAnchor, v => (ranchAnchor = v)],
+  ranchFloor: [() => ranchFloor, v => setRanchFloor(v)],
   // @ts-expect-error -- replaced on purpose
   ranchNow: [() => ranchNow, v => ((ranchNow = v), provide({ ranchNow }))],
   ranchSkew: [() => ranchSkew, v => setRanchSkew(v)],
+  // @ts-expect-error -- replaced on purpose
+  setRanchFloor: [() => setRanchFloor, v => (setRanchFloor = v)],
   // @ts-expect-error -- replaced on purpose
   setRanchSkew: [() => setRanchSkew, v => (setRanchSkew = v)],
 });
@@ -36,12 +39,21 @@ export let ranchSkew = 0;
 export function setRanchSkew(v) {
   ranchSkew = Number.isFinite(v) ? Math.round(v) : 0;
 }
+/** the server's time on the cloud save this session (ms; account.js sets it when the save is read or written; 0
+    signed out): ranchNow raises the mark of whichever save is playing to it, so a clock behind the last time the save
+    reached the server is turned back, on any device. Memory only, like the skew */
+export let ranchFloor = 0;
+/** @param {number} v */
+export function setRanchFloor(v) {
+  ranchFloor = Number.isFinite(v) && v > 0 ? Math.floor(v) : 0;
+}
 /** the ranch's time now: the phone's time less the measured skew, or, when that is more than guardMs behind the
     mark (the clock turned back), the mark itself with `back` set. Raises the mark. */
 /** @param {SaveData} s @param {number} deviceNow @param {Pick<RanchRules, 'guardMs'>} R @param {number} [skew] the
     phone's clock minus the server's (ms; this session's measured one when not given) @returns {{ now: number, back:
     boolean }} */
 export function ranchNow(s, deviceNow, R, skew = ranchSkew) {
+  ranchAnchor(s, ranchFloor);
   const t = Math.max(0, Math.floor(deviceNow - (Number.isFinite(skew) ? skew : 0))),
     seen = s.ranch.seen || 0;
   if (t < seen - R.guardMs) return { now: seen, back: true };
