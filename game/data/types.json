@@ -93,7 +93,7 @@
   "text": "#fff",
   "strong": ["Dragon"],
   "weak": ["Steel"],
-  "passive": "inherit",
+  "passive": "partingroar",
   "passiveName": "Parting Roar",
   "passiveText": "When it faints, the teammate who comes in next gets its Attack and Sp. Atk raised.",
   "fx": ["scale","flame"]

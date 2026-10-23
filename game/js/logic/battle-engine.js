@@ -758,12 +758,12 @@ export function award(e) {
  * (before RF-3 it passed on its own boosts, if it had any) */
 export function inherit(k) {
   const ty = speciesOf(fighter(k)).types;
-  if (!hasPassive(ty, 'inherit')) return;
-  battleNow().sides[ACTOR_SIDE[k]].inh = {
+  if (!hasPassive(ty, 'partingroar')) return;
+  battleNow().sides[ACTOR_SIDE[k]].roar = {
     lev: 1,
     lob: 1,
     from: billyName(fighter(k)),
-    name: passiveName(ty, 'inherit'),
+    name: passiveName(ty, 'partingroar'),
   };
 }
 /* who on a side could still come in: alive, not at work, not on the field and not already called in this turn */
@@ -786,9 +786,9 @@ export function doSwitch(k, idx, b) {
     f.act = idx;
     f.on = true;
     f.down = false;
-    const inh = sd.inh;
+    const roar = sd.roar;
     f.v = newFieldState();
-    sd.inh = null;
+    sd.roar = null;
     const m = fighter(k);
     battleSay(
       ACTOR_SIDE[k] === 0
@@ -805,10 +805,10 @@ export function doSwitch(k, idx, b) {
       m.hp = Math.max(0, m.hp - d);
       battleSay(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'rent', dmg: d });
     }
-    if (inh) {
-      f.v.st.lev += inh.lev;
-      f.v.st.lob += inh.lob;
-      battleSay(`${inh.from}’s ${inh.name} fired up ${billyName(m)}!`, { k: 'stat', si: k, up: true });
+    if (roar) {
+      f.v.st.lev += roar.lev;
+      f.v.st.lob += roar.lob;
+      battleSay(`${roar.from}’s ${roar.name} fired up ${billyName(m)}!`, { k: 'stat', si: k, up: true });
     }
   });
 }

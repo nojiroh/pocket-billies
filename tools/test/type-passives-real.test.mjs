@@ -47,7 +47,7 @@ test('every type names its passive and says what it does; the ids are the nine t
     'slipstream',
     'wildmind',
     'alloy',
-    'inherit',
+    'partingroar',
   ];
   assert.deepEqual(
     TYPES.map(t => data.PASSIVE[t]),
@@ -222,7 +222,7 @@ test('Parting Roar (Dragon): when it faints, the next one in gets +1 Attack and 
     fn('checkFaints')();
     /* yours wait for your pick of who comes in; the foe's next comes in at once */
     if (!si) {
-      assert.ok(b.sides[si].inh, 'the roar waits for the next one in');
+      assert.ok(b.sides[si].roar, 'the roar waits for the next one in');
       fn('doSwitch')(k, 1);
     }
     assert.equal(fn('fighter')(k).sp, 'gates0');
@@ -234,12 +234,12 @@ test('Parting Roar (Dragon): when it faints, the next one in gets +1 Attack and 
       lines(b).some(t => /’s Parting Roar fired up /.test(t)),
       lines(b).join(' | ')
     );
-    assert.equal(b.sides[si].inh, null);
+    assert.equal(b.sides[si].roar, null);
   }
   /* another type leaves nothing behind */
   const b = battle(['musk0', 'gates0'], ['musk0']);
   fn('fieldState')(0).st.lev = 2;
   fn('fighter')(0).hp = 0;
   fn('checkFaints')();
-  assert.equal(b.sides[0].inh, null);
+  assert.equal(b.sides[0].roar, null);
 });
