@@ -1,6 +1,6 @@
 // Studio track ST-3: cutting a sheet into parts (game/js/logic/sheet-slice.js): Python's rounding, the masks and
 // islands, rows, the template grid, trimming, names, front/back matching, Aseprite JSON and Pillow's box filter.
-// The kits' parity with tools/slice-part-kit.py is in sheet-slice-real.test.mjs.
+// The real kit sheets against the parts the game holds: sheet-slice-real.test.mjs.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { modules } from './setup-real.mjs';
