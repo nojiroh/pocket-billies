@@ -36,6 +36,7 @@ import {
   drawLevelTag,
   drawSpeech,
   drawTapMark,
+  drawWalkMark,
   ensureGround,
   hitAt,
   mapById,
@@ -617,6 +618,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
         );
     }
     drawExitLabels(C, st, hits, mapHub(sc));
+    drawWalkMark(C, t, labels);
   }
   /* v28: photo mode asks for the picture as it is drawn (before the browser clears it) */ if (walkRenderer.photoReq) {
     const cb = walkRenderer.photoReq;

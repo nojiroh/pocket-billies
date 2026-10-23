@@ -11,14 +11,15 @@ import { runClinic, runHealCost, runSheetStatus, weatherEffectText } from './log
 import { startWild } from './logic/battle-engine.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { artURL, uiIconHTML } from './art.js';
-import { mapById } from './walk-view.js';
+import { mapById, walkView } from './walk-view.js';
 import { WEATHER_NAMES, environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
-import { runClinicEach, runGiveUp } from './run.js';
+import { runClinicEach, runGiveUp, runStartSheet } from './run.js';
 import { trainerTalk } from './story.js';
 import { challengeCardHTML } from './things-to-do.js';
 import { closeModal, modal, toast } from './overlay.js';
 /* eslint-disable no-func-assign */
 expose({
+  HUB_MARKS: [() => HUB_MARKS],
   WEATHER_ICONS: [() => WEATHER_ICONS],
   boardNote: [() => boardNote, v => (boardNote = v)],
   clinicHeal: [() => clinicHeal, v => (clinicHeal = v)],
@@ -26,6 +27,7 @@ expose({
   encountersHTML: [() => encountersHTML, v => (encountersHTML = v)],
   environmentLine: [() => environmentLine, v => (environmentLine = v)],
   hereHTML: [() => hereHTML, v => (hereHTML = v)],
+  hubHTML: [() => hubHTML, v => (hubHTML = v)],
   locationCardHTML: [() => locationCardHTML, v => (locationCardHTML = v)],
   nodeActions: [() => nodeActions, v => ((nodeActions = v), provide({ nodeActions }))],
   renderWalk: [() => renderWalk, v => (renderWalk = v)],
@@ -35,6 +37,7 @@ expose({
   tripDest: [() => tripDest],
   tripStatus: [() => tripStatus, v => ((tripStatus = v), provide({ tripStatus }))],
   walkHero: [() => walkHero, v => (walkHero = v)],
+  walkMarkTo: [() => walkMarkTo, v => (walkMarkTo = v)],
   walkSheetClose: [() => walkSheetClose, v => (walkSheetClose = v)],
   walkSheetHTML: [() => walkSheetHTML, v => (walkSheetHTML = v)],
   walkSheetOpen: [() => walkSheetOpen, v => (walkSheetOpen = v)],
@@ -192,11 +195,36 @@ export function renderWalk() {
    part of the page under the scene, so any scroll (a mouse wheel, a trackpad) slid it into view. Its content is made
    again on every render while it is open; leaving the world (another tab, a battle) closes it */
 function walkSheetHTML() {
-  return `${runStatusHTML()}${hereHTML()}${encountersHTML()}${challengeCardHTML()}${
+  return `${runStatusHTML()}${hubHTML()}${hereHTML()}${encountersHTML()}${challengeCardHTML()}${
     saveData.run
       ? `<button class="pb gold wide ws-move" data-a="tab" data-t="map">${uiIconHTML('map', 16)} Open the map to move on</button>`
       : ''
   }`;
+}
+/* the hub's buildings the sheet can point you to (a marker in the world: walkMarkTo), by their act */
+const HUB_MARKS = [
+  ['ranch', 'Ranch', 'Train and breed your Billies'],
+  ['lab', 'Hazel’s lab', 'Talk to the professor'],
+];
+/** in the hub: start a run (the mast's sheet, opened here), and the ranch and the lab, marked in the world to walk to */
+function hubHTML() {
+  if (saveData.run) return '';
+  const props = (walkView.sc && walkView.sc.props) || [],
+    can = saveData.team.length + saveData.box.length > 0,
+    marks = HUB_MARKS.filter(([act]) => props.some(p => p.act === act))
+      .map(
+        ([act, name, what]) =>
+          `<button class="pb ws-go" data-a="walkmark" data-k="${act}">${uiIconHTML('walk', 16)}<span><b>${escapeHtml(name)}</b><small>${escapeHtml(what)} · show me the way</small></span></button>`
+      )
+      .join('');
+  return `<section class="ws-hub"><button class="pb gold wide ws-move" data-a="runstart"${can ? '' : ' disabled'}>${uiIconHTML('map', 16)} Start a run</button>${can ? '' : '<p class="note">Someone has to come along: a Billie in your team or in storage.</p>'}${marks ? `<div class="ws-gos">${marks}</div>` : ''}</section>`;
+}
+/** mark a hub building in the world (walk-view.js drawWalkMark) and close the sheet so you can walk there */
+function walkMarkTo(act) {
+  const H = HUB_MARKS.find(([a]) => a === act),
+    p = H && walkView.sc && (walkView.sc.props || []).find(q => q.act === act);
+  if (!p) return;
+  walkView.mark = { act, label: H[1] };
 }
 /** what this place offers: its line, a trainer's hint, and its buttons (nodeActions: a shop, the clinic, its trainers
     or a run's mini-boss) */
@@ -274,6 +302,7 @@ export function walkTipOnce() {
   toast('Drag anywhere on the scene to walk, or tap where you want to go. The arrows at the edges lead on.');
 }
 export function walkSheetOpen() {
+  walkView.mark = null;
   uiState.walkSheet = true;
   walkSheetSync();
 }
@@ -314,6 +343,12 @@ export function walkTabAction(a, d) {
       break;
     case 'rungiveup':
       runGiveUp();
+      break;
+    case 'runstart':
+      runStartSheet();
+      break;
+    case 'walkmark':
+      walkMarkTo(d.k);
       break;
   }
 }
