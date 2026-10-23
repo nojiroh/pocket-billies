@@ -131,7 +131,7 @@ def gamedata():
 
 # ------------------------------------------------------------------ 1. without a browser
 @step('Windows: no prop stands in front of one (from the data)', 30)
-def check_windows():
+def check_windows(P=None):
     """alpha 0.1: tools/clear-windows.py looks at every window on every building front and room wall as the walk camera
     sees it; no prop may hide more than a fifth of one"""
     import importlib.util
@@ -146,7 +146,7 @@ def check_windows():
 
 
 @step('Ground: every kind has twelve tiles of its own', 30)
-def check_ground():
+def check_ground(P=None):
     """v47: the 12 tiles of every ground kind exist, differ from each other, and share no picture or overlay with
     another kind (v46 stamped the same grey smudge onto one tile of every kind)"""
     from PIL import Image
@@ -175,7 +175,7 @@ def check_ground():
 
 
 @step('Unused: art, props and songs nothing names', 30)
-def report_unused():
+def report_unused(P=None):
     """v47: lists pictures and sounds no code, page or data names, and catalogue props no place uses and no code
     names, so old things don't build up again. A report, not a failure. A folder the code builds names in (battle/
     plus a stage) counts as named as a whole, so the list holds only what nothing reaches"""
