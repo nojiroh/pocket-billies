@@ -126,4 +126,5 @@ def go_scene(pg, node, sec=40):
     # the hub may sit near an exit, so the view may be the scene with its road (baseId)
     if not until(pg, f'!!(walkView.ready&&(walkView.id===LOCATIONS[{node}].mapId||(walkView.sc&&walkView.sc.baseId===LOCATIONS[{node}].mapId)))', sec):
         raise Exception(f'{pg.evaluate(f"LOCATIONS[{node}].mapId")} didn’t open in {sec}s')
-    if not frames(pg, 2, 30): raise Exception(f'{pg.evaluate("walkView.id")} isn’t drawing (black screen)')
+    # TC-4: the first frames of a scene opened again (back from a run, say) took over 30 s on a busy machine
+    if not frames(pg, 2, max(sec, 60)): raise Exception(f'{pg.evaluate("walkView.id")} isn’t drawing (black screen)')
