@@ -17,7 +17,7 @@ those sessions; until then, follow the rule next to them.
 | style diff (UI-5) | `python3 tools/style-diff.py` (`--only=<screens>`, `--ref=<rev>`) | about 8 min (16 screens, 2 browsers) | none | a commit that moves CSS or screen code and must change nothing on screen: 0 differences against HEAD |
 | fast check | `npm run check:fast` | about 11 min on CI (677 s on 23 Oct 2026: 27 checks on 19 pages, 2 browsers); 665 s in a 4-core cloud container | 3 min, not met (see below) | every push and pull request in CI; after a change, alone with `--only=` |
 | (c) smoke | `npm run check:smoke` | about 3 min (188 s on 23 Oct 2026, a 4-core cloud container: the phone flow, the actions sheet, one in-game test step) | 1-2 min, not met | before every commit that touches game/, tools/check-quick.py, vite.config.js or tools/to-module.mjs |
-| (d) full | `npm run check:quick` | about 20 min (1217 s on 23 Oct 2026: 37 steps on 13 pages, 2 browsers, the boots 506 s of it; 41 min the same day before TC-4 round 3) | about 10 min, not met (see below) | at the end of a phase, nightly in CI |
+| (d) full | `npm run check:quick` | about 21 min (1282 s on 23 Oct 2026, all 37 steps passed, 13 pages, 2 browsers, about 500 s of the pages' time boots; 1217-1338 s over four runs; 41 min the same day before TC-4 round 3) | about 10 min, not met (see below) | at the end of a phase, nightly in CI |
 | (e) in-game test | `python3 tools/check-quick.py --selftest` | about 25 min | outside the budget | nightly in CI; at the end of a phase that touched what it plays |
 | rules | `cd firebase && npm test` | about 1 min | none | when firestore.rules or what the game writes changes |
 

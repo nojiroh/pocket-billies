@@ -172,7 +172,7 @@ Done when: the full check has no red step that is not a real bug, and no step de
 6. Update TESTING.md's tiers table and the docstrings with measured times.
 Done when: full check about 10 min (or each miss documented), fast check in its stated time, `npm test` under 30 s,
 nightly green with pictures compared.
-**Done 2026-10-23** (round 3, docs/HANDOFF.md): the full check 1217 s (2455 s before), smoke 188 s, the fast check 677 s on
+**Done 2026-10-23** (round 3, docs/HANDOFF.md): the full check 1282 s, all passed (2455 s before), smoke 188 s, the fast check 677 s on
 CI, `npm test` 20 s. The misses are documented in docs/TESTING.md (software drawing, a frame about 1.5 s, a boot per
 page); the fast check's stated time is now its measured one, its 3-minute budget needs its pages to share boots. The
 nightly compares pictures once the baseline run (item 5) has made the baseline.
