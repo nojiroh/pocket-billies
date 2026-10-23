@@ -66,7 +66,7 @@ def hang(s, k, x, h=H):
 
 def int_shop():
     s = room('int_shop', 'Inside the shop', 'O', '#E6CFA2', 2601, 'shop', 'cashier', (7, 7.7),
-             ['Everything on these shelves is technically a collectible.', 'The coin rolls go fast on payday.', 'We restock every time an airship lands. Roughly.'])
+             ['Everything on these shelves is technically a collectible.', 'Limit three Capstones per customer. We have never had one.', 'We restock every time an airship lands. Roughly.'])
     s.put('shop_counter', 7, 6.6, act='shop', label='Counter')
     for x in (2.2, 11.8): s.put('shop_shelf', x, 8.6)
     s.put('fridge_drinks', 4.4, 8.9); s.put('shop_shelf', 9.7, 8.6, .9)
@@ -103,7 +103,7 @@ def int_lab():
 
 def int_house():
     s = room('int_house', 'Inside a house', '8', '#D9B79C', 2604, 'house', 'folk:7', (9.6, 5.4),
-             ['Come in, come in. Mind the rug.', 'The fireplace runs on old receipts.', 'My cousin caught a billionaire in the bath once.', 'Stay as long as you like. The kettle’s on.'])
+             ['Come in, come in. Mind the rug.', 'The fireplace runs on old terms and conditions. They burn for ages.', 'My cousin caught a billionaire in the bath once.', 'Stay as long as you like. The kettle’s on.'])
     s.put('fireplace', 7, 9.1, label='Fireplace')
     s.put('sofa', 7, 6.6); s.put('table_round', 3.6, 4.6); s.put('chair_wood', 2.6, 4.4); s.put('chair_wood', 4.6, 4.4, 1, 1)
     s.put('bookshelf', 12.2, 8.9); s.put('plant_tall', 1.6, 8.6); s.put('plant_tall', 12.5, 1.8, 1, 1)
@@ -196,7 +196,7 @@ def int_mansion():
 
 def int_barn():
     s = room('int_barn', 'Inside the barn', '~', '#B88A64', 2619, 'barn', 'folk:101', (7, 6.8),
-             ['Mind the hay. The billionaires love hiding in it.', 'We grow the town’s food. And its gossip.', 'The cow’s name is Dividend.'])
+             ['Mind the hay. The billionaires love hiding in it.', 'We grow the town’s food. And its gossip.', 'The cow’s name is Synergy. She has never once produced any.'])
     s.put('haybale_stack', 2.4, 8.8); s.put('haybale', 4.6, 8.4); s.put('haybale', 11.6, 8.6); s.put('wheelbarrow', 10.6, 6.0)
     s.put('sack', 12.6, 4.6); s.put('sack', 12.2, 5.4, .9, 1); s.put('barrel', 1.6, 4.2); s.put('crate', 2.6, 3.0); s.put('ladder', 7.6, 9.4)
     hang(s, 'wall_window', 4.6)
