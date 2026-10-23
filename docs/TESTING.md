@@ -10,7 +10,8 @@ those sessions; until then, follow the rule next to them.
 | Tier | Command | Now | Budget | When |
 |---|---|---|---|---|
 | (a) lint, types | `npm run lint`, `npm run typecheck` | 4 s warm (9 s cold) + 0.6 s | under 10 s | after every edit (the Claude Code hook runs it) |
-| (b) unit tests | `npm test` | about 47 s in a cloud container (Studio plan Phase 1: 635 tests; Phase 5: 665; the scene sweeps take most): over budget | under 30 s | after every edit to logic, data or tests (the hook) |
+| (b) unit tests | `npm test` | about 23 s in a cloud container (Studio plan Phase 6: 606 tests, the quick tier) | under 30 s | after every edit to logic, data or tests (the hook) |
+| (b2) slow unit tests | `npm run test:slow` | about 39 s (42 tests: the scene sweeps that generate whole maps and islands, `SLOW_TESTS` in tools/unit-tests.mjs) | none | in CI beside `npm test`; `npm run test:all` runs both |
 | before a commit | `npm run check:modules`, `npm run format:check`, `npm run check:data`, `npm run build` | about 15 s | none | every commit |
 | UI pictures (UI-2) | `npm run check:ui` | about 1.5 min | none | after a change to the kit, its CSS, uiTheme.json or studio/gallery.html |
 | style diff (UI-5) | `python3 tools/style-diff.py` (`--only=<screens>`, `--ref=<rev>`) | about 8 min (16 screens, 2 browsers) | none | a commit that moves CSS or screen code and must change nothing on screen: 0 differences against HEAD |

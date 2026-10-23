@@ -67,6 +67,7 @@ import {
   colorField,
   commit,
   dialog,
+  drawSoon,
   grid,
   numberField,
   peopleOptions,
@@ -429,7 +430,7 @@ SECTIONS.scenes = () => {
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(id)}</small><h2>${escapeHtml(sc.name || id)}</h2></div><div class="seg-row"><button class="btn subtle" data-act="scDup">Duplicate</button><button class="btn danger" data-act="scDel">Delete</button></div></div>
  ${card(
    'Preview',
-   `<div class="sc-pv"><canvas id="scPv"></canvas><div class="sc-pv-load" id="scPvLoad">Loading…</div></div>
+   `<div class="sc-pv"><canvas id="scPv" data-keep="walk-gl"></canvas><div class="sc-pv-load" id="scPvLoad">Loading…</div></div>
   <div class="seg-row"><button class="seg ${mapEditor.pv === 'roam' ? 'on' : ''}" data-act="scPv" data-m="roam">Walk around</button><button class="seg ${mapEditor.pv === 'path' ? 'on' : ''}" data-act="scPv" data-m="path">Follow the path</button><button class="btn sm subtle" data-act="scPvHub">Back to the hub</button><button class="btn sm" data-act="scTestRun" title="Opens the game in a new tab, straight into this scene, with a throwaway save. Your edits show up there as you make them.">Test run in the game</button></div>
   <div class="seg-row sc-env"><select id="scEnvT" data-act-change="scEnv" aria-label="Time of day">${[
     ['', 'Midday'],
@@ -1807,14 +1808,22 @@ document.addEventListener('keydown', ev => {
   }
 });
 /* field edits for the current scene update the map and preview */
+/* Studio plan T6.1: the 2D map (and the prop editor, the terrain thumbnails) redraw in the next frame, once however
+   many events came; the walk view rebuilds its paths and ground once the field has been still for 300 ms */
 studioState.hooks.scenes = path => {
-  if (mapEditor.ped && typeof drawPropEditor === 'function') drawPropEditor();
+  if (mapEditor.ped && typeof drawPropEditor === 'function') drawSoon('propEditor', drawPropEditor);
   if (path.startsWith('maps.') || path.startsWith('scenery.')) {
-    walkView.nav = null;
-    walkView.cand = null;
-    if (/\.(edge|w|h)$/.test(path) || path.startsWith('scenery.terrains')) walkView.gkey = '';
-    drawEditorMap();
-    if (path.startsWith('scenery.terrains')) drawSceneryThumbs();
+    const ground = /\.(edge|w|h)$/.test(path) || path.startsWith('scenery.terrains');
+    mapEditor.rebuildGround = mapEditor.rebuildGround || ground;
+    clearTimeout(mapEditor.rebuildT);
+    mapEditor.rebuildT = setTimeout(() => {
+      walkView.nav = null;
+      walkView.cand = null;
+      if (mapEditor.rebuildGround) walkView.gkey = '';
+      mapEditor.rebuildGround = false;
+    }, 300);
+    drawSoon('editorMap', drawEditorMap);
+    if (path.startsWith('scenery.terrains')) drawSoon('sceneryThumbs', drawSceneryThumbs);
   }
 };
 /* ---------- actions ---------- */

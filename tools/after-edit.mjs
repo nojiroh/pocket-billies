@@ -10,6 +10,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
+import { SLOW_TESTS } from './unit-tests.mjs';
 
 const ROOT = join(import.meta.dirname, '..');
 let file = '';
@@ -26,6 +27,9 @@ const runs = [];
 if (/^(game\/js|studio)\/.*\.js$/.test(rel) || /^[^/]+\.js$/.test(rel)) runs.push(['npm', ['run', '-s', 'lint']]);
 if (/^game\/js\/.*\.js$/.test(rel)) runs.push(['npm', ['run', '-s', 'typecheck']]);
 if (/^game\/js\/(logic\/.*|game-data)\.js$/.test(rel) || /^tools\/test\//.test(rel)) runs.push(['npm', ['test', '-s']]);
+/* Studio plan T6.4: npm test is the quick tier; an edited slow test (tools/unit-tests.mjs) runs on its own */
+if (/^tools\/test\/.*\.test\.mjs$/.test(rel) && SLOW_TESTS.includes(rel.slice('tools/test/'.length)))
+  runs.push(['node', ['--test', rel]]);
 if (/^game\/data\/.*\.json$/.test(rel)) runs.push(['npm', ['run', '-s', 'check:data']]);
 if (/^tools\/.*\.py$/.test(rel)) runs.push(['python3', ['-m', 'py_compile', rel]]);
 

@@ -1,6 +1,6 @@
 'use strict';
 /* ================= STUDIO SELF-TEST (studio track ST-T) =================
-   Check & backups → Run the Studio test, or studio/?selftest. A test of the Studio itself, not the game: it opens
+   Check → Run the Studio test, or studio/?selftest. A test of the Studio itself, not the game: it opens
    every section (both panes), makes an edit in each that has a field and undoes it, opens the tools, opens everything
    a second time, and times all of it, for the sessions that make the Studio faster (docs/phases/studio-self-test.md).
    About 90 seconds, on a desktop browser or an iPad.

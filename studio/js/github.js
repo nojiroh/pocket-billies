@@ -327,7 +327,6 @@ async function studioApiViaGithub(path, opt = {}) {
           mtime: 0,
         }));
     }
-    if (p === 'backups') return [];
     throw new Error('Unknown request.');
   }
   if (!githubMode.batch) throw new Error('Saving goes through “Propose changes”.');

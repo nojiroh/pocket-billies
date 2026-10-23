@@ -74,6 +74,26 @@ saved straight into `game/data`) was dropped (Studio plan, owner's decision 2026
 - A Billie named from a line parked in `game/data/legacy` is a note (the game stands a new line's Billie in for it).
   A name that is in neither, like a typo, is a problem.
 
+## How a section draws (for contributors; Studio plan Phase 6)
+
+- A section is a function returning HTML; `renderPane` puts it in its pane, then runs `afterRender` steps. If the
+  section throws, the pane says so (and the console has the error); an error nothing caught elsewhere is a toast.
+- A redraw of the section a pane already shows keeps the focused control (found again by its `data-p`, or its tag and
+  `data-*`) and the pane's scroll.
+- **Keep an element across redraws** with `data-keep="<key>"`: before the redraw it is put aside, then it replaces
+  the new HTML's placeholder with the same key (taking the placeholder's id and classes). The 3D previews (Walk scenes,
+  Generate, Hub island, Props, Engine) share `walk-gl`: one canvas, so one WebGL context, for the whole session. A new
+  3D section needs only `<canvas id="..." data-keep="walk-gl">`.
+- **Section hooks** (`studioState.hooks[sec]`) run on every input event of a field in that section's pane (the second
+  pane's own section, too). Expensive drawing goes through `drawSoon(key, f)`: once in the next frame, however many
+  events came. Rebuilds that may wait (Walk scenes' walk-view paths and ground) wait for 300 ms of stillness.
+- **Paths that read and write their own way** (`@lines.` lore lists, `@script.` scripts, `@thanks.` a shop keeper's
+  lines): `pathPrefix(prefix, read, write)`. A prefix is claimed once; a claim that starts another throws at load,
+  and a unit test reads every claim in studio/js.
+- **Person pictures** (game/js/person-art.js) keep a sheet's pixels and each recoloured piece per picture
+  (`markArt` bumps the picture's `_ver`); after a data edit call `forgetPersonLooks()`, not `PERSON_ART_CACHE.clear()`.
+- An undo that changes only text data (moves, items, lore, story and the like) keeps the picture caches.
+
 ## Layout (studio track ST-1)
 
 The Studio is built for wide screens (up to 3440 x 1440) and still works on a tablet.
@@ -495,8 +515,7 @@ only after a click). It stops by itself when the section is off screen.
 | **Generate** (in Walk scenes) | Map generator MG-1: **Generate…** beside + New scene makes a whole route from dials and a seed: the biome (ground, plants, water kind, sky and animals from game/data/biomes.json), size presets, hilliness, terraces and their height, mountains (terrain TR-2: up to 20 m on the sides chosen, rock shelves and cliffs, a footpath winding up each to a summit marked in `spots`), water (stream, pond, coast) and how much, the road's entry and exit edges (side, place along it, width; written to edgeExits with the walk length), its shape (straight, gentle winding, S-curve, switchback), wobble, width, surface and verge, trees, wild growth (the grow-wild rules), tall grass (the encounters), clearings, one feature (stream and bridge, lookout, jetty, glade, lava flow, terraces) and props (signposts, lamps, benches, bins, townsfolk spots). ↺ puts a dial back, Reset a group; 🎲 New seed, or a new seed for one part only (land and water, mountains, ground, road, plants, feature, props) keeping the rest. The draft is drawn by the game's renderer (walk around it) and from above (click to walk there); it is not game data, not in Undo and not saved until **Add as a new scene** (one undo step; Ctrl+S saves it). Every generated prop carries `g: 1` and the scene keeps its dials in `gen`. **Joins…** (map generator MG-2) under each exit joins it to an exit of any scene: the exit turns to face it, a whole number of metres along from it and as wide (its side, place and width are then locked; **Unjoin** frees them), and the draft takes that scene's edge (its heights, step raise and natural ground over the stretch a neighbour shows, 26 m either side of the exit; the dials keep the edge, so an added scene keeps it in `gen`). The stats say how the two meet (heights along the band, the step, a straight walk across), and warn when the exits break the data's rules for a place's map (two a side, 44 m apart). **Preview the pair** shows both side by side as the game lays them, nothing eased. Props → **Airship mast / Clinic / Shop at the hub** put them beside the main road near the hub facing the camera, on level ground with a path to the door (🎲 Buildings rerolls where). Terraces come down to ground level by every exit, and roads climb them as ramps (terrain track TR-1). Coming: towns (MG-3), presets and regenerating only what was generated (MG-4). The place and its roads (the old MG-2 Accept) are parked: every map outside the hub is legacy. |
 | **Hub island** | Island track IS-6a: the hub's island in an orbit view and on a map: paint the ground, shape the land, move the coast's and zones' points, set a zone's kind and lock, place the orbit's pivot and dead zone; Walk the coast; lock the ground once it is right (Walk scenes then refuses its ground tools; props stay free). IS-6b: the generator's dials with a live draft and Use this island (locked zones kept; refused while the ground is locked). Above. |
 | **Engine** | Every dial of the 3D renderer, with a live preview of any walk scene: lens (sharp band, blur in front and behind, round highlights, chromatic aberration, vignette, grain, sharpen), color (exposure, highlight roll-off, contrast, saturation, warmth, bloom), sun and sky (direction, height, color, real-clock sun, sky light, ground bounce, clouds and their shadows, light shafts), shadows (strength, softness, color, contact shadows, solid building shadows, ambient occlusion), lights, haze and mist, horizon curve, ground bumpiness and shine, world map mountains, grass and wind, water, camera (including distance and tilt) and quality, plus colour grades. Set them for the **whole game**, override them for **one scene** (battles there follow it) or for the **world map**; ↺ puts back a single dial. Ready-made presets (Sunny, Overcast, Golden hour, Cave, Mall), your own presets, a "Hold to compare" button that shows the built-in look, and a frame meter. |
-| **Map art** (under World) | Paint `world.png` with a brush, fill, color picker, clone and "fill with terrain". Remove the painted trail and repaint it along the stops in the exact path the game walks. Drag a stop and its painted patch moves with it, with the old spot filled from the terrain around it. A preview shows the stop from the game's map camera. |
-| **Trainers, People** | Trainer teams, their script (checked as you type), when they're there, rewards, badges, sandstorms; trainer and shopkeeper looks with a live preview. **Mini-boss** (RL-5): the trainer stands on no stop (the eight badge leaders, for the runs, RL-13); Stands at is hidden. |
+| **Trainers, Looks** | Trainer teams, their script (checked as you type), when they're there, rewards, badges, sandstorms; trainer and shopkeeper looks with a live preview. **Mini-boss** (RL-5): the trainer stands on no stop (the eight badge leaders, for the runs, RL-13); Stands at is hidden. |
 | **Run Lab** (group Runs) | Studio plan Phase 2: a run's map from a seed, on your unsaved data and beside the loaded data; a place's foes, shops and wild Billies from the game's logic; checks over 1,000 seeds; the run rules beside it; Play this seed; Simulate, Base against Draft (see Run Lab above). |
 | **Loopholes, Unlocks & hub, Economy** (group Runs) | Studio plan Phase 4: a run's Loopholes with a sample build and a seed's offers, the unlock graph with what a new save has, and every source and sink of each currency (see Roguelite content editors above). |
 | **Legacy world** (group Legacy) | RL-5: the old world outside the hub, parked in `game/data/legacy`, read-only: the 48 places with their old stop numbers, the trainers who stood there and their roads, plus counts of the parked shops, jobs and lore. It is read beside the Studio, or from GitHub when signed in, and never enters the Studio's data, so Save, Undo and the Check never touch it. **Copy into game** brings a place's map back as a walk scene of its own (no place, no roads) in one undo step and opens it in Walk scenes; whatever its people name that the game no longer has shows in the Check. |
@@ -506,13 +525,13 @@ only after a click). It stops by itself when the section is off screen.
 | **Music & sound** (group Sound) | The songs (play, loop, the recipe's dials heard at once, a hook and countermelody roll), the where table with Try a place, and the jingles (music.json). A Billy's cry is on its Billies page. Sound track SND-3, above. |
 | **Rules** | Every number that tunes the game: starting items, starters and rival, wild Billies per place and how fast they come back, prize money, leveling curve, team size, eggs, damage, critical hits, type abilities, taxing, bargains. |
 | **Art files** | Browse, download and replace any image. |
-| **Check & backups** | Lists problems with "Show me" links (see "The Check" below). The backups list is from the dropped local mode and is always empty on GitHub. |
+| **Check** | Lists problems with "Show me" links (see "The Check" below); downloads or loads the game data; runs the Studio test. Earlier versions are in git: a proposal is a pull request. |
 | **Find and Connections** | Ctrl+K finds any setting or thing and takes you to it; Ctrl+L shows what the thing you're editing uses and what uses it, or, for an engine dial, where its value comes from and what it depends on. |
 
 ## Saving in local mode
 
 **Save to game** (Ctrl+S) writes the game data, `game/art/rigs.js` and the
-changed images. Each save keeps the previous file in `backups/`. Undo/redo cover every
+changed images. Undo/redo cover every
 edit in the session. **Play test** opens the game with the debug menu at
 `localhost:8001`, which keeps a separate save from your normal game. Reload the game tab
 to see saved changes.
@@ -531,13 +550,7 @@ menu.
 
 ## Notes and limits
 
-- Moving a stop under Route stops moves only its marker and the walking path. Move it
-  under Map art to carry its painted patch along, then repaint the trail. Patch moving
-  keeps the colors that stand out from the ring around the stop, so a patch larger than
-  the patch-size setting is only partly carried.
-- Blank bodies are simple colored shapes meant to be painted over. Removing the trail
-  and moving patches fill holes from the surrounding terrain, which suits the map's flat
-  color areas; touch up with the brush or clone tool where needed.
+- Blank bodies are simple colored shapes meant to be painted over.
 - New parts make sheets taller. They are never packed tighter automatically, so a
   heavily edited billionaire's sheet can grow a little each time you add parts.
 - Checked in Chromium at phone, tablet, desktop and phone-landscape sizes, in light

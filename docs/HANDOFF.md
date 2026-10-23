@@ -1238,6 +1238,129 @@ reviewed by the parent session; further decisions took the recommended option an
   branch (sessions C+D, entry below) and were merged here. Their CI job runs `check-studio-github.py` with
   `studio_test`, which now also fails on a section that writes outside an edit. Tag `sr-1-done` is the owner's.
 - Optional follow-ups: drop the old colour keys of the 25 people and make the schema strict; split big maps deeper.
+### Studio plan Phase 6 - Performance, polish and docs - 2026-10-22
+Branch `claude/sr-6-polish`, from `ccr-81011a25-lf3exv` at 625dd55 (T1.2's `restoreParts` is in). Plan pre-approved by
+the owner's standing instruction; the recommended option is taken at each decision and recorded under the plan doc's
+"Decisions". Other sessions run at the same time (1c, 2b, 3, 4, 5b): this one leaves SECTION_LIST's order and groups,
+check.js's checks, data-checks.js, the publish and drafts code and the run, sim and workbench files alone.
+
+**Plan** (one cause per commit; a failing test first where a defect is fixed; unit tests, lint, typecheck,
+`check:modules`, `format:check` after each; `check-studio-github.py --only=sections,publish,drafts,studio_test,
+free_camera,tiles,polish` at the end of each ticket; timings from the self-test before and after):
+0. Tooling: `PB_STUDIO_TEST_OUT=<file>` makes `check-studio-github.py` write the self-test's report (the before/after
+   numbers); a new step `polish` holds this phase's browser checks.
+1. **T6.6** (one commit each):
+   - F16: `onField` runs the hook of the section in the field's own pane (a second-pane move rename updates its list).
+   - `renameType` moves to `game/js/logic/type-rename.js` unchanged, with unit tests; then F17: it also renames the
+     robots' parts and gems, the roster, `rules.ride.types` and relics' `fx[].type`, with a unit test that finds every
+     field holding a type id in the real data and renames each type. Deleting the first type no longer sets the shock
+     and spin types to the type being deleted (found while reading; its own commit).
+   - F20: the shop keeper's thank-you field gets its own prefix (`@thanks.`), then one ordered registry
+     (`pathPrefix`) replaces the chained `setReadPath`/`setWritePath` wrappers; a claim of a prefix another already
+     holds throws, and a unit test reads the claims in studio/js.
+   - D5 (`updateTopBar` stringifies the data): skipped, T1.2 fixed it ("a commit is pending").
+   - `renderPane` catches: a section that throws shows its error in the pane; global `error` and
+     `unhandledrejection` toasts.
+   - The pixel canvas's document listeners go when its canvas leaves the page (flat after 5 opens).
+   - The dead backups text (side footer, the Check's Backups card, STUDIO.md) goes.
+2. **T6.7**: `renderPane` moves an element marked `data-keep` into the redrawn pane's placeholder with the same mark;
+   the 3D placeholders (Walk scenes, Generate, Hub island, Props, Engine) share one, so one WebGL context lasts the
+   session. Test: 20 tool switches in Walk scenes make 1 context, no INVALID_OPERATION. Renderer files untouched
+   unless stale meshes remain (then only cache keys). `check:fast` for the game side.
+3. **T6.1**: Walk scenes' hook keeps the 2D map redraw on `input` and moves the walk view's rebuilds to a 300 ms
+   debounce; the other heavy hooks audited the same way.
+4. **T6.2**: undo/redo redraw only when the shown section(s) show a part that changed (`SECTION_PARTS`); a
+   `renderCard` helper for the busiest matrix and toggle actions.
+5. T6.3, T6.4, T6.5, T6.8 as time allows.
+
+**Changed** (one cause per commit; each defect's browser check or unit test fails on the old code):
+- **T6.6**
+  - F16: `onField` runs the hook of the field's own pane's section.
+  - F17: `renameType` moved to `game/js/logic/type-rename.js` (`renameTypeIn`). It now also renames robot parts and
+    gems, the roster, `rules.ride.types` and Loopholes' damage rows. Unit tests walk every field of the real data
+    whose text is a type id (terrain names aside), and the robot and Loophole data checks give the same results after
+    a rename. Found while moving it: deleting the first type left the battle's shock and spin types on the deleted
+    type (its own commit).
+  - F20: a shop keeper's lines take `@thanks.` (lore's `@lines.` won before, so the field showed empty and wrote a
+    top-level key). Then `pathPrefix(prefix, read, write)` replaced the chained setReadPath/setWritePath wrappers; a
+    clashing claim throws; a unit test reads every claim.
+  - D5 was already fixed by T1.2.
+  - `renderPane` catches a throwing section and shows its error in the pane. Uncaught errors and refused promises
+    are toasts.
+  - Pixel canvas: its document listeners share an AbortController, aborted by a MutationObserver when the canvas
+    leaves the page. Over 5 opens: 92 → 104 listeners before, 89 flat now.
+  - The dead backups text is gone (side footer, the Check's Backups card and Restore, the empty route); the section is
+    now called "Check".
+- **T6.7** (F18, F19): `renderPane` keeps `data-keep` elements across redraws. The five 3D placeholders share
+  `walk-gl`, so one canvas and one WebGL context last the session. No renderer file changed. 20 tool switches and an
+  undo in Walk scenes: 21 new contexts and 4114 "object does not belong to this context" warnings before, 0 and 0
+  now. Engine, Hub island, Props and Walk scenes all draw on the one canvas.
+- **T6.1**: `drawSoon(key, f)` (once per frame). Walk scenes draws its 2D map that way and rebuilds the walk view's
+  paths and ground after 300 ms of stillness. The Wardrobe hook draws the same way.
+- **T6.2**: a redraw of the same section keeps focus and scroll (Types matchup click, a `data-rr` select; F21's focus
+  item). An undo that changes only text data keeps the picture caches (`spriteCacheClear(false)`). No per-section
+  part list: see Decisions 9 in the plan doc.
+- **T6.3**: Types' particle icons are CSS sprites from the icon atlas: a cold open went 527 → 33 ms, of which
+  `toDataURL` had been 491 ms. Person art (game/js/person-art.js, cache keys only): a sheet's pixels and a recoloured
+  piece are keyed by the picture object and its `_ver`, and by everything a piece is made from. `forgetPersonLooks()`
+  replaces the Studio's ten full clears. Wardrobe thumbnails are canvases, not data URLs. Wardrobe undo: 750-1030 ms
+  → 180-237 ms.
+- **T6.4**: `tools/unit-tests.mjs`. `npm test` is the quick tier (606 tests, 23 s here); `npm run test:slow` runs the
+  six scene sweeps (42 tests, 39 s); CI runs both. The after-edit hook runs an edited slow test on its own.
+  TESTING.md updated.
+- **T6.8**: labels "People" → "Looks" and "Parts" → "Part sizes" (ids unchanged). STUDIO.md's Map art entry is gone.
+- **T6.5**: STUDIO.md "How a section draws (for contributors)".
+- Tooling: `check-studio-github.py` step `polish` (this phase's checks), `PB_STUDIO_TEST_OUT` (keeps the self-test's
+  report), WebGL contexts counted on every page. The free-camera scroll no longer waits for two identical frames.
+
+**Self-test timings** (headless Chromium, software GL; run-to-run noise is up to ±50%, so only large changes count):
+- A Walk scenes edit: 490 → 32-47 ms. Typing no longer draws; the 2D map draws once in the next frame.
+- A cold Types open: 165-527 → 27-33 ms.
+- Engine's long tasks: 8.1 s → 0.25-14.7 s. This spread is the noise; in this setup frames are bound by the software
+  renderer.
+- A Wardrobe undo (profiled alone): 750-1030 → 180-237 ms.
+- Not verified on a desktop or the iPad: the plan wants desktop numbers. Run Check → Run the Studio test there.
+
+**Where the plan doc was wrong or short**
+- F19's "buildings likely stop drawing" didn't need the fallback's cache keys: with one context nothing is stale.
+- T6.2's `SECTION_FILES` would not reach its own acceptance: Wardrobe undo changes a part Wardrobe shows. The cost
+  was person-art's cache keys (the global art version, which every undo bumps) plus PNG encoding.
+- T6.3: Types' cost was PNG encoding, not the icon cache itself: the cache was already per icon.
+- T6.4: `// @ts-check` for publish, drafts, run-lab and logic-worker was not added. drafts.js is in this branch but
+  its code is off limits to this session, and the other modules live on other branches.
+- T6.5: Run Lab, Simulate, Relics and Unlocks are on other branches (Phases 2-4); their sessions document them.
+- The self-test's "undo would hold 216 MB" is still `snapMB × 80` (Phase 1 asked for a measurement).
+
+**Risky**
+- **The kept 3D canvas** moves between sections. Anything that binds to a 3D canvas on each mount would bind twice;
+  none does today (the section listeners are on the 2D canvases). The battle preview still makes its own canvas, so
+  it still creates a context per open.
+- **Walk scenes with a prop open** shows two 3D placeholders: the kept canvas goes to the first, and the turntable
+  gets a fresh canvas, as before.
+- **Person-art keys**: a picture changed in place without `markArt` would now show stale pixels. Every Studio path
+  found uses `markArt`, and the polish step checks one. In the game, pictures never change.
+- **`drawSoon`** draws in the next animation frame, so code that reads the 2D map right after a field event sees the
+  old drawing (none found).
+- The free camera's "W didn't move it" fails now and then on both the base and this branch: it needs a frame within
+  6 s, and software frames take 4-5 s.
+
+**Verified**
+- Unit tests 648 (quick 606, slow 42); lint, typecheck, `check:modules`, `format:check` after each commit.
+- `check:fast` 25 of 25.
+- `check-studio-github.py --only=sections,publish,drafts,studio_test,free_camera,tiles,polish`, last full run:
+  sections, the art tools, free camera (all of it; the HANDOFF's earlier "ground moved" failure passed too), tiles,
+  the studio test (14 edits undone, no problem), the T1.2 undo check and polish pass, and the proposal is sent.
+  Publish and drafts failed in that run, but on reruns of `--only=polish,publish,drafts` both give 0 problems:
+  polish had left Walk scenes drawing software frames under them. Polish now ends on Jobs. A drafts click timeout
+  also happened once on the untouched base in this container.
+- Before and after: the studio test's report (`PB_STUDIO_TEST_OUT`) on the base worktree and on this branch.
+- **Not run:** the full quick check, and the self-test on a desktop or the iPad.
+
+**Next**
+- The owner: the Studio test on the iPad (3D sections, Wardrobe undo, typing in Walk scenes).
+- The battle preview could take the kept canvas too (it builds `#bpDio` itself).
+- T6.4's `// @ts-check` on the new Studio modules, once Phases 2-4 land.
+
 ### Studio plan Phase 1, sessions C+D - One validator for CI and the Studio (T1.3) and Studio checks in CI (T1.4) - 2026-10-22
 Branch `ccr-81011a25-lf3exv` (PR #131). Plan pre-approved by the owner's standing instruction (recommended options
 taken; recorded under the plan doc's "Decisions"). Phase 1b (T1.2 undo, T1.5, People) works on the same branch at the

@@ -1558,6 +1558,24 @@ Taken in Phase 1, session B (the recommended option each time, under the owner's
     beside the buildings in Unlocks & hub, where the Economy page links them.
 19. **Economy numbers**: T3.4 has not landed, so the page has a placeholder; Phase 3 fills it.
 20. **Town shops and Jobs** stay editable in the Legacy group (no data deleted).
+9. **Phase 6** (recommended options taken under the owner's standing instruction, 2026-10-23):
+   - F20: a shop keeper's thank-you lines take the prefix `@thanks.`; lore keeps `@lines.`. The registry throws on a
+     clashing claim at load (a page error the checks catch) rather than warning.
+   - F17: a deleted type makes a robot part or gem Normal (`None`, which check-data accepts) and a Loophole's damage
+     row count for any type; the roster board and `rules.ride.types` drop it.
+   - D5 skipped: T1.2 already stopped `updateTopBar` stringifying the data.
+   - Backups: the Check's Backups card and Restore go with the side-footer line (local mode is dropped); the section is
+     labelled "Check".
+   - T6.7: option 1, re-parenting, generalised: `renderPane` moves any `data-keep` element into its placeholder, and
+     the five 3D placeholders share one key, so one WebGL context lasts the session. No renderer file changed; the
+     battle preview keeps its own canvas.
+   - T6.1: drawing a hook asks for runs once per frame (`drawSoon`); Walk scenes' walk-view rebuild waits for 300 ms
+     of stillness. Engine already debounced; coats and robots cost about 25 ms and stay.
+   - T6.2: no per-section `SECTION_FILES` list. A section's code reads data through many helpers, so a list would be
+     a guess, and a wrong guess shows stale data after undo; the slow undo (Wardrobe) changes a part its own section
+     shows, so skipping redraws would not help it. Instead: a redraw keeps focus and scroll, and an undo of text-only
+     data keeps the picture caches. Wardrobe undo's real cost is person-art's cache key (the global `atlasVersion`,
+     bumped by every undo and by every picture change): see HANDOFF for the proposed fix.
 
 ## Ask me before (owner decisions this plan needs)
 1. **T5.1:** recipe as the truth with a JS baker (recommended), or Python stays and Studio writes recipes.

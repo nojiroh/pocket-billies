@@ -39,9 +39,11 @@ proposal at the end must carry uiTheme.json with it.
     python3 tools/check-studio-github.py --only=publish  # Studio plan Phase 0: Propose's failure cases alone
     python3 tools/check-studio-github.py --only=drafts   # Studio plan Phase 1 (T1.1): kept drafts, restore, discard
     python3 tools/check-studio-github.py --only=checks   # Studio plan Phase 1 (T1.3): the shared checks, an error blocks
+    python3 tools/check-studio-github.py --only=polish   # Studio plan Phase 6: second pane, paths, errors, listeners, GL
+    PB_STUDIO_TEST_OUT=report.json python3 tools/check-studio-github.py --only=studio_test   # keeps the self-test's report
 
 Needs Python 3 and Playwright (tools/requirements-check.txt). About a minute."""
-import json, re, subprocess, sys, threading, time
+import json, os, re, subprocess, sys, threading, time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -93,8 +95,10 @@ def free_camera_steps(pg, errs):
     turns and tilts, Top view looks down, W moves, two fingers pinch and twist, and it hands back to the walker."""
     pg.evaluate("studioState.sel.scene='copperleaf'; void openSection('scenes')")
     time.sleep(4)
-    pg.locator('#scPv').scroll_into_view_if_needed()
-    pg.locator('#scFreeCam [data-act="fcOn"]').click()
+    # Studio plan T6.7: the kept WebGL context draws at once, and a software-drawn frame can take seconds, so the
+    # scroll and the clicks don't wait for two frames with the same box
+    pg.evaluate("document.querySelector('#scPv').scrollIntoView({ block: 'nearest' })")
+    pg.locator('#scFreeCam [data-act="fcOn"]').click(force=True)
     time.sleep(1.5)
     G = lambda: pg.evaluate("JSON.parse(JSON.stringify(freeCamera.goal))")
     ground = lambda x, y: pg.evaluate(f"(() => {{ const p = canvasPoint({{ clientX: {x}, clientY: {y} }}); const g = screenToGround(p[0], p[1]); return g && [g.x, g.z]; }})()")
@@ -119,7 +123,7 @@ def free_camera_steps(pg, errs):
     pg.mouse.up(button='right')
     g1 = G()
     if not (g1['yaw'] > g0['yaw'] + 0.3 and g1['pitch'] < g0['pitch']): errs.append(f'free camera: right-drag {g0} -> {g1}')
-    pg.locator('#scFreeCam [data-act="fcTop"]').click()
+    pg.locator('#scFreeCam [data-act="fcTop"]').click(force=True)
     if G()['pitch'] != 89: errs.append('free camera: Top view doesn\'t look down')
     g0 = G()
     pg.mouse.move(cx, cy)
@@ -138,7 +142,7 @@ def free_camera_steps(pg, errs):
       e('pointerup', 11, 0, 0); e('pointerup', 12, 0, 0); }})()""")
     g1 = G()
     if not (g1['dist'] < g0['dist'] * 0.7 and abs(abs(g1['yaw'] - g0['yaw']) - 3.14159 / 2) < 0.2): errs.append(f'free camera: pinch and twist {g0} -> {g1}')
-    pg.locator('#scFreeCam [data-act="fcOn"]').first.click()
+    pg.locator('#scFreeCam [data-act="fcOn"]').first.click(force=True)
     time.sleep(0.5)
     if pg.evaluate("freeCamera.on") or pg.evaluate("walkView.opt.look(0.016)") is not None: errs.append('free camera: still on after Back to the walker')
     print('free camera: drag keeps the ground, wheel, right-drag, top view, keys, pinch and twist, back to the walker', flush=True)
@@ -1004,6 +1008,8 @@ def studio_test_steps(pg, errs):
     if r['privacy']: errs.append('studio test: the report holds ' + ', '.join(r['privacy']))
     if pg.evaluate("studioProbe.on !== null || studioProbe.running"): errs.append('studio test: the probe was left on')
     edits = sum(1 for s in r['sections'] if s.get('edit'))
+    if os.environ.get('PB_STUDIO_TEST_OUT'):  # Studio plan Phase 6: the report kept, for timings before and after
+        Path(os.environ['PB_STUDIO_TEST_OUT']).write_text(json.dumps(r, indent=1))
     print(f"studio test: {len(r['sections'])} sections, {edits} edits undone, {len(r['findings'])} findings, {r['seconds']} s", flush=True)
     U = r.get('undo') or {}
     big = sorted((s for s in r['sections'] if s.get('edit') and s['edit'].get('stepBytes')), key=lambda s: -s['edit']['stepBytes'])[:3]
@@ -1958,6 +1964,129 @@ def economy_steps(pg, errs):
     if len(errs) == n: print(f'economy: {rows} lines, links open their fields, the simulator placeholder shown', flush=True)
 
 
+# Studio plan Phase 6 (T6.7): every WebGL context the page makes is counted (a canvas that gets one), and the GPU's
+# warnings are kept apart, so a redraw that makes a new context or uses a stale object shows
+GL_COUNT = """(() => { window.__glCount = 0; const g = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function (t, ...a) { const c = g.call(this, t, ...a);
+    if (c && /webgl/.test(t) && !this.__glMade) { this.__glMade = 1; window.__glCount++; } return c; }; })()"""
+GL_WARN = []
+
+
+def polish_steps(pg, errs):
+    """Studio plan Phase 6 (T6.6, T6.7): a rename in the second pane updates that pane's list (F16); a shop keeper's
+    thank-you field reads and writes that shop's lines (F20); a section that throws says so in its pane, and an
+    error anywhere is a toast; the pixel canvas leaves no listeners behind; 20 tool switches in Walk scenes keep one
+    WebGL context and no stale GPU object."""
+    # F16: a move renamed in the second pane shows the new name in that pane's list
+    pg.evaluate("void openSection('billionaires')"); time.sleep(0.3)
+    pg.evaluate("ACTIONS.openBeside({ s: 'moves' })"); time.sleep(0.8)
+    k = pg.evaluate("studioState.sel.move")
+    f = pg.locator(f'#main2 input[data-p="moves.{k}.n"]')
+    v0 = f.input_value()
+    f.fill(v0 + ' Polish'); time.sleep(0.3)
+    listed = pg.evaluate("(document.querySelector('#main2 #moveList') || {}).textContent || ''")
+    f.dispatch_event('change'); time.sleep(0.3)
+    pg.evaluate("void undo()"); time.sleep(0.4)
+    if v0 + ' Polish' not in listed: errs.append('F16: a move renamed in the second pane kept its old name in that pane\'s list')
+    pg.evaluate("ACTIONS.paneClose()"); time.sleep(0.3)
+    # F20: the shop keeper's thank-you lines are the shop's, not a key of the data
+    got = pg.evaluate("""(async () => { const D = studioState.D, had = D.shops, keep = studioState.sel.shop;
+      D.shops = { tst: { name: 'Test shop', keeper: 'K', who: Object.keys(D.people)[0], thanks: ['Ta', 'Cheers'], stock: [] } };
+      studioState.sel.shop = 'tst'; openSection('shops'); await new Promise(r => setTimeout(r, 300));
+      const t = [...document.querySelectorAll('#main textarea[data-p]')].find(e => e.dataset.p.startsWith('@') && e.dataset.p.endsWith('.tst'));
+      const shown = t ? t.value : null;
+      if (t) { t.value = 'One\\nTwo'; t.dispatchEvent(new Event('input', { bubbles: true })); }
+      const r = { shown, thanks: D.shops.tst.thanks, top: 'tst' in D };
+      delete D.tst; D.shops = had; studioState.sel.shop = keep; commit(true); return r; })()""")
+    if got != {'shown': 'Ta\nCheers', 'thanks': ['One', 'Two'], 'top': False}: errs.append(f'F20: the shop thank-you field gave {got}')
+    # F20: lore's lists of lines and a trainer's script read as text and write back the same
+    got = pg.evaluate("""(() => { const L = readPath('@lines.lore.loading'), S = readPath('@script.trainer:crude'),
+      a = JSON.stringify(studioState.D.lore.loading), b = JSON.stringify(studioState.D.trainers.crude.script);
+      writePath('@lines.lore.loading', L); writePath('@script.trainer:crude', S);
+      return [L.split('\\n').length > 1, S.split('\\n').length > 1, JSON.stringify(studioState.D.lore.loading) === a,
+        JSON.stringify(studioState.D.trainers.crude.script) === b]; })()""")
+    if got != [True, True, True, True]: errs.append(f'F20: @lines. and @script. read and wrote back {got}')
+    # a section that throws says so in its pane; an error or a refused promise anywhere is a toast
+    n = len(errs)
+    got = pg.evaluate("""(async () => { const keep = studioState.sec, toasts = () => [...document.querySelectorAll('#toasts .toast.err')].map(t => t.textContent);
+      SECTIONS.__boom = () => { throw new Error('planted boom') }; openSection('__boom');
+      const pane = document.querySelector('#main').textContent.includes('planted boom');
+      setTimeout(() => { throw new Error('planted throw') }); Promise.reject(new Error('planted refusal'));
+      await new Promise(r => setTimeout(r, 200)); const t = toasts().join(' | ');
+      delete SECTIONS.__boom; openSection(keep);
+      return { pane, thrown: t.includes('planted throw'), refused: t.includes('planted refusal') }; })()""")
+    errs[n:] = [e for e in errs[n:] if 'planted' not in e]
+    if got != {'pane': True, 'thrown': True, 'refused': True}: errs.append(f'errors: a throwing section, a throw and a refusal showed {got}')
+    # the pixel canvas's listeners on document go with its canvas: the count is flat over 5 opens of the pixel editor
+    cdp = pg.context.new_cdp_session(pg)
+    def doc_listeners():
+        o = cdp.send('Runtime.evaluate', {'expression': 'document'})['result']['objectId']
+        return len(cdp.send('DOMDebugger.getEventListeners', {'objectId': o})['listeners'])
+    sp = pg.evaluate("studioState.D.lines[0].id + '0'")
+    counts = []
+    for _ in range(5):
+        pg.evaluate(f"void openPixelEditor({json.dumps(sp)}, 'front')"); pg.wait_for_selector('#pxCv', timeout=20000); time.sleep(0.3)
+        pg.click('.pxed [data-pe=close]'); time.sleep(0.3)
+        counts.append(doc_listeners())
+    if counts[-1] != counts[0]: errs.append(f'pixel canvas: document listeners after each of 5 opens: {counts}')
+    print('polish: second-pane rename, shop thank-you lines, prefixes, errors shown, pixel canvas listeners ' + str(counts), flush=True)
+    # T6.2, F21: a redraw keeps the focus and the scroll: a matchup click in Types, a select that redraws in Moves
+    got = pg.evaluate("""(async () => { openSection('types'); await new Promise(r => setTimeout(r, 300));
+      const m = document.querySelector('#main'), b = m.querySelectorAll('[data-act=mx]')[30];
+      b.scrollIntoView({ block: 'center' }); const y = m.scrollTop; b.focus(); b.click();
+      const a = document.activeElement, r = { mx: !!(a && a.dataset.act === 'mx' && a.dataset.a === b.dataset.a && a.dataset.b === b.dataset.b), scroll: Math.abs(m.scrollTop - y) < 2 };
+      undo(); openSection('moves'); await new Promise(r => setTimeout(r, 300));
+      const s = m.querySelector('select[data-rr][data-p$=".t"]');
+      if (s) { s.focus(); s.dispatchEvent(new Event('change', { bubbles: true })); const f = document.activeElement; r.select = !!(f && f.dataset.p === s.dataset.p); undo(); }
+      else r.select = 'no select';
+      return r; })()""")
+    if got != {'mx': True, 'scroll': True, 'select': True}: errs.append(f'focus: a redraw kept focus and scroll as {got}')
+    # T6.3: person art keeps a sheet's pixels across data edits, keyed by the picture: a painted sheet still shows
+    got = pg.evaluate("""(async () => { openSection('wardrobe'); await new Promise(r => setTimeout(r, 1500));
+      const W = studioState.D.wardrobe, [k, it] = Object.entries(W.items).find(([, i]) => i.slot === 'hair' && i.img && i.pieces && i.pieces.length);
+      const L = cleanLook(LOOK_PRESETS[0]); L.wear.hair = k;
+      const hash = () => { forgetPersonLooks(); const f = personFrame(L, 'front', 'idle', 0, 0), d = f.getContext('2d').getImageData(0, 0, f.width, f.height).data; let h = 0; for (let i = 0; i < d.length; i += 4) h = (h * 31 + d[i] + 7 * d[i + 1] + 13 * d[i + 2]) % 1000000007; return h; };
+      const path = 'art/' + it.img, c = await atlasGet(path), before = hash(), P = it.pieces.find(p => p.v === 'front') || it.pieces[0];
+      const x = c.getContext('2d'), keep = x.getImageData(0, 0, c.width, c.height);
+      x.fillStyle = '#ff00ff'; x.fillRect(P.r[0], P.r[1], P.r[2], P.r[3]); markArt(path, c);
+      const painted = hash();
+      x.putImageData(keep, 0, 0); markArt(path, c); const back = hash(); studioState.artDirty.delete(path); updateTopBar();
+      return { changed: painted !== before, back: back === before }; })()""")
+    if got != {'changed': True, 'back': True}: errs.append(f'person art: a painted sheet and its undo showed {got}')
+    # T6.7: 20 tool switches in Walk scenes (each redraws the section) keep one WebGL context and use no stale object
+    ready = "walkView.ready && !!document.querySelector('#scPv')"
+    pg.evaluate("void openSection('scenes')")
+    t0 = time.time()
+    while time.time() - t0 < 90 and not pg.evaluate(ready): time.sleep(0.5)
+    c0, w0 = pg.evaluate("window.__glCount"), len(GL_WARN)
+    tools = pg.evaluate("[...document.querySelectorAll('#main [data-act=scTool]')].map(b => b.dataset.t)")
+    for i in range(20):
+        pg.evaluate(f"ACTIONS.scTool({{ t: {json.dumps(tools[i % len(tools)])} }})"); time.sleep(0.3)
+    pg.evaluate("const m = studioState.D.maps[currentMapId()]; m.name = (m.name || '') + ' x'; changed(); commit(true); undo()")
+    t0 = time.time()
+    while time.time() - t0 < 120 and not pg.evaluate(ready): time.sleep(0.5)
+    time.sleep(2)
+    made = pg.evaluate("window.__glCount") - c0
+    if made: errs.append(f'3D view: 20 tool switches and an undo in Walk scenes made {made} new WebGL contexts')
+    if len(GL_WARN) > w0: errs.append(f'3D view: stale GPU objects after redraws: {GL_WARN[w0:w0 + 2]}')
+    print(f'polish: 20 tool switches in Walk scenes made {made} new WebGL contexts, {len(GL_WARN) - w0} GPU warnings ({time.time() - t0:.0f} s to ready)', flush=True)
+    # the other 3D sections take the same canvas: one context for all of them, and each still draws
+    shown = []
+    for s, cv in [('engine', 'engPv'), ('hub', 'hubPv'), ('props', 'pedPv'), ('scenes', 'scPv')]:
+        pg.evaluate(f"void openSection('{s}')")
+        if s == 'props':  # the turntable shows a prop open in its editor
+            pg.evaluate("ACTIONS.propsPick({ k: document.querySelector('#main [data-act=propsPick]').dataset.k })")
+        t0 = time.time()
+        while time.time() - t0 < 90 and not pg.evaluate(f"walkView.ready && !!document.querySelector('#{cv}.in')"): time.sleep(0.5)
+        shown.append(s if pg.evaluate(f"walkView.ready && walkView.cv === document.querySelector('#{cv}')") else s + ' (not drawn)')
+        if s == 'props': pg.evaluate("ACTIONS.pedClose()")
+    made = pg.evaluate("window.__glCount") - c0
+    if made or any('not drawn' in x for x in shown): errs.append(f'3D view: across {shown}, {made} new WebGL contexts')
+    if len(GL_WARN) > w0: errs.append(f'3D view: stale GPU objects across the 3D sections: {GL_WARN[w0:w0 + 2]}')
+    print(f'polish: {", ".join(shown)} on one canvas, {made} new WebGL contexts, {len(GL_WARN) - w0} GPU warnings', flush=True)
+    pg.evaluate("void openSection('jobs')")  # a section with no 3D view, so its frames don't slow the steps after
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
@@ -1987,6 +2116,7 @@ STEPS = [
     ('leaders', leaders_steps),
     ('economy', economy_steps),
     ('checks', checks_steps),
+    ('polish', polish_steps),
 ]
 
 
@@ -2421,8 +2551,10 @@ def main():
         b = pw.chromium.launch(args=['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
         ctx = b.new_context(viewport={'width': 1400, 'height': 900})
         ctx.add_init_script('window.PB_TEST_GLOBALS=true')  # phase 04d: the modules' names on window, for evaluate()
+        ctx.add_init_script(GL_COUNT)
         pg = ctx.new_page()
         pg.on('console', lambda m: errs.append(m.text[:300]) if m.type == 'error' else None)
+        pg.on('console', lambda m: GL_WARN.append(m.text[:300]) if re.search(r'INVALID_OPERATION|does not belong to this context', m.text) else None)
         pg.on('pageerror', lambda e: errs.append(str(e)[:400]))
         pg.route('https://api.github.com/**', api)
         pg.add_init_script("localStorage.setItem('pb-studio-gh-token','ghp_stand-in')")

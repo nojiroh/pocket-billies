@@ -83,6 +83,7 @@ import '../../game/js/logic/step-grid.js';
 import '../../game/js/logic/story-checks.js';
 import '../../game/js/logic/studio-layout.js';
 import '../../game/js/logic/studio-test-report.js';
+import '../../game/js/logic/type-rename.js';
 import '../../game/js/logic/ui-dials.js';
 import '../../game/js/logic/ui-inspect.js';
 import '../../game/js/logic/ui-lint.js';
