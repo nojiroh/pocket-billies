@@ -52,7 +52,7 @@ test('check-data: planted rules (battle, run, ranch)', t => {
         R.ranch.breed.odds.safe = 0.9;
         Object.assign(run.map, { rows: 4, first: 'nosuch', wide: 2, extra: 1 });
         run.map.biomes.nosuchbiome = 1;
-        run.clock.slack = 99;
+        run.clock.slack = 3; /* RL-R2: the deadline's slack is gone */
         run.reveal.extra = 1;
         run.bogusKey = 1;
         run.scene.land.hills = [0.8, 0.2];
@@ -113,6 +113,22 @@ test('check-data: planted robots, biomes, node types, relics, currencies, buildi
         U.caught_15.requires = ['shop_nerve_tonic'];
         U.caught_15.when = 'unlock:nosuchunlock';
         U.caught_15.grant = { money: 100 };
+      },
+    })
+  );
+});
+
+test('check-data: planted field moves and side areas (RL-R2)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'fieldMoves.json': F => {
+        F.moves.surf.type = 'Plasma';
+        F.moves.smash.biome = 'nosuchbiome';
+        F.moves.cut.biome = 'volcano';
+      },
+      'rules.json': R => {
+        Object.assign(R.run.side, { detour: 0.9, alt: 0.2, places: [1, 9], lean: -1, extra: 1 });
+        R.run.side.moves = { surf: 0, nosuchmove: 1 };
       },
     })
   );

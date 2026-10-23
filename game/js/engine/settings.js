@@ -7,6 +7,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { ENVIRONMENT_ENGINE_MODIFIERS, gameData, provide, saveData } from '../hooks.js';
+import { TIME_OF_DAY_DEFAULTS, TIME_OF_DAY_GROUPS, TIME_OF_DAY_KEYS } from '../logic/time-of-day.js';
 import { hexToRgb } from '../art.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -15,6 +16,7 @@ expose({
   ENGINE_SPEC: [() => ENGINE_SPEC],
   FRAME_SETTINGS: [() => FRAME_SETTINGS],
   PLAIN_LOOK: [() => PLAIN_LOOK],
+  TOD_NAMES: [() => TOD_NAMES],
   beginFrameSettings: [() => beginFrameSettings, v => (beginFrameSettings = v)],
   endFrameSettings: [() => endFrameSettings, v => (endFrameSettings = v)],
   engineColor: [() => engineColor, v => (engineColor = v)],
@@ -27,6 +29,7 @@ expose({
   playerBlur: [() => playerBlur, v => (playerBlur = v)],
   playerDials: [() => playerDials, v => (playerDials = v)],
   setEngineDataSource: [() => setEngineDataSource, v => (setEngineDataSource = v)],
+  todFields: [() => todFields, v => (todFields = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ engineSetting });
@@ -239,6 +242,10 @@ export const ENGINE_DEFAULTS = {
     shadowCache: true,
     gpuTimer: true,
     battleLite: true,
+    /* 0.1.0 alpha: skip props under this many pixels tall; on a phone, small props fade out before this distance (m,
+       0: no limit) */
+    minPropPx: 0,
+    phonePropDistance: 0,
     sharpTex: true,
     edgeBleed: true,
     /* phase 20 C1: the same, as the code's fallbacks (walk scenes kept ready; the ground painted in a worker unless
@@ -250,6 +257,54 @@ export const ENGINE_DEFAULTS = {
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
+/* 0.1.0 alpha: the five looks of the time of day, one group each (todDawn ... todNight; logic/time-of-day.js) */
+for (const k of TIME_OF_DAY_KEYS) ENGINE_DEFAULTS[TIME_OF_DAY_GROUPS[k]] = { ...TIME_OF_DAY_DEFAULTS[k] };
+/* 0.1.0 alpha: the dials of one time-of-day look, for the Studio */
+const TOD_NAMES = { dawn: 'dawn', day: 'day', golden: 'golden hour', dusk: 'dusk', night: 'night' };
+function todFields(k) {
+  const from = k === 'dawn' || k === 'day' ? 'sunrise' : 'sunset';
+  return [
+    [
+      'at',
+      `Hour (from ${from})`,
+      -4,
+      4,
+      0.1,
+      `Hours after ${from} (before it when negative) when this look is full. Sunrise and sunset move with the season.`,
+    ],
+    [
+      'blend',
+      'Blends in over',
+      0.1,
+      6,
+      0.1,
+      'Hours it takes to blend in from the look before it; until then that one holds.',
+    ],
+    ['skyTop', 'Sky, top', 'color?'],
+    ['skyMid', 'Sky, middle', 'color?'],
+    ['skyLow', 'Sky, horizon', 'color?'],
+    ['skyMix', 'Sky colour amount', 0, 1, 0.01, 'How far the sky turns to these colours (0: the scene’s own sky).'],
+    ['sunColor', 'Light colour', 'color?'],
+    ['sun', 'Light strength', 0, 2, 0.01, 'The sun’s (or the moon’s) strength, times the Sun group’s.'],
+    ['ambient', 'Fill light', 0, 2, 0.01, 'The light from the sky that fills the shadows.'],
+    ['ambientColor', 'Fill colour', 'color?'],
+    ['haze', 'Haze colour', 'color?'],
+    ['hazeMix', 'Haze colour amount', 0, 1, 0.01, 'How far the haze turns to this colour (0: the scene’s own).'],
+    ['hazeDistance', 'Haze distance', 0.3, 2, 0.01, 'Times the scene’s haze distance: lower is hazier.'],
+    ['mist', 'Low mist', 0, 1, 0.01, 'Mist lying in the valleys (mild and coastal places, not in rain or snow).'],
+    ['exposure', 'Exposure', 0.5, 2, 0.01],
+    ['saturation', 'Saturation', 0.3, 1.6, 0.01],
+    ['contrast', 'Contrast', 0.7, 1.4, 0.01],
+    ['warmth', 'Warmth', -1, 1, 0.01],
+    ['shadow', 'Shadow strength', 0, 1.5, 0.01],
+    ['shadowTint', 'Shadow tint', 'color?'],
+    ['lightTint', 'Highlight tint', 'color?'],
+    ['tintStrength', 'Tint amount', 0, 1, 0.01, 'How strongly the shadow and highlight tints colour the picture.'],
+    ['bloom', 'Glow', 0, 2, 0.01, 'Times the Color group’s bloom.'],
+    ['lamps', 'Lamps lit', 0, 1, 0.01, 'How lit the street lamps and windows are (weather can light them more).'],
+    ['stars', 'Stars', 0, 1, 0.01],
+  ];
+}
 /* labels, ranges and help for the Studio, in display order */
 export const ENGINE_SPEC = [
   [
@@ -993,6 +1048,22 @@ export const ENGINE_SPEC = [
       ],
       ['cull', 'Skip what’s off screen', 'bool', 'Props, grass and buildings outside the view aren’t drawn.'],
       [
+        'minPropPx',
+        'Skip tiny props',
+        0,
+        12,
+        1,
+        'Props smaller than this many pixels on screen aren’t drawn (0: all are drawn).',
+      ],
+      [
+        'phonePropDistance',
+        'Small props’ distance on phones',
+        0,
+        120,
+        2,
+        'On a phone, small props (flowers, tufts, pebbles, crates) fade out before this many metres; buildings, trees and anything big stay. 0: no limit.',
+      ],
+      [
         'battleLite',
         'Lighter battles',
         'bool',
@@ -1030,6 +1101,7 @@ export const ENGINE_SPEC = [
       ],
     ],
   ],
+  ...TIME_OF_DAY_KEYS.map(k => [TIME_OF_DAY_GROUPS[k], 'Time of day: ' + TOD_NAMES[k], todFields(k)]),
 ];
 provide({ ENGINE_SPEC }); /* to-module */
 /* ready-made looks; a preset only lists what it changes */

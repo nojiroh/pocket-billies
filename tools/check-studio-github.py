@@ -47,23 +47,20 @@ dials: too big round the middle, a draft drawn, Use this island, Undo, read-only
     PB_STUDIO_TEST_OUT=report.json python3 tools/check-studio-github.py --only=studio_test   # keeps the self-test's report
 
 Needs Python 3 and Playwright (tools/requirements-check.txt). About a minute."""
-import json, os, re, subprocess, sys, threading, time
-from functools import partial
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+import json, os, re, subprocess, sys, time
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
 from playwright.sync_api import sync_playwright
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from browser_check import serve  # noqa: E402  (TC-4: the browser checks' shared helpers)
 
 REPO = Path(__file__).resolve().parent.parent
 POS = [a for a in sys.argv[1:] if not a.startswith('--')]
 ROOT = REPO / POS[0] if POS else REPO
 # UI-3: --only=a,b runs only these steps (the full chain stalls at the story preview's real click in some containers)
 ONLY = next((set(a.split('=', 1)[1].split(',')) for a in sys.argv[1:] if a.startswith('--only=')), None)
-
-
-class Quiet(SimpleHTTPRequestHandler):
-    def log_message(self, *a): pass
 
 
 def play_from_here(pg, errs):
@@ -2725,8 +2722,7 @@ def hub_checks(b, url, errs):
 
 
 def main():
-    srv = ThreadingHTTPServer(('127.0.0.1', 0), partial(Quiet, directory=str(ROOT)))
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    _srv, base = serve(ROOT)
     tree = [{'type': 'blob', 'path': str(p.relative_to(ROOT)), 'sha': 'x', 'size': p.stat().st_size}
             for p in (ROOT / 'game').rglob('*') if p.is_file()]
     posts, bodies = [], []
@@ -2760,7 +2756,7 @@ def main():
         pg.route('https://api.github.com/**', api)
         pg.add_init_script("localStorage.setItem('pb-studio-gh-token','ghp_stand-in')")
         t0 = time.time()
-        pg.goto(f'http://127.0.0.1:{srv.server_address[1]}/studio/index.html')
+        pg.goto(f'{base}/studio/index.html')
         while time.time() - t0 < 120 and not pg.evaluate("typeof studioState!=='undefined'&&!!studioState.D&&!document.querySelector('#main .loading')"):
             time.sleep(0.5)
         if not pg.evaluate("typeof studioState!=='undefined'&&!!studioState.D"): errs.append('the game data never loaded')
@@ -2817,11 +2813,11 @@ def main():
             elif not ui or ui['defaults']['shape']['cutLg'] != 20: errs.append('ui: the proposal does not carry the large cut at 20 px')
             else: print('ui: the proposal carries game/data/uiTheme.json with the large cut at 20 px', flush=True)
         if ONLY is None or 'publish' in ONLY:
-            publish_checks(b, f'http://127.0.0.1:{srv.server_address[1]}/studio/index.html', errs)
+            publish_checks(b, f'{base}/studio/index.html', errs)
         if ONLY is None or 'drafts' in ONLY:
-            drafts_checks(b, f'http://127.0.0.1:{srv.server_address[1]}/studio/index.html', errs)
+            drafts_checks(b, f'{base}/studio/index.html', errs)
         if ONLY is None or 'hub' in ONLY:
-            hub_checks(b, f'http://127.0.0.1:{srv.server_address[1]}/studio/index.html', errs)
+            hub_checks(b, f'{base}/studio/index.html', errs)
         b.close()
     for e in errs: print('PROBLEM', e)
     print('ok' if not errs else f'{len(errs)} problem(s)')

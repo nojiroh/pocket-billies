@@ -11,6 +11,7 @@ import {
   battleTutor,
   battleWeatherMultiplier,
   closeModal,
+  fieldBadgeLine,
   jingle,
   limbPipsHTML,
   modal,
@@ -979,7 +980,8 @@ export function endBattle() {
       after.push({
         title: `You beat ${escapeHtml(T.name)}`,
         top: `<div class="sheet-art">${portraitHTML(T.who, 96, 'sad')}</div>`,
-        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned ${moneyHTML(pay.reward)}${extra}.</p>`,
+        /* RL-R2: a run leader's first win of its type keeps that badge for good (logic/battle-rewards.js) */
+        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned ${moneyHTML(pay.reward)}${extra}.</p>${pay.badge && typeof fieldBadgeLine === 'function' ? `<p class="note"><b>${escapeHtml(pay.badge)} Badge!</b> ${escapeHtml(fieldBadgeLine(pay.badge))}</p>` : ''}`,
         btns: [
           {
             c: 'dark',

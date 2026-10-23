@@ -43,6 +43,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataEvents: [() => dataEvents, v => (dataEvents = v)],
   // @ts-expect-error -- replaced on purpose
+  dataFieldMoves: [() => dataFieldMoves, v => (dataFieldMoves = v)],
+  // @ts-expect-error -- replaced on purpose
   dataNodeTypes: [() => dataNodeTypes, v => (dataNodeTypes = v)],
   // @ts-expect-error -- replaced on purpose
   dataPerks: [() => dataPerks, v => (dataPerks = v)],
@@ -287,7 +289,7 @@ export function dataRunMapRules(D) {
   }
   return out;
 }
-// RL-6: the run's clock and what its map shows: whole days of slack (0-30) and of forecast ahead (1-30), whole rows
+// RL-6: the run's clock and what its map shows: whole days of forecast ahead (1-30; RL-R2: no deadline, no slack), whole rows
 // shown ahead with their type (1-12) and as '?' (at least as far, up to 12); nothing else in rules.json run
 /** T1.3: the keys of rules.json run, each a rule a family here checks (any other is "no such rule"). The one list:
  * an editor of run rules reads it from here */
@@ -306,6 +308,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'shop',
   'foes',
   'perks',
+  'side',
   'trainers',
   'rewards',
 ]);
@@ -320,11 +323,9 @@ export function dataRunClock(D) {
       V = R.reveal,
       whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
     for (const k of Object.keys(R)) if (!RUN_RULE_KEYS.includes(k)) problem('rules.json', `run.${k}: no such rule`);
-    if (!C || typeof C !== 'object' || !whole(C.slack, 0, 30) || !whole(C.ahead, 1, 30))
-      problem('rules.json', 'run.clock: slack (0-30) and ahead (1-30) are not whole numbers of days');
-    else
-      for (const k of Object.keys(C))
-        if (!['slack', 'ahead'].includes(k)) problem('rules.json', `run.clock.${k}: no such rule`);
+    if (!C || typeof C !== 'object' || !whole(C.ahead, 1, 30))
+      problem('rules.json', 'run.clock: ahead (1-30) is not a whole number of days');
+    else for (const k of Object.keys(C)) if (k !== 'ahead') problem('rules.json', `run.clock.${k}: no such rule`);
     if (!V || typeof V !== 'object' || !whole(V.icons, 1, 12) || !whole(V.unknown, V.icons, 12))
       problem('rules.json', 'run.reveal: icons (1-12) and unknown (icons to 12) are not whole numbers of rows');
     else
@@ -692,6 +693,52 @@ export function dataNodeTypes(D, valid = () => true) {
     if (!Object.values(D.nodeTypes).some(T => (T.weight || 0) > 0))
       problem('nodeTypes.json', 'no type has a weight, so nothing can fill a free row of the run map');
   }
+  return out;
+}
+// RL-R2: field moves (fieldMoves.json): the schema, a real type and a run biome each; rules.json run.side: the chances
+// of a detour and of an alternate path (each 0-1, together at most 1), a detour's places [2-6], an alternate path's
+// rows [2-6] and the chance it ends at a boss of its own, a weight of 0 or more for moves that exist (one above 0), and
+// the lean (0-10) toward a move of the region's types
+/** RL-R2: fieldMoves.json and rules.json run.side @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataFieldMoves(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]),
+    FM = D.fieldMoves,
+    moves = FM && FM.moves ? FM.moves : {},
+    types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
+    runBiomes = (D.rules && D.rules.run && D.rules.run.map && D.rules.run.map.biomes) || {};
+  if (FM && valid('fieldMoves.schema.json', FM, 'fieldMoves.json'))
+    for (const [k, M] of Object.entries(moves)) {
+      if (!types.has(M.type)) problem('fieldMoves.json', `moves.${k}: no type "${M.type}" (types.json)`);
+      if (!(D.biomes || {})[M.biome]) problem('fieldMoves.json', `moves.${k}: no biome "${M.biome}" (biomes.json)`);
+      else if (!runBiomes[M.biome])
+        problem('fieldMoves.json', `moves.${k}: "${M.biome}" is not a run biome (rules.json run.map.biomes)`);
+    }
+  const S = D.rules && D.rules.run && D.rules.run.side;
+  if (!S) return out;
+  const chance = (/** @type {any} */ v) => typeof v === 'number' && v >= 0 && v <= 1,
+    span = (/** @type {any} */ v) =>
+      Array.isArray(v) && v.length === 2 && v.every(n => Number.isInteger(n) && n >= 2 && n <= 6) && v[0] <= v[1];
+  for (const k of Object.keys(S))
+    if (!['detour', 'alt', 'places', 'altRows', 'altBoss', 'moves', 'lean'].includes(k))
+      problem('rules.json', `run.side.${k}: no such rule`);
+  if (!chance(S.detour) || !chance(S.alt) || !chance(S.altBoss) || S.detour + S.alt > 1)
+    problem(
+      'rules.json',
+      'run.side: detour, alt and altBoss are not chances from 0 to 1 (detour and alt at most 1 together)'
+    );
+  if (!span(S.places)) problem('rules.json', 'run.side.places is not [fewest, most] whole places from 2 to 6');
+  if (!span(S.altRows)) problem('rules.json', 'run.side.altRows is not [fewest, most] whole rows from 2 to 6');
+  if (!(typeof S.lean === 'number' && S.lean >= 0 && S.lean <= 10))
+    problem('rules.json', 'run.side.lean is not a number from 0 to 10');
+  const W = S.moves && typeof S.moves === 'object' ? S.moves : {};
+  for (const [k, w] of Object.entries(W)) {
+    if (!moves[k]) problem('rules.json', `run.side.moves: no field move "${k}" (fieldMoves.json)`);
+    if (!(typeof w === 'number' && w >= 0)) problem('rules.json', `run.side.moves.${k} is not a weight of 0 or more`);
+  }
+  if (!Object.values(W).some(w => typeof w === 'number' && w > 0))
+    problem('rules.json', 'run.side.moves: no move has a weight, so no side area can be made');
   return out;
 }
 // RL-12b: events.json: the schema; every intro reads as lines only, every option's need as a condition and its `then`
@@ -1429,9 +1476,9 @@ export const RUN_MAP_ROLE_TYPES = { first: 'landing', rest: 'town', guard: 'mini
 export const RUN_MAP_ROLE_NAMES = { first: 'landing', rest: 'rest', guard: 'mini-boss', last: 'last' };
 
 /** what is wrong with one run map (run-map.js runMapMake's), as sentences: a place the landing can't reach, a place
- * that leads nowhere or skips a row, a role row without the type the game looks for, a deadline before the shortest
- * walk ends @param {any} map @param {any} M rules.json run.map @param {{ slack: number }} clock @returns {string[]} */
-export function runMapProblems(map, M, clock) {
+ * that leads nowhere or skips a row, a role row without the type the game looks for
+ * @param {any} map @param {any} M rules.json run.map @returns {string[]} */
+export function runMapProblems(map, M) {
   const out = [],
     nodes = map.nodes,
     last = Math.max(...nodes.map((/** @type {any} */ n) => n.row)),
@@ -1458,8 +1505,6 @@ export function runMapProblems(map, M, clock) {
           : `a ${RUN_MAP_ROLE_NAMES[role]} row (row ${n.row + 1}) is a ${n.type}, not a ${want === 'town' ? 'town' : want}`
       );
   });
-  if (!(clock.slack >= 0))
-    out.push(`the deadline (slack ${clock.slack}) comes before the shortest walk reaches the boss`);
   return [...new Set(out)];
 }
 
@@ -1486,9 +1531,9 @@ export function runMapTownsPerPath(map) {
  * the figures a designer weighs: places per map, places by type, towns on a walk, biomes, the towns made against the
  * routes (rest rows are always towns, so the ratio isn't the weights'), and outlying seeds to open
  * @param {Record<string, any>} nodeTypes @param {any} M rules.json run.map (its biomes as the run's unlocks leave them)
- * @param {{ slack: number }} clock @param {{ n?: number, prefix?: string }} [o]
+ * @param {{ n?: number, prefix?: string }} [o]
  */
-export function runMapSweep(nodeTypes, M, clock, o = {}) {
+export function runMapSweep(nodeTypes, M, o = {}) {
   const n = o.n || 1000,
     prefix = o.prefix || 'SWEEP',
     /** @type {Map<string, { text: string, seed: string, count: number }>} */
@@ -1516,7 +1561,7 @@ export function runMapSweep(nodeTypes, M, clock, o = {}) {
       continue;
     }
     maps++;
-    for (const p of runMapProblems(map, M, clock)) note(p, seed);
+    for (const p of runMapProblems(map, M)) note(p, seed);
     sizes.push([map.nodes.length, seed]);
     for (const x of map.nodes) {
       types[x.type] = (types[x.type] || 0) + 1;

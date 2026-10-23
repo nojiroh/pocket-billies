@@ -15,6 +15,7 @@
      type:Water >= 2       Billies of a type in the team (RL-12b)        money >= 200     Moneys on hand (RL-12b)
      team >= 2             Billies in the team (RL-12b)
      badge:Water           a badge of that type is won (RL-12b: meta.badges, or a leader's seat)
+     opened:cut            a run's field move obstacle is open (RL-R2)
    combined with `and`, `or`, `not` / `!` and parentheses (`and` binds tighter than `or`). A bare count term
    (`item:honey`, `visits:juniper`, `badges`) means more than 0. Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -63,7 +64,8 @@ expose({
  *   pyramids: Record<string, number>, quests: Record<string, string>, visits: Record<string, number>,
  *   visited: Record<string, any>, lines: Record<string, any>, robots: number, badges: number, caught: number,
  *   unlocks: Record<string, any>, runs: number, wins: number, questStages?: Record<string, string[]>,
- *   types?: Record<string, number>, money?: number, team?: number, badgeTypes?: Record<string, number> }} StoryState */
+ *   types?: Record<string, number>, money?: number, team?: number, badgeTypes?: Record<string, number>,
+ *   opened?: Record<string, number> }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
  * reads, for the Studio's reference (Project Story S3) */
@@ -85,6 +87,7 @@ export const CONDITION_KINDS = {
   money: { id: false, count: true, about: 'Moneys on hand: money >= 200' },
   team: { id: false, count: true, about: 'Billies in your team: team >= 2' },
   badge: { id: true, count: false, about: 'a badge of that type is won: badge:Water' },
+  opened: { id: true, count: false, about: 'a run’s field move obstacle is open (RL-R2): opened:cut' },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
 export const WORDS = new Set(['and', 'or', 'not']);
@@ -329,6 +332,8 @@ export function termValue(c, S) {
       return S.team || 0;
     case 'badge':
       return !!(S.badgeTypes || {})[c.id.toLowerCase()];
+    case 'opened':
+      return !!(S.opened || {})[c.id];
   }
 }
 /** whether a condition holds for the state @param {Cond | string} c @param {StoryState} S @returns {boolean} */
@@ -393,6 +398,9 @@ export function storyStateOf(save, o = {}) {
     money: save.se || 0,
     team: (save.team || []).length,
     badgeTypes: badgeTypesOf(save, o.badgeTypes || {}),
+    /* RL-R2: the run's side area's move, once its obstacle is open (logic/run-side.js) */
+    opened:
+      save.run && save.run.map && save.run.map.side && save.run.map.side.open ? { [save.run.map.side.move]: 1 } : {},
   };
 }
 

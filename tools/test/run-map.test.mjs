@@ -1,6 +1,6 @@
 // RL-6: the run's node map and its clock (game/js/logic/run-map.js), on the tests' own small tables: rows from the
 // landing to the boss, mini-boss rows with a town before each, one or two lanes, links only to the next row, where it
-// all sits on the bowl; the days, the deadline, what the map shows and the forecast. run-map-real.test.mjs runs it on the game's data.
+// all sits on the bowl; the days, what the map shows and the forecast. run-map-real.test.mjs runs it on the game's data.
 //   node --test --test-update-snapshots tools/test/run-map.test.mjs   remakes the frozen map (say why in the commit)
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -9,7 +9,6 @@ import {
   RUN_BOWL,
   runArrive,
   runBack,
-  runDeadline,
   runExits,
   runForecastFill,
   runMapMake,
@@ -19,7 +18,6 @@ import {
   runMapStart,
   runNext,
   runNodeSeed,
-  runOverdue,
   runReveal,
   runSpot,
   runWeather,
@@ -257,7 +255,7 @@ test("the world's numbering: Copperleaf first, map node i is world node i + 1", 
 });
 
 /* ---------- the clock (owner, 8.10): a day per arrival, backtracking included; the landing is day 1 ---------- */
-const RUN_RULES = { map: MAP_RULES, clock: { slack: 3, ahead: 7 }, reveal: { icons: 1, unknown: 2 } };
+const RUN_RULES = { map: MAP_RULES, clock: { ahead: 7 }, reveal: { icons: 1, unknown: 2 } };
 const BIOMES = Object.fromEntries(Object.keys(MAP_RULES.biomes).map(b => [b, { climate: 'mild' }]));
 const DATA = { nodeTypes: NODE_TYPES, biomes: BIOMES, rules: RUN_RULES };
 /** a save on a run that has its map (as at the mast, before the flight) */
@@ -278,15 +276,8 @@ const shortest = map => {
   return seen.get(last);
 };
 
-test('the deadline: the shortest walk to the boss in days (the landing is day 1) and the slack; days past it', () => {
-  for (const s of seeds(100)) {
-    const map = runMapMake(s, NODE_TYPES, MAP_RULES);
-    assert.equal(runDeadline(map, 3), shortest(map) + 3);
-    assert.equal(runDeadline(map, 3), 12);
-  }
-  assert.equal(runOverdue({ clock: 50, deadline: 0 }), 0, 'no deadline set');
-  assert.equal(runOverdue({ clock: 12, deadline: 12 }), 0, 'the last day');
-  assert.equal(runOverdue({ clock: 14, deadline: 12 }), 2);
+test('the shortest walk to the boss: a row a day from the landing (RL-R2: no deadline on top)', () => {
+  for (const s of seeds(100)) assert.equal(shortest(runMapMake(s, NODE_TYPES, MAP_RULES)), 9);
 });
 
 test("what's shown: the rows up to one ahead with their type, the next as '?', the boss always; never less", () => {
@@ -307,10 +298,10 @@ test("what's shown: the rows up to one ahead with their type, the next as '?', t
   );
 });
 
-test("a new run's map: the deadline, the landing's view, a week of forecast for every node, none for the hub", () => {
+test("a new run's map: no deadline, the landing's view, a week of forecast for every node, none for the hub", () => {
   const { run } = onRun('RL6START'),
     map = run.map;
-  assert.equal(run.deadline, 12);
+  assert.equal(run.deadline, undefined);
   assert.equal(run.clock, 1);
   assert.equal(run.forecast.length, map.nodes.length + 1);
   assert.deepEqual(run.forecast[0], []);
@@ -338,17 +329,15 @@ test('arriving: the landing first on day 1, then a day for each linked node, for
   assert.equal(runArrive(s, 0, DATA), 3, 'walking back costs a day');
   assert.deepEqual(s.run.path, [0, ahead, 0]);
   for (const days of s.run.forecast.slice(1)) assert.equal(days.length, 3 + 7, 'the forecast keeps a week ahead');
-  // on to the boss: one row a day from here, three days past the shortest walk's day 9
+  // on to the boss: one row a day from here, two days past the shortest walk's day 9
   let at = 0;
   while (runNext(map, at).length) {
     at = runNext(map, at).at(-1);
     assert.ok(runArrive(s, at, DATA) > 0);
   }
   assert.equal(s.run.clock, 3 + 8);
-  assert.equal(runOverdue(s.run), 0, 'day 11 of a day-12 deadline');
   assert.equal(runArrive(s, runBack(map, at)[0], DATA), 12);
   assert.equal(runArrive(s, at, DATA), 13);
-  assert.equal(runOverdue(s.run), 1);
   assert.equal(s.trip.node, runWorldNode(at));
   assert.ok(validRun(JSON.parse(JSON.stringify(s.run))), 'the save takes it after the walk');
 });
@@ -442,7 +431,7 @@ test("RL-R1: a region's zones give the rows their biomes, each node its zone, an
   runMapStart(run, {
     nodeTypes: NODE_TYPES,
     biomes: {},
-    rules: { map: M, clock: { slack: 3, ahead: 7 }, reveal: { icons: 1, unknown: 2 } },
+    rules: { map: M, clock: { ahead: 7 }, reveal: { icons: 1, unknown: 2 } },
   });
   assert.ok(validRun(run));
   assert.equal(run.map.nodes.at(-1).zone, 2);

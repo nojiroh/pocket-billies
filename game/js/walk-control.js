@@ -56,6 +56,7 @@ import { loreBook } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
 import { runWorldData } from './run-world.js';
 import { runArrivedFx, runArrivedHint } from './run.js';
+import { fieldMoveOpen, fieldWayOut } from './field-moves.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBoardOpen } from './lab-board.js';
 import { postcardCheck } from './postcards.js';
@@ -566,6 +567,15 @@ export function walkPick(h) {
       rideGlassLift(p);
       return;
     }
+    /* RL-R2: a field move's obstacle (Cut, Rock Smash, Surf) and a side area's way out (field-moves.js) */
+    if (a === 'field' && typeof fieldMoveOpen === 'function') {
+      fieldMoveOpen(p);
+      return;
+    }
+    if (a === 'fieldout' && typeof fieldWayOut === 'function') {
+      fieldWayOut();
+      return;
+    }
     /* v47: shops and the like keep opening hours */
     if (typeof isOpenNow === 'function') {
       const kind = openingHoursKind(a, p);
@@ -872,8 +882,13 @@ export function walkMapSync() {
               : uiState.tab !== 'walk'
                 ? 'screen'
                 : '';
+        /* 0.1.0 alpha: behind a full screen (Team, Guide, Bag...) the world settles for 0.8 s, then nearly stops (1 a
+           second): a still canvas lets the browser keep its blurred backdrop instead of blurring it again every frame,
+           which made a phone's menus crawl */
+        if (w !== walkView.held) walkView.heldT = performance.now();
         walkView.held = w;
-        return w === 'hidden' ? 1 : w === 'window' ? 20 : w === 'screen' ? 24 : userFps();
+        if (w === 'screen') return performance.now() - (walkView.heldT || 0) > 800 ? 1 : 24;
+        return w === 'hidden' ? 1 : w === 'window' ? 20 : userFps();
       },
     }).then(() => cv.classList.add('in'));
   }

@@ -17,6 +17,7 @@ import {
   setEngineDataSource,
 } from '../../game/js/engine/settings.js';
 import { gpuState, webgl2Supported } from '../../game/js/engine/webgl.js';
+import { environment } from '../../game/js/environment.js';
 import { walkRenderer } from '../../game/js/walk/walk-state.js';
 import { standingHeightAt } from '../../game/js/walk/heights.js';
 import { rebuildFromSettings } from '../../game/js/walk/map-cache.js';
@@ -45,10 +46,14 @@ import { atlasGet } from './sprites.js';
 import { mapExitNames, sceneryArtPaths, sceneryCatalog } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
+  ENG_SEASONS: [() => ENG_SEASONS],
+  ENG_WEATHER: [() => ENG_WEATHER],
   GUIDE_DIALS: [() => GUIDE_DIALS],
+  applyEngineEnvironment: [() => applyEngineEnvironment, v => (applyEngineEnvironment = v)],
   captureLookPreview: [() => captureLookPreview, v => (captureLookPreview = v)],
   drawBlurGuides: [() => drawBlurGuides, v => (drawBlurGuides = v)],
   drawCameraGuides: [() => drawCameraGuides, v => (drawCameraGuides = v)],
+  engHourText: [() => engHourText],
   engineData: [() => engineData],
   engineDialHTML: [() => engineDialHTML, v => (engineDialHTML = v)],
   engineEditor: [() => engineEditor],
@@ -57,6 +62,7 @@ expose({
   enginePresetsHTML: [() => enginePresetsHTML, v => (enginePresetsHTML = v)],
   engineScopePath: [() => engineScopePath],
   engineSettingsHTML: [() => engineSettingsHTML, v => (engineSettingsHTML = v)],
+  engineTimeBarHTML: [() => engineTimeBarHTML, v => (engineTimeBarHTML = v)],
   formatDialValue: [() => formatDialValue],
   guideDragTo: [() => guideDragTo, v => (guideDragTo = v)],
   guideEdgeAt: [() => guideEdgeAt, v => (guideEdgeAt = v)],
@@ -171,6 +177,7 @@ function engineSettingsHTML() {
 SECTIONS.engine = () => {
   const sid = engineEditorMapId();
   afterRender(mountEnginePreview);
+  afterRender(applyEngineEnvironment);
   if (!sid)
     return `<div class="ed-col solo"><h2>Engine</h2><p class="help">Add a walk scene first; the preview needs one.</p></div>`;
   const opts = Object.entries(studioState.D.maps)
@@ -184,6 +191,7 @@ SECTIONS.engine = () => {
    <button class="btn sm ${engineEditor.guides ? 'on' : ''}" id="engGuidesBtn" data-act="engGuides" title="Draws the camera's dead and soft zones (drag their edges), its aim, the look-ahead, the points of interest and the camera zones on the preview">Camera guides</button>
    <button class="btn sm ${engineEditor.blurGuides ? 'on' : ''}" id="engBlurBtn" data-act="engBlurGuides" title="CAM-3: tints the ground the blur keeps sharp (the strip round the plane of focus), marks what the focus is on and names the blur's path, tilt and strength">Blur guides</button>
    <button class="btn sm ${engineEditor.heat ? 'on' : ''}" id="engHeatBtn" data-act="engHeat" title="CAM-3: colours the preview by how blurred each pixel is: green sharp, yellow a little, red full">Blur heatmap</button></div>
+  ${engineTimeBarHTML()}
   <div class="eng-pvbar" title="CAM-2: plays one of the camera's moments in the preview, as if it happened (a talk or a boss 3 m up the screen)">Play moment ${[
     ['talk', 'Talk'],
     ['encounter', 'Encounter'],
@@ -404,7 +412,7 @@ function captureLookPreview() {
         res(null);
       }
     }, 4000);
-  });
+  }, 300);
 }
 ACTIONS.engLookPreviews = async () => {
   if (!$('#engPv')) return;
@@ -662,6 +670,92 @@ function mountCameraGuides() {
   if (engineEditor.blurGuides && !engineEditor.blurRaf) drawBlurGuides();
   walkView.opt.dofView = !!engineEditor.heat;
 }
+/* 0.1.0 alpha: the preview at any hour, weather and season, to tune the five time-of-day looks (Time of day groups
+   below); "Play a day" sweeps 24 hours in 20 s. Nothing is saved; the game follows the clock */
+const ENG_WEATHER = [
+  ['', 'Fair'],
+  ['cloudy', 'Cloudy'],
+  ['rain', 'Rain'],
+  ['storm', 'Storm'],
+  ['fog', 'Fog'],
+  ['snow', 'Snow'],
+];
+const ENG_SEASONS = [
+  ['', 'Season now'],
+  ['spring', 'Spring'],
+  ['summer', 'Summer'],
+  ['autumn', 'Autumn'],
+  ['winter', 'Winter'],
+];
+const engHourText = h =>
+  `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
+function engineTimeBarHTML() {
+  const e = engineEditor.env || (engineEditor.env = { time: 13, weather: '', season: '' }),
+    opt = (L, v) => L.map(([k, n]) => `<option value="${k}" ${k === v ? 'selected' : ''}>${n}</option>`).join('');
+  return `<div class="eng-pvbar" title="0.1.0 alpha: the preview at another hour, weather or season, to tune the Time of day looks (nothing is saved; the game follows the clock)">Hour <input type="range" id="engHour" data-eng-env="1" min="0" max="24" step="0.25" value="${e.time}" aria-label="Hour"><output id="engHourV">${engHourText(e.time)}</output>
+   <select id="engWx" data-eng-env="1" aria-label="Weather">${opt(ENG_WEATHER, e.weather)}</select><select id="engSeason" data-eng-env="1" aria-label="Season">${opt(ENG_SEASONS, e.season)}</select>
+   <button class="btn sm ${engineEditor.dayT ? 'on' : ''}" id="engDayBtn" data-act="engPlayDay">Play a day</button><span class="hint" id="engLookNow"></span></div>`;
+}
+function applyEngineEnvironment() {
+  if (typeof environment === 'undefined') return;
+  const e = engineEditor.env || { time: 13 },
+    f = { time: +e.time, weather: e.weather || 'clear', now: 1 };
+  if (e.season) f.season = e.season;
+  environment.force = f;
+  const o = $('#engHourV');
+  if (o) o.textContent = engHourText(+e.time);
+  /* which looks make up the light now (environment.look, as the preview's last frame left it), twice a second while
+     the bar is on screen */
+  if (!engineEditor.lookT)
+    engineEditor.lookT = setInterval(() => {
+      const L = environment.look,
+        el = $('#engLookNow');
+      if (!el) {
+        clearInterval(engineEditor.lookT);
+        engineEditor.lookT = 0;
+        return;
+      }
+      el.textContent = L
+        ? Object.entries(L.w)
+            .filter(([, w]) => w > 0.01)
+            .map(([k, w]) => `${k} ${Math.round(w * 100)}%`)
+            .join(' + ')
+        : '';
+    }, 500);
+}
+document.addEventListener('input', ev => {
+  const t = ev.target;
+  if (!t || !t.dataset || !t.dataset.engEnv) return;
+  engineEditor.env = { time: +$('#engHour').value, weather: $('#engWx').value, season: $('#engSeason').value };
+  applyEngineEnvironment();
+});
+ACTIONS.engPlayDay = () => {
+  const b = $('#engDayBtn');
+  if (engineEditor.dayT) {
+    cancelAnimationFrame(engineEditor.dayT);
+    engineEditor.dayT = 0;
+    if (b) b.classList.remove('on');
+    return;
+  }
+  if (b) b.classList.add('on');
+  const t0 = performance.now(),
+    h0 = +((engineEditor.env || {}).time || 0);
+  const step = () => {
+    const k = (performance.now() - t0) / 20000,
+      sl = $('#engHour');
+    if (k >= 1 || !sl) {
+      engineEditor.dayT = 0;
+      if (b) b.classList.remove('on');
+      return;
+    }
+    const h = (h0 + k * 24) % 24;
+    sl.value = String(h);
+    engineEditor.env = Object.assign({}, engineEditor.env, { time: h });
+    applyEngineEnvironment();
+    engineEditor.dayT = requestAnimationFrame(step);
+  };
+  engineEditor.dayT = requestAnimationFrame(step);
+};
 /* CAM-2: "Play moment": a talk or a boss stands 3 m up the screen from you, standing still starts at once, and an
    encounter swoops at a spot 2.5 m up the screen (then lets go, no battle) */
 ACTIONS.engMoment = d => {

@@ -89,7 +89,6 @@ export function newRun(seed, expedition, mapgenV, start) {
     map: null,
     at: { phase: 'fly', battle: -1 },
     clock: 1,
-    deadline: 0,
     forecast: [],
     perks: [],
     offer: null,
@@ -159,9 +158,39 @@ export function validRun(o) {
         new Set(node.to).size !== node.to.length ||
         (node.seen !== undefined && !wholeIn(node.seen, 0, 2)) ||
         (node.biome !== undefined && !id(node.biome)) ||
-        (node.zone !== undefined && !wholeIn(node.zone, 0, 7))
+        (node.zone !== undefined && !wholeIn(node.zone, 0, 7)) ||
+        (node.side !== undefined && node.side !== 1)
       )
         return false;
+    /* RL-R2: its side area (run-side.js): a kind, a move, a name, the obstacle's place on the main path, the way out
+       (-1: none), its places (marked, after the main path's), its leader, its species, open */
+    const S = o.map.side;
+    if (S !== undefined) {
+      const node = (/** @type {any} */ j) => wholeIn(j, 0, n - 1);
+      if (
+        !plain(S) ||
+        Object.keys(S).some(
+          k => !['kind', 'move', 'name', 'from', 'to', 'nodes', 'leader', 'dex', 'open'].includes(k)
+        ) ||
+        !['detour', 'alt'].includes(S.kind) ||
+        !id(S.move) ||
+        typeof S.name !== 'string' ||
+        !S.name ||
+        S.name.length > 40 ||
+        !node(S.from) ||
+        o.map.nodes[S.from].side ||
+        !(S.to === -1 || (node(S.to) && !o.map.nodes[S.to].side)) ||
+        !list(S.nodes, 8) ||
+        !S.nodes.length ||
+        !S.nodes.every(j => node(j) && o.map.nodes[j].side === 1) ||
+        new Set(S.nodes).size !== S.nodes.length ||
+        o.map.nodes.filter((/** @type {any} */ x) => x.side).length !== S.nodes.length ||
+        (S.leader !== undefined && !id(S.leader)) ||
+        (S.dex !== undefined && (!list(S.dex, 40) || !S.dex.every(id))) ||
+        (S.open !== undefined && S.open !== 1)
+      )
+        return false;
+    } else if (o.map.nodes.some((/** @type {any} */ x) => x.side)) return false;
   }
   /* RL-R1: the region (missing on a run from before regions) */
   if (o.region !== undefined && !validRunRegion(o.region)) return false;
@@ -171,7 +200,7 @@ export function validRun(o) {
   if (Object.keys(o.at).some(k => !['phase', 'battle', 'won', 'foe'].includes(k))) return false;
   if (o.at.won !== undefined && !wholeIn(o.at.won, 0, 1)) return false;
   if (o.at.foe !== undefined && !validRunFoe(o.at.foe)) return false;
-  if (!wholeIn(o.clock, 1, RUN_DAYS) || !wholeIn(o.deadline, 0, RUN_DAYS)) return false;
+  if (!wholeIn(o.clock, 1, RUN_DAYS)) return false;
   if (!list(o.forecast, nodes) || o.forecast.some(days => !list(days, RUN_DAYS) || !days.every(id))) return false;
   if (!list(o.perks, 32) || !o.perks.every(id) || !list(o.mods, 32) || !o.mods.every(id)) return false;
   if (o.offer !== null && (!list(o.offer, 5) || !o.offer.every(id))) return false;
