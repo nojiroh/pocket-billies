@@ -136,6 +136,7 @@ const UI_ICONS = [
   'chev',
   'close',
   'coin',
+  'pyramid',
   'fight',
   'gauge',
   'gear',
