@@ -22,8 +22,10 @@ branches (the git proxy refuses both with HTTP 403).
 - Verified: actionlint clean; both scripts run against a stand-in `gh` (protected names, open PRs, missing branches,
   dry run, empty list, bad and existing tag names, the phase-tag Check start). Not run on GitHub yet: it must be on
   main first.
-- Next: after the merge, a dry run of each action, then the `legacy` tag and the branch cleanup (docs/BRANCHES.md is
-  out of date: 156 branches on 2026-10-23).
+- Done after the merge (PR #146): dry runs of both actions on GitHub, then the `legacy` tag (0314a22) and the
+  clean-up, 157 branches down to 22 (docs/BRANCHES.md lists what is left and why; each deleted branch's commit is in
+  the Repo admin run summaries). Found: "Automatically delete head branches" is on (the owner should turn it off, see
+  BRANCHES.md); `sound` holds SND-6, 13 commits, not merged and with no PR.
 
 ### Sound track SND-5 - Battle and run music - 2026-10-22
 Branch `sound` (PR #120). Plan approved by the owner's "Start", without picks on the two "Ask me before" items, so
