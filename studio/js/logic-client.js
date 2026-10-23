@@ -98,7 +98,7 @@ export function logicAsk(fn, ...args) {
 }
 /** Studio plan T3.4: the same on the data as the Studio loaded it (the Base worker)
  * @param {string} fn @param {...any} args @returns {Promise<any>} */
-function logicAskBase(fn, ...args) {
+export function logicAskBase(fn, ...args) {
   if (!studioState.loadedText) return Promise.reject(new Error('the data as loaded is not kept'));
   return logicAskOn(logicWorkerBase, studioState.loadedText, fn, args);
 }
