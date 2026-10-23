@@ -40,7 +40,6 @@ test('every script in the data reads', () => {
   for (const [id, lines] of all) assert.doesNotThrow(() => parseScript(lines), id);
 });
 
-/* the people's and trainers' scripts against what the game said before: story-snapshot.test.mjs */
 test('Curator Nacre: a choice once the ledger is read, its [once] option gone after', async () => {
   const P = person('nacre'),
     save = { story: {}, items: {}, coins: {} };

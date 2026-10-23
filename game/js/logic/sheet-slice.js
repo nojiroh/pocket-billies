@@ -5,7 +5,7 @@
    clear pixels), islands of art (4- or 8-connected, pieces closer than a gap joined, specks under a minimum area
    dropped), a template grid, rows found by their gaps, trimming, names from a template, front and back matched, an
    Aseprite JSON's frames and slices, and the phase 16 kits exactly as tools/slice-part-kit.py cut them (its scipy
-   steps and Pillow's box filter, number for number; tools/test/sheet-slice-parity.test.mjs checks every part).
+   steps and Pillow's box filter, number for number; tools/test/sheet-slice-real.test.mjs checks every part).
    A picture is ImageData-shaped ({ width, height, data: RGBA bytes }); a mask is one byte per pixel (1 = art).
    Logic only: no DOM, runs in Node. studio/js/workbench.js puts it on the page. */
 /** @typedef {{ width: number, height: number, data: Uint8ClampedArray }} Pixels */

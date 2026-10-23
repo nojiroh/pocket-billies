@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { data, fn, logic, modules, startedSave } from './setup-fixture.mjs';
 
-test('saves: a new save, load checks, migrate, backup check', () => {
+test('saves: a new save, load checks, saveFill, backup check', () => {
   const s = fn('newSave')();
   assert.equal(s.saveVersion, logic.SAVE_VERSION);
   assert.equal(s.gameVersion, globalThis.PB_VERSION);
@@ -18,7 +18,7 @@ test('saves: a new save, load checks, migrate, backup check', () => {
   const started = startedSave('sparky0', 10);
   started.box.push({ ...fn('makeBilly')('sprout0', 3), sp: 'gone0' }); // a species the Studio removed
   started.team[0].moves = ['tackle', 'nosuchmove'];
-  const m = fn('migrate')(JSON.parse(JSON.stringify(started)));
+  const m = fn('saveFill')(JSON.parse(JSON.stringify(started)));
   assert.equal(m.box.length, 0);
   assert.deepEqual(m.team[0].moves, ['tackle']);
   assert.equal(m.saveVersion, logic.SAVE_VERSION);
@@ -112,14 +112,14 @@ test('saves: a save from a run loads with its trip, plan, visited places and run
   assert.deepEqual(back.wild, s.wild);
   assert.deepEqual(fn('loadSave')(JSON.parse(JSON.stringify(back))), back, 'loading again changes nothing');
   // off the run's world: back to Copperleaf (node 0), not to the hub's start
-  const off = fn('migrate')({ ...JSON.parse(JSON.stringify(s)), trip: { node: 6, plan: [9, 2, 'x'] } });
+  const off = fn('saveFill')({ ...JSON.parse(JSON.stringify(s)), trip: { node: 6, plan: [9, 2, 'x'] } });
   assert.deepEqual(off.trip, { node: 0, plan: [] });
-  const plan = fn('migrate')({ ...JSON.parse(JSON.stringify(s)), trip: { node: 3, plan: [9, 4, 'x'] } });
+  const plan = fn('saveFill')({ ...JSON.parse(JSON.stringify(s)), trip: { node: 3, plan: [9, 4, 'x'] } });
   assert.deepEqual(plan.trip, { node: 3, plan: [4] });
   // the hub's team as the run started is cleaned like the team (a species the Studio removed)
   const gone = JSON.parse(JSON.stringify(s));
   gone.run.start.team.push({ ...fn('makeBilly')('sprout0', 3), sp: 'gone0' });
-  assert.equal(fn('migrate')(gone).run.start.team.length, 1);
+  assert.equal(fn('saveFill')(gone).run.start.team.length, 1);
 });
 
 test("saves: a hub save is checked against the hub's places while a run's world is in (RL-7)", () => {
@@ -140,11 +140,10 @@ test("saves: a hub save is checked against the hub's places while a run's world 
     s.trip = { node: 4, plan: [5] };
     s.visited = { 0: 1, 4: 1 };
     assert.equal(fn('validSave')(JSON.parse(JSON.stringify(s))), false, "node 4 is not one of the hub's three");
-    const m = fn('migrate')(JSON.parse(JSON.stringify(s)));
+    const m = fn('saveFill')(JSON.parse(JSON.stringify(s)));
     assert.deepEqual(m.trip, { node: data.START_NODE, plan: [] });
-    assert.equal(m.visited[4], undefined);
     /* a run's save is still bounded by its own map */
-    assert.deepEqual(fn('migrate')(JSON.parse(JSON.stringify(runSave()))).trip, { node: 4, plan: [5] });
+    assert.deepEqual(fn('saveFill')(JSON.parse(JSON.stringify(runSave()))).trip, { node: 4, plan: [5] });
   } finally {
     data.worldSetGraph(hub, data.gameData.roads);
   }
@@ -158,7 +157,7 @@ test('saves: a run that fails its check is left, with the hub as it was when the
   const s = runSave(),
     hubTrip = s.run.start.trip;
   const broken = { ...JSON.parse(JSON.stringify(s)), run: { ...JSON.parse(JSON.stringify(s.run)), seed: 'bad seed' } };
-  const m = fn('migrate')(broken);
+  const m = fn('saveFill')(broken);
   assert.equal(m.run, null);
   assert.deepEqual(m.trip, hubTrip);
   assert.equal(m.se, 600);
@@ -185,36 +184,4 @@ test('saves: the load check refuses a format 4 save with a broken meta, run, ran
   const hub = JSON.parse(JSON.stringify(startedSave('sparky0', 10)));
   assert.equal(valid(hub), true);
   assert.equal(valid({ ...hub, trip: { node: 3, plan: [] } }), false);
-});
-
-test('saves: RL-5: a save from before the hub stood alone drops what names a place that is gone (in the hub only)', () => {
-  const s = startedSave('sparky0', 10);
-  s.trip = { node: 46, plan: [47] };
-  s.visited = { 0: 1, 2: 1, 46: 1, 47: 1 };
-  s.wild = { meadow: { at: 0, list: [] }, marigold: { at: 0, list: [] } };
-  s.x = {
-    stamps: { a: 1 },
-    reqs: {
-      0: { date: 'd', k: 'show', state: 'open' },
-      2: { date: 'd', k: 'letter', state: 'accepted', to: 1 },
-      1: { date: 'd', k: 'letter', state: 'accepted', to: 46 },
-      9: { date: 'd', k: 'show', state: 'open' },
-    },
-    visits: { date: 'd', ids: [46, 0, 47, 2] },
-  };
-  const m = fn('migrate')(JSON.parse(JSON.stringify(s)));
-  assert.deepEqual(m.trip, { node: data.START_NODE, plan: [] });
-  assert.deepEqual(Object.keys(m.visited).sort(), ['0', '1', '2'], 'the start is visited, the gone places are not');
-  assert.deepEqual(Object.keys(m.wild), ['meadow']);
-  assert.deepEqual(Object.keys(m.x.reqs).sort(), ['0', '2'], 'a request at a gone place, or a letter to one, goes');
-  assert.deepEqual(m.x.visits.ids, [0, 2]);
-  assert.deepEqual(m.x.stamps, { a: 1 });
-  assert.equal(fn('validSave')(m), true);
-  /* during a run, the run's places stay as they were (the run's world is made after loading) */
-  const r = runSave();
-  r.x = JSON.parse(JSON.stringify(s.x));
-  const back = fn('migrate')(JSON.parse(JSON.stringify(r)));
-  assert.deepEqual(back.visited, r.visited);
-  assert.deepEqual(back.wild, r.wild);
-  assert.deepEqual(back.x, r.x);
 });

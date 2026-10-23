@@ -111,7 +111,8 @@ export function writeStoredSave(o) {
     }
   }
 }
-/* a save set aside in this browser (one, the latest): Settings > Save restores it or downloads it */
+/* a save set aside in this browser (one, the latest), when your account and this browser held different games and you
+   kept one (account.js): Settings > Save restores it or downloads it */
 const SET_ASIDE_KEY = () => SAVE_KEY + '-set-aside';
 export function accountSetAside(json, from) {
   try {
@@ -128,18 +129,9 @@ export function accountSetAsideRead() {
     return null;
   }
 }
-/* a save here that this version can't load is kept aside in this browser (once), and the title says why it's a new game */
+/* a save here that this version can't load: an older one is replaced by the new game (the title says so); a newer
+   one is never written over (saveHold) */
 export const SAVE_FOUND = saveAge(readStoredSave());
-if (SAVE_FOUND === 'old' || SAVE_FOUND === 'new')
-  try {
-    /* SAVE_FOUND says the key holds a save; one writer and one shape, so Settings > Save offers it. The slot holds
-       the latest: an older set-aside save is replaced (else this one would be written over by the new game), the
-       same one is left as it was */
-    const json = /** @type {string} */ (localStorage.getItem(SAVE_KEY)),
-      aside = accountSetAsideRead();
-    if (!aside || aside.json !== json)
-      accountSetAside(json, SAVE_FOUND === 'old' ? 'an older version of the game' : 'a newer version of the game');
-  } catch (e) {}
 if (SAVE_FOUND === 'new') saveHold = true;
 export let saveData = loadSave(readStoredSave()) || newSave();
 provide({ saveData }); /* to-module */

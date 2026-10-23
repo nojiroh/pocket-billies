@@ -1,6 +1,6 @@
-// The cutscene tools, session 1: the opening plays from game/data/cutscenes/opening.json. It says what the code said
-// before the move (opening-before-scripts.json, made from cutscene.js at c7c5ad3), the cutscene commands read as the
-// stage plays them, the set's maths, and the story checks catch a cutscene's mistakes.
+// The cutscene tools, session 1: the opening plays from game/data/cutscenes/opening.json. It says the approved lines
+// with its commands between, in order (opening-said.json), the cutscene commands read as the stage plays them, the
+// set's maths, and the story checks catch a cutscene's mistakes.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
@@ -10,35 +10,9 @@ const { parseScript } = modules['script-parse'];
 const { runScript } = modules.script;
 const { cutsceneStep, cutsceneNames, cutsceneOffset, cutsceneShotAt, cutsceneCleared } = modules['cutscene-set'];
 const { storyFindings } = modules['story-checks'];
-const BEFORE = JSON.parse(readFileSync(new URL('./opening-before-scripts.json', import.meta.url), 'utf8')).said;
-/* 2026-10-23, the owner's new professor: the opening's words are the Chosen's and his assistant Hazel's, as approved
-   (opening-said.json); its commands stay where they were (BEFORE, after RL-8, below) */
+/* 2026-10-23, the owner's new professor: the opening's words are the Chosen's and his assistant Hazel's, as approved */
 const SAID = JSON.parse(readFileSync(new URL('./opening-said.json', import.meta.url), 'utf8')).said;
 const OPENING = GAME_DATA.cutscenes.opening;
-/* RL-8 (the owner's "fall only", roguelite-track.md 8.20): Blake left the opening: his lines, Hazel's fight with him
-   and her lines to him are gone, everything else said as before, in the same order */
-const BLAKE_SCENE = new Set([
-  'They don’t have a Billie yet, Blake.',
-  'Oh, I’d love to.',
-  'I have tenure.',
-  'Everyone has a type, Blake. Mine is “tenured”.',
-  'Now. Where was I? Ah, yes. Three of them, right here.',
-]);
-/* RL-8: and after the pick, Hazel sends you to the airship mast */
-const OPENING_NOW = [
-  ...BEFORE.filter(l => l.who !== 'chad' && l.cmd !== 'staged-fight' && !BLAKE_SCENE.has(l.text)),
-  {
-    who: 'gini',
-    text: 'One more thing. See the airship at the mast? It flies out past the island, to wild places nobody has mapped yet.',
-    expr: null,
-  },
-  {
-    who: 'gini',
-    text: 'Every trip out there is different. Take Starterbill, catch what you can, and bring back whatever you find.',
-    expr: null,
-  },
-  { who: 'gini', text: 'Go whenever you’re ready. And come and see me in the lab.', expr: 'happy' },
-];
 const SPEAKERS = GAME_DATA.story.speakers;
 const OWN = ['dressing-room', 'staged-fight', 'pick-starter'];
 
@@ -60,7 +34,7 @@ async function play(lines, slots) {
   return said;
 }
 
-test('the opening says the approved lines, in order, with the same commands between as before (Blake left it, RL-8)', async () => {
+test('the opening says the approved lines, in order, with its own commands between', async () => {
   const said = await play(OPENING.script, {
     name: 'Pat',
     starter: 'Starterbill',
@@ -69,8 +43,6 @@ test('the opening says the approved lines, in order, with the same commands betw
     place: 'Copperleaf Town',
   });
   assert.deepEqual(said, SAID);
-  const cmds = (/** @type {any[]} */ L) => L.filter(l => l.cmd).map(l => l.cmd);
-  assert.deepEqual(cmds(said), cmds(OPENING_NOW));
 });
 
 test('the opening is filmed on Copperleaf and names only its own spots and shots', () => {

@@ -40,13 +40,13 @@ expose({
   // @ts-expect-error -- replaced on purpose
   loadSave: [() => loadSave, v => (loadSave = v)],
   // @ts-expect-error -- replaced on purpose
-  migrate: [() => migrate, v => (migrate = v)],
-  // @ts-expect-error -- replaced on purpose
   newSave: [() => newSave, v => (newSave = v)],
   // @ts-expect-error -- replaced on purpose
   newSaveKeepingPreferences: [() => newSaveKeepingPreferences, v => (newSaveKeepingPreferences = v)],
   // @ts-expect-error -- replaced on purpose
   saveAge: [() => saveAge, v => (saveAge = v)],
+  // @ts-expect-error -- replaced on purpose
+  saveFill: [() => saveFill, v => (saveFill = v)],
   // @ts-expect-error -- replaced on purpose
   validSave: [() => validSave, v => (validSave = v)],
 });
@@ -108,7 +108,7 @@ export function newSaveKeepingPreferences() {
 /* alpha 0.4.1: saves only need to work with this version. A save is filled out with anything new and checked against
    the game data (things the Studio may have removed are dropped), but old formats are no longer converted */
 /** @param {any} o a save as stored (parsed JSON) @returns {SaveData | null} */
-export function migrate(o) {
+export function saveFill(o) {
   if (!o || typeof o !== 'object') return null;
   const f = newSave();
   /** @type {SaveData} */
@@ -121,11 +121,6 @@ export function migrate(o) {
      working fields come back from it (nothing is paid) before the checks below clean them */
   s.meta = metaFill(o.meta);
   s.ranch = ranchFill(o.ranch);
-  /* RL-12: a run saved before Loopholes had an offer counter or shelves: it carries on with none */
-  if (s.run && typeof s.run === 'object') {
-    if (s.run.offerN === undefined) s.run.offerN = 0;
-    if (s.run.shelf === undefined) s.run.shelf = {};
-  }
   if (s.run != null && !validRun(s.run)) runRestore(s);
   if (s.run === undefined) s.run = null;
   const p = (s.preferences = Object.assign(
@@ -136,9 +131,6 @@ export function migrate(o) {
   if (p.aim !== 'smooth') p.aim = 'sharp';
   p.effects = 'full';
   p.fps = +p.fps;
-  /* phase 06-3: the painted battle stage and the corner-card HUD are gone, and so are their settings */
-  delete p.battleStage;
-  delete p.battleHud;
   if (!Array.isArray(s.eggs)) s.eggs = [];
   if (!SPECIES[s.starter + '0'] && s.started)
     s.starter = RULES.start.starters.find(l => SPECIES[l + '0']) || LINES[0].id;
@@ -191,19 +183,6 @@ export function migrate(o) {
     if (s.trip.plan.length && !hubRoadCost(s.trip.node, s.trip.plan[0])) s.trip.plan = [];
   }
   if (!s.visited || typeof s.visited !== 'object') s.visited = {};
-  /* RL-5: a save from before the hub stood alone holds the old world's places: what names a place that isn't there
-     any more goes, in the hub (during a run they are the run's, made after loading): places visited, wild Billies by
-     place, the townsfolk's requests by place and the letters to one, today's visits */
-  if (!s.run) {
-    for (const k of Object.keys(s.visited)) if (!HUB_LOCATIONS[+k]) delete s.visited[k];
-    const ids = new Set(HUB_LOCATIONS.map(l => l.id));
-    for (const k of Object.keys(s.wild)) if (!ids.has(k)) delete s.wild[k];
-    const X = s.x && typeof s.x === 'object' ? s.x : null;
-    if (X && X.reqs && typeof X.reqs === 'object')
-      for (const [k, q] of Object.entries(X.reqs))
-        if (!HUB_LOCATIONS[+k] || (q && q.to != null && !HUB_LOCATIONS[q.to])) delete X.reqs[k];
-    if (X && X.visits && Array.isArray(X.visits.ids)) X.visits.ids = X.visits.ids.filter(n => !!HUB_LOCATIONS[n]);
-  }
   s.visited[s.trip.node] = 1;
   if (s.started && !s.team.length && !s.box.length) return newSave();
   s.saveVersion = SAVE_VERSION;
@@ -224,7 +203,7 @@ export function saveAge(o) {
 }
 /** @param {any} o @returns {SaveData | null} */
 export function loadSave(o) {
-  return saveAge(o) === 'ok' ? migrate(o) : null;
+  return saveAge(o) === 'ok' ? saveFill(o) : null;
 }
 export const SAVE_OLD_MSG = 'This save is from an older version of the game and can’t be loaded in this one.',
   SAVE_NEW_MSG = 'This save is from a newer version of the game. Reload the page to get the newest version.';

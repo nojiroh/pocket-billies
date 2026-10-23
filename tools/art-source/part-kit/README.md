@@ -7,4 +7,4 @@ are in `game/data/partKits.json` (`kits`).
 To slice a kit (after changing a sheet, or for a new kit): open the Studio, drop both sheets anywhere on it (Art
 workbench, Sheet mode, kit rows), check the parts, then **Write** and **Save**. A new kit needs its entry in
 partKits.json `kits` first. This replaced tools/slice-part-kit.py (studio track ST-3); the Studio slices the same
-way, pixel for pixel (tools/test/sheet-slice-parity.test.mjs).
+way, pixel for pixel (tools/test/sheet-slice-real.test.mjs).
