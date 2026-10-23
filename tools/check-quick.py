@@ -1162,8 +1162,8 @@ def desktop_steps(b, base, R):
         return f'rain in battle: Water ×{bw[1]}, Fire ×{bw[2]}'
     battle_weather()
 
-    @step('v31: shorelines, autumn, facing, rooms, settings tabs, place card, map camera', 300)   # RL-5: the fountains (Marigold Town's) are parked
-    def v31():
+    @step('Walking left and right, the shoreline, room light, settings tabs, the place card, the world map camera', 300)   # RL-5: the fountains (Marigold Town's) are parked
+    def frames_rooms_settings_map():
         if not pg.evaluate("typeof shoreField==='function'"): return 'not in this build'
         out = []
         # walking left is the mirror of walking right, not the same picture
@@ -1225,7 +1225,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("uiState.tab='walk';render();0"); time.sleep(.5)
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
-    v31()
+    frames_rooms_settings_map()
 
     @step('v32: 3D miniatures, skipping what is off screen, the scene cache, wear and variety', 240)
     def v32():
