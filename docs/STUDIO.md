@@ -320,13 +320,13 @@ Game → **UI look** edits game/data/uiTheme.json, the look of the game's menus 
 | **UI look** | The menus' look (uiTheme.json): colours light and dark with contrast grades, glass, depth, shapes, space, type and motion, for the whole game or one screen's colours and shapes; presets, Hold to compare, the UI gallery as a live preview. UI track UI-3, above. |
 | **Rules** | Every number that tunes the game: starting items, starters and rival, wild Billies per place and how fast they come back, prize money, leveling curve, team size, eggs, damage, critical hits, type abilities, taxing, bargains. |
 | **Art files** | Browse, download and replace any image. |
-| **Check & backups** | Lists problems with "Show me" links; restores earlier versions. |
+| **Check** | Lists problems with "Show me" links; downloads or loads the game data; runs the Studio test. Earlier versions are in git: a proposal is a pull request. |
 | **Find and Connections** | Ctrl+K finds any setting or thing and takes you to it; Ctrl+L shows what the thing you're editing uses and what uses it, or, for an engine dial, where its value comes from and what it depends on. |
 
 ## Saving in local mode
 
 **Save to game** (Ctrl+S) writes the game data, `game/art/rigs.js` and the
-changed images. Each save keeps the previous file in `backups/`. Undo/redo cover every
+changed images. Undo/redo cover every
 edit in the session. **Play test** opens the game with the debug menu at
 `localhost:8001`, which keeps a separate save from your normal game. Reload the game tab
 to see saved changes.

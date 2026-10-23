@@ -1,5 +1,5 @@
 'use strict';
-/* ================= POCKET BILLIES STUDIO · checks and backups =================
+/* ================= POCKET BILLIES STUDIO · checks =================
    The game repairs or skips anything broken when it loads, but these checks point at it first. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
@@ -16,7 +16,6 @@ import {
   ACTIONS,
   SECTIONS,
   afterRender,
-  api,
   ask,
   card,
   changed,
@@ -33,7 +32,6 @@ import { wmlSeaShare } from './worldmap-look.js';
 /* eslint-disable no-func-assign */
 expose({
   checkTimer: [() => checkTimer, v => (checkTimer = v)],
-  loadBackups: [() => loadBackups, v => (loadBackups = v)],
   renderCheckList: [() => renderCheckList, v => (renderCheckList = v)],
   runCheck: [() => runCheck, v => ((runCheck = v), provide({ runCheck }))],
   scheduleCheck: [() => scheduleCheck, v => ((scheduleCheck = v), provide({ scheduleCheck }))],
@@ -532,48 +530,9 @@ ACTIONS.fix = d => {
 };
 SECTIONS.check = () => {
   afterRender(renderCheckList);
-  afterRender(loadBackups);
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Check & backups</h2><div class="seg-row"><button class="btn" data-act="exportData">Download game data</button><button class="btn" data-act="importData">Load game data from a file</button><button class="btn" data-act="studioTest" title="Opens and edits every section, times the Studio’s own work and lists the slowest spots (about 90 s; nothing is saved)">Run the Studio test</button></div></div>
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Check</h2><div class="seg-row"><button class="btn" data-act="exportData">Download game data</button><button class="btn" data-act="importData">Load game data from a file</button><button class="btn" data-act="studioTest" title="Opens and edits every section, times the Studio’s own work and lists the slowest spots (about 90 s; nothing is saved)">Run the Studio test</button></div></div>
  ${card('Problems', `<ul class="checks" id="checkList"></ul>`, { sub: 'Problems are things the game will skip or patch over. Notes are worth a look.' })}
- ${card('Backups', `<p class="help">Every save keeps the previous version in the backups folder. Restoring replaces the current file (which is backed up first). Reload the Studio afterwards.</p><div id="backupList">Loading…</div>`)}</div>`;
-};
-async function loadBackups() {
-  const el = $('#backupList');
-  if (!el) return;
-  try {
-    const B = await api('backups');
-    const groups = { data: 'Game data', rigs: 'Skeletons', art: 'Art' };
-    el.innerHTML = B.length
-      ? `<table class="tbl"><thead><tr><th>Kind</th><th>File</th><th>Saved</th><th></th></tr></thead><tbody>${B.slice(
-          0,
-          60
-        )
-          .map(
-            b =>
-              `<tr><td>${groups[b.kind]}</td><td class="mono">${escapeHtml(b.name)}</td><td>${new Date(b.mtime * 1000).toLocaleString()}</td><td><button class="btn sm" data-act="restore" data-k="${b.kind}" data-n="${escapeHtml(b.name)}">Restore</button></td></tr>`
-          )
-          .join('')}</tbody></table>`
-      : '<p class="help">No backups yet. They appear after your first save.</p>';
-  } catch (e) {
-    el.textContent = e.message;
-  }
-}
-ACTIONS.restore = async d => {
-  if (studioState.dirty || studioState.rigsDirty || studioState.artDirty.size) {
-    if (
-      !(await ask('You have unsaved changes. Restoring will reload the Studio and they’ll be lost.', 'Restore anyway'))
-    )
-      return;
-  } else if (!(await ask('Restore this backup? The current file is backed up first.', 'Restore'))) return;
-  try {
-    const r = await api('restore', { method: 'POST', body: JSON.stringify({ kind: d.k, name: d.n }) });
-    studioState.dirty = studioState.rigsDirty = false;
-    studioState.artDirty.clear();
-    toast('Restored ' + r.restored + '. Reloading…', 'ok');
-    setTimeout(() => location.reload(), 800);
-  } catch (e) {
-    toast(e.message, 'err');
-  }
+</div>`;
 };
 ACTIONS.exportData = () => {
   const b = new Blob([JSON.stringify(studioState.D, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v), 1)], {

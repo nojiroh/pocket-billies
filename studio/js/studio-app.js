@@ -617,7 +617,7 @@ export const SECTION_LIST = [
   ['rules', 'Rules', 'Every number that tunes the game'],
   ['ui', 'UI look', 'The menus’ look: colours, glass, shapes, space, type and motion, for the game or one screen'],
   ['art', 'Art files', 'Browse and replace any image'],
-  ['check', 'Check & backups', 'Problems, backups and restore'],
+  ['check', 'Check', 'Problems, the game data as a file, and the Studio test'],
   ['legacy', 'Legacy world', 'The places parked outside the hub, read-only: copy a map into the game'],
 ];
 /* alpha 0.4.1: the sections in five groups that fold away; the one you're in always shows. The descriptions show as
@@ -663,7 +663,7 @@ export function renderSide() {
               .join('')
       }</div>`;
     }).join('') +
-    `<div class="side-foot"><small><kbd>Ctrl K</kbd> finds any setting · <kbd>Ctrl L</kbd> shows connections · <kbd>Ctrl S</kbd> saves · <kbd>?</kbd> lists the keys.<br>Saves go to <code>game/data</code> and <code>game/art</code>, with backups in <code>backups/</code>.</small></div>`;
+    `<div class="side-foot"><small><kbd>Ctrl K</kbd> finds any setting · <kbd>Ctrl L</kbd> shows connections · <kbd>Ctrl S</kbd> saves · <kbd>?</kbd> lists the keys.</small></div>`;
 }
 /* studio track ST-1: the second pane shows any section but the ones with a 3D view (IS-6a: Hub island too) (they share one) and the one in
    the first pane (its ids would clash); why not, or '' */
