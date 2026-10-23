@@ -71,7 +71,7 @@
   "text": "#fff",
   "strong": ["Electric","Dragon"],
   "weak": ["Psychic","Steel"],
-  "passive": "volatile",
+  "passive": "wildmind",
   "passiveName": "Wild Mind",
   "passiveText": "Its damage swings wildly, from a scratch to a huge hit.",
   "fx": ["orb","star"]

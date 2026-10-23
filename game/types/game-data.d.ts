@@ -860,8 +860,8 @@ export interface Rules {
     critChances: number[];
     critMult: number;
     rollMin: number;
-    cryptoRollMin: number;
-    cryptoRollMax: number;
+    wildMindRollMin: number;
+    wildMindRollMax: number;
     liveWireCrit: number;
     kindlingBoost: number;
     kindlingTurns: number;

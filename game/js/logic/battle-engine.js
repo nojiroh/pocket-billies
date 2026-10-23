@@ -351,8 +351,8 @@ export function calcDamage(k, tk, mid, src) {
     te = typeEffectiveness(M.t, actorTypes(tk));
   const cs = (fx.crit || 0) + (hasPassive(aty, 'livewire') ? BATTLE_RULES.liveWireCrit : 0);
   const crit = !src && battleRoll() < BATTLE_RULES.critChances[clamp(cs, 0, BATTLE_RULES.critChances.length - 1)];
-  const roll = hasPassive(aty, 'volatile')
-    ? BATTLE_RULES.cryptoRollMin + battleRoll() * (BATTLE_RULES.cryptoRollMax - BATTLE_RULES.cryptoRollMin)
+  const roll = hasPassive(aty, 'wildmind')
+    ? BATTLE_RULES.wildMindRollMin + battleRoll() * (BATTLE_RULES.wildMindRollMax - BATTLE_RULES.wildMindRollMin)
     : BATTLE_RULES.rollMin + battleRoll() * (1 - BATTLE_RULES.rollMin);
   const mk = battleNow().market && M.t === BATTLE_RULES.shockType ? BATTLE_RULES.oilShockMult : 1;
   let eco = 1;

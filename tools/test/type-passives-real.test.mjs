@@ -38,7 +38,7 @@ const plainMove = (t, c) =>
   );
 
 test('every type names its passive and says what it does; the ids are the nine the engine knows', () => {
-  const known = ['kindling', 'undertow', 'regrowth', 'livewire', 'bedrock', 'pivot', 'volatile', 'synergy', 'inherit'];
+  const known = ['kindling', 'undertow', 'regrowth', 'livewire', 'bedrock', 'pivot', 'wildmind', 'synergy', 'inherit'];
   assert.deepEqual(
     TYPES.map(t => data.PASSIVE[t]),
     known
@@ -119,7 +119,7 @@ test('Wild Mind (Psychic): damage from 25% to 160% instead of 85% to 100%', () =
   };
   const wild = span('swift0'),
     plain = span('musk0');
-  assert.ok(Math.abs(wild / (R.cryptoRollMax / R.cryptoRollMin) - 1) < 0.1, `Psychic swings ${wild.toFixed(2)}x`);
+  assert.ok(Math.abs(wild / (R.wildMindRollMax / R.wildMindRollMin) - 1) < 0.1, `Psychic swings ${wild.toFixed(2)}x`);
   assert.ok(Math.abs(plain - 1 / R.rollMin) < 0.1, `others swing ${plain.toFixed(2)}x`);
 });
 

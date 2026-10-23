@@ -915,7 +915,7 @@ ACTIONS.moveDel = async () => {
 const PASSIVES = [
   ['', 'No ability'],
   ['pivot', 'Slipstream: switches out once per battle without losing the turn'],
-  ['volatile', 'Wild Mind: damage swings wildly'],
+  ['wildmind', 'Wild Mind: damage swings wildly'],
   ['regrowth', 'Regrowth: restores a little HP each turn'],
   ['synergy', 'Alloy: +10% damage for each teammate of the same type'],
   ['livewire', 'Live Wire: higher critical-hit chance'],
