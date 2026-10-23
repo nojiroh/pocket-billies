@@ -1466,8 +1466,8 @@ def desktop_steps(b, base, R):
 
     @step('Ground tiles, building plans and colours, rooms laid in at their doors', 300)
     def buildings_and_rooms():
-        """every ground kind has its 12 tiles; the new buildings and every colour variant load and have a 3D plan; each new
-        kind of building has a room; walking into Hazel's lab lays the room into Copperleaf where the lab stands (its doorway
+        """every ground kind has its 12 tiles; the new buildings have a 3D plan or a low-poly model and every colour variant
+        loads; each kind of building has a room (in the game or parked); walking into Hazel's lab lays the room into Copperleaf where the lab stands (its doorway
         exactly at the lab's door, the hamlet dimmed around it, nowhere to walk but the floor) and walking out leaves you
         at the door with the lab back. RL-5: the hub's doors and its lab (the shop was Marigold Town's, parked)"""
         out = []
@@ -1478,12 +1478,16 @@ def desktop_steps(b, base, R):
         out.append(f'{len(tiles)} ground kinds × 12 tiles')
         b = json.loads(pg.evaluate("""(()=>{const C=walkData().sc.props,K=['bakery','inn','market_hall','bank','library','school','fire_station','mansion','barn','greenhouse','ski_lodge'],imgs=[];let plans=0,vars=0;
           for(const [k,M] of Object.entries(C)){if(!M.build)continue;plans++;for(const v of M.build.variants||[]){vars++;imgs.push(v.img)}}
-          return JSON.stringify({missing:K.filter(k=>!C[k]||!C[k].build),plans,vars,imgs,rooms:K.filter(k=>!gameData.maps['int_'+k]),v2:propWithVariant({v:2},C.bakery).img})})()"""))
-        if b['missing'] or b['rooms']: raise Exception(f'buildings without a plan: {b["missing"]}; kinds without a room: {b["rooms"]}')
-        if not b['v2'].endswith('bakery_v2.png'): raise Exception('a placed building’s colour (v) doesn’t pick its picture: ' + b['v2'])
+          return JSON.stringify({missing:K.filter(k=>!C[k]||!(C[k].build||C[k].model)),plans,models:K.filter(k=>C[k]&&C[k].model).length,vars,imgs,rooms:K.map(k=>[k,(C[k]&&C[k].room)||'int_'+k]),v2:propWithVariant({v:2},C.house).img})})()"""))
+        # TC-3: a kind of building is drawn from its 3D plan (build) or, since the low-poly kit, from its model; its room is
+        # in the game or parked with the unreachable rooms in game/data/legacy (the owner's choice, lane C), as check-data
+        # allows. The colour pick is the house's (the bakery's colours went with its plan)
+        rooms = [k for k, r in b['rooms'] if not pg.evaluate(f"!!gameData.maps[{json.dumps(r)}]") and not (GAME / 'data' / 'legacy' / 'maps' / f'{r}.json').exists()]
+        if b['missing'] or rooms: raise Exception(f'buildings without a plan or a model: {b["missing"]}; kinds without a room: {rooms}')
+        if not b['v2'].endswith('house_v2.png'): raise Exception('a placed building’s colour (v) doesn’t pick its picture: ' + b['v2'])
         bad = pg.evaluate(f"Promise.all({json.dumps(b['imgs'])}.map(p=>artLoad([p]).then(()=>imageReady(artImage(p))?null:p).catch(()=>p))).then(L=>L.filter(Boolean))")
         if bad: raise Exception(f'{len(bad)} building colours don’t load: {bad[:3]}')
-        out.append(f'{b["plans"]} buildings with 3D plans, {b["vars"]} colour variants load, a room for each new kind')
+        out.append(f'{b["plans"]} buildings with 3D plans ({b["models"]} of the {len(b["rooms"])} kinds with a model instead), {b["vars"]} colour variants load, a room for each kind (in the game or parked)')
         # phase 08b: every door of three towns: its room's doorway within 0.1 m of the door, the room inside the view
         # (RL-5: of the hub alone: Verdigris City and Marigold Town are parked)
         nd, bad = 0, []
