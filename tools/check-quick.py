@@ -1241,7 +1241,8 @@ def battles_and_world_billies(P):
             if not tid: out.append('no trainer for a double battle'); continue
             pg.evaluate(f"startTrainer('{tid}',{{talked:true,double:true}});0")
         else:
-            pg.evaluate("(()=>{const sp=Object.keys(SPECIES).find(k=>SPECIES[k].stage===0&&!RULES.start.starters.includes(SPECIES[k].line));const q={id:'cq-alpha',sp,lvl:6,no:1,alpha:true};encountersHere().push(q);startWild(q)})()")
+            # TC-4: level 12, as strong as the team: a level-6 Alpha fell to the first move and the catch was skipped
+            pg.evaluate("(()=>{const sp=Object.keys(SPECIES).find(k=>SPECIES[k].stage===0&&!RULES.start.starters.includes(SPECIES[k].line));const q={id:'cq-alpha',sp,lvl:12,no:1,alpha:true};encountersHere().push(q);startWild(q)})()")
         if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, tap): raise Exception(f'{kind}: never reached the move menu (phase {pg.evaluate("activeBattle&&activeBattle.phase")})')
         # the plates fade in with their billionaires; in software drawing that can take a few seconds
         until(pg, "document.querySelectorAll('#plates .bplate:not(.off):not(.gone)').length>=liveActors(0).length+liveActors(1).length", 12); ui(pg)
