@@ -4917,7 +4917,7 @@ body.wb-dropping::after {
 .rl-sim-table td.help {
   text-align: left;
 }
-/* Studio plan Phase 4: the roguelite content editors (relics-editor.js, unlocks-editor.js, economy-view.js,
+/* Studio plan Phase 4: the roguelite content editors (perks-editor.js, unlocks-editor.js, economy-view.js,
    run-values.js) */
 .relic-row {
   border: 1px solid var(--line);
