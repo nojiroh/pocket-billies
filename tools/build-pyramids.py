@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""RF-2: the catch pyramids' icons (game/art/coins/<id>_16.png and _32.png; the ids stay the coins' until RF-4).
+"""RF-2: the catch pyramids' icons and 3D models (game/art/coins/<id>_16.png, _32.png and <id>.json; the ids stay
+the coins' until RF-4).
 
 Each icon is drawn at its own size (never scaled): a pyramid seen from a little above and to the left, the left face
 lit and the right face in shade, a dark outline. The tier colours stay the coins' so the four read apart at 16 px:
@@ -8,10 +9,15 @@ lit and the right face in shade, a dark outline. The tier colours stay the coins
   gold   Gold Pyramid  gold, a shine down the lit face
   tbtf   Capstone      a small platinum-blue tip with a gold point and a few glints round it
 
-  python3 tools/build-pyramids.py            writes the eight PNGs
+The models are recipes for the 3D props' code (prop-models.js; low-poly, the buildings' 32 px textures), thrown in
+battle (battle-3d.js). They stand 2 cm up (PYRAMID_LIFT in battle-3d.js takes it back off): a shape on the ground
+gets no underside, and a thrown pyramid shows its underside as it tumbles.
+
+  python3 tools/build-pyramids.py            writes the eight PNGs and the four recipes
   python3 tools/build-pyramids.py --sheet F  also writes a 4x zoomed contact sheet to F
 """
 import argparse
+import json
 import os
 
 from PIL import Image
@@ -145,6 +151,45 @@ def draw(kind, n):
     return im
 
 
+LIFT = 0.02  # metres
+SIDE = 0.34  # the base's side, metres
+HIGH = 0.3  # the height, metres
+
+
+def recipe(kind):
+    """the model: x across, y in depth, z up (metres), as a prop's recipe"""
+    P = PALETTES[kind]
+    r = SIDE / 2 ** 0.5  # a 4-sided cone's corner radius, turned 45 degrees so its faces are square to x and y
+    cone = {'k': 'cone', 'x': 0, 'y': 0, 'sides': 4, 'rot': 0.7854, 'facet': 1}
+    if kind == 'penny':
+        L = [{**cone, 'z': LIFT, 'r': r, 'h': HIGH, 'col': P[2], 'tex': 'brick', 'name': 'pyramid'}]
+    elif kind == 'silver':
+        n = 3
+        L = [
+            {
+                'k': 'box', 'x': 0, 'y': 0, 'z': round(LIFT + i * HIGH / n, 3),
+                'w': round(SIDE * (1 - i / n), 3), 'd': round(SIDE * (1 - i / n), 3), 'h': round(HIGH / n, 3),
+                'col': P[2], 'tex': 'stone', 'name': f'step {i + 1}',
+            }
+            for i in range(n)
+        ]
+    elif kind == 'gold':
+        L = [{**cone, 'z': LIFT, 'r': r, 'h': HIGH, 'col': P[2], 'tex': 'plain', 'name': 'pyramid'}]
+    else:
+        # the capstone: a smaller pyramid, platinum blue with its top in gold
+        cr, ch, cut = r * 0.8, HIGH * 0.75, 0.6
+        L = [
+            {**cone, 'z': LIFT, 'r': round(cr, 4), 'r1': round(cr * (1 - cut), 4), 'h': round(ch * cut, 4),
+             'col': P[2], 'tex': 'plain', 'name': 'stone'},
+            {**cone, 'z': round(LIFT + ch * cut, 4), 'r': round(cr * (1 - cut), 4), 'h': round(ch * (1 - cut), 4),
+             'col': GOLD_TIP[1], 'tex': 'plain', 'name': 'gold point'},
+        ]
+    for l in L:
+        if 'r' in l:
+            l['r'] = round(l['r'], 4)
+    return {'about': f'RF-2: the {kind} catch pyramid (tools/build-pyramids.py)', 'cel': 0.6, 'layers': L}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--sheet')
@@ -153,6 +198,8 @@ def main():
     for k in kinds:
         for n in (16, 32):
             draw(k, n).save(os.path.join(OUT, f'{k}_{n}.png'), optimize=True)
+        with open(os.path.join(OUT, f'{k}.json'), 'w') as f:
+            f.write(json.dumps(recipe(k), ensure_ascii=False) + '\n')
     if a.sheet:
         z = 4
         sh = Image.new('RGBA', (len(kinds) * (48 + 4) * z, 36 * z), (40, 44, 56, 255))
@@ -161,7 +208,7 @@ def main():
                 im = draw(k, n).resize((n * z, n * z), Image.NEAREST)
                 sh.paste(im, ((i * 52 + j * 34) * z, 2 * z), im)
         sh.save(a.sheet)
-    print('wrote', len(kinds) * 2, 'icons to', os.path.relpath(OUT, ROOT))
+    print('wrote', len(kinds) * 2, 'icons and', len(kinds), 'models to', os.path.relpath(OUT, ROOT))
 
 
 if __name__ == '__main__':
