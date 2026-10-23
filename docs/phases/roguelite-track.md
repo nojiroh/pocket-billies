@@ -946,6 +946,10 @@ Pokémon region, with ideas taken from PokeRogue, and the story should react to 
 section records the owner's answers, the new and changed sessions, and the new "Ask me before" items. Numbers below
 were read at 2361848; verify again before each session.
 
+**Words (2026-10-23, docs/phases/reflavour-track.md):** the owner moved the game off finance. Read Loopholes as
+**Perks**, Brackets as **Expeditions**, Capital as **Research**, Audit Seals as **Crests**, $ as **Coins**; catching is
+with capsules. The organization is a secret bureaucratic agency (9.5 is superseded by reflavour-track.md section 4).
+
 ### 9.1 Why runs feel the same today (verified at 2361848)
 
 - **Wild Billies are the same 4 lines almost everywhere.** biomes.json points each biome at a legacy pool
@@ -1039,7 +1043,7 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
 - **RL-12b, RL-S1, RL-S2, RL-13:** files and tests as their rows say; each adds a fast-check page and an in-game test
   step, as earlier RL sessions did.
 
-### 9.5 The organization: three name options (Claude's drafts; original, nothing from Control or the SCP Foundation)
+### 9.5 The organization: three name options (superseded 2026-10-23: finance names; see reflavour-track.md section 4)
 
 1. **The Office of Unclaimed Property (OUP)** (recommended). It files everything that falls through a portal as
    unclaimed property, you included, and "returns" lost property to the drop point: Copperleaf. That is why a lost
@@ -1054,7 +1058,7 @@ The bots fit any of them as "repossession units"; the Voltron as the first "Lot"
 
 ### 9.6 Ask me before (new; recommendation first)
 
-21. **The organization's name:** 9.5's option 1 / 2 / 3 / your own.
+21. **The organization's name:** moved to reflavour-track.md section 5.
 22. **Kept badges vs badge Loopholes:** a permanent badge on the first win per leader, the Loophole pick stays the run's
     prize (recommended) / badges run-only and field moves need only the type.
 23. **Starter points:** a budget of 10 at Bracket I, costs 1-5 by line rarity and stage, a ranch-trained Billie +1 per
