@@ -235,12 +235,6 @@ section > h2,
   font: 400 28px/1 var(--font-voice);
   color: var(--gold2);
 }
-.lbl {
-  font-size: 13px;
-  color: var(--text2);
-  margin-top: 6px;
-  font-weight: 600;
-}
 .se {
   text-align: right;
 }
