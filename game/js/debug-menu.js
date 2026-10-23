@@ -286,7 +286,10 @@ function debugAction(x) {
       return e ? e.value : null;
     },
     sp = v('dbgSp'),
-    lv = clamp(+v('dbgLv') || 10, 1, maxLevel());
+    lv = clamp(+v('dbgLv') || 10, 1, maxLevel()),
+    money = () => `$${saveData.se.toLocaleString('en-US')}`;
+  /* what the button changed, said once the save is written (the cases that break) */
+  let said = '';
   if (sp) {
     uiState.dbgSp = sp;
     uiState.dbgLv = lv;
@@ -313,15 +316,19 @@ function debugAction(x) {
       return refreshDebugMenu('Battle quality adapts to frame time again.');
     case 'se1':
       saveData.se += 1000;
+      said = `+$1,000: you have ${money()}.`;
       break;
     case 'se10':
       saveData.se += 10000;
+      said = `+$10,000: you have ${money()}.`;
       break;
     case 'coins':
       Object.keys(COINS).forEach(k => (saveData.coins[k] = (saveData.coins[k] || 0) + 10));
+      said = `+10 of each of ${Object.keys(COINS).length} coins.`;
       break;
     case 'items':
       Object.keys(ITEMS).forEach(k => (saveData.items[k] = (saveData.items[k] || 0) + 5));
+      said = `+5 of each of ${Object.keys(ITEMS).length} items.`;
       break;
     case 'give': {
       const m = makeBilly(sp, lv, { coat: $('#dbgCoat').value || undefined });
@@ -337,6 +344,7 @@ function debugAction(x) {
         coat: $('#dbgCoat').value || undefined,
         no: ++saveData.serial,
       });
+      said = `${SPECIES[sp].name} (level ${lv}) added to the encounters here: ${encountersHere().length} now.`;
       break;
     }
     case 'alpha': {
@@ -364,6 +372,7 @@ function debugAction(x) {
     }
     case 'heal':
       healAll();
+      said = `Healed: ${saveData.team.length} on your team.`;
       break;
     case 'look': {
       saveData.preferences = saveData.preferences || {};
@@ -391,6 +400,9 @@ function debugAction(x) {
         const t = Math.min(maxLevel(), m.lvl + 5);
         gainXp(m, xpFor(t) - m.xp, () => {});
       });
+      said = saveData.team.length
+        ? `Team +5 levels: now ${saveData.team.map(m => m.lvl).join(', ')}.`
+        : 'No team to level up.';
       break;
     case 'evo': {
       const m = saveData.team[0];
@@ -404,6 +416,7 @@ function debugAction(x) {
         saveData.seen[id] = 1;
         saveData.caught[id] = 1;
       });
+      said = `Field Guide filled: ${DEX_ORDER.length} Billies seen and taxed.`;
       break;
     case 'trainer2': {
       const id = v('dbgTr');
@@ -427,7 +440,7 @@ function debugAction(x) {
     }
     case 'test': {
       const id = v('dbgTest');
-      if (!id || !mapById(id)) break;
+      if (!id || !mapById(id)) return refreshDebugMenu('Pick a test scene first.');
       uiState.dbgTest = id;
       uiState.testRes = null;
       uiState.bench = { id, test: 1 };
@@ -448,19 +461,21 @@ function debugAction(x) {
       const id = v('dbgTest') || uiState.dbgTest;
       uiState.dbgTest = id;
       uiState.testRes = testMapChecks(id);
+      said = `${(mapById(id) && mapById(id).name) || id}: ${uiState.testRes.filter(r => r.ok).length} of ${uiState.testRes.length} checks passed.`;
       break;
     }
     case 'jump': {
       const n = clamp(+v('dbgNode'), 0, LOCATIONS.length - 1);
       /* RL-8: on a run, walked there as you would (a day a place, the path, what the map shows) */
       if (saveData.run) {
-        if (!runJump(n)) toast('That place can’t be walked to on this run.');
+        said = runJump(n) ? `Walked to ${LOCATIONS[n].name}.` : 'That place can’t be walked to on this run.';
         saveData.mapSeen = null;
         break;
       }
       saveData.trip = { node: n, plan: [] };
       saveData.visited[n] = 1;
       saveData.mapSeen = null;
+      said = `Moved to ${LOCATIONS[n].name}.`;
       break;
     }
     /* RL-8: runs */
@@ -518,10 +533,12 @@ function debugAction(x) {
       /* a town without wild Billies gets a route's worth, so there is always something to test with */
       const q = encountersHere();
       while (q.length < Math.max(encounterStock(saveData.trip.node), RULES.encounters.route)) spawn();
+      said = `${q.length} encounters here.`;
       break;
     }
     case 'clearq':
       encountersHere().length = 0;
+      said = 'Encounters here cleared.';
       break;
     /* RL-9: the ranch's trainees started an hour earlier (an hour's training, collected when the ranch opens), and
        Scrap to train with */
@@ -529,24 +546,24 @@ function debugAction(x) {
       saveData.ranch.trainees.forEach(t => {
         t.at = Math.max(0, t.at - 3600000);
       });
-      toast(`${saveData.ranch.trainees.length} training: an hour older.`);
+      said = `${saveData.ranch.trainees.length} in training: an hour older.`;
       break;
     /* RL-10: every egg in the ranch's nursery ready to hatch now */
     case 'eggsready':
       saveData.ranch.nursery.forEach(n => {
         n.ready = Math.max(n.at, Math.min(n.ready, Date.now()));
       });
-      toast(`${saveData.ranch.nursery.length} egg(s) ready to hatch at the ranch.`);
+      said = `${saveData.ranch.nursery.length} egg(s) ready to hatch at the ranch.`;
       break;
     case 'scrap':
       saveData.meta.scrap += 50;
-      toast(`${saveData.meta.scrap} Scrap.`);
+      said = `+50 Scrap: you have ${saveData.meta.scrap}.`;
       break;
     /* RL-11: Capital and Seals to try the Lab's board and the airship's upgrades with */
     case 'capital':
       saveData.meta.capital += 500;
       saveData.meta.seals += 2;
-      toast(`${saveData.meta.capital} Capital, ${saveData.meta.seals} Audit Seals.`);
+      said = `+500 Capital, +2 Audit Seals: you have ${saveData.meta.capital} and ${saveData.meta.seals}.`;
       break;
     case 'win':
       if (!activeBattle || activeBattle.phase === 'playing' || activeBattle.over)
@@ -570,9 +587,10 @@ function debugAction(x) {
       playTurnEvents();
       return;
     case 'foe1':
-      if (!activeBattle) return;
+      if (!activeBattle) return toast('Start a battle first.');
       fighter(1).hp = 1;
       paintBoxes(allSnapshots(), activeBattle.market);
+      said = 'The foe is at 1 HP.';
       break;
     case 'catch':
       uiState.dbgCatch = !uiState.dbgCatch;
@@ -601,7 +619,7 @@ function debugAction(x) {
       return;
   }
   save();
-  refreshDebugMenu('Done.');
+  refreshDebugMenu(said);
 }
 document.addEventListener('click', ev => {
   const el = ev.target.closest('[data-a]');
