@@ -2267,7 +2267,7 @@ export function mapHub(sc) {
 export const STEP_GRID_CACHE = new WeakMap(),
   MAX_STEP_RISE = 0.34,
   MAX_HOP_DOWN = 1.8;
-export function decodeBase64Array(s, Type) {
+function decodeBase64Array(s, Type) {
   if (!s) return null;
   try {
     const b = atob(s),

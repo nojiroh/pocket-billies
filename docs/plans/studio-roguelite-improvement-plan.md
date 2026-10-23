@@ -1413,7 +1413,15 @@ The owner took the recommendation on every open question:
    - Convert the 9 old-style people to `look` in one data-only commit.
    - Remove the convert-on-open.
    - Make `look` required.
-9. **Phase 2, second session** (recommended options taken under the standing instruction; the owner may revisit):
+9. **T1.3 severity, applied** (Phase 1 sessions C+D, recommended option taken): an `error` is exactly what
+   check-data already refused; every other Studio "error" became a warning (the list is in HANDOFF). No Studio check
+   was turned into a new block. The UI rules over their ceiling are a warning (a lint failure, not check-data's).
+10. **T1.3 enums, applied:** relic `fx.stat` and the currencies of buildings and unlock grants are checked against
+    stats.json and currencies.json; currencies.schema.json keeps the four ids as the one list (the game's code reads
+    them). Recommended option taken.
+11. **T1.4 path filter, applied:** a pull request's changed files are compared with its base commit in the smoke
+    job (no third-party action). Recommended option taken.
+12. **Phase 2, second session** (recommended options taken under the standing instruction; the owner may revisit):
    - T2.4: the worker's data version is the draft's JSON text (2.4 MB, about 20 ms), not an edit counter, so undo,
      drafts and Phase 1's undo by parts need no hook. It loads every logic module (load-logic.mjs's list, kept by a
      unit test). runPreview lives in game/js/logic/run-preview.js, on no page.

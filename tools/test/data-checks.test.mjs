@@ -2,6 +2,7 @@
 // file is found wherever it is (the Studio's save would drop it).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { PB_DATA } from '../data-files.mjs';
 import { GAME_DATA, modules } from './setup-real.mjs';
 
 const C = modules['data-checks'];
@@ -117,4 +118,57 @@ test("a trainer's robot: a missing gem and a part in the wrong slot", () => {
   assert.ok(P.includes('has robot gem nosuch, no such gem'));
   assert.ok(P.includes(`has ${torso} as armL, but it is a torso part`));
   assert.ok(P.includes('has robot armR x, no such part'));
+});
+
+test("one species rule: a loaded line's stages, a legacy line's (by its names, or any stage by its id alone)", () => {
+  const kind = C.dataSpeciesKind(
+    [{ id: 'nova', names: ['a', 'b'] }],
+    [{ id: 'walton', names: ['x', 'y', 'z'] }, { id: 'ford' }]
+  );
+  assert.equal(kind('nova1'), 'line');
+  assert.equal(kind('nova2'), '');
+  assert.equal(kind('walton2'), 'legacy');
+  assert.equal(kind('walton3'), '');
+  assert.equal(kind('ford7'), 'legacy');
+  assert.equal(kind('waltn0'), '');
+  assert.equal(kind(null), '');
+});
+
+test("a relic's stat is one of stats.json's, not hp", () => {
+  const D = copy(),
+    R = Object.values(D.relics).find(r => r.fx.some(f => f.kind === 'stat')),
+    f = R.fx.find(f => f.kind === 'stat');
+  for (const [stat, ok] of [
+    ['hus', true],
+    ['hp', false],
+    ['luck', false],
+  ]) {
+    f.stat = stat;
+    assert.equal(!C.dataRelics(D).some(([, w]) => w.includes('.stat: no stat')), ok, stat);
+  }
+});
+
+// T1.3 step 5: the Studio's scene and road checks, now here (check-data runs them too)
+const roadOf = (D, L) => PB_DATA.road(D, L);
+const errorsOf = F => F.filter(f => f.lvl === 'error').map(f => `${f.where}: ${f.msg}`);
+
+test('the game data has no scene or road error', () => {
+  assert.deepEqual(errorsOf(C.dataSceneFindings(GAME_DATA, roadOf)), []);
+  assert.deepEqual(errorsOf(C.dataRoadFindings(GAME_DATA, roadOf)), []);
+});
+
+test('a planted unknown ground, a stop with no walk scene and a road to itself are found, with where Show me goes', () => {
+  const D = copy(),
+    k = D.locations[0].mapId;
+  D.maps[k].tiles[0] = '§' + D.maps[k].tiles[0].slice(1);
+  D.locations.push({ name: 'Nowhere', kind: 'route', mapId: 'nosuchmap' });
+  const F = C.dataSceneFindings(D, roadOf);
+  const ground = F.find(f => f.msg.includes('unknown ground §'));
+  assert.equal(ground.where, `maps/${k}.json`);
+  assert.deepEqual([ground.go, ground.sel], ['scenes', { scene: k }]);
+  assert.ok(F.some(f => f.where === 'locations.json' && f.msg.includes('uses a walk scene that doesn’t exist')));
+  const R = copy(),
+    map = R.locations[0].mapId;
+  R.roads = [{ id: 'loop', a: { map, exit: 'e1' }, b: { map, exit: 'e2' } }];
+  assert.ok(errorsOf(C.dataRoadFindings(R, roadOf)).some(m => m.includes('has a road to itself')));
 });

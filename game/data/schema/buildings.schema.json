@@ -24,12 +24,9 @@
     "maxLength": 40
    },
    "currency": {
-    "description": "the currency it is upgraded with: one kept between runs (currencies.json, not money)",
-    "enum": [
-     "capital",
-     "scrap",
-     "seals"
-    ]
+    "description": "the currency it is upgraded with: one kept between runs (currencies.json, not money; check-data and the Studio check it)",
+    "type": "string",
+    "pattern": "^[a-z][a-z0-9_]*$"
    },
    "act": {
     "description": "the act of its building in Copperleaf (a prop's act): its sheet sells its rows, its label shows its level",
