@@ -8,8 +8,8 @@ lit and the right face in shade, a dark outline. The tier colours stay the coins
   gold   Gold Pyramid  gold, a shine down the lit face
   tbtf   Capstone      a small platinum-blue tip with a gold point and a few glints round it
 
-  python3 tools/build-pyramid-icons.py            writes the eight PNGs
-  python3 tools/build-pyramid-icons.py --sheet F  also writes a 4x zoomed contact sheet to F
+  python3 tools/build-pyramids.py            writes the eight PNGs
+  python3 tools/build-pyramids.py --sheet F  also writes a 4x zoomed contact sheet to F
 """
 import argparse
 import os
