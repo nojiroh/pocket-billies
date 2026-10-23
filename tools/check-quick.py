@@ -1223,10 +1223,13 @@ def desktop_steps(b, base, R):
             pg.evaluate("(()=>{const me=worldBowlSpots()[saveData.trip.node];worldBowl.goal=null;worldBowl.tween=null;worldBowl.cam=bowlCamClamp(bowlCamHome(me.x,me.y));worldBowl.dirty=true})();0"); time.sleep(.5)
             c0 = pg.evaluate("JSON.stringify(worldBowl.cam)")
             pg.evaluate("(()=>{const W=worldMapWidth,H=worldMapHeight;let c=bowlCamPan(worldBowl.cam,bowlCamView(worldBowl.cam,W,H),-120,40);c=bowlCamTurn(c,.8,.2);for(let i=0;i<20;i++)c=bowlCamZoom(c,.8);worldBowl.goal=null;worldBowl.cam=c;worldBowl.dirty=true})();0"); time.sleep(2); shot(pg, 'map-close')
-            m = pg.evaluate("(()=>{const c=worldBowl.cam,v=bowlCamView(c,worldMapWidth,worldMapHeight);return [JSON.stringify(c),c.dist,v.C[1]]})()")
+            # TC-3: zoomed right in, the camera is as close as it may come there: the nearest zoom, or nearer the rim's
+            # height the distance that keeps the eye above the rim line (bowlCamClamp backs off at its steepest tilt;
+            # over the hub island's low ground that is about 0.49, so a fixed 0.46 failed)
+            m = pg.evaluate("(()=>{const c=worldBowl.cam,v=bowlCamView(c,worldMapWidth,worldMapHeight);return [JSON.stringify(c),c.dist,v.C[1],bowlCamClamp(Object.assign({},c,{dist:0})).dist]})()")
             pg.evaluate("worldMapReset();0")
-            if m[0] == c0 or m[1] > .46 or m[2] < .37: raise Exception(f'bowl map camera: {m}')
-            out.append(f'the bowl map pans, turns and zooms to {m[1]:.2f}, the eye {m[2]:.2f} up (above the rim)')
+            if m[0] == c0 or m[1] > m[3] + .01 or m[2] < .37: raise Exception(f'bowl map camera: {m}')
+            out.append(f'the bowl map pans, turns and zooms to {m[1]:.2f} (as close as it may come there: {m[3]:.2f}), the eye {m[2]:.2f} up (above the rim)')
         pg.evaluate("uiState.tab='walk';render();0"); time.sleep(.5)
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
