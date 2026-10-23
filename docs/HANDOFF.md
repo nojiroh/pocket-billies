@@ -2,6 +2,69 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Test cleanup track, round 1, lane C - In-game tests and the unreachable rooms to legacy - 2026-10-23
+Branch `track/test-cleanup` (shared with lanes A, B, D; merged by pull, never rebased). Plan approved in Plan Mode
+(runQuickTest: option a). Lane C's part is pushed.
+- **Lines outside lane C's files, given to lane C by the owner's answer (lanes A and D: leave these alone):**
+  `tools/check-data.mjs` (the doors check, plus the cutscene map check at the top, which the plan didn't name: city.json
+  is filmed on `city_opening`), `tools/check-fast.py` `boots`, `tools/test/opening-script.test.mjs`'s city test, and
+  `tools/test/check-data-snapshot.test.mjs.snapshot` (remade: 147 game files became 130, nothing else). Also outside
+  any lane: `game/js/title.js`, `studio/js/legacy-view.js`, one line of `game/js/settings-screen.js` (Full test calls
+  `runFullTest`), and CHANGELOG, CUTSCENES, STUDIO.
+- Changed (one cause per commit):
+  - **Moved** (git mv, unchanged) into `game/data/legacy/maps` and `legacy/index.json`: the 16 rooms (int_assay_office,
+    bakery, bank, bullion_exchange, cap_market, chandlery, fire_station, greenhouse, inn, library, mansion, market_hall,
+    night_market, school, ski_lodge, twinpetal_market) and `city_opening`. `cutscenes/city.json` stays in the game.
+  - **check-data**: a kind of building's room may be a parked room (10 kinds in scenery.json name one: bakery, inn,
+    market_hall, bank, library, school, fire_station, mansion, greenhouse, ski_lodge); a cutscene may be filmed on a
+    parked map.
+  - **Title**: Copperleaf for a new player too; the city branch (titleCityFrame, the forced night look) is gone. The
+    fast check's boot check now fails unless the title is over the hub (on the base it says "over city_opening").
+  - **Studio Legacy section**: a card "Rooms and scenes without a place" with Copy into game (the Places card only
+    listed maps with a place, so the parked rooms would not have shown).
+  - **self-test.js**: the Walk list from the door links (`selfTestWalkScenes`: the hub, its doors' rooms, then a run
+    town's shop and clinic): 7 scenes, was 25. `diagnosticsMaps()`: the hub and its busiest room; diagnostics also
+    runs "A run's road" (one generated scene). The header fixed. `runQuickTest` is gone from the game and hooks.js;
+    it stays only as a test global because check-quick.py:627 calls it. "A run's road" waits 60 s for the next view
+    (was 15 s).
+  - **bowl-map-test.js**: the island is the only kind of world; `under` gone; an off place is skipped in the
+    under-water check. **graphics-test.js**: opens test_graphics. **Debug menu**: Earn every badge and Reset trainer
+    wins gone; Walk 1 km has a note (trainer card distance); the Full test note fixed.
+- Verified: lint, typecheck, check:modules, format:check, check:data, `npm test` (813 before the merge with lanes
+  A and B, 792 after) on every commit. Headless (Playwright 1.56 through a scratch link to Chromium 1243):
+  - boot check: passes here, fails on the base 5b677a5;
+  - the full test's Walk phases: 7 of 7;
+  - "A run's road" alone at selfTest.slow=3: it failed the same way on the base (the 15 s wait was too short for
+    software drawing) and passes with the 60 s wait;
+  - diagnostics: picks copperleaf and int_shop (no page error);
+  - the world map test: 14 of 14 steps, run alone;
+  - the graphics test: opens test_graphics and steps through the dials, Stop works;
+  - the Studio's new card: 17 rows, Copy into game brings int_bakery back as a room under its own id.
+  Whole fast check after merging lanes A and B: 29 of 31 passed. The two red were the world map's "zoom didn't come
+  back" and CAM-2's "encounter shot never arrived"; each passes when run alone (with one worker for the world map),
+  so it was two browsers sharing the CPU. Whole in-game test (`check-quick.py --selftest`): the full test is red only
+  on "Light lab" (test_light_props: "0 of 0 buildings" in view) and "Opening: falling across the Hollow Earth" ("the
+  fall drew 0 frames"). Both fail the same way on the base 5b677a5, run alone. On the base the full test was also red
+  on several parked rooms' Walk phases (black screen), which are no longer walked. The diagnostics half doesn't run
+  after a full-test failure; it ran separately (above).
+- Risky / open:
+  - **Two in-game full test phases are red headless on the base and here** (Light lab's buildings check, the opening's
+    fall), so `--selftest` stays red. Not looked into: outside this lane's plan. They need a session of their own, or
+    TC-3.
+  - **Diagnostics: "Walk: Inside the shop" fails headless** ("no frames in 3 s"). The same happens on the base, which
+    already picked the same two scenes. In the full test the shop passes, also right after Copperleaf. Not fixed and
+    not tried on a phone: please run the diagnostics test there.
+  - `test_windows` and `test_props_marigold` place the buildings whose rooms moved: their doors now open the room for
+    what the building does (shop, house) or none. They are test maps, not in the game flow.
+  - Copying a parked room back with the Studio makes its building kinds open it again (check-data accepts both ways).
+- For lane B (check-quick.py): line 627 calls `runQuickTest()`. Switch it to `runFullTest()`, and then the test
+  global in self-test.js can go. Step v46's "kinds without a room" now also lists the 10 kinds whose rooms are parked
+  (it was red already).
+- For lane D: check-data's `under` rule is yours; the `parkedMaps` block and the two lines using it are lane C's.
+- Phone check wanted: a new game's title (Copperleaf by day, not the city at night); Settings → Full test and the
+  diagnostics test; the debug menu's Wallet row.
+- Next: lane C is done. Tag `tc-lane-C-done` when you are happy with it.
+
 ### Test cleanup track, round 1, lane A - Unit tests and save code - 2026-10-23
 Branch `track/test-cleanup` (shared with lanes B-D; pulled with --no-rebase before every push). Plan approved in Plan
 Mode; the owner said yes to lane A taking the old-save set-aside code (game-state.js, boot.js's notice) too.
