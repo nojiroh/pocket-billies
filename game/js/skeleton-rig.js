@@ -457,6 +457,10 @@ if (typeof window !== 'undefined' && window.RIGS_NEXT) {
   window.RIGS = window.RIGS || {};
   for (const k in window.RIGS_NEXT) if (!window.RIGS[k]) window.RIGS[k] = window.RIGS_NEXT[k];
 }
+/* RO-1: a regional form is drawn with its base stage's rig (its coat recolours it) */
+if (typeof window !== 'undefined' && window.RIGS && typeof SPECIES !== 'undefined' && SPECIES)
+  for (const [id, S] of Object.entries(SPECIES))
+    if (S.formOf && !window.RIGS[id] && window.RIGS[S.formOf]) window.RIGS[id] = window.RIGS[S.formOf];
 export function rigAtlas(sp, view, coat) {
   const own = coat ? coatArt(coatsForRigs()[coat], sp, view) : null;
   if (own) return own;

@@ -2,6 +2,74 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roster track RO-1 - Real wild pools and regional forms - 2026-10-23
+Branch `track/roster` (new; the owner's choice: every RO session works here, BRANCHES.md and roguelite-track 9.4 say
+so). Plan approved in Plan Mode with the owner's answers: 4 forms (one per uncommon line, the drafts' names), weights
+written by hand in pools.json, forms on their base's dex page. Round 1 beside TC-1 (already merged as PR #155, so no
+overlap). Tag `ro-1-done` for the owner.
+- Where the docs were wrong (checked at 5ddd0f8):
+  - Nine biomes used legacy pools, not three: canyon, volcano, tundra, sea, badlands and jungle too (only meadow and
+    thicket listed real lines). Two of the legacy pool ids (`sea`, `badlands`) are also biome ids.
+  - "By rarity": the 7 lines are only 3 `starter` and 4 `uncommon`; there is no common or rare line yet.
+  - Only 9 types exist, so a form swaps among those (no Ice, Bug...).
+  - `game/data/regions.json` already exists (empty `[]`); RL-R1 fills it.
+  - `SPECIES[id].form` was already taken (a split line's 'A'/'B'); the new species keys are `formOf` and `coat`.
+  - Runs never called `standInSpecies` themselves: run-world.js hands the run POOLS, which game-data.js had already
+    stood in. Pointing the biomes at real pools was enough; run-scenes.js changed by one line (the dex hook).
+- Changed (one cause per commit):
+  - **logic/forms.js** (new): a line's `forms` (`{id, name, swap, coat}`, line.schema.json) make a species per stage,
+    `<line>_<form><stage>` (trump_waterfront0), named "<name> <stage name>", types swapped, the base stage's stats
+    (a copy), dex number and rig, its own next stage. Not in DEX_ORDER; `SPECIES_FORMS` lists a base's forms.
+    game-data.js may import it (eslint.config.js allows that one import: it imports nothing back).
+  - **Coats**: a coats.json coat marked `form` (schema) is never rolled and adds no word before the name
+    (`coatPrefix`); `makeBilly` and `spawn` give a form its coat unless it has another. skeleton-rig.js points a
+    form's rig at its base's.
+  - **Four forms** (drafts, the owner may rename): Waterfront (trump, Ground -> Water), Cloud (zuck, Water ->
+    Flying), Folklore (swift, Flying -> Grass), Festival (kardashian, Steel -> Ground), coats of the same names.
+  - **pools.json**: one pool per biome, named after it, the 7 lines' first stages: uncommon lines about 20 (28 where
+    their types fit the biome), starters 2-5; a form in place of its base line where its biome is (lake, ridge,
+    autumn, canyon). biomes.json points each biome at its own pool. Thicket's middle stages (weight 5) went: runs
+    reach about level 13 and middle stages evolve at 16.
+  - **Parked**: the 45 old pools, as they were (sea and badlands with their old lists), in `legacy/pools.json`
+    (legacy/index.json, README `_pools`). pools.json keeps hedgerow (the hub) and the 11 biome pools.
+  - **logic/wild-pool.js** (new): `wildPoolList(list, dex)`: a copy, cut to the species a region's dex names (all of
+    it with no dex or none named). runWorldTables reads an optional `data.dex` (RunWorldData); nothing sets it yet.
+  - **The Guide**: `dexSeen`/`dexCaught` (rules.js): an entry counts when one of its forms is seen or caught (list,
+    counts, profile); a base stage's page has a "Regional forms" section (seen: picture, name, types; else ???).
+  - **Checks**: check-data and the Studio's Check know form ids (`lineSpeciesIds`) and run `formProblems` (coat
+    exists and is marked form, swaps name real types, some stage changes); dataSpeciesKind counts forms as a line's;
+    the Studio's type rename rewrites a form's swap; the Studio's legacy mark no longer marks a form as legacy (a
+    bug found on the way: it would have shown "legacy trump_waterfront0" in the Pools tab); conditions.js counts a
+    form's catch for its line.
+  - **Tests**: new tools/test/wild-pools.test.mjs (8 tests: every biome pool covers the 7 lines with first stages,
+    uncommon above starter, five seeds' run places use their biome's pool with no stand-in, each form's species,
+    the four drafts, a form's coat and prefix, the dex cut, dexSeen/dexCaught). content-preview's stand-in test
+    finds its legacy id in the trainers (as read; the game stands in its own copy). check-studio-github's leaders
+    step now wants no legacy mark in the pools (it wanted at least one).
+- Verified: lint, typecheck, check:data, check:modules, format:check and the unit tests after every commit (776 ->
+  784); smoke 14 of 14; the full quick check 40 of 45 (1,971 s here): Tap targets, v31 bowl map camera, v46
+  buildings without a plan and alpha 0.4 bush recipes are the four lane B found red on main too; Sound effects'
+  "payout, won" failed again alone (its log holds `jingle run_won`, after the 15 s wait: timing, lane B saw this step
+  flip; not yet compared on main). The fast check 28 of 29: CAM-2 "the encounter shot never arrived", the flake lane
+  D noted. A browser look (phone size): forms in the team list and a wild battle with their names, types and coats;
+  the Guide's "Regional forms" section; coat renders checked against the sheets.
+- Risky / open:
+  - **Cloud Facelet and Festival Kontourlet** keep their first stage's single type (Electric, Psychic): the swap
+    names a type stage 1 doesn't have, so they differ from the base only in colour until they evolve. Options: a
+    per-stage `types` override on a form, or swaps that hit stage 1 (the owner's call).
+  - **Festival's coat** recolours Kontourlet well but Filterleon and Kardashleon only partly: much of their art is
+    off the shared palette (the coat can only swap palette ramps). An exact-colour `swap` list or hand-painted art
+    in coats.json would finish it. Waterfront's first draft turned the belly violet; redone (teal fur, sandy belly).
+  - **Breeding**: an egg from a form parent is its line's base first stage (breeding.js reads the line). Forms
+    don't breed true; fine for now, a choice for RL-10's follow-ups.
+  - The Studio's connections graph and parts editor parse `<line><digits>`; a form id doesn't resolve there (no
+    crash, just no link). A forms editor in the Studio's line editor waits for RL-16; edit `forms` as JSON for now.
+  - Pool `lv` is [3,6] for the biome pools: runs ignore it (rules.json run.wild sets levels by row).
+  - Trainers, eggs and legends still name legacy ids and still go through `standInSpecies` (their own sessions).
+  - Not tried on a phone: a form in a run's grass, the Guide's forms section, the coats on a real screen.
+- For RL-R1: put the region's dex in `runWorldData()` as `dex` (run-world.js) and every place's list is cut to it;
+  the region's dex can name form ids. Pools are per biome now, so a zone's biome gives its pool.
+- Next: RL-R1 (round 2). RO-2.. (new lines) on this branch.
 ### Test cleanup track, round 2, lane B - TC-3: check-quick renamed, moved, fixed - 2026-10-23
 Branch `track/test-cleanup` (shared with lane E; pulled with --no-rebase before every push). Plan approved in Plan
 Mode ("Yes": the recommended choices: the props budget through Node stand-ins, not a code move; the masts step to

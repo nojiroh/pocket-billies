@@ -24,6 +24,7 @@ import { DATA, PB_DATA } from './data-files.mjs';
 import { musicFindings } from '../game/js/logic/music-studio.js';
 import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js';
 import { islandProblems } from '../game/js/logic/island.js';
+import { formProblems, lineSpeciesIds } from '../game/js/logic/forms.js';
 import {
   dataBattleRules,
   dataBiomes,
@@ -173,7 +174,10 @@ const S = D.maps || {},
   scenery = D.scenery || { terrains: {}, props: {} };
 const species = new Set();
 for (const L of D.lines || []) {
-  (L.names || []).forEach((n, i) => species.add(L.id + i));
+  for (const id of lineSpeciesIds(L)) species.add(id);
+  // RO-1: regional forms: a coat marked form, swaps between real types, a change to some stage's types
+  for (const p of formProblems(L, D.coats || {}, (D.types || []).map(t => t.id)))
+    problem(`lines/${L.id}.json`, p);
   for (const [lv, m] of L.learn || [])
     if (!moves[m]) problem(`lines/${L.id}.json`, `learns ${m} at ${lv}, no such move`);
   // phase 16: native parts: one per stage, every slot filled with a part the kits have
@@ -327,7 +331,7 @@ if (D.coats && check('coats.schema.json', D.coats, 'coats.json')) {
       .replace(/^[^=]*=/, '')
       .replace(/;\s*$/, '')
   );
-  const species = new Set((D.lines || []).flatMap(L => L.names.map((_, i) => L.id + i)));
+  const species = new Set((D.lines || []).flatMap(L => lineSpeciesIds(L)));
   for (const [id, C] of Object.entries(D.coats)) {
     for (const [a, b] of Object.entries(C.ramps || {}))
       for (const r of [a, b])

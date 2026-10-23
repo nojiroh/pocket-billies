@@ -11,6 +11,7 @@ import {
   uiRulesCheckLine,
 } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
+import { formProblems, lineSpeciesIds } from '../../game/js/logic/forms.js';
 import { uiThemeContrast } from '../../game/js/logic/ui-theme.js';
 import { storyFindings } from '../../game/js/logic/story-checks.js';
 import { animFor } from '../../game/js/body-plan-animation.js';
@@ -80,7 +81,8 @@ export function runCheck() {
     err = (msg, go, sel) => P.push({ lvl: 'error', msg, go, sel }),
     warn = (msg, go, sel) => P.push({ lvl: 'warn', msg, go, sel });
   const types = new Set(D.types.map(t => t.id)),
-    sp = new Set(D.lines.flatMap(L => L.names.map((n, i) => L.id + i))),
+    /* RO-1: a line's regional forms are species too (logic/forms.js) */
+    sp = new Set(D.lines.flatMap(L => lineSpeciesIds(L))),
     moves = D.moves,
     items = D.items,
     coins = D.coins;
@@ -125,6 +127,7 @@ export function runCheck() {
     ids.add(L.id);
     const g = { line: L.id };
     if (!L.names.length) err(`Line ${L.id} has no stages.`, 'billionaires', g);
+    for (const p of formProblems(L, D.coats || {}, [...types])) err(`Line ${L.id}: ${p}.`, 'billionaires', g);
     L.names.forEach((n, i) => {
       const id = L.id + i;
       if (!n) err(`${L.id} stage ${i + 1} has no name.`, 'billionaires', g);
