@@ -15,6 +15,15 @@ kept aside in the browser).
   turning the device's clock back stops them until it catches up (the sheet says so), and turning it forward again
   no longer pays the gap to training. Signed in, the account's save carries the server's time, so a clock set ahead
   counts at the real pace. (Firebase rules: only publish the new saves rule once this version is live.)
+- Settings in seven tabs (UI-7b): Sound, Display, Controls, Accessibility, Game, Save, Help, opening on the last one
+  you used. Start over moved from beside Done to the foot of the Save tab, and now also ends a battle in progress.
+  The Save card shows runs won and Billies taxed. Help has a Report a problem box (the full test and the debug log);
+  the other tests, and the time, weather and season overrides, moved to the debug menu. Customize trainer left
+  Settings (Edit look on the trainer card does it).
+- Settings → Sound (UI-7a): the Test buttons are gone; letting go of a slider plays its sound once at the new level
+  (the Music slider plays nothing while a song is on, as you hear it change). Each sound has its own mute button
+  where Test was, which keeps its level; moving a muted slider unmutes it. The Volume row's mute is the same as the
+  button beside the title, so the separate Sound on/off switch went.
 - Battle and run music (sound track SND-5): a battle's song starts on the encounter's flash with a short intro
   run and holds its drums until your first Billie is sent out. A run's mini-bosses have a song of their own (the
   title's theme in a minor key) and its boss another. While your lead Billie is under a quarter of its HP, the battle

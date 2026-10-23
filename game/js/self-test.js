@@ -52,7 +52,7 @@ import {
   uiState,
 } from './game-state.js';
 import { gpuCountBegin, gpuCountEnd } from './engine/gpu-counters.js';
-import { frameScheduler } from './frame-scheduler.js';
+import { frameScheduler, userFps } from './frame-scheduler.js';
 import { PERSON_ART_CACHE } from './person-art.js';
 import { closeDressingRoom, dressingRoom } from './dressing-room.js';
 import { battleStage, battleStageStop } from './battle-stage.js';
@@ -88,7 +88,7 @@ import { propModelShaders, propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { seamlessRoomMap, seamlessWorld } from './seamless-world.js';
 import { endBattle, pickMove, pickTarget, stopTimers, tapMessage } from './battle.js';
-import { WORLD_BOWL_SHADERS, worldBowl, worldMap, worldMapReset } from './world-bowl.js';
+import { WORLD_BOWL_SHADERS, worldBowl, worldBowlReset, worldMap, worldMapReset } from './world-bowl.js';
 import { openShop } from './shop.js';
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene/director.js';
@@ -252,11 +252,13 @@ async function runFullTest(mode) {
       'Frame budget',
       'Rain and night',
       'Battle on the 3D stage',
+      /* 0.1.0 alpha: the map's first open, timed (the owner finds it slow) */
+      'World map',
       'Memory',
     ];
   }
   const total = diag
-    ? scenes.length * 4 + 1 + 1 + 6 + 10 + 6 + 1
+    ? scenes.length * 4 + 1 + 1 + 6 + 10 + 6 + 8 + 1
     : scenes.length * 4 + 1 + 5 + 8 + 6 + 5 + 8 + 8 + 6 + 6 + 10 + 8 + 8 + 1 + 40;
   let done = 0;
   const tick = s => {
@@ -519,9 +521,12 @@ async function runFullTest(mode) {
             resolution: typeof walkView !== 'undefined' ? walkView.R : null,
             level: typeof walkRenderer !== 'undefined' ? (walkRenderer.q ?? null) : null,
             screenHz: typeof frameScheduler !== 'undefined' ? frameScheduler.hz : null,
+            /* the player's Settings → Frame rate (the save's own value) and the cap it gives */
+            fpsSetting: (saveData && saveData.preferences && saveData.preferences.fps) ?? null,
+            fpsCap: userFps(),
             why: ev,
           };
-          return `${String(g.renderer || g.gpu || 'graphics unknown').slice(0, 60)} · resolution ×${diagnosticsReport.device.resolution ?? '?'} · quality level ${diagnosticsReport.device.level ?? '?'}${ev.length ? ' · ' + ev.slice(-1)[0] : ''}`;
+          return `${String(g.renderer || g.gpu || 'graphics unknown').slice(0, 60)} · resolution ×${diagnosticsReport.device.resolution ?? '?'} · quality level ${diagnosticsReport.device.level ?? '?'} · cap ${diagnosticsReport.device.fpsCap} FPS${ev.length ? ' · ' + ev.slice(-1)[0] : ''}`;
         },
         1
       );
@@ -1665,9 +1670,17 @@ async function runFullTest(mode) {
       'World map',
       'map',
       async () => {
+        /* 0.1.0 alpha: opened from cold (its ground made again), timed until its textured ground is ready: the owner
+           finds the map slow to open, and the bowl was usually already built by the time this step ran */
+        worldBowlReset();
+        const t0 = performance.now();
         uiState.tab = 'map';
         render();
-        await selfTestSleep(3000);
+        await selfTestSleep(500);
+        while (worldBowl.on && !(worldBowl.ground && worldBowl.ground.ok) && performance.now() - t0 < 30000)
+          await selfTestSleep(100);
+        const readyMs = worldBowl.ground && worldBowl.ground.ok ? Math.round(performance.now() - t0) : null;
+        await selfTestSleep(1000);
         if (!worldBowl.on) {
           uiState.tab = 'walk';
           render();
@@ -1684,7 +1697,7 @@ async function runFullTest(mode) {
         render();
         await selfTestSleep(500);
         if (n < 5) throw new Error(`the bowl drew ${n} frames while turning`);
-        return `the bowl drew ${n} frames turning round and coming back`;
+        return `${readyMs == null ? 'its ground wasn’t ready in 30 s' : `ready in ${readyMs} ms from cold`}; the bowl drew ${n} frames turning round and coming back`;
       },
       8
     );
@@ -2130,6 +2143,7 @@ function diagnosticsSummary() {
     frame: (R.diag || diagnosticsReport).passes,
     rainAndNight: (R.diag || diagnosticsReport).weather,
     battle: one('Battle on the 3D stage'),
+    worldMap: one('World map'),
     memory: one('Memory'),
     errors: R.errors,
   };

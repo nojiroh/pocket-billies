@@ -46,7 +46,8 @@ town node needs it.
   shapes, done whole, not split) done 2026-10-21; UI-3 split by the owner: UI-3a (the Studio's UI section, core) done
   2026-10-21; UI-3b (its tools) and UI-4 (the run parts, beside it at the owner's word) done 2026-10-21; UI-5 (every screen
   onto the kit, one session at the owner's word, the bottom bar swapped) done 2026-10-22; UI-6 (old layers gone)
-  next.
+  next. UI-7 (settings and the debug menu made clearer, asked for by the owner 2026-10-23) in three steps: UI-7a
+  (Sound: row mutes, a sound on release) done 2026-10-23; UI-7b (the settings tabs) done 2026-10-23; UI-7c (the debug menu) next.
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
   after RL-8.
@@ -68,6 +69,10 @@ town node needs it.
   a player slider (CAM-3); each session brings its Studio dials and preview overlays. Runs now, beside the RL track.
   CAM-1 (the follow) done 2026-10-22 (PR #127); CAM-2 (moments of interest) done 2026-10-22 (PR #132); CAM-3 (the
   diorama blur) done 2026-10-22 (PR #134): the track is done. Tags `cam-N-done`.
+- **Test cleanup track** (docs/phases/test-cleanup-track.md, planned 2026-10-23): make every check and test fit the
+  roguelite game. TC-1 delete the outdated and useless ones, TC-2 rewrite the rest onto the hub and run worlds (off
+  the parked old world), TC-3 rename and fix what stays in check-quick, TC-4 speed (shared helpers, fixtures, the
+  budgets, the picture baseline). About 4-5 sessions; seven "Ask me before" items. Tags `tc-N-done`.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all

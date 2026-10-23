@@ -63,6 +63,113 @@ published after the build is live).
   a save on the account still works.
 - Next: the owner publishes the rule after the build is live and pushes `rl-10-done`; then RL-12b or RL-13.
 
+### UI track UI-7b - Settings: layout - 2026-10-23
+Branch `ccr-305ae8d3-6ivodu` (PR #147, with UI-7a). Decisions from the owner's question round (docs/phases/ui-track.md,
+UI-7).
+- Changed (one cause per commit):
+  - One `settingsReset` (moved from debug-menu.js to settings-screen.js) for Settings and the debug menu's Erase
+    save; it stops a battle in progress (Settings' own copy left it running under the new save).
+  - Start over: from the footer beside Done to a red section at the foot of the Save tab. The Save card shows runs
+    won (`meta.wins` of `meta.runs`) and Billies taxed, not km walked. Customize trainer left the Save tab (the
+    trainer card's Edit look does the same).
+  - Time, weather and season: out of Settings, into a debug-menu section (same preferences).
+  - Help: a Report a problem box (Full test, Export debug log); the diagnostics test joined the debug menu's
+    Performance row, which already had the graphics and cost tests (the bowl map test is under Trainers and world).
+  - Seven tabs: Sound, Display (key `graphics`), Controls, Accessibility (`access`), Game, Save, Help; they wrap onto
+    two rows at 390 px. Settings opens on the last tab used (`preferences.setTab`), else Sound.
+  - Translations (tab names, Report a problem, Start over and its note, shortened under the 80-character limit).
+  - Quick check: the screens step opens the seven tabs; High contrast is looked for under Accessibility.
+  - Docs: ui-track.md (as built), ROADMAP, CHANGELOG, TESTING, graphics-bench.md.
+- Risky or unfinished:
+  - CI's `smoke` (check-fast) is red on three camera checks (CAM-1 follow, CAM-2 moments, the debug log's camera
+    line): the same on main 1713a8c9 (reproduced in a worktree). Copperleaf's island orbit camera against checks
+    written for the walk camera; commented on PR #147 with two fixes for the owner to pick.
+  - Help's How to play still describes the legacy game (towns, roads, map arrows, eggs on real time).
+  - The debug menu still has the bowl map test twice and phase codes in its labels: UI-7c.
+- Verified: lint, typecheck, check:modules, format:check, unit tests (791); smoke (local, no problems); in a browser:
+  Start over during a battle (battle stopped, no errors), the Save tab and its Start over, the debug menu's time,
+  weather and season (preferences set), seven tabs at 390 px (no sideways scroll), the last tab kept, German labels.
+  The full-check steps that open Settings (safety, sound, desktop) were still running when this was written.
+- Next: UI-7c (the debug menu), in a new session at the owner's word.
+
+### UI track UI-7a - Settings: Sound - 2026-10-23
+Branch `ccr-305ae8d3-6ivodu`. The owner asked for clearer settings and debug menu; plan and a question round in Plan
+Mode, answers recorded in docs/phases/ui-track.md (UI-7). Three steps; this is the first.
+- Changed (one cause per commit):
+  - audio/levels.js: `preferences.mutes` (a muted bus is 0, its level kept); a unit test.
+  - Settings → Sound: the Test buttons go; a slider plays its sound once when let go (`testVolume` on `change`; the
+    music slider not while a song plays); a mute button per row (`.vol-mute`; the Volume row's is `preferences.mute`,
+    the header button's); a drag on a muted slider unmutes it; the effects slider's tick while dragging went.
+  - The Sound on/off switch went (it did what the Volume row's mute does); its hint moved to the Volume row.
+  - Translations for the four new mute labels; the Test string went.
+  - Quick check: the Sound settings step releases sliders instead of pressing Test, and checks each row's mute.
+  - Docs: ui-track.md (UI-7 decisions, UI-7a/b/c rows), ROADMAP, CHANGELOG, TESTING.
+- Risky or unfinished:
+  - Not heard on a phone. On iOS a slider's `change` comes when the finger lifts; check it sounds then.
+  - Keyboard arrows on a slider fire `change` on every step, so each press plays the sound.
+  - The music slider is silent when no song is playing only if `soundEngine.song` is null; while a song is fading out
+    after `musicStop` it may count as none.
+- Verified: lint, typecheck, check:modules, format:check, unit tests (791 pass); smoke check (no problems, before the
+  switch removal commit); the Sound settings step alone after each code commit; a 390 px screenshot of the tab; the
+  German labels read from the page.
+- Not run: the full quick check (due at the end of UI-7). Tag `ui-7a-done` (local; tags may not push).
+- Next: UI-7b (the settings tabs), at the owner's word.
+### Actions sheet rework for the roguelite - 2026-10-23
+Branch `claude/bold-davinci-vrss2q`, pushed to main at the owner's word. The owner's picks: a bottom sheet; on a run
+the run status and this node's actions; in the hub, shortcuts (Start a run and the clinic open at once, the ranch and
+the lab get a marker to walk to); Tab on a computer; keep the "?" cards; challenges hidden for now; no Actions
+indoors; buddy card, requests, rest stop, money card, gold-arrow buttons and the joystick note removed; Give up the
+run stays on the Map tab; the place card shows name, type and weather; the label stays "Actions"; a tap closes it.
+- Changed (one cause per commit):
+  - The sheet was page content under the scene, so any scroll (a mouse wheel, a trackpad) slid it up. It is now the
+    kit's `<pb-sheet id="walkSheet">` (walk-tab.js `walkSheetSync`, `uiState.walkSheet`), opened by the Actions
+    button or Tab, closed by Esc, Tab, the scrim, a drag down, any button in it, or a render that leaves the world.
+    The walk screen no longer scrolls. pb-sheet takes `--sheet-max` (58vh here).
+  - Run: day chip, node type, today's and tomorrow's weather with its move effect (logic/run-loop.js
+    `runSheetStatus`, `weatherEffectText`, `runBattleWeather`; unit tests), What's here (nodeActions), Wild Billies
+    here, Open the map to move on. Hub: Start a run (`walkrun`), ranch and Hazel's lab marked in the world
+    (`walkView.mark`, walk-view.js `drawWalkMark`; gone within 6 m, in another map, or when the sheet opens).
+  - Removed: gold-arrow buttons, money card, joystick note (now a one-time toast, `preferences.walkTip`), paid rest
+    stop, requests list, buddy card; challenges hidden (`CHALLENGES_SHOWN` false: no card, no toast, still counted).
+  - Fixed: a new encounter card had class `pop`, which battle-screen.css uses for damage numbers, so it hung over
+    the heading (now `enc-new`). Walk keys stop while the sheet is open (was a test on scrollY).
+  - Check: smoke and full `actions_sheet_step` (TESTING.md). Dead CSS dropped; ui-lint ceilings lowered.
+- Risky or unfinished:
+  - Not tried on a phone. Tab is taken only while nothing outside the sheet has the focus; Shift+Tab never.
+  - The full quick check was not run (the owner asked to push first); the in-game full test neither.
+  - Tags can't be pushed from here (403 before); no tag made for this rework (not a numbered phase).
+  - rules.json `battle.restCost` stays, unread. The loading tip "gold arrows lead you there" is stale.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build, unit tests 794; smoke 16 of 16 (168 s);
+  check-fast: three camera steps fail (CAM-1, CAM-2, debug log camera line), the same on the base commit 29e66011;
+  check:ui: run-hud 0.2% off, the same on the base commit.
+- Questions waiting for the owner: bring challenges back (hub only) or drop them; should the sheet show the team's
+  HP or the held Loopholes later; remove `restCost` from the data.
+- Next session starts with: the owner's phone test of the sheet, then the full quick check.
+### Tooling - Repo admin workflow (tags and branch deletion for cloud sessions) - 2026-10-23
+Branch `claude/optimistic-maxwell-vhge6s`. Not a phase: asked for by the owner so sessions can make tags and clean up
+branches (the git proxy refuses both with HTTP 403).
+- Changed: `.github/workflows/repo-admin.yml`, run by hand (workflow_dispatch). `create-tag`: a lightweight tag on a
+  commit, names `legacy` or `<name>-done` only, an existing tag is never moved; on a `phase-*` tag it starts the Check
+  workflow on the tag with `baseline=true`, since a tag made with GitHub's own token starts no workflows (a dispatched
+  Check also runs the selftest job, which a pushed tag doesn't). `delete-branches`: never main, legacy, the default
+  branch, archive/* or a branch with an open pull request; the run summary lists each branch's last commit.
+  `dry_run` is on by default. docs/BRANCHES.md says to use it.
+- Branch naming (owner's ask): docs/BRANCHES.md "Naming and long plans" (the kinds of branch and their names; a
+  plan of several sessions lives on one `track/<plan>` branch named in its plan file, every session starts on it and
+  checks it, the branch stays after its PRs merge) and a CLAUDE.md line pointing there. The workflow never deletes
+  `track/*`. The old tip to turn on "Automatically delete head branches" is reversed: it would delete a track branch
+  on every merge. Existing long branches (`sound`, `RL-10b`, ...) keep their names until their plans end.
+- Risky: the workflow can delete branches and runs with `contents: write`. Anyone who can push could edit it on a
+  branch and run that copy; only people with write access can run workflows at all. To limit it to main's copy, give
+  the job a GitHub environment that only allows main (Settings -> Environments).
+- Verified: actionlint clean; both scripts run against a stand-in `gh` (protected names, open PRs, missing branches,
+  dry run, empty list, bad and existing tag names, the phase-tag Check start). Not run on GitHub yet: it must be on
+  main first.
+- Done after the merge (PR #146): dry runs of both actions on GitHub, then the `legacy` tag (0314a22) and the
+  clean-up, 157 branches down to 22 (docs/BRANCHES.md lists what is left and why; each deleted branch's commit is in
+  the Repo admin run summaries). Found: "Automatically delete head branches" is on (the owner should turn it off, see
+  BRANCHES.md); `sound` holds SND-6, 13 commits, not merged and with no PR.
+
 ### Sound track SND-5 - Battle and run music - 2026-10-22
 Branch `sound` (PR #120). Plan approved by the owner's "Start", without picks on the two "Ask me before" items, so
 the recommendations were taken (and named as such in the commits): **the red zone plays a tense variant of the battle

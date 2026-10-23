@@ -74,6 +74,7 @@ expose({
   GROUND_BUILDS_PENDING: [() => GROUND_BUILDS_PENDING],
   GROUND_CACHE: [() => GROUND_CACHE],
   GROUND_CACHE_SIZE: [() => GROUND_CACHE_SIZE],
+  LABEL_GOLD: [() => LABEL_GOLD],
   MAX_HOP_DOWN: [() => MAX_HOP_DOWN],
   MAX_STEP_RISE: [() => MAX_STEP_RISE],
   NATURAL_EDGE_WALLS: [() => NATURAL_EDGE_WALLS],
@@ -134,6 +135,7 @@ expose({
   drawSpeech: [() => drawSpeech, v => (drawSpeech = v)],
   drawSpeechTail: [() => drawSpeechTail, v => (drawSpeechTail = v)],
   drawTapMark: [() => drawTapMark, v => (drawTapMark = v)],
+  drawWalkMark: [() => drawWalkMark, v => (drawWalkMark = v)],
   encodeBase64Array: [() => encodeBase64Array, v => (encodeBase64Array = v)],
   encounterCandidates: [() => encounterCandidates, v => (encounterCandidates = v)],
   encounterSpot: [() => encounterSpot, v => (encounterSpot = v)],
@@ -254,6 +256,8 @@ export function setUpdatePlayer(v) {
 export const walkView = {
   cv: null,
   x: null,
+  /* the Actions sheet's marker over a hub building ({ act, label }: walk-tab.js walkMarkTo, drawn by drawWalkMark) */
+  mark: /** @type {{ act: string, label: string } | null} */ (null),
   id: null,
   sc: null,
   ground: null,
@@ -4049,7 +4053,7 @@ export function drawExitLabels(C, st, hits, hub) {
       lx,
       ly,
       txt,
-      e.locked ? '#B54A55' : e.dest ? '#C99A1E' : '#2E7D5B',
+      e.locked ? '#B54A55' : e.dest ? LABEL_GOLD : '#2E7D5B',
       e.locked ? '🔒' : null
     );
     hits.push({
@@ -4063,6 +4067,46 @@ export function drawExitLabels(C, st, hits, hub) {
       go: walkablePointNear(pt[0], pt[1]),
     });
   }
+}
+/* a label's gold: an exit you're headed for, the Actions sheet's marker */
+const LABEL_GOLD = '#C99A1E';
+/* the Actions sheet's marker (walk-tab.js walkMarkTo): a gold label bobbing over the building with that act, above its
+   own label when that shows; at the screen's edge, pointing the way, when the building is off screen. It goes once
+   you stand near the building, or when the building isn't in this map (a room, a run) */
+export function drawWalkMark(C, t, labels) {
+  const M = walkView.mark,
+    sc = walkView.sc;
+  if (!M) return;
+  const p = sc && (sc.props || []).find(q => q.act === M.act);
+  if (!p || Math.hypot(walkView.pl.x - p.x, walkView.pl.z - p.z) < 6) {
+    walkView.mark = null;
+    return;
+  }
+  const x = walkView.x,
+    m = Math.max(10, C.rw / 40),
+    sf = walkView.opt.safe ? walkView.opt.safe() : [0.1, 0.85],
+    top = Math.max(64, C.rh * 0.12, sf[0] * C.rh),
+    bot = Math.min(C.rh - m * 4, sf[1] * C.rh - 8),
+    bob = reducedMotion ? 0 : Math.round(Math.sin(t / 260) * canvasPixels(4)),
+    own = labels.find(l => l.k === 'act' && l.act === M.act),
+    q = own ? { x: own.x, y: own.y - canvasPixels(26) } : worldToScreen(C, p.x, standingHeightAt(p.x, p.z) + 5, p.z),
+    gold = LABEL_GOLD;
+  if (q && q.x > m && q.x < C.rw - m && q.y > top && q.y < bot) {
+    drawLabelPill(x, q.x, q.y + bob, `${M.label} ↓`, gold);
+    return;
+  }
+  /* off screen: the way to it, from the screen's middle (or, behind the camera, from you along the ground) */
+  const dx = q ? q.x - C.rw / 2 : p.x - walkView.pl.x,
+    dy = q ? q.y - C.rh / 2 : p.z - walkView.pl.z,
+    side = Math.abs(dx) > Math.abs(dy) * 1.2,
+    txt = side ? (dx > 0 ? `${M.label} →` : `← ${M.label}`) : dy > 0 ? `${M.label} ↓` : `${M.label} ↑`,
+    S = labelPillSize(x, txt, null),
+    half = S.w / 2,
+    cy = (top + bot) / 2,
+    k = Math.min(Math.abs((C.rw / 2 - m - half) / (dx || 1e-6)), Math.abs((bot - cy) / (dy || 1e-6))),
+    lx = clamp(C.rw / 2 + dx * k, m + half, C.rw - m - half),
+    ly = clamp(cy + dy * k, top + S.h + 4, bot);
+  drawLabelPill(x, lx, ly + (side ? 0 : bob), txt, gold);
 }
 export function drawTapMark(C, t) {
   const T = walkView.tap;

@@ -45,3 +45,16 @@ test('a level stored as text, as a slider hands it over, reads as its number', (
   near(soundLevels({ music: '0.4' }).music, 0.16);
   assert.equal(soundLevel({ sfx: '0' }, 'sfx'), 0);
 });
+
+test('each bus has its own mute, which silences only that bus and keeps its level', () => {
+  const prefs = { master: 0.7, music: 0.3, sfx: 0.6, world: 0.2, amb: 0.4 },
+    on = soundLevels(prefs);
+  for (const k of ['music', 'sfx', 'world', 'amb']) {
+    const off = soundLevels({ ...prefs, mutes: { [k]: true } });
+    assert.equal(off[k], 0, k);
+    for (const o of ['master', 'music', 'sfx', 'world', 'amb'])
+      if (o !== k) assert.equal(off[o], on[o], `${k} muted ${o}`);
+    assert.equal(soundLevel({ ...prefs, mutes: { [k]: true } }, k), prefs[k]);
+  }
+  near(soundLevels({ ...prefs, mutes: { music: false } }).music, on.music);
+});
