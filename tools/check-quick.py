@@ -289,8 +289,16 @@ def go_scene(pg, node, sec=40):
     pg.evaluate(f"uiState.inside=null;uiState.tab='walk';saveData.trip={{node:{node},plan:[]}};saveData.visited[{node}]=1;uiState.roam=null;if(typeof walkView!=='undefined'&&walkView.pl)walkView.pl.fresh=true;render();0")
     if not until(pg, f'!!(walkView.ready&&(walkView.id===LOCATIONS[{node}].mapId||(walkView.sc&&walkView.sc.baseId===LOCATIONS[{node}].mapId)))', sec):   # v43: the hub may sit near an exit, so the view may be the scene with its road
         raise Exception(f'{pg.evaluate(f"LOCATIONS[{node}].mapId")} didn’t open in {sec}s')
-    f0 = pg.evaluate("typeof walkRenderer!=='undefined'&&walkRenderer.on?walkRenderer.frames:-1")
-    if f0 >= 0 and not until(pg, f'walkRenderer.frames>={f0 + 2}', 30): raise Exception(f'{pg.evaluate("walkView.id")} isn’t drawing (black screen)')
+    f0 = pg.evaluate("typeof walkRenderer!=='undefined'&&walkRenderer.on?walkRenderer.frames:-1"); t0 = page_now()
+    if f0 < 0 or until(pg, f'walkRenderer.frames>={f0 + 2}', 30): return
+    # one frame can hold the page for 20 s or more here: the debug log's picture once a minute (screenSnapshot) waits for
+    # the software drawing to finish, and that grows over a long run. While the draw loop is still running, wait longer
+    alive = "frameScheduler.tasks.has('dio')"
+    if pg.evaluate(alive) and until(pg, f'walkRenderer.frames>={f0 + 2}||!{alive}', 60) and pg.evaluate(alive):
+        why = pg.evaluate(f"(debugLog.slow.filter(s=>s.t>={t0}).sort((a,b)=>b.ms-a.ms)[0]||{{why:'?'}}).why")   # the slowest frame meanwhile
+        notes.append(f'{pg.evaluate("walkView.id")}: 2 frames took over 30 s (slowest frame: {why[:80]})'); return
+    kind = 'stopped drawing: its draw loop is gone (black screen)' if not pg.evaluate(alive) else 'drew fewer than 2 frames in 90 s'
+    raise Exception(f'{pg.evaluate("walkView.id")} {kind}')
 
 
 

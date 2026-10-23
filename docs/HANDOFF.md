@@ -2,6 +2,30 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fix - the hub's "black screen" in the full quick check - 2026-10-23
+Branch `fix/hub-frame-wait` (one session, docs/BRANCHES.md). The failure in RL-R1's long checks (PR #161's comment):
+"Ground tiles, building plans and colours, rooms": `w:copperleaf* isn't drawing (black screen)`, under CPU load.
+- Cause: the check, not the game. `go_scene` wanted 2 new frames within 30 s of a place opening. Once a minute the
+  debug log takes its picture of the scene (`screenSnapshot`, `readPixels`), which makes the page wait for the software
+  drawing to finish. That frame took 1.2-1.5 s on a fresh page (with or without 8-16 busy loops), but 16-23 s late in a
+  14-minute desktop run (4 busy cores, or the unit tests looping beside it). One more slow frame in the same 30 s and
+  the step failed. The screen was never black: the draw loop kept running (`frameScheduler.tasks.has('dio')`). On a
+  phone's graphics chip that wait is a few milliseconds.
+- Changed (tools/check-quick.py `go_scene` only; no game code, data or names): after 30 s without 2 frames, if the draw
+  loop is still running it waits up to 60 s more and adds a note naming the slowest frame meanwhile. It fails only when
+  the loop is gone ("stopped drawing: its draw loop is gone (black screen)") or fewer than 2 frames came in 90 s.
+- Verified: a scratch probe on the hub, the old and the new `go_scene`. No new frame for 35 s: old fails with the
+  PR #161 message, new passes with a note. The draw loop stopped (`frameStop('dio')`): both fail, the new one says so.
+  "Ground tiles" and "Place views" pass with the unit tests looping beside them; the 12 desktop steps up to the hub
+  step pass under load (the buddy lag in "Double and Alpha battles" is the known one, RF-2's entry). lint, typecheck,
+  `npm test` (827), smoke (6 of 6). I could not get the natural failure itself on this machine: the stall reached
+  20-23 s, short of 30.
+- Risky: a step that goes through `go_scene` while frames are this slow now takes up to 60 s longer instead of failing.
+- Found, not changed: tools/requirements-check.txt pins Playwright 1.56, which can't launch this machine's Chromium
+  (1.63 works). And the frame scheduler (frame-scheduler.js `runFrameTasks`) drops a task for good when it throws, so
+  one error in a walk frame would freeze the scene until it is mounted again. No sign of that here; worth its own look.
+- Before merging: merge main again once RF-4 has merged, and run the checks again.
+
 ### Fix: the lost-run payout jingle's wait in the quick check - 2026-10-23
 Branch `fix/payout-lost-wait` (one session, not a plan; kept small because RF-4 runs on `track/reflavour`).
 - Cause: the check, not the game. A loss plays the same sequence as a win (a coin per row, then the jingle when the
