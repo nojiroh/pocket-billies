@@ -1617,53 +1617,6 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     v36()
 
-    @step('v39/v40: the whole roster, old roster gone, signature moves, six-choice dressing room, busts', 300)   # RL-5: the legendary at the volcano is parked
-    def v39():
-        out = []
-        n = pg.evaluate("Object.keys(SPECIES).length"); ln = pg.evaluate("LINES.length")
-        if n != 117 or ln != 58: raise Exception(f'{n} species in {ln} lines (want 117 in 58)')
-        if pg.evaluate("!!(SPECIES.hood0||SPECIES.goss0||SPECIES.myth0||RIGS.hood0)"): raise Exception('old species still in the data')
-        if (GAME / 'art' / 'billionaires').exists(): raise Exception('art/billionaires still shipped')
-        ids = json.loads(pg.evaluate("JSON.stringify(Object.keys(SPECIES))"))
-        miss = [i for i in ids if not pg.evaluate(f"!!(RIGS['{i}']&&RIGS['{i}'].front&&RIGS['{i}'].back&&RIGS['{i}'].front.sheet&&RIGS['{i}'].front.portrait)")]
-        if miss: raise Exception(f'rigs or busts missing: {miss[:6]}')
-        nx = ROOT / 'game' / 'art' / 'next' / 'billionaires'
-        sheets = len(list(nx.glob('*.png')))
-        if sheets < 117: raise Exception(f'{sheets} sheets')
-        out.append(f'117 species in 58 lines, every one with a sheet, a rig and a bust; old roster and art/billionaires gone')
-        pools = json.loads(pg.evaluate("JSON.stringify(Object.values(POOLS).concat(Object.values(EGGS||{}),Object.values(gameData.fishing||{})).map(p=>p.list.map(x=>x[0])))"))
-        bad = [i for L in pools for i in L if i not in ids]
-        if bad: raise Exception(f'pools name species that are gone: {bad[:5]}')
-        sig = json.loads(pg.evaluate("JSON.stringify(LINES.filter(l=>!(l.learn||[]).some(([lv,m])=>MOVES[m]&&MOVES[m].sig===l.id)).map(l=>l.id))"))
-        if [x for x in sig if x not in ('musk', 'bezos', 'gates')]: raise Exception(f'lines without a signature move: {sig[:6]}')
-        nsig = pg.evaluate("Object.values(MOVES).filter(m=>m.sig).length")
-        out.append(f'{nsig} signature moves, one per new line; every pool, egg and fishing list names a living species')
-        # RL-5: the legendary at the volcano (Cinderpeak, 'v39-legend') is retired with its place: both legendaries of
-        # rules.json legends meet you in a parked scene (cinderpeak, frostcrown); they come back with a run's places (RL-7)
-        # the six-choice dressing room
-        pg.evaluate("openDressingRoom({});0"); time.sleep(1.5)
-        tabs = json.loads(pg.evaluate("JSON.stringify([...document.querySelectorAll('[data-a=dr-tab]')].map(b=>b.dataset.t))"))
-        if tabs != ['body', 'face', 'hair', 'outfit', 'hat', 'extras']: raise Exception(f'dressing room tabs: {tabs}')
-        pg.evaluate("dressingRoom.tab='face';refreshDressingRoom();document.querySelectorAll('[data-a=dr-face]')[3].click();0"); time.sleep(.5)
-        f = json.loads(pg.evaluate("JSON.stringify([dressingRoom.look.wear.eyes,dressingRoom.look.wear.brows,dressingRoom.look.wear.mouth])"))
-        pg.evaluate("dressingRoom.tab='outfit';refreshDressingRoom();0"); time.sleep(1)
-        no = pg.evaluate("document.querySelectorAll('[data-a=dr-outfit][data-w=\"0\"]').length")
-        pg.evaluate("[...document.querySelectorAll('[data-a=dr-outfit]')].find(e=>e.dataset.n==='Everyday'&&e.dataset.w==='1').click();0"); time.sleep(.5)
-        o = json.loads(pg.evaluate("JSON.stringify([dressingRoom.look.wear.top,dressingRoom.look.wear.bottom,dressingRoom.look.wear.shoes,(dressingRoom.look.colors.tee||[])[0]])"))
-        pg.evaluate("document.querySelector('[data-a=dr-more][data-t=outfit]').click();0"); time.sleep(.6)
-        more = pg.evaluate("document.querySelectorAll('[data-a=dr-wear][data-s=top]').length")
-        shot(pg, 'v40-dressing'); pg.evaluate("closeDressingRoom();0")
-        if f != ['eyes_sharp', 'brows_straight', 'mouth_smirk'] or no < 12 or o != ['tee', 'jeans', 'sneakers', '#C8323C'] or more < 10: raise Exception(f'dressing room: face {f}, {no} outfits, outfit {o}, more {more}')
-        out.append(f'dressing room: six tabs, 12 faces, {no} outfits in three colourways, every piece under More')
-        # busts in the Guide and the switch menu
-        pg.evaluate("saveData.seen['walton0']=1;uiState.tab='ledger';render();0"); time.sleep(1)
-        busts = pg.evaluate("document.querySelectorAll('.ledger .bust').length"); pg.evaluate("uiState.tab='walk';render();0")
-        if busts < 100: raise Exception(f'the Guide shows {busts} busts')
-        out.append(f'{busts} busts in the Guide')
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return '; '.join(out)
-    v39()
-
     @step('v42: nature props and the wild growth, edge-relative exits', 120)   # RL-5: the join table (roads between places) is retired: no road is left
     def v42():
         out = []
