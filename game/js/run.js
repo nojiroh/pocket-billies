@@ -24,6 +24,7 @@ import {
 import { COINS, ITEMS, RELICS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
 import { battleWeatherOf } from './logic/weather.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
+import { ranchNow } from './logic/ranch-clock.js';
 import { ranchStop } from './logic/ranch.js';
 import { runBegin, runByTier, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runMapStart, runNext, runWeather } from './logic/run-map.js';
@@ -360,7 +361,8 @@ export function runTakeOff(seed, map, mods, pick) {
   const s = saveData,
     sd = seed || runSeedRoll(),
     data = runWorldData();
-  if (RULES.ranch && s.ranch) for (const uid of P.home) ranchStop(s, uid, Date.now(), RULES.ranch, toast);
+  if (RULES.ranch && s.ranch)
+    for (const uid of P.home) ranchStop(s, uid, ranchNow(s, Date.now(), RULES.ranch).now, RULES.ranch, toast);
   healAll();
   runBegin(s, { ...runGive(sd, 1, MAPGEN_VERSION, RULES.run.start), home: P.home, pack: P.pack });
   if (mods && mods.length && s.run) s.run.mods = mods.slice();

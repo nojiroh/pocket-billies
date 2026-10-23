@@ -19,6 +19,7 @@ import {
   environmentOdds,
   jingle,
   provide,
+  ranchNow,
   ranchStop,
   runNodeSeed,
   runWeather,
@@ -593,7 +594,8 @@ export function toBox(m) {
     and stops (RL-9) */
 export function toTeam(m) {
   if (saveData.run) return false;
-  if (RULES.ranch && saveData.ranch) ranchStop(saveData, m.uid, Date.now(), RULES.ranch, toast);
+  if (RULES.ranch && saveData.ranch)
+    ranchStop(saveData, m.uid, ranchNow(saveData, Date.now(), RULES.ranch).now, RULES.ranch, toast);
   const i = saveData.box.indexOf(m);
   if (i >= 0) saveData.box.splice(i, 1);
   if (!saveData.team.includes(m)) saveData.team.push(m);

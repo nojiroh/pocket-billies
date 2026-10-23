@@ -40,6 +40,7 @@ import {
   spawn,
   xpFor,
 } from './logic/rules.js';
+import { ranchNow } from './logic/ranch-clock.js';
 import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
 import { relicOfferMake, relicTake } from './logic/relics.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
@@ -444,7 +445,7 @@ function debugAction(x) {
     /* RL-10: every egg in the ranch's nursery ready to hatch now */
     case 'eggsready':
       saveData.ranch.nursery.forEach(n => {
-        n.ready = Math.max(n.at, Math.min(n.ready, Date.now()));
+        n.ready = Math.max(n.at, Math.min(n.ready, ranchNow(saveData, Date.now(), RULES.ranch).now));
       });
       toast(`${saveData.ranch.nursery.length} egg(s) ready to hatch at the ranch.`);
       break;

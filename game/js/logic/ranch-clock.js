@@ -13,6 +13,7 @@
 /** @import { RanchRules } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -20,15 +21,27 @@ expose({
   // @ts-expect-error -- replaced on purpose
   ranchAnchor: [() => ranchAnchor, v => (ranchAnchor = v)],
   // @ts-expect-error -- replaced on purpose
-  ranchNow: [() => ranchNow, v => (ranchNow = v)],
+  ranchNow: [() => ranchNow, v => ((ranchNow = v), provide({ ranchNow }))],
+  ranchSkew: [() => ranchSkew, v => setRanchSkew(v)],
+  // @ts-expect-error -- replaced on purpose
+  setRanchSkew: [() => setRanchSkew, v => (setRanchSkew = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ ranchNow });
 /* to-module: end */
+/** the phone clock's skew from the server measured this session (ms; account.js sets it after a cloud write; 0 when
+    unknown, offline or signed out). Kept in memory only: a phone clock put right later must not carry an old one */
+export let ranchSkew = 0;
+/** @param {number} v */
+export function setRanchSkew(v) {
+  ranchSkew = Number.isFinite(v) ? Math.round(v) : 0;
+}
 /** the ranch's time now: the phone's time less the measured skew, or, when that is more than guardMs behind the
     mark (the clock turned back), the mark itself with `back` set. Raises the mark. */
 /** @param {SaveData} s @param {number} deviceNow @param {Pick<RanchRules, 'guardMs'>} R @param {number} [skew] the
-    phone's clock minus the server's (ms; 0 when unknown) @returns {{ now: number, back: boolean }} */
-export function ranchNow(s, deviceNow, R, skew = 0) {
+    phone's clock minus the server's (ms; this session's measured one when not given) @returns {{ now: number, back:
+    boolean }} */
+export function ranchNow(s, deviceNow, R, skew = ranchSkew) {
   const t = Math.max(0, Math.floor(deviceNow - (Number.isFinite(skew) ? skew : 0))),
     seen = s.ranch.seen || 0;
   if (t < seen - R.guardMs) return { now: seen, back: true };
