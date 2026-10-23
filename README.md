@@ -78,6 +78,7 @@ Before you push:
 ```sh
 npm run lint            # ESLint: undefined names (a module name used without an import), a name defined twice, likely bugs;
                         # then tools/check-names.mjs: the names follow docs/NAMING.md
+                        # then tools/ui-lint.mjs --check and tools/unused-css.mjs --check (no CSS rule nothing uses)
 npm run check:modules   # the modules' generated parts are up to date and the load order holds (npm run modules fixes them)
 npm run format          # Prettier (npm run format:check only checks)
 npm run check:data      # the game data: files, schemas, what refers to what (a second)

@@ -13,7 +13,7 @@
     "story:ids": "node tools/story-ids.mjs",
     "modules": "node tools/to-module.mjs",
     "check:modules": "node tools/to-module.mjs --check",
-    "lint": "eslint --cache --cache-strategy content . && node tools/check-names.mjs && node tools/ui-lint.mjs --check",
+    "lint": "eslint --cache --cache-strategy content . && node tools/check-names.mjs && node tools/ui-lint.mjs --check && node tools/unused-css.mjs --check",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.logic.json",
     "test": "node tools/unit-tests.mjs quick",
     "test:slow": "node tools/unit-tests.mjs slow",

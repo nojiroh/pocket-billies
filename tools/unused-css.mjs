@@ -1,6 +1,7 @@
 // Phase 06-4: lists the game's CSS rules whose class names nothing uses (no script, page or data file mentions them).
 //   node tools/unused-css.mjs            # the report: file, line, selector
 //   node tools/unused-css.mjs --json     # the same as JSON
+//   node tools/unused-css.mjs --check    # npm run lint: fails when a rule names a class nothing uses (KEEP aside)
 // A class counts as used when its name appears anywhere in game/js, studio/js, the HTML pages or game/data as a word,
 // or starts with a prefix a template builds names from (class="st-${...}" makes every "st-..." used). A report is a list
 // of candidates to check by hand, not a delete list: a name can also come from data or be built in ways this can't see.
@@ -25,7 +26,9 @@ const words = new Set(text.match(/[A-Za-z_][\w-]*/g));
 /* prefixes of built names: class="foo-${", 'foo-' + x, `foo-${x}` */
 const prefixes = new Set();
 for (const m of text.matchAll(/["'`\s]([a-z][\w-]*-)(?:\$\{|['"`]\s*\+)/g)) prefixes.add(m[1]);
-const used = c => words.has(c) || [...prefixes].some(p => c.startsWith(p));
+// kept on purpose with no user yet: two of motion.css's eight named motions (phase 06 "Motion"), there to be used
+const KEEP = new Set(['m-sheet', 'm-done']);
+const used = c => KEEP.has(c) || words.has(c) || [...prefixes].some(p => c.startsWith(p));
 
 const out = [];
 for (const f of walk(join(ROOT, 'game/css'), ['.css'])) {
@@ -50,5 +53,10 @@ for (const f of walk(join(ROOT, 'game/css'), ['.css'])) {
 if (process.argv.includes('--json')) console.log(JSON.stringify(out, null, 1));
 else {
   for (const o of out) console.log(`${o.file}:${o.line}  ${o.sel.replace(/\s+/g, ' ').slice(0, 90)}   [${o.unused.join(' ')}]`);
-  console.log(`${out.length} rules name a class nothing uses`);
+  console.log(
+    out.length
+      ? `${out.length} rules name a class nothing uses${process.argv.includes('--check') ? ': delete them, or add the class to KEEP in tools/unused-css.mjs with why' : ''}`
+      : 'unused CSS: every class a rule names is used'
+  );
+  if (out.length && process.argv.includes('--check')) process.exit(1);
 }
