@@ -26,6 +26,93 @@ standing instruction, relayed by the parent session); decisions recorded in the 
    (Base: the loaded data, Draft) on the same seeds, the policy banner on every table, policy-driven metrics marked,
    at most 200 seeds; a stand-in step running 5 seeds in check-studio-github.py.
 
+**Changed** (one cause per commit; the scratch harness compared every run's log for SIM0-SIM49 at three setups,
+defaults / team 3 + all unlocks / team 3 + 5 Potions + 4 fights, after each simulator commit)
+- **T3.3, the game's side** (each a logic function the page and the simulator both call; check:fast after each):
+  - `run-loop.js runArriveFx`: the arrival heal's composition (run.js `runArrivedFx` was `fxHealShare` + `runArriveHeal`).
+  - `run-loop.js runShopOpen`: a run town's wares through the run's unlocks (shop.js did `unlockOpen` itself).
+- **T3.3, the simulator** (`game/js/logic/run-sim.js`):
+  - a town's wares through `runShopOpen` (it drew from the unfiltered table: 12 of 50 logs' shop lists change, no
+    outcome);
+  - walking in heals by the held Loopholes (`runArriveFx`): output-neutral (none held then);
+  - `SIM_POLICY.relics`: `greedy` (rarest by `rules.run.relics.rarity` weight, then id; past the cap only for a rarer
+    one, letting the plainest go) and `SIM_POLICIES['never-pick']`; `simRelicChoice` is the pure choice. The pick after
+    a mini-boss goes through `relicChoose`: output-neutral, because **none of 150 runs beats a mini-boss**;
+  - a town shop's Loophole (`relicShelf`, `relicBuy`, its price with the price rows), bought keeping `reserve`: 16 of
+    50 runs change at the defaults, 11 and 15 at the other setups; where runs are lost doesn't move; Capital 81.6 ->
+    81.2, 82.4 -> 81.8, 117.2 -> 116.2 (money spent before a loss pays less). 48 of 49 shelves are bought;
+  - the log names the map's nodes (type:biome), and a test checks they are `runStartPlan`'s for the save's unlocks;
+  - stats: `lostRow`, `moneyIn` {prize, reward}, `moneyOut` {heal, shop, relics}, `foes` [{leader, type, won}],
+    `relics` held at the end (a test: start money + in - out = money left);
+  - **balance mode** (`scenes: 'skip'`, CLI `--balance`): no `runScenesMake`; each place is `{ _lite: { tiles: 't' } }`
+    (`SIM_LITE_PLACE`, the game's own lite map). **150 of 150 runs equal to the full mode** (every log and stat but
+    the scenes' seeds); **266 times faster** (2.2 ms a run against 573 ms here). Tests: equality on 12 seeds at two
+    setups, the speed (>= 20x), and the tall-grass stand-in on real scenes.
+- **T3.4, pure:** `game/js/logic/sim-compare.js` (`simWilson`, `simPaired`, `simSummary`, `simCompare`,
+  `simCompareReports`, `simSeeds`, `simBanner`, `simDataHash` (FNV-1a of the data without `maps`), `SIM_BROWSER_CAP`
+  200) and its unit test; `runReport(seeds, o)` in the core (the report the CLI writes and the card shows: runStats's
+  numbers, seeds, options, mode, data hash, every run's stats as `results`, the summary); `spent` and `relics` are
+  policy-driven too; the CLI's `--balance`, `--policy`, `--out`, `--compare=base.json`. On the Studio page beside
+  run-sim.js (the pages must reach every file the lint reads).
+- **T3.4, dashboard:** merge of `origin/claude/sr-2-run-lab` (a merge commit; HANDOFF, the plan's decisions and
+  studio/index.html both kept; the worker's module list gains run-sim.js and sim-compare.js). Then:
+  - **the worker, extended (not rewritten):** `logic-client.js` has a second slot, `logicWorkerBase`, and
+    `logicAskBase(fn, ...args)`, on `studioState.loadedText` (the whole data as loaded, as JSON text the way
+    `logicDataText` makes it, kept at boot beside `studioState.loaded`, which holds only five tables).
+    `logicWorkerStart`/`logicWorkerStop` take the slot (the draft's by default). Message shapes unchanged.
+    `LOGIC_WORKER_FNS.runSimReport` (`studio/js/logic-worker-sim.js`: the simulator's env from the modules the worker
+    already loaded, named; at most 200 seeds); a unit test: the worker's answer equals the CLI's report.
+  - **the Simulate card** (`studio/js/run-lab-sim.js`; run-lab.js only adds the card): seeds (5-200), policy, party
+    (one / three / three + 5 Potions), unlocks; Base and Draft in parallel; tables per run, losses by place and by
+    row, money in and out, Loopholes held, leaders beaten; the banner on every table; policy-driven rows marked; both
+    hashes; Export JSON.
+  - **stand-in step** `run_lab_sim` in check-studio-github.py: 5 seeds; no changes -> the same runs, the same hashes,
+    Base equals the CLI's summary in Node; a banner on each table, the policy-driven rows as the report names them;
+    the clinic price doubled (unsaved) -> a paired difference and a new Draft hash, the Base worker not made again;
+    500 seeds asked -> 200.
+- Docs: STUDIO.md (Simulate), TESTING.md (the CLI flags and tests), CHANGELOG, the plan's decisions 4 and 5.
+
+**Acceptance (T3.4)**, CLI, 200 seeds, team 3, balance mode: the same data compares as "the same runs" (every
+difference 0, one hash); `healCost` 60 -> 120 gives healed +18.2 [13.2, 23.2], money left -10.3 [-16.1, -4.6],
+Capital -1.0 [-1.6, -0.4], 49 runs changed, won 0 -> 0. In the card (5 seeds): healed +12 [-11.5, 35.5]. A unit test
+does the same on 40 seeds.
+
+**Where the plan doc was wrong or short**
+- A6's "no unlock filtering": the map was already through `runStartPlan` (T2.1); the shop stock was not.
+- "keep-one": done in T3.2 (`runKept`). "fx in battles and payout": done in T3.2 too; the arrival heal was the gap.
+- The Loophole pick moves no number today: no simulated run beats a mini-boss (0 of 150; 0 wins in every setup).
+  Shop Loopholes are the only Loopholes the numbers see until the roster or the policy changes.
+- Balance mode's speedup is bigger than "20x": the scenes are ~99.6% of a run here.
+- "Base, the loaded commit's data": the Studio holds the data it loaded; Base is that (kept as text at boot), not a
+  fetch of the commit.
+
+**Verified**
+- Unit tests: 691 pass (`npm test`); lint, typecheck, `check:modules`, `format:check` after each change.
+- check:fast after the arrival heal (25 checks; one problem, UI-5's team screen, passed alone: a timing flake while
+  another check:fast was running), after the shop (the run, Loopholes, Lab and room checks), and at the end: one run
+  failed UI-5 again (the bag screen this time; it passed alone twice), the next full run passed 26 of 26. The commit
+  this session started from passed 25 of 25. UI-5 looks timing-sensitive in full runs on this machine (a full run
+  takes ~12 minutes here); worth watching in CI.
+- `check-studio-github.py --only=publish,run_lab,run_lab_sim`: publish 0 problems, run_lab and run_lab_sim pass.
+- On the build (`npm run build`, `check-studio-github.py dist --only=run_lab_sim`): the card works; the page logs 404s
+  for the Run Lab's "rules in code", which reads source files the build leaves out (Phase 2's, also with `run_lab`
+  alone; on dist `run_lab` also reports those lines and a 136 ms redraw).
+- **Not run:** the full quick check (no quick-check baseline in this container; 40 min), the phone and iPad checks.
+
+**Risky**
+- Game code: run.js `runArrivedFx` and shop.js `openShop` now call logic functions (the same steps as before).
+- The Base worker holds a second copy of the data (~2.5 MB text, plus the worker's own); on an iPad two workers run
+  at once while simulating.
+- Simulated numbers are a bot on legacy stand-in species: the banner says so on every table.
+
+**Next**
+- Close Phase 3: the full quick check, then the tag `sr-3-done`.
+- Owner's manual check: in the Run Lab, Simulate with 200 seeds; change `healCost` and Simulate again; say whether
+  the compare is understandable (T3.4's manual acceptance); on the iPad, how long 200 seeds take.
+- Policies the plan named but this session didn't add: `cautious` (undefined) and `never-catch` (easy:
+  `taxWhileBelow: 0`).
+- The Run Lab's "rules in code" on the built site (404s): read the lines at build time, or hide the list there.
+
 ### Studio plan Phase 3 (first session) - The simulator on the game's own rules (T3.1, T3.2, T3.5) - 2026-10-23
 Branch `claude/sr-3-sim-balance`, draft PR #138 against Phase 2's `claude/sr-2-run-lab` (PR #135). The plan was approved
 with its recommended options (the owner, through the parent session; recorded in the plan doc, "Decisions (owner,
