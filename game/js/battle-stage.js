@@ -28,6 +28,7 @@ import {
   provide,
   reducedMotion,
   saveData,
+  soundEffect,
 } from './hooks.js';
 import { $, clamp, random } from './util.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
@@ -116,6 +117,7 @@ expose({
   camUpdate: [() => camUpdate, v => (camUpdate = v)],
   cameraGuardPose: [() => cameraGuardPose],
   cameraOverflow: [() => cameraOverflow, v => (cameraOverflow = v)],
+  catchSound: [() => catchSound],
   coinArc: [() => coinArc, v => (coinArc = v)],
   drawForegrounds: [() => drawForegrounds, v => (drawForegrounds = v)],
   drawList: [() => drawList],
@@ -2088,6 +2090,8 @@ export const PYRAMID_LIFT = 0.02,
 /* RF-2: the catch: the pyramid flies tumbling, the Billie goes into it, it rights itself as it drops and lands point up
    (res.edge, the critical catch: on its point), rocks on a base edge once a wobble (res.w), then seals (light climbs
    its edges to the tip, a glow, stars) or the Billie breaks out */
+/* RF-2: the catch's sounds (sound.js): the throw, the landing, a wobble each way, the seal or the pop out */
+const catchSound = k => typeof soundEffect === 'function' && soundEffect(k);
 export function battleStageCatch(kind, res, spin, done) {
   battleStageFlush();
   const s1 = battleStage.s[1],
@@ -2096,6 +2100,7 @@ export function battleStageCatch(kind, res, spin, done) {
     land = { x: w.x, y: PYRAMID_REST, z: w.z };
   camAt(1, 0.5, 0.18, 0.02, 320);
   battleStageFocus('foe');
+  catchSound('throw');
   coinArc(
     throwOrigin(),
     { x: o.x, y: o.y, z: o.z },
@@ -2117,6 +2122,7 @@ export function battleStageCatch(kind, res, spin, done) {
         scheduleAt(300, () => {
           C.fly = false;
           C.tip = !!res.edge;
+          catchSound('pyramidLand');
           battleStage.shk = 1.5;
           groundRing(1, '#FFFFFF', 1, 300);
           tween(C, 'y', land.y + 0.12, 110, 'out');
@@ -2129,6 +2135,8 @@ export function battleStageCatch(kind, res, spin, done) {
             tween(C, 'rot', -0.32, 150, 'out');
             tween(C, 'rot', 0.32, 240, 'io', 150);
             tween(C, 'rot', 0, 140, 'in', 390);
+            catchSound('wobble');
+            scheduleAt(390, () => catchSound('wobble'));
             buzz(8);
           });
           t += 820;
@@ -2137,6 +2145,7 @@ export function battleStageCatch(kind, res, spin, done) {
           tween(battleStage.css, 'z', 0, 300, 'io');
           if (res.caught) {
             /* the seal: sparks climb the four edges to the point, then it glows and the stars fly */
+            catchSound('seal');
             const hk = PYRAMID_SIDE * PYRAMID_SCALE * 0.7,
               top = { x: C.x, y: C.y + (PYRAMID_HIGH * PYRAMID_SCALE) / 2, z: C.z };
             for (let i = 0; i < 4 && !C.tip; i++) {
@@ -2174,6 +2183,7 @@ export function battleStageCatch(kind, res, spin, done) {
           } else {
             battleStageFlash('#FFFFFF', 0.6, 300);
             ringFx(C, '#FFFFFF', 0.1, 1.1);
+            catchSound('pop');
             C.show = false;
             s1.show = true;
             s1.sc = 0;
