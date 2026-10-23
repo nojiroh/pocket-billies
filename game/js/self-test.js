@@ -86,7 +86,7 @@ import { propModelShaders, propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { seamlessRoomMap, seamlessWorld } from './seamless-world.js';
 import { endBattle, pickMove, pickTarget, stopTimers, tapMessage } from './battle.js';
-import { WORLD_BOWL_SHADERS, worldBowl, worldMap, worldMapReset } from './world-bowl.js';
+import { WORLD_BOWL_SHADERS, worldBowl, worldBowlReset, worldMap, worldMapReset } from './world-bowl.js';
 import { openShop } from './shop.js';
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene/director.js';
@@ -1616,9 +1616,17 @@ async function runFullTest(mode) {
       'World map',
       'map',
       async () => {
+        /* 0.1.0 alpha: opened from cold (its ground made again), timed until its textured ground is ready: the owner
+           finds the map slow to open, and the bowl was usually already built by the time this step ran */
+        worldBowlReset();
+        const t0 = performance.now();
         uiState.tab = 'map';
         render();
-        await selfTestSleep(3000);
+        await selfTestSleep(500);
+        while (worldBowl.on && !(worldBowl.ground && worldBowl.ground.ok) && performance.now() - t0 < 30000)
+          await selfTestSleep(100);
+        const readyMs = worldBowl.ground && worldBowl.ground.ok ? Math.round(performance.now() - t0) : null;
+        await selfTestSleep(1000);
         if (!worldBowl.on) {
           uiState.tab = 'walk';
           render();
@@ -1635,7 +1643,7 @@ async function runFullTest(mode) {
         render();
         await selfTestSleep(500);
         if (n < 5) throw new Error(`the bowl drew ${n} frames while turning`);
-        return `the bowl drew ${n} frames turning round and coming back`;
+        return `${readyMs == null ? 'its ground wasn’t ready in 30 s' : `ready in ${readyMs} ms from cold`}; the bowl drew ${n} frames turning round and coming back`;
       },
       8
     );
@@ -2081,6 +2089,7 @@ function diagnosticsSummary() {
     frame: (R.diag || diagnosticsReport).passes,
     rainAndNight: (R.diag || diagnosticsReport).weather,
     battle: one('Battle on the 3D stage'),
+    worldMap: one('World map'),
     memory: one('Memory'),
     errors: R.errors,
   };
