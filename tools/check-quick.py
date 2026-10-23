@@ -742,7 +742,7 @@ def safety_step(b, base, R):
         for k in ['sum', 'build', 'moves', 'evo']:
             pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();billySheet(saveData.team[0]);document.querySelector('[data-a=ms-tab][data-k={k}]')?.click();0"); time.sleep(.3); check('details ' + k)
         shown.append('details')
-        for k in ['sound', 'graphics', 'game', 'save', 'help']:
+        for k in ['sound', 'graphics', 'controls', 'access', 'game', 'save', 'help']:
             pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();openSettings();document.querySelector('[data-a=set-tab][data-k={k}]')?.click();0"); time.sleep(.3); check('settings ' + k)
         shown.append('settings')
         pg.evaluate(CHECK_SHOP + "uiState.modal=null;uiState.mq=[];renderOverlay();openShop('check_shop');0"); time.sleep(.4); check('shop'); shown.append('shop')
@@ -1409,14 +1409,15 @@ def desktop_steps(b, base, R):
         # settings in tabs, every tab fits the phone width; a switch flips
         # a message waiting on screen (an egg hatching, in steps mode) would queue Settings behind it
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';render();openSettings('game');0"); time.sleep(.6); tabs = []
-        # alpha 0.5: the tabs are whatever the game lists (sound, graphics, game, save, help); contrast is under Game
+        # alpha 0.5: the tabs are whatever the game lists (UI-7b: sound, graphics, controls, access, game, save, help);
+        # contrast is under Accessibility
         names = pg.evaluate("SETTINGS_TABS.map(t=>t[0])")
         for t in names:
             pg.evaluate(f"document.querySelector('[data-a=set-tab][data-k={t}]').click();0"); time.sleep(.3)
             tabs.append(pg.evaluate("[document.querySelectorAll('.set-body .set-row,.set-body .settings-profile,.set-body details').length,(()=>{const b=document.querySelector('.sheet .body');return b.scrollWidth-b.clientWidth})()]"))
             if t == 'graphics': shot(pg, 'settings-graphics')
-        if len(names) < 5 or any(n == 0 for n, _ in tabs) or any(o > 4 for _, o in tabs): raise Exception(f'settings tabs {names}: {tabs}')
-        pg.evaluate("document.querySelector('[data-a=set-tab][data-k=game]').click();0"); time.sleep(.2)
+        if len(names) < 7 or any(n == 0 for n, _ in tabs) or any(o > 4 for _, o in tabs): raise Exception(f'settings tabs {names}: {tabs}')
+        pg.evaluate("document.querySelector('[data-a=set-tab][data-k=access]').click();0"); time.sleep(.2)
         c0 = pg.evaluate("saveData.preferences.contrast||'normal'"); pg.evaluate("document.querySelector('[data-pref-set=contrast]').click();0"); time.sleep(.2); c1 = pg.evaluate("saveData.preferences.contrast")
         pg.evaluate("document.querySelector('[data-pref-set=contrast]').click();uiState.modal=null;uiState.mq=[];renderOverlay();0")
         if c0 == c1: raise Exception('the High contrast switch did nothing')

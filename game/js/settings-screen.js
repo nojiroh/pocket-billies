@@ -241,10 +241,14 @@ function importSave() {
 }
 /* v31: settings in tabs (Game, Look, Sound, Controls, Save, Help), each choice a row with a one-line explanation and
    segmented buttons or a switch, so every option shows what it does and what it's set to without opening a menu */
-/* alpha 0.5: settings in five groups: Sound, Graphics, Game, Save, Help */
+/* alpha 0.5: settings in five groups: Sound, Graphics, Game, Save, Help. UI-7b: seven, so the Game tab's three
+   headings each have a tab of their own: Sound, Display (the graphics tab, its key kept), Controls, Accessibility,
+   Game, Save, Help */
 const SETTINGS_TABS = [
   ['sound', 'Sound'],
-  ['graphics', 'Graphics'],
+  ['graphics', 'Display'],
+  ['controls', 'Controls'],
+  ['access', 'Accessibility'],
   ['game', 'Game'],
   ['save', 'Save'],
   ['help', 'Help'],
@@ -369,12 +373,11 @@ function saveProgressLine() {
 }
 function settingsHTML() {
   const p = saveData.preferences || {},
-    tab = SETTINGS_TABS.some(t => t[0] === uiState.setTab) ? uiState.setTab : 'game',
+    tab = SETTINGS_TABS.some(t => t[0] === uiState.setTab) ? uiState.setTab : 'sound',
     hz = frameScheduler.hz || 60;
   let body = '';
   if (tab === 'game')
     body =
-      `<h3 class="set-sub">Playing</h3>` +
       settingsRowHTML(
         'Battle speed',
         'How fast moves play out and lines move on. Tap still skips ahead at any speed.',
@@ -393,8 +396,9 @@ function settingsHTML() {
         'Language',
         'Menus and buttons. Stories and names stay in English.',
         `<select data-preference="lang">${(typeof I18N_LANGS !== 'undefined' ? I18N_LANGS : [['en', 'English']]).map(([v, n]) => `<option value="${v}" ${(p.lang || 'en') === v ? 'selected' : ''}>${n}</option>`).join('')}</select>`
-      ) +
-      `<h3 class="set-sub">Moving about</h3>` +
+      );
+  else if (tab === 'controls')
+    body =
       settingsRowHTML(
         'Moving about',
         'Joystick: drag anywhere on the scene and a stick appears under your thumb; push past its rim into the outer ring to run. D-pad: a fixed pad in the corner; hold its centre to run. Either way, tapping the ground walks you there too.',
@@ -414,7 +418,6 @@ function settingsHTML() {
         'Tilt your phone to look a little around the scene.',
         switchHTML('tilt', p.tilt !== false, 'on', 'off')
       ) +
-      settingsRowHTML('Bigger buttons', 'Easier to tap.', switchHTML('bigTargets', !!p.bigTargets, '1', '')) +
       ('vibrate' in navigator
         ? settingsRowHTML(
             'Vibration',
@@ -422,16 +425,28 @@ function settingsHTML() {
             switchHTML('haptics', p.haptics !== false, 'on', 'off')
           )
         : '') +
-      `<details class="help"><summary>Moving around</summary><p>Drag on the scene for the joystick (or use the D-pad), or tap the ground to walk there. Tap people to talk and glowing spots to act. Two fingers turn the camera and pinch to zoom; with a mouse, drag with the right button to turn and Ctrl+scroll to zoom. On a keyboard: arrow keys or WASD walk, hold Shift to run, Q and E turn, Enter talks.</p></details>` +
-      `<h3 class="set-sub">Screen and comfort</h3>` +
+      `<details class="help"><summary>Moving around</summary><p>Drag on the scene for the joystick (or use the D-pad), or tap the ground to walk there. Tap people to talk and glowing spots to act. Two fingers turn the camera and pinch to zoom; with a mouse, drag with the right button to turn and Ctrl+scroll to zoom. On a keyboard: arrow keys or WASD walk, hold Shift to run, Q and E turn, Enter talks.</p></details>`;
+  else if (tab === 'access')
+    body =
       settingsRowHTML(
-        'Theme',
-        'Menus in light or dark colours.',
-        segmentedHTML('theme', p.theme || 'system', [
-          ['system', 'Device'],
-          ['light', 'Light'],
-          ['dark', 'Dark'],
+        'Text size',
+        'Bigger words in menus and talk.',
+        segmentedHTML('textSize', p.textSize || 'normal', [
+          ['normal', 'Normal'],
+          ['large', 'Large'],
+          ['xlarge', 'Larger'],
         ])
+      ) +
+      settingsRowHTML('Bigger buttons', 'Easier to tap.', switchHTML('bigTargets', !!p.bigTargets, '1', '')) +
+      settingsRowHTML(
+        'High contrast',
+        'Stronger outlines and plainer backgrounds behind text.',
+        switchHTML('contrast', p.contrast === 'high', 'high', 'normal')
+      ) +
+      settingsRowHTML(
+        'Flashes',
+        'Lightning and bright battle flashes. Turn off if flashing bothers you.',
+        switchHTML('flashes', (p.flashes || 'on') === 'on', 'on', 'off')
       ) +
       settingsRowHTML(
         'Animation',
@@ -443,23 +458,13 @@ function settingsHTML() {
         ])
       ) +
       settingsRowHTML(
-        'Text size',
-        'Bigger words in menus and talk.',
-        segmentedHTML('textSize', p.textSize || 'normal', [
-          ['normal', 'Normal'],
-          ['large', 'Large'],
-          ['xlarge', 'Larger'],
+        'Theme',
+        'Menus in light or dark colours.',
+        segmentedHTML('theme', p.theme || 'system', [
+          ['system', 'Device'],
+          ['light', 'Light'],
+          ['dark', 'Dark'],
         ])
-      ) +
-      settingsRowHTML(
-        'High contrast',
-        'Stronger outlines and plainer backgrounds behind text.',
-        switchHTML('contrast', p.contrast === 'high', 'high', 'normal')
-      ) +
-      settingsRowHTML(
-        'Flashes',
-        'Lightning and bright battle flashes. Turn off if flashing bothers you.',
-        switchHTML('flashes', (p.flashes || 'on') === 'on', 'on', 'off')
       );
   else if (tab === 'sound')
     body =

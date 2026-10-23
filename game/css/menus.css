@@ -123,7 +123,9 @@
 }
 
 /* ---------- Settings ---------- */
+/* UI-7b: seven tabs wrap onto a second row on a phone rather than scroll out of sight */
 .set-tabs {
+  flex-wrap: wrap;
   margin-bottom: var(--s4);
 }
 /* SND-1: the mute button sits in a box of no height just before the tabs, lifted into the row of the sheet's title,
