@@ -8,15 +8,17 @@ import {
   DEX_ORDER,
   LINE_BY_ID,
   LOCATIONS,
+  PASSIVE_INFO,
   POOLS,
   SPECIES,
+  SPECIES_FORMS,
   STAT_IDS,
   STAT_NAMES,
   TYPES,
   TYPE_COLORS,
   typeEffectiveness,
 } from './game-data.js';
-import { evolutionHint, evolutionItemName, formatNumber } from './logic/rules.js';
+import { dexCaught, dexSeen, evolutionHint, evolutionItemName, formatNumber } from './logic/rules.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { coinURL } from './art.js';
 import { bustHTML, rigCanvasHTML } from './skeleton-rig.js';
@@ -50,7 +52,7 @@ const TRACKS = {
   shell: 'A slow, shiny trail',
 };
 function dexStatus(id) {
-  return saveData.caught[id] ? 'got' : saveData.seen[id] ? 'seen' : 'none';
+  return dexCaught(id) ? 'got' : dexSeen(id) ? 'seen' : 'none';
 }
 function guideTabs() {
   const t = uiState.guideTab || 'dex';
@@ -66,19 +68,19 @@ function guideTabs() {
     .join('')}</div>`;
 }
 export function renderGuide() {
-  if (uiState.dex && SPECIES[uiState.dex] && saveData.seen[uiState.dex]) return renderDexEntry(uiState.dex);
+  if (uiState.dex && SPECIES[uiState.dex] && dexSeen(uiState.dex)) return renderDexEntry(uiState.dex);
   if (uiState.guideTab === 'cards' && typeof renderPostcards === 'function')
     return `<header class="bar"><div><div class="sub">Greetings from every town you’ve walked into</div><h1 class="where">Postcards</h1></div></header>${guideTabs()}${renderPostcards()}`;
   if (uiState.guideTab === 'lore' && typeof renderLore === 'function')
     return `<header class="bar"><div><div class="sub">The world, the story, the people</div><h1 class="where">Lore</h1></div></header>${guideTabs()}${renderLore()}`;
-  const seen = DEX_ORDER.filter(id => saveData.seen[id]).length,
-    got = DEX_ORDER.filter(id => saveData.caught[id]).length,
+  const seen = DEX_ORDER.filter(dexSeen).length,
+    got = DEX_ORDER.filter(dexCaught).length,
     f = uiState.dexF || 'all';
   const list = DEX_ORDER.filter(id => {
     const st = dexStatus(id);
     if (f === 'got') return st === 'got';
     if (f === 'miss') return st !== 'got';
-    if (TYPES.includes(f)) return saveData.seen[id] && SPECIES[id].types.includes(f);
+    if (TYPES.includes(f)) return dexSeen(id) && SPECIES[id].types.includes(f);
     return true;
   });
   const chips =
@@ -131,11 +133,11 @@ function evolutionMethod(e) {
 }
 function renderDexEntry(id) {
   const s = SPECIES[id],
-    got = !!saveData.caught[id],
+    got = dexCaught(id),
     L = LINE_BY_ID[s.line],
     D = (RIGS[id] && RIGS[id].front) || {},
     idx = DEX_ORDER.indexOf(id);
-  const seenList = DEX_ORDER.filter(x => saveData.seen[x]),
+  const seenList = DEX_ORDER.filter(dexSeen),
     si = seenList.indexOf(id),
     prev = seenList[si - 1],
     next = seenList[si + 1];
@@ -153,14 +155,27 @@ function renderDexEntry(id) {
   const strong = TYPES.filter(x => s.types.some(t => typeEffectiveness(t, [x]) > 1)),
     weak = TYPES.filter(x => typeEffectiveness(x, s.types) > 1),
     res = TYPES.filter(x => typeEffectiveness(x, s.types) < 1);
+  /* RF-3: what its types do in battle (types.json passiveName, passiveText) */
+  const abilities = s.types
+    .filter(t => PASSIVE_INFO[t] && PASSIVE_INFO[t].name)
+    .map(t => `<tr><td>${escapeHtml(PASSIVE_INFO[t].name)}</td><td>${escapeHtml(PASSIVE_INFO[t].text)}</td></tr>`)
+    .join('');
   const tot = s.base.reduce((a, b) => a + b, 0),
     mx = Math.max(...s.base);
   const chain = L.names
     .map((n, st) => {
       const sid = L.id + st,
-        sn = saveData.seen[sid],
+        sn = dexSeen(sid),
         prev = L.split && st === 3 ? L.id + '1' : L.id + (st - 1);
       return `${st ? `<span class="evarrow"><i>→</i><small>${escapeHtml(L.split && st >= 2 ? (st === 2 ? 'Build path' : 'Hype path') : evolutionMethod(SPECIES[prev].evo))}</small></span>` : ''}<button class="evnode k-card${sid === id ? ' cur' : ''}" data-a="dex" data-s="${sid}" ${sn ? '' : 'disabled'}>${sn ? rigCanvasHTML(sid, 44) : rigCanvasHTML(sid, 44, { sil: 1, still: 1 })}<small>${sn ? escapeHtml(n) : '???'}</small></button>`;
+    })
+    .join('');
+  /* RO-1: its regional forms, each seen or not (they have no page of their own) */
+  const forms = (SPECIES_FORMS[id] || [])
+    .map(fid => {
+      const F = SPECIES[fid],
+        fs = !!saveData.seen[fid];
+      return `<div class="evnode k-card">${fs ? rigCanvasHTML(fid, 44, { coat: F.coat }) : rigCanvasHTML(fid, 44, { sil: 1, still: 1 })}<small>${fs ? escapeHtml(F.name) : '???'}</small>${fs ? `<span class="row">${F.types.map(typeBadgeHTML).join('')}</span>` : ''}</div>`;
     })
     .join('');
   const bg = TYPE_COLORS[s.types[0]][0],
@@ -180,7 +195,9 @@ function renderDexEntry(id) {
   <section class="paper px k-panel notes"><h3>Field notes</h3>${got ? `<p>${escapeHtml(s.blurb)}</p><p class="hand red">${escapeHtml(s.note)}</p>` : `<p>${escapeHtml(s.blurb.split('. ')[0])}. <span class="redact">██████ ████ ███████ ██</span></p><p class="hand">Tax one to complete this entry.</p>`}</section>
   <section class="paper px k-panel"><h3>Base stats</h3>${got ? `<table class="bsheet"><tbody>${STAT_IDS.map((k, i) => `<tr><td>${STAT_NAMES[k]}</td><td class="tnum">${s.base[i]}</td><td><span class="bbar" style="--w:${((s.base[i] / mx) * 100).toFixed(0)}%"></span></td></tr>`).join('')}<tr class="tot"><td>Total</td><td class="tnum">${tot}</td><td></td></tr></tbody></table>` : `<p class="note">Tax one to see its stats.</p>`}</section>
   <section class="paper px k-panel lin"><h3>Evolution</h3><div class="chain">${chain}</div><p class="note">${escapeHtml(evolutionHint({ sp: id, lvl: 0 }))}</p></section>
+  ${forms ? `<section class="paper px k-panel lin"><h3>Regional forms</h3><div class="chain">${forms}</div></section>` : ''}
   <section class="paper px k-panel"><h3>Type matchups</h3><table class="expo"><tbody><tr><td>Strong against</td><td>${strong.map(typeBadgeHTML).join('') || '—'}</td></tr><tr><td>Weak to</td><td>${weak.map(typeBadgeHTML).join('') || '—'}</td></tr><tr><td>Resists</td><td>${res.map(typeBadgeHTML).join('') || '—'}</td></tr></tbody></table></section>
+  <section class="paper px k-panel"><h3>Abilities</h3><table class="expo"><tbody>${abilities || '<tr><td>None</td><td>—</td></tr>'}</tbody></table></section>
   <section class="paper px k-panel"><h3>Where to look</h3><table class="expo"><tbody><tr><td>Found at</td><td>${where.length ? escapeHtml(where.join(', ')) : 'Not found in the wild'}</td></tr><tr><td>Hatches from</td><td>${bred ? 'A pair bred at the ranch' : '—'}</td></tr><tr><td>Tracks</td><td>${escapeHtml(TRACKS[D.plan] || 'Unremarkable')}</td></tr></tbody></table></section>
   ${got ? `<div class="sig"><span class="sigline">${escapeHtml(s.name)}</span><small>Recorded by Hazel. Signed by the Chosen.</small></div>` : ''}
  </article>`;
@@ -190,7 +207,7 @@ export function guideAction(a, d) {
   switch (a) {
     case 'dex': {
       if (!d.s) break;
-      if (!saveData.seen[d.s]) {
+      if (!dexSeen(d.s)) {
         toast('Not seen yet. Keep walking.');
         break;
       }

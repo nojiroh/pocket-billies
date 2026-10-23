@@ -35,6 +35,7 @@ import '../../game/js/logic/draft-record.js';
 import '../../game/js/logic/economy-view.js';
 import '../../game/js/logic/effects.js';
 import '../../game/js/logic/fighters.js';
+import '../../game/js/logic/forms.js';
 import '../../game/js/logic/free-camera.js';
 import '../../game/js/logic/history.js';
 import '../../game/js/logic/hub-island.js';
@@ -99,6 +100,7 @@ import '../../game/js/logic/ui-theme.js';
 import '../../game/js/logic/unlock-graph.js';
 import '../../game/js/logic/unlocks.js';
 import '../../game/js/logic/weather.js';
+import '../../game/js/logic/wild-pool.js';
 export { runPreview } from '../../game/js/logic/run-preview.js';
 export { runMapSweep } from '../../game/js/logic/data-checks.js';
 /* Studio plan T3.4: the run simulation (the modules above, named for it) */

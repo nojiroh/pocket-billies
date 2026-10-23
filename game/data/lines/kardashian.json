@@ -35,6 +35,14 @@
   {"k":"lvl","at":16},
   {"k":"lvl","at":36}
  ],
+ "forms": [
+  {
+   "id": "festival",
+   "name": "Festival",
+   "swap": {"Steel":"Ground"},
+   "coat": "festival"
+  }
+ ],
  "parody": "Kim Kardashian",
  "cry": [
   {"base":"insect","pitch":70,"length":0.8,"name":"placeholder: a tiny buzz (Claude's draft)"},

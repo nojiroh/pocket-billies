@@ -56,6 +56,10 @@
      }
     }
    },
+   "form": {
+    "description": "RO-1: a regional form's look (a line's forms name it): never rolled, and no word before the Billie's name (the form's name says it)",
+    "type": "boolean"
+   },
    "art": {
     "description": "hand-painted sheets in place of the recolour, per species and view (paths under game/art)",
     "type": "object",

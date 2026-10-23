@@ -6,7 +6,7 @@ import { expose } from './test-globals.js';
 import { plateVars } from './hooks.js';
 import { clamp } from './util.js';
 import { COINS, DEX_ORDER, ITEMS, LOCATIONS, TRAINERS } from './game-data.js';
-import { billyName, findBilly, formatNumber, metresToKm, plural } from './logic/rules.js';
+import { billyName, dexCaught, dexSeen, findBilly, formatNumber, metresToKm, plural } from './logic/rules.js';
 import { escapeHtml, saveData } from './game-state.js';
 import { coinHTML, eggHTML, uiIconHTML } from './art.js';
 import { cleanTrainer, personHTML } from './person-art.js';
@@ -54,8 +54,8 @@ function badgeSlots() {
 }
 export function renderProfile() {
   const name = cleanTrainer(saveData.avatar, saveData.gender).name,
-    seen = DEX_ORDER.filter(id => saveData.seen[id]).length,
-    got = DEX_ORDER.filter(id => saveData.caught[id]).length,
+    seen = DEX_ORDER.filter(dexSeen).length,
+    got = DEX_ORDER.filter(dexCaught).length,
     places = LOCATIONS.filter((r, i) => saveData.visited[i]).length,
     bd = badgeSlots(),
     bud = findBilly(saveData.buddy);

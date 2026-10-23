@@ -29,6 +29,17 @@ export function renameTypeIn(D, from, to) {
       const r = a.map(x => (x === from ? to : x)).filter(Boolean);
       return r.length ? r : ['None'];
     });
+    /* RO-1: a regional form's swap names types as keys and values; a swap from or to a deleted type goes */
+    for (const F of L.forms || []) {
+      /** @type {Record<string, string>} */
+      const swap = {};
+      for (const [a, b] of Object.entries(F.swap || {})) {
+        const a2 = a === from ? to : a,
+          b2 = b === from ? to : b;
+        if (a2 && b2) swap[a2] = b2;
+      }
+      F.swap = swap;
+    }
   });
   /* Studio plan F17: the robots' parts and gems, the roster board, the types that ride on water and a Loophole's
      damage row name types too */

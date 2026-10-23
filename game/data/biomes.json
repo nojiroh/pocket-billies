@@ -2,7 +2,7 @@
  "meadow": {
   "name": "Meadow",
   "climate": "mild",
-  "pool": "grass",
+  "pool": "meadow",
   "battleStage": "grass",
   "mood": "green",
   "ground": {
@@ -60,7 +60,7 @@
  "thicket": {
   "name": "Thicket",
   "climate": "mild",
-  "pool": "shell",
+  "pool": "thicket",
   "battleStage": "shell",
   "mood": "misty",
   "ground": {
@@ -120,7 +120,7 @@
  "lake": {
   "name": "Lakeside",
   "climate": "mild",
-  "pool": "willowmere",
+  "pool": "lake",
   "battleStage": "golf",
   "mood": "lakeside",
   "ground": {
@@ -180,7 +180,7 @@
  "canyon": {
   "name": "Canyon",
   "climate": "dry",
-  "pool": "esc",
+  "pool": "canyon",
   "battleStage": "esc",
   "mood": "heat",
   "ground": {
@@ -218,7 +218,7 @@
  "volcano": {
   "name": "Volcano",
   "climate": "volcano",
-  "pool": "cinderpeak",
+  "pool": "volcano",
   "battleStage": "volcano",
   "mood": "ember",
   "ground": {
@@ -266,7 +266,7 @@
  "tundra": {
   "name": "Tundra",
   "climate": "alpine",
-  "pool": "rimefrost",
+  "pool": "tundra",
   "battleStage": "snow",
   "mood": "crisp",
   "ground": {
@@ -352,7 +352,7 @@
  "ridge": {
   "name": "Ridge",
   "climate": "mild",
-  "pool": "kitewind",
+  "pool": "ridge",
   "battleStage": "esc",
   "mood": "clear",
   "ground": {
@@ -410,7 +410,7 @@
  "autumn": {
   "name": "Autumn wood",
   "climate": "mild",
-  "pool": "russetwood",
+  "pool": "autumn",
   "battleStage": "shell",
   "mood": "harvest",
   "ground": {
@@ -516,7 +516,7 @@
  "jungle": {
   "name": "Jungle",
   "climate": "mild",
-  "pool": "tanglewild",
+  "pool": "jungle",
   "battleStage": "shell",
   "mood": "green",
   "ground": {
