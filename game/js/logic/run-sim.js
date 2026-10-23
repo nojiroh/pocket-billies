@@ -34,6 +34,8 @@ export const MAX_TURNS = 60;
 /**
  * Studio plan T3.2: the player's part, the bot policy. Every number the simulation uses that isn't the game's own rule is
  * here, by name, and every report names the policy and its settings: the results measure this bot, not a player.
+ * - home: who comes from home: the highest-level Billies, as many as rules.json run.home lets (the page's start
+ *   sheet picks the buddy by default)
  * - fights: wild Billies fought in a place, at most (the first of its stock; `fights` in the options)
  * - fightAbove: no wild fight while the party's HP is below this share of its full HP
  * - potionBelow: a Potion (taxbreak) on a Billie below this share of its HP, before each wild fight
@@ -47,6 +49,7 @@ export const MAX_TURNS = 60;
  */
 export const SIM_POLICY = Object.freeze({
   name: 'greedy-forward',
+  home: 'top-level',
   fights: 2,
   fightAbove: 0.7,
   potionBelow: 0.6,
