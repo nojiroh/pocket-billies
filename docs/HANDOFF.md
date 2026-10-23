@@ -2,6 +2,54 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roster track RO-2b - Three more lines from the part kits - 2026-10-23
+Branch `ccr-ro-2b-yiming-woods-arnault`, made from `ccr-81439378-ypunjg` (RO-2a, PR #168, not merged yet); draft PR
+into `track/roster`, stacked on #168 (its diff shrinks once #168 merges). Plan approved in Plan Mode with the draft
+names Cliplet and Peacouture, Woods as a common, and the peacock rare with no signature move.
+- Where the brief was wrong (checked in the code):
+  - The fox head can't be recoloured: `kitFaceMask` (logic/kit-pixels.js) keeps every saturated bright pixel as
+    "face", and the fox head's fur is that saturated, so a tinted fox head stays brown. The ferrets use a cat head with
+    fox ears (fox body, legs and tail). The shared bake code is unchanged; a fix there needs the face mask to look at
+    position, not only colour, and the parity test kept number for number.
+  - `bake.tailAim` only turns a tail part that has sockets; `birds_plume` has none, so it can't be a raised tail. The
+    peacock's fan is a mirrored pair of plumes carried on the `back` anchor, which reads as a fan from the front.
+  - Woods was uncommon in legacy, but the pool test puts every uncommon line in every pool (sea and volcano too), so
+    it is common here.
+  - There is no Arnault signature move in moves.json; with "existing moves only", Peacouture learns generic Fire and
+    Flying moves.
+- Changed:
+  - **Part library:** the hand-drawn sheets, layouts and rigs of tiktokferret, cublet and tigerwoods (rigs yiming0,
+    woods0, woods1) copied into `game/art/next/billionaires/hand` (rigs-hand.json).
+  - **Three lines** (`lines/yiming|woods|arnault.json`, `index.json`, roster.json rows 33-37): Cliplet →
+    Tiktokferret (common, Electric → Electric/Psychic, 18; keeps Fifteen Seconds), Cublet → Tigerwoods (common,
+    Ground → Ground/Grass, 24; keeps Sunday Red), Peacouture (rare single, Fire/Flying). Stat profiles of the legacy
+    lines kept; the peacock's is a slow special attacker with Altmowl's total. Bios, notes, sizes and cries are drafts
+    (cries named "placeholder").
+  - **Art:** kitBuilds.json recipes and 13 colours; `npm run bake:kits` wrote sheets and rigs. Tiger stripes aren't
+    possible with tints alone: a dark spike tuft on the head (and on the back for Tigerwoods) stands in.
+  - **Pools:** the ferret in meadow, lake, ridge, jungle, canyon; the tiger in meadow, thicket, autumn, canyon,
+    badlands, jungle; the peacock rare (3-4) in volcano, canyon, ridge. The egg and Alta's team that named `woods0`
+    now get the real Cublet.
+  - **Tests:** kit counts 37 (kit-bake-parity, pixel-density); check-data snapshot (136 files) and run-start
+    snapshot remade (regional dexes drawn from more lines); the sound baseline gains 10 prints (5 cries and their low
+    versions; no other print changed).
+- Verified: lint, typecheck, check:data, check:modules, format:check, bake check, unit tests 828 of 828;
+  check-sound: only the 10 new prints differed before the baseline; smoke 6 of 6 (179 s). The five sprites looked at in a
+  browser, front and back (Playwright 1.63.0, `rigCanvasHTML` on the game page). The full quick check 37 of 37
+  (1,723 s). CI on #172's first push: smoke red on "Play this seed" (fixed by #168's port of #174, merged in) and on
+  CAM-2's encounter shot and IS-1/IS-3's camera aim, the camera flakes RO-2a saw too.
+- Risky / open:
+  - Peacouture's head stays a pale peach (the bird head is near white, so tints come out pastel) and its back view
+    is busy where the fan crosses the body. The tigers have no real stripes. Both are fine as kit stand-ins until the
+    owner wants hand touches.
+  - Runs reach about level 13 (RO-1), so Tiktokferret (18) and Tigerwoods (24) are seldom seen evolved in a run.
+  - Leader Alta (trainers/alta.json, a Flying miniboss) lists `woods0` at level 36: now a real Cublet, unevolved
+    past its level 24. Left as is (legacy team list); RO-2c or the trainer pass can make it `woods1`.
+  - Not tried on a phone: the new sprites in grass, battle and the Guide.
+- Next: RO-2c: the Huang dragon pseudo-legend (Siliclet → Jenzard → Gigajenzard), regional forms for the new
+  commons, and a balance pass with the run sim. It should look at Sharktank, a 2-stage final with the middle stat total
+  (400), and at evolution levels against how far runs go.
+
 ### Roster track RO-2a - Four new lines from the part kits - 2026-10-23
 Branch `ccr-81439378-ypunjg` (a cloud session can only push to its own branch), made from main + `track/roster`;
 draft PR #168 into `track/roster`. Plan approved in Plan Mode: 24 → 40 species in three batches (roguelite-track.md,

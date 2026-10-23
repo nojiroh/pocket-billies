@@ -37,7 +37,7 @@ are sessions of Claude's working time, not calendar time, and exclude the owner'
 | RL-14 | The organization's bots, salvage, the Voltron | `factions.json`, `bosses.json`, data-driven `alphaPhase`, the bots as the organization's army | RL-13, RL-S1 | 2 | yes |
 | RL-15 | Online | the run record, friend ghosts, daily seeds, rules and emulator tests | RL-14 | 2 | yes |
 | RL-16 | Content packs and Studio editors | pack merge and checks, editors for the new sections | RL-11 | 1-2 | yes |
-| RO-2.. | Roster: new lines (RO-2a done 2026-10-23, branch `track/roster`: Hughes, Kamprad, Cuban, Altman, 32 species) | from 24 to about 40 species through the Studio's kit bake; plan in roguelite-track.md (RO-2.. plan) | RO-1 | 3 | yes |
+| RO-2.. | Roster: new lines (RO-2a and RO-2b done 2026-10-23, branch `track/roster`: Hughes, Kamprad, Cuban, Altman, Yiming, Woods, Arnault, 37 species) | from 24 to about 40 species through the Studio's kit bake; plan in roguelite-track.md (RO-2.. plan) | RO-1 | 3 | yes |
 | RL-E | Endless mode | after online | RL-15 | 1 | yes |
 
 **Restructured 2026-10-23** (roguelite-track.md section 9, the owner's answers): after RL-12a the order is the
