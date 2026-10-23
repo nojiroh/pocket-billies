@@ -296,7 +296,6 @@ document.addEventListener('click', ev => {
     case 'card-open':
     case 'enc':
     case 'clinic':
-    case 'rest':
     case 'trainer':
     case 'rungiveup':
       walkTabAction(a, d);

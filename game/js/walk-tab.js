@@ -5,7 +5,7 @@
 import { expose } from './test-globals.js';
 import { provide, render, roomState } from './hooks.js';
 import { $, $$ } from './util.js';
-import { LOCATIONS, RULES, SHOPS, locationSubtitle, trainersAt } from './game-data.js';
+import { LOCATIONS, SHOPS, locationSubtitle, trainersAt } from './game-data.js';
 import {
   billyName,
   encounterStock,
@@ -134,10 +134,7 @@ function nodeActions(i) {
         ? `<button class="pb small" data-a="clinic">Clinic: heal ${plural(hurt, 'Billie')} for $${formatNumber(cost)}</button>`
         : '<button class="pb small quiet" data-a="clinic">Clinic: everyone is fine</button>';
     }
-  } else
-    x += n.town
-      ? '<button class="pb small" data-a="clinic">Rest at the clinic, free</button>'
-      : `<button class="pb small quiet" data-a="rest">Rest stop, $${formatNumber(RULES.battle.restCost)}</button>`;
+  } else if (n.town) x += '<button class="pb small" data-a="clinic">Rest at the clinic, free</button>';
   trainersAt(i).forEach(T => {
     const done = saveData.flags[T.id];
     if (T.blocks && done && !T.seat) return;
@@ -302,19 +299,6 @@ export function walkTabAction(a, d) {
     case 'clinic':
       clinicHeal();
       break;
-    case 'rest': {
-      const c = RULES.battle.restCost;
-      if (saveData.se < c) {
-        toast(`A rest stop costs $${formatNumber(c)}. Win a battle first.`);
-        break;
-      }
-      saveData.se -= c;
-      healAll();
-      save();
-      render();
-      toast(`Everyone rested up for $${formatNumber(c)}.`);
-      break;
-    }
     case 'trainer':
       trainerTalk(d.t);
       break;
