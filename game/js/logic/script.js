@@ -17,6 +17,7 @@
 import { expose } from '../test-globals.js';
 import { provide, saveData } from '../hooks.js';
 import { LOCATIONS, STORY_DATA, TRAINERS, warnData } from '../game-data.js';
+import { speciesOf } from './fighters.js';
 import { makeBilly } from './rules.js';
 import { conditionHolds, conditionTree, storyStateOf } from './conditions.js';
 import { SCRIPT_COMMANDS } from './script-parse.js';
@@ -25,6 +26,7 @@ expose({
   END: [() => END],
   // @ts-expect-error -- replaced on purpose
   applyStoryPreset: [() => applyStoryPreset, v => (applyStoryPreset = v)],
+  badgeTypeMap: [() => badgeTypeMap, v => (badgeTypeMap = v)],
   // @ts-expect-error -- replaced on purpose
   chapterMap: [() => chapterMap, v => (chapterMap = v)],
   flagWarned: [() => flagWarned],
@@ -42,6 +44,8 @@ expose({
   storyFlagKnown: [() => storyFlagKnown, v => (storyFlagKnown = v)],
   // @ts-expect-error -- replaced on purpose
   storyHolds: [() => storyHolds, v => ((storyHolds = v), provide({ storyHolds }))],
+  // @ts-expect-error -- replaced on purpose
+  storyTeamLookups: [() => storyTeamLookups, v => (storyTeamLookups = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ storyAllows, storyHolds });
@@ -74,7 +78,10 @@ export async function runScript(tree, stage, o) {
     control = o.control || { skipping: false },
     id = o.id || 'script';
   const holds = (/** @type {string} */ c) =>
-    conditionHolds(conditionTree(c), storyStateOf(save, { locations: o.locations, questStages: o.questStages }));
+    conditionHolds(
+      conditionTree(c),
+      storyStateOf(save, { locations: o.locations, questStages: o.questStages, ...storyTeamLookups() })
+    );
   /* what once / cycle / seq / [once] remember by: their key, else their (first) line id, else the line number */
   const keyOf = (/** @type {{ key?: string | null, lid?: string, id?: string, line: number }} */ n) =>
     n.key || (n.lid || n.id ? `${id}#${n.lid || n.id}` : `${id}@${n.line}`);
@@ -219,6 +226,29 @@ export async function runScript(tree, stage, o) {
   await runBlock(tree, [], o.resume && o.resume.length ? o.resume : null);
 }
 
+/** @type {Record<string, string> | null} */
+export let badgeTypeMap = null;
+/** RL-12b: what the `type:` and `badge:` conditions read: a team Billie's types (a robot's from its parts) and a
+ * leader's or seat's type (the trainers' files, read once) */
+export function storyTeamLookups() {
+  if (!badgeTypeMap) {
+    badgeTypeMap = {};
+    for (const [id, T] of Object.entries(TRAINERS || {})) {
+      const t = /** @type {any} */ (T);
+      if (!t || !t.type) continue;
+      badgeTypeMap[id] = t.type;
+      if (t.seat && t.seat.id) badgeTypeMap[t.seat.id] = t.type;
+    }
+  }
+  return {
+    typesOf: (/** @type {any} */ m) => {
+      const sp = speciesOf(m);
+      return sp ? sp.types : [];
+    },
+    badgeTypes: badgeTypeMap,
+  };
+}
+
 /* ---------- the story flags (story.json flags, patterns, kept) ---------- */
 /** a flag story.json lists, by name or by pattern (met_<id> takes every met_...) @param {string} k */
 export function storyFlagKnown(k) {
@@ -247,7 +277,10 @@ export function storyHolds(cond, save = saveData) {
   const qs = Object.fromEntries(
     Object.entries((STORY_DATA || {}).quests || {}).map(([k, q]) => [k, /** @type {any} */ (q).stages])
   );
-  return conditionHolds(conditionTree(cond), storyStateOf(save, { locations: LOCATIONS, questStages: qs }));
+  return conditionHolds(
+    conditionTree(cond),
+    storyStateOf(save, { locations: LOCATIONS, questStages: qs, ...storyTeamLookups() })
+  );
 }
 /** whether a person, trainer or prop is there: its `when` holds (if it has one) and its `unless` doesn't
  * @param {{ when?: string, unless?: string } | null | undefined} thing @param {any} [save] */
