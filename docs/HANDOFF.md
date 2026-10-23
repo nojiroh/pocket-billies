@@ -428,9 +428,9 @@ overlap). Tag `ro-1-done` for the owner.
 - Verified: lint, typecheck, check:data, check:modules, format:check and the unit tests after every commit (776 ->
   784); smoke 14 of 14; the full quick check 40 of 45 (1,971 s here): Tap targets, v31 bowl map camera, v46
   buildings without a plan and alpha 0.4 bush recipes are the four lane B found red on main too; Sound effects'
-  "payout, won" failed again alone (its log holds `jingle run_won`, after the 15 s wait: timing, lane B saw this step
-  flip; not yet compared on main). The fast check 28 of 29: CAM-2 "the encounter shot never arrived", the flake lane
-  D noted. A browser look (phone size): forms in the team list and a wild battle with their names, types and coats;
+  "payout, won" is timing, not RO-1: timed with a longer wait, `run_won` lands 21 s after the payout opens here and
+  23 s on main (5ddd0f8); the step waits 15 s (main passed once by luck). Worth a longer wait in TC-3. The fast check
+  28 of 29: CAM-2 "the encounter shot never arrived", the flake lane D noted; it passed alone. A browser look (phone size): forms in the team list and a wild battle with their names, types and coats;
   the Guide's "Regional forms" section; coat renders checked against the sheets.
 - Risky / open:
   - **Cloud Facelet and Festival Kontourlet** keep their first stage's single type (Electric, Psychic): the swap
