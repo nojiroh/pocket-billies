@@ -15,7 +15,7 @@
 /** @import { Run, RunMap } from '../../types/save-data' */
 import { POOLS, NODE_TYPES, RELICS, RULES, START_NODE, TRAINERS, UNLOCK_DATA, gameData } from '../game-data.js';
 import { MAPGEN_VERSION } from './mapgen.js';
-import { relicOfferMake, relicShelf } from './relics.js';
+import { relicOfferMake, relicShelf } from './perks.js';
 import { runFoes, runShopStock } from './run-loop.js';
 import { runPlaceId, runWorldTables } from './run-scenes.js';
 import { runStartPlan } from './run-start.js';

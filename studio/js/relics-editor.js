@@ -8,7 +8,7 @@
      be drawn first (its weight over the pool's);
    - the effect on a sample build: the game's fx functions on a Billie made by rules.js (logic/content-preview.js
      relicPreview, in the Studio's logic worker on the data as it is now), with stats before and after;
-   - the offer order for a seed: the picks after each mini-boss, as the game makes them (relics.js relicOfferOrder in
+   - the offer order for a seed: the picks after each mini-boss, as the game makes them (perks.js relicOfferOrder in
      the worker), taking nothing, the first offered, or this Perk when offered.
    Edits are ordinary fields (saved, undone and proposed like any other); a row's kind is changed by its own select,
    which puts that kind's fields in with neutral values. */
@@ -305,7 +305,7 @@ SECTIONS.relics = () => {
        .join('')}</select></label>`
    )}<div data-relic-offers><p class="help">The game’s logic is working it out…</p></div>`,
    {
-     sub: 'The picks after each mini-boss on a run of this seed (relics.js), as the Run Lab shows them for the same seed with nothing taken. Shops are left out.',
+     sub: 'The picks after each mini-boss on a run of this seed (perks.js), as the Run Lab shows them for the same seed with nothing taken. Shops are left out.',
    }
  )}
  ${relicRarityHTML(D, cov, P)}</div></div>`;

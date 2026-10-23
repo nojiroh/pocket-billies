@@ -10,7 +10,7 @@
    - at most run.relics.cap held: a new one past the cap takes the place of one the player lets go.
    They last the run: nothing of them is kept at the payout. Every Perk is on offer from the first run (the owner,
    RL-12); RL-11's unlocks may narrow the pool later.
-   Logic only: no DOM, no Date, no Math.random (tools/test/relics.test.mjs). */
+   Logic only: no DOM, no Date, no Math.random (tools/test/perks.test.mjs). */
 /** @import { Run } from '../../types/save-data' */
 /** @import { Relic } from '../../types/game-data' */
 /** @typedef {{ cap: number, pick: number, rarity: Record<string, number>, price: Record<string, number> }} RelicRules */

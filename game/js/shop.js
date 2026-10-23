@@ -10,7 +10,7 @@ import { COINS, ITEMS, RELICS, RULES, SHOPS, UNLOCK_DATA } from './game-data.js'
 import { formatNumber, plural } from './logic/rules.js';
 import { runShopOpen } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
-import { relicBuy, relicPrice, relicShelf } from './logic/relics.js';
+import { relicBuy, relicPrice, relicShelf } from './logic/perks.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { coinHTML, moneyHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
@@ -68,7 +68,7 @@ const warePrice = (sh, w, it) => {
   const p = w.price ?? it.base;
   return sh.runNode != null && saveData.run ? fxRunPrice(saveData.run, RELICS, 'shop', p) : p;
 };
-/** RL-12: a run shop's Perk today (logic/relics.js relicShelf, drawn when the shop opened): its id and price, or
+/** RL-12: a run shop's Perk today (logic/perks.js relicShelf, drawn when the shop opened): its id and price, or
  * null (not a run shop, bought, or none left) */
 function shopRelic(sh) {
   const run = saveData.run;

@@ -43,7 +43,7 @@ import {
 } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
-import { relicOfferMake, relicTake } from './logic/relics.js';
+import { relicOfferMake, relicTake } from './logic/perks.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';

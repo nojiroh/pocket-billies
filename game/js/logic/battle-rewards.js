@@ -11,7 +11,7 @@ import { expose } from '../test-globals.js';
 import { RELICS, RULES } from '../game-data.js';
 import { dropEncounter, findBilly, wildPrize } from './rules.js';
 import { fxMoney } from './effects.js';
-import { relicOfferMake } from './relics.js';
+import { relicOfferMake } from './perks.js';
 import { battleRoll } from './battle-engine.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -92,7 +92,7 @@ export function battleSettle(b, s) {
 /**
  * A win's money and marks (after battleSettle; not for the opening's tutorial battle): a wild win's prize, a
  * trainer's reward and flag, and on a run (`run`) a mini-boss beaten makes the next pick of Perks
- * (logic/relics.js relicOfferMake, saved on the run before it shows).
+ * (logic/perks.js relicOfferMake, saved on the run before it shows).
  * @param {any} b @param {any} s @param {{ o: string | null, prize: number, reward: number }} pay @param {any} run
  */
 export function battleSettleWin(b, s, pay, run) {

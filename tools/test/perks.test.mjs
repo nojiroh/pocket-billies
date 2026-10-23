@@ -1,4 +1,4 @@
-// RL-12: logic/relics.js, where a run's Perks come from: the pick after a mini-boss (the same offer for the same
+// RL-12: logic/perks.js, where a run's Perks come from: the pick after a mini-boss (the same offer for the same
 // run and counter, none held, the counter moving on, nothing left: no offer), a run shop's Perk for a day (drawn
 // once, kept after a reload, gone once bought), holding at most the cap (a new one takes a let-go one's place), and
 // validRun's checks of run.offerN and run.shelf.
@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { GAME_DATA, fn, modules, startedSave } from './setup-real.mjs';
 
-const R = modules.relics,
+const R = modules.perks,
   { runBegin, validRun } = modules['run-state'],
   RELICS = GAME_DATA.relics,
   RULE = GAME_DATA.rules.run.relics,

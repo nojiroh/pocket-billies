@@ -1,6 +1,6 @@
 'use strict';
 /* ================= PERKS ON SCREEN (roguelite track RL-12) =================
-   A run's Perks (relics.json; logic/relics.js, logic/effects.js) as the player sees them:
+   A run's Perks (relics.json; logic/perks.js, logic/effects.js) as the player sees them:
    - the pick after a mini-boss: the offer (saved on the run before it shows) as face-up pick cards; tap one, then
      "Take it", or "Take none". It can't be closed any other way, and a reload opens it again (run.js runResume);
    - past the cap a second sheet asks which Perk to let go (the pick's and the shop's);
@@ -10,7 +10,7 @@
 import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOverlay, toast } from './hooks.js';
 import { RELICS, RULES } from './game-data.js';
-import { relicChoose } from './logic/relics.js';
+import { relicChoose } from './logic/perks.js';
 import { escapeHtml, saveData, saveNow, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { jinglePlay } from './sound.js';

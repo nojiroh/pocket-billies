@@ -12,7 +12,7 @@ const { runStartOn, runStartPlan } = modules['run-start'];
 const { runUnlocks, unlockOpen } = modules.unlocks;
 const { runFoes, runShopStock } = modules['run-loop'];
 const { runWorldTables, runPlaceId } = modules['run-scenes'];
-const { relicOfferMake, relicShelf } = modules.relics;
+const { relicOfferMake, relicShelf } = modules.perks;
 const { NODE_TYPES, POOLS, RELICS, RULES, START_NODE, TRAINERS, UNLOCK_DATA, gameData } = data;
 
 const SEEDS = ['LAB1', 'TESTSEED', 'Q7', 'ZZTOP99', 'PREVIEW-3'],

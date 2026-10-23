@@ -29,7 +29,7 @@ import { makeBilly } from './logic/rules.js';
 import { applyUiTheme } from './theme-sheet.js';
 import { runArrive } from './logic/run-map.js';
 import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
-import { relicOfferMake } from './logic/relics.js';
+import { relicOfferMake } from './logic/perks.js';
 import { newSave } from './logic/saves.js';
 import { startTrainer } from './logic/battle-engine.js';
 import { runUnlocks } from './logic/unlocks.js';

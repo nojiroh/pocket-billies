@@ -131,7 +131,7 @@ export function runSimOn(env) {
     { runStartOn, runStartPlan } = modules['run-start'],
     { runRegionData } = modules['run-region'],
     { runUnlocks } = modules.unlocks,
-    { relicBuy, relicChoose, relicPrice, relicShelf } = modules.relics;
+    { relicBuy, relicChoose, relicPrice, relicShelf } = modules.perks;
   const MAP_DATA = {
       nodeTypes: GAME_DATA.nodeTypes,
       biomes: GAME_DATA.biomes,
@@ -282,7 +282,7 @@ export function runSimOn(env) {
           }
           /* the day's wares as the shop opens them: only what the run has unlocked (run-loop.js runShopOpen) */
           const stock = runShopOpen(run, i, run.clock, R.shop, UNLOCK_DATA);
-          /* the shop's Perk, drawn as the shop opens (relics.js relicShelf), bought as the policy says, keeping the
+          /* the shop's Perk, drawn as the shop opens (perks.js relicShelf), bought as the policy says, keeping the
              reserve (shop.js shopRelicBuy: its price with the price rows) */
           const shelf = relicShelf(run, i, run.clock, data.RELICS, R.relics);
           if (shelf) {
@@ -393,7 +393,7 @@ export function runSimOn(env) {
           /* its reward and flag; a mini-boss also makes the run's next pick of Perks (not answered yet) */
           fn('battleSettleWin')(B, s, pay, run);
           stats.moneyIn.reward += pay.reward;
-          /* the pick it made, answered as the policy says (relic-screen.js relicPickDone: relics.js relicChoose) */
+          /* the pick it made, answered as the policy says (relic-screen.js relicPickDone: perks.js relicChoose) */
           if (run.offer) {
             const c = simRelicChoice(run.offer, run.relics, data.RELICS, R.relics, P);
             at.pick = { offer: run.offer.slice(), took: c ? c.id : null, ...(c && c.drop ? { drop: c.drop } : {}) };
