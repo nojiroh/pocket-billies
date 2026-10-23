@@ -302,9 +302,71 @@ is (phase 10's 1.5 m pixel ground), the mountain's relief, the town's buildings 
 The fenced pasture beside the barn (IS-4's fence and gate), up to ~6 ranch Billies wandering in it (from storage and
 trainees, RL-10's data), tap one or the gate to open the ranch sheet. Waits for RL-10 to merge.
 
+**Done in IS-8** (2026-10-22; question 8 answered: the ranch's Billies roam, up to ~6). Checked against the code:
+- Storage is `saveData.box`; `ranch.trainees` hold uids into it; `ranch.pens` is in the save but nothing uses it; eggs
+  in the nursery aren't Billies yet. Only RL-9/RL-10a's data was needed (RL-10b's income wasn't).
+- A gate with act `ranch` would walk you into the barn (walk-control.js enters `ROOM_BY_USE.ranch` first): the gate's
+  act is `pasture`, which opens the sheet where you stand.
+- A prop's `box` blocks walking for every placement of it, so a closed gate would shut the field (the island's
+  walking check "to the pasture" ends inside it): the gate stands swung open into the field beside a 2.4 m gap.
+- The pasture zone (40 points, flat at 1.1-1.2 m) was empty. The fence follows it made straight (9 sides here) and
+  1.2 m inside (logic/pasture.js; the build tool and the game read the same line from the same zone, so a new zone
+  after a rerun moves both). The build step is tools/build-pasture.mjs, run by build-copperleaf.mjs before it writes
+  the map, or alone: it takes everything off the zone first, so it doesn't matter what an earlier step put there.
+- The buddy's code (world-billies.js) already drew a Billie walking about on a map; the pasture's reuse it.
+
 ### IS-9 Dressing, variety and phone pass
 Forest density and clearings, the terrain kinds dressed with props, gulls and crabs on the beach, the wild patches
 placed (question 5), the phone's frame times at 8 angles round the coast, then the owner's play test.
+
+**Checked in IS-9** (the owner's answers: a mixed dense forest; steps up to the cut-off shelves, the rest dressed as
+rock; 4-6 gulls and crabs; 5-6 wild patches by the woods and heath; far trees flat if the phone is slow):
+- **The forest had no trees.** Copperleaf's 113 props were the town's; the forest was forest-floor ground only, about
+  1,650 m² of it. "Density" meant planting it; its dials grew (forest span 200, deep 40, density 0.9: 2,692 m²), which
+  changes ground letters only (heights, steps and plots identical).
+- **The cut-off shelves were ~150 m², not 1,500**: IS-5 measured the old seed. Two pockets by the summit. The cause was
+  the engine's terrace rounding (walk-view.js `stepEdgeShape`), not the generator: it promised a step you could take
+  stays one you can, but on one level it ignored the land's own slope, so 0.13-0.22 m rises became 0.34-0.40 m. Fixed
+  there (the slope counts), so no stairs and no rock dressing were needed: every cell reachable before the rounding is
+  reachable after.
+- **The three house fronts aren't blocked**: Juniper's home has a planter and a barrel beside its door, two cottages a
+  picket fence either side of theirs with a ~2 m gap and stepping stones; a tap reaches every door (17 ms at most).
+- **Tap-to-walk crosses the island**: from the square to the coast at 8 bearings, 95 ms headless at most (check-fast).
+- **Far trees are already flat**: the engine draws solid trees within ~20 m (at most 40, Engine > World > tree detail
+  and count) and pictures past that, so the fallback the owner picked is a setting, not new code.
+- The summit's flat top is about 8 x 8 m; the lookout (4 m across) stands on it 3.5-8 m from the summit spot.
+
+### Look pass (before wave 3; the owner's feedback rounds)
+The owner looks at headless phone pictures each round (tools/island-shots.py: 8 coast views with the game's orbit
+camera, the square, the summit, from above, a ground map) and asks for changes; the island is rebuilt with the tools
+(build-island, then build-copperleaf), never by hand. One draft PR for the whole pass.
+
+**Round 1** (the owner: too big, the sea too low, the river into the bay at a logical point, no hamlet, a better
+mountain from the run maps' generator, two bridges at most, apart). Answers in chat: ~150 m, a 2-minute lap; the sea up
+to the beach (and the run maps' coasts too); a long craggy ridge, shelves with ragged edges, forest up its foot; the
+river from the pond into the bay's head; the bridges at the square and upstream, the pier not counted; 6-8 cottages on
+both banks; the barn and pasture inland beside the town; the generator copies the run maps' recipe (mapgen.js not
+shared). Checked against the code:
+- **The sea's 1.8 m** was a mapgen bug, not a dial: `mapgenLowerWater` lowered a corner once for each of its (up to
+  four) water cells, so a stream's water, and a sea joined to a stream, sank up to 1.8 m under its banks. Fixed for
+  every map (run maps' rivers too; the golden water scene remade on purpose). The island's open sea then lies at
+  `ISLAND_SEA_BED` (-0.1 m), its surface about 0.2 m under the sand at the waterline.
+- **A ~150 m island with the old mountain finds no trail on most seeds**: a 19 m foot under a 28 m peak is too steep for
+  the switchback search. The mountain keeps a 22 m foot and a 24 m peak; the craggy look cuts down from the smooth
+  shape the trail climbs (`G.mtnE` is the smooth one), so the trail is found on every seed tried.
+- **The river is short** on a 150 m island (the mountain's foot to the bay's head is ~30 m in a straight line). The
+  pond sits 60 degrees round the foot and the river curves (41-52 m); the square moved two thirds of the way down the
+  main street, so the second bridge (a footbridge path upstream, when no path crosses there) can be 25 m away, not 40.
+- Many seeds miss a plot or the second bridge (the generator notes it); the seed is `copperleaf-13`, which places
+  everything. The lab, the airship station, the shop and the home fall back to the coast road near the square.
+- The flat barn zone, laid over the river, wiped it out (a zone resets its cells): the barn and pasture moved west.
+- **Five directions** (relief maps from the generator, the owner's ask): A as built, B the bay facing the first view,
+  C a big mountain with a rocky north, D a forest island, E a beach island. **The owner picked E**: two beaches (west,
+  wide with dunes; north-east), one short cliff, the forest north of the mountain; seed `copperleaf-e9`, the barn at
+  205 degrees 46 m, the pasture at 185 degrees 50 m (closer in, the town's outline from the first run covered the
+  barn's zone on a rerun). Copperleaf's own dials are in its `islandGen`; the generator's defaults stay option A.
+- **A game bug the island showed**: `navGrid` blocked a turned building's unturned box a second time on any map with
+  bridges, which for some angles lies over its own door (the barn's and Juniper's home's checks failed). Fixed.
 
 ## Running sessions side by side
 - **One owner per file at a time.** `copperleaf.json`: IS-5 only. `logic/mapgen.js`: nobody here while TR-2c part 2
@@ -332,6 +394,7 @@ placed (question 5), the phone's frame times at 8 angles round the coast, then t
    landing and a deep channel** (the dock itself is IS-4's).
 7. **The mountain**: climbable, summit lookout (rec) / scenery only. **Answered in IS-2: climbable.**
 8. **The pasture**: ranch Billies roam in it, up to ~6 (rec) / fence and props only for now.
+   **Answered in IS-8: they roam, up to ~6** (`rules.ranch.pasture`, a placeholder).
 9. **The stream and fall** from the mountain to the cove: yes (rec) / no. **Answered in IS-2: yes, with a pond.**
 10. **The generator for later islands**: built reusable now, a Studio "island" kind later (rec) / one-off tool.
     **Answered 2026-10-22: reusable.**

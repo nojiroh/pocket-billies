@@ -8,10 +8,21 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $, $$ } from '../../game/js/util.js';
+import { densityHeights, densityReport } from '../../game/js/logic/pixel-density.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { drawRig } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { ACTIONS, SECTIONS, afterRender, changed, commit, render, studioState } from './studio-app.js';
+import {
+  ACTIONS,
+  SECTIONS,
+  afterRender,
+  changed,
+  commit,
+  dialog,
+  render,
+  speciesName,
+  studioState,
+} from './studio-app.js';
 import { downloadCanvas, loadImage, rigFor } from './sprites.js';
 import { neutralPose } from './skeleton.js';
 /* eslint-disable no-func-assign */
@@ -80,7 +91,7 @@ SECTIONS.roster = () => {
   <select data-act="roKind" id="roKind"><option value="">Every kind</option>${Object.entries(ROSTER_KINDS)
     .map(([k, n]) => `<option value="${k}" ${rosterBoard.kind === k ? 'selected' : ''}>${n}</option>`)
     .join('')}</select>
-  <input id="roQ" placeholder="Search name, parody, line…" value="${escapeHtml(rosterBoard.q)}"><span class="grow"></span><button class="btn" data-act="roSheet">Silhouette sheet</button><button class="btn" data-act="roExport">Export CSV</button></div>
+  <input id="roQ" placeholder="Search name, parody, line…" value="${escapeHtml(rosterBoard.q)}"><span class="grow"></span><button class="btn" data-act="roSheet">Silhouette sheet</button><button class="btn" data-act="roDensity" title="How many pixels go into a metre, per Billie (measure only)">Pixel density</button><button class="btn" data-act="roExport">Export CSV</button></div>
   <p class="help">${all} Billies · ${sil} silhouettes approved · ${sheets} piece sheets drawn · ${done} complete. Tick a box when that step is done; the design line is editable. A piece sheet goes in <code>art/next/billionaires/&lt;id&gt;.png</code> with its layout <code>&lt;id&gt;.json</code> (Skeleton builder → Import piece sheet).</p>
   <div class="ro-grid">${filteredRoster().map(rosterCardHTML).join('')}</div></div>`;
 };
@@ -89,6 +100,35 @@ ACTIONS.roFilter = d => {
   render();
 };
 ACTIONS.roSheet = () => openSilhouetteSheet();
+/* Studio plan Phase 5 (T5.7): the pixel-density report (logic/pixel-density.js), measure only: per Billie, its rig
+   pixels a metre in the world against the art grid and the ground, and a kit Billie's parts against its torso */
+ACTIONS.roDensity = () => {
+  const D = studioState.D,
+    R = densityReport(D, studioState.rigs, densityHeights(D.lines)),
+    esc = escapeHtml,
+    rows = R.rows
+      .slice()
+      .sort(
+        (a, b) =>
+          b.flagged - a.flagged ||
+          (a.grid === 'off grid' ? -1 : 0) - (b.grid === 'off grid' ? -1 : 0) ||
+          a.sp.localeCompare(b.sp)
+      )
+      .map(
+        r =>
+          `<tr><td class="mono">${esc(r.sp)}</td><td>${esc(speciesName(r.sp))}</td><td>${r.pxPerM}</td><td>${r.perArtPx}</td><td>${r.perGroundPx}</td><td>${r.grid === 'off grid' ? '<b>off grid</b>' : r.grid}</td><td>${r.kit ? `${esc(r.kit)} ×${r.fit}` : ''}</td><td>${r.parts
+            .filter(p => p.flag)
+            .map(p => `${esc(p.what)} ${esc(p.part)} ×${p.vsBody}`)
+            .join(', ')}</td></tr>`
+      )
+      .join('');
+  dialog(
+    'Pixel density',
+    `<p class="help">Measure only: nothing changes until a target density is set (an art direction call). <b>px/m</b>: a Billie's rig pixels a metre in the world; <b>per art px</b>: rig pixels in one pixel of the art grid (${R.grids.artGrid} a metre, the props'); <b>per ground px</b>: against the ground (${R.grids.ground} a metre). <b>Grid</b>: whole, quarter (v34 sizes a Billie to quarters of an art pixel) or off grid. Kit Billies: the stage scale they were baked at, and parts scaled more than ${Math.round(R.grids.spread * 100)}% off their torso. Every Billie's S and L parts are drawn at ${esc(R.nonInteger.join(' and '))} (not whole, nearest-neighbour).</p><div style="max-height:60vh;overflow:auto"><table class="tbl"><thead><tr><th>Rig</th><th>Billie</th><th>px/m</th><th>per art px</th><th>per ground px</th><th>Grid</th><th>Kit</th><th>Parts off their torso</th></tr></thead><tbody>${rows}</tbody></table></div>`,
+    [{ l: 'Close', c: 'primary', v: 1 }],
+    'wide'
+  );
+};
 ACTIONS.roExport = () => {
   const L = studioState.D.roster || [];
   const csv =
@@ -151,13 +191,16 @@ function rosterSpeciesId(id) {
 async function silhouetteOf(id, size = 24) {
   if (SILHOUETTE_CACHE.has(id + size)) return SILHOUETTE_CACHE.get(id + size);
   let src = null;
-  try {
-    const im = await loadImage('../game/art/next/billionaires/' + id + '.png');
-    const lay = await fetch('../game/art/next/billionaires/' + id + '.json')
-      .then(r => (r.ok ? r.json() : null))
-      .catch(() => null);
-    src = sheetSilhouette(im, lay);
-  } catch (e) {}
+  /* Studio plan Phase 5: a kit Billie has no piece layout (its rig says kit: kitBuilds.json); it is drawn by its rig */
+  const kit = studioState.rigs?.[rosterSpeciesId(id)]?.front?.kit;
+  if (!kit)
+    try {
+      const im = await loadImage('../game/art/next/billionaires/' + id + '.png');
+      const lay = await fetch('../game/art/next/billionaires/' + id + '.json')
+        .then(r => (r.ok ? r.json() : null))
+        .catch(() => null);
+      src = sheetSilhouette(im, lay);
+    } catch (e) {}
   if (!src) {
     const R = rigFor(rosterSpeciesId(id), 'front');
     if (R) {

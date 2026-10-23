@@ -9,8 +9,7 @@ import { openShortcutSheet, openSkeleton, provide } from '../../game/js/hooks.js
 import { $, $$, clamp } from '../../game/js/util.js';
 import { coatArt } from '../../game/js/logic/coats.js';
 import { makeCanvas } from '../../game/js/art.js';
-import { animFor } from '../../game/js/body-plan-animation.js';
-import { coatAtlas, drawRig, rigPose, setCoatRigData } from '../../game/js/skeleton-rig.js';
+import { coatAtlas, drawRig, rigFrame, rigFromMeta, setCoatRigData } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { pixelKeyAction, pixelZoomNext } from '../../game/js/logic/pixel-ops.js';
 import { ask, redo, render, speciesName, studioState, toast, undo, updateTopBar } from './studio-app.js';
@@ -94,9 +93,11 @@ export const atlasPath = (sp, view) => {
   if (m && m.sheet) return 'art/' + m.sheet;
   return `art/billionaires/${sp}${view === 'back' ? '_back' : ''}.png`;
 };
-export function spriteCacheClear() {
+/* pictures false (Studio plan T6.2): only data no picture is drawn from changed, so the art caches keyed by
+   atlasVersion (people, the walk view, buildings) stay */
+export function spriteCacheClear(pictures = true) {
   RIG_CACHE.clear();
-  atlasVersion++;
+  if (pictures) atlasVersion++;
 }
 export function loadImage(src) {
   return new Promise((res, rej) => {
@@ -162,31 +163,9 @@ export function rigFor(sp, view, coat) {
     ver = (studioState.rigVer || 0) + ':' + atlasVersion + ':' + (atlas._ver || 0) + ':' + (coat ? coatVersion : 0),
     hit = RIG_CACHE.get(key);
   if (hit && hit.ver === ver) return hit.R;
-  const cut = ([x, y, w, h]) => {
-    const c = makeCanvas(Math.max(1, w), Math.max(1, h));
-    c.getContext('2d').drawImage(atlas, x, y, w, h, 0, 0, w, h);
-    return c;
-  };
-  const imgs = meta.imgs.map(e => {
-    const names = Object.keys(e.f);
-    if (names.length === 1 && names[0] === 'main') return { ox: e.ox, oy: e.oy, c: cut(e.f.main) };
-    const v = {};
-    names.forEach(n => (v[n] = cut(e.f[n])));
-    return { ox: e.ox, oy: e.oy, v, c: v.idle || v[names[0]] };
-  });
-  const bones = meta.bones.map(b => Object.assign({}, b, { img: b.i >= 0 ? imgs[b.i] : null }));
-  const R = {
-    k: meta.k,
-    BW: meta.BW,
-    BH: meta.BH,
-    cx: meta.cx,
-    base: meta.base,
-    tipX: meta.tipX,
-    plan: meta.plan,
-    geo: meta.geo,
-    bones,
-    anim: animFor(meta.plan, meta.q || {}),
-  };
+  /* studio plan T5.6: put together as the game does (skeleton-rig.js rigFromMeta), with its clock and lag, from the
+     Studio's own rig and picture */
+  const R = rigFromMeta(meta, atlas);
   RIG_CACHE.set(key, { ver, R });
   return R;
 }
@@ -244,7 +223,8 @@ function drawSpritePreview(c, ts) {
   const tau = ts - o.t0,
     act = o.act && (o.act === 'faint' || tau < 1100) ? o.act : null;
   if (o.act && !act && o.loop) o.t0 = ts;
-  const P = rigPose(act, tau, o.still ? 0 : ts, o.seed);
+  /* studio plan T5.6: the game's pose on the rig's clock (12 fps, lagging tails), as the game draws it */
+  const P = rigFrame(R, act, tau, o.still ? 0 : ts, o.seed);
   /* phase 16: a preview can show a build (part sizes) */
   if (o.build) P.build = o.build;
   drawRig(x, R, P, o.view || 'front');

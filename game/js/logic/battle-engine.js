@@ -42,6 +42,7 @@ import {
 } from '../game-data.js';
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, moveSources, robotGemDef, robotRules, speciesOf } from './fighters.js';
 import {
+  addBilly,
   billyName,
   brokenParts,
   coatPrefix,
@@ -112,7 +113,13 @@ expose({
   calcDamage: [() => calcDamage, v => (calcDamage = v)],
   canUse: [() => canUse],
   // @ts-expect-error -- replaced on purpose
+  catchKeep: [() => catchKeep, v => (catchKeep = v)],
+  // @ts-expect-error -- replaced on purpose
   catchOdds: [() => catchOdds, v => (catchOdds = v)],
+  // @ts-expect-error -- replaced on purpose
+  catchOffer: [() => catchOffer, v => (catchOffer = v)],
+  // @ts-expect-error -- replaced on purpose
+  catchOfferAnswer: [() => catchOfferAnswer, v => (catchOfferAnswer = v)],
   // @ts-expect-error -- replaced on purpose
   catchRoll: [() => catchRoll, v => (catchRoll = v)],
   // @ts-expect-error -- replaced on purpose
@@ -155,6 +162,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   sayBattleFx: [() => sayBattleFx, v => (sayBattleFx = v)],
   shockName: [() => shockName],
+  stageFactor: [() => stageFactor],
   // @ts-expect-error -- replaced on purpose
   startTrainer: [() => startTrainer, v => (startTrainer = v)],
   // @ts-expect-error -- replaced on purpose
@@ -257,12 +265,15 @@ export const foeSide = k => 1 - ACTOR_SIDE[k];
 export const actorTypes = k => fieldState(k).ov || speciesOf(fighter(k)).types;
 export const shockName = () => BATTLE_RULES.shockName || `${BATTLE_RULES.shockType} storm`;
 export const isMulti = () => !!battleNow() && (battleNow().sides[0].f.length > 1 || battleNow().sides[1].f.length > 1);
+/** what a stat's stages multiply it by in battle: +1 is x1.5, -1 is x2/3 (Studio plan T4.1: the Loophole preview
+ * reads it too) @param {number} s */
+export const stageFactor = s => (s >= 0 ? (2 + s) / 2 : 2 / (2 - s));
 export function effectiveStat(k, s2) {
   const m = fighter(k),
     v = fieldState(k);
   let x = stat(m, s2);
   const s = v.st[s2] || 0;
-  x *= s >= 0 ? (2 + s) / 2 : 2 / (2 - s);
+  x *= stageFactor(s);
   if (s2 === 'lev') {
     if (m.status === 'scn') x *= 0.5;
     if (hasPassive(actorTypes(k), 'ramp'))
@@ -967,10 +978,21 @@ export function makeAlpha(sp, lvl, o = {}) {
   m.hp = maxHp(m);
   return m;
 }
-export function startWild(q) {
-  const o = { build: encounterBuild(q), coat: q.coat },
-    foe = q.alpha ? makeAlpha(q.sp, q.lvl, o) : makeBilly(q.sp, q.lvl, o);
-  if (!newBattle('wild', [foe], { qid: q.id, area: battleStageKey(), fmt: q.alpha ? 'alpha' : 'single' })) return;
+/** a wild Billie's battle. Studio plan T3.2: `o.host` and `o.extra` (a run battle's seed, weather and Loopholes:
+ * logic/run-loop.js runBattleExtra) as for startTrainer, so the run's simulation starts it as the page does */
+export function startWild(q, o = {}) {
+  const made = { build: encounterBuild(q), coat: q.coat },
+    foe = q.alpha ? makeAlpha(q.sp, q.lvl, made) : makeBilly(q.sp, q.lvl, made);
+  if (
+    !newBattle('wild', [foe], {
+      qid: q.id,
+      area: battleStageKey(),
+      fmt: q.alpha ? 'alpha' : 'single',
+      ...(o.host && { host: o.host }),
+      ...o.extra,
+    })
+  )
+    return;
   const nm = SPECIES[q.sp].name;
   if (q.alpha) {
     battleSay(`An Alpha ${coatPrefix(q.coat)}${nm} rose out of the grass!`, { k: 'wild', alpha: 1 });
@@ -1006,6 +1028,9 @@ export function startTrainer(id, o = {}) {
       area: BATTLE_STAGES[/** @type {string} */ (T.battleStage)] ? T.battleStage : battleStageKey(),
       fmt: T.alpha ? 'alpha' : dbl ? 'double' : 'single',
       ...(o.host && { host: o.host }),
+      /* Studio plan T3.2: a run battle's seed, weather and Loopholes given with a host (the run's simulation; the
+         page's own run battles get them from run.js runBattleStart) */
+      ...o.extra,
     })
   )
     return;
@@ -1174,6 +1199,45 @@ export function catchRoll(id, T, spin, b) {
     while (w < 3 && battleRoll() < q) w++;
     return { caught: w === 3, w, edge: false, P };
   });
+}
+/* Studio plan T3.2: what follows a throw, the same on the page (battle.js finishThrow, battle-input.js) and in the
+   run's simulation (logic/run-sim.js) */
+/** a caught foe is kept: an Alpha stays one (its boss state gone, its share of HP kept), never below 1 HP, then
+ * addBilly; the battle is over ('caught'). Returns where it went and whether it was an Alpha @param {any} e */
+export function catchKeep(e) {
+  const alpha = !!e.boss;
+  if (e.boss) {
+    const f = e.hp / maxHp(e);
+    delete e.boss;
+    e.alpha = true;
+    e.hp = Math.max(1, Math.round(maxHp(e) * f));
+  }
+  e.hp = Math.max(1, e.hp);
+  const where = addBilly(e);
+  battleNow().over = 'caught';
+  return { where, alpha };
+}
+/** RL-4: after a missed throw the foe may offer money to be let go, as often as rules.catching.offerChance (the
+ * battle's chance, battleRoll): the offer ($, in tens; on the battle as b.offer), or 0 */
+export function catchOffer() {
+  if (battleRoll() >= CATCH_RULES.offerChance) return 0;
+  const b = battleNow();
+  b.offer = Math.round((CATCH_RULES.offerMin + battleRoll() * (CATCH_RULES.offerMax - CATCH_RULES.offerMin)) / 10) * 10;
+  return b.offer;
+}
+/** the player's answer to an offer: yes takes the money and the battle is over ('bribed'); no raises the Focus Bonus
+ * (b.integrity, within integrityMax) for the next throw. Returns the money taken (0 on a no) @param {boolean} yes */
+export function catchOfferAnswer(yes) {
+  const b = battleNow(),
+    amt = b.offer || 0;
+  b.offer = null;
+  if (yes) {
+    saveData.se += amt;
+    b.over = 'bribed';
+    return amt;
+  }
+  b.integrity = Math.min(CATCH_RULES.integrityMax, b.integrity * CATCH_RULES.integrityStep);
+  return 0;
 }
 /* the items: out of battle (b not given) on the save's team and bag; with a battle, on that battle's team and bag */
 export const teamNeedsHp = b => (b ? b.sides[0].team : saveData.team).some(m => m.hp > 0 && m.hp < maxHp(m));

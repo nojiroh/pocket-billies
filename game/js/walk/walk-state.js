@@ -27,9 +27,28 @@ export const walkRenderer = {
   zoomT: 1,
   tiltX: 0,
   tiltY: 0,
-  lead: [0, 0],
+  /* CAM-1: the camera's follow (logic/camera-follow.js) and what it is doing (the debug log, the Studio's guides) */
+  fol: null,
+  camInfo: null,
+  /* CAM-2: when a battle let go of the camera (walkView.t), for the pull back out */
+  leaveAt: null,
+  /* CAM-2: the scene's points of interest (walk/sprites.js interestPoints) */
+  intL: null,
+  /* CAM-2: the moments (logic/camera-moments.js): their state, who you talk to, where a run's boss stands, and a moment
+     the Studio plays ({id, at, until}) */
+  mom: null,
+  talkAt: null,
+  bossAt: null,
+  momentTest: null,
   focus: null,
   focusT: null,
+  /* CAM-3: this frame's plane of focus (logic/lens-focus.js focusPlane), for the Studio's blur guides */
+  lensPlane: null,
+  /* CAM-3: the speaker's and the boss's spots this frame (walk/camera.js moments); the focus's eased lean away from
+     you and what it is on (walk-view-gl.js) */
+  momSpots: null,
+  focusLean: null,
+  focusKind: 'you',
   frames: 0,
   farProps: [],
   orient: null,

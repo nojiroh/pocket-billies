@@ -6,7 +6,15 @@ import { expose } from './test-globals.js';
 import { $, $$ } from './util.js';
 import { ITEMS } from './game-data.js';
 import { billyName, formatNumber } from './logic/rules.js';
-import { CATCH_RULES, battleSay, checkFaints, doSwitch, enemyOnly, fighter, runTurn } from './logic/battle-engine.js';
+import {
+  battleSay,
+  catchOfferAnswer,
+  checkFaints,
+  doSwitch,
+  enemyOnly,
+  fighter,
+  runTurn,
+} from './logic/battle-engine.js';
 import { activeBattle, save, saveData, uiState } from './game-state.js';
 import { battleStage, battleStageFocus, battleStageTargets, camHome } from './battle-stage.js';
 import {
@@ -199,20 +207,15 @@ export function battleAction(a, d) {
       break;
     case 'boffer':
       if (activeBattle && activeBattle.phase === 'offer') {
-        const amt = activeBattle.offer;
-        activeBattle.offer = null;
         activeBattle.events = [];
+        /* logic/battle-engine.js catchOfferAnswer: yes takes the money and ends it, no raises the Focus Bonus */
         if (d.y === '1') {
-          saveData.se += amt;
+          const amt = catchOfferAnswer(true);
           battleSay(`You took $${formatNumber(amt)}. ${billyName(fighter(1))} scampered off.`);
-          activeBattle.over = 'bribed';
           battleStage.s[1].show = false;
           save();
         } else {
-          activeBattle.integrity = Math.min(
-            CATCH_RULES.integrityMax,
-            activeBattle.integrity * CATCH_RULES.integrityStep
-          );
+          catchOfferAnswer(false);
           battleSay(`You refused. Focus Bonus ×${+activeBattle.integrity.toFixed(2)} on your next throw.`);
           enemyOnly();
         }

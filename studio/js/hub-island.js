@@ -231,7 +231,7 @@ SECTIONS.hub = () => {
 <div class="seg-row hub-pick">${pick}</div>
 ${ro ? `<p class="hub-note">${escapeHtml(ro)}</p>` : ''}
 <div class="hub-grid">
-${card('Orbit view', `<div class="hub-pv"><canvas id="hubPv"></canvas><div class="sc-pv-load" id="hubPvLoad">Loading…</div></div><div class="seg-row hub-vbar" id="hubViewBar">${hubViewBarHTML()}</div>`, { sub: 'Drag turns round the middle · Shift-drag or the right button tilts · the wheel or a pinch zooms' })}
+${card('Orbit view', `<div class="hub-pv"><canvas id="hubPv" data-keep="walk-gl"></canvas><div class="sc-pv-load" id="hubPvLoad">Loading…</div></div><div class="seg-row hub-vbar" id="hubViewBar">${hubViewBarHTML()}</div>`, { sub: 'Drag turns round the middle · Shift-drag or the right button tilts · the wheel or a pinch zooms' })}
 ${card(
   'Map',
   `<div class="sc-bar"><span class="px-tools">${tools}</span><span class="px-tools"><button class="seg" data-act="hubZoom" data-z="-1" aria-label="Smaller">−</button><span id="hubZ">${hubZoom(sc)} px/m</span><button class="seg" data-act="hubZoom" data-z="1" aria-label="Bigger">+</button></span></div>

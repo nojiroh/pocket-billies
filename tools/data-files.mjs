@@ -5,7 +5,9 @@ import { dirname, join } from 'node:path';
 import vm from 'node:vm';
 
 export const ROOT = join(import.meta.dirname, '..');
-export const DATA = join(ROOT, 'game', 'data');
+// Studio plan T1.3: PB_DATA_DIR points the tools at another copy of the data (the check-data snapshot test plants bad
+// data in a temp copy); its pictures are read from ../art beside it, as in game/
+export const DATA = process.env.PB_DATA_DIR || join(ROOT, 'game', 'data');
 
 const box = { self: {} };
 vm.runInNewContext(readFileSync(join(ROOT, 'game', 'js', 'data-files.js'), 'utf8'), box, { filename: 'data-files.js' });

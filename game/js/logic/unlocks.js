@@ -33,7 +33,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   unlockGrant: [() => unlockGrant, v => (unlockGrant = v)],
   // @ts-expect-error -- replaced on purpose
-  unlockOpen: [() => unlockOpen, v => (unlockOpen = v)],
+  unlockOpen: [() => unlockOpen, v => ((unlockOpen = v), provide({ unlockOpen }))],
   // @ts-expect-error -- replaced on purpose
   unlockReady: [() => unlockReady, v => (unlockReady = v)],
   // @ts-expect-error -- replaced on purpose
@@ -42,7 +42,7 @@ expose({
   unlockTidy: [() => unlockTidy, v => ((unlockTidy = v), provide({ unlockTidy }))],
 });
 /* eslint-enable no-func-assign */
-provide({ unlockTidy });
+provide({ unlockOpen, unlockTidy });
 /* to-module: end */
 /** where a row is got: on the Lab's board, at another building, or earned by its condition
  * @param {Unlock} R @returns {'board' | 'building' | 'earned'} */

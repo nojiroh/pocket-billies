@@ -1,0 +1,146 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "kitBuilds.schema.json",
+ "title": "game/data/kitBuilds.json: every kit Billie's recipe, baked into its sheet, rig and native parts by game/js/logic/kit-assemble.js (Studio plan Phase 5, T5.1)",
+ "type": "object",
+ "required": ["bake", "colours", "forms"],
+ "additionalProperties": false,
+ "$defs": {
+  "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+  "pair": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+  "hsv": {
+   "description": "hue 0-1, saturation scale, value scale",
+   "type": "array",
+   "prefixItems": [{"type": "number", "minimum": 0, "maximum": 1}, {"type": "number", "minimum": 0, "maximum": 4}, {"type": "number", "minimum": 0, "maximum": 4}],
+   "minItems": 3,
+   "maxItems": 3
+  },
+  "colour": {
+   "description": "a name in colours, a [hue, saturation, value], or null for the kit's own colours",
+   "anyOf": [{"type": "string", "minLength": 1}, {"$ref": "#/$defs/hsv"}, {"type": "null"}]
+  },
+  "bonePart": {
+   "description": "[part id (partKits.json), size, colour]",
+   "type": "array",
+   "prefixItems": [{"$ref": "#/$defs/id"}, {"$ref": "#/$defs/size"}, {"$ref": "#/$defs/colour"}],
+   "items": false,
+   "minItems": 3,
+   "maxItems": 3
+  },
+  "size": {"description": "the part's size against its M picture", "type": "number", "exclusiveMinimum": 0, "maximum": 4},
+  "anchor": {
+   "type": "object",
+   "required": ["on", "x", "y", "z", "zb", "name"],
+   "additionalProperties": false,
+   "properties": {
+    "on": {"enum": ["head", "torso"]},
+    "x": {"description": "the extra's left: this fraction of the head or torso's width plus this fraction of its own", "$ref": "#/$defs/pair"},
+    "y": {"description": "the extra's top: this fraction of the head or torso's height plus this fraction of its own", "$ref": "#/$defs/pair"},
+    "z": {"description": "draw order from the front", "type": "number"},
+    "zb": {"description": "draw order from behind", "type": "number"},
+    "name": {"description": "its bone's name (a second one gets 2, and so on)", "type": "string", "pattern": "^[a-z][a-zA-Z0-9]*$"}
+   }
+  }
+ },
+ "properties": {
+  "note": {"type": "string"},
+  "bake": {
+   "description": "the baker's settings, the same for every form",
+   "type": "object",
+   "required": ["box", "margin", "pad", "squash", "sheetW", "tailAim", "tailBackSweep", "armOut", "footGap", "chinDrop", "anchors"],
+   "additionalProperties": false,
+   "properties": {
+    "box": {
+     "description": "the stage box every Billie fits in, its middle and ground line (pixels)",
+     "type": "object",
+     "required": ["w", "h", "cx", "base"],
+     "additionalProperties": false,
+     "properties": {
+      "w": {"type": "integer", "minimum": 16, "maximum": 512},
+      "h": {"type": "integer", "minimum": 16, "maximum": 512},
+      "cx": {"type": "integer", "minimum": 0},
+      "base": {"type": "integer", "minimum": 0}
+     }
+    },
+    "margin": {"description": "pixels kept clear of the box's edges", "type": "integer", "minimum": 0, "maximum": 32},
+    "pad": {"description": "room round a torso for its squash and stretch frames (pixels)", "type": "integer", "minimum": 0, "maximum": 32},
+    "squash": {
+     "description": "the torso's frames, each [x scale, y scale]; main is the torso at rest",
+     "type": "object",
+     "required": ["main"],
+     "propertyNames": {"pattern": "^[a-z][a-zA-Z0-9]*$"},
+     "additionalProperties": {"$ref": "#/$defs/pair"}
+    },
+    "sheetW": {"description": "the sheet's width (pixels)", "type": "integer", "minimum": 128, "maximum": 4096},
+    "tailAim": {
+     "description": "where a tail part points from the front: degrees, 0 = out to the right, 90 = up; a tail not here sits centred on the torso's tail socket",
+     "type": "object",
+     "propertyNames": {"$ref": "#/$defs/id"},
+     "additionalProperties": {"type": "number", "minimum": -180, "maximum": 180}
+    },
+    "tailBackSweep": {"description": "from behind, a tail turns this much of its aim", "type": "number", "minimum": 0, "maximum": 2},
+    "armOut": {"description": "how far an arm's far end hangs out from straight down (degrees)", "type": "number", "minimum": -90, "maximum": 90},
+    "footGap": {"description": "how far apart the feet stand at least, as their width", "type": "number", "minimum": 0, "maximum": 4},
+    "chinDrop": {"description": "the chin sits this much of the head's height below the neck socket", "type": "number", "minimum": -1, "maximum": 1},
+    "anchors": {
+     "description": "where an extra hangs: brow (horns), ears, crown (on top of the head), chin (a beard), back (carried on the back), collar (round the neck, at the torso's neck socket)",
+     "type": "object",
+     "propertyNames": {"$ref": "#/$defs/id"},
+     "additionalProperties": {"$ref": "#/$defs/anchor"}
+    }
+   }
+  },
+  "colours": {
+   "description": "named colours the forms use",
+   "type": "object",
+   "propertyNames": {"pattern": "^[A-Z][A-Z0-9_]*$"},
+   "additionalProperties": {"$ref": "#/$defs/hsv"}
+  },
+  "forms": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "object",
+    "required": ["name", "rig", "line", "stage", "scale", "parts"],
+    "additionalProperties": false,
+    "properties": {
+     "name": {"description": "its sheet: game/art/next/billionaires/<name>.png", "$ref": "#/$defs/id"},
+     "rig": {"description": "its rig in game/art/next/rigs-next.js", "type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+     "line": {"description": "the line (game/data/lines) whose stage it is", "$ref": "#/$defs/id"},
+     "stage": {"type": "integer", "minimum": 0},
+     "scale": {"description": "its stage scale (shrunk by the baker if the Billie does not fit the box)", "type": "number", "exclusiveMinimum": 0, "maximum": 4},
+     "parts": {
+      "description": "a kit part per bone kind: [part id (partKits.json), size, colour]; head and torso are needed",
+      "type": "object",
+      "required": ["head", "torso"],
+      "additionalProperties": false,
+      "properties": {
+       "head": {"$ref": "#/$defs/bonePart"},
+       "torso": {"$ref": "#/$defs/bonePart"},
+       "arm": {"$ref": "#/$defs/bonePart"},
+       "leg": {"$ref": "#/$defs/bonePart"},
+       "tail": {"$ref": "#/$defs/bonePart"}
+      }
+     },
+     "extras": {
+      "description": "each [part id, anchor, size, colour, a mirrored pair, the slot it fills (optional)]",
+      "type": "array",
+      "items": {
+       "type": "array",
+       "prefixItems": [{"$ref": "#/$defs/id"}, {"type": "string"}, {"$ref": "#/$defs/size"}, {"$ref": "#/$defs/colour"}, {"type": "boolean"}, {"type": ["string", "null"]}],
+       "items": false,
+       "minItems": 5,
+       "maxItems": 6
+      }
+     },
+     "slots": {
+      "description": "the slot a bone kind fills, in place of its usual one (rules.json parts.slots)",
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+     },
+     "armOut": {"description": "how far its arms hang out (degrees), in place of bake.armOut", "type": "number", "minimum": -90, "maximum": 90}
+    }
+   }
+  }
+ }
+}

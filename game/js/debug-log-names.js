@@ -42,7 +42,16 @@ import {
   setMakeNormalMap,
   setRunNormalMapJobs,
 } from './engine/webgl.js';
-import { drawPostEffects, screenSnapshot, setDrawPostEffects, setScreenSnapshot } from './engine/post-effects.js';
+import {
+  drawDepthOfField,
+  drawPostEffects,
+  drawPostRest,
+  screenSnapshot,
+  setDrawDepthOfField,
+  setDrawPostEffects,
+  setDrawPostRest,
+  setScreenSnapshot,
+} from './engine/post-effects.js';
 import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { groundOcclusion, setGroundOcclusion } from './walk/ground-textures.js';
@@ -76,6 +85,7 @@ import {
 } from './solid-props.js';
 import { drawPropModels, setDrawPropModels } from './prop-models.js';
 import { ambientLife, lifeStep, setLifeStep } from './ambient-life.js';
+import { worldBillies } from './world-billies.js';
 import { seamlessWorld } from './seamless-world.js';
 import { paintWorkerReport } from './ground-paint-worker.js';
 import { endBattle, openBattle, paintActions, setEndBattle, setOpenBattle, setPaintActions } from './battle.js';
@@ -110,10 +120,12 @@ Object.defineProperties(GAME, {
   cutsceneStart: { get: () => cutsceneStart, set: setCutsceneStart },
   drawBoxFaces: { get: () => drawBoxFaces, set: setDrawBoxFaces },
   drawBuildings: { get: () => drawBuildings, set: setDrawBuildings },
+  drawDepthOfField: { get: () => drawDepthOfField, set: setDrawDepthOfField },
   drawGrass: { get: () => drawGrass, set: setDrawGrass },
   drawGround: { get: () => drawGround, set: setDrawGround },
   drawPlayerSilhouette: { get: () => drawPlayerSilhouette, set: setDrawPlayerSilhouette },
   drawPostEffects: { get: () => drawPostEffects, set: setDrawPostEffects },
+  drawPostRest: { get: () => drawPostRest, set: setDrawPostRest },
   drawPropModels: { get: () => drawPropModels, set: setDrawPropModels },
   drawSolidProps: { get: () => drawSolidProps, set: setDrawSolidProps },
   drawSprites: { get: () => drawSprites, set: setDrawSprites },
@@ -172,6 +184,7 @@ Object.defineProperties(GAME, {
   userFps: { get: () => userFps },
   walkRenderer: { get: () => walkRenderer },
   walkView: { get: () => walkView },
+  worldBillies: { get: () => worldBillies },
   worldBowlRender: { get: () => worldBowlRender, set: setWorldBowlRender },
   worldMapMount: { get: () => worldMapMount, set: setWorldMapMount },
 });

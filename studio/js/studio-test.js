@@ -1,6 +1,6 @@
 'use strict';
 /* ================= STUDIO SELF-TEST (studio track ST-T) =================
-   Check & backups → Run the Studio test, or studio/?selftest. A test of the Studio itself, not the game: it opens
+   Check → Run the Studio test, or studio/?selftest. A test of the Studio itself, not the game: it opens
    every section (both panes), makes an edit in each that has a field and undoes it, opens the tools, opens everything
    a second time, and times all of it, for the sessions that make the Studio faster (docs/phases/studio-self-test.md).
    About 90 seconds, on a desktop browser or an iPad.
@@ -11,6 +11,7 @@
    numbers, section ids and data paths only: no token, no GitHub name (a last row checks it). */
 import {
   STUDIO_TEST_FORMAT,
+  studioTestChangedPaths,
   studioTestCompare,
   studioTestFilePath,
   studioTestFindings,
@@ -73,7 +74,7 @@ export async function runStudioTest(G, opts = {}) {
     snap: G.snapshot(),
     undo: S.undo.slice(),
     redo: S.redo.slice(),
-    last: S.last,
+    last: S.last && new Map(S.last) /* undo and redo change it in place */,
     dirty: S.dirty,
     rigsDirty: S.rigsDirty,
     artDirty: new Map(S.artDirty),
@@ -169,6 +170,7 @@ export async function runStudioTest(G, opts = {}) {
         row.longTasks = longIn(longTasks, a, now());
         row.api = calls.n - calls0;
         row.conn = timeIt(() => G.connectionsHTML());
+        row.outside = await outsideEdit(G);
         if (stop) break;
         step(`An edit in ${k}`, i, total);
         row.edit = await editOnce(G, k, probeSince);
@@ -235,15 +237,23 @@ export async function runStudioTest(G, opts = {}) {
         intervals: [base.timers, timers.live()],
       };
     }
-    /* ---- the undo: how big one step is, and what a full undo holds ---- */
+    /* ---- the undo, measured (Studio plan T1.2): the data it holds once (`last`), and the step each of the test's
+       edits added (each is undone straight away, so they are added up here as if all were kept). Bytes as the
+       browser stores the texts: 1 a character unless one is past U+00FF ---- */
     const commits = probe.filter(p => p.kind === 'commit');
     const snapMB = commits.length ? r1(commits[commits.length - 1].chars / 1e6) : r1(keep.snap.length / 1e6);
+    const edited = report.sections.filter(s => s.edit && s.edit.stepBytes != null),
+      lastMB = G.historyPartsBytes(S.last, true) / 1e6,
+      stepsMB = edited.reduce((n, s) => n + s.edit.stepBytes, 0) / 1e6;
     report.undo = {
       max: G.HISTORY_STEPS,
       snapMB,
-      fullMB: r1(snapMB * G.HISTORY_STEPS),
+      lastMB: r1(lastMB),
+      edits: edited.length,
+      stepsMB: r1(stepsMB),
+      fullMB: r1(lastMB + stepsMB),
       stepsBefore: keep.undo.length,
-      beforeMB: r1(keep.undo.reduce((n, s) => n + (typeof s === 'string' ? s.length : 0), 0) / 1e6),
+      beforeMB: r1(keep.undo.reduce((n, s) => n + G.historyBytes(s), 0) / 1e6),
     };
   } catch (e) {
     fail(where, e);
@@ -283,7 +293,10 @@ export async function runStudioTest(G, opts = {}) {
   }
   report.seconds = r1((now() - t0) / 1000);
   report.passed =
-    !errors.length && report.restored && !stop && report.sections.every(s => !s.edit || s.edit.back !== false);
+    !errors.length &&
+    report.restored &&
+    !stop &&
+    report.sections.every(s => (!s.edit || s.edit.back !== false) && !(s.outside && s.outside.length));
   report.findings = studioTestFindings(report);
   report.privacy = studioTestPrivacyProblems(JSON.stringify(report), opts.planted || []);
   if (report.privacy.length) report.passed = false;
@@ -302,6 +315,20 @@ export async function runStudioTest(G, opts = {}) {
   G.studioProbe.last = report;
   if (!opts.quiet) showReport(G, report, changes, before);
   return report;
+}
+
+/* ---------- Studio plan T1.5: what opening a section wrote to the data without an edit ----------
+   Once the section has settled and no commit is pending, the data must be the last undo state. A difference would
+   ride along with the next edit, and that edit's undo would take it back too (F14). The paths that differ are
+   reported, then committed, so each cause is named once. */
+async function outsideEdit(G) {
+  const S = G.studioState;
+  for (let i = 0; i < 20 && S.snapT != null; i++) await wait(100);
+  const now = G.snapshotParts();
+  if (S.last == null || !G.historyDiff(S.last, now)) return [];
+  const paths = studioTestChangedPaths(G.historyPartsData(S.last), G.historyPartsData(now));
+  G.commit(true);
+  return paths;
 }
 
 /* ---------- one edit, through the Studio's own field code, then undo, redo, undo ---------- */
@@ -329,6 +356,8 @@ async function editOnce(G, k, probeSince) {
   const ms = now() - a;
   const com = probeSince('commit', a).pop();
   await wait(AFTER_EDIT_MS);
+  /* the bytes of the undo step the edit added (its commit may be the debounced one, after the wait) */
+  const stepBytes = probeSince('commit', a).reduce((n, c) => n + (c.bytes || 0), 0);
   const chk = probeSince('check', a).pop(),
     send = probeSince('send', a).pop();
   const u0 = now();
@@ -343,6 +372,7 @@ async function editOnce(G, k, probeSince) {
     ms: r1(ms),
     snapMs: com ? r1(com.snapMs) : null,
     snapMB: com ? r1(com.chars / 1e6) : null,
+    stepBytes,
     checkMs: chk ? r1(chk.ms) : null,
     sendMs: send ? r1(send.ms) : null,
     undoMs: r1(u1 - u0),

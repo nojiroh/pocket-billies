@@ -61,7 +61,7 @@ test('a torso takes a head at its neck, front limbs at its shoulders, back limbs
   assert.deepEqual(J.partSocketsFor(K, 'cat_torso', 'cat_leg', 'back'), ['hipL', 'hipR']);
   assert.deepEqual(J.partSocketsFor(K, 'cat_torso', 'fox_tail', 'front'), ['tail']);
   assert.deepEqual(J.partSocketsFor(K, 'cat_torso', 'cat_ear', 'front'), [], 'no top socket on a torso');
-  K.parts.cat_torso.accepts = { neck: ['head', 'head-extra'] };
+  K.parts.cat_torso.accepts = { neck: ['head', 'headExtra'] };
   assert.deepEqual(J.partSocketsFor(K, 'cat_torso', 'cat_ear', 'front'), ['neck'], "a part's own rule wins");
   assert.deepEqual(J.partAccepts(K, 'cat_torso', 'hipL'), ['back']);
 });

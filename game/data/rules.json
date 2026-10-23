@@ -192,6 +192,7 @@
   "levelsPerHour": 0.5,
   "trainCost": 5,
   "guardMs": 60000,
+  "pasture": 6,
   "breed": {
    "nests": [1,2,3],
    "safeCost": 10,
