@@ -565,10 +565,10 @@ ACTIONS.musJinglePick = d => {
 };
 
 /* ---------- a Billy's cry (the Billies page) ----------
-   Gen 1 style: a base (music.json cries.bases), a pitch and a length per stage (lines/*.json cry); what a stage leaves
+   Gen 1 style: a base (music.json cries.bases, SND-6: a kind such as beast), a pitch and a length per stage (lines/*.json cry); what a stage leaves
    out comes from its id, as before (logic/cries.js). Played on the music section's AudioContext */
 function musicCryCardHTML(L, li, st) {
-  const bases = ((studioState.D.music || {}).cries || {}).bases || [],
+  const bases = ((studioState.D.music || {}).cries || {}).bases || {},
     sp = L.id + st,
     own = (L.cry || [])[st] || null,
     made = cryRecipe(sp, null, bases),
@@ -578,8 +578,8 @@ function musicCryCardHTML(L, li, st) {
       selectField(
         'Base cry',
         `${p}.base`,
-        bases.map((b, i) => [i, `${i + 1} · ${b.wave}`]),
-        { num: 1, opt: 1, none: `From its id (${made.base + 1} · ${made.wave})` }
+        Object.keys(bases).map(k => [k, `${k} · ${bases[k].wave}`]),
+        { opt: 1, none: `From its id (${made.base})`, help: 'The kind of cry (Music & sound → Sounds plays each one).' }
       ),
       numberField('Pitch', `${p}.pitch`, {
         opt: 1,
@@ -609,7 +609,7 @@ function musicCryTidy(li) {
 function musicCryPlay(li, st, low) {
   const T = musicTracker(),
     L = studioState.D.lines[li],
-    C0 = cryRecipe(L.id + st, (L.cry || [])[st], ((studioState.D.music || {}).cries || {}).bases || []),
+    C0 = cryRecipe(L.id + st, (L.cry || [])[st], ((studioState.D.music || {}).cries || {}).bases || {}),
     t = musicStudio.ctx.currentTime + 0.03;
   if (musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
   for (const v of cryVoices(low ? cryLowHealth(C0) : C0))

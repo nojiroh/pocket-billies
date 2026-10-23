@@ -314,19 +314,85 @@
    ],
    "additionalProperties": false,
    "properties": {
+    "about": {
+     "type": "string"
+    },
     "bases": {
-     "description": "the base cries; a species picks one by its name until roster.json names one (SND-6)",
-     "type": "array",
-     "minItems": 1,
-     "items": {
+     "description": "SND-6: the base cries by kind (beast, bird, ...); a species names one in lines/*.json cry, with its own pitch and length (logic/cries.js)",
+     "type": "object",
+     "minProperties": 1,
+     "propertyNames": {
+      "$ref": "#/$defs/id"
+     },
+     "additionalProperties": {
       "type": "object",
       "required": [
-       "wave"
+       "wave",
+       "voices"
       ],
       "additionalProperties": false,
       "properties": {
+       "name": {
+        "description": "a name for the cry. Claude's drafts start with \"placeholder\" (the Studio's Check lists them)",
+        "type": "string",
+        "maxLength": 80
+       },
        "wave": {
         "$ref": "#/$defs/wave"
+       },
+       "voices": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 6,
+        "items": {
+         "type": "object",
+         "required": [
+          "at",
+          "note",
+          "len"
+         ],
+         "additionalProperties": false,
+         "properties": {
+          "at": {
+           "description": "when it starts, in seconds from the cry's start (x the species' length)",
+           "type": "number",
+           "minimum": 0,
+           "maximum": 2
+          },
+          "note": {
+           "description": "semitones over the species' pitch",
+           "type": "integer",
+           "minimum": -24,
+           "maximum": 24
+          },
+          "len": {
+           "description": "seconds (x the species' length)",
+           "type": "number",
+           "exclusiveMinimum": 0,
+           "maximum": 2
+          },
+          "wave": {
+           "$ref": "#/$defs/wave"
+          },
+          "vol": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 0.2
+          },
+          "slide": {
+           "description": "where the note ends, x its frequency (1: no slide)",
+           "type": "number",
+           "minimum": 0.1,
+           "maximum": 4
+          },
+          "vib": {
+           "description": "a wobble's depth: 1 is 1.2 % of the note, at 5.5 Hz (0: none)",
+           "type": "number",
+           "minimum": 0,
+           "maximum": 10
+          }
+         }
+        }
        }
       }
      }

@@ -505,10 +505,10 @@ if (D.music && check('music.schema.json', D.music, 'music.json')) {
   for (const F of musicFindings(D.music, { nodeTypes: D.nodeTypes || {}, biomes: D.biomes || {}, locations: D.locations || [] }))
     if (F.lvl === 'error') problem(F.place ? 'locations.json' : 'music.json', F.msg);
   // SND-3: a species' own cry names a base that exists
-  const bases = (D.music.cries || {}).bases || [];
+  const bases = (D.music.cries || {}).bases || {};
   for (const L of D.lines || [])
     (L.cry || []).forEach((C, st) => {
-      if (C && C.base != null && C.base >= bases.length) problem(`lines/${L.id}.json`, `cry ${st}: no base ${C.base} (music.json cries.bases has ${bases.length})`);
+      if (C && C.base != null && !bases[C.base]) problem(`lines/${L.id}.json`, `cry ${st}: no base "${C.base}" (music.json cries.bases has ${Object.keys(bases).join(', ')})`);
     });
 }
 // RL-12: Loopholes (relics): the schema, the types their damage rows name; rules.json run.relics: a cap of 1-12 held, a
