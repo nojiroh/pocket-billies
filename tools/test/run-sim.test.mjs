@@ -2,38 +2,42 @@
 // The replay: the same seed played twice comes out the same, even with util.js random seeded differently, so nothing
 // a run decides hangs on Math.random (roguelite-track.md 2c). The statistics are the owner's to judge (report only):
 // run node tools/test/sim/run-sim.mjs for the numbers.
+// The runs here are in balance mode (no scenes made): run-sim-scenes.test.mjs (the slow tier) plays seeds in both
+// modes and checks they come out the same, so what a run decides is checked here at a fraction of the time.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { runReport, runSim, runStats } from './sim/run-sim.mjs';
 import { data, GAME_DATA, modules } from './setup-real.mjs';
 
-test('run sim: a seed played twice is the same run, whatever util.js random draws meanwhile', () => {
+const B = { team: 3, scenes: 'skip' };
+
+test('run sim: a seed played twice is the same run, whatever util.js random draws meanwhile (balance mode)', () => {
   for (const seed of ['SIMREPLAY0', 'SIMREPLAY1']) {
-    const a = runSim(seed, { random: 1, team: 3 }),
-      b = runSim(seed, { random: 4242, team: 3 });
+    const a = runSim(seed, { random: 1, ...B }),
+      b = runSim(seed, { random: 4242, ...B });
     assert.deepEqual(b.log, a.log, seed);
     assert.ok(a.log.places.length >= 1 && a.stats.battles >= 1, JSON.stringify(a.stats));
   }
-  const c = runSim('SIMREPLAY2', { team: 3 });
-  assert.notDeepEqual(c.log, runSim('SIMREPLAY0', { team: 3 }).log, 'another seed, another run');
+  const c = runSim('SIMREPLAY2', B);
+  assert.notDeepEqual(c.log, runSim('SIMREPLAY0', B).log, 'another seed, another run');
 });
 
 test('run sim: the report has its numbers', () => {
-  const R = runStats(3, { team: 3 });
+  const R = runStats(3, B);
   assert.equal(R.runs, 3);
   for (const k of ['days', 'places', 'battles', 'turnsPerBattle', 'capital']) assert.ok(R[k] >= 0, k);
   assert.ok(R.won >= 0 && R.won <= 3);
   // Studio plan T3.2: every report names its bot policy, its settings and the numbers it drives
   assert.equal(R.policy.name, 'greedy-forward');
   assert.equal(R.policy.fights, 2);
-  assert.equal(runStats(1, { team: 3, fights: 4 }).policy.fights, 4);
+  assert.equal(runStats(1, { ...B, fights: 4 }).policy.fights, 4);
   assert.ok(R.policyDriven.includes('caught') && /not a balance oracle/.test(R.note));
   assert.ok(R.policyDriven.includes('spent') && R.policyDriven.includes('relics'), 'what the policy buys');
 });
 
 test('run sim: a run starts as the mast starts it, with no unlocks or every one', () => {
-  const none = runSim('SIMUNLOCK0', { team: 3 }),
-    all = runSim('SIMUNLOCK0', { team: 3, unlocks: 'all' });
+  const none = runSim('SIMUNLOCK0', B),
+    all = runSim('SIMUNLOCK0', { ...B, unlocks: 'all' });
   assert.deepEqual(none.log.unlocks, []);
   assert.ok(all.log.unlocks.includes('biome_ridge') && all.log.unlocks.includes('shop_settlement'));
 });
@@ -42,7 +46,7 @@ test("run sim: a run town's shop stocks only what the run has unlocked (Studio p
   const locked = ['settlement', 'appeal', 'bailout'];
   let towns = 0;
   for (let k = 0; k < 12; k++)
-    for (const at of runSim(`SIMSHOP${k}`, { team: 3 }).log.places)
+    for (const at of runSim(`SIMSHOP${k}`, B).log.places)
       if (at.shop) {
         towns++;
         assert.ok(!at.shop.some(w => locked.includes(w)), `SIMSHOP${k} node ${at.i}: ${at.shop}`);
@@ -89,8 +93,8 @@ test('run sim: a town shop’s Loophole is bought under greedy-forward and never
   let bought = 0,
     shelves = 0;
   for (let k = 0; k < 12; k++) {
-    const g = runSim(`SIMSHOP${k}`, { team: 3 }),
-      n = runSim(`SIMSHOP${k}`, { team: 3, policy: 'never-pick' });
+    const g = runSim(`SIMSHOP${k}`, B),
+      n = runSim(`SIMSHOP${k}`, { ...B, policy: 'never-pick' });
     for (const at of g.log.places) if (at.relic) (shelves++, at.relic.bought && bought++);
     assert.ok(!n.log.places.some(at => at.relic && at.relic.bought), 'never-pick buys none');
   }
@@ -109,8 +113,8 @@ test("run sim: the run's map is runStartPlan's for the save's unlocks: no locked
     },
     nodes = plan => plan.map.nodes.map(n => `${n.type}:${n.biome}`);
   for (const seed of ['SIMPLAN0', 'SIMPLAN1', 'SIMPLAN2']) {
-    const none = runSim(seed, { team: 3 }).log,
-      all = runSim(seed, { team: 3, unlocks: 'all' }).log;
+    const none = runSim(seed, B).log,
+      all = runSim(seed, { ...B, unlocks: 'all' }).log;
     assert.deepEqual(none.nodes, nodes(runStartPlan(seed, D, { unlocks: [] })), seed);
     assert.deepEqual(all.nodes, nodes(runStartPlan(seed, D, { unlocks: all.unlocks })), seed);
     assert.ok(!none.nodes.some(n => /:(ridge|autumn)$/.test(n)), `${seed}: ${none.nodes}`);
@@ -122,7 +126,7 @@ test('run sim: money in and out add up to what is left; a loss names its row; fo
     sum = o => Object.values(o).reduce((a, x) => a + x, 0);
   let towns = 0;
   for (let k = 0; k < 10; k++) {
-    const { stats: x, log } = runSim(`SIMMONEY${k}`, { team: 3 });
+    const { stats: x, log } = runSim(`SIMMONEY${k}`, B);
     assert.equal(start + sum(x.moneyIn) - sum(x.moneyOut), x.se, `SIMMONEY${k}`);
     assert.equal(x.spent, x.moneyOut.shop + x.moneyOut.relics);
     assert.equal(x.healed, x.moneyOut.heal);
@@ -134,44 +138,6 @@ test('run sim: money in and out add up to what is left; a loss names its row; fo
     towns += log.places.filter(p => p.shop).length;
   }
   assert.ok(towns >= 1);
-});
-
-test('run sim: balance mode (no scenes) plays every seed as the full mode does (Studio plan T3.3)', () => {
-  const strip = log => ({ ...log, scenes: undefined, mode: undefined });
-  for (const o of [{ team: 3 }, { team: 3, unlocks: 'all', pack: 5, fights: 4 }])
-    for (let k = 0; k < 6; k++) {
-      const full = runSim(`SIMBAL${k}`, o),
-        fast = runSim(`SIMBAL${k}`, { ...o, scenes: 'skip' });
-      assert.deepEqual(strip(fast.log), strip(full.log), `SIMBAL${k} ${JSON.stringify(o)}`);
-      assert.deepEqual(fast.stats, full.stats);
-      assert.equal(fast.log.mode, 'balance');
-      assert.equal(fast.log.scenes, null, 'no scenes were made');
-    }
-});
-
-test('run sim: balance mode is at least 20 times faster; its stand-in (tall grass in every place) holds on real scenes', () => {
-  const time = o => {
-    const t0 = performance.now();
-    for (let k = 0; k < 3; k++) runSim(`SIMFAST${k}`, { team: 3, ...o });
-    return performance.now() - t0;
-  };
-  time({ scenes: 'skip' });
-  const full = time({}),
-    fast = time({ scenes: 'skip' });
-  assert.ok(full / fast >= 20, `full ${Math.round(full)} ms, balance ${Math.round(fast)} ms`);
-  /* the one thing balance mode stands in for: every run place's ground has tall grass (rules.js encounterStock) */
-  const { runStartPlan } = modules['run-start'],
-    { runScenesMake } = modules['run-scenes'],
-    R = GAME_DATA.rules.run,
-    D = { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: R },
-    world = { ...D, pools: GAME_DATA.pools, scenery: GAME_DATA.scenery };
-  for (let k = 0; k < 4; k++) {
-    const plan = runStartPlan(`SIMGRASS${k}`, { ...D, unlockData: { unlocks: {}, buildings: {} } }, {}),
-      scenes = runScenesMake({ seed: `SIMGRASS${k}`, map: plan.map, mods: [] }, world);
-    scenes.forEach((sc, i) =>
-      assert.ok(sc.tiles.join('').includes(modules['run-sim'].SIM_LITE_PLACE.tiles), `SIMGRASS${k} node ${i}`)
-    );
-  }
 });
 
 test('run sim: a report over a seed list; the same data compares as the same runs, a dearer clinic as a paired difference (T3.4)', () => {
