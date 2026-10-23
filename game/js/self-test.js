@@ -1616,16 +1616,17 @@ async function runFullTest(mode) {
           cutscene.run++;
           const run = cutscene.run,
             fr = [],
-            f0 = worldBowl.frames;
+            f0 = worldBowl.filmed;
           let last = performance.now(),
             seen = f0;
-          /* phase 10: frames counted as the bowl draws them (worldBowlFilm) */
+          /* phase 10: frames counted as the bowl draws them (worldBowlFilm counts worldBowl.filmed; worldBowl.frames is
+             the map tab's) */
           const watch = setInterval(() => {
-            if (worldBowl.frames !== seen) {
+            if (worldBowl.filmed !== seen) {
               const n = performance.now();
               fr.push(n - last);
               last = n;
-              seen = worldBowl.frames;
+              seen = worldBowl.filmed;
             }
           }, 4);
           try {
