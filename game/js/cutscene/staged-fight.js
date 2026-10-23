@@ -7,7 +7,7 @@ import { expose } from '../test-globals.js';
 import { $ } from '../util.js';
 import { RULES, SPECIES } from '../game-data.js';
 import { formatNumber, maxHp } from '../logic/rules.js';
-import { HAZEL, fillLine } from '../logic/hazel.js';
+import { HAZEL, fillLine } from '../logic/chosen.js';
 import { cutscenePoint } from '../logic/cutscene-set.js';
 import { escapeHtml } from '../game-state.js';
 import { buzz } from '../battle-stage.js';

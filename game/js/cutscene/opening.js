@@ -13,7 +13,7 @@ import { expose } from '../test-globals.js';
 import { fallPlay, landing, mapIdAt, provide, render, startGame, updateNav } from '../hooks.js';
 import { $, clamp } from '../util.js';
 import { CUTSCENES, LOCATIONS, RULES, SPECIES, START_NODE, locationFullName } from '../game-data.js';
-import { FAST_SKIPS, FAST_SKIP_MS, HAZEL, hotTake, speedWatch } from '../logic/hazel.js';
+import { FAST_SKIPS, FAST_SKIP_MS, HAZEL, hotTake, speedWatch } from '../logic/chosen.js';
 import { cutsceneCleared, cutsceneOffset, cutscenePoint } from '../logic/cutscene-set.js';
 import { uiState } from '../game-state.js';
 import { userFps } from '../frame-scheduler.js';

@@ -14,7 +14,7 @@ import { expose } from './test-globals.js';
 import { openingDone, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { START_NODE, typeEffectiveness } from './game-data.js';
-import { FAST_PICKS, FAST_PICK_MS, HAZEL, hazelTip, speedWatch } from './logic/hazel.js';
+import { FAST_PICKS, FAST_PICK_MS, HAZEL, hazelTip, speedWatch } from './logic/chosen.js';
 import { actorTypes } from './logic/battle-engine.js';
 import { bowlSun } from './logic/bowl.js';
 import { bowlCamLookView, bowlToGpu } from './logic/bowl-camera.js';
@@ -805,7 +805,7 @@ function landingFrame(now, parts) {
    moves and types, switching and items, and the coin you'd throw at a wild one. Win or lose the story goes on
    (story.js: storyAfterRival) with your team healed and no fee. The self-test's run of the opening stops before it. */
 /* phase 06-2b: no tutorial in Blake's battle. Hazel "helps": a meta line, then type tips that are wrong on purpose
-   (js/logic/hazel.js), one per turn, as a big HOT TIP that covers everything, the move buttons too, until tapped */
+   (js/logic/chosen.js), one per turn, as a big HOT TIP that covers everything, the move buttons too, until tapped */
 /* the real matchup between the two out front: which type beats which (strong beats weak), or null */
 function tutorMatchup() {
   const a = actorTypes(0),

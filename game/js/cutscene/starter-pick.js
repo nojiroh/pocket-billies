@@ -8,7 +8,7 @@ import { expose } from '../test-globals.js';
 import { hazelHotTake, typeBadgeHTML } from '../hooks.js';
 import { $, clamp } from '../util.js';
 import { SPECIES, TYPES, typeEffectiveness } from '../game-data.js';
-import { HAZEL } from '../logic/hazel.js';
+import { HAZEL } from '../logic/chosen.js';
 import { cutscenePoint } from '../logic/cutscene-set.js';
 import { escapeHtml } from '../game-state.js';
 import { makeCanvas } from '../art.js';

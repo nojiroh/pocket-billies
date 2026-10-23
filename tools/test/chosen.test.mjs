@@ -1,10 +1,10 @@
-// Phase 06-2b: the professor's lines and rules in the new opening (game/js/logic/hazel.js); since 2026-10-23 the
+// Phase 06-2b: the professor's lines and rules in the new opening (game/js/logic/chosen.js); since 2026-10-23 the
 // professor is the Chosen.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fn, modules, data } from './setup-real.mjs';
 
-const { HAZEL, TIP_MAX, FAST_PICK_MS, FAST_PICKS, FAST_SKIP_MS, FAST_SKIPS } = modules.hazel;
+const { HAZEL, TIP_MAX, FAST_PICK_MS, FAST_PICKS, FAST_SKIP_MS, FAST_SKIPS } = modules.chosen;
 
 test('every starter has hot takes, and tapping on runs into the annoyed ones and stays there', () => {
   for (const l of data.RULES.start.starters) assert.ok(HAZEL.hotTakes[l]?.length, `no hot takes for ${l}`);
