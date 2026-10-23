@@ -25,6 +25,7 @@ Studio plan Phase 5 (T5.1): a kit Billie's recipe edited in Part mode bakes at o
 carries its sheet (pixel-equal to the Node bake), rigs-next.js, kitBuilds.json and its line.
 Studio plan Phase 5 (T5.2): Replace from Parts Library greys a part a child can't hang on, shows before and after,
 and a head swapped keeps a blink as one undo step.
+Studio plan Phase 5 (T5.4): Repack sheet makes a hand-drawn Billie's sheet smaller, drawn the same, one undo step.
 Studio plan Phase 1 (T1.3): the Check lists check-data's own problems (planted), and an error blocks Propose.
 UI track UI-3: the UI look section: a colour dial changed shows in the preview frame, Undo puts the data and the
 preview back; a screen's own colour shows on that screen only and ↺ takes it away; a preset applies and undoes; Find
@@ -1280,6 +1281,41 @@ def library_swap_steps(pg, errs):
     print(f'library swap: {sp}: a torso without a tail socket greyed with its reason; a head swapped with a before/after strip, a blink kept, horns moved, geo updated, one undo step, undone', flush=True)
 
 
+def repack_steps(pg, errs):
+    """Studio plan Phase 5 (T5.4): Repack sheet on a hand-drawn species (huang0): the sheet gets smaller, both views are
+    drawn pixel for pixel as before (neutral pose, every face), it is one undo step and undo puts the sheet and rig
+    back; on a kit Billie it refuses (the recipe packs its sheet)."""
+    n = len(errs)
+    sp = 'huang0'
+    pg.evaluate(f"wbPart.src = 'species'; wbPart.sp = {json.dumps(sp)}; wbPart.id = 'head'; workbench.mode = 'part'; void openSection('workbench')")
+    pg.wait_for_selector('[data-act=wbsRepack]', timeout=20000); time.sleep(0.8)
+    drawn = f"""(async () => {{ const out = []; for (const v of ['front', 'back']) {{ await atlasGet(atlasPath({json.dumps(sp)}, v));
+      const R = rigFor({json.dumps(sp)}, v); for (const face of ['idle', 'blink', 'happy', 'hurt']) {{ const c = document.createElement('canvas'); c.width = R.BW; c.height = R.BH;
+      const P = neutralPose(); P.face = face; drawRig(c.getContext('2d'), R, P, v); out.push(c.toDataURL()); }} }} return out; }})()"""
+    rig = f"JSON.stringify(studioState.rigs[{json.dumps(sp)}])"
+    size = f"(c => [c.width, c.height])(loadedAtlas(atlasPath({json.dumps(sp)}, 'front')))"
+    d0, r0, s0, steps0 = pg.evaluate(drawn), pg.evaluate(rig), pg.evaluate(size), pg.evaluate("studioState.undo.length")
+    pg.locator('[data-act=wbsRepack]').first.click()
+    t0 = time.time()
+    while time.time() - t0 < 20 and pg.evaluate("studioState.undo.length") == steps0: time.sleep(0.2)
+    time.sleep(0.5)
+    s1 = pg.evaluate(size)
+    if s1[0] * s1[1] >= s0[0] * s0[1]: errs.append(f'the sheet is {s1}, not smaller than {s0}')
+    if pg.evaluate(rig) == r0: errs.append('the rig did not change')
+    if pg.evaluate(drawn) != d0: errs.append('the repacked Billie is not drawn as before')
+    if pg.evaluate("studioState.undo.length") != steps0 + 1: errs.append(f"the repack made {pg.evaluate('studioState.undo.length') - steps0} undo steps, not 1")
+    pg.evaluate("undo()"); time.sleep(0.5)
+    if pg.evaluate(rig) != r0 or pg.evaluate(size) != s0: errs.append('undo did not put the sheet and the rig back')
+    kit = pg.evaluate("studioState.D.kitBuilds.forms[0].rig")
+    pg.evaluate(f"wbPart.sp = {json.dumps(kit)}; render()"); time.sleep(0.5)
+    k0 = pg.evaluate("studioState.undo.length")
+    pg.locator('[data-act=wbsRepack]').first.click(); time.sleep(0.8)
+    if pg.evaluate("studioState.undo.length") != k0 or not pg.locator('.toast', has_text='baked from its recipe').count(): errs.append('Repack sheet on a kit Billie did not refuse')
+    pg.evaluate("wbPart.src = 'kits'; wbPart.id = ''; workbench.mode = 'sheet'")
+    if len(errs) > n: errs[n:] = [f'repack: {e}' for e in errs[n:]]
+    print(f'repack: {sp} {s0} -> {s1}, drawn the same front and back (4 faces), one undo step, undone; a kit Billie refused', flush=True)
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
@@ -1294,6 +1330,7 @@ STEPS = [
     ('rig_preview', rig_preview_steps),
     ('kit_write', kit_write_steps),
     ('library_swap', library_swap_steps),
+    ('repack', repack_steps),
     ('wardrobe', wardrobe_steps),
     ('ui', ui_steps),
     ('ui_tools', ui_tools_steps),
