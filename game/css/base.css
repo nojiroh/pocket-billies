@@ -745,3 +745,18 @@ h4 {
     animation: none;
   }
 }
+/* 0.1.0 alpha: phones keep the glass with a lighter blur (each blurred surface is redrawn over the 3D scene, and a
+   phone's screen has three or four times the pixels of its CSS size) */
+@media (hover: none) and (pointer: coarse) and (max-width: 959px) {
+  :root {
+    --g-blur: blur(9px) saturate(1.35);
+    --blur: 10px;
+    --blur-glass: blur(7px) saturate(1.25);
+    --blur-glass-strong: blur(9px) saturate(1.3);
+    --blur-panel: blur(9px) saturate(1.15);
+    --blur-scrim: blur(1.5px);
+    --blur-scrim-strong: blur(2px) saturate(1.05);
+    --blur-chip: blur(7px);
+    --blur-button: blur(3px);
+  }
+}
