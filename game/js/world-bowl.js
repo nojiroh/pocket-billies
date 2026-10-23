@@ -229,6 +229,8 @@ export const worldBowl = {
   ground: null,
   /** frames drawn, and the last few draw times in ms and frame times (for the bowl map test) */
   frames: 0,
+  /** frames drawn by worldBowlFilm (the opening's fall), counted apart from the map's own (the full test) */
+  filmed: 0,
   ms: [],
   ts: [],
   /** the bowl map test: keep drawing every frame and turn by this many radians a second */
@@ -2503,6 +2505,7 @@ export function worldBowlFilm(view, t) {
   worldMapHeight = view.H;
   worldBowl.view = view;
   worldBowlRender(t);
+  worldBowl.filmed++;
 }
 /* roads you're taking, pins, labels and you */
 function worldBowlOverlay(t) {
