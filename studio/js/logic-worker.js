@@ -20,6 +20,11 @@ export const LOGIC_WORKER_FNS = {
   runPreview: (/** @type {any} */ m) => m.runPreview,
   /* T2.3: the map checks over many seeds (data-checks.js) */
   runMapSweep: (/** @type {any} */ m) => m.runMapSweep,
+  /* Studio plan Phase 4: the content editors (logic/content-preview.js; relics.js relicOfferOrder) */
+  relicPreview: (/** @type {any} */ m) => m.relicPreview,
+  relicOfferOrder: (/** @type {any} */ m) => m.relicOfferOrder,
+  leaderRunValues: (/** @type {any} */ m) => m.leaderRunValues,
+  speciesStandIns: (/** @type {any} */ m) => m.speciesStandIns,
 };
 
 /** what the logic asks the page for through hooks.js, as tools/test/load-logic.mjs stands in for it in Node */

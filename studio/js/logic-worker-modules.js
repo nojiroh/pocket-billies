@@ -19,6 +19,7 @@ import '../../game/js/logic/camera-rise.js';
 import '../../game/js/logic/coats.js';
 import '../../game/js/logic/colors.js';
 import '../../game/js/logic/conditions.js';
+import '../../game/js/logic/content-preview.js';
 import '../../game/js/logic/cutscene-set.js';
 import '../../game/js/logic/data-checks.js';
 import '../../game/js/logic/draft-record.js';
@@ -78,3 +79,6 @@ import '../../game/js/logic/unlocks.js';
 import '../../game/js/logic/weather.js';
 export { runPreview } from '../../game/js/logic/run-preview.js';
 export { runMapSweep } from '../../game/js/logic/data-checks.js';
+/* Studio plan Phase 4: the content editors' previews */
+export { relicPreview, leaderRunValues, speciesStandIns } from '../../game/js/logic/content-preview.js';
+export { relicOfferOrder } from '../../game/js/logic/relics.js';
