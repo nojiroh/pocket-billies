@@ -1,9 +1,9 @@
 'use strict';
 /* ================= FULL TEST =================
    Settings → Run the full test (and the debug menu) plays through everything that draws, for several minutes:
-   every walk scene and room (walking, turning and zooming the camera), night, weather and seasons, a road between two
-   places, a room that opens in place, the light lab, a battle on the 3D stage (double and Alpha
-   too), the opening's fall and Blake's first battle, Billies in the world, the world map and its 3D miniatures, then a
+   the hub and every room the game's doors open (walking, turning and zooming the camera), night, weather and seasons,
+   a run's road, its airship, nodes and payout, the ranch and the Lab, a room that opens in place, the light lab, a
+   battle on the 3D stage (double and Alpha too), the opening's fall, Billies in the world, the world map, then a
    stress test that keeps adding load (crowds, particles, extra props, maximum quality) and measures how far the device
    keeps up. Your save is not changed: saving is paused and everything is put back
    afterwards. The results go into the debug log. If the app goes to the background (the screen locks), the test waits
@@ -22,9 +22,7 @@ import {
   TRAINERS,
   UNLOCK_DATA,
   gameData,
-  locationKind,
   trainersAt,
-  worldExtraMaps,
 } from './game-data.js';
 import { encountersHere, makeBilly, maxHp, spawn } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
@@ -33,6 +31,7 @@ import { incomeRate } from './logic/ranch-income.js';
 import { pastureBillies, pastureIn, pastureZone } from './logic/pasture.js';
 import { runRestore } from './logic/run-state.js';
 import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
+import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
 import { runHealCost } from './logic/run-loop.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { runUnlocks } from './logic/unlocks.js';
@@ -59,6 +58,7 @@ import { battleStage, battleStageStop } from './battle-stage.js';
 import {
   GROUND_CACHE,
   PROP_CLOCK,
+  ROOM_BY_USE,
   actionSpot,
   climbEnds,
   findPath,
@@ -119,6 +119,7 @@ expose({
   selfTest: [() => selfTest],
   selfTestFrameStats: [() => selfTestFrameStats, v => (selfTestFrameStats = v)],
   selfTestSleep: [() => selfTestSleep, v => (selfTestSleep = v)],
+  selfTestWalkScenes: [() => selfTestWalkScenes, v => (selfTestWalkScenes = v)],
   shareReportFile: [() => shareReportFile, v => (shareReportFile = v)],
   testMapChecks: [() => testMapChecks, v => ((testMapChecks = v), provide({ testMapChecks }))],
   testMaps: [() => testMaps, v => ((testMaps = v), provide({ testMaps }))],
@@ -228,15 +229,9 @@ async function runFullTest(mode) {
   };
   const stepEl = box.querySelector('.nb-step'),
     bar = box.querySelector('.nb-bar i');
-  /* RL-7: not a run's scenes (made from its seed while its world is in; a run's road has a phase of its own) */
-  const scenes = Object.keys(gameData.maps || {}).filter(
-      id =>
-        mapById(id) &&
-        !gameData.maps[id].test &&
-        !gameData.maps[id].backup &&
-        !id.includes('@') &&
-        !worldExtraMaps()[id]
-    ),
+  /* test cleanup lane C: the scenes the game reaches, from the door links (selfTestWalkScenes); not a run's scenes
+     (made from its seed while its world is in; a run's road has a phase of its own) */
+  const scenes = selfTestWalkScenes(),
     phases = [],
     stress = [],
     errs0 = debugLog.err.length,
@@ -248,6 +243,8 @@ async function runFullTest(mode) {
     selfTest.only = [
       'Shaders',
       'Walk: ',
+      /* test cleanup lane C: one generated run scene, made from its seed and walked over a seam */
+      "A run's road",
       'Device',
       'Frame budget',
       'Rain and night',
@@ -258,7 +255,7 @@ async function runFullTest(mode) {
     ];
   }
   const total = diag
-    ? scenes.length * 4 + 1 + 1 + 6 + 10 + 6 + 8 + 1
+    ? scenes.length * 4 + 1 + 1 + 6 + 6 + 10 + 6 + 8 + 1
     : scenes.length * 4 + 1 + 5 + 8 + 6 + 5 + 8 + 8 + 6 + 6 + 10 + 8 + 8 + 1 + 40;
   let done = 0;
   const tick = s => {
@@ -1970,9 +1967,9 @@ const runQuickTest = runFullTest;
 provide({ runQuickTest }); /* to-module */
 
 /* ================= DIAGNOSTICS TEST (alpha 0.4) =================
-   Next to the full test in Settings, about two minutes: the device and how the automatic quality chose its level, six
-   places picked from the data to cover the hardest cases (the busiest town, the biggest route, a room, a cave, a place
-   you ride across, a new place: time to the first frame and the worst frame), where a frame's time goes, memory after,
+   Next to the full test in Settings, about two minutes: the device and how the automatic quality chose its level, the hub
+   and its busiest room (time to the first frame and the worst frame), a run's road (a scene made from a seed, walked
+   over a seam), where a frame's time goes, memory after,
    a battle's start, what rain and night cost, and any errors. It saves a compact report made to be read (not the whole
    debug log). Like the full test it leaves your save alone and waits for you if the app goes to the background. */
 const emptyDiagnosticsReport = () => ({ device: null, busiest: null, places: [], passes: null, weather: null });
@@ -1980,24 +1977,30 @@ let diagnosticsReport = emptyDiagnosticsReport();
 function runDiagnostics() {
   return runFullTest('diag');
 }
+/** test cleanup lane C: the walk scenes the game reaches: the hub, then each room a door opens, the hub's own doors
+ * first, then the rooms a run town's buildings open (logic/mapgen.js MAPGEN_HUB_BUILDINGS). Worked out from the door
+ * links (data-files.js doorRooms), so a room no door leads to is never walked @returns {string[]} */
+function selfTestWalkScenes() {
+  const sc = gameData.maps || {},
+    P = (gameData.scenery && gameData.scenery.props) || {},
+    hub = (LOCATIONS[START_NODE] || {}).mapId,
+    out = [],
+    add = id => {
+      if (id && mapById(id) && !out.includes(id)) out.push(id);
+    },
+    roomOf = (p, act) => PB_DATA.doorRooms(p, p && P[p.k], act).find(id => sc[id] && sc[id].kind === 'room');
+  add(hub);
+  for (const p of (sc[hub] && sc[hub].props) || []) if (ROOM_BY_USE[p.act]) add(roomOf(p, p.act));
+  for (const [, , act] of MAPGEN_HUB_BUILDINGS) if (ROOM_BY_USE[act]) add(roomOf(null, act));
+  return out;
+}
+/* the diagnostics' walk: the hub and its busiest room (a run's generated scene is the "A run's road" phase) */
 function diagnosticsMaps() {
   const sc = gameData.maps,
-    ids = Object.keys(sc).filter(id => mapById(id) && !sc[id].test && !sc[id].backup && !id.includes('@')),
-    pick = [],
-    add = id => {
-      if (id && !pick.includes(id)) pick.push(id);
-    };
-  const kindOf = id => sc[id].kind || (typeof locationKind === 'function' ? locationKind(id) : null);
-  const towns = ids.filter(id => kindOf(id) === 'town'),
-    routes = ids.filter(id => kindOf(id) === 'route');
-  const busiest = towns.slice().sort((a, b) => (sc[b].props || []).length - (sc[a].props || []).length)[0];
-  add(busiest);
-  add(routes.slice().sort((a, b) => sc[b].w * sc[b].h - sc[a].w * sc[a].h)[0]);
-  add(ids.find(id => /^int_/.test(id) && (sc[id].props || []).length > 8));
-  add(ids.find(id => (sc[id].under || sc[id].far === 'cave') && kindOf(id) !== 'room'));
-  add(ids.find(id => sc[id].ride));
-  add(ids.find(id => sc[id].a04pearl) || ids.find(id => sc[id].a04place));
-  diagnosticsReport.busiest = busiest;
+    [hub, ...rooms] = selfTestWalkScenes(),
+    room = rooms.slice().sort((a, b) => (sc[b].props || []).length - (sc[a].props || []).length)[0],
+    pick = [hub, room].filter(Boolean);
+  diagnosticsReport.busiest = hub;
   diagnosticsReport.places = pick;
   return pick;
 }
