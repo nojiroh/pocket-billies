@@ -100,7 +100,8 @@ instruction, relayed by the parent session); this session's choices are decision
 
 **Next**
 - Owner decisions: the skeleton builder's geo (above); whether to repack the 122 sheets; a target density (T5.7).
-- Phase 5 is done (`sr-5-done`). T1.4 note: CI's Studio list grew by kit_write, library_swap, repack and density.
+- Phase 5 is done. **The tag `sr-5-done` could not be pushed from this session** (its git access takes only its own
+  branch): tag the merge of PR #139 `sr-5-done`. T1.4 note: CI's Studio list grew by kit_write, library_swap, repack and density.
 
 ### Studio plan Phase 5, session 2 - The recipe in game/data, a Node bake CLI, the slot words (T5.1, T5.5) - 2026-10-22
 Branch `claude/sr-5-parts`, draft PR #139 (base `ccr-81011a25-lf3exv`). Plan pre-approved with its recommended options
