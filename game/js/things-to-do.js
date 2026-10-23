@@ -383,7 +383,7 @@ async function requestTalk(f) {
   f.wait = 2;
 }
 /* requests you've taken on, wherever you are */
-export function requestListHTML() {
+function requestListHTML() {
   const X = thingsToDo();
   return Object.entries(X.reqs)
     .filter(([, q]) => q.state === 'accepted')
