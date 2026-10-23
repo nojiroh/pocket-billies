@@ -302,6 +302,19 @@ is (phase 10's 1.5 m pixel ground), the mountain's relief, the town's buildings 
 The fenced pasture beside the barn (IS-4's fence and gate), up to ~6 ranch Billies wandering in it (from storage and
 trainees, RL-10's data), tap one or the gate to open the ranch sheet. Waits for RL-10 to merge.
 
+**Done in IS-8** (2026-10-22; question 8 answered: the ranch's Billies roam, up to ~6). Checked against the code:
+- Storage is `saveData.box`; `ranch.trainees` hold uids into it; `ranch.pens` is in the save but nothing uses it; eggs
+  in the nursery aren't Billies yet. Only RL-9/RL-10a's data was needed (RL-10b's income wasn't).
+- A gate with act `ranch` would walk you into the barn (walk-control.js enters `ROOM_BY_USE.ranch` first): the gate's
+  act is `pasture`, which opens the sheet where you stand.
+- A prop's `box` blocks walking for every placement of it, so a closed gate would shut the field (the island's
+  walking check "to the pasture" ends inside it): the gate stands swung open into the field beside a 2.4 m gap.
+- The pasture zone (40 points, flat at 1.1-1.2 m) was empty. The fence follows it made straight (9 sides here) and
+  1.2 m inside (logic/pasture.js; the build tool and the game read the same line from the same zone, so a new zone
+  after a rerun moves both). The build step is tools/build-pasture.mjs, run by build-copperleaf.mjs before it writes
+  the map, or alone: it takes everything off the zone first, so it doesn't matter what an earlier step put there.
+- The buddy's code (world-billies.js) already drew a Billie walking about on a map; the pasture's reuse it.
+
 ### IS-9 Dressing, variety and phone pass
 Forest density and clearings, the terrain kinds dressed with props, gulls and crabs on the beach, the wild patches
 placed (question 5), the phone's frame times at 8 angles round the coast, then the owner's play test.
@@ -364,6 +377,7 @@ shared). Checked against the code:
    landing and a deep channel** (the dock itself is IS-4's).
 7. **The mountain**: climbable, summit lookout (rec) / scenery only. **Answered in IS-2: climbable.**
 8. **The pasture**: ranch Billies roam in it, up to ~6 (rec) / fence and props only for now.
+   **Answered in IS-8: they roam, up to ~6** (`rules.ranch.pasture`, a placeholder).
 9. **The stream and fall** from the mountain to the cove: yes (rec) / no. **Answered in IS-2: yes, with a pond.**
 10. **The generator for later islands**: built reusable now, a Studio "island" kind later (rec) / one-off tool.
     **Answered 2026-10-22: reusable.**

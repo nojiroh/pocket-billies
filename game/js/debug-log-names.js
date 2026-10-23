@@ -75,6 +75,7 @@ import {
 } from './solid-props.js';
 import { drawPropModels, setDrawPropModels } from './prop-models.js';
 import { ambientLife, lifeStep, setLifeStep } from './ambient-life.js';
+import { worldBillies } from './world-billies.js';
 import { seamlessWorld } from './seamless-world.js';
 import { paintWorkerReport } from './ground-paint-worker.js';
 import { endBattle, openBattle, paintActions, setEndBattle, setOpenBattle, setPaintActions } from './battle.js';
@@ -170,6 +171,7 @@ Object.defineProperties(GAME, {
   userFps: { get: () => userFps },
   walkRenderer: { get: () => walkRenderer },
   walkView: { get: () => walkView },
+  worldBillies: { get: () => worldBillies },
   worldBowlRender: { get: () => worldBowlRender, set: setWorldBowlRender },
   worldMapMount: { get: () => worldMapMount, set: setWorldMapMount },
 });

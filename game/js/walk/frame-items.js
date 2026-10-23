@@ -12,6 +12,7 @@ import {
   companionItems,
   friendWorldItems,
   lifeSprites,
+  pastureItems,
   propModelImageItems,
   provide,
   reducedMotion,
@@ -289,6 +290,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
   if (ow) {
     companionItems(out, t, npcPos);
     buddyItems(out, t, odt);
+    pastureItems(out, t, odt);
     if (typeof friendWorldItems === 'function')
       try {
         friendWorldItems(out, t, C0);

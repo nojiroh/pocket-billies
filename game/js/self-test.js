@@ -28,6 +28,7 @@ import {
 } from './game-data.js';
 import { encountersHere, makeBilly, maxHp, spawn } from './logic/rules.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
+import { pastureBillies, pastureIn, pastureZone } from './logic/pasture.js';
 import { runBegin, runRestore } from './logic/run-state.js';
 import { runArrive, runMapStart, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_VERSION } from './logic/mapgen.js';
@@ -1141,6 +1142,14 @@ async function runFullTest(mode) {
             if (why) throw new Error('training didn’t start: ' + why);
             if (s.meta.scrap !== 0)
               throw new Error(`training cost ${R.trainCost - s.meta.scrap} Scrap, not ${R.trainCost}`);
+            /* IS-8: the trainee wanders in the pasture first; the pasture's gate is in its zone */
+            const out = pastureBillies(s, R.pasture);
+            if (R.pasture > 0 && (!out.length || out[0].uid !== m.uid))
+              throw new Error('the trainee isn’t the first in the pasture');
+            const zone = pastureZone(hub),
+              gate = (hub.props || []).find(p => p.act === 'pasture');
+            if (zone && (!gate || !pastureIn(zone, gate.x, gate.z)))
+              throw new Error('the pasture has no gate in its zone');
             ranchOpen();
             if (!uiState.modal || uiState.modal.cls !== 'ranch-sheet' || !document.querySelector('#ov .ranch-sheet'))
               throw new Error('the ranch’s sheet didn’t open');
@@ -1151,7 +1160,7 @@ async function runFullTest(mode) {
             if (!stop) throw new Error('no Stop on the trainee’s card');
             stop.click();
             if (s.ranch.trainees.length) throw new Error('Stop left it training');
-            return `the barn leads into ${rooms.find(id => mapById(id))}; trained a level for ${R.trainCost} Scrap; Stop ended it`;
+            return `the barn leads into ${rooms.find(id => mapById(id))}; trained a level for ${R.trainCost} Scrap; Stop ended it; the trainee first in the pasture${zone ? ', its gate in place' : ''}`;
           } finally {
             uiState.modal = null;
             uiState.mq = [];

@@ -246,11 +246,11 @@ check('roads.schema.json', D.roads || [], 'roads.json');
 // RL-9: the ranch (logic/ranch.js): training slots by ranch level (1-12 levels, each 1-20 slots, never fewer than the
 // level before), the level cap (capBase at level 1, capStep more a level; at most the game's maxLevel), the hours a
 // trainee banks (1-168), levels an hour (above 0, at most 10), the Scrap to start (0-10,000), the clock's slack for a
-// rollback (0-1 hour); nothing else
+// rollback (0-1 hour), the Billies in the pasture (IS-8: 0-12); nothing else
 {
   const RA = D.rules && D.rules.ranch,
     whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi,
-    KEYS = ['slots', 'capBase', 'capStep', 'bankHours', 'levelsPerHour', 'trainCost', 'guardMs', 'breed'];
+    KEYS = ['slots', 'capBase', 'capStep', 'bankHours', 'levelsPerHour', 'trainCost', 'guardMs', 'pasture', 'breed'];
   if (!RA || typeof RA !== 'object' || Array.isArray(RA)) problem('rules.json', 'ranch missing');
   else {
     for (const k of Object.keys(RA)) if (!KEYS.includes(k)) problem('rules.json', `ranch.${k}: no such rule`);
@@ -265,6 +265,7 @@ check('roads.schema.json', D.roads || [], 'roads.json');
       problem('rules.json', 'ranch.levelsPerHour is not a number above 0 and at most 10');
     if (!whole(RA.trainCost, 0, 10000)) problem('rules.json', 'ranch.trainCost is not a whole number of Scrap (0-10,000)');
     if (!whole(RA.guardMs, 0, 3600000)) problem('rules.json', 'ranch.guardMs is not a whole number of ms (0-3,600,000)');
+    if (!whole(RA.pasture, 0, 12)) problem('rules.json', 'ranch.pasture is not a whole number of Billies (0-12)');
     // RL-10: breeding (logic/breeding.js): nests by ranch level as slots are, the two costs (a risky pair never costs
     // more than a safe one), the hours to hatch (1-168), the level it hatches at, the risky odds adding up to 1, the
     // abomination's spike (1-3) and drawback (0.1-1); nothing else

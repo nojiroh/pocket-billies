@@ -526,6 +526,11 @@ export function walkPick(h) {
         return;
       }
     }
+    /* IS-8: the pasture's gate opens the ranch's sheet where you stand (the barn's door walks you in) */
+    if (a === 'pasture' && typeof ranchOpen === 'function') {
+      ranchOpen();
+      return;
+    }
     if (ROOM_BY_USE[a] && enterRoom(a, p)) return;
     if (a === 'shop') {
       const id = p.shop || here.shop;

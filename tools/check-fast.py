@@ -998,6 +998,48 @@ def hub_island(pg, base):
     return f"{len(res)} walking checks hold; a tap reaches all {r['n']} doors from where you arrive (the longest search {r['ms']} ms); {r['cand']} wild spots, all in the patches; the camera orbits"
 
 
+def pasture(pg, base):
+    """IS-8: the pasture fixture stands at the pasture's gate with three Billies in storage. All three wander inside the
+    fence (and still are a few seconds later); one brought beside you is a tap target, and tapping it opens the ranch's
+    sheet; so does the gate; one moved to the team leaves the field"""
+    drawing(pg)
+    if not until(pg, "!document.getElementById('loader')&&worldBillies.pasture&&Object.keys(worldBillies.pasture.mons).length===3", 90):
+        raise Exception(f"not three Billies in the pasture: {pg.evaluate('worldBillies.pasture&&worldBillies.pasture.list.length')}")
+    inside = "(()=>{const L=pastureFenceLine(pastureZone(walkView.sc));return Object.values(worldBillies.pasture.mons).every(b=>pastureIn(L,b.x,b.z))})()"
+    if not pg.evaluate(inside): raise Exception('a Billie stands outside the fence')
+    f0 = pg.evaluate('walkRenderer.frames')
+    if not until(pg, f'walkRenderer.frames>={f0 + 30}', 90): raise Exception('the pasture isn’t drawing')
+    if not pg.evaluate(inside): raise Exception('a Billie wandered out of the fence')
+    # one brought 1.8 m from you, inside the wander line; your buddy off, so it can't wander in front of it
+    uid = pg.evaluate("""(()=>{saveData.preferences.buddyWalk='off';const P=walkView.pl,F=worldBillies.pasture,u=F.list[0].uid,b=F.mons[u],L=pastureRoamLine(pastureZone(walkView.sc));
+      for(let k=0;k<64;k++){const q=[P.x+Math.cos(k/10)*1.8,P.z+Math.sin(k/10)*1.8];
+        if(pastureIn(L,q[0],q[1])){b.x=q[0];b.z=q[1];b.tx=null;b.wait=99;return u}}return null})()""")
+    if not uid: raise Exception('no spot in the field 1.8 m from the gate')
+    f0 = pg.evaluate('walkRenderer.frames')
+    if not until(pg, f"walkRenderer.frames>={f0 + 3}&&walkView.hits.some(h=>h.k==='ranchBilly'&&h.uid==='{uid}')", 90):
+        raise Exception('the Billie beside you is no tap target')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];0")
+    # a point on its tap box that answers as the Billie (nothing nearer in front of it there), tapped
+    tap = pg.evaluate(f"""(()=>{{const h=walkView.hits.find(h=>h.k==='ranchBilly'&&h.uid==='{uid}'),cv=walkView.cv,r=cv.getBoundingClientRect(),
+        ev=(x,y)=>({{clientX:r.left+x/cv.width*r.width,clientY:r.top+y/cv.height*r.height}});
+      for(let j=1;j<8;j++)for(let i=1;i<8;i++){{const e=ev(h.x0+(h.x1-h.x0)*i/8,h.y0+(h.y1-h.y0)*j/8),w=hitAt(e);
+        if(w&&w.k==='ranchBilly'&&w.uid==='{uid}'){{handleWalkClick(e);return 'ok'}}}}
+      const w=hitAt(ev((h.x0+h.x1)/2,(h.y0+h.y1)/2));return 'covered by '+(w?w.k+(w.act?' '+w.act:''):'nothing')}})()""")
+    if tap != 'ok': raise Exception(f'the Billie beside you can’t be tapped: {tap}')
+    sheet = "!!(uiState.modal&&uiState.modal.cls==='ranch-sheet'&&document.querySelector('#ov .ranch-sheet'))"
+    if not until(pg, sheet, 10):
+        raise Exception(f"tapping a Billie in the pasture didn’t open the ranch’s sheet: {pg.evaluate('JSON.stringify([uiState.modal&&uiState.modal.cls,uiState.mq.length,!!uiState.inside])')}")
+    pg.evaluate("closeModal();uiState.modal=null;uiState.mq=[];0")
+    pg.evaluate("(()=>{const p=walkView.sc.props.find(q=>q.act==='pasture');walkPick({k:'act',p,act:'pasture'});return 0})()")
+    if not until(pg, sheet, 10): raise Exception('the pasture’s gate didn’t open the ranch’s sheet')
+    if pg.evaluate("!!uiState.inside"): raise Exception('the gate walked you into the barn')
+    pg.evaluate("closeModal();uiState.modal=null;uiState.mq=[];0")
+    pg.evaluate(f"toTeam(saveData.box.find(m=>m.uid==='{uid}'));0")
+    if not until(pg, f"!worldBillies.pasture.mons['{uid}']&&Object.keys(worldBillies.pasture.mons).length===2", 10):
+        raise Exception('a Billie moved to the team still wanders in the pasture')
+    return 'three Billies wander inside the fence; tapping one and tapping the gate open the ranch’s sheet; one moved to the team left the field'
+
+
 PAGES = [   # (what the page opens, its checks in order); the longest first, so the browsers finish together
     ('town', [('A town opens and draws (Copperleaf Town)', scene('copperleaf')),
               ('Copperleaf is the island: its walking checks, every door a tap away, the wild grass, the orbit (IS-5)', hub_island),
@@ -1005,6 +1047,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
               ('The world map opens as the bowl', bowl_map)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back, a reload (RL-9)', ranch)]),
+    ('pasture', [('The pasture: Billies wander inside the fence, a tap on one or the gate opens the ranch (IS-8)', pasture)]),
     ('relics', [("Loopholes: the pick (again after a reload), the tab, a battle's and a walk's effects, a town's prices, buying at the cap (RL-12)", relics)]),
     ('ranch', [('Breeding: a safe egg shown and hatched, a risky pair, a clock turned back, a reload (RL-10)', breed)]),
     ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the mast, a reload (RL-11)', lab)]),

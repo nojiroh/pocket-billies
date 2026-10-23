@@ -40,6 +40,10 @@ kept aside in the browser).
   the next tap after a phone call or Siri on an iPhone. The Sound tab reads in Dutch, German, Spanish and French.
 - A run's world (roguelite track RL-7), not playable yet (a run starts at the airship from RL-8; to look at one, open
   the game with `?fixture=run`): each place on a run's map is a walkable route made from the run's seed, joined
+- The barn has its pasture (island track IS-8): a rail fence round the field beside Copperleaf's barn, a field gate
+  standing open so you can walk in, a water trough and a hay rack with round bales. Up to six of your Billies at home
+  (the ones training first) wander in it, poking about the hay and now and then hopping. Tap one, or the gate, and
+  the ranch opens. A Billie you take onto your team or on a run leaves the field.
 - The Studio's Hub island section has the island generator's dials (IS-6b): size, coast, mountain, cove, beaches,
   cliffs, forest, stream, paths, the town and the hamlet, a seed and a seed for each part. A draft shows in the
   orbit view and on the map as you change them, with its size, the walk round the coast and a walking check. "Use
