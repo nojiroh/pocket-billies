@@ -30,6 +30,7 @@ import {
   COATS,
   DATA_WARN,
   DEX_ORDER,
+  FIELD_MOVES,
   ITEMS,
   LOCATIONS,
   PERKS,
@@ -37,6 +38,7 @@ import {
   RULES,
   SPECIES,
   TRAINERS,
+  TYPES,
 } from './game-data.js';
 import { speciesOf } from './logic/fighters.js';
 import {
@@ -53,6 +55,7 @@ import {
   xpFor,
 } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
+import { RUN_SIDE_MOD } from './logic/run-side.js';
 import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
 import { perkOfferMake, perkTake } from './logic/perks.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
@@ -80,6 +83,7 @@ expose({
   debugSceneName: [() => debugSceneName],
   debugSection: [() => debugSection],
   debugSelectHTML: [() => debugSelectHTML],
+  debugSideOptions: [() => debugSideOptions],
   debugSpeciesOptions: [() => debugSpeciesOptions, v => (debugSpeciesOptions = v)],
   openDebug: [() => openDebug, v => (openDebug = v)],
   refreshDebugMenu: [() => refreshDebugMenu, v => (refreshDebugMenu = v)],
@@ -90,6 +94,14 @@ provide({ debugFps });
 const debugMenu = { fps: false, on: /[?&]debug\b/.test(location.search) };
 const debugSelectHTML = (id, opts, val) =>
   `<select id="${id}">${opts.map(([v, n]) => `<option value="${escapeHtml(v)}" ${String(v) === String(val) ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select>`;
+/** RL-R2: the side areas the debug menu can force: each kind with each field move */
+const debugSideOptions = () =>
+  ['detour', 'alt'].flatMap(k =>
+    Object.keys(FIELD_MOVES).map(m => [
+      `${k}_${m}`,
+      `${k === 'detour' ? 'A detour' : 'An alternate path'} behind ${FIELD_MOVES[m].name}`,
+    ])
+  );
 const debugButtonHTML = (x, l, c = '') => `<button class="pb small ${c}" data-a="dbg" data-x="${x}">${l}</button>`;
 function debugSpeciesOptions() {
   return DEX_ORDER.map(id => [id, `${String(SPECIES[id].no).padStart(3, '0')} ${SPECIES[id].name}`]);
@@ -181,7 +193,11 @@ function debugHTML() {
         Object.keys(PERKS).map(k => [k, PERKS[k].name]),
         uiState.dbgRelic || Object.keys(PERKS)[0] || ''
       )}${debugButtonHTML('relicgive', 'Give a Perk', 'gold')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">Perks held: ${saveData.run.perks.length} of ${RULES.run.perks.cap}${saveData.run.perks.length ? ` (${escapeHtml(saveData.run.perks.map(k => (PERKS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p>`
-    : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><p class="note">From Copperleaf, as the mast does (Expedition I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (for measuring on a phone; the debug log has the frame times).</p>`;
+    : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><div class="dbg-row">${debugSelectHTML(
+        'dbgRunSide',
+        [['', 'Side area: as the seed rolls'], ...debugSideOptions()],
+        uiState.dbgRunSide || ''
+      )}${debugButtonHTML('badgesall', 'Keep every badge', 'gold')}${debugButtonHTML('badgesnone', 'No badges')}</div><p class="note">RL-R2: a side area forced on the run (a detour or an alternate path behind Surf, Rock Smash or Cut); badges kept: ${escapeHtml(Object.keys((saveData.meta || {}).badges || {}).join(', ') || 'none')}.</p><p class="note">From Copperleaf, as the mast does (Expedition I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (for measuring on a phone; the debug log has the frame times).</p>`;
   const places = `<div class="dbg-row">${debugSelectHTML(
     'dbgNode',
     LOCATIONS.map((r, i) => [i, `${i}. ${r.name}`]),
@@ -506,19 +522,27 @@ function debugAction(x) {
           .replace(/[^A-Za-z0-9_-]/g, '')
           .slice(0, 20),
         short = !!($('#dbgRunShort') || {}).checked,
-        mountains = !!($('#dbgRunMountains') || {}).checked;
+        mountains = !!($('#dbgRunMountains') || {}).checked,
+        side = v('dbgRunSide') || '';
       uiState.dbgRunSeed = sd;
+      uiState.dbgRunSide = side;
       uiState.dbgRunShort = short;
       uiState.dbgRunMountains = mountains;
       if (!runStartable())
         return refreshDebugMenu('A run can’t start now (on a run, in a battle, or no Billie can fight).');
       uiState.modal = null;
-      runTakeOff(
-        sd || undefined,
-        short ? { rows: 5, minibosses: 1 } : undefined,
-        mountains ? [RUN_MOD_MOUNTAINS] : undefined
-      );
+      runTakeOff(sd || undefined, short ? { rows: 5, minibosses: 1 } : undefined, [
+        ...(mountains ? [RUN_MOD_MOUNTAINS] : []),
+        ...(side ? [RUN_SIDE_MOD + side] : []),
+      ]);
       return;
+    }
+    /* RL-R2: badges kept for good, every type's or none (field moves need them) */
+    case 'badgesall':
+    case 'badgesnone': {
+      saveData.meta.badges = x === 'badgesall' ? Object.fromEntries(TYPES.map(t => [t.toLowerCase(), 1])) : {};
+      saveNow();
+      return refreshDebugMenu(x === 'badgesall' ? 'Every badge kept.' : 'No badges kept.');
     }
     /* RL-12: a Perk for nothing (past the cap, in the place of the one held longest), and a mini-boss's pick */
     case 'relicgive': {

@@ -11,6 +11,7 @@ const D = {
     unlocks: GAME_DATA.unlocks,
     perks: GAME_DATA.perks,
     cap: GAME_DATA.rules.run.perks.cap,
+    types: GAME_DATA.types.map(t => t.id),
   },
   of = (/** @type {string} */ q) => runTestOf(new URLSearchParams(q), D);
 
@@ -26,6 +27,8 @@ test('runTestOf: only behind ?debug, and only with a seed', () => {
     party: [],
     perks: [],
     draft: false,
+    side: '',
+    badges: [],
     left: [],
   });
   assert.equal(of('?x=1&debug=1&run=ABC').seed, 'ABC');
@@ -53,4 +56,13 @@ test('runTestOf: unlocks none, all or a list; the party and the Perks; what the 
   assert.deepEqual(R.left, ['unlock nope', 'Billie ghost1', 'Perk zzz']);
   const many = of(`?debug&run=A&relics=${Object.keys(GAME_DATA.perks).join(',')}`);
   assert.equal(many.perks.length, Math.min(D.cap, Object.keys(GAME_DATA.perks).length));
+});
+
+test('runTestOf: RL-R2: a forced side area and the badges kept', () => {
+  const R = of('?debug&run=A&side=detour_cut&badges=water,grass,plasma');
+  assert.equal(R.side, 'detour_cut');
+  assert.deepEqual(R.badges, ['water', 'grass']);
+  assert.deepEqual(R.left, ['badge plasma']);
+  assert.equal(of('?debug&run=A&side=portal_cut').side, '');
+  assert.equal(of('?debug&run=A&badges=all').badges.length, GAME_DATA.types.length);
 });
