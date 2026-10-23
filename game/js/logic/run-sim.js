@@ -87,13 +87,13 @@ export function simPolicy(o) {
  * The policy's answer to a Perk on offer (the pick's, or a shop's): which to take of `offer` and which held one to
  * let go past the cap, or null to take none. 'greedy': the rarest (lowest rarity weight), then by id; past the cap
  * only if it is rarer than the plainest held (the highest weight, then the last by id), which goes.
- * @param {string[]} offer @param {string[]} held @param {Record<string, any>} relics
+ * @param {string[]} offer @param {string[]} held @param {Record<string, any>} perks
  * @param {{ cap: number, rarity: Record<string, number> }} rule @param {{ relics: string }} P
  * @returns {{ id: string, drop?: string } | null}
  */
-export function simPerkChoice(offer, held, relics, rule, P) {
+export function simPerkChoice(offer, held, perks, rule, P) {
   if (P.relics !== 'greedy' || !offer.length) return null;
-  const w = (/** @type {string} */ id) => rule.rarity[relics[id].rarity] || 0,
+  const w = (/** @type {string} */ id) => rule.rarity[perks[id].rarity] || 0,
     order = (/** @type {string} */ a, /** @type {string} */ b) => w(a) - w(b) || (a < b ? -1 : a > b ? 1 : 0),
     id = offer.slice().sort(order)[0];
   if (held.length < rule.cap) return { id };

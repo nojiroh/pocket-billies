@@ -1196,7 +1196,7 @@ def run_lab_play_steps(pg, errs):
         if gp.evaluate('runClinicEach()') != 88: errs.append('Play this seed: a clinic price edited while the run goes did not reach it')
         keys = set(','.join(pg.evaluate('window.__sent')).split(','))
         if keys & {'saveData', 'save', 'meta', 'team', 'run'}: errs.append(f'the live channel carried save fields: {sorted(keys)}')
-        if not {'rules', 'nodeTypes', 'relics', 'unlocks', 'items', 'trainers'} <= keys: errs.append(f'the live channel did not carry the run data: {sorted(keys)}')
+        if not {'rules', 'nodeTypes', 'perks', 'unlocks', 'items', 'trainers'} <= keys: errs.append(f'the live channel did not carry the run data: {sorted(keys)}')
         for e in gp_errs: errs.append(f'Play this seed: the game: {e}')
     finally:
         gp.close()
@@ -1830,7 +1830,7 @@ def music_steps(pg, errs):
 CONTENT_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
 const out = {};
 /* Studio plan Phase 4: what the content editors must show, from the game's logic in Node */
-out.offers = modules.perks.perkOfferOrder('LAB1', D.relics, D.rules.run.relics, D.rules.run.map.minibosses).map(p => p.offer.join(','));
+out.offers = modules.perks.perkOfferOrder('LAB1', D.perks, D.rules.run.relics, D.rules.run.map.minibosses).map(p => p.offer.join(','));
 out.lab = modules['run-preview'].runPreview('LAB1', { unlocks: [] }).relicOffers.map(o => o.join(','));
 out.insider = modules['content-preview'].perkPreview(['insider'], { sp: D.lines[0].id + '1', lvl: 30 }).stats.find(s => s.id === 'hus');
 out.leaders = modules['content-preview'].leaderRunValues();
@@ -1881,7 +1881,7 @@ def edit_undo(pg, errs, where, sel, value, path, rx):
 
 def relics_steps(pg, errs):
     """Studio plan T4.1: the Perks editor. The sample build's Speed with Running Shoes is the game's (perkPreview in
-    Node); the offer order for LAB1 is the Run Lab's picks; a stages edit redraws the preview and is in relics.json; a
+    Node); the offer order for LAB1 is the Run Lab's picks; a stages edit redraws the preview and is in perks.json; a
     factor under FX_LIMIT shows data-checks' message on its row; a row's kind change and the edits all undo."""
     W = content_want(errs)
     if not W: return
@@ -1895,16 +1895,16 @@ def relics_steps(pg, errs):
     wait_js(pg, "!!document.querySelector('#main [data-relic-offers][data-ready]')")
     offers = pg.evaluate("[...document.querySelectorAll('#main [data-relic-offers] [data-offer]')].map(e=>e.dataset.offer)")
     if offers != W['offers'] or offers != W['lab'][:len(offers)]: errs.append(f"perks: LAB1's offer order {offers}, Node {W['offers']}, the Run Lab's {W['lab']}")
-    # a stages edit: the preview follows, Propose carries relics.json, undo puts it back
-    sel = '#main [data-p="relics.insider.fx.0.stages"]'
+    # a stages edit: the preview follows, Propose carries perks.json, undo puts it back
+    sel = '#main [data-p="perks.insider.fx.0.stages"]'
     pg.fill(sel, '2'); pg.dispatch_event(sel, 'change')
     two = wait_js(pg, f"+(document.querySelector('#main [data-relic-preview] [data-stat=hus]')||{{dataset:{{}}}}).dataset.after==={W['insider']['before'] * 2}", 10)
     if not two: errs.append('perks: +2 stages did not double the preview’s Speed')
     pg.evaluate("undo()"); time.sleep(0.3)
-    edit_undo(pg, errs, 'perks', sel, 3, 'relics.insider.fx.0.stages', 'relics\\.json$')
+    edit_undo(pg, errs, 'perks', sel, 3, 'perks.insider.fx.0.stages', 'perks\\.json$')
     # a factor under the code's limit: data-checks' message on its row
     pg.evaluate("void openSection('relics', { relic: 'offshore' })"); time.sleep(0.3)
-    sel = '#main [data-p="relics.offshore.fx.0.mult"]'
+    sel = '#main [data-p="perks.offshore.fx.0.mult"]'
     pg.fill(sel, '0.05'); pg.dispatch_event(sel, 'change'); time.sleep(0.6)
     pg.evaluate("render()")
     msg = pg.evaluate("(document.querySelector('#main [data-relic-row=\"0\"] .relic-err')||{}).textContent||''")
@@ -1912,11 +1912,11 @@ def relics_steps(pg, errs):
     pg.evaluate("undo()"); time.sleep(0.3)
     # a row's kind: the row becomes a stat row; undo makes it money again
     pg.select_option('#main [data-relic-kind="offshore"][data-n="0"]', 'stat'); time.sleep(0.6)
-    kind = pg.evaluate("studioState.D.relics.offshore.fx[0].kind")
+    kind = pg.evaluate("studioState.D.perks.offshore.fx[0].kind")
     pg.evaluate("undo()"); time.sleep(0.3)
-    if kind != 'stat' or pg.evaluate("JSON.stringify(studioState.D.relics.offshore.fx)") != '[{"kind":"money","mult":1.2}]':
-        errs.append(f"perks: the kind change made {kind!r} and undo left {pg.evaluate('JSON.stringify(studioState.D.relics.offshore.fx)')}")
-    if pending_files(pg, 'relics\\.json$'): errs.append('perks: after every undo Propose would still send relics.json')
+    if kind != 'stat' or pg.evaluate("JSON.stringify(studioState.D.perks.offshore.fx)") != '[{"kind":"money","mult":1.2}]':
+        errs.append(f"perks: the kind change made {kind!r} and undo left {pg.evaluate('JSON.stringify(studioState.D.perks.offshore.fx)')}")
+    if pending_files(pg, 'perks\\.json$'): errs.append('perks: after every undo Propose would still send perks.json')
     if len(errs) == n: print(f"perks: Running Shoes's Speed {W['insider']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone", flush=True)
 
 
@@ -1999,7 +1999,7 @@ def economy_steps(pg, errs):
     pg.click('#main [data-act="ecoGo"][data-path="unlocks.ranch_2.cost"]'); time.sleep(0.5)
     if pg.evaluate("studioState.sec") != 'unlocks' or not pg.locator('#main [data-p="unlocks.ranch_2.cost"]').count(): errs.append('economy: the ranch_2 cost link did not open its field')
     pg.evaluate("void openSection('economy')"); time.sleep(0.3)
-    pg.click('#main [data-act="ecoGo"][data-path="relics.offshore.fx.0.mult"]'); time.sleep(0.5)
+    pg.click('#main [data-act="ecoGo"][data-path="perks.offshore.fx.0.mult"]'); time.sleep(0.5)
     if pg.evaluate("studioState.sec + ':' + studioState.sel.relic") != 'relics:offshore': errs.append('economy: the Lucky Charm link did not open that Perk')
     if len(errs) == n: print(f'economy: {rows} lines, links open their fields, the simulator placeholder shown', flush=True)
 

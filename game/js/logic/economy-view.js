@@ -68,7 +68,7 @@ export function economyLines(D) {
       path: `rules.run.foes.${k}.reward`,
       section: 'runlab',
     });
-  for (const [k, L] of Object.entries(D.relics || {}))
+  for (const [k, L] of Object.entries(D.perks || {}))
     /** @type {any} */ (L.fx || []).forEach((/** @type {any} */ f, n) => {
       if (f.kind === 'money')
         add({
@@ -77,7 +77,7 @@ export function economyLines(D) {
           what: `Perk ${L.name || k}: wins pay ×${f.mult}`,
           value: f.mult,
           unit: '×',
-          path: `relics.${k}.fx.${n}.mult`,
+          path: `perks.${k}.fx.${n}.mult`,
           section: 'relics',
         });
     });

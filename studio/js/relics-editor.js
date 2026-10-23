@@ -1,6 +1,6 @@
 'use strict';
 /* ================= PERKS (Studio plan Phase 4, T4.1) =================
-   relics.json, a run's Perks ("relic" is the data's word; the player and this page say Perk), and the rules
+   perks.json, a run's Perks ("relic" is the data's word; the player and this page say Perk), and the rules
    that offer them (rules.json run.relics). What the JSON can't show:
    - each effect row by its kind (logic/effects.js FX_KINDS), with the limits that live in the code (FX_LIMIT for a
      factor, FX_STAGES for stages) beside the field, and data-checks.js dataPerks's messages on the row they are about;
@@ -88,29 +88,29 @@ const PERK_ROW_NEW = {
 };
 const PERK_RARITIES = ['common', 'uncommon', 'rare'];
 
-/** the data checks' messages about relics.json and rules.json run.relics (dataPerks, as CI runs it) */
+/** the data checks' messages about perks.json and rules.json run.relics (dataPerks, as CI runs it) */
 const perkProblems = () => {
   try {
     return dataPerks(studioState.D).map(([f, m]) => ({ f, m }));
   } catch (e) {
-    return [{ f: 'relics.json', m: `the check stopped: ${e.message || e}` }];
+    return [{ f: 'perks.json', m: `the check stopped: ${e.message || e}` }];
   }
 };
 /** the messages that start with `pre` (a Perk's or a row's), as error lines */
 const perkProblemHTML = (/** @type {{ f: string, m: string }[]} */ P, /** @type {string} */ pre, skip = '') =>
-  P.filter(p => p.f === 'relics.json' && p.m.startsWith(pre) && !(skip && p.m.startsWith(skip)))
+  P.filter(p => p.f === 'perks.json' && p.m.startsWith(pre) && !(skip && p.m.startsWith(skip)))
     .map(p => `<p class="err relic-err">${escapeHtml(p.m)}</p>`)
     .join('');
 /** each rarity's weight and how many Perks have it, and each Perk's chance to be drawn first */
 function perkCoverage(/** @type {any} */ D) {
   const RR = D.rules.run.relics,
-    ids = Object.keys(D.relics || {}),
-    w = id => RR.rarity[D.relics[id].rarity] || 0,
+    ids = Object.keys(D.perks || {}),
+    w = id => RR.rarity[D.perks[id].rarity] || 0,
     total = ids.reduce((a, id) => a + w(id), 0);
   return {
     total,
     chance: Object.fromEntries(ids.map(id => [id, total ? w(id) / total : 0])),
-    count: Object.fromEntries(PERK_RARITIES.map(r => [r, ids.filter(id => D.relics[id].rarity === r).length])),
+    count: Object.fromEntries(PERK_RARITIES.map(r => [r, ids.filter(id => D.perks[id].rarity === r).length])),
   };
 }
 const perkPct = (/** @type {number} */ v) => `${Math.round(v * 1000) / 10}%`;
@@ -118,7 +118,7 @@ const perkPct = (/** @type {number} */ v) => `${Math.round(v * 1000) / 10}%`;
 /** one effect row's fields, by its kind */
 function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {number} */ n, /** @type {any} */ P) {
   const D = studioState.D,
-    p = `relics.${k}.fx.${n}`,
+    p = `perks.${k}.fx.${n}`,
     lim = `×${FX_LIMIT.lo} to ×${FX_LIMIT.hi} (effects.js FX_LIMIT; a kind’s rows multiply, and the product stays within it too)`,
     mult = (/** @type {string} */ l) =>
       numberField(l, `${p}.mult`, { min: FX_LIMIT.lo, max: FX_LIMIT.hi, step: 0.05, help: lim }),
@@ -188,7 +188,7 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
     .map(([v, l]) => `<option value="${v}"${v === f.kind ? ' selected' : ''}>${v}: ${escapeHtml(l)}</option>`)
     .join(
       ''
-    )}</select>${D.relics[k].fx.length > 1 ? `<button class="x" data-act="relicRowDel" data-k="${escapeHtml(k)}" data-n="${n}" title="Remove this effect">✕</button>` : ''}</div>${fields ? grid(...fields()) : `<p class="err">No such kind: ${escapeHtml(String(f.kind))}</p>`}${perkProblemHTML(P, `${k}.fx[${n}]`)}</div>`;
+    )}</select>${D.perks[k].fx.length > 1 ? `<button class="x" data-act="relicRowDel" data-k="${escapeHtml(k)}" data-n="${n}" title="Remove this effect">✕</button>` : ''}</div>${fields ? grid(...fields()) : `<p class="err">No such kind: ${escapeHtml(String(f.kind))}</p>`}${perkProblemHTML(P, `${k}.fx[${n}]`)}</div>`;
 }
 
 /** the rarity table: weights, prices, coverage, and the pick rules */
@@ -224,7 +224,7 @@ function perkRarityHTML(/** @type {any} */ D, /** @type {any} */ cov, /** @type 
 
 SECTIONS.relics = () => {
   const D = studioState.D,
-    L = (D.relics = D.relics || {}),
+    L = (D.perks = D.perks || {}),
     ks = Object.keys(L);
   if (!L[studioState.sel.relic]) studioState.sel.relic = ks[0];
   const k = studioState.sel.relic,
@@ -234,7 +234,7 @@ SECTIONS.relics = () => {
   const list = ks
     .map(
       x =>
-        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickRelic" data-id="${escapeHtml(x)}"><span class="lt"><b>${escapeHtml(L[x].name || x)}${P.some(p => p.f === 'relics.json' && p.m.startsWith(x + '.')) ? ' <span class="warn">⚠</span>' : ''}</b><small>${escapeHtml(L[x].rarity)} · weight ${D.rules.run.relics.rarity[L[x].rarity] || 0} · ${perkPct(cov.chance[x])} first</small></span></button>`
+        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickRelic" data-id="${escapeHtml(x)}"><span class="lt"><b>${escapeHtml(L[x].name || x)}${P.some(p => p.f === 'perks.json' && p.m.startsWith(x + '.')) ? ' <span class="warn">⚠</span>' : ''}</b><small>${escapeHtml(L[x].rarity)} · weight ${D.rules.run.relics.rarity[L[x].rarity] || 0} · ${perkPct(cov.chance[x])} first</small></span></button>`
     )
     .join('');
   const head = `<div class="list-head"><button class="btn primary" data-act="relicNew">+ New Perk</button></div>`;
@@ -244,7 +244,7 @@ SECTIONS.relics = () => {
     perkEd.sp = D.lines[0].id + '1';
   perkEd.also = perkEd.also.filter(id => L[id] && id !== k);
   if (!perkEd.picks) perkEd.picks = Math.max(1, D.rules.run.map.minibosses || 1);
-  const p = `relics.${k}`;
+  const p = `perks.${k}`;
   afterRender(perkFillSoon);
   return `<div class="split"><aside class="list-col">${head}<div class="llist">${list}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(R.name || k)}</h2></div><button class="btn danger" data-act="relicDel">Delete</button></div>
@@ -319,7 +319,7 @@ function perkFillSoon() {
 function perkFill() {
   const D = studioState.D,
     k = studioState.sel.relic;
-  if (!D.relics || !D.relics[k]) return;
+  if (!D.perks || !D.perks[k]) return;
   const n = ++perkEd.n,
     pv = document.querySelector('[data-relic-preview]'),
     of = document.querySelector('[data-relic-offers]');
@@ -335,7 +335,7 @@ function perkFill() {
     logicAsk(
       'perkOfferOrder',
       perkEd.seed,
-      D.relics,
+      D.perks,
       D.rules.run.relics,
       perkEd.picks,
       perkEd.take === 'this' ? k : perkEd.take
@@ -393,7 +393,7 @@ function perkPreviewHTML(/** @type {any} */ v) {
 }
 /** perkOfferOrder's answer: each pick, this Perk marked */
 function perkOffersHTML(/** @type {{ offer: string[], took: string | null }[]} */ v, /** @type {string} */ k) {
-  const L = studioState.D.relics,
+  const L = studioState.D.perks,
     at = v.findIndex(p => p.offer.includes(k));
   return `<ol class="relic-offers">${v
     .map(
@@ -425,7 +425,7 @@ document.addEventListener('input', ev => {
 document.addEventListener('change', ev => {
   const el = /** @type {HTMLSelectElement} */ (ev.target);
   if (!el.dataset || !el.dataset.relicKind) return;
-  const R = studioState.D.relics[el.dataset.relicKind],
+  const R = studioState.D.perks[el.dataset.relicKind],
     make = PERK_ROW_NEW[el.value];
   if (!R || !make) return;
   R.fx[+(el.dataset.n || 0)] = make();
@@ -440,8 +440,8 @@ ACTIONS.pickRelic = d => {
 };
 ACTIONS.relicNew = () => {
   const D = studioState.D,
-    k = uniqueKey('loophole', x => !!(D.relics || {})[x]);
-  D.relics[k] = { name: 'New Perk', d: 'Wins pay 10% more Moneys.', rarity: 'common', fx: [PERK_ROW_NEW.money()] };
+    k = uniqueKey('loophole', x => !!(D.perks || {})[x]);
+  D.perks[k] = { name: 'New Perk', d: 'Wins pay 10% more Moneys.', rarity: 'common', fx: [PERK_ROW_NEW.money()] };
   studioState.sel.relic = k;
   changed();
   render();
@@ -450,24 +450,24 @@ ACTIONS.relicDel = async () => {
   const k = studioState.sel.relic;
   if (
     !(await ask(
-      `Delete the Perk ${escapeHtml(studioState.D.relics[k].name || k)}? A run holding it loses it.`,
+      `Delete the Perk ${escapeHtml(studioState.D.perks[k].name || k)}? A run holding it loses it.`,
       'Delete'
     ))
   )
     return;
-  delete studioState.D.relics[k];
+  delete studioState.D.perks[k];
   changed();
   render();
 };
 ACTIONS.relicRowAdd = () => {
-  const R = studioState.D.relics[studioState.sel.relic];
+  const R = studioState.D.perks[studioState.sel.relic];
   if (R.fx.length >= 4) return;
   R.fx.push(PERK_ROW_NEW.money());
   changed();
   render();
 };
 ACTIONS.relicRowDel = d => {
-  const R = studioState.D.relics[d.k];
+  const R = studioState.D.perks[d.k];
   if (!R || R.fx.length < 2) return;
   R.fx.splice(+d.n, 1);
   changed();

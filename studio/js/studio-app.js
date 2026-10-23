@@ -301,7 +301,7 @@ export function studioBroadcast() {
           /* Studio plan T2.6: what a run is made of, for a test run (Play this seed); game data only, never a save */
           rules: studioState.D.rules,
           nodeTypes: studioState.D.nodeTypes,
-          relics: studioState.D.relics,
+          relics: studioState.D.perks,
           unlocks: studioState.D.unlocks,
           items: studioState.D.items,
         },

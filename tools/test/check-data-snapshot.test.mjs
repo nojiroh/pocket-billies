@@ -95,7 +95,7 @@ test('check-data: planted robots, biomes, node types, relics, currencies, buildi
       'nodeTypes.json': N => {
         N.landing.mark = 'bogus';
       },
-      'relics.json': R => {
+      'perks.json': R => {
         R.insider.fx[0].stat = 'hp';
         R.takeover.fx[0].type = 'Plasma';
       },

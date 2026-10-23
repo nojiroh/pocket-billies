@@ -7,7 +7,7 @@ import { GAME_DATA, fn, modules, reseed, startedSave } from './setup-real.mjs';
 const E = modules.effects,
   L = modules['run-loop'],
   S = modules['run-state'],
-  PERKS = GAME_DATA.relics,
+  PERKS = GAME_DATA.perks,
   RATES = GAME_DATA.rules.run.payout;
 const maxHp = fn('maxHp');
 

@@ -766,7 +766,7 @@ const TEST_RUN = (() => {
   try {
     const q = new URLSearchParams(location.search),
       at = (q.get('at') || '').split(',').map(Number),
-      run = runTestOf(q, { species: SPECIES, unlocks: UNLOCKS, relics: PERKS, cap: RULES.run.relics.cap });
+      run = runTestOf(q, { species: SPECIES, unlocks: UNLOCKS, perks: PERKS, cap: RULES.run.relics.cap });
     return q.get('test') || q.get('story') || run
       ? {
           run,
@@ -898,7 +898,7 @@ function studioLive(D) {
      before a Play this seed run takes off (&draft=1) and while it goes: RULES, NODE_TYPES, PERKS, UNLOCKS and ITEMS
      are these objects too, so a clinic's price or a shop's wares follow an unsaved edit */
   for (const k of TEST_RUN
-    ? ['story', 'trainers', 'rules', 'nodeTypes', 'relics', 'unlocks', 'items']
+    ? ['story', 'trainers', 'rules', 'nodeTypes', 'perks', 'unlocks', 'items']
     : ['story', 'trainers'])
     if (D[k] && gameData[k]) {
       for (const x of Object.keys(gameData[k])) delete gameData[k][x];

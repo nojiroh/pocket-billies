@@ -26,7 +26,7 @@ export const RUN_TEST_SHORT = { rows: 5, minibosses: 1 };
 /**
  * a test run's address, or null (no ?debug, or no seed)
  * @param {{ has: (k: string) => boolean, get: (k: string) => string | null }} q the address's query (URLSearchParams)
- * @param {{ species: Record<string, any>, unlocks: Record<string, any>, relics: Record<string, any>, cap: number }} D
+ * @param {{ species: Record<string, any>, unlocks: Record<string, any>, perks: Record<string, any>, cap: number }} D
  */
 export function runTestOf(q, D) {
   if (!q.has('debug')) return null;
@@ -52,6 +52,6 @@ export function runTestOf(q, D) {
         return { sp, lv: Math.max(1, Math.min(100, Math.round(+lv) || 1)) };
       })
       .filter(p => Object.hasOwn(D.species, p.sp) || (left.push(`Billie ${p.sp}`), false)),
-    relics = known(list('relics'), D.relics, 'Perk').slice(0, Math.max(0, D.cap));
+    relics = known(list('relics'), D.perks, 'Perk').slice(0, Math.max(0, D.cap));
   return { seed, unlocks, short: q.get('short') === '1', party, relics, draft: q.get('draft') === '1', left };
 }

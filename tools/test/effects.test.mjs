@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { GAME_DATA, modules } from './setup-real.mjs';
 
 const E = modules.effects,
-  PERKS = GAME_DATA.relics,
+  PERKS = GAME_DATA.perks,
   ALL = Object.keys(PERKS);
 /** the rows of these made-up Perks (one row each) */
 const rows = (...fx) =>
@@ -118,7 +118,7 @@ test('effects: many rows stay within the limits (every Perk at once, and the wor
   assert.equal(E.fxPayoutRates(fx, { itemShare: 0.9 }).itemShare, 1, 'items never above their price');
 });
 
-test('effects: every Perk in relics.json uses a known kind', () => {
+test('effects: every Perk in perks.json uses a known kind', () => {
   for (const [id, R] of Object.entries(PERKS))
     for (const f of R.fx) assert.ok(E.FX_KINDS.includes(f.kind), `${id}: ${f.kind}`);
 });

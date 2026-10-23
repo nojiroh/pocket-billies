@@ -198,7 +198,7 @@ export function buildSearchIndex() {
     )
   );
   /* Studio plan Phase 4: the run's Perks, unlocks, buildings and currencies */
-  Object.entries(D.relics || {}).forEach(([k, R]) =>
+  Object.entries(D.perks || {}).forEach(([k, R]) =>
     add(
       R.name || k,
       `Perk · ${R.rarity || ''}`,

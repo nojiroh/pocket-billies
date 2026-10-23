@@ -81,9 +81,9 @@ export function runArriveHeal(team, share) {
 }
 /** Studio plan T3.3: walking into a place on a run (walk-control.js through run.js runArrivedFx, and the run's
  * simulation): the held Perks' heal rows heal the team (runArriveHeal); returns the HP gained (0: none)
- * @param {SaveData} s @param {Record<string, any>} relics relics.json */
-export function runArriveFx(s, relics) {
-  const share = fxHealShare(fxOfRun(s.run, relics));
+ * @param {SaveData} s @param {Record<string, any>} perks perks.json */
+export function runArriveFx(s, perks) {
+  const share = fxHealShare(fxOfRun(s.run, perks));
   return share ? runArriveHeal(s.team, share) : 0;
 }
 /** what a run town's clinic charges to heal the party: `each` per hurt Billie @param {Billy[]} team

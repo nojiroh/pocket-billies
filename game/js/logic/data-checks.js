@@ -659,7 +659,7 @@ export function dataNodeTypes(D, valid = () => true) {
 // RL-12: Perks (relics): the schema, the types their damage rows name; rules.json run.relics: a cap of 1-12 held, a
 // pick of 1-5 (run.offer holds up to 5), a weight of 0 or more and a whole price ($0-100,000) for each rarity, and
 // something to offer
-/** RL-12: relics.json and rules.json run.relics @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+/** RL-12: perks.json and rules.json run.relics @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataPerks(D, valid = () => true) {
   /** @type {DataProblem[]} */
   const out = [],
@@ -670,26 +670,26 @@ export function dataPerks(D, valid = () => true) {
       whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi,
       types = new Set((D.types || []).map(t => t.id)),
       stats = new Set((D.stats || []).map(t => t.id));
-    if (D.relics && valid('relics.schema.json', D.relics, 'relics.json'))
-      for (const [k, R] of Object.entries(D.relics))
+    if (D.perks && valid('perks.schema.json', D.perks, 'perks.json'))
+      for (const [k, R] of Object.entries(D.perks))
         R.fx.forEach((f, n) => {
           if (f.type && !types.has(f.type))
-            problem('relics.json', `${k}.fx[${n}].type: no type "${f.type}" (types.json)`);
+            problem('perks.json', `${k}.fx[${n}].type: no type "${f.type}" (types.json)`);
           // Studio plan T4.1: the limits that live in the code (effects.js): a factor within FX_LIMIT, stages within
           // FX_STAGES (the schema allows 0-4 and -6 to 6; a factor under FX_LIMIT.lo would be clamped up)
           if ('mult' in f && !(typeof f.mult === 'number' && f.mult >= FX_LIMIT.lo && f.mult <= FX_LIMIT.hi))
             problem(
-              'relics.json',
+              'perks.json',
               `${k}.fx[${n}].mult: ${f.mult} is outside the code's limits, ${FX_LIMIT.lo} to ${FX_LIMIT.hi} (effects.js FX_LIMIT)`
             );
           if ('stages' in f && !(Number.isInteger(f.stages) && Math.abs(f.stages) <= FX_STAGES))
             problem(
-              'relics.json',
+              'perks.json',
               `${k}.fx[${n}].stages: ${f.stages} is not a whole number of stages from -${FX_STAGES} to ${FX_STAGES} (effects.js FX_STAGES)`
             );
           /* T1.3: the stats from stats.json (a stage of HP means nothing), not a list in the schema */
           if (f.kind === 'stat' && (f.stat === 'hp' || !stats.has(f.stat)))
-            problem('relics.json', `${k}.fx[${n}].stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
+            problem('perks.json', `${k}.fx[${n}].stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
         });
     if (!RR || typeof RR !== 'object' || Array.isArray(RR)) problem('rules.json', 'run.relics missing');
     else {
@@ -708,11 +708,8 @@ export function dataPerks(D, valid = () => true) {
               `run.relics.${g}.${r} is not ${g === 'rarity' ? 'a weight of 0 or more' : 'a whole price (0-100,000 Moneys)'}`
             );
       }
-      if (D.relics && !Object.values(D.relics).some(R => (RR.rarity || {})[R.rarity] > 0))
-        problem(
-          'rules.json',
-          'run.relics.rarity gives every Perk in relics.json a weight of 0: nothing can be offered'
-        );
+      if (D.perks && !Object.values(D.perks).some(R => (RR.rarity || {})[R.rarity] > 0))
+        problem('rules.json', 'run.relics.rarity gives every Perk in perks.json a weight of 0: nothing can be offered');
     }
   }
   return out;

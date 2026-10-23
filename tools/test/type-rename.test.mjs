@@ -41,7 +41,7 @@ function typeFields(D, ids = new Set(D.types.map(t => t.id))) {
 // a relic's damage row may name a type (none does today): one is planted so the walk covers it
 const planted = () => {
   const D = copy();
-  D.relics._planted = { name: 'P', d: 'P', fx: [{ kind: 'damage', side: 'deal', type: D.types[0].id, mult: 1.5 }] };
+  D.perks._planted = { name: 'P', d: 'P', fx: [{ kind: 'damage', side: 'deal', type: D.types[0].id, mult: 1.5 }] };
   return D;
 };
 
