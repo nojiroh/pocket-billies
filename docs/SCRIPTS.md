@@ -123,6 +123,31 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 | `go place [entrance]` | a checkpoint; from S2 |
 | `actor`, `act`, `caption`, `blink`, `screen`, `effect`, `hide`, `sound`, `walk who spot`, `camera shot`, `wait who` | a cutscene's: docs/CUTSCENES.md (only in a cutscene) |
 | `dressing-room`, `throw-coins`, `pick-starter`, `staged-fight`, `rival-battle`, `fall` | the opening's: docs/CUTSCENES.md |
+| `perk [rarity or id]`, `money n`, `hurt share`, `heal [share]`, `status id`, `fx n kind key=value...`, `wager percent`, `loot table [n]`, `level n`, `recall [up]`, `foe class [up]`, `wild [up]`, `reward [kind] [n]` | an event's (events.json, on a run; RL-12b): below |
+
+### Event commands (RL-12b)
+
+An event (game/data/events.json) has an intro (lines only) and 2-3 options; an option's `need` is a condition (the
+option shows greyed out with what it needs until it holds), its `cost` Moneys paid when it is picked, and its `then` a
+script with these commands besides the usual ones. Every chance comes from the run's own stream, so a run made again
+plays the same.
+
+| Command | Does |
+|---|---|
+| `perk`, `perk rare`, `perk offshore` | offers one Perk (any, of a rarity, or that one); past the cap you let one go |
+| `money 150`, `money -50` | Moneys gained or lost (never below 0) |
+| `hurt 0.1`, `heal 0.25`, `heal` | every Billie standing loses / gains that share of its HP (never past 1 HP); `heal` alone heals all |
+| `status slp` | every Billie standing without a status gets one (par, slp, brn) |
+| `fx 3 price what=shop mult=1.25` | an effect row (perks.json's kinds) for this place and 3 more |
+| `wager 50` | a 50% chance: sets the flag `wager` to `win` or `lose` (`if wager = win`) |
+| `loot auction`, `loot common 2` | items drawn from a loot table (events.json `loot`) |
+| `level -1` | a Billie of the team, drawn, gains or loses levels |
+| `recall 2` | you pick a Billie (not one from home) to give up; one of the region's takes its place, 2 levels up |
+| `foe hustle_coach 1` | a battle with a trainer of that class (events.json `classes`), 1 level over the place; lost, the run ends |
+| `wild 2` | a wild battle with a Billie of the region, 2 levels over the place |
+| `reward`, `reward tutor 2` | a reward pick (rewards.json): of every kind, or of one (item, candy, evo, tutor), n cards |
+
+Speakers in an event are one word (`Clerk: ...`): the parser reads a single word before the colon as the speaker.
 
 The command table is `SCRIPT_COMMANDS` in logic/script-parse.js (with the parser; the runner is logic/script.js);
 the Studio's command reference is built from it, the keywords (`KEYWORD_ABOUT`), the slots and the condition terms
