@@ -1733,7 +1733,7 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     airship_moored()
 
-    @step('Props made of shapes: low-poly with the 32 px textures (voxels one to a pixel when switched)', 120)
+    @step('Props made of shapes: the every-prop scene draws them as low-poly models', 120)
     def lowpoly_props():
         """in the every-prop scene the props made of shapes draw as low-poly models, none as voxels. TC-3: that each recipe
         builds and the budget a phone can carry are tools/test/lowpoly-props.test.mjs's (this step took five minutes
