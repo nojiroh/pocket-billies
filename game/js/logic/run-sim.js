@@ -21,14 +21,16 @@ import { expose } from '../test-globals.js';
 expose({
   MAX_TURNS: [() => MAX_TURNS],
   SIM_LITE_PLACE: [() => SIM_LITE_PLACE],
+  SIM_POLICIES: [() => SIM_POLICIES],
   SIM_POLICY: [() => SIM_POLICY],
   SIM_POLICY_DRIVEN: [() => SIM_POLICY_DRIVEN],
   brief: [() => brief],
   // @ts-expect-error -- replaced on purpose
   runSimOn: [() => runSimOn, v => (runSimOn = v)],
-  SIM_POLICIES: [() => SIM_POLICIES],
-  simPolicy: [() => simPolicy],
-  simRelicChoice: [() => simRelicChoice],
+  // @ts-expect-error -- replaced on purpose
+  simPolicy: [() => simPolicy, v => (simPolicy = v)],
+  // @ts-expect-error -- replaced on purpose
+  simRelicChoice: [() => simRelicChoice, v => (simRelicChoice = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
