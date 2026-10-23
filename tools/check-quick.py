@@ -858,7 +858,9 @@ def sound_effects_step(b, base, R):
         out.append('Loophole: relic')
         # the payout: a coin per row, rising, then run_won after the last; then a loss plays run_lost
         clear(); pg.evaluate("closeModal();runOver(true);0")
-        if not until(pg, "soundEngine.log.some(e=>e.e==='jingle run_won')", 15): raise Exception(f'the payout, won: {log()}')
+        # TC-3: 40 s, not 15: the coins come a row at a time and run_won after the last; in the full check's run the
+        # jingle came just after 15 s (it was in the log the failure printed), the check's wait, not the game
+        if not until(pg, "soundEngine.log.some(e=>e.e==='jingle run_won')", 40): raise Exception(f'the payout, won: {log()}')
         L = log(); coins = [e for e in L if e.startswith('jingle payout_coin')]
         rows = pg.evaluate("JSON.parse(document.querySelector('#ov pb-payout').getAttribute('rows')||'[]').length")
         if len(coins) != rows: raise Exception(f'{len(coins)} coins for {rows} payout rows: {L}')
