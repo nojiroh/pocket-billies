@@ -13,6 +13,7 @@ import { expose } from './test-globals.js';
 import {
   BUILDING_SHADERS,
   SOLID_PROP_SHADERS,
+  WORLD_BOWL_SHADERS,
   drawBuildings,
   drawPropModels,
   drawSolidProps,
@@ -293,6 +294,8 @@ export function ensureWalkGl(cv) {
       typeof BUILDING_SHADERS !== 'undefined' && BUILDING_SHADERS,
       typeof SOLID_PROP_SHADERS !== 'undefined' && SOLID_PROP_SHADERS,
       typeof propModelShaders === 'function' && propModelShaders(),
+      /* 0.1.0 alpha: the world map's too: its first open compiled its eight programs on the spot */
+      typeof WORLD_BOWL_SHADERS !== 'undefined' && WORLD_BOWL_SHADERS,
     ])
       if (d)
         precompilePrograms(
