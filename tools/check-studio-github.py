@@ -21,6 +21,8 @@ wardrobe on the shared pixel canvas: a pencil click paints the item and marks it
 (undone and redone together); the Colour area brush paints the mask only; Grow piece; everything undone.
 Studio track ST-T: the Studio self-test runs whole and must pass (no errors, every edit undone, everything put back,
 no token in its report); its times are not judged here.
+Studio plan Phase 5 (T5.1): a kit Billie's recipe edited in Part mode bakes at once (one undo step), and the proposal
+carries its sheet (pixel-equal to the Node bake), rigs-next.js, kitBuilds.json and its line.
 Studio plan Phase 1 (T1.3): the Check lists check-data's own problems (planted), and an error blocks Propose.
 UI track UI-3: the UI look section: a colour dial changed shows in the preview frame, Undo puts the data and the
 preview back; a screen's own colour shows on that screen only and ↺ takes it away; a preset applies and undoes; Find
@@ -1110,6 +1112,112 @@ def checks_steps(pg, errs):
     print(f'checks: {len(base)} error(s) on the game data, 5 planted problems listed, Propose blocked on an error, not on a warning ({len(errs) - n} problem(s))', flush=True)
 
 
+def kit_write_steps(pg, errs):
+    """Studio plan Phase 5 (T5.1): the Studio bakes kit Billies. Part mode on a kit Billie shows its recipe; Write
+    Billie on the recipe as it is changes nothing; a head part changed in the recipe bakes at once (the recipe, the
+    sheet, the rig and the line's native parts) as one undo step, which undo takes back whole and redo puts back. The
+    edit is left pending: after the proposal, kit_write_sent checks it carried all of it, equal to the Node bake."""
+    n = len(errs)
+    form = pg.evaluate("studioState.D.kitBuilds.forms[0]")
+    sp, name = form['rig'], form['name']
+    state = f"""JSON.stringify({{ form: studioState.D.kitBuilds.forms[0], rig: studioState.rigs[{json.dumps(sp)}],
+      parts: studioState.D.lines.find(l => l.id === {json.dumps(form['line'])}).parts[{form['stage']}],
+      art: studioState.artDirty.has('art/next/billionaires/{name}.png') }})"""
+    s0 = pg.evaluate(state)
+    pg.evaluate(f"wbPart.src = 'species'; wbPart.sp = {json.dumps(sp)}; wbPart.id = ''; workbench.mode = 'part'; void openSection('workbench')")
+    pg.wait_for_selector(f'[data-kit-form="{name}"]', timeout=20000)
+    steps0 = pg.evaluate("studioState.undo.length")
+    idle = "!kitRecipe.busy"
+
+    def wait_steps(k, limit=20):
+        t0 = time.time()
+        while time.time() - t0 < limit and (pg.evaluate("studioState.undo.length") < steps0 + k or not pg.evaluate(idle)): time.sleep(0.2)
+
+    # parity through the browser: every kit Billie baked in the Studio is its committed sheet and rig
+    par = pg.evaluate("""(async () => { const out = [];
+      for (const f of studioState.D.kitBuilds.forms) {
+        const m = await kitBakeInStudio(f), i = new Image(); i.src = '../game/art/next/billionaires/' + f.name + '.png'; await i.decode();
+        const c = document.createElement('canvas'); c.width = i.width; c.height = i.height; c.getContext('2d').drawImage(i, 0, 0);
+        if (!kitSameShown(m.sheet, kitPixelsOf(c))) out.push(f.name + ' sheet');
+        if (JSON.stringify(JSON.parse(JSON.stringify(m.rig))) !== JSON.stringify(studioState.rigs[f.rig])) out.push(f.name + ' rig');
+      } return out; })()""")
+    for p in par: errs.append(f'baked in the browser, {p} is not as committed')
+    # Write Billie on the recipe as it is: nothing changes
+    pg.locator(f'[data-kit-form="{name}"] [data-act=kitWriteBillie]').click()
+    t0 = time.time()
+    while time.time() - t0 < 20 and not pg.locator('.toast', has_text='Already as baked').count(): time.sleep(0.2)
+    if not pg.locator('.toast', has_text='Already as baked').count(): errs.append(f"Write Billie on {name} as it is did not say it is already as baked")
+    if pg.evaluate(state) != s0 or pg.evaluate("studioState.undo.length") != steps0: errs.append(f'Write Billie on {name} as it is changed something')
+    # a head part changed in the recipe: one bake, one undo step
+    old = form['parts']['head'][0]
+    new = pg.evaluate(f"""[...document.querySelectorAll('[data-kit-form="{name}"] [data-kitr=part][data-kind=head] option')].map(o => o.value).find(v => v !== {json.dumps(old)})""")
+    pg.evaluate(f"""(() => {{ const el = document.querySelector('[data-kit-form="{name}"] [data-kitr=part][data-kind=head]'); el.value = {json.dumps(new)};
+      el.dispatchEvent(new Event('change', {{ bubbles: true }})); }})()""")
+    wait_steps(1)
+    s1 = json.loads(pg.evaluate(state))
+    if s1['form']['parts']['head'][0] != new: errs.append(f"the recipe's head is {s1['form']['parts']['head'][0]}, not {new}")
+    if s1['rig'] == json.loads(s0)['rig']: errs.append('the head part changed but the rig did not')
+    if not s1['art']: errs.append('the head part changed but the sheet is not marked to save')
+    if s1['parts'].get('head') != new: errs.append(f"the line's native head is {s1['parts'].get('head')}, not {new}")
+    if pg.evaluate("studioState.undo.length") != steps0 + 1: errs.append(f"the bake made {pg.evaluate('studioState.undo.length') - steps0} undo steps, not 1")
+    if not pg.evaluate("studioState.dirty && studioState.rigsDirty"): errs.append('the bake did not mark the data and the rigs to save')
+    pg.evaluate("undo()"); time.sleep(0.5)
+    s2 = json.loads(pg.evaluate(state))
+    s0j = json.loads(s0)
+    if s2['form'] != s0j['form'] or s2['rig'] != s0j['rig'] or s2['parts'] != s0j['parts']: errs.append('one undo did not take the recipe, the rig and the native parts back together')
+    same = pg.evaluate(f"""(async () => {{ const a = await atlasGet('art/next/billionaires/{name}.png'), i = new Image(); i.src = '../game/art/next/billionaires/{name}.png'; await i.decode();
+      const c = document.createElement('canvas'); c.width = i.width; c.height = i.height; c.getContext('2d').drawImage(i, 0, 0);
+      return kitSameShown(kitPixelsOf(a), kitPixelsOf(c)); }})()""")
+    if not same: errs.append('after the undo the sheet is not the committed one')
+    pg.evaluate("redo()"); time.sleep(0.5)
+    if json.loads(pg.evaluate(state)) != s1: errs.append('redo did not put the bake back whole')
+    pg.evaluate("window.__kitWrite = " + json.dumps({'name': name, 'rig': sp, 'line': form['line'], 'form': s1['form']}))
+    pg.evaluate("workbench.mode = 'sheet'; wbPart.src = 'kits'")
+    if len(errs) > n: errs[n:] = [f'kit write: {e}' for e in errs[n:]]
+    print(f'kit write: all {pg.evaluate("studioState.D.kitBuilds.forms.length")} kit Billies baked in the browser as committed; {name} written as it is (nothing changed), its head {old} -> {new} baked in one undo step, undone and redone, left to propose', flush=True)
+
+
+def kit_write_sent(pg, bodies, errs):
+    """after the proposal: it carries the kit Billie's sheet, rigs-next.js, kitBuilds.json and its line; the sheet is
+    pixel-equal (alpha, colour where shown) to `npm run bake:kits`'s bake of the same recipe, and the rig equal"""
+    import base64, io, subprocess
+    from PIL import Image
+    n = len(errs)
+    k = pg.evaluate("window.__kitWrite || null")
+    if not k: return errs.append('kit write: the step left nothing to propose')
+    tree = next((json.loads(b) for kd, b in bodies if kd == 'trees'), {'tree': []})['tree']
+    blobs = [json.loads(b)['content'] for kd, b in bodies if kd == 'blobs']
+    sent = dict(zip([e['path'] for e in tree if e.get('sha') is not None], blobs))
+    png, want = f"game/art/next/billionaires/{k['name']}.png", ['game/art/next/rigs-next.js', 'game/data/kitBuilds.json', f"game/data/lines/{k['line']}.json"]
+    for f in [png] + want:
+        if f not in sent: errs.append(f'the proposal does not carry {f} (it has {sorted(sent)[:12]})')
+    if png in sent and 'game/art/next/rigs-next.js' in sent:
+        node = r"""
+          import { readFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          import { readPng } from './tools/test/png.mjs';
+          import { kitBakeWhole } from './game/js/logic/kit-assemble.js';
+          const j = f => JSON.parse(readFileSync(join('game/data', f), 'utf8')), D = { partKits: j('partKits.json'), kitBuilds: j('kitBuilds.json'), rules: j('rules.json') };
+          const form = JSON.parse(process.argv[1]), made = kitBakeWhole(D, form, (id, v) => readPng(join('game/art', D.partKits.parts[id].views[v].file)));
+          process.stdout.write(JSON.stringify({ w: made.sheet.width, h: made.sheet.height, px: Buffer.from(made.sheet.data).toString('base64'), rig: made.rig, parts: made.parts }));"""
+        out = json.loads(subprocess.run(['node', '--input-type=module', '-e', node, json.dumps(k['form'])], cwd=REPO, capture_output=True, text=True, check=True).stdout)
+        im = Image.open(io.BytesIO(base64.b64decode(sent[png]))).convert('RGBA')
+        a, b = im.tobytes(), base64.b64decode(out['px'])
+        if im.size != (out['w'], out['h']): errs.append(f"the proposed sheet is {im.size}, the Node bake {out['w']}x{out['h']}")
+        else:
+            bad = sum(1 for i in range(0, len(b), 4) if a[i + 3] != b[i + 3] or (b[i + 3] and a[i:i + 3] != b[i:i + 3]))
+            if bad: errs.append(f'the proposed sheet differs from the Node bake in {bad} pixels')
+        rigs = base64.b64decode(sent['game/art/next/rigs-next.js']).decode()
+        RN = json.loads(rigs[rigs.index('{'):rigs.rindex('}') + 1])
+        if RN.get(k['rig']) != json.loads(json.dumps(out['rig'])): errs.append('the proposed rig is not the Node bake\'s')
+        line = json.loads(base64.b64decode(sent.get(want[2], '') or b'e30=').decode())
+        if (line.get('parts') or [None] * 9)[k['form']['stage']] != out['parts']: errs.append('the proposed native parts are not the Node bake\'s')
+        recipe = json.loads(base64.b64decode(sent.get(want[1], '') or b'e30=').decode())
+        if (recipe.get('forms') or [None])[0] != k['form']: errs.append('the proposed kitBuilds.json does not hold the edited recipe')
+    if len(errs) > n: errs[n:] = [f'kit write: {e}' for e in errs[n:]]
+    else: print(f"kit write: the proposal carries {k['name']}.png (pixel-equal to the Node bake), rigs-next.js (the rig equal), kitBuilds.json and lines/{k['line']}.json", flush=True)
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
@@ -1122,6 +1230,7 @@ STEPS = [
     ('generate', generate_steps),
     ('species_parts', species_part_steps),
     ('rig_preview', rig_preview_steps),
+    ('kit_write', kit_write_steps),
     ('wardrobe', wardrobe_steps),
     ('ui', ui_steps),
     ('ui_tools', ui_tools_steps),
@@ -1612,6 +1721,7 @@ def main():
             pg.evaluate("document.querySelectorAll('#dlg button, #modal button').forEach(b => /Save anyway|Propose|Send|OK/.test(b.textContent) && b.click())")
         if 'pulls' not in posts: errs.append(f'no pull request proposed (sent: {posts})')
         else: print('proposed: ' + ', '.join(posts), flush=True)
+        if ONLY is None or 'kit_write' in ONLY: kit_write_sent(pg, bodies, errs)
         if ONLY is None or 'ui' in ONLY:
             # UI-3: the large cut left at 20 px is in the proposal, as uiTheme.json
             import base64
