@@ -179,7 +179,7 @@ SECTIONS.world = () => {
     ['pools', 'Wild encounters'],
     ['fishing', 'Fishing'],
     ['eggs', 'Eggs (legacy)'],
-    ['regions', 'Regions ahead (legacy)'],
+    ['regions', 'Map and notes (legacy)'],
     ['backdrops', 'Battle backdrops'],
     ['look', 'World map look (legacy)'],
   ];
@@ -657,27 +657,11 @@ function worldEggs() {
     )
     .join('');
 }
+/* RL-R1: the old regions beyond the route are in game/data/legacy/regions.json (the Inner Sun); regions.json is the
+   run's region themes now */
 function worldRegions() {
-  const D = studioState.D;
   afterRender(bindWorldMap);
   return (
-    card(
-      'Regions beyond the route',
-      D.regions
-        .map(
-          (g, i) =>
-            `<div class="item-row"><div class="item-ic"><small class="mono">${escapeHtml(g.t)}</small></div><div>${grid(
-              textField('Name', `regions.${i}.name`),
-              selectField(
-                'Look',
-                `regions.${i}.t`,
-                LOCATION_KINDS.concat(['sun']).map(k => [k, k])
-              )
-            )}${textField('Description', `regions.${i}.blurb`, { area: 1, rows: 2 })}</div></div>`
-        )
-        .join(''),
-      { sub: 'Shown fogged on the world map. The Inner Sun sits at the center.' }
-    ) +
     card('Map', worldMapHTML()) +
     card(
       'What’s new',

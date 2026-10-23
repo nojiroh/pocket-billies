@@ -3,6 +3,7 @@
  "who": "morel",
  "battleStage": "shell",
  "miniboss": true,
+ "type": "Psychic",
  "blocks": false,
  "team": [
   {"sp":"jobs2","lvl":46},

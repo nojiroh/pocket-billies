@@ -15,10 +15,19 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /** a copy of a pool's list, keeping only the species a dex names; a dex that names none of them (or no dex) keeps the
- * whole list, so a place never has nothing to meet
- * @param {WeightedSpecies[]} list @param {string[] | null} [dex] @returns {WeightedSpecies[]} */
-export function wildPoolList(list, dex) {
-  const all = list.map(([id, w]) => /** @type {WeightedSpecies} */ ([id, w]));
+ * whole list, so a place never has nothing to meet. RL-R1: `swap` first turns a species into the region's variety of
+ * its line (a base into its regional form or back: run.region.swap), a species listed twice then once, weights summed
+ * @param {WeightedSpecies[]} list @param {string[] | null} [dex] @param {Record<string, string> | null} [swap]
+ * @returns {WeightedSpecies[]} */
+export function wildPoolList(list, dex, swap) {
+  /** @type {WeightedSpecies[]} */
+  const all = [];
+  for (const [id0, w] of list) {
+    const id = (swap && swap[id0]) || id0,
+      had = all.find(e => e[0] === id);
+    if (had) had[1] += w;
+    else all.push([id, w]);
+  }
   if (!dex || !dex.length) return all;
   const named = new Set(dex),
     cut = all.filter(([id]) => named.has(id));

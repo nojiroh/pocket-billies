@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Every run is a small region (roguelite track RL-R1): its seed picks a theme (Lakeland, Greenbelt, Wildwood,
+  Highland or Harvest Country; the last two need the Ridge or Autumn lands), names it ("Pendingvale", "Beta Basin",
+  "Hotfix Hollow") and walks it in three zones, each one biome over two or three rows of the map, one leading into
+  the next. A region has its own dex of four or five Billie lines (each as its normal look or its regional form, as
+  the region leans), and its mini-bosses and boss are leaders of the types it leans to. The world map shows the
+  region's name and each zone's own ground, and a place's card says which zone it is in.
 - Type abilities (reflavour track RF-3): each type's ability has a name, shown in the Guide's species page under
   Abilities and in battle lines: Kindling (Fire), Undertow (Water), Regrowth (Grass), Live Wire (Electric), Bedrock
   (Ground), Slipstream (Flying), Wild Mind (Psychic), Alloy (Steel), Parting Roar (Dragon). Three are new: Water's

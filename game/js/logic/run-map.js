@@ -28,6 +28,7 @@ import { provide } from '../hooks.js';
 import { rngFrom } from './rng.js';
 import { weatherPick } from './weather.js';
 import { RUN_DAYS } from './run-state.js';
+import { runZoneOf } from './run-region.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_BOWL: [() => RUN_BOWL],
@@ -84,10 +85,16 @@ export function runMapRowsFit(M) {
   );
 }
 /** the map for a seed. Each choice draws from a stream of its own (a row's shape, a node's type, a node's biome, keyed
- * by row and lane), so changing one rule moves only what it rules
+ * by row and lane), so changing one rule moves only what it rules. RL-R1: with the region's zones in the rules (M.zones,
+ * logic/run-region.js), each row is its zone's biome on both lanes and each node knows its zone; the links are the same
+ * across a zone's edge as inside it, so every place of a zone's last row leads into the next zone
  * @param {string} seed @param {Record<string, NodeType>} nodeTypes @param {RunMapRules} M @returns {RunMap} */
 export function runMapMake(seed, nodeTypes, M) {
   if (!runMapRowsFit(M)) throw new Error(`runMapMake: ${M.rows} rows can't hold ${M.minibosses} mini-bosses`);
+  /* RL-R1: the region's zones, when it has them, give each row its biome (and the rows add up to the map's) */
+  const zones = M.zones && M.zones.length ? M.zones : null;
+  if (zones && zones.reduce((n, z) => n + z.rows, 0) !== M.rows)
+    throw new Error(`runMapMake: the zones' rows don't add up to the map's ${M.rows}`);
   const roles = runMapRows(M),
     fill = Object.fromEntries(Object.entries(nodeTypes).map(([k, t]) => [k, t.weight || 0])),
     byRole = { first: M.first, last: M.last, guard: M.guard, rest: M.rest };
@@ -112,9 +119,12 @@ export function runMapMake(seed, nodeTypes, M) {
         type = role
           ? byRole[/** @type {keyof typeof byRole} */ (role)]
           : rngFrom(seed, `map|type|${row}|${lane}`).pick(fill),
-        biome = rngFrom(seed, `map|biome|${row}|${lane}`).pick(M.biomes);
+        zone = zones ? runZoneOf(zones, row) : -1,
+        biome = zones ? zones[zone].biome : rngFrom(seed, `map|biome|${row}|${lane}`).pick(M.biomes);
       at[row].push(nodes.length);
-      nodes.push({ type, row, lane, to: [], seen: 0, biome });
+      nodes.push(
+        zones ? { type, row, lane, to: [], seen: 0, biome, zone } : { type, row, lane, to: [], seen: 0, biome }
+      );
     }
   });
   for (let row = 0; row + 1 < at.length; row++) {

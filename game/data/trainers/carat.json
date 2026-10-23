@@ -3,6 +3,7 @@
  "who": "carat",
  "battleStage": "grotto",
  "miniboss": true,
+ "type": "Electric",
  "blocks": false,
  "team": [
   {"sp":"slim2","lvl":51},
