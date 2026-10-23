@@ -30,7 +30,6 @@ import { COATS, COINS, DATA_WARN, DEX_ORDER, ITEMS, LOCATIONS, RELICS, RULES, SP
 import { speciesOf } from './logic/fighters.js';
 import {
   addBilly,
-  addWalked,
   encounterStock,
   encountersHere,
   gainXp,
@@ -115,7 +114,7 @@ function debugHTML() {
           .join('')}</ul>`
       : '<p class="note">Game data loaded with no warnings.</p>'
   }</details>
- <details><summary>Wallet and walking</summary><div class="dbg-row">${debugButtonHTML('se1', '+$1,000')}${debugButtonHTML('se10', '+$10,000')}${debugButtonHTML('walk1', 'Walk 1 km')}</div>
+ <details><summary>Wallet</summary><div class="dbg-row">${debugButtonHTML('se1', '+$1,000')}${debugButtonHTML('se10', '+$10,000')}</div>
   <div class="dbg-row">${debugButtonHTML('coins', '+10 of every coin')}${debugButtonHTML('items', '+5 of every item')}</div></details>
  <details><summary>Billies</summary><div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level">${debugSelectHTML('dbgCoat', [['', 'No coat'], ...Object.entries(COATS).map(([k, c]) => [k, c.name])], uiState.dbgCoat || '')}</div>
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
@@ -132,7 +131,7 @@ function debugHTML() {
     node
   )}${debugButtonHTML('jump', 'Go there')}</div>
   <div class="dbg-row">${debugButtonHTML('bowltest', 'Bowl map test', 'gold')}</div><p class="note">Phase 10: opens the bowl world map and checks its shaders, that every place is on it and opens its card when tapped, that the camera keeps above the rim, Home, and the frame rate on this device.</p>
-  <div class="dbg-row">${debugButtonHTML('seats', 'Earn every badge')}${debugButtonHTML('flags', 'Reset trainer wins')}${debugButtonHTML('fillq', 'Fill encounters here')}${debugButtonHTML('clearq', 'Clear encounters here')}</div></details>
+  <div class="dbg-row">${debugButtonHTML('fillq', 'Fill encounters here')}${debugButtonHTML('clearq', 'Clear encounters here')}</div></details>
  <details><summary>Runs (roguelite track)</summary>${
    saveData.run
      ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” above walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugSelectHTML(
@@ -163,8 +162,7 @@ function debugHTML() {
     uiState.dbgTest || testMaps()[0] || ''
   )}${debugButtonHTML('test', 'Go there')}${debugButtonHTML('testchk', 'Run its checks')}${uiState.bench && uiState.bench.test ? debugButtonHTML('untest', 'Back to the game', 'gold') : ''}</div>
   ${uiState.testRes ? `<ul class="dbg-warn">${uiState.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${escapeHtml(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}</details>
- <details><summary>Storage, the ranch and evolution</summary><div class="dbg-row">${debugButtonHTML('idle', 'Age storage by a day')}${debugButtonHTML('streak', 'Lead +3 win streak')}</div>
-  <div class="dbg-row">${debugButtonHTML('ranchhour', 'Age the ranch by an hour')}${debugButtonHTML('scrap', '+50 Scrap')}${debugButtonHTML('eggsready', 'Eggs ready now')}${debugButtonHTML('capital', '+500 Capital, +2 Seals')}</div></details>
+ <details><summary>Storage, the ranch and evolution</summary><div class="dbg-row">${debugButtonHTML('ranchhour', 'Age the ranch by an hour')}${debugButtonHTML('scrap', '+50 Scrap')}${debugButtonHTML('eggsready', 'Eggs ready now')}${debugButtonHTML('capital', '+500 Capital, +2 Seals')}</div></details>
  <details ${inB ? 'open' : ''}><summary>Battle${inB ? '' : ' (start one first)'}</summary><div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div></details>
  <details><summary>Save</summary><div class="dbg-row">${debugButtonHTML('copy', 'Copy save as text')}${debugButtonHTML('export', 'Download backup')}${debugButtonHTML('wipe', 'Erase save', 'red')}</div></details>
@@ -241,10 +239,6 @@ function debugAction(x) {
       break;
     case 'se10':
       saveData.se += 10000;
-      break;
-    case 'walk1':
-      /* phase 08: as if you walked a kilometre outdoors (eggs, the distance on your trainer card) */
-      addWalked(1000);
       break;
     case 'coins':
       Object.keys(COINS).forEach(k => (saveData.coins[k] = (saveData.coins[k] || 0) + 10));
@@ -443,16 +437,6 @@ function debugAction(x) {
       uiState.modal = null;
       runOver(x === 'runwin');
       return;
-    case 'seats':
-      Object.values(TRAINERS).forEach(T => {
-        if (T.seat && !saveData.seats.includes(T.seat.id)) saveData.seats.push(T.seat.id);
-        saveData.flags[T.id] = 1;
-      });
-      break;
-    case 'flags':
-      saveData.flags = {};
-      saveData.seats = [];
-      break;
     case 'fillq': {
       /* a town without wild Billies gets a route's worth, so there is always something to test with */
       const q = encountersHere();
@@ -461,11 +445,6 @@ function debugAction(x) {
     }
     case 'clearq':
       encountersHere().length = 0;
-      break;
-    case 'idle':
-      saveData.box.forEach(m => {
-        if (m.boxedAt) m.boxedAt -= 864e5;
-      });
       break;
     /* RL-9: the ranch's trainees started an hour earlier (an hour's training, collected when the ranch opens), and
        Scrap to train with */
@@ -491,9 +470,6 @@ function debugAction(x) {
       saveData.meta.capital += 500;
       saveData.meta.seals += 2;
       toast(`${saveData.meta.capital} Capital, ${saveData.meta.seals} Audit Seals.`);
-      break;
-    case 'streak':
-      if (saveData.team[0]) saveData.team[0].streak = (saveData.team[0].streak || 0) + 3;
       break;
     case 'win':
       if (!activeBattle || activeBattle.phase === 'playing' || activeBattle.over)
