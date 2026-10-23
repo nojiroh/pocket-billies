@@ -478,6 +478,18 @@ def check_rooms():
     return f'{n} rooms, every wall at its room\'s height'
 
 
+@step('Rooms: a floor of its own each (from the data)', 10)
+def check_room_floors():
+    """v47: no two rooms share a floor (TC-1: the data half of the v47 step, kept when that step went)"""
+    import collections
+    floors = collections.defaultdict(list)
+    for sid, sc in gamedata()['maps'].items():
+        if sc.get('kind') == 'room' and '@' not in sid: floors[collections.Counter(''.join(sc['tiles'])).most_common(1)[0][0]].append(sid)
+    bad = [f'rooms sharing a floor ({k}): {", ".join(v)}' for k, v in floors.items() if len(v) > 1]
+    if bad: raise Exception('; '.join(bad[:6]))
+    return f'{len(floors)} rooms, a floor each'
+
+
 @step('Ground: every kind has twelve tiles of its own', 30)
 def check_ground():
     """v47: the 12 tiles of every ground kind exist, differ from each other, and share no picture or overlay with
@@ -2743,7 +2755,7 @@ def main():
     R = {'when': time.strftime('%Y-%m-%d %H:%M'), 'render': 'software, a third of the resolution, 1024 shadow map'}
     # phase 04b: data/gamedata.js is generated from the data files; make it from the files as they are now
     subprocess.run(['node', str(ROOT / 'tools' / 'build-data.mjs')], check=True)
-    check_version(); check_code(); check_data(); old_names(); copperleaf_data(); check_water(); check_masts(); check_postcards(); check_rooms(); check_windows(); check_ground(); report_unused()
+    check_version(); check_code(); check_data(); old_names(); copperleaf_data(); check_water(); check_masts(); check_postcards(); check_rooms(); check_room_floors(); check_windows(); check_ground(); report_unused()
     srv, base = serve(GAME)
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
