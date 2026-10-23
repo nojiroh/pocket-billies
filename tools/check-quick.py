@@ -3,7 +3,7 @@
 3D scenes in software and slowly). It is the check Claude runs while building a version; it takes a few minutes.
 
     python3 tools/check-quick.py                 # data, code, shaders, every scene once, the main flows
-    python3 tools/check-quick.py --smoke         # the fast subset: data and code, Start-Game on a phone + debug log, Studio opens
+    python3 tools/check-quick.py --smoke         # the fast subset: the data, Start-Game on a phone + debug log, the in-game test's first step
     python3 tools/check-quick.py --selftest      # the game's own full test and diagnostics test, whole (about 25 minutes)
     python3 tools/check-quick.py --scenes=copperleaf   # only these walk scenes (by id), for a change to one place
     python3 tools/check-quick.py --steps=v34,battle   # only the steps whose names hold these words
@@ -46,8 +46,9 @@ NO_ACCOUNTS = "Object.defineProperty(window,'PB_FIREBASE',{get(){return null},se
 TEST_GLOBALS = "window.PB_TEST_GLOBALS=true"
 LOW_RENDER = "gameData.engine=gameData.engine||{};gameData.engine.defaults=Object.assign({},gameData.engine.defaults||{},{quality:{resolution:.34,shadowMap:1024,auto:false}});0"
 ARGS = sys.argv[1:]
-# phase 01: --smoke is the fast subset run after every change and on every push (about two minutes): the data and code
-# checks, Start-Game on a phone (with the debug log export) and the Studio opening. The full check runs nightly and per phase
+# phase 01: --smoke is a fast subset (the data checks, Start-Game on a phone with the debug log export, one step of the
+# in-game test, the actions sheet); every push runs tools/check-fast.py, which also opens the Studio. The full check
+# runs nightly and per phase
 SMOKE = '--smoke' in ARGS
 # where a point of the walk scene is on screen (the same projection the renderer uses)
 PROJ = "(([x,z])=>{const C=walkView.C,r=walkView.cv.getBoundingClientRect(),y=standingHeightAt(x,z)+(typeof worldCurveDrop==='function'?worldCurveDrop(x,z):0);if(C.vp){const m=C.vp,cx=m[0]*x+m[4]*y+m[8]*z+m[12],cy=m[1]*x+m[5]*y+m[9]*z+m[13],w=m[3]*x+m[7]*y+m[11]*z+m[15];return [r.left+(cx/w*.5+.5)*r.width,r.top+(1-(cy/w*.5+.5))*r.height]}const q=worldToScreen(C,x,y,z);return [r.left+q.x/walkView.cv.width*r.width,r.top+q.y/walkView.cv.height*r.height]})(%s)"
@@ -2628,24 +2629,6 @@ def compare_pictures(R):
     elif diffs: notes.append(f'{len(diffs)} pictures match the baseline closely')
 
 
-@step('Studio: every script loads and the sign-in shows (GitHub mode)', 60)
-def studio_opens(b):
-    """phase 01: the Studio as GitHub Pages serves it (no Studio server): all its scripts run and it asks for a token.
-    The Studio's own checks are tools/check-studio-github.py (Studio plan T1.4; local mode was dropped)"""
-    srv, base = serve(ROOT); errs = []
-    ctx = b.new_context(viewport={'width': 1280, 'height': 860}); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS); pg = ctx.new_page()
-    pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
-    try:
-        pg.goto(base + '/studio/index.html'); pg.wait_for_selector('#ghTok', timeout=60000)
-        ok = pg.evaluate("[typeof openSection==='function',typeof githubMode==='object',typeof propLook==='function']")
-        if not all(ok): raise Exception(f'Studio scripts missing (openSection, githubMode, the shared renderer): {ok}')
-        shot(pg, 'studio-sign-in')
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return 'the Studio and the shared game scripts loaded; the GitHub sign-in is showing'
-    finally:
-        ctx.close(); srv.shutdown()
-
-
 def timing_report(R):
     """phase 01: the total and the slowest steps, so the time a check costs stays visible"""
     done = [s for s in steps if s.get('seconds')]
@@ -2675,9 +2658,7 @@ def main():
             phone_flow(b, base, R)
             in_game_test_step(b, base, R)
             actions_sheet_step(b, base, R)
-            if SMOKE:
-                studio_opens(b)
-            else:
+            if not SMOKE:
                 safety_step(b, base, R)
                 targets_step(b, base, R)
                 sound_step(b, base, R)
