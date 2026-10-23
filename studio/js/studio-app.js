@@ -623,7 +623,7 @@ const RANGE_FORMATS = { pct: v => Math.round(v * 100) + '%', x: v => '×' + (+v)
 export const SECTION_LIST = [
   ['billionaires', 'Billies', 'The creatures: names, stats, moves, evolution, sprite art'],
   ['roster', 'Roster board', 'The Billies in the game and how far their art is'],
-  ['parts', 'Parts', 'Part sizes, weight and Prime Billies'],
+  ['parts', 'Part sizes', 'Part sizes, weight and Prime Billies'],
   ['coats', 'Coats', 'Recolours of a Billie’s art, and how often each turns up'],
   ['workbench', 'Art workbench', 'Cut sheets into parts (drop a PNG anywhere); parts, pixels and models next'],
   ['robots', 'Robots', 'Robot parts, gems, their pictures and the rules behind them'],
@@ -641,7 +641,7 @@ export const SECTION_LIST = [
   ['trainers', 'Trainers', 'Rivals and arena leaders'],
   ['lore', 'Lore & story', 'The world, the story, people, places, legends, clues, books and what people say'],
   ['story', 'Story scripts', 'The story’s own scripts (story.json), its flags, start presets and quests'],
-  ['people', 'People', 'Looks for trainers and shopkeepers'],
+  ['people', 'Looks', 'Looks for trainers and shopkeepers'],
   ['jobs', 'Jobs', 'What working Billies earn (not in the game until the ranch)'],
   ['rules', 'Rules', 'Every number that tunes the game'],
   ['ui', 'UI look', 'The menus’ look: colours, glass, shapes, space, type and motion, for the game or one screen'],
