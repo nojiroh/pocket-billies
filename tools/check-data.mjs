@@ -189,15 +189,11 @@ for (const [k, P] of Object.entries(pools))
 route.forEach((r, i) => {
   if (r.mapId && !S[r.mapId]) problem('locations.json', `stop ${i} (${r.name}) has map ${r.mapId}, no such map`);
   if (r.pool && !pools[r.pool]) problem('locations.json', `stop ${i} (${r.name}) has pool ${r.pool}, no such pool`);
-  // phase 10: a spot on the bowl (a in degrees, r from the floor's centre 0 to the rim 1), or under another place
+  // phase 10: a spot on the bowl (a in degrees, r from the floor's centre 0 to the rim 1). The game's places all have
+  // one; a spot under another place (bowl.under) was only for the parked Pearlantis
   const B = r.bowl;
   if (!B) problem('locations.json', `stop ${i} (${r.name}) has no bowl spot`);
-  else if ('under' in B) {
-    const P = route.find(o => o.id === B.under);
-    if (!P) problem('locations.json', `stop ${i} (${r.name}) is under ${B.under}, no such place`);
-    else if (!P.bowl || 'under' in P.bowl)
-      problem('locations.json', `stop ${i} (${r.name}) is under ${B.under}, which has no spot of its own`);
-  } else if (!(B.a >= 0 && B.a < 360 && B.r >= 0 && B.r <= 1))
+  else if (!(B.a >= 0 && B.a < 360 && B.r >= 0 && B.r <= 1))
     problem('locations.json', `stop ${i} (${r.name}) has bowl spot a ${B.a}, r ${B.r}: a must be 0-360, r 0-1`);
 });
 check('roads.schema.json', D.roads || [], 'roads.json');
