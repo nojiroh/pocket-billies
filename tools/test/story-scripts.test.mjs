@@ -1,17 +1,15 @@
-// Project Story S1: the scripts in the data (three, for the line format check), start presets and safe runs.
+// Project Story S1: the scripts in the data, a person's script played as the game plays it (Juniper), start presets
+// and safe runs.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { data, fn, startedSave } from './setup-real.mjs';
-import { oldWorld } from './old-world.mjs';
 
 const { parseScript, runScript, saveDuringRun, runBase, applyStoryPreset } = Object.fromEntries(
   ['parseScript', 'runScript', 'saveDuringRun', 'runBase', 'applyStoryPreset'].map(n => [n, fn(n)])
 );
 const G = data.gameData;
-/* RL-5: people from the old world's maps too (Curator Nacre lives in Pearlantis, parked in game/data/legacy) */
-const OLD = oldWorld();
 const person = id =>
-  Object.values(OLD.maps)
+  Object.values(G.maps)
     .flatMap(sc => sc.people || [])
     .find(p => p.id === id);
 const scripts = () => [
@@ -40,23 +38,17 @@ test('every script in the data reads', () => {
   for (const [id, lines] of all) assert.doesNotThrow(() => parseScript(lines), id);
 });
 
-test('Curator Nacre: a choice once the ledger is read, its [once] option gone after', async () => {
-  const P = person('nacre'),
-    save = { story: {}, items: {}, coins: {} };
-  const SANK =
-    'We sank because we wouldn’t spend. Now someone else is spending it for us. There’s a lesson in that, but I’m too cross to learn it.';
-  assert.equal((await play(P.script, save)).length, 3, 'the first meeting');
-  assert.deepEqual(await play(P.script, save), [SANK]);
-  save.story.read_pearl_ledger = 1;
-  const asked = await play(P.script, save, { id: 'person:nacre' });
-  assert.deepEqual(asked, [
-    '[angry] So you’ve read the ledger.',
-    '? Why didn’t anyone stop her? | What are the mirrors for? | Just passing.',
-    SANK,
-  ]);
-  const again = await play(P.script, save, { id: 'person:nacre', pick: 1 });
-  assert.equal(again[1], '? What are the mirrors for? | Just passing.', 'the [once] option is gone');
-  assert.deepEqual(again[2], undefined, '"Just passing." says nothing');
+test('Juniper in Copperleaf: the first meeting once, then her lines in turn, round again', async () => {
+  const P = person('juniper'),
+    save = { story: {}, items: {}, coins: {} },
+    first = await play(P.script, save, { id: 'person:juniper' });
+  assert.equal(first.length, 3, 'the first meeting');
+  assert.equal(save.story.met_juniper, 1);
+  const cycle = P.script.filter(l => /^ {4}- /.test(l)).map(l => l.replace(/^ {4}- /, '').replace(/ #l:\w+$/, ''));
+  assert.ok(cycle.length >= 2, 'the test needs her cycle');
+  const heard = [];
+  for (let i = 0; i <= cycle.length; i++) heard.push(...(await play(P.script, save, { id: 'person:juniper' })));
+  assert.deepEqual(heard, [...cycle, cycle[0]]);
 });
 
 test('start presets: place, flags, trainers beaten with their badges, coins and team; an unknown one is null', () => {
@@ -85,18 +77,18 @@ test('start presets: place, flags, trainers beaten with their badges, coins and 
 });
 
 test('a save taken while a script runs writes the state from before it, and where to carry on', () => {
-  const s = { story: { met_juniper: 1 }, items: { honey: 1 }, coins: { gold: 0 }, flags: {}, team: [1] };
+  const s = { story: { met_chosen: 1 }, items: { honey: 1 }, coins: { gold: 0 }, flags: {}, team: [1] };
   const base = runBase(s);
-  s.story.met_nacre = 1;
+  s.story.met_juniper = 1;
   s.items.honey = 5;
   s.flags.chad = 1;
   Object.defineProperty(s, 'toJSON', {
-    value: () => saveDuringRun(s, base, { script: 'person:nacre', path: [2, 0, 1] }),
+    value: () => saveDuringRun(s, base, { script: 'person:juniper', path: [2, 0, 1] }),
   });
   const written = JSON.parse(JSON.stringify(s));
-  assert.deepEqual(written.story, { met_juniper: 1, resume: { script: 'person:nacre', path: [2, 0, 1] } });
+  assert.deepEqual(written.story, { met_chosen: 1, resume: { script: 'person:juniper', path: [2, 0, 1] } });
   assert.deepEqual(written.items, { honey: 1 });
   assert.deepEqual(written.flags, {});
   assert.deepEqual(written.team, [1]);
-  assert.equal(s.story.met_nacre, 1, 'the game itself keeps the new state');
+  assert.equal(s.story.met_juniper, 1, 'the game itself keeps the new state');
 });
