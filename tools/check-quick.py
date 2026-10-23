@@ -702,9 +702,10 @@ def battle_music_step(P):
         # TC-4: 20 s, not 6: the cue comes on the encounter's flash, which a busy machine draws late (the before run's failure)
         if not until(pg, "soundEngine.log.some(e=>e.e.startsWith('battle '))", 20): raise Exception(f'{kind}: no battle cue')
         held = pg.evaluate("!!(soundEngine.song&&soundEngine.song.hold)")
+        # the game's 8 s fallback lets the drums in without a log line, so a throw after it logs nothing: say so
         # the player taps through the opening lines; the throw ('enter') lets the drums in
         # (in a run the battle can begin again from its seed at once, "The battle starts again.": its cue comes again)
-        if not until(pg, "soundEngine.log.some(e=>e.e==='drums in')", 15, "uiState.evReady&&nextEvent()"): raise Exception(f'{kind}: the drums never came in on a throw ({pg.evaluate("JSON.stringify(soundEngine.log)")})')
+        if not until(pg, "soundEngine.log.some(e=>e.e==='drums in')", 15, "uiState.evReady&&nextEvent()"): raise Exception(f'{kind}: the drums never came in on a throw' + (' (the 8 s fallback had let them in first)' if pg.evaluate("!(soundEngine.song&&soundEngine.song.hold)") else '') + f' ({pg.evaluate("JSON.stringify(soundEngine.log)")})')
         L = pg.evaluate("soundEngine.log.map(e=>e.e)"); T = pg.evaluate("soundEngine.log.map(e=>e.at)")
         d = L.index('drums in'); c = max(i for i in range(d) if L[i].startswith('battle '))
         cue = L[c]
@@ -716,11 +717,15 @@ def battle_music_step(P):
     if not until(pg, "typeof walkView!=='undefined'&&walkView.ready&&!!saveData.run", 150): raise Exception('the run fixture never opened')
     pg.mouse.click(200, 300)
     if not until(pg, "!!soundEngine.ctx&&soundEngine.ctx.state==='running'", 8): return 'not checked: sound did not start in this browser'
+    # TC-4: the animations at four times their speed (as the double battles step plays them), so the throw comes well
+    # inside the drums' 8 s fallback; at normal speed a busy machine drew it 10 s after the flash and the fallback won
+    pg.evaluate("uiState.dbgSpeed=true;battleStage.speed=4;0")
     a = fight("screenWipe=f=>f();const q={id:'tbm',sp:'swift1',lvl:3,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0", 'wild', 'wild')
     pg.evaluate("closeModal();activeBattle=null;0")
     boss = pg.evaluate("Object.keys(TRAINERS).find(k=>TRAINERS[k].runFoe==='miniboss')")
     if not boss: raise Exception('the run fixture has no mini-boss')
     c = fight(f"saveData.team.forEach(m=>{{m.hp=maxHp(m)}});startTrainer('{boss}');0", 'leader', 'leader')
+    pg.evaluate("uiState.dbgSpeed=false;battleStage.speed=1;0")
     return f'wild: {a}; mini-boss {boss}: {c}'
 
 
