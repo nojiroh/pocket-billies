@@ -10,7 +10,7 @@ import { TEST_BOOT } from './test-boot.js';
 import {
   DATA_WARN,
   LOCATIONS,
-  RELICS,
+  PERKS,
   RULES,
   SPECIES,
   START_NODE,
@@ -36,7 +36,7 @@ import {
   setSaveData,
   uiState,
 } from './game-state.js';
-import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, artBoot, artImg, uiIconURL } from './art.js';
+import { ART_CACHE, EGG_ART, ICON_ATLAS, PYRAMID_ART, artBoot, artImg, uiIconURL } from './art.js';
 import { personArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, battleStagePrepare } from './battle-stage.js';
@@ -136,6 +136,7 @@ const UI_ICONS = [
   'chev',
   'close',
   'coin',
+  'pyramid',
   'fight',
   'gauge',
   'gear',
@@ -166,7 +167,7 @@ const UI_ICONS = [
 /* v26: the walk scenes follow the real clock, the weather and the season (environment.js; the Studio leaves this off) */
 if (typeof environment !== 'undefined') environment.on = true;
 const LOAD_PHASES = [
-  'Polishing the coins',
+  'Polishing the pyramids',
   'Waking up the Billies',
   'Building the battlefields',
   'Planting trees and painting towns',
@@ -180,7 +181,7 @@ const LOAD_TIPS = [
   'Clinics heal your whole team for free. Just walk up to the door.',
   'A Billie hides in the grass with only its level showing. You find out who it is when the battle starts.',
   'Fire beats Grass, Grass beats Water, Water beats Fire. The classics never go out of style.',
-  'Flick a coin at a tired Billie to tax it.',
+  'Throw a pyramid at a tired Billie to catch it.',
   'The world map shows every road. Pick a place, and gold arrows lead you there.',
   'Road signs at the edge of town tell you where each road goes.',
 ];
@@ -190,7 +191,7 @@ function loadList() {
     add = (p, ph) => {
       if (p && !L.has(p)) L.set(p, ph);
     };
-  [ICON_ATLAS, ...COIN_ART, ...EGG_ART].forEach(p => add(p, 0));
+  [ICON_ATLAS, ...PYRAMID_ART, ...EGG_ART].forEach(p => add(p, 0));
   for (const sp of Object.keys(SPECIES)) {
     const R = RIGS[sp];
     if (!R) continue;
@@ -760,12 +761,12 @@ function loaderHide() {
    starts you in the real place (its people, trainers and exits; not the scene alone), &at=x,z on that spot,
    &flags=a,!b,beat:chad switches flags and trainers on top of the preset, and &draft=1 waits for the open Studio's
    unsaved data (2 s at most) before starting. Studio plan T2.6, "Play this seed": ?debug&run=<seed> (logic/run-test.js:
-   the unlocks, short map, party and Loopholes) is a test run that takes off at once on that seed (runTestStart). */
+   the unlocks, short map, party and Perks) is a test run that takes off at once on that seed (runTestStart). */
 const TEST_RUN = (() => {
   try {
     const q = new URLSearchParams(location.search),
       at = (q.get('at') || '').split(',').map(Number),
-      run = runTestOf(q, { species: SPECIES, unlocks: UNLOCKS, relics: RELICS, cap: RULES.run.relics.cap });
+      run = runTestOf(q, { species: SPECIES, unlocks: UNLOCKS, perks: PERKS, cap: RULES.run.perks.cap });
     return q.get('test') || q.get('story') || run
       ? {
           run,
@@ -828,7 +829,7 @@ function studioTestStart() {
 }
 /** Studio plan T2.6, "Play this seed": a new game (the party asked for, else the first starter) with the unlocks asked
  * for takes off from the mast at once on the seed, through runTakeOff as the mast does (logic/run-start.js), every
- * Billie in the party flying; then the Loopholes asked for are held. A test run: nothing is saved, no account
+ * Billie in the party flying; then the Perks asked for are held. A test run: nothing is saved, no account
  * @param {NonNullable<ReturnType<typeof runTestOf>>} R */
 function runTestStart(R) {
   uiState.pg = 'girl';
@@ -845,10 +846,10 @@ function runTestStart(R) {
   uiState.mq = [];
   runTakeOff(R.seed, R.short ? RUN_TEST_SHORT : undefined, [], {
     home: s.team.map(m => m.uid),
-    pack: { items: {}, coins: {} },
+    pack: { items: {}, pyramids: {} },
   });
   if (!saveData.run) return toast(`Test run: seed ${R.seed} couldn’t take off with this data.`);
-  if (R.relics.length) saveData.run.relics = R.relics.slice();
+  if (R.perks.length) saveData.run.perks = R.perks.slice();
   toast(
     `Test run on seed ${R.seed}${R.short ? ', short map' : ''}${TEST_RUN.draft ? (studioLive.told ? ', with your Studio edits' : ' (the Studio’s edits didn’t come: saved data)') : ''}${R.left.length ? `. Left out: ${R.left.join(', ')}` : ''}. Nothing here is saved.`
   );
@@ -894,10 +895,10 @@ function studioLive(D) {
   }
   /* Project Story S3: the story and the trainers, in place (STORY_DATA and TRAINERS are these objects). Studio plan
      T2.6: in a test run (never a player's game, which would save what draft rules gave) also what a run is made of,
-     before a Play this seed run takes off (&draft=1) and while it goes: RULES, NODE_TYPES, RELICS, UNLOCKS and ITEMS
+     before a Play this seed run takes off (&draft=1) and while it goes: RULES, NODE_TYPES, PERKS, UNLOCKS and ITEMS
      are these objects too, so a clinic's price or a shop's wares follow an unsaved edit */
   for (const k of TEST_RUN
-    ? ['story', 'trainers', 'rules', 'nodeTypes', 'relics', 'unlocks', 'items']
+    ? ['story', 'trainers', 'rules', 'nodeTypes', 'perks', 'unlocks', 'items']
     : ['story', 'trainers'])
     if (D[k] && gameData[k]) {
       for (const x of Object.keys(gameData[k])) delete gameData[k][x];

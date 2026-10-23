@@ -10,11 +10,12 @@ import * as data from '../../game/js/game-data.js';
 import * as battleEngine from '../../game/js/logic/battle-engine.js';
 import * as battleRewards from '../../game/js/logic/battle-rewards.js';
 import * as effects from '../../game/js/logic/effects.js';
-import * as relics from '../../game/js/logic/relics.js';
+import * as perks from '../../game/js/logic/perks.js';
 import * as rng from '../../game/js/logic/rng.js';
 import * as rules from '../../game/js/logic/rules.js';
 import * as runLoop from '../../game/js/logic/run-loop.js';
 import * as runMap from '../../game/js/logic/run-map.js';
+import * as runRegion from '../../game/js/logic/run-region.js';
 import * as runScenes from '../../game/js/logic/run-scenes.js';
 import * as runSim from '../../game/js/logic/run-sim.js';
 import * as runStart from '../../game/js/logic/run-start.js';
@@ -29,11 +30,12 @@ export function simWorkerEnv() {
       'battle-engine': battleEngine,
       'battle-rewards': battleRewards,
       effects,
-      relics,
+      perks,
       rng,
       rules,
       'run-loop': runLoop,
       'run-map': runMap,
+      'run-region': runRegion,
       'run-scenes': runScenes,
       'run-sim': runSim,
       'run-start': runStart,

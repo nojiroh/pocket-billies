@@ -1,4 +1,4 @@
-// RL-12: a run's Loopholes in a battle (b.fx, logic/effects.js): stat stages for yours on the field as it starts, what
+// RL-12: a run's Perks in a battle (b.fx, logic/effects.js): stat stages for yours on the field as it starts, what
 // yours deal and take (calcDamage), a coin's chance (catchOdds), the money a win pays (battleRewards), and a battle
 // without them exactly as before.
 import assert from 'node:assert/strict';
@@ -68,7 +68,7 @@ test('battle fx: damage dealt and taken follow the rows (same seed, same rolls)'
 test('battle fx: catch rows multiply a coin’s chance, never past 1', () => {
   const odds = fx => {
     const b = battle(fx, 30);
-    return fn('catchOdds')('penny', 1, false, b);
+    return fn('catchOdds')('pyramid', 1, false, b);
   };
   const base = odds(null);
   assert.ok(base > 0 && base < 0.5, `the test needs a low chance: ${base}`);

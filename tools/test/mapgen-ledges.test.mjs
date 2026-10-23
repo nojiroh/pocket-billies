@@ -118,7 +118,7 @@ test("the debug menu's mountains run has ledges, no trap anywhere, and its scene
       team: [],
       se: 0,
       items: {},
-      coins: {},
+      pyramids: {},
       trip: { node: 0, plan: [] },
       wild: {},
       eggs: [],

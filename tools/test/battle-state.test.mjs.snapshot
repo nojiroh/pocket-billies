@@ -6,10 +6,8 @@ exports[`battle object: alpha 1`] = `
   "ev": 0,
   "phase": "playing",
   "market": null,
-  "integrity": 1,
   "over": null,
   "needSwitch": [],
-  "offer": null,
   "foeName": "Test",
   "lead": "-",
   "turn": 0,
@@ -90,11 +88,11 @@ exports[`battle object: alpha 1`] = `
           "down": false
         }
       ],
-      "rent": false,
-      "pivot": false,
+      "stones": false,
+      "slipstream": false,
       "held": [],
       "mail": [],
-      "inh": null
+      "roar": null
     },
     {
       "team": [
@@ -124,11 +122,11 @@ exports[`battle object: alpha 1`] = `
           "down": false
         }
       ],
-      "rent": false,
-      "pivot": false,
+      "stones": false,
+      "slipstream": false,
       "held": [],
       "mail": [],
-      "inh": null
+      "roar": null
     }
   ]
 }
@@ -142,10 +140,8 @@ exports[`battle object: double 1`] = `
   "ev": 0,
   "phase": "playing",
   "market": null,
-  "integrity": 1,
   "over": null,
   "needSwitch": [],
-  "offer": null,
   "foeName": "Test",
   "lead": "-",
   "turn": 0,
@@ -204,11 +200,11 @@ exports[`battle object: double 1`] = `
           "down": false
         }
       ],
-      "rent": false,
-      "pivot": false,
+      "stones": false,
+      "slipstream": false,
       "held": [],
       "mail": [],
-      "inh": null
+      "roar": null
     },
     {
       "team": [
@@ -261,11 +257,11 @@ exports[`battle object: double 1`] = `
           "down": false
         }
       ],
-      "rent": false,
-      "pivot": false,
+      "stones": false,
+      "slipstream": false,
       "held": [],
       "mail": [],
-      "inh": null
+      "roar": null
     }
   ]
 }
@@ -279,10 +275,8 @@ exports[`battle object: single 1`] = `
   "ev": 0,
   "phase": "playing",
   "market": null,
-  "integrity": 1,
   "over": null,
   "needSwitch": [],
-  "offer": null,
   "foeName": "Test",
   "lead": "-",
   "turn": 0,
@@ -319,11 +313,11 @@ exports[`battle object: single 1`] = `
           "down": false
         }
       ],
-      "rent": false,
-      "pivot": false,
+      "stones": false,
+      "slipstream": false,
       "held": [],
       "mail": [],
-      "inh": null
+      "roar": null
     },
     {
       "team": [
@@ -353,11 +347,11 @@ exports[`battle object: single 1`] = `
           "down": false
         }
       ],
-      "rent": false,
-      "pivot": false,
+      "stones": false,
+      "slipstream": false,
       "held": [],
       "mail": [],
-      "inh": null
+      "roar": null
     }
   ]
 }

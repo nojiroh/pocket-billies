@@ -4,31 +4,31 @@
    "id": "hollow",
    "title": "The Hollow Earth",
    "unlock": "start",
-   "text": "Inside the planet there is another world: a hollow shell with land on the inside, sea and sky in the middle, and the Inner Sun hanging at the centre of it all. Look up anywhere and you see more country curving overhead, hazy and blue. Things from the surface fall in through sinkholes now and then. Most of them land in Copperleaf, a hamlet one lane north of Marigold Town, which the people of Marigold Town regard as a business opportunity."
+   "text": "Inside the planet there is another world: a hollow shell with land on the inside, sea and sky in the middle, and the Inner Sun hanging at the centre of it all. Look up anywhere and you see more country curving overhead, hazy and blue. Things from the surface fall in through sinkholes now and then. Most of them land in Copperleaf, a hamlet one lane north of Marigold Town, which the people of Marigold Town regard as a paperwork opportunity."
   },
   {
    "id": "found",
    "title": "How it was found",
    "unlock": "start",
-   "text": "A mining company drilled too deep in 1971 and broke through the floor of the world. The first expedition planted a flag, then a toll booth, and the Hollow Earth was bought by a fund the same afternoon. It has changed hands eleven times since. Nobody who lives here has ever been asked."
+   "text": "A mining company drilled too deep in 1971 and broke through the floor of the world. The first expedition planted a flag, then a help desk, and the Hollow Earth was filed as “pending” the same afternoon. The file has been reassigned eleven times since. Nobody who lives here has ever been asked."
   },
   {
    "id": "billionaires",
    "title": "What Billies are",
    "unlock": "start",
-   "text": "Decades ago the world’s richest people paid a private lab, Legacy Labs (“Your fortune, backed up”), to clone them, as backups in case anything happened to the originals. To save money, the lab filled the gaps in the DNA with whatever animal was cheapest that week. The clones came out part tycoon, part creature, and refused to sign anything. Rather than admit it, the lab shipped them down here as “offshore storage”. They went wild, multiplied, and now they are the most common wildlife in the Hollow Earth. Most of them can only say their own name."
+   "text": "Decades ago the world’s richest people each hired a private lab, Legacy Labs (“You, again, but forever”), to clone them: a vanity project, a copy to show off and a spare in case anything happened to the original. To hit the launch date, the lab filled the gaps in the DNA with whatever animal was nearest. The clones came out part celebrity, part creature, and refused to sign the release form. Rather than admit it, the lab dropped them down a sinkhole and marked the project “archived”. They went wild, multiplied, and now they are the most common wildlife in the Hollow Earth. Most of them can only say their own name."
   },
   {
    "id": "coins",
-   "title": "Why a coin taxes them",
+   "title": "Why a pyramid catches them",
    "unlock": "start",
-   "text": "A Billie cannot resist a coin. Toss one and it will chase it, catch it and keep it, and while it is busy counting, it is yours. A Penny will do for a young one. Silver, Gold and Platinum (“Too Big To Fail”) coins hold the bigger and the stubborn ones. Nobody has found a Billie that turns money down."
+   "text": "Every cloning vat at Legacy Labs was a pyramid: one founder liked the shape, and the others copied it. So a Billie sees a pyramid and thinks it is going home. Throw one at a tired Billie and it climbs in. A Pyramid will do for a young one. Step Pyramids and Gold Pyramids hold the bigger and the stubborn ones, and a Capstone holds anything."
   },
   {
    "id": "money",
-   "title": "Money down here",
+   "title": "Moneys down here",
    "unlock": "start",
-   "text": "Down here money is coins, and coins are the one thing a Billie cannot resist, so every trainer’s purse is also a leash. Trainers pay each other after a battle, and a wild Billie you beat leaves a little prize behind. The banks of Verdigris City have tried for years to print coins of their own. So far, the Billies have refused to chase them."
+   "text": "Down here money is counted in Moneys. Nobody remembers who decided the plural. Trainers pay each other after a battle, and a wild Billie you beat leaves a little prize behind. The Bureau of Lost, Found and Beans has a form for appealing the plural. The appeal is still pending."
   },
   {
    "id": "sun",
@@ -54,7 +54,7 @@
    "id": "prologue",
    "stage": 0,
    "title": "The fall",
-   "text": "You were walking somewhere on the surface, late, with a lanyard round your neck and one coin in your pocket. The pavement opened. You fell through the crust, past the inner sky, with the Inner Sun blazing ahead, and woke in Copperleaf, a hamlet of round doors and beehives, with no memory of who you were. The Chosen, Copperleaf’s self-appointed professor, found you and gave you a Billie; his assistant Hazel made sure you were in one piece. Blake, his other student, picked the one that beats yours. Granny Juniper, the beekeeper, gave you a room."
+   "text": "You were walking somewhere on the surface, late, with a lanyard round your neck and one guitar pick in your pocket. The pavement opened. You fell through the crust, past the inner sky, with the Inner Sun blazing ahead, and woke in Copperleaf, a hamlet of round doors and beehives, with no memory of who you were. The Chosen, Copperleaf’s self-appointed professor, found you and gave you a Billie; his assistant Hazel made sure you were in one piece. Blake, his other student, picked the one that beats yours. Granny Juniper, the beekeeper, gave you a room."
   },
   {
    "id": "road1",
@@ -72,13 +72,13 @@
    "id": "variants",
    "stage": 2,
    "title": "The Variants",
-   "text": "Trainers in gold jackets have started turning up on the roads, buying rare Billies with cash and not taking no for an answer. They call themselves the Variants. They all have the same tour shirt. You have a feeling you’ve seen it before."
+   "text": "Trainers in gold jackets have started turning up on the roads, buying rare Billies with backstage passes and not taking no for an answer. They call themselves the Variants. They all have the same tour shirt. You have a feeling you’ve seen it before."
   },
   {
    "id": "oil",
    "stage": 4,
    "title": "Mt. Cinderpeak",
-   "text": "Vinyl is made from oil, and the richest well in the world is a Billie: Oilympus, under the volcano. The Variants went up Mt. Cinderpeak to tax it. They wanted enough black gold to press one very large record."
+   "text": "Vinyl is made from oil, and the richest well in the world is a Billie: Oilympus, under the volcano. The Variants went up Mt. Cinderpeak to catch it. They wanted enough black gold to press one very large record."
   },
   {
    "id": "meadowlands",
@@ -90,7 +90,7 @@
    "id": "goldenhills",
    "stage": 5,
    "title": "Golden Hills",
-   "text": "Golden grass over old stone vaults. Baron Vault has rented his vaults to Vinylla to store her variants, and rented himself along with them."
+   "text": "Golden grass over old stone vaults. Baron Vault has lent his vaults to Vinylla to store her variants, and signed himself over along with them."
   },
   {
    "id": "sporeforest",
@@ -134,7 +134,7 @@
    "name": "You",
    "role": "A trainer who fell in",
    "unlock": "start",
-   "text": "You fell down a sinkhole on the surface and woke in Copperleaf with no memory and one coin. Who you were is the thread through the road ahead.",
+   "text": "You fell down a sinkhole on the surface and woke in Copperleaf with no memory and one guitar pick. Who you were is the thread through the road ahead.",
    "voice": "Whatever you choose to say."
   },
   "chosen": {
@@ -158,7 +158,7 @@
    "who": "chad",
    "role": "Your rival",
    "unlock": "start",
-   "text": "The son of Sterling Sterling III, founder of Sterling Capital, whose clone lives in the bins behind the food stalls of Pepperpot Town and answers to “Mr Sterling” if you say it with enough respect. Blake is smug, rich and furious about it, and he always picks the Billie that beats yours.",
+   "text": "The son of Sterling Sterling III, founder of a company that makes apps for other apps, whose clone lives in the bins behind the food stalls of Pepperpot Town and answers to “Mr Sterling” if you say it with enough respect. Blake is smug, rich and furious about it, and he always picks the Billie that beats yours.",
    "voice": "“I picked the one that beats yours. No offence. Well, a little offence.”"
   },
   "vinylla": {
@@ -188,7 +188,7 @@
    "who": "markdown",
    "role": "Steel arena, Lanternhall City",
    "unlock": "meet:markdown",
-   "text": "Runs the arena on the mall’s lowest floor, between the fountain and the escalator nobody has seen move. Polished floors, polished team, and a policy of no refunds.",
+   "text": "Runs the arena on the mall’s lowest floor, between the fountain and the escalator nobody has seen move. Polished floors, polished team, and terms of service nobody has ever read.",
    "voice": "“Every Steel Billie on my team makes the others hit harder.”"
   },
   "alta": {
@@ -204,8 +204,8 @@
    "who": "marina",
    "role": "Water arena, Palmhaven Town",
    "unlock": "meet:marina",
-   "text": "Runs the island arena where nobody asks questions. She knows exactly whose money is on every yacht in the harbour, and she has never told.",
-   "voice": "“Relax. Nobody here asks questions.”"
+   "text": "Runs the island arena where photos are not allowed. She knows exactly who is on every yacht in the harbour, and where they told their followers they were, and she has never told.",
+   "voice": "“Relax. No photos on my island.”"
   },
   "poppy": {
    "name": "Leader Poppy",
@@ -218,8 +218,8 @@
    "name": "Baron Vault",
    "role": "Fire arena, Golden Hills",
    "unlock": "flag:region:goldenhills",
-   "text": "Old money, old vaults, new tenant. He rented his vaults to Vinylla to store her variants, and found out too late that the lease came with him in it.",
-   "voice": "“Everything has a price. I simply hadn’t asked mine.”"
+   "text": "Old name, old vaults, new tenant. He lent his vaults to Vinylla to store her variants, and found out too late that the contract came with him in it.",
+   "voice": "“Everything has my name on it. Even, apparently, the small print.”"
   },
   "morel": {
    "name": "Mother Morel",
@@ -248,8 +248,8 @@
    "who": "nacre",
    "role": "Curator of the Pearl Exchange, Pearlantis City",
    "unlock": "meet:nacre",
-   "text": "Keeps the Pearl Exchange’s books, and has been watching the city’s gold go up the pipes to Vinylla’s pressing plant on the platform above.",
-   "voice": "Dry, precise, very cross. “Somebody ought to send her the bill.”"
+   "text": "Keeps the Pearl Exchange’s inventory, and has been watching the city’s gold go up the pipes to Vinylla’s pressing plant on the platform above.",
+   "voice": "Dry, precise, very cross. “Somebody ought to send her a complaint form.”"
   }
  },
  "locations": {
@@ -264,15 +264,15 @@
  "clues": [
   {
    "id": "coin",
-   "title": "One coin",
+   "title": "One guitar pick",
    "unlock": "start",
-   "text": "The only thing in your pocket when you woke. A surface coin, worn smooth on one side as if someone rubbed it for luck."
+   "text": "The only thing in your pocket when you woke. A guitar pick from the surface, worn smooth on one side as if someone rubbed it for luck."
   },
   {
    "id": "face",
    "title": "A face in the crowd",
    "unlock": "flag:metCass",
-   "text": "At the pressing plant, the manager with the clipboard looked at you the way people look at a bill they thought they had paid. “You? We dropped you.”"
+   "text": "At the pressing plant, the manager with the clipboard looked at you the way people look at an email they thought they had deleted. “You? We dropped you.”"
   },
   {
    "id": "who",
@@ -286,16 +286,16 @@
    "title": "A Field Guide to the Hollow Earth",
    "by": "Hazel (Prof. Chosen on the cover)",
    "pages": [
-    "Billies are not dangerous unless you are holding money, are standing between them and money, or are money.",
+    "Billies are not dangerous unless you are holding a phone, are standing between them and a camera, or are a camera.",
     "They live everywhere: tall grass, caves, canyons, malls and the bottom of the sea. Each kind keeps to what its original loved most.",
-    "Toss a coin and a Billie will chase it. While it counts, it is yours. Be kind: they did not ask to be made."
+    "Throw a pyramid and a tired Billie will climb in: it thinks it is going home. Be kind: they did not ask to be made."
    ]
   },
   "brochure": {
-   "title": "Legacy Labs: Your Fortune, Backed Up",
+   "title": "Legacy Labs: You, Again, but Forever",
    "by": "a glossy brochure",
    "pages": [
-    "Why risk it all? For a modest fee, Legacy Labs will keep a living backup of you, safely stored offshore.",
+    "Why be the only you? Legacy Labs will grow a living copy of you, ready for your next era, your next launch and your next apology video.",
     "Our proprietary gap-filling process ensures every backup is complete. Results may vary. Tails are not covered by warranty.",
     "Legacy Labs accepts no liability for backups that refuse to sign, eat bins, or multiply."
    ]
@@ -319,11 +319,11 @@
    ]
   },
   "coin_standard": {
-   "title": "The Coin Standard",
-   "by": "an economics textbook, much underlined",
+   "title": "The Moneys Question",
+   "by": "a Bureau pamphlet, form 7B attached",
    "pages": [
-    "In the Hollow Earth, value is measured in coins, because a Billie will chase nothing else.",
-    "Attempts to replace coins with paper have failed, because the Billies ate the paper."
+    "Q: Why is it “Moneys”? A: Your question has been received and assigned a number. Please do not ask it again while it is being processed.",
+    "Q: How long will processing take? A: See question 1. Q: What are the Beans? A: This question has not been received."
    ]
   },
   "amnesia": {
@@ -340,25 +340,25 @@
    "pages": [
     "Airships leave from every mast for every town you have been to. Your ticket is good for one flight; your feet are good for everything else.",
     "Fares go by distance across the world, not by height. The Inner Sun is not a destination. Please stop asking.",
-    "Lost property is returned at the next mast. The company is not responsible for Billies that board without a ticket."
+    "Lost property goes to the Bureau of Lost, Found and Beans, which returns it eventually, somewhere. The company is not responsible for Billies that board without a ticket."
    ]
   },
   "pearl_ledger": {
-   "title": "The Pearl Exchange ledger",
+   "title": "The Pearl Exchange inventory",
    "by": "Curator Nacre",
    "pages": [
-    "Vault 1: gold, 40,000 bars. Vault 2: pearls, uncounted. Vault 3: the deeds to half the Hollow Earth, unsigned.",
-    "A year ago the pipes from the platform above began to hum. Every month since, the vaults weigh less.",
-    "Vault 1: 6,212 bars. Paid out to: VINYLLA WORLD TOUR LTD. Purpose: “pressing costs, merchandise, a bigger stage”.",
-    "Note for whoever reads this: the pipes run up the trench wall to the pressing plant on Vinyl Works. If you are going that way, take the bill."
+    "Hall 1: gold, 40,000 bars. Hall 2: pearls, uncounted. Hall 3: every lost-property form the Hollow Earth ever filed, unread.",
+    "A year ago the pipes from the platform above began to hum. Every month since, the halls weigh less.",
+    "Hall 1: 6,212 bars. Sent up to: VINYLLA WORLD TOUR LTD. Reason given: “pressing, merchandise, a bigger stage”.",
+    "Note for whoever reads this: the pipes run up the trench wall to the pressing plant on Vinyl Works. If you are going that way, take a complaint form. Take several."
    ]
   }
  },
  "loading": [
   "Officially the Inner Sun never sets. Its maintenance contract only covers business hours.",
-  "A Billie cannot resist a coin. That is how you tax one.",
+  "Tip: throw a pyramid at a tired Billie. It thinks it is going home.",
   "Every win counts. Your team grows stronger with every battle.",
-  "Legacy Labs: your fortune, backed up. Tails not covered by warranty.",
+  "Legacy Labs: you, again, but forever. Tails not covered by warranty.",
   "Things that fall from the surface mostly land in Copperleaf. Granny Juniper keeps a list.",
   "The clinic in Marigold Town is free. It always was. Stop asking.",
   "Tip: Water beats Fire, Fire beats Grass, Grass beats Water. Most Billies beat your patience.",
@@ -367,17 +367,17 @@
   "Tip: a gold Billie is a limited variant. Collectors will try to buy it from you. Don’t.",
   "The ducks on Marigold’s pond have names. They won’t tell you yet.",
   "The escalator in Lanternhall City has never been seen moving.",
-  "Down here, value is measured in coins, because a Billie will chase nothing else.",
-  "Aurumansa gives its gold away. The banks call it a disaster.",
+  "Lost something on the surface? The Bureau of Lost, Found and Beans has it. Probably. Do not ask about the beans.",
+  "Aurumansa gives its gold away. The collectors call it a disaster.",
   "The soup of the day in Pepperpot Town has been the same soup since 1971.",
-  "Hazel has a map of the sinkholes. It looks a lot like a map of banks.",
-  "Billies are not dangerous unless you are holding money, or are money.",
+  "Hazel has a map of the sinkholes. Every one of them has a Bureau form number.",
+  "Billies are not dangerous unless you are holding a camera, or are a camera.",
   "Blake picked the one that beats yours. No offence. Well, a little offence.",
-  "The Hollow Earth has changed hands eleven times. Nobody who lives here was asked.",
+  "The Hollow Earth’s file has been reassigned eleven times. Nobody who lives here was asked.",
   "Tip: rest at a bench or your room to heal your team.",
   "Tip: the place card at the top shows the hour, the weather and where you can go.",
   "Loading the inner sky. Please keep your hands inside the planet.",
-  "Counting coins. Billies insist.",
+  "Counting the beans. The Bureau insists. Nobody will say why.",
   "Polishing the marble in Palmhaven Town. Nobody asked who for.",
   "Warming up the Inner Sun. Business hours only."
  ],

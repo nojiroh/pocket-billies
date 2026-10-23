@@ -50,7 +50,7 @@ const START = {
   team: [],
   se: 0,
   items: {},
-  coins: {},
+  pyramids: {},
   trip: { node: 0, plan: [] },
   wild: {},
   eggs: [],
@@ -403,4 +403,49 @@ test("the forecast: the same for a seed, a later fill gives a longer fill's days
     clear = days.filter(w => w === 'clear').length / days.length;
   assert.ok(days.every(w => Object.hasOwn(CLIMATE_WEATHER_ODDS.mild, w)));
   assert.ok(clear > 0.45 && clear < 0.55, `clear on ${(clear * 100).toFixed(0)}% of days (mild: 50%)`);
+});
+
+test("RL-R1: a region's zones give the rows their biomes, each node its zone, and every zone leads into the next", () => {
+  const zones = [
+      { biome: 'lake', rows: 3 },
+      { biome: 'meadow', rows: 2 },
+      { biome: 'thicket', rows: 3 },
+    ],
+    M = { ...MAP_RULES, rows: 8, zones };
+  for (const s of seeds(200)) {
+    const map = runMapMake(s, NODE_TYPES, M),
+      plain = runMapMake(s, NODE_TYPES, { ...MAP_RULES, rows: 8 });
+    assert.equal(rowsOf(map), 8, s);
+    // the zones change only the biomes: the shape and the types are the map without them
+    assert.deepEqual(
+      map.nodes.map(n => [n.type, n.row, n.lane, n.to]),
+      plain.nodes.map(n => [n.type, n.row, n.lane, n.to]),
+      s
+    );
+    for (const n of map.nodes) {
+      const zone = n.row < 3 ? 0 : n.row < 5 ? 1 : 2;
+      assert.equal(n.zone, zone, `${s}: row ${n.row}'s zone`);
+      assert.equal(n.biome, zones[zone].biome, `${s}: row ${n.row}'s biome`);
+    }
+    // seamless across a zone's edge: every place on a zone's last row leads into the next zone
+    for (const n of map.nodes.filter(x => x.row === 2 || x.row === 4)) {
+      assert.ok(n.to.length > 0, s);
+      assert.ok(
+        n.to.every(j => map.nodes[j].zone === n.zone + 1),
+        `${s}: row ${n.row} leads into zone ${n.zone + 1}`
+      );
+    }
+  }
+  assert.throws(() => runMapMake('X', NODE_TYPES, { ...M, rows: 9 }), /don't add up/);
+  // a run's state keeps the zones
+  const run = newRun('ZONED', 1, 1, START);
+  runMapStart(run, {
+    nodeTypes: NODE_TYPES,
+    biomes: {},
+    rules: { map: M, clock: { slack: 3, ahead: 7 }, reveal: { icons: 1, unknown: 2 } },
+  });
+  assert.ok(validRun(run));
+  assert.equal(run.map.nodes.at(-1).zone, 2);
+  run.map.nodes[0].zone = 9;
+  assert.equal(validRun(run), false, 'a zone past 7');
 });

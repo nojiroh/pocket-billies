@@ -3,6 +3,7 @@
  "who": "crude",
  "battleStage": "grotto",
  "miniboss": true,
+ "type": "Ground",
  "blocks": false,
  "team": [
   {"sp":"ford0","lvl":12},
@@ -19,11 +20,11 @@
  "seat": {
   "id": "oil",
   "title": "Ground Badge · 1 of 8",
-  "coin": "penny",
-  "coins": {"silver":3,"tbtf":1},
+  "coin": "pyramid",
+  "pyramids": {"step_pyramid":3,"capstone":1},
   "items": {},
-  "rewardText": "3 Silver Coins and a Platinum Coin",
-  "unlockText": "The steps down to Route 5 · Stepstone Canyon and Lanternhall City are open. Silver Coins are now for sale."
+  "rewardText": "3 Step Pyramids and a Capstone",
+  "unlockText": "The steps down to Route 5 · Stepstone Canyon and Lanternhall City are open. Step Pyramids are now for sale."
  },
  "script": [
   "if beat:crude",

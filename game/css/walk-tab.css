@@ -554,7 +554,6 @@ body.on-walk #dio {
   flex-wrap: wrap;
 }
 .wh-env .uico {
-  background: currentColor;
   opacity: 0.85;
 }
 .wh-env span {

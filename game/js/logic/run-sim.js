@@ -29,9 +29,9 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runSimOn: [() => runSimOn, v => (runSimOn = v)],
   // @ts-expect-error -- replaced on purpose
-  simPolicy: [() => simPolicy, v => (simPolicy = v)],
+  simPerkChoice: [() => simPerkChoice, v => (simPerkChoice = v)],
   // @ts-expect-error -- replaced on purpose
-  simRelicChoice: [() => simRelicChoice, v => (simRelicChoice = v)],
+  simPolicy: [() => simPolicy, v => (simPolicy = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -45,16 +45,15 @@ export const MAX_TURNS = 60;
  *   sheet picks the buddy by default)
  * - fights: wild Billies fought in a place, at most (the first of its stock; `fights` in the options)
  * - fightAbove: no wild fight while the party's HP is below this share of its full HP
- * - potionBelow: a Potion (taxbreak) on a Billie below this share of its HP, before each wild fight
+ * - potionBelow: a Potion (potion) on a Billie below this share of its HP, before each wild fight
  * - clinic: a town's clinic whenever someone is hurt and the money is there
- * - penniesUpTo, reserve: Copper Coins bought in a town shop up to this many held, keeping this much money
- * - taxWhileBelow: one throw at a wild Billie (not an Alpha) while the party is smaller than this
+ * - pyramidsUpTo, reserve: Pyramids bought in a town shop up to this many held, keeping this much money
+ * - catchWhileBelow: one throw at a wild Billie (not an Alpha) while the party is smaller than this
  * - ring: the throw's ring timing (0 to 1, the page's ring phase; 0.5: a "Great throw")
- * - offer: a foe's offer after a miss: always refused
  * - lane: the next place drawn from the run's seed among the ones linked ahead (never back)
  * - keep: on a loss, the highest-level Billie comes home
- * - relics: Loopholes (Studio plan T3.3). 'greedy': the pick after a mini-boss takes the rarest offered (the lowest
- *   rules.json run.relics.rarity weight, then by id), and a town shop's Loophole is bought when the money is there
+ * - perks: Perks (Studio plan T3.3). 'greedy': the pick after a mini-boss takes the rarest offered (the lowest
+ *   rules.json run.perks.rarity weight, then in perks.json's order), and a town shop's Perk is bought when the money is there
  *   beyond `reserve`; past the cap only for a rarer one than the plainest held, which is let go. 'never': none taken
  *   or bought (the "never pick" baseline)
  */
@@ -65,19 +64,18 @@ export const SIM_POLICY = Object.freeze({
   fightAbove: 0.7,
   potionBelow: 0.6,
   clinic: 'when-hurt',
-  penniesUpTo: 5,
+  pyramidsUpTo: 5,
   reserve: 100,
-  taxWhileBelow: 3,
+  catchWhileBelow: 3,
   ring: 0.5,
-  offer: 'refuse',
   lane: 'seeded',
   keep: 'top-level',
-  relics: 'greedy',
+  perks: 'greedy',
 });
 /** the named policies a report can be asked for (`policy` in the options; greedy-forward by default) */
 export const SIM_POLICIES = Object.freeze({
   'greedy-forward': SIM_POLICY,
-  'never-pick': Object.freeze({ ...SIM_POLICY, name: 'never-pick', relics: 'never' }),
+  'never-pick': Object.freeze({ ...SIM_POLICY, name: 'never-pick', perks: 'never' }),
 });
 /** the policy a run plays with these options (`fights` is the CLI's --fights) @param {SimOptions} o */
 export function simPolicy(o) {
@@ -86,24 +84,25 @@ export function simPolicy(o) {
   return { ...P, ...(o.fights != null ? { fights: o.fights } : {}) };
 }
 /**
- * The policy's answer to a Loophole on offer (the pick's, or a shop's): which to take of `offer` and which held one to
- * let go past the cap, or null to take none. 'greedy': the rarest (lowest rarity weight), then by id; past the cap
- * only if it is rarer than the plainest held (the highest weight, then the last by id), which goes.
- * @param {string[]} offer @param {string[]} held @param {Record<string, any>} relics
- * @param {{ cap: number, rarity: Record<string, number> }} rule @param {{ relics: string }} P
+ * The policy's answer to a Perk on offer (the pick's, or a shop's): which to take of `offer` and which held one to
+ * let go past the cap, or null to take none. 'greedy': the rarest (lowest rarity weight), then in perks.json's order; past the cap
+ * only if it is rarer than the plainest held (the highest weight, then the last in perks.json's order), which goes.
+ * @param {string[]} offer @param {string[]} held @param {Record<string, any>} perks
+ * @param {{ cap: number, rarity: Record<string, number> }} rule @param {{ perks: string }} P
  * @returns {{ id: string, drop?: string } | null}
  */
-export function simRelicChoice(offer, held, relics, rule, P) {
-  if (P.relics !== 'greedy' || !offer.length) return null;
-  const w = (/** @type {string} */ id) => rule.rarity[relics[id].rarity] || 0,
-    order = (/** @type {string} */ a, /** @type {string} */ b) => w(a) - w(b) || (a < b ? -1 : a > b ? 1 : 0),
+export function simPerkChoice(offer, held, perks, rule, P) {
+  if (P.perks !== 'greedy' || !offer.length) return null;
+  const w = (/** @type {string} */ id) => rule.rarity[perks[id].rarity] || 0,
+    at = Object.keys(perks),
+    order = (/** @type {string} */ a, /** @type {string} */ b) => w(a) - w(b) || at.indexOf(a) - at.indexOf(b),
     id = offer.slice().sort(order)[0];
   if (held.length < rule.cap) return { id };
   const drop = held.slice().sort(order).pop();
   return drop && w(id) < w(drop) ? { id, drop } : null;
 }
 /** the report's numbers that say more about the policy than about the game's balance */
-export const SIM_POLICY_DRIVEN = Object.freeze(['caught', 'healed', 'spent', 'moneyLeft', 'relics']);
+export const SIM_POLICY_DRIVEN = Object.freeze(['caught', 'healed', 'spent', 'moneyLeft', 'perks']);
 /** what every report says its numbers are good for */
 export const SIM_NOTE =
   'A bot policy, not a player: a regression detector, not a balance oracle (legacy stand-in species).';
@@ -126,14 +125,20 @@ export function runSimOn(env) {
   const { RULES, TRAINERS } = data;
   const R = RULES.run,
     { runArrive, runNext, runWorldNode, runWeather } = modules['run-map'],
-    { runByTier, runEnd } = modules['run-state'],
+    { runByExpedition, runEnd } = modules['run-state'],
     { runScenesMake, runWorldTables } = modules['run-scenes'],
     { runArriveFx, runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen } = modules['run-loop'],
     { fxOfRun, fxPayoutRates, fxRunPrice } = modules.effects,
     { runStartOn, runStartPlan } = modules['run-start'],
+    { runRegionData } = modules['run-region'],
     { runUnlocks } = modules.unlocks,
-    { relicBuy, relicChoose, relicPrice, relicShelf } = modules.relics;
-  const MAP_DATA = { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: R },
+    { perkBuy, perkChoose, perkPrice, perkShelf } = modules.perks;
+  const MAP_DATA = {
+      nodeTypes: GAME_DATA.nodeTypes,
+      biomes: GAME_DATA.biomes,
+      rules: R,
+      region: runRegionData(GAME_DATA, TRAINERS),
+    },
     UNLOCK_DATA = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings };
   const worldData = () => ({
     nodeTypes: GAME_DATA.nodeTypes,
@@ -183,9 +188,9 @@ export function runSimOn(env) {
   /**
    * One run from its seed, played by the policy. Returns a log of everything that was drawn and how it went, and the
    * run's numbers. What the player does is a fixed policy: walk forward along a lane drawn from the seed, fight up to
-   * `fights` of a place's wild Billies while the party is above 70% of its HP (a Potion on a Billie below 60%; tax the
-   * first ones while the party is small), heal in towns when hurt, keep a few Copper Coins, beat the mini-boss, then
-   * the boss. It starts as the mast does: the highest-level Billies from home (rules.json run.home at Bracket I;
+   * `fights` of a place's wild Billies while the party is above 70% of its HP (a Potion on a Billie below 60%; catch the
+   * first ones while the party is small), heal in towns when hurt, keep a few Pyramids, beat the mini-boss, then
+   * the boss. It starts as the mast does: the highest-level Billies from home (rules.json run.home at Expedition I;
    * `team` is how many starters wait at home) and a bag packed with Potions from home (`pack` of them at home, as many
    * as run.pack lets).
    * @param {string} seed @param {SimOptions} [o]
@@ -199,13 +204,13 @@ export function runSimOn(env) {
     hooks.provide({ saveData: s, activeBattle: null });
     s.team.push(fn('makeBilly')(s.starter + '0', RULES.start.starterLevel));
     for (let k = 1; k < (o.team ?? 1); k++) s.team.push(fn('makeBilly')(s.starter + '0', RULES.start.starterLevel));
-    s.items.taxbreak = o.pack ?? 0;
+    s.items.potion = o.pack ?? 0;
     const home = s.team
         .slice()
         .sort((/** @type {any} */ a, /** @type {any} */ b) => b.lvl - a.lvl)
-        .slice(0, runByTier(R.home, 1))
+        .slice(0, runByExpedition(R.home, 1))
         .map((/** @type {any} */ m) => m.uid),
-      pack = { items: { taxbreak: Math.min(o.pack ?? 0, runByTier(R.pack, 1)) }, coins: {} };
+      pack = { items: { potion: Math.min(o.pack ?? 0, runByExpedition(R.pack, 1)) }, pyramids: {} };
     /* Studio plan T2.1: started as the mast starts a run (logic/run-start.js), with what the save has unlocked: none (a
        fresh save, the default) or every unlock (unlocks: 'all') */
     if (o.unlocks === 'all') for (const id of Object.keys(UNLOCK_DATA.unlocks)) s.meta.unlocks[id] = 1;
@@ -252,7 +257,7 @@ export function runSimOn(env) {
         lostRow: null,
         /** money in by where it came from, and out by what it paid for (Studio plan T3.4) */
         moneyIn: { prize: 0, reward: 0 },
-        moneyOut: { heal: 0, shop: 0, relics: 0 },
+        moneyOut: { heal: 0, shop: 0, perks: 0 },
         /** each run foe fought: its leader, its node's type, won or not @type {any[]} */
         foes: [],
         /** @type {any} */ days: 0,
@@ -268,9 +273,9 @@ export function runSimOn(env) {
           at = { i, type: node.type, day: run.clock, weather: runWeather(run, i, run.clock), battles: [] };
         if (fxHealed) at.fxHealed = fxHealed;
         log.places.push(at);
-        /* a town: heal when hurt, then the day's shop (Copper Coins up to five) */
+        /* a town: heal when hurt, then the day's shop (Pyramids up to five) */
         if (node.type === 'town') {
-          const { paid } = runClinic(s, fxRunPrice(run, data.RELICS, 'heal', R.healCost));
+          const { paid } = runClinic(s, fxRunPrice(run, data.PERKS, 'heal', R.healCost));
           if (paid) {
             stats.healed += paid;
             stats.moneyOut.heal += paid;
@@ -278,30 +283,30 @@ export function runSimOn(env) {
           }
           /* the day's wares as the shop opens them: only what the run has unlocked (run-loop.js runShopOpen) */
           const stock = runShopOpen(run, i, run.clock, R.shop, UNLOCK_DATA);
-          /* the shop's Loophole, drawn as the shop opens (relics.js relicShelf), bought as the policy says, keeping the
-             reserve (shop.js shopRelicBuy: its price with the price rows) */
-          const shelf = relicShelf(run, i, run.clock, data.RELICS, R.relics);
+          /* the shop's Perk, drawn as the shop opens (perks.js perkShelf), bought as the policy says, keeping the
+             reserve (shop.js shopPerkBuy: its price with the price rows) */
+          const shelf = perkShelf(run, i, run.clock, data.PERKS, R.perks);
           if (shelf) {
-            const cost = fxRunPrice(run, data.RELICS, 'shop', relicPrice(data.RELICS[shelf], R.relics)),
-              c = s.se >= cost + P.reserve ? simRelicChoice([shelf], run.relics, data.RELICS, R.relics, P) : null;
+            const cost = fxRunPrice(run, data.PERKS, 'shop', perkPrice(data.PERKS[shelf], R.perks)),
+              c = s.se >= cost + P.reserve ? simPerkChoice([shelf], run.perks, data.PERKS, R.perks, P) : null;
             at.relic = { id: shelf, price: cost };
-            if (c && !relicBuy(run, i, run.clock, data.RELICS, R.relics, c.drop)) {
+            if (c && !perkBuy(run, i, run.clock, data.PERKS, R.perks, c.drop)) {
               s.se -= cost;
               stats.spent += cost;
-              stats.moneyOut.relics += cost;
+              stats.moneyOut.perks += cost;
               at.relic.bought = c.drop ? { drop: c.drop } : 1;
             }
           }
           at.shop = stock.map((/** @type {any} */ w) => w.coin || w.item);
-          /* the shop's price, with the Loopholes' price rows (shop.js warePrice) */
-          const price = fxRunPrice(run, data.RELICS, 'shop', data.COINS.penny.price);
+          /* the shop's price, with the Perks' price rows (shop.js warePrice) */
+          const price = fxRunPrice(run, data.PERKS, 'shop', data.PYRAMIDS.pyramid.price);
           while (
-            stock.some((/** @type {any} */ w) => w.coin === 'penny') &&
-            (s.coins.penny || 0) < P.penniesUpTo &&
+            stock.some((/** @type {any} */ w) => w.coin === 'pyramid') &&
+            (s.pyramids.pyramid || 0) < P.pyramidsUpTo &&
             s.se >= price + P.reserve
           ) {
             s.se -= price;
-            s.coins.penny = (s.coins.penny || 0) + 1;
+            s.pyramids.pyramid = (s.pyramids.pyramid || 0) + 1;
             stats.spent += price;
             stats.moneyOut.shop += price;
           }
@@ -312,34 +317,33 @@ export function runSimOn(env) {
         for (const q of stock) {
           /* a careful player: a Potion on a Billie below 60%, and no wild fight while the party is below 70% */
           for (const m of s.team)
-            if (m.hp > 0 && m.hp < fn('maxHp')(m) * P.potionBelow && (s.items.taxbreak || 0) > 0)
-              fn('applyItem')('taxbreak', m.uid, false); /* the bag's use out of battle, as the page's */
+            if (m.hp > 0 && m.hp < fn('maxHp')(m) * P.potionBelow && (s.items.potion || 0) > 0)
+              fn('applyItem')('potion', m.uid, false); /* the bag's use out of battle, as the page's */
           const hp = s.team.reduce((/** @type {number} */ a, /** @type {any} */ m) => a + m.hp, 0),
             full = s.team.reduce((/** @type {number} */ a, /** @type {any} */ m) => a + fn('maxHp')(m), 0);
           if (hp < full * P.fightAbove) break;
-          /* started as the page starts it (battle-engine.js startWild), with the run's seed, weather and Loopholes; its
+          /* started as the page starts it (battle-engine.js startWild), with the run's seed, weather and Perks; its
              number is taken once it has begun, as run.js runBattleStart does */
           const k = run.battleN;
           fn('startWild')(q, {
             host: SIM_HOST,
-            extra: runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.RELICS)),
+            extra: runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.PERKS)),
           });
           if (!hooks.activeBattle) break;
           run.battleN = k + 1;
           const foe = hooks.activeBattle.sides[1].team[0];
           const B = hooks.activeBattle;
           let res;
-          /* tax it while the party is small and there are coins: one throw, then fight on */
-          if (s.team.length < P.taxWhileBelow && (s.coins.penny || 0) > 0 && !q.alpha) {
-            s.coins.penny--;
-            const c = fn('catchRoll')('penny', 1 + logic.CATCH_RULES.ring * P.ring, false); /* doThrow's T */
+          /* catch it while the party is small and there are pyramids: one throw, then fight on */
+          if (s.team.length < P.catchWhileBelow && (s.pyramids.pyramid || 0) > 0 && !q.alpha) {
+            s.pyramids.pyramid--;
+            const c = fn('catchRoll')('pyramid', 1 + logic.CATCH_RULES.ring * P.ring, false); /* doThrow's T */
             if (c.caught) {
               fn('catchKeep')(foe);
               stats.caught++;
               res = { over: 'caught', turns: B.turn };
             } else {
-              /* a miss: the foe's offer drawn as on the page (catchOffer), refused (the policy), then its turn */
-              if (fn('catchOffer')()) fn('catchOfferAnswer')(false);
+              /* a miss: the foe's turn */
               fn('enemyOnly')();
             }
           }
@@ -365,7 +369,7 @@ export function runSimOn(env) {
           const k = run.battleN;
           fn('startTrainer')(T.id, {
             host: SIM_HOST,
-            extra: runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.RELICS)),
+            extra: runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.PERKS)),
           });
           run.battleN = k + 1;
           const team = hooks.activeBattle.sides[1].team;
@@ -387,14 +391,14 @@ export function runSimOn(env) {
           });
           stats.foes.push({ leader: T.from, type: node.type, won: pay.o === 'win' });
           if (pay.o !== 'win') return lose(node);
-          /* its reward and flag; a mini-boss also makes the run's next pick of Loopholes (not answered yet) */
+          /* its reward and flag; a mini-boss also makes the run's next pick of Perks (not answered yet) */
           fn('battleSettleWin')(B, s, pay, run);
           stats.moneyIn.reward += pay.reward;
-          /* the pick it made, answered as the policy says (relic-screen.js relicPickDone: relics.js relicChoose) */
+          /* the pick it made, answered as the policy says (perk-screen.js perkPickDone: perks.js perkChoose) */
           if (run.offer) {
-            const c = simRelicChoice(run.offer, run.relics, data.RELICS, R.relics, P);
+            const c = simPerkChoice(run.offer, run.perks, data.PERKS, R.perks, P);
             at.pick = { offer: run.offer.slice(), took: c ? c.id : null, ...(c && c.drop ? { drop: c.drop } : {}) };
-            relicChoose(run, c ? c.id : null, data.RELICS, R.relics, c ? c.drop : undefined);
+            perkChoose(run, c ? c.id : null, data.PERKS, R.perks, c ? c.drop : undefined);
           }
           if (node.type === 'boss') {
             stats.won = true;
@@ -406,8 +410,8 @@ export function runSimOn(env) {
         if (!next.length) return finish();
         i = next[modules.rng.rngFrom(seed, 'sim|path|' + i).int(0, next.length - 1)];
         runArrive(s, i, MAP_DATA);
-        /* walking in: the Loopholes' heal rows (run-loop.js runArriveFx, as walk-control.js through runArrivedFx) */
-        fxHealed = runArriveFx(s, data.RELICS);
+        /* walking in: the Perks' heal rows (run-loop.js runArriveFx, as walk-control.js through runArrivedFx) */
+        fxHealed = runArriveFx(s, data.PERKS);
       }
     } finally {
       data.worldHubBack();
@@ -420,21 +424,21 @@ export function runSimOn(env) {
     }
     function finish() {
       /* the end as the payout screen's "Fly home" (run.js runEndHome): the whole party on a win, else the one the
-         policy keeps (the highest level, the first of them); the Loopholes' payout rates; runEnd pays and puts the
+         policy keeps (the highest level, the first of them); the Perks' payout rates; runEnd pays and puts the
          hub's fields back, so the run's own numbers are read first */
       const se = s.se,
         party = s.team.length,
         top = s.team.reduce((/** @type {any} */ a, /** @type {any} */ m) => (m.lvl > a.lvl ? m : a), s.team[0]),
         keep = runKept(s.team, stats.won, top ? top.uid : null),
-        pay = runEnd(s, { won: stats.won, keep }, fxPayoutRates(fxOfRun(run, data.RELICS), R.payout), runItemPrice);
+        pay = runEnd(s, { won: stats.won, keep }, fxPayoutRates(fxOfRun(run, data.PERKS), R.payout), runItemPrice);
       Object.assign(stats, {
         days: run.clock,
         places: run.path.length,
         se,
-        capital: pay.capital,
+        research: pay.research,
         party,
         top: top ? top.lvl : 0,
-        relics: run.relics.slice(),
+        perks: run.perks.slice(),
       });
       log.end = { ...stats, uids: run.uidN };
       return { log, stats: /** @type {any} */ (stats) };
@@ -480,7 +484,7 @@ export function runSimOn(env) {
       caught: avg(x => x.caught),
       healed: avg(x => x.healed),
       moneyLeft: avg(x => x.se),
-      capital: avg(x => x.capital),
+      research: avg(x => x.research),
       topLevel: avg(x => x.top),
     };
   }

@@ -8,10 +8,10 @@ import { expose } from './test-globals.js';
 import { buzz, provide, render, soundEffect, toast } from './hooks.js';
 import { $, $$, random } from './util.js';
 import { SHOPS } from './game-data.js';
-import { formatNumber } from './logic/rules.js';
+import { plural } from './logic/rules.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
-import { makeCanvas, uiIconHTML } from './art.js';
+import { makeCanvas, moneyHTML, uiIconHTML } from './art.js';
 import {
   LOOK_PRESETS,
   bodySliders,
@@ -372,8 +372,8 @@ function wardrobeGridHTML(slot, crop) {
     .map(([k, it]) => {
       const own = owns(k),
         here = boutiqueSells(it);
-      return `<button class="dr-it${own ? '' : ' locked'}${here && !own ? ' here' : ''}" data-a="dr-wear" data-s="${slot}" data-id="${k}" aria-pressed="${cur === k}" title="${escapeHtml(it.name)}${own ? '' : ` · $${formatNumber(it.price || 0)} at ${escapeHtml(shopName(it.shop))}`}">
-  <img class="dr-th" src="${wardrobeThumbnail(slot, k, crop)}" alt=""><b>${escapeHtml(it.name)}</b>${own ? '' : `<small>${here ? '' : uiIconHTML('lock', 10)} $${formatNumber(it.price || 0)}${here ? '' : ` · ${escapeHtml(shopName(it.shop))}`}</small>`}</button>`;
+      return `<button class="dr-it${own ? '' : ' locked'}${here && !own ? ' here' : ''}" data-a="dr-wear" data-s="${slot}" data-id="${k}" aria-pressed="${cur === k}" title="${escapeHtml(it.name)}${own ? '' : ` · ${plural(it.price || 0, 'Money')} at ${escapeHtml(shopName(it.shop))}`}">
+  <img class="dr-th" src="${wardrobeThumbnail(slot, k, crop)}" alt=""><b>${escapeHtml(it.name)}</b>${own ? '' : `<small>${here ? '' : uiIconHTML('lock', 10)} ${moneyHTML(it.price || 0, 10)}${here ? '' : ` · ${escapeHtml(shopName(it.shop))}`}</small>`}</button>`;
     })
     .join('')}</div>`;
 }
@@ -463,7 +463,7 @@ function dressingTabHTML() {
                 cost = Object.values(o)
                   .filter(id => id && !owns(id))
                   .reduce((a, id) => a + (W[id].price || 0), 0);
-              return `<div class="dr-it dr-outfit${own ? '' : ' locked'}" aria-pressed="${wearsOutfit(o)}"><button class="dr-outmain" data-a="dr-outfit" data-n="${escapeHtml(n)}" data-w="0" title="${n}"><img class="dr-th" src="${lookThumbnail(lookWithOutfit(L, o, ways[0]), 'body')}" alt=""><b>${n}</b>${own ? '' : `<small>${uiIconHTML('lock', 10)} $${formatNumber(cost)}</small>`}</button>
+              return `<div class="dr-it dr-outfit${own ? '' : ' locked'}" aria-pressed="${wearsOutfit(o)}"><button class="dr-outmain" data-a="dr-outfit" data-n="${escapeHtml(n)}" data-w="0" title="${n}"><img class="dr-th" src="${lookThumbnail(lookWithOutfit(L, o, ways[0]), 'body')}" alt=""><b>${n}</b>${own ? '' : `<small>${uiIconHTML('lock', 10)} ${moneyHTML(cost, 10)}</small>`}</button>
      <span class="dr-ways">${ways.map((w, k) => `<button class="swatch" style="--sw:${w[0]}" data-a="dr-outfit" data-n="${escapeHtml(n)}" data-w="${k}" aria-label="${n}, colourway ${k + 1}"><span>✓</span></button>`).join('')}</span></div>`;
             })
             .join('')}</div>`
@@ -566,10 +566,10 @@ function dressingFootHTML() {
     msg = elsewhere.length
       ? `${escapeHtml(W[elsewhere[0]].name)} is sold at ${escapeHtml(shopName(W[elsewhere[0]].shop))}.`
       : cost
-        ? `You have $${formatNumber(saveData.se)}.`
+        ? `You have ${moneyHTML(saveData.se)}.`
         : 'Pick anything to try it on.';
     btn = cost
-      ? `<button class="pb gold" data-a="dr-buy" ${saveData.se >= cost && !elsewhere.length ? '' : 'disabled'}>Buy and wear · $${formatNumber(cost)}</button>`
+      ? `<button class="pb gold" data-a="dr-buy" ${saveData.se >= cost && !elsewhere.length ? '' : 'disabled'}>Buy and wear · ${moneyHTML(cost)}</button>`
       : `<button class="pb gold" data-a="dr-save" ${elsewhere.length ? 'disabled' : ''}>Wear this</button>`;
   } else {
     msg = un.length
@@ -763,7 +763,7 @@ function buyDressingItems() {
     cost = mine.reduce((a, id) => a + (W[id].price || 0), 0);
   if (un.length > mine.length) return;
   if (saveData.se < cost) {
-    toast('Not enough money. Win a few battles first.');
+    toast('Not enough Moneys. Win a few battles first.');
     return;
   }
   saveData.se -= cost;
@@ -867,7 +867,7 @@ document.addEventListener('click', ev => {
       if (d.id && !owns(d.id) && boutiqueSells(wardrobeData().items[d.id])) {
         const l = $('#drLine');
         if (l)
-          l.textContent = `${wardrobeData().items[d.id].name}? Good eye. $${formatNumber(wardrobeData().items[d.id].price || 0)}.`;
+          l.textContent = `${wardrobeData().items[d.id].name}? Good eye. ${plural(wardrobeData().items[d.id].price || 0, 'Money')}.`;
       }
       break;
     case 'dr-col':
@@ -900,7 +900,10 @@ document.addEventListener('click', ev => {
           if (un.length) {
             const l = $('#drLine');
             if (l)
-              l.textContent = `${o[0]}? Good eye. $${formatNumber(un.reduce((a, id) => a + (wardrobeData().items[id].price || 0), 0))}.`;
+              l.textContent = `${o[0]}? Good eye. ${plural(
+                un.reduce((a, id) => a + (wardrobeData().items[id].price || 0), 0),
+                'Money'
+              )}.`;
           }
         }
       }

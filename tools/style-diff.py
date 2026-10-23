@@ -47,10 +47,10 @@ VIEWS = [
     ('sheet-evo', 'team', "document.querySelector('[data-a=mon]').click();setTimeout(()=>document.querySelector('#ov [data-a=ms-tab][data-k=evo]').click(),300)", "!!document.querySelector('#ov [data-a=ms-tab][data-k=evo][aria-selected=true]')"),
     ('storage', 'team', "saveData.box=saveData.team.map((m,i)=>Object.assign({},m,{uid:m.uid+'b'+i}));uiState.tab='team';render()", "!!document.querySelector('.screen.s-team .bx')"),
     ('heal-pick', 'bag', OPEN + "saveData.team[0].hp=1;healPick(saveData.team[0])", "!!document.querySelector('#ov .pickrow')"),
-    ('ledger', 'town', "uiState.tab='ledger';render()", "!!document.querySelector('.screen.s-ledger')"),
-    ('dex', 'town', "uiState.tab='ledger';uiState.dex=saveData.team[0].sp;render()", "!!document.querySelector('.screen.s-ledger .dexpage')"),
-    ('lore', 'town', "uiState.tab='ledger';uiState.guideTab='lore';render()", "!!document.querySelector('.screen.s-ledger .lore')"),
-    ('postcards', 'town', "uiState.tab='ledger';uiState.guideTab='cards';render()", "!!document.querySelector('.screen.s-ledger')"),
+    ('guide', 'town', "uiState.tab='guide';render()", "!!document.querySelector('.screen.s-guide')"),
+    ('dex', 'town', "uiState.tab='guide';uiState.dex=saveData.team[0].sp;render()", "!!document.querySelector('.screen.s-guide .dexpage')"),
+    ('lore', 'town', "uiState.tab='guide';uiState.guideTab='lore';render()", "!!document.querySelector('.screen.s-guide .lore')"),
+    ('postcards', 'town', "uiState.tab='guide';uiState.guideTab='cards';render()", "!!document.querySelector('.screen.s-guide')"),
     ('profile', 'town', "uiState.tab='profile';render()", "!!document.querySelector('.screen.s-profile')"),
     ('bag', 'bag', "uiState.tab='bag';render()", "!!document.querySelector('.screen.s-bag')"),
     ('settings', 'town', OPEN + "openSettings()", "!!document.querySelector('#ov .set-sheet')"),
@@ -80,7 +80,7 @@ LEGACY_WORLD = ("const H=(h)=>document.body.insertAdjacentHTML('beforeend',h);"
     "H('<div class=\"pc-mini in\"><div class=\"pc-stamp sm\"><img alt=\"\"></div><span>Copperleaf</span></div>');"
     "H('<div class=\"lift-veil up in\"><div class=\"lift-cap glass\"><small>Glass lift</small><b>Up to Copperleaf</b><span class=note>Up</span></div></div>');"
     "H('<div id=flycap class=\"fly-cap glass\"><small>Airship</small><b>A → B</b><span class=note>Tap to skip</span></div>');"
-    "H('<div class=fly-sheet><button class=\"pickrow fly-row\"><span class=fly-ico></span><span class=pr-t><b>Start a run</b><small>Bracket I</small></span><span class=fly-fare>Free</span></button><button class=\"pickrow fly-row off\"><span class=fly-ico></span><span class=pr-t><b>Town</b><small>x</small></span><span class=\"fly-fare tnum\">$5</span></button></div>');"
+    "H('<div class=fly-sheet><button class=\"pickrow fly-row\"><span class=fly-ico></span><span class=pr-t><b>Start a run</b><small>Expedition I</small></span><span class=fly-fare>Free</span></button><button class=\"pickrow fly-row off\"><span class=fly-ico></span><span class=pr-t><b>Town</b><small>x</small></span><span class=\"fly-fare tnum\">$5</span></button></div>');"
     "H('<div class=fish-ui><canvas class=fish-cv></canvas><div class=\"fish-msg glass\">Casting…</div><div class=fish-reel><div class=fr-bar><div class=fr-zone></div><div class=\"fr-fish in\"></div></div><div class=fr-prog><i></i></div></div><div class=fish-acts><button class=\"pb small gold fish-tap\">Strike!</button><button class=\"pb small glass\">Stop fishing</button></div></div>');"
     "H('<div class=\"evo run b\"><span class=ea><canvas class=rig></canvas></span><span class=eb><canvas class=rig></canvas></span></div><div class=\"hatch done\"><canvas class=rig></canvas></div>');"
     "H('<table class=nb-table><tr><td>x<small class=nb-det>d</small><small class=nb-why>w</small></td></tr></table>');"

@@ -355,13 +355,13 @@ section > h2,
   box-shadow: 0 0 0 2px currentColor;
   margin-left: 4px;
 }
-.st-aud {
+.st-par {
   color: #c27c0e;
 }
-.st-sub {
+.st-slp {
   color: #7b6be9;
 }
-.st-scn {
+.st-brn {
   color: var(--red);
 }
 .st-down {
@@ -536,12 +536,21 @@ section > h2,
   gap: 8px;
   margin-top: 12px;
 }
+/* a UI icon: fixed-colour pixel art (tools/build-ui-icons.py), shown as it is on both themes */
 .uico {
   display: inline-block;
   flex: none;
-  background: currentColor;
-  -webkit-mask: var(--ico) center/contain no-repeat;
-  mask: var(--ico) center/contain no-repeat;
+  background: var(--ico) center/contain no-repeat;
+}
+/* RF-1: a run's money: the coin icon beside the number (art.js moneyHTML) */
+.money {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  white-space: nowrap;
+}
+.money .uico {
+  color: var(--gold-b);
 }
 .boot {
   min-height: 70vh;

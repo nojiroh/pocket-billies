@@ -38,7 +38,7 @@ provide({ buildingLabel, buildingRowsHTML, labMilestones });
 /** what an unlock gives, in a few words: "+10 Scrap", or its name @param {any} R */
 function unlockGiftText(R) {
   const G = R.grant || {};
-  for (const c of ['capital', 'scrap', 'seals'])
+  for (const c of ['research', 'scrap', 'crests'])
     if (G[c]) {
       const C = CURRENCIES[c] || { name: c, one: c };
       return `+${formatNumber(G[c])} ${G[c] === 1 ? C.one : C.name}`;
@@ -72,7 +72,7 @@ const LAB_WHY = {
 };
 /** where a building's rows are bought, for its section */
 const LAB_WHERE = { airship: 'at the airship mast', ranch: 'at the ranch' };
-/** a price: "60 Capital", "1 Audit Seal" @param {number} n @param {string | null} c */
+/** a price: "60 Research", "1 Crest" @param {number} n @param {string | null} c */
 function labPrice(n, c) {
   const C = (c && CURRENCIES[c]) || { name: c || '', one: c || '' };
   return `${formatNumber(n)} ${n === 1 ? C.one : C.name}`;
@@ -114,7 +114,7 @@ export function renderLabBoard() {
   const s = saveData,
     M = s.meta,
     rows = unlockRows(s, UNLOCK_DATA),
-    chips = ['capital', 'scrap', 'seals']
+    chips = ['research', 'scrap', 'crests']
       .map(
         c =>
           `<pb-coin kind="${c}" value="${M[c]}" label="${escapeHtml((CURRENCIES[c] || { name: c }).name)}"></pb-coin>`

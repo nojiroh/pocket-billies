@@ -1,9 +1,9 @@
 // @ts-check
 'use strict';
 /* ================= META STATE (roguelite track RL-3) =================
-   What lasts between runs, kept in the save as saveData.meta: the three currencies other than money (Capital, the
-   unlock currency; Scrap, the building material; Audit Seals, the rare boss currency), the unlocks, each hub
-   building's level, how many runs were played and won, and the highest difficulty tier (Bracket) open. Money ($,
+   What lasts between runs, kept in the save as saveData.meta: the three currencies other than money (Research, the
+   unlock currency; Scrap, the building material; Crests, the rare boss currency), the unlocks, each hub
+   building's level, how many runs were played and won, and the highest Expedition (the difficulty) open. Money ($,
    saveData.se) is not here: it is the run's working field. Logic only: no DOM, runs in Node
    (tools/test/meta-state.test.mjs). The sections that spend these (unlocks.json, buildings.json) come in RL-11. */
 /** @import { Meta } from '../../types/save-data' */
@@ -11,9 +11,9 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  META_EXPEDITIONS: [() => META_EXPEDITIONS],
   META_IDS: [() => META_IDS],
   META_MAX: [() => META_MAX],
-  META_TIERS: [() => META_TIERS],
   // @ts-expect-error -- replaced on purpose
   metaFill: [() => metaFill, v => (metaFill = v)],
   // @ts-expect-error -- replaced on purpose
@@ -25,14 +25,14 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** a new player's meta state: nothing earned, Bracket I open */
+/** a new player's meta state: nothing earned, Expedition I open */
 /** @returns {Meta} */
 export function newMeta() {
-  return { capital: 0, scrap: 0, seals: 0, unlocks: {}, buildings: {}, runs: 0, wins: 0, tier: 1 };
+  return { research: 0, scrap: 0, crests: 0, unlocks: {}, buildings: {}, runs: 0, wins: 0, expedition: 1 };
 }
 export const META_MAX = 1e12,
   META_IDS = 200,
-  META_TIERS = 9;
+  META_EXPEDITIONS = 9;
 /** a whole number from min to max */
 export const wholeIn = (v, min, max) => Number.isInteger(v) && v >= min && v <= max;
 /** a plain record (not an array, no __proto__ key) of at most `most` keys whose values pass `ok` */
@@ -48,10 +48,10 @@ export const recordOf = (v, most, ok) =>
 /** @param {any} o @returns {boolean} */
 export function validMeta(o) {
   if (!o || typeof o !== 'object' || Array.isArray(o) || Object.hasOwn(o, '__proto__')) return false;
-  for (const k of ['capital', 'scrap', 'seals', 'runs', 'wins']) if (!wholeIn(o[k], 0, META_MAX)) return false;
+  for (const k of ['research', 'scrap', 'crests', 'runs', 'wins']) if (!wholeIn(o[k], 0, META_MAX)) return false;
   return (
     o.wins <= o.runs &&
-    wholeIn(o.tier, 1, META_TIERS) &&
+    wholeIn(o.expedition, 1, META_EXPEDITIONS) &&
     recordOf(o.unlocks, META_IDS, v => v === 1) &&
     recordOf(o.buildings, META_IDS, v => wholeIn(v, 0, 99))
   );

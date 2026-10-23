@@ -1,24 +1,24 @@
 {
- "shop_settlement": {
+ "shop_nerve_tonic": {
   "name": "Nerve Tonic in run shops",
   "about": "Run towns can stock Nerve Tonic, which cures paralysis.",
   "at": "lab",
   "cost": 60,
-  "grant": {"shop":"settlement"}
+  "grant": {"shop":"nerve_tonic"}
  },
- "shop_appeal": {
+ "shop_wake_tea": {
   "name": "Wake-Up Tea in run shops",
   "about": "Run towns can stock Wake-Up Tea, which wakes a sleeping Billie.",
   "at": "lab",
   "cost": 60,
-  "grant": {"shop":"appeal"}
+  "grant": {"shop":"wake_tea"}
  },
- "shop_bailout": {
+ "shop_revive": {
   "name": "Revives in run shops",
   "about": "Run towns can stock Revives, which bring a fainted Billie back with half its HP.",
   "at": "lab",
   "cost": 150,
-  "grant": {"shop":"bailout"}
+  "grant": {"shop":"revive"}
  },
  "airship_2": {
   "name": "Airship Lv 2",
@@ -68,18 +68,18 @@
   "name": "Frequent flyer",
   "about": "End five runs.",
   "when": "runs >= 5",
-  "grant": {"capital":50}
+  "grant": {"research":50}
  },
  "first_win": {
-  "name": "First audit",
+  "name": "First Crest",
   "about": "Win a run.",
   "when": "wins >= 1",
-  "grant": {"seals":1}
+  "grant": {"crests":1}
  },
  "caught_15": {
   "name": "Index of fifteen",
   "about": "Catch fifteen kinds of Billie.",
   "when": "caught >= 15",
-  "grant": {"capital":100}
+  "grant": {"research":100}
  }
 }

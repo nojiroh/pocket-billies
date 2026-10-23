@@ -4,32 +4,32 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
     "none": {
       "se": 600,
       "items": {
-        "taxbreak": 2,
-        "loophole": 0,
-        "apology": 0,
-        "settlement": 0,
-        "appeal": 0,
-        "bailout": 0,
+        "potion": 2,
+        "hi_potion": 0,
+        "burn_salve": 0,
+        "nerve_tonic": 0,
+        "wake_tea": 0,
+        "revive": 0,
         "bell": 0,
         "trailmix": 0,
         "pretzel": 0,
-        "spillkit": 0,
-        "parachute": 0,
+        "full_remedy": 0,
+        "max_revive": 0,
         "repairkit": 0
       },
-      "coins": {
-        "penny": 5,
-        "silver": 0,
-        "gold": 0,
-        "tbtf": 0
+      "pyramids": {
+        "pyramid": 5,
+        "step_pyramid": 0,
+        "gold_pyramid": 0,
+        "capstone": 0
       },
       "seed": "S0START",
-      "tier": 1,
+      "expedition": 1,
       "mapgenV": 6,
       "unlocks": [],
       "mods": [],
       "clock": 1,
-      "deadline": 12,
+      "deadline": 11,
       "map": {
         "nodes": [
           {
@@ -40,7 +40,8 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               1
             ],
             "seen": 2,
-            "biome": "meadow"
+            "biome": "meadow",
+            "zone": 0
           },
           {
             "type": "route",
@@ -51,7 +52,8 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               3
             ],
             "seen": 2,
-            "biome": "thicket"
+            "biome": "meadow",
+            "zone": 0
           },
           {
             "type": "town",
@@ -61,7 +63,8 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               4
             ],
             "seen": 1,
-            "biome": "meadow"
+            "biome": "thicket",
+            "zone": 1
           },
           {
             "type": "town",
@@ -71,7 +74,8 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               4
             ],
             "seen": 1,
-            "biome": "thicket"
+            "biome": "thicket",
+            "zone": 1
           },
           {
             "type": "miniboss",
@@ -82,87 +86,73 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               6
             ],
             "seen": 0,
-            "biome": "meadow"
+            "biome": "thicket",
+            "zone": 1
           },
           {
             "type": "town",
             "row": 4,
             "lane": 0,
             "to": [
-              7,
-              8
+              7
             ],
             "seen": 0,
-            "biome": "lake"
+            "biome": "thicket",
+            "zone": 1
           },
           {
-            "type": "route",
+            "type": "town",
             "row": 4,
             "lane": 1,
             "to": [
-              8
+              7
             ],
             "seen": 0,
-            "biome": "thicket"
-          },
-          {
-            "type": "town",
-            "row": 5,
-            "lane": 0,
-            "to": [
-              9
-            ],
-            "seen": 0,
-            "biome": "lake"
-          },
-          {
-            "type": "town",
-            "row": 5,
-            "lane": 1,
-            "to": [
-              9
-            ],
-            "seen": 0,
-            "biome": "lake"
+            "biome": "thicket",
+            "zone": 1
           },
           {
             "type": "miniboss",
+            "row": 5,
+            "lane": 0,
+            "to": [
+              8,
+              9
+            ],
+            "seen": 0,
+            "biome": "meadow",
+            "zone": 2
+          },
+          {
+            "type": "route",
             "row": 6,
             "lane": 0,
             "to": [
-              10,
-              11
+              10
             ],
             "seen": 0,
-            "biome": "meadow"
+            "biome": "meadow",
+            "zone": 2
           },
           {
             "type": "route",
-            "row": 7,
-            "lane": 0,
-            "to": [
-              12
-            ],
-            "seen": 0,
-            "biome": "meadow"
-          },
-          {
-            "type": "route",
-            "row": 7,
+            "row": 6,
             "lane": 1,
             "to": [
-              12
+              10
             ],
             "seen": 0,
-            "biome": "meadow"
+            "biome": "meadow",
+            "zone": 2
           },
           {
             "type": "boss",
-            "row": 8,
+            "row": 7,
             "lane": 0,
             "to": [],
             "seen": 2,
-            "biome": "meadow"
+            "biome": "meadow",
+            "zone": 2
           }
         ]
       },
@@ -277,64 +267,101 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "clear",
           "cloudy",
           "clear"
-        ],
-        [
-          "clear",
-          "clear",
-          "fog",
-          "cloudy",
-          "rain",
-          "cloudy",
-          "clear",
-          "fog"
-        ],
-        [
-          "clear",
-          "rain",
-          "clear",
-          "cloudy",
-          "clear",
-          "rain",
-          "clear",
-          "rain"
         ]
-      ]
+      ],
+      "region": {
+        "theme": "greenbelt",
+        "name": "Pending Commons",
+        "zones": [
+          {
+            "biome": "meadow",
+            "rows": 2
+          },
+          {
+            "biome": "thicket",
+            "rows": 3
+          },
+          {
+            "biome": "meadow",
+            "rows": 3
+          }
+        ],
+        "dex": [
+          "musk0",
+          "musk1",
+          "musk2",
+          "musk3",
+          "gates0",
+          "gates1",
+          "gates2",
+          "gates3",
+          "swift_folklore0",
+          "swift_folklore1",
+          "swift_folklore2",
+          "kardashian_festival0",
+          "kardashian_festival1",
+          "kardashian_festival2",
+          "trump0",
+          "trump1",
+          "trump2"
+        ],
+        "swap": {
+          "swift0": "swift_folklore0",
+          "swift1": "swift_folklore1",
+          "swift2": "swift_folklore2",
+          "kardashian0": "kardashian_festival0",
+          "kardashian1": "kardashian_festival1",
+          "kardashian2": "kardashian_festival2",
+          "trump_waterfront0": "trump0",
+          "trump_waterfront1": "trump1",
+          "trump_waterfront2": "trump2"
+        },
+        "forms": {
+          "swift": "folklore",
+          "kardashian": "festival"
+        },
+        "leaders": [
+          "poppy",
+          "vault",
+          "crude"
+        ]
+      }
     },
     "all": {
       "se": 600,
       "items": {
-        "taxbreak": 2,
-        "loophole": 0,
-        "apology": 0,
-        "settlement": 0,
-        "appeal": 0,
-        "bailout": 0,
+        "potion": 2,
+        "hi_potion": 0,
+        "burn_salve": 0,
+        "nerve_tonic": 0,
+        "wake_tea": 0,
+        "revive": 0,
         "bell": 0,
         "trailmix": 0,
         "pretzel": 0,
-        "spillkit": 0,
-        "parachute": 0,
+        "full_remedy": 0,
+        "max_revive": 0,
         "repairkit": 0
       },
-      "coins": {
-        "penny": 5,
-        "silver": 0,
-        "gold": 0,
-        "tbtf": 0
+      "pyramids": {
+        "pyramid": 5,
+        "step_pyramid": 0,
+        "gold_pyramid": 0,
+        "capstone": 0
       },
       "seed": "S0START",
-      "tier": 1,
+      "expedition": 1,
       "mapgenV": 6,
       "unlocks": [
         "biome_autumn",
         "biome_ridge",
-        "shop_appeal",
-        "shop_bailout",
-        "shop_settlement"
+        "shop_nerve_tonic",
+        "shop_revive",
+        "shop_wake_tea"
       ],
       "mods": [],
       "clock": 1,
-      "deadline": 12,
+      "deadline": 11,
       "map": {
         "nodes": [
           {
@@ -345,7 +372,8 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               1
             ],
             "seen": 2,
-            "biome": "lake"
+            "biome": "thicket",
+            "zone": 0
           },
           {
             "type": "route",
@@ -356,7 +384,8 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               3
             ],
             "seen": 2,
-            "biome": "ridge"
+            "biome": "thicket",
+            "zone": 0
           },
           {
             "type": "town",
@@ -366,7 +395,8 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               4
             ],
             "seen": 1,
-            "biome": "meadow"
+            "biome": "autumn",
+            "zone": 1
           },
           {
             "type": "town",
@@ -376,7 +406,8 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               4
             ],
             "seen": 1,
-            "biome": "autumn"
+            "biome": "autumn",
+            "zone": 1
           },
           {
             "type": "miniboss",
@@ -387,87 +418,73 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               6
             ],
             "seen": 0,
-            "biome": "meadow"
+            "biome": "autumn",
+            "zone": 1
           },
           {
             "type": "town",
             "row": 4,
             "lane": 0,
             "to": [
-              7,
-              8
+              7
             ],
             "seen": 0,
-            "biome": "thicket"
+            "biome": "autumn",
+            "zone": 1
           },
           {
-            "type": "route",
+            "type": "town",
             "row": 4,
             "lane": 1,
             "to": [
-              8
+              7
             ],
             "seen": 0,
-            "biome": "ridge"
-          },
-          {
-            "type": "town",
-            "row": 5,
-            "lane": 0,
-            "to": [
-              9
-            ],
-            "seen": 0,
-            "biome": "thicket"
-          },
-          {
-            "type": "town",
-            "row": 5,
-            "lane": 1,
-            "to": [
-              9
-            ],
-            "seen": 0,
-            "biome": "thicket"
+            "biome": "autumn",
+            "zone": 1
           },
           {
             "type": "miniboss",
+            "row": 5,
+            "lane": 0,
+            "to": [
+              8,
+              9
+            ],
+            "seen": 0,
+            "biome": "thicket",
+            "zone": 2
+          },
+          {
+            "type": "route",
             "row": 6,
             "lane": 0,
             "to": [
-              10,
-              11
+              10
             ],
             "seen": 0,
-            "biome": "lake"
+            "biome": "thicket",
+            "zone": 2
           },
           {
             "type": "route",
-            "row": 7,
-            "lane": 0,
-            "to": [
-              12
-            ],
-            "seen": 0,
-            "biome": "lake"
-          },
-          {
-            "type": "route",
-            "row": 7,
+            "row": 6,
             "lane": 1,
             "to": [
-              12
+              10
             ],
             "seen": 0,
-            "biome": "meadow"
+            "biome": "thicket",
+            "zone": 2
           },
           {
             "type": "boss",
-            "row": 8,
+            "row": 7,
             "lane": 0,
             "to": [],
             "seen": 2,
-            "biome": "meadow"
+            "biome": "thicket",
+            "zone": 2
           }
         ]
       },
@@ -582,53 +599,87 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "clear",
           "cloudy",
           "clear"
-        ],
-        [
-          "clear",
-          "clear",
-          "fog",
-          "cloudy",
-          "rain",
-          "cloudy",
-          "clear",
-          "fog"
-        ],
-        [
-          "clear",
-          "rain",
-          "clear",
-          "cloudy",
-          "clear",
-          "rain",
-          "clear",
-          "rain"
         ]
-      ]
+      ],
+      "region": {
+        "theme": "wildwood",
+        "name": "Pending Commons",
+        "zones": [
+          {
+            "biome": "thicket",
+            "rows": 2
+          },
+          {
+            "biome": "autumn",
+            "rows": 3
+          },
+          {
+            "biome": "thicket",
+            "rows": 3
+          }
+        ],
+        "dex": [
+          "musk0",
+          "musk1",
+          "musk2",
+          "musk3",
+          "bezos0",
+          "bezos1",
+          "bezos2",
+          "bezos3",
+          "gates0",
+          "gates1",
+          "gates2",
+          "gates3",
+          "swift_folklore0",
+          "swift_folklore1",
+          "swift_folklore2",
+          "kardashian0",
+          "kardashian1",
+          "kardashian2"
+        ],
+        "swap": {
+          "swift0": "swift_folklore0",
+          "swift1": "swift_folklore1",
+          "swift2": "swift_folklore2",
+          "kardashian_festival0": "kardashian0",
+          "kardashian_festival1": "kardashian1",
+          "kardashian_festival2": "kardashian2"
+        },
+        "forms": {
+          "swift": "folklore"
+        },
+        "leaders": [
+          "morel",
+          "poppy",
+          "markdown"
+        ]
+      }
     },
     "short": {
       "se": 600,
       "items": {
-        "taxbreak": 2,
-        "loophole": 0,
-        "apology": 0,
-        "settlement": 0,
-        "appeal": 0,
-        "bailout": 0,
+        "potion": 2,
+        "hi_potion": 0,
+        "burn_salve": 0,
+        "nerve_tonic": 0,
+        "wake_tea": 0,
+        "revive": 0,
         "bell": 0,
         "trailmix": 0,
         "pretzel": 0,
-        "spillkit": 0,
-        "parachute": 0,
+        "full_remedy": 0,
+        "max_revive": 0,
         "repairkit": 0
       },
-      "coins": {
-        "penny": 5,
-        "silver": 0,
-        "gold": 0,
-        "tbtf": 0
+      "pyramids": {
+        "pyramid": 5,
+        "step_pyramid": 0,
+        "gold_pyramid": 0,
+        "capstone": 0
       },
       "seed": "S0START",
-      "tier": 1,
+      "expedition": 1,
       "mapgenV": 6,
       "unlocks": [],
       "mods": [],
@@ -644,7 +695,8 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               1
             ],
             "seen": 2,
-            "biome": "meadow"
+            "biome": "meadow",
+            "zone": 0
           },
           {
             "type": "route",
@@ -655,7 +707,8 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               3
             ],
             "seen": 2,
-            "biome": "thicket"
+            "biome": "meadow",
+            "zone": 0
           },
           {
             "type": "town",
@@ -665,7 +718,8 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               4
             ],
             "seen": 1,
-            "biome": "meadow"
+            "biome": "meadow",
+            "zone": 0
           },
           {
             "type": "town",
@@ -675,7 +729,8 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               4
             ],
             "seen": 1,
-            "biome": "thicket"
+            "biome": "meadow",
+            "zone": 0
           },
           {
             "type": "miniboss",
@@ -685,7 +740,8 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               5
             ],
             "seen": 0,
-            "biome": "meadow"
+            "biome": "thicket",
+            "zone": 1
           },
           {
             "type": "boss",
@@ -693,7 +749,8 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "lane": 0,
             "to": [],
             "seen": 2,
-            "biome": "lake"
+            "biome": "thicket",
+            "zone": 1
           }
         ]
       },
@@ -759,9 +816,61 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "rain",
           "cloudy"
         ]
-      ]
+      ],
+      "region": {
+        "theme": "greenbelt",
+        "name": "Pending Commons",
+        "zones": [
+          {
+            "biome": "meadow",
+            "rows": 3
+          },
+          {
+            "biome": "thicket",
+            "rows": 2
+          }
+        ],
+        "dex": [
+          "musk0",
+          "musk1",
+          "musk2",
+          "musk3",
+          "gates0",
+          "gates1",
+          "gates2",
+          "gates3",
+          "swift_folklore0",
+          "swift_folklore1",
+          "swift_folklore2",
+          "kardashian_festival0",
+          "kardashian_festival1",
+          "kardashian_festival2",
+          "trump0",
+          "trump1",
+          "trump2"
+        ],
+        "swap": {
+          "swift0": "swift_folklore0",
+          "swift1": "swift_folklore1",
+          "swift2": "swift_folklore2",
+          "kardashian0": "kardashian_festival0",
+          "kardashian1": "kardashian_festival1",
+          "kardashian2": "kardashian_festival2",
+          "trump_waterfront0": "trump0",
+          "trump_waterfront1": "trump1",
+          "trump_waterfront2": "trump2"
+        },
+        "forms": {
+          "swift": "folklore",
+          "kardashian": "festival"
+        },
+        "leaders": [
+          "poppy",
+          "vault"
+        ]
+      }
     }
   },
-  "all": "3ed6570ebebfd3fb9ce2b6cca15156f341b5c8de7ac7a1992b0f368265298bee"
+  "all": "7f61cfeef9b2a73587d64314ca3d279cee1933eac9abd7904af63eaa8ae2209a"
 }
 `;

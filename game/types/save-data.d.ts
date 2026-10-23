@@ -34,8 +34,8 @@ export interface SaveData {
   caught: Record<SpeciesId, number>;
   /** money, dollars */
   se: number;
-  /** how many of each coin and item you have (every key of gameData.coins and gameData.items) */
-  coins: Record<DataId, number>;
+  /** how many of each coin and item you have (every key of gameData.pyramids and gameData.items) */
+  pyramids: Record<DataId, number>;
   items: Record<DataId, number>;
   /** where you are and where you're going */
   trip: Trip;
@@ -79,7 +79,7 @@ export interface SaveData {
   /** clothes owned and saved outfits (dressing-room.js) */
   wardrobe?: { owned: Record<string, any>; outfits: any[] };
   /** roguelite track RL-3 (save format 4): what lasts between runs, the run in progress (null in the hub; while it is
-      on, team, se, items, coins, trip, wild, eggs, flags, seats and visited are the run's), the ranch */
+      on, team, se, items, pyramids, trip, wild, eggs, flags, seats and visited are the run's), the ranch */
   meta: Meta;
   run: Run | null;
   ranch: Ranch;
@@ -88,9 +88,9 @@ export interface SaveData {
 /** roguelite track RL-3: what lasts between runs (logic/meta-state.js) */
 export interface Meta {
   /** the unlock currency, the building material, the rare boss currency (money is saveData.se) */
-  capital: number;
+  research: number;
   scrap: number;
-  seals: number;
+  crests: number;
   /** unlock ids: 1 (unlocks.json, RL-11) */
   unlocks: Record<string, 1>;
   /** hub building id -> level (buildings.json, RL-11) */
@@ -98,8 +98,8 @@ export interface Meta {
   /** runs ended (won or lost) and runs won */
   runs: number;
   wins: number;
-  /** the highest difficulty tier (Bracket) open, from 1 */
-  tier: number;
+  /** the highest Expedition open, from 1 */
+  expedition: number;
 }
 
 /** roguelite track RL-3: the ranch, a hub building (logic/ranch-state.js; filled in RL-9 and RL-10) */
@@ -135,6 +135,24 @@ export interface RunNode {
   seen?: number;
   /** its biome (a biomes.json id): its scene's look and its weather's climate */
   biome?: string;
+  /** RL-R1: its zone in the run's region (run.region.zones); missing on a run from before regions */
+  zone?: number;
+}
+
+/** roguelite track RL-R1: a run's region (logic/run-region.js runRegionMake) */
+export interface RunRegion {
+  /** its regions.json theme and its name ("Pendingvale") */
+  theme: string;
+  name: string;
+  /** its zones in order: a biome over some rows of the map */
+  zones: { biome: string; rows: number }[];
+  /** the regional dex (species ids, each line in the region's variety), every other variety of those lines to the
+      region's, and the lines met as a regional form (line id to form id) */
+  dex: string[];
+  swap: Record<string, string>;
+  forms: Record<string, string>;
+  /** trainer ids: the mini-bosses in order, then the boss */
+  leaders: string[];
 }
 
 /** roguelite track RL-6: a run's node map (logic/run-map.js runMapMake): nodes row by row, west to east */
@@ -157,7 +175,7 @@ export interface RunStart {
   team: Billy[];
   se: number;
   items: Record<DataId, number>;
-  coins: Record<DataId, number>;
+  pyramids: Record<DataId, number>;
   trip: Trip;
   wild: Record<string, WildStock>;
   eggs: Egg[];
@@ -172,12 +190,14 @@ export interface RunStart {
 export interface Run {
   /** the run's seed (10 base32 characters; 'd' + a UTC date for a daily); everything else regenerates from it */
   seed: string;
-  /** the difficulty tier (Bracket) */
-  tier: number;
+  /** the Expedition (the difficulty, from 1) */
+  expedition: number;
   /** the map generator's version when the run started (a run made by another version is abandoned) */
   mapgenV: number;
   /** the node map; null until the run gets it at the mast (logic/run-map.js runMapStart) */
   map: RunMap | null;
+  /** RL-R1: its region (name, zones, dex, leaders); missing on a run from before regions */
+  region?: RunRegion;
   /** what is happening, and the battle being fought (its battle number, -1 for none: a resume restarts it from
       the seed). Where the player is stays saveData.trip.node: 0 Copperleaf, i + 1 the map's node i */
   /** RL-8: won, at the payout (1 won, 0 lost or given up) */
@@ -190,13 +210,13 @@ export interface Run {
       and Copperleaf's, world node 0, is empty) */
   forecast: string[][];
   /** relic ids held, the offer shown (saved before it is shown), modifier ids */
-  relics: string[];
+  perks: string[];
   offer: string[] | null;
   mods: string[];
-  /** RL-12: Loophole offers made so far (the next offer's stream, logic/relics.js relicOffer) */
+  /** RL-12: Perk offers made so far (the next offer's stream, logic/perks.js perkOffer) */
   offerN: number;
-  /** RL-12: each run shop's Loophole for a day, by '<map node>:<day>' ('' once bought), drawn when the shop first
-      opens that day (logic/relics.js relicShelf) */
+  /** RL-12: each run shop's Perk for a day, by '<map node>:<day>' ('' once bought), drawn when the shop first
+      opens that day (logic/perks.js perkShelf) */
   shelf: Record<string, string>;
   /** the hub's working fields as the run started */
   start: RunStart;
@@ -206,7 +226,7 @@ export interface Run {
   /** the nodes arrived at, in order (map indices); the player's choices, in order */
   path: number[];
   log: string[];
-  /** Billies released during the run (paid as Capital at the payout) */
+  /** Billies released during the run (paid as Research at the payout) */
   released: { sp: SpeciesId; lvl: number }[];
   /** the one-time hints already shown */
   hints: Record<string, 1>;
@@ -217,7 +237,7 @@ export interface Run {
       runHome reads a run saved before as the hub's team) */
   home?: string[];
   /** RL-9b: what was packed from Copperleaf's bag at the mast */
-  pack?: { items: Record<DataId, number>; coins: Record<DataId, number> };
+  pack?: { items: Record<DataId, number>; pyramids: Record<DataId, number> };
 }
 
 /** the player's travel: where you are, and the locations still ahead (the gold arrows' guide) */

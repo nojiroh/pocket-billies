@@ -3,6 +3,7 @@
  "who": "marina",
  "battleStage": "beach",
  "miniboss": true,
+ "type": "Water",
  "blocks": false,
  "team": [
   {"sp":"ellison1","lvl":29},
@@ -19,17 +20,17 @@
  "seat": {
   "id": "haven",
   "title": "Water Badge · 3 of 8",
-  "coin": "gold",
-  "coins": {"gold":3,"tbtf":2},
-  "items": {"parachute":1},
-  "rewardText": "a Golden Parachute, 3 Gold Coins and 2 Platinum Coins",
+  "coin": "gold_pyramid",
+  "pyramids": {"gold_pyramid":3,"capstone":2},
+  "items": {"max_revive":1},
+  "rewardText": "a Max Revive, 3 Gold Pyramids and 2 Capstones",
   "unlockText": "The path up Mt. Cinderpeak, on the north shore, is open. Bring water."
  },
  "script": [
   "if beat:marina",
   "  [happy] Back for more? All right! #l:a209",
   "else",
-  "  [happy] Welcome to Palmhaven Town. Relax, nobody here asks questions. #l:30d5",
+  "  [happy] Welcome to Palmhaven Town. Relax, no photos on my island. #l:30d5",
   "  My Water team flows around every attack. #l:669f",
   "battle marina"
  ]

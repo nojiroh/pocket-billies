@@ -12,8 +12,8 @@
      mountains   the same run with the debug menu's mountains mod (TR-3: mountains north and south, for the camera)
      ranch   inside Copperleaf's ranch (RL-9): three Billies in storage (one two levels under the cap), 50 Scrap
      pasture the ranch's save, standing outside the pasture's gate by the barn (IS-8: the three wander inside)
-     relics  the run, holding five Loopholes (RL-12: one under the cap), $2,000, a mini-boss's pick waiting
-     lab     Copperleaf after a run (RL-11): 500 Capital, 60 Scrap, 2 Audit Seals, one run ended (a milestone met)
+     relics  the run, holding five Perks (RL-12: one under the cap), 2,000 Moneys, a mini-boss's pick waiting
+     lab     Copperleaf after a run (RL-11): 500 Research, 60 Scrap, 2 Crests, one run ended (a milestone met)
      island  the test island (island track IS-0: test_island, the map with the island contract's fields)
    UI-3b, for the Studio's UI look preview (the real screens with the look being edited):
      team    the Team screen          bag     the Bag, with a few of each item
@@ -24,12 +24,12 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
-import { LOCATIONS, RELICS, RULES, SPECIES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
+import { LOCATIONS, PERKS, RULES, SPECIES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
 import { makeBilly } from './logic/rules.js';
 import { applyUiTheme } from './theme-sheet.js';
 import { runArrive } from './logic/run-map.js';
 import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
-import { relicOfferMake } from './logic/relics.js';
+import { perkOfferMake } from './logic/perks.js';
 import { newSave } from './logic/saves.js';
 import { startTrainer } from './logic/battle-engine.js';
 import { runUnlocks } from './logic/unlocks.js';
@@ -46,8 +46,8 @@ import { render } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   FIXTURE_NAMES: [() => FIXTURE_NAMES],
+  FIXTURE_PERKS: [() => FIXTURE_PERKS],
   FIXTURE_PLACES: [() => FIXTURE_PLACES],
-  FIXTURE_RELICS: [() => FIXTURE_RELICS],
   FIXTURE_RUN_SEED: [() => FIXTURE_RUN_SEED],
   fixtureLook: [() => fixtureLook, v => (fixtureLook = v)],
   fixtureSave: [() => fixtureSave, v => (fixtureSave = v)],
@@ -72,9 +72,9 @@ const FIXTURE_PLACES = {
   lab: 'copperleaf',
   island: 'copperleaf',
 };
-/** RL-12: the Loopholes the relics fixture holds (a shop's and a clinic's price rows, a catch row, a battle's stage, a
+/** RL-12: the Perks the relics fixture holds (a shop's and a clinic's price rows, a catch row, a battle's stage, a
  * heal on arrival) */
-const FIXTURE_RELICS = ['shelter', 'lobbyist', 'fineprint', 'insider', 'severance'];
+const FIXTURE_PERKS = ['clinic_card', 'coupon_book', 'steady_hand', 'running_shoes', 'trail_snacks'];
 /** RL-7: the run fixture's seed */
 const FIXTURE_RUN_SEED = 'RL7FIXTURE';
 function fixtureSave() {
@@ -112,7 +112,7 @@ function fixtureSave() {
     }
   }
   /* RL-11: the Lab's fixture has what a few runs bring home, and one run ended (the first milestone, granted on load) */
-  if (FIXTURE === 'lab') Object.assign(s.meta, { capital: 500, scrap: 60, seals: 2, runs: 1 });
+  if (FIXTURE === 'lab') Object.assign(s.meta, { research: 500, scrap: 60, crests: 2, runs: 1 });
   /* UI-3b: the Bag fixture has something in it */
   if (FIXTURE === 'bag') for (const k of Object.keys(s.items)) s.items[k] = 3;
   /* the people who would stop you to talk have met you already */
@@ -122,7 +122,7 @@ function fixtureSave() {
      world goes in at boot (run-world.js) */
   if (FIXTURE === 'run' || FIXTURE === 'mountains' || FIXTURE === 'relics') {
     const data = runWorldData();
-    /* RL-9b: one Billie from home at Bracket I, the lead (the second stays in Copperleaf). Studio plan T2.1: started
+    /* RL-9b: one Billie from home at Expedition I, the lead (the second stays in Copperleaf). Studio plan T2.1: started
        as the mast starts a run (logic/run-start.js), with a fresh save's unlocks (none: no ridge or autumn) */
     const plan = runStartPlan(
       FIXTURE_RUN_SEED,
@@ -134,12 +134,12 @@ function fixtureSave() {
     s.run.at.phase = 'walk';
     s.visited[s.trip.node] = 1;
   }
-  /* RL-12: five Loopholes held (one under the cap), money for the shop, and a mini-boss's pick waiting (it opens once
+  /* RL-12: five Perks held (one under the cap), money for the shop, and a mini-boss's pick waiting (it opens once
      the world shows, as after a reload: run.js runResume) */
   if (FIXTURE === 'relics') {
-    s.run.relics = FIXTURE_RELICS.filter(id => RELICS[id]);
+    s.run.perks = FIXTURE_PERKS.filter(id => PERKS[id]);
     s.se = 2000;
-    relicOfferMake(s.run, RELICS, RULES.run.relics);
+    perkOfferMake(s.run, PERKS, RULES.run.perks);
   }
   return s;
 }

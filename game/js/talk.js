@@ -290,7 +290,7 @@ const FOLK_TALK = [
   'My feet are tired, but I’ve seen three towns today.',
   '[surprised] Is that a trainer card? Fancy!',
   'I used to have a Billie. It bought my house and moved me out.',
-  'A coin saved is a coin taxed, they say. I never know who says it.',
+  'A pyramid saved is a Billie caught, they say. I never know who says it.',
   '[happy] Lovely day under the Inner Sun.',
   'Careful in the tall grass. They hide in there.',
 ];

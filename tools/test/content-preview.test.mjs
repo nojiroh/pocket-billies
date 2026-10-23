@@ -1,5 +1,5 @@
 // Studio plan Phase 4: logic/content-preview.js, what the Studio's content editors ask the logic worker. Each answer is
-// the game's own logic: the Loophole preview's stats are rules.js stat times the battle's stage factor, its numbers
+// the game's own logic: the Perk preview's stats are rules.js stat times the battle's stage factor, its numbers
 // the fx readers' (clamped products named); a leader's run values are runFoes on that row; the stand-ins are
 // standInSpecies'.
 import assert from 'node:assert/strict';
@@ -18,18 +18,27 @@ test('stageFactor is the battle’s: +1 is x1.5, +2 x2, -1 x2/3, 0 x1', () => {
 });
 
 test('relic preview: nothing held changes nothing', () => {
-  const p = P.relicPreview([], { sp: SP, lvl: 20 });
+  const p = P.perkPreview([], { sp: SP, lvl: 20 });
   assert.equal(p.sample.sp, SP);
   for (const s of p.stats) assert.equal(s.after, s.before, s.id);
   assert.deepEqual(p.money.prize[0], p.money.prize[1]);
   assert.equal(p.catch, 1);
-  assert.deepEqual([p.damage.dealH, p.damage.take, p.heal.share, p.payout.capital], [1, 1, 0, 1]);
+  assert.deepEqual([p.damage.dealH, p.damage.take, p.heal.share, p.payout.research], [1, 1, 0, 1]);
   assert.deepEqual(p.limited, []);
 });
 
 test('relic preview: each kind reads its rows through the game’s fx functions', () => {
-  const p = P.relicPreview(
-      ['insider', 'offshore', 'shelter', 'takeover', 'hedge', 'severance', 'options', 'writeoff'],
+  const p = P.perkPreview(
+      [
+        'running_shoes',
+        'lucky_charm',
+        'clinic_card',
+        'power_gloves',
+        'bubble_wrap',
+        'trail_snacks',
+        'field_notebook',
+        'lost_property',
+      ],
       {
         sp: SP,
         lvl: 30,
@@ -46,16 +55,16 @@ test('relic preview: each kind reads its rows through the game’s fx functions'
   assert.equal(p.damage.dealS, 1);
   assert.equal(p.damage.take, 0.9);
   assert.equal(p.heal.share, 0.15);
-  assert.equal(p.payout.capital, 1.15);
+  assert.equal(p.payout.research, 1.15);
   assert.equal(p.payout.itemShare[1], Math.min(1, RULES.run.payout.itemShare * 2));
 });
 
 test('relic preview: a product past FX_LIMIT is named with the product used', () => {
-  const R = data.RELICS;
+  const R = data.PERKS;
   R.__a = { name: 'A', d: 'a', rarity: 'common', fx: [{ kind: 'money', mult: 3 }] };
   R.__b = { name: 'B', d: 'b', rarity: 'common', fx: [{ kind: 'money', mult: 2 }] };
   try {
-    const p = P.relicPreview(['__a', '__b'], { sp: SP, lvl: 10 });
+    const p = P.perkPreview(['__a', '__b'], { sp: SP, lvl: 10 });
     assert.deepEqual(p.limited, [{ kind: 'money', what: '', raw: 6, used: E.FX_LIMIT.hi }]);
     assert.equal(p.money.reward[1], RULES.run.foes.miniboss.reward * E.FX_LIMIT.hi);
   } finally {

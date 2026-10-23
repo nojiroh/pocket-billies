@@ -8,10 +8,10 @@
    endBattle as it was (tools/test/battle-rewards.test.mjs). Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { RELICS, RULES } from '../game-data.js';
+import { PERKS, RULES } from '../game-data.js';
 import { dropEncounter, findBilly, wildPrize } from './rules.js';
 import { fxMoney } from './effects.js';
-import { relicOfferMake } from './relics.js';
+import { perkOfferMake } from './perks.js';
 import { battleRoll } from './battle-engine.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -33,12 +33,12 @@ export const battleOutcome = (kind, over) => (over === 'draw' ? (kind === 'wild'
  * (a wild win's egg drop, the one roll it took, is gone: eggs come from the ranch); `roll`, the battle's chance, is
  * still taken so every caller's arguments keep their places.
  * @param {{ kind: string, over: string | null, T?: any, tid?: string, foe: { lvl: number }[], fx?: any[] }} b b.fx: a run's
- *   Loopholes (logic/effects.js), which change the money a win pays
+ *   Perks (logic/effects.js), which change the money a win pays
  * @param {{ se: number, flags: Record<string, number>, seats: string[], run?: any }} s
  * @param {(() => number) | null} roll unused since RL-10
  * @param {{ battle: { loseFee: number } }} [rules]
  * @returns {{ o: string | null, fee: number, prize: number, reward: number, first: boolean,
- *   seat: null | { id: string, nu: boolean, coins: Record<string, number>, items: Record<string, number> } }}
+ *   seat: null | { id: string, nu: boolean, pyramids: Record<string, number>, items: Record<string, number> } }}
  */
 export function battleRewards(b, s, roll, rules = RULES) {
   const o = battleOutcome(b.kind, b.over),
@@ -57,7 +57,7 @@ export function battleRewards(b, s, roll, rules = RULES) {
     out.first = !s.flags[b.tid || ''];
     const st = b.T.seat;
     if (st && !run)
-      out.seat = { id: st.id, nu: !s.seats.includes(st.id), coins: st.coins || {}, items: st.items || {} };
+      out.seat = { id: st.id, nu: !s.seats.includes(st.id), pyramids: st.pyramids || {}, items: st.items || {} };
   }
   return out;
 }
@@ -65,7 +65,7 @@ export function battleRewards(b, s, roll, rules = RULES) {
 /* Studio plan T3.2: what an ended battle does to the save, the same on the page (battle.js endBattle, which shows the
    sheets, seats and the tutorial) and in a run's simulation (logic/run-sim.js) */
 /**
- * The battle has ended: what it pays (battleRewards, with the battle's Loopholes), and on the save: a run battle's
+ * The battle has ended: what it pays (battleRewards, with the battle's Perks), and on the save: a run battle's
  * checkpoint back to walking, the Hype counter (wins) of everyone standing on a win, a wild encounter gone, the lead's
  * streak (one more on a win, 0 on a loss). Returns the pay and the run when it was a run battle (b.runK).
  * @param {any} b the battle @param {any} s the save it was fought on (saveData)
@@ -91,8 +91,8 @@ export function battleSettle(b, s) {
 }
 /**
  * A win's money and marks (after battleSettle; not for the opening's tutorial battle): a wild win's prize, a
- * trainer's reward and flag, and on a run (`run`) a mini-boss beaten makes the next pick of Loopholes
- * (logic/relics.js relicOfferMake, saved on the run before it shows).
+ * trainer's reward and flag, and on a run (`run`) a mini-boss beaten makes the next pick of Perks
+ * (logic/perks.js perkOfferMake, saved on the run before it shows).
  * @param {any} b @param {any} s @param {{ o: string | null, prize: number, reward: number }} pay @param {any} run
  */
 export function battleSettleWin(b, s, pay, run) {
@@ -100,7 +100,7 @@ export function battleSettleWin(b, s, pay, run) {
   if (b.kind === 'wild' && pay.prize > 0) s.se += pay.prize;
   if (b.kind === 'trainer') {
     s.se += pay.reward;
-    if (run && b.T && b.T.runFoe === 'miniboss') relicOfferMake(run, RELICS, RULES.run.relics);
+    if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, PERKS, RULES.run.perks);
     s.flags[b.tid] = 1;
   }
 }

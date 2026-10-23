@@ -138,7 +138,7 @@ async function checkGithubToken(token) {
 function githubLoginHTML(err, cancel = false) {
   /* SECURITY.md option A (RL-1): a fine-grained token for this one repository, so a stolen one can't touch others */
   const tok = `https://github.com/settings/personal-access-tokens/new?name=${encodeURIComponent('Pocket Billies Studio')}&expires_in=90&contents=write&pull_requests=write`;
-  return `<div class="gh-login"><div class="gh-card"><img src="../game/art/coins/penny_32.png" width="40" height="40" alt=""><h2>Pocket Billies Studio</h2>
+  return `<div class="gh-login"><div class="gh-card"><img src="../game/art/coins/pyramid_32.png" width="40" height="40" alt=""><h2>Pocket Billies Studio</h2>
  <p>Sign in with GitHub to edit the game. Only Studio admins get in, and what you save becomes a <b>pull request</b>: the game changes only when ${escapeHtml(GITHUB_CONFIG.owner)} approves it.</p>
  <ol class="gh-steps"><li><a href="${tok}" target="_blank" rel="noopener">Open GitHub’s “new fine-grained token” page</a> (signed in as yourself). The name and 90 days are filled in.</li>
  <li>Under <b>Repository access</b> pick <b>Only select repositories</b> and choose <b>${escapeHtml(GITHUB_CONFIG.owner)}/${escapeHtml(GITHUB_CONFIG.repo)}</b>. Under <b>Permissions</b> check that <b>Contents</b> and <b>Pull requests</b> say <b>Read and write</b>.</li>

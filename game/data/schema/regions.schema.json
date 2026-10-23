@@ -1,0 +1,48 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "regions.schema.json",
+ "title": "game/data/regions.json: what a run's region is made from (roguelite track RL-R1, logic/run-region.js)",
+ "type": "object",
+ "additionalProperties": false,
+ "required": ["zones", "rows", "dex", "graph", "themes", "names"],
+ "$defs": {
+  "weights": {"type": "object", "additionalProperties": {"type": "number", "minimum": 0}},
+  "range": {"type": "array", "items": {"type": "integer", "minimum": 1}, "minItems": 2, "maxItems": 2},
+  "words": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 16}}
+ },
+ "properties": {
+  "zones": {"description": "the zones a region has at each Expedition, I first (past the last, the last)", "type": "array", "items": {"type": "integer", "minimum": 1, "maximum": 8}, "minItems": 1},
+  "rows": {"description": "a zone's rows on the run's map: fewest, most", "$ref": "#/$defs/range"},
+  "dex": {"description": "the regional dex's species (every stage and form counts): fewest, most", "$ref": "#/$defs/range"},
+  "graph": {"description": "the biome graph: each biome's likely next zones, by weight (biomes.json ids; only biomes with finished plants)", "type": "object", "additionalProperties": {"$ref": "#/$defs/weights"}},
+  "themes": {
+   "type": "object",
+   "minProperties": 1,
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["name", "start", "biomes", "types"],
+    "properties": {
+     "name": {"type": "string", "minLength": 1},
+     "weight": {"description": "how often it rolls (1 if missing)", "type": "number", "minimum": 0},
+     "start": {"description": "the first zone's biome, by weight", "$ref": "#/$defs/weights"},
+     "biomes": {"description": "its biomes, by weight (times the graph's)", "$ref": "#/$defs/weights"},
+     "types": {"description": "the types it leans to (types.json ids): its dex's lines and its leaders", "$ref": "#/$defs/weights"},
+     "ends": {"description": "its own name endings, joined on (\"mere\")", "$ref": "#/$defs/words"},
+     "nouns": {"description": "its own name nouns, after a space (\"Shores\")", "$ref": "#/$defs/words"}
+    }
+   }
+  },
+  "names": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": ["parts", "ends", "nouns", "joined"],
+   "properties": {
+    "parts": {"description": "a name's first part (\"Pending\"); one of two words takes only a noun", "type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 16}, "minItems": 1},
+    "ends": {"$ref": "#/$defs/words"},
+    "nouns": {"$ref": "#/$defs/words"},
+    "joined": {"description": "the odds a one-word part takes an ending (Pendingvale) rather than a noun (Beta Basin)", "type": "number", "minimum": 0, "maximum": 1}
+   }
+  }
+ }
+}

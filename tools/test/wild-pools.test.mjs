@@ -50,7 +50,7 @@ test('the uncommon lines are met far more often than the starters', () => {
 
 test('no run place needs a stand-in: its list is its biome pool, every id the game has', () => {
   const R = GAME_DATA.rules.run,
-    start = { team: [], se: 0, items: {}, coins: {}, trip: { node: 0, plan: [] }, wild: {}, eggs: [], flags: {} },
+    start = { team: [], se: 0, items: {}, pyramids: {}, trip: { node: 0, plan: [] }, wild: {}, eggs: [], flags: {} },
     world = {
       nodeTypes: GAME_DATA.nodeTypes,
       biomes: GAME_DATA.biomes,
@@ -142,4 +142,23 @@ test('the dex counts a base stage as seen or caught when one of its forms is; a 
   s.caught.trump_waterfront0 = 1;
   assert.ok(dexCaught('trump0'));
   assert.ok(!dexSeen('trump1'), 'only its own stage');
+});
+
+test("RL-R1: a region's swap meets a line in the region's variety, a species once, its weights summed", () => {
+  const list = [
+    ['trump_waterfront0', 20],
+    ['zuck0', 10],
+    ['zuck_cloud0', 5],
+    ['musk0', 3],
+  ];
+  assert.deepEqual(wildPoolList(list, null, { trump_waterfront0: 'trump0', zuck_cloud0: 'zuck0' }), [
+    ['trump0', 20],
+    ['zuck0', 15],
+    ['musk0', 3],
+  ]);
+  assert.deepEqual(wildPoolList(list, ['trump0', 'zuck0'], { trump_waterfront0: 'trump0' }), [
+    ['trump0', 20],
+    ['zuck0', 10],
+  ]);
+  assert.deepEqual(list[0], ['trump_waterfront0', 20], 'the pool is not changed');
 });

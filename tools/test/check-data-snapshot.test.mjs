@@ -46,7 +46,7 @@ test('check-data: planted rules (battle, run, ranch)', t => {
       'rules.json': R => {
         const run = R.run;
         R.battle.turnCap = 5;
-        Object.assign(run.payout, { money: -1, bogus: 1, winSeals: 1.5, itemShare: 2 });
+        Object.assign(run.payout, { money: -1, bogus: 1, winCrests: 1.5, itemShare: 2 });
         Object.assign(R.ranch, { slots: [3, 2], bogus: 1, levelsPerHour: 0 });
         Object.assign(R.ranch.breed, { riskyCost: 50, extra: 1 });
         R.ranch.breed.odds.safe = 0.9;
@@ -60,7 +60,7 @@ test('check-data: planted rules (battle, run, ranch)', t => {
         run.scene.size = 3;
         run.wild.lv = [5, 3];
         run.seamIn = 0;
-        run.start.coins.nosuchcoin = 1;
+        run.start.pyramids.nosuchcoin = 1;
         run.start.extra = 1;
         run.home = [2, 1];
         run.healCost = -5;
@@ -68,9 +68,9 @@ test('check-data: planted rules (battle, run, ranch)', t => {
         run.shop.pick['coin:nosuch'] = 1;
         run.foes.boss.up = 99;
         run.foes.extra = {};
-        run.relics.cap = 0;
-        run.relics.rarity.mythic = 1;
-        run.relics.price.rare = 1.5;
+        run.perks.cap = 0;
+        run.perks.rarity.mythic = 1;
+        run.perks.price.rare = 1.5;
       },
     })
   );
@@ -95,12 +95,12 @@ test('check-data: planted robots, biomes, node types, relics, currencies, buildi
       'nodeTypes.json': N => {
         N.landing.mark = 'bogus';
       },
-      'relics.json': R => {
-        R.insider.fx[0].stat = 'hp';
-        R.takeover.fx[0].type = 'Plasma';
+      'perks.json': R => {
+        R.running_shoes.fx[0].stat = 'hp';
+        R.power_gloves.fx[0].type = 'Plasma';
       },
       'currencies.json': C => {
-        C.capital.kept = 'run';
+        C.research.kept = 'run';
       },
       'buildings.json': B => {
         B.ranch.act = 'nosuchact';
@@ -108,9 +108,9 @@ test('check-data: planted robots, biomes, node types, relics, currencies, buildi
         B.lab.currency = 'gold';
       },
       'unlocks.json': U => {
-        U.shop_settlement.at = 'nosuchbuilding';
-        U.shop_settlement.requires = ['caught_15'];
-        U.caught_15.requires = ['shop_settlement'];
+        U.shop_nerve_tonic.at = 'nosuchbuilding';
+        U.shop_nerve_tonic.requires = ['caught_15'];
+        U.caught_15.requires = ['shop_nerve_tonic'];
         U.caught_15.when = 'unlock:nosuchunlock';
         U.caught_15.grant = { money: 100 };
       },

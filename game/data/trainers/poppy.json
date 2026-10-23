@@ -3,6 +3,7 @@
  "who": "poppy",
  "battleStage": "grass",
  "miniboss": true,
+ "type": "Grass",
  "blocks": false,
  "team": [
   {"sp":"bloomberg1","lvl":36},
@@ -19,10 +20,10 @@
  "seat": {
   "id": "bloom",
   "title": "Grass Badge · 5 of 8",
-  "coin": "gold",
-  "coins": {"gold":3,"tbtf":2},
-  "items": {"bailout":2},
-  "rewardText": "2 Bailouts, 3 Gold Coins and 2 Platinum Coins",
+  "coin": "gold_pyramid",
+  "pyramids": {"gold_pyramid":3,"capstone":2},
+  "items": {"revive":2},
+  "rewardText": "2 Revives, 3 Gold Pyramids and 2 Capstones",
   "unlockText": "The boardwalks of Rootwater Marsh, south-east of Twinpetal Town, are open."
  },
  "v47region": 1,

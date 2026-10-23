@@ -2,7 +2,7 @@
 // (biomes filtered by those unlocks), deadline, what the map shows and the forecast, for 200 seeds with no unlocks,
 // with every unlock, and on the debug menu's short map. Frozen from runTakeOff (game/js/run.js) before the start became
 // one shared function (logic/run-start.js runStartPlan, runStartOn), which the fixture, the self-test, the simulator and
-// the Studio's Run Lab call too.
+// the Studio's Run Lab call too. RL-R1: with the run's region (its zones give the map its rows and biomes).
 //   node --test --test-update-snapshots tools/test/run-start.test.mjs   remakes it (say why in the commit)
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -19,6 +19,8 @@ const UNLOCK_DATA = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings
     scenery: GAME_DATA.scenery,
     rules: GAME_DATA.rules.run,
     unlockData: UNLOCK_DATA,
+    /* RL-R1: the region, as run-world.js runWorldData gives it */
+    region: modules['run-region'].runRegionData(GAME_DATA, GAME_DATA.trainers),
   },
   SEEDS = Array.from({ length: 200 }, (_, k) => `S${k.toString(36).toUpperCase()}START`),
   CASES = {
@@ -52,9 +54,9 @@ function takeOff(/** @type {string} */ seed, /** @type {{ unlocks: string[], map
 const started = s => ({
   se: s.se,
   items: s.items,
-  coins: s.coins,
+  pyramids: s.pyramids,
   seed: s.run.seed,
-  tier: s.run.tier,
+  expedition: s.run.expedition,
   mapgenV: s.run.mapgenV,
   unlocks: s.run.unlocks,
   mods: s.run.mods,
@@ -62,6 +64,7 @@ const started = s => ({
   deadline: s.run.deadline,
   map: s.run.map,
   forecast: s.run.forecast,
+  region: s.run.region,
 });
 
 test('a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlock, the short map', t => {
@@ -82,18 +85,18 @@ test('the unlocks a run carries open its biomes: none leaves out ridge and autum
   assert.deepEqual([...biomes(CASES.all)].sort(), ['autumn', 'lake', 'meadow', 'ridge', 'thicket']);
 });
 
-test('a run starts with run.start (copies), on its seed, tier and generator version', () => {
+test('a run starts with run.start (copies), on its seed, expedition and generator version', () => {
   const g = runGive('S', 1, 7, GAME_DATA.rules.run.start);
   assert.deepEqual(g, {
     seed: 'S',
-    tier: 1,
+    expedition: 1,
     mapgenV: 7,
     se: GAME_DATA.rules.run.start.se,
-    coins: GAME_DATA.rules.run.start.coins,
+    pyramids: GAME_DATA.rules.run.start.pyramids,
     items: GAME_DATA.rules.run.start.items,
   });
-  g.coins.penny = 99;
-  assert.notEqual(GAME_DATA.rules.run.start.coins.penny, 99);
+  g.pyramids.pyramid = 99;
+  assert.notEqual(GAME_DATA.rules.run.start.pyramids.pyramid, 99);
 });
 
 test('a plan touches nothing: the data stays as it was, the same seed plans the same run, a save it goes on is its own', () => {

@@ -56,7 +56,6 @@ expose({
   checkboxField: [() => checkboxField, v => (checkboxField = v)],
   claimedPrefix: [() => claimedPrefix],
   clone: [() => clone],
-  coinOptions: [() => coinOptions],
   colorField: [() => colorField, v => (colorField = v)],
   commit: [() => commit, v => (commit = v)],
   confirmStaged: [() => confirmStaged, v => (confirmStaged = v)],
@@ -82,6 +81,7 @@ expose({
   paneRoot: [() => paneRoot],
   pathPrefix: [() => pathPrefix, v => (pathPrefix = v)],
   peopleOptions: [() => peopleOptions],
+  pyramidOptions: [() => pyramidOptions],
   rangeField: [() => rangeField, v => (rangeField = v)],
   readField: [() => readField, v => (readField = v)],
   readPath: [() => readPath, v => (readPath = v)],
@@ -265,7 +265,7 @@ export function changed(rigs) {
 }
 /* v29: live update. A game tab open from this Studio (a test run, or the game on the same address) gets your scenes,
    props and engine settings (Project Story S3: and the story and trainers) half a second after each change, before
-   you save; UI-3: and the UI's look; Studio plan T2.6: and the run's rules, place types, Loopholes, unlocks and items
+   you save; UI-3: and the UI's look; Studio plan T2.6: and the run's rules, place types, Perks, unlocks and items
    (a test run only applies those) */
 const LIVE_UPDATE_CHANNEL = (() => {
   try {
@@ -301,7 +301,7 @@ export function studioBroadcast() {
           /* Studio plan T2.6: what a run is made of, for a test run (Play this seed); game data only, never a save */
           rules: studioState.D.rules,
           nodeTypes: studioState.D.nodeTypes,
-          relics: studioState.D.relics,
+          perks: studioState.D.perks,
           unlocks: studioState.D.unlocks,
           items: studioState.D.items,
         },
@@ -356,7 +356,7 @@ export function restore(s) {
 /* Studio plan T6.2: data no picture is drawn from (top-level keys of D). An undo that changes only these keeps the
    art caches: a Wardrobe opened after undoing a move edit no longer bakes every clothes thumbnail again */
 const TEXT_ONLY_DATA = new Set(
-  'moves items coins lore story jobs stats statuses rarities relics currencies unlocks shops pools eggs meta uiTheme'.split(
+  'moves items pyramids lore story jobs stats statuses rarities perks currencies unlocks shops pools eggs meta uiTheme'.split(
     ' '
   )
 );
@@ -650,7 +650,7 @@ export const SECTION_LIST = [
   ['moves', 'Moves', 'Attacks and their effects'],
   ['preview', 'Battle preview', 'Watch moves, backdrops and Billies on the real battle stage'],
   ['types', 'Types', 'Colors, matchups and type abilities'],
-  ['items', 'Items & coins', 'Shop goods, tax coins'],
+  ['items', 'Items & pyramids', 'Shop goods, catch pyramids'],
   ['shops', 'Town shops', 'Legacy: keepers and what they sell (runs stock from the run rules)'],
   [
     'world',
@@ -676,11 +676,7 @@ export const SECTION_LIST = [
   ['runlab', 'Run Lab', 'A run’s map from its seed, as the game makes it, on your unsaved data'],
   ['economy', 'Economy', 'Every source and sink of each currency, with a link to its field'],
   ['unlocks', 'Unlocks & hub', 'The unlock graph, the hub’s buildings and currencies, and what a new save has'],
-  [
-    'relics',
-    'Loopholes',
-    'A run’s Loopholes: effects by kind, the code’s limits, a sample build, the offer order for a seed',
-  ],
+  ['relics', 'Perks', 'A run’s Perks: effects by kind, the code’s limits, a sample build, the offer order for a seed'],
 ];
 /* alpha 0.4.1: the sections in five groups that fold away; the one you're in always shows. The descriptions show as
    a tooltip and under the section you're in, so the list is short enough to see at once */
@@ -691,7 +687,7 @@ const SECTION_GROUPS = [
   ],
   ['World & places', ['scenes', 'hub', 'props', 'engine', 'world']],
   ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
-  ['Money', ['items']],
+  ['Moneys', ['items']],
   ['Game', ['rules', 'ui', 'art', 'check']],
   /* SND-3: the songs, the where table and the jingles (music-editor.js); the cries are on the Billies page */
   ['Sound', ['music']],
@@ -920,7 +916,7 @@ export const moveOptions = () =>
     .sort((a, b) => studioState.D.moves[a].n.localeCompare(studioState.D.moves[b].n))
     .map(k => [k, `${studioState.D.moves[k].n} · ${studioState.D.moves[k].t}`]);
 export const itemOptions = () => Object.keys(studioState.D.items).map(k => [k, studioState.D.items[k].n]);
-export const coinOptions = () => Object.keys(studioState.D.coins).map(k => [k, studioState.D.coins[k].n]);
+export const pyramidOptions = () => Object.keys(studioState.D.pyramids).map(k => [k, studioState.D.pyramids[k].n]);
 export const peopleOptions = () => Object.keys(studioState.D.people).map(k => [k, k]);
 export const statusOptions = () => studioState.D.statuses.map(s => [s.id, s.name]);
 export const statOptions = () => studioState.D.stats.filter(s => s.id !== 'hp').map(s => [s.id, s.name]);

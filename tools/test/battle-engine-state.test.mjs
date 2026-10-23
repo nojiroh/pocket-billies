@@ -51,19 +51,19 @@ test('a battle on a copied team leaves the save as it was (HP, XP, items, buddy)
   const s = startedSave(starter(), 12);
   s.team.push(fn('makeBilly')(DEX_ORDER[4], 12));
   s.buddy = s.team[1].uid;
-  s.items = { ...s.items, taxbreak: 2 };
+  s.items = { ...s.items, potion: 2 };
   s.team[0].hp -= 5;
   const before = JSON.stringify(s);
   const team = copyTeam(s);
   const b = fn('makeBattle')('wild', team, [fn('makeBilly')(DEX_ORDER[1], 5)], {
     host: SILENT_HOST,
-    bag: { taxbreak: 1 },
+    bag: { potion: 1 },
     buddy: team[1].uid,
   });
-  const k = fn('canUse')('taxbreak', team[0], b);
+  const k = fn('canUse')('potion', team[0], b);
   assert.equal(k, true, 'the battle uses its own bag');
-  fn('runTurn')([{ who: 0, k: 'item', item: 'taxbreak', uid: team[0].uid }], b);
-  assert.equal(b.bag.taxbreak, 0);
+  fn('runTurn')([{ who: 0, k: 'item', item: 'potion', uid: team[0].uid }], b);
+  assert.equal(b.bag.potion, 0);
   playOut(b);
   assert.equal(b.over, 'win');
   assert.ok(team[1].xp > s.team[1].xp, 'the copied buddy got XP');
@@ -74,13 +74,13 @@ test('a battle on a copied team leaves the save as it was (HP, XP, items, buddy)
 test("a battle on the save's team still marks seen and spends the save's items", () => {
   reseed(12);
   const s = startedSave(starter(), 12);
-  s.items = { ...s.items, taxbreak: 1 };
+  s.items = { ...s.items, potion: 1 };
   s.team[0].hp -= 5;
   const foe = fn('makeBilly')(DEX_ORDER[6], 8);
   fn('newBattle')('wild', [foe], { host: SILENT_HOST });
   assert.equal(s.seen[foe.sp], 1);
-  fn('runTurn')([{ who: 0, k: 'item', item: 'taxbreak', uid: s.team[0].uid }]);
-  assert.equal(s.items.taxbreak, 0);
+  fn('runTurn')([{ who: 0, k: 'item', item: 'potion', uid: s.team[0].uid }]);
+  assert.equal(s.items.potion, 0);
 });
 
 // a seeded fight on copies, both sides played by the computer: its events without uids, and the end state

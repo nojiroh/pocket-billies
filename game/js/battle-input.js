@@ -5,17 +5,8 @@
 import { expose } from './test-globals.js';
 import { $, $$ } from './util.js';
 import { ITEMS } from './game-data.js';
-import { billyName, formatNumber } from './logic/rules.js';
-import {
-  battleSay,
-  catchOfferAnswer,
-  checkFaints,
-  doSwitch,
-  enemyOnly,
-  fighter,
-  runTurn,
-} from './logic/battle-engine.js';
-import { activeBattle, save, saveData, uiState } from './game-state.js';
+import { checkFaints, doSwitch, fighter, runTurn } from './logic/battle-engine.js';
+import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage, battleStageFocus, battleStageTargets, camHome } from './battle-stage.js';
 import {
   chooseMessage,
@@ -36,7 +27,7 @@ import { tutorPicked } from './opening-fall.js';
 expose({ battleAction: [() => battleAction, v => (battleAction = v)] });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/* keyboard play in battle: F fight, 1–4 moves, X tax (or C), I items, T team, R run, Esc back, Space/Enter advance */
+/* keyboard play in battle: F fight, 1–4 moves, X catch (or C), I items, T team, R run, Esc back, Space/Enter advance */
 document.addEventListener('keydown', ev => {
   if (
     !activeBattle ||
@@ -95,7 +86,10 @@ document.addEventListener('keydown', ev => {
     return;
   }
   if (ph === 'end' && (k === ' ' || k === 'enter')) click('[data-a=bend]');
-  if ((k === 'escape' || k === 'backspace') && ['fight', 'target', 'coins', 'items', 'itemTarget', 'team'].includes(ph))
+  if (
+    (k === 'escape' || k === 'backspace') &&
+    ['fight', 'target', 'pyramids', 'items', 'itemTarget', 'team'].includes(ph)
+  )
     click('#acts [data-a=bback]');
 });
 /* the battle's buttons (UI-5: the cases of ui.js's click switch, as they were) */
@@ -126,7 +120,7 @@ export function battleAction(a, d) {
       break;
     case 'bcoins':
       if (activeBattle && activeBattle.phase === 'choose') {
-        activeBattle.phase = 'coins';
+        activeBattle.phase = 'pyramids';
         paintActions();
       }
       break;
@@ -159,7 +153,7 @@ export function battleAction(a, d) {
       }
       break;
     case 'bcoin':
-      if (activeBattle && activeBattle.phase === 'coins' && saveData.coins[d.c] > 0) {
+      if (activeBattle && activeBattle.phase === 'pyramids' && saveData.pyramids[d.c] > 0) {
         activeBattle.coin = d.c;
         activeBattle.phase = 'aim';
         paintActions();
@@ -202,23 +196,6 @@ export function battleAction(a, d) {
         activeBattle.events = [];
         doSwitch(k ?? 0, +d.i);
         if (!activeBattle.needSwitch.length) checkFaints();
-        playTurnEvents();
-      }
-      break;
-    case 'boffer':
-      if (activeBattle && activeBattle.phase === 'offer') {
-        activeBattle.events = [];
-        /* logic/battle-engine.js catchOfferAnswer: yes takes the money and ends it, no raises the Focus Bonus */
-        if (d.y === '1') {
-          const amt = catchOfferAnswer(true);
-          battleSay(`You took $${formatNumber(amt)}. ${billyName(fighter(1))} scampered off.`);
-          battleStage.s[1].show = false;
-          save();
-        } else {
-          catchOfferAnswer(false);
-          battleSay(`You refused. Focus Bonus ×${+activeBattle.integrity.toFixed(2)} on your next throw.`);
-          enemyOnly();
-        }
         playTurnEvents();
       }
       break;

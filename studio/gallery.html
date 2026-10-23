@@ -113,7 +113,7 @@
 </section>
 
 <section class="g-sec" data-shot="tabs"><h2>Tabs</h2><p>pb-tabs: trapezoids; arrow keys move along the row. The run's and the hub's bottom-bar sets.</p>
-  <div class="g-stack"><pb-tabs items="map:Map,team:Team,bag:Bag,relics:Relics" value="team" label="Run"></pb-tabs><pb-tabs items="map:Map,team:Team,bag:Bag,lab:Lab" value="lab" label="Hub"></pb-tabs><pb-tabs items="moves:Moves,build:Build,about:About the Billie and its long history" value="moves"></pb-tabs></div>
+  <div class="g-stack"><pb-tabs items="map:Map,team:Team,bag:Bag,perks:Perks" value="team" label="Run"></pb-tabs><pb-tabs items="map:Map,team:Team,bag:Bag,lab:Lab" value="lab" label="Hub"></pb-tabs><pb-tabs items="moves:Moves,build:Build,about:About the Billie and its long history" value="moves"></pb-tabs></div>
 </section>
 
 <section class="g-sec" data-shot="bars"><h2>Stat bars</h2><p>pb-stat-bar: HP (teal, gold under half, red under a quarter), XP, a stat; segmented or whole.</p>
@@ -131,7 +131,7 @@
 <section class="g-sec" data-shot="messages"><h2>Messages</h2><p>A toast (the same message again adds a count), the inbox dot, a rising number.</p>
   <div class="g-stack">
     <pb-toast class="g-local" id="gToast"></pb-toast>
-    <div class="g-row"><button class="pb small" id="gToastMore">Same message again</button><span style="position:relative;width:60px;height:44px;display:inline-block"><button class="tb-inbox" style="left:0;top:0"><b>3</b></button></span><button class="pb small" id="gFloat">+$120</button></div>
+    <div class="g-row"><button class="pb small" id="gToastMore">Same message again</button><span style="position:relative;width:60px;height:44px;display:inline-block"><button class="tb-inbox" style="left:0;top:0"><b>3</b></button></span><button class="pb small" id="gFloat">+120 Moneys</button></div>
   </div>
 </section>
 
@@ -173,7 +173,7 @@
       <button class="mv" style="--tc:#7fb2f5;--tf:#fff"><span class="mv-top"><b>Cyclone</b><kbd>2</kbd></span><span class="mv-meta"><span class="mv-ty">Flying</span><span class="tnum">110 pow</span></span></button>
       <button class="mv" style="--tc:#E0603A;--tf:#fff"><span class="mv-top"><b>Blaze Charge</b><kbd>3</kbd></span><span class="mv-meta"><span class="mv-ty">Fire ★</span><span class="tnum">100 pow</span></span></button>
       <button class="mv off" disabled style="--tc:#7d52c2;--tf:#fff"><span class="mv-top"><b>Drake Dive</b><kbd>4</kbd></span><span class="mv-meta"><span class="mv-ty">Part broken</span></span></button>
-    </div><div class="bt-row"><button class="bt coin"><b>Tax it</b><small>5 left</small></button><button class="bt items"><b>Bag</b><small>2</small></button><button class="bt team"><b>Team</b><small>2/2</small></button><button class="bt run"><b>Run</b><small>Walk away</small></button></div></div></div>
+    </div><div class="bt-row"><button class="bt coin"><b>Catch it</b><small>5 left</small></button><button class="bt items"><b>Bag</b><small>2</small></button><button class="bt team"><b>Team</b><small>2/2</small></button><button class="bt run"><b>Run</b><small>Walk away</small></button></div></div></div>
   </div></div>
 </section>
 
@@ -200,8 +200,8 @@
   <div class="g-stack">
     <div class="g-row"><pb-day-chip day="3" deadline="7"></pb-day-chip><pb-day-chip day="7" deadline="7"></pb-day-chip><pb-day-chip day="9" deadline="7"></pb-day-chip></div>
     <pb-forecast items="clear:Clear,cloudy:Cloudy,rain:Rain,storm:Thunderstorm,fog:Fog,snow:Snow,ash:Ash" from="3" value="4"></pb-forecast>
-    <div class="g-row"><pb-coin kind="money" value="340" label="$"></pb-coin><pb-coin kind="capital" value="12400" label="Capital"></pb-coin><pb-coin kind="scrap" value="86" label="Scrap"></pb-coin><pb-coin kind="seals" value="2" label="Audit Seals"></pb-coin></div>
-    <pb-nav-bar set="run" value="map" badges="relics:2"></pb-nav-bar>
+    <div class="g-row"><pb-coin kind="money" value="340" label="Moneys"></pb-coin><pb-coin kind="research" value="12400" label="Research"></pb-coin><pb-coin kind="scrap" value="86" label="Scrap"></pb-coin><pb-coin kind="crests" value="2" label="Crests"></pb-coin></div>
+    <pb-nav-bar set="run" value="map" badges="perks:2"></pb-nav-bar>
     <pb-nav-bar set="hub" value="lab"></pb-nav-bar>
   </div>
 </section>
@@ -215,16 +215,16 @@
 
 <section class="g-sec" data-shot="picks"><h2>Pick cards</h2><p>pb-pick-card, for relics and the keep-one picker: face up, selected, face down (tap it and it flips), a long name.</p>
   <div class="g-stack">
-    <div class="g-picks"><pb-pick-card heading="Offshore Account" sub="Relic"><span slot="art" class="g-relic"></span>Shop prices are 15% lower.</pb-pick-card><pb-pick-card heading="Emberox" sub="Lv 30 · Fire" selected><span slot="art" class="g-sprite" style="--c1:#c4502e"></span>Keeps its levels and its moves.</pb-pick-card><pb-pick-card heading="Golden Parachute" facedown id="gPickDown">When a Billie faints, gain $40.</pb-pick-card></div>
+    <div class="g-picks"><pb-pick-card heading="Lucky Charm" sub="Perk"><span slot="art" class="g-relic"></span>Shop prices are 15% lower.</pb-pick-card><pb-pick-card heading="Emberox" sub="Lv 30 · Fire" selected><span slot="art" class="g-sprite" style="--c1:#c4502e"></span>Keeps its levels and its moves.</pb-pick-card><pb-pick-card heading="Golden Parachute" facedown id="gPickDown">When a Billie faints, gain $40.</pb-pick-card></div>
     <div class="g-picks"><pb-pick-card heading="Sir Reginald Taxworth the Third of the Long Lunch" sub="Lv 12 · Steel"><span slot="art" class="g-sprite" style="--c1:#6b7f91"></span>A long name that wraps.</pb-pick-card></div>
     <div class="g-row"><button class="pb small" id="gPickFlip">Flip the face-down card</button></div>
   </div>
 </section>
 
-<section class="g-sec" data-shot="payout"><h2>Payout</h2><p>pb-payout: its rows slam in one by one and Capital counts up (Play again; a tap skips to the end).</p>
+<section class="g-sec" data-shot="payout"><h2>Payout</h2><p>pb-payout: its rows slam in one by one and Research counts up (Play again; a tap skips to the end).</p>
   <div class="g-stack">
-    <pb-panel><pb-payout id="gPayout" total="1180" total-label="Capital" rows='[{"label":"Money left","note":"$340 at half","value":170},{"label":"Items at half price","value":95},{"label":"Billies released","note":"2 Billies","value":60},{"label":"Nodes cleared","note":"7 × 75","value":525},{"label":"Win bonus","value":400},{"label":"Unpaid clinic bill","value":-70}]'></pb-payout></pb-panel>
-    <div class="g-row"><button class="pb small" id="gPayoutPlay">Play again</button><button class="pb small" id="gCoinUp">Add 1,000 Capital to the chip above</button></div>
+    <pb-panel><pb-payout id="gPayout" total="1180" total-label="Research" rows='[{"label":"Moneys left","note":"340 Moneys at half","value":170},{"label":"Items at half price","value":95},{"label":"Billies released","note":"2 Billies","value":60},{"label":"Nodes cleared","note":"7 × 75","value":525},{"label":"Win bonus","value":400},{"label":"Unpaid clinic bill","value":-70}]'></pb-payout></pb-panel>
+    <div class="g-row"><button class="pb small" id="gPayoutPlay">Play again</button><button class="pb small" id="gCoinUp">Add 1,000 Research to the chip above</button></div>
   </div>
 </section>
 

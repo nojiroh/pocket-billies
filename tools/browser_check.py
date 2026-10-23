@@ -119,12 +119,22 @@ def stand(pg, x, z, frames=30):
     if not until(pg, f'walkRenderer.frames>={f0 + frames}', 60): raise Exception(f'{pg.evaluate("walkView.id")} isn’t drawing')
 
 
-def go_scene(pg, node, sec=40):
+def go_scene(pg, node, sec=40, slow=None):
     """a jump to the place at node, not a walk, then wait until its scene is open and draws (a neighbour's view would
     otherwise be prepared a few milliseconds a frame, which at a frame every few seconds here takes minutes)"""
     pg.evaluate(f"uiState.inside=null;uiState.tab='walk';saveData.trip={{node:{node},plan:[]}};saveData.visited[{node}]=1;uiState.roam=null;if(typeof walkView!=='undefined'&&walkView.pl)walkView.pl.fresh=true;render();0")
     # the hub may sit near an exit, so the view may be the scene with its road (baseId)
     if not until(pg, f'!!(walkView.ready&&(walkView.id===LOCATIONS[{node}].mapId||(walkView.sc&&walkView.sc.baseId===LOCATIONS[{node}].mapId)))', sec):
         raise Exception(f'{pg.evaluate(f"LOCATIONS[{node}].mapId")} didn’t open in {sec}s')
-    # TC-4: the first frames of a scene opened again (back from a run, say) took over 30 s on a busy machine
-    if not frames(pg, 2, max(sec, 60)): raise Exception(f'{pg.evaluate("walkView.id")} isn’t drawing (black screen)')
+    f0 = pg.evaluate("typeof walkRenderer!=='undefined'&&walkRenderer.on?walkRenderer.frames:-1")
+    t0 = pg.evaluate("typeof debugLog!=='undefined'?debugLog.now():0")
+    if f0 < 0 or until(pg, f'walkRenderer.frames>={f0 + 2}', 30): return
+    # one frame can hold the page for 20 s or more in software: the debug log's picture once a minute (screenSnapshot)
+    # waits for the drawing to finish, and that grows over a long run. While the draw loop is still running, wait
+    # longer and say so (slow: where the note goes, the check's notes; the log otherwise)
+    alive = "frameScheduler.tasks.has('dio')"
+    if pg.evaluate(alive) and until(pg, f'walkRenderer.frames>={f0 + 2}||!{alive}', 60) and pg.evaluate(alive):
+        why = pg.evaluate(f"(debugLog.slow.filter(s=>s.t>={t0}).sort((a,b)=>b.ms-a.ms)[0]||{{why:'?'}}).why")   # the slowest frame meanwhile
+        (slow or log)(f'{pg.evaluate("walkView.id")}: 2 frames took over 30 s (slowest frame: {why[:80]})'); return
+    kind = 'stopped drawing: its draw loop is gone (black screen)' if not pg.evaluate(alive) else 'drew fewer than 2 frames in 90 s'
+    raise Exception(f'{pg.evaluate("walkView.id")} {kind}')

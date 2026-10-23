@@ -9,7 +9,7 @@ const state = (o = {}) => ({
   flags: { met_juniper: 1, rival0: 'win', talks: 3 },
   beaten: { chad: 1 },
   items: { honey: 3, potion: 0 },
-  coins: { gold: 2 },
+  pyramids: { gold_pyramid: 2 },
   quests: { ledger: 'asked' },
   visits: { juniper: 2 },
   visited: { copperleaf: 1 },
@@ -37,8 +37,8 @@ test('every term reads the state it names', () => {
     'item:honey >= 3',
     'item:honey',
     '!item:potion',
-    'coin:gold > 1',
-    'coin:gold == 2',
+    'coin:gold_pyramid > 1',
+    'coin:gold_pyramid == 2',
     'quest:ledger = asked',
     'quest:ledger >= found',
     'quest:ledger < paid',
@@ -114,7 +114,7 @@ test('storyStateOf reads a save: places by id, Billie lines, robots, badges, tal
     story: { met_juniper: 1, talks: { juniper: 4 }, quests: { ledger: 'found' } },
     flags: { chad: 1 },
     items: { honey: 1 },
-    coins: { gold: 0 },
+    pyramids: { gold_pyramid: 0 },
     visited: { 1: 1 },
     caught: { musk1: 1 },
     team: [{ kind: 'robot' }, {}],
@@ -127,7 +127,7 @@ test('storyStateOf reads a save: places by id, Billie lines, robots, badges, tal
     'met_juniper',
     'beat:chad',
     'item:honey',
-    '!coin:gold',
+    '!coin:gold_pyramid',
     'visited:copperleaf',
     '!visited:marigold',
     'billie:musk',
@@ -145,12 +145,12 @@ test('RL-11: unlock:, runs and wins read what lasts between runs (saveData.meta)
   for (const c of ['unlock:ranch_2', '!unlock:ranch_3', 'runs >= 3', 'runs', '!wins', 'wins = 0', 'runs > 2 and !wins'])
     assert.equal(conditionHolds(c, S), true, c);
   for (const c of ['unlock:ranch_3', 'runs > 3', 'wins', 'wins >= 1']) assert.equal(conditionHolds(c, S), false, c);
-  assert.equal(conditionProblem('unlock:shop_bailout and wins >= 1'), null);
+  assert.equal(conditionProblem('unlock:shop_revive and wins >= 1'), null);
   assert.deepEqual([...conditionNames(conditionTree('unlock:a or unlock:b and runs')).unlock], ['a', 'b']);
-  const save = { meta: { unlocks: { shop_bailout: 1 }, runs: 2, wins: 1 }, run: { seed: 'x' } };
+  const save = { meta: { unlocks: { shop_revive: 1 }, runs: 2, wins: 1 }, run: { seed: 'x' } };
   const M = storyStateOf(save);
-  for (const c of ['unlock:shop_bailout', 'runs = 2', 'wins >= 1']) assert.equal(conditionHolds(c, M), true, c);
+  for (const c of ['unlock:shop_revive', 'runs = 2', 'wins >= 1']) assert.equal(conditionHolds(c, M), true, c);
   const none = storyStateOf({});
-  for (const c of ['!unlock:shop_bailout', '!runs', '!wins'])
+  for (const c of ['!unlock:shop_revive', '!runs', '!wins'])
     assert.equal(conditionHolds(c, none), true, `no meta: ${c}`);
 });

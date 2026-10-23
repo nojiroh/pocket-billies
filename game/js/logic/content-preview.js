@@ -4,7 +4,7 @@
    The Studio's content editors ask the game's own logic, through the logic worker (studio/js/logic-worker.js, where
    GAMEDATA is the Studio's draft), what an edit does. On no page, like run-preview.js: game-data.js would read the
    Studio's data as the game's.
-   - relicPreview (T4.1): what some Loopholes do to a sample Billie (made by rules.js makeBilly at a level) and to the
+   - perkPreview (T4.1): what some Perks do to a sample Billie (made by rules.js makeBilly at a level) and to the
      numbers of a run: fxRows, then fxStages with the battle's stageFactor on its stats, fxMoney on a wild prize and a
      mini-boss's reward, fxPrice on a shop ware and the clinic, fxCatch, fxDamage, fxHealShare and fxPayoutRates. Where
      a kind's product passes FX_LIMIT, the product before and after the clamp.
@@ -12,7 +12,7 @@
      row and the boss's row: run-loop.js runFoes on that row alone, so its reward and its team's levels are the game's.
    - speciesStandIns (T4.3): the species game-data.js standInSpecies puts in for legacy ids (pools, eggs, teams).
    Logic only: no DOM, no Date, no Math.random (tools/test/content-preview.test.mjs). */
-import { RELICS, RULES, SPECIES, STAT_IDS, TRAINERS, gameData, standInSpecies } from '../game-data.js';
+import { PERKS, RULES, SPECIES, STAT_IDS, TRAINERS, gameData, standInSpecies } from '../game-data.js';
 import {
   FX_LIMIT,
   fxCatch,
@@ -30,11 +30,11 @@ import { runMapRows } from './run-map.js';
 import { runFoes } from './run-loop.js';
 
 /**
- * What the Loopholes `ids` do to a sample Billie of species `sp` at level `lvl`, and to a run's numbers.
+ * What the Perks `ids` do to a sample Billie of species `sp` at level `lvl`, and to a run's numbers.
  * @param {string[]} ids @param {{ sp: string, lvl: number }} sample
  */
-export function relicPreview(ids, sample) {
-  const fx = fxRows(ids, RELICS),
+export function perkPreview(ids, sample) {
+  const fx = fxRows(ids, PERKS),
     sp = SPECIES[sample.sp] ? sample.sp : Object.keys(SPECIES)[0],
     lvl = Math.max(1, Math.min(100, Math.round(sample.lvl) || 1)),
     m = makeBilly(sp, lvl),
@@ -73,7 +73,7 @@ export function relicPreview(ids, sample) {
     }
   }
   return {
-    ids: ids.filter(id => RELICS[id]),
+    ids: ids.filter(id => PERKS[id]),
     rows: fx,
     sample: { sp, lvl, name: SPECIES[sp].name, hp },
     stats,
@@ -87,7 +87,7 @@ export function relicPreview(ids, sample) {
       types: types.map(t => ({ type: t, deal: hit('H', t, true), take: hit('H', t, false) })),
     },
     heal: { share: fxHealShare(fx), hp: Math.floor(hp * fxHealShare(fx)) },
-    payout: { itemShare: [R.payout.itemShare, pay.itemShare], capital: pay.capital },
+    payout: { itemShare: [R.payout.itemShare, pay.itemShare], research: pay.research },
     limited,
   };
 }
