@@ -1520,8 +1520,8 @@ def desktop_steps(b, base, R):
         return '; '.join(out) + '; out again at the lab’s door'
     buildings_and_rooms()
 
-    @step('alpha 0.1: the new name, Billies and taxing, rooms with their building\'s windows', 240)
-    def a01():
+    @step('The game\'s name, Taxed in the Guide, rooms with their building\'s windows', 240)
+    def name_taxed_room_windows():
         """Pocket Billies on the page and the title; the Guide counts the Billies you've taxed and the battle has a Tax!
         button; every room of a town shows its building's windows (as many as the front has, double windows as one, in
         the same order) with no furniture in front of them; the picture setting. RL-5: the town is Copperleaf; the
@@ -1549,7 +1549,7 @@ def desktop_steps(b, base, R):
         # library stood in Marigold Town, parked; the hub has none (its room, int_library, stays in the data)
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
-    a01()
+    name_taxed_room_windows()
 
     @step('alpha 0.2: the ground — natural terraces leave walking as it was, nothing floats', 600)
     def a02_ground():
