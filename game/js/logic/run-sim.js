@@ -13,13 +13,14 @@
  * @typedef {{ modules: Record<string, any>, fn: (name: string) => any, hooks: any, data: any, gameData: any,
  *   logic: any, beforeRun?: (o: SimOptions) => void }} SimEnv
  * @typedef {{ random?: number, fights?: number, team?: number, pack?: number, unlocks?: 'none' | 'all',
- *   policy?: string }} SimOptions
+ *   policy?: string, scenes?: 'make' | 'skip' }} SimOptions
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   MAX_TURNS: [() => MAX_TURNS],
+  SIM_LITE_PLACE: [() => SIM_LITE_PLACE],
   SIM_POLICY: [() => SIM_POLICY],
   SIM_POLICY_DRIVEN: [() => SIM_POLICY_DRIVEN],
   brief: [() => brief],
@@ -100,6 +101,15 @@ export function simRelicChoice(offer, held, relics, rule, P) {
 }
 /** the report's numbers that say more about the policy than about the game's balance */
 export const SIM_POLICY_DRIVEN = Object.freeze(['caught', 'healed', 'moneyLeft']);
+/**
+ * Studio plan T3.3, balance mode (`scenes: 'skip'`): no place's scene is made (run-scenes.js runScenesMake is ~98% of a
+ * run's time). The logic reads one thing off a run place's scene: whether its ground has tall grass, which decides
+ * whether a town has wild Billies (rules.js encounterStock). In balance mode each place is a lite map (the game's own
+ * kind: `_lite.tiles` names the ground kinds a map uses) whose ground has tall grass: every run place has had it
+ * (344 of 344 towns, 650 of 650 routes over 80 maps, no unlocks and every one; Phase 3b). The equality test
+ * (tools/test/run-sim.test.mjs) plays the same seeds in both modes and fails if that ever stops being true.
+ */
+export const SIM_LITE_PLACE = Object.freeze({ tiles: 't' });
 /** @param {any} m */
 export const brief = m => `${m.sp}:${m.lvl}:${m.hp}`;
 
@@ -197,13 +207,19 @@ export function runSimOn(env) {
       runStartPlan(seed, { ...MAP_DATA, unlockData: UNLOCK_DATA }, { unlocks: runUnlocks(s, UNLOCK_DATA) }),
       { home, pack }
     );
-    const scenes = runScenesMake(run, worldData()),
+    const balance = o.scenes === 'skip',
+      scenes = balance ? null : runScenesMake(run, worldData()),
       W = runWorldTables(run, data.LOCATIONS[0], worldData()),
       foes = runFoes(run, { leaders: Object.values(TRAINERS).filter((/** @type {any} */ T) => T.miniboss), rules: R });
     data.worldPut({
       ...W,
       maps: Object.fromEntries(
-        W.locations.slice(1).map((/** @type {any} */ p, /** @type {number} */ i) => [p.mapId, scenes[i]])
+        W.locations
+          .slice(1)
+          .map((/** @type {any} */ p, /** @type {number} */ i) => [
+            p.mapId,
+            scenes ? scenes[i] : { _lite: { ...SIM_LITE_PLACE } },
+          ])
       ),
       trainers: foes,
     });
@@ -213,7 +229,8 @@ export function runSimOn(env) {
         unlocks: run.unlocks,
         /* the map as runStartPlan made it: each node's type and biome */
         nodes: run.map.nodes.map((/** @type {any} */ n) => `${n.type}:${n.biome}`),
-        scenes: scenes.map((/** @type {any} */ sc) => sc.gen.seed),
+        scenes: scenes ? scenes.map((/** @type {any} */ sc) => sc.gen.seed) : null,
+        ...(balance ? { mode: 'balance' } : {}),
         places: [],
       },
       stats = {
