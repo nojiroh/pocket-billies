@@ -4,7 +4,7 @@
    Images load once and are cached; pixel arrays (for the 3D ground and the world map) are read on demand. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { COINS, provide } from './hooks.js';
+import { COINS, formatNumber, plural, provide } from './hooks.js';
 import { clamp } from './util.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -38,6 +38,7 @@ expose({
   makeSeededRandom: [() => makeSeededRandom, v => (makeSeededRandom = v)],
   mixHex: [() => mixHex, v => (mixHex = v)],
   mixRgb: [() => mixRgb],
+  moneyHTML: [() => moneyHTML, v => (moneyHTML = v)],
   packHexPixel: [() => packHexPixel],
   packPixel: [() => packPixel],
   setArtLoad: [() => setArtLoad, v => (setArtLoad = v)],
@@ -173,6 +174,10 @@ export const uiIconURL = k =>
     : new URL(`${ART_DIR}ui/${k}.svg`, document.baseURI).href;
 export function uiIconHTML(key, size = 22) {
   return `<i class="uico" style="--ico:url('${uiIconURL(key)}');width:${size}px;height:${size}px" aria-hidden="true"></i>`;
+}
+/** RF-1: a run's money on screen: the coin icon and the number, read aloud as "120 Moneys" (plain text: plural(n, 'Money')) */
+export function moneyHTML(n, size = 14) {
+  return `<span class="money" role="img" aria-label="${plural(n, 'Money')}">${uiIconHTML('coin', size)}<span aria-hidden="true">${formatNumber(n)}</span></span>`;
 }
 /* ---- tints of any image (white flash, silhouettes) ---- */
 function tintedCopy(c, col) {

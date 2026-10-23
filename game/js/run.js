@@ -274,7 +274,7 @@ export function runStartSheet() {
   const S = RULES.run.start,
     P = runPickNow(),
     gifts = [
-      `$${formatNumber(S.se)}`,
+      plural(S.se, 'Money'),
       ...Object.entries(S.coins).map(([k, n]) => `${n} ${COINS[k] ? COINS[k].n : k}${n === 1 ? '' : 's'}`),
       ...Object.entries(S.items).map(([k, n]) => `${n} ${ITEMS[k] ? ITEMS[k].n : k}${n === 1 ? '' : 's'}`),
     ],
@@ -502,7 +502,8 @@ const RUN_HINTS = {
   landing: run =>
     `Day 1 of the run. Walk north into the next place: each place you walk into takes a day. The boss waits at the far end; the deadline is day ${run.deadline}.`,
   map: () => 'The map shows the places ahead and their weather. A ? is further on. The boss is always shown.',
-  town: () => `A town: its clinic heals for $${runClinicEach()} a Billie, and its shop has new stock every day.`,
+  town: () =>
+    `A town: its clinic heals for ${plural(runClinicEach(), 'Money')} a Billie, and its shop has new stock every day.`,
   miniboss: () => 'A mini-boss blocks the way north. Beat them to go on.',
   boss: () => 'The boss. Beat it and the run is won.',
   relic: () =>

@@ -30,17 +30,7 @@ import {
 import { $, $$, clamp, random } from './util.js';
 import { COINS, ITEMS, MOVES, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
-import {
-  billyName,
-  formatNumber,
-  healAll,
-  maxHp,
-  moveUsable,
-  partBroken,
-  partHpLeft,
-  partMaxHp,
-  plural,
-} from './logic/rules.js';
+import { billyName, healAll, maxHp, moveUsable, partBroken, partHpLeft, partMaxHp, plural } from './logic/rules.js';
 import {
   ACTOR_SIDE,
   BATTLE_RULES,
@@ -63,7 +53,7 @@ import {
 } from './logic/battle-engine.js';
 import { battleSettle, battleSettleWin } from './logic/battle-rewards.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
-import { artURL, coinHTML, iconURL, uiIconHTML } from './art.js';
+import { artURL, coinHTML, iconURL, moneyHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
@@ -546,7 +536,7 @@ function tickerUpdate(s, mk) {
   })();
   items.push(
     `<span class="tki"><b>INNER SUN</b> ${sunTxt}</span>`,
-    `<span class="tki"><b>MONEY</b> $${formatNumber(saveData.se)}</span>`
+    `<span class="tki"><b>MONEYS</b> ${moneyHTML(saveData.se, 12)}</span>`
   );
   const h = items.join('<i>•</i>');
   el.innerHTML = h + '<i>•</i>' + h + '<i>•</i>';
@@ -959,14 +949,14 @@ export function endBattle() {
     healAll();
     after.push({
       title: 'Your team fainted',
-      html: `<p>You hurried back to the clinic.</p><p>You paid $${formatNumber(fee)} for treatment, and the team is back at full HP.</p>${T ? `<p class="note">${escapeHtml(T.name)}: ${escapeHtml(T.lose || '')}</p>` : ''}`,
+      html: `<p>You hurried back to the clinic.</p><p>You paid ${moneyHTML(fee)} for treatment, and the team is back at full HP.</p>${T ? `<p class="note">${escapeHtml(T.name)}: ${escapeHtml(T.lose || '')}</p>` : ''}`,
       btns: [{ l: 'Back to walking', c: 'dark', f: closeModal }],
     });
   }
   /* phase 08: beating a wild Billie pays prize money (steps paid before); a trainer its reward and its flag, and RL-12:
      a run's mini-boss a pick of Loopholes, saved on the run before it shows (logic/battle-rewards.js battleSettleWin) */
   battleSettleWin(activeBattle, saveData, pay, run);
-  if (kind === 'wild' && o === 'win' && pay.prize > 0) toast(`You earned $${formatNumber(pay.prize)}.`);
+  if (kind === 'wild' && o === 'win' && pay.prize > 0) toast(`You earned ${plural(pay.prize, 'Money')}.`);
   if (kind === 'trainer' && o === 'win') {
     const first = pay.first;
     let extra = '';
@@ -981,14 +971,14 @@ export function endBattle() {
       after.push({
         title: nu ? escapeHtml(st.title || 'Badge') : 'Rematch won',
         top: `<div class="sheet-art">${coinHTML(st.coin || 'penny', 96, 32)}</div>`,
-        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(pay.reward)}${nu && st.rewardText ? `, ${escapeHtml(st.rewardText)}` : ''}${extra}.</p>${nu && st.unlockText ? `<p class="note">${escapeHtml(st.unlockText)}</p>` : ''}`,
+        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned ${moneyHTML(pay.reward)}${nu && st.rewardText ? `, ${escapeHtml(st.rewardText)}` : ''}${extra}.</p>${nu && st.unlockText ? `<p class="note">${escapeHtml(st.unlockText)}</p>` : ''}`,
         btns: [{ l: 'Back to walking', c: 'dark', f: closeModal }],
       });
     } else
       after.push({
         title: `You beat ${escapeHtml(T.name)}`,
         top: `<div class="sheet-art">${portraitHTML(T.who, 96, 'sad')}</div>`,
-        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(pay.reward)}${extra}.</p>`,
+        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned ${moneyHTML(pay.reward)}${extra}.</p>`,
         btns: [
           {
             c: 'dark',

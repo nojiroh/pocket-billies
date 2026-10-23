@@ -24,7 +24,7 @@ import {
   gameData,
   trainersAt,
 } from './game-data.js';
-import { encountersHere, makeBilly, maxHp, spawn } from './logic/rules.js';
+import { encountersHere, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
 import { incomeRate } from './logic/ranch-income.js';
@@ -1038,7 +1038,8 @@ async function runFullTest(mode) {
             clinicHeal();
             if (!uiState.modal || !uiState.modal.btns) throw new Error('the clinic asked nothing');
             uiState.modal.btns[0].f();
-            if (saveData.se !== se - cost) throw new Error(`the clinic took $${se - saveData.se}, not $${cost}`);
+            if (saveData.se !== se - cost)
+              throw new Error(`the clinic took ${plural(se - saveData.se, 'Money')}, not ${cost}`);
             /* RL-12: the town's shop sells the day's Loophole; the mini-boss leaves a pick; the boss's battle carries
                both */
             uiState.modal = null;
@@ -1099,7 +1100,7 @@ async function runFullTest(mode) {
             uiState.modal.btns[0].f();
             if (!(await wait(() => !saveData.run && LOCATIONS.length === gameData.locations.length, 10000)))
               throw new Error('the run didn’t end');
-            return `${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for $${cost}, a Loophole bought and one picked after the mini-boss, the boss; home with ${saveData.meta.capital} Capital`;
+            return `${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Loophole bought and one picked after the mini-boss, the boss; home with ${saveData.meta.capital} Capital`;
           } finally {
             if (activeBattle) {
               stopTimers();

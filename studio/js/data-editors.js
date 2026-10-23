@@ -1064,7 +1064,7 @@ SECTIONS.items = () => {
       return `<div class="item-row"><div class="item-ic">${I.img ? `<img src="../game/art/${escapeHtml(I.img)}" width="40" height="40" class="pix">` : `<img src="${iconURL('i_' + (I.icon || k), 3)}" class="pix" alt="">`}<small class="mono">${escapeHtml(k)}</small></div>
   <div>${grid(
     textField('Name', `${p}.n`, { max: 24 }),
-    numberField('Shop price ($)', `${p}.price`, { min: 0, step: 10 }),
+    numberField('Shop price (Moneys)', `${p}.price`, { min: 0, step: 10 }),
     checkboxField('Sold in the Shop', `${p}.mint`, { help: 'Untick to make it a town-shop special.' }),
     selectField(
       'Icon',
@@ -1080,7 +1080,7 @@ SECTIONS.items = () => {
   const coins = Object.entries(D.coins)
     .map(([k, C]) => {
       const p = `coins.${k}`;
-      return `<div class="item-row"><div class="item-ic"><img src="../game/art/coins/${k}_32.png" width="40" height="40" class="pix" onerror="this.style.opacity=.2"><small class="mono">${escapeHtml(k)}</small></div><div>${grid(textField('Name', `${p}.n`), numberField('Catch multiplier', `${p}.m`, { min: 0, max: 10, step: 0.1, help: '0 means it always catches.' }), numberField('Shop price ($)', `${p}.price`, { min: 0, step: 10, help: '0 means it can’t be bought.' }), numberField('Badges needed', `${p}.need`, { opt: 1, min: 0, max: 8, step: 1 }))}${textField('Description', `${p}.d`, { area: 1, rows: 2 })}</div></div>`;
+      return `<div class="item-row"><div class="item-ic"><img src="../game/art/coins/${k}_32.png" width="40" height="40" class="pix" onerror="this.style.opacity=.2"><small class="mono">${escapeHtml(k)}</small></div><div>${grid(textField('Name', `${p}.n`), numberField('Catch multiplier', `${p}.m`, { min: 0, max: 10, step: 0.1, help: '0 means it always catches.' }), numberField('Shop price (Moneys)', `${p}.price`, { min: 0, step: 10, help: '0 means it can’t be bought.' }), numberField('Badges needed', `${p}.need`, { opt: 1, min: 0, max: 8, step: 1 }))}${textField('Description', `${p}.d`, { area: 1, rows: 2 })}</div></div>`;
     })
     .join('');
   return `<div class="ed-col solo"><div class="ed-head"><h2>Items & pyramids</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Pyramids', coins, { sub: 'Pyramid icons are art/coins/<id>_16.png and _32.png (tools/build-pyramids.py). Replace them under Art files.' })}</div>`;
@@ -1153,7 +1153,7 @@ SECTIONS.shops = () => {
         ]
           .map(([v, n]) => `<option value="${v}" ${(isC ? 'coin' : 'item') === v ? 'selected' : ''}>${n}</option>`)
           .join('')}</select></td>
-  <td><select data-p="${p}.stock.${i}.${isC ? 'coin' : 'item'}" data-k="sel" data-rr="1">${(isC ? coinOptions() : itemOptions()).map(([v, n]) => `<option value="${v}" ${v === key ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="0" step="10" data-p="${p}.stock.${i}.price" data-k="num" data-opt="1" value="${w.price ?? ''}" placeholder="${base ?? ''}"></td><td><small>${base != null ? `Shop price: $${base}` : ''}</small></td>
+  <td><select data-p="${p}.stock.${i}.${isC ? 'coin' : 'item'}" data-k="sel" data-rr="1">${(isC ? coinOptions() : itemOptions()).map(([v, n]) => `<option value="${v}" ${v === key ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="0" step="10" data-p="${p}.stock.${i}.price" data-k="num" data-opt="1" value="${w.price ?? ''}" placeholder="${base ?? ''}"></td><td><small>${base != null ? `Shop price: ${base} Moneys` : ''}</small></td>
   <td><button class="x" data-act="stockMove" data-i="${i}" data-d="-1">↑</button><button class="x" data-act="stockDel" data-i="${i}">✕</button></td></tr>`;
       })
       .join('');
@@ -1169,7 +1169,7 @@ SECTIONS.shops = () => {
              .filter(([i, it]) => it.shop === k)
              .map(
                ([i, it]) =>
-                 `<button class="chk-chip" data-act="wdGo" data-k="${escapeHtml(i)}">${escapeHtml(it.name)} · $${formatThousands(it.price || 0)}</button>`
+                 `<button class="chk-chip" data-act="wdGo" data-k="${escapeHtml(i)}">${escapeHtml(it.name)} · ${formatThousands(it.price || 0)} Moneys</button>`
              )
              .join('') || '<span class="help">Nothing yet.</span>'
          }</div>`,
@@ -1179,7 +1179,7 @@ SECTIONS.shops = () => {
        )
      : card(
          'Stock',
-         `<table class="tbl"><thead><tr><th>Kind</th><th>What</th><th>Price ($)</th><th></th><th></th></tr></thead><tbody>${stock}</tbody></table><div class="seg-row"><button class="btn" data-act="stockAdd">Add to the shelves</button></div>`,
+         `<table class="tbl"><thead><tr><th>Kind</th><th>What</th><th>Price (Moneys)</th><th></th><th></th></tr></thead><tbody>${stock}</tbody></table><div class="seg-row"><button class="btn" data-act="stockAdd">Add to the shelves</button></div>`,
          { sub: 'Leave the price empty to use the normal Shop price. Pyramids that need badges stay locked here too.' }
        )
  }
@@ -1430,7 +1430,7 @@ SECTIONS.jobs = () => {
         `<label class="fld"><span>Pays in</span><select data-act-sel="jobKind" data-k="${k}">${[
           ['item', 'Items'],
           ['coin', 'Pyramids'],
-          ['se', 'Money'],
+          ['se', 'Moneys'],
         ]
           .map(([v, n]) => `<option value="${v}" ${kind === v ? 'selected' : ''}>${n}</option>`)
           .join('')}</select></label>`,
@@ -1510,7 +1510,7 @@ SECTIONS.trainers = () => {
         .join('')}${Object.keys(D.items)
         .map(it => numberField(`${D.items[it].n} reward`, `${p}.seat.items.${it}`, { opt: 1, min: 0, step: 1 }))
         .join('')}</div>` +
-      textField('Reward text', `${p}.seat.rewardText`, { help: 'Read as “You earned $1,200, …”.' }) +
+      textField('Reward text', `${p}.seat.rewardText`, { help: 'Read as “You earned 1,200 Moneys, …”.' }) +
       textField('What it unlocks', `${p}.seat.unlockText`, { area: 1, rows: 2 }) +
       `<button class="btn danger subtle" data-act="seatOff">Remove the badge</button>`
     : `<p class="help">Beating this trainer doesn’t award a badge.</p><button class="btn" data-act="seatOn">Award a badge</button>`;
@@ -1535,7 +1535,10 @@ SECTIONS.trainers = () => {
        `${p}.battleStage`,
        Object.entries(D.battleStages).map(([b, v]) => [b, v.name || b])
      ),
-     numberField(T.miniboss ? 'Reward ($), outside runs only' : 'Reward ($)', `${p}.reward`, { min: 0, step: 50 }),
+     numberField(T.miniboss ? 'Reward (Moneys), outside runs only' : 'Reward (Moneys)', `${p}.reward`, {
+       min: 0,
+       step: 50,
+     }),
      selectField(
        'First-win egg',
        `${p}.egg`,

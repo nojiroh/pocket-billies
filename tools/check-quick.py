@@ -647,10 +647,10 @@ def debug_menu_step(b, base, R):
         se = pg.evaluate("saveData.se")
         pg.click('.dbg [data-x=se1]'); time.sleep(.3)
         said = pg.evaluate("JSON.stringify([uiState.toastOn,...(uiState.toastQ||[])].filter(Boolean).map(t=>t.text))")
-        if 'you have $' not in said or 'Done.' in said: raise Exception(f'+$1,000 said {said[:160]}')
-        if pg.evaluate("saveData.se") != se + 1000: raise Exception('+$1,000 didn’t add $1,000')
+        if 'Moneys.' not in said or 'Done.' in said: raise Exception(f'+1,000 Moneys said {said[:160]}')
+        if pg.evaluate("saveData.se") != se + 1000: raise Exception('+1,000 Moneys didn’t add 1,000')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return 'nine sections in order, no phase codes, each button once, search narrowed to +50 Scrap and put the sections back, Give me kept open across reopening, +$1,000 said what it changed'
+        return 'nine sections in order, no phase codes, each button once, search narrowed to +50 Scrap and put the sections back, Give me kept open across reopening, +1,000 Moneys said what it changed'
     finally:
         ctx.close()
 
@@ -1599,7 +1599,7 @@ def desktop_steps(b, base, R):
         """Copperleaf's mast sheet (tapped as walkPick does) offers "Start a run"; its sheet's "Take off" puts a run on the
         save with its world and flies to the landing (skipped to the end: day 1, beside the landing's mast); a wild
         battle won pays and lets saving go on; the north seam walked (cross()) is day 2; "Go there" walks to the first
-        town: the clinic charges $60 a hurt Billie (after a yes), the shop has the day's stock and (RL-12) a Loophole;
+        town: the clinic charges 60 Moneys a hurt Billie (after a yes), the shop has the day's stock and (RL-12) a Loophole;
         on to the first mini-boss, which blocks the way north and fights a double battle (won): "Pick a Loophole" opens
         the pick, a card tapped and "Take it" holds it; on to the boss, an Alpha (won, its battle carrying the
         Loophole): "On to the payout", the payout as won, "Fly home": Copperleaf with Capital, no run. The hub's save is

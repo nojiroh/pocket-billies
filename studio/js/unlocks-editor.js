@@ -355,7 +355,7 @@ SECTIONS.unlocks = () => {
    sub: 'The hub’s buildings: each sells its unlock rows in its own currency; a level above 1 is a row of its own.',
  })}
  ${card('Currencies', currencies + unlockErrHTML(P.filter(x => x.f === 'currencies.json')), {
-   sub: 'Money is the run’s; the others are kept between runs (the game reads each by its id).',
+   sub: 'Moneys are the run’s; the others are kept between runs (the game reads each by its id).',
  })}</div>`;
 };
 

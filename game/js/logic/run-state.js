@@ -274,7 +274,7 @@ export function runBegin(s, give) {
  * @param {{ money: number, itemShare: number, released: number, node: number, win: number, winSeals: number,
  *   scrapNode?: number, scrapWin?: number, capital?: number }} rates capital (RL-12, a Loophole's): the Capital times
  *   this, the difference as a line of its own
- * @param {(id: string) => number} itemPrice an item's shop price ($), 0 for none
+ * @param {(id: string) => number} itemPrice an item's shop price (Moneys), 0 for none
  * @returns {{ capital: number, seals: number, scrap: number, lines: { what: string, n: number, capital: number }[] }}
  */
 export function payoutOf(end, rates, itemPrice) {

@@ -794,7 +794,7 @@ SECTIONS.rules = () => {
        (D.locations || []).filter(r => r.town || r.kind === 'town').map(r => [r.id, r.name]),
        { none: 'The first stop', opt: 1 }
      ),
-     numberField('Money ($)', `${s}.se`, { min: 0, step: 50 }),
+     numberField('Moneys', `${s}.se`, { min: 0, step: 50 }),
      numberField('Starter’s level', `${s}.starterLevel`, { min: 1, max: 100, step: 1 }),
      numberField('Encounters waiting', `${s}.starterEncounters`, { min: 0, max: 10, step: 1 }),
      selectField(
@@ -929,12 +929,12 @@ SECTIONS.rules = () => {
        step: 0.05,
        help: 'Chance a trainer picks its best move.',
      }),
-     numberField('Rest stop price ($)', `${bt}.restCost`, { min: 0, step: 10 }),
+     numberField('Rest stop price (Moneys)', `${bt}.restCost`, { min: 0, step: 10 }),
      numberField('Losing fee', `${bt}.loseFee`, {
        min: 0,
        max: 1,
        step: 0.01,
-       help: 'Fraction of your money paid when your team is wiped out.',
+       help: 'Fraction of your Moneys paid when your team is wiped out.',
      }),
      numberField('Strongest move power cap (doubling moves)', `${bt}.holdCap`, { min: 40, step: 10 }),
      numberField('Delayed attack turns', `${bt}.mailTurns`, { min: 1, max: 6, step: 1 })

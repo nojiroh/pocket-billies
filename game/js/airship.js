@@ -25,13 +25,13 @@ import {
 } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, LOCATION_BY_ID, isTown, locationFullName } from './game-data.js';
-import { canEnter, formatNumber } from './logic/rules.js';
+import { canEnter, formatNumber, plural } from './logic/rules.js';
 import { turnedPoint } from './logic/prop-turn.js';
 import { bowlSurface } from './logic/bowl-camera.js';
 import { setStoryFlag } from './logic/script.js';
 import { isLiteMap, loadMapFile, loadMapsAhead } from './map-files.js';
 import { escapeHtml, reducedMotion, save, saveData, uiState } from './game-state.js';
-import { artLoad, uiIconHTML } from './art.js';
+import { artLoad, moneyHTML, uiIconHTML } from './art.js';
 import { artImage, imageReady, mapById, prepareMap, walkData } from './walk-view.js';
 import { seamlessHubMap } from './seamless-world.js';
 import { worldMap, worldMapSpot } from './world-bowl.js';
@@ -112,7 +112,7 @@ export function flyMenu(p) {
   const rows = L.map(i => {
     const f = flyFare(here, i),
       ok = saveData.se >= f;
-    return `<button class="pickrow fly-row${ok ? '' : ' off'}" data-a="flyto" data-n="${i}"${ok ? '' : ' aria-disabled="true"'}><span class="fly-ico">${uiIconHTML('house', 18)}</span><span class="pr-t"><b>${escapeHtml(locationFullName(LOCATIONS[i]))}</b><small>${escapeHtml(LOCATIONS[i].blurb || '')}</small></span><span class="fly-fare tnum">$${formatNumber(f)}</span></button>`;
+    return `<button class="pickrow fly-row${ok ? '' : ' off'}" data-a="flyto" data-n="${i}"${ok ? '' : ' aria-disabled="true"'}><span class="fly-ico">${uiIconHTML('house', 18)}</span><span class="pr-t"><b>${escapeHtml(locationFullName(LOCATIONS[i]))}</b><small>${escapeHtml(LOCATIONS[i].blurb || '')}</small></span><span class="fly-fare tnum">${moneyHTML(f)}</span></button>`;
   }).join('');
   /* RL-8: a run starts here (run.js) */
   const runRow =
@@ -131,7 +131,7 @@ export function flyMenu(p) {
       (runRow ? `<div class="list">${runRow}</div>` : '') +
       upHTML +
       (L.length
-        ? `<p class="note">The airships fly to the towns you’ve been to. A ticket is paid in money. You have $${formatNumber(saveData.se)}.</p><div class="list">${rows}</div>`
+        ? `<p class="note">The airships fly to the towns you’ve been to. A ticket is paid in Moneys. You have ${moneyHTML(saveData.se)}.</p><div class="list">${rows}</div>`
         : runRow
           ? ''
           : `<p>The airships fly to the towns you’ve already been to. Walk on to another town, and you can fly back here from its mast whenever you like.</p>`),
@@ -147,7 +147,7 @@ export function startAirshipFlight(i, o = {}) {
   const a = o.free && LOCATIONS[o.from] ? o.from : saveData.trip.node,
     f = o.free ? 0 : flyFare(a, i);
   if (saveData.se < f) {
-    toast(`A ticket to ${LOCATIONS[i].name} costs $${formatNumber(f)}. You have $${formatNumber(saveData.se)}.`);
+    toast(`A ticket to ${LOCATIONS[i].name} costs ${plural(f, 'Money')}. You have ${plural(saveData.se, 'Money')}.`);
     return;
   }
   if (!o.free) {
@@ -167,7 +167,7 @@ export function startAirshipFlight(i, o = {}) {
   save();
   closeModal();
   if (typeof debugLog !== 'undefined')
-    debugLog.add('scene', `airship ${LOCATIONS[a].id} to ${LOCATIONS[i].id} ($${f})`);
+    debugLog.add('scene', `airship ${LOCATIONS[a].id} to ${LOCATIONS[i].id} (${f} Moneys)`);
   const d = flyDistance(a, i);
   Object.assign(airshipFlight, {
     on: true,
@@ -346,7 +346,7 @@ document.addEventListener(
       ev.stopPropagation();
       ev.preventDefault();
       if (el.getAttribute('aria-disabled'))
-        toast(`You need $${formatNumber(flyFare(saveData.trip.node, +el.dataset.n))} for that ticket.`);
+        toast(`You need ${plural(flyFare(saveData.trip.node, +el.dataset.n), 'Money')} for that ticket.`);
       else startAirshipFlight(+el.dataset.n);
       return;
     }

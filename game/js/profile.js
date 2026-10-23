@@ -8,7 +8,7 @@ import { clamp } from './util.js';
 import { COINS, DEX_ORDER, ITEMS, LOCATIONS, TRAINERS } from './game-data.js';
 import { billyName, dexCaught, dexSeen, findBilly, formatNumber, metresToKm, plural } from './logic/rules.js';
 import { escapeHtml, saveData } from './game-state.js';
-import { coinHTML, eggHTML, uiIconHTML } from './art.js';
+import { coinHTML, eggHTML, moneyHTML, uiIconHTML } from './art.js';
 import { cleanTrainer, personHTML } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
@@ -70,7 +70,7 @@ export function renderProfile() {
  <div class="pf-top"><section class="tcard k-panel">
   <div class="tc-band"><span>Trainer card</span><span class="tnum">ID No. ${String(saveData.tid || 0).padStart(5, '0')}</span></div>
   <div class="tc-body"><div class="tc-photo k-card"><div class="tc-portrait">${personHTML('me', 92)}</div><button class="pb small" data-a="customize">Edit look</button></div>
-   <div class="tc-info"><h2 class="tc-name">${escapeHtml(name)}</h2><dl class="tc-dl"><div><dt>Money</dt><dd class="tnum">${coinHTML('penny', 16)} $${formatNumber(saveData.se)}</dd></div><div><dt>Now in</dt><dd>${escapeHtml(LOCATIONS[saveData.trip.node].name)}</dd></div>${since ? `<div><dt>Started</dt><dd>${escapeHtml(since)}</dd></div>` : ''}<div><dt>Buddy</dt><dd>${bud ? escapeHtml(billyName(bud)) : 'None yet'}</dd></div></dl></div></div>
+   <div class="tc-info"><h2 class="tc-name">${escapeHtml(name)}</h2><dl class="tc-dl"><div><dt>Moneys</dt><dd class="tnum">${moneyHTML(saveData.se, 16)}</dd></div><div><dt>Now in</dt><dd>${escapeHtml(LOCATIONS[saveData.trip.node].name)}</dd></div>${since ? `<div><dt>Started</dt><dd>${escapeHtml(since)}</dd></div>` : ''}<div><dt>Buddy</dt><dd>${bud ? escapeHtml(billyName(bud)) : 'None yet'}</dd></div></dl></div></div>
   <div class="tc-badges"><div class="tc-bh"><span>Badges</span><b class="tnum">${bd.got} of ${bd.tot}</b></div><ol class="bdgs">${bd.html}</ol></div>
  </section>
  <section class="tpanel pf-stats"><div class="sec-h"><h2>Records</h2></div><div class="pf-grid">

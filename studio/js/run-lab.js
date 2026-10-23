@@ -267,7 +267,7 @@ function runLabLogicHTML(D, p, i) {
           F.runFoe === 'boss' ? 'Boss' : 'Mini-boss',
           `${escapeHtml(F.name || F.from)} <small class="mono">${escapeHtml(F.from)}</small>: ${F.team
             .map(e => `${escapeHtml(speciesName(e.sp))} Lv ${e.lvl}`)
-            .join(', ')}; ${F.double ? 'a double battle' : 'alone, as an Alpha'}; reward $${F.reward}`,
+            .join(', ')}; ${F.double ? 'a double battle' : 'alone, as an Alpha'}; reward ${F.reward} Moneys`,
           ` data-foe="${escapeHtml(F.from)}" data-team="${escapeHtml(F.team.map(e => e.sp + '@' + e.lvl).join(','))}"`
         )
       );
@@ -453,7 +453,7 @@ function runLabRulesHTML() {
         const name = escapeHtml((D.nodeTypes[k] || {}).name || k);
         return [
           n(`${name}: levels over the row’s top wild level`, `foes.${k}.up`, int),
-          n(`${name}: reward ($)`, `foes.${k}.reward`, int),
+          n(`${name}: reward (Moneys)`, `foes.${k}.reward`, int),
         ];
       })
     ),

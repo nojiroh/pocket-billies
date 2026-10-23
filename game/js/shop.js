@@ -12,7 +12,7 @@ import { runShopOpen } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
 import { relicBuy, relicPrice, relicShelf } from './logic/relics.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
-import { coinHTML, uiIconHTML } from './art.js';
+import { coinHTML, moneyHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { openDressingRoom } from './dressing-room.js';
 import { buzz } from './battle-stage.js';
@@ -83,7 +83,7 @@ function shopRelicHTML(id, sh) {
   if (!L) return '';
   const R = RELICS[L.id],
     can = saveData.se >= L.price;
-  return `<div class="ware2 k-card"><span class="w-ic">${uiIconHTML('relic', 36)}</span><span class="w-t"><b>${escapeHtml(R.name)}</b><small>${escapeHtml(R.d)}</small><small class="note">A Loophole, for the rest of the run · you hold ${saveData.run.relics.length} of ${RULES.run.relics.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>$${formatNumber(L.price)}</button></span></div>`;
+  return `<div class="ware2 k-card"><span class="w-ic">${uiIconHTML('relic', 36)}</span><span class="w-t"><b>${escapeHtml(R.name)}</b><small>${escapeHtml(R.d)}</small><small class="note">A Loophole, for the rest of the run · you hold ${saveData.run.relics.length} of ${RULES.run.relics.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
 }
 function shopHTML(id) {
   const sh = SHOPS[id],
@@ -99,17 +99,17 @@ function shopHTML(id) {
         locked = it.need && seats < it.need,
         cost = price * n,
         deal = price < it.base;
-      return `<div class="ware2 k-card${locked ? ' locked' : ''}"><span class="w-ic">${it.kind === 'coin' ? coinHTML(it.key, 36) : itemIcon(it.key, 36)}</span><span class="w-t"><b>${escapeHtml(it.n)}</b><small>${escapeHtml(it.d)}</small><small class="w-own tnum">You have ${it.have}${deal ? ` · <em>Shop price $${formatNumber(it.base)}</em>` : ''}</small></span>
+      return `<div class="ware2 k-card${locked ? ' locked' : ''}"><span class="w-ic">${it.kind === 'coin' ? coinHTML(it.key, 36) : itemIcon(it.key, 36)}</span><span class="w-t"><b>${escapeHtml(it.n)}</b><small>${escapeHtml(it.d)}</small><small class="w-own tnum">You have ${it.have}${deal ? ` · <em>Shop price ${moneyHTML(it.base)}</em>` : ''}</small></span>
   <span class="w-buy">${
     locked
       ? `<span class="note">Needs ${plural(it.need, 'badge')}</span>`
       : `<span class="qty"><button class="qb k-btn" data-a="shopq" data-k="${k}" data-d="-1" aria-label="One fewer" ${n <= 1 ? 'disabled' : ''}>${uiIconHTML('minus', 10)}</button><b class="tnum">${n}</b><button class="qb k-btn" data-a="shopq" data-k="${k}" data-d="1" aria-label="One more" ${n >= 99 ? 'disabled' : ''}>${uiIconHTML('plus', 10)}</button></span>
-  <button class="pb small ${saveData.se >= cost ? 'gold' : ''}" data-a="shopbuy" data-s="${id}" data-k="${k}" ${saveData.se >= cost ? '' : 'disabled'}>$${formatNumber(cost)}</button>`
+  <button class="pb small ${saveData.se >= cost ? 'gold' : ''}" data-a="shopbuy" data-s="${id}" data-k="${k}" ${saveData.se >= cost ? '' : 'disabled'}>${moneyHTML(cost)}</button>`
   }</span></div>`;
     })
     .join('');
   return `<div class="shop-head"><div class="shop-keeper">${portraitHTML(sh.who || 'clerk', 78, 'happy')}</div><div class="shop-say"><b>${escapeHtml(sh.keeper || 'Shopkeeper')}</b><p id="shopLine">${escapeHtml(uiState.shopLine || sh.greeting || 'Welcome in.')}</p></div></div>
- <div class="shop-bal"><span>${uiIconHTML('coin', 14)} Money</span><b class="tnum" data-count="shopse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></div>
+ <div class="shop-bal"><span>${uiIconHTML('coin', 14)} Moneys</span><b class="tnum" data-count="shopse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></div>
  <div class="shop-bag"><span>In your bag</span>${Object.keys(COINS)
    .map(
      k =>
@@ -163,7 +163,7 @@ function shopBuy(id, k) {
     cost = price * n;
   if (it.need && saveData.seats.length < it.need) return;
   if (saveData.se < cost) {
-    toast('Not enough money. Win a few battles first.');
+    toast('Not enough Moneys. Win a few battles first.');
     return;
   }
   saveData.se -= cost;
@@ -187,7 +187,7 @@ function shopRelicBuy(id, drop) {
     L = sh && shopRelic(sh);
   if (!L || !run) return;
   if (saveData.se < L.price) {
-    toast('Not enough money for that one.');
+    toast('Not enough Moneys for that one.');
     return;
   }
   if (drop == null && run.relics.length >= RULES.run.relics.cap) {

@@ -448,7 +448,8 @@ export function dataRunLoop(D) {
           `run.${k} is not a list of 1-9 whole numbers (${what}, ${lo}-${hi}), one a Bracket, none fewer than the one before`
         );
     }
-    if (!whole(R.healCost, 0, 100000)) problem('rules.json', 'run.healCost is not a whole number of $ (0-100,000)');
+    if (!whole(R.healCost, 0, 100000))
+      problem('rules.json', 'run.healCost is not a whole number of Moneys (0-100,000)');
     if (!rec(SH) || !Array.isArray(SH.always) || !whole(SH.more, 0, 12) || !rec(SH.pick))
       problem('rules.json', 'run.shop: always (a list), more (whole, 0-12) and pick (weights) are needed');
     else {
@@ -468,7 +469,7 @@ export function dataRunLoop(D) {
       for (const k of ['miniboss', 'boss']) {
         const f = F[k];
         if (!rec(f) || !whole(f.up, -20, 50) || !whole(f.reward, 0, 1e6))
-          problem('rules.json', `run.foes.${k}: up (whole, -20-50) and reward (whole $, 0-1,000,000) are needed`);
+          problem('rules.json', `run.foes.${k}: up (whole, -20-50) and reward (whole Moneys, 0-1,000,000) are needed`);
         else only(f, ['up', 'reward'], `run.foes.${k}`);
       }
     }
@@ -626,7 +627,7 @@ export function dataRelics(D, valid = () => true) {
           if (g === 'rarity' ? !(typeof G[r] === 'number' && G[r] >= 0) : !whole(G[r], 0, 100000))
             problem(
               'rules.json',
-              `run.relics.${g}.${r} is not ${g === 'rarity' ? 'a weight of 0 or more' : 'a whole price ($0-100,000)'}`
+              `run.relics.${g}.${r} is not ${g === 'rarity' ? 'a weight of 0 or more' : 'a whole price (0-100,000 Moneys)'}`
             );
       }
       if (D.relics && !Object.values(D.relics).some(R => (RR.rarity || {})[R.rarity] > 0))

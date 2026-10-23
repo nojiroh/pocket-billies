@@ -19,7 +19,7 @@ import { fxHealShare, fxOfRun, unlockOpen } from '../hooks.js';
 import { ITEMS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
-import { healAll, maxHp } from './rules.js';
+import { healAll, maxHp, plural } from './rules.js';
 import { RUN_DAYS, runHome } from './run-state.js';
 import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
@@ -260,8 +260,8 @@ export const runItemPrice = id => (ITEMS[id] && ITEMS[id].price) || 0;
 export function runPayoutRows(pay, rates) {
   const pct = Math.round(rates.money * 100),
     say = {
-      money: (/** @type {number} */ n) => ['Money left', `$${n.toLocaleString('en')} at ${pct}%`],
-      items: n => ['Items in the bag', `worth $${n.toLocaleString('en')} at ${pct}%`],
+      money: (/** @type {number} */ n) => ['Moneys left', `${plural(n, 'Money')} at ${pct}%`],
+      items: n => ['Items in the bag', `worth ${plural(n, 'Money')} at ${pct}%`],
       released: n => ['Billies released', `${n} × ${rates.released}`],
       nodes: n => ['Places reached', `${n} × ${rates.node}`],
       win: () => ['The boss beaten', ''],

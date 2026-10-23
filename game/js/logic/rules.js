@@ -223,6 +223,7 @@ export const cleanName = (s, max) =>
     .slice(0, max);
 provide({ cleanName }); /* to-module */
 export const formatNumber = n => Math.floor(n).toLocaleString('en-US');
+provide({ formatNumber }); /* to-module */
 /* RL-8: on a run, from the run's own counter (run.uidN: 'r' + the runs played before + '-' + n), so a run made again
    from its seed (a resume, its simulation) gives its Billies, encounters and eggs the same ids; the hub's from the
    clock as before */
@@ -236,6 +237,7 @@ export const today = () => {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 };
 export const plural = (n, w) => `${formatNumber(n)} ${w}${n === 1 ? '' : 's'}`;
+provide({ plural }); /* to-module */
 /** one id from [id, weight] pairs; rnd is the random source (a run passes its seeded stream, logic/rng.js rngFn) */
 export function pickWeighted(list, rnd = random) {
   const tot = list.reduce((a, b) => a + b[1], 0);

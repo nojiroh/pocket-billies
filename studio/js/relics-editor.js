@@ -68,7 +68,7 @@ const relicEd = {
 };
 /** what each kind of row means, and the fields it has */
 const RELIC_KINDS = {
-  money: 'A won battle pays more (or less) money',
+  money: 'A won battle pays more (or less) Moneys',
   price: 'A run shop’s prices, or a run town’s clinic',
   catch: 'A coin’s chance to catch',
   stat: 'Stat stages as a battle starts',
@@ -126,7 +126,7 @@ function relicRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {
       .filter((/** @type {any} */ s) => s.id !== 'hp')
       .map((/** @type {any} */ s) => [s.id, s.name]),
     fields = {
-      money: () => [mult('Money ×')],
+      money: () => [mult('Moneys ×')],
       price: () => [
         selectField('Which price', `${p}.what`, [
           ['shop', 'A run shop’s wares'],
@@ -262,7 +262,7 @@ SECTIONS.relics = () => {
      textField('What it does (one sentence)', `${p}.d`, { area: 1, rows: 2, max: 160 }) +
      relicProblemHTML(P, `${k}.`, `${k}.fx[`),
    {
-     sub: `${escapeHtml(R.rarity)}: ${relicPct(cov.chance[k])} to be drawn first at a pick; a shop asks $${D.rules.run.relics.price[R.rarity] || 0}.`,
+     sub: `${escapeHtml(R.rarity)}: ${relicPct(cov.chance[k])} to be drawn first at a pick; a shop asks ${D.rules.run.relics.price[R.rarity] || 0} Moneys.`,
    }
  )}
  ${card(
@@ -443,7 +443,7 @@ ACTIONS.pickRelic = d => {
 ACTIONS.relicNew = () => {
   const D = studioState.D,
     k = uniqueKey('loophole', x => !!(D.relics || {})[x]);
-  D.relics[k] = { name: 'New Loophole', d: 'Wins pay 10% more money.', rarity: 'common', fx: [RELIC_ROW_NEW.money()] };
+  D.relics[k] = { name: 'New Loophole', d: 'Wins pay 10% more Moneys.', rarity: 'common', fx: [RELIC_ROW_NEW.money()] };
   studioState.sel.relic = k;
   changed();
   render();

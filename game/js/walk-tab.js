@@ -10,7 +10,7 @@ import { encounterStock, encountersHere, formatNumber, healAll, plural } from '.
 import { runClinic, runHealCost, runSheetStatus, weatherEffectText } from './logic/run-loop.js';
 import { startWild } from './logic/battle-engine.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
-import { artURL, uiIconHTML } from './art.js';
+import { artURL, moneyHTML, uiIconHTML } from './art.js';
 import { mapById, walkView } from './walk-view.js';
 import { WEATHER_NAMES, environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
 import { runClinicEach, runGiveUp, runStartSheet } from './run.js';
@@ -84,16 +84,16 @@ export function clinicHeal(say) {
   }
   if (saveData.se < cost) {
     toast(
-      `Healing ${plural(hurt, 'Billie')} costs $${formatNumber(cost)} ($${each} each). You have $${formatNumber(saveData.se)}.`
+      `Healing ${plural(hurt, 'Billie')} costs ${plural(cost, 'Money')} (${plural(each, 'Money')} each). You have ${plural(saveData.se, 'Money')}.`
     );
     return;
   }
   modal({
     title: 'The clinic',
-    html: `<p>Out here healing isn’t free: $${each} a Billie. Heal ${plural(hurt, 'hurt Billie')} for $${formatNumber(cost)}? You have $${formatNumber(saveData.se)}.</p>`,
+    html: `<p>Out here healing isn’t free: ${moneyHTML(each)} a Billie. Heal ${plural(hurt, 'hurt Billie')} for ${moneyHTML(cost)}? You have ${moneyHTML(saveData.se)}.</p>`,
     btns: [
       {
-        l: `Heal for $${formatNumber(cost)}`,
+        l: `Heal for ${plural(cost, 'Money')}`,
         c: 'gold',
         f: () => {
           closeModal();
@@ -102,7 +102,7 @@ export function clinicHeal(say) {
           if (!now.paid) return;
           saveNow();
           render();
-          toast(say || `The clinic patched everyone up for $${formatNumber(now.cost)}.`);
+          toast(say || `The clinic patched everyone up for ${plural(now.cost, 'Money')}.`);
         },
       },
       { l: 'Not now', c: 'quiet', f: closeModal },
@@ -123,7 +123,7 @@ function nodeActions(i) {
     if (n.town) {
       const { hurt, cost } = runHealCost(saveData.team, runClinicEach());
       x += hurt
-        ? `<button class="pb small" data-a="clinic">Clinic: heal ${plural(hurt, 'Billie')} for $${formatNumber(cost)}</button>`
+        ? `<button class="pb small" data-a="clinic">Clinic: heal ${plural(hurt, 'Billie')} for ${moneyHTML(cost)}</button>`
         : '<button class="pb small quiet" data-a="clinic">Clinic: everyone is fine</button>';
     }
   } else if (n.town) x += '<button class="pb small" data-a="clinic">Rest at the clinic, free</button>';

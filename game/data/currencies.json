@@ -1,11 +1,11 @@
 {
  "money": {
-  "name": "$",
-  "long": "Money",
-  "one": "dollar",
+  "name": "Moneys",
+  "long": "Moneys",
+  "one": "Money",
   "icon": "coin",
   "kept": "run",
-  "about": "A run's money: wild prizes and trainers. Pays for healing and run shops; turns into Capital when the run ends."
+  "about": "A run's Moneys: wild prizes and trainers. Pays for healing and run shops; turns into Capital when the run ends."
  },
  "capital": {
   "name": "Capital",

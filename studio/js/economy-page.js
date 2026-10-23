@@ -39,7 +39,7 @@ SECTIONS.economy = () => {
     .join('');
   return `<div class="ed-col solo"><div class="ed-head"><div><h2>Economy</h2><p class="sub">Every source and sink of each currency, read from the field that sets it. Click one to edit it where it lives.</p></div></div>
  ${card(
-   'Money in and out of runs',
+   'Moneys in and out of runs',
    '<p class="help eco-sim" data-eco-sim="none">Not here yet: the simulated runs’ money in and out (Studio plan Phase 3, the balance dashboard T3.4) has not landed. Until then, the Run Lab shows a seed’s rewards, shops and picks.</p>'
  )}
  ${tables}</div>`;

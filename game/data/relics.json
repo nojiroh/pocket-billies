@@ -1,7 +1,7 @@
 {
  "offshore": {
   "name": "Offshore Account",
-  "d": "Wins pay 20% more money.",
+  "d": "Wins pay 20% more Moneys.",
   "rarity": "common",
   "fx": [
    {"kind":"money","mult":1.2}

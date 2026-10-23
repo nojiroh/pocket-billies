@@ -691,7 +691,7 @@ const SECTION_GROUPS = [
   ],
   ['World & places', ['scenes', 'hub', 'props', 'engine', 'world']],
   ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
-  ['Money', ['items']],
+  ['Moneys', ['items']],
   ['Game', ['rules', 'ui', 'art', 'check']],
   /* SND-3: the songs, the where table and the jingles (music-editor.js); the cries are on the Billies page */
   ['Sound', ['music']],

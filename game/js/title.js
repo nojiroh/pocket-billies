@@ -304,7 +304,7 @@ function titleNew() {
   }
   modal({
     title: 'Start a new game?',
-    html: '<p>This replaces your game: your team, Field Guide and money. (Settings → Save → Export save keeps a copy first.)</p>',
+    html: '<p>This replaces your game: your team, Field Guide and Moneys. (Settings → Save → Export save keeps a copy first.)</p>',
     btns: [
       {
         l: 'Start a new game',

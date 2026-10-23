@@ -224,13 +224,13 @@ test("the payout screen's rows: payoutOf's lines with their words, the win row o
     won = L.runPayoutRows(payoutOf({ ...end, won: true }, R.payout, price), R.payout);
   assert.deepEqual(
     lost.map(r => r.label),
-    ['Money left', 'Items in the bag', 'Billies released', 'Places reached']
+    ['Moneys left', 'Items in the bag', 'Billies released', 'Places reached']
   );
   assert.equal(won.at(-1).label, 'The boss beaten');
   assert.ok(!won.some(r => r.label === 'Items in the bag'), 'RL-9b: a win takes the bag home, not paid');
   assert.equal(won.at(-1).value, R.payout.win);
   assert.equal(lost[0].value, Math.floor(750 * R.payout.money));
-  assert.match(lost[0].note, /\$750 at 10%/);
+  assert.match(lost[0].note, /750 Moneys at 10%/);
 });
 
 test('during a run storage stays in Copperleaf: only the party counts, nothing moves in or out, a 7th waits', () => {

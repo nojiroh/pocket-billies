@@ -101,7 +101,7 @@ function runLeaderHTML(/** @type {any[]} */ rows) {
   return `<table class="tbl run-leader"><thead><tr><th>Place</th><th>Row</th><th>Reward</th><th>Levels</th><th>Team</th></tr></thead><tbody>${rows
     .map(
       r =>
-        `<tr data-kind="${r.kind}" data-row="${r.row}" data-reward="${r.reward}" data-levels="${r.levels.join('-')}"><td>${kind(r.kind)}</td><td>${r.row + 1}</td><td>$${r.reward}</td><td>${r.levels[0] === r.levels[1] ? r.levels[0] : r.levels.join('–')}</td><td>${r.team
+        `<tr data-kind="${r.kind}" data-row="${r.row}" data-reward="${r.reward}" data-levels="${r.levels.join('-')}"><td>${kind(r.kind)}</td><td>${r.row + 1}</td><td>${r.reward} Moneys</td><td>${r.levels[0] === r.levels[1] ? r.levels[0] : r.levels.join('–')}</td><td>${r.team
           .map((/** @type {any} */ e) => `${escapeHtml(speciesName(e.sp))} ${e.lvl}`)
           .join(', ')}</td></tr>`
     )
