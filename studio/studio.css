@@ -4762,3 +4762,31 @@ body.wb-dropping::after {
   margin: 4px 0;
   padding-left: 20px;
 }
+/* Studio plan T3.4: the Run Lab's Simulate card */
+.rl-sim-banner {
+  margin: 0.2em 0;
+  font-size: 0.85em;
+  font-style: italic;
+  opacity: 0.8;
+}
+.rl-sim-table td,
+.rl-sim-table th {
+  text-align: right;
+  padding: 0.1em 0.6em;
+}
+.rl-sim-table th:first-child {
+  text-align: left;
+}
+.rl-sim-driven {
+  font-size: 0.75em;
+  padding: 0 0.4em;
+  border: 1px solid currentColor;
+  border-radius: 0.6em;
+  opacity: 0.7;
+}
+.rl-sim-same {
+  opacity: 0.5;
+}
+.rl-sim-table td.help {
+  text-align: left;
+}
