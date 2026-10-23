@@ -48,7 +48,7 @@ import { battle3dLayout } from './battle-3d.js';
 import { worldMapWanted } from './world-bowl.js';
 import { openShop } from './shop.js';
 import { soundEffect } from './sound.js';
-import { talkHazel } from './talk.js';
+import { talkChosen } from './talk.js';
 import { cutscene } from './cutscene/director.js';
 import { loreBook } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
@@ -347,7 +347,7 @@ function roomAct(h) {
     if (I.shop && SHOPS[I.shop]) openShop(I.shop);
     else toast(I.p.say || 'The shop is closed today.');
   } else if (I.kind === 'clinic') clinicHeal(I.p.say);
-  else if (I.kind === 'lab' && typeof talkHazel === 'function') talkHazel(I.p);
+  else if (I.kind === 'lab' && typeof talkChosen === 'function') talkChosen(I.p);
   else if (I.kind === 'home' && typeof homeDecorate === 'function') homeDecorate();
   else if (I.kind === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
   else {
@@ -552,7 +552,7 @@ export function walkPick(h) {
       if (id && SHOPS[id]) openShop(id);
       else toast(p.say || 'The shop is closed today.');
     } else if (a === 'clinic') clinicHeal(p.say);
-    else if (a === 'lab' && typeof talkHazel === 'function') talkHazel(p);
+    else if (a === 'lab' && typeof talkChosen === 'function') talkChosen(p);
     else if (a === 'read' && typeof loreBook === 'function') loreBook(p.book);
     else if (a === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
     else if (a === 'board' && typeof labBoardOpen === 'function') labBoardOpen();

@@ -25,9 +25,9 @@ expose({
   talk: [() => talk, v => (talk = v)],
   talkBox: [() => talkBox],
   talkChoose: [() => talkChoose, v => (talkChoose = v)],
+  talkChosen: [() => talkChosen, v => (talkChosen = v)],
   talkEl: [() => talkEl, v => (talkEl = v)],
   talkFolk: [() => talkFolk, v => setTalkFolk(v)],
-  talkHazel: [() => talkHazel, v => (talkHazel = v)],
   talkHide: [() => talkHide, v => (talkHide = v)],
   talkLine: [() => talkLine, v => (talkLine = v)],
   talkName: [() => talkName, v => (talkName = v)],
@@ -318,7 +318,7 @@ export function setTalkFolk(v) {
   provide({ talkFolk });
 }
 /* Professor Chosen in his lab: his script (story.json scripts.hazel): your Index, your badges, where Blake went */
-export async function talkHazel() {
+export async function talkChosen() {
   if (talkBox.on) return;
   await playStoryScript('story:hazel');
 }

@@ -1,5 +1,5 @@
 // Project Story S2: every conversation, played from its script on a stub, says what the game said before the move
-// (talk-before-scripts.json, recorded in the game from personTalk, trainerTalk, rivalScene, talkHazel,
+// (talk-before-scripts.json, recorded in the game from personTalk, trainerTalk, rivalScene, talkChosen,
 // storyAfterRival and storyEnding): the same words, expressions, speakers and order, and the same battle.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

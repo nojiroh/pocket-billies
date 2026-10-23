@@ -39,7 +39,7 @@
  },
  "scripts": {
   "hazel": {
-   "about": "Professor Chosen in his lab (talk.js talkHazel): your Index, your badges, where Blake went",
+   "about": "Professor Chosen in his lab (talk.js talkChosen): your Index, your badges, where Blake went",
    "who": "chosen",
    "script": [
     "[happy] {name}! My sidekick returns. How’s the Index? {caught} taxed so far. #l:2c0a",
