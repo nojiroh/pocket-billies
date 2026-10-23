@@ -471,7 +471,8 @@ def ranch(pg, base):
     """RL-9: the ranch fixture stands in Copperleaf's barn. The training board opens the ranch's sheet; Train on a
     stored Billie pays the Scrap and starts it; two hours later (the page's clock moved on) the sheet opened again has
     collected a level; the one two levels under the cap, trained for a whole bank, stops at the cap; the clock turned
-    back gains nothing and starts the trainees again; a reload (?fixture=stored) keeps it all"""
+    back gains nothing and leaves the trainees' starts where they were; forward again a minute past them pays only that
+    minute (RL-10b: RL-9 moved the starts back, so this paid a whole bank); a reload (?fixture=stored) keeps it all"""
     if not until(pg, "!!uiState.inside&&uiState.inside.kind==='ranch'&&walkView.ready", 60): raise Exception(f'not in the ranch: {pg.evaluate("walkView.id")}')
     pg.evaluate("window.__d0=Date.now;window.__shift=0;Date.now=()=>__d0.call(Date)+__shift;0")
     board = "(()=>{const p=walkView.sc.props.find(q=>q.act==='ranch'&&q.k==='blackboard');uiState.modal=null;uiState.mq=[];walkPick({k:'act',p,act:'ranch'});return !!(uiState.modal&&uiState.modal.cls==='ranch-sheet'&&document.querySelector('#ov .ranch-sheet'))})()"
@@ -493,16 +494,20 @@ def ranch(pg, base):
     if lv(2) != cap: raise Exception(f'trained a whole bank from Lv {last}: Lv {lv(2)}, the cap is {cap}')
     if lv(0) > first + 1 + R['bankHours'] * R['levelsPerHour']: raise Exception(f'more than a bank: Lv {lv(0)}')
     got = lv(0)
+    at0 = pg.evaluate("saveData.ranch.trainees.map(t=>t.at)")
     pg.evaluate(f"__shift={-30 * H};0")
     pg.evaluate(board)
     at = pg.evaluate("saveData.ranch.trainees.map(t=>t.at)")
-    if lv(0) != got or any(abs(a - pg.evaluate("Date.now()")) > 60000 for a in at): raise Exception(f'the clock turned back: Lv {got} → {lv(0)}, starts {at}')
+    if lv(0) != got or at != at0: raise Exception(f'the clock turned back: Lv {got} → {lv(0)}, starts {at0} → {at}')
+    pg.evaluate(f"__shift={20 * H + 60000};0")
+    pg.evaluate(board)
+    if lv(0) != got: raise Exception(f'forward again a minute past the starts: Lv {got} → {lv(0)} (the gap paid)')
     keep = pg.evaluate("JSON.stringify([saveData.meta.scrap,saveData.ranch.trainees.map(t=>t.uid),saveData.box.map(m=>m.lvl)])")
     pg.goto(base + '/index.html?fixture=stored')
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.ranch&&!document.getElementById('loader')", 90): raise Exception('the reload never booted')
     back = pg.evaluate("JSON.stringify([saveData.meta.scrap,saveData.ranch.trainees.map(t=>t.uid),saveData.box.map(m=>m.lvl)])")
     if back != keep: raise Exception(f'after a reload {back}, not {keep}')
-    return f'Train paid {R["trainCost"]} Scrap each; a level’s time: Lv {first} → {first + 1}; a whole bank from Lv {last} stopped at the cap ({cap}); the clock turned back gained nothing; a reload kept it'
+    return f'Train paid {R["trainCost"]} Scrap each; a level’s time: Lv {first} → {first + 1}; a whole bank from Lv {last} stopped at the cap ({cap}); the clock turned back gained nothing, and forward again paid no gap; a reload kept it'
 
 
 def relics(pg, base):
@@ -1004,7 +1009,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
               ('The exported debug log holds no names', debug_log),
               ('The world map opens as the bowl', bowl_map)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
-    ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back, a reload (RL-9)', ranch)]),
+    ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back and forward, a reload (RL-9, RL-10b)', ranch)]),
     ('relics', [("Loopholes: the pick (again after a reload), the tab, a battle's and a walk's effects, a town's prices, buying at the cap (RL-12)", relics)]),
     ('ranch', [('Breeding: a safe egg shown and hatched, a risky pair, a clock turned back, a reload (RL-10)', breed)]),
     ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the mast, a reload (RL-11)', lab)]),
