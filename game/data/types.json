@@ -60,7 +60,7 @@
   "text": "#fff",
   "strong": ["Grass"],
   "weak": ["Electric","Steel"],
-  "passive": "pivot",
+  "passive": "slipstream",
   "passiveName": "Slipstream",
   "passiveText": "Once a battle, it can switch out without losing the turn.",
   "fx": ["feather","up"]

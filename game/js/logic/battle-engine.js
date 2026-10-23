@@ -1117,11 +1117,11 @@ export function runTurn(plan, b) {
     for (const p of plan.filter(p => p.k === 'switch')) {
       const out = fighter(p.who);
       if (!out) continue;
-      const free = hasPassive(actorTypes(p.who), 'pivot') && !battleNow().sides[0].pivot;
-      if (free) battleNow().sides[0].pivot = true;
+      const free = hasPassive(actorTypes(p.who), 'slipstream') && !battleNow().sides[0].slipstream;
+      if (free) battleNow().sides[0].slipstream = true;
       battleSay(
         free
-          ? `${billyName(out)} rode its ${passiveName(actorTypes(p.who), 'pivot')} back without losing the turn.`
+          ? `${billyName(out)} rode its ${passiveName(actorTypes(p.who), 'slipstream')} back without losing the turn.`
           : `${billyName(out)}, come back.`,
         {
           k: 'recall',

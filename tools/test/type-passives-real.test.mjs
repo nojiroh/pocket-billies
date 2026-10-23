@@ -38,7 +38,17 @@ const plainMove = (t, c) =>
   );
 
 test('every type names its passive and says what it does; the ids are the nine the engine knows', () => {
-  const known = ['kindling', 'undertow', 'regrowth', 'livewire', 'bedrock', 'pivot', 'wildmind', 'alloy', 'inherit'];
+  const known = [
+    'kindling',
+    'undertow',
+    'regrowth',
+    'livewire',
+    'bedrock',
+    'slipstream',
+    'wildmind',
+    'alloy',
+    'inherit',
+  ];
   assert.deepEqual(
     TYPES.map(t => data.PASSIVE[t]),
     known
@@ -143,7 +153,7 @@ test('Slipstream (Flying): the first switch out costs no turn, the second does',
   const foe = b.sides[1].team[0],
     foeHp = foe.hp;
   fn('runTurn')([{ who: 0, k: 'switch', i: 1 }], b);
-  assert.equal(b.sides[0].pivot, true);
+  assert.equal(b.sides[0].slipstream, true);
   assert.ok(
     lines(b).some(t => /rode its Slipstream back without losing the turn/.test(t)),
     lines(b).join(' | ')

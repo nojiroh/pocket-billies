@@ -71,7 +71,7 @@ export function makeBattle(kind, team, foe, extra) {
       plan: [],
       cur: 0,
       sides: [
-        { team, f: fighters(n0, able), rent: false, pivot: false, held: [], mail: [], inh: null },
+        { team, f: fighters(n0, able), rent: false, slipstream: false, held: [], mail: [], inh: null },
         {
           team: foe,
           f: fighters(
@@ -79,7 +79,7 @@ export function makeBattle(kind, team, foe, extra) {
             foe.map((m, i) => i)
           ),
           rent: false,
-          pivot: false,
+          slipstream: false,
           held: [],
           mail: [],
           inh: null,
