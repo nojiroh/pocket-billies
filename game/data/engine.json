@@ -44,7 +44,48 @@
   "grass": {"density":3,"height":0.55},
   "water": {"reflection":0.95,"ripples":0.3,"glints":1.35,"clarity":0.2,"caustics":0.4,"shallow":"#229ABF"},
   "camera": {"pixelGrid":false,"pitchAdd":-8,"fov":0.68},
-  "quality": {"resolution":1.5,"shadowMap":4096,"frameBlock":true,"edgeBleed":true,"minPropPx":3,"phonePropDistance":48}
+  "quality": {"resolution":1.5,"shadowMap":4096,"frameBlock":true,"edgeBleed":true,"minPropPx":3,"phonePropDistance":48},
+  "todDawn": {
+   "skyTop": "#5b6fb8",
+   "skyMid": "#e9a5b0",
+   "skyLow": "#ffd6a3",
+   "sunColor": "#ffc7a0",
+   "ambientColor": "#c9cff2",
+   "haze": "#f2c9b8",
+   "shadowTint": "#6a78b8",
+   "lightTint": "#ffc09a"
+  },
+  "todDay": {"sunColor":"#fff4e2"},
+  "todGolden": {
+   "skyTop": "#6fa0d8",
+   "skyMid": "#f2c38a",
+   "skyLow": "#ffb060",
+   "sunColor": "#ffb869",
+   "ambientColor": "#9fc4d8",
+   "haze": "#f4c27e",
+   "shadowTint": "#3f7f8c",
+   "lightTint": "#ffb15c"
+  },
+  "todDusk": {
+   "skyTop": "#2e2f6e",
+   "skyMid": "#b4618f",
+   "skyLow": "#ff9068",
+   "sunColor": "#ff8a70",
+   "ambientColor": "#a79bd6",
+   "haze": "#c27e9a",
+   "shadowTint": "#5b4a9c",
+   "lightTint": "#ff9a78"
+  },
+  "todNight": {
+   "skyTop": "#060a24",
+   "skyMid": "#111b45",
+   "skyLow": "#26356a",
+   "sunColor": "#8fa6ff",
+   "ambientColor": "#8ea2e0",
+   "haze": "#1e2a55",
+   "shadowTint": "#23306e",
+   "lightTint": "#ffc27a"
+  }
  },
  "presets": {
   "test": {
