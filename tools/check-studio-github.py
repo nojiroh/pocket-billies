@@ -1332,6 +1332,38 @@ def relics_steps(pg, errs):
     if len(errs) == n: print(f"loopholes: Insider Tip's Speed {W['insider']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone", flush=True)
 
 
+def unlocks_steps(pg, errs):
+    """Studio plan T4.2: Unlocks & hub. The graph has a node per row and the edges unlocks.test.mjs expects; a need that
+    would close a circle is refused, the data unchanged and the message naming the path; "what a new save has" is the
+    game's (unlockSaveAfter in Node) and follows runs; a cost edit is in unlocks.json and undoes."""
+    W = content_want(errs)
+    if not W: return
+    n = len(errs)
+    pg.evaluate("void openSection('unlocks', { unlock: 'ranch_2' })")
+    pg.wait_for_selector('#main .ug-map', timeout=20000)
+    nodes = pg.evaluate("document.querySelectorAll('#main .ug-map .ug-node').length")
+    want_nodes = pg.evaluate("Object.keys(studioState.D.unlocks).length")
+    if nodes != want_nodes: errs.append(f'unlocks: the graph has {nodes} nodes, the table {want_nodes} rows')
+    edges = pg.evaluate("[...document.querySelectorAll('#main .ug-map [data-edge]')].map(e=>e.dataset.edge)")
+    for e in ['ranch_2>ranch_3', 'airship_2>biome_ridge', 'airship_2>biome_autumn']:
+        if e not in edges: errs.append(f'unlocks: no edge {e} in the graph ({edges})')
+    owned = pg.evaluate("document.querySelector('#main .ug-save').dataset.owned")
+    if owned != ','.join(W['fresh']['owned']): errs.append(f"unlocks: a new save owns {owned!r}, the game's {W['fresh']['owned']}")
+    # a planted circle: ranch_2 needs ranch_3 (which needs ranch_2)
+    before = pg.evaluate("JSON.stringify(studioState.D.unlocks)")
+    pg.evaluate("""document.querySelector('#main [data-ug-req="ranch_2"][value="ranch_3"]').click()"""); time.sleep(0.3)
+    said = pg.evaluate("(document.querySelector('#main .ug-refused')||{}).textContent||''")
+    if 'ranch_2 -> ranch_3 -> ranch_2' not in said: errs.append(f'unlocks: the circle was not refused with its path ({said!r})')
+    if pg.evaluate("JSON.stringify(studioState.D.unlocks)") != before: errs.append('unlocks: the refused need changed the data')
+    # the save after a run: First flight earned
+    pg.fill('#main [data-ug-ed="runs"]', '1'); pg.dispatch_event('#main [data-ug-ed="runs"]', 'change'); time.sleep(0.3)
+    if 'first_run' not in pg.evaluate("document.querySelector('#main .ug-save').dataset.owned"): errs.append('unlocks: after a run the save did not earn first_run')
+    pg.fill('#main [data-ug-ed="runs"]', '0'); pg.dispatch_event('#main [data-ug-ed="runs"]', 'change'); time.sleep(0.3)
+    sent = edit_undo(pg, errs, 'unlocks', '#main [data-p="unlocks.ranch_2.cost"]', 77, 'unlocks.ranch_2.cost', 'unlocks\\.json$')
+    edit_undo(pg, errs, 'unlocks: buildings', '#main [data-p="buildings.ranch.name"]', 'Barn', 'buildings.ranch.name', 'buildings\\.json$')
+    if len(errs) == n: print(f"unlocks: {nodes} nodes with the expected edges, the circle ranch_2 -> ranch_3 -> ranch_2 refused, a new save as the game's, a run earns first_run, a cost edit proposed ({sent}) and undone", flush=True)
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
@@ -1350,6 +1382,7 @@ STEPS = [
     ('studio_test', studio_test_steps),
     ('run_lab', run_lab_steps),
     ('relics', relics_steps),
+    ('unlocks', unlocks_steps),
 ]
 
 
