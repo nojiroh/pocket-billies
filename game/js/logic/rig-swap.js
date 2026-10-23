@@ -33,6 +33,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   rigSwapNeeds: [() => rigSwapNeeds, v => (rigSwapNeeds = v)],
   // @ts-expect-error -- replaced on purpose
+  rigSwapPair: [() => rigSwapPair, v => (rigSwapPair = v)],
+  // @ts-expect-error -- replaced on purpose
   rigSwapSide: [() => rigSwapSide, v => (rigSwapSide = v)],
   // @ts-expect-error -- replaced on purpose
   rigSwapSlot: [() => rigSwapSlot, v => (rigSwapSlot = v)],
@@ -56,6 +58,18 @@ export function rigSwapSlot(b, boneSlot) {
 export function rigSwapSide(/** @type {string} */ name) {
   if (/^leg[FB][FN]$/.test(name)) return name.endsWith('N') ? 'L' : 'R';
   return /[a-z](L|R)$/.test(name) ? name.slice(-1) : '';
+}
+/** a bone's twin on the other side with a picture and the same parent (armL and armR, a quad's legBN and legBF), else
+ * null @param {RigView | null | undefined} M @param {string} name */
+export function rigSwapPair(M, name) {
+  const b = M?.bones.find(x => x.n === name);
+  if (!M || !b) return null;
+  const other = /[LR]$/.test(name)
+    ? name.slice(0, -1) + (name.endsWith('L') ? 'R' : 'L')
+    : /^leg[FB][FN]$/.test(name)
+      ? name.slice(0, -1) + (name.endsWith('F') ? 'N' : 'F')
+      : '';
+  return M.bones.find(x => x.n === other && x.par === b.par && x.i >= 0) || null;
 }
 /** the named sockets a child of this slot hangs on (partKits.json socketRules), on its own side first
  * @param {PartKits} K @param {string} slot @param {string} side @returns {string[]} */
