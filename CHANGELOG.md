@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- The Studio bakes kit Billies (Studio plan Phase 5). In the Art workbench's Part mode a kit Billie shows its recipe
+  (which part on each bone, at what size and colour, and its extras); a change there bakes the Billie's sheet and
+  skeleton at once with the game's own baker, as one undo step, and Propose sends them with the recipe. Write Billie
+  bakes it again after a part's picture was repainted. The old Python builder is gone, and so are the kit Billies'
+  piece layout files, which nothing used. No change in the game.
 - The 24 kit Billies' recipes are game data now (Studio plan Phase 5): game/data/kitBuilds.json, which part sits on
   which bone at what size and colour, and the baker's settings, checked by `npm run check:data`. `npm run bake:kits`
   bakes them with the game's own code and writes only what changed; on today's data it changes nothing. The part

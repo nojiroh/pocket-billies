@@ -200,6 +200,21 @@ that species.
   with the rigs.
 - **As drawn**: the species front and back as the game draws it, the part picked marked; **Move** plays its idle.
 
+### A kit Billie's recipe (Studio plan Phase 5)
+
+The 24 kit Billies (game/data/kitBuilds.json) are baked from a recipe: which kit part sits on each bone, at what size
+and colour, plus extras (horns, ears, a crest, a shell). On a kit Billie Part mode shows **Kit recipe** above the
+part's numbers (and when no part is picked): the stage scale, each bone kind's part, size and colour, and the extras
+(part, where it sits, size, colour, a mirrored pair; **Add an extra**, ✕ to take one off).
+
+- **A change bakes at once** with the game's own baker (the code `npm run bake:kits` runs): the recipe, the sheet,
+  the rig and the line's native parts change together, as **one undo step**. Propose then carries all of them, so a
+  recipe never leaves without its bake (CI fails a recipe sent without one).
+- **Write Billie** bakes the recipe as it is again: after a kit part's picture was repainted, for example. When the
+  Billie already is as baked it says so and changes nothing.
+- A recipe the baker can't make (a slot left empty, a missing picture) is not written; the card says why.
+- Edits by hand to a kit Billie's sheet or rig (pixels, pivots) are lost at its next bake: the recipe is the truth.
+
 The skeleton builder zooms by whole steps (+, −, 0 to fit, 1 to 6 for 1x to 32x, as on the pixel canvas; O for the
 onion), fits its window when opened, and **Paint pixels** opens the sheet with the part picked in focus.
 

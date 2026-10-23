@@ -29,6 +29,13 @@ instruction, relayed by the parent session); this session's choices are decision
    before/after preview through rigParts/rigFrame; unit tests on 3 real species.
 4. **T5.3** rig consistency checks into data-checks.js; then T5.4 and T5.7 if time allows.
 
+**Progress** (kept up to date while the session runs)
+- Step 1 done: `kitBakeWhole`; the kit layouts retired; `studio/js/kit-recipe.js` (the recipe card in Part mode, a
+  change bakes in one undo step, Write Billie); the Roster silhouette draws kit Billies from the rig; `kit_write` in
+  check-studio-github.py and in CI. A planted wrong native part and a planted one-pixel sheet fault each failed it.
+- Step 2 done: tools/build-kit-billies.py and docs/samples/kit-billies.png deleted; parity test unchanged in what it
+  checks (the committed art), its header says where that art came from.
+
 ### Studio plan Phase 5, session 2 - The recipe in game/data, a Node bake CLI, the slot words (T5.1, T5.5) - 2026-10-22
 Branch `claude/sr-5-parts`, draft PR #139 (base `ccr-81011a25-lf3exv`). Plan pre-approved with its recommended options
 (decision 9's standing instruction); this session's choices are decision 10 in the plan doc.

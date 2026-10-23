@@ -1441,6 +1441,17 @@ The owner took the recommendation on every open question:
      reads the recipe from its new place.
    - **A stage's native parts are checked against its recipe** by check-data, so a recipe edited without a bake fails
      CI.
+11. **Phase 5, session 3** (2026-10-23; recommended options taken under decision 9's standing instruction):
+   - **The kit Billies' piece layouts retire** (`game/art/next/billionaires/<kit form>.json`, 24 files). The game never
+     read them, Propose has no way to send a JSON beside a picture (so a Studio bake would leave them stale), and the
+     rig holds all they did. The Roster board's silhouette draws a kit Billie from its rig; the full quick check asks
+     for each starter sheet to be drawn by a rig. The 105 other layouts (hand-drawn sheets) stay.
+   - **A recipe change bakes at once** (recipe, sheet, rig and native parts as one undo step), rather than waiting
+     for a Write Billie click, so a recipe can't leave the Studio without its bake; Write Billie re-bakes as it is.
+     The recipe card is in Part mode (kit Billies only), not a new section (SECTION_LIST unchanged).
+   - **CI's Studio checks run `kit_write`** (about 15 s): all 24 baked in the browser as committed, an edit proposed
+     pixel-equal to the Node bake.
+   - **docs/samples/kit-billies.png goes** with the Python builder: nothing would keep it up to date.
 
 Taken in Phase 1, sessions C+D (the recommended option each time, under the owner's standing instruction; numbered
 as in that branch):
