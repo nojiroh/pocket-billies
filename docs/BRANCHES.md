@@ -54,7 +54,7 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | `RL-10b` | RL-10b, Ranch B second half (PR #144, open). |
 | `ccr-9023a485-qr0fhf` | Project Story: Professor Chosen replaces Hazel (PR #142, open). |
 | `ccr-305ae8d3-6ivodu` | UI track UI-7b (14 commits, no pull request yet). |
-| `ccr-0d51bc4a-a4p71z` | Test clean-up track plan (TC-1..TC-4), 1 commit, no pull request yet. |
+| `track/test-cleanup` | Test clean-up track (docs/phases/test-cleanup-track.md): every lane of TC-1..TC-4 works here; round 1 in PR #155. |
 | `terrain-generation` | Terrain track: TR-2c part 1 merged; one leftover HANDOFF note on top. Part 2 next. |
 | `terrain/tr-1-roads` | Terrain TR-1: road gradient cap and switchbacks. Not merged. |
 | `ccr-be1fe0b2-8j7yqr` | The TR-1 session's own branch: 9 commits not in main, 4 of them not in `terrain/tr-1-roads` either (MAPGEN_VERSION 3, stairs, walls). Check against `terrain/tr-1-roads` before deleting. |

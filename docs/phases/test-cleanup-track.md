@@ -200,7 +200,8 @@ answers").
   `retired-names.json`, the rename tools, `check-data.mjs`, `unused-css.mjs`, `check-studio-github.py`,
   `.github/workflows/check.yml`, and the two checks dropped from `check-fast.py`.
 
-**Round 2, two sessions at once**
+**Round 2, two sessions at once** (started automatically when lanes B and D have pushed their round 1 HANDOFF
+entries; the owner, 2026-10-23)
 - **B continues:** TC-3, all of it.
 - **E:** TC-4 items 3-4: the IS-6a/IS-6b checks move from `check-fast.py` to `check-studio-github.py`, `island` folds
   into `hub_island`, `npm test` under 30 s (after A is merged).
@@ -238,6 +239,11 @@ All seven "Ask me before" items are decided; lanes act on these without asking a
 - **Graphics test:** point it at test_graphics now (not `marigold`); merging it into the bench test is a later UI
   choice, not this track (lane C).
 - **The `city` and `mall` songs:** keep them and their sound fingerprints.
+- **The `variants` song** (asked by lane A; only parked places play it now): keep it, like `city` and `mall`
+  (the owner, 2026-10-23: "make the recommended choices").
+- **Lane A's corrections to this file:** the set-aside box stays (it also holds the other game when the account and
+  the browser hold different games); only the boot-time setting aside of an older save went. `lookFromOld` stays
+  (person-art.js calls it); only its boot use in settings-screen.js went.
 - **Parity tests:** delete `frame-allocations` and `fx-group`; keep `sheet-slice-parity` renamed to
   `sheet-slice-real` (the "source sheets match committed parts" half, without the Python wording) (lane A; the rename
   in its own commit).

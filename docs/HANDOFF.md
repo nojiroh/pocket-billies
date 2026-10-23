@@ -58,6 +58,115 @@ Lane D's part is pushed.
   - Round 3 (TESTING.md tiers): check-fast no longer runs Node checks; the lint job now runs unused-css.
 - Next: round 2 (lane B's TC-3, lane E).
 
+### Test cleanup track, round 1, lane B - check-quick deletions and the Things to do system - 2026-10-23
+Branch `track/test-cleanup` (shared with lanes A, C, D; merged by pull, never rebased). Plan approved in Plan Mode
+with the owner's choices: Time/weather/rooms stays for TC-3; the Things to do code goes this session; photo mode
+and your room go with it. Lane B's part is pushed.
+- **check-quick.py** (2,740 -> about 2,200 lines, 62 -> 44 steps):
+  - Deleted, covered elsewhere (checked one by one): Code parses (ESLint parses every script; modules can't clash),
+    Messages and Team (check-fast's Every screen, messages.test.mjs), Studio opens (check-fast's The Studio loads),
+    Shaders, Paths and Scenes (phases of the in-game full test), Crowd (a software frame-rate ratio), RL-7 run roads
+    (check-fast's run world), the alpha 0.4.1 joystick (CAM-1 and the kept running step), Battles (check-fast's
+    battle and run checks), v36's split evolution (rules.test.mjs). `--scenes` went with Scenes and Paths.
+  - Deleted, outdated: old place names, v34, v35, v37, v38, v39/v40, v44, v47, the dead `cross_to`, Things to do.
+  - Kept as small steps first, in their own commits: Data (only what check-data doesn't refuse: the scenery's
+    pictures, rows and step grid, the place/scene kind rules, which check-data only warns about), Battle weather
+    (Things to do's rain-in-battle part), Rooms: a floor each (v47's data half). The water step carries
+    `buildings_in_water` and `piers_of`, copied from the two one-off tools.
+  - The in-game test step calls `runFullTest()` (lane C's ask), so self-test.js's `runQuickTest` alias can go.
+  - The nightly's upload: the `scene-w:copperleaf*` picture went with the Scenes step; no other picture name has a
+    `:` or `*` (checked), so upload-artifact should take the whole folder again (TC-1 item 5; check.yml untouched).
+- **The Things to do system is gone** (the owner's answer): `things-to-do.js` and its CSS, challenges, requests and
+  letters, gold stamps (their glow, the Trainer card tile), photo mode (the button, its CSS rules; the renderer's
+  `photoReq` stays for the Studio's engine editor), the debug log's `today` line, ten i18n strings, style-diff's
+  photo view. Battle weather moved first, unchanged, to `game/js/battle-weather.js`. **Your room** (`int_home`)
+  is gone; Granny Juniper's cottage keeps act `home` (build-copperleaf.mjs and the island tools find her cottage
+  by it) and opens nothing: tapping it says the houses' "Nobody answers the door." ui-lint ceilings lowered.
+- **Deleted helpers**: `rename-places.py`, `migrate-places.py`, `fix-marigold-stream.py`, `fix-piers.py`.
+- **Outside lane B's files** (needed to keep CI green or by the system's deletion): check-data's snapshot (lane A's
+  folder) remade twice, file counts only (now 129 with lane C's rooms); `photo-mode.css` keeps only the text-size
+  rules (a rename is for later, its own commit).
+- Verified: lint, typecheck, check:modules, format, check:data and the unit tests after every code commit and both
+  merges (813, then 776 after lane A's deletions); PR #155's CI green (lint, rules, smoke) on 3eb1440, with lanes
+  A and C. The full quick check on an untouched copy (5b677a5) and on lane B's work (a20f844, before the merges),
+  here: **before** 3,422 s, 61 steps, 46 passed, 15 problems; **after** 2,340 s, 44 steps, 40 passed, 4 problems:
+  Tap targets (a settings slider 16 px tall), v31 bowl map camera, v46 buildings without a plan, alpha 0.4 bush
+  recipes. All four were red before too and are TC-3's. In-game test step, Battle music, Sound effects and phase 08
+  running were red in the before run and passed after; they look timing- or order-dependent here, not fixed.
+- Risky / open:
+  - Gaps left by the deletions, small: the "choice waits for the world" timing, notices de-duplicated and the Build
+    tab's slot values were only in the Messages and Team steps; the evolution window's Build/Hype buttons only in v36.
+  - This container draws the desktop title in more than 60 s, so `open_game`'s 60 s wait skips every desktop step
+    here; both runs used a scratch copy with 300 s. Not changed in the repo (TC-4's speed work).
+  - Not tried on a phone: the walk screen without the photo button, Juniper's cottage, the Trainer card.
+- For lane A: logic/saves.js no longer has `saveData.x`'s readers; an old save's `x` (Things to do) is ignored and
+  could be dropped. For lane D: check-data could fail (not warn) on scene/place kinds and check the scenery's
+  pictures, so check-quick's Data step can go in TC-3; rename-ids.mjs still names the four deleted helpers.
+- Next: round 2, lane B's TC-3 (renames, moves to Node, the real failures in kept steps, Time/weather/rooms).
+
+### Test cleanup track, round 1, lane C - In-game tests and the unreachable rooms to legacy - 2026-10-23
+Branch `track/test-cleanup` (shared with lanes A, B, D; merged by pull, never rebased). Plan approved in Plan Mode
+(runQuickTest: option a). Lane C's part is pushed.
+- **Lines outside lane C's files, given to lane C by the owner's answer (lanes A and D: leave these alone):**
+  `tools/check-data.mjs` (the doors check, plus the cutscene map check at the top, which the plan didn't name: city.json
+  is filmed on `city_opening`), `tools/check-fast.py` `boots`, `tools/test/opening-script.test.mjs`'s city test, and
+  `tools/test/check-data-snapshot.test.mjs.snapshot` (remade: 147 game files became 130, nothing else). Also outside
+  any lane: `game/js/title.js`, `studio/js/legacy-view.js`, one line of `game/js/settings-screen.js` (Full test calls
+  `runFullTest`), and CHANGELOG, CUTSCENES, STUDIO.
+- Changed (one cause per commit):
+  - **Moved** (git mv, unchanged) into `game/data/legacy/maps` and `legacy/index.json`: the 16 rooms (int_assay_office,
+    bakery, bank, bullion_exchange, cap_market, chandlery, fire_station, greenhouse, inn, library, mansion, market_hall,
+    night_market, school, ski_lodge, twinpetal_market) and `city_opening`. `cutscenes/city.json` stays in the game.
+  - **check-data**: a kind of building's room may be a parked room (10 kinds in scenery.json name one: bakery, inn,
+    market_hall, bank, library, school, fire_station, mansion, greenhouse, ski_lodge); a cutscene may be filmed on a
+    parked map.
+  - **Title**: Copperleaf for a new player too; the city branch (titleCityFrame, the forced night look) is gone. The
+    fast check's boot check now fails unless the title is over the hub (on the base it says "over city_opening").
+  - **Studio Legacy section**: a card "Rooms and scenes without a place" with Copy into game (the Places card only
+    listed maps with a place, so the parked rooms would not have shown).
+  - **self-test.js**: the Walk list from the door links (`selfTestWalkScenes`: the hub, its doors' rooms, then a run
+    town's shop and clinic): 7 scenes, was 25. `diagnosticsMaps()`: the hub and its busiest room; diagnostics also
+    runs "A run's road" (one generated scene). The header fixed. `runQuickTest` is gone from the game and hooks.js;
+    it stays only as a test global because check-quick.py:627 calls it. "A run's road" waits 60 s for the next view
+    (was 15 s).
+  - **bowl-map-test.js**: the island is the only kind of world; `under` gone; an off place is skipped in the
+    under-water check. **graphics-test.js**: opens test_graphics. **Debug menu**: Earn every badge and Reset trainer
+    wins gone; Walk 1 km has a note (trainer card distance); the Full test note fixed.
+- Verified: lint, typecheck, check:modules, format:check, check:data, `npm test` (813 before the merge with lanes
+  A and B, 792 after) on every commit. Headless (Playwright 1.56 through a scratch link to Chromium 1243):
+  - boot check: passes here, fails on the base 5b677a5;
+  - the full test's Walk phases: 7 of 7;
+  - "A run's road" alone at selfTest.slow=3: it failed the same way on the base (the 15 s wait was too short for
+    software drawing) and passes with the 60 s wait;
+  - diagnostics: picks copperleaf and int_shop (no page error);
+  - the world map test: 14 of 14 steps, run alone;
+  - the graphics test: opens test_graphics and steps through the dials, Stop works;
+  - the Studio's new card: 17 rows, Copy into game brings int_bakery back as a room under its own id.
+  Whole fast check after merging lanes A and B: 29 of 31 passed. The two red were the world map's "zoom didn't come
+  back" and CAM-2's "encounter shot never arrived"; each passes when run alone (with one worker for the world map),
+  so it was two browsers sharing the CPU. Whole in-game test (`check-quick.py --selftest`): the full test is red only
+  on "Light lab" (test_light_props: "0 of 0 buildings" in view) and "Opening: falling across the Hollow Earth" ("the
+  fall drew 0 frames"). Both fail the same way on the base 5b677a5, run alone. On the base the full test was also red
+  on several parked rooms' Walk phases (black screen), which are no longer walked. The diagnostics half doesn't run
+  after a full-test failure; it ran separately (above).
+- Risky / open:
+  - **Two in-game full test phases are red headless on the base and here** (Light lab's buildings check, the opening's
+    fall), so `--selftest` stays red. Not looked into: outside this lane's plan. They need a session of their own, or
+    TC-3.
+  - **Diagnostics: "Walk: Inside the shop" fails headless** ("no frames in 3 s"). The same happens on the base, which
+    already picked the same two scenes. In the full test the shop passes, also right after Copperleaf. Not fixed and
+    not tried on a phone: please run the diagnostics test there.
+  - `test_windows` and `test_props_marigold` place the buildings whose rooms moved: their doors now open the room for
+    what the building does (shop, house) or none. They are test maps, not in the game flow.
+  - Copying a parked room back with the Studio makes its building kinds open it again (check-data accepts both ways).
+- For lane B (check-quick.py): line 627 calls `runQuickTest()`. Switch it to `runFullTest()`, and then the test
+  global in self-test.js can go. Step v46's "kinds without a room" now also lists the 10 kinds whose rooms are parked
+  (it was red already).
+- For lane D: check-data's `under` rule is yours; the `parkedMaps` block and the two lines using it are lane C's.
+- Phone check wanted: a new game's title (Copperleaf by day, not the city at night); Settings → Full test and the
+  diagnostics test; the debug menu's Wallet row.
+- Next: lane C is done. Tag `tc-lane-C-done` when you are happy with it.
+
 ### Test cleanup track, round 1, lane A - Unit tests and save code - 2026-10-23
 Branch `track/test-cleanup` (shared with lanes B-D; pulled with --no-rebase before every push). Plan approved in Plan
 Mode; the owner said yes to lane A taking the old-save set-aside code (game-state.js, boot.js's notice) too.
