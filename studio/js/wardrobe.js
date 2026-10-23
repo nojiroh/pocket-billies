@@ -17,9 +17,9 @@ import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
 import { makeCanvas } from '../../game/js/art.js';
 import {
   LOOK_PRESETS,
-  PERSON_ART_CACHE,
   bodySliders,
   cleanLook,
+  forgetPersonLooks,
   personFrame,
   personRig,
 } from '../../game/js/person-art.js';
@@ -718,7 +718,7 @@ function wardrobeArtChanged(src) {
   markArt(img, loadedAtlas(img));
   if (mask) markArt(mask, loadedAtlas(mask));
   changed();
-  PERSON_ART_CACHE.clear();
+  forgetPersonLooks();
   drawWardrobeEditor();
 }
 /* Grow piece: the piece copied with `m` pixels of room on every side to a new place at the bottom of its picture and
@@ -747,7 +747,7 @@ function wardrobeGrowPiece(src, P, m) {
   P.o = [P.o[0] - m, P.o[1] - m];
   changed();
   commit(true);
-  PERSON_ART_CACHE.clear();
+  forgetPersonLooks();
   render();
 }
 /* the trainer beside the canvas: drag the picked piece to move it on its bone */
@@ -783,7 +783,7 @@ function bindWardrobeCanvas() {
     if (o[0] === P.o[0] && o[1] === P.o[1]) return;
     P.o = o;
     D.moved = true;
-    PERSON_ART_CACHE.clear();
+    forgetPersonLooks();
     drawWardrobeEditor();
   });
   const up = () => {
@@ -820,7 +820,7 @@ document.addEventListener('studio-art', ev => {
   if (!src) return;
   const { img, mask } = wardrobePaths(src);
   if (ev.detail.path !== img && ev.detail.path !== mask) return;
-  PERSON_ART_CACHE.clear();
+  forgetPersonLooks();
   drawWardrobeEditor();
   if (ev.detail.path === mask && wardrobeEditor.pc?.cv.isConnected) drawPixelCanvas(wardrobeEditor.pc);
 });
@@ -894,7 +894,7 @@ ACTIONS.wdAdd = d => {
   wardrobeEditor.piece = src.pieces.length - 1;
   changed();
   commit(true);
-  PERSON_ART_CACHE.clear();
+  forgetPersonLooks();
   render();
 };
 const FACE_EXPRESSIONS = [
@@ -926,7 +926,7 @@ ACTIONS.wdPieceX = async () => {
   wardrobeEditor.piece = src.pieces.length - 1;
   changed();
   commit(true);
-  PERSON_ART_CACHE.clear();
+  forgetPersonLooks();
   render();
   toast(`Added a ${free[0][1].toLowerCase()} copy. Repaint it, or change when it shows.`);
 };
@@ -937,7 +937,7 @@ ACTIONS.wdPieceDel = async () => {
   wardrobeEditor.piece = -1;
   changed();
   commit(true);
-  PERSON_ART_CACHE.clear();
+  forgetPersonLooks();
   render();
 };
 /* ---------- items ---------- */
@@ -1085,6 +1085,6 @@ ACTIONS.wdColDel = d => {
   render();
 };
 studioState.hooks.wardrobe = () => {
-  PERSON_ART_CACHE.clear();
+  forgetPersonLooks();
   drawSoon('wardrobeEditor', drawWardrobeEditor); /* Studio plan T6.1: once per frame, not per event */
 };

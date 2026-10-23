@@ -1091,6 +1091,18 @@ def polish_steps(pg, errs):
       else r.select = 'no select';
       return r; })()""")
     if got != {'mx': True, 'scroll': True, 'select': True}: errs.append(f'focus: a redraw kept focus and scroll as {got}')
+    # T6.3: person art keeps a sheet's pixels across data edits, keyed by the picture: a painted sheet still shows
+    got = pg.evaluate("""(async () => { openSection('wardrobe'); await new Promise(r => setTimeout(r, 1500));
+      const W = studioState.D.wardrobe, [k, it] = Object.entries(W.items).find(([, i]) => i.slot === 'hair' && i.img && i.pieces && i.pieces.length);
+      const L = cleanLook(LOOK_PRESETS[0]); L.wear.hair = k;
+      const hash = () => { forgetPersonLooks(); const f = personFrame(L, 'front', 'idle', 0, 0), d = f.getContext('2d').getImageData(0, 0, f.width, f.height).data; let h = 0; for (let i = 0; i < d.length; i += 4) h = (h * 31 + d[i] + 7 * d[i + 1] + 13 * d[i + 2]) % 1000000007; return h; };
+      const path = 'art/' + it.img, c = await atlasGet(path), before = hash(), P = it.pieces.find(p => p.v === 'front') || it.pieces[0];
+      const x = c.getContext('2d'), keep = x.getImageData(0, 0, c.width, c.height);
+      x.fillStyle = '#ff00ff'; x.fillRect(P.r[0], P.r[1], P.r[2], P.r[3]); markArt(path, c);
+      const painted = hash();
+      x.putImageData(keep, 0, 0); markArt(path, c); const back = hash(); studioState.artDirty.delete(path); updateTopBar();
+      return { changed: painted !== before, back: back === before }; })()""")
+    if got != {'changed': True, 'back': True}: errs.append(f'person art: a painted sheet and its undo showed {got}')
     # T6.7: 20 tool switches in Walk scenes (each redraws the section) keep one WebGL context and use no stale object
     ready = "walkView.ready && !!document.querySelector('#scPv')"
     pg.evaluate("void openSection('scenes')")

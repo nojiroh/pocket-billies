@@ -14,9 +14,9 @@ import {
 import { $, $$ } from '../../game/js/util.js';
 import { ART_CACHE, ICON_ATLAS, iconURL, makeCanvas } from '../../game/js/art.js';
 import {
-  PERSON_ART_CACHE,
   bodySliders,
   cleanLook,
+  forgetPersonLooks,
   lookFromOld,
   personSheet,
   wornColors,
@@ -1322,7 +1322,7 @@ SECTIONS.people = () => {
   afterRender(() => {
     if (typeof loadWardrobe === 'function' && !wardrobeEditor.loaded)
       loadWardrobe().then(() => {
-        PERSON_ART_CACHE.clear();
+        forgetPersonLooks();
         const b = $('#personPrev');
         if (b) b.innerHTML = personPreviewHTML(k);
       });
@@ -1379,7 +1379,7 @@ SECTIONS.people = () => {
 };
 studioState.hooks.people = path => {
   if (/^people\./.test(path)) {
-    PERSON_ART_CACHE.clear();
+    forgetPersonLooks();
     const b = $('#personPrev');
     if (b) b.innerHTML = personPreviewHTML(studioState.sel.person);
   }
