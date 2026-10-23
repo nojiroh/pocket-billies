@@ -58,7 +58,7 @@ function runPayoutOpen() {
     title: won ? 'You beat the run' : 'The run is over',
     cls: 'run-payout',
     lock: true,
-    html: `<p>${won ? 'The boss is down. The airship takes everyone home, with all they learned, and your bag goes into Copperleaf’s.' : 'The airship comes for you. What you found turns into Research, for the Lab.'}</p><pb-payout rows="${escapeHtml(JSON.stringify(rows))}" total="${pay.research}" total-label="Research"></pb-payout>${pay.seals || pay.scrap ? `<p>${pay.scrap ? `<pb-coin kind="scrap" value="${pay.scrap}" label="Scrap, for the Ranch"></pb-coin> ` : ''}${pay.seals ? `<pb-coin kind="seals" value="${pay.seals}" label="Crest"></pb-coin>` : ''}</p>` : ''}${cards}`,
+    html: `<p>${won ? 'The boss is down. The airship takes everyone home, with all they learned, and your bag goes into Copperleaf’s.' : 'The airship comes for you. What you found turns into Research, for the Lab.'}</p><pb-payout rows="${escapeHtml(JSON.stringify(rows))}" total="${pay.research}" total-label="Research"></pb-payout>${pay.crests || pay.scrap ? `<p>${pay.scrap ? `<pb-coin kind="scrap" value="${pay.scrap}" label="Scrap, for the Ranch"></pb-coin> ` : ''}${pay.crests ? `<pb-coin kind="crests" value="${pay.crests}" label="Crest"></pb-coin>` : ''}</p>` : ''}${cards}`,
     btns: [{ l: 'Fly home', c: 'gold', dis: !won && !saveData.team.some(m => m.uid === keep), f: runPayoutDone }],
     after: () => {
       const el = /** @type {any} */ (document.querySelector('#ov pb-payout'));

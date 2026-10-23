@@ -74,7 +74,7 @@
   "name": "First Crest",
   "about": "Win a run.",
   "when": "wins >= 1",
-  "grant": {"seals":1}
+  "grant": {"crests":1}
  },
  "caught_15": {
   "name": "Index of fifteen",

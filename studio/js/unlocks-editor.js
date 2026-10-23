@@ -66,7 +66,7 @@ const UNLOCK_GRANTS = {
   biome: 'A biome on run maps',
   research: 'Research',
   scrap: 'Scrap',
-  seals: 'Crests',
+  crests: 'Crests',
 };
 const unlockGrantKind = (/** @type {any} */ G) => Object.keys(UNLOCK_GRANTS).find(k => G && k in G) || 'research';
 function unlockGrantNew(/** @type {string} */ kind) {

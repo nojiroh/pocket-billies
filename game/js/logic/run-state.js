@@ -297,7 +297,7 @@ export function runBegin(s, give) {
 }
 /** what a run pays when it ends, as Research and Crests, with the lines the payout screen lists: the money at a
     rate, the items at a share of their price (then at the money rate; RL-9b: on a loss only, a win takes the bag
-    home), each released Billie, each node cleared, a win bonus; seals for a win; Scrap (RL-9, the ranch's material)
+    home), each released Billie, each node cleared, a win bonus; crests for a win; Scrap (RL-9, the ranch's material)
     for each node cleared and a win. Rates are rules.json run.payout (placeholders until the first play) */
 /**
  * @param {{ se: number, items: Record<string, number>, released: number, cleared: number, won: boolean }} end
@@ -305,7 +305,7 @@ export function runBegin(s, give) {
  *   scrapNode?: number, scrapWin?: number, research?: number }} rates research (RL-12, a Perk's): the Research times
  *   this, the difference as a line of its own
  * @param {(id: string) => number} itemPrice an item's shop price (Moneys), 0 for none
- * @returns {{ research: number, seals: number, scrap: number, lines: { what: string, n: number, research: number }[] }}
+ * @returns {{ research: number, crests: number, scrap: number, lines: { what: string, n: number, research: number }[] }}
  */
 export function payoutOf(end, rates, itemPrice) {
   const itemValue = Object.entries(end.won ? {} : end.items || {}).reduce(
@@ -327,7 +327,7 @@ export function payoutOf(end, rates, itemPrice) {
   }
   return {
     research: lines.reduce((sum, l) => sum + l.research, 0),
-    seals: end.won ? rates.winSeals : 0,
+    crests: end.won ? rates.winSeals : 0,
     scrap: Math.max(0, end.cleared) * (rates.scrapNode || 0) + (end.won ? rates.scrapWin || 0 : 0),
     lines,
   };
@@ -368,7 +368,7 @@ export function runEnd(s, how, rates, itemPrice) {
     for (const kind of /** @type {const} */ (['items', 'coins']))
       for (const [k, n] of Object.entries(bag[kind])) if (n > 0) s[kind][k] = (s[kind][k] || 0) + n;
   s.meta.research += pay.research;
-  s.meta.seals += pay.seals;
+  s.meta.crests += pay.crests;
   s.meta.scrap += pay.scrap;
   s.meta.runs += 1;
   if (how.won) s.meta.wins += 1;

@@ -112,7 +112,7 @@ function fixtureSave() {
     }
   }
   /* RL-11: the Lab's fixture has what a few runs bring home, and one run ended (the first milestone, granted on load) */
-  if (FIXTURE === 'lab') Object.assign(s.meta, { research: 500, scrap: 60, seals: 2, runs: 1 });
+  if (FIXTURE === 'lab') Object.assign(s.meta, { research: 500, scrap: 60, crests: 2, runs: 1 });
   /* UI-3b: the Bag fixture has something in it */
   if (FIXTURE === 'bag') for (const k of Object.keys(s.items)) s.items[k] = 3;
   /* the people who would stop you to talk have met you already */

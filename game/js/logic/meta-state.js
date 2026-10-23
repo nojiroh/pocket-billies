@@ -28,7 +28,7 @@ expose({
 /** a new player's meta state: nothing earned, Expedition I open */
 /** @returns {Meta} */
 export function newMeta() {
-  return { research: 0, scrap: 0, seals: 0, unlocks: {}, buildings: {}, runs: 0, wins: 0, tier: 1 };
+  return { research: 0, scrap: 0, crests: 0, unlocks: {}, buildings: {}, runs: 0, wins: 0, tier: 1 };
 }
 export const META_MAX = 1e12,
   META_IDS = 200,
@@ -48,7 +48,7 @@ export const recordOf = (v, most, ok) =>
 /** @param {any} o @returns {boolean} */
 export function validMeta(o) {
   if (!o || typeof o !== 'object' || Array.isArray(o) || Object.hasOwn(o, '__proto__')) return false;
-  for (const k of ['research', 'scrap', 'seals', 'runs', 'wins']) if (!wholeIn(o[k], 0, META_MAX)) return false;
+  for (const k of ['research', 'scrap', 'crests', 'runs', 'wins']) if (!wholeIn(o[k], 0, META_MAX)) return false;
   return (
     o.wins <= o.runs &&
     wholeIn(o.tier, 1, META_TIERS) &&

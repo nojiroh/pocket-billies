@@ -26,11 +26,11 @@ test('unlocks: each row is sold at its building in that building’s currency, o
   assert.equal(K.unlockDoor(D.unlocks.shop_bailout), 'board');
   assert.equal(K.unlockDoor(D.unlocks.ranch_2), 'building');
   assert.equal(K.unlockCurrency(D.unlocks.ranch_2, D), 'scrap');
-  assert.equal(K.unlockCurrency(D.unlocks.airship_2, D), 'seals');
+  assert.equal(K.unlockCurrency(D.unlocks.airship_2, D), 'crests');
 });
 
 test('unlocks: buying pays once, in the right currency, and grants', () => {
-  const s = hubSave({ research: 200, scrap: 50, seals: 0 });
+  const s = hubSave({ research: 200, scrap: 50, crests: 0 });
   assert.equal(K.unlockReady(s, 'shop_bailout', D), null);
   assert.equal(K.unlockBuy(s, 'shop_bailout', D), true);
   assert.equal(s.meta.research, 200 - D.unlocks.shop_bailout.cost);
@@ -48,7 +48,7 @@ test('unlocks: buying pays once, in the right currency, and grants', () => {
 });
 
 test('unlocks: what a row needs, earned rows, and the run refuse a purchase', () => {
-  const s = hubSave({ research: 1e6, scrap: 1e6, seals: 9 });
+  const s = hubSave({ research: 1e6, scrap: 1e6, crests: 9 });
   assert.equal(K.unlockReady(s, 'ranch_3', D), 'requires');
   assert.equal(K.unlockReady(s, 'biome_ridge', D), 'requires');
   assert.equal(K.unlockReady(s, 'first_run', D), 'earned', 'an earned row is not sold');
@@ -75,9 +75,9 @@ test('unlocks: earned rows are granted when their condition holds, once, in the 
   assert.equal(s.meta.scrap, scrap + D.unlocks.first_run.grant.scrap);
   assert.deepEqual(K.unlockAuto(s, D), [], 'once');
   s.meta.wins = 1;
-  const seals = s.meta.seals;
+  const crests = s.meta.crests;
   assert.deepEqual(K.unlockAuto(s, D), ['first_win']);
-  assert.equal(s.meta.seals, seals + 1);
+  assert.equal(s.meta.crests, crests + 1);
   const chain = {
     ...D,
     unlocks: {

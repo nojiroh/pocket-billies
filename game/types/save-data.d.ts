@@ -90,7 +90,7 @@ export interface Meta {
   /** the unlock currency, the building material, the rare boss currency (money is saveData.se) */
   research: number;
   scrap: number;
-  seals: number;
+  crests: number;
   /** unlock ids: 1 (unlocks.json, RL-11) */
   unlocks: Record<string, 1>;
   /** hub building id -> level (buildings.json, RL-11) */

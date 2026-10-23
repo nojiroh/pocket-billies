@@ -137,7 +137,7 @@ export function unlockSaveAfter(D, o = {}) {
   return {
     earned,
     owned: Object.keys(meta.unlocks),
-    currencies: { research: meta.research, scrap: meta.scrap, seals: meta.seals },
+    currencies: { research: meta.research, scrap: meta.scrap, crests: meta.crests },
     buildings: Object.fromEntries(Object.keys(UD.buildings).map(b => [b, buildingLevel(s, b)])),
     why: Object.fromEntries(Object.keys(UD.unlocks).map(id => [id, unlockReady(s, id, UD)])),
     biomes: Object.keys(unlockOpen((R.map && R.map.biomes) || {}, 'biome', run, UD)),

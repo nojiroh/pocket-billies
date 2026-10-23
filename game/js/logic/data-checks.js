@@ -109,7 +109,7 @@ export function dataBattleRules(D) {
   return out;
 }
 // roguelite track RL-3: what a run pays when it ends (logic/run-state.js payoutOf): every rate a number, none below 0,
-// the items' share of their price at most 1, the seals for a win a whole number
+// the items' share of their price at most 1, the crests for a win a whole number
 /** RL-3: rules.json run.payout @param {any} D @returns {DataProblem[]} */
 export function dataRunPayout(D) {
   /** @type {DataProblem[]} */

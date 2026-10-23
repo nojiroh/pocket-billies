@@ -575,8 +575,8 @@ function debugAction(x) {
     /* RL-11: Research and Crests to try the Lab's board and the airship's upgrades with */
     case 'research':
       saveData.meta.research += 500;
-      saveData.meta.seals += 2;
-      said = `+500 Research, +2 Crests: you have ${saveData.meta.research} and ${saveData.meta.seals}.`;
+      saveData.meta.crests += 2;
+      said = `+500 Research, +2 Crests: you have ${saveData.meta.research} and ${saveData.meta.crests}.`;
       break;
     case 'win':
       if (!activeBattle || activeBattle.phase === 'playing' || activeBattle.over)

@@ -1321,7 +1321,7 @@ async function runFullTest(mode) {
             Object.assign(s.meta, {
               research: 1000,
               scrap: 200,
-              seals: 0,
+              crests: 0,
               unlocks: {},
               buildings: {},
               runs: 1,

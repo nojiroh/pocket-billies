@@ -7,7 +7,7 @@
      <pb-day-chip day="3" deadline="7">               "Day 3 · deadline day 7"; gold on the last day, red past it
      <pb-forecast items="clear:Clear,rain:Rain" from="3" value="3">   the weather by day, today marked
      <pb-node type="town" state="seen" weather="rain" label="Marrow Town">   a run map marker (js/logic/run-marks.js)
-     <pb-coin kind="money|research|scrap|seals" value="340" label="Moneys">   a currency chip that counts to a new value
+     <pb-coin kind="money|research|scrap|crests" value="340" label="Moneys">   a currency chip that counts to a new value
      <pb-pick-card heading="..." facedown selected>   the relic pick and keep-one card; turning it face up flips it
      <pb-payout rows='[{"label":"Moneys left","value":170}]' total="420" total-label="Research">   rows slam in, the
                                                        total counts up (play() runs it again); pb-payout-row
@@ -72,7 +72,7 @@ const RUN_WEATHER_ICONS = {
   ash: 'ash',
 };
 /* the four currencies' icons (names are placeholders until currencies.json, roguelite-track.md 8.5) */
-const RUN_CURRENCY_ICONS = { money: 'coin', research: 'research', scrap: 'scrap', seals: 'seal' };
+const RUN_CURRENCY_ICONS = { money: 'coin', research: 'research', scrap: 'scrap', crests: 'crest' };
 /* the bottom bar's two sets (owner's decision: one bar whose tabs change) */
 const RUN_NAV_SETS = {
   run: [
@@ -436,7 +436,7 @@ const PbCoin = class extends LitElement {
       :host([kind='scrap']) {
         --tone: color-mix(in srgb, var(--c-text) 55%, var(--c-surface));
       }
-      :host([kind='seals']) {
+      :host([kind='crests']) {
         --tone: var(--c-danger);
       }
       .chip {

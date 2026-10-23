@@ -33,7 +33,7 @@ export const ECONOMY_PAYOUT = {
   released: ['research', 'Research per Billie caught on the run and released'],
   node: ['research', 'Research per place cleared'],
   win: ['research', 'Research for a win'],
-  winSeals: ['seals', 'Crests for a win'],
+  winSeals: ['crests', 'Crests for a win'],
   scrapNode: ['scrap', 'Scrap per place cleared'],
   scrapWin: ['scrap', 'Scrap for a win'],
 };
@@ -126,7 +126,7 @@ export function economyLines(D) {
   const B = D.buildings || {};
   for (const [k, U] of Object.entries(D.unlocks || {})) {
     const G = /** @type {any} */ (U).grant || {};
-    for (const c of ['research', 'scrap', 'seals'])
+    for (const c of ['research', 'scrap', 'crests'])
       if (G[c])
         add({
           currency: c,

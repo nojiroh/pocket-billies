@@ -122,7 +122,7 @@ export function flyMenu(p) {
   /* RL-11: the airship's upgrades, for Crests */
   const ups = typeof buildingRowsHTML === 'function' ? buildingRowsHTML('airship', 'fly') : '',
     upHTML = ups
-      ? `<p class="note">Airship upgrades, paid in Crests. You have ${formatNumber(saveData.meta.seals)}.</p>${ups}`
+      ? `<p class="note">Airship upgrades, paid in Crests. You have ${formatNumber(saveData.meta.crests)}.</p>${ups}`
       : '';
   modal({
     title: escapeHtml((p && p.label) || 'Airship mast'),

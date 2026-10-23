@@ -8,7 +8,7 @@
  },
  "airship": {
   "name": "Airship",
-  "currency": "seals",
+  "currency": "crests",
   "act": "fly",
   "levels": 2,
   "about": "The airship at the mast. Upgrades for Crests take runs to new lands."

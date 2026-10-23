@@ -153,10 +153,10 @@ test('run: the payout converts money, items, releases, nodes and a win into Rese
   );
   assert.deepEqual(lostBag.lines[1], { what: 'items', n: 300, research: 30 }, 'a loss pays the bag at half price');
   assert.equal(p.research, 215);
-  assert.equal(p.seals, 1);
+  assert.equal(p.crests, 1);
   assert.equal(p.scrap, 4 * 2 + 10, 'RL-9: Scrap a node cleared, more for a win');
   const lost = payoutOf({ se: 0, items: {}, released: 0, cleared: 1, won: false }, RATES, PRICE);
-  assert.deepEqual([lost.research, lost.seals, lost.scrap], [10, 0, 2]);
+  assert.deepEqual([lost.research, lost.crests, lost.scrap], [10, 0, 2]);
 });
 
 test('run: ending one pays into meta, puts the hub back and keeps the chosen Billies', () => {
@@ -186,7 +186,7 @@ test('run: ending one pays into meta, puts the hub back and keeps the chosen Bil
   const fresh = fn('makeBilly')('sprout0', 6);
   t.team.push(fresh);
   runEnd(t, { won: true, keep: [fresh.uid] }, RATES, PRICE);
-  assert.deepEqual([t.meta.runs, t.meta.wins, t.meta.seals], [1, 1, 1]);
+  assert.deepEqual([t.meta.runs, t.meta.wins, t.meta.crests], [1, 1, 1]);
   assert.equal(t.team.length, 3);
   assert.equal(t.team[2].uid, fresh.uid);
   const u = hubSave();

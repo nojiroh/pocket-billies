@@ -21,10 +21,10 @@
   "kept": "meta",
   "about": "The building material. A little for every place a run reaches; spent at the ranch."
  },
- "seals": {
+ "crests": {
   "name": "Crests",
   "one": "Crest",
-  "icon": "seal",
+  "icon": "crest",
   "kept": "meta",
   "about": "Rare: one for beating a run's boss. Spent at the airship."
  }
