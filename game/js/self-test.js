@@ -50,7 +50,7 @@ import {
   uiState,
 } from './game-state.js';
 import { gpuCountBegin, gpuCountEnd } from './engine/gpu-counters.js';
-import { frameScheduler } from './frame-scheduler.js';
+import { frameScheduler, userFps } from './frame-scheduler.js';
 import { PERSON_ART_CACHE } from './person-art.js';
 import { closeDressingRoom, dressingRoom } from './dressing-room.js';
 import { battleStage, battleStageStop } from './battle-stage.js';
@@ -517,9 +517,12 @@ async function runFullTest(mode) {
             resolution: typeof walkView !== 'undefined' ? walkView.R : null,
             level: typeof walkRenderer !== 'undefined' ? (walkRenderer.q ?? null) : null,
             screenHz: typeof frameScheduler !== 'undefined' ? frameScheduler.hz : null,
+            /* the player's Settings → Frame rate (the save's own value) and the cap it gives */
+            fpsSetting: (saveData && saveData.preferences && saveData.preferences.fps) ?? null,
+            fpsCap: userFps(),
             why: ev,
           };
-          return `${String(g.renderer || g.gpu || 'graphics unknown').slice(0, 60)} · resolution ×${diagnosticsReport.device.resolution ?? '?'} · quality level ${diagnosticsReport.device.level ?? '?'}${ev.length ? ' · ' + ev.slice(-1)[0] : ''}`;
+          return `${String(g.renderer || g.gpu || 'graphics unknown').slice(0, 60)} · resolution ×${diagnosticsReport.device.resolution ?? '?'} · quality level ${diagnosticsReport.device.level ?? '?'} · cap ${diagnosticsReport.device.fpsCap} FPS${ev.length ? ' · ' + ev.slice(-1)[0] : ''}`;
         },
         1
       );
