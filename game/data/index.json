@@ -95,7 +95,6 @@
     "int_clinic",
     "int_lab",
     "int_house",
-    "int_home",
     "test_stairs",
     "test_ledges",
     "test_bridges",

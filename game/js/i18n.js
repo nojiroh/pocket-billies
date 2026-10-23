@@ -63,7 +63,6 @@ Heal|Genezen|Heilen|Curar|Soigner
 Fish|Vissen|Angeln|Pescar|Pêcher
 Strike!|Aanslaan!|Anschlagen!|¡Tira!|Ferrez !
 Stop fishing|Stop met vissen|Angeln beenden|Dejar de pescar|Arrêter de pêcher
-Decorate|Inrichten|Einrichten|Decorar|Décorer
 Go outside|Naar buiten|Nach draußen|Salir|Sortir
 Labels|Labels|Beschriftung|Etiquetas|Étiquettes
 Requests you’re helping with|Verzoeken waar je mee helpt|Bitten, bei denen du hilfst|Peticiones en las que ayudas|Demandes en cours
@@ -200,7 +199,6 @@ Back to walking|Terug naar het lopen|Zurück zum Gehen|Volver a caminar|Reprendr
 Let’s go|Daar gaan we|Los geht’s|¡Vamos!|C’est parti
 Leave the shop|De winkel verlaten|Laden verlassen|Salir de la tienda|Quitter la boutique
 I’ll do it|Ik doe het|Mach ich|Lo haré|Je m’en occupe
-Decorate your room|Richt je kamer in|Richte dein Zimmer ein|Decora tu habitación|Décore ta chambre
 Nothing|Niets|Nichts|Nada|Rien
 `;
 const I18N = (() => {

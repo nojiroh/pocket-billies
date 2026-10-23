@@ -210,8 +210,8 @@ def check_data():
 @step('Copperleaf Town, the hub on its own (from the data)', 20)
 def copperleaf_data():
     """a new game starts in Copperleaf (rules.start.locationId), the hub and the only place (RL-5: every other place is
-    parked in game/data/legacy), with no exit and no road out; the lab and your room are in Copperleaf and nowhere else
-    outdoors; Granny Juniper stands in her garden; no shop or clinic in the hamlet; nothing solid stands on the
+    parked in game/data/legacy), with no exit and no road out; the lab and Granny Juniper's cottage (act home; TC-1: no room of
+    its own now) are in Copperleaf and nowhere else outdoors; Granny Juniper stands in her garden; no shop or clinic in the hamlet; nothing solid stands on the
     opening's stage"""
     D = gamedata(); R = D['locations']; ix = {r['id']: i for i, r in enumerate(R)}; bad = []
     start = (D['rules'].get('start') or {}).get('locationId')
@@ -242,7 +242,7 @@ def copperleaf_data():
         lx, lz = own(p['x'], p['z'])
         if solid and d[0] + .8 < lx < d[0] + 9.6 and d[1] - 4.8 < lz < d[1] - 1.4: bad.append(f'{p["k"]} at {p["x"]},{p["z"]} stands on the opening’s stage')
     if bad: raise Exception('; '.join(bad[:6]))
-    return f'a new game starts in Copperleaf (node {ix["copperleaf"]}), the only place, with no road out; the lab and your room are there, Granny Juniper in her garden, no shop or clinic; the opening’s stage is clear'
+    return f'a new game starts in Copperleaf (node {ix["copperleaf"]}), the only place, with no road out; the lab and Granny Juniper’s cottage are there, she in her garden, no shop or clinic; the opening’s stage is clear'
 
 
 # alpha 0.4: the two data rules the water step needs, from the one-off tools/fix-marigold-stream.py and

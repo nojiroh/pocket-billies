@@ -568,9 +568,12 @@ export function walkPick(h) {
     else
       toast(
         p.say ||
-          { lab: 'The lab is busy with research.', house: 'Nobody answers the door.', sign: `You’re in ${here.name}.` }[
-            a
-          ] ||
+          {
+            lab: 'The lab is busy with research.',
+            house: 'Nobody answers the door.',
+            home: 'Nobody answers the door.',
+            sign: `You’re in ${here.name}.`,
+          }[a] ||
           'Nothing happens.'
       );
   } else if (h.k === 'exit') exitPrompt(h.e);

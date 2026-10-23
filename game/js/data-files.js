@@ -152,13 +152,12 @@ self.PB_DATA = (() => {
     clinic: 'int_clinic',
     lab: 'int_lab',
     house: 'int_house',
-    home: 'int_home',
     ranch: 'int_barn',
   };
   /** @param {any} p @param {any} M @param {string | null} act @returns {string[]} */
   function doorRooms(p, M, act) {
     const out = [];
-    if (act !== 'home' && p) {
+    if (p) {
       if (p.room) out.push(p.room);
       if (M && M.room) out.push(M.room);
     }

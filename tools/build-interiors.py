@@ -112,15 +112,7 @@ def int_house():
     return s.out(10)
 
 
-def int_home():
-    """v28: your own room in Sundown. It starts bare: the game puts in the furniture you choose (Decorate)."""
-    s = room('int_home', 'Your room', '7', '#E4D3B8', 2605, 'home', None, (7, 7),
-             ['Home sweet home.'])
-    s.d.pop('npcSpots', None); s.d.pop('keeper', None)
-    return s.out(10)
-
-
-BUILD = [int_shop, int_clinic, int_lab, int_house, int_home]
+BUILD = [int_shop, int_clinic, int_lab, int_house]
 
 
 # ---------------------------------------------------------------- v46: rooms for the new kinds of building
