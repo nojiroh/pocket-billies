@@ -482,7 +482,7 @@ def camera_follow(pg, base):
     wait = lambda ms: until(pg, f'walkView.t>{pg.evaluate("walkView.t") + ms}', 60) or (_ for _ in ()).throw(Exception('the page stopped drawing'))
     wait(1500)
     a = pg.evaluate(info)
-    if a['mode'] != 'walk' or max(abs(v) for v in a['off'] + a['lead']) > 0.05: raise Exception(f'standing, the camera isn’t settled on its aim: {a}')
+    if a['mode'] not in ('walk', 'orbit') or max(abs(v) for v in a['off'] + a['lead']) > 0.05: raise Exception(f'standing, the camera isn’t settled on its aim: {a}')
     for sx, sy in ((1, 0), (-1, 0), (0, -1), (0, 1)):
         stand(pg, home[0], home[1], 5)
         pg.evaluate(f'walkView.stick={{x:{sx},y:{sy}}};0')
@@ -529,7 +529,7 @@ def camera_moments(pg, base):
     drawing(pg)
     sp = pg.evaluate(MOMENT_SPOTS)
     if not sp['quiet']: raise Exception('no reachable spot without a point of interest near the hub')
-    cam = "(()=>{const I=walkRenderer.camInfo;return {moment:I.moment,zoom:I.zoom,user:walkRenderer.zoom,goal:I.goal,P:[walkView.pl.x,walkView.pl.z],w:Object.assign({},walkRenderer.fol.w),interest:I.interest}})()"
+    cam = "(()=>{const I=walkRenderer.camInfo;return {moment:I.moment,zoom:I.zoom,user:walkRenderer.zoom,goal:I.goal,P:[walkView.pl.x,walkView.pl.z],right:I.right,w:Object.assign({},walkRenderer.fol.w),interest:I.interest}})()"
     # the game's clock runs slower than real time when the page draws slowly (CI), so the waits get room
     wait = lambda ms: until(pg, f'walkView.t>{pg.evaluate("walkView.t") + ms}', 150) or (_ for _ in ()).throw(Exception(f'the page stopped drawing (waiting {ms} ms of game time)'))
     delay = pg.evaluate("engineSetting('camera','idleDelay')") * 1000
@@ -547,13 +547,15 @@ def camera_moments(pg, base):
     c = pg.evaluate(cam)
     pg.evaluate('walkView.stick=null;0')
     if c['moment'] == 'idle' or c['w'].get('idle', 0) > 0.4: raise Exception(f'moving, the drift in didn’t go at once: {c}')
-    # someone talks to you, 3 m east
+    # someone talks to you, 3 m to the screen's right (the orbit camera turns, so not world east); the two-shot's aim is
+    # between you on screen, read along the screen's right (the game also nudges every aim up the screen)
     stand(pg, *sp['quiet'], 5)
-    pg.evaluate("(()=>{const P=walkView.pl;walkRenderer.talkAt={x:P.x+3,z:P.z,t:walkView.t};talkBox.on=true;return 0})()")
+    pg.evaluate("(()=>{const P=walkView.pl,R=walkRenderer.camInfo.right;walkRenderer.talkAt={x:P.x+3*R[0],z:P.z+3*R[1],t:walkView.t};talkBox.on=true;return 0})()")
     wait(1500)
     d = pg.evaluate(cam)
     pg.evaluate("talkBox.on=false;walkRenderer.talkAt=null;0")
-    if d['moment'] != 'talk' or not d['zoom'] < a['zoom'] * 0.85 or not 0.8 < d['goal'][0] - d['P'][0] < 2.2: raise Exception(f'talking, no two-shot: {d}')
+    d['across'] = (d['goal'][0] - d['P'][0]) * d['right'][0] + (d['goal'][1] - d['P'][1]) * d['right'][1]
+    if d['moment'] != 'talk' or not d['zoom'] < a['zoom'] * 0.85 or not 0.8 < d['across'] < 2.2: raise Exception(f'talking, no two-shot: {d}')
     # a played boss moment (the Studio's Play moment), 4 m north
     pg.evaluate("(()=>{const P=walkView.pl;walkRenderer.momentTest={id:'boss',at:[P.x,P.z+4],until:walkView.t+3000};return 0})()")
     wait(1200)
@@ -896,7 +898,7 @@ def debug_log(pg, base):
                 if r: return r
         return None
     cam = find(log_)
-    if not cam or cam.get('mode') != 'walk' or 'goals' not in cam: raise Exception(f'the debug log has no camera line: {cam}')
+    if not cam or cam.get('mode') not in ('walk', 'orbit') or 'goals' not in cam: raise Exception(f'the debug log has no camera line: {cam}')
     # CAM-2: the moment, the zoom the camera uses, the zone
     if not all(k in cam for k in ('moment', 'zoomEff', 'zone')): raise Exception(f'the camera line has no moment, zoom or zone: {cam}')
     # CAM-3: the blur's line (its path, what the focus is on, the tilt, the player's slider)
