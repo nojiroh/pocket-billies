@@ -1328,8 +1328,8 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     battles_and_world_billies()
 
-    @step('v36: new starters on piece sheets, 12 fps puppets, next ground tiles', 150)
-    def v36():
+    @step('Starters: their rigs, 12 fps puppets, the motion audit, a battle on the 3D stage', 150)
+    def starter_rigs():
         if not pg.evaluate("typeof rigFrame==='function'&&!!window.RIGS_NEXT"): return 'not in this build'
         out = []
         st = pg.evaluate("RULES.start.starters")
@@ -1372,7 +1372,7 @@ def desktop_steps(b, base, R):
         out.append(f"3D-stage battle Kidling vs Primotter: both puppets drawn ({px['0']} / {px['1']} px)")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
-    v36()
+    starter_rigs()
 
     @step('Nature props, the wild growth, edge-relative exits', 120)   # RL-5: the join table (roads between places) is retired: no road is left
     def nature_growth_exits():
