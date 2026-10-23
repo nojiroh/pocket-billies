@@ -27,7 +27,7 @@ import { join } from 'node:path';
 import { data, fn, hooks, logic, modules, reseed, ROOT, GAME_DATA } from '../setup-real.mjs';
 
 /** the core on the game's data in Node; util.js random is reseeded before each run (`random`, 1 by default) */
-export const { runSim, runStats } = modules['run-sim'].runSimOn({
+export const { runSim, runStats, runReport } = modules['run-sim'].runSimOn({
   modules,
   fn,
   hooks,

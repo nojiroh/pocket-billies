@@ -21,6 +21,7 @@ import { expose } from '../test-globals.js';
 expose({
   MAX_TURNS: [() => MAX_TURNS],
   SIM_LITE_PLACE: [() => SIM_LITE_PLACE],
+  SIM_NOTE: [() => SIM_NOTE],
   SIM_POLICIES: [() => SIM_POLICIES],
   SIM_POLICY: [() => SIM_POLICY],
   SIM_POLICY_DRIVEN: [() => SIM_POLICY_DRIVEN],
@@ -103,6 +104,9 @@ export function simRelicChoice(offer, held, relics, rule, P) {
 }
 /** the report's numbers that say more about the policy than about the game's balance */
 export const SIM_POLICY_DRIVEN = Object.freeze(['caught', 'healed', 'moneyLeft']);
+/** what every report says its numbers are good for */
+export const SIM_NOTE =
+  'A bot policy, not a player: a regression detector, not a balance oracle (legacy stand-in species).';
 /**
  * Studio plan T3.3, balance mode (`scenes: 'skip'`): no place's scene is made (run-scenes.js runScenesMake is ~98% of a
  * run's time). The logic reads one thing off a run place's scene: whether its ground has tall grass, which decides
@@ -118,6 +122,7 @@ export const brief = m => `${m.sp}:${m.lvl}:${m.hp}`;
 /** the simulation on a set of loaded logic and data: runSim and runStats @param {SimEnv} env */
 export function runSimOn(env) {
   const { modules, fn, hooks, data, gameData: GAME_DATA, logic } = env;
+  const { simBanner, simDataHash, simSeeds, simSummary } = modules['sim-compare'];
   const { RULES, TRAINERS } = data;
   const R = RULES.run,
     { runArrive, runNext, runWorldNode, runWeather } = modules['run-map'],
@@ -439,10 +444,15 @@ export function runSimOn(env) {
   /** many runs (SIM0, SIM1, ...): the numbers the owner's first play will be read against (report only)
    * @param {number} [n] @param {SimOptions} [o] */
   function runStats(n = 50, o = {}) {
-    /** @type {any[]} */
-    const all = [];
-    for (let k = 0; k < n; k++) all.push(runSim(`SIM${k}`, o).stats);
-    const avg = (/** @type {(x: any) => number} */ f) =>
+    return runStatsOf(
+      simSeeds(n).map(seed => runSim(seed, o).stats),
+      o
+    );
+  }
+  /** the report's averages over runs' stats @param {any[]} all @param {SimOptions} o */
+  function runStatsOf(all, o) {
+    const n = all.length,
+      avg = (/** @type {(x: any) => number} */ f) =>
         Math.round((all.reduce((a, x) => a + f(x), 0) / all.length) * 10) / 10,
       /** @type {Record<string, number>} */
       lost = {};
@@ -452,7 +462,7 @@ export function runSimOn(env) {
       /* the honesty rules (Studio plan Part 3): the bot that played, and what its numbers are good for */
       policy: simPolicy(o),
       policyDriven: SIM_POLICY_DRIVEN.slice(),
-      note: 'A bot policy, not a player: a regression detector, not a balance oracle (legacy stand-in species).',
+      note: SIM_NOTE,
       won: all.filter(x => x.won).length,
       lostAt: lost,
       days: avg(x => x.days),
@@ -475,5 +485,27 @@ export function runSimOn(env) {
     };
   }
 
-  return { runSim, runStats };
+  /**
+   * Studio plan T3.4: a report over a seed list, the shape the CLI writes (--out) and compares (--compare) and the Run
+   * Lab's Simulate card shows: runStats's numbers, the seeds and options, the data's hash, every run's stats in the
+   * seeds' order (`results`) and their summary (sim-compare.js simSummary).
+   * @param {string[]} seeds @param {SimOptions} [o] the options every run is played with (`random` aside)
+   */
+  function runReport(seeds, o = {}) {
+    const results = seeds.map(seed => runSim(seed, o).stats);
+    return {
+      kind: 'pb-sim-report',
+      version: 1,
+      ...runStatsOf(results, o),
+      banner: simBanner(simPolicy(o)),
+      mode: o.scenes === 'skip' ? 'balance' : 'full',
+      options: { ...o },
+      dataHash: simDataHash(GAME_DATA),
+      seeds: seeds.slice(),
+      results,
+      summary: simSummary(results),
+    };
+  }
+
+  return { runSim, runStats, runReport };
 }

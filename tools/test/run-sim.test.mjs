@@ -4,8 +4,8 @@
 // run node tools/test/sim/run-sim.mjs for the numbers.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { runSim, runStats } from './sim/run-sim.mjs';
-import { GAME_DATA, modules } from './setup-real.mjs';
+import { runReport, runSim, runStats } from './sim/run-sim.mjs';
+import { data, GAME_DATA, modules } from './setup-real.mjs';
 
 test('run sim: a seed played twice is the same run, whatever util.js random draws meanwhile', () => {
   for (const seed of ['SIMREPLAY0', 'SIMREPLAY1']) {
@@ -171,4 +171,33 @@ test('run sim: balance mode is at least 20 times faster; its stand-in (tall gras
       assert.ok(sc.tiles.join('').includes(modules['run-sim'].SIM_LITE_PLACE.tiles), `SIMGRASS${k} node ${i}`)
     );
   }
+});
+
+test('run sim: a report over a seed list; the same data compares as the same runs, a dearer clinic as a paired difference (T3.4)', () => {
+  const C = modules['sim-compare'],
+    seeds = C.simSeeds(40),
+    o = { team: 3, scenes: 'skip' },
+    base = runReport(seeds, o);
+  assert.equal(base.kind, 'pb-sim-report');
+  assert.deepEqual(base.seeds, seeds);
+  assert.equal(base.results.length, 40);
+  assert.equal(base.mode, 'balance');
+  assert.match(base.dataHash, /^[0-9a-f]{8}$/);
+  assert.equal(base.banner, C.simBanner(base.policy));
+  assert.deepEqual(runReport(seeds, o), base, 'a re-run matches exactly');
+  const same = C.simCompareReports(base, runReport(seeds, o));
+  assert.equal(same.same, true);
+  for (const k of C.SIM_METRICS) assert.equal(same.diff[k].changed, 0, k);
+  const R = data.RULES.run,
+    was = R.healCost;
+  R.healCost = was * 2;
+  let dear;
+  try {
+    dear = C.simCompareReports(base, runReport(seeds, o));
+  } finally {
+    R.healCost = was;
+  }
+  assert.notEqual(dear.hash.draft, dear.hash.base, 'the data hash moves with the data');
+  assert.ok(dear.diff.healed.mean > 0 && dear.diff.healed.lo > 0, JSON.stringify(dear.diff.healed));
+  assert.ok(dear.diff.moneyLeft.hi < 0, JSON.stringify(dear.diff.moneyLeft));
 });
