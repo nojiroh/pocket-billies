@@ -155,7 +155,7 @@ function debugHTML() {
           .join('')}</ul>`
       : '<p class="note">Game data loaded with no warnings.</p>'
   }`;
-  const give = `<div class="dbg-row">${debugButtonHTML('se1', '+$1,000', 'gold')}${debugButtonHTML('se10', '+$10,000', 'gold')}${debugButtonHTML('coins', '+10 of every coin', 'gold')}${debugButtonHTML('items', '+5 of every item', 'gold')}</div>
+  const give = `<div class="dbg-row">${debugButtonHTML('se1', '+$1,000', 'gold')}${debugButtonHTML('se10', '+$10,000', 'gold')}${debugButtonHTML('coins', '+10 of every pyramid', 'gold')}${debugButtonHTML('items', '+5 of every item', 'gold')}</div>
   <div class="dbg-row">${debugButtonHTML('scrap', '+50 Scrap', 'gold')}${debugButtonHTML('capital', '+500 Capital, +2 Seals', 'gold')}</div>`;
   const billies = `<div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level">${debugSelectHTML('dbgCoat', [['', 'No coat'], ...Object.entries(COATS).map(([k, c]) => [k, c.name])], uiState.dbgCoat || '')}</div>
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
