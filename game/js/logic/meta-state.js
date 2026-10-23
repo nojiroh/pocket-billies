@@ -11,9 +11,9 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  META_EXPEDITIONS: [() => META_EXPEDITIONS],
   META_IDS: [() => META_IDS],
   META_MAX: [() => META_MAX],
-  META_TIERS: [() => META_TIERS],
   // @ts-expect-error -- replaced on purpose
   metaFill: [() => metaFill, v => (metaFill = v)],
   // @ts-expect-error -- replaced on purpose
@@ -32,7 +32,7 @@ export function newMeta() {
 }
 export const META_MAX = 1e12,
   META_IDS = 200,
-  META_TIERS = 9;
+  META_EXPEDITIONS = 9;
 /** a whole number from min to max */
 export const wholeIn = (v, min, max) => Number.isInteger(v) && v >= min && v <= max;
 /** a plain record (not an array, no __proto__ key) of at most `most` keys whose values pass `ok` */
@@ -51,7 +51,7 @@ export function validMeta(o) {
   for (const k of ['research', 'scrap', 'crests', 'runs', 'wins']) if (!wholeIn(o[k], 0, META_MAX)) return false;
   return (
     o.wins <= o.runs &&
-    wholeIn(o.expedition, 1, META_TIERS) &&
+    wholeIn(o.expedition, 1, META_EXPEDITIONS) &&
     recordOf(o.unlocks, META_IDS, v => v === 1) &&
     recordOf(o.buildings, META_IDS, v => wholeIn(v, 0, 99))
   );

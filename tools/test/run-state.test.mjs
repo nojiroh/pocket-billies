@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fn, modules, startedSave } from './setup-fixture.mjs';
 
-const { newRun, validRun, runBegin, runEnd, runRestore, payoutOf, runNodeCount, RUN_FIELDS, runHome, runByTier } =
+const { newRun, validRun, runBegin, runEnd, runRestore, payoutOf, runNodeCount, RUN_FIELDS, runHome, runByExpedition } =
   modules['run-state'];
 const { runReleasePays } = modules['run-loop'];
 const { newMeta } = modules['meta-state'];
@@ -298,7 +298,7 @@ test('run: the packed bag leaves the hub, travels on top of the gift and comes h
 
 test('run: the Expedition rules and the load check of what was picked and packed', () => {
   assert.deepEqual(
-    [1, 2, 3, 9].map(t => runByTier([1, 2], t)),
+    [1, 2, 3, 9].map(t => runByExpedition([1, 2], t)),
     [1, 2, 2, 2]
   );
   const s = hubSave(),

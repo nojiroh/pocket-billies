@@ -16,11 +16,11 @@ import { META_IDS, META_MAX, recordOf, wholeIn } from './meta-state.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_DAYS: [() => RUN_DAYS],
+  RUN_EXPEDITIONS: [() => RUN_EXPEDITIONS],
   RUN_FIELDS: [() => RUN_FIELDS],
   RUN_LIST: [() => RUN_LIST],
   RUN_NODES: [() => RUN_NODES],
   RUN_PHASES: [() => RUN_PHASES],
-  RUN_TIERS: [() => RUN_TIERS],
   copyOf: [() => copyOf],
   // @ts-expect-error -- replaced on purpose
   newRun: [() => newRun, v => (newRun = v)],
@@ -28,7 +28,7 @@ expose({
   payoutOf: [() => payoutOf, v => (payoutOf = v)],
   // @ts-expect-error -- replaced on purpose
   runBegin: [() => runBegin, v => (runBegin = v)],
-  runByTier: [() => runByTier],
+  runByExpedition: [() => runByExpedition],
   // @ts-expect-error -- replaced on purpose
   runEnd: [() => runEnd, v => (runEnd = v)],
   runHome: [() => runHome],
@@ -63,11 +63,11 @@ export const RUN_PHASES = ['fly', 'walk', 'battle', 'menu', 'payout'],
   RUN_NODES = 64,
   RUN_DAYS = 9999,
   RUN_LIST = 5000,
-  RUN_TIERS = 9;
+  RUN_EXPEDITIONS = 9;
 export const copyOf = v => JSON.parse(JSON.stringify(v));
 /** RL-9b: a rule by Expedition (rules.json run.home, run.pack): the expedition's entry, past the list's end its last */
 /** @param {number[]} list @param {number} expedition */
-export const runByTier = (list, expedition) =>
+export const runByExpedition = (list, expedition) =>
   list[Math.max(0, Math.min(list.length, Math.floor(expedition) || 1) - 1)];
 /** RL-9b: the uids of the Billies that came from home (picked at the mast); a run saved before RL-9b took the hub's
     whole team */
@@ -142,7 +142,7 @@ export function validRun(o) {
     money = v => Number.isFinite(v) && v >= 0 && v <= META_MAX;
   if (!plain(o)) return false;
   if (typeof o.seed !== 'string' || !/^[A-Za-z0-9|_-]{1,40}$/.test(o.seed)) return false;
-  if (!wholeIn(o.expedition, 1, RUN_TIERS) || !wholeIn(o.mapgenV, 1, 1e6)) return false;
+  if (!wholeIn(o.expedition, 1, RUN_EXPEDITIONS) || !wholeIn(o.mapgenV, 1, 1e6)) return false;
   if (o.map !== null) {
     if (!plain(o.map) || !list(o.map.nodes, RUN_NODES) || !o.map.nodes.length) return false;
     const n = o.map.nodes.length;

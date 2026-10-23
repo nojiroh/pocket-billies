@@ -25,7 +25,7 @@ import { ITEMS, PERKS, PYRAMIDS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchStop } from './logic/ranch.js';
-import { runByTier, runEnd } from './logic/run-state.js';
+import { runByExpedition, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runNext } from './logic/run-map.js';
 import { runArriveFx, runBattleExtra, runRelease, runReleasePays } from './logic/run-loop.js';
 import { fxOfRun, fxPayoutRates, fxRunPrice } from './logic/effects.js';
@@ -236,8 +236,8 @@ function runPickDefault() {
  * and how many things are in it @param {number} [expedition] */
 function runPickNow(expedition = 1) {
   const all = runHomeList(),
-    cap = runByTier(RULES.run.home, expedition),
-    most = runByTier(RULES.run.pack, expedition);
+    cap = runByExpedition(RULES.run.home, expedition),
+    most = runByExpedition(RULES.run.pack, expedition);
   let home = (uiState.runPick || []).filter(u => all.some(m => m.uid === u)).slice(0, cap);
   if (!home.length) home = [runPickDefault()].filter(u => !!u);
   const pack = { items: {}, pyramids: {} };

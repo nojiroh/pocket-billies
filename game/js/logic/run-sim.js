@@ -124,7 +124,7 @@ export function runSimOn(env) {
   const { RULES, TRAINERS } = data;
   const R = RULES.run,
     { runArrive, runNext, runWorldNode, runWeather } = modules['run-map'],
-    { runByTier, runEnd } = modules['run-state'],
+    { runByExpedition, runEnd } = modules['run-state'],
     { runScenesMake, runWorldTables } = modules['run-scenes'],
     { runArriveFx, runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen } = modules['run-loop'],
     { fxOfRun, fxPayoutRates, fxRunPrice } = modules.effects,
@@ -207,9 +207,9 @@ export function runSimOn(env) {
     const home = s.team
         .slice()
         .sort((/** @type {any} */ a, /** @type {any} */ b) => b.lvl - a.lvl)
-        .slice(0, runByTier(R.home, 1))
+        .slice(0, runByExpedition(R.home, 1))
         .map((/** @type {any} */ m) => m.uid),
-      pack = { items: { potion: Math.min(o.pack ?? 0, runByTier(R.pack, 1)) }, pyramids: {} };
+      pack = { items: { potion: Math.min(o.pack ?? 0, runByExpedition(R.pack, 1)) }, pyramids: {} };
     /* Studio plan T2.1: started as the mast starts a run (logic/run-start.js), with what the save has unlocked: none (a
        fresh save, the default) or every unlock (unlocks: 'all') */
     if (o.unlocks === 'all') for (const id of Object.keys(UNLOCK_DATA.unlocks)) s.meta.unlocks[id] = 1;
