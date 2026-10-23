@@ -1366,7 +1366,7 @@ def desktop_steps(b, base, R):
         if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, "activeBattle&&activeBattle.phase==='playing'&&tapMessage()"): raise Exception('the starter battle never reached the move menu')
         until(pg, "(()=>{const a=actorBuffer(0),b=actorBuffer(1);return !!(a&&b)})()", 15); time.sleep(2)
         px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=actorBuffer(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
-        shot(pg, 'v36-starter-battle')
+        shot(pg, 'starter-battle')
         if px['0'] < 500 or px['1'] < 500: raise Exception(f'battle rig buffers nearly empty: {px}')
         pg.evaluate("if(activeBattle){activeBattle.over='ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();saveData.team.shift();0")
         out.append(f"3D-stage battle Kidling vs Primotter: both puppets drawn ({px['0']} / {px['1']} px)")
