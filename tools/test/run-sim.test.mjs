@@ -115,3 +115,22 @@ test("run sim: the run's map is runStartPlan's for the save's unlocks: no locked
     assert.ok(!none.nodes.some(n => /:(ridge|autumn)$/.test(n)), `${seed}: ${none.nodes}`);
   }
 });
+
+test('run sim: money in and out add up to what is left; a loss names its row; foes and Loopholes are listed (T3.4)', () => {
+  const start = GAME_DATA.rules.run.start.se,
+    sum = o => Object.values(o).reduce((a, x) => a + x, 0);
+  let towns = 0;
+  for (let k = 0; k < 10; k++) {
+    const { stats: x, log } = runSim(`SIMMONEY${k}`, { team: 3 });
+    assert.equal(start + sum(x.moneyIn) - sum(x.moneyOut), x.se, `SIMMONEY${k}`);
+    assert.equal(x.spent, x.moneyOut.shop + x.moneyOut.relics);
+    assert.equal(x.healed, x.moneyOut.heal);
+    if (!x.won && x.lostAt) {
+      const at = log.places[log.places.length - 1];
+      assert.ok(Number.isInteger(x.lostRow) && x.lostRow >= 0, `${x.lostRow} at node ${at.i}`);
+    }
+    assert.ok(Array.isArray(x.relics) && Array.isArray(x.foes));
+    towns += log.places.filter(p => p.shop).length;
+  }
+  assert.ok(towns >= 1);
+});

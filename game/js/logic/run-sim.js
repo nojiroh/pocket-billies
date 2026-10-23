@@ -224,6 +224,13 @@ export function runSimOn(env) {
         spent: 0,
         won: false,
         lostAt: '',
+        /** the lost place's row on the map (null: not lost there) @type {number | null} */
+        lostRow: null,
+        /** money in by where it came from, and out by what it paid for (Studio plan T3.4) */
+        moneyIn: { prize: 0, reward: 0 },
+        moneyOut: { heal: 0, shop: 0, relics: 0 },
+        /** each run foe fought: its leader, its node's type, won or not @type {any[]} */
+        foes: [],
         /** @type {any} */ days: 0,
       };
     try {
@@ -242,6 +249,7 @@ export function runSimOn(env) {
           const { paid } = runClinic(s, fxRunPrice(run, data.RELICS, 'heal', R.healCost));
           if (paid) {
             stats.healed += paid;
+            stats.moneyOut.heal += paid;
             at.healed = paid;
           }
           /* the day's wares as the shop opens them: only what the run has unlocked (run-loop.js runShopOpen) */
@@ -256,6 +264,7 @@ export function runSimOn(env) {
             if (c && !relicBuy(run, i, run.clock, data.RELICS, R.relics, c.drop)) {
               s.se -= cost;
               stats.spent += cost;
+              stats.moneyOut.relics += cost;
               at.relic.bought = c.drop ? { drop: c.drop } : 1;
             }
           }
@@ -270,6 +279,7 @@ export function runSimOn(env) {
             s.se -= price;
             s.coins.penny = (s.coins.penny || 0) + 1;
             stats.spent += price;
+            stats.moneyOut.shop += price;
           }
         }
         /* the place's wild Billies, up to `fights` of them */
@@ -314,23 +324,18 @@ export function runSimOn(env) {
           B.over = res.over;
           const { pay } = fn('battleSettle')(B, s);
           fn('battleSettleWin')(B, s, pay, run);
+          if (pay.o === 'win' && pay.prize > 0) stats.moneyIn.prize += pay.prize;
           hooks.provide({ activeBattle: null });
           hooks.uiState.learnQ.length = 0;
           stats.battles++;
           stats.turns += res.turns;
           at.battles.push({ k, foe: brief(foe), over: res.over, turns: res.turns, team: s.team.map(brief) });
-          if (pay.o === 'lose') {
-            stats.lostAt = node.type;
-            return finish();
-          }
+          if (pay.o === 'lose') return lose(node);
         }
         /* its trainer: a mini-boss (doubles), the boss (an Alpha) */
         const T = Object.values(foes).find((/** @type {any} */ F) => F.runNode === i);
         if (T) {
-          if (!s.team.some((/** @type {any} */ m) => m.hp > 0)) {
-            stats.lostAt = node.type;
-            return finish();
-          }
+          if (!s.team.some((/** @type {any} */ m) => m.hp > 0)) return lose(node);
           /* its team, format and market as the page starts it (battle-engine.js startTrainer: the boss is its leader's
              top Billie alone, as an Alpha) */
           const k = run.battleN;
@@ -356,12 +361,11 @@ export function runSimOn(env) {
             turns: res.turns,
             team: s.team.map(brief),
           });
-          if (pay.o !== 'win') {
-            stats.lostAt = node.type;
-            return finish();
-          }
+          stats.foes.push({ leader: T.from, type: node.type, won: pay.o === 'win' });
+          if (pay.o !== 'win') return lose(node);
           /* its reward and flag; a mini-boss also makes the run's next pick of Loopholes (not answered yet) */
           fn('battleSettleWin')(B, s, pay, run);
+          stats.moneyIn.reward += pay.reward;
           /* the pick it made, answered as the policy says (relic-screen.js relicPickDone: relics.js relicChoose) */
           if (run.offer) {
             const c = simRelicChoice(run.offer, run.relics, data.RELICS, R.relics, P);
@@ -384,6 +388,12 @@ export function runSimOn(env) {
     } finally {
       data.worldHubBack();
     }
+    /** the run lost at this node @param {any} node */
+    function lose(node) {
+      stats.lostAt = node.type;
+      stats.lostRow = node.row;
+      return finish();
+    }
     function finish() {
       /* the end as the payout screen's "Fly home" (run.js runEndHome): the whole party on a win, else the one the
          policy keeps (the highest level, the first of them); the Loopholes' payout rates; runEnd pays and puts the
@@ -400,6 +410,7 @@ export function runSimOn(env) {
         capital: pay.capital,
         party,
         top: top ? top.lvl : 0,
+        relics: run.relics.slice(),
       });
       log.end = { ...stats, uids: run.uidN };
       return { log, stats: /** @type {any} */ (stats) };
