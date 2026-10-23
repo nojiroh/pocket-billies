@@ -24,6 +24,7 @@ expose({
   frameSettingsState: [() => frameSettingsState],
   gameDataDials: [() => gameDataDials, v => (gameDataDials = v)],
   lookDials: [() => lookDials, v => (lookDials = v)],
+  playerBlur: [() => playerBlur, v => (playerBlur = v)],
   playerDials: [() => playerDials, v => (playerDials = v)],
   setEngineDataSource: [() => setEngineDataSource, v => (setEngineDataSource = v)],
 });
@@ -33,6 +34,10 @@ provide({ engineSetting });
 export const ENGINE_DEFAULTS = {
   lens: {
     focusBand: 0.3,
+    focusTilt: 0,
+    edgeBlur: 0,
+    miniature: 0,
+    focusEase: 0.35,
     blurFar: 1.5,
     blurNear: 0.9,
     blur: 0.5,
@@ -258,6 +263,38 @@ export const ENGINE_SPEC = [
         1,
         0.01,
         'How deep the in-focus zone is, as a share of the camera distance (in the walk view, of 16 m at any zoom).',
+      ],
+      [
+        'focusTilt',
+        'Tilt of the sharp zone',
+        0,
+        1,
+        0.01,
+        'CAM-3, the diorama look: 0, the sharp zone faces the camera (a slab of distance); 1, it stands upright through you, so whatever stands in the strip is sharp head to toe and the ground ahead and behind melts away.',
+      ],
+      [
+        'edgeBlur',
+        'Edge blur',
+        0,
+        1,
+        0.01,
+        "CAM-3: blur toward the screen's edges and corners whatever the distance (none in the middle 60%). Off by default: players turned it off in other games.",
+      ],
+      [
+        'miniature',
+        'Miniature look',
+        0,
+        1,
+        0.01,
+        "CAM-3: a little more saturation, contrast and vignette, as a tilt-shift photo of a model town; it follows the blur actually in use (the player's blur slider tones it down too, and it goes with the blur).",
+      ],
+      [
+        'focusEase',
+        'Focus moves in',
+        0,
+        2,
+        0.05,
+        'CAM-3: seconds the sharp zone takes to move to what a moment is about (the middle of you and who you talk to, an encounter, a boss) and back to you.',
       ],
       ['blurFar', 'Blur growth behind', 0.1, 3, 0.05],
       ['blurNear', 'Blur growth in front', 0.1, 3, 0.05],
@@ -1053,6 +1090,13 @@ export const ENGINE_PRESETS = {
       air: { mist: 0.18 },
     },
   },
+  /* CAM-3: the diorama look: an upright, narrow sharp strip, a quick melt away, and the Miniature colour */
+  miniature: {
+    name: 'Miniature',
+    v: {
+      lens: { focusTilt: 1, focusBand: 0.35, blurFar: 1.8, blurNear: 0.7, blur: 2.2, miniature: 0.8 },
+    },
+  },
   mall: {
     name: 'Mall',
     v: {
@@ -1079,6 +1123,12 @@ export function setEngineDataSource(v) {
 function gameDataDials() {
   const d = engineDataSource();
   return (d && d.defaults) || null;
+}
+/* CAM-3: the player's blur slider (Settings → Graphics → Blur): a factor on the game's blur, 1 by default (Medium) */
+export function playerBlur() {
+  const p = typeof saveData !== 'undefined' && saveData && saveData.preferences,
+    v = p ? p.blur : null;
+  return typeof v === 'number' && isFinite(v) ? Math.max(0, Math.min(1.5, v)) : 1;
 }
 /* alpha 0.5: a player's own expert dials (Settings → Graphics → Expert) come first */
 function playerDials() {

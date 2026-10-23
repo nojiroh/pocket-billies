@@ -422,6 +422,57 @@ slow.
 - Next: the owner's phone test and debug log; then lock the ground (Hub island editor); IS-8 meets this branch by
   rebuilding. Tag `is-9-done` is the owner's to push.
 
+### Camera track CAM-3 - The diorama blur - 2026-10-22
+Branch `CAM-3`, from `CAM-2` (draft PR #132, not merged; its later commits, the HANDOFF entry among them, merged in).
+Draft PR #134 against `CAM-2`. Plan approved in Plan Mode; the owner chose to start before `cam-2-done` was pushed
+(it still isn't), the talk focus between you both, the slider replacing the Expert dial, a tilt of about 0.7 from
+pictures with no edge blur and Miniature as a preset only.
+- Changed (one cause per commit):
+  - **The blur timed on its own**: `drawDepthOfField` and `drawPostRest` (diagnostics "blur" and "final pass").
+  - **The plane of focus tilts** (logic/lens-focus.js, 9 unit tests; Engine > Lens > Tilt of the sharp zone): a
+    pixel's distance from any plane is `z*(g0+gx*u+gy*v)-h`, so no extra pass; tilt 0 is the old slab to the bit.
+  - **Samples count where their blur reaches** (Gustafsson): no halo round sharp things; a blurred thing in front
+    spills over sharp pixels; in front of the focus everything behind counts as before.
+  - **The blur's amount at full size** in the composite (no blocky edges).
+  - **A cheap blur on the slowest setting** (dual Kawase) instead of none.
+  - **Edge blur** (0), **Miniature look** dial and a **Miniature** preset, **Focus moves in** (0.35 s).
+  - **Settings > Graphics > Blur** (Off, Low, Medium, Strong; walks and battles); the Expert "Depth of field" dial
+    is gone.
+  - **The focus follows the moments**: the middle of you and who you talk to (whole talk), the encounter's spot in
+    the swoop, a boss as revealed, a tapped spot as before.
+  - **Studio**: Blur guides (the sharp ground tinted, the focus point, a status line) and Blur heatmap.
+  - **Debug log**: a `lens` section (path, focus on, focus, lean, tilt, blur, slider; no names). check-fast "Blur
+    focus" (planted fault caught); the debug log step wants `lens`. tools/look-blur.py (pictures).
+  - **The game's look**: engine.json `focusTilt` 0.7. Fixes on the way: the blur's dead `st.focusY` factor; the
+    slider's word stuck out of the Graphics tab (v31 caught it).
+- Where the plan was wrong (camera-track.md "CAM-3 as built"): a player blur dial already existed (Expert, an
+  override); no background clamp ever; the composite drew the amount up bilinearly; talking moved the focus 2.6 s
+  only and the swoop never; no per-pass GPU time in play; the plan's prep pass isn't needed.
+- Verified: unit tests 602; lint, typecheck, modules, format, check-data; check-fast 24 of 24 (Tall ground still
+  16.9 m of rock, 18.0 degrees); tools/look-tall-ground.py the same numbers before and after, pictures within 1.1 of
+  255; CI's smoke, lint and rules green on the PR. In one frame, tilt 0 drew as before to float rounding (then made
+  exact). Headless Studio: Blur guides and heatmap drawn, no errors. tools/look-blur.py: 12 pictures, each path as
+  meant (full, off at the slider's Off, cheap at quality 4), no errors. Full quick check against a local baseline
+  from the starting commit: the same 9 steps red as before (v34, v35, v38, v39/v40, v43, v44, v46, alpha 0.4
+  recipes, phase 08 running). 14 of 56 pictures differ clearly, all looked at: timing (battles at another moment,
+  screens caught mid-change or with the postcard up, you mid-walk in a04-airship-mast and v34-copperleaf) and, in
+  the walk scenes, the tilt (the mast and what stands where you are a little sharper).
+- Risky / open:
+  - **Not measured on a phone.** The blur pass reads 4 more depth samples a pixel (the probes) and works out the
+    plane per sample; the composite reads full-size depth once more. Measure: Settings > Help > the diagnostics test
+    (the "blur" and "final pass" times) on `cam-2-done`'s build and on this one, or the debug overlay's GPU ms
+    standing in Copperleaf, the slider at Medium then Off.
+  - Not tuned on a phone: the tilt (0.7), the talk focus between you both, Focus moves in, the cheap blur's
+    strength. Battles keep the slab (no tilt).
+  - The Studio's heatmap flag (`walkView.opt.dofView`) stays on if you leave the Engine section with it on (other
+    Studio previews would show it until it's turned off).
+  - CI's picture baseline is stale after the merge: Actions > Check > Run workflow > "Make the picture baseline".
+- Phone check wanted: Copperleaf with the slider at each step (Off must look plain, Strong soft); talk to someone
+  (both of you sharp); a wild battle's swoop (the spot sharp); the GPU time as above; the Studio's Engine > Lens
+  dials, the Miniature preset, Blur guides and heatmap; export the debug log (`lens`).
+- Next: the owner pushes `cam-2-done` and `cam-3-done`; the camera track is done. The next session: RL-10b (Ranch B,
+  passive income).
+
 ### Camera track CAM-2 - Moments of interest - 2026-10-22
 Branch `CAM-2`, from `CAM` (CAM-1, PR #127, not merged yet). Draft PR #132 against `CAM`. Plan approved in Plan Mode
 with every recommendation: moments multiply your pinch zoom; the encounter hands over when the camera arrives (at most

@@ -148,6 +148,8 @@ function moments(sc, P, push, I, dt, snap) {
       st.still = Math.max(st.still, D.idleDelay);
     }
   }
+  /* CAM-3: where the speaker and the boss are, for the blur's focus (walk-view-gl.js, logic/lens-focus.js focusAim) */
+  walkRenderer.momSpots = { talk, boss: boss ? [boss.x, boss.z] : null };
   if ((freeCameraOn() && !walkView.opt.moments) || sc.indoor || sc.room) return { id: null, goals: [] };
   return momentStep(
     st,

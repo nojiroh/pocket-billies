@@ -6,6 +6,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
+import { focusBlur, planeDistance } from '../../game/js/logic/lens-focus.js';
 import { mapHub, walkView } from '../../game/js/walk-view.js';
 import {
   ENGINE_DEFAULTS,
@@ -17,6 +18,7 @@ import {
 } from '../../game/js/engine/settings.js';
 import { gpuState, webgl2Supported } from '../../game/js/engine/webgl.js';
 import { walkRenderer } from '../../game/js/walk/walk-state.js';
+import { standingHeightAt } from '../../game/js/walk/heights.js';
 import { rebuildFromSettings } from '../../game/js/walk/map-cache.js';
 import { adaptQuality, setAdaptQuality } from '../../game/js/walk/quality-cull.js';
 import { interestPoints } from '../../game/js/walk/sprites.js';
@@ -45,6 +47,7 @@ import { mapExitNames, sceneryArtPaths, sceneryCatalog } from './map-editor.js';
 expose({
   GUIDE_DIALS: [() => GUIDE_DIALS],
   captureLookPreview: [() => captureLookPreview, v => (captureLookPreview = v)],
+  drawBlurGuides: [() => drawBlurGuides, v => (drawBlurGuides = v)],
   drawCameraGuides: [() => drawCameraGuides, v => (drawCameraGuides = v)],
   engineData: [() => engineData],
   engineDialHTML: [() => engineDialHTML, v => (engineDialHTML = v)],
@@ -178,7 +181,9 @@ SECTIONS.engine = () => {
   return `<div class="eng-split"><div class="eng-set" id="engSet">${engineSettingsHTML()}</div>
  <div class="eng-side"><div class="card"><div class="card-b"><div class="eng-pvbar"><label class="fld"><span>Preview scene</span><select id="engScene">${opts}</select></label>
    <button class="btn sm" id="engCmp" title="Hold to see the built-in look without any of your settings">Hold to compare</button>
-   <button class="btn sm ${engineEditor.guides ? 'on' : ''}" id="engGuidesBtn" data-act="engGuides" title="Draws the camera's dead and soft zones (drag their edges), its aim, the look-ahead, the points of interest and the camera zones on the preview">Camera guides</button></div>
+   <button class="btn sm ${engineEditor.guides ? 'on' : ''}" id="engGuidesBtn" data-act="engGuides" title="Draws the camera's dead and soft zones (drag their edges), its aim, the look-ahead, the points of interest and the camera zones on the preview">Camera guides</button>
+   <button class="btn sm ${engineEditor.blurGuides ? 'on' : ''}" id="engBlurBtn" data-act="engBlurGuides" title="CAM-3: tints the ground the blur keeps sharp (the strip round the plane of focus), marks what the focus is on and names the blur's path, tilt and strength">Blur guides</button>
+   <button class="btn sm ${engineEditor.heat ? 'on' : ''}" id="engHeatBtn" data-act="engHeat" title="CAM-3: colours the preview by how blurred each pixel is: green sharp, yellow a little, red full">Blur heatmap</button></div>
   <div class="eng-pvbar" title="CAM-2: plays one of the camera's moments in the preview, as if it happened (a talk or a boss 3 m up the screen)">Play moment ${[
     ['talk', 'Talk'],
     ['encounter', 'Encounter'],
@@ -187,7 +192,7 @@ SECTIONS.engine = () => {
   ]
     .map(([k, n]) => `<button class="btn sm" data-act="engMoment" data-m="${k}">${n}</button>`)
     .join('')}</div>
-  <div class="sc-pv eng-pv"><canvas id="engPv" data-keep="walk-gl"></canvas><canvas id="engGuides" class="eng-guides" ${engineEditor.guides ? '' : 'hidden'}></canvas><div class="sc-pv-load" id="engPvLoad">Loading…</div></div>
+  <div class="sc-pv eng-pv"><canvas id="engPv" data-keep="walk-gl"></canvas><canvas id="engGuides" class="eng-guides" ${engineEditor.guides ? '' : 'hidden'}></canvas><canvas id="engBlur" class="eng-guides" ${engineEditor.blurGuides ? '' : 'hidden'}></canvas><div class="sc-pv-load" id="engPvLoad">Loading…</div></div>
   <div class="eng-meter" id="engMeter">–</div>
   <p class="help">Click the ground to walk, drag to turn, scroll to zoom. What you see is the game’s own renderer with your unsaved values. Battles happen inside the walk scene, so they follow its look.</p></div></div></div></div>`;
 };
@@ -654,6 +659,8 @@ function mountCameraGuides() {
   box.addEventListener('pointerup', end, true);
   box.addEventListener('pointercancel', end, true);
   if (engineEditor.guides && !engineEditor.guideRaf) drawCameraGuides();
+  if (engineEditor.blurGuides && !engineEditor.blurRaf) drawBlurGuides();
+  walkView.opt.dofView = !!engineEditor.heat;
 }
 /* CAM-2: "Play moment": a talk or a boss stands 3 m up the screen from you, standing still starts at once, and an
    encounter swoops at a spot 2.5 m up the screen (then lets go, no battle) */
@@ -689,6 +696,87 @@ ACTIONS.engMoment = d => {
     at: d.m === 'idle' ? null : at(3),
     until: walkView.t + (d.m === 'idle' ? 6000 : 3500),
   };
+};
+/* CAM-3: the blur guides. The ground round you, in 1 m cells over 48 m, tinted where the blur keeps it sharp: each
+   cell's distance from this frame's plane of focus (walkRenderer.lensPlane) through the blur's own curve
+   (logic/lens-focus.js focusBlur, the band and ramps of the 16 m walk reference), so the strip shown is the shader's;
+   a dot where the focus is, and a line with the blur's path, what the focus is on, the tilt and the strength */
+function drawBlurGuides() {
+  const g = $('#engBlur');
+  if (!g || !engineEditor.blurGuides || studioState.sec !== 'engine') {
+    engineEditor.blurRaf = 0;
+    return;
+  }
+  engineEditor.blurRaf = requestAnimationFrame(drawBlurGuides);
+  const r = window.devicePixelRatio || 1,
+    w = g.clientWidth,
+    h = g.clientHeight;
+  if (g.width !== Math.round(w * r) || g.height !== Math.round(h * r)) {
+    g.width = Math.round(w * r);
+    g.height = Math.round(h * r);
+  }
+  const x = g.getContext('2d');
+  x.setTransform(r, 0, 0, r, 0, 0);
+  x.clearRect(0, 0, w, h);
+  const C = walkView.C,
+    FP = walkRenderer.lensPlane,
+    L = walkRenderer.lensInfo,
+    P = walkView.pl;
+  if (!C || !C.vp || !FP || !L || !P) return;
+  const band = 16 * engineSetting('lens', 'focusBand'),
+    rampF = 16 * engineSetting('lens', 'blurFar'),
+    rampN = 16 * engineSetting('lens', 'blurNear'),
+    gy = (/** @type {number} */ px, /** @type {number} */ pz) =>
+      typeof standingHeightAt === 'function' ? standingHeightAt(px, pz) : walkRenderer.camT ? walkRenderer.camT[2] : 0,
+    cx = Math.round(P.x),
+    cz = Math.round(P.z);
+  for (let i = -24; i < 24; i++)
+    for (let j = -24; j < 24; j++) {
+      const a = cx + i + 0.5,
+        b = cz + j + 0.5,
+        k = focusBlur(planeDistance(FP, [a, gy(a, b), b]), band, rampF, rampN);
+      if (k > 0.02) continue;
+      const q = [
+        [a - 0.5, b - 0.5],
+        [a + 0.5, b - 0.5],
+        [a + 0.5, b + 0.5],
+        [a - 0.5, b + 0.5],
+      ].map(([u, v]) => guideProject(C, w, h, u, gy(u, v), v));
+      if (!q.every(Boolean)) continue;
+      x.beginPath();
+      q.forEach((p, n) => (n ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])));
+      x.closePath();
+      x.fillStyle = 'rgba(80, 255, 140, 0.22)';
+      x.fill();
+    }
+  const f = guideProject(C, w, h, L.at[0], gy(L.at[0], L.at[1]) + 0.8, L.at[1]);
+  if (f) {
+    x.beginPath();
+    x.arc(f[0], f[1], 5, 0, Math.PI * 2);
+    x.fillStyle = 'rgba(80, 255, 140, 1)';
+    x.fill();
+  }
+  const line = `blur ${L.path} · focus on ${L.on} · ${L.focus.toFixed(1)} m · tilt ${L.tilt.toFixed(2)} · strength ${L.blur.toFixed(2)}`;
+  x.font = '12px system-ui, sans-serif';
+  x.fillStyle = 'rgba(0, 0, 0, 0.55)';
+  x.fillRect(6, h - 26, x.measureText(line).width + 12, 20);
+  x.fillStyle = '#fff';
+  x.fillText(line, 12, h - 12);
+}
+ACTIONS.engBlurGuides = () => {
+  engineEditor.blurGuides = !engineEditor.blurGuides;
+  if (engineEditor.blurGuides) engineEditor.open.lens = 1;
+  const g = $('#engBlur'),
+    b = $('#engBlurBtn');
+  if (g) g.hidden = !engineEditor.blurGuides;
+  if (b) b.classList.toggle('on', engineEditor.blurGuides);
+  if (engineEditor.blurGuides && !engineEditor.blurRaf) drawBlurGuides();
+};
+ACTIONS.engHeat = () => {
+  engineEditor.heat = !engineEditor.heat;
+  walkView.opt.dofView = engineEditor.heat;
+  const b = $('#engHeatBtn');
+  if (b) b.classList.toggle('on', engineEditor.heat);
 };
 ACTIONS.engGuides = () => {
   engineEditor.guides = !engineEditor.guides;

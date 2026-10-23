@@ -1,6 +1,6 @@
 {
  "defaults": {
-  "lens": {"grain":0.015,"vignette":0.72,"aberration":1.15,"bokeh":1.25,"blur":2,"blurFar":2.6,"focusBand":0.62},
+  "lens": {"grain":0.015,"vignette":0.72,"aberration":1.15,"bokeh":1.25,"blur":2,"blurFar":2.6,"focusBand":0.62,"focusTilt":0.7},
   "color": {
    "exposure": 1.1,
    "saturation": 1.2,

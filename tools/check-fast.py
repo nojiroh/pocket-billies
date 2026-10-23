@@ -17,7 +17,9 @@ on tall ground (TR-3, the mountains fixture) the camera rises, rock fades and th
 none of it on flat ground; the camera follow (CAM-1, in Copperleaf) settles on you standing, leads the way the stick
 pushes while you stay inside its soft zone, and settles again when you let go; the camera's moments (CAM-2, read from
 its state) drift in standing still, frame a talk as a two-shot, play a boss, lean by a door and zoom the encounter's
-swoop without touching your own zoom; the Lab's unlock board (RL-11) grants, sells and keeps; the test island (island track) opens with its contract fields, and its orbit camera (IS-1) looks at the middle from 8 places, holds on the summit and walks a circle when you hold right; the Studio's Hub island editor draws, turns, paints and locks (IS-6a). The page is small (400x300) with every costly graphics dial
+swoop without touching your own zoom; the diorama blur (CAM-3, read from the renderer's state) focuses on you, between
+you and who you talk to, on an encounter, stands upright when fully tilted, stops at the player's Off and takes the
+cheap blur on the slowest setting; the Lab's unlock board (RL-11) grants, sells and keeps; the test island (island track) opens with its contract fields, and its orbit camera (IS-1) looks at the middle from 8 places, holds on the summit and walks a circle when you hold right; the Studio's Hub island editor draws, turns, paints and locks (IS-6a). The page is small (400x300) with every costly graphics dial
 off before it loads; nothing waits a fixed time, only for frames or the game's state. No pictures are taken.
 
 Graphics are not judged here: software drawing can't. The game's own graphics test (Settings → Help) is for a person
@@ -577,6 +579,50 @@ def camera_moments(pg, base):
     return f'drift in standing ({a["zoom"]:.2f} -> {b["zoom"]:.2f}), gone moving; talk {d["zoom"]:.2f}, a two-shot; boss {e["zoom"]:.2f}{door}; encounter {g["zoom"]:.2f}, your zoom kept'
 
 
+def blur_focus(pg, base):
+    """CAM-3: in Copperleaf with the game's blur on (the page has it off), read from the renderer's state: the focus is
+    on you; in a talk it moves to the middle of you and who you talk to; during an encounter's swoop to the encounter's
+    spot; tilted fully the plane of focus stands upright; the player's slider at Off stops the blur pass; the slowest
+    quality setting takes the cheap blur instead of none"""
+    drawing(pg)
+    sp = pg.evaluate(MOMENT_SPOTS)
+    if not sp['quiet']: raise Exception('no reachable spot without a point of interest near the hub')
+    pg.evaluate("(()=>{const D=gameData.engine.defaults;D.lens=Object.assign({},D.lens,{blur:2,focusTilt:1});return 0})()")
+    info = "(()=>{const L=walkRenderer.lensInfo,P=walkView.pl,F=walkRenderer.lensPlane;return {path:L.path,on:L.on,d:[L.at[0]-P.x,L.at[1]-P.z],ny:F?F.n[1]:null}})()"
+    wait = lambda ms: until(pg, f'walkView.t>{pg.evaluate("walkView.t") + ms}', 150) or (_ for _ in ()).throw(Exception(f'the page stopped drawing (waiting {ms} ms of game time)'))
+    stand(pg, *sp['quiet'], 5)
+    wait(600)
+    a = pg.evaluate(info)
+    if a['path'] not in ('full', 'fast') or a['on'] != 'you' or max(abs(v) for v in a['d']) > 0.05: raise Exception(f'standing, the blur isn’t on you: {a}')
+    if a['ny'] is None or abs(a['ny']) > 1e-6: raise Exception(f'tilted fully, the plane of focus isn’t upright: {a}')
+    # someone talks to you, 3 m east: the focus moves to the middle (1.5 m east)
+    pg.evaluate("(()=>{const P=walkView.pl;walkRenderer.talkAt={x:P.x+3,z:P.z,t:walkView.t};talkBox.on=true;return 0})()")
+    wait(1500)
+    b = pg.evaluate(info)
+    pg.evaluate("talkBox.on=false;walkRenderer.talkAt=null;0")
+    if b['on'] != 'talk' or not 1.2 < b['d'][0] < 1.8 or abs(b['d'][1]) > 0.3: raise Exception(f'talking, the focus isn’t between you: {b}')
+    # an encounter's swoop to a spot 2.5 m north: the focus goes there
+    stand(pg, *sp['quiet'], 5)
+    pg.evaluate("(()=>{const P=walkView.pl;walkRenderer.swoop={x:P.x,z:P.z+1,px:P.x,pz:P.z,ex:P.x,ez:P.z+2.5,zoom:engineSetting('camera','encZoom'),arrived:false};return 0})()")
+    wait(1200)
+    c = pg.evaluate(info)
+    pg.evaluate('walkRenderer.swoop=null;0')
+    if c['on'] != 'encounter' or not 2.0 < c['d'][1] < 2.8: raise Exception(f'in the encounter shot, the focus isn’t on the spot: {c}')
+    # the player's slider at Off: no blur pass at all
+    pg.evaluate('saveData.preferences.blur=0;0')
+    wait(300)
+    d = pg.evaluate(info)
+    pg.evaluate('saveData.preferences.blur=1;0')
+    if d['path'] != 'off': raise Exception(f'the slider at Off, the blur still runs: {d}')
+    # the slowest quality step (held there): the cheap blur, not none
+    pg.evaluate("(()=>{const D=gameData.engine.defaults;D.quality=Object.assign({},D.quality,{auto:true});walkRenderer.adaptT=1e15;walkRenderer.q=4;return 0})()")
+    wait(300)
+    e = pg.evaluate(info)
+    pg.evaluate("(()=>{gameData.engine.defaults.quality.auto=false;walkRenderer.adaptT=0;walkRenderer.q=0;const D=gameData.engine.defaults;D.lens=Object.assign({},D.lens,{blur:0,focusTilt:0});return 0})()")
+    if e['path'] != 'cheap': raise Exception(f'on the slowest setting the blur isn’t the cheap one: {e}')
+    return f'on you, upright at tilt 1; talking {b["d"][0]:.2f} m toward them (the middle); the encounter {c["d"][1]:.2f} m ahead; Off: no blur pass; slowest: the cheap blur'
+
+
 def ranch(pg, base):
     """RL-9: the ranch fixture stands in Copperleaf's barn. The training board opens the ranch's sheet; Train on a
     stored Billie pays the Scrap and starts it; two hours later (the page's clock moved on) the sheet opened again has
@@ -810,7 +856,19 @@ def debug_log(pg, base):
     if not cam or cam.get('mode') != 'walk' or 'goals' not in cam: raise Exception(f'the debug log has no camera line: {cam}')
     # CAM-2: the moment, the zoom the camera uses, the zone
     if not all(k in cam for k in ('moment', 'zoomEff', 'zone')): raise Exception(f'the camera line has no moment, zoom or zone: {cam}')
-    return f'{len(text) // 1024} KB, no names; the camera: {json.dumps(cam, separators=(",", ":"))}'
+    # CAM-3: the blur's line (its path, what the focus is on, the tilt, the player's slider)
+    def find_lens(o):
+        if isinstance(o, dict):
+            if isinstance(o.get('lens'), dict) and 'path' in o['lens']: return o['lens']
+            o = list(o.values())
+        if isinstance(o, list):
+            for v in o:
+                r = find_lens(v)
+                if r: return r
+        return None
+    lens = find_lens(log_)
+    if not lens or not all(k in lens for k in ('path', 'on', 'tilt', 'slider')): raise Exception(f'the debug log has no lens line: {lens}')
+    return f'{len(text) // 1024} KB, no names; the camera: {json.dumps(cam, separators=(",", ":"))}; the lens: {json.dumps(lens, separators=(",", ":"))}'
 
 
 def studio(pg, base):
@@ -1217,11 +1275,12 @@ def pasture(pg, base):
 PAGES = [   # (what the page opens, its checks in order); the longest first, so the browsers finish together
     ('town', [('A town opens and draws (Copperleaf Town)', scene('copperleaf')),
               ('Copperleaf is the island: its walking checks, every door a tap away, the wild grass, the orbit (IS-5)', hub_island),
-              ('The exported debug log holds no names, and a camera line with the moment (CAM-1, CAM-2)', debug_log),
+              ('The exported debug log holds no names, a camera line with the moment and a lens line (CAM-1, CAM-2, CAM-3)', debug_log),
               ('The world map opens as the bowl', bowl_map)]),
     ('town', [('Camera follow: settled standing, the look-ahead from the stick, the soft zone, settled again (CAM-1)', camera_follow),
               ('Camera moments: a drift in standing, a two-shot talking, a boss, a door, the encounter shot (CAM-2)', camera_moments)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
+    ('town', [('Blur focus: on you, between you in a talk, on the encounter; the slider at Off; the cheap blur (CAM-3)', blur_focus)]),
     ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back, a reload (RL-9)', ranch)]),
     ('pasture', [('The pasture: Billies wander inside the fence, a tap on one or the gate opens the ranch (IS-8)', pasture)]),
     ('relics', [("Loopholes: the pick (again after a reload), the tab, a battle's and a walk's effects, a town's prices, buying at the cap (RL-12)", relics)]),

@@ -632,6 +632,25 @@ debugLog.more = () => {
       still: W.mom ? r(W.mom.still) : null,
     };
   });
+  /* CAM-3: the blur this frame: its path (full, fast, cheap, off), what the focus is on (you, tap, talk, encounter,
+     boss, battle), the focus distance, how far the focus leans from you, the tilt, the blur in use and the player's
+     slider (no names, no places) */
+  t('lens', () => {
+    const W = typeof GAME.walkRenderer !== 'undefined' ? GAME.walkRenderer : null,
+      L = W && W.lensInfo;
+    if (!L) return null;
+    const r = v => +(+v).toFixed(2),
+      lean = W.focusLean || [0, 0];
+    return {
+      path: L.path,
+      on: L.on,
+      focus: r(L.focus),
+      lean: [r(lean[0]), r(lean[1])],
+      tilt: r(L.tilt),
+      blur: r(L.blur),
+      slider: r(L.slider),
+    };
+  });
   t('caches', () => ({
     people: typeof GAME.PERSON_ART_CACHE !== 'undefined' ? GAME.PERSON_ART_CACHE.size : null,
     lifeFrames: typeof GAME.ambientLife !== 'undefined' ? GAME.ambientLife.cut.size : null,
@@ -897,6 +916,9 @@ debugLog.hook = () => {
     ['drawStructures', 'structures'],
     ['drawPlayerSilhouette', 'silhouette'],
     ['drawPostEffects', 'post'],
+    /* CAM-3: the blur and the rest of the post chain, apart (inside drawPostEffects) */
+    ['drawDepthOfField', 'blur'],
+    ['drawPostRest', 'post rest'],
     ['drawGround', 'ground'],
     ['reflectionPass', 'reflections'],
     ['drawWater', 'water'],

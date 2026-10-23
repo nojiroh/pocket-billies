@@ -42,6 +42,13 @@ export const walkRenderer = {
   momentTest: null,
   focus: null,
   focusT: null,
+  /* CAM-3: this frame's plane of focus (logic/lens-focus.js focusPlane), for the Studio's blur guides */
+  lensPlane: null,
+  /* CAM-3: the speaker's and the boss's spots this frame (walk/camera.js moments); the focus's eased lean away from
+     you and what it is on (walk-view-gl.js) */
+  momSpots: null,
+  focusLean: null,
+  focusKind: 'you',
   frames: 0,
   farProps: [],
   orient: null,
