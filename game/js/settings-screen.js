@@ -70,6 +70,8 @@ expose({
   HOST_THEME: [() => HOST_THEME],
   SETTINGS_TABS: [() => SETTINGS_TABS],
   applyPreferences: [() => applyPreferences, v => (applyPreferences = v)],
+  blurSliderHTML: [() => blurSliderHTML, v => (blurSliderHTML = v)],
+  blurWord: [() => blurWord, v => (blurWord = v)],
   changePreference: [() => changePreference, v => (changePreference = v)],
   customizeTrainer: [() => customizeTrainer, v => (customizeTrainer = v)],
   exportSave: [() => exportSave, v => (exportSave = v)],
@@ -266,7 +268,6 @@ export const GRAPHICS_DIALS = [
   [
     'Effects',
     [
-      ['lens.blur', 'Depth of field', 'Far and near things go soft', 'medium', 0, 3, 0.05],
       ['color.bloom', 'Glow', 'Bright lights glow', 'low', 0, 2, 0.05],
       ['lens.vignette', 'Dark corners', 'The edges of the picture darken a little', 'low', 0, 1, 0.05],
       ['lens.grain', 'Film grain', 'A fine grain over the picture', 'low', 0, 0.15, 0.005],
@@ -289,6 +290,18 @@ function segmentedHTML(k, cur, opts) {
 }
 function switchHTML(k, on, onV, offV) {
   return `<button type="button" class="sw ${on ? 'on' : ''}" role="switch" aria-checked="${!!on}" aria-label="${escapeHtml(k)}" data-pref-set="${k}" data-v="${escapeHtml(String(on ? offV : onV))}"><i></i></button>`;
+}
+/* CAM-3: the player's blur slider (preferences.blur: 0 off, 1 the game's own look, 1.5 strong) */
+function blurWord(v) {
+  return v < 0.05 ? 'Off' : v < 0.75 ? 'Low' : v < 1.25 ? 'Medium' : 'Strong';
+}
+function blurSliderHTML() {
+  const v = Math.round((saveData.preferences.blur ?? 1) * 100);
+  return settingsRowHTML(
+    'Blur',
+    'How soft far and near things go round the sharp strip where you stand (Medium is the game’s own look). Off costs nothing.',
+    `<div class="vol"><input type="range" min="0" max="150" step="5" data-preference="blur" value="${v}" aria-label="Blur"><span class="vol-n vol-word">${blurWord(v / 100)}</span></div>`
+  );
 }
 function volumeSliderHTML(k, label, hint, def) {
   const p = saveData.preferences || {},
@@ -475,6 +488,7 @@ function settingsHTML() {
           [120, '120'],
         ])
       ) +
+      blurSliderHTML() +
       settingsRowHTML(
         'World map clouds',
         'Clouds, rain, snow and lightning over the world map, from each place’s own weather. Auto follows the look above.',
@@ -534,7 +548,7 @@ function changePreference(k, v) {
     return changePreference('effects', 'full');
   }
   if (k === 'fps') v = +v;
-  if (k === 'music' || k === 'sfx' || k === 'world' || k === 'amb') v = +v / 100;
+  if (k === 'music' || k === 'sfx' || k === 'world' || k === 'amb' || k === 'blur') v = +v / 100;
   if (k === 'master') {
     saveData.preferences.master = v;
     applyPreferences();
@@ -578,7 +592,7 @@ document.addEventListener('input', ev => {
   const k = ev.target.dataset && ev.target.dataset.preference;
   if (k && ev.target.type === 'range') {
     const n = ev.target.parentNode.querySelector('.vol-n');
-    if (n) n.textContent = ev.target.value;
+    if (n) n.textContent = k === 'blur' ? blurWord(+ev.target.value / 100) : ev.target.value;
   }
 });
 document.addEventListener('click', ev => {

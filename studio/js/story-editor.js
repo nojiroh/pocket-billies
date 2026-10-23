@@ -21,16 +21,14 @@ import {
   commit,
   dialog,
   grid,
+  pathPrefix,
   readPath,
   render,
   selectField,
-  setReadPath,
-  setWritePath,
   studioBroadcast,
   studioState,
   textField,
   toast,
-  writePath,
 } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -69,28 +67,20 @@ function scriptOwner(id, D = studioState.D) {
   return null;
 }
 /* the field's path is @script.<id>: one text, a line each, the indent kept (two spaces per level); blank lines go */
-{
-  const g = readPath,
-    st = writePath;
-  setReadPath(function (path, o) {
-    if (path && path.startsWith('@script.')) {
-      const O = scriptOwner(path.slice(8));
-      return O && O.script ? O.script.join('\n') : '';
-    }
-    return g(path, o);
-  });
-  setWritePath(function (path, v, o) {
-    if (path && path.startsWith('@script.')) {
-      const O = scriptOwner(path.slice(8));
-      if (!O) return;
-      const L = scriptLinesOf(v);
-      if (L.length) O.script = L;
-      else delete O.script;
-      return;
-    }
-    return st(path, v, o);
-  });
-}
+pathPrefix(
+  '@script.',
+  k => {
+    const O = scriptOwner(k);
+    return O && O.script ? O.script.join('\n') : '';
+  },
+  (k, v) => {
+    const O = scriptOwner(k);
+    if (!O) return;
+    const L = scriptLinesOf(v);
+    if (L.length) O.script = L;
+    else delete O.script;
+  }
+);
 const scriptLinesOf = text =>
   String(text || '')
     .split('\n')

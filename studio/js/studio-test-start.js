@@ -1,6 +1,6 @@
 'use strict';
 /* ================= STUDIO SELF-TEST: the start (studio track ST-T) =================
-   Check & backups → Run the Studio test, and studio/?selftest (it starts once the data has loaded). The test itself
+   Check → Run the Studio test, and studio/?selftest (it starts once the data has loaded). The test itself
    (studio-test.js) loads only now, and gets what it reads from here: the Studio's own functions and state, and of
    the GitHub sign-in only whether it is on (never the token or the name). docs/phases/studio-self-test.md. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -11,7 +11,13 @@ import { gpuCountBegin, gpuCountEnd } from '../../game/js/engine/gpu-counters.js
 import { frameScheduler } from '../../game/js/frame-scheduler.js';
 import { gpuState } from '../../game/js/engine/webgl.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { HISTORY_STEPS } from '../../game/js/logic/history.js';
+import {
+  HISTORY_STEPS,
+  historyBytes,
+  historyDiff,
+  historyPartsBytes,
+  historyPartsData,
+} from '../../game/js/logic/history.js';
 import { sheetIslands } from '../../game/js/logic/sheet-slice.js';
 import {
   ACTIONS,
@@ -19,6 +25,7 @@ import {
   SECTIONS,
   SECTION_LIST,
   api,
+  commit,
   openSection,
   redo,
   restore,
@@ -26,6 +33,7 @@ import {
   setApi,
   setSaveAll,
   snapshot,
+  snapshotParts,
   studioBroadcast,
   studioProbe,
   studioState,
@@ -61,7 +69,13 @@ function studioTestHandles() {
     openSection,
     undo,
     redo,
+    commit,
     snapshot,
+    snapshotParts,
+    historyDiff,
+    historyPartsData,
+    historyBytes,
+    historyPartsBytes,
     restore,
     api,
     setApi,

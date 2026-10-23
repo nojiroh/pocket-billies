@@ -8,14 +8,20 @@
    endBattle as it was (tools/test/battle-rewards.test.mjs). Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { RULES } from '../game-data.js';
-import { wildPrize } from './rules.js';
+import { RELICS, RULES } from '../game-data.js';
+import { dropEncounter, findBilly, wildPrize } from './rules.js';
 import { fxMoney } from './effects.js';
+import { relicOfferMake } from './relics.js';
+import { battleRoll } from './battle-engine.js';
 /* eslint-disable no-func-assign */
 expose({
   battleOutcome: [() => battleOutcome],
   // @ts-expect-error -- replaced on purpose
   battleRewards: [() => battleRewards, v => (battleRewards = v)],
+  // @ts-expect-error -- replaced on purpose
+  battleSettle: [() => battleSettle, v => (battleSettle = v)],
+  // @ts-expect-error -- replaced on purpose
+  battleSettleWin: [() => battleSettleWin, v => (battleSettleWin = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -54,4 +60,47 @@ export function battleRewards(b, s, roll, rules = RULES) {
       out.seat = { id: st.id, nu: !s.seats.includes(st.id), coins: st.coins || {}, items: st.items || {} };
   }
   return out;
+}
+
+/* Studio plan T3.2: what an ended battle does to the save, the same on the page (battle.js endBattle, which shows the
+   sheets, seats and the tutorial) and in a run's simulation (logic/run-sim.js) */
+/**
+ * The battle has ended: what it pays (battleRewards, with the battle's Loopholes), and on the save: a run battle's
+ * checkpoint back to walking, the Hype counter (wins) of everyone standing on a win, a wild encounter gone, the lead's
+ * streak (one more on a win, 0 on a loss). Returns the pay and the run when it was a run battle (b.runK).
+ * @param {any} b the battle @param {any} s the save it was fought on (saveData)
+ */
+export function battleSettle(b, s) {
+  const pay = battleRewards(
+      { kind: b.kind, over: b.over, T: b.T, tid: b.tid, foe: b.sides[1].team, fx: b.fx },
+      s,
+      battleRoll
+    ),
+    o = pay.o,
+    lead = findBilly(b.lead),
+    run = s.run && b.runK != null ? s.run : null;
+  if (run) run.at = { phase: 'walk', battle: -1 };
+  /* v36: the Hype counter */
+  if (o === 'win') for (const m of s.team) if (m.hp > 0) m.wins = (m.wins || 0) + 1;
+  if (b.kind === 'wild') dropEncounter(b.qid);
+  if (lead) {
+    if (o === 'win') lead.streak = (lead.streak || 0) + 1;
+    else if (o === 'lose') lead.streak = 0;
+  }
+  return { pay, run };
+}
+/**
+ * A win's money and marks (after battleSettle; not for the opening's tutorial battle): a wild win's prize, a
+ * trainer's reward and flag, and on a run (`run`) a mini-boss beaten makes the next pick of Loopholes
+ * (logic/relics.js relicOfferMake, saved on the run before it shows).
+ * @param {any} b @param {any} s @param {{ o: string | null, prize: number, reward: number }} pay @param {any} run
+ */
+export function battleSettleWin(b, s, pay, run) {
+  if (pay.o !== 'win') return;
+  if (b.kind === 'wild' && pay.prize > 0) s.se += pay.prize;
+  if (b.kind === 'trainer') {
+    s.se += pay.reward;
+    if (run && b.T && b.T.runFoe === 'miniboss') relicOfferMake(run, RELICS, RULES.run.relics);
+    s.flags[b.tid] = 1;
+  }
 }

@@ -40,6 +40,95 @@ kept aside in the browser).
   the next tap after a phone call or Siri on an iPhone. The Sound tab reads in Dutch, German, Spanish and French.
 - A run's world (roguelite track RL-7), not playable yet (a run starts at the airship from RL-8; to look at one, open
   the game with `?fixture=run`): each place on a run's map is a walkable route made from the run's seed, joined
+- The barn has its pasture (island track IS-8): a rail fence round the field beside Copperleaf's barn, a field gate
+  standing open so you can walk in, a water trough and a hay rack with round bales. Up to six of your Billies at home
+  (the ones training first) wander in it, poking about the hay and now and then hopping. Tap one, or the gate, and
+  the ranch opens. A Billie you take onto your team or on a run leaves the field.
+- Copperleaf's island is dressed (island track IS-9): a mixed forest from the north-west round to the north-east
+  (oaks, beeches, birches, hazels and rowans low down, pines and larches up the mountain's foot), with ferns, bracken,
+  mushrooms, mossy logs and glades; flowers in the meadows and the odd lone tree; juniper on the heath; beach grass on
+  the dunes, driftwood and shells on the sand, rocks on the shore; boulders and scree on the mountain, cairns along the
+  trail and a lookout on the summit. Gulls wheel over both beaches and crabs scuttle on the wet sand. Six patches of
+  tall grass by the woods and on the heath hide wild Billies. Two corners of the mountain by the summit that you
+  couldn't climb onto can be walked to now (the rounded terrace edges no longer make a gentle slope too steep to step).
+- The run simulator plays by the game's own rules (Studio plan Phase 3, first part): the clinic, Potions, shop
+  prices, how battles start and end, catching (a miss can now bring the foe's money offer, which the simulator
+  refuses), and the payout all run the same code as the game. What the simulated player decides is one named bot
+  policy, printed with every report, with a note that the numbers catch changes rather than judge balance. The core
+  now lives with the game's logic so the Studio can run it later. The old species balance report
+  (tools/balance-report.py) is gone.
+- The run simulator now takes Loopholes (Studio plan Phase 3, second part): it picks one after a mini-boss and buys a
+  town shop's, heals on walking in when a Loophole says so, and stocks a town's shop with only what the run has
+  unlocked, as the game does. A second bot, never-pick, takes none, to compare against. A balance mode plays the
+  same runs about 250 times faster by not building the places' scenery. Two simulation reports of the same seeds can
+  be compared run by run, with 95% intervals.
+- The Studio's Run Lab has a Simulate card: it plays up to 200 runs on the data as loaded and on your unsaved
+  changes, side by side, and shows what changed (wins, where runs were lost, money in and out, Loopholes, leaders),
+  each table marked as a bot's results rather than a prediction. The results can be saved as JSON.
+- The Studio has pages for what a run is made of (Studio plan Phase 4), in the Runs group beside the Run Lab.
+  **Loopholes**: each effect edited by its kind with the code's limits beside it, what a set of Loopholes does to a
+  Billie's stats and to a run's prices and payouts, and the order they are offered in for a seed. **Unlocks & hub**:
+  the unlock table as a graph by building, refusing a "needs" that would go round in a circle, and what a new save has
+  after a few runs. **Economy**: every way each currency comes in and goes out, with a link to the number. Trainers
+  shows what a run gives a mini-boss leader instead of its own reward and levels, and World & encounters which pools a
+  run reads and which Billie stands in for a legacy one. Town shops and Jobs moved to the Legacy group. A Loophole
+  factor outside the game's limits (x0.1 to x4) is now a data error.
+- The Studio has a Run Lab (Studio plan Phase 2): type or roll a seed, or paste a debug log, and see that run's map
+  as the game makes it, with your unsaved changes, and beside the data as loaded. Click a place for its type, biome,
+  the day you reach it, its seed and its weather. Every run now starts the same way, from the mast, the test runs and
+  the simulator alike, so the same seed and unlocks always make the same map. The test runs start as a new player's
+  would: no ridge or autumn until those are unlocked.
+  The Lab now also shows, from the game's own code on your unsaved data, a place's wild Billies, its mini-boss's team,
+  a town's wares day by day and the Loophole picks; checks the map rules over 1,000 seeds and names a seed for each
+  problem; edits the run rules beside the map; and opens the game on that seed (Play this seed) in a test run that is
+  never saved, with your unsaved rules. A debug log taken on a run now names the run's own unlocks.
+- The Studio can repack a Billie's sheet (Studio plan Phase 5): Repack sheet in Part mode drops the pixels no frame
+  shows, and the Billie looks exactly the same. The Roster board has a Pixel density report: how many of each Billie's
+  pixels go into a metre in the world against the props' and the ground's, and which kit parts were scaled more than
+  their body. It only measures. No change in the game.
+- Replacing a Billie's part from the Parts Library keeps the Billie whole (Studio plan Phase 5). The body parts
+  hanging on the old part move to the new part's neck, shoulders, hips and tail (horns, ears and crests keep their
+  place on a new head); a new head blinks (the blink is drawn again from it) unless you keep the old faces; a new
+  torso squashes and stretches; the Billie's size in the world moves only by what the part changed. Parts a body part
+  can't hang on are greyed out with the reason, and a strip shows the Billie before and after, front and back, with
+  each face. The Studio's Check and CI now also check every Billie's skeleton (pictures inside their sheet, bones,
+  front and back, size in the world). No change in the game.
+- The Studio bakes kit Billies (Studio plan Phase 5). In the Art workbench's Part mode a kit Billie shows its recipe
+  (which part on each bone, at what size and colour, and its extras); a change there bakes the Billie's sheet and
+  skeleton at once with the game's own baker, as one undo step, and Propose sends them with the recipe. Write Billie
+  bakes it again after a part's picture was repainted. The old Python builder is gone, and so are the kit Billies'
+  piece layout files, which nothing used. No change in the game.
+- The 24 kit Billies' recipes are game data now (Studio plan Phase 5): game/data/kitBuilds.json, which part sits on
+  which bone at what size and colour, and the baker's settings, checked by `npm run check:data`. `npm run bake:kits`
+  bakes them with the game's own code and writes only what changed; on today's data it changes nothing. The part
+  kits use the game's slot words (sig, headExtra, bodyExtra). No change in the game.
+- The Studio's Billie previews move the way the game moves them (Studio plan Phase 5): on the game's 12 frames a
+  second, tails and hair lagging a frame behind, in the animated previews and in Parts' "As drawn". They used to
+  play the plain 60 fps pose, so a Billie could look smoother in the Studio than in the game.
+- The Studio's undo is lighter and more exact (Studio plan Phase 1). A step keeps only what the edit changed instead
+  of a copy of the whole game data, so a long editing session no longer fills the memory, and undoing an edit puts
+  back only what it changed. Opening the People section no longer changes the data by itself: it used to convert
+  nine older people to the new look and fill in clothing colours every time, which then rode along with the next
+  edit and made its undo take more back than it should (seen as an undo in Rules failing). Those nine people are now
+  stored in the new look once (they look exactly the same), and a person without a look is a data error.
+- The Studio's Check and the game data check in CI are one set of checks (Studio plan Phase 1). The Check now also
+  checks the run rules, the ranch, robots, biomes, node types, Loopholes, currencies, buildings and unlocks, in the
+  same words as CI; CI now also checks what only the Studio used to (scenes and roads, as notes). Propose changes
+  refuses while the Check lists a problem, so a proposal can no longer fail CI on something the Studio didn't show;
+  everything else is a note that never gets in the way. A typo in a Billie's name is a problem now, not a "legacy"
+  note. CI runs the Studio's own checks on pull requests that change the Studio or the game's logic. The Studio's
+  local mode (never in this repository) is gone from the docs and the tests.
+- The Studio keeps what you haven't proposed yet in the browser (Studio plan Phase 1). Closing the tab, a crash or a
+  phone dropping the page no longer loses work: the next time the Studio opens it offers the changes back (Restore,
+  Later or Discard), at the commit they were made on, so nothing merged since is put back. Only the changed files and
+  pictures are kept, never the sign-in.
+- The Studio's Propose changes no longer loses work (Studio plan Phase 0). A failed proposal used to drop the
+  pictures and rigs you had changed from the next try while showing them as saved; now nothing is marked saved until
+  the pull request is open, a retry sends everything, and a proposal that can't be packed sends nothing. The Studio
+  reads the game at the commit it opened on and proposes on that commit, so it can't quietly undo what was merged in
+  the meantime: if main changed the same files, it names them and asks first. An expired sign-in opens the sign-in
+  card over the Studio and sends the same changes afterwards. Branch names carry the second, so two proposals in a
+  minute no longer clash, and a retry reuses the branch a failed try left.
 - The Studio's Hub island section has the island generator's dials (IS-6b): size, coast, mountain, cove, beaches,
   cliffs, forest, stream, paths, the town and the hamlet, a seed and a seed for each part. A draft shows in the
   orbit view and on the map as you change them, with its size, the walk round the coast and a walking check. "Use
@@ -52,6 +141,31 @@ kept aside in the browser).
   square, a pier at the cove. A new game falls onto the square and wakes in front of the lab. Wild Billies hide in tall
   grass out by the woods and on the heath, not in town. Rooms open in place behind a door facing any way, the camera
   looking in through the door. A tap walks you all the way across the island.
+- The blur looks like a diorama (CAM-3): the sharp zone can stand upright through where you are, so whatever stands
+  there is sharp head to toe and the ground ahead and behind melts away, as in a tilt-shift photo of a model town.
+  The sharp zone follows what the camera is about: you, the middle of you and who you talk to (for the whole talk),
+  the spot of an encounter, a boss as it is revealed. Sharp things no longer leave a halo in the blur behind them, a
+  blurred thing in front spills over what is behind it, and the edge between sharp and blurred is smooth. On the
+  slowest graphics setting the blur is a cheap one instead of none. Settings > Graphics > Blur: Off, Low, Medium (the
+  game's look) or Strong; Off costs nothing (it replaces the Expert "Depth of field" dial). The Studio: Engine > Lens
+  dials for the tilt, an edge blur, a Miniature look (a little more colour, contrast and vignette) and how fast the
+  focus moves; a Miniature preset; Blur guides (the sharp strip tinted on the ground) and a Blur heatmap on the
+  preview.
+- The camera frames what matters (CAM-2): while someone talks to you it frames you both and comes in closer; the swoop
+  into a battle frames you and the spot and the battle comes up once the camera is there; the first time you come
+  near a run's boss in a place the camera leans toward them; by a landmark, a shop, a clinic, the lab or the ranch it
+  leans a little that way; standing still a few seconds it drifts slowly in, and running it eases out a little. One
+  thing at a time, nothing new right after a sharp turn; with reduced motion the drift and the ease are off and the
+  rest is gentler. Your own zoom is kept through all of it, battles included. Zoom now moves the tilt, distance and
+  field of view together along curves. The Studio: dials for all of it in Engine > Camera, the points of interest and
+  camera zones on the Camera guides, "Play moment" buttons, and a Camera zones tool in the Walk scenes editor (a
+  rectangle or circle where the camera frames differently).
+- The walking camera follows more smoothly (CAM-1): it trails you by the same amount at any frame rate, holds still
+  while you move a little and catches up as you go further, and settles on you again when you stop. It looks ahead
+  the way you push the joystick (or the way you walk when you tap), further sideways on a phone held upright. Looking
+  up at a landmark, tilting indoors, rising ground ahead, a room framed whole and the swoop into a battle now blend
+  in and out as one camera instead of each pulling on its own. The camera on tall ground behaves as before. The
+  Studio's Engine preview has Camera guides: the zones drawn on the scene, dragged to resize.
 - The world map shows Copperleaf's real island (island track IS-7): its own coastline with the cove and the
   headlands, its beaches, meadows, forest and paths as they are on the ground, its mountain standing up in the
   middle, and the town's buildings close in (the lab, the airship station, the houses, the well, the barn). The

@@ -7,6 +7,7 @@
    covered by tools/check-data-text.py, so every text shown here is escaped. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
+import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
@@ -27,11 +28,14 @@ import { githubDataText, githubMode } from './github.js';
 /* eslint-disable no-func-assign */
 expose({
   legacyJson: [() => legacyJson],
+  legacyLineIds: [() => legacyLineIds, v => ((legacyLineIds = v), provide({ legacyLineIds }))],
+  legacyLineIdsRead: [() => legacyLineIdsRead, v => ((legacyLineIdsRead = v), provide({ legacyLineIdsRead }))],
   legacyLoad: [() => legacyLoad, v => (legacyLoad = v)],
   legacyText: [() => legacyText, v => (legacyText = v)],
   legacyView: [() => legacyView],
 });
 /* eslint-enable no-func-assign */
+provide({ legacyLineIds, legacyLineIdsRead });
 /* to-module: end */
 export const legacyView = { data: null, loading: null, error: '' };
 
@@ -68,6 +72,18 @@ export function legacyLoad() {
     if (sectionShown('legacy')) render();
   })();
   return legacyView.loading;
+}
+
+/** Studio plan T1.3: the ids of the lines parked in game/data/legacy, for the Check's species rule (a species from one
+ * is stood in for by the game): null until read, or when it can't be read @returns {string[] | null} */
+function legacyLineIds() {
+  return legacyView.data ? legacyView.data.lines : null;
+}
+/** the same once read (it starts the read) @returns {Promise<string[] | null>} */
+async function legacyLineIdsRead() {
+  legacyLoad();
+  await legacyView.loading;
+  return legacyLineIds();
 }
 
 SECTIONS.legacy = () => {

@@ -22,14 +22,12 @@ import {
   toast,
 } from './hooks.js';
 import { COINS, ITEMS, RELICS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
-import { battleWeatherOf } from './logic/weather.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { ranchStop } from './logic/ranch.js';
-import { runBegin, runByTier, runEnd } from './logic/run-state.js';
-import { runArrive, runBack, runMapNode, runMapStart, runNext, runWeather } from './logic/run-map.js';
-import { MAPGEN_VERSION } from './logic/mapgen.js';
-import { runArriveHeal, runBattleSeed, runGive, runRelease, runReleasePays } from './logic/run-loop.js';
-import { fxHealShare, fxOfRun, fxPayoutRates, fxPrice, fxRows } from './logic/effects.js';
+import { runByTier, runEnd } from './logic/run-state.js';
+import { runArrive, runBack, runMapNode, runNext } from './logic/run-map.js';
+import { runArriveFx, runBattleExtra, runRelease, runReleasePays } from './logic/run-loop.js';
+import { fxOfRun, fxPayoutRates, fxRunPrice } from './logic/effects.js';
 import {
   BATTLE_RULES,
   battleHost,
@@ -39,7 +37,8 @@ import {
   newBattle,
   sayBattleFx,
 } from './logic/battle-engine.js';
-import { runUnlocks, unlockOpen } from './logic/unlocks.js';
+import { runUnlocks } from './logic/unlocks.js';
+import { runStartOn, runStartPlan } from './logic/run-start.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { coinHTML } from './art.js';
@@ -55,7 +54,6 @@ expose({
   runArrivedHint: [() => runArrivedHint, v => (runArrivedHint = v)],
   runBattleAgain: [() => runBattleAgain, v => (runBattleAgain = v)],
   runBattleStart: [() => runBattleStart, v => ((runBattleStart = v), provide({ runBattleStart }))],
-  runBattleWeather: [() => runBattleWeather],
   runCatch: [() => runCatch],
   runClinicEach: [() => runClinicEach],
   runEndHome: [() => runEndHome, v => (runEndHome = v)],
@@ -340,7 +338,7 @@ function runStartSheet() {
   renderOverlay();
 }
 /**
- * Take off on a run, in one tick: the run on the save (runBegin, with run.start), its map (runMapStart), its world
+ * Take off on a run, in one tick: the run on the save with its map (logic/run-start.js runStartPlan, runStartOn), its world
  * (runWorldSync; a world that can't be made leaves the run), day 1 on the landing (runArrive) in phase 'fly', saved
  * with the account at once, then the airship's free flight from Copperleaf (it starts after the world goes in, which
  * would stop it, and is told where from: runArrive has moved the trip already). A reload mid-flight is on the landing.
@@ -360,20 +358,18 @@ export function runTakeOff(seed, map, mods, pick) {
   const s = saveData,
     sd = seed || runSeedRoll(),
     data = runWorldData();
+  /* RL-11: the shop and biome unlocks it starts with; its map draws only the biomes open to it (Studio plan T2.1: one
+     start for every run, logic/run-start.js) */
+  const plan = runStartPlan(
+    sd,
+    { ...data, unlockData: UNLOCK_DATA },
+    { unlocks: runUnlocks(s, UNLOCK_DATA), map, mods }
+  );
   if (RULES.ranch && s.ranch) for (const uid of P.home) ranchStop(s, uid, Date.now(), RULES.ranch, toast);
   healAll();
-  runBegin(s, { ...runGive(sd, 1, MAPGEN_VERSION, RULES.run.start), home: P.home, pack: P.pack });
-  if (mods && mods.length && s.run) s.run.mods = mods.slice();
-  /* RL-11: the shop and biome unlocks it starts with; its map draws only the biomes open to it */
-  const run = /** @type {any} */ (s.run);
-  run.unlocks = runUnlocks(s, UNLOCK_DATA);
+  runStartOn(s, plan, { home: P.home, pack: P.pack });
   uiState.learnQ = [];
   runCatch.m = null;
-  const rules = { ...data.rules.map, ...(map || {}) };
-  runMapStart(run, {
-    ...data,
-    rules: { ...data.rules, map: { ...rules, biomes: unlockOpen(rules.biomes, 'biome', run.unlocks, UNLOCK_DATA) } },
-  });
   runWorldSync();
   if (!s.run || runWorld.seed !== sd) return;
   runArrive(s, 0, data);
@@ -418,11 +414,6 @@ export function runJump(n) {
 }
 
 /* ---------- a run's battles ---------- */
-/** a run battle's weather: the place's forecast for today; clear is sunny (a run has no hour) */
-const runBattleWeather = (run, i) => {
-  const w = runWeather(run, i, run.clock) || 'clear';
-  return battleWeatherOf(w === 'clear' ? 'sunny' : w, RULES.env);
-};
 /** what a run battle needs to start again after a reload: its kind, format and foe as it began (copies), and what
  * the page gave it (the encounter, the trainer, the stage, a fish) */
 const runFoeRef = (kind, foe, extra = {}) => ({
@@ -450,10 +441,9 @@ function runBattleStart(kind, foe, extra) {
   return {
     extra: {
       ...extra,
-      seed: runBattleSeed(run, i, k),
-      wx: runBattleWeather(run, i),
-      /* RL-12: the Loopholes held (logic/effects.js); none: no fx, the battle as before */
-      ...(run.relics.length ? { fx: fxRows(run.relics, RELICS) } : {}),
+      /* its seed, the forecast's weather and (RL-12) the Loopholes held: none, no fx, the battle as before
+         (logic/run-loop.js runBattleExtra, which the run's simulation plays too) */
+      ...runBattleExtra(run, i, k, RULES.env, fxOfRun(run, RELICS)),
     },
     begun: b => {
       if (!again) run.battleN = k + 1;
@@ -497,11 +487,10 @@ function runBattleAgain() {
 
 /* ---------- Loopholes on the walk (RL-12, logic/effects.js) ---------- */
 /** a run town's clinic: $ a hurt Billie, with the Loopholes' heal price rows */
-export const runClinicEach = () => fxPrice(fxOfRun(saveData.run, RELICS), 'heal', RULES.run.healCost);
+export const runClinicEach = () => fxRunPrice(saveData.run, RELICS, 'heal', RULES.run.healCost);
 /** walking into a place on a run: a Loophole's heal row heals the team (before the arrival's save) */
 export function runArrivedFx() {
-  const share = fxHealShare(fxOfRun(saveData.run, RELICS)),
-    gained = share ? runArriveHeal(saveData.team, share) : 0;
+  const gained = runArriveFx(saveData, RELICS);
   if (gained > 0) toast(`Your Loopholes paid out: your team healed ${formatNumber(gained)} HP.`);
 }
 

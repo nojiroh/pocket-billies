@@ -18,6 +18,7 @@
 /** @typedef {FxRow & { src: string }} Fx */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   FX_KINDS: [() => FX_KINDS],
@@ -35,6 +36,7 @@ expose({
   fxPayoutRates: [() => fxPayoutRates, v => (fxPayoutRates = v)],
   fxPrice: [() => fxPrice],
   fxRows: [() => fxRows],
+  fxRunPrice: [() => fxRunPrice],
   // @ts-expect-error -- replaced on purpose
   fxStages: [() => fxStages, v => (fxStages = v)],
 });
@@ -54,6 +56,7 @@ export const fxRows = (ids, relics) =>
 /** the effect rows of a run's Loopholes (null in the hub, or with none held) @param {{ relics: string[] } | null | undefined} run
  * @param {Record<string, Relic>} relics @returns {Fx[] | null} */
 export const fxOfRun = (run, relics) => (run && run.relics.length ? fxRows(run.relics, relics) : null);
+provide({ fxOfRun }); /* to-module */
 
 /** the product of the multipliers of the rows that pass `test`, smallest first, within FX_LIMIT (1 when none)
  * @param {Fx[] | null | undefined} fx @param {(f: Fx) => boolean} test */
@@ -79,6 +82,11 @@ export const fxPrice = (fx, what, n) => {
   const k = fxMult(fx, f => f.kind === 'price' && f.what === what);
   return k === 1 ? n : Math.max(0, Math.round(n * k));
 };
+
+/** Studio plan T3.2: a price on a run with its Loopholes' price rows of `what` (the page's clinic and shops, and the
+ * run's simulation): the price itself with no run or none held @param {{ relics: string[] } | null | undefined} run
+ * @param {Record<string, Relic>} relics @param {'shop' | 'heal'} what @param {number} n */
+export const fxRunPrice = (run, relics, what, n) => fxPrice(fxOfRun(run, relics), what, n);
 
 /** what multiplies a coin's chance to catch (the chance itself stays at most 1) @param {Fx[] | null | undefined} fx */
 export const fxCatch = fx => fxMult(fx, f => f.kind === 'catch');
@@ -120,6 +128,7 @@ export const fxHealShare = fx =>
     1,
     (fx || []).reduce((a, f) => a + (f.kind === 'heal' ? f.share : 0), 0)
   );
+provide({ fxHealShare }); /* to-module */
 
 /**
  * The payout's rates with the payout rows: `itemShare` times its rows (at most 1: an item never counts above its

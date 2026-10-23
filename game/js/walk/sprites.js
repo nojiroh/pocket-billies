@@ -7,6 +7,7 @@ import { expose } from '../test-globals.js';
 import { loadingScreen, provide, reducedMotion, requestAsker } from '../hooks.js';
 import { clamp } from '../util.js';
 import { pictureFacing } from '../logic/prop-turn.js';
+import { INTEREST_DEFAULTS } from '../logic/camera-interest.js';
 import { filterInto } from '../engine/frame-lists.js';
 import { makeCanvas } from '../art.js';
 import {
@@ -15,6 +16,7 @@ import {
   approachPoint,
   artImage,
   climbStartEnd,
+  doorOf,
   propShown,
   walkData,
   walkView,
@@ -30,6 +32,7 @@ import { foliageAmount, setPropLookUniforms } from './prop-look.js';
 /* eslint-disable no-func-assign */
 expose({
   BOX_INFO_CACHE: [() => BOX_INFO_CACHE],
+  DOOR_INTEREST: [() => DOOR_INTEREST],
   IMAGE_IDS: [() => IMAGE_IDS],
   SILHOUETTE_AMOUNT: [() => SILHOUETTE_AMOUNT],
   SILHOUETTE_PULL: [() => SILHOUETTE_PULL],
@@ -48,6 +51,7 @@ expose({
   drawSprites: [() => drawSprites, v => setDrawSprites(v)],
   imageId: [() => imageId, v => (imageId = v)],
   imageIdCount: [() => imageIdCount, v => (imageIdCount = v)],
+  interestPoints: [() => interestPoints, v => (interestPoints = v)],
   landmarkTilt: [() => landmarkTilt, v => (landmarkTilt = v)],
   spriteDrawn: [() => spriteDrawn],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
@@ -594,6 +598,36 @@ export function landmarkTilt(P, sc, yaw = 0) {
   }
   return best;
 }
+/* CAM-2: the scene's points of interest (logic/camera-interest.js), kept per scene: a catalogue entry's `interest`
+   ({weight, radius, zoom, pull}, any of them), else a landmark's default, else a door that counts; props not
+   shown now (propShown) are left out when asked */
+/* the doors that count: where you buy, heal or work (a run town's shop and clinic, the hub's lab and ranch) */
+const DOOR_INTEREST = ['shop', 'clinic', 'lab', 'ranch'];
+export function interestPoints(sc) {
+  if (!sc) return [];
+  const C0 = walkData().sc;
+  let L = walkRenderer.intL;
+  if (!L || L.sc !== sc) {
+    const list = [];
+    (sc.props || []).forEach((p, i) => {
+      const M = C0.props[p.k];
+      if (!M) return;
+      const door = DOOR_INTEREST.includes(p.act) && !!M.door,
+        base = M.landmark ? INTEREST_DEFAULTS.landmark : door ? INTEREST_DEFAULTS.door : null;
+      if (!base && !M.interest) return;
+      list.push({ p, door, pt: { id: `${p.k}#${i}`, ...INTEREST_DEFAULTS.landmark, ...base, ...M.interest } });
+    });
+    L = walkRenderer.intL = { sc, list };
+  }
+  /* where each is, read now (the seamless world moves the props when it re-anchors) */
+  const out = [];
+  for (const o of L.list) {
+    if (typeof propShown === 'function' && !propShown(o.p)) continue;
+    const at = o.door ? doorOf(o.p).at : [+o.p.x, +o.p.z];
+    out.push({ ...o.pt, x: at[0], z: at[1] });
+  }
+  return out;
+}
 function drawFlatItem(fp, it, T) {
   const gl = gpuState.gl,
     U = fp.U,
@@ -649,6 +683,8 @@ export function addHitTarget(it, C, hits, labels, PPU) {
     if (lb) labels.push({ k: 'act', x: q.x, y: box.y0 - 4, t: lb, act: lb === 'Closed' ? 'closed' : it.p.act });
   } else if (it.k === 'buddy') {
     hits.push({ k: 'buddy', ...box, z: q.d - 0.5 });
+  } else if (it.k === 'ranchBilly') {
+    hits.push({ k: 'ranchBilly', uid: it.uid, ...box, z: q.d - 0.3 });
   } else if (it.k === 'pet') {
     hits.push({ k: 'npc', n: it.n, ...box, z: q.d + 0.2, go: approachPoint(it.x, it.z), look: [it.x, it.z] });
   } else if (it.k === 'encm') {
