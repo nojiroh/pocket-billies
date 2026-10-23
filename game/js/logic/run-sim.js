@@ -19,13 +19,50 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   MAX_TURNS: [() => MAX_TURNS],
+  SIM_POLICY: [() => SIM_POLICY],
+  SIM_POLICY_DRIVEN: [() => SIM_POLICY_DRIVEN],
   brief: [() => brief],
   // @ts-expect-error -- replaced on purpose
   runSimOn: [() => runSimOn, v => (runSimOn = v)],
+  simPolicy: [() => simPolicy],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
+/** a guard against a battle that never ends in the simulation: the game itself ends one at rules.json battle.turnCap
+ * (battle-engine.js turnCapCheck), so this is never reached by a battle the game plays */
 export const MAX_TURNS = 60;
+/**
+ * Studio plan T3.2: the player's part, the bot policy. Every number the simulation uses that isn't the game's own rule is
+ * here, by name, and every report names the policy and its settings: the results measure this bot, not a player.
+ * - fights: wild Billies fought in a place, at most (the first of its stock; `fights` in the options)
+ * - fightAbove: no wild fight while the party's HP is below this share of its full HP
+ * - potionBelow: a Potion (taxbreak) on a Billie below this share of its HP, before each wild fight
+ * - clinic: a town's clinic whenever someone is hurt and the money is there
+ * - penniesUpTo, reserve: Copper Coins bought in a town shop up to this many held, keeping this much money
+ * - taxWhileBelow: one throw at a wild Billie (not an Alpha) while the party is smaller than this
+ * - ring: the throw's ring timing (0 to 1, the page's ring phase; 0.5: a "Great throw")
+ * - offer: a foe's offer after a miss: always refused
+ * - lane: the next place drawn from the run's seed among the ones linked ahead (never back)
+ * - keep: on a loss, the highest-level Billie comes home
+ */
+export const SIM_POLICY = Object.freeze({
+  name: 'greedy-forward',
+  fights: 2,
+  fightAbove: 0.7,
+  potionBelow: 0.6,
+  clinic: 'when-hurt',
+  penniesUpTo: 5,
+  reserve: 100,
+  taxWhileBelow: 3,
+  ring: 0.5,
+  offer: 'refuse',
+  lane: 'seeded',
+  keep: 'top-level',
+});
+/** the policy a run plays with these options (`fights` is the CLI's --fights) @param {SimOptions} o */
+export const simPolicy = o => ({ ...SIM_POLICY, ...(o.fights != null ? { fights: o.fights } : {}) });
+/** the report's numbers that say more about the policy than about the game's balance */
+export const SIM_POLICY_DRIVEN = Object.freeze(['caught', 'healed', 'moneyLeft']);
 /** @param {any} m */
 export const brief = m => `${m.sp}:${m.lvl}:${m.hp}`;
 
@@ -100,6 +137,7 @@ export function runSimOn(env) {
    */
   function runSim(seed, o = {}) {
     if (env.beforeRun) env.beforeRun(o);
+    const P = simPolicy(o);
     const s = fn('newSave')();
     s.started = true;
     s.starter = RULES.start.starters[0];
@@ -165,8 +203,8 @@ export function runSimOn(env) {
           const price = fxRunPrice(run, data.RELICS, 'shop', data.COINS.penny.price);
           while (
             stock.some((/** @type {any} */ w) => w.coin === 'penny') &&
-            (s.coins.penny || 0) < 5 &&
-            s.se >= price + 100
+            (s.coins.penny || 0) < P.penniesUpTo &&
+            s.se >= price + P.reserve
           ) {
             s.se -= price;
             s.coins.penny = (s.coins.penny || 0) + 1;
@@ -174,16 +212,16 @@ export function runSimOn(env) {
           }
         }
         /* the place's wild Billies, up to `fights` of them */
-        const stock = fn('encountersHere')(wn).slice(0, o.fights ?? 2);
+        const stock = fn('encountersHere')(wn).slice(0, P.fights);
         at.stock = stock.map((/** @type {any} */ q) => `${q.sp}:${q.lvl}${q.alpha ? 'A' : ''}`);
         for (const q of stock) {
           /* a careful player: a Potion on a Billie below 60%, and no wild fight while the party is below 70% */
           for (const m of s.team)
-            if (m.hp > 0 && m.hp < fn('maxHp')(m) * 0.6 && (s.items.taxbreak || 0) > 0)
+            if (m.hp > 0 && m.hp < fn('maxHp')(m) * P.potionBelow && (s.items.taxbreak || 0) > 0)
               fn('applyItem')('taxbreak', m.uid, false); /* the bag's use out of battle, as the page's */
           const hp = s.team.reduce((/** @type {number} */ a, /** @type {any} */ m) => a + m.hp, 0),
             full = s.team.reduce((/** @type {number} */ a, /** @type {any} */ m) => a + fn('maxHp')(m), 0);
-          if (hp < full * 0.7) break;
+          if (hp < full * P.fightAbove) break;
           /* started as the page starts it (battle-engine.js startWild), with the run's seed, weather and Loopholes; its
              number is taken once it has begun, as run.js runBattleStart does */
           const k = run.battleN;
@@ -197,9 +235,9 @@ export function runSimOn(env) {
           const B = hooks.activeBattle;
           let res;
           /* tax it while the party is small and there are coins: one throw, then fight on */
-          if (s.team.length < 3 && (s.coins.penny || 0) > 0 && !q.alpha) {
+          if (s.team.length < P.taxWhileBelow && (s.coins.penny || 0) > 0 && !q.alpha) {
             s.coins.penny--;
-            const c = fn('catchRoll')('penny', 1 + logic.CATCH_RULES.ring * 0.5, false);
+            const c = fn('catchRoll')('penny', 1 + logic.CATCH_RULES.ring * P.ring, false); /* doThrow's T */
             if (c.caught) {
               fn('catchKeep')(foe);
               stats.caught++;
@@ -312,6 +350,10 @@ export function runSimOn(env) {
     for (const x of all) if (!x.won) lost[x.lostAt || 'end'] = (lost[x.lostAt || 'end'] || 0) + 1;
     return {
       runs: n,
+      /* the honesty rules (Studio plan Part 3): the bot that played, and what its numbers are good for */
+      policy: simPolicy(o),
+      policyDriven: SIM_POLICY_DRIVEN.slice(),
+      note: 'A bot policy, not a player: a regression detector, not a balance oracle (legacy stand-in species).',
       won: all.filter(x => x.won).length,
       lostAt: lost,
       days: avg(x => x.days),

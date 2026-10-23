@@ -22,6 +22,11 @@ test('run sim: the report has its numbers', () => {
   assert.equal(R.runs, 3);
   for (const k of ['days', 'places', 'battles', 'turnsPerBattle', 'capital']) assert.ok(R[k] >= 0, k);
   assert.ok(R.won >= 0 && R.won <= 3);
+  // Studio plan T3.2: every report names its bot policy, its settings and the numbers it drives
+  assert.equal(R.policy.name, 'greedy-forward');
+  assert.equal(R.policy.fights, 2);
+  assert.equal(runStats(1, { team: 3, fights: 4 }).policy.fights, 4);
+  assert.ok(R.policyDriven.includes('caught') && /not a balance oracle/.test(R.note));
 });
 
 test('run sim: a run starts as the mast starts it, with no unlocks or every one', () => {
