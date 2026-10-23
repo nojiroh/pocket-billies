@@ -5,7 +5,7 @@
    and never reaches an account (game-state.js FIXTURE), so a player's save is never touched.
      title   a new game on the title screen (the boot a new player sees)
      town    Copperleaf Town, the hub (RL-5: the route and the cave were parked with their places)
-     room    inside Professor Hazel's lab in Copperleaf
+     room    inside Professor Chosen's lab in Copperleaf (Hazel works there too)
      battle  a trainer battle (Leader Rocco) in Copperleaf that the team wins
      stored  whatever the fixture saved last in this browser (the save round trip)
      run     on a run (RL-7): standing on its landing on day 1, its world made from the seed RL7FIXTURE
@@ -17,7 +17,7 @@
      island  the test island (island track IS-0: test_island, the map with the island contract's fields)
    UI-3b, for the Studio's UI look preview (the real screens with the look being edited):
      team    the Team screen          bag     the Bag, with a few of each item
-     talk    the dialogue box with a line from Professor Hazel
+     talk    the dialogue box with a line from Professor Chosen
    While a fixture runs, a page of the same origin that holds it in a frame (the Studio) can hand it a look:
    postMessage({type: 'uiLook', theme, mode, reduced, text}) (fixtureLook below).
    The trainer and the buddy carry planted names (FIXTURE_NAMES) that the debug log must never hold. */
@@ -192,7 +192,7 @@ export function fixtureStart() {
     render();
   }
   if (FIXTURE === 'talk')
-    talkLine('gini', 'This is the dialogue box. The Studio shows it with the look you are editing.');
+    talkLine('chosen', 'This is the dialogue box. The Studio shows it with the look you are editing.');
 }
 /* UI-3b: the Studio's UI look preview hands a fixture the look being edited: the theme sheet, and light or dark,
    reduced motion and the text size through the fixture save's own Settings (only a fixture listens) */

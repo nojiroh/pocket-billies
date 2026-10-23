@@ -21,7 +21,7 @@ Project Story is its own track. It runs alongside phases A to E; A2 and E3 point
 | The player | An ordinary person; the portal opens by accident |
 | The organization | A background mystery: clues, logos, documents; rarely seen in person until late |
 | Tone | Balanced: funny people, a mystery that gets genuinely eerie |
-| Hazel | Stays Professor Hazel, she/her. A **former member** of the organization: she knows more than she says |
+| Hazel | ~~Stays Professor Hazel, she/her. A former member of the organization~~ Superseded 2026-10-23: see below |
 | Surface / interior contrast | **Not decided.** Cyberpunk city above, solarpunk Hollow Earth within, is the working idea only |
 | Character creation | After the fall (already true: the dressing room comes after you wake outside Hazel's lab) |
 | City look | Dark, rainy neon at night |
@@ -32,6 +32,19 @@ Project Story is its own track. It runs alongside phases A to E; A2 and E3 point
 | Arrival | Open: Claude proposes 2-3 options (see "Ask me before") |
 | Phase 22 | Moved here from the `plan/engine-phases-19-21` branch |
 | City opening beats (S7) | Draft in docs/city-opening-beats.md: 21 s; the city replaces the fall's first leg (in S8); the figure reaches toward the light; the billboard's advert stays open (one swappable picture) |
+
+## Owner decisions (2026-10-23): the Chosen is the professor
+| Topic | Decision |
+|---|---|
+| The professor | **Professor Chosen** (he/him), after the Chosen from Smosh, as a Pokémon-style professor: self-appointed, sure he is the main character, confidently wrong. Name tag "Professor Chosen"; person id `chosen` (was `gini`) |
+| Hazel | Stays, as **his tired assistant** (person `hazel`, her old look): dry, kind, she does the real research and corrects him. Five short lines in the opening, her own lines in the lab |
+| The organization | **Dropped for now** from both: neither is a former member. Decide in S4 |
+| His lines | Approved as drafted (2026-10-23): the opening, hot takes, tips, the lab, after Blake's battle, his line in the ending, signs and lore. The katana is "at the cleaners" until its art exists |
+| His look | Existing wardrobe pieces for now (spiky hair, sunglasses, open lab coat over a purple tee, khaki cargo shorts, black high-tops, a bone-white chain); the wolf-print tee and a katana on his back come in a later session |
+
+Read "Hazel" below as "the professor" where it means the one who runs the lab and the opening; S4's "Hazel's past"
+is open again (the organization link was dropped). Note: the Chosen is Smosh's character; fine for a private build,
+but his name and costume are what to change before any public release.
 
 ## What exists today (read 2026-10-19 on main 09ae2ba; verify again before each session)
 - **The fall** (`opening-fall.js`, 899 lines): surface, crust, inner sky, landing. Starts on New game.

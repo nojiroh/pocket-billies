@@ -113,7 +113,7 @@ export const SCRIPT_COMMANDS = {
     checkpoint: true,
     about: 'you make yourself up (skipping stops here)',
   },
-  'throw-coins': { args: [], group: 'opening', about: 'Hazel’s three coins pop open into the starters' },
+  'throw-coins': { args: [], group: 'opening', about: 'the professor’s three coins pop open into the starters' },
   'pick-starter': {
     args: [],
     group: 'opening',
@@ -123,7 +123,7 @@ export const SCRIPT_COMMANDS = {
   'staged-fight': {
     args: [],
     group: 'opening',
-    about: 'Hazel fights Blake herself, staged (Project Story S6 makes it a real battle); {foe} after it',
+    about: 'the Chosen fights Blake himself, staged (Project Story S6 makes it a real battle); {foe} after it',
   },
   'rival-battle': { args: [], group: 'opening', about: 'Blake’s battle starts when the opening ends' },
   fall: { args: [], group: 'opening', checkpoint: true, about: 'the fall through the crust' },
@@ -173,7 +173,7 @@ export const SCRIPT_SLOTS = {
   place: 'the place a cutscene is filmed in (Copperleaf Town)',
   starter: 'the opening: the Billie you picked',
   counter: 'the opening: the one Blake takes, that beats yours',
-  foe: 'the opening: Blake’s first Billie, the one Hazel flattens',
+  foe: 'the opening: Blake’s first Billie, the one the Chosen flattens',
 };
 
 /** an error in a script, with the line (from 0) it is on @param {string} message @param {number} line */

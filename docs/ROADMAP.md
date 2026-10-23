@@ -87,6 +87,8 @@ town node needs it.
   the forest, gulls and crabs, the phone pass) done 2026-10-22 headless, waiting on the owner's phone test; then the
   ground is locked. Tags `is-N-done`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
+  2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
+  (PR #142); his wolf shirt and katana art are next.
   S6 (Hazel vs Blake as a real battle) is unblocked by RL-4; S4, S5 and S8's leftovers wait until the first cut has
   been played. RL-8 (the owner's answer): the opening is the fall only, Blake cut from it (his data kept), and Hazel's
   new lines send the player to the airship mast.

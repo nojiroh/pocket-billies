@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- A new professor: Professor Chosen runs the lab in Copperleaf. He finds you after the fall, hands out the starters,
+  gives his (chosen) opinion of each and sends you to the airship; he is sure he is the main character and is wrong
+  about most things, his type tips especially. Hazel stays as his assistant: she follows him out of the lab in the
+  opening, corrects him, and has her own things to say at her desk in the lab. Name tags, the lab's sign, the Field
+  Guide (recorded by Hazel, signed by the Chosen) and the lore follow. His look uses today's wardrobe; his wolf shirt
+  and katana come later.
 - Ranch income (RL-10b): the ranch earns Scrap by itself, 1 an hour at Lv 1 (2 at Lv 2, 3 at Lv 3), banking up to
   24 hours; the ranch's sheet shows the pile and how long until it is full, and Collect pays it. It counts from the
   first time you open the ranch, and works offline. Every ranch timer (training, eggs, income) now shares one clock:

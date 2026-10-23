@@ -1,8 +1,8 @@
 'use strict';
 /* ================= CUTSCENES: THE OPENING =================
    Starts with New game on the title screen: first the fall (opening-fall.js), then Copperleaf, filmed with the walk-scene
-   engine: you wake in the dust outside Professor Hazel's lab and she comes running; you make yourself up in the dressing
-   room; Blake barges in and Hazel fights him herself; three coins pop open into the starters; you pick one, Blake takes
+   engine: you wake in the dust outside Professor Chosen's lab and he comes running, his assistant Hazel behind him; you make yourself up in the dressing
+   room; Blake barges in and the Chosen fights him himself; three coins pop open into the starters; you pick one, Blake takes
    the one that beats it and battles you on the spot (opening-fall.js battleTutor, story.js storyAfterRival). If it can't
    run or stops, a Try again screen (ui.js renderIntro). What happens and in which order is the cutscene's file,
    game/data/cutscenes/opening.json (docs/CUTSCENES.md); this module mounts the view, clears the set, plays it on the
@@ -13,7 +13,7 @@ import { expose } from '../test-globals.js';
 import { fallPlay, landing, mapIdAt, provide, render, startGame, updateNav } from '../hooks.js';
 import { $, clamp } from '../util.js';
 import { CUTSCENES, LOCATIONS, RULES, SPECIES, START_NODE, locationFullName } from '../game-data.js';
-import { FAST_SKIPS, FAST_SKIP_MS, HAZEL, hotTake, speedWatch } from '../logic/hazel.js';
+import { CHOSEN, FAST_SKIPS, FAST_SKIP_MS, hotTake, speedWatch } from '../logic/chosen.js';
 import { cutsceneCleared, cutsceneOffset, cutscenePoint } from '../logic/cutscene-set.js';
 import { uiState } from '../game-state.js';
 import { userFps } from '../frame-scheduler.js';
@@ -52,16 +52,16 @@ import {
 } from './director.js';
 import { cutsceneLook, cutscenePlayScript } from './stage.js';
 import { chooseStarter, cutsceneStarterItem } from './starter-pick.js';
-import { hazelFight } from './staged-fight.js';
+import { chosenFight } from './staged-fight.js';
 /* eslint-disable no-func-assign */
 expose({
+  chosenHotTake: [() => chosenHotTake, v => ((chosenHotTake = v), provide({ chosenHotTake }))],
   cutsceneAbort: [() => cutsceneAbort, v => (cutsceneAbort = v)],
   cutsceneEnd: [() => cutsceneEnd, v => (cutsceneEnd = v)],
   cutsceneMapId: [() => cutsceneMapId, v => (cutsceneMapId = v)],
   cutsceneStart: [() => cutsceneStart, v => setCutsceneStart(v)],
   cutsceneStartName: [() => cutsceneStartName],
   cutsceneWanted: [() => cutsceneWanted, v => (cutsceneWanted = v)],
-  hazelHotTake: [() => hazelHotTake, v => ((hazelHotTake = v), provide({ hazelHotTake }))],
   openingCity: [() => openingCity, v => (openingCity = v)],
   openingDressingRoom: [() => openingDressingRoom, v => (openingDressingRoom = v)],
   openingLayer: [() => openingLayer, v => (openingLayer = v)],
@@ -70,7 +70,7 @@ expose({
   openingThrowCoins: [() => openingThrowCoins, v => (openingThrowCoins = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ hazelHotTake });
+provide({ chosenHotTake });
 export function setCutsceneStart(v) {
   cutsceneStart = v; // eslint-disable-line no-func-assign
   provide({ cutsceneStart });
@@ -106,7 +106,7 @@ export const cutsceneStartName = () =>
 
 /* ---------- the cutscene ---------- */
 /* opts.quick (phase 16 test boot, js/test-boot.js): no fall, and the dressing room keeps a random look on its own,
-   so the game opens on Hazel's scene and goes on to the coins and the starter pick */
+   so the game opens on the professor's scene and goes on to the coins and the starter pick */
 export async function cutsceneStart(opts) {
   if (cutscene.on) return;
   const id = cutsceneMapId();
@@ -129,7 +129,7 @@ export async function cutsceneStart(opts) {
      watch for skipped lines and a comment waiting to be said */
   cutscene.foe = null;
   cutscene.takes = {};
-  cutscene.skipWatch = speedWatch(FAST_SKIP_MS, FAST_SKIPS, HAZEL.tooFastSkips);
+  cutscene.skipWatch = speedWatch(FAST_SKIP_MS, FAST_SKIPS, CHOSEN.tooFastSkips);
   cutscene.quip = null;
   if (typeof landing !== 'undefined') landing.bits = [];
   cutscene.pickList = RULES.start.starters.filter(l => SPECIES[l + '0']);
@@ -287,7 +287,7 @@ async function openingScript(run) {
       'dressing-room': openingDressingRoom,
       'throw-coins': openingThrowCoins,
       'pick-starter': openingPickStarter,
-      'staged-fight': () => hazelFight(cutsceneLook('Blake')),
+      'staged-fight': () => chosenFight(cutsceneLook('Blake')),
       'rival-battle': () => {
         cutscene.rival = true;
       },
@@ -327,10 +327,10 @@ async function openingDressingRoom() {
   uiState.avatarDraft = cleanLook(uiState.trainerDraft || LOOK_PRESETS[0]);
   uiState.trainerDraft = uiState.avatarDraft;
 }
-/* throw-coins: Hazel's three coins fly to the starters' spots (star1-3) and pop open into the three Billies */
+/* throw-coins: the Chosen's three coins fly to the starters' spots (star1-3) and pop open into the three Billies */
 async function openingThrowCoins() {
   const C = cutscene.set,
-    H = cutscene.actors[cutsceneLook('Hazel')];
+    H = cutscene.actors[cutsceneLook('Chosen')];
   if (typeof soundEffect === 'function') soundEffect('throw');
   cutscene.pickList.forEach((l, i) => {
     const p = cutscenePoint(C.spots['star' + (i + 1)], cutscene.off),
@@ -435,9 +435,9 @@ function openingLayer(items, parts, lights, now, t) {
     lights.push({ p: [x, y, z], r: 1.1, c: [0.5, 0.4, 0.12] });
   }
 }
-/* during the pick: tap Hazel for a hot take about the starter you're looking at, in a bubble over her head */
-function hazelHotTake() {
-  const g = cutscene.actors[cutsceneLook('Hazel')],
+/* during the pick: tap the Chosen for a hot take about the starter you're looking at, in a bubble over his head */
+function chosenHotTake() {
+  const g = cutscene.actors[cutsceneLook('Chosen')],
     b = $('#csBubble');
   if (!g || !b || !walkView.C || !walkView.cv) return;
   const line = cutscene.pickList[cutscene.sel],
@@ -448,7 +448,7 @@ function hazelHotTake() {
     r = walkView.cv.getBoundingClientRect();
   b.hidden = false;
   if (q) {
-    /* over her head, but kept fully on screen */
+    /* over his head, but kept fully on screen */
     const half = b.offsetWidth / 2 + 16;
     b.style.left = clamp(r.left + (q.x / walkView.cv.width) * r.width, half, innerWidth - half) + 'px';
     b.style.top = Math.max(b.offsetHeight + 70, r.top + (q.y / walkView.cv.height) * r.height) + 'px';
@@ -456,7 +456,7 @@ function hazelHotTake() {
   b.classList.remove('m-pop');
   void b.offsetWidth;
   b.classList.add('m-pop');
-  cutsceneAct(cutsceneLook('Hazel'), 'react', 700);
+  cutsceneAct(cutsceneLook('Chosen'), 'react', 700);
   clearTimeout(b._t);
   b._t = setTimeout(() => (b.hidden = true), 3600);
 }

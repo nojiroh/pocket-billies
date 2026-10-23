@@ -48,7 +48,7 @@ import { battle3dLayout } from './battle-3d.js';
 import { worldMapWanted } from './world-bowl.js';
 import { openShop } from './shop.js';
 import { soundEffect } from './sound.js';
-import { talkHazel } from './talk.js';
+import { talkChosen } from './talk.js';
 import { cutscene } from './cutscene/director.js';
 import { loreBook } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
@@ -76,6 +76,7 @@ expose({
   roomFor: [() => roomFor, v => (roomFor = v)],
   roomFrontOf: [() => roomFrontOf, v => (roomFrontOf = v)],
   roomLayIn: [() => roomLayIn, v => (roomLayIn = v)],
+  roomPeople: [() => roomPeople, v => (roomPeople = v)],
   roomRefresh: [() => roomRefresh, v => ((roomRefresh = v), provide({ roomRefresh }))],
   roomState: [() => roomState, v => ((roomState = v), provide({ roomState }))],
   roomStepIn: [() => roomStepIn, v => (roomStepIn = v)],
@@ -321,7 +322,7 @@ function roomAct(h) {
     flyMenu(h.p);
     return;
   }
-  /* RL-11: the unlock board in Hazel's lab opens the Lab tab */
+  /* RL-11: the unlock board in the Chosen's lab opens the Lab tab */
   if (pa === 'board' && typeof labBoardOpen === 'function') {
     labBoardOpen();
     return;
@@ -349,13 +350,21 @@ function roomAct(h) {
     if (I.shop && SHOPS[I.shop]) openShop(I.shop);
     else toast(I.p.say || 'The shop is closed today.');
   } else if (I.kind === 'clinic') clinicHeal(I.p.say);
-  else if (I.kind === 'lab' && typeof talkHazel === 'function') talkHazel(I.p);
+  else if (I.kind === 'lab' && typeof talkChosen === 'function') talkChosen(I.p);
   else if (I.kind === 'home' && typeof homeDecorate === 'function') homeDecorate();
   else if (I.kind === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
   else {
     const c = (mapById(I.id) || {}).chat || [];
     toast(c.length ? `“${c[Math.floor(Math.random() * c.length)]}”` : 'They wave hello.');
   }
+}
+/** the room's own people who only talk (its map's people, as a place's are), whose story conditions hold
+ * @param {any} sc the room's scene */
+function roomPeople(sc) {
+  const R = sc.roomOf ? mapById(sc.roomOf) : null;
+  return ((R && R.people) || []).filter(
+    (/** @type {any} */ P) => PEOPLE[P.who] && ((!P.when && !P.unless) || storyAllows(P))
+  );
 }
 export function roomState() {
   const I = uiState.inside;
@@ -380,7 +389,18 @@ export function roomState() {
     roam: true,
     who: 'me',
     enc: [],
-    npcs: sc.keeper ? [{ who: sc.keeper, id: '_keeper:' + I.id, done: true, exit: null, dir: 'down' }] : [],
+    npcs: [
+      ...(sc.keeper ? [{ who: sc.keeper, id: '_keeper:' + I.id, done: true, exit: null, dir: 'down' }] : []),
+      /* people who only talk in the room's own data (Hazel in the lab): they stand on the room's next npcSpots */
+      ...roomPeople(sc).map(P => ({
+        who: P.who,
+        id: '_talk:' + P.id,
+        talk: P,
+        done: true,
+        exit: null,
+        dir: P.dir || 'down',
+      })),
+    ],
     exits: [{ i: 0, to: -1, name: 'Outside', out: 1 }],
   };
 }
@@ -543,7 +563,7 @@ export function walkPick(h) {
       if (id && SHOPS[id]) openShop(id);
       else toast(p.say || 'The shop is closed today.');
     } else if (a === 'clinic') clinicHeal(p.say);
-    else if (a === 'lab' && typeof talkHazel === 'function') talkHazel(p);
+    else if (a === 'lab' && typeof talkChosen === 'function') talkChosen(p);
     else if (a === 'read' && typeof loreBook === 'function') loreBook(p.book);
     else if (a === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
     else if (a === 'board' && typeof labBoardOpen === 'function') labBoardOpen();

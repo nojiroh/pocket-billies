@@ -24,7 +24,7 @@
  "chat": [
   "Things fall into Copperleaf every week or so. We put the furniture to good use.",
   "The flower on the knoll makes the power. The moss makes the roofs. The bees make the rest.",
-  "Hazel’s lab hums all night. Granny Juniper says it’s thinking."
+  "The lab hums all night. Granny Juniper says it’s thinking. The Chosen says it’s him."
  ],
  "people": [
   {
@@ -1050,8 +1050,8 @@
    "x": 48.5,
    "z": 50.4,
    "act": "lab",
-   "label": "Professor Hazel’s lab",
-   "say": "Professor: Every Billie you meet adds to your Index. Walk, battle and tax them all!"
+   "label": "Professor Chosen’s lab",
+   "say": "Professor Chosen: Every Billie you meet adds to your Index. Walk, battle and tax them all! It is your destiny."
   },
   {
    "k": "beehive",
@@ -3385,6 +3385,10 @@
    "hazel": [
     52.22,
     48.25
+   ],
+   "assist": [
+    51.2,
+    49.61
    ],
    "me": [
     53.97,
