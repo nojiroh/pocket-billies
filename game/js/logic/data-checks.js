@@ -38,6 +38,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataRelics: [() => dataRelics, v => (dataRelics = v)],
   // @ts-expect-error -- replaced on purpose
+  dataRigs: [() => dataRigs, v => (dataRigs = v)],
+  // @ts-expect-error -- replaced on purpose
   dataRoadFindings: [() => dataRoadFindings, v => (dataRoadFindings = v)],
   // @ts-expect-error -- replaced on purpose
   dataRobotProblems: [() => dataRobotProblems, v => (dataRobotProblems = v)],
@@ -739,6 +741,75 @@ export function dataRobotProblems(D, R) {
     const P = (robots.parts || {})[R[k]];
     if (!P) out.push(`has robot ${k} ${R[k]}, no such part`);
     else if (P.slot !== slot) out.push(`has ${R[k]} as ${k}, but it is a ${P.slot} part`);
+  }
+  return out;
+}
+
+/* ---------- Studio plan Phase 5 (T5.3): the rigs (art/next/rigs-next.js) hold together ---------- */
+/**
+ * Each species' rig, both views: every picture's box inside its sheet, the rig's `size` the sheet's (and the same in
+ * both views when they share it), every bone's parent there and its picture one of the view's, the same bones front
+ * and back, and `geo` as the builders made it (its cx, base and k the view's, mid and cy halfway from the top to the
+ * ground line, the top inside the pictures' boxes as the skeleton builder frames them and above the ground).
+ * `sheetSize(path)` is a sheet's [w, h] (null when it is not known: the boxes are then checked against `size`);
+ * `geoOf(M, view)` the skeleton builder's framing (logic/rig-joints.js rigGeo at the neutral pose).
+ * @param {Record<string, any>} rigs by species @param {(sheet: string) => [number, number] | null} sheetSize
+ * @param {(M: any, view: string) => Record<string, number> | null} geoOf @returns {DataProblem[]}
+ */
+export function dataRigs(rigs, sheetSize, geoOf) {
+  /** @type {DataProblem[]} */
+  const out = [];
+  for (const [sp, R] of Object.entries(rigs || {})) {
+    if (!R || typeof R !== 'object') continue;
+    const views = ['front', 'back'].filter(v => R[v]),
+      file = views.some(v => String(R[v].sheet || '').startsWith('next/')) ? 'art/next/rigs-next.js' : 'art/rigs.js',
+      bad = (/** @type {string} */ msg) => out.push([file, `${sp} ${msg}`]);
+    if (!views.length) continue;
+    if (views.length === 2) {
+      const names = (/** @type {any} */ M) =>
+        M.bones
+          .map((/** @type {any} */ b) => b.n)
+          .sort()
+          .join(', ');
+      if (names(R.front) !== names(R.back))
+        bad(`front and back have different bones (front ${names(R.front)}; back ${names(R.back)})`);
+      if (R.front.sheet === R.back.sheet && String(R.front.size) !== String(R.back.size))
+        bad(`size is ${R.front.size} in front and ${R.back.size} in back, on one sheet`);
+    }
+    for (const view of views) {
+      const M = R[view],
+        at = `${view}:`,
+        known = M.sheet ? sheetSize(M.sheet) : null,
+        [W, H] = known || M.size || [0, 0];
+      if (known && String(M.size) !== String(known))
+        bad(`${at} size ${M.size}, but its sheet ${M.sheet} is ${known.join(',')}`);
+      const names = new Set(M.bones.map((/** @type {any} */ b) => b.n));
+      for (const b of M.bones) {
+        if (b.par && b.par !== 'root' && !names.has(b.par)) bad(`${at} ${b.n} hangs from ${b.par}, no such bone`);
+        if (!Number.isInteger(b.i) || b.i < -1 || b.i >= M.imgs.length)
+          bad(`${at} ${b.n} shows picture ${b.i}, but there are ${M.imgs.length}`);
+      }
+      M.imgs.forEach((/** @type {any} */ P, /** @type {number} */ i) => {
+        for (const [f, box] of Object.entries(P.f || {})) {
+          const [x, y, w, h] = /** @type {number[]} */ (box);
+          if (x < 0 || y < 0 || w < 0 || h < 0 || x + w > W || y + h > H)
+            bad(`${at} picture ${i} ${f} [${box}] is outside its sheet (${W} x ${H})`);
+        }
+      });
+      const G = M.geo;
+      if (!G) {
+        bad(`${at} has no geo`);
+        continue;
+      }
+      if (G.cx !== M.cx || G.base !== M.base || G.k !== M.k)
+        bad(`${at} geo cx, base, k are ${G.cx}, ${G.base}, ${G.k}, not the view's ${M.cx}, ${M.base}, ${M.k}`);
+      const mid = +((G.top + M.base) / 2).toFixed(2);
+      if (Math.abs(G.mid - mid) > 0.01 || Math.abs(G.cy - mid) > 0.01)
+        bad(`${at} geo mid ${G.mid} and cy ${G.cy} are not halfway from its top ${G.top} to the ground ${M.base}`);
+      const g = geoOf(M, view);
+      if (g && G.top < g.top - 0.01) bad(`${at} geo top ${G.top} is above every picture (the boxes start at ${g.top})`);
+      if (G.top >= M.base) bad(`${at} geo top ${G.top} is not above the ground ${M.base}`);
+    }
   }
   return out;
 }

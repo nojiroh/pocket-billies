@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import './robot-rig-node.mjs';
 import {
+  RIG_NEUTRAL_POSE,
   rigBox,
   rigGeo,
   rigKit,
@@ -330,4 +331,11 @@ test("rigGeo is the skeleton builder's framing, number for number, on every spec
       n++;
     }
   assert.ok(n >= 200, `${n} views`);
+});
+
+test("RIG_NEUTRAL_POSE is the skeleton builder's neutral pose", () => {
+  assert.deepEqual(
+    { ...RIG_NEUTRAL_POSE, hov: { ...RIG_NEUTRAL_POSE.hov } },
+    JSON.parse(JSON.stringify(neutralPose()))
+  );
 });

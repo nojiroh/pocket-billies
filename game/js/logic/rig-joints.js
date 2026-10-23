@@ -15,6 +15,7 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  RIG_NEUTRAL_POSE: [() => RIG_NEUTRAL_POSE],
   rigAffineMove: [() => rigAffineMove],
   rigAffineMul: [() => rigAffineMul],
   rigAffineScale: [() => rigAffineScale],
@@ -210,6 +211,34 @@ export function rigSetZ(M, name, view, z) {
   return true;
 }
 
+/** the skeleton builder's neutral pose (studio/js/skeleton.js neutralPose: skeleton-rig.js rigPose at rest, nothing
+ * turned, open eyes), the pose geo is framed at */
+export const RIG_NEUTRAL_POSE = Object.freeze({
+  act: null,
+  tau: 0,
+  t: 0,
+  seed: 0,
+  x: 0,
+  y: 0,
+  r: 0,
+  sx: 1,
+  sy: 1,
+  body: 0,
+  bdy: 0,
+  head: 0,
+  hdx: 0,
+  hdy: 0,
+  aL: 0,
+  aR: 0,
+  lL: 0,
+  lR: 0,
+  tail: 0,
+  flap: 1,
+  open: 0,
+  face: 'idle',
+  hov: Object.freeze({ dx: 0, dy: 0, r: 0 }),
+  k: 0,
+});
 /* ---------- geo: how big the figure stands (Studio plan Phase 5, T5.2; was the skeleton builder's skeletonFraming) */
 /** @typedef {[number, number, number, number, number, number]} Affine x' = a x + c y + e, y' = b x + d y + f */
 /** @param {Affine} m @param {Affine} n @returns {Affine} */

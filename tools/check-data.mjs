@@ -30,6 +30,7 @@ import {
   dataRelics,
   dataRoadFindings,
   dataRobotProblems,
+  dataRigs,
   dataRobots,
   dataRunClock,
   dataRunLoop,
@@ -440,6 +441,32 @@ for (const [id, sc] of Object.entries(S)) {
   for (const p of islandProblems(sc)) problem(where, p);
 }
 
+// Studio plan Phase 5 (T5.3): the rigs (game/art/next/rigs-next.js and art/rigs.js) hold together: boxes inside their
+// sheets, sizes, parents, front and back, geo (logic/data-checks.js dataRigs, the Studio's Check runs it too)
+{
+  const vm = await import('node:vm'),
+    { rigGeo, RIG_NEUTRAL_POSE } = await import('../game/js/logic/rig-joints.js'),
+    { animFor } = await import('../game/js/body-plan-animation.js'),
+    ART = join(DATA, '..', 'art'),
+    rigsOf = (/** @type {string} */ f, /** @type {string} */ name) => {
+      const box = { window: {} };
+      vm.runInNewContext(readFileSync(join(ART, f), 'utf8'), box);
+      return box.window[name] || {};
+    },
+    /* a PNG's width and height from its header */
+    sheetSize = (/** @type {string} */ sheet) => {
+      const f = join(ART, sheet);
+      if (!existsSync(f)) return null;
+      const b = readFileSync(f).subarray(16, 24);
+      return [b.readUInt32BE(0), b.readUInt32BE(4)];
+    },
+    geoOf = (M, view) => rigGeo(M, view, animFor(M.plan, M.q || {})(RIG_NEUTRAL_POSE, view === 'back') || {}, RIG_NEUTRAL_POSE);
+  for (const [f, name] of [
+    ['next/rigs-next.js', 'RIGS_NEXT'],
+    ['rigs.js', 'RIGS'],
+  ])
+    for (const [where, what] of dataRigs(rigsOf(f, name), sheetSize, geoOf)) problem(where, what);
+}
 // Studio plan T1.3: the Studio's scene and road checks (logic/data-checks.js), so CI runs what the Studio's Check
 // shows: an error fails here (each is one of the rules above too), a warning is printed and never fails
 for (const f of [...dataSceneFindings(D, PB_DATA.road), ...dataRoadFindings(D, PB_DATA.road)])
