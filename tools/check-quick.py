@@ -1459,8 +1459,8 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     views_flags_wind_light()
 
-    @step('v46: the world update — ground kit, buildings and their colours, rooms that open in place', 300)
-    def v46():
+    @step('Ground tiles, building plans and colours, rooms laid in at their doors', 300)
+    def buildings_and_rooms():
         """every ground kind has its 12 tiles; the new buildings and every colour variant load and have a 3D plan; each new
         kind of building has a room; walking into Hazel's lab lays the room into Copperleaf where the lab stands (its doorway
         exactly at the lab's door, the hamlet dimmed around it, nowhere to walk but the floor) and walking out leaves you
@@ -1518,7 +1518,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("environment.force=null;0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out) + '; out again at the lab’s door'
-    v46()
+    buildings_and_rooms()
 
     @step('alpha 0.1: the new name, Billies and taxing, rooms with their building\'s windows', 240)
     def a01():
