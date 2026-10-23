@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""The fast check of Pocket Billies: only what must never break, in one to three minutes on a headless machine. Claude
-Code runs it after a change and CI on every push.
+"""The fast check of Pocket Billies: only what must never break. Claude Code runs it after a change (alone with
+--only=) and CI on every push: about 11 minutes on CI's runner (677 s on 23 Oct 2026, 27 checks on 19 pages, 2
+browsers). Its budget, three minutes, is missed: each page boots once (25-65 s in software); docs/TESTING.md says why.
 
     python3 tools/check-fast.py                  # every check
     python3 tools/check-fast.py --workers=2      # browser checks side by side in this many browsers (default 2)
@@ -878,8 +879,8 @@ def screens(pg, base):
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
     tap = lambda sel: pg.evaluate(f"(()=>{{const e=document.querySelector({json.dumps(sel)});if(!e)return false;e.click();return true}})()")
     seen = []
-    def need(what, cond, sec=10):
-        if not until(pg, cond, sec):
+    def need(what, cond, sec=10, poke=None):
+        if not until(pg, cond, sec, poke):
             raise Exception(f'{what}: not there ({cond}); on screen: ' + pg.evaluate("[uiState.tab,uiState.modal&&(uiState.modal.cls||uiState.modal.title),document.querySelector('#ov').className+' '+(document.querySelector('#ov .sheet')||{}).className].join(' / ')"))
         seen.append(what)
     screen = lambda t, part: f"!!document.querySelector('.screen.s-{t}')&&!!document.querySelector('.screen.s-{t} :is({part})')"
@@ -909,8 +910,11 @@ def screens(pg, base):
     keys = pg.evaluate("[...document.querySelectorAll('#ov [data-a=ms-tab]')].map(b=>b.dataset.k)")
     if len(keys) < 4: raise Exception(f'the Billie sheet has tabs {keys}')
     for k in keys:
-        tap(f'#ov [data-a=ms-tab][data-k={k}]')
-        need(f'its {k} tab', f"document.querySelector('#ov [data-a=ms-tab][data-k={k}]').getAttribute('aria-selected')==='true'")
+        # TC-4: tapped again while it isn't open: a tap while the sheet was still drawing itself was lost on a busy
+        # machine ("its sum tab: not there"); a tap on the open tab does nothing
+        sel = f'#ov [data-a=ms-tab][data-k={k}]'
+        tap(sel)
+        need(f'its {k} tab', f"document.querySelector('{sel}').getAttribute('aria-selected')==='true'", poke=f"document.querySelector('{sel}').click()")
     pg.evaluate("closeModal();0")
     # the fixture's lead can evolve: closing the sheet brings up the evolution window (a pending window)
     need('the evolution window', "!!document.querySelector('#ov .evo-sheet')")
