@@ -74,7 +74,7 @@ const FIXTURE_PLACES = {
 };
 /** RL-12: the Perks the relics fixture holds (a shop's and a clinic's price rows, a catch row, a battle's stage, a
  * heal on arrival) */
-const FIXTURE_PERKS = ['shelter', 'lobbyist', 'fineprint', 'insider', 'severance'];
+const FIXTURE_PERKS = ['clinic_card', 'coupon_book', 'steady_hand', 'running_shoes', 'trail_snacks'];
 /** RL-7: the run fixture's seed */
 const FIXTURE_RUN_SEED = 'RL7FIXTURE';
 function fixtureSave() {

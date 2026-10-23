@@ -174,6 +174,8 @@
    "miniboss": {"up":3,"reward":300},
    "boss": {"up":5,"reward":600}
   },
+  "trainers": {"perRoute":[1,2],"up":0,"reward":150,"sight":6},
+  "rewards": {"pick":3,"reroll":50,"grow":2},
   "perks": {
    "cap": 6,
    "pick": 3,

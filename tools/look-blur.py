@@ -9,14 +9,14 @@ Studio's blur guides show. The numbers go to validation/look-blur/notes.json.
     python3 tools/look-blur.py --only=tilt      # only the pictures whose names hold these words
     python3 tools/look-blur.py --out=DIR        # somewhere else (a "before" set from another worktree)
 
-Uses check-fast.py's page set-up (the clock, no accounts, the test globals), without its low graphics."""
-import importlib.util, json, sys
+Uses the browser checks' page set-up (tools/browser_check.py: the clock, no accounts, the test globals), without the
+low graphics."""
+import json, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-spec = importlib.util.spec_from_file_location('check_fast', ROOT / 'tools' / 'check-fast.py')
-CF = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(CF)
+sys.path.insert(0, str(ROOT / 'tools'))
+import browser_check as CF  # noqa: E402
 ARGS = sys.argv[1:]
 ONLY = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--only=')), None)
 OUT = Path(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--out=')), ROOT / 'validation' / 'look-blur'))

@@ -704,7 +704,9 @@ function rigTick(ts) {
     if ((!c.dataset.still && !reducedMotion) || !c._drawn) drawDomRig(c, ts);
   }
 }
-frameTask('rig', rigTick, () => (activeBattle ? 4 : Math.min(60, userFps() / 2)));
+/* 0.1.0 alpha: the pose moves in 50 ms steps (drawDomRig), so 20 redraws a second show the same motion; it was 30-60,
+   which cost a phone's menus for nothing */
+frameTask('rig', rigTick, () => (activeBattle ? 4 : Math.min(20, userFps() / 2)));
 document.addEventListener(
   'pointerdown',
   ev => {

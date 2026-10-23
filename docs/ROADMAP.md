@@ -30,7 +30,8 @@ are sessions of Claude's working time, not calendar time, and exclude the owner'
 | RO-1 | Roster: real pools and regional forms (done 2026-10-23, branch `track/roster`) | every run pool lists real lines, no stand-ins; `forms` on lines | none (alongside) | 1 | yes |
 | RL-R1 | Region generator (done 2026-10-23, branch `track/regions`) | a themed region per seed: zones on a biome graph, a regional dex, leaders by type, the region's name | RO-1 | 1-2 | yes |
 | RL-R2 | Side areas and field moves | detours and rare alternate paths behind Surf, Dig and Cut (type + a kept badge) | RL-R1 | 2 | yes |
-| RL-12b | Encounters | `events.json` with options and requirements, waystations, reward picks after trainer battles, route trainers | RL-R1 | 2 | yes |
+| RL-12b | Encounters (part 1 done 2026-10-23 on `track/encounters`: events, the reward pick, route trainers; part 2 next, after RL-R2: waystations, no two shops) | `events.json` with options and requirements, waystations, reward picks after trainer battles, route trainers | RL-R1 | 2 | yes |
+| RL-12c | Held items | one held-item slot per Billie (the owner's answer, 9.6 27): the data section, the slot in the save and the Team tab, effect rows at the battle hooks; the reward pick's `held` cards switched on | RL-12b | 1 | yes |
 | RL-S1 | Story director | `meta.history`, `lines.json`, the hub's line pick, the return-from-a-loss scene | RL-12b | 1-2 | yes |
 | RL-S2 | Rival and relationships | Blake as a rival node countering your starter, `meta.rel`, Chapter 1 | RL-S1 | 1-2 | yes |
 | RL-13 | Brackets, challenges, starter points | `modifiers.json`, challenge modes, starter points at the mast, the region's leaders | RL-R2 | 1-2 | yes |
@@ -52,7 +53,7 @@ town node needs it.
   Research, Scrap and Crests, new type passives, internal renames one per commit, the new tone in the text, the new name Pocket B&B² (a raised B), the Bureau of Lost, Found and
   Beans. RF-1 and RF-2 before RO-1, RF-3 before RL-12b, RF-4 before RL-S1. Tags `rf-N-done`. Branch `track/reflavour`.
   RF-1 (the words players see), RF-2 (pyramids: names, icons, the 3D throw, its sounds) and RF-3 (type passives) done
-  2026-10-23.
+  2026-10-23. RF-4 (internal renames, SAVE_VERSION 5) and RF-5 (the new tone in text) done 2026-10-23; RF-6 (the game's name) next.
 - **Studio track** (docs/phases/studio-track.md): ST-0..ST-6 done; ST-7 (Model mode import) next. Independent of the
   rework; the editors for the new data sections come with their sessions (RL-11..RL-16). Side session ST-T, the
   Studio self-test (docs/phases/studio-self-test.md, approved 2026-10-21): measure the Studio; fixes come after.
@@ -92,7 +93,9 @@ town node needs it.
   the parked old world), TC-3 rename and fix what stays in check-quick, TC-4 speed (shared helpers, fixtures, the
   budgets, the picture baseline). About 4-5 sessions; seven "Ask me before" items, all answered 2026-10-23. Tags `tc-N-done`. First, alone:
   fix the three camera checks main's fast check fails. Can also run as lanes A-E in three rounds (the file's
-  "Running sessions in parallel").
+  "Running sessions in parallel"). Done 2026-10-23 (rounds 1-3; round 3 is TC-4 items 1, 2, 5, 6): the full check
+  about 21 min (41 before), smoke about 3, the fast check about 11, `npm test` 20 s; the 10- and 3-minute budgets are
+  missed for reasons docs/TESTING.md gives. Tag `tc-done`.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all

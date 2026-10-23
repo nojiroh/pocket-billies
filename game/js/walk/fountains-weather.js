@@ -11,6 +11,7 @@ import { freeMesh, gpuState, normalize3, uploadMesh, windGustAt } from '../engin
 import { environment } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
+import { inFrustum } from './quality-cull.js';
 import { addRipple, waterAt } from './water.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -156,6 +157,8 @@ export function drawFountainEffects(quad, t, rm, dt) {
       continue;
     }
     if (!b.spout) continue;
+    /* 0.1.0 alpha: a fountain outside the view draws no spray (150-250 draws each) */
+    if (walkRenderer.frustum && !inFrustum(walkRenderer.frustum, b.spout[0], b.spout[1], b.spout[2], 4)) continue;
     const [sx, sy, sz] = b.spout,
       u = B[0],
       lo = B[B.length - 1],

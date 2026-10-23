@@ -26,6 +26,7 @@ expose({
   DEX_ORDER: [() => DEX_ORDER],
   EGGS: [() => EGGS],
   EGG_TIERS: [() => EGG_TIERS],
+  EVENTS: [() => EVENTS],
   FIELD_MOVES: [() => FIELD_MOVES],
   HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   HUB_LOCATIONS: [() => HUB_LOCATIONS],
@@ -44,6 +45,7 @@ expose({
   POOLS: [() => POOLS],
   PYRAMIDS: [() => PYRAMIDS],
   RARITY_STAT_TOTALS: [() => RARITY_STAT_TOTALS],
+  REWARDS: [() => REWARDS],
   ROADS: [() => ROADS],
   ROADS_BY_NODE: [() => ROADS_BY_NODE],
   ROBOTS: [() => ROBOTS],
@@ -101,6 +103,8 @@ expose({
   typeEffectiveness: [() => typeEffectiveness, v => (typeEffectiveness = v)],
   typesWith: [() => typesWith],
   warnData: [() => warnData],
+  // @ts-expect-error -- replaced on purpose
+  worldAddTrainers: [() => worldAddTrainers, v => (worldAddTrainers = v)],
   worldExtra: [() => worldExtra],
   worldExtraMaps: [() => worldExtraMaps],
   // @ts-expect-error -- replaced on purpose
@@ -397,6 +401,12 @@ export const MUSIC = gameData.music || { songs: {}, jingles: {}, cries: { bases:
 export const FIELD_MOVES = (gameData.fieldMoves && gameData.fieldMoves.moves) || {};
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
+/** RL-12b: the reward pick's cards */
+export const REWARDS = /** @type {Record<string, import('../types/game-data').RewardRow>} */ (gameData.rewards || {});
+/** RL-12b: a run's events, loot tables and trainer classes */
+export const EVENTS = /** @type {import('../types/game-data').EventsData} */ (
+  gameData.events || { loot: {}, classes: {}, events: {} }
+);
 /* roguelite track RL-11: the four currencies (currencies.json) */
 export const CURRENCIES = gameData.currencies || {};
 /* RL-11: the hub's buildings, each upgraded with one currency (buildings.json; levels are unlocks.json rows) */
@@ -527,11 +537,16 @@ export function worldPut(w) {
   worldExtra.pools.push(...Object.keys(w.pools));
   Object.assign(SHOPS, w.shops || {});
   worldExtra.shops.push(...Object.keys(w.shops || {}));
-  for (const [id, T] of Object.entries(w.trainers || {})) {
-    TRAINERS[id] = /** @type {TrainerEntry} */ ({ ...T, id, who: PEOPLE[T.who] ? T.who : 'chosen' });
-    worldExtra.trainers.push(id);
-  }
+  worldAddTrainers(w.trainers || {});
   worldSetGraph(w.locations, w.roads);
+}
+/** RL-12b: trainers put into the world as it stands (a run's event foe), gone with it at worldHubBack
+ * @param {Record<string, any>} trainers */
+export function worldAddTrainers(trainers) {
+  for (const [id, T] of Object.entries(trainers)) {
+    TRAINERS[id] = /** @type {TrainerEntry} */ ({ ...T, id, who: PEOPLE[T.who] ? T.who : 'chosen' });
+    if (!worldExtra.trainers.includes(id)) worldExtra.trainers.push(id);
+  }
 }
 export function worldHubBack() {
   worldExtra.look = null;

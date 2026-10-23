@@ -15,7 +15,7 @@
 /** @import { Run, RunMap, SaveData, Billy } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { fxHealShare, fxOfRun, unlockOpen } from '../hooks.js';
+import { encArrive, fxHealShare, fxOfRun, unlockOpen } from '../hooks.js';
 import { ITEMS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
@@ -83,6 +83,8 @@ export function runArriveHeal(team, share) {
  * simulation): the held Perks' heal rows heal the team (runArriveHeal); returns the HP gained (0: none)
  * @param {SaveData} s @param {Record<string, any>} perks perks.json */
 export function runArriveFx(s, perks) {
+  /* RL-12b: an event's boons count one place down first (logic/run-enc.js) */
+  if (s.run) encArrive(s.run);
   const share = fxHealShare(fxOfRun(s.run, perks));
   return share ? runArriveHeal(s.team, share) : 0;
 }

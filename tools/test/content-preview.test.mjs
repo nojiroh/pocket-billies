@@ -28,10 +28,22 @@ test('relic preview: nothing held changes nothing', () => {
 });
 
 test('relic preview: each kind reads its rows through the game’s fx functions', () => {
-  const p = P.perkPreview(['insider', 'offshore', 'shelter', 'takeover', 'hedge', 'severance', 'options', 'writeoff'], {
-      sp: SP,
-      lvl: 30,
-    }),
+  const p = P.perkPreview(
+      [
+        'running_shoes',
+        'lucky_charm',
+        'clinic_card',
+        'power_gloves',
+        'bubble_wrap',
+        'trail_snacks',
+        'field_notebook',
+        'lost_property',
+      ],
+      {
+        sp: SP,
+        lvl: 30,
+      }
+    ),
     m = fn('makeBilly')(SP, 30),
     hus = p.stats.find(s => s.id === 'hus');
   assert.equal(hus.before, fn('stat')(m, 'hus'));

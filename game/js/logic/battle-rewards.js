@@ -13,6 +13,7 @@ import { dropEncounter, findBilly, wildPrize } from './rules.js';
 import { fieldBadgeKey } from './run-side.js';
 import { fxMoney } from './effects.js';
 import { perkOfferMake } from './perks.js';
+import { rewardDataGame, rewardOfferMake } from './rewards.js';
 import { battleRoll } from './battle-engine.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -92,7 +93,8 @@ export function battleSettle(b, s) {
 }
 /**
  * A win's money and marks (after battleSettle; not for the opening's tutorial battle): a wild win's prize, a
- * trainer's reward and flag, and on a run (`run`) a mini-boss beaten makes the next pick of Perks
+ * trainer's reward and flag, and on a run (`run`) a mini-boss beaten makes the next pick of Perks (RL-12b: a route
+ * trainer the next reward pick)
  * (logic/perks.js perkOfferMake, saved on the run before it shows). RL-R2: on a run, the first win over a leader
  * of a type keeps that type's badge for good (s.meta.badges; `pay.badge` names the type, for the sheet).
  * @param {any} b @param {any} s @param {{ o: string | null, prize: number, reward: number, badge?: string }} pay
@@ -103,7 +105,7 @@ export function battleSettleWin(b, s, pay, run) {
   if (b.kind === 'wild' && pay.prize > 0) s.se += pay.prize;
   if (b.kind === 'trainer') {
     s.se += pay.reward;
-    if (run && b.T && b.T.runFoe && b.T.type && s.meta) {
+    if (run && b.T && (b.T.runFoe === 'miniboss' || b.T.runFoe === 'boss') && b.T.type && s.meta) {
       const key = fieldBadgeKey(b.T.type),
         badges = s.meta.badges || (s.meta.badges = {});
       if (!badges[key]) {
@@ -112,6 +114,9 @@ export function battleSettleWin(b, s, pay, run) {
       }
     }
     if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, PERKS, RULES.run.perks);
+    /* RL-12b: a route trainer (or the rival) leaves a reward pick (logic/rewards.js), saved with the battle's end */
+    if (run && b.T && (b.T.runFoe === 'route' || b.T.runFoe === 'rival'))
+      rewardOfferMake(run, b.tid, rewardDataGame(s.team));
     s.flags[b.tid] = 1;
   }
 }

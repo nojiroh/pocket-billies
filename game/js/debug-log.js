@@ -493,6 +493,19 @@ debugLog.state = () => {
             relics: (run.perks || []).slice(),
             offer: run.offer ? run.offer.length : 0,
             offers: run.offerN || 0,
+            /* RL-12b: events (ids played, the one playing, draws so far), the boons on, reward picks made and the
+               one waiting (how many cards, rerolls), the route trainer walking up */
+            events: run.enc
+              ? {
+                  seen: run.enc.seen.slice(),
+                  playing: run.enc.play ? run.enc.play.id + ':' + run.enc.play.opt : null,
+                  draws: run.enc.n,
+                  boons: run.enc.boons.map(b => b.src + ':' + b.left),
+                  rewards: run.enc.rewardN,
+                  reward: run.enc.reward ? { cards: run.enc.reward.cards.length, rolls: run.enc.reward.rolls } : null,
+                }
+              : null,
+            spottedBy: GAME.routeSight ? GAME.routeSight.busy || null : null,
           }
         : null;
     /* RL-8: what the runs brought home (numbers only) */

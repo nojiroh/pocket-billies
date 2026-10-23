@@ -154,3 +154,41 @@ test('RL-11: unlock:, runs and wins read what lasts between runs (saveData.meta)
   for (const c of ['!unlock:shop_revive', '!runs', '!wins'])
     assert.equal(conditionHolds(c, none), true, `no meta: ${c}`);
 });
+
+test('RL-12b: type:, money and badge: read the team, the Moneys on hand and the badges won', () => {
+  const save = {
+    se: 250,
+    team: [
+      { sp: 'a', types: ['Water', 'Flying'] },
+      { sp: 'b', types: ['Water'] },
+      { sp: 'c', types: ['Fire'] },
+    ],
+    seats: ['haven'],
+    meta: { badges: ['Ground'] },
+  };
+  const S = storyStateOf(save, { badgeTypes: { haven: 'Water' } });
+  for (const c of ['type:Water >= 2', 'type:water', 'type:Fire', '!type:Grass', 'money >= 250', 'money < 251'])
+    assert.equal(conditionHolds(c, S), true, c);
+  for (const c of ['badge:Water', 'badge:Ground', '!badge:Grass']) assert.equal(conditionHolds(c, S), true, c);
+  /* a robot or a Billie without its own types: the caller's lookup */
+  const T = storyStateOf({ team: [{ sp: 'x' }] }, { typesOf: () => ['Steel'] });
+  assert.equal(conditionHolds('type:Steel', T), true);
+  /* meta.badges as keys (RL-R2 may write an object), a leader id mapped to its type */
+  const K = storyStateOf(
+    { meta: { badges: { marina: 1, rocco: 0 } } },
+    { badgeTypes: { marina: 'Water', rocco: 'Ground' } }
+  );
+  assert.equal(conditionHolds('badge:Water and !badge:Ground', K), true);
+  assert.equal(conditionHolds('money or type:Fire or badge:Fire', storyStateOf({})), false);
+  assert.ok(conditionProblem('badge: and money'), 'badge: needs a type');
+  assert.ok(conditionProblem('badge:Water >= 1'), 'badge: is yes or no');
+  assert.ok(conditionProblem('money:gold'), 'money takes no name');
+});
+
+test("RL-12b: the game reads a team Billie's types from its species, and the leaders' types from their files", () => {
+  const { storyTeamLookups } = modules.script;
+  const L = storyTeamLookups();
+  assert.equal(L.badgeTypes.marina, 'Water');
+  assert.ok(Object.values(L.badgeTypes).includes('Water'));
+  assert.deepEqual(L.typesOf({ sp: 'zuck1' }), ['Electric', 'Water']);
+});

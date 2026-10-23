@@ -51,7 +51,7 @@ export const SCRIPT_COMMANDS = {
   take: { args: ['item', 'n?'], about: 'take items (or coin:<id>) away, never below 0' },
   quest: { args: ['id', 'stage'], about: 'move a quest to a stage' },
   battle: { args: ['trainer'], checkpoint: true, about: 'battle a trainer; the script goes on after it' },
-  heal: { args: [], about: 'heal the team' },
+  heal: { args: ['s?'], about: 'heal the team (an event: that share of each Billie’s HP, "heal 0.5")' },
   walk: {
     args: ['who', '...'],
     about:
@@ -106,6 +106,56 @@ export const SCRIPT_COMMANDS = {
       'that many of a prop (a flying car) along one of the cutscene’s lanes, end to end in s seconds, again and again (doesn’t wait)',
   },
   sound: { args: ['effect'], group: 'cutscene', about: 'a sound effect (throw, pop, hit: sound.js)' },
+  /* RL-12b: an event's own (events.json, logic/encounters.js), on a run */
+  perk: {
+    args: ['rarity?'],
+    group: 'event',
+    about: 'offer one Perk: any, or of a rarity (common, uncommon, rare), or a Perk by id; past the cap you let one go',
+  },
+  money: { args: ['n'], group: 'event', about: 'Moneys gained, or lost with a minus (never below 0): "money -50"' },
+  hurt: { args: ['s'], group: 'event', about: 'every Billie standing loses that share of its HP, never past 1 HP' },
+  status: { args: ['id'], group: 'event', about: 'every Billie standing without one gets a status (par, slp, brn)' },
+  fx: {
+    args: ['n', 'kind', '...'],
+    group: 'event',
+    about:
+      'an effect row (perks.json’s kinds) for this place and n more: "fx 3 price what=shop mult=1.25", "fx 1 stat stat=hus stages=1"',
+  },
+  wager: {
+    args: ['n'],
+    group: 'event',
+    about: 'a chance in percent from the run’s stream: sets the flag wager to win or lose ("if wager = win")',
+  },
+  loot: { args: ['table', 'n?'], group: 'event', about: 'items drawn from a loot table (events.json loot)' },
+  level: {
+    args: ['n'],
+    group: 'event',
+    about: 'a Billie of the team, drawn from the run’s stream, gains or loses levels',
+  },
+  recall: {
+    args: ['n?'],
+    group: 'event',
+    checkpoint: true,
+    about: 'you pick a Billie to give up; a Billie of the region’s dex takes its place, n levels up',
+  },
+  foe: {
+    args: ['class', 'n?'],
+    group: 'event',
+    checkpoint: true,
+    about: 'battle a trainer of a class (events.json classes), its levels the place’s plus n; lost, the run ends',
+  },
+  wild: {
+    args: ['n?'],
+    group: 'event',
+    checkpoint: true,
+    about: 'a wild battle with a Billie of the region, n levels up',
+  },
+  reward: {
+    args: ['kind?', 'n?'],
+    group: 'event',
+    checkpoint: true,
+    about: 'a reward pick (rewards.json): of every kind, or of one (item, tutor, candy, evo), n cards',
+  },
   /* the opening's own (cutscene/opening.js) */
   'dressing-room': {
     args: [],
@@ -409,6 +459,7 @@ export function scriptReference() {
     { title: 'Commands', rows: commands(undefined) },
     { title: 'Cutscene commands', rows: commands('cutscene') },
     { title: 'Opening commands', rows: commands('opening') },
+    { title: 'Event commands', rows: commands('event') },
     {
       title: 'Conditions',
       rows: [

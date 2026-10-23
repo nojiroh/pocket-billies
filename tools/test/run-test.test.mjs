@@ -45,14 +45,16 @@ test('runTestOf: the seed as the debug menu cleans it, the short map, the Studio
 test('runTestOf: unlocks none, all or a list; the party and the Perks; what the data lacks is named', () => {
   assert.deepEqual(of('?debug&run=A&unlocks=all').unlocks, Object.keys(GAME_DATA.unlocks));
   assert.deepEqual(of('?debug&run=A&unlocks=none').unlocks, []);
-  const R = of('?debug&run=A&unlocks=biome_ridge,nope&party=musk2@30,bezos0@0,ghost1@5,gates1@250&relics=shelter,zzz');
+  const R = of(
+    '?debug&run=A&unlocks=biome_ridge,nope&party=musk2@30,bezos0@0,ghost1@5,gates1@250&relics=clinic_card,zzz'
+  );
   assert.deepEqual(R.unlocks, ['biome_ridge']);
   assert.deepEqual(R.party, [
     { sp: 'musk2', lv: 30 },
     { sp: 'bezos0', lv: 1 },
     { sp: 'gates1', lv: 100 },
   ]);
-  assert.deepEqual(R.perks, ['shelter']);
+  assert.deepEqual(R.perks, ['clinic_card']);
   assert.deepEqual(R.left, ['unlock nope', 'Billie ghost1', 'Perk zzz']);
   const many = of(`?debug&run=A&relics=${Object.keys(GAME_DATA.perks).join(',')}`);
   assert.equal(many.perks.length, Math.min(D.cap, Object.keys(GAME_DATA.perks).length));

@@ -39,6 +39,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   validRun: [() => validRun, v => (validRun = v)],
   // @ts-expect-error -- replaced on purpose
+  validRunEnc: [() => validRunEnc, v => (validRunEnc = v)],
+  // @ts-expect-error -- replaced on purpose
   validRunFoe: [() => validRunFoe, v => (validRunFoe = v)],
   // @ts-expect-error -- replaced on purpose
   validRunRegion: [() => validRunRegion, v => (validRunRegion = v)],
@@ -227,6 +229,8 @@ export function validRun(o) {
   if (o.pack !== undefined && !(plain(o.pack) && Object.keys(o.pack).every(k => k === 'items' || k === 'pyramids')))
     return false;
   if (o.pack !== undefined && !(packed(o.pack.items || {}) && packed(o.pack.pyramids || {}))) return false;
+  /* RL-12b: its events and reward picks (missing on a run from before) */
+  if (o.enc !== undefined && !validRunEnc(o.enc)) return false;
   /* the hub as the run started: shapes only (validSave checks its Billies like the team's) */
   const st = o.start,
     counts = v => recordOf(v, 500, n => wholeIn(n, 0, META_MAX));
@@ -248,6 +252,69 @@ export function validRun(o) {
     st.seats.every(v => typeof v === 'string') &&
     plain(st.visited) &&
     (st.buddy === undefined || st.buddy === null || (typeof st.buddy === 'string' && st.buddy.length <= 60))
+  );
+}
+/** RL-12b: a run's events and reward picks (logic/run-enc.js): shapes only @param {any} e @returns {boolean} */
+export function validRunEnc(e) {
+  const plain = (/** @type {any} */ v) =>
+      !!v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__'),
+    id = (/** @type {any} */ v) => typeof v === 'string' && /^[a-z0-9_]{1,40}$/.test(v),
+    num = (/** @type {any} */ v) => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 1e6,
+    row = (/** @type {any} */ f) =>
+      plain(f) &&
+      id(f.kind) &&
+      Object.keys(f).length <= 6 &&
+      Object.values(f).every(v => num(v) || (typeof v === 'string' && v.length <= 20)),
+    card = (/** @type {any} */ c) =>
+      plain(c) &&
+      Object.keys(c).every(k => ['id', 'kind', 'item', 'n', 'move'].includes(k)) &&
+      id(c.id) &&
+      ['item', 'candy', 'evo', 'tutor', 'held'].includes(c.kind) &&
+      (c.item === undefined || id(c.item)) &&
+      (c.move === undefined || id(c.move)) &&
+      (c.n === undefined || wholeIn(c.n, 1, 99));
+  return (
+    plain(e) &&
+    Object.keys(e).every(k => ['n', 'node', 'seen', 'boons', 'rewardN', 'reward', 'play'].includes(k)) &&
+    (e.play == null ||
+      (plain(e.play) &&
+        Object.keys(e.play).every(k => ['id', 'i', 'opt', 'at', 'foe'].includes(k)) &&
+        id(e.play.id) &&
+        wholeIn(e.play.i, -1, RUN_NODES - 1) &&
+        wholeIn(e.play.opt, 0, 2) &&
+        Array.isArray(e.play.at) &&
+        e.play.at.length <= 16 &&
+        e.play.at.every((/** @type {any} */ n) => wholeIn(n, 0, 999)) &&
+        (e.play.foe === undefined ||
+          (plain(e.play.foe) &&
+            id(e.play.foe.cls) &&
+            wholeIn(e.play.foe.up, -20, 20) &&
+            wholeIn(e.play.foe.n, 0, RUN_NODES - 1))))) &&
+    wholeIn(e.n, 0, 1e6) &&
+    recordOf(e.node, RUN_NODES, v => v === '' || id(v)) &&
+    Object.keys(e.node).every(k => /^\d{1,2}$/.test(k)) &&
+    Array.isArray(e.seen) &&
+    e.seen.length <= RUN_NODES * 2 &&
+    e.seen.every(id) &&
+    Array.isArray(e.boons) &&
+    e.boons.length <= 32 &&
+    e.boons.every(
+      (/** @type {any} */ b) =>
+        plain(b) && Array.isArray(b.fx) && b.fx.length <= 8 && b.fx.every(row) && wholeIn(b.left, 0, 99) && id(b.src)
+    ) &&
+    wholeIn(e.rewardN, 0, 1e6) &&
+    (e.reward === null ||
+      (plain(e.reward) &&
+        Array.isArray(e.reward.cards) &&
+        e.reward.cards.length >= 1 &&
+        e.reward.cards.length <= 5 &&
+        e.reward.cards.every(card) &&
+        wholeIn(e.reward.rolls, 0, 99) &&
+        Object.keys(e.reward).every(k => ['cards', 'rolls', 'from', 'kind', 'n'].includes(k)) &&
+        (e.reward.kind === undefined || ['item', 'candy', 'evo', 'tutor', 'held'].includes(e.reward.kind)) &&
+        (e.reward.n === undefined || wholeIn(e.reward.n, 1, 5)) &&
+        typeof e.reward.from === 'string' &&
+        e.reward.from.length <= 60))
   );
 }
 /** RL-8: a run battle's foe as it began, kept in run.at so a reload starts the same battle again: its kind and

@@ -2,6 +2,369 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Test cleanup track, round 3 - TC-4: shared helpers, check-quick on fixtures and waits, the tiers - 2026-10-23
+Branch `track/test-cleanup` (pulled with --no-rebase before every push). TC-4 items 1, 2, 5 and 6, over two sessions
+(the first ran out of room). The owner said to make the recommended choices without waiting for plan approval. main
+(RF-3, RO-1) merged in first. The track is done; the owner pushes the `tc-done` tag.
+- Where the track file was wrong: software drawing is multi-threaded (one page keeps about two cores busy, two pages
+  fill a 4-core container, a boot takes 25-65 s), so more browsers buy nothing; 13 check-quick steps already opened
+  their own fixture page, only the 22 desktop steps replayed the start with `play()`. "About 10 min" for the full check
+  and "1-3 min" for the fast check are not reachable on this hardware with every page drawn in software (below).
+- **Item 1**: `tools/browser_check.py`, the shared helpers (serve on a free port, CLOCK, NO_ACCOUNTS, TEST_GLOBALS,
+  LOW_GRAPHICS, `until` with an optional poke, `new_page` with extra init scripts, `open_game`, `console_text`, `log`,
+  `frames`, `drawing`, `stand`, `go_scene`). check-fast, check-quick, check-ui-gallery, check-sound and
+  check-studio-github use it; style-diff, look-blur, island-perf and island-shots import it; look-tall-ground still
+  loads check-fast (TALL_SPOT), which re-imports the same names.
+- **Item 2**: check-quick on check-fast's model. Each step is `def step(P)` on a Page opened by its first step at
+  `?fixture=<name>` ('title' = the phone flow's real opening, None = no page). 13 pages in `--workers` browsers
+  (default 2), longest first; `play()` is gone; QUICK_RENDER is an init script; a page error fails the step it came
+  in; each page's boot is recorded (`boot` in results.json) and left out of the step's time limit. 93 of 95 sleeps
+  became waits (`ui`, `drawn`, `look_at_me`, `bowl_drawn`, BOWL_OPEN, BATTLE_LEFT); two stay with comments. The
+  battle, run and speed pages (battles/starters/battle weather, RL-8/Juniper/airship, postcards/running/settings)
+  draw with check-fast's low graphics (their steps read state). The double/Alpha battles and battle music play at
+  four times the animation speed.
+- **Check fixes** (each its own commit; every one was the check, not the game): battle music's cue waits 20 s and the
+  lost payout's jingle 40 s; battle music at 4x, since on a busy machine the throw came after the drums' 8 s fallback,
+  which logs nothing; the Alpha foe level 12 (a level-6 Alpha fell to the first move and the catch was skipped);
+  `go_scene` waits at least 60 s for a scene's first frames (Juniper's "black screen" after the RL-8 run); the
+  postcard step loads the card's picture and stretches the card's 9 s timer while it checks it (the card had gone);
+  RL-8 taps Take off again while the run sheet is still there (a lost tap); run map music waits for the map song
+  (Run music's last check leaves the deadline song asked for) and puts the walk tab back even when it fails (its
+  failure had taken Battle music with it); check-fast's CAM-2 encounter swoop waits 30 s and the orbit check resets
+  the camera first (CI failed that pair once); check-fast's screens check taps a Billie sheet's tab again until it
+  opens (a lost tap; that commit also carries check-fast's docstring times).
+- **Fixed on main's behalf**: check-fast's "Play this seed" built its Node plan without the run's region (RL-R1), so it
+  failed on main since #167 and on this PR; it passes the region now. check-data-text treats an event option's `need`
+  as a condition, as it does an unlock's `when` (RL-12b's `team >= 2` stopped CI's smoke job); main's #173 made the
+  same change (and reads then/intro as scripts), and the merge keeps main's file. main's #170 fixed the in-game test's two false
+  failures the baseline run's selftest job hit (merged in).
+- Tried and reverted: steps that share a fixture sharing a page (13 pages to 10) saved 66 s of 1338 and broke Run
+  music, which needs the run's landing untouched.
+- **Results** (a 4-core cloud container, one heavy check at a time):
+  - Full check: 2455 s and 35 of 37 steps before (main, with other work beside it; round 2 measured 1872 s). Five
+    full runs after: 1338 s (1 problem), 1272 s (the reverted page sharing, 3), 1217 s (1), 1259 s (3), and
+    **1282 s with all 37 passed** on the last. Each problem was a check that lost a tap or waited too little on a busy
+    machine, fixed above. Boots are about 500 s of the pages' time. Slowest steps of the last run: double/Alpha
+    battles 258 s, RL-8's run 253, phone 169, walking left and right 168, running 161, culling 149.
+  - Smoke: **188 s**, 3 steps, no problems (budget 1-2 min).
+  - Fast check: **677 s** on CI on dfbe76c (27 checks on 19 pages, 2 browsers, all passed); 665 s here (26 of 27: the screens check lost a tap on the Billie sheet; fixed, it taps again until the tab opens).
+  - `npm test`: 20 s; lint, typecheck, check:modules clean after every change.
+  - Why the 10-minute budget is missed: a desktop frame takes about 1.5 s in software beside another page, at a third
+    of the resolution or with low graphics alike, and the game clock moves at most 60 ms a frame, so game-time waits
+    are frame waits. TESTING.md says so under the tiers, with the ways further (fewer drawn steps, more logic in Node,
+    a faster machine, the fast check's pages sharing boots).
+- **Item 5**: triggered on `track/test-cleanup` at a47fa45 (Actions -> Check -> Run workflow, "Make the picture
+  baseline" on: run 1252, https://github.com/nojiroh/pocket-billies/actions/runs/40030142882). When its full check
+  passes it saves the release `baseline-0.1.0-alpha` (quick-baseline.zip); the PR says how it ended. If it failed or a
+  rebuild is wanted after the merge: Actions -> Check -> Run workflow on main with "Make the picture baseline".
+- **Item 6**: TESTING.md's tiers table (a fast check row; smoke, full and unit times; why the budgets are missed), the
+  docstrings of check-quick and check-fast, check.yml's header.
+- Risky: the low-graphics pages' pictures look plainer than before (no grass, mist or extra shadows): they are notes,
+  and the baseline is made from this state. The postcard step stubs `setTimeout` for one 9 s delay while the card is
+  checked. "Save the picture baseline" in check.yml runs only when the full check passes.
+- Next: the owner tags `tc-done`; the nightly full run compares pictures with the baseline. The fast check's budget
+  needs its 19 pages to share boots (a check-fast restructure, not in this track).
+### Phone speed, calmer effects, five times of day - 2026-10-23
+Branch `claude/new-session-yby9e8` (one session, restarted from main after PR #170 merged). From the owner's three
+debug logs of 2026-10-23 (Android phone, iPad, Windows) and their ask: the phone runs badly, menus are sluggish, blur
+and haze toned down ("don't drop the blur, make it more subtle"), a stylized time of day with about five times to tune
+in the Studio, and more suggestions (tech and visual).
+- What the logs say (checked in the code):
+  - Android in Copperleaf: **1,770 draw calls and 27,400 uniform calls a frame** (iPad 1,050 / 10,000); **864 sprite
+    draws against the iPad's 191**: a phone held upright keeps about 1,000 of 1,530 things in view (the iPad 230).
+  - On Android Chrome a wait on the graphics process shows up as main-thread time, so the automatic quality judged every
+    slow frame "main-thread bound", held the effects at step 2 and pushed the resolution back to 1 every second: the
+    phone ran the whole session at full resolution, 17-27 fps.
+  - Phase 20 says the Android phone is limited by pixels: with engine.json's quality.resolution 1.5 it draws the 1.6 MP
+    cap, but the calls are now the bigger cost. Stage E (instanced sprites) is the real fix.
+  - Menus on a phone (portrait, under 960 px): a CSS blur on the full-screen live 3D canvas, glass blurs of 10-18 px on
+    top, all redone every frame because the world kept drawing at 24 fps behind full screens.
+- Changed (one cause per commit):
+  - Menus: the blur behind a phone's screens 1.5 px to 0.8 px (kept, at the owner's word); the world behind a full
+    screen settles for 0.8 s, then draws once a second (a still canvas keeps its blurred backdrop); phone glass blurs
+    halved through CSS variables (a no-op commit first: the fixed values became variables with today's values);
+    Billie pictures redraw at most 20 times a second (their pose moves in 50 ms steps).
+  - Walk: the automatic quality's step is a pure function (logic/quality-step.js, tests); on Android and iPhone a slow
+    frame now takes steps 3-4 and then the resolution (not below 0.6), never raising it for "main-thread" time.
+    New settings Quality > Skip tiny props (minPropPx, 3 in the data) and Small props' distance on phones
+    (phonePropDistance, 48 m in the data; small props under 1 m fade out over the last 8 m; buildings never). The
+    effects pass skips props outside the view, and fountains outside it draw no spray.
+  - Engine data, calmer: depth-of-field blur 2 to 1, behind you 2.6 to 1.4, sharp band 0.62 to 0.8, colour fringes 1.15
+    to 0.35, vignette 0.72 to 0.4, bloom 0.8 to 0.6, glare 0.9 to 0.6, saturation 1.2 to 1.1, mist 0.16 to 0.08.
+  - **Five times of day** (logic/time-of-day.js, tests): engine groups todDawn, todDay, todGolden, todDusk, todNight
+    (25 dials each: hour offset and blend, sky colours and amount, light colour and strength, fill and its colour,
+    haze colour, amount and distance, mist, exposure, saturation, contrast, warmth, shadow strength, shadow and
+    highlight tints, glow, lamps, stars). Dawn sits at sunrise, day 3 h after it, golden hour 1.4 h before sunset, dusk
+    0.4 h after, night 1.8 h after (all move with the season); each look is reached over its blend hours, the one before
+    holds until then. They replace, outdoors, the old dawn/dusk/night sky tints, warm sun and moon colour, night ambient,
+    saturation, exposure, warmth and bloom terms, the dawn mist and the lamps; weather, a scene's own look and the
+    player's dials stay on top; rooms keep their light. The colours are game data (engine.json); the code's defaults
+    have none (the ui-lint ceiling on colours in game code). The Studio's Engine page lists the five groups and a bar
+    under its moments: hour, weather, season, Play a day (24 h in 20 s) and which looks make up the light.
+- Not done, with reasons:
+  - Debouncing `save()`: the save is 2.3 KB (the log's saveBytes), a write is well under a millisecond; not worth a
+    lost save.
+  - A schema file for the looks: engine.json has none; the dials' ranges live in ENGINE_SPEC as for every other group.
+  - The phone pixel budget (phase 20 D4) and quality.resolution 1.5 / shadowMap 4096 in engine.json: unchanged
+    (phase 20 says ask first); the automatic quality now brings the phone down from them.
+- Verified: lint, typecheck, unit tests (863) and check:modules after every commit; check:data; the Studio's 32
+  sections open with no error (check-studio-github.py --only=sections); a scratch Playwright run of the Engine page:
+  the five groups, the bar, 19:45 shows "golden 50% + dusk 50%", 23:30 "night 100%", Play a day sweeps; smoke (see
+  below). The looks through a summer and a winter day printed from the data (night until ~4:30, dawn at sunrise, day
+  from ~9:00, golden hour before sunset). **Not judged headless** (phase 20's rule): how the looks and the calmer
+  effects look, and the speed. Please try on the phone and iPad and send a debug log.
+- Risky:
+  - The looks change the picture at every hour but midday; the starting values are my guess at "stylized". Tune them in
+    the Studio (Engine > Time of day, with the hour bar).
+  - On a phone the resolution can now fall to 0.6 when frames are slow: softer, but the frames should come.
+  - Small props fade out 40-48 m away on phones: watch for things popping in a long street.
+  - The world behind a full screen moves once a second: it may look still or stutter behind the glass.
+- PR #170's follow-up (the full test's three false failures): headless, the whole in-game test went from three red
+  steps to one, "Opening: falling across the Hollow Earth: the fall drew 1 frames" (software drawing late in an 11-minute
+  run; it passed alone with 9 frames). Proposed fix, not made: run the fall for 6 s x selfTest.slow in the test.
+- Suggestions for next (tech and visual, ranked): phase 20 stage E (instanced sprites: ~864 sprite draws to tens),
+  stage F (instanced models and merged shadow casters: shadows are 200-400 draws), GPU-tier presets from the renderer
+  string and a warm-up benchmark, invalidateFramebuffer after post passes and RGBA8 targets on phones, half-rate
+  shadows and reflections on phones by default and lamp shadows for the nearest 1-2 lamps only; for the looks: a toon
+  light ramp per look, coloured ink outlines per look, glowing windows and lanterns that follow the lamps (stage I2),
+  painted cloud cards, fireflies at night, cheap god-ray quads at dawn and golden hour (stage D7); menus that redraw
+  only what changed; the world map's idle water at 10 fps.
+
+### Roguelite track RL-12b part 1 - Encounters: events, reward picks, route trainers - 2026-10-23
+Branch `track/encounters` (new; made from `track/reflavour` at e1e1479, RF-4's renames, at the owner's word in this
+session, before RF-4's PR merged; main merged in twice since, the last after #167). Plan approved in Plan Mode, the
+owner's answers relayed by the coordinating session and the branch base confirmed by the owner here: held items are
+RL-12c; leaders keep the 3-Perk pick, route trainers and the rival get the reward pick, the boss none; evolution items
+by option B (lines get a stone evolution); the Protein Bar a bag item; tutor moves from the line above its level or of
+its types; reroll 50 Moneys doubling; sight 6 m straight, 1-2 trainers a route; outcomes in the script language;
+waystations `event` and `stall`, no two shops counting both; the 18 events and 7 trainer classes as drafted. Round 4
+beside RL-R2 and RF-5; this part touches no run-map file. Tag `rl-12b1-done` (or as the owner names it) for the owner.
+- Where the docs were wrong (checked in the code; roguelite-track.md section 0 "Corrected in RL-12b"):
+  - Nothing read nodeTypes' `engine: "menu"` or the run's `menu` phase: both unused until part 2.
+  - No rule kept two shops apart: a town is forced before each mini-boss and filler rows roll towns too (seed
+    SCENE00001's map: landing, town, miniboss, route, town, town, ...).
+  - No route trainers, no line of sight; every unbeaten trainer showed a "!" from the start.
+  - Only a mini-boss win made a pick. One evolution item (the Shining Stone) and no line used it; no candy, no tutor.
+  - Conditions couldn't test money or a type in the team (`billie:` is "caught"); `give` handled items only.
+  - The drafts' "a day passes" can't be a command (RL-R2 drops the deadline; the day drives the forecast and shops):
+    Form 27-B, the Side Quest Giver and the surveyor's rope cost a tenth of the team's HP instead.
+- Changed (one cause per commit):
+  - **Stone evolutions (option B)**: swift's Versewift -> Erastar and zuck's Feedopus -> Metapus evolve with the Shining
+    Stone (`bell`) from level 20 (were level 36); their forms (Folklore, Cloud) follow. The sheet's "Use Shining
+    Stone", the Guide's chain and the hint were already there.
+  - **Conditions**: `type:<Type>` (Billies of it in the team), `money`, `team`, `badge:<Type>` (meta.badges when RL-R2
+    adds it, as a list or keys of types, leader ids or seat ids; until then the leaders' seats by their file's type).
+  - **The Protein Bar** (`protein_bar`, lvlUp 1, the trail mix's icon for now): "Feed a Protein Bar" on the Billie
+    sheet (rules.js feedLevels: whole levels through gainXp, so moves and evolutions follow), never in battle.
+  - **run.enc** (logic/run-enc.js; no SAVE_VERSION bump, missing on an older run): events drawn, each waystation's
+    event, the events played, timed boons (effect rows for this place and N more: fxOfRun reads them after the Perks;
+    runArriveFx counts them down), reward picks, the event playing. validRunEnc.
+  - **events.json** (schema, types, EVENTS, the Studio's JSON list, check-data/Studio Check `dataEvents`): the 18
+    events, 3 loot tables, 7 classes. Event commands in SCRIPT_COMMANDS (group event; docs/SCRIPTS.md): perk, money,
+    hurt, heal [share], status, fx, wager, loot, level, recall, foe, wild, reward.
+  - **logic/encounters.js**: which event a place holds (its node's stream, by weight, of its biome, none twice a run),
+    whether an option is open and why not in words, what each command does, the region's foes (encClassFoe, shared
+    with route trainers), the summary. Every chance from the run's events stream.
+  - **encounter-screen.js**: the sheet (intro, options greyed with the reason, lines one at a time, a battle in the
+    middle, a Perk or reward pick in its own sheet, what changed at the end). A reload mid-event: the battle starts
+    again (run-world.js puts the event's foe back) and the event goes on after it (script.js `beforeCheckpoint`,
+    showPendingWindows -> encounterResume).
+  - **The reward pick** (logic/rewards.js, rewards.json, reward-screen.js; rules.json run.rewards 3 cards, 50, x2):
+    items, pyramids, the Protein Bar (candy), the Shining Stone (only when a Billie evolves with it), a move tutor
+    (only moves a Billie can learn); a `held` card at weight 0 for RL-12c. Route trainers' (and the rival's, when RL-S2
+    adds it) wins store it with the battle's end; the win sheet's button opens it; a reload reopens it.
+  - **Route trainers** (logic/route-trainers.js, route-sight.js; rules.json run.trainers 1-2 a route, up 0, 150
+    Moneys, sight 6 m): of different classes, the region's Billies at the place's top wild level; they stand along the
+    road to the way ahead, by turns to each side, facing it. In their line: the "!" (only then), the reveal sting, you
+    stop, they walk up, say their line under their class's name, battle. They never block the way.
+  - The Perk pick takes an event's line and a callback ("Leave it" for a single Perk). Debug menu (Runs): "Play this
+    event", "A trainer's reward pick". The debug log's run line: events played, playing, draws, boons, picks (ids and
+    counts only), who is walking up.
+- Verified: lint, typecheck, unit tests, check:modules, format:check, check:data, build after every commit (826 ->
+  848 tests: conditions, rules, run-enc, encounters, rewards, route-trainers, data-checks' planted faults); smoke 6 of
+  6 (174 s) on the merged tree. Headless browser runs (scratch Playwright scripts, `?fixture=relics`, 390 x 760):
+  three events through to their end (a closed option's reason, a Perk, a tutor taught), the intern's manager battle
+  and its tail, a reload in the middle of that battle (it restarted, the event went on and gave the Max Revive), a
+  route trainer spotting the player, walking up, its line under "Hustle Coach", the battle and the reward pick after
+  it; no page errors. Long checks skipped at the owner's word (full quick check, in-game test, check-fast).
+- Risky / open:
+  - Not tried on a phone: the sheets' tall cards need a scroll to reach the buttons (as the Perk pick); the walk-up's
+    speed; the sight line is straight from the trainer to the hub-ahead line, so a road that bends far off it can let
+    you slip past (6 m covers 3 m either side of that line).
+  - Every number is a placeholder (rewards' weights, reroll, trainers' reward and count, event costs).
+  - `recall` won't take a Billie from home (the billboard keeps only run catches), so on a run with only home
+    Billies it does nothing but say so.
+  - A route trainer's sprite is its class's look (people/<who>); route trainers stand on `route` nodes only (towns and
+    waystations have none).
+  - The run sim doesn't fight route trainers or play events yet: its numbers don't move.
+  - The event foe after a reload restarts with the same Billies; a page reload while the event's reward or Perk sheet
+    is up reopens the sheet, and the event goes on once it is answered.
+- Overlap: RL-R2 (track/regions) edits run-map.js, run-scenes.js and mapgen: this part touched none of them. run.js
+  (one resume line), battle.js (the win button), battle-rewards.js (one hook), walk-control.js (route trainers' spots),
+  data-checks.js, rules.json, index.json, CHANGELOG, ROADMAP and this file will conflict as additions only.
+- Next: part 2 after RL-R2 merges: the `event` and `stall` waystations (normal places with a stand, fewer wild
+  Billies), the no-two-shops rule, run-sim and run-preview, a check-fast "Encounters" page and the in-game test's
+  step. Then RL-12c (held items).
+
+### Reflavour track RF-5 - The new tone in text - 2026-10-23
+Branch `track/reflavour-rf-5`, made from `track/reflavour` at e1e1479 while RF-4 was still finishing its docs (the
+coordinating session's word, confirmed by the owner); main merged in after RF-4's PR #165 landed. Plan approved with
+the owner's answers: **Legacy Labs stays** (the one lab every billionaire hired; its slogan is now "You, again, but
+forever"); the old campaign lore (Vinylla's arc) **loses its finance only**; the Bureau of Lost, Found and Beans in
+**hints only**; Chosen's table **unchanged**. Text only: no id, script logic or line id changed.
+- Where the brief was wrong (checked in the code):
+  - story.json holds three scripts and none had a finance joke; Chosen's table and Hazel's lines were already RPG and
+    chosen-one satire. Neither changed.
+  - There is no separate Index text: the Guide's species pages (bios about the clone, kept) and its Lore tab. The
+    clones' origin lived in lore "What Billies are", the opening's lines 38-39 and the brochure.
+  - The opening has no billboard any more (the owner): the slogan was only a comment in opening-fall.js.
+  - "Why a pyramid catches them" (RF-2 changed its title only) still told the coin lore.
+  - The Perk ids (`offshore`...) were not renamed by RF-4; no Perk text was touched here.
+- Changed (one cause per commit):
+  - **Lore, world:** the clones are Legacy Labs' vanity copies, cut with the nearest animal to hit a launch date,
+    dropped down a sinkhole and marked "archived"; pyramids catch them because every cloning vat was one (plain, no
+    pyramid-scheme joke); "Moneys down here" (the plural under appeal at the Bureau); the Hollow Earth "filed as
+    pending" and reassigned eleven times. The coin in your pocket is a **guitar pick** (clue, the fall, your bio; the
+    clue's id stays `coin`).
+  - **Books and loading tips:** Field Guide (cameras, not money), the brochure "You, Again, but Forever", "The Coin
+    Standard" is "The Moneys Question" (a Bureau Q&A; the Beans question "has not been received"), the Pearl Exchange
+    "inventory", the airship's lost property goes to the Bureau; nine loading tips, two of them Bureau hints.
+  - **People and leaders:** Blake's father founded "a company that makes apps for other apps"; Iris's terms of
+    service; Marina's no-photos island; Baron Vault's NDA, publicist and complaint in triplicate; Nacre's complaint
+    form; two story lines (backstage passes, Vault "lent" his vaults); the face clue (an email they thought they had
+    deleted).
+  - **Rooms:** the cow is Synergy; the shop's Capstone limit; the fireplace's terms and conditions
+    (tools/build-interiors.py's copy too, so a rerun keeps them).
+  - **The opening:** "A lab copied them for fun..."; "Then dropped them down here." (tools/test/opening-said.json
+    retargeted in the same commit).
+  - **Code:** folk chat (the Bureau and the umbrella; a Billie "tried to put its name on the sun"), the loading line
+    "Polishing the pyramids", the sound effects' description says catches (and its four translations).
+  - Docs: ROADMAP, reflavour-track.md (RF-5 done), CHANGELOG.
+- Kept on purpose: "Gotta tax 'em all!", the species' names, bios, notes and moves (about the clones), Vinylla's arc
+  (celebrity and scarcity satire), the shop's "stock", run money as Moneys.
+- Verified: lint, typecheck, unit tests (826; 827 after merging main), check:data with the story checks and
+  format:check after every commit; check:modules after the code commit; smoke 6 of 6 (183 s, before the merge). Long
+  checks skipped at the owner's word.
+- Risky:
+  - Not read on a phone: a few lines are longer (What Billies are, the pyramid entry, the brochure's first page).
+  - The legacy generator tools/build-regions-v47.py still holds Baron Vault's old lines; rerunning it
+    would bring them back.
+  - Translations exist only for the settings line; the new lore is English only, as before.
+- Out of scope, left for their sessions: regions.json name parts (RL-R1/RL-R2), events.json (RL-12b), the Bureau in
+  people's lines (RL-S1's lines.json).
+- Next: RF-6 (the game's name). Tag `rf-5-done` on this entry's commit (the owner pushes tags).
+
+### Fix - the hub's "black screen" in the full quick check - 2026-10-23
+Branch `fix/hub-frame-wait` (one session, docs/BRANCHES.md). The failure in RL-R1's long checks (PR #161's comment):
+"Ground tiles, building plans and colours, rooms": `w:copperleaf* isn't drawing (black screen)`, under CPU load.
+- Cause: the check, not the game. `go_scene` wanted 2 new frames within 30 s of a place opening. Once a minute the
+  debug log takes its picture of the scene (`screenSnapshot`, `readPixels`), which makes the page wait for the software
+  drawing to finish. That frame took 1.2-1.5 s on a fresh page (with or without 8-16 busy loops), but 16-23 s late in a
+  14-minute desktop run (4 busy cores, or the unit tests looping beside it). One more slow frame in the same 30 s and
+  the step failed. The screen was never black: the draw loop kept running (`frameScheduler.tasks.has('dio')`). On a
+  phone's graphics chip that wait is a few milliseconds.
+- Changed (tools/check-quick.py `go_scene` only; no game code, data or names): after 30 s without 2 frames, if the draw
+  loop is still running it waits up to 60 s more and adds a note naming the slowest frame meanwhile. It fails only when
+  the loop is gone ("stopped drawing: its draw loop is gone (black screen)") or fewer than 2 frames came in 90 s.
+- Verified: a scratch probe on the hub, the old and the new `go_scene`. No new frame for 35 s: old fails with the
+  PR #161 message, new passes with a note. The draw loop stopped (`frameStop('dio')`): both fail, the new one says so.
+  "Ground tiles" and "Place views" pass with the unit tests looping beside them; the 12 desktop steps up to the hub
+  step pass under load (the buddy lag in "Double and Alpha battles" is the known one, RF-2's entry). lint, typecheck,
+  `npm test` (827), smoke (6 of 6). I could not get the natural failure itself on this machine: the stall reached
+  20-23 s, short of 30.
+- Risky: a step that goes through `go_scene` while frames are this slow now takes up to 60 s longer instead of failing.
+- Found, not changed: tools/requirements-check.txt pins Playwright 1.56, which can't launch this machine's Chromium
+  (1.63 works). And the frame scheduler (frame-scheduler.js `runFrameTasks`) drops a task for good when it throws, so
+  one error in a walk frame would freeze the scene until it is mounted again. No sign of that here; worth its own look.
+- Before merging: merge main again once RF-4 has merged, and run the checks again.
+
+### Fix: the lost-run payout jingle's wait in the quick check - 2026-10-23
+Branch `fix/payout-lost-wait` (one session, not a plan; kept small because RF-4 runs on `track/reflavour`).
+- Cause: the check, not the game. A loss plays the same sequence as a win (a coin per row, then the jingle when the
+  total lands; run-payout.js), but TC-3 raised only the win's wait to 40 s and left the loss at 15 s. Under CPU
+  load the headless browser's timers slow down: measured 26.9 s (won) and 16.3 s (lost). On a phone it's ~2-3 s.
+- Changed: `tools/check-quick.py` Sound effects waits 40 s for `run_lost` too. Nothing else.
+- Verified: with 6 busy loops on 4 cores, `--steps="Sound effects"` failed on main at line 869 (4 coins, no
+  `run_lost`) and passes with the fix; idle, all 4 Sound steps pass. Lint, typecheck, unit tests (826) pass.
+- Next: merge main in again once RF-4 is merged, re-run the checks, then merge.
+
+### Reflavour track RF-4 - Internal renames - 2026-10-23
+Branch `track/reflavour` (main fast-forwarded in first; round 3, alone). Plan approved in Plan Mode, the owner's
+answers relayed by the coordinating session: keep the money id `money`; rename `tier` to `expedition` now; keep the
+art folder `art/coins/`; rename `foreclose` with the stone moves; long checks skipped for speed. Tag `rf-4-done` is
+the owner's to push. The full list of what was renamed, kept and left is in reflavour-track.md section 7.
+- Where the plan and the track file were wrong (checked in the code): there were no Bracket keys (the difficulty was
+  `tier`); the shop unlock ids embedded item ids (`shop_settlement`...); more rule keys were finance than listed
+  (`auditSkip`, `subpoena`, `luxuryPenny`, `winSeals`); the repo has no retired-names lint list any more (the test
+  cleanup track removed it), so none was added to.
+- Changed: SAVE_VERSION 5 first (the only behaviour commit: an older save gets the "older version" message and is set
+  aside). Then one rename per commit: perks (files, data, code names, rules, save, tab), research, crests, the
+  pyramid ids and the `pyramids` section and pocket, item ids, unlock ids, status ids, the nine passives with their
+  rule keys and battle-side fields, the stones, the stone moves, `expedition`, the `guide` tab, run-sim's options and
+  report keys, the `taxed` local. Three small commits fixed spots a rename had missed (the Studio's live channel and
+  undo list for `perks`; four `coins/penny_32.png` paths: the opening and the Studio's brand and login images). Where
+  a concept had several keys (a passive and its rule numbers, the two status rule keys), they share a commit.
+- Renaming tools: `tools/rename.mjs` (file, prefix, name, with `verify` on the prefix renames) and
+  `tools/rename-data.mjs` (sections, keys); the rest by scripted regex with the contexts listed, then each diff read.
+- Snapshots remade on purpose, each in its rename's commit: check-data (messages name perks.json, run.perks),
+  run-start (ids and keys), battle-state (the side flags `slipstream`, `roar`, `stones`), the battle golden record
+  (only the status ids in its events, 42 lines; no outcome moved).
+- Verified: after every commit `npm run modules`, check:modules, lint, typecheck, check:data, format:check and the
+  unit tests (all pass, about 70 s a round). Smoke at the end: passed, no problems (202 s; the phone flow with the Guide, shop and a battle, the debug log with no names, the in-game test's first step). It ran on Python Playwright 1.63.0, not the pinned 1.56.0: this container's Chromium is build 1243, which only 1.63 drives. The one unused picture it notes (`scene/build/detail-a04.png`) is not this session's.
+  **Skipped, at the owner's word (speed; asked again after the PR opened: merge on CI):** the full quick check, the in-game test (`--selftest`), test:slow,
+  check-fast and the Studio check (`tools/check-studio-github.py`, which this session edited for the new names
+  without running it).
+- The exported debug log: no key changed (none was forced). Its run and meta summary keeps `relics`, `capital` and
+  `seals` and reads the renamed fields (`run.perks`, `meta.research`, `meta.crests`); it never carries the save itself.
+  Values that are ids now read the new ids (a status `par` where it said `aud`, an item `potion`).
+- Risky:
+  - **One rename changed behaviour (accepted by the owner):** runShopStock sorts a town's weighted wares by item id before its seeded draw, so
+    the item rename changed which wares a seed's run shop stocks. No test pinned it; no saved run carries over.
+  - The Studio check and check-fast were edited (new ids, tab names, selectors) but not run.
+  - Phones: the first load after this sets the save aside (as decided). The renamed art files (`art/coins/pyramid_16.png`
+    and the rest, `art/ui/research.svg`, `art/ui/crest.svg`) load under new paths, so nothing stale shows.
+  - A `track/*` merge from a session that started before this one will conflict on these names: merge main and run
+    `npm run modules`; `git grep` for the old names in the table of section 7.
+- The ten Perk ids (the owner's answer after the PR opened: rename now, in two commits): first a behaviour commit,
+  Perks drawn in perks.json's order instead of by id (perkPool, and the run sim's tie-break), so every seed's offers
+  change once on purpose; two run-sim tests updated with it (the Perk dropped past the cap is now `fineprint`, not
+  `shelter`; the dearer-clinic test asks for no significant gain in money left: its 40 seeds' mean went 0 -> +4.5, lo
+  -21.9). Then the ids alone (`lucky_charm`...). The shop-stock change below: accepted by the owner.
+- Left: stat ids `lev`, `lob`, `hus`; most move ids.
+- Next: RF-5 (the new tone in text), beside RL-S1. Tag `rf-4-done` on this entry's commit.
+
+### UI icons - 49 icons redrawn at 36x36, "block and split" - 2026-10-23
+Branch `ccr-6515f662-u0e47e` (the session's own: the owner named no branch; BRANCHES.md would call it
+`art/ui-icons`). Not a phase or track session: an art request. The look was picked from rounds of samples in chat
+(Pokemon-flavoured, then modern multi-tone in the theme colours): "P5", an extruded block with a diagonal split.
+- Changed (one cause per commit):
+  - **tools/build-ui-icons.py**: each icon is a 34x34 grid of colour letters (PALETTE); the tool adds a 2 px block
+    side, the 45-degree split, a lit edge and seams, and writes a 36x36 SVG with one path per colour. Stdlib only.
+    The two sound icons, drawn outside the tool before, are in it now. Merged with main's RF-1/RF-2: `capital` is
+    drawn as Research's lab flask and the new `pyramid` (the catch pyramid) is in the set: 49 grids.
+  - **Shown as images**: `.uico` (parts.css) and the run kit's `.ic` use the SVG as a background image instead of
+    a mask tinted by `currentColor`. Four rules that set `background: currentColor` on an icon are gone (map list,
+    dressing room x2, walk card); they would have painted a solid square over the picture. Rules that only set
+    `color` on an icon are harmless no-ops now and were left.
+  - **tools/test/ui-icons.test.mjs** runs `build-ui-icons.py --check` (python3 is on the CI runner), checks every
+    file is 36x36 and that the tool draws exactly the files in game/art/ui, and now also counts `runIcon('...')`.
+  - `check` is cream, not green: its only use is the visited node's mark on a green hex, where green vanished.
+- Where the old code was off: the old test counted 46 icons; there were 48 files (the two sound icons were
+  not in the tool).
+- Verified: lint, typecheck, check:modules, format, `npm test` (802). UI gallery (check-ui-gallery.py): the
+  untouched code and this branch, shot with the same browser here, differ only where icons are (run HUD, map nodes,
+  picks, payout); the committed baseline was NOT replaced (owner's call). starter/tip/picks at 320 px differ from
+  the baseline at 100% on the untouched code too: this container's browser, not this change.
+  Full quick check (tools/check-quick.py): running at push time; result in the next commit.
+- Risky / open:
+  - Icons no longer follow the text colour: a disabled or selected state that relied on the tint now shows the same
+    colours. None found in the gallery; say if a screen reads wrong.
+  - The nightly full quick check will show icon picture diffs until the baseline is remade (Actions, "Make the
+    picture baseline").
+  - The UI gallery baseline (validation/ui-gallery) needs `python3 tools/check-ui-gallery.py --update` once the
+    owner approves the look, ideally on the CI-like browser.
+- Next: the owner's phone check of the bottom bar, the run HUD, the shop and the walk card on both themes.
+
 ### Reflavour track RF-2 - Pyramids - 2026-10-23
 Branch `track/reflavour` (made this session from main and named in reflavour-track.md's `Branch:` line; RF-1 works
 here too and merged RF-2's pushed commits into its own, so the two sit on one line of history; PR #160). Plan approved with the owner's picks, all the recommended

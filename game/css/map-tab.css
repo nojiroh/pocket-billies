@@ -54,8 +54,8 @@
   box-shadow:
     0 0 0 2px #0b0912,
     0 4px 10px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: var(--blur-button, blur(6px));
+  -webkit-backdrop-filter: var(--blur-button, blur(6px));
 }
 .mbtn:active {
   transform: translateY(1px);
@@ -306,9 +306,6 @@ body.map-gl #dioui {
   height: 24px;
   border-radius: 50%;
   background: color-mix(in srgb, var(--text) 10%, transparent);
-}
-.mpl-row .mp-i .uico {
-  background: currentColor;
 }
 .mpl-row.here .mp-i {
   background: #f2c14e;

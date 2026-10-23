@@ -1,5 +1,5 @@
 {
- "offshore": {
+ "lucky_charm": {
   "name": "Lucky Charm",
   "d": "Wins pay 20% more Moneys.",
   "rarity": "common",
@@ -7,7 +7,7 @@
    {"kind":"money","mult":1.2}
   ]
  },
- "shelter": {
+ "clinic_card": {
   "name": "Clinic Loyalty Card",
   "d": "A town’s clinic charges half.",
   "rarity": "common",
@@ -15,7 +15,7 @@
    {"kind":"price","what":"heal","mult":0.5}
   ]
  },
- "lobbyist": {
+ "coupon_book": {
   "name": "Coupon Book",
   "d": "Shops on the run are 15% cheaper.",
   "rarity": "common",
@@ -23,7 +23,7 @@
    {"kind":"price","what":"shop","mult":0.85}
   ]
  },
- "fineprint": {
+ "steady_hand": {
   "name": "Steady Hand",
   "d": "Pyramids catch 25% more often.",
   "rarity": "common",
@@ -31,7 +31,7 @@
    {"kind":"catch","mult":1.25}
   ]
  },
- "insider": {
+ "running_shoes": {
   "name": "Running Shoes",
   "d": "Your Billies start each battle with their Speed up.",
   "rarity": "uncommon",
@@ -39,7 +39,7 @@
    {"kind":"stat","stat":"hus","stages":1}
   ]
  },
- "takeover": {
+ "power_gloves": {
   "name": "Power Gloves",
   "d": "Your physical moves hit 15% harder.",
   "rarity": "uncommon",
@@ -47,7 +47,7 @@
    {"kind":"damage","side":"deal","cat":"H","mult":1.15}
   ]
  },
- "hedge": {
+ "bubble_wrap": {
   "name": "Bubble Wrap",
   "d": "Your Billies take 10% less damage.",
   "rarity": "rare",
@@ -55,7 +55,7 @@
    {"kind":"damage","side":"take","mult":0.9}
   ]
  },
- "severance": {
+ "trail_snacks": {
   "name": "Trail Snacks",
   "d": "Each place you walk into heals your team by 15% of their HP.",
   "rarity": "uncommon",
@@ -63,7 +63,7 @@
    {"kind":"heal","share":0.15}
   ]
  },
- "options": {
+ "field_notebook": {
   "name": "Field Notebook",
   "d": "The payout gives 15% more Research.",
   "rarity": "uncommon",
@@ -71,7 +71,7 @@
    {"kind":"payout","what":"research","mult":1.15}
   ]
  },
- "writeoff": {
+ "lost_property": {
   "name": "Lost Property Form",
   "d": "If the run is lost, the payout counts your items at their full price.",
   "rarity": "rare",

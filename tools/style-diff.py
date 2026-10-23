@@ -14,7 +14,7 @@ Exit 0 when nothing differs. A property that differs between two loads of the re
 position) is left out, and said so. The revision's game/ is unpacked under validation/style-diff/ (git ignored) and
 served with the data built from the working tree (data/gamedata.js is not in git); a revision that changed game data
 can't be compared this way. No pictures are taken and nothing is saved anywhere."""
-import importlib.util, json, queue, shutil, subprocess, sys, tarfile, io, threading, time
+import json, queue, shutil, subprocess, sys, tarfile, io, threading, time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -25,11 +25,10 @@ SIZE = [int(x) for x in next((a.split('=', 1)[1] for a in ARGS if a.startswith('
 WORKERS = int(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--workers=')), 2))
 OUT = ROOT / 'validation' / 'style-diff'
 
-# the fast check's page set-up (its clock, no accounts, the names on window, the graphics dials off)
-_spec = importlib.util.spec_from_file_location('check_fast', ROOT / 'tools' / 'check-fast.py')
-sys.argv = [sys.argv[0]]
-cf = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(cf)
-sys.argv = [sys.argv[0]] + ARGS
+# the browser checks' page set-up (tools/browser_check.py: the clock, no accounts, the names on window, the graphics
+# dials off)
+sys.path.insert(0, str(ROOT / 'tools'))
+import browser_check as cf  # noqa: E402
 
 # the fast check's day, but the clock stands still: two pages loaded a minute apart show the same times
 FROZEN_CLOCK = """(()=>{const D=Date,T=new D(2026,5,15,12,30,0).getTime();class FD extends D{constructor(...a){if(a.length)super(...a);else super(T)}static now(){return T}}

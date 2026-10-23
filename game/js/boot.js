@@ -169,7 +169,7 @@ const UI_ICONS = [
 /* v26: the walk scenes follow the real clock, the weather and the season (environment.js; the Studio leaves this off) */
 if (typeof environment !== 'undefined') environment.on = true;
 const LOAD_PHASES = [
-  'Polishing the coins',
+  'Polishing the pyramids',
   'Waking up the Billies',
   'Building the battlefields',
   'Planting trees and painting towns',

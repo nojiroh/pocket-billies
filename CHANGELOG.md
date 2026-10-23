@@ -9,6 +9,44 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Five times of day**: the light outdoors now comes from five looks, dawn, day, golden hour, dusk and night, that
+  blend into each other with the clock (and move with sunrise and sunset through the seasons). Golden hour is warm
+  with teal shadows, dusk pink and violet, night deep blue with warm lamps and stars; day keeps each place's own sky.
+  Each look (its sky, light, fill, haze, mist, exposure, colour, shadow tints, glow, lamps and stars) can be tuned in
+  the Studio's Engine page, which can now show any hour, weather and season and play a whole day in 20 seconds.
+- **Calmer effects**: half the depth-of-field blur and a wider sharp band, much weaker colour fringes and vignette,
+  less bloom, glare, saturation and mist. The blur behind menus on a phone is lighter too.
+- **Faster on phones**: menus no longer redraw the moving 3D world behind them (it settles, then holds still), glass
+  panels blur less, Billie pictures redraw less often, things too small to see aren't drawn, a phone skips small props
+  far off in the haze, effects of things off screen aren't drawn, and the automatic quality on a phone now lowers the
+  effects and then the resolution when frames are slow (it used to keep the full resolution on the Android phone).
+- Encounters on a run (roguelite track RL-12b, part 1):
+  - **Events**: eighteen of them, in the new tone (a Bureau desk wanting Form 27-B, an unpaid intern guarding a Revive,
+    a crate that says DO NOT OPEN: BEANS, a pay-to-wish fountain...). Each has two or three choices; some need a Billie
+    of a type, an item, Moneys or a badge, and say so when you can't pick them. Outcomes give items, Moneys, Perks,
+    battles, a move tutor, or a while of cheaper or dearer prices. For now they open from the debug menu; places that
+    hold them come next.
+  - **Route trainers**: one or two stand by every route's road. Walk into their line of sight and they spot you, walk
+    up and battle. Beating one lets you **pick a reward**: one of three cards (items, pyramids, a Protein Bar, the
+    Shining Stone, or a move tutor), with a reroll for Moneys that doubles each time.
+  - The **Protein Bar**: a Billie that eats one gains a level (from its sheet, not in battle).
+  - Versewift and Feedopus now evolve with the **Shining Stone** from level 20 (they evolved at level 36).
+
+- Fix: the full test (Settings → Help) no longer fails three steps on every device while the game draws fine. Night,
+  weather and seasons now waits for Copperleaf to open before it starts; the Light lab counts the new low-poly
+  buildings; the opening's fall counts the frames the fall draws.
+- New jokes in the lore, the loading tips and people's lines (reflavour track RF-5): the satire moves off money onto
+  bureaucracy, tech and influencers. The Guide's lore tells where the Billies came from (Legacy Labs, "You, again, but
+  forever": the billionaires' vanity clones, dropped down a sinkhole when they came out wrong) and why a pyramid
+  catches them (every cloning vat was one). The Bureau of Lost, Found and Beans turns up in hints; nobody says what the
+  Beans are. The cow is called Synergy now.
+- Saves from before this change don't load (reflavour track RF-4, save format 5): the game's internal names moved off
+  finance (Perks, Research, Crests, Pyramids, Expeditions, the item, status and ability names), so an older save is set
+  aside and a new game starts. Nothing you see changes, except that a seed's run may offer different Perks (they are
+  drawn in the data's order now) and its town shops may stock different wares.
+- New interface icons: all 49 UI icons (the bottom bar, currencies, weather, the run's day chip and map markers,
+  buttons) are redrawn as larger, full-colour pixel art: little blocks with a diagonal light split, in the game's
+  own greens, golds and reds. They look the same on the light and dark themes.
 - Fewer finance words (reflavour track RF-1): you **catch** Billies now ("Catch it", "Caught!", the Guide's Caught
   count), and nothing says "tax" except the title's "Gotta tax 'em all!". Run money is **Moneys** (1 Money), shown
   with a small gold coin instead of a $; Capital is **Research** (with a flask icon), Audit Seals are **Crests**,

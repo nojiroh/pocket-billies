@@ -12,6 +12,9 @@
      robot                  you have a robot             badges >= 2                    badges won
      caught >= 15           kinds of Billie caught (the Index)
      unlock:shop_revive    an unlock is owned (RL-11)  runs >= 3, wins >= 1           runs ended, runs won (RL-11)
+     type:Water >= 2       Billies of a type in the team (RL-12b)        money >= 200     Moneys on hand (RL-12b)
+     team >= 2             Billies in the team (RL-12b)
+     badge:Water           a badge of that type is won (RL-12b: meta.badges, or a leader's seat)
      opened:cut            a run's field move obstacle is open (RL-R2)
    combined with `and`, `or`, `not` / `!` and parentheses (`and` binds tighter than `or`). A bare count term
    (`item:honey`, `visits:juniper`, `badges`) means more than 0. Logic only: no DOM, runs in Node. */
@@ -22,6 +25,8 @@ expose({
   CONDITION_KINDS: [() => CONDITION_KINDS],
   OPS: [() => OPS],
   WORDS: [() => WORDS],
+  // @ts-expect-error -- replaced on purpose
+  badgeTypesOf: [() => badgeTypesOf, v => (badgeTypesOf = v)],
   // @ts-expect-error -- replaced on purpose
   compare: [() => compare, v => (compare = v)],
   // @ts-expect-error -- replaced on purpose
@@ -44,6 +49,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   storyStateOf: [() => storyStateOf, v => (storyStateOf = v)],
   // @ts-expect-error -- replaced on purpose
+  teamTypes: [() => teamTypes, v => (teamTypes = v)],
+  // @ts-expect-error -- replaced on purpose
   termValue: [() => termValue, v => (termValue = v)],
   // @ts-expect-error -- replaced on purpose
   tokens: [() => tokens, v => (tokens = v)],
@@ -57,6 +64,7 @@ expose({
  *   pyramids: Record<string, number>, quests: Record<string, string>, visits: Record<string, number>,
  *   visited: Record<string, any>, lines: Record<string, any>, robots: number, badges: number, caught: number,
  *   unlocks: Record<string, any>, runs: number, wins: number, questStages?: Record<string, string[]>,
+ *   types?: Record<string, number>, money?: number, team?: number, badgeTypes?: Record<string, number>,
  *   opened?: Record<string, number> }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
@@ -75,6 +83,10 @@ export const CONDITION_KINDS = {
   unlock: { id: true, count: false, about: 'an unlock is owned (unlocks.json): unlock:ranch_2' },
   runs: { id: false, count: true, about: 'runs ended, won or lost: runs >= 3' },
   wins: { id: false, count: true, about: 'runs won: wins >= 1' },
+  type: { id: true, count: true, about: 'Billies of a type in your team: type:Water, type:Fire >= 2' },
+  money: { id: false, count: true, about: 'Moneys on hand: money >= 200' },
+  team: { id: false, count: true, about: 'Billies in your team: team >= 2' },
+  badge: { id: true, count: false, about: 'a badge of that type is won: badge:Water' },
   opened: { id: true, count: false, about: 'a run’s field move obstacle is open (RL-R2): opened:cut' },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
@@ -312,6 +324,14 @@ export function termValue(c, S) {
       return S.runs;
     case 'wins':
       return S.wins;
+    case 'type':
+      return (S.types || {})[c.id.toLowerCase()] || 0;
+    case 'money':
+      return S.money || 0;
+    case 'team':
+      return S.team || 0;
+    case 'badge':
+      return !!(S.badgeTypes || {})[c.id.toLowerCase()];
     case 'opened':
       return !!(S.opened || {})[c.id];
   }
@@ -337,8 +357,11 @@ export function conditionHolds(c, S) {
 }
 
 /** the story state a save gives, for conditionHolds: the save's own objects where they fit (so a script's changes to
- * story flags, items and pyramids show at once), counts and lookups made fresh
- * @param {any} save @param {{ locations?: { id: string }[], questStages?: Record<string, string[]> }} [o] */
+ * story flags, items and pyramids show at once), counts and lookups made fresh. RL-12b: `typesOf` gives a team
+ * Billie's types (else its own `types`), `badgeTypes` a seat's, a leader's or a badge's type (meta.badges may hold
+ * types, leader ids or seat ids, as a list or as keys)
+ * @param {any} save @param {{ locations?: { id: string }[], questStages?: Record<string, string[]>,
+ *   typesOf?: (m: any) => string[], badgeTypes?: Record<string, string> }} [o] */
 export function storyStateOf(save, o = {}) {
   const story = save.story || (save.story = {}),
     visited = /** @type {Record<string, number>} */ ({}),
@@ -371,8 +394,44 @@ export function storyStateOf(save, o = {}) {
     runs: meta.runs || 0,
     wins: meta.wins || 0,
     questStages: o.questStages,
+    types: teamTypes(save.team || [], o.typesOf),
+    money: save.se || 0,
+    team: (save.team || []).length,
+    badgeTypes: badgeTypesOf(save, o.badgeTypes || {}),
     /* RL-R2: the run's side area's move, once its obstacle is open (logic/run-side.js) */
     opened:
       save.run && save.run.map && save.run.map.side && save.run.map.side.open ? { [save.run.map.side.move]: 1 } : {},
   };
+}
+
+/** RL-12b: how many Billies of each type (lower case) the team holds, fainted ones too
+ * @param {any[]} team @param {(m: any) => string[]} [typesOf] */
+export function teamTypes(team, typesOf) {
+  /** @type {Record<string, number>} */
+  const out = {};
+  for (const m of team) {
+    if (!m) continue;
+    for (const t of new Set((typesOf ? typesOf(m) : m.types) || [])) {
+      const k = String(t).toLowerCase();
+      out[k] = (out[k] || 0) + 1;
+    }
+  }
+  return out;
+}
+/** RL-12b: the types of the badges won (lower case): meta.badges (RL-R2), then the leaders' seats
+ * @param {any} save @param {Record<string, string>} typeOf a seat id, leader id or type name -> its type */
+export function badgeTypesOf(save, typeOf) {
+  const meta = save.meta || {},
+    b = meta.badges,
+    ids = [
+      ...(Array.isArray(b) ? b : b && typeof b === 'object' ? Object.keys(b).filter(k => b[k]) : []),
+      ...(save.seats || []),
+    ];
+  /** @type {Record<string, number>} */
+  const out = {};
+  for (const id of ids) {
+    const t = typeOf[id] || id;
+    if (typeof t === 'string' && t) out[t.toLowerCase()] = 1;
+  }
+  return out;
 }

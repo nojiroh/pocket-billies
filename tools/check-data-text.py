@@ -11,7 +11,8 @@ Quotes and & in descriptions and dialogue are fine: those are page text.
 Story scripts (a `script` list, docs/SCRIPTS.md) may use > and < as syntax only: the option marker at the
 start of a line and the comparisons in a condition (if / elif / [if ...]). Everything the player sees in them
 is still checked. A `when` field (a condition, docs/SCRIPTS.md: unlocks.json's milestones, RL-11) is never shown to
-the player: its comparisons, with a space each side (`runs >= 5`), are syntax too.
+the player: its comparisons, with a space each side (`runs >= 5`), are syntax too. RL-12b: an event option's `need`
+is a condition the same way, and its `then` and `intro` lists are scripts.
 
 Exit code 1 if anything is found, with the path of each value.
 
@@ -28,6 +29,8 @@ DATA = 'game/data'
 ANY = re.compile(r'[<>`]')
 NAME_KEYS = {'id', 'name', 'n', 'names', 'title', 'locationId'}
 OPS = re.compile(r'>=|<=|!=|==|[<>]')
+COND_KEYS = {'when', 'need'}
+SCRIPT_KEYS = {'script', 'then', 'intro'}
 WHEN_OPS = re.compile(r'\s(?:>=|<=|!=|==|[<>])\s')
 
 
@@ -41,14 +44,14 @@ def script_text(line):
 
 def walk(v, path, key, out):
     if isinstance(v, str):
-        if ANY.search(WHEN_OPS.sub(' ', v) if key == 'when' else v) or (key in NAME_KEYS and '"' in v):
+        if ANY.search(WHEN_OPS.sub(' ', v) if key in COND_KEYS else v) or (key in NAME_KEYS and '"' in v):
             out.append((path, v[:80]))
     elif isinstance(v, dict):
         for k, x in v.items():
             walk(x, f'{path}.{k}', k, out)
     elif isinstance(v, list):
         for i, x in enumerate(v):
-            if key == 'script' and isinstance(x, str):
+            if key in SCRIPT_KEYS and isinstance(x, str):
                 if ANY.search(script_text(x)):
                     out.append((f'{path}[{i}]', x[:80]))
                 continue

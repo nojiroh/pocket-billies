@@ -1,0 +1,388 @@
+{
+ "loot": {
+  "common": {"potion":4,"pretzel":3,"burn_salve":2,"nerve_tonic":2,"wake_tea":2,"hi_potion":1},
+  "auction": {"pretzel":5,"hi_potion":3,"revive":2,"full_remedy":2,"protein_bar":1,"max_revive":1},
+  "parcel": {"potion":3,"hi_potion":2,"revive":1,"protein_bar":1}
+ },
+ "classes": {
+  "intern": {
+   "name": "Unpaid Intern",
+   "who": "intern",
+   "team": [1,2],
+   "sight": "You are in my content! I mean, my battle!",
+   "lose": "I did that for free, you know."
+  },
+  "beta_tester": {
+   "name": "Beta Tester",
+   "who": "boy",
+   "team": [2,3],
+   "sight": "Found a bug! It is you. Let me reproduce it.",
+   "lose": "Works as intended, apparently."
+  },
+  "hustle_coach": {
+   "name": "Hustle Coach",
+   "who": "broker",
+   "team": [2,3],
+   "sight": "Rise and grind! You look like you need a mentor!",
+   "lose": "Losing is just winning in beta."
+  },
+  "vlogger": {
+   "name": "Lifestyle Vlogger",
+   "who": "girl",
+   "team": [1,3],
+   "sight": "Hi guys! Today I battle a random stranger!",
+   "lose": "Cut that. Cut all of that."
+  },
+  "speedrunner": {"name":"Speedrunner","who":"diver","team":[1,2],"sight":"No time! Battle any percent!","lose":"Reset. Reset!"},
+  "bureau_clerk": {
+   "name": "Bureau Clerk",
+   "who": "clerk",
+   "team": [2,3],
+   "sight": "You look lost. That is our department.",
+   "lose": "I will need that in writing."
+  },
+  "ethicist": {
+   "name": "Clone Ethicist",
+   "who": "geo",
+   "team": [2,3],
+   "sight": "Is it right to battle a clone? Let us find out empirically.",
+   "lose": "Inconclusive. Very inconclusive."
+  }
+ },
+ "events": {
+  "form_27b": {
+   "title": "Form 27-B",
+   "intro": [
+    "A folding desk stands in the grass. A clerk in a grey cardigan looks up.",
+    "Clerk: Form 27-B. Proof of Being Lost. In triplicate."
+   ],
+   "options": [
+    {
+     "text": "Fill it in",
+     "then": [
+      "It takes ages. Your team naps through most of it, badly.",
+      "hurt 0.1",
+      "Clerk: Stamped. Here is your complimentary Found Item.",
+      "loot common"
+     ]
+    },
+    {
+     "text": "Let Wild Mind fill it in",
+     "need": "type:Psychic",
+     "then": [
+      "Your Psychic Billie fills in all three copies at once, in three different handwritings.",
+      "Clerk: This is irregular. Take this and go.",
+      "perk"
+     ]
+    },
+    {"text":"Leave","then":["Clerk: We will keep you on file."]}
+   ],
+   "weight": 1
+  },
+  "unpaid_intern": {
+   "title": "Unpaid Intern",
+   "intro": [
+    "An intern guards a Revive like it is the last one in the Hollow Earth.",
+    "Intern: It is for exposure. Everything here is for exposure."
+   ],
+   "options": [
+    {"text":"Buy the Revive","cost":200,"then":["give revive","Intern: Thank you for the exposure!"]},
+    {
+     "text": "Ask for the manager",
+     "then": [
+      "Intern: Oh no. Oh no no no.",
+      "foe hustle_coach 1",
+      "Coach: Fine. Take the Max Revive. Leave a review.",
+      "give max_revive"
+     ]
+    },
+    {"text":"Leave","then":["Intern: I will be here. Forever, probably."]}
+   ],
+   "weight": 1
+  },
+  "beans_crate": {
+   "title": "DO NOT OPEN: BEANS",
+   "intro": ["A sealed crate sits by the road. The stencil says DO NOT OPEN, then BEANS, then Bureau property."],
+   "options": [
+    {
+     "text": "Open it",
+     "then": [
+      "wager 50",
+      "if wager = win",
+      "  There is a gift inside, and a sound like someone saying oh no, very far away.",
+      "  perk rare",
+      "else",
+      "  Your team looks inside. They all lie down for a bit.",
+      "  status slp"
+     ]
+    },
+    {
+     "text": "Let Alloy pry it open",
+     "need": "type:Steel",
+     "then": ["Your Steel Billie pries the lid up a crack, takes something out and shuts it again without looking.","perk"]
+    },
+    {
+     "text": "File it as Found",
+     "then": ["You fill in a Found tag. A drone takes the crate away and drops a finder's fee.","money 100"]
+    }
+   ],
+   "weight": 1
+  },
+  "ring_light": {
+   "title": "Ring Light Shrine",
+   "intro": ["A ring light glows in the woods. A wild Billie poses in front of it, alone, for no one."],
+   "options": [
+    {
+     "text": "Like and subscribe",
+     "cost": 100,
+     "then": [
+      "The Billie looks right at you and nods. Engagement is up. Your team feels faster for a while.",
+      "fx 1 stat stat=hus stages=1"
+     ]
+    },
+    {
+     "text": "Overload it with Live Wire",
+     "need": "type:Electric",
+     "then": ["Your Electric Billie touches the light. It pops. The poser drops what it was holding and runs.","give burn_salve"]
+    },
+    {"text":"Scroll past","then":["You keep walking. It keeps posing."]}
+   ],
+   "weight": 1
+  },
+  "recall_notice": {
+   "title": "Recall Notice",
+   "intro": [
+    "A billboard flickers. BATCH 7 CLONES RECALLED FOR DEFECTS. RETURN FOR A FREE REPLACEMENT.",
+    "Below it there is a hatch, and a slot marked RETURNS."
+   ],
+   "options": [
+    {
+     "text": "Return a Billie",
+     "need": "team >= 2",
+     "needText": "Needs two Billies",
+     "then": ["recall 2","The hatch hums. Something new climbs out, still warm."]
+    },
+    {"text":"Ignore it","then":["Your team watches the billboard for a long moment. Then you all walk on."]}
+   ],
+   "weight": 1
+  },
+  "terms_of_service": {
+   "title": "Terms of Service",
+   "intro": [
+    "A startup has set up a tent with free samples and a tablet on a stand.",
+    "Founder: Early access! Just accept the terms."
+   ],
+   "options": [
+    {
+     "text": "Accept without reading",
+     "then": ["perk","fx 3 price what=shop mult=1.25","Founder: Great! You also agreed to surge pricing. For three places."]
+    },
+    {
+     "text": "Read all 400 pages",
+     "need": "item:nerve_tonic",
+     "then": ["take nerve_tonic","You drink a Nerve Tonic and read every page. Clause 312 says the sample is free.","perk"]
+    },
+    {"text":"Decline","then":["Founder: Your loss. Literally. It is in the terms."]}
+   ],
+   "weight": 1
+  },
+  "side_quest": {
+   "title": "Side Quest Giver",
+   "intro": [
+    "An old man waves you over. Something like an exclamation mark hovers over his head.",
+    "Elder: Bring me ten bear pelts, traveller! There are no bears here. I checked."
+   ],
+   "options": [
+    {"text":"Help anyway","then":["You search everywhere. There are no bears. He pays you anyway.","hurt 0.1","money 300"]},
+    {
+     "text": "Show him your badge",
+     "need": "badges",
+     "needText": "Needs a badge",
+     "then": ["Elder: A badge! Adventurers like you are the reason I keep asking.","give coin:step_pyramid"]
+    },
+    {"text":"Leave","then":["Elder: Come back if you find a bear!"]}
+   ],
+   "weight": 1
+  },
+  "tall_grass": {
+   "title": "Tall Grass Sign",
+   "intro": [
+    "A sign at the edge of some very tall grass says DO NOT ENTER WITHOUT A BILLIE.",
+    "You have several. The sign does not seem to care."
+   ],
+   "options": [
+    {"text":"Walk in anyway","then":["Something rustles. Then it charges.","wild 2"]},
+    {"text":"Obey the sign","then":["You respect the sign. The sign respects nothing."]}
+   ],
+   "weight": 1
+  },
+  "wishing_fountain": {
+   "title": "Pay-to-Wish Fountain",
+   "intro": ["A fountain with a price list. BASIC WISH 50. PREMIUM WISH 300. Basic wishes not guaranteed."],
+   "options": [
+    {
+     "text": "Basic wish",
+     "cost": 50,
+     "then": [
+      "wager 50",
+      "if wager = win",
+      "  A Potion floats up. Wish granted!",
+      "  give potion",
+      "else",
+      "  Nothing happens. A small sign lights up. UPGRADE TO PREMIUM."
+     ]
+    },
+    {"text":"Premium wish","cost":300,"then":["The fountain plays a jingle and hands you something.","perk"]},
+    {
+     "text": "Let Undertow pull the coins out",
+     "need": "type:Water",
+     "then": ["Your Water Billie dives in and comes back up with everyone else's wishes.","money 150"]
+    }
+   ],
+   "weight": 1
+  },
+  "pyramid_cart": {
+   "title": "Abandoned Pyramid Cart",
+   "intro": ["A handcart full of pyramids, left by the road. The tag says PROPERTY OF THE BUREAU OF LOST, FOUND AND BEANS."],
+   "options": [
+    {"text":"Take three","then":["give coin:pyramid 3","Nobody stops you. Somewhere, a form is filled in."]},
+    {"text":"Report it","then":["A Bureau drone arrives, scans the cart, scans you, and pays a reward.","money 150"]}
+   ],
+   "weight": 1
+  },
+  "fire_sale": {
+   "title": "Fire Sale",
+   "intro": ["A merchant sits in front of a tent that is mostly ash.","Merchant: Fire sale! It is literal. Everything must go."],
+   "options": [
+    {"text":"Buy a Revive at half price","cost":300,"then":["give revive","Merchant: Smoke damage is cosmetic."]},
+    {
+     "text": "Let Kindling relight the forge",
+     "need": "type:Fire",
+     "then": [
+      "Your Fire Billie lights the forge. The merchant cries a little.",
+      "give hi_potion",
+      "Merchant: On the house. What is left of it."
+     ]
+    },
+    {"text":"Leave","then":["Merchant: Everything must go! Except me, apparently."]}
+   ],
+   "weight": 1
+  },
+  "speedrunner": {
+   "title": "Speedrunner",
+   "intro": ["A trainer sprints past, turns, and jogs on the spot in front of you.","Speedrunner: No time! Battle any percent!"],
+   "options": [
+    {"text":"Battle","then":["foe speedrunner","Speedrunner: GG. My splits are ruined. Take something.","reward"]},
+    {"text":"Let them pass","then":["Speedrunner: Skip!","They are gone before you finish nodding."]}
+   ],
+   "weight": 1
+  },
+  "support_group": {
+   "title": "Clone Support Group",
+   "intro": ["Billies sit in a circle of folding chairs. A sign reads CLONES ANONYMOUS. YOU ARE MORE THAN YOUR ORIGINAL."],
+   "options": [
+    {
+     "text": "Sit in",
+     "then": ["Your team sits in. Someone shares about their original's podcast. Everyone feels better.","heal 0.5"]
+    },
+    {
+     "text": "Bring yours to share",
+     "then": ["One of yours stands up and says something brave. The group offers to teach it a move.","reward tutor 2"]
+    },
+    {"text":"Leave quietly","then":["Nobody notices. That is the point of the circle, they say."]}
+   ],
+   "weight": 1
+  },
+  "lost_property_auction": {
+   "title": "Lost Property Auction",
+   "intro": [
+    "A Bureau auctioneer stands on a crate of unclaimed things.",
+    "Auctioneer: Lot nine! Contents unknown! Contents always unknown! Do I hear 250?"
+   ],
+   "options": [
+    {"text":"Bid 250","cost":250,"then":["The hammer falls. Your lot is yours.","loot auction"]},
+    {
+     "text": "Read the auctioneer, then bid",
+     "need": "type:Psychic",
+     "cost": 250,
+     "then": ["Your Psychic Billie stares at the auctioneer until he sweats. You get to see inside two lots first.","reward item 2"]
+    },
+    {"text":"Leave","then":["Auctioneer: Going once! Going twice! Gone, like you."]}
+   ],
+   "weight": 1
+  },
+  "surveyor_hole": {
+   "title": "Surveyor in a Hole",
+   "intro": [
+    "A Bureau surveyor is stuck at the bottom of a neat, square hole.",
+    "Surveyor: Do not look at me. Look at the hole. The hole is the survey."
+   ],
+   "options": [
+    {
+     "text": "Let Bedrock dig him out",
+     "need": "type:Ground",
+     "then": ["Your Ground Billie digs a ramp. He walks out, embarrassed, and pays you in supplies.","give full_remedy 2"]
+    },
+    {"text":"Throw him a rope","then":["It takes a while, and your team is tired after. He tips.","hurt 0.1","money 100"]},
+    {
+     "text": "Walk away",
+     "then": [
+      "Surveyor: I am filing a complaint! Form 9-C!",
+      "The next clinics will hear about this.",
+      "fx 2 price what=heal mult=1.5"
+     ]
+    }
+   ],
+   "weight": 1
+  },
+  "poster_grove": {
+   "title": "Motivational Poster Grove",
+   "intro": ["Every tree here has a poster nailed to it. HANG IN THERE. HUSTLE. THE GRIND IS THE REWARD."],
+   "options": [
+    {
+     "text": "Read them all",
+     "then": ["Your team reads every one. They are furious, and it helps.","fx 1 stat stat=lev stages=1"]
+    },
+    {
+     "text": "Let Regrowth grow over them",
+     "need": "type:Grass",
+     "then": ["Your Grass Billie covers the posters in moss. The grove sighs, and so does your team.","heal 0.25"]
+    }
+   ],
+   "weight": 1
+  },
+  "patch_notes": {
+   "title": "Patch Notes v0.1.0",
+   "intro": [
+    "A tablet lies on a rock, open to a changelog.",
+    "PATCH NOTES v0.1.0. Nerfed your team. Buffed something else. Fixed nothing."
+   ],
+   "options": [
+    {
+     "text": "Accept the update",
+     "then": ["Installing. One of your Billies feels a little worse. You feel a little luckier.","level -1","perk"]
+    },
+    {"text":"Roll back","then":["Rolled back to the previous version. Nothing changed. It never does."]}
+   ],
+   "weight": 1
+  },
+  "delivery_drone": {
+   "title": "Delivery Drone",
+   "intro": ["A drone hovers in front of you with a parcel. The label says TO WHOEVER IS LOST."],
+   "options": [
+    {
+     "text": "Let Slipstream catch it",
+     "need": "type:Flying",
+     "then": ["Your Flying Billie snatches the parcel and the drone flies off, relieved.","loot parcel"]
+    },
+    {
+     "text": "Sign for it",
+     "cost": 50,
+     "then": ["You sign. You open it. It is beans.","The beans do nothing. You keep them anyway. Everyone does."]
+    },
+    {"text":"Leave","then":["The drone follows you for a bit, then gives up."]}
+   ],
+   "weight": 1
+  }
+ }
+}

@@ -15,8 +15,8 @@ test('run fx: a run without Perks has no rows; the hub has none', () => {
   assert.equal(E.fxOfRun(null, PERKS), null);
   assert.equal(E.fxOfRun({ perks: [] }, PERKS), null);
   assert.deepEqual(
-    E.fxOfRun({ perks: ['shelter'] }, PERKS).map(f => f.src),
-    ['shelter']
+    E.fxOfRun({ perks: ['clinic_card'] }, PERKS).map(f => f.src),
+    ['clinic_card']
   );
 });
 
@@ -44,7 +44,7 @@ test('run fx: walking into a place on a run heals by the held Perks (runArriveFx
   s.run = { perks: [] };
   assert.equal(L.runArriveFx(s, PERKS), 0, 'no Perks: nothing');
   assert.equal(s.team[0].hp, 1);
-  s.run.perks = ['severance'];
+  s.run.perks = ['trail_snacks'];
   assert.equal(L.runArriveFx(s, PERKS), Math.ceil(top * 0.15));
   assert.equal(s.team[0].hp, 1 + Math.ceil(top * 0.15));
   assert.equal(L.runArriveFx({ team: s.team, run: null }, PERKS), 0, 'not on a run: nothing');
@@ -57,7 +57,7 @@ test('run fx: a lost run’s payout with Field Notebook and Lost Property Form a
     plain = S.payoutOf(end, RATES, price),
     same = S.payoutOf(end, E.fxPayoutRates(null, RATES), price);
   assert.deepEqual(same, plain, 'no rows: the same payout');
-  const fx = E.fxRows(['options', 'writeoff'], PERKS),
+  const fx = E.fxRows(['field_notebook', 'lost_property'], PERKS),
     pay = S.payoutOf(end, E.fxPayoutRates(fx, RATES), price),
     items = pay.lines.find(l => l.what === 'items'),
     row = pay.lines.find(l => l.what === 'fx');

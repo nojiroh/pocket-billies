@@ -96,8 +96,8 @@ test('check-data: planted robots, biomes, node types, relics, currencies, buildi
         N.landing.mark = 'bogus';
       },
       'perks.json': R => {
-        R.insider.fx[0].stat = 'hp';
-        R.takeover.fx[0].type = 'Plasma';
+        R.running_shoes.fx[0].stat = 'hp';
+        R.power_gloves.fx[0].type = 'Plasma';
       },
       'currencies.json': C => {
         C.research.kept = 'run';
