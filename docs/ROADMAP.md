@@ -27,16 +27,30 @@ are sessions of Claude's working time, not calendar time, and exclude the owner'
 | RL-10 | Ranch B (RL-10a done 2026-10-22: breeding safe/risky, abominations and quirks, hatching at the ranch, the walking eggs retired; RL-10b done 2026-10-23: passive income, one ranch clock with the rollback guard, the cloud `t` anchor and skew, the saves whitelist) | breed safe/risky with abominations, hatch, passive income (cap, rollback guard, offline, server anchor) | RL-9 | 2 | yes |
 | RL-11 | Hub upgrades, currencies, unlocks (done 2026-10-22) | `currencies/buildings/unlocks.json`, the Lab board, one unlock registry | RL-8 | 1-2 | yes |
 | RL-12 | Relics and effects (RL-12a done 2026-10-22: effects, Loopholes, picks, shops; RL-12b next) | `relics.json`, `events.json`, `logic/effects.js`, picks | RL-11 (the owner: may go first, every Loophole on offer) | 1-2 | yes |
-| RL-13 | Modifiers, tiers, mini-boss leaders | `modifiers.json`, the bracket pick, the 8 leaders as the pool | RL-12 | 1 | yes |
-| RL-14 | Bots as enemies, salvage, the Voltron | `factions.json`, `bosses.json`, data-driven `alphaPhase`, a robot phase in the full test | RL-13 | 2 | yes |
+| RO-1 | Roster: real pools and regional forms (2026-10-23 restructure, section 9) | every run pool lists real lines, no stand-ins; `forms` on lines | none (alongside) | 1 | yes |
+| RL-R1 | Region generator | a themed region per seed: zones on a biome graph, a regional dex, leaders by type, the region's name | RO-1 | 1-2 | yes |
+| RL-R2 | Side areas and field moves | detours and rare alternate paths behind Surf, Dig and Cut (type + a kept badge) | RL-R1 | 2 | yes |
+| RL-12b | Encounters | `events.json` with options and requirements, waystations, reward picks after trainer battles, route trainers | RL-R1 | 2 | yes |
+| RL-S1 | Story director | `meta.history`, `lines.json`, the hub's line pick, the return-from-a-loss scene | RL-12b | 1-2 | yes |
+| RL-S2 | Rival and relationships | Blake as a rival node countering your starter, `meta.rel`, Chapter 1 | RL-S1 | 1-2 | yes |
+| RL-13 | Brackets, challenges, starter points | `modifiers.json`, challenge modes, starter points at the mast, the region's leaders | RL-R2 | 1-2 | yes |
+| RL-14 | The organization's bots, salvage, the Voltron | `factions.json`, `bosses.json`, data-driven `alphaPhase`, the bots as the organization's army | RL-13, RL-S1 | 2 | yes |
 | RL-15 | Online | the run record, friend ghosts, daily seeds, rules and emulator tests | RL-14 | 2 | yes |
 | RL-16 | Content packs and Studio editors | pack merge and checks, editors for the new sections | RL-11 | 1-2 | yes |
+| RO-2.. | Roster: new lines | from 24 to about 40 species through the Studio's kit bake | RO-1 | 4-6 | yes |
+| RL-E | Endless mode | after online | RL-15 | 1 | yes |
 
-About 22-28 sessions in all; the first playable cut (RL-1..RL-8 plus MG-2) about 10-13. **Nothing after RL-8 starts
+**Restructured 2026-10-23** (roguelite-track.md section 9, the owner's answers): after RL-12a the order is the
+table's from RO-1 down (region → encounters → story, then brackets, bots, online); RL-12b became Encounters. About
+14-19 sessions after RL-12a plus the roster sessions. The original estimate: about 22-28 sessions in all; the first playable cut (RL-1..RL-8 plus MG-2) about 10-13. **Nothing after RL-8 starts
 before the owner has played the first cut on the phone.** MG-3 (towns from the generator) joins the path when a
 town node needs it.
 
 ## Tracks alongside
+- **Reflavour track** (docs/phases/reflavour-track.md, the owner's brief 2026-10-23): less finance, more Pokémon. The
+  Billies stay billionaire clones; catching with pyramids, Perks (was Loopholes), Expeditions (was Brackets), Coins,
+  Research, Scrap and Crests, new type passives, internal renames one per commit, the new tone in the text, the new name Pocket B&B² (a raised B), the Bureau of Lost, Found and
+  Beans. RF-1 and RF-2 before RO-1, RF-3 before RL-12b, RF-4 before RL-S1. Tags `rf-N-done`.
 - **Studio track** (docs/phases/studio-track.md): ST-0..ST-6 done; ST-7 (Model mode import) next. Independent of the
   rework; the editors for the new data sections come with their sessions (RL-11..RL-16). Side session ST-T, the
   Studio self-test (docs/phases/studio-self-test.md, approved 2026-10-21): measure the Studio; fixes come after.
