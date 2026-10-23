@@ -1553,6 +1553,17 @@ def desktop_steps(b, base, R):
         return f'animals at the pond: {", ".join(kinds)}; a rabbit bolted; {prints} footprints; world sounds: {snd}'   # RL-5: a rabbit, not a frog
     animals()
 
+    @step('Battle weather: rain where you stand makes Water moves stronger and Fire weaker', 120)
+    def battle_weather():
+        """TC-1: the part of the Things to do step that stays (that step went with the system)"""
+        go_scene(pg, 0); pg.evaluate("environment.force={time:15,weather:'rain'};const q={id:'twx',sp:'swift1',lvl:8,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
+        wait_phase(pg, sec=60); bw = pg.evaluate("(()=>{const w=battleWeather();return w?[w.k,battleWeatherMultiplier('Water'),battleWeatherMultiplier('Fire'),document.getElementById('camWorld')?document.getElementById('camWorld').dataset.wx:''] :null})()")
+        time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();activeBattle=null;battleStageStop();environment.force=null;render();0")
+        if not bw or bw[0] != 'rain' or bw[1] <= 1 or bw[2] >= 1: raise Exception(f'rain didn’t change the battle ({bw})')
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return f'rain in battle: Water ×{bw[1]}, Fire ×{bw[2]}'
+    battle_weather()
+
     @step('Things to do: challenges, a request, a gold stamp, your room, a photo, weather in battle', 240)   # RL-5: the ladder (Kitewind Ridge) is parked
     def things():
         if not pg.evaluate("typeof challengesToday==='function'"): return 'not in this build'
