@@ -195,6 +195,8 @@ export const uiState = {
   disp: { se: null },
   seenEnc: new Set(),
   mapSel: null,
+  /* the Actions sheet over the world is open (walk-tab.js walkSheetSync) */
+  walkSheet: false,
 };
 provide({ uiState }); /* to-module */
 

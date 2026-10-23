@@ -268,7 +268,7 @@ function runPackStep(kind, k, d) {
 }
 /** the sheet before a run: who comes from home, what you pack from Copperleaf's bag, what the airship adds, how it
  * ends. Opened again in place on every tap (the same sheet: no new scrim, the scroll kept) */
-function runStartSheet() {
+export function runStartSheet() {
   if (!runStartable()) return;
   const S = RULES.run.start,
     P = runPickNow(),
