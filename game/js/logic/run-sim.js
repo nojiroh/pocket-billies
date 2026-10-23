@@ -47,12 +47,12 @@ export const MAX_TURNS = 60;
  * - fightAbove: no wild fight while the party's HP is below this share of its full HP
  * - potionBelow: a Potion (potion) on a Billie below this share of its HP, before each wild fight
  * - clinic: a town's clinic whenever someone is hurt and the money is there
- * - penniesUpTo, reserve: Copper Coins bought in a town shop up to this many held, keeping this much money
- * - taxWhileBelow: one throw at a wild Billie (not an Alpha) while the party is smaller than this
+ * - pyramidsUpTo, reserve: Pyramids bought in a town shop up to this many held, keeping this much money
+ * - catchWhileBelow: one throw at a wild Billie (not an Alpha) while the party is smaller than this
  * - ring: the throw's ring timing (0 to 1, the page's ring phase; 0.5: a "Great throw")
  * - lane: the next place drawn from the run's seed among the ones linked ahead (never back)
  * - keep: on a loss, the highest-level Billie comes home
- * - relics: Perks (Studio plan T3.3). 'greedy': the pick after a mini-boss takes the rarest offered (the lowest
+ * - perks: Perks (Studio plan T3.3). 'greedy': the pick after a mini-boss takes the rarest offered (the lowest
  *   rules.json run.perks.rarity weight, then by id), and a town shop's Perk is bought when the money is there
  *   beyond `reserve`; past the cap only for a rarer one than the plainest held, which is let go. 'never': none taken
  *   or bought (the "never pick" baseline)
@@ -64,18 +64,18 @@ export const SIM_POLICY = Object.freeze({
   fightAbove: 0.7,
   potionBelow: 0.6,
   clinic: 'when-hurt',
-  penniesUpTo: 5,
+  pyramidsUpTo: 5,
   reserve: 100,
-  taxWhileBelow: 3,
+  catchWhileBelow: 3,
   ring: 0.5,
   lane: 'seeded',
   keep: 'top-level',
-  relics: 'greedy',
+  perks: 'greedy',
 });
 /** the named policies a report can be asked for (`policy` in the options; greedy-forward by default) */
 export const SIM_POLICIES = Object.freeze({
   'greedy-forward': SIM_POLICY,
-  'never-pick': Object.freeze({ ...SIM_POLICY, name: 'never-pick', relics: 'never' }),
+  'never-pick': Object.freeze({ ...SIM_POLICY, name: 'never-pick', perks: 'never' }),
 });
 /** the policy a run plays with these options (`fights` is the CLI's --fights) @param {SimOptions} o */
 export function simPolicy(o) {
@@ -88,11 +88,11 @@ export function simPolicy(o) {
  * let go past the cap, or null to take none. 'greedy': the rarest (lowest rarity weight), then by id; past the cap
  * only if it is rarer than the plainest held (the highest weight, then the last by id), which goes.
  * @param {string[]} offer @param {string[]} held @param {Record<string, any>} perks
- * @param {{ cap: number, rarity: Record<string, number> }} rule @param {{ relics: string }} P
+ * @param {{ cap: number, rarity: Record<string, number> }} rule @param {{ perks: string }} P
  * @returns {{ id: string, drop?: string } | null}
  */
 export function simPerkChoice(offer, held, perks, rule, P) {
-  if (P.relics !== 'greedy' || !offer.length) return null;
+  if (P.perks !== 'greedy' || !offer.length) return null;
   const w = (/** @type {string} */ id) => rule.rarity[perks[id].rarity] || 0,
     order = (/** @type {string} */ a, /** @type {string} */ b) => w(a) - w(b) || (a < b ? -1 : a > b ? 1 : 0),
     id = offer.slice().sort(order)[0];
@@ -301,7 +301,7 @@ export function runSimOn(env) {
           const price = fxRunPrice(run, data.PERKS, 'shop', data.PYRAMIDS.pyramid.price);
           while (
             stock.some((/** @type {any} */ w) => w.coin === 'pyramid') &&
-            (s.pyramids.pyramid || 0) < P.penniesUpTo &&
+            (s.pyramids.pyramid || 0) < P.pyramidsUpTo &&
             s.se >= price + P.reserve
           ) {
             s.se -= price;
@@ -334,7 +334,7 @@ export function runSimOn(env) {
           const B = hooks.activeBattle;
           let res;
           /* catch it while the party is small and there are pyramids: one throw, then fight on */
-          if (s.team.length < P.taxWhileBelow && (s.pyramids.pyramid || 0) > 0 && !q.alpha) {
+          if (s.team.length < P.catchWhileBelow && (s.pyramids.pyramid || 0) > 0 && !q.alpha) {
             s.pyramids.pyramid--;
             const c = fn('catchRoll')('pyramid', 1 + logic.CATCH_RULES.ring * P.ring, false); /* doThrow's T */
             if (c.caught) {
