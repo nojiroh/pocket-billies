@@ -15,6 +15,7 @@ import { clamp } from './util.js';
 import { SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
 import { billyName, encountersHere, findBilly, maxHp } from './logic/rules.js';
 import { battleStageKey } from './logic/battle-engine.js';
+import { densityWorldMpp } from './logic/pixel-density.js';
 import { save, saveData, uiState } from './game-state.js';
 import { makeCanvas } from './art.js';
 import { RIG_BACK_VIEW, buildCode, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
@@ -121,18 +122,10 @@ function worldBillyFrame(sp, view, pose, t, seed, build, coat) {
   }
   return c;
 }
-/* metres per rig pixel: a billionaire stands about 0.9 of its listed height, between 0.6 and 2 m */
-/* v34: and sized so its pixels sit on the art grid: one art pixel (1/68 m) holds a whole number of quarter rig pixels
-   (2, 2.25, 2.5 ...), never off by more than 6% of the height it would otherwise have, so its pixels line up with the
-   props' instead of beating against them */
+/* metres per rig pixel: a billionaire stands about 0.9 of its listed height, between 0.6 and 2 m, on the art grid
+   (v34); the maths is logic/pixel-density.js densityWorldMpp (Studio plan Phase 5, T5.7: the Studio reports it) */
 function worldBillyMetersPerPixel(sp, R, big = 1) {
-  const h = clamp((SPECIES[sp].ht || 1) * 0.9, 0.6, 2) * big,
-    px = Math.max(20, R.geo.base - R.geo.top || R.BH * 0.7),
-    m = h / px;
-  const r = 1 / (m * 68),
-    rq = r >= 1 ? Math.round(r * 4) / 4 : 1 / (Math.round(4 / r) / 4),
-    mq = 1 / (rq * 68);
-  return Math.abs(mq / m - 1) <= 0.06 ? mq : m;
+  return densityWorldMpp(SPECIES[sp].ht, R.geo, R.BH, big);
 }
 export function worldBillyItem(k, sp, view, pose, t, seed, x, z, o = {}) {
   const im = worldBillyFrame(sp, view, pose, t, seed, o.build, o.coat);
