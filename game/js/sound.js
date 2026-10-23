@@ -71,6 +71,7 @@ expose({
   playClockTick: [() => playClockTick, v => (playClockTick = v)],
   playOwlCall: [() => playOwlCall, v => (playOwlCall = v)],
   playScrapClank: [() => playScrapClank, v => (playScrapClank = v)],
+  runArriveSound: [() => runArriveSound, v => (runArriveSound = v)],
   soundEffect: [() => soundEffect, v => ((soundEffect = v), provide({ soundEffect }))],
   soundEffectAt: [() => soundEffectAt, v => ((soundEffectAt = v), provide({ soundEffectAt }))],
   soundEngine: [() => soundEngine],
@@ -338,7 +339,7 @@ export function jingle(notes, bpm = 150, type = 'p25', bus = null) {
 /* SND-6: a jingle by its name, at its own tempo and wave (music.json jingles bpm, wave); o.shift moves it by
    semitones, o.duck false plays it over the song without ducking it (and doesn't hold the music sync). Logs
    'jingle <name>' in soundEngine.log (in memory, never sent). Returns how long it lasts (s), 0 when silent */
-function jinglePlay(id, o = {}) {
+export function jinglePlay(id, o = {}) {
   const J = MUSIC.jingles[id];
   if (!J || !initSound() || soundEngine.ctx.state !== 'running') return 0;
   const out = o.bus || soundEngine.fx,
@@ -348,6 +349,12 @@ function jinglePlay(id, o = {}) {
   if (o.duck !== false) soundEngine.jingle = performance.now() + end * 1000 + 200;
   soundLog('jingle ' + id + (o.shift ? ' +' + o.shift : ''));
   return end;
+}
+/* SND-6: walking into a run's next place: a day passes (the day jingle), then the reveal jingle when the map shows more
+   than it did */
+export function runArriveSound(revealed) {
+  const d = jinglePlay('day');
+  if (revealed && d) setTimeout(() => jinglePlay('reveal'), d * 1000 + 120);
 }
 /* SND-2: the jingles are data (music.json jingles); here each is its note list, as jingle() takes it */
 export const JINGLES = Object.fromEntries(Object.entries(MUSIC.jingles).map(([k, J]) => [k, J.notes]));

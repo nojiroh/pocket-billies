@@ -17,7 +17,7 @@ import { runPayoutRows, runReleasePays } from './logic/run-loop.js';
 import { fxOfRun, fxPayoutRates } from './logic/effects.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
-import { JINGLES, jingle } from './sound.js';
+import { jinglePlay } from './sound.js';
 import { runEndHome } from './run.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -65,11 +65,22 @@ function runPayoutOpen() {
     btns: [{ l: 'Fly home', c: 'gold', dis: !won && !saveData.team.some(m => m.uid === keep), f: runPayoutDone }],
     after: () => {
       const el = /** @type {any} */ (document.querySelector('#ov pb-payout'));
+      /* SND-6: a coin for each row as it shows, a step higher each, then the run's end when the total lands: run_won
+         (the victory tune, then the title's motif: the run's last bookend, the first plays as the airship leaves the
+         mast) or run_lost. Once, however often the sheet is drawn again (a card picked) */
+      if (el) {
+        el.addEventListener('pb-payout-row', (/** @type {any} */ e) => {
+          if (typeof jinglePlay === 'function') jinglePlay('payout_coin', { shift: 2 * e.detail.i, duck: false });
+        });
+        el.addEventListener('pb-payout-total', () => {
+          if (uiState.runPayoutSung) return;
+          uiState.runPayoutSung = true;
+          if (typeof jinglePlay === 'function') jinglePlay(won ? 'run_won' : 'run_lost');
+        });
+      }
       if (el && !uiState.runPayoutPlayed && typeof el.play === 'function') {
         uiState.runPayoutPlayed = true;
         el.play();
-        /* SND-4: the run's last bookend, the title's motif (the first plays as the airship leaves the mast) */
-        if (typeof jingle === 'function' && JINGLES.motif) jingle(JINGLES.motif);
       } else if (el && typeof el.finish === 'function') el.finish();
       for (const c of document.querySelectorAll('#ov pb-pick-card'))
         c.addEventListener('pb-pick', () => {
@@ -93,5 +104,6 @@ function runPayoutDone() {
   if (!won && !keep.length) return;
   uiState.runKeep = null;
   uiState.runPayoutPlayed = false;
+  uiState.runPayoutSung = false;
   runEndHome(won, keep, runItemPrice);
 }

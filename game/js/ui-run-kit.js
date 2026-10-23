@@ -10,7 +10,8 @@
      <pb-coin kind="money|capital|scrap|seals" value="340" label="$">   a currency chip that counts to a new value
      <pb-pick-card heading="..." facedown selected>   the relic pick and keep-one card; turning it face up flips it
      <pb-payout rows='[{"label":"Money left","value":170}]' total="420" total-label="Capital">   rows slam in, the
-                                                       total counts up (play() runs it again)
+                                                       total counts up (play() runs it again); pb-payout-row
+                                                       as each row shows, pb-payout-total as the total lands
      <pb-nav-bar set="run|hub" value="map" badges="relics:2">   the bottom bar (pb-change)
    The motions here repeat css/motion.css's reward motions (m-slam, m-flip), as a component's styles can't see the
    page's; with reduced motion each one is a fade and numbers jump to their end. */
@@ -799,12 +800,23 @@ const PbPayout = class extends LitElement {
     if (reduced()) {
       this._n = rows.length;
       this._t = this.total;
+      this._tell('pb-payout-total', {});
       return;
     }
     this._n = 0;
     this._t = 0;
     const gap = Math.max(120, runMsVar(this, '--m-slow', 360) * 0.6);
-    rows.forEach((_, i) => this._timers.push(setTimeout(() => (this._n = i + 1), gap * (i + 1))));
+    rows.forEach((_, i) =>
+      this._timers.push(
+        setTimeout(
+          () => {
+            this._n = i + 1;
+            this._tell('pb-payout-row', { i });
+          },
+          gap * (i + 1)
+        )
+      )
+    );
     this._timers.push(
       setTimeout(
         () => {
@@ -815,7 +827,10 @@ const PbPayout = class extends LitElement {
             const k = Math.min(1, (t - t0) / ms);
             this._t = to * (1 - (1 - k) ** 3);
             if (k < 1) this._raf = requestAnimationFrame(step);
-            else this.renderRoot.querySelector('.tot .v')?.classList.add('bump');
+            else {
+              this.renderRoot.querySelector('.tot .v')?.classList.add('bump');
+              this._tell('pb-payout-total', {});
+            }
           };
           this._raf = requestAnimationFrame(step);
         },
@@ -828,6 +843,11 @@ const PbPayout = class extends LitElement {
     this._stop();
     this._n = (this.rows || []).length;
     this._t = this.total;
+    this._tell('pb-payout-total', {});
+  }
+  /** SND-6: the page hears each row show (pb-payout-row, its index) and the total land (pb-payout-total) */
+  _tell(/** @type {string} */ name, /** @type {object} */ detail) {
+    this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }));
   }
   _stop() {
     this._timers.forEach(clearTimeout);
