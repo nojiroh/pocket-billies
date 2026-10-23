@@ -15,6 +15,12 @@ kept aside in the browser).
   Cloud Facelet (Electric/Flying, on the ridge), Folklore Swiftlet (Grass/Psychic, in the autumn wood) and Festival
   Kontourlet (Psychic/Ground, in the canyon), each line with its own colours and its own evolutions. The Guide shows
   a line's regional forms on its page; catching one counts for that entry.
+- Catching with pyramids (reflavour track RF-2): the four catch coins are now the Pyramid, the Step Pyramid, the
+  Gold Pyramid and the Capstone (never fails, from badges), with new icons; the catch odds are the same. The throw is
+  a small lit 3D pyramid that tumbles through the air, rights itself as it drops, lands point up, rocks on an edge
+  once a wobble and seals with light climbing to its point; a critical catch lands balanced on its point. The throw
+  has sounds now (the throw, a stone landing, the wobbles, the seal, the pop when a Billie breaks out). Billies are
+  sent out of pyramids, and the professor throws three in the opening. The bag's pocket is Pyramids.
 - Things to do is gone (test cleanup track): the daily challenges, the townsfolk's requests and letters, the gold
   stamps (and their tile on the Trainer card), photo mode and your room in Granny Juniper's cottage are removed;
   her cottage no longer opens. The weather still changes battles.

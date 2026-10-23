@@ -2,6 +2,79 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Reflavour track RF-2 - Pyramids - 2026-10-23
+Branch `track/reflavour` (made this session from main and named in reflavour-track.md's `Branch:` line; RF-1 works
+here too and merged RF-2's pushed commits into its own, so the two sit on one line of history; PR #160). Plan approved with the owner's picks, all the recommended
+ones: lands point up, rocks on an edge, light climbs to the point (A1); the coins' tier colours (B1); the full set of
+sounds (C1); pyramids wherever a Billie comes out of one, the mail move keeping a coin (D1); RF-2 takes the throw's
+own lines whole, RF-1 the rest (E1); the plan on `track/reflavour` (F1). Internal ids unchanged (`penny`, `silver`,
+`gold`, `tbtf`, `art/coins/`, `coinArc`, `battleStage.coin`, `saveData.coins`, `bcoins`, `#aimCoin`, `throw-coins`):
+RF-4 renames them.
+- Where the track file was wrong (checked in the code):
+  - There was no coin model: the throw drew the coin's 16 px icon flat on the 2D layer over the 3D battle. The
+    pyramid is new engine use: a 3D-prop recipe item in the battle's world.
+  - The catch made no sound before the caught jingle; `wobble` was defined in sound.js and never played.
+  - The coin throw was used four times: the catch, every send-out, the mail move and the opening's throws.
+  - "Coins" would have meant two things (RF-1's money name and the bag's catch pocket).
+  - The Capstone comes only from the leaders' badges (eight trainer files); no run boss gives one. Unchanged.
+  - The `sound` branch (BRANCHES.md) was already merged into main.
+- Changed (one cause per commit; the rename of the tool is its own commit):
+  - **Names and text:** coins.json is Pyramid, Step Pyramid, Gold Pyramid, Capstone, with "catch odds" (odds and
+    prices unchanged); the leaders' reward texts and the catch perk name them; the Studio's labels (Items &
+    pyramids, Catch multiplier, Pyramid shown, Balances-on-its-tip chance, Alpha catch rate, Pyramid penalty...).
+  - **Icons:** `tools/build-pyramids.py` draws the eight icons at their own sizes (no scaling) in the coins' tier
+    colours and writes the four model recipes; `meta.artVersion` 1 so phones drop the cached coin art once. A 12 px
+    `pyramid` UI icon (its grid in tools/build-ui-icons.py) on the catch button and the bag's pocket.
+  - **The model:** `art/coins/<id>.json`: 4-sided cones (brick; gold; the capstone in platinum blue with a gold
+    point) and three stacked stone boxes for the Step Pyramid, the buildings' 32 px textures, 0.34 m square, 0.3 m
+    tall, drawn 1.6x (`PYRAMID_*` in battle-stage.js). They stand 2 cm up: a recipe shape on the ground gets no
+    underside, and a tumbling pyramid shows its underside.
+  - **Engine:** prop-models.js `setItemSpin`: a model item may carry its own turn (`it.spin`: axis, angle, pivot) in
+    the model, low-poly and shadow passes. battle-3d.js `pyramidWorldItem` (any scene) and `pyramidItem` (the battle;
+    the capstone and a sealing pyramid carry a light). The item has the icon as its picture (never drawn): the
+    sprite pass keys every item by its picture and threw on one without.
+  - **The throw:** tumbles about a tilted axis (faster with spin); under the hit flash it turns to a small lean and
+    rights itself as it drops; lands point up with a bounce (a critical catch turns over and lands on its point);
+    rocks on the base edge it leans to, once each way per wobble; seals with sparks up its four edges, then the glow
+    and stars; a break-out pops. Its flat icon draws only while the model can't (3D props off, GPU lost).
+  - **Send-outs and the opening:** the same model; the opening's three (and Blake's) tumble. The mail move's coin is
+    the atlas's money icon.
+  - **Sounds:** `pyramidLand` (a stone clunk) and `seal` (a click and a shimmer climbing a fifth and an octave) in
+    sound.js; the throw, the landing, a wobble each way, the seal, a pop on a break-out.
+  - **Throw lines (E1):** You threw a Pyramid, Throw it, Swipe the pyramid up, The pyramid is in the air, ~N% catch,
+    It landed on its point. Critical catch!; the bag's pocket Pyramids and its two lines; the profile's shop hint; the
+    debug menu's +10 of every pyramid.
+  - **check-data:** every catch item has its two icons and its model, a recipe with shapes (data-checks.js
+    `dataCatchArt`, its unit test).
+  - check-quick.py: not touched. Its catch step names catch items only by id, so no line needed changing.
+- Verified: lint, typecheck, check:modules, format, check:data, build and the unit tests after every commit (776,
+  then 777; 801 after merging RF-1 and main); smoke 14 of 14 (164 s). The full quick check (before the merge):
+  45 steps, 40 passed, 1964 s. Four of the five problems were red before this session (lane B's list: tap targets,
+  the v31 map camera, v46 buildings, the bush recipes; TC-3 has since fixed three on main). The fifth, the buddy
+  falling 7.9 m behind in Double and Alpha battles (after its battles and the catch passed, with 8 s frames), passed
+  when run alone on the merged tree (1.4 m). Its Alpha catch says "not caught" here, the same on a clean main: the step
+  waits 30 s of real time for a sure catch that takes about 5 s of battle time, longer than that under software
+  drawing.
+  The throw photographed in a real game frame by frame (scratch Playwright script, software drawing): all four
+  pyramids, caught, broken out, the critical catch on its point, spin, 3D props off (the flat icon), the opening's
+  throws. No page errors.
+  The in-game test (`--selftest`, on the merged tree, 698 s): 1 problem with two parts: the Light lab saw 0
+  buildings in view (it wants at least one; all 17 of 17 3D props drew), and the opening's fall over the world map
+  drew 0 frames (the test calls the bowl's fall directly, not the opening code RF-2 touched). Not confirmed against
+  main: that comparison run was stopped, and further long checks were skipped, at the owner's request ("speed them
+  along and skip the checks", relayed by the coordinating session). Worth a look in the nightly.
+- Risky:
+  - Not tried on a phone: the size (1.6x) and the tumble speed are judged from software-drawn frames; the opening's
+    pyramids look large close to the camera (0.8 of the battle's).
+  - The seal's light climbs as sparks (the low-poly shader has no glow uniform); the voxel path (Props as low-poly
+    off) is not photographed.
+  - artVersion 1 clears the phone's art cache once (every picture loads again on the first start).
+- For RF-1: after merging RF-1's commits, three lines still say coins, and all three may mean money, not the catch
+  items: boot.js's loading line "Polishing the coins", walk-view.js "Every coin counts, they say", and settings'
+  "Buttons, battles, coins, and the short tunes" (the sound effects; also in i18n.js). Yours to keep or change.
+- For RF-4: the ids above; `MONEY_COIN` ('$coin') in battle-stage.js; `coinArc`'s name; the opening's `coins` list.
+- Next: RF-3 (type passives), then RF-4. Tag `rf-2-done` on this entry's commit (the owner pushes tags).
+
 ### Roster track RO-1 - Real wild pools and regional forms - 2026-10-23
 Branch `track/roster` (new; the owner's choice: every RO session works here, BRANCHES.md and roguelite-track 9.4 say
 so). Plan approved in Plan Mode with the owner's answers: 4 forms (one per uncommon line, the drafts' names), weights
