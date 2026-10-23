@@ -226,3 +226,21 @@ test("a field move's answer: no badge, no Billie of the type, or a yes", () => {
   assert.match(S.fieldMoveText(M, 'needBadge'), /Grass Badge/);
   assert.equal(S.fieldBadgeKey('Water'), 'water');
 });
+
+test("the side's leader is its mini-boss or boss foe; the main path's foes are the region's leaders as before", () => {
+  const { runFoes } = modules['run-loop'],
+    leaders = Object.entries(RAW.trainers).flatMap(([id, T]) => (T && T.miniboss ? [{ ...T, id }] : []));
+  for (const seed of SEEDS.slice(0, 60)) {
+    const p = plan(seed),
+      run = { seed, map: p.map, region: p.region },
+      foes = Object.values(runFoes(run, { leaders, rules: GAME_DATA.rules.run })),
+      side = p.map.side;
+    const main = foes.filter(F => !p.map.nodes[F.runNode].side).map(F => F.from);
+    assert.deepEqual(main, p.region.leaders, seed);
+    if (!side) continue;
+    const own = foes.filter(F => p.map.nodes[F.runNode].side);
+    assert.equal(own.length, 1, seed);
+    assert.equal(own[0].from, side.leader);
+    assert.equal(own[0].type, RAW.trainers[side.leader].type, 'it carries its type, for the badge');
+  }
+});

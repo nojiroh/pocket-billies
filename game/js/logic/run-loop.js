@@ -141,7 +141,7 @@ export const runFoeId = i => `run_${i}_foe`;
 /**
  * The run's foes, by id: on each mini-boss node and the boss's, a copy of a leader drawn from the node's stream
  * ('foe'), no leader twice in a run (nodes in order); RL-R1: a run with a region has its leaders (run.region.leaders,
- * picked by its types), in node order, while there are any. Its levels: its row's top wild level + run.foes[type].up for its
+ * picked by its types), in node order, while there are any; RL-R2: a side area's mini-boss or boss its own leader. Its levels: its row's top wild level + run.foes[type].up for its
  * top Billie, the others as far below as in the leader's team (1-100). A mini-boss blocks the way north and fights a
  * double battle; the boss is its leader's top Billie alone, fought as an Alpha (which adds the Alpha's own levels).
  * @param {Run} run
@@ -162,7 +162,8 @@ export function runFoes(run, data) {
     if (node.type !== 'miniboss' && node.type !== 'boss') return;
     const left = pool.filter(T => !used.has(T.id)),
       from = left.length ? left : pool,
-      pick = picks[k++],
+      /* RL-R2: a side area's leader is its own (run.map.side.leader); its places come after the main path's */
+      pick = node.side && map.side ? map.side.leader : picks[k++],
       want = pool.find(T => T.id === pick);
     if (!from.length) return;
     const T = want || from[rngFrom(runNodeSeed(run.seed, i), 'foe').int(0, from.length - 1)];
@@ -190,6 +191,8 @@ export function runFoes(run, data) {
       runFoe: node.type,
       runNode: i,
       from: T.id,
+      /* RL-R2: its leader's type: the first win over one keeps that type's badge (battle-rewards.js) */
+      ...(T.type ? { type: T.type } : {}),
     };
   });
   return out;
