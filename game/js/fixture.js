@@ -122,7 +122,7 @@ function fixtureSave() {
      world goes in at boot (run-world.js) */
   if (FIXTURE === 'run' || FIXTURE === 'mountains' || FIXTURE === 'relics') {
     const data = runWorldData();
-    /* RL-9b: one Billie from home at Bracket I, the lead (the second stays in Copperleaf). Studio plan T2.1: started
+    /* RL-9b: one Billie from home at Expedition I, the lead (the second stays in Copperleaf). Studio plan T2.1: started
        as the mast starts a run (logic/run-start.js), with a fresh save's unlocks (none: no ridge or autumn) */
     const plan = runStartPlan(
       FIXTURE_RUN_SEED,

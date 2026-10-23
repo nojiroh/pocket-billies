@@ -997,7 +997,7 @@ async function runFullTest(mode) {
             runTakeOff('SELFTESTRUN8', { rows: 5, minibosses: 1 });
             if (!saveData.run || !(await wait(() => airshipFlight.on, 5000)))
               throw new Error('the run didn’t take off');
-            /* RL-9b: one Billie from home at Bracket I; the hub's team waits in Copperleaf as it was */
+            /* RL-9b: one Billie from home at Expedition I; the hub's team waits in Copperleaf as it was */
             if (
               saveData.team.length !== RULES.run.home[0] ||
               saveData.run.start.team.map(m => m.uid).join() !== hubTeam

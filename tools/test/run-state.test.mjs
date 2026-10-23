@@ -287,7 +287,7 @@ test('run: the packed bag leaves the hub, travels on top of the gift and comes h
   }
 });
 
-test('run: the Bracket rules and the load check of what was picked and packed', () => {
+test('run: the Expedition rules and the load check of what was picked and packed', () => {
   assert.deepEqual(
     [1, 2, 3, 9].map(t => runByTier([1, 2], t)),
     [1, 2, 2, 2]

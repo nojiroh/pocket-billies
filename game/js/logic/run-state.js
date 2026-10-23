@@ -63,7 +63,7 @@ export const RUN_PHASES = ['fly', 'walk', 'battle', 'menu', 'payout'],
   RUN_LIST = 5000,
   RUN_TIERS = 9;
 export const copyOf = v => JSON.parse(JSON.stringify(v));
-/** RL-9b: a rule by Bracket (rules.json run.home, run.pack): the tier's entry, past the list's end its last */
+/** RL-9b: a rule by Expedition (rules.json run.home, run.pack): the tier's entry, past the list's end its last */
 /** @param {number[]} list @param {number} tier */
 export const runByTier = (list, tier) => list[Math.max(0, Math.min(list.length, Math.floor(tier) || 1) - 1)];
 /** RL-9b: the uids of the Billies that came from home (picked at the mast); a run saved before RL-9b took the hub's
@@ -213,7 +213,7 @@ export function validRunFoe(f) {
   );
 }
 /** start a run on the save: the hub's working fields go into run.start and the run gets its own. The Billies from
-    home travel (`home`, by uid, from the team or storage; RL-9b: picked at the mast, the rules' count by Bracket is the
+    home travel (`home`, by uid, from the team or storage; RL-9b: picked at the mast, the rules' count by Expedition is the
     page's to keep; left out, the team as it is): copies, so what happens to them in the run never touches the hub's,
     and the first is the buddy. The packed bag (`pack`) leaves the hub's (no more than it holds, so run.start keeps what
     stays home) and joins the run's starting money, items and coins (`give`, from the rules in RL-8); the trip starts at

@@ -33,7 +33,7 @@ const runPreviewData = () => ({
 
 /**
  * a run's preview from its seed. `unlocks` is what the run carries (unlocks.js runUnlocks), `map` overrides rules.json
- * run.map (the debug menu's short map), `tier` the run's Bracket
+ * run.map (the debug menu's short map), `tier` the run's Expedition
  * @param {string} seed @param {{ unlocks?: string[], map?: object, tier?: number }} [o]
  */
 export function runPreview(seed, o = {}) {

@@ -12,7 +12,7 @@
    multiplied smallest first (the same product for any order), and the product stays within FX_LIMIT, so a run holding
    every Perk stays finite. With no rows every answer is the number it was given (a multiplier of exactly 1), so a
    battle or a run without Perks is the same as before them. Later sessions add rows from other places into the same
-   list (RL-11 building levels, RL-13 brackets).
+   list (RL-11 building levels, RL-13 expeditions).
    Logic only: no DOM, no Date, no Math.random (tools/test/effects.test.mjs). */
 /** @import { FxRow, Relic } from '../../types/game-data' */
 /** @typedef {FxRow & { src: string }} Fx */

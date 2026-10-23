@@ -430,8 +430,8 @@ export function dataRunLoop(D) {
         if (!(D.items || {})[k] || !whole(n, 0, 999))
           problem('rules.json', `run.start.items.${k}: no such item, or not a whole count`);
     }
-    // RL-9b: by Bracket (index 0 = Bracket I; past the end, the last): Billies from home a run takes (1-6, never fewer
-    // than the Bracket before) and the things packed from Copperleaf's bag (0-99 items and coins in all)
+    // RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): Billies from home a run takes (1-6, never fewer
+    // than the Expedition before) and the things packed from Copperleaf's bag (0-99 items and coins in all)
     for (const [k, lo, hi, what] of [
       ['home', 1, 6, 'Billies from home'],
       ['pack', 0, 99, 'things packed'],
@@ -445,7 +445,7 @@ export function dataRunLoop(D) {
       )
         problem(
           'rules.json',
-          `run.${k} is not a list of 1-9 whole numbers (${what}, ${lo}-${hi}), one a Bracket, none fewer than the one before`
+          `run.${k} is not a list of 1-9 whole numbers (${what}, ${lo}-${hi}), one a Expedition, none fewer than the one before`
         );
     }
     if (!whole(R.healCost, 0, 100000))

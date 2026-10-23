@@ -183,7 +183,7 @@ export function runSimOn(env) {
    * run's numbers. What the player does is a fixed policy: walk forward along a lane drawn from the seed, fight up to
    * `fights` of a place's wild Billies while the party is above 70% of its HP (a Potion on a Billie below 60%; catch the
    * first ones while the party is small), heal in towns when hurt, keep a few Copper Coins, beat the mini-boss, then
-   * the boss. It starts as the mast does: the highest-level Billies from home (rules.json run.home at Bracket I;
+   * the boss. It starts as the mast does: the highest-level Billies from home (rules.json run.home at Expedition I;
    * `team` is how many starters wait at home) and a bag packed with Potions from home (`pack` of them at home, as many
    * as run.pack lets).
    * @param {string} seed @param {SimOptions} [o]
