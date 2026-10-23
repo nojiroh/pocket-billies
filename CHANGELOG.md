@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Type abilities (reflavour track RF-3): each type's ability has a name, shown in the Guide's species page under
+  Abilities and in battle lines: Kindling (Fire), Undertow (Water), Regrowth (Grass), Live Wire (Electric), Bedrock
+  (Ground), Slipstream (Flying), Wild Mind (Psychic), Alloy (Steel), Parting Roar (Dragon). Three are new: Water's
+  Undertow (its Water moves hit 1.3× at a third of its HP or less; Water had none), Ground's Bedrock (once a battle a
+  hit that would knock it out from full HP leaves it at 1 HP; sharp stones still don't hurt it) and Dragon's Parting
+  Roar (when it faints, the next one in gets +1 Attack and +1 Sp. Atk, instead of the boosts it had). The rest work as
+  before.
 - Things to do is gone (test cleanup track): the daily challenges, the townsfolk's requests and letters, the gold
   stamps (and their tile on the Trainer card), photo mode and your room in Granny Juniper's cottage are removed;
   her cottage no longer opens. The weather still changes battles.
