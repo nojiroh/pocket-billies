@@ -2806,7 +2806,15 @@ export function navGrid() {
       if (M && M.box && !M.walk) {
         const w = M.box[0] * (p.s || 1),
           d = M.box[1] * (p.s || 1);
-        each(p.x - w / 2, p.z - 0.1, p.x + w / 2, p.z + d, q => (blk[q] = 1));
+        /* the look pass: a turned building blocks its turned footprint here too (it blocked its unturned box, which
+           can lie over its own door) */
+        if (p.rot) {
+          const B = turnedBounds(p, -w / 2, -0.1, w / 2, d);
+          each(B[0], B[1], B[2], B[3], (q, x, z) => {
+            const [lx, lz] = pointInProp(p, x, z);
+            if (lx >= -w / 2 && lx <= w / 2 && lz >= -0.1 && lz <= d) blk[q] = 1;
+          });
+        } else each(p.x - w / 2, p.z - 0.1, p.x + w / 2, p.z + d, q => (blk[q] = 1));
       }
     }
   /* arches: you walk between the piers, not through them */

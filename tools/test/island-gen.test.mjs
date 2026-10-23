@@ -18,6 +18,7 @@ import {
   ISLAND_GEN_VERSION,
   islandGenDials,
   islandGenerate,
+  islandPolyDist,
 } from '../../game/js/logic/island-gen.js';
 import { islandPointIn, islandProblems } from '../../game/js/logic/island.js';
 import {
@@ -68,9 +69,10 @@ function loopProblems(sc, loop) {
     a = loop.pts[0],
     z = loop.pts[loop.pts.length - 1];
   if (Math.hypot(a[0] - z[0], a[1] - z[1]) > 0.6) out.push('the loop is not closed');
-  /* the walk grid with only path ground walkable (bridges open by themselves) */
+  /* the walk grid with only path ground walkable (bridges open by themselves; the town square's paving is walked like
+     a street: since the look pass the coast road crosses the river on the square's bridge) */
   const terrains = {};
-  for (const k of Object.keys(sc.scenery.terrains)) terrains[k] = { walk: k === 'p' || k === 'v' };
+  for (const k of Object.keys(sc.scenery.terrains)) terrains[k] = { walk: k === 'p' || k === 'v' || k === 'c' };
   const R = mapgenReach(sc, { terrains, props: {} }, a, { slope: true }),
     off = loop.pts.filter(p => !mapgenReached(R, p[0], p[1]));
   if (off.length) out.push(`${off.length} of the loop's points can't be walked to along it, first (${off[0]})`);
@@ -240,8 +242,15 @@ test('the island passes the contract and the schema, a closed coast with only se
     const kinds = new Set((sc.plots || []).map(L => L.k));
     for (const k of ['well', 'lab', 'mast', 'shop', 'home', 'farmhouse', 'house'])
       assert.ok(kinds.has(k), `${seed}: a ${k} plot`);
-    assert.ok(sc.plots.filter(L => L.k === 'house').length >= 8, `${seed}: houses in the town and the hamlet`);
-    for (const k of ['town', 'barn', 'pasture', 'mountain', 'forest', 'cove', 'beach', 'hamlet'])
+    /* the look pass (the owner): a smaller island, 6-8 cottages, no hamlet */
+    assert.ok(sc.plots.filter(L => L.k === 'house').length >= 6, `${seed}: houses in the town`);
+    assert.ok(!sc.zones.some(Z => Z.k === 'hamlet'), `${seed}: no hamlet`);
+    /* at most two bridges over the river, not close to one another */
+    const mids = (sc.bridges || []).map(B => [(B.a[0] + B.b[0]) / 2, (B.a[1] + B.b[1]) / 2]);
+    assert.ok(mids.length >= 1 && mids.length <= 2, `${seed}: ${mids.length} bridges`);
+    if (mids.length === 2)
+      assert.ok(Math.hypot(mids[0][0] - mids[1][0], mids[0][1] - mids[1][1]) >= 25, `${seed}: the bridges 25 m apart`);
+    for (const k of ['town', 'barn', 'pasture', 'mountain', 'forest', 'cove', 'beach'])
       assert.ok(
         sc.zones.some(Z => Z.k === k),
         `a ${k} zone`
@@ -274,15 +283,14 @@ test('the coast path is one closed loop you can walk along', () => {
 test('every zone, the summit and the dock are walked to from the town, with nowhere you cannot walk back from', () => {
   for (const seed of ['copperleaf', 'another'])
     assert.deepEqual(reachProblems(withScenery(isle(seed).scene)), [], seed);
-  /* planted: the trail's foot cut (a ring of deep water round the mountain's foot) */
+  /* planted: the trail's foot cut (a ring of deep water round the mountain zone's outline; the mountain stands off the
+     island's middle since the look pass) */
   const bad = withScenery(isle().scene),
     M = bad.zones.find(Z => Z.k === 'mountain');
-  const c = bad.island.c;
   for (let j = 0; j < bad.h; j++)
     for (let i = 0; i < bad.w; i++) {
-      const d = Math.hypot(i + 0.5 - c[0], j + 0.5 - c[1]),
-        foot = Math.max(...M.poly.map(p => Math.hypot(p[0] - c[0], p[1] - c[1])));
-      if (d > foot + 1 && d < foot + 4) setTile(bad, i, j, 'd');
+      const d = islandPolyDist(M.poly, i + 0.5, j + 0.5);
+      if (d > 1 && d < 4) setTile(bad, i, j, 'd');
     }
   bad.bridges = [];
   assert.match(reachProblems(bad).join(), /the summit can't be walked to/);
