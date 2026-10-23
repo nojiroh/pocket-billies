@@ -1745,8 +1745,8 @@ def desktop_steps(b, base, R):
         return f'{r["n"]} recipes: {r["lp"]} triangles low-poly, {r["q"]} quads as voxels at 32 to the metre; the every-prop scene draws {m["lp"]} as low-poly models'
     lowpoly_props()
 
-    @step('alpha 0.4: postcards — the first visit brings the card, the Guide keeps it', 90)
-    def a04_postcards():
+    @step('Postcards: the first visit brings the card, the Guide keeps it', 90)
+    def postcard_visit():
         """walking into a town you haven't had the postcard of: it slides in with the town's picture and is kept in the
         Guide's Postcards page (it slides away by itself or on a tap); coming back shows just the stamp. RL-5: the town
         is Copperleaf, the only one (Marigold Town is parked)"""
@@ -1772,7 +1772,7 @@ def desktop_steps(b, base, R):
         if pg.evaluate("!!document.querySelector('.pcard-wrap')"): raise Exception('coming back showed the big card again')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return 'Copperleaf’s postcard came on the first visit, went into the Guide (1 card), and only its stamp the next time'   # RL-5: Copperleaf
-    a04_postcards()
+    postcard_visit()
 
     @step('Windows and lamps by night; a weather front passing', 120)
     def night_lights_and_front():
