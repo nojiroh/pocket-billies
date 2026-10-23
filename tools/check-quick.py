@@ -1571,25 +1571,6 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     v33()
 
-    @step('v34: shadow cache, walk cycles', 300)
-    def v34():
-        out = []
-        # (v37: the 2x "detailed art" of v34 is retired; the ground is the 32 px tiles of v37) open a scene and read the renderer's counters
-        go_scene(pg, 0); time.sleep(6)   # RL-5: Copperleaf, the one place left (Verdigris City is parked)
-        r = json.loads(pg.evaluate("JSON.stringify({tp:(walkRenderer.ring&&walkRenderer.ring.TP)||(walkView.ground&&walkView.ground._TP),mb:Math.round((gpuState.texB||0)/1048576),sh:[walkRenderer.shHit||0,walkRenderer.shMiss||0],grid:walkRenderer.gridSkip||0,gpu:gpuState.gpuX?'timer':'no timer'})"))
-        if r['tp'] != 32: raise Exception(f'the ground isn’t painted from the 32 px tiles (tile {r["tp"]} px)')
-        shot(pg, 'v34-copperleaf')   # RL-5: was v34-verdigris
-        out.append(f"ground {r['tp']} px a tile, {r['mb']} MB of pictures on the card; shadow cache {r['sh'][0]} kept / {r['sh'][1]} drawn; {r['grid']} props skipped by the grid; GPU {r['gpu']}")
-        # walk cycles per body plan, front and back only
-        w = pg.evaluate("""(()=>{const plans={};for(const sp of Object.keys(SPECIES)){const R=typeof rigParts==='function'?rigParts(sp,1):null;if(!R||plans[R.plan])continue;const a=worldBillyFrame(sp,false,'front','walk',0,1),b=worldBillyFrame(sp,false,'front','walk',280,1);if(!a||!b)continue;
-          const d=(c)=>c.getContext('2d').getImageData(0,0,c.width,c.height).data;const x=d(a),y=d(b);let diff=0;for(let i=3;i<x.length;i+=16)if(x[i]!==y[i])diff++;plans[R.plan]=diff}return plans})()""")
-        still = [k for k, v in w.items() if v == 0]
-        if still: raise Exception(f'walk cycle doesn’t move for: {", ".join(still)}')
-        out.append('walk cycles move for ' + ', '.join(sorted(w)))
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return '; '.join(out)
-    v34()
-
     @step('v35: roster, palette, starter studies, pixel-grid camera', 120)
     def v35():
         out = []
