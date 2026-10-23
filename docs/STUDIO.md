@@ -43,6 +43,18 @@ saved straight into `game/data`) was dropped (Studio plan, owner's decision 2026
 - The kept changes stay in this browser on this device. They are never sent anywhere; another browser or computer
   doesn't see them. GitHub mode only.
 
+## The Check: problems and notes (Studio plan Phase 1, T1.3)
+
+- The Check runs the same checks as `npm run check:data` (CI) where they overlap: they live in
+  `game/js/logic/data-checks.js`, so the run rules, ranch, robots, biomes, node types, relics (Loopholes), currencies,
+  buildings, unlocks, scenes and roads are checked the same way in both.
+- A **Problem** (an error) is something check-data fails on. **Propose changes refuses while there is one**: it names
+  the first few, and Show me opens the Check. Nothing is sent and your changes stay unsaved until you fix it.
+- A **Note** (a warning) is something the game works around (a missing picture, an unknown shop, a stop no road
+  reaches). It is shown and never blocks. check-data prints the scene and road notes too, and never fails on them.
+- A Billie named from a line parked in `game/data/legacy` is a note (the game stands a new line's Billie in for it).
+  A name that is in neither, like a typo, is a problem.
+
 ## Layout (studio track ST-1)
 
 The Studio is built for wide screens (up to 3440 x 1440) and still works on a tablet.
@@ -313,7 +325,7 @@ Game → **UI look** edits game/data/uiTheme.json, the look of the game's menus 
 | **UI look** | The menus' look (uiTheme.json): colours light and dark with contrast grades, glass, depth, shapes, space, type and motion, for the whole game or one screen's colours and shapes; presets, Hold to compare, the UI gallery as a live preview. UI track UI-3, above. |
 | **Rules** | Every number that tunes the game: starting items, starters and rival, wild Billies per place and how fast they come back, prize money, leveling curve, team size, eggs, damage, critical hits, type abilities, taxing, bargains. |
 | **Art files** | Browse, download and replace any image. |
-| **Check & backups** | Lists problems with "Show me" links; restores earlier versions. |
+| **Check & backups** | Lists problems with "Show me" links (see "The Check" below). The backups list is from the dropped local mode and is always empty on GitHub. |
 | **Find and Connections** | Ctrl+K finds any setting or thing and takes you to it; Ctrl+L shows what the thing you're editing uses and what uses it, or, for an engine dial, where its value comes from and what it depends on. |
 
 ## Saving in local mode
