@@ -23,6 +23,7 @@ import {
 } from '../../game/js/person-art.js';
 import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { renameTypeIn } from '../../game/js/logic/type-rename.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -95,7 +96,6 @@ expose({
   poolPercent: [() => poolPercent],
   refsTo: [() => refsTo, v => (refsTo = v)],
   removeRefs: [() => removeRefs, v => (removeRefs = v)],
-  renameType: [() => renameType, v => (renameType = v)],
   selectedLineIndex: [() => selectedLineIndex],
   statsCard: [() => statsCard, v => (statsCard = v)],
   trainerRobotHTML: [() => trainerRobotHTML, v => (trainerRobotHTML = v)],
@@ -1003,30 +1003,11 @@ ACTIONS.typeDel = async d => {
     !(await ask(`Delete the ${escapeHtml(t.id)} type? Moves of this type become Normal and Billies lose it.`, 'Delete'))
   )
     return;
-  renameType(t.id, null);
+  renameTypeIn(D, t.id, null);
   D.types.splice(+d.i, 1);
   changed();
   render();
 };
-function renameType(from, to) {
-  const D = studioState.D;
-  D.types.forEach(t => {
-    t.strong = t.strong.map(x => (x === from ? to : x)).filter(Boolean);
-    t.weak = t.weak.map(x => (x === from ? to : x)).filter(Boolean);
-  });
-  Object.values(D.moves).forEach(m => {
-    if (m.t === from) m.t = to || 'None';
-  });
-  D.lines.forEach(L => {
-    L.types = L.types.map(a => {
-      const r = a.map(x => (x === from ? to : x)).filter(Boolean);
-      return r.length ? r : ['None'];
-    });
-  });
-  const R = D.rules.battle;
-  if (R.shockType === from) R.shockType = to || D.types[0].id;
-  if (R.spinType === from) R.spinType = to || D.types[0].id;
-}
 studioState.hooks.types = (path, v) => {
   const m = path.match(/^types\.(\d+)\.id$/);
   if (m) {
@@ -1051,7 +1032,7 @@ document.addEventListener('change', ev => {
         el.value = old;
         return;
       }
-      renameType(old, nu);
+      renameTypeIn(studioState.D, old, nu);
       changed();
       render();
     }
