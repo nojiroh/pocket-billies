@@ -166,7 +166,9 @@ export const WATER_KIND_LOOKS = [
   },
 ];
 const WATER_KIND_INDEX = Object.fromEntries(WATER_KIND_LOOKS.map((w, i) => [w.k, i]));
-export function shoreField(sc, isW, T = walkRenderer) {
+/* 0.1.0 alpha: in steps (a generator, drained with yield*), so building a place's ground a slice at a time (map-cache.js
+   prepareMapGround) doesn't stop here: a big place's field is millions of samples, about 0.4 s in one go */
+export function* shoreField(sc, isW, T = walkRenderer) {
   const gl = gpuState.gl,
     W = sc.w,
     H = sc.h,
@@ -206,12 +208,16 @@ export function shoreField(sc, isW, T = walkRenderer) {
         }
       }
     };
+  yield;
   for (let n = 0; n < 2; n++) {
     blur(m, tmp, 1);
+    yield;
     blur(tmp, m, 0);
+    yield;
   }
   const d = new Uint8Array(FW * FH);
-  for (let j = 0; j < FH; j++)
+  for (let j = 0; j < FH; j++) {
+    if (j % 64 === 63) yield;
     for (let i = 0; i < FW; i++) {
       const q = j * FW + i,
         f = m[q],
@@ -222,6 +228,7 @@ export function shoreField(sc, isW, T = walkRenderer) {
         nz = (valueNoise2d(x * 1.1 + 3.7, z * 1.1) - 0.5) * 0.34 + (valueNoise2d(x * 3.3, z * 3.3 + 9.1) - 0.5) * 0.12;
       d[q] = Math.round(clamp(f + nz * e, 0, 1) * 255);
     }
+  }
   if (!T.shoreTex) T.shoreTex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, T.shoreTex);
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
