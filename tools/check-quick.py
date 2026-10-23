@@ -925,6 +925,50 @@ def sound_step(b, base, R):
         ctx.close()
 
 
+@step('Debug menu: nine sections, plain labels, search, remembered sections, a message per button (UI-7c)', 60)
+def debug_menu_step(b, base, R):
+    """UI-7c: the debug menu on a 390 px phone: the nine sections in their order, no phase or track code in what it
+    says, one copy of each test, the search box narrowing the buttons and putting the sections back, the open sections
+    kept across closing and opening, and a button saying what it changed (not "Done.")"""
+    errs = []
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1, is_mobile=True, has_touch=True)
+    for s in (CLOCK, NO_ACCOUNTS, TEST_GLOBALS): ctx.add_init_script(s)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    try:
+        pg.goto(base + '/index.html?fixture=town'); pg.evaluate(LOW_RENDER)
+        if not until(pg, "typeof walkView!=='undefined'&&walkView.ready", 120): raise Exception('the town never opened')
+        pg.evaluate("localStorage.removeItem('pb-debug-open');uiState.modal=null;uiState.mq=[];renderOverlay();openDebug();0"); time.sleep(.5)
+        keys = pg.evaluate("[...document.querySelectorAll('.dbg details[data-k]')].map(d=>d.dataset.k)")
+        want = ['tests', 'give', 'billies', 'battle', 'run', 'places', 'story', 'ranch', 'save']
+        if keys != want: raise Exception(f'sections {keys}, wanted {want}')
+        text = pg.evaluate("document.querySelector('.dbg').textContent")
+        codes = sorted(set(re.findall(r'\b(?:[Pp]hase \d+|(?:RL|UI|TR|ST|MG|IS|SND|CAM)-\d+|v\d{2}\b|S\d\b)', text)))
+        if codes: raise Exception('phase or track codes in the menu: ' + ', '.join(codes))
+        dup = pg.evaluate("(()=>{const n={};document.querySelectorAll('.dbg button').forEach(b=>{const k=b.dataset.a+':'+(b.dataset.x||'');n[k]=(n[k]||0)+1});return Object.keys(n).filter(k=>n[k]>1)})()")
+        if dup: raise Exception('buttons in the menu twice: ' + ', '.join(dup))
+        shown = "[...document.querySelectorAll('.dbg button')].filter(b=>b.offsetParent).map(b=>b.textContent)"
+        pg.fill('#dbgFind', 'scrap'); time.sleep(.3)
+        found = pg.evaluate(shown)
+        if found != ['+50 Scrap']: raise Exception(f'searching "scrap" left {found}')
+        pg.fill('#dbgFind', ''); time.sleep(.3)
+        back = pg.evaluate("[...document.querySelectorAll('.dbg details[data-k]')].filter(d=>d.open&&!d.hidden).map(d=>d.dataset.k)")
+        if back != ['tests']: raise Exception(f'clearing the search left open {back}, wanted tests alone')
+        pg.click('.dbg details[data-k=give] summary'); pg.click('.dbg details[data-k=tests] summary'); time.sleep(.3)
+        pg.evaluate("closeModal();0"); time.sleep(.3); pg.evaluate("openDebug();0"); time.sleep(.5)
+        kept = pg.evaluate("[...document.querySelectorAll('.dbg details[data-k]')].filter(d=>d.open).map(d=>d.dataset.k)")
+        if kept != ['give']: raise Exception(f'reopened with {kept} open, wanted give alone')
+        se = pg.evaluate("saveData.se")
+        pg.click('.dbg [data-x=se1]'); time.sleep(.3)
+        said = pg.evaluate("JSON.stringify([uiState.toastOn,...(uiState.toastQ||[])].filter(Boolean).map(t=>t.text))")
+        if 'you have $' not in said or 'Done.' in said: raise Exception(f'+$1,000 said {said[:160]}')
+        if pg.evaluate("saveData.se") != se + 1000: raise Exception('+$1,000 didn’t add $1,000')
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return 'nine sections in order, no phase codes, each button once, search narrowed to +50 Scrap and put the sections back, Give me kept open across reopening, +$1,000 said what it changed'
+    finally:
+        ctx.close()
+
+
 @step('Song fingerprints: every song, jingle and cry renders as in validation/sound-baseline (SND-2)', 180)
 def sound_fingerprints(b, base, R):
     """sound track SND-2: tools/check-sound.py on this browser. Every song (day and night), jingle and cry is rendered
@@ -2710,6 +2754,7 @@ def main():
                 safety_step(b, base, R)
                 targets_step(b, base, R)
                 sound_step(b, base, R)
+                debug_menu_step(b, base, R)
                 sound_fingerprints(b, base, R)
                 run_music_step(b, base, R)
                 battle_music_step(b, base, R)
