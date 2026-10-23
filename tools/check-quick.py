@@ -1274,8 +1274,8 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     culling_cache_wear()
 
-    @step('v33: double and Alpha battles, nameplates, Billies in the world', 300)
-    def v33():
+    @step('Double and Alpha battles, nameplates, Billies in the world', 300)
+    def battles_and_world_billies():
         if not pg.evaluate("typeof liveActors==='function'&&typeof worldBillyItem==='function'"): return 'not in this build'
         out = []
         pg.evaluate("saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null;m.lvl=Math.max(m.lvl,12)});while(saveData.team.length<3)saveData.team.push(makeBilly(DEX_ORDER[(saveData.team.length*5+3)%DEX_ORDER.length],10));saveData.team.forEach(m=>m.hp=maxHp(m));0")
@@ -1326,7 +1326,7 @@ def desktop_steps(b, base, R):
         out.append(f"world: {w['shown']} in the grass (none left its spot in 5 s, Alpha {'there' if w['alpha'] else 'not rolled'}), buddy {gap:.1f} m behind and says “{said[:50]}”, {pets} trainers with a companion")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
-    v33()
+    battles_and_world_billies()
 
     @step('v36: new starters on piece sheets, 12 fps puppets, next ground tiles', 150)
     def v36():
