@@ -8,6 +8,7 @@ import { test } from 'node:test';
 import './robot-rig-node.mjs';
 import {
   rigBox,
+  rigGeo,
   rigKit,
   rigSetBox,
   rigSetPivot,
@@ -276,4 +277,57 @@ test('rigSetZ: the front’s z, the back’s zb', () => {
   assert.equal(M.back.bones.find(b => b.n === 'head').zb, 4);
   assert.equal(M.back.bones.find(b => b.n === 'head').z, RIGS.musk0.back.bones.find(b => b.n === 'head').z);
   assert.equal(rigKit(M).parts.head.z.back, 4);
+});
+
+/* the skeleton builder's skeletonFraming as it was before Studio plan Phase 5 moved it into rigGeo (the oracle) */
+function framingBefore(M, view) {
+  const R = rigOf(M),
+    { list } = rigMatrices(R, neutralPose(), view);
+  let x0 = 1e9,
+    x1 = -1e9,
+    y0 = 1e9,
+    y1 = -1e9;
+  for (const [, m, img] of list) {
+    const w = Math.max(1, img.c.width),
+      h = Math.max(1, img.c.height);
+    for (const [px, py] of [
+      [img.ox, img.oy],
+      [img.ox + w, img.oy],
+      [img.ox, img.oy + h],
+      [img.ox + w, img.oy + h],
+    ]) {
+      const X = m[0] * px + m[2] * py + m[4],
+        Y = m[1] * px + m[3] * py + m[5];
+      x0 = Math.min(x0, X);
+      x1 = Math.max(x1, X);
+      y0 = Math.min(y0, Y);
+      y1 = Math.max(y1, Y);
+    }
+  }
+  if (x0 > x1) return null;
+  const lift = ((M.q && M.q.lift) || 0) * M.k;
+  return {
+    cx: M.cx,
+    base: M.base,
+    k: M.k,
+    top: +y0.toFixed(2),
+    mid: +((y0 + y1) / 2).toFixed(2),
+    hw: +((x1 - x0) / 2).toFixed(2),
+    lift: +lift.toFixed(2),
+    cy: +((y0 + y1) / 2).toFixed(2),
+  };
+}
+
+test("rigGeo is the skeleton builder's framing, number for number, on every species and view", () => {
+  const P = neutralPose();
+  let n = 0;
+  for (const sp of SPECIES)
+    for (const view of VIEWS) {
+      const M = RIGS[sp][view];
+      if (!M) continue;
+      const g = rigGeo(M, view, animFor(M.plan, M.q || {})(P, view === 'back') || {}, P);
+      assert.deepEqual(g, framingBefore(M, view), `${sp} ${view}`);
+      n++;
+    }
+  assert.ok(n >= 200, `${n} views`);
 });

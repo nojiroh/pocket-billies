@@ -12,7 +12,7 @@ import { POSES_BY_PLAN } from '../../game/js/body-plan-animation.js';
 import { boneSlot, drawRig, rigAudit, rigMatrices, rigPose } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { pixelKeyAction, pixelZoomNext } from '../../game/js/logic/pixel-ops.js';
-import { rigSetPivot } from '../../game/js/logic/rig-joints.js';
+import { rigGeo, rigSetPivot } from '../../game/js/logic/rig-joints.js';
 import {
   ACTIONS,
   ask,
@@ -322,47 +322,15 @@ function sortBonesParentsFirst(meta) {
 }
 /* shadow width, body center and top for battle framing */
 function skeletonFraming(sp) {
+  /* Studio plan Phase 5 (T5.2): the maths is logic/rig-joints.js rigGeo, at the neutral pose */
   for (const view of ['front', 'back']) {
     const meta = studioState.rigs[sp] && studioState.rigs[sp][view];
     if (!meta) continue;
     const R = rigFor(sp, view);
     if (!R) continue;
-    const { list } = rigMatrices(R, neutralPose(), view);
-    let x0 = 1e9,
-      x1 = -1e9,
-      y0 = 1e9,
-      y1 = -1e9;
-    for (const [z, m, img] of list) {
-      const c = img.c,
-        w = c.width,
-        h = c.height;
-      for (const [px, py] of [
-        [img.ox, img.oy],
-        [img.ox + w, img.oy],
-        [img.ox, img.oy + h],
-        [img.ox + w, img.oy + h],
-      ]) {
-        const X = m[0] * px + m[2] * py + m[4],
-          Y = m[1] * px + m[3] * py + m[5];
-        x0 = Math.min(x0, X);
-        x1 = Math.max(x1, X);
-        y0 = Math.min(y0, Y);
-        y1 = Math.max(y1, Y);
-      }
-    }
-    if (x0 > x1) continue;
-    const g = (meta.geo = meta.geo || {});
-    const lift = ((meta.q && meta.q.lift) || 0) * meta.k;
-    Object.assign(g, {
-      cx: meta.cx,
-      base: meta.base,
-      k: meta.k,
-      top: +y0.toFixed(2),
-      mid: +((y0 + y1) / 2).toFixed(2),
-      hw: +((x1 - x0) / 2).toFixed(2),
-      lift: +lift.toFixed(2),
-      cy: +((y0 + y1) / 2).toFixed(2),
-    });
+    const P = neutralPose(),
+      g = rigGeo(meta, view, R.anim(P, view === 'back') || {}, P);
+    if (g) meta.geo = Object.assign(meta.geo || {}, g);
   }
 }
 /* ---------- open ---------- */
