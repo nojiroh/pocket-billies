@@ -11,6 +11,8 @@
    ["kardashian0",26],
    ["zuck0",24],
    ["kamprad0",24],
+   ["yiming0",22],
+   ["woods0",20],
    ["trump0",16],
    ["cuban0",8],
    ["musk0",3],
@@ -23,6 +25,7 @@
   "list": [
    ["kamprad0",28],
    ["zuck0",24],
+   ["woods0",24],
    ["kardashian0",22],
    ["swift0",20],
    ["trump0",16],
@@ -42,6 +45,7 @@
    ["zuck0",26],
    ["hughes0",24],
    ["swift0",18],
+   ["yiming0",18],
    ["kardashian0",14],
    ["kamprad0",10],
    ["bezos0",5],
@@ -57,11 +61,13 @@
    ["swift0",26],
    ["trump0",18],
    ["kamprad0",18],
+   ["yiming0",16],
    ["kardashian0",14],
    ["altman0",4],
    ["musk0",3],
    ["bezos0",3],
-   ["gates0",3]
+   ["gates0",3],
+   ["arnault0",3]
   ]
  },
  "autumn": {
@@ -71,6 +77,7 @@
    ["kamprad0",28],
    ["kardashian0",24],
    ["hughes0",22],
+   ["woods0",20],
    ["trump0",16],
    ["zuck0",14],
    ["cuban0",6],
@@ -86,10 +93,13 @@
    ["kardashian_festival0",28],
    ["trump0",26],
    ["kamprad0",24],
+   ["woods0",18],
    ["swift0",16],
    ["zuck0",14],
    ["hughes0",14],
+   ["yiming0",12],
    ["musk0",5],
+   ["arnault0",4],
    ["gates0",3],
    ["bezos0",2]
   ]
@@ -104,6 +114,7 @@
    ["zuck0",14],
    ["hughes0",10],
    ["musk0",5],
+   ["arnault0",4],
    ["gates0",2],
    ["bezos0",2]
   ]
@@ -143,6 +154,7 @@
    ["trump0",28],
    ["kamprad0",26],
    ["kardashian0",20],
+   ["woods0",20],
    ["swift0",18],
    ["zuck0",14],
    ["hughes0",12],
@@ -158,9 +170,11 @@
    ["zuck0",22],
    ["kamprad0",22],
    ["kardashian0",18],
+   ["yiming0",18],
    ["trump0",16],
    ["cuban0",16],
    ["hughes0",14],
+   ["woods0",14],
    ["gates0",5],
    ["bezos0",3],
    ["altman0",3],

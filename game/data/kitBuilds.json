@@ -60,7 +60,20 @@
   "SHARK": [0.58,0.55,0.92],
   "SHARK_DEEP": [0.6,0.6,0.65],
   "CLOUD": [0.56,0.22,1.22],
-  "CLOUD_DEEP": [0.6,0.35,0.95]
+  "CLOUD_DEEP": [0.6,0.35,0.95],
+  "CLIP": [0.14,1.5,1.18],
+  "CLIP_CYAN": [0.5,1.7,1.12],
+  "TIKTOK": [0.62,0.35,0.5],
+  "TIKTOK_CYAN": [0.5,1.8,1.15],
+  "TIKTOK_PINK": [0.95,1.5,1.12],
+  "TIGER": [0.07,1.7,1.1],
+  "TIGER_STRIPE": [0.05,1.2,0.45],
+  "TEE_GOLD": [0.13,1.6,1.2],
+  "SUNDAY_RED": [0.995,1.7,0.85],
+  "PUTTING_GREEN": [0.3,1.5,0.95],
+  "PEACOCK": [0.075,2,1],
+  "PEACOCK_GOLD": [0.12,2,1.1],
+  "PEACOCK_EMBER": [0,2,0.85]
  },
  "forms": [
   {
@@ -571,6 +584,90 @@
     "tail": ["owl_tail",0.9,"CLOUD_DEEP"]
    },
    "extras": [["birds_crown","crown",0.9,"CLOUD",false]]
+  },
+  {
+   "name": "cliplet",
+   "rig": "yiming0",
+   "line": "yiming",
+   "stage": 0,
+   "scale": 0.55,
+   "parts": {
+    "head": ["cat_head",1,"CLIP"],
+    "torso": ["fox_torso",0.85,"CLIP"],
+    "arm": ["fox_arm",0.8,"CLIP"],
+    "leg": ["fox_leg",0.75,"CLIP"],
+    "tail": ["fox_tail",1,"CLIP_CYAN"]
+   },
+   "extras": [["fox_ear","ears",0.75,"CLIP",true]]
+  },
+  {
+   "name": "tiktokferret",
+   "rig": "yiming1",
+   "line": "yiming",
+   "stage": 1,
+   "scale": 0.82,
+   "parts": {
+    "head": ["cat_head",0.95,"TIKTOK"],
+    "torso": ["fox_torso",1.05,"TIKTOK"],
+    "arm": ["fox_arm",0.85,"TIKTOK"],
+    "leg": ["fox_leg",0.8,"TIKTOK"],
+    "tail": ["fox_tail",1.05,"TIKTOK_CYAN"]
+   },
+   "extras": [["fox_ear","ears",0.6,"TIKTOK",true],["birds_plume","crown",0.45,"TIKTOK_PINK",false]]
+  },
+  {
+   "name": "cublet",
+   "rig": "woods0",
+   "line": "woods",
+   "stage": 0,
+   "scale": 0.6,
+   "parts": {
+    "head": ["cat_head",1,"TIGER"],
+    "torso": ["cat_torso",0.9,"TIGER"],
+    "arm": ["cat_arm",0.85,"TIGER"],
+    "leg": ["cat_leg",0.8,"TIGER"],
+    "tail": ["cat_tail",0.85,"TEE_GOLD"]
+   },
+   "extras": [["cat_ear","ears",0.65,"TIGER",true],["beasts_spikes","crown",0.5,"TIGER_STRIPE",false]]
+  },
+  {
+   "name": "tigerwoods",
+   "rig": "woods1",
+   "line": "woods",
+   "stage": 1,
+   "scale": 0.95,
+   "parts": {
+    "head": ["cat_head",1,"SUNDAY_RED"],
+    "torso": ["bear_torso",1.1,"SUNDAY_RED"],
+    "arm": ["cat_arm",1.05,"SUNDAY_RED"],
+    "leg": ["cat_leg",1.05,"SUNDAY_RED"],
+    "tail": ["cat_tail",1.1,"PUTTING_GREEN"]
+   },
+   "extras": [
+    ["cat_ear","ears",0.7,"SUNDAY_RED",true],
+    ["beasts_spikes","crown",0.65,"TIGER_STRIPE",false],
+    ["beasts_spikes","back",0.8,"TIGER_STRIPE",false]
+   ]
+  },
+  {
+   "name": "peacouture",
+   "rig": "arnault0",
+   "line": "arnault",
+   "stage": 0,
+   "scale": 0.8,
+   "armOut": 25,
+   "parts": {
+    "head": ["bird_head",1,"PEACOCK"],
+    "torso": ["bird_torso",1,"PEACOCK"],
+    "arm": ["bird_arm",0.95,"PEACOCK_EMBER"],
+    "leg": ["bird_leg",0.9,null],
+    "tail": ["bird_tail",1.1,"PEACOCK_EMBER"]
+   },
+   "extras": [
+    ["birds_plume","back",2.6,"PEACOCK_GOLD",true],
+    ["birds_crown","crown",0.8,"PEACOCK_GOLD",false],
+    ["birds_ruff","collar",0.7,"PEACOCK_EMBER",false]
+   ]
   }
  ]
 }

@@ -1,0 +1,43 @@
+{
+ "id": "woods",
+ "names": ["Cublet","Tigerwoods"],
+ "types": [["Ground"],["Ground","Grass"]],
+ "prof": [0.95,1.2,0.9,1,0.9,1.05],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"quakestomp"],
+  [6,"scatterstones"],
+  [10,"snub"],
+  [14,"lobbygusher"],
+  [18,"harvest"],
+  [22,"bouldertoss"],
+  [26,"oldmoney"],
+  [30,"deepdrill"],
+  [34,"sundayred"],
+  [38,"allowance"],
+  [46,"margincall"]
+ ],
+ "cat": ["Cub Billie","Green Billie"],
+ "ht": [0.6,1.6],
+ "wt": [12,220],
+ "hab": ["Driving ranges","The eighteenth green on Sunday"],
+ "diet": ["Range balls","Majors"],
+ "bio": [
+  "A tiger cub with dark stripes and a golden tip to its tail that it uses as a tee. It could putt before it could walk, and it still prefers putting.",
+  "A red-furred tiger that stalks a green and sinks everything. The fist-pump is its taunt, and it has fifteen of them."
+ ],
+ "note": ["Could putt before it could walk.","Sunday red, always."],
+ "evo": [
+  {"k":"lvl","at":24}
+ ],
+ "parody": "Tiger Woods",
+ "cry": [
+  {"base":"beast","pitch":64,"length":0.7,"name":"placeholder: a small growl, then a quiet 'fore' (Claude's draft)"},
+  {"base":"beast","pitch":44,"length":1.3,"name":"placeholder: a roar like a crowd on the last hole (Claude's draft)"}
+ ],
+ "parts": [
+  {"head":"cat_head","body":"cat_torso","front":"cat_arm","back":"cat_leg","sig":"cat_tail"},
+  {"head":"cat_head","body":"bear_torso","front":"cat_arm","back":"cat_leg","sig":"cat_tail"}
+ ]
+}

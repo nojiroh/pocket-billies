@@ -47,7 +47,25 @@
   "cutscenes"
  ],
  "split": {
-  "lines": {"array":true,"ids":["musk","bezos","gates","swift","kardashian","trump","zuck","hughes","kamprad","cuban","altman"]},
+  "lines": {
+   "array": true,
+   "ids": [
+    "musk",
+    "bezos",
+    "gates",
+    "swift",
+    "kardashian",
+    "trump",
+    "zuck",
+    "hughes",
+    "kamprad",
+    "cuban",
+    "altman",
+    "yiming",
+    "woods",
+    "arnault"
+   ]
+  },
   "people": {
    "ids": [
     "boy",

@@ -388,5 +388,65 @@
   "types": ["Psychic","Electric"],
   "design": "Cloud-white owl with a cloud for a crest",
   "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "cliplet",
+  "name": "Cliplet",
+  "no": 33,
+  "line": "yiming",
+  "stage": 1,
+  "kind": "line2",
+  "parody": "Zhang Yiming",
+  "types": ["Electric"],
+  "design": "Small yellow kit with a play-button patch on its chest",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "tiktokferret",
+  "name": "Tiktokferret",
+  "no": 34,
+  "line": "yiming",
+  "stage": 2,
+  "kind": "line2",
+  "parody": "Zhang Yiming",
+  "types": ["Electric","Psychic"],
+  "design": "Long dark ferret with cyan and pink flashes and a clock-face patch",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "cublet",
+  "name": "Cublet",
+  "no": 35,
+  "line": "woods",
+  "stage": 1,
+  "kind": "line2",
+  "parody": "Tiger Woods",
+  "types": ["Ground"],
+  "design": "Striped orange tiger cub with a gold tail tip",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "tigerwoods",
+  "name": "Tigerwoods",
+  "no": 36,
+  "line": "woods",
+  "stage": 2,
+  "kind": "line2",
+  "parody": "Tiger Woods",
+  "types": ["Ground","Grass"],
+  "design": "Red-furred tiger with a putting-green tail",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "peacouture",
+  "name": "Peacouture",
+  "no": 37,
+  "line": "arnault",
+  "stage": 1,
+  "kind": "single",
+  "parody": "Bernard Arnault",
+  "types": ["Fire","Flying"],
+  "design": "Gold-and-ember peacock with a crest and a monogram-eyed fan",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  }
 ]
