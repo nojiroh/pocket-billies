@@ -75,6 +75,28 @@ test("a run town's shop: always its wares, then more drawn by weight, the same o
   }
 });
 
+test("Studio plan T3.3: a run town's wares through the run's own unlocks (runShopOpen: shop.js and the simulation)", () => {
+  const run = runOf('SHOPOPEN'),
+    UD = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings },
+    locked = ['settlement', 'appeal', 'bailout'],
+    seen = new Set();
+  run.unlocks = [];
+  for (let day = 1; day <= 40; day++) {
+    const a = L.runShopOpen(run, 3, day, R.shop, UD);
+    assert.ok(!a.some(w => locked.includes(w.item)), `day ${day}: nothing the run hasn't unlocked`);
+    const open = modules.unlocks.unlockOpen(R.shop.pick, 'shop', [], UD);
+    assert.deepEqual(a, L.runShopStock(run, 3, day, { ...R.shop, pick: open }), 'the stock of the open wares');
+  }
+  run.unlocks = ['shop_appeal', 'shop_bailout', 'shop_settlement'];
+  for (let day = 1; day <= 40; day++) for (const w of L.runShopOpen(run, 3, day, R.shop, UD)) seen.add(w.item);
+  assert.ok(
+    locked.some(k => seen.has(k)),
+    'unlocked, they can be stocked'
+  );
+  run.unlocks = undefined;
+  assert.deepEqual(L.runShopOpen(run, 3, 2, R.shop, UD), L.runShopStock(run, 3, 2, R.shop), 'no copy: all open');
+});
+
 test("the run's foes: a leader on every mini-boss node and the boss's, none twice, at their row's levels", () => {
   assert.equal(LEADERS.length, 8);
   for (let k = 0; k < 200; k++) {

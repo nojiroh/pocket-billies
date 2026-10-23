@@ -15,7 +15,7 @@
 /** @import { Run, RunMap, SaveData, Billy } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { fxHealShare, fxOfRun } from '../hooks.js';
+import { fxHealShare, fxOfRun, unlockOpen } from '../hooks.js';
 import { ITEMS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
@@ -48,6 +48,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runRelease: [() => runRelease, v => (runRelease = v)],
   runReleasePays: [() => runReleasePays],
+  // @ts-expect-error -- replaced on purpose
+  runShopOpen: [() => runShopOpen, v => (runShopOpen = v)],
   // @ts-expect-error -- replaced on purpose
   runShopStock: [() => runShopStock, v => (runShopStock = v)],
 });
@@ -109,6 +111,15 @@ export function runShopStock(run, i, day, rule) {
     delete left[w];
   }
   return out.map(w => (w.startsWith('coin:') ? { coin: w.slice(5) } : { item: w }));
+}
+
+/** Studio plan T3.3: a run town's wares on a day as its shop opens them (shop.js openShop, and the run's simulation):
+ * runShopStock with only the wares the run has unlocked (its copy, run.unlocks; RL-11)
+ * @param {Run} run @param {number} i @param {number} day
+ * @param {{ always: string[], more: number, pick: Record<string, number> }} rule
+ * @param {import('./unlocks.js').UnlockData} unlockData */
+export function runShopOpen(run, i, day, rule, unlockData) {
+  return runShopStock(run, i, day, { ...rule, pick: unlockOpen(rule.pick, 'shop', run.unlocks, unlockData) });
 }
 
 /** a leader's win line without its badge (the run gives none): the sentences naming a Badge left out
