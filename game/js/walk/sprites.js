@@ -4,7 +4,7 @@
    items, the title's town rise and tap targets, moved from walk-view-gl.js as they were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { loadingScreen, provide, reducedMotion, requestAsker } from '../hooks.js';
+import { loadingScreen, provide, reducedMotion } from '../hooks.js';
 import { clamp } from '../util.js';
 import { pictureFacing } from '../logic/prop-turn.js';
 import { INTEREST_DEFAULTS } from '../logic/camera-interest.js';
@@ -704,8 +704,6 @@ export function addHitTarget(it, C, hits, labels, PPU) {
     if (!it.n.done) labels.push({ k: 'bang', x: q.x, y: box.y0, col: it.n.col || '#D9434B' });
   } else if (it.k === 'folk') {
     hits.push({ k: 'folk', f: it.f, ...box, x0: q.x - 16 * k, x1: q.x + 16 * k, z: q.d });
-    if (typeof requestAsker === 'function' && it.f === requestAsker() && !(it.f.sayT > 0))
-      labels.push({ k: 'bang', x: q.x, y: box.y0 - 2, col: '#E2B92C' });
     if (it.f.sayT > 0) labels.push({ k: 'say', x: q.x, y: box.y0 - 2, t: it.f.say, a: Math.min(1, it.f.sayT * 3) });
   } else if (it.k === 'enc') {
     const by = box.y0 - 8 - Math.abs(Math.sin(walkView.t / 380 + it.x)) * 4;

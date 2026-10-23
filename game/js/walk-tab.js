@@ -15,7 +15,6 @@ import { mapById, walkView } from './walk-view.js';
 import { WEATHER_NAMES, environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
 import { runClinicEach, runGiveUp, runStartSheet } from './run.js';
 import { trainerTalk } from './story.js';
-import { challengeCardHTML } from './things-to-do.js';
 import { closeModal, modal, toast } from './overlay.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -185,7 +184,7 @@ function walkHero() {
     q = encountersHere();
   return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(locationSubtitle(here)), escapeHtml(here.name), environmentLine(), '')}
  <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIconHTML('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : `<p class="wh-hint glass">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>`}
-  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIconHTML('camera', 14)}</button><button class="wh-down glass k-btn" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
+  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass k-btn" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
 }
 export function renderWalk() {
   return walkHero();
@@ -194,7 +193,7 @@ export function renderWalk() {
    part of the page under the scene, so any scroll (a mouse wheel, a trackpad) slid it into view. Its content is made
    again on every render while it is open; leaving the world (another tab, a battle) closes it */
 function walkSheetHTML() {
-  return `${runStatusHTML()}${hubHTML()}${hereHTML()}${encountersHTML()}${challengeCardHTML()}${
+  return `${runStatusHTML()}${hubHTML()}${hereHTML()}${encountersHTML()}${
     saveData.run
       ? `<button class="pb gold wide ws-move" data-a="tab" data-t="map">${uiIconHTML('map', 16)} Open the map to move on</button>`
       : ''

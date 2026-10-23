@@ -7,7 +7,7 @@
    the place's own plus the kind's bonus. A catch starts a wild battle like any other encounter. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { recordThingsToDoEvent, soundEffect, toast } from './hooks.js';
+import { soundEffect, toast } from './hooks.js';
 import { clamp, random } from './util.js';
 import { COATS, RULES, SPECIES, gameData } from './game-data.js';
 import { coatPrefix, encounterPoolHere, newUid, pickWeighted } from './logic/rules.js';
@@ -388,7 +388,6 @@ function fishCaught() {
   if (typeof debugLog !== 'undefined') debugLog.add('fish', 'caught ' + q.sp);
   saveData.stats = saveData.stats || {};
   saveData.stats.fished = (saveData.stats.fished || 0) + 1;
-  if (typeof recordThingsToDoEvent === 'function') recordThingsToDoEvent('fish');
   save();
   toast(`You hooked a ${coatPrefix(q.coat)}${nm}!`);
   setTimeout(() => startWild(q), 350);

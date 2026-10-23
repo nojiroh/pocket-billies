@@ -74,7 +74,7 @@ VIEWS = [
     ('title', 'title', '', "!!document.querySelector('.ttl,.title')"),
 ]
 # UI-6: the parts UI-5 had no view of (the opening, postcards, the flight and the lift, the walk controls, fishing,
-# photo mode, the workshop, evolving, the full test's table). Each is put on the page the way its code builds it
+# the workshop, evolving, the full test's table; photo mode went with Things to do in TC-1). Each is put on the page the way its code builds it
 # (the real builder where it has no timer, else a copy of its markup), still, so the cascade can be compared
 LEGACY_WORLD = ("const H=(h)=>document.body.insertAdjacentHTML('beforeend',h);"
     "H('<div class=\"pcard-wrap in\" role=dialog><div class=pcard><div class=pc-pic><img alt=\"\"><div class=pc-greet><small>Greetings from</small><b>Copperleaf</b></div></div><div class=pc-stamp><img alt=\"\"><span>Copperleaf</span></div><p class=pc-note>A postcard for your Guide.</p></div></div>');"
@@ -90,14 +90,12 @@ LEGACY_OPENING = ("document.body.classList.add('in-cs','cs-choosing');const c=do
     "const k=document.getElementById('csPick');k.hidden=false;k.innerHTML='<p class=sd>Pick one</p><div class=racts><button class=\"pb wide\">A</button><button class=pb>B</button></div>';"
     "document.getElementById('csCap').classList.add('on');document.getElementById('csFade').classList.add('on');"
     "document.body.insertAdjacentHTML('beforeend','<canvas class=cs-fall></canvas>');battleTip('chosen','A tip',{a:'x',l:'Skip'},true)")
-LEGACY_PHOTO = ("document.body.classList.add('photo');document.body.insertAdjacentHTML('beforeend','<div class=\"photo-ui glass\" id=photoUI><div class=ph-row><button class=\"pb small on\">None</button><button class=\"pb small\">+</button></div><div class=ph-row><button class=\"pb gold\">Take photo</button><button class=\"pb quiet\">Done</button></div></div><div class=photo-prev></div>')")
 LEGACY_WORKSHOP = (OPEN + "document.body.insertAdjacentHTML('beforeend','<div id=wsTest class=\"sheet px\"><div class=ws-top><div class=ws-big></div><div class=ws-info><p class=row><b class=\"lv tnum\">Lv 5</b></p><div class=ws-stats><span><small>HP</small><b>10</b></span></div></div></div>"
     "<div class=ws-slots><button class=\"ws-slot on\"><small>Head</small><b>Part</b><span class=ws-meta><span>Move</span></span><span class=ws-n>2</span><span class=ws-up>+</span><span class=\"ws-brk dmg\">!</span></button><button class=ws-slot><small>Arm</small><b>Part</b></button></div>"
     "<div class=ws-pick><p class=note>Spare parts:</p><div class=ws-cand><span class=ws-ct><b>P</b><span class=ws-meta></span></span><span class=ws-ds><span class=\"ws-d up\">+1</span><span class=\"ws-d dn\">-1</span></span><button class=\"pb small\">Fit</button></div><div class=ws-upg><span class=note>Upgrade</span><button class=\"pb small quiet\">Upgrade</button></div></div></div>')")
 VIEWS += [
     ('legacy-world', 'town', LEGACY_WORLD, "!!document.querySelector('.pcard-wrap')&&!!document.querySelector('.joy.on')"),
     ('legacy-opening', 'town', LEGACY_OPENING, "!!document.querySelector('#cs .cs-cap.on')&&!!document.querySelector('#btip')"),
-    ('legacy-photo', 'town', LEGACY_PHOTO, "!!document.querySelector('#photoUI')"),
     ('legacy-workshop', 'team', LEGACY_WORKSHOP, "!!document.querySelector('#wsTest')"),
 ]
 if ONLY: VIEWS = [v for v in VIEWS if v[0] in ONLY]
