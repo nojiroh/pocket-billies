@@ -1698,6 +1698,9 @@ def postcard_visit(P):
     sd = pg.evaluate("LOCATION_BY_ID.copperleaf.node")   # RL-5: Copperleaf's postcard (Marigold Town is parked)
     # alpha 0.5: no postcard before the opening has ended (postcardAllowed; RL-8: it waited for Blake's battle, which left the opening)
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.bench=null;saveData.cards={};postcardState.last=null;postcardState.on=false;0")
+    # TC-4: the card's picture loaded first: the card goes by itself after 9 s, and on a busy machine the picture
+    # took longer than that to come
+    pg.evaluate(f"artLoad([postcardImage({sd})])")
     go_scene(pg, sd)
     if not until(pg, "!!document.querySelector('.pcard-wrap.in')", 12, "postcardCheck()"): raise Exception('no postcard came on walking into Copperleaf')   # RL-5: Copperleaf
     until(pg, "(()=>{const im=document.querySelector('.pcard-wrap img');return !!(im&&im.complete&&im.naturalWidth>100)})()", 10); ui(pg)
