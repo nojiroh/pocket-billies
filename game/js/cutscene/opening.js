@@ -13,7 +13,7 @@ import { expose } from '../test-globals.js';
 import { fallPlay, landing, mapIdAt, provide, render, startGame, updateNav } from '../hooks.js';
 import { $, clamp } from '../util.js';
 import { CUTSCENES, LOCATIONS, RULES, SPECIES, START_NODE, locationFullName } from '../game-data.js';
-import { FAST_SKIPS, FAST_SKIP_MS, HAZEL, hotTake, speedWatch } from '../logic/chosen.js';
+import { CHOSEN, FAST_SKIPS, FAST_SKIP_MS, hotTake, speedWatch } from '../logic/chosen.js';
 import { cutsceneCleared, cutsceneOffset, cutscenePoint } from '../logic/cutscene-set.js';
 import { uiState } from '../game-state.js';
 import { userFps } from '../frame-scheduler.js';
@@ -129,7 +129,7 @@ export async function cutsceneStart(opts) {
      watch for skipped lines and a comment waiting to be said */
   cutscene.foe = null;
   cutscene.takes = {};
-  cutscene.skipWatch = speedWatch(FAST_SKIP_MS, FAST_SKIPS, HAZEL.tooFastSkips);
+  cutscene.skipWatch = speedWatch(FAST_SKIP_MS, FAST_SKIPS, CHOSEN.tooFastSkips);
   cutscene.quip = null;
   if (typeof landing !== 'undefined') landing.bits = [];
   cutscene.pickList = RULES.start.starters.filter(l => SPECIES[l + '0']);

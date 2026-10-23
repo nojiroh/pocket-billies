@@ -1,6 +1,6 @@
 // @ts-check
 'use strict';
-/* ================= HAZEL (phase 06-2b) =================
+/* ================= CHOSEN (phase 06-2b) =================
    What the professor (Professor Chosen, since 2026-10-23) says around the opening that isn't a line of its script (game/data/cutscenes/opening.json
    holds those): the staged fight's log, the pick card's note, her hot takes, her tips in Blake's battle and her
    comments on tapping too fast, in one table, and the small rules around them: which hot take comes next when you tap
@@ -10,11 +10,11 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  CHOSEN: [() => CHOSEN],
   FAST_PICKS: [() => FAST_PICKS],
   FAST_PICK_MS: [() => FAST_PICK_MS],
   FAST_SKIPS: [() => FAST_SKIPS],
   FAST_SKIP_MS: [() => FAST_SKIP_MS],
-  HAZEL: [() => HAZEL],
   TIP_MAX: [() => TIP_MAX],
   // @ts-expect-error -- replaced on purpose
   fillLine: [() => fillLine, v => (fillLine = v)],
@@ -27,7 +27,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const HAZEL = {
+export const CHOSEN = {
   /** the Chosen's own fight: the log lines under the plates ({foe} is Blake's Billie) */
   fight: {
     start: 'Professor Chosen wants to battle! He sent out… himself.',
@@ -99,8 +99,8 @@ export function fillLine(text, vars) {
 /** the hot take for the n-th tap (0-based) on one starter line: its own takes in order, then the annoyed ones, which
  * stay on the last one @param {string} line @param {number} n */
 export function hotTake(line, n) {
-  const own = HAZEL.hotTakes[line] || [],
-    all = own.concat(HAZEL.annoyed);
+  const own = CHOSEN.hotTakes[line] || [],
+    all = own.concat(CHOSEN.annoyed);
   return all[Math.min(n, all.length - 1)] || '';
 }
 
@@ -109,9 +109,9 @@ export function hotTake(line, n) {
  * @param {number} i @param {{ weak: string, strong: string } | null} matchup the real one: strong beats weak */
 export function hazelTip(i, matchup) {
   if (i >= TIP_MAX) return null;
-  const L = [HAZEL.meta];
-  if (matchup) L.push(fillLine(HAZEL.flippedTip, { weak: matchup.weak, strong: matchup.strong }));
-  L.push(...HAZEL.badTips);
+  const L = [CHOSEN.meta];
+  if (matchup) L.push(fillLine(CHOSEN.flippedTip, { weak: matchup.weak, strong: matchup.strong }));
+  L.push(...CHOSEN.badTips);
   return L[i] ?? null;
 }
 

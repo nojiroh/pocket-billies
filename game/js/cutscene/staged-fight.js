@@ -7,7 +7,7 @@ import { expose } from '../test-globals.js';
 import { $ } from '../util.js';
 import { RULES, SPECIES } from '../game-data.js';
 import { formatNumber, maxHp } from '../logic/rules.js';
-import { HAZEL, fillLine } from '../logic/chosen.js';
+import { CHOSEN, fillLine } from '../logic/chosen.js';
 import { cutscenePoint } from '../logic/cutscene-set.js';
 import { escapeHtml } from '../game-state.js';
 import { buzz } from '../battle-stage.js';
@@ -67,7 +67,7 @@ export async function hazelFight(who) {
   const id = blakeFirstBillie(),
     box = $('#csFight');
   if (!id || !box) return;
-  const F = HAZEL.fight,
+  const F = CHOSEN.fight,
     name = SPECIES[id].name,
     vars = { foe: name };
   cutscene.foeName = name;

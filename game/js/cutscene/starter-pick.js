@@ -8,7 +8,7 @@ import { expose } from '../test-globals.js';
 import { hazelHotTake, typeBadgeHTML } from '../hooks.js';
 import { $, clamp } from '../util.js';
 import { SPECIES, TYPES, typeEffectiveness } from '../game-data.js';
-import { HAZEL } from '../logic/chosen.js';
+import { CHOSEN } from '../logic/chosen.js';
 import { cutscenePoint } from '../logic/cutscene-set.js';
 import { escapeHtml } from '../game-state.js';
 import { makeCanvas } from '../art.js';
@@ -84,7 +84,7 @@ function starterPickerHTML() {
  <div class="pk-dots" role="img" aria-label="${cutscene.sel + 1} of ${pk.length}">${pk.map((_, i) => `<i class="${i === cutscene.sel ? 'on' : ''}"></i>`).join('')}</div>
  <p class="pk-blurb">${escapeHtml(s.blurb)}</p>
  <div class="pk-match"><div><span class="pk-k">Strong against</span><span class="pk-ts">${pills(st)}</span></div><div><span class="pk-k">Weak to</span><span class="pk-ts">${pills(wk)}</span></div></div>
- <p class="pk-note">${escapeHtml(HAZEL.pickNote)}</p>
+ <p class="pk-note">${escapeHtml(CHOSEN.pickNote)}</p>
  ${cutscene.confirm ? `<div class="pk-acts"><button class="pb quiet" data-a="cs-no">Not yet</button><button class="pb gold" data-a="cs-yes">Yes, ${escapeHtml(s.name)}!</button></div>` : `<button class="pb gold wide pk-go" data-a="cs-choose">Choose ${escapeHtml(s.name)}</button>`}`;
 }
 function starterPickerFocus() {
