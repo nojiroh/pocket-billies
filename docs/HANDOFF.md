@@ -35,7 +35,9 @@ names Cliplet and Peacouture, Woods as a common, and the peacock rare with no si
     versions; no other print changed).
 - Verified: lint, typecheck, check:data, check:modules, format:check, bake check, unit tests 828 of 828;
   check-sound: only the 10 new prints differed before the baseline; smoke 6 of 6 (179 s). The five sprites looked at in a
-  browser, front and back (Playwright 1.63.0, `rigCanvasHTML` on the game page). The full quick check was not run.
+  browser, front and back (Playwright 1.63.0, `rigCanvasHTML` on the game page). The full quick check 37 of 37
+  (1,723 s). CI on #172's first push: smoke red on "Play this seed" (fixed by #168's port of #174, merged in) and on
+  CAM-2's encounter shot and IS-1/IS-3's camera aim, the camera flakes RO-2a saw too.
 - Risky / open:
   - Peacouture's head stays a pale peach (the bird head is near white, so tints come out pastel) and its back view
     is busy where the fan crosses the body. The tigers have no real stripes. Both are fine as kit stand-ins until the
