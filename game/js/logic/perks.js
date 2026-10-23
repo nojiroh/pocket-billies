@@ -44,7 +44,7 @@ expose({
  * @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule @param {string[]} [also] left out too */
 export const perkPool = (run, perks, rule, also = []) =>
   Object.keys(perks)
-    .filter(id => !run.relics.includes(id) && !also.includes(id) && (rule.rarity[perks[id].rarity] || 0) > 0)
+    .filter(id => !run.perks.includes(id) && !also.includes(id) && (rule.rarity[perks[id].rarity] || 0) > 0)
     .sort();
 
 /** draw up to n Perks from a stream, by rarity weight, none twice @param {{ pick: (w: Record<string, number>) => string }} g
@@ -101,15 +101,15 @@ export const perkPrice = (R, rule) => rule.price[R.rarity] || 0;
  */
 export function perkTake(run, id, perks, rule, drop) {
   if (!perks[id]) return 'none';
-  if (run.relics.includes(id)) return 'held';
+  if (run.perks.includes(id)) return 'held';
   if (drop != null) {
-    const at = run.relics.indexOf(drop);
+    const at = run.perks.indexOf(drop);
     if (at < 0) return 'drop';
-    run.relics[at] = id;
+    run.perks[at] = id;
     return '';
   }
-  if (run.relics.length >= rule.cap) return 'full';
-  run.relics.push(id);
+  if (run.perks.length >= rule.cap) return 'full';
+  run.perks.push(id);
   return '';
 }
 
@@ -154,12 +154,12 @@ export function perkBuy(run, i, day, perks, rule, drop) {
  * @param {string} [take] @returns {{ offer: string[], took: string | null }[]}
  */
 export function perkOfferOrder(seed, perks, rule, picks, take = 'none') {
-  const run = /** @type {Run} */ (/** @type {any} */ ({ seed, relics: [], offer: null, offerN: 0, shelf: {} })),
+  const run = /** @type {Run} */ (/** @type {any} */ ({ seed, perks: [], offer: null, offerN: 0, shelf: {} })),
     out = [];
   for (let k = 0; k < picks; k++) {
     const offer = (perkOfferMake(run, perks, rule) || []).slice(),
       want = take === 'first' ? offer[0] : take !== 'none' && offer.includes(take) ? take : null,
-      took = want && run.relics.length < rule.cap && !perkChoose(run, want, perks, rule) ? want : null;
+      took = want && run.perks.length < rule.cap && !perkChoose(run, want, perks, rule) ? want : null;
     if (!took && run.offer) perkChoose(run, null, perks, rule);
     out.push({ offer, took });
   }

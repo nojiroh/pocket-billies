@@ -82,10 +82,10 @@ test('run sim: the policy answers a Perk on offer: greedy takes the rarest, neve
     'no rarer'
   );
   /* and on a run: the pick answered through perks.js perkChoose, as perk-screen.js does */
-  const run = { seed: 'P', relics: [], offer: ['offshore', 'hedge', 'insider'] },
-    c = simPerkChoice(run.offer, run.relics, PERKS, rule, greedy);
+  const run = { seed: 'P', perks: [], offer: ['offshore', 'hedge', 'insider'] },
+    c = simPerkChoice(run.offer, run.perks, PERKS, rule, greedy);
   assert.equal(modules.perks.perkChoose(run, c.id, PERKS, rule, c.drop), '');
-  assert.deepEqual(run.relics, ['hedge']);
+  assert.deepEqual(run.perks, ['hedge']);
   assert.equal(run.offer, null);
 });
 

@@ -1660,8 +1660,8 @@ def desktop_steps(b, base, R):
             if not until(pg, "!document.querySelector('#ov [data-a=mb][data-i=\"0\"]').disabled", 10): raise Exception('a card didn’t enable “Take it”')
             shot(pg, 'rl12-pick')
             pg.click('#ov [data-a=mb][data-i="0"]')
-            relic = pg.evaluate("saveData.run.relics.length===1&&!saveData.run.offer&&saveData.run.relics[0]")
-            if not relic: raise Exception(f'the pick: held {pg.evaluate("JSON.stringify([saveData.run.relics,saveData.run.offer])")}')
+            relic = pg.evaluate("saveData.run.perks.length===1&&!saveData.run.offer&&saveData.run.perks[0]")
+            if not relic: raise Exception(f'the pick: held {pg.evaluate("JSON.stringify([saveData.run.perks,saveData.run.offer])")}')
             # the boss: an Alpha, won, the payout, home
             boss = pg.evaluate("saveData.run.map.nodes.length")
             pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();runJump({boss});render();0")

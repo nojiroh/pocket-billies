@@ -126,10 +126,10 @@ test('effects: every Perk in perks.json uses a known kind', () => {
 test("effects: fxRunPrice is a run's price with its Perks' price rows (none held, or no run: the price)", () => {
   const heal = ALL.find(id => (PERKS[id].fx || []).some(f => f.kind === 'price' && f.what === 'heal'));
   assert.ok(heal, 'a Perk with a heal price row');
-  const run = { relics: [heal] };
+  const run = { perks: [heal] };
   assert.equal(E.fxRunPrice(run, PERKS, 'heal', 60), E.fxPrice(E.fxRows([heal], PERKS), 'heal', 60));
   assert.notEqual(E.fxRunPrice(run, PERKS, 'heal', 60), 60);
   assert.equal(E.fxRunPrice(run, PERKS, 'shop', 60), 60, 'only its own kind of price');
-  assert.equal(E.fxRunPrice({ relics: [] }, PERKS, 'heal', 60), 60);
+  assert.equal(E.fxRunPrice({ perks: [] }, PERKS, 'heal', 60), 60);
   assert.equal(E.fxRunPrice(null, PERKS, 'heal', 60), 60);
 });

@@ -671,9 +671,9 @@ def relics(pg, base):
     if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('a card didn’t enable Take it')
     pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
     took = offer[1]
-    if not until(pg, f"saveData.run.relics.length===6&&saveData.run.relics.includes('{took}')&&!saveData.run.offer&&!(uiState.modal&&uiState.modal.cls==='relic-pick')", 10):
-        raise Exception(f'taking {took}: {pg.evaluate("JSON.stringify([saveData.run.relics,saveData.run.offer])")}')
-    if len(stored()['relics']) != 6: raise Exception('the pick wasn’t stored')
+    if not until(pg, f"saveData.run.perks.length===6&&saveData.run.perks.includes('{took}')&&!saveData.run.offer&&!(uiState.modal&&uiState.modal.cls==='relic-pick')", 10):
+        raise Exception(f'taking {took}: {pg.evaluate("JSON.stringify([saveData.run.perks,saveData.run.offer])")}')
+    if len(stored()['perks']) != 6: raise Exception('the pick wasn’t stored')
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='relics';render();0")
     if not until(pg, "document.querySelectorAll('.s-relics .bag-row').length===6", 10): raise Exception('the Perks tab doesn’t list six')
     pg.evaluate("uiState.tab='walk';render();0")
@@ -694,12 +694,12 @@ def relics(pg, base):
     if not until(pg, "!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')", 10): raise Exception('the town’s shop has no Perk')
     shelf = pg.evaluate("Object.values(saveData.run.shelf)[0]")
     price = pg.evaluate(f"Math.round(RULES.run.perks.price[PERKS['{shelf}'].rarity]*0.85)")
-    se, held = pg.evaluate("[saveData.se,saveData.run.relics.slice()]")
+    se, held = pg.evaluate("[saveData.se,saveData.run.perks.slice()]")
     pg.evaluate("document.querySelector('#ov [data-a=shoprelic]').click();0")
     if not until(pg, "!!uiState.modal&&uiState.modal.cls==='relic-drop'&&document.querySelectorAll('#ov pb-pick-card').length===6", 10): raise Exception('buying at the cap didn’t ask which to let go')
     pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
-    if not until(pg, f"saveData.run.relics.includes('{shelf}')&&!saveData.run.relics.includes('{held[0]}')", 10): raise Exception('the Perk wasn’t bought')
-    after = pg.evaluate("[saveData.se,saveData.run.relics.length,Object.values(saveData.run.shelf)[0],!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')]")
+    if not until(pg, f"saveData.run.perks.includes('{shelf}')&&!saveData.run.perks.includes('{held[0]}')", 10): raise Exception('the Perk wasn’t bought')
+    after = pg.evaluate("[saveData.se,saveData.run.perks.length,Object.values(saveData.run.shelf)[0],!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')]")
     if after != [se - price, 6, '', False]: raise Exception(f'after buying: money, held, shelf, row {after} (paid {se - after[0]}, price {price})')
     if stored()['shelf'] != {f'{town}:{pg.evaluate("saveData.run.clock")}': ''}: raise Exception(f'the bought shelf isn’t stored: {stored()["shelf"]}')
     # a mini-boss beaten: the pick is stored with the battle's end, before its sheet
@@ -1086,7 +1086,7 @@ def run_test(pg, base):
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.run&&runWorld.seed==='TESTSEED'", 90):
         raise Exception('no run on TESTSEED took off')
     got = pg.evaluate("({map: saveData.run.map, deadline: saveData.run.deadline, unlocks: saveData.run.unlocks, test: !!TEST_RUN, "
-                      "team: saveData.team.map(m => m.sp + '@' + m.lvl), relics: saveData.run.relics})")
+                      "team: saveData.team.map(m => m.sp + '@' + m.lvl), relics: saveData.run.perks})")
     if not got['test']: raise Exception('it is not a test run (TEST_RUN is off)')
     for n in [n for n in got['map']['nodes']]: n.pop('seen', None)
     for n in want['map']['nodes']: n.pop('seen', None)

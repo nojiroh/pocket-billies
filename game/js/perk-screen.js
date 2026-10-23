@@ -62,7 +62,7 @@ export function perkPickOpen() {
     title: 'Pick a Perk',
     cls: 'relic-pick',
     lock: true,
-    html: `<p>The mini-boss left a few perks behind. Take one for the rest of the run.</p><p class="note">You hold ${run.relics.length} of ${rule.cap}.${run.relics.length >= rule.cap ? ' Taking one means letting another go.' : ''}</p><div class="relic-cards">${ids.map(id => perkCardHTML(id, id === sel)).join('')}</div>`,
+    html: `<p>The mini-boss left a few perks behind. Take one for the rest of the run.</p><p class="note">You hold ${run.perks.length} of ${rule.cap}.${run.perks.length >= rule.cap ? ' Taking one means letting another go.' : ''}</p><div class="relic-cards">${ids.map(id => perkCardHTML(id, id === sel)).join('')}</div>`,
     btns: [
       { l: 'Take it', c: 'gold', dis: !sel, f: () => perkPickTake(/** @type {string} */ (sel)) },
       { l: 'Take none', c: 'quiet', f: () => perkPickDone(null) },
@@ -79,7 +79,7 @@ export function perkPickOpen() {
 function perkPickTake(id) {
   const run = saveData.run;
   if (!run || !run.offer || !id) return;
-  if (run.relics.length >= RULES.run.perks.cap) perkDropOpen(id, drop => perkPickDone(id, drop), perkPickOpen);
+  if (run.perks.length >= RULES.run.perks.cap) perkDropOpen(id, drop => perkPickDone(id, drop), perkPickOpen);
   else perkPickDone(id);
 }
 /** the pick answered (a Perk, or none): saved, the sheet closed */
@@ -113,7 +113,7 @@ function perkDropOpen(id, then, back) {
     title: 'Let one go',
     cls: 'relic-drop',
     lock: true,
-    html: `<p>You can hold ${RULES.run.perks.cap} Perks. Tap one to let it go for ${escapeHtml(PERKS[id].name)}.</p><div class="relic-cards">${run.relics
+    html: `<p>You can hold ${RULES.run.perks.cap} Perks. Tap one to let it go for ${escapeHtml(PERKS[id].name)}.</p><div class="relic-cards">${run.perks
       .filter(k => PERKS[k])
       .map(k => perkCardHTML(k, false))
       .join('')}</div>`,
@@ -141,7 +141,7 @@ export function renderPerks() {
   const run = saveData.run,
     cap = RULES.run.perks.cap;
   if (!run) return `<p class="note bag-empty">Perks come with a run. Start one at the airship mast.</p>`;
-  const held = run.relics.filter(id => PERKS[id]);
+  const held = run.perks.filter(id => PERKS[id]);
   return `<section class="tpanel relics"><div class="sec-h"><h2>Perks</h2><span class="count tnum">${held.length} of ${cap}</span></div>${
     held.length
       ? `<div class="bag-list">${held

@@ -52,6 +52,6 @@ export function runTestOf(q, D) {
         return { sp, lv: Math.max(1, Math.min(100, Math.round(+lv) || 1)) };
       })
       .filter(p => Object.hasOwn(D.species, p.sp) || (left.push(`Billie ${p.sp}`), false)),
-    relics = known(list('relics'), D.perks, 'Perk').slice(0, Math.max(0, D.cap));
-  return { seed, unlocks, short: q.get('short') === '1', party, relics, draft: q.get('draft') === '1', left };
+    perks = known(list('relics'), D.perks, 'Perk').slice(0, Math.max(0, D.cap));
+  return { seed, unlocks, short: q.get('short') === '1', party, perks, draft: q.get('draft') === '1', left };
 }

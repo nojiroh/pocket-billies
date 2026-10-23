@@ -45,7 +45,7 @@ test('run: a new run starts on day 1 at the airship with nothing held', () => {
   assert.equal(r.clock, 1);
   assert.deepEqual(r.at, { phase: 'fly', battle: -1 });
   assert.equal(r.map, null);
-  assert.deepEqual([r.relics, r.mods, r.path, r.log, r.released], [[], [], [], [], []]);
+  assert.deepEqual([r.perks, r.mods, r.path, r.log, r.released], [[], [], [], [], []]);
   assert.equal(runNodeCount(r), 1, 'Copperleaf alone until the map is made');
   assert.equal(runNodeCount({ ...r, map: MAP }), 6);
   assert.equal(runNodeCount(null), 1);
@@ -116,7 +116,7 @@ test('run: the load check refuses broken or tampered runs', () => {
     { ...ok, clock: 0 },
     { ...ok, forecast: [['sun'], 'rain'] },
     { ...ok, forecast: Array(7).fill([]) }, // more nodes than the map has
-    { ...ok, relics: ['ok', 7] },
+    { ...ok, perks: ['ok', 7] },
     { ...ok, offer: ['a', 'b', 'c', 'd', 'e', 'f'] },
     { ...ok, uidN: -1 },
     { ...ok, path: [5] }, // map nodes are 0..4

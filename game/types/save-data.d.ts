@@ -210,7 +210,7 @@ export interface Run {
       and Copperleaf's, world node 0, is empty) */
   forecast: string[][];
   /** relic ids held, the offer shown (saved before it is shown), modifier ids */
-  relics: string[];
+  perks: string[];
   offer: string[] | null;
   mods: string[];
   /** RL-12: Loophole offers made so far (the next offer's stream, logic/perks.js perkOffer) */

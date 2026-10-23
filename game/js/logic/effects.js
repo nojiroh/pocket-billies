@@ -53,9 +53,9 @@ export const FX_STAGES = 6;
 export const fxRows = (ids, perks) =>
   ids.flatMap(id => (perks[id] ? perks[id].fx.map(f => /** @type {Fx} */ ({ ...f, src: id })) : []));
 
-/** the effect rows of a run's Perks (null in the hub, or with none held) @param {{ relics: string[] } | null | undefined} run
+/** the effect rows of a run's Perks (null in the hub, or with none held) @param {{ perks: string[] } | null | undefined} run
  * @param {Record<string, Perk>} perks @returns {Fx[] | null} */
-export const fxOfRun = (run, perks) => (run && run.relics.length ? fxRows(run.relics, perks) : null);
+export const fxOfRun = (run, perks) => (run && run.perks.length ? fxRows(run.perks, perks) : null);
 provide({ fxOfRun }); /* to-module */
 
 /** the product of the multipliers of the rows that pass `test`, smallest first, within FX_LIMIT (1 when none)
@@ -84,7 +84,7 @@ export const fxPrice = (fx, what, n) => {
 };
 
 /** Studio plan T3.2: a price on a run with its Perks' price rows of `what` (the page's clinic and shops, and the
- * run's simulation): the price itself with no run or none held @param {{ relics: string[] } | null | undefined} run
+ * run's simulation): the price itself with no run or none held @param {{ perks: string[] } | null | undefined} run
  * @param {Record<string, Perk>} perks @param {'shop' | 'heal'} what @param {number} n */
 export const fxRunPrice = (run, perks, what, n) => fxPrice(fxOfRun(run, perks), what, n);
 

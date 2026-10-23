@@ -88,7 +88,7 @@ export function newRun(seed, tier, mapgenV, start) {
     clock: 1,
     deadline: 0,
     forecast: [],
-    relics: [],
+    perks: [],
     offer: null,
     mods: [],
     offerN: 0,
@@ -170,7 +170,7 @@ export function validRun(o) {
   if (o.at.foe !== undefined && !validRunFoe(o.at.foe)) return false;
   if (!wholeIn(o.clock, 1, RUN_DAYS) || !wholeIn(o.deadline, 0, RUN_DAYS)) return false;
   if (!list(o.forecast, nodes) || o.forecast.some(days => !list(days, RUN_DAYS) || !days.every(id))) return false;
-  if (!list(o.relics, 32) || !o.relics.every(id) || !list(o.mods, 32) || !o.mods.every(id)) return false;
+  if (!list(o.perks, 32) || !o.perks.every(id) || !list(o.mods, 32) || !o.mods.every(id)) return false;
   if (o.offer !== null && (!list(o.offer, 5) || !o.offer.every(id))) return false;
   /* RL-12: the offers made, and the run shops' Perks by '<map node>:<day>' ('' once bought) */
   if (!wholeIn(o.offerN, 0, 1e6)) return false;

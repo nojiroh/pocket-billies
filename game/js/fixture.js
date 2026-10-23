@@ -137,7 +137,7 @@ function fixtureSave() {
   /* RL-12: five Perks held (one under the cap), money for the shop, and a mini-boss's pick waiting (it opens once
      the world shows, as after a reload: run.js runResume) */
   if (FIXTURE === 'relics') {
-    s.run.relics = FIXTURE_PERKS.filter(id => PERKS[id]);
+    s.run.perks = FIXTURE_PERKS.filter(id => PERKS[id]);
     s.se = 2000;
     perkOfferMake(s.run, PERKS, RULES.run.perks);
   }

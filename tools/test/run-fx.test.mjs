@@ -13,9 +13,9 @@ const maxHp = fn('maxHp');
 
 test('run fx: a run without Perks has no rows; the hub has none', () => {
   assert.equal(E.fxOfRun(null, PERKS), null);
-  assert.equal(E.fxOfRun({ relics: [] }, PERKS), null);
+  assert.equal(E.fxOfRun({ perks: [] }, PERKS), null);
   assert.deepEqual(
-    E.fxOfRun({ relics: ['shelter'] }, PERKS).map(f => f.src),
+    E.fxOfRun({ perks: ['shelter'] }, PERKS).map(f => f.src),
     ['shelter']
   );
 });
@@ -41,10 +41,10 @@ test('run fx: walking into a place on a run heals by the held Perks (runArriveFx
   const s = startedSave('musk0', 20);
   const top = maxHp(s.team[0]);
   s.team[0].hp = 1;
-  s.run = { relics: [] };
+  s.run = { perks: [] };
   assert.equal(L.runArriveFx(s, PERKS), 0, 'no Perks: nothing');
   assert.equal(s.team[0].hp, 1);
-  s.run.relics = ['severance'];
+  s.run.perks = ['severance'];
   assert.equal(L.runArriveFx(s, PERKS), Math.ceil(top * 0.15));
   assert.equal(s.team[0].hp, 1 + Math.ceil(top * 0.15));
   assert.equal(L.runArriveFx({ team: s.team, run: null }, PERKS), 0, 'not on a run: nothing');

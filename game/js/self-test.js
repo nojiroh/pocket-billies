@@ -1062,7 +1062,7 @@ async function runFullTest(mode) {
             );
             if (!buy) throw new Error('the town’s shop has no Perk');
             buy.click();
-            if (saveData.run.relics.length !== 1) throw new Error('the shop’s Perk wasn’t bought');
+            if (saveData.run.perks.length !== 1) throw new Error('the shop’s Perk wasn’t bought');
             uiState.modal = null;
             uiState.mq = [];
             const mb = runWorldNode(map.nodes.findIndex(n => n.type === 'miniboss'));
@@ -1086,7 +1086,7 @@ async function runFullTest(mode) {
             uiState.relicSel = took;
             perkPickOpen();
             uiState.modal.btns[0].f();
-            if (saveData.run.relics.length !== 2 || !saveData.run.relics.includes(took) || saveData.run.offer)
+            if (saveData.run.perks.length !== 2 || !saveData.run.perks.includes(took) || saveData.run.offer)
               throw new Error('the pick wasn’t taken');
             uiState.modal = null;
             uiState.mq = [];

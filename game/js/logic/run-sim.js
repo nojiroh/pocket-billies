@@ -287,7 +287,7 @@ export function runSimOn(env) {
           const shelf = perkShelf(run, i, run.clock, data.PERKS, R.perks);
           if (shelf) {
             const cost = fxRunPrice(run, data.PERKS, 'shop', perkPrice(data.PERKS[shelf], R.perks)),
-              c = s.se >= cost + P.reserve ? simPerkChoice([shelf], run.relics, data.PERKS, R.perks, P) : null;
+              c = s.se >= cost + P.reserve ? simPerkChoice([shelf], run.perks, data.PERKS, R.perks, P) : null;
             at.relic = { id: shelf, price: cost };
             if (c && !perkBuy(run, i, run.clock, data.PERKS, R.perks, c.drop)) {
               s.se -= cost;
@@ -395,7 +395,7 @@ export function runSimOn(env) {
           stats.moneyIn.reward += pay.reward;
           /* the pick it made, answered as the policy says (perk-screen.js perkPickDone: perks.js perkChoose) */
           if (run.offer) {
-            const c = simPerkChoice(run.offer, run.relics, data.PERKS, R.perks, P);
+            const c = simPerkChoice(run.offer, run.perks, data.PERKS, R.perks, P);
             at.pick = { offer: run.offer.slice(), took: c ? c.id : null, ...(c && c.drop ? { drop: c.drop } : {}) };
             perkChoose(run, c ? c.id : null, data.PERKS, R.perks, c ? c.drop : undefined);
           }
@@ -437,7 +437,7 @@ export function runSimOn(env) {
         capital: pay.capital,
         party,
         top: top ? top.lvl : 0,
-        relics: run.relics.slice(),
+        relics: run.perks.slice(),
       });
       log.end = { ...stats, uids: run.uidN };
       return { log, stats: /** @type {any} */ (stats) };

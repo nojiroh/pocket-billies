@@ -849,7 +849,7 @@ function runTestStart(R) {
     pack: { items: {}, coins: {} },
   });
   if (!saveData.run) return toast(`Test run: seed ${R.seed} couldn’t take off with this data.`);
-  if (R.relics.length) saveData.run.relics = R.relics.slice();
+  if (R.perks.length) saveData.run.perks = R.perks.slice();
   toast(
     `Test run on seed ${R.seed}${R.short ? ', short map' : ''}${TEST_RUN.draft ? (studioLive.told ? ', with your Studio edits' : ' (the Studio’s edits didn’t come: saved data)') : ''}${R.left.length ? `. Left out: ${R.left.join(', ')}` : ''}. Nothing here is saved.`
   );
