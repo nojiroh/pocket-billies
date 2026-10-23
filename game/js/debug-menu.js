@@ -64,6 +64,7 @@ expose({
   debugMenu: [() => debugMenu],
   debugOpenKeep: [() => debugOpenKeep, v => (debugOpenKeep = v)],
   debugOpenRead: [() => debugOpenRead, v => (debugOpenRead = v)],
+  debugSceneName: [() => debugSceneName],
   debugSection: [() => debugSection],
   debugSelectHTML: [() => debugSelectHTML],
   debugSpeciesOptions: [() => debugSpeciesOptions, v => (debugSpeciesOptions = v)],
@@ -131,6 +132,13 @@ const debugSection = (k, title, body, open = false, force = false) => {
   /* a forced section isn't remembered as open: the toggle its open attribute fires is skipped (data-force) */
   return `<details data-k="${k}"${force ? ' data-force="1"' : ''}${force || (kept == null ? open : kept) ? ' open' : ''}><summary>${title}</summary>${body}</details>`;
 };
+/* a test scene's name without "Test: " and without a bracketed note naming a phase or track (the map data keeps it
+   for the Studio): "props in the new style (phase 09)" is "props in the new style" here */
+const debugSceneName = k =>
+  (mapById(k).name || k)
+    .replace(/^Test: /, '')
+    .replace(/\s*\([^)]*\b(?:phase|track|Project Story)\b[^)]*\)/gi, '')
+    .trim() || k;
 function debugHTML() {
   const inB = !!activeBattle,
     node = saveData.trip.node,
@@ -170,7 +178,7 @@ function debugHTML() {
   <p class="note">Small places that each show one tricky situation: stairs, ledges at the limits, bridges, water, shadows, every prop, slopes, the camera in tight spots, night lights, a dense forest, tiny and huge maps, traffic, and the light lab (light on the land, in a room, on props, in the air — the places the quick check measures the lighting in). Checks test the walking rules there (what should and shouldn't be reachable).</p>
   <div class="dbg-row">${debugSelectHTML(
     'dbgTest',
-    testMaps().map(k => [k, (mapById(k).name || k).replace(/^Test: /, '')]),
+    testMaps().map(k => [k, debugSceneName(k)]),
     uiState.dbgTest || testMaps()[0] || ''
   )}${debugButtonHTML('test', 'Go there')}${debugButtonHTML('testchk', 'Run its checks')}${inTest ? debugButtonHTML('untest', 'Back to the game') : ''}</div>
   ${uiState.testRes ? `<ul class="dbg-warn">${uiState.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${escapeHtml(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}
