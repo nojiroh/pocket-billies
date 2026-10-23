@@ -690,7 +690,7 @@ export function endTurn() {
     if (m.hp > 0 && hasPassive(ty, 'subsidy') && m.hp < mx) {
       const g = Math.min(mx - m.hp, Math.max(1, Math.floor(mx / fr)));
       m.hp += g;
-      battleSay(`${billyName(m)} regrew a little HP.`, { k: 'heal', si: k, amt: g });
+      battleSay(`${billyName(m)}’s ${passiveName(ty, 'subsidy')} restored a little HP.`, { k: 'heal', si: k, amt: g });
     }
     f.v.turnsIn++;
     f.v.protect = false;
@@ -1123,10 +1123,15 @@ export function runTurn(plan, b) {
       if (!out) continue;
       const free = hasPassive(actorTypes(p.who), 'pivot') && !battleNow().sides[0].pivot;
       if (free) battleNow().sides[0].pivot = true;
-      battleSay(free ? `${billyName(out)} darted out without losing the turn.` : `${billyName(out)}, come back.`, {
-        k: 'recall',
-        si: p.who,
-      });
+      battleSay(
+        free
+          ? `${billyName(out)} rode its ${passiveName(actorTypes(p.who), 'pivot')} back without losing the turn.`
+          : `${billyName(out)}, come back.`,
+        {
+          k: 'recall',
+          si: p.who,
+        }
+      );
       doSwitch(p.who, p.i);
       p.free = free;
     }
