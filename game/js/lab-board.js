@@ -8,8 +8,10 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, render, toast } from './hooks.js';
-import { CURRENCIES, UNLOCK_DATA } from './game-data.js';
+import { CURRENCIES, RULES, UNLOCK_DATA } from './game-data.js';
 import { formatNumber } from './logic/rules.js';
+import { ranchNow } from './logic/ranch-clock.js';
+import { incomeBank } from './logic/ranch-income.js';
 import { buildingLevel, unlockAuto, unlockBuy, unlockCurrency, unlockReady, unlockRows } from './logic/unlocks.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
@@ -153,6 +155,9 @@ export function labBuy(id) {
     );
     return false;
   }
+  /* RL-10b: the ranch's income so far banked at the old level's rate before an upgrade changes it */
+  if (RULES.ranch && RULES.ranch.income && saveData.ranch.income.lastAt)
+    incomeBank(saveData, ranchNow(saveData, Date.now(), RULES.ranch).now, RULES.ranch);
   unlockBuy(saveData, id, UNLOCK_DATA);
   if (typeof debugLog !== 'undefined') debugLog.add('meta', `bought ${id}`);
   toast(`Unlocked: ${R.name}.`);
