@@ -2,6 +2,60 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-10b - Ranch B, second half: passive income, one ranch clock, the cloud anchor - 2026-10-23
+Branch `RL-10b` (PR #144), from main 303f074; main (29e6601: CAM-1..3, the island look, IS-8's pasture, Studio plan
+Phases 5 and 6) merged in near the end. Plan approved in Plan Mode with the owner's answers: income in Scrap by ranch
+level (1/2/3 an hour, 24 h banked), a Collect button, the cloud anchor plus a measured skew, 8.12 yes (the rule
+published after the build is live).
+- Changed (one cause per commit):
+  - **Rules**: `rules.ranch.income` `{rate: [1,2,3], capHours: 24}` (placeholders); types, data checks (now in
+    `logic/data-checks.js` after the merge).
+  - **Save**: `ranch.seen` (the ranch clock's high-water mark); `ranch.income` is `{bank, lastAt}` (the stored rate
+    dropped: it comes from the rules by level, so an upgrade counts at once).
+  - **logic/ranch-clock.js**: `ranchNow` (the phone time less the session's skew; more than `guardMs` behind the mark,
+    time stands still at the mark until the clock passes it), `ranchAnchor`, `clockSkew`, the session's `ranchSkew` and
+    `ranchFloor` (memory only).
+  - **Training's rollback bug fixed** (RL-10a found it): a trainee's start never moves back; turning the clock back and
+    forward no longer pays the gap.
+  - **Every ranch timer on the clock**: the sheet (collect, Train, Stop, breeding, egg times, Hatch), the mast's
+    take-off, the team move, the debug menu's Eggs ready now. Turned back, the sheet says the device's clock is behind.
+  - **logic/ranch-income.js** and the sheet's **Income** row: the pile, its rate, full in n h, Collect. Income starts at
+    the ranch's first opening; the part of a Scrap carries over; full counts again from now; buying an unlock banks
+    the income first (an upgrade pays the old level's time at the old rate). Age the ranch by an hour ages it too.
+  - **firestore.rules** (8.12): `saves/{uid}` takes only `json, savedAt, saveVersion, name, game, t`, and `t ==
+    request.time`.
+  - **account.js**: both cloud writes send one document (`accountSaveDoc`) with `t: serverTimestamp()`; reading the save
+    sets the clock's floor; after the session's first write the save is read back once from the server and the
+    phone clock's skew measured (under `guardMs`: none); signing out clears both.
+  - **Checks and debug**: unit tests ranch-clock (7), ranch-income (7), the ranch rollback test rewritten; check-fast's
+    ranch step turns the clock back and forward, a new "Income" step; the in-game "The ranch: income and a clock
+    turned back"; 14 emulator rules tests (13 before); the debug log's ranch line has the income, how far the clock
+    is behind the mark and the skew (numbers only).
+- Where the plan was wrong: see roguelite-track.md "Corrected in RL-10b" (the save already had an income shape and
+  no cap; a new save's `lastAt` 0 would have paid a full pile; `lastAt = max(lastAt, t)` alone doesn't stop a clock
+  set forward; offline needed nothing new, the service worker was there; RL-10's `account.js:331-351` is two writes).
+- Merging main: index.html and the debug log kept both (income and the pasture); run.js took main's one run start with
+  the ranch clock on the take-off; the ranch's data checks had moved to `logic/data-checks.js`, so the income block
+  moved with them; the Studio's logic worker lists the two new modules (its test caught it).
+- Verified: unit tests 804 after the merge (684 before it); lint, typecheck, modules, format, check-data (planted rule
+  faults caught); the emulator rules tests 14 of 14 here (the new one failed on the old rule first); check-fast ranch,
+  Income, Breeding, Packing, Lab and pasture after the merge (the ranch step failed with the old `t.at = now`, Income
+  with the clock's turned-back rule removed); the in-game ranch phases alone headless; headless pictures (390 x 760)
+  of the Income row and the clock-behind note; CI green on the PR before the merge. The full quick check against a
+  local baseline of main: see the next commit.
+- Risky / open:
+  - **Publish order**: publish the new `saves` rule in the Firebase console only once this build is live; a copy of
+    the game open from before can't save to the account until it reloads.
+  - The account path (`t` written, the floor, the skew read back) was not run end to end: no Firebase project here.
+  - A clock set ahead while offline still banks up to the cap early; then time stands still until the real time
+    catches up (nothing paid twice).
+  - The skew costs one extra Firestore read a session. Every number is a placeholder.
+- Phone check wanted: at the ranch, the Income row (it starts at the first opening); "Age the ranch by an hour" a few
+  times, Collect; set the phone's clock back a day and open the ranch (the note, nothing waiting), forward again (only
+  real time); signed in, play a little, export the debug log (`income`, `behind`, `skew`); after publishing the rule,
+  a save on the account still works.
+- Next: the owner publishes the rule after the build is live and pushes `rl-10-done`; then RL-12b or RL-13.
+
 ### Sound track SND-5 - Battle and run music - 2026-10-22
 Branch `sound` (PR #120). Plan approved by the owner's "Start", without picks on the two "Ask me before" items, so
 the recommendations were taken (and named as such in the commits): **the red zone plays a tense variant of the battle
