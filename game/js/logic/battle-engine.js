@@ -758,17 +758,17 @@ export function award(e) {
     battleSay(`The rest of the team gained ${formatNumber(share)} XP.`);
   }
 }
+/** RF-3 Parting Roar (Dragon, id `inherit`): when it faints, the next teammate in gets +1 Attack and +1 Sp. Atk
+ * (before RF-3 it passed on its own boosts, if it had any) */
 export function inherit(k) {
-  const sd = battleNow().sides[ACTOR_SIDE[k]];
-  if (!hasPassive(speciesOf(fighter(k)).types, 'inherit')) return;
-  const st = {};
-  let any = false;
-  for (const s2 in fieldState(k).st)
-    if (fieldState(k).st[s2] > 0) {
-      st[s2] = fieldState(k).st[s2];
-      any = true;
-    }
-  if (any) sd.inh = st;
+  const ty = speciesOf(fighter(k)).types;
+  if (!hasPassive(ty, 'inherit')) return;
+  battleNow().sides[ACTOR_SIDE[k]].inh = {
+    lev: 1,
+    lob: 1,
+    from: billyName(fighter(k)),
+    name: passiveName(ty, 'inherit'),
+  };
 }
 /* who on a side could still come in: alive, not at work, not on the field and not already called in this turn */
 export function benchCandidates(si, also = [], b) {
@@ -810,8 +810,9 @@ export function doSwitch(k, idx, b) {
       battleSay(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'rent', dmg: d });
     }
     if (inh) {
-      Object.assign(f.v.st, inh);
-      battleSay(`${billyName(m)} took up its teammate’s boosts.`, { k: 'stat', si: k, up: true });
+      f.v.st.lev += inh.lev;
+      f.v.st.lob += inh.lob;
+      battleSay(`${inh.from}’s ${inh.name} fired up ${billyName(m)}!`, { k: 'stat', si: k, up: true });
     }
   });
 }
