@@ -367,8 +367,8 @@ const VOLUME_KEYS = ['master', 'music', 'sfx', 'world', 'amb'];
 function saveProgressLine() {
   const m = saveData.meta || {},
     runs = m.runs || 0,
-    taxed = Object.keys(saveData.caught || {}).length;
-  return `${runs ? `${m.wins || 0} of ${runs} ${runs === 1 ? 'run' : 'runs'} won` : 'No runs yet'} · ${taxed} caught`;
+    caught = Object.keys(saveData.caught || {}).length;
+  return `${runs ? `${m.wins || 0} of ${runs} ${runs === 1 ? 'run' : 'runs'} won` : 'No runs yet'} · ${caught} caught`;
 }
 function settingsHTML() {
   const p = saveData.preferences || {},
