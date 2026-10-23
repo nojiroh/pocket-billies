@@ -38,6 +38,8 @@ instruction, relayed by the parent session); this session's choices are decision
 - Step 3 (T5.2) done: `rigGeo` (moved, equal on every view); `logic/rig-swap.js` with 6 unit tests on musk0, huang0,
   trump0 and billie-library.test.mjs moved onto it; the Studio's Library uses it (greyed misfits, refit, frames, geo,
   before/after strip); check-studio-github.py `library_swap`.
+- Step 4 (T5.3) done: `dataRigs` in data-checks.js, run by check-data and the Studio's Check (0 problems today; nine
+  planted faults named in data-rigs.test.mjs; one in the Studio's `checks` group); the skeleton builder's mid/cy.
 
 ### Studio plan Phase 5, session 2 - The recipe in game/data, a Node bake CLI, the slot words (T5.1, T5.5) - 2026-10-22
 Branch `claude/sr-5-parts`, draft PR #139 (base `ccr-81011a25-lf3exv`). Plan pre-approved with its recommended options

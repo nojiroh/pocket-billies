@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Replacing a Billie's part from the Parts Library keeps the Billie whole (Studio plan Phase 5). The body parts
+  hanging on the old part move to the new part's neck, shoulders, hips and tail (horns, ears and crests keep their
+  place on a new head); a new head blinks (the blink is drawn again from it) unless you keep the old faces; a new
+  torso squashes and stretches; the Billie's size in the world moves only by what the part changed. Parts a body part
+  can't hang on are greyed out with the reason, and a strip shows the Billie before and after, front and back, with
+  each face. The Studio's Check and CI now also check every Billie's skeleton (pictures inside their sheet, bones,
+  front and back, size in the world). No change in the game.
 - The Studio bakes kit Billies (Studio plan Phase 5). In the Art workbench's Part mode a kit Billie shows its recipe
   (which part on each bone, at what size and colour, and its extras); a change there bakes the Billie's sheet and
   skeleton at once with the game's own baker, as one undo step, and Propose sends them with the recipe. Write Billie

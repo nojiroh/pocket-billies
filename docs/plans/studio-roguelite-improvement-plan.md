@@ -1465,6 +1465,17 @@ The owner took the recommendation on every open question:
    - **Found, not fixed** (behaviour change for the owner): the skeleton builder rewrites geo with box corners on
      every drag, so editing any Billie there changes its world height by up to 20 px. Recommended: the builder moves
      geo by its change, as the swap does (one small commit) after the owner agrees.
+13. **T5.3** (Phase 5, session 3; recommended options):
+   - **geo is checked as far as the data agrees**, since nothing recomputes it whole: cx, base and k the view's;
+     `mid = cy = (top + base) / 2` (true on all 258 views); the top inside the pictures' boxes (the skeleton builder's
+     framing) and above the ground. Not hw: the builders copied the front's to the back (37 back views are wider than
+     their own pictures). Pixel-measured top matched on 239 of 258 views (the rest have a turned top piece), so it is
+     not a rule.
+   - **The skeleton builder writes `mid = cy = (top + base) / 2`** (it wrote halfway down the boxes), so an edit there
+     does not become a Check error that blocks Propose. Its top and hw stay box-measured (decision 12's finding).
+   - **The rig checks are errors** (check-data fails on them, so per decision 2 they block Propose). 0 on today's rigs.
+   - **Not moved:** check-data's kitBuilds block (decision 10) stays in check-data.mjs; the Studio can't send a recipe
+     without its bake (decision 11), so the Studio does not need it.
 
 Taken in Phase 1, sessions C+D (the recommended option each time, under the owner's standing instruction; numbered
 as in that branch):

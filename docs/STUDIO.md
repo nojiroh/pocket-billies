@@ -67,6 +67,10 @@ saved straight into `game/data`) was dropped (Studio plan, owner's decision 2026
   the first few, and Show me opens the Check. Nothing is sent and your changes stay unsaved until you fix it.
 - A **Note** (a warning) is something the game works around (a missing picture, an unknown shop, a stop no road
   reaches). It is shown and never blocks. check-data prints the scene and road notes too, and never fails on them.
+- The rigs (Studio plan Phase 5, T5.3) are checked too, in both: every picture's box inside its sheet, the rig's size
+  the sheet's, every bone's parent and picture there, the same bones front and back, and `geo` (the size a Billie
+  stands in the world) as the builders made it: mid and cy halfway from its top to the ground line, the top inside the
+  pictures and above the ground. A rig fault is a problem.
 - A Billie named from a line parked in `game/data/legacy` is a note (the game stands a new line's Billie in for it).
   A name that is in neither, like a typo, is a problem.
 
