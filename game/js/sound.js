@@ -13,7 +13,7 @@ import { LOCATIONS, MUSIC, SPECIES } from './game-data.js';
 import { maxHp } from './logic/rules.js';
 import { runWeather } from './logic/run-map.js';
 import { musicBattleKind, musicRedZone, musicWeatherCut, songFor, songVariant } from './logic/music-where.js';
-import { cryRecipe, cryVoices } from './logic/cries.js';
+import { cryLowHealth, cryRecipe, cryVoices } from './logic/cries.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
@@ -46,9 +46,11 @@ expose({
   ambienceOutput: [() => ambienceOutput, v => (ambienceOutput = v)],
   applyAmbienceVolume: [() => applyAmbienceVolume, v => ((applyAmbienceVolume = v), provide({ applyAmbienceVolume }))],
   applyVolumes: [() => applyVolumes, v => ((applyVolumes = v), provide({ applyVolumes }))],
+  battleCry: [() => battleCry, v => (battleCry = v)],
   battleDrumsIn: [() => battleDrumsIn, v => (battleDrumsIn = v)],
   battleMusicStart: [() => battleMusicStart, v => (battleMusicStart = v)],
   battleSoundEffect: [() => battleSoundEffect, v => ((battleSoundEffect = v), provide({ battleSoundEffect }))],
+  cryPlay: [() => cryPlay, v => (cryPlay = v)],
   footstepAt: [() => footstepAt, v => (footstepAt = v)],
   initAmbience: [() => initAmbience, v => (initAmbience = v)],
   initSound: [() => initSound, v => (initSound = v)],
@@ -472,21 +474,36 @@ export function soundEffect(name, o = {}) {
       synthNoise(F, { t, dur: 0.08, vol: 0.08, lp: 600 });
       synthNoise(F, { t: t + 0.1, dur: 0.06, vol: 0.06, lp: 500 });
       break;
-    case 'cry': {
-      /* SND-3: a species' cry from its own base, pitch and length (lines/*.json cry), else from its id as before */
-      for (const v of cryVoices(cryRecipe(o.sp, (SPECIES[o.sp] || {}).cry, CRIES)))
-        synthVoice(F, {
-          type: v.type,
-          freq: midiToFrequency(v.midi),
-          t: t + v.at,
-          dur: v.dur,
-          vol: v.vol,
-          slide: v.slide,
-          vib: v.vib,
-        });
+    case 'cry':
+      cryPlay(o.sp, !!o.low);
       break;
-    }
   }
+}
+/* SND-3: a species' cry from its own base, pitch and length (lines/*.json cry), else from its id. SND-6: low, its
+   low-HP version (faster and a third down: logic/cries.js cryLowHealth). Returns how long it lasts (s), 0 when silent */
+function cryPlay(sp, low) {
+  if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return 0;
+  const t = soundEngine.ctx.currentTime + 0.005,
+    C = cryRecipe(sp, (SPECIES[sp] || {}).cry, CRIES),
+    V = cryVoices(low ? cryLowHealth(C) : C);
+  for (const v of V)
+    synthVoice(soundEngine.fx, {
+      type: v.type,
+      freq: midiToFrequency(v.midi),
+      t: t + v.at,
+      dur: v.dur,
+      vol: v.vol,
+      slide: v.slide,
+      vib: v.vib,
+    });
+  return Math.max(0, ...V.map(v => v.at + v.dur));
+}
+/* SND-6: a Billie's cry in battle, from the line's snapshot of its slot (ev.s: its species and its HP then): its low-HP
+   cry in the red zone (logic/music-where.js musicRedZone, as the music's tense version); robots have no cry yet */
+function battleCry(ev, si, low) {
+  const sn = ev && ev.s && ev.s[si];
+  if (!sn || sn.bot || !sn.sp) return 0;
+  return cryPlay(sn.sp, low || musicRedZone(sn.hp, sn.max));
 }
 /* SND-5: the classic low-HP beep (Settings → Sound, off by default): twice a second-ish while the lead Billie is in the
    red zone, on the effects bus. The music's tense version plays either way */
@@ -511,8 +528,8 @@ function musicMapCut() {
   if (!r || r.runNode == null) return null;
   return musicWeatherCut(runWeather(run, r.runNode, run.clock), MUSIC.run);
 }
-/* battle animations make their sounds */
-function battleSoundEffect(an, r) {
+/* battle animations make their sounds. SND-6: ev is the line they belong to (its snapshot names who cries) */
+function battleSoundEffect(an, r, ev) {
   if (!an || !soundEngine.ctx) return;
   const at = (ms, f) => setTimeout(f, Math.max(0, ms / (typeof battleStage !== 'undefined' ? battleStage.speed : 1)));
   switch (an.k) {
@@ -525,17 +542,22 @@ function battleSoundEffect(an, r) {
       break;
     case 'cry': {
       const s = typeof battleStage !== 'undefined' && battleStage.s[an.si || 1];
-      soundEffect('cry', { sp: s && s.sp });
+      if (!battleCry(ev, an.si || 1)) soundEffect('cry', { sp: s && s.sp });
       break;
     }
     case 'enter':
       battleDrumsIn();
       soundEffect('throw');
       at(380, () => soundEffect('pop'));
+      /* SND-6: a Billie cries as it comes out (as in Gen 1), after the pop */
+      at(520, () => battleCry(ev, an.si));
       break;
-    case 'faint':
-      soundEffect('faint');
+    case 'faint': {
+      /* SND-6: its low-HP cry, then the fall */
+      const d = battleCry(ev, an.si, true);
+      at(d * 1000, () => soundEffect('faint'));
       break;
+    }
     case 'heal':
       soundEffect('heal');
       break;

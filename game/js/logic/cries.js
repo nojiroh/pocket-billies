@@ -10,6 +10,7 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  CRY_LOW: [() => CRY_LOW],
   // @ts-expect-error -- replaced on purpose
   cryHash: [() => cryHash, v => (cryHash = v)],
   // @ts-expect-error -- replaced on purpose
@@ -73,11 +74,13 @@ export function cryVoices(C) {
   }));
 }
 
+/** SND-6: how the low-HP cry differs: a minor third down, a quarter faster */
+export const CRY_LOW = { down: 3, speed: 0.75 };
 /**
- * the cry when its Billy is low on health: lower and slower
+ * the cry when its Billy is low on health (the red zone): the same cry faster and a third down
  * @param {Cry} C
  * @returns {Cry}
  */
 export function cryLowHealth(C) {
-  return { ...C, pitch: C.pitch - 3, length: C.length * 1.6 };
+  return { ...C, pitch: C.pitch - CRY_LOW.down, length: C.length * CRY_LOW.speed };
 }

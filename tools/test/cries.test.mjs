@@ -32,7 +32,7 @@ test('a species sets base, pitch and length; a base that does not exist is passe
   assert.equal(cryRecipe('bezos0', { pitch: 50 }, BASES).pitch, 50);
 });
 
-test("the voices: the base's notes over the species' pitch; length stretches when and how long", () => {
+test("the voices: the base's notes over the species' pitch; length stretches when and how long; the low-HP cry is a third down and a quarter faster", () => {
   const B = {
     wave: 'p12',
     voices: [
@@ -50,5 +50,5 @@ test("the voices: the base's notes over the species' pitch; length stretches whe
   );
   const C = cryRecipe('x', { base: 'k', pitch: 60, length: 1 }, { k: B }),
     L = cryLowHealth(C);
-  assert.ok(L.pitch < 60 && L.length !== 1 && L.base === 'k');
+  assert.deepEqual([L.pitch, L.length, L.base], [57, 0.75, 'k']);
 });
