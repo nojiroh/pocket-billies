@@ -1556,7 +1556,9 @@ def rl8_run_from_mast(P):
         pg.click('#ov [data-a=runstart]')
         if not until(pg, "uiState.modal&&uiState.modal.title==='Start a run'", 10): raise Exception('no run sheet')
         pg.click('#ov [data-a=mb][data-i="0"]')
-        if not until(pg, "!!saveData.run&&airshipFlight.on", 30): raise Exception('“Take off” didn’t start a run’s flight')
+        # TC-4: tapped again while the sheet is still there: once on a busy machine the tap was lost (the sheet still
+        # drawing itself); the take-off closes the sheet, so nothing is tapped twice
+        if not until(pg, "!!saveData.run&&airshipFlight.on", 30, "uiState.modal&&uiState.modal.title==='Start a run'&&document.querySelector('#ov [data-a=mb][data-i=\"0\"]').click()"): raise Exception('“Take off” didn’t start a run’s flight')
         pg.evaluate("flySkip();0")
         if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready&&walkView.id==='w:'+LOCATIONS[1].mapId+'*'", 90): raise Exception(f'never landed on the landing ({pg.evaluate("saveData.run&&saveData.run.at.phase")}, {pg.evaluate("walkView.id")})')
         land = pg.evaluate("[saveData.run.seed, saveData.trip.node, saveData.run.clock, !!uiState.roam, runWorld.scenes]")
