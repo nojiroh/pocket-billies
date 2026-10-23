@@ -35,10 +35,10 @@ export function runSimOn(env) {
   const { RULES, TRAINERS } = data;
   const R = RULES.run,
     { runArrive, runNext, runWorldNode, runWeather } = modules['run-map'],
-    { payoutOf, runByTier } = modules['run-state'],
+    { runByTier, runEnd } = modules['run-state'],
     { runScenesMake, runWorldTables } = modules['run-scenes'],
-    { runFoes, runBattleExtra, runClinic, runShopStock } = modules['run-loop'],
-    { fxOfRun, fxRunPrice } = modules.effects,
+    { runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopStock } = modules['run-loop'],
+    { fxOfRun, fxPayoutRates, fxRunPrice } = modules.effects,
     { runStartOn, runStartPlan } = modules['run-start'],
     { runUnlocks } = modules.unlocks;
   const MAP_DATA = { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: R },
@@ -278,18 +278,21 @@ export function runSimOn(env) {
       data.worldHubBack();
     }
     function finish() {
-      const pay = payoutOf(
-        { se: s.se, items: s.items, released: run.released.length, cleared: new Set(run.path).size, won: stats.won },
-        R.payout,
-        (/** @type {string} */ id) => (data.ITEMS[id] && data.ITEMS[id].price) || 0
-      );
+      /* the end as the payout screen's "Fly home" (run.js runEndHome): the whole party on a win, else the one the
+         policy keeps (the highest level, the first of them); the Loopholes' payout rates; runEnd pays and puts the
+         hub's fields back, so the run's own numbers are read first */
+      const se = s.se,
+        party = s.team.length,
+        top = s.team.reduce((/** @type {any} */ a, /** @type {any} */ m) => (m.lvl > a.lvl ? m : a), s.team[0]),
+        keep = runKept(s.team, stats.won, top ? top.uid : null),
+        pay = runEnd(s, { won: stats.won, keep }, fxPayoutRates(fxOfRun(run, data.RELICS), R.payout), runItemPrice);
       Object.assign(stats, {
         days: run.clock,
         places: run.path.length,
-        se: s.se,
+        se,
         capital: pay.capital,
-        party: s.team.length,
-        top: Math.max(...s.team.map((/** @type {any} */ m) => m.lvl)),
+        party,
+        top: top ? top.lvl : 0,
       });
       log.end = { ...stats, uids: run.uidN };
       return { log, stats: /** @type {any} */ (stats) };
