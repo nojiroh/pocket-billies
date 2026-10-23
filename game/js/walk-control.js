@@ -808,6 +808,8 @@ export function walkMapSync() {
           b ? clamp(b.getBoundingClientRect().top / H, 0.5, 1) : 0.88,
         ];
       },
+      /* behind a menu the world runs at 20 a second: a frame stays under the 60 ms a frame may count
+         (walk-view-gl.js drawWalkFrame), so it keeps its speed (at 10 it ran at 60% of it) */
       cap: () => {
         const w = document.hidden
           ? 'hidden'
@@ -821,7 +823,7 @@ export function walkMapSync() {
                   ? 'scrolled'
                   : '';
         walkView.held = w;
-        return w === 'hidden' ? 1 : w === 'window' ? 10 : w === 'screen' ? 24 : w === 'scrolled' ? 4 : userFps();
+        return w === 'hidden' ? 1 : w === 'window' ? 20 : w === 'screen' ? 24 : w === 'scrolled' ? 4 : userFps();
       },
     }).then(() => cv.classList.add('in'));
   }
