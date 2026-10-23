@@ -1316,6 +1316,26 @@ def repack_steps(pg, errs):
     print(f'repack: {sp} {s0} -> {s1}, drawn the same front and back (4 faces), one undo step, undone; a kit Billie refused', flush=True)
 
 
+def density_steps(pg, errs):
+    """Studio plan Phase 5 (T5.7): the Roster board's Pixel density report opens with a row per Billie of the game's
+    lines with a rig (legacy rigs have no species), the kit Billies with their stage scale, and names the part sizes
+    that are not whole (measure only)."""
+    n = len(errs)
+    pg.evaluate("void openSection('roster')")
+    pg.wait_for_selector('[data-act=roDensity]', timeout=20000)
+    pg.locator('[data-act=roDensity]').click()
+    pg.wait_for_selector('#dlg table', timeout=10000)
+    r = pg.evaluate("""(() => { const rows = [...document.querySelectorAll('#dlg tbody tr')];
+      return { rows: rows.length, kit: rows.filter(t => t.children[6].textContent.includes('×')).length, text: document.querySelector('#dlg .dlg-body').textContent }; })()""")
+    want = pg.evaluate("Object.keys(densityHeights(studioState.D.lines)).filter(sp => studioState.rigs[sp]).length")
+    if r['rows'] != want: errs.append(f"the report has {r['rows']} rows, not one per Billie with a rig ({want})")
+    if r['kit'] != 24: errs.append(f"the report shows {r['kit']} kit Billies, not 24")
+    if 'S 0.85 and L 1.2' not in r['text']: errs.append('the report does not name the S and L sizes')
+    pg.locator('#dlg button', has_text='Close').click()
+    if len(errs) > n: errs[n:] = [f'density: {e}' for e in errs[n:]]
+    print(f"density: the Pixel density report, {r['rows']} Billies, {r['kit']} kit Billies with their parts", flush=True)
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
@@ -1331,6 +1351,7 @@ STEPS = [
     ('kit_write', kit_write_steps),
     ('library_swap', library_swap_steps),
     ('repack', repack_steps),
+    ('density', density_steps),
     ('wardrobe', wardrobe_steps),
     ('ui', ui_steps),
     ('ui_tools', ui_tools_steps),
