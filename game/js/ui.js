@@ -85,7 +85,7 @@ export function render() {
   }
   if (!saveData.started) {
     if (typeof cutscene !== 'undefined' && cutscene.on) {
-      app.innerHTML = '';
+      app.replaceChildren();
       updateNav(false);
       return;
     }
