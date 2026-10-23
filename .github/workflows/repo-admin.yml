@@ -5,7 +5,7 @@
 #   already exists is never moved. A tag made here doesn't start other workflows (GitHub's rule for its own token), so
 #   for a phase-* tag this workflow starts the Check workflow on the tag itself, the run a pushed phase tag starts.
 # - delete-branches: deletes the listed branches (spaces, commas or new lines between names). Never main, legacy, an
-#   archive/* branch or a branch with an open pull request. Each deleted branch's last commit goes in the run summary,
+#   archive/* or track/* branch (a long plan's branch, docs/BRANCHES.md) or a branch with an open pull request. Each deleted branch's last commit goes in the run summary,
 #   so any branch can be brought back: git push origin <commit>:refs/heads/<name>.
 # dry_run (on by default) only reports what would happen.
 name: Repo admin
@@ -102,7 +102,7 @@ jobs:
           for b in "${names[@]}"; do
             result=""
             sha=""
-            if [ "$b" = "main" ] || [ "$b" = "legacy" ] || [ "$b" = "$default" ] || [[ "$b" == archive/* ]]; then
+            if [ "$b" = "main" ] || [ "$b" = "legacy" ] || [ "$b" = "$default" ] || [[ "$b" == archive/* ]] || [[ "$b" == track/* ]]; then
               result="kept: protected name"
             elif grep -qxF -- "$b" <<< "$open"; then
               result="kept: has an open pull request"
