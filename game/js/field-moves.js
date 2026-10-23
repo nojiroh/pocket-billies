@@ -124,7 +124,7 @@ export async function fieldWayOut() {
   if (yes) fieldWayOutGo();
 }
 /** follow the way out: back on the main path's next row (logic/run-map.js runArrive: a day, one way) */
-function fieldWayOutGo() {
+export function fieldWayOutGo() {
   const F = fieldSideHere();
   if (!F) return;
   if (!runArrive(saveData, F.S.to, runWorldData())) {
