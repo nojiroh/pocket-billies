@@ -1,9 +1,13 @@
 // Phase 10, session E-map-4: the bowl's ground (game/js/logic/bowl.js): gentle relief from the places' kinds, the
-// grid the map draws as a low-poly mesh, and the camera reading the same heights it draws.
+// grid the map draws as a low-poly mesh, and the camera reading the same heights it draws. RL-8b: on a run's world as
+// the game puts it in (its places by their biomes, on the run's map spots; the hub off it) with the run's look.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import './setup-real.mjs';
-import { oldWorld } from './old-world.mjs';
+import { data, GAME_DATA, modules } from './setup-real.mjs';
+import { runBowlLook } from '../../game/js/logic/run-bowl.js';
+import { runSpot } from '../../game/js/logic/run-map.js';
+import { rngFrom } from '../../game/js/logic/rng.js';
+import { bowlTreeStyle } from '../../game/js/logic/bowl-things.js';
 import {
   BOWL_GROUND_EXTENT,
   BOWL_RELIEF_MAX,
@@ -28,17 +32,58 @@ import {
   bowlToGpu,
 } from '../../game/js/logic/bowl-camera.js';
 
-/* RL-5: the old world's places (the game's and the ones parked in game/data/legacy): good ground to test on */
-const { locations } = oldWorld();
-const byId = id => locations.find(l => l.id === id);
-const F = bowlReliefFeatures(locations);
-const at = id => {
-  const s = bowlSpotOf(byId(id), byId);
-  return bowlXY(s.a, s.r);
+const { runMapStart } = modules['run-map'];
+const { newRun } = modules['run-state'];
+const { MAPGEN_VERSION } = modules.mapgen;
+const { runWorldTables } = modules['run-scenes'];
+const R = GAME_DATA.rules.run,
+  START = {
+    team: [],
+    se: 0,
+    items: {},
+    coins: {},
+    trip: { node: 0, plan: [] },
+    wild: {},
+    eggs: [],
+    flags: {},
+    seats: [],
+    visited: {},
+  };
+/* a run's places (Copperleaf first, off the run's map) and the relief the game makes from them with the run's look */
+const runWorld = seed => {
+  const run = newRun(seed, 1, MAPGEN_VERSION, START);
+  runMapStart(run, { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: R });
+  const { locations } = runWorldTables(run, data.LOCATIONS[0], {
+      nodeTypes: GAME_DATA.nodeTypes,
+      biomes: GAME_DATA.biomes,
+      pools: data.POOLS,
+      scenery: GAME_DATA.scenery,
+      rules: R,
+    }),
+    spots = run.map.nodes.map((_, i) => {
+      const s = runSpot(run.map, i);
+      return bowlXY(s.a, s.r);
+    }),
+    look = runBowlLook(seed, run.map, spots, GAME_DATA.biomes, GAME_DATA.worldmap, bowlTreeStyle, rngFrom),
+    byId = id => locations.find(l => l.id === id);
+  return {
+    locations,
+    F: bowlReliefFeatures(locations, look.relief, look.seed),
+    at: l => {
+      const s = bowlSpotOf(l, byId);
+      return bowlXY(s.a, s.r);
+    },
+  };
 };
+/* three runs with ridges and lakes */
+const RUNS = ['G0', 'G2', 'G4'].map(runWorld);
+const { F, locations, at } = RUNS[0];
 
-test('every place with its own spot shapes the ground; places under another add nothing', () => {
-  assert.equal(F.length, locations.filter(l => !('under' in l.bowl)).length);
+test("every run place shapes the ground; the hub, off the run's map, adds nothing", () => {
+  for (const W of RUNS) {
+    assert.ok(W.locations[0].bowl.off, 'Copperleaf is off the run’s map');
+    assert.equal(W.F.length, W.locations.length - 1);
+  }
 });
 
 test('the relief is gentle: within its limit everywhere, and gone beyond the rim', () => {
@@ -51,11 +96,15 @@ test('the relief is gentle: within its limit everywhere, and gone beyond the rim
   }
 });
 
-test('the landmarks read: a peak by Frostcrown, dips at the trench and the sea', () => {
-  assert.ok(bowlRelief(F, ...at('frostcrown')) > 0.05, 'Frostcrown');
-  assert.ok(bowlRelief(F, ...at('cinderpeak')) > 0.04, 'the volcano');
-  assert.ok(bowlRelief(F, ...at('abyssal_trench')) < -0.02, 'the trench');
-  assert.ok(bowlRelief(F, ...at('driftwreck')) < -0.01, 'the sea');
+test('the kinds read: a ridge stands up, a lake dips', () => {
+  const seen = { ridge: 0, lake: 0 };
+  for (const W of RUNS)
+    for (const l of W.locations.slice(1)) {
+      const h = bowlRelief(W.F, ...W.at(l));
+      if (l.t === 'ridge') (seen.ridge++, assert.ok(h > 0.04, `a ridge at ${h}`));
+      if (l.t === 'lake') (seen.lake++, assert.ok(h < 0, `a lake at ${h}`));
+    }
+  assert.ok(seen.ridge && seen.lake, 'the runs need a ridge and a lake');
 });
 
 test('the grid holds the heights at its corners and runs flat between them', () => {
@@ -88,7 +137,7 @@ test('the camera, the pins and a tap read the drawn ground', () => {
   const G = bowlGroundGrid(F);
   bowlCamUseGround(G);
   try {
-    const [x, y] = at('frostcrown');
+    const [x, y] = at(locations.find(l => l.t === 'ridge'));
     assert.ok(Math.abs(bowlSurface(x, y) - bowlGridHeight(G, x, y)) < 1e-12);
     const v = bowlCamView(bowlCamHome(x, y), 390, 760),
       g = bowlPickGround(v, 195, 380);

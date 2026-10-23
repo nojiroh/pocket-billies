@@ -2,10 +2,13 @@
 // alpha 0.1 of tools/check-quick.py).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { data, fn, startedSave } from './setup-real.mjs';
-import { oldWorld } from './old-world.mjs';
+import { data, fn, GAME_DATA, modules, startedSave } from './setup-real.mjs';
 
 const { RULES, SPECIES } = data;
+const { runMapStart } = modules['run-map'];
+const { newRun } = modules['run-state'];
+const { MAPGEN_VERSION } = modules.mapgen;
+const { runScenesMake, runWorldTables } = modules['run-scenes'];
 
 test('a species the game no longer has is dropped from a save with its Guide marks; the rest loads as it was', () => {
   assert.equal(SPECIES.ghost0, undefined, 'the test needs a species the data does not have');
@@ -40,30 +43,52 @@ test('preferences survive loading: 90 frames a second is kept, the picture setti
 });
 
 test('wild Billies by place: a route keeps 4, a town with tall grass 2, a town without none', () => {
-  /* RL-5: on the old world (the hub alone has only Copperleaf, a town with tall grass), put in through
-     worldSetGraph with its maps, and the hub back after: so this also proves the world setter on the real maps */
-  const W = oldWorld(),
-    maps0 = data.gameData.maps;
-  data.gameData.maps = { ...W.maps, ...maps0 };
-  data.worldSetGraph(W.locations, W.roads);
+  /* on a run's world (made from a seed on the game's data, as the mast does), put in with its scenes and the hub
+     back after; the run's towns all have tall grass, so one's grass is taken out for the last case */
+  const R = GAME_DATA.rules.run,
+    WD = {
+      nodeTypes: GAME_DATA.nodeTypes,
+      biomes: GAME_DATA.biomes,
+      pools: data.POOLS,
+      scenery: GAME_DATA.scenery,
+      rules: R,
+    },
+    START = {
+      team: [],
+      se: 0,
+      items: {},
+      coins: {},
+      trip: { node: 0, plan: [] },
+      wild: {},
+      eggs: [],
+      flags: {},
+      seats: [],
+      visited: {},
+    },
+    run = newRun('SAVESWILD', 1, MAPGEN_VERSION, START);
+  runMapStart(run, { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: R });
+  const made = runScenesMake(run, WD),
+    W = runWorldTables(run, data.LOCATIONS[0], WD),
+    maps = Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, made[i]])),
+    route = W.locations.findIndex(p => p.kind === 'route'),
+    town = W.locations.findIndex((p, i) => i > 0 && p.kind === 'town');
+  assert.ok(route > 0 && town > 0, 'the run needs a route and a town');
+  const s = startedSave(Object.keys(SPECIES).find(k => SPECIES[k].line === RULES.start.starters[0])),
+    stock = fn('encounterStock');
+  s.wild = {};
+  assert.equal(stock(0), RULES.encounters.townGrass, 'Copperleaf, a town with tall grass');
+  data.worldPut({ ...W, maps });
   try {
-    const s = startedSave(Object.keys(SPECIES).find(k => SPECIES[k].line === RULES.start.starters[0])),
-      node = id => data.LOCATIONS.findIndex(L => L.id === id),
-      stock = fn('encounterStock');
-    s.wild = {};
-    assert.equal(stock(node('tallgrass_meadow')), RULES.encounters.route);
-    assert.equal(stock(node('marigold')), RULES.encounters.townGrass);
-    assert.equal(stock(node('copperleaf')), RULES.encounters.townGrass);
-    assert.equal(stock(node('fizzwell')), 0);
-    assert.equal(
-      fn('encountersHere')(node('tallgrass_meadow')).length,
-      RULES.encounters.route,
-      'full on the first visit'
-    );
-    assert.equal(fn('encountersHere')(node('fizzwell')).length, 0);
+    assert.equal(stock(route), RULES.encounters.route);
+    assert.equal(fn('encountersHere')(route).length, RULES.encounters.route, 'full on the first visit');
+    assert.equal(stock(town), RULES.encounters.townGrass);
+    const sc = maps[W.locations[town].mapId];
+    sc.tiles = sc.tiles.map((/** @type {string} */ row) => row.replaceAll('t', '.'));
+    delete sc._lite;
+    assert.equal(stock(town), 0);
+    assert.equal(fn('encountersHere')(town).length, 0);
   } finally {
-    data.gameData.maps = maps0;
-    data.worldSetGraph(data.gameData.locations, data.gameData.roads);
+    data.worldHubBack();
   }
   assert.deepEqual(
     data.LOCATIONS.map(l => l.id),

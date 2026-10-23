@@ -69,22 +69,27 @@ test('rules in words', () => {
   assert.equal(musicRuleText({ indoor: true, map: ['a', 'b'], song: 'cave' }), 'indoors · map a, b');
 });
 
-test('every song in the game data is played by something, and the rules say where', () => {
-  const locations = json('locations.json'),
-    legacy = json('legacy/locations.json');
-  const uses = musicSongUses(MUSIC, { locations: [...locations, ...legacy] });
+/* songs only places parked in game/data/legacy play (the Studio's Check counts the parked places too) */
+const PARKED_ONLY = ['variants'];
+
+test("every song is played by something in the game, and the rules say where (but the parked places' own)", () => {
+  const locations = json('locations.json');
+  const uses = musicSongUses(MUSIC, { locations });
   assert.ok(uses.hazel.includes('rule 1: before the game starts'), uses.hazel.join('; '));
   assert.ok(
     uses.copperleaf.some(u => u.startsWith('place ')),
     'copperleaf is a place’s own song'
   );
-  assert.ok(uses.variants.length, 'variants: parked places name it');
+  for (const id of PARKED_ONLY)
+    assert.deepEqual(uses[id], [], `${id} is played in the game now: take it off PARKED_ONLY`);
   assert.deepEqual(
     musicFindings(MUSIC, {
       nodeTypes: json('nodeTypes.json'),
       biomes: json('biomes.json'),
-      locations: [...locations, ...legacy],
-    }).filter(f => f.lvl !== 'info'),
+      locations,
+    })
+      .filter(f => f.lvl !== 'info')
+      .filter(f => !(f.lvl === 'warn' && PARKED_ONLY.includes(f.song || ''))),
     [],
     'no errors or warnings (the notes on placeholder hooks are expected)'
   );

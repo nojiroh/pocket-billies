@@ -126,13 +126,12 @@ Two rules hold everywhere:
   clinic and shop), its trainers in their own world and its bridges (both ends dry, a stream crossed square within
   25 degrees).
 - The world (RL-5): the game's world is Copperleaf alone; the old one is parked in `game/data/legacy` (its own
-  `legacy/index.json`, read by `readLegacyData()` in `tools/data-files.mjs`, null without one). A test that uses the
-  old places as test data (the bowl's ground and landmarks, scripts said there) reads `oldWorld()`
-  (`tools/test/old-world.mjs`: the game's places, roads, maps and trainers plus the parked ones), so parking or
-  bringing back a place doesn't change it. `world-tables-real.test.mjs` snapshots the tables `worldSetGraph` works out
-  on the game's data; `world-graph-set.test.mjs` puts a 3-place world in and the hub back (every table deep-equal, the
-  same objects); `saves-real` puts the old world in through `worldSetGraph` for its wild-stock cases and the hub back
-  after. A test that swaps the world puts the hub back in `finally`.
+  `legacy/index.json`, read by `readLegacyData()` in `tools/data-files.mjs`, null without one); no test uses it as
+  test data. The bowl's tests (ground, sea, land, things) run on a run's world made from a seed as the game makes it
+  (`runWorldTables`, `runScenesMake`, `runBowlLook`) and on Copperleaf's island. `world-graph.test.mjs` snapshots the hub's graph and the tables
+  `worldSetGraph` works out on the game's data; `world-graph-set.test.mjs` puts a 3-place world in and the hub back
+  (every table deep-equal, the same objects); `saves-real` puts a run's world in through `worldPut` for its wild-stock
+  cases and the hub back after. A test that swaps the world puts the hub back in `finally`.
 - The map generator (MG-1, MG-2, TR-1; `tools/test/mapgen*.test.mjs`): `mapgen.test.mjs` the MG-1 invariants (format,
   determinism, a stage's own seed, the hub reaches every exit, nothing grows on paths or in water); `mapgen-golden`
   a hash per part of five unjoined scenes (`gen` left out), so a change says which part moved: remake it on purpose
