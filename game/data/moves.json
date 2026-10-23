@@ -296,7 +296,7 @@
   "t": "Ground",
   "c": "X",
   "a": 0,
-  "fx": {"rent":1},
+  "fx": {"stones":1},
   "d": "Scatters sharp stones: foes switching in lose 1/8 of their HP."
  },
  "zoning": {
@@ -315,7 +315,7 @@
   "c": "H",
   "p": 60,
   "a": 100,
-  "fx": {"rent":1},
+  "fx": {"stones":1},
   "d": "Hits and scatters sharp stones."
  },
  "gentrify": {"n":"Chrome Ray","t":"Steel","c":"S","p":90,"a":100,"d":"A heavy hit."},

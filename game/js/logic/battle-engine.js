@@ -643,11 +643,11 @@ export function useMove(k, mid, tk0, part) {
       battleSay(`${billyName(u)} restored its health.`, { k: 'heal', si: k, amt: g });
     }
   }
-  if (fx.rent) {
-    if (td.rent) {
+  if (fx.stones) {
+    if (td.stones) {
       if (M.c === 'X') battleSay('Sharp stones are already scattered there.');
     } else {
-      td.rent = true;
+      td.stones = true;
       battleSay(`Sharp stones are scattered around ${ACTOR_SIDE[k] === 0 ? 'their' : 'your'} side.`);
     }
   }
@@ -800,10 +800,10 @@ export function doSwitch(k, idx, b) {
       }
     );
     if (!isRobot(m)) battleSeen()[m.sp] = 1;
-    if (sd.rent && !hasPassive(speciesOf(m).types, 'bedrock')) {
-      const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, BATTLE_RULES.rentFraction)));
+    if (sd.stones && !hasPassive(speciesOf(m).types, 'bedrock')) {
+      const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, BATTLE_RULES.stonesFraction)));
       m.hp = Math.max(0, m.hp - d);
-      battleSay(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'rent', dmg: d });
+      battleSay(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'stones', dmg: d });
     }
     if (roar) {
       f.v.st.lev += roar.lev;
@@ -901,7 +901,7 @@ export function aiScore(k, id, tk) {
   else if (fx.hype) s = fieldState(tk).hyped ? 0 : 35;
   else if (fx.heal) s = m.hp < maxHp(m) * 0.5 ? 90 : 0;
   else if (fx.protect) s = fieldState(k).last === id ? 0 : 12;
-  else if (fx.rent) s = battleNow().sides[ACTOR_SIDE[tk]].rent ? 0 : 30;
+  else if (fx.stones) s = battleNow().sides[ACTOR_SIDE[tk]].stones ? 0 : 30;
   else if (fx.market) s = battleNow().market ? 0 : 40;
   else if (fx.selfStage) s = Object.keys(fx.selfStage).some(q => fieldState(k).st[q] < 2) ? 28 : 0;
   else if (fx.tgtStage) s = 22;

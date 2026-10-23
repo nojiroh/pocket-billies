@@ -88,7 +88,7 @@ exports[`battle object: alpha 1`] = `
           "down": false
         }
       ],
-      "rent": false,
+      "stones": false,
       "slipstream": false,
       "held": [],
       "mail": [],
@@ -122,7 +122,7 @@ exports[`battle object: alpha 1`] = `
           "down": false
         }
       ],
-      "rent": false,
+      "stones": false,
       "slipstream": false,
       "held": [],
       "mail": [],
@@ -200,7 +200,7 @@ exports[`battle object: double 1`] = `
           "down": false
         }
       ],
-      "rent": false,
+      "stones": false,
       "slipstream": false,
       "held": [],
       "mail": [],
@@ -257,7 +257,7 @@ exports[`battle object: double 1`] = `
           "down": false
         }
       ],
-      "rent": false,
+      "stones": false,
       "slipstream": false,
       "held": [],
       "mail": [],
@@ -313,7 +313,7 @@ exports[`battle object: single 1`] = `
           "down": false
         }
       ],
-      "rent": false,
+      "stones": false,
       "slipstream": false,
       "held": [],
       "mail": [],
@@ -347,7 +347,7 @@ exports[`battle object: single 1`] = `
           "down": false
         }
       ],
-      "rent": false,
+      "stones": false,
       "slipstream": false,
       "held": [],
       "mail": [],

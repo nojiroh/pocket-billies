@@ -51,7 +51,7 @@ export const FIXTURE = {
       alloyBoost: 0.1,
       oilShockMult: 1.5,
       drainFraction: 16,
-      rentFraction: 8,
+      stonesFraction: 8,
       paralysisSkip: 0.25,
       hypeTurns: 3,
       hypeSelfHit: 0.3333,

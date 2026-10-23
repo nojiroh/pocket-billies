@@ -228,7 +228,7 @@ export interface MoveEffect {
   spin?: number;
   hold?: number;
   missCost?: number;
-  rent?: number;
+  stones?: number;
   /** phase 17: the attacker picks which part of a robot it hits */
   aim?: number;
   /** phase 17: a robot part hit by it loses this many times the usual part damage */
@@ -871,7 +871,7 @@ export interface Rules {
     undertowHp: number;
     oilShockMult: number;
     drainFraction: number;
-    rentFraction: number;
+    stonesFraction: number;
     paralysisSkip: number;
     hypeTurns: number;
     hypeSelfHit: number;

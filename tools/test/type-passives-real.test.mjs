@@ -207,7 +207,7 @@ test('Bedrock (Ground): from full HP a knockout hit leaves 1 HP, once a battle; 
 
   /* sharp stones hurt others coming in, not Ground */
   const s = battle(['musk0', 'trump0', 'gates0'], ['musk0']);
-  s.sides[0].rent = true;
+  s.sides[0].stones = true;
   fn('doSwitch')(0, 1);
   assert.equal(fn('fighter')(0).hp, fn('maxHp')(fn('fighter')(0)), 'Gildlet takes no stone damage');
   fn('doSwitch')(0, 2);

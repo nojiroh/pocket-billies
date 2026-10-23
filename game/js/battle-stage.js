@@ -1824,7 +1824,7 @@ export function battleStagePlay(an, ev) {
             spr: 'pebble',
             k: kk,
           });
-      if (an.fx === 'rent') burst(T, 'Ground', 7, 1.6, kk);
+      if (an.fx === 'stones') burst(T, 'Ground', 7, 1.6, kk);
       if (an.fx === 'brn')
         for (let i = 0; i < 4; i++)
           scheduleAt(i * 70, () =>

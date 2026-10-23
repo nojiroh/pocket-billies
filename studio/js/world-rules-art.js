@@ -900,7 +900,7 @@ SECTIONS.rules = () => {
        step: 1,
        help: 'Burn, sandstorm and Regrowth move this fraction of max HP each turn.',
      }),
-     numberField('Sharp stones: 1 /', `${bt}.rentFraction`, { min: 2, max: 64, step: 1 }),
+     numberField('Sharp stones: 1 /', `${bt}.stonesFraction`, { min: 2, max: 64, step: 1 }),
      numberField('Paralysis lost-turn chance', `${bt}.paralysisSkip`, { min: 0, max: 1, step: 0.05 }),
      numberField('Confusion turns', `${bt}.hypeTurns`, { min: 1, max: 10, step: 1 }),
      numberField('Confusion self-hit chance', `${bt}.hypeSelfHit`, { min: 0, max: 1, step: 0.05 }),
