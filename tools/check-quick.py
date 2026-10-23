@@ -1698,11 +1698,14 @@ def postcard_visit(P):
     sd = pg.evaluate("LOCATION_BY_ID.copperleaf.node")   # RL-5: Copperleaf's postcard (Marigold Town is parked)
     # alpha 0.5: no postcard before the opening has ended (postcardAllowed; RL-8: it waited for Blake's battle, which left the opening)
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.bench=null;saveData.cards={};postcardState.last=null;postcardState.on=false;0")
-    # TC-4: the card's picture loaded first: the card goes by itself after 9 s, and on a busy machine the picture
-    # took longer than that to come
-    pg.evaluate(f"artLoad([postcardImage({sd})])")
-    go_scene(pg, sd)
-    if not until(pg, "!!document.querySelector('.pcard-wrap.in')", 12, "postcardCheck()"): raise Exception('no postcard came on walking into Copperleaf')   # RL-5: Copperleaf
+    # TC-4: the card goes by itself 9 s after it comes; on a busy machine sliding in, its picture and two frames took
+    # longer than that, so the card's own timer is stretched to 60 s while it is checked (the step closes it with a tap)
+    pg.evaluate(f"artLoad([postcardImage({sd})]);window.__st=window.setTimeout;window.setTimeout=(f,d,...a)=>__st(f,d===9000?60000:d,...a);0")
+    try:
+        go_scene(pg, sd)
+        if not until(pg, "!!document.querySelector('.pcard-wrap.in')", 12, "postcardCheck()"): raise Exception('no postcard came on walking into Copperleaf')   # RL-5: Copperleaf
+    finally:
+        pg.evaluate("if(window.__st){window.setTimeout=window.__st;delete window.__st};0")
     until(pg, "(()=>{const im=document.querySelector('.pcard-wrap img');return !!(im&&im.complete&&im.naturalWidth>100)})()", 10); ui(pg)
     ok = pg.evaluate("(()=>{const im=document.querySelector('.pcard-wrap img');return !!(im&&im.complete&&im.naturalWidth>100)})()")
     if not ok: raise Exception('the postcard’s picture didn’t load')
