@@ -57,12 +57,14 @@ expose({
   commit: [() => commit, v => (commit = v)],
   confirmStaged: [() => confirmStaged, v => (confirmStaged = v)],
   dialog: [() => dialog, v => (dialog = v)],
+  errorToast: [() => errorToast, v => (errorToast = v)],
   fieldOutputId: [() => fieldOutputId],
   foldedSectionGroups: [() => foldedSectionGroups],
   formatThousands: [() => formatThousands],
   grid: [() => grid],
   helpHTML: [() => helpHTML],
   itemOptions: [() => itemOptions],
+  lastErrorToast: [() => lastErrorToast, v => (lastErrorToast = v)],
   moveOptions: [() => moveOptions],
   numberField: [() => numberField, v => (numberField = v)],
   onField: [() => onField, v => (onField = v)],
@@ -719,6 +721,10 @@ export function renderPane(m, sec) {
     mountPreviews(m);
     if (P)
       P('render', { sec, pane: m.id, html: t1 - t0, dom: t2 - t1, after: t3 - t2, previews: performance.now() - t3 });
+  } catch (e) {
+    /* Studio plan T6.6: a section that throws says so in its pane, instead of leaving the last one on screen */
+    console.error(e);
+    m.innerHTML = `<div class="loading err"><h2>This section stopped with an error</h2><p class="mono">${escapeHtml((e && e.message) || String(e))}</p><p>Undo the last change or open another section. The debug log has the details.</p></div>`;
   } finally {
     renderingPane = null;
   }
@@ -732,6 +738,17 @@ export const afterRender = f => {
   studioState.after.push(f);
 };
 /* ---------- events ---------- */
+/* Studio plan T6.6: an error that nothing caught (a click's action, a timer, a refused promise) is a toast, so it
+   doesn't pass silently; the same words twice in 3 s show once */
+let lastErrorToast = { text: '', at: 0 };
+function errorToast(e) {
+  const text = 'Something went wrong: ' + String((e && e.message) || e || 'unknown error').slice(0, 160);
+  if (text === lastErrorToast.text && performance.now() - lastErrorToast.at < 3000) return;
+  lastErrorToast = { text, at: performance.now() };
+  if ($('#toasts')) toast(text, 'err');
+}
+addEventListener('error', ev => errorToast(ev.error || ev.message));
+addEventListener('unhandledrejection', ev => errorToast(ev.reason));
 document.addEventListener('input', ev => {
   if (ev.target.closest('.pane,#modal,#dlg')) onField(ev);
 });

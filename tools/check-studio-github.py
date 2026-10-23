@@ -1054,7 +1054,18 @@ def polish_steps(pg, errs):
       return [L.split('\\n').length > 1, S.split('\\n').length > 1, JSON.stringify(studioState.D.lore.loading) === a,
         JSON.stringify(studioState.D.trainers.crude.script) === b]; })()""")
     if got != [True, True, True, True]: errs.append(f'F20: @lines. and @script. read and wrote back {got}')
-    print('polish: second-pane rename, shop thank-you lines', flush=True)
+    # a section that throws says so in its pane; an error or a refused promise anywhere is a toast
+    n = len(errs)
+    got = pg.evaluate("""(async () => { const keep = studioState.sec, toasts = () => [...document.querySelectorAll('#toasts .toast.err')].map(t => t.textContent);
+      SECTIONS.__boom = () => { throw new Error('planted boom') }; openSection('__boom');
+      const pane = document.querySelector('#main').textContent.includes('planted boom');
+      setTimeout(() => { throw new Error('planted throw') }); Promise.reject(new Error('planted refusal'));
+      await new Promise(r => setTimeout(r, 200)); const t = toasts().join(' | ');
+      delete SECTIONS.__boom; openSection(keep);
+      return { pane, thrown: t.includes('planted throw'), refused: t.includes('planted refusal') }; })()""")
+    errs[n:] = [e for e in errs[n:] if 'planted' not in e]
+    if got != {'pane': True, 'thrown': True, 'refused': True}: errs.append(f'errors: a throwing section, a throw and a refusal showed {got}')
+    print('polish: second-pane rename, shop thank-you lines, prefixes, errors shown', flush=True)
 
 
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
