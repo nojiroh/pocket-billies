@@ -1476,6 +1476,17 @@ The owner took the recommendation on every open question:
    - **The rig checks are errors** (check-data fails on them, so per decision 2 they block Propose). 0 on today's rigs.
    - **Not moved:** check-data's kitBuilds block (decision 10) stays in check-data.mjs; the Studio can't send a recipe
      without its bake (decision 11), so the Studio does not need it.
+14. **T5.4 and T5.7** (Phase 5, session 3; recommended options):
+   - **Repack is an action, not a migration:** nothing is repacked in this change (122 of 129 sheets would shrink).
+     It refuses kit Billies (Write Billie packs them; a repacked kit sheet would fail the parity test) and species with
+     a coat's own sheet. The parity check is a unit test on every species (every frame and portrait pixel-equal) plus
+     the Studio check drawing a repacked Billie the same.
+   - **The density report lives on the Roster board** (a dialog, not a new section: SECTION_LIST unchanged), for the
+     game's lines only (the 105 hand-drawn rigs belong to legacy lines and have no height). The world's metres-per-pixel
+     maths moved into logic/pixel-density.js so the report and the game use one function. Battle density is not in
+     it: it depends on where the camera stands (battle-stage.js actorMetersPerPixel), so it needs a run, not data.
+   - **X = 25%** for "a part's density differs from its body" (kit parts against the torso by size); every extra is
+     under it today, by design (ears and horns are drawn small), so the owner may want a per-kind rule.
 
 Taken in Phase 1, sessions C+D (the recommended option each time, under the owner's standing instruction; numbered
 as in that branch):
