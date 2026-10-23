@@ -13,6 +13,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { makeBilly, makeRobot, provide, saveData, storyAllows } from './hooks.js';
+import { formSpeciesOf } from './logic/forms.js';
 /* eslint-disable no-func-assign */
 expose({
   BATTLE_STAGES: [() => BATTLE_STAGES],
@@ -50,6 +51,7 @@ expose({
   SEATS: [() => SEATS],
   SHOPS: [() => SHOPS],
   SPECIES: [() => SPECIES],
+  SPECIES_FORMS: [() => SPECIES_FORMS],
   STAND_IN_LINES: [() => STAND_IN_LINES],
   START_NODE: [() => START_NODE],
   STATUS_NAMES: [() => STATUS_NAMES],
@@ -251,6 +253,23 @@ LINES.forEach(L => {
     };
     DEX_ORDER.push(id);
   });
+});
+/* RO-1: a line's regional forms, a species per stage (logic/forms.js), after every line's own: each keeps its base
+   stage's dex number and stays out of DEX_ORDER (the Guide shows it on its base's page, SPECIES_FORMS: a base stage's
+   form species) */
+export const SPECIES_FORMS = /** @type {Record<string, string[]>} */ ({});
+LINES.forEach(L => {
+  for (const F of L.forms || []) {
+    if (!(gameData.coats || {})[F.coat]) warnData(`${L.id}'s form ${F.id} has unknown coat ${F.coat}.`);
+    L.names.forEach((_, st0) => {
+      const S = formSpeciesOf(SPECIES[L.id + st0], L, F);
+      S.base = S.base.slice();
+      S.types = S.types.filter(t => TYPE_COLORS[t]);
+      if (!S.types.length) S.types = ['None'];
+      SPECIES[S.id] = S;
+      (SPECIES_FORMS[S.formOf] || (SPECIES_FORMS[S.formOf] = [])).push(S.id);
+    });
+  }
 });
 /* phase 16: a Billie from a line that is now in game/data/legacy (or missing) is stood in for by one of the new
    lines at the same stage, so pools, eggs, trainers and legendaries further out keep working until they are redone.

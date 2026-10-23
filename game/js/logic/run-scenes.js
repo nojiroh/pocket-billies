@@ -23,6 +23,7 @@ import { expose } from '../test-globals.js';
 import { hashString, rngFrom } from './rng.js';
 import { runExits, runNodeSeed, runSpot } from './run-map.js';
 import { MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
+import { wildPoolList } from './wild-pool.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_BUILDINGS: [() => RUN_BUILDINGS],
@@ -53,7 +54,9 @@ expose({
 /* to-module: end */
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, Biome>, pools: Record<string, Pool>,
- *   scenery: any, rules: { scene: RunSceneRules, wild: { lv: [number, number], perRow: number, back: number } } }} RunWorldData
+ *   scenery: any, rules: { scene: RunSceneRules, wild: { lv: [number, number], perRow: number, back: number } },
+ *   dex?: string[] | null }} RunWorldData
+ * RO-1: dex, a region's species (RL-R1), cuts each place's biome pool to them (logic/wild-pool.js)
  */
 /** a run node's place id (its row in the world tables, its wild Billies in saveData.wild) @param {number} i */
 export const runPlaceId = i => `run_${i}`;
@@ -207,7 +210,7 @@ export function runWorldTables(run, hub, data) {
       source = data.pools[B.pool] || data.pools[Object.keys(data.pools)[0]];
     pools[id] = {
       lv: runWildLevels(map, i, data),
-      list: source.list.map(e => /** @type {[string, number]} */ ([...e])),
+      list: wildPoolList(source.list, data.dex),
     };
     /** @type {LocationData} */
     const row = {

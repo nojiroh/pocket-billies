@@ -11,6 +11,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
+import { lineSpeciesIds } from '../../game/js/logic/forms.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { afterRender, card, speciesName, studioState } from './studio-app.js';
 import { logicAsk } from './logic-client.js';
@@ -45,9 +46,10 @@ function poolRunTag(/** @type {string} */ k) {
     ? `<span class="run-tag" data-pool-run="${escapeHtml(by.join(','))}">a run reads this: ${escapeHtml(by.map(b => B[b].name || b).join(', '))}</span>`
     : '<span class="run-tag legacy" data-pool-run="">legacy: no biome names it</span>';
 }
-/** the mark beside a species id the data lists but the game doesn't have (filled with its stand-in) */
+/** the mark beside a species id the data lists but the game doesn't have (filled with its stand-in); RO-1: a regional
+ * form's id is the game's (logic/forms.js) */
 const standInMark = (/** @type {string} */ id) =>
-  studioState.D.lines.some((/** @type {any} */ L) => id.startsWith(L.id) && /^\d+$/.test(id.slice(L.id.length)))
+  studioState.D.lines.some((/** @type {any} */ L) => lineSpeciesIds(L).includes(id))
     ? ''
     : `<small class="warn" data-standin="${escapeHtml(id)}">legacy ${escapeHtml(id)}</small>`;
 provide({ standInMark }); /* to-module */

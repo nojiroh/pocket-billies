@@ -276,6 +276,20 @@ export interface Line {
   parts?: Record<string, string>[];
   /** SND-3: each stage's cry (null: the one its id makes) */
   cry?: (SpeciesCry | null)[];
+  /** RO-1: regional forms of the whole line (logic/forms.js) */
+  forms?: LineForm[];
+}
+
+/** RO-1: a line's regional form: a coat (coats.json, marked form) and a type swap; each stage is a species
+    <line>_<id><stage> named "<name> <stage name>" (logic/forms.js) */
+export interface LineForm {
+  id: DataId;
+  /** the regional word before each stage's name */
+  name: string;
+  /** a type for a type, on every stage: { Ground: 'Water' } */
+  swap: Record<TypeId, TypeId>;
+  /** its look: a coats.json id marked form */
+  coat: DataId;
 }
 
 /** SND-3: a species' own cry: a base (music.json cries.bases), the first note's pitch (midi) and a length (1 as made
@@ -319,6 +333,10 @@ export interface Species {
   form: 'A' | 'B' | null;
   /** SND-3: its own cry, or null for the one its id makes */
   cry: SpeciesCry | null;
+  /** RO-1: a regional form's base stage (its art and dex entry); none on a line's own stages */
+  formOf?: SpeciesId;
+  /** RO-1: a regional form's coat, given to every Billie of it */
+  coat?: DataId;
 }
 
 /** roster.json: the art and design state of each species (the Studio's Billies section) */
@@ -1193,6 +1211,8 @@ export interface Coat {
   odds?: { wild?: number; egg?: number; fish?: number };
   /** hand-painted sheets per species and view, in place of the recolour (paths under game/art) */
   art?: Record<SpeciesId, { front?: string; back?: string }>;
+  /** RO-1: a regional form's look: never rolled, no word before the name (the form's name says it) */
+  form?: boolean;
 }
 
 export interface RobotData {

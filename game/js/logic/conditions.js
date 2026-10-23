@@ -344,6 +344,8 @@ export function storyStateOf(save, o = {}) {
   for (const sp of Object.keys(save.caught || {})) {
     lines[sp] = 1;
     lines[sp.replace(/\d+$/, '')] = 1;
+    /* RO-1: a regional form (trump_waterfront0) counts for its line (trump) */
+    lines[sp.replace(/(?:_[a-z0-9]+)?\d+$/, '')] = 1;
   }
   const all = [...(save.team || []), ...(save.box || [])],
     /* RL-11: what lasts between runs (the same in a run and in the hub) */

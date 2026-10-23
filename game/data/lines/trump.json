@@ -31,6 +31,14 @@
   {"k":"lvl","at":16},
   {"k":"lvl","at":36}
  ],
+ "forms": [
+  {
+   "id": "waterfront",
+   "name": "Waterfront",
+   "swap": {"Ground":"Water"},
+   "coat": "waterfront"
+  }
+ ],
  "parody": "Donald Trump",
  "cry": [
   {"base":"slime","pitch":57,"length":0.9,"name":"placeholder: a gilded bloop (Claude's draft)"},
