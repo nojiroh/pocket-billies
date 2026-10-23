@@ -1881,19 +1881,19 @@ def pages():
         # TC-4: pages whose steps read the game's state (battles, a run, speeds) draw with check-fast's graphics settings:
         # in software a frame there took 1.6 s, and their waits are counted in frames (the game clock moves 60 ms a frame)
         low = {'low': True}
+        # TC-4: a boot costs about a minute in software, so steps that share a fixture and its settings share a page
+        # (the desktop steps all ran on one page before TC-4); the pages run longest first
         L = [('town', {}, [in_game_test_step, test_checks] + ([test_draw] if '--tests' in ARGS else []) +
-                          [nature_growth_exits, views_flags_wind_light, terraces_and_floating, name_taxed_room_windows]),
-             ('town', low, [battles_and_world_billies, starter_rigs, battle_weather]),
-             ('town', low, [rl8_run_from_mast, juniper_and_lab, airship_moored]),
-             ('town', {}, [walking, atmosphere, animals, frames_rooms_settings_map]),
+                          [nature_growth_exits, views_flags_wind_light, terraces_and_floating, name_taxed_room_windows,
+                           walking, atmosphere, animals, frames_rooms_settings_map]),
+             ('town', low, [rl8_run_from_mast, juniper_and_lab, airship_moored, battles_and_world_billies, starter_rigs, battle_weather]),
              ('town', {}, [culling_cache_wear, buildings_and_rooms, lowpoly_props, night_lights_and_front]),
              ('town', low, [postcard_visit, run_speeds, settings]),
              ('title', {'width': 390, 'height': 844, 'mobile': True}, [phone_flow]),
-             ('run', phone, [sound_effects_step]),
-             ('run', phone, [run_music_step, run_map_weather_step, battle_music_step]),
+             ('run', phone, [sound_effects_step, run_music_step, run_map_weather_step, battle_music_step]),
+             ('town', phone, [targets_step, safety_step]),
              ('town', {'width': 1280, 'height': 800}, [actions_sheet_step]),
              ('town', dict(phone, mobile=True), [sound_step, debug_menu_step]),
-             ('town', phone, [targets_step, safety_step]),
              (None, {}, [sound_fingerprints])]
     if STEPS: L = [(f, o, [s for s in ss if any(w.lower() in s.step_name.lower() for w in STEPS)]) for f, o, ss in L]
     return [(f, o, ss) for f, o, ss in L if ss]
