@@ -77,7 +77,8 @@ export function effectsPass(C, items, X, dark, t, dt) {
         ? environment.lampK || 0
         : 0; /* v46: lamps and windows outside a room laid into the place keep the outdoor hour */
   for (const it of items) {
-    if (it.k !== 'prop' || it.far || it.layer) continue;
+    /* 0.1.0 alpha: not for props outside the view (cullItems; a fountain alone is 150-250 draws) */
+    if (it.k !== 'prop' || it.far || it.layer || it.vis === false) continue;
     const s = it.mpp,
       chim = it.bld3 && typeof chimneySmoke === 'function' ? chimneySmoke(it) : null,
       out = !!RR && (it.x < RR[0] || it.x > RR[0] + RR[2] || it.z < RR[1] || it.z > RR[1] + RR[3]),

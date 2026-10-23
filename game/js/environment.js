@@ -12,8 +12,10 @@ import { expose } from './test-globals.js';
 import { RULES, SPECIES, mapIdAt, provide, reducedMotion, runPlaceWeather, saveData } from './hooks.js';
 import { clamp } from './util.js';
 import { CLIMATE_WEATHER_ODDS, weatherPick, wildLikes } from './logic/weather.js';
+import { TIME_OF_DAY_DEFAULTS, TIME_OF_DAY_GROUPS, TIME_OF_DAY_KEYS, timeOfDayLook } from './logic/time-of-day.js';
 import { hexToRgb } from './art.js';
 import { mapById, walkView } from './walk-view.js';
+import { engineSetting } from './engine/settings.js';
 /* eslint-disable no-func-assign */
 expose({
   ENVIRONMENT_ENGINE_MODIFIERS: [() => ENVIRONMENT_ENGINE_MODIFIERS],
@@ -30,12 +32,14 @@ expose({
   environmentForecast: [() => environmentForecast, v => (environmentForecast = v)],
   environmentFrame: [() => environmentFrame, v => (environmentFrame = v)],
   environmentHash: [() => environmentHash, v => (environmentHash = v)],
+  environmentHaze: [() => environmentHaze, v => (environmentHaze = v)],
   environmentHint: [() => environmentHint, v => (environmentHint = v)],
   environmentHistory: [() => environmentHistory, v => (environmentHistory = v)],
   environmentHour: [() => environmentHour, v => (environmentHour = v)],
   environmentIcon: [() => environmentIcon, v => (environmentIcon = v)],
   environmentLabel: [() => environmentLabel, v => (environmentLabel = v)],
   environmentLitFraction: [() => environmentLitFraction, v => (environmentLitFraction = v)],
+  environmentLooks: [() => environmentLooks, v => (environmentLooks = v)],
   environmentMixRgb: [() => environmentMixRgb, v => (environmentMixRgb = v)],
   environmentOdds: [() => environmentOdds, v => ((environmentOdds = v), provide({ environmentOdds }))],
   environmentPreferences: [() => environmentPreferences, v => (environmentPreferences = v)],
@@ -48,6 +52,8 @@ expose({
   environmentSun: [() => environmentSun, v => ((environmentSun = v), provide({ environmentSun }))],
   environmentWeatherFor: [() => environmentWeatherFor, v => (environmentWeatherFor = v)],
   environmentWindowLit: [() => environmentWindowLit, v => (environmentWindowLit = v)],
+  todCache: [() => todCache],
+  todK: [() => todK],
   weatherHistory: [() => weatherHistory],
   wildTypeBoosts: [() => wildTypeBoosts, v => (wildTypeBoosts = v)],
 });
@@ -270,6 +276,23 @@ function environmentHistory(clim, d) {
   weatherHistory.snow = snow;
   return weatherHistory;
 }
+/* 0.1.0 alpha: the five time-of-day looks as the engine has them now (game data, the scene's look, the player's dials;
+   logic/time-of-day.js), read again twice a second so a Studio edit shows at once */
+const todCache = { t: -1e9, T: null };
+function environmentLooks() {
+  const now = performance.now();
+  if (todCache.T && now - todCache.t < 500) return todCache.T;
+  /** @type {Record<string, Record<string, any>>} */
+  const T = {};
+  for (const k of TIME_OF_DAY_KEYS) {
+    const g = TIME_OF_DAY_GROUPS[k],
+      o = (T[k] = {});
+    for (const f of Object.keys(TIME_OF_DAY_DEFAULTS[k])) o[f] = engineSetting(g, f);
+  }
+  todCache.t = now;
+  todCache.T = T;
+  return T;
+}
 /* everything the renderer needs, eased so weather drifts in and out; a new scene (or a changed setting) snaps */
 export function environmentFrame(sc, dt) {
   const p = environmentPreferences(),
@@ -295,6 +318,9 @@ export function environmentFrame(sc, dt) {
   environment.set = set;
   environment.raw = { night, dusk, dawn };
   const inn = sc && sc.indoor ? 0 : 1;
+  /* 0.1.0 alpha: the look of the hour (outdoors; a room keeps its own light) */
+  const L = inn ? timeOfDayLook(environmentLooks(), h, rise, set) : null;
+  environment.look = L;
   /* alpha 0.4: weather comes in fronts. When the weather changes while you're in a place, the clouds build first and
     the light dims, then the rain (or snow, or ash) sweeps across the place as a curtain you can see coming; when it
     clears, the back edge of the curtain passes the same way and the light comes back. environment.curtain tells the rain where
@@ -355,7 +381,9 @@ export function environmentFrame(sc, dt) {
   /* morning mist: in the mild and coastal places the valleys fill with fog at dawn and it burns off by mid-morning */
   const mist =
     inn && (clim === 'mild' || clim === 'coast') && !(Wm.rain || Wm.snow)
-      ? 0.42 * Math.exp(-Math.pow((h - (rise + 0.7)) / 1.1, 2))
+      ? L
+        ? L.mist
+        : 0.42 * Math.exp(-Math.pow((h - (rise + 0.7)) / 1.1, 2))
       : 0;
   const T = {
     night: night * inn,
@@ -399,8 +427,8 @@ export function environmentFrame(sc, dt) {
     ? [ss === 'autumn' ? 0.8 : 0, ss === 'spring' ? 0.8 : 0, ss === 'winter' ? 0.6 : 0, sc && sc.indoor ? 0 : snowLie]
     : [0, 0, 0, 0];
   environment.lampK = Math.max(
-    environment.night,
-    environment.dusk * 0.6,
+    L ? L.lamps : environment.night,
+    L ? 0 : environment.dusk * 0.6,
     environment.grey * 0.45,
     environment.fog * 0.5
   );
@@ -418,8 +446,22 @@ export function environmentSky(sky, indoor) {
     da = P('dawn'),
     gr = P(environment.storm > 0.5 ? 'storm' : environment.ash > 0.5 ? 'ash' : 'grey'),
     ni = P('night');
+  const L = environment.look,
+    LS = L ? [L.skyTop, L.skyMid, L.skyLow] : null;
   for (let i = 0; i < 3; i++) {
     let v = c[i];
+    if (L) {
+      /* 0.1.0 alpha: the look's sky, then the weather's grey (darker as the light goes) */
+      if (LS[i]) v = environmentMixRgb(v, LS[i], L.skyMix);
+      v = environmentMixRgb(
+        v,
+        gr[i].map(x => x * (0.25 + 0.75 * Math.min(1, L.sun))),
+        environment.grey * 0.85
+      );
+      if (environment.flash) v = environmentMixRgb(v, [0.9, 0.92, 1], environment.flash * 0.5);
+      c[i] = v;
+      continue;
+    }
     v = environmentMixRgb(v, da[i], environment.dawn * 0.75);
     v = environmentMixRgb(v, du[i], environment.dusk * 0.85);
     v = environmentMixRgb(v, gr[i], environment.grey * 0.85);
@@ -433,11 +475,26 @@ export function environmentSky(sky, indoor) {
   }
   return c;
 }
-/* engine dials the time and weather lean on (read through engineSetting(); see settings.js) */
+/* 0.1.0 alpha: the haze's colour after the time of day and the weather (lighting.js) */
+export function environmentHaze(hz) {
+  const L = environment.look;
+  if (!L) return environmentSky([hz, hz, hz], false)[2];
+  let v = L.haze ? environmentMixRgb(hz, L.haze, L.hazeMix) : hz;
+  const P = SKY_TINT_PALETTES[environment.storm > 0.5 ? 'storm' : environment.ash > 0.5 ? 'ash' : 'grey'],
+    g = hexToRgb(P[2]).map(x => (x / 255) * (0.25 + 0.75 * Math.min(1, L.sun)));
+  v = environmentMixRgb(v, g, environment.grey * 0.85);
+  if (environment.flash) v = environmentMixRgb(v, [0.9, 0.92, 1], environment.flash * 0.5);
+  return v;
+}
+/* engine dials the time and weather lean on (read through engineSetting(); see settings.js); with a time-of-day look
+   (environment.look, outdoors) its factors stand in for the old night, dusk and dawn terms */
+const todK = (f, old) => (environment.look ? environment.look[f] : old);
 const ENVIRONMENT_ENGINE_MODIFIERS = {
   sun: {
     strength: v =>
-      environment.on || environment.force ? v * (1 - environment.grey * 0.55) * (1 - environment.fog * 0.25) : v,
+      environment.on || environment.force
+        ? v * todK('sun', 1) * (1 - environment.grey * 0.55) * (1 - environment.fog * 0.25)
+        : v,
     /* the dial is how cloudy a clear day is; cloudier weather scales it up (at the default 0.45: 0.87 cloudy, 0.99 in a
        storm, as when the weather was a floor under the dial, which left its lower third doing nothing) */
     clouds: v =>
@@ -448,20 +505,25 @@ const ENVIRONMENT_ENGINE_MODIFIERS = {
     shafts: v => v * (1 - environment.grey) * (1 + environment.dusk * 0.8 + environment.dawn * 0.5),
   },
   shadows: {
-    strength: v => v * (1 - environment.grey * 0.55 - environment.fog * 0.2),
+    strength: v => v * todK('shadow', 1) * (1 - environment.grey * 0.55 - environment.fog * 0.2),
     softness: v => v * (1 + environment.grey * 1.4),
   },
   lights: { windowsDay: v => Math.max(v, environment.lampK) },
   color: {
-    saturation: v => v * (1 - environment.night * 0.22 - environment.grey * 0.14),
+    saturation: v =>
+      environment.look
+        ? v * environment.look.saturation * (1 - environment.grey * 0.14)
+        : v * (1 - environment.night * 0.22 - environment.grey * 0.14),
+    contrast: v => v * todK('contrast', 1),
     exposure: v =>
       v *
-      (1 + environment.night * 0.18 + environment.flash * 0.6) *
+      todK('exposure', 1 + environment.night * 0.18) *
+      (1 + environment.flash * 0.6) *
       (typeof walkView !== 'undefined' && walkView.sc && walkView.sc.indoor
         ? 1 - environment.grey * 0.12 - environment.storm * 0.06
         : 1),
-    warmth: v => v + environment.dusk * 0.22 + environment.dawn * 0.12 - environment.night * 0.12,
-    bloom: v => v * (1 + environment.night * 0.5),
+    warmth: v => v + todK('warmth', environment.dusk * 0.22 + environment.dawn * 0.12 - environment.night * 0.12),
+    bloom: v => v * todK('bloom', 1 + environment.night * 0.5),
   },
   air: {
     mist: v => v + environment.fog * 0.18 + environment.rain * 0.05,
@@ -486,11 +548,15 @@ function environmentSun(a, h, col) {
     h = clamp(12 + (h - 12) * el, 12, h);
     a = a + (ph - 0.5) * 70;
   }
-  const warm = Math.max(environment.dusk, environment.dawn * 0.7);
-  col = [col[0], col[1] * (1 - warm * 0.16), col[2] * (1 - warm * 0.38)];
-  /* the moon: from high up front-left, cool and dim */
-  const moon = [0.62, 0.72, 1.0];
-  col = col.map((v, i) => v * (1 - environment.night) + moon[i] * environment.night * 0.42);
+  const L = environment.look;
+  if (L) col = col.map((v, i) => v * L.sunColor[i]); /* 0.1.0 alpha: the look's light (its strength: sun.strength) */
+  else {
+    const warm = Math.max(environment.dusk, environment.dawn * 0.7);
+    col = [col[0], col[1] * (1 - warm * 0.16), col[2] * (1 - warm * 0.38)];
+    /* the moon: from high up front-left, cool and dim */
+    const moon = [0.62, 0.72, 1.0];
+    col = col.map((v, i) => v * (1 - environment.night) + moon[i] * environment.night * 0.42);
+  }
   h = h * (1 - environment.night) + 48 * environment.night;
   a = a * (1 - environment.night) + (a + 40) * environment.night;
   return { a, h, col };

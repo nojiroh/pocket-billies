@@ -64,6 +64,72 @@ Branch `track/test-cleanup` (pulled with --no-rebase before every push). TC-4 it
   checked. "Save the picture baseline" in check.yml runs only when the full check passes.
 - Next: the owner tags `tc-done`; the nightly full run compares pictures with the baseline. The fast check's budget
   needs its 19 pages to share boots (a check-fast restructure, not in this track).
+### Phone speed, calmer effects, five times of day - 2026-10-23
+Branch `claude/new-session-yby9e8` (one session, restarted from main after PR #170 merged). From the owner's three
+debug logs of 2026-10-23 (Android phone, iPad, Windows) and their ask: the phone runs badly, menus are sluggish, blur
+and haze toned down ("don't drop the blur, make it more subtle"), a stylized time of day with about five times to tune
+in the Studio, and more suggestions (tech and visual).
+- What the logs say (checked in the code):
+  - Android in Copperleaf: **1,770 draw calls and 27,400 uniform calls a frame** (iPad 1,050 / 10,000); **864 sprite
+    draws against the iPad's 191**: a phone held upright keeps about 1,000 of 1,530 things in view (the iPad 230).
+  - On Android Chrome a wait on the graphics process shows up as main-thread time, so the automatic quality judged every
+    slow frame "main-thread bound", held the effects at step 2 and pushed the resolution back to 1 every second: the
+    phone ran the whole session at full resolution, 17-27 fps.
+  - Phase 20 says the Android phone is limited by pixels: with engine.json's quality.resolution 1.5 it draws the 1.6 MP
+    cap, but the calls are now the bigger cost. Stage E (instanced sprites) is the real fix.
+  - Menus on a phone (portrait, under 960 px): a CSS blur on the full-screen live 3D canvas, glass blurs of 10-18 px on
+    top, all redone every frame because the world kept drawing at 24 fps behind full screens.
+- Changed (one cause per commit):
+  - Menus: the blur behind a phone's screens 1.5 px to 0.8 px (kept, at the owner's word); the world behind a full
+    screen settles for 0.8 s, then draws once a second (a still canvas keeps its blurred backdrop); phone glass blurs
+    halved through CSS variables (a no-op commit first: the fixed values became variables with today's values);
+    Billie pictures redraw at most 20 times a second (their pose moves in 50 ms steps).
+  - Walk: the automatic quality's step is a pure function (logic/quality-step.js, tests); on Android and iPhone a slow
+    frame now takes steps 3-4 and then the resolution (not below 0.6), never raising it for "main-thread" time.
+    New settings Quality > Skip tiny props (minPropPx, 3 in the data) and Small props' distance on phones
+    (phonePropDistance, 48 m in the data; small props under 1 m fade out over the last 8 m; buildings never). The
+    effects pass skips props outside the view, and fountains outside it draw no spray.
+  - Engine data, calmer: depth-of-field blur 2 to 1, behind you 2.6 to 1.4, sharp band 0.62 to 0.8, colour fringes 1.15
+    to 0.35, vignette 0.72 to 0.4, bloom 0.8 to 0.6, glare 0.9 to 0.6, saturation 1.2 to 1.1, mist 0.16 to 0.08.
+  - **Five times of day** (logic/time-of-day.js, tests): engine groups todDawn, todDay, todGolden, todDusk, todNight
+    (25 dials each: hour offset and blend, sky colours and amount, light colour and strength, fill and its colour,
+    haze colour, amount and distance, mist, exposure, saturation, contrast, warmth, shadow strength, shadow and
+    highlight tints, glow, lamps, stars). Dawn sits at sunrise, day 3 h after it, golden hour 1.4 h before sunset, dusk
+    0.4 h after, night 1.8 h after (all move with the season); each look is reached over its blend hours, the one before
+    holds until then. They replace, outdoors, the old dawn/dusk/night sky tints, warm sun and moon colour, night ambient,
+    saturation, exposure, warmth and bloom terms, the dawn mist and the lamps; weather, a scene's own look and the
+    player's dials stay on top; rooms keep their light. The colours are game data (engine.json); the code's defaults
+    have none (the ui-lint ceiling on colours in game code). The Studio's Engine page lists the five groups and a bar
+    under its moments: hour, weather, season, Play a day (24 h in 20 s) and which looks make up the light.
+- Not done, with reasons:
+  - Debouncing `save()`: the save is 2.3 KB (the log's saveBytes), a write is well under a millisecond; not worth a
+    lost save.
+  - A schema file for the looks: engine.json has none; the dials' ranges live in ENGINE_SPEC as for every other group.
+  - The phone pixel budget (phase 20 D4) and quality.resolution 1.5 / shadowMap 4096 in engine.json: unchanged
+    (phase 20 says ask first); the automatic quality now brings the phone down from them.
+- Verified: lint, typecheck, unit tests (863) and check:modules after every commit; check:data; the Studio's 32
+  sections open with no error (check-studio-github.py --only=sections); a scratch Playwright run of the Engine page:
+  the five groups, the bar, 19:45 shows "golden 50% + dusk 50%", 23:30 "night 100%", Play a day sweeps; smoke (see
+  below). The looks through a summer and a winter day printed from the data (night until ~4:30, dawn at sunrise, day
+  from ~9:00, golden hour before sunset). **Not judged headless** (phase 20's rule): how the looks and the calmer
+  effects look, and the speed. Please try on the phone and iPad and send a debug log.
+- Risky:
+  - The looks change the picture at every hour but midday; the starting values are my guess at "stylized". Tune them in
+    the Studio (Engine > Time of day, with the hour bar).
+  - On a phone the resolution can now fall to 0.6 when frames are slow: softer, but the frames should come.
+  - Small props fade out 40-48 m away on phones: watch for things popping in a long street.
+  - The world behind a full screen moves once a second: it may look still or stutter behind the glass.
+- PR #170's follow-up (the full test's three false failures): headless, the whole in-game test went from three red
+  steps to one, "Opening: falling across the Hollow Earth: the fall drew 1 frames" (software drawing late in an 11-minute
+  run; it passed alone with 9 frames). Proposed fix, not made: run the fall for 6 s x selfTest.slow in the test.
+- Suggestions for next (tech and visual, ranked): phase 20 stage E (instanced sprites: ~864 sprite draws to tens),
+  stage F (instanced models and merged shadow casters: shadows are 200-400 draws), GPU-tier presets from the renderer
+  string and a warm-up benchmark, invalidateFramebuffer after post passes and RGBA8 targets on phones, half-rate
+  shadows and reflections on phones by default and lamp shadows for the nearest 1-2 lamps only; for the looks: a toon
+  light ramp per look, coloured ink outlines per look, glowing windows and lanterns that follow the lamps (stage I2),
+  painted cloud cards, fireflies at night, cheap god-ray quads at dawn and golden hour (stage D7); menus that redraw
+  only what changed; the world map's idle water at 10 fps.
+
 ### Roguelite track RL-12b part 1 - Encounters: events, reward picks, route trainers - 2026-10-23
 Branch `track/encounters` (new; made from `track/reflavour` at e1e1479, RF-4's renames, at the owner's word in this
 session, before RF-4's PR merged; main merged in twice since, the last after #167). Plan approved in Plan Mode, the

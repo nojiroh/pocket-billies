@@ -29,7 +29,9 @@ export function drawSky(C, sun, mirror) {
   bindQuad();
   if (U.uEnv) {
     const E = typeof environment !== 'undefined' && engineContext.env ? environment : null;
-    gl.uniform4f(U.uEnv, E ? E.night : 0, E ? E.flash : 0, E ? E.grey : 0, E ? (E.rainbow || 0) * (1 - E.night) : 0);
+    /* 0.1.0 alpha: the stars and the moon as the time-of-day look has them */
+    const st = E ? (E.look && !sc.indoor ? E.look.stars : E.night) : 0;
+    gl.uniform4f(U.uEnv, st, E ? E.flash : 0, E ? E.grey : 0, E ? (E.rainbow || 0) * (1 - E.night) : 0);
     gl.uniform3fv(U.uMoon, sun.dir);
   }
   gl.uniformMatrix4fv(U.uIVP, false, C.ivp);
