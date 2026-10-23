@@ -24,6 +24,8 @@ expose({
   perkPickDone: [() => perkPickDone, v => (perkPickDone = v)],
   perkPickOpen: [() => perkPickOpen, v => ((perkPickOpen = v), provide({ perkPickOpen }))],
   perkPickTake: [() => perkPickTake, v => (perkPickTake = v)],
+  perkPickText: [() => perkPickText, v => (perkPickText = v)],
+  perkPickThen: [() => perkPickThen, v => (perkPickThen = v)],
   perkSheet: [() => perkSheet, v => (perkSheet = v)],
   renderPerks: [() => renderPerks, v => (renderPerks = v)],
 });
@@ -51,9 +53,17 @@ function perkCardsOn(f) {
 }
 
 /* ---------- the pick after a mini-boss ---------- */
-/** the run's offer as a sheet (nothing when there is none) */
-export function perkPickOpen() {
+/** RL-12b: an event's offer: its line, and what to do once it is answered (lost on a reload: the offer reopens with
+ * the mini-boss's line) */
+let perkPickText = '',
+  perkPickThen = /** @type {(() => void) | null} */ (null);
+/** the run's offer as a sheet (nothing when there is none) @param {{ text?: string, then?: () => void }} [o] */
+export function perkPickOpen(o) {
   const run = saveData.run;
+  if (o) {
+    perkPickText = o.text || '';
+    perkPickThen = o.then || null;
+  }
   if (!run || !run.offer) return;
   const rule = RULES.run.perks,
     ids = run.offer.filter(id => PERKS[id]),
@@ -62,10 +72,10 @@ export function perkPickOpen() {
     title: 'Pick a Perk',
     cls: 'relic-pick',
     lock: true,
-    html: `<p>The mini-boss left a few perks behind. Take one for the rest of the run.</p><p class="note">You hold ${run.perks.length} of ${rule.cap}.${run.perks.length >= rule.cap ? ' Taking one means letting another go.' : ''}</p><div class="relic-cards">${ids.map(id => perkCardHTML(id, id === sel)).join('')}</div>`,
+    html: `<p>${escapeHtml(perkPickText || 'The mini-boss left a few perks behind.')} Take ${ids.length > 1 ? 'one' : 'it'} for the rest of the run.</p><p class="note">You hold ${run.perks.length} of ${rule.cap}.${run.perks.length >= rule.cap ? ' Taking one means letting another go.' : ''}</p><div class="relic-cards">${ids.map(id => perkCardHTML(id, id === sel)).join('')}</div>`,
     btns: [
       { l: 'Take it', c: 'gold', dis: !sel, f: () => perkPickTake(/** @type {string} */ (sel)) },
-      { l: 'Take none', c: 'quiet', f: () => perkPickDone(null) },
+      { l: ids.length > 1 ? 'Take none' : 'Leave it', c: 'quiet', f: () => perkPickDone(null) },
     ],
     after: () =>
       perkCardsOn(id => {
@@ -99,6 +109,10 @@ function perkPickDone(id, drop) {
   if (id) toast(`${PERKS[id].name}: ${PERKS[id].d}`);
   /* SND-6: a Perk taken has a jingle of its own */
   if (id && typeof jinglePlay === 'function') jinglePlay('relic');
+  const then = perkPickThen;
+  perkPickText = '';
+  perkPickThen = null;
+  if (then) then();
 }
 
 /* ---------- past the cap: let one go ---------- */

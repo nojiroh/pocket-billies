@@ -246,7 +246,21 @@ export function validRunEnc(e) {
       (c.n === undefined || wholeIn(c.n, 1, 99));
   return (
     plain(e) &&
-    Object.keys(e).every(k => ['n', 'node', 'seen', 'boons', 'rewardN', 'reward'].includes(k)) &&
+    Object.keys(e).every(k => ['n', 'node', 'seen', 'boons', 'rewardN', 'reward', 'play'].includes(k)) &&
+    (e.play == null ||
+      (plain(e.play) &&
+        Object.keys(e.play).every(k => ['id', 'i', 'opt', 'at', 'foe'].includes(k)) &&
+        id(e.play.id) &&
+        wholeIn(e.play.i, -1, RUN_NODES - 1) &&
+        wholeIn(e.play.opt, 0, 2) &&
+        Array.isArray(e.play.at) &&
+        e.play.at.length <= 16 &&
+        e.play.at.every((/** @type {any} */ n) => wholeIn(n, 0, 999)) &&
+        (e.play.foe === undefined ||
+          (plain(e.play.foe) &&
+            id(e.play.foe.cls) &&
+            wholeIn(e.play.foe.up, -20, 20) &&
+            wholeIn(e.play.foe.n, 0, RUN_NODES - 1))))) &&
     wholeIn(e.n, 0, 1e6) &&
     recordOf(e.node, RUN_NODES, v => v === '' || id(v)) &&
     Object.keys(e.node).every(k => /^\d{1,2}$/.test(k)) &&
@@ -267,6 +281,9 @@ export function validRunEnc(e) {
         e.reward.cards.length <= 5 &&
         e.reward.cards.every(card) &&
         wholeIn(e.reward.rolls, 0, 99) &&
+        Object.keys(e.reward).every(k => ['cards', 'rolls', 'from', 'kind', 'n'].includes(k)) &&
+        (e.reward.kind === undefined || ['item', 'candy', 'evo', 'tutor', 'held'].includes(e.reward.kind)) &&
+        (e.reward.n === undefined || wholeIn(e.reward.n, 1, 5)) &&
         typeof e.reward.from === 'string' &&
         e.reward.from.length <= 60))
   );

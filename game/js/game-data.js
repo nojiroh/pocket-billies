@@ -44,6 +44,7 @@ expose({
   POOLS: [() => POOLS],
   PYRAMIDS: [() => PYRAMIDS],
   RARITY_STAT_TOTALS: [() => RARITY_STAT_TOTALS],
+  REWARDS: [() => REWARDS],
   ROADS: [() => ROADS],
   ROADS_BY_NODE: [() => ROADS_BY_NODE],
   ROBOTS: [() => ROBOTS],
@@ -101,6 +102,8 @@ expose({
   typeEffectiveness: [() => typeEffectiveness, v => (typeEffectiveness = v)],
   typesWith: [() => typesWith],
   warnData: [() => warnData],
+  // @ts-expect-error -- replaced on purpose
+  worldAddTrainers: [() => worldAddTrainers, v => (worldAddTrainers = v)],
   worldExtra: [() => worldExtra],
   worldExtraMaps: [() => worldExtraMaps],
   // @ts-expect-error -- replaced on purpose
@@ -395,6 +398,8 @@ export const NODE_TYPES = gameData.nodeTypes || {};
 export const MUSIC = gameData.music || { songs: {}, jingles: {}, cries: { bases: [] }, where: [] };
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
+/** RL-12b: the reward pick's cards */
+export const REWARDS = /** @type {Record<string, import('../types/game-data').RewardRow>} */ (gameData.rewards || {});
 /** RL-12b: a run's events, loot tables and trainer classes */
 export const EVENTS = /** @type {import('../types/game-data').EventsData} */ (
   gameData.events || { loot: {}, classes: {}, events: {} }
@@ -529,11 +534,16 @@ export function worldPut(w) {
   worldExtra.pools.push(...Object.keys(w.pools));
   Object.assign(SHOPS, w.shops || {});
   worldExtra.shops.push(...Object.keys(w.shops || {}));
-  for (const [id, T] of Object.entries(w.trainers || {})) {
-    TRAINERS[id] = /** @type {TrainerEntry} */ ({ ...T, id, who: PEOPLE[T.who] ? T.who : 'chosen' });
-    worldExtra.trainers.push(id);
-  }
+  worldAddTrainers(w.trainers || {});
   worldSetGraph(w.locations, w.roads);
+}
+/** RL-12b: trainers put into the world as it stands (a run's event foe), gone with it at worldHubBack
+ * @param {Record<string, any>} trainers */
+export function worldAddTrainers(trainers) {
+  for (const [id, T] of Object.entries(trainers)) {
+    TRAINERS[id] = /** @type {TrainerEntry} */ ({ ...T, id, who: PEOPLE[T.who] ? T.who : 'chosen' });
+    if (!worldExtra.trainers.includes(id)) worldExtra.trainers.push(id);
+  }
 }
 export function worldHubBack() {
   worldExtra.look = null;

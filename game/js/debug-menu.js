@@ -6,6 +6,7 @@
 import { expose } from './test-globals.js';
 import {
   closeModal,
+  encounterOpen,
   giveRobotKit,
   modal,
   perkPickOpen,
@@ -14,6 +15,7 @@ import {
   provide,
   render,
   renderOverlay,
+  rewardPickOpen,
   runBowlMapTest,
   runEvolution,
   runJump,
@@ -30,6 +32,7 @@ import {
   COATS,
   DATA_WARN,
   DEX_ORDER,
+  EVENTS,
   ITEMS,
   LOCATIONS,
   PERKS,
@@ -55,6 +58,7 @@ import {
 import { ranchNow } from './logic/ranch-clock.js';
 import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
 import { perkOfferMake, perkTake } from './logic/perks.js';
+import { rewardDataGame, rewardOfferMake } from './logic/rewards.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
@@ -180,7 +184,11 @@ function debugHTML() {
         'dbgRelic',
         Object.keys(PERKS).map(k => [k, PERKS[k].name]),
         uiState.dbgRelic || Object.keys(PERKS)[0] || ''
-      )}${debugButtonHTML('relicgive', 'Give a Perk', 'gold')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">Perks held: ${saveData.run.perks.length} of ${RULES.run.perks.cap}${saveData.run.perks.length ? ` (${escapeHtml(saveData.run.perks.map(k => (PERKS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p>`
+      )}${debugButtonHTML('relicgive', 'Give a Perk', 'gold')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">Perks held: ${saveData.run.perks.length} of ${RULES.run.perks.cap}${saveData.run.perks.length ? ` (${escapeHtml(saveData.run.perks.map(k => (PERKS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p><div class="dbg-row">${debugSelectHTML(
+        'dbgEvent',
+        Object.keys(EVENTS.events).map(k => [k, EVENTS.events[k].title]),
+        uiState.dbgEvent || Object.keys(EVENTS.events)[0] || ''
+      )}${debugButtonHTML('eventplay', 'Play this event', 'gold')}${debugButtonHTML('rewardpick', 'A trainer’s reward pick')}</div><p class="note">An event here, as a waystation would hold it (played events: ${escapeHtml(((saveData.run.enc && saveData.run.enc.seen) || []).join(', ') || 'none')}). The reward pick is a route trainer’s.</p>`
     : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><p class="note">From Copperleaf, as the mast does (Expedition I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (for measuring on a phone; the debug log has the frame times).</p>`;
   const places = `<div class="dbg-row">${debugSelectHTML(
     'dbgNode',
@@ -543,6 +551,23 @@ function debugAction(x) {
       saveNow();
       uiState.modal = null;
       perkPickOpen();
+      return;
+    /* RL-12b: an event played here, and a route trainer's reward pick */
+    case 'eventplay': {
+      const id = v('dbgEvent');
+      uiState.dbgEvent = id;
+      if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
+      uiState.modal = null;
+      encounterOpen(null, id);
+      return;
+    }
+    case 'rewardpick':
+      if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
+      if (!rewardOfferMake(saveData.run, 'debug', rewardDataGame(saveData.team)))
+        return refreshDebugMenu('Nothing to offer.');
+      saveNow();
+      uiState.modal = null;
+      rewardPickOpen();
       return;
     case 'runwin':
     case 'runlose':

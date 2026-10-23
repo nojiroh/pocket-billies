@@ -67,7 +67,8 @@ provide({ storyAllows, storyHolds });
  *   [cmd: string]: any }} Stage */
 /** @typedef {{ save: any, id?: string, speaker?: string | null, scripts?: (id: string) => ScriptNode[] | null,
  *   locations?: { id: string }[], questStages?: Record<string, string[]>, resume?: number[] | null,
- *   onCheckpoint?: (path: number[]) => void, control?: { skipping: boolean },
+ *   onCheckpoint?: (path: number[]) => void, beforeCheckpoint?: (path: number[]) => void,
+ *   control?: { skipping: boolean },
  *   slots?: Record<string, () => string | number> }} RunOptions */
 
 export const END = Symbol('end');
@@ -218,6 +219,9 @@ export async function runScript(tree, stage, o) {
         const spec = /** @type {Record<string, { checkpoint?: boolean }>} */ (SCRIPT_COMMANDS)[n.name];
         /* what can't be skipped (a battle, the dressing room, a new place) stops the skip there */
         if (spec.checkpoint) control.skipping = false;
+        /* RL-12b: where to go on from, saved before the command (an event's battle: a reload restarts the battle,
+           then the script goes on after it) */
+        if (spec.checkpoint && o.beforeCheckpoint) o.beforeCheckpoint([...at.slice(0, -1), at[at.length - 1] + 1]);
         await play(n.name, n.args);
         if (spec.checkpoint && o.onCheckpoint) o.onCheckpoint([...at.slice(0, -1), at[at.length - 1] + 1]);
       }

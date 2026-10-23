@@ -31,6 +31,7 @@ expose({
   encClassFoe: [() => encClassFoe, v => (encClassFoe = v)],
   // @ts-expect-error -- replaced on purpose
   encDexAt: [() => encDexAt, v => (encDexAt = v)],
+  encEventFoe: [() => encEventFoe],
   // @ts-expect-error -- replaced on purpose
   encHeal: [() => encHeal, v => (encHeal = v)],
   // @ts-expect-error -- replaced on purpose
@@ -262,6 +263,19 @@ export function encClassFoe(run, i, id, cls, o) {
     runNode: i,
   };
 }
+
+/** an event's foe (the `foe` command) at map node i: its class's trainer, id run_<i>_ev, from the event's own stream,
+ * paying a route trainer's reward; made again the same after a reload (run.enc.play.foe)
+ * @param {Run} run @param {number} i @param {string} eventId @param {string} cls @param {number} up
+ * @param {{ classes: EventsData['classes'], species: Record<string, any>, rules: any }} data rules: rules.json run */
+export const encEventFoe = (run, i, eventId, cls, up, data) =>
+  encClassFoe(run, i, `run_${i}_ev`, cls, {
+    ...data,
+    up,
+    salt: 'event|foe|' + eventId,
+    reward: data.rules.trainers.reward,
+    foe: 'event',
+  });
 
 /** a wild Billie of the region's dex for an event, from the events stream, at the place's top wild level plus `up`
  * @param {Run} run @param {number} i @param {Record<string, any>} species @param {any} rules rules.json run

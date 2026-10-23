@@ -256,12 +256,18 @@ export interface RunEnc {
   rewardN: number;
   /** the reward pick waiting (saved before it shows), or null */
   reward: RunReward | null;
+  /** the event playing: its id, its map node (-1: from the debug menu), the option, the script's last checkpoint and
+   * an event foe's class (so a reload makes the same foe); missing or null when none */
+  play?: { id: string; i: number; opt: number; at: number[]; foe?: { cls: string; up: number; n: number } } | null;
 }
 /** RL-12b: a reward pick after a trainer battle: its cards, the rerolls paid, who left it */
 export interface RunReward {
   cards: RewardCard[];
   rolls: number;
   from: string;
+  /** an event's pick of one kind, and of how many cards (a reroll keeps them) */
+  kind?: string;
+  n?: number;
 }
 /** RL-12b: one card of a reward pick (rewards.json): an item into the bag (a candy and an evolution item are items
  * too), or a move a Billie of the team may learn */

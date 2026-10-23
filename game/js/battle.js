@@ -17,6 +17,7 @@ import {
   perkPickOpen,
   provide,
   render,
+  rewardPickOpen,
   runCatch,
   runOver,
   runReleaseSheet,
@@ -982,7 +983,14 @@ export function endBattle() {
         btns: [
           {
             c: 'dark',
-            l: run && T.runFoe === 'boss' ? 'On to the payout' : run && run.offer ? 'Pick a Perk' : 'Keep walking',
+            l:
+              run && T.runFoe === 'boss'
+                ? 'On to the payout'
+                : run && run.offer
+                  ? 'Pick a Perk'
+                  : run && run.enc && run.enc.reward
+                    ? 'Pick a reward'
+                    : 'Keep walking',
             f:
               /* RL-8: the run's boss beaten: the run is won */
               run && T.runFoe === 'boss'
@@ -995,12 +1003,17 @@ export function endBattle() {
                       uiState.modal = null;
                       perkPickOpen();
                     }
-                  : first && (T.clue || T.ending) && typeof storyAfterWin === 'function'
+                  : run && run.enc && run.enc.reward
                     ? () => {
-                        closeModal();
-                        storyAfterWin(T);
+                        uiState.modal = null;
+                        rewardPickOpen();
                       }
-                    : closeModal,
+                    : first && (T.clue || T.ending) && typeof storyAfterWin === 'function'
+                      ? () => {
+                          closeModal();
+                          storyAfterWin(T);
+                        }
+                      : closeModal,
           },
         ],
       });

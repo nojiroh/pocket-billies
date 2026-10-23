@@ -12,6 +12,7 @@ import { PERKS, RULES } from '../game-data.js';
 import { dropEncounter, findBilly, wildPrize } from './rules.js';
 import { fxMoney } from './effects.js';
 import { perkOfferMake } from './perks.js';
+import { rewardDataGame, rewardOfferMake } from './rewards.js';
 import { battleRoll } from './battle-engine.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -91,7 +92,8 @@ export function battleSettle(b, s) {
 }
 /**
  * A win's money and marks (after battleSettle; not for the opening's tutorial battle): a wild win's prize, a
- * trainer's reward and flag, and on a run (`run`) a mini-boss beaten makes the next pick of Perks
+ * trainer's reward and flag, and on a run (`run`) a mini-boss beaten makes the next pick of Perks (RL-12b: a route
+ * trainer the next reward pick)
  * (logic/perks.js perkOfferMake, saved on the run before it shows).
  * @param {any} b @param {any} s @param {{ o: string | null, prize: number, reward: number }} pay @param {any} run
  */
@@ -101,6 +103,9 @@ export function battleSettleWin(b, s, pay, run) {
   if (b.kind === 'trainer') {
     s.se += pay.reward;
     if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, PERKS, RULES.run.perks);
+    /* RL-12b: a route trainer (or the rival) leaves a reward pick (logic/rewards.js), saved with the battle's end */
+    if (run && b.T && (b.T.runFoe === 'route' || b.T.runFoe === 'rival'))
+      rewardOfferMake(run, b.tid, rewardDataGame(s.team));
     s.flags[b.tid] = 1;
   }
 }

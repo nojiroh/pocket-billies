@@ -51,6 +51,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataRegions: [() => dataRegions, v => (dataRegions = v)],
   // @ts-expect-error -- replaced on purpose
+  dataRewards: [() => dataRewards, v => (dataRewards = v)],
+  // @ts-expect-error -- replaced on purpose
   dataRigs: [() => dataRigs, v => (dataRigs = v)],
   // @ts-expect-error -- replaced on purpose
   dataRoadFindings: [() => dataRoadFindings, v => (dataRoadFindings = v)],
@@ -304,6 +306,8 @@ export const RUN_RULE_KEYS = Object.freeze([
   'shop',
   'foes',
   'perks',
+  'trainers',
+  'rewards',
 ]);
 /** RL-6: rules.json run.clock, run.reveal and the run keys @param {any} D @returns {DataProblem[]} */
 export function dataRunClock(D) {
@@ -479,6 +483,32 @@ export function dataRunLoop(D) {
           problem('rules.json', `run.foes.${k}: up (whole, -20-50) and reward (whole Moneys, 0-1,000,000) are needed`);
         else only(f, ['up', 'reward'], `run.foes.${k}`);
       }
+    }
+    /* RL-12b: route trainers (how many a route, levels up, what they pay, how far they see) and the reward pick */
+    const TR = R.trainers,
+      RW = R.rewards;
+    if (!rec(TR)) problem('rules.json', 'run.trainers missing');
+    else {
+      only(TR, ['perRoute', 'up', 'reward', 'sight'], 'run.trainers');
+      if (
+        !Array.isArray(TR.perRoute) ||
+        TR.perRoute.length !== 2 ||
+        !whole(TR.perRoute[0], 0, 4) ||
+        !whole(TR.perRoute[1], TR.perRoute[0], 4)
+      )
+        problem('rules.json', 'run.trainers.perRoute: [fewest, most], whole, 0-4');
+      if (!whole(TR.up, -20, 20)) problem('rules.json', 'run.trainers.up: whole, -20-20');
+      if (!whole(TR.reward, 0, 1e6)) problem('rules.json', 'run.trainers.reward: whole Moneys, 0-1,000,000');
+      if (!(typeof TR.sight === 'number' && TR.sight >= 1 && TR.sight <= 20))
+        problem('rules.json', 'run.trainers.sight: 1-20 m');
+    }
+    if (!rec(RW)) problem('rules.json', 'run.rewards missing');
+    else {
+      only(RW, ['pick', 'reroll', 'grow'], 'run.rewards');
+      if (!whole(RW.pick, 1, 5)) problem('rules.json', 'run.rewards.pick: whole, 1-5 cards');
+      if (!whole(RW.reroll, 0, 1e5)) problem('rules.json', 'run.rewards.reroll: whole Moneys, 0-100,000');
+      if (!(typeof RW.grow === 'number' && RW.grow >= 1 && RW.grow <= 10))
+        problem('rules.json', 'run.rewards.grow: 1-10');
     }
   }
   return out;
@@ -806,6 +836,37 @@ export function dataEvents(D, valid = () => true) {
       });
     });
   }
+  return out;
+}
+
+// RL-12b: rewards.json: the schema; every item and pyramid there, a candy a level item, an evolution item one, held
+// cards switched off until RL-12c, and something to offer
+/** RL-12b: rewards.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataRewards(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['rewards.json', what]),
+    R = D.rewards;
+  if (!R) return [['rewards.json', 'missing']];
+  if (!valid('rewards.schema.json', R, 'rewards.json')) return out;
+  const items = D.items || {},
+    pyramids = D.pyramids || {};
+  for (const [k, c] of Object.entries(R)) {
+    const r = /** @type {any} */ (c);
+    if (r.item && !items[r.item]) problem(`${k}.item: no item "${r.item}" (items.json)`);
+    if (r.pyramid && !pyramids[r.pyramid]) problem(`${k}.pyramid: no pyramid "${r.pyramid}" (pyramids.json)`);
+    if ((r.kind === 'item' || r.kind === 'candy' || r.kind === 'evo') && !r.item === !r.pyramid)
+      problem(`${k}: an item or a pyramid, one of them`);
+    if ((r.kind === 'candy' || r.kind === 'evo') && r.pyramid) problem(`${k}: a ${r.kind} is an item, not a pyramid`);
+    if (r.kind === 'candy' && r.item && items[r.item] && !items[r.item].lvlUp)
+      problem(`${k}: a candy's item gives levels (lvlUp in items.json)`);
+    if (r.kind === 'evo' && r.item && items[r.item] && !items[r.item].evoItem)
+      problem(`${k}: an evolution item's item is one (evoItem in items.json)`);
+    if (r.kind === 'tutor' && (r.item || r.pyramid || r.n)) problem(`${k}: a tutor card names no item`);
+    if (r.kind === 'held' && r.weight > 0) problem(`${k}: held items come with RL-12c; keep its weight 0`);
+  }
+  if (!Object.values(R).some((/** @type {any} */ r) => r.kind === 'item' && r.weight > 0))
+    problem('no item card with a weight above 0: a pick could be empty');
   return out;
 }
 

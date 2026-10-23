@@ -63,6 +63,7 @@ import '../../game/js/logic/ranch-clock.js';
 import '../../game/js/logic/ranch-income.js';
 import '../../game/js/logic/ranch-state.js';
 import '../../game/js/logic/ranch.js';
+import '../../game/js/logic/rewards.js';
 import '../../game/js/logic/rig-joints.js';
 import '../../game/js/logic/rig-swap.js';
 import '../../game/js/logic/rng.js';

@@ -13,6 +13,7 @@ import { activeBattle, escapeHtml, reducedMotion, save, saveData, uiState } from
 import { eggHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { walkView } from './walk-view.js';
+import { encounterResume } from './encounter-screen.js';
 import { typeBadgeHTML } from './ui-bits.js';
 import { closeModal, modal, toast } from './overlay.js';
 /* eslint-disable no-func-assign */
@@ -60,6 +61,8 @@ export function showPendingWindows() {
   }
   const m = allBillies().find(canEvolve);
   if (m) evolutionModal(m);
+  /* RL-12b: an event a reload stopped in the middle opens again where it was */
+  else if (typeof encounterResume === 'function') encounterResume();
 }
 function learnModal(m, mv) {
   const M = MOVES[mv];

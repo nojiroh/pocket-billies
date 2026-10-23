@@ -58,6 +58,8 @@ export interface GameData {
   perks?: Record<DataId, Perk>;
   /** RL-12b: events.json */
   events?: EventsData;
+  /** RL-12b: rewards.json */
+  rewards?: Record<DataId, RewardRow>;
   /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
   currencies?: Partial<Record<CurrencyId, Currency>>;
   /** RL-11: Copperleaf's hub buildings (game/data/buildings.json) */
@@ -987,6 +989,11 @@ export interface Rules {
     shop: { always: string[]; more: number; pick: Record<string, number> };
     /** RL-8: a mini-boss's and the boss's levels: `up` over the top wild level of their row; their reward in $ */
     foes: { miniboss: { up: number; reward: number }; boss: { up: number; reward: number } };
+    /** RL-12b: route trainers: how many a route (fewest, most), levels over the place's top wild level, what each
+     * pays, how far they see (m) */
+    trainers: { perRoute: [number, number]; up: number; reward: number; sight: number };
+    /** RL-12b: the reward pick after a trainer battle: cards, a reroll's first price, how it grows each time */
+    rewards: { pick: number; reroll: number; grow: number };
     /** RL-12: Perks: at most `cap` held, a pick of `pick` after a mini-boss, offered by `rarity` weight, sold in a
         run shop at `price` by rarity (placeholders) */
     perks: {
@@ -1716,6 +1723,14 @@ export interface EventsData {
   loot: Record<DataId, Record<DataId, number>>;
   classes: Record<DataId, TrainerClass>;
   events: Record<DataId, RunEvent>;
+}
+/** rewards.json: a card of the reward pick (roguelite track RL-12b; logic/rewards.js) */
+export interface RewardRow {
+  kind: 'item' | 'candy' | 'evo' | 'tutor' | 'held';
+  item?: DataId;
+  pyramid?: DataId;
+  n?: number;
+  weight: number;
 }
 /** events.json classes: a kind of trainer (route trainers, the `foe` command) */
 export interface TrainerClass {
