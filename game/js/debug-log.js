@@ -603,6 +603,35 @@ debugLog.more = () => {
       })(),
     };
   });
+  /* CAM-1: what the walking camera is doing: its mode (walk, indoor, room, swoop, free), zoom, turn, tilt, the rise on
+     tall ground, the goals in play with their weights, the look-ahead and how far the aim is from its goal (metres).
+     CAM-2: the zoom the camera uses (yours times the goals'), the moment (talk, boss, interest, idle, run, or none),
+     the points of interest in reach and the strongest's weight, the camera zone you stand in (its index, -1 for none)
+     and how long you have stood still (seconds). Only numbers and ids, no names */
+  t('camera', () => {
+    const W = typeof GAME.walkRenderer !== 'undefined' ? GAME.walkRenderer : null,
+      I = W && W.camInfo,
+      T = W && W.camT,
+      C = typeof GAME.walkView !== 'undefined' ? GAME.walkView.C : null;
+    if (!I || !T) return null;
+    const r = v => +v.toFixed(2);
+    return {
+      mode: I.mode,
+      zoom: r(W.zoom),
+      yaw: C && C.yaw != null ? r((C.yaw * 180) / Math.PI) : null,
+      pitch: C && C.sp != null ? r((Math.asin(C.sp) * 180) / Math.PI) : null,
+      rise: W.occT != null ? r(W.occT) : null,
+      goals: I.goals.map(([id, w]) => [id, r(w)]),
+      lead: [r(I.lead[0]), r(I.lead[1])],
+      off: [r(I.goal[0] - T[0]), r(I.goal[1] - T[1])],
+      moving: r(I.move),
+      zoomEff: I.zoom != null ? r(I.zoom) : null,
+      moment: I.moment ?? null,
+      interest: I.interest ? [I.interest[0], r(I.interest[1])] : null,
+      zone: I.zone ?? -1,
+      still: W.mom ? r(W.mom.still) : null,
+    };
+  });
   t('caches', () => ({
     people: typeof GAME.PERSON_ART_CACHE !== 'undefined' ? GAME.PERSON_ART_CACHE.size : null,
     lifeFrames: typeof GAME.ambientLife !== 'undefined' ? GAME.ambientLife.cut.size : null,

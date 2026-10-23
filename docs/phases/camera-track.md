@@ -78,6 +78,55 @@ below against main and report what differs.
   preview: the zones (dragged to resize) and the look-ahead arrow.
 - Debug log: a camera line (mode, zoom, the goals in play). No save data or names.
 
+#### CAM-1 as built (2026-10-22)
+- **Corrections to "Verified facts"** (checked against the code at the start of CAM-1):
+  - The list of forces missed four: rising ground 3.5 m ahead tilted the camera down up to 9 degrees (`upT`, apart
+    from TR-3); the scene's own tilt and height glided on changes (`cpe`); the aim was clamped inside the scene with a
+    fixed +2 m (landscape) / +1 m (portrait) up the screen; indoors the camera came closer so it stayed inside the
+    near wall.
+  - `st.focus` and `st.focusY` were never set by the walking game (the `focus:` values in title.js and the director
+    belong to the cutscene camera): dead code, removed from `walkCamera`.
+  - `walkView.opt.instant` is never set by anything. The camera snaps when something sets `walkRenderer.camT = null`
+    (title, battle-3d, story-stage, the director, a new scene); rooms save and restore the camera at the door and the
+    self-test compares `camT` exactly.
+  - The blur numbers quoted are the code's fallbacks; the game's engine.json sets `focusBand` 0.62 and `blurFar` 2.6
+    (and the camera's `fov` 0.68, `pitchAdd` -8).
+  - There is no `validation/quick-baseline` in the repo: CI fetches it from the release `baseline-<version>`, remade
+    only on `phase-*` tags or by hand (Actions > Check > Run workflow > "Make the picture baseline").
+  - The Studio's Engine preview has no joystick (click to walk, WASD), so the look-ahead also takes the walking
+    direction.
+- **The follow** (logic/camera-follow.js, 12 unit tests): `springStep` is a critically damped spring solved exactly
+  for a target moving in a straight line during the step (30, 60 and 144 fps agree to 0.00001 m; a still target is
+  never passed); `zoneAxis`/`zoneMetres` the dead and soft zones as shares of the screen, measured along the screen's
+  axes on the ground; `followStep` (the dead zone closes over about 0.35 s when you stop, so a still picture is
+  framed as before; a hard limit at the soft zone; a goal jump past the soft zone is a cut, not a move; ground
+  changes under the band ignored while you walk); `leadStep` (its own spring; the sideways part x`leadSide` on a tall
+  screen); `blendGoals` (weights ramp in and out, a goal no longer asked for fades as it last was; tilts add,
+  distances multiply, aim points pull in order).
+- **One goal** in walk/camera.js: `tilt` (phone and mouse, at once), `indoor` (+12 degrees), `ahead` (up to 9),
+  `landmark` (up to -11), `room` (the room framed whole, 0.15 s), `swoop` (0.15 s). TR-3's rise keeps its own uneven
+  ramp and code, fed the blended tilt: check-fast's Tall ground gives the same numbers as TR-3 (16.9 m of rock, 18.0
+  degrees). The swoop still halves `zoomT` (one zoom curve is CAM-2). The scene's own tilt/height glide (`cpe`) stays
+  as a glide of the base, not a goal. Yaw, zoom and `cpe` eases are exact exponentials now.
+- **Dials** (Engine > Camera): Look-ahead 1.3 m (was "Leads your walk"), Look-ahead smoothing 0.6 s, sideways on a
+  tall screen x1.5, Follow smoothing 0.3 s (the old follow's lag at a steady walk), Dead zone 10% x 8%, Soft zone 50%
+  x 50%, Ignore ground changes under 0.5 m, Camera goals blend 0.4 s. Studio: "Camera guides" over the preview (soft
+  zone tinted, dead zone outlined, the aim, you, the goal, the look-ahead arrow, a line with the mode, zoom and goals;
+  drag a zone's edge to set its dial, one undo step).
+- **State**: `walkRenderer.fol` (the follow; `camT` stays its aim, so every reset and the door's save/restore keep
+  working; the door also saves `fol`), `walkRenderer.camInfo` (for the debug log and the guides). The seamless
+  world's re-anchor shifts `camT`, the follow's last targets, the goals' aim points, the swoop and `px/pz`.
+- **Debug log**: a `camera` section (mode, zoom, yaw, pitch, rise, goals, lead, off, moving).
+- **Merged with main's IS-1 orbit camera** (after CAM-1 was built, before its PR merged): the orbit sets the base
+  direction, and the follow's screen axes, the look-ahead from the stick, rising ground ahead, the landmark tilt, the
+  swoop's offset and "a little up the screen" all turn with it; an orbiting camera isn't held inside the scene; the
+  debug log's mode reads `orbit`. Not done yet: one smoothing model for both. The orbit still turns with its own
+  yaw lag and dead zone (logic/camera-orbit.js) while the follow's spring and zones move the aim. Merging them changes
+  how the island camera feels, so it waits for the owner's call (CAM-2 or a follow-up). check-fast 24 of 24 after
+  the merge (IS-1's orbit step, the Hub island editor, Tall ground, Camera follow); unit tests 621.
+- **Checks**: check-fast "Camera follow" (Copperleaf: settled standing, the look-ahead from the stick, inside the
+  soft zone, settled again; a look-ahead that ignores the stick is caught); the debug log step wants the camera line.
+
 ### CAM-2 - Moments of interest
 - One zoom value drives distance, tilt and field of view along curves (Studio dials for each end).
 - Points of interest from data: the catalogue's `landmark` grows into `interest {weight, radius, zoom, pull}`;
@@ -88,6 +137,54 @@ below against main and report what differs.
   timeout); the boss gate (a reveal); shop and clinic doors and landmarks (a gentle pull); standing still a few seconds
   (a slow drift in); running (a small ease-out). None right after a turn; all off or reduced with reduced motion.
 - Studio: point-of-interest rings and zones on the preview; "Play moment" buttons (talk, encounter, boss gate, idle).
+
+#### CAM-2 as built (2026-10-22)
+- **Corrections to the plan** (checked against `CAM` at the start of CAM-2):
+  - There is no "boss gate" in the walk: a run's boss is a trainer (logic/run-loop.js `runFoes`, `runFoe: 'boss'`),
+    placed like the other trainers. The reveal fires the first time you come near it in a place.
+  - Nothing noticed a door you stand by (doors only worked when tapped), and nothing counted time standing still:
+    both are new.
+  - Talking has no "ended" hook: the moment follows `talkBox.on`, with the speaker stored when the talk starts
+    (talk.js `talkFolk`, walk-control.js `walkPick` for trainers and people).
+  - The landmark catalogue is scenery.json (`props`, 41 with `landmark`), which has no schema.
+  - Zoom never changed the field of view: the distance and the width shown both scaled with it, so only distance and
+    tilt moved (14 degrees a unit).
+  - The swoop wrote your zoom (`zoomT` halved, restored after 720 ms) and leaving a battle set `zoom` to 0.55x; twelve
+    other places write `zoomT`/`yawT`, so no moment does.
+  - Copperleaf has no shop or clinic: the lab's and ranch's doors count as points of interest too.
+  - The Engine preview runs a free camera (studio/js/viewport.js), which had no goals beyond the follow; it asks for
+    the moments and zones now (`walkView.opt.moments`). The Studio's other previews don't.
+- **One zoom** (logic/camera-zoom.js, 7 unit tests): `zoomShape` turns a zoom into tilt, distance and field of view
+  along `t^curve` toward each end (Engine > Camera > Zoom curve: tilt, distance and field of view up close and far out,
+  and the shape), carrying on along the slope past an end. The defaults give the zoom as before (-6.3/+9.8 degrees,
+  0.55/1.7 distance at 0.55/1.7 zoom, field of view 1). The zoom used is your pinch zoom times the goals' zoom
+  (`blendGoals` multiplies a goal's `zoom` like its `dist`); it is never clamped below or above your own.
+- **Goals** gain `zoom` and `out` (a ramp time going out). New goals in walk/camera.js: `swoop` now with a zoom
+  (Encounter shot: zoom 0.5, never so close that you and the spot don't both fit), `leave` (after a battle the camera
+  starts at 0.55 and pulls back out over 0.2 s, as v31's jump of the zoom did), `zone:N`, and the moments'.
+- **Encounter shot** (battle.js): the battle comes up once the camera has arrived (the swoop at weight 0.95 and the
+  camera within 0.2 m of its aim), no sooner than 400 ms and no later than 900 ms (dials), instead of a fixed 720 ms.
+  Your `zoomT` is untouched. The seamless world's re-anchor moves the swoop's points.
+- **Points of interest** (logic/camera-interest.js, 6 unit tests; walk/sprites.js `interestPoints`): a catalogue
+  entry's `interest {weight, radius, zoom, pull}`, else a landmark's default (0.5, 14 m, zoom 1, 1.5 m), else a shop,
+  clinic, lab or ranch door (0.6, 3.5 m, zoom 0.92, 1 m). The weight fades in over the outer 60% of the radius; the
+  strongest wins; the lean is capped (Interest: most lean, 1.5 m). The v47 landmark tilt is unchanged.
+- **Moments** (logic/camera-moments.js, 9 unit tests): one a frame by priority: talk (a two-shot at the midpoint, zoom
+  0.75), boss (2.2 s, lean up to 3 m, zoom 0.85; once per boss, kept across the seamless world's re-anchor),
+  interest, idle (after 4 s still, in over 2 s to zoom 0.9, out in 0.3 s), run (zoom 1.06; `P.running` set where
+  the walk picks the run speed). None starts within 0.5 s of a turn past 60 degrees; one already on carries on.
+  Reduced motion: idle and run off, the others at half weight. A camera cut restarts the idle count.
+- **Camera zones**: a scene's `camZones` (map.schema.json: rect or circle, zoom, aim offset `at`, tilt, priority,
+  blend); the highest priority you stand in is a goal (`zoneAt`); the seamless world carries a place's zones. No scene
+  has any yet. Studio: Walk scenes > Camera zones (shortcut J; studio/js/camera-zones-editor.js): drag a rectangle or
+  a circle from its centre, click to pick and set its numbers, drag to move, right-click or Alt-click to remove.
+- **Studio** (Engine): the dials above; Camera guides also draw the interest rings (the one that counts brighter),
+  the zones (the one you stand in filled) and a played moment's spot, and the line names the moment and the zoom used;
+  "Play moment": Talk, Encounter, Boss, Standing still.
+- **Debug log**: the `camera` section adds `zoomEff`, `moment`, `interest` ([in reach, top weight]), `zone`, `still`.
+- **Checks**: check-fast "Camera moments" (Copperleaf, from state: the drift in and out, a talk's two-shot, a played
+  boss, the lab's door, the encounter shot keeping your zoom; a planted fault, the moments switched off, is caught);
+  the debug log step wants the moment, zoom and zone.
 
 ### CAM-3 - The diorama blur
 - A tilted plane of focus through the player (a Studio dial: 0 = today's slab, 1 = an upright plane, so whatever

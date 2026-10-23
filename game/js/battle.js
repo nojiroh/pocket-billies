@@ -87,6 +87,7 @@ import {
   camAt,
 } from './battle-stage.js';
 import { walkView } from './walk-view.js';
+import { engineSetting } from './engine/settings.js';
 import { WEATHER_NAMES, currentLocationMap, environment, environmentState } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { addRipple, waterAt } from './walk/water.js';
@@ -277,8 +278,18 @@ function battleSwoop(go) {
   uiState.encAt = null;
   const fx = e ? P.x * 0.6 + e[0] * 0.4 : P.x,
     fz = e ? P.z * 0.6 + e[1] * 0.4 : P.z;
-  walkRenderer.swoop = { x: fx, z: fz, z0: walkRenderer.zoomT };
-  walkRenderer.zoomT = Math.max(0.42, walkRenderer.zoomT * 0.5);
+  /* CAM-2: the swoop is a camera goal (walk/camera.js) that frames you and the spot and zooms in; your own zoom
+     (zoomT) stays as it is */
+  walkRenderer.swoop = {
+    x: fx,
+    z: fz,
+    px: P.x,
+    pz: P.z,
+    ex: e ? e[0] : P.x,
+    ez: e ? e[1] : P.z,
+    zoom: engineSetting('camera', 'encZoom'),
+    arrived: false,
+  };
   P.route = null;
   P.walk = 0;
   if (e) {
@@ -302,12 +313,19 @@ function battleSwoop(go) {
     if (typeof addRipple === 'function' && typeof waterAt === 'function' && waterAt(e[0], e[1]))
       addRipple(e[0], e[1], 1);
   }
-  setTimeout(() => {
-    const S0 = walkRenderer.swoop;
-    walkRenderer.swoop = null;
-    if (S0) walkRenderer.zoomT = S0.z0;
-    go();
-  }, 720);
+  /* CAM-2: the battle comes up once the camera has arrived (walk/camera.js sets `arrived`), not before Engine >
+     Camera > Encounter shot: shortest, and no later than its longest */
+  const t0 = performance.now(),
+    S = walkRenderer.swoop,
+    cam = k => engineSetting('camera', k),
+    wait = () => {
+      const t = performance.now() - t0;
+      if (walkRenderer.swoop === S && !((S.arrived && t >= cam('encMin')) || t >= cam('encMax')))
+        return void setTimeout(wait, 30);
+      if (walkRenderer.swoop === S) walkRenderer.swoop = null;
+      go();
+    };
+  setTimeout(wait, 30);
 }
 function battleRise() {
   const el = $('#battle');
@@ -322,9 +340,8 @@ function battleLeave(mid) {
   el.classList.add('bt-leave');
   setTimeout(() => {
     mid();
-    if (typeof walkRenderer !== 'undefined') {
-      walkRenderer.zoom = Math.max(0.42, (walkRenderer.zoomT || 1) * 0.55);
-    }
+    /* CAM-2: the camera pulls back out as a goal (walk/camera.js `leave`), not by changing the zoom */
+    if (typeof walkRenderer !== 'undefined') walkRenderer.leaveAt = walkView.t;
   }, 360);
 }
 function screenWipe(mid) {

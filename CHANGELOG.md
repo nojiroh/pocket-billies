@@ -141,6 +141,21 @@ kept aside in the browser).
   square, a pier at the cove. A new game falls onto the square and wakes in front of the lab. Wild Billies hide in tall
   grass out by the woods and on the heath, not in town. Rooms open in place behind a door facing any way, the camera
   looking in through the door. A tap walks you all the way across the island.
+- The camera frames what matters (CAM-2): while someone talks to you it frames you both and comes in closer; the swoop
+  into a battle frames you and the spot and the battle comes up once the camera is there; the first time you come
+  near a run's boss in a place the camera leans toward them; by a landmark, a shop, a clinic, the lab or the ranch it
+  leans a little that way; standing still a few seconds it drifts slowly in, and running it eases out a little. One
+  thing at a time, nothing new right after a sharp turn; with reduced motion the drift and the ease are off and the
+  rest is gentler. Your own zoom is kept through all of it, battles included. Zoom now moves the tilt, distance and
+  field of view together along curves. The Studio: dials for all of it in Engine > Camera, the points of interest and
+  camera zones on the Camera guides, "Play moment" buttons, and a Camera zones tool in the Walk scenes editor (a
+  rectangle or circle where the camera frames differently).
+- The walking camera follows more smoothly (CAM-1): it trails you by the same amount at any frame rate, holds still
+  while you move a little and catches up as you go further, and settles on you again when you stop. It looks ahead
+  the way you push the joystick (or the way you walk when you tap), further sideways on a phone held upright. Looking
+  up at a landmark, tilting indoors, rising ground ahead, a room framed whole and the swoop into a battle now blend
+  in and out as one camera instead of each pulling on its own. The camera on tall ground behaves as before. The
+  Studio's Engine preview has Camera guides: the zones drawn on the scene, dragged to resize.
 - The world map shows Copperleaf's real island (island track IS-7): its own coastline with the cove and the
   headlands, its beaches, meadows, forest and paths as they are on the ground, its mountain standing up in the
   middle, and the town's buildings close in (the lab, the airship station, the houses, the well, the barn). The

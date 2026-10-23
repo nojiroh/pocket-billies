@@ -422,6 +422,112 @@ slow.
 - Next: the owner's phone test and debug log; then lock the ground (Hub island editor); IS-8 meets this branch by
   rebuilding. Tag `is-9-done` is the owner's to push.
 
+### Camera track CAM-2 - Moments of interest - 2026-10-22
+Branch `CAM-2`, from `CAM` (CAM-1, PR #127, not merged yet). Draft PR #132 against `CAM`. Plan approved in Plan Mode
+with every recommendation: moments multiply your pinch zoom; the encounter hands over when the camera arrives (at most
+900 ms); camera zones as a tool only, none placed. The CAM-1 HANDOFF entry reached `CAM` during planning; `cam-1-done`
+is still to be pushed.
+- Changed (one cause per commit):
+  - **One zoom** (logic/camera-zoom.js, 7 tests): tilt, distance and field of view from one zoom along curves (Engine >
+    Camera > Zoom curve); defaults equal the old zoom. The zoom used = your zoom x the goals' (`blendGoals` `zoom`).
+  - **Encounter shot and the pull back out** (battle.js, walk/camera.js): goals instead of writing `zoomT`; the
+    battle comes up once the camera arrives (400-900 ms).
+  - **Points of interest** (logic/camera-interest.js, 6 tests; walk/sprites.js `interestPoints`): landmarks, shop,
+    clinic, lab and ranch doors, or a catalogue `interest`; the strongest leans the aim (at most 1.5 m) and zooms.
+  - **Moments** (logic/camera-moments.js, 9 tests): talk (two-shot), a run's boss (once), interest, standing still
+    (drift in), running (ease out); none after a sharp turn; reduced motion: drift and ease off, the rest at half.
+  - **Camera zones**: `camZones` in a scene (schema), carried by the seamless world; Studio Walk scenes > Camera zones.
+  - **Studio**: dials; Camera guides draw interest rings, zones and the moment; "Play moment" (talk, encounter, boss,
+    standing still). The Engine preview asks for moments (`walkView.opt.moments`), other previews don't.
+  - **Debug log**: `camera` adds `zoomEff`, `moment`, `interest`, `zone`, `still`.
+  - **Checks**: check-fast "Camera moments" (planted fault caught); the debug log step wants the moment.
+  - Fixes found on the way: a camera cut restarts standing still; your own zoom is never clamped (the Studio's free
+    camera zooms to 3.2); a finished talk's spot is forgotten (a sign's box later isn't framed toward it).
+- Where the plan was wrong (camera-track.md "CAM-2 as built"): no boss gate in the walk (the boss is a run trainer);
+  no door nearness, no idle timer, no talk-ended hook; zoom never changed the field of view; the swoop wrote your
+  zoom; Copperleaf has no shop or clinic (the lab and ranch doors count instead); the Engine preview is a free camera.
+- Verified: unit tests 593; lint, typecheck, modules, format, check-data; check-fast 23 of 23 (Tall ground still
+  16.9 m of rock, 18.0 degrees); tools/look-tall-ground.py the same numbers before and after, pictures within 0.6 of
+  255; CI's smoke, lint and rules green on the PR. Headless Studio: Play moment talk and boss show in the guides
+  (moment and zoom on the line), a camera zone drawn, edited and undone, no errors. Full quick check against a local
+  baseline from the starting commit: the same 9 steps red as before (v34, v35, v38, v39/v40, v43, v44, v46, alpha 0.4
+  recipes, phase 08 running). 13 of 56 pictures differ clearly, all looked at: battles at another moment of the turn
+  (battle-3d, -alpha, -double, -rain, v36-starter-battle), screens caught mid-change (phone-opening-pick,
+  phone-mast, phone-map, v47-lore-places, rl12-pick), life-copperleaf a different rabbit, room-lab darker but framed
+  the same (no moments indoors); a04-airship-mast is the camera: it leans toward the airship mast, a landmark.
+- Risky / open:
+  - Not tuned on a phone: the zooms (talk 0.75, idle 0.9, run 1.06), the interest lean and radius, the boss reveal.
+    The landmark lean (0.5 weight, 14 m) may feel busy in a town full of landmarks; Engine > Camera has every dial.
+  - The boss reveal needs a real run to be seen (check-fast plays it through "Play moment"). The Studio preview's
+    free camera never reports the encounter shot as arrived; there it lets go after Encounter shot: longest + 0.6 s.
+  - CI's picture baseline is stale after the merge: Actions > Check > Run workflow > "Make the picture baseline".
+- Phone check wanted: talk to someone in Copperleaf (the two-shot), stand still 5 s (the drift in; it should go the
+  moment you move), run (the ease out), walk past the lab door and the airship mast (the lean), a wild battle (the
+  swoop, and your zoom kept after), a run's boss; Studio Engine > Camera guides and Play moment; Walk scenes > Camera
+  zones; export the debug log (`camera`).
+- Merged `CAM` again at the end (main's island track, IS-1's orbit camera): CAM-2's aim points now go up the screen
+  along the orbit's direction, not north. After the merge: unit tests 643, lint, typecheck, modules, data; check-fast
+  25 of 25 (the orbit camera and Studio Hub island steps with CAM-2's, Tall ground 16.9 m and 18.0 degrees).
+- Next: the owner pushes `cam-2-done`; CAM-3 (the diorama blur) has its own session, waiting on this entry and the
+  tag.
+
+### Camera track CAM-1 - The follow - 2026-10-22
+Branch `CAM`, from the plan's branch `ccr-3d24989e-9cyftq` (PR #121, not merged yet). Draft PR #127. Plan approved in
+Plan Mode with every recommendation: with no joystick the look-ahead follows the walking direction; defaults match
+today's framing (tune in the Studio); rising ground ahead kept as a goal.
+- Changed (one cause per commit):
+  - **Blur focus** (walk-view-gl.js): 12% a frame at 60 fps, as an exact rate (was 12% of every frame).
+  - **logic/camera-follow.js** (new, 12 unit tests): an exact critically damped spring (30/60/144 fps agree to
+    0.00001 m), dead and soft zones as shares of the screen along its axes (the dead zone closes when you stop, a hard
+    limit at the soft zone), a look-ahead with its own spring (x1.5 sideways on a tall screen), a ground band, goals
+    whose weights ramp and blend (a goal no longer asked for fades as it last was).
+  - **Dials** (Engine > Camera): Look-ahead (was "Leads your walk"), its smoothing and sideways reach, Follow smoothing,
+    Dead and Soft zone width and height, Ignore ground changes under, Camera goals blend.
+  - **walk/camera.js**: the aim follows the spring; the look-ahead comes from the joystick or d-pad, else the keys,
+    else the way you walk; one goal blends the tilt, indoors, rising ground ahead, the landmark tilt, the room
+    framing and the swoop. TR-3's rise keeps its ramp and code. Yaw, zoom and the scene's tilt/height glide are exact
+    eases. The dead `st.focus` branch is gone. A room's door saves the follow's state too.
+  - **Re-anchor** (seamless-world.js): the follow's last targets, the goals' aim points, the swoop and `px/pz` shift.
+  - **Studio**: "Camera guides" on the Engine preview (zones, aim, you, goal, look-ahead arrow, mode and goals; drag
+    a zone's edge to set its dial, one undo step).
+  - **Debug log**: a `camera` section (mode, zoom, yaw, pitch, rise, goals, lead, off, moving). No names.
+  - **Checks**: check-fast "Camera follow" (planted fault caught); the debug log step wants the camera line.
+  - **Docs**: walk-view.js's blur note, CHANGELOG, camera-track.md "CAM-1 as built".
+- Where the plan was wrong (camera-track.md "CAM-1 as built"): four forces missing from the list (ground ahead, the
+  scene's tilt glide, the scene-edge clamp, the indoor wall pull); `st.focus` and `opt.instant` never set; the blur
+  numbers quoted were the code's fallbacks; no picture baseline in the repo (a CI release asset, remade by hand); the
+  Studio preview has no joystick.
+- Verified: unit tests 571; lint, typecheck, modules, format; check-fast 22 of 22 (Tall ground gives TR-3's numbers:
+  16.9 m of rock, 18.0 degrees); smoke; CI's smoke, lint and rules green on the PR. The Studio guides in a headless
+  Studio (drawn; a drag set the dead zone to 0.33). Full quick check against a local baseline made from the starting
+  commit: the same 9 steps red as before the change (v34, v35, v38, v39/v40, v43, v44, v46, alpha 0.4 recipes, phase
+  08 running); phase 08 running passes alone on both (full push 3.45 m/s), so its failure in the full run is load. A
+  first full run on a loaded machine timed out page loads in six steps; rerun quiet, they passed.
+  Pictures against that baseline (a third, quiet run): 17 of 56 differ clearly, all looked at. Most are timing, not
+  the camera: rl12-pick's "before" was still black (loading), phone-map caught the postcard, the battles a different
+  moment of the turn, life-copperleaf a different rabbit (picked at random) and so a different spot. The walk scenes
+  that move the player and take the picture a second or two later (water-edge, a04-copperleaf, autumn) frame a
+  little differently because the spring's catch-up curve differs: measured after a 10 m jump, 1.42 m left at 0.5 s
+  (old 1.46 m), 0.25 m at 0.8 s (old 0.50), 0.03 m at 1.2 s (old 0.14). Standing still the framing is as before.
+- Risky / open:
+  - The feel isn't tuned: at a slow walk the dead zone eats most of the look-ahead (headless: the aim 0.07 m ahead of
+    you against 0.34 m before). Tune Dead zone and Look-ahead on the phone with the Studio guides.
+  - The swoop still halves `zoomT` (one zoom curve is CAM-2); room and swoop pulls now ramp in 0.15 s on top of the
+    spring, so a swoop arrives a little later than before.
+  - CI's picture baseline (release `baseline-0.1.0-alpha`) is stale after the merge: Actions > Check > Run workflow >
+    "Make the picture baseline".
+- Phone check wanted: walk Copperleaf with the joystick both ways and in portrait (the look-ahead, no lurch when you
+  stop), a landmark (the tilt fades in and out), into a room laid into the place and out, a battle's swoop, the
+  Mountains run (TR-3 as before); the Studio's Engine > Camera guides; export the debug log (`camera`).
+- Merged with main after the entry above (main had gained the island track, IS-1..IS-4, IS-6a, IS-7): the IS-1 orbit
+  sets the base direction and the follow turns with it (camera-track.md, "CAM-1 as built"). Conflicts: walk/camera.js
+  (both kept), the pages' module lists, check-fast's header, CHANGELOG, HANDOFF and ROADMAP (both kept). After the
+  merge: unit tests 621, lint, typecheck, modules, format, check-data; check-fast 24 of 24. **Open, the owner's call**:
+  the orbit's own yaw lag and dead zone and the follow's spring are still two smoothing models; making them one
+  changes the island camera's feel.
+- Next: the owner pushes `cam-1-done`; CAM-2 (moments of interest) has its own session, waiting on this entry and the
+  tag.
+
 ### Camera track - planned - 2026-10-22
 Branch `ccr-3d24989e-9cyftq`. A planning session only: no code changed.
 - Changed: docs/phases/camera-track.md (new: verified facts about the walk camera and the blur, outside research,

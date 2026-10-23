@@ -14,7 +14,10 @@ with their places); a run's world (RL-7) opens on its landing, its places on the
 at the next node a day later; a battle plays to the end; a save round-trips; the Studio loads; the exported debug
 log holds no names; the world map opens as the bowl, a tap opens a card, Home comes back; every screen opens with its parts (UI-5);
 on tall ground (TR-3, the mountains fixture) the camera rises, rock fades and the player's silhouette is drawn, and
-none of it on flat ground; the Lab's unlock board (RL-11) grants, sells and keeps; the test island (island track) opens with its contract fields, and its orbit camera (IS-1) looks at the middle from 8 places, holds on the summit and walks a circle when you hold right; the Studio's Hub island editor draws, turns, paints and locks (IS-6a). The page is small (400x300) with every costly graphics dial
+none of it on flat ground; the camera follow (CAM-1, in Copperleaf) settles on you standing, leads the way the stick
+pushes while you stay inside its soft zone, and settles again when you let go; the camera's moments (CAM-2, read from
+its state) drift in standing still, frame a talk as a two-shot, play a boss, lean by a door and zoom the encounter's
+swoop without touching your own zoom; the Lab's unlock board (RL-11) grants, sells and keeps; the test island (island track) opens with its contract fields, and its orbit camera (IS-1) looks at the middle from 8 places, holds on the summit and walks a circle when you hold right; the Studio's Hub island editor draws, turns, paints and locks (IS-6a). The page is small (400x300) with every costly graphics dial
 off before it loads; nothing waits a fixed time, only for frames or the game's state. No pictures are taken.
 
 Graphics are not judged here: software drawing can't. The game's own graphics test (Settings → Help) is for a person
@@ -467,6 +470,113 @@ def tall_ground(pg, base):
     return f'at the foot of {spot["up"]} m of rock: the camera rose {rise:.1f} degrees, the rock fade and the silhouette on; on flat ground off'
 
 
+def camera_follow(pg, base):
+    """CAM-1: in Copperleaf, standing, the camera settles on its aim; pushing the stick moves the look-ahead that way and
+    you stay inside the soft zone; letting go, the look-ahead dies away and the camera settles again"""
+    drawing(pg)
+    home = pg.evaluate('[walkView.pl.x, walkView.pl.z]')
+    stand(pg, home[0], home[1], 20)
+    info = "(()=>{const I=walkRenderer.camInfo,T=walkRenderer.camT,R=I.right,F=[-R[1],R[0]],dx=I.goal[0]-T[0],dz=I.goal[1]-T[1];return {mode:I.mode,off:[dx*R[0]+dz*R[1],dx*F[0]+dz*F[1]],lead:[I.lead[0]*R[0]+I.lead[1]*R[1],I.lead[0]*F[0]+I.lead[1]*F[1]],soft:I.soft,P:[walkView.pl.x,walkView.pl.z],t:walkView.t}})()"
+    wait = lambda ms: until(pg, f'walkView.t>{pg.evaluate("walkView.t") + ms}', 60) or (_ for _ in ()).throw(Exception('the page stopped drawing'))
+    wait(1500)
+    a = pg.evaluate(info)
+    if a['mode'] != 'walk' or max(abs(v) for v in a['off'] + a['lead']) > 0.05: raise Exception(f'standing, the camera isn’t settled on its aim: {a}')
+    for sx, sy in ((1, 0), (-1, 0), (0, -1), (0, 1)):
+        stand(pg, home[0], home[1], 5)
+        pg.evaluate(f'walkView.stick={{x:{sx},y:{sy}}};0')
+        wait(1500)
+        b = pg.evaluate(info)
+        if abs(b['P'][0] - home[0]) + abs(b['P'][1] - home[1]) > 1.5: break
+    else: raise Exception('the stick moved you nowhere from the hub spot')
+    along = b['lead'][0] * sx + b['lead'][1] * sy
+    if along < 0.6: raise Exception(f'pushing ({sx}, {sy}) the look-ahead is {b["lead"]}, not that way')
+    if abs(b['off'][0]) > b['soft'][0] + 0.05 or abs(b['off'][1]) > b['soft'][1] + 0.05: raise Exception(f'you left the soft zone: {b}')
+    pg.evaluate('walkView.stick=null;0')
+    wait(3500)
+    c = pg.evaluate(info)
+    if max(abs(v) for v in c['lead']) > 0.1 or max(abs(v) for v in c['off']) > 0.1: raise Exception(f'let go, the camera didn’t settle: {c}')
+    return f'standing settled; pushing ({sx}, {sy}) a look-ahead of {along:.2f} m that way, inside the soft zone; let go, settled again'
+
+
+# CAM-2: a reachable spot near home with no point of interest in reach (quiet), and one by a shop's or clinic's door
+# where the door is the point that counts
+MOMENT_SPOTS = """(() => {
+  const sc = walkView.sc, P = walkView.pl, pts = interestPoints(sc), cap = engineSetting('camera', 'intPull'),
+    ok = (x, z) => x > 2 && z > 2 && x < sc.w - 2 && z < sc.h - 2 && isWalkable(x, z) && !!findPath(P.x, P.z, x, z, { max: 1e6 });
+  let quiet = null, door = null;
+  for (let r = 0; r < 40 && !quiet; r += 1.5)
+    for (let a = 0; a < 6.283 && !quiet; a += 0.4) {
+      const x = P.x + Math.cos(a) * r, z = P.z + Math.sin(a) * r;
+      if (ok(x, z) && !interestPick(pts, x, z, cap)) quiet = [x, z];
+    }
+  for (const d of pts.filter(q => q.radius < 6))
+    for (let r = 0.8; r <= 2 && !door; r += 0.3)
+      for (let a = 0; a < 6.283 && !door; a += 0.5) {
+        const x = d.x + Math.cos(a) * r, z = d.z + Math.sin(a) * r, I = ok(x, z) && interestPick(pts, x, z, cap);
+        if (I && I.id === d.id) door = { x, z, id: d.id, at: [d.x, d.z] };
+      }
+  return { quiet, door };
+})()"""
+
+
+def camera_moments(pg, base):
+    """CAM-2: in Copperleaf, read from the camera's state (headless walking is slow): standing still a few seconds the
+    camera drifts in, and moving it goes at once; someone talking to you gives a two-shot, zoomed in, aimed between you;
+    by a shop's or clinic's door the aim leans toward it; a played boss moment leans and zooms; an encounter's swoop
+    zooms in and arrives without touching your own zoom"""
+    drawing(pg)
+    sp = pg.evaluate(MOMENT_SPOTS)
+    if not sp['quiet']: raise Exception('no reachable spot without a point of interest near the hub')
+    cam = "(()=>{const I=walkRenderer.camInfo;return {moment:I.moment,zoom:I.zoom,user:walkRenderer.zoom,goal:I.goal,P:[walkView.pl.x,walkView.pl.z],w:Object.assign({},walkRenderer.fol.w),interest:I.interest}})()"
+    # the game's clock runs slower than real time when the page draws slowly (CI), so the waits get room
+    wait = lambda ms: until(pg, f'walkView.t>{pg.evaluate("walkView.t") + ms}', 150) or (_ for _ in ()).throw(Exception(f'the page stopped drawing (waiting {ms} ms of game time)'))
+    delay = pg.evaluate("engineSetting('camera','idleDelay')") * 1000
+    stand(pg, *sp['quiet'], 5)
+    wait(800)
+    a = pg.evaluate(cam)
+    if a['moment']: raise Exception(f'a moment right after standing there: {a}')
+    # standing still counted up to just short of the delay (the state the walk keeps), then the real drift in
+    pg.evaluate(f"walkRenderer.mom.still={delay / 1000 - 0.3};0")
+    wait(2500)
+    b = pg.evaluate(cam)
+    if b['moment'] != 'idle' or not b['zoom'] < a['zoom'] - 0.02: raise Exception(f'standing still past {delay / 1000:.0f} s the camera didn’t drift in: {a} then {b}')
+    pg.evaluate('walkView.stick={x:1,y:0};0')
+    wait(500)
+    c = pg.evaluate(cam)
+    pg.evaluate('walkView.stick=null;0')
+    if c['moment'] == 'idle' or c['w'].get('idle', 0) > 0.4: raise Exception(f'moving, the drift in didn’t go at once: {c}')
+    # someone talks to you, 3 m east
+    stand(pg, *sp['quiet'], 5)
+    pg.evaluate("(()=>{const P=walkView.pl;walkRenderer.talkAt={x:P.x+3,z:P.z,t:walkView.t};talkBox.on=true;return 0})()")
+    wait(1500)
+    d = pg.evaluate(cam)
+    pg.evaluate("talkBox.on=false;walkRenderer.talkAt=null;0")
+    if d['moment'] != 'talk' or not d['zoom'] < a['zoom'] * 0.85 or not 0.8 < d['goal'][0] - d['P'][0] < 2.2: raise Exception(f'talking, no two-shot: {d}')
+    # a played boss moment (the Studio's Play moment), 4 m north
+    pg.evaluate("(()=>{const P=walkView.pl;walkRenderer.momentTest={id:'boss',at:[P.x,P.z+4],until:walkView.t+3000};return 0})()")
+    wait(1200)
+    e = pg.evaluate(cam)
+    pg.evaluate("walkRenderer.momentTest=null;0")
+    if e['moment'] != 'boss' or not e['zoom'] < a['zoom'] - 0.05: raise Exception(f'the boss moment didn’t play: {e}')
+    # by a door
+    door = ''
+    if sp['door']:
+        stand(pg, sp['door']['x'], sp['door']['z'], 5)
+        wait(1500)
+        f = pg.evaluate(cam)
+        if f['moment'] != 'interest' or not f['interest'] or f['w'].get('interest', 0) < 0.3: raise Exception(f'by the door ({sp["door"]["id"]}) no lean: {f}')
+        door = f'; by {sp["door"]["id"]} the aim leans toward the door'
+    # an encounter's swoop: zooms in, arrives, your zoom untouched
+    z0 = pg.evaluate('walkRenderer.zoomT')
+    stand(pg, *sp['quiet'], 5)
+    pg.evaluate("(()=>{const P=walkView.pl;walkRenderer.swoop={x:P.x,z:P.z+1,px:P.x,pz:P.z,ex:P.x,ez:P.z+2.5,zoom:engineSetting('camera','encZoom'),arrived:false};return 0})()")
+    if not until(pg, 'walkRenderer.swoop&&walkRenderer.swoop.arrived', 10): raise Exception('the encounter shot never arrived')
+    g = pg.evaluate(cam)
+    pg.evaluate('walkRenderer.swoop=null;0')
+    if not g['zoom'] < a['zoom'] * 0.75 or pg.evaluate('walkRenderer.zoomT') != z0: raise Exception(f'the encounter shot: {g}, your zoom {z0} -> {pg.evaluate("walkRenderer.zoomT")}')
+    return f'drift in standing ({a["zoom"]:.2f} -> {b["zoom"]:.2f}), gone moving; talk {d["zoom"]:.2f}, a two-shot; boss {e["zoom"]:.2f}{door}; encounter {g["zoom"]:.2f}, your zoom kept'
+
+
 def ranch(pg, base):
     """RL-9: the ranch fixture stands in Copperleaf's barn. The training board opens the ranch's sheet; Train on a
     stored Billie pays the Scrap and starts it; two hours later (the page's clock moved on) the sheet opened again has
@@ -686,7 +796,21 @@ def debug_log(pg, base):
     if not isinstance(log_, dict) or not log_: raise Exception('the exported debug log is empty')
     found = [n for n in NAMES if n.lower() in text.lower()]
     if found: raise Exception(f'the exported debug log holds a name: {found}')
-    return f'{len(text) // 1024} KB, no names'
+    # CAM-1: the camera's line (its mode, zoom, the goals in play)
+    def find(o):
+        if isinstance(o, dict):
+            if isinstance(o.get('camera'), dict) and 'mode' in o['camera']: return o['camera']
+            o = list(o.values())
+        if isinstance(o, list):
+            for v in o:
+                r = find(v)
+                if r: return r
+        return None
+    cam = find(log_)
+    if not cam or cam.get('mode') != 'walk' or 'goals' not in cam: raise Exception(f'the debug log has no camera line: {cam}')
+    # CAM-2: the moment, the zoom the camera uses, the zone
+    if not all(k in cam for k in ('moment', 'zoomEff', 'zone')): raise Exception(f'the camera line has no moment, zoom or zone: {cam}')
+    return f'{len(text) // 1024} KB, no names; the camera: {json.dumps(cam, separators=(",", ":"))}'
 
 
 def studio(pg, base):
@@ -1093,8 +1217,10 @@ def pasture(pg, base):
 PAGES = [   # (what the page opens, its checks in order); the longest first, so the browsers finish together
     ('town', [('A town opens and draws (Copperleaf Town)', scene('copperleaf')),
               ('Copperleaf is the island: its walking checks, every door a tap away, the wild grass, the orbit (IS-5)', hub_island),
-              ('The exported debug log holds no names', debug_log),
+              ('The exported debug log holds no names, and a camera line with the moment (CAM-1, CAM-2)', debug_log),
               ('The world map opens as the bowl', bowl_map)]),
+    ('town', [('Camera follow: settled standing, the look-ahead from the stick, the soft zone, settled again (CAM-1)', camera_follow),
+              ('Camera moments: a drift in standing, a two-shot talking, a boss, a door, the encounter shot (CAM-2)', camera_moments)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back, a reload (RL-9)', ranch)]),
     ('pasture', [('The pasture: Billies wander inside the fence, a tap on one or the gate opens the ranch (IS-8)', pasture)]),

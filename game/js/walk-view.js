@@ -2,8 +2,9 @@
 /* ================= WALK SCENE: a tilt-shift diorama of the current route stop =================
    The ground is a tile map (scene.tiles, one character per tile) painted into a texture and projected row by row,
    like a camera looking down at a model railway. Props, people and hidden encounters are upright pixel billboards
-   that cast soft sun shadows. Distant hills (scene.far) stand behind the scene, haze grows with distance and a blur
-   that grows toward the top and bottom of the screen gives the miniature (tilt-shift) look.
+   that cast soft sun shadows. Distant hills (scene.far) stand behind the scene, haze grows with distance and a
+   depth blur (engine/post-effects.js, sharp in a slab round the focus distance, softer in front and behind) gives the
+   miniature look.
    v10: the player walks around freely (tap the ground, a building, a trainer, a road sign), townsfolk wander,
    chimneys smoke, fountains splash, windmills turn, butterflies and leaves drift by.
    Scenes and the prop catalog live in game data (scenes, scenery) and are edited in Pocket Billies Studio. */
@@ -3554,8 +3555,10 @@ function movePlayer(st, dt) {
       }
       /* phase 08: a light push walks slowly, a full push walks; running (the ring, the d-pad's centre, Shift, or a full
          push with "Always run") is RUN_FACTOR faster. The keys and the d-pad push fully. */
-      const run = walkView.run || K.run || (km > 0.92 && alwaysRun()) ? RUN_FACTOR : km < 0.5 ? 0.6 : 1,
-        s = WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l);
+      const run = walkView.run || K.run || (km > 0.92 && alwaysRun()) ? RUN_FACTOR : km < 0.5 ? 0.6 : 1;
+      /* CAM-2: whether you run, for the camera's ease out (walk/camera.js) */
+      P.running = run === RUN_FACTOR;
+      const s = WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l);
       let nx = P.x + (wx / l) * s,
         nz = P.z + (wz / l) * s;
       if (OrbM) [nx, nz] = orbitWalkStep(OrbM.c, P.x, P.z, wx / l, wz / l, s, OrbM.dead || 0);
@@ -3566,6 +3569,7 @@ function movePlayer(st, dt) {
     } else if (P.route) {
       const tg0 = P.route[P.ri],
         d0 = Math.hypot(tg0[0] - P.x, tg0[1] - P.z) || 1;
+      P.running = !!(K.run || alwaysRun());
       let left =
         WALK_SPEED *
         (P.rush || 1) *

@@ -19,6 +19,7 @@ import { gpuState, webgl2Supported } from '../../game/js/engine/webgl.js';
 import { walkRenderer } from '../../game/js/walk/walk-state.js';
 import { rebuildFromSettings } from '../../game/js/walk/map-cache.js';
 import { adaptQuality, setAdaptQuality } from '../../game/js/walk/quality-cull.js';
+import { interestPoints } from '../../game/js/walk/sprites.js';
 import { mountWalkView } from '../../game/js/walk-view-gl.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
@@ -42,7 +43,9 @@ import { atlasGet } from './sprites.js';
 import { mapExitNames, sceneryArtPaths, sceneryCatalog } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
+  GUIDE_DIALS: [() => GUIDE_DIALS],
   captureLookPreview: [() => captureLookPreview, v => (captureLookPreview = v)],
+  drawCameraGuides: [() => drawCameraGuides, v => (drawCameraGuides = v)],
   engineData: [() => engineData],
   engineDialHTML: [() => engineDialHTML, v => (engineDialHTML = v)],
   engineEditor: [() => engineEditor],
@@ -52,7 +55,12 @@ expose({
   engineScopePath: [() => engineScopePath],
   engineSettingsHTML: [() => engineSettingsHTML, v => (engineSettingsHTML = v)],
   formatDialValue: [() => formatDialValue],
+  guideDragTo: [() => guideDragTo, v => (guideDragTo = v)],
+  guideEdgeAt: [() => guideEdgeAt, v => (guideEdgeAt = v)],
+  guideProject: [() => guideProject, v => (guideProject = v)],
+  guideShapes: [() => guideShapes, v => (guideShapes = v)],
   inheritedDialValue: [() => inheritedDialValue, v => (inheritedDialValue = v)],
+  mountCameraGuides: [() => mountCameraGuides, v => (mountCameraGuides = v)],
   mountEnginePreview: [() => mountEnginePreview, v => (mountEnginePreview = v)],
   pruneEngineOverrides: [() => pruneEngineOverrides],
   refreshEngineSettings: [() => refreshEngineSettings],
@@ -169,8 +177,17 @@ SECTIONS.engine = () => {
     .join('');
   return `<div class="eng-split"><div class="eng-set" id="engSet">${engineSettingsHTML()}</div>
  <div class="eng-side"><div class="card"><div class="card-b"><div class="eng-pvbar"><label class="fld"><span>Preview scene</span><select id="engScene">${opts}</select></label>
-   <button class="btn sm" id="engCmp" title="Hold to see the built-in look without any of your settings">Hold to compare</button></div>
-  <div class="sc-pv eng-pv"><canvas id="engPv" data-keep="walk-gl"></canvas><div class="sc-pv-load" id="engPvLoad">Loading…</div></div>
+   <button class="btn sm" id="engCmp" title="Hold to see the built-in look without any of your settings">Hold to compare</button>
+   <button class="btn sm ${engineEditor.guides ? 'on' : ''}" id="engGuidesBtn" data-act="engGuides" title="Draws the camera's dead and soft zones (drag their edges), its aim, the look-ahead, the points of interest and the camera zones on the preview">Camera guides</button></div>
+  <div class="eng-pvbar" title="CAM-2: plays one of the camera's moments in the preview, as if it happened (a talk or a boss 3 m up the screen)">Play moment ${[
+    ['talk', 'Talk'],
+    ['encounter', 'Encounter'],
+    ['boss', 'Boss'],
+    ['idle', 'Standing still'],
+  ]
+    .map(([k, n]) => `<button class="btn sm" data-act="engMoment" data-m="${k}">${n}</button>`)
+    .join('')}</div>
+  <div class="sc-pv eng-pv"><canvas id="engPv" data-keep="walk-gl"></canvas><canvas id="engGuides" class="eng-guides" ${engineEditor.guides ? '' : 'hidden'}></canvas><div class="sc-pv-load" id="engPvLoad">Loading…</div></div>
   <div class="eng-meter" id="engMeter">–</div>
   <p class="help">Click the ground to walk, drag to turn, scroll to zoom. What you see is the game’s own renderer with your unsaved values. Battles happen inside the walk scene, so they follow its look.</p></div></div></div></div>`;
 };
@@ -199,6 +216,8 @@ async function mountEnginePreview() {
       engineEditor.pos = [id, [x, z]];
     },
     keys: () => false,
+    /* CAM-2: the camera's moments and zones play here, as in the game */
+    moments: true,
     onPick: h => {
       if (h.k !== 'ground') toast('That works in the game; here you can only walk.');
     },
@@ -217,6 +236,7 @@ async function mountEnginePreview() {
       b.classList.toggle('on', v);
     };
   b.onpointerdown = () => on(true);
+  mountCameraGuides();
   ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, () => on(false)));
   clearInterval(engineEditor.meterT);
   engineEditor.meterT = setInterval(() => {
@@ -409,4 +429,275 @@ ACTIONS.engLookPreviews = async () => {
     `<div class="eng-looks">${cur ? `<figure><img src="${cur}" alt="As it is now"><figcaption>As it is now</figcaption></figure>` : ''}${out.map(([k, P, o, u]) => `<figure class="eng-look" data-act="engPreset" data-k="${escapeHtml(k)}" ${o ? 'data-own="1"' : ''} role="button" tabindex="0">${u ? `<img src="${u}" alt="${escapeHtml(P.name || k)}">` : '<div class="help">No picture</div>'}<figcaption>${escapeHtml(P.name || k)}</figcaption></figure>`).join('')}</div><p class="help">Click a look to apply it (Undo takes it back).</p>`,
     [{ l: 'Close', v: null }]
   );
+};
+/* ================= CAM-1: the camera's guides on the preview =================
+   As Cinemachine's game-view guides: the follow's soft zone (tinted) and dead zone (outlined) drawn on the ground round
+   the camera's aim, the aim, you, and the look-ahead as an arrow; a line says the camera's mode and the goals in play.
+   Drag a zone's edge to resize it: that writes the Camera dial (Dead zone / Soft zone, width or height) of the scope
+   being edited, with undo. */
+const GUIDE_DIALS = { dead: ['deadW', 'deadH', 0, 0.6], soft: ['softW', 'softH', 0.1, 1] };
+function guideProject(C, w, h, x, y, z) {
+  const m = C.vp,
+    cx = m[0] * x + m[4] * y + m[8] * z + m[12],
+    cy = m[1] * x + m[5] * y + m[9] * z + m[13],
+    cw = m[3] * x + m[7] * y + m[11] * z + m[15];
+  return cw > 0 ? [(cx / cw / 2 + 0.5) * w, (0.5 - cy / cw / 2) * h] : null;
+}
+/* the zones' corners on screen, and the aim's point */
+function guideShapes(w, h) {
+  const C = walkView.C,
+    I = walkRenderer.camInfo,
+    T = walkRenderer.camT;
+  if (!C || !C.vp || !I || !T) return null;
+  const R = I.right,
+    F = [-R[1], R[0]],
+    quad = ([a, f]) =>
+      [
+        [-1, -1],
+        [1, -1],
+        [1, 1],
+        [-1, 1],
+      ].map(([i, j]) =>
+        guideProject(C, w, h, T[0] + R[0] * a * i + F[0] * f * j, T[2], T[1] + R[1] * a * i + F[1] * f * j)
+      ),
+    out = { aim: guideProject(C, w, h, T[0], T[2], T[1]), dead: quad(I.dead), soft: quad(I.soft), I, C, T };
+  return out.aim && out.dead.every(Boolean) && out.soft.every(Boolean) ? out : null;
+}
+/* which zone edge is under the pointer (within 8 px): [zone, 'w' for a side edge or 'h' for a top or bottom edge] */
+function guideEdgeAt(S, x, y) {
+  const near = (a, b) => {
+    const dx = b[0] - a[0],
+      dy = b[1] - a[1],
+      t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / (dx * dx + dy * dy || 1)));
+    return Math.hypot(a[0] + dx * t - x, a[1] + dy * t - y) < 8;
+  };
+  for (const z of ['dead', 'soft']) {
+    const q = S[z];
+    if (near(q[1], q[2]) || near(q[3], q[0])) return [z, 'w'];
+    if (near(q[0], q[1]) || near(q[2], q[3])) return [z, 'h'];
+  }
+  return null;
+}
+function drawCameraGuides() {
+  const g = $('#engGuides');
+  if (!g || !engineEditor.guides || studioState.sec !== 'engine') {
+    engineEditor.guideRaf = 0;
+    return;
+  }
+  engineEditor.guideRaf = requestAnimationFrame(drawCameraGuides);
+  const r = window.devicePixelRatio || 1,
+    w = g.clientWidth,
+    h = g.clientHeight;
+  if (g.width !== Math.round(w * r) || g.height !== Math.round(h * r)) {
+    g.width = Math.round(w * r);
+    g.height = Math.round(h * r);
+  }
+  const x = g.getContext('2d');
+  x.setTransform(r, 0, 0, r, 0, 0);
+  x.clearRect(0, 0, w, h);
+  const S = guideShapes(w, h);
+  if (!S) return;
+  const poly = (q, fill, stroke, dash) => {
+    x.beginPath();
+    q.forEach((p, i) => (i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])));
+    x.closePath();
+    if (fill) {
+      x.fillStyle = fill;
+      x.fill();
+    }
+    x.setLineDash(dash || []);
+    x.strokeStyle = stroke;
+    x.lineWidth = engineEditor.guideHover && engineEditor.guideHover[0] === (dash ? 'soft' : 'dead') ? 3 : 1.5;
+    x.stroke();
+    x.setLineDash([]);
+  };
+  const { I, C, T } = S,
+    dot = (p, col, rad) => {
+      if (!p) return;
+      x.beginPath();
+      x.arc(p[0], p[1], rad, 0, Math.PI * 2);
+      x.fillStyle = col;
+      x.fill();
+    };
+  poly(S.soft, 'rgba(255, 196, 64, 0.12)', 'rgba(255, 196, 64, 0.9)', [6, 4]);
+  poly(S.dead, 'rgba(255, 255, 255, 0.10)', 'rgba(255, 255, 255, 0.95)');
+  const P = walkView.pl,
+    feet = T[2],
+    you = guideProject(C, w, h, P.x, feet, P.z),
+    ahead = guideProject(C, w, h, P.x + I.lead[0], feet, P.z + I.lead[1]);
+  if (you && ahead && Math.hypot(ahead[0] - you[0], ahead[1] - you[1]) > 3) {
+    const a = Math.atan2(ahead[1] - you[1], ahead[0] - you[0]);
+    x.strokeStyle = x.fillStyle = 'rgba(80, 220, 255, 0.95)';
+    x.lineWidth = 2.5;
+    x.beginPath();
+    x.moveTo(you[0], you[1]);
+    x.lineTo(ahead[0], ahead[1]);
+    x.stroke();
+    x.beginPath();
+    x.moveTo(ahead[0], ahead[1]);
+    x.lineTo(ahead[0] - 9 * Math.cos(a - 0.45), ahead[1] - 9 * Math.sin(a - 0.45));
+    x.lineTo(ahead[0] - 9 * Math.cos(a + 0.45), ahead[1] - 9 * Math.sin(a + 0.45));
+    x.closePath();
+    x.fill();
+  }
+  /* CAM-2: the points of interest (a ring on the ground, its radius; brighter the more it counts now), the camera
+     zones (outlined; the one you stand in filled) and a played moment's spot */
+  const ring = (cx, cz, rad, stroke, fill) => {
+    const q = [];
+    for (let i = 0; i < 32; i++) {
+      const a = (i / 32) * Math.PI * 2,
+        p = guideProject(C, w, h, cx + Math.cos(a) * rad, feet, cz + Math.sin(a) * rad);
+      if (!p) return;
+      q.push(p);
+    }
+    poly(q, fill, stroke, [3, 3]);
+  };
+  for (const pt of typeof interestPoints === 'function' ? interestPoints(walkView.sc) : []) {
+    const top = I.interest && Math.abs(I.interest[2] - pt.x) < 1e-6 && Math.abs(I.interest[3] - pt.z) < 1e-6;
+    ring(pt.x, pt.z, pt.radius, `rgba(120, 255, 160, ${top ? 0.95 : 0.45})`, top ? 'rgba(120, 255, 160, 0.10)' : null);
+    dot(guideProject(C, w, h, pt.x, feet, pt.z), 'rgba(120, 255, 160, 0.95)', 3);
+  }
+  ((walkView.sc && walkView.sc.camZones) || []).forEach((zn, i) => {
+    const fill = i === I.zone ? 'rgba(181, 126, 220, 0.18)' : null,
+      stroke = 'rgba(181, 126, 220, 0.95)';
+    if (zn.shape === 'circle') return ring(zn.x, zn.z, zn.r || 0, stroke, fill);
+    const q = [
+      [zn.x, zn.z],
+      [zn.x + (zn.w || 0), zn.z],
+      [zn.x + (zn.w || 0), zn.z + (zn.h || 0)],
+      [zn.x, zn.z + (zn.h || 0)],
+    ].map(([a, b]) => guideProject(C, w, h, a, feet, b));
+    if (q.every(Boolean)) poly(q, fill, stroke, [3, 3]);
+  });
+  const MT = walkRenderer.momentTest;
+  if (MT && MT.at) dot(guideProject(C, w, h, MT.at[0], feet, MT.at[1]), 'rgba(255, 90, 200, 1)', 5);
+  dot(guideProject(C, w, h, I.goal[0], feet, I.goal[1]), 'rgba(255, 196, 64, 1)', 3.5);
+  dot(S.aim, 'rgba(255, 255, 255, 1)', 4);
+  dot(you, 'rgba(80, 220, 255, 1)', 4);
+  const goals = I.goals
+    .filter(([id]) => id !== 'tilt')
+    .map(([id, v]) => `${id} ${v.toFixed(2)}`)
+    .join(' · ');
+  x.font = '12px system-ui, sans-serif';
+  x.fillStyle = 'rgba(0, 0, 0, 0.55)';
+  const line = `${I.mode}${I.moment ? ' · moment ' + I.moment : ''} · zoom ${walkRenderer.zoom.toFixed(2)}${I.zoom != null && Math.abs(I.zoom - walkRenderer.zoom) > 0.005 ? ' → ' + I.zoom.toFixed(2) : ''}${goals ? ' · ' + goals : ''}`;
+  x.fillRect(6, 6, x.measureText(line).width + 12, 20);
+  x.fillStyle = '#fff';
+  x.fillText(line, 12, 20);
+}
+/* drag an edge: the zone's share of the screen from how far the pointer is from the aim */
+function guideDragTo(ev) {
+  const g = $('#engGuides'),
+    d = engineEditor.guideDrag;
+  if (!g || !d) return;
+  const b = g.getBoundingClientRect(),
+    S = guideShapes(b.width, b.height);
+  if (!S) return;
+  const [kw, kh, lo, hi] = GUIDE_DIALS[d[0]],
+    k = d[1] === 'w' ? kw : kh,
+    share =
+      d[1] === 'w'
+        ? (2 * Math.abs(ev.clientX - b.left - S.aim[0])) / b.width
+        : (2 * Math.abs(ev.clientY - b.top - S.aim[1])) / b.height,
+    v = Math.round(Math.max(lo, Math.min(hi, share)) * 100) / 100,
+    p = `${engineScopePath()}.camera.${k}`;
+  writePath(p, v);
+  const el = document.querySelector(`input[data-p="${p}"]`),
+    o = document.getElementById(fieldOutputId(p));
+  if (el) el.value = v;
+  if (o) o.textContent = formatDialValue(v, 0.01);
+}
+function mountCameraGuides() {
+  const box = $('.eng-pv');
+  if (!box) return;
+  box.addEventListener(
+    'pointerdown',
+    ev => {
+      if (!engineEditor.guides) return;
+      const b = box.getBoundingClientRect(),
+        S = guideShapes(b.width, b.height),
+        e = S && guideEdgeAt(S, ev.clientX - b.left, ev.clientY - b.top);
+      if (!e) return;
+      ev.stopPropagation();
+      ev.preventDefault();
+      engineEditor.guideDrag = e;
+      box.setPointerCapture(ev.pointerId);
+    },
+    true
+  );
+  box.addEventListener(
+    'pointermove',
+    ev => {
+      if (!engineEditor.guides) return;
+      if (engineEditor.guideDrag) {
+        ev.stopPropagation();
+        guideDragTo(ev);
+        return;
+      }
+      const b = box.getBoundingClientRect(),
+        S = guideShapes(b.width, b.height),
+        e = S && guideEdgeAt(S, ev.clientX - b.left, ev.clientY - b.top);
+      engineEditor.guideHover = e;
+      box.style.cursor = e ? (e[1] === 'w' ? 'ew-resize' : 'ns-resize') : '';
+    },
+    true
+  );
+  const end = ev => {
+    if (!engineEditor.guideDrag) return;
+    ev.stopPropagation();
+    guideDragTo(ev);
+    engineEditor.guideDrag = null;
+    changed();
+    commit(true);
+    refreshEngineSettings();
+  };
+  box.addEventListener('pointerup', end, true);
+  box.addEventListener('pointercancel', end, true);
+  if (engineEditor.guides && !engineEditor.guideRaf) drawCameraGuides();
+}
+/* CAM-2: "Play moment": a talk or a boss stands 3 m up the screen from you, standing still starts at once, and an
+   encounter swoops at a spot 2.5 m up the screen (then lets go, no battle) */
+ACTIONS.engMoment = d => {
+  const P = walkView.pl,
+    I = walkRenderer.camInfo;
+  if (!P || !I) return;
+  const F = [-I.right[1], I.right[0]],
+    at = r => [P.x + F[0] * r, P.z + F[1] * r];
+  if (d.m === 'encounter') {
+    const e = at(2.5),
+      S = {
+        x: P.x * 0.6 + e[0] * 0.4,
+        z: P.z * 0.6 + e[1] * 0.4,
+        px: P.x,
+        pz: P.z,
+        ex: e[0],
+        ez: e[1],
+        zoom: engineSetting('camera', 'encZoom'),
+        arrived: false,
+      };
+    walkRenderer.swoop = S;
+    setTimeout(
+      () => {
+        if (walkRenderer.swoop === S) walkRenderer.swoop = null;
+      },
+      engineSetting('camera', 'encMax') + 600
+    );
+    return;
+  }
+  walkRenderer.momentTest = {
+    id: d.m,
+    at: d.m === 'idle' ? null : at(3),
+    until: walkView.t + (d.m === 'idle' ? 6000 : 3500),
+  };
+};
+ACTIONS.engGuides = () => {
+  engineEditor.guides = !engineEditor.guides;
+  /* the zones' dials show beside the guides they draw */
+  if (engineEditor.guides) engineEditor.open.camera = 1;
+  const g = $('#engGuides'),
+    b = $('#engGuidesBtn');
+  if (g) g.hidden = !engineEditor.guides;
+  if (b) b.classList.toggle('on', engineEditor.guides);
+  refreshEngineSettings();
+  if (engineEditor.guides && !engineEditor.guideRaf) drawCameraGuides();
 };
