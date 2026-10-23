@@ -9,10 +9,11 @@ the committed baseline in validation/ui-gallery/; the shaped parts once more wit
 
 Needs Python Playwright and Pillow (tools/requirements-check.txt) and game/data/gamedata.js (built here first).
 This run's pictures go to validation/ui-gallery-out/, with a side-by-side picture of each one that differs."""
-import json, socket, subprocess, sys, threading
-from functools import partial
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+import json, subprocess, sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from browser_check import serve  # noqa: E402  (TC-4: the browser checks' shared helpers)
 
 ROOT = Path(__file__).resolve().parent.parent
 BASE = ROOT / 'validation' / 'ui-gallery'
@@ -27,21 +28,6 @@ STEPPED = ('buttons', 'panels', 'cards', 'tabs', 'messages')
 # a picture differs when more than this share of its pixels moved by more than TOL in any channel (fonts antialias a
 # little differently from run to run; a reshaped part moves far more)
 SHARE, TOL = 0.0005, 24
-
-
-class Quiet(SimpleHTTPRequestHandler):
-    def log_message(self, *a):
-        pass
-
-
-def serve():
-    s = socket.socket()
-    s.bind(('127.0.0.1', 0))
-    port = s.getsockname()[1]
-    s.close()
-    srv = ThreadingHTTPServer(('127.0.0.1', port), partial(Quiet, directory=str(ROOT)))
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
-    return srv, port
 
 
 def differs(a, b):
@@ -63,7 +49,7 @@ def main():
     subprocess.run(['node', 'tools/build-data.mjs'], cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
     OUT.mkdir(parents=True, exist_ok=True)
     BASE.mkdir(parents=True, exist_ok=True)
-    srv, port = serve()
+    srv, base = serve(ROOT)
     shots, problems, errors = [], [], []
     with sync_playwright() as pw:
         b = pw.chromium.launch()
@@ -71,7 +57,7 @@ def main():
             if True:
                 page = b.new_page(viewport={'width': w, 'height': 900}, device_scale_factor=1, reduced_motion='reduce')
                 page.on('pageerror', lambda e: errors.append(str(e)))
-                page.goto(f'http://127.0.0.1:{port}/studio/gallery.html?shots=1', wait_until='load')
+                page.goto(f'{base}/studio/gallery.html?shots=1', wait_until='load')
                 page.evaluate(
                     """([theme, w]) => { document.documentElement.dataset.theme = theme;
                        document.querySelector('.g-wrap').style.setProperty('--g-w', w + 'px');

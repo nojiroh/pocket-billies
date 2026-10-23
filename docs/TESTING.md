@@ -10,19 +10,29 @@ those sessions; until then, follow the rule next to them.
 | Tier | Command | Now | Budget | When |
 |---|---|---|---|---|
 | (a) lint, types | `npm run lint`, `npm run typecheck` | 4 s warm (9 s cold) + 0.6 s | under 10 s | after every edit (the Claude Code hook runs it) |
-| (b) unit tests | `npm test` | about 26 s in a cloud container (TC-4, 23 Oct 2026: 769 tests, the quick tier; 72 s before) | under 30 s | after every edit to logic, data or tests (the hook) |
+| (b) unit tests | `npm test` | about 20 s in a cloud container (TC-4 round 3, 23 Oct 2026, after RF-3 and RO-1 merged; 26 s in round 2, 72 s before) | under 30 s | after every edit to logic, data or tests (the hook) |
 | (b2) slow unit tests | `npm run test:slow` | about 58 s (50 tests: the scene sweeps that generate whole maps and islands, runs played with their scenes, the weather's every-roll sweep; `SLOW_TESTS` in tools/unit-tests.mjs) | none | in CI beside `npm test`; `npm run test:all` runs both |
 | before a commit | `npm run check:modules`, `npm run format:check`, `npm run check:data`, `npm run build` | about 15 s | none | every commit |
 | UI pictures (UI-2) | `npm run check:ui` | about 1.5 min | none | after a change to the kit, its CSS, uiTheme.json or studio/gallery.html |
 | style diff (UI-5) | `python3 tools/style-diff.py` (`--only=<screens>`, `--ref=<rev>`) | about 8 min (16 screens, 2 browsers) | none | a commit that moves CSS or screen code and must change nothing on screen: 0 differences against HEAD |
-| (c) smoke | `npm run check:smoke` | about 2.5 min | 1-2 min | before every commit that touches game/, tools/check-quick.py, vite.config.js or tools/to-module.mjs |
-| (d) full | `npm run check:quick` | about 32 min | about 10 min | at the end of a phase, nightly in CI |
+| fast check | `npm run check:fast` | about 11 min on CI (677 s on 23 Oct 2026: 27 checks on 19 pages, 2 browsers); 665 s in a 4-core cloud container | 3 min, not met (see below) | every push and pull request in CI; after a change, alone with `--only=` |
+| (c) smoke | `npm run check:smoke` | about 3 min (188 s on 23 Oct 2026, a 4-core cloud container: the phone flow, the actions sheet, one in-game test step) | 1-2 min, not met | before every commit that touches game/, tools/check-quick.py, vite.config.js or tools/to-module.mjs |
+| (d) full | `npm run check:quick` | about 21 min (1282 s on 23 Oct 2026, all 37 steps passed, 13 pages, 2 browsers, about 500 s of the pages' time boots; 1217-1338 s over four runs; 41 min the same day before TC-4 round 3) | about 10 min, not met (see below) | at the end of a phase, nightly in CI |
 | (e) in-game test | `python3 tools/check-quick.py --selftest` | about 25 min | outside the budget | nightly in CI; at the end of a phase that touched what it plays |
 | rules | `cd firebase && npm test` | about 1 min | none | when firestore.rules or what the game writes changes |
 
-The quick check needs Python Playwright matching the installed Chromium (tools/requirements-check.txt). Smoke and the
-full check are over budget today; 13b brings them down (parallel groups, fixtures, waits instead of sleeps, fewer
-legacy steps). A phase that makes a tier slower says by how much and why in its HANDOFF entry.
+The quick check needs Python Playwright matching the installed Chromium (tools/requirements-check.txt). A phase that
+makes a tier slower says by how much and why in its HANDOFF entry.
+
+Why the browser tiers miss their budgets (measured in TC-4 round 3, 23 Oct 2026): a headless machine draws in software,
+and one page keeps about two cores busy, so two pages fill a 4-core machine (CI's runner too) and a third browser buys
+nothing. A desktop page draws a frame of Copperleaf in about 1.5 s beside another page, at a third of the resolution or
+with check-fast's low graphics alike (the cost is the scene and the game's own work, not pixels), and the game clock
+moves at most 60 ms a frame, so a wait for game time is a wait for frames. Every page boots once, 25-65 s. The full
+check now opens every page at a fixture, waits on state instead of sleeping and plays battles at four times the
+animation speed; sharing pages to save boots saved 66 s and broke a step that needs a fresh page. Going further means
+fewer drawn steps (more logic checked in Node, as TC-3 did) or a faster machine; the fast check's budget would need its
+19 pages to share boots.
 
 The update check (update-check.js, the owner 2026-10-22) works only on the built site (`npm run build`, then serve
 `dist/game`): no check runs it, since the checks serve the repository, where PB_BUILD is '' and it is off. To try it,
@@ -172,11 +182,17 @@ Two rules hold everywhere:
 
 - `@step(name, limit)`: the name says what is checked, with no version stamp for new steps (docs/NAMING.md; the old
   `v31`..`alpha 0.4.1` names are retired or renamed in 13b).
-- Wait on the game's state with `until()` and check what it returns; a fixed `time.sleep` only for a deliberate wait,
-  with a comment saying why. Explicit ready events arrive in **(13b)**.
-- Clean up in `finally`, and don't rely on what an earlier step left (13b gives each group its own page; until then,
-  reset what your step needs at its start).
-- **(13b)** Each step gets `areas=(...)` tags and joins a run group with a fixture instead of replaying the opening.
+- A step takes a page (`def my_step(P)`, `pg = P.pg`): put it in a page of `pages()` whose fixture and size fit, or a
+  page of its own if it leaves the game in a state the next step can't use. A page boots once at its fixture
+  (`?fixture=<name>`, game/js/fixture.js) in its first step; the pages run side by side (`--workers`, default 2). Only
+  the phone flow plays the real opening (TC-4: `play()` is gone).
+- Wait on the game's state, never a fixed time: `until(pg, cond, sec, poke)`, `ui(pg)` after a screen or a sheet
+  opens (two frames painted, its CSS animations done), `drawn(pg, n)` and `look_at_me(pg)` before reading or picturing
+  the walk view, `bowl_drawn`, `BOWL_OPEN`, `BATTLE_LEFT`. A `time.sleep` only where the wait is the point, with a
+  comment saying why (two today).
+- Clean up in `finally`, and reset at the step's start what it needs: steps on one page share it.
+- The shared helpers of every browser check (server, clock, accounts, test globals, low graphics, `until`, page
+  opening, console text, log) are in `tools/browser_check.py`; a new check imports them from there.
 - The checks never reach accounts or the network (`NO_ACCOUNTS`), and nothing they do is saved for real.
 - The test cleanup track's TC-1 (docs/phases/test-cleanup-track.md, lane B) deleted the steps another check already
   covers (Code, Messages, Team, Studio opens, Shaders, Paths, Scenes, Crowd, RL-7's run roads, the joystick, Battles,
