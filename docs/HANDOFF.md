@@ -2,6 +2,71 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Test cleanup track, round 2, lane B - TC-3: check-quick renamed, moved, fixed - 2026-10-23
+Branch `track/test-cleanup` (shared with lane E; pulled with --no-rebase before every push). Plan approved in Plan
+Mode ("Yes": the recommended choices: the props budget through Node stand-ins, not a code move; the masts step to
+Node too; the postcards' solarpunk half dropped). Lane B's part is pushed.
+- Where the track file was wrong (checked against the code):
+  - There is no "alpha 0.4.1" step (0.4.1 was only in comments) and no RL-7 step any more (round 1 deleted it).
+  - The masts and postcard data steps looped over towns: Copperleaf alone. The solarpunk rule skipped Copperleaf, so
+    it checked nothing.
+  - `testMapChecks` is not pure: it runs the walk's nav grid and path finder on walkView, and loading it in Node pulls
+    in self-test.js's UI (Lit, the page's globals). It stays in the browser (1 s, no drawing).
+  - The low-poly budget was one total over every recipe (15,000 triangles, 40,000 voxel quads), set when only small
+    props had recipes. Today's 164 recipes total about 138,000 triangles and 2.26 million quads (the city's three
+    towers 1 million of them); the step never got that far because six bushes failed first.
+  - Terraces, phase 08 running, RL-8 and postcards did not fail here (baseline and final runs); the last nightly
+    (23 Oct) predates round 1, so there is no newer CI evidence. See "Risky".
+- **Moved out of check-quick** (the new check first, then the step's deletion, each its own commit):
+  - Node tests (quick tier, about 1.5 s together): `version-source` (Version), `hub-data` (Copperleaf on its own),
+    `room-data` (wall height, a floor each), `water-data` (buildings in water, piers, jetties: `buildingsInWater` and
+    `piersOf` are the Python helpers in JS, compared on the 65 parked maps and 300 random scenes with planted boards
+    and buildings: the same 156 piers and 584 wet buildings), `airship-data` (the masts step), `postcard-data` (the
+    postcard files), `lowpoly-props` (see below). game/version.js's comment names its test.
+  - **check-data.mjs** (lane D's file in round 1) fails now on what the Data step held: the step grid's size, a room
+    without a building, a place's kind against its scene and its town mark, a place's id, an unnamed road, a
+    missing scenery picture. The Studio's Check still only warns about some of these (data-checks.js unchanged).
+  - **Low-poly props**: prop-models.js loads in Node through walk-renderer.mjs's stand-ins (no game code moved). Every
+    recipe of shapes builds a model; the budget is per prop: a building 10,000 triangles, another prop 4,000 (largest
+    today 8,573 and 3,798); voxels at 32 to the metre for eight Copperleaf props, 50,000 quads each (all 160 take six
+    minutes here, the towers five). The browser step keeps the every-prop scene drawing them low-poly: 302 s to 6 s.
+- **Renamed** (one per commit, a step's name with its function): v31, v32, v33, v36, v42, v43, v46, alpha 0.1, alpha
+  0.2, the five alpha 0.4 browser steps, phase 08 (e.g. v46 is "Ground tiles, building plans and colours, rooms laid
+  in at their doors"). The steps' version-stamped picture names too (`v46-room-in-place` to `room-in-place`...; no
+  baseline holds them yet). The `--steps` example names steps that exist.
+- **Fixed** (each commit says whether the check or the game was wrong):
+  - Tap targets: **the game**. Settings' volume sliders were 16 px tall; their box is 40 px now (settings.css).
+  - v31's world map camera: **the check**. Over the hub island the camera backs off to 0.49 to keep the eye above
+    the rim (bowlCamClamp); the check wanted 0.46. It now wants "as close as the camera may come there".
+  - v46: **the check**. Six kinds are drawn from low-poly models now, not build plans; ten kinds' rooms are parked
+    (lane C, the owner's choice). The colour pick is checked on the house.
+  - The bushes ("these recipes make nothing"): **the check**. A recipe of picture layers alone is drawn as cut-out
+    cards on purpose (propModelImageItems).
+  - Running: a push that moves nothing now fails with what held you, not `float division by zero`.
+  - Sound effects: **the check**. It waited 15 s for the payout's `run_won`; in the final run the jingle came just
+    after (it was in the failure's own log). 40 s now.
+- **Time, weather and rooms** reads `environment` (night, lamps, storm and rain, snow falling and lying, autumn
+  colour) after a frame drawn with each look, not screenshot brightness. The old "lamps 0.00 at night" was read
+  before a frame had applied the forced night (the state changes per drawn frame); it reads 1.00 now.
+- Verified: lint, typecheck, check:data, check:modules, format:check, `npm test` (793 after lane E's merge, 21 s)
+  after every code commit. The full quick check here (the scratch runner with a 300 s title wait):
+  **before** (5ddd0f8, the merged main, 2308 s, 44 steps, 4 red: Tap targets, v31, v46, the bushes) and
+  **after** (4068190, merged with lane E: 1872 s, 38 steps, 1 red: Sound effects' payout wait, fixed in fe64b93 and green alone after; the slowest steps: Double and Alpha battles 298 s, Running 163 s, Phone 108 s, RL-8 107 s). Each fix also passed alone before it was committed.
+- Risky / open:
+  - RL-8, postcards, terraces and running were green in both full runs here; if the nightly shows them red after
+    other steps, the failure message now says more (running) but no reset was added without a failure to look at.
+  - `npm test`'s after-edit hook times out at 50 s while a browser check runs beside it (it ran 66 s); it passes
+    alone. Not changed (tools/after-edit.mjs).
+  - The voxel budget is a sample; a full voxel sweep belongs in the slow tier if wanted (unit-tests.mjs SLOW_TESTS).
+  - The per-prop budgets (10,000 / 4,000 triangles, 50,000 quads) are my numbers from today's largest props, not a
+    phone measurement. Say if you want others.
+  - The graphics settings' dials (`.gfx-dial` sliders) are 16 px tall too; Tap targets only opens the Sound tab.
+- For others:
+  - Round 3 (TESTING.md): its lines 174 and 246-253 still name v31..alpha 0.4.1 and steps round 1 deleted; the
+    tiers table could take the new data tests. check-quick's step list and times are in this entry.
+  - Lane D's area: check-data.mjs has a TC-3 block (above).
+- Next: round 3 (TC-4 items 1, 2, 5, 6).
+
 ### Test cleanup track, round 2, lane E - check-fast's island checks, the quick unit tier - 2026-10-23
 Branch `track/test-cleanup` (shared with lane B; pulled with --no-rebase before every push). TC-4 items 3-4. The owner
 said to make the recommended choices without waiting for plan approval. Lane E's part is pushed.
