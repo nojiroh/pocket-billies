@@ -21,6 +21,7 @@ wardrobe on the shared pixel canvas: a pencil click paints the item and marks it
 (undone and redone together); the Colour area brush paints the mask only; Grow piece; everything undone.
 Studio track ST-T: the Studio self-test runs whole and must pass (no errors, every edit undone, everything put back,
 no token in its report); its times are not judged here.
+Studio plan Phase 1 (T1.3): the Check lists check-data's own problems (planted), and an error blocks Propose.
 UI track UI-3: the UI look section: a colour dial changed shows in the preview frame, Undo puts the data and the
 preview back; a screen's own colour shows on that screen only and ↺ takes it away; a preset applies and undoes; Find
 and the Check's Show me reach a dial; Hold to compare shows the saved look; a cut size is left changed, so the
@@ -30,6 +31,9 @@ proposal at the end must carry uiTheme.json with it.
     python3 tools/check-studio-github.py dist      # the build (`npm run build` first)
     python3 tools/check-studio-github.py --only=ui,studio_test   # sign in, only these steps, then the proposal
                                                                  # (step names: STEPS below)
+    python3 tools/check-studio-github.py --only=publish  # Studio plan Phase 0: Propose's failure cases alone
+    python3 tools/check-studio-github.py --only=drafts   # Studio plan Phase 1 (T1.1): kept drafts, restore, discard
+    python3 tools/check-studio-github.py --only=checks   # Studio plan Phase 1 (T1.3): the shared checks, an error blocks
 
 Needs Python 3 and Playwright (tools/requirements-check.txt). About a minute."""
 import json, re, subprocess, sys, threading, time
@@ -979,10 +983,35 @@ def studio_test_steps(pg, errs):
     if not r['restored']: errs.append('studio test: the data was not put back as it was')
     for s in r['sections']:
         if s.get('edit') and s['edit']['back'] is False: errs.append(f"studio test: the edit in {s['id']} did not come back with undo")
+        if s.get('outside'): errs.append(f"studio test: opening {s['id']} changed the data outside an edit: {', '.join(s['outside'])}")
     if r['privacy']: errs.append('studio test: the report holds ' + ', '.join(r['privacy']))
     if pg.evaluate("studioProbe.on !== null || studioProbe.running"): errs.append('studio test: the probe was left on')
     edits = sum(1 for s in r['sections'] if s.get('edit'))
     print(f"studio test: {len(r['sections'])} sections, {edits} edits undone, {len(r['findings'])} findings, {r['seconds']} s", flush=True)
+    U = r.get('undo') or {}
+    big = sorted((s for s in r['sections'] if s.get('edit') and s['edit'].get('stepBytes')), key=lambda s: -s['edit']['stepBytes'])[:3]
+    print(f"studio test: the undo holds {U.get('fullMB')} MB after {U.get('edits')} edits (the data once {U.get('lastMB')} MB, the steps {U.get('stepsMB')} MB; biggest: "
+          + ', '.join(f"{s['id']} {s['edit']['path']} {s['edit']['stepBytes'] / 1e3:.0f} kB" for s in big) + ')', flush=True)
+    # Studio plan T1.2: the undo holds only the parts an edit changed, and puts back only those
+    u = pg.evaluate("""(() => {
+      const S = studioState, ids = Object.keys(S.D.maps), id = ids[0], before = {};
+      const text = v => JSON.stringify(v, SAVE_REPLACER);  // the undo, like saving, keeps no _ caches
+      commit(true);
+      const was = text(S.D.maps[id]), steps = S.undo.length;
+      for (const k of ids) before[k] = S.D.maps[k];
+      S.D.maps[id].name = (S.D.maps[id].name || '') + ' x';
+      changed();
+      commit(true);
+      const step = S.undo[S.undo.length - 1], parts = step && step.parts ? Object.keys(step.parts) : [];
+      undo();
+      const same = ids.filter(k => k !== id && S.D.maps[k] !== before[k]);
+      return { parts, steps: S.undo.length - steps, back: text(S.D.maps[id]) === was, same, n: ids.length };
+    })()""")
+    if u['parts'] != ['D/maps/' + pg.evaluate("Object.keys(studioState.D.maps)[0]")]: errs.append(f"undo: a map edit's step holds {u['parts']}")
+    if not u['back']: errs.append('undo: the map edit did not come back')
+    if u['same']: errs.append(f"undo: an undo of one map replaced other maps: {u['same'][:5]}")
+    if u['steps'] != 0: errs.append(f"undo: the edit and its undo left {u['steps']} steps")
+    print(f"undo: a map edit's step holds {u['parts']}; its undo kept the other {u['n'] - 1} maps the same objects", flush=True)
 
 
 # Studio plan T2.2: the same seed's run as the game's own start makes it in Node (tools/test/setup-real.mjs, the
@@ -994,6 +1023,15 @@ for (const [k, ids] of [['none', []], ['all', Object.keys(D.unlocks)]]) {
   const p = modules['run-start'].runStartPlan('LABCHECK7', { nodeTypes: D.nodeTypes, biomes: D.biomes, rules: D.rules.run, unlockData: U }, { unlocks: un });
   out[k] = p.map.nodes.map(n => n.type + ':' + n.biome);
 }
+/* T2.4: what the logic worker's panel must show: runPreview with no unlocks, for the first mini-boss and town */
+const P = modules['run-preview'].runPreview('LABCHECK7', { unlocks: [] }),
+  at = t => P.map.nodes.findIndex(n => n.type === t),
+  g = at('miniboss'), w = at('town'), F = P.nodes[g].foe;
+out.preview = {
+  guard: { i: g, foe: [F.from, F.team.map(e => e.sp + '@' + e.lvl).join(',')], wild: P.nodes[g].wild.list.map(e => e.join(':')).join(',') },
+  town: { i: w, shop: P.nodes[w].shop.map(S => [S.day, S.stock.map(x => x.item || 'coin:' + x.coin).join(','), S.relic]) },
+  offers: P.relicOffers.map(o => o.join(',')),
+};
 console.log(JSON.stringify(out));"""
 
 
@@ -1039,8 +1077,213 @@ def run_lab_steps(pg, errs):
     while time.time() - t0 < 5 and pg.evaluate("document.querySelectorAll('#main .rl-map').length") < 2: time.sleep(0.05)
     if pg.evaluate("document.querySelectorAll('#main .rl-map').length") != 2: errs.append('run lab: beside the loaded data did not draw a second map')
     pg.uncheck('#rlBeside')
+    # T2.6: a debug log's run carries its own unlocks; an older log only the save's
+    read = pg.evaluate("""[runLabReadLog(JSON.stringify({state:{run:{seed:'LOGSEED',unlocks:['biome_ridge'],nodes:12},meta:{unlocks:['biome_ridge','shop_appeal']}}})),
+      runLabReadLog(JSON.stringify({state:{run:{seed:'OLDLOG',nodes:12},meta:{unlocks:['shop_appeal']}}}))]""")
+    if [read[0]['unlocks'], read[0]['own'], read[1]['unlocks'], read[1]['own']] != [['biome_ridge'], True, ['shop_appeal'], False]:
+        errs.append(f'a debug log read for the run’s own unlocks gave {read}')
+    logic = run_lab_logic_steps(pg, errs, want)
+    rules = run_lab_rules_steps(pg, errs)
+    sweep = run_lab_sweep_steps(pg, errs)
+    play = run_lab_play_steps(pg, errs)
     if len(errs) > n: errs[n:] = [f'run lab: {e}' if not e.startswith('run lab') else e for e in errs[n:]]
-    else: print(f"run lab: LABCHECK7 drawn as the game makes it ({len(want['none'])} places, no unlocks and all), a nodeTypes edit redrawn in {ms:.0f} ms, node 3's seed, beside the loaded data", flush=True)
+    else: print(f"run lab: LABCHECK7 drawn as the game makes it ({len(want['none'])} places, no unlocks and all), a nodeTypes edit redrawn in {ms:.0f} ms, node 3's seed, beside the loaded data; {logic}; {rules}; {sweep}; {play}", flush=True)
+
+
+def run_lab_sweep_steps(pg, errs):
+    """Studio plan T2.3: the map checks over 1,000 seeds under the map: none on the game's rules; a planted bad rule
+    (the last row a mini-boss) is named with a seed, and its button opens that seed."""
+    ready = "(()=>{const e=document.querySelector('#main [data-runlab-sweep][data-ready]');return e?+e.dataset.problems:-1})()"
+    t0 = time.time()
+    while time.time() - t0 < 30 and pg.evaluate(ready) < 0: time.sleep(0.05)
+    if pg.evaluate(ready) != 0:
+        said = pg.evaluate("(document.querySelector('#main [data-runlab-sweep]')||{}).textContent||''")
+        errs.append(f"the seed sweep on the game's rules: {pg.evaluate(ready)} problem(s) ({said[:200]})"); return 'no sweep'
+    ratio = pg.evaluate("document.querySelector('#main [data-runlab-sweep] [data-ratio]').dataset.ratio")
+    pg.select_option('#main .rl-rules [data-p="rules.run.map.last"]', 'miniboss')
+    t0 = time.time()
+    while time.time() - t0 < 30 and pg.evaluate(ready) < 1: time.sleep(0.05)
+    seed = pg.evaluate("(document.querySelector('#main .rl-sweep-problems li')||{dataset:{}}).dataset.seed||''")
+    text = pg.evaluate("(document.querySelector('#main .rl-sweep-problems li')||{}).textContent||''")
+    if not seed or 'not the boss' not in text: errs.append(f'the last row a mini-boss: the sweep said {text[:160]!r}')
+    else:
+        pg.click(f'#main .rl-sweep-problems [data-act=runLabOpenSeed][data-seed="{seed}"]')
+        if pg.input_value('#rlSeed') != seed: errs.append(f"the sweep's Open {seed} left the seed at {pg.input_value('#rlSeed')}")
+    pg.select_option('#main .rl-rules [data-p="rules.run.map.last"]', 'boss')
+    t0 = time.time()
+    while time.time() - t0 < 30 and pg.evaluate(ready) != 0: time.sleep(0.05)
+    return f"1,000 seeds checked with no problems (towns : routes {ratio}); the last row a mini-boss named with {seed}, which opens"
+
+
+def run_lab_play_steps(pg, errs):
+    """Studio plan T2.6: "Play this seed" opens the game in a test run on the Lab's seed (short map), after the Studio's
+    unsaved data: its map is the one the Lab draws, an unsaved clinic price (rules.run.healCost) is the run's, an edit
+    made while it runs reaches it, and the live channel carries no save."""
+    if not (ROOT / 'game/data/gamedata.js').is_file(): subprocess.run(['node', 'tools/build-data.mjs'], cwd=ROOT, check=True, capture_output=True)
+    pg.fill('#rlSeed', 'PLAYCHECK1')
+    pg.select_option('#rlUnlocks', 'none')
+    pg.check('#rlShort')
+    t0 = time.time()
+    rows = "(()=>{const m=document.querySelector('#main .rl-map');return m?new Set([...m.querySelectorAll('circle')].map(c=>c.getAttribute('cx'))).size:0})()"
+    while time.time() - t0 < 5 and pg.evaluate(rows) != 5: time.sleep(0.05)
+    lab = pg.evaluate("[...document.querySelector('#main .rl-map').querySelectorAll('.rl-node')].map(g=>g.dataset.type+':'+g.dataset.biome)")
+    was = pg.evaluate('studioState.D.rules.run.healCost')
+    pg.fill('#main .rl-rules [data-p="rules.run.healCost"]', '77')
+    sent = []
+    pg.evaluate("window.__sent=[];const c=new BroadcastChannel('networth-studio');c.onmessage=e=>window.__sent.push(Object.keys((e.data&&e.data.D)||{}).sort().join(','));0")
+    with pg.context.expect_page(timeout=20000) as info: pg.click('#main [data-act=runLabPlay]')
+    gp = info.value
+    gp_errs = []
+    gp.on('pageerror', lambda e: gp_errs.append(str(e)[:300]))
+    try:
+        t0 = time.time()
+        ok = False
+        while time.time() - t0 < 150:
+            try: ok = gp.evaluate("typeof saveData!=='undefined'&&!!saveData.run&&runWorld.seed==='PLAYCHECK1'")
+            except Exception: ok = False
+            if ok: break
+            time.sleep(0.5)
+        if not ok: errs.append(f'Play this seed: no run on PLAYCHECK1 took off in the game ({gp.url})'); return 'no run'
+        got = gp.evaluate("({map: saveData.run.map.nodes.map(n=>n.type+':'+n.biome), test: !!TEST_RUN, heal: RULES.run.healCost, clinic: runClinicEach(), live: !!studioLive.told})")
+        if not got['test']: errs.append('Play this seed: the game is not in a test run')
+        if got['map'] != lab: errs.append(f"Play this seed: the game's map {got['map']} isn't the Lab's {lab}")
+        if got['heal'] != 77 or got['clinic'] != 77: errs.append(f"Play this seed: the unsaved clinic price 77 isn't the run's (rules {got['heal']}, the clinic {got['clinic']}; Studio data came: {got['live']})")
+        pg.fill('#main .rl-rules [data-p="rules.run.healCost"]', '88')
+        t0 = time.time()
+        while time.time() - t0 < 5 and gp.evaluate('RULES.run.healCost') != 88: time.sleep(0.1)
+        if gp.evaluate('runClinicEach()') != 88: errs.append('Play this seed: a clinic price edited while the run goes did not reach it')
+        keys = set(','.join(pg.evaluate('window.__sent')).split(','))
+        if keys & {'saveData', 'save', 'meta', 'team', 'run'}: errs.append(f'the live channel carried save fields: {sorted(keys)}')
+        if not {'rules', 'nodeTypes', 'relics', 'unlocks', 'items', 'trainers'} <= keys: errs.append(f'the live channel did not carry the run data: {sorted(keys)}')
+        for e in gp_errs: errs.append(f'Play this seed: the game: {e}')
+    finally:
+        gp.close()
+        pg.fill('#main .rl-rules [data-p="rules.run.healCost"]', str(was))
+        pg.uncheck('#rlShort')
+    return f"Play this seed opened PLAYCHECK1 in a test run with the Lab's {len(lab)} places, the unsaved clinic price 77 and a live edit to 88"
+
+
+def run_lab_rules_steps(pg, errs):
+    """Studio plan T2.5: the run rules card. Typing in a field redraws the map (rows), the edit is in what Propose would
+    send (rules.json, nodeTypes.json), the shop's always-stocked box edits the list, a value the game can't lay out
+    shows its error beside the map, every rule in code finds its line, and putting the values back leaves nothing to
+    propose in those files."""
+    rows_drawn = lambda: pg.evaluate("(()=>{const m=document.querySelector('#main .rl-map');if(!m)return 0;return new Set([...m.querySelectorAll('.rl-node circle')].map(c=>c.getAttribute('cx'))).size})()")
+    pending = lambda: pg.evaluate("changedDataFiles(studioState.D).map(f=>f.path).filter(p=>/rules\\.json$|nodeTypes\\.json$/.test(p)).sort()")
+    if not pg.locator('#main .rl-rules').count(): errs.append('no run rules card'); return 'no rules card'
+    was = pg.evaluate('studioState.D.rules.run.map.rows')
+    before = rows_drawn()
+    pg.fill('#main .rl-rules [data-p="rules.run.map.rows"]', '7')
+    t0 = time.time()
+    while time.time() - t0 < 5 and rows_drawn() == before: time.sleep(0.05)
+    drawn = rows_drawn()
+    if drawn != 7: errs.append(f'rows 7 typed in the rules card: the map has {drawn} rows')
+    if pg.evaluate('studioState.D.rules.run.map.rows') != 7: errs.append('the rows field did not write rules.run.map.rows')
+    name_was = pg.evaluate('studioState.D.nodeTypes.town.name')
+    pg.fill('#main .rl-rules [data-p="nodeTypes.town.name"]', 'Market')
+    pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"taxbreak\"]').click()")
+    sent = pending()
+    rules_text = pg.evaluate("(changedDataFiles(studioState.D).find(f=>/rules\\.json$/.test(f.path))||{}).text||''")
+    if not any(p.endswith('rules.json') for p in sent) or not any(p.endswith('nodeTypes.json') for p in sent): errs.append(f'Propose would send {sent}, not rules.json and nodeTypes.json')
+    elif '"rows": 7' not in rules_text.replace('"rows":7', '"rows": 7'): errs.append('the proposed rules.json does not hold rows 7')
+    if 'taxbreak' in pg.evaluate('studioState.D.rules.run.shop.always'): errs.append('unticking the Potion left it always on the shelves')
+    # a value the map can't lay out (more mini-bosses than rows hold): the game's own error beside the map
+    pg.fill('#main .rl-rules [data-p="rules.run.map.minibosses"]', '6')
+    t0 = time.time()
+    while time.time() - t0 < 5 and not pg.locator('#main .rl-error').count(): time.sleep(0.05)
+    if not pg.locator('#main .rl-error').count(): errs.append('6 mini-bosses on 7 rows drew a map, not the game’s error')
+    mb = pg.evaluate('studioState.loaded.rules.run.map.minibosses')
+    pg.fill('#main .rl-rules [data-p="rules.run.map.minibosses"]', str(mb))
+    pg.fill('#main .rl-rules [data-p="rules.run.map.rows"]', str(was))
+    pg.fill('#main .rl-rules [data-p="nodeTypes.town.name"]', name_was)
+    pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"taxbreak\"]').click()")
+    left = pending()
+    if left: errs.append(f'every rules card value put back, Propose would still send {left}')
+    t0 = time.time()
+    while time.time() - t0 < 10 and pg.evaluate("[...document.querySelectorAll('#main [data-rl-code]')].some(e=>!e.dataset.line)"): time.sleep(0.1)
+    lines = pg.evaluate("[...document.querySelectorAll('#main [data-rl-code]')].map(e=>e.textContent)")
+    if not lines or any(l.endswith(':?') or ':' not in l for l in lines): errs.append(f'the rules in code did not all find their line: {lines}')
+    return f"the rules card: rows 7 redrawn, proposed in rules.json and nodeTypes.json, the game's error for 6 mini-bosses, put back with nothing left to send, {len(lines)} rules in code with their lines ({lines[0] if lines else ''})"
+
+
+def run_lab_logic_steps(pg, errs, want):
+    """Studio plan T2.4: the node panel's part from the game's logic, worked out in the Studio's logic worker on the
+    data as it is now, equals runPreview in Node for the same seed: a mini-boss's leader and team, a town's stock and
+    Loophole on each day, the Loophole picks. One worker per data version: another click asks the same worker; an
+    edit makes a new one."""
+    P = want['preview']
+    pg.select_option('#rlUnlocks', 'none')
+    def panel(i):
+        pg.click(f'#main .rl-node[data-i="{i}"]')
+        t0 = time.time()
+        while time.time() - t0 < 30 and not pg.evaluate(f"!!document.querySelector('#main [data-runlab-logic][data-ready=LABCHECK7] .rl-logic-node[data-node=\"{i}\"]')"): time.sleep(0.05)
+        return pg.evaluate("""i=>{const el=document.querySelector('#main [data-runlab-logic]');const t=el&&el.querySelector('.rl-logic-node[data-node="'+i+'"]');
+          if(!t)return {err:(el||{}).textContent||'no panel'};const f=t.querySelector('[data-foe]');
+          return {ms:+el.dataset.ms,foe:f?[f.dataset.foe,f.dataset.team]:null,wild:(t.querySelector('[data-wild]')||{dataset:{}}).dataset.wild||'',
+            shop:[...t.querySelectorAll('[data-day]')].map(r=>[+r.dataset.day,r.dataset.stock,r.dataset.relic]),
+            offers:[...el.querySelectorAll('[data-offer]')].map(o=>o.dataset.offer)}}""", i)
+    boss = panel(P['guard']['i'])
+    if 'err' in boss: errs.append(f"the logic panel for mini-boss node {P['guard']['i']} never came: {boss['err'][:200]}"); return 'no logic panel'
+    if boss['foe'] != P['guard']['foe']: errs.append(f"mini-boss node {P['guard']['i']}: the panel shows {boss['foe']}, runPreview in Node {P['guard']['foe']}")
+    if boss['wild'] != P['guard']['wild']: errs.append(f"mini-boss node {P['guard']['i']}: wild {boss['wild']!r}, Node {P['guard']['wild']!r}")
+    if boss['offers'] != P['offers']: errs.append(f"the Loophole picks: the panel shows {boss['offers']}, Node {P['offers']}")
+    made = pg.evaluate('logicWorker.made')
+    town = panel(P['town']['i'])
+    if 'err' in town: errs.append(f"the logic panel for town node {P['town']['i']} never came: {town['err'][:200]}"); return 'no logic panel'
+    if town['shop'] != P['town']['shop']: errs.append(f"town node {P['town']['i']}: the panel's shop {town['shop']}, Node {P['town']['shop']}")
+    if pg.evaluate('logicWorker.made') != made: errs.append('a second click on the same data made a new logic worker')
+    # an edit: a new worker on the new data, and the panel follows it (the town's first day sells no Potion)
+    pg.evaluate("studioState.D.rules.run.shop.always=studioState.D.rules.run.shop.always.filter(w=>w!=='taxbreak');"
+                "document.querySelector('#main [data-runlab-logic]').removeAttribute('data-ready');runLabRedraw()")
+    t0 = time.time()
+    while time.time() - t0 < 30 and not pg.evaluate("!!document.querySelector('#main [data-runlab-logic][data-ready]')"): time.sleep(0.05)
+    stock = pg.evaluate("[...document.querySelectorAll('#main [data-runlab-logic] [data-day]')].map(r=>r.dataset.stock)")
+    more = pg.evaluate('logicWorker.made') - made
+    pg.evaluate("studioState.D.rules.run.shop.always.push('taxbreak');runLabRedraw()")
+    if more != 1: errs.append(f"an edit made {more} new logic workers (want 1)")
+    if not stock or any('taxbreak' in s.split(',') for s in stock): errs.append(f'after taking the Potion off the shop rules the panel still sells it: {stock}')
+    return f"the logic worker's panel equals runPreview (mini-boss {boss['foe'][0] if boss['foe'] else '?'}, a town's {len(town['shop'])} days, {len(P['offers'])} picks; {boss['ms']} ms), one worker per data version"
+def checks_steps(pg, errs):
+    """Studio plan Phase 1 (T1.3): the Check runs check-data's checks (logic/data-checks.js) and an error blocks
+    Propose. The game data has no error; a planted relic, unlock, run rule and robot problem, and a pool typo, are
+    each listed as an error; Propose with an error sends nothing and offers Show me; a warning never blocks."""
+    n = len(errs)
+    errors = "runCheck().filter(p => p.lvl === 'error').map(p => p.msg)"
+    base = pg.evaluate(errors)
+    for m in base: errs.append(f'the game data has a Check error: {m}')
+    pg.evaluate("window.__ckD = JSON.stringify(studioState.D)")
+    plants = {
+        'run.relics.cap': "studioState.D.rules.run.relics.cap = 0",
+        'goes round in a circle': "(() => { const U = studioState.D.unlocks, [a, b] = Object.keys(U); U[a].requires = [b]; U[b].requires = [a]; })()",
+        'run.typo: no such rule': "studioState.D.rules.run.typo = 1",
+        'nosuchmove, no such move': "Object.values(studioState.D.robots.gems)[0].move = 'nosuchmove'",
+        'lists waltn0': "studioState.D.pools[Object.keys(studioState.D.pools)[0]].list[0][0] = 'waltn0'",
+    }
+    for want, js in plants.items():
+        pg.evaluate(js)
+        if not any(want in m for m in pg.evaluate(errors)): errs.append(f'a planted problem is not a Check error: {want}')
+    # Propose with errors: nothing is sent, the dialog says why and offers Show me
+    pg.evaluate("studioState.dirty = true; window.__ckDone = false; void saveAll().then(() => window.__ckDone = true)")
+    pg.wait_for_selector('#dlg .dlg', timeout=10000)
+    text = pg.inner_text('#dlg .dlg')
+    if 'Show me' not in text: errs.append(f'the blocked Propose offers no Show me: {text[:200]}')
+    pg.evaluate("[...document.querySelectorAll('#dlg button')].find(b => /Show me/.test(b.textContent))?.click()")
+    t0 = time.time()
+    while time.time() - t0 < 10 and not pg.evaluate("window.__ckDone"): time.sleep(0.2)
+    if not pg.evaluate("studioState.dirty"): errs.append('Propose went ahead with Check errors')
+    if pg.evaluate("studioState.sec") != 'check': errs.append(f"Show me opened {pg.evaluate('studioState.sec')}, not the Check")
+    # a warning alone never blocks: the same data, a wild pool's levels the wrong way round
+    pg.evaluate("studioState.D = JSON.parse(window.__ckD); const P = Object.values(studioState.D.pools)[0]; P.lv = [P.lv[1] + 1, P.lv[0]]")
+    if pg.evaluate(errors): errs.append(f'the wrong-way pool levels are a Check error: {pg.evaluate(errors)}')
+    pg.evaluate("studioState.dirty = true; window.__ckDone = false; void saveAll().then(() => window.__ckDone = true)")
+    t0 = time.time()
+    while time.time() - t0 < 30 and not pg.evaluate("window.__ckDone"):
+        time.sleep(0.3)
+        pg.evaluate("document.querySelectorAll('#dlg button').forEach(b => /Propose|Send|OK/.test(b.textContent) && b.click())")
+    if pg.evaluate("studioState.dirty"): errs.append('Propose did not go ahead with only a warning')
+    pg.evaluate("studioState.D = JSON.parse(window.__ckD); delete window.__ckD; render()")
+    if len(errs) > n: errs[n:] = [f'checks: {e}' for e in errs[n:]]
+    print(f'checks: {len(base)} error(s) on the game data, 5 planted problems listed, Propose blocked on an error, not on a warning ({len(errs) - n} problem(s))', flush=True)
 
 
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
@@ -1060,6 +1303,7 @@ STEPS = [
     ('ui_screens', ui_screens_steps),
     ('studio_test', studio_test_steps),
     ('run_lab', run_lab_steps),
+    ('checks', checks_steps),
 ]
 
 
@@ -1178,7 +1422,10 @@ def publish_checks(b, url, errs):
     st['log'].clear(); st['fail'] = {}
     make_edits('bad-id')
     pg.evaluate("studioState.D.maps['Bad id!'] = {}")
+    # T1.3: the Check refuses that map before anything is built; this case is about the building, so it steps past it
+    pg.evaluate("window.__ckBefore = checkBeforeSave; void (checkBeforeSave = async () => true)")
     start('publish check: bad id'); settle()
+    pg.evaluate("void (checkBeforeSave = window.__ckBefore)")
     if st['log']: errs.append(f"publish: a proposal that could not be built still sent {[k for k, _ in st['log']]}")
     left = pg.evaluate(pending)
     if not all(left.values()): errs.append(f'publish: a proposal that could not be built dropped pending changes: {left}')
@@ -1266,6 +1513,200 @@ def publish_checks(b, url, errs):
     pg.evaluate("studioState.artDirty.delete(%s); delete studioState.D.meta.publishCheck; studioState.dirty = studioState.rigsDirty = false" % json.dumps(ART))
     n = sum(1 for e in errs if e.startswith('publish:'))
     print(f'publish: failures at 5 steps, a proposal that cannot be built, a held send, main moved on, an expired sign-in ({n} problem(s))', flush=True)
+    ctx.close()
+
+
+def drafts_checks(b, url, errs):
+    """Studio plan Phase 1 (T1.1): what isn't proposed yet is kept in the browser (IndexedDB) and offered back when the
+    Studio opens again. One context (one browser profile, so its IndexedDB lasts across pages) and a GitHub stand-in.
+    Each case edits a data field, a rig and a picture with the Studio's own calls, waits for the draft, closes the page
+    without saving and opens a new one."""
+    import base64
+    tree = [{'type': 'blob', 'path': str(p.relative_to(ROOT)), 'sha': 'x', 'size': p.stat().st_size}
+            for p in (ROOT / 'game' / 'art').rglob('*') if p.is_file()]
+    st = {'head': 'base1', 'reads': [], 'log': [], 'fail': {}, 'compare': []}
+
+    def api(route):
+        u = urlparse(route.request.url)
+        p = u.path
+        if route.request.method != 'GET':
+            k = p.rsplit('/', 1)[-1]
+            st['log'].append((k, route.request.post_data or ''))
+            if st['fail'].get(k):
+                code = st['fail'][k].pop(0)
+                return route.fulfill(status=code, json={'message': f'stand-in {code} at {k}'})
+            return route.fulfill(json={'sha': 'x', 'number': 8, 'html_url': 'x', 'object': {'sha': 'x'}, 'tree': {'sha': 'x'}})
+        if p == '/user': return route.fulfill(json={'login': 'nojiroh'})
+        if p.rstrip('/') == '/repos/nojiroh/pocket-billies': return route.fulfill(json={'permissions': {'push': True, 'admin': True}})
+        if '/compare/' in p: return route.fulfill(json={'total_commits': 1, 'files': [{'filename': f} for f in st['compare']]})
+        if '/git/trees/' in p: return route.fulfill(json={'tree': tree})
+        if '/git/commits/' in p: return route.fulfill(json={'sha': p.rsplit('/', 1)[-1], 'tree': {'sha': 'tree-x'}})
+        if '/git/ref' in p: return route.fulfill(json={'object': {'sha': st['head']}})
+        if '/contents/' in p:
+            f = ROOT / unquote(p.split('/contents/', 1)[1])
+            if 'studio/admins.json' not in p: st['reads'].append(parse_qs(u.query).get('ref', [''])[0])
+            if f.is_file(): return route.fulfill(body=f.read_bytes())
+        return route.fulfill(status=404, json={'message': 'Not Found'})
+
+    ctx = b.new_context(viewport={'width': 1400, 'height': 900})
+    ctx.add_init_script('window.PB_TEST_GLOBALS=true')
+    ctx.add_init_script("localStorage.setItem('pb-studio-gh-token','ghp_stand-in')")
+    ctx.route('https://api.github.com/**', api)
+    ART = 'art/next/parts/front/draft_check.png'
+    pending = "({data: studioState.dirty, rigs: studioState.rigsDirty, art: studioState.artDirty.has(%s)})" % json.dumps(ART)
+    stored = """async () => { const d = await draftRead(); return d ? {files: Object.keys(d.files), rigs: d.rigsText != null,
+      art: d.art.map(a => a.path), base: d.base, meta: d.files['meta.json'] || '', token: JSON.stringify(Object.keys(d)).includes('token')} : null }"""
+
+    def ready(pg):
+        return pg.evaluate("typeof studioState!=='undefined'&&!!studioState.D&&!document.querySelector('#main .loading')")
+
+    def open_page(answer=None):
+        """a new page; answers the draft question (Restore, Later, Discard) if asked. Returns (page, question text)"""
+        pg = ctx.new_page()
+        pg.on('pageerror', lambda e: errs.append('drafts: ' + str(e)[:300]))
+        st['reads'].clear()
+        pg.goto(url)
+        t0 = time.time(); asked = None
+        while time.time() - t0 < 120 and not ready(pg):
+            h = pg.locator('#dlg h2')
+            if asked is None and h.count() and h.first.text_content() == 'Unsent changes':
+                asked = pg.locator('#dlg .dlg-body').first.text_content()
+                if answer: pg.locator('#dlg button', has_text=answer).click()
+                if answer == 'Discard':
+                    pg.wait_for_selector('#dlg button:has-text("Delete")', timeout=5000)
+                    pg.locator('#dlg button', has_text='Delete').click()
+            time.sleep(0.3)
+        if not ready(pg): errs.append(f'drafts: the Studio did not load (asked {asked!r})')
+        time.sleep(0.5)
+        return pg, asked
+
+    def make_edits(pg, tag):
+        pg.evaluate("""tag => { const c = document.createElement('canvas'); c.width = c.height = 4;
+          const x = c.getContext('2d'); x.fillStyle = '#c03'; x.fillRect(0, 0, 4, 4);
+          markArt(%s, c);
+          const k = Object.keys(studioState.rigs).find(k => String((studioState.rigs[k].front || {}).sheet || '').startsWith('next/'));
+          studioState.rigs[k].draftCheck = tag; changed(true);
+          studioState.D.meta.draftCheck = tag; changed(); }""" % json.dumps(ART), tag)
+
+    def wait_draft(pg, tag, limit=10):
+        """the draft holds this tag, written by the Studio's own timer (2 s after the last change)"""
+        t0 = time.time()
+        while time.time() - t0 < limit:
+            d = pg.evaluate(stored)
+            if d and tag in d['meta']: return d, time.time() - t0
+            time.sleep(0.25)
+        return pg.evaluate(stored), None
+
+    def propose(pg, summary, answer='Propose anyway'):
+        pg.evaluate("void saveAll()")
+        t1 = time.time()
+        while time.time() - t1 < 20 and not pg.locator('#ghSum').count(): time.sleep(0.1)
+        pg.fill('#ghSum', summary)
+        pg.locator('#dlg button', has_text='Propose changes').click()
+        t1 = time.time(); moved = None
+        while time.time() - t1 < 30:
+            h = pg.locator('#dlg h2')
+            if h.count() and h.first.text_content() == 'Main has moved on':
+                moved = pg.locator('#dlg .dlg-body').first.text_content()
+                pg.locator('#dlg button', has_text=answer).click()
+            for t in ('Save anyway', 'OK'):
+                a = pg.locator('#dlg button', has_text=t)
+                if a.count(): a.first.click()
+            if pg.evaluate("document.querySelector('#saveBtn').textContent === 'Propose changes' && !document.querySelector('#saveBtn').disabled && !document.querySelector('#ghSum') && !document.querySelector('#dlg .dlg')"): break
+            time.sleep(0.2)
+        return moved
+
+    def last_tree():
+        trees = [json.loads(bd) for k, bd in st['log'] if k == 'trees']
+        return [t['path'] for t in trees[-1]['tree']] if trees else []
+
+    want = {'game/' + ART, 'game/art/rigs.js', 'game/art/next/rigs-next.js', 'game/data/meta.json'}
+    # 1. edits, the tab closed without proposing, reopened: one question; Restore brings all three back
+    pg, asked = open_page()
+    if asked: errs.append(f'drafts: a fresh browser was asked about a draft: {asked!r}')
+    make_edits(pg, 'kept-1')
+    d, secs = wait_draft(pg, 'kept-1')
+    if secs is None: errs.append(f'drafts: no draft 10 s after the edits ({d})')
+    else:
+        if set(d['files']) != {'meta.json'} or not d['rigs'] or d['art'] != [ART] or d['base'] != 'base1' or d['token']:
+            errs.append(f'drafts: the draft does not hold exactly the three changes at base1: {d}')
+        print(f'drafts: written {secs:.1f} s after the last edit ({len(d["files"])} data file, rigs, {len(d["art"])} picture)', flush=True)
+    ms = pg.evaluate("async () => { const a = performance.now(); studioState.D.meta.draftCheck += '+'; changed(); await draftNow(); return performance.now() - a }")
+    pg.close()
+    pg, asked = open_page('Restore')
+    if not asked or '1 data file, the skeletons and 1 picture' not in asked: errs.append(f'drafts: the question on reopening was {asked!r}')
+    elif 'Main has new commits' in asked: errs.append('drafts: main did not move, yet the question says it did')
+    left = pg.evaluate(pending)
+    if not all(left.values()): errs.append(f'drafts: Restore did not bring every change back as pending: {left}')
+    back = pg.evaluate("""() => { const k = Object.keys(studioState.rigs).find(k => studioState.rigs[k].draftCheck);
+      const c = studioState.artDirty.get(%s), px = c ? [...c.getContext('2d').getImageData(1, 1, 1, 1).data] : null;
+      return {meta: studioState.D.meta.draftCheck, rig: k ? studioState.rigs[k].draftCheck : null, px, undo: studioState.undo.length,
+        undoOff: document.querySelector('#undoBtn').disabled} }""" % json.dumps(ART))
+    if back['meta'] != 'kept-1+' or back['rig'] != 'kept-1' or back['px'] != [204, 0, 51, 255]: errs.append(f'drafts: the restored changes are not the ones made: {back}')
+    if back['undo'] or not back['undoOff']: errs.append(f'drafts: undo does not start empty after a restore: {back}')
+    # 2. a restored draft proposes correctly, and the draft goes once the proposal is confirmed
+    st['log'].clear()
+    propose(pg, 'drafts check: restored')
+    missing = sorted(want - set(last_tree()))
+    if missing: errs.append(f'drafts: the proposal after a restore left out {missing}')
+    meta = next((base64.b64decode(json.loads(bd)['content']).decode() for k, bd in st['log'] if k == 'blobs' and 'kept-1+' in base64.b64decode(json.loads(bd)['content']).decode('utf8', 'replace')), None)
+    if not meta: errs.append('drafts: the proposal does not carry the restored data edit')
+    if any(pg.evaluate(pending).values()): errs.append('drafts: after proposing, changes still show as pending')
+    if pg.evaluate(stored): errs.append('drafts: the draft is still there after a confirmed proposal')
+    pg.close()
+    # 3. a failed proposal keeps the draft
+    pg, asked = open_page()
+    if asked: errs.append(f'drafts: asked again after the draft was proposed: {asked!r}')
+    make_edits(pg, 'failed-3')
+    wait_draft(pg, 'failed-3')
+    st['fail'] = {'trees': [502]}
+    propose(pg, 'drafts check: fails')
+    time.sleep(0.5)
+    d = pg.evaluate(stored)
+    if not d or 'failed-3' not in d['meta'] or not d['rigs'] or d['art'] != [ART]: errs.append(f'drafts: a failed proposal did not keep the whole draft: {d}')
+    pg.close()
+    # 4. main moved on: the question says so, and Restore reads everything at the draft's commit (base1), not main's
+    st['head'] = 'main2'; st['compare'] = ['game/data/meta.json']
+    pg, asked = open_page('Restore')
+    if not asked or 'Main has new commits' not in asked: errs.append(f'drafts: main moved, but the question was {asked!r}')
+    at = sorted(set(st['reads']))
+    if at != ['base1']: errs.append(f'drafts: a restore on a moved main read at {at}, not only at the draft commit base1')
+    st['log'].clear()
+    moved = propose(pg, 'drafts check: moved', 'Cancel')
+    if not moved or 'meta.json' not in moved: errs.append(f'drafts: proposing a restored draft on a moved main did not name meta.json ({moved!r})')
+    if st['log']: errs.append(f"drafts: a cancelled proposal still sent {[k for k, _ in st['log']]}")
+    pg.close()
+    st['head'] = 'base1'; st['compare'] = []
+    # 5. Later keeps the draft and writes nothing over it; Discard removes it
+    pg, asked = open_page('Later')
+    if any(pg.evaluate(pending).values()): errs.append('drafts: Later still put changes back')
+    if not pg.locator('#draftOff').count(): errs.append('drafts: after Later, nothing says new changes are not kept')
+    make_edits(pg, 'later-5'); time.sleep(3)
+    d = pg.evaluate(stored)
+    if not d or 'failed-3' not in d['meta']: errs.append(f'drafts: an edit after Later wrote over the kept draft: {d}')
+    pg.close()
+    pg, asked = open_page('Discard')
+    if not asked: errs.append('drafts: the kept draft was not offered again after Later')
+    if any(pg.evaluate(pending).values()) or pg.evaluate(stored): errs.append('drafts: Discard left the draft or its changes')
+    pg.close()
+    # 6. a browser that can't keep drafts (IndexedDB refused): the Studio works and says changes aren't kept
+    ctx2 = b.new_context(viewport={'width': 1400, 'height': 900})
+    ctx2.add_init_script('window.PB_TEST_GLOBALS=true')
+    ctx2.add_init_script("localStorage.setItem('pb-studio-gh-token','ghp_stand-in')")
+    ctx2.add_init_script("IDBFactory.prototype.open = function () { throw new DOMException('stand-in: storage refused', 'SecurityError') }")
+    ctx2.route('https://api.github.com/**', api)
+    pg = ctx2.new_page()
+    pg.on('pageerror', lambda e: errs.append('drafts (no storage): ' + str(e)[:300]))
+    pg.goto(url); t0 = time.time()
+    while time.time() - t0 < 120 and not ready(pg): time.sleep(0.3)
+    if not ready(pg): errs.append('drafts: without IndexedDB the Studio did not load')
+    elif not pg.locator('#draftOff').count(): errs.append('drafts: without IndexedDB nothing says changes are not kept')
+    else:
+        make_edits(pg, 'none-6'); time.sleep(2.5)
+        if not all(pg.evaluate(pending).values()): errs.append('drafts: without IndexedDB, edits did not stay pending')
+    ctx2.close()
+    n = sum(1 for e in errs if e.startswith('drafts'))
+    print(f'drafts: restore, propose, a failed proposal, main moved on, Later, Discard, no storage; a write takes {ms:.0f} ms ({n} problem(s))', flush=True)
     ctx.close()
 
 
@@ -1360,6 +1801,8 @@ def main():
             else: print('ui: the proposal carries game/data/uiTheme.json with the large cut at 20 px', flush=True)
         if ONLY is None or 'publish' in ONLY:
             publish_checks(b, f'http://127.0.0.1:{srv.server_address[1]}/studio/index.html', errs)
+        if ONLY is None or 'drafts' in ONLY:
+            drafts_checks(b, f'http://127.0.0.1:{srv.server_address[1]}/studio/index.html', errs)
         b.close()
     for e in errs: print('PROBLEM', e)
     print('ok' if not errs else f'{len(errs)} problem(s)')

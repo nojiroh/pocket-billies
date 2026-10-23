@@ -4724,8 +4724,41 @@ body.wb-dropping::after {
   margin-right: 4px;
   vertical-align: -2px;
 }
-.rl-node-info th {
+.rl-node-info th,
+.rl-logic-node th {
   text-align: left;
   white-space: nowrap;
   padding-right: 10px;
+}
+.rl-logic-node th {
+  vertical-align: top;
+}
+.rl-offers {
+  margin: 4px 0 0;
+  padding-left: 22px;
+}
+.rl-side {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+.rl-side > .card {
+  flex: 1 1 min(420px, 100%);
+  min-width: 0;
+}
+.rl-code th {
+  text-align: left;
+  vertical-align: top;
+  padding-right: 10px;
+}
+.rl-sweep-figures th {
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+  padding-right: 10px;
+}
+.rl-sweep-problems {
+  margin: 4px 0;
+  padding-left: 20px;
 }

@@ -3,13 +3,31 @@
    State, server calls, undo, form fields bound to paths in the game data, navigation, toasts and dialogs. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { artStepPut, mountPreviews, provide, runCheck, scheduleCheck, spriteCacheClear } from '../../game/js/hooks.js';
+import {
+  artStepPut,
+  draftNow,
+  draftSoon,
+  legacyLineIdsRead,
+  mountPreviews,
+  provide,
+  runCheck,
+  scheduleCheck,
+  spriteCacheClear,
+} from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ICON_ATLAS, artLoad } from '../../game/js/art.js';
 import { battleStageStop } from '../../game/js/battle-stage.js';
 import { engineContext } from '../../game/js/engine/settings.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { historyCommit, historyRedo, historyUndo } from '../../game/js/logic/history.js';
+import {
+  HISTORY_ORDER,
+  historyBytes,
+  historyCommit,
+  historyParts,
+  historyPartsData,
+  historyRedo,
+  historyUndo,
+} from '../../game/js/logic/history.js';
 import { publishConfirm, publishEmpty } from '../../game/js/logic/publish-plan.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -59,6 +77,7 @@ expose({
   renderSide: [() => renderSide, v => (renderSide = v)],
   renderingPane: [() => renderingPane, v => (renderingPane = v)],
   restore: [() => restore, v => (restore = v)],
+  restoreParts: [() => restoreParts, v => (restoreParts = v)],
   saveAll: [() => saveAll, v => setSaveAll(v)],
   sectionShown: [() => sectionShown],
   selectField: [() => selectField, v => (selectField = v)],
@@ -69,6 +88,7 @@ expose({
   setToast: [() => setToast, v => (setToast = v)],
   setWritePath: [() => setWritePath, v => (setWritePath = v)],
   snapshot: [() => snapshot],
+  snapshotParts: [() => snapshotParts],
   speciesName: [() => speciesName],
   speciesOptions: [() => speciesOptions],
   stageChanges: [() => stageChanges, v => (stageChanges = v)],
@@ -186,18 +206,31 @@ export function setWritePath(v) {
 }
 /* ---------- undo / dirty ---------- */
 /* caches kept on the data (keys starting with _, as the height cache's clock in a map) are left out, as saving does:
-   otherwise the snapshot changes on its own and an undo only takes that back */
+   otherwise the snapshot changes on its own and an undo only takes that back. The whole data as one text: the
+   self-test's before and after (restore puts it back) */
 export const snapshot = () =>
   JSON.stringify({ D: studioState.D, R: studioState.rigs }, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v));
+/* Studio plan T1.2: the data as the undo holds it, one text per entry (logic/history.js historyParts) */
+export const snapshotParts = () => historyParts(studioState.D, studioState.rigs);
 export function commit(now) {
   clearTimeout(studioState.snapT);
+  studioState.snapT = null;
   const go = () => {
+    studioState.snapT = null; /* T1.5: null when no commit is pending */
     const P = studioProbe.on,
       a = P ? performance.now() : 0,
-      snap = snapshot(),
-      b = P ? performance.now() : 0;
-    if (historyCommit(studioState, snap)) updateTopBar();
-    if (P) P('commit', { snapMs: b - a, chars: snap.length, ms: performance.now() - a });
+      parts = snapshotParts(),
+      b = P ? performance.now() : 0,
+      top = studioState.undo[studioState.undo.length - 1];
+    if (historyCommit(studioState, parts)) updateTopBar();
+    if (P) {
+      let chars = 0;
+      for (const v of parts.values()) chars += v.length;
+      const step = studioState.undo[studioState.undo.length - 1];
+      /* bytes: what this edit's undo step holds, as the browser stores it */
+      const bytes = step !== top ? historyBytes(step, undefined, true) : 0;
+      P('commit', { snapMs: b - a, chars, bytes, ms: performance.now() - a });
+    }
   };
   if (now) go();
   else studioState.snapT = setTimeout(go, 450);
@@ -214,7 +247,8 @@ export function changed(rigs) {
 }
 /* v29: live update. A game tab open from this Studio (a test run, or the game on the same address) gets your scenes,
    props and engine settings (Project Story S3: and the story and trainers) half a second after each change, before
-   you save; UI-3: and the UI's look */
+   you save; UI-3: and the UI's look; Studio plan T2.6: and the run's rules, place types, Loopholes, unlocks and items
+   (a test run only applies those) */
 const LIVE_UPDATE_CHANNEL = (() => {
   try {
     const c = new BroadcastChannel('networth-studio');
@@ -246,6 +280,12 @@ export function studioBroadcast() {
           landmarks: Object.fromEntries((studioState.D.locations || []).map(l => [l.id, l.landmark || ''])),
           /* UI-3: the UI's look (the game writes it as its theme sheet) */
           uiTheme: studioState.D.uiTheme,
+          /* Studio plan T2.6: what a run is made of, for a test run (Play this seed); game data only, never a save */
+          rules: studioState.D.rules,
+          nodeTypes: studioState.D.nodeTypes,
+          relics: studioState.D.relics,
+          unlocks: studioState.D.unlocks,
+          items: studioState.D.items,
         },
       });
     } catch (e) {}
@@ -263,9 +303,9 @@ export function undo() {
   if (!u) return toast('Nothing to undo.');
   if (u.kind === 'art') {
     artStepPut(u.step, u.put);
-    if (u.step.snapshot) restore(u.step.snapshot.before);
+    if (u.parts) restoreParts(u.parts);
     updateTopBar();
-  } else restore(u.snap);
+  } else restoreParts(u.put);
   toast('Undone.');
 }
 export function redo() {
@@ -274,9 +314,9 @@ export function redo() {
   if (!u) return toast('Nothing to redo.');
   if (u.kind === 'art') {
     artStepPut(u.step, u.put);
-    if (u.step.snapshot) restore(u.step.snapshot.after);
+    if (u.parts) restoreParts(u.parts);
     updateTopBar();
-  } else restore(u.snap);
+  } else restoreParts(u.put);
   toast('Redone.');
 }
 export function restore(s) {
@@ -295,31 +335,78 @@ export function restore(s) {
   scheduleCheck();
   if (P) P('restore', { parseMs: b - a, ms: performance.now() - a });
 }
+/* Studio plan T1.2: an undo or redo puts back only the parts it holds (logic/history.js has already put them in
+   `last`); a change to the keys or their order (@order) rebuilds the whole data from `last` */
+function restoreParts(put) {
+  const P = studioProbe.on,
+    a = P ? performance.now() : 0,
+    S = studioState;
+  let data = false,
+    rigs = false;
+  if (HISTORY_ORDER in put) {
+    const o = historyPartsData(S.last);
+    S.D = o.D;
+    S.rigs = o.R;
+    data = rigs = true;
+  } else
+    for (const name of Object.keys(put)) {
+      const v = JSON.parse(put[name]);
+      if (name.startsWith('R/')) {
+        S.rigs[name.slice(2)] = v;
+        rigs = true;
+        continue;
+      }
+      const i = name.indexOf('/', 2),
+        k = i < 0 ? name.slice(2) : name.slice(2, i);
+      if (i < 0) S.D[k] = v;
+      else S.D[k][Array.isArray(S.D[k]) ? +name.slice(i + 1) : name.slice(i + 1)] = v;
+      data = true;
+    }
+  const b = P ? performance.now() : 0;
+  if (data) S.dirty = true;
+  if (rigs) {
+    S.rigsDirty = true;
+    window.RIGS = S.rigs;
+  }
+  spriteCacheClear();
+  render();
+  updateTopBar();
+  scheduleCheck();
+  if (P) P('restore', { parseMs: b - a, parts: Object.keys(put).length, ms: performance.now() - a });
+}
 export function updateTopBar() {
   $('#dirty').hidden = !(studioState.dirty || studioState.rigsDirty || studioState.artDirty.size);
-  $('#undoBtn').disabled = !studioState.undo.length && studioState.last === snapshot();
+  /* an edit whose commit is pending can be undone too */
+  $('#undoBtn').disabled = !studioState.undo.length && studioState.snapT == null;
   $('#redoBtn').disabled = !studioState.redo.length;
+  draftSoon(); /* T1.1: what is pending is kept in this browser 2 s later (drafts.js) */
 }
 /* ---------- save ----------
    Studio plan Phase 0: a save stages what it will send (stageChanges), sends it (writeStaged, which throws on the
    first error) and only then marks saved what is still as it was sent (confirmStaged, logic/publish-plan.js). A failed
    save leaves everything unsaved; a picture painted or data edited during the send stays unsaved. */
-const SAVE_REPLACER = (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v);
-/** Check's problems before a save: true to go on (none, or "Save anyway"); false opens the Check */
+export const SAVE_REPLACER = (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v);
+/** Studio plan T1.3: the Check before a save. An error (what check-data, and so CI, fails on) refuses it: the dialog
+ * names the first few and Show me opens the Check. Warnings never stop a save. true to go on */
 export async function checkBeforeSave() {
+  await legacyLineIdsRead(); /* the legacy-species rule needs the parked lines (an error if read, else the old rule) */
   const errs = runCheck().filter(p => p.lvl === 'error');
-  if (
-    errs.length &&
-    !(await ask(
-      `There ${errs.length === 1 ? 'is 1 problem' : 'are ' + errs.length + ' problems'} the game can work around, but you’ll probably want to fix ${errs.length === 1 ? 'it' : 'them'}. Save anyway?`,
-      'Save anyway',
-      'Review problems'
-    ))
-  ) {
-    openSection('check');
-    return false;
-  }
-  return true;
+  if (!errs.length) return true;
+  const n = errs.length,
+    list = errs
+      .slice(0, 5)
+      .map(p => `<li>${escapeHtml(p.msg)}</li>`)
+      .join('');
+  const go = await dialog(
+    n === 1 ? 'Fix 1 problem first' : `Fix ${n} problems first`,
+    `<p>${n === 1 ? 'This would fail' : 'These would fail'} the game data check every proposal must pass, so nothing is sent. Your changes stay here, unsaved.</p><ul class="checks">${list}</ul>${n > 5 ? `<p>And ${n - 5} more in the Check.</p>` : ''}`,
+    [
+      { l: 'Close', v: null },
+      { l: 'Show me', c: 'primary', v: 'show' },
+    ]
+  );
+  if (go === 'show') openSection('check');
+  return false;
 }
 /** what a save will send, without marking anything saved: each unsaved picture with its version, the rigs' text, the
  * data's text (with meta.artVersion one up when pictures go too; the data itself changes only on confirm) */
@@ -362,6 +449,7 @@ export function confirmStaged(staged) {
   if (ok.rigs) S.rigsDirty = false;
   for (const p of ok.art) S.artDirty.delete(p);
   updateTopBar();
+  draftNow(); /* T1.1: the draft goes (or keeps only what is still unsaved) at once, not 2 s later */
   return ok;
 }
 export async function saveAll() {
@@ -460,7 +548,7 @@ export function checkboxField(label, p, o = {}) {
   return `<label class="fld chk ${o.cls || ''}"><input type="checkbox" data-p="${p}" data-k="bool" ${o.num ? 'data-num="1"' : ''} ${o.rr ? 'data-rr="1"' : ''} ${v ? 'checked' : ''}><span>${label}</span>${helpHTML(o.help)}</label>`;
 }
 export function colorField(label, p, o = {}) {
-  const v = readPath(p) || '#000000';
+  const v = readPath(p) || o.def || '#000000'; /* o.def: shown when the data has none, not written */
   return `<label class="fld color ${o.cls || ''}"><span>${label}</span><span class="colw"><input type="color" data-p="${p}" data-k="color" value="${/^#[0-9a-f]{6}$/i.test(v) ? v : '#000000'}"><input type="text" data-p="${p}" data-k="color" value="${escapeHtml(v)}" maxlength="7" class="hex"></span>${helpHTML(o.help)}</label>`;
 }
 export const card = (title, body, o = {}) =>
@@ -750,7 +838,7 @@ export async function boot() {
     if (window.RIGS_NEXT) for (const k in window.RIGS_NEXT) if (!R[k]) R[k] = window.RIGS_NEXT[k];
     window.RIGS = R;
     studioState.files = F;
-    studioState.last = snapshot();
+    studioState.last = snapshotParts();
     const h = location.hash.slice(1);
     if (SECTION_LIST.some(n => n[0] === h)) studioState.sec = h;
     renderSide();
@@ -760,7 +848,7 @@ export async function boot() {
     performance.mark('studio-first-draw');
   } catch (e) {
     $('#main').innerHTML =
-      `<div class="loading err"><h2>The Studio couldn’t load the game data</h2><p>${escapeHtml(e.message)}</p><p>From the game's site: check your connection and reload; if it says the sign-in expired, sign out and in again. Local mode (<code>start-studio.py</code>) is not in this repository.</p></div>`;
+      `<div class="loading err"><h2>The Studio couldn’t load the game data</h2><p>${escapeHtml(e.message)}</p><p>From the game's site: check your connection and reload; if it says the sign-in expired, sign out and in again.</p></div>`;
   }
 }
 addEventListener('load', boot);

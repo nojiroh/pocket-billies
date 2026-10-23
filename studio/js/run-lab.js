@@ -12,7 +12,18 @@
      and its forecast.
    - "Beside the loaded data" draws the same seed on the data as the Studio loaded it (studioState.loaded), so a
      change to rules.run, nodeTypes or biomes shows as a second map.
-   An edit made in the other pane redraws the map (the game's map code takes well under a millisecond). */
+   An edit made in the other pane redraws the map (the game's map code takes well under a millisecond).
+   T2.4: what the game's logic says about the run (logic/run-preview.js runPreview, in the Studio's logic worker on the
+   data as it is now): the clicked place's wild table, its leader and team (a mini-boss or the boss), a town's stock and
+   Loophole on each day it can be open; and the run's Loophole picks after each mini-boss row, with nothing held.
+   T2.5: the run rules card beside the map edits rules.run (map, clock, reveal, wild, foes, shop, healCost, payout) and
+   nodeTypes with the standard fields; each change redraws the map and the logic panel. The rules that live in code
+   (logic/run-rules-code.js) are listed read-only with their file and line, found by searching the file as served.
+   T2.6: "Play this seed" opens the game on this seed in a test run (?debug&run=, logic/run-test.js) with the Lab's
+   unlocks and short map, after the Studio's unsaved data (the live channel: game data, never a save).
+   T2.3: the map checks over 1,000 seeds (data-checks.js runMapSweep, in the logic worker) under the map: problems with
+   a seed that shows each, the figures (places, types, towns on a walk, biomes, towns made against routes) and outlying
+   seeds to open. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
@@ -20,24 +31,51 @@ import { runBack, runMapRows, runNodeSeed, runWorldNode } from '../../game/js/lo
 import { runUnlocks } from '../../game/js/logic/unlocks.js';
 import { runStartPlan } from '../../game/js/logic/run-start.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { ACTIONS, SECTIONS, card, dialog, render, sectionShown, studioState, toast } from './studio-app.js';
+import { RUN_RULES_IN_CODE, runRulesCodeLine } from '../../game/js/logic/run-rules-code.js';
+import {
+  ACTIONS,
+  SECTIONS,
+  card,
+  changed,
+  dialog,
+  grid,
+  numberField,
+  render,
+  sectionShown,
+  selectField,
+  speciesName,
+  studioState,
+  textField,
+  toast,
+} from './studio-app.js';
 import { githubMode } from './github.js';
+import { logicAsk } from './logic-client.js';
 /* eslint-disable no-func-assign */
 expose({
+  RUN_LAB_PAYOUT: [() => RUN_LAB_PAYOUT],
   RUN_LAB_ROLE: [() => RUN_LAB_ROLE],
   RUN_LAB_SHORT: [() => RUN_LAB_SHORT],
   RUN_LAB_TYPE_COLOUR: [() => RUN_LAB_TYPE_COLOUR],
   runLab: [() => runLab],
   runLabBiomeColour: [() => runLabBiomeColour],
+  runLabCodeLines: [() => runLabCodeLines, v => (runLabCodeLines = v)],
   runLabFigures: [() => runLabFigures, v => (runLabFigures = v)],
+  runLabLogicFill: [() => runLabLogicFill, v => (runLabLogicFill = v)],
+  runLabLogicHTML: [() => runLabLogicHTML, v => (runLabLogicHTML = v)],
+  runLabLogicSoon: [() => runLabLogicSoon],
+  runLabName: [() => runLabName],
   runLabNodeHTML: [() => runLabNodeHTML, v => (runLabNodeHTML = v)],
   runLabOutHTML: [() => runLabOutHTML, v => (runLabOutHTML = v)],
   runLabPlan: [() => runLabPlan, v => (runLabPlan = v)],
+  runLabPlayUrl: [() => runLabPlayUrl, v => (runLabPlayUrl = v)],
   runLabReadLog: [() => runLabReadLog, v => (runLabReadLog = v)],
   runLabRedraw: [() => runLabRedraw, v => (runLabRedraw = v)],
+  runLabRulesHTML: [() => runLabRulesHTML, v => (runLabRulesHTML = v)],
   runLabSeedClean: [() => runLabSeedClean],
   runLabSoon: [() => runLabSoon],
   runLabSvg: [() => runLabSvg, v => (runLabSvg = v)],
+  runLabSweepFill: [() => runLabSweepFill, v => (runLabSweepFill = v)],
+  runLabSweepHTML: [() => runLabSweepHTML, v => (runLabSweepHTML = v)],
   runLabUnlocks: [() => runLabUnlocks, v => (runLabUnlocks = v)],
 });
 /* eslint-enable no-func-assign */
@@ -53,6 +91,25 @@ const runLab = {
   beside: false,
   pick: -1,
   redrawT: 0,
+  /** the latest ask to the logic worker (an older answer is dropped) */
+  logicN: 0,
+  logicT: 0,
+  sweepN: 0,
+  /** the last sweep and the rules it was for @type {{ key: string, S: any } | null} */
+  sweep: null,
+  /** the source files the rules in code are in, as served (path -> its text, '' when it couldn't be read) */
+  /** @type {Record<string, Promise<string>>} */
+  code: {},
+};
+const RUN_LAB_PAYOUT = {
+  money: 'Capital per $ brought home',
+  itemShare: 'Share of an item’s price',
+  released: 'Capital per Billie released',
+  node: 'Capital per place cleared',
+  win: 'Capital for a win',
+  winSeals: 'Seals for a win',
+  scrapNode: 'Scrap per place cleared',
+  scrapWin: 'Scrap for a win',
 };
 /** the debug menu's short run (debug-menu.js runstart) */
 const RUN_LAB_SHORT = { rows: 5, minibosses: 1 };
@@ -178,6 +235,143 @@ function runLabNodeHTML(D, plan, roles, i) {
   ].join('')}</table>`;
 }
 
+/** a name from the data, its id beside it @param {any} table @param {string} id @param {string} [k] */
+const runLabName = (table, id, k = 'n') =>
+  `${escapeHtml(((table || {})[id] || {})[k] || id)} <small class="mono">${escapeHtml(id)}</small>`;
+/** what the game's logic says about the run (runPreview's answer): node i's part, then the run's Loophole picks
+ * @param {any} D @param {any} p @param {number} i */
+function runLabLogicHTML(D, p, i) {
+  const n = p.nodes[i],
+    row = (/** @type {string} */ k, /** @type {string} */ v, a = '') => `<tr${a}><th>${k}</th><td>${v}</td></tr>`,
+    rows = [];
+  if (n) {
+    const W = n.wild,
+      sum = W.list.reduce((a, e) => a + e[1], 0) || 1;
+    rows.push(
+      row(
+        'Wild',
+        `Lv ${W.lv[0]}–${W.lv[1]}: ${W.list
+          .slice()
+          .sort((a, b) => b[1] - a[1])
+          .map(([sp, w]) => `${escapeHtml(speciesName(sp))} ${Math.round((w / sum) * 100)}%`)
+          .join(', ')}`,
+        ` data-wild="${escapeHtml(W.list.map(e => e.join(':')).join(','))}"`
+      )
+    );
+    if (n.foe) {
+      const F = n.foe;
+      rows.push(
+        row(
+          F.runFoe === 'boss' ? 'Boss' : 'Mini-boss',
+          `${escapeHtml(F.name || F.from)} <small class="mono">${escapeHtml(F.from)}</small>: ${F.team
+            .map(e => `${escapeHtml(speciesName(e.sp))} Lv ${e.lvl}`)
+            .join(', ')}; ${F.double ? 'a double battle' : 'alone, as an Alpha'}; reward $${F.reward}`,
+          ` data-foe="${escapeHtml(F.from)}" data-team="${escapeHtml(F.team.map(e => e.sp + '@' + e.lvl).join(','))}"`
+        )
+      );
+    }
+    for (const S of n.shop || [])
+      rows.push(
+        row(
+          `Shop, day ${S.day}`,
+          `${S.stock.map(w => (w.coin ? runLabName(D.coins, w.coin) : runLabName(D.items, w.item))).join(', ')}${S.relic ? `; Loophole: ${runLabName(D.relics, S.relic, 'name')}` : ''}`,
+          ` data-day="${S.day}" data-stock="${escapeHtml(S.stock.map(w => w.item || 'coin:' + w.coin).join(','))}" data-relic="${escapeHtml(S.relic)}"`
+        )
+      );
+  }
+  const picks = p.relicOffers
+    .map(
+      (/** @type {string[]} */ ids, /** @type {number} */ k) =>
+        `<li data-offer="${escapeHtml(ids.join(','))}">after mini-boss ${k + 1}: ${ids.map(id => runLabName(D.relics, id, 'name')).join(', ') || 'nothing left'}</li>`
+    )
+    .join('');
+  return `<h4>From the game’s logic</h4>${rows.length ? `<table class="tbl rl-logic-node" data-node="${i}">${rows.join('')}</table>` : ''}<p class="help">Loophole picks, in order, with none held (a held one changes the later picks and the shelves):</p><ol class="rl-offers">${picks}</ol>`;
+}
+/** the seed sweep's answer (data-checks.js runMapSweep) @param {any} D @param {any} S */
+function runLabSweepHTML(D, S) {
+  const pct = (/** @type {number} */ v, /** @type {number} */ all) => `${Math.round((v / (all || 1)) * 100)}%`,
+    all = Object.values(S.types).reduce((/** @type {number} */ a, /** @type {any} */ b) => a + b, 0),
+    open = (/** @type {string} */ seed, /** @type {string} */ l) =>
+      `<button class="btn small" data-act="runLabOpenSeed" data-seed="${escapeHtml(seed)}">${l}</button>`,
+    problems = S.problems.length
+      ? `<ul class="rl-sweep-problems">${S.problems.map((/** @type {any} */ p) => `<li class="err" data-seed="${escapeHtml(p.seed)}">${escapeHtml(p.text)} (${p.count} of ${S.maps || 1000} maps) ${open(p.seed, `Open ${escapeHtml(p.seed)}`)}</li>`).join('')}</ul>`
+      : '<p class="ok rl-sweep-ok">No problems: every map reaches the boss, every place can be reached, each role row holds its type.</p>';
+  if (!S.maps) return `<h4>Over 1,000 seeds</h4>${problems}`;
+  const types = Object.entries(S.types)
+      .map(([k, v]) => `${escapeHtml((D.nodeTypes[k] || {}).name || k)} ${pct(/** @type {number} */ (v), all)}`)
+      .join(', '),
+    bAll = Object.values(S.biomes).reduce((/** @type {number} */ a, /** @type {any} */ b) => a + b, 0),
+    biomes = Object.entries(S.biomes)
+      .sort((a, b) => /** @type {number} */ (b[1]) - /** @type {number} */ (a[1]))
+      .map(([k, v]) => `${escapeHtml((D.biomes[k] || {}).name || k)} ${pct(/** @type {number} */ (v), bAll)}`)
+      .join(', '),
+    R = S.ratio;
+  return `<h4>Over ${S.maps.toLocaleString()} seeds</h4>${problems}<table class="tbl rl-sweep-figures">
+<tr><th>Places</th><td>${S.nodes.min}–${S.nodes.max}, ${S.nodes.avg.toFixed(1)} on average</td></tr>
+<tr><th>By type</th><td>${types}</td></tr>
+<tr><th>Towns on a walk</th><td>${S.townsPerPath.min}–${S.townsPerPath.max} (the walk with fewest: ${S.townsPerPath.avg.toFixed(1)} on average)</td></tr>
+<tr><th>Towns : routes</th><td data-ratio="${R.towns}:${R.routes}">${R.towns.toLocaleString()} : ${R.routes.toLocaleString()} made, against weights ${R.weights.town} : ${R.weights.route} (rest rows are always towns)</td></tr>
+<tr><th>Biomes</th><td>${biomes}</td></tr>
+<tr><th>Seeds to look at</th><td>${S.outliers.map((/** @type {any} */ o) => open(o.seed, `${escapeHtml(o.seed)}: ${escapeHtml(o.why)}`)).join(' ')}</td></tr></table>`;
+}
+/** ask the logic worker for the sweep on the rules the Lab's map uses (the unlocks' biomes, the short map) */
+function runLabSweepFill() {
+  const els = /** @type {HTMLElement[]} */ ([...document.querySelectorAll('[data-runlab-sweep]')]);
+  if (!els.length) return;
+  const D = studioState.D,
+    now = runLabPlan(D),
+    k = ++runLab.sweepN;
+  if (now.error || !now.plan) return;
+  const args = [D.nodeTypes, now.plan.data.rules.map, D.rules.run.clock, { n: 1000 }],
+    key = JSON.stringify(args),
+    show = (/** @type {any} */ S) => {
+      for (const el of els) {
+        el.innerHTML = runLabSweepHTML(D, S);
+        el.dataset.problems = String(S.problems.length);
+        el.dataset.ready = '1';
+      }
+    };
+  /* it doesn't change with the seed or the place clicked: the last answer stands while its rules do */
+  if (runLab.sweep && runLab.sweep.key === key) return show(runLab.sweep.S);
+  logicAsk('runMapSweep', ...args).then(
+    S => {
+      if (k !== runLab.sweepN) return;
+      runLab.sweep = { key, S };
+      show(S);
+    },
+    e => {
+      if (k !== runLab.sweepN || e.message === 'replaced') return;
+      for (const el of els) el.innerHTML = `<p class="err">The seed sweep couldn’t run: ${escapeHtml(e.message)}</p>`;
+    }
+  );
+}
+/** ask the logic worker about the run on the data as it is now, and fill the panel when it answers */
+function runLabLogicFill() {
+  runLabSweepFill();
+  const els = [...document.querySelectorAll('[data-runlab-logic]')];
+  if (!els.length) return;
+  const D = studioState.D,
+    k = ++runLab.logicN,
+    t0 = performance.now(),
+    seed = runLab.seed,
+    pick = runLab.pick;
+  logicAsk('runPreview', seed, { unlocks: runLabUnlocks(D), map: runLab.short ? RUN_LAB_SHORT : undefined }).then(
+    p => {
+      if (k !== runLab.logicN) return;
+      for (const el of els) {
+        el.innerHTML = runLabLogicHTML(D, p, pick);
+        el.dataset.ms = String(Math.round(performance.now() - t0));
+        el.dataset.ready = seed;
+      }
+    },
+    e => {
+      if (k !== runLab.logicN || e.message === 'replaced') return;
+      for (const el of els)
+        el.innerHTML = `<p class="err rl-logic-error">The game’s logic couldn’t work it out: ${escapeHtml(e.message)}</p>`;
+    }
+  );
+}
+
 /** the part of the Lab that changes with the seed and the data */
 function runLabOutHTML() {
   const D = studioState.D,
@@ -195,18 +389,132 @@ function runLabOutHTML() {
     RUN_LAB_TYPE_COLOUR
   )
     .map(([k, c]) => `<span><i style="border-color:${c}"></i>${escapeHtml((D.nodeTypes[k] || {}).name || k)}</span>`)
-    .join('')}</div>${runLabNodeHTML(D, now.plan, now.roles, runLab.pick)}`;
+    .join(
+      ''
+    )}</div><div class="rl-sweep" data-runlab-sweep><p class="help">Checking 1,000 seeds…</p></div>${runLabNodeHTML(D, now.plan, now.roles, runLab.pick)}<div class="rl-logic" data-runlab-logic><p class="help">The game’s logic is working it out…</p></div>`;
 }
+/** the run rules card: rules.run and nodeTypes with the standard fields, then the rules that live in code */
+function runLabRulesHTML() {
+  const D = studioState.D,
+    R = D.rules.run,
+    n = (/** @type {string} */ l, /** @type {string} */ p, o = {}) => numberField(l, `rules.run.${p}`, o),
+    int = { min: 0, step: 1 },
+    types = Object.keys(D.nodeTypes || {}).map(k => [k, (D.nodeTypes[k] || {}).name || k]),
+    part = (/** @type {string} */ h, /** @type {string[]} */ f, more = '') => `<h4>${h}</h4>${grid(...f)}${more}`,
+    always = Object.keys(D.items)
+      .map(k => ['', k])
+      .concat(Object.keys(D.coins).map(k => ['coin:', k]))
+      .map(([pre, k]) => {
+        const id = pre + k,
+          name = pre ? (D.coins[k] || {}).n : (D.items[k] || {}).n;
+        return `<label class="chk-chip"><input type="checkbox" data-rl-always="${escapeHtml(id)}"${R.shop.always.includes(id) ? ' checked' : ''}> ${escapeHtml(name || id)}</label>`;
+      })
+      .join('');
+  return [
+    `<p class="help">Each change redraws the map and the game’s logic beside it. These are rules.json <code>run</code> and nodeTypes.json, saved and proposed like any other field.</p>`,
+    part('Map', [
+      n('Rows', 'map.rows', { min: 2, max: 30, step: 1 }),
+      n('Mini-bosses', 'map.minibosses', { min: 0, max: 10, step: 1 }),
+      n('Two lanes (chance a row)', 'map.wide', { min: 0, max: 1, step: 0.05 }),
+      n('Cross-link (chance a row)', 'map.cross', { min: 0, max: 1, step: 0.05 }),
+      selectField('The landing’s row', 'rules.run.map.first', types),
+      selectField('A rest row (before a mini-boss)', 'rules.run.map.rest', types),
+      selectField('A mini-boss row', 'rules.run.map.guard', types),
+      selectField('The last row', 'rules.run.map.last', types),
+    ]),
+    part(
+      'Biomes on the map (weight; an unlock may close one)',
+      Object.keys(D.biomes || {}).map(b => n((D.biomes[b] || {}).name || b, `map.biomes.${b}`, { ...int, opt: 1 }))
+    ),
+    part(
+      'Place types (filler rows draw by weight)',
+      Object.keys(D.nodeTypes || {}).flatMap(k => [
+        textField(`<span class="mono">${escapeHtml(k)}</span> name`, `nodeTypes.${k}.name`),
+        numberField(`<span class="mono">${escapeHtml(k)}</span> weight`, `nodeTypes.${k}.weight`, { ...int, opt: 1 }),
+      ])
+    ),
+    part('Clock and what the map shows', [
+      n('Days of slack past the shortest walk', 'clock.slack', int),
+      n('Forecast days ahead', 'clock.ahead', int),
+      n('Rows ahead shown with their type', 'reveal.icons', int),
+      n('Rows ahead shown as ?', 'reveal.unknown', int),
+    ]),
+    part('Wild Billies', [
+      n('Lowest level (landing row)', 'wild.lv.0', { min: 1, max: 100, step: 1 }),
+      n('Highest level (landing row)', 'wild.lv.1', { min: 1, max: 100, step: 1 }),
+      n('Levels more each row', 'wild.perRow', int),
+      n('Encounters left on a place walked back to', 'wild.back', int),
+    ]),
+    part(
+      'Foes',
+      ['miniboss', 'boss'].flatMap(k => {
+        const name = escapeHtml((D.nodeTypes[k] || {}).name || k);
+        return [
+          n(`${name}: levels over the row’s top wild level`, `foes.${k}.up`, int),
+          n(`${name}: reward ($)`, `foes.${k}.reward`, int),
+        ];
+      })
+    ),
+    part(
+      'Town shop and clinic',
+      [
+        n('Wares drawn each day', 'shop.more', int),
+        n('Clinic: $ per hurt Billie', 'healCost', int),
+        ...Object.keys(D.items).map(k =>
+          n(`Weight: ${escapeHtml(D.items[k].n || k)}`, `shop.pick.${k}`, { ...int, opt: 1 })
+        ),
+      ],
+      `<p class="help">Always on the shelves:</p><div class="chips rl-always">${always}</div>`
+    ),
+    part(
+      'Payout',
+      Object.keys(R.payout || {}).map(k => n(RUN_LAB_PAYOUT[k] || k, `payout.${k}`, { min: 0, step: 'any' }))
+    ),
+    `<h4>In the code (read-only)</h4><p class="help">These follow the code, not the data; changing one is a game change.</p><table class="tbl rl-code">${RUN_RULES_IN_CODE.map(
+      (C, k) =>
+        `<tr><th>${escapeHtml(C.what)}</th><td>${escapeHtml(C.value)}</td><td class="mono" data-rl-code="${k}">${escapeHtml(C.file.split('/').pop())}</td></tr>`
+    ).join('')}</table>`,
+  ].join('');
+}
+/** put each rule in code's line beside its file, from the file as the page is served */
+function runLabCodeLines() {
+  for (const el of /** @type {NodeListOf<HTMLElement>} */ (document.querySelectorAll('[data-rl-code]'))) {
+    const C = RUN_RULES_IN_CODE[+(el.dataset.rlCode || 0)];
+    if (!runLab.code[C.file])
+      runLab.code[C.file] = fetch(new URL('../' + C.file, document.baseURI)).then(
+        r => (r.ok ? r.text() : ''),
+        () => ''
+      );
+    runLab.code[C.file].then(text => {
+      const line = runRulesCodeLine(text, C.code);
+      el.textContent = `${C.file.split('/').pop()}:${line || '?'}`;
+      el.title = line ? `${C.file}, line ${line}: ${C.code}` : `${C.file}: the code has moved (${C.code})`;
+      el.dataset.line = String(line);
+    });
+  }
+}
+
 /** redraw the map and the node, not the inputs (the seed field keeps its caret) */
 function runLabRedraw() {
   for (const el of document.querySelectorAll('[data-runlab-out]')) el.innerHTML = runLabOutHTML();
+  runLabLogicSoon();
 }
+/** the logic worker's part a little after the map (it copies the whole data: not on every key typed) */
+const runLabLogicSoon = () => {
+  clearTimeout(runLab.logicT);
+  runLab.logicT = setTimeout(runLabLogicFill, 150);
+};
 const runLabSoon = () => {
   clearTimeout(runLab.redrawT);
   runLab.redrawT = setTimeout(runLabRedraw, 30);
 };
 
 SECTIONS.runlab = () => {
+  /* the logic worker's part fills in once the section is on the page */
+  setTimeout(() => {
+    runLabLogicFill();
+    runLabCodeLines();
+  });
   const opt = (/** @type {string} */ v, /** @type {string} */ l) =>
     `<option value="${v}"${runLab.unlocks === v ? ' selected' : ''}>${l}</option>`;
   return (
@@ -221,8 +529,10 @@ SECTIONS.runlab = () => {
 <label class="chk"><input type="checkbox" id="rlBeside" data-rl="beside"${runLab.beside ? ' checked' : ''}> Beside the loaded data</label>
 <button class="btn" data-act="runLabPaste">Paste a debug log…</button>
 <button class="btn" data-act="runLabCopy">Copy seed + data version</button>
+<button class="btn primary" data-act="runLabPlay" title="Opens the game in a test run on this seed, with your unsaved changes; nothing there is saved">▶ Play this seed</button>
 </div>${runLab.logNote ? `<p class="help rl-log-note">${escapeHtml(runLab.logNote)}</p>` : ''}`
-    ) + card('Map', `<div data-runlab-out>${runLabOutHTML()}</div>`)
+    ) +
+    `<div class="rl-side">${card('Map', `<div data-runlab-out>${runLabOutHTML()}</div>`, { cls: 'rl-map-card' })}${card('Run rules', runLabRulesHTML(), { cls: 'rl-rules' })}</div>`
   );
 };
 
@@ -244,6 +554,16 @@ document.addEventListener('input', ev => {
 });
 document.addEventListener('change', ev => {
   const el = /** @type {HTMLInputElement} */ (ev.target);
+  /* the shop's always-stocked wares: a list, so a box of its own */
+  if (el && el.dataset && el.dataset.rlAlways) {
+    const A = studioState.D.rules.run.shop.always,
+      id = el.dataset.rlAlways;
+    if (el.checked && !A.includes(id)) A.push(id);
+    else if (!el.checked && A.includes(id)) A.splice(A.indexOf(id), 1);
+    changed();
+    runLabSoon();
+    return;
+  }
   if (el && el.dataset && el.dataset.p && sectionShown('runlab')) runLabSoon();
 });
 
@@ -259,7 +579,8 @@ ACTIONS.runLabRoll = () => {
   runLab.pick = -1;
   render();
 };
-/** a debug log's run seed and the save's unlocks (debug-log.js: state.run.seed, state.meta.unlocks) @param {string} text */
+/** a debug log's run seed and unlocks: the run's own (debug-log.js state.run.unlocks, T2.6), else the save's
+ * (state.meta.unlocks, which a log taken after buying one mid-run has more of) @param {string} text */
 function runLabReadLog(text) {
   let log = null;
   try {
@@ -267,10 +588,12 @@ function runLabReadLog(text) {
   } catch (e) {}
   const st = (log && log.state) || {},
     seed = (st.run && st.run.seed) || ((/"seed"\s*:\s*"([^"]+)"/.exec(text) || [])[1] ?? ''),
-    unlocks =
-      (st.meta && st.meta.unlocks) || JSON.parse(`[${(/"unlocks"\s*:\s*\[([^\]]*)\]/.exec(text) || [])[1] || ''}]`),
+    own = st.run && Array.isArray(st.run.unlocks),
+    unlocks = own
+      ? st.run.unlocks
+      : (st.meta && st.meta.unlocks) || JSON.parse(`[${(/"unlocks"\s*:\s*\[([^\]]*)\]/.exec(text) || [])[1] || ''}]`),
     nodes = st.run && st.run.nodes;
-  return { seed: runLabSeedClean(seed), unlocks: Array.isArray(unlocks) ? unlocks.map(String) : [], nodes };
+  return { seed: runLabSeedClean(seed), unlocks: Array.isArray(unlocks) ? unlocks.map(String) : [], nodes, own };
 }
 ACTIONS.runLabPaste = async () => {
   const text = await dialog(
@@ -293,8 +616,24 @@ ACTIONS.runLabPaste = async () => {
   runLab.logUnlocks = got.unlocks;
   runLab.unlocks = 'log';
   runLab.pick = -1;
-  runLab.logNote = `From a debug log: seed ${got.seed}, ${got.unlocks.length} unlock(s) on the save${got.nodes ? `, its run had ${got.nodes} places` : ''}. The log has the save’s unlocks now, not the run’s at take-off; a short map isn't logged.`;
+  runLab.logNote = got.own
+    ? `From a debug log: seed ${got.seed}, the run’s ${got.unlocks.length} unlock(s)${got.nodes ? `, ${got.nodes} places` : ''}. A short map isn’t logged: tick it if the run had ${RUN_LAB_SHORT.rows} rows.`
+    : `From a debug log: seed ${got.seed}, ${got.unlocks.length} unlock(s) on the save${got.nodes ? `, its run had ${got.nodes} places` : ''}. This log is older than the run’s own unlocks: it has the save’s now, not the run’s at take-off; a short map isn’t logged.`;
   render();
+};
+/** T2.6: the game's address for this seed (logic/run-test.js): the Lab's unlocks and short map, the Studio's unsaved
+ * data first (&draft=1, sent on the live channel: game data only) */
+function runLabPlayUrl() {
+  const u = runLab.unlocks === 'log' ? runLab.logUnlocks.map(encodeURIComponent).join(',') || 'none' : runLab.unlocks;
+  return `../game/index.html?debug&run=${encodeURIComponent(runLab.seed)}&unlocks=${u}${runLab.short ? '&short=1' : ''}&draft=1`;
+}
+ACTIONS.runLabOpenSeed = (/** @type {{ seed: string }} */ d) => {
+  runLab.seed = runLabSeedClean(d.seed);
+  runLab.pick = -1;
+  render();
+};
+ACTIONS.runLabPlay = () => {
+  window.open(runLabPlayUrl(), 'networth-game');
 };
 ACTIONS.runLabCopy = () => {
   const D = studioState.D,

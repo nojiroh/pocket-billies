@@ -483,6 +483,9 @@ debugLog.state = () => {
             /* TR-2: the run's mods (dbg_mountains: the debug menu's mountains run), this place's mountains dial and
                its ground's triangles (the land and the step grid's walls; to weigh frame times against) */
             mods: (run.mods || []).slice(),
+            /* Studio plan T2.6: the unlocks the run carries (unlocks.json ids: they choose its biomes and shop wares),
+               so the Studio's Run Lab draws this run's map from the log */
+            unlocks: (run.unlocks || []).slice(),
             mountains: placeLand.mountains || 0,
             groundTris: GAME.walkRenderer && GAME.walkRenderer.mesh ? Math.round(GAME.walkRenderer.mesh.n / 3) : null,
             /* TR-3: the camera's extra tilt on tall ground right now (degrees) */

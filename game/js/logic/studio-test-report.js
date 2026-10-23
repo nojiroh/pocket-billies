@@ -7,8 +7,9 @@
    (tools/test/studio-test-report.test.mjs). studio/js/studio-test.js makes the report; docs/phases/studio-self-test.md
    says what is in it. On no page: the test imports it when it starts. */
 
-/** the report format: a change to its shape adds one, and the comparison only compares the same format */
-export const STUDIO_TEST_FORMAT = 1;
+/** the report format: a change to its shape adds one, and the comparison only compares the same format (2: the
+    undo's size is measured, Studio plan T1.2) */
+export const STUDIO_TEST_FORMAT = 2;
 
 /** where a number starts to matter (mid) and where it is the first thing to fix (high) */
 export const STUDIO_TEST_LIMITS = {
@@ -18,7 +19,7 @@ export const STUDIO_TEST_LIMITS = {
   editMs: [100, 300] /* one edit, from the field to the undo step */,
   snapMs: [50, 200] /* the undo's copy of the data, per edit */,
   undoMs: [150, 500] /* undo or redo */,
-  undoMB: [100, 400] /* what the undo would hold when full */,
+  undoMB: [100, 400] /* what the undo holds after the test's edits */,
   checkMs: [50, 200] /* the Check, which runs after every edit */,
   sendMs: [20, 100] /* the live update to a game tab, per edit */,
   connMs: [100, 400] /* the Connections drawer's work for a section */,
@@ -80,6 +81,13 @@ export function studioTestFindings(r) {
   for (const s of r.sections || []) {
     if (s.edit && s.edit.back === false)
       out.push({ lvl: 'high', area: s.id, text: 'An edit and its undo did not bring the data back', over: 1e9 });
+    if (s.outside && s.outside.length)
+      out.push({
+        lvl: 'high',
+        area: s.id,
+        text: `Opening ${s.id} changed the data outside an edit: ${s.outside.join(', ')}`,
+        over: 1e9,
+      });
     if (s.open) {
       const o = s.open,
         parts = [
@@ -117,7 +125,7 @@ export function studioTestFindings(r) {
       'every edit',
       worst('snapMs'),
       L.snapMs,
-      `Every edit copies all the game data for the undo (${mb(worst('snapMB'))}) in up to ${ms(worst('snapMs'))}`
+      `Every edit turns all the game data into text for the undo (${mb(worst('snapMB'))}) in up to ${ms(worst('snapMs'))}`
     );
     add('every edit', worst('checkMs'), L.checkMs, `The Check runs after every edit and takes ${ms(worst('checkMs'))}`);
     add(
@@ -132,7 +140,7 @@ export function studioTestFindings(r) {
       'undo',
       r.undo.fullMB,
       L.undoMB,
-      `The undo would hold about ${mb(r.undo.fullMB)} when full (${r.undo.max} steps of ${mb(r.undo.snapMB)}; pictures are capped, the data is not)`
+      `The undo holds ${mb(r.undo.fullMB)} after the test’s ${r.undo.edits} edits: the data once (${mb(r.undo.lastMB)}) and what each edit changed (${mb(r.undo.stepsMB)})`
     );
   const T = r.tools || {};
   if (T.find)
@@ -194,6 +202,33 @@ export function studioTestFindings(r) {
   );
 }
 
+/**
+ * Studio plan T1.5: where two copies of the data differ, as paths three levels deep (`D.people.boy`), sorted, at most
+ * `max`. The self-test compares the data after a section opened with the last undo state: a section that writes to
+ * the data without an edit makes the next edit's undo take that write back too.
+ */
+export function studioTestChangedPaths(/** @type {any} */ a, /** @type {any} */ b, max = 8) {
+  /** @type {string[]} */
+  const out = [];
+  const walk = (
+    /** @type {any} */ x,
+    /** @type {any} */ y,
+    /** @type {string} */ path,
+    /** @type {number} */ depth
+  ) => {
+    const ox = x !== null && typeof x === 'object',
+      oy = y !== null && typeof y === 'object';
+    if (!ox || !oy || depth === 0 || Array.isArray(x) !== Array.isArray(y)) {
+      if (JSON.stringify(x) !== JSON.stringify(y)) out.push(path);
+      return;
+    }
+    const keys = [...new Set([...Object.keys(x), ...Object.keys(y)])].sort();
+    for (const k of keys) walk(x[k], y[k], path ? path + '.' + k : k, depth - 1);
+  };
+  walk(a, b, '', 3);
+  return out.sort().slice(0, max);
+}
+
 /** the numbers of a report that compare between runs, by a stable name */
 export function studioTestMetrics(/** @type {any} */ r) {
   /** @type {Record<string, number>} */
@@ -211,7 +246,7 @@ export function studioTestMetrics(/** @type {any} */ r) {
       put(`${s.id} undo (ms)`, s.edit.undoMs);
     }
   }
-  if (r.undo) put('undo when full (MB)', r.undo.fullMB);
+  if (r.undo) put('undo after the edits (MB)', r.undo.fullMB);
   const T = r.tools || {};
   put('find index (ms)', T.find && T.find.buildMs);
   for (const k of ['pixel', 'skeleton', 'mapgen', 'slice', 'check', 'save', 'propose'])

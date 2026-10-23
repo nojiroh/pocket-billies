@@ -1416,6 +1416,58 @@ own message):
    `rules.run.relics.rarity` weight, then by id), buys a shop's when the money is there beyond `reserve`, and past
    the cap only swaps for a rarer one; `never-pick` is the baseline that takes and buys none.
 
+## Decisions (owner, 2026-10-22)
+The owner took the recommendation on every open question:
+1. **T5.1:** the recipe is the truth. Kit Billies are baked by a JS port of the builder, with a parity test against
+   the Python builder, which then retires.
+2. **T1.3:** only what CI's `check:data` fails on blocks Propose; everything else is a warning.
+3. **T1.4:** `check-studio-github.py` runs in CI on PRs that touch `studio/` or `game/js/logic/`.
+4. **T0.2:** "Continue from my proposal branch" comes later; proposals stay cumulative.
+5. **T5.5:** the game's words win (`rules.json`, `lines`, `boneSlot`). partKits kinds map onto them, and the Phase 5
+   session proposes the exact mapping in its plan.
+6. **RL-16:** Phase 4 replaces RL-16's generic editors for the new sections; RL-16 keeps content packs.
+7. **Local mode:** dropped. The `start-studio.py` docs and text go, and so does `check-quick.py --studio`.
+8. **F14** (raised in Phase 1):
+   - Convert the 9 old-style people to `look` in one data-only commit.
+   - Remove the convert-on-open.
+   - Make `look` required.
+9. **T1.3 severity, applied** (Phase 1 sessions C+D, recommended option taken): an `error` is exactly what
+   check-data already refused; every other Studio "error" became a warning (the list is in HANDOFF). No Studio check
+   was turned into a new block. The UI rules over their ceiling are a warning (a lint failure, not check-data's).
+10. **T1.3 enums, applied:** relic `fx.stat` and the currencies of buildings and unlock grants are checked against
+    stats.json and currencies.json; currencies.schema.json keeps the four ids as the one list (the game's code reads
+    them). Recommended option taken.
+11. **T1.4 path filter, applied:** a pull request's changed files are compared with its base commit in the smoke
+    job (no third-party action). Recommended option taken.
+12. **Phase 2, second session** (recommended options taken under the standing instruction; the owner may revisit):
+   - T2.4: the worker's data version is the draft's JSON text (2.4 MB, about 20 ms), not an edit counter, so undo,
+     drafts and Phase 1's undo by parts need no hook. It loads every logic module (load-logic.mjs's list, kept by a
+     unit test). runPreview lives in game/js/logic/run-preview.js, on no page.
+   - T2.5: the code-only rules are listed in logic/run-rules-code.js with a code snippet; the Studio finds the line in
+     the file as served, so "run-map.js:102" can't go stale. Moving them into data stays a game ticket.
+   - T2.6: "Play this seed" is a kind of test run (TEST_RUN), so it inherits no saving, no account and no resume. It
+     takes off through runTakeOff itself. No `tier=`: tier changes neither the map nor the start today (only how many
+     come from home, and the party given all fly). The live channel's run data (rules, nodeTypes, relics, unlocks,
+     items) applies only in a test run, never in a player's game open beside the Studio.
+   - T2.3: done after Phase 1's T1.3 landed: the map checks are pure functions in data-checks.js shown in the Lab
+     (run in the worker). check-data.mjs doesn't run the 1,000-seed sweep yet (the unit test does); adding it is one
+     line for whoever owns check-data next.
+
+Taken in Phase 1, session B (the recommended option each time, under the owner's standing instruction):
+9. **F14, a second write:** the new guard also caught People filling `look.colors` for the selected person on
+   opening (every look-style person lacked some). The colour fields now show those colours as a default and write
+   only on a change. No data change: the picture uses the same colours.
+10. **`look` required, old keys still allowed:** 25 people carry the old colour keys beside their look (the game
+    ignores them). `additionalProperties: false` would need a data cleanup of those 25; left for a later data-only
+    commit if wanted.
+11. **T1.2 parts are finer than files:** one text per second-level entry of every section (so `meta`, `rules`,
+    `scenery` split per key too), one per rig, and `@order`. A change to `@order` (an entry added or removed)
+    rebuilds the whole data; any other undo replaces only its entries.
+12. **`fullMB` measured:** the data the undo holds once (`last`) plus the step each self-test edit added, as if all
+    were kept, each text counted as the browser stores it (1 byte a character unless one is past U+00FF; the caps
+    keep the safer 2). The report format is 2, so runs before this don't compare.
+13. **T1.2 and its callers in one commit**, so no commit leaves the Studio's undo broken.
+
 ## Ask me before (owner decisions this plan needs)
 1. **T5.1:** recipe as the truth with a JS baker (recommended), or Python stays and Studio writes recipes.
 2. **T1.3:** which of today's Studio "errors" may block Propose. Recommended: only what CI already fails on.

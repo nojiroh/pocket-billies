@@ -235,8 +235,9 @@ export function report(total) {
    style sheets and scripts under game/, and every module they import, followed. tools/test/ui-lint.test.mjs keeps
    this list equal to what tools/ui-lint.mjs walks. */
 export const UI_LINT_PAGES = ['game/index.html', 'studio/index.html', 'studio/gallery.html'];
-// loaded by a URL made at run time (settings-screen.js), so no import names it
-export const UI_LINT_EXTRA = ['game/js/graphics-test.js'];
+// loaded by a URL made at run time (settings-screen.js; the Studio's logic worker, logic-client.js), so no import
+// names it
+export const UI_LINT_EXTRA = ['game/js/graphics-test.js', 'studio/js/logic-worker.js'];
 
 /** a path relative to the repository: dir + a relative URL (./, ../) */
 export function joinPath(dir, rel) {
