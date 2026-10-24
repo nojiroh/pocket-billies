@@ -45,7 +45,8 @@ test('rng: a generated scene hashes the same as before the move', () => {
   // (and 2783618042 until MAPGEN_VERSION 6, TR-2c: tall grass in patches, one across the way west)
   // (and 2339577951 until phase 09 batch 10: the autumn rowan became a model, so it keeps its size, s)
   // (and 2053084956 until RL-12b: the props dials gained stand and stall, gen.params; the scene is the same)
-  assert.equal(hashString(JSON.stringify(sc)), 569487650);
+  // (and 569487650 until MAPGEN_VERSION 7, TW-1: the town kind; this scene, a route, is the same but for gen.v)
+  assert.equal(hashString(JSON.stringify(sc)), 721684391);
 });
 
 test('rng: the helpers stay in their ranges', () => {

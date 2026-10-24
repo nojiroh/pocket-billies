@@ -32,6 +32,7 @@ expose({
   RUN_FIELD_PROPS: [() => RUN_FIELD_PROPS],
   RUN_MOD_MOUNTAINS: [() => RUN_MOD_MOUNTAINS],
   RUN_SIDE_ID: [() => RUN_SIDE_ID],
+  RUN_TOWN_ROAD: [() => RUN_TOWN_ROAD],
   fieldMoveOf: [() => fieldMoveOf],
   // @ts-expect-error -- replaced on purpose
   runAlongBack: [() => runAlongBack, v => (runAlongBack = v)],
@@ -160,7 +161,8 @@ export function runSceneParams(run, i, scenes, data) {
     ...(node.side && fieldMoveOf(map, data) && /** @type {any} */ (fieldMoveOf(map, data)).ride
       ? { land: { ...(dials.land || {}), water: 'coast', waterAmount: 0.6 } }
       : {}),
-    kind: 'route',
+    /* TW-1: a town node is a town (mapgen.js mapgenStageTown: a street, a square, houses) */
+    kind: node.type === 'town' ? 'town' : 'route',
     biome: node.biome || Object.keys(data.biomes)[0],
     w: size.w,
     h: size.h,
@@ -168,10 +170,19 @@ export function runSceneParams(run, i, scenes, data) {
     /* its east and west edges at height 0, so it meets any neighbour with no step (two neighbours' strips overlap on
        a 64 m edge, where one scene can't follow both) */
     pin: 'EW',
-    road: { ...(dials.road || {}), exits: exits.map(e => ({ side: e.side, t: e.t, width: 2 })) },
+    road: {
+      ...(dials.road || {}),
+      /* TW-1: a town's through road runs straight, so its street and square have room beside it */
+      ...(node.type === 'town' ? RUN_TOWN_ROAD : {}),
+      exits: exits.map(e => ({ side: e.side, t: e.t, width: 2 })),
+    },
+    /* TW-1: a town has no lookout, bridge or glade of its own */
+    ...(node.type === 'town' ? { feature: 'none' } : {}),
     edges,
   };
 }
+/** TW-1: a town's through road (mapgen's road dials): straight, a little wobble */
+export const RUN_TOWN_ROAD = { shape: 'straight', wobble: 0.25 };
 /** TR-2: the debug menu's run mod that gives every place mountains (runSceneParams) */
 export const RUN_MOD_MOUNTAINS = 'dbg_mountains';
 /** RL-8: what stands beside the main road of a node of each type: the airship's mast where it lands you, a clinic

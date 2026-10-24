@@ -193,7 +193,9 @@ test("the debug menu's mountains run: a valid run whose every place has mountain
       assert.deepEqual(notes, [], `${seed} node ${i}`);
       assert.deepEqual(G.mapgenUnreachable(scene, C, { slope: true }), [], `${seed} node ${i}`);
       const R = G.mapgenReach(scene, C, scene.hub, { slope: true });
-      for (const s of scene.spots || []) assert.ok(G.mapgenReached(R, s.x, s.z), `${seed} node ${i}: its summit`);
+      /* TW-1: a town's spots (its square, its board) are not summits */
+      for (const s of (scene.spots || []).filter(q => q.kind === 'summit'))
+        assert.ok(G.mapgenReached(R, s.x, s.z), `${seed} node ${i}: its summit`);
       made.push(scene);
     });
     assert.ok(Math.max(...made.map(top)) >= 15, `${seed}: 15 m somewhere`);

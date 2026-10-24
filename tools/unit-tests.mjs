@@ -18,6 +18,7 @@ export const SLOW_TESTS = [
   'mapgen-mountains.test.mjs',
   'mapgen-roads.test.mjs',
   'mapgen-seams.test.mjs',
+  'mapgen-town.test.mjs',
   'run-sim-scenes.test.mjs',
   'run-world-real.test.mjs',
   'weather-before.test.mjs',
