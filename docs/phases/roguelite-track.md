@@ -233,6 +233,20 @@ the seams; the owner chose a normal-sized place with a stand (RL-12b). RL-9b (me
 items home, so Write-off (items at full price) counts only on a loss. Names: "Loophole" on screen, `relics` in the data
 (the item id `loophole` is the Hi-Potion).
 
+**Corrected in RL-12b (part 1, 2026-10-23, branch `track/encounters`).** Checked in the code first: nothing read
+nodeTypes' `engine: "menu"` or the run's `menu` phase (both left for part 2); the map had no rule against two shops in
+a row (a town is forced before each mini-boss, and filler rows roll towns too); there were no route trainers, no line
+of sight and no "!" until spotted (the only walk-up was the story's `runsUp`); only a mini-boss win left a pick;
+there was one evolution item (the Shining Stone) and no line used it, no candy, no tutor; conditions couldn't test
+money or a type in the team; `give` handled items only. Built: `events.json` (the owner's 18 events, loot tables,
+seven trainer classes) with options as conditions, costs and scripts in the story language; the event commands
+(`perk`, `money`, `hurt`, `heal`, `status`, `fx`, `wager`, `loot`, `level`, `recall`, `foe`, `wild`, `reward`) and
+conditions (`type:`, `money`, `team`, `badge:`); `run.enc` (no SAVE_VERSION bump: missing on an older run) with timed
+boons read by `fxOfRun`; the reward pick (`rewards.json`, a paid reroll that doubles; the owner's option B: Versewift
+and Feedopus evolve with the Shining Stone from level 20); route trainers on every route who walk up on sight. Not
+"a day passes": RL-R2 drops the deadline, so the drafts' day costs became a tenth of the team's HP. Part 2 (after
+RL-R2 merges): the waystation places, the no-two-shops rule, the check-fast page and the in-game test's step.
+
 **Changed in the TR-2 session (2026-10-21, the owner: "runs should go from east to west").** A run scene is entered
 by its east side and left ahead by its west: `east`/`east2` back, `west`/`west2` ahead (logic/run-scenes.js
 runSceneExits; runExits' `ahead`/`back`, renamed from north/south). Two links a side sit 10 m and 54 m along the 64 m
@@ -507,7 +521,7 @@ brackets, bots, online). The table below is the original plan.
 | RL-10 | Ranch B | breed safe/risky with abominations, hatch, passive income (cap, rollback guard, offline, server anchor) | 2 | yes |
 | RL-11 | Hub upgrades, currencies, unlocks | `currencies/buildings/unlocks.json`, the Lab board, one unlock registry | 1-2 | yes |
 | RL-12 | Relics and effects | `relics.json`, `events.json`, `logic/effects.js` (phase 19's handler table), picks | 1-2 | yes |
-| RL-13 | Modifiers, tiers, mini-boss leaders | `modifiers.json`, bracket pick at the mast, the 8 leaders, overdue hardening | 1 | yes |
+| RL-13 | Modifiers, tiers, mini-boss leaders | `modifiers.json`, bracket pick at the mast, the 8 leaders, overdue hardening (dropped in RL-R2: no deadline) | 1 | yes |
 | RL-14 | Bots as enemies, salvage, the Voltron | `factions.json`, `bosses.json`, data-driven `alphaPhase`, a robot phase in the full test | 2 | yes |
 | RL-15 | Online | run record, friend ghosts, daily seeds, rules and emulator tests | 2 | yes |
 | RL-16 | Content packs and Studio editors | `mergeInto`, pack checks, editors for the new sections | 1-2 | yes |
@@ -1071,6 +1085,27 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   props), `run.js` (the travel moment), `meta-state.js` (`badges`), `rules.json run.side`. Tests: every side area
   reachable only through its link; the clock counts it; an alternate path still reaches a boss; a field link refused
   without the type or the badge. Could break: seams, the bowl's run layout, the in-game test's run phase.
+- **RL-R2a as built (2026-10-23; HANDOFF has where this shape was wrong).** The owner's answers in Plan Mode: you walk
+  in past the obstacle by a seam (not a travel moment both ways), the way out is one way to the main path's next row,
+  a run gets a detour (60%) or an alternate path (15%) and never both, badges are kept by type, the moves' data is
+  `fieldMoves.json`, and **the deadline is dropped** (the day clock stays for the forecast and the shops' stock;
+  RL-13's "overdue hardening" goes with it). Files: new `logic/run-side.js` (runSideAdd after the main map, from its
+  own streams), `run-map.js` (start, arrive, reveal, spot), `run-scenes.js` (the north exit, the obstacle and way-out
+  props, Surf's ridden water, the gate on the first place), `run-loop.js` (the side's leader), `battle-rewards.js`
+  (`meta.badges` on a leader's first win), new `game/js/field-moves.js` (Pokémon's talk box and a little burst on the
+  map), `rules.js` canEnter and gateText, `conditions.js` `opened:<move>`. No cave or cove scene yet: the areas use the
+  finished biomes (thicket for Cut, ridge for Rock Smash, lake with coast water for Surf); RL-R2b makes them.
+- **The encounter sessions (RL-12b's two parts, RL-12c)** live on one branch (the owner, 2026-10-23). Branch: track/encounters
+- **RL-12b part 1** (done 2026-10-23; HANDOFF and section 0 "Corrected in RL-12b" have what changed). Part 2 (after
+  RL-R2 merges): the `event` and `stall` waystation node types and their stand, the no-two-shops rule in run-map.js,
+  the run sim and preview, a check-fast page and the in-game test's step. RL-12c: held items (9.6 27).
+- **RL-12b part 2 as built (2026-10-24; HANDOFF has the detail).** Two node types: `event` ("Waystation", weight 2) and
+  `stall` ("Stall", weight 1, `shop: true` like a town); route 4, town 1 (placeholders). `runMapNoTwoShops` redraws a
+  shop led to from a shop. A waystation's stand is the market tent (act `event`, opens `encounterOpen` for the node);
+  a stall is the fruit stall (act `stall`, opens the place's shop where you stand, no room); both are lots placed like
+  the town buildings (mapgen `MAPGEN_HUB_BUILDINGS`). Both rows are `waystation: 1`: `rules.json run.wild.waystation`
+  (2) wild Billies. The sim sells at a stall (no heal) and notes a waystation's event (the bot plays no option); the
+  preview gives a stall's shop by day and each waystation's first-drawn event.
 - **RL-12b, RL-S1, RL-S2, RL-13:** files and tests as their rows say; each adds a fast-check page and an in-game test
   step, as earlier RL sessions did.
 

@@ -267,17 +267,6 @@
        "arc": {
         "description": "SND-5: false: the run's arc bands (music.json run.arc) leave this song as written",
         "const": false
-       },
-       "deadline": {
-        "description": "SND-5: the deadline version (a run's last days, logic/music-where.js songVariant): the recipe's changes. With none written, the drums and the hook on the triangle alone (audio/tracker.js trackerDeadline). false: no deadline version",
-        "anyOf": [
-         {
-          "const": false
-         },
-         {
-          "$ref": "#/$defs/recipe"
-         }
-        ]
        }
       },
       "additionalProperties": false
@@ -601,13 +590,12 @@
       "additionalProperties": false,
       "properties": {
        "name": {
-        "description": "the band's name, the song's part ('meadow@late'); not night, tense or deadline",
+        "description": "the band's name, the song's part ('meadow@late'); not night or tense",
         "$ref": "#/$defs/id",
         "not": {
          "enum": [
           "night",
           "tense",
-          "deadline",
           "intro",
           "day"
          ]
@@ -629,12 +617,6 @@
        }
       }
      }
-    },
-    "deadlineDays": {
-     "description": "the run's last days that play a song's deadline version (1: the deadline day alone); past the deadline it always plays",
-     "type": "integer",
-     "minimum": 1,
-     "maximum": 3
     },
     "weather": {
      "description": "the low-pass on the music (Hz) for each weather on a run's map tab (logic/music-where.js musicWeatherCut); weather not named plays open",

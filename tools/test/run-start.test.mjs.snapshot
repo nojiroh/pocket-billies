@@ -11,6 +11,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "wake_tea": 0,
         "revive": 0,
         "bell": 0,
+        "protein_bar": 0,
         "trailmix": 0,
         "pretzel": 0,
         "full_remedy": 0,
@@ -29,7 +30,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       "unlocks": [],
       "mods": [],
       "clock": 1,
-      "deadline": 11,
       "map": {
         "nodes": [
           {
@@ -135,7 +135,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2
           },
           {
-            "type": "route",
+            "type": "event",
             "row": 6,
             "lane": 1,
             "to": [
@@ -334,6 +334,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "wake_tea": 0,
         "revive": 0,
         "bell": 0,
+        "protein_bar": 0,
         "trailmix": 0,
         "pretzel": 0,
         "full_remedy": 0,
@@ -358,7 +359,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       ],
       "mods": [],
       "clock": 1,
-      "deadline": 11,
       "map": {
         "nodes": [
           {
@@ -464,7 +464,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2
           },
           {
-            "type": "route",
+            "type": "event",
             "row": 6,
             "lane": 1,
             "to": [
@@ -666,6 +666,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "wake_tea": 0,
         "revive": 0,
         "bell": 0,
+        "protein_bar": 0,
         "trailmix": 0,
         "pretzel": 0,
         "full_remedy": 0,
@@ -684,7 +685,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       "unlocks": [],
       "mods": [],
       "clock": 1,
-      "deadline": 8,
       "map": {
         "nodes": [
           {
@@ -868,6 +868,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "61e44d7cf3e614fa9b4c0f8dd2165fea8e888300542fe5f32a213ddf732f51e6"
+  "all": "309b91414461268628d4a0e9c76577c95f46e733ce9362afd6cb9493fefcbe3f"
 }
 `;

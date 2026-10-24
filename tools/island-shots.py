@@ -15,8 +15,7 @@ import json, subprocess, sys, time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from importlib import import_module
-fast = import_module('check-fast')
+import browser_check as fast  # noqa: E402  (the browser checks' page set-up)
 
 ROOT = fast.ROOT
 ARGS = sys.argv[1:]

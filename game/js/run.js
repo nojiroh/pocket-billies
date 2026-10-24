@@ -18,6 +18,7 @@ import {
   provide,
   render,
   renderOverlay,
+  rewardPickOpen,
   runPayoutOpen,
   toast,
 } from './hooks.js';
@@ -198,6 +199,8 @@ export function runResume() {
   if (run.at.phase === 'payout') runPayoutOpen();
   /* RL-12: a mini-boss's pick not answered yet (the offer was saved before it showed) */
   else if (run.offer && run.at.phase === 'walk') perkPickOpen();
+  /* RL-12b: a reward pick not answered yet (saved before it showed) */
+  else if (run.enc && run.enc.reward && run.at.phase === 'walk') rewardPickOpen();
   /* killed mid-battle: the same battle again, from its seed (the owner's answer, roguelite-track.md 8.7) */
   if (run.at.phase === 'battle') runBattleAgain();
   /* killed mid-flight: you are on the landing (runArrive ran before the flight) */
@@ -500,10 +503,12 @@ export function runArrivedFx() {
 /** the first run's hints, each shown once (run.hints) as a toast */
 const RUN_HINTS = {
   landing: run =>
-    `Day 1 of the run. Walk north into the next place: each place you walk into takes a day. The boss waits at the far end; the deadline is day ${run.deadline}.`,
+    `Day 1 of the run. Walk north into the next place: each place you walk into takes a day. The boss waits at the far end.`,
   map: () => 'The map shows the places ahead and their weather. A ? is further on. The boss is always shown.',
   town: () =>
     `A town: its clinic heals for ${plural(runClinicEach(), 'Money')} a Billie, and its shop has new stock every day.`,
+  event: () => 'A waystation: someone at the stand wants a word. Tap it to see what they offer.',
+  stall: () => 'A stall: a shop with new stock every day, but no clinic.',
   miniboss: () => 'A mini-boss blocks the way north. Beat them to go on.',
   boss: () => 'The boss. Beat it and the run is won.',
   relic: () =>
@@ -520,5 +525,6 @@ export function runHint(id) {
 export function runArrivedHint() {
   const run = saveData.run,
     node = run && run.map && run.map.nodes[runMapNode(saveData.trip.node)];
-  if (node && ['town', 'miniboss', 'boss'].includes(node.type)) runHint(/** @type {any} */ (node.type));
+  if (node && ['town', 'event', 'stall', 'miniboss', 'boss'].includes(node.type))
+    runHint(/** @type {any} */ (node.type));
 }

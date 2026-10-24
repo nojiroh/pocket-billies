@@ -39,6 +39,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   validRun: [() => validRun, v => (validRun = v)],
   // @ts-expect-error -- replaced on purpose
+  validRunEnc: [() => validRunEnc, v => (validRunEnc = v)],
+  // @ts-expect-error -- replaced on purpose
   validRunFoe: [() => validRunFoe, v => (validRunFoe = v)],
   // @ts-expect-error -- replaced on purpose
   validRunRegion: [() => validRunRegion, v => (validRunRegion = v)],
@@ -87,7 +89,6 @@ export function newRun(seed, expedition, mapgenV, start) {
     map: null,
     at: { phase: 'fly', battle: -1 },
     clock: 1,
-    deadline: 0,
     forecast: [],
     perks: [],
     offer: null,
@@ -157,9 +158,39 @@ export function validRun(o) {
         new Set(node.to).size !== node.to.length ||
         (node.seen !== undefined && !wholeIn(node.seen, 0, 2)) ||
         (node.biome !== undefined && !id(node.biome)) ||
-        (node.zone !== undefined && !wholeIn(node.zone, 0, 7))
+        (node.zone !== undefined && !wholeIn(node.zone, 0, 7)) ||
+        (node.side !== undefined && node.side !== 1)
       )
         return false;
+    /* RL-R2: its side area (run-side.js): a kind, a move, a name, the obstacle's place on the main path, the way out
+       (-1: none), its places (marked, after the main path's), its leader, its species, open */
+    const S = o.map.side;
+    if (S !== undefined) {
+      const node = (/** @type {any} */ j) => wholeIn(j, 0, n - 1);
+      if (
+        !plain(S) ||
+        Object.keys(S).some(
+          k => !['kind', 'move', 'name', 'from', 'to', 'nodes', 'leader', 'dex', 'open'].includes(k)
+        ) ||
+        !['detour', 'alt'].includes(S.kind) ||
+        !id(S.move) ||
+        typeof S.name !== 'string' ||
+        !S.name ||
+        S.name.length > 40 ||
+        !node(S.from) ||
+        o.map.nodes[S.from].side ||
+        !(S.to === -1 || (node(S.to) && !o.map.nodes[S.to].side)) ||
+        !list(S.nodes, 8) ||
+        !S.nodes.length ||
+        !S.nodes.every(j => node(j) && o.map.nodes[j].side === 1) ||
+        new Set(S.nodes).size !== S.nodes.length ||
+        o.map.nodes.filter((/** @type {any} */ x) => x.side).length !== S.nodes.length ||
+        (S.leader !== undefined && !id(S.leader)) ||
+        (S.dex !== undefined && (!list(S.dex, 40) || !S.dex.every(id))) ||
+        (S.open !== undefined && S.open !== 1)
+      )
+        return false;
+    } else if (o.map.nodes.some((/** @type {any} */ x) => x.side)) return false;
   }
   /* RL-R1: the region (missing on a run from before regions) */
   if (o.region !== undefined && !validRunRegion(o.region)) return false;
@@ -169,7 +200,7 @@ export function validRun(o) {
   if (Object.keys(o.at).some(k => !['phase', 'battle', 'won', 'foe'].includes(k))) return false;
   if (o.at.won !== undefined && !wholeIn(o.at.won, 0, 1)) return false;
   if (o.at.foe !== undefined && !validRunFoe(o.at.foe)) return false;
-  if (!wholeIn(o.clock, 1, RUN_DAYS) || !wholeIn(o.deadline, 0, RUN_DAYS)) return false;
+  if (!wholeIn(o.clock, 1, RUN_DAYS)) return false;
   if (!list(o.forecast, nodes) || o.forecast.some(days => !list(days, RUN_DAYS) || !days.every(id))) return false;
   if (!list(o.perks, 32) || !o.perks.every(id) || !list(o.mods, 32) || !o.mods.every(id)) return false;
   if (o.offer !== null && (!list(o.offer, 5) || !o.offer.every(id))) return false;
@@ -198,6 +229,8 @@ export function validRun(o) {
   if (o.pack !== undefined && !(plain(o.pack) && Object.keys(o.pack).every(k => k === 'items' || k === 'pyramids')))
     return false;
   if (o.pack !== undefined && !(packed(o.pack.items || {}) && packed(o.pack.pyramids || {}))) return false;
+  /* RL-12b: its events and reward picks (missing on a run from before) */
+  if (o.enc !== undefined && !validRunEnc(o.enc)) return false;
   /* the hub as the run started: shapes only (validSave checks its Billies like the team's) */
   const st = o.start,
     counts = v => recordOf(v, 500, n => wholeIn(n, 0, META_MAX));
@@ -219,6 +252,69 @@ export function validRun(o) {
     st.seats.every(v => typeof v === 'string') &&
     plain(st.visited) &&
     (st.buddy === undefined || st.buddy === null || (typeof st.buddy === 'string' && st.buddy.length <= 60))
+  );
+}
+/** RL-12b: a run's events and reward picks (logic/run-enc.js): shapes only @param {any} e @returns {boolean} */
+export function validRunEnc(e) {
+  const plain = (/** @type {any} */ v) =>
+      !!v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__'),
+    id = (/** @type {any} */ v) => typeof v === 'string' && /^[a-z0-9_]{1,40}$/.test(v),
+    num = (/** @type {any} */ v) => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 1e6,
+    row = (/** @type {any} */ f) =>
+      plain(f) &&
+      id(f.kind) &&
+      Object.keys(f).length <= 6 &&
+      Object.values(f).every(v => num(v) || (typeof v === 'string' && v.length <= 20)),
+    card = (/** @type {any} */ c) =>
+      plain(c) &&
+      Object.keys(c).every(k => ['id', 'kind', 'item', 'n', 'move'].includes(k)) &&
+      id(c.id) &&
+      ['item', 'candy', 'evo', 'tutor', 'held'].includes(c.kind) &&
+      (c.item === undefined || id(c.item)) &&
+      (c.move === undefined || id(c.move)) &&
+      (c.n === undefined || wholeIn(c.n, 1, 99));
+  return (
+    plain(e) &&
+    Object.keys(e).every(k => ['n', 'node', 'seen', 'boons', 'rewardN', 'reward', 'play'].includes(k)) &&
+    (e.play == null ||
+      (plain(e.play) &&
+        Object.keys(e.play).every(k => ['id', 'i', 'opt', 'at', 'foe'].includes(k)) &&
+        id(e.play.id) &&
+        wholeIn(e.play.i, -1, RUN_NODES - 1) &&
+        wholeIn(e.play.opt, 0, 2) &&
+        Array.isArray(e.play.at) &&
+        e.play.at.length <= 16 &&
+        e.play.at.every((/** @type {any} */ n) => wholeIn(n, 0, 999)) &&
+        (e.play.foe === undefined ||
+          (plain(e.play.foe) &&
+            id(e.play.foe.cls) &&
+            wholeIn(e.play.foe.up, -20, 20) &&
+            wholeIn(e.play.foe.n, 0, RUN_NODES - 1))))) &&
+    wholeIn(e.n, 0, 1e6) &&
+    recordOf(e.node, RUN_NODES, v => v === '' || id(v)) &&
+    Object.keys(e.node).every(k => /^\d{1,2}$/.test(k)) &&
+    Array.isArray(e.seen) &&
+    e.seen.length <= RUN_NODES * 2 &&
+    e.seen.every(id) &&
+    Array.isArray(e.boons) &&
+    e.boons.length <= 32 &&
+    e.boons.every(
+      (/** @type {any} */ b) =>
+        plain(b) && Array.isArray(b.fx) && b.fx.length <= 8 && b.fx.every(row) && wholeIn(b.left, 0, 99) && id(b.src)
+    ) &&
+    wholeIn(e.rewardN, 0, 1e6) &&
+    (e.reward === null ||
+      (plain(e.reward) &&
+        Array.isArray(e.reward.cards) &&
+        e.reward.cards.length >= 1 &&
+        e.reward.cards.length <= 5 &&
+        e.reward.cards.every(card) &&
+        wholeIn(e.reward.rolls, 0, 99) &&
+        Object.keys(e.reward).every(k => ['cards', 'rolls', 'from', 'kind', 'n'].includes(k)) &&
+        (e.reward.kind === undefined || ['item', 'candy', 'evo', 'tutor', 'held'].includes(e.reward.kind)) &&
+        (e.reward.n === undefined || wholeIn(e.reward.n, 1, 5)) &&
+        typeof e.reward.from === 'string' &&
+        e.reward.from.length <= 60))
   );
 }
 /** RL-8: a run battle's foe as it began, kept in run.at so a reload starts the same battle again: its kind and

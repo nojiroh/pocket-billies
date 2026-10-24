@@ -13,17 +13,23 @@ import { BOWL_RIM_HEIGHT, bowlBaseHeight, bowlGridHeight } from './bowl.js';
 expose({
   BOWL_CAMERA: [() => BOWL_CAMERA],
   DEG: [() => DEG],
+  FLOAT_CAMERA: [() => FLOAT_CAMERA],
   // @ts-expect-error -- replaced on purpose
   add: [() => add, v => (add = v)],
   // @ts-expect-error -- replaced on purpose
   bowlCamClamp: [() => bowlCamClamp, v => (bowlCamClamp = v)],
   // @ts-expect-error -- replaced on purpose
+  bowlCamClampFloat: [() => bowlCamClampFloat, v => (bowlCamClampFloat = v)],
+  // @ts-expect-error -- replaced on purpose
   bowlCamEase: [() => bowlCamEase, v => (bowlCamEase = v)],
+  bowlCamFloat: [() => bowlCamFloat, v => (bowlCamFloat = v)],
   // @ts-expect-error -- replaced on purpose
   bowlCamGap: [() => bowlCamGap, v => (bowlCamGap = v)],
   bowlCamGround: [() => bowlCamGround, v => (bowlCamGround = v)],
   // @ts-expect-error -- replaced on purpose
   bowlCamHome: [() => bowlCamHome, v => (bowlCamHome = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlCamHomeFloat: [() => bowlCamHomeFloat, v => (bowlCamHomeFloat = v)],
   // @ts-expect-error -- replaced on purpose
   bowlCamLookView: [() => bowlCamLookView, v => (bowlCamLookView = v)],
   // @ts-expect-error -- replaced on purpose
@@ -36,6 +42,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   bowlCamRay: [() => bowlCamRay, v => (bowlCamRay = v)],
   bowlCamTurn: [() => bowlCamTurn],
+  // @ts-expect-error -- replaced on purpose
+  bowlCamUseFloat: [() => bowlCamUseFloat, v => (bowlCamUseFloat = v)],
   // @ts-expect-error -- replaced on purpose
   bowlCamUseGround: [() => bowlCamUseGround, v => (bowlCamUseGround = v)],
   // @ts-expect-error -- replaced on purpose
@@ -81,7 +89,8 @@ export const BOWL_CAMERA = {
   far: 10,
 };
 
-/** @typedef {{ tx: number, ty: number, yaw: number, tilt: number, dist: number }} BowlCamState */
+/** th: the target's height when it is fixed (the floating island's pivot); else the ground under the target
+ * @typedef {{ tx: number, ty: number, yaw: number, tilt: number, dist: number, th?: number }} BowlCamState */
 /** @typedef {[number, number, number]} V3 */
 /** @typedef {{ C: V3, fw: V3, rt: V3, up: V3, foc: number, W: number, H: number, near: number, far: number }} BowlView */
 
@@ -98,8 +107,55 @@ export function bowlCamUseGround(G) {
 export function bowlSurface(x, y) {
   return bowlCamGround ? bowlGridHeight(bowlCamGround, x, y) : bowlBaseHeight(x, y);
 }
-/** a state kept inside every limit @param {BowlCamState} s @returns {BowlCamState} */
+/** the hub's floating island (the owner, 2026-10-23: no bowl, an island in open sky): the camera orbits its middle
+ * like the walk's orbit camera (logic/camera-orbit.js). Limits are shares of the island's radius r. */
+export const FLOAT_CAMERA = {
+  tilt: 45 * DEG,
+  tiltMin: 12 * DEG,
+  tiltMax: 75 * DEG,
+  dist: 5,
+  distMin: 1.8,
+  distMax: 8,
+  /** how far from the middle the target may go */
+  pan: 0.5,
+  /** the slow turn while nobody touches the map (radians a second) */
+  drift: 0.03,
+};
+/** @typedef {{ c: number[], r: number, th: number }} FloatFrame the island's middle, radius and the pivot's height */
+/** the floating island the camera orbits, or null for the bowl @type {FloatFrame | null} */
+export let bowlCamFloat = null;
+/** @param {FloatFrame | null} F */
+export function bowlCamUseFloat(F) {
+  bowlCamFloat = F;
+}
+/** a state inside the floating island's limits: the target near its middle at the pivot's height, the eye between
+ * close and far, never under the horizon or straight down
+ * @param {BowlCamState} s @param {FloatFrame} F @returns {BowlCamState} */
+export function bowlCamClampFloat(s, F) {
+  const K = FLOAT_CAMERA;
+  let { tx, ty, yaw, tilt, dist } = s;
+  const dx = tx - F.c[0],
+    dy = ty - F.c[1],
+    m = Math.hypot(dx, dy),
+    lim = F.r * K.pan;
+  if (m > lim) {
+    tx = F.c[0] + (dx * lim) / m;
+    ty = F.c[1] + (dy * lim) / m;
+  }
+  dist = Math.min(F.r * K.distMax, Math.max(F.r * K.distMin, dist));
+  tilt = Math.min(K.tiltMax, Math.max(K.tiltMin, tilt));
+  yaw = Math.atan2(Math.sin(yaw), Math.cos(yaw));
+  return { tx, ty, yaw, tilt, dist, th: F.th };
+}
+/** the floating island's opening view: its middle, from the side yaw looks from, a low three-quarter view
+ * @param {FloatFrame} F @param {number} [yaw] @returns {BowlCamState} */
+export function bowlCamHomeFloat(F, yaw = 0) {
+  return bowlCamClampFloat({ tx: F.c[0], ty: F.c[1], yaw, tilt: FLOAT_CAMERA.tilt, dist: F.r * FLOAT_CAMERA.dist }, F);
+}
+/** a state kept inside every limit (the floating island's, while one is in) @param {BowlCamState} s
+ * @returns {BowlCamState} */
 export function bowlCamClamp(s) {
+  if (bowlCamFloat) return bowlCamClampFloat(s, bowlCamFloat);
   const K = BOWL_CAMERA;
   let { tx, ty, yaw, tilt, dist } = s;
   const r = Math.hypot(tx, ty);
@@ -127,7 +183,7 @@ export function bowlCamClamp(s) {
 export function bowlCamView(s, W, H) {
   const K = BOWL_CAMERA,
     fh = [Math.sin(s.yaw), Math.cos(s.yaw)],
-    th = bowlSurface(s.tx, s.ty),
+    th = s.th != null ? s.th : bowlSurface(s.tx, s.ty),
     back = s.dist * Math.cos(s.tilt),
     /** @type {V3} */ T = bowlToGpu(s.tx, s.ty, th),
     /** @type {V3} */ C = bowlToGpu(s.tx - fh[0] * back, s.ty - fh[1] * back, th + s.dist * Math.sin(s.tilt)),
@@ -253,6 +309,7 @@ export function bowlCamEase(s, g, k) {
     yaw: s.yaw + dy * k,
     tilt: s.tilt + (g.tilt - s.tilt) * k,
     dist: s.dist + (g.dist - s.dist) * k,
+    ...(g.th != null ? { th: s.th != null ? s.th + (g.th - s.th) * k : g.th } : {}),
   };
 }
 /** how far a state is from a goal (for "arrived") @param {BowlCamState} s @param {BowlCamState} g */

@@ -6,11 +6,11 @@
    and a light sharpen. Also takes a small screenshot for the debug log when asked. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide, reducedMotion } from '../hooks.js';
+import { environment, provide, reducedMotion } from '../hooks.js';
 import { clamp } from '../util.js';
 import { makeCanvas } from '../art.js';
 import { walkView } from '../walk-view.js';
-import { engineColor, engineSetting } from './settings.js';
+import { engineColor, engineContext, engineSetting } from './settings.js';
 import { LIGHT_GLSL, bindQuad, ensurePrograms, gpuState, renderTarget } from './webgl.js';
 import { setLightUniforms } from './light.js';
 /* eslint-disable no-func-assign */
@@ -457,6 +457,13 @@ export function drawPostRest(S, C, rw, rh, o, F) {
       G.gain[i] *= 1 + MO.gain[i];
     }
   }
+  /* 0.1.0 alpha: the time-of-day look's shadow and highlight tints (outdoors, in a walk frame) */
+  const TL = engineContext.env && typeof environment !== 'undefined' ? environment.look : null;
+  if (TL && TL.tintStrength > 0)
+    for (let i = 0; i < 3; i++) {
+      G.sh[i] += (TL.shadowTint[i] - 0.5) * 0.08 * TL.tintStrength;
+      G.hi[i] += (TL.lightTint[i] - 0.5) * 0.08 * TL.tintStrength;
+    }
   gl.uniform3fv(U.uLift, G.lift);
   gl.uniform3fv(U.uGam, G.gamma);
   gl.uniform3fv(U.uGain, G.gain);

@@ -701,7 +701,9 @@ export function addHitTarget(it, C, hits, labels, PPU) {
       go: approachPoint(it.x, it.z),
       look: [it.x, it.z],
     });
-    if (!it.n.done) labels.push({ k: 'bang', x: q.x, y: box.y0, col: it.n.col || '#D9434B' });
+    /* RL-12b: a route trainer's "!" only once it has spotted you */
+    if (!it.n.done && (!it.n.route || walkView.spotted[it.n.id]))
+      labels.push({ k: 'bang', x: q.x, y: box.y0, col: it.n.col || '#D9434B' });
   } else if (it.k === 'folk') {
     hits.push({ k: 'folk', f: it.f, ...box, x0: q.x - 16 * k, x1: q.x + 16 * k, z: q.d });
     if (it.f.sayT > 0) labels.push({ k: 'say', x: q.x, y: box.y0 - 2, t: it.f.say, a: Math.min(1, it.f.sayT * 3) });

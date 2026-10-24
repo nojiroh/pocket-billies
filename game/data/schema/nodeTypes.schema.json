@@ -33,6 +33,10 @@
      "menu"
     ]
    },
+   "shop": {
+    "description": "RL-12b: it sells things (a town, a stall): never two of them one after the other on a run's map",
+    "type": "boolean"
+   },
    "weight": {
     "description": "how often it fills a free row (rows rules.json run.map gives no role); 0 or left out: never",
     "type": "number",

@@ -13,6 +13,7 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import {
+  EVENTS,
   LOCATIONS,
   MOVES,
   RULES,
@@ -24,15 +25,17 @@ import {
   gameData,
   trainersAt,
 } from './game-data.js';
-import { encountersHere, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
+import { canEnter, encountersHere, gateText, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
 import { incomeRate } from './logic/ranch-income.js';
 import { pastureBillies, pastureIn, pastureZone } from './logic/pasture.js';
 import { runRestore } from './logic/run-state.js';
+import { RUN_SIDE_MOD, runSideOpen } from './logic/run-side.js';
 import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
 import { runHealCost } from './logic/run-loop.js';
+import { eventAt } from './logic/encounters.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { runUnlocks } from './logic/unlocks.js';
 import { runStartOn, runStartPlan } from './logic/run-start.js';
@@ -67,6 +70,7 @@ import {
   mapHub,
   navCellAt,
   navGrid,
+  propShown,
   stepGrid,
   stopWalkView,
   walkData,
@@ -96,7 +100,9 @@ import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
 import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 import { runClinicEach, runJump, runTakeOff } from './run.js';
+import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
+import { encounterOpen } from './encounter-screen.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
@@ -718,7 +724,15 @@ async function runFullTest(mode) {
             uiState.tab = 'walk';
             uiState.bench = { id: sid };
             render();
-            await selfTestSleep(900);
+            /* 0.1.0 alpha: a place's ground is built on the card before it draws (about 2 s for the hub on a phone), so
+               wait for the scene to open and draw before timing the looks */
+            for (let i = 0; i < 150 && !(walkView.ready && walkView.id === sid); i++) await selfTestSleep(100);
+            if (!walkView.ready || walkView.id !== sid)
+              throw new Error((gameData.maps[sid] ? gameData.maps[sid].name : sid) + ' didn’t open');
+            if (typeof walkRenderer !== 'undefined' && walkRenderer.on) {
+              const fa = walkRenderer.frames;
+              for (let i = 0; i < 50 && walkRenderer.frames < fa + 2; i++) await selfTestSleep(100);
+            }
             for (const [n, f] of [
               ['night', { time: 23.5, weather: 'clear' }],
               ['a storm', { time: 15, weather: 'storm' }],
@@ -957,6 +971,166 @@ async function runFullTest(mode) {
         },
         8,
         150
+      );
+    /* RL-R2: a run's side area (forced: a detour behind Cut), on a copy of the save: the obstacle stands on its place's
+       north road and the seam behind it turns you back; with the Grass Badge and a Grass Billie it opens (the obstacle
+       gone); the side's places are walked in a day each and its way out sets you down on the main path's next row.
+       Then the save as it was */
+    if (typeof runWorldSync === 'function' && typeof fieldWayOutGo === 'function' && !selfTest.stop)
+      await phase(
+        "A run's side area",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            view = async (/** @type {number} */ n) => {
+              const id = 'w:' + LOCATIONS[n].mapId + '*';
+              for (let i = 0; i < 600 && !(walkView.ready && walkView.id === id); i++) await selfTestSleep(100);
+              if (walkView.id !== id) throw new Error(`${LOCATIONS[n].name} isn't shown (still ${walkView.id})`);
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            runStartOn(
+              s,
+              runStartPlan(
+                'SELFTESTSIDE',
+                { ...data, unlockData: UNLOCK_DATA },
+                { unlocks: [], mods: [RUN_SIDE_MOD + 'detour_cut'] }
+              )
+            );
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            s.meta.badges = {};
+            setSaveData(s);
+            const S = s.run.map.side;
+            if (!S || S.move !== 'cut') throw new Error('the forced detour behind Cut was not made');
+            if (!runJump(runWorldNode(S.from))) throw new Error('couldn’t walk to the obstacle’s place');
+            render();
+            await view(runWorldNode(S.from));
+            const ob = (walkView.sc.props || []).find(p => p.act === 'field');
+            if (!ob || !propShown(ob)) throw new Error('no obstacle on the north road');
+            const first = runWorldNode(S.nodes[0]);
+            if (canEnter(first)) throw new Error('the side area is open before its obstacle');
+            if (!/Grass Badge/.test(gateText(LOCATIONS[first])))
+              throw new Error('the closed seam doesn’t name the badge');
+            saveData.meta.badges.grass = 1;
+            saveData.team.push(makeBilly('gates0', 10));
+            if (runSideOpen(saveData.run.map) !== true) throw new Error('the obstacle didn’t open');
+            await selfTestSleep(400);
+            if (propShown(ob)) throw new Error('the obstacle still stands once open');
+            if (!canEnter(first)) throw new Error('the seam is still closed once open');
+            const day = saveData.run.clock;
+            for (const i of S.nodes)
+              if (!runArrive(saveData, i, data)) throw new Error(`couldn’t walk into side place ${i}`);
+            uiState.roam = null;
+            render();
+            await view(runWorldNode(S.nodes[S.nodes.length - 1]));
+            if (!(walkView.sc.props || []).some(p => p.act === 'fieldout'))
+              throw new Error('no way out at the last place');
+            fieldWayOutGo();
+            if (saveData.trip.node !== runWorldNode(S.to))
+              throw new Error('the way out didn’t lead back to the main path');
+            await view(runWorldNode(S.to));
+            const days = saveData.run.clock - day;
+            if (days !== S.nodes.length + 1)
+              throw new Error(`the side area took ${days} days, not ${S.nodes.length + 1}`);
+            return `${S.name}: ${S.nodes.length} places behind Cut, opened with the Grass Badge, out on day ${saveData.run.clock}`;
+          } finally {
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        180
+      );
+    /* RL-12b: a run's waystation and stall, on a copy of the save: the first seed (SELFTESTWAY0, 1, ...) whose map has
+       both; at the waystation its stand (act 'event') opens the event the place holds, at the stall its stall opens
+       the place's shop with the day's wares; both hold rules.json run.wild.waystation wild Billies. Then the save as
+       it was */
+    if (typeof runWorldSync === 'function' && typeof encounterOpen === 'function' && !selfTest.stop)
+      await phase(
+        "A run's waystation and stall",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            view = async (/** @type {number} */ n) => {
+              const id = 'w:' + LOCATIONS[n].mapId + '*';
+              for (let i = 0; i < 600 && !(walkView.ready && walkView.id === id); i++) await selfTestSleep(100);
+              if (walkView.id !== id) throw new Error(`${LOCATIONS[n].name} isn't shown (still ${walkView.id})`);
+            },
+            sheet = async (/** @type {string} */ sel) => {
+              for (let i = 0; i < 50 && !document.querySelector(sel); i++) await selfTestSleep(100);
+              return document.querySelector(sel);
+            },
+            shut = () => {
+              uiState.modal = null;
+              uiState.mq = [];
+              renderOverlay();
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            let plan = null,
+              seed = '';
+            for (let k = 0; k < 60 && !plan; k++) {
+              const p = runStartPlan(`SELFTESTWAY${k}`, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }),
+                types = p.map.nodes.filter(n => !n.side).map(n => n.type);
+              if (types.includes('event') && types.includes('stall')) [plan, seed] = [p, `SELFTESTWAY${k}`];
+            }
+            if (!plan) throw new Error('no seed of the first 60 has a waystation and a stall');
+            runStartOn(s, plan);
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            setSaveData(s);
+            const nodes = s.run.map.nodes,
+              stand = nodes.findIndex(n => n.type === 'event' && !n.side),
+              stall = nodes.findIndex(n => n.type === 'stall' && !n.side),
+              out = [];
+            for (const [i, act] of /** @type {[number, string][]} */ ([
+              [stand, 'event'],
+              [stall, 'stall'],
+            ])) {
+              const n = runWorldNode(i);
+              if (!runJump(n)) throw new Error(`couldn’t walk to ${act === 'event' ? 'the waystation' : 'the stall'}`);
+              uiState.roam = null;
+              render();
+              await view(n);
+              const P = (walkView.sc.props || []).find(q => q.act === act);
+              if (!P) throw new Error(`${LOCATIONS[n].name} has no ${act === 'event' ? 'stand' : 'stall'}`);
+              const wild = encountersHere(n).length;
+              if (!LOCATIONS[n].waystation || wild > RULES.run.wild.waystation)
+                throw new Error(`${LOCATIONS[n].name} holds ${wild} wild Billies, more than a waystation's`);
+              shut();
+              walkPick({ k: 'act', act, p: P });
+              if (act === 'event') {
+                const ev = eventAt(saveData.run, i, EVENTS);
+                if (!ev) throw new Error('the waystation holds no event');
+                if (!(await sheet('#ov .event-sheet'))) throw new Error(`the stand didn’t open ${ev}`);
+                out.push(`${LOCATIONS[n].name}: ${ev}`);
+              } else {
+                if (!(await sheet('#ov .shop-sheet .ware2'))) throw new Error('the stall didn’t open its shop');
+                out.push(`${LOCATIONS[n].name}: ${document.querySelectorAll('#ov .shop-sheet .ware2').length} wares`);
+              }
+              shut();
+            }
+            return `${seed}: ${out.join('; ')}`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        180
       );
     /* RL-8: a run from the mast to the payout, on a copy of the save (nothing is written while the test runs): a short
        run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the
@@ -1553,17 +1727,23 @@ async function runFullTest(mode) {
                   W = m[3] * x + m[7] * y + m[11] * z + m[15];
                 return W > 0 && Math.abs(X / W) < 0.92 && Math.abs(Y / W) < 0.92;
               };
+              /* a building is drawn from its plan (build) or, since the low-poly batches, as a low-poly model with a
+                 door (house_red, shop, clinic); the low-poly ones count among the voxel props too */
               const seen = (sc.props || []).filter(inView),
-                wantB = seen.filter(pp => C0[pp.k] && C0[pp.k].build).length,
+                lowB = pp => C0[pp.k] && !C0[pp.k].build && C0[pp.k].door && C0[pp.k].model && pp.model !== 'card',
+                planB = seen.filter(pp => C0[pp.k] && C0[pp.k].build).length,
+                polyB = seen.filter(lowB).length,
+                wantB = planB + polyB,
+                lp = typeof propModelState !== 'undefined' ? propModelState.lowPoly || 0 : 0,
                 wantV = seen.filter(pp => C0[pp.k] && C0[pp.k].model && pp.model !== 'card').length;
-              if (id === 'test_light_props' && (b < wantB || v < wantV || !wantB))
+              if (id === 'test_light_props' && (b < planB || lp < polyB || v < wantV || !wantB))
                 throw new Error(
-                  `props in view: ${b} of ${wantB} buildings and ${v} of ${wantV} voxel props drawn (${p} solid props)`
+                  `props in view: ${Math.min(b, planB) + Math.min(lp, polyB)} of ${wantB} buildings and ${v} of ${wantV} voxel props drawn (${p} solid props)`
                 );
               if (id === 'test_light_room' && t === 23 && !lm)
                 throw new Error('no lamp shadow map in the room at night');
               out.push(
-                `${(sc.name || id).replace(/^Test: /, '')} ${Math.floor(t)}:${t % 1 ? String(Math.round((t % 1) * 60)).padStart(2, '0') : '00'} — ${b} buildings, ${v} voxels, ${p} solids drawn (${seen.length} placed things in view), ${lm} lamp map(s)`
+                `${(sc.name || id).replace(/^Test: /, '')} ${Math.floor(t)}:${t % 1 ? String(Math.round((t % 1) * 60)).padStart(2, '0') : '00'} — ${Math.min(b, planB) + Math.min(lp, polyB)} of ${wantB} buildings, ${v} voxels, ${p} solids drawn (${seen.length} placed things in view), ${lm} lamp map(s)`
               );
             }
           } finally {
@@ -1602,16 +1782,17 @@ async function runFullTest(mode) {
           cutscene.run++;
           const run = cutscene.run,
             fr = [],
-            f0 = worldBowl.frames;
+            f0 = worldBowl.filmed;
           let last = performance.now(),
             seen = f0;
-          /* phase 10: frames counted as the bowl draws them (worldBowlFilm) */
+          /* phase 10: frames counted as the bowl draws them (worldBowlFilm counts worldBowl.filmed; worldBowl.frames is
+             the map tab's) */
           const watch = setInterval(() => {
-            if (worldBowl.frames !== seen) {
+            if (worldBowl.filmed !== seen) {
               const n = performance.now();
               fr.push(n - last);
               last = n;
-              seen = worldBowl.frames;
+              seen = worldBowl.filmed;
             }
           }, 4);
           try {

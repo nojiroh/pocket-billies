@@ -22,6 +22,13 @@ No engine swap (CLAUDE.md). The look must not change except where a task says so
   on phones, shadow passes included**; **60 fps in towns on the Android phone at the game's own values**. Next stage:
   **B** (the file split), then the rest.
 
+## Update (2026-10-23, from the owner's debug logs; HANDOFF "Phone speed, calmer effects, five times of day")
+- The Android phone in Copperleaf draws 1,770 calls a frame (864 of them sprites; a phone held upright sees about
+  1,000 things), and its graphics waits show up as main-thread time: the calls now cost it more than the pixels.
+  Stage E comes before stage D for it.
+- Stage I is done in another form: five looks (dawn, day, golden hour, dusk, night) as engine groups todDawn ...
+  todNight, Studio-editable, logic/time-of-day.js. I2 (glow that follows the light) is still open.
+
 ## What the owner's graphics test already says (docs/graphics-bench.md)
 - Game's own values / everything lowest / highest: iPad 38.5 / 57.5 / 37 fps; Android 15.5 / 42 / 16.5 fps.
 - The Android phone is held back by pixel count: Sharpness 0.4 -> 1 halves it on bare ground (55 -> 29.5); grass,

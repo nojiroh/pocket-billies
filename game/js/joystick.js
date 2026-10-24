@@ -11,6 +11,7 @@
    and forward. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
+import { routeSight } from './hooks.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { walkView } from './walk-view.js';
 import { walkRenderer } from './walk/walk-state.js';
@@ -70,7 +71,8 @@ function joystickAllowed() {
     !walkView.director &&
     !(typeof airshipFlight !== 'undefined' && airshipFlight.on) &&
     !(typeof glassLift !== 'undefined' && glassLift.on) &&
-    !(typeof talkBox !== 'undefined' && talkBox.on)
+    !(typeof talkBox !== 'undefined' && talkBox.on) &&
+    !(typeof routeSight !== 'undefined' && routeSight.busy)
   );
 }
 function joystickInput(x, y) {

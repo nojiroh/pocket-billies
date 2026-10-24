@@ -150,6 +150,364 @@ draft PR #168 into `track/roster`. Plan approved in Plan Mode: 24 → 40 species
   - Not tried on a phone: the new sprites in grass, battle and the Guide.
   - Playwright (Python) needs version 1.63.0 here to match the preinstalled Chromium.
 - Next: RO-2b (Yiming ferret, Woods tiger, an Arnault peacock), then RO-2c (Huang dragon, forms, balance).
+### Floating island world map, orbit camera, map opens whole, shorter fall - 2026-10-24
+Branch `ccr-a5b35598-07ud1j` (one session, not part of a plan; PR #178). The owner's asks: improve the opening intro;
+the island bigger on the world map and looking like a floating island; a version of the orbit camera; every building
+low-poly 3D; the background matching the time of day; the world map never half loaded when it opens; the fall more
+dynamic, natural and shorter; not too busy. The owner's answers: drop the bowl (hub only, runs keep it), about 10 s,
+simple new models where a building has none.
+- What was wrong (checked headless at phone size): the map drew before its parts were in (a flat green shape, then
+  the sea, then the island; the island's own heights arriving rebuilt the whole ground). The island was a small patch
+  in a blue bowl seen from above, its buildings and trees three times life size (BOWL_THING_SCALE), so the island read
+  small and crowded. Two landmarks (the giant swing tree, the summit lookout) drew as red squares (flat pictures that
+  never showed) though both have models; the airship station was not drawn at all. The map's sky was the same pale
+  haze at every hour. The New game fall is crust (2.9 s) and a 9 s glide (the street leg is not played since RL-8).
+- Changed (one cause per commit):
+  - Landmarks and structures (airship station and mast, well, fountain, clock tower, greenhouse) with a .json model
+    draw as their model. Every Copperleaf building already had a model, so no new models were needed.
+  - logic/float-island.js (tests): the rock hanging under the coast (a low-poly cone, 40 corners, 6 rings and a point)
+    and three small floating rocks with a grassy top that drift.
+  - logic/bowl-camera.js (tests): FLOAT_CAMERA and bowlCamClampFloat / bowlCamHomeFloat; while a floating island is
+    in (bowlCamUseFloat) every clamp keeps its limits; a state may carry a fixed pivot height `th`.
+  - environment.js environmentLookAt: the time-of-day look at a scene's hour.
+  - world-bowl.js, when the hub's island map is in and no run world is (worldBowlFloats): the ground cut to the land,
+    no water, the rock (mrock, the terrain's rock and dirt pictures), a sky of its own (mskyf: the island map's sky
+    under the time-of-day look, colour under the horizon, a calm sea of clouds, stars, the sun), lights tinted by the
+    look (uSunTint, uAmbTint, uTodOn in BOWL_SKY_GLSL; 1 and 0 on the bowl), shadows over the island alone (sharper),
+    things life size, the terrain worked out round the island only, no weather clouds or rain (a storm greys the sky).
+    The orbit: opens from where you stand (camera-orbit.js orbitYawAt) looking across; one finger turns and tilts;
+    a slow turn after 4 s idle (not with reduced motion).
+  - Opens whole: worldMapPrewarm (idle time, no GPU: places, island heights, terrain, pictures, model recipes) from
+    the hub's walk scene and the fall's start; the map stays covered (worldMapFade full) until worldBowlReady, 5 s at
+    most; the zoom-out waits for it.
+  - The fall: crust 2 s, then 6.5 s: a drop from high above the island (gravity, a tumble that steadies, a little
+    shake) and a swoop round to the lab (worldMapFallFrame), the island drawn behind the fade until ready (1.5 s at
+    most). The caption "At the centre of everything / The Inner Sun" no longer shows on this path (it flew past the
+    Inner Sun); "Inside the planet / The Hollow Earth" does.
+  - Checks: check-fast's map check and check-quick's map camera step know the floating island.
+  - "Less low poly" (the owner, later the same session): the rock 112 corners and 11 rings with smooth bulges; the
+    island's ground its own mesh of 1.5 m squares from its own heights (floatGroundMesh), not the bowl's 6 m grid;
+    things stand on it (worldBowlSkyFloor reads it).
+- Verified: lint, typecheck, unit tests, check:modules after each commit; check-fast --only=map (2 of 2); the smoke
+  check (no problems, 174 s); headless pictures at five hours and of the fall. Not judged headless: speed on a phone, how the
+  fall feels in motion.
+- Risky: the bowl's shaders gained uniforms (tints, uIsle): runs should look as before, unchecked on a device. The
+  Studio's world map preview still shows the bowl. The airship flight on the hub map is clamped to the island's orbit.
+- Next: try it on the phone (map at a few hours, the New game fall) and send a debug log; tune FLOAT_CAMERA and the
+  rock in logic/ if wanted.
+### Roguelite track RL-12b part 2 - Waystations and stalls (done) - 2026-10-24
+Branch `track/encounters`, over two sessions (the first did the node types and the map rule, then handed over). The
+plan was approved in the earlier RL-12b session's Plan Mode (waystations are normal-sized places with a stand and fewer
+wild Billies; the no-two-shops rule counts towns and stalls; weights route 4, event 2, town 1, stall 1, placeholders);
+this session built the rest on the owner's word, fast checks per commit, smoke once, long checks skipped. main merged
+in twice (RL-R2a, then #177's grass): no conflicts. Tag `rl-12b-done` for the owner.
+- Where the plan was wrong (checked in the code):
+  - "a stall: a stand with act `shop`": act `shop` on a prop walks you into the shop's room (`ROOM_BY_USE.shop`,
+    `enterRoom`), and a stall has no room. It got its own act, `stall`, which opens the shop sheet where you stand.
+  - mapgen's props dials list their keys in the defaults (`mast`, `clinic`, `shop`); `stand` and `stall` join them,
+    which changes the params in every scene's `gen` (rng's scene hash remade; the scenes are the same).
+  - `encounterOpen` wasn't exported (only the debug menu reached it, through hooks): it is now.
+- Changed (one cause per commit):
+  - **Node types and the map** (first session): `event` and `stall` in nodeTypes.json, `shop: true` on town and stall,
+    `runMapNoTwoShops`, `runMapProblems` naming two shops in a row.
+  - **Scenes and rows**: `RUN_BUILDINGS` event `{stand}`, stall `{stall}`; `MAPGEN_HUB_BUILDINGS` rows (the market tent,
+    act `event`, label "Waystation"; the fruit stall, act `stall`, "Stall"), placed on a lot like the town buildings.
+    `runWorldTables`: a type with `shop` gets a shop (a stall's is named after the place, kept by "The stallholder");
+    event and stall rows carry `waystation: 1`; `encounterStock` gives them `rules.json run.wild.waystation` (2).
+  - **The page**: `walkPick` act `event` -> `encounterOpen(runMapNode(here))`, act `stall` -> `openShop`; the stall's
+    label pill is shop blue; first-run hints for a waystation and a stall (run.js).
+  - **Sim and preview**: the sim opens the day's shop at any type with `shop` (only a town heals) and notes a
+    waystation's event (`at.event`; the bot plays no option); the Studio's sim worker gets the encounters module. The
+    preview gives a stall's shop by day and each waystation's event as first drawn (a later stand can differ once an
+    earlier event is played: the comment says so).
+  - **Tests**: run-waystation-world (props, rows, shop on two seeds), run-sim, run-preview; check-data's planted
+    rules snapshot and rng's scene hash remade on purpose.
+  - **In-game test**: a new phase, "A run's waystation and stall" (the first SELFTESTWAY seed with both: the stand
+    opens its event, the stall its shop, the wild stock). **check-fast**: an "Encounters" check on the blur page (no new
+    boot) runs that phase.
+- Verified: lint, typecheck, check:modules, format:check, check:data and the unit tests after every commit (877 ->
+  880). The new in-game phase alone headless (15 s) and check-fast `--only=Encounters` (26.5 s), both passed.
+  Screenshots of a waystation and a stall (the tent and the stall by the road, their pills). Smoke 6 of 6 (219 s).
+  The slow unit tests, after CI's lint job caught run-world-real's snapshot (a town there is now a stall: remade on
+  purpose): 50 of 50. **Skipped on the owner's word**: the full quick check, the whole in-game test and the full
+  check-fast run (CI skipped its `full` and `selftest` jobs on the PR; lint, rules and smoke passed).
+- Risky / open:
+  - The market tent has no 3D model (a flat sprite beside the low-poly stall and buildings). It reads fine in the
+    screenshot; a model (or another prop) is the owner's call.
+  - Found, not caused here: the run sim's bot loses at the landing in most seeds (`lostAt: 'landing'` with a party
+    of 1 from `team: 3`), so its stats say little past row 1; and maps hold far more towns than the weights suggest
+    (about 350 towns, 150 routes, 80 waystations, 15 stalls over 100 maps: rest rows are towns). Worth a look before
+    the weights are tuned.
+  - Side places (`side: 1`) still skip the no-two-shops pass.
+  - RL-R2b (caves, the Surf islet) works on run-map.js and run-scenes.js too and had pushed nothing when this PR went
+    up. Shared touch points: `RUN_BUILDINGS`, `runWorldTables`'s row block (the `sells`/`waystation` lines),
+    `MAPGEN_HUB_BUILDINGS` and mapgen's props defaults.
+- Next: RL-12c (held items) on this branch; RL-S1 depends on RL-12b.
+
+### Roguelite track RL-R2a - Side areas and field moves (and no deadline) - 2026-10-23
+Branch `track/regions` (fast-forwarded to RF-4's `track/reflavour` at e1e1479 on the coordinating session's word, then
+main merged in: RF-4, RF-5, RL-12b part 1, TC-4). Plan approved in Plan Mode with the owner's answers: walk in past the
+obstacle by a seam, a one-way way out to the next row, a detour or an alternate path but never both, badges by type,
+`fieldMoves.json`, RL-R2 split in two (this is R2a), and **drop the deadline** (the owner: "Why do I have deadlines").
+Mid-session the owner asked for the Cut moment to be "not as obtrusive, more like Pokémon with a little animation on the
+map": the sheets became the talk box and a burst on the map. Tag `rl-r2a-done` for the owner.
+- Where the docs were wrong (checked at 4a9b734, RF-4 at e1e1479):
+  - Badges were the old per-run `saveData.seats`, reset at every run's start and never awarded on a run
+    (`battle-rewards.js`: `if (st && !run)`). Nothing in the roguelite had ever won one.
+  - Rocco (Ground) is `crude.json`, not `rocco.json`.
+  - Surf was half built: v24's riding (`sc.ride`, `riderOf`, the Billie drawn under you) and badge gates on places
+    (`gate`, `canEnter`, `gateText`) were there, unused by runs. Both are reused.
+  - 9.3's "a side area can't hang off a scene's free side without breaking the seam rules" was half wrong: run scenes
+    use only their east and west sides, and mapgen makes north exits and edge strips; walking in by a north seam fits
+    the rules. What can't be promised is a seam back into a later main place (a loop), hence the one-way way out.
+  - There is no cave scene type (mapgen makes routes and towns); the island generator is reusable but makes a whole
+    island with no exits. A run's "map" is the 3D world map only (no 2D node map).
+  - The deadline did almost nothing: a chip, a song version; RL-13's hardening was never built.
+- Changed (one cause per commit):
+  - **The deadline goes** (3 commits): the run songs' deadline version (music.json, the tracker, the sound baseline's
+    renders, the Studio's card), the day chip (the day alone), then `run.deadline`, `runDeadline`, `runOverdue`,
+    `run.clock.slack` (check-data calls it "no such rule"), the map checks' clock argument, the debug log's field.
+  - **Data**: `fieldMoves.json` (Surf / Water / shore / lake, ridden; Rock Smash / Ground / boulder / ridge; Cut / Grass /
+    thorns / thicket; area names and lines drafted for the owner to edit) and `rules.json run.side` (detour 0.6, alt
+    0.15, places [2,4], altRows [2,3], altBoss 0.33, move weights, lean 2: placeholders). `meta.badges` by type.
+  - **logic/run-side.js**: `runSideAdd` after the main map (its own streams: the main path is the same with or without
+    a side), `runSideLinked`, `runSideOpen`, `fieldMoveState` (no badge, no Billie of the type, or yes),
+    `runSideProblems`. Side places are marked `side: 1` after the main path's; `run.map.side` holds the rest.
+    `validRun` checks them; no SAVE_VERSION bump (optional fields).
+  - **Scenes**: a north exit on the obstacle's place, the side's chain east to west, the obstacle prop 8 m in on the
+    north road (`act: 'field'`, `unless: opened:<move>`, a new condition kind), the way out at the last place's hub
+    (`act: 'fieldout'`), Surf's places ridden with coast water, the first place's `field` gate.
+  - **Foes and badges**: the side's own leader (one the region didn't pick, not of the move's type, so it can win a new
+    badge); a run leader's first win of a type keeps the badge (mini-bosses and bosses only: RL-12b's route trainers
+    are run foes too), its line on the win sheet; the trainer card's badge case reads it.
+  - **The page**: `game/js/field-moves.js` (the talk box, Yes / No, "Leafy used Cut!", leaves / dust / ripples on the
+    map, the way out), `walkPick`'s two acts, `canEnter`/`gateText` turning you back at the closed seam with the
+    obstacle's words.
+  - **Debug**: the debug menu forces a side area (each kind and move) and keeps every badge or none; the test run's
+    address takes `&side=detour_cut` and `&badges=all`.
+  - **In-game test**: a new phase, "A run's side area" (passed headless).
+- Verified: lint, typecheck, check:modules, format:check, check:data and the unit tests after every commit (826 -> 876
+  with main's); new tests run-side (9), run-side-world (both kinds x three moves: scenes, seam rules and agreement,
+  props, ride, gate, pools), battle-formats (the badge), run-test (the address), check-data's planted field moves.
+  Smoke 6 of 6. A headless browser walk of a Cut detour and a Surf alternate path (screens checked: the talk box, the
+  burst, inside, the way out, the map); the new in-game phase alone passed. Full quick check and the whole in-game
+  test not run (the owner's word: long checks skipped). check:fast: see the PR.
+- Risky / open:
+  - The obstacle sits 8 m in on the north road of a town or route; at night or in fog it can be hard to see. Its seam
+    gate does the blocking, so walking round the bramble still turns you back.
+  - Side places crowd the world map 2 lanes north of the line; at Expeditions III-V (up to 15 rows) they may overlap.
+  - The run sim, run preview and Studio Run Lab stay on the main path (no side areas): RL-R2b.
+  - Surf's water is coast water along a side of an ordinary route, not open sea; a cave is a ridge route. RL-R2b.
+  - A type renamed in the Studio orphans its kept badge in saves (meta.badges is keyed by the type's id).
+  - The talk box speaks as "Trainer" (the player); Pokémon's narration has no speaker.
+  - Playwright for the checks here must match the container's browser (1.63.0 for chromium 1243), not
+    requirements-check.txt's 1.56.0.
+- Next: RL-R2b (a cave scene type, an islet town for Surf, the travel moment, the Run Lab and sim with sides); RL-12b
+  part 2 (waystations) edits the run map after this merges.
+
+### Test cleanup track, round 3 - TC-4: shared helpers, check-quick on fixtures and waits, the tiers - 2026-10-23
+Branch `track/test-cleanup` (pulled with --no-rebase before every push). TC-4 items 1, 2, 5 and 6, over two sessions
+(the first ran out of room). The owner said to make the recommended choices without waiting for plan approval. main
+(RF-3, RO-1) merged in first. The track is done; the owner pushes the `tc-done` tag.
+- Where the track file was wrong: software drawing is multi-threaded (one page keeps about two cores busy, two pages
+  fill a 4-core container, a boot takes 25-65 s), so more browsers buy nothing; 13 check-quick steps already opened
+  their own fixture page, only the 22 desktop steps replayed the start with `play()`. "About 10 min" for the full check
+  and "1-3 min" for the fast check are not reachable on this hardware with every page drawn in software (below).
+- **Item 1**: `tools/browser_check.py`, the shared helpers (serve on a free port, CLOCK, NO_ACCOUNTS, TEST_GLOBALS,
+  LOW_GRAPHICS, `until` with an optional poke, `new_page` with extra init scripts, `open_game`, `console_text`, `log`,
+  `frames`, `drawing`, `stand`, `go_scene`). check-fast, check-quick, check-ui-gallery, check-sound and
+  check-studio-github use it; style-diff, look-blur, island-perf and island-shots import it; look-tall-ground still
+  loads check-fast (TALL_SPOT), which re-imports the same names.
+- **Item 2**: check-quick on check-fast's model. Each step is `def step(P)` on a Page opened by its first step at
+  `?fixture=<name>` ('title' = the phone flow's real opening, None = no page). 13 pages in `--workers` browsers
+  (default 2), longest first; `play()` is gone; QUICK_RENDER is an init script; a page error fails the step it came
+  in; each page's boot is recorded (`boot` in results.json) and left out of the step's time limit. 93 of 95 sleeps
+  became waits (`ui`, `drawn`, `look_at_me`, `bowl_drawn`, BOWL_OPEN, BATTLE_LEFT); two stay with comments. The
+  battle, run and speed pages (battles/starters/battle weather, RL-8/Juniper/airship, postcards/running/settings)
+  draw with check-fast's low graphics (their steps read state). The double/Alpha battles and battle music play at
+  four times the animation speed.
+- **Check fixes** (each its own commit; every one was the check, not the game): battle music's cue waits 20 s and the
+  lost payout's jingle 40 s; battle music at 4x, since on a busy machine the throw came after the drums' 8 s fallback,
+  which logs nothing; the Alpha foe level 12 (a level-6 Alpha fell to the first move and the catch was skipped);
+  `go_scene` waits at least 60 s for a scene's first frames (Juniper's "black screen" after the RL-8 run); the
+  postcard step loads the card's picture and stretches the card's 9 s timer while it checks it (the card had gone);
+  RL-8 taps Take off again while the run sheet is still there (a lost tap); run map music waits for the map song
+  (Run music's last check leaves the deadline song asked for) and puts the walk tab back even when it fails (its
+  failure had taken Battle music with it); check-fast's CAM-2 encounter swoop waits 30 s and the orbit check resets
+  the camera first (CI failed that pair once); check-fast's screens check taps a Billie sheet's tab again until it
+  opens (a lost tap; that commit also carries check-fast's docstring times).
+- **Fixed on main's behalf**: check-fast's "Play this seed" built its Node plan without the run's region (RL-R1), so it
+  failed on main since #167 and on this PR; it passes the region now. check-data-text treats an event option's `need`
+  as a condition, as it does an unlock's `when` (RL-12b's `team >= 2` stopped CI's smoke job); main's #173 made the
+  same change (and reads then/intro as scripts), and the merge keeps main's file. main's #170 fixed the in-game test's two false
+  failures the baseline run's selftest job hit (merged in).
+- Tried and reverted: steps that share a fixture sharing a page (13 pages to 10) saved 66 s of 1338 and broke Run
+  music, which needs the run's landing untouched.
+- **Results** (a 4-core cloud container, one heavy check at a time):
+  - Full check: 2455 s and 35 of 37 steps before (main, with other work beside it; round 2 measured 1872 s). Five
+    full runs after: 1338 s (1 problem), 1272 s (the reverted page sharing, 3), 1217 s (1), 1259 s (3), and
+    **1282 s with all 37 passed** on the last. Each problem was a check that lost a tap or waited too little on a busy
+    machine, fixed above. Boots are about 500 s of the pages' time. Slowest steps of the last run: double/Alpha
+    battles 258 s, RL-8's run 253, phone 169, walking left and right 168, running 161, culling 149.
+  - Smoke: **188 s**, 3 steps, no problems (budget 1-2 min).
+  - Fast check: **677 s** on CI on dfbe76c (27 checks on 19 pages, 2 browsers, all passed); 665 s here (26 of 27: the screens check lost a tap on the Billie sheet; fixed, it taps again until the tab opens).
+  - `npm test`: 20 s; lint, typecheck, check:modules clean after every change.
+  - Why the 10-minute budget is missed: a desktop frame takes about 1.5 s in software beside another page, at a third
+    of the resolution or with low graphics alike, and the game clock moves at most 60 ms a frame, so game-time waits
+    are frame waits. TESTING.md says so under the tiers, with the ways further (fewer drawn steps, more logic in Node,
+    a faster machine, the fast check's pages sharing boots).
+- **Item 5**: triggered on `track/test-cleanup` at a47fa45 (Actions -> Check -> Run workflow, "Make the picture
+  baseline" on: run 1252, https://github.com/nojiroh/pocket-billies/actions/runs/40030142882). When its full check
+  passes it saves the release `baseline-0.1.0-alpha` (quick-baseline.zip); the PR says how it ended. If it failed or a
+  rebuild is wanted after the merge: Actions -> Check -> Run workflow on main with "Make the picture baseline".
+- **Item 6**: TESTING.md's tiers table (a fast check row; smoke, full and unit times; why the budgets are missed), the
+  docstrings of check-quick and check-fast, check.yml's header.
+- Risky: the low-graphics pages' pictures look plainer than before (no grass, mist or extra shadows): they are notes,
+  and the baseline is made from this state. The postcard step stubs `setTimeout` for one 9 s delay while the card is
+  checked. "Save the picture baseline" in check.yml runs only when the full check passes.
+- Next: the owner tags `tc-done`; the nightly full run compares pictures with the baseline. The fast check's budget
+  needs its 19 pages to share boots (a check-fast restructure, not in this track).
+### Phone speed, calmer effects, five times of day - 2026-10-23
+Branch `claude/new-session-yby9e8` (one session, restarted from main after PR #170 merged). From the owner's three
+debug logs of 2026-10-23 (Android phone, iPad, Windows) and their ask: the phone runs badly, menus are sluggish, blur
+and haze toned down ("don't drop the blur, make it more subtle"), a stylized time of day with about five times to tune
+in the Studio, and more suggestions (tech and visual).
+- What the logs say (checked in the code):
+  - Android in Copperleaf: **1,770 draw calls and 27,400 uniform calls a frame** (iPad 1,050 / 10,000); **864 sprite
+    draws against the iPad's 191**: a phone held upright keeps about 1,000 of 1,530 things in view (the iPad 230).
+  - On Android Chrome a wait on the graphics process shows up as main-thread time, so the automatic quality judged every
+    slow frame "main-thread bound", held the effects at step 2 and pushed the resolution back to 1 every second: the
+    phone ran the whole session at full resolution, 17-27 fps.
+  - Phase 20 says the Android phone is limited by pixels: with engine.json's quality.resolution 1.5 it draws the 1.6 MP
+    cap, but the calls are now the bigger cost. Stage E (instanced sprites) is the real fix.
+  - Menus on a phone (portrait, under 960 px): a CSS blur on the full-screen live 3D canvas, glass blurs of 10-18 px on
+    top, all redone every frame because the world kept drawing at 24 fps behind full screens.
+- Changed (one cause per commit):
+  - Menus: the blur behind a phone's screens 1.5 px to 0.8 px (kept, at the owner's word); the world behind a full
+    screen settles for 0.8 s, then draws once a second (a still canvas keeps its blurred backdrop); phone glass blurs
+    halved through CSS variables (a no-op commit first: the fixed values became variables with today's values);
+    Billie pictures redraw at most 20 times a second (their pose moves in 50 ms steps).
+  - Walk: the automatic quality's step is a pure function (logic/quality-step.js, tests); on Android and iPhone a slow
+    frame now takes steps 3-4 and then the resolution (not below 0.6), never raising it for "main-thread" time.
+    New settings Quality > Skip tiny props (minPropPx, 3 in the data) and Small props' distance on phones
+    (phonePropDistance, 48 m in the data; small props under 1 m fade out over the last 8 m; buildings never). The
+    effects pass skips props outside the view, and fountains outside it draw no spray.
+  - Engine data, calmer: depth-of-field blur 2 to 1, behind you 2.6 to 1.4, sharp band 0.62 to 0.8, colour fringes 1.15
+    to 0.35, vignette 0.72 to 0.4, bloom 0.8 to 0.6, glare 0.9 to 0.6, saturation 1.2 to 1.1, mist 0.16 to 0.08.
+  - **Five times of day** (logic/time-of-day.js, tests): engine groups todDawn, todDay, todGolden, todDusk, todNight
+    (25 dials each: hour offset and blend, sky colours and amount, light colour and strength, fill and its colour,
+    haze colour, amount and distance, mist, exposure, saturation, contrast, warmth, shadow strength, shadow and
+    highlight tints, glow, lamps, stars). Dawn sits at sunrise, day 3 h after it, golden hour 1.4 h before sunset, dusk
+    0.4 h after, night 1.8 h after (all move with the season); each look is reached over its blend hours, the one before
+    holds until then. They replace, outdoors, the old dawn/dusk/night sky tints, warm sun and moon colour, night ambient,
+    saturation, exposure, warmth and bloom terms, the dawn mist and the lamps; weather, a scene's own look and the
+    player's dials stay on top; rooms keep their light. The colours are game data (engine.json); the code's defaults
+    have none (the ui-lint ceiling on colours in game code). The Studio's Engine page lists the five groups and a bar
+    under its moments: hour, weather, season, Play a day (24 h in 20 s) and which looks make up the light.
+- Not done, with reasons:
+  - Debouncing `save()`: the save is 2.3 KB (the log's saveBytes), a write is well under a millisecond; not worth a
+    lost save.
+  - A schema file for the looks: engine.json has none; the dials' ranges live in ENGINE_SPEC as for every other group.
+  - The phone pixel budget (phase 20 D4) and quality.resolution 1.5 / shadowMap 4096 in engine.json: unchanged
+    (phase 20 says ask first); the automatic quality now brings the phone down from them.
+- Verified: lint, typecheck, unit tests (863) and check:modules after every commit; check:data; the Studio's 32
+  sections open with no error (check-studio-github.py --only=sections); a scratch Playwright run of the Engine page:
+  the five groups, the bar, 19:45 shows "golden 50% + dusk 50%", 23:30 "night 100%", Play a day sweeps; smoke (see
+  below). The looks through a summer and a winter day printed from the data (night until ~4:30, dawn at sunrise, day
+  from ~9:00, golden hour before sunset). **Not judged headless** (phase 20's rule): how the looks and the calmer
+  effects look, and the speed. Please try on the phone and iPad and send a debug log.
+- Risky:
+  - The looks change the picture at every hour but midday; the starting values are my guess at "stylized". Tune them in
+    the Studio (Engine > Time of day, with the hour bar).
+  - On a phone the resolution can now fall to 0.6 when frames are slow: softer, but the frames should come.
+  - Small props fade out 40-48 m away on phones: watch for things popping in a long street.
+  - The world behind a full screen moves once a second: it may look still or stutter behind the glass.
+- PR #170's follow-up (the full test's three false failures): headless, the whole in-game test went from three red
+  steps to one, "Opening: falling across the Hollow Earth: the fall drew 1 frames" (software drawing late in an 11-minute
+  run; it passed alone with 9 frames). Proposed fix, not made: run the fall for 6 s x selfTest.slow in the test.
+- Suggestions for next (tech and visual, ranked): phase 20 stage E (instanced sprites: ~864 sprite draws to tens),
+  stage F (instanced models and merged shadow casters: shadows are 200-400 draws), GPU-tier presets from the renderer
+  string and a warm-up benchmark, invalidateFramebuffer after post passes and RGBA8 targets on phones, half-rate
+  shadows and reflections on phones by default and lamp shadows for the nearest 1-2 lamps only; for the looks: a toon
+  light ramp per look, coloured ink outlines per look, glowing windows and lanterns that follow the lamps (stage I2),
+  painted cloud cards, fireflies at night, cheap god-ray quads at dawn and golden hour (stage D7); menus that redraw
+  only what changed; the world map's idle water at 10 fps.
+
+### Roguelite track RL-12b part 1 - Encounters: events, reward picks, route trainers - 2026-10-23
+Branch `track/encounters` (new; made from `track/reflavour` at e1e1479, RF-4's renames, at the owner's word in this
+session, before RF-4's PR merged; main merged in twice since, the last after #167). Plan approved in Plan Mode, the
+owner's answers relayed by the coordinating session and the branch base confirmed by the owner here: held items are
+RL-12c; leaders keep the 3-Perk pick, route trainers and the rival get the reward pick, the boss none; evolution items
+by option B (lines get a stone evolution); the Protein Bar a bag item; tutor moves from the line above its level or of
+its types; reroll 50 Moneys doubling; sight 6 m straight, 1-2 trainers a route; outcomes in the script language;
+waystations `event` and `stall`, no two shops counting both; the 18 events and 7 trainer classes as drafted. Round 4
+beside RL-R2 and RF-5; this part touches no run-map file. Tag `rl-12b1-done` (or as the owner names it) for the owner.
+- Where the docs were wrong (checked in the code; roguelite-track.md section 0 "Corrected in RL-12b"):
+  - Nothing read nodeTypes' `engine: "menu"` or the run's `menu` phase: both unused until part 2.
+  - No rule kept two shops apart: a town is forced before each mini-boss and filler rows roll towns too (seed
+    SCENE00001's map: landing, town, miniboss, route, town, town, ...).
+  - No route trainers, no line of sight; every unbeaten trainer showed a "!" from the start.
+  - Only a mini-boss win made a pick. One evolution item (the Shining Stone) and no line used it; no candy, no tutor.
+  - Conditions couldn't test money or a type in the team (`billie:` is "caught"); `give` handled items only.
+  - The drafts' "a day passes" can't be a command (RL-R2 drops the deadline; the day drives the forecast and shops):
+    Form 27-B, the Side Quest Giver and the surveyor's rope cost a tenth of the team's HP instead.
+- Changed (one cause per commit):
+  - **Stone evolutions (option B)**: swift's Versewift -> Erastar and zuck's Feedopus -> Metapus evolve with the Shining
+    Stone (`bell`) from level 20 (were level 36); their forms (Folklore, Cloud) follow. The sheet's "Use Shining
+    Stone", the Guide's chain and the hint were already there.
+  - **Conditions**: `type:<Type>` (Billies of it in the team), `money`, `team`, `badge:<Type>` (meta.badges when RL-R2
+    adds it, as a list or keys of types, leader ids or seat ids; until then the leaders' seats by their file's type).
+  - **The Protein Bar** (`protein_bar`, lvlUp 1, the trail mix's icon for now): "Feed a Protein Bar" on the Billie
+    sheet (rules.js feedLevels: whole levels through gainXp, so moves and evolutions follow), never in battle.
+  - **run.enc** (logic/run-enc.js; no SAVE_VERSION bump, missing on an older run): events drawn, each waystation's
+    event, the events played, timed boons (effect rows for this place and N more: fxOfRun reads them after the Perks;
+    runArriveFx counts them down), reward picks, the event playing. validRunEnc.
+  - **events.json** (schema, types, EVENTS, the Studio's JSON list, check-data/Studio Check `dataEvents`): the 18
+    events, 3 loot tables, 7 classes. Event commands in SCRIPT_COMMANDS (group event; docs/SCRIPTS.md): perk, money,
+    hurt, heal [share], status, fx, wager, loot, level, recall, foe, wild, reward.
+  - **logic/encounters.js**: which event a place holds (its node's stream, by weight, of its biome, none twice a run),
+    whether an option is open and why not in words, what each command does, the region's foes (encClassFoe, shared
+    with route trainers), the summary. Every chance from the run's events stream.
+  - **encounter-screen.js**: the sheet (intro, options greyed with the reason, lines one at a time, a battle in the
+    middle, a Perk or reward pick in its own sheet, what changed at the end). A reload mid-event: the battle starts
+    again (run-world.js puts the event's foe back) and the event goes on after it (script.js `beforeCheckpoint`,
+    showPendingWindows -> encounterResume).
+  - **The reward pick** (logic/rewards.js, rewards.json, reward-screen.js; rules.json run.rewards 3 cards, 50, x2):
+    items, pyramids, the Protein Bar (candy), the Shining Stone (only when a Billie evolves with it), a move tutor
+    (only moves a Billie can learn); a `held` card at weight 0 for RL-12c. Route trainers' (and the rival's, when RL-S2
+    adds it) wins store it with the battle's end; the win sheet's button opens it; a reload reopens it.
+  - **Route trainers** (logic/route-trainers.js, route-sight.js; rules.json run.trainers 1-2 a route, up 0, 150
+    Moneys, sight 6 m): of different classes, the region's Billies at the place's top wild level; they stand along the
+    road to the way ahead, by turns to each side, facing it. In their line: the "!" (only then), the reveal sting, you
+    stop, they walk up, say their line under their class's name, battle. They never block the way.
+  - The Perk pick takes an event's line and a callback ("Leave it" for a single Perk). Debug menu (Runs): "Play this
+    event", "A trainer's reward pick". The debug log's run line: events played, playing, draws, boons, picks (ids and
+    counts only), who is walking up.
+- Verified: lint, typecheck, unit tests, check:modules, format:check, check:data, build after every commit (826 ->
+  848 tests: conditions, rules, run-enc, encounters, rewards, route-trainers, data-checks' planted faults); smoke 6 of
+  6 (174 s) on the merged tree. Headless browser runs (scratch Playwright scripts, `?fixture=relics`, 390 x 760):
+  three events through to their end (a closed option's reason, a Perk, a tutor taught), the intern's manager battle
+  and its tail, a reload in the middle of that battle (it restarted, the event went on and gave the Max Revive), a
+  route trainer spotting the player, walking up, its line under "Hustle Coach", the battle and the reward pick after
+  it; no page errors. Long checks skipped at the owner's word (full quick check, in-game test, check-fast).
+- Risky / open:
+  - Not tried on a phone: the sheets' tall cards need a scroll to reach the buttons (as the Perk pick); the walk-up's
+    speed; the sight line is straight from the trainer to the hub-ahead line, so a road that bends far off it can let
+    you slip past (6 m covers 3 m either side of that line).
+  - Every number is a placeholder (rewards' weights, reroll, trainers' reward and count, event costs).
+  - `recall` won't take a Billie from home (the billboard keeps only run catches), so on a run with only home
+    Billies it does nothing but say so.
+  - A route trainer's sprite is its class's look (people/<who>); route trainers stand on `route` nodes only (towns and
+    waystations have none).
+  - The run sim doesn't fight route trainers or play events yet: its numbers don't move.
+  - The event foe after a reload restarts with the same Billies; a page reload while the event's reward or Perk sheet
+    is up reopens the sheet, and the event goes on once it is answered.
+- Overlap: RL-R2 (track/regions) edits run-map.js, run-scenes.js and mapgen: this part touched none of them. run.js
+  (one resume line), battle.js (the win button), battle-rewards.js (one hook), walk-control.js (route trainers' spots),
+  data-checks.js, rules.json, index.json, CHANGELOG, ROADMAP and this file will conflict as additions only.
+- Next: part 2 after RL-R2 merges: the `event` and `stall` waystations (normal places with a stand, fewer wild
+  Billies), the no-two-shops rule, run-sim and run-preview, a check-fast "Encounters" page and the in-game test's
+  step. Then RL-12c (held items).
 
 ### Reflavour track RF-5 - The new tone in text - 2026-10-23
 Branch `track/reflavour-rf-5`, made from `track/reflavour` at e1e1479 while RF-4 was still finishing its docs (the

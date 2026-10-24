@@ -204,3 +204,25 @@ test("a run's mini-boss beaten (battleSettleWin): its reward, its flag and a pic
   assert.ok(Array.isArray(run.offer) && run.offer.length > 0, 'a pick of Perks');
   assert.equal(run.offerN, 1);
 });
+
+test("RL-R2: a run leader's first win keeps its type's badge for good (meta.badges); a second win adds none", () => {
+  const s = teamOfThree(),
+    tid = doubleTrainer();
+  fn('startTrainer')(tid, { talked: true });
+  const B = hooks.activeBattle;
+  B.over = 'win';
+  B.T = { ...B.T, runFoe: 'miniboss', type: 'Water', reward: 10 };
+  const run = { offer: null, offerN: 0, perks: [], seed: 'BADGE' },
+    { pay } = fn('battleSettle')(B, s);
+  fn('battleSettleWin')(B, s, pay, run);
+  assert.deepEqual(s.meta.badges, { water: 1 });
+  assert.equal(pay.badge, 'Water');
+  const again = { ...pay, badge: undefined };
+  fn('battleSettleWin')(B, s, again, run);
+  assert.equal(again.badge, undefined, 'kept already');
+  // not off a run, nor a trainer without a type
+  const pay2 = { ...pay, badge: undefined };
+  B.T = { ...B.T, type: 'Grass' };
+  fn('battleSettleWin')(B, s, pay2, null);
+  assert.deepEqual(s.meta.badges, { water: 1 });
+});

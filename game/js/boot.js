@@ -14,12 +14,14 @@ import {
   RULES,
   SPECIES,
   START_NODE,
+  TYPES,
   UNLOCKS,
   gameData,
   worldExtraMaps,
 } from './game-data.js';
 import { makeBilly } from './logic/rules.js';
 import { applyUiTheme } from './theme-sheet.js';
+import { RUN_SIDE_MOD } from './logic/run-side.js';
 import { SAVE_NEW_MSG, SAVE_OLD_MSG, newSave } from './logic/saves.js';
 import { battleStageKey } from './logic/battle-engine.js';
 import { RUN_TEST_SHORT, runTestOf } from './logic/run-test.js';
@@ -766,7 +768,13 @@ const TEST_RUN = (() => {
   try {
     const q = new URLSearchParams(location.search),
       at = (q.get('at') || '').split(',').map(Number),
-      run = runTestOf(q, { species: SPECIES, unlocks: UNLOCKS, perks: PERKS, cap: RULES.run.perks.cap });
+      run = runTestOf(q, {
+        species: SPECIES,
+        unlocks: UNLOCKS,
+        perks: PERKS,
+        cap: RULES.run.perks.cap,
+        types: TYPES,
+      });
     return q.get('test') || q.get('story') || run
       ? {
           run,
@@ -842,9 +850,11 @@ function runTestStart(R) {
     for (const m of s.team) s.caught[m.sp] = s.seen[m.sp] = 1;
   }
   for (const id of R.unlocks) s.meta.unlocks[id] = 1;
+  /* RL-R2: badges kept, and a forced side area */
+  for (const t of R.badges) s.meta.badges[t] = 1;
   uiState.modal = null;
   uiState.mq = [];
-  runTakeOff(R.seed, R.short ? RUN_TEST_SHORT : undefined, [], {
+  runTakeOff(R.seed, R.short ? RUN_TEST_SHORT : undefined, R.side ? [RUN_SIDE_MOD + R.side] : [], {
     home: s.team.map(m => m.uid),
     pack: { items: {}, pyramids: {} },
   });

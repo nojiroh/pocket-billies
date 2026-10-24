@@ -1251,7 +1251,7 @@ export function catchKeep(e) {
 export const teamNeedsHp = b => (b ? b.sides[0].team : saveData.team).some(m => m.hp > 0 && m.hp < maxHp(m));
 export const canUse = (it, m, b) => {
   const I = ITEMS[it];
-  if (!I || !battleBag(b)[it] || I.evoItem) return false;
+  if (!I || !battleBag(b)[it] || I.evoItem || I.lvlUp) return false;
   if (I.revive) return m.hp <= 0;
   if (m.hp <= 0) return false;
   if (I.hpAll) return teamNeedsHp(b);

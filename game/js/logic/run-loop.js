@@ -15,7 +15,7 @@
 /** @import { Run, RunMap, SaveData, Billy } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { fxHealShare, fxOfRun, unlockOpen } from '../hooks.js';
+import { encArrive, fxHealShare, fxOfRun, unlockOpen } from '../hooks.js';
 import { ITEMS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
@@ -83,6 +83,8 @@ export function runArriveHeal(team, share) {
  * simulation): the held Perks' heal rows heal the team (runArriveHeal); returns the HP gained (0: none)
  * @param {SaveData} s @param {Record<string, any>} perks perks.json */
 export function runArriveFx(s, perks) {
+  /* RL-12b: an event's boons count one place down first (logic/run-enc.js) */
+  if (s.run) encArrive(s.run);
   const share = fxHealShare(fxOfRun(s.run, perks));
   return share ? runArriveHeal(s.team, share) : 0;
 }
@@ -141,7 +143,7 @@ export const runFoeId = i => `run_${i}_foe`;
 /**
  * The run's foes, by id: on each mini-boss node and the boss's, a copy of a leader drawn from the node's stream
  * ('foe'), no leader twice in a run (nodes in order); RL-R1: a run with a region has its leaders (run.region.leaders,
- * picked by its types), in node order, while there are any. Its levels: its row's top wild level + run.foes[type].up for its
+ * picked by its types), in node order, while there are any; RL-R2: a side area's mini-boss or boss its own leader. Its levels: its row's top wild level + run.foes[type].up for its
  * top Billie, the others as far below as in the leader's team (1-100). A mini-boss blocks the way north and fights a
  * double battle; the boss is its leader's top Billie alone, fought as an Alpha (which adds the Alpha's own levels).
  * @param {Run} run
@@ -162,7 +164,8 @@ export function runFoes(run, data) {
     if (node.type !== 'miniboss' && node.type !== 'boss') return;
     const left = pool.filter(T => !used.has(T.id)),
       from = left.length ? left : pool,
-      pick = picks[k++],
+      /* RL-R2: a side area's leader is its own (run.map.side.leader); its places come after the main path's */
+      pick = node.side && map.side ? map.side.leader : picks[k++],
       want = pool.find(T => T.id === pick);
     if (!from.length) return;
     const T = want || from[rngFrom(runNodeSeed(run.seed, i), 'foe').int(0, from.length - 1)];
@@ -190,6 +193,8 @@ export function runFoes(run, data) {
       runFoe: node.type,
       runNode: i,
       from: T.id,
+      /* RL-R2: its leader's type: the first win over one keeps that type's badge (battle-rewards.js) */
+      ...(T.type ? { type: T.type } : {}),
     };
   });
   return out;
@@ -215,10 +220,10 @@ export function weatherEffectText(wx) {
     .map(([t, v]) => `${t} ${v > 1 ? '+' : '−'}${Math.round(Math.abs(v - 1) * 100)}%`)
     .join(', ');
 }
-/** the Actions sheet's run status at map node i: the day, the deadline, the node's type, and its weather today and
+/** the Actions sheet's run status at map node i: the day, the node's type, and its weather today and
  * tomorrow (the forecast's word and what a battle there would feel; tomorrow left out past the run's last day or when
  * not rolled) @param {Run} run @param {number} i the map node @param {any} env rules.json env
- * @returns {{ day: number, deadline: number, type: string, days: { day: number, w: string, wx: { k: string, m: Record<string, number> } | null }[] } | null} */
+ * @returns {{ day: number, type: string, days: { day: number, w: string, wx: { k: string, m: Record<string, number> } | null }[] } | null} */
 export function runSheetStatus(run, i, env) {
   const node = run.map && run.map.nodes[i];
   if (!node) return null;
@@ -226,7 +231,7 @@ export function runSheetStatus(run, i, env) {
     .filter(d => d <= RUN_DAYS)
     .map(d => ({ day: d, w: runWeather(run, i, d), wx: runBattleWeather(run, i, d, env) }))
     .filter(d => d.w);
-  return { day: run.clock, deadline: run.deadline, type: node.type, days };
+  return { day: run.clock, type: node.type, days };
 }
 /** Studio plan T3.2: what a run battle starts with, on the page (run.js runBattleStart) and in the simulation (logic/
  * run-sim.js): its seed, the place's forecast for today as the battle's weather (clear is sunny: a run has no hour),

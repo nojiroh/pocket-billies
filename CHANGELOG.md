@@ -26,6 +26,55 @@ kept aside in the browser).
   stop pitching, until it evolves at level 20 into **Sharktank**, a Water/Dragon shark; and **Altmowl**, a rare owl
   with a cloud for a brain. They're the first common and rare Billies, so each run's region differs more, and fishing
   and eggs that used to give a stand-in now give these.
+- **A floating island**: the hub's world map shows Copperleaf's island floating in open sky, its rock hanging under it,
+  with no bowl and no sea round it. The town's buildings and trees stand at their real size, so the island reads as
+  big as it is, and every landmark with a model (the giant swing tree, the summit lookout, the airship station and
+  mast, the well) is drawn as that model. The sky follows the time of day, with a calm sea of clouds far below.
+- **Orbit camera on the map**: it opens from your side of the island looking across it; drag to turn round it and
+  tilt, pinch to zoom; left alone it turns slowly.
+- **The map opens whole**: it is made ready while you walk, and stays covered until everything on it is in.
+- **A shorter, livelier fall**: about 10 seconds. You drop out of the sky onto the floating island, faster and faster,
+  then swoop round it and land by the lab.
+- **Five times of day**: the light outdoors now comes from five looks, dawn, day, golden hour, dusk and night, that
+  blend into each other with the clock (and move with sunrise and sunset through the seasons). Golden hour is warm
+  with teal shadows, dusk pink and violet, night deep blue with warm lamps and stars; day keeps each place's own sky.
+  Each look (its sky, light, fill, haze, mist, exposure, colour, shadow tints, glow, lamps and stars) can be tuned in
+  the Studio's Engine page, which can now show any hour, weather and season and play a whole day in 20 seconds.
+- **Calmer effects**: half the depth-of-field blur and a wider sharp band, much weaker colour fringes and vignette,
+  less bloom, glare, saturation and mist. The blur behind menus on a phone is lighter too.
+- **Faster on phones**: menus no longer redraw the moving 3D world behind them (it settles, then holds still), glass
+  panels blur less, Billie pictures redraw less often, things too small to see aren't drawn, a phone skips small props
+  far off in the haze, effects of things off screen aren't drawn, and the automatic quality on a phone now lowers the
+  effects and then the resolution when frames are slow (it used to keep the full resolution on the Android phone).
+- **Side areas and field moves** (roguelite track RL-R2, part 1): most runs now hide a side area. On the main path a
+  thorny little tree, a cracked boulder or a boat at the shore blocks a road north. As in Pokémon, it opens for a
+  Billie of the right type once you have that type's badge: **Cut** (Grass), **Rock Smash** (Ground) and **Surf**
+  (Water, riding your Billie over the water). Tap it and the talk box asks "Would you like to use Cut?"; your Billie
+  uses it and the obstacle goes with a burst of leaves, dust or ripples. A **detour** is 2-4 places (routes, a town and a
+  leader of its own) with Billies the region doesn't have, and a one-way way out back to the main path. A rarer
+  **alternate path** runs beside the main one with its own mini-boss, and now and then ends at a boss of its own.
+  **Badges are kept for good**: the first win over a leader of a type keeps its badge, shown on the trainer card.
+- **No more deadline on a run**: the day still counts (the forecast, the shops' stock) but nothing is late. The day
+  chip shows the day alone and the run songs lose their deadline version.
+- Encounters on a run (roguelite track RL-12b, part 1):
+  - **Events**: eighteen of them, in the new tone (a Bureau desk wanting Form 27-B, an unpaid intern guarding a Revive,
+    a crate that says DO NOT OPEN: BEANS, a pay-to-wish fountain...). Each has two or three choices; some need a Billie
+    of a type, an item, Moneys or a badge, and say so when you can't pick them. Outcomes give items, Moneys, Perks,
+    battles, a move tutor, or a while of cheaper or dearer prices. For now they open from the debug menu; places that
+    hold them come next.
+  - **Route trainers**: one or two stand by every route's road. Walk into their line of sight and they spot you, walk
+    up and battle. Beating one lets you **pick a reward**: one of three cards (items, pyramids, a Protein Bar, the
+    Shining Stone, or a move tutor), with a reroll for Moneys that doubles each time.
+  - The **Protein Bar**: a Billie that eats one gains a level (from its sheet, not in battle).
+  - Versewift and Feedopus now evolve with the **Shining Stone** from level 20 (they evolved at level 36).
+- **Waystations and stalls** on a run (roguelite track RL-12b, part 2): the run's map now has two new kinds of place.
+  A **waystation** has a striped market tent by the road: tap it and its event opens (the events above now happen on
+  the map, not just from the debug menu). A **stall** is a fruit stall with a shop (new stock every day, no clinic).
+  Both have fewer wild Billies than a route. The map never puts two shops (a town or a stall) one after the other.
+
+- Fix: the full test (Settings → Help) no longer fails three steps on every device while the game draws fine. Night,
+  weather and seasons now waits for Copperleaf to open before it starts; the Light lab counts the new low-poly
+  buildings; the opening's fall counts the frames the fall draws.
 - New jokes in the lore, the loading tips and people's lines (reflavour track RF-5): the satire moves off money onto
   bureaucracy, tech and influencers. The Guide's lore tells where the Billies came from (Legacy Labs, "You, again, but
   forever": the billionaires' vanity clones, dropped down a sinkhole when they came out wrong) and why a pyramid

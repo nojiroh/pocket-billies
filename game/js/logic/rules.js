@@ -17,6 +17,8 @@ import {
   JINGLES,
   coatRoll,
   environmentOdds,
+  fieldMoveState,
+  fieldMoveText,
   jingle,
   provide,
   ranchNow,
@@ -35,6 +37,7 @@ import {
   COATS,
   EGGS,
   EGG_TIERS,
+  FIELD_MOVES,
   ITEMS,
   LINE_BY_ID,
   LOCATIONS,
@@ -124,6 +127,9 @@ expose({
   evolutionItemName: [() => evolutionItemName],
   // @ts-expect-error -- replaced on purpose
   evolve: [() => evolve, v => (evolve = v)],
+  // @ts-expect-error -- replaced on purpose
+  feedLevels: [() => feedLevels, v => (feedLevels = v)],
+  fieldOpen: [() => fieldOpen],
   findBilly: [() => findBilly],
   // @ts-expect-error -- replaced on purpose
   fitPart: [() => fitPart, v => (fitPart = v)],
@@ -518,6 +524,16 @@ export function gainXp(m, amt, say) {
     }
   }
 }
+/** RL-12b: a Billie eats a level item (the Protein Bar): it gains `n` levels' worth of XP, learning moves on the way
+ * as a battle's XP would (gainXp); the levels gained (0 at the top level or for a robot) @param {any} m
+ * @param {number} n @param {(text: string, o?: any) => void} say */
+export function feedLevels(m, n, say) {
+  if (isRobot(m) || m.lvl >= maxLevel() || !(n > 0)) return 0;
+  const from = m.lvl,
+    to = Math.min(maxLevel(), m.lvl + Math.floor(n));
+  gainXp(m, Math.max(1, xpFor(to) - m.xp), say);
+  return m.lvl - from;
+}
 export function canEvolve(m) {
   const e = speciesOf(m).evo;
   if (!e) return false;
@@ -640,6 +656,16 @@ export function gateText(n) {
   /* Project Story S2: a place the story keeps closed (requires), and what you are told (locked) */
   if (n.requires && !storyHolds(n.requires)) return n.locked || `${n.name} is closed for now.`;
   if (n.gate && !saveData.seats.includes(n.gate) && n.gateText) return n.gateText;
+  /* RL-R2: a side area's first place, closed until its field move's obstacle is open: what the obstacle says */
+  if (n.field && !fieldOpen()) {
+    const M = FIELD_MOVES[n.field];
+    if (!M) return 'The way is blocked.';
+    const team = saveData.team
+        .filter(m => m.hp > 0 && speciesOf(m))
+        .map(m => ({ name: billyName(m), types: speciesOf(m).types })),
+      st = fieldMoveState(M, (saveData.meta || {}).badges, team);
+    return st.state === 'ask' ? `Use ${M.name} on what blocks the way first.` : fieldMoveText(M, st.state);
+  }
   if (n.ride && !canRide()) {
     const R = RULES.ride || { minHeight: 1.5 };
     return `To cross ${n.name} you need a Water Billie at least ${R.minHeight || 1.5} m tall in your team to ride on. Quant and Billigator are big enough.`;
@@ -669,7 +695,13 @@ export const riderName = () => {
   const m = riderOf();
   return m ? m.nick || speciesOf(m).name : '';
 };
+/** RL-R2: whether the run's side area is open (its field move used; logic/run-side.js runSideOpen) */
+export const fieldOpen = () => {
+  const run = saveData.run;
+  return !!(run && run.map && run.map.side && run.map.side.open);
+};
 export const canEnter = n =>
+  (!LOCATIONS[n].field || fieldOpen()) &&
   (!LOCATIONS[n].gate || saveData.seats.includes(LOCATIONS[n].gate)) &&
   (!LOCATIONS[n].ride || canRide()) &&
   (!LOCATIONS[n].requires || storyHolds(LOCATIONS[n].requires));
@@ -736,6 +768,8 @@ export function encounterStock(node) {
   if (!L) return 0;
   /* RL-7: a run's place walked back to holds fewer (rules.json run.wild.back) */
   if (encounterRunVisits(node) > 1) return RULES.run.wild.back;
+  /* RL-12b: a waystation (an event's or a stall's place) holds fewer */
+  if (L.waystation) return RULES.run.wild.waystation;
   if (!isTown(node)) return R.route;
   const sc = L.mapId && gameData.maps ? gameData.maps[L.mapId] : null,
     tiles = sc ? (sc._lite ? sc._lite.tiles : (sc.tiles || []).join('')) : '';

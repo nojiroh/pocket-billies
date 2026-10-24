@@ -139,7 +139,7 @@
    "cross": 0.25,
    "biomes": {"meadow":3,"lake":2,"thicket":2,"ridge":1,"autumn":1}
   },
-  "clock": {"slack":3,"ahead":7},
+  "clock": {"ahead":7},
   "reveal": {"icons":1,"unknown":2},
   "scene": {
    "land": {
@@ -155,7 +155,7 @@
    "nature": {"growth":[0.6,1],"tall":[0.4,0.8],"clearings":[0.2,0.5],"trees":[0.3,0.7]},
    "feature": {"none":4,"bridge":1,"glade":1,"lookout":1}
   },
-  "wild": {"lv":[3,5],"perRow":1,"back":2},
+  "wild": {"lv":[3,5],"perRow":1,"back":2,"waystation":2},
   "seamIn": 6,
   "start": {
    "se": 600,
@@ -174,11 +174,22 @@
    "miniboss": {"up":3,"reward":300},
    "boss": {"up":5,"reward":600}
   },
+  "trainers": {"perRoute":[1,2],"up":0,"reward":150,"sight":6},
+  "rewards": {"pick":3,"reroll":50,"grow":2},
   "perks": {
    "cap": 6,
    "pick": 3,
    "rarity": {"common":6,"uncommon":3,"rare":1},
    "price": {"common":150,"uncommon":250,"rare":400}
+  },
+  "side": {
+   "detour": 0.6,
+   "alt": 0.15,
+   "places": [2,4],
+   "altRows": [2,3],
+   "altBoss": 0.33,
+   "moves": {"surf":1,"smash":1,"cut":1},
+   "lean": 2
   }
  },
  "ranch": {

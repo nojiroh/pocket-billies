@@ -291,6 +291,9 @@ export const walkView = {
   cand: null,
   enc: {},
   npcAt: {},
+  /* RL-12b: where each route trainer looks (the road point it faces), and the ones that have spotted you */
+  npcLook: /** @type {Record<string, [number, number]>} */ ({}),
+  spotted: /** @type {Record<string, 1>} */ ({}),
   err: null,
   ready: false,
   nav: null,

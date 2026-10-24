@@ -17,6 +17,7 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
     runs: 0,
     wins: 0,
     expedition: 1,
+    badges: {},
   });
   assert.equal(validMeta(m), true);
   assert.notEqual(newMeta(), m, 'a fresh object each time');
@@ -42,6 +43,10 @@ test('meta: broken or tampered shapes are refused', () => {
     { ...ok, buildings: { ranch: 100 } },
     { ...ok, buildings: { ranch: -1 } },
     { ...ok, runs: undefined },
+    { ...ok, badges: undefined }, // RL-R2: metaFill gives an old one {}
+    { ...ok, badges: { water: 2 } },
+    { ...ok, badges: { Water: 1 } },
+    { ...ok, badges: ['water'] },
   ])
     assert.equal(validMeta(bad), false, JSON.stringify(bad));
   assert.equal(validMeta(JSON.parse(JSON.stringify(ok).replace('"unlocks":{', '"unlocks":{"__proto__":1,'))), false);
@@ -54,6 +59,14 @@ test('meta: a stored one is filled out with new fields; one still broken starts 
   assert.deepEqual(metaFill(undefined), newMeta());
   assert.deepEqual(metaFill([1]), newMeta());
   assert.deepEqual(metaFill({ research: -5 }), newMeta());
-  const kept = { ...newMeta(), crests: 2, expedition: 3 };
+  const kept = { ...newMeta(), crests: 2, expedition: 3, badges: { water: 1, grass: 1 } };
   assert.deepEqual(metaFill(JSON.parse(JSON.stringify(kept))), kept);
+});
+
+test('meta: RL-R2: a meta from before badges gets none; badges are kept by type', () => {
+  const old = { ...newMeta(), research: 7 };
+  delete (/** @type {any} */ (old).badges);
+  assert.deepEqual(metaFill(old).badges, {});
+  assert.equal(metaFill(old).research, 7);
+  assert.deepEqual(newMeta().badges, {});
 });

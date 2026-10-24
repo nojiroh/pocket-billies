@@ -13,7 +13,7 @@ held still while the notes are scheduled, so one tick schedules all 8 bars. Each
 of each 50 ms window. Nothing is heard and nothing in game/ is changed.
 
 SND-5: a song also renders its intro ('intro': the intro, then the song, as a battle starts it) and the variants
-sound.js musicParts names for it ('tense' for a battle song, 'mid', 'late' and 'deadline' for a run's songs), each as
+sound.js musicParts names for it ('tense' for a battle song, 'mid' and 'late' for a run's songs), each as
 long as the recipe that plays (tracker.js trackerRecipe). On code without them, only day and night.
 
 SND-6: a species' cry also renders its low-HP version ('<id>@low', when sound.js has cryPlay), the four UI sounds
@@ -24,6 +24,9 @@ A window may differ by 1% (or 0.0001) before it counts as changed. The baseline 
 again on purpose, like the picture baseline."""
 import json, sys, time
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from browser_check import NO_ACCOUNTS, TEST_GLOBALS, serve, until  # noqa: E402  (TC-4: the browser checks' shared helpers)
 
 ROOT = Path(__file__).resolve().parent.parent
 GAME = ROOT / 'game'
@@ -141,16 +144,13 @@ def differences(now, only=None):
 def run(b, base, write=False, only=None):
     """renders on a page of the browser b served at base; returns (problems, a summary line)"""
     ctx = b.new_context(viewport={'width': 390, 'height': 844})
-    ctx.add_init_script('window.PB_TEST_GLOBALS=true')
-    ctx.add_init_script("Object.defineProperty(window,'PB_FIREBASE',{get(){return null},set(){},configurable:false})")
+    ctx.add_init_script(TEST_GLOBALS); ctx.add_init_script(NO_ACCOUNTS)
     pg = ctx.new_page(); errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))
     try:
         pg.goto(base + '/index.html')
-        end = time.time() + 120
-        while not pg.evaluate("typeof soundEngine!=='undefined'&&typeof initSound==='function'&&typeof gameData!=='undefined'"):
-            if time.time() > end: raise Exception('the game page never loaded its sound code')
-            time.sleep(.3)
+        if not until(pg, "typeof soundEngine!=='undefined'&&typeof initSound==='function'&&typeof gameData!=='undefined'", 120):
+            raise Exception('the game page never loaded its sound code')
         t = time.time(); now = render_all(pg, only); dt = round(time.time() - t, 1)
         count = sum(len(p) for p in now.values())
         if write:
@@ -170,7 +170,7 @@ def main():
     args = sys.argv[1:]
     only = next((a.split('=', 1)[1].split(',') for a in args if a.startswith('--only=')), None)
     subprocess.run(['node', str(ROOT / 'tools' / 'build-data.mjs')], check=True, capture_output=True)
-    srv, base = _serve()
+    srv, base = serve(GAME)
     with sync_playwright() as pw:
         b = pw.chromium.launch()
         try:
@@ -181,18 +181,6 @@ def main():
     print(line)
     for x in bad[:40]: print('  CHANGED', x)
     sys.exit(1 if bad else 0)
-
-
-def _serve():
-    import socket, threading
-    from functools import partial
-    from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-    s = socket.socket(); s.bind(('127.0.0.1', 0)); port = s.getsockname()[1]; s.close()
-    class Quiet(SimpleHTTPRequestHandler):
-        def log_message(self, *a): pass
-    srv = ThreadingHTTPServer(('127.0.0.1', port), partial(Quiet, directory=str(GAME)))
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
-    return srv, f'http://127.0.0.1:{port}'
 
 
 if __name__ == '__main__':

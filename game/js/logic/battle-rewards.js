@@ -10,8 +10,10 @@
 import { expose } from '../test-globals.js';
 import { PERKS, RULES } from '../game-data.js';
 import { dropEncounter, findBilly, wildPrize } from './rules.js';
+import { fieldBadgeKey } from './run-side.js';
 import { fxMoney } from './effects.js';
 import { perkOfferMake } from './perks.js';
+import { rewardDataGame, rewardOfferMake } from './rewards.js';
 import { battleRoll } from './battle-engine.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -91,16 +93,30 @@ export function battleSettle(b, s) {
 }
 /**
  * A win's money and marks (after battleSettle; not for the opening's tutorial battle): a wild win's prize, a
- * trainer's reward and flag, and on a run (`run`) a mini-boss beaten makes the next pick of Perks
- * (logic/perks.js perkOfferMake, saved on the run before it shows).
- * @param {any} b @param {any} s @param {{ o: string | null, prize: number, reward: number }} pay @param {any} run
+ * trainer's reward and flag, and on a run (`run`) a mini-boss beaten makes the next pick of Perks (RL-12b: a route
+ * trainer the next reward pick)
+ * (logic/perks.js perkOfferMake, saved on the run before it shows). RL-R2: on a run, the first win over a leader
+ * of a type keeps that type's badge for good (s.meta.badges; `pay.badge` names the type, for the sheet).
+ * @param {any} b @param {any} s @param {{ o: string | null, prize: number, reward: number, badge?: string }} pay
+ * @param {any} run
  */
 export function battleSettleWin(b, s, pay, run) {
   if (pay.o !== 'win') return;
   if (b.kind === 'wild' && pay.prize > 0) s.se += pay.prize;
   if (b.kind === 'trainer') {
     s.se += pay.reward;
+    if (run && b.T && (b.T.runFoe === 'miniboss' || b.T.runFoe === 'boss') && b.T.type && s.meta) {
+      const key = fieldBadgeKey(b.T.type),
+        badges = s.meta.badges || (s.meta.badges = {});
+      if (!badges[key]) {
+        badges[key] = 1;
+        pay.badge = b.T.type;
+      }
+    }
     if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, PERKS, RULES.run.perks);
+    /* RL-12b: a route trainer (or the rival) leaves a reward pick (logic/rewards.js), saved with the battle's end */
+    if (run && b.T && (b.T.runFoe === 'route' || b.T.runFoe === 'rival'))
+      rewardOfferMake(run, b.tid, rewardDataGame(s.team));
     s.flags[b.tid] = 1;
   }
 }

@@ -46,13 +46,13 @@ test("the game's run map: 8 to 12 nodes on every path, mini-bosses with a town b
   assert.ok(mean >= M.rows && mean <= 2 * M.rows - 2, `${mean} nodes a map`);
 });
 
-test("the game's clock: deadline day 12 on 9 rows, a week of forecast from the biomes' climates, a walk the save takes", () => {
+test("the game's clock: no deadline (RL-R2), a week of forecast from the biomes' climates, a walk the save takes", () => {
   const data = { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: GAME_DATA.rules.run },
     weathers = {};
   for (const seed of seeds.slice(0, 200)) {
     const s = { run: newRun(seed, 1, 3, START), trip: { node: 0, plan: [] } };
     runMapStart(s.run, data);
-    assert.equal(s.run.deadline, M.rows + GAME_DATA.rules.run.clock.slack);
+    assert.equal(s.run.deadline, undefined);
     let at = 0;
     assert.equal(runArrive(s, 0, data), 1);
     while (runNext(s.run.map, at).length) runArrive(s, (at = runNext(s.run.map, at)[0]), data);
@@ -60,7 +60,7 @@ test("the game's clock: deadline day 12 on 9 rows, a week of forecast from the b
     for (const w of s.run.forecast.flat()) weathers[w] = (weathers[w] || 0) + 1;
     assert.ok(validRun(JSON.parse(JSON.stringify(s.run))));
   }
-  assert.equal(M.rows + GAME_DATA.rules.run.clock.slack, 12);
+  assert.deepEqual(Object.keys(GAME_DATA.rules.run.clock), ['ahead']);
   // the five biomes are mild: the mild odds, no snow or ash (no season in a run)
   assert.deepEqual(Object.keys(weathers).sort(), ['clear', 'cloudy', 'fog', 'rain', 'storm']);
 });

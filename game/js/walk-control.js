@@ -9,6 +9,7 @@ import { LOCATIONS, PEOPLE, ROADS, ROADS_BY_NODE, RULES, SHOPS, gameData, traine
 import { blockerAt, canEnter, encounterBuild, encountersHere, gateText, healAll } from './logic/rules.js';
 import { roomTurnOf } from './logic/room-turn.js';
 import { runArrive, runMapNode } from './logic/run-map.js';
+import { routeTrainerSpot } from './logic/route-trainers.js';
 import { startWild } from './logic/battle-engine.js';
 import { storyAllows } from './logic/script.js';
 import { activeBattle, save, saveData, saveNow, uiState } from './game-state.js';
@@ -17,6 +18,7 @@ import { artLoad } from './art.js';
 import {
   ROOM_BY_USE,
   closedText,
+  directionOf,
   doorLinkOf,
   doorOf,
   isOpenNow,
@@ -54,10 +56,13 @@ import { loreBook } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
 import { runWorldData } from './run-world.js';
 import { runArrivedFx, runArrivedHint } from './run.js';
+import { fieldMoveOpen, fieldWayOut } from './field-moves.js';
+import { encounterOpen } from './encounter-screen.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBoardOpen } from './lab-board.js';
 import { postcardCheck } from './postcards.js';
 import { legendCheck, personTalk, storyCheck, trainerTalk } from './story.js';
+import { routeSight } from './route-sight.js';
 import { storyResumeCheck } from './story-stage.js';
 import { toast } from './overlay.js';
 import { clinicHeal } from './walk-tab.js';
@@ -468,6 +473,27 @@ export function walkState() {
         const e = v.exits.find(e => !saveData.visited[e.to]);
         if (e && sc.exits) exit = sc.exits[e.i];
       }
+      /* RL-12b: a route trainer stands by the road, facing it (logic/route-trainers.js); it sees you from there */
+      if (T.route) {
+        const bid = sc.baseId || v.id,
+          base = mapById(bid) || sc,
+          o = sc.baseOff || [0, 0],
+          S = routeTrainerSpot(mapHub(base), base.exits || [], T.route.k, T.route.n);
+        if (S) {
+          const at = /** @type {[number, number]} */ ([S.at[0] + o[0], S.at[1] + o[1]]),
+            look = /** @type {[number, number]} */ ([S.road[0] + o[0], S.road[1] + o[1]]);
+          walkView.npcLook[T.id] = look;
+          return {
+            who: T.who,
+            id: T.id,
+            done: !!saveData.flags[T.id],
+            exit: null,
+            dir: directionOf(look[0] - at[0], look[1] - at[1]),
+            route: true,
+            at,
+          };
+        }
+      }
       return { who: T.who, id: T.id, done: !!saveData.flags[T.id], exit, dir: 'down', boss: T.runFoe === 'boss' };
     });
   /* alpha 0.4: people who only talk (Granny Juniper in her garden): the place's own (scene.people), in the view's metres */
@@ -540,6 +566,26 @@ export function walkPick(h) {
     }
     if (a === 'lift' && typeof rideGlassLift === 'function') {
       rideGlassLift(p);
+      return;
+    }
+    /* RL-R2: a field move's obstacle (Cut, Rock Smash, Surf) and a side area's way out (field-moves.js) */
+    if (a === 'field' && typeof fieldMoveOpen === 'function') {
+      fieldMoveOpen(p);
+      return;
+    }
+    if (a === 'fieldout' && typeof fieldWayOut === 'function') {
+      fieldWayOut();
+      return;
+    }
+    /* RL-12b: a waystation's stand opens its event (encounter-screen.js); a stall opens its shop where you stand */
+    if (a === 'event' && typeof encounterOpen === 'function') {
+      encounterOpen(runMapNode(node));
+      return;
+    }
+    if (a === 'stall') {
+      const id = p.shop || here.shop;
+      if (id && SHOPS[id]) openShop(id);
+      else toast(p.say || 'The stall is packed up today.');
       return;
     }
     /* v47: shops and the like keep opening hours */
@@ -826,7 +872,7 @@ export function walkMapSync() {
         };
       },
       keys: () => !uiState.modal && uiState.tab === 'walk' && !uiState.walkSheet,
-      active: () => uiState.tab === 'walk' && !uiState.modal,
+      active: () => uiState.tab === 'walk' && !uiState.modal && !routeSight.busy,
       safe: () => {
         const a = $('.wh-card'),
           b = $('.wh-foot'),
@@ -848,8 +894,13 @@ export function walkMapSync() {
               : uiState.tab !== 'walk'
                 ? 'screen'
                 : '';
+        /* 0.1.0 alpha: behind a full screen (Team, Guide, Bag...) the world settles for 0.8 s, then nearly stops (1 a
+           second): a still canvas lets the browser keep its blurred backdrop instead of blurring it again every frame,
+           which made a phone's menus crawl */
+        if (w !== walkView.held) walkView.heldT = performance.now();
         walkView.held = w;
-        return w === 'hidden' ? 1 : w === 'window' ? 20 : w === 'screen' ? 24 : userFps();
+        if (w === 'screen') return performance.now() - (walkView.heldT || 0) > 800 ? 1 : 24;
+        return w === 'hidden' ? 1 : w === 'window' ? 20 : userFps();
       },
     }).then(() => cv.classList.add('in'));
   }

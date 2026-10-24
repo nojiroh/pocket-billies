@@ -4,25 +4,31 @@
    What a run from a seed holds, worked out by the game's own logic on the game data as game-data.js reads it (its
    POOLS with stand-ins, TRAINERS, PERKS, RULES): the start (run-start.js runStartPlan, as the mast takes off), then
    - each mini-boss's and the boss's foe (run-loop.js runFoes, with the leaders run-world.js passes);
-   - each town's stock on every day from the first it can be reached (its row + 1) to the deadline (runShopStock with
+   - each town's and stall's (RL-12b) stock on every day from the first it can be reached (its row + 1) to RUN_PREVIEW_LATE days past the
+     shortest walk's last day (runShopStock with
      the run's shop unlocks, as shop.js opens it) and its shelf's Perk that day (perkShelf);
    - each place's wild table (run-scenes.js runWorldTables: its biome's pool at its row's levels);
+   - each waystation's event (RL-12b: encounters.js eventAt, with none played yet);
    - the Perk picks after each mini-boss row, in order (perkOfferMake), with nothing held.
    Held Perks change the shelves and the picks; the preview holds none. The Studio's Run Lab asks for it through its
    logic worker (studio/js/logic-worker.js), where GAMEDATA is the Studio's draft; it is on no page, since game-data.js
    would read the Studio's data as the game's (tools/test/run-preview.test.mjs compares it with the game's own path).
    Logic only: no DOM, no Date, no Math.random. */
 /** @import { Run, RunMap } from '../../types/save-data' */
-import { POOLS, NODE_TYPES, PERKS, RULES, START_NODE, TRAINERS, UNLOCK_DATA, gameData } from '../game-data.js';
+import { EVENTS, POOLS, NODE_TYPES, PERKS, RULES, START_NODE, TRAINERS, UNLOCK_DATA, gameData } from '../game-data.js';
 import { MAPGEN_VERSION } from './mapgen.js';
 import { perkOfferMake, perkShelf } from './perks.js';
 import { runFoes, runShopStock } from './run-loop.js';
+import { eventAt } from './encounters.js';
 import { runPlaceId, runWorldTables } from './run-scenes.js';
 import { runStartPlan } from './run-start.js';
 import { runRegionData } from './run-region.js';
 import { copyOf, newRun } from './run-state.js';
 import { unlockOpen } from './unlocks.js';
 
+/** RL-R2: the days a town's stock is shown past the shortest walk's last day (the deadline's old slack: the owner
+ * dropped the deadline) */
+const RUN_PREVIEW_LATE = 3;
 /** run-world.js runWorldData: what a run's tables are made from */
 const runPreviewData = () => ({
   nodeTypes: NODE_TYPES,
@@ -49,7 +55,6 @@ export function runPreview(seed, o = {}) {
     run = newRun(seed, plan.give.expedition, MAPGEN_VERSION, /** @type {any} */ ({}));
   run.unlocks = plan.unlocks.slice();
   run.map = copyOf(plan.map);
-  run.deadline = plan.deadline;
   run.forecast = copyOf(plan.forecast);
   if (plan.region) run.region = copyOf(plan.region);
   const map = /** @type {RunMap} */ (run.map),
@@ -57,12 +62,14 @@ export function runPreview(seed, o = {}) {
     W = runWorldTables(run, gameData.locations[START_NODE], /** @type {any} */ (data)),
     rule = RULES.run.shop,
     shopRule = { ...rule, pick: unlockOpen(rule.pick, 'shop', run.unlocks, UNLOCK_DATA) };
+  const lastDay = 1 + Math.max(...map.nodes.map(n => n.row)) + RUN_PREVIEW_LATE;
   const nodes = map.nodes.map((n, i) => {
     /** @type {{ day: number, stock: any[], relic: string }[] | null} */
     let shop = null;
-    if (n.type === 'town') {
+    /* a town's or a stall's (RL-12b: nodeTypes.json shop) */
+    if (data.nodeTypes[n.type] && data.nodeTypes[n.type].shop) {
       shop = [];
-      for (let day = n.row + 1; day <= run.deadline; day++)
+      for (let day = n.row + 1; day <= lastDay; day++)
         shop.push({
           day,
           stock: runShopStock(run, i, day, shopRule),
@@ -73,6 +80,9 @@ export function runPreview(seed, o = {}) {
       wild: W.pools[runPlaceId(i)],
       foe: Object.values(foes).find(F => F.runNode === i) || null,
       shop,
+      /* RL-12b: a waystation's event as drawn with none played yet (an event played earlier in the run leaves the
+         pool, so a later stand may hold another) */
+      event: n.type === 'event' ? eventAt(run, i, EVENTS) || null : null,
     };
   });
   const relicOffers = [],
@@ -83,7 +93,6 @@ export function runPreview(seed, o = {}) {
     expedition: plan.give.expedition,
     unlocks: run.unlocks,
     map,
-    deadline: run.deadline,
     forecast: run.forecast,
     nodes,
     relicOffers,

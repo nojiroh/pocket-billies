@@ -100,6 +100,8 @@ export interface Meta {
   wins: number;
   /** the highest Expedition open, from 1 */
   expedition: number;
+  /** RL-R2: badges kept for good, by type id in lower case (`water`): the first win over a leader of the type */
+  badges: Record<string, 1>;
 }
 
 /** roguelite track RL-3: the ranch, a hub building (logic/ranch-state.js; filled in RL-9 and RL-10) */
@@ -137,6 +139,27 @@ export interface RunNode {
   biome?: string;
   /** RL-R1: its zone in the run's region (run.region.zones); missing on a run from before regions */
   zone?: number;
+  /** RL-R2: 1 on a side area's place (run.map.side) */
+  side?: 1;
+}
+
+/** roguelite track RL-R2: a run's side area (logic/run-side.js runSideAdd) */
+export interface RunSide {
+  /** a detour off the main path and back, or an alternate path alongside it */
+  kind: 'detour' | 'alt' | string;
+  /** the field move that opens it (fieldMoves.json) and its name */
+  move: string;
+  name: string;
+  /** the main place with the obstacle, and where the way out goes (-1: an alternate path's own boss ends the run) */
+  from: number;
+  to: number;
+  /** its places in order (map node indices, after the main path's) */
+  nodes: number[];
+  /** its leader (a trainer id) and its own species */
+  leader?: string;
+  dex?: string[];
+  /** 1 once the obstacle is open */
+  open?: 1;
 }
 
 /** roguelite track RL-R1: a run's region (logic/run-region.js runRegionMake) */
@@ -158,6 +181,8 @@ export interface RunRegion {
 /** roguelite track RL-6: a run's node map (logic/run-map.js runMapMake): nodes row by row, west to east */
 export interface RunMap {
   nodes: RunNode[];
+  /** RL-R2: its side area, when it has one */
+  side?: RunSide;
 }
 
 /** what a run changes in the working fields, copied when it starts and put back when it ends */
@@ -203,9 +228,8 @@ export interface Run {
   /** RL-8: won, at the payout (1 won, 0 lost or given up) */
   /** RL-8: in a battle, its foe as it began (a reload starts the same battle again) */
   at: { phase: 'fly' | 'walk' | 'battle' | 'menu' | 'payout'; battle: number; won?: 0 | 1; foe?: RunFoe };
-  /** the day (one per node arrival, backtracking included) and the deadline day */
+  /** the day (one per node arrival, backtracking included) */
   clock: number;
-  deadline: number;
   /** each node's weather by day: forecast[world node][day - 1] (a weather id; world node i + 1 is the map's node i,
       and Copperleaf's, world node 0, is empty) */
   forecast: string[][];
@@ -238,6 +262,45 @@ export interface Run {
   home?: string[];
   /** RL-9b: what was packed from Copperleaf's bag at the mast */
   pack?: { items: Record<DataId, number>; pyramids: Record<DataId, number> };
+  /** RL-12b: its events and reward picks (logic/run-enc.js); missing on a run from before */
+  enc?: RunEnc;
+}
+
+/** RL-12b: a run's events and reward picks (logic/run-enc.js, logic/encounters.js, logic/rewards.js) */
+export interface RunEnc {
+  /** draws from the events' stream so far (wagers, loot, picks of an event) */
+  n: number;
+  /** each waystation's event by map node ('' once played) */
+  node: Record<string, string>;
+  /** the events played this run, in order */
+  seen: string[];
+  /** effect rows an event left: this place and `left` more */
+  boons: { fx: import('./game-data').FxRow[]; left: number; src: string }[];
+  /** reward picks made so far (the next pick's stream) */
+  rewardN: number;
+  /** the reward pick waiting (saved before it shows), or null */
+  reward: RunReward | null;
+  /** the event playing: its id, its map node (-1: from the debug menu), the option, the script's last checkpoint and
+   * an event foe's class (so a reload makes the same foe); missing or null when none */
+  play?: { id: string; i: number; opt: number; at: number[]; foe?: { cls: string; up: number; n: number } } | null;
+}
+/** RL-12b: a reward pick after a trainer battle: its cards, the rerolls paid, who left it */
+export interface RunReward {
+  cards: RewardCard[];
+  rolls: number;
+  from: string;
+  /** an event's pick of one kind, and of how many cards (a reroll keeps them) */
+  kind?: string;
+  n?: number;
+}
+/** RL-12b: one card of a reward pick (rewards.json): an item into the bag (a candy and an evolution item are items
+ * too), or a move a Billie of the team may learn */
+export interface RewardCard {
+  id: string;
+  kind: 'item' | 'candy' | 'evo' | 'tutor' | 'held';
+  item?: string;
+  n?: number;
+  move?: string;
 }
 
 /** the player's travel: where you are, and the locations still ahead (the gold arrows' guide) */

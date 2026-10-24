@@ -448,7 +448,7 @@ debugLog.state = () => {
     s.encounters = GAME.encountersHere ? GAME.encountersHere().length : 0;
     s.badges = (GAME.saveData.seats || []).length;
     s.visited = Object.keys(GAME.saveData.visited || {}).length;
-    /* RL-7: on a run, where it stands (no names): its seed (to make the same run again), the day and deadline, the
+    /* RL-7: on a run, where it stands (no names): its seed (to make the same run again), the day, the
        map node you are on, the arrivals so far, and its world's scenes and how long they took to make on this device */
     const run = GAME.saveData.run,
       /* TR-2: the place's land dials are on its map (the drawn scene has no gen) */
@@ -459,7 +459,6 @@ debugLog.state = () => {
         ? {
             seed: run.seed,
             day: run.clock,
-            deadline: run.deadline,
             node: GAME.saveData.trip.node - 1,
             arrivals: run.path.length,
             nodes: run.map.nodes.length,
@@ -494,6 +493,19 @@ debugLog.state = () => {
             relics: (run.perks || []).slice(),
             offer: run.offer ? run.offer.length : 0,
             offers: run.offerN || 0,
+            /* RL-12b: events (ids played, the one playing, draws so far), the boons on, reward picks made and the
+               one waiting (how many cards, rerolls), the route trainer walking up */
+            events: run.enc
+              ? {
+                  seen: run.enc.seen.slice(),
+                  playing: run.enc.play ? run.enc.play.id + ':' + run.enc.play.opt : null,
+                  draws: run.enc.n,
+                  boons: run.enc.boons.map(b => b.src + ':' + b.left),
+                  rewards: run.enc.rewardN,
+                  reward: run.enc.reward ? { cards: run.enc.reward.cards.length, rolls: run.enc.reward.rolls } : null,
+                }
+              : null,
+            spottedBy: GAME.routeSight ? GAME.routeSight.busy || null : null,
           }
         : null;
     /* RL-8: what the runs brought home (numbers only) */

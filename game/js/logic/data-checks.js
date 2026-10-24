@@ -18,9 +18,11 @@ import { RUN_MARK_TYPES } from './run-marks.js';
 import { runRegionData, runRegionMake } from './run-region.js';
 import { runMapMake, runMapRows, runMapRowsFit } from './run-map.js';
 import { MAPGEN_DEFAULTS, MAPGEN_FEATURES, MAPGEN_SHAPES, MAPGEN_SURFACES, MAPGEN_WATER } from './mapgen.js';
-import { FX_LIMIT, FX_STAGES } from './effects.js';
+import { fxRowOf } from './run-enc.js';
+import { FX_KINDS, FX_LIMIT, FX_STAGES } from './effects.js';
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
 import { islandProblems } from './island.js';
+import { parseScript, scriptProblem } from './script-parse.js';
 /* eslint-disable no-func-assign */
 expose({
   ROBOT_FITS: [() => ROBOT_FITS],
@@ -39,6 +41,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataCurrencies: [() => dataCurrencies, v => (dataCurrencies = v)],
   // @ts-expect-error -- replaced on purpose
+  dataEvents: [() => dataEvents, v => (dataEvents = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataFieldMoves: [() => dataFieldMoves, v => (dataFieldMoves = v)],
+  // @ts-expect-error -- replaced on purpose
   dataNodeTypes: [() => dataNodeTypes, v => (dataNodeTypes = v)],
   // @ts-expect-error -- replaced on purpose
   dataPerks: [() => dataPerks, v => (dataPerks = v)],
@@ -46,6 +52,8 @@ expose({
   dataRanchRules: [() => dataRanchRules, v => (dataRanchRules = v)],
   // @ts-expect-error -- replaced on purpose
   dataRegions: [() => dataRegions, v => (dataRegions = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataRewards: [() => dataRewards, v => (dataRewards = v)],
   // @ts-expect-error -- replaced on purpose
   dataRigs: [() => dataRigs, v => (dataRigs = v)],
   // @ts-expect-error -- replaced on purpose
@@ -281,7 +289,7 @@ export function dataRunMapRules(D) {
   }
   return out;
 }
-// RL-6: the run's clock and what its map shows: whole days of slack (0-30) and of forecast ahead (1-30), whole rows
+// RL-6: the run's clock and what its map shows: whole days of forecast ahead (1-30; RL-R2: no deadline, no slack), whole rows
 // shown ahead with their type (1-12) and as '?' (at least as far, up to 12); nothing else in rules.json run
 /** T1.3: the keys of rules.json run, each a rule a family here checks (any other is "no such rule"). The one list:
  * an editor of run rules reads it from here */
@@ -300,6 +308,9 @@ export const RUN_RULE_KEYS = Object.freeze([
   'shop',
   'foes',
   'perks',
+  'side',
+  'trainers',
+  'rewards',
 ]);
 /** RL-6: rules.json run.clock, run.reveal and the run keys @param {any} D @returns {DataProblem[]} */
 export function dataRunClock(D) {
@@ -312,11 +323,9 @@ export function dataRunClock(D) {
       V = R.reveal,
       whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
     for (const k of Object.keys(R)) if (!RUN_RULE_KEYS.includes(k)) problem('rules.json', `run.${k}: no such rule`);
-    if (!C || typeof C !== 'object' || !whole(C.slack, 0, 30) || !whole(C.ahead, 1, 30))
-      problem('rules.json', 'run.clock: slack (0-30) and ahead (1-30) are not whole numbers of days');
-    else
-      for (const k of Object.keys(C))
-        if (!['slack', 'ahead'].includes(k)) problem('rules.json', `run.clock.${k}: no such rule`);
+    if (!C || typeof C !== 'object' || !whole(C.ahead, 1, 30))
+      problem('rules.json', 'run.clock: ahead (1-30) is not a whole number of days');
+    else for (const k of Object.keys(C)) if (k !== 'ahead') problem('rules.json', `run.clock.${k}: no such rule`);
     if (!V || typeof V !== 'object' || !whole(V.icons, 1, 12) || !whole(V.unknown, V.icons, 12))
       problem('rules.json', 'run.reveal: icons (1-12) and unknown (icons to 12) are not whole numbers of rows');
     else
@@ -391,12 +400,16 @@ export function dataRunScene(D) {
       !whole(W.lv[0], 1, 100) ||
       !whole(W.lv[1], W.lv[0], 100) ||
       !whole(W.perRow, 0, 20) ||
-      !whole(W.back, 0, 20)
+      !whole(W.back, 0, 20) ||
+      !whole(W.waystation, 0, 20)
     )
-      problem('rules.json', 'run.wild: lv [low, high] (1-100), perRow (0-20) and back (0-20) are not whole numbers');
+      problem(
+        'rules.json',
+        'run.wild: lv [low, high] (1-100), perRow (0-20), back (0-20) and waystation (0-20) are not whole numbers'
+      );
     else
       for (const k of Object.keys(W))
-        if (!['lv', 'perRow', 'back'].includes(k)) problem('rules.json', `run.wild.${k}: no such rule`);
+        if (!['lv', 'perRow', 'back', 'waystation'].includes(k)) problem('rules.json', `run.wild.${k}: no such rule`);
     if (!whole(R.seamIn, 1, 30)) problem('rules.json', 'run.seamIn is not a whole number of metres from 1 to 30');
   }
   return out;
@@ -475,6 +488,32 @@ export function dataRunLoop(D) {
           problem('rules.json', `run.foes.${k}: up (whole, -20-50) and reward (whole Moneys, 0-1,000,000) are needed`);
         else only(f, ['up', 'reward'], `run.foes.${k}`);
       }
+    }
+    /* RL-12b: route trainers (how many a route, levels up, what they pay, how far they see) and the reward pick */
+    const TR = R.trainers,
+      RW = R.rewards;
+    if (!rec(TR)) problem('rules.json', 'run.trainers missing');
+    else {
+      only(TR, ['perRoute', 'up', 'reward', 'sight'], 'run.trainers');
+      if (
+        !Array.isArray(TR.perRoute) ||
+        TR.perRoute.length !== 2 ||
+        !whole(TR.perRoute[0], 0, 4) ||
+        !whole(TR.perRoute[1], TR.perRoute[0], 4)
+      )
+        problem('rules.json', 'run.trainers.perRoute: [fewest, most], whole, 0-4');
+      if (!whole(TR.up, -20, 20)) problem('rules.json', 'run.trainers.up: whole, -20-20');
+      if (!whole(TR.reward, 0, 1e6)) problem('rules.json', 'run.trainers.reward: whole Moneys, 0-1,000,000');
+      if (!(typeof TR.sight === 'number' && TR.sight >= 1 && TR.sight <= 20))
+        problem('rules.json', 'run.trainers.sight: 1-20 m');
+    }
+    if (!rec(RW)) problem('rules.json', 'run.rewards missing');
+    else {
+      only(RW, ['pick', 'reroll', 'grow'], 'run.rewards');
+      if (!whole(RW.pick, 1, 5)) problem('rules.json', 'run.rewards.pick: whole, 1-5 cards');
+      if (!whole(RW.reroll, 0, 1e5)) problem('rules.json', 'run.rewards.reroll: whole Moneys, 0-100,000');
+      if (!(typeof RW.grow === 'number' && RW.grow >= 1 && RW.grow <= 10))
+        problem('rules.json', 'run.rewards.grow: 1-10');
     }
   }
   return out;
@@ -660,6 +699,228 @@ export function dataNodeTypes(D, valid = () => true) {
   }
   return out;
 }
+// RL-R2: field moves (fieldMoves.json): the schema, a real type and a run biome each; rules.json run.side: the chances
+// of a detour and of an alternate path (each 0-1, together at most 1), a detour's places [2-6], an alternate path's
+// rows [2-6] and the chance it ends at a boss of its own, a weight of 0 or more for moves that exist (one above 0), and
+// the lean (0-10) toward a move of the region's types
+/** RL-R2: fieldMoves.json and rules.json run.side @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataFieldMoves(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]),
+    FM = D.fieldMoves,
+    moves = FM && FM.moves ? FM.moves : {},
+    types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
+    runBiomes = (D.rules && D.rules.run && D.rules.run.map && D.rules.run.map.biomes) || {};
+  if (FM && valid('fieldMoves.schema.json', FM, 'fieldMoves.json'))
+    for (const [k, M] of Object.entries(moves)) {
+      if (!types.has(M.type)) problem('fieldMoves.json', `moves.${k}: no type "${M.type}" (types.json)`);
+      if (!(D.biomes || {})[M.biome]) problem('fieldMoves.json', `moves.${k}: no biome "${M.biome}" (biomes.json)`);
+      else if (!runBiomes[M.biome])
+        problem('fieldMoves.json', `moves.${k}: "${M.biome}" is not a run biome (rules.json run.map.biomes)`);
+    }
+  const S = D.rules && D.rules.run && D.rules.run.side;
+  if (!S) return out;
+  const chance = (/** @type {any} */ v) => typeof v === 'number' && v >= 0 && v <= 1,
+    span = (/** @type {any} */ v) =>
+      Array.isArray(v) && v.length === 2 && v.every(n => Number.isInteger(n) && n >= 2 && n <= 6) && v[0] <= v[1];
+  for (const k of Object.keys(S))
+    if (!['detour', 'alt', 'places', 'altRows', 'altBoss', 'moves', 'lean'].includes(k))
+      problem('rules.json', `run.side.${k}: no such rule`);
+  if (!chance(S.detour) || !chance(S.alt) || !chance(S.altBoss) || S.detour + S.alt > 1)
+    problem(
+      'rules.json',
+      'run.side: detour, alt and altBoss are not chances from 0 to 1 (detour and alt at most 1 together)'
+    );
+  if (!span(S.places)) problem('rules.json', 'run.side.places is not [fewest, most] whole places from 2 to 6');
+  if (!span(S.altRows)) problem('rules.json', 'run.side.altRows is not [fewest, most] whole rows from 2 to 6');
+  if (!(typeof S.lean === 'number' && S.lean >= 0 && S.lean <= 10))
+    problem('rules.json', 'run.side.lean is not a number from 0 to 10');
+  const W = S.moves && typeof S.moves === 'object' ? S.moves : {};
+  for (const [k, w] of Object.entries(W)) {
+    if (!moves[k]) problem('rules.json', `run.side.moves: no field move "${k}" (fieldMoves.json)`);
+    if (!(typeof w === 'number' && w >= 0)) problem('rules.json', `run.side.moves.${k} is not a weight of 0 or more`);
+  }
+  if (!Object.values(W).some(w => typeof w === 'number' && w > 0))
+    problem('rules.json', 'run.side.moves: no move has a weight, so no side area can be made');
+  return out;
+}
+// RL-12b: events.json: the schema; every intro reads as lines only, every option's need as a condition and its `then`
+// as a script; what they name is there (items, pyramids, loot tables, classes, types, statuses, Perks, biomes, people)
+// and the event commands' arguments make sense
+/** RL-12b: events.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataEvents(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['events.json', what]),
+    E = D.events;
+  if (!E) return [['events.json', 'missing']];
+  if (!valid('events.schema.json', E, 'events.json')) return out;
+  const items = D.items || {},
+    pyramids = D.pyramids || {},
+    perks = D.perks || {},
+    types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
+    stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
+    statuses = new Set((D.statuses || []).map((/** @type {any} */ t) => t.id)),
+    biomes = new Set(Object.keys(D.biomes || {})),
+    people = new Set(
+      Array.isArray(D.people) ? D.people.map((/** @type {any} */ x) => x.id) : Object.keys(D.people || {})
+    ),
+    num = (/** @type {string | undefined} */ v) => (v != null && /^-?\d+(\.\d+)?$/.test(v) ? +v : NaN),
+    thing = (/** @type {string} */ v) => (v.startsWith('coin:') ? !!pyramids[v.slice(5)] : !!items[v]);
+  for (const [t, L] of Object.entries(E.loot))
+    for (const k of Object.keys(/** @type {any} */ (L)))
+      if (!items[k]) problem(`loot.${t}: no item "${k}" (items.json)`);
+  for (const [k, C] of Object.entries(E.classes)) {
+    const c = /** @type {any} */ (C);
+    if (people.size && !people.has(c.who)) problem(`classes.${k}.who: no person "${c.who}" (people/)`);
+    if (c.team[0] > c.team[1]) problem(`classes.${k}.team: the fewest is more than the most`);
+  }
+  /** @param {any[]} nodes @param {(n: any) => void} f */
+  const walk = (nodes, f) => {
+    for (const n of nodes) {
+      f(n);
+      if (n.k === 'choice') n.options.forEach((/** @type {any} */ o) => walk(o.body, f));
+      else if (n.k === 'if') n.clauses.forEach((/** @type {any} */ c) => walk(c.body, f));
+      else if (n.k === 'once') walk(n.body, f);
+      else if (n.k === 'cycle' || n.k === 'seq') n.entries.forEach((/** @type {any} */ e) => walk(e, f));
+    }
+  };
+  /** what a condition names that isn't there @param {string} where @param {string} cond */
+  const names = (where, cond) => {
+    const N = conditionNames(conditionTree(cond));
+    for (const id of N.item || []) if (!items[id]) problem(`${where}: no item "${id}" (items.json)`);
+    for (const id of [...(N.type || []), ...(N.badge || [])])
+      if (types.size && !types.has(id)) problem(`${where}: no type "${id}" (types.json)`);
+  };
+  /** @param {string} where @param {any} n a command */
+  const command = (where, n) => {
+    const [a, b] = n.args,
+      at = `${where}: "${n.name}${n.args.length ? ' ' + n.args.join(' ') : ''}"`;
+    switch (n.name) {
+      case 'give':
+      case 'take':
+        if (!thing(a)) problem(`${at}: no item or pyramid "${a}"`);
+        if (b != null && !(Number.isInteger(num(b)) && num(b) >= 1 && num(b) <= 99)) problem(`${at}: a count of 1-99`);
+        return;
+      case 'loot':
+        if (!E.loot[a]) problem(`${at}: no loot table "${a}"`);
+        return;
+      case 'foe':
+        if (!E.classes[a]) problem(`${at}: no class "${a}"`);
+        if (b != null && !(Number.isInteger(num(b)) && Math.abs(num(b)) <= 20))
+          problem(`${at}: levels up of -20 to 20`);
+        return;
+      case 'wild':
+      case 'recall':
+        if (a != null && !(Number.isInteger(num(a)) && Math.abs(num(a)) <= 20))
+          problem(`${at}: levels up of -20 to 20`);
+        return;
+      case 'level':
+        if (!(Number.isInteger(num(a)) && num(a) !== 0 && Math.abs(num(a)) <= 10))
+          problem(`${at}: -10 to 10 levels, not 0`);
+        return;
+      case 'perk':
+        if (a != null && !['common', 'uncommon', 'rare'].includes(a) && !perks[a])
+          problem(`${at}: not a rarity (common, uncommon, rare) or a Perk (perks.json)`);
+        return;
+      case 'status':
+        if (statuses.size && !statuses.has(a)) problem(`${at}: no status "${a}" (statuses.json)`);
+        return;
+      case 'hurt':
+      case 'heal':
+        if (a != null && !(num(a) > 0 && num(a) <= 1)) problem(`${at}: a share above 0, at most 1`);
+        return;
+      case 'wager':
+        if (!(num(a) >= 1 && num(a) <= 99)) problem(`${at}: a chance of 1-99 percent`);
+        return;
+      case 'money':
+        if (!(Number.isInteger(num(a)) && num(a) !== 0)) problem(`${at}: a whole number of Moneys, not 0`);
+        return;
+      case 'reward':
+        if (a != null && !['item', 'tutor', 'candy', 'evo'].includes(a))
+          problem(`${at}: a kind (item, tutor, candy, evo)`);
+        if (b != null && !(Number.isInteger(num(b)) && num(b) >= 1 && num(b) <= 5)) problem(`${at}: 1-5 cards`);
+        return;
+      case 'fx': {
+        const places = num(a),
+          row = fxRowOf(n.args.slice(1));
+        if (!(Number.isInteger(places) && places >= 0 && places <= 20)) problem(`${at}: 0-20 more places`);
+        if (!FX_KINDS.includes(/** @type {any} */ (row.kind))) problem(`${at}: no effect kind "${row.kind}"`);
+        if ('mult' in row && !(typeof row.mult === 'number' && row.mult >= FX_LIMIT.lo && row.mult <= FX_LIMIT.hi))
+          problem(`${at}: mult outside ${FX_LIMIT.lo} to ${FX_LIMIT.hi}`);
+        if (row.kind === 'stat' && (!stats.has(row.stat) || row.stat === 'hp' || !Number.isInteger(row.stages)))
+          problem(`${at}: a stat (stats.json, not hp) and whole stages`);
+        if (row.kind === 'price' && !['shop', 'heal'].includes(/** @type {any} */ (row.what)))
+          problem(`${at}: price what=shop or what=heal`);
+        if (row.kind === 'heal' && !(typeof row.share === 'number' && row.share > 0 && row.share <= 1))
+          problem(`${at}: heal share above 0, at most 1`);
+        return;
+      }
+    }
+  };
+  for (const [k, V] of Object.entries(E.events)) {
+    const ev = /** @type {any} */ (V);
+    for (const b of ev.biomes || []) if (biomes.size && !biomes.has(b)) problem(`events.${k}.biomes: no biome "${b}"`);
+    const ip = scriptProblem(ev.intro);
+    if (ip) problem(`events.${k}.intro, line ${(ip.line || 0) + 1}: ${ip.message}`);
+    else
+      walk(
+        parseScript(ev.intro),
+        n => n.k !== 'say' && problem(`events.${k}.intro: lines only, no "${n.name || n.k}"`)
+      );
+    ev.options.forEach((/** @type {any} */ o, i) => {
+      const where = `events.${k}.options[${i}]`;
+      if (o.need) {
+        const cp = conditionProblem(o.need);
+        if (cp) problem(`${where}.need: ${cp.message}`);
+        else names(`${where}.need`, o.need);
+      }
+      const sp = scriptProblem(o.then);
+      if (sp) {
+        problem(`${where}.then, line ${(sp.line || 0) + 1}: ${sp.message}`);
+        return;
+      }
+      walk(parseScript(o.then), n => {
+        if (n.k === 'cmd') command(`${where}.then`, n);
+        else if (n.k === 'if') n.clauses.forEach((/** @type {any} */ c) => c.cond && names(`${where}.then`, c.cond));
+      });
+    });
+  }
+  return out;
+}
+
+// RL-12b: rewards.json: the schema; every item and pyramid there, a candy a level item, an evolution item one, held
+// cards switched off until RL-12c, and something to offer
+/** RL-12b: rewards.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataRewards(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['rewards.json', what]),
+    R = D.rewards;
+  if (!R) return [['rewards.json', 'missing']];
+  if (!valid('rewards.schema.json', R, 'rewards.json')) return out;
+  const items = D.items || {},
+    pyramids = D.pyramids || {};
+  for (const [k, c] of Object.entries(R)) {
+    const r = /** @type {any} */ (c);
+    if (r.item && !items[r.item]) problem(`${k}.item: no item "${r.item}" (items.json)`);
+    if (r.pyramid && !pyramids[r.pyramid]) problem(`${k}.pyramid: no pyramid "${r.pyramid}" (pyramids.json)`);
+    if ((r.kind === 'item' || r.kind === 'candy' || r.kind === 'evo') && !r.item === !r.pyramid)
+      problem(`${k}: an item or a pyramid, one of them`);
+    if ((r.kind === 'candy' || r.kind === 'evo') && r.pyramid) problem(`${k}: a ${r.kind} is an item, not a pyramid`);
+    if (r.kind === 'candy' && r.item && items[r.item] && !items[r.item].lvlUp)
+      problem(`${k}: a candy's item gives levels (lvlUp in items.json)`);
+    if (r.kind === 'evo' && r.item && items[r.item] && !items[r.item].evoItem)
+      problem(`${k}: an evolution item's item is one (evoItem in items.json)`);
+    if (r.kind === 'tutor' && (r.item || r.pyramid || r.n)) problem(`${k}: a tutor card names no item`);
+    if (r.kind === 'held' && r.weight > 0) problem(`${k}: held items come with RL-12c; keep its weight 0`);
+  }
+  if (!Object.values(R).some((/** @type {any} */ r) => r.kind === 'item' && r.weight > 0))
+    problem('no item card with a weight above 0: a pick could be empty');
+  return out;
+}
+
 // RL-12: Perks (relics): the schema, the types their damage rows name; rules.json run.perks: a cap of 1-12 held, a
 // pick of 1-5 (run.offer holds up to 5), a weight of 0 or more and a whole price ($0-100,000) for each rarity, and
 // something to offer
@@ -1219,9 +1480,10 @@ export const RUN_MAP_ROLE_TYPES = { first: 'landing', rest: 'town', guard: 'mini
 export const RUN_MAP_ROLE_NAMES = { first: 'landing', rest: 'rest', guard: 'mini-boss', last: 'last' };
 
 /** what is wrong with one run map (run-map.js runMapMake's), as sentences: a place the landing can't reach, a place
- * that leads nowhere or skips a row, a role row without the type the game looks for, a deadline before the shortest
- * walk ends @param {any} map @param {any} M rules.json run.map @param {{ slack: number }} clock @returns {string[]} */
-export function runMapProblems(map, M, clock) {
+ * that leads nowhere or skips a row, a role row without the type the game looks for; RL-12b: with the node types, two
+ * places that sell things one after the other
+ * @param {any} map @param {any} M rules.json run.map @param {Record<string, any>} [nodeTypes] @returns {string[]} */
+export function runMapProblems(map, M, nodeTypes) {
   const out = [],
     nodes = map.nodes,
     last = Math.max(...nodes.map((/** @type {any} */ n) => n.row)),
@@ -1239,6 +1501,12 @@ export function runMapProblems(map, M, clock) {
     if (n.row < last && !n.to.length) out.push(`place ${i} leads nowhere (row ${n.row + 1} of ${last + 1})`);
     if (n.to.some((/** @type {number} */ j) => !nodes[j] || nodes[j].row !== n.row + 1))
       out.push(`place ${i} skips a row`);
+    if (nodeTypes && nodeTypes[n.type] && nodeTypes[n.type].shop)
+      for (const j of n.to)
+        if (nodes[j] && nodeTypes[nodes[j].type] && nodeTypes[nodes[j].type].shop)
+          out.push(
+            `two places that sell things in a row (place ${i}, a ${n.type}, then place ${j}, a ${nodes[j].type})`
+          );
     const role = /** @type {keyof typeof RUN_MAP_ROLE_TYPES} */ (roles[n.row]),
       want = RUN_MAP_ROLE_TYPES[role];
     if (want && n.type !== want)
@@ -1248,8 +1516,6 @@ export function runMapProblems(map, M, clock) {
           : `a ${RUN_MAP_ROLE_NAMES[role]} row (row ${n.row + 1}) is a ${n.type}, not a ${want === 'town' ? 'town' : want}`
       );
   });
-  if (!(clock.slack >= 0))
-    out.push(`the deadline (slack ${clock.slack}) comes before the shortest walk reaches the boss`);
   return [...new Set(out)];
 }
 
@@ -1276,9 +1542,9 @@ export function runMapTownsPerPath(map) {
  * the figures a designer weighs: places per map, places by type, towns on a walk, biomes, the towns made against the
  * routes (rest rows are always towns, so the ratio isn't the weights'), and outlying seeds to open
  * @param {Record<string, any>} nodeTypes @param {any} M rules.json run.map (its biomes as the run's unlocks leave them)
- * @param {{ slack: number }} clock @param {{ n?: number, prefix?: string }} [o]
+ * @param {{ n?: number, prefix?: string }} [o]
  */
-export function runMapSweep(nodeTypes, M, clock, o = {}) {
+export function runMapSweep(nodeTypes, M, o = {}) {
   const n = o.n || 1000,
     prefix = o.prefix || 'SWEEP',
     /** @type {Map<string, { text: string, seed: string, count: number }>} */
@@ -1306,7 +1572,7 @@ export function runMapSweep(nodeTypes, M, clock, o = {}) {
       continue;
     }
     maps++;
-    for (const p of runMapProblems(map, M, clock)) note(p, seed);
+    for (const p of runMapProblems(map, M, nodeTypes)) note(p, seed);
     sizes.push([map.nodes.length, seed]);
     for (const x of map.nodes) {
       types[x.type] = (types[x.type] || 0) + 1;
