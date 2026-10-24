@@ -2,6 +2,55 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-12b part 2 - Waystations and stalls (done) - 2026-10-24
+Branch `track/encounters`, over two sessions (the first did the node types and the map rule, then handed over). The
+plan was approved in the earlier RL-12b session's Plan Mode (waystations are normal-sized places with a stand and fewer
+wild Billies; the no-two-shops rule counts towns and stalls; weights route 4, event 2, town 1, stall 1, placeholders);
+this session built the rest on the owner's word, fast checks per commit, smoke once, long checks skipped. main merged
+in twice (RL-R2a, then #177's grass): no conflicts. Tag `rl-12b-done` for the owner.
+- Where the plan was wrong (checked in the code):
+  - "a stall: a stand with act `shop`": act `shop` on a prop walks you into the shop's room (`ROOM_BY_USE.shop`,
+    `enterRoom`), and a stall has no room. It got its own act, `stall`, which opens the shop sheet where you stand.
+  - mapgen's props dials list their keys in the defaults (`mast`, `clinic`, `shop`); `stand` and `stall` join them,
+    which changes the params in every scene's `gen` (rng's scene hash remade; the scenes are the same).
+  - `encounterOpen` wasn't exported (only the debug menu reached it, through hooks): it is now.
+- Changed (one cause per commit):
+  - **Node types and the map** (first session): `event` and `stall` in nodeTypes.json, `shop: true` on town and stall,
+    `runMapNoTwoShops`, `runMapProblems` naming two shops in a row.
+  - **Scenes and rows**: `RUN_BUILDINGS` event `{stand}`, stall `{stall}`; `MAPGEN_HUB_BUILDINGS` rows (the market tent,
+    act `event`, label "Waystation"; the fruit stall, act `stall`, "Stall"), placed on a lot like the town buildings.
+    `runWorldTables`: a type with `shop` gets a shop (a stall's is named after the place, kept by "The stallholder");
+    event and stall rows carry `waystation: 1`; `encounterStock` gives them `rules.json run.wild.waystation` (2).
+  - **The page**: `walkPick` act `event` -> `encounterOpen(runMapNode(here))`, act `stall` -> `openShop`; the stall's
+    label pill is shop blue; first-run hints for a waystation and a stall (run.js).
+  - **Sim and preview**: the sim opens the day's shop at any type with `shop` (only a town heals) and notes a
+    waystation's event (`at.event`; the bot plays no option); the Studio's sim worker gets the encounters module. The
+    preview gives a stall's shop by day and each waystation's event as first drawn (a later stand can differ once an
+    earlier event is played: the comment says so).
+  - **Tests**: run-waystation-world (props, rows, shop on two seeds), run-sim, run-preview; check-data's planted
+    rules snapshot and rng's scene hash remade on purpose.
+  - **In-game test**: a new phase, "A run's waystation and stall" (the first SELFTESTWAY seed with both: the stand
+    opens its event, the stall its shop, the wild stock). **check-fast**: an "Encounters" check on the blur page (no new
+    boot) runs that phase.
+- Verified: lint, typecheck, check:modules, format:check, check:data and the unit tests after every commit (877 ->
+  880). The new in-game phase alone headless (15 s) and check-fast `--only=Encounters` (26.5 s), both passed.
+  Screenshots of a waystation and a stall (the tent and the stall by the road, their pills). Smoke 6 of 6 (219 s).
+  The slow unit tests, after CI's lint job caught run-world-real's snapshot (a town there is now a stall: remade on
+  purpose): 50 of 50. **Skipped on the owner's word**: the full quick check, the whole in-game test and the full
+  check-fast run (CI skipped its `full` and `selftest` jobs on the PR; lint, rules and smoke passed).
+- Risky / open:
+  - The market tent has no 3D model (a flat sprite beside the low-poly stall and buildings). It reads fine in the
+    screenshot; a model (or another prop) is the owner's call.
+  - Found, not caused here: the run sim's bot loses at the landing in most seeds (`lostAt: 'landing'` with a party
+    of 1 from `team: 3`), so its stats say little past row 1; and maps hold far more towns than the weights suggest
+    (about 350 towns, 150 routes, 80 waystations, 15 stalls over 100 maps: rest rows are towns). Worth a look before
+    the weights are tuned.
+  - Side places (`side: 1`) still skip the no-two-shops pass.
+  - RL-R2b (caves, the Surf islet) works on run-map.js and run-scenes.js too and had pushed nothing when this PR went
+    up. Shared touch points: `RUN_BUILDINGS`, `runWorldTables`'s row block (the `sells`/`waystation` lines),
+    `MAPGEN_HUB_BUILDINGS` and mapgen's props defaults.
+- Next: RL-12c (held items) on this branch; RL-S1 depends on RL-12b.
+
 ### Roguelite track RL-R2a - Side areas and field moves (and no deadline) - 2026-10-23
 Branch `track/regions` (fast-forwarded to RF-4's `track/reflavour` at e1e1479 on the coordinating session's word, then
 main merged in: RF-4, RF-5, RL-12b part 1, TC-4). Plan approved in Plan Mode with the owner's answers: walk in past the

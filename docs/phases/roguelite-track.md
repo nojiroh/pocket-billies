@@ -1071,6 +1071,13 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
 - **RL-12b part 1** (done 2026-10-23; HANDOFF and section 0 "Corrected in RL-12b" have what changed). Part 2 (after
   RL-R2 merges): the `event` and `stall` waystation node types and their stand, the no-two-shops rule in run-map.js,
   the run sim and preview, a check-fast page and the in-game test's step. RL-12c: held items (9.6 27).
+- **RL-12b part 2 as built (2026-10-24; HANDOFF has the detail).** Two node types: `event` ("Waystation", weight 2) and
+  `stall` ("Stall", weight 1, `shop: true` like a town); route 4, town 1 (placeholders). `runMapNoTwoShops` redraws a
+  shop led to from a shop. A waystation's stand is the market tent (act `event`, opens `encounterOpen` for the node);
+  a stall is the fruit stall (act `stall`, opens the place's shop where you stand, no room); both are lots placed like
+  the town buildings (mapgen `MAPGEN_HUB_BUILDINGS`). Both rows are `waystation: 1`: `rules.json run.wild.waystation`
+  (2) wild Billies. The sim sells at a stall (no heal) and notes a waystation's event (the bot plays no option); the
+  preview gives a stall's shop by day and each waystation's first-drawn event.
 - **RL-12b, RL-S1, RL-S2, RL-13:** files and tests as their rows say; each adds a fast-check page and an in-game test
   step, as earlier RL sessions did.
 
