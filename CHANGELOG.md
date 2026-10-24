@@ -9,6 +9,23 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Three new Billies and five regional forms (roster track RO-2c): **Siliclet**, a black gecko with one glowing scale,
+  evolving at level 20 into **Jenzard** and at 40 into **Gigajenzard**, a rare Electric/Dragon data-centre dragon
+  whose keynote dims the lights. Five Billies you already know now have a regional form, met in the biomes it suits:
+  the **Harbour** goose (Flying/Water), the **Meatball** rat (Steel/Fire), the **Courtside** fish (Ground, and
+  Ground/Dragon once it grows), the **Livestream** ferret (Electric/Fire) and the **Hazard** tiger (Water, then
+  Water/Grass). That makes 40 Billies, the roster the plan set out to build.
+- Balance: **Sharktank** is a real payoff now (a weaker Pupfin, a much stronger shark), the ferret and the tiger grew,
+  and the goose, the rat, the ferret and the tiger evolve earlier, so a single run can see them change.
+- Five new Billies (roster track RO-2b): **Cliplet**, a yellow kit that copies every dance it sees, evolving at level
+  18 into **Tiktokferret**, an Electric/Psychic ferret that loops in fifteen seconds; **Cublet**, a tiger cub that
+  could putt before it could walk, evolving at level 24 into **Tigerwoods**, a Ground/Grass tiger in Sunday red; and
+  **Peacouture**, a rare Fire/Flying peacock whose fan is made of other birds' feathers.
+- Eight new Billies (roster track RO-2a): **Gosling**, **Sprucegoose** and **Aviatorgoose**, the goose you meet on
+  almost every route; **Flatpackrat** and **Kamprat**, a rat that assembles itself; **Pupfin**, a goldfish that won't
+  stop pitching, until it evolves at level 20 into **Sharktank**, a Water/Dragon shark; and **Altmowl**, a rare owl
+  with a cloud for a brain. They're the first common and rare Billies, so each run's region differs more, and fishing
+  and eggs that used to give a stand-in now give these.
 - **A floating island**: the hub's world map shows Copperleaf's island floating in open sky, its rock hanging under it,
   with no bowl and no sea round it. The town's buildings and trees stand at their real size, so the island reads as
   big as it is, and every landmark with a model (the giant swing tree, the summit lookout, the airship station and

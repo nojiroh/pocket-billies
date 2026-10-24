@@ -70,7 +70,7 @@ function pixelDiff(made, ref) {
 
 test('every kit Billie bakes as committed (the retired Python builder, number for number)', () => {
   const problems = [];
-  assert.equal(B.forms.length, 24);
+  assert.equal(B.forms.length, 51);
   for (const form of B.forms) {
     const where = `${form.name} (${form.rig})`;
     let made;

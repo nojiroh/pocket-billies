@@ -1048,6 +1048,34 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   `lines/*.json` `forms`, `game-data.js` (`standInSpecies` not used for a run), `logic/rules.js spawn`. Tests: every
   run pool resolves without a stand-in; a form's types and name. Could break: wild battles, the dex, the Studio's
   line editor.
+- **RO-2.. plan (the owner, 2026-10-23).** 24 → 40 species, shaped like a small Pokémon dex (Gen 6's mix: the
+  starters, about four 3-stage lines, about five 2-stage lines, a few singles), filling the archetypes every Pokémon
+  generation repeats and the roster lacked. Art: kit parts only; an animal the kits can't make gets a kit stand-in
+  marked placeholder (the owner's pick), not a legacy sheet. Parodies: a mix, legacy lines where a kit animal fits,
+  new ones for the gaps. The 16 new species:
+  - **RO-2a** (done 2026-10-23, HANDOFF): Hughes goose (Gosling → Sprucegoose → Aviatorgoose, early bird, common,
+    Flying → Flying/Steel), Kamprad rat (Flatpackrat → Kamprat, early rodent, common, Steel → Steel/Grass), Cuban
+    (Pupfin → Sharktank, the joke fish, common, Water → Water/Dragon), Altmowl (single, rare, Psychic/Electric).
+  - **RO-2b** (done 2026-10-23, HANDOFF): Yiming ferret (Cliplet → Tiktokferret, the Electric mascot, common,
+    Electric → Electric/Psychic, fox parts on a cat head), Woods tiger (Cublet → Tigerwoods, common, Ground →
+    Ground/Grass, cat parts), Peacouture (the Arnault peacock, single, rare, Fire/Flying, bird parts, crown and a plume
+    fan). Names and bios are drafts for the owner.
+  - **RO-2c** (done 2026-10-24, HANDOFF): Huang gecko (Siliclet → Jenzard → Gigajenzard, the Dragon pseudo-legend,
+    rare, Electric → Electric/Dragon, 20/40), regional forms for the five commons (Harbour, Meatball, Courtside,
+    Livestream, Hazard), each with its own baked kit look because a coat's ramps cannot recolour a kit Billie's tinted
+    sheet, and the balance pass: a line's own `totals` (Cuban 235/515, Yiming and Woods 265/470, Huang 300/420/560),
+    earlier first evolutions (12-16) against the designed level curve, Alta's `woods1`. **The RO-2.. plan is done:
+    40 species.**
+  - Later, outside the 40: the critters kit (beetle, spider, snake, frog, crab, octopus) and the hooves kit (horse,
+    deer, ox, goat, elephant, camel) open the lines the kits can't make; historic tycoons as legendary or boss
+    Billies; an Eevee-style Billie whose evolution follows its parts.
+  - How a line is added (RO-2a's recipe): copy its legacy sheets, layouts and rigs into
+    `game/art/next/billionaires/hand` (rigs-hand.json) first; `lines/<id>.json` (learnset of existing moves of its
+    types; cry drafts), `index.json` `lines`, a roster.json row, a kitBuilds.json recipe and colours, then
+    `npm run bake:kits` (sheet, rig, native parts) and `node tools/check-data.mjs --fix`; drop the legacy
+    `<name>.json` layouts from the sheets folder; the biome pools; then the counts in kit-bake-parity and
+    pixel-density, the check-data and run-start snapshots, and `python3 tools/check-sound.py --baseline` for the new
+    cries.
 - **The region sessions (RL-R1, RL-R2)** live on one branch. Branch: track/regions
 - **RL-R1** (done 2026-10-23; HANDOFF has what changed and where this shape was wrong). Files: new `game/data/regions.json` + schema, type, check, export; new `logic/run-region.js`;
   `logic/run-map.js` (rows from zones); `logic/run-bowl.js` (zone bands); the Map tab's header. Tests: same seed same

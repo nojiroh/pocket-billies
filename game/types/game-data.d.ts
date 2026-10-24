@@ -271,6 +271,8 @@ export interface Line {
   parody: string;
   /** base stats per stage (else made from prof and the rarity's totals) */
   base?: number[][];
+  /** RO-2c: this line's own stat total per stage, in place of its rarity's (rarities.json) */
+  totals?: number[];
   catchRate?: number;
   cat?: string[];
   ht?: number[];

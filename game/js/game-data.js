@@ -208,7 +208,9 @@ LINES.forEach(L => {
   if (!L.learn.length) L.learn = [[1, 'handshake']];
   const sum = L.prof.reduce((a, b) => a + b, 0) || 1,
     ev = L.evo || DEFAULT_EVOLUTIONS,
-    tot = RARITY_STAT_TOTALS[L.rar] || RARITY_STAT_TOTALS.common;
+    /* RO-2c: a line may carry its own stat total per stage (`totals`), in place of its rarity's: a 2-stage line whose
+      final is the payoff (Sharktank) or a pseudo-legend needs a total its rarity's table cannot give */
+    tot = L.totals || RARITY_STAT_TOTALS[L.rar] || RARITY_STAT_TOTALS.common;
   /* v36: a split line has four names: stages 1, 2 and two finals (3A, 3B); the middle stage evolves into one of the two
     by the Hype/Build rule (see evolve). Both finals count as stage 2 for stats, catch rate and XP yield */
   /* v40: a species with no evolutions (the singles) has the stats and XP yield of a final stage and the catch rate of a middle one */
