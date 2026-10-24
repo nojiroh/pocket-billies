@@ -1,5 +1,5 @@
 {
- "about": "RL-13: what a run's Expedition and challenges change. expeditions: I first; each one's effect rows (logic/effects.js) join the run's Perks. The values are placeholders for the run sim. challenges: picked at the mast (any number) once `when` holds; each adds its rows and the rule its id names (logic/modifiers.js).",
+ "about": "RL-13: what a run's Expedition and challenges change. expeditions: I first; each one's effect rows (logic/effects.js) join the run's Perks. The values are placeholders for the run sim. challenges: picked at the mast (any number) once its when-condition holds; each adds its rows and the rule its id names (logic/modifiers.js).",
  "expeditions": [
   {"name":"Expedition I","d":"The first chapter. Foes as they come.","fx":[]},
   {
