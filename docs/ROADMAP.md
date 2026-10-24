@@ -34,7 +34,7 @@ are sessions of Claude's working time, not calendar time, and exclude the owner'
 | RL-12c | Held items | one held-item slot per Billie (the owner's answer, 9.6 27): the data section, the slot in the save and the Team tab, effect rows at the battle hooks; the reward pick's `held` cards switched on | RL-12b | 1 | yes |
 | RL-S1 | Story director | `meta.history`, `lines.json`, the hub's line pick, the return-from-a-loss scene | RL-12b | 1-2 | yes |
 | RL-S2 | Rival and relationships | Blake as a rival node countering your starter, `meta.rel`, Chapter 1 | RL-S1 | 1-2 | yes |
-| RL-13 | Brackets, challenges, starter points | `modifiers.json`, challenge modes, starter points at the mast, the region's leaders | RL-R2 | 1-2 | yes |
+| RL-13 | Expeditions, challenges, starter points (done 2026-10-24, branch `track/expeditions`) | `modifiers.json` Expeditions I-V, four challenges, starter points at the mast, leaders of their own type, the sim tuned to its first wins | RL-R2 | 1-2 | yes |
 | RL-14 | The organization's bots, salvage, the Voltron | `factions.json`, `bosses.json`, data-driven `alphaPhase`, the bots as the organization's army | RL-13, RL-S1 | 2 | yes |
 | RL-15 | Online | the run record, friend ghosts, daily seeds, rules and emulator tests | RL-14 | 2 | yes |
 | RL-16 | Content packs and Studio editors | pack merge and checks, editors for the new sections | RL-11 | 1-2 | yes |

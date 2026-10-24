@@ -9,6 +9,18 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Expeditions, challenges and starter points** (roguelite track RL-13): runs now have difficulty tiers.
+  **Expedition I** is the game as it was; winning the highest one open unlocks the next, up to **V**. Each one above I
+  sends foes out 2 levels higher, makes the final boss tougher (+15% HP a step), raises run shop and clinic prices by
+  10%, and (from the region generator) adds a zone or two to the run. Once you have won a run you can also take
+  **challenges** on: **Mono-type** (pick a type; only Billies of it may start the run or be caught), **No healing**
+  (clinics shut, no healing items sold or packed), **No Perks** and **Fainted is gone** (a Billie that faints leaves
+  the run). Each pays 25% more Research.
+  **Starter points** replace "one Billie from home": every Billie at the ranch has a price in points (by how rare and
+  how evolved it is, and 1 more per 5 levels), and the mast gives you a budget to spend (20 at Expedition I, more
+  later). Bring six fresh ones or three trained ones. The start sheet shows each card's price and why one can't come.
+  **Leaders now field their own type**: the Water leader brings Water Billies from the region, not whatever the old
+  data said.
 - **Five times of day**: the light outdoors now comes from five looks, dawn, day, golden hour, dusk and night, that
   blend into each other with the clock (and move with sunrise and sunset through the seasons). Golden hour is warm
   with teal shadows, dusk pink and violet, night deep blue with warm lamps and stars; day keeps each place's own sky.
