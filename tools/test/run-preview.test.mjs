@@ -102,3 +102,23 @@ test('runPreview: every mini-boss and the boss has a foe, every town a day of st
   assert.ok(p.relicOffers.length >= 1);
   assert.deepEqual(JSON.parse(JSON.stringify(p)), p, 'it crosses to the Studio page as it is (structured clone)');
 });
+
+test('the preview gives a stall a shop and a waystation its event, as the game draws it (RL-12b)', () => {
+  const { eventAt } = modules.encounters;
+  let stalls = 0,
+    stands = 0;
+  for (let k = 0; k < 12; k++) {
+    const seed = `PREVWAY${k}`,
+      P = runPreview(seed, {});
+    P.map.nodes.forEach((/** @type {any} */ n, /** @type {number} */ i) => {
+      const N = P.nodes[i];
+      if (n.type === 'stall') stalls++;
+      assert.equal(!!N.shop, n.type === 'stall' || n.type === 'town', `${seed} node ${i}`);
+      if (n.type !== 'event') return assert.equal(N.event, null);
+      stands++;
+      const run = /** @type {any} */ ({ seed, map: P.map, enc: undefined });
+      assert.equal(N.event, eventAt(run, i, data.EVENTS) || null, `${seed} node ${i}`);
+    });
+  }
+  assert.ok(stalls >= 1 && stands >= 1, `${stalls} stalls, ${stands} waystations`);
+});
