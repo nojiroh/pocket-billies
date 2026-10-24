@@ -10,7 +10,7 @@ browsers). Its budget, three minutes, is missed: each page boots once (25-65 s i
 The data check and the unit tests (the world-map graph's snapshot among them) run in CI's lint job, not here. In a
 browser, each check opens its own page straight where it needs to be (?fixture=<name>,
 game/js/fixture.js), never through the opening and never waiting for every map: the game boots with no console or page
-errors; a town and a room each open and draw frames (RL-5: the hub, Copperleaf; the route and the cave were parked
+errors; a town and a room each open and draw frames, and the room is left by walking out of its door (TW-0) (RL-5: the hub, Copperleaf; the route and the cave were parked
 with their places); a run's world (RL-7) opens on its landing, its places on the bowl, and a walk over a seam arrives
 at the next node a day later; a battle plays to the end; a save round-trips; the Studio loads; the exported debug
 log holds no names; the world map opens as the bowl, a tap opens a card, Home comes back; every screen opens with its parts (UI-5);
@@ -290,6 +290,23 @@ def room(pg, base):
     if not until(pg, "!!uiState.inside&&walkView.ready&&walkView.sc.roomOf===uiState.inside.id", 60): raise Exception(f'not in the room: {pg.evaluate("walkView.id")}')
     drawing(pg)
     return f'{pg.evaluate("walkView.id")} drew {pg.evaluate("walkRenderer.frames")} frames'
+
+
+def room_walk_out(pg, base):
+    """towns track TW-0: with the card closed a room still shows "Go outside"; holding the stick out of the door (down,
+    once you have walked in) takes you outside, as tapping "Outside" does"""
+    if not until(pg, "!!uiState.inside&&walkView.ready&&walkView.sc.roomOf===uiState.inside.id", 60): raise Exception('not in the room')
+    pg.evaluate("saveData.preferences.cardClosed=true;render();0")
+    btn = pg.evaluate("!!document.querySelector('[data-a=leaveroom]')")
+    pg.evaluate("saveData.preferences.cardClosed=false;render();0")
+    if not btn: raise Exception('no "Go outside" button with the card closed')
+    pg.evaluate("walkView.keys.u=true;0")
+    until(pg, "walkView.doorArmed", 10)
+    pg.evaluate("walkView.keys.u=false;walkView.keys.d=true;0")
+    out = until(pg, "!uiState.inside&&walkView.ready&&!walkView.sc.roomRect", 30)
+    pg.evaluate("walkView.keys.d=false;0")
+    if not out: raise Exception(f'held the stick out of the door and stayed in: at {pg.evaluate("[walkView.pl.x,walkView.pl.z]")}')
+    return f'walked out to {pg.evaluate("walkView.id")}'
 
 
 def battle(pg, base):

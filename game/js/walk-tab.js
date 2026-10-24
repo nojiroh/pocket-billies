@@ -152,9 +152,11 @@ function roomHero() {
         lab: 'Tap Professor Chosen or Hazel to talk, or the unlock board to spend Research.',
         house: 'Tap whoever lives here to chat.',
         ranch: 'Tap the training board or the rancher to train your Billies.',
-      }[I.kind] || '';
+      }[I.kind] || '',
+    /* towns track TW-0: with the card closed its "Go outside" goes too, so the way out stays on screen */
+    shut = !!(saveData.preferences && saveData.preferences.cardClosed);
   return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(here.name), escapeHtml(I.name || sc.name || 'Inside'), `<p class="wh-gate">${escapeHtml(what)}</p>`, `<button class="pb small" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>`)}
- <div class="wh-foot"><div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button></div></div></div>`;
+ <div class="wh-foot"><div class="wh-row">${shut ? `<button class="pb small glass" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>` : ''}<button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button></div></div></div>`;
 }
 /* v31: the place card: compact (where, the hour and weather, staying or walking, one main button; the rest folded
    under More), closable with ×, and brought back by tapping the place's name in the top bar. Closed stays closed. */
