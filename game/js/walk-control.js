@@ -57,6 +57,7 @@ import { flyMenu, rideGlassLift } from './airship.js';
 import { runWorldData } from './run-world.js';
 import { runArrivedFx, runArrivedHint } from './run.js';
 import { fieldMoveOpen, fieldWayOut } from './field-moves.js';
+import { encounterOpen } from './encounter-screen.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBoardOpen } from './lab-board.js';
 import { postcardCheck } from './postcards.js';
@@ -70,7 +71,7 @@ expose({
   doorBuildingOf: [() => doorBuildingOf, v => (doorBuildingOf = v)],
   enterRoom: [() => enterRoom, v => (enterRoom = v)],
   exitPrompt: [() => exitPrompt, v => (exitPrompt = v)],
-  leaveRoom: [() => leaveRoom, v => (leaveRoom = v)],
+  leaveRoom: [() => leaveRoom, v => ((leaveRoom = v), provide({ leaveRoom }))],
   mapExits: [() => mapExits, v => (mapExits = v)],
   mapIdAt: [() => mapIdAt, v => ((mapIdAt = v), provide({ mapIdAt }))],
   mapOffsetInView: [() => mapOffsetInView, v => ((mapOffsetInView = v), provide({ mapOffsetInView }))],
@@ -90,7 +91,7 @@ expose({
   walkState: [() => walkState, v => (walkState = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ mapIdAt, mapOffsetInView, roomState });
+provide({ leaveRoom, mapIdAt, mapOffsetInView, roomState });
 /* to-module: end */
 /* ---------- the walk scene behind the Walk tab ---------- */
 export function mapIdAt(i) {
@@ -574,6 +575,17 @@ export function walkPick(h) {
     }
     if (a === 'fieldout' && typeof fieldWayOut === 'function') {
       fieldWayOut();
+      return;
+    }
+    /* RL-12b: a waystation's stand opens its event (encounter-screen.js); a stall opens its shop where you stand */
+    if (a === 'event' && typeof encounterOpen === 'function') {
+      encounterOpen(runMapNode(node));
+      return;
+    }
+    if (a === 'stall') {
+      const id = p.shop || here.shop;
+      if (id && SHOPS[id]) openShop(id);
+      else toast(p.say || 'The stall is packed up today.');
       return;
     }
     /* v47: shops and the like keep opening hours */

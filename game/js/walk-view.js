@@ -25,6 +25,7 @@ import {
   environmentState,
   gameData,
   groundHeightAt,
+  leaveRoom,
   lifePaths,
   loreFlags,
   mapChatLines,
@@ -52,7 +53,7 @@ import {
 } from './hooks.js';
 import { clamp } from './util.js';
 import { pointInProp, turnedBounds, turnedPoint } from './logic/prop-turn.js';
-import { roomToLocal } from './logic/room-turn.js';
+import { roomDoorPush, roomToLocal } from './logic/room-turn.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
 import { orbitStickYaw, orbitWalkStep } from './logic/camera-orbit.js';
 import { frameStop } from './frame-scheduler.js';
@@ -266,6 +267,12 @@ export const walkView = {
   cam: null,
   C: null,
   st: {},
+  /* towns track TW-0: the room you are in (its view) and whether you have walked a metre in from its doorway (or
+     been in it 0.7 s: doorAt, walkView.t when you came in), so walking back into the doorway takes you out
+     (movePlayer) but a push held from outside doesn't step you straight out */
+  doorRoom: /** @type {any} */ (null),
+  doorArmed: false,
+  doorAt: 0,
   pl: {
     t: -1,
     walk: 0,
@@ -3573,6 +3580,18 @@ function movePlayer(st, dt) {
       if (canStepTo(P.x, P.z, P.x, nz)) P.z = nz;
       mx = wx;
       mz = wz;
+      /* towns track TW-0: in a room, pushing out through its doorway takes you outside (as tapping "Outside" does) */
+      if (
+        sc.roomRect &&
+        uiState.inside &&
+        walkView.doorRoom === sc &&
+        walkView.doorArmed &&
+        roomDoorPush(sc, P.x, P.z, wx, wz) &&
+        typeof leaveRoom === 'function'
+      ) {
+        walkView.doorArmed = false;
+        setTimeout(() => leaveRoom(), 0);
+      }
     } else if (P.route) {
       const tg0 = P.route[P.ri],
         d0 = Math.hypot(tg0[0] - P.x, tg0[1] - P.z) || 1;
@@ -3609,6 +3628,17 @@ function movePlayer(st, dt) {
           left = 0;
         }
       }
+    }
+    /* towns track TW-0: armed once you stand a metre in from the room's doorway or have been in it 0.7 s */
+    if (sc.roomRect) {
+      if (walkView.doorRoom !== sc) {
+        walkView.doorRoom = sc;
+        walkView.doorArmed = false;
+        walkView.doorAt = walkView.t;
+      }
+      const E = sc.exits && sc.exits[0];
+      if ((E && Math.hypot(P.x - E[0], P.z - E[1]) > 1) || walkView.t - walkView.doorAt > 700)
+        walkView.doorArmed = true;
     }
     P.walk = Math.hypot(P.x - ox, P.z - oz) > 1e-4 ? 1 : 0;
     /* phase 08: the metres you walk outdoors (the distance on your trainer card; RL-10: they hatch nothing any more) */

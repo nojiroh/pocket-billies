@@ -1,0 +1,50 @@
+{
+ "id": "kamprad",
+ "names": ["Flatpackrat","Kamprat"],
+ "types": [["Steel"],["Steel","Grass"]],
+ "prof": [0.9,1.05,0.95,0.9,0.95,1.25],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"markdown"],
+  [4,"flashsale"],
+  [7,"snub"],
+  [12,"flatpack"],
+  [16,"gripcrush"],
+  [20,"dynamic"],
+  [24,"harvest"],
+  [29,"perfectfold"],
+  [34,"assemblyline"],
+  [40,"oldmoney"]
+ ],
+ "cat": ["Flatpack Billie","Assembly Billie"],
+ "ht": [0.3,0.7],
+ "wt": [2.5,18],
+ "hab": ["Cardboard boxes","Showrooms with arrows on the floor"],
+ "diet": ["Meatballs","Little wooden pencils"],
+ "bio": [
+  "A rat that arrived in a flat box with the instructions missing. It has assembled itself four times and there is always one screw left over.",
+  "It builds a nest out of anything that comes flat, names every room with too many vowels, and makes you walk past all of them to reach the way out."
+ ],
+ "note": ["There is always one screw left over.","Gives every room a name you can't say."],
+ "evo": [
+  {"k":"lvl","at":14}
+ ],
+ "forms": [
+  {
+   "id": "meatball",
+   "name": "Meatball",
+   "swap": {"Grass":"Fire"},
+   "coat": "meatball"
+  }
+ ],
+ "parody": "Ingvar Kamprad",
+ "cry": [
+  {"base":"beast","pitch":78,"length":0.5,"name":"placeholder: a squeak like a hex key (Claude's draft)"},
+  {"base":"beast","pitch":70,"length":0.8,"name":"placeholder: a ratchety chatter (Claude's draft)"}
+ ],
+ "parts": [
+  {"head":"cat_head","body":"cat_torso","front":"cat_arm","back":"cat_leg","sig":"reptile_tail"},
+  {"head":"cat_head","body":"bear_torso","front":"cat_arm","back":"cat_leg","sig":"reptile_tail"}
+ ]
+}

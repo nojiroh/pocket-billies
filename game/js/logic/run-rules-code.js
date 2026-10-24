@@ -57,7 +57,7 @@ export const RUN_RULES_IN_CODE = [
   },
   {
     what: 'Buildings by the main road',
-    value: 'the landing: the airship’s mast; a town: a clinic and a shop',
+    value: 'the landing: the airship’s mast; a town: a clinic and a shop; a waystation: a stand; a stall: a stall',
     file: 'game/js/logic/run-scenes.js',
     code: 'export const RUN_BUILDINGS = /** @type {Record<string, Record<string, number>>} */ ({',
   },

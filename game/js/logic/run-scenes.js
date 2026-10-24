@@ -184,10 +184,13 @@ export function runSideLand(M, node, dials) {
 /** TR-2: the debug menu's run mod that gives every place mountains (runSceneParams) */
 export const RUN_MOD_MOUNTAINS = 'dbg_mountains';
 /** RL-8: what stands beside the main road of a node of each type: the airship's mast where it lands you, a clinic
- * (paid healing) and a shop in a town (mapgen.js MAPGEN_HUB_BUILDINGS) */
+ * (paid healing) and a shop in a town (mapgen.js MAPGEN_HUB_BUILDINGS); RL-12b: a waystation's stand (its event) and
+ * a stall (its shop, no clinic) */
 export const RUN_BUILDINGS = /** @type {Record<string, Record<string, number>>} */ ({
   landing: { mast: 1 },
   town: { clinic: 1, shop: 1 },
+  event: { stand: 1 },
+  stall: { stall: 1 },
 });
 /** RL-R2: the run's side area's field move (fieldMoves.json), or null @param {RunMap} map @param {RunWorldData} data */
 export const fieldMoveOf = (map, data) => (map.side && data.fieldMoves && data.fieldMoves[map.side.move]) || null;
@@ -310,6 +313,8 @@ export function runWorldTables(run, hub, data) {
     const B = data.biomes[node.biome || ''] || /** @type {Biome} */ ({}),
       T = data.nodeTypes[node.type],
       town = node.type === 'town',
+      /* RL-12b: a node type that sells (nodeTypes.json shop: a town, a stall) */
+      sells = !!(T && T.shop),
       id = runPlaceId(i),
       source = data.pools[B.pool] || data.pools[Object.keys(data.pools)[0]];
     /* RL-R2: a side area's places meet its own species (lines the region left out), when it has them */
@@ -339,15 +344,17 @@ export function runWorldTables(run, hub, data) {
     /* RL-R2: a side area's first place is closed until its obstacle is open (rules.js canEnter, gateText) */
     if (map.side && i === map.side.nodes[0]) row.field = map.side.move;
     if (node.side) row.side = 1;
-    if (town) {
-      row.town = 1;
-      /* RL-8: its shop (stocked by the day when it opens: logic/run-loop.js runShopStock) */
+    /* RL-12b: a waystation (an event's or a stall's place) has fewer wild Billies (rules.js encounterStock) */
+    if (node.type === 'event' || node.type === 'stall') row.waystation = 1;
+    if (town) row.town = 1;
+    if (sells) {
+      /* RL-8: its shop (stocked by the day when it opens: logic/run-loop.js runShopStock); RL-12b: a stall's too */
       row.shop = runShopId(i);
       shops[row.shop] = {
-        name: `${row.name} Shop`,
-        keeper: 'The shopkeeper',
+        name: town ? `${row.name} Shop` : row.name,
+        keeper: town ? 'The shopkeeper' : 'The stallholder',
         who: 'clerk',
-        greeting: 'New stock every morning. Have a look.',
+        greeting: town ? 'New stock every morning. Have a look.' : 'Fresh off the cart this morning. Have a look.',
         stock: [],
         runNode: i,
       };

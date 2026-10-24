@@ -52,3 +52,21 @@ test('a planted bad rule is named with a seed that shows it', () => {
   const noRest = C.runMapSweep(T, rules({ rest: 'route' }), { n: 50 });
   assert.ok(noRest.problems.some(p => /rest row .*not a town/.test(p.text)));
 });
+
+test('RL-12b: never two places that sell things one after the other; the sweep would name a map that had them', () => {
+  for (let k = 0; k < 500; k++) {
+    const map = runMapMake('SHOPS' + k, T, M);
+    for (const n of map.nodes)
+      if (T[n.type].shop)
+        for (const j of n.to) assert.ok(!T[map.nodes[j].type].shop, `SHOPS${k}: ${n.type} then ${map.nodes[j].type}`);
+  }
+  const S = C.runMapSweep(T, M, { n: 500 });
+  assert.ok(S.types.event > 0 && S.types.stall > 0, 'waystations and stalls are drawn');
+  const two = structuredClone(runMapMake('CHECK1', T, M)),
+    a = two.nodes.findIndex(n => n.to.length);
+  two.nodes[a].type = 'stall';
+  for (const j of two.nodes[a].to) two.nodes[j].type = 'town';
+  assert.ok(C.runMapProblems(two, M, T).some(p => p.includes('two places that sell things in a row')));
+  /* without the node types (an older caller) the check stays out */
+  assert.ok(!C.runMapProblems(two, M).some(p => p.includes('sell things')));
+});

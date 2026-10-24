@@ -144,7 +144,7 @@ async function fieldWayOutTravel() {
     v = document.createElement('div');
   v.id = 'fieldVeil';
   v.style.cssText =
-    'position:fixed;pointer-events:none;background:#07060a;z-index:6;opacity:0;display:flex;align-items:center;' +
+    'position:fixed;pointer-events:none;background:black;z-index:6;opacity:0;display:flex;align-items:center;' +
     'justify-content:center;color:white;font:inherit;letter-spacing:.04em;text-align:center;padding:0 24px';
   Object.assign(v.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
   document.body.appendChild(v);

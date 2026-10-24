@@ -271,6 +271,8 @@ export interface Line {
   parody: string;
   /** base stats per stage (else made from prof and the rarity's totals) */
   base?: number[][];
+  /** RO-2c: this line's own stat total per stage, in place of its rarity's (rarities.json) */
+  totals?: number[];
   catchRate?: number;
   cat?: string[];
   ht?: number[];
@@ -411,6 +413,8 @@ export interface LocationData {
   field?: DataId;
   /** RL-R2: 1 on a side area's place */
   side?: 1;
+  /** RL-12b: 1 on a run's waystation (an event's or a stall's place): fewer wild Billies (rules.json run.wild) */
+  waystation?: 1;
   v47region?: number;
   a04place?: number;
   a04pearl?: number;
@@ -976,8 +980,9 @@ export interface Rules {
         a record of weights. Dials left out keep mapgen's defaults */
     scene: RunSceneRules;
     /** RL-7: a run node's wild Billies: levels `lv` on the landing's row, `perRow` more on each row after; a node
-        walked back to rolls `back` of them again (the hub's stock on a first visit) */
-    wild: { lv: [number, number]; perRow: number; back: number };
+        walked back to rolls `back` of them again (the hub's stock on a first visit); a waystation (an event or a
+        stall: RL-12b) holds `waystation` */
+    wild: { lv: [number, number]; perRow: number; back: number; waystation: number };
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;
@@ -1655,6 +1660,8 @@ export interface NodeType {
   engine: 'scene' | 'menu';
   /** how often it fills a free row (rules.json run.map gives the other rows their types); 0 or none: never */
   weight?: number;
+  /** RL-12b: it sells things (a town, a stall): the map never puts two of them one after the other */
+  shop?: boolean;
 }
 
 /** music.json: a song's recipe, composed into notes by the tracker (game/js/audio/tracker.js; sound track SND-2) */

@@ -400,12 +400,16 @@ export function dataRunScene(D) {
       !whole(W.lv[0], 1, 100) ||
       !whole(W.lv[1], W.lv[0], 100) ||
       !whole(W.perRow, 0, 20) ||
-      !whole(W.back, 0, 20)
+      !whole(W.back, 0, 20) ||
+      !whole(W.waystation, 0, 20)
     )
-      problem('rules.json', 'run.wild: lv [low, high] (1-100), perRow (0-20) and back (0-20) are not whole numbers');
+      problem(
+        'rules.json',
+        'run.wild: lv [low, high] (1-100), perRow (0-20), back (0-20) and waystation (0-20) are not whole numbers'
+      );
     else
       for (const k of Object.keys(W))
-        if (!['lv', 'perRow', 'back'].includes(k)) problem('rules.json', `run.wild.${k}: no such rule`);
+        if (!['lv', 'perRow', 'back', 'waystation'].includes(k)) problem('rules.json', `run.wild.${k}: no such rule`);
     if (!whole(R.seamIn, 1, 30)) problem('rules.json', 'run.seamIn is not a whole number of metres from 1 to 30');
   }
   return out;
@@ -1474,9 +1478,10 @@ export const RUN_MAP_ROLE_TYPES = { first: 'landing', rest: 'town', guard: 'mini
 export const RUN_MAP_ROLE_NAMES = { first: 'landing', rest: 'rest', guard: 'mini-boss', last: 'last' };
 
 /** what is wrong with one run map (run-map.js runMapMake's), as sentences: a place the landing can't reach, a place
- * that leads nowhere or skips a row, a role row without the type the game looks for
- * @param {any} map @param {any} M rules.json run.map @returns {string[]} */
-export function runMapProblems(map, M) {
+ * that leads nowhere or skips a row, a role row without the type the game looks for; RL-12b: with the node types, two
+ * places that sell things one after the other
+ * @param {any} map @param {any} M rules.json run.map @param {Record<string, any>} [nodeTypes] @returns {string[]} */
+export function runMapProblems(map, M, nodeTypes) {
   const out = [],
     nodes = map.nodes,
     last = Math.max(...nodes.map((/** @type {any} */ n) => n.row)),
@@ -1494,6 +1499,12 @@ export function runMapProblems(map, M) {
     if (n.row < last && !n.to.length) out.push(`place ${i} leads nowhere (row ${n.row + 1} of ${last + 1})`);
     if (n.to.some((/** @type {number} */ j) => !nodes[j] || nodes[j].row !== n.row + 1))
       out.push(`place ${i} skips a row`);
+    if (nodeTypes && nodeTypes[n.type] && nodeTypes[n.type].shop)
+      for (const j of n.to)
+        if (nodes[j] && nodeTypes[nodes[j].type] && nodeTypes[nodes[j].type].shop)
+          out.push(
+            `two places that sell things in a row (place ${i}, a ${n.type}, then place ${j}, a ${nodes[j].type})`
+          );
     const role = /** @type {keyof typeof RUN_MAP_ROLE_TYPES} */ (roles[n.row]),
       want = RUN_MAP_ROLE_TYPES[role];
     if (want && n.type !== want)
@@ -1559,7 +1570,7 @@ export function runMapSweep(nodeTypes, M, o = {}) {
       continue;
     }
     maps++;
-    for (const p of runMapProblems(map, M)) note(p, seed);
+    for (const p of runMapProblems(map, M, nodeTypes)) note(p, seed);
     sizes.push([map.nodes.length, seed]);
     for (const x of map.nodes) {
       types[x.type] = (types[x.type] || 0) + 1;

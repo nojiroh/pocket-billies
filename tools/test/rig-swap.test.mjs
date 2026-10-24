@@ -1,6 +1,6 @@
 // Studio plan Phase 5, T5.2: a part swapped from the Parts Library keeps the Billie whole (logic/rig-swap.js), on
 // three real species of art/next/rigs-next.js with the real kit parts and sheets: musk0 (a kit Billie, biped, horns on
-// its head), huang0 (hand-drawn, four legs) and trump0 (kit, no legs, a crest). Which parts fit, where the children go,
+// its head), ma0 (hand-drawn, four legs) and trump0 (kit, no legs, a crest). Which parts fit, where the children go,
 // the frames (blink, squash), the sheet and geo.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -82,7 +82,7 @@ test("a torso's children need its named sockets, on their own side; a head's hor
     tail: 'tail',
     head: 'neck',
   });
-  const q = rigSwapNeeds(K, RIGS.huang0.front, 'torso', slotOf, 'body', 'front');
+  const q = rigSwapNeeds(K, RIGS.ma0.front, 'torso', slotOf, 'body', 'front');
   assert.deepEqual(Object.fromEntries(q.map(x => [x.child, x.sockets[0]])), {
     legBF: 'hipR',
     legFF: 'shoulderR',
@@ -108,7 +108,7 @@ test('a part without a socket a child needs is a misfit, with the reason; every 
 });
 
 test('the same picture swapped in changes nothing the game reads: children, geo, sizes of pictures (3 species)', () => {
-  for (const sp of ['musk0', 'huang0', 'trump0']) {
+  for (const sp of ['musk0', 'ma0', 'trump0']) {
     const sheets = sheetsOf(sp),
       prepared = ['front', 'back'].map(view => {
         const M = RIGS[sp][view],

@@ -1,0 +1,52 @@
+{
+ "id": "yiming",
+ "names": ["Cliplet","Tiktokferret"],
+ "types": [["Electric"],["Electric","Psychic"]],
+ "prof": [0.85,0.95,0.85,1.2,0.95,1.4],
+ "rar": "common",
+ "totals": [265,470],
+ "learn": [
+  [1,"handshake"],
+  [1,"movefast"],
+  [5,"zoning"],
+  [9,"tos"],
+  [12,"flashsale"],
+  [15,"disrupt"],
+  [19,"arcwhip"],
+  [23,"fifteensec"],
+  [27,"pump"],
+  [31,"rebrand"],
+  [36,"overload"],
+  [42,"moon"]
+ ],
+ "cat": ["Clip Billie","Loop Billie"],
+ "ht": [0.3,0.8],
+ "wt": [2,9],
+ "hab": ["Anywhere with a signal","Phone screens"],
+ "diet": ["Trending sounds","Fifteen seconds of you"],
+ "bio": [
+  "A yellow kit with a play-button patch on its chest. It copies any dance it sees, adds a sound, and shows it back to you before you have finished the first one.",
+  "A ferret with a clock-face patch on its chest that dances in fifteen-second loops and knows exactly what you want to see next. Look away and it has already found the next one."
+ ],
+ "note": ["Has already seen this one.","Every loop is a little different, on purpose."],
+ "evo": [
+  {"k":"lvl","at":14}
+ ],
+ "forms": [
+  {
+   "id": "livestream",
+   "name": "Livestream",
+   "swap": {"Psychic":"Fire"},
+   "coat": "livestream"
+  }
+ ],
+ "parody": "Zhang Yiming",
+ "cry": [
+  {"base":"beast","pitch":76,"length":0.5,"name":"placeholder: a bright chirp that loops (Claude's draft)"},
+  {"base":"machine","pitch":64,"length":0.9,"name":"placeholder: a buzzing chirp, then the same again (Claude's draft)"}
+ ],
+ "parts": [
+  {"head":"cat_head","body":"fox_torso","front":"fox_arm","back":"fox_leg","sig":"fox_tail"},
+  {"head":"cat_head","body":"fox_torso","front":"fox_arm","back":"fox_leg","sig":"fox_tail"}
+ ]
+}

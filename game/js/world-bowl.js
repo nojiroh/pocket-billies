@@ -20,6 +20,8 @@ import { canEnter, distanceText, tripTo } from './logic/rules.js';
 import { runMarkDraw } from './logic/run-marks.js';
 import {
   BOWL_GROUND_EXTENT,
+  BOWL_ISLAND_BASE,
+  bowlBaseHeight,
   bowlCoastAt,
   bowlCompass,
   bowlGridHeight,
@@ -38,15 +40,18 @@ import {
 } from './logic/bowl.js';
 import {
   BOWL_CAMERA,
+  FLOAT_CAMERA,
   bowlCamClamp,
   bowlCamEase,
   bowlCamGap,
   bowlCamHome,
+  bowlCamHomeFloat,
   bowlCamMatrix,
   bowlCamOverview,
   bowlCamPan,
   bowlCamProject,
   bowlCamTurn,
+  bowlCamUseFloat,
   bowlCamUseGround,
   bowlCamView,
   bowlCamZoom,
@@ -74,6 +79,14 @@ import {
   bowlTreeStyle,
 } from './logic/bowl-things.js';
 import { bowlHasCoast, bowlIslandHeights, bowlIslandMapId, bowlIslandPlotThings } from './logic/bowl-island.js';
+import {
+  FLOAT_ISLAND,
+  FLOAT_STRIDE,
+  floatGroundHeight,
+  floatGroundMesh,
+  floatIslandMesh,
+} from './logic/float-island.js';
+import { orbitYawAt } from './logic/camera-orbit.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { escapeHtml, reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask } from './frame-scheduler.js';
@@ -91,7 +104,7 @@ import {
   webgl2Supported,
 } from './engine/webgl.js';
 import { POST_EFFECT_SHADERS, drawPostEffects, projectToScreenUv } from './engine/post-effects.js';
-import { WEATHER_LOOKS, environmentLitFraction, environmentState } from './environment.js';
+import { WEATHER_LOOKS, environmentLitFraction, environmentLookAt, environmentState } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { clampZoom } from './walk/camera.js';
 import { loadPropModelRecipe, lowPolyFromRecipe } from './prop-models.js';
@@ -113,6 +126,7 @@ expose({
   BOWL_SHADOW_GLSL: [() => BOWL_SHADOW_GLSL],
   BOWL_SHADOW_SIZE: [() => BOWL_SHADOW_SIZE],
   BOWL_SKY_GLSL: [() => BOWL_SKY_GLSL],
+  BOWL_STRUCTURE: [() => BOWL_STRUCTURE],
   BOWL_SUN: [() => BOWL_SUN],
   BOWL_SUN_NOW: [() => BOWL_SUN_NOW],
   BOWL_TREE_LOOK: [() => BOWL_TREE_LOOK],
@@ -131,7 +145,15 @@ expose({
   worldBowlDrawSky: [() => worldBowlDrawSky, v => (worldBowlDrawSky = v)],
   worldBowlFallNow: [() => worldBowlFallNow, v => (worldBowlFallNow = v)],
   worldBowlFilm: [() => worldBowlFilm, v => (worldBowlFilm = v)],
+  worldBowlFloatCam: [() => worldBowlFloatCam, v => (worldBowlFloatCam = v)],
+  worldBowlFloatGpu: [() => worldBowlFloatGpu, v => (worldBowlFloatGpu = v)],
+  worldBowlFloatHome: [() => worldBowlFloatHome, v => (worldBowlFloatHome = v)],
+  worldBowlFloatIsland: [() => worldBowlFloatIsland, v => (worldBowlFloatIsland = v)],
+  worldBowlFloatLook: [() => worldBowlFloatLook, v => (worldBowlFloatLook = v)],
+  worldBowlFloats: [() => worldBowlFloats, v => (worldBowlFloats = v)],
+  worldBowlFlying: [() => worldBowlFlying],
   worldBowlGpu: [() => worldBowlGpu, v => (worldBowlGpu = v)],
+  worldBowlHex: [() => worldBowlHex],
   worldBowlIslandLoad: [() => worldBowlIslandLoad, v => (worldBowlIslandLoad = v)],
   worldBowlLightMatrix: [() => worldBowlLightMatrix, v => (worldBowlLightMatrix = v)],
   worldBowlLine: [() => worldBowlLine, v => (worldBowlLine = v)],
@@ -140,11 +162,14 @@ expose({
   worldBowlMapId: [() => worldBowlMapId, v => (worldBowlMapId = v)],
   worldBowlMapOf: [() => worldBowlMapOf, v => (worldBowlMapOf = v)],
   worldBowlMesh: [() => worldBowlMesh, v => (worldBowlMesh = v)],
+  worldBowlMixRgb: [() => worldBowlMixRgb],
+  worldBowlModelInto: [() => worldBowlModelInto, v => (worldBowlModelInto = v)],
   worldBowlModelShape: [() => worldBowlModelShape, v => (worldBowlModelShape = v)],
   worldBowlOverlay: [() => worldBowlOverlay, v => (worldBowlOverlay = v)],
   worldBowlPick: [() => worldBowlPick, v => (worldBowlPick = v)],
   worldBowlPin: [() => worldBowlPin, v => (worldBowlPin = v)],
   worldBowlPuffMesh: [() => worldBowlPuffMesh, v => (worldBowlPuffMesh = v)],
+  worldBowlReady: [() => worldBowlReady, v => (worldBowlReady = v)],
   worldBowlRender: [() => worldBowlRender, v => setWorldBowlRender(v)],
   worldBowlReset: [() => worldBowlReset, v => (worldBowlReset = v)],
   worldBowlRiversInto: [() => worldBowlRiversInto, v => (worldBowlRiversInto = v)],
@@ -167,6 +192,7 @@ expose({
   worldBowlTerrainKinds: [() => worldBowlTerrainKinds, v => (worldBowlTerrainKinds = v)],
   worldBowlTerrainPictures: [() => worldBowlTerrainPictures, v => (worldBowlTerrainPictures = v)],
   worldBowlTerrainStart: [() => worldBowlTerrainStart, v => (worldBowlTerrainStart = v)],
+  worldBowlThingScale: [() => worldBowlThingScale, v => (worldBowlThingScale = v)],
   worldBowlThingsDraw: [() => worldBowlThingsDraw, v => (worldBowlThingsDraw = v)],
   worldBowlThingsOfPlace: [() => worldBowlThingsOfPlace, v => (worldBowlThingsOfPlace = v)],
   worldBowlThingsTick: [() => worldBowlThingsTick, v => (worldBowlThingsTick = v)],
@@ -179,6 +205,7 @@ expose({
   worldMapCanvasGl: [() => worldMapCanvasGl, v => (worldMapCanvasGl = v)],
   worldMapChrome: [() => worldMapChrome, v => (worldMapChrome = v)],
   worldMapFade: [() => worldMapFade, v => (worldMapFade = v)],
+  worldMapFallFrame: [() => worldMapFallFrame, v => (worldMapFallFrame = v)],
   worldMapFit: [() => worldMapFit, v => (worldMapFit = v)],
   worldMapHeight: [() => worldMapHeight, v => (worldMapHeight = v)],
   worldMapLocationListHTML: [() => worldMapLocationListHTML, v => (worldMapLocationListHTML = v)],
@@ -187,16 +214,19 @@ expose({
   worldMapMount: [() => worldMapMount, v => setWorldMapMount(v)],
   worldMapOpenFromWalk: [() => worldMapOpenFromWalk, v => (worldMapOpenFromWalk = v)],
   worldMapPinState: [() => worldMapPinState, v => (worldMapPinState = v)],
+  worldMapPrewarm: [() => worldMapPrewarm, v => ((worldMapPrewarm = v), provide({ worldMapPrewarm }))],
+  worldMapReadyNow: [() => worldMapReadyNow, v => (worldMapReadyNow = v)],
   worldMapReset: [() => worldMapReset, v => (worldMapReset = v)],
   worldMapSelect: [() => worldMapSelect, v => (worldMapSelect = v)],
   worldMapSize: [() => worldMapSize, v => (worldMapSize = v)],
   worldMapSpot: [() => worldMapSpot, v => (worldMapSpot = v)],
   worldMapWanted: [() => worldMapWanted, v => (worldMapWanted = v)],
+  worldMapWarm: [() => worldMapWarm],
   worldMapWidth: [() => worldMapWidth, v => (worldMapWidth = v)],
   worldMapZoom: [() => worldMapZoom, v => (worldMapZoom = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ bowlWallTexture });
+provide({ bowlWallTexture, worldMapPrewarm });
 export function setWorldBowlRender(v) {
   worldBowlRender = v; // eslint-disable-line no-func-assign
   provide({ worldBowlRender });
@@ -266,9 +296,9 @@ float bowlShadow(vec3 p,float nl){if(uShOn<.5)return 1.;vec4 s=uSM*vec4(p,1.);ve
 /* the sky's part of lighting, shared by the ground and the water (look session 3): the sun's strength and colour
    through the day (red and low at night), the ambient going dusk-blue, the clouds' moving shadows (up to 40 soft
    discs where each cloud's shadow falls along the light) and the weather map (cloud, rain, fog, snow) */
-const BOWL_SKY_GLSL = `uniform float uLight,uNight,uFlash;uniform vec4 uCs[40];uniform int uCn;uniform sampler2D uSky;
-vec3 bowlAmb(float ny){return mix(vec3(.4,.45,.56)+.16*ny,vec3(.1,.13,.27)+.05*ny,uNight)+uFlash*.35;}
-vec3 bowlSunCol(){return mix(vec3(1.,.94,.82)*.74,vec3(.5,.18,.1)*.5,uNight)*uLight;}
+const BOWL_SKY_GLSL = `uniform float uLight,uNight,uFlash,uTodOn;uniform vec3 uSunTint,uAmbTint;uniform vec4 uCs[40];uniform int uCn;uniform sampler2D uSky;
+vec3 bowlAmb(float ny){return mix(vec3(.4,.45,.56)+.16*ny,vec3(.1,.13,.27)+.05*ny,uNight*(1.-uTodOn))*uAmbTint+uFlash*.35;}
+vec3 bowlSunCol(){return mix(vec3(1.,.94,.82)*.74,vec3(.5,.18,.1)*.5,uNight*(1.-uTodOn))*uLight*uSunTint;}
 float bowlCloudShade(vec2 q){float s=1.;for(int i=0;i<40;i++){if(i>=uCn)break;vec4 c=uCs[i];float d=length(q-c.xy)/c.z;s*=1.-c.w*(1.-smoothstep(.55,1.,d));}return s;}
 float bowlH(vec2 q){float r=min(1.,length(q));return ${Math.SQRT2.toFixed(6)}-sqrt(2.-r*r);}`;
 export const WORLD_BOWL_SHADERS = {
@@ -294,10 +324,12 @@ void main(){vec2 px=gl_FragCoord.xy/uR;vec3 d=normalize(uFw+uRt*(px.x-uWH.x*.5)/
     `#version 300 es
 precision highp float;in vec3 aPos;uniform mat4 uVP;out vec3 vW;void main(){vW=aPos;gl_Position=uVP*vec4(aPos,1.);}`,
     `#version 300 es
-precision highp float;precision highp sampler2DArray;precision highp sampler2DShadow;in vec3 vW;out vec4 o;uniform sampler2D uIdx,uMix,uRoute;uniform sampler2DArray uLay;uniform vec3 uC,uLd,uHaze;uniform float uOn,uT;uniform vec2 uWaterL;
+precision highp float;precision highp sampler2DArray;precision highp sampler2DShadow;in vec3 vW;out vec4 o;uniform sampler2D uIdx,uMix,uRoute;uniform sampler2DArray uLay;uniform vec3 uC,uLd,uHaze;uniform float uOn,uT;uniform vec2 uWaterL;uniform vec4 uIsle;
 ${BOWL_SHADOW_GLSL}
 ${BOWL_SKY_GLSL}
 void main(){vec3 n=normalize(cross(dFdx(vW),dFdy(vW)));if(n.y<0.)n=-n;
+ /* the floating island: only its land, nothing under the water's line or away from it */
+ if(uIsle.w>.5){vec2 qi=vec2(vW.x,-vW.z);if(vW.y-bowlH(qi)<0.||length(qi-uIsle.xy)>uIsle.z)discard;}
  vec2 q=vec2(vW.x,-vW.z),uv=vec2(q.x*.5+.5,.5-q.y*.5);vec3 far=uOn>.5?texture(uMix,uv).rgb:vec3(.5,.63,.38),c=far,near=far;
  vec2 m=q*${BOWL_METRES.toFixed(1)};float px=max(length(dFdx(m)),length(dFdy(m))),pb=px/${BOWL_METRES.toFixed(1)};
  if(uOn>.5&&px<4.){ivec2 ti=ivec2(clamp(uv*${BOWL_INDEX.toFixed(1)},vec2(0.),vec2(${(BOWL_INDEX - 1).toFixed(1)})));float L=floor(texelFetch(uIdx,ti,0).r*255.+.5);
@@ -383,9 +415,47 @@ void main(){vec4 t=texture(uAtlas,vUV);if(t.a<.5)discard;float f=vG<.5?uFar:uNea
   /* the shadow map: the ground seen from the sun, depth only */
   mshadow: [
     `#version 300 es
-precision highp float;in vec3 aPos;uniform mat4 uSM;void main(){gl_Position=uSM*vec4(aPos,1.);}`,
+precision highp float;in vec3 aPos;uniform mat4 uSM;out vec3 vW;void main(){vW=aPos;gl_Position=uSM*vec4(aPos,1.);}`,
     `#version 300 es
-precision highp float;out vec4 o;void main(){o=vec4(1.);}`,
+precision highp float;in vec3 vW;uniform vec4 uIsle;out vec4 o;void main(){if(uIsle.w>.5&&length(vec2(vW.x,-vW.z)-uIsle.xy)>uIsle.z)discard;o=vec4(1.);}`,
+  ],
+  /* the floating island's rock (logic/float-island.js): flat-faced, painted with the walk scenes' rock and dirt
+     pictures (a picture every 2 m, from the side each face looks), darker towards its point, the small rocks with a
+     grassy top drifting up and down a little */
+  mrock: [
+    `#version 300 es
+precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=3) in vec2 aK;uniform mat4 uVP;uniform float uT;out vec3 vW,vN;out float vB;
+void main(){vec3 p=aPos;if(aK.y>0.)p.y+=sin(uT*.45+aK.y*6.283)*.0015;vW=p;vN=aNrm;vB=aK.x;gl_Position=uVP*vec4(p,1.);}`,
+    `#version 300 es
+precision highp float;precision highp sampler2DArray;precision highp sampler2DShadow;in vec3 vW,vN;in float vB;out vec4 o;uniform sampler2DArray uLay;uniform vec3 uC,uLd,uHaze,uRockL;uniform float uOn;
+${BOWL_SHADOW_GLSL}
+${BOWL_SKY_GLSL}
+void main(){vec3 n=normalize(vN);if(dot(n,uC-vW)<0.)n=-n;vec3 m=vW*${(BOWL_METRES / 2).toFixed(1)},an=abs(n);
+ vec2 uv=an.y>max(an.x,an.z)?m.xz:an.x>an.z?m.zy:m.xy;
+ float L=vB<-1.5?uRockL.z:vB<.14?uRockL.y:uRockL.x;
+ vec3 base=vB<-1.5?vec3(.36,.55,.25):vB<.14?vec3(.5,.38,.26):vec3(.5,.46,.43);
+ vec3 t=uOn>.5&&L>=0.?textureGrad(uLay,vec3(fract(uv),L),dFdx(uv),dFdy(uv)).rgb:base;
+ t*=mix(1.,.74,clamp(vB,0.,1.))*(.93+.07*step(.5,fract(vW.y*${(BOWL_METRES / 4).toFixed(1)})));
+ float nl=max(0.,dot(n,uLd));vec3 c=t*(bowlAmb(n.y)*1.05+bowlSunCol()*nl*.9);
+ float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(c,uHaze,clamp(fk,0.,.6)),1.);}`,
+  ],
+  /* the floating island's sky (the hub's map): the time of day's colours all round, under the horizon too, a calm
+     sea of clouds far below, the stars at night and the sun */
+  mskyf: [
+    `#version 300 es
+precision highp float;in vec2 aC;void main(){gl_Position=vec4(aC*2.-1.,.99999,1.);}`,
+    `#version 300 es
+precision highp float;out vec4 o;uniform vec3 uC,uFw,uRt,uUp,uSun,uTop,uMid,uLow,uBelow,uCloud,uSunCol;uniform float uFoc,uR,uStars,uT,uY0;uniform vec2 uWH;
+float hs(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hs(i),hs(i+vec2(1.,0.)),f.x),mix(hs(i+vec2(0.,1.)),hs(i+vec2(1.,1.)),f.x),f.y);}
+float fbm(vec2 p){return vn(p)*.55+vn(p*2.1+3.7)*.3+vn(p*4.3-1.3)*.15;}
+void main(){vec2 px=gl_FragCoord.xy/uR;vec3 d=normalize(uFw+uRt*(px.x-uWH.x*.5)/uFoc+uUp*(px.y-uWH.y*.5)/uFoc);float y=d.y;
+ vec3 c=y>0.?mix(mix(uLow,uMid,smoothstep(0.,.22,y)),uTop,smoothstep(.18,.85,y)):mix(uLow,uBelow,smoothstep(0.,-.3,y));
+ if(y<-.005){float t=(uY0-uC.y)/y;vec2 q=(uC+d*t).xz*7.+vec2(uT*.006,uT*.002);float n=fbm(q);
+  float cov=smoothstep(.52,.66,n)*exp(-t*.3)*smoothstep(-.005,-.08,y);c=mix(c,uCloud*mix(.86,1.04,smoothstep(.55,.8,n)),cov*.9);}
+ if(uStars>.01&&y>0.){vec2 g=vec2(atan(d.z,d.x)*110.,y*150.),f=fract(g)-.5;float s=hs(floor(g));
+  c+=vec3(.9,.92,1.)*uStars*step(.986,s)*smoothstep(.3,.05,length(f))*smoothstep(0.,.3,y);}
+ vec3 sd=normalize(uSun-uC);float a=max(0.,dot(d,sd));c+=uSunCol*(pow(a,900.)*2.5+pow(a,40.)*.22);o=vec4(c,1.);}`,
   ],
 };
 provide({ WORLD_BOWL_SHADERS }); /* to-module */
@@ -481,6 +551,127 @@ function worldBowlIslandLoad(i) {
       if (bowlIslandHeights(gameData.maps[id])) worldBowlReset();
     });
 }
+/* the owner, 2026-10-23: the hub's world map is Copperleaf's island floating in open sky (no bowl, no sea round it);
+   a run's world keeps the bowl */
+function worldBowlFloats() {
+  const g = worldBowl.ground;
+  return !!(g && g.islandMap && !worldExtra.look);
+}
+/* the floating island: its rock and small rocks (logic/float-island.js), its middle, radius and the camera's pivot */
+function worldBowlFloatIsland() {
+  const g = worldBowl.ground;
+  if (!worldBowlFloats()) return null;
+  if (g.float) return g.float;
+  const i = LOCATIONS.findIndex((l, k) => worldBowlMapId(k) === g.islandMap),
+    s = worldBowl.spots[i],
+    M = gameData.maps[g.islandMap];
+  if (!s || !M || !M.island || !M.island.coast) return null;
+  const coast = M.island.coast.map(([x, z]) => bowlMapPoint(s, M, x, z, BOWL_METRES)),
+    F = floatIslandMesh(coast, 0, { lift: bowlWaterLevel, seed: 1 }),
+    top = bowlWaterLevel(F.c[0], F.c[1]);
+  /* the pivot a little under the land, so the island sits in the screen's upper part, over the place's card */
+  /* its ground, finer than the bowl's grid (the owner: "less low poly"), once its own heights are in */
+  const P = g.sea && g.sea.places.find(q => q && q.poly && q.hAt),
+    fine = P
+      ? floatGroundMesh(
+          P.poly,
+          (x, y) => bowlBaseHeight(x, y) + BOWL_ISLAND_BASE + Math.max(0, P.hAt(x, y)),
+          bowlWaterLevel,
+          FLOAT_ISLAND.cell / BOWL_METRES
+        )
+      : null;
+  g.float = { ...F, i, top, th: top - F.r * 0.7, y0: top - F.depth * 2.2, gpu: null, fine, fineGpu: null };
+  return g.float;
+}
+/* the camera's limits: the floating island's orbit, or the bowl's */
+function worldBowlFloatCam() {
+  const F = worldBowlFloatIsland();
+  bowlCamUseFloat(F ? { c: F.c, r: F.r, th: F.th } : null);
+  return F;
+}
+/* the floating island's opening view: from where you stand on it, looking across to its middle (the walk's orbit
+   camera, logic/camera-orbit.js), else from the south */
+function worldBowlFloatHome(F, yaw) {
+  const M = gameData.maps[worldBowl.ground.islandMap],
+    s = worldBowl.spots[F.i],
+    pl = walkView && walkView.pl && walkView.id === worldBowl.ground.islandMap ? walkView.pl : null;
+  if (pl && M && s) {
+    const [x, y] = bowlMapPoint(s, M, pl.x, pl.z, BOWL_METRES);
+    if (Math.hypot(x - F.c[0], y - F.c[1]) > F.r * 0.1) yaw = orbitYawAt(F.c, x, y);
+  }
+  return bowlCamHomeFloat({ c: F.c, r: F.r, th: F.th }, yaw ?? 0);
+}
+/* the floating island's rock on the GPU: position, normal, band and drift per corner */
+function worldBowlFloatGpu(F) {
+  const gl = gpuState.gl;
+  if (F.gpu && F.gpu.gl === gl) return F.gpu;
+  const vao = gl.createVertexArray(),
+    vb = gl.createBuffer(),
+    B = FLOAT_STRIDE * 4;
+  gl.bindVertexArray(vao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+  gl.bufferData(gl.ARRAY_BUFFER, F.data, gl.STATIC_DRAW);
+  for (const [loc, size, off] of [
+    [0, 3, 0],
+    [1, 3, 12],
+    [3, 2, 24],
+  ]) {
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, size, gl.FLOAT, false, B, off);
+  }
+  gl.bindVertexArray(null);
+  F.gpu = { gl, vao, n: F.data.length / FLOAT_STRIDE };
+  return F.gpu;
+}
+/* the floating island's light and sky from the time of day (logic/time-of-day.js, the five looks the walk scenes use)
+   over the island map's own sky and haze, greyed by the weather; worked out again once a second */
+const worldBowlHex = h => {
+  if (!h) return [0.5, 0.5, 0.5];
+  const n = parseInt(String(h).slice(1, 7), 16);
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+};
+const worldBowlMixRgb = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+function worldBowlFloatLook(S) {
+  const now = performance.now();
+  if (S.flook && now - S.flook.at < 1000) return S.flook;
+  const M = gameData.maps[worldBowl.ground.islandMap] || {},
+    { L, night } = environmentLookAt(M),
+    /* the island map's own sky (else a clear day's: blue above, pale at the horizon) */
+    base =
+      Array.isArray(M.sky) && M.sky.length === 3
+        ? M.sky.map(worldBowlHex)
+        : [
+            [0.56, 0.77, 0.91],
+            [0.78, 0.89, 0.93],
+            [0.96, 0.9, 0.78],
+          ],
+    grey = (S.greyHere || 0) * 0.7,
+    dim = 0.3 + 0.7 * Math.min(1, L.sun),
+    sky = [L.skyTop, L.skyMid, L.skyLow].map((c, i) => {
+      const v = c ? worldBowlMixRgb(base[i], c, L.skyMix) : base[i];
+      return worldBowlMixRgb(
+        v,
+        [0.62, 0.66, 0.72].map(x => x * dim),
+        grey
+      );
+    }),
+    hz = M.haze ? worldBowlHex(M.haze) : [0.93, 0.87, 0.77],
+    sunTint = (L.sunColor || [1, 1, 1]).map(v => v * L.sun * (1 - 0.4 * night) * (1 - grey * 0.45)),
+    ambTint = (L.ambientColor || [1, 1, 1]).map(v => v * L.ambient * (1 - 0.3 * night)),
+    lum = Math.min(1, (sunTint[0] + sunTint[1] + sunTint[2]) / 3);
+  S.flook = {
+    at: now,
+    sky,
+    haze: L.haze ? worldBowlMixRgb(hz, L.haze, L.hazeMix) : hz,
+    below: worldBowlMixRgb(sky[1], sky[0], 0.85).map(v => v * 0.94),
+    cloud: worldBowlMixRgb([1, 1, 1], sky[2], 0.2).map(v => v * (0.3 + 0.7 * lum)),
+    sunTint,
+    ambTint,
+    stars: L.stars || 0,
+    night,
+  };
+  return S.flook;
+}
 /* where a place is on the bowl: x, y seen from above and the ground's height there */
 export function worldMapSpot(i) {
   return worldBowlSpots()[i] || { x: 0, y: 0, h: 0, under: 0 };
@@ -572,6 +763,8 @@ function worldBowlSpots() {
     water: null,
     terrain: null,
     seaMs: Math.round(performance.now() - t0),
+    /* the sea's input: the floating island's coast and its own heights (worldBowlFloatIsland) */
+    sea,
     /* RL-8b: an island world (the hub's island, a run's own land): sea to the rim, few rivers */
     isle: !!bowlIsles(sea),
     /* IS-7: the island map drawn from its own coast and ground (its streams are its own: no rivers made on it) */
@@ -677,11 +870,26 @@ function worldBowlTerrainStart() {
     ox: ox * 37,
     oy: oy * 37,
   };
+  /* the floating island: only the squares round it are ever seen, so only they are worked out */
+  const FI = worldBowlFloatIsland(),
+    band = FI
+      ? [FI.c[0] - FI.r * 1.4, FI.c[0] + FI.r * 1.4, FI.c[1] - FI.r * 1.4, FI.c[1] + FI.r * 1.4].map((v, k) =>
+          Math.max(0, Math.min(N, Math.floor(((k < 2 ? v + 1 : 1 - v) / 2) * N) + (k % 2 ? 1 : 0)))
+        )
+      : null;
+  if (band) {
+    g.terrain.row = Math.min(band[2], band[3]);
+    g.terrain.rowEnd = Math.max(band[2], band[3]) + 1;
+    g.terrain.row0 = g.terrain.row;
+    g.terrain.i0 = band[0];
+    g.terrain.i1 = band[1];
+  }
   g.terrain.fill = rows => {
     const T = g.terrain,
-      end = Math.min(N, T.row + rows);
+      last = Math.min(N, T.rowEnd ?? N),
+      end = Math.min(last, T.row + rows);
     for (let j = T.row; j < end; j++)
-      for (let i = 0; i < N; i++) {
+      for (let i = T.i0 ?? 0; i < Math.min(N, T.i1 ?? N); i++) {
         const x = -1 + ((i + 0.5) / N) * 2,
           y = 1 - ((j + 0.5) / N) * 2,
           r = Math.hypot(x, y);
@@ -739,7 +947,7 @@ function worldBowlTerrainStart() {
       }
     T.row = end;
     T.dirty = true;
-    if (T.row >= N) {
+    if (T.row >= last) {
       worldBowlRiversInto(T);
       worldBowlRoadsInto(T);
       T.ready = true;
@@ -850,7 +1058,7 @@ function worldBowlLineMap() {
 }
 /* the light's view of the bowl for the shadow map: straight along the light, everything inside the rim in the square.
    Column-major, as WebGL reads it */
-function worldBowlLightMatrix() {
+function worldBowlLightMatrix(c = [0, 0.3, 0], E = 1.25) {
   const f = worldBowlSunNow().ld.map(v => -v),
     hint = Math.abs(f[2]) > 0.9 ? [1, 0, 0] : [0, 0, 1],
     cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
@@ -860,8 +1068,6 @@ function worldBowlLightMatrix() {
     },
     r = norm(cross(f, hint)),
     u = cross(r, f),
-    c = [0, 0.3, 0],
-    E = 1.25,
     Z = 2,
     m = new Float32Array(16),
     row = (k, a, s) => {
@@ -886,6 +1092,7 @@ function worldBowlShadows(g) {
     g.shadow &&
     g.shadow.gl === gl &&
     Math.abs(g.shadow.az - sun.az) < 1.5 &&
+    g.shadow.float === !!g.float &&
     (g.shadow.ver === ver || performance.now() - g.shadow.at < 2000)
   )
     return g.shadow;
@@ -912,8 +1119,10 @@ function worldBowlShadows(g) {
   gl.activeTexture(gl.TEXTURE3);
   gl.bindTexture(gl.TEXTURE_2D, null);
   gl.activeTexture(gl.TEXTURE0);
-  const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE,
-    SM = worldBowlLightMatrix();
+  /* the floating island: the shadows over it alone, so they come out sharp */
+  const F = g.float,
+    ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE,
+    SM = F ? worldBowlLightMatrix(bowlToGpu(F.c[0], F.c[1], F.top), F.r * 1.6) : worldBowlLightMatrix();
   if (ok) {
     gl.viewport(0, 0, Z, Z);
     gl.enable(gl.DEPTH_TEST);
@@ -925,8 +1134,10 @@ function worldBowlShadows(g) {
     const p = gpuState.P.mshadow;
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uSM, false, SM);
-    gl.bindVertexArray(g.mesh.vao);
-    gl.drawElements(gl.TRIANGLES, g.mesh.n, gl.UNSIGNED_INT, 0);
+    gl.uniform4f(p.U.uIsle, F ? F.c[0] : 0, F ? F.c[1] : 0, F ? F.r * 1.25 : 0, F ? 1 : 0);
+    const land = F && F.fineGpu ? F.fineGpu : g.mesh;
+    gl.bindVertexArray(land.vao);
+    gl.drawElements(gl.TRIANGLES, land.n, gl.UNSIGNED_INT, 0);
     /* the buildings and trees cast shadows too */
     if (g.things && g.things.gpu) worldBowlThingsDraw(g.things, SM, null, true);
     gl.bindVertexArray(null);
@@ -940,6 +1151,7 @@ function worldBowlShadows(g) {
     t: ok ? tex : null,
     SM,
     az: sun.az,
+    float: !!F,
     ver,
     at: performance.now(),
     ms: Math.round(performance.now() - t0),
@@ -1081,6 +1293,30 @@ function worldBowlModelShape(path) {
   }
   return out;
 }
+/* how much bigger than life things stand: three times on the bowl, life size on the floating island (the owner: the
+   island is big, its town in scale with it) */
+function worldBowlThingScale() {
+  return worldBowlFloats() ? 1 : BOWL_THING_SCALE;
+}
+/* the town's smaller structures the bowl draws as their models though they are no buildings (no door, small) */
+const BOWL_STRUCTURE = /^(airship_station|airship_mast|well|fountain|clock_tower|greenhouse)$/;
+/* one model standing at (x, y) on the bowl: its scale and the map's east and north there (group 1, a map's own) */
+function worldBowlModelInto(W, model, x, y, k, east, north) {
+  const key = 'm:' + model;
+  W.models.add(model);
+  (W.inst[key] = W.inst[key] || []).push([
+    ...bowlToGpu(x, y, worldBowlSkyFloor(x, y)),
+    k,
+    east[0],
+    east[1],
+    north[0],
+    north[1],
+    1,
+    0.05 + ((0.9 * (((Math.sin(x * 9137.1 + y * 5711.3) * 43758.5) % 1) + 1)) % 1),
+    0,
+    0,
+  ]);
+}
 /* the things of one place, from its map: its landmark (far), its buildings and trees (close) */
 function worldBowlThingsOfPlace(W, i) {
   const l = LOCATIONS[i],
@@ -1089,17 +1325,22 @@ function worldBowlThingsOfPlace(W, i) {
     own = (l && gameData.maps && gameData.maps[l.mapId]) || M,
     A = (gameData.scenery && gameData.scenery.props) || {};
   if (!M || !M.props || s.under || s.off) return false;
-  const k = BOWL_THING_SCALE / BOWL_METRES,
+  const k = worldBowlThingScale() / BOWL_METRES,
     { north, east } = bowlCompass(s.x, s.y, s.up),
     base = (x, y) => bowlToGpu(x, y, worldBowlSkyFloor(x, y)),
     /* the landmark from the place's own map (Copperleaf's oak until IS-5 moves the town onto its island) */
     lm = bowlLandmarkPick(l, own && own.props ? own : M, A);
-  if (lm && A[lm.k] && A[lm.k].img) W.stand.push({ i, k: lm.k, x: s.x, y: s.y, g: 0, s: lm.s || 1 });
+  /* a landmark with a model of its own is drawn as that model (where the map puts it), never as a flat picture */
+  const modelOf = (/** @type {any} */ a) => !!(a && a.model && /\.json$/.test(a.model));
+  if (lm && A[lm.k] && modelOf(A[lm.k])) {
+    if (!M.props.some(p => p.k === lm.k)) worldBowlModelInto(W, A[lm.k].model, s.x, s.y, k * (lm.s || 1), east, north);
+  } else if (lm && A[lm.k] && A[lm.k].img) W.stand.push({ i, k: lm.k, x: s.x, y: s.y, g: 0, s: lm.s || 1 });
   let n = 0;
   for (const p of M.props) {
     const art = A[p.k],
       cls = bowlPropClass(p.k, art);
-    if (!cls && !(art && art.landmark)) continue;
+    const structure = !!(art && BOWL_STRUCTURE.test(art.group || p.k) && modelOf(art));
+    if (!cls && !(art && art.landmark) && !structure) continue;
     const [x, y] = bowlMapPoint(s, M, p.x, p.z, BOWL_METRES);
     if (Math.hypot(x, y) > 0.99) continue;
     n++;
@@ -1117,21 +1358,8 @@ function worldBowlThingsOfPlace(W, i) {
         0,
         0,
       ]);
-    } else if (cls === 'building' && art.model && /\.json$/.test(art.model)) {
-      const key = 'm:' + art.model;
-      W.models.add(art.model);
-      (W.inst[key] = W.inst[key] || []).push([
-        ...base(x, y),
-        k * (p.s || 1),
-        east[0],
-        east[1],
-        north[0],
-        north[1],
-        1,
-        0.05 + ((0.9 * (((Math.sin(x * 9137.1 + y * 5711.3) * 43758.5) % 1) + 1)) % 1),
-        0,
-        0,
-      ]);
+    } else if ((cls === 'building' || art.landmark || structure) && modelOf(art)) {
+      worldBowlModelInto(W, art.model, x, y, k * (p.s || 1), east, north);
     } else if (art && art.img) W.stand.push({ i, k: p.k, x, y, g: 1, s: p.s || 1 });
   }
   /* IS-7: an island map's plots no building stands on yet get one of their kind, turned to face where the plot does */
@@ -1193,7 +1421,7 @@ function worldBowlClumpsInto(W) {
       trees,
       look.seed
     ),
-    k = BOWL_THING_SCALE / BOWL_METRES;
+    k = worldBowlThingScale() / BOWL_METRES;
   for (const t of T) {
     const a = Math.sin(t.x * 733.1 + t.y * 197.7) * Math.PI;
     (W.inst[t.style] = W.inst[t.style] || []).push([
@@ -1395,8 +1623,11 @@ function worldBowlThingsDraw(W, VP, F, shadowPass) {
   const gl = gpuState.gl,
     G = W.gpu,
     dist = worldBowl.cam ? worldBowl.cam.dist : 2,
-    near = shadowPass ? 1 : 1 - Math.max(0, Math.min(1, (dist - 0.7) / 0.25)),
-    far = Math.max(0, Math.min(1, (dist - 0.62) / 0.23));
+    /* the floating island is always seen close: its own things always show (the opening fall films it with no map
+       camera) */
+    fl = worldBowlFloats(),
+    near = shadowPass || fl ? 1 : 1 - Math.max(0, Math.min(1, (dist - 0.7) / 0.25)),
+    far = fl ? 0 : Math.max(0, Math.min(1, (dist - 0.62) / 0.23));
   let p = gpuState.P.mthing,
     U = p.U;
   gl.useProgram(p.p);
@@ -1725,10 +1956,17 @@ function worldBowlWaterMesh() {
 }
 function worldBowlGpu() {
   const g = worldBowl.ground;
+  worldBowlFloatCam();
+  const FI = g.float;
+  if (FI && FI.fine && (!FI.fineGpu || FI.fineGpu.gl !== gpuState.gl)) {
+    FI.fineGpu = uploadMesh(FI.fine.V, FI.fine.I, [['aPos', 3, 0]], 12);
+    FI.fineGpu.gl = gpuState.gl;
+  }
   if (!g.mesh || g.gl !== gpuState.gl) {
     g.gl = gpuState.gl;
     g.mesh = worldBowlMesh();
-    g.water = worldBowlWaterMesh();
+    /* the floating island has no sea round it */
+    g.water = worldBowlFloats() ? null : worldBowlWaterMesh();
     g.shadow = null;
     g.lines = null;
   }
@@ -1817,6 +2055,88 @@ function bowlWallTexture() {
   return t;
 }
 
+/* ---------- ready before it shows (the owner: "every time the world map opens it hasn't fully loaded yet") ----------
+   Everything the map shows is in: the island's own heights (their arrival works the ground out again), the terrain map
+   and its pictures, each place's map stamped, the things' shapes and pictures on the GPU and their shadows. */
+function worldBowlReady() {
+  const g = worldBowl.ground,
+    T = g && g.terrain,
+    W = g && g.things,
+    id = worldBowl.islandLoading,
+    M = id && gameData.maps && gameData.maps[id];
+  if (M && bowlHasCoast(M) && !bowlIslandHeights(M)) return false;
+  if (!g || !g.ok || !T || !T.ready || T.loading || !T.pix || !W || !W.gpu || W.dirty) return false;
+  for (let i = 0; i < LOCATIONS.length; i++) {
+    const sp = worldBowl.spots[i];
+    if (sp && !sp.under && !sp.off && !T.stamped.has(i)) return false;
+  }
+  return !!(g.shadow && g.shadow.ver === W.ver);
+}
+/* the map's slow parts done ahead, in idle time and without the GPU: the places, the island's own heights, the terrain
+   map and its pictures, each place's map, the models' recipes and the pictures of things without one. The walk scene
+   starts it in the hub, the opening fall as it begins. */
+const worldMapWarm = { on: false };
+export function worldMapPrewarm() {
+  if (worldMapWarm.on || !worldMapWanted()) return;
+  worldMapWarm.on = true;
+  const later = f =>
+    typeof requestIdleCallback === 'function' ? requestIdleCallback(f, { timeout: 200 }) : setTimeout(f, 16);
+  let tries = 0;
+  const step = () => {
+    try {
+      if (++tries > 4000) return (worldMapWarm.on = false);
+      worldBowlSpots();
+      const g = worldBowl.ground,
+        id = worldBowl.islandLoading,
+        M = id && gameData.maps[id];
+      /* the island's heights first: when they come the ground is worked out again */
+      if (M && bowlHasCoast(M) && !bowlIslandHeights(M)) return later(step);
+      const T = worldBowlTerrainStart();
+      if (!T.ready) {
+        T.fill(48);
+        return later(step);
+      }
+      worldBowlStampMaps(T);
+      if (!T.pix && !T.pixLoading) {
+        T.pixLoading = true;
+        worldBowlTerrainPictures(T).then(() => (worldBowl.dirty = true));
+      }
+      if (!g.warmThings) {
+        const W = { inst: {}, stand: [], models: new Set(), counts: {} };
+        LOCATIONS.forEach((l, i) => {
+          const sp = worldBowl.spots[i];
+          if (sp && !sp.under && !sp.off) worldBowlThingsOfPlace(W, i);
+        });
+        for (const m of W.models) loadPropModelRecipe(m);
+        const A = (gameData.scenery && gameData.scenery.props) || {},
+          imgs = [...new Set(W.stand.map(q => A[q.k] && A[q.k].img).filter(Boolean))];
+        if (imgs.length) Promise.resolve(artLoad(imgs)).catch(() => {});
+        g.warmThings = true;
+      }
+      worldMapWarm.on = false;
+    } catch (e) {
+      console.error(e);
+      worldMapWarm.on = false;
+    }
+  };
+  later(step);
+}
+/* the opening fall's frame (opening-fall.js): the floating island's middle, radius and height, and where you land
+   (outside Professor Chosen's lab); null without the floating island */
+export function worldMapFallFrame() {
+  worldBowlSpots();
+  const F = worldBowlFloatIsland();
+  if (!F) return null;
+  const M = gameData.maps[worldBowl.ground.islandMap],
+    s = worldBowl.spots[F.i],
+    lab = (M.props || []).find(p => p.k === 'lab'),
+    [x, y] = lab ? bowlMapPoint(s, M, lab.x, lab.z, BOWL_METRES) : F.c;
+  return { c: F.c, r: F.r, top: F.top, land: [x, y, Math.max(F.top, bowlSurface(x, y))] };
+}
+/* everything the map shows is in (for the opening fall, which films it) */
+export function worldMapReadyNow() {
+  return worldBowlReady();
+}
 /* ---------- mount, size, loop ---------- */
 /* the bowl needs WebGL 2; without it the Map tab shows the Places list */
 export function worldMapWanted() {
@@ -1875,9 +2195,23 @@ export function worldMapMount() {
   worldMapSize();
   worldBowlSpots();
   const me = worldBowl.spots[saveData.trip.node] || { x: 0, y: 0, h: 0 },
+    FI = worldBowlFloatCam(),
     yaw = worldBowl.cam ? worldBowl.cam.yaw : Math.hypot(me.x, me.y) > 0.05 ? Math.atan2(me.x, me.y) : 0,
-    home = bowlCamHome(me.x, me.y, yaw);
-  if (typeof airshipFlight !== 'undefined' && airshipFlight.on) {
+    home = FI ? worldBowlFloatHome(FI, yaw) : bowlCamHome(me.x, me.y, yaw);
+  if (worldBowl.cam) worldBowl.cam = bowlCamClamp(worldBowl.cam);
+  worldBowl.idle = 0;
+  if (FI && !(typeof airshipFlight !== 'undefined' && airshipFlight.on)) {
+    /* the floating island: from close over where you stand, swing out round to the orbit's view */
+    if (uiState.mglFrom === 'walk' && !reducedMotion) {
+      worldBowl.cam = { ...home, tilt: FLOAT_CAMERA.tiltMax, dist: FI.r * FLOAT_CAMERA.distMin, yaw: home.yaw - 0.5 };
+      worldBowl.goal = null;
+      worldBowl.tween = { from: worldBowl.cam, to: home, t0: null, dur: 1500 };
+    } else {
+      worldBowl.cam = reducedMotion || !worldBowl.cam ? home : worldBowl.cam;
+      worldBowl.goal = null;
+      worldBowl.tween = null;
+    }
+  } else if (typeof airshipFlight !== 'undefined' && airshipFlight.on) {
     /* the flight: from above where it takes off, far enough out to see the way */
     const A = worldBowl.spots[airshipFlight.a] || me;
     worldBowl.cam = bowlCamClamp({ ...bowlCamHome(A.x, A.y, yaw), dist: Math.max(1, airshipFlight.span || 1) });
@@ -1898,6 +2232,9 @@ export function worldMapMount() {
   worldMapChrome();
   worldBowl.dirty = true;
   worldBowl.fadeOut = true;
+  worldBowl.fadeAt = null;
+  /* covered until everything it shows is in (worldBowlReady) */
+  if (!worldBowlReady()) worldMapFade(true, true);
   frameTask('map', worldMapLoop);
 }
 function worldMapSize() {
@@ -1930,9 +2267,10 @@ export function worldMapZoom(k) {
 /* Home: back over where you are */
 export function worldMapReset() {
   if (!worldBowl.on) return;
-  const me = worldBowlSpots()[saveData.trip.node];
+  const me = worldBowlSpots()[saveData.trip.node],
+    FI = worldBowlFloatCam();
   worldBowl.tween = null;
-  worldBowl.goal = bowlCamHome(me.x, me.y, worldBowl.cam.yaw);
+  worldBowl.goal = FI ? worldBowlFloatHome(FI, worldBowl.cam.yaw) : bowlCamHome(me.x, me.y, worldBowl.cam.yaw);
   worldBowl.dirty = true;
 }
 /* pick a place: its card, and the camera comes over it */
@@ -1942,6 +2280,7 @@ export function worldMapSelect(n) {
   if (worldMap.list) worldMapChrome();
   worldBowl.dirty = true;
 }
+const worldBowlFlying = () => typeof airshipFlight !== 'undefined' && airshipFlight.on;
 function worldMapLoop(ts) {
   if (!worldBowl.on || !worldMap.cv || !worldMap.cv.isConnected) {
     worldBowl.on = false;
@@ -1976,10 +2315,22 @@ function worldMapLoop(ts) {
   }
   if (worldBowl.bench && worldBowl.bench.turn)
     worldBowl.cam = bowlCamTurn(worldBowl.cam, (worldBowl.bench.turn * dt) / 1000, 0);
+  /* the floating island turns slowly while nobody touches the map (after 4 s; none with reduced motion) */
+  if (worldBowl.drag || worldBowl.tween || worldBowl.goal || worldBowlFlying()) worldBowl.idle = 0;
+  else worldBowl.idle = (worldBowl.idle || 0) + dt;
+  if (worldBowlFloats() && !reducedMotion && worldBowl.idle > 4000 && !worldBowl.bench) {
+    worldBowl.cam = bowlCamTurn(worldBowl.cam, (FLOAT_CAMERA.drift * dt) / 1000, 0);
+    moving = true;
+  }
+  if (worldBowl.fadeOut) {
+    if (worldBowl.fadeAt == null) worldBowl.fadeAt = ts;
+    moving = true;
+  }
   if (worldBowl.tween) {
     const T = worldBowl.tween;
-    if (T.t0 == null) T.t0 = ts;
-    const k = Math.min(1, (ts - T.t0) / T.dur),
+    /* the move starts once the map shows */
+    if (T.t0 == null && !worldBowl.fadeOut) T.t0 = ts;
+    const k = T.t0 == null ? 0 : Math.min(1, (ts - T.t0) / T.dur),
       e = 1 - Math.pow(1 - k, 3);
     worldBowl.cam = bowlCamEase(T.from, T.to, e);
     if (k >= 1) worldBowl.tween = null;
@@ -2008,7 +2359,7 @@ function worldMapLoop(ts) {
   worldBowl.ts.push(ts);
   if (worldBowl.ms.length > 240) (worldBowl.ms.shift(), worldBowl.ts.shift());
   frameCount(ms);
-  if (worldBowl.fadeOut) {
+  if (worldBowl.fadeOut && (worldBowlReady() || ts - (worldBowl.fadeAt || ts) > 5000)) {
     worldBowl.fadeOut = false;
     worldMapFade(false);
   }
@@ -2041,7 +2392,8 @@ export function worldBowlRender(t) {
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.ALWAYS);
   gl.depthMask(false);
-  let p = gpuState.P.msky,
+  const FI = worldBowlFloatIsland();
+  let p = FI ? gpuState.P.mskyf : gpuState.P.msky,
     U = p.U;
   gl.useProgram(p.p);
   bindQuad();
@@ -2051,10 +2403,26 @@ export function worldBowlRender(t) {
   gl.uniform3fv(U.uUp, v.up);
   const sky = worldBowlSkyTick(),
     sun = worldBowlSunNow(),
-    haze = BOWL_HAZE.map((c, k) => c + ([0.12, 0.14, 0.26][k] - c) * sun.night);
+    FL = FI ? worldBowlFloatLook(sky) : null,
+    haze = FL ? FL.haze : BOWL_HAZE.map((c, k) => c + ([0.12, 0.14, 0.26][k] - c) * sun.night);
   gl.uniform3fv(U.uSun, sun.pos);
-  gl.uniform1f(U.uNight, sun.night);
-  gl.uniform1f(U.uGrey, sky.greyHere || 0);
+  if (FL) {
+    gl.uniform3fv(U.uTop, FL.sky[0]);
+    gl.uniform3fv(U.uMid, FL.sky[1]);
+    gl.uniform3fv(U.uLow, FL.sky[2]);
+    gl.uniform3fv(U.uBelow, FL.below);
+    gl.uniform3fv(U.uCloud, FL.cloud);
+    gl.uniform3fv(
+      U.uSunCol,
+      FL.sunTint.map(c => c * 0.8)
+    );
+    gl.uniform1f(U.uStars, FL.stars);
+    gl.uniform1f(U.uT, reducedMotion ? 0 : (t % 600000) / 1000);
+    gl.uniform1f(U.uY0, FI.y0);
+  } else {
+    gl.uniform1f(U.uNight, sun.night);
+    gl.uniform1f(U.uGrey, sky.greyHere || 0);
+  }
   gl.uniform1f(U.uFoc, v.foc);
   gl.uniform1f(U.uR, rw / worldMapWidth);
   gl.uniform2f(U.uWH, worldMapWidth, worldMapHeight);
@@ -2076,6 +2444,7 @@ export function worldBowlRender(t) {
   gl.uniform1f(U.uOn, g.ok ? 1 : 0);
   gl.uniform1f(U.uT, reducedMotion ? 0 : (t % 600000) / 1000);
   gl.uniform2f(U.uWaterL, T && T.K.layer.w != null ? T.K.layer.w : -9, T && T.K.layer.d != null ? T.K.layer.d : -9);
+  gl.uniform4f(U.uIsle, FI ? FI.c[0] : 0, FI ? FI.c[1] : 0, FI ? FI.r * 1.25 : 0, FI ? 1 : 0);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, g.ok ? T.tIdx : gpuState.white);
   gl.uniform1i(U.uIdx, 0);
@@ -2089,8 +2458,33 @@ export function worldBowlRender(t) {
   gl.bindTexture(gl.TEXTURE_2D, g.lines ? g.lines.t : gpuState.white);
   gl.uniform1i(U.uRoute, 4);
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindVertexArray(g.mesh.vao);
-  gl.drawElements(gl.TRIANGLES, g.mesh.n, gl.UNSIGNED_INT, 0);
+  const land = FI && FI.fineGpu ? FI.fineGpu : g.mesh;
+  gl.bindVertexArray(land.vao);
+  gl.drawElements(gl.TRIANGLES, land.n, gl.UNSIGNED_INT, 0);
+  /* the floating island's rock, under its land */
+  if (FI) {
+    const R = worldBowlFloatGpu(FI),
+      K = T && T.K && T.K.layer,
+      lay = k => (K && K[k] != null ? K[k] : -1);
+    p = gpuState.P.mrock;
+    U = p.U;
+    gl.useProgram(p.p);
+    gl.uniformMatrix4fv(U.uVP, false, VP);
+    gl.uniform3fv(U.uC, v.C);
+    gl.uniform3fv(U.uLd, sun.ld);
+    gl.uniform3fv(U.uHaze, haze);
+    gl.uniform1f(U.uT, reducedMotion ? 0 : (t % 600000) / 1000);
+    gl.uniform1f(U.uOn, g.ok ? 1 : 0);
+    gl.uniform3f(U.uRockL, lay('r'), lay('u'), lay('g'));
+    worldBowlShadowUniforms(U, g);
+    worldBowlSkyUniforms(U, sky, sun);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, g.ok ? T.tLay : null);
+    gl.uniform1i(U.uLay, 2);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindVertexArray(R.vao);
+    gl.drawArrays(gl.TRIANGLES, 0, R.n);
+  }
   /* the sea over it, see-through in the shallows */
   if (g.water) {
     p = gpuState.P.mwater;
@@ -2113,8 +2507,11 @@ export function worldBowlRender(t) {
   }
   /* the landmarks, buildings and trees */
   if (g.things && g.things.gpu) worldBowlThingsDraw(g.things, VP, { v, sun, sky, haze }, false);
-  /* rain, snow and ash, then the clouds over everything */
-  worldBowlDrawSky(sky, sun, VP, v, haze);
+  /* rain, snow and ash, then the clouds over everything (the floating island: its calm sky alone) */
+  if (FI) {
+    sky.shadowN = 0;
+    sky.shown = 0;
+  } else worldBowlDrawSky(sky, sun, VP, v, haze);
   gl.bindVertexArray(null);
   const fd = Math.max(0.05, worldBowl.cam ? worldBowl.cam.dist : 1);
   drawPostEffects(
@@ -2128,7 +2525,9 @@ export function worldBowlRender(t) {
       fast: rw * rh > 1.2e6,
       noAO: true,
       sun: projectToScreenUv(VP, sun.pos),
-      sunCol: [1, 0.9 - 0.5 * sun.night, 0.7 - 0.5 * sun.night].map(c => c * sun.light),
+      sunCol: FL
+        ? FL.sunTint.map(c => c * 0.7)
+        : [1, 0.9 - 0.5 * sun.night, 0.7 - 0.5 * sun.night].map(c => c * sun.light),
     }
   );
 }
@@ -2202,9 +2601,13 @@ function worldBowlSkyAt(x, y) {
 }
 /* the sky's uniforms for the ground and the water: light, night, lightning, cloud shadows, the weather map */
 function worldBowlSkyUniforms(U, S, sun) {
-  const gl = gpuState.gl;
-  gl.uniform1f(U.uLight, sun.light);
-  gl.uniform1f(U.uNight, sun.night);
+  const gl = gpuState.gl,
+    FL = worldBowlFloats() ? worldBowlFloatLook(S) : null;
+  gl.uniform1f(U.uLight, FL ? 1 : sun.light);
+  gl.uniform1f(U.uNight, FL ? FL.night : sun.night);
+  if (U.uTodOn) gl.uniform1f(U.uTodOn, FL ? 1 : 0);
+  if (U.uSunTint) gl.uniform3fv(U.uSunTint, FL ? FL.sunTint : [1, 1, 1]);
+  if (U.uAmbTint) gl.uniform3fv(U.uAmbTint, FL ? FL.ambTint : [1, 1, 1]);
   gl.uniform1f(U.uFlash, S.flash || 0);
   gl.uniform4fv(U.uCs, S.shadows || new Float32Array(160));
   gl.uniform1i(U.uCn, S.shadowN || 0);
@@ -2327,6 +2730,9 @@ function worldBowlSkyGpu(S) {
 }
 /* where the ground or the water is under a point (clouds float above whichever is higher) */
 function worldBowlSkyFloor(x, y) {
+  const F = worldBowl.ground && worldBowl.ground.float,
+    h = F && F.fine ? floatGroundHeight(F.fine, x, y) : null;
+  if (h != null) return Math.max(h, bowlWaterLevel(x, y));
   return Math.max(bowlSurface(x, y), bowlWaterLevel(x, y));
 }
 /* the clouds this frame: which show, their puffs as instances (back to front), their shadows on the ground */
@@ -2835,7 +3241,9 @@ function worldMapBind(cv) {
       dy = e.clientY - D.y;
     if (Math.abs(dx) + Math.abs(dy) > 6) D.moved = 1;
     if (!D.moved) return;
-    worldBowl.cam = D.turn ? bowlCamTurn(D.cam, -dx * 0.006, dy * 0.004) : bowlCamPan(D.cam, D.view, dx, dy);
+    /* the floating island: one finger orbits round it (across turns, up and down tilts), as the walk's orbit camera */
+    worldBowl.cam =
+      D.turn || worldBowlFloats() ? bowlCamTurn(D.cam, -dx * 0.006, dy * 0.004) : bowlCamPan(D.cam, D.view, dx, dy);
     worldBowl.dirty = true;
   });
   const up = e => {
@@ -2873,6 +3281,18 @@ function worldMapBind(cv) {
     const k = e.key,
       v = worldBowl.view || bowlCamView(worldBowl.cam, worldMapWidth, worldMapHeight),
       c = worldBowl.cam;
+    const fl = worldBowlFloats();
+    if (fl && /^(ArrowLeft|ArrowRight|ArrowUp|ArrowDown|a|d|w|s)$/.test(k)) {
+      e.preventDefault();
+      worldBowl.tween = null;
+      worldBowl.goal = bowlCamTurn(
+        c,
+        k === 'ArrowLeft' || k === 'a' ? -0.2 : k === 'ArrowRight' || k === 'd' ? 0.2 : 0,
+        k === 'ArrowUp' || k === 'w' ? -0.1 : k === 'ArrowDown' || k === 's' ? 0.1 : 0
+      );
+      worldBowl.dirty = true;
+      return;
+    }
     const next =
       k === 'ArrowLeft' || k === 'a'
         ? bowlCamPan(c, v, 60, 0)
@@ -2974,7 +3394,8 @@ function worldMapBackToWalk() {
   walkRenderer.zoomT = z;
 }
 /* a veil in the haze's colour over the switch, so the walk scene's last frame never cuts to the map */
-function worldMapFade(on) {
+/* full: covering the map while it loads (opaque), else the short veil of the zoom out from the walk scene */
+function worldMapFade(on, full) {
   let f = $('#mapfade');
   if (on) {
     if (!f) {
@@ -2984,7 +3405,7 @@ function worldMapFade(on) {
         'position:fixed;inset:0;z-index:5;pointer-events:none;background:rgb(176,186,236);opacity:0;transition:opacity .32s ease-in';
       document.body.appendChild(f);
     }
-    requestAnimationFrame(() => (f.style.opacity = '.85'));
+    requestAnimationFrame(() => (f.style.opacity = full ? '1' : '.85'));
   } else if (f) {
     f.style.transition = 'opacity .35s ease-out';
     f.style.opacity = '0';
@@ -3013,7 +3434,11 @@ function worldMapChrome() {
       const c = worldBowl.goal || worldBowl.cam;
       worldBowl.tween = null;
       worldBowl.goal =
-        b.dataset.k === 'all' ? bowlCamOverview(c.yaw) : bowlCamTurn(c, b.dataset.k === 'left' ? -0.6 : 0.6, 0);
+        b.dataset.k === 'all'
+          ? worldBowlFloats()
+            ? bowlCamClamp({ ...c, dist: worldBowlFloatIsland().r * FLOAT_CAMERA.distMax * 0.7, tilt: 0.75 })
+            : bowlCamOverview(c.yaw)
+          : bowlCamTurn(c, b.dataset.k === 'left' ? -0.6 : 0.6, 0);
       worldBowl.dirty = true;
     });
   }

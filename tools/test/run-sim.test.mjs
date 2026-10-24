@@ -195,3 +195,17 @@ test('run sim: the side area (RL-R2b): shut with no badge kept; the policy goes 
   assert.equal(simSideNext({ side: { ...map.side, to: -1 } }, 13, {}, hot), null, 'past its own boss: none');
   assert.equal(simSideNext({}, 3, { grass: 1 }, leafy), null, 'no side area');
 });
+
+test('run sim: a stall sells without healing and a waystation notes its event (RL-12b)', () => {
+  // the bot rarely gets past the first rows, and stalls are rare there: a stall is checked when one is reached
+  let stands = 0;
+  for (let k = 0; k < 40; k++)
+    for (const at of runSim(`SIMWAY${k}`, B).log.places) {
+      if (at.type === 'stall') assert.ok(Array.isArray(at.shop) && at.healed === undefined, `SIMWAY${k} node ${at.i}`);
+      if (at.type === 'event') {
+        stands++;
+        assert.ok(at.event === null || GAME_DATA.events.events[at.event], `SIMWAY${k} node ${at.i}: ${at.event}`);
+      } else assert.equal(at.event, undefined);
+    }
+  assert.ok(stands >= 2, `${stands} waystations`);
+});

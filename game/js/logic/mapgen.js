@@ -313,7 +313,7 @@ export const MAPGEN_DEFAULTS = {
   },
   nature: { growth: 0.8, tall: 0.5, clearings: 0.3, trees: 0.5 },
   feature: 'none',
-  props: { lamps: 0, benches: 0.3, signs: 1, bins: 0, folk: 0.3, mast: 0, clinic: 0, shop: 0 },
+  props: { lamps: 0, benches: 0.3, signs: 1, bins: 0, folk: 0.3, mast: 0, clinic: 0, shop: 0, stand: 0, stall: 0 },
 };
 
 export const mapgenBetween = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -2686,12 +2686,15 @@ export function mapgenStageEdgeGround(G) {
 
 /* ---------- MG-2: the hub's buildings (a first take on MG-3's lots) ---------- */
 /* what the props dials put at the hub: [dial, prop, what it does, label] (the act opens the clinic's or the shop's
-   room, data-files.js ROOM_BY_USE; 'fly' is the airship's mast, airship.js) */
+   room, data-files.js ROOM_BY_USE; 'fly' is the airship's mast, airship.js; RL-12b: a waystation's stand opens its
+   event and a stall its shop where you stand, walk-control.js walkPick) */
 /** @type {[string, string, string, string | null][]} */
 export const MAPGEN_HUB_BUILDINGS = [
   ['clinic', 'clinic', 'clinic', null],
   ['shop', 'shop', 'shop', null],
   ['mast', 'airship_station', 'fly', 'Airship station'],
+  ['stand', 'tent', 'event', 'Waystation'],
+  ['stall', 'stall', 'stall', 'Stall'],
 ];
 /** is (x, z) on a building's lot, or within m metres of one */
 export const mapgenInLot = (G, x, z, m = 0) =>

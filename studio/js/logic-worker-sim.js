@@ -10,6 +10,7 @@ import * as data from '../../game/js/game-data.js';
 import * as battleEngine from '../../game/js/logic/battle-engine.js';
 import * as battleRewards from '../../game/js/logic/battle-rewards.js';
 import * as effects from '../../game/js/logic/effects.js';
+import * as encounters from '../../game/js/logic/encounters.js';
 import * as fighters from '../../game/js/logic/fighters.js';
 import * as perks from '../../game/js/logic/perks.js';
 import * as rng from '../../game/js/logic/rng.js';
@@ -32,6 +33,7 @@ export function simWorkerEnv() {
       'battle-engine': battleEngine,
       'battle-rewards': battleRewards,
       effects,
+      encounters,
       fighters,
       perks,
       rng,
