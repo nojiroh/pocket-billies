@@ -2836,8 +2836,8 @@ export const MAPGEN_TOWN = {
  * a notice board: G.spots kind 'board'), the clinic and the shop on its north side facing the camera (the props dials
  * clinic and shop), then 4-7 houses north of the main road on both sides of the street, each facing the camera (the
  * owner, TW-1) with a garden beside it, a fence along its front with a gap at its path and a lamp at every other
- * one. The houses are shut (no act: only the clinic and the shop have rooms). South of the road stays open land
- * (the tall grass). Nothing goes on tall grass, so the patches stay whole. Its own random stream ('lots', '|town').
+ * one. The houses are shut (no act: only the clinic and the shop have rooms). South of the road: 1-2 fenced
+ * vegetable plots, the rest open land and tall grass (the owner, TW-1). Nothing goes on tall grass, so the patches stay whole. Its own random stream ('lots', '|town').
  * Sets G.town, or leaves it null when no spot fits (the lot stage then places the buildings as on a route). */
 export function mapgenStageTown(G) {
   const { P, B, w, h } = G;
@@ -3048,7 +3048,38 @@ export function mapgenStageTown(G) {
       }
       built++;
     }
-  G.town = { square: [sq.x0, sq.z0, sq.x1, sq.z1], street: [sq.jx, sq.edge, sq.z0], houses: built };
+  /* ---- south of the road (the camera's side): 1-2 vegetable plots in farm soil, planters in two rows, a fence along
+     their front; the rest stays open land and tall grass ---- */
+  const nPlots = rnd.int(1, 2);
+  let plots = 0;
+  for (let d = 10; d < M.length && plots < nPlots; d += 6)
+    for (const k of [sq.k + d, sq.k - d]) {
+      if (plots >= nPlots || k < 6 || k > M.length - 7) continue;
+      const pw = 5,
+        pd = 3,
+        cx = M[k][0],
+        z1 = Math.round((M[k][1] - half - 2.5) * 2) / 2,
+        z0 = z1 - pd,
+        x0 = cx - pw / 2,
+        x1 = cx + pw / 2;
+      if (!mapgenLotFree(G, x0 - 0.5, z0 - 1.5, x1 + 0.5, z1 + 0.3) || !clear(x0 - 0.5, z0 - 1.5, x1 + 0.5, z1 + 0.3))
+        continue;
+      if (corners(x0, z0 - 1, x1, z1) > 1.2) continue;
+      for (let j = Math.floor(z0); j < Math.ceil(z1); j++)
+        for (let i = Math.floor(x0); i < Math.ceil(x1); i++) {
+          G.T[j * w + i] = 'o';
+          G.F[j * w + i] |= 16;
+        }
+      for (const dz of [0.8, 2.1])
+        for (const dx of [-1.5, 0, 1.5]) mapgenPutProp(G, 'planter_box', cx + dx, z0 + dz, { force: true });
+      const F = G.cat[S.fence],
+        fw = (F && F.box && F.box[0]) || 2.2;
+      for (let fx = x0 + fw / 2; fx <= x1 - fw / 2 + 0.01; fx += fw)
+        mapgenPutProp(G, S.fence, fx, z0 - 0.6, { force: true });
+      G.lots.push([x0, z0 - 0.8, x1, z1]);
+      plots++;
+    }
+  G.town = { square: [sq.x0, sq.z0, sq.x1, sq.z1], street: [sq.jx, sq.edge, sq.z0], houses: built, plots };
 }
 /* ---------- 6. plants: groves and an edge belt of trees, shrubs, rocks, tall grass, then the wild growth ---------- */
 export function mapgenStagePlants(G) {

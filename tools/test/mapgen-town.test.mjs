@@ -1,7 +1,7 @@
 // Towns track TW-1: a run town (mapgen.js mapgenStageTown, kind 'town'). On real runs' town nodes: a street off the
 // main road to a level square with its middle (a well or a fountain) and a notice board's spot, the clinic and the
 // shop on the square's north side facing the camera with their doors a walk from the hub and their rooms fitting
-// behind them, 4-7 shut houses (no act, no room) facing the camera, tall grass kept, no townsfolk yet, no note,
+// behind them, 4-7 shut houses (no act, no room) facing the camera, a vegetable plot south of the road, tall grass kept, no townsfolk yet, no note,
 // nothing unreachable, the east and west edges still pinned; the same seed makes the same town; a route has none.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -112,6 +112,11 @@ test('every run town has a street, a square with the clinic and the shop on it, 
         assert.ok(G.mapgenReached(reach, p.x + dx, p.z - 0.55), `${where}: ${p.k}'s door step can't be walked to`);
       }
       assert.ok(sc.tiles.join('').includes(B.ground.tall), `${where}: tall grass`);
+      /* south of the road (the camera's side): a fenced vegetable plot in farm soil */
+      assert.ok(
+        sc.props.some(p => p.k === 'planter_box' && p.z < sq.z - 8 && tile(p.x, p.z) === 'o'),
+        `${where}: a vegetable plot south of the road`
+      );
       assert.deepEqual(G.mapgenUnreachable(sc, C), [], where);
       /* a run's scenes meet any neighbour at height 0 on their east and west edges */
       for (const row of sc.heights) assert.ok(row[0] === 0 && row[sc.w] === 0, `${where}: the edges pinned`);
