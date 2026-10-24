@@ -17,6 +17,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { hashString, rngFrom } from './rng.js';
+import { pointInProp, turnedBounds, turnedPoint } from './prop-turn.js';
 /* eslint-disable no-func-assign */
 expose({
   MAPGEN_BAND: [() => MAPGEN_BAND],
@@ -3268,22 +3269,35 @@ export function mapgenWalkGrid(sc, scenery, o = {}) {
       });
     }
   }
+  /* as walk-view.js navGrid: a turned prop (rot) blocks its turned footprint, a prop with posts (an arch) its posts */
+  const disc = (cx, cz, r) =>
+    each(cx - r, cz - r, cx + r, cz + r, (q, x, z) => Math.hypot(x - cx, z - cz) <= r && (blk[q] = 1));
+  const ppu = C.ppu || 34;
   for (const p of sc.props || []) {
     const M = C.props[p.k];
     if (!M || M.walk) continue;
     const s = p.s || 1;
-    if (M.box)
-      each(p.x - (M.box[0] * s) / 2, p.z - 0.1, p.x + (M.box[0] * s) / 2, p.z + M.box[1] * s, q => (blk[q] = 1));
+    if (M.box) {
+      const w = M.box[0] * s,
+        d = M.box[1] * s;
+      if (p.rot) {
+        const B = turnedBounds(p, -w / 2, -0.1, w / 2, d);
+        each(B[0], B[1], B[2], B[3], (q, x, z) => {
+          const [lx, lz] = pointInProp(p, x, z);
+          if (lx >= -w / 2 && lx <= w / 2 && lz >= -0.1 && lz <= d) blk[q] = 1;
+        });
+      } else each(p.x - w / 2, p.z - 0.1, p.x + w / 2, p.z + d, q => (blk[q] = 1));
+    } else if (M.posts)
+      for (const o of M.posts) {
+        const [px, pz] = turnedPoint(p, (o.x / ppu) * s * (p.f ? -1 : 1), 0.15);
+        disc(px, pz, (o.r || 0.4) * s);
+      }
     else {
       const r = M.solid != null ? M.solid * s : M.flat ? 0 : (M.shadow || 0) * 0.42 * s;
-      if (r > 0.05)
-        each(
-          p.x - r,
-          p.z - r,
-          p.x + r,
-          p.z + r,
-          (q, x, z) => Math.hypot(x - p.x, z - p.z - r * 0.2) <= r && (blk[q] = 1)
-        );
+      if (r > 0.05) {
+        const [cx, cz] = turnedPoint(p, 0, r * 0.2);
+        disc(cx, cz, r);
+      }
     }
   }
   /* steps: the raise of each cell (decoded from base64 Int16) */

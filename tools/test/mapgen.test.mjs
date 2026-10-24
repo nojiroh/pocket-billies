@@ -218,3 +218,17 @@ test('the variant pick follows the weights, the prop as drawn counting 1', () =>
   assert.ok(Math.abs(n[2] / 4000 - 0.5) < 0.04 && Math.abs(n[0] / 4000 - 0.25) < 0.04, n.join(','));
   assert.equal(G.mapgenPickVariant(W, { name: 'no variants' }), 0);
 });
+
+test("RT-1: the walk grid turns a turned prop's footprint as the game's navGrid does", () => {
+  const C = GAME_DATA.scenery,
+    sc = { w: 10, h: 10, edge: 'g', tiles: Array(10).fill('g'.repeat(10)), props: [] },
+    blocked = (/** @type {any} */ W, /** @type {number} */ x, /** @type {number} */ z) =>
+      !!W.blk[Math.floor(z * W.N) * W.gw + Math.floor(x * W.N)];
+  /* a hedge (box 3.4 x 0.7) unturned runs east-west; turned 90 degrees it runs north-south from its base point */
+  sc.props = [{ k: 'hedge', x: 5, z: 5 }];
+  let W = G.mapgenWalkGrid(sc, C);
+  assert.ok(blocked(W, 6.4, 5.2) && !blocked(W, 5.2, 6.4));
+  sc.props = [{ k: 'hedge', x: 5, z: 5, rot: 90 }];
+  W = G.mapgenWalkGrid(sc, C);
+  assert.ok(!blocked(W, 6.4, 5.2) && blocked(W, 4.8, 6.4));
+});
