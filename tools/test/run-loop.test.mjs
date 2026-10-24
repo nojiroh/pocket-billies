@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { GAME_DATA, data, fn, modules, reseed, startedSave } from './setup-real.mjs';
+import { rngFrom } from '../../game/js/logic/rng.js';
 
 const L = modules['run-loop'],
   { runMapStart } = modules['run-map'],
@@ -299,4 +300,44 @@ test("RL-13: a higher Expedition's foes: wild Billies and leaders its levels up,
     plain = fn('makeAlpha')('musk0', 20);
   assert.equal(boss.hp, fn('maxHp')(boss));
   assert.ok(boss.hp > plain.hp * 1.4 && boss.hp < plain.hp * 1.6, `${boss.hp} vs ${plain.hp}`);
+});
+
+test('RL-13: a leader fields its own type, as many Billies and the same level spread as its file', () => {
+  const SPECIES = data.SPECIES;
+  for (const T of LEADERS) {
+    const levels = [8, 9, 10, 11].slice(0, T.team.length),
+      team = L.runLeaderTeam(rngFrom('LEADERS', 'team'), T, levels, SPECIES, null);
+    assert.equal(team.length, T.team.length, T.id);
+    assert.deepEqual(
+      team.map(e => e.lvl),
+      levels,
+      T.id
+    );
+    for (const e of team) {
+      assert.ok(SPECIES[e.sp], `${T.id}: ${e.sp} is a species`);
+      assert.ok(SPECIES[e.sp].types.includes(T.type), `${T.id} (${T.type}) fields ${e.sp} (${SPECIES[e.sp].types})`);
+      /* the stage fits the level (nothing final under 32), unless its type has nothing younger (Steel) */
+      const young = Math.min(
+        ...Object.keys(SPECIES)
+          .filter(id => SPECIES[id].types.includes(T.type))
+          .map(id => SPECIES[id].stage)
+      );
+      assert.ok(e.lvl >= 32 || SPECIES[e.sp].stage <= Math.max(1, young), `${T.id}: ${e.sp} at ${e.lvl}`);
+    }
+    /* the same seed, the same team */
+    assert.deepEqual(L.runLeaderTeam(rngFrom('LEADERS', 'team'), T, levels, SPECIES, null), team);
+  }
+  /* a leader with no type keeps its own team (the data's stand-ins) */
+  const noType = { id: 'x', team: [{ sp: 'musk0', lvl: 5 }] };
+  assert.deepEqual(L.runLeaderTeam(rngFrom('X', 'team'), noType, [12], SPECIES, null), [{ sp: 'musk0', lvl: 12 }]);
+  /* a type no line has: its own team again */
+  const odd = { id: 'y', type: 'Nosuchtype', team: [{ sp: 'musk0', lvl: 5 }] };
+  assert.deepEqual(L.runLeaderTeam(rngFrom('Y', 'team'), odd, [12], SPECIES, null), [{ sp: 'musk0', lvl: 12 }]);
+  /* the region's dex comes first when it has the type */
+  const water = LEADERS.find(T => T.type === 'Water'),
+    dexed = L.runLeaderTeam(rngFrom('D', 'team'), water, [40, 41], data.SPECIES, ['bezos2']);
+  assert.deepEqual(
+    dexed.map(e => e.sp),
+    ['bezos2', 'bezos2']
+  );
 });

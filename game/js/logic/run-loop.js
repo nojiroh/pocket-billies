@@ -16,7 +16,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { encArrive, fxHealShare, fxOfRun, unlockOpen } from '../hooks.js';
-import { ITEMS } from '../game-data.js';
+import { ITEMS, SPECIES } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
 import { healAll, maxHp, plural } from './rules.js';
@@ -48,6 +48,8 @@ expose({
   runHurt: [() => runHurt],
   runItemPrice: [() => runItemPrice],
   runKept: [() => runKept],
+  // @ts-expect-error -- replaced on purpose
+  runLeaderTeam: [() => runLeaderTeam, v => (runLeaderTeam = v)],
   // @ts-expect-error -- replaced on purpose
   runPayoutRows: [() => runPayoutRows, v => (runPayoutRows = v)],
   // @ts-expect-error -- replaced on purpose
@@ -156,6 +158,46 @@ export const runFoeWinText = text => {
   const kept = (m[1].match(/[^.!?]+[.!?]+/g) || [m[1]]).map(s => s.trim()).filter(s => !/Badge/.test(s));
   return kept.length ? `“${kept.join(' ')}”` : '';
 };
+/**
+ * RL-13: a run leader's team, built for the run instead of the file's legacy stand-ins: as many Billies as its own
+ * team has, at `levels` (its own spread, kept), of species of the leader's type (`type`) — from the region's dex
+ * first, then from every species of that type, each at the stage its level allows (as a wild Billie's: a first stage
+ * under 16, nothing final under 32); with
+ * none of its type is young enough for the level (Steel has no first stage), its youngest; with none of its type
+ * anywhere (a type no line has), its own team's species stay; no species twice while the pool has
+ * others. Drawn from the node's stream, so a
+ * seed's leaders are the same every time. Its coats and builds are left to the battle, as the file's team is.
+ * @param {{ int: (lo: number, hi: number) => number }} g the node's stream ('team')
+ * @param {any} T the leader @param {number[]} levels its Billies' levels, lowest first
+ * @param {Record<string, any>} species SPECIES @param {string[] | null} dex the region's
+ * @returns {{ sp: string, lvl: number }[]}
+ */
+export function runLeaderTeam(g, T, levels, species, dex) {
+  const own = T.team.map((/** @type {any} */ e, /** @type {number} */ k) => ({ ...e, lvl: levels[k] }));
+  if (!T.type) return own;
+  const ofType = (/** @type {string[]} */ ids) =>
+    ids.filter(id => species[id] && (species[id].types || []).includes(T.type));
+  const pool = ofType(dex && dex.length ? dex : []),
+    all = pool.length ? pool : ofType(Object.keys(species));
+  if (!all.length) return own;
+  /** @type {string[]} */
+  const taken = [];
+  return levels.map(lvl => {
+    /* the stages the level may field (encounters.js encDexAt has the same rule for route trainers) */
+    const fits = (/** @type {string} */ id) =>
+        lvl < 16 ? species[id].stage === 0 : lvl < 32 ? species[id].stage <= 1 : true,
+      fit = all.filter(fits),
+      /* no species of the type is young enough for this level (Steel has no first stage): its youngest instead */
+      low = Math.min(...all.map(id => species[id].stage)),
+      pick = fit.length ? fit.slice().sort() : all.filter(id => species[id].stage === low).sort(),
+      /* no species twice while there are others to field */
+      left = pick.filter(id => !taken.includes(id)),
+      from = left.length ? left : pick,
+      sp = from[g.int(0, from.length - 1)];
+    taken.push(sp);
+    return { sp, lvl };
+  });
+}
 /** a run foe's id: the node's place id and 'foe' @param {number} i */
 export const runFoeId = i => `run_${i}_foe`;
 /**
@@ -192,7 +234,15 @@ export function runFoes(run, data) {
       top = runWildLevels(map, i, /** @type {any} */ (data), modFoeLevels(run))[1] + F.up,
       high = Math.max(...T.team.map(e => e.lvl || 1)),
       lv = (/** @type {number} */ l) => Math.max(1, Math.min(100, top - (high - (l || 1)))),
-      team = T.team.map(e => ({ ...e, lvl: lv(e.lvl) })),
+      /* RL-13: the leader's team is built for the run, of its own type (its file's team sets how many and the
+         level spread; the region's dex first) */
+      team = runLeaderTeam(
+        rngFrom(runNodeSeed(run.seed, i), 'team'),
+        T,
+        T.team.map((/** @type {any} */ e) => lv(e.lvl)),
+        SPECIES,
+        (run.region && run.region.dex) || null
+      ),
       boss = node.type === 'boss';
     out[runFoeId(i)] = {
       id: runFoeId(i),
