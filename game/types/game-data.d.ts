@@ -411,6 +411,8 @@ export interface LocationData {
   field?: DataId;
   /** RL-R2: 1 on a side area's place */
   side?: 1;
+  /** RL-12b: 1 on a run's waystation (an event's or a stall's place): fewer wild Billies (rules.json run.wild) */
+  waystation?: 1;
   v47region?: number;
   a04place?: number;
   a04pearl?: number;
@@ -976,8 +978,9 @@ export interface Rules {
         a record of weights. Dials left out keep mapgen's defaults */
     scene: RunSceneRules;
     /** RL-7: a run node's wild Billies: levels `lv` on the landing's row, `perRow` more on each row after; a node
-        walked back to rolls `back` of them again (the hub's stock on a first visit) */
-    wild: { lv: [number, number]; perRow: number; back: number };
+        walked back to rolls `back` of them again (the hub's stock on a first visit); a waystation (an event or a
+        stall: RL-12b) holds `waystation` */
+    wild: { lv: [number, number]; perRow: number; back: number; waystation: number };
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;
