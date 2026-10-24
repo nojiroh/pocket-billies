@@ -1183,9 +1183,10 @@ def frames_rooms_settings_map(P):
         # TC-3: zoomed right in, the camera is as close as it may come there: the nearest zoom, or nearer the rim's
         # height the distance that keeps the eye above the rim line (bowlCamClamp backs off at its steepest tilt;
         # over the hub island's low ground that is about 0.49, so a fixed 0.46 failed)
-        m = pg.evaluate("(()=>{const c=worldBowl.cam,v=bowlCamView(c,worldMapWidth,worldMapHeight);return [JSON.stringify(c),c.dist,v.C[1],bowlCamClamp(Object.assign({},c,{dist:0})).dist]})()")
+        # (the hub's floating island: its own orbit limits, the eye above its pivot instead of the rim)
+        m = pg.evaluate("(()=>{const c=worldBowl.cam,v=bowlCamView(c,worldMapWidth,worldMapHeight),F=worldBowl.ground.float;return [JSON.stringify(c),c.dist,v.C[1],bowlCamClamp(Object.assign({},c,{dist:0})).dist,F?c.th:.37]})()")
         pg.evaluate("worldMapReset();0")
-        if m[0] == c0 or m[1] > m[3] + .01 or m[2] < .37: raise Exception(f'bowl map camera: {m}')
+        if m[0] == c0 or m[1] > m[3] + .01 or m[2] < m[4]: raise Exception(f'bowl map camera: {m}')
         out.append(f'the bowl map pans, turns and zooms to {m[1]:.2f} (as close as it may come there: {m[3]:.2f}), the eye {m[2]:.2f} up (above the rim)')
     pg.evaluate("uiState.tab='walk';render();0"); drawn(pg, 2)
     return '; '.join(out)
