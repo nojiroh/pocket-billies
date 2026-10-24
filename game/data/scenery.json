@@ -1135,6 +1135,21 @@
     "scene/tiles/neontiles_5.png"
    ],
    "paved": true
+  },
+  "&": {
+   "name": "Deep forest (no way in)",
+   "tile": "scene/tiles/forest.png",
+   "z": 4,
+   "edge": "#33482A",
+   "vars": [
+    "scene/tiles/forest_1.png",
+    "scene/tiles/forest_2.png",
+    "scene/tiles/forest_3.png",
+    "scene/tiles/forest_4.png",
+    "scene/tiles/forest_5.png"
+   ],
+   "flip": 1,
+   "walk": false
   }
  },
  "props": {
@@ -11484,7 +11499,7 @@
    "flat": 0,
    "tags": ["route","forest"],
    "group": "forest_canopy",
-   "solid": 2.4,
+   "solid": 1.2,
    "ppm": 32,
    "model": "scene/next/models/forest_canopy.json",
    "vary": {"rot":1,"lean":0}
@@ -11499,7 +11514,7 @@
    "flat": 0,
    "tags": ["route","forest"],
    "group": "forest_canopy",
-   "solid": 2.4,
+   "solid": 1.2,
    "ppm": 32,
    "model": "scene/next/models/forest_canopy_pine.json",
    "vary": {"rot":1,"lean":0}
@@ -11514,7 +11529,7 @@
    "flat": 0,
    "tags": ["route","forest"],
    "group": "forest_canopy",
-   "solid": 2.4,
+   "solid": 1.2,
    "ppm": 32,
    "model": "scene/next/models/forest_canopy_autumn.json",
    "vary": {"rot":1,"lean":0}

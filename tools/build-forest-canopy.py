@@ -3,9 +3,12 @@
 mapgenStageLayout). A mass is a wall of the biome's real trees along its edge and these inside: one low-poly piece
 about 6 x 5 m, made of mesh shapes only (a dark understorey and lumpy leaf globes or cones; no picture layers), so a
 piece is one draw and its shadow, where a model tree is a draw plus one per drawn leaf clump. A piece blocks walking
-by its `solid` disc; pieces overlap, so the mass is solid as a whole.
+by its trunks alone (`solid`); the mass is solid by its ground.
 
     python3 tools/build-forest-canopy.py      # writes everything below; run it again after changing it
+
+A mass blocks walking by its ground, the deep forest terrain (`&`, walk false), so the pieces stand about 5 m apart
+for the look alone.
 
 Writes game/art/scene/next/models/forest_canopy*.json, their fallback pictures game/art/scene/next/forest/*.png
 (shown when models are off), and the catalogue entries in game/data/scenery.json.
@@ -25,7 +28,8 @@ import gamedata  # noqa: E402
 PPM = 32
 MODELS = ROOT / 'game' / 'art' / 'scene' / 'next' / 'models'
 PICS = ROOT / 'game' / 'art' / 'scene' / 'next' / 'forest'
-SOLID = 2.4  # the walk disc's radius (metres): pieces 3.6 m apart leave no gap
+SOLID = 1.2  # the trunks' disc (metres); the mass blocks by its ground (DEEP), not by the pieces
+DEEP = '&'  # the deep forest terrain's letter
 
 # key: (name, kind of crown, understorey colour, crown colours dark to light)
 PIECES = {
@@ -119,6 +123,11 @@ def main():
                   'flat': 0, 'tags': ['route', 'forest'], 'group': 'forest_canopy', 'solid': SOLID, 'ppm': PPM,
                   'model': f'scene/next/models/{key}.json', 'vary': {'rot': 1, 'lean': 0}}
         print(f'{key}: {len(M["layers"])} layers, picture {im.size[0]}x{im.size[1]}')
+    # the ground under a forest mass: forest floor no one walks on (the mass is solid by its ground, so the pieces
+    # only have to hide it, spaced for the look); nothing grows on it
+    T = D['scenery']['terrains']
+    T[DEEP] = {**{k: v for k, v in T['y'].items() if k not in ('grow', 'wear')}, 'name': 'Deep forest (no way in)',
+               'walk': False}
     gamedata.save(D)
 
 
