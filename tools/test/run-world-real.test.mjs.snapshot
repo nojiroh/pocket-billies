@@ -137,8 +137,8 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "trees": 0.61
     },
     "road": {
-      "shape": "winding",
-      "wobble": 0.74,
+      "shape": "straight",
+      "wobble": 0.25,
       "exits": [
         {
           "side": "E",
@@ -161,7 +161,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "clinic": 1,
       "shop": 1
     },
-    "kind": "route",
+    "kind": "town",
     "biome": "thicket",
     "w": 112,
     "h": 64,
@@ -314,8 +314,8 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "trees": 0.57
     },
     "road": {
-      "shape": "winding",
-      "wobble": 0.54,
+      "shape": "straight",
+      "wobble": 0.25,
       "exits": [
         {
           "side": "E",
@@ -333,7 +333,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "clinic": 1,
       "shop": 1
     },
-    "kind": "route",
+    "kind": "town",
     "biome": "thicket",
     "w": 112,
     "h": 64,
@@ -342,7 +342,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "edges": 1
   },
   {
-    "feature": "lookout",
+    "feature": "none",
     "land": {
       "cliffs": 0.47,
       "hills": 0.68,
@@ -356,8 +356,8 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "trees": 0.33
     },
     "road": {
-      "shape": "winding",
-      "wobble": 0.72,
+      "shape": "straight",
+      "wobble": 0.25,
       "exits": [
         {
           "side": "E",
@@ -380,7 +380,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "clinic": 1,
       "shop": 1
     },
-    "kind": "route",
+    "kind": "town",
     "biome": "meadow",
     "w": 112,
     "h": 64,

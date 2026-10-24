@@ -104,7 +104,7 @@ pictures (loaded only on arrival). Left dead in the data: `rules.json legends[].
 biomes.json rows got `climate` (today's guess for each biome's generated scene, default dials; a map with coast water
 guesses coast whatever its biome, so RL-7 writes `scene.climate` from the biome). `weatherPick(climate, rnd)` became
 `weatherPick(climate, roll, season)`: the page's pick changes the mild odds by season first; environment.js is on the
-Studio page too, so logic/weather.js loads on both. `runMapMake` takes no tier (tiers change nothing until RL-13).
+Studio page too, so logic/weather.js loads on both. `runMapMake` takes no tier (RL-13: an Expedition changes the foes and the prices, and its region's zones the rows, not the map's shape).
 The seam rules cap a node at two links each way (two exits a side, 44 m apart: t 0.5, or 0.25 and 0.75). On the bowl
 every map's north faces the centre, so a run's rows go from the rim (r 0.94) towards it (0.12), on the south side;
 the hub's 30-degree seam rule holds for straight links and splits, not for a lane switch (45 is tested; 34 seen on the
@@ -206,7 +206,7 @@ cloud writes (`accountSaveDoc`) carry `t: serverTimestamp()`, read back once a s
 
 **Corrected in RL-11 (2026-10-22).** There is no `hub.js`: the board is `lab-board.js` in the hub's Lab tab (hidden
 since UI-5 for it), and Hazel's lab machine (now act `board`) opens it. `won:bracket_N` can't be built yet: meta keeps a
-win count and the highest tier, and nothing raises the tier (RL-13); RL-11 added the condition kinds `unlock:<id>`,
+win count and the highest tier, and nothing raises the tier (RL-13 does, on a win); RL-11 added the condition kinds `unlock:<id>`,
 `runs` and `wins`. The three doors are one field each: a row with `at` (and `cost`) is sold at that building in its
 currency (the Lab's rows are the board), a row with `when` is earned (a milestone; no `door` field). A grant is one of a
 building's level, an item into run shops, a biome onto run maps, or a currency; nothing else needed effects (RL-12).
@@ -225,7 +225,7 @@ in 4 were all there (`calcDamage`, `catchOdds`, `newBattle` with the run's `runB
 `run.relics`, `run.offer` and the `menu` phase; RL-12a added `run.offerN` (the offers' stream) and `run.shelf` (a run
 shop's Loophole by node and day, so buying it doesn't put another on the shelf), filled by `migrate` for a run saved
 before. The effect kinds built are `money`, `price` (shop, heal), `catch`, `stat`, `damage` (deal, take, by category or
-type), `heal` (walking in) and `payout` (Capital, the items' share); `rule`, `clock`, `start` and `boss` wait for RL-13
+type), `heal` (walking in) and `payout` (Capital, the items' share); RL-13 added `level` and `bossHp` (modifiers only); `rule`, `clock` and `start` wait for RL-14
 and RL-14. Stat rows apply as the battle is made (yours on the field), said after the sides come out. UI-4 had already
 built the run bar's fourth tab (hidden) and the pick card: the tab opens as "Loopholes" and the pick shows its cards
 one to a row (three across cut the names). "Tiny waystation scenes" (8.6) can't be: every run scene is 112 x 64 m for
@@ -521,7 +521,7 @@ brackets, bots, online). The table below is the original plan.
 | RL-10 | Ranch B | breed safe/risky with abominations, hatch, passive income (cap, rollback guard, offline, server anchor) | 2 | yes |
 | RL-11 | Hub upgrades, currencies, unlocks | `currencies/buildings/unlocks.json`, the Lab board, one unlock registry | 1-2 | yes |
 | RL-12 | Relics and effects | `relics.json`, `events.json`, `logic/effects.js` (phase 19's handler table), picks | 1-2 | yes |
-| RL-13 | Modifiers, tiers, mini-boss leaders | `modifiers.json`, bracket pick at the mast, the 8 leaders, overdue hardening (dropped in RL-R2: no deadline) | 1 | yes |
+| RL-13 | Expeditions, challenges, starter points (done 2026-10-24; section 9.4's row and the HANDOFF) | `modifiers.json`, the Expedition and challenge pick at the mast, starter points, leaders of their own type | 1 | yes |
 | RL-14 | Bots as enemies, salvage, the Voltron | `factions.json`, `bosses.json`, data-driven `alphaPhase`, a robot phase in the full test | 2 | yes |
 | RL-15 | Online | run record, friend ghosts, daily seeds, rules and emulator tests | 2 | yes |
 | RL-16 | Content packs and Studio editors | `mergeInto`, pack checks, editors for the new sections | 1-2 | yes |
@@ -635,8 +635,12 @@ against "not loaded in the new flow") and deleting them (the Studio would lose t
 - **Relics ("Loopholes"; data section `relics`, since `loophole` is an item id):** about 6-8 a run: a pick of 3 at
   each of 2 mini-bosses, 1 for $ in each shop, 0-1 from events; held cap 6 (8.14). Shown as three face-up rows (the
   `flyMenu` pickrow pattern); the offer is saved before it is shown.
-- **Difficulty tiers:** "Brackets" I-V in `modifiers.json`: foe levels +2 each, deadline slack −1 from III, boss HP
-  ×(1 + 0.15N), prices +10%N, a bot trainer in the pool from III. Winning N unlocks N+1 (`auto: 'won:bracket_N'`).
+- **Difficulty tiers:** "Expeditions" I-V in `modifiers.json`. **Built in RL-13 (2026-10-24), counted from I** (the
+  owner): I changes nothing; each step above it is +2 foe levels, boss HP ×1.15 a step, +10% to run shop and clinic
+  prices, and a zone or two more (RL-R1's `regions.json zones`). The deadline's slack is gone with the deadline
+  (RL-R2a) and **nothing replaces it** (the owner). Winning the highest Expedition open opens the next
+  (`run-state.js runEnd`, `logic/modifiers.js expeditionAfterWin`; the condition kind is `expedition >= n`, not
+  `won:bracket_N`). The bot trainer from III waits for RL-14.
 - **Battle formats:** by node type: routes single, town and mini-boss trainers double, the final boss an Alpha fought
   by three; a 40-turn cap on every battle (the sim saw 70-190-turn stalls). No engine change.
 - **Keep-one vs ranch levels (owner's call, 8.2):** recommended: ranch Billies travel and return on a loss at the
@@ -812,9 +816,10 @@ with every relic stays finite), a golden battle with a relic, story checks on ev
 mini-boss pick and a shop's Loophole, the Loopholes tab (`relic-screen.js`). RL-12b: `events.json` with `relic` and
 `wager`, the event and shop places (waystations, 8.6), the no-two-shops rule.
 
-**RL-13 Modifiers, tiers, mini-boss leaders.** `modifiers.json`, the bracket pick at the mast, the 8 leaders as the
-pool with badge relics, overdue hardening as effect rows. Tests: tier effects on levels, prices, deadline; leader
-teams rescale within 1..100. 1 session.
+**RL-13 Modifiers, tiers, mini-boss leaders. Done 2026-10-24** (9.4 and the HANDOFF have it as built): `modifiers.json`
+(Expeditions I-V and four challenges), the Expedition and challenge pick at the mast, starter points in place of
+RL-9b's one Billie from home, and the leaders fielding their own type. No badge relics (9.6, 22: badges are kept in
+`meta.badges` and a leader's prize is the pick of 3 Perks) and no overdue hardening (the deadline is gone, RL-R2a).
 
 **RL-14 Bots as enemies, salvage, the Voltron.** `factions.json`, `bosses.json`, boss parts and art in `robots.json`,
 `rules.js spawn` (`bot:` entries, never taxed), `battle-engine.js` (`alphaPhase` from data, `makeBossRobot`),
@@ -1031,7 +1036,7 @@ reflavour-track.md section 4).
 | RL-12b | Encounters (was "events and waystations") | `events.json` PokeRogue-style: 2-3 options with requirements (a type in the team, an item, money, a badge, a relationship) and outcomes as effect rows and script commands (`relic`, `wager`, `give`, `battle`); waystation places; **reward picks after trainer battles** (`rewards.json`: items, move tutors, candy levels, evolution items; a paid reroll); route trainers who battle on sight; the no-two-shops rule; first 15-20 events drafted by Claude, approved by the owner | RL-R1 | 2 |
 | RL-S1 | Story director | `meta.history` (the last 20 runs: seed, region, result, what beat you, team, Loopholes, leaders, rival result); `lines.json` (who, text, `when`, priority, `once`, cooldown, `must`) on the story layer's conditions plus new kinds (`last:`, `history:`, `rel:`, `chapter:`); `storyPick(who)` on each return to the hub; leaders and agents' in-run lines from the same table; the return-from-a-loss scene (Chosen's credit, Hazel's doubt) | RL-12b | 1-2 |
 | RL-S2 | Rival and relationships | Blake as a `rival` node (shared with RL-15's ghost node): `rivalTeam(starter, history, row)` counters your starter and grows over runs; `meta.rel` per hub character, gifts and favours, what each level unlocks; Chapter 1's beats | RL-S1 | 1-2 |
-| RL-13 | Brackets, challenges, starter points | `modifiers.json` brackets I-V (as section 3), challenge modes as modifiers (mono-type, no healing, ...); **starter points**: species unlocked by catching, a cost per species and stage, a budget by bracket, the mast's pick reworked; the region's leaders as the mini-boss pool | RL-R2 | 1-2 |
+| RL-13 | Expeditions, challenges, starter points (**done 2026-10-24**; HANDOFF has what changed and where this shape was wrong) | `modifiers.json` brackets I-V (as section 3), challenge modes as modifiers (mono-type, no healing, ...); **starter points**: species unlocked by catching, a cost per species and stage, a budget by bracket, the mast's pick reworked; the region's leaders as the mini-boss pool | RL-R2 | 1-2 |
 | RL-14 | The organization's bots, salvage, the Voltron | as section 4, with the bots as the organization's army: its agents as trainers and events, the Voltron as Chapter 1's boss | RL-13, RL-S1 | 2 |
 | RL-15 | Online | as section 4; the ghost node shares RL-S2's `rival` node | RL-14 | 2 |
 | RL-16 | Content packs and Studio editors | as section 4, plus editors for `regions`, `events`, `rewards`, `lines` | RL-11 | 1-2 |
@@ -1095,10 +1100,31 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   (`meta.badges` on a leader's first win), new `game/js/field-moves.js` (Pokémon's talk box and a little burst on the
   map), `rules.js` canEnter and gateText, `conditions.js` `opened:<move>`. No cave or cove scene yet: the areas use the
   finished biomes (thicket for Cut, ridge for Rock Smash, lake with coast water for Surf); RL-R2b makes them.
+- **RL-13 (Expeditions, challenges, starter points)** lives on its own branch (the owner, 2026-10-24). Branch: track/expeditions
+- **RL-R2b as built (2026-10-24; HANDOFF has where this shape was wrong).** The owner's answers in Plan Mode: the
+  cave uses the game's own cave darkness (`dark: 1`, the lantern), the islet joins Surf's chain by seams (riding in,
+  no dock), the way out is a fade with the move's words, and the islet could move to an RL-R2c if it ran long (it
+  didn't). No cave scene type was needed: a `cave` biome (biomes.json, pools.json, music.json; no region draws it)
+  and fieldMoves.json `land` (the move's land dials: Rock Smash's mountains north and south, Surf's coast water, moved
+  out of the code) and `townLand` (Surf's town: mapgen's new `islet` water). The islet is mapgen's, not the island
+  generator's: logic/island-gen.js makes a whole free-sized island with no exits, props or seams, where mapgen's
+  islet keeps the run's 112 x 64 frame and every seam rule. The way out: field-moves.js `fieldWayOutTravel`
+  (fieldMoves.json `travel`). The Run Lab, the run preview, the run sim (`badges`, `simSideNext`) and the Studio
+  check's Node start get the field moves. Not done: the world map's crowding at Expeditions III-V (the owner left it
+  out), a picker in the Run Lab that forces a side area (likewise).
 - **The encounter sessions (RL-12b's two parts, RL-12c)** live on one branch (the owner, 2026-10-23). Branch: track/encounters
 - **RL-12b part 1** (done 2026-10-23; HANDOFF and section 0 "Corrected in RL-12b" have what changed). Part 2 (after
   RL-R2 merges): the `event` and `stall` waystation node types and their stand, the no-two-shops rule in run-map.js,
   the run sim and preview, a check-fast page and the in-game test's step. RL-12c: held items (9.6 27).
+- **RL-13 as built (2026-10-24).** `modifiers.json` + `logic/modifiers.js` (the Expedition's and challenges' effect
+  rows, joined to the Perks' in `fxOfRun`; two new kinds, `level` and `bossHp`), `logic/starter-points.js` +
+  `rules.json run.points` (`run.home` gone; the cost counts any levels above 5, since ranch levels are not tracked),
+  the mast's Expedition and challenge rows, the four challenges at their own choke points (`perkPool`, `runClinic`,
+  `runShopOpen`, `runCatchFits`, `runFragileDrop`), `runLeaderTeam` (leaders field their own type at last), and the
+  run sim with `--expedition`, `--mods` and `--lvl`. The sim's first wins came from tuning three placeholders:
+  budget 10 → [20, 22, 24, 26, 28], `foes.miniboss.up` 3 → 2, `foes.boss.up` 5 → 3 (the table is in the HANDOFF).
+  No check-fast page yet.
+- **RL-12b, RL-S1, RL-S2:** files and tests as their rows say; each adds a fast-check page and an in-game test
 - **RL-12b part 2 as built (2026-10-24; HANDOFF has the detail).** Two node types: `event` ("Waystation", weight 2) and
   `stall` ("Stall", weight 1, `shop: true` like a town); route 4, town 1 (placeholders). `runMapNoTwoShops` redraws a
   shop led to from a shop. A waystation's stand is the market tent (act `event`, opens `encounterOpen` for the node);

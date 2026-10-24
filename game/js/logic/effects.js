@@ -8,17 +8,20 @@
      catch   a coin's chance to catch (catchOdds)              stat    stat stages for your Billies as a battle starts
      damage  what your Billies deal or take (calcDamage)       heal    a share of HP on walking into a place
      payout  the payout's Research, or the share items count at
+     level   foes' levels      bossHp  the run's boss's HP   (RL-13, modifiers only: logic/modifiers.js modFoeLevels,
+                                                             modBossHp)
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
    multiplied smallest first (the same product for any order), and the product stays within FX_LIMIT, so a run holding
    every Perk stays finite. With no rows every answer is the number it was given (a multiplier of exactly 1), so a
    battle or a run without Perks is the same as before them. Later sessions add rows from other places into the same
-   list (RL-11 building levels, RL-13 expeditions).
+   list (RL-11 building levels; RL-13: the run's Expedition and challenges, logic/modifiers.js).
    Logic only: no DOM, no Date, no Math.random (tools/test/effects.test.mjs). */
 /** @import { FxRow, Perk } from '../../types/game-data' */
 /** @typedef {FxRow & { src: string }} Fx */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
+import { modFxRows } from './modifiers.js';
 import { encBoonRows } from './run-enc.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -43,7 +46,17 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const FX_KINDS = /** @type {const} */ (['money', 'price', 'catch', 'stat', 'damage', 'heal', 'payout']);
+export const FX_KINDS = /** @type {const} */ ([
+  'money',
+  'price',
+  'catch',
+  'stat',
+  'damage',
+  'heal',
+  'payout',
+  'level',
+  'bossHp',
+]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
 /** stat stages from effects stay within these (the battle clamps again to its own stageMax) */
@@ -54,11 +67,14 @@ export const FX_STAGES = 6;
 export const fxRows = (ids, perks) =>
   ids.flatMap(id => (perks[id] ? perks[id].fx.map(f => /** @type {Fx} */ ({ ...f, src: id })) : []));
 
-/** the effect rows of a run's Perks and its events' boons (null in the hub, or with none) @param {{ perks: string[] } | null | undefined} run
+/** the effect rows of a run's Perks, its events' boons and its Expedition and challenges (null in the hub, or with
+ * none) @param {{ perks: string[], expedition?: number, mods?: string[] } | null | undefined} run
  * @param {Record<string, Perk>} perks @returns {Fx[] | null} */
 export const fxOfRun = (run, perks) => {
-  /* RL-12b: an event's boons (logic/run-enc.js) after the Perks' rows */
-  const rows = run ? [...fxRows(run.perks, perks), ...encBoonRows(/** @type {any} */ (run))] : [];
+  /* RL-12b: an event's boons (logic/run-enc.js) after the Perks' rows; RL-13: the Expedition's and challenges' last */
+  const rows = run
+    ? [...fxRows(run.perks, perks), ...encBoonRows(/** @type {any} */ (run)), .../** @type {Fx[]} */ (modFxRows(run))]
+    : [];
   return rows.length ? rows : null;
 };
 provide({ fxOfRun }); /* to-module */

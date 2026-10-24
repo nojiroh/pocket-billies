@@ -75,6 +75,8 @@ export interface GameData {
   regions: RegionsData;
   /** RL-R2: the field moves that open a run's side areas */
   fieldMoves?: { about?: string; moves: Record<DataId, FieldMove> };
+  /** RL-13: a run's Expeditions and challenges */
+  modifiers?: ModifiersData;
   pools: Record<DataId, Pool>;
   /** the egg tiers, keyed by the distance in km that hatches them ('2', '5', '10') */
   eggs: Record<string, EggTier>;
@@ -798,6 +800,8 @@ export interface TrainerEntry extends Trainer {
   runFoe?: 'miniboss' | 'boss';
   from?: DataId;
   alpha?: boolean;
+  /** RL-13: a run boss's HP times this (the Expedition's, logic/run-loop.js runFoes) */
+  hpMult?: number;
 }
 
 /** a trainer's Billie: a species, or '@rival' ('@rival1', '@rival2': evolved) for the starter that beats yours */
@@ -991,10 +995,12 @@ export interface Rules {
     seamIn: number;
     /** RL-8: what a run starts with, besides the Billies from home and the packed bag: its money, pyramids and items (placeholders) */
     start: { se: number; pyramids: Record<string, number>; items: Record<string, number> };
-    /** RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): how many Billies from home a run takes, and
-        how many items and pyramids (in all) are packed from Copperleaf's bag at the mast (placeholders) */
-    home: number[];
+    /** RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): how many items and pyramids (in all) are
+        packed from Copperleaf's bag at the mast (placeholders) */
     pack: number[];
+    /** RL-13: starter points: what a Billie at the ranch costs to take on a run, and the budget by Expedition
+        (placeholders for the sim; logic/starter-points.js) */
+    points: StarterPointRules;
     /** RL-8: a run town's clinic: $ per hurt Billie (free in the hub) */
     healCost: number;
     /** RL-8: a run town's shop: `always` on sale, then `more` wares a day drawn by weight from `pick` (an item id, or
@@ -1020,6 +1026,24 @@ export interface Rules {
   };
   /** roguelite track RL-9: the ranch (logic/ranch.js). Placeholders until the owner has played it */
   ranch: RanchRules;
+}
+
+/** RL-13: rules.json run.points: a Billie's cost in starter points and the budget a run has (logic/starter-points.js) */
+export interface StarterPointRules {
+  /** the points to spend, by Expedition (index 0 = Expedition I; past the end, the last) */
+  budget: number[];
+  /** the base cost by the line's rarity */
+  rarity: Record<string, number>;
+  /** more per evolution stage above the first */
+  stage: number;
+  /** the most the base cost (rarity and stage) can come to */
+  most: number;
+  /** levels above this cost extra */
+  levelsFrom: number;
+  /** one point more per this many levels above levelsFrom */
+  perLevels: number;
+  /** the most Billies a run can start with */
+  team: number;
 }
 
 /** rules.json ranch: training between runs (logic/ranch.js) */
@@ -1654,6 +1678,16 @@ export interface Biome {
   tall: Record<string, number>;
   look?: Record<string, unknown>;
   life?: { k: string; n: number }[];
+  /** TW-1: a run town's buildings and dressing (logic/mapgen.js mapgenStageTown): house props by weight (shut: for
+      show only), the square's centre, the plots' fence, the square's ground letter, the lamp and the bench */
+  town?: {
+    houses: Record<string, number>;
+    centre: string;
+    fence?: string;
+    square?: string;
+    lamp?: string;
+    bench?: string;
+  };
   from?: string;
 }
 
@@ -1740,7 +1774,24 @@ export type FxRow =
   | { kind: 'stat'; stat: 'lev' | 'law' | 'lob' | 'pr' | 'hus'; stages: number }
   | { kind: 'damage'; side: 'deal' | 'take'; cat?: 'H' | 'S'; type?: string; mult: number }
   | { kind: 'heal'; share: number }
-  | { kind: 'payout'; what: 'research' | 'itemShare'; mult: number };
+  | { kind: 'payout'; what: 'research' | 'itemShare'; mult: number }
+  /** RL-13 (modifiers.json only): foes' levels up by n; the boss's HP times mult */
+  | { kind: 'level'; n: number }
+  | { kind: 'bossHp'; mult: number };
+/** RL-13: modifiers.json: a run's Expedition (one row each, I first) and its challenges (logic/modifiers.js) */
+export interface Modifier {
+  name: string;
+  d: string;
+  fx: FxRow[];
+  /** a challenge: the condition for it to be offered at the mast */
+  when?: string;
+}
+export type ChallengeId = 'mono' | 'noheal' | 'noperks' | 'fragile';
+export interface ModifiersData {
+  about?: string;
+  expeditions: Modifier[];
+  challenges: Partial<Record<ChallengeId, Modifier>>;
+}
 /** events.json: a run's events, loot tables and trainer classes (roguelite track RL-12b; logic/encounters.js) */
 export interface EventsData {
   loot: Record<DataId, Record<DataId, number>>;

@@ -30,9 +30,10 @@ import {
   typeBadgeHTML,
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
-import { ITEMS, MOVES, PYRAMIDS, STAT_NAMES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
+import { ITEMS, MOVES, PYRAMIDS, STAT_NAMES, TYPES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
 import { billyName, healAll, maxHp, moveUsable, partBroken, partHpLeft, partMaxHp, plural } from './logic/rules.js';
+import { modMonoType, modTypeFits } from './logic/modifiers.js';
 import {
   ACTOR_SIDE,
   BATTLE_RULES,
@@ -130,6 +131,7 @@ expose({
   plateElement: [() => plateElement, v => (plateElement = v)],
   platesTick: [() => platesTick, v => ((platesTick = v), provide({ platesTick }))],
   playTurnEvents: [() => playTurnEvents, v => ((playTurnEvents = v), provide({ playTurnEvents }))],
+  runCatchFits: [() => runCatchFits, v => (runCatchFits = v)],
   screenWipe: [() => screenWipe, v => (screenWipe = v)],
   setEndBattle: [() => setEndBattle, v => (setEndBattle = v)],
   setOpenBattle: [() => setOpenBattle, v => (setOpenBattle = v)],
@@ -780,10 +782,12 @@ export function paintActions() {
       })
       .join('')}</div>${backButtonHTML()}`;
   } else if (ph === 'pyramids') {
+    /* RL-13: a mono-type run catches only Billies of its type (logic/modifiers.js) */
+    const monoOff = !runCatchFits();
     h = `<div class="coins">${Object.keys(PYRAMIDS)
       .map((k, n) => {
         const c = PYRAMIDS[k],
-          have = saveData.pyramids[k] || 0,
+          have = monoOff ? 0 : saveData.pyramids[k] || 0,
           odds = Math.round(catchOdds(k, 1 + CATCH_RULES.ring * 0.5, false) * 100);
         return `<button class="ccard" data-a="bcoin" data-c="${k}" ${have ? '' : 'disabled'}>${pyramidHTML(k, 34)}<span class="cc-t"><b>${escapeHtml(c.n)}</b><small class="tnum">${c.m === 0 ? 'Guaranteed' : `~${odds}% catch`} · ${have} left</small></span><span class="cc-bar"><i style="width:${c.m === 0 ? 100 : clamp(odds, 2, 100)}%"></i></span></button>`;
       })
@@ -872,8 +876,20 @@ export function showAim() {
   battleStageFocus('foe');
   $('#msgT').textContent = 'Line up your throw.';
 }
+/** RL-13: whether the foe on the field may be caught on this run (a mono-type run takes only its own type;
+ * logic/modifiers.js) */
+function runCatchFits() {
+  if (!activeBattle || !saveData.run) return true;
+  const e = fighter(1);
+  return !e || modTypeFits(saveData.run, speciesOf(e).types);
+}
 export function doThrow(spin) {
   if (uiState.throwing || !activeBattle || activeBattle.phase !== 'aim') return;
+  /* RL-13: a mono-type run never catches another type (logic/modifiers.js) */
+  if (!runCatchFits()) {
+    toast(`Only ${modMonoType(saveData.run, TYPES)} Billies can join this run.`);
+    return;
+  }
   uiState.throwing = true;
   const ph = battleStageRingPhase(),
     T = 1 + CATCH_RULES.ring * ph,
@@ -920,7 +936,7 @@ export function endBattle() {
     /* RL-8: what it pays and costs (logic/battle-rewards.js); RL-4: a battle called off at the turn cap ends as if you
        walked away (wild) or lost (a trainer). Studio plan T3.2: battleSettle also does what it does to the save (a
        run battle's checkpoint, the Hype counter, the encounter, the lead's streak), as the run's simulation does */
-    { pay, run } = battleSettle(activeBattle, saveData),
+    { pay, run, gone } = battleSettle(activeBattle, saveData),
     o = pay.o;
   if (o === 'win' && typeof jingle === 'function') jingle(JINGLES.victory);
   if (typeof battleTipHide === 'function') battleTipHide();
@@ -959,6 +975,8 @@ export function endBattle() {
      a run's mini-boss a pick of Perks, saved on the run before it shows (logic/battle-rewards.js battleSettleWin) */
   battleSettleWin(activeBattle, saveData, pay, run);
   if (kind === 'wild' && o === 'win' && pay.prize > 0) toast(`You earned ${plural(pay.prize, 'Money')}.`);
+  /* RL-13: the "Fainted is gone" challenge took them out of the run (logic/run-loop.js runFragileDrop) */
+  if (gone && gone.length) toast(`${gone.map(m => billyName(m)).join(' and ')} fainted and left the run.`);
   if (kind === 'trainer' && o === 'win') {
     const first = pay.first;
     let extra = '';

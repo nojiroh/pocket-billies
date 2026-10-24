@@ -36,6 +36,7 @@ import {
   FIELD_MOVES,
   ITEMS,
   LOCATIONS,
+  MODIFIERS,
   PERKS,
   PYRAMIDS,
   RULES,
@@ -57,6 +58,7 @@ import {
   spawn,
   xpFor,
 } from './logic/rules.js';
+import { CHALLENGE_IDS, expeditionNumeral, modsMake } from './logic/modifiers.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { RUN_SIDE_MOD } from './logic/run-side.js';
 import { MAPGEN_LAYOUTS } from './logic/mapgen.js';
@@ -215,7 +217,18 @@ function debugHTML() {
             .map(([k, L]) => [k, `Every route: ${L.name}`]),
         ],
         uiState.dbgRunLayout || ''
-      )}${debugButtonHTML('badgesall', 'Keep every badge', 'gold')}${debugButtonHTML('badgesnone', 'No badges')}</div><p class="note">RL-R2: a side area forced on the run (a detour or an alternate path behind Surf, Rock Smash or Cut); badges kept: ${escapeHtml(Object.keys((saveData.meta || {}).badges || {}).join(', ') || 'none')}.</p><p class="note">From Copperleaf, as the mast does (Expedition I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (for measuring on a phone; the debug log has the frame times). Route layout (RT-1): every laid-out place (routes, the landing, the mini-bosses' and the boss's) gets that plan.</p>`;
+      )}${debugButtonHTML('badgesall', 'Keep every badge', 'gold')}${debugButtonHTML('badgesnone', 'No badges')}</div><div class="dbg-row">${debugSelectHTML(
+        'dbgExpedition',
+        MODIFIERS.expeditions.map((E, i) => [i + 1, E.name]),
+        uiState.dbgExpedition || 1
+      )}${CHALLENGE_IDS.filter(id => MODIFIERS.challenges[id])
+        .map(
+          id =>
+            `<label><input id="dbgChal_${id}" type="checkbox"${(uiState.dbgChal || []).includes(id) ? ' checked' : ''}> ${escapeHtml(/** @type {any} */ (MODIFIERS.challenges[id]).name)}</label>`
+        )
+        .join(
+          ''
+        )}${debugButtonHTML('expopen', 'Open every Expedition', 'gold')}</div><p class="note">RL-13: the Expedition and challenges the next run starts at (a mono-type run takes the lead's first type). Open: ${escapeHtml(expeditionNumeral(saveData.meta.expedition || 1))}.</p><p class="note">RL-R2: a side area forced on the run (a detour or an alternate path behind Surf, Rock Smash or Cut); badges kept: ${escapeHtml(Object.keys((saveData.meta || {}).badges || {}).join(', ') || 'none')}.</p><p class="note">From Copperleaf, as the mast does (Expedition I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (for measuring on a phone; the debug log has the frame times). Route layout (RT-1): every laid-out place (routes, the landing, the mini-bosses' and the boss's) gets that plan.</p>`;
   const places = `<div class="dbg-row">${debugSelectHTML(
     'dbgNode',
     LOCATIONS.map((r, i) => [i, `${i}. ${r.name}`]),
@@ -551,13 +564,32 @@ function debugAction(x) {
       if (!runStartable())
         return refreshDebugMenu('A run can’t start now (on a run, in a battle, or no Billie can fight).');
       uiState.modal = null;
-      runTakeOff(sd || undefined, short ? { rows: 5, minibosses: 1 } : undefined, [
-        ...(mountains ? [RUN_MOD_MOUNTAINS] : []),
-        ...(side ? [RUN_SIDE_MOD + side] : []),
-        ...(layout ? [RUN_LAYOUT_MOD + layout] : []),
-      ]);
+      /* RL-13: the Expedition and the challenges picked here (a mono-type run takes the lead's first type) */
+      const expedition = Math.max(1, Math.min(MODIFIERS.expeditions.length, Number(v('dbgExpedition')) || 1)),
+        chal = CHALLENGE_IDS.filter(id => MODIFIERS.challenges[id] && ($(`#dbgChal_${id}`) || {}).checked),
+        lead = saveData.team[0],
+        monoType = (lead && SPECIES[lead.sp] && SPECIES[lead.sp].types[0]) || TYPES[0];
+      uiState.dbgExpedition = expedition;
+      uiState.dbgChal = chal;
+      runTakeOff(
+        sd || undefined,
+        short ? { rows: 5, minibosses: 1 } : undefined,
+        [
+          ...modsMake(chal, monoType),
+          ...(mountains ? [RUN_MOD_MOUNTAINS] : []),
+          ...(side ? [RUN_SIDE_MOD + side] : []),
+          ...(layout ? [RUN_LAYOUT_MOD + layout] : []),
+        ],
+        undefined,
+        expedition
+      );
       return;
     }
+    /* RL-13: every Expedition open, to try the harder ones */
+    case 'expopen':
+      saveData.meta.expedition = MODIFIERS.expeditions.length;
+      saveNow();
+      return refreshDebugMenu(`Expeditions I-${expeditionNumeral(saveData.meta.expedition)} open.`);
     /* RL-R2: badges kept for good, every type's or none (field moves need them) */
     case 'badgesall':
     case 'badgesnone': {

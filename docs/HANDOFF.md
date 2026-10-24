@@ -76,6 +76,238 @@ for the owner to push.
   - Python Playwright was not installed in this container (`pip install playwright==1.63.0`; the browser is in
     /opt/pw-browsers). gamedata.js is 0.62 MB now, not the 13 MB CLAUDE.md says.
 - Next: RT-2 (trainers on the spots, sight along the road, 4-6 a place, pairs).
+### Roguelite track RL-13 - Expeditions, challenges, starter points - 2026-10-24
+Branch `track/expeditions` (new, made from main at 25e447e in this session on the owner's word; BRANCHES.md and
+roguelite-track 9.4 name it). Plan approved in Plan Mode with the owner's answers: Expedition I is the baseline and
+each step counts from it; **nothing replaces the deadline's bite** (levels, boss HP, prices and the longer run are
+enough); a Billie's starter-point cost counts any levels above 5, not ranch levels tracked in the save; all four
+challenges, open after the first win; leader teams built during the run; and the placeholders are mine to tune with
+the sim (every change listed below). Round 5 beside RL-S1. Tag `rl-13-done` for the owner.
+- Where the docs were wrong (checked at 25e447e):
+  - Expeditions were half built already: `meta.expedition` and `run.expedition` were saved and validated, but nothing
+    ever raised them and only the zone count read them. The mast always started at I.
+  - "Runs grow by a zone or two at higher Expeditions" was already done in RL-R1 (regions.json zones 3/3/4/4/5), so
+    this session only had to let a run start above I. A run at III is 16 places against I's 10 on the same seed.
+  - The leaders were already picked by the region's types (RL-R1), but their **teams** were the legacy stand-ins:
+    Marina, the Water leader, fielded Gildslug, Filterleon and Feedopus. That is what RL-13 had to fix.
+  - Ranch-trained levels are not tracked anywhere: training adds XP to the Billie like any battle. So the cost counts
+    levels above 5 whatever their source (the owner's answer).
+  - `run.home` (RL-9b's count by Expedition) is gone, replaced by `run.points`. The packed bag (`run.pack`) stays.
+- Changed (one cause per commit):
+  - **modifiers.json** (+ schema, types, MODIFIERS, check-data and the Studio's Check): Expeditions I-V (I changes
+    nothing; each step +2 foe levels, boss HP x1.15, prices +10%) and the four challenges with a `when`
+    (`wins >= 1`) and +25% Research. Two new effect kinds, `level` and `bossHp`. New `logic/modifiers.js`
+    (a run's rows from `run.expedition` and `run.mods`, the mono-type helpers, `expeditionAfterWin`); `fxOfRun` adds
+    its rows after the Perks' and the events' boons.
+  - **In play**: wild Billies, route trainers, event foes, leaders and the boss take the Expedition's levels; the
+    boss's entry carries `hpMult` and `bossAlpha` builds its Alpha with it.
+  - **Winning opens the next** (run-state.js runEnd, one line after the win count: RL-S1 also edits runEnd), with a
+    toast; a new condition kind `expedition` for unlocks and lines.
+  - **Starter points** (new `logic/starter-points.js`, rules.json `run.points`): only the Billies at the ranch can
+    start; cost = rarity + stage (at most `most`), +1 per 5 levels above 5; budget by Expedition; at most 6. The
+    mast's pick, the run sim and the in-game test all use `pointPick`.
+  - **The start sheet**: an Expedition row (hidden while only I is open), a challenges row, a type row for a
+    mono-type run, each card's price and why it can't come. Take off hands the Expedition and mods to runStartPlan.
+  - **The challenges' rules**: `perkPool` empty (no pick, no shelf), `runClinic` shut and run shops without healing
+    wares (`runWareHeals`), the mast packing none, catching refused off-type (`runCatchFits`), and `runFragileDrop`
+    after every run battle (never the last one standing).
+  - **Leader teams** (`runLeaderTeam`): species of the leader's type, the region's dex first, the stage the level
+    allows, no species twice while the pool has others; its file's team sets how many and the level spread.
+  - **The sim**: `--expedition`, `--mods` and `--lvl` (the level the ranch trained them to), and the debug menu, the
+    debug log's run line, the fixture and a new in-game test phase.
+- **Balance, from the run sim** (the HANDOFF has carried "every run lost" since RL-8). The cause was not the
+  Expeditions: on a budget of 10 a level-20 party could bring **three** Billies, and the mini-boss (+3 levels, four
+  Billies) ended 72% of runs. Tuned placeholders: `run.points.budget` 10 -> [20, 22, 24, 26, 28],
+  `run.foes.miniboss.up` 3 -> 2, `run.foes.boss.up` 5 -> 3. Measured again **after main's new Billies (RO-2a/b/c,
+  40 species) were merged in**, with the two fixes below. Wins over 60 seeds (balance mode, 6 at the ranch, 4 wild
+  fights a place, 5 Potions; the bot policy is a lower bound on a player):
+
+  | party level | Expedition I | II | III |
+  |---|---|---|---|
+  | 5 (a fresh save) | 0 | - | - |
+  | 10 | 2 | 0 | 0 |
+  | 15 | 15 | 0 | 0 |
+  | 20 | 40 | 15 | 1 |
+  | 25 | 42 | 17 | 10 |
+
+  (Before the new roster, level 20 won 25 / 7 / 0: the new commons fill each region with young Billies and the
+  leaders field them, so Expedition I got friendlier; the step from one Expedition to the next is as steep.)
+  Challenges at Expedition I with a level-20 party: none 40 wins and 658 Research; no healing 41/805; no Perks
+  39/776; fainted is gone 40/822; mono-type 40/822. **The challenges barely bite for the bot** (it heals little, buys
+  few Perks, and its party is all one type): their cost shows only in play. The first runs are lost until the ranch
+  has trained something, which is the roguelite shape the owner asked for.
+- **check-fast's "Packing for a run" (found by CI)**: the start sheet opened with the suggested party filling the
+  budget, so every other card was greyed out and a tap did nothing until you tapped someone out. Now the suggested
+  party shows only until your first tap, which starts your own pick with that Billie; later taps add or take one out.
+- **The new Billies (merged from main mid-session)**, two fixes, one commit each:
+  - Starter points priced a Billie by its stage *number*: Sharktank (a two-stage line's final, stage 1) cost 2 while
+    Aviatorgoose with the same stats cost 3, and Altmowl and Peacouture (rare, no evolutions, stage 0 but a final
+    form's stats) cost 3 like Siliclet. A new `rules.js speciesStep` (a final form is 2 whatever its stage number) fixes
+    the price: they cost 3, 3, 5 and 5.
+  - The same mistake let leaders and route trainers field a final form at any level: a Flying mini-boss fielded four
+    level-11 Peacoutures, and a route trainer could field one at level 8. `runLeaderTeam` and RL-12b's `encDexAt` read
+    `speciesStep` now; a leader whose region has only its type's final forms looks at every species of the type first.
+- Verified: lint, typecheck, check:modules, format:check, check:data and the unit tests after every commit (886 ->
+  913 with main's and the new ones: modifiers (5), starter-points (5), challenges (4), run-loop's Expedition and
+  leader tests, encounters, run-state, conditions, check-data's planted Expeditions). Smoke 6 of 6 (208 s). The new in-game phase alone passed
+  headlessly. A browser look at the start sheet at 390x760 (three Expeditions open, a win): the chips, a challenge
+  on, the type row, each card's price and reason.
+  **Long checks skipped at the owner's word**: the full quick check and the whole in-game test (--selftest) were not
+  run. check:fast was, after all: CI runs it on every push, and it found a bug (below); 28 of 28 passed locally
+  after the fix, and CI's smoke job (which runs it) passed too.
+- Risky / open:
+  - Every number is still a placeholder; the sim's bot is not a player, and the win rates above are a floor.
+  - **No check-fast page for Expeditions** (the track asks each session for one): the start sheet's chips and a run
+    above I are only covered by the unit tests, the in-game phase and this session's browser look.
+  - The challenges' chip row scrolls sideways on a phone (four chips plus nine type chips); not tried on a phone.
+  - A mono-type run checks the type when a Billie starts or is caught; an event or a reward that hands you a Billie
+    (RL-12b `recall`, RL-S2's gifts) does not check it yet.
+  - `meta.expedition` goes up on a win but nothing lowers it; a save that has reached V always sees every chip.
+  - Leader teams are drawn fresh each time `runFoes` runs, so a leader's team is stable for a seed but changes if the
+    region's dex changes (a data edit mid-run).
+  - The fresh-save party (level 5) still never wins in the sim. If the owner wants the first run winnable, the lever
+    is the starter level or the mini-boss's row, not the Expedition.
+- Overlap: RL-S1 also edits `runEnd` (this adds one line after the win count) and the run's start; RL-12b part 2 edits
+  the run map (untouched here). main was merged in before the PR.
+- Next: RL-14 (the organization's bots, salvage, the Voltron) depends on this and RL-S1; RL-12c (held items) and
+  RL-R2b are open. For RL-13 itself: a check-fast page, and the owner's own numbers for the budget and the costs.
+### Towns track TW-1 - The town layout - 2026-10-24
+Branch `track/towns` (TW-1 of docs/phases/towns-track.md); main merged in first. Plan approved after four questions
+answered by the owner: towns keep the route size (Ask me before 1), **every house faces the camera** (not turned to its
+street), south of the through road is gardens and grass, a well or a fountain by biome. Tag `tw-1-done` for the owner (this
+session's git proxy refuses tag pushes): on this entry's commit.
+- Where the plan's facts were wrong (checked in the code):
+  - Filler rows roll route 4, event 2, town 1, stall 1 since RL-12b: a town is 1 in 8, not 1 in 5. The forced town
+    before each mini-boss is unchanged.
+  - island-gen's `plotFits`/`addPlot`/`plotsAlong`/`plotRing` are closures inside `islandGenerate`, built for turned
+    plots. With every house facing the camera, mapgen's own lot code fit better: its free-ground check became
+    `mapgenLotFree` (a no-change commit) and the town reuses it with `mapgenLevelLot`. island-gen is untouched.
+  - `folkTown()` (walk-view.js) is already true for a scene of kind `town`; `folk` stays 0, so nobody walks yet.
+    TW-2 only has to raise the count.
+  - Biomes had no building sets: added (below). Every house prop has a door but none has a room, so a house with no
+    `act` is shut by itself (data-files.js doorRooms finds nothing).
+  - `folk: 0` is at mapgen.js ~3188, not 3185.
+- **Main's Check was red** when this session started: the roster merge (#180) left the check-data snapshot with
+  duplicate entries and old file counts, and the run-start snapshot stale. Remade in their own commit.
+- Changed:
+  - **biomes.json `town`** per biome (schema, the Biome type, check-data): houses by weight (existing model houses and
+    cottages only), `centre` (well or fountain), `fence`, `square` (ground letter), optional `lamp` and `bench`.
+  - **mapgen.js `mapgenStageTown`** (kind `town`, MAPGEN_VERSION 7; `MAPGEN_TOWN`, `MAPGEN_TOWN_SET`), before the lot
+    stage: a short street north off the main road near the hub to a level square (16x8, else 14x7 or 12x6: the first
+    that fits; its own ground, the centre prop, two benches, four lamps), the clinic and the shop on its north side
+    facing the camera with their rooms fitting behind, `sc.spots` kind `square` and kind `board` (TW-3's notice board,
+    kept clear); then 4-7 shut houses north of the road, out from the street on both sides, each with a lawn garden
+    (a planter, a shrub, now and then a gnome), a fence along its front with a gap at its path, a lamp at every other
+    one; then 1-2 fenced vegetable plots south of the road. Nothing goes on tall grass. If no square fits, the lot
+    stage places the clinic and shop as on a route (never seen in 107 towns).
+  - **run-scenes.js:** a town node asks for `kind: 'town'`, a straight through road (`RUN_TOWN_ROAD`, wobble 0.25)
+    and no feature. A winding road left room for the square in only half the towns.
+  - **Studio:** the Generate card's Kind switch now offers Town.
+  - **Tests:** new `mapgen-town.test.mjs` (slow tier): every town in 6 runs has the square and the board's spot, the
+    centre prop, the clinic and the shop on its north side facing the camera with reachable doors and fitting rooms,
+    3-7 shut camera-facing houses from its biome's set (4+ in 90%), a vegetable plot, tall grass, no townsfolk, no
+    note, nothing unreachable, the east and west edges pinned; the same seed, the same town; a route has none.
+    Remade on purpose: run-world-real's frozen dials (only the town nodes' kind, road and feature), run-start (only
+    `mapgenV`), the rng scene hash (only `gen.v`: a route scene is byte for byte the same). The mountains run test
+    now checks summits only (a town's spots are not summits).
+- Verified: lint, typecheck, check:modules, format:check, check:data; unit tests 946 of 946 (all tiers); check-fast's
+  run steps 6 of 6 (twice); the smoke subset 6 of 6. Over 30 runs (107 towns): every town has its square, houses
+  4-7 in 106 (one has 3), a vegetable plot in all, nothing unreachable. Looked at in the game (Playwright 1.63.0, the
+  run fixture): Thicket Town (with a side area's north exit) and Meadow Town show the square, the well, the clinic
+  and shop, and houses beside the road.
+- Risky / open:
+  - **Not tried on the phone.** A town adds about 7 houses, 15-25 fence lengths, planters and lamps: watch the fps
+    (towns ran at 27-28 fps in phase 09).
+  - Houses sit in one row along the road; the "street" is short (3-5.5 m). If it reads too thin, a second row behind
+    the first or a longer street with houses on it is the next step (the square needs 10.4 m behind the shop's door).
+  - Two boss scenes in my 30-run sweep (seeds TW1TRY11 and TW1TRY23) note "no room for tall grass across the road";
+    it happens without TW-1 too and on no seed the tests use.
+  - The square's ground is dirt in the thicket (`u`): change biomes.json `town.square` if it looks wrong.
+  - **Side-area towns (RL-R2b, merged from main after TW-1 was built):** Surf's islet towns and the side areas' towns
+    get the town kind too. Over 12 seeds each, the square fits in 14 of 20 Surf islets and 18-19 of 20 Rock Smash and
+    Cut towns, with fewer houses (0-3 in about a third). Where the square doesn't fit, the clinic and the shop stand by
+    the road as before; never a note or an unreachable spot. Little land on an islet and the side road's diagonal entry
+    from the south are why; a smaller square for side towns is the follow-up if it matters.
+- Next: TW-2 (townsfolk, animals, chat lines): homes are the houses (FOLK_HOME matches them), work places the clinic
+  and the shop, hang-outs the benches and the well or fountain.
+### Roguelite track RL-R2b - Side areas and field moves, part 2: a cave, an islet, the way back - 2026-10-24
+Branch `track/regions` (fast-forwarded to main at 25e447e, RL-R2a's merge). Plan approved in Plan Mode with the
+owner's answers: the cave uses the game's own cave darkness, the islet joins by a seam on the water (riding in), the
+way out is a fade with the move's words, the islet may move to an RL-R2c if it runs long (it didn't). Left out by
+the owner: the world map's crowding at Expeditions III-V and a Run Lab picker that forces a side area. Tag
+`rl-r2b-done` for the owner.
+- Where the docs were wrong (checked at 25e447e):
+  - There is no top-level `logic/`: the files are under `game/js/logic/`.
+  - "The map generator makes only routes and towns": it makes routes only; a run's town is a route scene with a
+    clinic and a shop (run-scenes.js RUN_BUILDINGS), `kind: 'town'` only on the location row.
+  - A cave needed no new scene type: walk/lighting.js already darkens a scene with `dark: 1` and gives you a lantern
+    (`caveDark` 0.75), and the seam's look mix (seamless-world.js LOOK_KEYS, 14 m) already eases `dark` across a seam.
+    mapgen copies a biome's `look` onto its scene. Legacy caves (glimmershaft...) had the look to copy.
+  - "The island generator is reusable": for an islet in a run, no. It makes a whole free-sized island (76-93 m for a
+    small one) with an orbit camera, plots but no props or buildings, and no exits or seams. mapgen's new `islet`
+    water keeps the run's 112 x 64 frame and every seam rule, so the islet is mapgen's.
+  - The Run Lab, the run preview and the run sim never passed the field moves, so none of them ever made a side
+    area; the preview's own test and the Studio check's Node start had left them out too (the Studio check's Node
+    start had also left out RL-R1's region: two of its Run Lab problems were failing on main already).
+  - check-data required a field move's biome to be a run biome (rules.json run.map.biomes); the cave is a biome no
+    region draws, so that rule is gone (any biomes.json biome).
+- Changed (one cause per commit):
+  - **The cave** (data): a `cave` biome (cave floor, rock, crystal floor for the encounter ground; stalagmites,
+    crystals, mushrooms, boulders; the legacy cave's sky, haze and tint, `dark: 1`, `far: 'cave'`, drip; climate
+    `dry`; battle stage `grotto`; mood `cave`), its pool (Ground first: the pool rules' 7 lines), the cave song in
+    music.json before the town rule (a cave's town plays it too).
+  - **fieldMoves.json `land`**: a move's land dials over the run's (run-scenes.js runSideLand); Surf's coast water moved
+    there out of the code (no change in play). Rock Smash: biome `cave`, mountains north and south with cliffs,
+    terraces and ledges (the walls).
+  - **mapgen's `islet` water** (Islet in the Studio's list): the sea round a round of land on the hub's first guess,
+    sandbar causeways along the roads, each exit's run in and a joined edge's strip kept land (so a seam meets the
+    neighbour's land). **fieldMoves.json `townLand`**: Surf's town is an islet (waterAmount 0.8: the land's share).
+  - **The way out's moment** (field-moves.js `fieldWayOutTravel`): the talk box asks as before; a yes dips the
+    picture to dark (450 ms, waiting for the fade's end), paints the move's words (fieldMoves.json `travel`, drafts:
+    "Swept along by the current…", "Up the tunnel, toward the daylight…", "Through the undergrowth…"), builds the
+    main path's place behind it, holds (1.1 s) and fades back (650 ms), then the "Back on the main path" toast. A
+    rumble for Rock Smash, a whoosh for the others. Reduced motion: a quick fade. The self-test still calls
+    `fieldWayOutGo` directly.
+  - **Run preview**: the field moves (game-data.js FIELD_MOVES), so a preview has the side area as the game does.
+  - **Run Lab**: the plan gets the field moves; side places in a band of their own above the main path (a detour's
+    spread from half way after the obstacle's row), a dashed way in and a fainter dashed way out, the figures name
+    the side area, a side place's info says where it sits (reached from the obstacle's place or the one before).
+    Side places carry `data-side`.
+  - **Run sim**: `badges: 'none' | 'all'` (default none, a fresh save; CLI `--badges=all`); `simSideNext` takes the
+    side when the move can be used and the way out at its last place. The Studio's sim worker loads run-side and
+    fighters.
+  - **Studio check** (check-studio-github.py): its Node start gets the region and the field moves; its route count
+    and rows drawn leave side places out.
+- Verified: lint, typecheck, check:modules, format:check, check:data and the unit tests after every commit (876 ->
+  878). New or changed tests: run-side-world (Rock Smash's places dark and walled, the main path in daylight, Surf's
+  town an islet with the sea round its edge and its hub on land; seams agree for both kinds x three moves), mapgen
+  (an islet: no notes, sea north and south, the hub on land, every exit reached on foot), run-preview (a side area
+  in some seed, equal to the game's), run-sim (no badge no side; simSideNext's cases), sound (the cave's song),
+  check-data's planted field moves. Default sim runs unchanged: 50 seeds compared with the commit before (the same
+  runs). Smoke 6 of 6. A headless browser walk of a Rock Smash detour, a Surf detour and a Cut detour (the obstacle,
+  each place, the moment, back on the main path a day later; screens checked: the cave dark with the lantern, the
+  cave town, the islet's water, the words on the dark). The Studio check's run_lab step: 1 problem left, the rows
+  one below. Full quick check and the whole in-game test not run (long checks skipped).
+- Risky / open:
+  - The islet is checked by tests and from the walking camera, which sees only part of it: its look on a phone (does
+    it read as an island? the sandbar causeways, the Surf ride over its land) is for the owner.
+  - The cave's darkness easing in at the cave mouth was not watched walking across (the walk jumped place to place);
+    the look mix does it for any `dark` scene.
+  - Surf's town is ridden like its routes (RL-R2a's `ride` on every Surf place): you ride through the islet's town.
+  - The Studio check's "rows 7 typed in the rules card: the map has 8 rows" fails on main too: since RL-R1 the
+    region's zones set the rows, not rules.json run.map.rows. Not fixed here (RL-R1's; the check or the card wants
+    a decision).
+  - The run sim loses almost every run in the first rows on the placeholders, so its bot rarely reaches a side area
+    even with every badge; `simSideNext` is tested directly.
+  - Side places still crowd the world map at Expeditions III-V (left out by the owner).
+  - My headless walk loaded the data from the data files (game/data/gamedata.js isn't built in a fresh checkout:
+    one 404 in the console); the checks build it.
+- Merged main before merging (RL-12b part 2, RO-2b/2c, the routes and towns plans): the cave pool rebuilt on the 15
+  lines (main's ridge pool, Trump's line first); the veil's colour named (main's colour ceiling fell to 591). Two
+  snapshots main itself failed (run-start's hash, check-data's four, with duplicate stale entries) were remade.
+- Next: RL-12b part 2 is merged; RL-R2's track work is done (a crowding pass and the Run Lab picker if the owner
+  wants them).
+
 ### Roster track RO-2c - The Huang line, regional forms and a balance pass - 2026-10-24
 Branch `track/roster` itself (the push was allowed from this session). Plan approved in Plan Mode with the
 recommendations taken: Huang rare, ending at 560; the starters' level 16 left alone. **The RO-2.. plan is finished:

@@ -2,7 +2,7 @@
 // answers) equals what the game itself works out for the same seed: a save at the mast takes off through
 // runStartPlan/runStartOn, then the run's foes as run-world.js makes them, a town's stock and shelf as shop.js opens
 // them on a day, its places' wild tables (run-scenes.js runWorldTables) and the Perk picks battle.js makes after
-// each mini-boss, with nothing held.
+// each mini-boss, with nothing held; RL-R2b: the run's side area too.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { data, fn, GAME_DATA, hooks, modules, reseed } from './setup-real.mjs';
@@ -30,6 +30,7 @@ const worldData = () => ({
   scenery: gameData.scenery,
   rules: RULES.run,
   region: modules['run-region'].runRegionData(gameData, TRAINERS),
+  fieldMoves: data.FIELD_MOVES,
 });
 
 /** what the game shows for a seed: the run on a save, then each part as the page asks for it */
@@ -74,6 +75,7 @@ function theGame(/** @type {string} */ seed, /** @type {{ unlocks: string[], map
 }
 
 test('runPreview: the foes, shops, wild tables and Perk picks are the game’s for the same seed', () => {
+  let sides = 0;
   for (const seed of SEEDS)
     for (const [name, c] of Object.entries(CASES)) {
       const want = theGame(seed, c),
@@ -88,7 +90,10 @@ test('runPreview: the foes, shops, wild tables and Perk picks are the game’s f
         assert.deepEqual(n.shop, want.nodes[i].shop, `${at}: node ${i}'s shop`);
       });
       assert.deepEqual(got.relicOffers, want.offers, `${at}: the Perk picks`);
+      if (got.map.side) sides++;
     }
+  /* RL-R2b: a side area on most runs (rules.json run.side), in the preview as in the game */
+  assert.ok(sides > 0, 'some seed has a side area');
 });
 
 test('runPreview: every mini-boss and the boss has a foe, every town a day of stock, and it is plain data', () => {

@@ -52,6 +52,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataFieldMoves: [() => dataFieldMoves, v => (dataFieldMoves = v)],
   // @ts-expect-error -- replaced on purpose
+  dataModifiers: [() => dataModifiers, v => (dataModifiers = v)],
+  // @ts-expect-error -- replaced on purpose
   dataNodeTypes: [() => dataNodeTypes, v => (dataNodeTypes = v)],
   // @ts-expect-error -- replaced on purpose
   dataPerks: [() => dataPerks, v => (dataPerks = v)],
@@ -310,7 +312,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'wild',
   'seamIn',
   'start',
-  'home',
+  'points',
   'pack',
   'healCost',
   'shop',
@@ -473,13 +475,13 @@ export function dataRunLoop(D) {
         if (!(D.items || {})[k] || !whole(n, 0, 999))
           problem('rules.json', `run.start.items.${k}: no such item, or not a whole count`);
     }
-    // RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): Billies from home a run takes (1-6, never fewer
-    // than the Expedition before) and the things packed from Copperleaf's bag (0-99 items and pyramids in all)
+    // RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): the things packed from Copperleaf's bag
+    // (0-99 items and pyramids in all); RL-13: the starter points' budget (1-99), never less than the Expedition before
     for (const [k, lo, hi, what] of [
-      ['home', 1, 6, 'Billies from home'],
       ['pack', 0, 99, 'things packed'],
+      ['points.budget', 1, 99, 'starter points'],
     ]) {
-      const L = R[k];
+      const L = k === 'points.budget' ? R.points && R.points.budget : R[k];
       if (
         !Array.isArray(L) ||
         L.length < 1 ||
@@ -490,6 +492,22 @@ export function dataRunLoop(D) {
           'rules.json',
           `run.${k} is not a list of 1-9 whole numbers (${what}, ${lo}-${hi}), one a Expedition, none fewer than the one before`
         );
+    }
+    // RL-13: starter points (logic/starter-points.js): a cost per rarity (rarities.json), the stage step, the cap, the
+    // levels that cost more and how many Billies may go
+    const PT = R.points;
+    if (!rec(PT)) problem('rules.json', 'run.points: the starter points (budget, rarity, stage, most, ...) are needed');
+    else {
+      only(PT, ['budget', 'rarity', 'stage', 'most', 'levelsFrom', 'perLevels', 'team'], 'run.points');
+      if (!rec(PT.rarity) || !Object.keys(D.rarities || {}).every(r => whole(PT.rarity[r], 0, 20)))
+        problem('rules.json', 'run.points.rarity: a whole cost from 0 to 20 for each rarity (rarities.json)');
+      for (const r of Object.keys(PT.rarity || {}))
+        if (!(D.rarities || {})[r]) problem('rules.json', `run.points.rarity.${r}: no such rarity (rarities.json)`);
+      if (!whole(PT.stage, 0, 20) || !whole(PT.most, 1, 40))
+        problem('rules.json', 'run.points.stage (0-20) and most (1-40) are not whole costs');
+      if (!whole(PT.levelsFrom, 1, 100) || !whole(PT.perLevels, 1, 100))
+        problem('rules.json', 'run.points.levelsFrom and perLevels are not whole levels from 1 to 100');
+      if (!whole(PT.team, 1, 6)) problem('rules.json', 'run.points.team is not a whole number of Billies from 1 to 6');
     }
     if (!whole(R.healCost, 0, 100000))
       problem('rules.json', 'run.healCost is not a whole number of Moneys (0-100,000)');
@@ -626,6 +644,16 @@ export function dataBiomes(D, valid = () => true) {
       for (const k of Object.keys(B.fences || {}))
         if (props[k] && !props[k].box) problem('biomes.json', `${b}.fences: ${k} has no box (scenery.json)`);
       for (const L of B.life || []) if (!life[L.k]) problem('biomes.json', `${b}.life: no animal ${L.k}`);
+      /* TW-1: a run town's props are real, its houses have a door and a footprint, its square a real ground */
+      if (B.town) {
+        for (const k of Object.keys(B.town.houses))
+          if (!props[k]) problem('biomes.json', `${b}.town.houses: no prop ${k}`);
+          else if (!props[k].box || !props[k].door) problem('biomes.json', `${b}.town.houses: ${k} has no box or door`);
+        for (const f of ['centre', 'fence', 'lamp', 'bench'])
+          if (B.town[f] && !props[B.town[f]]) problem('biomes.json', `${b}.town.${f}: no prop ${B.town[f]}`);
+        if (B.town.square && !terr[B.town.square])
+          problem('biomes.json', `${b}.town.square: no terrain "${B.town.square}" (scenery.json terrains)`);
+      }
     }
   }
   return out;
@@ -729,7 +757,8 @@ export function dataNodeTypes(D, valid = () => true) {
   }
   return out;
 }
-// RL-R2: field moves (fieldMoves.json): the schema, a real type and a run biome each; rules.json run.side: the chances
+// RL-R2: field moves (fieldMoves.json): the schema, a real type and a biome each (RL-R2b: any biome, so a side-only
+// one such as the cave, which a region never draws); rules.json run.side: the chances
 // of a detour and of an alternate path (each 0-1, together at most 1), a detour's places [2-6], an alternate path's
 // rows [2-6] and the chance it ends at a boss of its own, a weight of 0 or more for moves that exist (one above 0), and
 // the lean (0-10) toward a move of the region's types
@@ -740,14 +769,11 @@ export function dataFieldMoves(D, valid = () => true) {
     problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]),
     FM = D.fieldMoves,
     moves = FM && FM.moves ? FM.moves : {},
-    types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
-    runBiomes = (D.rules && D.rules.run && D.rules.run.map && D.rules.run.map.biomes) || {};
+    types = new Set((D.types || []).map((/** @type {any} */ t) => t.id));
   if (FM && valid('fieldMoves.schema.json', FM, 'fieldMoves.json'))
     for (const [k, M] of Object.entries(moves)) {
       if (!types.has(M.type)) problem('fieldMoves.json', `moves.${k}: no type "${M.type}" (types.json)`);
       if (!(D.biomes || {})[M.biome]) problem('fieldMoves.json', `moves.${k}: no biome "${M.biome}" (biomes.json)`);
-      else if (!runBiomes[M.biome])
-        problem('fieldMoves.json', `moves.${k}: "${M.biome}" is not a run biome (rules.json run.map.biomes)`);
     }
   const S = D.rules && D.rules.run && D.rules.run.side;
   if (!S) return out;
@@ -773,6 +799,28 @@ export function dataFieldMoves(D, valid = () => true) {
   }
   if (!Object.values(W).some(w => typeof w === 'number' && w > 0))
     problem('rules.json', 'run.side.moves: no move has a weight, so no side area can be made');
+  return out;
+}
+// RL-13: modifiers.json: the schema; each challenge's `when` reads as a condition; the Expeditions are no more than
+// regions.json has zone counts for (past its last, a region keeps its last count) and their foe level rows never go down
+/** RL-13: modifiers.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataModifiers(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['modifiers.json', what]),
+    M = D.modifiers;
+  if (!M) return [['modifiers.json', 'missing']];
+  if (!valid('modifiers.schema.json', M, 'modifiers.json')) return out;
+  for (const [k, C] of Object.entries(M.challenges || {})) {
+    const p = /** @type {any} */ (C).when ? conditionProblem(/** @type {any} */ (C).when) : null;
+    if (p) problem(`challenges.${k}.when: ${p.message}`);
+  }
+  let last = -Infinity;
+  M.expeditions.forEach((/** @type {any} */ E, /** @type {number} */ i) => {
+    const up = E.fx.reduce((/** @type {number} */ a, /** @type {any} */ f) => a + (f.kind === 'level' ? f.n : 0), 0);
+    if (up < last) problem(`expeditions[${i}]: foes' levels go down from the Expedition before (${last} to ${up})`);
+    last = up;
+  });
   return out;
 }
 // RL-12b: events.json: the schema; every intro reads as lines only, every option's need as a condition and its `then`

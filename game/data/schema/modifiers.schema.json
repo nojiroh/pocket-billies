@@ -1,0 +1,511 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "modifiers.schema.json",
+ "title": "game/data/modifiers.json: a run's Expeditions and challenges (roguelite track RL-13; logic/modifiers.js, logic/effects.js)",
+ "type": "object",
+ "required": [
+  "expeditions",
+  "challenges"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "about": {
+   "type": "string"
+  },
+  "expeditions": {
+   "description": "Expedition I first; winning one opens the next",
+   "type": "array",
+   "minItems": 1,
+   "maxItems": 9,
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "name",
+     "d",
+     "fx"
+    ],
+    "properties": {
+     "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+     },
+     "d": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+     },
+     "fx": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+       "oneOf": [
+        {
+         "description": "money: what a won battle pays ($), times mult",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "mult"
+         ],
+         "properties": {
+          "kind": {
+           "const": "money"
+          },
+          "mult": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 4
+          }
+         }
+        },
+        {
+         "description": "price: a run shop's prices (shop) or a run town's clinic (heal), times mult",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "what",
+          "mult"
+         ],
+         "properties": {
+          "kind": {
+           "const": "price"
+          },
+          "what": {
+           "enum": [
+            "shop",
+            "heal"
+           ]
+          },
+          "mult": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 4
+          }
+         }
+        },
+        {
+         "description": "catch: a coin's chance to catch, times mult (never past 1)",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "mult"
+         ],
+         "properties": {
+          "kind": {
+           "const": "catch"
+          },
+          "mult": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 4
+          }
+         }
+        },
+        {
+         "description": "stat: your Billies on the field when a battle starts get stages of a stat (stats.json; not HP)",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "stat",
+          "stages"
+         ],
+         "properties": {
+          "kind": {
+           "const": "stat"
+          },
+          "stat": {
+           "type": "string",
+           "pattern": "^[a-z][a-z0-9_]*$",
+           "description": "a stat of stats.json other than hp (check-data and the Studio check it against the data)"
+          },
+          "stages": {
+           "type": "integer",
+           "minimum": -6,
+           "maximum": 6
+          }
+         }
+        },
+        {
+         "description": "damage: what your Billies deal (deal) or take (take), times mult; only moves of a category (H physical, S special) or a type when given",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "side",
+          "mult"
+         ],
+         "properties": {
+          "kind": {
+           "const": "damage"
+          },
+          "side": {
+           "enum": [
+            "deal",
+            "take"
+           ]
+          },
+          "cat": {
+           "enum": [
+            "H",
+            "S"
+           ]
+          },
+          "type": {
+           "type": "string",
+           "minLength": 1
+          },
+          "mult": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 4
+          }
+         }
+        },
+        {
+         "description": "heal: each place you walk into heals every Billie on your team that hasn't fainted by this share of its HP",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "share"
+         ],
+         "properties": {
+          "kind": {
+           "const": "heal"
+          },
+          "share": {
+           "type": "number",
+           "exclusiveMinimum": 0,
+           "maximum": 1
+          }
+         }
+        },
+        {
+         "description": "payout: the payout's Research (research) or the share of their price items count at (itemShare), times mult",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "what",
+          "mult"
+         ],
+         "properties": {
+          "kind": {
+           "const": "payout"
+          },
+          "what": {
+           "enum": [
+            "research",
+            "itemShare"
+           ]
+          },
+          "mult": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 4
+          }
+         }
+        },
+        {
+         "description": "level: foes' levels (wild Billies, trainers, leaders and the boss) up by n",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "n"
+         ],
+         "properties": {
+          "kind": {
+           "const": "level"
+          },
+          "n": {
+           "type": "integer",
+           "minimum": -20,
+           "maximum": 40
+          }
+         }
+        },
+        {
+         "description": "bossHp: the run's boss's HP, times mult",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "mult"
+         ],
+         "properties": {
+          "kind": {
+           "const": "bossHp"
+          },
+          "mult": {
+           "type": "number",
+           "minimum": 0.1,
+           "maximum": 4
+          }
+         }
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  "challenges": {
+   "type": "object",
+   "propertyNames": {
+    "enum": [
+     "mono",
+     "noheal",
+     "noperks",
+     "fragile"
+    ]
+   },
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "name",
+     "d",
+     "fx"
+    ],
+    "properties": {
+     "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+     },
+     "d": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+     },
+     "fx": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+       "oneOf": [
+        {
+         "description": "money: what a won battle pays ($), times mult",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "mult"
+         ],
+         "properties": {
+          "kind": {
+           "const": "money"
+          },
+          "mult": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 4
+          }
+         }
+        },
+        {
+         "description": "price: a run shop's prices (shop) or a run town's clinic (heal), times mult",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "what",
+          "mult"
+         ],
+         "properties": {
+          "kind": {
+           "const": "price"
+          },
+          "what": {
+           "enum": [
+            "shop",
+            "heal"
+           ]
+          },
+          "mult": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 4
+          }
+         }
+        },
+        {
+         "description": "catch: a coin's chance to catch, times mult (never past 1)",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "mult"
+         ],
+         "properties": {
+          "kind": {
+           "const": "catch"
+          },
+          "mult": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 4
+          }
+         }
+        },
+        {
+         "description": "stat: your Billies on the field when a battle starts get stages of a stat (stats.json; not HP)",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "stat",
+          "stages"
+         ],
+         "properties": {
+          "kind": {
+           "const": "stat"
+          },
+          "stat": {
+           "type": "string",
+           "pattern": "^[a-z][a-z0-9_]*$",
+           "description": "a stat of stats.json other than hp (check-data and the Studio check it against the data)"
+          },
+          "stages": {
+           "type": "integer",
+           "minimum": -6,
+           "maximum": 6
+          }
+         }
+        },
+        {
+         "description": "damage: what your Billies deal (deal) or take (take), times mult; only moves of a category (H physical, S special) or a type when given",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "side",
+          "mult"
+         ],
+         "properties": {
+          "kind": {
+           "const": "damage"
+          },
+          "side": {
+           "enum": [
+            "deal",
+            "take"
+           ]
+          },
+          "cat": {
+           "enum": [
+            "H",
+            "S"
+           ]
+          },
+          "type": {
+           "type": "string",
+           "minLength": 1
+          },
+          "mult": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 4
+          }
+         }
+        },
+        {
+         "description": "heal: each place you walk into heals every Billie on your team that hasn't fainted by this share of its HP",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "share"
+         ],
+         "properties": {
+          "kind": {
+           "const": "heal"
+          },
+          "share": {
+           "type": "number",
+           "exclusiveMinimum": 0,
+           "maximum": 1
+          }
+         }
+        },
+        {
+         "description": "payout: the payout's Research (research) or the share of their price items count at (itemShare), times mult",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "what",
+          "mult"
+         ],
+         "properties": {
+          "kind": {
+           "const": "payout"
+          },
+          "what": {
+           "enum": [
+            "research",
+            "itemShare"
+           ]
+          },
+          "mult": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 4
+          }
+         }
+        },
+        {
+         "description": "level: foes' levels (wild Billies, trainers, leaders and the boss) up by n",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "n"
+         ],
+         "properties": {
+          "kind": {
+           "const": "level"
+          },
+          "n": {
+           "type": "integer",
+           "minimum": -20,
+           "maximum": 40
+          }
+         }
+        },
+        {
+         "description": "bossHp: the run's boss's HP, times mult",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "mult"
+         ],
+         "properties": {
+          "kind": {
+           "const": "bossHp"
+          },
+          "mult": {
+           "type": "number",
+           "minimum": 0.1,
+           "maximum": 4
+          }
+         }
+        }
+       ]
+      }
+     },
+     "when": {
+      "description": "a condition (logic/conditions.js) for the challenge to be offered at the mast",
+      "type": "string"
+     }
+    }
+   }
+  }
+ }
+}

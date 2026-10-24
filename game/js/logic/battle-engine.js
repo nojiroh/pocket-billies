@@ -113,6 +113,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   benchCandidates: [() => benchCandidates, v => (benchCandidates = v)],
   // @ts-expect-error -- replaced on purpose
+  bossAlpha: [() => bossAlpha, v => (bossAlpha = v)],
+  // @ts-expect-error -- replaced on purpose
   calcDamage: [() => calcDamage, v => (calcDamage = v)],
   canUse: [() => canUse],
   // @ts-expect-error -- replaced on purpose
@@ -1004,6 +1006,16 @@ export function makeAlpha(sp, lvl, o = {}) {
   m.hp = maxHp(m);
   return m;
 }
+/** RL-13: a run boss's Alpha, its HP times hpMult (the Expedition's, run-loop.js runFoes) when given
+ * @param {{ sp: string, lvl: number }} e @param {number} [hpMult] */
+export function bossAlpha(e, hpMult) {
+  const m = makeAlpha(e.sp, e.lvl);
+  if (hpMult && hpMult !== 1 && m.boss) {
+    m.boss.hp *= hpMult;
+    m.hp = maxHp(m);
+  }
+  return m;
+}
 /** a wild Billie's battle. Studio plan T3.2: `o.host` and `o.extra` (a run battle's seed, weather and Perks:
  * logic/run-loop.js runBattleExtra) as for startTrainer, so the run's simulation starts it as the page does */
 export function startWild(q, o = {}) {
@@ -1039,7 +1051,7 @@ export function startTrainer(id, o = {}) {
   const T = TRAINERS[id];
   if (!T) return;
   /* RL-8: a run's boss is its leader's top Billie alone, as an Alpha (logic/run-loop.js runFoes) */
-  const team = T.alpha ? T.team.slice(0, 1).map(e => makeAlpha(e.sp, e.lvl)) : trainerTeam(T);
+  const team = T.alpha ? T.team.slice(0, 1).map(e => bossAlpha(e, T.hpMult)) : trainerTeam(T);
   if (!team.length) {
     battleHost(o).toast(`${T.name} has no team yet. Add one in Pocket Billies Studio.`);
     return;

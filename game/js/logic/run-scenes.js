@@ -21,6 +21,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { hashString, rngFrom } from './rng.js';
+import { modFoeLevels } from './modifiers.js';
 import { runZoneRegion } from './run-region.js';
 import { runExits, runNodeSeed, runSpot } from './run-map.js';
 import { MAPGEN_LAYOUTS, MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
@@ -33,6 +34,7 @@ expose({
   RUN_LAYOUT_MOD: [() => RUN_LAYOUT_MOD],
   RUN_MOD_MOUNTAINS: [() => RUN_MOD_MOUNTAINS],
   RUN_SIDE_ID: [() => RUN_SIDE_ID],
+  RUN_TOWN_ROAD: [() => RUN_TOWN_ROAD],
   fieldMoveOf: [() => fieldMoveOf],
   // @ts-expect-error -- replaced on purpose
   runAlongBack: [() => runAlongBack, v => (runAlongBack = v)],
@@ -56,6 +58,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runScenesMake: [() => runScenesMake, v => (runScenesMake = v)],
   runShopId: [() => runShopId],
+  // @ts-expect-error -- replaced on purpose
+  runSideLand: [() => runSideLand, v => (runSideLand = v)],
   // @ts-expect-error -- replaced on purpose
   runWildLevels: [() => runWildLevels, v => (runWildLevels = v)],
   // @ts-expect-error -- replaced on purpose
@@ -161,13 +165,15 @@ export function runSceneParams(run, i, scenes, data) {
       : {}),
     /* RL-8: the buildings a node's type needs, beside the main road near its middle (mapgen's props dials: MG-2) */
     props: { ...(dials.props || {}), ...(RUN_BUILDINGS[node.type] || {}) },
-    /* RL-R2: a ridden side area (Surf): water along a side, walked on by riding */
-    ...(node.side && fieldMoveOf(map, data) && /** @type {any} */ (fieldMoveOf(map, data)).ride
-      ? { land: { ...(dials.land || {}), water: 'coast', waterAmount: 0.6 } }
+    /* RL-R2: a side area's own land (fieldMoves.json `land`: Surf's coast water, walked on by riding; RL-R2b: the
+       cave's rock walls) */
+    ...(node.side && fieldMoveOf(map, data)
+      ? runSideLand(/** @type {any} */ (fieldMoveOf(map, data)), node, dials)
       : {}),
     /* RT-1: a laid-out place's plan (a route, the landing, a mini-boss's or the boss's place) */
     ...(layout ? { layout } : {}),
-    kind: 'route',
+    /* TW-1: a town node is a town (mapgen.js mapgenStageTown: a street, a square, houses) */
+    kind: node.type === 'town' ? 'town' : 'route',
     biome: node.biome || Object.keys(data.biomes)[0],
     w: size.w,
     h: size.h,
@@ -175,7 +181,14 @@ export function runSceneParams(run, i, scenes, data) {
     /* its east and west edges at height 0, so it meets any neighbour with no step (two neighbours' strips overlap on
        a 64 m edge, where one scene can't follow both) */
     pin: 'EW',
-    road: { ...(dials.road || {}), exits: exits.map(e => ({ side: e.side, t: e.t, width: 2 })) },
+    road: {
+      ...(dials.road || {}),
+      /* TW-1: a town's through road runs straight, so its street and square have room beside it */
+      ...(node.type === 'town' ? RUN_TOWN_ROAD : {}),
+      exits: exits.map(e => ({ side: e.side, t: e.t, width: 2 })),
+    },
+    /* TW-1: a town has no lookout, bridge or glade of its own */
+    ...(node.type === 'town' ? { feature: 'none' } : {}),
     edges,
   };
 }
@@ -200,6 +213,14 @@ export function runLayoutOf(run, i, data) {
   if (!W || !Object.values(W).some(w => w > 0)) return null;
   const id = rngFrom(runNodeSeed(run.seed, i), 'scene|layout').pick(Object.fromEntries(Object.entries(W).sort()));
   return id === 'none' ? null : id;
+}
+/** TW-1: a town's through road (mapgen's road dials): straight, a little wobble */
+export const RUN_TOWN_ROAD = { shape: 'straight', wobble: 0.25 };
+/** RL-R2b: a side place's land dials: the move's `land` over the run's, and a town's `townLand` over both (Surf's
+ * islet) @param {any} M the field move @param {RunMap['nodes'][number]} node @param {any} dials */
+export function runSideLand(M, node, dials) {
+  if (!M.land && !(node.type === 'town' && M.townLand)) return {};
+  return { land: { ...(dials.land || {}), ...(M.land || {}), ...(node.type === 'town' ? M.townLand || {} : {}) } };
 }
 /** TR-2: the debug menu's run mod that gives every place mountains (runSceneParams) */
 export const RUN_MOD_MOUNTAINS = 'dbg_mountains';
@@ -305,11 +326,12 @@ export function runScenesMake(run, data) {
   for (let i = 0; i < map.nodes.length; i++) scenes.push(runSceneMake(run, i, scenes, data).scene);
   return scenes;
 }
-/** node i's wild levels: rules.json run.wild's on the landing's row, perRow more on each row after (1-100)
- * @param {RunMap} map @param {number} i @param {RunWorldData} data @returns {[number, number]} */
-export function runWildLevels(map, i, data) {
+/** node i's wild levels: rules.json run.wild's on the landing's row, perRow more on each row after, and `more` (RL-13:
+ * the run's Expedition, effects.js modFoeLevels) on all of them (1-100)
+ * @param {RunMap} map @param {number} i @param {RunWorldData} data @param {number} [more] @returns {[number, number]} */
+export function runWildLevels(map, i, data, more = 0) {
   const W = data.rules.wild,
-    up = map.nodes[i].row * W.perRow,
+    up = map.nodes[i].row * W.perRow + more,
     lv = /** @type {[number, number]} */ (W.lv.map(v => Math.max(1, Math.min(100, v + up))));
   return lv;
 }
@@ -340,7 +362,7 @@ export function runWorldTables(run, hub, data) {
     /* RL-R2: a side area's places meet its own species (lines the region left out), when it has them */
     const own = node.side && map.side && map.side.dex ? map.side.dex : null;
     pools[id] = {
-      lv: runWildLevels(map, i, data),
+      lv: runWildLevels(map, i, data, modFoeLevels(run)),
       list: own ? wildPoolList(source.list, own, null) : wildPoolList(source.list, dex, region ? region.swap : null),
     };
     /** @type {LocationData} */

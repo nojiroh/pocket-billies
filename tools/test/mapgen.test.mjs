@@ -15,7 +15,8 @@ const CASES = [];
 {
   const biomes = Object.keys(GAME_DATA.biomes),
     shapes = Object.keys(G.MAPGEN_SHAPES),
-    water = Object.keys(G.MAPGEN_WATER),
+    /* RL-R2b: the islet has its own test below (adding it here would move every case's water) */
+    water = Object.keys(G.MAPGEN_WATER).filter(k => k !== 'islet'),
     feats = Object.keys(G.MAPGEN_FEATURES),
     surf = Object.keys(G.MAPGEN_SURFACES);
   const exits = [
@@ -231,4 +232,37 @@ test("RT-1: the walk grid turns a turned prop's footprint as the game's navGrid 
   sc.props = [{ k: 'hedge', x: 5, z: 5, rot: 90 }];
   W = G.mapgenWalkGrid(sc, C);
   assert.ok(!blocked(W, 6.4, 5.2) && blocked(W, 4.8, 6.4));
+});
+
+test('RL-R2b: an islet is the sea round a round of land on the hub, its exits reached on foot by causeways', () => {
+  for (const seed of [7, 8, 9]) {
+    const { scene: sc, notes } = G.mapgenScene(
+      {
+        biome: 'lake',
+        seed,
+        w: 112,
+        h: 64,
+        pin: 'EW',
+        land: { water: 'islet', waterAmount: 0.8 },
+        road: {
+          exits: [
+            { side: 'E', t: 0.5, width: 2 },
+            { side: 'W', t: 0.5, width: 2 },
+          ],
+        },
+      },
+      ctx
+    );
+    assert.deepEqual(notes, [], `seed ${seed}`);
+    assert.equal(sc.waterKind, 'sea');
+    const wet = (/** @type {string} */ c) => c === 'd' || c === 'w',
+      rim = [...sc.tiles[0], ...sc.tiles[sc.h - 1]];
+    assert.ok(rim.filter(wet).length > rim.length * 0.7, `seed ${seed}: the sea along the north and south`);
+    assert.ok(!wet(sc.tiles[Math.floor(sc.hub[1])][Math.floor(sc.hub[0])]), `seed ${seed}: the hub on land`);
+    assert.deepEqual(
+      G.mapgenUnreachable(sc, GAME_DATA.scenery),
+      [],
+      `seed ${seed}: the hub reaches every exit on foot`
+    );
+  }
 });

@@ -594,6 +594,7 @@
   {"indoor":true,"map":["lanternhall","pepperpot"],"song":"mall"},
   {"indoor":true,"song":"cave"},
   {"song":"$place"},
+  {"biome":"cave","song":"cave"},
   {"nodeType":"town","song":"town"},
   {"nodeType":"landing","song":"route"},
   {"biome":"meadow","song":"meadow"},

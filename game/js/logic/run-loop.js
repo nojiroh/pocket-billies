@@ -16,10 +16,11 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { encArrive, fxHealShare, fxOfRun, unlockOpen } from '../hooks.js';
-import { ITEMS } from '../game-data.js';
+import { ITEMS, SPECIES } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
-import { healAll, maxHp, plural } from './rules.js';
+import { healAll, maxHp, plural, speciesStep } from './rules.js';
+import { modBossHp, modFoeLevels, modHas } from './modifiers.js';
 import { RUN_DAYS, runHome } from './run-state.js';
 import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
@@ -41,10 +42,14 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runFoes: [() => runFoes, v => (runFoes = v)],
   // @ts-expect-error -- replaced on purpose
+  runFragileDrop: [() => runFragileDrop, v => (runFragileDrop = v)],
+  // @ts-expect-error -- replaced on purpose
   runHealCost: [() => runHealCost, v => (runHealCost = v)],
   runHurt: [() => runHurt],
   runItemPrice: [() => runItemPrice],
   runKept: [() => runKept],
+  // @ts-expect-error -- replaced on purpose
+  runLeaderTeam: [() => runLeaderTeam, v => (runLeaderTeam = v)],
   // @ts-expect-error -- replaced on purpose
   runPayoutRows: [() => runPayoutRows, v => (runPayoutRows = v)],
   // @ts-expect-error -- replaced on purpose
@@ -56,6 +61,7 @@ expose({
   runShopOpen: [() => runShopOpen, v => (runShopOpen = v)],
   // @ts-expect-error -- replaced on purpose
   runShopStock: [() => runShopStock, v => (runShopStock = v)],
+  runWareHeals: [() => runWareHeals],
   // @ts-expect-error -- replaced on purpose
   weatherEffectText: [() => weatherEffectText, v => (weatherEffectText = v)],
 });
@@ -97,9 +103,12 @@ export function runHealCost(team, each) {
 /** Studio plan T3.2: a run town's clinic, after the player's yes (walk-tab.js clinicHeal, and the run's simulation):
  * when a Billie is hurt and the money is there, pay `each` per hurt Billie and heal everyone (healAll: the save in
  * play, `s`); else nothing changes. Returns what was hurt, what it costs and what was paid (0: nothing done)
- * @param {SaveData} s @param {number} each @returns {{ hurt: number, cost: number, paid: number }} */
+ * RL-13: with the "No healing" challenge the clinic is shut and nothing is paid (`shut`)
+ * @param {SaveData} s @param {number} each @returns {{ hurt: number, cost: number, paid: number, shut?: boolean }} */
 export function runClinic(s, each) {
   const { hurt, cost } = runHealCost(s.team, each);
+  /* RL-13: the "No healing" challenge closes the clinics (logic/modifiers.js) */
+  if (modHas(s.run, 'noheal')) return { hurt, cost, paid: 0, shut: true };
   if (!hurt || s.se < cost) return { hurt, cost, paid: 0 };
   s.se -= cost;
   healAll();
@@ -127,8 +136,19 @@ export function runShopStock(run, i, day, rule) {
  * @param {{ always: string[], more: number, pick: Record<string, number> }} rule
  * @param {import('./unlocks.js').UnlockData} unlockData */
 export function runShopOpen(run, i, day, rule, unlockData) {
-  return runShopStock(run, i, day, { ...rule, pick: unlockOpen(rule.pick, 'shop', run.unlocks, unlockData) });
+  const open = unlockOpen(rule.pick, 'shop', run.unlocks, unlockData),
+    /* RL-13: the "No healing" challenge takes the healing wares off the shelves (logic/modifiers.js) */
+    heals = (/** @type {string} */ w) => runWareHeals(w, ITEMS),
+    pick = modHas(run, 'noheal') ? Object.fromEntries(Object.entries(open).filter(([w]) => !heals(w))) : open,
+    always = modHas(run, 'noheal') ? rule.always.filter(w => !heals(w)) : rule.always;
+  return runShopStock(run, i, day, { ...rule, always, pick });
 }
+/** RL-13: whether a shop ware (an item id, or 'coin:<id>') heals or revives a Billie (items.json), for the
+ * "No healing" challenge @param {string} ware @param {Record<string, any>} items */
+export const runWareHeals = (ware, items) => {
+  const I = !ware.startsWith('coin:') && items[ware];
+  return !!I && !!(I.hp || I.hpAll || I.revive || I.cure);
+};
 
 /** a leader's win line without its badge (the run gives none): the sentences naming a Badge left out
  * @param {string} text */
@@ -138,6 +158,47 @@ export const runFoeWinText = text => {
   const kept = (m[1].match(/[^.!?]+[.!?]+/g) || [m[1]]).map(s => s.trim()).filter(s => !/Badge/.test(s));
   return kept.length ? `“${kept.join(' ')}”` : '';
 };
+/**
+ * RL-13: a run leader's team, built for the run instead of the file's legacy stand-ins: as many Billies as its own
+ * team has, at `levels` (its own spread, kept), of species of the leader's type (`type`) — from the region's dex
+ * first, then (none there young enough for the level) from every species of that type, each at the stage its level
+ * allows (as a wild Billie's: a first stage under 16, no final form under 32, rules.js speciesStep); with
+ * none of its type is young enough for the level (Steel has no first stage), its youngest; with none of its type
+ * anywhere (a type no line has), its own team's species stay; no species twice while the pool has
+ * others. Drawn from the node's stream, so a
+ * seed's leaders are the same every time. Its coats and builds are left to the battle, as the file's team is.
+ * @param {{ int: (lo: number, hi: number) => number }} g the node's stream ('team')
+ * @param {any} T the leader @param {number[]} levels its Billies' levels, lowest first
+ * @param {Record<string, any>} species SPECIES @param {string[] | null} dex the region's
+ * @returns {{ sp: string, lvl: number }[]}
+ */
+export function runLeaderTeam(g, T, levels, species, dex) {
+  const own = T.team.map((/** @type {any} */ e, /** @type {number} */ k) => ({ ...e, lvl: levels[k] }));
+  if (!T.type) return own;
+  const ofType = (/** @type {string[]} */ ids) =>
+    ids.filter(id => species[id] && (species[id].types || []).includes(T.type));
+  const pool = ofType(dex && dex.length ? dex : []),
+    every = ofType(Object.keys(species));
+  if (!every.length) return own;
+  /** @type {string[]} */
+  const taken = [];
+  return levels.map(lvl => {
+    /* the stages the level may field (encounters.js encDexAt has the same rule for route trainers) */
+    const fits = (/** @type {string} */ id) =>
+        lvl < 16 ? speciesStep(species[id]) === 0 : lvl < 32 ? speciesStep(species[id]) <= 1 : true,
+      /* the region's own first; when it has none of the type young enough, every species of the type */
+      fit = pool.filter(fits).length ? pool.filter(fits) : every.filter(fits),
+      /* none of the type is young enough anywhere: its youngest instead */
+      low = Math.min(...every.map(id => speciesStep(species[id]))),
+      pick = fit.length ? fit.slice().sort() : every.filter(id => speciesStep(species[id]) === low).sort(),
+      /* no species twice while there are others to field */
+      left = pick.filter(id => !taken.includes(id)),
+      from = left.length ? left : pick,
+      sp = from[g.int(0, from.length - 1)];
+    taken.push(sp);
+    return { sp, lvl };
+  });
+}
 /** a run foe's id: the node's place id and 'foe' @param {number} i */
 export const runFoeId = i => `run_${i}_foe`;
 /**
@@ -171,10 +232,18 @@ export function runFoes(run, data) {
     const T = want || from[rngFrom(runNodeSeed(run.seed, i), 'foe').int(0, from.length - 1)];
     used.add(T.id);
     const F = data.rules.foes[node.type],
-      top = runWildLevels(map, i, /** @type {any} */ (data))[1] + F.up,
+      top = runWildLevels(map, i, /** @type {any} */ (data), modFoeLevels(run))[1] + F.up,
       high = Math.max(...T.team.map(e => e.lvl || 1)),
       lv = (/** @type {number} */ l) => Math.max(1, Math.min(100, top - (high - (l || 1)))),
-      team = T.team.map(e => ({ ...e, lvl: lv(e.lvl) })),
+      /* RL-13: the leader's team is built for the run, of its own type (its file's team sets how many and the
+         level spread; the region's dex first) */
+      team = runLeaderTeam(
+        rngFrom(runNodeSeed(run.seed, i), 'team'),
+        T,
+        T.team.map((/** @type {any} */ e) => lv(e.lvl)),
+        SPECIES,
+        (run.region && run.region.dex) || null
+      ),
       boss = node.type === 'boss';
     out[runFoeId(i)] = {
       id: runFoeId(i),
@@ -190,6 +259,8 @@ export function runFoes(run, data) {
       blocks: !boss,
       double: !boss,
       ...(boss ? { alpha: true } : {}),
+      /* RL-13: the Expedition's boss HP (effects.js modBossHp) */
+      ...(boss && modBossHp(run) !== 1 ? { hpMult: modBossHp(run) } : {}),
       runFoe: node.type,
       runNode: i,
       from: T.id,
@@ -258,6 +329,20 @@ export function runRelease(s, m) {
   if (runReleasePays(run, m)) run.released.push({ sp: m.sp, lvl: m.lvl });
 }
 
+/**
+ * RL-13: the "Fainted is gone" challenge: after a run battle, every Billie that fainted leaves the run (runRelease:
+ * out of the party, paid at the payout when it was caught on the run). Never the last one standing: with the whole
+ * party down the run is over anyway and the payout keeps one. Returns those that left (names for the sheet).
+ * @param {SaveData} s @returns {Billy[]}
+ */
+export function runFragileDrop(s) {
+  const run = s.run;
+  if (!run || !modHas(run, 'fragile') || !s.team.some(m => m.hp > 0)) return [];
+  const gone = s.team.filter(m => m.hp <= 0);
+  for (const m of gone) runRelease(s, m);
+  if (s.team.length && !s.team.some(m => m.uid === s.buddy)) s.buddy = s.team[0].uid;
+  return gone;
+}
 /** Studio plan T3.2: who comes home from a run's end (run-payout.js and the run's simulation): the whole party on a
  * win, else only the one picked (none when it isn't in the party) @param {{ uid: string }[]} team @param {boolean} won
  * @param {string | null} pick @returns {string[]} */

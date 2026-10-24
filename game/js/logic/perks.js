@@ -17,6 +17,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
+import { modHas } from './modifiers.js';
 import { runNodeSeed } from './run-map.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -44,9 +45,12 @@ expose({
  * was by id; the data's order lets an id change without changing a seed's offers)
  * @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule @param {string[]} [also] left out too */
 export const perkPool = (run, perks, rule, also = []) =>
-  Object.keys(perks).filter(
-    id => !run.perks.includes(id) && !also.includes(id) && (rule.rarity[perks[id].rarity] || 0) > 0
-  );
+  /* RL-13: the "No Perks" challenge offers none at all (logic/modifiers.js) */
+  modHas(run, 'noperks')
+    ? []
+    : Object.keys(perks).filter(
+        id => !run.perks.includes(id) && !also.includes(id) && (rule.rarity[perks[id].rarity] || 0) > 0
+      );
 
 /** draw up to n Perks from a stream, by rarity weight, none twice @param {{ pick: (w: Record<string, number>) => string }} g
  * @param {string[]} pool @param {Record<string, Perk>} perks @param {PerkRules} rule @param {number} n */

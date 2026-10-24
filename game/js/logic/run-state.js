@@ -12,7 +12,9 @@
 /** @import { Run, RunStart, SaveData, Billy } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 import { META_IDS, META_MAX, recordOf, wholeIn } from './meta-state.js';
+import { expeditionAfterWin } from './modifiers.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_DAYS: [() => RUN_DAYS],
@@ -67,10 +69,11 @@ export const RUN_PHASES = ['fly', 'walk', 'battle', 'menu', 'payout'],
   RUN_LIST = 5000,
   RUN_EXPEDITIONS = 9;
 export const copyOf = v => JSON.parse(JSON.stringify(v));
-/** RL-9b: a rule by Expedition (rules.json run.home, run.pack): the expedition's entry, past the list's end its last */
+/** RL-9b: a rule by Expedition (rules.json run.pack, run.points.budget): the expedition's entry, past the list's end its last */
 /** @param {number[]} list @param {number} expedition */
 export const runByExpedition = (list, expedition) =>
   list[Math.max(0, Math.min(list.length, Math.floor(expedition) || 1) - 1)];
+provide({ runByExpedition }); /* to-module */
 /** RL-9b: the uids of the Billies that came from home (picked at the mast); a run saved before RL-9b took the hub's
     whole team */
 /** @param {Run} run @returns {string[]} */
@@ -469,6 +472,8 @@ export function runEnd(s, how, rates, itemPrice) {
   s.meta.scrap += pay.scrap;
   s.meta.runs += 1;
   if (how.won) s.meta.wins += 1;
+  /* RL-13: winning the highest Expedition open opens the next (logic/modifiers.js) */
+  s.meta.expedition = expeditionAfterWin(s.meta.expedition || 1, run.expedition || 1, how.won);
   return pay;
 }
 /** put the hub's working fields back from run.start and leave the run, paying nothing (runEnd's last step; also a

@@ -305,7 +305,19 @@ function genBasicsHTML() {
   const P = mapGen.params,
     B = studioState.D.biomes || {};
   return `<section class="card eng-g open"><header><h3 style="padding:6px">Basics</h3></header><div class="card-b eng-fields">
- <div class="eng-f"><span class="eng-lab">Kind</span><div class="seg-row"><button class="seg on">Route</button><button class="seg" disabled title="Towns come in the next session of the map generator track (MG-3)">Town</button></div></div>
+ <div class="eng-f"><span class="eng-lab">Kind</span><div class="seg-row">${[
+   ['route', 'Route', 'A road from exit to exit'],
+   [
+     'town',
+     'Town',
+     "A street off the road to a square (the clinic and the shop on it when their dials are on), and houses with gardens (towns track TW-1; the run's towns)",
+   ],
+ ]
+   .map(
+     ([k, n, tip]) =>
+       `<button class="seg ${P.kind === k ? 'on' : ''}" data-act="genKind" data-k="${k}" title="${escapeHtml(tip)}">${n}</button>`
+   )
+   .join('')}</div></div>
  <div class="eng-f ${P.biome !== MAPGEN_DEFAULTS.biome ? 'own' : ''}"><span class="eng-lab">Biome</span><select data-gen="biome" data-k="sel">${Object.entries(
    B
  )
@@ -605,6 +617,12 @@ ACTIONS.genResetG = d => {
 ACTIONS.genSize = d => {
   const s = MAPGEN_SIZES[d.k];
   Object.assign(mapGen.params, { w: s.w, h: s.h });
+  render();
+  genRun();
+};
+/* TW-1: a route or a town (mapgen.js mapgenStageTown) */
+ACTIONS.genKind = d => {
+  mapGen.params.kind = d.k === 'town' ? 'town' : 'route';
   render();
   genRun();
 };

@@ -114,6 +114,20 @@
      "properties": { "k": { "type": "string" }, "n": { "type": "integer", "minimum": 1 } }
     }
    },
+   "town": {
+    "description": "TW-1: a run town's buildings and dressing (logic/mapgen.js mapgenStageTown): house props by weight (shut, only for show), the square's centre (a well or a fountain), the fence along the house plots, the square's ground letter, and optionally the lamp and the bench",
+    "type": "object",
+    "required": ["houses", "centre"],
+    "additionalProperties": false,
+    "properties": {
+     "houses": { "$ref": "#/$defs/pool" },
+     "centre": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+     "fence": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+     "square": { "$ref": "#/$defs/letter" },
+     "lamp": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+     "bench": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" }
+    }
+   },
    "from": {
     "description": "the hand-built place this recipe was first taken from (for reference)",
     "type": "string"
