@@ -46,6 +46,17 @@ for the owner to push.
   lakeside 497, ledge drop 555, lanes 485. So the canopy pieces stayed (option A); the generated canopy mesh
   (option B, new renderer code) was not built: A came in under the +25% I set. Every route was already over the
   phone's 400-draw budget before RT-1.
+- **Frame time is the bigger cost** (found when the full quick check timed out): headless frame time is software
+  drawing, so only comparable, not a phone's, but it moved much more than the draws. Open field 273 ms; forest with
+  no pieces 330; with 10-globe pieces 523; with **5 bigger shapes 416** (kept). Not the shadow pass (canopy shadows
+  off: no change) and not the understorey's fill (off: no change). The pieces' own geometry is the cost; on a phone
+  GPU it should matter less, but it is the first thing to check in the owner's debug log.
+- **Making a run's world** (all its scenes at take-off): 0.5 s without layouts, 1.3 s with them on this machine;
+  1.1 s after reading heights from a table (`mapgenGroundSampler`, the same heights) and a cheaper dead-end search.
+  A laid-out place takes about 1.2 tries on average.
+- check-quick: the laid-out places made the RL-8 and Sound effects steps time out in the full check's paired
+  browsers (a frame up to 10 s). Waits raised as TC-3/TC-4 did: a seam's view 90 to 150 s, the take-off 30 to 60,
+  the Alpha 20 to 45, the payouts 40 to 90 (each is a second or two on a phone).
 - Verified: lint, typecheck, check:modules, check:data, format:check, unit tests 895 quick and 54 slow (the new
   `mapgen-layout` test: five plans over six biomes, 55-65% walkable, exits and spots reached, no trap, nothing on the
   road, seams or run-ins, deep forest never walkable, same seed same scene, no dial no change); run-world-real (every
@@ -54,7 +65,8 @@ for the owner to push.
 - Risky / open:
   - **Route trainers** still stand on the straight line (RT-2). The layout keeps their spots clear; 8 of 118 spots
     over 20 runs are on water, a lookout or a bush, as 6 were before.
-  - Not seen on a phone: fps, and how the canopy pieces read at full graphics (they are lumpy globes and cones; the
+  - Not seen on a phone: fps (headless frames went +50% on a forest trail), the take-off's world making (2x), and
+    how the canopy pieces read at full graphics (they are lumpy globes and cones; the
     look is ask-me-before item 2 if it doesn't sit right). Try `?fixture=layout` or the debug menu's layout choice.
   - Outcrops are boulder clusters, not raised step blocks (the step grid meets pinning and seams; boulders were safe).
   - Spots: dead ends are often in a field's corner by the map's edge; pinches are rare where the road's margin is wide.
