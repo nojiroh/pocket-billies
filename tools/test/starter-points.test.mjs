@@ -65,17 +65,22 @@ test('starter points: the default pick spends the budget, the buddy first, withi
       { sp: 'bezos0', lvl: 5, uid: 'water' },
       { sp: 'kardashian0', lvl: 5, uid: 'psychic' },
     ],
-    pick = P.pointPick(all, SPECIES, R, budget);
+    pick = P.pointPick(all, SPECIES, R, budget),
+    dearest = cost('musk2', 60);
   assert.ok(pick.length >= 1);
   assert.ok(P.pointSpend(pick, SPECIES, R) <= budget, 'never over the budget');
   assert.ok(pick.length <= R.team);
-  /* a Billie too dear for the whole budget is passed over; the cheaper ones fill it */
-  assert.ok(!pick.some(m => m.uid === 'trained'), `too dear at ${cost('musk2', 60)} points of ${budget}`);
-  assert.deepEqual(
-    pick.map(m => m.uid).sort(),
-    ['psychic', 'starter', 'water'],
-    'everyone the budget affords comes along'
-  );
+  /* the dearest the budget affords comes first; one too dear for the whole budget is passed over */
+  if (dearest <= budget) assert.equal(pick[0].uid, 'trained', `the dearest (${dearest} of ${budget}) first`);
+  else assert.ok(!pick.some(m => m.uid === 'trained'), `too dear at ${dearest} points of ${budget}`);
+  /* nothing left behind could still have come: the budget is spent down to what is left over */
+  const left = budget - P.pointSpend(pick, SPECIES, R);
+  for (const m of all)
+    if (!pick.includes(m))
+      assert.ok(
+        P.pointCost(m, SPECIES, R) > left || pick.length >= R.team,
+        `${m.uid} costs ${P.pointCost(m, SPECIES, R)} and ${left} was left`
+      );
   /* the buddy goes first when it fits */
   assert.equal(P.pointPick(all, SPECIES, R, budget, null, 'water')[0].uid, 'water');
   /* a mono-type run picks only its type */

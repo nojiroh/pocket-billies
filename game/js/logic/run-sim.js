@@ -13,7 +13,7 @@
  * @typedef {{ modules: Record<string, any>, fn: (name: string) => any, hooks: any, data: any, gameData: any,
  *   logic: any, beforeRun?: (o: SimOptions) => void }} SimEnv
  * @typedef {{ random?: number, fights?: number, team?: number, pack?: number, unlocks?: 'none' | 'all',
- *   policy?: string, scenes?: 'make' | 'skip', expedition?: number, mods?: string[] }} SimOptions
+ *   policy?: string, scenes?: 'make' | 'skip', expedition?: number, mods?: string[], lvl?: number }} SimOptions
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -205,8 +205,11 @@ export function runSimOn(env) {
     s.started = true;
     s.starter = RULES.start.starters[0];
     hooks.provide({ saveData: s, activeBattle: null });
-    s.team.push(fn('makeBilly')(s.starter + '0', RULES.start.starterLevel));
-    for (let k = 1; k < (o.team ?? 1); k++) s.team.push(fn('makeBilly')(s.starter + '0', RULES.start.starterLevel));
+    /* RL-13: `lvl` is the level the ranch has trained them to (it costs starter points); the starter's own level
+       by default */
+    const lvl = Math.max(1, Math.floor(o.lvl || RULES.start.starterLevel));
+    s.team.push(fn('makeBilly')(s.starter + '0', lvl));
+    for (let k = 1; k < (o.team ?? 1); k++) s.team.push(fn('makeBilly')(s.starter + '0', lvl));
     s.items.potion = o.pack ?? 0;
     const expedition = Math.max(1, Math.floor(o.expedition || 1)),
       /* RL-13: the starter points the Expedition's budget buys, the dearest first (the start sheet's default pick) */
@@ -224,7 +227,11 @@ export function runSimOn(env) {
     if (o.unlocks === 'all') for (const id of Object.keys(UNLOCK_DATA.unlocks)) s.meta.unlocks[id] = 1;
     const run = runStartOn(
       s,
-      runStartPlan(seed, { ...MAP_DATA, unlockData: UNLOCK_DATA }, { unlocks: runUnlocks(s, UNLOCK_DATA) }),
+      runStartPlan(
+        seed,
+        { ...MAP_DATA, unlockData: UNLOCK_DATA },
+        { unlocks: runUnlocks(s, UNLOCK_DATA), expedition, mods: o.mods || [] }
+      ),
       { home, pack }
     );
     const balance = o.scenes === 'skip',

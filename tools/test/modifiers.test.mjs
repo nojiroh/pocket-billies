@@ -65,3 +65,23 @@ test('modifiers: winning the highest Expedition open opens the next, never past 
   assert.equal(M.expeditionAfterWin(most, most, true), most);
   assert.equal(M.expeditionNumeral(4), 'IV');
 });
+
+test('modifiers: the run sim takes an Expedition, challenges and a trained level', async () => {
+  const { runSim } = await import('./sim/run-sim.mjs');
+  const o = { scenes: 'skip', team: 3, fights: 2, pack: 2, lvl: 20 },
+    one = runSim('SIMEXP1', { ...o, expedition: 1 }),
+    three = runSim('SIMEXP1', { ...o, expedition: 3 });
+  /* RL-R1: a higher Expedition's region has more zones, so the run is longer */
+  assert.ok(three.log.nodes.length > one.log.nodes.length, `${one.log.nodes.length} -> ${three.log.nodes.length}`);
+  const foes = r => r.log.places.flatMap(p => (p.battles || []).map(b => b.foe));
+  assert.ok(foes(one).length && foes(three).length);
+  /* the same run, higher foes: the first wild Billie met is the Expedition's levels up */
+  const lvlOf = s => Number(String(s).split(':')[1]);
+  assert.equal(lvlOf(foes(three)[0]), lvlOf(foes(one)[0]) + 4);
+  /* a challenge takes hold: no Perk is ever bought or offered on a "No Perks" run */
+  const none = runSim('SIMEXP2', { ...o, mods: ['noperks'] }),
+    plain = runSim('SIMEXP2', o);
+  assert.deepEqual(none.stats.perks, []);
+  assert.ok(none.log.places.every(p => !p.relic));
+  assert.ok(plain.log.places.some(p => p.relic) || plain.stats.places < 2);
+});

@@ -18,8 +18,12 @@
 //   - statistics: how long runs are, how many battles, how often they are won, what they pay (report only; the bounds
 //     are the owner's call after the first play).
 //   node tools/test/sim/run-sim.mjs            50 runs, the report in validation/sim/runs.json (not committed)
-//   node tools/test/sim/run-sim.mjs --runs=200 --team=3 --fights=4 --pack=5   more runs, three starters at home
-//                                       (one travels), up to four wild fights a place, five Potions packed
+//   node tools/test/sim/run-sim.mjs --runs=200 --team=3 --fights=4 --pack=5   more runs, three Billies at the ranch
+//                                       (the starter points say how many travel), up to four wild fights a place,
+//                                       five Potions packed
+//   node tools/test/sim/run-sim.mjs --expedition=3 --mods=noheal,fragile --lvl=20   RL-13: a harder Expedition, its
+//                                       challenges (modifiers.json ids; mono needs its type: mono,mono_water), and
+//                                       the level the Billies at home are trained to (the ranch between runs)
 //   node tools/test/sim/run-sim.mjs --unlocks=all   runs with every unlock (default none: a fresh save's; Studio plan
 //                                       T2.1, the run starts through logic/run-start.js as the mast's does)
 // Studio plan T3.3, T3.4:
@@ -61,6 +65,10 @@ if (process.argv[1] && process.argv[1].endsWith('run-sim.mjs')) {
           fights: arg('fights', 2),
           pack: arg('pack', 0),
           unlocks: opt('unlocks') || 'none',
+          /* RL-13: the run's Expedition, its challenges and the level the Billies at home are trained to */
+          ...(opt('expedition') ? { expedition: arg('expedition', 1) } : {}),
+          ...(opt('mods') ? { mods: opt('mods').split(',').filter(Boolean) } : {}),
+          ...(opt('lvl') ? { lvl: arg('lvl', 0) } : {}),
           ...(opt('policy') ? { policy: opt('policy') } : {}),
           ...(process.argv.includes('--balance') ? { scenes: 'skip' } : {}),
         },
