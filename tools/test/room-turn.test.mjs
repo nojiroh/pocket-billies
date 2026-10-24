@@ -2,6 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  roomDoorPush,
   roomToLocal,
   roomToWorld,
   roomTurnOf,
@@ -112,4 +113,27 @@ test('room turn: a grid turned lands each cell where its middle goes, for cells,
       }
   }
   assert.equal(turnTileRows(['ab'], 2, 1, 0)[0], 'ab');
+});
+
+test('room door push (towns TW-0): pushing out at the doorway leaves, anywhere else or any other way does not', () => {
+  /* a room facing south: its exit at (10, 5.6), a 1.2 m doorway */
+  const sc = { exits: [[10, 5.6]], roomGap: 1.2 };
+  assert.equal(roomDoorPush(sc, 10, 5.5, 0, -1), true, 'at the exit pushing south');
+  assert.equal(roomDoorPush(sc, 10.4, 5.8, 0.2, -1), true, 'a little off, pushing mostly south');
+  assert.equal(roomDoorPush(sc, 10, 5.5, 0, 1), false, 'pushing in');
+  assert.equal(roomDoorPush(sc, 10, 5.5, 1, 0), false, 'pushing along the wall');
+  assert.equal(roomDoorPush(sc, 11.5, 5.5, 0, -1), false, 'beside the doorway');
+  assert.equal(roomDoorPush(sc, 10, 8, 0, -1), false, 'deeper in the room');
+  assert.equal(roomDoorPush(sc, 10, 5.5, 0, 0), false, 'no push');
+  assert.equal(roomDoorPush({}, 10, 5.5, 0, -1), false, 'no exit');
+  /* each turned room: the room's own point near its exit and its own "out" (-z), turned into the place */
+  for (let q = 1; q < 4; q++) {
+    const F = { q, p: [20, 20], rect: [14, 19, 12, 8] },
+      E = roomToWorld(F, 20, 19.6),
+      at = roomToWorld(F, 20.2, 19.5),
+      out = roomVecToWorld(F, 0, -1),
+      T = { exits: [E], roomGap: 1.2, roomFrame: F };
+    assert.equal(roomDoorPush(T, at[0], at[1], out[0], out[1]), true, `q ${q} out`);
+    assert.equal(roomDoorPush(T, at[0], at[1], -out[0], -out[1]), false, `q ${q} in`);
+  }
 });

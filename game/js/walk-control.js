@@ -70,7 +70,7 @@ expose({
   doorBuildingOf: [() => doorBuildingOf, v => (doorBuildingOf = v)],
   enterRoom: [() => enterRoom, v => (enterRoom = v)],
   exitPrompt: [() => exitPrompt, v => (exitPrompt = v)],
-  leaveRoom: [() => leaveRoom, v => (leaveRoom = v)],
+  leaveRoom: [() => leaveRoom, v => ((leaveRoom = v), provide({ leaveRoom }))],
   mapExits: [() => mapExits, v => (mapExits = v)],
   mapIdAt: [() => mapIdAt, v => ((mapIdAt = v), provide({ mapIdAt }))],
   mapOffsetInView: [() => mapOffsetInView, v => ((mapOffsetInView = v), provide({ mapOffsetInView }))],
@@ -90,7 +90,7 @@ expose({
   walkState: [() => walkState, v => (walkState = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ mapIdAt, mapOffsetInView, roomState });
+provide({ leaveRoom, mapIdAt, mapOffsetInView, roomState });
 /* to-module: end */
 /* ---------- the walk scene behind the Walk tab ---------- */
 export function mapIdAt(i) {

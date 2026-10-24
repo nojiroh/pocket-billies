@@ -10,7 +10,7 @@ browsers). Its budget, three minutes, is missed: each page boots once (25-65 s i
 The data check and the unit tests (the world-map graph's snapshot among them) run in CI's lint job, not here. In a
 browser, each check opens its own page straight where it needs to be (?fixture=<name>,
 game/js/fixture.js), never through the opening and never waiting for every map: the game boots with no console or page
-errors; a town and a room each open and draw frames (RL-5: the hub, Copperleaf; the route and the cave were parked
+errors; a town and a room each open and draw frames, and the room is left by walking out of its door (TW-0) (RL-5: the hub, Copperleaf; the route and the cave were parked
 with their places); a run's world (RL-7) opens on its landing, its places on the bowl, and a walk over a seam arrives
 at the next node a day later; a battle plays to the end; a save round-trips; the Studio loads; the exported debug
 log holds no names; the world map opens as the bowl, a tap opens a card, Home comes back; every screen opens with its parts (UI-5);
@@ -281,6 +281,23 @@ def room(pg, base):
     if not until(pg, "!!uiState.inside&&walkView.ready&&walkView.sc.roomOf===uiState.inside.id", 60): raise Exception(f'not in the room: {pg.evaluate("walkView.id")}')
     drawing(pg)
     return f'{pg.evaluate("walkView.id")} drew {pg.evaluate("walkRenderer.frames")} frames'
+
+
+def room_walk_out(pg, base):
+    """towns track TW-0: with the card closed a room still shows "Go outside"; holding the stick out of the door (down,
+    once you have walked in) takes you outside, as tapping "Outside" does"""
+    if not until(pg, "!!uiState.inside&&walkView.ready&&walkView.sc.roomOf===uiState.inside.id", 60): raise Exception('not in the room')
+    pg.evaluate("saveData.preferences.cardClosed=true;render();0")
+    btn = pg.evaluate("!!document.querySelector('[data-a=leaveroom]')")
+    pg.evaluate("saveData.preferences.cardClosed=false;render();0")
+    if not btn: raise Exception('no "Go outside" button with the card closed')
+    pg.evaluate("walkView.keys.u=true;0")
+    until(pg, "walkView.doorArmed", 10)
+    pg.evaluate("walkView.keys.u=false;walkView.keys.d=true;0")
+    out = until(pg, "!uiState.inside&&walkView.ready&&!walkView.sc.roomRect", 30)
+    pg.evaluate("walkView.keys.d=false;0")
+    if not out: raise Exception(f'held the stick out of the door and stayed in: at {pg.evaluate("[walkView.pl.x,walkView.pl.z]")}')
+    return f'walked out to {pg.evaluate("walkView.id")}'
 
 
 def battle(pg, base):
@@ -1112,7 +1129,8 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('town', [('Camera follow: settled standing, the look-ahead from the stick, the soft zone, settled again (CAM-1)', camera_follow),
               ('Camera moments: a drift in standing, a two-shot talking, a boss, a door, the encounter shot (CAM-2)', camera_moments),
               ('Copperleaf is the island: the sea skirt from 8 angles; the orbit camera from 8 places, on the summit, holding right (IS-1, IS-3)', hub_orbit)]),
-    ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
+    ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip),
+              ('A room is left by walking out of its door (TW-0)', room_walk_out)]),
     ('town', [('Blur focus: on you, between you in a talk, on the encounter; the slider at Off; the cheap blur (CAM-3)', blur_focus)]),
     ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back and forward, a reload (RL-9, RL-10b)', ranch)]),
     ('pasture', [('The pasture: Billies wander inside the fence, a tap on one or the gate opens the ranch (IS-8)', pasture)]),

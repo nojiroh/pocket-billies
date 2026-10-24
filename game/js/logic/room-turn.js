@@ -16,6 +16,8 @@ expose({
   COS: [() => COS],
   SIN: [() => SIN],
   // @ts-expect-error -- replaced on purpose
+  roomDoorPush: [() => roomDoorPush, v => (roomDoorPush = v)],
+  // @ts-expect-error -- replaced on purpose
   roomToLocal: [() => roomToLocal, v => (roomToLocal = v)],
   // @ts-expect-error -- replaced on purpose
   roomToWorld: [() => roomToWorld, v => (roomToWorld = v)],
@@ -151,4 +153,21 @@ export function turnHeightRows(rows, w, h, q) {
   const out = [];
   for (let j = T.h - 1; j >= 0; j--) out.push(g[j]);
   return out;
+}
+
+/** towns track TW-0: whether a step at (x, z) pushing along (dx, dz) (the place's metres, any length) walks out
+ * through a room's doorway: within half the doorway's width of its exit, no further in than the exit (plus a little),
+ * and pushing out of the door (toward the room's near side, in its own metres)
+ * @param {{ exits?: number[][], roomGap?: number, roomFrame?: RoomFrame | null }} sc @param {number} x @param {number} z
+ * @param {number} dx @param {number} dz @returns {boolean} */
+export function roomDoorPush(sc, x, z, dx, dz) {
+  const E = sc.exits && sc.exits[0],
+    l = Math.hypot(dx, dz);
+  if (!E || !l) return false;
+  const F = sc.roomFrame,
+    [u, v] = roomToLocal(F, x, z),
+    [eu, ev] = roomToLocal(F, E[0], E[1]),
+    /* the push turned into the room's metres (the same turn, about the origin) */
+    [, pv] = roomToLocal(F ? { q: F.q, p: [0, 0], rect: F.rect } : null, dx / l, dz / l);
+  return Math.abs(u - eu) < (sc.roomGap || 1.2) / 2 && v <= ev + 0.3 && pv < -0.5;
 }
