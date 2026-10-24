@@ -107,6 +107,7 @@
      "name": {"description": "its sheet: game/art/next/billionaires/<name>.png", "$ref": "#/$defs/id"},
      "rig": {"description": "its rig in game/art/next/rigs-next.js", "type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
      "line": {"description": "the line (game/data/lines) whose stage it is", "$ref": "#/$defs/id"},
+     "form": {"description": "RO-2c: the regional form (lines/<line>.json forms) this recipe is the look of; the line's own look has none", "$ref": "#/$defs/id"},
      "stage": {"type": "integer", "minimum": 0},
      "scale": {"description": "its stage scale (shrunk by the baker if the Billie does not fit the box)", "type": "number", "exclusiveMinimum": 0, "maximum": 4},
      "parts": {

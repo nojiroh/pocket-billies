@@ -298,19 +298,24 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "swift_folklore0",
           "swift_folklore1",
           "swift_folklore2",
-          "hughes0",
-          "hughes1",
-          "hughes2",
-          "cuban0",
-          "cuban1"
+          "kamprad0",
+          "kamprad1",
+          "cuban_courtside0",
+          "cuban_courtside1",
+          "altman0"
         ],
         "swap": {
           "swift0": "swift_folklore0",
           "swift1": "swift_folklore1",
-          "swift2": "swift_folklore2"
+          "swift2": "swift_folklore2",
+          "kamprad_meatball0": "kamprad0",
+          "kamprad_meatball1": "kamprad1",
+          "cuban0": "cuban_courtside0",
+          "cuban1": "cuban_courtside1"
         },
         "forms": {
-          "swift": "folklore"
+          "swift": "folklore",
+          "cuban": "courtside"
         },
         "leaders": [
           "poppy",
@@ -635,7 +640,10 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "swift2": "swift_folklore2",
           "zuck0": "zuck_cloud0",
           "zuck1": "zuck_cloud1",
-          "zuck2": "zuck_cloud2"
+          "zuck2": "zuck_cloud2",
+          "hughes_harbour0": "hughes0",
+          "hughes_harbour1": "hughes1",
+          "hughes_harbour2": "hughes2"
         },
         "forms": {
           "swift": "folklore",
@@ -834,19 +842,24 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "swift_folklore0",
           "swift_folklore1",
           "swift_folklore2",
-          "hughes0",
-          "hughes1",
-          "hughes2",
-          "cuban0",
-          "cuban1"
+          "kamprad0",
+          "kamprad1",
+          "cuban_courtside0",
+          "cuban_courtside1",
+          "altman0"
         ],
         "swap": {
           "swift0": "swift_folklore0",
           "swift1": "swift_folklore1",
-          "swift2": "swift_folklore2"
+          "swift2": "swift_folklore2",
+          "kamprad_meatball0": "kamprad0",
+          "kamprad_meatball1": "kamprad1",
+          "cuban0": "cuban_courtside0",
+          "cuban1": "cuban_courtside1"
         },
         "forms": {
-          "swift": "folklore"
+          "swift": "folklore",
+          "cuban": "courtside"
         },
         "leaders": [
           "poppy",
@@ -855,6 +868,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "845881d238f0f3ae3e4deccdb5d433ba3d9aa6bd17c97de97478e5e418b48200"
+  "all": "61e44d7cf3e614fa9b4c0f8dd2165fea8e888300542fe5f32a213ddf732f51e6"
 }
 `;

@@ -62,7 +62,7 @@ test("the grid a Billie sits on, and a kit Billie's parts against its torso", ()
 test('the report covers every species with a rig, kit Billies with their parts, and the sizes that are not whole', () => {
   const R = densityReport(GAME_DATA, RIGS, SPECIES);
   assert.equal(R.rows.length, Object.keys(RIGS).filter(sp => SPECIES[sp]).length);
-  assert.equal(R.rows.filter(r => r.kit).length, 40);
+  assert.equal(R.rows.filter(r => r.kit).length, 51);
   for (const r of R.rows)
     assert.ok(r.pxPerM > 20 && r.pxPerM < 400 && ['whole', 'quarter', 'off grid'].includes(r.grid), JSON.stringify(r));
   assert.deepEqual(R.nonInteger, ['S 0.85', 'L 1.2']);

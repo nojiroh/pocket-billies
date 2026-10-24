@@ -31,6 +31,14 @@
  "evo": [
   {"k":"lvl","at":18}
  ],
+ "forms": [
+  {
+   "id": "livestream",
+   "name": "Livestream",
+   "swap": {"Psychic":"Fire"},
+   "coat": "livestream"
+  }
+ ],
  "parody": "Zhang Yiming",
  "cry": [
   {"base":"beast","pitch":76,"length":0.5,"name":"placeholder: a bright chirp that loops (Claude's draft)"},

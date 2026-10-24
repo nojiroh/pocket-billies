@@ -3,7 +3,7 @@
 // - game/art/next/billionaires/<name>.png, the sheet (written only when a shown pixel differs: alpha, and colour
 //   where alpha is not 0);
 // - its rig in game/art/next/rigs-next.js (the file is written as the Studio writes it, and only when a rig changed);
-// - the stage's native parts in game/data/lines/<line>.json "parts".
+// - the stage's native parts in game/data/lines/<line>.json "parts" (not for a regional form's recipe: it is only a look).
 // Nothing is written for a recipe that bakes as committed, so a run on an unchanged tree changes no file.
 //
 //   node tools/bake-kit-billies.mjs                    bake every form, write what changed
@@ -79,16 +79,20 @@ export function bakeKitBillies({ only = null, check = false, log = console.log }
       rigs[form.rig] = rig;
       rigsChanged = true;
     }
-    const L = (lines[form.line] ||= readJson(`lines/${form.line}.json`)),
-      parts = made.parts;
-    if (form.stage >= L.names.length)
-      throw new Error(`${form.name}: stage ${form.stage}, ${form.line} has ${L.names.length}`);
-    L.parts ||= [];
-    if (!same(L.parts[form.stage], parts)) {
-      what.push('parts');
-      L.parts[form.stage] = parts;
-      L._changed = true;
-    }
+    /* RO-2c: a regional form's recipe is only a look: the line's native parts come from its own recipe */
+    if (!form.form) {
+      const L = (lines[form.line] ||= readJson(`lines/${form.line}.json`)),
+        parts = made.parts;
+      if (form.stage >= L.names.length)
+        throw new Error(`${form.name}: stage ${form.stage}, ${form.line} has ${L.names.length}`);
+      L.parts ||= [];
+      if (!same(L.parts[form.stage], parts)) {
+        what.push('parts');
+        L.parts[form.stage] = parts;
+        L._changed = true;
+      }
+    } else if (form.stage >= readJson(`lines/${form.line}.json`).names.length)
+      throw new Error(`${form.name}: stage ${form.stage}, ${form.line} has fewer stages`);
     if (form.scale !== made.k) what.push(`(fit ${made.k})`);
     log(`${form.rig.padEnd(12)} ${form.name.padEnd(13)} ${what.length ? what.join(', ') : 'as committed'}`);
     if (what.some(w => !w.startsWith('('))) changed.push(`${form.name}: ${what.join(', ')}`);

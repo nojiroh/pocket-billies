@@ -178,7 +178,11 @@ const species = new Set();
 for (const L of D.lines || []) {
   for (const id of lineSpeciesIds(L)) species.add(id);
   // RO-1: regional forms: a coat marked form, swaps between real types, a change to some stage's types
-  for (const p of formProblems(L, D.coats || {}, (D.types || []).map(t => t.id)))
+  for (const p of formProblems(
+    L,
+    D.coats || {},
+    (D.types || []).map(t => t.id)
+  ))
     problem(`lines/${L.id}.json`, p);
   for (const [lv, m] of L.learn || [])
     if (!moves[m]) problem(`lines/${L.id}.json`, `learns ${m} at ${lv}, no such move`);
@@ -404,7 +408,7 @@ if (D.kitBuilds && check('kitBuilds.schema.json', D.kitBuilds, 'kitBuilds.json')
     for (const [k, v] of [
       ['name', f.name],
       ['rig', f.rig],
-      ['stage', `${f.line} ${f.stage}`],
+      ['stage', `${f.line} ${f.stage}${f.form ? ' ' + f.form : ''}`],
     ])
       if (seen[k].has(v)) problem(at, `${where}: a second form for ${k} ${v}`);
       else seen[k].add(v);
@@ -412,7 +416,9 @@ if (D.kitBuilds && check('kitBuilds.schema.json', D.kitBuilds, 'kitBuilds.json')
     if (!line) problem(at, `${where}: line ${f.line}, no such line`);
     else if (f.stage >= line.names.length)
       problem(at, `${where}: stage ${f.stage}, ${f.line} has ${line.names.length}`);
-    else (lines[f.line] ||= { line, forms: [] }).forms.push(f);
+    else if (!f.form) (lines[f.line] ||= { line, forms: [] }).forms.push(f);
+    else if (!(line.forms || []).some(F => F.id === f.form))
+      problem(at, `${where}: form ${f.form}, ${f.line} has no such regional form`);
     for (const [kind, [pid, , col]] of Object.entries(f.parts)) {
       if (!kit[pid]) problem(at, `${where} ${kind}: part ${pid}, not in partKits.json`);
       colourOk(`${where} ${kind}`, col);
@@ -598,7 +604,8 @@ if (D.story) {
     if (!places.has(P.place)) problem(at, `starts in ${P.place}, no such place`);
     for (const t of P.beaten || []) if (!trainers[t]) problem(at, `has beaten ${t}, no such trainer`);
     for (const m of P.team || []) if (!species.has(m.sp)) problem(at, `has ${m.sp}, no such species`);
-    for (const c of Object.keys(P.pyramids || {})) if (!(D.pyramids || {})[c]) problem(at, `has coin ${c}, no such coin`);
+    for (const c of Object.keys(P.pyramids || {}))
+      if (!(D.pyramids || {})[c]) problem(at, `has coin ${c}, no such coin`);
     for (const i of Object.keys(P.items || {})) if (!(D.items || {})[i]) problem(at, `has item ${i}, no such item`);
   }
 } else problem('story.json', 'missing');

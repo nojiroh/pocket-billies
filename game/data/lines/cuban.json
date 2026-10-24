@@ -28,6 +28,14 @@
  "evo": [
   {"k":"lvl","at":20}
  ],
+ "forms": [
+  {
+   "id": "courtside",
+   "name": "Courtside",
+   "swap": {"Water":"Ground"},
+   "coat": "courtside"
+  }
+ ],
  "parody": "Mark Cuban",
  "cry": [
   {"base":"fish","pitch":74,"length":0.6,"name":"placeholder: a hopeful blub (Claude's draft)"},

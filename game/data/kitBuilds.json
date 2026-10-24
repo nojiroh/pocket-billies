@@ -78,7 +78,22 @@
   "GECKO": [0.36,0.45,0.62],
   "GECKO_GLOSS": [0.4,0.5,0.5],
   "CHIP_GREEN": [0.27,1.8,1.2],
-  "GECKO_WING": [0.42,0.6,0.32]
+  "GECKO_WING": [0.42,0.6,0.32],
+  "HARBOUR": [0.51,1.3,0.9],
+  "HARBOUR_DEEP": [0.55,1.4,0.55],
+  "HARBOUR_PALE": [0.48,0.8,1.15],
+  "MEATBALL": [0.04,1.3,0.75],
+  "MEATBALL_SAUCE": [0.02,1.6,1],
+  "LINGON": [0.97,1.5,0.95],
+  "COURTSIDE": [0.09,1.5,0.8],
+  "COURTSIDE_DEEP": [0.07,1.7,0.45],
+  "HARDWOOD": [0.08,1.7,0.85],
+  "LIVESTREAM": [0.95,1.5,0.9],
+  "LIVESTREAM_HOT": [0.02,1.8,1.1],
+  "LIVESTREAM_GLOW": [0.13,1.8,1.2],
+  "HAZARD": [0.54,1.4,0.85],
+  "HAZARD_DEEP": [0.58,1.5,0.5],
+  "HAZARD_WEED": [0.33,1.5,0.85]
  },
  "forms": [
   {
@@ -722,6 +737,195 @@
     ["fish_sail","back",1,"CHIP_GREEN",false],
     ["beasts_horn","brow",0.65,"HORN",true],
     ["beasts_spikes","crown",0.7,"CHIP_GREEN",false]
+   ]
+  },
+  {
+   "name": "harbour_gosling",
+   "rig": "hughes_harbour0",
+   "line": "hughes",
+   "form": "harbour",
+   "stage": 0,
+   "scale": 0.55,
+   "armOut": 45,
+   "parts": {
+    "head": ["chick_head",1,"HARBOUR_PALE"],
+    "torso": ["chick_torso",0.9,"HARBOUR_PALE"],
+    "arm": ["chick_wing",0.9,"HARBOUR_PALE"],
+    "leg": ["duck_foot",0.8,null],
+    "tail": ["chick_tail",0.7,"HARBOUR_PALE"]
+   },
+   "extras": [["chick_crest","crown",0.5,"HARBOUR_PALE",false]]
+  },
+  {
+   "name": "harbour_sprucegoose",
+   "rig": "hughes_harbour1",
+   "line": "hughes",
+   "form": "harbour",
+   "stage": 1,
+   "scale": 0.8,
+   "armOut": 35,
+   "parts": {
+    "head": ["duck_head",1,"HARBOUR"],
+    "torso": ["duck_torso",1,"HARBOUR"],
+    "arm": ["duck_wing",1.05,"HARBOUR_DEEP"],
+    "leg": ["duck_foot",0.9,null],
+    "tail": ["duck_tail",0.9,"HARBOUR_DEEP"]
+   },
+   "extras": [["duck_crest","crown",0.6,"HARBOUR_DEEP",false]]
+  },
+  {
+   "name": "harbour_aviatorgoose",
+   "rig": "hughes_harbour2",
+   "line": "hughes",
+   "form": "harbour",
+   "stage": 2,
+   "scale": 0.95,
+   "armOut": 40,
+   "parts": {
+    "head": ["duck_head",1,"HARBOUR"],
+    "torso": ["duck_torso",1.05,"HARBOUR"],
+    "arm": ["eagle_wing",1.1,"HARBOUR_DEEP"],
+    "leg": ["duck_foot",0.95,null],
+    "tail": ["duck_tail",1,"HARBOUR_DEEP"]
+   },
+   "extras": [["birds_ruff","collar",0.7,"HARBOUR_PALE",false],["duck_crest","crown",0.7,"HARBOUR_DEEP",false]]
+  },
+  {
+   "name": "meatball_flatpackrat",
+   "rig": "kamprad_meatball0",
+   "line": "kamprad",
+   "form": "meatball",
+   "stage": 0,
+   "scale": 0.55,
+   "parts": {
+    "head": ["cat_head",1,"MEATBALL"],
+    "torso": ["cat_torso",0.9,"MEATBALL"],
+    "arm": ["cat_arm",0.75,"MEATBALL"],
+    "leg": ["cat_leg",0.75,"MEATBALL"],
+    "tail": ["reptile_tail",0.8,"MEATBALL_SAUCE"]
+   },
+   "extras": [["bear_ear","ears",0.5,"MEATBALL",true]]
+  },
+  {
+   "name": "meatball_kamprat",
+   "rig": "kamprad_meatball1",
+   "line": "kamprad",
+   "form": "meatball",
+   "stage": 1,
+   "scale": 0.8,
+   "parts": {
+    "head": ["cat_head",1,"MEATBALL"],
+    "torso": ["bear_torso",1,"MEATBALL"],
+    "arm": ["cat_arm",0.9,"MEATBALL"],
+    "leg": ["cat_leg",0.9,"MEATBALL"],
+    "tail": ["reptile_tail",1,"MEATBALL_SAUCE"]
+   },
+   "extras": [
+    ["bear_ear","ears",0.55,"MEATBALL",true],
+    ["fish_sail","back",0.8,"MEATBALL_SAUCE",false],
+    ["birds_plume","crown",0.55,"LINGON",false]
+   ]
+  },
+  {
+   "name": "courtside_pupfin",
+   "rig": "cuban_courtside0",
+   "line": "cuban",
+   "form": "courtside",
+   "stage": 0,
+   "scale": 0.5,
+   "armOut": 35,
+   "parts": {
+    "head": ["goldfish_head",1,"COURTSIDE"],
+    "torso": ["goldfish_torso",0.9,"COURTSIDE"],
+    "arm": ["goldfish_frontfin",1,"COURTSIDE"],
+    "leg": ["goldfish_backfin",1,"COURTSIDE"],
+    "tail": ["goldfish_tailfin",0.9,"COURTSIDE"]
+   },
+   "extras": [["goldfish_dorsal","crown",0.6,"COURTSIDE",false]]
+  },
+  {
+   "name": "courtside_sharktank",
+   "rig": "cuban_courtside1",
+   "line": "cuban",
+   "form": "courtside",
+   "stage": 1,
+   "scale": 1,
+   "armOut": 35,
+   "parts": {
+    "head": ["shark_head",1,"HARDWOOD"],
+    "torso": ["shark_torso",1.1,"HARDWOOD"],
+    "arm": ["shark_frontfin",1.1,"HARDWOOD"],
+    "leg": ["shark_backfin",1.1,"HARDWOOD"],
+    "tail": ["shark_tailfin",1.1,"COURTSIDE_DEEP"]
+   },
+   "extras": [["shark_dorsal","back",0.9,"COURTSIDE_DEEP",false],["beasts_horn","brow",0.45,"COURTSIDE_DEEP",true]]
+  },
+  {
+   "name": "livestream_cliplet",
+   "rig": "yiming_livestream0",
+   "line": "yiming",
+   "form": "livestream",
+   "stage": 0,
+   "scale": 0.55,
+   "parts": {
+    "head": ["cat_head",1,"LIVESTREAM_GLOW"],
+    "torso": ["fox_torso",0.85,"LIVESTREAM_GLOW"],
+    "arm": ["fox_arm",0.8,"LIVESTREAM_GLOW"],
+    "leg": ["fox_leg",0.75,"LIVESTREAM_GLOW"],
+    "tail": ["fox_tail",1,"LIVESTREAM_HOT"]
+   },
+   "extras": [["fox_ear","ears",0.75,"LIVESTREAM_GLOW",true]]
+  },
+  {
+   "name": "livestream_tiktokferret",
+   "rig": "yiming_livestream1",
+   "line": "yiming",
+   "form": "livestream",
+   "stage": 1,
+   "scale": 0.82,
+   "parts": {
+    "head": ["cat_head",0.95,"LIVESTREAM"],
+    "torso": ["fox_torso",1.05,"LIVESTREAM"],
+    "arm": ["fox_arm",0.85,"LIVESTREAM"],
+    "leg": ["fox_leg",0.8,"LIVESTREAM"],
+    "tail": ["fox_tail",1.05,"LIVESTREAM_HOT"]
+   },
+   "extras": [["fox_ear","ears",0.6,"LIVESTREAM",true],["birds_plume","crown",0.45,"LIVESTREAM_GLOW",false]]
+  },
+  {
+   "name": "hazard_cublet",
+   "rig": "woods_hazard0",
+   "line": "woods",
+   "form": "hazard",
+   "stage": 0,
+   "scale": 0.6,
+   "parts": {
+    "head": ["cat_head",1,"HAZARD"],
+    "torso": ["cat_torso",0.9,"HAZARD"],
+    "arm": ["cat_arm",0.85,"HAZARD"],
+    "leg": ["cat_leg",0.8,"HAZARD"],
+    "tail": ["cat_tail",0.85,"HAZARD_WEED"]
+   },
+   "extras": [["cat_ear","ears",0.65,"HAZARD",true],["beasts_spikes","crown",0.5,"HAZARD_DEEP",false]]
+  },
+  {
+   "name": "hazard_tigerwoods",
+   "rig": "woods_hazard1",
+   "line": "woods",
+   "form": "hazard",
+   "stage": 1,
+   "scale": 0.95,
+   "parts": {
+    "head": ["cat_head",1,"HAZARD"],
+    "torso": ["bear_torso",1.1,"HAZARD"],
+    "arm": ["cat_arm",1.05,"HAZARD"],
+    "leg": ["cat_leg",1.05,"HAZARD"],
+    "tail": ["cat_tail",1.1,"HAZARD_WEED"]
+   },
+   "extras": [
+    ["cat_ear","ears",0.7,"HAZARD",true],
+    ["beasts_spikes","crown",0.65,"HAZARD_DEEP",false],
+    ["beasts_spikes","back",0.8,"HAZARD_DEEP",false]
    ]
   }
  ]

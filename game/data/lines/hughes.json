@@ -32,6 +32,14 @@
   {"k":"lvl","at":16},
   {"k":"lvl","at":36}
  ],
+ "forms": [
+  {
+   "id": "harbour",
+   "name": "Harbour",
+   "swap": {"Steel":"Water"},
+   "coat": "harbour"
+  }
+ ],
  "parody": "Howard Hughes",
  "cry": [
   {"base":"bird","pitch":70,"length":0.6,"name":"placeholder: a gosling's peep (Claude's draft)"},
