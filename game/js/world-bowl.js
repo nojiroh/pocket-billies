@@ -197,6 +197,7 @@ expose({
   worldMapCanvasGl: [() => worldMapCanvasGl, v => (worldMapCanvasGl = v)],
   worldMapChrome: [() => worldMapChrome, v => (worldMapChrome = v)],
   worldMapFade: [() => worldMapFade, v => (worldMapFade = v)],
+  worldMapFallFrame: [() => worldMapFallFrame, v => (worldMapFallFrame = v)],
   worldMapFit: [() => worldMapFit, v => (worldMapFit = v)],
   worldMapHeight: [() => worldMapHeight, v => (worldMapHeight = v)],
   worldMapLocationListHTML: [() => worldMapLocationListHTML, v => (worldMapLocationListHTML = v)],
@@ -206,6 +207,7 @@ expose({
   worldMapOpenFromWalk: [() => worldMapOpenFromWalk, v => (worldMapOpenFromWalk = v)],
   worldMapPinState: [() => worldMapPinState, v => (worldMapPinState = v)],
   worldMapPrewarm: [() => worldMapPrewarm, v => ((worldMapPrewarm = v), provide({ worldMapPrewarm }))],
+  worldMapReadyNow: [() => worldMapReadyNow, v => (worldMapReadyNow = v)],
   worldMapReset: [() => worldMapReset, v => (worldMapReset = v)],
   worldMapSelect: [() => worldMapSelect, v => (worldMapSelect = v)],
   worldMapSize: [() => worldMapSize, v => (worldMapSize = v)],
@@ -858,6 +860,7 @@ function worldBowlTerrainStart() {
   if (band) {
     g.terrain.row = Math.min(band[2], band[3]);
     g.terrain.rowEnd = Math.max(band[2], band[3]) + 1;
+    g.terrain.row0 = g.terrain.row;
     g.terrain.i0 = band[0];
     g.terrain.i1 = band[1];
   }
@@ -1599,8 +1602,11 @@ function worldBowlThingsDraw(W, VP, F, shadowPass) {
   const gl = gpuState.gl,
     G = W.gpu,
     dist = worldBowl.cam ? worldBowl.cam.dist : 2,
-    near = shadowPass ? 1 : 1 - Math.max(0, Math.min(1, (dist - 0.7) / 0.25)),
-    far = Math.max(0, Math.min(1, (dist - 0.62) / 0.23));
+    /* the floating island is always seen close: its own things always show (the opening fall films it with no map
+       camera) */
+    fl = worldBowlFloats(),
+    near = shadowPass || fl ? 1 : 1 - Math.max(0, Math.min(1, (dist - 0.7) / 0.25)),
+    far = fl ? 0 : Math.max(0, Math.min(1, (dist - 0.62) / 0.23));
   let p = gpuState.P.mthing,
     U = p.U;
   gl.useProgram(p.p);
@@ -2088,6 +2094,22 @@ export function worldMapPrewarm() {
     }
   };
   later(step);
+}
+/* the opening fall's frame (opening-fall.js): the floating island's middle, radius and height, and where you land
+   (outside Professor Chosen's lab); null without the floating island */
+export function worldMapFallFrame() {
+  worldBowlSpots();
+  const F = worldBowlFloatIsland();
+  if (!F) return null;
+  const M = gameData.maps[worldBowl.ground.islandMap],
+    s = worldBowl.spots[F.i],
+    lab = (M.props || []).find(p => p.k === 'lab'),
+    [x, y] = lab ? bowlMapPoint(s, M, lab.x, lab.z, BOWL_METRES) : F.c;
+  return { c: F.c, r: F.r, top: F.top, land: [x, y, Math.max(F.top, bowlSurface(x, y))] };
+}
+/* everything the map shows is in (for the opening fall, which films it) */
+export function worldMapReadyNow() {
+  return worldBowlReady();
 }
 /* ---------- mount, size, loop ---------- */
 /* the bowl needs WebGL 2; without it the Map tab shows the Places list */
