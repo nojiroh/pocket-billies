@@ -1,5 +1,5 @@
 {
- "note": "Every kit Billie's recipe, baked into its sheet, rig and native parts by game/js/logic/kit-assemble.js (npm run bake:kits, or the Studio's kit recipe in Part mode). bake: the stage box every Billie fits in (w, h, its middle cx and ground line base) and the margin kept clear, the room (pad) round a torso for its squash and stretch frames and their shapes, the sheet width, where a tail points from the front (degrees by part, 0 = out to the right, 90 = up) and how much flatter it sweeps from behind, how far an arm hangs out (degrees), how far apart the feet stand (as their width), how far below the neck the chin sits (as the head's height), and the extras' anchors: on the head or torso, the top left as fractions of that part (x[0], y[0]) plus fractions of the extra (x[1], y[1]), its draw order front and back, its bone's name. A form: its sheet name, rig key, line and stage, a scale for the stage, a part per bone kind (part id, size, colour), extras (part, anchor, size, colour, mirrored pair, optional slot), optional slot overrides per bone kind and how far the arms hang out. Colours are hue 0-1, saturation scale, value scale; null keeps the kit's own colours. Anchors: brow (horns), ears, crown (on top of the head), chin (a beard), back (carried on the back), collar (round the neck).",
+ "note": "Every kit Billie's recipe, baked into its sheet, rig and native parts by game/js/logic/kit-assemble.js (npm run bake:kits, or the Studio's kit recipe in Part mode). bake: the stage box every Billie fits in (w, h, its middle cx and ground line base) and the margin kept clear, the room (pad) round a torso for its squash and stretch frames and their shapes, the sheet width, where a tail points from the front (degrees by part, 0 = out to the right, 90 = up) and how much flatter it sweeps from behind, how far an arm hangs out (degrees), how far apart the feet stand (as their width), how far below the neck the chin sits (as the head's height), and the extras' anchors: on the head or torso, the top left as fractions of that part (x[0], y[0]) plus fractions of the extra (x[1], y[1]), its draw order front and back, its bone's name. A form: its sheet name, rig key, line and stage, a scale for the stage, a part per bone kind (part id, size, colour), extras (part, anchor, size, colour, mirrored pair, optional slot), optional slot overrides per bone kind and how far the arms hang out. Colours are hue 0-1, saturation scale, value scale; null keeps the kit's own colours. Anchors: brow (horns), ears, crown (on top of the head), chin (a beard), back (carried on the back), collar (round the neck), wings (a mirrored pair spread from the middle of the back).",
  "bake": {
   "box": {"w":128,"h":128,"cx":64,"base":120},
   "margin": 2,
@@ -17,7 +17,8 @@
    "crown": {"on":"head","x":[0.5,-0.5],"y":[0,-0.55],"z":11,"zb":11,"name":"crest"},
    "chin": {"on":"head","x":[0.5,-0.5],"y":[0.78,0],"z":10,"zb":4,"name":"beard"},
    "back": {"on":"torso","x":[0.5,-0.5],"y":[0,-0.15],"z":4,"zb":6,"name":"pack"},
-   "collar": {"on":"torso","x":[0,-0.5],"y":[0,-0.45],"z":8.5,"zb":8.5,"name":"ruff"}
+   "collar": {"on":"torso","x":[0,-0.5],"y":[0,-0.45],"z":8.5,"zb":8.5,"name":"ruff"},
+   "wings": {"on":"torso","x":[0.5,-0.95],"y":[0,-0.35],"z":3,"zb":7,"name":"wing"}
   }
  },
  "colours": {
@@ -73,7 +74,11 @@
   "PUTTING_GREEN": [0.3,1.5,0.95],
   "PEACOCK": [0.075,2,1],
   "PEACOCK_GOLD": [0.12,2,1.1],
-  "PEACOCK_EMBER": [0,2,0.85]
+  "PEACOCK_EMBER": [0,2,0.85],
+  "GECKO": [0.36,0.45,0.62],
+  "GECKO_GLOSS": [0.4,0.5,0.5],
+  "CHIP_GREEN": [0.27,1.8,1.2],
+  "GECKO_WING": [0.42,0.6,0.32]
  },
  "forms": [
   {
@@ -667,6 +672,56 @@
     ["birds_plume","back",2.6,"PEACOCK_GOLD",true],
     ["birds_crown","crown",0.8,"PEACOCK_GOLD",false],
     ["birds_ruff","collar",0.7,"PEACOCK_EMBER",false]
+   ]
+  },
+  {
+   "name": "siliclet",
+   "rig": "huang0",
+   "line": "huang",
+   "stage": 0,
+   "scale": 0.55,
+   "parts": {
+    "head": ["reptile_head",1.05,"GECKO"],
+    "torso": ["reptile_torso",0.85,"GECKO"],
+    "arm": ["reptile_arm",0.8,"GECKO"],
+    "leg": ["reptile_leg",0.8,"GECKO"],
+    "tail": ["reptile_tail",0.85,"GECKO"]
+   },
+   "extras": [["beasts_spikes","crown",0.45,"CHIP_GREEN",false]]
+  },
+  {
+   "name": "jenzard",
+   "rig": "huang1",
+   "line": "huang",
+   "stage": 1,
+   "scale": 0.8,
+   "parts": {
+    "head": ["reptile_head",1,"GECKO_GLOSS"],
+    "torso": ["reptile_torso",1,"GECKO_GLOSS"],
+    "arm": ["reptile_arm",0.95,"GECKO_GLOSS"],
+    "leg": ["reptile_leg",0.95,"GECKO_GLOSS"],
+    "tail": ["reptile_tail",1.15,"GECKO_GLOSS"]
+   },
+   "extras": [["fish_sail","back",0.9,"CHIP_GREEN",false],["beasts_spikes","crown",0.6,"CHIP_GREEN",false]]
+  },
+  {
+   "name": "gigajenzard",
+   "rig": "huang2",
+   "line": "huang",
+   "stage": 2,
+   "scale": 1,
+   "parts": {
+    "head": ["reptile_head",1.05,"GECKO_GLOSS"],
+    "torso": ["reptile_torso",1.15,"GECKO_GLOSS"],
+    "arm": ["reptile_arm",1.05,"GECKO_GLOSS"],
+    "leg": ["reptile_leg",1.1,"GECKO_GLOSS"],
+    "tail": ["reptile_tail",1.25,"GECKO_GLOSS"]
+   },
+   "extras": [
+    ["hawk_wing","wings",1.4,"GECKO_WING",true],
+    ["fish_sail","back",1,"CHIP_GREEN",false],
+    ["beasts_horn","brow",0.65,"HORN",true],
+    ["beasts_spikes","crown",0.7,"CHIP_GREEN",false]
    ]
   }
  ]

@@ -1,0 +1,49 @@
+{
+ "id": "huang",
+ "names": ["Siliclet","Jenzard","Gigajenzard"],
+ "types": [["Electric"],["Electric"],["Electric","Dragon"]],
+ "prof": [0.9,1,0.85,1.3,0.95,1.15],
+ "rar": "rare",
+ "learn": [
+  [1,"handshake"],
+  [1,"movefast"],
+  [5,"zoning"],
+  [9,"tos"],
+  [15,"disrupt"],
+  [21,"cudacall"],
+  [27,"rebrand"],
+  [34,"overload"],
+  [39,"wyrmbreath"],
+  [44,"joyride"]
+ ],
+ "cat": ["Chip Billie","Card Billie","Data Centre Billie"],
+ "ht": [0.3,1.1,3.2],
+ "wt": [2,40,900],
+ "hab": ["Warm server rooms","Gaming dens","Data centres the size of towns"],
+ "diet": ["Static","Power, lots of it","Whole power grids"],
+ "bio": [
+  "A black gecko hatchling with one glowing green scale on its back. It sticks to warm walls and hums when it thinks.",
+  "A glossy black lizard whose back spines glow like a row of cards. It runs hot, so it is always looking for a fan.",
+  "A great black dragon-lizard that spreads its wings before every move, and the lights in town dim. Every keynote it gives ends with a bigger number."
+ ],
+ "note": [
+  "Every scale it grows is worth more than the last one.",
+  "Sells the same spine to everyone, and everyone queues.",
+  "Its value doubled while you read this."
+ ],
+ "evo": [
+  {"k":"lvl","at":20},
+  {"k":"lvl","at":40}
+ ],
+ "parody": "Jensen Huang",
+ "cry": [
+  {"base":"insect","pitch":78,"length":0.5,"name":"placeholder: a gecko's warm chirp (Claude's draft)"},
+  {"base":"machine","pitch":60,"length":0.9,"name":"placeholder: a hiss with a fan spinning up (Claude's draft)"},
+  {"base":"beast","pitch":44,"length":1.5,"name":"placeholder: a dragon's roar over a server hum (Claude's draft)"}
+ ],
+ "parts": [
+  {"head":"reptile_head","body":"reptile_torso","front":"reptile_arm","back":"reptile_leg","sig":"reptile_tail"},
+  {"head":"reptile_head","body":"reptile_torso","front":"reptile_arm","back":"reptile_leg","sig":"reptile_tail"},
+  {"head":"reptile_head","body":"reptile_torso","front":"reptile_arm","back":"reptile_leg","sig":"reptile_tail"}
+ ]
+}

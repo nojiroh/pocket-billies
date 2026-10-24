@@ -298,19 +298,16 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "swift_folklore0",
           "swift_folklore1",
           "swift_folklore2",
-          "zuck0",
-          "zuck1",
-          "zuck2",
-          "kamprad0",
-          "kamprad1"
+          "hughes0",
+          "hughes1",
+          "hughes2",
+          "cuban0",
+          "cuban1"
         ],
         "swap": {
           "swift0": "swift_folklore0",
           "swift1": "swift_folklore1",
-          "swift2": "swift_folklore2",
-          "zuck_cloud0": "zuck0",
-          "zuck_cloud1": "zuck1",
-          "zuck_cloud2": "zuck2"
+          "swift2": "swift_folklore2"
         },
         "forms": {
           "swift": "folklore"
@@ -837,19 +834,16 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "swift_folklore0",
           "swift_folklore1",
           "swift_folklore2",
-          "zuck0",
-          "zuck1",
-          "zuck2",
-          "kamprad0",
-          "kamprad1"
+          "hughes0",
+          "hughes1",
+          "hughes2",
+          "cuban0",
+          "cuban1"
         ],
         "swap": {
           "swift0": "swift_folklore0",
           "swift1": "swift_folklore1",
-          "swift2": "swift_folklore2",
-          "zuck_cloud0": "zuck0",
-          "zuck_cloud1": "zuck1",
-          "zuck_cloud2": "zuck2"
+          "swift2": "swift_folklore2"
         },
         "forms": {
           "swift": "folklore"
@@ -861,6 +855,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "26dd3ef802478f49777961a41cb9df58e554c1bf6d6c2a198b069f0b07b26ed8"
+  "all": "845881d238f0f3ae3e4deccdb5d433ba3d9aa6bd17c97de97478e5e418b48200"
 }
 `;

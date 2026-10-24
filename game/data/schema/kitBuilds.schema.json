@@ -83,7 +83,7 @@
     "footGap": {"description": "how far apart the feet stand at least, as their width", "type": "number", "minimum": 0, "maximum": 4},
     "chinDrop": {"description": "the chin sits this much of the head's height below the neck socket", "type": "number", "minimum": -1, "maximum": 1},
     "anchors": {
-     "description": "where an extra hangs: brow (horns), ears, crown (on top of the head), chin (a beard), back (carried on the back), collar (round the neck, at the torso's neck socket)",
+     "description": "where an extra hangs: brow (horns), ears, crown (on top of the head), chin (a beard), back (carried on the back), collar (round the neck, at the torso's neck socket), wings (a mirrored pair spread from the middle of the back)",
      "type": "object",
      "propertyNames": {"$ref": "#/$defs/id"},
      "additionalProperties": {"$ref": "#/$defs/anchor"}

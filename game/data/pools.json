@@ -67,7 +67,8 @@
    ["musk0",3],
    ["bezos0",3],
    ["gates0",3],
-   ["arnault0",3]
+   ["arnault0",3],
+   ["huang0",3]
   ]
  },
  "autumn": {
@@ -101,6 +102,7 @@
    ["musk0",5],
    ["arnault0",4],
    ["gates0",3],
+   ["huang0",3],
    ["bezos0",2]
   ]
  },
@@ -159,6 +161,7 @@
    ["zuck0",14],
    ["hughes0",12],
    ["musk0",5],
+   ["huang0",3],
    ["gates0",2],
    ["bezos0",2]
   ]

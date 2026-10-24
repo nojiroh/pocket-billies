@@ -448,5 +448,41 @@
   "types": ["Fire","Flying"],
   "design": "Gold-and-ember peacock with a crest and a monogram-eyed fan",
   "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "siliclet",
+  "name": "Siliclet",
+  "no": 38,
+  "line": "huang",
+  "stage": 1,
+  "kind": "line3",
+  "parody": "Jensen Huang",
+  "types": ["Electric"],
+  "design": "Black gecko hatchling with one glowing green scale",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "jenzard",
+  "name": "Jenzard",
+  "no": 39,
+  "line": "huang",
+  "stage": 2,
+  "kind": "line3",
+  "parody": "Jensen Huang",
+  "types": ["Electric"],
+  "design": "Glossy black lizard with a glowing green sail of spines",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "gigajenzard",
+  "name": "Gigajenzard",
+  "no": 40,
+  "line": "huang",
+  "stage": 3,
+  "kind": "line3",
+  "parody": "Jensen Huang",
+  "types": ["Electric","Dragon"],
+  "design": "Great black dragon-lizard with wings, horns and a green sail",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  }
 ]
