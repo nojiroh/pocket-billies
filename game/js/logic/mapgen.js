@@ -28,6 +28,7 @@ expose({
   MAPGEN_EXIT_IN: [() => MAPGEN_EXIT_IN],
   MAPGEN_FAMILY_SHARE: [() => MAPGEN_FAMILY_SHARE],
   MAPGEN_FEATURES: [() => MAPGEN_FEATURES],
+  MAPGEN_FOREST: [() => MAPGEN_FOREST],
   MAPGEN_FOUR: [() => MAPGEN_FOUR],
   MAPGEN_GRASS_PATCH: [() => MAPGEN_GRASS_PATCH],
   MAPGEN_HUB_BUILDINGS: [() => MAPGEN_HUB_BUILDINGS],
@@ -2866,6 +2867,10 @@ export const MAPGEN_LAYOUTS = {
 };
 /** the layout dial when not given (not in MAPGEN_DEFAULTS, so scenes made without it keep the dials they stored) */
 export const MAPGEN_LAYOUT_DIALS = { layout: 'none' };
+/** a forest mass's props (measured on the phone-sized headless page, tools/route-perf.py): canopy pieces `step`
+ * metres apart at a scale in `size`, the biome's trees along its edge `wall` metres apart (a model tree is a draw
+ * per leaf clump, the wall is most of a forest's cost) */
+export const MAPGEN_FOREST = { step: 5.2, size: [1.0, 1.35], wall: 5 };
 /** the ground under a forest mass: deep forest, walked by no one (scenery.json, tools/build-forest-canopy.py) */
 export const MAPGEN_DEEP = '&';
 /** the share of a laid-out route you can walk to from the hub (the owner, 2026-10-24: 55-65%) and the aim */
@@ -3350,11 +3355,11 @@ export function mapgenForestFill(G, rnd) {
       rnd,
       F,
       () => rnd.pick(B.canopy),
-      5.2,
-      [1.0, 1.35],
+      MAPGEN_FOREST.step,
+      MAPGEN_FOREST.size,
       () => rnd.pick(B.trees),
       !deep,
-      3.2
+      MAPGEN_FOREST.wall
     );
   else mapgenFillMask(G, rnd, F, () => rnd.pick(MAPGEN_OUTCROP[G.P.biome] || MAPGEN_OUTCROP.default), 2, [1.2, 1.6]);
 }
