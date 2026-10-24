@@ -79,6 +79,7 @@ the owner: the world map's crowding at Expeditions III-V and a Run Lab picker th
   snapshots main itself failed (run-start's hash, check-data's four, with duplicate stale entries) were remade.
 - Next: RL-12b part 2 is merged; RL-R2's track work is done (a crowding pass and the Run Lab picker if the owner
   wants them).
+
 ### Roster track RO-2c - The Huang line, regional forms and a balance pass - 2026-10-24
 Branch `track/roster` itself (the push was allowed from this session). Plan approved in Plan Mode with the
 recommendations taken: Huang rare, ending at 560; the starters' level 16 left alone. **The RO-2.. plan is finished:
