@@ -228,7 +228,11 @@ function runLabNodeHTML(D, plan, roles, i) {
     B = D.biomes[n.biome] || {},
     name = (/** @type {number} */ j) =>
       `${j} (${escapeHtml((D.nodeTypes[map.nodes[j].type] || {}).name || map.nodes[j].type)})`,
-    back = runBack(map, i),
+    /* RL-R2b: a side place is reached from the obstacle's place (its first) or the one before it in the chain */
+    back =
+      n.side && map.side
+        ? [map.side.nodes.indexOf(i) > 0 ? map.side.nodes[map.side.nodes.indexOf(i) - 1] : map.side.from]
+        : runBack(map, i),
     days = (plan.forecast[runWorldNode(i)] || []).map((w, d) => `day ${d + 1}: ${escapeHtml(w)}`).join(', '),
     shown = ['not shown', 'shown as ?', 'shown with its type'][n.seen || 0];
   const row = (/** @type {string} */ k, /** @type {string} */ v) => `<tr><th>${k}</th><td>${v}</td></tr>`;
@@ -237,7 +241,9 @@ function runLabNodeHTML(D, plan, roles, i) {
     row('Type', `${escapeHtml(T.name || n.type)} <small class="mono">${escapeHtml(n.type)}</small>`),
     row(
       'Row',
-      `${n.row + 1} of ${roles.length}, lane ${n.lane}: ${RUN_LAB_ROLE[roles[n.row]] || escapeHtml(roles[n.row])}`
+      n.side
+        ? `${n.row + 1} of ${roles.length}, in the side area`
+        : `${n.row + 1} of ${roles.length}, lane ${n.lane}: ${RUN_LAB_ROLE[roles[n.row]] || escapeHtml(roles[n.row])}`
     ),
     row(
       'Biome',
