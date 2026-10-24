@@ -3,7 +3,8 @@
    The run loop as the player meets it: starting a run at Copperleaf's airship mast, the checkpoints it saves, a
    reload picking it up where it was, giving up, and the end (the payout screen is run-payout.js). The rules it plays
    by are logic/run-loop.js, logic/run-map.js and logic/run-state.js; the run's world is run-world.js.
-   RL-9b: the start sheet picks who comes from home (the team or storage, rules.json run.home by Expedition) and packs a
+   RL-9b, RL-13: the start sheet picks who comes from home (the team or storage, for starter points: rules.json
+   run.points by Expedition) and packs a
    bag from Copperleaf's (run.pack); the rest stay. Storage stays in Copperleaf during a run (logic/rules.js
    allBillies, toBox, toTeam, addBilly): a Billie caught while
    the party is full waits in runCatch, never in the save (a team of seven can't be saved), until one is released. */
@@ -21,14 +22,28 @@ import {
   rewardPickOpen,
   runPayoutOpen,
   toast,
+  typeBadgeHTML,
 } from './hooks.js';
-import { ITEMS, PERKS, PYRAMIDS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
+import {
+  ITEMS,
+  MODIFIERS,
+  PERKS,
+  PYRAMIDS,
+  RULES,
+  SPECIES,
+  START_NODE,
+  TRAINERS,
+  TYPES,
+  UNLOCK_DATA,
+} from './game-data.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
+import { CHALLENGE_IDS, expeditionNumeral, modsMake } from './logic/modifiers.js';
+import { pointBudget, pointPick, pointSpend, pointStartable } from './logic/starter-points.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchStop } from './logic/ranch.js';
 import { runByExpedition, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runNext } from './logic/run-map.js';
-import { runArriveFx, runBattleExtra, runRelease, runReleasePays } from './logic/run-loop.js';
+import { runArriveFx, runBattleExtra, runRelease, runReleasePays, runWareHeals } from './logic/run-loop.js';
 import { fxOfRun, fxPayoutRates, fxRunPrice } from './logic/effects.js';
 import {
   BATTLE_RULES,
@@ -41,6 +56,7 @@ import {
 } from './logic/battle-engine.js';
 import { runUnlocks } from './logic/unlocks.js';
 import { runStartOn, runStartPlan } from './logic/run-start.js';
+import { storyAllows } from './logic/script.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { pyramidHTML } from './art.js';
@@ -57,13 +73,16 @@ expose({
   runBattleAgain: [() => runBattleAgain, v => (runBattleAgain = v)],
   runBattleStart: [() => runBattleStart, v => ((runBattleStart = v), provide({ runBattleStart }))],
   runCatch: [() => runCatch],
+  runChallengesOpen: [() => runChallengesOpen],
   runClinicEach: [() => runClinicEach],
   runEndHome: [() => runEndHome, v => (runEndHome = v)],
+  runExpNow: [() => runExpNow],
   runFoeRef: [() => runFoeRef],
   runGiveUp: [() => runGiveUp, v => ((runGiveUp = v), provide({ runGiveUp }))],
   runHint: [() => runHint, v => ((runHint = v), provide({ runHint }))],
   runHomeList: [() => runHomeList],
   runJump: [() => runJump, v => ((runJump = v), provide({ runJump }))],
+  runModsNow: [() => runModsNow, v => (runModsNow = v)],
   runOver: [() => runOver, v => ((runOver = v), provide({ runOver }))],
   runPackStep: [() => runPackStep, v => (runPackStep = v)],
   runPickDefault: [() => runPickDefault, v => (runPickDefault = v)],
@@ -165,6 +184,7 @@ export function runEndHome(won, keep, itemPrice) {
   if (!saveData.run) return;
   /* RL-12: the Perks' payout rows, read before the run ends */
   const rates = fxPayoutRates(fxOfRun(saveData.run, PERKS), RULES.run.payout),
+    opened = saveData.meta.expedition,
     pay = runEnd(saveData, { won, keep }, rates, itemPrice);
   /* a move waiting to be learned names a Billie by its uid, which a run's copy shares with the hub's */
   uiState.learnQ = [];
@@ -187,6 +207,9 @@ export function runEndHome(won, keep, itemPrice) {
   toast(
     `+${formatNumber(pay.research)} Research${pay.scrap ? `, ${formatNumber(pay.scrap)} Scrap` : ''}${pay.crests ? ` and ${plural(pay.crests, 'Crest')}` : ''}. You have ${formatNumber(saveData.meta.research)} Research.`
   );
+  /* RL-13: a win that opens the next Expedition says so */
+  if (saveData.meta.expedition > opened)
+    toast(`${MODIFIERS.expeditions[saveData.meta.expedition - 1].name} is open. Pick it at the mast.`);
   /* RL-11: milestones the run has met (ended runs, wins), each with its own toast after this one */
   if (typeof labMilestones === 'function') labMilestones();
 }
@@ -226,23 +249,61 @@ function runSeedRoll() {
   for (let k = 0; k < 10; k++) s += A[Math.floor(Math.random() * A.length)];
   return s;
 }
-/** RL-9b: who may come from home: the team, then storage */
+/** RL-9b: who may come from home: the team, then storage (RL-13: the Billies at the ranch, the only ones that can
+    start a run) */
 const runHomeList = () => [...saveData.team, ...saveData.box];
-/** the mast's first pick: the buddy, else the lead, else the first in storage */
-function runPickDefault() {
-  const all = runHomeList(),
-    m = all.find(b => b.uid === saveData.buddy) || all[0];
-  return m ? m.uid : null;
+/** RL-13: the Expedition the start sheet is set to (uiState.runExp), within what the save has open */
+const runExpNow = () => Math.max(1, Math.min(saveData.meta.expedition || 1, uiState.runExp || 1));
+/** RL-13: the challenges the start sheet is set to (uiState.runChal), those the save may take; with the mono-type's
+    type (uiState.runMonoType, the first type when none picked) */
+function runModsNow() {
+  const open = runChallengesOpen().filter(c => (uiState.runChal || []).includes(c.id));
+  return modsMake(
+    open.map(c => c.id),
+    uiState.runMonoType || TYPES[0]
+  );
+}
+/** RL-13: the challenges and whether each may be taken now (its `when`, logic/conditions.js) */
+const runChallengesOpen = () =>
+  CHALLENGE_IDS.filter(id => MODIFIERS.challenges[id]).map(id => ({
+    id,
+    C: /** @type {any} */ (MODIFIERS.challenges[id]),
+    ok: storyAllows({ when: /** @type {any} */ (MODIFIERS.challenges[id]).when || undefined }),
+  }));
+/** RL-13: the mast's default pick: the dearest Billies the starter points afford, the buddy first
+ * (logic/starter-points.js pointPick) @param {number} [expedition] @param {string[]} [mods] */
+function runPickDefault(expedition = 1, mods = []) {
+  const R = RULES.run.points;
+  return pointPick(runHomeList(), SPECIES, R, pointBudget(R, expedition), { mods }, saveData.buddy).map(m => m.uid);
 }
 /** the start sheet's choice as it stands (uiState.runPick, runPack), kept to what is at home, what the bag holds and
- * the Expedition's counts (rules.json run.home, run.pack): the Billies from home (the default pick when none), the pack
- * and how many things are in it @param {number} [expedition] */
-function runPickNow(expedition = 1) {
+ * the Expedition (rules.json run.points for the starter points, run.pack for the bag): the Billies from home (the
+ * default pick when none), what they cost of the budget, the pack and how many things are in it
+ * @param {number} [expedition] @param {string[]} [mods] */
+function runPickNow(expedition = 1, mods = []) {
   const all = runHomeList(),
-    cap = runByExpedition(RULES.run.home, expedition),
+    PT = RULES.run.points,
+    budget = pointBudget(PT, expedition),
+    cap = PT.team,
     most = runByExpedition(RULES.run.pack, expedition);
-  let home = (uiState.runPick || []).filter(u => all.some(m => m.uid === u)).slice(0, cap);
-  if (!home.length) home = [runPickDefault()].filter(u => !!u);
+  /* RL-13: the pick is kept within the budget, in the order it was made */
+  let home = [];
+  for (const u of uiState.runPick || []) {
+    const m = all.find(b => b.uid === u);
+    if (
+      m &&
+      pointStartable(
+        m,
+        home.map(uid => all.find(b => b.uid === uid)).filter(b => !!b),
+        SPECIES,
+        PT,
+        budget,
+        { mods }
+      ).ok
+    )
+      home.push(u);
+  }
+  if (!home.length) home = runPickDefault(expedition, mods);
   const pack = { items: {}, pyramids: {} };
   let n = 0;
   for (const kind of ['items', 'pyramids'])
@@ -252,18 +313,25 @@ function runPickNow(expedition = 1) {
       pack[kind][k] = take;
       n += take;
     }
-  return { home, pack, n, cap, most };
+  const picked = home.map(u => all.find(b => b.uid === u)).filter(b => !!b);
+  return { home, pack, n, cap, most, budget, spent: pointSpend(picked, SPECIES, PT) };
 }
-/** a card tapped: that Billie comes (with one place, in place of the one picked; with more, in or out) */
+/** a card tapped: that Billie comes, or stops coming (RL-13: within the starter points; one that doesn't fit is
+    left out by runPickNow) */
 function runPickTap(uid) {
-  const P = runPickNow();
-  uiState.runPick =
-    P.cap === 1 ? [uid] : P.home.includes(uid) ? P.home.filter(u => u !== uid) : [...P.home, uid].slice(-P.cap);
+  const P = runPickNow(runExpNow(), runModsNow());
+  /* the first tap starts your own pick with that Billie (the suggested party is only shown until then); later taps
+     add or take one out within the points */
+  uiState.runPick = !Array.isArray(uiState.runPick)
+    ? [uid]
+    : P.home.includes(uid)
+      ? P.home.filter(u => u !== uid)
+      : [...P.home, uid];
   runStartSheet();
 }
 /** a pack row's − or +: one thing more or less of it, within what the bag holds and the pack's room */
 function runPackStep(kind, k, d) {
-  const P = runPickNow(),
+  const P = runPickNow(runExpNow(), runModsNow()),
     now = P.pack[kind][k] || 0,
     next = Math.max(0, Math.min(saveData[kind][k] || 0, now + d, now + P.most - P.n));
   uiState.runPack = P.pack;
@@ -275,18 +343,48 @@ function runPackStep(kind, k, d) {
 export function runStartSheet() {
   if (!runStartable()) return;
   const S = RULES.run.start,
-    P = runPickNow(),
+    expedition = runExpNow(),
+    mods = runModsNow(),
+    P = runPickNow(expedition, mods),
     gifts = [
       plural(S.se, 'Money'),
       ...Object.entries(S.pyramids).map(([k, n]) => `${n} ${PYRAMIDS[k] ? PYRAMIDS[k].n : k}${n === 1 ? '' : 's'}`),
       ...Object.entries(S.items).map(([k, n]) => `${n} ${ITEMS[k] ? ITEMS[k].n : k}${n === 1 ? '' : 's'}`),
     ],
     trains = uid => !!(saveData.ranch && saveData.ranch.trainees.some(t => t.uid === uid)),
-    card = m =>
-      `<pb-pick-card data-u="${m.uid}" heading="${escapeHtml(billyName(m))}" sub="Lv ${m.lvl} · ${saveData.team.includes(m) ? 'team' : trains(m.uid) ? 'training' : 'storage'}"${P.home.includes(m.uid) ? ' selected' : ''}><span slot="art">${rigCanvasHTML(m.sp, 64, { build: m.build, coat: m.coat })}</span></pb-pick-card>`,
+    /* the suggested party (nothing tapped yet) greys nobody out for points: a tap starts your own pick */
+    own = Array.isArray(uiState.runPick),
+    picked = own ? P.home.map(u => runHomeList().find(m => m.uid === u)).filter(m => !!m) : [],
+    /* RL-13: each card says what it costs in starter points, and why it can't come when it can't */
+    card = m => {
+      const on = P.home.includes(m.uid),
+        can = pointStartable(m, picked, SPECIES, RULES.run.points, P.budget, { mods }),
+        where = saveData.team.includes(m) ? 'team' : trains(m.uid) ? 'training' : 'storage',
+        sub = `Lv ${m.lvl} · ${where} · ${plural(can.cost, 'point')}${!on && can.why ? ` · ${can.why}` : ''}`;
+      return `<pb-pick-card data-u="${m.uid}" heading="${escapeHtml(billyName(m))}" sub="${escapeHtml(sub)}"${on ? ' selected' : ''}${on || can.ok ? '' : ' disabled'}><span slot="art">${rigCanvasHTML(m.sp, 64, { build: m.build, coat: m.coat })}</span></pb-pick-card>`;
+    },
+    /* RL-13: the Expedition (those open) and the challenges (those the save may take) as chips */
+    expChips = MODIFIERS.expeditions
+      .slice(0, saveData.meta.expedition || 1)
+      .map(
+        (E, i) =>
+          `<button class="fchip k-btn${i + 1 === expedition ? ' on' : ''}" data-exp="${i + 1}" aria-pressed="${i + 1 === expedition}">${escapeHtml(expeditionNumeral(i + 1))}</button>`
+      )
+      .join(''),
+    chalChips = runChallengesOpen()
+      .filter(c => c.ok)
+      .map(
+        c =>
+          `<button class="fchip k-btn${mods.includes(c.id) ? ' on' : ''}" data-chal="${c.id}" aria-pressed="${mods.includes(c.id)}" title="${escapeHtml(c.C.d)}">${escapeHtml(c.C.name)}</button>`
+      )
+      .join(''),
+    monoChips = mods.includes('mono')
+      ? `<div class="fchips">${TYPES.map(t => `<button class="fchip k-btn${(uiState.runMonoType || TYPES[0]) === t ? ' on' : ''}" data-mono="${escapeHtml(t)}" aria-pressed="${(uiState.runMonoType || TYPES[0]) === t}">${typeBadgeHTML(t)}</button>`).join('')}</div>`
+      : '',
     things = [
       ...Object.keys(ITEMS)
-        .filter(k => saveData.items[k] > 0)
+        /* RL-13: the "No healing" challenge packs no healing items (logic/run-loop.js runWareHeals) */
+        .filter(k => saveData.items[k] > 0 && !(mods.includes('noheal') && runWareHeals(k, ITEMS)))
         .map(k => ['items', k, ITEMS[k].n, itemIcon(k, 30)]),
       ...Object.keys(PYRAMIDS)
         .filter(k => saveData.pyramids[k] > 0)
@@ -298,7 +396,9 @@ export function runStartSheet() {
       return `<div class="bag-row k-card run-pack-row"><span class="bag-ic">${icon}</span><span class="bag-t"><b>${escapeHtml(name)}</b><small>${formatNumber(have)} in the bag</small></span><button class="pb" data-pk="${kind}" data-k="${escapeHtml(k)}" data-d="-1" aria-label="One ${escapeHtml(name)} less"${n ? '' : ' disabled'}>−</button><b class="bag-n tnum">${n}</b><button class="pb" data-pk="${kind}" data-k="${escapeHtml(k)}" data-d="1" aria-label="One ${escapeHtml(name)} more"${n < have && P.n < P.most ? '' : ' disabled'}>+</button></div>`;
     },
     trained = P.home.filter(trains);
-  const html = `<p>The airship flies you out to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p><h3>Who comes from home</h3><p class="note">${plural(P.cap, 'Billie')} from home at Expedition I. The rest stay at the ranch; on the run you catch wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>The airship adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Research.</p>`;
+  const E = MODIFIERS.expeditions[expedition - 1],
+    chal = runChallengesOpen().filter(c => mods.includes(c.id));
+  const html = `<p>The airship flies you out to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p>${(saveData.meta.expedition || 1) > 1 ? `<h3>Expedition</h3><div class="fchips">${expChips}</div><p class="note">${escapeHtml(E ? E.d : '')}</p>` : ''}${chalChips ? `<h3>Challenges</h3><div class="fchips">${chalChips}</div>${monoChips}<p class="note">${chal.length ? escapeHtml(chal.map(c => c.C.d).join(' ')) : 'Harder runs pay more Research.'}</p>` : ''}<h3>Who comes from home</h3><p class="note">${P.spent} of ${P.budget} starter points spent${own ? '' : ' (a suggested party: tap a Billie to pick your own)'}. The rest stay at the ranch; on the run you catch wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>The airship adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Research.</p>`;
   const was = uiState.modal && uiState.modal.cls === 'fly-sheet run-start' ? uiState.modal : null,
     sheet = document.querySelector('#ov .sheet'),
     body = document.querySelector('#ov .sheet .body'),
@@ -311,13 +411,14 @@ export function runStartSheet() {
         l: 'Take off',
         c: 'gold',
         dis: !P.home.length,
-        f: () => runTakeOff(undefined, undefined, undefined, runPickNow()),
+        f: () => runTakeOff(undefined, undefined, mods, runPickNow(expedition, mods), expedition),
       },
       {
         l: 'Not now',
         c: 'quiet',
         f: () => {
           uiState.runPick = uiState.runPack = null;
+          uiState.runExp = uiState.runChal = uiState.runMonoType = null;
           closeModal();
         },
       },
@@ -330,6 +431,24 @@ export function runStartSheet() {
         b.addEventListener('click', () => {
           const d = /** @type {HTMLElement} */ (b).dataset;
           runPackStep(d.pk, d.k, Number(d.d));
+        });
+      /* RL-13: the Expedition, a challenge on or off, a mono-type run's type */
+      for (const b of document.querySelectorAll('#ov [data-exp]'))
+        b.addEventListener('click', () => {
+          uiState.runExp = Number(/** @type {HTMLElement} */ (b).dataset.exp);
+          runStartSheet();
+        });
+      for (const b of document.querySelectorAll('#ov [data-chal]'))
+        b.addEventListener('click', () => {
+          const id = /** @type {HTMLElement} */ (b).dataset.chal,
+            on = (uiState.runChal || []).includes(id);
+          uiState.runChal = on ? uiState.runChal.filter(c => c !== id) : [...(uiState.runChal || []), id];
+          runStartSheet();
+        });
+      for (const b of document.querySelectorAll('#ov [data-mono]'))
+        b.addEventListener('click', () => {
+          uiState.runMonoType = /** @type {HTMLElement} */ (b).dataset.mono;
+          runStartSheet();
         });
       const sh = document.querySelector('#ov .sheet'),
         bd = document.querySelector('#ov .sheet .body');
@@ -352,12 +471,14 @@ export function runStartSheet() {
  * @param {string} [seed] @param {Partial<import('../types/game-data').RunMapRules>} [map] the map's rules changed (the
  * debug menu's short run) @param {string[]} [mods] the run's mods (the debug menu's mountains run: RUN_MOD_MOUNTAINS)
  * @param {{ home: string[], pack: { items: Record<string, number>, pyramids: Record<string, number> } }} [pick]
+ * @param {number} [expedition] RL-13: the Expedition picked at the mast (I by default)
  */
-export function runTakeOff(seed, map, mods, pick) {
+export function runTakeOff(seed, map, mods, pick, expedition) {
   if (!runStartable()) return;
-  const P = pick || { home: [runPickDefault()].filter(u => !!u), pack: { items: {}, pyramids: {} } };
+  const P = pick || { home: runPickDefault(), pack: { items: {}, pyramids: {} } };
   if (!P.home.length) return;
   uiState.runPick = uiState.runPack = null;
+  uiState.runExp = uiState.runChal = uiState.runMonoType = null;
   closeModal();
   const s = saveData,
     sd = seed || runSeedRoll(),
@@ -367,7 +488,7 @@ export function runTakeOff(seed, map, mods, pick) {
   const plan = runStartPlan(
     sd,
     { ...data, unlockData: UNLOCK_DATA },
-    { unlocks: runUnlocks(s, UNLOCK_DATA), map, mods }
+    { unlocks: runUnlocks(s, UNLOCK_DATA), map, mods, expedition }
   );
   if (RULES.ranch && s.ranch)
     for (const uid of P.home) ranchStop(s, uid, ranchNow(s, Date.now(), RULES.ranch).now, RULES.ranch, toast);

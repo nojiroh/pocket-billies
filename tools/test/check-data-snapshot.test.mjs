@@ -62,7 +62,8 @@ test('check-data: planted rules (battle, run, ranch)', t => {
         run.seamIn = 0;
         run.start.pyramids.nosuchcoin = 1;
         run.start.extra = 1;
-        run.home = [2, 1];
+        run.points.budget = [2, 1];
+        run.points.most = 'five';
         run.healCost = -5;
         run.shop.always.push('nosuchware');
         run.shop.pick['coin:nosuch'] = 1;
@@ -130,6 +131,17 @@ test('check-data: planted field moves and side areas (RL-R2)', t => {
       'rules.json': R => {
         Object.assign(R.run.side, { detour: 0.9, alt: 0.2, places: [1, 9], lean: -1, extra: 1 });
         R.run.side.moves = { surf: 0, nosuchmove: 1 };
+      },
+    })
+  );
+});
+
+test('check-data: planted Expeditions and challenges (RL-13)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'modifiers.json': M => {
+        M.challenges.mono.when = 'wins >=';
+        M.expeditions[2].fx = [{ kind: 'level', n: 1 }];
       },
     })
   );

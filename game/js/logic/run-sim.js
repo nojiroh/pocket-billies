@@ -13,7 +13,8 @@
  * @typedef {{ modules: Record<string, any>, fn: (name: string) => any, hooks: any, data: any, gameData: any,
  *   logic: any, beforeRun?: (o: SimOptions) => void }} SimEnv
  * @typedef {{ random?: number, fights?: number, team?: number, pack?: number, unlocks?: 'none' | 'all',
- *   policy?: string, scenes?: 'make' | 'skip', badges?: 'none' | 'all' }} SimOptions
+ *   policy?: string, scenes?: 'make' | 'skip', expedition?: number, mods?: string[], lvl?: number,
+ *   badges?: 'none' | 'all' }} SimOptions
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -41,8 +42,8 @@ export const MAX_TURNS = 60;
 /**
  * Studio plan T3.2: the player's part, the bot policy. Every number the simulation uses that isn't the game's own rule is
  * here, by name, and every report names the policy and its settings: the results measure this bot, not a player.
- * - home: who comes from home: the highest-level Billies, as many as rules.json run.home lets (the page's start
- *   sheet picks the buddy by default)
+ * - home: who comes from home: the dearest Billies the starter-point budget affords (RL-13, logic/starter-points.js
+ *   pointPick, as the start sheet's default pick), out of the `team` at the ranch
  * - fights: wild Billies fought in a place, at most (the first of its stock; `fights` in the options)
  * - fightAbove: no wild fight while the party's HP is below this share of its full HP
  * - potionBelow: a Potion (potion) on a Billie below this share of its HP, before each wild fight
@@ -135,7 +136,9 @@ export function runSimOn(env) {
     { runStartOn, runStartPlan } = modules['run-start'],
     { runRegionData } = modules['run-region'],
     { runUnlocks } = modules.unlocks,
-    { perkBuy, perkChoose, perkPrice, perkShelf } = modules.perks;
+    { perkBuy, perkChoose, perkPrice, perkShelf } = modules.perks,
+    { pointBudget, pointPick } = modules['starter-points'],
+    { modTypeFits } = modules.modifiers;
   const MAP_DATA = {
       nodeTypes: GAME_DATA.nodeTypes,
       biomes: GAME_DATA.biomes,
@@ -196,7 +199,8 @@ export function runSimOn(env) {
    * run's numbers. What the player does is a fixed policy: walk forward along a lane drawn from the seed, fight up to
    * `fights` of a place's wild Billies while the party is above 70% of its HP (a Potion on a Billie below 60%; catch the
    * first ones while the party is small), heal in towns when hurt, keep a few Pyramids, beat the mini-boss, then
-   * the boss. It starts as the mast does: the highest-level Billies from home (rules.json run.home at Expedition I;
+   * the boss. It starts as the mast does: the Billies the starter points afford (RL-13: rules.json run.points at the
+   * run's Expedition, logic/starter-points.js pointPick;
    * `team` is how many starters wait at home) and a bag packed with Potions from home (`pack` of them at home, as many
    * as run.pack lets).
    * @param {string} seed @param {SimOptions} [o]
@@ -208,14 +212,22 @@ export function runSimOn(env) {
     s.started = true;
     s.starter = RULES.start.starters[0];
     hooks.provide({ saveData: s, activeBattle: null });
-    s.team.push(fn('makeBilly')(s.starter + '0', RULES.start.starterLevel));
-    for (let k = 1; k < (o.team ?? 1); k++) s.team.push(fn('makeBilly')(s.starter + '0', RULES.start.starterLevel));
+    /* RL-13: `lvl` is the level the ranch has trained them to (it costs starter points); the starter's own level
+       by default */
+    const lvl = Math.max(1, Math.floor(o.lvl || RULES.start.starterLevel));
+    s.team.push(fn('makeBilly')(s.starter + '0', lvl));
+    for (let k = 1; k < (o.team ?? 1); k++) s.team.push(fn('makeBilly')(s.starter + '0', lvl));
     s.items.potion = o.pack ?? 0;
-    const home = s.team
-        .slice()
-        .sort((/** @type {any} */ a, /** @type {any} */ b) => b.lvl - a.lvl)
-        .slice(0, runByExpedition(R.home, 1))
-        .map((/** @type {any} */ m) => m.uid),
+    const expedition = Math.max(1, Math.floor(o.expedition || 1)),
+      /* RL-13: the starter points the Expedition's budget buys, the dearest first (the start sheet's default pick) */
+      home = pointPick(
+        [...s.team, ...(s.box || [])],
+        data.SPECIES,
+        R.points,
+        pointBudget(R.points, expedition),
+        { mods: o.mods || [] },
+        s.buddy
+      ).map((/** @type {any} */ m) => m.uid),
       pack = { items: { potion: Math.min(o.pack ?? 0, runByExpedition(R.pack, 1)) }, pyramids: {} };
     /* Studio plan T2.1: started as the mast starts a run (logic/run-start.js), with what the save has unlocked: none (a
        fresh save, the default) or every unlock (unlocks: 'all') */
@@ -225,7 +237,11 @@ export function runSimOn(env) {
     if (o.badges === 'all') for (const M of Object.values(MOVES)) s.meta.badges[fieldBadgeKey(M.type)] = 1;
     const run = runStartOn(
       s,
-      runStartPlan(seed, { ...MAP_DATA, unlockData: UNLOCK_DATA }, { unlocks: runUnlocks(s, UNLOCK_DATA) }),
+      runStartPlan(
+        seed,
+        { ...MAP_DATA, unlockData: UNLOCK_DATA },
+        { unlocks: runUnlocks(s, UNLOCK_DATA), expedition, mods: o.mods || [] }
+      ),
       { home, pack }
     );
     const balance = o.scenes === 'skip',
@@ -349,7 +365,13 @@ export function runSimOn(env) {
           const B = hooks.activeBattle;
           let res;
           /* catch it while the party is small and there are pyramids: one throw, then fight on */
-          if (s.team.length < P.catchWhileBelow && (s.pyramids.pyramid || 0) > 0 && !q.alpha) {
+          if (
+            s.team.length < P.catchWhileBelow &&
+            (s.pyramids.pyramid || 0) > 0 &&
+            !q.alpha &&
+            /* RL-13: a mono-type run takes only its own type (logic/modifiers.js) */
+            modTypeFits(run, data.SPECIES[q.sp] ? data.SPECIES[q.sp].types : [])
+          ) {
             s.pyramids.pyramid--;
             const c = fn('catchRoll')('pyramid', 1 + logic.CATCH_RULES.ring * P.ring, false); /* doThrow's T */
             if (c.caught) {

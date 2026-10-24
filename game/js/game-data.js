@@ -35,6 +35,7 @@ expose({
   LINE_BY_ID: [() => LINE_BY_ID],
   LOCATIONS: [() => LOCATIONS],
   LOCATION_BY_ID: [() => LOCATION_BY_ID],
+  MODIFIERS: [() => MODIFIERS],
   MOVES: [() => MOVES],
   MUSIC: [() => MUSIC],
   NODE_TYPES: [() => NODE_TYPES],
@@ -401,6 +402,11 @@ export const NODE_TYPES = gameData.nodeTypes || {};
 export const MUSIC = gameData.music || { songs: {}, jingles: {}, cries: { bases: [] }, where: [] };
 /* roguelite track RL-R2: the field moves that open a run's side areas (fieldMoves.json; logic/run-side.js) */
 export const FIELD_MOVES = (gameData.fieldMoves && gameData.fieldMoves.moves) || {};
+/* roguelite track RL-13: a run's Expeditions and challenges (modifiers.json; logic/modifiers.js) */
+export const MODIFIERS = /** @type {import('../types/game-data').ModifiersData} */ (
+  gameData.modifiers || { expeditions: [{ name: 'Expedition I', d: '', fx: [] }], challenges: {} }
+);
+provide({ MODIFIERS }); /* to-module */
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
 /** RL-12b: the reward pick's cards */

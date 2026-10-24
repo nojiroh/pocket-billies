@@ -1,0 +1,80 @@
+{
+ "about": "RL-13: what a run's Expedition and challenges change. expeditions: I first; each one's effect rows (logic/effects.js) join the run's Perks. The values are placeholders for the run sim. challenges: picked at the mast (any number) once its when-condition holds; each adds its rows and the rule its id names (logic/modifiers.js).",
+ "expeditions": [
+  {"name":"Expedition I","d":"The first chapter. Foes as they come.","fx":[]},
+  {
+   "name": "Expedition II",
+   "d": "Foes 2 levels higher, the boss 15% tougher, prices 10% up.",
+   "fx": [
+    {"kind":"level","n":2},
+    {"kind":"bossHp","mult":1.15},
+    {"kind":"price","what":"shop","mult":1.1},
+    {"kind":"price","what":"heal","mult":1.1}
+   ]
+  },
+  {
+   "name": "Expedition III",
+   "d": "Foes 4 levels higher, the boss 30% tougher, prices 20% up.",
+   "fx": [
+    {"kind":"level","n":4},
+    {"kind":"bossHp","mult":1.3},
+    {"kind":"price","what":"shop","mult":1.2},
+    {"kind":"price","what":"heal","mult":1.2}
+   ]
+  },
+  {
+   "name": "Expedition IV",
+   "d": "Foes 6 levels higher, the boss 45% tougher, prices 30% up.",
+   "fx": [
+    {"kind":"level","n":6},
+    {"kind":"bossHp","mult":1.45},
+    {"kind":"price","what":"shop","mult":1.3},
+    {"kind":"price","what":"heal","mult":1.3}
+   ]
+  },
+  {
+   "name": "Expedition V",
+   "d": "Foes 8 levels higher, the boss 60% tougher, prices 40% up.",
+   "fx": [
+    {"kind":"level","n":8},
+    {"kind":"bossHp","mult":1.6},
+    {"kind":"price","what":"shop","mult":1.4},
+    {"kind":"price","what":"heal","mult":1.4}
+   ]
+  }
+ ],
+ "challenges": {
+  "mono": {
+   "name": "Mono-type",
+   "d": "Pick a type. Only Billies of it may start the run or be caught.",
+   "when": "wins >= 1",
+   "fx": [
+    {"kind":"payout","what":"research","mult":1.25}
+   ]
+  },
+  "noheal": {
+   "name": "No healing",
+   "d": "Clinics are closed, and no healing items are sold or packed.",
+   "when": "wins >= 1",
+   "fx": [
+    {"kind":"payout","what":"research","mult":1.25}
+   ]
+  },
+  "noperks": {
+   "name": "No Perks",
+   "d": "No Perk picks, and no Perks in shops.",
+   "when": "wins >= 1",
+   "fx": [
+    {"kind":"payout","what":"research","mult":1.25}
+   ]
+  },
+  "fragile": {
+   "name": "Fainted is gone",
+   "d": "A Billie that faints leaves the run after the battle.",
+   "when": "wins >= 1",
+   "fx": [
+    {"kind":"payout","what":"research","mult":1.25}
+   ]
+  }
+ }
+}

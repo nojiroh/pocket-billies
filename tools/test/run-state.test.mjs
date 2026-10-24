@@ -196,6 +196,9 @@ test('run: ending one pays into meta, puts the hub back and keeps the chosen Bil
   t.team.push(fresh);
   runEnd(t, { won: true, keep: [fresh.uid] }, RATES, PRICE);
   assert.deepEqual([t.meta.runs, t.meta.wins, t.meta.crests], [1, 1, 1]);
+  /* RL-13: winning Expedition I opens II (the fixture's data may have only one) */
+  assert.equal(t.meta.expedition, Math.min(2, modules.modifiers.expeditionCount()));
+  assert.equal(s.meta.expedition, 1, 'a loss opens nothing');
   assert.equal(t.team.length, 3);
   assert.equal(t.team[2].uid, fresh.uid);
   const u = hubSave();

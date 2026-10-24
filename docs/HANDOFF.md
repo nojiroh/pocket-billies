@@ -2,7 +2,101 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
-<<<<<<< HEAD
+### Roguelite track RL-13 - Expeditions, challenges, starter points - 2026-10-24
+Branch `track/expeditions` (new, made from main at 25e447e in this session on the owner's word; BRANCHES.md and
+roguelite-track 9.4 name it). Plan approved in Plan Mode with the owner's answers: Expedition I is the baseline and
+each step counts from it; **nothing replaces the deadline's bite** (levels, boss HP, prices and the longer run are
+enough); a Billie's starter-point cost counts any levels above 5, not ranch levels tracked in the save; all four
+challenges, open after the first win; leader teams built during the run; and the placeholders are mine to tune with
+the sim (every change listed below). Round 5 beside RL-S1. Tag `rl-13-done` for the owner.
+- Where the docs were wrong (checked at 25e447e):
+  - Expeditions were half built already: `meta.expedition` and `run.expedition` were saved and validated, but nothing
+    ever raised them and only the zone count read them. The mast always started at I.
+  - "Runs grow by a zone or two at higher Expeditions" was already done in RL-R1 (regions.json zones 3/3/4/4/5), so
+    this session only had to let a run start above I. A run at III is 16 places against I's 10 on the same seed.
+  - The leaders were already picked by the region's types (RL-R1), but their **teams** were the legacy stand-ins:
+    Marina, the Water leader, fielded Gildslug, Filterleon and Feedopus. That is what RL-13 had to fix.
+  - Ranch-trained levels are not tracked anywhere: training adds XP to the Billie like any battle. So the cost counts
+    levels above 5 whatever their source (the owner's answer).
+  - `run.home` (RL-9b's count by Expedition) is gone, replaced by `run.points`. The packed bag (`run.pack`) stays.
+- Changed (one cause per commit):
+  - **modifiers.json** (+ schema, types, MODIFIERS, check-data and the Studio's Check): Expeditions I-V (I changes
+    nothing; each step +2 foe levels, boss HP x1.15, prices +10%) and the four challenges with a `when`
+    (`wins >= 1`) and +25% Research. Two new effect kinds, `level` and `bossHp`. New `logic/modifiers.js`
+    (a run's rows from `run.expedition` and `run.mods`, the mono-type helpers, `expeditionAfterWin`); `fxOfRun` adds
+    its rows after the Perks' and the events' boons.
+  - **In play**: wild Billies, route trainers, event foes, leaders and the boss take the Expedition's levels; the
+    boss's entry carries `hpMult` and `bossAlpha` builds its Alpha with it.
+  - **Winning opens the next** (run-state.js runEnd, one line after the win count: RL-S1 also edits runEnd), with a
+    toast; a new condition kind `expedition` for unlocks and lines.
+  - **Starter points** (new `logic/starter-points.js`, rules.json `run.points`): only the Billies at the ranch can
+    start; cost = rarity + stage (at most `most`), +1 per 5 levels above 5; budget by Expedition; at most 6. The
+    mast's pick, the run sim and the in-game test all use `pointPick`.
+  - **The start sheet**: an Expedition row (hidden while only I is open), a challenges row, a type row for a
+    mono-type run, each card's price and why it can't come. Take off hands the Expedition and mods to runStartPlan.
+  - **The challenges' rules**: `perkPool` empty (no pick, no shelf), `runClinic` shut and run shops without healing
+    wares (`runWareHeals`), the mast packing none, catching refused off-type (`runCatchFits`), and `runFragileDrop`
+    after every run battle (never the last one standing).
+  - **Leader teams** (`runLeaderTeam`): species of the leader's type, the region's dex first, the stage the level
+    allows, no species twice while the pool has others; its file's team sets how many and the level spread.
+  - **The sim**: `--expedition`, `--mods` and `--lvl` (the level the ranch trained them to), and the debug menu, the
+    debug log's run line, the fixture and a new in-game test phase.
+- **Balance, from the run sim** (the HANDOFF has carried "every run lost" since RL-8). The cause was not the
+  Expeditions: on a budget of 10 a level-20 party could bring **three** Billies, and the mini-boss (+3 levels, four
+  Billies) ended 72% of runs. Tuned placeholders: `run.points.budget` 10 -> [20, 22, 24, 26, 28],
+  `run.foes.miniboss.up` 3 -> 2, `run.foes.boss.up` 5 -> 3. Measured again **after main's new Billies (RO-2a/b/c,
+  40 species) were merged in**, with the two fixes below. Wins over 60 seeds (balance mode, 6 at the ranch, 4 wild
+  fights a place, 5 Potions; the bot policy is a lower bound on a player):
+
+  | party level | Expedition I | II | III |
+  |---|---|---|---|
+  | 5 (a fresh save) | 0 | - | - |
+  | 10 | 2 | 0 | 0 |
+  | 15 | 15 | 0 | 0 |
+  | 20 | 40 | 15 | 1 |
+  | 25 | 42 | 17 | 10 |
+
+  (Before the new roster, level 20 won 25 / 7 / 0: the new commons fill each region with young Billies and the
+  leaders field them, so Expedition I got friendlier; the step from one Expedition to the next is as steep.)
+  Challenges at Expedition I with a level-20 party: none 40 wins and 658 Research; no healing 41/805; no Perks
+  39/776; fainted is gone 40/822; mono-type 40/822. **The challenges barely bite for the bot** (it heals little, buys
+  few Perks, and its party is all one type): their cost shows only in play. The first runs are lost until the ranch
+  has trained something, which is the roguelite shape the owner asked for.
+- **check-fast's "Packing for a run" (found by CI)**: the start sheet opened with the suggested party filling the
+  budget, so every other card was greyed out and a tap did nothing until you tapped someone out. Now the suggested
+  party shows only until your first tap, which starts your own pick with that Billie; later taps add or take one out.
+- **The new Billies (merged from main mid-session)**, two fixes, one commit each:
+  - Starter points priced a Billie by its stage *number*: Sharktank (a two-stage line's final, stage 1) cost 2 while
+    Aviatorgoose with the same stats cost 3, and Altmowl and Peacouture (rare, no evolutions, stage 0 but a final
+    form's stats) cost 3 like Siliclet. A new `rules.js speciesStep` (a final form is 2 whatever its stage number) fixes
+    the price: they cost 3, 3, 5 and 5.
+  - The same mistake let leaders and route trainers field a final form at any level: a Flying mini-boss fielded four
+    level-11 Peacoutures, and a route trainer could field one at level 8. `runLeaderTeam` and RL-12b's `encDexAt` read
+    `speciesStep` now; a leader whose region has only its type's final forms looks at every species of the type first.
+- Verified: lint, typecheck, check:modules, format:check, check:data and the unit tests after every commit (886 ->
+  913 with main's and the new ones: modifiers (5), starter-points (5), challenges (4), run-loop's Expedition and
+  leader tests, encounters, run-state, conditions, check-data's planted Expeditions). Smoke 6 of 6 (208 s). The new in-game phase alone passed
+  headlessly. A browser look at the start sheet at 390x760 (three Expeditions open, a win): the chips, a challenge
+  on, the type row, each card's price and reason.
+  **Long checks skipped at the owner's word**: the full quick check and the whole in-game test (--selftest) were not
+  run. check:fast was, after all: CI runs it on every push, and it found a bug (below); 28 of 28 passed locally
+  after the fix, and CI's smoke job (which runs it) passed too.
+- Risky / open:
+  - Every number is still a placeholder; the sim's bot is not a player, and the win rates above are a floor.
+  - **No check-fast page for Expeditions** (the track asks each session for one): the start sheet's chips and a run
+    above I are only covered by the unit tests, the in-game phase and this session's browser look.
+  - The challenges' chip row scrolls sideways on a phone (four chips plus nine type chips); not tried on a phone.
+  - A mono-type run checks the type when a Billie starts or is caught; an event or a reward that hands you a Billie
+    (RL-12b `recall`, RL-S2's gifts) does not check it yet.
+  - `meta.expedition` goes up on a win but nothing lowers it; a save that has reached V always sees every chip.
+  - Leader teams are drawn fresh each time `runFoes` runs, so a leader's team is stable for a seed but changes if the
+    region's dex changes (a data edit mid-run).
+  - The fresh-save party (level 5) still never wins in the sim. If the owner wants the first run winnable, the lever
+    is the starter level or the mini-boss's row, not the Expedition.
+- Overlap: RL-S1 also edits `runEnd` (this adds one line after the win count) and the run's start; RL-12b part 2 edits
+  the run map (untouched here). main was merged in before the PR.
+- Next: RL-14 (the organization's bots, salvage, the Voltron) depends on this and RL-S1; RL-12c (held items) and
+  RL-R2b are open. For RL-13 itself: a check-fast page, and the owner's own numbers for the budget and the costs.
 ### Towns track TW-1 - The town layout - 2026-10-24
 Branch `track/towns` (TW-1 of docs/phases/towns-track.md); main merged in first. Plan approved after four questions
 answered by the owner: towns keep the route size (Ask me before 1), **every house faces the camera** (not turned to its
@@ -62,7 +156,6 @@ session's git proxy refuses tag pushes): on this entry's commit.
     from the south are why; a smaller square for side towns is the follow-up if it matters.
 - Next: TW-2 (townsfolk, animals, chat lines): homes are the houses (FOLK_HOME matches them), work places the clinic
   and the shop, hang-outs the benches and the well or fountain.
-=======
 ### Roguelite track RL-R2b - Side areas and field moves, part 2: a cave, an islet, the way back - 2026-10-24
 Branch `track/regions` (fast-forwarded to main at 25e447e, RL-R2a's merge). Plan approved in Plan Mode with the
 owner's answers: the cave uses the game's own cave darkness, the islet joins by a seam on the water (riding in), the
@@ -140,7 +233,6 @@ the owner: the world map's crowding at Expeditions III-V and a Run Lab picker th
   snapshots main itself failed (run-start's hash, check-data's four, with duplicate stale entries) were remade.
 - Next: RL-12b part 2 is merged; RL-R2's track work is done (a crowding pass and the Run Lab picker if the owner
   wants them).
->>>>>>> origin/main
 
 ### Roster track RO-2c - The Huang line, regional forms and a balance pass - 2026-10-24
 Branch `track/roster` itself (the push was allowed from this session). Plan approved in Plan Mode with the

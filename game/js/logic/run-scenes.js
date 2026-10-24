@@ -21,6 +21,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { hashString, rngFrom } from './rng.js';
+import { modFoeLevels } from './modifiers.js';
 import { runZoneRegion } from './run-region.js';
 import { runExits, runNodeSeed, runSpot } from './run-map.js';
 import { MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
@@ -296,11 +297,12 @@ export function runScenesMake(run, data) {
   for (let i = 0; i < map.nodes.length; i++) scenes.push(runSceneMake(run, i, scenes, data).scene);
   return scenes;
 }
-/** node i's wild levels: rules.json run.wild's on the landing's row, perRow more on each row after (1-100)
- * @param {RunMap} map @param {number} i @param {RunWorldData} data @returns {[number, number]} */
-export function runWildLevels(map, i, data) {
+/** node i's wild levels: rules.json run.wild's on the landing's row, perRow more on each row after, and `more` (RL-13:
+ * the run's Expedition, effects.js modFoeLevels) on all of them (1-100)
+ * @param {RunMap} map @param {number} i @param {RunWorldData} data @param {number} [more] @returns {[number, number]} */
+export function runWildLevels(map, i, data, more = 0) {
   const W = data.rules.wild,
-    up = map.nodes[i].row * W.perRow,
+    up = map.nodes[i].row * W.perRow + more,
     lv = /** @type {[number, number]} */ (W.lv.map(v => Math.max(1, Math.min(100, v + up))));
   return lv;
 }
@@ -331,7 +333,7 @@ export function runWorldTables(run, hub, data) {
     /* RL-R2: a side area's places meet its own species (lines the region left out), when it has them */
     const own = node.side && map.side && map.side.dex ? map.side.dex : null;
     pools[id] = {
-      lv: runWildLevels(map, i, data),
+      lv: runWildLevels(map, i, data, modFoeLevels(run)),
       list: own ? wildPoolList(source.list, own, null) : wildPoolList(source.list, dex, region ? region.swap : null),
     };
     /** @type {LocationData} */

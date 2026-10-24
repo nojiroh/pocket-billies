@@ -9,6 +9,21 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Expeditions, challenges and starter points** (roguelite track RL-13): runs now have difficulty tiers.
+  **Expedition I** is the game as it was; winning the highest one open unlocks the next, up to **V**. Each one above I
+  sends foes out 2 levels higher, makes the final boss tougher (+15% HP a step), raises run shop and clinic prices by
+  10%, and (from the region generator) adds a zone or two to the run. Once you have won a run you can also take
+  **challenges** on: **Mono-type** (pick a type; only Billies of it may start the run or be caught), **No healing**
+  (clinics shut, no healing items sold or packed), **No Perks** and **Fainted is gone** (a Billie that faints leaves
+  the run). Each pays 25% more Research.
+  **Starter points** replace "one Billie from home": every Billie at the ranch has a price in points (by how rare and
+  how evolved it is, and 1 more per 5 levels), and the mast gives you a budget to spend (20 at Expedition I, more
+  later). Bring six fresh ones or three trained ones. A Billie that is already fully evolved, or never evolves, is
+  priced as a final form. The start sheet shows each card's price and why one can't come.
+  **Leaders now field their own type**: the Water leader brings Water Billies from the region, not whatever the old
+  data said.
+- Leaders and trainers on a run no longer field a fully evolved Billie before level 32: a Flying leader could send out
+  four Peacoutures at level 11.
 - Run towns look like towns (towns track TW-1): a short street leads off the road to a little square with a well or a
   fountain, benches and lamps, the clinic and the shop facing it, and a row of houses with gardens and fences along
   the road. The houses are for show; only the clinic and the shop open. Each biome builds with its own houses.
