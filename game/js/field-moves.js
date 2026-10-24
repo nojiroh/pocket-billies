@@ -9,7 +9,8 @@
    way north opens (run.map.side.open; until then the seam turns you back with the obstacle's words: logic/rules.js
    gateText).
    At the side area's last place its way out (act 'fieldout') takes you back to the main path's next row, a day as any
-   arrival (logic/run-map.js runArrive, one way). */
+   arrival (logic/run-map.js runArrive, one way); RL-R2b: as a moment, the picture dipping to dark with the move's
+   words on it (fieldMoves.json `travel`) and fading in on the main path. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, render, toast } from './hooks.js';
@@ -26,6 +27,7 @@ import { talkBox, talkChoose, talkHide, talkLine } from './talk.js';
 import { runWorldData } from './run-world.js';
 /* eslint-disable no-func-assign */
 expose({
+  FIELD_TRAVEL_MS: [() => FIELD_TRAVEL_MS],
   fieldBadgeLine: [() => fieldBadgeLine, v => ((fieldBadgeLine = v), provide({ fieldBadgeLine }))],
   fieldMoveBurst: [() => fieldMoveBurst, v => (fieldMoveBurst = v)],
   fieldMoveOpen: [() => fieldMoveOpen, v => (fieldMoveOpen = v)],
@@ -34,6 +36,7 @@ expose({
   fieldTeam: [() => fieldTeam],
   fieldWayOut: [() => fieldWayOut, v => (fieldWayOut = v)],
   fieldWayOutGo: [() => fieldWayOutGo, v => (fieldWayOutGo = v)],
+  fieldWayOutTravel: [() => fieldWayOutTravel, v => (fieldWayOutTravel = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ fieldBadgeLine });
@@ -121,7 +124,43 @@ export async function fieldWayOut() {
   await talkLine('me', out, null);
   const yes = (await talkChoose([{ text: 'Yes' }, { text: 'No' }])) === 0;
   talkHide();
-  if (yes) fieldWayOutGo();
+  if (yes) await fieldWayOutTravel();
+}
+/** RL-R2b: how long the way out's moment takes (ms): the dip to dark, the hold with the move's words on it, the
+ * fade back in on the main path */
+const FIELD_TRAVEL_MS = { dip: 450, hold: 1100, rise: 650 };
+/** RL-R2b: the way out as a moment, Pokémon's way (no sheet): the picture dips to dark, the move's own sound and a
+ * few words on the dark ("Swept along by the current..."), and it fades in again on the main path (fieldWayOutGo,
+ * done behind the dark). Reduced motion: a quick fade alone */
+async function fieldWayOutTravel() {
+  const F = fieldSideHere();
+  if (!F) return;
+  const cv = walkView.cv;
+  if (!cv || !cv.isConnected) return fieldWayOutGo();
+  const quick = reducedMotion,
+    T = quick ? { dip: 120, hold: 0, rise: 160 } : FIELD_TRAVEL_MS,
+    r = cv.getBoundingClientRect(),
+    v = document.createElement('div');
+  v.id = 'fieldVeil';
+  v.style.cssText =
+    'position:fixed;pointer-events:none;background:#07060a;z-index:6;opacity:0;display:flex;align-items:center;' +
+    'justify-content:center;color:white;font:inherit;letter-spacing:.04em;text-align:center;padding:0 24px';
+  Object.assign(v.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+  document.body.appendChild(v);
+  const wait = (/** @type {number} */ ms) => new Promise(res => setTimeout(res, ms));
+  void v.offsetWidth;
+  v.style.transition = `opacity ${T.dip}ms ease-in`;
+  v.style.opacity = '1';
+  if (typeof soundEffect === 'function') soundEffect(F.M.obstacle === 'boulder' ? 'rumble' : 'whoosh');
+  await wait(T.dip);
+  if (!quick && F.M.travel) v.textContent = F.M.travel;
+  fieldWayOutGo();
+  await wait(T.hold);
+  v.textContent = '';
+  v.style.transition = `opacity ${T.rise}ms ease-out`;
+  v.style.opacity = '0';
+  await wait(T.rise);
+  v.remove();
 }
 /** follow the way out: back on the main path's next row (logic/run-map.js runArrive: a day, one way) */
 export function fieldWayOutGo() {

@@ -112,6 +112,12 @@
       "minLength": 1,
       "maxLength": 100
      },
+     "travel": {
+      "description": "RL-R2b: the words on the dark as the way out takes you back (game/js/field-moves.js fieldWayOutTravel)",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60
+     },
      "out": {
       "description": "the side area's way out, back to the main path",
       "type": "string",

@@ -15,7 +15,8 @@
    "needType": "The water is calm and deep. You have the {badge}, but no Water Billie in your team to ride.",
    "ask": "The water is calm and deep. Would you like to Surf?",
    "used": "{billie} used Surf!",
-   "out": "A current pulls you along the shore and sets you down on the main path."
+   "out": "A current pulls you along the shore and sets you down on the main path.",
+   "travel": "Swept along by the current…"
   },
   "smash": {
    "name": "Rock Smash",
@@ -29,7 +30,8 @@
    "needType": "A cracked boulder blocks the way. You have the {badge}, but no Ground Billie in your team to smash it.",
    "ask": "A cracked boulder blocks the way. Would you like to use Rock Smash?",
    "used": "{billie} used Rock Smash!",
-   "out": "A tunnel slopes up into daylight, back on the main path."
+   "out": "A tunnel slopes up into daylight, back on the main path.",
+   "travel": "Up the tunnel, toward the daylight…"
   },
   "cut": {
    "name": "Cut",
@@ -42,7 +44,8 @@
    "needType": "A thorny little tree blocks the path. You have the {badge}, but no Grass Billie in your team to cut it.",
    "ask": "This tree looks like it can be cut down! Would you like to use Cut?",
    "used": "{billie} used Cut!",
-   "out": "A trail through the undergrowth leads back to the main path."
+   "out": "A trail through the undergrowth leads back to the main path.",
+   "travel": "Through the undergrowth…"
   }
  }
 }
