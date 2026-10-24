@@ -7,6 +7,7 @@ import { provide, render, roomState } from './hooks.js';
 import { $, $$ } from './util.js';
 import { LOCATIONS, NODE_TYPES, RULES, SHOPS, locationSubtitle, trainersAt } from './game-data.js';
 import { encounterStock, encountersHere, formatNumber, healAll, plural } from './logic/rules.js';
+import { modHas } from './logic/modifiers.js';
 import { runClinic, runHealCost, runSheetStatus, weatherEffectText } from './logic/run-loop.js';
 import { startWild } from './logic/battle-engine.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
@@ -78,6 +79,11 @@ export function clinicHeal(say) {
   }
   const { hurt, cost } = runHealCost(saveData.team, runClinicEach()),
     each = formatNumber(runClinicEach());
+  /* RL-13: the "No healing" challenge (logic/modifiers.js): the clinic is shut for the whole run */
+  if (modHas(saveData.run, 'noheal')) {
+    toast('The clinic is shut. No healing on this run.');
+    return;
+  }
   if (!hurt) {
     toast('Everyone is in good shape. Nothing to pay.');
     return;

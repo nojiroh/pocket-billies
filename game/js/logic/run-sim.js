@@ -133,7 +133,8 @@ export function runSimOn(env) {
     { runRegionData } = modules['run-region'],
     { runUnlocks } = modules.unlocks,
     { perkBuy, perkChoose, perkPrice, perkShelf } = modules.perks,
-    { pointBudget, pointPick } = modules['starter-points'];
+    { pointBudget, pointPick } = modules['starter-points'],
+    { modTypeFits } = modules.modifiers;
   const MAP_DATA = {
       nodeTypes: GAME_DATA.nodeTypes,
       biomes: GAME_DATA.biomes,
@@ -342,7 +343,13 @@ export function runSimOn(env) {
           const B = hooks.activeBattle;
           let res;
           /* catch it while the party is small and there are pyramids: one throw, then fight on */
-          if (s.team.length < P.catchWhileBelow && (s.pyramids.pyramid || 0) > 0 && !q.alpha) {
+          if (
+            s.team.length < P.catchWhileBelow &&
+            (s.pyramids.pyramid || 0) > 0 &&
+            !q.alpha &&
+            /* RL-13: a mono-type run takes only its own type (logic/modifiers.js) */
+            modTypeFits(run, data.SPECIES[q.sp] ? data.SPECIES[q.sp].types : [])
+          ) {
             s.pyramids.pyramid--;
             const c = fn('catchRoll')('pyramid', 1 + logic.CATCH_RULES.ring * P.ring, false); /* doThrow's T */
             if (c.caught) {

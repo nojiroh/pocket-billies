@@ -20,7 +20,7 @@ import { ITEMS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
 import { healAll, maxHp, plural } from './rules.js';
-import { modBossHp, modFoeLevels } from './modifiers.js';
+import { modBossHp, modFoeLevels, modHas } from './modifiers.js';
 import { RUN_DAYS, runHome } from './run-state.js';
 import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
@@ -42,6 +42,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runFoes: [() => runFoes, v => (runFoes = v)],
   // @ts-expect-error -- replaced on purpose
+  runFragileDrop: [() => runFragileDrop, v => (runFragileDrop = v)],
+  // @ts-expect-error -- replaced on purpose
   runHealCost: [() => runHealCost, v => (runHealCost = v)],
   runHurt: [() => runHurt],
   runItemPrice: [() => runItemPrice],
@@ -57,6 +59,7 @@ expose({
   runShopOpen: [() => runShopOpen, v => (runShopOpen = v)],
   // @ts-expect-error -- replaced on purpose
   runShopStock: [() => runShopStock, v => (runShopStock = v)],
+  runWareHeals: [() => runWareHeals],
   // @ts-expect-error -- replaced on purpose
   weatherEffectText: [() => weatherEffectText, v => (weatherEffectText = v)],
 });
@@ -98,9 +101,12 @@ export function runHealCost(team, each) {
 /** Studio plan T3.2: a run town's clinic, after the player's yes (walk-tab.js clinicHeal, and the run's simulation):
  * when a Billie is hurt and the money is there, pay `each` per hurt Billie and heal everyone (healAll: the save in
  * play, `s`); else nothing changes. Returns what was hurt, what it costs and what was paid (0: nothing done)
- * @param {SaveData} s @param {number} each @returns {{ hurt: number, cost: number, paid: number }} */
+ * RL-13: with the "No healing" challenge the clinic is shut and nothing is paid (`shut`)
+ * @param {SaveData} s @param {number} each @returns {{ hurt: number, cost: number, paid: number, shut?: boolean }} */
 export function runClinic(s, each) {
   const { hurt, cost } = runHealCost(s.team, each);
+  /* RL-13: the "No healing" challenge closes the clinics (logic/modifiers.js) */
+  if (modHas(s.run, 'noheal')) return { hurt, cost, paid: 0, shut: true };
   if (!hurt || s.se < cost) return { hurt, cost, paid: 0 };
   s.se -= cost;
   healAll();
@@ -128,8 +134,19 @@ export function runShopStock(run, i, day, rule) {
  * @param {{ always: string[], more: number, pick: Record<string, number> }} rule
  * @param {import('./unlocks.js').UnlockData} unlockData */
 export function runShopOpen(run, i, day, rule, unlockData) {
-  return runShopStock(run, i, day, { ...rule, pick: unlockOpen(rule.pick, 'shop', run.unlocks, unlockData) });
+  const open = unlockOpen(rule.pick, 'shop', run.unlocks, unlockData),
+    /* RL-13: the "No healing" challenge takes the healing wares off the shelves (logic/modifiers.js) */
+    heals = (/** @type {string} */ w) => runWareHeals(w, ITEMS),
+    pick = modHas(run, 'noheal') ? Object.fromEntries(Object.entries(open).filter(([w]) => !heals(w))) : open,
+    always = modHas(run, 'noheal') ? rule.always.filter(w => !heals(w)) : rule.always;
+  return runShopStock(run, i, day, { ...rule, always, pick });
 }
+/** RL-13: whether a shop ware (an item id, or 'coin:<id>') heals or revives a Billie (items.json), for the
+ * "No healing" challenge @param {string} ware @param {Record<string, any>} items */
+export const runWareHeals = (ware, items) => {
+  const I = !ware.startsWith('coin:') && items[ware];
+  return !!I && !!(I.hp || I.hpAll || I.revive || I.cure);
+};
 
 /** a leader's win line without its badge (the run gives none): the sentences naming a Badge left out
  * @param {string} text */
@@ -261,6 +278,20 @@ export function runRelease(s, m) {
   if (runReleasePays(run, m)) run.released.push({ sp: m.sp, lvl: m.lvl });
 }
 
+/**
+ * RL-13: the "Fainted is gone" challenge: after a run battle, every Billie that fainted leaves the run (runRelease:
+ * out of the party, paid at the payout when it was caught on the run). Never the last one standing: with the whole
+ * party down the run is over anyway and the payout keeps one. Returns those that left (names for the sheet).
+ * @param {SaveData} s @returns {Billy[]}
+ */
+export function runFragileDrop(s) {
+  const run = s.run;
+  if (!run || !modHas(run, 'fragile') || !s.team.some(m => m.hp > 0)) return [];
+  const gone = s.team.filter(m => m.hp <= 0);
+  for (const m of gone) runRelease(s, m);
+  if (s.team.length && !s.team.some(m => m.uid === s.buddy)) s.buddy = s.team[0].uid;
+  return gone;
+}
 /** Studio plan T3.2: who comes home from a run's end (run-payout.js and the run's simulation): the whole party on a
  * win, else only the one picked (none when it isn't in the party) @param {{ uid: string }[]} team @param {boolean} won
  * @param {string | null} pick @returns {string[]} */

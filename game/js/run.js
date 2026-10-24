@@ -43,7 +43,7 @@ import { ranchNow } from './logic/ranch-clock.js';
 import { ranchStop } from './logic/ranch.js';
 import { runByExpedition, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runNext } from './logic/run-map.js';
-import { runArriveFx, runBattleExtra, runRelease, runReleasePays } from './logic/run-loop.js';
+import { runArriveFx, runBattleExtra, runRelease, runReleasePays, runWareHeals } from './logic/run-loop.js';
 import { fxOfRun, fxPayoutRates, fxRunPrice } from './logic/effects.js';
 import {
   BATTLE_RULES,
@@ -375,7 +375,8 @@ export function runStartSheet() {
       : '',
     things = [
       ...Object.keys(ITEMS)
-        .filter(k => saveData.items[k] > 0)
+        /* RL-13: the "No healing" challenge packs no healing items (logic/run-loop.js runWareHeals) */
+        .filter(k => saveData.items[k] > 0 && !(mods.includes('noheal') && runWareHeals(k, ITEMS)))
         .map(k => ['items', k, ITEMS[k].n, itemIcon(k, 30)]),
       ...Object.keys(PYRAMIDS)
         .filter(k => saveData.pyramids[k] > 0)
