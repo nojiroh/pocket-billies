@@ -30,6 +30,9 @@ MODELS = ROOT / 'game' / 'art' / 'scene' / 'next' / 'models'
 PICS = ROOT / 'game' / 'art' / 'scene' / 'next' / 'forest'
 SOLID = 1.2  # the trunks' disc (metres); the mass blocks by its ground (DEEP), not by the pieces
 DEEP = '&'  # the deep forest terrain's letter
+# the crown's shapes: few and big (measured, tools/route-perf.py: every model draws into the shadow map, so a piece's
+# weight counts twice; 10 globes a piece doubled a forest's frame time headless, 5 keep the look)
+GLOBES, CONES = 5, 5
 
 # key: (name, kind of crown, understorey colour, crown colours dark to light)
 PIECES = {
@@ -47,19 +50,19 @@ def crown(kind, cols, rnd):
     """the leaf shapes: [layer], each with its colour index for the picture"""
     out = []
     if kind == 'globe':
-        for i in range(10):
+        for i in range(GLOBES):
             a = rnd.uniform(0, math.tau)
             d = math.sqrt(rnd.random())
-            r = rnd.uniform(1.25, 1.75)
+            r = rnd.uniform(1.6, 2.1)
             out.append({'k': 'sphere', 'x': r2(math.cos(a) * d * 1.7), 'y': r2(0.3 + math.sin(a) * d * 1.3),
                         'z': r2(rnd.uniform(1.0, 2.0)), 'r': r2(r), 'ry': r2(r * 0.9), 'h': r2(rnd.uniform(2.8, 3.8)),
                         'sides': 9, 'rings': 4, 'lump': 0.3, 'col': cols[rnd.randrange(len(cols))], 'tex': 'leaves',
                         'name': 'crown'})
     else:
-        for i in range(8):
+        for i in range(CONES):
             a = rnd.uniform(0, math.tau)
             d = math.sqrt(rnd.random())
-            r = rnd.uniform(0.95, 1.35)
+            r = rnd.uniform(1.1, 1.5)
             out.append({'k': 'cone', 'x': r2(math.cos(a) * d * 1.9), 'y': r2(0.3 + math.sin(a) * d * 1.4),
                         'z': r2(rnd.uniform(0.6, 1.2)), 'r': r2(r), 'ry': r2(r), 'r1': 0, 'h': r2(rnd.uniform(4.2, 5.6)),
                         'sides': 7, 'col': cols[rnd.randrange(len(cols))], 'tex': 'leaves', 'name': 'crown'})
