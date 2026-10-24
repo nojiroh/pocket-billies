@@ -524,6 +524,7 @@ export const worldExtra = {
   shops: /** @type {string[]} */ ([]),
   trainers: /** @type {string[]} */ ([]),
 };
+provide({ worldExtra }); /* to-module */
 /** RL-8: and its shops (a run town's) into SHOPS and its trainers (a run's mini-bosses and boss) into TRAINERS;
  * RL-8b: and its own world map look
  * @param {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, maps: Record<string, any>,

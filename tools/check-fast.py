@@ -146,10 +146,14 @@ def bowl_map(pg, base):
     # the ground's terrain map fills and the terrain pictures go up (graphics off: nothing is judged by eye)
     if not until(pg, "!!(worldBowl.ground&&worldBowl.ground.terrain&&worldBowl.ground.terrain.ready&&worldBowl.ground.ok)", 60): raise Exception('the terrain never got ready')
     # calm ground (fix 2026-10-19): few single squares of another ground in the middle of the map (it read as camouflage)
-    sp = pg.evaluate("(()=>{const I=worldBowl.ground.terrain.idx,N=2048;let s=0,n=0;for(let j=600;j<1450;j++)for(let i=600;i<1450;i++){const v=I[j*N+i];n++;if(I[j*N+i+1]!==v&&I[j*N+i-1]!==v&&I[(j+1)*N+i]!==v&&I[(j-1)*N+i]!==v)s++}return s/n})()")
+    # the floating island (the hub): its terrain is worked out round the island alone, so that is where it is read
+    sp = pg.evaluate("(()=>{const T=worldBowl.ground.terrain,I=T.idx,N=2048,j0=T.rowEnd?T.row0+1:600,j1=T.rowEnd?T.rowEnd-1:1450,i0=T.i0?T.i0+1:600,i1=T.i1?T.i1-1:1450;let s=0,n=0;for(let j=j0;j<j1;j++)for(let i=i0;i<i1;i++){const v=I[j*N+i];n++;if(I[j*N+i+1]!==v&&I[j*N+i-1]!==v&&I[(j+1)*N+i]!==v&&I[(j-1)*N+i]!==v)s++}return s/n})()")
     if sp > 0.07: raise Exception(f'the ground is speckled: {sp * 100:.1f}% single squares')
-    # the sea (look session 1): a water sheet (RL-8b: round the hub's island), its shader in the same programs
-    if not pg.evaluate("!!(worldBowl.ground.water&&gpuState.P.mwater)"): raise Exception('the sea isn’t drawn')
+    # the hub (the owner, 2026-10-23): Copperleaf's island floats in open sky: no sea round it, its rock under it and
+    # its own sky (a run's world keeps the bowl's sea: look session 1)
+    if pg.evaluate("!!worldBowl.ground.islandMap&&!worldExtra.look"):
+        if not until(pg, "!!(worldBowl.ground.float&&worldBowl.ground.float.gpu&&!worldBowl.ground.water&&gpuState.P.mrock&&gpuState.P.mskyf)", 10): raise Exception('the hub’s island doesn’t float (a sea, or no rock under it)')
+    elif not pg.evaluate("!!(worldBowl.ground.water&&gpuState.P.mwater)"): raise Exception('the sea isn’t drawn')
     # look session 2: the shadow map, the routes' and rivers' line map and the rivers
     # RL-8b: the hub is an island (worldmap.json sea.island): a river or two, not four; IS-7: none on an island drawn
     # from its own map (its stream is its own)
@@ -160,12 +164,13 @@ def bowl_map(pg, base):
         if not until(pg, f"!!(worldBowl.skyState&&worldBowl.skyState.level==='{lv}'&&worldBowl.skyState.clouds.length==={want})", 10): raise Exception(f'the clouds don’t follow the setting {lv}')
     if not pg.evaluate("!!(gpuState.P.mcloud&&gpuState.P.mfall)"): raise Exception('the cloud shaders are missing')
     # a storm everywhere: clouds show, rain falls (then the weather goes back to the game's own)
+    # (the floating island: no weather clouds round it, the storm greys its sky instead)
     pg.evaluate("environment.force={weather:'storm'};worldBowl.skyState.at=-1e9;worldBowl.skyState.grid=null;worldBowl.dirty=true;0")
-    if not until(pg, "worldBowl.skyState.shown>10&&worldBowl.skyState.nFall>0", 15): raise Exception('a storm shows no clouds or rain on the map')
+    if not until(pg, "worldBowl.ground.float?worldBowl.skyState.greyHere>.3:worldBowl.skyState.shown>10&&worldBowl.skyState.nFall>0", 15): raise Exception('a storm shows no clouds or rain on the map')
     pg.evaluate("environment.force=null;worldBowl.skyState.at=-1e9;0")
     # look session 4: landmarks far out, buildings and trees close in (over Copperleaf, the hub, zoomed right in)
     pg.evaluate("(()=>{const t=LOCATIONS.findIndex(l=>l.id==='copperleaf'),p=worldBowl.spots[t];worldBowl.goal=null;worldBowl.tween=null;worldBowl.cam=bowlCamClamp({...bowlCamHome(p.x,p.y),dist:.45});worldBowl.dirty=true})();0")
-    if not until(pg, "(()=>{const W=worldBowl.ground.things;return !!(W&&W.gpu&&W.gpu.ns>0&&W.tris>0&&W.done.size>0&&Object.keys(W.gpu.kinds).some(k=>k.startsWith('m:')))})()", 30): raise Exception('no landmarks, buildings or trees on the map')
+    if not until(pg, "(()=>{const W=worldBowl.ground.things;return !!(W&&W.gpu&&(W.gpu.ns>0||worldBowl.ground.float)&&W.tris>0&&W.done.size>0&&Object.keys(W.gpu.kinds).some(k=>k.startsWith('m:')))})()", 30): raise Exception('no landmarks, buildings or trees on the map')
     f1 = pg.evaluate("worldBowl.frames"); until(pg, f"worldBowl.frames>={f1 + 2}", 10)
     err = pg.evaluate("gpuState.gl.getError()")
     if err: raise Exception(f'the GPU reports error {err} while drawing the bowl')
@@ -183,6 +188,10 @@ def bowl_map(pg, base):
     fr = pg.evaluate("worldBowl.frames")
     # the opening fall films the bowl (one frame of it, mid-fall)
     pg.evaluate("worldBowlFilm(fallCamera(.5,400,300),performance.now());0")
+    # and the floating island's fall (from high above down to the lab)
+    if pg.evaluate("!!worldMapFallFrame()"):
+        pg.evaluate("worldBowlFilm(fallFloatCamera(.5,400,300,worldMapFallFrame()),performance.now());0")
+        if pg.evaluate("gpuState.gl.getError()"): raise Exception('the GPU reports an error filming the floating island')
     pg.evaluate("uiState.tab='walk';render();0")
     if z0 is not None and not until(pg, f"Math.abs(walkRenderer.zoomT-{z0})<1e-6", 10): raise Exception(f'the walk camera’s zoom didn’t come back ({pg.evaluate("walkRenderer.zoomT")}, was {z0})')
     # an airship flight over the bowl, skipped to the end: you land at the mast (RL-5: Copperleaf to itself, the hub's one

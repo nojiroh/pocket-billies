@@ -9,6 +9,15 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **A floating island**: the hub's world map shows Copperleaf's island floating in open sky, its rock hanging under it,
+  with no bowl and no sea round it. The town's buildings and trees stand at their real size, so the island reads as
+  big as it is, and every landmark with a model (the giant swing tree, the summit lookout, the airship station and
+  mast, the well) is drawn as that model. The sky follows the time of day, with a calm sea of clouds far below.
+- **Orbit camera on the map**: it opens from your side of the island looking across it; drag to turn round it and
+  tilt, pinch to zoom; left alone it turns slowly.
+- **The map opens whole**: it is made ready while you walk, and stays covered until everything on it is in.
+- **A shorter, livelier fall**: about 10 seconds. You drop out of the sky onto the floating island, faster and faster,
+  then swoop round it and land by the lab.
 - **Five times of day**: the light outdoors now comes from five looks, dawn, day, golden hour, dusk and night, that
   blend into each other with the clock (and move with sunrise and sunset through the seasons). Golden hour is warm
   with teal shadows, dusk pink and violet, night deep blue with warm lamps and stars; day keeps each place's own sky.

@@ -2,6 +2,51 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Floating island world map, orbit camera, map opens whole, shorter fall - 2026-10-24
+Branch `ccr-a5b35598-07ud1j` (one session, not part of a plan; PR #178). The owner's asks: improve the opening intro;
+the island bigger on the world map and looking like a floating island; a version of the orbit camera; every building
+low-poly 3D; the background matching the time of day; the world map never half loaded when it opens; the fall more
+dynamic, natural and shorter; not too busy. The owner's answers: drop the bowl (hub only, runs keep it), about 10 s,
+simple new models where a building has none.
+- What was wrong (checked headless at phone size): the map drew before its parts were in (a flat green shape, then
+  the sea, then the island; the island's own heights arriving rebuilt the whole ground). The island was a small patch
+  in a blue bowl seen from above, its buildings and trees three times life size (BOWL_THING_SCALE), so the island read
+  small and crowded. Two landmarks (the giant swing tree, the summit lookout) drew as red squares (flat pictures that
+  never showed) though both have models; the airship station was not drawn at all. The map's sky was the same pale
+  haze at every hour. The New game fall is crust (2.9 s) and a 9 s glide (the street leg is not played since RL-8).
+- Changed (one cause per commit):
+  - Landmarks and structures (airship station and mast, well, fountain, clock tower, greenhouse) with a .json model
+    draw as their model. Every Copperleaf building already had a model, so no new models were needed.
+  - logic/float-island.js (tests): the rock hanging under the coast (a low-poly cone, 40 corners, 6 rings and a point)
+    and three small floating rocks with a grassy top that drift.
+  - logic/bowl-camera.js (tests): FLOAT_CAMERA and bowlCamClampFloat / bowlCamHomeFloat; while a floating island is
+    in (bowlCamUseFloat) every clamp keeps its limits; a state may carry a fixed pivot height `th`.
+  - environment.js environmentLookAt: the time-of-day look at a scene's hour.
+  - world-bowl.js, when the hub's island map is in and no run world is (worldBowlFloats): the ground cut to the land,
+    no water, the rock (mrock, the terrain's rock and dirt pictures), a sky of its own (mskyf: the island map's sky
+    under the time-of-day look, colour under the horizon, a calm sea of clouds, stars, the sun), lights tinted by the
+    look (uSunTint, uAmbTint, uTodOn in BOWL_SKY_GLSL; 1 and 0 on the bowl), shadows over the island alone (sharper),
+    things life size, the terrain worked out round the island only, no weather clouds or rain (a storm greys the sky).
+    The orbit: opens from where you stand (camera-orbit.js orbitYawAt) looking across; one finger turns and tilts;
+    a slow turn after 4 s idle (not with reduced motion).
+  - Opens whole: worldMapPrewarm (idle time, no GPU: places, island heights, terrain, pictures, model recipes) from
+    the hub's walk scene and the fall's start; the map stays covered (worldMapFade full) until worldBowlReady, 5 s at
+    most; the zoom-out waits for it.
+  - The fall: crust 2 s, then 6.5 s: a drop from high above the island (gravity, a tumble that steadies, a little
+    shake) and a swoop round to the lab (worldMapFallFrame), the island drawn behind the fade until ready (1.5 s at
+    most). The caption "At the centre of everything / The Inner Sun" no longer shows on this path (it flew past the
+    Inner Sun); "Inside the planet / The Hollow Earth" does.
+  - Checks: check-fast's map check and check-quick's map camera step know the floating island.
+  - "Less low poly" (the owner, later the same session): the rock 112 corners and 11 rings with smooth bulges; the
+    island's ground its own mesh of 1.5 m squares from its own heights (floatGroundMesh), not the bowl's 6 m grid;
+    things stand on it (worldBowlSkyFloor reads it).
+- Verified: lint, typecheck, unit tests, check:modules after each commit; check-fast --only=map (2 of 2); the smoke
+  check (no problems, 174 s); headless pictures at five hours and of the fall. Not judged headless: speed on a phone, how the
+  fall feels in motion.
+- Risky: the bowl's shaders gained uniforms (tints, uIsle): runs should look as before, unchecked on a device. The
+  Studio's world map preview still shows the bowl. The airship flight on the hub map is clamped to the island's orbit.
+- Next: try it on the phone (map at a few hours, the New game fall) and send a debug log; tune FLOAT_CAMERA and the
+  rock in logic/ if wanted.
 ### Roguelite track RL-12b part 2 - Waystations and stalls (done) - 2026-10-24
 Branch `track/encounters`, over two sessions (the first did the node types and the map rule, then handed over). The
 plan was approved in the earlier RL-12b session's Plan Mode (waystations are normal-sized places with a stand and fewer
