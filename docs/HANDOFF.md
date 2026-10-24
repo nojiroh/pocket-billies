@@ -97,6 +97,65 @@ the sim (every change listed below). Round 5 beside RL-S1. Tag `rl-13-done` for 
   the run map (untouched here). main was merged in before the PR.
 - Next: RL-14 (the organization's bots, salvage, the Voltron) depends on this and RL-S1; RL-12c (held items) and
   RL-R2b are open. For RL-13 itself: a check-fast page, and the owner's own numbers for the budget and the costs.
+### Towns track TW-1 - The town layout - 2026-10-24
+Branch `track/towns` (TW-1 of docs/phases/towns-track.md); main merged in first. Plan approved after four questions
+answered by the owner: towns keep the route size (Ask me before 1), **every house faces the camera** (not turned to its
+street), south of the through road is gardens and grass, a well or a fountain by biome. Tag `tw-1-done` for the owner (this
+session's git proxy refuses tag pushes): on this entry's commit.
+- Where the plan's facts were wrong (checked in the code):
+  - Filler rows roll route 4, event 2, town 1, stall 1 since RL-12b: a town is 1 in 8, not 1 in 5. The forced town
+    before each mini-boss is unchanged.
+  - island-gen's `plotFits`/`addPlot`/`plotsAlong`/`plotRing` are closures inside `islandGenerate`, built for turned
+    plots. With every house facing the camera, mapgen's own lot code fit better: its free-ground check became
+    `mapgenLotFree` (a no-change commit) and the town reuses it with `mapgenLevelLot`. island-gen is untouched.
+  - `folkTown()` (walk-view.js) is already true for a scene of kind `town`; `folk` stays 0, so nobody walks yet.
+    TW-2 only has to raise the count.
+  - Biomes had no building sets: added (below). Every house prop has a door but none has a room, so a house with no
+    `act` is shut by itself (data-files.js doorRooms finds nothing).
+  - `folk: 0` is at mapgen.js ~3188, not 3185.
+- **Main's Check was red** when this session started: the roster merge (#180) left the check-data snapshot with
+  duplicate entries and old file counts, and the run-start snapshot stale. Remade in their own commit.
+- Changed:
+  - **biomes.json `town`** per biome (schema, the Biome type, check-data): houses by weight (existing model houses and
+    cottages only), `centre` (well or fountain), `fence`, `square` (ground letter), optional `lamp` and `bench`.
+  - **mapgen.js `mapgenStageTown`** (kind `town`, MAPGEN_VERSION 7; `MAPGEN_TOWN`, `MAPGEN_TOWN_SET`), before the lot
+    stage: a short street north off the main road near the hub to a level square (16x8, else 14x7 or 12x6: the first
+    that fits; its own ground, the centre prop, two benches, four lamps), the clinic and the shop on its north side
+    facing the camera with their rooms fitting behind, `sc.spots` kind `square` and kind `board` (TW-3's notice board,
+    kept clear); then 4-7 shut houses north of the road, out from the street on both sides, each with a lawn garden
+    (a planter, a shrub, now and then a gnome), a fence along its front with a gap at its path, a lamp at every other
+    one; then 1-2 fenced vegetable plots south of the road. Nothing goes on tall grass. If no square fits, the lot
+    stage places the clinic and shop as on a route (never seen in 107 towns).
+  - **run-scenes.js:** a town node asks for `kind: 'town'`, a straight through road (`RUN_TOWN_ROAD`, wobble 0.25)
+    and no feature. A winding road left room for the square in only half the towns.
+  - **Studio:** the Generate card's Kind switch now offers Town.
+  - **Tests:** new `mapgen-town.test.mjs` (slow tier): every town in 6 runs has the square and the board's spot, the
+    centre prop, the clinic and the shop on its north side facing the camera with reachable doors and fitting rooms,
+    3-7 shut camera-facing houses from its biome's set (4+ in 90%), a vegetable plot, tall grass, no townsfolk, no
+    note, nothing unreachable, the east and west edges pinned; the same seed, the same town; a route has none.
+    Remade on purpose: run-world-real's frozen dials (only the town nodes' kind, road and feature), run-start (only
+    `mapgenV`), the rng scene hash (only `gen.v`: a route scene is byte for byte the same). The mountains run test
+    now checks summits only (a town's spots are not summits).
+- Verified: lint, typecheck, check:modules, format:check, check:data; unit tests 946 of 946 (all tiers); check-fast's
+  run steps 6 of 6 (twice); the smoke subset 6 of 6. Over 30 runs (107 towns): every town has its square, houses
+  4-7 in 106 (one has 3), a vegetable plot in all, nothing unreachable. Looked at in the game (Playwright 1.63.0, the
+  run fixture): Thicket Town (with a side area's north exit) and Meadow Town show the square, the well, the clinic
+  and shop, and houses beside the road.
+- Risky / open:
+  - **Not tried on the phone.** A town adds about 7 houses, 15-25 fence lengths, planters and lamps: watch the fps
+    (towns ran at 27-28 fps in phase 09).
+  - Houses sit in one row along the road; the "street" is short (3-5.5 m). If it reads too thin, a second row behind
+    the first or a longer street with houses on it is the next step (the square needs 10.4 m behind the shop's door).
+  - Two boss scenes in my 30-run sweep (seeds TW1TRY11 and TW1TRY23) note "no room for tall grass across the road";
+    it happens without TW-1 too and on no seed the tests use.
+  - The square's ground is dirt in the thicket (`u`): change biomes.json `town.square` if it looks wrong.
+  - **Side-area towns (RL-R2b, merged from main after TW-1 was built):** Surf's islet towns and the side areas' towns
+    get the town kind too. Over 12 seeds each, the square fits in 14 of 20 Surf islets and 18-19 of 20 Rock Smash and
+    Cut towns, with fewer houses (0-3 in about a third). Where the square doesn't fit, the clinic and the shop stand by
+    the road as before; never a note or an unreachable spot. Little land on an islet and the side road's diagonal entry
+    from the south are why; a smaller square for side towns is the follow-up if it matters.
+- Next: TW-2 (townsfolk, animals, chat lines): homes are the houses (FOLK_HOME matches them), work places the clinic
+  and the shop, hang-outs the benches and the well or fountain.
 ### Roguelite track RL-R2b - Side areas and field moves, part 2: a cave, an islet, the way back - 2026-10-24
 Branch `track/regions` (fast-forwarded to main at 25e447e, RL-R2a's merge). Plan approved in Plan Mode with the
 owner's answers: the cave uses the game's own cave darkness, the islet joins by a seam on the water (riding in), the

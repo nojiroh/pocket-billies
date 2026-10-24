@@ -1671,6 +1671,16 @@ export interface Biome {
   tall: Record<string, number>;
   look?: Record<string, unknown>;
   life?: { k: string; n: number }[];
+  /** TW-1: a run town's buildings and dressing (logic/mapgen.js mapgenStageTown): house props by weight (shut: for
+      show only), the square's centre, the plots' fence, the square's ground letter, the lamp and the bench */
+  town?: {
+    houses: Record<string, number>;
+    centre: string;
+    fence?: string;
+    square?: string;
+    lamp?: string;
+    bench?: string;
+  };
   from?: string;
 }
 

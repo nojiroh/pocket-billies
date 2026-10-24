@@ -24,6 +24,9 @@ kept aside in the browser).
   data said.
 - Leaders and trainers on a run no longer field a fully evolved Billie before level 32: a Flying leader could send out
   four Peacoutures at level 11.
+- Run towns look like towns (towns track TW-1): a short street leads off the road to a little square with a well or a
+  fountain, benches and lamps, the clinic and the shop facing it, and a row of houses with gardens and fences along
+  the road. The houses are for show; only the clinic and the shop open. Each biome builds with its own houses.
 - Three new Billies and five regional forms (roster track RO-2c): **Siliclet**, a black gecko with one glowing scale,
   evolving at level 20 into **Jenzard** and at 40 into **Gigajenzard**, a rare Electric/Dragon data-centre dragon
   whose keynote dims the lights. Five Billies you already know now have a regional form, met in the biomes it suits:
