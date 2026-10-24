@@ -30,14 +30,14 @@ exports[`golden scene: feature 1`] = `
 
 exports[`golden scene: laidOut 1`] = `
 {
-  "tiles": 3409520482,
+  "tiles": 1715359895,
   "heights": 3623381891,
   "steps": 238425371,
-  "props": 535077378,
+  "props": 1575768869,
   "exits": 2118420281,
-  "rest": 3313502823,
+  "rest": 3998402059,
   "counts": {
-    "props": 599,
+    "props": 601,
     "raised": false
   }
 }
