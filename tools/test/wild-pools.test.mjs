@@ -176,3 +176,19 @@ test("RL-R1: a region's swap meets a line in the region's variety, a species onc
   ]);
   assert.deepEqual(list[0], ['trump_waterfront0', 20], 'the pool is not changed');
 });
+
+test("RO-2c: a line's own `totals` give its stages' stat totals, in place of its rarity's", () => {
+  const sum = (/** @type {string} */ id) => SPECIES[id].base.reduce((a, b) => a + b, 0),
+    near = (/** @type {string} */ id, /** @type {number} */ want) =>
+      assert.ok(Math.abs(sum(id) - want) <= 6, `${id}: ${sum(id)}, wanted about ${want}`);
+  const withTotals = LINES.filter(L => L.totals);
+  assert.ok(withTotals.length, 'some line carries its own totals');
+  for (const L of withTotals) L.names.forEach((_, st) => near(L.id + st, L.totals[Math.min(st, L.totals.length - 1)]));
+  /* a line without them still follows its rarity's table, and a form keeps its base stage's stats */
+  const plain = LINES.find(L => !L.totals && L.rar === 'common' && L.names.length === 2);
+  assert.ok(plain, 'a plain common 2-stage line');
+  near(plain.id + '0', RAW.rarities.common.totals[0]);
+  near(plain.id + '1', RAW.rarities.common.totals[1]);
+  for (const F of withTotals[0].forms || [])
+    assert.deepEqual(SPECIES[formSpeciesId(withTotals[0].id, F.id, 0)].base, SPECIES[withTotals[0].id + '0'].base);
+});

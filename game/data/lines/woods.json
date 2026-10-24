@@ -4,6 +4,7 @@
  "types": [["Ground"],["Ground","Grass"]],
  "prof": [0.95,1.2,0.9,1,0.9,1.05],
  "rar": "common",
+ "totals": [265,470],
  "learn": [
   [1,"handshake"],
   [1,"quakestomp"],
@@ -29,7 +30,7 @@
  ],
  "note": ["Could putt before it could walk.","Sunday red, always."],
  "evo": [
-  {"k":"lvl","at":24}
+  {"k":"lvl","at":16}
  ],
  "forms": [
   {

@@ -4,6 +4,7 @@
  "types": [["Electric"],["Electric","Psychic"]],
  "prof": [0.85,0.95,0.85,1.2,0.95,1.4],
  "rar": "common",
+ "totals": [265,470],
  "learn": [
   [1,"handshake"],
   [1,"movefast"],
@@ -29,7 +30,7 @@
  ],
  "note": ["Has already seen this one.","Every loop is a little different, on purpose."],
  "evo": [
-  {"k":"lvl","at":18}
+  {"k":"lvl","at":14}
  ],
  "forms": [
   {

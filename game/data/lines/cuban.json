@@ -4,6 +4,7 @@
  "types": [["Water"],["Water","Dragon"]],
  "prof": [0.95,1.2,0.9,0.95,0.95,1.05],
  "rar": "common",
+ "totals": [235,515],
  "learn": [
   [1,"spin"],
   [1,"handshake"],
