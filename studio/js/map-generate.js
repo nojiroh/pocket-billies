@@ -17,6 +17,8 @@ import { $ } from '../../game/js/util.js';
 import {
   MAPGEN_DEFAULTS,
   MAPGEN_FEATURES,
+  MAPGEN_LAYOUTS,
+  MAPGEN_LAYOUT_DIALS,
   MAPGEN_MASSIF,
   MAPGEN_MOUNTAIN_DIALS,
   MAPGEN_OPPOSITE,
@@ -189,6 +191,12 @@ const GEN_DIALS = [
     ],
   ],
   ['feature', 'Feature', [['feature', 'Feature', 'sel', MAPGEN_FEATURES]]],
+  /* RT-1: a run route's plan: blockers (forest masses, fences and hedges, outcrops, water) to 55-65% walkable */
+  [
+    'layout',
+    'Route layout',
+    [['layout', 'Layout', 'sel', Object.fromEntries(Object.entries(MAPGEN_LAYOUTS).map(([k, L]) => [k, L.name]))]],
+  ],
   [
     'props',
     'Props',
@@ -213,6 +221,7 @@ const GEN_REROLL = [
   ['feature', 'Feature'],
   ['props', 'Props'],
   ['lots', 'Buildings'],
+  ['layout', 'Layout'],
 ];
 const genGet = (o, path) => path.split('.').reduce((v, k) => (v == null ? v : v[k]), o);
 function genSet(o, path, v) {
@@ -222,8 +231,10 @@ function genSet(o, path, v) {
   for (const k of ks) t = t[k] == null ? (t[k] = {}) : t[k];
   t[last] = v;
 }
-/* TR-2: the mountains dials are not in MAPGEN_DEFAULTS (scenes made without them keep the dials they stored) */
-const genDefault = path => genGet(MAPGEN_DEFAULTS, path) ?? genGet({ land: MAPGEN_MOUNTAIN_DIALS }, path);
+/* TR-2: the mountains dials are not in MAPGEN_DEFAULTS (scenes made without them keep the dials they stored); nor is
+   RT-1's layout */
+const genDefault = path =>
+  genGet(MAPGEN_DEFAULTS, path) ?? genGet({ land: MAPGEN_MOUNTAIN_DIALS }, path) ?? genGet(MAPGEN_LAYOUT_DIALS, path);
 const genDialValue = (v, step) => (typeof v === 'number' ? +v.toFixed(step < 0.1 ? 2 : 1) : v);
 function genDialHTML(f) {
   const [path, label] = f,
