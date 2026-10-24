@@ -55,9 +55,17 @@
       ]
      },
      "biome": {
-      "description": "the side area's biome: a run biome (rules.json run.map.biomes)",
+      "description": "the side area's biome: a biomes.json biome (RL-R2b: it may be one a region never draws, such as the cave)",
       "type": "string",
       "pattern": "^[a-z][a-z0-9_]*$"
+     },
+     "land": {
+      "description": "RL-R2b: the map generator's land dials for the side area's places, over the run's (logic/mapgen.js MAPGEN_DEFAULTS.land: Surf's coast water, the cave's rock walls)",
+      "type": "object"
+     },
+     "townLand": {
+      "description": "RL-R2b: the land dials of the side area's town, over `land` (Surf's islet: water islet)",
+      "type": "object"
      },
      "ride": {
       "description": "true: its places are ridden (water walkable, you sit on the Water Billie: walk/prop-look.js rideMountItem)",
@@ -103,6 +111,12 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 100
+     },
+     "travel": {
+      "description": "RL-R2b: the words on the dark as the way out takes you back (game/js/field-moves.js fieldWayOutTravel)",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60
      },
      "out": {
       "description": "the side area's way out, back to the main path",

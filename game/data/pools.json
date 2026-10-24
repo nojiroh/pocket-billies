@@ -187,5 +187,23 @@
    ["altman0",3],
    ["musk0",2]
   ]
+ },
+ "cave": {
+  "lv": [3,6],
+  "list": [
+   ["trump0",32],
+   ["zuck_cloud0",26],
+   ["hughes0",24],
+   ["swift0",20],
+   ["kamprad0",18],
+   ["yiming0",16],
+   ["kardashian0",14],
+   ["altman0",4],
+   ["musk0",3],
+   ["bezos0",3],
+   ["gates0",3],
+   ["arnault0",3],
+   ["huang0",3]
+  ]
  }
 }

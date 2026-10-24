@@ -1101,6 +1101,17 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   map), `rules.js` canEnter and gateText, `conditions.js` `opened:<move>`. No cave or cove scene yet: the areas use the
   finished biomes (thicket for Cut, ridge for Rock Smash, lake with coast water for Surf); RL-R2b makes them.
 - **RL-13 (Expeditions, challenges, starter points)** lives on its own branch (the owner, 2026-10-24). Branch: track/expeditions
+- **RL-R2b as built (2026-10-24; HANDOFF has where this shape was wrong).** The owner's answers in Plan Mode: the
+  cave uses the game's own cave darkness (`dark: 1`, the lantern), the islet joins Surf's chain by seams (riding in,
+  no dock), the way out is a fade with the move's words, and the islet could move to an RL-R2c if it ran long (it
+  didn't). No cave scene type was needed: a `cave` biome (biomes.json, pools.json, music.json; no region draws it)
+  and fieldMoves.json `land` (the move's land dials: Rock Smash's mountains north and south, Surf's coast water, moved
+  out of the code) and `townLand` (Surf's town: mapgen's new `islet` water). The islet is mapgen's, not the island
+  generator's: logic/island-gen.js makes a whole free-sized island with no exits, props or seams, where mapgen's
+  islet keeps the run's 112 x 64 frame and every seam rule. The way out: field-moves.js `fieldWayOutTravel`
+  (fieldMoves.json `travel`). The Run Lab, the run preview, the run sim (`badges`, `simSideNext`) and the Studio
+  check's Node start get the field moves. Not done: the world map's crowding at Expeditions III-V (the owner left it
+  out), a picker in the Run Lab that forces a side area (likewise).
 - **The encounter sessions (RL-12b's two parts, RL-12c)** live on one branch (the owner, 2026-10-23). Branch: track/encounters
 - **RL-12b part 1** (done 2026-10-23; HANDOFF and section 0 "Corrected in RL-12b" have what changed). Part 2 (after
   RL-R2 merges): the `event` and `stall` waystation node types and their stand, the no-two-shops rule in run-map.js,

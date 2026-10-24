@@ -1059,7 +1059,7 @@ RUN_LAB_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-re
 const U = { unlocks: D.unlocks, buildings: D.buildings }, out = {};
 for (const [k, ids] of [['none', []], ['all', Object.keys(D.unlocks)]]) {
   const un = modules.unlocks.runUnlocks({ meta: { unlocks: Object.fromEntries(ids.map(i => [i, 1])) } }, U);
-  const p = modules['run-start'].runStartPlan('LABCHECK7', { nodeTypes: D.nodeTypes, biomes: D.biomes, rules: D.rules.run, unlockData: U }, { unlocks: un });
+  const p = modules['run-start'].runStartPlan('LABCHECK7', { nodeTypes: D.nodeTypes, biomes: D.biomes, rules: D.rules.run, unlockData: U, region: D.regions && D.regions.themes ? modules['run-region'].runRegionData(D, D.trainers || {}) : undefined, fieldMoves: D.fieldMoves && D.fieldMoves.moves }, { unlocks: un });
   out[k] = p.map.nodes.map(n => n.type + ':' + n.biome);
 }
 /* T2.4: what the logic worker's panel must show: runPreview with no unlocks, for the first mini-boss and town */
@@ -1097,13 +1097,14 @@ def run_lab_steps(pg, errs):
     pg.select_option('#rlUnlocks', 'all')
     every = settle(none) if want['all'] != want['none'] else got()
     if every != want['all']: errs.append(f"run lab: with all unlocks it drew {every}, the game's start makes {want['all']}")
-    # an edit made elsewhere (a field of another section) redraws the map: no route weight, so no routes
+    # an edit made elsewhere (a field of another section) redraws the map: no route weight, so no routes (on the main
+    # path: RL-R2b's side area keeps its own routes, data-side)
     ms = pg.evaluate("""(async()=>{const T=studioState.D.nodeTypes,was=T.route.weight;T.route.weight=0;
       const f=document.createElement('input');f.dataset.p='nodeTypes.route.weight';document.body.appendChild(f);
       const before=document.querySelector('#main .rl-figures').textContent,t0=performance.now();
       f.dispatchEvent(new Event('input',{bubbles:true}));
       while(document.querySelector('#main .rl-figures').textContent===before&&performance.now()-t0<2000)await new Promise(r=>setTimeout(r,5));
-      const ms=performance.now()-t0;window.__rlRoutes=document.querySelectorAll('#main .rl-map .rl-node[data-type=route]').length;
+      const ms=performance.now()-t0;window.__rlRoutes=document.querySelectorAll('#main .rl-map .rl-node[data-type=route]:not([data-side])').length;
       T.route.weight=was;f.dispatchEvent(new Event('input',{bubbles:true}));f.remove();return ms})()""")
     routes = pg.evaluate('window.__rlRoutes')
     if ms > 100 or routes: errs.append(f'run lab: a nodeTypes edit (no route weight) redrew in {ms:.0f} ms with {routes} routes (want under 100 ms and none)')
@@ -1207,7 +1208,8 @@ def run_lab_rules_steps(pg, errs):
     send (rules.json, nodeTypes.json), the shop's always-stocked box edits the list, a value the game can't lay out
     shows its error beside the map, every rule in code finds its line, and putting the values back leaves nothing to
     propose in those files."""
-    rows_drawn = lambda: pg.evaluate("(()=>{const m=document.querySelector('#main .rl-map');if(!m)return 0;return new Set([...m.querySelectorAll('.rl-node circle')].map(c=>c.getAttribute('cx'))).size})()")
+    # the main path's rows (RL-R2b: a side area's places, data-side, sit in a band of their own)
+    rows_drawn = lambda: pg.evaluate("(()=>{const m=document.querySelector('#main .rl-map');if(!m)return 0;return new Set([...m.querySelectorAll('.rl-node:not([data-side]) circle')].map(c=>c.getAttribute('cx'))).size})()")
     pending = lambda: pg.evaluate("changedDataFiles(studioState.D).map(f=>f.path).filter(p=>/rules\\.json$|nodeTypes\\.json$/.test(p)).sort()")
     if not pg.locator('#main .rl-rules').count(): errs.append('no run rules card'); return 'no rules card'
     was = pg.evaluate('studioState.D.rules.run.map.rows')

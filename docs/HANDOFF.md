@@ -97,6 +97,84 @@ the sim (every change listed below). Round 5 beside RL-S1. Tag `rl-13-done` for 
   the run map (untouched here). main was merged in before the PR.
 - Next: RL-14 (the organization's bots, salvage, the Voltron) depends on this and RL-S1; RL-12c (held items) and
   RL-R2b are open. For RL-13 itself: a check-fast page, and the owner's own numbers for the budget and the costs.
+### Roguelite track RL-R2b - Side areas and field moves, part 2: a cave, an islet, the way back - 2026-10-24
+Branch `track/regions` (fast-forwarded to main at 25e447e, RL-R2a's merge). Plan approved in Plan Mode with the
+owner's answers: the cave uses the game's own cave darkness, the islet joins by a seam on the water (riding in), the
+way out is a fade with the move's words, the islet may move to an RL-R2c if it runs long (it didn't). Left out by
+the owner: the world map's crowding at Expeditions III-V and a Run Lab picker that forces a side area. Tag
+`rl-r2b-done` for the owner.
+- Where the docs were wrong (checked at 25e447e):
+  - There is no top-level `logic/`: the files are under `game/js/logic/`.
+  - "The map generator makes only routes and towns": it makes routes only; a run's town is a route scene with a
+    clinic and a shop (run-scenes.js RUN_BUILDINGS), `kind: 'town'` only on the location row.
+  - A cave needed no new scene type: walk/lighting.js already darkens a scene with `dark: 1` and gives you a lantern
+    (`caveDark` 0.75), and the seam's look mix (seamless-world.js LOOK_KEYS, 14 m) already eases `dark` across a seam.
+    mapgen copies a biome's `look` onto its scene. Legacy caves (glimmershaft...) had the look to copy.
+  - "The island generator is reusable": for an islet in a run, no. It makes a whole free-sized island (76-93 m for a
+    small one) with an orbit camera, plots but no props or buildings, and no exits or seams. mapgen's new `islet`
+    water keeps the run's 112 x 64 frame and every seam rule, so the islet is mapgen's.
+  - The Run Lab, the run preview and the run sim never passed the field moves, so none of them ever made a side
+    area; the preview's own test and the Studio check's Node start had left them out too (the Studio check's Node
+    start had also left out RL-R1's region: two of its Run Lab problems were failing on main already).
+  - check-data required a field move's biome to be a run biome (rules.json run.map.biomes); the cave is a biome no
+    region draws, so that rule is gone (any biomes.json biome).
+- Changed (one cause per commit):
+  - **The cave** (data): a `cave` biome (cave floor, rock, crystal floor for the encounter ground; stalagmites,
+    crystals, mushrooms, boulders; the legacy cave's sky, haze and tint, `dark: 1`, `far: 'cave'`, drip; climate
+    `dry`; battle stage `grotto`; mood `cave`), its pool (Ground first: the pool rules' 7 lines), the cave song in
+    music.json before the town rule (a cave's town plays it too).
+  - **fieldMoves.json `land`**: a move's land dials over the run's (run-scenes.js runSideLand); Surf's coast water moved
+    there out of the code (no change in play). Rock Smash: biome `cave`, mountains north and south with cliffs,
+    terraces and ledges (the walls).
+  - **mapgen's `islet` water** (Islet in the Studio's list): the sea round a round of land on the hub's first guess,
+    sandbar causeways along the roads, each exit's run in and a joined edge's strip kept land (so a seam meets the
+    neighbour's land). **fieldMoves.json `townLand`**: Surf's town is an islet (waterAmount 0.8: the land's share).
+  - **The way out's moment** (field-moves.js `fieldWayOutTravel`): the talk box asks as before; a yes dips the
+    picture to dark (450 ms, waiting for the fade's end), paints the move's words (fieldMoves.json `travel`, drafts:
+    "Swept along by the current…", "Up the tunnel, toward the daylight…", "Through the undergrowth…"), builds the
+    main path's place behind it, holds (1.1 s) and fades back (650 ms), then the "Back on the main path" toast. A
+    rumble for Rock Smash, a whoosh for the others. Reduced motion: a quick fade. The self-test still calls
+    `fieldWayOutGo` directly.
+  - **Run preview**: the field moves (game-data.js FIELD_MOVES), so a preview has the side area as the game does.
+  - **Run Lab**: the plan gets the field moves; side places in a band of their own above the main path (a detour's
+    spread from half way after the obstacle's row), a dashed way in and a fainter dashed way out, the figures name
+    the side area, a side place's info says where it sits (reached from the obstacle's place or the one before).
+    Side places carry `data-side`.
+  - **Run sim**: `badges: 'none' | 'all'` (default none, a fresh save; CLI `--badges=all`); `simSideNext` takes the
+    side when the move can be used and the way out at its last place. The Studio's sim worker loads run-side and
+    fighters.
+  - **Studio check** (check-studio-github.py): its Node start gets the region and the field moves; its route count
+    and rows drawn leave side places out.
+- Verified: lint, typecheck, check:modules, format:check, check:data and the unit tests after every commit (876 ->
+  878). New or changed tests: run-side-world (Rock Smash's places dark and walled, the main path in daylight, Surf's
+  town an islet with the sea round its edge and its hub on land; seams agree for both kinds x three moves), mapgen
+  (an islet: no notes, sea north and south, the hub on land, every exit reached on foot), run-preview (a side area
+  in some seed, equal to the game's), run-sim (no badge no side; simSideNext's cases), sound (the cave's song),
+  check-data's planted field moves. Default sim runs unchanged: 50 seeds compared with the commit before (the same
+  runs). Smoke 6 of 6. A headless browser walk of a Rock Smash detour, a Surf detour and a Cut detour (the obstacle,
+  each place, the moment, back on the main path a day later; screens checked: the cave dark with the lantern, the
+  cave town, the islet's water, the words on the dark). The Studio check's run_lab step: 1 problem left, the rows
+  one below. Full quick check and the whole in-game test not run (long checks skipped).
+- Risky / open:
+  - The islet is checked by tests and from the walking camera, which sees only part of it: its look on a phone (does
+    it read as an island? the sandbar causeways, the Surf ride over its land) is for the owner.
+  - The cave's darkness easing in at the cave mouth was not watched walking across (the walk jumped place to place);
+    the look mix does it for any `dark` scene.
+  - Surf's town is ridden like its routes (RL-R2a's `ride` on every Surf place): you ride through the islet's town.
+  - The Studio check's "rows 7 typed in the rules card: the map has 8 rows" fails on main too: since RL-R1 the
+    region's zones set the rows, not rules.json run.map.rows. Not fixed here (RL-R1's; the check or the card wants
+    a decision).
+  - The run sim loses almost every run in the first rows on the placeholders, so its bot rarely reaches a side area
+    even with every badge; `simSideNext` is tested directly.
+  - Side places still crowd the world map at Expeditions III-V (left out by the owner).
+  - My headless walk loaded the data from the data files (game/data/gamedata.js isn't built in a fresh checkout:
+    one 404 in the console); the checks build it.
+- Merged main before merging (RL-12b part 2, RO-2b/2c, the routes and towns plans): the cave pool rebuilt on the 15
+  lines (main's ridge pool, Trump's line first); the veil's colour named (main's colour ceiling fell to 591). Two
+  snapshots main itself failed (run-start's hash, check-data's four, with duplicate stale entries) were remade.
+- Next: RL-12b part 2 is merged; RL-R2's track work is done (a crowding pass and the Run Lab picker if the owner
+  wants them).
+
 ### Roster track RO-2c - The Huang line, regional forms and a balance pass - 2026-10-24
 Branch `track/roster` itself (the push was allowed from this session). Plan approved in Plan Mode with the
 recommendations taken: Huang rare, ending at 560; the starters' level 16 left alone. **The RO-2.. plan is finished:
