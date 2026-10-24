@@ -92,7 +92,12 @@ test('lift raises every corner by the height under it (the water’s curve the c
 
 test('the fine ground: the land’s heights inside the coast, under the water outside, squares only over the land', () => {
   const poly = new Float64Array(COAST.flat()),
-    M = F.floatGroundMesh(poly, (x, y) => 0.01 + x * 0.05, () => 0, 0.002);
+    M = F.floatGroundMesh(
+      poly,
+      (x, y) => 0.01 + x * 0.05,
+      () => 0,
+      0.002
+    );
   assert.equal(M.I.length % 6, 0);
   assert.ok(M.I.length > 0);
   // a point well inside reads the land's height (as drawn: flat within a square here, the slope is linear)
