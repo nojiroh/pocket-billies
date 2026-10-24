@@ -45,6 +45,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataFieldMoves: [() => dataFieldMoves, v => (dataFieldMoves = v)],
   // @ts-expect-error -- replaced on purpose
+  dataModifiers: [() => dataModifiers, v => (dataModifiers = v)],
+  // @ts-expect-error -- replaced on purpose
   dataNodeTypes: [() => dataNodeTypes, v => (dataNodeTypes = v)],
   // @ts-expect-error -- replaced on purpose
   dataPerks: [() => dataPerks, v => (dataPerks = v)],
@@ -739,6 +741,28 @@ export function dataFieldMoves(D, valid = () => true) {
   }
   if (!Object.values(W).some(w => typeof w === 'number' && w > 0))
     problem('rules.json', 'run.side.moves: no move has a weight, so no side area can be made');
+  return out;
+}
+// RL-13: modifiers.json: the schema; each challenge's `when` reads as a condition; the Expeditions are no more than
+// regions.json has zone counts for (past its last, a region keeps its last count) and their foe level rows never go down
+/** RL-13: modifiers.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataModifiers(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['modifiers.json', what]),
+    M = D.modifiers;
+  if (!M) return [['modifiers.json', 'missing']];
+  if (!valid('modifiers.schema.json', M, 'modifiers.json')) return out;
+  for (const [k, C] of Object.entries(M.challenges || {})) {
+    const p = /** @type {any} */ (C).when ? conditionProblem(/** @type {any} */ (C).when) : null;
+    if (p) problem(`challenges.${k}.when: ${p.message}`);
+  }
+  let last = -Infinity;
+  M.expeditions.forEach((/** @type {any} */ E, /** @type {number} */ i) => {
+    const up = E.fx.reduce((/** @type {number} */ a, /** @type {any} */ f) => a + (f.kind === 'level' ? f.n : 0), 0);
+    if (up < last) problem(`expeditions[${i}]: foes' levels go down from the Expedition before (${last} to ${up})`);
+    last = up;
+  });
   return out;
 }
 // RL-12b: events.json: the schema; every intro reads as lines only, every option's need as a condition and its `then`

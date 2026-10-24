@@ -75,6 +75,8 @@ export interface GameData {
   regions: RegionsData;
   /** RL-R2: the field moves that open a run's side areas */
   fieldMoves?: { about?: string; moves: Record<DataId, FieldMove> };
+  /** RL-13: a run's Expeditions and challenges */
+  modifiers?: ModifiersData;
   pools: Record<DataId, Pool>;
   /** the egg tiers, keyed by the distance in km that hatches them ('2', '5', '10') */
   eggs: Record<string, EggTier>;
@@ -1724,7 +1726,24 @@ export type FxRow =
   | { kind: 'stat'; stat: 'lev' | 'law' | 'lob' | 'pr' | 'hus'; stages: number }
   | { kind: 'damage'; side: 'deal' | 'take'; cat?: 'H' | 'S'; type?: string; mult: number }
   | { kind: 'heal'; share: number }
-  | { kind: 'payout'; what: 'research' | 'itemShare'; mult: number };
+  | { kind: 'payout'; what: 'research' | 'itemShare'; mult: number }
+  /** RL-13 (modifiers.json only): foes' levels up by n; the boss's HP times mult */
+  | { kind: 'level'; n: number }
+  | { kind: 'bossHp'; mult: number };
+/** RL-13: modifiers.json: a run's Expedition (one row each, I first) and its challenges (logic/modifiers.js) */
+export interface Modifier {
+  name: string;
+  d: string;
+  fx: FxRow[];
+  /** a challenge: the condition for it to be offered at the mast */
+  when?: string;
+}
+export type ChallengeId = 'mono' | 'noheal' | 'noperks' | 'fragile';
+export interface ModifiersData {
+  about?: string;
+  expeditions: Modifier[];
+  challenges: Partial<Record<ChallengeId, Modifier>>;
+}
 /** events.json: a run's events, loot tables and trainer classes (roguelite track RL-12b; logic/encounters.js) */
 export interface EventsData {
   loot: Record<DataId, Record<DataId, number>>;

@@ -48,6 +48,7 @@ import '../../game/js/logic/lens-focus.js';
 import '../../game/js/logic/mapgen.js';
 import '../../game/js/logic/messages.js';
 import '../../game/js/logic/meta-state.js';
+import '../../game/js/logic/modifiers.js';
 import '../../game/js/logic/music-studio.js';
 import '../../game/js/logic/music-where.js';
 import '../../game/js/logic/part-joints.js';

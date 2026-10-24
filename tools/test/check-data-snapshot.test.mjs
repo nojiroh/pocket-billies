@@ -133,3 +133,14 @@ test('check-data: planted field moves and side areas (RL-R2)', t => {
     })
   );
 });
+
+test('check-data: planted Expeditions and challenges (RL-13)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'modifiers.json': M => {
+        M.challenges.mono.when = 'wins >=';
+        M.expeditions[2].fx = [{ kind: 'level', n: 1 }];
+      },
+    })
+  );
+});
