@@ -1644,6 +1644,10 @@ export interface Biome {
   plants?: Record<string, number>;
   rocks?: Record<string, number>;
   waterPlants?: Record<string, number>;
+  /** RT-1: the canopy pieces filling a laid-out route's forest masses */
+  canopy?: Record<string, number>;
+  /** RT-1: the fence, wall or hedge of a laid-out route's runs */
+  fences?: Record<string, number>;
   tall: Record<string, number>;
   look?: Record<string, unknown>;
   life?: { k: string; n: number }[];

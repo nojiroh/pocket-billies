@@ -11473,6 +11473,51 @@
      "name": "Forest litter (cones)"
     }
    ]
+  },
+  "forest_canopy": {
+   "name": "Forest canopy",
+   "img": "scene/next/forest/forest_canopy.png",
+   "ox": -115,
+   "oy": -232,
+   "shadow": 2.2,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["route","forest"],
+   "group": "forest_canopy",
+   "solid": 2.4,
+   "ppm": 32,
+   "model": "scene/next/models/forest_canopy.json",
+   "vary": {"rot":1,"lean":0}
+  },
+  "forest_canopy_pine": {
+   "name": "Pine forest canopy",
+   "img": "scene/next/forest/forest_canopy_pine.png",
+   "ox": -115,
+   "oy": -232,
+   "shadow": 2.2,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["route","forest"],
+   "group": "forest_canopy",
+   "solid": 2.4,
+   "ppm": 32,
+   "model": "scene/next/models/forest_canopy_pine.json",
+   "vary": {"rot":1,"lean":0}
+  },
+  "forest_canopy_autumn": {
+   "name": "Autumn forest canopy",
+   "img": "scene/next/forest/forest_canopy_autumn.png",
+   "ox": -115,
+   "oy": -232,
+   "shadow": 2.2,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["route","forest"],
+   "group": "forest_canopy",
+   "solid": 2.4,
+   "ppm": 32,
+   "model": "scene/next/models/forest_canopy_autumn.json",
+   "vary": {"rot":1,"lean":0}
   }
  },
  "person": 1.75,

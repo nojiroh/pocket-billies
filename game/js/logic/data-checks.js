@@ -593,8 +593,11 @@ export function dataBiomes(D, valid = () => true) {
         if (!terr[ch]) problem('biomes.json', `${b}.${f}: no terrain "${ch}" (scenery.json terrains)`);
       for (const ch of Object.keys(G.patches || {}))
         if (!terr[ch]) problem('biomes.json', `${b}.ground.patches: no terrain "${ch}"`);
-      for (const pool of ['trees', 'shrubs', 'plants', 'rocks', 'waterPlants', 'tall'])
+      for (const pool of ['trees', 'shrubs', 'plants', 'rocks', 'waterPlants', 'tall', 'canopy', 'fences'])
         for (const k of Object.keys(B[pool] || {})) if (!props[k]) problem('biomes.json', `${b}.${pool}: no prop ${k}`);
+      /* RT-1: a fence run is laid by its box (a turned footprint) */
+      for (const k of Object.keys(B.fences || {}))
+        if (props[k] && !props[k].box) problem('biomes.json', `${b}.fences: ${k} has no box (scenery.json)`);
       for (const L of B.life || []) if (!life[L.k]) problem('biomes.json', `${b}.life: no animal ${L.k}`);
     }
   }
