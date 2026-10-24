@@ -161,6 +161,7 @@ expose({
   worldBowlPick: [() => worldBowlPick, v => (worldBowlPick = v)],
   worldBowlPin: [() => worldBowlPin, v => (worldBowlPin = v)],
   worldBowlPuffMesh: [() => worldBowlPuffMesh, v => (worldBowlPuffMesh = v)],
+  worldBowlReady: [() => worldBowlReady, v => (worldBowlReady = v)],
   worldBowlRender: [() => worldBowlRender, v => setWorldBowlRender(v)],
   worldBowlReset: [() => worldBowlReset, v => (worldBowlReset = v)],
   worldBowlRiversInto: [() => worldBowlRiversInto, v => (worldBowlRiversInto = v)],
@@ -204,16 +205,18 @@ expose({
   worldMapMount: [() => worldMapMount, v => setWorldMapMount(v)],
   worldMapOpenFromWalk: [() => worldMapOpenFromWalk, v => (worldMapOpenFromWalk = v)],
   worldMapPinState: [() => worldMapPinState, v => (worldMapPinState = v)],
+  worldMapPrewarm: [() => worldMapPrewarm, v => ((worldMapPrewarm = v), provide({ worldMapPrewarm }))],
   worldMapReset: [() => worldMapReset, v => (worldMapReset = v)],
   worldMapSelect: [() => worldMapSelect, v => (worldMapSelect = v)],
   worldMapSize: [() => worldMapSize, v => (worldMapSize = v)],
   worldMapSpot: [() => worldMapSpot, v => (worldMapSpot = v)],
   worldMapWanted: [() => worldMapWanted, v => (worldMapWanted = v)],
+  worldMapWarm: [() => worldMapWarm],
   worldMapWidth: [() => worldMapWidth, v => (worldMapWidth = v)],
   worldMapZoom: [() => worldMapZoom, v => (worldMapZoom = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ bowlWallTexture });
+provide({ bowlWallTexture, worldMapPrewarm });
 export function setWorldBowlRender(v) {
   worldBowlRender = v; // eslint-disable-line no-func-assign
   provide({ worldBowlRender });
@@ -845,11 +848,25 @@ function worldBowlTerrainStart() {
     ox: ox * 37,
     oy: oy * 37,
   };
+  /* the floating island: only the squares round it are ever seen, so only they are worked out */
+  const FI = worldBowlFloatIsland(),
+    band = FI
+      ? [FI.c[0] - FI.r * 1.4, FI.c[0] + FI.r * 1.4, FI.c[1] - FI.r * 1.4, FI.c[1] + FI.r * 1.4].map((v, k) =>
+          Math.max(0, Math.min(N, Math.floor(((k < 2 ? v + 1 : 1 - v) / 2) * N) + (k % 2 ? 1 : 0)))
+        )
+      : null;
+  if (band) {
+    g.terrain.row = Math.min(band[2], band[3]);
+    g.terrain.rowEnd = Math.max(band[2], band[3]) + 1;
+    g.terrain.i0 = band[0];
+    g.terrain.i1 = band[1];
+  }
   g.terrain.fill = rows => {
     const T = g.terrain,
-      end = Math.min(N, T.row + rows);
+      last = Math.min(N, T.rowEnd ?? N),
+      end = Math.min(last, T.row + rows);
     for (let j = T.row; j < end; j++)
-      for (let i = 0; i < N; i++) {
+      for (let i = T.i0 ?? 0; i < Math.min(N, T.i1 ?? N); i++) {
         const x = -1 + ((i + 0.5) / N) * 2,
           y = 1 - ((j + 0.5) / N) * 2,
           r = Math.hypot(x, y);
@@ -907,7 +924,7 @@ function worldBowlTerrainStart() {
       }
     T.row = end;
     T.dirty = true;
-    if (T.row >= N) {
+    if (T.row >= last) {
       worldBowlRiversInto(T);
       worldBowlRoadsInto(T);
       T.ready = true;
@@ -2006,6 +2023,72 @@ function bowlWallTexture() {
   return t;
 }
 
+/* ---------- ready before it shows (the owner: "every time the world map opens it hasn't fully loaded yet") ----------
+   Everything the map shows is in: the island's own heights (their arrival works the ground out again), the terrain map
+   and its pictures, each place's map stamped, the things' shapes and pictures on the GPU and their shadows. */
+function worldBowlReady() {
+  const g = worldBowl.ground,
+    T = g && g.terrain,
+    W = g && g.things,
+    id = worldBowl.islandLoading,
+    M = id && gameData.maps && gameData.maps[id];
+  if (M && bowlHasCoast(M) && !bowlIslandHeights(M)) return false;
+  if (!g || !g.ok || !T || !T.ready || T.loading || !T.pix || !W || !W.gpu || W.dirty) return false;
+  for (let i = 0; i < LOCATIONS.length; i++) {
+    const sp = worldBowl.spots[i];
+    if (sp && !sp.under && !sp.off && !T.stamped.has(i)) return false;
+  }
+  return !!(g.shadow && g.shadow.ver === W.ver);
+}
+/* the map's slow parts done ahead, in idle time and without the GPU: the places, the island's own heights, the terrain
+   map and its pictures, each place's map, the models' recipes and the pictures of things without one. The walk scene
+   starts it in the hub, the opening fall as it begins. */
+const worldMapWarm = { on: false };
+export function worldMapPrewarm() {
+  if (worldMapWarm.on || !worldMapWanted()) return;
+  worldMapWarm.on = true;
+  const later = f =>
+    typeof requestIdleCallback === 'function' ? requestIdleCallback(f, { timeout: 200 }) : setTimeout(f, 16);
+  let tries = 0;
+  const step = () => {
+    try {
+      if (++tries > 4000) return (worldMapWarm.on = false);
+      worldBowlSpots();
+      const g = worldBowl.ground,
+        id = worldBowl.islandLoading,
+        M = id && gameData.maps[id];
+      /* the island's heights first: when they come the ground is worked out again */
+      if (M && bowlHasCoast(M) && !bowlIslandHeights(M)) return later(step);
+      const T = worldBowlTerrainStart();
+      if (!T.ready) {
+        T.fill(48);
+        return later(step);
+      }
+      worldBowlStampMaps(T);
+      if (!T.pix && !T.pixLoading) {
+        T.pixLoading = true;
+        worldBowlTerrainPictures(T).then(() => (worldBowl.dirty = true));
+      }
+      if (!g.warmThings) {
+        const W = { inst: {}, stand: [], models: new Set(), counts: {} };
+        LOCATIONS.forEach((l, i) => {
+          const sp = worldBowl.spots[i];
+          if (sp && !sp.under && !sp.off) worldBowlThingsOfPlace(W, i);
+        });
+        for (const m of W.models) loadPropModelRecipe(m);
+        const A = (gameData.scenery && gameData.scenery.props) || {},
+          imgs = [...new Set(W.stand.map(q => A[q.k] && A[q.k].img).filter(Boolean))];
+        if (imgs.length) Promise.resolve(artLoad(imgs)).catch(() => {});
+        g.warmThings = true;
+      }
+      worldMapWarm.on = false;
+    } catch (e) {
+      console.error(e);
+      worldMapWarm.on = false;
+    }
+  };
+  later(step);
+}
 /* ---------- mount, size, loop ---------- */
 /* the bowl needs WebGL 2; without it the Map tab shows the Places list */
 export function worldMapWanted() {
@@ -2101,6 +2184,9 @@ export function worldMapMount() {
   worldMapChrome();
   worldBowl.dirty = true;
   worldBowl.fadeOut = true;
+  worldBowl.fadeAt = null;
+  /* covered until everything it shows is in (worldBowlReady) */
+  if (!worldBowlReady()) worldMapFade(true, true);
   frameTask('map', worldMapLoop);
 }
 function worldMapSize() {
@@ -2188,10 +2274,15 @@ function worldMapLoop(ts) {
     worldBowl.cam = bowlCamTurn(worldBowl.cam, (FLOAT_CAMERA.drift * dt) / 1000, 0);
     moving = true;
   }
+  if (worldBowl.fadeOut) {
+    if (worldBowl.fadeAt == null) worldBowl.fadeAt = ts;
+    moving = true;
+  }
   if (worldBowl.tween) {
     const T = worldBowl.tween;
-    if (T.t0 == null) T.t0 = ts;
-    const k = Math.min(1, (ts - T.t0) / T.dur),
+    /* the move starts once the map shows */
+    if (T.t0 == null && !worldBowl.fadeOut) T.t0 = ts;
+    const k = T.t0 == null ? 0 : Math.min(1, (ts - T.t0) / T.dur),
       e = 1 - Math.pow(1 - k, 3);
     worldBowl.cam = bowlCamEase(T.from, T.to, e);
     if (k >= 1) worldBowl.tween = null;
@@ -2220,7 +2311,7 @@ function worldMapLoop(ts) {
   worldBowl.ts.push(ts);
   if (worldBowl.ms.length > 240) (worldBowl.ms.shift(), worldBowl.ts.shift());
   frameCount(ms);
-  if (worldBowl.fadeOut) {
+  if (worldBowl.fadeOut && (worldBowlReady() || ts - (worldBowl.fadeAt || ts) > 5000)) {
     worldBowl.fadeOut = false;
     worldMapFade(false);
   }
@@ -3251,7 +3342,8 @@ function worldMapBackToWalk() {
   walkRenderer.zoomT = z;
 }
 /* a veil in the haze's colour over the switch, so the walk scene's last frame never cuts to the map */
-function worldMapFade(on) {
+/* full: covering the map while it loads (opaque), else the short veil of the zoom out from the walk scene */
+function worldMapFade(on, full) {
   let f = $('#mapfade');
   if (on) {
     if (!f) {
@@ -3261,7 +3353,7 @@ function worldMapFade(on) {
         'position:fixed;inset:0;z-index:5;pointer-events:none;background:rgb(176,186,236);opacity:0;transition:opacity .32s ease-in';
       document.body.appendChild(f);
     }
-    requestAnimationFrame(() => (f.style.opacity = '.85'));
+    requestAnimationFrame(() => (f.style.opacity = full ? '1' : '.85'));
   } else if (f) {
     f.style.transition = 'opacity .35s ease-out';
     f.style.opacity = '0';

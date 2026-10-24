@@ -27,7 +27,7 @@ import { POST_EFFECT_SHADERS } from './engine/post-effects.js';
 import { standingHeightAt } from './walk/heights.js';
 import { canvasForContext, ensureWalkGl } from './walk-view-gl.js';
 import { endBattle, stopTimers } from './battle.js';
-import { WORLD_BOWL_SHADERS, worldBowlFilm, worldMapSpot } from './world-bowl.js';
+import { WORLD_BOWL_SHADERS, worldBowlFilm, worldMapPrewarm, worldMapSpot } from './world-bowl.js';
 import { music, soundEffect } from './sound.js';
 import { cutscene, cutsceneCaption } from './cutscene/director.js';
 /* eslint-disable no-func-assign */
@@ -658,6 +658,8 @@ export function fallOverWorldMap(run, ms) {
 async function fallPlay(run, o = {}) {
   const alive = () => cutscene.on && cutscene.run === run && !cutscene.skip;
   openingFall.run = run;
+  /* the island the fall ends over, made ready while the street and the crust play */
+  if (typeof worldMapPrewarm === 'function') worldMapPrewarm();
   if (typeof music === 'function') music('fall');
   fallCanvas();
   const fade = $('#csFade');

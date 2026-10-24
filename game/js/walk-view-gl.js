@@ -25,6 +25,8 @@ import {
   seamlessLookTick,
   seamlessPrepareAhead,
   worldBillyLabels,
+  worldExtra,
+  worldMapPrewarm,
 } from './hooks.js';
 import { focusAim, focusPlane, leanStep } from './logic/lens-focus.js';
 import { gpuPass } from './engine/gpu-counters.js';
@@ -224,6 +226,8 @@ export function mountWalkView(cv, id, opt = {}) {
       walkView.ready = true;
       frameTask('dio', drawWalkFrame, () => (walkView.opt.cap ? walkView.opt.cap() : userFps()));
       cv.classList.add('in');
+      /* the hub: the world map's slow parts done ahead, so it opens whole (world-bowl.js worldMapPrewarm) */
+      if (typeof worldMapPrewarm === 'function' && !worldExtra.look) setTimeout(worldMapPrewarm, 1500);
     })
     .catch(e => {
       walkView.err = e;
