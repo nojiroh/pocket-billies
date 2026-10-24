@@ -12,27 +12,27 @@ const M = modules.modifiers,
 test('modifiers: Expedition I changes nothing; each Expedition after it raises foes and prices, never less', () => {
   assert.equal(M.expeditionCount(), MODS.expeditions.length);
   assert.equal(E.fxOfRun({ perks: [], expedition: 1, mods: [] }, PERKS), null);
-  assert.equal(E.fxFoeLevels({ expedition: 1 }), 0);
-  assert.equal(E.fxBossHp({ expedition: 1 }), 1);
-  assert.equal(E.fxFoeLevels(null), 0);
+  assert.equal(M.modFoeLevels({ expedition: 1 }), 0);
+  assert.equal(M.modBossHp({ expedition: 1 }), 1);
+  assert.equal(M.modFoeLevels(null), 0);
   let lv = 0,
     hp = 1,
     shop = 100;
   for (let n = 2; n <= M.expeditionCount(); n++) {
     const run = { perks: [], expedition: n, mods: [] };
-    assert.ok(E.fxFoeLevels(run) > lv, `Expedition ${n}: foes higher`);
-    assert.ok(E.fxBossHp(run) > hp, `Expedition ${n}: the boss tougher`);
+    assert.ok(M.modFoeLevels(run) > lv, `Expedition ${n}: foes higher`);
+    assert.ok(M.modBossHp(run) > hp, `Expedition ${n}: the boss tougher`);
     assert.ok(E.fxRunPrice(run, PERKS, 'shop', 100) > shop, `Expedition ${n}: dearer`);
-    [lv, hp, shop] = [E.fxFoeLevels(run), E.fxBossHp(run), E.fxRunPrice(run, PERKS, 'shop', 100)];
+    [lv, hp, shop] = [M.modFoeLevels(run), M.modBossHp(run), E.fxRunPrice(run, PERKS, 'shop', 100)];
   }
   /* past the data's last, the last */
-  assert.equal(E.fxFoeLevels({ expedition: 9 }), E.fxFoeLevels({ expedition: M.expeditionCount() }));
+  assert.equal(M.modFoeLevels({ expedition: 9 }), M.modFoeLevels({ expedition: M.expeditionCount() }));
 });
 
 test('modifiers: Expedition II is section 3 from I: +2 levels, the boss x1.15, prices +10%', () => {
   const run = { perks: [], expedition: 2, mods: [] };
-  assert.equal(E.fxFoeLevels(run), 2);
-  assert.equal(E.fxBossHp(run), 1.15);
+  assert.equal(M.modFoeLevels(run), 2);
+  assert.equal(M.modBossHp(run), 1.15);
   assert.equal(E.fxRunPrice(run, PERKS, 'shop', 100), 110);
   assert.equal(E.fxRunPrice(run, PERKS, 'heal', 60), 66);
   /* with a Perk the rows stack */

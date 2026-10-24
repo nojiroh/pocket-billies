@@ -796,6 +796,8 @@ export interface TrainerEntry extends Trainer {
   runFoe?: 'miniboss' | 'boss';
   from?: DataId;
   alpha?: boolean;
+  /** RL-13: a run boss's HP times this (the Expedition's, logic/run-loop.js runFoes) */
+  hpMult?: number;
 }
 
 /** a trainer's Billie: a species, or '@rival' ('@rival1', '@rival2': evolved) for the starter that beats yours */

@@ -17,7 +17,9 @@ expose({
   expeditionAfterWin: [() => expeditionAfterWin],
   expeditionCount: [() => expeditionCount],
   expeditionNumeral: [() => expeditionNumeral],
+  modBossHp: [() => modBossHp],
   modChallenges: [() => modChallenges],
+  modFoeLevels: [() => modFoeLevels],
   // @ts-expect-error -- replaced on purpose
   modFxRows: [() => modFxRows, v => (modFxRows = v)],
   modHas: [() => modHas],
@@ -32,7 +34,7 @@ expose({
 /** the challenges the code knows (modifiers.schema.json's list) */
 export const CHALLENGE_IDS = /** @type {const} */ (['mono', 'noheal', 'noperks', 'fragile']);
 /** how many Expeditions there are @param {ModifiersData} [M] */
-export const expeditionCount = (M = MODIFIERS) => Math.max(1, M.expeditions.length);
+export const expeditionCount = (M = MODIFIERS) => Math.max(1, M ? M.expeditions.length : 1);
 /** an Expedition's numeral (1 -> I) @param {number} n */
 export const expeditionNumeral = n => ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'][n - 1] || String(n);
 /** whether a run (or a list of mods) has a challenge @param {{ mods?: string[] } | null | undefined} run
@@ -68,7 +70,8 @@ export function modsMake(challenges, monoType, more = []) {
  * id); none for an Expedition past the data's last (it reads as the last) @param {{ expedition?: number, mods?: string[] } | null | undefined} run
  * @param {ModifiersData} [M] @returns {(FxRow & { src: string })[]} */
 export function modFxRows(run, M = MODIFIERS) {
-  if (!run) return [];
+  /* a page or test without game data (logic loaded alone) has no modifiers */
+  if (!run || !M) return [];
   const n = Math.max(1, Math.min(expeditionCount(M), Math.floor(run.expedition || 1))),
     E = M.expeditions[n - 1],
     rows = (E ? E.fx : []).map(f => ({ ...f, src: 'expedition' }));
@@ -78,6 +81,14 @@ export function modFxRows(run, M = MODIFIERS) {
   }
   return rows;
 }
+/** how many levels foes are up on a run (its Expedition's and challenges' level rows, summed; 0 in the hub)
+ * @param {{ expedition?: number, mods?: string[] } | null | undefined} run @param {ModifiersData} [M] */
+export const modFoeLevels = (run, M = MODIFIERS) =>
+  modFxRows(run, M).reduce((a, f) => a + (f.kind === 'level' ? f.n : 0), 0);
+/** what the run's boss's HP is multiplied by (the product of its bossHp rows; 1 when none)
+ * @param {{ expedition?: number, mods?: string[] } | null | undefined} run @param {ModifiersData} [M] */
+export const modBossHp = (run, M = MODIFIERS) =>
+  modFxRows(run, M).reduce((a, f) => a * (f.kind === 'bossHp' ? f.mult : 1), 1);
 /** the highest Expedition open after a run ends: winning the highest one open opens the next (never past the last)
  * @param {number} open meta.expedition @param {number} played run.expedition @param {boolean} won
  * @param {number} [most] how many there are */

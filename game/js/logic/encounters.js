@@ -19,6 +19,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
+import { modFoeLevels } from './modifiers.js';
 import { runNodeSeed, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
 import { encOf } from './run-enc.js';
@@ -229,7 +230,9 @@ export function encDexAt(run, species, lvl) {
 
 /** a place's top wild level @param {Run} run @param {number} i @param {{ wild: { lv: [number, number], perRow: number } }} rules */
 export const encPlaceLevel = (run, i, rules) =>
-  run.map ? runWildLevels(run.map, i, /** @type {any} */ ({ rules }))[1] : Math.max(1, rules.wild.lv[1]);
+  run.map
+    ? runWildLevels(run.map, i, /** @type {any} */ ({ rules }), modFoeLevels(run))[1]
+    : Math.max(1, rules.wild.lv[1]);
 
 /**
  * A trainer of a class at a map node, as a trainer entry (the shape runFoes makes): its Billies drawn from `salt`'s

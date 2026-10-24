@@ -270,3 +270,33 @@ test("on a run new ids come from the run's counter, so a run made again gives th
   assert.equal(s.run.uidN, 3);
   s.run = null;
 });
+
+test("RL-13: a higher Expedition's foes: wild Billies and leaders its levels up, the boss's HP times its row", () => {
+  const E = modules.modifiers,
+    W = modules['run-scenes'];
+  for (let k = 0; k < 20; k++) {
+    const run = runOf(`EXP${k}`),
+      at1 = L.runFoes(run, { leaders: LEADERS, rules: R });
+    run.expedition = 3;
+    const up = E.modFoeLevels(run),
+      at3 = L.runFoes(run, { leaders: LEADERS, rules: R });
+    assert.equal(up, 4);
+    for (const id of Object.keys(at1)) {
+      assert.deepEqual(
+        at3[id].team.map(e => e.lvl),
+        at1[id].team.map(e => Math.min(100, e.lvl + up))
+      );
+      assert.equal(at3[id].hpMult, at1[id].alpha ? 1.3 : undefined);
+      assert.equal(at1[id].hpMult, undefined, 'Expedition I: no change');
+    }
+    for (let i = 0; i < run.map.nodes.length; i++)
+      assert.deepEqual(
+        W.runWildLevels(run.map, i, { rules: R }, up),
+        W.runWildLevels(run.map, i, { rules: R }).map(v => Math.min(100, v + up))
+      );
+  }
+  const boss = fn('bossAlpha')({ sp: 'musk0', lvl: 20 }, 1.5),
+    plain = fn('makeAlpha')('musk0', 20);
+  assert.equal(boss.hp, fn('maxHp')(boss));
+  assert.ok(boss.hp > plain.hp * 1.4 && boss.hp < plain.hp * 1.6, `${boss.hp} vs ${plain.hp}`);
+});

@@ -20,6 +20,7 @@ import { ITEMS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
 import { healAll, maxHp, plural } from './rules.js';
+import { modBossHp, modFoeLevels } from './modifiers.js';
 import { RUN_DAYS, runHome } from './run-state.js';
 import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
@@ -171,7 +172,7 @@ export function runFoes(run, data) {
     const T = want || from[rngFrom(runNodeSeed(run.seed, i), 'foe').int(0, from.length - 1)];
     used.add(T.id);
     const F = data.rules.foes[node.type],
-      top = runWildLevels(map, i, /** @type {any} */ (data))[1] + F.up,
+      top = runWildLevels(map, i, /** @type {any} */ (data), modFoeLevels(run))[1] + F.up,
       high = Math.max(...T.team.map(e => e.lvl || 1)),
       lv = (/** @type {number} */ l) => Math.max(1, Math.min(100, top - (high - (l || 1)))),
       team = T.team.map(e => ({ ...e, lvl: lv(e.lvl) })),
@@ -190,6 +191,8 @@ export function runFoes(run, data) {
       blocks: !boss,
       double: !boss,
       ...(boss ? { alpha: true } : {}),
+      /* RL-13: the Expedition's boss HP (effects.js modBossHp) */
+      ...(boss && modBossHp(run) !== 1 ? { hpMult: modBossHp(run) } : {}),
       runFoe: node.type,
       runNode: i,
       from: T.id,
