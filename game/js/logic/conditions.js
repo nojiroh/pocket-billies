@@ -63,7 +63,7 @@ expose({
 /** @typedef {{ flags: Record<string, any>, beaten: Record<string, any>, items: Record<string, number>,
  *   pyramids: Record<string, number>, quests: Record<string, string>, visits: Record<string, number>,
  *   visited: Record<string, any>, lines: Record<string, any>, robots: number, badges: number, caught: number,
- *   unlocks: Record<string, any>, runs: number, wins: number, questStages?: Record<string, string[]>,
+ *   unlocks: Record<string, any>, runs: number, wins: number, expedition?: number, questStages?: Record<string, string[]>,
  *   types?: Record<string, number>, money?: number, team?: number, badgeTypes?: Record<string, number>,
  *   opened?: Record<string, number> }} StoryState */
 
@@ -83,6 +83,7 @@ export const CONDITION_KINDS = {
   unlock: { id: true, count: false, about: 'an unlock is owned (unlocks.json): unlock:ranch_2' },
   runs: { id: false, count: true, about: 'runs ended, won or lost: runs >= 3' },
   wins: { id: false, count: true, about: 'runs won: wins >= 1' },
+  expedition: { id: false, count: true, about: 'the highest Expedition open (RL-13): expedition >= 2' },
   type: { id: true, count: true, about: 'Billies of a type in your team: type:Water, type:Fire >= 2' },
   money: { id: false, count: true, about: 'Moneys on hand: money >= 200' },
   team: { id: false, count: true, about: 'Billies in your team: team >= 2' },
@@ -324,6 +325,8 @@ export function termValue(c, S) {
       return S.runs;
     case 'wins':
       return S.wins;
+    case 'expedition':
+      return S.expedition || 1;
     case 'type':
       return (S.types || {})[c.id.toLowerCase()] || 0;
     case 'money':
@@ -393,6 +396,7 @@ export function storyStateOf(save, o = {}) {
     unlocks: meta.unlocks || {},
     runs: meta.runs || 0,
     wins: meta.wins || 0,
+    expedition: meta.expedition || 1,
     questStages: o.questStages,
     types: teamTypes(save.team || [], o.typesOf),
     money: save.se || 0,

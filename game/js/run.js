@@ -22,7 +22,7 @@ import {
   runPayoutOpen,
   toast,
 } from './hooks.js';
-import { ITEMS, PERKS, PYRAMIDS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
+import { ITEMS, MODIFIERS, PERKS, PYRAMIDS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchStop } from './logic/ranch.js';
@@ -165,6 +165,7 @@ export function runEndHome(won, keep, itemPrice) {
   if (!saveData.run) return;
   /* RL-12: the Perks' payout rows, read before the run ends */
   const rates = fxPayoutRates(fxOfRun(saveData.run, PERKS), RULES.run.payout),
+    opened = saveData.meta.expedition,
     pay = runEnd(saveData, { won, keep }, rates, itemPrice);
   /* a move waiting to be learned names a Billie by its uid, which a run's copy shares with the hub's */
   uiState.learnQ = [];
@@ -187,6 +188,9 @@ export function runEndHome(won, keep, itemPrice) {
   toast(
     `+${formatNumber(pay.research)} Research${pay.scrap ? `, ${formatNumber(pay.scrap)} Scrap` : ''}${pay.crests ? ` and ${plural(pay.crests, 'Crest')}` : ''}. You have ${formatNumber(saveData.meta.research)} Research.`
   );
+  /* RL-13: a win that opens the next Expedition says so */
+  if (saveData.meta.expedition > opened)
+    toast(`${MODIFIERS.expeditions[saveData.meta.expedition - 1].name} is open. Pick it at the mast.`);
   /* RL-11: milestones the run has met (ended runs, wins), each with its own toast after this one */
   if (typeof labMilestones === 'function') labMilestones();
 }

@@ -149,7 +149,11 @@ test('RL-11: unlock:, runs and wins read what lasts between runs (saveData.meta)
   assert.deepEqual([...conditionNames(conditionTree('unlock:a or unlock:b and runs')).unlock], ['a', 'b']);
   const save = { meta: { unlocks: { shop_revive: 1 }, runs: 2, wins: 1 }, run: { seed: 'x' } };
   const M = storyStateOf(save);
-  for (const c of ['unlock:shop_revive', 'runs = 2', 'wins >= 1']) assert.equal(conditionHolds(c, M), true, c);
+  for (const c of ['unlock:shop_revive', 'runs = 2', 'wins >= 1', 'expedition = 1'])
+    assert.equal(conditionHolds(c, M), true, c);
+  /* RL-13: the highest Expedition open */
+  assert.equal(conditionHolds('expedition >= 3', storyStateOf({ meta: { expedition: 3 } })), true);
+  assert.equal(conditionHolds('expedition >= 2', storyStateOf({})), false);
   const none = storyStateOf({});
   for (const c of ['!unlock:shop_revive', '!runs', '!wins'])
     assert.equal(conditionHolds(c, none), true, `no meta: ${c}`);

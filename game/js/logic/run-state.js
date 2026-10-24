@@ -13,6 +13,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { META_IDS, META_MAX, recordOf, wholeIn } from './meta-state.js';
+import { expeditionAfterWin } from './modifiers.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_DAYS: [() => RUN_DAYS],
@@ -469,6 +470,8 @@ export function runEnd(s, how, rates, itemPrice) {
   s.meta.scrap += pay.scrap;
   s.meta.runs += 1;
   if (how.won) s.meta.wins += 1;
+  /* RL-13: winning the highest Expedition open opens the next (logic/modifiers.js) */
+  s.meta.expedition = expeditionAfterWin(s.meta.expedition || 1, run.expedition || 1, how.won);
   return pay;
 }
 /** put the hub's working fields back from run.start and leave the run, paying nothing (runEnd's last step; also a
