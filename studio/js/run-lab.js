@@ -196,7 +196,7 @@ function runLabSvg(D, plan, pickable) {
       const T = D.nodeTypes[n.type] || {},
         letter = escapeHtml((T.name || n.type || '?').slice(0, 1).toUpperCase()),
         ring = n.seen >= 2 ? '' : n.seen === 1 ? ' stroke-dasharray="3 3"' : ' stroke-opacity=".35"';
-      return `<g class="rl-node${pickable && runLab.pick === i ? ' on' : ''}"${pickable ? ` data-act="runLabPick" data-i="${i}"` : ''} data-type="${escapeHtml(n.type)}" data-biome="${escapeHtml(n.biome || '')}"><title>${i}: ${escapeHtml(T.name || n.type)}, ${escapeHtml((D.biomes[n.biome] || {}).name || n.biome || '')}</title><circle cx="${XN(n)}" cy="${Y(n)}" r="17" fill="${runLabBiomeColour(D, n.biome)}" stroke="${RUN_LAB_TYPE_COLOUR[n.type] || '#333'}" stroke-width="4"${ring}/><text x="${XN(n)}" y="${Y(n) + 5}" text-anchor="middle">${letter}</text></g>`;
+      return `<g class="rl-node${pickable && runLab.pick === i ? ' on' : ''}"${pickable ? ` data-act="runLabPick" data-i="${i}"` : ''} data-type="${escapeHtml(n.type)}" data-biome="${escapeHtml(n.biome || '')}"${n.side ? ' data-side="1"' : ''}><title>${i}: ${escapeHtml(T.name || n.type)}, ${escapeHtml((D.biomes[n.biome] || {}).name || n.biome || '')}</title><circle cx="${XN(n)}" cy="${Y(n)}" r="17" fill="${runLabBiomeColour(D, n.biome)}" stroke="${RUN_LAB_TYPE_COLOUR[n.type] || '#333'}" stroke-width="4"${ring}/><text x="${XN(n)}" y="${Y(n) + 5}" text-anchor="middle">${letter}</text></g>`;
     })
     .join('');
   return `<svg class="rl-map" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="The run's map">${links}${dots}</svg>`;
