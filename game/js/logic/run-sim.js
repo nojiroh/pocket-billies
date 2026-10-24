@@ -13,7 +13,7 @@
  * @typedef {{ modules: Record<string, any>, fn: (name: string) => any, hooks: any, data: any, gameData: any,
  *   logic: any, beforeRun?: (o: SimOptions) => void }} SimEnv
  * @typedef {{ random?: number, fights?: number, team?: number, pack?: number, unlocks?: 'none' | 'all',
- *   policy?: string, scenes?: 'make' | 'skip' }} SimOptions
+ *   policy?: string, scenes?: 'make' | 'skip', badges?: 'none' | 'all' }} SimOptions
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -125,6 +125,8 @@ export function runSimOn(env) {
   const { RULES, TRAINERS } = data;
   const R = RULES.run,
     { runArrive, runNext, runWorldNode, runWeather } = modules['run-map'],
+    { fieldBadgeKey, fieldMoveState, runSideOpen } = modules['run-side'],
+    MOVES = (GAME_DATA.fieldMoves && GAME_DATA.fieldMoves.moves) || {},
     { runByExpedition, runEnd } = modules['run-state'],
     { runScenesMake, runWorldTables } = modules['run-scenes'],
     { eventAt } = modules.encounters,
@@ -139,6 +141,8 @@ export function runSimOn(env) {
       biomes: GAME_DATA.biomes,
       rules: R,
       region: runRegionData(GAME_DATA, TRAINERS),
+      /* RL-R2b: the field moves, so a run has its side area as the game's does */
+      fieldMoves: MOVES,
     },
     UNLOCK_DATA = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings };
   const worldData = () => ({
@@ -147,6 +151,7 @@ export function runSimOn(env) {
     pools: data.POOLS,
     scenery: GAME_DATA.scenery,
     rules: R,
+    fieldMoves: MOVES,
   });
   /* a battle's host in the simulation: shows and saves nothing, and plays the battle's own weather (b.wx, as the page's
      battleWeatherMultiplier does once a run battle has its forecast's weather) */
@@ -215,6 +220,9 @@ export function runSimOn(env) {
     /* Studio plan T2.1: started as the mast starts a run (logic/run-start.js), with what the save has unlocked: none (a
        fresh save, the default) or every unlock (unlocks: 'all') */
     if (o.unlocks === 'all') for (const id of Object.keys(UNLOCK_DATA.unlocks)) s.meta.unlocks[id] = 1;
+    /* RL-R2b: the badges kept: none (a fresh save, the default: the side area stays shut) or every field move's
+       (badges: 'all') */
+    if (o.badges === 'all') for (const M of Object.values(MOVES)) s.meta.badges[fieldBadgeKey(M.type)] = 1;
     const run = runStartOn(
       s,
       runStartPlan(seed, { ...MAP_DATA, unlockData: UNLOCK_DATA }, { unlocks: runUnlocks(s, UNLOCK_DATA) }),
@@ -411,16 +419,30 @@ export function runSimOn(env) {
             return finish();
           }
         }
-        /* on: a lane drawn from the seed */
-        const next = runNext(run.map, i);
-        if (!next.length) return finish();
-        i = next[modules.rng.rngFrom(seed, 'sim|path|' + i).int(0, next.length - 1)];
+        /* on: into the side area when its field move can be used here (the policy takes it), out by its way out
+           at its last place, else a lane drawn from the seed */
+        const next = runNext(run.map, i),
+          side = simSideNext(run.map, i, s.meta.badges, simTypes());
+        if (side) {
+          if (side.open) {
+            runSideOpen(run.map);
+            log.side = { move: run.map.side.move, kind: run.map.side.kind };
+          }
+          i = side.to;
+        } else if (!next.length) return finish();
+        else i = next[modules.rng.rngFrom(seed, 'sim|path|' + i).int(0, next.length - 1)];
         runArrive(s, i, MAP_DATA);
         /* walking in: the Perks' heal rows (run-loop.js runArriveFx, as walk-control.js through runArrivedFx) */
         fxHealed = runArriveFx(s, data.PERKS);
       }
     } finally {
       data.worldHubBack();
+    }
+    /** the team's Billies standing, as the field moves read them (field-moves.js fieldTeam) */
+    function simTypes() {
+      return s.team
+        .filter((/** @type {any} */ m) => m.hp > 0 && fn('speciesOf')(m))
+        .map((/** @type {any} */ m) => ({ name: m.uid, types: fn('speciesOf')(m).types }));
     }
     /** the run lost at this node @param {any} node */
     function lose(node) {
@@ -517,5 +539,19 @@ export function runSimOn(env) {
     };
   }
 
-  return { runSim, runStats, runReport };
+  /**
+   * RL-R2b: the policy at a side area: from the obstacle's place into the side when its field move can be used (the
+   * badge kept and a Billie of the type standing: `open`), from its last place out by its way out; else null (the
+   * lane as usual) @param {any} map @param {number} i @param {Record<string, number>} badges
+   * @param {{ name: string, types: string[] }[]} team @returns {{ to: number, open?: boolean } | null}
+   */
+  function simSideNext(map, i, badges, team) {
+    const S = map.side;
+    if (!S) return null;
+    if (i === S.from && MOVES[S.move] && fieldMoveState(MOVES[S.move], badges, team).state === 'ask')
+      return { to: S.nodes[0], open: true };
+    if (i === S.nodes[S.nodes.length - 1] && S.to >= 0) return { to: S.to };
+    return null;
+  }
+  return { runSim, runStats, runReport, simSideNext };
 }

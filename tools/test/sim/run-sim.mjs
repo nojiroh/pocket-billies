@@ -24,6 +24,8 @@
 //                                       T2.1, the run starts through logic/run-start.js as the mast's does)
 // Studio plan T3.3, T3.4:
 //   --balance                  balance mode: no scenes are made (the same outcomes, ~250 times faster)
+//   --badges=all               every field move's badge kept (default none: a fresh save's; RL-R2b), so the
+//                              policy takes the run's side area where its move can be used
 //   --policy=never-pick        another bot policy (run-sim.js SIM_POLICIES; default greedy-forward)
 //   --out=path.json            where the report goes (default validation/sim/runs.json): runStats's numbers, the seeds,
 //                              the options, the data's hash and every run's stats (`results`)
@@ -37,7 +39,7 @@ import { dirname, join, resolve } from 'node:path';
 import { data, fn, hooks, logic, modules, reseed, ROOT, GAME_DATA } from '../setup-real.mjs';
 
 /** the core on the game's data in Node; util.js random is reseeded before each run (`random`, 1 by default) */
-export const { runSim, runStats, runReport } = modules['run-sim'].runSimOn({
+export const { runSim, runStats, runReport, simSideNext } = modules['run-sim'].runSimOn({
   modules,
   fn,
   hooks,
@@ -61,6 +63,7 @@ if (process.argv[1] && process.argv[1].endsWith('run-sim.mjs')) {
           fights: arg('fights', 2),
           pack: arg('pack', 0),
           unlocks: opt('unlocks') || 'none',
+          ...(opt('badges') ? { badges: opt('badges') } : {}),
           ...(opt('policy') ? { policy: opt('policy') } : {}),
           ...(process.argv.includes('--balance') ? { scenes: 'skip' } : {}),
         },

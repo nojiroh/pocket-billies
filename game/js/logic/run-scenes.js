@@ -55,6 +55,8 @@ expose({
   runScenesMake: [() => runScenesMake, v => (runScenesMake = v)],
   runShopId: [() => runShopId],
   // @ts-expect-error -- replaced on purpose
+  runSideLand: [() => runSideLand, v => (runSideLand = v)],
+  // @ts-expect-error -- replaced on purpose
   runWildLevels: [() => runWildLevels, v => (runWildLevels = v)],
   // @ts-expect-error -- replaced on purpose
   runWorldTables: [() => runWorldTables, v => (runWorldTables = v)],
@@ -157,9 +159,10 @@ export function runSceneParams(run, i, scenes, data) {
       : {}),
     /* RL-8: the buildings a node's type needs, beside the main road near its middle (mapgen's props dials: MG-2) */
     props: { ...(dials.props || {}), ...(RUN_BUILDINGS[node.type] || {}) },
-    /* RL-R2: a ridden side area (Surf): water along a side, walked on by riding */
-    ...(node.side && fieldMoveOf(map, data) && /** @type {any} */ (fieldMoveOf(map, data)).ride
-      ? { land: { ...(dials.land || {}), water: 'coast', waterAmount: 0.6 } }
+    /* RL-R2: a side area's own land (fieldMoves.json `land`: Surf's coast water, walked on by riding; RL-R2b: the
+       cave's rock walls) */
+    ...(node.side && fieldMoveOf(map, data)
+      ? runSideLand(/** @type {any} */ (fieldMoveOf(map, data)), node, dials)
       : {}),
     /* TW-1: a town node is a town (mapgen.js mapgenStageTown: a street, a square, houses) */
     kind: node.type === 'town' ? 'town' : 'route',
@@ -183,6 +186,12 @@ export function runSceneParams(run, i, scenes, data) {
 }
 /** TW-1: a town's through road (mapgen's road dials): straight, a little wobble */
 export const RUN_TOWN_ROAD = { shape: 'straight', wobble: 0.25 };
+/** RL-R2b: a side place's land dials: the move's `land` over the run's, and a town's `townLand` over both (Surf's
+ * islet) @param {any} M the field move @param {RunMap['nodes'][number]} node @param {any} dials */
+export function runSideLand(M, node, dials) {
+  if (!M.land && !(node.type === 'town' && M.townLand)) return {};
+  return { land: { ...(dials.land || {}), ...(M.land || {}), ...(node.type === 'town' ? M.townLand || {} : {}) } };
+}
 /** TR-2: the debug menu's run mod that gives every place mountains (runSceneParams) */
 export const RUN_MOD_MOUNTAINS = 'dbg_mountains';
 /** RL-8: what stands beside the main road of a node of each type: the airship's mast where it lands you, a clinic

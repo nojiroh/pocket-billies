@@ -709,7 +709,8 @@ export function dataNodeTypes(D, valid = () => true) {
   }
   return out;
 }
-// RL-R2: field moves (fieldMoves.json): the schema, a real type and a run biome each; rules.json run.side: the chances
+// RL-R2: field moves (fieldMoves.json): the schema, a real type and a biome each (RL-R2b: any biome, so a side-only
+// one such as the cave, which a region never draws); rules.json run.side: the chances
 // of a detour and of an alternate path (each 0-1, together at most 1), a detour's places [2-6], an alternate path's
 // rows [2-6] and the chance it ends at a boss of its own, a weight of 0 or more for moves that exist (one above 0), and
 // the lean (0-10) toward a move of the region's types
@@ -720,14 +721,11 @@ export function dataFieldMoves(D, valid = () => true) {
     problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]),
     FM = D.fieldMoves,
     moves = FM && FM.moves ? FM.moves : {},
-    types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
-    runBiomes = (D.rules && D.rules.run && D.rules.run.map && D.rules.run.map.biomes) || {};
+    types = new Set((D.types || []).map((/** @type {any} */ t) => t.id));
   if (FM && valid('fieldMoves.schema.json', FM, 'fieldMoves.json'))
     for (const [k, M] of Object.entries(moves)) {
       if (!types.has(M.type)) problem('fieldMoves.json', `moves.${k}: no type "${M.type}" (types.json)`);
       if (!(D.biomes || {})[M.biome]) problem('fieldMoves.json', `moves.${k}: no biome "${M.biome}" (biomes.json)`);
-      else if (!runBiomes[M.biome])
-        problem('fieldMoves.json', `moves.${k}: "${M.biome}" is not a run biome (rules.json run.map.biomes)`);
     }
   const S = D.rules && D.rules.run && D.rules.run.side;
   if (!S) return out;

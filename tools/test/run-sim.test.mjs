@@ -6,7 +6,7 @@
 // modes and checks they come out the same, so what a run decides is checked here at a fraction of the time.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { runReport, runSim, runStats } from './sim/run-sim.mjs';
+import { runReport, runSim, runStats, simSideNext } from './sim/run-sim.mjs';
 import { data, GAME_DATA, modules } from './setup-real.mjs';
 
 const B = { team: 3, scenes: 'skip' };
@@ -117,6 +117,7 @@ test("run sim: the run's map is runStartPlan's for the save's unlocks: no locked
       rules: R,
       unlockData: { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings },
       region: modules['run-region'].runRegionData(GAME_DATA, data.TRAINERS),
+      fieldMoves: GAME_DATA.fieldMoves.moves,
     },
     nodes = plan => plan.map.nodes.map(n => `${n.type}:${n.biome}`);
   for (const seed of ['SIMPLAN0', 'SIMPLAN1', 'SIMPLAN2']) {
@@ -178,6 +179,21 @@ test('run sim: a report over a seed list; the same data compares as the same run
      with Perks drawn in perks.json's order the 40 seeds' mean is +4.5 (lo -21.9): no significant gain, which is the
      claim, so the interval must reach 0 or below */
   assert.ok(dear.diff.moneyLeft.lo <= 0, JSON.stringify(dear.diff.moneyLeft));
+});
+
+test('run sim: the side area (RL-R2b): shut with no badge kept; the policy goes in when the move can be used', () => {
+  for (let k = 0; k < 8; k++)
+    assert.equal(runSim(`SIMSIDE${k}`, B).log.side, undefined, `SIMSIDE${k}: no badge, no side`);
+  const map = { side: { kind: 'detour', move: 'cut', from: 3, to: 4, nodes: [11, 12, 13] } },
+    leafy = [{ name: 'Leafy', types: ['Grass'] }],
+    hot = [{ name: 'Hot', types: ['Fire'] }];
+  assert.deepEqual(simSideNext(map, 3, { grass: 1 }, leafy), { to: 11, open: true });
+  assert.equal(simSideNext(map, 3, {}, leafy), null, 'no badge');
+  assert.equal(simSideNext(map, 3, { grass: 1 }, hot), null, 'no Grass Billie');
+  assert.equal(simSideNext(map, 11, { grass: 1 }, leafy), null, 'along the chain: the lane');
+  assert.deepEqual(simSideNext(map, 13, {}, hot), { to: 4 }, 'the way out');
+  assert.equal(simSideNext({ side: { ...map.side, to: -1 } }, 13, {}, hot), null, 'past its own boss: none');
+  assert.equal(simSideNext({}, 3, { grass: 1 }, leafy), null, 'no side area');
 });
 
 test('run sim: a stall sells without healing and a waystation notes its event (RL-12b)', () => {

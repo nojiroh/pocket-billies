@@ -134,6 +134,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenPaintDisc: [() => mapgenPaintDisc, v => (mapgenPaintDisc = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenPaintIslet: [() => mapgenPaintIslet, v => (mapgenPaintIslet = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenPaintPond: [() => mapgenPaintPond, v => (mapgenPaintPond = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenPaintStream: [() => mapgenPaintStream, v => (mapgenPaintStream = v)],
@@ -246,7 +248,7 @@ export const MAPGEN_SHAPES = {
   switchback: 'Switchback',
 };
 export const MAPGEN_SURFACES = { dirt: 'p', gravel: 'v', cobbles: 'K', pavers: 'q' };
-export const MAPGEN_WATER = { none: 'None', stream: 'Stream', pond: 'Pond', coast: 'Coast' };
+export const MAPGEN_WATER = { none: 'None', stream: 'Stream', pond: 'Pond', coast: 'Coast', islet: 'Islet' };
 export const MAPGEN_FEATURES = {
   none: 'None',
   bridge: 'Stream and bridge',
@@ -1443,6 +1445,54 @@ export function mapgenPaintCoast(G, rnd, size) {
     }
   G.waterKind = 'sea';
 }
+/* RL-R2b: an islet (Surf's side-area town): the sea all round a round of land in the middle, its size 0-1 the
+   land's share. The roads stay dry, so each exit's road crosses the water as a causeway (and the straight run in
+   from an exit and a joined edge's strip stay land: mapgenStageWater), where the seam meets the neighbour's land */
+export function mapgenPaintIslet(G, size) {
+  const { w, h } = G,
+    ns = G.salt('heights', 'islet'),
+    rx = w * (0.2 + 0.14 * size),
+    rz = h * (0.3 + 0.12 * size),
+    /* round the hub's first guess (mapgenStageRoad), the sea at least 3 m wide all round where it fits */
+    mid = (/** @type {number} */ v, /** @type {number} */ r, /** @type {number} */ n) =>
+      r + 3 < n - r - 3 ? mapgenBetween(v, r + 3, n - r - 3) : n / 2,
+    cx = mid(G.hub ? G.hub[0] : w / 2, rx * 1.14, w),
+    cz = mid(G.hub ? G.hub[1] : h / 2, rz * 1.14, h);
+  for (let j = 0; j < h; j++)
+    for (let i = 0; i < w; i++) {
+      const q = j * w + i;
+      if (G.F[q] & 1) continue; /* a road stays a road: the causeways */
+      const dx = (i + 0.5 - cx) / rx,
+        dz = (j + 0.5 - cz) / rz,
+        a = Math.atan2(dz, dx),
+        r = Math.hypot(dx, dz) * rz,
+        line = rz * (0.86 + 0.28 * mapgenNoise(Math.cos(a) * 1.6 + 3, Math.sin(a) * 1.6 + 3, ns)),
+        from = r - line;
+      if (from > 0) {
+        G.T[q] = from > 3 ? 'd' : 'w';
+        G.F[q] = (G.F[q] & ~(2 | 32 | 64)) | 4;
+      } else if (from > -1.6) {
+        G.T[q] = 'S';
+        G.F[q] |= 64;
+      } else if (from > -4.5) G.T[q] = 's';
+    }
+  /* the causeways: a sandbar a metre and a half each side of a road over the water */
+  const near = [];
+  for (let j = 0; j < h; j++)
+    for (let i = 0; i < w; i++)
+      if (G.F[j * w + i] & 1)
+        for (let dj = -2; dj <= 2; dj++)
+          for (let di = -2; di <= 2; di++) {
+            const ii = i + di,
+              jj = j + dj;
+            if (ii >= 0 && jj >= 0 && ii < w && jj < h && G.F[jj * w + ii] & 4) near.push(jj * w + ii);
+          }
+  for (const q of near) {
+    G.F[q] = (G.F[q] & ~4) | 64;
+    G.T[q] = 'S';
+  }
+  G.waterKind = 'sea';
+}
 export function mapgenTerraces(G, levels) {
   /* bands across the depth that rise toward the back, each a step up; the road ramps through them */
   const { w, h, P } = G,
@@ -2322,6 +2372,7 @@ export function mapgenStageWater(G) {
   if (wk === 'pond' || P.feature === 'jetty')
     G.pond = mapgenPaintPond(G, rnd, wk === 'pond' ? amt : Math.max(0.5, amt));
   if (wk === 'coast') mapgenPaintCoast(G, rnd, amt);
+  if (wk === 'islet') mapgenPaintIslet(G, amt);
   if (G.F.some(f => f & 4)) {
     G.waterKind = G.waterKind || (P.feature === 'lava' && wk === 'none' ? 'lava' : B.water);
     for (const e of G.exits) {
