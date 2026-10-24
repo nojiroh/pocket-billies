@@ -50,8 +50,9 @@ town node needs it.
 ## Tracks alongside
 - **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
   out of any room's doorway; "Go outside" stays with the card closed) done 2026-10-24; TW-1 (a town layout: street,
-  square, house plots), TW-2 (townsfolk, animals, chat) and TW-3 (run quests paid at a later town's notice board with
-  the reward pick) next, alongside RL-12b part 2 and RL-R2b. Tags `tw-N-done`. Branch `track/towns` (the owner makes it).
+  square, houses with gardens, mapgen's `town` kind) done 2026-10-24; TW-2 (townsfolk, animals, chat) and TW-3 (run
+  quests paid at a later town's notice board with the reward pick) next, alongside RL-12b part 2 and RL-R2b. Tags
+  `tw-N-done`. Branch `track/towns`.
 - **Reflavour track** (docs/phases/reflavour-track.md, the owner's brief 2026-10-23): less finance, more Pokémon. The
   Billies stay billionaire clones; catching with pyramids, Perks (was Loopholes), Expeditions (was Brackets), Moneys,
   Research, Scrap and Crests, new type passives, internal renames one per commit, the new tone in the text, the new name Pocket B&B² (a raised B), the Bureau of Lost, Found and

@@ -9,6 +9,9 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Run towns look like towns (towns track TW-1): a short street leads off the road to a little square with a well or a
+  fountain, benches and lamps, the clinic and the shop facing it, and a row of houses with gardens and fences along
+  the road. The houses are for show; only the clinic and the shop open. Each biome builds with its own houses.
 - Three new Billies and five regional forms (roster track RO-2c): **Siliclet**, a black gecko with one glowing scale,
   evolving at level 20 into **Jenzard** and at 40 into **Gigajenzard**, a rare Electric/Dragon data-centre dragon
   whose keynote dims the lights. Five Billies you already know now have a regional form, met in the biomes it suits:
