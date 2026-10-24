@@ -979,6 +979,9 @@ export interface Rules {
         number a [low, high] range drawn from the node's stream, each choice (water, road shape and surface, feature)
         a record of weights. Dials left out keep mapgen's defaults */
     scene: RunSceneRules;
+    /** RT-1: the layout plans a laid-out place is drawn from (logic/mapgen.js MAPGEN_LAYOUTS), weights by biome,
+        `default` for a biome not listed (nodeTypes.json layout says which places are laid out) */
+    layouts?: Record<string, Record<string, number>>;
     /** RL-7: a run node's wild Billies: levels `lv` on the landing's row, `perRow` more on each row after; a node
         walked back to rolls `back` of them again (the hub's stock on a first visit); a waystation (an event or a
         stall: RL-12b) holds `waystation` */
@@ -1666,6 +1669,8 @@ export interface NodeType {
   weight?: number;
   /** RL-12b: it sells things (a town, a stall): the map never puts two of them one after the other */
   shop?: boolean;
+  /** RT-1: its place is laid out as a route (a plan from rules.json run.layouts by biome) */
+  layout?: boolean;
 }
 
 /** music.json: a song's recipe, composed into notes by the tracker (game/js/audio/tracker.js; sound track SND-2) */

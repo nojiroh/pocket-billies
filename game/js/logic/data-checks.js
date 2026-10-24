@@ -17,7 +17,14 @@ import { uiThemeContrast } from './ui-theme.js';
 import { RUN_MARK_TYPES } from './run-marks.js';
 import { runRegionData, runRegionMake } from './run-region.js';
 import { runMapMake, runMapRows, runMapRowsFit } from './run-map.js';
-import { MAPGEN_DEFAULTS, MAPGEN_FEATURES, MAPGEN_SHAPES, MAPGEN_SURFACES, MAPGEN_WATER } from './mapgen.js';
+import {
+  MAPGEN_DEFAULTS,
+  MAPGEN_FEATURES,
+  MAPGEN_LAYOUTS,
+  MAPGEN_SHAPES,
+  MAPGEN_SURFACES,
+  MAPGEN_WATER,
+} from './mapgen.js';
 import { fxRowOf } from './run-enc.js';
 import { FX_KINDS, FX_LIMIT, FX_STAGES } from './effects.js';
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
@@ -299,6 +306,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'clock',
   'reveal',
   'scene',
+  'layouts',
   'wild',
   'seamIn',
   'start',
@@ -390,6 +398,25 @@ export function dataRunScene(D) {
       };
     if (!SC || typeof SC !== 'object' || Array.isArray(SC)) problem('rules.json', 'run.scene missing');
     else walk(SC, MAPGEN_DEFAULTS, '');
+    /* RT-1: the layout plans by biome */
+    const LY = R.layouts;
+    if (LY !== undefined) {
+      if (!LY || typeof LY !== 'object' || Array.isArray(LY))
+        problem('rules.json', 'run.layouts is not plans by biome');
+      else
+        for (const [b, W] of Object.entries(LY)) {
+          if (b !== 'default' && !(D.biomes || {})[b])
+            problem('rules.json', `run.layouts.${b}: no biome "${b}" (biomes.json)`);
+          const E = W && typeof W === 'object' && !Array.isArray(W) ? Object.entries(W) : [];
+          if (!E.some(([, w]) => w > 0)) problem('rules.json', `run.layouts.${b} has nothing to pick`);
+          for (const [p, w] of E) {
+            if (!Object.hasOwn(MAPGEN_LAYOUTS, p))
+              problem('rules.json', `run.layouts.${b}: no such plan "${p}" (logic/mapgen.js MAPGEN_LAYOUTS)`);
+            if (typeof w !== 'number' || !(w >= 0))
+              problem('rules.json', `run.layouts.${b}.${p} is not a weight of 0 or more`);
+          }
+        }
+    }
     const W = R.wild,
       whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
     if (

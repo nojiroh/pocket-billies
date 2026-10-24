@@ -28,6 +28,21 @@ exports[`golden scene: feature 1`] = `
 }
 `;
 
+exports[`golden scene: laidOut 1`] = `
+{
+  "tiles": 3409520482,
+  "heights": 3623381891,
+  "steps": 238425371,
+  "props": 596041629,
+  "exits": 2118420281,
+  "rest": 2921345139,
+  "counts": {
+    "props": 640,
+    "raised": false
+  }
+}
+`;
+
 exports[`golden scene: terraced 1`] = `
 {
   "tiles": 1451151688,
