@@ -110,6 +110,8 @@ expose({
   mapgenGrassPatches: [() => mapgenGrassPatches, v => (mapgenGrassPatches = v)],
   mapgenGround: [() => mapgenGround],
   // @ts-expect-error -- replaced on purpose
+  mapgenGroundSampler: [() => mapgenGroundSampler, v => (mapgenGroundSampler = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenGrowWild: [() => mapgenGrowWild, v => (mapgenGrowWild = v)],
   mapgenInLot: [() => mapgenInLot],
   // @ts-expect-error -- replaced on purpose
@@ -3444,33 +3446,28 @@ export function mapgenLayoutSpots(sc, scenery, G) {
     out.push({ kind: 'clearing', x: mapgenRound2(x), z: mapgenRound2(z), y: yOf(q, x, z), r: mapgenRound2(C[q] / N) });
     nc++;
   }
-  /* dead ends: the walk's local peaks (nothing within 3 m is further), hemmed in (under 2.5 m clear), off the road */
+  /* dead ends: the walk's local peaks (nothing within 3 m is further), hemmed in (under 2.5 m clear), off the road;
+     the furthest first, each tested only until three are found */
   const ends = [];
-  for (let q = 0; q < gw * gh; q++) {
-    if (!seen[q] || C[q] > 5 || dist[q] < 40) continue;
-    const [x, z] = at(q);
-    if (x < 6 || x > sc.w - 6 || z < 3 || z > sc.h - 3 || !offRoad(x, z, 4) || !awayFromEnds(x, z, 8)) continue;
+  for (let q = 0; q < gw * gh; q++) if (seen[q] && C[q] <= 5 && dist[q] >= 40) ends.push(q);
+  ends.sort((a, b) => dist[b] - dist[a] || a - b);
+  const peakAt = q => {
     const i = q % gw,
       j = Math.floor(q / gw);
-    let peak = true;
-    for (let dj = -6; dj <= 6 && peak; dj++)
+    for (let dj = -6; dj <= 6; dj++)
       for (let di = -6; di <= 6; di++) {
         const ii = i + di,
           jj = j + dj;
-        if (ii < 0 || jj < 0 || ii >= gw || jj >= gh) continue;
-        if (dist[jj * gw + ii] > dist[q]) {
-          peak = false;
-          break;
-        }
+        if (ii >= 0 && jj >= 0 && ii < gw && jj < gh && dist[jj * gw + ii] > dist[q]) return false;
       }
-    if (peak) ends.push(q);
-  }
-  ends.sort((a, b) => dist[b] - dist[a] || a - b);
+    return true;
+  };
   let nd = 0;
   for (const q of ends) {
     if (nd >= 3) break;
     const [x, z] = at(q);
-    if (!spaced(x, z, 12)) continue;
+    if (x < 6 || x > sc.w - 6 || z < 3 || z > sc.h - 3 || !offRoad(x, z, 4) || !awayFromEnds(x, z, 8)) continue;
+    if (!spaced(x, z, 12) || !peakAt(q)) continue;
     out.push({ kind: 'deadend', x: mapgenRound2(x), z: mapgenRound2(z), y: yOf(q, x, z) });
     nd++;
   }
@@ -4006,14 +4003,15 @@ export function mapgenWalkGrid(sc, scenery, o = {}) {
   };
   /* TR-2, with o.slope: smooth land too steep to walk (walk/heights.js navGrid: a slope over 1.05); a bridge's deck is
      walked whatever lies under it */
-  if (o.slope && sc.heights && sc.heights.length)
+  const ground = o.slope && sc.heights && sc.heights.length ? mapgenGroundSampler(sc) : null;
+  if (ground)
     for (let j = 0; j < gh; j++)
       for (let i = 0; i < gw; i++) {
         const x = (i + 0.5) / N,
           z = (j + 0.5) / N,
           e = 0.3,
-          gx = (mapgenSceneGround(sc, x + e, z) - mapgenSceneGround(sc, x - e, z)) / (2 * e),
-          gz = (mapgenSceneGround(sc, x, z + e) - mapgenSceneGround(sc, x, z - e)) / (2 * e);
+          gx = (ground(x + e, z) - ground(x - e, z)) / (2 * e),
+          gz = (ground(x, z + e) - ground(x, z - e)) / (2 * e);
         if (Math.hypot(gx, gz) > 1.05) blk[j * gw + i] = 1;
       }
   for (const b of sc.bridges || []) {
@@ -4086,9 +4084,9 @@ export function mapgenReach(sc, scenery, from = sc.hub, o = {}) {
     hop = /** @type {Uint8Array | null} */ (null);
   if (o.slope) {
     lv = new Float32Array(gw * gh);
+    const ground = mapgenGroundSampler(sc);
     for (let j = 0; j < gh; j++)
-      for (let i = 0; i < gw; i++)
-        lv[j * gw + i] = mapgenSceneGround(sc, (i + 0.5) / N, (j + 0.5) / N) + (S ? S[j * gw + i] / 20 : 0);
+      for (let i = 0; i < gw; i++) lv[j * gw + i] = ground((i + 0.5) / N, (j + 0.5) / N) + (S ? S[j * gw + i] / 20 : 0);
     if (sc.stepm) {
       const M = mapgenDecodeBase64(sc.stepm);
       if (M.length === gw * gh) hop = M.map(f => (f & 16 ? 1 : 0));
@@ -4189,6 +4187,21 @@ export function mapgenSceneGround(sc, x, z) {
     c(i, j + 1) * (1 - fx) * fz +
     c(i + 1, j + 1) * fx * fz
   );
+}
+/** mapgenSceneGround for many points of one scene: its corners read once into a table (the same sums, so the same
+ * heights), for the walk checks that sample every half-metre cell @returns {(x: number, z: number) => number} */
+export function mapgenGroundSampler(sc) {
+  const W1 = sc.w + 1,
+    C = new Float64Array(W1 * (sc.h + 1));
+  for (let j = 0; j <= sc.h; j++) for (let i = 0; i <= sc.w; i++) C[j * W1 + i] = mapgenSceneCorner(sc, i, j);
+  return (x, z) => {
+    const i = mapgenBetween(Math.floor(x), 0, sc.w - 1),
+      j = mapgenBetween(Math.floor(z), 0, sc.h - 1),
+      fx = mapgenBetween(x - i, 0, 1),
+      fz = mapgenBetween(z - j, 0, 1),
+      q = j * W1 + i;
+    return C[q] * (1 - fx) * (1 - fz) + C[q + 1] * fx * (1 - fz) + C[q + W1] * (1 - fx) * fz + C[q + W1 + 1] * fx * fz;
+  };
 }
 /** a scene's exit and the point it stands on (sc.exits, as the game reads it; worked out when missing) */
 export function mapgenExitOf(sc, id) {
