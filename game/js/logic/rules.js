@@ -189,6 +189,7 @@ expose({
   setTrip: [() => setTrip, v => setSetTrip(v)],
   // @ts-expect-error -- replaced on purpose
   spawn: [() => spawn, v => (spawn = v)],
+  speciesStep: [() => speciesStep],
   // @ts-expect-error -- replaced on purpose
   stat: [() => stat, v => (stat = v)],
   // @ts-expect-error -- replaced on purpose
@@ -257,6 +258,11 @@ export function pickWeighted(list, rnd = random) {
 
 /* ---------- state ---------- */
 export const xpFor = L => Math.floor(RULES.progression.xpFactor * L * L * L);
+/** RL-13: how far along its line a species is: 0 a first stage, 1 a middle one, 2 a final form whatever its stage
+ * number (a two-stage line's final is stage 1 and a Billie with no evolutions stage 0, yet both have a final form's
+ * stats: game-data.js). What a level may field and what a Billie costs read this @param {any} S a species (SPECIES) */
+export const speciesStep = S => (!S ? 0 : S.next ? Math.min(1, S.stage) : 2);
+provide({ speciesStep }); /* to-module */
 export const maxLevel = () => RULES.progression.maxLevel,
   moveSlotCount = () => RULES.progression.moveSlots,
   teamSize = () => RULES.progression.teamSize;

@@ -3,7 +3,7 @@
 // default pick the mast and the run sim start with.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { GAME_DATA, data, modules } from './setup-real.mjs';
+import { GAME_DATA, data, fn, modules } from './setup-real.mjs';
 
 const P = modules['starter-points'],
   R = GAME_DATA.rules.run.points,
@@ -18,6 +18,12 @@ test('starter points: a Billie costs by rarity, stage and its levels, within the
   assert.ok(cost('musk1', 5) > cost('musk0', 5));
   assert.ok(cost('musk2', 5) <= R.most);
   for (const sp of Object.keys(SPECIES)) assert.ok(cost(sp, 1) <= R.most, sp);
+  /* RO-2: a final form is priced as one: a two-stage line's final (Sharktank) as a three-stage line's (Aviatorgoose),
+     and a Billie with no evolutions (Altmowl, final-stage stats) as its rarity's final (Gigajenzard) */
+  assert.equal(cost('cuban1', 5), cost('hughes2', 5), 'Sharktank and Aviatorgoose, both common finals');
+  assert.equal(cost('altman0', 5), cost('huang2', 5), 'Altmowl and Gigajenzard, both rare finals');
+  assert.ok(cost('altman0', 5) > cost('huang0', 5), 'Altmowl dearer than Siliclet, a first stage');
+  assert.equal(cost('hughes1', 5), cost('hughes0', 5) + R.stage, 'a middle stage, one step');
   /* levels cost: one more per perLevels above levelsFrom, wherever they came from (the ranch or a won run) */
   assert.equal(cost('musk0', R.levelsFrom + R.perLevels), cost('musk0', R.levelsFrom) + 1);
   assert.equal(cost('musk0', R.levelsFrom + R.perLevels * 5), cost('musk0', R.levelsFrom) + 5);
@@ -91,4 +97,13 @@ test('starter points: the default pick spends the budget, the buddy first, withi
   );
   /* one Billie too dear for the budget: nobody goes (the mast's Take off stays off) */
   assert.deepEqual(P.pointPick([{ sp: 'musk2', lvl: 100, uid: 'big' }], SPECIES, R, 1), []);
+});
+
+test('RL-13: speciesStep: how far along its line a species is (a final form is a final form)', () => {
+  const step = sp => fn('speciesStep')(SPECIES[sp]);
+  assert.deepEqual(['hughes0', 'hughes1', 'hughes2'].map(step), [0, 1, 2], 'a three-stage line');
+  assert.deepEqual(['cuban0', 'cuban1'].map(step), [0, 2], 'a two-stage line: its second stage is its final');
+  assert.equal(step('altman0'), 2, 'a Billie with no evolutions is a final form');
+  assert.equal(step('musk3'), 2, 'a split line: both finals');
+  assert.equal(fn('speciesStep')(undefined), 0);
 });

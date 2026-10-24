@@ -2,7 +2,8 @@
 'use strict';
 /* ================= STARTER POINTS (roguelite track RL-13) =================
    Who may start a run, and what each one costs. Only the Billies at the ranch (the team and storage) can start a run
-   (9.6, 24); each costs points by its line's rarity and its evolution stage, and more for its levels (a Billie
+   (9.6, 24); each costs points by its line's rarity and how far along its line it is (a final form counts as a
+   final form: RO-2's two-stage lines and Billies with no evolutions included), and more for its levels (a Billie
    trained at the ranch, or brought home from a won run, is dearer: the levels are what a run gains, wherever they
    came from). A run's budget is rules.json run.points.budget by Expedition. This replaces RL-9b's "1 Billie from home
    a run" (rules.json run.home); the packed bag (run.pack) is unchanged.
@@ -12,7 +13,7 @@
 /** @typedef {{ sp: string, lvl?: number, uid?: string }} PointBilly */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { runByExpedition } from '../hooks.js';
+import { runByExpedition, speciesStep } from '../hooks.js';
 import { modTypeFits } from './modifiers.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -31,14 +32,14 @@ expose({
 export const pointBudget = (R, expedition) => runByExpedition(R.budget, expedition);
 
 /**
- * What one Billie costs: its line's rarity, `stage` more per evolution stage above the first (together at most
+ * What one Billie costs: its line's rarity, `stage` more per step along its line (rules.js speciesStep; together at most
  * `most`), and one more per `perLevels` levels above `levelsFrom`. An unknown species costs the commonest rarity.
  * @param {PointBilly} m @param {Record<string, Species>} species @param {StarterPointRules} R @returns {number}
  */
 export function pointCost(m, species, R) {
   const S = species[m.sp],
     rarity = Math.min(...Object.values(R.rarity)),
-    base = Math.min(R.most, (S ? (R.rarity[S.rar] ?? rarity) : rarity) + (S ? S.stage : 0) * R.stage),
+    base = Math.min(R.most, (S ? (R.rarity[S.rar] ?? rarity) : rarity) + speciesStep(S) * R.stage),
     over = Math.max(0, (m.lvl || 1) - R.levelsFrom);
   return base + Math.floor(over / R.perLevels);
 }
