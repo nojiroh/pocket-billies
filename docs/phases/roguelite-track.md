@@ -1046,9 +1046,12 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
     Electric → Electric/Psychic, fox parts on a cat head), Woods tiger (Cublet → Tigerwoods, common, Ground →
     Ground/Grass, cat parts), Peacouture (the Arnault peacock, single, rare, Fire/Flying, bird parts, crown and a plume
     fan). Names and bios are drafts for the owner.
-  - **RO-2c:** Huang gecko (Siliclet → Jenzard → Gigajenzard, the Dragon pseudo-legend, Electric → Electric/Dragon),
-    regional forms for the new commons, a balance pass with the run sim (Sharktank's 400, a 2-stage final's middle
-    total; evolution levels against runs that reach about level 13), the full quick check.
+  - **RO-2c** (done 2026-10-24, HANDOFF): Huang gecko (Siliclet → Jenzard → Gigajenzard, the Dragon pseudo-legend,
+    rare, Electric → Electric/Dragon, 20/40), regional forms for the five commons (Harbour, Meatball, Courtside,
+    Livestream, Hazard), each with its own baked kit look because a coat's ramps cannot recolour a kit Billie's tinted
+    sheet, and the balance pass: a line's own `totals` (Cuban 235/515, Yiming and Woods 265/470, Huang 300/420/560),
+    earlier first evolutions (12-16) against the designed level curve, Alta's `woods1`. **The RO-2.. plan is done:
+    40 species.**
   - Later, outside the 40: the critters kit (beetle, spider, snake, frog, crab, octopus) and the hooves kit (horse,
     deer, ox, goat, elephant, camel) open the lines the kits can't make; historic tycoons as legendary or boss
     Billies; an Eevee-style Billie whose evolution follows its parts.
