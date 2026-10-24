@@ -670,6 +670,12 @@
    "dark": 1,
    "wind": 0
   },
+  "town": {
+   "houses": {"cave_house":1},
+   "centre": "well",
+   "fence": "fence_wood",
+   "square": "k"
+  },
   "from": "glimmershaft"
  }
 }
