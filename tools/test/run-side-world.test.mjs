@@ -2,7 +2,7 @@
 // mod), over a few seeds: every scene is made with no generator note and walkable from its hub; the obstacle's place
 // has a north exit into the side's first place, which comes in by its south; the roads join by the seam rules with no
 // gap or step; the obstacle stands on the north road (act 'field', gone once open), the way out at the last place (act
-// 'fieldout', none past an alternate path's own boss), Surf's places are ridden, Rock Smash's a dark walled cave
+// 'fieldout', none past an alternate path's own boss), Surf's places are ridden (its town an islet), Rock Smash's a dark walled cave
 // (RL-R2b) and the main path's in daylight; the first place is closed by its move
 // and every side place meets the side's own species.
 import assert from 'node:assert/strict';
@@ -91,6 +91,21 @@ test("a side area's scenes join the run's and carry its obstacle, way out and ri
         assert.equal(last.length, S.to >= 0 ? 1 : 0, `${where}: the way out`);
         for (const i of S.nodes) {
           assert.equal(!!made[i].ride, !!MOVES[move].ride, `${where}: ride`);
+          // RL-R2b: Surf's town is an islet: the sea round most of its edge, its hub on land, the roads over it dry
+          if (MOVES[move].townLand && map.nodes[i].type === 'town') {
+            const sc = made[i],
+              rim = [
+                ...sc.tiles[0],
+                ...sc.tiles[sc.h - 1],
+                ...sc.tiles.flatMap((/** @type {string} */ r) => [r[0], r[sc.w - 1]]),
+              ];
+            assert.ok(rim.filter(c => c === 'd' || c === 'w').length > rim.length * 0.6, `${where} node ${i}: the sea`);
+            assert.ok(
+              !/[dw]/.test(sc.tiles[Math.floor(sc.hub[1])][Math.floor(sc.hub[0])]),
+              `${where}: the hub on land`
+            );
+            assert.equal(sc.waterKind, 'sea', where);
+          }
           // RL-R2b: Rock Smash's places are a dark cave (the lantern: walk/lighting.js), walled by rock
           if (MOVES[move].biome === 'cave') {
             assert.deepEqual([made[i].dark, made[i].far], [1, 'cave'], `${where} node ${i}: a dark cave`);

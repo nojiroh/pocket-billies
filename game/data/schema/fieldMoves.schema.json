@@ -63,6 +63,10 @@
       "description": "RL-R2b: the map generator's land dials for the side area's places, over the run's (logic/mapgen.js MAPGEN_DEFAULTS.land: Surf's coast water, the cave's rock walls)",
       "type": "object"
      },
+     "townLand": {
+      "description": "RL-R2b: the land dials of the side area's town, over `land` (Surf's islet: water islet)",
+      "type": "object"
+     },
      "ride": {
       "description": "true: its places are ridden (water walkable, you sit on the Water Billie: walk/prop-look.js rideMountItem)",
       "type": "boolean"

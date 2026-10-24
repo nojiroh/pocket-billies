@@ -54,6 +54,8 @@ expose({
   runScenesMake: [() => runScenesMake, v => (runScenesMake = v)],
   runShopId: [() => runShopId],
   // @ts-expect-error -- replaced on purpose
+  runSideLand: [() => runSideLand, v => (runSideLand = v)],
+  // @ts-expect-error -- replaced on purpose
   runWildLevels: [() => runWildLevels, v => (runWildLevels = v)],
   // @ts-expect-error -- replaced on purpose
   runWorldTables: [() => runWorldTables, v => (runWorldTables = v)],
@@ -158,8 +160,8 @@ export function runSceneParams(run, i, scenes, data) {
     props: { ...(dials.props || {}), ...(RUN_BUILDINGS[node.type] || {}) },
     /* RL-R2: a side area's own land (fieldMoves.json `land`: Surf's coast water, walked on by riding; RL-R2b: the
        cave's rock walls) */
-    ...(node.side && fieldMoveOf(map, data) && /** @type {any} */ (fieldMoveOf(map, data)).land
-      ? { land: { ...(dials.land || {}), .../** @type {any} */ (fieldMoveOf(map, data)).land } }
+    ...(node.side && fieldMoveOf(map, data)
+      ? runSideLand(/** @type {any} */ (fieldMoveOf(map, data)), node, dials)
       : {}),
     kind: 'route',
     biome: node.biome || Object.keys(data.biomes)[0],
@@ -172,6 +174,12 @@ export function runSceneParams(run, i, scenes, data) {
     road: { ...(dials.road || {}), exits: exits.map(e => ({ side: e.side, t: e.t, width: 2 })) },
     edges,
   };
+}
+/** RL-R2b: a side place's land dials: the move's `land` over the run's, and a town's `townLand` over both (Surf's
+ * islet) @param {any} M the field move @param {RunMap['nodes'][number]} node @param {any} dials */
+export function runSideLand(M, node, dials) {
+  if (!M.land && !(node.type === 'town' && M.townLand)) return {};
+  return { land: { ...(dials.land || {}), ...(M.land || {}), ...(node.type === 'town' ? M.townLand || {} : {}) } };
 }
 /** TR-2: the debug menu's run mod that gives every place mountains (runSceneParams) */
 export const RUN_MOD_MOUNTAINS = 'dbg_mountains';
