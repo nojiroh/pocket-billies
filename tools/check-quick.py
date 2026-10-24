@@ -210,6 +210,10 @@ def report_unused(P=None):
     # copied back into the game brings its props with it)
     for f in (GAME / 'data' / 'legacy' / 'maps').glob('*.json'):
         placed |= {p['k'] for p in json.loads(f.read_text(encoding='utf-8')).get('props', [])}
+    # RT-1: what a biome's pools name, the map generator places on run scenes (trees, canopy, fences and the rest)
+    for B in (D.get('biomes') or {}).values():
+        for v in B.values():
+            if isinstance(v, dict) and all(isinstance(w, (int, float)) for w in v.values()): placed |= set(v) & set(SY.get('props', {}))
     code = '\n'.join(f.read_text(encoding='utf-8', errors='ignore') for f in list((GAME / 'js').rglob('*.js')) + list((ROOT / 'studio' / 'js').glob('*.js')))
     ctok = set(re.findall(r'[\'"`]([A-Za-z0-9_]+)[\'"`]', code)) | set(re.findall(r'[\'"`]([A-Za-z0-9_]+)[|,]', code))
     props = [k for k in SY.get('props', {}) if k not in placed and k not in ctok]
