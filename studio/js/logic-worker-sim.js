@@ -22,6 +22,7 @@ import * as runStart from '../../game/js/logic/run-start.js';
 import * as runState from '../../game/js/logic/run-state.js';
 import * as saves from '../../game/js/logic/saves.js';
 import * as simCompare from '../../game/js/logic/sim-compare.js';
+import * as starterPoints from '../../game/js/logic/starter-points.js';
 import * as unlocks from '../../game/js/logic/unlocks.js';
 
 /** the simulator's env from the loaded modules (run-sim.js SimEnv) */
@@ -42,6 +43,7 @@ export function simWorkerEnv() {
       'run-state': runState,
       saves,
       'sim-compare': simCompare,
+      'starter-points': starterPoints,
       unlocks,
     },
     logic = Object.assign({}, data, ...Object.values(modules)),

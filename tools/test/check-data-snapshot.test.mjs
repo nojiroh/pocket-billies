@@ -62,7 +62,8 @@ test('check-data: planted rules (battle, run, ranch)', t => {
         run.seamIn = 0;
         run.start.pyramids.nosuchcoin = 1;
         run.start.extra = 1;
-        run.home = [2, 1];
+        run.points.budget = [2, 1];
+        run.points.most = 'five';
         run.healCost = -5;
         run.shop.always.push('nosuchware');
         run.shop.pick['coin:nosuch'] = 1;

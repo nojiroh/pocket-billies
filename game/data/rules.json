@@ -162,7 +162,15 @@
    "pyramids": {"pyramid":5},
    "items": {"potion":2}
   },
-  "home": [1],
+  "points": {
+   "budget": [10],
+   "rarity": {"common":1,"uncommon":2,"starter":2,"rare":3,"mythical":5},
+   "stage": 1,
+   "most": 5,
+   "levelsFrom": 5,
+   "perLevels": 5,
+   "team": 6
+  },
   "pack": [5],
   "healCost": 60,
   "shop": {

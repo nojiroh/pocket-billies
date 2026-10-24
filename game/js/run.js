@@ -3,7 +3,8 @@
    The run loop as the player meets it: starting a run at Copperleaf's airship mast, the checkpoints it saves, a
    reload picking it up where it was, giving up, and the end (the payout screen is run-payout.js). The rules it plays
    by are logic/run-loop.js, logic/run-map.js and logic/run-state.js; the run's world is run-world.js.
-   RL-9b: the start sheet picks who comes from home (the team or storage, rules.json run.home by Expedition) and packs a
+   RL-9b, RL-13: the start sheet picks who comes from home (the team or storage, for starter points: rules.json
+   run.points by Expedition) and packs a
    bag from Copperleaf's (run.pack); the rest stay. Storage stays in Copperleaf during a run (logic/rules.js
    allBillies, toBox, toTeam, addBilly): a Billie caught while
    the party is full waits in runCatch, never in the save (a team of seven can't be saved), until one is released. */
@@ -22,8 +23,9 @@ import {
   runPayoutOpen,
   toast,
 } from './hooks.js';
-import { ITEMS, MODIFIERS, PERKS, PYRAMIDS, RULES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
+import { ITEMS, MODIFIERS, PERKS, PYRAMIDS, RULES, SPECIES, START_NODE, TRAINERS, UNLOCK_DATA } from './game-data.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
+import { pointBudget, pointPick, pointSpend, pointStartable } from './logic/starter-points.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchStop } from './logic/ranch.js';
 import { runByExpedition, runEnd } from './logic/run-state.js';
@@ -230,23 +232,43 @@ function runSeedRoll() {
   for (let k = 0; k < 10; k++) s += A[Math.floor(Math.random() * A.length)];
   return s;
 }
-/** RL-9b: who may come from home: the team, then storage */
+/** RL-9b: who may come from home: the team, then storage (RL-13: the Billies at the ranch, the only ones that can
+    start a run) */
 const runHomeList = () => [...saveData.team, ...saveData.box];
-/** the mast's first pick: the buddy, else the lead, else the first in storage */
-function runPickDefault() {
-  const all = runHomeList(),
-    m = all.find(b => b.uid === saveData.buddy) || all[0];
-  return m ? m.uid : null;
+/** RL-13: the mast's default pick: the dearest Billies the starter points afford, the buddy first
+ * (logic/starter-points.js pointPick) @param {number} [expedition] @param {string[]} [mods] */
+function runPickDefault(expedition = 1, mods = []) {
+  const R = RULES.run.points;
+  return pointPick(runHomeList(), SPECIES, R, pointBudget(R, expedition), { mods }, saveData.buddy).map(m => m.uid);
 }
 /** the start sheet's choice as it stands (uiState.runPick, runPack), kept to what is at home, what the bag holds and
- * the Expedition's counts (rules.json run.home, run.pack): the Billies from home (the default pick when none), the pack
- * and how many things are in it @param {number} [expedition] */
-function runPickNow(expedition = 1) {
+ * the Expedition (rules.json run.points for the starter points, run.pack for the bag): the Billies from home (the
+ * default pick when none), what they cost of the budget, the pack and how many things are in it
+ * @param {number} [expedition] @param {string[]} [mods] */
+function runPickNow(expedition = 1, mods = []) {
   const all = runHomeList(),
-    cap = runByExpedition(RULES.run.home, expedition),
+    PT = RULES.run.points,
+    budget = pointBudget(PT, expedition),
+    cap = PT.team,
     most = runByExpedition(RULES.run.pack, expedition);
-  let home = (uiState.runPick || []).filter(u => all.some(m => m.uid === u)).slice(0, cap);
-  if (!home.length) home = [runPickDefault()].filter(u => !!u);
+  /* RL-13: the pick is kept within the budget, in the order it was made */
+  let home = [];
+  for (const u of uiState.runPick || []) {
+    const m = all.find(b => b.uid === u);
+    if (
+      m &&
+      pointStartable(
+        m,
+        home.map(uid => all.find(b => b.uid === uid)).filter(b => !!b),
+        SPECIES,
+        PT,
+        budget,
+        { mods }
+      ).ok
+    )
+      home.push(u);
+  }
+  if (!home.length) home = runPickDefault(expedition, mods);
   const pack = { items: {}, pyramids: {} };
   let n = 0;
   for (const kind of ['items', 'pyramids'])
@@ -256,13 +278,14 @@ function runPickNow(expedition = 1) {
       pack[kind][k] = take;
       n += take;
     }
-  return { home, pack, n, cap, most };
+  const picked = home.map(u => all.find(b => b.uid === u)).filter(b => !!b);
+  return { home, pack, n, cap, most, budget, spent: pointSpend(picked, SPECIES, PT) };
 }
-/** a card tapped: that Billie comes (with one place, in place of the one picked; with more, in or out) */
+/** a card tapped: that Billie comes, or stops coming (RL-13: within the starter points; one that doesn't fit is
+    left out by runPickNow) */
 function runPickTap(uid) {
   const P = runPickNow();
-  uiState.runPick =
-    P.cap === 1 ? [uid] : P.home.includes(uid) ? P.home.filter(u => u !== uid) : [...P.home, uid].slice(-P.cap);
+  uiState.runPick = P.home.includes(uid) ? P.home.filter(u => u !== uid) : [...P.home, uid];
   runStartSheet();
 }
 /** a pack row's − or +: one thing more or less of it, within what the bag holds and the pack's room */
@@ -302,7 +325,7 @@ export function runStartSheet() {
       return `<div class="bag-row k-card run-pack-row"><span class="bag-ic">${icon}</span><span class="bag-t"><b>${escapeHtml(name)}</b><small>${formatNumber(have)} in the bag</small></span><button class="pb" data-pk="${kind}" data-k="${escapeHtml(k)}" data-d="-1" aria-label="One ${escapeHtml(name)} less"${n ? '' : ' disabled'}>−</button><b class="bag-n tnum">${n}</b><button class="pb" data-pk="${kind}" data-k="${escapeHtml(k)}" data-d="1" aria-label="One ${escapeHtml(name)} more"${n < have && P.n < P.most ? '' : ' disabled'}>+</button></div>`;
     },
     trained = P.home.filter(trains);
-  const html = `<p>The airship flies you out to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p><h3>Who comes from home</h3><p class="note">${plural(P.cap, 'Billie')} from home at Expedition I. The rest stay at the ranch; on the run you catch wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>The airship adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Research.</p>`;
+  const html = `<p>The airship flies you out to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p><h3>Who comes from home</h3><p class="note">${P.spent} of ${P.budget} starter points spent. The rest stay at the ranch; on the run you catch wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>The airship adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Research.</p>`;
   const was = uiState.modal && uiState.modal.cls === 'fly-sheet run-start' ? uiState.modal : null,
     sheet = document.querySelector('#ov .sheet'),
     body = document.querySelector('#ov .sheet .body'),
@@ -359,7 +382,7 @@ export function runStartSheet() {
  */
 export function runTakeOff(seed, map, mods, pick) {
   if (!runStartable()) return;
-  const P = pick || { home: [runPickDefault()].filter(u => !!u), pack: { items: {}, pyramids: {} } };
+  const P = pick || { home: runPickDefault(), pack: { items: {}, pyramids: {} } };
   if (!P.home.length) return;
   uiState.runPick = uiState.runPack = null;
   closeModal();

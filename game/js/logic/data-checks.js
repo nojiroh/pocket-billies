@@ -304,7 +304,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'wild',
   'seamIn',
   'start',
-  'home',
+  'points',
   'pack',
   'healCost',
   'shop',
@@ -444,13 +444,13 @@ export function dataRunLoop(D) {
         if (!(D.items || {})[k] || !whole(n, 0, 999))
           problem('rules.json', `run.start.items.${k}: no such item, or not a whole count`);
     }
-    // RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): Billies from home a run takes (1-6, never fewer
-    // than the Expedition before) and the things packed from Copperleaf's bag (0-99 items and pyramids in all)
+    // RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): the things packed from Copperleaf's bag
+    // (0-99 items and pyramids in all); RL-13: the starter points' budget (1-99), never less than the Expedition before
     for (const [k, lo, hi, what] of [
-      ['home', 1, 6, 'Billies from home'],
       ['pack', 0, 99, 'things packed'],
+      ['points.budget', 1, 99, 'starter points'],
     ]) {
-      const L = R[k];
+      const L = k === 'points.budget' ? R.points && R.points.budget : R[k];
       if (
         !Array.isArray(L) ||
         L.length < 1 ||
@@ -461,6 +461,22 @@ export function dataRunLoop(D) {
           'rules.json',
           `run.${k} is not a list of 1-9 whole numbers (${what}, ${lo}-${hi}), one a Expedition, none fewer than the one before`
         );
+    }
+    // RL-13: starter points (logic/starter-points.js): a cost per rarity (rarities.json), the stage step, the cap, the
+    // levels that cost more and how many Billies may go
+    const PT = R.points;
+    if (!rec(PT)) problem('rules.json', 'run.points: the starter points (budget, rarity, stage, most, ...) are needed');
+    else {
+      only(PT, ['budget', 'rarity', 'stage', 'most', 'levelsFrom', 'perLevels', 'team'], 'run.points');
+      if (!rec(PT.rarity) || !Object.keys(D.rarities || {}).every(r => whole(PT.rarity[r], 0, 20)))
+        problem('rules.json', 'run.points.rarity: a whole cost from 0 to 20 for each rarity (rarities.json)');
+      for (const r of Object.keys(PT.rarity || {}))
+        if (!(D.rarities || {})[r]) problem('rules.json', `run.points.rarity.${r}: no such rarity (rarities.json)`);
+      if (!whole(PT.stage, 0, 20) || !whole(PT.most, 1, 40))
+        problem('rules.json', 'run.points.stage (0-20) and most (1-40) are not whole costs');
+      if (!whole(PT.levelsFrom, 1, 100) || !whole(PT.perLevels, 1, 100))
+        problem('rules.json', 'run.points.levelsFrom and perLevels are not whole levels from 1 to 100');
+      if (!whole(PT.team, 1, 6)) problem('rules.json', 'run.points.team is not a whole number of Billies from 1 to 6');
     }
     if (!whole(R.healCost, 0, 100000))
       problem('rules.json', 'run.healCost is not a whole number of Moneys (0-100,000)');

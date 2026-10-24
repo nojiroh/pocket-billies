@@ -987,10 +987,12 @@ export interface Rules {
     seamIn: number;
     /** RL-8: what a run starts with, besides the Billies from home and the packed bag: its money, pyramids and items (placeholders) */
     start: { se: number; pyramids: Record<string, number>; items: Record<string, number> };
-    /** RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): how many Billies from home a run takes, and
-        how many items and pyramids (in all) are packed from Copperleaf's bag at the mast (placeholders) */
-    home: number[];
+    /** RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): how many items and pyramids (in all) are
+        packed from Copperleaf's bag at the mast (placeholders) */
     pack: number[];
+    /** RL-13: starter points: what a Billie at the ranch costs to take on a run, and the budget by Expedition
+        (placeholders for the sim; logic/starter-points.js) */
+    points: StarterPointRules;
     /** RL-8: a run town's clinic: $ per hurt Billie (free in the hub) */
     healCost: number;
     /** RL-8: a run town's shop: `always` on sale, then `more` wares a day drawn by weight from `pick` (an item id, or
@@ -1016,6 +1018,24 @@ export interface Rules {
   };
   /** roguelite track RL-9: the ranch (logic/ranch.js). Placeholders until the owner has played it */
   ranch: RanchRules;
+}
+
+/** RL-13: rules.json run.points: a Billie's cost in starter points and the budget a run has (logic/starter-points.js) */
+export interface StarterPointRules {
+  /** the points to spend, by Expedition (index 0 = Expedition I; past the end, the last) */
+  budget: number[];
+  /** the base cost by the line's rarity */
+  rarity: Record<string, number>;
+  /** more per evolution stage above the first */
+  stage: number;
+  /** the most the base cost (rarity and stage) can come to */
+  most: number;
+  /** levels above this cost extra */
+  levelsFrom: number;
+  /** one point more per this many levels above levelsFrom */
+  perLevels: number;
+  /** the most Billies a run can start with */
+  team: number;
 }
 
 /** rules.json ranch: training between runs (logic/ranch.js) */
