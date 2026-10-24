@@ -149,6 +149,8 @@ function runLabPlan(D) {
       unlockData: { unlocks: D.unlocks || {}, buildings: D.buildings || {} },
       /* RL-R1: the run's region (its zones decide the map's rows) */
       region: D.regions && D.regions.themes ? runRegionData(D, D.trainers || {}) : undefined,
+      /* RL-R2b: the field moves, so the plan has the run's side area as the game's does */
+      fieldMoves: D.fieldMoves && D.fieldMoves.moves,
     };
     const plan = runStartPlan(runLab.seed, data, {
       unlocks: runLabUnlocks(D),
@@ -167,24 +169,37 @@ const RUN_LAB_TYPE_COLOUR = { landing: '#2a7', route: '#557', town: '#c80', mini
 /** the map as SVG @param {any} D @param {any} plan @param {boolean} pickable */
 function runLabSvg(D, plan, pickable) {
   const nodes = plan.map.nodes,
+    S = plan.map.side,
+    main = nodes.filter(n => !n.side),
     rows = Math.max(...nodes.map(n => n.row)) + 1,
+    /* RL-R2b: a side area's places in a band of their own above the main path (north, as on the world map); a
+       detour's share one row, so they are spread out from half way after the obstacle's row */
+    top = S ? 44 : 0,
     X = r => 30 + r * 64,
-    Y = n => (nodes.filter(m => m.row === n.row).length === 1 ? 60 : n.lane === 0 ? 92 : 28),
-    w = X(rows - 1) + 30;
-  const links = nodes
-    .flatMap((n, i) =>
-      n.to.map(j => `<line x1="${X(n.row)}" y1="${Y(n)}" x2="${X(nodes[j].row)}" y2="${Y(nodes[j])}" class="rl-link"/>`)
-    )
-    .join('');
+    XN = (/** @type {any} */ n) => {
+      const k = S && n.side ? S.nodes.indexOf(nodes.indexOf(n)) : -1;
+      return k >= 0 && S.kind === 'detour' ? X(n.row - 1) + 32 + k * 40 : X(n.row);
+    },
+    Y = n => (n.side ? 24 : top + (main.filter(m => m.row === n.row).length === 1 ? 60 : n.lane === 0 ? 92 : 28)),
+    w = X(rows - 1) + 30,
+    h = 120 + top;
+  const line = (/** @type {any} */ a, /** @type {any} */ b, cls = 'rl-link') =>
+    `<line x1="${XN(a)}" y1="${Y(a)}" x2="${XN(b)}" y2="${Y(b)}" class="${cls}"/>`;
+  const links =
+    nodes.flatMap(n => n.to.map(j => line(n, nodes[j]))).join('') +
+    (S
+      ? line(nodes[S.from], nodes[S.nodes[0]], 'rl-link rl-side-in') +
+        (S.to >= 0 ? line(nodes[S.nodes[S.nodes.length - 1]], nodes[S.to], 'rl-link rl-side-out') : '')
+      : '');
   const dots = nodes
     .map((n, i) => {
       const T = D.nodeTypes[n.type] || {},
         letter = escapeHtml((T.name || n.type || '?').slice(0, 1).toUpperCase()),
         ring = n.seen >= 2 ? '' : n.seen === 1 ? ' stroke-dasharray="3 3"' : ' stroke-opacity=".35"';
-      return `<g class="rl-node${pickable && runLab.pick === i ? ' on' : ''}"${pickable ? ` data-act="runLabPick" data-i="${i}"` : ''} data-type="${escapeHtml(n.type)}" data-biome="${escapeHtml(n.biome || '')}"><title>${i}: ${escapeHtml(T.name || n.type)}, ${escapeHtml((D.biomes[n.biome] || {}).name || n.biome || '')}</title><circle cx="${X(n.row)}" cy="${Y(n)}" r="17" fill="${runLabBiomeColour(D, n.biome)}" stroke="${RUN_LAB_TYPE_COLOUR[n.type] || '#333'}" stroke-width="4"${ring}/><text x="${X(n.row)}" y="${Y(n) + 5}" text-anchor="middle">${letter}</text></g>`;
+      return `<g class="rl-node${pickable && runLab.pick === i ? ' on' : ''}"${pickable ? ` data-act="runLabPick" data-i="${i}"` : ''} data-type="${escapeHtml(n.type)}" data-biome="${escapeHtml(n.biome || '')}"${n.side ? ' data-side="1"' : ''}><title>${i}: ${escapeHtml(T.name || n.type)}, ${escapeHtml((D.biomes[n.biome] || {}).name || n.biome || '')}</title><circle cx="${XN(n)}" cy="${Y(n)}" r="17" fill="${runLabBiomeColour(D, n.biome)}" stroke="${RUN_LAB_TYPE_COLOUR[n.type] || '#333'}" stroke-width="4"${ring}/><text x="${XN(n)}" y="${Y(n) + 5}" text-anchor="middle">${letter}</text></g>`;
     })
     .join('');
-  return `<svg class="rl-map" viewBox="0 0 ${w} 120" width="${w}" height="120" role="img" aria-label="The run's map">${links}${dots}</svg>`;
+  return `<svg class="rl-map" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="The run's map">${links}${dots}</svg>`;
 }
 
 /** a map's figures in a line @param {any} D @param {any} plan */
@@ -196,7 +211,12 @@ function runLabFigures(D, plan) {
       .map(([k, v]) => `${v} ${escapeHtml(k)}`)
       .join(', ');
   };
-  return `${plan.map.nodes.length} places: ${count(n => (D.nodeTypes[n.type] || {}).name || n.type)}. Biomes: ${count(n => (D.biomes[n.biome] || {}).name || n.biome)}.`;
+  const S = plan.map.side,
+    M = S && D.fieldMoves && D.fieldMoves.moves ? D.fieldMoves.moves[S.move] : null,
+    side = S
+      ? ` Side area: ${escapeHtml(S.name)}, ${S.kind === 'detour' ? 'a detour' : 'an alternate path'} of ${S.nodes.length} behind ${escapeHtml(M ? M.name : S.move)}${S.to < 0 ? ', ending at its own boss' : ''}.`
+      : ' No side area.';
+  return `${plan.map.nodes.length} places: ${count(n => (D.nodeTypes[n.type] || {}).name || n.type)}. Biomes: ${count(n => (D.biomes[n.biome] || {}).name || n.biome)}.${side}`;
 }
 
 /** what a clicked node is @param {any} D @param {any} plan @param {string[]} roles @param {number} i */
@@ -208,7 +228,11 @@ function runLabNodeHTML(D, plan, roles, i) {
     B = D.biomes[n.biome] || {},
     name = (/** @type {number} */ j) =>
       `${j} (${escapeHtml((D.nodeTypes[map.nodes[j].type] || {}).name || map.nodes[j].type)})`,
-    back = runBack(map, i),
+    /* RL-R2b: a side place is reached from the obstacle's place (its first) or the one before it in the chain */
+    back =
+      n.side && map.side
+        ? [map.side.nodes.indexOf(i) > 0 ? map.side.nodes[map.side.nodes.indexOf(i) - 1] : map.side.from]
+        : runBack(map, i),
     days = (plan.forecast[runWorldNode(i)] || []).map((w, d) => `day ${d + 1}: ${escapeHtml(w)}`).join(', '),
     shown = ['not shown', 'shown as ?', 'shown with its type'][n.seen || 0];
   const row = (/** @type {string} */ k, /** @type {string} */ v) => `<tr><th>${k}</th><td>${v}</td></tr>`;
@@ -217,12 +241,30 @@ function runLabNodeHTML(D, plan, roles, i) {
     row('Type', `${escapeHtml(T.name || n.type)} <small class="mono">${escapeHtml(n.type)}</small>`),
     row(
       'Row',
-      `${n.row + 1} of ${roles.length}, lane ${n.lane}: ${RUN_LAB_ROLE[roles[n.row]] || escapeHtml(roles[n.row])}`
+      n.side
+        ? `${n.row + 1} of ${roles.length}, in the side area`
+        : `${n.row + 1} of ${roles.length}, lane ${n.lane}: ${RUN_LAB_ROLE[roles[n.row]] || escapeHtml(roles[n.row])}`
     ),
     row(
       'Biome',
       `${escapeHtml(B.name || n.biome || '')} <small class="mono">${escapeHtml(n.biome || '')}</small>, ${escapeHtml(B.climate || 'mild')}`
     ),
+    ...(map.side && (n.side || map.side.from === i)
+      ? [
+          row(
+            'Side area',
+            `${escapeHtml(map.side.name)}, behind ${escapeHtml(((D.fieldMoves || {}).moves || {})[map.side.move]?.name || map.side.move)}: ${
+              map.side.from === i
+                ? `its obstacle stands on this place's north road, the way in to ${name(map.side.nodes[0])}`
+                : map.side.nodes[map.side.nodes.length - 1] === i
+                  ? map.side.to >= 0
+                    ? `its last place; the way out leads (one way) to ${name(map.side.to)}`
+                    : 'its last place, at its own boss'
+                  : `place ${map.side.nodes.indexOf(i) + 1} of ${map.side.nodes.length}`
+            }`
+          ),
+        ]
+      : []),
     row('Leads to', n.to.map(name).join(', ') || 'nothing (the end)'),
     row('Reached from', back.map(name).join(', ') || 'Copperleaf (the airship)'),
     row('Day', `day ${n.row + 1} on the shortest walk`),

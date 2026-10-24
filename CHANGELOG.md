@@ -54,6 +54,15 @@ kept aside in the browser).
   leader of its own) with Billies the region doesn't have, and a one-way way out back to the main path. A rarer
   **alternate path** runs beside the main one with its own mini-boss, and now and then ends at a boss of its own.
   **Badges are kept for good**: the first win over a leader of a type keeps its badge, shown on the trainer card.
+- **Caves, an islet and the way back** (roguelite track RL-R2, part 2): behind Rock Smash's boulder is now a real
+  **cave**: rock walls all round, a rock and crystal floor, stalagmites, glowing crystals and mushrooms, dripping water
+  and the cave song, dark enough that you carry a lantern (the dark eases in as you walk through the cave mouth).
+  Surf's town is an **islet**: the sea all round, crossed by sandy causeways. Taking a side area's one-way way out now
+  plays a short moment, Pokémon's way: the picture dips to dark with a few words ("Swept along by the current…") and
+  you are back on the main path.
+- **The Studio's Run Lab** shows a run's side area in a band above the main path, with its way in and its one-way way
+  out, and says what it is; the run preview and the run simulator have it too (the simulator's `--badges=all` lets its
+  bot open it). The map generator has a new **Islet** water.
 - **No more deadline on a run**: the day still counts (the forecast, the shops' stock) but nothing is late. The day
   chip shows the day alone and the run songs lose their deadline version.
 - Encounters on a run (roguelite track RL-12b, part 1):

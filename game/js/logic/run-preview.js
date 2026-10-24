@@ -7,7 +7,8 @@
    - each town's and stall's (RL-12b) stock on every day from the first it can be reached (its row + 1) to RUN_PREVIEW_LATE days past the
      shortest walk's last day (runShopStock with
      the run's shop unlocks, as shop.js opens it) and its shelf's Perk that day (perkShelf);
-   - each place's wild table (run-scenes.js runWorldTables: its biome's pool at its row's levels);
+   - each place's wild table (run-scenes.js runWorldTables: its biome's pool at its row's levels), the side area's
+     places too (RL-R2b: map.side, from the field moves as run-world.js passes them);
    - each waystation's event (RL-12b: encounters.js eventAt, with none played yet);
    - the Perk picks after each mini-boss row, in order (perkOfferMake), with nothing held.
    Held Perks change the shelves and the picks; the preview holds none. The Studio's Run Lab asks for it through its
@@ -15,7 +16,18 @@
    would read the Studio's data as the game's (tools/test/run-preview.test.mjs compares it with the game's own path).
    Logic only: no DOM, no Date, no Math.random. */
 /** @import { Run, RunMap } from '../../types/save-data' */
-import { EVENTS, POOLS, NODE_TYPES, PERKS, RULES, START_NODE, TRAINERS, UNLOCK_DATA, gameData } from '../game-data.js';
+import {
+  EVENTS,
+  FIELD_MOVES,
+  POOLS,
+  NODE_TYPES,
+  PERKS,
+  RULES,
+  START_NODE,
+  TRAINERS,
+  UNLOCK_DATA,
+  gameData,
+} from '../game-data.js';
 import { MAPGEN_VERSION } from './mapgen.js';
 import { perkOfferMake, perkShelf } from './perks.js';
 import { runFoes, runShopStock } from './run-loop.js';
@@ -37,6 +49,8 @@ const runPreviewData = () => ({
   scenery: gameData.scenery,
   rules: RULES.run,
   region: runRegionData(gameData, TRAINERS),
+  /* RL-R2b: the field moves, so a preview has the run's side area as the game does */
+  fieldMoves: FIELD_MOVES,
 });
 
 /**

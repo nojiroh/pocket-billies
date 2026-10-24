@@ -124,6 +124,7 @@ test('check-data: planted field moves and side areas (RL-R2)', t => {
       'fieldMoves.json': F => {
         F.moves.surf.type = 'Plasma';
         F.moves.smash.biome = 'nosuchbiome';
+        // RL-R2b: a side area's biome may be one no region draws (the cave), so any biomes.json biome is fine
         F.moves.cut.biome = 'volcano';
       },
       'rules.json': R => {

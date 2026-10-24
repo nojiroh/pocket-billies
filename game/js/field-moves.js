@@ -9,7 +9,8 @@
    way north opens (run.map.side.open; until then the seam turns you back with the obstacle's words: logic/rules.js
    gateText).
    At the side area's last place its way out (act 'fieldout') takes you back to the main path's next row, a day as any
-   arrival (logic/run-map.js runArrive, one way). */
+   arrival (logic/run-map.js runArrive, one way); RL-R2b: as a moment, the picture dipping to dark with the move's
+   words on it (fieldMoves.json `travel`) and fading in on the main path. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, render, toast } from './hooks.js';
@@ -26,6 +27,8 @@ import { talkBox, talkChoose, talkHide, talkLine } from './talk.js';
 import { runWorldData } from './run-world.js';
 /* eslint-disable no-func-assign */
 expose({
+  FIELD_TRAVEL_MS: [() => FIELD_TRAVEL_MS],
+  fieldBackToast: [() => fieldBackToast],
   fieldBadgeLine: [() => fieldBadgeLine, v => ((fieldBadgeLine = v), provide({ fieldBadgeLine }))],
   fieldMoveBurst: [() => fieldMoveBurst, v => (fieldMoveBurst = v)],
   fieldMoveOpen: [() => fieldMoveOpen, v => (fieldMoveOpen = v)],
@@ -34,6 +37,7 @@ expose({
   fieldTeam: [() => fieldTeam],
   fieldWayOut: [() => fieldWayOut, v => (fieldWayOut = v)],
   fieldWayOutGo: [() => fieldWayOutGo, v => (fieldWayOutGo = v)],
+  fieldWayOutTravel: [() => fieldWayOutTravel, v => (fieldWayOutTravel = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ fieldBadgeLine });
@@ -121,15 +125,64 @@ export async function fieldWayOut() {
   await talkLine('me', out, null);
   const yes = (await talkChoose([{ text: 'Yes' }, { text: 'No' }])) === 0;
   talkHide();
-  if (yes) fieldWayOutGo();
+  if (yes) await fieldWayOutTravel();
 }
-/** follow the way out: back on the main path's next row (logic/run-map.js runArrive: a day, one way) */
-export function fieldWayOutGo() {
+/** RL-R2b: how long the way out's moment takes (ms): the dip to dark, the hold with the move's words on it, the
+ * fade back in on the main path */
+const FIELD_TRAVEL_MS = { dip: 450, hold: 1100, rise: 650 };
+/** RL-R2b: the way out as a moment, Pokémon's way (no sheet): the picture dips to dark, the move's own sound and a
+ * few words on the dark ("Swept along by the current..."), and it fades in again on the main path (fieldWayOutGo,
+ * done behind the dark). Reduced motion: a quick fade alone */
+async function fieldWayOutTravel() {
   const F = fieldSideHere();
   if (!F) return;
+  const cv = walkView.cv;
+  if (!cv || !cv.isConnected) return fieldWayOutGo();
+  const quick = reducedMotion,
+    T = quick ? { dip: 120, hold: 0, rise: 160 } : FIELD_TRAVEL_MS,
+    r = cv.getBoundingClientRect(),
+    v = document.createElement('div');
+  v.id = 'fieldVeil';
+  v.style.cssText =
+    'position:fixed;pointer-events:none;background:black;z-index:6;opacity:0;display:flex;align-items:center;' +
+    'justify-content:center;color:white;font:inherit;letter-spacing:.04em;text-align:center;padding:0 24px';
+  Object.assign(v.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+  document.body.appendChild(v);
+  const wait = (/** @type {number} */ ms) => new Promise(res => setTimeout(res, ms)),
+    /* a fade's end (its transitionend; at most twice its time, so a busy page never holds it) */
+    faded = (/** @type {number} */ ms) =>
+      new Promise(res => {
+        const done = () => (v.removeEventListener('transitionend', done), res(0));
+        v.addEventListener('transitionend', done);
+        setTimeout(done, ms * 2 + 50);
+      }),
+    painted = () => new Promise(res => requestAnimationFrame(() => requestAnimationFrame(() => res(0))));
+  void v.offsetWidth;
+  v.style.transition = `opacity ${T.dip}ms ease-in`;
+  v.style.opacity = '1';
+  if (typeof soundEffect === 'function') soundEffect(F.M.obstacle === 'boulder' ? 'rumble' : 'whoosh');
+  await faded(T.dip);
+  /* the words on the dark, drawn before the main path's place is built behind it (that can hold the page a moment) */
+  if (!quick && F.M.travel) v.textContent = F.M.travel;
+  await painted();
+  const t0 = performance.now(),
+    back = fieldWayOutGo(true);
+  await wait(Math.max(0, T.hold - (performance.now() - t0)));
+  v.textContent = '';
+  v.style.transition = `opacity ${T.rise}ms ease-out`;
+  v.style.opacity = '0';
+  await faded(T.rise);
+  v.remove();
+  if (back) fieldBackToast();
+}
+/** follow the way out: back on the main path's next row (logic/run-map.js runArrive: a day, one way); `quiet`: no
+ * toast (the moment says it once the picture is back) @param {boolean} [quiet] */
+export function fieldWayOutGo(quiet) {
+  const F = fieldSideHere();
+  if (!F) return false;
   if (!runArrive(saveData, F.S.to, runWorldData())) {
     toast('That way isn’t open from here.');
-    return;
+    return false;
   }
   saveData.visited[saveData.trip.node] = 1;
   saveData.mapSeen = null;
@@ -137,8 +190,10 @@ export function fieldWayOutGo() {
   saveNow();
   if (typeof debugLog !== 'undefined') debugLog.add('scene', `the way out of the side area: day ${saveData.run.clock}`);
   render();
-  toast(`Back on the main path: ${LOCATIONS[saveData.trip.node].name}.`);
+  if (!quiet) fieldBackToast();
+  return true;
 }
+const fieldBackToast = () => toast(`Back on the main path: ${LOCATIONS[saveData.trip.node].name}.`);
 /** a badge kept for good (battle.js endBattle, after a run leader's first win): the sheet's line, and what it opens */
 function fieldBadgeLine(type) {
   const M = Object.values(FIELD_MOVES).find(x => x.type === type);
