@@ -156,9 +156,10 @@ export function runSceneParams(run, i, scenes, data) {
       : {}),
     /* RL-8: the buildings a node's type needs, beside the main road near its middle (mapgen's props dials: MG-2) */
     props: { ...(dials.props || {}), ...(RUN_BUILDINGS[node.type] || {}) },
-    /* RL-R2: a ridden side area (Surf): water along a side, walked on by riding */
-    ...(node.side && fieldMoveOf(map, data) && /** @type {any} */ (fieldMoveOf(map, data)).ride
-      ? { land: { ...(dials.land || {}), water: 'coast', waterAmount: 0.6 } }
+    /* RL-R2: a side area's own land (fieldMoves.json `land`: Surf's coast water, walked on by riding; RL-R2b: the
+       cave's rock walls) */
+    ...(node.side && fieldMoveOf(map, data) && /** @type {any} */ (fieldMoveOf(map, data)).land
+      ? { land: { ...(dials.land || {}), .../** @type {any} */ (fieldMoveOf(map, data)).land } }
       : {}),
     kind: 'route',
     biome: node.biome || Object.keys(data.biomes)[0],

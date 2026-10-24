@@ -7,6 +7,7 @@
    "obstacle": "shore",
    "biome": "lake",
    "ride": true,
+   "land": {"water":"coast","waterAmount":0.6},
    "areas": ["Sunken Cove","Lost Lagoon","Unsubscribed Shallows"],
    "look": "The water is calm and deep. Something glints on the far side.",
    "needBadge": "The water is calm and deep. With the {badge}, a Water Billie could carry you across.",
