@@ -596,6 +596,16 @@ export function dataBiomes(D, valid = () => true) {
       for (const pool of ['trees', 'shrubs', 'plants', 'rocks', 'waterPlants', 'tall'])
         for (const k of Object.keys(B[pool] || {})) if (!props[k]) problem('biomes.json', `${b}.${pool}: no prop ${k}`);
       for (const L of B.life || []) if (!life[L.k]) problem('biomes.json', `${b}.life: no animal ${L.k}`);
+      /* TW-1: a run town's props are real, its houses have a door and a footprint, its square a real ground */
+      if (B.town) {
+        for (const k of Object.keys(B.town.houses))
+          if (!props[k]) problem('biomes.json', `${b}.town.houses: no prop ${k}`);
+          else if (!props[k].box || !props[k].door) problem('biomes.json', `${b}.town.houses: ${k} has no box or door`);
+        for (const f of ['centre', 'fence', 'lamp', 'bench'])
+          if (B.town[f] && !props[B.town[f]]) problem('biomes.json', `${b}.town.${f}: no prop ${B.town[f]}`);
+        if (B.town.square && !terr[B.town.square])
+          problem('biomes.json', `${b}.town.square: no terrain "${B.town.square}" (scenery.json terrains)`);
+      }
     }
   }
   return out;

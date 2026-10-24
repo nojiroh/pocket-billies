@@ -1607,11 +1607,14 @@ def library_swap_steps(pg, errs):
 
 
 def repack_steps(pg, errs):
-    """Studio plan Phase 5 (T5.4): Repack sheet on a hand-drawn species (huang0): the sheet gets smaller, both views are
+    """Studio plan Phase 5 (T5.4): Repack sheet on a hand-drawn rig (the first rig that is not a kit Billie: since RO-2c
+    every game species is one, so a legacy rig): the sheet gets smaller, both views are
     drawn pixel for pixel as before (neutral pose, every face), it is one undo step and undo puts the sheet and rig
     back; on a kit Billie it refuses (the recipe packs its sheet)."""
     n = len(errs)
-    sp = 'huang0'
+    sp = pg.evaluate("Object.keys(studioState.rigs).sort().find(s => !kitFormOf(s) && studioState.rigs[s].front && studioState.rigs[s].back) || ''")
+    if not sp:
+        errs.append('repack: no hand-drawn rig left to repack'); return
     pg.evaluate(f"wbPart.src = 'species'; wbPart.sp = {json.dumps(sp)}; wbPart.id = 'head'; workbench.mode = 'part'; void openSection('workbench')")
     pg.wait_for_selector('[data-act=wbsRepack]', timeout=20000); time.sleep(0.8)
     drawn = f"""(async () => {{ const out = []; for (const v of ['front', 'back']) {{ await atlasGet(atlasPath({json.dumps(sp)}, v));
@@ -1654,7 +1657,8 @@ def density_steps(pg, errs):
       return { rows: rows.length, kit: rows.filter(t => t.children[6].textContent.includes('×')).length, text: document.querySelector('#dlg .dlg-body').textContent }; })()""")
     want = pg.evaluate("Object.keys(densityHeights(studioState.D.lines)).filter(sp => studioState.rigs[sp]).length")
     if r['rows'] != want: errs.append(f"the report has {r['rows']} rows, not one per Billie with a rig ({want})")
-    if r['kit'] != 24: errs.append(f"the report shows {r['kit']} kit Billies, not 24")
+    kits = pg.evaluate("Object.keys(densityHeights(studioState.D.lines)).filter(sp => studioState.rigs[sp] && kitFormOf(sp)).length")
+    if r['kit'] != kits: errs.append(f"the report shows {r['kit']} kit Billies, not {kits}")
     if 'S 0.85 and L 1.2' not in r['text']: errs.append('the report does not name the S and L sizes')
     pg.locator('#dlg button', has_text='Close').click()
     if len(errs) > n: errs[n:] = [f'density: {e}' for e in errs[n:]]

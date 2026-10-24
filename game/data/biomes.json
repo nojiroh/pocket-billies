@@ -52,6 +52,12 @@
   "waterPlants": {"iris_yellow":4,"iris_purple":2,"water_mint":1,"marsh_marigold":1},
   "tall": {"tallgrass":4,"tallgrass_c":4,"tallgrass_b":3},
   "look": {"sky":["#8CC6E6","#BFE3EE","#F4E8C8"],"haze":"#EAD9C0","hazeD":34,"amb":"pollen","far":"hills","farH":8},
+  "town": {
+   "houses": {"house_red":3,"house_blue":2,"house_green":2,"house_cottage":3,"cottage_solar":2},
+   "centre": "well",
+   "fence": "picket_fence",
+   "square": "c"
+  },
   "life": [
    {"k":"rabbit","n":4}
   ],
@@ -110,6 +116,12 @@
   "waterPlants": {"bulrush":4},
   "tall": {"tallgrass":4,"tallgrass_b":4,"tallgrass_c":3},
   "look": {"sky":["#7FB8D8","#B3D9E6","#E2E8C8"],"haze":"#C9D8B8","hazeD":28,"amb":"spore","rays":1,"far":"forest","farH":8},
+  "town": {
+   "houses": {"cottage_moss":4,"house_cottage":3,"house_green":2},
+   "centre": "well",
+   "fence": "fence_wood",
+   "square": "u"
+  },
   "life": [
    {"k":"squirrel","n":3},
    {"k":"frog","n":2},
@@ -170,6 +182,12 @@
   "waterPlants": {"iris_yellow":4,"marsh_marigold":4,"water_mint":2,"bulrush":2,"iris_purple":2,"lotus_pink":1,"lilypad":1},
   "tall": {"tallgrass_c":4,"tallgrass_b":3,"tallgrass":2},
   "look": {"sky":["#88C4E4","#BEE2EC","#F2EACB"],"haze":"#DCE6D0","hazeD":34,"amb":"pollen","rays":1,"far":"forest","farH":8},
+  "town": {
+   "houses": {"house_blue":3,"cottage_solar":3,"house_cottage":2,"townhouse_yellow":1},
+   "centre": "fountain",
+   "fence": "picket_fence",
+   "square": "c"
+  },
   "life": [
    {"k":"duck","n":6},
    {"k":"frog","n":4},
@@ -210,6 +228,12 @@
   "rocks": {"stones_flat":4,"scree":4,"boulder_lichen":2,"rocks":2,"rocks_b":2,"rocks_c":1,"rocks_snow":1,"boulder":1},
   "tall": {"tallgrass_c":4,"tallgrass":3,"tallgrass_b":2},
   "look": {"sky":["#8CC2E2","#D6E6E4","#F6E2BE"],"haze":"#F0D9B2","hazeD":42,"amb":"sand","far":"canyon","farH":8},
+  "town": {
+   "houses": {"townhouse_red":3,"house_red":2,"cottage_solar":2},
+   "centre": "well",
+   "fence": "fence_wood",
+   "square": "Y"
+  },
   "life": [
    {"k":"lizard","n":4}
   ],
@@ -257,6 +281,12 @@
    "rays": 1,
    "far": "volcano",
    "farH": 10
+  },
+  "town": {
+   "houses": {"townhouse_red":3,"house_large":2,"house_red":1},
+   "centre": "well",
+   "fence": "fence_wood",
+   "square": "j"
   },
   "life": [
    {"k":"lizard","n":4}
@@ -306,6 +336,12 @@
    "far": "mountains",
    "farH": 10
   },
+  "town": {
+   "houses": {"cottage_juniper":3,"house_large":2,"house_blue":2},
+   "centre": "well",
+   "fence": "fence_wood",
+   "square": "K"
+  },
   "life": [
    {"k":"rabbit","n":2}
   ],
@@ -342,6 +378,12 @@
    "far": "sea",
    "farH": 5,
    "flatFar": 1
+  },
+  "town": {
+   "houses": {"house_blue":3,"townhouse_yellow":3,"cottage_solar":2},
+   "centre": "fountain",
+   "fence": "picket_fence",
+   "square": "c"
   },
   "life": [
    {"k":"gull","n":4},
@@ -401,6 +443,12 @@
   "rocks": {"rocks_snow":4,"boulder_lichen":3,"rocks":3,"rocks_b":3,"rocks_mossy":3,"scree":2,"rocks_c":1,"molehill":1},
   "tall": {"tallgrass_b":4,"tallgrass":4,"tallgrass_c":3},
   "look": {"sky":["#7FBCE8","#BFE0F0","#EEF2EA"],"haze":"#DCE6EE","hazeD":48,"amb":"dust","wind":1.6,"far":"mountains","farH":9},
+  "town": {
+   "houses": {"house_large":2,"cottage_juniper":3,"cottage_moss":2},
+   "centre": "well",
+   "fence": "fence_wood",
+   "square": "K"
+  },
   "life": [
    {"k":"goat","n":3},
    {"k":"rabbit","n":1}
@@ -460,6 +508,12 @@
    "far": "forest",
    "farH": 9
   },
+  "town": {
+   "houses": {"house_red":3,"cottage_juniper":2,"house_cottage":3,"house_green":1},
+   "centre": "well",
+   "fence": "picket_fence",
+   "square": "c"
+  },
   "life": [
    {"k":"squirrel","n":4},
    {"k":"rabbit","n":2}
@@ -507,6 +561,12 @@
    "grassCol": ["#7A6A30","#C8A860"],
    "far": "canyon",
    "farH": 9
+  },
+  "town": {
+   "houses": {"townhouse_red":3,"house_red":2,"cottage_solar":2},
+   "centre": "well",
+   "fence": "fence_wood",
+   "square": "Y"
   },
   "life": [
    {"k":"lizard","n":4}
@@ -566,6 +626,12 @@
    "far": "forest",
    "farH": 11
   },
+  "town": {
+   "houses": {"cottage_moss":3,"house_green":3,"cottage_solar":2},
+   "centre": "fountain",
+   "fence": "fence_wood",
+   "square": "c"
+  },
   "life": [
    {"k":"frog","n":4}
   ],
@@ -603,6 +669,12 @@
    "farH": 9,
    "dark": 1,
    "wind": 0
+  },
+  "town": {
+   "houses": {"cave_house":1},
+   "centre": "well",
+   "fence": "fence_wood",
+   "square": "k"
   },
   "from": "glimmershaft"
  }
