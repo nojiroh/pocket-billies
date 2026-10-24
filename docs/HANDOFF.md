@@ -60,7 +60,9 @@ for the owner to push.
 - Verified: lint, typecheck, check:modules, check:data, format:check, unit tests 895 quick and 54 slow (the new
   `mapgen-layout` test: five plans over six biomes, 55-65% walkable, exits and spots reached, no trap, nothing on the
   road, seams or run-ins, deep forest never walkable, same seed same scene, no dial no change); run-world-real (every
-  run's seams still agree); smoke 6 of 6; headless pictures of each plan. Snapshots remade on purpose: rng's scene
+  run's seams still agree); smoke 6 of 6; headless pictures of each plan. Full quick check (1663 s): 36 of 37; the
+  one problem, Postcards ("the postcard's picture didn't load", Copperleaf's picture in 10 s), passed alone and in the
+  first full run and touches nothing RT-1 changed: the full check's load. CI (lint, rules, smoke) green. Snapshots remade on purpose: rng's scene
   hash and run-start (version only), run-world-real's dials (the new `layout` field only), golden (a laid-out case).
 - Risky / open:
   - **Route trainers** still stand on the straight line (RT-2). The layout keeps their spots clear; 8 of 118 spots
