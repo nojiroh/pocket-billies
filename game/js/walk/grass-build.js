@@ -13,6 +13,7 @@ import { rawHeightAt } from './heights.js';
 /* eslint-disable no-func-assign */
 expose({
   GRASS_KINDS: [() => GRASS_KINDS],
+  NEAR_DIRS: [() => NEAR_DIRS],
   buildFarProps: [() => buildFarProps, v => (buildFarProps = v)],
   buildGrass: [() => buildGrass, v => setBuildGrass(v)],
   grassWork: [() => grassWork, v => setGrassWork(v)],
@@ -71,6 +72,8 @@ const GRASS_KINDS = {
     [1, 0.1],
   ],
 }; /* v47: sunburnt grass (mostly dry straw), wildflower meadow (flower heads) */
+/* the order the eight ways round a spot are tried in (as before: the four straight ones first) */
+const NEAR_DIRS = [0, 4, 2, 6, 1, 3, 7, 5];
 /* v39: planting is spread over frames: each frame plants rows for a few milliseconds (grassWork), and the blades
    appear when the last row is in, so a big meadow no longer costs one long frame when the scene opens */
 export function buildGrass() {
@@ -117,20 +120,15 @@ export function buildGrass() {
       j = sc.h - 1 - Math.floor(z);
     return i < 0 || j < 0 || i >= sc.w || j >= sc.h ? sc.edge : (rows[j] || '')[i] || sc.edge;
   };
-  const near = (x, z, r, set) => {
-    for (const [a, b] of [
-      [r, 0],
-      [-r, 0],
-      [0, r],
-      [0, -r],
-      [r * 0.7, r * 0.7],
-      [-r * 0.7, r * 0.7],
-      [r * 0.7, -r * 0.7],
-      [-r * 0.7, -r * 0.7],
-    ])
-      if (set.includes(ter(x + a, z + b))) return true;
-    return false;
+  /* which way (in eighths of a turn, 0 = east) there is ground of the set within r, or -1 */
+  const nearDir = (x, z, r, set) => {
+    for (const d of NEAR_DIRS) {
+      const an = d * (Math.PI / 4);
+      if (set.includes(ter(x + Math.cos(an) * r, z + Math.sin(an) * r))) return d;
+    }
+    return -1;
   };
+  const near = (x, z, r, set) => nearDir(x, z, r, set) >= 0;
   const pick = (ch, r) => {
     const L = GRASS_KINDS[ch] || GRASS_KINDS.g;
     let a = 0;
@@ -169,9 +167,11 @@ export function buildGrass() {
             J.k++;
             const x = i + rnd(J.k, 1),
               z = z0 + rnd(J.k, 2);
-            if (!near(x, z, 0.35, 'gGflt')) continue;
+            const dir = nearDir(x, z, 0.35, 'gGflt');
+            if (dir < 0) continue;
             if (!isWalkable(x, z) || occ[Math.floor(z * 2) * W2 + Math.floor(x * 2)]) continue;
-            add(x, z, 0.08 + rnd(J.k, 4) * 0.1, 0, (valueNoise2d(x * 0.18, z * 0.18) - 0.5) * 1.2);
+            /* 0.1.0 alpha: the tuft takes its colour from the grass beside it (kind + 8 x (direction + 1)) */
+            add(x, z, 0.08 + rnd(J.k, 4) * 0.1, 8 * (dir + 1), (valueNoise2d(x * 0.18, z * 0.18) - 0.5) * 1.2);
           }
         }
         continue;
@@ -251,7 +251,7 @@ export function buildGrass() {
     gl.bindVertexArray(vao);
     const vb = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vb);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0.5, 1]), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8, 0);
     const ib = gl.createBuffer();

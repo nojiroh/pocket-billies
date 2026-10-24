@@ -407,6 +407,15 @@ export function drawGrass(C, X) {
     hexToRgb(g[1]).map(v => v / 255)
   );
   if (U.uFol) gl.uniform2f(U.uFol, 0.75, 1);
+  /* 0.1.0 alpha: a blade takes the colour of the ground at its root: the ground's picture and the near ring */
+  if (U.uGround) {
+    const B = GROUND_BORDER_M;
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, walkRenderer.gtex || gpuState.white);
+    gl.uniform1i(U.uGround, 0);
+    gl.uniform4f(U.uGRect, -B, sc.h + B, 1 / (sc.w + 2 * B), 1 / (sc.h + 2 * B));
+  }
+  setNearRingUniforms(U, sc);
   gl.disable(gl.CULL_FACE);
   const G = walkRenderer.grass;
   gl.bindVertexArray(G.vao);
@@ -414,7 +423,7 @@ export function drawGrass(C, X) {
     gl.bindBuffer(gl.ARRAY_BUFFER, G.ib);
     gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 32, 0);
     gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 32, 16);
-    gl.drawArraysInstanced(gl.TRIANGLES, 0, 3, G.n);
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, G.n);
   } else {
     const F = computeFrustum(C.vp),
       far = (walkRenderer.q || 0) >= 3 ? 38 : 1e9,
@@ -426,7 +435,7 @@ export function drawGrass(C, X) {
       if (far < 1e9 && Math.hypot(c.x - Pp.x, c.z - Pp.z) > far) continue;
       gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 32, c.off * 32);
       gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 32, c.off * 32 + 16);
-      gl.drawArraysInstanced(gl.TRIANGLES, 0, 3, c.n);
+      gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, c.n);
       drawn += c.n;
     }
     walkRenderer.grassDrawn = drawn;
