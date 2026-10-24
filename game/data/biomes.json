@@ -579,7 +579,7 @@
   "mood": "cave",
   "ground": {
    "base": "k",
-   "patches": {"r":0.3,"X":0.08,"v":0.2},
+   "patches": {"r":0.3,"v":0.2},
    "verge": "v",
    "floor": "k",
    "bank": "r",
