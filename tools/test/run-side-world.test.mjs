@@ -2,7 +2,8 @@
 // mod), over a few seeds: every scene is made with no generator note and walkable from its hub; the obstacle's place
 // has a north exit into the side's first place, which comes in by its south; the roads join by the seam rules with no
 // gap or step; the obstacle stands on the north road (act 'field', gone once open), the way out at the last place (act
-// 'fieldout', none past an alternate path's own boss), Surf's places are ridden; the first place is closed by its move
+// 'fieldout', none past an alternate path's own boss), Surf's places are ridden, Rock Smash's a dark walled cave
+// (RL-R2b) and the main path's in daylight; the first place is closed by its move
 // and every side place meets the side's own species.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -90,10 +91,17 @@ test("a side area's scenes join the run's and carry its obstacle, way out and ri
         assert.equal(last.length, S.to >= 0 ? 1 : 0, `${where}: the way out`);
         for (const i of S.nodes) {
           assert.equal(!!made[i].ride, !!MOVES[move].ride, `${where}: ride`);
+          // RL-R2b: Rock Smash's places are a dark cave (the lantern: walk/lighting.js), walled by rock
+          if (MOVES[move].biome === 'cave') {
+            assert.deepEqual([made[i].dark, made[i].far], [1, 'cave'], `${where} node ${i}: a dark cave`);
+            assert.ok(made[i].tiles.join('').split('r').length > 1000, `${where} node ${i}: rock walls`);
+          }
           const L = W.locations[i + 1];
           assert.equal(L.side, 1);
           if (S.dex) for (const e of W.pools[L.pool].list) assert.ok(S.dex.includes(e.sp || e[0] || e), where);
         }
+        for (const [i, sc] of made.entries())
+          if (!map.nodes[i].side) assert.ok(!sc.dark, `${where} node ${i}: daylight`);
         assert.equal(W.locations[S.nodes[0] + 1].field, move, `${where}: the first place is closed by its move`);
         assert.equal(W.locations.filter(L => L.field).length, 1, `${where}: only the first`);
         sides++;
