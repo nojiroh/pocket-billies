@@ -41,6 +41,10 @@ kept aside in the browser).
     Shining Stone, or a move tutor), with a reroll for Moneys that doubles each time.
   - The **Protein Bar**: a Billie that eats one gains a level (from its sheet, not in battle).
   - Versewift and Feedopus now evolve with the **Shining Stone** from level 20 (they evolved at level 36).
+- **Waystations and stalls** on a run (roguelite track RL-12b, part 2): the run's map now has two new kinds of place.
+  A **waystation** has a striped market tent by the road: tap it and its event opens (the events above now happen on
+  the map, not just from the debug menu). A **stall** is a fruit stall with a shop (new stock every day, no clinic).
+  Both have fewer wild Billies than a route. The map never puts two shops (a town or a stall) one after the other.
 
 - Fix: the full test (Settings → Help) no longer fails three steps on every device while the game draws fine. Night,
   weather and seasons now waits for Copperleaf to open before it starts; the Light lab counts the new low-poly

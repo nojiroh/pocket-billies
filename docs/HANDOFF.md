@@ -2,18 +2,53 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
-### Roguelite track RL-12b part 2 - Waystations (IN PROGRESS, handed to a new session) - 2026-10-24
-Branch `track/encounters` (main at 25e447e, RL-R2a, fast-forwarded in). The owner asked to continue in a new session.
-- Done (pushed): `event` (Waystation) and `stall` node types, a `shop` flag on town and stall, `runMapNoTwoShops` in
-  run-map.js, `runMapProblems(map, M, nodeTypes)` naming two shops in a row; run-start's snapshot remade; 877 tests.
-  Their scenes are still plain routes.
-- Left, as planned: run-scenes.js `RUN_BUILDINGS` for event (a stand prop, act `event`) and stall (a stand with act
-  `shop`) plus mapgen's `MAPGEN_HUB_BUILDINGS` row; `runWorldTables` giving a stall a shop (like a town's, no clinic)
-  and both fewer wild Billies (`rules.run.wild` key, `encounterStock` in rules.js); walk-control.js `walkPick` act
-  `event` -> `encounterOpen(runMapNode(...))`; run.js hints; run-sim.js and run-preview.js treating a stall as a shop;
-  a check-fast "Encounters" page and the in-game test's step; HANDOFF, ROADMAP, CHANGELOG; smoke; PR ready for review.
-- Notes: side places (RL-R2a, `side: 1`) aren't run through the no-two-shops pass. Two camera checks in check-fast fail
-  on main (a fix session has them). The checks' Playwright must match the container's Chromium (see RL-R2a's entry).
+### Roguelite track RL-12b part 2 - Waystations and stalls (done) - 2026-10-24
+Branch `track/encounters`, over two sessions (the first did the node types and the map rule, then handed over). The
+plan was approved in the earlier RL-12b session's Plan Mode (waystations are normal-sized places with a stand and fewer
+wild Billies; the no-two-shops rule counts towns and stalls; weights route 4, event 2, town 1, stall 1, placeholders);
+this session built the rest on the owner's word, fast checks per commit, smoke once, long checks skipped. main merged
+in twice (RL-R2a, then #177's grass): no conflicts. Tag `rl-12b-done` for the owner.
+- Where the plan was wrong (checked in the code):
+  - "a stall: a stand with act `shop`": act `shop` on a prop walks you into the shop's room (`ROOM_BY_USE.shop`,
+    `enterRoom`), and a stall has no room. It got its own act, `stall`, which opens the shop sheet where you stand.
+  - mapgen's props dials list their keys in the defaults (`mast`, `clinic`, `shop`); `stand` and `stall` join them,
+    which changes the params in every scene's `gen` (rng's scene hash remade; the scenes are the same).
+  - `encounterOpen` wasn't exported (only the debug menu reached it, through hooks): it is now.
+- Changed (one cause per commit):
+  - **Node types and the map** (first session): `event` and `stall` in nodeTypes.json, `shop: true` on town and stall,
+    `runMapNoTwoShops`, `runMapProblems` naming two shops in a row.
+  - **Scenes and rows**: `RUN_BUILDINGS` event `{stand}`, stall `{stall}`; `MAPGEN_HUB_BUILDINGS` rows (the market tent,
+    act `event`, label "Waystation"; the fruit stall, act `stall`, "Stall"), placed on a lot like the town buildings.
+    `runWorldTables`: a type with `shop` gets a shop (a stall's is named after the place, kept by "The stallholder");
+    event and stall rows carry `waystation: 1`; `encounterStock` gives them `rules.json run.wild.waystation` (2).
+  - **The page**: `walkPick` act `event` -> `encounterOpen(runMapNode(here))`, act `stall` -> `openShop`; the stall's
+    label pill is shop blue; first-run hints for a waystation and a stall (run.js).
+  - **Sim and preview**: the sim opens the day's shop at any type with `shop` (only a town heals) and notes a
+    waystation's event (`at.event`; the bot plays no option); the Studio's sim worker gets the encounters module. The
+    preview gives a stall's shop by day and each waystation's event as first drawn (a later stand can differ once an
+    earlier event is played: the comment says so).
+  - **Tests**: run-waystation-world (props, rows, shop on two seeds), run-sim, run-preview; check-data's planted
+    rules snapshot and rng's scene hash remade on purpose.
+  - **In-game test**: a new phase, "A run's waystation and stall" (the first SELFTESTWAY seed with both: the stand
+    opens its event, the stall its shop, the wild stock). **check-fast**: an "Encounters" check on the blur page (no new
+    boot) runs that phase.
+- Verified: lint, typecheck, check:modules, format:check, check:data and the unit tests after every commit (877 ->
+  880). The new in-game phase alone headless (15 s) and check-fast `--only=Encounters` (26.5 s), both passed.
+  Screenshots of a waystation and a stall (the tent and the stall by the road, their pills). SMOKE_RESULT
+  **Skipped on the owner's word**: the full quick check, the whole in-game test, the slow unit tests (mapgen-lots run
+  alone: passed) and the full check-fast run (CI runs it on the PR).
+- Risky / open:
+  - The market tent has no 3D model (a flat sprite beside the low-poly stall and buildings). It reads fine in the
+    screenshot; a model (or another prop) is the owner's call.
+  - Found, not caused here: the run sim's bot loses at the landing in most seeds (`lostAt: 'landing'` with a party
+    of 1 from `team: 3`), so its stats say little past row 1; and maps hold far more towns than the weights suggest
+    (about 350 towns, 150 routes, 80 waystations, 15 stalls over 100 maps: rest rows are towns). Worth a look before
+    the weights are tuned.
+  - Side places (`side: 1`) still skip the no-two-shops pass.
+  - RL-R2b (caves, the Surf islet) works on run-map.js and run-scenes.js too and had pushed nothing when this PR went
+    up. Shared touch points: `RUN_BUILDINGS`, `runWorldTables`'s row block (the `sells`/`waystation` lines),
+    `MAPGEN_HUB_BUILDINGS` and mapgen's props defaults.
+- Next: RL-12c (held items) on this branch; RL-S1 depends on RL-12b.
 
 ### Roguelite track RL-R2a - Side areas and field moves (and no deadline) - 2026-10-23
 Branch `track/regions` (fast-forwarded to RF-4's `track/reflavour` at e1e1479 on the coordinating session's word, then
