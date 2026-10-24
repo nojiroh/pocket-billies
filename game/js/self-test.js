@@ -13,8 +13,10 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import {
+  ITEMS,
   LOCATIONS,
   MOVES,
+  PERKS,
   RULES,
   SHOPS,
   SPECIES,
@@ -25,6 +27,7 @@ import {
   trainersAt,
 } from './game-data.js';
 import { canEnter, encountersHere, gateText, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
+import { modBossHp, modFoeLevels, modsMake } from './logic/modifiers.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
 import { incomeRate } from './logic/ranch-income.js';
@@ -33,7 +36,8 @@ import { runRestore } from './logic/run-state.js';
 import { RUN_SIDE_MOD, runSideOpen } from './logic/run-side.js';
 import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
-import { runHealCost } from './logic/run-loop.js';
+import { runClinic, runFoes, runHealCost, runShopOpen, runWareHeals } from './logic/run-loop.js';
+import { perkOfferMake } from './logic/perks.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { runUnlocks } from './logic/unlocks.js';
 import { runStartOn, runStartPlan } from './logic/run-start.js';
@@ -1043,6 +1047,66 @@ async function runFullTest(mode) {
         },
         8,
         180
+      );
+    /* RL-13: an Expedition and its challenges, on a copy of the save: a run started at Expedition III has more zones
+       and foes its levels up (modifiers.json), its boss's HP multiplied; with "No healing" and "No Perks" the clinic
+       is shut, no run shop stocks a healing ware and no Perk is ever offered. Then the save as it was */
+    if (typeof runStartPlan === 'function' && typeof modsMake === 'function' && !selfTest.stop)
+      await phase(
+        'A run at Expedition III, with challenges',
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            seed = 'SELFTESTEXP',
+            plan = (expedition, mods) =>
+              runStartPlan(seed, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [], mods, expedition });
+          try {
+            if (s.run) runRestore(s);
+            const one = plan(1, []),
+              three = plan(3, modsMake(['noheal', 'noperks']));
+            if (three.map.nodes.length <= one.map.nodes.length)
+              throw new Error(`Expedition III is ${three.map.nodes.length} places, I is ${one.map.nodes.length}`);
+            runStartOn(s, three);
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            setSaveData(s);
+            const run = s.run,
+              up = modFoeLevels(run);
+            if (run.expedition !== 3 || up !== 4) throw new Error(`Expedition ${run.expedition}, foes +${up}`);
+            if (modBossHp(run) <= 1) throw new Error('the boss is no tougher at Expedition III');
+            /* its foes: the leaders of its own types, at the Expedition's levels */
+            const foes = Object.values(
+                runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run })
+              ),
+              boss = foes.find(F => F.runFoe === 'boss');
+            if (!foes.length || !boss) throw new Error('the run has no leaders');
+            if (!boss.hpMult || boss.hpMult <= 1) throw new Error('the boss carries no HP multiplier');
+            for (const F of foes) {
+              const T = TRAINERS[F.from];
+              if (T && T.type)
+                for (const e of F.team)
+                  if (!SPECIES[e.sp].types.includes(T.type))
+                    throw new Error(`${T.name} (${T.type}) fields ${SPECIES[e.sp].name}`);
+            }
+            /* the challenges: the clinic shut, no healing ware on sale, no Perk offered */
+            s.team[0].hp = 1;
+            const money = s.se;
+            if (runClinic(s, RULES.run.healCost).paid || s.se !== money || s.team[0].hp !== 1)
+              throw new Error('the clinic healed on a "No healing" run');
+            for (let day = 1; day <= 10; day++)
+              for (const w of runShopOpen(run, 1, day, RULES.run.shop, UNLOCK_DATA))
+                if (w.item && runWareHeals(w.item, ITEMS)) throw new Error(`a shop sells ${w.item} on day ${day}`);
+            if (perkOfferMake(run, PERKS, RULES.run.perks)) throw new Error('a Perk was offered on a "No Perks" run');
+            return `Expedition III: ${three.map.nodes.length} places (I: ${one.map.nodes.length}), foes +${up}, the boss x${modBossHp(run).toFixed(2)}; the clinic shut, no healing ware, no Perk`;
+          } finally {
+            setSaveData(was);
+            render();
+          }
+        },
+        4,
+        60
       );
     /* RL-8: a run from the mast to the payout, on a copy of the save (nothing is written while the test runs): a short
        run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the

@@ -468,6 +468,9 @@ debugLog.state = () => {
                party's size and the run's money (numbers only) */
             phase: run.at.phase,
             battles: run.battleN,
+            /* RL-13: the run's Expedition and the highest one open (its challenges are in `mods`) */
+            expedition: run.expedition || 1,
+            expeditionOpen: (GAME.saveData.meta && GAME.saveData.meta.expedition) || 1,
             held: typeof GAME.saveHeld === 'function' ? GAME.saveHeld() : null,
             party: GAME.saveData.team ? GAME.saveData.team.length : 0,
             money: GAME.saveData.se,
