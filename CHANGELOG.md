@@ -18,9 +18,12 @@ kept aside in the browser).
   the run). Each pays 25% more Research.
   **Starter points** replace "one Billie from home": every Billie at the ranch has a price in points (by how rare and
   how evolved it is, and 1 more per 5 levels), and the mast gives you a budget to spend (20 at Expedition I, more
-  later). Bring six fresh ones or three trained ones. The start sheet shows each card's price and why one can't come.
+  later). Bring six fresh ones or three trained ones. A Billie that is already fully evolved, or never evolves, is
+  priced as a final form. The start sheet shows each card's price and why one can't come.
   **Leaders now field their own type**: the Water leader brings Water Billies from the region, not whatever the old
   data said.
+- Leaders and trainers on a run no longer field a fully evolved Billie before level 32: a Flying leader could send out
+  four Peacoutures at level 11.
 - Three new Billies and five regional forms (roster track RO-2c): **Siliclet**, a black gecko with one glowing scale,
   evolving at level 20 into **Jenzard** and at 40 into **Gigajenzard**, a rare Electric/Dragon data-centre dragon
   whose keynote dims the lights. Five Billies you already know now have a regional form, met in the biomes it suits:
