@@ -15,7 +15,8 @@ const CASES = [];
 {
   const biomes = Object.keys(GAME_DATA.biomes),
     shapes = Object.keys(G.MAPGEN_SHAPES),
-    water = Object.keys(G.MAPGEN_WATER),
+    /* RL-R2b: the islet has its own test below (adding it here would move every case's water) */
+    water = Object.keys(G.MAPGEN_WATER).filter(k => k !== 'islet'),
     feats = Object.keys(G.MAPGEN_FEATURES),
     surf = Object.keys(G.MAPGEN_SURFACES);
   const exits = [
@@ -217,4 +218,37 @@ test('the variant pick follows the weights, the prop as drawn counting 1', () =>
   assert.equal(n[3], 0, 'a weight of 0 is never picked');
   assert.ok(Math.abs(n[2] / 4000 - 0.5) < 0.04 && Math.abs(n[0] / 4000 - 0.25) < 0.04, n.join(','));
   assert.equal(G.mapgenPickVariant(W, { name: 'no variants' }), 0);
+});
+
+test('RL-R2b: an islet is the sea round a round of land on the hub, its exits reached on foot by causeways', () => {
+  for (const seed of [7, 8, 9]) {
+    const { scene: sc, notes } = G.mapgenScene(
+      {
+        biome: 'lake',
+        seed,
+        w: 112,
+        h: 64,
+        pin: 'EW',
+        land: { water: 'islet', waterAmount: 0.8 },
+        road: {
+          exits: [
+            { side: 'E', t: 0.5, width: 2 },
+            { side: 'W', t: 0.5, width: 2 },
+          ],
+        },
+      },
+      ctx
+    );
+    assert.deepEqual(notes, [], `seed ${seed}`);
+    assert.equal(sc.waterKind, 'sea');
+    const wet = (/** @type {string} */ c) => c === 'd' || c === 'w',
+      rim = [...sc.tiles[0], ...sc.tiles[sc.h - 1]];
+    assert.ok(rim.filter(wet).length > rim.length * 0.7, `seed ${seed}: the sea along the north and south`);
+    assert.ok(!wet(sc.tiles[Math.floor(sc.hub[1])][Math.floor(sc.hub[0])]), `seed ${seed}: the hub on land`);
+    assert.deepEqual(
+      G.mapgenUnreachable(sc, GAME_DATA.scenery),
+      [],
+      `seed ${seed}: the hub reaches every exit on foot`
+    );
+  }
 });
