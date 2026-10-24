@@ -320,7 +320,13 @@ function runPickNow(expedition = 1, mods = []) {
     left out by runPickNow) */
 function runPickTap(uid) {
   const P = runPickNow(runExpNow(), runModsNow());
-  uiState.runPick = P.home.includes(uid) ? P.home.filter(u => u !== uid) : [...P.home, uid];
+  /* the first tap starts your own pick with that Billie (the suggested party is only shown until then); later taps
+     add or take one out within the points */
+  uiState.runPick = !Array.isArray(uiState.runPick)
+    ? [uid]
+    : P.home.includes(uid)
+      ? P.home.filter(u => u !== uid)
+      : [...P.home, uid];
   runStartSheet();
 }
 /** a pack row's − or +: one thing more or less of it, within what the bag holds and the pack's room */
@@ -346,7 +352,9 @@ export function runStartSheet() {
       ...Object.entries(S.items).map(([k, n]) => `${n} ${ITEMS[k] ? ITEMS[k].n : k}${n === 1 ? '' : 's'}`),
     ],
     trains = uid => !!(saveData.ranch && saveData.ranch.trainees.some(t => t.uid === uid)),
-    picked = P.home.map(u => runHomeList().find(m => m.uid === u)).filter(m => !!m),
+    /* the suggested party (nothing tapped yet) greys nobody out for points: a tap starts your own pick */
+    own = Array.isArray(uiState.runPick),
+    picked = own ? P.home.map(u => runHomeList().find(m => m.uid === u)).filter(m => !!m) : [],
     /* RL-13: each card says what it costs in starter points, and why it can't come when it can't */
     card = m => {
       const on = P.home.includes(m.uid),
@@ -390,7 +398,7 @@ export function runStartSheet() {
     trained = P.home.filter(trains);
   const E = MODIFIERS.expeditions[expedition - 1],
     chal = runChallengesOpen().filter(c => mods.includes(c.id));
-  const html = `<p>The airship flies you out to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p>${(saveData.meta.expedition || 1) > 1 ? `<h3>Expedition</h3><div class="fchips">${expChips}</div><p class="note">${escapeHtml(E ? E.d : '')}</p>` : ''}${chalChips ? `<h3>Challenges</h3><div class="fchips">${chalChips}</div>${monoChips}<p class="note">${chal.length ? escapeHtml(chal.map(c => c.C.d).join(' ')) : 'Harder runs pay more Research.'}</p>` : ''}<h3>Who comes from home</h3><p class="note">${P.spent} of ${P.budget} starter points spent. The rest stay at the ranch; on the run you catch wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>The airship adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Research.</p>`;
+  const html = `<p>The airship flies you out to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p>${(saveData.meta.expedition || 1) > 1 ? `<h3>Expedition</h3><div class="fchips">${expChips}</div><p class="note">${escapeHtml(E ? E.d : '')}</p>` : ''}${chalChips ? `<h3>Challenges</h3><div class="fchips">${chalChips}</div>${monoChips}<p class="note">${chal.length ? escapeHtml(chal.map(c => c.C.d).join(' ')) : 'Harder runs pay more Research.'}</p>` : ''}<h3>Who comes from home</h3><p class="note">${P.spent} of ${P.budget} starter points spent${own ? '' : ' (a suggested party: tap a Billie to pick your own)'}. The rest stay at the ranch; on the run you catch wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>The airship adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Research.</p>`;
   const was = uiState.modal && uiState.modal.cls === 'fly-sheet run-start' ? uiState.modal : null,
     sheet = document.querySelector('#ov .sheet'),
     body = document.querySelector('#ov .sheet .body'),
