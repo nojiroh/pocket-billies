@@ -27,7 +27,14 @@ import { POST_EFFECT_SHADERS } from './engine/post-effects.js';
 import { standingHeightAt } from './walk/heights.js';
 import { canvasForContext, ensureWalkGl } from './walk-view-gl.js';
 import { endBattle, stopTimers } from './battle.js';
-import { WORLD_BOWL_SHADERS, worldBowlFilm, worldMapSpot } from './world-bowl.js';
+import {
+  WORLD_BOWL_SHADERS,
+  worldBowlFilm,
+  worldMapFallFrame,
+  worldMapPrewarm,
+  worldMapReadyNow,
+  worldMapSpot,
+} from './world-bowl.js';
 import { music, soundEffect } from './sound.js';
 import { cutscene, cutsceneCaption } from './cutscene/director.js';
 /* eslint-disable no-func-assign */
@@ -43,6 +50,7 @@ expose({
   fallCamera: [() => fallCamera, v => (fallCamera = v)],
   fallCanvas: [() => fallCanvas, v => (fallCanvas = v)],
   fallCrust: [() => fallCrust, v => (fallCrust = v)],
+  fallFloatCamera: [() => fallFloatCamera, v => (fallFloatCamera = v)],
   fallFont: [() => fallFont, v => (fallFont = v)],
   fallOverWorldMap: [() => fallOverWorldMap, v => (fallOverWorldMap = v)],
   fallPlay: [() => fallPlay, v => ((fallPlay = v), provide({ fallPlay }))],
@@ -606,6 +614,40 @@ function fallCamera(k, W, H) {
   const roll = (k > 0.55 ? (k - 0.55) * 5.5 : 0) + Math.sin(k * 9) * 0.12;
   return bowlCamLookView(C, look, W, H, roll);
 }
+/* ---- 3. the floating island (the owner, 2026-10-23: shorter, more dynamic and natural): you drop out of the sky
+   above Copperleaf's island, faster and faster, tumbling and steadying as you fall, then swoop round it, slowing, down
+   to the lab where you land. P: world-bowl.js worldMapFallFrame (the bowl's coordinates) ---- */
+function fallFloatCamera(k, W, H, P) {
+  const { c, r, top, land } = P,
+    aL = Math.atan2(land[1] - c[1], land[0] - c[0]),
+    A = 0.55,
+    a0 = aL + 2.3,
+    aA = aL + 1.4,
+    rollA = Math.sin(7.5) * 0.3 * 0.4,
+    at = (a, d, h) => [c[0] + Math.cos(a) * d, c[1] + Math.sin(a) * d, h];
+  let C, look, roll;
+  if (k < A) {
+    /* the drop: gravity (the height goes with the square of the time), turning in towards the island */
+    const f = k / A,
+      shake = r * 0.006 * f * f;
+    C = at(a0 + (aA - a0) * f, r * (2.2 - 0.6 * f), top + r * (10 - 8.2 * (0.25 * f + 0.75 * f * f)));
+    C[0] += Math.sin(k * 97) * shake;
+    C[1] += Math.cos(k * 83) * shake;
+    C[2] += Math.sin(k * 71 + 1) * shake;
+    look = [c[0], c[1], top - r * 0.3 * (1 - f)];
+    roll = Math.sin(f * 7.5) * 0.3 * (1 - f * 0.6);
+  } else {
+    /* the swoop: round the island to where you land, slowing to a stop just above it */
+    const f = (k - A) / (1 - A),
+      e = 1 - Math.pow(1 - f, 3),
+      dl = Math.hypot(land[0] - c[0], land[1] - c[1]),
+      d0 = r * 1.6;
+    C = at(aA + (aL - aA) * e, d0 + (dl + r * 0.75 - d0) * e, top + r * 1.8 + (land[2] + r * 0.45 - top - r * 1.8) * e);
+    look = [c[0] + (land[0] - c[0]) * e, c[1] + (land[1] - c[1]) * e, top + (land[2] - top) * e];
+    roll = rollA * (1 - e);
+  }
+  return bowlCamLookView(bowlToGpu(C[0], C[1], C[2]), bowlToGpu(look[0], look[1], look[2]), W, H, roll);
+}
 export function fallOverWorldMap(run, ms) {
   return new Promise(res => {
     if (typeof worldBowlFilm !== 'function' || !gpuState.gl) {
@@ -619,9 +661,10 @@ export function fallOverWorldMap(run, ms) {
       res();
       return;
     }
-    const t0 = performance.now();
+    const t0 = performance.now(),
+      P = worldMapFallFrame();
     let capA = 0,
-      capB = 0;
+      capB = P ? 1 : 0;
     const step = ts => {
       if (!cutscene.on || cutscene.run !== run || cutscene.skip || gpuState.lost) {
         res();
@@ -629,15 +672,15 @@ export function fallOverWorldMap(run, ms) {
       }
       const k = Math.min(1, (performance.now() - t0) / ms);
       try {
-        worldBowlFilm(fallCamera(k, innerWidth, innerHeight), ts);
+        worldBowlFilm(P ? fallFloatCamera(k, innerWidth, innerHeight, P) : fallCamera(k, innerWidth, innerHeight), ts);
       } catch (e) {
         console.error(e);
         res();
         return;
       }
-      if (!capA && k > 0.12) {
+      if (!capA && k > (P ? 0.04 : 0.12)) {
         capA = 1;
-        cutsceneCaption('Inside the planet', 'The Hollow Earth', 2600);
+        cutsceneCaption('Inside the planet', 'The Hollow Earth', P ? 2400 : 2600);
       }
       if (!capB && k > 0.4) {
         capB = 1;
@@ -658,6 +701,8 @@ export function fallOverWorldMap(run, ms) {
 async function fallPlay(run, o = {}) {
   const alive = () => cutscene.on && cutscene.run === run && !cutscene.skip;
   openingFall.run = run;
+  /* the island the fall ends over, made ready while the street and the crust play */
+  if (typeof worldMapPrewarm === 'function') worldMapPrewarm();
   if (typeof music === 'function') music('fall');
   fallCanvas();
   const fade = $('#csFade');
@@ -709,7 +754,8 @@ async function fallPlay(run, o = {}) {
         if (typeof soundEffect === 'function') soundEffect('whoosh', { dur: 2.4 });
       }
     }, 7600);
-  if (alive()) await anim(t => fallCrust(t), 2900);
+  /* through the crust, faster (the owner: a shorter fall; 2.9 s to 2 s) */
+  if (alive()) await anim(t => fallCrust(t * 1.45), 2000);
   const gcv = alive() && !reducedMotion ? fallWorldMapCanvas() : null;
   if (!gcv && alive()) {
     cutsceneCaption('At the centre of everything', 'The Inner Sun', 2600);
@@ -718,12 +764,23 @@ async function fallPlay(run, o = {}) {
   if (gcv) {
     if (fade) fade.classList.add('on');
     await new Promise(r => setTimeout(r, 350));
+    /* the island whole before it shows: drawn behind the fade until it is in (world-bowl.js worldMapReadyNow) */
+    const P = worldMapFallFrame();
+    for (let w0 = performance.now(); alive() && P && !worldMapReadyNow() && performance.now() - w0 < 1500;) {
+      try {
+        worldBowlFilm(fallFloatCamera(0, innerWidth, innerHeight, P), performance.now());
+      } catch (e) {
+        console.error(e);
+        break;
+      }
+      await new Promise(r => requestAnimationFrame(r));
+    }
     gcv.hidden = false;
     gcv.classList.add('in');
     if (openingFall.cv) openingFall.cv.hidden = true;
     if (fade) fade.classList.remove('on');
     if (typeof soundEffect === 'function') soundEffect('whoosh', { dur: 3 });
-    await fallOverWorldMap(run, 9000);
+    await fallOverWorldMap(run, worldMapFallFrame() ? 6500 : 9000);
   }
   cancelAnimationFrame(openingFall.raf);
   if (fade) fade.classList.add('on');

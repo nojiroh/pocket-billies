@@ -25,6 +25,8 @@ import {
   seamlessLookTick,
   seamlessPrepareAhead,
   worldBillyLabels,
+  worldExtra,
+  worldMapPrewarm,
 } from './hooks.js';
 import { focusAim, focusPlane, leanStep } from './logic/lens-focus.js';
 import { gpuPass } from './engine/gpu-counters.js';
@@ -224,6 +226,8 @@ export function mountWalkView(cv, id, opt = {}) {
       walkView.ready = true;
       frameTask('dio', drawWalkFrame, () => (walkView.opt.cap ? walkView.opt.cap() : userFps()));
       cv.classList.add('in');
+      /* the hub: the world map's slow parts done ahead, so it opens whole (world-bowl.js worldMapPrewarm) */
+      if (typeof worldMapPrewarm === 'function' && !worldExtra.look) setTimeout(worldMapPrewarm, 1500);
     })
     .catch(e => {
       walkView.err = e;
@@ -666,7 +670,13 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
           l.x,
           l.y,
           l.t,
-          l.act === 'clinic' ? '#E8607A' : l.act === 'shop' ? '#4E9BE0' : l.act === 'closed' ? '#7E7888' : '#8E6CCB'
+          l.act === 'clinic'
+            ? '#E8607A'
+            : l.act === 'shop' || l.act === 'stall'
+              ? '#4E9BE0'
+              : l.act === 'closed'
+                ? '#7E7888'
+                : '#8E6CCB'
         );
     }
     drawExitLabels(C, st, hits, mapHub(sc));

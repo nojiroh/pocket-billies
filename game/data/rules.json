@@ -155,7 +155,7 @@
    "nature": {"growth":[0.6,1],"tall":[0.4,0.8],"clearings":[0.2,0.5],"trees":[0.3,0.7]},
    "feature": {"none":4,"bridge":1,"glade":1,"lookout":1}
   },
-  "wild": {"lv":[3,5],"perRow":1,"back":2},
+  "wild": {"lv":[3,5],"perRow":1,"back":2,"waystation":2},
   "seamIn": 6,
   "start": {
    "se": 600,

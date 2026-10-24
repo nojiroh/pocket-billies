@@ -416,7 +416,7 @@ if (D.kitBuilds && check('kitBuilds.schema.json', D.kitBuilds, 'kitBuilds.json')
     for (const [k, v] of [
       ['name', f.name],
       ['rig', f.rig],
-      ['stage', `${f.line} ${f.stage}`],
+      ['stage', `${f.line} ${f.stage}${f.form ? ' ' + f.form : ''}`],
     ])
       if (seen[k].has(v)) problem(at, `${where}: a second form for ${k} ${v}`);
       else seen[k].add(v);
@@ -424,7 +424,9 @@ if (D.kitBuilds && check('kitBuilds.schema.json', D.kitBuilds, 'kitBuilds.json')
     if (!line) problem(at, `${where}: line ${f.line}, no such line`);
     else if (f.stage >= line.names.length)
       problem(at, `${where}: stage ${f.stage}, ${f.line} has ${line.names.length}`);
-    else (lines[f.line] ||= { line, forms: [] }).forms.push(f);
+    else if (!f.form) (lines[f.line] ||= { line, forms: [] }).forms.push(f);
+    else if (!(line.forms || []).some(F => F.id === f.form))
+      problem(at, `${where}: form ${f.form}, ${f.line} has no such regional form`);
     for (const [kind, [pid, , col]] of Object.entries(f.parts)) {
       if (!kit[pid]) problem(at, `${where} ${kind}: part ${pid}, not in partKits.json`);
       colourOk(`${where} ${kind}`, col);

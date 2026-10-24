@@ -39,6 +39,7 @@ expose({
   environmentIcon: [() => environmentIcon, v => (environmentIcon = v)],
   environmentLabel: [() => environmentLabel, v => (environmentLabel = v)],
   environmentLitFraction: [() => environmentLitFraction, v => (environmentLitFraction = v)],
+  environmentLookAt: [() => environmentLookAt, v => (environmentLookAt = v)],
   environmentLooks: [() => environmentLooks, v => (environmentLooks = v)],
   environmentMixRgb: [() => environmentMixRgb, v => (environmentMixRgb = v)],
   environmentOdds: [() => environmentOdds, v => ((environmentOdds = v), provide({ environmentOdds }))],
@@ -292,6 +293,12 @@ function environmentLooks() {
   todCache.t = now;
   todCache.T = T;
   return T;
+}
+/* the world map's light (the hub's floating island): the time-of-day look outdoors at a scene's hour, with the
+   hour, sunrise, sunset and how far into the night */
+export function environmentLookAt(sc) {
+  const st = environmentState(sc);
+  return { L: timeOfDayLook(environmentLooks(), st.h, st.rise, st.set), h: st.h, night: st.night, wx: st.wx };
 }
 /* everything the renderer needs, eased so weather drifts in and out; a new scene (or a changed setting) snaps */
 export function environmentFrame(sc, dt) {

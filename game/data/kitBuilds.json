@@ -1,5 +1,5 @@
 {
- "note": "Every kit Billie's recipe, baked into its sheet, rig and native parts by game/js/logic/kit-assemble.js (npm run bake:kits, or the Studio's kit recipe in Part mode). bake: the stage box every Billie fits in (w, h, its middle cx and ground line base) and the margin kept clear, the room (pad) round a torso for its squash and stretch frames and their shapes, the sheet width, where a tail points from the front (degrees by part, 0 = out to the right, 90 = up) and how much flatter it sweeps from behind, how far an arm hangs out (degrees), how far apart the feet stand (as their width), how far below the neck the chin sits (as the head's height), and the extras' anchors: on the head or torso, the top left as fractions of that part (x[0], y[0]) plus fractions of the extra (x[1], y[1]), its draw order front and back, its bone's name. A form: its sheet name, rig key, line and stage, a scale for the stage, a part per bone kind (part id, size, colour), extras (part, anchor, size, colour, mirrored pair, optional slot), optional slot overrides per bone kind and how far the arms hang out. Colours are hue 0-1, saturation scale, value scale; null keeps the kit's own colours. Anchors: brow (horns), ears, crown (on top of the head), chin (a beard), back (carried on the back), collar (round the neck).",
+ "note": "Every kit Billie's recipe, baked into its sheet, rig and native parts by game/js/logic/kit-assemble.js (npm run bake:kits, or the Studio's kit recipe in Part mode). bake: the stage box every Billie fits in (w, h, its middle cx and ground line base) and the margin kept clear, the room (pad) round a torso for its squash and stretch frames and their shapes, the sheet width, where a tail points from the front (degrees by part, 0 = out to the right, 90 = up) and how much flatter it sweeps from behind, how far an arm hangs out (degrees), how far apart the feet stand (as their width), how far below the neck the chin sits (as the head's height), and the extras' anchors: on the head or torso, the top left as fractions of that part (x[0], y[0]) plus fractions of the extra (x[1], y[1]), its draw order front and back, its bone's name. A form: its sheet name, rig key, line and stage, a scale for the stage, a part per bone kind (part id, size, colour), extras (part, anchor, size, colour, mirrored pair, optional slot), optional slot overrides per bone kind and how far the arms hang out. Colours are hue 0-1, saturation scale, value scale; null keeps the kit's own colours. Anchors: brow (horns), ears, crown (on top of the head), chin (a beard), back (carried on the back), collar (round the neck), wings (a mirrored pair spread from the middle of the back).",
  "bake": {
   "box": {"w":128,"h":128,"cx":64,"base":120},
   "margin": 2,
@@ -17,7 +17,8 @@
    "crown": {"on":"head","x":[0.5,-0.5],"y":[0,-0.55],"z":11,"zb":11,"name":"crest"},
    "chin": {"on":"head","x":[0.5,-0.5],"y":[0.78,0],"z":10,"zb":4,"name":"beard"},
    "back": {"on":"torso","x":[0.5,-0.5],"y":[0,-0.15],"z":4,"zb":6,"name":"pack"},
-   "collar": {"on":"torso","x":[0,-0.5],"y":[0,-0.45],"z":8.5,"zb":8.5,"name":"ruff"}
+   "collar": {"on":"torso","x":[0,-0.5],"y":[0,-0.45],"z":8.5,"zb":8.5,"name":"ruff"},
+   "wings": {"on":"torso","x":[0.5,-0.95],"y":[0,-0.35],"z":3,"zb":7,"name":"wing"}
   }
  },
  "colours": {
@@ -46,7 +47,53 @@
   "HIDE": [0.07,1.5,1.05],
   "GOLD": [0.12,1.6,1.15],
   "PALE": [0.58,0.25,1.12],
-  "CURL": [0.07,0.6,0.55]
+  "CURL": [0.07,0.6,0.55],
+  "GOSLING": [0.14,1.6,1.15],
+  "SPRUCE": [0.08,0.95,1.02],
+  "SPRUCE_DARK": [0.07,1,0.75],
+  "AVIATOR": [0.6,0.3,0.98],
+  "AVIATOR_DEEP": [0.62,0.4,0.72],
+  "SCARF": [0.1,0.15,1.25],
+  "FLATPACK": [0.6,1.3,0.95],
+  "FLAT_YELLOW": [0.14,1.7,1.15],
+  "RAT_TAIL": [0.97,0.55,1.1],
+  "GOLDFISH": [0.07,1.8,1.15],
+  "SHARK": [0.58,0.55,0.92],
+  "SHARK_DEEP": [0.6,0.6,0.65],
+  "CLOUD": [0.56,0.22,1.22],
+  "CLOUD_DEEP": [0.6,0.35,0.95],
+  "CLIP": [0.14,1.5,1.18],
+  "CLIP_CYAN": [0.5,1.7,1.12],
+  "TIKTOK": [0.62,0.35,0.5],
+  "TIKTOK_CYAN": [0.5,1.8,1.15],
+  "TIKTOK_PINK": [0.95,1.5,1.12],
+  "TIGER": [0.07,1.7,1.1],
+  "TIGER_STRIPE": [0.05,1.2,0.45],
+  "TEE_GOLD": [0.13,1.6,1.2],
+  "SUNDAY_RED": [0.995,1.7,0.85],
+  "PUTTING_GREEN": [0.3,1.5,0.95],
+  "PEACOCK": [0.075,2,1],
+  "PEACOCK_GOLD": [0.12,2,1.1],
+  "PEACOCK_EMBER": [0,2,0.85],
+  "GECKO": [0.36,0.45,0.62],
+  "GECKO_GLOSS": [0.4,0.5,0.5],
+  "CHIP_GREEN": [0.27,1.8,1.2],
+  "GECKO_WING": [0.42,0.6,0.32],
+  "HARBOUR": [0.51,1.3,0.9],
+  "HARBOUR_DEEP": [0.55,1.4,0.55],
+  "HARBOUR_PALE": [0.48,0.8,1.15],
+  "MEATBALL": [0.04,1.3,0.75],
+  "MEATBALL_SAUCE": [0.02,1.6,1],
+  "LINGON": [0.97,1.5,0.95],
+  "COURTSIDE": [0.09,1.5,0.8],
+  "COURTSIDE_DEEP": [0.07,1.7,0.45],
+  "HARDWOOD": [0.08,1.7,0.85],
+  "LIVESTREAM": [0.95,1.5,0.9],
+  "LIVESTREAM_HOT": [0.02,1.8,1.1],
+  "LIVESTREAM_GLOW": [0.13,1.8,1.2],
+  "HAZARD": [0.54,1.4,0.85],
+  "HAZARD_DEEP": [0.58,1.5,0.5],
+  "HAZARD_WEED": [0.33,1.5,0.85]
  },
  "forms": [
   {
@@ -427,6 +474,459 @@
     "tail": ["shark_tailfin",0.8,"PALE"]
    },
    "extras": [["beasts_mane","crown",0.45,"CURL",false]]
+  },
+  {
+   "name": "gosling",
+   "rig": "hughes0",
+   "line": "hughes",
+   "stage": 0,
+   "scale": 0.55,
+   "armOut": 45,
+   "parts": {
+    "head": ["chick_head",1,"GOSLING"],
+    "torso": ["chick_torso",0.9,"GOSLING"],
+    "arm": ["chick_wing",0.9,"GOSLING"],
+    "leg": ["duck_foot",0.8,null],
+    "tail": ["chick_tail",0.7,"GOSLING"]
+   },
+   "extras": [["chick_crest","crown",0.5,"GOSLING",false]]
+  },
+  {
+   "name": "sprucegoose",
+   "rig": "hughes1",
+   "line": "hughes",
+   "stage": 1,
+   "scale": 0.8,
+   "armOut": 35,
+   "parts": {
+    "head": ["duck_head",1,"SPRUCE"],
+    "torso": ["duck_torso",1,"SPRUCE"],
+    "arm": ["duck_wing",1.05,"SPRUCE_DARK"],
+    "leg": ["duck_foot",0.9,null],
+    "tail": ["duck_tail",0.9,"SPRUCE_DARK"]
+   },
+   "extras": [["duck_crest","crown",0.6,"SPRUCE_DARK",false]]
+  },
+  {
+   "name": "aviatorgoose",
+   "rig": "hughes2",
+   "line": "hughes",
+   "stage": 2,
+   "scale": 0.95,
+   "armOut": 40,
+   "parts": {
+    "head": ["duck_head",1,"AVIATOR"],
+    "torso": ["duck_torso",1.05,"AVIATOR"],
+    "arm": ["eagle_wing",1.1,"AVIATOR_DEEP"],
+    "leg": ["duck_foot",0.95,null],
+    "tail": ["duck_tail",1,"AVIATOR_DEEP"]
+   },
+   "extras": [["birds_ruff","collar",0.7,"SCARF",false],["duck_crest","crown",0.7,"AVIATOR_DEEP",false]]
+  },
+  {
+   "name": "flatpackrat",
+   "rig": "kamprad0",
+   "line": "kamprad",
+   "stage": 0,
+   "scale": 0.55,
+   "parts": {
+    "head": ["cat_head",1,"FLATPACK"],
+    "torso": ["cat_torso",0.9,"FLATPACK"],
+    "arm": ["cat_arm",0.75,"FLATPACK"],
+    "leg": ["cat_leg",0.75,"FLATPACK"],
+    "tail": ["reptile_tail",0.8,"RAT_TAIL"]
+   },
+   "extras": [["bear_ear","ears",0.5,"FLATPACK",true]]
+  },
+  {
+   "name": "kamprat",
+   "rig": "kamprad1",
+   "line": "kamprad",
+   "stage": 1,
+   "scale": 0.8,
+   "parts": {
+    "head": ["cat_head",1,"FLATPACK"],
+    "torso": ["bear_torso",1,"FLATPACK"],
+    "arm": ["cat_arm",0.9,"FLATPACK"],
+    "leg": ["cat_leg",0.9,"FLATPACK"],
+    "tail": ["reptile_tail",1,"RAT_TAIL"]
+   },
+   "extras": [
+    ["bear_ear","ears",0.55,"FLATPACK",true],
+    ["fish_sail","back",0.8,"FLAT_YELLOW",false],
+    ["birds_plume","crown",0.55,"LEAF",false]
+   ]
+  },
+  {
+   "name": "pupfin",
+   "rig": "cuban0",
+   "line": "cuban",
+   "stage": 0,
+   "scale": 0.5,
+   "armOut": 35,
+   "parts": {
+    "head": ["goldfish_head",1,"GOLDFISH"],
+    "torso": ["goldfish_torso",0.9,"GOLDFISH"],
+    "arm": ["goldfish_frontfin",1,"GOLDFISH"],
+    "leg": ["goldfish_backfin",1,"GOLDFISH"],
+    "tail": ["goldfish_tailfin",0.9,"GOLDFISH"]
+   },
+   "extras": [["goldfish_dorsal","crown",0.6,"GOLDFISH",false]]
+  },
+  {
+   "name": "sharktank",
+   "rig": "cuban1",
+   "line": "cuban",
+   "stage": 1,
+   "scale": 1,
+   "armOut": 35,
+   "parts": {
+    "head": ["shark_head",1,"SHARK"],
+    "torso": ["shark_torso",1.1,"SHARK"],
+    "arm": ["shark_frontfin",1.1,"SHARK"],
+    "leg": ["shark_backfin",1.1,"SHARK"],
+    "tail": ["shark_tailfin",1.1,"SHARK_DEEP"]
+   },
+   "extras": [["shark_dorsal","back",0.9,"SHARK_DEEP",false],["beasts_horn","brow",0.45,"SHARK_DEEP",true]]
+  },
+  {
+   "name": "altmowl",
+   "rig": "altman0",
+   "line": "altman",
+   "stage": 0,
+   "scale": 0.85,
+   "armOut": 20,
+   "parts": {
+    "head": ["owl_head",1,"CLOUD"],
+    "torso": ["owl_torso",1,"CLOUD"],
+    "arm": ["owl_wing",0.95,"CLOUD_DEEP"],
+    "leg": ["owl_foot",0.9,null],
+    "tail": ["owl_tail",0.9,"CLOUD_DEEP"]
+   },
+   "extras": [["birds_crown","crown",0.9,"CLOUD",false]]
+  },
+  {
+   "name": "cliplet",
+   "rig": "yiming0",
+   "line": "yiming",
+   "stage": 0,
+   "scale": 0.55,
+   "parts": {
+    "head": ["cat_head",1,"CLIP"],
+    "torso": ["fox_torso",0.85,"CLIP"],
+    "arm": ["fox_arm",0.8,"CLIP"],
+    "leg": ["fox_leg",0.75,"CLIP"],
+    "tail": ["fox_tail",1,"CLIP_CYAN"]
+   },
+   "extras": [["fox_ear","ears",0.75,"CLIP",true]]
+  },
+  {
+   "name": "tiktokferret",
+   "rig": "yiming1",
+   "line": "yiming",
+   "stage": 1,
+   "scale": 0.82,
+   "parts": {
+    "head": ["cat_head",0.95,"TIKTOK"],
+    "torso": ["fox_torso",1.05,"TIKTOK"],
+    "arm": ["fox_arm",0.85,"TIKTOK"],
+    "leg": ["fox_leg",0.8,"TIKTOK"],
+    "tail": ["fox_tail",1.05,"TIKTOK_CYAN"]
+   },
+   "extras": [["fox_ear","ears",0.6,"TIKTOK",true],["birds_plume","crown",0.45,"TIKTOK_PINK",false]]
+  },
+  {
+   "name": "cublet",
+   "rig": "woods0",
+   "line": "woods",
+   "stage": 0,
+   "scale": 0.6,
+   "parts": {
+    "head": ["cat_head",1,"TIGER"],
+    "torso": ["cat_torso",0.9,"TIGER"],
+    "arm": ["cat_arm",0.85,"TIGER"],
+    "leg": ["cat_leg",0.8,"TIGER"],
+    "tail": ["cat_tail",0.85,"TEE_GOLD"]
+   },
+   "extras": [["cat_ear","ears",0.65,"TIGER",true],["beasts_spikes","crown",0.5,"TIGER_STRIPE",false]]
+  },
+  {
+   "name": "tigerwoods",
+   "rig": "woods1",
+   "line": "woods",
+   "stage": 1,
+   "scale": 0.95,
+   "parts": {
+    "head": ["cat_head",1,"SUNDAY_RED"],
+    "torso": ["bear_torso",1.1,"SUNDAY_RED"],
+    "arm": ["cat_arm",1.05,"SUNDAY_RED"],
+    "leg": ["cat_leg",1.05,"SUNDAY_RED"],
+    "tail": ["cat_tail",1.1,"PUTTING_GREEN"]
+   },
+   "extras": [
+    ["cat_ear","ears",0.7,"SUNDAY_RED",true],
+    ["beasts_spikes","crown",0.65,"TIGER_STRIPE",false],
+    ["beasts_spikes","back",0.8,"TIGER_STRIPE",false]
+   ]
+  },
+  {
+   "name": "peacouture",
+   "rig": "arnault0",
+   "line": "arnault",
+   "stage": 0,
+   "scale": 0.8,
+   "armOut": 25,
+   "parts": {
+    "head": ["bird_head",1,"PEACOCK"],
+    "torso": ["bird_torso",1,"PEACOCK"],
+    "arm": ["bird_arm",0.95,"PEACOCK_EMBER"],
+    "leg": ["bird_leg",0.9,null],
+    "tail": ["bird_tail",1.1,"PEACOCK_EMBER"]
+   },
+   "extras": [
+    ["birds_plume","back",2.6,"PEACOCK_GOLD",true],
+    ["birds_crown","crown",0.8,"PEACOCK_GOLD",false],
+    ["birds_ruff","collar",0.7,"PEACOCK_EMBER",false]
+   ]
+  },
+  {
+   "name": "siliclet",
+   "rig": "huang0",
+   "line": "huang",
+   "stage": 0,
+   "scale": 0.55,
+   "parts": {
+    "head": ["reptile_head",1.05,"GECKO"],
+    "torso": ["reptile_torso",0.85,"GECKO"],
+    "arm": ["reptile_arm",0.8,"GECKO"],
+    "leg": ["reptile_leg",0.8,"GECKO"],
+    "tail": ["reptile_tail",0.85,"GECKO"]
+   },
+   "extras": [["beasts_spikes","crown",0.45,"CHIP_GREEN",false]]
+  },
+  {
+   "name": "jenzard",
+   "rig": "huang1",
+   "line": "huang",
+   "stage": 1,
+   "scale": 0.8,
+   "parts": {
+    "head": ["reptile_head",1,"GECKO_GLOSS"],
+    "torso": ["reptile_torso",1,"GECKO_GLOSS"],
+    "arm": ["reptile_arm",0.95,"GECKO_GLOSS"],
+    "leg": ["reptile_leg",0.95,"GECKO_GLOSS"],
+    "tail": ["reptile_tail",1.15,"GECKO_GLOSS"]
+   },
+   "extras": [["fish_sail","back",0.9,"CHIP_GREEN",false],["beasts_spikes","crown",0.6,"CHIP_GREEN",false]]
+  },
+  {
+   "name": "gigajenzard",
+   "rig": "huang2",
+   "line": "huang",
+   "stage": 2,
+   "scale": 1,
+   "parts": {
+    "head": ["reptile_head",1.05,"GECKO_GLOSS"],
+    "torso": ["reptile_torso",1.15,"GECKO_GLOSS"],
+    "arm": ["reptile_arm",1.05,"GECKO_GLOSS"],
+    "leg": ["reptile_leg",1.1,"GECKO_GLOSS"],
+    "tail": ["reptile_tail",1.25,"GECKO_GLOSS"]
+   },
+   "extras": [
+    ["hawk_wing","wings",1.4,"GECKO_WING",true],
+    ["fish_sail","back",1,"CHIP_GREEN",false],
+    ["beasts_horn","brow",0.65,"HORN",true],
+    ["beasts_spikes","crown",0.7,"CHIP_GREEN",false]
+   ]
+  },
+  {
+   "name": "harbour_gosling",
+   "rig": "hughes_harbour0",
+   "line": "hughes",
+   "form": "harbour",
+   "stage": 0,
+   "scale": 0.55,
+   "armOut": 45,
+   "parts": {
+    "head": ["chick_head",1,"HARBOUR_PALE"],
+    "torso": ["chick_torso",0.9,"HARBOUR_PALE"],
+    "arm": ["chick_wing",0.9,"HARBOUR_PALE"],
+    "leg": ["duck_foot",0.8,null],
+    "tail": ["chick_tail",0.7,"HARBOUR_PALE"]
+   },
+   "extras": [["chick_crest","crown",0.5,"HARBOUR_PALE",false]]
+  },
+  {
+   "name": "harbour_sprucegoose",
+   "rig": "hughes_harbour1",
+   "line": "hughes",
+   "form": "harbour",
+   "stage": 1,
+   "scale": 0.8,
+   "armOut": 35,
+   "parts": {
+    "head": ["duck_head",1,"HARBOUR"],
+    "torso": ["duck_torso",1,"HARBOUR"],
+    "arm": ["duck_wing",1.05,"HARBOUR_DEEP"],
+    "leg": ["duck_foot",0.9,null],
+    "tail": ["duck_tail",0.9,"HARBOUR_DEEP"]
+   },
+   "extras": [["duck_crest","crown",0.6,"HARBOUR_DEEP",false]]
+  },
+  {
+   "name": "harbour_aviatorgoose",
+   "rig": "hughes_harbour2",
+   "line": "hughes",
+   "form": "harbour",
+   "stage": 2,
+   "scale": 0.95,
+   "armOut": 40,
+   "parts": {
+    "head": ["duck_head",1,"HARBOUR"],
+    "torso": ["duck_torso",1.05,"HARBOUR"],
+    "arm": ["eagle_wing",1.1,"HARBOUR_DEEP"],
+    "leg": ["duck_foot",0.95,null],
+    "tail": ["duck_tail",1,"HARBOUR_DEEP"]
+   },
+   "extras": [["birds_ruff","collar",0.7,"HARBOUR_PALE",false],["duck_crest","crown",0.7,"HARBOUR_DEEP",false]]
+  },
+  {
+   "name": "meatball_flatpackrat",
+   "rig": "kamprad_meatball0",
+   "line": "kamprad",
+   "form": "meatball",
+   "stage": 0,
+   "scale": 0.55,
+   "parts": {
+    "head": ["cat_head",1,"MEATBALL"],
+    "torso": ["cat_torso",0.9,"MEATBALL"],
+    "arm": ["cat_arm",0.75,"MEATBALL"],
+    "leg": ["cat_leg",0.75,"MEATBALL"],
+    "tail": ["reptile_tail",0.8,"MEATBALL_SAUCE"]
+   },
+   "extras": [["bear_ear","ears",0.5,"MEATBALL",true]]
+  },
+  {
+   "name": "meatball_kamprat",
+   "rig": "kamprad_meatball1",
+   "line": "kamprad",
+   "form": "meatball",
+   "stage": 1,
+   "scale": 0.8,
+   "parts": {
+    "head": ["cat_head",1,"MEATBALL"],
+    "torso": ["bear_torso",1,"MEATBALL"],
+    "arm": ["cat_arm",0.9,"MEATBALL"],
+    "leg": ["cat_leg",0.9,"MEATBALL"],
+    "tail": ["reptile_tail",1,"MEATBALL_SAUCE"]
+   },
+   "extras": [
+    ["bear_ear","ears",0.55,"MEATBALL",true],
+    ["fish_sail","back",0.8,"MEATBALL_SAUCE",false],
+    ["birds_plume","crown",0.55,"LINGON",false]
+   ]
+  },
+  {
+   "name": "courtside_pupfin",
+   "rig": "cuban_courtside0",
+   "line": "cuban",
+   "form": "courtside",
+   "stage": 0,
+   "scale": 0.5,
+   "armOut": 35,
+   "parts": {
+    "head": ["goldfish_head",1,"COURTSIDE"],
+    "torso": ["goldfish_torso",0.9,"COURTSIDE"],
+    "arm": ["goldfish_frontfin",1,"COURTSIDE"],
+    "leg": ["goldfish_backfin",1,"COURTSIDE"],
+    "tail": ["goldfish_tailfin",0.9,"COURTSIDE"]
+   },
+   "extras": [["goldfish_dorsal","crown",0.6,"COURTSIDE",false]]
+  },
+  {
+   "name": "courtside_sharktank",
+   "rig": "cuban_courtside1",
+   "line": "cuban",
+   "form": "courtside",
+   "stage": 1,
+   "scale": 1,
+   "armOut": 35,
+   "parts": {
+    "head": ["shark_head",1,"HARDWOOD"],
+    "torso": ["shark_torso",1.1,"HARDWOOD"],
+    "arm": ["shark_frontfin",1.1,"HARDWOOD"],
+    "leg": ["shark_backfin",1.1,"HARDWOOD"],
+    "tail": ["shark_tailfin",1.1,"COURTSIDE_DEEP"]
+   },
+   "extras": [["shark_dorsal","back",0.9,"COURTSIDE_DEEP",false],["beasts_horn","brow",0.45,"COURTSIDE_DEEP",true]]
+  },
+  {
+   "name": "livestream_cliplet",
+   "rig": "yiming_livestream0",
+   "line": "yiming",
+   "form": "livestream",
+   "stage": 0,
+   "scale": 0.55,
+   "parts": {
+    "head": ["cat_head",1,"LIVESTREAM_GLOW"],
+    "torso": ["fox_torso",0.85,"LIVESTREAM_GLOW"],
+    "arm": ["fox_arm",0.8,"LIVESTREAM_GLOW"],
+    "leg": ["fox_leg",0.75,"LIVESTREAM_GLOW"],
+    "tail": ["fox_tail",1,"LIVESTREAM_HOT"]
+   },
+   "extras": [["fox_ear","ears",0.75,"LIVESTREAM_GLOW",true]]
+  },
+  {
+   "name": "livestream_tiktokferret",
+   "rig": "yiming_livestream1",
+   "line": "yiming",
+   "form": "livestream",
+   "stage": 1,
+   "scale": 0.82,
+   "parts": {
+    "head": ["cat_head",0.95,"LIVESTREAM"],
+    "torso": ["fox_torso",1.05,"LIVESTREAM"],
+    "arm": ["fox_arm",0.85,"LIVESTREAM"],
+    "leg": ["fox_leg",0.8,"LIVESTREAM"],
+    "tail": ["fox_tail",1.05,"LIVESTREAM_HOT"]
+   },
+   "extras": [["fox_ear","ears",0.6,"LIVESTREAM",true],["birds_plume","crown",0.45,"LIVESTREAM_GLOW",false]]
+  },
+  {
+   "name": "hazard_cublet",
+   "rig": "woods_hazard0",
+   "line": "woods",
+   "form": "hazard",
+   "stage": 0,
+   "scale": 0.6,
+   "parts": {
+    "head": ["cat_head",1,"HAZARD"],
+    "torso": ["cat_torso",0.9,"HAZARD"],
+    "arm": ["cat_arm",0.85,"HAZARD"],
+    "leg": ["cat_leg",0.8,"HAZARD"],
+    "tail": ["cat_tail",0.85,"HAZARD_WEED"]
+   },
+   "extras": [["cat_ear","ears",0.65,"HAZARD",true],["beasts_spikes","crown",0.5,"HAZARD_DEEP",false]]
+  },
+  {
+   "name": "hazard_tigerwoods",
+   "rig": "woods_hazard1",
+   "line": "woods",
+   "form": "hazard",
+   "stage": 1,
+   "scale": 0.95,
+   "parts": {
+    "head": ["cat_head",1,"HAZARD"],
+    "torso": ["bear_torso",1.1,"HAZARD"],
+    "arm": ["cat_arm",1.05,"HAZARD"],
+    "leg": ["cat_leg",1.05,"HAZARD"],
+    "tail": ["cat_tail",1.1,"HAZARD_WEED"]
+   },
+   "extras": [
+    ["cat_ear","ears",0.7,"HAZARD",true],
+    ["beasts_spikes","crown",0.65,"HAZARD_DEEP",false],
+    ["beasts_spikes","back",0.8,"HAZARD_DEEP",false]
+   ]
   }
  ]
 }

@@ -1,0 +1,55 @@
+{
+ "id": "cuban",
+ "names": ["Pupfin","Sharktank"],
+ "types": [["Water"],["Water","Dragon"]],
+ "prof": [0.95,1.2,0.9,0.95,0.95,1.05],
+ "rar": "common",
+ "totals": [235,515],
+ "learn": [
+  [1,"spin"],
+  [1,"handshake"],
+  [10,"interest"],
+  [15,"compound"],
+  [20,"imout"],
+  [24,"wyrmbreath"],
+  [28,"headline"],
+  [34,"joyride"],
+  [40,"exclusive"]
+ ],
+ "cat": ["Pitch Billie","Tank Billie"],
+ "ht": [0.3,4.2],
+ "wt": [2,280],
+ "hab": ["Ponds, fountains and anywhere with an audience","Deep water under bright studio lights"],
+ "diet": ["Pitches","Other people's pitches"],
+ "bio": [
+  "A goldfish that flops up to anyone who will watch and pitches them an idea. Nobody has ever said yes, and it has never once stopped talking.",
+  "One day the pitching goldfish stopped asking and started deciding. It circles the pond, hears every idea, and says one thing before it bites: \"I'm out.\""
+ ],
+ "note": ["Has an idea for you. And another one.","Says \"I'm out\" and means everyone."],
+ "evo": [
+  {"k":"lvl","at":20}
+ ],
+ "forms": [
+  {
+   "id": "courtside",
+   "name": "Courtside",
+   "swap": {"Water":"Ground"},
+   "coat": "courtside"
+  }
+ ],
+ "parody": "Mark Cuban",
+ "cry": [
+  {"base":"fish","pitch":74,"length":0.6,"name":"placeholder: a hopeful blub (Claude's draft)"},
+  {"base":"fish","pitch":46,"length":1.4,"name":"placeholder: a deep studio roar (Claude's draft)"}
+ ],
+ "parts": [
+  {
+   "head": "goldfish_head",
+   "body": "goldfish_torso",
+   "front": "goldfish_frontfin",
+   "back": "goldfish_backfin",
+   "sig": "goldfish_tailfin"
+  },
+  {"head":"shark_head","body":"shark_torso","front":"shark_frontfin","back":"shark_backfin","sig":"shark_tailfin"}
+ ]
+}

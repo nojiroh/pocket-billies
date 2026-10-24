@@ -13,6 +13,7 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import {
+  EVENTS,
   ITEMS,
   LOCATIONS,
   MOVES,
@@ -38,6 +39,7 @@ import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
 import { runClinic, runFoes, runHealCost, runShopOpen, runWareHeals } from './logic/run-loop.js';
 import { perkOfferMake } from './logic/perks.js';
+import { eventAt } from './logic/encounters.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { runUnlocks } from './logic/unlocks.js';
 import { runStartOn, runStartPlan } from './logic/run-start.js';
@@ -104,6 +106,7 @@ import { runWorld, runWorldData, runWorldSync } from './run-world.js';
 import { runClinicEach, runJump, runTakeOff } from './run.js';
 import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
+import { encounterOpen } from './encounter-screen.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
@@ -1107,6 +1110,91 @@ async function runFullTest(mode) {
         },
         4,
         60
+      );
+    /* RL-12b: a run's waystation and stall, on a copy of the save: the first seed (SELFTESTWAY0, 1, ...) whose map has
+       both; at the waystation its stand (act 'event') opens the event the place holds, at the stall its stall opens
+       the place's shop with the day's wares; both hold rules.json run.wild.waystation wild Billies. Then the save as
+       it was */
+    if (typeof runWorldSync === 'function' && typeof encounterOpen === 'function' && !selfTest.stop)
+      await phase(
+        "A run's waystation and stall",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            view = async (/** @type {number} */ n) => {
+              const id = 'w:' + LOCATIONS[n].mapId + '*';
+              for (let i = 0; i < 600 && !(walkView.ready && walkView.id === id); i++) await selfTestSleep(100);
+              if (walkView.id !== id) throw new Error(`${LOCATIONS[n].name} isn't shown (still ${walkView.id})`);
+            },
+            sheet = async (/** @type {string} */ sel) => {
+              for (let i = 0; i < 50 && !document.querySelector(sel); i++) await selfTestSleep(100);
+              return document.querySelector(sel);
+            },
+            shut = () => {
+              uiState.modal = null;
+              uiState.mq = [];
+              renderOverlay();
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            let plan = null,
+              seed = '';
+            for (let k = 0; k < 60 && !plan; k++) {
+              const p = runStartPlan(`SELFTESTWAY${k}`, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }),
+                types = p.map.nodes.filter(n => !n.side).map(n => n.type);
+              if (types.includes('event') && types.includes('stall')) [plan, seed] = [p, `SELFTESTWAY${k}`];
+            }
+            if (!plan) throw new Error('no seed of the first 60 has a waystation and a stall');
+            runStartOn(s, plan);
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            setSaveData(s);
+            const nodes = s.run.map.nodes,
+              stand = nodes.findIndex(n => n.type === 'event' && !n.side),
+              stall = nodes.findIndex(n => n.type === 'stall' && !n.side),
+              out = [];
+            for (const [i, act] of /** @type {[number, string][]} */ ([
+              [stand, 'event'],
+              [stall, 'stall'],
+            ])) {
+              const n = runWorldNode(i);
+              if (!runJump(n)) throw new Error(`couldn’t walk to ${act === 'event' ? 'the waystation' : 'the stall'}`);
+              uiState.roam = null;
+              render();
+              await view(n);
+              const P = (walkView.sc.props || []).find(q => q.act === act);
+              if (!P) throw new Error(`${LOCATIONS[n].name} has no ${act === 'event' ? 'stand' : 'stall'}`);
+              const wild = encountersHere(n).length;
+              if (!LOCATIONS[n].waystation || wild > RULES.run.wild.waystation)
+                throw new Error(`${LOCATIONS[n].name} holds ${wild} wild Billies, more than a waystation's`);
+              shut();
+              walkPick({ k: 'act', act, p: P });
+              if (act === 'event') {
+                const ev = eventAt(saveData.run, i, EVENTS);
+                if (!ev) throw new Error('the waystation holds no event');
+                if (!(await sheet('#ov .event-sheet'))) throw new Error(`the stand didn’t open ${ev}`);
+                out.push(`${LOCATIONS[n].name}: ${ev}`);
+              } else {
+                if (!(await sheet('#ov .shop-sheet .ware2'))) throw new Error('the stall didn’t open its shop');
+                out.push(`${LOCATIONS[n].name}: ${document.querySelectorAll('#ov .shop-sheet .ware2').length} wares`);
+              }
+              shut();
+            }
+            return `${seed}: ${out.join('; ')}`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        180
       );
     /* RL-8: a run from the mast to the payout, on a copy of the save (nothing is written while the test runs): a short
        run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the

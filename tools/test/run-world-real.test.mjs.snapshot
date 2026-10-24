@@ -501,8 +501,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       ]
     },
     "props": {
-      "clinic": 1,
-      "shop": 1
+      "stall": 1
     },
     "kind": "route",
     "biome": "meadow",
