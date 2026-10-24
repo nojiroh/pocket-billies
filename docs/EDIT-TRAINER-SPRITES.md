@@ -10,7 +10,7 @@ Trainer art spans three distinct systems. The exporter collects all three **from
 
 The [**Trainer Editable Sprite Sheets** workflow](../../actions/workflows/trainer-sprite-sheets.yml) publishes a ZIP artifact named **trainer-sprite-edit-pack**. It includes the editable sheets, guides, JSON manifest, exact source PNG backups and, where available, the original unsliced portrait kit.
 
-The **`art-edit/trainer-sheets/`** directory in the export branch also contains the generated PNG sheets, guides and manifest (without redundant source backups). Use the workflow artifact when importing edits, as it includes the original source PNGs.
+The generated files are published as a workflow artifact, rather than committed to the repository. Use that artifact when importing edits, as it includes the original source PNGs.
 
 ## Edit with Aseprite, LibreSprite, Krita, or Photoshop
 
