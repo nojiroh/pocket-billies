@@ -2,6 +2,84 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Routes track RT-1 - Route layouts - 2026-10-24
+Branch `track/routes` (plan approved in Plan Mode; the owner's answers: all five plans, and **every non-town place**
+laid out: landing, route, mini-boss, boss; towns, waystations and stalls keep their open ground). Tag `rt-1-done`
+for the owner to push.
+- Where the plan file was wrong (checked in the code):
+  - `MAPGEN_STAGES` drives nothing (only exposed); the order is hard-coded in `mapgenScene`. The new stage runs there,
+    after `lots`, before `plants`; the list and the Studio's `GEN_REROLL` gained `layout`.
+  - `scene.spots` already existed (TR-2b `summit`, `pocket`): RT-1 adds kinds to it.
+  - `mapgenWalkGrid` ignored a prop's `rot` (the game's `navGrid` turns it): a fence off east-west was checked by its
+    unturned box. Fixed first, on its own (no scene changed).
+  - Plan weights "in `rules.json run.scene`" would have shifted every later dial's draw and failed check-data:
+    they are `rules.json run.layouts` (biome to plan weights, `default`), drawn from the node's own stream.
+  - Phone cost: no prop is batched; a model tree is a draw per leaf clump, so a forest of trees was out from the start.
+  - Found on main, not caused here: merge 4b72518 left the check-data and run-start snapshots stale (five quick tests
+    red). Remade in the first commit.
+- Changed (one cause per commit):
+  - **Canopy pieces** (`tools/build-forest-canopy.py`): `forest_canopy`, `_pine`, `_autumn`, low-poly, mesh shapes
+    only (one draw and its shadow), about 6 x 5 m, fallback pictures. **Deep forest** ground `&` (the forest floor's
+    tiles, walk false, nothing grows): a mass is solid by its ground, so the pieces stand about 5 m apart for the look.
+    biomes.json `canopy` and `fences` pools (schema, type, check).
+  - **logic/mapgen.js**: the `layout` dial (`MAPGEN_LAYOUT_DIALS`, kept only when given: scenes made without it are
+    unchanged), `MAPGEN_LAYOUTS` (forest trail, farmland, lakeside, ledge drop, two lanes), `mapgenStageLayout`:
+    fenced fields (shut, or with a gap: a pocket) on farm soil, hedgerows and a hedge lane beside the road (turned
+    fence runs, `mapgenFenceRun`), boulder outcrops on rock, then forest masses fill the rest of the budget (ranked by
+    a smooth field, hugging the road on the forest trail): a wall of the biome's trees 5 m apart, canopy pieces
+    inside, clearings carved in with a way in (pockets). Biomes with no canopy get boulder masses. Blockers keep off
+    the road (2.2 m; 7 m on its south, the camera's side), water, tall grass, 9 m round the hub, the exits' run-in,
+    joined strips, the east and west 5 m, lots, kept spots and where today's route trainers stand (until RT-2).
+    `mapgenScene` makes a laid-out place again (four tries at most) until its walkable share is 55-65%.
+    **Spots** on the finished scene: `pocket`, `clearing` (3.5 m clear), `deadend`, `pinch` (`dir`, `r` half the
+    width); `sc.layout = { plan, walk }`. Lakeside sets a pond, ledge drop terraces with ledges. MAPGEN_VERSION 8 (TW-1 took 7 on main; merged in).
+  - **Runs**: nodeTypes.json `layout` on landing, route, miniboss, boss; `runLayoutOf` (run-scenes.js), the plan from
+    `run.layouts` (placeholder weights) on the node's `scene|layout` stream, so no other dial moved; check-data.
+  - **Studio**: a Route layout dial and a Layout reroll on the Generate card.
+  - **Debug**: Start a run can force a plan on every laid-out place (`dbg_layout_<plan>`); `?fixture=layout` (forest,
+    `&plan=` another, `none` the open field). `tools/route-perf.py`: draws per plan, headless at phone size.
+  - check-quick's unused report counts what a biome's pools name.
+- Measured (5 seeds, the game's data, walk from the hub with slopes): laid-out places 60-62% walkable (route 61.5%,
+  landing 60.1, mini-boss 62.2, boss 61.0), towns 94.7 as before; props a route 553 -> 612. **Draws a frame**
+  (route-perf, low graphics, 6 spots on the way west, the fixture's thicket landing): open field 463; forest trail
+  715 with the wall 3.2 m apart (+55%, the wall's leaf clumps), **564** with it 5 m apart (+22%); farmland 512,
+  lakeside 497, ledge drop 555, lanes 485. So the canopy pieces stayed (option A); the generated canopy mesh
+  (option B, new renderer code) was not built: A came in under the +25% I set. Every route was already over the
+  phone's 400-draw budget before RT-1.
+- **Frame time is the bigger cost** (found when the full quick check timed out): headless frame time is software
+  drawing, so only comparable, not a phone's, but it moved much more than the draws. Open field 273 ms; forest with
+  no pieces 330; with 10-globe pieces 523; with **5 bigger shapes 416** (kept). Not the shadow pass (canopy shadows
+  off: no change) and not the understorey's fill (off: no change). The pieces' own geometry is the cost; on a phone
+  GPU it should matter less, but it is the first thing to check in the owner's debug log.
+- **Making a run's world** (all its scenes at take-off): 0.5 s without layouts, 1.3 s with them on this machine;
+  1.1 s after reading heights from a table (`mapgenGroundSampler`, the same heights) and a cheaper dead-end search.
+  A laid-out place takes about 1.2 tries on average.
+- check-quick: the laid-out places made the RL-8 and Sound effects steps time out in the full check's paired
+  browsers (a frame up to 10 s). Waits raised as TC-3/TC-4 did: a seam's view 90 to 150 s, the take-off 30 to 60,
+  the Alpha 20 to 45, the payouts 40 to 90 (each is a second or two on a phone).
+- Verified: lint, typecheck, check:modules, check:data, format:check, unit tests 895 quick and 54 slow (the new
+  `mapgen-layout` test: five plans over six biomes, 55-65% walkable, exits and spots reached, no trap, nothing on the
+  road, seams or run-ins, deep forest never walkable, same seed same scene, no dial no change); run-world-real (every
+  run's seams still agree); smoke 6 of 6; headless pictures of each plan. Full quick check (1663 s): 36 of 37; the
+  one problem, Postcards ("the postcard's picture didn't load", Copperleaf's picture in 10 s), passed alone and in the
+  first full run and touches nothing RT-1 changed: the full check's load. CI (lint, rules, smoke) green.
+  - After merging main (RL-13, TW-1, RL-R2b): unit tests 917 and 57, smoke clean, Sound effects and Postcards pass.
+    **RL-8 fails on main too** (c68318e, run alone): "the town's shop has no Perk (RL-12)": the town's shop sheet
+    has no Perk row (shop.js shopPerk reads `run.shelf`, filled by perkShelf when the shop opens). Not RT-1's code;
+    left for the RL-13 / TW-1 owner of that change to look at. Snapshots remade on purpose: rng's scene
+  hash and run-start (version only), run-world-real's dials (the new `layout` field only), golden (a laid-out case).
+- Risky / open:
+  - **Route trainers** still stand on the straight line (RT-2). The layout keeps their spots clear; 8 of 118 spots
+    over 20 runs are on water, a lookout or a bush, as 6 were before.
+  - Not seen on a phone: fps (headless frames went +50% on a forest trail), the take-off's world making (2x), and
+    how the canopy pieces read at full graphics (they are lumpy globes and cones; the
+    look is ask-me-before item 2 if it doesn't sit right). Try `?fixture=layout` or the debug menu's layout choice.
+  - Outcrops are boulder clusters, not raised step blocks (the step grid meets pinning and seams; boulders were safe).
+  - Spots: dead ends are often in a field's corner by the map's edge; pinches are rare where the road's margin is wide.
+    RT-2 picks among them.
+  - Python Playwright was not installed in this container (`pip install playwright==1.63.0`; the browser is in
+    /opt/pw-browsers). gamedata.js is 0.62 MB now, not the 13 MB CLAUDE.md says.
+- Next: RT-2 (trainers on the spots, sight along the road, 4-6 a place, pairs).
 ### Roguelite track RL-13 - Expeditions, challenges, starter points - 2026-10-24
 Branch `track/expeditions` (new, made from main at 25e447e in this session on the owner's word; BRANCHES.md and
 roguelite-track 9.4 name it). Plan approved in Plan Mode with the owner's answers: Expedition I is the baseline and

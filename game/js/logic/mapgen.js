@@ -17,27 +17,35 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { hashString, rngFrom } from './rng.js';
+import { pointInProp, turnedBounds, turnedPoint } from './prop-turn.js';
 /* eslint-disable no-func-assign */
 expose({
   MAPGEN_BAND: [() => MAPGEN_BAND],
   MAPGEN_BASE64: [() => MAPGEN_BASE64],
   MAPGEN_BRIDGE_SQUARE: [() => MAPGEN_BRIDGE_SQUARE],
+  MAPGEN_DEEP: [() => MAPGEN_DEEP],
   MAPGEN_DEFAULTS: [() => MAPGEN_DEFAULTS],
   MAPGEN_EXIT_IN: [() => MAPGEN_EXIT_IN],
   MAPGEN_FAMILY_SHARE: [() => MAPGEN_FAMILY_SHARE],
   MAPGEN_FEATURES: [() => MAPGEN_FEATURES],
+  MAPGEN_FOREST: [() => MAPGEN_FOREST],
   MAPGEN_FOUR: [() => MAPGEN_FOUR],
   MAPGEN_GRASS_PATCH: [() => MAPGEN_GRASS_PATCH],
   MAPGEN_HUB_BUILDINGS: [() => MAPGEN_HUB_BUILDINGS],
   MAPGEN_INWARD: [() => MAPGEN_INWARD],
+  MAPGEN_LAYOUTS: [() => MAPGEN_LAYOUTS],
+  MAPGEN_LAYOUT_DIALS: [() => MAPGEN_LAYOUT_DIALS],
   MAPGEN_LEDGE_PIECE: [() => MAPGEN_LEDGE_PIECE],
+  MAPGEN_LM: [() => MAPGEN_LM],
   MAPGEN_MASSIF: [() => MAPGEN_MASSIF],
   MAPGEN_MOUNTAIN_DIALS: [() => MAPGEN_MOUNTAIN_DIALS],
   MAPGEN_MOUNTAIN_SMOOTH: [() => MAPGEN_MOUNTAIN_SMOOTH],
   MAPGEN_OPPOSITE: [() => MAPGEN_OPPOSITE],
+  MAPGEN_OUTCROP: [() => MAPGEN_OUTCROP],
   MAPGEN_OUTWARD: [() => MAPGEN_OUTWARD],
   MAPGEN_PATH_GROUND: [() => MAPGEN_PATH_GROUND],
   MAPGEN_PEAK: [() => MAPGEN_PEAK],
+  MAPGEN_PLANT_SHARE: [() => MAPGEN_PLANT_SHARE],
   MAPGEN_SHAPES: [() => MAPGEN_SHAPES],
   MAPGEN_SIDE_NAME: [() => MAPGEN_SIDE_NAME],
   MAPGEN_SIZES: [() => MAPGEN_SIZES],
@@ -49,6 +57,8 @@ expose({
   MAPGEN_TRAIL_GRADE: [() => MAPGEN_TRAIL_GRADE],
   MAPGEN_TRAIL_WIDTH: [() => MAPGEN_TRAIL_WIDTH],
   MAPGEN_VERSION: [() => MAPGEN_VERSION],
+  MAPGEN_WALKABLE: [() => MAPGEN_WALKABLE],
+  MAPGEN_WALK_AIM: [() => MAPGEN_WALK_AIM],
   MAPGEN_WATER: [() => MAPGEN_WATER],
   MAPGEN_WET: [() => MAPGEN_WET],
   MAPGEN_WILD_MARK: [() => MAPGEN_WILD_MARK],
@@ -58,6 +68,8 @@ expose({
   mapgenBezier: [() => mapgenBezier, v => (mapgenBezier = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenBridgesOverWater: [() => mapgenBridgesOverWater, v => (mapgenBridgesOverWater = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenBuild: [() => mapgenBuild, v => (mapgenBuild = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenCarveTrail: [() => mapgenCarveTrail, v => (mapgenCarveTrail = v)],
   mapgenCellAt: [() => mapgenCellAt],
@@ -85,17 +97,36 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenFbm: [() => mapgenFbm, v => (mapgenFbm = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenFenceRun: [() => mapgenFenceRun, v => (mapgenFenceRun = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenFillMask: [() => mapgenFillMask, v => (mapgenFillMask = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenFlattenRoads: [() => mapgenFlattenRoads, v => (mapgenFlattenRoads = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenForestClearings: [() => mapgenForestClearings, v => (mapgenForestClearings = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenForestFill: [() => mapgenForestFill, v => (mapgenForestFill = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenForestTidy: [() => mapgenForestTidy, v => (mapgenForestTidy = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenGrassPatches: [() => mapgenGrassPatches, v => (mapgenGrassPatches = v)],
   mapgenGround: [() => mapgenGround],
+  // @ts-expect-error -- replaced on purpose
+  mapgenGroundSampler: [() => mapgenGroundSampler, v => (mapgenGroundSampler = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenGrowWild: [() => mapgenGrowWild, v => (mapgenGrowWild = v)],
   mapgenInLot: [() => mapgenInLot],
   // @ts-expect-error -- replaced on purpose
   mapgenJoinOffset: [() => mapgenJoinOffset, v => (mapgenJoinOffset = v)],
+  mapgenLaidOut: [() => mapgenLaidOut],
   // @ts-expect-error -- replaced on purpose
   mapgenLattice: [() => mapgenLattice, v => (mapgenLattice = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenLayoutFree: [() => mapgenLayoutFree, v => (mapgenLayoutFree = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenLayoutRect: [() => mapgenLayoutRect, v => (mapgenLayoutRect = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenLayoutSpots: [() => mapgenLayoutSpots, v => (mapgenLayoutSpots = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenLedges: [() => mapgenLedges, v => (mapgenLedges = v)],
   // @ts-expect-error -- replaced on purpose
@@ -104,6 +135,8 @@ expose({
   mapgenLotFree: [() => mapgenLotFree, v => (mapgenLotFree = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenLowerWater: [() => mapgenLowerWater, v => (mapgenLowerWater = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenMaskDepth: [() => mapgenMaskDepth, v => (mapgenMaskDepth = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenMergeDefaults: [() => mapgenMergeDefaults, v => (mapgenMergeDefaults = v)],
   // @ts-expect-error -- replaced on purpose
@@ -130,6 +163,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenOnCliff: [() => mapgenOnCliff, v => (mapgenOnCliff = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenOutcrop: [() => mapgenOutcrop, v => (mapgenOutcrop = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenPaintCoast: [() => mapgenPaintCoast, v => (mapgenPaintCoast = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenPaintDisc: [() => mapgenPaintDisc, v => (mapgenPaintDisc = v)],
@@ -153,6 +188,7 @@ expose({
   mapgenPockets: [() => mapgenPockets, v => (mapgenPockets = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenPolyLength: [() => mapgenPolyLength, v => (mapgenPolyLength = v)],
+  mapgenPoolPick: [() => mapgenPoolPick],
   // @ts-expect-error -- replaced on purpose
   mapgenPutProp: [() => mapgenPutProp, v => (mapgenPutProp = v)],
   // @ts-expect-error -- replaced on purpose
@@ -207,6 +243,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenStageLand: [() => mapgenStageLand, v => (mapgenStageLand = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenStageLayout: [() => mapgenStageLayout, v => (mapgenStageLayout = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenStageLots: [() => mapgenStageLots, v => (mapgenStageLots = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenStagePlants: [() => mapgenStagePlants, v => (mapgenStagePlants = v)],
@@ -236,11 +274,24 @@ expose({
   mapgenUntrap: [() => mapgenUntrap, v => (mapgenUntrap = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenWalkGrid: [() => mapgenWalkGrid, v => (mapgenWalkGrid = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenWalkShare: [() => mapgenWalkShare, v => (mapgenWalkShare = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 7; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1) */
-export const MAPGEN_STAGES = ['heights', 'relief', 'ground', 'road', 'exits', 'lots', 'plants', 'feature', 'props'];
+export const MAPGEN_VERSION = 8; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track) */
+export const MAPGEN_STAGES = [
+  'heights',
+  'relief',
+  'ground',
+  'road',
+  'exits',
+  'lots',
+  'layout',
+  'plants',
+  'feature',
+  'props',
+];
 export const MAPGEN_SHAPES = {
   straight: 'Straight',
   winding: 'Gentle winding',
@@ -386,6 +437,16 @@ export function mapgenParams(p) {
   if (P.land.mountains !== undefined && typeof P.land.mountains !== 'number') delete P.land.mountains;
   if (P.land.ledges !== undefined && typeof P.land.ledges !== 'number') delete P.land.ledges;
   if (P.land.massif !== undefined && !MAPGEN_MASSIF[P.land.massif]) P.land.massif = MAPGEN_MOUNTAIN_DIALS.massif;
+  /* RT-1: the layout plan, kept only when given; a plan sets its own dials (a lake, terraces with ledge fronts) */
+  if (P.layout !== undefined && (typeof P.layout !== 'string' || !MAPGEN_LAYOUTS[P.layout]))
+    P.layout = MAPGEN_LAYOUT_DIALS.layout;
+  if (mapgenLaidOut(P)) {
+    const d = MAPGEN_LAYOUTS[P.layout].dials || {};
+    if (d.water && P.land.water !== 'coast') P.land.water = d.water;
+    if (d.waterAmount != null) P.land.waterAmount = Math.max(P.land.waterAmount, d.waterAmount);
+    if (d.terraces != null) P.land.terraces = Math.max(P.land.terraces, d.terraces);
+    if (d.ledges != null) P.land.ledges = d.ledges;
+  }
   /* the sides whose edge is pinned to height 0 (a run's: every scene meets any neighbour there), kept only when given */
   if (P.pin !== undefined)
     P.pin = typeof P.pin === 'string' ? [...new Set(P.pin.split(''))].filter(c => 'NSEW'.includes(c)).join('') : '';
@@ -3133,6 +3194,679 @@ export function mapgenStageTown(G) {
   G.town = { square: [sq.x0, sq.z0, sq.x1, sq.z1], street: [sq.jx, sq.edge, sq.z0], houses: built, plots };
 }
 /* ---------- 6. plants: groves and an edge belt of trees, shrubs, rocks, tall grass, then the wild growth ---------- */
+/* ---------- RT-1: route layouts (the routes track) ---------- */
+/** the plans a run route is laid out by (the layout dial; 'none' leaves the open field). Each says what it builds
+ * before forest masses fill the rest of the blocking budget: fenced fields (shut or with a gap: a pocket inside),
+ * hedgerows along the road, a hedge lane beside the road, rock outcrops, clearings carved into the forest; and the
+ * dials it sets (a lake for the lakeside, terraces with ledge fronts for the ledge drop) */
+export const MAPGEN_LAYOUTS = {
+  none: { name: 'None (open field)' },
+  forest: { name: 'Forest trail', hug: 1, outcrops: [0, 1], clearings: [1, 2] },
+  farmland: { name: 'Farmland', fields: [2, 4], hedgerows: [1, 2], outcrops: [0, 0], clearings: [0, 1] },
+  lakeside: { name: 'Lakeside', dials: { water: 'pond', waterAmount: 0.85 }, outcrops: [0, 1], clearings: [1, 1] },
+  ledges: { name: 'Ledge drop', dials: { terraces: 0.6, ledges: 1 }, outcrops: [2, 3], clearings: [0, 1] },
+  lanes: { name: 'Two lanes', lane: 1, hedgerows: [0, 1], outcrops: [0, 1], clearings: [0, 1] },
+};
+/** the layout dial when not given (not in MAPGEN_DEFAULTS, so scenes made without it keep the dials they stored) */
+export const MAPGEN_LAYOUT_DIALS = { layout: 'none' };
+/** a forest mass's props (measured on the phone-sized headless page, tools/route-perf.py): canopy pieces `step`
+ * metres apart at a scale in `size`, the biome's trees along its edge `wall` metres apart (a model tree is a draw
+ * per leaf clump, the wall is most of a forest's cost) */
+export const MAPGEN_FOREST = { step: 5.2, size: [1.0, 1.35], wall: 5 };
+/** the ground under a forest mass: deep forest, walked by no one (scenery.json, tools/build-forest-canopy.py) */
+export const MAPGEN_DEEP = '&';
+/** the share of a laid-out route you can walk to from the hub (the owner, 2026-10-24: 55-65%) and the aim */
+export const MAPGEN_WALKABLE = [0.55, 0.65];
+export const MAPGEN_WALK_AIM = 0.6;
+/** what the plants stage still blocks on a laid-out route (shrubs, rocks and wild trees), counted in the budget */
+export const MAPGEN_PLANT_SHARE = 0.03;
+/** the mask a layout keeps per cell (G.Lm): what stands there */
+export const MAPGEN_LM = { forest: 1, field: 2, fence: 3, rock: 4, keep: 5 };
+/** the boulders of a rock outcrop by biome (models scale; the rest are pictures) */
+export const MAPGEN_OUTCROP = {
+  tundra: { boulder_snow: 1 },
+  volcano: { boulder_basalt: 1 },
+  default: { boulder_granite: 2, boulder_lichen: 2 },
+};
+/** is this scene laid out (params.layout set and not 'none') */
+export const mapgenLaidOut = P => !!P.layout && P.layout !== 'none' && !!MAPGEN_LAYOUTS[P.layout];
+
+/** the cells a layout may block: off the road and its verge (2.2 m from its edge; 7 m on its south, the camera's
+ * side, where a forest would hide you), water, banks, bridges and jettys, tall grass (1 m round it), 9 m round the
+ * hub, each exit's straight run-in, a joined edge's strip, the east and west 5 m (the seams), lots and kept spots,
+ * mountains, and where today's route trainers stand */
+export function mapgenLayoutFree(G) {
+  const { w, h } = G,
+    free = new Uint8Array(w * h);
+  /* until RT-2 stands route trainers on the layout's spots: where logic/route-trainers.js routeTrainerSpot puts them
+     today (1 or 2 a route: half, a third or two thirds of the way from the hub to the westmost exit, 3 m either side
+     of that line), and halfway back to it, stay clear */
+  const trainers = [];
+  if (G.exits.length) {
+    const ahead = G.exits.reduce((a, e) => (e.pt[0] < a.pt[0] ? e : a)).pt,
+      [hx, hz] = G.hub,
+      dx = ahead[0] - hx,
+      dz = ahead[1] - hz,
+      l = Math.hypot(dx, dz) || 1;
+    for (const t of [1 / 2, 1 / 3, 2 / 3])
+      for (const off of [-3, -1.5, 1.5, 3])
+        trainers.push([hx + dx * t + (-dz / l) * off, hz + dz * t + (dx / l) * off]);
+  }
+  for (let q = 0; q < w * h; q++) {
+    const i = q % w,
+      j = Math.floor(q / w),
+      x = i + 0.5,
+      z = j + 0.5;
+    if (G.F[q] & (1 | 2 | 4 | 8 | 32 | 64 | 128)) continue;
+    if (x < 5 || x > w - 5) continue;
+    const k = G.near[q];
+    if (k >= 0) {
+      const R = G.roadPts[k],
+        d = G.dist[q] - R.r;
+      if (d < 2.2 || (z < R.z && d < 7)) continue;
+    }
+    let near = false;
+    for (let dj = -1; dj <= 1 && !near; dj++)
+      for (let di = -1; di <= 1 && !near; di++) {
+        const ii = i + di,
+          jj = j + dj;
+        if (ii >= 0 && jj >= 0 && ii < w && jj < h && G.F[jj * w + ii] & 32) near = true;
+      }
+    if (near) continue;
+    if (Math.hypot(x - G.hub[0], z - G.hub[1]) < 9) continue;
+    if (
+      G.exits.some(e => {
+        const n = MAPGEN_INWARD[e.side],
+          dx = x - e.pt[0],
+          dz = z - e.pt[1],
+          along = dx * n[0] + dz * n[1],
+          across = Math.abs(dx * n[1] - dz * n[0]);
+        return along > -2 && along < MAPGEN_STRAIGHT_IN + 4 && across < 5;
+      })
+    )
+      continue;
+    if (mapgenNearJoined(G, x, z, 8) || mapgenInLot(G, x, z, 2)) continue;
+    if (G.keep.some(o => Math.hypot(x - o[0], z - o[1]) < o[2] + 1.5)) continue;
+    if (trainers.some(o => Math.hypot(x - o[0], z - o[1]) < 2.5)) continue;
+    if (G.mtnE && G.mtnE[mapgenBetween(Math.round(z), 0, h) * (w + 1) + mapgenBetween(Math.round(x), 0, w)] > 0.2)
+      continue;
+    free[q] = 1;
+  }
+  return free;
+}
+
+/** a run of box props (fences, walls, hedges) from a to b, turned along it, each segment fitted to the run's length;
+ * gaps: segment indices left out. Marks the mask under it. Returns the segments placed */
+export function mapgenFenceRun(G, k, a, b, gaps = []) {
+  const M = G.cat[k];
+  if (!M || !M.box) return 0;
+  const L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  if (L < 1) return 0;
+  const n = Math.max(1, Math.round(L / M.box[0])),
+    s = mapgenBetween(L / n / M.box[0], 0.8, 1.25),
+    tx = (b[0] - a[0]) / L,
+    tz = (b[1] - a[1]) / L,
+    rot = mapgenRound2((Math.atan2(tz, tx) * 180) / Math.PI),
+    d = M.box[1] * s;
+  let placed = 0;
+  for (let i = 0; i < n; i++) {
+    const cx = a[0] + tx * (L / n) * (i + 0.5),
+      cz = a[1] + tz * (L / n) * (i + 0.5);
+    mapgenPaintDisc(G, cx, cz, (L / n) * 0.55, q => {
+      if (!G.Lm[q]) G.Lm[q] = MAPGEN_LM.fence;
+    });
+    if (gaps.includes(i)) continue;
+    /* the base point is the middle of its front: half its depth before the run's line */
+    const bx = cx + tz * (d / 2),
+      bz = cz - tx * (d / 2);
+    if (mapgenPutProp(G, k, bx, bz, { force: true, s, extra: rot ? { rot } : undefined })) placed++;
+  }
+  return placed;
+}
+/** a place for a w x d rectangle (axis-aligned, metres) whose cells and a 1 m margin are all free and unmasked */
+export function mapgenLayoutRect(G, free, rnd, w, d, tries = 60) {
+  for (let t = 0; t < tries; t++) {
+    const x0 = Math.round(rnd.range(5, G.w - 5 - w)),
+      z0 = Math.round(rnd.range(1, G.h - 1 - d));
+    let ok = true;
+    for (let z = z0 - 1; z < z0 + d + 1 && ok; z++)
+      for (let x = x0 - 1; x < x0 + w + 1 && ok; x++) {
+        if (x < 0 || z < 0 || x >= G.w || z >= G.h) {
+          ok = false;
+          break;
+        }
+        const q = z * G.w + x;
+        if (!free[q] || G.Lm[q]) ok = false;
+      }
+    if (ok) return [x0, z0];
+  }
+  return null;
+}
+/** the biome's pick from a pool (a record of weights) or a fallback */
+export const mapgenPoolPick = (rnd, pool, fb) => (pool && Object.keys(pool).length ? rnd.pick(pool) : fb);
+
+/**
+ * RT-1: lay a route out by its plan (P.layout): blockers to bring the walkable share near `aim`, after the lots and
+ * before the plants. Fields, hedgerows, a lane and outcrops by the plan; then forest masses (a wall of the biome's
+ * trees round their edge, canopy pieces inside; boulders where the biome has no canopy) fill what is left of the
+ * budget, ranked by a smooth field so they come out as masses, hugging the road on the forest trail. Clearings are
+ * carved into the masses with a way in (pockets). Sets G.Lm (the mask), G.layoutSpots (pockets made on purpose)
+ * @param {any} G @param {number} aim the walkable share wanted (MAPGEN_WALK_AIM, moved by mapgenScene's retries)
+ */
+export function mapgenStageLayout(G, aim) {
+  const { P, B, w, h } = G,
+    plan = MAPGEN_LAYOUTS[P.layout],
+    rnd = G.rng('layout'),
+    s = G.salt('layout');
+  G.Lm = new Uint8Array(w * h);
+  G.layoutSpots = [];
+  const free = mapgenLayoutFree(G),
+    N = w * h,
+    span = r => (Array.isArray(r) ? rnd.int(r[0], r[1]) : r || 0);
+  let water = 0;
+  for (let q = 0; q < N; q++) if (G.F[q] & 4 && !(G.F[q] & 8)) water++;
+  const budget = Math.max(0, Math.round(N * (1 - aim - MAPGEN_PLANT_SHARE) - water));
+  const blocked = () => {
+    let n = 0;
+    for (let q = 0; q < N; q++) if (G.Lm[q] && G.Lm[q] !== MAPGEN_LM.keep) n++;
+    return n;
+  };
+  const fences = B.fences || { fence_wood: 1 },
+    fieldFence = fences.fence_wood ? 'fence_wood' : mapgenPoolPick(rnd, fences, 'fence_wood');
+  /* farmland: fenced fields, the side nearest the road open by a segment (a pocket inside) or shut (crops seen over
+     the fence), farm soil inside */
+  const nf = span(plan.fields);
+  for (let f = 0; f < nf; f++) {
+    const fw = rnd.int(10, 16),
+      fd = rnd.int(8, 12),
+      at = mapgenLayoutRect(G, free, rnd, fw, fd);
+    if (!at) continue;
+    const [x0, z0] = at,
+      x1 = x0 + fw,
+      z1 = z0 + fd,
+      shut = f % 2 === 1;
+    for (let z = z0; z < z1; z++)
+      for (let x = x0; x < x1; x++) {
+        const q = z * w + x;
+        G.Lm[q] = shut ? MAPGEN_LM.field : MAPGEN_LM.keep;
+        if (G.terr.o) G.T[q] = 'o';
+        G.F[q] |= 16;
+      }
+    /* the side facing the road gets the gap (the road's nearest sample to the field's middle) */
+    const k = G.near[mapgenCellAt(G, (x0 + x1) / 2, (z0 + z1) / 2)],
+      R = k >= 0 ? G.roadPts[k] : { x: w / 2, z: h / 2 },
+      dx = R.x - (x0 + x1) / 2,
+      dz = R.z - (z0 + z1) / 2,
+      open = Math.abs(dx) * fd > Math.abs(dz) * fw ? (dx > 0 ? 'E' : 'W') : dz > 0 ? 'N' : 'S';
+    const sides = {
+      S: [
+        [x0, z0],
+        [x1, z0],
+      ],
+      N: [
+        [x1, z1],
+        [x0, z1],
+      ],
+      W: [
+        [x0, z1],
+        [x0, z0],
+      ],
+      E: [
+        [x1, z0],
+        [x1, z1],
+      ],
+    };
+    for (const [side, [a, b]] of Object.entries(sides)) {
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]),
+        n = Math.max(1, Math.round(len / (G.cat[fieldFence]?.box?.[0] || 2.2))),
+        gap = !shut && side === open ? [Math.floor(n / 2)] : [];
+      mapgenFenceRun(G, fieldFence, a, b, gap);
+    }
+    if (shut) {
+      for (let r = z0 + 1.5; r < z1 - 1; r += 2.2)
+        for (let x = x0 + 1.5; x < x1 - 1; x += 2.4)
+          if (G.cat.crops && rnd.chance(0.35)) mapgenPutProp(G, 'crops', x + rnd.range(-0.3, 0.3), r, { force: true });
+    } else
+      G.layoutSpots.push({
+        kind: 'pocket',
+        x: mapgenRound2((x0 + x1) / 2),
+        z: mapgenRound2((z0 + z1) / 2),
+        r: mapgenRound2(Math.min(fw, fd) / 2 - 1),
+        in: 'field',
+      });
+  }
+  /* hedgerows (and the lane): a run beside the road, off it by `off` metres past its edge, on one side, along a
+     stretch of it; gaps where the ground is not free, and a gap or two on purpose */
+  const roadRun = (off, len, sg) => {
+    const Rp = G.road[0].pts,
+      L = Rp.length,
+      n = Math.round(len * 2),
+      k0 = rnd.int(Math.min(L - 1, 30), Math.max(30, L - 30 - n));
+    const pts = [];
+    for (let k = k0; k < Math.min(L - 2, k0 + n); k += 4) {
+      const a = Rp[Math.max(0, k - 1)],
+        b = Rp[Math.min(L - 1, k + 1)],
+        l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1,
+        nx = -(b[1] - a[1]) / l,
+        nz = (b[0] - a[0]) / l,
+        r = P.road.width / 2 + off;
+      pts.push([Rp[k][0] + nx * r * sg, Rp[k][1] + nz * r * sg]);
+    }
+    let placed = 0;
+    const kind = mapgenPoolPick(rnd, fences, 'hedge'),
+      gapAt = rnd.int(1, Math.max(1, pts.length - 2));
+    for (let i = 0; i + 1 < pts.length; i++) {
+      const [a, b] = [pts[i], pts[i + 1]],
+        mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2],
+        q = mapgenCellAt(G, ...mid),
+        qa = mapgenCellAt(G, ...a),
+        qb = mapgenCellAt(G, ...b);
+      if (!free[q] || !free[qa] || !free[qb] || G.Lm[q] || i === gapAt) continue;
+      placed += mapgenFenceRun(G, kind, a, b);
+    }
+    return placed;
+  };
+  const nh = span(plan.hedgerows);
+  for (let i = 0; i < nh; i++) roadRun(rnd.range(3, 6), rnd.range(16, 30), rnd.chance(0.5) ? 1 : -1);
+  /* the lane: a hedge 7-9 m off one side of the road over a long stretch, so a second way runs beside the road */
+  if (plan.lane) roadRun(rnd.range(7, 9), rnd.range(34, 48), 1);
+  /* rock outcrops: a ragged cluster of boulders on rock */
+  const rocks = MAPGEN_OUTCROP[P.biome] || MAPGEN_OUTCROP.default,
+    no = span(plan.outcrops);
+  for (let o = 0; o < no; o++) {
+    const r = rnd.range(2.5, 4.2),
+      at = mapgenLayoutRect(G, free, rnd, Math.ceil(r * 2), Math.ceil(r * 2));
+    if (!at) continue;
+    mapgenOutcrop(G, rnd, at[0] + r, at[1] + r, r, rocks, free);
+  }
+  /* forest masses fill what is left: the free cells with the highest field, the field a few soft cores (along the
+     road on the forest trail, else toward the back and the front edges) with noise */
+  const left = budget - blocked();
+  if (left > 0) {
+    const cores = [];
+    if (plan.hug) {
+      const Rp = G.road[0].pts;
+      for (let k = 10, sg = 1; k < Rp.length - 10; k += rnd.int(18, 30), sg = -sg) {
+        const a = Rp[k - 1],
+          b = Rp[k + 1],
+          l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1,
+          off = P.road.width / 2 + rnd.range(sg > 0 ? 6 : 11, sg > 0 ? 12 : 18);
+        cores.push([
+          Rp[k][0] - ((b[1] - a[1]) / l) * off * sg,
+          Rp[k][1] + ((b[0] - a[0]) / l) * off * sg,
+          rnd.range(9, 15),
+        ]);
+      }
+    }
+    const nc = rnd.int(3, 6);
+    for (let c = 0; c < nc; c++)
+      cores.push([
+        rnd.range(6, w - 6),
+        rnd.chance(0.5) ? rnd.range(-4, h * 0.25) : rnd.range(h * 0.75, h + 4),
+        rnd.range(10, 18),
+      ]);
+    const val = new Float32Array(N),
+      cand = [];
+    for (let q = 0; q < N; q++) {
+      if (!free[q] || G.Lm[q]) continue;
+      const x = (q % w) + 0.5,
+        z = Math.floor(q / w) + 0.5;
+      let v = 0;
+      for (const [cx, cz, cr] of cores) v = Math.max(v, 1 - Math.hypot(x - cx, z - cz) / cr);
+      v += 0.45 * (mapgenFbm(x / 7, z / 7, s) - 0.5) + 0.25 * Math.max(0, 1 - Math.min(z, h - z) / 10);
+      val[q] = v;
+      cand.push(q);
+    }
+    cand.sort((a, b) => val[b] - val[a] || a - b);
+    for (let i = 0; i < Math.min(left, cand.length); i++) G.Lm[cand[i]] = MAPGEN_LM.forest;
+    mapgenForestTidy(G);
+    mapgenForestClearings(G, rnd, span(plan.clearings));
+    mapgenForestFill(G, rnd);
+  }
+}
+/** a ragged cluster of boulders round (x, z), on the biome's rock ground; marks the mask */
+export function mapgenOutcrop(G, rnd, x, z, r, rocks, free) {
+  const sc = G.salt('layout', 'rock');
+  mapgenPaintDisc(G, x, z, r, q => {
+    const i = q % G.w,
+      j = Math.floor(q / G.w),
+      a = Math.atan2(j + 0.5 - z, i + 0.5 - x),
+      edge = r * (0.75 + 0.45 * mapgenNoise(Math.cos(a) * 1.5 + 4, Math.sin(a) * 1.5 + 4, sc));
+    if (!free[q] || G.Lm[q] || Math.hypot(i + 0.5 - x, j + 0.5 - z) > edge) return;
+    G.Lm[q] = MAPGEN_LM.rock;
+    G.T[q] = G.B.ground.rock || 'r';
+  });
+  mapgenFillMask(G, rnd, MAPGEN_LM.rock, () => rnd.pick(rocks), 1.1, [1.1, 1.6]);
+}
+/** forest masses tidied: bits under 24 cells dropped, holes under 12 cells filled */
+export function mapgenForestTidy(G) {
+  const { w, h } = G,
+    F = MAPGEN_LM.forest;
+  for (const want of [1, 0]) {
+    const seen = new Uint8Array(w * h);
+    for (let q0 = 0; q0 < w * h; q0++) {
+      if (seen[q0] || (G.Lm[q0] === F) !== !!want) continue;
+      const comp = [q0];
+      seen[q0] = 1;
+      for (let n = 0; n < comp.length; n++) {
+        const q = comp[n],
+          i = q % w,
+          j = Math.floor(q / w);
+        for (const [di, dj] of MAPGEN_FOUR) {
+          const ii = i + di,
+            jj = j + dj,
+            r = jj * w + ii;
+          if (ii < 0 || jj < 0 || ii >= w || jj >= h || seen[r] || (G.Lm[r] === F) !== !!want) continue;
+          seen[r] = 1;
+          comp.push(r);
+        }
+      }
+      if (want && comp.length < 24) for (const q of comp) G.Lm[q] = 0;
+      /* a hole: a few cells shut in by forest, filled (never one touching the edge, or holding anything else) */
+      if (!want && comp.length < 12 && comp.every(q => !G.Lm[q])) {
+        const inside = comp.every(q => {
+          const i = q % w,
+            j = Math.floor(q / w);
+          return i > 0 && j > 0 && i < w - 1 && j < h - 1;
+        });
+        if (inside) for (const q of comp) G.Lm[q] = F;
+      }
+    }
+  }
+}
+/** how far each cell is from a cell not of mask value v (cells, 4-way), 0 outside */
+export function mapgenMaskDepth(G, v) {
+  const { w, h } = G,
+    D = new Int16Array(w * h).fill(-1),
+    Q = [];
+  for (let q = 0; q < w * h; q++)
+    if (G.Lm[q] !== v) {
+      D[q] = 0;
+      Q.push(q);
+    }
+  for (let n = 0; n < Q.length; n++) {
+    const q = Q[n],
+      i = q % w,
+      j = Math.floor(q / w);
+    for (const [di, dj] of MAPGEN_FOUR) {
+      const ii = i + di,
+        jj = j + dj,
+        r = jj * w + ii;
+      if (ii < 0 || jj < 0 || ii >= w || jj >= h || D[r] >= 0) continue;
+      D[r] = D[q] + 1;
+      Q.push(r);
+    }
+  }
+  /* the scene's own edges don't count as an edge of a mass (a forest runs off the map) */
+  return D;
+}
+/** clearings carved into the forest, each with a way in 2.5 m wide to the nearest open ground (pockets) */
+export function mapgenForestClearings(G, rnd, n) {
+  const { w } = G,
+    D = mapgenMaskDepth(G, MAPGEN_LM.forest),
+    cands = [];
+  for (let q = 0; q < D.length; q++) if (D[q] >= 6) cands.push(q);
+  for (let c = 0; c < n && cands.length; c++) {
+    const q = cands[rnd.int(0, cands.length - 1)],
+      x = (q % w) + 0.5,
+      z = Math.floor(q / w) + 0.5;
+    if (G.layoutSpots.some(p => Math.hypot(p.x - x, p.z - z) < 14)) continue;
+    const r = rnd.range(3.2, 4.4);
+    /* the nearest open ground that isn't the scene's edge */
+    let best = /** @type {number[] | null} */ (null),
+      bd = 1e9;
+    for (let p = 0; p < D.length; p++) {
+      if (G.Lm[p] || G.F[p] & 4) continue;
+      const px = (p % w) + 0.5,
+        pz = Math.floor(p / w) + 0.5;
+      if (px < 6 || px > w - 6 || pz < 2 || pz > G.h - 2) continue;
+      const d = Math.hypot(px - x, pz - z);
+      if (d < bd) {
+        bd = d;
+        best = [px, pz];
+      }
+    }
+    if (!best) continue;
+    mapgenPaintDisc(G, x, z, r, p => {
+      if (G.Lm[p] === MAPGEN_LM.forest) {
+        G.Lm[p] = MAPGEN_LM.keep;
+        G.F[p] |= 16;
+        G.T[p] = G.B.ground.floor;
+      }
+    });
+    for (let t = 0, L = Math.hypot(best[0] - x, best[1] - z); t <= L; t += 0.5)
+      mapgenPaintDisc(G, x + ((best[0] - x) * t) / L, z + ((best[1] - z) * t) / L, 1.6, p => {
+        if (G.Lm[p] === MAPGEN_LM.forest) G.Lm[p] = MAPGEN_LM.keep;
+      });
+    G.layoutSpots.push({
+      kind: 'pocket',
+      x: mapgenRound2(x),
+      z: mapgenRound2(z),
+      r: mapgenRound2(r - 1),
+      in: 'forest',
+    });
+  }
+}
+/** the mask cells of value v filled with props: a wall along their edge (props from `edgeKind`, if given, `wall`
+ * metres apart) and pieces inside (`kind`) on a jittered grid `step` apart; with `cover`, then a small piece wherever
+ * a cell is still open, so the props alone make the mass solid (a mass whose ground blocks needs no cover) */
+/** @param {any} G @param {any} rnd @param {number} v @param {() => string} kind @param {number} step
+ * @param {number[]} sz @param {(() => string) | null} [edgeKind] @param {boolean} [cover] @param {number} [wall] */
+export function mapgenFillMask(G, rnd, v, kind, step, sz, edgeKind = null, cover = true, wall = 2.6) {
+  const { w, h } = G,
+    D = mapgenMaskDepth(G, v),
+    discs = /** @type {number[][]} */ ([]),
+    put = (k, x, z, o) => {
+      const p = mapgenPutProp(G, k, x, z, { force: true, ...o });
+      if (!p) return;
+      const M = G.cat[k],
+        r = (M.solid != null ? M.solid : (M.shadow || 0) * 0.42) * (p.s || 1),
+        [cx, cz] = turnedPoint(p, 0, r * 0.2);
+      if (r > 0.05) discs.push([cx, cz, r]);
+    },
+    covered = (x, z) => discs.some(o => Math.hypot(x - o[0], z - o[1]) <= o[2]);
+  if (edgeKind) {
+    const edge = [],
+      walls = /** @type {number[][]} */ ([]);
+    for (let q = 0; q < w * h; q++) if (D[q] === 1) edge.push(q);
+    for (const q of edge) {
+      const x = (q % w) + rnd.range(0.2, 0.8),
+        z = Math.floor(q / w) + rnd.range(0.2, 0.8);
+      if (walls.some(o => Math.hypot(x - o[0], z - o[1]) < wall)) continue;
+      walls.push([x, z]);
+      put(edgeKind(), x, z, { s: rnd.range(0.9, 1.2), f: rnd.chance(0.45) });
+    }
+  }
+  /* the inside on a jittered grid, the pieces' middles a cell in from the edge */
+  for (let z = 0.5 + rnd.next() * step; z < h; z += step)
+    for (let x = 0.5 + rnd.next() * step; x < w; x += step) {
+      const px = x + rnd.range(-0.3, 0.3) * step,
+        pz = z + rnd.range(-0.3, 0.3) * step,
+        q = mapgenCellAt(G, px, pz);
+      if (G.Lm[q] !== v || D[q] < (edgeKind ? 2 : 1)) continue;
+      put(kind(), px, pz, { s: rnd.range(sz[0], sz[1]), extra: { rot: Math.round(rnd.range(-180, 180)) } });
+    }
+  /* then every cell still open gets a small piece */
+  for (let q = 0; q < w * h && cover; q++) {
+    if (G.Lm[q] !== v) continue;
+    const x = (q % w) + 0.5,
+      z = Math.floor(q / w) + 0.5;
+    if (!covered(x, z)) put(kind(), x, z - 0.3, { s: sz[0] * 0.75 });
+  }
+}
+/** a forest mass's props: the biome's trees along its edge and its canopy pieces inside, on deep forest ground that
+ * no one walks on (so the pieces stand for the look alone); with no canopy, boulders on rock, packed to be solid */
+export function mapgenForestFill(G, rnd) {
+  const { B } = G,
+    F = MAPGEN_LM.forest,
+    canopy = !!(B.canopy && Object.keys(B.canopy).length),
+    deep = canopy && !!G.terr[MAPGEN_DEEP];
+  for (let q = 0; q < G.w * G.h; q++)
+    if (G.Lm[q] === F) {
+      G.T[q] = deep ? MAPGEN_DEEP : canopy ? B.ground.floor : B.ground.rock || 'r';
+      G.F[q] |= 16;
+    }
+  if (canopy)
+    mapgenFillMask(
+      G,
+      rnd,
+      F,
+      () => rnd.pick(B.canopy),
+      MAPGEN_FOREST.step,
+      MAPGEN_FOREST.size,
+      () => rnd.pick(B.trees),
+      !deep,
+      MAPGEN_FOREST.wall
+    );
+  else mapgenFillMask(G, rnd, F, () => rnd.pick(MAPGEN_OUTCROP[G.P.biome] || MAPGEN_OUTCROP.default), 2, [1.2, 1.6]);
+}
+
+/**
+ * RT-1: the spots a laid-out route marks for what comes later (RT-2 trainers, RT-3 set pieces, RT-4 finds), found on
+ * the finished scene from the walk (props and all): `pocket` (made on purpose: a field with a gap, a clearing with a
+ * way in; kept when reached), `clearing` (open ground 3.5 m round, off the road), `deadend` (where a walk from the
+ * hub ends: a local peak of its length, hemmed in), `pinch` (the way west at its narrowest: dir its heading in
+ * degrees, r half its width). { kind, x, z, y, r?, dir? }
+ */
+export function mapgenLayoutSpots(sc, scenery, G) {
+  const R = mapgenReach(sc, scenery, sc.hub, { slope: true }),
+    { N, gw, gh, seen, dist } = R,
+    out = [],
+    at = q => [((q % gw) + 0.5) / N, (Math.floor(q / gw) + 0.5) / N],
+    yOf = (q, x, z) => mapgenRound2(mapgenSceneGround(sc, x, z) + (R.S ? R.S[q] / 20 : 0)),
+    exits = (sc.edgeExits || []).map(e => mapgenExitPoint(sc.w, sc.h, e)),
+    awayFromEnds = (x, z, m) =>
+      Math.hypot(x - sc.hub[0], z - sc.hub[1]) > m && exits.every(p => Math.hypot(p[0] - x, p[1] - z) > m),
+    offRoad = (x, z, m) => {
+      const q = mapgenCellAt(G, x, z);
+      return G.near[q] < 0 || G.dist[q] - G.roadPts[G.near[q]].r > m;
+    },
+    spaced = (x, z, m) =>
+      out.every(p => Math.hypot(p.x - x, p.z - z) > m) && G.spots.every(p => Math.hypot(p.x - x, p.z - z) > 4);
+  /* pockets made on purpose, where the walk reaches them */
+  for (const p of G.layoutSpots || []) {
+    const q = mapgenBetween(Math.floor(p.z * N), 0, gh - 1) * gw + mapgenBetween(Math.floor(p.x * N), 0, gw - 1);
+    if (seen[q]) out.push({ kind: 'pocket', x: p.x, z: p.z, y: yOf(q, p.x, p.z), r: p.r });
+  }
+  /* clearance: half-metre steps to the nearest cell you can't stand in */
+  const C = new Int16Array(gw * gh).fill(-1),
+    Q = [];
+  for (let q = 0; q < gw * gh; q++)
+    if (!seen[q]) {
+      C[q] = 0;
+      Q.push(q);
+    }
+  for (let n = 0; n < Q.length; n++) {
+    const q = Q[n],
+      i = q % gw,
+      j = Math.floor(q / gw);
+    for (const [di, dj] of MAPGEN_FOUR) {
+      const ii = i + di,
+        jj = j + dj,
+        r = jj * gw + ii;
+      if (ii < 0 || jj < 0 || ii >= gw || jj >= gh || C[r] >= 0) continue;
+      C[r] = C[q] + 1;
+      Q.push(r);
+    }
+  }
+  /* clearings: the widest open ground off the road (3.5 m clear at least), up to three, 15 m apart */
+  const open = [];
+  for (let q = 0; q < gw * gh; q++) {
+    if (!seen[q] || C[q] < 7) continue;
+    const [x, z] = at(q);
+    if (x < 6 || x > sc.w - 6 || z < 3 || z > sc.h - 3 || !offRoad(x, z, 4) || !awayFromEnds(x, z, 8)) continue;
+    open.push(q);
+  }
+  open.sort((a, b) => C[b] - C[a] || a - b);
+  let nc = 0;
+  for (const q of open) {
+    if (nc >= 3) break;
+    const [x, z] = at(q);
+    if (!spaced(x, z, 15)) continue;
+    out.push({ kind: 'clearing', x: mapgenRound2(x), z: mapgenRound2(z), y: yOf(q, x, z), r: mapgenRound2(C[q] / N) });
+    nc++;
+  }
+  /* dead ends: the walk's local peaks (nothing within 3 m is further), hemmed in (under 2.5 m clear), off the road;
+     the furthest first, each tested only until three are found */
+  const ends = [];
+  for (let q = 0; q < gw * gh; q++) if (seen[q] && C[q] <= 5 && dist[q] >= 40) ends.push(q);
+  ends.sort((a, b) => dist[b] - dist[a] || a - b);
+  const peakAt = q => {
+    const i = q % gw,
+      j = Math.floor(q / gw);
+    for (let dj = -6; dj <= 6; dj++)
+      for (let di = -6; di <= 6; di++) {
+        const ii = i + di,
+          jj = j + dj;
+        if (ii >= 0 && jj >= 0 && ii < gw && jj < gh && dist[jj * gw + ii] > dist[q]) return false;
+      }
+    return true;
+  };
+  let nd = 0;
+  for (const q of ends) {
+    if (nd >= 3) break;
+    const [x, z] = at(q);
+    if (x < 6 || x > sc.w - 6 || z < 3 || z > sc.h - 3 || !offRoad(x, z, 4) || !awayFromEnds(x, z, 8)) continue;
+    if (!spaced(x, z, 12) || !peakAt(q)) continue;
+    out.push({ kind: 'deadend', x: mapgenRound2(x), z: mapgenRound2(z), y: yOf(q, x, z) });
+    nd++;
+  }
+  /* pinches: along the way west (the westmost exit's walk from the hub), the open width across it, its narrowest */
+  const west = (sc.edgeExits || []).filter(e => e.side === 'W').sort((a, b) => a.t - b.t)[0] || (sc.edgeExits || [])[0];
+  if (west && west.path && west.path.length > 1) {
+    const pts = mapgenResample(west.path, 1),
+      wid = [];
+    const openAt = (x, z) => {
+      if (x < 0 || z < 0 || x >= sc.w || z >= sc.h) return false;
+      return !!seen[Math.floor(z * N) * gw + Math.floor(x * N)];
+    };
+    for (let k = 1; k < pts.length - 1; k++) {
+      const [x, z] = pts[k],
+        a = pts[k - 1],
+        b = pts[k + 1],
+        L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1,
+        nx = -(b[1] - a[1]) / L,
+        nz = (b[0] - a[0]) / L;
+      if (!awayFromEnds(x, z, 10)) {
+        wid.push(99);
+        continue;
+      }
+      let left = 0,
+        right = 0;
+      while (left < 12 && openAt(x + nx * left, z + nz * left)) left += 0.25;
+      while (right < 12 && openAt(x - nx * right, z - nz * right)) right += 0.25;
+      wid.push(left >= 12 || right >= 12 ? 99 : left + right);
+    }
+    const order = wid.map((v, i) => i).filter(i => wid[i] <= 9);
+    order.sort((a, b) => wid[a] - wid[b] || a - b);
+    let np = 0;
+    for (const i of order) {
+      if (np >= 2) break;
+      const [x, z] = pts[i + 1],
+        a = pts[i],
+        b = pts[i + 2];
+      if (!spaced(x, z, 15)) continue;
+      const q = Math.floor(z * N) * gw + Math.floor(x * N);
+      out.push({
+        kind: 'pinch',
+        x: mapgenRound2(x),
+        z: mapgenRound2(z),
+        y: yOf(q, x, z),
+        r: mapgenRound2(wid[i] / 2),
+        dir: Math.round((Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI),
+      });
+      np++;
+    }
+  }
+  return { spots: out, walk: R };
+}
+/** the share of a scene's half-metre cells you can walk to from the hub (R: from mapgenReach) */
+export function mapgenWalkShare(R) {
+  let n = 0;
+  for (let q = 0; q < R.seen.length; q++) if (R.seen[q]) n++;
+  return n / R.seen.length;
+}
+
 export function mapgenStagePlants(G) {
   const { P, B, w, h } = G,
     rnd = G.rng('plants');
@@ -3142,8 +3876,8 @@ export function mapgenStagePlants(G) {
   const treeAvoid = MAPGEN_PATH_GROUND + MAPGEN_WET;
   const T = P.nature.trees,
     gw = P.nature.growth;
-  /* groves */
-  const ng = Math.round(1 + T * 5);
+  /* groves (RT-1: none on a laid-out route, whose forest masses stand for them) */
+  const ng = mapgenLaidOut(P) ? 0 : Math.round(1 + T * 5);
   for (let g = 0; g < ng; g++) {
     const cx = rnd.range(6, w - 6),
       cz = rnd.range(6, h - 6),
@@ -3166,7 +3900,7 @@ export function mapgenStagePlants(G) {
     }
   }
   /* a belt of trees along the edges, open at the exits */
-  const belt = Math.round((w + h) * 2 * 0.14 * T);
+  const belt = mapgenLaidOut(P) ? 0 : Math.round((w + h) * 2 * 0.14 * T);
   for (let i = 0; i < belt * 3; i++) {
     const side = rnd.int(0, 3),
       u = rnd.next(),
@@ -3487,8 +4221,24 @@ export function mapgenEncodeBase64(bytes) {
  * @param {any} params @param {{ scenery: any, biomes: Record<string, Biome> }} ctx
  */
 export function mapgenScene(params, ctx) {
-  const P = mapgenParams(params),
-    G = mapgenNewWork(P, ctx);
+  const P0 = mapgenParams(params);
+  if (!mapgenLaidOut(P0)) return mapgenBuild(P0, ctx, 0);
+  /* RT-1: a laid-out route is made again, its blocking budget moved by how far the walkable share missed, until it
+     lands within MAPGEN_WALKABLE (four tries; the nearest kept) */
+  let best = /** @type {any} */ (null),
+    aim = MAPGEN_WALK_AIM;
+  for (let t = 0; t < 4; t++) {
+    const r = mapgenBuild(t ? mapgenParams(params) : P0, ctx, aim),
+      share = r.scene.layout.walk;
+    if (!best || Math.abs(share - MAPGEN_WALK_AIM) < Math.abs(best.scene.layout.walk - MAPGEN_WALK_AIM)) best = r;
+    if (share >= MAPGEN_WALKABLE[0] + 0.005 && share <= MAPGEN_WALKABLE[1] - 0.005) break;
+    aim = mapgenBetween(aim + (MAPGEN_WALK_AIM - share), 0.3, 0.9);
+  }
+  return best;
+}
+/** one go at a scene (mapgenScene); aim: a laid-out route's walkable share wanted (0 when not laid out) */
+export function mapgenBuild(P, ctx, aim) {
+  const G = mapgenNewWork(P, ctx);
   for (const s of P.edges || [])
     if (!G.joined.includes(s))
       G.notes.push(`no room for the exit joined on the ${MAPGEN_SIDE_NAME[s.side]} side (four exits at most)`);
@@ -3505,6 +4255,7 @@ export function mapgenScene(params, ctx) {
   mapgenStageEdgeGround(G);
   mapgenStageTown(G);
   mapgenStageLots(G);
+  if (mapgenLaidOut(P)) mapgenStageLayout(G, aim);
   mapgenStagePlants(G);
   mapgenStageProps(G);
   mapgenPinSides(G, 6);
@@ -3559,6 +4310,13 @@ export function mapgenScene(params, ctx) {
     mapgenPockets(sc, ctx.scenery, G);
     if (G.spots.length) sc.spots = G.spots;
   }
+  /* RT-1: a laid-out route's spots and its walkable share */
+  if (mapgenLaidOut(P)) {
+    const L = mapgenLayoutSpots(sc, ctx.scenery, G);
+    G.spots.push(...L.spots);
+    if (G.spots.length) sc.spots = G.spots;
+    sc.layout = { plan: P.layout, walk: Math.round(mapgenWalkShare(L.walk) * 1000) / 1000 };
+  }
   sc.gen = { v: MAPGEN_VERSION, params: P, seed: P.seed };
   return { scene: sc, notes: G.notes };
 }
@@ -3586,14 +4344,15 @@ export function mapgenWalkGrid(sc, scenery, o = {}) {
   };
   /* TR-2, with o.slope: smooth land too steep to walk (walk/heights.js navGrid: a slope over 1.05); a bridge's deck is
      walked whatever lies under it */
-  if (o.slope && sc.heights && sc.heights.length)
+  const ground = o.slope && sc.heights && sc.heights.length ? mapgenGroundSampler(sc) : null;
+  if (ground)
     for (let j = 0; j < gh; j++)
       for (let i = 0; i < gw; i++) {
         const x = (i + 0.5) / N,
           z = (j + 0.5) / N,
           e = 0.3,
-          gx = (mapgenSceneGround(sc, x + e, z) - mapgenSceneGround(sc, x - e, z)) / (2 * e),
-          gz = (mapgenSceneGround(sc, x, z + e) - mapgenSceneGround(sc, x, z - e)) / (2 * e);
+          gx = (ground(x + e, z) - ground(x - e, z)) / (2 * e),
+          gz = (ground(x, z + e) - ground(x, z - e)) / (2 * e);
         if (Math.hypot(gx, gz) > 1.05) blk[j * gw + i] = 1;
       }
   for (const b of sc.bridges || []) {
@@ -3609,22 +4368,35 @@ export function mapgenWalkGrid(sc, scenery, o = {}) {
       });
     }
   }
+  /* as walk-view.js navGrid: a turned prop (rot) blocks its turned footprint, a prop with posts (an arch) its posts */
+  const disc = (cx, cz, r) =>
+    each(cx - r, cz - r, cx + r, cz + r, (q, x, z) => Math.hypot(x - cx, z - cz) <= r && (blk[q] = 1));
+  const ppu = C.ppu || 34;
   for (const p of sc.props || []) {
     const M = C.props[p.k];
     if (!M || M.walk) continue;
     const s = p.s || 1;
-    if (M.box)
-      each(p.x - (M.box[0] * s) / 2, p.z - 0.1, p.x + (M.box[0] * s) / 2, p.z + M.box[1] * s, q => (blk[q] = 1));
+    if (M.box) {
+      const w = M.box[0] * s,
+        d = M.box[1] * s;
+      if (p.rot) {
+        const B = turnedBounds(p, -w / 2, -0.1, w / 2, d);
+        each(B[0], B[1], B[2], B[3], (q, x, z) => {
+          const [lx, lz] = pointInProp(p, x, z);
+          if (lx >= -w / 2 && lx <= w / 2 && lz >= -0.1 && lz <= d) blk[q] = 1;
+        });
+      } else each(p.x - w / 2, p.z - 0.1, p.x + w / 2, p.z + d, q => (blk[q] = 1));
+    } else if (M.posts)
+      for (const o of M.posts) {
+        const [px, pz] = turnedPoint(p, (o.x / ppu) * s * (p.f ? -1 : 1), 0.15);
+        disc(px, pz, (o.r || 0.4) * s);
+      }
     else {
       const r = M.solid != null ? M.solid * s : M.flat ? 0 : (M.shadow || 0) * 0.42 * s;
-      if (r > 0.05)
-        each(
-          p.x - r,
-          p.z - r,
-          p.x + r,
-          p.z + r,
-          (q, x, z) => Math.hypot(x - p.x, z - p.z - r * 0.2) <= r && (blk[q] = 1)
-        );
+      if (r > 0.05) {
+        const [cx, cz] = turnedPoint(p, 0, r * 0.2);
+        disc(cx, cz, r);
+      }
     }
   }
   /* steps: the raise of each cell (decoded from base64 Int16) */
@@ -3653,9 +4425,9 @@ export function mapgenReach(sc, scenery, from = sc.hub, o = {}) {
     hop = /** @type {Uint8Array | null} */ (null);
   if (o.slope) {
     lv = new Float32Array(gw * gh);
+    const ground = mapgenGroundSampler(sc);
     for (let j = 0; j < gh; j++)
-      for (let i = 0; i < gw; i++)
-        lv[j * gw + i] = mapgenSceneGround(sc, (i + 0.5) / N, (j + 0.5) / N) + (S ? S[j * gw + i] / 20 : 0);
+      for (let i = 0; i < gw; i++) lv[j * gw + i] = ground((i + 0.5) / N, (j + 0.5) / N) + (S ? S[j * gw + i] / 20 : 0);
     if (sc.stepm) {
       const M = mapgenDecodeBase64(sc.stepm);
       if (M.length === gw * gh) hop = M.map(f => (f & 16 ? 1 : 0));
@@ -3756,6 +4528,21 @@ export function mapgenSceneGround(sc, x, z) {
     c(i, j + 1) * (1 - fx) * fz +
     c(i + 1, j + 1) * fx * fz
   );
+}
+/** mapgenSceneGround for many points of one scene: its corners read once into a table (the same sums, so the same
+ * heights), for the walk checks that sample every half-metre cell @returns {(x: number, z: number) => number} */
+export function mapgenGroundSampler(sc) {
+  const W1 = sc.w + 1,
+    C = new Float64Array(W1 * (sc.h + 1));
+  for (let j = 0; j <= sc.h; j++) for (let i = 0; i <= sc.w; i++) C[j * W1 + i] = mapgenSceneCorner(sc, i, j);
+  return (x, z) => {
+    const i = mapgenBetween(Math.floor(x), 0, sc.w - 1),
+      j = mapgenBetween(Math.floor(z), 0, sc.h - 1),
+      fx = mapgenBetween(x - i, 0, 1),
+      fz = mapgenBetween(z - j, 0, 1),
+      q = j * W1 + i;
+    return C[q] * (1 - fx) * (1 - fz) + C[q + 1] * fx * (1 - fz) + C[q + W1] * (1 - fx) * fz + C[q + W1 + 1] * fx * fz;
+  };
 }
 /** a scene's exit and the point it stands on (sc.exits, as the game reads it; worked out when missing) */
 export function mapgenExitOf(sc, id) {

@@ -210,6 +210,10 @@ def report_unused(P=None):
     # copied back into the game brings its props with it)
     for f in (GAME / 'data' / 'legacy' / 'maps').glob('*.json'):
         placed |= {p['k'] for p in json.loads(f.read_text(encoding='utf-8')).get('props', [])}
+    # RT-1: what a biome's pools name, the map generator places on run scenes (trees, canopy, fences and the rest)
+    for B in (D.get('biomes') or {}).values():
+        for v in B.values():
+            if isinstance(v, dict) and all(isinstance(w, (int, float)) for w in v.values()): placed |= set(v) & set(SY.get('props', {}))
     code = '\n'.join(f.read_text(encoding='utf-8', errors='ignore') for f in list((GAME / 'js').rglob('*.js')) + list((ROOT / 'studio' / 'js').glob('*.js')))
     ctok = set(re.findall(r'[\'"`]([A-Za-z0-9_]+)[\'"`]', code)) | set(re.findall(r'[\'"`]([A-Za-z0-9_]+)[|,]', code))
     props = [k for k in SY.get('props', {}) if k not in placed and k not in ctok]
@@ -337,7 +341,10 @@ def walk_in(pg, act, k):
 # phase 08b: prep_ms gives the ground a phone's share of work for each 0.8 m step (about 0.24 s of walking at 4 ms a
 # frame; headless software drawing manages two frames a second, so the next view would otherwise take minutes), and
 # meter['waits'] counts those steps' worth spent waiting at the seam for the next view
-def cross(pg, n1, sec=90, look=None, prep_ms=None, meter=None):
+# RT-1: 150 s, not 90: a laid-out run place draws about 1.5 times slower in software than the open field (canopy
+# pieces, tools/route-perf.py); in the full check's paired browsers a frame took up to 10 s, and the view's preparation
+# is spread over frames. On a phone it is a second or two
+def cross(pg, n1, sec=150, look=None, prep_ms=None, meter=None):
     if not until(pg, 'walkView.ready', sec): raise Exception(f'the view {pg.evaluate("walkView.id")} never got ready to walk from')
     r = pg.evaluate(f"""(()=>{{const v=walkState(),e=(v.exits||[]).find(e=>e.to==={n1});if(!e)return 'no exit to '+LOCATIONS[{n1}].name+' from '+LOCATIONS[saveData.trip.node].name;const sc=walkView.sc,pt=sc.exits[e.i],hub=mapHub(sc),ee=(sc.edgeExits||(sc.baseId&&mapById(sc.baseId)||{{}}).edgeExits||[])[e.i],sv=ee&&SIDE_VECTORS[ee.side],dx=sv?sv[0]:pt[0]-hub[0],dz=sv?sv[1]:pt[1]-hub[1],l=Math.hypot(dx,dz)||1,past=6+(saveData.run?RULES.run.seamIn:0),tg=[pt[0]+dx/l*past,pt[1]+dz/l*past];/* phase 08b: straight out of the edge the exit is on */
       const P=walkView.pl,R=findPath(P.x,P.z,tg[0],tg[1],{{max:1e6}});return R?{{R}}:'no path to the exit to '+LOCATIONS[{n1}].name}})()""")
@@ -822,7 +829,9 @@ def sound_effects_step(P):
     clear(); pg.evaluate("closeModal();runOver(true);0")
     # TC-3: 40 s, not 15: the coins come a row at a time and run_won after the last; in the full check's run the
     # jingle came just after 15 s (it was in the log the failure printed), the check's wait, not the game
-    if not until(pg, "soundEngine.log.some(e=>e.e==='jingle run_won')", 40): raise Exception(f'the payout, won: {log()}')
+    # RT-1: 90 s, not 40: the laid-out landing behind the sheet draws slower in software (see cross); measured 51 s for
+    # the lost payout in the paired run (3 s alone)
+    if not until(pg, "soundEngine.log.some(e=>e.e==='jingle run_won')", 90): raise Exception(f'the payout, won: {log()}')
     L = log(); coins = [e for e in L if e.startswith('jingle payout_coin')]
     rows = pg.evaluate("JSON.parse(document.querySelector('#ov pb-payout').getAttribute('rows')||'[]').length")
     if len(coins) != rows: raise Exception(f'{len(coins)} coins for {rows} payout rows: {L}')
@@ -830,7 +839,7 @@ def sound_effects_step(P):
     clear(); pg.evaluate("closeModal();saveData.run.at={phase:'walk',battle:-1};uiState.runPayoutPlayed=false;uiState.runPayoutSung=false;runOver(false);0")
     # TC-4: 40 s, as for the won payout: the coins come a row at a time and run_lost after the last (the before run's
     # failure had four coins in its log and no jingle yet at 15 s)
-    if not until(pg, "soundEngine.log.some(e=>e.e==='jingle run_lost')", 40): raise Exception(f'the payout, lost: {log()}')
+    if not until(pg, "soundEngine.log.some(e=>e.e==='jingle run_lost')", 90): raise Exception(f'the payout, lost: {log()}')
     out.append(f'payout: {len(coins)} coins ({coins[-1].split(" ", 2)[-1] if coins else ""} last), run_won; lost: run_lost')
     return '; '.join(out)
 
@@ -1565,7 +1574,8 @@ def rl8_run_from_mast(P):
         pg.click('#ov [data-a=mb][data-i="0"]')
         # TC-4: tapped again while the sheet is still there: once on a busy machine the tap was lost (the sheet still
         # drawing itself); the take-off closes the sheet, so nothing is tapped twice
-        if not until(pg, "!!saveData.run&&airshipFlight.on", 30, "uiState.modal&&uiState.modal.title==='Start a run'&&document.querySelector('#ov [data-a=mb][data-i=\"0\"]').click()"): raise Exception('“Take off” didn’t start a run’s flight')
+        # RT-1: 60 s, not 30: the take-off makes the run's world (laid-out places: 1.1 s here alone, more in the paired run)
+        if not until(pg, "!!saveData.run&&airshipFlight.on", 60, "uiState.modal&&uiState.modal.title==='Start a run'&&document.querySelector('#ov [data-a=mb][data-i=\"0\"]').click()"): raise Exception('“Take off” didn’t start a run’s flight')
         pg.evaluate("flySkip();0")
         if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready&&walkView.id==='w:'+LOCATIONS[1].mapId+'*'", 90): raise Exception(f'never landed on the landing ({pg.evaluate("saveData.run&&saveData.run.at.phase")}, {pg.evaluate("walkView.id")})')
         land = pg.evaluate("[saveData.run.seed, saveData.trip.node, saveData.run.clock, !!uiState.roam, runWorld.scenes]")
@@ -1620,7 +1630,8 @@ def rl8_run_from_mast(P):
         B = pg.evaluate(f"(T=>T&&T.id)(trainersAt({boss})[0])")
         if not B: raise Exception('no boss stands on the boss’s place')
         pg.evaluate(f"saveData.team.forEach(m=>{{m.hp=maxHp(m)}});startTrainer('{B}',{{talked:true}});0")
-        if not until(pg, "!!activeBattle&&activeBattle.fmt==='alpha'&&!!activeBattle.sides[1].team[0].boss", 20): raise Exception('the boss isn’t an Alpha battle')
+        # RT-1: 45 s, not 20: the boss's place is laid out, and drawn slower in software (see cross)
+        if not until(pg, "!!activeBattle&&activeBattle.fmt==='alpha'&&!!activeBattle.sides[1].team[0].boss", 45): raise Exception('the boss isn’t an Alpha battle')
         if pg.evaluate("(activeBattle.fx||[]).map(f=>f.src).join()") != relic: raise Exception('the boss’s battle doesn’t carry the Perk')
         pg.evaluate("stopTimers();activeBattle.over='win';endBattle();0")
         if not until(pg, "uiState.modal&&uiState.modal.btns&&uiState.modal.btns[0].l==='On to the payout'", 30): raise Exception('no “On to the payout” after the boss')

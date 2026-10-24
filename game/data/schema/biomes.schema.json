@@ -89,6 +89,14 @@
    },
    "rocks": { "$ref": "#/$defs/pool" },
    "waterPlants": { "$ref": "#/$defs/pool" },
+   "canopy": {
+    "description": "RT-1: the canopy pieces that fill a forest mass on a laid-out route (its edge is the biome's trees); no forest masses without it",
+    "$ref": "#/$defs/pool"
+   },
+   "fences": {
+    "description": "RT-1: the fence, wall or hedge a laid-out route's runs are built of (props with a box)",
+    "$ref": "#/$defs/pool"
+   },
    "tall": {
     "description": "the props drawn in tall grass",
     "$ref": "#/$defs/pool"

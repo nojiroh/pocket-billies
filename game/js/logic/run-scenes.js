@@ -24,13 +24,14 @@ import { hashString, rngFrom } from './rng.js';
 import { modFoeLevels } from './modifiers.js';
 import { runZoneRegion } from './run-region.js';
 import { runExits, runNodeSeed, runSpot } from './run-map.js';
-import { MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
+import { MAPGEN_LAYOUTS, MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
 import { wildPoolList } from './wild-pool.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_BUILDINGS: [() => RUN_BUILDINGS],
   RUN_FIELD_IN: [() => RUN_FIELD_IN],
   RUN_FIELD_PROPS: [() => RUN_FIELD_PROPS],
+  RUN_LAYOUT_MOD: [() => RUN_LAYOUT_MOD],
   RUN_MOD_MOUNTAINS: [() => RUN_MOD_MOUNTAINS],
   RUN_SIDE_ID: [() => RUN_SIDE_ID],
   RUN_TOWN_ROAD: [() => RUN_TOWN_ROAD],
@@ -39,6 +40,8 @@ expose({
   runAlongBack: [() => runAlongBack, v => (runAlongBack = v)],
   // @ts-expect-error -- replaced on purpose
   runFieldProps: [() => runFieldProps, v => (runFieldProps = v)],
+  // @ts-expect-error -- replaced on purpose
+  runLayoutOf: [() => runLayoutOf, v => (runLayoutOf = v)],
   runMapIdOf: [() => runMapIdOf],
   runPlaceId: [() => runPlaceId],
   // @ts-expect-error -- replaced on purpose
@@ -66,7 +69,8 @@ expose({
 /* to-module: end */
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, Biome>, pools: Record<string, Pool>,
- *   scenery: any, rules: { scene: RunSceneRules, wild: { lv: [number, number], perRow: number, back: number } },
+ *   scenery: any, rules: { scene: RunSceneRules, layouts?: Record<string, Record<string, number>>,
+ *   wild: { lv: [number, number], perRow: number, back: number } },
  *   dex?: string[] | null, fieldMoves?: Record<string, import('../../types/game-data').FieldMove> }} RunWorldData
  * RO-1: dex, a region's species, cuts each place's biome pool to them (logic/wild-pool.js); RL-R1: without it, the
  * run's region's (run.region.dex, its other varieties swapped to the region's)
@@ -137,7 +141,8 @@ export function runSceneParams(run, i, scenes, data) {
     size = MAPGEN_SIZES.route,
     nodeSeed = runNodeSeed(run.seed, i),
     exits = runSceneExits(map, i),
-    dials = runSceneDials(data.rules.scene, rngFrom(nodeSeed, 'scene|dials'));
+    dials = runSceneDials(data.rules.scene, rngFrom(nodeSeed, 'scene|dials')),
+    layout = runLayoutOf(run, i, data);
   /* its parents: the neighbours made before it (a main place's east ones; RL-R2: a side place's south or east one) */
   const edges = exits
     .filter(e => e.node < i)
@@ -165,6 +170,8 @@ export function runSceneParams(run, i, scenes, data) {
     ...(node.side && fieldMoveOf(map, data)
       ? runSideLand(/** @type {any} */ (fieldMoveOf(map, data)), node, dials)
       : {}),
+    /* RT-1: a laid-out place's plan (a route, the landing, a mini-boss's or the boss's place) */
+    ...(layout ? { layout } : {}),
     /* TW-1: a town node is a town (mapgen.js mapgenStageTown: a street, a square, houses) */
     kind: node.type === 'town' ? 'town' : 'route',
     biome: node.biome || Object.keys(data.biomes)[0],
@@ -184,6 +191,28 @@ export function runSceneParams(run, i, scenes, data) {
     ...(node.type === 'town' ? { feature: 'none' } : {}),
     edges,
   };
+}
+/** RT-1: the debug menu's run mod that gives every laid-out place one plan: the mod is this and the plan's id */
+export const RUN_LAYOUT_MOD = 'dbg_layout_';
+/** RT-1: node i's layout plan, or null: a place whose node type says layout (nodeTypes.json) draws one from
+ * rules.json run.layouts by its biome (`default` for one not listed), from its own stream (so the other dials' draws
+ * don't move); the debug menu's mod (RUN_LAYOUT_MOD) picks it instead
+ * @param {Run} run @param {number} i @param {RunWorldData} data @returns {string | null} */
+export function runLayoutOf(run, i, data) {
+  const map = /** @type {RunMap} */ (run.map),
+    node = map.nodes[i],
+    T = data.nodeTypes[node.type];
+  if (!T || !T.layout) return null;
+  const forced = (run.mods || []).find(m => m.startsWith(RUN_LAYOUT_MOD));
+  if (forced) {
+    const id = forced.slice(RUN_LAYOUT_MOD.length);
+    return Object.hasOwn(MAPGEN_LAYOUTS, id) ? id : null;
+  }
+  const L = data.rules.layouts,
+    W = L && (L[node.biome || ''] || L.default);
+  if (!W || !Object.values(W).some(w => w > 0)) return null;
+  const id = rngFrom(runNodeSeed(run.seed, i), 'scene|layout').pick(Object.fromEntries(Object.entries(W).sort()));
+  return id === 'none' ? null : id;
 }
 /** TW-1: a town's through road (mapgen's road dials): straight, a little wobble */
 export const RUN_TOWN_ROAD = { shape: 'straight', wobble: 0.25 };
