@@ -37,8 +37,11 @@ simple new models where a building has none.
     most). The caption "At the centre of everything / The Inner Sun" no longer shows on this path (it flew past the
     Inner Sun); "Inside the planet / The Hollow Earth" does.
   - Checks: check-fast's map check and check-quick's map camera step know the floating island.
+  - "Less low poly" (the owner, later the same session): the rock 112 corners and 11 rings with smooth bulges; the
+    island's ground its own mesh of 1.5 m squares from its own heights (floatGroundMesh), not the bowl's 6 m grid;
+    things stand on it (worldBowlSkyFloor reads it).
 - Verified: lint, typecheck, unit tests, check:modules after each commit; check-fast --only=map (2 of 2); the smoke
-  check (see the PR); headless pictures at five hours and of the fall. Not judged headless: speed on a phone, how the
+  check (no problems, 174 s); headless pictures at five hours and of the fall. Not judged headless: speed on a phone, how the
   fall feels in motion.
 - Risky: the bowl's shaders gained uniforms (tints, uIsle): runs should look as before, unchecked on a device. The
   Studio's world map preview still shows the bowl. The airship flight on the hub map is clamped to the island's orbit.
