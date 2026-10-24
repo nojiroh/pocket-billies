@@ -1067,6 +1067,7 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   (`meta.badges` on a leader's first win), new `game/js/field-moves.js` (Pokémon's talk box and a little burst on the
   map), `rules.js` canEnter and gateText, `conditions.js` `opened:<move>`. No cave or cove scene yet: the areas use the
   finished biomes (thicket for Cut, ridge for Rock Smash, lake with coast water for Surf); RL-R2b makes them.
+- **RL-13 (Expeditions, challenges, starter points)** lives on its own branch (the owner, 2026-10-24). Branch: track/expeditions
 - **The encounter sessions (RL-12b's two parts, RL-12c)** live on one branch (the owner, 2026-10-23). Branch: track/encounters
 - **RL-12b part 1** (done 2026-10-23; HANDOFF and section 0 "Corrected in RL-12b" have what changed). Part 2 (after
   RL-R2 merges): the `event` and `stall` waystation node types and their stand, the no-two-shops rule in run-map.js,
