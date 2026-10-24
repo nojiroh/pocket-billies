@@ -32,7 +32,7 @@ for the owner to push.
     joined strips, the east and west 5 m, lots, kept spots and where today's route trainers stand (until RT-2).
     `mapgenScene` makes a laid-out place again (four tries at most) until its walkable share is 55-65%.
     **Spots** on the finished scene: `pocket`, `clearing` (3.5 m clear), `deadend`, `pinch` (`dir`, `r` half the
-    width); `sc.layout = { plan, walk }`. Lakeside sets a pond, ledge drop terraces with ledges. MAPGEN_VERSION 7.
+    width); `sc.layout = { plan, walk }`. Lakeside sets a pond, ledge drop terraces with ledges. MAPGEN_VERSION 8 (TW-1 took 7 on main; merged in).
   - **Runs**: nodeTypes.json `layout` on landing, route, miniboss, boss; `runLayoutOf` (run-scenes.js), the plan from
     `run.layouts` (placeholder weights) on the node's `scene|layout` stream, so no other dial moved; check-data.
   - **Studio**: a Route layout dial and a Layout reroll on the Generate card.
