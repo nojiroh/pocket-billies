@@ -28,7 +28,7 @@ The single source of truth for what the game is becoming. Phase files implement 
 - Bots (robots) are an enemy faction first and playable much later.
 - Modular: nodes, relics, modifiers, currencies, factions, buildings, unlocks and bosses are data sections with schemas, so new systems and, later, content packs by others are added without editing core files.
 - Online: friends' ghost teams (a friend's last run as a rival fight) and daily shared seeds. Nothing else.
-- World map: always 3D, the inside of a half sphere, like a bowl. In the hub it shows the island; during a run it shows the run's node map with the forecast. (Phase 10, then RL-7.)
+- World map: always 3D. In the hub it shows Copperleaf's island floating in open sky (the owner, 2026-10-23: no bowl, no sea round it; the time of day's sky, an orbit camera round the island, its buildings as low-poly models at life size). During a run it is still the inside of a half sphere, like a bowl, with the run's node map and the forecast. (Phase 10, RL-7, then the floating island.)
 - The fitness step tracking stays REMOVED: real-world steps never drive the game.
 - Locations and maps keep the retro-futuristic solarpunk vibe.
 
