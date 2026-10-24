@@ -62,6 +62,9 @@ the sim (every change listed below). Round 5 beside RL-S1. Tag `rl-13-done` for 
   39/776; fainted is gone 40/822; mono-type 40/822. **The challenges barely bite for the bot** (it heals little, buys
   few Perks, and its party is all one type): their cost shows only in play. The first runs are lost until the ranch
   has trained something, which is the roguelite shape the owner asked for.
+- **check-fast's "Packing for a run" (found by CI)**: the start sheet opened with the suggested party filling the
+  budget, so every other card was greyed out and a tap did nothing until you tapped someone out. Now the suggested
+  party shows only until your first tap, which starts your own pick with that Billie; later taps add or take one out.
 - **The new Billies (merged from main mid-session)**, two fixes, one commit each:
   - Starter points priced a Billie by its stage *number*: Sharktank (a two-stage line's final, stage 1) cost 2 while
     Aviatorgoose with the same stats cost 3, and Altmowl and Peacouture (rare, no evolutions, stage 0 but a final
@@ -75,8 +78,9 @@ the sim (every change listed below). Round 5 beside RL-S1. Tag `rl-13-done` for 
   leader tests, encounters, run-state, conditions, check-data's planted Expeditions). Smoke 6 of 6 (208 s). The new in-game phase alone passed
   headlessly. A browser look at the start sheet at 390x760 (three Expeditions open, a win): the chips, a challenge
   on, the type row, each card's price and reason.
-  **Long checks skipped at the owner's word**: the full quick check, the whole in-game test (--selftest) and
-  check:fast were not run.
+  **Long checks skipped at the owner's word**: the full quick check and the whole in-game test (--selftest) were not
+  run. check:fast was, after all: CI runs it on every push, and it found a bug (below); 28 of 28 passed locally
+  after the fix, and CI's smoke job (which runs it) passed too.
 - Risky / open:
   - Every number is still a placeholder; the sim's bot is not a player, and the win rates above are a floor.
   - **No check-fast page for Expeditions** (the track asks each session for one): the start sheet's chips and a run
