@@ -19,7 +19,7 @@ import { encArrive, fxHealShare, fxOfRun, unlockOpen } from '../hooks.js';
 import { ITEMS, SPECIES } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
-import { healAll, maxHp, plural } from './rules.js';
+import { healAll, maxHp, plural, speciesStep } from './rules.js';
 import { modBossHp, modFoeLevels, modHas } from './modifiers.js';
 import { RUN_DAYS, runHome } from './run-state.js';
 import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
@@ -161,8 +161,8 @@ export const runFoeWinText = text => {
 /**
  * RL-13: a run leader's team, built for the run instead of the file's legacy stand-ins: as many Billies as its own
  * team has, at `levels` (its own spread, kept), of species of the leader's type (`type`) — from the region's dex
- * first, then from every species of that type, each at the stage its level allows (as a wild Billie's: a first stage
- * under 16, nothing final under 32); with
+ * first, then (none there young enough for the level) from every species of that type, each at the stage its level
+ * allows (as a wild Billie's: a first stage under 16, no final form under 32, rules.js speciesStep); with
  * none of its type is young enough for the level (Steel has no first stage), its youngest; with none of its type
  * anywhere (a type no line has), its own team's species stay; no species twice while the pool has
  * others. Drawn from the node's stream, so a
@@ -178,18 +178,19 @@ export function runLeaderTeam(g, T, levels, species, dex) {
   const ofType = (/** @type {string[]} */ ids) =>
     ids.filter(id => species[id] && (species[id].types || []).includes(T.type));
   const pool = ofType(dex && dex.length ? dex : []),
-    all = pool.length ? pool : ofType(Object.keys(species));
-  if (!all.length) return own;
+    every = ofType(Object.keys(species));
+  if (!every.length) return own;
   /** @type {string[]} */
   const taken = [];
   return levels.map(lvl => {
     /* the stages the level may field (encounters.js encDexAt has the same rule for route trainers) */
     const fits = (/** @type {string} */ id) =>
-        lvl < 16 ? species[id].stage === 0 : lvl < 32 ? species[id].stage <= 1 : true,
-      fit = all.filter(fits),
-      /* no species of the type is young enough for this level (Steel has no first stage): its youngest instead */
-      low = Math.min(...all.map(id => species[id].stage)),
-      pick = fit.length ? fit.slice().sort() : all.filter(id => species[id].stage === low).sort(),
+        lvl < 16 ? speciesStep(species[id]) === 0 : lvl < 32 ? speciesStep(species[id]) <= 1 : true,
+      /* the region's own first; when it has none of the type young enough, every species of the type */
+      fit = pool.filter(fits).length ? pool.filter(fits) : every.filter(fits),
+      /* none of the type is young enough anywhere: its youngest instead */
+      low = Math.min(...every.map(id => speciesStep(species[id]))),
+      pick = fit.length ? fit.slice().sort() : every.filter(id => speciesStep(species[id]) === low).sort(),
       /* no species twice while there are others to field */
       left = pick.filter(id => !taken.includes(id)),
       from = left.length ? left : pick,

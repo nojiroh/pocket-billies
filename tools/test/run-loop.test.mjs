@@ -316,13 +316,15 @@ test('RL-13: a leader fields its own type, as many Billies and the same level sp
     for (const e of team) {
       assert.ok(SPECIES[e.sp], `${T.id}: ${e.sp} is a species`);
       assert.ok(SPECIES[e.sp].types.includes(T.type), `${T.id} (${T.type}) fields ${e.sp} (${SPECIES[e.sp].types})`);
-      /* the stage fits the level (nothing final under 32), unless its type has nothing younger (Steel) */
-      const young = Math.min(
-        ...Object.keys(SPECIES)
-          .filter(id => SPECIES[id].types.includes(T.type))
-          .map(id => SPECIES[id].stage)
-      );
-      assert.ok(e.lvl >= 32 || SPECIES[e.sp].stage <= Math.max(1, young), `${T.id}: ${e.sp} at ${e.lvl}`);
+      /* the stage fits the level (no final form under 32, a Billie with no evolutions included), unless its type
+         has nothing younger */
+      const step = fn('speciesStep'),
+        young = Math.min(
+          ...Object.keys(SPECIES)
+            .filter(id => SPECIES[id].types.includes(T.type))
+            .map(id => step(SPECIES[id]))
+        );
+      assert.ok(e.lvl >= 32 || step(SPECIES[e.sp]) <= Math.max(1, young), `${T.id}: ${e.sp} at ${e.lvl}`);
     }
     /* the same seed, the same team */
     assert.deepEqual(L.runLeaderTeam(rngFrom('LEADERS', 'team'), T, levels, SPECIES, null), team);
@@ -340,4 +342,28 @@ test('RL-13: a leader fields its own type, as many Billies and the same level sp
     dexed.map(e => e.sp),
     ['bezos2', 'bezos2']
   );
+});
+
+test('RL-13: a Billie with no evolutions is a final form: no leader fields one under level 32', () => {
+  const flying = LEADERS.find(T => T.type === 'Flying');
+  for (let k = 0; k < 40; k++) {
+    const team = L.runLeaderTeam(rngFrom(`SINGLE${k}`, 'team'), flying, [11, 11, 12, 12], data.SPECIES, [
+      'arnault0',
+      'hughes0',
+      'swift0',
+    ]);
+    assert.ok(!team.some(e => e.sp === 'arnault0'), `a level-11 Peacouture (${team.map(e => e.sp)})`);
+  }
+  /* from 32 it may */
+  const late = L.runLeaderTeam(rngFrom('SINGLE', 'team'), flying, [40], data.SPECIES, ['arnault0']);
+  assert.deepEqual(
+    late.map(e => e.sp),
+    ['arnault0']
+  );
+});
+
+test("RL-13: a region whose dex has only a type's final forms: the leader looks past its dex before fielding one", () => {
+  const flying = LEADERS.find(T => T.type === 'Flying'),
+    team = L.runLeaderTeam(rngFrom('FINALS', 'team'), flying, [11, 12], data.SPECIES, ['arnault0', 'bezos2']);
+  for (const e of team) assert.equal(fn('speciesStep')(data.SPECIES[e.sp]), 0, `${e.sp} at ${e.lvl}`);
 });
