@@ -99,6 +99,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenLevelLot: [() => mapgenLevelLot, v => (mapgenLevelLot = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenLotFree: [() => mapgenLotFree, v => (mapgenLotFree = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenLowerWater: [() => mapgenLowerWater, v => (mapgenLowerWater = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenMergeDefaults: [() => mapgenMergeDefaults, v => (mapgenMergeDefaults = v)],
@@ -2648,6 +2650,28 @@ export const MAPGEN_HUB_BUILDINGS = [
 /** is (x, z) on a building's lot, or within m metres of one */
 export const mapgenInLot = (G, x, z, m = 0) =>
   G.lots.some(L => x > L[0] - m && x < L[2] + m && z > L[1] - m && z < L[3] + m);
+/** is the rectangle [x0, z0]-[x1, z1] free for a lot: inside the scene by a metre, on no road, path, water, bridge,
+ * stream or jetty cell, 12 m clear of the exits and joined edges, a metre clear of the other lots, clear of anything
+ * placed or kept, and (unless hub is false) clear of the hub */
+export function mapgenLotFree(G, x0, z0, x1, z1, hub = true) {
+  const { w, h } = G;
+  if (x0 < 1 || z0 < 1 || x1 > w - 1 || z1 > h - 1) return false;
+  for (let z = Math.floor(z0); z < Math.ceil(z1); z++)
+    for (let x = Math.floor(x0); x < Math.ceil(x1); x++) if (G.F[z * w + x] & (1 | 2 | 4 | 8 | 64 | 128)) return false;
+  const cx = (x0 + x1) / 2,
+    cz = (z0 + z1) / 2,
+    r = Math.hypot(x1 - x0, z1 - z0) / 2;
+  if (hub && Math.hypot(cx - G.hub[0], cz - G.hub[1]) < r + 3) return false;
+  if (G.exits.some(e => Math.hypot(cx - e.pt[0], cz - e.pt[1]) < r + 12)) return false;
+  if (mapgenNearJoined(G, cx, cz, 12 + r)) return false;
+  if (G.lots.some(L => x0 < L[2] + 1 && x1 > L[0] - 1 && z0 < L[3] + 1 && z1 > L[1] - 1)) return false;
+  for (const o of [...[...G.occ.values()].flat(), ...G.keep]) {
+    const dx = Math.max(x0 - o[0], 0, o[0] - x1),
+      dz = Math.max(z0 - o[1], 0, o[1] - z1);
+    if (Math.hypot(dx, dz) < o[2]) return false;
+  }
+  return true;
+}
 /** the props dials' clinic, shop and airship mast beside the main road near the hub, facing the camera (south) like
  * every town building: north of the road, the front 2.5-5 m from its edge, on a level pad, with a path from the door
  * to the road. A lot keeps 12 m from the exits and joined edges, clear of the road, water, banks, bridges and
@@ -2670,25 +2694,7 @@ export function mapgenStageLots(G) {
     [cand[i], cand[j]] = [cand[j], cand[i]];
   }
   cand.sort((a, b) => Math.abs(a - hk) - Math.abs(b - hk) || 0); /* nearest the hub first; ties in the random order */
-  const free = (x0, z0, x1, z1) => {
-    if (x0 < 1 || z0 < 1 || x1 > w - 1 || z1 > h - 1) return false;
-    for (let z = Math.floor(z0); z < Math.ceil(z1); z++)
-      for (let x = Math.floor(x0); x < Math.ceil(x1); x++)
-        if (G.F[z * w + x] & (1 | 2 | 4 | 8 | 64 | 128)) return false;
-    const cx = (x0 + x1) / 2,
-      cz = (z0 + z1) / 2,
-      r = Math.hypot(x1 - x0, z1 - z0) / 2;
-    if (Math.hypot(cx - G.hub[0], cz - G.hub[1]) < r + 3) return false;
-    if (G.exits.some(e => Math.hypot(cx - e.pt[0], cz - e.pt[1]) < r + 12)) return false;
-    if (mapgenNearJoined(G, cx, cz, 12 + r)) return false;
-    if (G.lots.some(L => x0 < L[2] + 1 && x1 > L[0] - 1 && z0 < L[3] + 1 && z1 > L[1] - 1)) return false;
-    for (const o of [...[...G.occ.values()].flat(), ...G.keep]) {
-      const dx = Math.max(x0 - o[0], 0, o[0] - x1),
-        dz = Math.max(z0 - o[1], 0, o[1] - z1);
-      if (Math.hypot(dx, dz) < o[2]) return false;
-    }
-    return true;
-  };
+  const free = (x0, z0, x1, z1) => mapgenLotFree(G, x0, z0, x1, z1);
   for (const [dial, k, act, label] of want) {
     const C = G.cat[k];
     if (!C || !C.box) continue;
