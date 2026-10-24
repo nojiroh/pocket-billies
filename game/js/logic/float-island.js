@@ -15,7 +15,13 @@ expose({
   FLOAT_ISLAND: [() => FLOAT_ISLAND],
   FLOAT_STRIDE: [() => FLOAT_STRIDE],
   // @ts-expect-error -- replaced on purpose
+  floatGroundHeight: [() => floatGroundHeight, v => (floatGroundHeight = v)],
+  // @ts-expect-error -- replaced on purpose
+  floatGroundMesh: [() => floatGroundMesh, v => (floatGroundMesh = v)],
+  // @ts-expect-error -- replaced on purpose
   floatHash: [() => floatHash, v => (floatHash = v)],
+  // @ts-expect-error -- replaced on purpose
+  floatInside: [() => floatInside, v => (floatInside = v)],
   // @ts-expect-error -- replaced on purpose
   floatIslandMesh: [() => floatIslandMesh, v => (floatIslandMesh = v)],
   // @ts-expect-error -- replaced on purpose
@@ -32,19 +38,28 @@ export const FLOAT_STRIDE = 8;
 /** the rock's shape: corners round the coast, the rings going down (how far out from the middle, how far down as a
  * share of the depth), the depth as a share of the island's width, and the small rocks */
 export const FLOAT_ISLAND = {
-  corners: 40,
+  /* the owner, 2026-10-24: "less low poly": many corners and rings, its bulges smooth */
+  corners: 112,
   rings: [
     [1.0, 0.0],
-    [1.0, 0.07],
-    [0.86, 0.2],
-    [0.67, 0.38],
-    [0.46, 0.58],
-    [0.25, 0.8],
+    [1.0, 0.035],
+    [0.97, 0.09],
+    [0.91, 0.16],
+    [0.83, 0.25],
+    [0.73, 0.35],
+    [0.62, 0.46],
+    [0.5, 0.57],
+    [0.38, 0.68],
+    [0.26, 0.79],
+    [0.15, 0.89],
   ],
   depth: 0.62,
-  /** how much each corner is pushed in or out, and up or down (shares) */
+  /** how much each corner is pushed in or out, and up or down (shares): broad bulges and a little grain */
   jitter: 0.13,
+  grain: 0.025,
   rocks: 3,
+  /** the island's own ground: a square this many metres */
+  cell: 1.5,
 };
 
 /** a hash in 0-1 @param {number} a @param {number} b */
@@ -100,7 +115,7 @@ export function floatIslandSize(P) {
  * One rock: a top ring (with a cap), its rings going down and a point, as flat-faced triangles.
  * @param {number[][]} ring the top's corners [x, y], counter-clockwise @param {number[]} c its middle
  * @param {number} top the top's height @param {number} depth how far down the point hangs
- * @param {{ seed?: number, cap?: number, capDrop?: number, bob?: number, rings?: number[][], jitter?: number,
+ * @param {{ seed?: number, cap?: number, capDrop?: number, bob?: number, rings?: number[][], jitter?: number, grain?: number,
  *   lift?: (x: number, y: number) => number }} [o]
  * cap: the cap's band (-1 the island's, -2 grass; undefined: none), capDrop: how far under the top the cap sits,
  * lift: a height added under each corner (the water's curve the coast sits on)
@@ -115,14 +130,24 @@ export function floatRock(ring, c, top, depth, o = {}) {
     n = ring.length,
     /** @type {number[][][]} */ rows = [],
     out = /** @type {number[]} */ ([]);
+  /* broad bulges round the rock (a smooth noise over the angle, new each ring) and a little grain per corner */
+  const lumps = 9,
+    bulge = (/** @type {number} */ k, /** @type {number} */ i) => {
+      const t = (i / n) * lumps,
+        a = Math.floor(t),
+        f = t - a,
+        e = f * f * (3 - 2 * f);
+      return floatHash(seed + k, a % lumps) * (1 - e) + floatHash(seed + k, (a + 1) % lumps) * e - 0.5;
+    },
+    G = o.grain ?? FLOAT_ISLAND.grain;
   /* the point: under the middle, a little off it */
   const tip = [c[0] + (floatHash(seed, 1) - 0.5) * depth * 0.18, c[1] + (floatHash(seed, 2) - 0.5) * depth * 0.18, 0];
   tip[2] = top - depth + lift(tip[0], tip[1]);
   R.forEach(([s, d], k) => {
     rows.push(
       ring.map((p, i) => {
-        const w = k ? 1 + (floatHash(seed + k, i) - 0.5) * 2 * J : 1,
-          dz = k ? (floatHash(seed + k, i + 99) - 0.5) * J * 0.5 : 0,
+        const w = k ? 1 + bulge(k, i) * 2 * J + (floatHash(seed + k, i) - 0.5) * 2 * G : 1,
+          dz = k ? bulge(k + 50, i) * J * 0.5 + (floatHash(seed + k, i + 99) - 0.5) * G : 0,
           /* the lower rings lean towards the point */
           lean = d * d * 0.6;
         const x = c[0] + (p[0] - c[0]) * s * w,
@@ -193,7 +218,7 @@ export function floatIslandMesh(coast, top, o = {}) {
       x = c[0] + Math.cos(a) * far,
       y = c[1] + Math.sin(a) * far,
       h = top - depth * (0.12 + floatHash(seed + 10, q) * 0.3),
-      m = 7,
+      m = 16,
       small = [];
     for (let i = 0; i < m; i++) {
       const b = (i / m) * Math.PI * 2,
@@ -208,12 +233,99 @@ export function floatIslandMesh(coast, top, o = {}) {
         lift,
         rings: [
           [1, 0],
-          [0.9, 0.25],
-          [0.55, 0.6],
+          [0.97, 0.12],
+          [0.85, 0.3],
+          [0.65, 0.5],
+          [0.4, 0.72],
         ],
         jitter: 0.2,
       })
     );
   }
   return { data: new Float32Array(out), c, r, depth };
+}
+
+/** a point inside a polygon given as [x0, y0, x1, y1, ...] @param {ArrayLike<number>} P @param {number} x
+ * @param {number} y */
+export function floatInside(P, x, y) {
+  let o = false;
+  for (let i = 0, j = P.length - 2; i < P.length; j = i, i += 2) {
+    const xi = P[i],
+      yi = P[i + 1],
+      xj = P[j],
+      yj = P[j + 1];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) o = !o;
+  }
+  return o;
+}
+
+/**
+ * The floating island's own ground, finer than the bowl's grid (the owner: "less low poly"): a square every `cell`
+ * across the island, its height from the island map's own heights inside the coast and just under the water's line
+ * outside it (so the ground's edge meets the coast), two triangles a square, only squares that touch the land.
+ * @param {ArrayLike<number>} poly the coast [x0, y0, ...] @param {(x: number, y: number) => number} heightAt inside
+ * @param {(x: number, y: number) => number} waterAt the water's line @param {number} cell the square, in bowl units
+ * @returns {{ V: Float32Array, I: Uint32Array, n: number, x0: number, y0: number, cell: number, h: Float32Array }}
+ */
+export function floatGroundMesh(poly, heightAt, waterAt, cell) {
+  let x0 = Infinity,
+    y0 = Infinity,
+    x1 = -Infinity,
+    y1 = -Infinity;
+  for (let k = 0; k < poly.length; k += 2) {
+    x0 = Math.min(x0, poly[k]);
+    x1 = Math.max(x1, poly[k]);
+    y0 = Math.min(y0, poly[k + 1]);
+    y1 = Math.max(y1, poly[k + 1]);
+  }
+  x0 -= cell * 2;
+  y0 -= cell * 2;
+  const nx = Math.ceil((x1 + cell * 2 - x0) / cell),
+    ny = Math.ceil((y1 + cell * 2 - y0) / cell),
+    w = nx + 1,
+    V = new Float32Array(w * (ny + 1) * 3),
+    h = new Float32Array(w * (ny + 1)),
+    inn = new Uint8Array(w * (ny + 1)),
+    /** @type {number[]} */ I = [];
+  for (let j = 0; j <= ny; j++)
+    for (let i = 0; i <= nx; i++) {
+      const x = x0 + i * cell,
+        y = y0 + j * cell,
+        q = j * w + i,
+        on = floatInside(poly, x, y);
+      inn[q] = on ? 1 : 0;
+      h[q] = on ? heightAt(x, y) : waterAt(x, y) - cell * 0.6;
+      V.set([x, h[q], -y], q * 3);
+    }
+  for (let j = 0; j < ny; j++)
+    for (let i = 0; i < nx; i++) {
+      const a = j * w + i,
+        b = a + 1,
+        c = a + w,
+        d = c + 1;
+      if (inn[a] + inn[b] + inn[c] + inn[d]) I.push(a, b, d, a, d, c);
+    }
+  return { V, I: new Uint32Array(I), n: nx, x0, y0, cell, h };
+}
+
+/**
+ * The fine ground's height at a point (the triangle it falls in, as drawn), or null outside it.
+ * @param {{ n: number, x0: number, y0: number, cell: number, h: Float32Array }} M @param {number} x @param {number} y
+ */
+export function floatGroundHeight(M, x, y) {
+  const w = M.n + 1,
+    rows = M.h.length / w - 1,
+    u = (x - M.x0) / M.cell,
+    v = (y - M.y0) / M.cell,
+    i = Math.floor(u),
+    j = Math.floor(v);
+  if (i < 0 || j < 0 || i >= M.n || j >= rows) return null;
+  const fu = u - i,
+    fv = v - j,
+    a = M.h[j * w + i],
+    b = M.h[j * w + i + 1],
+    c = M.h[(j + 1) * w + i],
+    d = M.h[(j + 1) * w + i + 1];
+  /* split from (i, j) to (i + 1, j + 1) */
+  return fu >= fv ? a + (b - a) * fu + (d - b) * fv : a + (d - c) * fu + (c - a) * fv;
 }
