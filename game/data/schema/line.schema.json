@@ -10,6 +10,7 @@
   "types": {"description": "the types of each stage", "type": "array", "items": {"type": "array", "items": {"type": "string"}, "minItems": 1}, "minItems": 1},
   "prof": {"description": "the six stat weights (hp, then the others in stats.json order)", "type": "array", "items": {"type": "number", "exclusiveMinimum": 0}, "minItems": 6, "maxItems": 6},
   "rar": {"type": "string"},
+  "totals": {"description": "RO-2c: this line's own stat total per stage, in place of its rarity's (rarities.json); a stage past the last one takes the last", "type": "array", "items": {"type": "integer", "minimum": 100, "maximum": 800}, "minItems": 1, "maxItems": 4},
   "learn": {"description": "[level, move id] pairs", "type": "array", "items": {"type": "array", "prefixItems": [{"type": "integer", "minimum": 1}, {"type": "string"}], "minItems": 2, "maxItems": 2}},
   "evo": {"type": "array"},
   "split": {"type": "boolean"},

@@ -1,0 +1,37 @@
+{
+ "id": "arnault",
+ "names": ["Peacouture"],
+ "types": [["Fire","Flying"]],
+ "prof": [0.95,0.85,0.9,1.35,1.1,0.95],
+ "rar": "rare",
+ "learn": [
+  [1,"handshake"],
+  [1,"spill"],
+  [1,"escvel"],
+  [8,"liftoff"],
+  [13,"lobby"],
+  [18,"hottake"],
+  [23,"pipeline"],
+  [28,"orbit"],
+  [33,"cindershot"],
+  [38,"flarecore"],
+  [44,"launch"],
+  [50,"post3am"]
+ ],
+ "cat": ["Maison Billie"],
+ "ht": [1.1],
+ "wt": [6],
+ "hab": ["The front row of every show"],
+ "diet": ["Heritage houses"],
+ "bio": [
+  "A peacock that collects houses. Every feather in its fan once belonged to another bird, and it keeps each one polished, numbered and priced. When it spreads its tail, the eye on every feather is a monogram, and the whole fan glows like gold leaf in a fire."
+ ],
+ "note": ["Never on sale. Not once."],
+ "parody": "Bernard Arnault",
+ "cry": [
+  {"base":"bird","pitch":50,"length":1.3,"name":"placeholder: a slow call that expects an answer (Claude's draft)"}
+ ],
+ "parts": [
+  {"head":"bird_head","body":"bird_torso","front":"bird_arm","back":"bird_leg","sig":"bird_tail"}
+ ]
+}

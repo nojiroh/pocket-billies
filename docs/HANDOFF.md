@@ -2,6 +2,248 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roster track RO-2c - The Huang line, regional forms and a balance pass - 2026-10-24
+Branch `track/roster` itself (the push was allowed from this session). Plan approved in Plan Mode with the
+recommendations taken: Huang rare, ending at 560; the starters' level 16 left alone. **The RO-2.. plan is finished:
+40 species, 15 lines.**
+- Where the brief and my own plan were wrong (checked in the code):
+  - **A coat cannot recolour a kit Billie.** RO-1's forms are a coat (palette ramps swapped step for step) plus a type
+    swap, but a kit sheet is part art tinted in HSV, so 22-55% of its pixels are further than `COAT_NEAR` (24) from
+    any palette shade and keep their colour: a ramp swap gave half-blue, half-orange tigers. So a kit Billie's form
+    gets **its own baked look**: a kitBuilds.json recipe with the same parts and sizes in the form's colours, marked
+    by a new `form` field and keyed by the form's species (rig `hughes_harbour0`), so the form draws its own sheet.
+    Its coat row stays (the forms rule wants one) and holds no ramps. RO-1's four hand-drawn-era forms still recolour
+    through their coats, unchanged.
+  - **The level 13 in RO-1's handoff is the designed curve, not what a run reaches.** rules.json run.wild is level 3-5
+    with +1 a row over 9 rows (so the last row is about 12, the boss about 17), but the run sim's bot ends at level
+    **5.4** over 200 seeds, losing at the landing in about half of them - and the same on the branch point (5.6), so
+    this is not RO-2c's doing. The pass follows the designed curve; the sim could not check it (its paired compare
+    moves 2-5 runs of 200, the bot dying long before any of this).
+  - A global `sed` of mine shrank Marsox's horns (0.9 to 0.65) while editing Gigajenzard's; caught by a stray
+    marsox.png in the diff and put back. The kit baker is fine.
+  - Reptile heads tint properly (the Kardashian line proves it), so RO-2b's fox-head problem did not apply.
+- Changed:
+  - **Part library:** the hand-drawn sheets, layouts and rigs of siliclet, jenzard and gigajenzard (rigs huang0-2)
+    copied into `game/art/next/billionaires/hand` (rigs-hand.json).
+  - **The Huang line** (`lines/huang.json`, `index.json`, roster.json rows 38-40): Siliclet -> Jenzard ->
+    Gigajenzard, **rare** (every uncommon line must be in every pool, the sea and the tundra too, and a pseudo-legend
+    should be scarce), Electric then Electric/Dragon, evolving at **20 and 40** (raised at the ranch over runs, not
+    inside one). Keeps its signature CUDA Call (21) and its legacy profile and bios. Reptile parts in three tints, a
+    green crest, then a green sail, then wings and pale horns. Pools: ridge, canyon and badlands at weight 3, below
+    every common there.
+  - **A `wings` anchor** (kitBuilds.json bake.anchors and its schema): a mirrored pair spread from the middle of the
+    back, because the `back` anchor's pair overlaps in the middle. Only Gigajenzard uses it.
+  - **Five regional forms** (drafts, the owner may rename): Harbour (hughes, Steel -> Water), Meatball (kamprad,
+    Grass -> Fire), Courtside (cuban, Water -> Ground), Livestream (yiming, Psychic -> Fire), Hazard (woods, Ground ->
+    Water), with 11 baked sheets and rigs, 15 colours and five coats that hold no ramps. Pools: Harbour in place of
+    the goose in lake and sea, Meatball in place of the rat in volcano and badlands; Courtside joins canyon and
+    badlands, Livestream the volcano, Hazard the lake (a pool holds a line once, base or form).
+  - **Balance:** a line's own **`totals`** per stage (line.schema.json, the Line type, game-data.js) in place of its
+    rarity's table, because `tot[stage]` gave a 2-stage final the middle total: Cuban **235/515** (the Gyarados
+    payoff), Yiming and Woods **265/470**, Huang **300/420/560** (above a starter's 530); Kamprad keeps 265/400.
+    First evolutions: Gosling 16 -> **12**, Sprucegoose 36 -> **32**, Flatpackrat 20 -> **14**, Cliplet 18 -> **14**,
+    Cublet 24 -> **16**; Pupfin keeps 20 (the wait is the joke). Leader Alta's `woods0` at level 36 is **`woods1`**.
+  - **logic/pixel-density.js:** `densityHeights` also lists a line's forms, so the report covers the 11 form sheets.
+  - **Tests:** kit counts 40 then 51 (kit-bake-parity, pixel-density); rig-swap's four-legged example moved from
+    huang0 (now a kit biped) to the legacy ma0; check-data and run-start snapshots remade; a new wild-pools test for
+    `totals`.
+- Verified: lint, typecheck, check:data, check:modules, format:check, bake check, unit tests 829 of 829; check-sound
+  gained only the 3 new Huang cries and their low versions, then 0 changed; smoke 6 of 6 (176 s). All 14 new sprites
+  looked at in a browser, front and back (Playwright 1.63.0, `rigCanvasHTML` on the game page; a form needs
+  `setCoatRigData` and a rebuilt gamedata.js to show). Over 500 seeds every line is in 18-62% of regional dexes
+  (Swift 62%, Huang 23% beside the other rares, Altmowl 18%) and each new form is the region's variety in 8-30%.
+- Risky / open:
+  - A form's own baked sheet is new ground: `coatArt` is not involved, the form just has its own rig. If the owner
+    later wants a form to be a recolour after all, the coat is still the hook.
+  - Courtside Pupfin is a drab tan; Harbour Gosling is a pale ice-blue. Both read, neither sings.
+  - The run sim cannot check balance while its bot dies at level 5. Either the bot policy is too weak or the run's
+    first rows are too hard: worth its own look, and not roster work.
+  - Pupfin at 234 points until level 20 is deliberately weak. If it feels bad to play, raise the first stage, not the
+    level.
+  - Not tried on a phone: the new sprites in grass, battle and the Guide.
+- Next (outside the 40, not started): the critters kit (beetle, spider, snake, frog, crab, octopus) and the hooves kit
+  (horse, deer, ox, goat, elephant, camel), historic tycoons as legendary or boss Billies, and an Eevee-style Billie
+  whose evolution follows its parts.
+
+### Roster track RO-2b - Three more lines from the part kits - 2026-10-23
+Branch `ccr-ro-2b-yiming-woods-arnault`, made from `ccr-81439378-ypunjg` (RO-2a, PR #168, not merged yet); draft PR
+into `track/roster`, stacked on #168 (its diff shrinks once #168 merges). Plan approved in Plan Mode with the draft
+names Cliplet and Peacouture, Woods as a common, and the peacock rare with no signature move.
+- Where the brief was wrong (checked in the code):
+  - The fox head can't be recoloured: `kitFaceMask` (logic/kit-pixels.js) keeps every saturated bright pixel as
+    "face", and the fox head's fur is that saturated, so a tinted fox head stays brown. The ferrets use a cat head with
+    fox ears (fox body, legs and tail). The shared bake code is unchanged; a fix there needs the face mask to look at
+    position, not only colour, and the parity test kept number for number.
+  - `bake.tailAim` only turns a tail part that has sockets; `birds_plume` has none, so it can't be a raised tail. The
+    peacock's fan is a mirrored pair of plumes carried on the `back` anchor, which reads as a fan from the front.
+  - Woods was uncommon in legacy, but the pool test puts every uncommon line in every pool (sea and volcano too), so
+    it is common here.
+  - There is no Arnault signature move in moves.json; with "existing moves only", Peacouture learns generic Fire and
+    Flying moves.
+- Changed:
+  - **Part library:** the hand-drawn sheets, layouts and rigs of tiktokferret, cublet and tigerwoods (rigs yiming0,
+    woods0, woods1) copied into `game/art/next/billionaires/hand` (rigs-hand.json).
+  - **Three lines** (`lines/yiming|woods|arnault.json`, `index.json`, roster.json rows 33-37): Cliplet →
+    Tiktokferret (common, Electric → Electric/Psychic, 18; keeps Fifteen Seconds), Cublet → Tigerwoods (common,
+    Ground → Ground/Grass, 24; keeps Sunday Red), Peacouture (rare single, Fire/Flying). Stat profiles of the legacy
+    lines kept; the peacock's is a slow special attacker with Altmowl's total. Bios, notes, sizes and cries are drafts
+    (cries named "placeholder").
+  - **Art:** kitBuilds.json recipes and 13 colours; `npm run bake:kits` wrote sheets and rigs. Tiger stripes aren't
+    possible with tints alone: a dark spike tuft on the head (and on the back for Tigerwoods) stands in.
+  - **Pools:** the ferret in meadow, lake, ridge, jungle, canyon; the tiger in meadow, thicket, autumn, canyon,
+    badlands, jungle; the peacock rare (3-4) in volcano, canyon, ridge. The egg and Alta's team that named `woods0`
+    now get the real Cublet.
+  - **Tests:** kit counts 37 (kit-bake-parity, pixel-density); check-data snapshot (136 files) and run-start
+    snapshot remade (regional dexes drawn from more lines); the sound baseline gains 10 prints (5 cries and their low
+    versions; no other print changed).
+- Verified: lint, typecheck, check:data, check:modules, format:check, bake check, unit tests 828 of 828;
+  check-sound: only the 10 new prints differed before the baseline; smoke 6 of 6 (179 s). The five sprites looked at in a
+  browser, front and back (Playwright 1.63.0, `rigCanvasHTML` on the game page). The full quick check 37 of 37
+  (1,723 s). CI on #172's first push: smoke red on "Play this seed" (fixed by #168's port of #174, merged in) and on
+  CAM-2's encounter shot and IS-1/IS-3's camera aim, the camera flakes RO-2a saw too.
+- Risky / open:
+  - Peacouture's head stays a pale peach (the bird head is near white, so tints come out pastel) and its back view
+    is busy where the fan crosses the body. The tigers have no real stripes. Both are fine as kit stand-ins until the
+    owner wants hand touches.
+  - Runs reach about level 13 (RO-1), so Tiktokferret (18) and Tigerwoods (24) are seldom seen evolved in a run.
+  - Leader Alta (trainers/alta.json, a Flying miniboss) lists `woods0` at level 36: now a real Cublet, unevolved
+    past its level 24. Left as is (legacy team list); RO-2c or the trainer pass can make it `woods1`.
+  - Not tried on a phone: the new sprites in grass, battle and the Guide.
+- Next: RO-2c: the Huang dragon pseudo-legend (Siliclet → Jenzard → Gigajenzard), regional forms for the new
+  commons, and a balance pass with the run sim. It should look at Sharktank, a 2-stage final with the middle stat total
+  (400), and at evolution levels against how far runs go.
+
+### Roster track RO-2a - Four new lines from the part kits - 2026-10-23
+Branch `ccr-81439378-ypunjg` (a cloud session can only push to its own branch), made from main + `track/roster`;
+draft PR #168 into `track/roster`. Plan approved in Plan Mode: 24 → 40 species in three batches (roguelite-track.md,
+"RO-2.. plan"), kit parts and kit stand-ins only, a mix of legacy and new parodies. RO-2b runs in its own session
+(stacked on #168). Tag `ro-2a-done` for the owner.
+- Where the docs were wrong: phase 16's "Verify first" still says 7 lines; legacy sheets of these species had the
+  same file names as the kit sheets the baker writes, so baking over them would have lost the hand-drawn art (copied
+  to `billionaires/hand` first). A 2-stage final gets the middle stat total (game-data.js: `tot[stage]`), not a final's.
+- Changed:
+  - **Part library:** the hand-drawn sheets, layouts and rigs of gosling, sprucegoose, aviatorgoose, flatpackrat,
+    kamprat, pupfin, sharktank and altmowl copied into `game/art/next/billionaires/hand` (rigs-hand.json).
+  - **Four lines** (`lines/hughes|kamprad|cuban|altman.json`, `index.json`, roster.json rows 25-32): Gosling →
+    Sprucegoose → Aviatorgoose (common, Flying → Flying/Steel, 16/36), Flatpackrat → Kamprat (common, Steel →
+    Steel/Grass, 20), Pupfin → Sharktank (common, Water → Water/Dragon, 20), Altmowl (rare single, Psychic/Electric).
+    Learnsets of existing moves of their types; bios, notes, sizes and cries redrawn (drafts; cries named
+    "placeholder").
+  - **Art:** kitBuilds.json recipes and 14 colours; `npm run bake:kits` wrote sheets, rigs and native parts. The
+    rat is a stand-in (cat body, round bear ears, reptile tail). The old `<name>.json` layouts left the sheets folder.
+  - **Pools:** the commons in the biomes their types fit (the fish only near water, the owl rare in thicket, autumn,
+    ridge, tundra, jungle). Eggs and fishing that named these legacy ids now give the real Billies.
+  - **Tests:** wild-pools (starters and uncommon lines in every pool, every line in some pool, rare below common),
+    kit counts 32 (kit-bake-parity, pixel-density), check-data and run-start snapshots remade, the sound baseline
+    gains the 16 new cry fingerprints (no other cry changed). Gosling's diet is "Fresh grass" (a data text equal to
+    a type name fails the type-rename tests).
+- Verified: lint, typecheck, check:data, check:modules, format:check, bake check, unit tests 828 of 828;
+  check-sound 0 changed; smoke 6 of 6; the full quick check 37 of 37 (1,726 s). The sprites looked at in a browser
+  (front and back). Over 500 seeds the regional dex holds Hughes 51%, Kamprad 41%, Altmowl 23%, Cuban 21%.
+- CI on #168: check-fast's "Play this seed" is red on main too (since RL-R1 its Node side calls `runStartPlan`
+  without `region`); a one-line patch is proposed on the PR, tested locally. CAM-2's encounter shot and IS-1/IS-3's
+  camera aim flaked once in the second run on the same commit (green in the first).
+- Risky / open:
+  - Sharktank has 400 stat points (a 2-stage final), weak for a Gyarados-style payoff: RO-2c's balance pass.
+  - Runs reach about level 13 (RO-1), so Sprucegoose (16), Kamprat, Sharktank (20) are rarely seen evolved in a run
+    except from the ranch.
+  - Not tried on a phone: the new sprites in grass, battle and the Guide.
+  - Playwright (Python) needs version 1.63.0 here to match the preinstalled Chromium.
+- Next: RO-2b (Yiming ferret, Woods tiger, an Arnault peacock), then RO-2c (Huang dragon, forms, balance).
+### Floating island world map, orbit camera, map opens whole, shorter fall - 2026-10-24
+Branch `ccr-a5b35598-07ud1j` (one session, not part of a plan; PR #178). The owner's asks: improve the opening intro;
+the island bigger on the world map and looking like a floating island; a version of the orbit camera; every building
+low-poly 3D; the background matching the time of day; the world map never half loaded when it opens; the fall more
+dynamic, natural and shorter; not too busy. The owner's answers: drop the bowl (hub only, runs keep it), about 10 s,
+simple new models where a building has none.
+- What was wrong (checked headless at phone size): the map drew before its parts were in (a flat green shape, then
+  the sea, then the island; the island's own heights arriving rebuilt the whole ground). The island was a small patch
+  in a blue bowl seen from above, its buildings and trees three times life size (BOWL_THING_SCALE), so the island read
+  small and crowded. Two landmarks (the giant swing tree, the summit lookout) drew as red squares (flat pictures that
+  never showed) though both have models; the airship station was not drawn at all. The map's sky was the same pale
+  haze at every hour. The New game fall is crust (2.9 s) and a 9 s glide (the street leg is not played since RL-8).
+- Changed (one cause per commit):
+  - Landmarks and structures (airship station and mast, well, fountain, clock tower, greenhouse) with a .json model
+    draw as their model. Every Copperleaf building already had a model, so no new models were needed.
+  - logic/float-island.js (tests): the rock hanging under the coast (a low-poly cone, 40 corners, 6 rings and a point)
+    and three small floating rocks with a grassy top that drift.
+  - logic/bowl-camera.js (tests): FLOAT_CAMERA and bowlCamClampFloat / bowlCamHomeFloat; while a floating island is
+    in (bowlCamUseFloat) every clamp keeps its limits; a state may carry a fixed pivot height `th`.
+  - environment.js environmentLookAt: the time-of-day look at a scene's hour.
+  - world-bowl.js, when the hub's island map is in and no run world is (worldBowlFloats): the ground cut to the land,
+    no water, the rock (mrock, the terrain's rock and dirt pictures), a sky of its own (mskyf: the island map's sky
+    under the time-of-day look, colour under the horizon, a calm sea of clouds, stars, the sun), lights tinted by the
+    look (uSunTint, uAmbTint, uTodOn in BOWL_SKY_GLSL; 1 and 0 on the bowl), shadows over the island alone (sharper),
+    things life size, the terrain worked out round the island only, no weather clouds or rain (a storm greys the sky).
+    The orbit: opens from where you stand (camera-orbit.js orbitYawAt) looking across; one finger turns and tilts;
+    a slow turn after 4 s idle (not with reduced motion).
+  - Opens whole: worldMapPrewarm (idle time, no GPU: places, island heights, terrain, pictures, model recipes) from
+    the hub's walk scene and the fall's start; the map stays covered (worldMapFade full) until worldBowlReady, 5 s at
+    most; the zoom-out waits for it.
+  - The fall: crust 2 s, then 6.5 s: a drop from high above the island (gravity, a tumble that steadies, a little
+    shake) and a swoop round to the lab (worldMapFallFrame), the island drawn behind the fade until ready (1.5 s at
+    most). The caption "At the centre of everything / The Inner Sun" no longer shows on this path (it flew past the
+    Inner Sun); "Inside the planet / The Hollow Earth" does.
+  - Checks: check-fast's map check and check-quick's map camera step know the floating island.
+  - "Less low poly" (the owner, later the same session): the rock 112 corners and 11 rings with smooth bulges; the
+    island's ground its own mesh of 1.5 m squares from its own heights (floatGroundMesh), not the bowl's 6 m grid;
+    things stand on it (worldBowlSkyFloor reads it).
+- Verified: lint, typecheck, unit tests, check:modules after each commit; check-fast --only=map (2 of 2); the smoke
+  check (no problems, 174 s); headless pictures at five hours and of the fall. Not judged headless: speed on a phone, how the
+  fall feels in motion.
+- Risky: the bowl's shaders gained uniforms (tints, uIsle): runs should look as before, unchecked on a device. The
+  Studio's world map preview still shows the bowl. The airship flight on the hub map is clamped to the island's orbit.
+- Next: try it on the phone (map at a few hours, the New game fall) and send a debug log; tune FLOAT_CAMERA and the
+  rock in logic/ if wanted.
+### Roguelite track RL-12b part 2 - Waystations and stalls (done) - 2026-10-24
+Branch `track/encounters`, over two sessions (the first did the node types and the map rule, then handed over). The
+plan was approved in the earlier RL-12b session's Plan Mode (waystations are normal-sized places with a stand and fewer
+wild Billies; the no-two-shops rule counts towns and stalls; weights route 4, event 2, town 1, stall 1, placeholders);
+this session built the rest on the owner's word, fast checks per commit, smoke once, long checks skipped. main merged
+in twice (RL-R2a, then #177's grass): no conflicts. Tag `rl-12b-done` for the owner.
+- Where the plan was wrong (checked in the code):
+  - "a stall: a stand with act `shop`": act `shop` on a prop walks you into the shop's room (`ROOM_BY_USE.shop`,
+    `enterRoom`), and a stall has no room. It got its own act, `stall`, which opens the shop sheet where you stand.
+  - mapgen's props dials list their keys in the defaults (`mast`, `clinic`, `shop`); `stand` and `stall` join them,
+    which changes the params in every scene's `gen` (rng's scene hash remade; the scenes are the same).
+  - `encounterOpen` wasn't exported (only the debug menu reached it, through hooks): it is now.
+- Changed (one cause per commit):
+  - **Node types and the map** (first session): `event` and `stall` in nodeTypes.json, `shop: true` on town and stall,
+    `runMapNoTwoShops`, `runMapProblems` naming two shops in a row.
+  - **Scenes and rows**: `RUN_BUILDINGS` event `{stand}`, stall `{stall}`; `MAPGEN_HUB_BUILDINGS` rows (the market tent,
+    act `event`, label "Waystation"; the fruit stall, act `stall`, "Stall"), placed on a lot like the town buildings.
+    `runWorldTables`: a type with `shop` gets a shop (a stall's is named after the place, kept by "The stallholder");
+    event and stall rows carry `waystation: 1`; `encounterStock` gives them `rules.json run.wild.waystation` (2).
+  - **The page**: `walkPick` act `event` -> `encounterOpen(runMapNode(here))`, act `stall` -> `openShop`; the stall's
+    label pill is shop blue; first-run hints for a waystation and a stall (run.js).
+  - **Sim and preview**: the sim opens the day's shop at any type with `shop` (only a town heals) and notes a
+    waystation's event (`at.event`; the bot plays no option); the Studio's sim worker gets the encounters module. The
+    preview gives a stall's shop by day and each waystation's event as first drawn (a later stand can differ once an
+    earlier event is played: the comment says so).
+  - **Tests**: run-waystation-world (props, rows, shop on two seeds), run-sim, run-preview; check-data's planted
+    rules snapshot and rng's scene hash remade on purpose.
+  - **In-game test**: a new phase, "A run's waystation and stall" (the first SELFTESTWAY seed with both: the stand
+    opens its event, the stall its shop, the wild stock). **check-fast**: an "Encounters" check on the blur page (no new
+    boot) runs that phase.
+- Verified: lint, typecheck, check:modules, format:check, check:data and the unit tests after every commit (877 ->
+  880). The new in-game phase alone headless (15 s) and check-fast `--only=Encounters` (26.5 s), both passed.
+  Screenshots of a waystation and a stall (the tent and the stall by the road, their pills). Smoke 6 of 6 (219 s).
+  The slow unit tests, after CI's lint job caught run-world-real's snapshot (a town there is now a stall: remade on
+  purpose): 50 of 50. **Skipped on the owner's word**: the full quick check, the whole in-game test and the full
+  check-fast run (CI skipped its `full` and `selftest` jobs on the PR; lint, rules and smoke passed).
+- Risky / open:
+  - The market tent has no 3D model (a flat sprite beside the low-poly stall and buildings). It reads fine in the
+    screenshot; a model (or another prop) is the owner's call.
+  - Found, not caused here: the run sim's bot loses at the landing in most seeds (`lostAt: 'landing'` with a party
+    of 1 from `team: 3`), so its stats say little past row 1; and maps hold far more towns than the weights suggest
+    (about 350 towns, 150 routes, 80 waystations, 15 stalls over 100 maps: rest rows are towns). Worth a look before
+    the weights are tuned.
+  - Side places (`side: 1`) still skip the no-two-shops pass.
+  - RL-R2b (caves, the Surf islet) works on run-map.js and run-scenes.js too and had pushed nothing when this PR went
+    up. Shared touch points: `RUN_BUILDINGS`, `runWorldTables`'s row block (the `sells`/`waystation` lines),
+    `MAPGEN_HUB_BUILDINGS` and mapgen's props defaults.
+- Next: RL-12c (held items) on this branch; RL-S1 depends on RL-12b.
+
 ### Roguelite track RL-R2a - Side areas and field moves (and no deadline) - 2026-10-23
 Branch `track/regions` (fast-forwarded to RF-4's `track/reflavour` at e1e1479 on the coordinating session's word, then
 main merged in: RF-4, RF-5, RL-12b part 1, TC-4). Plan approved in Plan Mode with the owner's answers: walk in past the
@@ -693,9 +935,9 @@ overlap). Tag `ro-1-done` for the owner.
 - Verified: lint, typecheck, check:data, check:modules, format:check and the unit tests after every commit (776 ->
   784); smoke 14 of 14; the full quick check 40 of 45 (1,971 s here): Tap targets, v31 bowl map camera, v46
   buildings without a plan and alpha 0.4 bush recipes are the four lane B found red on main too; Sound effects'
-  "payout, won" failed again alone (its log holds `jingle run_won`, after the 15 s wait: timing, lane B saw this step
-  flip; not yet compared on main). The fast check 28 of 29: CAM-2 "the encounter shot never arrived", the flake lane
-  D noted. A browser look (phone size): forms in the team list and a wild battle with their names, types and coats;
+  "payout, won" is timing, not RO-1: timed with a longer wait, `run_won` lands 21 s after the payout opens here and
+  23 s on main (5ddd0f8); the step waits 15 s (main passed once by luck). Worth a longer wait in TC-3. The fast check
+  28 of 29: CAM-2 "the encounter shot never arrived", the flake lane D noted; it passed alone. A browser look (phone size): forms in the team list and a wild battle with their names, types and coats;
   the Guide's "Regional forms" section; coat renders checked against the sheets.
 - Risky / open:
   - **Cloud Facelet and Festival Kontourlet** keep their first stage's single type (Electric, Psychic): the swap

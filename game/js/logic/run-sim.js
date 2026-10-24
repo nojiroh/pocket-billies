@@ -127,6 +127,7 @@ export function runSimOn(env) {
     { runArrive, runNext, runWorldNode, runWeather } = modules['run-map'],
     { runByExpedition, runEnd } = modules['run-state'],
     { runScenesMake, runWorldTables } = modules['run-scenes'],
+    { eventAt } = modules.encounters,
     { runArriveFx, runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen } = modules['run-loop'],
     { fxOfRun, fxPayoutRates, fxRunPrice } = modules.effects,
     { runStartOn, runStartPlan } = modules['run-start'],
@@ -273,7 +274,10 @@ export function runSimOn(env) {
           at = { i, type: node.type, day: run.clock, weather: runWeather(run, i, run.clock), battles: [] };
         if (fxHealed) at.fxHealed = fxHealed;
         log.places.push(at);
-        /* a town: heal when hurt, then the day's shop (Pyramids up to five) */
+        /* RL-12b: a waystation: the event its stand holds, noted (the bot walks past it: no option is played) */
+        if (node.type === 'event') at.event = eventAt(run, i, data.EVENTS) || null;
+        /* a town: heal when hurt; a town or a stall (RL-12b, nodeTypes.json shop): the day's shop (Pyramids up to
+           five) */
         if (node.type === 'town') {
           const { paid } = runClinic(s, fxRunPrice(run, data.PERKS, 'heal', R.healCost));
           if (paid) {
@@ -281,6 +285,8 @@ export function runSimOn(env) {
             stats.moneyOut.heal += paid;
             at.healed = paid;
           }
+        }
+        if (GAME_DATA.nodeTypes[node.type] && GAME_DATA.nodeTypes[node.type].shop) {
           /* the day's wares as the shop opens them: only what the run has unlocked (run-loop.js runShopOpen) */
           const stock = runShopOpen(run, i, run.clock, R.shop, UNLOCK_DATA);
           /* the shop's Perk, drawn as the shop opens (perks.js perkShelf), bought as the policy says, keeping the

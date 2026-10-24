@@ -43,6 +43,8 @@ expose({
   runForecastFill: [() => runForecastFill, v => (runForecastFill = v)],
   // @ts-expect-error -- replaced on purpose
   runMapMake: [() => runMapMake, v => (runMapMake = v)],
+  // @ts-expect-error -- replaced on purpose
+  runMapNoTwoShops: [() => runMapNoTwoShops, v => (runMapNoTwoShops = v)],
   runMapNode: [() => runMapNode],
   // @ts-expect-error -- replaced on purpose
   runMapRows: [() => runMapRows, v => (runMapRows = v)],
@@ -139,7 +141,36 @@ export function runMapMake(seed, nodeTypes, M) {
     }
   }
   for (const n of nodes) n.to.sort((a, b) => a - b);
+  runMapNoTwoShops(seed, nodeTypes, roles, nodes);
   return { nodes };
+}
+/** RL-12b: never two places that sell things (nodeTypes' `shop`: a town, a stall) one after the other. Going row by row,
+ * a shop led to from a shop is drawn again from the types that don't sell (its own stream, 'map|calm|row|lane'); when
+ * it is a role row's town (before a mini-boss), the free row's shop before it is drawn again instead. Role rows' shops
+ * never meet (a town row is followed by its mini-boss) @param {string} seed @param {Record<string, NodeType>} nodeTypes
+ * @param {string[]} roles @param {RunNode[]} nodes */
+export function runMapNoTwoShops(seed, nodeTypes, roles, nodes) {
+  const shop = (/** @type {string} */ k) => !!(nodeTypes[k] && nodeTypes[k].shop),
+    calm = Object.fromEntries(
+      Object.entries(nodeTypes)
+        .filter(([k, t]) => !shop(k) && (t.weight || 0) > 0)
+        .map(([k, t]) => [k, /** @type {number} */ (t.weight)])
+    );
+  if (!Object.keys(calm).length) return;
+  const redraw = (/** @type {RunNode} */ n) => {
+    n.type = rngFrom(seed, `map|calm|${n.row}|${n.lane}`).pick(calm);
+  };
+  nodes.forEach((n, j) => {
+    if (!shop(n.type)) return;
+    for (const i of nodes.flatMap((p, k) => (p.to.includes(j) ? [k] : []))) {
+      if (!shop(nodes[i].type)) continue;
+      if (roles[n.row] === '') {
+        redraw(n);
+        return;
+      }
+      if (roles[nodes[i].row] === '') redraw(nodes[i]);
+    }
+  });
 }
 /** the nodes a node leads to (forward, by its north side) @param {RunMap} map @param {number} i @returns {number[]} */
 export const runNext = (map, i) => map.nodes[i].to.slice();

@@ -57,6 +57,7 @@ import { flyMenu, rideGlassLift } from './airship.js';
 import { runWorldData } from './run-world.js';
 import { runArrivedFx, runArrivedHint } from './run.js';
 import { fieldMoveOpen, fieldWayOut } from './field-moves.js';
+import { encounterOpen } from './encounter-screen.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBoardOpen } from './lab-board.js';
 import { postcardCheck } from './postcards.js';
@@ -574,6 +575,17 @@ export function walkPick(h) {
     }
     if (a === 'fieldout' && typeof fieldWayOut === 'function') {
       fieldWayOut();
+      return;
+    }
+    /* RL-12b: a waystation's stand opens its event (encounter-screen.js); a stall opens its shop where you stand */
+    if (a === 'event' && typeof encounterOpen === 'function') {
+      encounterOpen(runMapNode(node));
+      return;
+    }
+    if (a === 'stall') {
+      const id = p.shop || here.shop;
+      if (id && SHOPS[id]) openShop(id);
+      else toast(p.say || 'The stall is packed up today.');
       return;
     }
     /* v47: shops and the like keep opening hours */

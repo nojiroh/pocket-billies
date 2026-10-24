@@ -83,7 +83,7 @@
     "footGap": {"description": "how far apart the feet stand at least, as their width", "type": "number", "minimum": 0, "maximum": 4},
     "chinDrop": {"description": "the chin sits this much of the head's height below the neck socket", "type": "number", "minimum": -1, "maximum": 1},
     "anchors": {
-     "description": "where an extra hangs: brow (horns), ears, crown (on top of the head), chin (a beard), back (carried on the back), collar (round the neck, at the torso's neck socket)",
+     "description": "where an extra hangs: brow (horns), ears, crown (on top of the head), chin (a beard), back (carried on the back), collar (round the neck, at the torso's neck socket), wings (a mirrored pair spread from the middle of the back)",
      "type": "object",
      "propertyNames": {"$ref": "#/$defs/id"},
      "additionalProperties": {"$ref": "#/$defs/anchor"}
@@ -107,6 +107,7 @@
      "name": {"description": "its sheet: game/art/next/billionaires/<name>.png", "$ref": "#/$defs/id"},
      "rig": {"description": "its rig in game/art/next/rigs-next.js", "type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
      "line": {"description": "the line (game/data/lines) whose stage it is", "$ref": "#/$defs/id"},
+     "form": {"description": "RO-2c: the regional form (lines/<line>.json forms) this recipe is the look of; the line's own look has none", "$ref": "#/$defs/id"},
      "stage": {"type": "integer", "minimum": 0},
      "scale": {"description": "its stage scale (shrunk by the baker if the Billie does not fit the box)", "type": "number", "exclusiveMinimum": 0, "maximum": 4},
      "parts": {

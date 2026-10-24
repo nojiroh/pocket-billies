@@ -1,0 +1,54 @@
+{
+ "id": "hughes",
+ "names": ["Gosling","Sprucegoose","Aviatorgoose"],
+ "types": [["Flying"],["Flying","Steel"],["Flying","Steel"]],
+ "prof": [0.95,1,0.9,1,0.9,1.25],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"escvel"],
+  [5,"liftoff"],
+  [9,"markdown"],
+  [13,"flashsale"],
+  [17,"pistonjab"],
+  [21,"orbit"],
+  [27,"bulk"],
+  [33,"sprucedive"],
+  [39,"gentrify"],
+  [45,"launch"]
+ ],
+ "cat": ["Gosling Billie","Spruce Billie","Aviator Billie"],
+ "ht": [0.3,0.9,1.6],
+ "wt": [1.5,14,45],
+ "hab": ["Airfields","Hangars too big for what is in them","The fastest air there is"],
+ "diet": ["Fresh grass","Spruce shavings","Film reels"],
+ "bio": [
+  "A gosling with dark rings round its eyes like flying goggles. It runs at everything flat out and calls it a test flight.",
+  "Its wings grew out of spruce and are far too big for it. It has flown exactly once, for about a mile, and it still talks about that mile.",
+  "It keeps a film studio under one wing and an airline under the other. It will not take off until every rivet is perfect, then it breaks the speed record by lunch."
+ ],
+ "note": ["Wants to be the fastest thing alive.","Flew for one mile, once.","Re-cuts its own film every night."],
+ "evo": [
+  {"k":"lvl","at":12},
+  {"k":"lvl","at":32}
+ ],
+ "forms": [
+  {
+   "id": "harbour",
+   "name": "Harbour",
+   "swap": {"Steel":"Water"},
+   "coat": "harbour"
+  }
+ ],
+ "parody": "Howard Hughes",
+ "cry": [
+  {"base":"bird","pitch":70,"length":0.6,"name":"placeholder: a gosling's peep (Claude's draft)"},
+  {"base":"bird","pitch":60,"length":0.9,"name":"placeholder: a wooden honk (Claude's draft)"},
+  {"base":"bird","pitch":53,"length":1.2,"name":"placeholder: a honk like an engine (Claude's draft)"}
+ ],
+ "parts": [
+  {"head":"chick_head","body":"chick_torso","front":"chick_wing","back":"duck_foot","sig":"chick_tail"},
+  {"head":"duck_head","body":"duck_torso","front":"duck_wing","back":"duck_foot","sig":"duck_tail"},
+  {"head":"duck_head","body":"duck_torso","front":"eagle_wing","back":"duck_foot","sig":"duck_tail"}
+ ]
+}

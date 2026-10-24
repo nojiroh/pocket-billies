@@ -1,5 +1,6 @@
 // Roster track RO-1: the wild pools and the regional forms on the game's own data. Every biome has its own pool of
-// the 7 real lines (a regional form in place of its base line), so a run never meets a stand-in; a form is a species
+// real lines (a regional form in place of its base line), so a run never meets a stand-in; the starters and the
+// uncommon lines are in every pool, the lines added in RO-2 where their types fit; a form is a species
 // per stage with its types swapped, its regional name, its coat and its own next stage; a region's dex cuts a place's
 // list (logic/wild-pool.js).
 import assert from 'node:assert/strict';
@@ -21,7 +22,10 @@ const RAW = readGameData(),
   REAL = new Set(LINES.flatMap(L => lineSpeciesIds(L))),
   lineOf = (/** @type {string} */ id) => SPECIES[id].line;
 
-test('every biome has its own pool, listing all 7 real lines and nothing else', () => {
+test('every biome has its own pool of real first stages; every line is met somewhere', () => {
+  const met = new Set(),
+    everywhere = LINES.filter(L => L.rar === 'starter' || L.rar === 'uncommon').map(L => L.id);
+  assert.ok(everywhere.length >= 7, 'the starters and the uncommon lines');
   for (const [b, B] of Object.entries(RAW.biomes)) {
     const P = RAW.pools[B.pool];
     assert.ok(P, `${b}: pool ${B.pool}`);
@@ -30,12 +34,22 @@ test('every biome has its own pool, listing all 7 real lines and nothing else', 
       assert.ok(w > 0, `${b}: ${id} has a weight`);
       assert.equal(SPECIES[id].stage, 0, `${b}: ${id} is a first stage`);
     }
-    assert.deepEqual(
-      [...new Set(P.list.map(([id]) => lineOf(id)))].sort(),
-      LINES.map(L => L.id).sort(),
-      `${b}: the 7 lines`
-    );
-    assert.equal(new Set(P.list.map(([id]) => lineOf(id))).size, P.list.length, `${b}: a line once (base or form)`);
+    const lines = new Set(P.list.map(([id]) => lineOf(id)));
+    for (const id of everywhere) assert.ok(lines.has(id), `${b}: has ${id}, a starter or uncommon line`);
+    assert.equal(lines.size, P.list.length, `${b}: a line once (base or form)`);
+    lines.forEach(id => met.add(id));
+  }
+  assert.deepEqual([...met].sort(), LINES.map(L => L.id).sort(), 'every line is in some biome pool');
+});
+
+test('RO-2: a rare line is met less often than every common line in the same pool', () => {
+  const rar = Object.fromEntries(LINES.map(L => [L.id, L.rar]));
+  assert.ok(Object.values(rar).includes('common') && Object.values(rar).includes('rare'), 'common and rare lines');
+  for (const B of Object.values(RAW.biomes)) {
+    const w = (/** @type {string} */ r) =>
+      RAW.pools[B.pool].list.filter(([id]) => rar[lineOf(id)] === r).map(([, n]) => n);
+    if (w('rare').length && w('common').length)
+      assert.ok(Math.max(...w('rare')) < Math.min(...w('common')), `${B.pool}: every rare below every common`);
   }
 });
 
@@ -161,4 +175,20 @@ test("RL-R1: a region's swap meets a line in the region's variety, a species onc
     ['zuck0', 10],
   ]);
   assert.deepEqual(list[0], ['trump_waterfront0', 20], 'the pool is not changed');
+});
+
+test("RO-2c: a line's own `totals` give its stages' stat totals, in place of its rarity's", () => {
+  const sum = (/** @type {string} */ id) => SPECIES[id].base.reduce((a, b) => a + b, 0),
+    near = (/** @type {string} */ id, /** @type {number} */ want) =>
+      assert.ok(Math.abs(sum(id) - want) <= 6, `${id}: ${sum(id)}, wanted about ${want}`);
+  const withTotals = LINES.filter(L => L.totals);
+  assert.ok(withTotals.length, 'some line carries its own totals');
+  for (const L of withTotals) L.names.forEach((_, st) => near(L.id + st, L.totals[Math.min(st, L.totals.length - 1)]));
+  /* a line without them still follows its rarity's table, and a form keeps its base stage's stats */
+  const plain = LINES.find(L => !L.totals && L.rar === 'common' && L.names.length === 2);
+  assert.ok(plain, 'a plain common 2-stage line');
+  near(plain.id + '0', RAW.rarities.common.totals[0]);
+  near(plain.id + '1', RAW.rarities.common.totals[1]);
+  for (const F of withTotals[0].forms || [])
+    assert.deepEqual(SPECIES[formSpeciesId(withTotals[0].id, F.id, 0)].base, SPECIES[withTotals[0].id + '0'].base);
 });

@@ -22,5 +22,10 @@
   "name": "Festival",
   "form": true,
   "ramps": {"stone":"gold","rose":"ember","orchid":"crimson"}
- }
+ },
+ "harbour": {"name":"Harbour","form":true},
+ "meatball": {"name":"Meatball","form":true},
+ "courtside": {"name":"Courtside","form":true},
+ "livestream": {"name":"Livestream","form":true},
+ "hazard": {"name":"Hazard","form":true}
 }

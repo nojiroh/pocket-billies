@@ -9,6 +9,32 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Three new Billies and five regional forms (roster track RO-2c): **Siliclet**, a black gecko with one glowing scale,
+  evolving at level 20 into **Jenzard** and at 40 into **Gigajenzard**, a rare Electric/Dragon data-centre dragon
+  whose keynote dims the lights. Five Billies you already know now have a regional form, met in the biomes it suits:
+  the **Harbour** goose (Flying/Water), the **Meatball** rat (Steel/Fire), the **Courtside** fish (Ground, and
+  Ground/Dragon once it grows), the **Livestream** ferret (Electric/Fire) and the **Hazard** tiger (Water, then
+  Water/Grass). That makes 40 Billies, the roster the plan set out to build.
+- Balance: **Sharktank** is a real payoff now (a weaker Pupfin, a much stronger shark), the ferret and the tiger grew,
+  and the goose, the rat, the ferret and the tiger evolve earlier, so a single run can see them change.
+- Five new Billies (roster track RO-2b): **Cliplet**, a yellow kit that copies every dance it sees, evolving at level
+  18 into **Tiktokferret**, an Electric/Psychic ferret that loops in fifteen seconds; **Cublet**, a tiger cub that
+  could putt before it could walk, evolving at level 24 into **Tigerwoods**, a Ground/Grass tiger in Sunday red; and
+  **Peacouture**, a rare Fire/Flying peacock whose fan is made of other birds' feathers.
+- Eight new Billies (roster track RO-2a): **Gosling**, **Sprucegoose** and **Aviatorgoose**, the goose you meet on
+  almost every route; **Flatpackrat** and **Kamprat**, a rat that assembles itself; **Pupfin**, a goldfish that won't
+  stop pitching, until it evolves at level 20 into **Sharktank**, a Water/Dragon shark; and **Altmowl**, a rare owl
+  with a cloud for a brain. They're the first common and rare Billies, so each run's region differs more, and fishing
+  and eggs that used to give a stand-in now give these.
+- **A floating island**: the hub's world map shows Copperleaf's island floating in open sky, its rock hanging under it,
+  with no bowl and no sea round it. The town's buildings and trees stand at their real size, so the island reads as
+  big as it is, and every landmark with a model (the giant swing tree, the summit lookout, the airship station and
+  mast, the well) is drawn as that model. The sky follows the time of day, with a calm sea of clouds far below.
+- **Orbit camera on the map**: it opens from your side of the island looking across it; drag to turn round it and
+  tilt, pinch to zoom; left alone it turns slowly.
+- **The map opens whole**: it is made ready while you walk, and stays covered until everything on it is in.
+- **A shorter, livelier fall**: about 10 seconds. You drop out of the sky onto the floating island, faster and faster,
+  then swoop round it and land by the lab.
 - **Five times of day**: the light outdoors now comes from five looks, dawn, day, golden hour, dusk and night, that
   blend into each other with the clock (and move with sunrise and sunset through the seasons). Golden hour is warm
   with teal shadows, dusk pink and violet, night deep blue with warm lamps and stars; day keeps each place's own sky.
@@ -41,6 +67,10 @@ kept aside in the browser).
     Shining Stone, or a move tutor), with a reroll for Moneys that doubles each time.
   - The **Protein Bar**: a Billie that eats one gains a level (from its sheet, not in battle).
   - Versewift and Feedopus now evolve with the **Shining Stone** from level 20 (they evolved at level 36).
+- **Waystations and stalls** on a run (roguelite track RL-12b, part 2): the run's map now has two new kinds of place.
+  A **waystation** has a striped market tent by the road: tap it and its event opens (the events above now happen on
+  the map, not just from the debug menu). A **stall** is a fruit stall with a shop (new stock every day, no clinic).
+  Both have fewer wild Billies than a route. The map never puts two shops (a town or a stall) one after the other.
 
 - Fix: the full test (Settings → Help) no longer fails three steps on every device while the game draws fine. Night,
   weather and seasons now waits for Copperleaf to open before it starts; the Light lab counts the new low-poly

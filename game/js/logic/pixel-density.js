@@ -11,6 +11,7 @@
 /* to-module: end */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { formSpeciesId } from './forms.js';
 /* eslint-disable no-func-assign */
 expose({
   DENSITY: [() => DENSITY],
@@ -91,15 +92,18 @@ export function densityKitParts(form) {
   ];
 }
 
-/** each species' listed height by its id (line + stage), as game-data.js gives it: the line's `ht` at its stage (the
- * last one when the list is shorter), else 1 @param {any[]} lines @returns {Record<string, { ht: number }>} */
+/** each species' listed height by its id (line + stage, then each regional form's stages), as game-data.js gives it:
+ * the line's `ht` at its stage (the last one when the list is shorter), else 1 (a form keeps its base stage's height)
+ * @param {any[]} lines @returns {Record<string, { ht: number }>} */
 export function densityHeights(lines) {
   /** @type {Record<string, { ht: number }>} */
   const out = {};
   for (const L of lines || [])
     (L.names || []).forEach((/** @type {string} */ _, /** @type {number} */ i) => {
       const a = L.ht;
-      out[L.id + i] = { ht: Array.isArray(a) && a.length ? a[Math.min(i, a.length - 1)] : 1 };
+      const ht = { ht: Array.isArray(a) && a.length ? a[Math.min(i, a.length - 1)] : 1 };
+      out[L.id + i] = ht;
+      for (const F of L.forms || []) out[formSpeciesId(L.id, F.id, i)] = { ...ht };
     });
   return out;
 }

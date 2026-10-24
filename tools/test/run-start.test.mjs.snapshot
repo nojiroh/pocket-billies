@@ -135,7 +135,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2
           },
           {
-            "type": "route",
+            "type": "event",
             "row": 6,
             "lane": 1,
             "to": [
@@ -298,27 +298,24 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "swift_folklore0",
           "swift_folklore1",
           "swift_folklore2",
-          "kardashian_festival0",
-          "kardashian_festival1",
-          "kardashian_festival2",
-          "trump0",
-          "trump1",
-          "trump2"
+          "kamprad0",
+          "kamprad1",
+          "cuban_courtside0",
+          "cuban_courtside1",
+          "altman0"
         ],
         "swap": {
           "swift0": "swift_folklore0",
           "swift1": "swift_folklore1",
           "swift2": "swift_folklore2",
-          "kardashian0": "kardashian_festival0",
-          "kardashian1": "kardashian_festival1",
-          "kardashian2": "kardashian_festival2",
-          "trump_waterfront0": "trump0",
-          "trump_waterfront1": "trump1",
-          "trump_waterfront2": "trump2"
+          "kamprad_meatball0": "kamprad0",
+          "kamprad_meatball1": "kamprad1",
+          "cuban0": "cuban_courtside0",
+          "cuban1": "cuban_courtside1"
         },
         "forms": {
           "swift": "folklore",
-          "kardashian": "festival"
+          "cuban": "courtside"
         },
         "leaders": [
           "poppy",
@@ -467,7 +464,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2
           },
           {
-            "type": "route",
+            "type": "event",
             "row": 6,
             "lane": 1,
             "to": [
@@ -623,10 +620,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "musk1",
           "musk2",
           "musk3",
-          "bezos0",
-          "bezos1",
-          "bezos2",
-          "bezos3",
           "gates0",
           "gates1",
           "gates2",
@@ -634,20 +627,27 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "swift_folklore0",
           "swift_folklore1",
           "swift_folklore2",
-          "kardashian0",
-          "kardashian1",
-          "kardashian2"
+          "zuck_cloud0",
+          "zuck_cloud1",
+          "zuck_cloud2",
+          "hughes0",
+          "hughes1",
+          "hughes2"
         ],
         "swap": {
           "swift0": "swift_folklore0",
           "swift1": "swift_folklore1",
           "swift2": "swift_folklore2",
-          "kardashian_festival0": "kardashian0",
-          "kardashian_festival1": "kardashian1",
-          "kardashian_festival2": "kardashian2"
+          "zuck0": "zuck_cloud0",
+          "zuck1": "zuck_cloud1",
+          "zuck2": "zuck_cloud2",
+          "hughes_harbour0": "hughes0",
+          "hughes_harbour1": "hughes1",
+          "hughes_harbour2": "hughes2"
         },
         "forms": {
-          "swift": "folklore"
+          "swift": "folklore",
+          "zuck": "cloud"
         },
         "leaders": [
           "morel",
@@ -842,27 +842,24 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "swift_folklore0",
           "swift_folklore1",
           "swift_folklore2",
-          "kardashian_festival0",
-          "kardashian_festival1",
-          "kardashian_festival2",
-          "trump0",
-          "trump1",
-          "trump2"
+          "kamprad0",
+          "kamprad1",
+          "cuban_courtside0",
+          "cuban_courtside1",
+          "altman0"
         ],
         "swap": {
           "swift0": "swift_folklore0",
           "swift1": "swift_folklore1",
           "swift2": "swift_folklore2",
-          "kardashian0": "kardashian_festival0",
-          "kardashian1": "kardashian_festival1",
-          "kardashian2": "kardashian_festival2",
-          "trump_waterfront0": "trump0",
-          "trump_waterfront1": "trump1",
-          "trump_waterfront2": "trump2"
+          "kamprad_meatball0": "kamprad0",
+          "kamprad_meatball1": "kamprad1",
+          "cuban0": "cuban_courtside0",
+          "cuban1": "cuban_courtside1"
         },
         "forms": {
           "swift": "folklore",
-          "kardashian": "festival"
+          "cuban": "courtside"
         },
         "leaders": [
           "poppy",
@@ -871,6 +868,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "b82010591c00efd7a41260f4540eae28bbc7aced71f619609afb61126851eab7"
+  "all": "309b91414461268628d4a0e9c76577c95f46e733ce9362afd6cb9493fefcbe3f"
 }
 `;

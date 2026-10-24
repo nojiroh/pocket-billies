@@ -105,7 +105,7 @@ const encHolds = (/** @type {string} */ cond) => storyHolds(cond);
 /* ---------- the intro and the options ---------- */
 /** open an event: the one at map node i (drawn and kept the first time), or the one given (the debug menu)
  * @param {number | null} i @param {string} [id] */
-function encounterOpen(i, id) {
+export function encounterOpen(i, id) {
   const run = saveData.run;
   if (!run || encPlaying || activeBattle) return;
   const ev = id || (i != null && i >= 0 ? eventAt(run, i, EVENTS) : '');
