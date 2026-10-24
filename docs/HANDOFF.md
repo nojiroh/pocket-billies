@@ -5,7 +5,8 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 ### Towns track TW-1 - The town layout - 2026-10-24
 Branch `track/towns` (TW-1 of docs/phases/towns-track.md); main merged in first. Plan approved after four questions
 answered by the owner: towns keep the route size (Ask me before 1), **every house faces the camera** (not turned to its
-street), south of the through road is gardens and grass, a well or a fountain by biome.
+street), south of the through road is gardens and grass, a well or a fountain by biome. Tag `tw-1-done` for the owner (this
+session's git proxy refuses tag pushes): on this entry's commit.
 - Where the plan's facts were wrong (checked in the code):
   - Filler rows roll route 4, event 2, town 1, stall 1 since RL-12b: a town is 1 in 8, not 1 in 5. The forced town
     before each mini-boss is unchanged.
