@@ -8,7 +8,7 @@
    - "Short map" is the debug menu's (5 rows, 1 mini-boss).
    - The map is SVG: rows from the landing (left) to the boss (right), lane 0 below; a node's fill is its biome's haze
      colour, its letter its type; a dashed ring is what the landing shows as '?', a faint one what it doesn't show.
-   - Clicking a node shows its type, role, biome, links, the day the shortest walk reaches it, the deadline, its seed
+   - Clicking a node shows its type, role, biome, links, the day the shortest walk reaches it, its seed
      and its forecast.
    - "Beside the loaded data" draws the same seed on the data as the Studio loaded it (studioState.loaded), so a
      change to rules.run, nodeTypes or biomes shows as a second map.
@@ -196,7 +196,7 @@ function runLabFigures(D, plan) {
       .map(([k, v]) => `${v} ${escapeHtml(k)}`)
       .join(', ');
   };
-  return `${plan.map.nodes.length} places: ${count(n => (D.nodeTypes[n.type] || {}).name || n.type)}. Biomes: ${count(n => (D.biomes[n.biome] || {}).name || n.biome)}. Deadline: day ${plan.deadline}.`;
+  return `${plan.map.nodes.length} places: ${count(n => (D.nodeTypes[n.type] || {}).name || n.type)}. Biomes: ${count(n => (D.biomes[n.biome] || {}).name || n.biome)}.`;
 }
 
 /** what a clicked node is @param {any} D @param {any} plan @param {string[]} roles @param {number} i */
@@ -225,10 +225,7 @@ function runLabNodeHTML(D, plan, roles, i) {
     ),
     row('Leads to', n.to.map(name).join(', ') || 'nothing (the end)'),
     row('Reached from', back.map(name).join(', ') || 'Copperleaf (the airship)'),
-    row(
-      'Day',
-      `day ${n.row + 1} on the shortest walk; the deadline is day ${plan.deadline} (rules.run.clock.slack ${escapeHtml(String(D.rules.run.clock.slack))} past the shortest walk to the boss)`
-    ),
+    row('Day', `day ${n.row + 1} on the shortest walk`),
     row('At the landing', shown),
     row(
       'Node seed',
@@ -325,7 +322,7 @@ function runLabSweepFill() {
     now = runLabPlan(D),
     k = ++runLab.sweepN;
   if (now.error || !now.plan) return;
-  const args = [D.nodeTypes, now.plan.data.rules.map, D.rules.run.clock, { n: 1000 }],
+  const args = [D.nodeTypes, now.plan.data.rules.map, { n: 1000 }],
     key = JSON.stringify(args),
     show = (/** @type {any} */ S) => {
       for (const el of els) {
@@ -437,7 +434,6 @@ function runLabRulesHTML() {
       ])
     ),
     part('Clock and what the map shows', [
-      n('Days of slack past the shortest walk', 'clock.slack', int),
       n('Forecast days ahead', 'clock.ahead', int),
       n('Rows ahead shown with their type', 'reveal.icons', int),
       n('Rows ahead shown as ?', 'reveal.unknown', int),

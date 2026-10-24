@@ -1,0 +1,45 @@
+{
+ "about": "RL-R2: field moves, the Pokémon HMs of a run. A side area (rules.json run.side) sits behind one of them: its obstacle stands on the main path and opens for a Billie of the move's type, once that type's badge is kept (meta.badges, won from a leader of the type). Lines are drafts for the owner: {billie} is the Billie that uses the move, {badge} the badge's name.",
+ "moves": {
+  "surf": {
+   "name": "Surf",
+   "type": "Water",
+   "obstacle": "shore",
+   "biome": "lake",
+   "ride": true,
+   "areas": ["Sunken Cove","Lost Lagoon","Unsubscribed Shallows"],
+   "look": "The water is calm and deep. Something glints on the far side.",
+   "needBadge": "The water is calm and deep. With the {badge}, a Water Billie could carry you across.",
+   "needType": "The water is calm and deep. You have the {badge}, but no Water Billie in your team to ride.",
+   "ask": "The water is calm and deep. Would you like to Surf?",
+   "used": "{billie} used Surf!",
+   "out": "A current pulls you along the shore and sets you down on the main path."
+  },
+  "smash": {
+   "name": "Rock Smash",
+   "type": "Ground",
+   "obstacle": "boulder",
+   "biome": "ridge",
+   "areas": ["Rumble Gorge","Pending Pit","Under Construction Cave"],
+   "look": "A cracked boulder blocks a gap in the rock face. A cold draught comes through.",
+   "needBadge": "A cracked boulder blocks the way. With the {badge}, a Ground Billie could smash it.",
+   "needType": "A cracked boulder blocks the way. You have the {badge}, but no Ground Billie in your team to smash it.",
+   "ask": "A cracked boulder blocks the way. Would you like to use Rock Smash?",
+   "used": "{billie} used Rock Smash!",
+   "out": "A tunnel slopes up into daylight, back on the main path."
+  },
+  "cut": {
+   "name": "Cut",
+   "type": "Grass",
+   "obstacle": "thorns",
+   "biome": "thicket",
+   "areas": ["Bramble Grove","Overgrown Commons","Beta Thicket"],
+   "look": "A thorny little tree has grown across the path. It looks like it could be cut.",
+   "needBadge": "A thorny little tree blocks the path. With the {badge}, a Grass Billie could cut it down.",
+   "needType": "A thorny little tree blocks the path. You have the {badge}, but no Grass Billie in your team to cut it.",
+   "ask": "This tree looks like it can be cut down! Would you like to use Cut?",
+   "used": "{billie} used Cut!",
+   "out": "A trail through the undergrowth leads back to the main path."
+  }
+ }
+}

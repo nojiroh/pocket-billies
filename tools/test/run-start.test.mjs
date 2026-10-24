@@ -1,5 +1,5 @@
 // Studio plan T2.1: how a run starts, on the game's own data. The run's money and items, the unlocks it carries, its map
-// (biomes filtered by those unlocks), deadline, what the map shows and the forecast, for 200 seeds with no unlocks,
+// (biomes filtered by those unlocks), what the map shows and the forecast, for 200 seeds with no unlocks,
 // with every unlock, and on the debug menu's short map. Frozen from runTakeOff (game/js/run.js) before the start became
 // one shared function (logic/run-start.js runStartPlan, runStartOn), which the fixture, the self-test, the simulator and
 // the Studio's Run Lab call too. RL-R1: with the run's region (its zones give the map its rows and biomes).
@@ -61,7 +61,6 @@ const started = s => ({
   unlocks: s.run.unlocks,
   mods: s.run.mods,
   clock: s.run.clock,
-  deadline: s.run.deadline,
   map: s.run.map,
   forecast: s.run.forecast,
   region: s.run.region,

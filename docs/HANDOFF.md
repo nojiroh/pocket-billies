@@ -47,6 +47,116 @@ simple new models where a building has none.
   Studio's world map preview still shows the bowl. The airship flight on the hub map is clamped to the island's orbit.
 - Next: try it on the phone (map at a few hours, the New game fall) and send a debug log; tune FLOAT_CAMERA and the
   rock in logic/ if wanted.
+### Roguelite track RL-12b part 2 - Waystations and stalls (done) - 2026-10-24
+Branch `track/encounters`, over two sessions (the first did the node types and the map rule, then handed over). The
+plan was approved in the earlier RL-12b session's Plan Mode (waystations are normal-sized places with a stand and fewer
+wild Billies; the no-two-shops rule counts towns and stalls; weights route 4, event 2, town 1, stall 1, placeholders);
+this session built the rest on the owner's word, fast checks per commit, smoke once, long checks skipped. main merged
+in twice (RL-R2a, then #177's grass): no conflicts. Tag `rl-12b-done` for the owner.
+- Where the plan was wrong (checked in the code):
+  - "a stall: a stand with act `shop`": act `shop` on a prop walks you into the shop's room (`ROOM_BY_USE.shop`,
+    `enterRoom`), and a stall has no room. It got its own act, `stall`, which opens the shop sheet where you stand.
+  - mapgen's props dials list their keys in the defaults (`mast`, `clinic`, `shop`); `stand` and `stall` join them,
+    which changes the params in every scene's `gen` (rng's scene hash remade; the scenes are the same).
+  - `encounterOpen` wasn't exported (only the debug menu reached it, through hooks): it is now.
+- Changed (one cause per commit):
+  - **Node types and the map** (first session): `event` and `stall` in nodeTypes.json, `shop: true` on town and stall,
+    `runMapNoTwoShops`, `runMapProblems` naming two shops in a row.
+  - **Scenes and rows**: `RUN_BUILDINGS` event `{stand}`, stall `{stall}`; `MAPGEN_HUB_BUILDINGS` rows (the market tent,
+    act `event`, label "Waystation"; the fruit stall, act `stall`, "Stall"), placed on a lot like the town buildings.
+    `runWorldTables`: a type with `shop` gets a shop (a stall's is named after the place, kept by "The stallholder");
+    event and stall rows carry `waystation: 1`; `encounterStock` gives them `rules.json run.wild.waystation` (2).
+  - **The page**: `walkPick` act `event` -> `encounterOpen(runMapNode(here))`, act `stall` -> `openShop`; the stall's
+    label pill is shop blue; first-run hints for a waystation and a stall (run.js).
+  - **Sim and preview**: the sim opens the day's shop at any type with `shop` (only a town heals) and notes a
+    waystation's event (`at.event`; the bot plays no option); the Studio's sim worker gets the encounters module. The
+    preview gives a stall's shop by day and each waystation's event as first drawn (a later stand can differ once an
+    earlier event is played: the comment says so).
+  - **Tests**: run-waystation-world (props, rows, shop on two seeds), run-sim, run-preview; check-data's planted
+    rules snapshot and rng's scene hash remade on purpose.
+  - **In-game test**: a new phase, "A run's waystation and stall" (the first SELFTESTWAY seed with both: the stand
+    opens its event, the stall its shop, the wild stock). **check-fast**: an "Encounters" check on the blur page (no new
+    boot) runs that phase.
+- Verified: lint, typecheck, check:modules, format:check, check:data and the unit tests after every commit (877 ->
+  880). The new in-game phase alone headless (15 s) and check-fast `--only=Encounters` (26.5 s), both passed.
+  Screenshots of a waystation and a stall (the tent and the stall by the road, their pills). Smoke 6 of 6 (219 s).
+  The slow unit tests, after CI's lint job caught run-world-real's snapshot (a town there is now a stall: remade on
+  purpose): 50 of 50. **Skipped on the owner's word**: the full quick check, the whole in-game test and the full
+  check-fast run (CI skipped its `full` and `selftest` jobs on the PR; lint, rules and smoke passed).
+- Risky / open:
+  - The market tent has no 3D model (a flat sprite beside the low-poly stall and buildings). It reads fine in the
+    screenshot; a model (or another prop) is the owner's call.
+  - Found, not caused here: the run sim's bot loses at the landing in most seeds (`lostAt: 'landing'` with a party
+    of 1 from `team: 3`), so its stats say little past row 1; and maps hold far more towns than the weights suggest
+    (about 350 towns, 150 routes, 80 waystations, 15 stalls over 100 maps: rest rows are towns). Worth a look before
+    the weights are tuned.
+  - Side places (`side: 1`) still skip the no-two-shops pass.
+  - RL-R2b (caves, the Surf islet) works on run-map.js and run-scenes.js too and had pushed nothing when this PR went
+    up. Shared touch points: `RUN_BUILDINGS`, `runWorldTables`'s row block (the `sells`/`waystation` lines),
+    `MAPGEN_HUB_BUILDINGS` and mapgen's props defaults.
+- Next: RL-12c (held items) on this branch; RL-S1 depends on RL-12b.
+
+### Roguelite track RL-R2a - Side areas and field moves (and no deadline) - 2026-10-23
+Branch `track/regions` (fast-forwarded to RF-4's `track/reflavour` at e1e1479 on the coordinating session's word, then
+main merged in: RF-4, RF-5, RL-12b part 1, TC-4). Plan approved in Plan Mode with the owner's answers: walk in past the
+obstacle by a seam, a one-way way out to the next row, a detour or an alternate path but never both, badges by type,
+`fieldMoves.json`, RL-R2 split in two (this is R2a), and **drop the deadline** (the owner: "Why do I have deadlines").
+Mid-session the owner asked for the Cut moment to be "not as obtrusive, more like Pokémon with a little animation on the
+map": the sheets became the talk box and a burst on the map. Tag `rl-r2a-done` for the owner.
+- Where the docs were wrong (checked at 4a9b734, RF-4 at e1e1479):
+  - Badges were the old per-run `saveData.seats`, reset at every run's start and never awarded on a run
+    (`battle-rewards.js`: `if (st && !run)`). Nothing in the roguelite had ever won one.
+  - Rocco (Ground) is `crude.json`, not `rocco.json`.
+  - Surf was half built: v24's riding (`sc.ride`, `riderOf`, the Billie drawn under you) and badge gates on places
+    (`gate`, `canEnter`, `gateText`) were there, unused by runs. Both are reused.
+  - 9.3's "a side area can't hang off a scene's free side without breaking the seam rules" was half wrong: run scenes
+    use only their east and west sides, and mapgen makes north exits and edge strips; walking in by a north seam fits
+    the rules. What can't be promised is a seam back into a later main place (a loop), hence the one-way way out.
+  - There is no cave scene type (mapgen makes routes and towns); the island generator is reusable but makes a whole
+    island with no exits. A run's "map" is the 3D world map only (no 2D node map).
+  - The deadline did almost nothing: a chip, a song version; RL-13's hardening was never built.
+- Changed (one cause per commit):
+  - **The deadline goes** (3 commits): the run songs' deadline version (music.json, the tracker, the sound baseline's
+    renders, the Studio's card), the day chip (the day alone), then `run.deadline`, `runDeadline`, `runOverdue`,
+    `run.clock.slack` (check-data calls it "no such rule"), the map checks' clock argument, the debug log's field.
+  - **Data**: `fieldMoves.json` (Surf / Water / shore / lake, ridden; Rock Smash / Ground / boulder / ridge; Cut / Grass /
+    thorns / thicket; area names and lines drafted for the owner to edit) and `rules.json run.side` (detour 0.6, alt
+    0.15, places [2,4], altRows [2,3], altBoss 0.33, move weights, lean 2: placeholders). `meta.badges` by type.
+  - **logic/run-side.js**: `runSideAdd` after the main map (its own streams: the main path is the same with or without
+    a side), `runSideLinked`, `runSideOpen`, `fieldMoveState` (no badge, no Billie of the type, or yes),
+    `runSideProblems`. Side places are marked `side: 1` after the main path's; `run.map.side` holds the rest.
+    `validRun` checks them; no SAVE_VERSION bump (optional fields).
+  - **Scenes**: a north exit on the obstacle's place, the side's chain east to west, the obstacle prop 8 m in on the
+    north road (`act: 'field'`, `unless: opened:<move>`, a new condition kind), the way out at the last place's hub
+    (`act: 'fieldout'`), Surf's places ridden with coast water, the first place's `field` gate.
+  - **Foes and badges**: the side's own leader (one the region didn't pick, not of the move's type, so it can win a new
+    badge); a run leader's first win of a type keeps the badge (mini-bosses and bosses only: RL-12b's route trainers
+    are run foes too), its line on the win sheet; the trainer card's badge case reads it.
+  - **The page**: `game/js/field-moves.js` (the talk box, Yes / No, "Leafy used Cut!", leaves / dust / ripples on the
+    map, the way out), `walkPick`'s two acts, `canEnter`/`gateText` turning you back at the closed seam with the
+    obstacle's words.
+  - **Debug**: the debug menu forces a side area (each kind and move) and keeps every badge or none; the test run's
+    address takes `&side=detour_cut` and `&badges=all`.
+  - **In-game test**: a new phase, "A run's side area" (passed headless).
+- Verified: lint, typecheck, check:modules, format:check, check:data and the unit tests after every commit (826 -> 876
+  with main's); new tests run-side (9), run-side-world (both kinds x three moves: scenes, seam rules and agreement,
+  props, ride, gate, pools), battle-formats (the badge), run-test (the address), check-data's planted field moves.
+  Smoke 6 of 6. A headless browser walk of a Cut detour and a Surf alternate path (screens checked: the talk box, the
+  burst, inside, the way out, the map); the new in-game phase alone passed. Full quick check and the whole in-game
+  test not run (the owner's word: long checks skipped). check:fast: see the PR.
+- Risky / open:
+  - The obstacle sits 8 m in on the north road of a town or route; at night or in fog it can be hard to see. Its seam
+    gate does the blocking, so walking round the bramble still turns you back.
+  - Side places crowd the world map 2 lanes north of the line; at Expeditions III-V (up to 15 rows) they may overlap.
+  - The run sim, run preview and Studio Run Lab stay on the main path (no side areas): RL-R2b.
+  - Surf's water is coast water along a side of an ordinary route, not open sea; a cave is a ridge route. RL-R2b.
+  - A type renamed in the Studio orphans its kept badge in saves (meta.badges is keyed by the type's id).
+  - The talk box speaks as "Trainer" (the player); Pokémon's narration has no speaker.
+  - Playwright for the checks here must match the container's browser (1.63.0 for chromium 1243), not
+    requirements-check.txt's 1.56.0.
+- Next: RL-R2b (a cave scene type, an islet town for Surf, the travel moment, the Run Lab and sim with sides); RL-12b
+  part 2 (waystations) edits the run map after this merges.
+
 ### Test cleanup track, round 3 - TC-4: shared helpers, check-quick on fixtures and waits, the tiers - 2026-10-23
 Branch `track/test-cleanup` (pulled with --no-rebase before every push). TC-4 items 1, 2, 5 and 6, over two sessions
 (the first ran out of room). The owner said to make the recommended choices without waiting for plan approval. main

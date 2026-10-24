@@ -29,6 +29,16 @@ kept aside in the browser).
   panels blur less, Billie pictures redraw less often, things too small to see aren't drawn, a phone skips small props
   far off in the haze, effects of things off screen aren't drawn, and the automatic quality on a phone now lowers the
   effects and then the resolution when frames are slow (it used to keep the full resolution on the Android phone).
+- **Side areas and field moves** (roguelite track RL-R2, part 1): most runs now hide a side area. On the main path a
+  thorny little tree, a cracked boulder or a boat at the shore blocks a road north. As in Pokémon, it opens for a
+  Billie of the right type once you have that type's badge: **Cut** (Grass), **Rock Smash** (Ground) and **Surf**
+  (Water, riding your Billie over the water). Tap it and the talk box asks "Would you like to use Cut?"; your Billie
+  uses it and the obstacle goes with a burst of leaves, dust or ripples. A **detour** is 2-4 places (routes, a town and a
+  leader of its own) with Billies the region doesn't have, and a one-way way out back to the main path. A rarer
+  **alternate path** runs beside the main one with its own mini-boss, and now and then ends at a boss of its own.
+  **Badges are kept for good**: the first win over a leader of a type keeps its badge, shown on the trainer card.
+- **No more deadline on a run**: the day still counts (the forecast, the shops' stock) but nothing is late. The day
+  chip shows the day alone and the run songs lose their deadline version.
 - Encounters on a run (roguelite track RL-12b, part 1):
   - **Events**: eighteen of them, in the new tone (a Bureau desk wanting Form 27-B, an unpaid intern guarding a Revive,
     a crate that says DO NOT OPEN: BEANS, a pay-to-wish fountain...). Each has two or three choices; some need a Billie
@@ -40,6 +50,10 @@ kept aside in the browser).
     Shining Stone, or a move tutor), with a reroll for Moneys that doubles each time.
   - The **Protein Bar**: a Billie that eats one gains a level (from its sheet, not in battle).
   - Versewift and Feedopus now evolve with the **Shining Stone** from level 20 (they evolved at level 36).
+- **Waystations and stalls** on a run (roguelite track RL-12b, part 2): the run's map now has two new kinds of place.
+  A **waystation** has a striped market tent by the road: tap it and its event opens (the events above now happen on
+  the map, not just from the debug menu). A **stall** is a fruit stall with a shop (new stock every day, no clinic).
+  Both have fewer wild Billies than a route. The map never puts two shops (a town or a stall) one after the other.
 
 - Fix: the full test (Settings → Help) no longer fails three steps on every device while the game draws fine. Night,
   weather and seasons now waits for Copperleaf to open before it starts; the Light lab counts the new low-poly

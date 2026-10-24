@@ -670,7 +670,13 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
           l.x,
           l.y,
           l.t,
-          l.act === 'clinic' ? '#E8607A' : l.act === 'shop' ? '#4E9BE0' : l.act === 'closed' ? '#7E7888' : '#8E6CCB'
+          l.act === 'clinic'
+            ? '#E8607A'
+            : l.act === 'shop' || l.act === 'stall'
+              ? '#4E9BE0'
+              : l.act === 'closed'
+                ? '#7E7888'
+                : '#8E6CCB'
         );
     }
     drawExitLabels(C, st, hits, mapHub(sc));

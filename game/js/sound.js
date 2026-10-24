@@ -268,8 +268,6 @@ function musicState() {
     nodeType: node ? node.type : null,
     biome: node ? node.biome || null : null,
     row: node ? node.row : null,
-    /* SND-5: the days left to the run's deadline, today included (1 on the deadline day, 0 or less past it) */
-    daysLeft: run && run.deadline ? run.deadline - run.clock + 1 : null,
   };
 }
 function musicSync() {
@@ -310,7 +308,7 @@ function battleDrumsIn() {
   }
 }
 /* SND-5: the parts of a song the fingerprints (tools/check-sound.py) render besides day and night: its intro, its tense
-   version, its run arc bands, its deadline version */
+   version, its run arc bands */
 function musicParts(name) {
   const S = SONGS[name];
   const out = S && S.intro && S.intro.length ? ['intro'] : [];
@@ -319,9 +317,6 @@ function musicParts(name) {
   /* a run's songs (a biome's): each arc band */
   if (S && S.arc !== false && MUSIC.where.some(W => W.biome && W.song === name))
     for (const B of (MUSIC.run && MUSIC.run.arc) || []) out.push(B.name);
-  /* a run's songs near the deadline */
-  if (S && S.deadline !== false && MUSIC.where.some(W => (W.biome || W.nodeType) && W.song === name))
-    out.push('deadline');
   return out;
 }
 /* SND-4: a song's name as it plays at this night level (1 night, 0 day): 'town@night' or the name itself */

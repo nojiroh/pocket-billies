@@ -67,6 +67,9 @@ export function renameTypeIn(D, from, to) {
      a region theme's lean goes with its type */
   for (const T of Object.values(D.trainers || {}))
     if (T && /** @type {any} */ (T).type === from) /** @type {any} */ (T).type = left;
+  /* RL-R2: a field move's type (whose Billies use it and whose badge opens it) takes the first other one too */
+  for (const M of Object.values((D.fieldMoves && D.fieldMoves.moves) || {}))
+    if (/** @type {any} */ (M).type === from) /** @type {any} */ (M).type = left;
   for (const T of Object.values((D.regions && D.regions.themes) || {})) {
     const lean = /** @type {any} */ (T).types || {};
     if (!Object.hasOwn(lean, from)) continue;

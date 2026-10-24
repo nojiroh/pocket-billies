@@ -9,12 +9,11 @@ const C = modules['data-checks'];
 const { runMapMake } = modules['run-map'];
 const T = GAME_DATA.nodeTypes,
   M = GAME_DATA.rules.run.map,
-  clock = GAME_DATA.rules.run.clock,
   rules = (/** @type {object} */ o) => ({ ...M, ...o });
 
 test('the game’s rules: 1,000 maps hold every check, in under a second', () => {
   const t0 = performance.now(),
-    S = C.runMapSweep(T, M, clock, { n: 1000 }),
+    S = C.runMapSweep(T, M, { n: 1000 }),
     ms = performance.now() - t0;
   assert.deepEqual(S.problems, []);
   assert.equal(S.maps, 1000);
@@ -30,27 +29,44 @@ test('the game’s rules: 1,000 maps hold every check, in under a second', () =>
 
 test('one map: reachable, no dead end, each role row holds its type', () => {
   const map = runMapMake('CHECK1', T, M);
-  assert.deepEqual(C.runMapProblems(map, M, clock), []);
+  assert.deepEqual(C.runMapProblems(map, M), []);
   const cut = structuredClone(map);
   cut.nodes[0].to = cut.nodes[0].to.slice(0, 1);
   const lone = cut.nodes.findIndex((n, i) => i > 0 && !cut.nodes.some(m => m.to.includes(i)));
-  if (lone > 0) assert.ok(C.runMapProblems(cut, M, clock).some(p => p.includes(`place ${lone} can’t be reached`)));
+  if (lone > 0) assert.ok(C.runMapProblems(cut, M).some(p => p.includes(`place ${lone} can’t be reached`)));
   const dead = structuredClone(map);
   dead.nodes[1].to = [];
-  assert.ok(C.runMapProblems(dead, M, clock).some(p => p.includes('place 1 leads nowhere')));
-  assert.ok(C.runMapProblems(map, M, { ...clock, slack: -1 }).some(p => p.includes('deadline')));
+  assert.ok(C.runMapProblems(dead, M).some(p => p.includes('place 1 leads nowhere')));
 });
 
 test('a planted bad rule is named with a seed that shows it', () => {
   // a mini-boss row on the last row: the rows can't hold it
-  const tight = C.runMapSweep(T, rules({ rows: 2, minibosses: 1 }), clock, { n: 50 });
+  const tight = C.runMapSweep(T, rules({ rows: 2, minibosses: 1 }), { n: 50 });
   assert.equal(tight.maps, 0);
   assert.match(tight.problems[0].text, /can.t make a map/);
   assert.ok(tight.problems[0].seed);
   // the last row made a mini-boss: no boss, so the run can't end
-  const noBoss = C.runMapSweep(T, rules({ last: 'miniboss' }), clock, { n: 50 });
+  const noBoss = C.runMapSweep(T, rules({ last: 'miniboss' }), { n: 50 });
   assert.ok(noBoss.problems.some(p => /last row .*not the boss/.test(p.text) && p.seed && p.count === 50));
   // rest rows made routes: no town before a mini-boss
-  const noRest = C.runMapSweep(T, rules({ rest: 'route' }), clock, { n: 50 });
+  const noRest = C.runMapSweep(T, rules({ rest: 'route' }), { n: 50 });
   assert.ok(noRest.problems.some(p => /rest row .*not a town/.test(p.text)));
+});
+
+test('RL-12b: never two places that sell things one after the other; the sweep would name a map that had them', () => {
+  for (let k = 0; k < 500; k++) {
+    const map = runMapMake('SHOPS' + k, T, M);
+    for (const n of map.nodes)
+      if (T[n.type].shop)
+        for (const j of n.to) assert.ok(!T[map.nodes[j].type].shop, `SHOPS${k}: ${n.type} then ${map.nodes[j].type}`);
+  }
+  const S = C.runMapSweep(T, M, { n: 500 });
+  assert.ok(S.types.event > 0 && S.types.stall > 0, 'waystations and stalls are drawn');
+  const two = structuredClone(runMapMake('CHECK1', T, M)),
+    a = two.nodes.findIndex(n => n.to.length);
+  two.nodes[a].type = 'stall';
+  for (const j of two.nodes[a].to) two.nodes[j].type = 'town';
+  assert.ok(C.runMapProblems(two, M, T).some(p => p.includes('two places that sell things in a row')));
+  /* without the node types (an older caller) the check stays out */
+  assert.ok(!C.runMapProblems(two, M).some(p => p.includes('sell things')));
 });

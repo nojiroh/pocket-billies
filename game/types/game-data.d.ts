@@ -73,6 +73,8 @@ export interface GameData {
   locations: LocationData[];
   /** RL-R1: the run's region themes (logic/run-region.js) */
   regions: RegionsData;
+  /** RL-R2: the field moves that open a run's side areas */
+  fieldMoves?: { about?: string; moves: Record<DataId, FieldMove> };
   pools: Record<DataId, Pool>;
   /** the egg tiers, keyed by the distance in km that hatches them ('2', '5', '10') */
   eggs: Record<string, EggTier>;
@@ -405,6 +407,12 @@ export interface LocationData {
   noFly?: number;
   /** roguelite track RL-7: a run's place: its node on the run's map (logic/run-scenes.js; world node runNode + 1) */
   runNode?: number;
+  /** RL-R2: a side area's first place: closed until the run's field move obstacle (this move) is open */
+  field?: DataId;
+  /** RL-R2: 1 on a side area's place */
+  side?: 1;
+  /** RL-12b: 1 on a run's waystation (an event's or a stall's place): fewer wild Billies (rules.json run.wild) */
+  waystation?: 1;
   v47region?: number;
   a04place?: number;
   a04pearl?: number;
@@ -960,9 +968,8 @@ export interface Rules {
     };
     /** RL-6: the run's node map (logic/run-map.js) */
     map: RunMapRules;
-    /** RL-6: the clock (owner, 8.10): the deadline is the shortest walk to the boss plus `slack` days; the forecast
-        keeps `ahead` days after today */
-    clock: { slack: number; ahead: number };
+    /** RL-6: the clock (owner, 8.10): the forecast keeps `ahead` days after today (RL-R2: no deadline) */
+    clock: { ahead: number };
     /** RL-6: what the map shows from where you stand: the rows up to `icons` ahead with their type, up to `unknown`
         ahead as '?' pins (the boss always) */
     reveal: { icons: number; unknown: number };
@@ -971,8 +978,9 @@ export interface Rules {
         a record of weights. Dials left out keep mapgen's defaults */
     scene: RunSceneRules;
     /** RL-7: a run node's wild Billies: levels `lv` on the landing's row, `perRow` more on each row after; a node
-        walked back to rolls `back` of them again (the hub's stock on a first visit) */
-    wild: { lv: [number, number]; perRow: number; back: number };
+        walked back to rolls `back` of them again (the hub's stock on a first visit); a waystation (an event or a
+        stall: RL-12b) holds `waystation` */
+    wild: { lv: [number, number]; perRow: number; back: number; waystation: number };
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;
@@ -1002,6 +1010,8 @@ export interface Rules {
       rarity: Record<PerkRarity, number>;
       price: Record<PerkRarity, number>;
     };
+    /** RL-R2: side areas (logic/run-side.js) */
+    side?: RunSideRules;
   };
   /** roguelite track RL-9: the ranch (logic/ranch.js). Placeholders until the owner has played it */
   ranch: RanchRules;
@@ -1648,6 +1658,8 @@ export interface NodeType {
   engine: 'scene' | 'menu';
   /** how often it fills a free row (rules.json run.map gives the other rows their types); 0 or none: never */
   weight?: number;
+  /** RL-12b: it sells things (a town, a stall): the map never puts two of them one after the other */
+  shop?: boolean;
 }
 
 /** music.json: a song's recipe, composed into notes by the tracker (game/js/audio/tracker.js; sound track SND-2) */
@@ -1894,4 +1906,35 @@ export interface UiTheme {
   presets?: Record<string, UiLook>;
   /** per screen: colour and shape only */
   overrides?: Record<string, Pick<UiLook, 'color' | 'shape'>>;
+}
+
+/** RL-R2: a field move (fieldMoves.json): what opens a run's side area (logic/run-side.js) */
+export interface FieldMove {
+  name: string;
+  /** the type a Billie needs, and whose badge (meta.badges, by the type's id in lower case) */
+  type: string;
+  obstacle: 'shore' | 'boulder' | 'thorns';
+  /** the side area's biome */
+  biome: string;
+  /** its places are ridden (water walkable) */
+  ride?: boolean;
+  areas: string[];
+  look: string;
+  needBadge: string;
+  needType: string;
+  ask: string;
+  used: string;
+  out: string;
+}
+/** RL-R2: rules.json run.side: the chance a run has a detour or an alternate path (never both), a detour's places, an
+ * alternate path's rows and the chance it ends at a boss of its own, each move's weight and the lean toward a move of
+ * the region's types */
+export interface RunSideRules {
+  detour: number;
+  alt: number;
+  places: [number, number];
+  altRows: [number, number];
+  altBoss: number;
+  moves: Record<string, number>;
+  lean: number;
 }

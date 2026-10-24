@@ -879,6 +879,16 @@ def run_shop(pg, base):
     return f'{n} wares'
 
 
+def waystations(pg, base):
+    """RL-12b: the in-game test's own phase, "A run's waystation and stall" (self-test.js), on a copy of the save: the
+    first seed with both, the stand tapped (its event's sheet), the stall tapped (its shop's wares), the wild stock"""
+    pg.evaluate("uiState.inside=null;uiState.mq=[];uiState.modal=null;renderOverlay();"
+                "selfTest.slow=3;selfTest.only=['waystation'];runFullTest();0")
+    if not until(pg, '!selfTest.on&&!!(debugLog.bench&&debugLog.bench.result)', 240): raise Exception('the phase didn’t finish in 240 s')
+    ph = pg.evaluate("debugLog.bench.result.phases.map(p=>({name:p.name,ok:p.ok,why:p.why||p.note||''}))")
+    if len(ph) != 1 or not ph[0]['ok']: raise Exception(f'the phase failed: {ph}')
+    return ph[0]['why']
+
 def screens(pg, base):
     """UI-5: every screen opens with its parts, through the buttons a player taps: the bottom bar's Map, Team, Bag and Lab, the
     world again (the open tab tapped again, and Esc), the Trainer card from the portrait and the Guide from it,
@@ -1003,9 +1013,9 @@ RUN_TEST_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-r
 const U = { unlocks: D.unlocks, buildings: D.buildings },
   un = modules.unlocks.runUnlocks({ meta: { unlocks: Object.fromEntries(Object.keys(D.unlocks).map(i => [i, 1])) } }, U),
   p = modules['run-start'].runStartPlan('TESTSEED', { nodeTypes: D.nodeTypes, biomes: D.biomes, rules: D.rules.run, unlockData: U,
-    region: modules['run-region'].runRegionData(D, D.trainers) },
+    region: modules['run-region'].runRegionData(D, D.trainers), fieldMoves: D.fieldMoves.moves },
     { unlocks: un, map: { rows: 5, minibosses: 1 } });
-console.log(JSON.stringify({ map: p.map, deadline: p.deadline, unlocks: p.unlocks }));"""
+console.log(JSON.stringify({ map: p.map, unlocks: p.unlocks }));"""
 
 
 def run_test(pg, base):
@@ -1016,12 +1026,12 @@ def run_test(pg, base):
     want = json.loads(r.stdout.strip().splitlines()[-1])
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.run&&runWorld.seed==='TESTSEED'", 90):
         raise Exception('no run on TESTSEED took off')
-    got = pg.evaluate("({map: saveData.run.map, deadline: saveData.run.deadline, unlocks: saveData.run.unlocks, test: !!TEST_RUN, "
+    got = pg.evaluate("({map: saveData.run.map, unlocks: saveData.run.unlocks, test: !!TEST_RUN, "
                       "team: saveData.team.map(m => m.sp + '@' + m.lvl), relics: saveData.run.perks})")
     if not got['test']: raise Exception('it is not a test run (TEST_RUN is off)')
     for n in [n for n in got['map']['nodes']]: n.pop('seen', None)
     for n in want['map']['nodes']: n.pop('seen', None)
-    if got['map'] != want['map'] or got['deadline'] != want['deadline']: raise Exception(f"its map isn't runStartPlan's: {len(got['map']['nodes'])} places, deadline {got['deadline']}; Node: {len(want['map']['nodes'])}, {want['deadline']}")
+    if got['map'] != want['map']: raise Exception(f"its map isn't runStartPlan's: {len(got['map']['nodes'])} places; Node: {len(want['map']['nodes'])}")
     if got['unlocks'] != want['unlocks']: raise Exception(f"its unlocks {got['unlocks']} aren't runStartPlan's {want['unlocks']}")
     if got['team'] != ['musk2@30', 'bezos1@20']: raise Exception(f"its party is {got['team']}, not musk2@30, bezos1@20")
     if got['relics'] != ['clinic_card', 'coupon_book']: raise Exception(f"it holds {got['relics']}, not clinic_card, coupon_book")
@@ -1122,7 +1132,8 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
               ('Camera moments: a drift in standing, a two-shot talking, a boss, a door, the encounter shot (CAM-2)', camera_moments),
               ('Copperleaf is the island: the sea skirt from 8 angles; the orbit camera from 8 places, on the summit, holding right (IS-1, IS-3)', hub_orbit)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
-    ('town', [('Blur focus: on you, between you in a talk, on the encounter; the slider at Off; the cheap blur (CAM-3)', blur_focus)]),
+    ('town', [('Blur focus: on you, between you in a talk, on the encounter; the slider at Off; the cheap blur (CAM-3)', blur_focus),
+              ("Encounters: a run's waystation stand opens its event, a stall its shop; both hold fewer wild Billies (RL-12b)", waystations)]),
     ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back and forward, a reload (RL-9, RL-10b)', ranch)]),
     ('pasture', [('The pasture: Billies wander inside the fence, a tap on one or the gate opens the ranch (IS-8)', pasture)]),
     ('relics', [("Perks: the pick (again after a reload), the tab, a battle's and a walk's effects, a town's prices, buying at the cap (RL-12)", relics)]),

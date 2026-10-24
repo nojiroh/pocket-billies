@@ -242,7 +242,7 @@ function encountersHTML() {
 }
 /* the forecast's word to a UI icon (environment.js environmentIcon's, by day) */
 const WEATHER_ICONS = { rain: 'rain', storm: 'rain', snow: 'snow', fog: 'fog', ash: 'ash', cloudy: 'cloud' };
-/** on a run: the day and deadline, the place's type, and its weather today and tomorrow with what it does to moves
+/** on a run: the day, the place's type, and its weather today and tomorrow with what it does to moves
     (logic/run-loop.js runSheetStatus) */
 function runStatusHTML() {
   const run = saveData.run,
@@ -256,7 +256,7 @@ function runStatusHTML() {
         return `<li>${uiIconHTML(WEATHER_ICONS[d.w] || 'sun', 16)}<b>${d.day === st.day ? 'Today' : 'Tomorrow'}</b><span>${escapeHtml(WEATHER_NAMES[d.w] || d.w)}</span><small>${fx ? escapeHtml(fx) : 'No effect on moves'}</small></li>`;
       })
       .join('');
-  return `<section class="ws-status k-card"><div class="ws-top"><pb-day-chip day="${st.day}" deadline="${st.deadline}"></pb-day-chip><span class="ws-type">${escapeHtml(T ? T.name : st.type)}</span></div>${rows ? `<ul class="ws-wx">${rows}</ul>` : ''}</section>`;
+  return `<section class="ws-status k-card"><div class="ws-top"><pb-day-chip day="${st.day}"></pb-day-chip><span class="ws-type">${escapeHtml(T ? T.name : st.type)}</span></div>${rows ? `<ul class="ws-wx">${rows}</ul>` : ''}</section>`;
 }
 const walkSheetWanted = () =>
   uiState.walkSheet && uiState.tab === 'walk' && !!saveData.started && !activeBattle && !uiState.title;

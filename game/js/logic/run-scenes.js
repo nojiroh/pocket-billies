@@ -28,8 +28,15 @@ import { wildPoolList } from './wild-pool.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_BUILDINGS: [() => RUN_BUILDINGS],
+  RUN_FIELD_IN: [() => RUN_FIELD_IN],
+  RUN_FIELD_PROPS: [() => RUN_FIELD_PROPS],
   RUN_MOD_MOUNTAINS: [() => RUN_MOD_MOUNTAINS],
   RUN_SIDE_ID: [() => RUN_SIDE_ID],
+  fieldMoveOf: [() => fieldMoveOf],
+  // @ts-expect-error -- replaced on purpose
+  runAlongBack: [() => runAlongBack, v => (runAlongBack = v)],
+  // @ts-expect-error -- replaced on purpose
+  runFieldProps: [() => runFieldProps, v => (runFieldProps = v)],
   runMapIdOf: [() => runMapIdOf],
   runPlaceId: [() => runPlaceId],
   // @ts-expect-error -- replaced on purpose
@@ -56,7 +63,7 @@ expose({
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, Biome>, pools: Record<string, Pool>,
  *   scenery: any, rules: { scene: RunSceneRules, wild: { lv: [number, number], perRow: number, back: number } },
- *   dex?: string[] | null }} RunWorldData
+ *   dex?: string[] | null, fieldMoves?: Record<string, import('../../types/game-data').FieldMove> }} RunWorldData
  * RO-1: dex, a region's species, cuts each place's biome pool to them (logic/wild-pool.js); RL-R1: without it, the
  * run's region's (run.region.dex, its other varieties swapped to the region's)
  */
@@ -72,12 +79,31 @@ export const RUN_SIDE_ID = { E: ['east', 'east2'], W: ['west', 'west2'] };
 /** a node's exits in the order its scene is made with them, with the ids the generator gives them: the first east
  * (back), the first west (ahead; the main road between them), then the second east and the second west
  * @param {RunMap} map @param {number} i
- * @returns {{ side: 'E' | 'W', t: number, id: string, node: number }[]} node: the neighbour the exit leads to */
+ * @returns {{ side: 'E' | 'W' | 'N' | 'S', t: number, id: string, node: number }[]} node: the neighbour the exit leads
+ * to. RL-R2: a side area's places and the obstacle's north exit (run-side.js) */
 export function runSceneExits(map, i) {
+  const S = map.side;
+  /* RL-R2: a side area's place: its first comes in by its south side from the obstacle's place (whose north exit it
+     is), the others by their east from the one before; each but the last goes on by its west to the next */
+  if (S && map.nodes[i].side) {
+    const k = S.nodes.indexOf(i),
+      next = S.nodes[k + 1];
+    return [
+      k === 0
+        ? { side: /** @type {'S'} */ ('S'), t: 0.5, id: 'south', node: S.from }
+        : { side: /** @type {'E'} */ ('E'), t: 0.5, id: 'east', node: S.nodes[k - 1] },
+      ...(next === undefined ? [] : [{ side: /** @type {'W'} */ ('W'), t: 0.5, id: 'west', node: next }]),
+    ];
+  }
   const ex = runExits(map, i),
     E = ex.back.map((e, k) => ({ side: /** @type {'E'} */ ('E'), t: e.t, id: RUN_SIDE_ID.E[k], node: e.from })),
     W = ex.ahead.map((e, k) => ({ side: /** @type {'W'} */ ('W'), t: e.t, id: RUN_SIDE_ID.W[k], node: e.to }));
-  return [E[0], W[0], E[1], W[1]].filter(e => !!e);
+  const out = /** @type {{ side: 'E' | 'W' | 'N' | 'S', t: number, id: string, node: number }[]} */ (
+    [E[0], W[0], E[1], W[1]].filter(e => !!e)
+  );
+  /* RL-R2: the obstacle's place: a north exit (a branch off the main road) into the side area */
+  if (S && S.from === i) out.push({ side: 'N', t: 0.5, id: 'north', node: S.nodes[0] });
+  return out;
 }
 /** the exit of node i that leads to node j, or null @param {RunMap} map @param {number} i @param {number} j */
 export const runSceneExitTo = (map, i, j) => runSceneExits(map, i).find(e => e.node === j) || null;
@@ -108,8 +134,9 @@ export function runSceneParams(run, i, scenes, data) {
     nodeSeed = runNodeSeed(run.seed, i),
     exits = runSceneExits(map, i),
     dials = runSceneDials(data.rules.scene, rngFrom(nodeSeed, 'scene|dials'));
+  /* its parents: the neighbours made before it (a main place's east ones; RL-R2: a side place's south or east one) */
   const edges = exits
-    .filter(e => e.side === 'E')
+    .filter(e => e.node < i)
     .map(e => {
       const parent = scenes[e.node],
         out = runSceneExitTo(map, e.node, i);
@@ -129,6 +156,10 @@ export function runSceneParams(run, i, scenes, data) {
       : {}),
     /* RL-8: the buildings a node's type needs, beside the main road near its middle (mapgen's props dials: MG-2) */
     props: { ...(dials.props || {}), ...(RUN_BUILDINGS[node.type] || {}) },
+    /* RL-R2: a ridden side area (Surf): water along a side, walked on by riding */
+    ...(node.side && fieldMoveOf(map, data) && /** @type {any} */ (fieldMoveOf(map, data)).ride
+      ? { land: { ...(dials.land || {}), water: 'coast', waterAmount: 0.6 } }
+      : {}),
     kind: 'route',
     biome: node.biome || Object.keys(data.biomes)[0],
     w: size.w,
@@ -144,17 +175,78 @@ export function runSceneParams(run, i, scenes, data) {
 /** TR-2: the debug menu's run mod that gives every place mountains (runSceneParams) */
 export const RUN_MOD_MOUNTAINS = 'dbg_mountains';
 /** RL-8: what stands beside the main road of a node of each type: the airship's mast where it lands you, a clinic
- * (paid healing) and a shop in a town (mapgen.js MAPGEN_HUB_BUILDINGS) */
+ * (paid healing) and a shop in a town (mapgen.js MAPGEN_HUB_BUILDINGS); RL-12b: a waystation's stand (its event) and
+ * a stall (its shop, no clinic) */
 export const RUN_BUILDINGS = /** @type {Record<string, Record<string, number>>} */ ({
   landing: { mast: 1 },
   town: { clinic: 1, shop: 1 },
+  event: { stand: 1 },
+  stall: { stall: 1 },
 });
+/** RL-R2: the run's side area's field move (fieldMoves.json), or null @param {RunMap} map @param {RunWorldData} data */
+export const fieldMoveOf = (map, data) => (map.side && data.fieldMoves && data.fieldMoves[map.side.move]) || null;
+/** RL-R2: what stands for a field move's obstacle (on the north exit's road, before the seam) and for a side area's
+ * way out (at its last place's road end): scenery.json props */
+export const RUN_FIELD_PROPS = /** @type {Record<string, { obstacle: string, out: string }>} */ ({
+  thorns: { obstacle: 'bush_bramble', out: 'signpost' },
+  boulder: { obstacle: 'boulder_granite', out: 'mine_entrance' },
+  shore: { obstacle: 'rowboat', out: 'fishing_boat' },
+});
+/** RL-R2: how far in from the north exit the obstacle stands (metres along the exit's road; past the walk's seamIn) */
+export const RUN_FIELD_IN = 8;
+/** RL-R2: put the side area's props on a made scene: the obstacle on the obstacle's place (act 'field', gone once
+ * open: `unless`), the way out on the side's last place (act 'fieldout'); a ridden area's places are ridden
+ * @param {RunMap} map @param {number} i @param {any} scene @param {RunWorldData} data */
+export function runFieldProps(map, i, scene, data) {
+  const S = map.side,
+    M = fieldMoveOf(map, data);
+  if (!S || !M) return;
+  const P = RUN_FIELD_PROPS[M.obstacle] || RUN_FIELD_PROPS.thorns;
+  if (i === S.from) {
+    const e = (scene.edgeExits || []).find((/** @type {any} */ x) => x.id === 'north');
+    if (!e) return;
+    const at = runAlongBack(e.path, RUN_FIELD_IN);
+    scene.props.push({
+      k: P.obstacle,
+      x: at[0],
+      z: at[1],
+      g: 1,
+      act: 'field',
+      move: S.move,
+      label: M.name,
+      unless: `opened:${S.move}`,
+    });
+  }
+  if (map.nodes[i].side && M.ride) scene.ride = 1;
+  if (i === S.nodes[S.nodes.length - 1] && S.to >= 0) {
+    const h = scene.hub || [scene.w / 2, scene.h / 2];
+    scene.props.push({ k: P.out, x: h[0], z: h[1] + 2, g: 1, act: 'fieldout', move: S.move, label: 'Way out' });
+  }
+}
+/** the point `d` metres back from a path's end, along it (its start when it is shorter) @param {number[][]} path
+ * @param {number} d @returns {number[]} */
+export function runAlongBack(path, d) {
+  let left = d;
+  for (let k = path.length - 1; k > 0; k--) {
+    const [ax, az] = path[k],
+      [bx, bz] = path[k - 1],
+      seg = Math.hypot(bx - ax, bz - az);
+    if (seg >= left) {
+      const f = left / seg;
+      return [Math.round((ax + (bx - ax) * f) * 100) / 100, Math.round((az + (bz - az) * f) * 100) / 100];
+    }
+    left -= seg;
+  }
+  return path[0].slice();
+}
 /** a run node's name (a placeholder, the owner's call: its biome and its type, "Meadow Route")
  * @param {RunMap} map @param {number} i @param {RunWorldData} data */
 export function runPlaceName(map, i, data) {
   const node = map.nodes[i],
     B = data.biomes[node.biome || ''],
     T = data.nodeTypes[node.type];
+  /* RL-R2: a side area's places carry its name ("Bramble Grove Town") */
+  if (node.side && map.side) return `${map.side.name} ${T ? T.name : 'Route'}`;
   return `${B ? B.name : 'Wild'} ${T ? T.name : 'Route'}`;
 }
 /** node i's scene, made from its parents' (see runSceneParams), with what the game reads off a place's scene: its
@@ -173,6 +265,7 @@ export function runSceneMake(run, i, scenes, data) {
     mood: B.mood,
     climate: B.climate,
   });
+  runFieldProps(map, i, scene, data);
   return { scene, notes };
 }
 /** every scene of a run's map, in order (each after its parents), by map node @param {Run} run
@@ -211,11 +304,15 @@ export function runWorldTables(run, hub, data) {
     const B = data.biomes[node.biome || ''] || /** @type {Biome} */ ({}),
       T = data.nodeTypes[node.type],
       town = node.type === 'town',
+      /* RL-12b: a node type that sells (nodeTypes.json shop: a town, a stall) */
+      sells = !!(T && T.shop),
       id = runPlaceId(i),
       source = data.pools[B.pool] || data.pools[Object.keys(data.pools)[0]];
+    /* RL-R2: a side area's places meet its own species (lines the region left out), when it has them */
+    const own = node.side && map.side && map.side.dex ? map.side.dex : null;
     pools[id] = {
       lv: runWildLevels(map, i, data),
-      list: wildPoolList(source.list, dex, region ? region.swap : null),
+      list: own ? wildPoolList(source.list, own, null) : wildPoolList(source.list, dex, region ? region.swap : null),
     };
     /** @type {LocationData} */
     const row = {
@@ -235,15 +332,20 @@ export function runWorldTables(run, hub, data) {
     };
     /* RL-R1: its zone's ground on the world map (run-bowl.js), so the run's land reads as bands of zones */
     if (node.zone !== undefined) row.region = runZoneRegion(node.zone);
-    if (town) {
-      row.town = 1;
-      /* RL-8: its shop (stocked by the day when it opens: logic/run-loop.js runShopStock) */
+    /* RL-R2: a side area's first place is closed until its obstacle is open (rules.js canEnter, gateText) */
+    if (map.side && i === map.side.nodes[0]) row.field = map.side.move;
+    if (node.side) row.side = 1;
+    /* RL-12b: a waystation (an event's or a stall's place) has fewer wild Billies (rules.js encounterStock) */
+    if (node.type === 'event' || node.type === 'stall') row.waystation = 1;
+    if (town) row.town = 1;
+    if (sells) {
+      /* RL-8: its shop (stocked by the day when it opens: logic/run-loop.js runShopStock); RL-12b: a stall's too */
       row.shop = runShopId(i);
       shops[row.shop] = {
-        name: `${row.name} Shop`,
-        keeper: 'The shopkeeper',
+        name: town ? `${row.name} Shop` : row.name,
+        keeper: town ? 'The shopkeeper' : 'The stallholder',
         who: 'clerk',
-        greeting: 'New stock every morning. Have a look.',
+        greeting: town ? 'New stock every morning. Have a look.' : 'Fresh off the cart this morning. Have a look.',
         stock: [],
         runNode: i,
       };
@@ -264,6 +366,20 @@ export function runWorldTables(run, hub, data) {
       });
     })
   );
+  /* RL-R2: the seam from the obstacle's place north into its side area */
+  const S = map.side;
+  if (S) {
+    const a = runSceneExitTo(map, S.from, S.nodes[0]),
+      b = runSceneExitTo(map, S.nodes[0], S.from);
+    if (!a || !b) throw new Error('runWorldTables: no exits between the obstacle and its side area');
+    roads.push({
+      id: `road:${runPlaceId(S.from)}-${runPlaceId(S.nodes[0])}`,
+      name: '',
+      kind: 'seam',
+      a: { map: places[S.from].mapId, exit: a.id },
+      b: { map: places[S.nodes[0]].mapId, exit: b.id },
+    });
+  }
   /* RL-8b: the run's map is its own land: Copperleaf stays world node 0 (flying home, a save's checks) but is off it */
   const home = { ...hub, bowl: { a: 0, r: 0, ...hub.bowl, off: true } };
   return { locations: [home, ...places], roads, pools, shops };

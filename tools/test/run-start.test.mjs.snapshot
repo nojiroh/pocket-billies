@@ -30,7 +30,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       "unlocks": [],
       "mods": [],
       "clock": 1,
-      "deadline": 11,
       "map": {
         "nodes": [
           {
@@ -136,7 +135,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2
           },
           {
-            "type": "route",
+            "type": "event",
             "row": 6,
             "lane": 1,
             "to": [
@@ -363,7 +362,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       ],
       "mods": [],
       "clock": 1,
-      "deadline": 11,
       "map": {
         "nodes": [
           {
@@ -469,7 +467,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2
           },
           {
-            "type": "route",
+            "type": "event",
             "row": 6,
             "lane": 1,
             "to": [
@@ -687,7 +685,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       "unlocks": [],
       "mods": [],
       "clock": 1,
-      "deadline": 8,
       "map": {
         "nodes": [
           {
@@ -874,6 +871,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "f63bfa485a8a7d62a7609f296fe93815e2b69125f58aa9b62c833c3591da12d8"
+  "all": "309b91414461268628d4a0e9c76577c95f46e733ce9362afd6cb9493fefcbe3f"
 }
 `;

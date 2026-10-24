@@ -51,10 +51,12 @@ function theGame(/** @type {string} */ seed, /** @type {{ unlocks: string[], map
     foes = runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run }),
     W = runWorldTables(run, gameData.locations[START_NODE], worldData()),
     rule = RULES.run.shop;
+  /* RL-R2: three days past the shortest walk's last day (the old deadline's) */
+  const lastDay = 1 + Math.max(...run.map.nodes.map(n => n.row)) + 3;
   const nodes = run.map.nodes.map((n, i) => {
     const shop = [];
     if (n.type === 'town')
-      for (let day = n.row + 1; day <= run.deadline; day++) {
+      for (let day = n.row + 1; day <= lastDay; day++) {
         run.clock = day;
         const stock = runShopStock(run, i, run.clock, {
           ...rule,
@@ -68,7 +70,7 @@ function theGame(/** @type {string} */ seed, /** @type {{ unlocks: string[], map
   const offers = [],
     guards = new Set(run.map.nodes.filter(n => n.type === 'miniboss').map(n => n.row)).size;
   for (let k = 0; k < guards; k++) offers.push(perkOfferMake(run, PERKS, RULES.run.perks) || []);
-  return { map: run.map, deadline: run.deadline, unlocks: run.unlocks, nodes, offers };
+  return { map: run.map, unlocks: run.unlocks, nodes, offers };
 }
 
 test('runPreview: the foes, shops, wild tables and Perk picks are the game’s for the same seed', () => {
@@ -78,7 +80,6 @@ test('runPreview: the foes, shops, wild tables and Perk picks are the game’s f
         got = runPreview(seed, { unlocks: runUnlocks(hooks.saveData, UNLOCK_DATA), map: c.map });
       const at = `${seed}, ${name}`;
       assert.deepEqual(got.map, want.map, `${at}: the map`);
-      assert.equal(got.deadline, want.deadline, `${at}: the deadline`);
       assert.deepEqual(got.unlocks, want.unlocks, `${at}: the unlocks`);
       assert.equal(got.nodes.length, want.nodes.length, at);
       got.nodes.forEach((n, i) => {
@@ -100,4 +101,24 @@ test('runPreview: every mini-boss and the boss has a foe, every town a day of st
   }
   assert.ok(p.relicOffers.length >= 1);
   assert.deepEqual(JSON.parse(JSON.stringify(p)), p, 'it crosses to the Studio page as it is (structured clone)');
+});
+
+test('the preview gives a stall a shop and a waystation its event, as the game draws it (RL-12b)', () => {
+  const { eventAt } = modules.encounters;
+  let stalls = 0,
+    stands = 0;
+  for (let k = 0; k < 12; k++) {
+    const seed = `PREVWAY${k}`,
+      P = runPreview(seed, {});
+    P.map.nodes.forEach((/** @type {any} */ n, /** @type {number} */ i) => {
+      const N = P.nodes[i];
+      if (n.type === 'stall') stalls++;
+      assert.equal(!!N.shop, n.type === 'stall' || n.type === 'town', `${seed} node ${i}`);
+      if (n.type !== 'event') return assert.equal(N.event, null);
+      stands++;
+      const run = /** @type {any} */ ({ seed, map: P.map, enc: undefined });
+      assert.equal(N.event, eventAt(run, i, data.EVENTS) || null, `${seed} node ${i}`);
+    });
+  }
+  assert.ok(stalls >= 1 && stands >= 1, `${stalls} stalls, ${stands} waystations`);
 });

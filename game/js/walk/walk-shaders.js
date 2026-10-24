@@ -5,7 +5,7 @@
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
 import { COMMON_GLSL, LIGHT_GLSL, LOOK_GLSL } from '../engine/webgl.js';
-expose({ ROCK_GLSL: [() => ROCK_GLSL], WALK_SHADERS: [() => WALK_SHADERS] });
+expose({ RING_AT_GLSL: [() => RING_AT_GLSL], ROCK_GLSL: [() => ROCK_GLSL], WALK_SHADERS: [() => WALK_SHADERS] });
 /* to-module: end */
 /* ---------- shaders ---------- */
 /* terrain TR-3: rock between the camera and you thins out: a spot nearer the camera than you, half a metre above your
@@ -16,6 +16,9 @@ float rockCut(vec3 w){if(uRock.y<=0.||w.y<uRock.x+.5)return 0.;vec4 c=uVP*vec4(w
  return (1.-smoothstep(uRock.y*.55,uRock.y,length((nd-uPlC.xy)*vec2(uAspect,1.))))*uRock.z;}
 bool rockHides(vec3 w){return rockBay(gl_FragCoord.xy)<rockCut(w);}
 `;
+/* v46: the near ring lookup, shared by the ground and the grass (their uniforms: uRingC, uRingBox, uCanvas) */
+const RING_AT_GLSL = `float ringAt(vec2 cc,out vec2 ruv){ruv=vec2(0.);if(uCanvas.z<.5)return 0.;vec2 ch=floor(cc/16.),s=mod(ch,4.);int si=int(s.x+.5)+int(s.y+.5)*4;vec2 h=uRingC[si];if(abs(h.x-ch.x)>.5||abs(h.y-ch.y)>.5)return 0.;
+ ruv=(s*16.+(cc-ch*16.))/64.;vec2 e=min(cc-uRingBox.xy,uRingBox.zw-cc);return clamp(min(e.x,e.y)/3.,0.,1.);}`;
 export const WALK_SHADERS = {
   ground: [
     `#version 300 es
@@ -25,8 +28,7 @@ void main(){vec3 p=aPos+uOrg;p.y+=curveY(p.xz);vW=p;vN=aNrm;vWall=aWall;gl_Posit
 precision highp float;in vec3 vW;in vec3 vN;in vec3 vWall;in vec4 vClip;out vec4 o;uniform sampler2D uGround,uFar,uCliff,uGNrm,uWallA;uniform vec4 uGRect;uniform vec3 uFarTint;uniform float uGStr,uGShine,uWallDef;uniform vec3 uWallCol[12];uniform sampler2D uShore;uniform vec3 uShoreR,uBed;uniform vec4 uSea;uniform vec4 uRoom;uniform vec4 uRoomT;uniform float uRoomY;uniform sampler2D uGAO;uniform vec3 uGAOR,uSkyW;uniform float uWet,uRainK,uCausW;uniform sampler2D uRing,uRingN;uniform vec2 uRingC[16];uniform vec4 uRingBox;uniform vec3 uCanvas;uniform vec4 uHole;${LIGHT_GLSL}${ROCK_GLSL}
 /* v46: the near ring: the 16 m squares round you at full size (4 x 4 of them in one texture, each in the slot its
    position mod 4 gives); the view's whole ground is the small distant picture. 0 = not in the ring */
-float ringAt(vec2 cc,out vec2 ruv){ruv=vec2(0.);if(uCanvas.z<.5)return 0.;vec2 ch=floor(cc/16.),s=mod(ch,4.);int si=int(s.x+.5)+int(s.y+.5)*4;vec2 h=uRingC[si];if(abs(h.x-ch.x)>.5||abs(h.y-ch.y)>.5)return 0.;
- ruv=(s*16.+(cc-ch*16.))/64.;vec2 e=min(cc-uRingBox.xy,uRingBox.zw-cc);return clamp(min(e.x,e.y)/3.,0.,1.);}
+${RING_AT_GLSL}
 vec3 rampW(vec3 b,float t){vec3 d0=mix(b*.55,vec3(.235,.165,.439),.30),d1=mix(b*.79,vec3(.376,.29,.596),.17),l3=mix(b,vec3(1.,.957,.769),.30),l4=mix(b,vec3(1.,.988,.918),.60);return t<.5?d0:t<1.5?d1:t<2.5?b:t<3.5?l3:l4;}
 float bayerG(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
 /* IS-5: a room turned with its door (logic/room-turn.js): the place's metres in the room's own (uRoomT: the turn's point, cos, sin; cos 1 for a room facing south) */
@@ -236,10 +238,22 @@ void main(){if(rockHides(vW))discard;float t=uTime*.001,x=vT.x*7.,y=vT.y;float s
  vec3 c=mix(uShallow*1.1,vec3(.92,.97,1.),smoothstep(.45,.8,s));float foot=smoothstep(.3,0.,vH-y);c=mix(c,vec3(.97,.99,1.),foot*.7+smoothstep(.12,0.,y)*.4);
  float sh=shadowAt(vW,.002);vec3 L=ambient(vec3(0,0,-1),1.,sh)*1.2+uSunCol*.6*sh;o=vec4(fogit(c*L,vW),.82+foot*.15);}`,
   ],
+  /* 0.1.0 alpha: the grass in the 32 px a metre pixel style, coloured by the ground it grows from. A blade is a quad
+     on the pixel grid (vP: its pixels across and up); the fragment shader draws it in whole pixels: a staircase that
+     narrows to the tip, bending in whole-pixel steps, in three flat bands (a darker foot, the ground's own colour, a
+     lighter tip). Its colour (vG) is the ground picture's at its root (the near ring's, sharper, close to you); a tuft at
+     a path's edge takes the grass beside it (kind + 8 x (direction + 1), direction in eighths of a turn) */
   grass: [
     `#version 300 es
-precision highp float;in vec2 aC;in vec4 aI;in vec4 aCol;uniform mat4 uVP;uniform vec3 uRight,uPl;uniform float uT,uWind,uGust,uBend,uHK;uniform vec3 uCut;uniform vec3 uTrail[16];uniform vec3 uPush[8];out vec4 vK;out vec3 vW;out float vY;${COMMON_GLSL}
-void main(){vec2 b=aI.xy;float kind=aCol.x,h=aI.z*uHK*(uCut.z>0.?smoothstep(uCut.z*.55,uCut.z,length(b-uCut.xy)):1.),ph=aI.w;float y=aC.y;
+precision highp float;in vec2 aC;in vec4 aI;in vec4 aCol;uniform mat4 uVP;uniform vec3 uRight,uPl;uniform float uT,uWind,uGust,uBend,uHK;uniform vec3 uCut;uniform vec3 uTrail[16];uniform vec3 uPush[8];
+uniform sampler2D uGround,uRing;uniform vec4 uGRect;uniform vec2 uRingC[16];uniform vec4 uRingBox;uniform vec3 uCanvas;
+out vec3 vW;out vec2 vP;flat out vec4 vS;flat out vec3 vK;flat out vec3 vG;${COMMON_GLSL}
+${RING_AT_GLSL}
+vec3 groundAt(vec2 w){vec2 g=vec2((w.x-uGRect.x)*uGRect.z,(uGRect.y-w.y)*uGRect.w);vec3 a=textureLod(uGround,g,0.).rgb;vec2 ruv;float rw=ringAt(g*uCanvas.xy,ruv);
+ if(rw>0.){vec2 e=vec2(1.5/2048.,0.);vec3 r=(textureLod(uRing,ruv+e,0.).rgb+textureLod(uRing,ruv-e,0.).rgb+textureLod(uRing,ruv+e.yx,0.).rgb+textureLod(uRing,ruv-e.yx,0.).rgb)*.25;a=mix(a,r,rw);}return a;}
+void main(){vec2 b=floor(aI.xy*32.+.5)/32.;float kr=aCol.x,kind=mod(kr,8.),dir=floor(kr/8.+.01),ph=aI.w;
+ vec2 sp=b;if(dir>.5){float an=(dir-1.)*.7854;sp+=vec2(cos(an),sin(an))*.35;}vG=groundAt(sp);
+ float h=aI.z*uHK*(uCut.z>0.?smoothstep(uCut.z*.55,uCut.z,length(b-uCut.xy)):1.);
  /* alpha 0.4: the place's one wind (windBend), the same that moves the props and the trees, a blade only a little its own */
  float gust=windGust(b,uT)*uGust;float sw=(windBend(b,uT,uGust)*2.6+sin(uT*.0041+ph*6.28)*.016)*uWind*(kind>4.5?1.3:kind>1.5&&kind<2.5?.3:1.);
  vec2 away=b-uPl.xz;float dl=length(away),pu=clamp(1.-dl/.85,0.,1.)*uBend;vec2 push=dl>.001?away/dl*pu*.75:vec2(0.);
@@ -247,19 +261,31 @@ void main(){vec2 b=aI.xy;float kind=aCol.x,h=aI.z*uHK*(uCut.z>0.?smoothstep(uCut
  for(int i=0;i<16;i++){vec3 tr=uTrail[i];if(tr.z<=0.)continue;vec2 d2=b-tr.xy;float l=length(d2),f=clamp(1.-l/.42,0.,1.)*tr.z*uBend;if(f>pu){pu=f;push=(l>.001?d2/l:vec2(.7,.7))*f*.8;}}
  /* v33: your buddy, folk and the billionaires hiding in it part the grass too (z: how far they reach) */
  for(int i=0;i<8;i++){vec3 q=uPush[i];if(q.z<=0.)continue;vec2 d2=b-q.xy;float l=length(d2),f=clamp(1.-l/q.z,0.,1.)*uBend;if(f>pu){pu=f;push=(l>.001?d2/l:vec2(.7,.7))*f*.75;}}
- float wid=kind<.5?.07:kind<1.5?.13:kind<2.5?.11:kind<3.5?.06:kind<4.5?.07:.09;
- float bend=y*y;vec3 p=vec3(b.x,0.,b.y)+uRight*((aC.x-.5)*wid*(1.-y*(kind>1.5&&kind<2.5?.3:1.)));p.x+=(sw*.9+push.x)*bend*h;p.z+=(sw*.25+push.y)*bend*h;p.y=aCol.z+y*h*(1.-pu*.6);
- p.y+=curveY(p.xz);vW=p;vY=y;vK=vec4(kind,aCol.y,aCol.w,gust);gl_Position=uVP*vec4(p,1.);}`,
+ /* in whole pixels: its height, its width and how far its tip leans across the screen; the lean toward or away from
+    the camera stays a smooth shear */
+ float Hp=floor(h*(1.-pu*.6)*32.+.5),Wp=kind<.5?2.:kind<2.5?4.:kind<4.5?2.:3.;
+ vec2 off=vec2(sw*.9+push.x,sw*.25+push.y)*h,rx=normalize(uRight.xz+vec2(1e-5,0.));float sa=dot(off,rx);vec2 perp=off-rx*sa;float S=floor(sa*32.+.5);
+ float x0=min(0.,S)-Wp*.5-1.,x1=max(0.,S)+Wp*.5+1.,xp=mix(x0,x1,aC.x),yp=aC.y*Hp;
+ vec3 p=vec3(b.x,0.,b.y)+uRight*(xp/32.);p.xz+=perp*aC.y;p.y=aCol.z+yp/32.;p.y+=curveY(p.xz);
+ vW=p;vP=vec2(xp,yp);vS=vec4(kind,Hp,Wp,S);vK=vec3(aCol.y,aCol.w,gust);gl_Position=Hp<1.?vec4(2.,2.,2.,1.):uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec4 vK;in vec3 vW;in float vY;out vec4 o;uniform vec3 uGlo,uGhi;uniform vec3 uFlw[4];uniform float uFlwGlow;uniform vec4 uHole;${LIGHT_GLSL}${ROCK_GLSL}
-void main(){if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y&&vW.z<uHole.w)discard;if(rockHides(vW))discard;float kind=vK.x,rn=vK.y,tint=vK.z;vec3 c=mix(uGlo,uGhi,vY)*(.86+rn*.28);vec3 dry=vec3(.78,.7,.38)*mix(.72,1.05,vY);
- if(tint>0.)c=mix(c,dry,tint*.6);else c*=vec3(1.+tint*.2,1.+tint*.06,1.+tint*.12);
- if(kind>2.5&&kind<3.5)c=mix(c,dry,.75);
+precision highp float;in vec3 vW;in vec2 vP;flat in vec4 vS;flat in vec3 vK;flat in vec3 vG;out vec4 o;uniform vec3 uFlw[4];uniform float uFlwGlow;uniform vec4 uHole;${LIGHT_GLSL}${ROCK_GLSL}
+void main(){if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y&&vW.z<uHole.w)discard;if(rockHides(vW))discard;
+ float kind=vS.x,Hp=vS.y,Wp=vS.z,S=vS.w,rn=vK.x,tint=vK.y,r=floor(vP.y);if(r<0.||r>=Hp)discard;float t=(r+.5)/Hp;
+ /* the row's width (thin blades narrow to one pixel; clover hardly narrows; a flower is a one-pixel stalk under a two-pixel head) and its place (the lean grows toward the tip) */
+ bool flw=kind>3.5&&kind<4.5,head=flw&&Hp>=4.&&r>=Hp-2.;float w=flw?(head?2.:1.):max(1.,floor(Wp*(1.-t*(kind>1.5&&kind<2.5?.3:1.))+.5));
+ float left=floor(S*t*t-w*.5+.5),k=floor(vP.x);if(k<left||k>=left+w)discard;
+ vec3 g=vG*(.94+rn*.12);vec3 dry=vec3(.78,.7,.38);
+ if(tint>0.)g=mix(g,dry,tint*.18);else g*=vec3(1.+tint*.2,1.+tint*.06,1.+tint*.12);
+ if(kind>2.5&&kind<3.5)g=mix(g,dry,.35);if(kind>4.5)g*=vec3(.9,.95,.88);
+ /* three flat bands, a pixel row at a time: the foot darker and cooler, the middle the ground's, the tip lighter and warmer */
+ float band=t<.34?0.:t<.72?1.:2.;vec3 c=band<.5?mix(g*.79,vec3(.376,.29,.596),.17):band<1.5?g*1.05:mix(g*1.12,vec3(1.,.957,.769),.14);
  /* alpha 0.4: the flowers in the grass are the place's own (uFlw: four colours; uFlwGlow: they glow at night, as the Spore Forest's caps do) */
- if(kind>3.5&&kind<4.5&&vY>.8){int f=int(rn*4.);c=f==0?uFlw[0]:f==1?uFlw[1]:f==2?uFlw[2]:uFlw[3];if(vY>.93&&f<2)c=mix(c,vec3(1.,.9,.4),.5);}
- if(kind>4.5){c*=vec3(.8,.9,.76);c=mix(c,vec3(.82,.78,.42),smoothstep(.7,1.,vY)*.3);}
- c*=1.+vK.w*.09;c=seasonal(c,vW);if(uSeason.w>0.)c=mix(c,vec3(.9,.93,.98),uSeason.w*smoothstep(.55,1.,vY)*.7);
- float sh=shadowAt(vW,.002);float ao=contactAO(vW);float occ=min(sh,ao);vec3 L=ambient(vec3(0,1,0),ao,occ)+uSunCol*(.55+.45*vY)*occ+points(vW,vec3(0,1,0));o=vec4(fogit(c*L+(kind>3.5&&kind<4.5&&vY>.8?c*uFlwGlow:vec3(0.)),vW),0.);}`,
+ if(head){int f=int(rn*4.);c=f==0?uFlw[0]:f==1?uFlw[1]:f==2?uFlw[2]:uFlw[3];if(r>=Hp-1.&&k==left&&f<2)c=mix(c,vec3(1.,.9,.4),.5);}
+ c*=1.+vK.z*.09;c=seasonal(c,vW);if(uSeason.w>0.&&band>1.5)c=mix(c,vec3(.9,.93,.98),uSeason.w*.7);
+ /* lit as the flat ground round it is, so the middle band is the ground's own colour */
+ float sh=shadowAt(vW,.002);float ao=contactAO(vW);float occ=min(sh,ao);vec3 L=ambient(vec3(0,1,0),ao,occ)+uSunCol*max(uSunDir.y,0.)*occ+points(vW,vec3(0,1,0));
+ o=vec4(fogit(c*L+(head?c*uFlwGlow:vec3(0.)),vW),0.);}`,
   ],
   face: [
     `#version 300 es

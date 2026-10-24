@@ -3,7 +3,9 @@
 /* ================= META STATE (roguelite track RL-3) =================
    What lasts between runs, kept in the save as saveData.meta: the three currencies other than money (Research, the
    unlock currency; Scrap, the building material; Crests, the rare boss currency), the unlocks, each hub
-   building's level, how many runs were played and won, and the highest Expedition (the difficulty) open. Money ($,
+   building's level, how many runs were played and won, the highest Expedition (the difficulty) open, and (RL-R2) the
+   badges kept for good, by type (`{ water: 1 }`: the first win over a leader of a type opens that type's field move,
+   logic/run-side.js). Money ($,
    saveData.se) is not here: it is the run's working field. Logic only: no DOM, runs in Node
    (tools/test/meta-state.test.mjs). The sections that spend these (unlocks.json, buildings.json) come in RL-11. */
 /** @import { Meta } from '../../types/save-data' */
@@ -28,7 +30,17 @@ expose({
 /** a new player's meta state: nothing earned, Expedition I open */
 /** @returns {Meta} */
 export function newMeta() {
-  return { research: 0, scrap: 0, crests: 0, unlocks: {}, buildings: {}, runs: 0, wins: 0, expedition: 1 };
+  return {
+    research: 0,
+    scrap: 0,
+    crests: 0,
+    unlocks: {},
+    buildings: {},
+    runs: 0,
+    wins: 0,
+    expedition: 1,
+    badges: {},
+  };
 }
 export const META_MAX = 1e12,
   META_IDS = 200,
@@ -53,7 +65,8 @@ export function validMeta(o) {
     o.wins <= o.runs &&
     wholeIn(o.expedition, 1, META_EXPEDITIONS) &&
     recordOf(o.unlocks, META_IDS, v => v === 1) &&
-    recordOf(o.buildings, META_IDS, v => wholeIn(v, 0, 99))
+    recordOf(o.buildings, META_IDS, v => wholeIn(v, 0, 99)) &&
+    recordOf(o.badges, 32, v => v === 1)
   );
 }
 /** a stored meta filled out with anything new (fields a later version adds); one that still fails the check is

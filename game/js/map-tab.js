@@ -36,12 +36,12 @@ provide({ paintWorldMapCard });
 /* to-module: end */
 export function renderWorldMapTab() {
   if (saveData.run) runHint('map');
-  /* RL-7: on a run, its day and deadline (ui-run-kit.js pb-day-chip) */
+  /* RL-7: on a run, its day (ui-run-kit.js pb-day-chip; RL-R2: no deadline) */
   const run = saveData.run && saveData.run.map ? saveData.run : null,
     M = saveData.meta,
     /* RL-8: on a run, the way to give it up; in the hub, once a run has ended, what the runs brought home */
     day = run
-      ? `<pb-day-chip class="map-day" day="${run.clock}" deadline="${run.deadline}"></pb-day-chip><button class="pb small quiet" data-a="rungiveup">Give up the run</button>`
+      ? `<pb-day-chip class="map-day" day="${run.clock}"></pb-day-chip><button class="pb small quiet" data-a="rungiveup">Give up the run</button>`
       : M && M.runs
         ? `<p class="map-meta"><pb-coin kind="research" value="${M.research}" label="Research"></pb-coin>${M.scrap ? ` <pb-coin kind="scrap" value="${M.scrap}" label="Scrap"></pb-coin>` : ''}${M.crests ? ` <pb-coin kind="crests" value="${M.crests}" label="Crests"></pb-coin>` : ''}</p>`
         : '';
