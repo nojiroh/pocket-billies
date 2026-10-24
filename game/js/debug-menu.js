@@ -59,7 +59,8 @@ import {
 } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { RUN_SIDE_MOD } from './logic/run-side.js';
-import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
+import { MAPGEN_LAYOUTS } from './logic/mapgen.js';
+import { RUN_LAYOUT_MOD, RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
 import { perkOfferMake, perkTake } from './logic/perks.js';
 import { rewardDataGame, rewardOfferMake } from './logic/rewards.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
@@ -205,7 +206,16 @@ function debugHTML() {
         'dbgRunSide',
         [['', 'Side area: as the seed rolls'], ...debugSideOptions()],
         uiState.dbgRunSide || ''
-      )}${debugButtonHTML('badgesall', 'Keep every badge', 'gold')}${debugButtonHTML('badgesnone', 'No badges')}</div><p class="note">RL-R2: a side area forced on the run (a detour or an alternate path behind Surf, Rock Smash or Cut); badges kept: ${escapeHtml(Object.keys((saveData.meta || {}).badges || {}).join(', ') || 'none')}.</p><p class="note">From Copperleaf, as the mast does (Expedition I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (for measuring on a phone; the debug log has the frame times).</p>`;
+      )}${debugSelectHTML(
+        'dbgRunLayout',
+        [
+          ['', 'Route layout: as the seed rolls'],
+          ...Object.entries(MAPGEN_LAYOUTS)
+            .filter(([k]) => k !== 'none')
+            .map(([k, L]) => [k, `Every route: ${L.name}`]),
+        ],
+        uiState.dbgRunLayout || ''
+      )}${debugButtonHTML('badgesall', 'Keep every badge', 'gold')}${debugButtonHTML('badgesnone', 'No badges')}</div><p class="note">RL-R2: a side area forced on the run (a detour or an alternate path behind Surf, Rock Smash or Cut); badges kept: ${escapeHtml(Object.keys((saveData.meta || {}).badges || {}).join(', ') || 'none')}.</p><p class="note">From Copperleaf, as the mast does (Expedition I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (for measuring on a phone; the debug log has the frame times). Route layout (RT-1): every laid-out place (routes, the landing, the mini-bosses' and the boss's) gets that plan.</p>`;
   const places = `<div class="dbg-row">${debugSelectHTML(
     'dbgNode',
     LOCATIONS.map((r, i) => [i, `${i}. ${r.name}`]),
@@ -531,9 +541,11 @@ function debugAction(x) {
           .slice(0, 20),
         short = !!($('#dbgRunShort') || {}).checked,
         mountains = !!($('#dbgRunMountains') || {}).checked,
-        side = v('dbgRunSide') || '';
+        side = v('dbgRunSide') || '',
+        layout = v('dbgRunLayout') || '';
       uiState.dbgRunSeed = sd;
       uiState.dbgRunSide = side;
+      uiState.dbgRunLayout = layout;
       uiState.dbgRunShort = short;
       uiState.dbgRunMountains = mountains;
       if (!runStartable())
@@ -542,6 +554,7 @@ function debugAction(x) {
       runTakeOff(sd || undefined, short ? { rows: 5, minibosses: 1 } : undefined, [
         ...(mountains ? [RUN_MOD_MOUNTAINS] : []),
         ...(side ? [RUN_SIDE_MOD + side] : []),
+        ...(layout ? [RUN_LAYOUT_MOD + layout] : []),
       ]);
       return;
     }
