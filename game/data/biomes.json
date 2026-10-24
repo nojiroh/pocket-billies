@@ -570,5 +570,40 @@
    {"k":"frog","n":4}
   ],
   "from": "tanglewild"
+ },
+ "cave": {
+  "name": "Cave",
+  "climate": "dry",
+  "pool": "cave",
+  "battleStage": "grotto",
+  "mood": "cave",
+  "ground": {
+   "base": "k",
+   "patches": {"r":0.3,"X":0.08,"v":0.2},
+   "verge": "v",
+   "floor": "k",
+   "bank": "r",
+   "rock": "r",
+   "tall": "X"
+  },
+  "road": "v",
+  "water": "spring",
+  "trees": {"stalagmite":4,"stalagmite_b":4,"crystal_cluster":1,"crystal_spire":1},
+  "shrubs": {"crystal":2,"crystal_purple":1,"mushroom_blue":2,"mushroom":2},
+  "plants": {"mushroom_blue":3,"mushroom":3,"mushroom_brown":2},
+  "rocks": {"boulder":3,"boulder_b":3,"rocks":3,"rocks_b":3,"rocks_c":2,"scree":2,"boulder_granite":1},
+  "tall": {"mushroom_blue":3,"mushroom":2,"mushroom_brown":2},
+  "look": {
+   "sky": ["#221C36","#342C50","#54486E"],
+   "haze": "#463E62",
+   "hazeD": 30,
+   "amb": "drip",
+   "tint": "#2A2446",
+   "far": "cave",
+   "farH": 9,
+   "dark": 1,
+   "wind": 0
+  },
+  "from": "glimmershaft"
  }
 }

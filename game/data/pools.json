@@ -46,5 +46,9 @@
  "jungle": {
   "lv": [3,6],
   "list": [["swift0",22],["zuck0",22],["kardashian0",18],["trump0",16],["gates0",5],["bezos0",3],["musk0",2]]
+ },
+ "cave": {
+  "lv": [3,6],
+  "list": [["trump0",30],["kardashian0",24],["zuck_cloud0",22],["swift0",14],["gates0",4],["musk0",3],["bezos0",3]]
  }
 }
