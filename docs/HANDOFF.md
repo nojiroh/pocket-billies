@@ -35,8 +35,9 @@ in twice (RL-R2a, then #177's grass): no conflicts. Tag `rl-12b-done` for the ow
 - Verified: lint, typecheck, check:modules, format:check, check:data and the unit tests after every commit (877 ->
   880). The new in-game phase alone headless (15 s) and check-fast `--only=Encounters` (26.5 s), both passed.
   Screenshots of a waystation and a stall (the tent and the stall by the road, their pills). Smoke 6 of 6 (219 s).
-  **Skipped on the owner's word**: the full quick check, the whole in-game test, the slow unit tests (mapgen-lots run
-  alone: passed) and the full check-fast run (CI runs it on the PR).
+  The slow unit tests, after CI's lint job caught run-world-real's snapshot (a town there is now a stall: remade on
+  purpose): 50 of 50. **Skipped on the owner's word**: the full quick check, the whole in-game test and the full
+  check-fast run (CI runs it on the PR).
 - Risky / open:
   - The market tent has no 3D model (a flat sprite beside the low-poly stall and buildings). It reads fine in the
     screenshot; a model (or another prop) is the owner's call.
