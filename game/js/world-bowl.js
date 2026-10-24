@@ -20,6 +20,8 @@ import { canEnter, distanceText, tripTo } from './logic/rules.js';
 import { runMarkDraw } from './logic/run-marks.js';
 import {
   BOWL_GROUND_EXTENT,
+  BOWL_ISLAND_BASE,
+  bowlBaseHeight,
   bowlCoastAt,
   bowlCompass,
   bowlGridHeight,
@@ -77,7 +79,13 @@ import {
   bowlTreeStyle,
 } from './logic/bowl-things.js';
 import { bowlHasCoast, bowlIslandHeights, bowlIslandMapId, bowlIslandPlotThings } from './logic/bowl-island.js';
-import { FLOAT_STRIDE, floatIslandMesh } from './logic/float-island.js';
+import {
+  FLOAT_ISLAND,
+  FLOAT_STRIDE,
+  floatGroundHeight,
+  floatGroundMesh,
+  floatIslandMesh,
+} from './logic/float-island.js';
 import { orbitYawAt } from './logic/camera-orbit.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { escapeHtml, reducedMotion, saveData, uiState } from './game-state.js';
@@ -562,7 +570,17 @@ function worldBowlFloatIsland() {
     F = floatIslandMesh(coast, 0, { lift: bowlWaterLevel, seed: 1 }),
     top = bowlWaterLevel(F.c[0], F.c[1]);
   /* the pivot a little under the land, so the island sits in the screen's upper part, over the place's card */
-  g.float = { ...F, i, top, th: top - F.r * 0.7, y0: top - F.depth * 2.2, gpu: null };
+  /* its ground, finer than the bowl's grid (the owner: "less low poly"), once its own heights are in */
+  const P = g.sea && g.sea.places.find(q => q && q.poly && q.hAt),
+    fine = P
+      ? floatGroundMesh(
+          P.poly,
+          (x, y) => bowlBaseHeight(x, y) + BOWL_ISLAND_BASE + Math.max(0, P.hAt(x, y)),
+          bowlWaterLevel,
+          FLOAT_ISLAND.cell / BOWL_METRES
+        )
+      : null;
+  g.float = { ...F, i, top, th: top - F.r * 0.7, y0: top - F.depth * 2.2, gpu: null, fine, fineGpu: null };
   return g.float;
 }
 /* the camera's limits: the floating island's orbit, or the bowl's */
@@ -745,6 +763,8 @@ function worldBowlSpots() {
     water: null,
     terrain: null,
     seaMs: Math.round(performance.now() - t0),
+    /* the sea's input: the floating island's coast and its own heights (worldBowlFloatIsland) */
+    sea,
     /* RL-8b: an island world (the hub's island, a run's own land): sea to the rim, few rivers */
     isle: !!bowlIsles(sea),
     /* IS-7: the island map drawn from its own coast and ground (its streams are its own: no rivers made on it) */
@@ -1115,8 +1135,9 @@ function worldBowlShadows(g) {
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uSM, false, SM);
     gl.uniform4f(p.U.uIsle, F ? F.c[0] : 0, F ? F.c[1] : 0, F ? F.r * 1.25 : 0, F ? 1 : 0);
-    gl.bindVertexArray(g.mesh.vao);
-    gl.drawElements(gl.TRIANGLES, g.mesh.n, gl.UNSIGNED_INT, 0);
+    const land = F && F.fineGpu ? F.fineGpu : g.mesh;
+    gl.bindVertexArray(land.vao);
+    gl.drawElements(gl.TRIANGLES, land.n, gl.UNSIGNED_INT, 0);
     /* the buildings and trees cast shadows too */
     if (g.things && g.things.gpu) worldBowlThingsDraw(g.things, SM, null, true);
     gl.bindVertexArray(null);
@@ -1936,6 +1957,11 @@ function worldBowlWaterMesh() {
 function worldBowlGpu() {
   const g = worldBowl.ground;
   worldBowlFloatCam();
+  const FI = g.float;
+  if (FI && FI.fine && (!FI.fineGpu || FI.fineGpu.gl !== gpuState.gl)) {
+    FI.fineGpu = uploadMesh(FI.fine.V, FI.fine.I, [['aPos', 3, 0]], 12);
+    FI.fineGpu.gl = gpuState.gl;
+  }
   if (!g.mesh || g.gl !== gpuState.gl) {
     g.gl = gpuState.gl;
     g.mesh = worldBowlMesh();
@@ -2432,8 +2458,9 @@ export function worldBowlRender(t) {
   gl.bindTexture(gl.TEXTURE_2D, g.lines ? g.lines.t : gpuState.white);
   gl.uniform1i(U.uRoute, 4);
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindVertexArray(g.mesh.vao);
-  gl.drawElements(gl.TRIANGLES, g.mesh.n, gl.UNSIGNED_INT, 0);
+  const land = FI && FI.fineGpu ? FI.fineGpu : g.mesh;
+  gl.bindVertexArray(land.vao);
+  gl.drawElements(gl.TRIANGLES, land.n, gl.UNSIGNED_INT, 0);
   /* the floating island's rock, under its land */
   if (FI) {
     const R = worldBowlFloatGpu(FI),
@@ -2703,6 +2730,9 @@ function worldBowlSkyGpu(S) {
 }
 /* where the ground or the water is under a point (clouds float above whichever is higher) */
 function worldBowlSkyFloor(x, y) {
+  const F = worldBowl.ground && worldBowl.ground.float,
+    h = F && F.fine ? floatGroundHeight(F.fine, x, y) : null;
+  if (h != null) return Math.max(h, bowlWaterLevel(x, y));
   return Math.max(bowlSurface(x, y), bowlWaterLevel(x, y));
 }
 /* the clouds this frame: which show, their puffs as instances (back to front), their shadows on the ground */
