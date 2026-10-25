@@ -33,6 +33,10 @@ My firm art commitments: terrain textures and the airship style (low-poly models
   boulder_snow, boulder_basalt, rocks_basalt, lava_rock, basalt_columns; the cave's stalagmite, stalagmite_b, crystal,
   crystal_purple, crystal_cluster, crystal_spire, cave_house. Flat on purpose (the owner): the 11 ground decals and the
   flat plants, with sunflowers, crops, molehill and roots counted as flat.
+- Batch 11 part 2 (2026-10-25): those 23 are models (tools/build-props-batch11b.py; showcase `test_props_biomes`).
+  Every standing prop the game flow shows is now a model; what stays a picture is flat on purpose. Batch 11 is done,
+  waiting for the owner's phone check. Next in this phase: task 10 (a cheap far version and instancing: the jungle's
+  broadleaf trees cost the most draws, see HANDOFF.md), then tasks 3, 5-7, 9 and 11.
 
 ## Tasks: scope first
 1. List which props the maps, rooms, the opening, the ranch and the world map still use. Delete the unused ones.

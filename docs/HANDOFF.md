@@ -2,6 +2,48 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Phase 09 batch 11 part 2 - The run biomes' trees, rocks and cave things as models - 2026-10-25
+Branch `ccr-abb116a0-en5q2d` (part 1's). Plan approved in Plan Mode (relayed from the owner's session: "continue the
+remaining props"; the vines as cut strips, the palm fronds modelled, no `phase-09-done` tag).
+- Changed (tools/build-props-batch11b.py, swapped in under their own keys like batches 1-11 part 1; rerunnable):
+  - **Trees (8)**: tree_pine_snow, _b, _small (batch 10's conifers: the drawn snowy tiers as bands on a modelled mast);
+    tree_olive (batch 1's broadleaf: a gnarled trunk splitting in two, six clumps cut from the picture); tree_jungle
+    (a pale trunk on brown buttress roots, the front leaf layer laid over the crown before it is cut into six clumps,
+    the back leaf layer behind, the vines as two cut sheets: every other vine in front of the trunk, the rest behind);
+    tree_dead (every limb modelled, bent in depth); palm_tree and palm_small (a ringed trunk following the drawing's
+    curve, eight modelled fronds with leaflet pairs, young fronds, coconuts).
+  - **Rocks (8)**: boulder, boulder_b, boulder_mossy (a moss cap, drips, grass, a toadstool), boulder_snow (snow caps),
+    boulder_basalt, rocks_basalt (column stubs), lava_rock (orange cracks all round, its glow), basalt_columns (eleven
+    hexagonal prisms with pale tops and joints) as IS-4's faceted stones.
+  - **Cave (7)**: stalagmite, stalagmite_b (stacked tapering cones), crystal, crystal_purple, crystal_cluster,
+    crystal_spire (hexagonal prisms with pointed tips; their sparkles and glows moved to the same place in metres),
+    cave_house (a rock mound, a moss top, a stone porch round an arched door at its door point, a round lit window, a
+    lantern, a chimney with its smoke; moved back so its 4 x 2.4 m footprint is behind its base point, as drawn).
+  - Base points, `solid` and footprints unchanged. The rocks, crystals and cave house keep their size in metres; the
+    trees cut from their pictures come out at 32 px/m like batch 10's (about 6% taller, as the pines beside them).
+    The crystals, columns and cave house stand square (`vary` rot/lean 0); trees, rocks and stalagmites still turn.
+  - Showcase map `test_props_biomes` (six rows). Snapshots remade on purpose: check-data's (143 data files, was 142)
+    and the map generator's golden scene "feature" (mapgenPutProp gives a model its size range and never scales a
+    picture, so the glade's mossy boulders, now a model, carry a size s 0.94; nothing else in the scene moved).
+- Draws a frame at phone size (390 x 760, the game's defaults, 20 frames; pictures = 3D props off), in the run
+  fixture with its nodes' biomes set and its world rebuilt (names as the game gave them):
+  Tundra Waystation 266 -> 299, Jungle Mini-boss 352 -> 596, Volcano Mini-boss 650 -> 559, Coast Waystation (with
+  volcano rocks) 109 -> 116, Bramble Grove Route (a cave side area) 649 -> 523, Bramble Grove Mini-boss (cave)
+  795 -> 556, Bramble Grove Town (cave houses) 556 -> 531. The jungle's first model drew 642: each picture inside a
+  model costs a draw and a jungle place has twenty-odd jungle trees, so the tree went from 19 pictures to 10. What is
+  left in the jungle: leaf pictures +134, the models themselves +48, the models in the water's reflection +35.
+- Risky: the jungle costs about 70% more draws than with pictures (broadleaf trees in batch 1's style: modelled
+  limbs and cut leaf clumps; the oak has eight clumps). Task 10 (a cheap far version, instancing) is where to win
+  it back; fewer clumps would flatten the crown. The palms are the heaviest models in vertices (128 parts: the fronds'
+  leaflets), and modelled fronds don't sway (only pictures sway). The crystals can't glow on their own (solid parts
+  have no emissive light): they are brighter colours plus their sparkle and glow effects.
+- Verified: lint, type-check, unit tests (917 pass), check-data, the smoke check (6 of 6); headless pictures of each
+  `test_props_biomes` row (game camera and turned), and the seven run places above with models and with pictures (no
+  page errors). Full quick check: running when this was written; its result follows in the next commit.
+- Phone check wanted: a tundra, a jungle, a volcano and a cave run (a cave town for the cave houses and a crystal
+  spire); turn the camera round the palms, the jungle trees and the crystals; export the debug log.
+- Next: batch 11 is done. Phase 09 task 10 (far versions and instancing, the jungle's draws first), or the owner's pick.
+
 ### Phase 09 batch 11 part 1 - The rooms' furniture and the generator's made things as models - 2026-10-25
 Branch `ccr-abb116a0-en5q2d`: the session's own; BRANCHES.md would name it `props/batch11-rooms`, but a cloud
 session can push only to the branch it was started on. Plan approved in Plan Mode. The owner's ask: of the 47
