@@ -256,14 +256,17 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
  rip+=vec2(ring*.012);
  /* WA-1: the mirror moves by whole pixels (rip is the same over a texel and steps in time); the picture in it stays smooth */
  vec2 s=pix>.5?(gl_FragCoord.xy+floor(rip*uRes+.5))/uRes:gl_FragCoord.xy/uRes+rip;vec4 rf=texture(uRefl,s);rf.a*=clamp(1.-abs(vW.y-uLevel)*3.,0.,1.);vec3 v=normalize(uEye-vW);float fr=(.3+.55*pow(1.-max(v.y,0.),2.))*uReflK*(1.-kb.y*.75);
- vec3 shal=uShallow*uKS[K],deep=uDeep*uKD[K];vec3 base=pwTone(shal,deep,clamp(dep*.92+(1.-vS2)*.08,0.,1.),pc);float sh=shadowAt(vW,.002);
+ vec3 shal=uShallow*uKS[K],deep=uDeep*uKD[K];
+ /* water track WA-4: reef shallows: the sea's wadeable shallows (they ride below the kind, ground-mesh.js) and its water near the shore turn a clear turquoise; the bed shows through */
+ float reef=(pix>.5&&K==6)?max(clamp((float(K)-vDK.y)/.45,0.,1.),1.-smoothstep(.12,.5,dep)):0.,depC=mix(dep,min(dep,.28),reef);
+ shal=mix(shal,vec3(.36,.98,.9),reef*.8);vec3 base=pwTone(shal,deep,clamp(depC*.92+(1.-vS2)*.08,0.,1.),pc);float sh=shadowAt(vW,.002);
  /* fish: dark shapes under the surface, only where it is deep enough to hide them */
  float fishK=0.;for(int i=0;i<4;i++){vec4 F=uFish[i];if(far>.5)break;if(F.w<=0.)continue;vec2 d=wp-F.xy;vec2 fw=vec2(cos(F.z),sin(F.z));float lx=dot(d,fw)/F.w,ly=dot(d,vec2(-fw.y,fw.x))/F.w;
   float wig=sin(ts*9.+F.x*3.)*.04*(lx<0.?-lx*4.:0.);ly+=wig;float body=step(lx*lx/.09+ly*ly/.0081,1.);float tail=step(-.42,lx)*step(lx,-.24)*step(abs(ly),(-lx-.22)*.7);fishK=max(fishK,max(body,tail));}
  base*=1.-fishK*.45*smoothstep(.2,.45,dep);
  base*=mix(uShTint*.85,vec3(1.),sh)*(.55+.45*uAmbK);
  /* light on the bed, brightest in the clear shallows */
- float cz=far>.5?0.:caust(wp*1.5,ts*(.6+.4*rk));cz=(pix>.5?step(.3,cz)*.8*pwQ(1.-dep,3.,pc):cz*(1.-dep))*ka.y*uCaus;base+=uSunCol*cz*.32*sh;
+ float cz=far>.5?0.:caust(wp*1.5,ts*(.6+.4*rk));cz=(pix>.5?step(.3,cz)*.8*pwQ(1.-depC,3.,pc)*(1.+reef*.6):cz*(1.-dep))*ka.y*uCaus;base+=uSunCol*cz*.32*sh;
  base+=shal*kb.x*(.6+.4*sin(ts*1.3+wp.x*1.7+wp.y));
  vec3 refl=mix(uSkyR,rf.rgb,rf.a);vec3 c=mix(base,refl,clamp(fr,0.,1.));
  float foam=(pwHard(.75,1.,vS2+(r1-.5)*.35)*(.6+.4*sin(ts*2.+wp.x*3.))+flowing*pwHard(.6,.9,r2)*.5)*uFoam*ka.z;
@@ -282,7 +285,7 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
  if(kb.z>0.){vec2 dw=wp+vec2(sin(ts*.05),cos(ts*.04))*.4;float pch=pwHard(.55,.75,lnoise(dw*.7)+(1.-dep)*.3);float speck=step(.45,fract(sin(dot(floor(dw*pr),vec2(12.9898,78.233)))*43758.5));
   float wd=pch*speck*kb.z;c=mix(c,mix(vec3(.36,.5,.16),vec3(.55,.66,.24),speck*fract(dw.x*3.1))*(.55+.45*sh)*(.6+.4*uAmbK),clamp(wd,0.,1.));}
  /* v47: whitecaps on the open sea: small crests that come and go, only out where it is deep */
- if(K==6){vec2 q=uSea.z>.5?vec2(dot(w,vec2(-rd.y,rd.x)),dot(w,rd))*vec2(2.1,4.6)+vec2(ts*.05,ts*.24):w*vec2(2.1,4.6)+vec2(ts*.21,ts*.09);float wc=lnoise(q)*lnoise(q*1.9+vec2(5.2,1.3)-vec2(ts*.17,0.));wc=pwHard(.46,.52,wc)*pwQ(smoothstep(.45,.85,dep),3.,pc)*uFoam*(uSea.z>.5?1.-calm*.85:1.);c=mix(c,vec3(.95,.98,1.)*(.75+.25*sh),clamp(wc*.65,0.,.65));}
+ if(K==6){vec2 q=uSea.z>.5?vec2(dot(w,vec2(-rd.y,rd.x)),dot(w,rd))*vec2(2.1,4.6)+vec2(ts*.05,ts*.24):w*vec2(2.1,4.6)+vec2(ts*.21,ts*.09);float wc=lnoise(q)*lnoise(q*1.9+vec2(5.2,1.3)-vec2(ts*.17,0.));wc=pwHard(.46,.52,wc)*pwQ(smoothstep(.45,.85,depC),3.,pc)*uFoam*(uSea.z>.5?1.-calm*.85:1.);c=mix(c,vec3(.95,.98,1.)*(.75+.25*sh),clamp(wc*.65,0.,.65));}
  /* IS-3: the swell, long low bands rolling in toward the island, and the surf: lines of foam that roll in over the
     shallows and break along the whole coast, broken up along it; a cove gets little of either */
  if(seaK>0.){float rr=dot(vW.xz-uSea.xy,rd);c*=1.+sin(rr*.55+t*1.3+lnoise(wp*.05)*3.)*.045*seaK*smoothstep(.1,.6,dep);
@@ -309,7 +312,7 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
   vec3 icr=mix(ic,mix(uSkyR,rf.rgb,rf.a*.5),clamp(fr*.6,0.,.5));float isn=lnoise(wp*5.+ts*.02),isv=pow(max(isn-.6,0.)*2.5,3.)*1.5;icr+=uSunCol*(pix>.5?pwQ(min(isv,1.),3.,pc)+step(.86,lnoise(wp*11.+ts*.05))*step(.62,isn)*.4:isv)*sh;
   o=vec4(fogit(icr,vW),.97);return;}
  /* the shallows let the bed show; murky water never does */
- float a=mix(clamp(ka.x/max(uClar,.05),0.,1.),.94,smoothstep(0.,.8,dep));a=mix(a,.97,kb.y*.6);a=max(a,clamp(foam,0.,1.)*.9);
+ float a=mix(clamp(ka.x/max(uClar,.05),0.,1.),.94,smoothstep(0.,.8,depC));a=mix(a,max(a,.8),reef);a=mix(a,.97,kb.y*.6);a=max(a,clamp(foam,0.,1.)*.9);
  /* IS-3: the sea past the scene's edge has no land under it beyond the 8 m border: there it is opaque */
  {vec2 sz=1./max(uShoreR.xy,vec2(1e-4));float ou=max(max(-vW.x,vW.x-sz.x),max(-vW.z,vW.z-sz.y));a=mix(a,1.,smoothstep(3.,7.,ou));}
  o=vec4(fogit(c,vW),a);}`,
