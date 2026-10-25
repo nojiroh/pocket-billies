@@ -275,7 +275,8 @@ export function bowlTreeFromRecipe(rec, leafOf) {
       /* a tube from its first point to its last through its middle one, five sides */
       const P = L.pts,
         keep = P.length > 2 ? [P[0], P[Math.floor(P.length / 2)], P[P.length - 1]] : P,
-        col = bowlHexColour(L.col || '#7a5a3c');
+        /* bark brown when the limb names no colour */
+        col = L.col ? bowlHexColour(L.col) : [0.48, 0.35, 0.24];
       for (let s = 0; s + 1 < keep.length; s++) {
         const A = at(keep[s]),
           B = at(keep[s + 1]),
