@@ -20,7 +20,9 @@
  "checks": [
   {"from":[20,3],"to":[50,8.2],"reach":true,"what":"the hub to the foot of the tall fall"},
   {"from":[1.2,9.4],"to":[5.5,9.3],"reach":true,"what":"wade into the pond's shallows"},
-  {"from":[41,6.5],"to":[45.5,6.5],"reach":false,"what":"the lava pool stays shut (should be impossible)"}
+  {"from":[41,6.5],"to":[45.5,6.5],"reach":false,"what":"the lava pool stays shut (should be impossible)"},
+  {"from":[4.5,8.5],"to":[8.5,8.5],"reach":true,"what":"surf out onto the pond's deep middle","surf":true},
+  {"from":[4.5,8.5],"to":[8.5,8.5],"reach":false,"what":"deep water stays shut without Surf (should be impossible)"}
  ],
  "shots": [
   {"x":8,"z":4,"yaw":0,"label":"pond"},

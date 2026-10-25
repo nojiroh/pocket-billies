@@ -32,8 +32,10 @@ def hub(s, x, z):
     s.d['hub'] = [x, z]; s.clear.append((x, z, 1.2))
 
 
-def check(s, a, b, reach, what):
-    s.d['checks'].append({'from': [round(a[0], 2), round(a[1], 2)], 'to': [round(b[0], 2), round(b[1], 2)], 'reach': reach, 'what': what})
+def check(s, a, b, reach, what, surf=False):
+    c = {'from': [round(a[0], 2), round(a[1], 2)], 'to': [round(b[0], 2), round(b[1], 2)], 'reach': reach, 'what': what}
+    if surf: c['surf'] = True                                                       # WA-6b: walked with Surf on
+    s.d['checks'].append(c)
 
 
 def shot(s, x, z, label, yaw=0):
@@ -143,6 +145,8 @@ def t_water():
     check(s, (20, 3), (50, 8.2), True, 'the hub to the foot of the tall fall')
     check(s, (1.2, 9.4), (5.5, 9.3), True, "wade into the pond's shallows")                # WA-6a: shallows are waded
     check(s, (41, 6.5), (45.5, 6.5), False, 'the lava pool stays shut (should be impossible)')
+    check(s, (4.5, 8.5), (8.5, 8.5), True, "surf out onto the pond's deep middle", surf=True)   # WA-6b: Surf
+    check(s, (4.5, 8.5), (8.5, 8.5), False, 'deep water stays shut without Surf (should be impossible)')
     s.patches('G', .6, 6, seed=6)
     return s.out(7, 'wood')
 
