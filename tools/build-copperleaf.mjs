@@ -153,10 +153,18 @@ const pairs = [
   [oldBuildings.find(B => B.act === 'home'), plotOf('home')],
   [oldBuildings.find(B => B.k === 'well'), well],
   [{ k: 'shop', x: 0, z: 0, label: 'General store' }, plotOf('shop')],
-  /* HB-4b: the inn and the library (the archive) stand on their plots as the existing models, closed (HB-5 gives them
-     their rooms and names); the Workshop's, the Gene Bank's, the station's, the lighthouse's and the windmill's plots
-     wait for their models (HB-5, HB-7) */
-  ...['inn', 'library'].filter(k => plotOf(k)).map(k => [{ k, x: 0, z: 0 }, plotOf(k)]),
+  /* HB-4b: the inn and the library (the archive) stand on their plots, closed (HB-5 gives them their rooms and names);
+     hub placing: HB-5's Workshop and Gene Bank on theirs, the lighthouse on the cove, the windmill by the farm */
+  ...[
+    ['inn', 'inn'],
+    ['library', 'library'],
+    ['workshop', 'workshop'],
+    ['genebank', 'gene_bank'],
+    ['lighthouse', 'lighthouse'],
+    ['windmill', 'windmill'],
+  ]
+    .filter(([L]) => plotOf(L))
+    .map(([L, k]) => [{ k, x: 0, z: 0 }, plotOf(L)]),
   ...oldCottages.map((B, i) => [B, townHouses[i]]),
   /* the new cottages: the two kinds and their looks taken in turn */
   ...[...townHouses.slice(oldCottages.length), ...otherHouses].map((L, i) => [
