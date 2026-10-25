@@ -18,6 +18,7 @@ import {
   LOCATIONS,
   MOVES,
   PERKS,
+  QUESTS,
   RULES,
   SHOPS,
   SPECIES,
@@ -33,7 +34,7 @@ import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
 import { incomeRate } from './logic/ranch-income.js';
 import { pastureBillies, pastureIn, pastureZone } from './logic/pasture.js';
-import { runRestore } from './logic/run-state.js';
+import { runRestore, validRun } from './logic/run-state.js';
 import { RUN_SIDE_MOD, runSideOpen } from './logic/run-side.js';
 import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
@@ -41,6 +42,7 @@ import { runClinic, runFoes, runHealCost, runShopOpen, runWareHeals } from './lo
 import { perkOfferMake } from './logic/perks.js';
 import { eventAt } from './logic/encounters.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
+import { questOffer, questTake } from './logic/run-quests.js';
 import { runUnlocks } from './logic/unlocks.js';
 import { runStartOn, runStartPlan } from './logic/run-start.js';
 import { loadAllMaps } from './map-files.js';
@@ -107,6 +109,7 @@ import { runClinicEach, runJump, runTakeOff } from './run.js';
 import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
 import { encounterOpen } from './encounter-screen.js';
+import { questData } from './quest-board.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
@@ -1289,6 +1292,17 @@ async function runFullTest(mode) {
             uiState.modal.btns[0].f();
             if (saveData.se !== se - cost)
               throw new Error(`the clinic took ${plural(se - saveData.se, 'Money')}, not ${cost}`);
+            /* TW-3: the town has a notice board and a quest giver; its quest (when it has one) is taken and kept
+               by the save's check */
+            const townScene = mapById(LOCATIONS[town].mapId) || {};
+            if (!(townScene.props || []).some((/** @type {any} */ p) => p.act === 'notice'))
+              throw new Error('the town has no notice board');
+            if (!(townScene.people || []).some((/** @type {any} */ p) => p.quest))
+              throw new Error('the town has no quest giver');
+            const offer = questOffer(saveData.run, town - 1, questData());
+            if (offer && !questTake(saveData.run, town - 1, offer, QUESTS)) throw new Error('the quest wasn’t taken');
+            if (!validRun(JSON.parse(JSON.stringify(saveData.run))))
+              throw new Error('a run with a quest fails validRun');
             /* RL-12: the town's shop sells the day's Perk; the mini-boss leaves a pick; the boss's battle carries
                both */
             uiState.modal = null;

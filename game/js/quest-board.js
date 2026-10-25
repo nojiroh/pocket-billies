@@ -32,7 +32,7 @@ provide({ questArrived, questMarked, questToasts });
 /* to-module: end */
 /** the run's quest data on the page: the towns whose scene has a notice board, the world's route trainers by node
  * @returns {import('./logic/run-quests.js').QuestData} */
-function questData() {
+export function questData() {
   const run = saveData.run,
     nodes = (run && run.map && run.map.nodes) || [],
     at = /** @type {Record<number, number>} */ ({});

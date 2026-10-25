@@ -928,6 +928,48 @@ def run_town_life(pg, base):
     return f'{want} folk ({pg.evaluate("walkView.folk.length")} drawn, cap {cap}), walked and went indoors; animals {life}; {chat} lines; {n} local(s), {name} talked'
 
 
+def run_town_quests(pg, base):
+    """TW-3: the run fixture's first town with a quest: its giver has a gold "!", talks by name, offers the town's
+    quest, Yes takes it (the "!" goes, the Map tab lists it); made done, another town's notice board hands it in for a
+    reward pick, and a reload keeps what is held"""
+    i = pg.evaluate("(()=>{const r=saveData.run,D=questData();return r.map.nodes.findIndex((n,i)=>!!questOffer(r,i,D))})()")
+    if i < 0: raise Exception("no town on the run fixture's map offers a quest")
+    node = pg.evaluate(f"runWorldNode({i})")
+    go_scene(pg, node, 90)
+    if not until(pg, "(walkState().npcs||[]).some(n=>n.id==='_talk:quest')", 20): raise Exception('no quest giver in the town')
+    if not pg.evaluate("questMarked(walkState().npcs.find(n=>n.id==='_talk:quest').talk)"): raise Exception('the giver has no "!"')
+    name = pg.evaluate("(()=>{const n=walkState().npcs.find(n=>n.id==='_talk:quest');walkPick({k:'npc',n});return n.talk.name})()")
+    if not until(pg, f"talkBox.on&&document.querySelector('.talk-who').textContent==={json.dumps(name)}", 20):
+        raise Exception(f'tapping {name} didn’t open the talk box with their name')
+    # through the offer: Yes at the choice, every line tapped on
+    if not until(pg, "!talkBox.on", 30, "if(talkBox.choice)talkBox.choice.pick(0);else if(talkBox.cur)talkBox.cur.done()"):
+        raise Exception('the giver’s talk never ended')
+    held = pg.evaluate("(saveData.run.quests||{held:[]}).held.map(q=>q.kind)")
+    if len(held) != 1: raise Exception(f'Yes took {held}, not one quest')
+    if pg.evaluate("questMarked(walkState().npcs.find(n=>n.id==='_talk:quest').talk)"): raise Exception('the "!" stayed after taking the quest')
+    pg.evaluate("uiState.tab='map';render();0")
+    if not until(pg, "!!document.querySelector('.map-quests li')", 10): raise Exception('the Map tab lists no quest')
+    # a reload keeps it
+    pg.evaluate("saveNow();0")
+    if not pg.evaluate("validRun(JSON.parse(JSON.stringify(saveData.run)))"): raise Exception('the run with a quest fails validRun')
+    # done, then another town's board
+    pg.evaluate("(()=>{const q=saveData.run.quests.held[0];q.n=q.goal;q.done=1;return 0})()")
+    j = pg.evaluate(f"questData().boards.find(j=>j!=={i})")
+    if j is None: raise Exception('no other town with a notice board')
+    node2 = pg.evaluate(f"runWorldNode({j})")
+    go_scene(pg, node2, 90)
+    pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='notice');walkPick({k:'act',p,act:'notice'});return 0})()")
+    if not until(pg, "uiState.modal&&uiState.modal.cls==='reward-pick'", 20): raise Exception('the notice board opened no reward pick')
+    if not until(pg, "document.querySelector('#ov p')&&/quest/.test(document.querySelector('#ov p').textContent)", 10):
+        raise Exception('the reward pick doesn’t say it is the quest’s')
+    q = pg.evaluate("[saveData.run.quests.held.length,saveData.run.quests.paid]")
+    if q != [0, 1]: raise Exception(f'after the hand-in: {q[0]} held, {q[1]} paid (want 0, 1)')
+    pg.evaluate("rewardAnswer(null);0")
+    if not until(pg, "!(uiState.modal&&uiState.modal.cls==='reward-pick')", 10): raise Exception('the pick didn’t close')
+    pg.evaluate("uiState.tab='walk';render();0")
+    return f'{name} gave a {held[0]} quest in town {i}; handed in at town {j}'
+
+
 def waystations(pg, base):
     """RL-12b: the in-game test's own phase, "A run's waystation and stall" (self-test.js), on a copy of the save: the
     first seed with both, the stand tapped (its event's sheet), the stall tapped (its shop's wares), the wild stock"""
@@ -1193,7 +1235,8 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('battle', [('A battle plays to the end', battle)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
              ("A run town's shop opens (UI-5)", run_shop),
-             ("A run town's life: folk walk and go indoors, the graphics cap, a named local talks (TW-2)", run_town_life)]),
+             ("A run town's life: folk walk and go indoors, the graphics cap, a named local talks (TW-2)", run_town_life),
+             ("A run town's quest: the giver's \"!\", Yes takes it, the Map tab lists it, another town's board pays it (TW-3)", run_town_quests)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home", run_loop)]),
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; none on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),
