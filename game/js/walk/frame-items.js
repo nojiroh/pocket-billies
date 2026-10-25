@@ -304,7 +304,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
   (st.enc || []).forEach(e => {
     let s = walkView.enc[e.id];
     if (!s || s.sc !== walkView.id) {
-      const sp = encounterSpot(sc, e.id, used);
+      const sp = encounterSpot(sc, e.id, used, e.hab);
       s = walkView.enc[e.id] = { x: sp[0], z: sp[1], tx: sp[0], tz: sp[1], sc: walkView.id };
     }
     /* v46: they keep their spot in the tall grass until you battle them: no wandering. They stay alive in place (a bob,

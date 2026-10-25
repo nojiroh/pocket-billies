@@ -3121,8 +3121,11 @@ function encounterCandidates(sc) {
     }
   return (walkView.cand = out);
 }
-export function encounterSpot(sc, id, used) {
-  const C = encounterCandidates(sc);
+export function encounterSpot(sc, id, used, hab) {
+  /* RT-4: a Billie of the water or the woods waits on its habitat's points (mapgen.js mapgenHabitats), where the
+     place has them; the rest (and those, where it has none) in the tall grass */
+  const H = hab && sc.habitats && sc.habitats[hab],
+    C = H && H.length ? H.map(p => [p[0], p[1], 1]) : encounterCandidates(sc);
   let h = 0;
   for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   const tot = C.reduce((a, c) => a + c[2], 0);
