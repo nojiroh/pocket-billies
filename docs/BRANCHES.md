@@ -63,6 +63,7 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | `track/towns` | Towns track (docs/phases/towns-track.md): TW-1..TW-3 (town layout, townsfolk, run quests) work here. TW-1 (the town layout) done 2026-10-24. |
 | `track/routes` | Routes track (docs/phases/routes-track.md): RT-1..RT-4 (route layouts, trainers, set pieces, Billies and finds) work here. |
 | `track/hub` | Hub track (docs/phases/hub-track.md): every HB session works here (made from main 2026-10-25). HB-2 (the run's loading screen) done 2026-10-25; HB-1 is finished on `claude/hub-island-revamp-4fskxy`. |
+| `art/hub-world-map` | Hub track HB-3 (the floating world map's lagoon, falls and detail), built here at the owner's word beside HB-4b on `track/hub` (2026-10-25); to main by pull request. |
 | `track/test-cleanup` | Test clean-up track (docs/phases/test-cleanup-track.md): every lane of TC-1..TC-4 works here; round 1 in PR #155. |
 | `terrain-generation` | Terrain track: TR-2c part 1 merged; one leftover HANDOFF note on top. Part 2 next. |
 | `terrain/tr-1-roads` | Terrain TR-1: road gradient cap and switchbacks. Not merged. |
