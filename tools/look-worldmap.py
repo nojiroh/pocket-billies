@@ -31,7 +31,7 @@ NUMBERS = """(()=>{const g=worldBowl.ground,F=g.float,W=g.things||{};const kinds
  return {floats:!!F,lift:typeof worldBowlIslandLift==='function'?worldBowlIslandLift():null,clumps:W.clumps??null,
   stands:(W.stand||[]).length,tris:W.tris??null,models:kinds.filter(([k])=>k.startsWith('m:')).length,
   trees:kinds.filter(([k])=>!k.startsWith('m:')).reduce((s,[,v])=>s+(v.n||0),0),
-  lagoon:!!(F&&F.lagoon),falls:F&&F.falls?F.falls.length:0,water:!!g.water,isleWater:!!(F&&F.water)}})()"""
+  lagoon:!!(F&&F.lagoon),falls:F&&F.falls?F.falls.n:0,water:!!g.water,isleWater:!!(F&&F.water)}})()"""
 
 
 def main():
