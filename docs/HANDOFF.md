@@ -2,6 +2,31 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### The in-game test's run phase and side areas (zone biome, the boss) - 2026-10-25
+Branch `fix/run-zone-biome` (one session, not part of a plan). The bug: the full test's "A run: airship, nodes,
+payout" failed on main f779581 with "a place on row 4 isn't its zone's biome". Plan approved in Plan Mode (the
+approval was relayed by the planning session at the owner's word, not typed in this session).
+- What was wrong (the self-test, not the run logic): on the debug short map, SELFTESTRUN8 rolls a Cut detour, two
+  places (a route, its leader) on row 4. They are thicket in a meadow zone, as RL-R2a/RL-R2b mean them to be: a side
+  area's places are its field move's biome (`run-side.js` `biome: M.biome`; Cut thicket, Surf lake, Rock Smash the
+  `cave` no region draws) and take the zone of their row only for the world map's bands. The phase's RL-R1 rule
+  predates side areas. A Node sweep (800 runs, both map sizes): no main place off its zone, 1,275 side places
+  off theirs, a side area on 578 runs (72%), so the phase failed on most seeds. That failure hid a second one: the phase took the
+  boss as the last map node (`map.nodes.length`), which is a side place on any run with a side area ("no Alpha boss
+  on the boss's place").
+- Changed (one cause per commit): new `tools/test/run-zone-biome.test.mjs` (the seed's detour off its zone, the
+  rule over 150 seeds on the short and full maps, every move rolled); `self-test.js` checks main places against
+  their zone and side places against their move's biome (`FIELD_MOVES`, `npm run modules`); the phase's boss is
+  the main path's (`type === 'boss' && !side`). No run logic, generated runs, snapshots or versions changed. No game
+  code takes the boss as the last node (searched).
+- Verified: lint, typecheck, check:modules, prettier; `npm test` 939/939; headless (Playwright 1.63.0,
+  `?fixture=town`, `selfTest.slow=3; selfTest.only=['A run: airship']`): before, the zone message, then (biome fix only)
+  the boss message; after, ok ("Sidequest Flats (thicket, meadow): 9 scenes ...", no page errors). Not run: the full
+  quick check and check-fast (not a phase end; no drawing changed).
+- Risky: none known; the phase still walks to the first town and the first mini-boss by `findIndex`, which are main
+  places because the side's come after them.
+- Next: nothing for this fix.
+
 ### Window glass on the low-poly buildings (no more glowing orbs) - 2026-10-25
 Branch `ccr-7161a124-txw6o4` (one session, not part of a plan). The owner's ask: windows on 3D buildings looked like a
 weird orb at night. Plan approved in Plan Mode; the owner chose to mark the glass with a new recipe key (`glass: n`)
