@@ -32,7 +32,9 @@ def height(r):
 
 
 def ground(r):
-    return 'r' if r < FOOT else 'g' if r < RING else 's' if r < SAND else 'S' if r < COAST else 'w'
+    # WA-6a: shallows are waded, so the sea is deep past a 2 m band of shallows (as Copperleaf's), and "out into the
+    # sea" stays out of reach
+    return 'r' if r < FOOT else 'g' if r < RING else 's' if r < SAND else 'S' if r < COAST else 'w' if r < COAST + 2 else 'd'
 
 
 def ring(r, n, a0=0, a1=360):

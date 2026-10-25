@@ -13,6 +13,7 @@ import { expose } from './test-globals.js';
 import {
   ALTERNATE_PROPS,
   TERRAIN_MATERIALS,
+  addRipple,
   addWalked,
   artCacheVersion,
   buddyTap,
@@ -54,6 +55,7 @@ import {
 import { clamp } from './util.js';
 import { pointInProp, turnedBounds, turnedPoint } from './logic/prop-turn.js';
 import { roomDoorPush, roomToLocal } from './logic/room-turn.js';
+import { WADE_COST, wadeDepthAt, wadeSpeed, wadeWalkable } from './logic/wading.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
 import { orbitStickYaw, orbitWalkStep } from './logic/camera-orbit.js';
 import { frameStop } from './frame-scheduler.js';
@@ -233,6 +235,7 @@ expose({
   updatePlayer: [() => updatePlayer, v => setUpdatePlayer(v)],
   updatePlayerHeight: [() => updatePlayerHeight, v => (updatePlayerHeight = v)],
   valueNoise2d: [() => valueNoise2d, v => (valueNoise2d = v)],
+  wadeDepthHere: [() => wadeDepthHere, v => (wadeDepthHere = v)],
   walkData: [() => walkData, v => setWalkData(v)],
   walkTo: [() => walkTo, v => (walkTo = v)],
   walkView: [() => walkView],
@@ -2712,16 +2715,28 @@ export function navGrid() {
     rows = sc.tiles || [],
     PPU = C.ppu || 34,
     blk = new Uint8Array(gw * gh),
-    cost = new Float32Array(gw * gh).fill(1);
+    cost = new Float32Array(gw * gh).fill(1),
+    dry = new Uint8Array(gw * gh); /* WA-6a: over water but out of it (a stepping stone, a jetty, a bridge deck) */
   for (let j = 0; j < gh; j++)
     for (let i = 0; i < gw; i++) {
       const ti = Math.floor(i / N),
         tz = Math.floor(j / N),
         ch = (rows[sc.h - 1 - tz] || '')[ti] || sc.edge,
         T = C.terrains[ch];
-      const wk = T && T.walk != null ? !!T.walk : !'wd'.includes(ch) || !!sc.ride;
-      /* v24: in a riding scene you cross water on your billionaire */ if (!wk) blk[j * gw + i] = 1;
-      cost[j * gw + i] = (T && T.paved) || 'pcmbaqhe'.includes(ch) ? 0.7 : ch === 't' ? 1.25 : ch === 'y' ? 1.1 : 1;
+      /* v24: in a riding scene you cross water on your billionaire; WA-6a: elsewhere you wade the shallows (not lava or
+         ice), slowly, and deep water blocks (logic/wading.js) */
+      const wk = wadeWalkable(sc, ch, T, (i + 0.5) / N, (j + 0.5) / N);
+      if (!wk) blk[j * gw + i] = 1;
+      cost[j * gw + i] =
+        (T && T.paved) || 'pcmbaqhe'.includes(ch)
+          ? 0.7
+          : ch === 't'
+            ? 1.25
+            : ch === 'y'
+              ? 1.1
+              : ch === 'w' && !sc.ride
+                ? WADE_COST
+                : 1;
     }
   const each = (x0, z0, x1, z1, fn) => {
     for (let j = Math.max(0, Math.floor(z0 * N)); j < Math.min(gh, Math.ceil(z1 * N)); j++)
@@ -2735,7 +2750,13 @@ export function navGrid() {
   /* stepping stones and bridges open water first, then solid things close ground */
   for (const p of sc.props || []) {
     const M = C.props[p.k];
-    if (M && M.walk) disc(p.x, p.z, M.walk * (p.s || 1), 0);
+    if (M && M.walk) {
+      const r = M.walk * (p.s || 1);
+      disc(p.x, p.z, r, 0);
+      each(p.x - r, p.z - r, p.x + r, p.z + r, (q, x, z) => {
+        if (Math.hypot(x - p.x, z - p.z) <= r) dry[q] = 1;
+      });
+    }
   }
   for (const p of sc.props || []) {
     const M = C.props[p.k];
@@ -2832,6 +2853,7 @@ export function navGrid() {
           h = d;
           blk[q] = 0;
           cost[q] = 0.75;
+          dry[q] = 1;
         }
       }
       lv[q] = h;
@@ -2867,7 +2889,7 @@ export function navGrid() {
     }
   }
   walkView.navKey = key;
-  return (walkView.nav = { N, gw, gh, blk, cost, lv, hop });
+  return (walkView.nav = { N, gw, gh, blk, cost, lv, hop, dry });
 }
 /* phase 04d: walk/heights.js puts the 3D version in place */
 export function setNavGrid(v) {
@@ -2943,6 +2965,15 @@ function hasLineOfSight(a, b, mc) {
     pc = c;
   }
   return true;
+}
+/** WA-6a: how far under the surface someone stands at (x, z) in this scene's shallows: 0 on land, on a bridge deck,
+ * a stepping stone or a jetty (logic/wading.js wadeDepthAt) */
+export function wadeDepthHere(x, z) {
+  const sc = walkView.sc;
+  if (!sc || sc.ride) return 0;
+  const c = navCellAt(x, z);
+  if (c >= 0 && walkView.nav.dry[c]) return 0;
+  return wadeDepthAt(sc, x, z);
 }
 function navCostAt(p) {
   const c = navCellAt(p[0], p[1]);
@@ -3572,7 +3603,8 @@ function movePlayer(st, dt) {
       const run = walkView.run || K.run || (km > 0.92 && alwaysRun()) ? RUN_FACTOR : km < 0.5 ? 0.6 : 1;
       /* CAM-2: whether you run, for the camera's ease out (walk/camera.js) */
       P.running = run === RUN_FACTOR;
-      const s = WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l);
+      /* WA-6a: slower in the shallows, the deeper the slower (logic/wading.js) */
+      const s = WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l) * wadeSpeed(wadeDepthHere(P.x, P.z));
       let nx = P.x + (wx / l) * s,
         nz = P.z + (wz / l) * s;
       if (OrbM) [nx, nz] = orbitWalkStep(OrbM.c, P.x, P.z, wx / l, wz / l, s, OrbM.dead || 0);
@@ -3601,7 +3633,8 @@ function movePlayer(st, dt) {
         (P.rush || 1) *
         (K.run || alwaysRun() ? RUN_FACTOR : 1) *
         dt *
-        slopeSpeedFactor(P.x, P.z, (tg0[0] - P.x) / d0, (tg0[1] - P.z) / d0);
+        slopeSpeedFactor(P.x, P.z, (tg0[0] - P.x) / d0, (tg0[1] - P.z) / d0) *
+        wadeSpeed(wadeDepthHere(P.x, P.z));
       while (left > 0 && P.route) {
         const tg = P.route[P.ri],
           dx = tg[0] - P.x,
@@ -3655,9 +3688,34 @@ function movePlayer(st, dt) {
   P.wasWalk = P.walk;
   /* grass rustle and dust */
   P.rust -= dt;
+  /* WA-6a: in the shallows a wake of rings behind you as you wade (one now and then while you stand), and a splash
+     at your steps (walk/water.js addRipple; walkView.parts of kind 'splash', drawn as a pale puff by walk/effects.js) */
+  const wd = wadeDepthHere(P.x, P.z);
+  if (wd > 0.05 && typeof addRipple === 'function') {
+    P.wakeT = (P.wakeT || 0) - dt;
+    if (P.wakeT <= 0) {
+      P.wakeT = P.walk ? 0.3 : 1.6;
+      addRipple(P.x, P.z - 0.05, P.walk ? 0.5 + wd : 0.35);
+    }
+  }
   if (P.walk && P.rust <= 0 && !reducedMotion) {
     const ch = terrainAt(P.x, P.z);
-    if (ch === 't') {
+    if (wd > 0.05) {
+      P.rust = 0.22;
+      for (let i = 0; i < 2; i++)
+        walkView.parts.push({
+          k: 'splash',
+          x: P.x + (Math.random() - 0.5) * 0.3,
+          z: P.z - 0.08,
+          y: 0.02,
+          vx: (Math.random() - 0.5) * 0.6,
+          vz: 0,
+          vy: 0.9 + Math.random() * 0.5,
+          life: 0,
+          max: 0.35,
+          g: 5,
+        });
+    } else if (ch === 't') {
       P.rust = 0.18;
       for (let i = 0; i < 3; i++)
         walkView.parts.push({
