@@ -45,6 +45,7 @@ expose({
   MAPGEN_OUTWARD: [() => MAPGEN_OUTWARD],
   MAPGEN_PATH_GROUND: [() => MAPGEN_PATH_GROUND],
   MAPGEN_PEAK: [() => MAPGEN_PEAK],
+  MAPGEN_PIECES_DIALS: [() => MAPGEN_PIECES_DIALS],
   MAPGEN_PIECES_MOST: [() => MAPGEN_PIECES_MOST],
   MAPGEN_PIECE_LEAVE: [() => MAPGEN_PIECE_LEAVE],
   MAPGEN_PIECE_SIGHT: [() => MAPGEN_PIECE_SIGHT],
@@ -304,6 +305,7 @@ export const MAPGEN_STAGES = [
   'plants',
   'feature',
   'props',
+  'pieces',
 ];
 export const MAPGEN_SHAPES = {
   straight: 'Straight',
@@ -4450,6 +4452,8 @@ export function mapgenBuild(P, ctx, aim) {
 /* ---------- RT-3: set pieces ---------- */
 /** the most set pieces a place may ask for (the pieces dial) */
 export const MAPGEN_PIECES_MOST = 6;
+/** the pieces dial, kept only when given (a scene made without it is the one it always was) */
+export const MAPGEN_PIECES_DIALS = { pieces: 0 };
 /** a route trainer's sight a piece keeps out of (logic/route-trainers.js routeInSight: rules.json run.trainers.sight
  * 6 m, 0.9 m to each side), with a little room */
 export const MAPGEN_PIECE_SIGHT = { range: 6.5, half: 1.1 };
