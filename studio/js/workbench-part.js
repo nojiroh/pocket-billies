@@ -32,10 +32,6 @@ import {
   wbsThumb,
   wbsZoomFit,
 } from '../../game/js/hooks.js';
-import { robotFrac, robotJointSet, robotKit, robotKitPart, robotPx } from '../../game/js/logic/robot-joints.js';
-import { setRobotRigData } from '../../game/js/skeleton-rig.js';
-import { escapeHtml } from './game-stand-ins.js';
-import { pixelFlip } from '../../game/js/logic/pixel-ops.js';
 import {
   PART_ATTACH,
   partAccepts,
@@ -52,6 +48,10 @@ import {
   partTurn,
   partZ,
 } from '../../game/js/logic/part-joints.js';
+import { robotFrac, robotJointSet, robotKit, robotKitPart, robotPx } from '../../game/js/logic/robot-joints.js';
+import { setRobotRigData } from '../../game/js/skeleton-rig.js';
+import { escapeHtml } from './game-stand-ins.js';
+import { pixelFlip } from '../../game/js/logic/pixel-ops.js';
 import {
   ACTIONS,
   afterRender,

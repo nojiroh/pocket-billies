@@ -18,17 +18,11 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { $ } from './util.js';
 import { LOCATIONS, gameData } from './game-data.js';
-import {
-  BOWL_ISLAND_BASE,
-  BOWL_ISLAND_LIFT,
-  BOWL_RIM_HEIGHT,
-  bowlBaseHeight,
-  bowlCoastAt,
-  bowlGridHeight,
-} from './logic/bowl.js';
+import { BOWL_ISLAND_BASE, BOWL_RIM_HEIGHT, bowlBaseHeight, bowlCoastAt, bowlGridHeight } from './logic/bowl.js';
 import {
   BOWL_CAMERA,
   bowlCamHome,
+  bowlCamHomeFloat,
   bowlCamOverview,
   bowlCamPan,
   bowlCamProject,
@@ -41,12 +35,17 @@ import { BOWL_CLOUD_LEVELS } from './logic/bowl-weather.js';
 import { bowlMapPoint, bowlPropClass } from './logic/bowl-things.js';
 import { bowlHasCoast, bowlIslandHeights, bowlIslandMapId, bowlIslandPlotThings } from './logic/bowl-island.js';
 import { activeBattle, escapeHtml, pauseSaving, resumeSaving, saveData, uiState } from './game-state.js';
+import { engineSetting } from './engine/settings.js';
 import { ensurePrograms, gpuState } from './engine/webgl.js';
 import {
   BOWL_METRES,
   WORLD_BOWL_SHADERS,
   worldBowl,
+  worldBowlFloatFrame,
+  worldBowlFloats,
+  worldBowlIslandLift,
   worldBowlPick,
+  worldBowlReady,
   worldBowlSunNow,
   worldMap,
   worldMapHeight,
@@ -133,7 +132,7 @@ async function runBowlMapTest() {
   };
   const stepEl = box.querySelector('.nb-step'),
     bar = box.querySelector('.nb-bar i'),
-    TOTAL = 10;
+    TOTAL = 11;
   const step = async (name, fn) => {
     if (bowlMapTest.stop) return;
     stepEl.textContent = name;
@@ -220,6 +219,13 @@ async function runBowlMapTest() {
       });
       const share = Math.round((sea / all) * 100);
       if (wet.length) return { ok: false, note: `under water: ${wet.map(l => l.id).join(', ')}` };
+      /* HB-3: the hub's floating island has no sea, its lagoon instead (World map settings: Lagoon) */
+      if (worldBowlFloats()) {
+        const F = worldBowl.ground.float;
+        if (!engineSetting('worldMap', 'lagoon')) return 'the floating island: no sea, its lagoon off in the settings';
+        if (!F || !F.waterGpu) return { ok: false, note: "the floating island's lagoon isn't drawn" };
+        return `the floating island: no sea; its lagoon ${F.waterGpu.n / 3} triangles, ${F.falls ? F.falls.n : 0} falls`;
+      }
       if (!g.water) return { ok: false, note: "the water isn't drawn" };
       /* RL-8b: an island world (the hub's island, a run's own land) is mostly sea. Test cleanup lane C: every world is
          one now (the old continent and its places under another went to game/data/legacy) */
@@ -265,7 +271,8 @@ async function runBowlMapTest() {
         n = kinds.reduce((a, [, K]) => a + K.n, 0),
         far = W.stand.filter(q => q.g === 0).length,
         near = W.stand.length - far;
-      if (!far) return { ok: false, note: 'no landmarks' };
+      /* the floating island draws its own things where they stand, no landmark picture (HB-3) */
+      if (!far && !worldBowlFloats()) return { ok: false, note: 'no landmarks' };
       return `${far} landmarks; ${n} trees and buildings (${models} building models, ${W.clumps} trees in clumps), ${near} standees close in; ${W.done.size} places in, last update ${W.ms} ms; ${Math.round((W.tris || 0) / 1000)}k triangles last frame`;
     });
     /* IS-7: the hub's world map draws its real island (logic/bowl-island.js): its coast, its heights, its town */
@@ -323,9 +330,10 @@ async function runBowlMapTest() {
             tx = x;
             tz = z;
           }
-      const [px, py] = bowlMapPoint(s, M, tx, tz, BOWL_METRES),
-        drawn =
-          ((bowlGridHeight(G, px, py) - bowlBaseHeight(px, py) - BOWL_ISLAND_BASE) * BOWL_METRES) / BOWL_ISLAND_LIFT;
+      /* HB-3: real height on the hub's floating island, BOWL_ISLAND_LIFT on a run's bowl */
+      const lift = worldBowlIslandLift(),
+        [px, py] = bowlMapPoint(s, M, tx, tz, BOWL_METRES),
+        drawn = ((bowlGridHeight(G, px, py) - bowlBaseHeight(px, py) - BOWL_ISLAND_BASE) * BOWL_METRES) / lift;
       if (Math.abs(drawn - top) > Math.max(3, top * 0.25))
         return { ok: false, note: `${id}: its top is ${top.toFixed(1)} m, drawn ${drawn.toFixed(1)} m` };
       /* its town: a model on every plot nothing stands on yet (and its own buildings) */
@@ -333,7 +341,7 @@ async function runBowlMapTest() {
         plots = bowlIslandPlotThings(M, p => bowlPropClass(p.k, A[p.k]) === 'building').length,
         drawnN = g.things.counts[0] || 0;
       if (drawnN < plots) return { ok: false, note: `${id}: ${drawnN} things drawn for ${plots} plots` };
-      return `${id}: its coast (${C.length} points; ${tried} land and sea checks hold), its ground laid on, its top ${top.toFixed(1)} m drawn ${drawn.toFixed(1)} m (x${BOWL_ISLAND_LIFT}), ${plots} plot buildings of ${drawnN} things; ready in ${Math.round(performance.now() - t)} ms`;
+      return `${id}: its coast (${C.length} points; ${tried} land and sea checks hold), its ground laid on, its top ${top.toFixed(1)} m drawn ${drawn.toFixed(1)} m (x${lift}), ${plots} plot buildings of ${drawnN} things; ready in ${Math.round(performance.now() - t)} ms`;
     });
     await step('Every place is on the bowl', async () => {
       const S = worldBowl.spots || [],
@@ -380,6 +388,8 @@ async function runBowlMapTest() {
         : `all ${LOCATIONS.length} places`;
     });
     await step('The camera stays above the rim', async () => {
+      /* the floating island's orbit keeps its own limits (logic/bowl-camera.js bowlCamClampFloat, unit-tested) */
+      if (worldBowlFloats()) return 'the floating island: no rim, its orbit’s own limits';
       const limit = BOWL_RIM_HEIGHT + BOWL_CAMERA.eyeAboveRim - 1e-6;
       let low = Infinity,
         far = 0,
@@ -417,6 +427,53 @@ async function runBowlMapTest() {
         d = Math.hypot(worldBowl.cam.tx - me.x, worldBowl.cam.ty - me.y),
         note = `${Math.round(performance.now() - t)} ms to settle over ${LOCATIONS[saveData.trip.node].id}, ${d.toFixed(3)} off`;
       return d < 0.01 ? note : { ok: false, note };
+    });
+    /* HB-3: on the hub's floating island, its frame times at four orbit angles (the camera still), then what the
+       lagoon, the falls and the trees as models each cost (one switched off at a time in the World map settings, the
+       island made again); numbers only in the debug log */
+    await step('The floating island’s frame times', async () => {
+      if (!worldBowlFloats()) return 'not the floating island (a run’s bowl)';
+      const f = m => `${m.fps ?? '–'} fps (worst gap ${m.worstMs ?? '–'} ms, ${m.drawMs ?? '–'} ms to draw)`,
+        home = a => still(bowlCamHomeFloat(worldBowlFloatFrame(worldBowl.ground.float), (a * Math.PI) / 180)),
+        angles = [],
+        off = [],
+        P = saveData.preferences,
+        keep = { expert: P.expert, eng: P.eng },
+        mine = keep.expert && keep.eng ? keep.eng : {};
+      worldBowl.bench = { turn: 0 };
+      try {
+        for (const a of [0, 90, 180, 270]) {
+          home(a);
+          await bowlTestFrames(3);
+          const m = await bowlTestMeasure(BOWL_TEST_MEASURE_MS);
+          angles.push(m);
+          measures['float' + a] = m;
+        }
+        for (const [k, v, name] of [
+          ['lagoon', false, 'no lagoon'],
+          ['falls', 0, 'no falls'],
+          ['treeModels', false, 'simple trees'],
+        ]) {
+          if (bowlMapTest.stop) break;
+          P.expert = true;
+          P.eng = { ...mine, worldMap: { ...(mine.worldMap || {}), [k]: v } };
+          worldBowl.dirty = true;
+          const t = performance.now();
+          await bowlTestFrames(2);
+          while (!(worldBowlReady() && worldBowl.ground.float) && performance.now() - t < 30000)
+            await bowlTestWait(100);
+          home(0);
+          await bowlTestFrames(3);
+          off.push(`${name} ${f(await bowlTestMeasure(BOWL_TEST_MEASURE_MS))}`);
+        }
+      } finally {
+        P.expert = keep.expert;
+        P.eng = keep.eng;
+        worldBowl.dirty = true;
+        worldBowl.bench = null;
+      }
+      const note = `${[0, 90, 180, 270].map((a, i) => `${a}° ${f(angles[i])}`).join('; ')}; at 0°: ${off.join('; ')}`;
+      return angles.every(m => m.fps != null) ? note : { ok: false, note: 'frames stopped coming: ' + note };
     });
     await step('Frame rate', async () => {
       const me = worldBowl.spots[saveData.trip.node];

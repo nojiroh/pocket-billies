@@ -190,6 +190,42 @@ at the landing).
   No bowl clumps off the island.
 - Phone frame times at 4 orbit angles; the fallbacks are Engine settings.
 
+**Done in HB-3** (2026-10-25, branch `art/hub-world-map` at the owner's word, beside HB-4b on `track/hub`; tag
+`hb-3-done` for the owner). The owner's answers: 3 falls, silent; the lagoon on the bowl's own water (`mwater`), WA-7
+swaps in the water track's pixel look after this merges. Checked against main at f691ce9:
+- Already true on main: no bowl clumps on the floating island (0) and no landmark picture at its middle (0 standees):
+  Copperleaf's landmark is a prop with a model. Both are now guarded in code all the same.
+- Not true: every map model ignored its placement's `rot` (only the plots' fill-ins turned); fixed. The tree models
+  are limbs and leaf picture cards, both of which the map's model builder drops: they are made again for the map
+  (`bowlTreeFromRecipe`). Flat pictures on the floating island were still 3x (`BOWL_THING_SCALE`); now life size.
+  The Bowl map test's sea, landmark and rim steps failed on the floating island since IS-7; they know it now.
+- Real height: `bowlSeaInput(…, lift)`, 1 on the hub's floating island (`worldBowlIslandLift`), `BOWL_ISLAND_LIFT` (3)
+  on a run's bowl. The mountain is drawn 20.6 m for its 21.9 m (the Bowl map test reads it).
+- Lagoon (logic/float-island.js, tests): `floatLagoonRing` (the coast's reach at 128 angles, smoothed, pushed out 0.3x
+  the mean radius: 1.3x), the bed `floatLagoonDepth` (a shelf, a 3.2 m basin, a 0.35 m sill), the fine ground runs out
+  to the ring with the land meeting the water at the beach (no 4 m step), `floatLagoonWater` (depth and a rim fade in
+  the bowl sea's mesh layout), the rock under the ring, `floatMistPuffs` (the clouds' puffs along the rim). The coast
+  is where the water meets the 1.5 m ground, and the ground's letters are clipped by the map's own coast.
+- Falls: `floatFallSpots` (the rim nearest the coast, spread a quarter turn apart), `floatFallMesh`, the `mfallw`
+  shader (streak columns in the lagoon's tones, white lip, thinning into the cloud colour). Silent.
+- Trees as their models (`bowlTreeFromRecipe`: trunk and main limbs as five-sided tubes, a crown blob per leaf card,
+  placed and sized as the walk cuts it, in the leaf picture's average colour; a prop's `swap` for autumn trees; a
+  mushroom with no leaves through the normal model builder). Fences as their models; bridges and the pier as plank
+  decks (`bowlBridgeShape`, from the higher end). The stream and the pond show as the stamped water letters (painted
+  water with foam, as before); paths as before, now clipped by the fine coast.
+- World map settings (engine/settings.js `worldMap`, Engine panel): `lagoon`, `falls` (0-4), `treeModels`, `treeFar`
+  (simple shapes past that many metres, switched in the shader; 0 never), `fences`, `bridges`. A change makes the
+  island again (`worldBowlMapSettingsKey`).
+- The orbit stands 1.25x further back with the lagoon (`worldBowlFloatFrame`), so the ring fits a phone's width.
+- Numbers (headless, Copperleaf): 14.4k triangles of things before, ~44k after (193 trees as models); the lagoon
+  10.3k triangles; 72 mist puffs; 3 falls of 96 triangles.
+- Frame times: the debug menu's Bowl map test, step "The floating island's frame times": fps, worst gap and CPU draw
+  time at 0/90/180/270 degrees, then at 0 degrees with no lagoon, no falls and simple trees. Headless numbers are
+  software drawing; the phone's are the owner's.
+- Not done: the picture standees (`mstandee`) draw red squares on the floating island (the atlas is right; the cause
+  is not found), so the far-tree fallback is simple shapes, not flat pictures. The stream and pond are not a water
+  surface of their own. The falls have no plunge or splash (they fade into the clouds).
+
 ### HB-4a Island sketches
 - 3-4 directions from today's island (`copperleaf-e9`), relief maps and from-above pictures with the town, the second
   street, the station headland with its rail out to sea, the lighthouse, the windmill, the pasture and the new

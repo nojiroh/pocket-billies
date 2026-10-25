@@ -49,10 +49,51 @@ hub branch left for it). Details: docs/phases/hub-track.md, "Done in the placing
   doors a tap away, Station Lv 2 bought on the station's sheet); `check:smoke` 6/6 (206 s; the phone flow taps the station on its headland, the window check passes). Pictures (tools/island-shots.py, not
   committed): the rail climbing from the headland to the portal and its tear, the station on its headland, the
   lighthouse on the cove, the windmill by the farm, the town; the game's own camera at the station; no page errors.
-- Next: the owner's look at the pictures and on the phone; HB-3 (PR #202); HB-8 (the departure on this rail: the
+- Next: the owner's look at the pictures and on the phone (HB-3, merged meanwhile in PR #202, merged in here); HB-8 (the departure on this rail: the
   train along `landmarks.rail`, the sea past the edge, `flyMenu`'s hub branch); a stock for the General store when
   the owner picks one; HB-9.
 
+### Splicing track SP-1 - Art spike: grafted Billies baked at runtime (built, waiting on the phone) - 2026-10-25
+Branch `ccr-dde1a5bd-nx5zdl` (`track/splicing` didn't exist yet; the owner chose to build SP-1 here, as RL-12c and
+HB-1 were). Plan approved in Plan Mode. SP-2 started in a new session on top of this branch at the owner's word,
+before SP-1 is merged or tagged. Tag `sp-1-done` for the owner once the exit is chosen.
+- Where the track was wrong (checked at 501b286): `logic/kit-assemble.js` wasn't on the game page at all. No
+  `rigRefit` is needed: the whole recipe is rebaked with the part swapped, exactly as `npm run bake:kits` bakes it.
+  RL-12c (fxOfBillie) is on main, so SP-2's dependency is met.
+- Changed (one cause per commit):
+  - game/index.html loads kit-assemble.js and its imports, plus the new logic/graft-art.js (also in the Studio's
+    logic worker list).
+  - logic/graft-art.js: a graft is `{ slot: donor species id }` for front, back and sig, swapped bone kind for bone
+    kind (a form's `slots` first: the slug's tail is its back, so no leg donor fits it). The donor's part keeps its
+    colour and its absolute size (size x donor scale / own scale); the fit shrinks the Billie if needed. graftForm,
+    graftKey/graftParse (`front=swift1`), graftDonors, graftKind, graftRecipe. graftOf/graftSet: this session's
+    grafts in a WeakMap by Billie object, **never saved** (saveFill keeps unknown Billie fields; SP-2 adds a
+    validated `Billy.graft`).
+  - skeleton-rig.js: rigParts(sp, k, coat, graft) and rigPreload's 4th tuple element bake a grafted Billie (part
+    pictures loaded, then kitBakeWhole in a task of its own), an LRU of 12, null while baking, the plain species if
+    a bake fails; a coat still recolours it. graftReport: bake and load times, memory held and its peak.
+  - The graft goes wherever `build` goes: actorSnapshot (only when present: golden battles unchanged), a grafted
+    wild encounter's foe, battle-stage syncSide, the battle preload, world-billies (buddy, pasture, grass, warm-up,
+    frame cache key), rigCanvasHTML `data-g`, and the menus that pass `{ build, coat }`. Busts stay plain.
+  - Debug menu, Billies: Graft the lead, Add a grafted encounter, Battle a grafted one, Clear grafts. 'graft' events
+    in the debug log; the export's `graphics.grafts` holds the summary (no names, no save data).
+  - tools/look-grafts.py (pictures before and after, a grafted battle); validation/look-grafts/ is git-ignored.
+- Verified: lint, typecheck, check:modules after each commit; unit tests 948 quick (new graft-art tests, the DOM
+  rig test now also checks the graft is passed), slow-tier graft sweep: 1597 bakes (every recipe x every distinct
+  donor part per slot) all bake and fit, Node median 21 ms, 95th 95 ms, max 221 ms, biggest sheet 482 KB;
+  kit-bake-parity unchanged; smoke 6 of 6. Headless (software drawing): Marsox with Cartotter's arms on its details
+  plate, Versewift with the muskox's arms in battle, both battle sides drawn from their grafted rigs; bakes 297 ms
+  (the first, with warm-up) and 51 ms, pictures 64-99 ms; the debug buttons work, nothing lands in the save. Full
+  quick check: 34 of 37. The three problems aren't SP-1's: song fingerprints (cave mid/late not in the sound
+  baseline), RL-8 "Take off didn't start a run's flight" (fails the same alone on main 501b286), Actions sheet (a
+  page load timeout in the full run; passes alone here and on main).
+- Risky: every Billie's drawing goes through the changed rigParts (ungrafted ones take the old path with the same
+  cache keys). A bake runs on the main thread: on a phone a worst case could stall a frame for up to ~1 s when a
+  Billie is grafted while walking (battles bake while they load). The Prime tag still shows on a grafted Billie
+  (Prime ignores grafts until SP-2).
+- Next: the owner presses the graft buttons on the phone (the lead, a grafted battle, the team screen), exports the
+  debug log and picks SP-1's exit from `graphics.grafts`: runtime baking, or Grafts baked offline per biome pool.
+  SP-2 (rules) is under way in its own session.
 ### Hub track - the finished hub branches merged together (HB-4a/4b, HB-5 art, HB-6, HB-7 art) - 2026-10-25
 Branch `track/hub-merge` (from main 83e7bdd: HB-1, HB-2, the run-zone-biome fix). Plan approved in Plan Mode. One
 merge commit per branch (no rebase, no squash), in this order: `track/hub` (HB-4a, HB-4b), `art/hub-station-trains`
@@ -306,6 +347,43 @@ Branch `art/hub-island-sketches` (a one-session art branch at the owner's word; 
   buildings fronting it; build B's dials into copperleaf through build-island and build-copperleaf; the lookout out of
   the dressing; re-point the hub's positions; the door check. Tell the water track (lane G, WA-2b) the waterfall site.
 
+### Hub track HB-3 - the floating world map's ocean and detail - 2026-10-25
+Branch `art/hub-world-map` (made from main at f691ce9, HB-1 and HB-2 merged; the owner's choice, beside HB-4b on
+`track/hub`). Plan approved in Plan Mode with the owner's answers: **3 falls, silent**; the lagoon on the bowl's own
+water now, the water track's WA-7 swaps in the pixel water after this merges; work on this branch. Tag `hb-3-done` for
+the owner. Details: docs/phases/hub-track.md, "Done in HB-3".
+- Where the plan's facts were off (checked in the code): the bowl clumps (0) and a landmark picture at the middle (0)
+  were already gone on main; every map model ignored its placement's `rot`; the tree models are limbs and leaf
+  pictures, which the map's model builder drops (so "trees as their models" needed a builder of its own); the Bowl map
+  test's sea, landmark and rim steps failed on the floating island since IS-7. `BOWL_ISLAND_LIFT` was read only in
+  `bowlSeaInput` (and the test's text). The coast is ~10 m from the map's edges, so the lagoon's outer part is made,
+  not read from the map's sea letters.
+- Changed (one cause per commit): real height (lift 1 on the hub's floating island, 3 on a run's bowl); no clumps and
+  no landmark at the middle (guards); the ground letters clipped by the map's coast; logic/float-island.js lagoon,
+  falls and mist (tests); the World map Engine settings (lagoon, falls, trees as models, simple trees past, fences,
+  bridges); the lagoon and its mist; three falls (`mfallw`); map models turned by `rot`; trees from their recipes
+  (logic/bowl-things.js `bowlTreeFromRecipe`, tests); fences and bridges (`bowlBridgeShape`, tests); the Bowl map
+  test's frame-time step and its floating-island steps; check-fast's map check; the orbit a little further back.
+  tools/look-worldmap.py: the hub's world map at hours times orbit angles, `--eng`, `--at`, `--map` (another island
+  file served to the page only).
+- Water track: its milestone 1 (WA-1 pixel water and the rest) merged into main during this session and was merged in
+  at the end (only HANDOFF conflicted). HB-3 neither uses nor edits it. HB-3's water is `mwater` (world-bowl.js)
+  with a lagoon mode (`uRim`, vS.y as the rim's fade) and `mfallw`. For WA-7 (lane B): the lagoon's colour is the `mwater` block after
+  `float dep=…`, and the falls' colour the first lines of `mfallw`; that is where `PIXEL_WATER_GLSL` goes.
+- Verified: lint, typecheck, `npm test` (955), check:modules after each commit; `check-fast --only=map` 2/2 (new: lift
+  1, the lagoon and 3 falls up, 0 clumps, 0 standees, the ring 1.15-1.5x); `check:smoke` 6/6 (205 s); the Bowl map
+  test headless, every step ok; pictures before (f691ce9) and after at 7, 13, 19 and 23 h and 0/90/180/270 degrees
+  (validation is not committed: `python3 tools/look-worldmap.py OUT`), close views of the pasture fence, the stream's
+  bridges and the pier; HB-4b's island (`track/hub` copperleaf.json via `--map`) draws with no change.
+- Risky: **phone cost**: ~44k triangles of things (was 14k) plus the lagoon (10k) and 72 mist puffs drawn every
+  frame. Fallbacks in Settings → Engine → World map: Simple trees past (e.g. 150 m), Trees as models off, Falls 0,
+  Lagoon off. The opening fall films the same island (smoke passed; its look not judged by eye). Buildings on the
+  map now turn as in the walk (rot), so they face other ways than before.
+- Not done: picture standees draw as red squares on the floating island (the atlas reads right; not found), so the
+  far trees fall back to simple shapes, not flat pictures; the stream and pond stay painted water letters (no surface
+  of their own); the falls end in the cloud colour, no splash.
+- Next: the owner's phone test: open the map at a few hours and turn it; run Debug → Bowl map test and send the log
+  (the step "The floating island's frame times"). If it is slow, try Simple trees past first.
 ### Water track WA-6b (lane P) - Surf and the Waterfall climb - 2026-10-25
 Branch `track/water` (main merged in at the start: hub track HB-1, .gitignore and HANDOFF kept both sides; lanes R's
 WA-1 and G's work merged in before each push). Plan approved in Plan Mode; the owner's answers: Surf needs the Water

@@ -6,6 +6,7 @@ import { expose } from './test-globals.js';
 import { billyUnit, provide, render, unitHeroHTML, unitOpenRowHTML, unitRowHTML } from './hooks.js';
 import { clamp } from './util.js';
 import { TYPE_COLORS } from './game-data.js';
+import { graftOf } from './logic/graft-art.js';
 import { speciesOf } from './logic/fighters.js';
 import { billyName, formatNumber, maxHp, maxLevel, teamSize, xpFor } from './logic/rules.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
@@ -77,7 +78,7 @@ function boxSection() {
       ? `<p class="note">Billies resting here don’t battle. Tap one for details.</p>${tools}
  <div class="bx-grid">${L.map(
    m =>
-     `<div class="bx k-card"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { build: m.build, coat: m.coat })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${speciesOf(
+     `<div class="bx k-card"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { build: m.build, coat: m.coat, graft: graftOf(m) })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${speciesOf(
        m
      )
        .types.map(t => `<i style="--tc:${TYPE_COLORS[t][0]}" title="${t}"></i>`)

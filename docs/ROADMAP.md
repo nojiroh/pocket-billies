@@ -61,8 +61,9 @@ town node needs it.
   `wa-N-done`. Branch `track/water`.
 - **Splicing track** (docs/phases/splicing-track.md, the owner's brief and answers 2026-10-25): Genes from kit parts
   with readable traits, wild Billies with mixed parts (Graft, Chimera), a Gene Bank building paid in DNA, a Stability
-  budget with Unstable abominations past it, Augments from the bots' salvage. SP-1 (an art spike on the phone) first;
-  SP-5 waits for RL-14. Tags `sp-N-done`. Branch `track/splicing`.
+  budget with Unstable abominations past it, Augments from the bots' salvage. SP-1 (an art spike on the phone) built
+  2026-10-25 on `ccr-dde1a5bd-nx5zdl` (the owner's word: `track/splicing` didn't exist yet), waiting on the phone's
+  bake times for its exit; SP-5 waits for RL-14. Tags `sp-N-done`. Branch `track/splicing`.
 - **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
   out of any room's doorway; "Go outside" stays with the card closed) done 2026-10-24; TW-1 (a town layout: street,
   square, houses with gardens, mapgen's `town` kind) done 2026-10-24; TW-2 (townsfolk, animals, chat) and TW-3 (run
@@ -129,11 +130,13 @@ town node needs it.
   sky rail, the tear portal, five trains; runs start at the station) done 2026-10-25 on `art/hub-station-trains`.
   HB-5's art half (cottage variants, the Workshop, Gene Bank, lighthouse and windmill models, five rooms) on
   `art/hub-buildings` and HB-6 (the natural pasture fence, a gentle swell) on `props/hub-fence`, done 2026-10-25.
-  All four merged together on `track/hub-merge` (2026-10-25, Copperleaf rebuilt by the tools), merged (PR #201).
+  HB-3 (the world map: real height, a lagoon ring fading into mist, three silent falls, trees, fences, bridges, World
+  map settings, frame times in the Bowl map test) done 2026-10-25 on `art/hub-world-map`, waiting on the owner's phone test.
+  All four merged together on `track/hub-merge` (2026-10-25, Copperleaf rebuilt by the tools), merged into main (PR #201).
   The placing half of HB-5 and HB-7 done 2026-10-25 on `props/hub-placing`: Skyline Station side-on on its headland
   with the sky rail out to sea and the portal at its top, the Workshop, Gene Bank, lighthouse and windmill on their
-  plots, the store's, inn's, library's, Workshop's and Gene Bank's doors open their rooms. HB-3 in PR #202; HB-8 and
-  HB-9 next. Tags `hb-N-done`. Branch `track/hub`.
+  plots, the store's, inn's, library's, Workshop's and Gene Bank's doors open their rooms. HB-8 and HB-9 next. Tags
+  `hb-N-done`. Branch `track/hub`.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all
