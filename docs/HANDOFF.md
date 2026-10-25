@@ -2,6 +2,47 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Splicing track SP-1 - Art spike: grafted Billies baked at runtime (built, waiting on the phone) - 2026-10-25
+Branch `ccr-dde1a5bd-nx5zdl` (`track/splicing` didn't exist yet; the owner chose to build SP-1 here, as RL-12c and
+HB-1 were). Plan approved in Plan Mode. SP-2 started in a new session on top of this branch at the owner's word,
+before SP-1 is merged or tagged. Tag `sp-1-done` for the owner once the exit is chosen.
+- Where the track was wrong (checked at 501b286): `logic/kit-assemble.js` wasn't on the game page at all. No
+  `rigRefit` is needed: the whole recipe is rebaked with the part swapped, exactly as `npm run bake:kits` bakes it.
+  RL-12c (fxOfBillie) is on main, so SP-2's dependency is met.
+- Changed (one cause per commit):
+  - game/index.html loads kit-assemble.js and its imports, plus the new logic/graft-art.js (also in the Studio's
+    logic worker list).
+  - logic/graft-art.js: a graft is `{ slot: donor species id }` for front, back and sig, swapped bone kind for bone
+    kind (a form's `slots` first: the slug's tail is its back, so no leg donor fits it). The donor's part keeps its
+    colour and its absolute size (size x donor scale / own scale); the fit shrinks the Billie if needed. graftForm,
+    graftKey/graftParse (`front=swift1`), graftDonors, graftKind, graftRecipe. graftOf/graftSet: this session's
+    grafts in a WeakMap by Billie object, **never saved** (saveFill keeps unknown Billie fields; SP-2 adds a
+    validated `Billy.graft`).
+  - skeleton-rig.js: rigParts(sp, k, coat, graft) and rigPreload's 4th tuple element bake a grafted Billie (part
+    pictures loaded, then kitBakeWhole in a task of its own), an LRU of 12, null while baking, the plain species if
+    a bake fails; a coat still recolours it. graftReport: bake and load times, memory held and its peak.
+  - The graft goes wherever `build` goes: actorSnapshot (only when present: golden battles unchanged), a grafted
+    wild encounter's foe, battle-stage syncSide, the battle preload, world-billies (buddy, pasture, grass, warm-up,
+    frame cache key), rigCanvasHTML `data-g`, and the menus that pass `{ build, coat }`. Busts stay plain.
+  - Debug menu, Billies: Graft the lead, Add a grafted encounter, Battle a grafted one, Clear grafts. 'graft' events
+    in the debug log; the export's `graphics.grafts` holds the summary (no names, no save data).
+  - tools/look-grafts.py (pictures before and after, a grafted battle); validation/look-grafts/ is git-ignored.
+- Verified: lint, typecheck, check:modules after each commit; unit tests 948 quick (new graft-art tests, the DOM
+  rig test now also checks the graft is passed), slow-tier graft sweep: 1597 bakes (every recipe x every distinct
+  donor part per slot) all bake and fit, Node median 21 ms, 95th 95 ms, max 221 ms, biggest sheet 482 KB;
+  kit-bake-parity unchanged; smoke 6 of 6. Headless (software drawing): Marsox with Cartotter's arms on its details
+  plate, Versewift with the muskox's arms in battle, both battle sides drawn from their grafted rigs; bakes 297 ms
+  (the first, with warm-up) and 51 ms, pictures 64-99 ms; the debug buttons work, nothing lands in the save. Full
+  quick check: 34 of 37. The three problems aren't SP-1's: song fingerprints (cave mid/late not in the sound
+  baseline), RL-8 "Take off didn't start a run's flight" (fails the same alone on main 501b286), Actions sheet (a
+  page load timeout in the full run; passes alone here and on main).
+- Risky: every Billie's drawing goes through the changed rigParts (ungrafted ones take the old path with the same
+  cache keys). A bake runs on the main thread: on a phone a worst case could stall a frame for up to ~1 s when a
+  Billie is grafted while walking (battles bake while they load). The Prime tag still shows on a grafted Billie
+  (Prime ignores grafts until SP-2).
+- Next: the owner presses the graft buttons on the phone (the lead, a grafted battle, the team screen), exports the
+  debug log and picks SP-1's exit from `graphics.grafts`: runtime baking, or Grafts baked offline per biome pool.
+  SP-2 (rules) is under way in its own session.
 ### Hub track - the finished hub branches merged together (HB-4a/4b, HB-5 art, HB-6, HB-7 art) - 2026-10-25
 Branch `track/hub-merge` (from main 83e7bdd: HB-1, HB-2, the run-zone-biome fix). Plan approved in Plan Mode. One
 merge commit per branch (no rebase, no squash), in this order: `track/hub` (HB-4a, HB-4b), `art/hub-station-trains`

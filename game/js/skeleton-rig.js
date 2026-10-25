@@ -3,8 +3,20 @@
 /* ---- matrices ---- */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { COATS, ROBOTS, RULES, SPECIES, activeBattle, provide, reducedMotion } from './hooks.js';
+import {
+  COATS,
+  ROBOTS,
+  RULES,
+  SPECIES,
+  activeBattle,
+  gameData,
+  graftForm,
+  graftParse,
+  provide,
+  reducedMotion,
+} from './hooks.js';
 import { clamp, random } from './util.js';
+import { kitBakeWhole } from './logic/kit-assemble.js';
 import { coatArt, coatColorMap, coatRecolor } from './logic/coats.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artImg, artLoad, artReady, artURL, makeCanvas } from './art.js';
@@ -14,6 +26,9 @@ import { animFor } from './body-plan-animation.js';
 expose({
   BONE_SLOT_RULES: [() => BONE_SLOT_RULES],
   COAT_ATLASES: [() => COAT_ATLASES],
+  GRAFT_BAKES: [() => GRAFT_BAKES],
+  GRAFT_KEEP: [() => GRAFT_KEEP],
+  GRAFT_PIXELS: [() => GRAFT_PIXELS],
   GROUNDED: [() => GROUNDED],
   RIG_BACK_VIEW: [() => RIG_BACK_VIEW],
   RIG_CANVAS_SIZE: [() => RIG_CANVAS_SIZE],
@@ -34,6 +49,13 @@ expose({
   coatsForRigs: [() => coatsForRigs],
   drawDomRig: [() => drawDomRig, v => (drawDomRig = v)],
   drawRig: [() => drawRig, v => ((drawRig = v), provide({ drawRig }))],
+  graftBake: [() => graftBake, v => (graftBake = v)],
+  graftBytes: [() => graftBytes],
+  graftForget: [() => graftForget, v => (graftForget = v)],
+  graftPartPixels: [() => graftPartPixels, v => (graftPartPixels = v)],
+  graftReport: [() => graftReport],
+  graftRigParts: [() => graftRigParts, v => (graftRigParts = v)],
+  graftStats: [() => graftStats],
   rigAtlas: [() => rigAtlas, v => (rigAtlas = v)],
   rigAudit: [() => rigAudit, v => (rigAudit = v)],
   rigBuildScales: [() => rigBuildScales, v => (rigBuildScales = v)],
@@ -502,12 +524,13 @@ function coatAtlasURL(path, sp, view, coat) {
   const e = COAT_ATLASES.get(path + '#' + coat);
   return e.url || (e.url = e.c.toDataURL());
 }
-export function rigParts(sp, k = 1, coat) {
+export function rigParts(sp, k = 1, coat, graft) {
   const view = k === 1 ? 'front' : 'back',
-    key = sp + view + (coat ? '#' + coat : '');
+    key = sp + view + (coat ? '#' + coat : '') + (graft ? '~' + graft : '');
   if (RIG_PARTS_CACHE[key]) return RIG_PARTS_CACHE[key];
   /* phase 17: a robot is drawn from its parts */
   if (typeof sp === 'string' && sp.startsWith('bot:')) return robotRigParts(sp, k);
+  if (graft) return graftRigParts(sp, view, coat, graft, key);
   const meta = RIGS[sp] && RIGS[sp][view];
   if (!meta) return null;
   const path = rigAtlas(sp, view, coat);
@@ -574,11 +597,141 @@ export function setRigParts(v) {
 export function rigPreload(list) {
   /* phase 17: a robot loads its parts' pictures */
   const D = robotRigData || (typeof ROBOTS !== 'undefined' ? ROBOTS : null);
-  return artLoad(
-    list.flatMap(([sp, k, coat]) =>
-      String(sp).startsWith('bot:') ? robotArtFiles(sp, D) : [rigAtlas(sp, k === 1 ? 'front' : 'back', coat)]
-    )
-  );
+  /* SP-1: a grafted Billie is baked (its parts' pictures loaded first), so a battle bakes while it loads */
+  const bakes = list
+    .filter(([sp, , , graft]) => graft && !String(sp).startsWith('bot:'))
+    .map(([sp, , , graft]) => graftBake(sp, graft));
+  return Promise.all([
+    artLoad(
+      list.flatMap(([sp, k, coat]) =>
+        String(sp).startsWith('bot:') ? robotArtFiles(sp, D) : [rigAtlas(sp, k === 1 ? 'front' : 'back', coat)]
+      )
+    ),
+    ...bakes,
+  ]).then(([loaded]) => loaded);
+}
+/* ---- SP-1: grafted Billies, baked at runtime ----
+   A Billie wearing another species' part (logic/graft-art.js) is baked from its species' kit recipe with the donor's
+   part (kitBakeWhole, the baker `npm run bake:kits` and the Studio use), once per species and graft, kept for the
+   last GRAFT_KEEP of them. Until its bake is done rigParts gives null (as for a sheet still loading); a bake that fails
+   draws the plain species. Each bake's times and sizes go to the debug log (graftReport) for the art spike's verdict:
+   runtime baking on the phone, or grafts baked offline. */
+const GRAFT_KEEP = 12;
+const GRAFT_BAKES = new Map(); /* sp~graft -> { wait, rig, sheet, bytes, bad, keys: its rigParts cache keys } */
+const GRAFT_PIXELS = new Map(); /* a kit part's picture path -> its pixels */
+export const graftReport = () => {
+  const S = graftStats,
+    ms = S.ms.slice().sort((a, b) => a - b);
+  return {
+    bakes: ms.length,
+    failed: S.bad,
+    medianMs: ms.length ? ms[ms.length >> 1] : null,
+    maxMs: ms.length ? ms[ms.length - 1] : null,
+    loadMaxMs: S.loadMs.length ? Math.max(...S.loadMs) : null,
+    keptKB: Math.round(graftBytes() / 1024),
+    peakKB: Math.round(S.peak / 1024),
+    last: S.last.slice(-8),
+  };
+};
+const graftStats = { ms: [], loadMs: [], bad: 0, peak: 0, last: [] };
+const graftBytes = () => [...GRAFT_BAKES.values()].reduce((n, e) => n + (e.bytes || 0), 0);
+function graftPartPixels(path) {
+  let p = GRAFT_PIXELS.get(path);
+  if (p) return p;
+  const im = ART_CACHE.img[path],
+    c = makeCanvas(im.naturalWidth, im.naturalHeight),
+    x = c.getContext('2d', { willReadFrequently: true });
+  x.drawImage(im, 0, 0);
+  const d = x.getImageData(0, 0, c.width, c.height);
+  p = { width: d.width, height: d.height, data: d.data };
+  GRAFT_PIXELS.set(path, p);
+  return p;
+}
+/* bake a species with a graft (a graft code): load its parts' pictures, then bake in a task of its own */
+function graftBake(sp, graft) {
+  const id = sp + '~' + graft,
+    had = GRAFT_BAKES.get(id);
+  if (had) {
+    GRAFT_BAKES.delete(id); /* most recently used last */
+    GRAFT_BAKES.set(id, had);
+    return had.wait;
+  }
+  const e = { wait: null, rig: null, sheet: null, bytes: 0, bad: false, keys: [] };
+  GRAFT_BAKES.set(id, e);
+  while (GRAFT_BAKES.size > GRAFT_KEEP) graftForget(GRAFT_BAKES.keys().next().value);
+  const K = gameData.partKits,
+    form = graftForm(gameData.kitBuilds, K, sp, graftParse(graft) || {}),
+    fail = err => {
+      e.bad = true;
+      graftStats.bad++;
+      if (typeof debugLog !== 'undefined') debugLog.add('graft', `bake failed: ${sp} ${graft}: ${err}`);
+    };
+  if (!form) {
+    fail('no recipe or no fitting part');
+    return (e.wait = Promise.resolve());
+  }
+  const ids = [...Object.values(form.parts).map(p => p[0]), ...(form.extras || []).map(x => x[0])],
+    paths = [...new Set(ids.flatMap(pid => ['front', 'back'].map(v => K.parts[pid].views[v].file)))],
+    t0 = performance.now();
+  e.wait = artLoad(paths)
+    .then(() => new Promise(res => setTimeout(res, 0)))
+    .then(() => {
+      if (GRAFT_BAKES.get(id) !== e) return; /* forgotten while its pictures loaded */
+      const t1 = performance.now();
+      try {
+        const made = kitBakeWhole({ partKits: K, kitBuilds: gameData.kitBuilds, rules: RULES }, form, (pid, view) =>
+            graftPartPixels(K.parts[pid].views[view].file)
+          ),
+          c = makeCanvas(made.sheet.width, made.sheet.height);
+        c.getContext('2d').putImageData(new ImageData(made.sheet.data, made.sheet.width, made.sheet.height), 0, 0);
+        const ms = Math.round(performance.now() - t1),
+          loadMs = Math.round(t1 - t0);
+        /* the sheet, and the pieces rigFromMeta cuts from it for each view */
+        e.bytes =
+          c.width * c.height * 4 +
+          ['front', 'back'].reduce(
+            (n, v) =>
+              n +
+              made.rig[v].imgs.reduce(
+                (m, im) => m + Object.values(im.f).reduce((q, [, , w, h]) => q + w * h * 4, 0),
+                0
+              ),
+            0
+          );
+        Object.assign(e, { rig: made.rig, sheet: c });
+        graftStats.ms.push(ms);
+        graftStats.loadMs.push(loadMs);
+        graftStats.peak = Math.max(graftStats.peak, graftBytes());
+        graftStats.last.push({ sp, graft, ms, loadMs, w: c.width, h: c.height, kb: Math.round(e.bytes / 1024) });
+        if (graftStats.last.length > 24) graftStats.last.shift();
+        if (typeof debugLog !== 'undefined')
+          debugLog.add('graft', `baked ${sp} ${graft}: ${ms} ms (pictures ${loadMs} ms), ${c.width}x${c.height}`, {
+            ms,
+            loadMs,
+            kb: Math.round(e.bytes / 1024),
+          });
+      } catch (err) {
+        fail(err && err.message);
+      }
+    });
+  return e.wait;
+}
+function graftForget(id) {
+  for (const k of GRAFT_BAKES.get(id).keys) delete RIG_PARTS_CACHE[k];
+  for (const k of COAT_ATLASES.keys()) if (k.startsWith(`graft:${id}#`)) COAT_ATLASES.delete(k);
+  GRAFT_BAKES.delete(id);
+}
+function graftRigParts(sp, view, coat, graft, key) {
+  const e = GRAFT_BAKES.get(sp + '~' + graft);
+  if (!e) {
+    graftBake(sp, graft);
+    return null;
+  }
+  if (e.bad) return rigParts(sp, view === 'front' ? 1 : RIG_BACK_VIEW, coat);
+  if (!e.rig) return null;
+  const atlas = coatAtlas(e.sheet, `graft:${sp}~${graft}`, sp, view, coat);
+  e.keys.push(key);
+  return (RIG_PARTS_CACHE[key] = rigFromMeta(e.rig[view], atlas));
 }
 /* ---- DOM animator: every <canvas class="rig"> on screen ---- */
 const rigCanvasAnimator = { vis: new Set(), nodes: new Set(), io: null, mo: null, last: 0 };
@@ -598,7 +751,7 @@ export function rigCanvasHTML(sp, size, o = {}) {
     h = Math.round((w * RIG_CANVAS_SIZE.h) / RIG_CANVAS_SIZE.w),
     st = SPECIES[sp] ? (SPECIES[sp].rar === 'mythical' ? 2 : SPECIES[sp].stage) : 2,
     f = [1.3, 1.1, 1][st];
-  return `<canvas class="rig${o.sil ? ' sil' : ''}" width="${RIG_CANVAS_SIZE.w * 2}" height="${RIG_CANVAS_SIZE.h * 2}" data-sp="${sp}"${o.coat ? ` data-coat="${o.coat}"` : ''} data-v="${o.view || 'front'}"${o.build ? ` data-b="${buildCode(o.build)}"` : ''}${o.still || o.sil ? ' data-still="1"' : ''}${o.act ? ` data-act="${o.act}"` : ''} style="width:${w}px;height:${h}px;margin:${-Math.round((h - size) / 2)}px ${-Math.round((w - size) / 2)}px;transform:scale(${f});transform-origin:50% 94%" aria-hidden="true"></canvas>`;
+  return `<canvas class="rig${o.sil ? ' sil' : ''}" width="${RIG_CANVAS_SIZE.w * 2}" height="${RIG_CANVAS_SIZE.h * 2}" data-sp="${sp}"${o.coat ? ` data-coat="${o.coat}"` : ''} data-v="${o.view || 'front'}"${o.build ? ` data-b="${buildCode(o.build)}"` : ''}${o.graft ? ` data-g="${o.graft}"` : ''}${o.still || o.sil ? ' data-still="1"' : ''}${o.act ? ` data-act="${o.act}"` : ''} style="width:${w}px;height:${h}px;margin:${-Math.round((h - size) / 2)}px ${-Math.round((w - size) / 2)}px;transform:scale(${f});transform-origin:50% 94%" aria-hidden="true"></canvas>`;
 }
 /* v39: the 64x64 bust from a species' piece sheet (rig meta "portrait"), as an <img> cropped by CSS; falls back to the
    rest-pose rig for a species without one */
@@ -618,7 +771,7 @@ export function bustHTML(sp, size, o = {}) {
 function drawDomRig(c, ts) {
   const sp = c.dataset.sp;
   if (!sp.startsWith('bot:') && !(SPECIES && SPECIES[sp])) return;
-  const R = rigParts(sp, c.dataset.v === 'back' ? RIG_BACK_VIEW : 1, c.dataset.coat);
+  const R = rigParts(sp, c.dataset.v === 'back' ? RIG_BACK_VIEW : 1, c.dataset.coat, c.dataset.g);
   if (!R) return;
   const x = c.getContext('2d');
   if (c._seed == null) {
