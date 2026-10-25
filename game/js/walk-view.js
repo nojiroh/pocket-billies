@@ -12,6 +12,7 @@
 import { expose } from './test-globals.js';
 import {
   ALTERNATE_PROPS,
+  RULES,
   TERRAIN_MATERIALS,
   addWalked,
   artCacheVersion,
@@ -39,6 +40,7 @@ import {
   provide,
   rawHeightAt,
   reducedMotion,
+  runTownFolkCap,
   saveData,
   seamlessMapById,
   smooth01,
@@ -3988,6 +3990,12 @@ export function updateFolk(n, dt) {
   n = folkCount(walkView.sc, n);
   if (walkView.folkId !== walkView.id || (walkView.folkAll || walkView.folk).length !== n) initFolk(n);
   stepFolk(dt);
+  /* TW-2: a run town draws only its first few folk, by the graphics (rules.json run.town.cap); the rest keep their day */
+  const b = walkView.sc.baseId ? mapById(walkView.sc.baseId) : walkView.sc;
+  if (b && b.gen && b.kind === 'town' && RULES.run.town) {
+    const cap = runTownFolkCap(RULES.run.town, walkRenderer.q, saveData.preferences && saveData.preferences.aim);
+    if (walkView.folk.length > cap) walkView.folk = walkView.folk.filter(f => walkView.folkAll.indexOf(f) < cap);
+  }
 }
 export function tallGrassProps(C0) {
   const out = [];

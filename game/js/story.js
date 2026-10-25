@@ -26,7 +26,7 @@ import { baseMapId, walkView } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { music } from './sound.js';
-import { talkBox } from './talk.js';
+import { talk, talkBox } from './talk.js';
 import { cutscene } from './cutscene/director.js';
 import { loreClue, loreData } from './lore.js';
 /* eslint-disable no-func-assign */
@@ -153,6 +153,12 @@ provide({ storyState }); /* to-module */
 export async function personTalk(P) {
   if (!P || talkBox.on || storyRun.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
   if (P.script) await playStoryScript('person:' + P.id);
+  else if (P.lines && P.lines.length)
+    /* TW-2: a run town's named local says their own lines, by their name (logic/run-scenes.js runTownLife) */
+    await talk(
+      P.lines.map((/** @type {string} */ l) => [P.who, l]),
+      { name: P.name }
+    );
 }
 
 /* ================= v47: BLAKE'S FIRST BATTLE, AND WHAT COMES AFTER =================

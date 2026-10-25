@@ -222,7 +222,7 @@ export function talkChoose(options) {
   });
 }
 /* a whole conversation: [[who,text,expr],…] or [{who,text,expr}] */
-async function talk(lines, o = {}) {
+export async function talk(lines, o = {}) {
   for (const l of lines) {
     const [who, text, expr] = Array.isArray(l) ? l : [l.who, l.text, l.expr];
     await talkLine(who, text, expr, o);

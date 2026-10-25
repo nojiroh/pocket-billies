@@ -503,7 +503,8 @@ export function walkState() {
       o = sc.baseOff || [0, 0];
     if (base && bid === mapIdAt(v.node))
       for (const P of base.people || [])
-        if (PEOPLE[P.who] && ((!P.when && !P.unless) || storyAllows(P)))
+        /* TW-2: a run town's named local has a townsfolk look ('folk:<seed>') and lines of their own */
+        if ((PEOPLE[P.who] || (P.lines && /^folk:/.test(P.who))) && ((!P.when && !P.unless) || storyAllows(P)))
           v.npcs.push({
             who: P.who,
             id: '_talk:' + P.id,
