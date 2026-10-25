@@ -17,7 +17,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { hashString, rngFrom } from './rng.js';
-import { pointInProp, turnedBounds, turnedPoint } from './prop-turn.js';
+import { normalTurn, pointInProp, turnedBounds, turnedPoint } from './prop-turn.js';
 /* eslint-disable no-func-assign */
 expose({
   MAPGEN_BAND: [() => MAPGEN_BAND],
@@ -45,6 +45,9 @@ expose({
   MAPGEN_OUTWARD: [() => MAPGEN_OUTWARD],
   MAPGEN_PATH_GROUND: [() => MAPGEN_PATH_GROUND],
   MAPGEN_PEAK: [() => MAPGEN_PEAK],
+  MAPGEN_PIECES_MOST: [() => MAPGEN_PIECES_MOST],
+  MAPGEN_PIECE_LEAVE: [() => MAPGEN_PIECE_LEAVE],
+  MAPGEN_PIECE_SIGHT: [() => MAPGEN_PIECE_SIGHT],
   MAPGEN_PLANT_SHARE: [() => MAPGEN_PLANT_SHARE],
   MAPGEN_SHAPES: [() => MAPGEN_SHAPES],
   MAPGEN_SIDE_NAME: [() => MAPGEN_SIDE_NAME],
@@ -183,6 +186,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenPickVariant: [() => mapgenPickVariant, v => (mapgenPickVariant = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenPieceWeight: [() => mapgenPieceWeight, v => (mapgenPieceWeight = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenPiecesWant: [() => mapgenPiecesWant, v => (mapgenPiecesWant = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenPinEdges: [() => mapgenPinEdges, v => (mapgenPinEdges = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenPinSides: [() => mapgenPinSides, v => (mapgenPinSides = v)],
@@ -191,6 +198,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenPolyLength: [() => mapgenPolyLength, v => (mapgenPolyLength = v)],
   mapgenPoolPick: [() => mapgenPoolPick],
+  // @ts-expect-error -- replaced on purpose
+  mapgenPropCells: [() => mapgenPropCells, v => (mapgenPropCells = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenPutProp: [() => mapgenPutProp, v => (mapgenPutProp = v)],
   // @ts-expect-error -- replaced on purpose
@@ -248,6 +257,8 @@ expose({
   mapgenStageLayout: [() => mapgenStageLayout, v => (mapgenStageLayout = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenStageLots: [() => mapgenStageLots, v => (mapgenStageLots = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenStagePieces: [() => mapgenStagePieces, v => (mapgenStagePieces = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenStagePlants: [() => mapgenStagePlants, v => (mapgenStagePlants = v)],
   // @ts-expect-error -- replaced on purpose
@@ -442,6 +453,8 @@ export function mapgenParams(p) {
   /* RT-1: the layout plan, kept only when given; a plan sets its own dials (a lake, terraces with ledge fronts) */
   if (P.layout !== undefined && (typeof P.layout !== 'string' || !MAPGEN_LAYOUTS[P.layout]))
     P.layout = MAPGEN_LAYOUT_DIALS.layout;
+  /* RT-3: how many set pieces, kept only when given (whole, 0-6) */
+  if (P.pieces !== undefined) P.pieces = mapgenBetween(Math.round(+P.pieces || 0), 0, MAPGEN_PIECES_MOST);
   if (mapgenLaidOut(P)) {
     const d = MAPGEN_LAYOUTS[P.layout].dials || {};
     if (d.water && P.land.water !== 'coast') P.land.water = d.water;
@@ -3945,6 +3958,15 @@ export function mapgenLayoutSpots(sc, scenery, G) {
         break found;
       }
   }
+  /* RT-3: a jetty's land end, facing the land (a set piece's fishing jetty stands there) */
+  if (G.jetty && seen[qOf(G.jetty.x, G.jetty.z)])
+    out.push({
+      kind: 'jetty',
+      x: mapgenRound2(G.jetty.x),
+      z: mapgenRound2(G.jetty.z),
+      y: yOf(qOf(G.jetty.x, G.jetty.z), G.jetty.x, G.jetty.z),
+      face: deg(-G.jetty.dir[0], -G.jetty.dir[1]),
+    });
   return { spots: out, walk: R };
 }
 /** the share of a scene's half-metre cells you can walk to from the hub (R: from mapgenReach) */
@@ -4141,7 +4163,7 @@ export function mapgenStageFeature(G) {
 }
 /** boards from the bank toward the pond's middle, over the water, from the main road's nearest point (a path of the
  * road's surface to the bank, mooring posts on both sides); RT-3: G.jetty, where it starts on land and its way out */
-export function mapgenJetty(G) {
+export function mapgenJetty(G, full = false) {
   const { P } = G;
   const { x: px, z: pz, r } = G.pond;
   const M = G.road[0].pts;
@@ -4157,8 +4179,12 @@ export function mapgenJetty(G) {
   const dx = (px - best[0]) / (bd || 1),
     dz = (pz - best[1]) / (bd || 1);
   const start = bd - r - 2,
-    end = bd - r * 0.25;
-  for (let t = Math.max(0, start - 3); t < end; t += 0.25)
+    end = bd - r * 0.25,
+    /* RT-3 (full): a set piece's jetty has its path all the way from the road's edge, kept clear of the layout */
+    from = full ? P.road.width / 2 : start - 3;
+  if (full) for (let t = from; t < start; t += 1.5) G.keep.push([best[0] + dx * t, best[1] + dz * t, 1.2]);
+  G.jetty = { x: best[0] + dx * (start - 0.8), z: best[1] + dz * (start - 0.8), dir: [dx, dz] };
+  for (let t = Math.max(0, from); t < end; t += 0.25)
     for (let o = -0.9; o <= 0.9; o += 0.3) {
       const x = best[0] + dx * t - dz * o,
         z = best[1] + dz * t + dx * o,
@@ -4347,6 +4373,9 @@ export function mapgenBuild(P, ctx, aim) {
   mapgenStageEdgeGround(G);
   mapgenStageTown(G);
   mapgenStageLots(G);
+  /* RT-3: a laid-out place with a pond gets a jetty when a set piece wants one (the fishing jetty) */
+  if (mapgenLaidOut(P) && P.pieces > 0 && G.pond && !G.jetty && mapgenPiecesWant(P, ctx.setPieces, 'jetty'))
+    mapgenJetty(G, true);
   if (mapgenLaidOut(P)) mapgenStageLayout(G, aim);
   mapgenStagePlants(G);
   mapgenStageProps(G);
@@ -4407,10 +4436,269 @@ export function mapgenBuild(P, ctx, aim) {
     const L = mapgenLayoutSpots(sc, ctx.scenery, G);
     G.spots.push(...L.spots);
     if (G.spots.length) sc.spots = G.spots;
-    sc.layout = { plan: P.layout, walk: Math.round(mapgenWalkShare(L.walk) * 1000) / 1000 };
+    /* RT-3: set pieces on spare spots (they change what you can walk, so the share is measured after them) */
+    const walk =
+      P.pieces > 0 && ctx.setPieces ? mapgenStagePieces(G, sc, ctx.scenery, ctx.setPieces) || L.walk : L.walk;
+    sc.layout = { plan: P.layout, walk: Math.round(mapgenWalkShare(walk) * 1000) / 1000 };
   }
   sc.gen = { v: MAPGEN_VERSION, params: P, seed: P.seed };
   return { scene: sc, notes: G.notes };
+}
+
+/* ---------- RT-3: set pieces ---------- */
+/** the most set pieces a place may ask for (the pieces dial) */
+export const MAPGEN_PIECES_MOST = 6;
+/** a route trainer's sight a piece keeps out of (logic/route-trainers.js routeInSight: rules.json run.trainers.sight
+ * 6 m, 0.9 m to each side), with a little room */
+export const MAPGEN_PIECE_SIGHT = { range: 6.5, half: 1.1 };
+/** the spots a piece leaves for the route trainers (logic/route-trainers.js ROUTE_SPOTS: by the road, aside; RT-2's
+ * 4-6 a place, half of them by the road) */
+export const MAPGEN_PIECE_LEAVE = {
+  road: ['roadside', 'pinch', 'bridge', 4],
+  aside: ['pocket', 'clearing', 'deadend', 4],
+};
+/** a set piece's draw weight on this place: its biome's (default for one not listed) times its plan's
+ * @param {any} P @param {import('../../types/game-data').SetPiece} S */
+export function mapgenPieceWeight(P, S) {
+  const w = S.biomes[P.biome] ?? S.biomes.default ?? 0;
+  return w * ((S.plans && P.layout && S.plans[P.layout]) ?? 1);
+}
+/** does a piece that takes this spot kind have a weight here? @param {any} P @param {any} D setPieces.json @param {string} kind */
+export function mapgenPiecesWant(P, D, kind) {
+  return !!D && Object.values(D.pieces || {}).some(S => S.on.includes(kind) && mapgenPieceWeight(P, S) > 0);
+}
+/** the half-metre cells a placed prop covers, as walk-view.js navGrid blocks them (a box its turned rectangle, else a
+ * disc; at least 0.3 m round, so a prop that blocks nothing still keeps its place) */
+export function mapgenPropCells(p, M, N = 2) {
+  const out = [],
+    s = p.s || 1;
+  if (M && M.box) {
+    const w = M.box[0] * s,
+      d = M.box[1] * s,
+      B = turnedBounds(p, -w / 2, -0.1, w / 2, d);
+    for (let j = Math.floor(B[1] * N); j < Math.ceil(B[3] * N); j++)
+      for (let i = Math.floor(B[0] * N); i < Math.ceil(B[2] * N); i++) {
+        const [lx, lz] = pointInProp(p, (i + 0.5) / N, (j + 0.5) / N);
+        if (lx >= -w / 2 && lx <= w / 2 && lz >= -0.1 && lz <= d) out.push([i, j]);
+      }
+    return out;
+  }
+  const r = Math.max(0.3, M && M.solid != null ? M.solid * s : M && M.flat ? 0 : ((M && M.shadow) || 0) * 0.42 * s),
+    [cx, cz] = turnedPoint(p, 0, r * 0.2);
+  for (let j = Math.floor((cz - r) * N); j < Math.ceil((cz + r) * N); j++)
+    for (let i = Math.floor((cx - r) * N); i < Math.ceil((cx + r) * N); i++)
+      if (Math.hypot((i + 0.5) / N - cx, (j + 0.5) / N - cz) <= r) out.push([i, j]);
+  return out;
+}
+/**
+ * RT-3: set pieces (setPieces.json) on a laid-out place's spare spots, P.pieces of them at most, each placed as a
+ * whole or not at all, turned so its front faces the road (a clearing's way in, a jetty's land): roadside spots and
+ * clearings (never pockets, dead ends, pinches or bridges), leaving MAPGEN_PIECE_LEAVE for the route trainers, a jetty
+ * spot for a piece that takes one. A piece clears the small plants under it and needs every cell it covers on ground
+ * you can walk to (past the trees, rocks, fences and forest), off the road, its verge and the tall grass, out of every
+ * other spot's sight and 1.5 m from where its trainer would stand. Once placed, a piece that cuts the walk to an exit,
+ * a spot or its person, or leaves you below a ledge with no way back, is taken out again (the last first). The taken spot leaves scene.spots; scene.pieces lists them
+ * ({ id, x, z, rot, spot, f: mirrored, people }).
+ * Returns the walk (mapgenReach) with the pieces in, or null when none was placed.
+ * @param {any} G @param {any} sc @param {any} scenery @param {import('../../types/game-data').SetPiecesData} D
+ */
+export function mapgenStagePieces(G, sc, scenery, D) {
+  const { P, B } = G,
+    rnd = G.rng('pieces'),
+    N = 2,
+    soft = new Set([
+      ...Object.keys(B.plants || {}),
+      ...Object.keys(B.shrubs || {}),
+      ...Object.keys(B.tall || {}),
+      ...Object.keys(B.waterPlants || {}),
+      ...Object.keys(B.rocks || {}).filter(k => mapgenRadius(G.cat[k]) < 0.6),
+    ]),
+    isSoft = p => p.w === MAPGEN_WILD_MARK || soft.has(p.k),
+    /* the walk past everything but the small plants: where a piece may stand */
+    R0 = mapgenReach({ ...sc, props: sc.props.filter(p => !isSoft(p)) }, scenery, sc.hub, { slope: true }),
+    seen0 = (i, j) => i >= 0 && j >= 0 && i < R0.gw && j < R0.gh && !!R0.seen[j * R0.gw + i],
+    exits = (sc.edgeExits || []).map(e => mapgenExitPoint(sc.w, sc.h, e)),
+    rad = a => (a * Math.PI) / 180,
+    spots = /** @type {any[]} */ (sc.spots || []),
+    ids = Object.keys(D.pieces)
+      .sort()
+      .filter(k => mapgenPieceWeight(P, D.pieces[k]) > 0),
+    placed = [];
+  if (!ids.length) return null;
+  const kindOf = k =>
+    MAPGEN_PIECE_LEAVE.road.includes(k) ? 'road' : MAPGEN_PIECE_LEAVE.aside.includes(k) ? 'aside' : '';
+  /* may this spot be taken, leaving enough of its kind for the trainers? */
+  const spare = sp => {
+    const g = kindOf(sp.kind);
+    if (!g) return true;
+    const L = MAPGEN_PIECE_LEAVE[g],
+      n = /** @type {any[]} */ (sc.spots || []).filter(o => L.includes(o.kind)).length;
+    return n - 1 >= /** @type {number} */ (L[L.length - 1]);
+  };
+  /* is a cell clear of every other spot: its stand's room and its sight */
+  const clearOf = (sp, x, z) =>
+    spots.every(o => {
+      if (o === sp) return true;
+      const at = o.stand || [o.x, o.z];
+      if (Math.hypot(x - at[0], z - at[1]) < 1.5 || Math.hypot(x - o.x, z - o.z) < 1.5) return false;
+      if (!Number.isFinite(o.face)) return true;
+      const ux = Math.cos(rad(o.face)),
+        uz = Math.sin(rad(o.face)),
+        along = (x - at[0]) * ux + (z - at[1]) * uz,
+        side = Math.abs(-(x - at[0]) * uz + (z - at[1]) * ux);
+      return !(along > 0 && along <= MAPGEN_PIECE_SIGHT.range && side <= MAPGEN_PIECE_SIGHT.half);
+    });
+  /* where a piece goes on a spot: its origin (the middle of its front) and its turn */
+  const anchor = (S, sp) => {
+    const f = sp.face,
+      ux = Math.cos(rad(f)),
+      uz = Math.sin(rad(f)),
+      back = sp.kind === 'clearing' ? S.r / 2 : 0;
+    return { x: sp.x + ux * back, z: sp.z + uz * back, rot: normalTurn(f + 90) };
+  };
+  /* try piece S on spot sp: { add, gone, people } or null */
+  const fit = (S, sp, flip) => {
+    if (!Number.isFinite(sp.face) || !spare(sp)) return null;
+    const O = anchor(S, sp),
+      add = [],
+      cover = [];
+    if (
+      Math.hypot(O.x - sc.hub[0], O.z - sc.hub[1]) < 6 + S.r / 2 ||
+      exits.some(e => Math.hypot(O.x - e[0], O.z - e[1]) < 6 + S.r / 2)
+    )
+      return null;
+    const cellOK = (i, j, wet) => {
+      const x = (i + 0.5) / N,
+        z = (j + 0.5) / N;
+      if (x < 1 || z < 1 || x > sc.w - 1 || z > sc.h - 1) return false;
+      const q = mapgenCellAt(G, x, z),
+        F = G.F[q];
+      if (wet) return !(F & (8 | 128));
+      if (F & (1 | 2 | 4 | 8 | 32 | 128) || !seen0(i, j)) return false;
+      if (G.near[q] >= 0 && G.dist[q] - G.roadPts[G.near[q]].r < 0.8) return false;
+      if (mapgenInLot(G, x, z, 0.3)) return false;
+      return clearOf(sp, x, z);
+    };
+    for (const q of S.props) {
+      const M = G.cat[q.k];
+      if (!M) return null;
+      const [x, z] = turnedPoint(O, q.x * flip, q.z),
+        p = { k: q.k, x: mapgenRound2(x), z: mapgenRound2(z), g: 1 };
+      if (M.model) {
+        const r = normalTurn(O.rot + (q.rot || 0) * flip);
+        if (r) p.rot = r;
+      }
+      if (q.say) Object.assign(p, { act: 'sign', say: q.say });
+      if (q.water && !(G.F[mapgenCellAt(G, p.x, p.z)] & 4)) return null;
+      const cells = mapgenPropCells(p, M, N);
+      if (!cells.every(([i, j]) => cellOK(i, j, !!q.water))) return null;
+      add.push(p);
+      cover.push(...cells);
+    }
+    const people = [];
+    for (const q of S.people || []) {
+      const [x, z] = turnedPoint(O, q.x * flip, q.z),
+        i = Math.floor(x * N),
+        j = Math.floor(z * N);
+      if (!cellOK(i, j, false)) return null;
+      people.push({
+        who: q.who,
+        x: mapgenRound2(x),
+        z: mapgenRound2(z),
+        face: sp.face,
+        ...(q.event ? { event: q.event } : {}),
+        ...(q.say ? { say: q.say } : {}),
+      });
+    }
+    /* the small plants under it go */
+    const hit = new Set(cover.map(([i, j]) => j * R0.gw + i)),
+      gone = sc.props.filter(o => {
+        if (!isSoft(o)) return false;
+        const i = Math.floor(o.x * N),
+          j = Math.floor(o.z * N);
+        for (let dj = -1; dj <= 1; dj++)
+          for (let di = -1; di <= 1; di++) if (hit.has((j + dj) * R0.gw + i + di)) return true;
+        return false;
+      });
+    return { O, flip, add, gone, people };
+  };
+  const put = (id, sp, F) => {
+    const gone = new Set(F.gone);
+    sc.props = G.props = sc.props.filter(o => !gone.has(o)).concat(F.add);
+    sc.spots = G.spots = sc.spots.filter(o => o !== sp);
+    placed.push({ id, sp, F });
+  };
+  const undo = () => {
+    const L = placed.pop(),
+      add = new Set(L.F.add);
+    sc.props = G.props = sc.props.filter(o => !add.has(o)).concat(L.F.gone);
+    sc.spots = G.spots = [...sc.spots, L.sp];
+  };
+  /* the draw: a jetty's piece first when there is a jetty, then by weight, each piece once */
+  const left = new Set(ids),
+    order = [];
+  const draw = only => {
+    const W = Object.fromEntries([...left].filter(only).map(k => [k, mapgenPieceWeight(P, D.pieces[k])]));
+    if (!Object.keys(W).length) return null;
+    const k = rnd.pick(W);
+    left.delete(k);
+    return k;
+  };
+  if (spots.some(o => o.kind === 'jetty')) {
+    const k = draw(k => D.pieces[k].on.includes('jetty'));
+    if (k) order.push(k);
+  }
+  for (let k; (k = draw(() => true));) order.push(k);
+  for (const id of order) {
+    if (placed.length >= P.pieces) break;
+    const S = D.pieces[id],
+      cands = (sc.spots || [])
+        .filter(o => S.on.includes(o.kind))
+        .map(o => [rnd.next(), o])
+        .sort((a, b) => a[0] - b[0])
+        .map(a => a[1]);
+    /* each spot as drawn, then mirrored (left for right) */
+    found: for (const sp of cands)
+      for (const flip of [1, -1]) {
+        const F = fit(S, sp, flip);
+        if (!F) continue;
+        put(id, sp, F);
+        break found;
+      }
+  }
+  if (!placed.length) return null;
+  /* nothing cut off: every exit, every spot left and each piece's person still walked to, and no ledge you can't walk
+     back up from (the last piece out first) */
+  let R = /** @type {any} */ (null);
+  for (;;) {
+    const T = mapgenTraps(sc, scenery);
+    R = T.R;
+    const ok =
+      !T.n &&
+      exits.every(e => mapgenReached(R, e[0], e[1])) &&
+      sc.spots.every(o => mapgenReached(R, o.x, o.z) && (!o.stand || mapgenReached(R, o.stand[0], o.stand[1]))) &&
+      placed.every(L =>
+        L.F.people.every(q => {
+          const u = rad(q.face);
+          return mapgenReached(R, q.x + Math.cos(u) * 0.8, q.z + Math.sin(u) * 0.8);
+        })
+      );
+    if (ok || !placed.length) break;
+    undo();
+  }
+  if (!placed.length) return null;
+  sc.props.sort((a, b) => b.z - a.z || a.x - b.x);
+  if (!sc.spots.length) delete sc.spots;
+  sc.pieces = placed.map(L => ({
+    id: L.id,
+    x: mapgenRound2(L.F.O.x),
+    z: mapgenRound2(L.F.O.z),
+    rot: L.F.O.rot,
+    spot: L.sp.kind,
+    ...(L.F.flip < 0 ? { f: 1 } : {}),
+    ...(L.F.people.length ? { people: L.F.people } : {}),
+  }));
+  return R;
 }
 
 /* ---------- checking a scene: can you walk from the hub to every exit? ---------- */

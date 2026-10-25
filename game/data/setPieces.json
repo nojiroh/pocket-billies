@@ -67,13 +67,12 @@
   "fishing_jetty": {
    "name": "Fishing jetty",
    "on": ["jetty"],
-   "r": 4,
+   "r": 5,
    "biomes": {"lake":4,"sea":3,"meadow":2,"default":1},
    "props": [
-    {"k":"net_rack","x":-2.2,"z":-0.6},
-    {"k":"barrels","x":2.2,"z":-0.8},
-    {"k":"crate","x":-1.4,"z":-2},
-    {"k":"rowboat","x":2.3,"z":3,"water":true}
+    {"k":"net_rack","x":-2.8,"z":0},
+    {"k":"barrels","x":2.8,"z":-0.2},
+    {"k":"rowboat","x":2.4,"z":4.2,"water":true}
    ]
   },
   "ruins": {
