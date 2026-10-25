@@ -107,7 +107,7 @@
   "attackExp": 0.5,
   "speedExp": -0.6,
   "cap": 0.2,
-  "primeBonus": 0.1
+  "primeBonus": 0.05
  },
  "robots": {
   "slots": ["torso","armL","armR","legs"],
