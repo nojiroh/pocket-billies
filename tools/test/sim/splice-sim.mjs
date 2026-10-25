@@ -35,7 +35,9 @@ function fair(a, b, seed) {
 
 /** `n` slots of `sp` spliced with random donors from other lines; null when the species has too few slots that take one */
 function rollGraft(sp, n, r) {
-  const open = SLOTS.filter(s => modules['graft-art'].graftDonors(GAME_DATA.kitBuilds, GAME_DATA.partKits, sp, s).length);
+  const open = SLOTS.filter(
+    s => modules['graft-art'].graftDonors(GAME_DATA.kitBuilds, GAME_DATA.partKits, sp, s).length
+  );
   if (open.length < n) return null;
   const pick = open.slice();
   /** @type {Record<string, string>} */
