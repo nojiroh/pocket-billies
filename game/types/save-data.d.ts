@@ -378,7 +378,8 @@ export interface Billy {
   mut?: BillieMut;
   /** RL-12c: the item it holds (an items.json id with `hold`), or none; a run's held items go back to the bag at its end */
   held?: string;
-  /** SP-2: its splice, slot (rules.json parts.slots) -> donor rig (kitBuilds.json); missing for a Billie with none */
+  /** SP-2: its splice, slot (rules.json parts.slots) -> Gene id, "part@donor" (a partKits.json part, a kitBuilds.json
+      rig); missing for a Billie with none */
   graft?: Record<string, string>;
   /** phase 17: 'robot' for a robot (sp is then made from its parts: logic/fighters.js robotSp); missing for a Billie */
   kind?: 'robot';

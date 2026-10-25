@@ -284,12 +284,13 @@ export function validSave(o) {
   if (!num(o.serial, 0, 1e12)) return false;
   return true;
 }
-/** SP-2: a splice as a save holds it: none, or a few slot -> donor rig pairs of short strings @param {unknown} g */
+/** SP-2: a splice as a save holds it: none, or a few slot -> Gene id ("part@donor") pairs of short strings
+ * @param {unknown} g */
 export function graftShapeOk(g) {
   if (g == null) return true;
   if (typeof g !== 'object' || Array.isArray(g) || Object.hasOwn(g, '__proto__')) return false;
   const pairs = Object.entries(g);
-  return pairs.length <= 8 && pairs.every(([k, v]) => k.length <= 12 && typeof v === 'string' && v.length <= 40);
+  return pairs.length <= 8 && pairs.every(([k, v]) => k.length <= 12 && typeof v === 'string' && v.length <= 64);
 }
 /** SP-2: a loaded Billie's or encounter's splice: the slots that still fit it; none left, or a splice past what
  * Stability allows at the default limit, and it goes @param {{ sp: string, graft?: Record<string, string> }} m */
@@ -331,7 +332,7 @@ export function billiesOk(list) {
     if (typeof (m.nick || '') !== 'string' || (m.status != null && !STATUS_NAMES[m.status])) return false;
   /* RL-12c: a held item is an item id (saveFill drops one the data doesn't have) */
   for (const m of list) if (m.held != null && (typeof m.held !== 'string' || m.held.length > 40)) return false;
-  /* SP-2: a splice is a few slot -> donor pairs (saveFill drops what the data no longer fits) */
+  /* SP-2: a splice is a few slot -> Gene id pairs (saveFill drops what the data no longer fits) */
   for (const m of list) if (!graftShapeOk(m.graft)) return false;
   /* RL-10: a bred Billie's mark: a quirk, or an abomination with a short name and two different stats */
   for (const m of list) {

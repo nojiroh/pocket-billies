@@ -140,7 +140,7 @@ test('SP-2: a spliced Billie: its weight, its stats and its Prime tag follow its
     lev = fn('stat')(m, 'lev'),
     hus = fn('stat')(m, 'hus');
   assert.equal(fn('billyPrime')(m), true);
-  m.graft = { front: 'musk3' };
+  m.graft = { front: 'bear_arm@musk3' };
   assert.equal(fn('billyPrime')(m), false);
   assert.ok(fn('billyWeight')(m) > kg * 50, 'a bear arm on a Swiftlet');
   assert.ok(fn('stat')(m, 'lev') > lev / (1 + P.primeBonus), 'heavier: more attack than an un-Prime twin');
@@ -152,6 +152,6 @@ test('SP-2: a Billie with no build and a splice that no longer fits gets no buil
     m = s.team[0];
   delete m.build;
   const plain = fn('stat')(m, 'hp');
-  m.graft = { back: 'trump0' };
+  m.graft = { back: 'reptile_tail@trump0' };
   assert.equal(fn('stat')(m, 'hp'), plain);
 });

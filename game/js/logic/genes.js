@@ -1,9 +1,9 @@
 // @ts-check
 'use strict';
 /* ================= GENES (splicing track SP-2) =================
-   The rules of a spliced Billie. A graft is { slot: donor rig } (graft-art.js); each slot's Gene is the part the
-   donor's kit recipe has for that slot's bone (kitBuilds.json), with what genes.json says about the part's kind (its
-   trait) and the part itself (its dominant type, its move). From those:
+   The rules of a spliced Billie. A graft is { slot: Gene id } (graft-art.js), a Gene id "part@donor": a kit part
+   (partKits.json) and the donor rig it came from (kitBuilds.json: its species, weight, colour), with what genes.json
+   says about the part's kind (its trait) and the part itself (its dominant type, its move). From those:
      Stability  a foreign part costs genes.json stability.line (the Billie's own line), .kit (the same kit as the part
                 it replaces), or .other; past the limit the splice is Unstable, past limit + refuse it is refused
      weight     a foreign part weighs what it did on its donor: the slot's weight times the donor's `wt` over the
@@ -21,12 +21,12 @@
 /** @typedef {import('./graft-art.js').Graft} Graft */
 /** @typedef {{ kitBuilds: { forms: KitForm[] }, partKits: PartKits, genes: Genes,
  *   species: Record<string, { wt: number, types: string[], line: string, name: string }>, parts?: PartRules }} GeneData */
-/** @typedef {{ slot: string, donor: string, sp: string, line: string, part: string, kind: string, kit: string,
+/** @typedef {{ slot: string, id: string, donor: string, sp: string, line: string, part: string, kind: string, kit: string,
  *   trait: string | null, type: string | null, move: string | null }} Gene */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
-import { GRAFT_SLOTS, graftForm, graftKey, graftKind, graftRecipe } from './graft-art.js';
+import { GRAFT_SLOTS, geneSplit, graftForm, graftKey, graftKind, graftRecipe } from './graft-art.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -52,22 +52,23 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** a donor's Gene for a slot: the part its recipe has there, or null when it has none of the slot's bone
- * @param {GeneData} D @param {string} slot @param {string} donor a kitBuilds rig @returns {Gene | null} */
-export function geneOf(D, slot, donor) {
-  const form = graftRecipe(D.kitBuilds, donor),
-    bone = form && graftKind(D.partKits, form, slot),
-    pid = bone && form.parts[bone][0],
-    P = pid && D.partKits.parts[pid];
-  if (!form || !P) return null;
+/** a slot's Gene from its id ("part@donor"): the part, its kind and kit, the donor's species and line, the trait,
+ * dominant type and move genes.json gives the part; null for an id with no such part or donor (graftFit says
+ * whether it fits a species) @param {GeneData} D @param {string} slot @param {string} id @returns {Gene | null} */
+export function geneOf(D, slot, id) {
+  const gene = geneSplit(id),
+    form = gene && graftRecipe(D.kitBuilds, gene.donor),
+    P = gene && D.partKits.parts[gene.part];
+  if (!gene || !form || !P) return null;
   const G = D.genes,
-    own = G.parts[/** @type {string} */ (pid)] || {};
+    own = G.parts[gene.part] || {};
   return {
     slot,
-    donor,
+    id: /** @type {string} */ (id),
+    donor: gene.donor,
     sp: form.line + form.stage,
     line: form.line,
-    part: /** @type {string} */ (pid),
+    part: gene.part,
     kind: P.kind,
     kit: P.kit,
     trait: (G.kinds[P.kind] && G.kinds[P.kind].trait) || null,

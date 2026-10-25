@@ -45,7 +45,7 @@ import {
   TYPES,
   gameData,
 } from './game-data.js';
-import { GRAFT_SLOTS, graftDonors, graftKey, graftParse, graftSet } from './logic/graft-art.js';
+import { GRAFT_SLOTS, geneSplit, graftDonors, graftKey, graftParse, graftSet } from './logic/graft-art.js';
 import { speciesOf } from './logic/fighters.js';
 import {
   addBilly,
@@ -366,10 +366,10 @@ function debugGraftFor(sp) {
 }
 const debugGraftWords = g =>
   Object.entries(graftParse(g) || {})
-    .map(
-      ([slot, d]) =>
-        `${SPECIES[d] ? SPECIES[d].name : d}’s ${{ front: 'arms', back: 'legs', sig: 'tail' }[slot] || slot}`
-    )
+    .map(([slot, id]) => {
+      const d = (geneSplit(id) || { donor: id }).donor;
+      return `${SPECIES[d] ? SPECIES[d].name : d}’s ${{ front: 'arms', back: 'legs', sig: 'tail' }[slot] || slot}`;
+    })
     .join(' and ');
 function debugAction(x) {
   const v = id => {

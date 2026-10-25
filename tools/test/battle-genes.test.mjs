@@ -27,12 +27,12 @@ function battle(graft, foeGraft) {
 const texts = B => JSON.stringify(B.events);
 
 test("battle genes: a trait row is the Billie's own: Stride and Counterweight raise stages as it takes the field", () => {
-  assert.equal(battle({ back: 'swift0' }).B.sides[0].f[0].v.st.hus, 1, 'a foot: Stride');
-  assert.equal(battle({ sig: 'musk0' }).B.sides[0].f[0].v.st.law, 1, 'a tail: Counterweight');
+  assert.equal(battle({ back: 'sparrow_foot@swift0' }).B.sides[0].f[0].v.st.hus, 1, 'a foot: Stride');
+  assert.equal(battle({ sig: 'fox_tail@musk0' }).B.sides[0].f[0].v.st.law, 1, 'a tail: Counterweight');
   assert.equal(battle(null).B.sides[0].f[0].v.st.hus, 0);
-  assert.equal(battle(null, { back: 'swift0' }).B.sides[1].f[0].v.st.hus, 1, 'the foe has its own');
+  assert.equal(battle(null, { back: 'sparrow_foot@swift0' }).B.sides[1].f[0].v.st.hus, 1, 'the foe has its own');
   assert.deepEqual(
-    fn('fxOfBillie')(battle({ back: 'swift0' }).me, data.ITEMS).map(f => f.src),
+    fn('fxOfBillie')(battle({ back: 'sparrow_foot@swift0' }).me, data.ITEMS).map(f => f.src),
     ['gene:stride']
   );
 });
@@ -48,9 +48,12 @@ test('battle genes: damage rows count for the spliced side alone', () => {
   assert.ok(ground, 'a Ground move to test with');
   const base = dmg(null, null, 1, 0, ground);
   /* Airborne (a wing) takes half from Ground; the Kidling keeps its type (a chick wing has no dominant type) */
-  assert.ok(dmg({ front: 'hughes0' }, null, 1, 0, ground) < base, 'Airborne takes less from Ground');
+  assert.ok(dmg({ front: 'chick_wing@hughes0' }, null, 1, 0, ground) < base, 'Airborne takes less from Ground');
   /* the foe's own wing shields the foe, not you (its weight moves its own attack, so compare what it takes) */
-  assert.ok(dmg(null, { front: 'hughes0' }, 0, 1, ground) < dmg(null, null, 0, 1, ground), 'the foe takes less');
+  assert.ok(
+    dmg(null, { front: 'chick_wing@hughes0' }, 0, 1, ground) < dmg(null, null, 0, 1, ground),
+    'the foe takes less'
+  );
 });
 
 test("battle genes: an Unstable splice loses a share of HP at each turn's end; a stable one none", () => {
@@ -58,7 +61,7 @@ test("battle genes: an Unstable splice loses a share of HP at each turn's end; a
     was = S.limit;
   S.limit = 0;
   try {
-    const { B, me } = battle({ front: 'musk3' }),
+    const { B, me } = battle({ front: 'bear_arm@musk3' }),
       mx = fn('maxHp')(me);
     assert.ok(fn('billyUnstable')(me));
     me.hp = mx;
@@ -68,7 +71,7 @@ test("battle genes: an Unstable splice loses a share of HP at each turn's end; a
   } finally {
     S.limit = was;
   }
-  const { B, me } = battle({ front: 'musk3' }),
+  const { B, me } = battle({ front: 'bear_arm@musk3' }),
     mx = fn('maxHp')(me);
   me.hp = mx;
   fn('endTurn')();
@@ -77,7 +80,7 @@ test("battle genes: an Unstable splice loses a share of HP at each turn's end; a
 });
 
 test("battle genes: a spliced Billie fights as its dominant Gene's type", () => {
-  battle({ sig: 'musk0' });
+  battle({ sig: 'fox_tail@musk0' });
   assert.deepEqual(fn('actorTypes')(0), ['Grass', 'Fire']);
   battle(null);
   assert.deepEqual(fn('actorTypes')(0), ['Grass']);

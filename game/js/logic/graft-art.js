@@ -3,20 +3,23 @@
 /* ================= GRAFT ART (splicing track SP-1) =================
    A grafted Billie's recipe: its species' kit recipe (game/data/kitBuilds.json) with one or more slots' parts taken
    from another species' recipe, ready for kitBakeWhole (logic/kit-assemble.js) to bake at runtime. A graft is
-   { slot: donor species id } (SP-1's art spike; SP-2's Genes resolve to the same part and donor). The donor's part
+   { slot: Gene id }, a Gene id "part@donor": a kit part and the donor rig whose colour and size it keeps (SP-2). The donor's part
    keeps its colour and its size on the donor (the fit scales the whole Billie down if it no longer fits the stage
    box). A slot is swapped only bone kind for bone kind (an arm for an arm or a wing, a leg for a leg or a foot, a tail
    for a tail): the baker places each kind its own way, so a tail can't stand in for legs. Extras and the head are
    not grafted yet. SP-2: the splice is saved on the Billie (graftOf, graftSet); its rules are logic/genes.js. Logic only: no DOM (tools/test/graft-art.test.mjs). */
 /** @import { PartKits } from '../../types/game-data' */
 /** @typedef {import('./kit-assemble.js').KitForm} KitForm */
-/** @typedef {Record<string, string>} Graft slot (rules.json parts.slots) -> donor species id */
+/** @typedef {Record<string, string>} Graft slot (rules.json parts.slots) -> Gene id, "part@donor" (SP-2) */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
+  BONE_OF_SLOT: [() => BONE_OF_SLOT],
   GRAFT_SLOTS: [() => GRAFT_SLOTS],
+  // @ts-expect-error -- replaced on purpose
+  geneSplit: [() => geneSplit, v => (geneSplit = v)],
   // @ts-expect-error -- replaced on purpose
   graftDonors: [() => graftDonors, v => (graftDonors = v)],
   // @ts-expect-error -- replaced on purpose
@@ -81,30 +84,47 @@ export function graftSet(m, key) {
   else delete o.graft;
 }
 
-/** the recipe of a species with its grafted slots' parts from their donors, or null when a donor or a slot doesn't fit
- * (no recipe, no part of that kind) @param {{ forms: KitForm[] }} B @param {PartKits} K @param {string} sp
- * @param {Graft} graft @returns {KitForm | null} */
+/** SP-2: a Gene id, "part@donor" (a kit part id and the donor rig it came from), as its two halves; null for
+ * anything else @param {unknown} id @returns {{ part: string, donor: string } | null} */
+export function geneSplit(id) {
+  if (typeof id !== 'string') return null;
+  const at = id.indexOf('@');
+  return at > 0 && at < id.length - 1 && id.indexOf('@', at + 1) < 0
+    ? { part: id.slice(0, at), donor: id.slice(at + 1) }
+    : null;
+}
+/** the bone a part goes on, from its kind's usual slot (partKits.json slots): front an arm, back a leg, sig a tail */
+export const BONE_OF_SLOT = /** @type {Record<string, string>} */ ({ front: 'arm', back: 'leg', sig: 'tail' });
+
+/** the recipe of a species with its grafted slots' parts (a Gene's part, at its donor's colour and size), or null
+ * when a Gene or a slot doesn't fit: no recipe, no such donor or part, a donor without that bone, a part that goes
+ * on another bone @param {{ forms: KitForm[] }} B @param {PartKits} K @param {string} sp @param {Graft} graft
+ * @returns {KitForm | null} */
 export function graftForm(B, K, sp, graft) {
   const base = graftRecipe(B, sp);
   if (!base) return null;
   const out = { ...base, parts: { ...base.parts }, name: `${base.name}~${graftKey(graft)}` };
-  for (const [slot, donorSp] of Object.entries(graft)) {
-    const donor = graftRecipe(B, donorSp),
+  for (const [slot, id] of Object.entries(graft)) {
+    const gene = geneSplit(id),
+      donor = gene && graftRecipe(B, gene.donor),
+      P = gene && K.parts[gene.part],
       kind = graftKind(K, base, slot);
-    if (!donor || !kind || graftKind(K, donor, slot) !== kind) return null;
-    const [pid, size, col] = donor.parts[kind];
-    out.parts[kind] = [pid, Math.round(((size * donor.scale) / base.scale) * 1e4) / 1e4, col];
+    if (!donor || !P || !kind || graftKind(K, donor, slot) !== kind) return null;
+    if (BONE_OF_SLOT[/** @type {Record<string, string>} */ (K.slots || {})[P.kind]] !== kind) return null;
+    const [, size, col] = donor.parts[kind];
+    out.parts[kind] = [gene.part, Math.round(((size * donor.scale) / base.scale) * 1e4) / 1e4, col];
   }
   return out;
 }
 
-/** the species that can give a species a part for a slot: another line, the same bone kind, a different part
- * @param {{ forms: KitForm[] }} B @param {PartKits} K @param {string} sp @param {string} slot @returns {string[]} */
+/** the Genes a species can take for a slot, one per donor ("part@donor"): another line, the same bone kind, a
+ * different part @param {{ forms: KitForm[] }} B @param {PartKits} K @param {string} sp @param {string} slot
+ * @returns {string[]} */
 export function graftDonors(B, K, sp, slot) {
   const base = graftRecipe(B, sp),
     kind = base && graftKind(K, base, slot);
   if (!base || !kind) return [];
   return B.forms
     .filter(f => f.line !== base.line && graftKind(K, f, slot) === kind && f.parts[kind][0] !== base.parts[kind][0])
-    .map(f => f.rig);
+    .map(f => `${f.parts[kind][0]}@${f.rig}`);
 }
