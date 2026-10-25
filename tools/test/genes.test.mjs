@@ -182,3 +182,30 @@ test('genes: a spliced Billie has its dominant Gene type in battle and on its ca
   m.graft = { sig: 'musk0' };
   assert.deepEqual(fn('billyTypes')(m), ['Grass', 'Fire']);
 });
+
+test('genes: an Unstable Billie has one stat raised and one lowered, and a merged name; a stable one neither', () => {
+  const S = data.GENES.stability,
+    U = data.GENES.unstable,
+    was = S.limit,
+    s = startedSave('swift0', 30),
+    m = s.team[0];
+  m.build = { head: 'M', body: 'M', front: 'M', back: 'M', sig: 'M' };
+  m.graft = { front: 'hughes2' };
+  const stable = Object.fromEntries(STATS.map(k => [k, fn('stat')(m, k)]));
+  assert.equal(fn('billyName')(m), 'Swiftlet');
+  S.limit = 0;
+  try {
+    const un = fn('billyUnstable')(m);
+    assert.ok(un);
+    for (const k of STATS) {
+      const want =
+        k === un.up ? Math.round(stable[k] * U.up) : k === un.down ? Math.round(stable[k] * U.down) : stable[k];
+      assert.equal(fn('stat')(m, k), Math.max(1, want), k);
+    }
+    assert.equal(fn('billyName')(m), modules.breeding.breedName('Swiftlet', data.SPECIES.hughes2.name));
+    m.nick = 'Bob';
+    assert.equal(fn('billyName')(m), 'Bob', 'a nickname still wins');
+  } finally {
+    S.limit = was;
+  }
+});

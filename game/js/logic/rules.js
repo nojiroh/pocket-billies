@@ -15,6 +15,7 @@
 import { expose } from '../test-globals.js';
 import {
   JINGLES,
+  breedName,
   coatRoll,
   environmentOdds,
   fieldMoveState,
@@ -214,6 +215,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   tripTo: [() => tripTo, v => (tripTo = v)],
   // @ts-expect-error -- replaced on purpose
+  unstableName: [() => unstableName, v => (unstableName = v)],
+  // @ts-expect-error -- replaced on purpose
   upgradePart: [() => upgradePart, v => (upgradePart = v)],
   // @ts-expect-error -- replaced on purpose
   walkDistances: [() => walkDistances, v => (walkDistances = v)],
@@ -380,6 +383,10 @@ export function stat(m, k) {
   const mu = m.mut,
     B = mu && mu.k === 'abom' && RULES.ranch && RULES.ranch.breed;
   if (B && (k === mu.up || k === mu.down)) v = Math.max(1, Math.round(v * (k === mu.up ? B.abomUp : B.abomDown)));
+  /* SP-2: an Unstable splice's spike and drawback (genes.json unstable), picked from the Billie and its splice */
+  const un = m.graft ? billyUnstable(m) : null;
+  if (un && (k === un.up || k === un.down))
+    v = Math.max(1, Math.round(v * (k === un.up ? GENES.unstable.up : GENES.unstable.down)));
   /* v33: an Alpha in battle is much tougher (m.boss); one you caught keeps a little of it (m.alpha) */
   if (m.boss) v = Math.floor(v * (k === 'hp' ? m.boss.hp : m.boss.st));
   else if (m.alpha) v = Math.floor(v * ((RULES.battle && RULES.battle.alphaKeep) ?? 1.08));
@@ -558,7 +565,13 @@ export function upgradePart(p) {
   for (const { m, previousMaxHp } of fitted) refreshRobot(m, previousMaxHp);
   return true;
 }
-export const billyName = m => m.nick || (m.mut && m.mut.name) || speciesOf(m).name;
+/* SP-2: an Unstable Billie is called by its own and its heaviest donor's names merged, as an abomination is */
+export const billyName = m => m.nick || (m.mut && m.mut.name) || unstableName(m) || speciesOf(m).name;
+/** SP-2: an Unstable Billie's merged name ('' when it isn't one) @param {any} m */
+export function unstableName(m) {
+  const un = m.graft ? billyUnstable(m) : null;
+  return un && SPECIES[un.donor] ? breedName(speciesOf(m).name, SPECIES[un.donor].name) : '';
+}
 /* RL-8: during a run storage stays in Copperleaf (the box isn't a run field): only the party counts, so nothing in a run
    reads, heals, merges or moves a Billie that is resting at home */
 export const allBillies = () => (saveData.run ? saveData.team.slice() : saveData.team.concat(saveData.box));

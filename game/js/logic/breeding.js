@@ -20,6 +20,7 @@
 /** @typedef {{ a: string, b: string, mode: 'safe' | 'risky', at: number, ready: number, egg: Billy }} NurseryEgg */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 import { COATS, MOVES, STAT_IDS } from '../game-data.js';
 import { hashString, rngFrom } from './rng.js';
 import { isRobot, speciesOf } from './fighters.js';
@@ -36,7 +37,7 @@ expose({
   breedHatch: [() => breedHatch, v => (breedHatch = v)],
   breedLine: [() => breedLine],
   // @ts-expect-error -- replaced on purpose
-  breedName: [() => breedName, v => (breedName = v)],
+  breedName: [() => breedName, v => ((breedName = v), provide({ breedName }))],
   breedNests: [() => breedNests],
   // @ts-expect-error -- replaced on purpose
   breedParent: [() => breedParent, v => (breedParent = v)],
@@ -48,6 +49,7 @@ expose({
   breedStart: [() => breedStart, v => (breedStart = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ breedName });
 /* to-module: end */
 export const BREED_HOUR = 3600000;
 /** how many eggs the nursery holds at this ranch level (past the list's end, its last) */
