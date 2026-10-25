@@ -41,6 +41,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   floatLagoonWater: [() => floatLagoonWater, v => (floatLagoonWater = v)],
   // @ts-expect-error -- replaced on purpose
+  floatMistPuffs: [() => floatMistPuffs, v => (floatMistPuffs = v)],
+  // @ts-expect-error -- replaced on purpose
   floatReach: [() => floatReach, v => (floatReach = v)],
   // @ts-expect-error -- replaced on purpose
   floatResample: [() => floatResample, v => (floatResample = v)],
@@ -214,7 +216,8 @@ export function floatRock(ring, c, top, depth, o = {}) {
  * The whole floating island: its rock under the coast (and a cap just under the land, so no gap shows between the
  * ground's edge and the rock) and a few small rocks floating round it.
  * @param {number[][]} coast the coast [x, y] in the bowl's coordinates @param {number} top the coast's height
- * @param {{ seed?: number, rocks?: number, lift?: (x: number, y: number) => number }} [o]
+ * @param {{ seed?: number, rocks?: number, lift?: (x: number, y: number) => number, capDrop?: number }} [o]
+ * capDrop: how far under the top its cap sits (HB-3: under a lagoon's bed)
  * @returns {{ data: Float32Array, c: number[], r: number, depth: number }}
  */
 export function floatIslandMesh(coast, top, o = {}) {
@@ -224,7 +227,7 @@ export function floatIslandMesh(coast, top, o = {}) {
     { c, r } = floatIslandSize(ring),
     depth = r * 2 * K.depth,
     lift = o.lift,
-    out = floatRock(ring, c, top, depth, { seed, cap: -1, capDrop: r * 0.004, lift });
+    out = floatRock(ring, c, top, depth, { seed, cap: -1, capDrop: o.capDrop ?? r * 0.004, lift });
   const nr = o.rocks ?? K.rocks;
   for (let q = 0; q < nr; q++) {
     /* round the island, spread out, at different heights and sizes */
@@ -358,8 +361,9 @@ export function floatGroundHeight(M, x, y) {
    coast pushed out by a share of its mean radius, smoothed round (a star round the middle, so it never folds into a
    bay); the bed goes down from the beach to a shallow basin and back up to a sill at the rim; three falls pour off the
    rim where it comes nearest the coast. */
-/** the lagoon: how far past the coast (a share of the island's mean radius), how many corners round, how deep its
- * basin and its sill (metres), the share of its width that fades into the clouds at the rim, how many falls */
+/** the lagoon: how far past the coast (a share of the island's mean radius), how many corners round (and how many
+ * either side its reach is smoothed over), how deep its basin, its sill and off the beach (metres), the share of its
+ * width that fades into the clouds at the rim, how many falls */
 export const FLOAT_LAGOON = {
   out: 0.3,
   corners: 128,
@@ -542,4 +546,34 @@ export function floatFallMesh(f, top, w, drop, rows = 12) {
       I.push(a, b, d, a, d, c);
     }
   return { V, I: new Uint32Array(I) };
+}
+
+/**
+ * The mist round the lagoon's rim (HB-3: the lagoon fades into the clouds): low, flat puffs along the ring, a little
+ * outside it, sizes and spacing varied by the seed. Each: where (x, y), its radius and how far above the water.
+ * @param {ArrayLike<number>} ring flat x, y pairs @param {number[]} c the middle @param {number} r the island's radius
+ * @param {{ n?: number, seed?: number }} [o]
+ * @returns {{ x: number, y: number, s: number, h: number }[]}
+ */
+export function floatMistPuffs(ring, c, r, o = {}) {
+  const m = ring.length / 2,
+    n = o.n ?? 72,
+    seed = o.seed || 0,
+    out = [];
+  for (let q = 0; q < n; q++) {
+    const k = Math.floor(((q + floatHash(seed + 31, q) * 0.8) / n) * m) % m,
+      x = ring[k * 2],
+      y = ring[k * 2 + 1],
+      dx = x - c[0],
+      dy = y - c[1],
+      l = Math.hypot(dx, dy) || 1,
+      off = r * (0.02 + floatHash(seed + 32, q) * 0.07);
+    out.push({
+      x: x + (dx / l) * off,
+      y: y + (dy / l) * off,
+      s: r * (0.09 + floatHash(seed + 33, q) * 0.08),
+      h: r * (floatHash(seed + 34, q) - 0.6) * 0.04,
+    });
+  }
+  return out;
 }

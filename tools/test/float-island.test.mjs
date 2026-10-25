@@ -208,3 +208,14 @@ test('a fall’s sheet hangs from the lip down by its drop, moving out as it fal
     bottom = outs.filter(o => o[0] === 1).map(o => o[1]);
   assert.ok(Math.min(...bottom) > Math.max(...top), 'further out at the foot');
 });
+
+test('mist along the lagoon’s rim: just outside the ring, low over the water, the same each time', () => {
+  const { ring, c, r } = ringOf(),
+    M = F.floatMistPuffs(ring, c, r);
+  assert.ok(M.length >= 40);
+  for (const p of M) {
+    assert.ok(!F.floatInside(ring, p.x, p.y), 'outside the ring');
+    assert.ok(Math.abs(p.h) < r * 0.03 && p.s > r * 0.05 && p.s < r * 0.2);
+  }
+  assert.deepEqual(F.floatMistPuffs(ring, c, r), M);
+});
