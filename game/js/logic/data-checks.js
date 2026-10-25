@@ -315,6 +315,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'layouts',
   'wild',
   'seamIn',
+  'load',
   'start',
   'points',
   'pack',
@@ -353,7 +354,7 @@ export function dataRunClock(D) {
 // (water, the road's shape and surface, the feature) with something to pick; nothing the run sets itself (size, kind,
 // biome, seed, exits, edges). Wild levels: whole numbers from 1 to 100, low to high, a whole number more a row and
 // again on a node walked back to; the metres past a seam before a crossing counts (1-30)
-/** RL-7: rules.json run.scene, run.wild, run.seamIn @param {any} D @returns {DataProblem[]} */
+/** RL-7: rules.json run.scene, run.wild, run.seamIn (HB-2: and run.load) @param {any} D @returns {DataProblem[]} */
 export function dataRunScene(D) {
   /** @type {DataProblem[]} */
   const out = [],
@@ -444,6 +445,11 @@ export function dataRunScene(D) {
       for (const k of Object.keys(W))
         if (!['lv', 'perRow', 'back', 'waystation'].includes(k)) problem('rules.json', `run.wild.${k}: no such rule`);
     if (!whole(R.seamIn, 1, 30)) problem('rules.json', 'run.seamIn is not a whole number of metres from 1 to 30');
+    /* HB-2: the loading screen's cap (logic/run-load.js), 1-120 s */
+    const Ld = R.load;
+    if (!Ld || !whole(Ld.capMs, 1000, 120000))
+      problem('rules.json', 'run.load.capMs is not a whole number of ms from 1,000 to 120,000');
+    else for (const k of Object.keys(Ld)) if (k !== 'capMs') problem('rules.json', `run.load.${k}: no such rule`);
   }
   return out;
 }

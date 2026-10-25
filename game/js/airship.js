@@ -18,6 +18,7 @@ import {
   render,
   runGiveUp,
   runHint,
+  runLoadShow,
   runStartSheet,
   runStartable,
   storyFlags,
@@ -320,6 +321,8 @@ function flyLand() {
   if (saveData.run && saveData.run.at.phase === 'fly') {
     saveData.run.at.phase = 'walk';
     if (typeof runHint === 'function') runHint('landing');
+    /* HB-2: the landing not ready yet: its loading screen until it is (run-loading.js) */
+    if (typeof runLoadShow === 'function') runLoadShow();
   }
   save();
   render();

@@ -1573,11 +1573,14 @@ def rl8_run_from_mast(P):
         if not until(pg, "uiState.modal&&uiState.modal.title==='Start a run'", 10): raise Exception('no run sheet')
         pg.click('#ov [data-a=mb][data-i="0"]')
         # TC-4: tapped again while the sheet is still there: once on a busy machine the tap was lost (the sheet still
-        # drawing itself); the take-off closes the sheet, so nothing is tapped twice
+        # drawing itself); the take-off closes the sheet, so nothing is tapped twice (HB-2: the sheet stays while the
+        # world is made, inert, and a second runTakeOff on a run does nothing)
         # RT-1: 60 s, not 30: the take-off makes the run's world (laid-out places: 1.1 s here alone, more in the paired run)
         if not until(pg, "!!saveData.run&&airshipFlight.on", 60, "uiState.modal&&uiState.modal.title==='Start a run'&&document.querySelector('#ov [data-a=mb][data-i=\"0\"]').click()"): raise Exception('“Take off” didn’t start a run’s flight')
         pg.evaluate("flySkip();0")
         if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready&&walkView.id==='w:'+LOCATIONS[1].mapId+'*'", 90): raise Exception(f'never landed on the landing ({pg.evaluate("saveData.run&&saveData.run.at.phase")}, {pg.evaluate("walkView.id")})')
+        # HB-2: the landing's loading screen lifts (every stage ready, or the cap)
+        if not until(pg, "runLoad.ready&&!document.getElementById('runload')", 40): raise Exception("the landing's loading screen never lifted")
         land = pg.evaluate("[saveData.run.seed, saveData.trip.node, saveData.run.clock, !!uiState.roam, runWorld.scenes]")
         if land[1] != 1 or land[2] != 1: raise Exception(f'landed at node {land[1]} on day {land[2]}')
         # a wild battle, won

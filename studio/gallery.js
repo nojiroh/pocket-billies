@@ -2,7 +2,7 @@
 // game's own js/ui-kit.js, so the gallery shows exactly what the game draws.
 import { pbFloat, typeGlyphHTML } from '../game/js/ui-kit.js';
 import { applyUiTheme } from '../game/js/theme-sheet.js';
-// UI-4: the run parts (pb-day-chip, pb-forecast, pb-node, pb-coin, pb-pick-card, pb-payout, pb-nav-bar)
+// UI-4: the run parts (pb-day-chip, pb-forecast, pb-node, pb-coin, pb-pick-card, pb-payout, pb-nav-bar; HB-2 pb-loading)
 import '../game/js/ui-run-kit.js';
 
 const root = document.documentElement;
