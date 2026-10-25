@@ -1,0 +1,178 @@
+{
+ "lost_rescued": {
+  "who": "back_lost",
+  "priority": 1,
+  "script": [
+   "Chosen: Rescued you again. Don’t thank me. Actually, do. #l:0caf",
+   "Hazel: Same spot over the dock. To the metre. #l:11db"
+  ]
+ },
+ "lost_reflexes": {
+  "who": "back_lost",
+  "priority": 1,
+  "script": [
+   "Chosen: Yanked you out just in time. Professor reflexes. #l:bd0a",
+   "Hazel: You landed exactly in the mast’s shadow. Exactly. #l:abb6"
+  ]
+ },
+ "lost_charge": {
+  "who": "back_lost",
+  "when": "history:losses >= 3",
+  "priority": 3,
+  "script": [
+   "Chosen: At this point I should charge for rescues. #l:fefa",
+   "Hazel: Something out there keeps sending you back. Folded. Like a returned parcel. #l:af04"
+  ]
+ },
+ "lost_stamp": {
+  "who": "back_lost",
+  "when": "lastby:bureau",
+  "priority": 6,
+  "once": true,
+  "script": [
+   "Chosen: You lost to a clerk and I still saved you. Generous of me. #l:ba8e",
+   "Hazel: There was a stamp on your sleeve. “Returned to sender.” It wasn’t there when you left. #l:0df7"
+  ]
+ },
+ "chosen_first": {
+  "who": "chosen",
+  "when": "history:runs = 1",
+  "priority": 9,
+  "must": true,
+  "once": true,
+  "script": ["Your first expedition! I’d have done it faster, but I was busy being chosen. #l:b1b0"]
+ },
+ "chosen_won": {
+  "who": "chosen",
+  "when": "last:won",
+  "priority": 5,
+  "script": ["[happy] You won! I taught you that. I’m not sure when. Possibly in a dream we shared. #l:ed8d"]
+ },
+ "chosen_early": {
+  "who": "chosen",
+  "when": "last:lost and last:row <= 3",
+  "priority": 4,
+  "script": ["Down that early? Bold. Avant-garde. Next time try the part where you win. #l:3752"]
+ },
+ "chosen_boss": {
+  "who": "chosen",
+  "when": "lastby:boss",
+  "priority": 6,
+  "script": ["You reached the big one and blinked. I respect a dramatic exit. #l:ef10"]
+ },
+ "chosen_montage": {
+  "who": "chosen",
+  "when": "history:lstreak >= 3",
+  "priority": 7,
+  "cooldown": 5,
+  "script": ["[surprised] Three in a row. I’ve decided this is a training montage. Montages end well. Usually. #l:f8bc"]
+ },
+ "chosen_quit": {
+  "who": "chosen",
+  "when": "last:quit",
+  "priority": 5,
+  "script": ["Home early. Leave them wanting more. That’s what I always say. I’ve never said that. #l:5806"]
+ },
+ "chosen_clerk": {
+  "who": "chosen",
+  "when": "lastby:bureau",
+  "priority": 6,
+  "script": ["[angry] A clerk? You lost to paperwork? I once lost to a form. We don’t talk about the form. #l:0564"]
+ },
+ "hazel_rounder": {
+  "who": "hazel",
+  "when": "last:lost",
+  "priority": 4,
+  "script": ["You came back through the same hole. I measured it. It’s getting rounder. #l:5be0"]
+ },
+ "hazel_tidy": {
+  "who": "hazel",
+  "when": "history:losses >= 2",
+  "priority": 6,
+  "once": true,
+  "script": ["Every time you lose out there, you land in the same spot. Things don’t fall that tidily. #l:2b31"]
+ },
+ "hazel_won": {
+  "who": "hazel",
+  "when": "last:won",
+  "priority": 4,
+  "script": ["You won and came home by airship. Good. The other way home makes my instruments hum. #l:df6c"]
+ },
+ "hazel_file": {
+  "who": "hazel",
+  "when": "lastby:bureau",
+  "priority": 7,
+  "once": true,
+  "script": ["The clerk who beat you. Did they mention a file? A number? ...No reason. #l:41c7"]
+ },
+ "hazel_perks": {
+  "who": "hazel",
+  "when": "last:perks >= 4",
+  "priority": 3,
+  "script": ["That many Perks in one run. You sound like someone I work with. Not a compliment. #l:1d8e"]
+ },
+ "hazel_scrapbook": {
+  "who": "hazel",
+  "when": "history:runs >= 5",
+  "priority": 5,
+  "once": true,
+  "script": ["Five expeditions. Juniper started a scrapbook. Someone in a lab coat keeps pasting himself into it. #l:6ba3"]
+ },
+ "juniper_lost": {
+  "who": "juniper",
+  "when": "met_juniper and last:lost",
+  "priority": 4,
+  "script": ["Back already, dear? Sit. The kettle doesn’t care who won. #l:45be"]
+ },
+ "juniper_won": {
+  "who": "juniper",
+  "when": "met_juniper and last:won",
+  "priority": 4,
+  "script": ["[happy] Oh, you won! I’ll tell the bees. They pretend not to care. They care. #l:1f91"]
+ },
+ "juniper_green": {
+  "who": "juniper",
+  "when": "met_juniper and history:lstreak >= 2",
+  "priority": 5,
+  "cooldown": 3,
+  "script": ["Two rough trips in a row. Eat something green. It won’t help, but it’s green. #l:8e6a"]
+ },
+ "juniper_lavender": {
+  "who": "juniper",
+  "when": "met_juniper and last:days >= 12",
+  "priority": 3,
+  "script": ["You were gone a while. The lavender grew back. Mind where you land. #l:d521"]
+ },
+ "leader_badge": {"who":"leader","priority":1,"script":["I’m a leader. It says so on my badge. Let’s see yours. #l:8ee4"]},
+ "leader_again": {
+  "who": "leader",
+  "when": "rematch >= 1",
+  "priority": 5,
+  "script": ["You again! I remember your team. Mostly the fainting. #l:e094"]
+ },
+ "leader_word": {
+  "who": "leader",
+  "when": "history:wins >= 1",
+  "priority": 2,
+  "script": ["Word is you’ve beaten a boss. Word says a lot of things. #l:a4ee"]
+ },
+ "bureau_lost": {"who":"bureau","priority":1,"script":["You look lost. That is our department. #l:492a"]},
+ "bureau_file": {
+  "who": "bureau",
+  "when": "history:losses >= 1",
+  "priority": 3,
+  "script": ["Ah. You’re on file. Returned item, handled once. #l:7ffb"]
+ },
+ "bureau_drawer": {
+  "who": "bureau",
+  "when": "history:losses >= 3",
+  "priority": 5,
+  "script": ["Your file is getting thick. We’ll need a bigger drawer. #l:2ca8"]
+ },
+ "bureau_win": {
+  "who": "bureau",
+  "when": "last:won",
+  "priority": 4,
+  "script": ["A win, recorded. Wins are reviewed. Reviews take time. #l:aaec"]
+ }
+}

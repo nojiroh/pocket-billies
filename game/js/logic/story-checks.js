@@ -128,6 +128,9 @@ export function scriptsOf(G) {
       });
   for (const [k, v] of Object.entries((G.story || {}).scripts || {}))
     out.push({ id: 'story:' + k, where: 'story.json', owner: v, lines: v.script, place: null });
+  /* RL-S1: the story director's lines (banter.json; logic/story-pick.js) */
+  for (const [k, v] of Object.entries(G.banter || {}))
+    out.push({ id: 'banter:' + k, where: 'banter.json', owner: v, lines: v.script, place: null });
   for (const [k, C] of Object.entries(G.cutscenes || {}))
     out.push({
       id: 'cutscene:' + k,
@@ -352,6 +355,9 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
     );
 
   /* when, unless, requires and chapters: their conditions read */
+  for (const [k, B] of Object.entries(G.banter || {}))
+    if (B.when)
+      condition(B.when, spot(`banter.json ${k} when`, { file: 'banter.json', thing: 'banter:' + k, field: 'when' }));
   for (const [mid, M] of Object.entries(G.maps || {})) {
     for (const P of M.people || [])
       for (const k of ['when', 'unless'])
