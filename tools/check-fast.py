@@ -166,6 +166,13 @@ def bowl_map(pg, base):
         f0 = pg.evaluate("worldBowl.frames"); until(pg, f"worldBowl.frames>={f0 + 2}", 10)
         off2 = pg.evaluate("(()=>{const g=worldBowl.ground,F=g.float,m=worldBowl.me,P=walkView.pl,w=bowlYouPoint(worldBowl.spots[F.i],gameData.maps[g.islandMap],P,1000);[P.x,P.z]=worldBowl.hb1;return m?Math.hypot(m.x-w[0],m.y-w[1])*1000:-1})()")
         if off2 < 0 or off2 > 0.5: raise Exception(f'you don’t follow on the island: drawn {off2:.1f} m from where you stand')
+        # HB-3: real height, its lagoon and three falls (the World map settings' defaults), no bowl clumps and no
+        # landmark picture at the map's middle
+        if not until(pg, "!!(worldBowl.ground.float.waterGpu&&worldBowl.ground.float.fallsGpu&&gpuState.P.mfallw)", 10): raise Exception('the floating island has no lagoon or falls')
+        hb3 = pg.evaluate("(()=>{const g=worldBowl.ground,F=g.float,W=g.things;return {lift:worldBowlIslandLift(),falls:F.falls.n,clumps:W?W.clumps:-1,stands:W?W.stand.length:-1,ring:F.lr/F.r}})()")
+        if hb3['lift'] != 1: raise Exception(f"the floating island is drawn {hb3['lift']} times its height")
+        if hb3['falls'] != 3 or hb3['clumps'] != 0 or hb3['stands'] != 0: raise Exception(f'the floating island: {hb3}')
+        if not 1.15 < hb3['ring'] < 1.5: raise Exception(f"the lagoon's ring is {hb3['ring']:.2f} times the island's radius")
     elif not pg.evaluate("!!(worldBowl.ground.water&&gpuState.P.mwater)"): raise Exception('the sea isn’t drawn')
     # look session 2: the shadow map, the routes' and rivers' line map and the rivers
     # RL-8b: the hub is an island (worldmap.json sea.island): a river or two, not four; IS-7: none on an island drawn
