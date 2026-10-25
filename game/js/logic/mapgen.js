@@ -3843,6 +3843,106 @@ export function mapgenLayoutSpots(sc, scenery, G) {
       np++;
     }
   }
+  /* RT-2: where a route trainer stands. `face` (degrees, as pinch's dir: 0 east, 90 south) is the way it looks.
+     Pockets, clearings and dead ends face the way in (down the walk from the hub, 6 m on), so a trainer there sees
+     you come in (TR-2c's pockets too); a pinch gets a place to stand at its side (`stand`), facing across the road */
+  const qOf = (x, z) => mapgenBetween(Math.floor(z * N), 0, gh - 1) * gw + mapgenBetween(Math.floor(x * N), 0, gw - 1),
+    deg = (dx, dz) => Math.round((Math.atan2(dz, dx) * 180) / Math.PI),
+    standOK = (x, z) => x > 1 && z > 1 && x < sc.w - 1 && z < sc.h - 1 && seen[qOf(x, z)] && C[qOf(x, z)] >= 2;
+  for (const p of [...G.spots.filter(p => p.kind === 'pocket'), ...out]) {
+    if (p.kind === 'pinch') {
+      const a = ((p.dir + 90) * Math.PI) / 180;
+      for (const side of [1, -1]) {
+        const off = Math.min(Math.max(p.r - 0.8, 1.2), 3),
+          x = p.x + Math.cos(a) * off * side,
+          z = p.z + Math.sin(a) * off * side;
+        if (!standOK(x, z)) continue;
+        p.stand = [mapgenRound2(x), mapgenRound2(z)];
+        p.face = deg(p.x - x, p.z - z);
+        break;
+      }
+      continue;
+    }
+    let q = qOf(p.x, p.z);
+    const q0 = q;
+    for (let n = 0; n < 12 && dist[q] > 0; n++) {
+      const i = q % gw,
+        j = Math.floor(q / gw);
+      let best = q;
+      for (const [di, dj] of MAPGEN_FOUR) {
+        const ii = i + di,
+          jj = j + dj,
+          r = jj * gw + ii;
+        if (ii >= 0 && jj >= 0 && ii < gw && jj < gh && seen[r] && dist[r] < dist[best]) best = r;
+      }
+      if (best === q) break;
+      q = best;
+    }
+    const [x0, z0] = at(q0),
+      [x1, z1] = q === q0 ? sc.hub : at(q);
+    p.face = deg(x1 - x0, z1 - z0);
+  }
+  /* RT-2: by the road: along each way from the hub to an exit, about every 12 m (not by the hub or an exit), 2-3.5 m
+     off its edge on one side and then the other, where you can stand and reach, facing the road */
+  const side0 = out.length,
+    roadsideOK = (x, z) =>
+      out.slice(side0).every(p => Math.hypot(p.x - x, p.z - z) > 8) &&
+      G.spots.every(p => Math.hypot(p.x - x, p.z - z) > 4);
+  let flip = 1;
+  for (const e of sc.edgeExits || []) {
+    if (!e.path || e.path.length < 2) continue;
+    const pts = mapgenResample(e.path, 1);
+    for (let k = 6; k < pts.length - 1; k += 12) {
+      const [px, pz] = pts[k],
+        a = pts[k - 1],
+        b = pts[k + 1],
+        L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1,
+        nx = -(b[1] - a[1]) / L,
+        nz = (b[0] - a[0]) / L;
+      if (!awayFromEnds(px, pz, 8)) continue;
+      const r = mapgenNearRoadWidth(G, px, pz);
+      flip = -flip;
+      found: for (const side of [flip, -flip])
+        for (const d of [2.5, 2, 3, 3.5]) {
+          const x = px + nx * (r + d) * side,
+            z = pz + nz * (r + d) * side;
+          if (!standOK(x, z) || !roadsideOK(x, z)) continue;
+          out.push({
+            kind: 'roadside',
+            x: mapgenRound2(x),
+            z: mapgenRound2(z),
+            y: yOf(qOf(x, z), x, z),
+            face: deg(px - x, pz - z),
+          });
+          break found;
+        }
+    }
+  }
+  /* RT-2: at a bridge's ends, a step back from the deck and to one side, facing along it */
+  for (const S of sc.bridges || []) {
+    const dx = S.b[0] - S.a[0],
+      dz = S.b[1] - S.a[1],
+      L = Math.hypot(dx, dz) || 1,
+      ux = dx / L,
+      uz = dz / L;
+    for (const [end, u] of /** @type {[number[], number][]} */ ([
+      [S.a, -1],
+      [S.b, 1],
+    ]))
+      found: for (const side of [1, -1]) {
+        const x = end[0] + ux * u * 1.5 - uz * side * (S.w / 2 + 0.6),
+          z = end[1] + uz * u * 1.5 + ux * side * (S.w / 2 + 0.6);
+        if (!standOK(x, z) || !roadsideOK(x, z)) continue;
+        out.push({
+          kind: 'bridge',
+          x: mapgenRound2(x),
+          z: mapgenRound2(z),
+          y: yOf(qOf(x, z), x, z),
+          face: deg(-ux * u, -uz * u),
+        });
+        break found;
+      }
+  }
   return { spots: out, walk: R };
 }
 /** the share of a scene's half-metre cells you can walk to from the hub (R: from mapgenReach) */
