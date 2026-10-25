@@ -50,7 +50,9 @@ the Billie). Merge SP-1, then SP-2, then this. Plan approved in Plan Mode. Tag `
   fixture): the full test's new step passes (Emberox with a fox's arms: +5 DNA, its Gene sampled); a Chimera
   Versewift (back, front and tail from three donors, Unstable "Verseprat") opens with its line, the win shows the
   Gene Sample sheet (+12 DNA, three Genes), the debug log's meta has `dna: 12, genes: 3`, no console errors.
-  Full quick check: QUICK_RESULT
+  Full quick check (1568 s): 35 of 37. The two problems are the known ones, not SP-3's: RL-8 "Take off didn't start
+  a run's flight" (fails on main too) and song fingerprints (cave mid/late not in the sound baseline). The Actions
+  sheet passed this time (it took 158 s, 150 expected, a note).
 - Risky: every run place's wild Billies can now be spliced (about 15 %), so run battles differ from before (the
   stock's species and levels don't). DNA is banked mid-run, the first currency that is. `meta.genes` is checked
   strictly like the rest of meta: a tampered entry restarts meta (as for any meta field). The economy view's DNA link
