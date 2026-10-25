@@ -25,7 +25,10 @@
   "quests": "each quest's stage (conditions: quest:id)",
   "once": "the once blocks and [once] options already played",
   "cycles": "where each cycle and seq is",
-  "resume": "a script saved halfway: which one, and where it goes on from"
+  "resume": "a script saved halfway: which one, and where it goes on from",
+  "said": "RL-S1: the story director's lines said (banter.json id: the runs ended when it was said; logic/story-pick.js)",
+  "fresh": "RL-S1: each hub character's line picked on the way home, said at the first talk after it (who: banter.json id)",
+  "pending": "RL-S1: a scene to play on arriving home (back-lost after a lost run), kept until it has played"
  },
  "speakers": {
   "Chosen": "chosen",

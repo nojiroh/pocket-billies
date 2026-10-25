@@ -100,6 +100,7 @@ import '../../game/js/logic/sim-compare.js';
 import '../../game/js/logic/starter-points.js';
 import '../../game/js/logic/step-grid.js';
 import '../../game/js/logic/story-checks.js';
+import '../../game/js/logic/story-pick.js';
 import '../../game/js/logic/studio-layout.js';
 import '../../game/js/logic/studio-test-report.js';
 import '../../game/js/logic/time-of-day.js';

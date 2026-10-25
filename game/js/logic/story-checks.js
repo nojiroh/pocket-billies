@@ -335,6 +335,8 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
             else note(taken, a, at);
           } else if (n.name === 'battle' && !trainers[a]) problems.push(at, `battle ${a}, no such trainer`);
           else if (n.name === 'call' && !ids.has(a)) problems.push(at, `call ${a}, no such script`);
+          else if (n.name === 'pick' && !Object.values(G.banter || {}).some(B => B.who === a))
+            problems.push(at, `pick ${a}, no banter.json line is for ${a}`);
           else if (n.name === 'go' && !places.has(a)) problems.push(at, `go ${a}, no such place`);
           else if (n.name === 'quest') {
             if (!quests[a]) problems.push(at, `quest ${a}, no such quest (story.json quests)`);

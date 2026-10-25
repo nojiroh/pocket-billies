@@ -18,11 +18,13 @@
 import { expose } from './test-globals.js';
 import { provide, render, toast } from './hooks.js';
 import { $, clamp } from './util.js';
-import { LOCATIONS, STORY_DATA, TRAINERS, gameData } from './game-data.js';
+import { BANTER, LOCATIONS, STORY_DATA, TRAINERS, gameData } from './game-data.js';
 import { healAll } from './logic/rules.js';
 import { startTrainer } from './logic/battle-engine.js';
+import { conditionHolds, conditionTree, storyStateOf } from './logic/conditions.js';
+import { BANTER_HUB, storyPick, storyPickSaid } from './logic/story-pick.js';
 import { parseScript } from './logic/script-parse.js';
-import { runBase, runScript, saveDuringRun } from './logic/script.js';
+import { runBase, runScript, saveDuringRun, storyTeamLookups } from './logic/script.js';
 import { activeBattle, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { lookOf } from './person-art.js';
 import { walkView, walkablePointNear } from './walk-view.js';
@@ -50,6 +52,7 @@ expose({
   storyGameStage: [() => storyGameStage],
   storyHold: [() => storyHold, v => (storyHold = v)],
   storyOwner: [() => storyOwner, v => (storyOwner = v)],
+  storyPickTree: [() => storyPickTree, v => (storyPickTree = v)],
   storyResumeCheck: [() => storyResumeCheck, v => (storyResumeCheck = v)],
   storyRun: [() => storyRun],
   storyRunUp: [() => storyRunUp, v => (storyRunUp = v)],
@@ -75,6 +78,8 @@ function storyScriptLines(id) {
     key = id.slice(i + 1);
   if (kind === 'trainer') return (TRAINERS[key] && TRAINERS[key].script) || null;
   if (kind === 'story') return ((STORY_DATA.scripts || {})[key] || {}).script || null;
+  /* RL-S1: the story director's lines (banter.json) */
+  if (kind === 'banter') return (BANTER[key] && BANTER[key].script) || null;
   if (kind === 'person')
     for (const sc of Object.values(gameData.maps)) {
       const P = (sc.people || []).find(p => p.id === key && p.script);
@@ -89,6 +94,7 @@ function storyScriptIds() {
     for (const P of sc.people || []) if (P.script) ids.push('person:' + P.id);
   for (const [id, T] of Object.entries(TRAINERS)) if (T.script) ids.push('trainer:' + id);
   for (const id of Object.keys(STORY_DATA.scripts || {})) ids.push('story:' + id);
+  for (const id of Object.keys(BANTER)) ids.push('banter:' + id);
   return ids;
 }
 /* who says a line that names nobody: the person or trainer the script belongs to, a story script's `who` */
@@ -96,6 +102,8 @@ function storyOwner(id) {
   const key = id.slice(id.indexOf(':') + 1);
   if (id.startsWith('trainer:')) return (TRAINERS[key] && TRAINERS[key].who) || null;
   if (id.startsWith('story:')) return ((STORY_DATA.scripts || {})[key] || {}).who || null;
+  /* a hub character's line is theirs (their person id is their `who`); the others name their speakers */
+  if (id.startsWith('banter:')) return (BANTER[key] && BANTER_HUB.includes(BANTER[key].who) && BANTER[key].who) || null;
   for (const sc of Object.values(gameData.maps)) {
     const P = (sc.people || []).find(p => p.id === key);
     if (P) return P.who || P.id;
@@ -300,6 +308,25 @@ const storyGameStage = {
 const storyRun = { on: false, id: null, speaker: null, line: null, base: null, path: null, control: null };
 provide({ storyRun }); /* to-module */
 const storySlots = { name: () => lookOf('me').name || 'Trainer' };
+/* RL-S1: the script command `pick <who>`: the story director's line (logic/story-pick.js) on the game's save, marked
+   said; in a trainer's script `rematch` reads that trainer's leader or class. Its tree, or null for nothing to say */
+function storyPickTree(who, id) {
+  const S = saveData,
+    story = S.story || (S.story = {}),
+    runs = (S.meta && S.meta.runs) || 0,
+    T = id && id.startsWith('trainer:') ? TRAINERS[id.slice(8)] : null,
+    state = storyStateOf(S, {
+      locations: LOCATIONS,
+      questStages: Object.fromEntries(Object.entries(STORY_DATA.quests || {}).map(([k, q]) => [k, q.stages])),
+      ...storyTeamLookups(),
+      foe: T ? T.from || T.cls : undefined,
+    }),
+    k = storyPick(who, BANTER, c => conditionHolds(conditionTree(c), state), story, runs);
+  if (!k) return null;
+  storyPickSaid(k, BANTER, story, runs);
+  if (typeof debugLog !== 'undefined') debugLog.add('story', `pick ${who}: ${k}`);
+  return storyTree('banter:' + k);
+}
 /* plays a script by id; resume: where a saved run goes on from */
 async function playStoryScript(id, o = {}) {
   const tree = storyTree(id);
@@ -314,6 +341,7 @@ async function playStoryScript(id, o = {}) {
       locations: LOCATIONS,
       control: storyRun.control || undefined,
       slots: storySlots,
+      pick: who => storyPickTree(who, id),
     });
     return true;
   }
@@ -343,6 +371,7 @@ async function playStoryScript(id, o = {}) {
       questStages: Object.fromEntries(Object.entries(STORY_DATA.quests || {}).map(([k, q]) => [k, q.stages])),
       resume: o.resume || null,
       control,
+      pick: who => storyPickTree(who, id),
       onCheckpoint: p => {
         storyRun.base = runBase(S);
         storyRun.path = p;
