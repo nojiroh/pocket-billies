@@ -166,8 +166,9 @@ Two rules hold everywhere:
   `mountains` fixture is the run fixture with `dbg_mountains`; its step "Tall ground" stands you at the foot of the
   most rock on the camera's side and checks the rise, the fade and the silhouette are on, and no rise or rock fade on
   flat ground. Player visibility: `occlude.test.mjs` (logic/occlude.js: what covers you, the eased hidden amount);
-  the fast check's "Behind things" stands you behind trees and buildings in Copperleaf (hidden at most of them, not
-  in the open). Its
+  the fast check's "Behind things" stands you behind trees and buildings in Copperleaf (hidden at most of them, frame
+  after frame, not in the open); `python3 tools/look-behind.py` takes the pictures (validation/behind/: settings off
+  and on behind three buildings and three trees). Tall ground's
   pictures come from `python3 tools/look-tall-ground.py` (five, settings off to all on, in validation/tall-ground/;
   `--full` with the game's graphics). `rng.test.mjs` freezes the default scene's hash, `gen` included: a new dial or version changes it
   (remade on purpose, said in the commit). The seam rules are `logic/seam-rules.js` (`seam-rules.test.mjs` freezes
