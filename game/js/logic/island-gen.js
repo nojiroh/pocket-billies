@@ -158,8 +158,9 @@ export const ISLAND_GEN_DEFAULTS = {
      is, with a level pad under each plot only. houses: how many house plots it aims for; lanes: side lanes. A town
      zone in the zones above makes the old flat town instead. face (HB-4a): 'street' puts plots on both sides of a
      street; 'out' keeps only a side whose front lies within tol degrees of facing out from the orbit's pivot (the
-     summit), so the orbit camera sees the doors.*/
-  town: { on: 1, houses: 7, lanes: 2, face: 'street', tol: 50 },
+     summit), so the orbit camera sees the doors. quarter (HB-4a, 0-1): 1 turns every building's plot to the quarter turn
+     (0, 90, 180, 270) nearest to facing out from the pivot, so its room stays square with its walls */
+  town: { on: 1, houses: 7, lanes: 2, face: 'street', tol: 50, quarter: 0 },
   /* a hamlet: a few houses round a green under the mountains, joined to the coast road (off since the look pass: the
      owner, a smaller island) */
   hamlet: { on: 0, houses: 4 },
@@ -299,6 +300,7 @@ export function islandGenDials(d) {
   D.town.lanes = Math.round(num(D.town.lanes, 0, 6, 3));
   if (D.town.face !== 'out') D.town.face = 'street';
   D.town.tol = num(D.town.tol, 10, 90, 50);
+  D.town.quarter = D.town.quarter ? 1 : 0;
   D.hamlet.on = D.hamlet.on ? 1 : 0;
   D.hamlet.houses = Math.round(num(D.hamlet.houses, 0, 10, 4));
   D.wild.n = Math.round(num(D.wild.n, 0, 12, 5));
@@ -1694,7 +1696,11 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     D.town.face !== 'out' ||
     Math.abs(islandAngleDiff((a / ISLAND_RAD) % 360, Math.atan2(z - peakP[1], x - peakP[0]) / ISLAND_RAD)) <=
       D.town.tol;
+  /* HB-4a: the quarter turn nearest to facing out from the pivot (town.quarter), in radians */
+  const quarterOut = (x, z) =>
+    Math.round(Math.atan2(z - peakP[1], x - peakP[0]) / (Math.PI / 2)) * (Math.PI / 2);
   const addPlot = (k, x, z, pw, pd, a, front, where) => {
+    if (D.town.quarter && k !== 'well') a = quarterOut(x, z);
     if (!plotFits(x, z, pw, pd, a)) return false;
     plots.push({ k, x, z, w: pw, d: pd, a, y: cornerAt(front[0], front[1]), at: where });
     return true;

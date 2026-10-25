@@ -33,3 +33,41 @@ test("town.face 'street' (the default) still puts plots facing away from the piv
   const { scene } = islandGenerate(hub.dials, hub.seed, ctx);
   assert.ok(offOut(scene).some(o => Math.abs(o.off) > 90));
 });
+
+test('town.quarter 1: every building plot stands on the quarter turn nearest to facing out, none overlapping', () => {
+  for (const face of ['out', 'street']) {
+    const { scene } = islandGenerate(withTown({ face, quarter: 1 }), hub.seed, ctx),
+      all = offOut(scene);
+    assert.ok(all.length >= 5, `${all.length} plots`);
+    for (const o of all) {
+      assert.equal(((o.L.a % 90) + 90) % 90, 0, `${o.L.k} at ${o.L.a}`);
+      /* the pivot is the summit spot, the dial's the peak: a degree or two apart */
+      assert.ok(Math.abs(o.off) <= 47, `${o.L.k} at ${o.L.x}, ${o.L.z}: ${o.off}`);
+    }
+    /* no two plots' rectangles overlap */
+    const corners = L => {
+      const a = (L.a * Math.PI) / 180,
+        ca = Math.cos(a),
+        sa = Math.sin(a);
+      return [
+        [-1, -1],
+        [1, -1],
+        [1, 1],
+        [-1, 1],
+      ].map(([u, v]) => [L.x - sa * u * (L.w / 2) + ca * v * (L.d / 2), L.z + ca * u * (L.w / 2) + sa * v * (L.d / 2)]);
+    };
+    const apart = (A, B) =>
+      [A, B].some(P =>
+        P.some((p, i) => {
+          const q = P[(i + 1) % 4],
+            nx = q[1] - p[1],
+            nz = p[0] - q[0],
+            pr = R => R.map(r => r[0] * nx + r[1] * nz);
+          return Math.max(...pr(A)) <= Math.min(...pr(B)) || Math.max(...pr(B)) <= Math.min(...pr(A));
+        })
+      );
+    for (let i = 0; i < scene.plots.length; i++)
+      for (let j = i + 1; j < scene.plots.length; j++)
+        assert.ok(apart(corners(scene.plots[i]), corners(scene.plots[j])), `${scene.plots[i].k} / ${scene.plots[j].k}`);
+  }
+});
