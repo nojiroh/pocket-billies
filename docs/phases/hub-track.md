@@ -85,6 +85,9 @@ Every figure is a claim from a read of the code: check it again at the start of 
   ~0.4 m into the gap, long sides leave hairline gaps; every post rot 0; every rail on a side the same rot.
 - A boxed prop sits at the ground height of its middle, no tilt (frame-items.js `propBaseHeight`); the zone is
   flattened, so nothing floats today, but a fence off the flat would.
+- (HB-6, rechecked) `fence_wood` is a 2.2 m section with three posts of its own, and the corner post is an 8 vox/m
+  model. Low-poly models ignore `wear`/`tint`/lean. The model shaders' spin (RF-2) was unused by the walk view.
+  Done in HB-6 below.
 
 **Run start** (airship.js, run.js, run-world.js)
 - `flyMenu` → `runStartSheet` → "Take off" → `runTakeOff`: `runWorldSync` makes all 12-14 run scenes in one tick
@@ -113,6 +116,13 @@ Every figure is a claim from a read of the code: check it again at the start of 
 | HB-9 | Look pass on the phone | Headless phone pictures each round, then the owner's play test and debug log | all | 1 |
 
 About 10-15 sessions. HB-1, HB-2 and HB-4a can run side by side; then HB-3 beside HB-4b; then HB-5, HB-6 and HB-7.
+
+**Merged together** (2026-10-25, on `track/hub-merge`, for one PR into main): `track/hub` (HB-4a, HB-4b),
+`art/hub-station-trains` (HB-7's art), `art/hub-buildings` (HB-5's art half), `props/hub-fence` (HB-6), a merge
+commit each. Copperleaf rebuilt by the tools (build-copperleaf, then one round of build-island and build-copperleaf so
+the ground meets HB-6's swell); see HANDOFF. Still to do on the new island: Skyline Station onto its headland with the
+sky rail and portal (HB-7 placed it beside the mast); the Workshop, Gene Bank, lighthouse and windmill onto their plots,
+the inn's, library's and store's door acts (HB-5's placing half); HB-3, HB-8, HB-9.
 
 ### HB-1 Pin and decals
 - Pin: when the walk view is on the island map, the pin, the "here" ring and the walker use
@@ -181,10 +191,79 @@ at the landing).
   No bowl clumps off the island.
 - Phone frame times at 4 orbit angles; the fallbacks are Engine settings.
 
+**Done in HB-3** (2026-10-25, branch `art/hub-world-map` at the owner's word, beside HB-4b on `track/hub`; tag
+`hb-3-done` for the owner). The owner's answers: 3 falls, silent; the lagoon on the bowl's own water (`mwater`), WA-7
+swaps in the water track's pixel look after this merges. Checked against main at f691ce9:
+- Already true on main: no bowl clumps on the floating island (0) and no landmark picture at its middle (0 standees):
+  Copperleaf's landmark is a prop with a model. Both are now guarded in code all the same.
+- Not true: every map model ignored its placement's `rot` (only the plots' fill-ins turned); fixed. The tree models
+  are limbs and leaf picture cards, both of which the map's model builder drops: they are made again for the map
+  (`bowlTreeFromRecipe`). Flat pictures on the floating island were still 3x (`BOWL_THING_SCALE`); now life size.
+  The Bowl map test's sea, landmark and rim steps failed on the floating island since IS-7; they know it now.
+- Real height: `bowlSeaInput(…, lift)`, 1 on the hub's floating island (`worldBowlIslandLift`), `BOWL_ISLAND_LIFT` (3)
+  on a run's bowl. The mountain is drawn 20.6 m for its 21.9 m (the Bowl map test reads it).
+- Lagoon (logic/float-island.js, tests): `floatLagoonRing` (the coast's reach at 128 angles, smoothed, pushed out 0.3x
+  the mean radius: 1.3x), the bed `floatLagoonDepth` (a shelf, a 3.2 m basin, a 0.35 m sill), the fine ground runs out
+  to the ring with the land meeting the water at the beach (no 4 m step), `floatLagoonWater` (depth and a rim fade in
+  the bowl sea's mesh layout), the rock under the ring, `floatMistPuffs` (the clouds' puffs along the rim). The coast
+  is where the water meets the 1.5 m ground, and the ground's letters are clipped by the map's own coast.
+- Falls: `floatFallSpots` (the rim nearest the coast, spread a quarter turn apart), `floatFallMesh`, the `mfallw`
+  shader (streak columns in the lagoon's tones, white lip, thinning into the cloud colour). Silent.
+- Trees as their models (`bowlTreeFromRecipe`: trunk and main limbs as five-sided tubes, a crown blob per leaf card,
+  placed and sized as the walk cuts it, in the leaf picture's average colour; a prop's `swap` for autumn trees; a
+  mushroom with no leaves through the normal model builder). Fences as their models; bridges and the pier as plank
+  decks (`bowlBridgeShape`, from the higher end). The stream and the pond show as the stamped water letters (painted
+  water with foam, as before); paths as before, now clipped by the fine coast.
+- World map settings (engine/settings.js `worldMap`, Engine panel): `lagoon`, `falls` (0-4), `treeModels`, `treeFar`
+  (simple shapes past that many metres, switched in the shader; 0 never), `fences`, `bridges`. A change makes the
+  island again (`worldBowlMapSettingsKey`).
+- The orbit stands 1.25x further back with the lagoon (`worldBowlFloatFrame`), so the ring fits a phone's width.
+- Numbers (headless, Copperleaf): 14.4k triangles of things before, ~44k after (193 trees as models); the lagoon
+  10.3k triangles; 72 mist puffs; 3 falls of 96 triangles.
+- Frame times: the debug menu's Bowl map test, step "The floating island's frame times": fps, worst gap and CPU draw
+  time at 0/90/180/270 degrees, then at 0 degrees with no lagoon, no falls and simple trees. Headless numbers are
+  software drawing; the phone's are the owner's.
+- Not done: the picture standees (`mstandee`) draw red squares on the floating island (the atlas is right; the cause
+  is not found), so the far-tree fallback is simple shapes, not flat pictures. The stream and pond are not a water
+  surface of their own. The falls have no plunge or splash (they fade into the clouds).
+
 ### HB-4a Island sketches
 - 3-4 directions from today's island (`copperleaf-e9`), relief maps and from-above pictures with the town, the second
   street, the station headland with its rail out to sea, the lighthouse, the windmill, the pasture and the new
   buildings marked. Same size. The owner picks one (or mixes).
+
+**Done in HB-4a** (2026-10-25, branch `art/hub-island-sketches`, not `track/hub`: a one-session art branch at the
+owner's word; HB-4b merges it into `track/hub`). **The owner's pick: a version of B (East crescent) with more of a
+town square; the hub waterfall above the pond.**
+- Facts that differed: the orbit pivot `cam.orbit.c` is the **summit spot** (island-gen.js `orbit.c = summit`), not
+  the island's middle: "outward" is away from the mountain top. Off-outward figures hold (3 of 12 props within 50; 2 of
+  12 plots within 45). The generator's dials use 0 = east, 90 = north (x = cos, z = sin); island-shots' compass is 0
+  north, clockwise. The town already had three streets (main, cross, east bank) plus the quay; the doors miss because
+  the main street and east bank run toward the mountain (radial): a side facing its street faces 90 off outward.
+- New generator dials (all off by default; the hub's island unchanged, island-gen.test checks it): `town.face`
+  ('out': only the street side within `town.tol` of outward), `town.quarter` (plots on the quarter turn nearest
+  outward, stepped back up to 3 m from the street), `town.second` (a second built-up street; `along: 'arc'` runs round
+  the pivot, in pieces where other streets cut it), `town.scale` (house plot size), `town.extra` (inn, workshop,
+  genebank, library: `ISLAND_TOWN_EXTRA`), `landmarks` (the station on the headland that stands out most within 80
+  degrees of the square, its rail out to sea climbing `rise` m to the portal, returned as `landmarks: {rail, portal}`
+  beside the scene; the lighthouse on the cove's arm further from the station; the windmill by the barn; `shore` 3 m
+  from the water, for the water track's tide and wading). Tests: tools/test/island-gen-doors.test.mjs (slow tier).
+- **B's dials** (tools/data/hub-sketches.json `b`, on copperleaf-e9): `town: {houses: 16, quarter: 1, face: 'out',
+  scale: 0.8, extra: [inn, workshop, genebank, library], second: {on: 1, along: 'arc', side: 'in', off: 9, span: 110,
+  at: 40}}, landmarks: {on: 1}`: 17 buildings, all 17 doors within 45 of outward on a quarter turn.
+- For HB-4b: **"more of a town square"** needs a new dial: the square's radius is fixed at 7.5 m (island-gen.js
+  `sqR`), and B's square is the grey patch by the bay, ringed by streets, with no buildings fronting it. A square dial
+  (radius, and plots round it facing in where that is outward, or on its outer side) is HB-4b's first generator change.
+  Landmark plots ignore the coast path's margins (a headland is narrower than a 14 m station allows): the path through
+  the station needs re-routing. The sky rail and the portal stand past the map's edge (the map holds 10 m of sea):
+  props in the sea skirt, or a bigger `size.sea`. The tall grass falls to 3 of 6 patches with these dials.
+- **The hub waterfall** (water track WA-2b, the owner: above the pond): copperleaf-e9 has no drop of 4 m or more on
+  its stream; the only one is the 5 m north-west sea cliff. The site: 16 m up from the pond toward the summit, where
+  the ground first stands 4 m over the pond (`falls` contract draft `{x: 92.79, z: 89.67, dir: [0.83, -0.56], w: 3, h:
+  4.15, pool: 4}` on B); a shelf has to be cut there (the generator's or the water track's, WA-2b decides which). Tell
+  the water track's lane G.
+- Sketch tool: `python3 tools/island-sketches.py [OUT] [ids] [--above]` (relief maps, a sheet; `--above` the game's
+  own pictures from draft maps `hb4a_<id>` put in the game data and removed after). Output in validation/hub-sketches/.
 
 ### HB-4b The island rebuilt
 - The picked direction through the generator's dials and the build tools (build-island, build-copperleaf, the
@@ -194,12 +273,69 @@ at the landing).
   steps, the opening fall's landing, island-gen.test, the quick check's pictures.
 - A check: every building's door within 45 degrees of outward and on a quarter turn.
 
+**Done in HB-4b** (2026-10-25, branch `track/hub`; tag `hb-4b-done` for the owner). The owner's answers: the rail
+and portal as data now, drawn in the sea's skirt by HB-7 (`size.sea` stays 10); the inn and the library models on
+their plots, the other new plots bare pads; a 12 m square; at least 8 cottages. Merged main (HB-1) and
+`art/hub-island-sketches` (HB-4a) first.
+- Facts that differed: B made 5 house plots, not 16 (fewer than today's 7); `cam.orbit.c` is the summit spot, up to
+  5 m from the peak the plots turned from, so a quarter-turned door could stand 47 degrees off (now guarded); the hub's
+  positions are almost all derived (npcSpots, people, life, checks, fixtures, the fall's landing, the opening's spots
+  rewritten by build-copperleaf from the lab's door); RF-1's "catch" never reached tools/data/copperleaf-town.json
+  (a rebuild put "tax" back: fixed); HB-4a missed `npm run modules`; islandProblems and the map schema didn't know the
+  new plot kinds.
+- Generator (island-gen.js; each its own commit, unit tests in tools/test/island-gen-doors.test.mjs, slow tier):
+  `town.square {r, off, front}` (radius; set back from the main street, room for a row facing in; plots round its rim,
+  the shop, the home, the extras, then houses, the side open toward the camera left free, rectangles kept 0.6 m apart);
+  a house plot never under a cottage (3.8 x 2.8 m); the quarter turn keeps clear of the diagonals by asin(5.5/d) so it
+  holds from the summit spot; the station's headland chosen before the paths are painted and every path on its plot
+  pushed inland round it (the same headland as HB-4a's); the opening's stage in front of the lab kept clear; no plot
+  facing the airship's mast from 16 m behind (with `town.quarter`; smoke's window check found the airship hiding a
+  cottage window). `STATION_PLOT`, `landmarkFits`.
+- The hub is **B2** (tools/data/hub-sketches.json `b2`: B with `town {tol: 90, scale: 0.6, lanes: 3, houses: 20,
+  extra: [library, inn, workshop, genebank], second.off: 15, span: 140, square: {r: 12, off: 6, front: 6}}`), built with
+  `build-island --dials <hub+b2> --fresh`, `build-copperleaf`, then both again with the new town zone kept (a rerun's
+  output; island-gen.test checks it). 18 buildings (10 cottages, the inn, the library), plots for the Workshop, the
+  Gene Bank, the station, the lighthouse and the windmill; the lab, the library and the Workshop round the square;
+  every door within 34 degrees of outward on a quarter turn (tools/test/hub-doors.test.mjs, quick tier). `hub`
+  [151.63, 59.36] (was [141.49, 56.63]). `landmarks: {rail, portal}` kept by both tools (schema too): the portal at
+  [243.5, 128.3], 50 m up, 53 m past the map's east edge. hub-sketches.json `base` holds the pre-HB-4b dials (the
+  sketches and the dial tests start from it).
+- Dressing: no summit lookout (island-dress.mjs and its test); the summit spot stays free.
+- World map: the inn and the library drawn on their plots (bowl-island.js `BOWL_PLOT_PROPS`); the kinds with no
+  model yet are skipped.
+- **The hub waterfall, for the water track (lane G, WA-2b)**: the site is unchanged by B2 (the mountain and pond
+  didn't move): `falls: [{x: 92.79, z: 89.67, dir: [0.83, -0.56], w: 3, h: 4.14, pool: 4}]` on copperleaf, 16 m up
+  from the pond toward the summit; a shelf has to be cut there. Not written into the map (the scene's `falls` are lane
+  G's).
+- Not done / for later: Juniper's home lands 54 m south-west of the square (by the lighthouse), the inn 41 m and the
+  store 27 m away up the arc street (the square's ring had no room left facing out); the tall grass has 3 patches of 6
+  (the arc street takes the heath; `wild.n` 6); the Studio's Hub island card doesn't show the new dials;
+  tools/build-postcards.py's view (3 m off the hub) not looked at.
+
+
 ### HB-5 Building variety
 - Cottages: `roof: 1` layers and `variants` colour swaps so `v` and `roof` work; mixed with the coloured houses and
   townhouses.
 - Open the General store (shop room). The inn/cafe (inn model), the library as the archive (library model). New
   low-poly models (32 px/m) for the Workshop, the Gene Bank, the lighthouse and the windmill (turning sails).
   Rooms: which get one (ask: rec the store, inn, library, Workshop; the Gene Bank waits for the splicing track).
+
+**Done in HB-5, the art half** (2026-10-25, on `art/hub-buildings` at the owner's word). Answers: all five new
+buildings get a room (the Gene Bank too); their doors open with a new act `enter` (the room set on the building or its
+kind); the Gene Bank is a solarpunk lab-vault. Checked against the code:
+- The cottages' `v` did nothing because no model building had catalogue `variants` (barn aside); the roof layers were
+  missing too. Now: `roof: 1` on the cottages' roofs, `roof: 2` on their moss tufts (hidden under another roof style),
+  colour-swap variants on the cottages, the coloured houses and the townhouses (tools/add-building-variants.py).
+- A door opens a room only through its act (`ROOM_BY_USE`): the General store has no act at all, so it is not just
+  closed. `enter` was added (data-files.js `opensRoom`). The store's stock (shops.json is `{}`) and its `act: 'shop'`
+  on Copperleaf wait for the placing half.
+- `lighthouse` and `windmill` were already catalogue keys (old pictures, legacy maps only): the models are swapped in
+  under them. New keys: `workshop`, `gene_bank`. Rooms: int_inn and int_library back from legacy, int_workshop and
+  int_gene_bank new.
+- Rooms open only in a seamless world (`roomLayIn` needs the place's parts): the showcase map (test_hub_buildings)
+  shows the buildings, the walk-ins are checked on Copperleaf (tools/look-hub-buildings.py).
+- Left for the placing half: place them on the HB-4b island (doors on quarter turns), the store's act and stock, the
+  Gene Bank's place (splicing track's Ask me before).
 
 ### HB-6 Natural fence
 - The line follows the zone with gentle bends (a light smoothing, not Douglas-Peucker to straight sides); rails cut
@@ -208,6 +344,19 @@ at the landing).
   weathered or broken rails; the gate where the path arrives. Pasture tests: no gaps, no overlaps, the Billies' roam
   line inside, the gate reachable.
 
+**Done in HB-6** (2026-10-25, on `props/hub-fence`, the session's brief). Answers: the gate where the island's path
+arrives; the field swells up to 0.5 m; fixed rails, not an engine stretch. Checked against the code:
+- Rail tilt needed engine support, though not a new shader. The model shaders already apply RF-2's `it.spin`. The
+  walk view now sets it (`logic/prop-turn.js spanFit`, `tiltSpin`; `walk/prop-look.js`): a catalogue model with
+  `restEnds` rests on the ground at both ends of its width, and a placement's `tilt` leans a model.
+- One rail model fits every span. The posts are evenly spaced round the line, so the spans come out nearly equal, and
+  the 2 m rail (`fence_rail`) takes its span's size (`s`, within 2% on the hub, the tool refuses more than 8%).
+  Weathered and broken are its variants. Every part is made from `fence_wood`'s own layers by
+  tools/make-fence-parts.mjs.
+- The gate is where island-gen's spoke crosses the fence: the west side, on the coast path. It hangs on its own post.
+- The ground swell belongs to tools/build-pasture.mjs (`pastureGround`): level at the zone's edge and round the gate,
+  so HB-4b's rebuilt island gets it again from `build-copperleaf.mjs`.
+
 ### HB-7 Station and trains
 - Models: the station (platform, canopy, a departures board), the sky rail (pylons out over the sea, climbing), and
   one train per region theme (the run's region from RL-R1), retro-futuristic, low-poly 32 px/m. A portal ring at the
@@ -215,6 +364,25 @@ at the landing).
 - The station's act opens a sheet with "Start a run" (today's `runStartSheet`) and the Crest upgrades. The airship
   stays moored as scenery: no act.
 - Player-facing words: the station's name and lines (ask; this phase changes them).
+
+**Done in HB-7** (2026-10-25, on `art/hub-station-trains` from main with HB-1 merged in, at the owner's word). Answers
+(Ask me before 4): **Skyline Station**; the trains **the Lakeland Clipper, the Greenbelt Sunrunner, the Wildwood
+Zephyr, the Highland Arrow, the Harvest Comet**. The owner's notes on the first pictures: the trains have rocket
+engines; the portal is a tear floating in the sky, retro-futuristic (not a ring on a gantry). Checked against the code:
+- Region themes: 5 (`lakeland`, `greenbelt`, `wildwood`, `highland`, `harvest`); a run keeps `run.region.theme`;
+  `runRegionMake` can return null, so HB-8 needs a fallback train (rec: the Sunrunner). regions.json
+  `themes.<id>.train` names each theme's train (`{k, name}`), checked by check-data.
+- The portal models didn't fit: `portal_ring` is shards and a flat picture, `portal_gate` 3.3 m. `sky_portal` is new.
+- A model can't stand above the ground (`propBaseHeight`), so each `sky_rail` piece carries its own pylon; nothing
+  moves a prop along a path (HB-8's engine work). Pieces chain 12 m apart on one heading: flat (out of the station's
+  right end), bend, rise, rise high, crest (15.5 m), then `sky_portal` (the launch lip at its x -1.4, the tear at x 2).
+- The airship's act was read in more places than the plan listed: `standByMast` (run end, resume, landing: now the
+  station first), check-data's `dataBuildings` (a building's act must stand in Copperleaf), airship-data.test (every
+  town needs act `fly`, and no prop of kind `station`: the new kind is `train_station`), check-quick's phone step,
+  RL-8 and airship_moored, check-fast's Lab step.
+- Copperleaf is generated: build-copperleaf.mjs places the station on the open ground nearest the mast (now 118.9,
+  93.2, turned -64.5, 13 m from it). HB-4b moves it to the headland and lays the rail out to sea.
+- The run still sets off on the airship's flight over the world map and the run sheet still says so: HB-8.
 
 ### HB-8 Departure and return
 - Departure: the train glides in, you board, the camera follows it up the rail, the portal opens, the train flies in,

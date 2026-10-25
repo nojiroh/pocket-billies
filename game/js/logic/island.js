@@ -39,7 +39,24 @@ expose({
 /* to-module: end */
 export const ISLAND_ZONE_KINDS = ['town', 'barn', 'pasture', 'forest', 'mountain', 'cove', 'beach', 'path', 'hamlet'];
 /* the kinds of building plot the island generator lays out (IS-2) */
-export const ISLAND_PLOT_KINDS = ['house', 'home', 'lab', 'mast', 'shop', 'well', 'farmhouse'];
+/* HB-4b: the town's other buildings (island-gen.js ISLAND_TOWN_EXTRA) and the landmarks (the station, the lighthouse, the
+   windmill) */
+export const ISLAND_PLOT_KINDS = [
+  'house',
+  'home',
+  'lab',
+  'mast',
+  'shop',
+  'well',
+  'farmhouse',
+  'inn',
+  'workshop',
+  'genebank',
+  'library',
+  'station',
+  'lighthouse',
+  'windmill',
+];
 /* the ground letters that are water (walk-view.js navGrid, mapgen MAPGEN_WET) */
 export const ISLAND_WATER = 'wd';
 

@@ -1936,7 +1936,7 @@ def unlocks_steps(pg, errs):
     want_nodes = pg.evaluate("Object.keys(studioState.D.unlocks).length")
     if nodes != want_nodes: errs.append(f'unlocks: the graph has {nodes} nodes, the table {want_nodes} rows')
     edges = pg.evaluate("[...document.querySelectorAll('#main .ug-map [data-edge]')].map(e=>e.dataset.edge)")
-    for e in ['ranch_2>ranch_3', 'airship_2>biome_ridge', 'airship_2>biome_autumn']:
+    for e in ['ranch_2>ranch_3', 'station_2>biome_ridge', 'station_2>biome_autumn']:
         if e not in edges: errs.append(f'unlocks: no edge {e} in the graph ({edges})')
     owned = pg.evaluate("document.querySelector('#main .ug-save').dataset.owned")
     if owned != ','.join(W['fresh']['owned']): errs.append(f"unlocks: a new save owns {owned!r}, the game's {W['fresh']['owned']}")

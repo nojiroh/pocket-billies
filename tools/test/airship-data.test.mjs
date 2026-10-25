@@ -1,5 +1,6 @@
 // alpha 0.4's airship rules in the game data: every town has somewhere to fly from (a prop with act 'fly', or a sky
-// lift for a town marked noFly), no old train station stands anywhere, every mast has its airship moored at it, and
+// lift for a town marked noFly; the hub, Copperleaf, has Skyline Station instead, HB-7: its airship is scenery), no old
+// train station (the alpha's `station` prop) stands anywhere, every mast has its airship moored at it, and
 // the mast and the airship are low-poly models (tools/build-airship.py): the airship bobbing, with two turning
 // propellers, its vertex data the right size, painted from the building sheet. (TC-3: was the full check's "an
 // airship mast in every town" step, tools/check-quick.py.)
@@ -18,10 +19,10 @@ test('every town has somewhere to fly from; no train station is left', () => {
   const towns = D.locations.filter(l => l.kind === 'town');
   assert.ok(towns.length > 0, 'no town');
   for (const t of towns) {
-    const act = t.noFly ? 'lift' : 'fly';
+    const act = t.id === 'copperleaf' ? 'station' : t.noFly ? 'lift' : 'fly';
     assert.ok(
       D.maps[t.mapId].props.some(p => p.act === act),
-      `${t.id}: ${t.noFly ? 'no lift' : 'nowhere to fly from'}`
+      `${t.id}: ${{ station: 'no Skyline Station', lift: 'no lift', fly: 'nowhere to fly from' }[act]}`
     );
   }
   const stations = Object.values(D.maps).flatMap(sc => (sc.props || []).filter(p => p.k === 'station'));
