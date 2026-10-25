@@ -279,7 +279,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 8; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track) */
+export const MAPGEN_VERSION = 9; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: no room kept for the straight-line route trainers (RT-2) */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -3234,24 +3234,10 @@ export const mapgenLaidOut = P => !!P.layout && P.layout !== 'none' && !!MAPGEN_
 /** the cells a layout may block: off the road and its verge (2.2 m from its edge; 7 m on its south, the camera's
  * side, where a forest would hide you), water, banks, bridges and jettys, tall grass (1 m round it), 9 m round the
  * hub, each exit's straight run-in, a joined edge's strip, the east and west 5 m (the seams), lots and kept spots,
- * mountains, and where today's route trainers stand */
+ * and mountains */
 export function mapgenLayoutFree(G) {
   const { w, h } = G,
     free = new Uint8Array(w * h);
-  /* until RT-2 stands route trainers on the layout's spots: where logic/route-trainers.js routeTrainerSpot puts them
-     today (1 or 2 a route: half, a third or two thirds of the way from the hub to the westmost exit, 3 m either side
-     of that line), and halfway back to it, stay clear */
-  const trainers = [];
-  if (G.exits.length) {
-    const ahead = G.exits.reduce((a, e) => (e.pt[0] < a.pt[0] ? e : a)).pt,
-      [hx, hz] = G.hub,
-      dx = ahead[0] - hx,
-      dz = ahead[1] - hz,
-      l = Math.hypot(dx, dz) || 1;
-    for (const t of [1 / 2, 1 / 3, 2 / 3])
-      for (const off of [-3, -1.5, 1.5, 3])
-        trainers.push([hx + dx * t + (-dz / l) * off, hz + dz * t + (dx / l) * off]);
-  }
   for (let q = 0; q < w * h; q++) {
     const i = q % w,
       j = Math.floor(q / w),
@@ -3287,7 +3273,6 @@ export function mapgenLayoutFree(G) {
       continue;
     if (mapgenNearJoined(G, x, z, 8) || mapgenInLot(G, x, z, 2)) continue;
     if (G.keep.some(o => Math.hypot(x - o[0], z - o[1]) < o[2] + 1.5)) continue;
-    if (trainers.some(o => Math.hypot(x - o[0], z - o[1]) < 2.5)) continue;
     if (G.mtnE && G.mtnE[mapgenBetween(Math.round(z), 0, h) * (w + 1) + mapgenBetween(Math.round(x), 0, w)] > 0.2)
       continue;
     free[q] = 1;
