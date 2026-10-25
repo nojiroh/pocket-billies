@@ -112,3 +112,99 @@ test('the fine ground: the land’s heights inside the coast, under the water ou
   }
   assert.ok(F.floatInside(poly, 0.02, -0.01) && !F.floatInside(poly, 0.5, 0));
 });
+
+// HB-3: the lagoon round the floating island and its falls
+const POLY = new Float64Array(COAST.flat());
+const ringOf = () => F.floatLagoonRing(POLY);
+
+test('the lagoon’s ring: round the coast, everywhere outside it, about 1.3 times the island’s radius', () => {
+  const { ring, c, r, lr } = ringOf();
+  assert.equal(ring.length, F.FLOAT_LAGOON.corners * 2);
+  for (let k = 0; k < ring.length; k += 2) assert.ok(!F.floatInside(POLY, ring[k], ring[k + 1]), 'outside the coast');
+  // every coast point inside the ring, with room
+  for (const [x, y] of COAST) assert.ok(F.floatInside(ring, x, y));
+  assert.ok(lr > r * 1.2 && lr < r * 1.45, `ring ${lr / r} times the radius`);
+  assert.ok(Math.abs(c[0] - 0.02) < 0.01 && Math.abs(c[1] + 0.01) < 0.01);
+  // counter-clockwise
+  let area = 0;
+  for (let i = 0, j = ring.length - 2; i < ring.length; j = i, i += 2)
+    area += (ring[j] - ring[i]) * (ring[j + 1] + ring[i + 1]);
+  assert.ok(area > 0);
+});
+
+test('the ring never folds into a bay: a coast with a deep cove still gives a ring outside it', () => {
+  const cove = Array.from({ length: 80 }, (_, i) => {
+    const a = (i / 80) * Math.PI * 2,
+      bay = Math.exp(-(((a - 1) / 0.25) ** 2)) * 0.6;
+    return [Math.cos(a) * 0.08 * (1 - bay), Math.sin(a) * 0.08 * (1 - bay)];
+  });
+  const P = new Float64Array(cove.flat()),
+    { ring } = F.floatLagoonRing(P);
+  for (const [x, y] of cove) assert.ok(F.floatInside(ring, x, y), 'the cove inside the ring');
+});
+
+test('the lagoon’s depth: shallow off the beach, a basin, a shallow sill at the rim', () => {
+  const K = F.FLOAT_LAGOON;
+  assert.ok(Math.abs(F.floatLagoonDepth(0) - K.beach) < 1e-9);
+  assert.ok(Math.abs(F.floatLagoonDepth(1) - K.sill) < 1e-9);
+  assert.ok(F.floatLagoonDepth(0.5) > K.depth);
+  assert.ok(F.floatLagoonDepth(0.5) > F.floatLagoonDepth(0.15) && F.floatLagoonDepth(0.5) > F.floatLagoonDepth(0.85));
+});
+
+test('the lagoon’s ground and water: land inside the coast, the bed under the water out to the ring, its rim faded', () => {
+  const { ring } = ringOf(),
+    water = () => 0,
+    land = () => 0.002,
+    bed = (x, y) => -F.floatLagoonDepth(F.floatLagoonAt(POLY, ring, x, y).t) / 1000,
+    G = F.floatGroundMesh(POLY, land, water, 0.002, { ring, bedAt: bed });
+  let lag = 0;
+  for (let q = 0; q < G.h.length; q++) {
+    if (G.inn[q] === 1) assert.ok(G.h[q] > 0, 'land above the water');
+    if (G.inn[q] === 2) {
+      lag++;
+      assert.ok(G.h[q] < 0, 'the bed under it');
+    }
+  }
+  assert.ok(lag > 0);
+  const W = F.floatLagoonWater(G, ring, water, 0.005);
+  assert.ok(W.I.length > 0 && W.I.length % 6 === 0);
+  for (const q of W.I) {
+    const x = W.V[q * 5],
+      y = -W.V[q * 5 + 2];
+    assert.ok(W.V[q * 5 + 1] <= 0, 'at the water’s line');
+    if (F.floatInside(POLY, x, y)) continue;
+    assert.ok(W.V[q * 5 + 3] > 0, 'deep where the bed is');
+  }
+  // faded at the ring, clear near the coast
+  const near = W.V.filter((_, k) => k % 5 === 4);
+  assert.ok(Math.max(...near) > 0.9 && Math.min(...near) === 0);
+});
+
+test('three falls where the rim comes nearest the coast, spread round, each pointing out', () => {
+  const { ring, c } = ringOf(),
+    S = F.floatFallSpots(ring, POLY, 3),
+    m = ring.length / 2;
+  assert.equal(S.length, 3);
+  for (const f of S) {
+    assert.ok(Math.abs(Math.hypot(f.dx, f.dy) - 1) < 1e-9);
+    assert.ok((f.x - c[0]) * f.dx + (f.y - c[1]) * f.dy > 0, 'outward');
+    for (const g of S) if (g !== f) assert.ok(Math.min(Math.abs(f.k - g.k), m - Math.abs(f.k - g.k)) >= m / 4);
+  }
+  assert.deepEqual(F.floatFallSpots(ring, POLY, 3), S, 'the same each time');
+});
+
+test('a fall’s sheet hangs from the lip down by its drop, moving out as it falls', () => {
+  const f = { x: 0.1, y: 0, dx: 1, dy: 0 },
+    M = F.floatFallMesh(f, 0.004, 0.003, 0.05);
+  assert.ok(M.I.length > 0 && M.I.length % 6 === 0);
+  const hs = [],
+    outs = [];
+  for (let q = 0; q < M.V.length; q += 5) {
+    hs.push(M.V[q + 1]);
+    outs.push([M.V[q + 4], M.V[q]]);
+  }
+  assert.ok(Math.abs(Math.max(...hs) - 0.004) < 1e-9 && Math.abs(Math.min(...hs) - (0.004 - 0.05)) < 1e-9);
+  const top = outs.filter(o => o[0] === 0).map(o => o[1]),
+    bottom = outs.filter(o => o[0] === 1).map(o => o[1]);
+  assert.ok(Math.min(...bottom) > Math.max(...top), 'further out at the foot');
+});
