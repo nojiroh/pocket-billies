@@ -35,6 +35,7 @@ import { BOWL_CLOUD_LEVELS } from './logic/bowl-weather.js';
 import { bowlMapPoint, bowlPropClass } from './logic/bowl-things.js';
 import { bowlHasCoast, bowlIslandHeights, bowlIslandMapId, bowlIslandPlotThings } from './logic/bowl-island.js';
 import { activeBattle, escapeHtml, pauseSaving, resumeSaving, saveData, uiState } from './game-state.js';
+import { engineSetting } from './engine/settings.js';
 import { ensurePrograms, gpuState } from './engine/webgl.js';
 import {
   BOWL_METRES,
@@ -217,6 +218,13 @@ async function runBowlMapTest() {
       });
       const share = Math.round((sea / all) * 100);
       if (wet.length) return { ok: false, note: `under water: ${wet.map(l => l.id).join(', ')}` };
+      /* HB-3: the hub's floating island has no sea, its lagoon instead (World map settings: Lagoon) */
+      if (worldBowlFloats()) {
+        const F = worldBowl.ground.float;
+        if (!engineSetting('worldMap', 'lagoon')) return 'the floating island: no sea, its lagoon off in the settings';
+        if (!F || !F.waterGpu) return { ok: false, note: "the floating island's lagoon isn't drawn" };
+        return `the floating island: no sea; its lagoon ${F.waterGpu.n / 3} triangles, ${F.falls ? F.falls.n : 0} falls`;
+      }
       if (!g.water) return { ok: false, note: "the water isn't drawn" };
       /* RL-8b: an island world (the hub's island, a run's own land) is mostly sea. Test cleanup lane C: every world is
          one now (the old continent and its places under another went to game/data/legacy) */
@@ -262,7 +270,8 @@ async function runBowlMapTest() {
         n = kinds.reduce((a, [, K]) => a + K.n, 0),
         far = W.stand.filter(q => q.g === 0).length,
         near = W.stand.length - far;
-      if (!far) return { ok: false, note: 'no landmarks' };
+      /* the floating island draws its own things where they stand, no landmark picture (HB-3) */
+      if (!far && !worldBowlFloats()) return { ok: false, note: 'no landmarks' };
       return `${far} landmarks; ${n} trees and buildings (${models} building models, ${W.clumps} trees in clumps), ${near} standees close in; ${W.done.size} places in, last update ${W.ms} ms; ${Math.round((W.tris || 0) / 1000)}k triangles last frame`;
     });
     /* IS-7: the hub's world map draws its real island (logic/bowl-island.js): its coast, its heights, its town */
@@ -378,6 +387,8 @@ async function runBowlMapTest() {
         : `all ${LOCATIONS.length} places`;
     });
     await step('The camera stays above the rim', async () => {
+      /* the floating island's orbit keeps its own limits (logic/bowl-camera.js bowlCamClampFloat, unit-tested) */
+      if (worldBowlFloats()) return 'the floating island: no rim, its orbit’s own limits';
       const limit = BOWL_RIM_HEIGHT + BOWL_CAMERA.eyeAboveRim - 1e-6;
       let low = Infinity,
         far = 0,
