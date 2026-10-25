@@ -3,12 +3,13 @@
 look). A decal is a model's picture layer that stays put on it (`face: "fixed"`: a shop's lettering, the lab's window
 view, washing on a line). Opens a test map with the game's own graphics, phone sized, and for every prop there whose
 model has such a layer stands in front of it and takes four pictures: as placed, mirrored (`f`), turned 30 degrees
-and with a big size wobble (`vary.size`). The decals should sit on the model in all four, and lettering read right
+and with a size wobble of +25% (`vary.size`, worked out from the prop's own random draw). The decals should sit on the model in all four, and lettering read right
 when mirrored (logic/prop-turn.js decalPlace). The numbers go to validation/look-decals/notes.json (not kept in git).
 
     python3 tools/look-decals.py                        # test_windows (the buildings), in validation/look-decals/
     python3 tools/look-decals.py --scene=test_props_next  # another test map (laundry lines, bunting, the giant tree)
     python3 tools/look-decals.py --only=shop,inn        # only these props
+    python3 tools/look-decals.py --states=wobble        # only these of plain, mirrored, turned, wobble
     python3 tools/look-decals.py --out=DIR              # somewhere else (a "before" set from another worktree)
 
 Uses the browser checks' page set-up (tools/browser_check.py: the clock, no accounts, the test globals), without the
@@ -22,6 +23,7 @@ import browser_check as CF  # noqa: E402
 ARGS = sys.argv[1:]
 ONLY = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--only=')), None)
 OUT = Path(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--out=')), ROOT / 'validation' / 'look-decals'))
+STATE_ONLY = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--states=')), None)
 SCENE = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--scene=')), 'test_windows')
 
 # (name, what is changed on the placement)
@@ -29,7 +31,7 @@ STATES = [
     ('plain', {}),
     ('mirrored', {'f': 1}),
     ('turned', {'rot': 30}),
-    ('wobble', {'vary': {'size': 0.3}}),
+    ('wobble', {'vary': 'auto'}),
 ]
 
 # the props whose model has a fixed picture layer (their recipes loaded first)
@@ -81,8 +83,13 @@ def main():
         for s in got:
             if ONLY and s['k'] not in ONLY: continue
             for name, change in STATES:
+                if STATE_ONLY and name not in STATE_ONLY: continue
                 rot = s['rot'] + change.get('rot', 0)
                 pg.evaluate(f"(()=>{{const p=walkView.sc.props[{s['i']}],c={json.dumps(change)};delete p.f;delete p.vary;Object.assign(p,c);p.rot={rot};walkRenderer.itemGen=(walkRenderer.itemGen||0)+1;return 0}})()")
+                if change.get('vary') == 'auto':
+                    # the wobble is the prop's own random draw (by where it stands) times vary.size and the variety
+                    # dials: read the draw at vary.size 1, then scale it to +25% (a test map may have variety off)
+                    s['size'] = pg.evaluate(f"(()=>{{const p=walkView.sc.props[{s['i']}],M=walkData().sc.props[p.k],sc=walkView.sc;sc.variety=sc.variety||1;const R=walkRenderer;p.vary={{size:1}};R.itemGen=(R.itemGen||0)+1;const d=propLook(p,M,sc).size-1;if(Math.abs(d)<0.02)return null;p.vary={{size:0.25/d}};R.itemGen++;return propLook(p,M,sc).size}})()")
                 # a fixed camera 8 m in front of the prop as placed (its front: (sin r, -cos r)), 6.5 m up (over a hedge)
                 pg.evaluate(f"(()=>{{const r={s['rot']}*Math.PI/180,f=[Math.sin(r),-Math.cos(r)],x={s['x']},z={s['z']},y=groundHeightAt(x,z);walkView.opt.look=()=>({{eye:[x+f[0]*8,y+6.5,z+f[1]*8],tgt:[x,y+2,z],fov:58}});return 0}})()")
                 settle(pg)
