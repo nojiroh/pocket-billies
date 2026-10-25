@@ -163,7 +163,7 @@ expose({
   gateText: [() => gateText, v => (gateText = v)],
   geneData: [() => geneData],
   // @ts-expect-error -- replaced on purpose
-  geneLimit: [() => geneLimit, v => (geneLimit = v)],
+  geneLimit: [() => geneLimit, v => ((geneLimit = v), provide({ geneLimit }))],
   // @ts-expect-error -- replaced on purpose
   hatchEgg: [() => hatchEgg, v => (hatchEgg = v)],
   hatchable: [() => hatchable],
@@ -235,7 +235,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   unstableName: [() => unstableName, v => (unstableName = v)],
   // @ts-expect-error -- replaced on purpose
-  unstableTidy: [() => unstableTidy, v => (unstableTidy = v)],
+  unstableTidy: [() => unstableTidy, v => ((unstableTidy = v), provide({ unstableTidy }))],
   // @ts-expect-error -- replaced on purpose
   upgradePart: [() => upgradePart, v => (upgradePart = v)],
   // @ts-expect-error -- replaced on purpose
@@ -247,7 +247,7 @@ expose({
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
-provide({ addWalked, billyGeneFx, makeBilly, makeRobot, riderOf });
+provide({ addWalked, billyGeneFx, geneLimit, makeBilly, makeRobot, riderOf, unstableTidy });
 export function setSetTrip(v) {
   // @ts-expect-error -- replaced on purpose
   setTrip = v; // eslint-disable-line no-func-assign
@@ -360,6 +360,7 @@ export const geneData = () => ({
 /** SP-2: a Billie's (or an encounter's) splice, the slots that still fit it; null for none or a robot
  * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m */
 export const billyGraft = m => (m && m.graft && m.kind !== 'robot' ? graftFit(geneData(), m.sp, m.graft) : null);
+provide({ billyGraft }); /* to-module */
 /** SP-2: per spliced slot, its part's weight over the Billie's own part's; null with no splice
  * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m */
 export const billyRel = m => (m && billyGraft(m) ? graftRel(geneData(), m.sp, m.graft) : null);

@@ -11,6 +11,7 @@
 /** @import { Meta } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   META_EXPEDITIONS: [() => META_EXPEDITIONS],
@@ -49,6 +50,7 @@ export const META_GENES = 1000,
   META_MAX = 1e12,
   META_IDS = 200,
   META_EXPEDITIONS = 9;
+provide({ META_GENES }); /* to-module */
 /** a whole number from min to max */
 export const wholeIn = (v, min, max) => Number.isInteger(v) && v >= min && v <= max;
 /** a plain record (not an array, no __proto__ key) of at most `most` keys whose values pass `ok` */

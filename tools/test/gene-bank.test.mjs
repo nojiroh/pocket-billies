@@ -70,3 +70,70 @@ test('gene bank: your Billies are held to the Bank level’s limit through a rel
   const low = saveFill(structuredClone(s));
   assert.ok(low.team[0].unstable, 'at Lv 1 a reload settles it Unstable');
 });
+
+const B = modules['gene-bank'];
+
+test('gene bank: sequencing reads a Billie’s own parts (and its splice) into the library once, for free', () => {
+  const D = modules.rules.geneData(),
+    s = startedSave('swift0', 20),
+    m = s.team[0];
+  s.meta.genes = [];
+  const own = ['front', 'back', 'sig'].map(k => B.bankNative(D, 'swift0', k)).filter(Boolean);
+  assert.ok(own.length >= 2 && own.every(id => id.endsWith('@swift0')), own.join());
+  const got = B.bankSequence(D, s, m);
+  assert.deepEqual(got.sort(), [...new Set(own)].sort());
+  assert.deepEqual(B.bankSequence(D, s, m), [], 'never twice');
+  m.graft = { sig: 'shark_tailfin@zuck2' };
+  assert.deepEqual(B.bankSequence(D, s, m), ['shark_tailfin@zuck2'], 'its spliced Gene too');
+  assert.equal(s.meta.dna, 0, 'free');
+});
+
+test('gene bank: a splice goes on an open slot for its DNA, is undone for free, and the Gene stays', () => {
+  const D = modules.rules.geneData(),
+    s = startedSave('swift0', 20),
+    m = s.team[0],
+    tail = 'shark_tailfin@zuck2',
+    wing = 'eagle_wing@hughes2';
+  s.meta.genes = [tail, wing];
+  s.meta.dna = 0;
+  assert.ok(B.bankGenes(D, s, m, 'sig').includes(tail));
+  assert.ok(!B.bankGenes(D, s, m, 'sig').includes(wing), 'a wing doesn’t go on a tail');
+  const price = B.bankPrice(D, 'swift0', 'sig', tail);
+  assert.equal(price, D.genes.bank.price.base + D.genes.bank.price.perCost * 2, 'another kit: Stability 2');
+  assert.equal(B.bankWhy(D, s, m, 'sig', tail), 'dna');
+  s.meta.dna = 100;
+  assert.equal(B.bankWhy(D, s, m, 'front', wing), 'slot', 'Lv 1 splices the sig slot only');
+  assert.equal(B.bankWhy(D, s, m, 'sig', 'nope@zuck2'), 'unknown');
+  assert.equal(B.bankSplice(D, s, m, 'sig', tail), '');
+  assert.equal(s.meta.dna, 100 - price);
+  assert.deepEqual(m.graft, { sig: tail });
+  assert.equal(B.bankWhy(D, s, m, 'sig', tail), 'same');
+  s.meta.buildings.genebank = 2;
+  assert.deepEqual(B.bankSlots(D, 2), ['front', 'sig']);
+  assert.equal(B.bankSplice(D, s, m, 'front', wing), '');
+  assert.deepEqual(m.graft, { front: wing, sig: tail });
+  assert.equal(B.bankUnsplice(D, s, m, 'sig'), '');
+  assert.deepEqual(m.graft, { front: wing });
+  assert.ok(s.meta.genes.includes(tail), 'the Gene stays in the library');
+  assert.equal(B.bankUnsplice(D, s, m, 'front'), '');
+  assert.equal('graft' in m, false);
+  assert.equal(B.bankUnsplice(D, s, m, 'front'), 'none');
+  s.run = { id: 'x' };
+  assert.equal(B.bankWhy(D, s, m, 'sig', tail), 'run', 'a hub action');
+});
+
+test('gene bank: past the limit it is Unstable; a level up settles your Billies at the new limit', () => {
+  const D = modules.rules.geneData(),
+    s = startedSave('swift0', 20),
+    m = s.team[0];
+  s.meta.dna = 999;
+  s.meta.buildings.genebank = 3;
+  s.meta.genes = ['bear_arm@musk3', 'bear_leg@musk3'];
+  assert.equal(B.bankSplice(D, s, m, 'front', 'bear_arm@musk3'), '');
+  assert.equal(B.bankSplice(D, s, m, 'back', 'bear_leg@musk3'), '');
+  const st = modules.genes.graftStability(D, 'swift0', m.graft, modules.rules.geneLimit(s));
+  assert.equal(st.unstable, !!m.unstable, `cost ${st.cost}, limit ${st.limit}`);
+  s.meta.buildings.genebank = 1;
+  B.bankSettle(s);
+  assert.equal(!!m.unstable, modules.genes.graftStability(D, 'swift0', m.graft, 3).unstable);
+});
