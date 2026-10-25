@@ -2,6 +2,66 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Routes track RT-2 - Battle spots and route trainers - 2026-10-25
+Branch `track/routes` (fast-forwarded to main 2cfef57 first; plan approved in Plan Mode with the owner's answers:
+**trainers replace some wild Billies** (a route's wild stock is 8 less its trainers, at least 2) and **pairs now and
+then** (about one route place in three)). Tag `rt-2-done` for the owner to push.
+- Where the plan file was wrong (checked in the code):
+  - The run sim had **no route trainers** (only `runFoes`) and **no measure of minutes**. Both added.
+  - A double is **one trainer entry with 2+ Billies** (`startTrainer`'s `T.double`); there is no two-trainer battle. A
+    pair is one entry (both teams, at most two Billies each, `double`, `mate`, both rewards, both lines) drawn as two
+    people sharing one flag.
+  - Bridges, jetties and ledge tops were not spots. RT-2 adds `roadside` and `bridge`; jetties (only a grid flag) and
+    ledge tops stay for TR-8 / RT-3.
+  - Only `pinch` had a direction, and the scene keeps no road polyline (`edgeExits[].path`) or reach grid, so facings
+    are worked out in mapgen.
+  - Trainers counting toward the wild stock is `rules.js encounterStock` (an RT-4 file), needed now.
+- Changed (one cause per commit):
+  - **mapgen** (MAPGEN_VERSION 9): RT-1's room kept for the straight-line trainers is gone. On laid-out places:
+    `roadside` spots (every ~12 m along each hub-to-exit road, 2-3.5 m off its edge, alternating sides, standable,
+    reached, `face` toward the road), `bridge` spots (a step back from each end, facing along it), a `stand` at a
+    pinch's side facing across, and a `face` on pockets (TR-2c's too), clearings and dead ends: the way in, 2 m down
+    the walk from the hub (6 m faced a wall at a dead end's bend).
+  - **Route trainers** (`logic/route-trainers.js`): `run.trainers.perRoute` by row `[[4,4],[4,5],[5,6]]`, `required`
+    0.5 (the first half stand by the road: roadside, pinch, bridge; the rest optional: pocket, clearing, dead end),
+    `pair` 0.33. `routeTrainersPlace` puts them on the scene's spots (the kinds `events.json classes.<c>.likes` first,
+    6 m apart; the other pool, then a point by the way west, when a place runs out), `route.at/look/spot/mate`.
+    `routeTrainerSpot` (the straight line) went. run-world places them after the scenes; walk-control stands them
+    there and a pair's second beside the first (`<id>~b`, tapping it talks to the pair); story-stage names each of a
+    pair by its class; a pair's opening line says "want".
+  - **Wild stock**: `run.wild.route` 8 and `routeMin` 2; a run place carries `trainerCount` (routeTrainerTally).
+  - **Run sim**: route trainers fought (required always, optional while above `fightAbove`), the pick taking its first
+    non-tutor card; `trainers` and `minutes` in the report (`SIM_CLOCK`: 60 s a place, 15 s a battle, 6 s a turn, a
+    guess to compare before and after). The Studio's sim worker loads route-trainers and rewards.
+  - **Debug**: the debug log's `run.routeTrainers` (id:spot:r|o[:pair][:beaten]); the debug menu's "Walk into a route
+    trainer's sight" (lists this place's trainers, walks 3 m in front of the nearest unbeaten one). A spot-marker
+    overlay was planned but the menu has no map markers: the list and the walk stand in.
+  - **Checks**: in-game test step "A route's trainers: on their spots, a pair as a double"; check-quick step RT-2 (that
+    step, then outside the self-test a pair that sees you walks up, both say their lines, a double starts).
+- Measured:
+  - Spots a route place (5 seeds, 14 places): roadside 8.6, clearing 3.0, dead end 2.9, pocket 1.5, pinch 0.7,
+    bridge 0.1. Trainers over 8 seeds (75 entries): required on roadside 35 (5 of them pairs) and pinch 2; optional on
+    clearings 20, dead ends 13, pockets 5; no fallbacks; every pair's second on walkable ground.
+  - **Run sim**, 200 runs, balance mode, six at home at level 20, five Potions: before 66% won, 17.1 battles, ~14.2
+    min (SIM_CLOCK on the old numbers); after 67%, 19.7 battles (3.4 route trainers), 15.7 min. Fighting up to 8 wild
+    a place: 69% / 26.1 battles / 17.7 min before, 68.5% / 27.4 / 18.5 after. Well under the ~35 minutes of
+    ask-me-before item 3. A fresh save (one Billie, level 5) wins none either way, but now loses on a route 31 times in
+    200 (was 13): the required trainers stand at the place's top wild level.
+- Verified: lint, typecheck, check:modules, check:data, format:check; unit tests 919 quick and 58 slow (new:
+  route-trainers rewritten, route-trainer-spots (slow, real runs), battle-formats a pair's double incl. 1 vs 2,
+  rewards a pair's one pick, saves-real the wild stock, run-sim route trainers fought); smoke 6 of 6; check-quick
+  RT-2 alone. The full quick check: (see the next commit).
+- Risky / open:
+  - **Not seen on a phone**: 4-6 more people on a route place (sprites and their pets) on top of RT-1's forests.
+  - Required trainers make the first route harder for a weak party (the fresh-save number above). If it bites,
+    `run.trainers.up` below 0 for the first row, or fewer required, is the knob.
+  - Sight still passes through hedges and forest (it is a strip, 6 m by 1.8 m); a pocket trainer can see you through
+    its fence. Emerald's sight is about 3 tiles: worth a look once it has been played.
+  - Spots are made only on laid-out places; an old or Studio scene without them gets the way-west fallback.
+  - RL-8's "the town's shop has no Perk" fails on main (not RT-2's; RT-1's entry).
+- Next: RT-3 (set pieces) or RT-4 (more Billies, items in pockets, Cut shortcuts; it re-tunes the wild stock with
+  trainers counted).
+
 ### Routes track RT-1 - Route layouts - 2026-10-24
 Branch `track/routes` (plan approved in Plan Mode; the owner's answers: all five plans, and **every non-town place**
 laid out: landing, route, mini-boss, boss; towns, waystations and stalls keep their open ground). Tag `rt-1-done`
