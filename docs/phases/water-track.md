@@ -149,7 +149,7 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
 | 2 | WA-2a | R | (**done** 2026-10-25, notes below) **Waterfalls drawn.** Each `falls` entry: a curled lip, a sheet of streaks in pixel columns over a slower large pattern, white water at the foot, a churning foam ring and rings on the plunge pool, mist that rises and drifts, wet dark rock beside it, the light it throws; the small automatic sheets the same style; the flow map (a texture of flow and foam) replacing the per-vertex segment search. | look-water (tall-fall, stream-and-falls), bench cost, smoke |
 | 2 | WA-2b | G | (**done** 2026-10-25, notes below) **Waterfalls placed.** Off terrace and cliff edges where a river meets a drop, in caves (rooms), as a route's set piece; `climb` on some (the Waterfall move's way up); the hub island's fall only with the owner's yes. | unit tests (a fall's lip and foot on its river; its pool reached), sweep |
 | 2 | WA-6b | P | **Surf and Waterfall climb.** Riding per cell: walk into `d` with a rider (`rules.ride`) and the Water badge, mount and leave at the shore; the mount's bob, wake and rings; encounters on water (the region's water pool); the Waterfall field move (badge: ask) climbing a `climb` fall. Builds on the contract while WA-2b lands. | unit tests (riding rules, badge), a surf walk check, smoke |
-| 3 | WA-4 | R | **The sea and the coast.** Surf as hard stepped bands breaking along the coast, foam round rocks, a slow tide (the waterline and wet sand move, tide pools), reef shallows (turquoise, see-through), kelp, sandbars, a sun and a moon path on the open sea, a storm sea from the forecast. | look-water --scene=test_island, island-shots, smoke |
+| 3 | WA-4 | R | (**done** 2026-10-25, notes below) **The sea and the coast.** Surf as hard stepped bands breaking along the coast, foam round rocks, a slow tide (the waterline and wet sand move, tide pools), reef shallows (turquoise, see-through), kelp, sandbars, a sun and a moon path on the open sea, a storm sea from the forecast. | look-water --scene=test_island, island-shots, smoke |
 | 3 | WA-5a | G | (**done** 2026-10-25, notes below) **New kinds' play and weather on water.** Hot springs heal the party, oases, marsh and bog slow you (their encounter pools, hidden items in reeds), rapids block, floods in storms keep the main path open, ponds freeze in snow, rain rings (exist). | unit tests (a flooded path keeps the main path open; heal once a run), smoke |
 | 3 | WA-7 | B | **World map and battles.** The bowl's rivers and seas in the same tones and steps (the shared snippet); water backdrops on battle stages by a node's biome. | bowl map test, battle stage pictures, smoke |
 | 4 | WA-5b | R | **Kinds as a texture and water life.** Kind looks in a small texture (no cap at 9), the new kinds drawn (steam on hot springs, rapids' white water, bog's scum, reef, cave water lit by its own glow); lily pads that bob, reeds that sway, frogs, fish that jump (sprites), birds that dive. | look-water, smoke |
@@ -365,3 +365,48 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
   the weather` line, flooded and frozen places, 239 of 240 ice cells walkable in a frozen town (a prop on the last).
 - Not done here: the new kinds' looks (WA-5b), reef shallows on a coast (WA-4's coast; the kind and its rules are in),
   the slip on ice (TR-10), rain rings that skip ice and lava (lane R), the flood's look on raised banks (lane R).
+
+## WA-4 notes (2026-10-25)
+- The owner's answers: test_island gets a coast to picture (two sea rocks, a sandbar, a reef shelf, a wet flat with two
+  tide pools, all north and west of the town; `tools/build-test-island.py`); a subtle tide; reef shallows by depth
+  until the `reef` kind is drawn (WA-5b); the tide on Copperleaf too (its look only, its data untouched).
+- Everything new is drawn with pixel water on; pixel water off keeps the look of before (the tide has its own switch).
+- **The tide** (`walk/sea-tide.js`, new, Node-tested): read from the tiles on a scene with the sea all round
+  (`flatFar`). Wet sand (`S`) joined to the sea is covered at high tide (sandbars and flats too); the open sea's
+  shallows (`w`) touching dry land go dry at low tide; sea water joined neither to the map's edge nor to deep water is
+  a tide pool (kept at low tide, calm, brimming at the high tide's skin). Two highs a day at 9:00 and 21:00 (a 12-hour
+  cycle, so a day repeats and midnight never jumps). The shore texture carries the high and low water's lines in
+  green and blue (RGBA when the scene has a tide, R8 as before otherwise); `TIDE_GLSL tideSF` moves the waterline
+  between them. The covered sand gets a skin of sea 3 cm over the ground, reaching half a metre past it so the rounded
+  line never stops at a tile's edge; the sea's own corners beside it rise to meet it. The shallows the low tide leaves
+  draw as wet sand on the water's own surface (the bed under water lies low between steep banks: shown, it read as a
+  trench); the sand below the high water's line stays darker, drying as the tide goes out. Setting `water.tide` (on).
+  Not moved: the water's level (only the line moves, so the skirt and the scene's sea stay level with each other).
+- **Surf** in hard stepped bands: a white crest on each wave's shore side, a broken lace trailing out to sea, the
+  crest thickening as the water shallows, white water washing at the waterline (it follows the tide's line); nothing
+  depth-driven over the flooded sand (the skin's depth is 0: it drew triangles).
+- **Foam round sea rocks**: the rock foam the ponds had (`rockFoam`), reaching 1.4 m in the sea, drawn as a white
+  collar that swells and shrinks with the swell and rings stepping out from it.
+- **Reef shallows** (by depth): the mesh carries the sea's wadeable shallows below the kind's index (`kind - 0.45 *
+  share`; a cove's calm and a tide pool ride above it), matched on the skirt's first ring and fading over its ramp.
+  The shader turns those and the sea near the shore a clear turquoise, the bed's light stronger. The depth itself is
+  unchanged (the surf's phase and the walk read it). Coral patches wait for the `reef` kind (WA-5b): today a `reef`
+  rectangle draws as the scene's default kind (`waterKindLookup` knows only the nine looks).
+- **Kelp**: dark fronds just under the surface at middle depth, out of the reef's shallows, in about 45% of 2.6 m
+  cells, three fronds swaying in steps; laid partly over the reflection (else the sky's mirror hid them).
+- **The sun's path** (by night the moon's: the light's direction then is the moon's): the swell's facets that mirror
+  the light, a soft smooth glow under hard sparkling pixels that come and go in steps, kept bright enough at night.
+- **The storm sea**: the weather's storm (`environment.storm`, eased; a run's forecast drives it) in `uTide.y`: a
+  swell 3.5 times as strong, a heave of up to 0.2 m out where it is deep (only up: dipping, the ground at the scene's
+  border showed through; fading past the scene's edge, so the skirt's widening rings never show it; its clock in
+  `uTide.w`, the frame's seconds wrapped on whole turns of the swell), more whitecaps further in, more and wider
+  surf bands, a darker and greyer sea.
+- The skirt (IS-3, `logic/sea.js` untouched) still meets the scene's sea without a seam: the tide moves only the
+  line, the shallows' share is matched on the first ring, the heave is the same formula on both.
+- **Cost**: building a scene, the tide's cells 5 ms and the two extra shoreline fields about 88 ms on Copperleaf (190
+  x 154 m; Node, in the existing slices); its shore texture 7.5 MB instead of 1.9 (RGBA). Per sea pixel: the shore
+  texel read once more for the line (four more for the foam line near the edge, as before), the surf bands, three
+  kelp fronds (skipped past 140 m and outside their depth), the path's two noises, the rock foam where a rock is near.
+  The headless browser draws in software: no frame times. The phone should compare the frame time on Copperleaf's
+  beach with Pixel water on and off, and Tide on and off.
+
