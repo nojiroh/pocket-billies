@@ -14,6 +14,8 @@ expose({
   FACING_RIGHT: [() => FACING_RIGHT],
   STRAIGHT_RIGHT: [() => STRAIGHT_RIGHT],
   // @ts-expect-error -- replaced on purpose
+  decalPlace: [() => decalPlace, v => (decalPlace = v)],
+  // @ts-expect-error -- replaced on purpose
   mirroredTurn: [() => mirroredTurn, v => (mirroredTurn = v)],
   // @ts-expect-error -- replaced on purpose
   normalTurn: [() => normalTurn, v => (normalTurn = v)],
@@ -129,4 +131,36 @@ export function pictureRight(it, cameraRight) {
   FACING_RIGHT[1] = 0;
   FACING_RIGHT[2] = Math.sin(a);
   return FACING_RIGHT;
+}
+
+/**
+ * where a model's picture layer stands (a decal: a sign's lettering, a window's view, washing on a line; HB-1): on its
+ * model as the model shaders draw it (prop-models.js setPropModelUniforms), so with the model's size and its look's
+ * random wobble, its turn, its mirror and its bob. A layer's x is across the model, y back from its front, z up (its
+ * metres before the size). A mirrored model's fixed layer moves to the mirrored spot and faces the mirrored way, but
+ * its picture is never mirrored, so lettering reads right (the owner, 2026-10-25); a camera-facing layer mirrors with
+ * its model as before.
+ * @param {{ x: number, y: number, z: number }} at the model's base
+ * @param {{ x?: number, y?: number, z?: number, yaw?: number, face?: string, flip?: unknown }} L the layer
+ * @param {{ s: number, f?: number, turn: number, bob?: number[] | null }} m the model's size (with the wobble),
+ *   mirror (-1), turn (radians, propTurn) and bob ([up, turn], prop-models.js mooredBob)
+ * @returns {{ x: number, y: number, z: number, s: number, yaw: number, flip: number }}
+ */
+export function decalPlace(at, L, m) {
+  const s = m.s,
+    f = m.f || 1,
+    ro = m.turn + (m.bob ? m.bob[1] : 0),
+    c = Math.cos(ro),
+    n = Math.sin(ro),
+    lx = (L.x || 0) * s * f,
+    lz = (L.y || 0) * s,
+    fixed = L.face === 'fixed';
+  return {
+    x: at.x + lx * c - lz * n,
+    z: at.z + lx * n + lz * c,
+    y: at.y + (m.bob ? m.bob[0] : 0) + (L.z || 0) * s,
+    s,
+    yaw: fixed ? (+(L.yaw || 0) || 0) * f + ro : 0,
+    flip: fixed ? (L.flip ? -1 : 1) : L.flip ? -f : f,
+  };
 }

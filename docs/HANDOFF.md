@@ -140,6 +140,43 @@ weather and life on water).
   G, rivers downhill), WA-6a (lane P, wading). WA-1 takes its "before" pictures with `tools/look-water.py --out=` at
   this commit. Lane B (WA-7) runs in round 3 as a fourth lane (the owner, after WA-0).
 
+### Hub track HB-1 - the world map's pin, decals on their models (done) - 2026-10-25
+Branch `claude/hub-island-revamp-4fskxy` (the planning session's branch: `track/hub` didn't exist yet and a cloud
+session pushes only to its own branch; the owner chose to build HB-1 here, as RL-12c was). Plan approved in Plan Mode
+with the owner's answers: lettering on a mirrored model moves and faces the mirrored way but is never mirrored; the
+decal check is a headless pictures tool, not a Studio overlay. Tag `hb-1-done` for the owner.
+- What was wrong (in the code):
+  - The floating island's pin, its "here" ring and you were drawn at the location's spot, which on the island is the
+    map's middle (95, 77: the mountain's flank), ~50 m from the town; the height from the bowl's 6 m grid; you 18 px
+    beside the pin. The fast check, once it measured it, found you drawn 152 m from where you stood.
+  - The walk on the island was never found: the hub's walk view is `w:copperleaf*` (seamlessHubMap), never the bare
+    map id world-bowl.js compared with, so the map never opened from where you stand either (worldBowlFloatHome).
+  - Decals (a model's `face: "fixed"` picture layers: a shop's lettering, the lab's window, washing, bunting, the giant
+    trees' knots) used the placement's size alone while the model draws at size x its look's wobble (`lk.size`), so
+    they drifted and mis-scaled on Juniper's home (6 %), the laundry lines (8 %), the giant trees (14 %); a mirrored
+    model mirrored its lettering and left side decals facing the unmirrored way; a bobbing model left its decals.
+- Changed (one cause per commit):
+  - logic/bowl-things.js `bowlYouPoint` (tests): you on a walk map shown on the bowl: your spot, else the map's hub,
+    else its middle.
+  - world-bowl.js: on the floating island the place's pin at the map's hub (the town), the ring and you at your own
+    spot on the island's fine ground (`worldBowlSkyFloor`); `worldBowlWalkOnIsland` finds the walk on the island for
+    the pin and the opening view; `worldBowl.me` keeps where you were drawn. Runs' bowl unchanged.
+  - logic/prop-turn.js `decalPlace` (tests against the shaders' own transform at 3 sizes, both mirrors, 3 turns, with
+    and without a bob, and the face's outward way); prop-models.js `propModelImageItems` uses it.
+  - Studio: the room warning (map-editor.js) measures from the nearest quarter turn (rooms face four ways since IS-5).
+  - check-fast's map check: you are drawn where you stand on the island, and follow when you move 40 m.
+  - tools/look-decals.py: every decal model on a test map, as placed, mirrored, turned 30 degrees and wobbled.
+- Verified: lint, typecheck, unit tests (940 pass), check:modules after each commit; `check-fast --only=map` (2 of
+  2); the smoke check; headless pictures of the hub map before and after (you by the barn: before, you and the pin
+  on the mountain's flank; after, you by the barn, the pin on the town) and look-decals before and after on
+  test_props_next and test_windows: lettering on mirrored buildings reads right (market, library, bakery), decals
+  stay on turned fronts, and a laundry line 25% bigger keeps its washing across the line (before: small and bunched
+  to one side).
+- Risky: decals on a mirrored building now face the other way than before (on purpose); run maps' mirrored props with
+  decals change too. Nothing judged on a phone.
+- Not done: a flat landmark picture with no prop of its own still stands at the map's middle on the floating island
+  (world-bowl.js worldBowlThingsOfPlace); HB-3 removes or moves it with the island's detail.
+- Next: HB-2 (the loading screen) and HB-4a (island sketches) can start now; HB-3 after this merges.
 ### Window glass on the low-poly buildings (no more glowing orbs) - 2026-10-25
 Branch `ccr-7161a124-txw6o4` (one session, not part of a plan). The owner's ask: windows on 3D buildings looked like a
 weird orb at night. Plan approved in Plan Mode; the owner chose to mark the glass with a new recipe key (`glass: n`)
