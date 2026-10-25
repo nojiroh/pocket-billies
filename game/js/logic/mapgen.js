@@ -31,6 +31,7 @@ expose({
   MAPGEN_FOREST: [() => MAPGEN_FOREST],
   MAPGEN_FOUR: [() => MAPGEN_FOUR],
   MAPGEN_GRASS_PATCH: [() => MAPGEN_GRASS_PATCH],
+  MAPGEN_HABITAT: [() => MAPGEN_HABITAT],
   MAPGEN_HUB_BUILDINGS: [() => MAPGEN_HUB_BUILDINGS],
   MAPGEN_INWARD: [() => MAPGEN_INWARD],
   MAPGEN_LAYOUTS: [() => MAPGEN_LAYOUTS],
@@ -119,6 +120,8 @@ expose({
   mapgenGroundSampler: [() => mapgenGroundSampler, v => (mapgenGroundSampler = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenGrowWild: [() => mapgenGrowWild, v => (mapgenGrowWild = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenHabitats: [() => mapgenHabitats, v => (mapgenHabitats = v)],
   mapgenInLot: [() => mapgenInLot],
   // @ts-expect-error -- replaced on purpose
   mapgenJetty: [() => mapgenJetty, v => (mapgenJetty = v)],
@@ -293,7 +296,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 10; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: no room kept for the straight-line route trainers (RT-2); 10: an exit's signpost reads the place's name, set pieces (RT-3) */
+export const MAPGEN_VERSION = 11; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: no room kept for the straight-line route trainers (RT-2); 10: an exit's signpost reads the place's name, set pieces (RT-3); 11: habitat points for wild Billies (RT-4) */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -4444,6 +4447,9 @@ export function mapgenBuild(P, ctx, aim) {
     const walk =
       P.pieces > 0 && ctx.setPieces ? mapgenStagePieces(G, sc, ctx.scenery, ctx.setPieces) || L.walk : L.walk;
     sc.layout = { plan: P.layout, walk: Math.round(mapgenWalkShare(walk) * 1000) / 1000 };
+    /* RT-4: where wild Billies of each habitat wait (after the pieces, on what they leave) */
+    const hab = mapgenHabitats(G, sc, walk);
+    if (hab) sc.habitats = hab;
   }
   sc.gen = { v: MAPGEN_VERSION, params: P, seed: P.seed };
   return { scene: sc, notes: G.notes };
@@ -4721,6 +4727,88 @@ export function mapgenStagePieces(G, sc, scenery, D) {
     ...(L.F.people.length ? { people: L.F.people } : {}),
   }));
   return R;
+}
+
+/* ---------- RT-4: habitats ---------- */
+/** a habitat's most points a place, and how far apart they stand (m) */
+export const MAPGEN_HABITAT = { most: 12, apart: 3 };
+/**
+ * RT-4: the points where a laid-out place's wild Billies of a habitat wait (rules.json run.wild.habitats; tall grass
+ * is the grass habitat's own, sc.grassPatches): `water`, dry ground you walk to within a metre of water; `woods`,
+ * the same beside a forest mass (boulders where a biome has no canopy). Each off the road, the hub, the exits, the
+ * spots and the set pieces, clear of every prop but tall grass, up to MAPGEN_HABITAT.most of them spaced apart, drawn
+ * on the `habitats` stream. { water: [[x, z], ...], woods: [...] }, a habitat with none left out; null with neither
+ * @param {any} G @param {any} sc @param {any} R the walk on the finished scene (props and pieces in)
+ */
+export function mapgenHabitats(G, sc, R) {
+  const { w, h } = G,
+    { N, gw, gh, seen } = R,
+    rnd = G.rng('habitats'),
+    exits = (sc.edgeExits || []).map(e => mapgenExitPoint(sc.w, sc.h, e)),
+    stands = (sc.spots || []).map(p => (p.stand ? p.stand : [p.x, p.z])),
+    pieces = (sc.pieces || []).map(p => [p.x, p.z]),
+    /* cells a prop covers (tall grass aside), on the walk grid */
+    held = new Uint8Array(gw * gh),
+    tile = (x, z) => (x >= 0 && z >= 0 && x < w && z < h ? Math.floor(z) * w + Math.floor(x) : -1);
+  for (const p of sc.props || []) {
+    if (/tallgrass/.test(p.k)) continue;
+    const r = 0.7;
+    for (let j = Math.max(0, Math.floor((p.z - r) * N)); j < Math.min(gh, Math.ceil((p.z + r) * N)); j++)
+      for (let i = Math.max(0, Math.floor((p.x - r) * N)); i < Math.min(gw, Math.ceil((p.x + r) * N)); i++)
+        held[j * gw + i] = 1;
+  }
+  const beside = (x, z, test) => {
+    for (const [dx, dz] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+      [0.7, 0.7],
+      [-0.7, 0.7],
+      [0.7, -0.7],
+      [-0.7, -0.7],
+    ]) {
+      const q = tile(x + dx, z + dz);
+      if (q >= 0 && test(q)) return true;
+    }
+    return false;
+  };
+  const kinds = {
+      water: q => MAPGEN_WET.includes(G.T[q]),
+      woods: q => G.Lm[q] === MAPGEN_LM.forest,
+    },
+    found = /** @type {Record<string, number[]>} */ ({ water: [], woods: [] });
+  for (let q = 0; q < gw * gh; q++) {
+    if (!seen[q] || held[q]) continue;
+    const x = ((q % gw) + 0.5) / N,
+      z = (Math.floor(q / gw) + 0.5) / N,
+      t = tile(x, z);
+    if (t < 0 || G.T[t] === 't' || G.T[t] === 'b' || x < 2 || x > w - 2) continue;
+    if (G.near[t] >= 0 && G.dist[t] - G.roadPts[G.near[t]].r < 1.5) continue;
+    if (Math.hypot(x - sc.hub[0], z - sc.hub[1]) < 6 || exits.some(e => Math.hypot(e[0] - x, e[1] - z) < 5)) continue;
+    if (stands.some(s => Math.hypot(s[0] - x, s[1] - z) < 2.5) || pieces.some(s => Math.hypot(s[0] - x, s[1] - z) < 4))
+      continue;
+    for (const k in kinds) if (beside(x, z, kinds[k])) found[k].push(q);
+  }
+  /** @type {Record<string, [number, number][]>} */
+  const out = {};
+  for (const k in found) {
+    const C = found[k],
+      took = /** @type {[number, number][]} */ ([]);
+    for (let n = C.length - 1; n > 0; n--) {
+      const m = rnd.int(0, n);
+      [C[n], C[m]] = [C[m], C[n]];
+    }
+    for (const q of C) {
+      if (took.length >= MAPGEN_HABITAT.most) break;
+      const x = ((q % gw) + 0.5) / N,
+        z = (Math.floor(q / gw) + 0.5) / N;
+      if (took.every(p => Math.hypot(p[0] - x, p[1] - z) >= MAPGEN_HABITAT.apart))
+        took.push([mapgenRound2(x), mapgenRound2(z)]);
+    }
+    if (took.length) out[k] = took;
+  }
+  return Object.keys(out).length ? out : null;
 }
 
 /* ---------- checking a scene: can you walk from the hub to every exit? ---------- */
