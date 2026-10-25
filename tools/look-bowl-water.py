@@ -48,7 +48,7 @@ CAMS = """(()=>{const g=worldBowl.ground,G=g.G,me=worldBowl.spots[saveData.trip.
  at('place',me.x,me.y,.02);return out})()"""
 
 NUMBERS = """(()=>{const g=worldBowl.ground;return {sea:!!g.water,waterTriangles:g.water?Math.round(g.water.n/3):0,
- rivers:(g.G.rivers||[]).length,floats:!!g.float,pixel:engineSetting('water','pixel')!==false,bands:engineSetting('water','bands'),frames:engineSetting('water','frames')}})()"""
+ rivers:(g.G.rivers||[]).length,programs:['mwater','mground'].filter(k=>gpuState.P[k]&&gpuState.P[k].p).length,floats:!!g.float,pixel:engineSetting('water','pixel')!==false,bands:engineSetting('water','bands'),frames:engineSetting('water','frames')}})()"""
 
 
 def pixel(pg, on):
