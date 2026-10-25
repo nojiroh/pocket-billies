@@ -5,7 +5,12 @@
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
 import { COMMON_GLSL, LIGHT_GLSL, LOOK_GLSL } from '../engine/webgl.js';
-expose({ RING_AT_GLSL: [() => RING_AT_GLSL], ROCK_GLSL: [() => ROCK_GLSL], WALK_SHADERS: [() => WALK_SHADERS] });
+expose({
+  PIXEL_WATER_GLSL: [() => PIXEL_WATER_GLSL],
+  RING_AT_GLSL: [() => RING_AT_GLSL],
+  ROCK_GLSL: [() => ROCK_GLSL],
+  WALK_SHADERS: [() => WALK_SHADERS],
+});
 /* to-module: end */
 /* ---------- shaders ---------- */
 /* terrain TR-3: rock between the camera and you thins out: a spot nearer the camera than you, half a metre above your
@@ -15,6 +20,21 @@ float rockBay(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,1
 float rockCut(vec3 w){if(uRock.y<=0.||w.y<uRock.x+.5)return 0.;vec4 c=uVP*vec4(w,1.);if(c.w>=uPlC.z-.6)return 0.;vec2 nd=c.xy/c.w;
  return (1.-smoothstep(uRock.y*.55,uRock.y,length((nd-uPlC.xy)*vec2(uAspect,1.))))*uRock.z;}
 bool rockHides(vec3 w){return rockBay(gl_FragCoord.xy)<rockCut(w);}
+`;
+/* water track WA-1: the pixel water, shared by the water, its shore, the falls and (lane B) the world map's and battles'
+   water. uPixW: on, tones a kind (water.bands), animation steps a second (water.frames). On, water lies on the
+   ground's 32 texels a metre grid, a kind's colours fall in a few tones with an ordered dither fixed to that grid (it
+   does not swim as the camera moves), and the small motions step; off, the 16 grid and smooth tones of before. */
+const PIXEL_WATER_GLSL = `uniform vec3 uPixW;
+float pwRes(){return uPixW.x>.5?32.:16.;}
+vec2 pwCell(vec2 xz){return floor(xz*pwRes());}
+vec2 pwSnap(vec2 xz){return floor(xz*pwRes())/pwRes();}
+float pwBayer(vec2 c){ivec2 i=ivec2(mod(c,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
+float pwStep(float t){return uPixW.x>.5&&uPixW.z>0.?floor(t*uPixW.z)/uPixW.z:t;}
+float pwQ(float v,float n,vec2 c){if(uPixW.x<.5)return v;n=max(n,2.)-1.;return clamp(floor(clamp(v,0.,1.)*n+pwBayer(c)),0.,n)/n;}
+float pwBand(float v,vec2 c){return pwQ(v,uPixW.y,c);}
+vec3 pwTone(vec3 shal,vec3 deep,float d,vec2 c){return mix(shal,deep,pwBand(d,c));}
+float pwHard(float e0,float e1,float x){return uPixW.x>.5?step((e0+e1)*.5,x):smoothstep(e0,e1,x);}
 `;
 /* v46: the near ring lookup, shared by the ground and the grass (their uniforms: uRingC, uRingBox, uCanvas) */
 const RING_AT_GLSL = `float ringAt(vec2 cc,out vec2 ruv){ruv=vec2(0.);if(uCanvas.z<.5)return 0.;vec2 ch=floor(cc/16.),s=mod(ch,4.);int si=int(s.x+.5)+int(s.y+.5)*4;vec2 h=uRingC[si];if(abs(h.x-ch.x)>.5||abs(h.y-ch.y)>.5)return 0.;

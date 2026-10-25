@@ -14,6 +14,7 @@ import { walkRenderer } from './walk-state.js';
 expose({
   WATER_KIND_INDEX: [() => WATER_KIND_INDEX],
   WATER_KIND_LOOKS: [() => WATER_KIND_LOOKS],
+  setPixelWaterUniform: [() => setPixelWaterUniform, v => (setPixelWaterUniform = v)],
   setShoreUniforms: [() => setShoreUniforms, v => (setShoreUniforms = v)],
   shoreAt: [() => shoreAt, v => (shoreAt = v)],
   shoreField: [() => shoreField, v => (shoreField = v)],
@@ -241,7 +242,18 @@ export function* shoreField(sc, isW, T = walkRenderer) {
   T.shoreF = { W, H, d, FW, FH };
 }
 /* the shoreline value at a spot (0 dry ... 0.5 the water's edge ... 1 open water); 1 where there is no field */
+/* water track WA-1: the pixel water's switch, tones and steps (walk-shaders.js PIXEL_WATER_GLSL) */
+function setPixelWaterUniform(U) {
+  if (!U.uPixW) return;
+  gpuState.gl.uniform3f(
+    U.uPixW,
+    engineSetting('water', 'pixel') === false ? 0 : 1,
+    clamp(Math.round(engineSetting('water', 'bands') ?? 5), 2, 8),
+    clamp(engineSetting('water', 'frames') ?? 10, 0, 60)
+  );
+}
 export function setShoreUniforms(U, sc) {
+  setPixelWaterUniform(U);
   if (!U.uShoreR) return;
   const gl = gpuState.gl,
     on = !!(walkRenderer.shoreF && walkRenderer.shoreTex);
