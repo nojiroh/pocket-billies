@@ -283,7 +283,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 9; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2) */
+export const MAPGEN_VERSION = 10; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3) */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -2930,6 +2930,8 @@ export const MAPGEN_TOWN_SET = {
   square: 'c',
   lamp: 'streetlamp',
   bench: 'bench_wood',
+  /* TW-3: the notice board on the square's east side (act 'notice': the run's quests are handed in there) */
+  board: 'notice_board',
 };
 /** a town's sizes (metres): the main street's length and width, the square's width and depth, how many houses, the
  * garden beside a house, how far a house's fence stands in front of it */
@@ -2951,7 +2953,7 @@ export const MAPGEN_TOWN = {
 /** a town (kind 'town'), laid before the hub's buildings (mapgenStageLots, which then only adds what the town did
  * not place): a short main street north off the main road near the hub, to a small level square (the biome's well
  * or fountain in its middle, lamps at its front corners, benches on its west side, a spot kept on its east side for
- * a notice board: G.spots kind 'board'), the clinic and the shop on its north side facing the camera (the props dials
+ * a notice board: G.spots kind 'board', TW-3: the board on it and its quest giver's spot, kind 'giver'), the clinic and the shop on its north side facing the camera (the props dials
  * clinic and shop), then 4-7 houses north of the main road on both sides of the street, each facing the camera (the
  * owner, TW-1) with a garden beside it, a fence along its front with a gap at its path and a lamp at every other
  * one. The houses are shut (no act: only the clinic and the shop have rooms). South of the road: 1-2 fenced
@@ -3075,6 +3077,12 @@ export function mapgenStageTown(G) {
   G.spots.push({ kind: 'square', x: mapgenRound2(mx), z: mapgenRound2(mz), y: mapgenRound2(y) });
   G.spots.push({ kind: 'board', x: board[0], z: board[1], y: mapgenRound2(y) });
   G.keep.push([board[0], board[1], 1.2]);
+  /* TW-3: the notice board on its spot, and where the town's quest giver stands: in front of it, to its west */
+  if (G.cat[S.board])
+    mapgenPutProp(G, S.board, board[0], board[1], { force: true, extra: { act: 'notice', label: 'Notice board' } });
+  const giver = [mapgenRound2(board[0] - 1.6), mapgenRound2(mz - 1)];
+  G.spots.push({ kind: 'giver', x: giver[0], z: giver[1], y: mapgenRound2(mapgenCornerHeight(G, giver[0], giver[1])) });
+  G.keep.push([giver[0], giver[1], 0.6]);
   for (const dz of [-1.3, 1.3]) mapgenPutProp(G, S.bench, sq.x0 + 1.4, mz + dz, { force: true });
   for (const x of [sq.x0 + 0.5, sq.x1 - 0.5]) mapgenPutProp(G, S.lamp, x, sq.z0 + 0.5, { force: true });
   for (const sg of [-1, 1]) {

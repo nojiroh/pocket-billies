@@ -66,6 +66,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runTownLife: [() => runTownLife, v => (runTownLife = v)],
   // @ts-expect-error -- replaced on purpose
+  runTownQuest: [() => runTownQuest, v => (runTownQuest = v)],
+  // @ts-expect-error -- replaced on purpose
   runWildLevels: [() => runWildLevels, v => (runWildLevels = v)],
   // @ts-expect-error -- replaced on purpose
   runWorldTables: [() => runWorldTables, v => (runWorldTables = v)],
@@ -322,7 +324,10 @@ export function runSceneMake(run, i, scenes, data) {
     climate: B.climate,
   });
   runFieldProps(map, i, scene, data);
-  if (scene.kind === 'town') runTownLife(run, i, scene, data);
+  if (scene.kind === 'town') {
+    runTownLife(run, i, scene, data);
+    runTownQuest(run, i, scene, data);
+  }
   return { scene, notes };
 }
 /** TW-2: how many of a run town's folk are drawn (rules.json run.town.cap): `busy` once the game has stepped its
@@ -367,6 +372,24 @@ export function runTownLife(run, i, scene, data) {
     });
   }
   if (people.length) scene.people = people;
+}
+/** TW-3: a run town's quest giver (scene.people id 'quest', `quest: 1`: quest-board.js offers the town's quest),
+ * from the node's own stream ('town|quest', so the locals' draws stay as they were): on the giver's spot by the notice
+ * board (mapgen.js), a seeded townsfolk look and a name from run.town.names that none of the town's locals has. None
+ * when the town has no board (its square didn't fit) @param {Run} run @param {number} i @param {any} scene
+ * @param {RunWorldData} data */
+export function runTownQuest(run, i, scene, data) {
+  const T = data.rules.town,
+    at = (scene.spots || []).find((/** @type {any} */ s) => s.kind === 'giver');
+  if (!T || !at) return;
+  const rnd = rngFrom(runNodeSeed(run.seed, i), 'town|quest'),
+    taken = new Set((scene.people || []).map((/** @type {any} */ p) => p.name)),
+    names = T.names.filter(n => !taken.has(n));
+  if (!names.length) return;
+  const name = names[rnd.int(0, names.length - 1)];
+  scene.people = (scene.people || []).concat([
+    { id: 'quest', who: 'folk:' + rnd.int(1000, 99999), name, x: at.x, z: at.z, dir: 'down', lines: [], quest: 1 },
+  ]);
 }
 /** every scene of a run's map, in order (each after its parents), by map node @param {Run} run
  * @param {RunWorldData} data @returns {any[]} */

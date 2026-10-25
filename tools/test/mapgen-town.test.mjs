@@ -91,7 +91,15 @@ test('every run town has a street, a square with the clinic and the shop on it, 
         sc.props.some(p => p.k === B.town.centre && Math.hypot(p.x - sq.x, p.z - sq.z) < 0.1),
         `${where}: the ${B.town.centre} in the square's middle`
       );
-      assert.ok(!sc.props.some(p => Math.hypot(p.x - board.x, p.z - board.z) < 1), `${where}: the board's spot clear`);
+      /* TW-3: the notice board on its spot (act notice), nothing else near it; the quest giver's spot clear */
+      const near = (x, z, r) => sc.props.filter(p => Math.hypot(p.x - x, p.z - z) < r);
+      assert.deepEqual(
+        near(board.x, board.z, 1).map(p => [p.k, p.act]),
+        [['notice_board', 'notice']],
+        `${where}: the board on its spot`
+      );
+      const giver = (sc.spots || []).find(s => s.kind === 'giver');
+      assert.ok(giver && !near(giver.x, giver.z, 0.6).length, `${where}: the giver's spot clear`);
       /* the square is level and paved */
       const tile = (x, z) => (sc.tiles[sc.h - 1 - Math.floor(z)] || '')[Math.floor(x)];
       assert.equal(tile(sq.x + 0.5, sq.z - 2.5), B.town.square, `${where}: the square's ground`);
@@ -155,7 +163,7 @@ test('every run town has a street, a square with the clinic and the shop on it, 
       const own = (run.region && R.town.chat[run.region.theme]) || [];
       assert.deepEqual(sc.chat, B.town.chat.concat(own), `${where}: chat`);
       /* 1-2 named locals, on the square first, a walk from the hub, each with a townsfolk look and two lines */
-      const P = sc.people || [];
+      const P = (sc.people || []).filter(p => p.id !== 'quest');
       assert.ok(P.length >= R.town.locals[0] && P.length <= R.town.locals[1], `${where}: ${P.length} locals`);
       assert.equal(new Set(P.map(p => p.name)).size, P.length, `${where}: no name twice`);
       P.forEach((p, k) => {
@@ -167,6 +175,14 @@ test('every run town has a street, a square with the clinic and the shop on it, 
         assert.ok(G.mapgenReached(reach, p.x, p.z), `${where}: ${p.name} can't be walked to`);
         if (k === 0) assert.ok(Math.abs(p.z - sq.z) < SQUARE_HALF_DEPTH, `${where}: the first local on the square`);
       });
+      /* TW-3: one quest giver by the board, a walk from the hub, a townsfolk look, a name no local has */
+      const Q = (sc.people || []).filter(p => p.quest);
+      assert.equal(Q.length, 1, `${where}: a quest giver`);
+      assert.deepEqual([Q[0].id, Q[0].x, Q[0].z], ['quest', giver.x, giver.z], where);
+      assert.match(Q[0].who, /^folk:\d+$/, where);
+      assert.ok(R.town.names.includes(Q[0].name) && !P.some(p => p.name === Q[0].name), `${where}: the giver's name`);
+      assert.ok(G.mapgenReached(reach, Q[0].x, Q[0].z), `${where}: the quest giver can't be walked to`);
+      assert.ok(G.mapgenReached(reach, board.x, board.z - 0.8), `${where}: the board can't be walked to`);
       /* a run's scenes meet any neighbour at height 0 on their east and west edges */
       for (const row of sc.heights) assert.ok(row[0] === 0 && row[sc.w] === 0, `${where}: the edges pinned`);
     }
@@ -192,5 +208,9 @@ test("a run town's chat ends with its region's lines", () => {
   sc.chat = biome.slice();
   runTownLife({ ...t.run, region: { theme: 'harvest' } }, t.i, sc, WORLD_DATA);
   assert.deepEqual(sc.chat, biome.concat(R.town.chat.harvest));
-  assert.deepEqual(sc.people, t.scene.people, 'the same locals: the region moves no draw');
+  assert.deepEqual(
+    sc.people,
+    t.scene.people.filter(p => !p.quest),
+    'the same locals: the region moves no draw'
+  );
 });
