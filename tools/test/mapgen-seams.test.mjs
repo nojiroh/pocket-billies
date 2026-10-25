@@ -335,3 +335,49 @@ test('a pair laid as one scene (the Studio preview): the game format, and from t
     null
   );
 });
+
+test('WA-3a: a river that leaves by a joined edge goes on in the neighbour, cell for cell and at the same height', () => {
+  /* run-like routes (112 x 64, pinned east and west, an exit on each); a parent whose river leaves by its west side
+     and the child made from that edge's strip, with and without a river of its own */
+  const route = (seed, edges, water) => ({
+    seed,
+    w: 112,
+    h: 64,
+    pin: 'EW',
+    biome: 'meadow',
+    edges,
+    land: { water, waterAmount: 0.5, hills: 0.4 },
+    road: {
+      exits: [
+        { side: 'E', t: 0.5 },
+        { side: 'W', t: 0.5 },
+      ],
+    },
+  });
+  let pairs = 0;
+  for (let seed = 1; seed <= 40 && pairs < 6; seed++) {
+    const A = G.mapgenScene(route(seed, undefined, 'stream'), ctx).scene,
+      st = (A.streams || []).find(s => s.src);
+    if (!st || st.pts[st.pts.length - 1][0] > 0) continue;
+    const west = A.edgeExits.find(e => e.side === 'W'),
+      strip = G.mapgenEdgeStrip(A, west.id, { w: 112, h: 64 }, 0.5);
+    for (const water of pairs % 2 ? ['none'] : ['stream']) {
+      const { scene: B, notes } = G.mapgenScene(route(seed + 5000, [strip], water), ctx),
+        where = `seed ${seed} (child ${water})`,
+        east = B.edgeExits.find(e => e.side === 'E');
+      assert.deepEqual(notes, [], where);
+      const sb = (B.streams || []).find(s => s.src);
+      assert.ok(sb && sb.src === 'edge' && sb.pts[0][0] === 112, `${where}: the child's river comes in at the seam`);
+      /* the edge cells on both sides of the seam: wet over the same stretch */
+      const wet = (sc, col) => sc.tiles.map(r => ('wd'.includes(r[col]) ? 1 : 0)).join('');
+      assert.equal(wet(B, 111), wet(A, 0), `${where}: the same water across the seam`);
+      for (let j = 0; j <= 64; j++)
+        assert.ok(Math.abs(A.heights[j][0] - B.heights[j][112]) < 0.05, `${where}: the heights at row ${j}`);
+      const a = G.mapgenSeamAgreement(A, west.id, B, east.id, C);
+      assert.deepEqual([a.dhNear, a.dhBand, a.raiseExit, a.walk], [0, 0, 0, null], where);
+      assert.deepEqual(G.mapgenUnreachable(B, C), [], where);
+      pairs++;
+    }
+  }
+  assert.ok(pairs >= 4, `${pairs} pairs whose river crosses the seam`);
+});

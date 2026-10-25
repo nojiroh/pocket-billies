@@ -16,6 +16,7 @@
    (mapgenStreamLine) only when no river fits. Logic only: no DOM, runs in Node (tools/test/water-gen.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 import {
   MAPGEN_INWARD,
   MAPGEN_STRAIGHT_IN,
@@ -52,7 +53,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   waterGenBodies: [() => waterGenBodies, v => (waterGenBodies = v)],
   // @ts-expect-error -- replaced on purpose
-  waterGenCarve: [() => waterGenCarve, v => (waterGenCarve = v)],
+  waterGenCarve: [() => waterGenCarve, v => ((waterGenCarve = v), provide({ waterGenCarve }))],
   // @ts-expect-error -- replaced on purpose
   waterGenCorners: [() => waterGenCorners, v => (waterGenCorners = v)],
   // @ts-expect-error -- replaced on purpose
@@ -71,7 +72,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   waterGenPaint: [() => waterGenPaint, v => (waterGenPaint = v)],
   // @ts-expect-error -- replaced on purpose
-  waterGenRiver: [() => waterGenRiver, v => (waterGenRiver = v)],
+  waterGenRiver: [() => waterGenRiver, v => ((waterGenRiver = v), provide({ waterGenRiver }))],
   // @ts-expect-error -- replaced on purpose
   waterGenSeamCells: [() => waterGenSeamCells, v => (waterGenSeamCells = v)],
   // @ts-expect-error -- replaced on purpose
@@ -93,6 +94,7 @@ expose({
   waterGenTry: [() => waterGenTry, v => (waterGenTry = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ waterGenCarve, waterGenRiver });
 /* to-module: end */
 /** metres a river runs straight across a side before it turns, so a seam is crossed head on */
 export const WATERGEN_STRAIGHT = 8;
