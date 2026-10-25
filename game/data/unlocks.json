@@ -20,27 +20,27 @@
   "cost": 150,
   "grant": {"shop":"revive"}
  },
- "airship_2": {
+ "station_2": {
   "name": "Station Lv 2",
   "about": "A longer line: the trains learn the way to new lands.",
-  "at": "airship",
+  "at": "station",
   "cost": 1,
-  "grant": {"building":"airship","level":2}
+  "grant": {"building":"station","level":2}
  },
  "biome_ridge": {
   "name": "Ridge lands",
   "about": "Ridge routes can show up on a run's map.",
-  "at": "airship",
+  "at": "station",
   "cost": 1,
-  "requires": ["airship_2"],
+  "requires": ["station_2"],
   "grant": {"biome":"ridge"}
  },
  "biome_autumn": {
   "name": "Autumn lands",
   "about": "Autumn routes can show up on a run's map.",
-  "at": "airship",
+  "at": "station",
   "cost": 1,
-  "requires": ["airship_2"],
+  "requires": ["station_2"],
   "grant": {"biome":"autumn"}
  },
  "ranch_2": {

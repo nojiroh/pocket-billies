@@ -6,7 +6,7 @@
   "levels": 1,
   "about": "Professor Chosen's lab (his assistant Hazel does the work). Its board sells unlocks for Research."
  },
- "airship": {
+ "station": {
   "name": "Skyline Station",
   "currency": "crests",
   "act": "station",

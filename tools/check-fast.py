@@ -788,7 +788,7 @@ def lab(pg, base):
     st = pg.evaluate("[saveData.meta.scrap,ranchLevel(saveData),ranchSlots(saveData,RULES.ranch),uiState.modal&&uiState.modal.title]")
     if st[:3] != [70 - pg.evaluate("UNLOCK_DATA.unlocks.ranch_2.cost"), 2, pg.evaluate("RULES.ranch.slots[1]")] or 'Lv 2' not in (st[3] or ''): raise Exception(f'Ranch Lv 2: Scrap, level, slots, title {st}')
     pg.evaluate("uiState.modal=null;uiState.mq=[];stationMenu(walkView.sc.props.find(q=>q.act==='station'));0")
-    pg.click("#ov .fly-sheet [data-a=lab-buy][data-k=airship_2]")
+    pg.click("#ov .fly-sheet [data-a=lab-buy][data-k=station_2]")
     if not until(pg, "saveData.meta.crests===1&&!!document.querySelector('#ov .fly-sheet [data-k=biome_ridge]:not([disabled])')", 10): raise Exception('Station Lv 2 didn’t open the ridge lands on the station’s sheet')
     if pg.evaluate("runUnlocks(saveData,UNLOCK_DATA).join()") != 'shop_revive': raise Exception('a run wouldn’t carry the shop unlock')
     keep = pg.evaluate("JSON.stringify(saveData.meta)")

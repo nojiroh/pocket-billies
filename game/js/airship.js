@@ -121,7 +121,7 @@ export function flyMenu(p) {
       ? `<button class="pickrow fly-row" data-a="runstart"><span class="fly-ico">${uiIconHTML('map', 18)}</span><span class="pr-t"><b>Start a run</b><small>Expedition I · the wild lands past the island</small></span><span class="fly-fare">Free</span></button>`
       : '';
   /* RL-11: the airship's upgrades, for Crests */
-  const ups = typeof buildingRowsHTML === 'function' ? buildingRowsHTML('airship', 'fly') : '',
+  const ups = typeof buildingRowsHTML === 'function' ? buildingRowsHTML('station', 'fly') : '',
     upHTML = ups
       ? `<p class="note">Airship upgrades, paid in Crests. You have ${formatNumber(saveData.meta.crests)}.</p>${ups}`
       : '';
@@ -154,7 +154,7 @@ export function stationMenu(p) {
     typeof runStartable === 'function' && runStartable()
       ? `<button class="pickrow fly-row" data-a="runstart"><span class="fly-ico">${uiIconHTML('map', 18)}</span><span class="pr-t"><b>Start a run</b><small>Expedition I · the wild lands past the island</small></span><span class="fly-fare">Free</span></button>`
       : '';
-  const ups = typeof buildingRowsHTML === 'function' ? buildingRowsHTML('airship', 'station') : '',
+  const ups = typeof buildingRowsHTML === 'function' ? buildingRowsHTML('station', 'station') : '',
     upHTML = ups
       ? `<p class="note">Station upgrades, paid in Crests. You have ${formatNumber(saveData.meta.crests)}.</p>${ups}`
       : '';
