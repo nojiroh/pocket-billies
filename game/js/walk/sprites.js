@@ -7,7 +7,7 @@ import { expose } from '../test-globals.js';
 import { loadingScreen, provide, reducedMotion, talkBox } from '../hooks.js';
 import { clamp } from '../util.js';
 import { pictureFacing } from '../logic/prop-turn.js';
-import { hiddenEase, outlineColour, pictureCovers } from '../logic/occlude.js';
+import { hiddenEase, outlineColour } from '../logic/occlude.js';
 import { INTEREST_DEFAULTS } from '../logic/camera-interest.js';
 import { filterInto } from '../engine/frame-lists.js';
 import { makeCanvas } from '../art.js';
@@ -140,7 +140,6 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   const gl = gpuState.gl,
     p = useWalkProgram('sprite', C, X),
     U = p.U,
-    P = walkView.pl,
     sc = walkView.sc,
     sun = X.sun;
   bindQuad();
@@ -159,7 +158,6 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   gl.uniform1f(U.uEmit, 0);
   gl.uniform1f(U.uFlipN, 1);
   gl.uniform1f(U.uFixed, 0);
-  const me = worldToScreen(C, P.x, 0.9, P.z);
   if (walkRenderer.bfade) walkRenderer.bfade.clear();
   else walkRenderer.bfade = new Map();
   const sd = sun.dir,
@@ -186,11 +184,8 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     if (!T) continue;
     const s = it.mpp,
       hM = -it.oy * s;
-    let fade = it.fade ?? 1;
-    if (me && !walkRenderer.bt && !it.person && it.k === 'prop' && hM > 1.6) {
-      const q = worldToScreen(C, it.x, 0, it.z);
-      if (q && pictureCovers(me, q, it.w * s * 0.5, hM)) fade = 0.4;
-    }
+    /* player visibility: a picture covering you is thinned out already (walk/quality-cull.js coverItems) */
+    const fade = it.fade ?? 1;
     const rk = walkRenderer.rise ? townRiseAmount(it) : 1;
     if (rk < 0.002 && !it.person) continue;
     if (it.bld3) {

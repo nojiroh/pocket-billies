@@ -8,6 +8,10 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
+  coverTarget: [() => coverTarget, v => (coverTarget = v)],
+  // @ts-expect-error -- replaced on purpose
+  fadeEase: [() => fadeEase, v => (fadeEase = v)],
+  // @ts-expect-error -- replaced on purpose
   hiddenEase: [() => hiddenEase, v => (hiddenEase = v)],
   // @ts-expect-error -- replaced on purpose
   outlineColour: [() => outlineColour, v => (outlineColour = v)],
@@ -81,4 +85,28 @@ export function outlineColour(hex) {
       [c, 0, x],
     ][i];
   return rgb.map(v => +(v + o).toFixed(4));
+}
+
+/**
+ * How far a picture that covers you thins out (its fade, 0-1): `base` (Engine > Camera > coverFade, 0.4), milder
+ * while the see-through circle is on (`hidK`, 0-1), since the circle already opens the part round you: halfway back
+ * toward 1 when fully hidden.
+ * @param {number} base
+ * @param {number} hidK
+ */
+export function coverTarget(base, hidK) {
+  const b = Math.min(1, Math.max(0, base));
+  return b + (1 - b) * 0.5 * Math.min(1, Math.max(0, hidK));
+}
+
+/**
+ * A picture's fade eased toward `target`: it thins out in about a quarter of a second and comes back in about half
+ * a second, so walking past a tree doesn't pop it.
+ * @param {number} v the fade last frame
+ * @param {number} target
+ * @param {number} dt seconds since last frame
+ */
+export function fadeEase(v, target, dt) {
+  const r = v + (target - v) * Math.min(1, dt * (target < v ? 10 : 5));
+  return Math.abs(r - target) < 0.005 ? target : r;
 }

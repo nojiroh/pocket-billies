@@ -424,7 +424,8 @@ BEHIND_SPOTS = """(() => {
 def behind_things(pg, base):
     """Player visibility: in Copperleaf, standing just behind trees and buildings (away from the camera), something
     covers you at most of them: the occlusion query says so (walkRenderer.hidT), the hidden amount comes on, the
-    silhouette is shown and the see-through circle is on; back where you started, in the open, none of it"""
+    silhouette is shown and the see-through circle is on, frame after frame; back where you started, in the open,
+    none of it"""
     drawing(pg)
     home = pg.evaluate('[walkView.pl.x, walkView.pl.z]')
     stand(pg, home[0], home[1], 30)
@@ -434,7 +435,14 @@ def behind_things(pg, base):
     hid = []
     for s in spots:
         stand(pg, s['x'], s['z'], 30)
-        if pg.evaluate('walkRenderer.hidT === 1 && walkRenderer.hidK > 0.9 && rockUniformsFor(walkView.C).rock[2] > 0.5'): hid.append(s['k'])
+        # hidden over several frames in a row: the circle and the fades together must never take every pixel in
+        # front of you (the query would see nothing and the circle would flicker off)
+        ok = True
+        for _ in range(4):
+            f0 = pg.evaluate('walkRenderer.frames')
+            until(pg, f'walkRenderer.frames>={f0 + 3}', 30)
+            ok = ok and pg.evaluate('walkRenderer.hidT === 1 && walkRenderer.hidK > 0.9 && rockUniformsFor(walkView.C).rock[2] > 0.5')
+        if ok: hid.append(s['k'])
     if len(hid) * 2 < len(spots): raise Exception(f'hidden behind only {hid} of {[s["k"] for s in spots]}')
     stand(pg, home[0], home[1], 60)
     k, circle = pg.evaluate('[walkRenderer.hidK || 0, rockUniformsFor(walkView.C).rock[2]]')

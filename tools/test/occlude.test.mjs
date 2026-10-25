@@ -56,3 +56,21 @@ test('the outline colour keeps a bright top’s colour and lifts a dark one', ()
   assert.equal(O.outlineColour('red'), null);
   assert.equal(O.outlineColour(null), null);
 });
+
+test('a picture covering you fades to the dial, milder while the circle is on', () => {
+  assert.equal(O.coverTarget(0.4, 0), 0.4);
+  assert.ok(Math.abs(O.coverTarget(0.4, 1) - 0.7) < 1e-9);
+  assert.equal(O.coverTarget(1, 1), 1, 'off');
+  assert.equal(O.coverTarget(2, -1), 1, 'kept in range');
+});
+
+test('a fade thins out in about a quarter of a second, comes back slower and settles exactly', () => {
+  let v = 1;
+  for (let i = 0; i < 15; i++) v = O.fadeEase(v, 0.4, 1 / 60);
+  assert.ok(v < 0.45, `a quarter of a second: ${v}`);
+  let w = 0.4;
+  for (let i = 0; i < 15; i++) w = O.fadeEase(w, 1, 1 / 60);
+  assert.ok(w > 0.8 && w < 1, `coming back: ${w}`);
+  for (let i = 0; i < 120; i++) w = O.fadeEase(w, 1, 1 / 60);
+  assert.equal(w, 1);
+});

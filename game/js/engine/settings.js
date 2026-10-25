@@ -234,6 +234,7 @@ export const ENGINE_DEFAULTS = {
     hideFade: true,
     hideSize: 0.3,
     hideAmount: 0.7,
+    coverFade: 0.4,
     /* island track IS-1: an island map's camera turns round its middle (cam.orbit); the sun turns with the camera
        (off: the sun stays put in the world, the owner's pick) */
     orbit: true,
@@ -1053,6 +1054,14 @@ export const ENGINE_SPEC = [
         0.85,
         0.05,
         'Player visibility: how much of what hides you goes in the middle of the circle (never all: some stays, so the game still knows you are behind it).',
+      ],
+      [
+        'coverFade',
+        'Things covering you fade to',
+        0.1,
+        1,
+        0.05,
+        'Player visibility: a tree, building or other tall thing nearer the camera that covers you thins out to this much (1: not at all); halfway back while the see-through circle is on.',
       ],
       [
         'orbit',

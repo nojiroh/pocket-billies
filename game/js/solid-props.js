@@ -15,9 +15,8 @@ import { expose } from './test-globals.js';
 import { provide, reducedMotion } from './hooks.js';
 import { clamp } from './util.js';
 import { placedTurn } from './logic/prop-turn.js';
-import { pictureCovers } from './logic/occlude.js';
 import { makeCanvas } from './art.js';
-import { artImage, hash2d, walkView, worldToScreen } from './walk-view.js';
+import { artImage, hash2d, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import {
   COMMON_GLSL,
@@ -1256,8 +1255,6 @@ export function drawSolidProps(C, items, X, hits, labels, PPU) {
     const gl = gpuState.gl;
     ensurePrograms(SOLID_PROP_SHADERS);
     let p = null;
-    const P = walkView.pl,
-      me = worldToScreen(C, P.x, 0.9, P.z);
     for (const it of items) {
       if (!it.vol || it.vis === false) continue;
       const M = solidPropMesh(it.im, it.vol);
@@ -1277,13 +1274,8 @@ export function drawSolidProps(C, items, X, hits, labels, PPU) {
         gl.disable(gl.BLEND);
         gl.disable(gl.CULL_FACE);
       }
-      const s = it.mpp,
-        hM = -it.oy * s;
-      let fade = it.fade ?? 1;
-      if (me && !walkRenderer.bt && hM > 1.6) {
-        const q = worldToScreen(C, it.x, 0, it.z);
-        if (q && pictureCovers(me, q, it.w * s * 0.5, hM)) fade = 0.4;
-      }
+      /* player visibility: a solid covering you is thinned out already (walk/quality-cull.js coverItems) */
+      const fade = it.fade ?? 1;
       const mt = SURFACE_MATERIALS[it.mat] || SURFACE_MATERIALS.plain;
       gl.uniform4f(p.U.uMat, mt.spec, mt.shin, mt.transl, mt.wrap);
       if (p.U.uDet)
