@@ -1005,8 +1005,10 @@ def run_town_life(pg, base):
     if not until(pg, f"walkView.folk.length<={cap}", 20): raise Exception(f'{pg.evaluate("walkView.folk.length")} folk drawn, over the cap of {cap}')
     pg.evaluate("walkView.folkAll.forEach(f=>{f.x0=f.x;f.z0=f.z});0")
     if not until(pg, "walkView.folkAll.some(f=>Math.hypot(f.x-f.x0,f.z-f.z0)>1)", 90): raise Exception('nobody walked in 90 s')
-    # the evening: each one's own hours moved to 19:00, so the day sends them home and in at their door
-    pg.evaluate("(()=>{const h=folkHour();walkView.folkAll.forEach(f=>{f.off=19-h;f.owl=false});return 0})()")
+    # the evening: each one's own hours moved to 19:00, so the day sends them home and in at their door. Each first
+    # steps to 3 m from its own door (on the way it would walk), so the walk home is short: folk walk in game time,
+    # which a slow runner draws slower than the clock, and from across the town 150 s was not always enough on CI
+    pg.evaluate("(()=>{const h=folkHour();walkView.folkAll.forEach(f=>{if(f.A&&!f.in){const H=f.A.home,d=Math.hypot(f.x-H[0],f.z-H[1]),x=H[0]+(f.x-H[0])/d*3,z=H[1]+(f.z-H[1])/d*3;if(d>3&&isWalkable(x,z)){f.x=x;f.z=z;f.route=null}}f.off=19-h;f.owl=false});return 0})()")
     if not until(pg, "walkView.folkAll.some(f=>f.in)", 150): raise Exception('sent home, nobody went indoors in 150 s')
     life = pg.evaluate(f"(mapById(LOCATIONS[{node}].mapId).life||[]).filter(l=>l.area).map(l=>l.k)")
     if not life and pg.evaluate(f"!!((gameData.biomes[mapById(LOCATIONS[{node}].mapId).biome]||{{}}).town||{{}}).life"): raise Exception('the town has none of its biome\'s town animals')
