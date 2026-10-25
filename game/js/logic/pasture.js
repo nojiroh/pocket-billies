@@ -2,7 +2,7 @@
 'use strict';
 /* ================= THE PASTURE (island track IS-8) =================
    The fenced pasture by Copperleaf's barn. The map's `pasture` zone is the field; its fence follows the zone's outline,
-   made straight (a few long sides instead of the zone's 40 points) and set a little inside it. The build tool
+   lightly smoothed (HB-6: it bends as the zone does; IS-8 made it a few straight sides) and set a little inside it. The build tool
    (tools/build-pasture.mjs) lays the fence along that line, and the game lets up to rules.ranch.pasture of the ranch's
    Billies wander a little inside it: the same line from the same zone, so the two always agree.
    Who wanders: Billies at home and not on the team (storage, saveData.box), the trainees first, then the highest
@@ -18,7 +18,7 @@ import { expose } from '../test-globals.js';
 expose({
   PASTURE_FENCE_IN: [() => PASTURE_FENCE_IN],
   PASTURE_ROAM_IN: [() => PASTURE_ROAM_IN],
-  PASTURE_STRAIGHT: [() => PASTURE_STRAIGHT],
+  PASTURE_SMOOTH: [() => PASTURE_SMOOTH],
   // @ts-expect-error -- replaced on purpose
   pastureArea2: [() => pastureArea2, v => (pastureArea2 = v)],
   // @ts-expect-error -- replaced on purpose
@@ -30,13 +30,15 @@ expose({
   pastureIn: [() => pastureIn, v => (pastureIn = v)],
   // @ts-expect-error -- replaced on purpose
   pastureInset: [() => pastureInset, v => (pastureInset = v)],
+  // @ts-expect-error -- replaced on purpose
+  pastureResample: [() => pastureResample, v => (pastureResample = v)],
   pastureRoamLine: [() => pastureRoamLine],
   // @ts-expect-error -- replaced on purpose
   pastureSegDist: [() => pastureSegDist, v => (pastureSegDist = v)],
   // @ts-expect-error -- replaced on purpose
-  pastureSpot: [() => pastureSpot, v => (pastureSpot = v)],
+  pastureSmooth: [() => pastureSmooth, v => (pastureSmooth = v)],
   // @ts-expect-error -- replaced on purpose
-  pastureStraight: [() => pastureStraight, v => (pastureStraight = v)],
+  pastureSpot: [() => pastureSpot, v => (pastureSpot = v)],
   // @ts-expect-error -- replaced on purpose
   pastureWander: [() => pastureWander, v => (pastureWander = v)],
   // @ts-expect-error -- replaced on purpose
@@ -48,8 +50,8 @@ expose({
 /** how far inside the zone's outline the fence runs, and how far inside the fence a Billie keeps (m) */
 export const PASTURE_FENCE_IN = 1.2,
   PASTURE_ROAM_IN = 1.1,
-  /** how far a straightened side may stray from the zone's outline (m) */
-  PASTURE_STRAIGHT = 1.4;
+  /** HB-6: how far along the zone's outline its smoothing reaches (m): a light smoothing, its bends kept */
+  PASTURE_SMOOTH = 4;
 
 /** the map's pasture zone's outline, or null
  * @param {any} sc @returns {Pt[] | null} */
@@ -88,38 +90,54 @@ export function pastureSegDist(a, b, x, z) {
   return Math.hypot(a[0] + dx * t - x, a[1] + dz * t - z);
 }
 
-/** the outline made straight: the fewest points that keep every point of it within `tol` (Douglas-Peucker, closed;
- * it starts from the point furthest from the first)
- * @param {Pt[]} poly @param {number} tol @returns {Pt[]} */
-export function pastureStraight(poly, tol = PASTURE_STRAIGHT) {
-  const n = poly.length;
-  let far = 0,
-    fd = -1;
-  for (let i = 1; i < n; i++) {
-    const d = Math.hypot(poly[i][0] - poly[0][0], poly[i][1] - poly[0][1]);
-    if (d > fd) [far, fd] = [i, d];
+/** the outline walked round at even steps of about `step` m (closed: the last point is followed by the first)
+ * @param {Pt[]} poly @param {number} step @returns {Pt[]} */
+export function pastureResample(poly, step) {
+  const n = poly.length,
+    /** @type {[Pt, Pt, number, number][]} each side: its ends, its length and how far round it starts */
+    sides = [];
+  let P = 0;
+  for (let i = 0; i < n; i++) {
+    const a = poly[i],
+      b = poly[(i + 1) % n],
+      L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    sides.push([a, b, L, P]);
+    P += L;
   }
-  const keep = new Set([0, far]);
-  /** @param {number} i @param {number} j  indexes round the ring, i to j going forward */
-  const run = (i, j) => {
-    const len = (j - i + n) % n;
-    if (len < 2) return;
-    let best = -1,
-      bd = -1;
-    for (let k = 1; k < len; k++) {
-      const m = (i + k) % n,
-        d = pastureSegDist(poly[i], poly[j], poly[m][0], poly[m][1]);
-      if (d > bd) [best, bd] = [m, d];
-    }
-    if (bd > tol) {
-      keep.add(best);
-      run(i, best);
-      run(best, j);
-    }
-  };
-  run(0, far);
-  run(far, 0);
-  return [...keep].sort((a, b) => a - b).map(i => /** @type {Pt} */ ([poly[i][0], poly[i][1]]));
+  const m = Math.max(8, Math.round(P / step)),
+    /** @type {Pt[]} */
+    out = [];
+  for (let k = 0, j = 0; k < m; k++) {
+    const d = (k * P) / m;
+    while (j < n - 1 && sides[j][3] + sides[j][2] < d) j++;
+    const [a, b, L, s] = sides[j],
+      f = L ? (d - s) / L : 0;
+    out.push([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]);
+  }
+  return out;
+}
+
+/** the outline made smooth, lightly: walked round every metre, then each point moved to the middle of the points
+ * within `reach` metres along it, twice. The zone's bends stay (gentle ones), its kinks and sharp corners go.
+ * @param {Pt[]} poly @param {number} [reach] @returns {Pt[]} */
+export function pastureSmooth(poly, reach = PASTURE_SMOOTH) {
+  let p = pastureResample(poly, 1);
+  const w = Math.max(1, Math.round(reach / 2));
+  for (let q = 0; q < 2; q++) {
+    const n = p.length,
+      prev = p;
+    p = prev.map((_, i) => {
+      let x = 0,
+        z = 0;
+      for (let k = -w; k <= w; k++) {
+        const r = prev[(i + k + n) % n];
+        x += r[0];
+        z += r[1];
+      }
+      return /** @type {Pt} */ ([x / (2 * w + 1), z / (2 * w + 1)]);
+    });
+  }
+  return p;
 }
 
 /** the outline moved `d` metres inward, each side kept parallel (a corner sharper than about 30 degrees is cut short)
@@ -144,9 +162,9 @@ export function pastureInset(poly, d) {
 /** @param {number} v */
 export const round2 = v => Math.round(v * 100) / 100;
 
-/** the fence's line round a pasture zone: straightened, a little inside it
+/** the fence's line round a pasture zone: lightly smoothed (it bends as the zone does), a little inside it
  * @param {Pt[]} zone @returns {Pt[]} */
-export const pastureFenceLine = zone => pastureInset(pastureStraight(zone), PASTURE_FENCE_IN);
+export const pastureFenceLine = zone => pastureInset(pastureSmooth(zone), PASTURE_FENCE_IN);
 /** where the Billies wander: a little inside the fence
  * @param {Pt[]} zone @returns {Pt[]} */
 export const pastureRoamLine = zone => pastureInset(pastureFenceLine(zone), PASTURE_ROAM_IN);

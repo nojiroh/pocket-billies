@@ -87,6 +87,13 @@ export function renameTypeIn(D, from, to) {
   /* RL-R2: a field move's type (whose Billies use it and whose badge opens it) takes the first other one too */
   for (const M of Object.values((D.fieldMoves && D.fieldMoves.moves) || {}))
     if (/** @type {any} */ (M).type === from) /** @type {any} */ (M).type = left;
+  /* WA-6b: the Waterfall climb's type and its badges too (a badge list stays without repeats) */
+  const WF = D.fieldMoves && D.fieldMoves.waterfall;
+  if (WF) {
+    if (WF.type === from) WF.type = left;
+    if (Array.isArray(WF.badges))
+      WF.badges = [...new Set(WF.badges.map((/** @type {string} */ t) => (t === from ? left : t)))];
+  }
   for (const T of Object.values((D.regions && D.regions.themes) || {})) {
     const lean = /** @type {any} */ (T).types || {};
     if (!Object.hasOwn(lean, from)) continue;

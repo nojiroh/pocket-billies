@@ -21,6 +21,7 @@ import { runMarkDraw } from './logic/run-marks.js';
 import {
   BOWL_GROUND_EXTENT,
   BOWL_ISLAND_BASE,
+  BOWL_ISLAND_LIFT,
   bowlBaseHeight,
   bowlCoastAt,
   bowlCompass,
@@ -72,20 +73,32 @@ import {
 import {
   BOWL_REGION_TREES,
   BOWL_THING_SCALE,
+  bowlAverageColour,
+  bowlBridgeShape,
   bowlClumps,
   bowlLandmarkPick,
   bowlMapPoint,
   bowlPropClass,
+  bowlTreeFromRecipe,
   bowlTreeStyle,
   bowlYouPoint,
 } from './logic/bowl-things.js';
 import { bowlHasCoast, bowlIslandHeights, bowlIslandMapId, bowlIslandPlotThings } from './logic/bowl-island.js';
 import {
   FLOAT_ISLAND,
+  FLOAT_LAGOON,
   FLOAT_STRIDE,
+  floatFallMesh,
+  floatFallSpots,
   floatGroundHeight,
   floatGroundMesh,
+  floatInside,
   floatIslandMesh,
+  floatLagoonAt,
+  floatLagoonDepth,
+  floatLagoonRing,
+  floatLagoonWater,
+  floatMistPuffs,
 } from './logic/float-island.js';
 import { orbitYawAt } from './logic/camera-orbit.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
@@ -94,6 +107,7 @@ import { frameCount, frameStop, frameTask } from './frame-scheduler.js';
 import { ART_CACHE, artLoad, artPixels, makeCanvas, uiIconHTML } from './art.js';
 import { personWalkFrames } from './person-art.js';
 import { walkView } from './walk-view.js';
+import { engineSetting } from './engine/settings.js';
 import {
   bindQuad,
   ensurePrograms,
@@ -132,6 +146,7 @@ expose({
   BOWL_SUN_NOW: [() => BOWL_SUN_NOW],
   BOWL_TREE_LOOK: [() => BOWL_TREE_LOOK],
   BOWL_WALL_W: [() => BOWL_WALL_W],
+  WORLD_BOWL_LEAVES: [() => WORLD_BOWL_LEAVES],
   WORLD_BOWL_SHADERS: [() => WORLD_BOWL_SHADERS],
   bowlHash: [() => bowlHash],
   bowlNoise: [() => bowlNoise, v => (bowlNoise = v)],
@@ -139,14 +154,17 @@ expose({
   runPinColors: [() => runPinColors],
   worldBowl: [() => worldBowl],
   worldBowlAtlas: [() => worldBowlAtlas, v => (worldBowlAtlas = v)],
+  worldBowlBridgeShape: [() => worldBowlBridgeShape, v => (worldBowlBridgeShape = v)],
   worldBowlCloudsNow: [() => worldBowlCloudsNow, v => (worldBowlCloudsNow = v)],
   worldBowlClumpsInto: [() => worldBowlClumpsInto, v => (worldBowlClumpsInto = v)],
   worldBowlColorAt: [() => worldBowlColorAt, v => (worldBowlColorAt = v)],
   worldBowlDot: [() => worldBowlDot, v => (worldBowlDot = v)],
   worldBowlDrawSky: [() => worldBowlDrawSky, v => (worldBowlDrawSky = v)],
   worldBowlFallNow: [() => worldBowlFallNow, v => (worldBowlFallNow = v)],
+  worldBowlFallsMesh: [() => worldBowlFallsMesh, v => (worldBowlFallsMesh = v)],
   worldBowlFilm: [() => worldBowlFilm, v => (worldBowlFilm = v)],
   worldBowlFloatCam: [() => worldBowlFloatCam, v => (worldBowlFloatCam = v)],
+  worldBowlFloatFrame: [() => worldBowlFloatFrame, v => (worldBowlFloatFrame = v)],
   worldBowlFloatGpu: [() => worldBowlFloatGpu, v => (worldBowlFloatGpu = v)],
   worldBowlFloatHome: [() => worldBowlFloatHome, v => (worldBowlFloatHome = v)],
   worldBowlFloatIsland: [() => worldBowlFloatIsland, v => (worldBowlFloatIsland = v)],
@@ -155,14 +173,21 @@ expose({
   worldBowlFlying: [() => worldBowlFlying],
   worldBowlGpu: [() => worldBowlGpu, v => (worldBowlGpu = v)],
   worldBowlHex: [() => worldBowlHex],
+  worldBowlInst: [() => worldBowlInst, v => (worldBowlInst = v)],
+  worldBowlIslandLift: [() => worldBowlIslandLift, v => (worldBowlIslandLift = v)],
   worldBowlIslandLoad: [() => worldBowlIslandLoad, v => (worldBowlIslandLoad = v)],
+  worldBowlIslandPoly: [() => worldBowlIslandPoly, v => (worldBowlIslandPoly = v)],
+  worldBowlIsleUniform: [() => worldBowlIsleUniform, v => (worldBowlIsleUniform = v)],
+  worldBowlLeafLook: [() => worldBowlLeafLook, v => (worldBowlLeafLook = v)],
   worldBowlLightMatrix: [() => worldBowlLightMatrix, v => (worldBowlLightMatrix = v)],
   worldBowlLine: [() => worldBowlLine, v => (worldBowlLine = v)],
   worldBowlLineMap: [() => worldBowlLineMap, v => (worldBowlLineMap = v)],
   worldBowlLock: [() => worldBowlLock, v => (worldBowlLock = v)],
   worldBowlMapId: [() => worldBowlMapId, v => (worldBowlMapId = v)],
   worldBowlMapOf: [() => worldBowlMapOf, v => (worldBowlMapOf = v)],
+  worldBowlMapSettingsKey: [() => worldBowlMapSettingsKey, v => (worldBowlMapSettingsKey = v)],
   worldBowlMesh: [() => worldBowlMesh, v => (worldBowlMesh = v)],
+  worldBowlMistDraw: [() => worldBowlMistDraw, v => (worldBowlMistDraw = v)],
   worldBowlMixRgb: [() => worldBowlMixRgb],
   worldBowlModelInto: [() => worldBowlModelInto, v => (worldBowlModelInto = v)],
   worldBowlModelShape: [() => worldBowlModelShape, v => (worldBowlModelShape = v)],
@@ -197,6 +222,7 @@ expose({
   worldBowlThingsDraw: [() => worldBowlThingsDraw, v => (worldBowlThingsDraw = v)],
   worldBowlThingsOfPlace: [() => worldBowlThingsOfPlace, v => (worldBowlThingsOfPlace = v)],
   worldBowlThingsTick: [() => worldBowlThingsTick, v => (worldBowlThingsTick = v)],
+  worldBowlTreeModelShape: [() => worldBowlTreeModelShape, v => (worldBowlTreeModelShape = v)],
   worldBowlTreeShape: [() => worldBowlTreeShape, v => (worldBowlTreeShape = v)],
   worldBowlWalkOnIsland: [() => worldBowlWalkOnIsland, v => (worldBowlWalkOnIsland = v)],
   worldBowlWaterMesh: [() => worldBowlWaterMesh, v => (worldBowlWaterMesh = v)],
@@ -267,6 +293,8 @@ export const worldBowl = {
   ts: [],
   /** the bowl map test: keep drawing every frame and turn by this many radians a second */
   bench: null,
+  /* HB-3: the World map settings the floating island was made with (worldBowlMapSettingsKey) */
+  mapSettings: null,
   /** where each pin is on screen, last drawn: { i, base, top, z } */
   marks: [],
 };
@@ -282,7 +310,7 @@ const BOWL_SEA_FAR = [0.16, 0.42, 0.62]; /* the sea's colour far away (the walk 
 
 /* the ground's scale: metres to the bowl's radius, squares across the terrain map, and the far-colours' size */
 export const BOWL_METRES = 1000;
-const BOWL_INDEX = 2048;
+export const BOWL_INDEX = 2048;
 const BOWL_MIX = 1024;
 /* the routes' and rivers' line map: distance to the nearest route (red, up to BOWL_ROUTE_FIELD), whether a place's own
    ground is there (green: up close its own paths show instead), distance to the nearest river (blue) */
@@ -330,8 +358,8 @@ precision highp float;precision highp sampler2DArray;precision highp sampler2DSh
 ${BOWL_SHADOW_GLSL}
 ${BOWL_SKY_GLSL}
 void main(){vec3 n=normalize(cross(dFdx(vW),dFdy(vW)));if(n.y<0.)n=-n;
- /* the floating island: only its land, nothing under the water's line or away from it */
- if(uIsle.w>.5){vec2 qi=vec2(vW.x,-vW.z);if(vW.y-bowlH(qi)<0.||length(qi-uIsle.xy)>uIsle.z)discard;}
+ /* the floating island: only its land, nothing under the water's line (HB-3: but its lagoon's bed) or away from it */
+ if(uIsle.w>.5){vec2 qi=vec2(vW.x,-vW.z);if((uIsle.w<1.5&&vW.y-bowlH(qi)<0.)||length(qi-uIsle.xy)>uIsle.z)discard;}
  vec2 q=vec2(vW.x,-vW.z),uv=vec2(q.x*.5+.5,.5-q.y*.5);vec3 far=uOn>.5?texture(uMix,uv).rgb:vec3(.5,.63,.38),c=far,near=far;
  vec2 m=q*${BOWL_METRES.toFixed(1)};float px=max(length(dFdx(m)),length(dFdy(m))),pb=px/${BOWL_METRES.toFixed(1)};
  if(uOn>.5&&px<4.){ivec2 ti=ivec2(clamp(uv*${BOWL_INDEX.toFixed(1)},vec2(0.),vec2(${(BOWL_INDEX - 1).toFixed(1)})));float L=floor(texelFetch(uIdx,ti,0).r*255.+.5);
@@ -383,8 +411,11 @@ void main(){vec3 c=vK<.5?vec3(.72,.8,.92):vK<1.5?vec3(1.):vec3(.35,.32,.3);c*=1.
   mthing: [
     `#version 300 es
 precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=2) in vec3 aCol;layout(location=8) in vec4 iP;layout(location=9) in vec4 iR;layout(location=10) in vec4 iK;
-uniform mat4 uVP;uniform float uNear;out vec3 vW,vN,vC,vL;out vec2 vK;
+uniform mat4 uVP;uniform float uNear,uFlat;uniform vec3 uC;out vec3 vW,vN,vC,vL;out vec2 vK;
 void main(){vec3 E=vec3(iR.x,0.,-iR.y),N=vec3(iR.z,0.,-iR.w);float k=iP.w*(iK.x>.5?mix(.3,1.,uNear):1.);
+ vW=iP.xyz;vN=vec3(0.,1.,0.);vC=aCol;vL=aPos;vK=iK.xy;
+ /* HB-3: past the World map's Simple trees past a tree's own model (iK.z 1) gives way to its simple shape (2) */
+ if(iK.z>.5){bool far=uFlat>0.&&length(iP.xyz-uC)>uFlat;if(iK.z<1.5?far:!far){gl_Position=vec4(2.,2.,2.,1.);return;}}
  vec3 p=iP.xyz+(E*aPos.x+N*aPos.z)*k+vec3(0.,aPos.y*k,0.);vN=E*aNrm.x+N*aNrm.z+vec3(0.,aNrm.y,0.);vW=p;vC=aCol;vL=aPos;vK=iK.xy;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
 precision highp float;precision highp sampler2DShadow;in vec3 vW,vN,vC,vL;in vec2 vK;out vec4 o;uniform vec3 uC,uLd,uHaze;uniform float uNear,uLit,uShadowPass;
@@ -461,13 +492,31 @@ void main(){vec2 px=gl_FragCoord.xy/uR;vec3 d=normalize(uFw+uRt*(px.x-uWH.x*.5)/
   ],
 };
 provide({ WORLD_BOWL_SHADERS }); /* to-module */
+/* HB-3: the falls off the floating island's rim (logic/float-island.js floatFallMesh): a sheet in the lagoon's
+   tones, streaks running down it in columns, white water at the lip, thinning into mist as it falls to the clouds */
+WORLD_BOWL_SHADERS.mfallw = [
+  `#version 300 es
+precision highp float;in vec3 aPos;layout(location=2) in vec2 aUV;uniform mat4 uVP;out vec3 vW;out vec2 vUV;
+void main(){vW=aPos;vUV=aUV;gl_Position=uVP*vec4(aPos,1.);}`,
+  `#version 300 es
+precision highp float;in vec3 vW;in vec2 vUV;out vec4 o;uniform vec3 uC,uHaze,uRimCol;uniform float uT,uLight,uNight;
+float hs(float x){return fract(sin(x*127.1)*43758.5453);}
+void main(){float u=vUV.x,v=vUV.y,col=floor(u*14.),sp=.55+hs(col)*.5;
+ float st=fract(v*(3.+hs(col+7.)*2.)-uT*sp+hs(col+3.)),streak=smoothstep(.55,.95,st)*(1.-smoothstep(.95,1.,st));
+ vec3 c=mix(vec3(.33,.78,.8),vec3(.12,.5,.7),.35+.3*hs(col+11.));
+ c=mix(c,vec3(.93,.97,1.),max(streak*.65,1.-smoothstep(0.,.08,v)));
+ c=mix(c,uRimCol,smoothstep(.35,1.,v));
+ c*=mix(.95,.32,uNight)*mix(.8,1.08,uLight);
+ float edge=smoothstep(0.,.18,u)*smoothstep(1.,.82,u),a=edge*(1.-smoothstep(.45,1.,v))*(.78+.2*streak);
+ if(a<.01)discard;float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(c,uHaze,clamp(fk,0.,.5)),a);}`,
+];
 /* the sea (look session 1, owner: water that looks like water): clear and pale in the shallows, deep blue further out,
    small waves moving over it, the sky in it at a glancing angle, the sun's glint, and foam where it meets the land */
 WORLD_BOWL_SHADERS.mwater = [
   `#version 300 es
 precision highp float;in vec3 aPos;in vec2 aShore;uniform mat4 uVP;out vec3 vW;out vec2 vS;void main(){vW=aPos;vS=aShore;gl_Position=uVP*vec4(aPos,1.);}`,
   `#version 300 es
-precision highp float;precision highp sampler2DShadow;in vec3 vW;in vec2 vS;out vec4 o;uniform vec3 uC,uLd,uHaze;uniform float uT;
+precision highp float;precision highp sampler2DShadow;in vec3 vW;in vec2 vS;out vec4 o;uniform vec3 uC,uLd,uHaze,uRimCol;uniform float uT,uRim;
 ${BOWL_SHADOW_GLSL}
 ${BOWL_SKY_GLSL}
 float wv(vec2 p,vec2 d,float f,float s,float t){return sin(dot(p,d)*f+t*s);}
@@ -481,7 +530,9 @@ void main(){vec2 q=vec2(vW.x,-vW.z)*${BOWL_METRES.toFixed(1)};float t=uT;
  g+=vec2(-.94,-.34)*cos(dot(q,vec2(-.94,-.34))*.6+t*3.1)*.02*(1.-smoothstep(.2,.45,px*.6/6.283));
  vec3 n=normalize(up+vec3(-g.x,0.,g.y)*.35);
  vec3 v=normalize(uC-vW),l=uLd;vec2 qb=vec2(vW.x,-vW.z);vec4 wx=texture(uSky,vec2(qb.x*.5+.5,.5-qb.y*.5));float sh=bowlShadow(vW+vec3(0.,.0015,0.),1.)*bowlCloudShade(qb);
- float dep=vS.x,c=vS.y;
+ /* HB-3, the floating island's lagoon (uRim): a few metres deep, so pale and clear; its
+    foam stays by the beach and on the sill (fd), and vS.y is how far it has faded into the clouds at the rim */
+ float dep=vS.x,fd=vS.x*(uRim>.5?3.:1.);
  vec3 shallow=vec3(.33,.78,.78),mid=vec3(.1,.48,.68),deep=vec3(.04,.2,.42);
  vec3 col=mix(shallow,mid,smoothstep(.0,.006,dep));col=mix(col,deep,smoothstep(.008,.032,dep));
  col*=(bowlAmb(1.)*1.4+bowlSunCol()*.4*max(0.,dot(n,l)))*(.72+.28*sh);
@@ -490,10 +541,11 @@ void main(){vec2 q=vec2(vW.x,-vW.z)*${BOWL_METRES.toFixed(1)};float t=uT;
  float fr=.04+.96*pow(1.-max(0.,dot(n,v)),5.);col=mix(col,sky,clamp(fr,0.,.85));
  float sp=pow(max(0.,dot(reflect(-l,n),v)),120.)*(1.-smoothstep(2.,10.,px));col+=mix(vec3(1.,.95,.8),vec3(.9,.35,.2),uNight)*sp*.9*sh*uLight;
  col=mix(col,mix(vec3(.82,.85,.88),vec3(.2,.22,.3),uNight),wx.b*.35);
- float fb=1.-smoothstep(.0,.0035,dep),fw=.5+.5*sin(dep*2600.-t*2.2+wv(q,vec2(.6,.8),.4,0.,0.)*1.5);
+ float fb=1.-smoothstep(.0,.0035,fd),fw=.5+.5*sin(fd*2600.-t*2.2+wv(q,vec2(.6,.8),.4,0.,0.)*1.5);
  fw=mix(fw,.55,smoothstep(.3,1.5,px)); /* far away the foam bands blur into a steady edge */
- float foam=fb*smoothstep(.35,.75,fw)+(1.-smoothstep(0.,.0008,dep))*.8;col=mix(col,vec3(.95,.98,1.),clamp(foam,0.,1.)*.85);
+ float foam=fb*smoothstep(.35,.75,fw)+(1.-smoothstep(0.,.0008,fd))*.8;col=mix(col,vec3(.95,.98,1.),clamp(foam,0.,1.)*.85);
  float a=mix(.45,.92,smoothstep(.0,.006,dep));a=max(a,clamp(foam,0.,1.)*.9);
+ if(uRim>.5){float f=smoothstep(0.,1.,vS.y);col=mix(col,uRimCol,f);a=mix(a,.97,f);}
  float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(col,uHaze,clamp(fk,0.,.6)),a);}`,
 ];
 
@@ -555,9 +607,15 @@ function worldBowlIslandLoad(i) {
 }
 /* the owner, 2026-10-23: the hub's world map is Copperleaf's island floating in open sky (no bowl, no sea round it);
    a run's world keeps the bowl */
-function worldBowlFloats() {
+export function worldBowlFloats() {
   const g = worldBowl.ground;
   return !!(g && g.islandMap && !worldExtra.look);
+}
+/* the floating island's coast on the bowl (flat x, y pairs), from the sea's input (its map's own coast) */
+function worldBowlIslandPoly() {
+  const g = worldBowl.ground,
+    P = g && g.sea && g.sea.places.find(q => q && q.poly);
+  return P ? P.poly : null;
 }
 /* the floating island: its rock and small rocks (logic/float-island.js), its middle, radius and the camera's pivot */
 function worldBowlFloatIsland() {
@@ -569,26 +627,100 @@ function worldBowlFloatIsland() {
     M = gameData.maps[g.islandMap];
   if (!s || !M || !M.island || !M.island.coast) return null;
   const coast = M.island.coast.map(([x, z]) => bowlMapPoint(s, M, x, z, BOWL_METRES)),
-    F = floatIslandMesh(coast, 0, { lift: bowlWaterLevel, seed: 1 }),
-    top = bowlWaterLevel(F.c[0], F.c[1]);
+    poly = Float64Array.from(coast.flat()),
+    /* HB-3: a shallow lagoon round it (the owner: about 1.3 times its radius), the rock under the lagoon's ring */
+    lag = engineSetting('worldMap', 'lagoon') ? floatLagoonRing(poly) : null,
+    rim = lag ? Array.from({ length: lag.ring.length / 2 }, (_, k) => [lag.ring[k * 2], lag.ring[k * 2 + 1]]) : null,
+    F = floatIslandMesh(rim || coast, 0, {
+      lift: bowlWaterLevel,
+      seed: 1,
+      capDrop: lag ? (FLOAT_LAGOON.depth * 1.6) / BOWL_METRES : undefined,
+    }),
+    top = bowlWaterLevel(F.c[0], F.c[1]),
+    /* the camera keeps to the island itself, not its lagoon */
+    r = lag ? lag.r : F.r;
   /* the pivot a little under the land, so the island sits in the screen's upper part, over the place's card */
-  /* its ground, finer than the bowl's grid (the owner: "less low poly"), once its own heights are in */
+  /* its ground, finer than the bowl's grid (the owner: "less low poly"), once its own heights are in; with the
+     lagoon the land meets the water at the beach (no step up) and the bed runs out under the water to the ring */
   const P = g.sea && g.sea.places.find(q => q && q.poly && q.hAt),
+    bedAt = lag
+      ? (x, y) => bowlWaterLevel(x, y) - floatLagoonDepth(floatLagoonAt(poly, lag.ring, x, y).t) / BOWL_METRES
+      : undefined,
     fine = P
       ? floatGroundMesh(
           P.poly,
-          (x, y) => bowlBaseHeight(x, y) + BOWL_ISLAND_BASE + Math.max(0, P.hAt(x, y)),
+          lag
+            ? (x, y) => bowlBaseHeight(x, y) + Math.max(0.1 / BOWL_METRES, P.hAt(x, y))
+            : (x, y) => bowlBaseHeight(x, y) + BOWL_ISLAND_BASE + Math.max(0, P.hAt(x, y)),
           bowlWaterLevel,
-          FLOAT_ISLAND.cell / BOWL_METRES
+          FLOAT_ISLAND.cell / BOWL_METRES,
+          lag ? { ring: lag.ring, bedAt } : {}
         )
-      : null;
-  g.float = { ...F, i, top, th: top - F.r * 0.7, y0: top - F.depth * 2.2, gpu: null, fine, fineGpu: null };
+      : null,
+    water =
+      fine && lag
+        ? floatLagoonWater(fine, lag.ring, bowlWaterLevel, lag.r * FLOAT_LAGOON.out * FLOAT_LAGOON.fade)
+        : null;
+  g.float = {
+    ...F,
+    r,
+    lr: F.r,
+    i,
+    top,
+    th: top - r * 0.7,
+    y0: top - F.depth * 2.2,
+    gpu: null,
+    fine,
+    fineGpu: null,
+    lagoon: lag,
+    water,
+    waterGpu: null,
+    /* the falls off its rim, where the rim comes nearest the coast (the owner: three, silent) */
+    falls: lag ? worldBowlFallsMesh(lag, poly, F.depth) : null,
+    fallsGpu: null,
+    /* the mist along its rim: the lagoon fading into the clouds (drawn with the clouds' puffs) */
+    mist: lag
+      ? floatMistPuffs(lag.ring, lag.c, lag.r, { seed: 1 }).map(q => ({
+          g: bowlToGpu(q.x, q.y, bowlWaterLevel(q.x, q.y) + q.h),
+          s: q.s,
+        }))
+      : null,
+  };
   return g.float;
+}
+/* the ground's and the shadows' cut (uIsle): the floating island's middle and how far out its ground is drawn; mode 1
+   its land alone (nothing under the water's line), 2 with its lagoon (the bed under the water drawn too) */
+function worldBowlIsleUniform(U, F) {
+  if (!F) gpuState.gl.uniform4f(U.uIsle, 0, 0, 0, 0);
+  else gpuState.gl.uniform4f(U.uIsle, F.c[0], F.c[1], F.lagoon ? F.lr * 1.15 : F.r * 1.25, F.lagoon ? 2 : 1);
+}
+/* the World map settings the floating island is built with (the simple trees' distance only says whether they exist) */
+function worldBowlMapSettingsKey() {
+  const e = k => engineSetting('worldMap', k);
+  return [e('lagoon'), e('falls'), e('treeModels'), (e('treeFar') || 0) > 0, e('fences'), e('bridges')].join();
+}
+/* HB-3: the falls off the lagoon's rim as one mesh: per corner its place (GPU) and (across, down) */
+function worldBowlFallsMesh(lag, coast, depth) {
+  const n = Math.max(0, Math.round(engineSetting('worldMap', 'falls') ?? FLOAT_LAGOON.falls)),
+    spots = n ? floatFallSpots(lag.ring, coast, n) : [];
+  if (!spots.length) return null;
+  const parts = spots.map(f => floatFallMesh(f, bowlWaterLevel(f.x, f.y), lag.r * 0.09, depth * 0.85)),
+    V = new Float32Array(parts.reduce((a, m) => a + m.V.length, 0)),
+    I = new Uint32Array(parts.reduce((a, m) => a + m.I.length, 0));
+  let v = 0,
+    i = 0;
+  for (const m of parts) {
+    V.set(m.V, v);
+    for (let k = 0; k < m.I.length; k++) I[i + k] = m.I[k] + v / 5;
+    v += m.V.length;
+    i += m.I.length;
+  }
+  return { V, I, n: spots.length, spots };
 }
 /* the camera's limits: the floating island's orbit, or the bowl's */
 function worldBowlFloatCam() {
   const F = worldBowlFloatIsland();
-  bowlCamUseFloat(F ? { c: F.c, r: F.r, th: F.th } : null);
+  bowlCamUseFloat(F ? worldBowlFloatFrame(F) : null);
   return F;
 }
 /* you on the floating island's map, in its own metres, or null when the walk is elsewhere. HB-1: the hub's walk view
@@ -611,7 +743,12 @@ function worldBowlFloatHome(F, yaw) {
     const [x, y] = bowlMapPoint(s, M, pl.x, pl.z, BOWL_METRES);
     if (Math.hypot(x - F.c[0], y - F.c[1]) > F.r * 0.1) yaw = orbitYawAt(F.c, x, y);
   }
-  return bowlCamHomeFloat({ c: F.c, r: F.r, th: F.th }, yaw ?? 0);
+  return bowlCamHomeFloat(worldBowlFloatFrame(F), yaw ?? 0);
+}
+/* the orbit's frame round the floating island: its middle, radius and pivot height. HB-3: with its lagoon round it the
+   orbit stands a little further back, so the ring fits a phone's width */
+export function worldBowlFloatFrame(F) {
+  return { c: F.c, r: F.lagoon ? F.r * 1.25 : F.r, th: F.th };
 }
 /* the floating island's rock on the GPU: position, normal, band and drift per corner */
 function worldBowlFloatGpu(F) {
@@ -735,6 +872,11 @@ const BOWL_KIND_GROUND = {
   bins: 'xvxu',
   grotto: 'krkM',
 };
+/* HB-3: how much higher than they are an island map's heights are drawn: real height on the hub's floating island
+   (its buildings and trees are life size), BOWL_ISLAND_LIFT on a run's bowl (worldExtra.look, as worldBowlFloats) */
+export function worldBowlIslandLift() {
+  return worldExtra.look ? BOWL_ISLAND_LIFT : 1;
+}
 function worldBowlSpots() {
   if (worldBowl.spots) return worldBowl.spots;
   /* the sea (look session 1): every place's walk map and every road on land, the rest of the line drawn so about 40%
@@ -751,7 +893,8 @@ function worldBowlSpots() {
       l => {
         const M = worldBowlMapOf(LOCATIONS.indexOf(l));
         return bowlHasCoast(M) ? bowlIslandHeights(M) : null;
-      }
+      },
+      worldBowlIslandLift()
     ),
     F = bowlReliefFeatures(LOCATIONS, look.relief, look.seed),
     G = bowlGroundGrid(F, undefined, sea);
@@ -884,8 +1027,9 @@ function worldBowlTerrainStart() {
   };
   /* the floating island: only the squares round it are ever seen, so only they are worked out */
   const FI = worldBowlFloatIsland(),
+    far = FI ? Math.max(FI.r * 1.4, FI.lr * 1.25) : 0,
     band = FI
-      ? [FI.c[0] - FI.r * 1.4, FI.c[0] + FI.r * 1.4, FI.c[1] - FI.r * 1.4, FI.c[1] + FI.r * 1.4].map((v, k) =>
+      ? [FI.c[0] - far, FI.c[0] + far, FI.c[1] - far, FI.c[1] + far].map((v, k) =>
           Math.max(0, Math.min(N, Math.floor(((k < 2 ? v + 1 : 1 - v) / 2) * N) + (k % 2 ? 1 : 0)))
         )
       : null;
@@ -1146,7 +1290,7 @@ function worldBowlShadows(g) {
     const p = gpuState.P.mshadow;
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uSM, false, SM);
-    gl.uniform4f(p.U.uIsle, F ? F.c[0] : 0, F ? F.c[1] : 0, F ? F.r * 1.25 : 0, F ? 1 : 0);
+    worldBowlIsleUniform(p.U, F);
     const land = F && F.fineGpu ? F.fineGpu : g.mesh;
     gl.bindVertexArray(land.vao);
     gl.drawElements(gl.TRIANGLES, land.n, gl.UNSIGNED_INT, 0);
@@ -1270,6 +1414,37 @@ function worldBowlTreeShape(style) {
   }
   return new Float32Array(out);
 }
+/* HB-3: a bridge's shape from its key ('b:length:width:pier'), its deck a little over the bank it starts from */
+function worldBowlBridgeShape(key) {
+  const [, len, w, pier] = key.split(':').map(Number),
+    T = bowlBridgeShape(len, w, { pier: !!pier, drop: 1.5 });
+  if (!pier) for (let i = 1; i < T.length; i += 9) T[i] += 0.3;
+  return T;
+}
+/* HB-3: a tree's own model for the map, from its recipe (logic/bowl-things.js bowlTreeFromRecipe), its leaf pictures
+   (a prop's swap, an autumn tree's) read for their colour and size first; null while any is still coming */
+const WORLD_BOWL_LEAVES = new Map();
+function worldBowlLeafLook(path) {
+  if (WORLD_BOWL_LEAVES.has(path)) return WORLD_BOWL_LEAVES.get(path);
+  WORLD_BOWL_LEAVES.set(path, null);
+  artPixels(path)
+    .then(px => {
+      const im = ART_CACHE.img[path];
+      WORLD_BOWL_LEAVES.set(path, { col: bowlAverageColour(px), w: im.naturalWidth, h: im.naturalHeight });
+    })
+    .catch(() => WORLD_BOWL_LEAVES.set(path, { col: [0.3, 0.5, 0.25], w: 64, h: 64 }))
+    .finally(() => (worldBowl.dirty = true));
+  return null;
+}
+function worldBowlTreeModelShape(pk) {
+  const art = ((gameData.scenery && gameData.scenery.props) || {})[pk],
+    rec = art && loadPropModelRecipe(art.model);
+  if (!rec) return null;
+  const swap = art.swap || {},
+    T = bowlTreeFromRecipe(rec, img => worldBowlLeafLook(swap[img] || img));
+  /* one with no limbs or leaves (a mushroom: domes and spheres) is drawn as any model is */
+  return T && !T.length ? worldBowlModelShape(art.model) : T;
+}
 /* a building's low-poly model from its recipe (prop-models.js lowPolyFromRecipe), kept simple for the map: small
    parts left out, round parts with few sides; unpacked to floats [x, y up, z, normal, colour] */
 function worldBowlModelShape(path) {
@@ -1313,19 +1488,29 @@ function worldBowlThingScale() {
 /* the town's smaller structures the bowl draws as their models though they are no buildings (no door, small) */
 const BOWL_STRUCTURE = /^(airship_station|airship_mast|well|fountain|clock_tower|greenhouse)$/;
 /* one model standing at (x, y) on the bowl: its scale and the map's east and north there (group 1, a map's own) */
-function worldBowlModelInto(W, model, x, y, k, east, north) {
-  const key = 'm:' + model;
+/* HB-3: turned by the placement's rot (degrees, logic/prop-turn.js turnedPoint: its across toward its back), as the
+   walk scene turns it */
+function worldBowlModelInto(W, model, x, y, k, east, north, rot = 0, lod = 0) {
   W.models.add(model);
+  worldBowlInst(W, 'm:' + model, x, y, k, east, north, rot, lod);
+}
+/* one instance of a shape (key: a tree style, 'm:' a model, 't:' a tree's own model by its prop): lod 0 a building
+   (its windows light at night), 1 a tree's own model (not drawn past the World map's Simple trees past), 2 that tree's
+   simple shape (drawn only past it), 3 any other thing (a fence, a bridge) */
+function worldBowlInst(W, key, x, y, k, east, north, rot = 0, lod = 0) {
+  const a = (rot * Math.PI) / 180,
+    ca = Math.cos(a),
+    sa = Math.sin(a);
   (W.inst[key] = W.inst[key] || []).push([
     ...bowlToGpu(x, y, worldBowlSkyFloor(x, y)),
     k,
-    east[0],
-    east[1],
-    north[0],
-    north[1],
+    ca * east[0] + sa * north[0],
+    ca * east[1] + sa * north[1],
+    ca * north[0] - sa * east[0],
+    ca * north[1] - sa * east[1],
     1,
-    0.05 + ((0.9 * (((Math.sin(x * 9137.1 + y * 5711.3) * 43758.5) % 1) + 1)) % 1),
-    0,
+    lod ? 0 : 0.05 + ((0.9 * (((Math.sin(x * 9137.1 + y * 5711.3) * 43758.5) % 1) + 1)) % 1),
+    lod === 1 || lod === 2 ? lod : 0,
     0,
   ]);
 }
@@ -1343,20 +1528,41 @@ function worldBowlThingsOfPlace(W, i) {
     /* the landmark from the place's own map (Copperleaf's oak until IS-5 moves the town onto its island) */
     lm = bowlLandmarkPick(l, own && own.props ? own : M, A);
   /* a landmark with a model of its own is drawn as that model (where the map puts it), never as a flat picture */
-  const modelOf = (/** @type {any} */ a) => !!(a && a.model && /\.json$/.test(a.model));
-  if (lm && A[lm.k] && modelOf(A[lm.k])) {
-    if (!M.props.some(p => p.k === lm.k)) worldBowlModelInto(W, A[lm.k].model, s.x, s.y, k * (lm.s || 1), east, north);
-  } else if (lm && A[lm.k] && A[lm.k].img) W.stand.push({ i, k: lm.k, x: s.x, y: s.y, g: 0, s: lm.s || 1 });
+  const modelOf = (/** @type {any} */ a) => !!(a && a.model && /\.json$/.test(a.model)),
+    treeModels = worldBowlFloats() && !!engineSetting('worldMap', 'treeModels'),
+    treeFar = (engineSetting('worldMap', 'treeFar') || 0) > 0,
+    fences = worldBowlFloats() && !!engineSetting('worldMap', 'fences');
+  /* HB-3: the floating island draws its own things where they stand; a landmark that is not one of them would stand
+     at the map's middle (its spot), so none is added there */
+  if (lm && A[lm.k] && !worldBowlFloats()) {
+    if (modelOf(A[lm.k])) {
+      if (!M.props.some(p => p.k === lm.k))
+        worldBowlModelInto(W, A[lm.k].model, s.x, s.y, k * (lm.s || 1), east, north);
+    } else if (A[lm.k].img) W.stand.push({ i, k: lm.k, x: s.x, y: s.y, g: 0, s: lm.s || 1 });
+  }
   let n = 0;
   for (const p of M.props) {
     const art = A[p.k],
       cls = bowlPropClass(p.k, art);
+    /* HB-3: the floating island's fences as their models (World map settings: Fences) */
+    if (fences && /fence/.test(p.k) && modelOf(art)) {
+      const [x, y] = bowlMapPoint(s, M, p.x, p.z, BOWL_METRES);
+      worldBowlModelInto(W, art.model, x, y, k * (p.s || 1), east, north, +(p.rot || 0), 3);
+      n++;
+      continue;
+    }
     const structure = !!(art && BOWL_STRUCTURE.test(art.group || p.k) && modelOf(art));
     if (!cls && !(art && art.landmark) && !structure) continue;
     const [x, y] = bowlMapPoint(s, M, p.x, p.z, BOWL_METRES);
     if (Math.hypot(x, y) > 0.99) continue;
     n++;
-    if (cls === 'tree') {
+    if (cls === 'tree' && treeModels && modelOf(art)) {
+      /* HB-3: the floating island's trees as their own models (the World map settings: off, the simple shapes), and
+         with Simple trees past set, a simple shape of each drawn instead when it is that far */
+      worldBowlInst(W, 't:' + p.k, x, y, k * (p.s || 1), east, north, +(p.rot || 0), 1);
+      W.models.add(art.model);
+      if (treeFar) worldBowlInst(W, bowlTreeStyle(p.k), x, y, k * (p.s || 1), east, north, +(p.rot || 0), 2);
+    } else if (cls === 'tree') {
       const style = bowlTreeStyle(p.k);
       (W.inst[style] = W.inst[style] || []).push([
         ...base(x, y),
@@ -1371,33 +1577,42 @@ function worldBowlThingsOfPlace(W, i) {
         0,
       ]);
     } else if ((cls === 'building' || art.landmark || structure) && modelOf(art)) {
-      worldBowlModelInto(W, art.model, x, y, k * (p.s || 1), east, north);
+      worldBowlModelInto(W, art.model, x, y, k * (p.s || 1), east, north, +(p.rot || 0));
     } else if (art && art.img) W.stand.push({ i, k: p.k, x, y, g: 1, s: p.s || 1 });
   }
+  /* HB-3: its bridges and pier (the map's own `bridges`, not props), each from its higher end (World map settings) */
+  if (worldBowlFloats() && engineSetting('worldMap', 'bridges'))
+    for (const b of M.bridges || []) {
+      if (!Array.isArray(b.a) || !Array.isArray(b.b)) continue;
+      const A = bowlMapPoint(s, M, b.a[0], b.a[1], BOWL_METRES),
+        B = bowlMapPoint(s, M, b.b[0], b.b[1], BOWL_METRES),
+        up = worldBowlSkyFloor(B[0], B[1]) > worldBowlSkyFloor(A[0], A[1]),
+        [from, to] = up ? [b.b, b.a] : [b.a, b.b],
+        len = Math.hypot(to[0] - from[0], to[1] - from[1]),
+        rot = (Math.atan2(to[1] - from[1], to[0] - from[0]) * 180) / Math.PI,
+        at = up ? B : A;
+      if (len < 0.5) continue;
+      worldBowlInst(
+        W,
+        `b:${len.toFixed(1)}:${(+b.w || 2).toFixed(1)}:${b.pier ? 1 : 0}`,
+        at[0],
+        at[1],
+        k,
+        east,
+        north,
+        rot,
+        3
+      );
+      n++;
+    }
   /* IS-7: an island map's plots no building stands on yet get one of their kind, turned to face where the plot does */
   for (const t of bowlIslandPlotThings(M, p => bowlPropClass(p.k, A[p.k]) === 'building')) {
     const art = A[t.k];
     if (!art || !art.model || !/\.json$/.test(art.model)) continue;
     const [x, y] = bowlMapPoint(s, M, t.x, t.z, BOWL_METRES);
     if (Math.hypot(x, y) > 0.99) continue;
-    const a = (t.turn * Math.PI) / 180,
-      ca = Math.cos(a),
-      sa = Math.sin(a),
-      key = 'm:' + art.model;
-    W.models.add(art.model);
     n++;
-    (W.inst[key] = W.inst[key] || []).push([
-      ...base(x, y),
-      k,
-      ca * east[0] + sa * north[0],
-      ca * east[1] + sa * north[1],
-      ca * north[0] - sa * east[0],
-      ca * north[1] - sa * east[1],
-      1,
-      0.05 + ((0.9 * (((Math.sin(x * 9137.1 + y * 5711.3) * 43758.5) % 1) + 1)) % 1),
-      0,
-      0,
-    ]);
+    worldBowlModelInto(W, art.model, x, y, k, east, north, t.turn);
   }
   W.counts[i] = n;
   return true;
@@ -1511,7 +1726,9 @@ function worldBowlThingsTick(g) {
   let W = g.things;
   if (!W) {
     W = g.things = { inst: {}, stand: [], models: new Set(), done: new Set(), counts: {}, ver: 0, dirty: true, at: 0 };
-    worldBowlClumpsInto(W);
+    /* HB-3: the floating island has its own trees, never the bowl's clumps between places */
+    if (worldBowlFloats()) W.clumps = 0;
+    else worldBowlClumpsInto(W);
   }
   for (let i = 0; i < LOCATIONS.length; i++)
     if (
@@ -1533,7 +1750,13 @@ function worldBowlThingsTick(g) {
   let waiting = false;
   for (const key of Object.keys(W.inst)) {
     if (G.kinds[key] && G.kinds[key].shape) continue;
-    const shape = key.startsWith('m:') ? worldBowlModelShape(key.slice(2)) : worldBowlTreeShape(key);
+    const shape = key.startsWith('m:')
+      ? worldBowlModelShape(key.slice(2))
+      : key.startsWith('t:')
+        ? worldBowlTreeModelShape(key.slice(2))
+        : key.startsWith('b:')
+          ? worldBowlBridgeShape(key)
+          : worldBowlTreeShape(key);
     if (!shape) {
       waiting = true;
       continue;
@@ -1591,8 +1814,8 @@ function worldBowlThingsTick(g) {
       const u = at.uv[q.k];
       if (!u) continue;
       const b = bowlToGpu(q.x, q.y, worldBowlSkyFloor(q.x, q.y)),
-        w = (u.w * q.s * BOWL_THING_SCALE) / BOWL_METRES,
-        h = (u.h * q.s * BOWL_THING_SCALE) / BOWL_METRES;
+        w = (u.w * q.s * worldBowlThingScale()) / BOWL_METRES,
+        h = (u.h * q.s * worldBowlThingScale()) / BOWL_METRES;
       for (const [cx, cy] of [
         [-0.5, 0],
         [0.5, 0],
@@ -1646,6 +1869,8 @@ function worldBowlThingsDraw(W, VP, F, shadowPass) {
   gl.uniformMatrix4fv(U.uVP, false, VP);
   gl.uniform1f(U.uNear, near);
   gl.uniform1f(U.uShadowPass, shadowPass ? 1 : 0);
+  /* HB-3: trees as simple shapes past this far (World map settings, metres; 0 never; the shadows keep the models) */
+  gl.uniform1f(U.uFlat, shadowPass || !fl ? 0 : (engineSetting('worldMap', 'treeFar') || 0) / BOWL_METRES);
   if (shadowPass) {
     gl.uniform1i(U.uSh, 3);
     gl.uniform1i(U.uSky, 7);
@@ -1733,7 +1958,10 @@ function worldBowlStampMap(T, i) {
     L = T.K.layer,
     /* IS-7: an island map only where the bowl has its land: its own sea squares would show through the water as a
        box round it */
-    G = bowlHasCoast(M) && worldBowl.ground ? worldBowl.ground.G : null;
+    G = bowlHasCoast(M) && worldBowl.ground ? worldBowl.ground.G : null,
+    /* HB-3: the floating island clipped by its own coast (the map's 240 points), not the bowl's 6 m grid: a smooth
+       coast, no blocks */
+    P = G && worldBowlFloats() ? worldBowlIslandPoly() : null;
   for (let j = j0; j <= j1; j++)
     for (let ii = i0; ii <= i1; ii++) {
       const x = -1 + ((ii + 0.5) / N) * 2 - s.x,
@@ -1741,7 +1969,7 @@ function worldBowlStampMap(T, i) {
         mx = (x * east[0] + y * east[1]) * BOWL_METRES + w / 2,
         mz = (x * north[0] + y * north[1]) * BOWL_METRES + h / 2;
       if (mx < 0 || mz < 0 || mx >= w || mz >= h) continue;
-      if (G && bowlCoastAt(G, x + s.x, y + s.y) > 0) continue;
+      if (P ? !floatInside(P, x + s.x, y + s.y) : G && bowlCoastAt(G, x + s.x, y + s.y) > 0) continue;
       const ch = (M.tiles[h - 1 - Math.floor(mz)] || '')[Math.floor(mx)],
         t = L[ch];
       if (t != null) T.idx[j * N + ii] = t;
@@ -1974,6 +2202,31 @@ function worldBowlGpu() {
     FI.fineGpu = uploadMesh(FI.fine.V, FI.fine.I, [['aPos', 3, 0]], 12);
     FI.fineGpu.gl = gpuState.gl;
   }
+  if (FI && FI.falls && (!FI.fallsGpu || FI.fallsGpu.gl !== gpuState.gl)) {
+    FI.fallsGpu = uploadMesh(
+      FI.falls.V,
+      FI.falls.I,
+      [
+        ['aPos', 3, 0],
+        ['aUV', 2, 12],
+      ],
+      20
+    );
+    FI.fallsGpu.gl = gpuState.gl;
+  }
+  /* HB-3: the lagoon's water, as the bowl's sea carries it (depth, and here how far it has faded into the clouds) */
+  if (FI && FI.water && FI.water.I.length && (!FI.waterGpu || FI.waterGpu.gl !== gpuState.gl)) {
+    FI.waterGpu = uploadMesh(
+      FI.water.V,
+      FI.water.I,
+      [
+        ['aPos', 3, 0],
+        ['aShore', 2, 12],
+      ],
+      20
+    );
+    FI.waterGpu.gl = gpuState.gl;
+  }
   if (!g.mesh || g.gl !== gpuState.gl) {
     g.gl = gpuState.gl;
     g.mesh = worldBowlMesh();
@@ -2070,7 +2323,7 @@ function bowlWallTexture() {
 /* ---------- ready before it shows (the owner: "every time the world map opens it hasn't fully loaded yet") ----------
    Everything the map shows is in: the island's own heights (their arrival works the ground out again), the terrain map
    and its pictures, each place's map stamped, the things' shapes and pictures on the GPU and their shadows. */
-function worldBowlReady() {
+export function worldBowlReady() {
   const g = worldBowl.ground,
     T = g && g.terrain,
     W = g && g.things,
@@ -2086,17 +2339,28 @@ function worldBowlReady() {
 }
 /* the map's slow parts done ahead, in idle time and without the GPU: the places, the island's own heights, the terrain
    map and its pictures, each place's map, the models' recipes and the pictures of things without one. The walk scene
-   starts it in the hub, the opening fall as it begins. */
-const worldMapWarm = { on: false };
-export function worldMapPrewarm() {
-  if (worldMapWarm.on || !worldMapWanted()) return;
+   starts it in the hub, the opening fall as it begins. HB-2: done(ok) when it has finished (a run's loading screen
+   waits on it, eager: on a timer, not in idle time, which a page drawing every frame seldom has); a second call while
+   it works waits for the same end. */
+const worldMapWarm = { on: false, eager: false, done: /** @type {((ok: boolean) => void)[]} */ ([]) };
+export function worldMapPrewarm(done, eager) {
+  if (done) worldMapWarm.done.push(done);
+  if (eager) worldMapWarm.eager = true;
+  if (worldMapWarm.on) return;
+  const end = ok => {
+    worldMapWarm.on = worldMapWarm.eager = false;
+    for (const f of worldMapWarm.done.splice(0)) f(ok);
+  };
+  if (!worldMapWanted()) return end(false);
   worldMapWarm.on = true;
   const later = f =>
-    typeof requestIdleCallback === 'function' ? requestIdleCallback(f, { timeout: 200 }) : setTimeout(f, 16);
+    worldMapWarm.eager || typeof requestIdleCallback !== 'function'
+      ? setTimeout(f, worldMapWarm.eager ? 0 : 16)
+      : requestIdleCallback(f, { timeout: 200 });
   let tries = 0;
   const step = () => {
     try {
-      if (++tries > 4000) return (worldMapWarm.on = false);
+      if (++tries > 4000) return end(false);
       worldBowlSpots();
       const g = worldBowl.ground,
         id = worldBowl.islandLoading,
@@ -2105,7 +2369,11 @@ export function worldMapPrewarm() {
       if (M && bowlHasCoast(M) && !bowlIslandHeights(M)) return later(step);
       const T = worldBowlTerrainStart();
       if (!T.ready) {
-        T.fill(48);
+        const t0 = performance.now();
+        if (!worldMapWarm.eager) T.fill(48);
+        else
+          do T.fill(16);
+          while (!T.ready && performance.now() - t0 < 12);
         return later(step);
       }
       worldBowlStampMaps(T);
@@ -2125,10 +2393,10 @@ export function worldMapPrewarm() {
         if (imgs.length) Promise.resolve(artLoad(imgs)).catch(() => {});
         g.warmThings = true;
       }
-      worldMapWarm.on = false;
+      end(true);
     } catch (e) {
       console.error(e);
-      worldMapWarm.on = false;
+      end(false);
     }
   };
   later(step);
@@ -2391,6 +2659,12 @@ export function worldBowlRender(t) {
     cv.width = rw;
     cv.height = rh;
   }
+  /* HB-3: the World map settings are built into the floating island's meshes: when they change it is made again */
+  const ms = worldBowlMapSettingsKey();
+  if (worldBowl.mapSettings !== ms) {
+    if (worldBowl.mapSettings != null && worldBowlFloats()) worldBowlReset();
+    worldBowl.mapSettings = ms;
+  }
   worldBowlSpots();
   const g = worldBowlGpu();
   const S = renderTarget('scene', rw, rh, { depth: true, hdr: true });
@@ -2456,7 +2730,7 @@ export function worldBowlRender(t) {
   gl.uniform1f(U.uOn, g.ok ? 1 : 0);
   gl.uniform1f(U.uT, reducedMotion ? 0 : (t % 600000) / 1000);
   gl.uniform2f(U.uWaterL, T && T.K.layer.w != null ? T.K.layer.w : -9, T && T.K.layer.d != null ? T.K.layer.d : -9);
-  gl.uniform4f(U.uIsle, FI ? FI.c[0] : 0, FI ? FI.c[1] : 0, FI ? FI.r * 1.25 : 0, FI ? 1 : 0);
+  worldBowlIsleUniform(U, FI);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, g.ok ? T.tIdx : gpuState.white);
   gl.uniform1i(U.uIdx, 0);
@@ -2509,6 +2783,7 @@ export function worldBowlRender(t) {
     worldBowlSkyUniforms(U, sky, sun);
     gl.uniform3fv(U.uHaze, haze);
     gl.uniform1f(U.uT, reducedMotion ? 0 : (t % 600000) / 1000);
+    gl.uniform1f(U.uRim, 0);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.depthMask(false);
@@ -2517,6 +2792,49 @@ export function worldBowlRender(t) {
     gl.depthMask(true);
     gl.disable(gl.BLEND);
   }
+  /* HB-3: its falls, see-through, under the lagoon's mist */
+  if (FI && FI.fallsGpu) {
+    p = gpuState.P.mfallw;
+    U = p.U;
+    gl.useProgram(p.p);
+    gl.uniformMatrix4fv(U.uVP, false, VP);
+    gl.uniform3fv(U.uC, v.C);
+    gl.uniform3fv(U.uHaze, haze);
+    gl.uniform3fv(U.uRimCol, FL ? FL.cloud : haze);
+    gl.uniform1f(U.uT, reducedMotion ? 0 : (t % 600000) / 1000);
+    gl.uniform1f(U.uLight, sun.light);
+    gl.uniform1f(U.uNight, sun.night);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthMask(false);
+    gl.bindVertexArray(FI.fallsGpu.vao);
+    gl.drawElements(gl.TRIANGLES, FI.fallsGpu.n, gl.UNSIGNED_INT, 0);
+    gl.depthMask(true);
+    gl.disable(gl.BLEND);
+  }
+  /* HB-3: the floating island's lagoon, fading at its rim into the sea of clouds' colour */
+  if (FI && FI.waterGpu) {
+    p = gpuState.P.mwater;
+    U = p.U;
+    gl.useProgram(p.p);
+    gl.uniformMatrix4fv(U.uVP, false, VP);
+    gl.uniform3fv(U.uC, v.C);
+    gl.uniform3fv(U.uLd, sun.ld);
+    worldBowlShadowUniforms(U, g);
+    worldBowlSkyUniforms(U, sky, sun);
+    gl.uniform3fv(U.uHaze, haze);
+    gl.uniform1f(U.uT, reducedMotion ? 0 : (t % 600000) / 1000);
+    gl.uniform1f(U.uRim, 1);
+    gl.uniform3fv(U.uRimCol, FL ? FL.cloud : haze);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthMask(false);
+    gl.bindVertexArray(FI.waterGpu.vao);
+    gl.drawElements(gl.TRIANGLES, FI.waterGpu.n, gl.UNSIGNED_INT, 0);
+    gl.depthMask(true);
+    gl.disable(gl.BLEND);
+  }
+  if (FI && FI.mist) worldBowlMistDraw(FI, sky, VP, v, sun, haze);
   /* the landmarks, buildings and trees */
   if (g.things && g.things.gpu) worldBowlThingsDraw(g.things, VP, { v, sun, sky, haze }, false);
   /* rain, snow and ash, then the clouds over everything (the floating island: its calm sky alone) */
@@ -2902,6 +3220,42 @@ function worldBowlDrawSky(S, sun, VP, v, haze) {
     gl.drawArraysInstanced(gl.TRIANGLES, 0, G.nPuff, S.nInst);
     gl.disable(gl.CULL_FACE);
   }
+  gl.bindVertexArray(null);
+  gl.depthMask(true);
+  gl.disable(gl.BLEND);
+}
+/* HB-3: the mist along the floating island's lagoon rim, as low flat cloud puffs (the clouds' own shape and shader;
+   the floating island has no weather clouds, so their instance buffer is free), back to front */
+function worldBowlMistDraw(F, S, VP, v, sun, haze) {
+  const gl = gpuState.gl,
+    G = worldBowlSkyGpu(S),
+    eye = v.C,
+    order = F.mist
+      .map(q => ({ q, d: Math.hypot(q.g[0] - eye[0], q.g[1] - eye[1], q.g[2] - eye[2]) }))
+      .sort((a, b) => b.d - a.d),
+    inst = new Float32Array(order.length * 8);
+  /* the puff's corners reach about 1.9 from its middle */
+  order.forEach(({ q }, k) => inst.set([q.g[0], q.g[1], q.g[2], q.s / 1.9, 0.42, 0, 0.2, 0], k * 8));
+  const p = gpuState.P.mcloud,
+    U = p.U;
+  gl.useProgram(p.p);
+  gl.uniformMatrix4fv(U.uVP, false, VP);
+  gl.uniform3fv(U.uC, eye);
+  gl.uniform3fv(U.uLd, sun.ld);
+  gl.uniform3fv(U.uHaze, haze);
+  gl.uniform1f(U.uLight, sun.light);
+  gl.uniform1f(U.uNight, sun.night);
+  gl.uniform1f(U.uFlash, 0);
+  gl.uniform1f(U.uNear, 0.01);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.depthMask(false);
+  gl.bindVertexArray(G.vao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, G.inst);
+  gl.bufferData(gl.ARRAY_BUFFER, inst, gl.DYNAMIC_DRAW);
+  gl.enable(gl.CULL_FACE);
+  gl.drawArraysInstanced(gl.TRIANGLES, 0, G.nPuff, order.length);
+  gl.disable(gl.CULL_FACE);
   gl.bindVertexArray(null);
   gl.depthMask(true);
   gl.disable(gl.BLEND);

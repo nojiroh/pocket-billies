@@ -16,7 +16,8 @@
    "biomes": {"lake":3,"meadow":2,"thicket":1},
    "types": {"Water":3,"Electric":2,"Flying":2,"Grass":1},
    "ends": ["mere","ford"],
-   "nouns": ["Shores","Basin"]
+   "nouns": ["Shores","Basin"],
+   "train": {"k":"train_lakeland","name":"Lakeland Clipper"}
   },
   "greenbelt": {
    "name": "Greenbelt",
@@ -24,7 +25,8 @@
    "biomes": {"meadow":3,"thicket":2,"lake":1},
    "types": {"Grass":3,"Ground":2,"Fire":2,"Electric":1},
    "ends": ["stead","vale"],
-   "nouns": ["Fields","Downs"]
+   "nouns": ["Fields","Downs"],
+   "train": {"k":"train_greenbelt","name":"Greenbelt Sunrunner"}
   },
   "wildwood": {
    "name": "Wildwood",
@@ -32,7 +34,8 @@
    "biomes": {"thicket":3,"autumn":2,"meadow":2},
    "types": {"Grass":3,"Psychic":2,"Steel":2,"Flying":1},
    "ends": ["wick","wood"],
-   "nouns": ["Hollow","Thicket"]
+   "nouns": ["Hollow","Thicket"],
+   "train": {"k":"train_wildwood","name":"Wildwood Zephyr"}
   },
   "highland": {
    "name": "Highland",
@@ -40,7 +43,8 @@
    "biomes": {"ridge":3,"autumn":2,"meadow":2},
    "types": {"Flying":3,"Ground":2,"Steel":2,"Fire":1},
    "ends": ["crag","fell"],
-   "nouns": ["Heights","Reach"]
+   "nouns": ["Heights","Reach"],
+   "train": {"k":"train_highland","name":"Highland Arrow"}
   },
   "harvest": {
    "name": "Harvest Country",
@@ -48,7 +52,8 @@
    "biomes": {"autumn":3,"meadow":2,"ridge":2},
    "types": {"Fire":3,"Ground":2,"Psychic":2,"Steel":1},
    "ends": ["stead","field"],
-   "nouns": ["Acres","Commons"]
+   "nouns": ["Acres","Commons"],
+   "train": {"k":"train_harvest","name":"Harvest Comet"}
   }
  },
  "names": {

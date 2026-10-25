@@ -404,7 +404,7 @@ test("the game's island is the generator's own output for its stored dials and s
   assert.ok(sc && sc.islandGen, 'copperleaf is on the island');
   if (sc.islandGen.lock || sc.islandGen.v !== ISLAND_GEN_VERSION) return;
   /* as the tool makes it again: its own locked zones kept */
-  const { scene } = islandGenerate(sc.islandGen.dials, sc.islandGen.seed, ctx, sc);
+  const { scene, landmarks } = islandGenerate(sc.islandGen.dials, sc.islandGen.seed, ctx, sc);
   for (const k of [
     'w',
     'h',
@@ -426,4 +426,6 @@ test("the game's island is the generator's own output for its stored dials and s
     "bridges (the pier is the town's own, tools/build-copperleaf.mjs; a kept town's comes back with it)"
   );
   assert.deepEqual(sc.cam.orbit, scene.cam.orbit);
+  /* HB-4b: the station's sky rail and portal, kept by build-island */
+  assert.deepEqual(sc.landmarks, landmarks, 'landmarks (run node tools/build-island.mjs to remake it)');
 });

@@ -900,7 +900,7 @@ def in_game_test_whole(P):
     return '; '.join(out)
 
 
-@step('Phone: opening, the airship mast, screens and a battle', 260)
+@step('Phone: opening, the station, screens and a battle', 260)
 def phone_flow(P):
     pg, R = P.pg, P.R
     pg.click('[data-a=intro]')
@@ -920,11 +920,12 @@ def phone_flow(P):
     if not until(pg, '!!uiState.modal', 30): raise Exception('no welcome sheet after the opening')
     R['afterOpening'] = pg.evaluate("({welcome:uiState.modal&&uiState.modal.title,rival0:(saveData.story||{}).rival0||null})")
     pg.evaluate("closeModal();0")
-    # RL-8: Copperleaf's airship mast offers a run: tapped (walkPick, as a tap on it does), its sheet has "Start a
-    # run"; a real tap on that row opens the run's sheet (left there: the fast check and the full check fly it)
-    if not until(pg, "walkView.ready&&!!walkView.sc.props.find(p=>p.act==='fly')", 60): raise Exception('Copperleaf has no airship mast')
-    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();(p=>walkPick({k:'act',p,act:'fly'}))(walkView.sc.props.find(p=>p.act==='fly'));0")
-    if not until(pg, "!!document.querySelector('#ov [data-a=runstart]')", 30): raise Exception('the mast’s sheet has no “Start a run”')
+    # RL-8: Copperleaf's station offers a run (HB-7: Skyline Station, act 'station'; the airship is scenery): tapped
+    # (walkPick, as a tap on it does), its sheet has "Start a run"; a real tap on that row opens the run's sheet (left
+    # there: the fast check and the full check fly it)
+    if not until(pg, "walkView.ready&&!!walkView.sc.props.find(p=>p.act==='station')", 60): raise Exception('Copperleaf has no station')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();(p=>walkPick({k:'act',p,act:'station'}))(walkView.sc.props.find(p=>p.act==='station'));0")
+    if not until(pg, "!!document.querySelector('#ov [data-a=runstart]')", 30): raise Exception('the station’s sheet has no “Start a run”')
     shot(pg, 'phone-mast')
     pg.click('#ov [data-a=runstart]')
     if not until(pg, "uiState.modal&&uiState.modal.title==='Start a run'", 10): raise Exception('“Start a run” didn’t open the run’s sheet')
@@ -1566,18 +1567,21 @@ def rl8_run_from_mast(P):
     if not pg.evaluate("typeof runTakeOff==='function'"): return 'not in this build'
     pg.evaluate("window.rl8Hub=JSON.parse(JSON.stringify(saveData));uiState.inside=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});render();0")
     try:
-        if not until(pg, "walkView.ready&&!!walkView.sc.props.find(p=>p.act==='fly')", 90): raise Exception('Copperleaf’s mast isn’t in the view')
-        pg.evaluate("(p=>walkPick({k:'act',p,act:'fly'}))(walkView.sc.props.find(p=>p.act==='fly'));0")
-        if not until(pg, "!!document.querySelector('#ov [data-a=runstart]')", 20): raise Exception('the mast’s sheet has no “Start a run”')
+        if not until(pg, "walkView.ready&&!!walkView.sc.props.find(p=>p.act==='station')", 90): raise Exception('Copperleaf’s station isn’t in the view')
+        pg.evaluate("(p=>walkPick({k:'act',p,act:'station'}))(walkView.sc.props.find(p=>p.act==='station'));0")
+        if not until(pg, "!!document.querySelector('#ov [data-a=runstart]')", 20): raise Exception('the station’s sheet has no “Start a run”')
         pg.click('#ov [data-a=runstart]')
         if not until(pg, "uiState.modal&&uiState.modal.title==='Start a run'", 10): raise Exception('no run sheet')
         pg.click('#ov [data-a=mb][data-i="0"]')
         # TC-4: tapped again while the sheet is still there: once on a busy machine the tap was lost (the sheet still
-        # drawing itself); the take-off closes the sheet, so nothing is tapped twice
+        # drawing itself); the take-off closes the sheet, so nothing is tapped twice (HB-2: the sheet stays while the
+        # world is made, inert, and a second runTakeOff on a run does nothing)
         # RT-1: 60 s, not 30: the take-off makes the run's world (laid-out places: 1.1 s here alone, more in the paired run)
         if not until(pg, "!!saveData.run&&airshipFlight.on", 60, "uiState.modal&&uiState.modal.title==='Start a run'&&document.querySelector('#ov [data-a=mb][data-i=\"0\"]').click()"): raise Exception('“Take off” didn’t start a run’s flight')
         pg.evaluate("flySkip();0")
         if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready&&walkView.id==='w:'+LOCATIONS[1].mapId+'*'", 90): raise Exception(f'never landed on the landing ({pg.evaluate("saveData.run&&saveData.run.at.phase")}, {pg.evaluate("walkView.id")})')
+        # HB-2: the landing's loading screen lifts (every stage ready, or the cap)
+        if not until(pg, "runLoad.ready&&!document.getElementById('runload')", 40): raise Exception("the landing's loading screen never lifted")
         land = pg.evaluate("[saveData.run.seed, saveData.trip.node, saveData.run.clock, !!uiState.roam, runWorld.scenes]")
         if land[1] != 1 or land[2] != 1: raise Exception(f'landed at node {land[1]} on day {land[2]}')
         # a wild battle, won
@@ -1683,7 +1687,7 @@ def airship_moored(P):
     out = []; cl = pg.evaluate("LOCATION_BY_ID.copperleaf.node")   # RL-5: no Marigold Town to fly to
     pg.evaluate("uiState.inside=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();environment.force={time:11,weather:'clear',season:'summer'};0")   # RL-5: no visit to Marigold or money for a fare
     go_scene(pg, cl)
-    pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='fly');walkView.pl.route=null;walkView.pl.x=p.x+2.2;walkView.pl.z=p.z-1.6})();0")
+    pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.k==='airship_station');walkView.pl.route=null;walkView.pl.x=p.x+2.2;walkView.pl.z=p.z-1.6})();0")
     until(pg, "propModelState.meshes.has('scene/models/airship.json')&&!!propModelState.meshes.get('scene/models/airship.json')", 60); look_at_me(pg)
     v = pg.evaluate("(()=>{const m=propModelState.meshes.get('scene/models/airship.json');return m?{spins:(m.spins||[]).length,model:!!m.model,tris:m.n/3,drawn:propModelState.drawn}:null})()")
     if not v or not v['model'] or v['spins'] != 2: raise Exception(f'the airship isn’t drawn as a low-poly model with two turning propellers: {v}')

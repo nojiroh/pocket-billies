@@ -118,8 +118,13 @@ test('every run town has a street, a square with the clinic and the shop on it, 
         `${where}: a vegetable plot south of the road`
       );
       assert.deepEqual(G.mapgenUnreachable(sc, C), [], where);
-      /* a run's scenes meet any neighbour at height 0 on their east and west edges */
-      for (const row of sc.heights) assert.ok(row[0] === 0 && row[sc.w] === 0, `${where}: the edges pinned`);
+      /* a run's scenes meet any neighbour at height 0 on their east and west edges, but where a river crosses (WA-3a:
+         its bed keeps its height, the neighbour takes it from the edge strip) */
+      const wetBy = (x, r) =>
+        [r - 1, r].some(k => k >= 0 && k < sc.h && 'wd'.includes(sc.tiles[k][Math.min(sc.w - 1, x)]));
+      sc.heights.forEach((row, r) => {
+        for (const x of [0, sc.w]) assert.ok(row[x] === 0 || wetBy(x, r), `${where}: the edges pinned`);
+      });
     }
   }
   assert.ok(towns >= 15, `${towns} towns`);

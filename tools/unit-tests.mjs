@@ -12,6 +12,7 @@ const ROOT = join(import.meta.dirname, '..');
 export const SLOW_TESTS = [
   'graft-art-sweep.test.mjs',
   'island-gen.test.mjs',
+  'island-gen-doors.test.mjs',
   'mapgen-dials.test.mjs',
   'mapgen-grass.test.mjs',
   'mapgen-layout.test.mjs',

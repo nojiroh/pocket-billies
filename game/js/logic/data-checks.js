@@ -15,6 +15,7 @@ import { lineSpeciesIds } from './forms.js';
 import { CLIMATE_WEATHER_ODDS } from './weather.js';
 import { uiThemeContrast } from './ui-theme.js';
 import { RUN_MARK_TYPES } from './run-marks.js';
+import { wadeWalkable } from './wading.js';
 import { runRegionData, runRegionMake } from './run-region.js';
 import { runMapMake, runMapRows, runMapRowsFit } from './run-map.js';
 import {
@@ -319,6 +320,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'layouts',
   'wild',
   'seamIn',
+  'load',
   'start',
   'points',
   'pack',
@@ -357,7 +359,7 @@ export function dataRunClock(D) {
 // (water, the road's shape and surface, the feature) with something to pick; nothing the run sets itself (size, kind,
 // biome, seed, exits, edges). Wild levels: whole numbers from 1 to 100, low to high, a whole number more a row and
 // again on a node walked back to; the metres past a seam before a crossing counts (1-30)
-/** RL-7: rules.json run.scene, run.wild, run.seamIn @param {any} D @returns {DataProblem[]} */
+/** RL-7: rules.json run.scene, run.wild, run.seamIn (HB-2: and run.load) @param {any} D @returns {DataProblem[]} */
 export function dataRunScene(D) {
   /** @type {DataProblem[]} */
   const out = [],
@@ -448,6 +450,11 @@ export function dataRunScene(D) {
       for (const k of Object.keys(W))
         if (!['lv', 'perRow', 'back', 'waystation'].includes(k)) problem('rules.json', `run.wild.${k}: no such rule`);
     if (!whole(R.seamIn, 1, 30)) problem('rules.json', 'run.seamIn is not a whole number of metres from 1 to 30');
+    /* HB-2: the loading screen's cap (logic/run-load.js), 1-120 s */
+    const Ld = R.load;
+    if (!Ld || !whole(Ld.capMs, 1000, 120000))
+      problem('rules.json', 'run.load.capMs is not a whole number of ms from 1,000 to 120,000');
+    else for (const k of Object.keys(Ld)) if (k !== 'capMs') problem('rules.json', `run.load.${k}: no such rule`);
   }
   return out;
 }
@@ -697,6 +704,10 @@ export function dataRegions(D, valid = () => true) {
       }
     for (const t of Object.keys(T.types))
       if (!types.has(t)) problem('regions.json', `themes.${k}.types: no type "${t}"`);
+    /* HB-7: its sky train is a train prop */
+    const P = T.train && ((D.scenery && D.scenery.props) || {})[T.train.k];
+    if (T.train && (!P || P.group !== 'sky_train'))
+      problem('regions.json', `themes.${k}.train: "${T.train.k}" is not a sky train (scenery.json, group sky_train)`);
   }
   for (const f of ['rows', 'dex'])
     if (R[f][0] > R[f][1]) problem('regions.json', `${f}: the fewest (${R[f][0]}) is more than the most (${R[f][1]})`);
@@ -783,6 +794,11 @@ export function dataFieldMoves(D, valid = () => true) {
       if (!types.has(M.type)) problem('fieldMoves.json', `moves.${k}: no type "${M.type}" (types.json)`);
       if (!(D.biomes || {})[M.biome]) problem('fieldMoves.json', `moves.${k}: no biome "${M.biome}" (biomes.json)`);
     }
+  /* WA-6b: the Waterfall climb's Billie type and its badges are real types */
+  const WF = FM && FM.waterfall;
+  if (WF)
+    for (const t of [WF.type, ...(WF.badges || [])])
+      if (!types.has(t)) problem('fieldMoves.json', `waterfall: no type "${t}" (types.json)`);
   const S = D.rules && D.rules.run && D.rules.run.side;
   if (!S) return out;
   const chance = (/** @type {any} */ v) => typeof v === 'number' && v >= 0 && v <= 1,
@@ -1544,7 +1560,11 @@ export function dataSceneFindings(D, roadOf) {
       const off = (/** @type {number[]} */ p) => p[0] < 0 || p[1] < 0 || p[0] > s.w || p[1] > s.h;
       if (L < 1) warn(`Scene ${s.name || k}: bridge ${n + 1} is shorter than a metre.`, 'scenes', g);
       else if (off(b.a) || off(b.b)) warn(`Scene ${s.name || k}: bridge ${n + 1} runs off the map.`, 'scenes', g);
-      else if ('wd'.includes(ter(b.a[0], b.a[1])) || 'wd'.includes(ter(b.b[0], b.b[1])))
+      else if (
+        /* WA-6a: an end in shallows you wade is fine; deep water, lava or ice is not (logic/wading.js) */
+        !wadeWalkable(s, ter(b.a[0], b.a[1]), null, b.a[0], b.a[1]) ||
+        !wadeWalkable(s, ter(b.b[0], b.b[1]), null, b.b[0], b.b[1])
+      )
         warn(
           `Scene ${s.name || k}: bridge ${n + 1} ends in the water, so nobody can step onto it. Drag it from bank to bank.`,
           'scenes',
@@ -1566,7 +1586,8 @@ export function dataSceneFindings(D, roadOf) {
           }
         }
       if (!wet) warn(`Scene ${s.name || k}: water rectangle ${n + 1} (${r.k}) covers no water.`, 'scenes', g);
-      if (!['pond', 'stream', 'canal', 'spring', 'swamp', 'lake'].includes(r.k))
+      /* the kinds walk/water-data.js WATER_KIND_LOOKS draws (water track WA-0: sea, lava and ice were missing) */
+      if (!['pond', 'stream', 'canal', 'spring', 'swamp', 'lake', 'sea', 'lava', 'ice'].includes(r.k))
         warn(`Scene ${s.name || k}: water rectangle ${n + 1} has an unknown kind “${r.k}”.`, 'scenes', g);
     });
     const users = locations.map((r, i) => [r, i]).filter(([r]) => r.mapId === k);

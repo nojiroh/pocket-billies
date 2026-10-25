@@ -259,7 +259,7 @@ check('roads.schema.json', D.roads || [], 'roads.json');
     const sc = S[r.mapId];
     if (!sc || sc.kind === 'room') continue;
     for (const p of sc.props || []) {
-      if (!PB_DATA.ROOM_BY_USE[p.act]) continue;
+      if (!PB_DATA.opensRoom(p.act)) continue;
       const M = P[p.k],
         at = `maps/${r.mapId}.json`,
         id = PB_DATA.doorRooms(p, M, p.act).find(isRoom),

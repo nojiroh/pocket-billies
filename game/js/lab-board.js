@@ -15,7 +15,7 @@ import { incomeBank } from './logic/ranch-income.js';
 import { buildingLevel, unlockAuto, unlockBuy, unlockCurrency, unlockReady, unlockRows } from './logic/unlocks.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
-import { flyMenu } from './airship.js';
+import { flyMenu, stationMenu } from './airship.js';
 import { ranchOpen } from './ranch-screen.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -71,7 +71,7 @@ const LAB_WHY = {
   unknown: 'Gone',
 };
 /** where a building's rows are bought, for its section */
-const LAB_WHERE = { airship: 'at the airship mast', ranch: 'at the ranch' };
+const LAB_WHERE = { station: 'at Skyline Station', ranch: 'at the ranch' };
 /** a price: "60 Research", "1 Crest" @param {number} n @param {string | null} c */
 function labPrice(n, c) {
   const C = (c && CURRENCIES[c]) || { name: c || '', one: c || '' };
@@ -184,5 +184,8 @@ export function labAction(a, d) {
     /* in place of the open sheet (a second one would wait behind it) */
     uiState.modal = null;
     flyMenu(uiState.flyAt);
+  } else if (d.then === 'station' && typeof stationMenu === 'function') {
+    uiState.modal = null;
+    stationMenu(uiState.stationAt);
   }
 }
