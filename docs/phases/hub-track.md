@@ -159,6 +159,39 @@ yet). Answers: a mirrored model's lettering is never mirrored (it moves and face
   street, the station headland with its rail out to sea, the lighthouse, the windmill, the pasture and the new
   buildings marked. Same size. The owner picks one (or mixes).
 
+**Done in HB-4a** (2026-10-25, branch `art/hub-island-sketches`, not `track/hub`: a one-session art branch at the
+owner's word; HB-4b merges it into `track/hub`). **The owner's pick: a version of B (East crescent) with more of a
+town square; the hub waterfall above the pond.**
+- Facts that differed: the orbit pivot `cam.orbit.c` is the **summit spot** (island-gen.js `orbit.c = summit`), not
+  the island's middle: "outward" is away from the mountain top. Off-outward figures hold (3 of 12 props within 50; 2 of
+  12 plots within 45). The generator's dials use 0 = east, 90 = north (x = cos, z = sin); island-shots' compass is 0
+  north, clockwise. The town already had three streets (main, cross, east bank) plus the quay; the doors miss because
+  the main street and east bank run toward the mountain (radial): a side facing its street faces 90 off outward.
+- New generator dials (all off by default; the hub's island unchanged, island-gen.test checks it): `town.face`
+  ('out': only the street side within `town.tol` of outward), `town.quarter` (plots on the quarter turn nearest
+  outward, stepped back up to 3 m from the street), `town.second` (a second built-up street; `along: 'arc'` runs round
+  the pivot, in pieces where other streets cut it), `town.scale` (house plot size), `town.extra` (inn, workshop,
+  genebank, library: `ISLAND_TOWN_EXTRA`), `landmarks` (the station on the headland that stands out most within 80
+  degrees of the square, its rail out to sea climbing `rise` m to the portal, returned as `landmarks: {rail, portal}`
+  beside the scene; the lighthouse on the cove's arm further from the station; the windmill by the barn; `shore` 3 m
+  from the water, for the water track's tide and wading). Tests: tools/test/island-gen-doors.test.mjs (slow tier).
+- **B's dials** (tools/data/hub-sketches.json `b`, on copperleaf-e9): `town: {houses: 16, quarter: 1, face: 'out',
+  scale: 0.8, extra: [inn, workshop, genebank, library], second: {on: 1, along: 'arc', side: 'in', off: 9, span: 110,
+  at: 40}}, landmarks: {on: 1}`: 17 buildings, all 17 doors within 45 of outward on a quarter turn.
+- For HB-4b: **"more of a town square"** needs a new dial: the square's radius is fixed at 7.5 m (island-gen.js
+  `sqR`), and B's square is the grey patch by the bay, ringed by streets, with no buildings fronting it. A square dial
+  (radius, and plots round it facing in where that is outward, or on its outer side) is HB-4b's first generator change.
+  Landmark plots ignore the coast path's margins (a headland is narrower than a 14 m station allows): the path through
+  the station needs re-routing. The sky rail and the portal stand past the map's edge (the map holds 10 m of sea):
+  props in the sea skirt, or a bigger `size.sea`. The tall grass falls to 3 of 6 patches with these dials.
+- **The hub waterfall** (water track WA-2b, the owner: above the pond): copperleaf-e9 has no drop of 4 m or more on
+  its stream; the only one is the 5 m north-west sea cliff. The site: 16 m up from the pond toward the summit, where
+  the ground first stands 4 m over the pond (`falls` contract draft `{x: 92.79, z: 89.67, dir: [0.83, -0.56], w: 3, h:
+  4.15, pool: 4}` on B); a shelf has to be cut there (the generator's or the water track's, WA-2b decides which). Tell
+  the water track's lane G.
+- Sketch tool: `python3 tools/island-sketches.py [OUT] [ids] [--above]` (relief maps, a sheet; `--above` the game's
+  own pictures from draft maps `hb4a_<id>` put in the game data and removed after). Output in validation/hub-sketches/.
+
 ### HB-4b The island rebuilt
 - The picked direction through the generator's dials and the build tools (build-island, build-copperleaf, the
   dressing), never by hand. Plots pick the street side whose front faces out from `cam.orbit.c`, then snap to the
