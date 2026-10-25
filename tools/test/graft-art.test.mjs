@@ -36,15 +36,15 @@ test('graft-art: graftParse reads a graftKey back, null for nothing', () => {
   assert.equal(G.graftParse('front'), null);
 });
 
-test('graft-art: graftSet and graftOf keep a graft per Billie object, never on the Billie', () => {
-  const m = { uid: 'a', sp: 'musk0' },
-    twin = { uid: 'a', sp: 'musk0' };
+test('graft-art: graftSet and graftOf keep a graft on the Billie (SP-2: Billy.graft, saved with it)', () => {
+  const m = { uid: 'a', sp: 'musk0' };
   assert.equal(G.graftOf(m), '');
-  G.graftSet(m, 'front=swift1');
-  assert.equal(G.graftOf(m), 'front=swift1');
-  assert.equal(G.graftOf(twin), '', 'by object, not uid: a reloaded save has none');
-  assert.deepEqual(Object.keys(m), ['uid', 'sp'], 'nothing is written on the Billie, so nothing reaches the save');
+  G.graftSet(m, 'sig=zuck2,front=swift1');
+  assert.deepEqual(m.graft, { sig: 'zuck2', front: 'swift1' });
+  assert.equal(G.graftOf(m), 'front=swift1,sig=zuck2');
+  assert.equal(G.graftOf(structuredClone(m)), 'front=swift1,sig=zuck2', 'a copy (a reloaded save) keeps it');
   G.graftSet(m, '');
+  assert.equal('graft' in m, false);
   assert.equal(G.graftOf(m), '');
   assert.equal(G.graftOf(null), '');
 });

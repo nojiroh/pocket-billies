@@ -7,7 +7,7 @@
    keeps its colour and its size on the donor (the fit scales the whole Billie down if it no longer fits the stage
    box). A slot is swapped only bone kind for bone kind (an arm for an arm or a wing, a leg for a leg or a foot, a tail
    for a tail): the baker places each kind its own way, so a tail can't stand in for legs. Extras and the head are
-   not grafted yet. Logic only: no DOM (tools/test/graft-art.test.mjs). */
+   not grafted yet. SP-2: the splice is saved on the Billie (graftOf, graftSet); its rules are logic/genes.js. Logic only: no DOM (tools/test/graft-art.test.mjs). */
 /** @import { PartKits } from '../../types/game-data' */
 /** @typedef {import('./kit-assemble.js').KitForm} KitForm */
 /** @typedef {Record<string, string>} Graft slot (rules.json parts.slots) -> donor species id */
@@ -16,7 +16,6 @@ import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
-  GRAFTS: [() => GRAFTS],
   GRAFT_SLOTS: [() => GRAFT_SLOTS],
   // @ts-expect-error -- replaced on purpose
   graftDonors: [() => graftDonors, v => (graftDonors = v)],
@@ -71,15 +70,15 @@ export function graftParse(key) {
   return Object.keys(g).length ? g : null;
 }
 
-/* SP-1: this session's grafts, by Billie object (or wild encounter), as graft codes. Never saved: saveFill keeps a
-   Billie's unknown fields, so a field would land in the save; SP-2 gives Billy a validated `graft` instead. */
-export const GRAFTS = new WeakMap();
-/** a Billie's graft code, '' for none @param {object | null | undefined} m */
-export const graftOf = m => (m && typeof m === 'object' && GRAFTS.get(m)) || '';
+/* SP-2: a Billie's (or wild encounter's) splice is its `graft` field (Billy.graft, kept by the save's validators) */
+/** a Billie's graft code, '' for none @param {{ graft?: Graft } | null | undefined} m */
+export const graftOf = m => (m && typeof m === 'object' ? graftKey(m.graft) : '');
 /** give a Billie (or an encounter) a graft code; '' takes it off @param {object} m @param {string} key */
 export function graftSet(m, key) {
-  if (key) GRAFTS.set(m, key);
-  else GRAFTS.delete(m);
+  const g = graftParse(key),
+    o = /** @type {{ graft?: Graft }} */ (m);
+  if (g) o.graft = g;
+  else delete o.graft;
 }
 
 /** the recipe of a species with its grafted slots' parts from their donors, or null when a donor or a slot doesn't fit
