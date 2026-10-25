@@ -106,7 +106,10 @@
   "shark_tailfin": {"type":"Water"},
   "reptile_tail": {"type":"Dragon"},
   "bear_arm": {"type":"Ground"},
-  "fox_tail": {"type":"Fire"}
+  "fox_tail": {"type":"Fire"},
+  "koi_frontfin": {"type":"Electric"},
+  "piranha_backfin": {"type":"Steel"},
+  "rabbit_tail": {"type":"Grass"}
  },
  "maxTraits": 3,
  "stability": {"line":0,"kit":1,"other":2,"augment":3,"limit":3,"refuse":3},
