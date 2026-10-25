@@ -186,16 +186,18 @@ def tear(name, cols):
 
 
 # ================================================================ Skyline Station
-def lattice(L, x, y, h, foot=0.9, top=0.35, col=STEEL, name='pylon', step=3.0):
-    """a lattice pylon: four legs leaning in from a concrete footing, braced in X every few metres, a cap on top"""
-    L.append(box(x, y, 0, foot * 2 + 0.6, foot * 2 + 0.6, 0.4, CONCRETE, 'stone', name + ' footing'))
-    at = lambda z, sx, sy: (x + sx * (foot + (top - foot) * z / h), y + sy * (foot + (top - foot) * z / h), z)
+def lattice(L, x, y, h, foot=0.9, top=0.35, col=STEEL, name='pylon', step=3.0, base=0.0):
+    """a lattice pylon: four legs leaning in from a concrete footing at base (under the ground: SINK), braced in X every
+    few metres, a cap on top at h"""
+    L.append(box(x, y, base, foot * 2 + 0.6, foot * 2 + 0.6, 0.4, CONCRETE, 'stone', name + ' footing'))
+    at = lambda z, sx, sy: (x + sx * (foot + (top - foot) * (z - base) / (h - base)),
+                            y + sy * (foot + (top - foot) * (z - base) / (h - base)), z)
     for sx in (-1, 1):
         for sy in (-1, 1):
-            L.append(limb(at(0.3, sx, sy), at(h, sx, sy), 0.08, 0.06, col, 'metal', name + ' leg', 5))
-    n = max(1, int(round((h - 0.3) / step)))
+            L.append(limb(at(base + 0.3, sx, sy), at(h, sx, sy), 0.08, 0.06, col, 'metal', name + ' leg', 5))
+    n = max(1, int(round((h - base - 0.3) / step)))
     for i in range(n):
-        z0, z1 = 0.3 + (h - 0.3) * i / n, 0.3 + (h - 0.3) * (i + 1) / n
+        z0, z1 = base + 0.3 + (h - base - 0.3) * i / n, base + 0.3 + (h - base - 0.3) * (i + 1) / n
         for (ax, ay), (bx, by) in (((-1, -1), (1, -1)), ((1, -1), (1, 1)), ((1, 1), (-1, 1)), ((-1, 1), (-1, -1))):
             L.append(limb(at(z0, ax, ay), at(z1, bx, by), 0.035, 0.035, STEEL_D, 'metal', name + ' brace', 4))
             L.append(limb(at(z0, bx, by), at(z1, ax, ay), 0.035, 0.035, STEEL_D, 'metal', name + ' brace', 4))
@@ -316,6 +318,9 @@ def station():
 RAIL_LEN = 12.0
 Z_FLAT = 0.13  # the rail's middle out of the station (its top 0.45 m up)
 CLIMB = 5.0  # what a straight piece climbs in its 12 m
+# how far the rail's piers and pylons reach under their base: the hub's rail stands level with its station (a
+# placement's y) out over the sea, about a metre lower, so its feet still go into the water (under the ground on land)
+SINK = 2.5
 
 
 def rail_piece(z0, z1, shape):
@@ -330,14 +335,14 @@ def rail_piece(z0, z1, shape):
     beam(L, pts)
     h = z1 - 0.69  # the cap and the saddle under the rail's bottom
     if h < 1.5:
-        L += [box(RAIL_LEN / 2 - 0.6, 0, 0, 1.1, 1.4, max(0.2, h), CONCRETE, 'stone', 'pier'),
+        L += [box(RAIL_LEN / 2 - 0.6, 0, -SINK, 1.1, 1.4, max(0.2, h) + SINK, CONCRETE, 'stone', 'pier'),
               box(RAIL_LEN / 2 - 0.6, 0, max(0.2, h), 1.3, 1.6, 0.12, STEEL_D, 'metal', 'pier cap')]
     else:
-        lattice(L, RAIL_LEN / 2 - 0.6, 0, h)
+        lattice(L, RAIL_LEN / 2 - 0.6, 0, h, base=-SINK)
         L.append(box(RAIL_LEN / 2 - 0.6, 0, h + 0.25, 0.9, 1.0, 0.12, A['brass'], 'metal', 'saddle'))
     if shape != 'flat' and z1 - z0 > 4:  # a mid pylon under the long climbs
         zm = pts[4][2] - 0.57
-        lattice(L, 0, 0, zm, foot=0.75, top=0.3)
+        lattice(L, 0, 0, zm, foot=0.75, top=0.3, base=-SINK)
     return rec(L, 0.7)
 
 
@@ -379,7 +384,7 @@ def sky_portal(tear_pic):
     L = []
     xt, zt = 2.0, Z_TOP + 0.32 + 1.6  # the tear's middle
     beam(L, [(-8.0, 0, Z_TOP), (-5.0, 0, Z_TOP), (-2.0, 0, Z_TOP)])
-    lattice(L, -4.0, 0, Z_TOP - 0.57)
+    lattice(L, -4.0, 0, Z_TOP - 0.57, base=-SINK)
     L += [box(-1.7, 0, Z_TOP - 0.45, 0.6, 1.4, 0.95, STEEL_D, 'metal', 'launch lip'),
           box(-1.42, 0, Z_TOP + 0.1, 0.06, 1.2, 0.3, '#E8C040', 'plain', 'lip stripe')]
     for sy in (-1, 1):  # the lip's beacons
