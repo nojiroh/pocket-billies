@@ -1329,10 +1329,13 @@
    "box": [4,2.4],
    "door": {"x":6,"y":0},
    "fx": [
-    {"k":"smoke","x":33,"y":-116},
-    {"k":"window","x":-36,"y":-45},
-    {"k":"glow","x":40,"y":-44}
-   ]
+    {"k":"smoke","x":31,"y":-118},
+    {"k":"window","x":-35,"y":-37},
+    {"k":"glow","x":38,"y":-38}
+   ],
+   "model": "scene/next/models/cave_house.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "tree_pine": {
    "name": "Pine tree",
@@ -1756,7 +1759,9 @@
    "flat": 0,
    "tags": ["route","cave"],
    "group": "boulder",
-   "solid": 1.2
+   "solid": 1.2,
+   "model": "scene/next/models/boulder.json",
+   "ppm": 32
   },
   "rocks": {
    "name": "Small rocks",
@@ -1784,12 +1789,15 @@
    "group": "crystal",
    "solid": 0.6,
    "fx": [
-    {"k":"sparkle","x":-26,"y":-45},
-    {"k":"sparkle","x":24,"y":-57},
-    {"k":"sparkle","x":6,"y":-73},
-    {"k":"sparkle","x":-16,"y":-63}
+    {"k":"sparkle","x":-24,"y":-42},
+    {"k":"sparkle","x":23,"y":-54},
+    {"k":"sparkle","x":6,"y":-69},
+    {"k":"sparkle","x":-15,"y":-59}
    ],
-   "glow": {"c":"#8EF0FF","r":1.5,"y":1}
+   "glow": {"c":"#8EF0FF","r":1.5,"y":1},
+   "model": "scene/next/models/crystal.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "stalagmite": {
    "name": "Stalagmite",
@@ -1801,7 +1809,9 @@
    "flat": 0,
    "tags": ["cave"],
    "group": "stalagmite",
-   "solid": 0.5
+   "solid": 0.5,
+   "model": "scene/next/models/stalagmite.json",
+   "ppm": 32
   },
   "well": {
    "name": "Stone well",
@@ -2647,7 +2657,9 @@
    "flat": 0,
    "tags": ["route","cave"],
    "group": "boulder",
-   "solid": 1
+   "solid": 1,
+   "model": "scene/next/models/boulder_b.json",
+   "ppm": 32
   },
   "boulder_mossy": {
    "name": "Mossy boulder",
@@ -2659,7 +2671,9 @@
    "flat": 0,
    "tags": ["route"],
    "group": "boulder",
-   "solid": 1.2
+   "solid": 1.2,
+   "model": "scene/next/models/boulder_mossy.json",
+   "ppm": 32
   },
   "mushroom_brown": {
    "name": "Brown mushrooms",
@@ -2849,7 +2863,9 @@
    "flat": 0,
    "tags": ["cave"],
    "group": "stalagmite",
-   "solid": 0.6
+   "solid": 0.6,
+   "model": "scene/next/models/stalagmite_b.json",
+   "ppm": 32
   },
   "crystal_pink": {
    "name": "Pink crystals",
@@ -2882,12 +2898,15 @@
    "group": "crystal",
    "solid": 0.55,
    "fx": [
-    {"k":"sparkle","x":-22,"y":-49},
-    {"k":"sparkle","x":18,"y":-51},
-    {"k":"sparkle","x":-6,"y":-69},
-    {"k":"sparkle","x":12,"y":-31}
+    {"k":"sparkle","x":-21,"y":-46},
+    {"k":"sparkle","x":17,"y":-48},
+    {"k":"sparkle","x":-6,"y":-65},
+    {"k":"sparkle","x":11,"y":-29}
    ],
-   "glow": {"c":"#C79BFF","r":1.4,"y":0.9}
+   "glow": {"c":"#C79BFF","r":1.4,"y":0.9},
+   "model": "scene/next/models/crystal_purple.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "lantern_b": {
    "name": "Paper lantern pole",
@@ -4999,7 +5018,9 @@
    "flat": 0,
    "tags": ["beach","island"],
    "group": "palm",
-   "solid": 0.4
+   "solid": 0.4,
+   "model": "scene/next/models/palm_tree.json",
+   "ppm": 32
   },
   "palm_tree_b": {
    "name": "Leaning palm",
@@ -5023,7 +5044,9 @@
    "flat": 0,
    "tags": ["beach","island"],
    "group": "palm",
-   "solid": 0.2
+   "solid": 0.2,
+   "model": "scene/next/models/palm_small.json",
+   "ppm": 32
   },
   "villa": {
    "name": "White villa",
@@ -5205,7 +5228,9 @@
    "flat": 0,
    "tags": ["snow","mountain"],
    "group": "tree_pine_snow",
-   "solid": 0.5
+   "solid": 0.5,
+   "model": "scene/next/models/tree_pine_snow.json",
+   "ppm": 32
   },
   "tree_pine_snow_b": {
    "name": "Tall snowy pine",
@@ -5217,7 +5242,9 @@
    "flat": 0,
    "tags": ["snow","mountain"],
    "group": "tree_pine_snow",
-   "solid": 0.5
+   "solid": 0.5,
+   "model": "scene/next/models/tree_pine_snow_b.json",
+   "ppm": 32
   },
   "tree_pine_snow_small": {
    "name": "Small snowy pine",
@@ -5229,7 +5256,9 @@
    "flat": 0,
    "tags": ["snow","mountain"],
    "group": "tree_pine_snow",
-   "solid": 0.3
+   "solid": 0.3,
+   "model": "scene/next/models/tree_pine_snow_small.json",
+   "ppm": 32
   },
   "chalet": {
    "name": "Chalet",
@@ -5417,7 +5446,9 @@
    "flat": 0,
    "tags": ["snow","mountain"],
    "group": "boulder",
-   "solid": 1
+   "solid": 1,
+   "model": "scene/next/models/boulder_snow.json",
+   "ppm": 32
   },
   "rocks_snow": {
    "name": "Snowy rocks",
@@ -5456,7 +5487,9 @@
    "flat": 0,
    "tags": ["volcano"],
    "group": "tree_dead",
-   "solid": 0.3
+   "solid": 0.3,
+   "model": "scene/next/models/tree_dead.json",
+   "ppm": 32
   },
   "rocks_basalt": {
    "name": "Basalt rocks",
@@ -5468,7 +5501,9 @@
    "flat": 0,
    "tags": ["volcano"],
    "group": "rocks_basalt",
-   "solid": 0
+   "solid": 0,
+   "model": "scene/next/models/rocks_basalt.json",
+   "ppm": 32
   },
   "boulder_basalt": {
    "name": "Basalt boulder",
@@ -5480,7 +5515,9 @@
    "flat": 0,
    "tags": ["volcano"],
    "group": "rocks_basalt",
-   "solid": 1
+   "solid": 1,
+   "model": "scene/next/models/boulder_basalt.json",
+   "ppm": 32
   },
   "basalt_columns": {
    "name": "Basalt columns",
@@ -5492,7 +5529,10 @@
    "flat": 0,
    "tags": ["volcano"],
    "group": "basalt_columns",
-   "solid": 1.1
+   "solid": 1.1,
+   "model": "scene/next/models/basalt_columns.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "obsidian": {
    "name": "Obsidian shards",
@@ -5537,8 +5577,10 @@
    "group": "lava_rock",
    "solid": 0.6,
    "fx": [
-    {"k":"glow","x":0,"y":-25}
-   ]
+    {"k":"glow","x":0,"y":-24}
+   ],
+   "model": "scene/next/models/lava_rock.json",
+   "ppm": 32
   },
   "lava_vent": {
    "name": "Lava vent",
@@ -7663,7 +7705,9 @@
    "solid": 0.4,
    "family": "trees",
    "grow": "svl",
-   "weight": 0.8
+   "weight": 0.8,
+   "model": "scene/next/models/tree_olive.json",
+   "ppm": 32
   },
   "tree_cypress": {
    "name": "Cypress",
@@ -10023,10 +10067,8 @@
    "tags": ["jungle","route"],
    "group": "tree_jungle",
    "solid": 0.7,
-   "layers": [
-    {"img":"scene/props/layers/tree_jungle_lb.png","dz":0.6,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_jungle_lf.png","dz":-0.45,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_jungle.json",
+   "ppm": 32
   },
   "jungle_fern": {
    "name": "Jungle leaves",
@@ -10084,10 +10126,13 @@
    "tags": ["cave","crystal","route"],
    "group": "crystal_cluster",
    "fx": [
-    {"k":"glow","x":-2,"y":-40},
-    {"k":"glow","x":-11,"y":-27}
+    {"k":"glow","x":-2,"y":-38},
+    {"k":"glow","x":-10,"y":-25}
    ],
-   "solid": 0.5
+   "solid": 0.5,
+   "model": "scene/next/models/crystal_cluster.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "crystal_cluster_violet": {
    "name": "Violet crystal cluster",
@@ -10128,16 +10173,17 @@
    "tags": ["cave","crystal","route"],
    "group": "crystal_spire",
    "fx": [
-    {"k":"glow","x":2,"y":-200},
-    {"k":"glow","x":-34,"y":-150},
-    {"k":"glow","x":74,"y":-130},
-    {"k":"glow","x":6,"y":-90},
-    {"k":"sparkle","x":10,"y":-300}
+    {"k":"glow","x":2,"y":-188},
+    {"k":"glow","x":-32,"y":-141},
+    {"k":"glow","x":70,"y":-122},
+    {"k":"glow","x":6,"y":-85},
+    {"k":"sparkle","x":9,"y":-282}
    ],
    "solid": 1.6,
    "landmark": 1,
-   "vol": "puff",
-   "volDepth": 2.2
+   "model": "scene/next/models/crystal_spire.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "geode_great": {
    "name": "The Great Geode",
