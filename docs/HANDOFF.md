@@ -2,6 +2,35 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Window glass on the low-poly buildings (no more glowing orbs) - 2026-10-25
+Branch `ccr-7161a124-txw6o4` (one session, not part of a plan). The owner's ask: windows on 3D buildings looked like a
+weird orb at night. Plan approved in Plan Mode; the owner chose to mark the glass with a new recipe key (`glass: n`)
+over matching layer names.
+- What was wrong (in the code): every building in the game flow (the hub's clinic and shop, a town's
+  `house_cottage`, …) is a low-poly model (`prop-models.js`), not a `buildings.js` building (`build` key: 18 legacy
+  props, none placed by mapgen). The model's window is a plain blue box the low-poly shader never lit, and the only
+  light was the old picture path's round glow (`walk/effects.js`, `e.k === 'window'`): a 0.32 m camera-facing disc at
+  the picture's window spot, shifted along the camera's right (not the model's front) for an unturned prop, bloomed
+  into a ball. A first plan aimed at `buildings.js` would have changed nothing the player sees.
+- Changed (one cause per commit):
+  - Data: `tools/mark-window-glass.py` (one-off) gave the glass layers of the 19 models with picture windows a
+    `glass` number (1-31; an arched top shares its window's). 126 layers; the lamp glass, solar panels and the
+    clinic's roof dome are left out.
+  - Engine: `lowPolyFromRecipe` writes the window into the vertex's spare byte 18 (0 ramp, 1 flat colour as the
+    prebuilt meshes use it, 2-32 glass) and returns each window's middle and outward look (`wins`); `tagPropModel`
+    sets `it.wins`. The model shader's `glassLit` (GLASS_GLSL): sky and a sun glint by day, a room's lamp after dark
+    (warm, kitchen-cool or a TV's blue by a seed), soft roll-off so bloom spreads the window's own shape.
+    `walk/lighting.js modelWindowLight`: each window's place, lit or not by `environmentWindowLit` at its own spot,
+    strength 1 after dark, `lights.windowsDay` by day, 0 seen from inside a room; it also feeds the light on the
+    ground (from the lit ground-floor glass, pushed out its own way). `effects.js` draws no window disc for an item
+    with glass. With Props as low-poly off (voxels) nothing changes: no `wins`, the old disc.
+  - Studio: the model editor's "Window glass" number on a shape layer.
+  - `tools/look-windows.py`: Copperleaf pictures in front of a model building at noon, dusk, night, straight and
+    turned (validation/look-windows/).
+- Risky: the art cache is per version; a phone with the old model JSON cached has no glass numbers, so it keeps the old
+  look (the disc) until the art cache refreshes. Glow strength (`e*1.6` against bloom threshold 0.9) was judged in
+  software drawing only: check it on a phone at night.
+
 ### Routes track RT-1 - Route layouts - 2026-10-24
 Branch `track/routes` (plan approved in Plan Mode; the owner's answers: all five plans, and **every non-town place**
 laid out: landing, route, mini-boss, boss; towns, waystations and stalls keep their open ground). Tag `rt-1-done`
