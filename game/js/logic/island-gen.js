@@ -159,7 +159,12 @@ export const ISLAND_GEN_DEFAULTS = {
      zone in the zones above makes the old flat town instead. face (HB-4a): 'street' puts plots on both sides of a
      street; 'out' keeps only a side whose front lies within tol degrees of facing out from the orbit's pivot (the
      summit), so the orbit camera sees the doors. quarter (HB-4a, 0-1): 1 turns every building's plot to the quarter turn
-     (0, 90, 180, 270) nearest to facing out from the pivot, so its room stays square with its walls */
+     (0, 90, 180, 270) nearest to facing out from the pivot, so its room stays square with its walls. second (HB-4a): a
+     second built-up street, off metres beside one of the town's streets (along: 'quay', 'cross' or 'main', or 'arc':
+     a line round the pivot through the square, span degrees long, its middle turned at degrees round the pivot from
+     the square, so the street runs round the mountain), on its side toward the pivot ('in') or away from it ('out';
+     on the main street 'out' is away from the river), joined to that street at both ends; houses line it as they
+     line the others */
   town: {
     on: 1,
     houses: 7,
@@ -167,6 +172,7 @@ export const ISLAND_GEN_DEFAULTS = {
     face: 'street',
     tol: 50,
     quarter: 0,
+    second: { on: 0, along: 'quay', side: 'in', off: 15, span: 70, at: 0 },
   },
   /* a hamlet: a few houses round a green under the mountains, joined to the coast road (off since the look pass: the
      owner, a smaller island) */
@@ -308,6 +314,13 @@ export function islandGenDials(d) {
   if (D.town.face !== 'out') D.town.face = 'street';
   D.town.tol = num(D.town.tol, 10, 90, 50);
   D.town.quarter = D.town.quarter ? 1 : 0;
+  if (!D.town.second || typeof D.town.second !== 'object') D.town.second = { on: 0 };
+  D.town.second.on = D.town.second.on ? 1 : 0;
+  if (!['quay', 'cross', 'main', 'arc'].includes(D.town.second.along)) D.town.second.along = 'quay';
+  D.town.second.span = num(D.town.second.span, 20, 140, 70);
+  D.town.second.at = num(D.town.second.at, -120, 120, 0);
+  if (D.town.second.side !== 'out') D.town.second.side = 'in';
+  D.town.second.off = num(D.town.second.off, 9, 30, 15);
   D.hamlet.on = D.hamlet.on ? 1 : 0;
   D.hamlet.houses = Math.round(num(D.hamlet.houses, 0, 10, 4));
   D.wild.n = Math.round(num(D.wild.n, 0, 12, 5));
@@ -1360,6 +1373,59 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         );
         if (clear) street(lane, 2.6, `town lane ${k + 1}`);
       }
+      /* HB-4a: the second street beside one of them, joined to it at both ends */
+      const S2 = D.town.second,
+        sqPolar = Math.atan2(square[1] - peakP[1], square[0] - peakP[0]),
+        sqDist = Math.hypot(square[0] - peakP[0], square[1] - peakP[1]),
+        /* 'arc': a street round the pivot through the square (the line the others are beside), span degrees long */
+        arcSt = [...Array(Math.ceil((sqDist * S2.span * ISLAND_RAD) / 0.5) + 1).keys()].map(k => {
+          const f = sqPolar + S2.at * ISLAND_RAD + (k * 0.5) / sqDist - (S2.span * ISLAND_RAD) / 2;
+          return [peakP[0] + Math.cos(f) * sqDist, peakP[1] + Math.sin(f) * sqDist];
+        }),
+        base2 = S2.on && { quay: quaySt, cross: crossSt, main: mainSt, arc: arcSt }[S2.along];
+      if (S2.on && !base2) notes.push(`no ${S2.along} street for the second street`);
+      if (base2) {
+        const [plus, minus] = [1, -1].map(sg => beside(base2, S2.off * sg)),
+          toPivot = L => L.reduce((m, p) => m + Math.hypot(p[0] - peakP[0], p[1] - peakP[1]), 0) / (L.length || 1),
+          inSide = toPivot(plus) < toPivot(minus) ? plus : minus,
+          pick =
+            S2.side === 'in'
+              ? inSide
+              : S2.along === 'main'
+                ? beside(base2, S2.off * sideBank)
+                : inSide === plus
+                  ? minus
+                  : plus,
+          /* stretches on fine land 7 m or more from every other road (room for a plot between): the longest, or for an
+             arc every one 16 m long or more (the streets it crosses split it; each piece is joined at both ends) */
+          clear = pick.map(
+            q =>
+              okAt(q[0], q[1]) &&
+              roads.every(r => r.pts.every((o, m) => m % 2 || Math.hypot(o[0] - q[0], o[1] - q[1]) > 7))
+          ),
+          runs = [];
+        for (let i = 0, a = 0; i <= pick.length; i++)
+          if (i === pick.length || !clear[i]) {
+            if (i - a >= 32) runs.push([a, i - 1]);
+            a = i + 1;
+          }
+        runs.sort((u, v) => v[1] - v[0] - (u[1] - u[0]));
+        const pieces = /** @type {number[][][]} */ (
+          (S2.along === 'arc' ? runs : runs.slice(0, 1))
+            .map((r, n) => street(pick.slice(r[0], r[1] + 1), 3, `town second street${n ? ' ' + (n + 1) : ''}`))
+            .filter(Boolean)
+        );
+        if (!pieces.length) notes.push('no room for the second street');
+        for (const L2 of pieces)
+          /* joined at both ends: to the street it is beside, or (an arc) to the nearest other road */
+          for (const end of [L2[0], L2[L2.length - 1]]) {
+            const to = S2.along === 'arc' ? roads.filter(r => r.pts !== L2).flatMap(r => r.pts) : base2;
+            let b = to[0];
+            for (const q of to)
+              if (Math.hypot(q[0] - end[0], q[1] - end[1]) < Math.hypot(b[0] - end[0], b[1] - end[1])) b = q;
+            spoke(end, b, 'town second street, a join');
+          }
+      }
       /* the town meets the coast road at its ends */
       if (crossSt) {
         tieToLoop(crossSt[0], 'town to the coast road');
@@ -1841,6 +1907,7 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       ['town cross street', 3.4, [1, -1]],
       ['town quay', 3.4, [1, -1]],
       ['town east bank', 3, [-sideBank]],
+      ...townStreets.filter(r => r.name.startsWith('town second street')).map(r => [r.name, 3, [1, -1]]),
       ...[...Array(D.town.lanes).keys()].map(k => [`town lane ${k + 1}`, 2.6, [1, -1]]),
     ])
       left -= plotsAlong(

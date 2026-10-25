@@ -1,16 +1,23 @@
-// Hub track HB-4a: the island generator's door dials. town.face 'out' keeps a plot only on the street side whose front
-// faces out from the orbit's pivot (the summit) within town.tol degrees, so the orbit camera sees the doors. The
-// defaults leave the hub's island as it is (island-gen.test.mjs checks the game's map is the generator's own output).
+// Hub track HB-4a: the island generator's sketch dials. town.face 'out' keeps a plot only on the street side whose
+// front faces out from the orbit's pivot (the summit) within town.tol degrees, so the orbit camera sees the doors;
+// town.quarter turns every building plot to the quarter turn nearest to facing out; town.second a second built-up
+// street. The defaults leave the hub's island as it is (island-gen.test.mjs checks the game's map is the generator's
+// own output).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readGameData } from '../data-files.mjs';
 import { islandAngleDiff, islandGenerate } from '../../game/js/logic/island-gen.js';
+import { mapgenReach } from '../../game/js/logic/mapgen.js';
 
 const D = readGameData(),
   ctx = { scenery: D.scenery },
   hub = D.maps.copperleaf.islandGen;
 /** the hub's own dials with some town dials changed */
-const withTown = town => ({ ...structuredClone(hub.dials), town: { ...hub.dials.town, ...town } });
+const withTown = (town, more = {}) => ({
+  ...structuredClone(hub.dials),
+  town: { ...hub.dials.town, ...town },
+  ...more,
+});
 /** each building plot's front against facing out from the orbit's pivot, in degrees */
 const offOut = sc => {
   const [cx, cz] = sc.cam.orbit.c;
@@ -69,5 +76,50 @@ test('town.quarter 1: every building plot stands on the quarter turn nearest to 
     for (let i = 0; i < scene.plots.length; i++)
       for (let j = i + 1; j < scene.plots.length; j++)
         assert.ok(apart(corners(scene.plots[i]), corners(scene.plots[j])), `${scene.plots[i].k} / ${scene.plots[j].k}`);
+  }
+});
+
+/** the walk grid's cell of a point reached from the square */
+const reached = (sc, R, p) => R.dist[Math.floor(p[1] * R.N) * R.gw + Math.floor(p[0] * R.N)] >= 0;
+const near = (L, pts, m) => pts.some(q => Math.hypot(q[0] - L.x, q[1] - L.z) < m);
+
+test('town.second: a second street beside the main street, walked to from the square, a house along it', () => {
+  const { scene, paths } = islandGenerate(
+      withTown({
+        face: 'out',
+        tol: 100,
+        quarter: 1,
+        houses: 16,
+        second: { on: 1, along: 'main', side: 'out', off: 13 },
+      }),
+      hub.seed,
+      ctx
+    ),
+    st = paths.filter(p => p.name === 'town second street');
+  assert.equal(st.length, 1);
+  const R = mapgenReach(scene, D.scenery, scene.hub, { slope: true }),
+    pts = st[0].pts;
+  assert.ok(pts.length >= 32, `${pts.length} points`);
+  for (const q of [pts[0], pts[Math.floor(pts.length / 2)], pts[pts.length - 1]])
+    assert.ok(reached(scene, R, q), `${q} not walked to from the square`);
+  assert.ok(scene.plots.filter(L => L.k === 'house' && near(L, pts, 10)).length >= 1, 'houses along it');
+});
+
+test("town.second 'arc': pieces of a street round the pivot, each joined to the town", () => {
+  const { scene, paths } = islandGenerate(
+      withTown({ face: 'out', quarter: 1, second: { on: 1, along: 'arc', side: 'in', off: 9, span: 110, at: 40 } }),
+      hub.seed,
+      ctx
+    ),
+    pieces = paths.filter(p => /^town second street( \d+)?$/.test(p.name)),
+    [cx, cz] = scene.cam.orbit.c,
+    R = mapgenReach(scene, D.scenery, scene.hub, { slope: true });
+  assert.ok(pieces.length >= 1);
+  assert.ok(paths.some(p => p.name === 'town second street, a join'));
+  for (const P of pieces) {
+    const rs = P.pts.map(q => Math.hypot(q[0] - cx, q[1] - cz));
+    /* round the peak (the pivot is the summit spot on it, a metre or so off) */
+    assert.ok(Math.max(...rs) - Math.min(...rs) < 4, `${P.name}: ${Math.min(...rs)} - ${Math.max(...rs)} m out`);
+    assert.ok(reached(scene, R, P.pts[Math.floor(P.pts.length / 2)]), `${P.name} not walked to`);
   }
 });
