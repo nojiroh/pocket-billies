@@ -125,18 +125,26 @@ export function hugSlope(it, C) {
   if (c.tilt) it.tilt = c.tilt;
 }
 /* v24: riding. On water in a riding scene you sit on your biggest Water billionaire (rules.ride), drawn from its rig,
-   facing away when you head up the screen; it bobs, and leaves ripple rings behind. */
+   facing away when you head up the screen; it bobs, and leaves ripple rings behind. WA-6b: and anywhere you Surf
+   (walk-view.js P.surf: on deep water, and up a waterfall), the lift eased in as you mount at the edge; rings now and
+   then while you sit still. */
 export function rideMountItem(P, t) {
   const sc = walkView.sc;
-  if (!sc || !sc.ride || typeof riderOf !== 'function' || typeof saveData === 'undefined' || !saveData.team)
+  if (!sc || typeof riderOf !== 'function' || typeof saveData === 'undefined' || !saveData.team) return null;
+  const surf = !!P.surf || !!(P.climb && P.climb.fall);
+  if (!sc.ride && !surf) {
+    walkRenderer.mountOn = false;
     return null;
+  }
   const ch = terrainAt(P.x, P.z);
-  if (ch !== 'w' && ch !== 'd') {
+  if (!surf && ch !== 'w' && ch !== 'd') {
     walkRenderer.mountOn = false;
     return null;
   }
   const m =
-    riderOf() || saveData.team.find(x => SPECIES[x.sp] && SPECIES[x.sp].types.includes('Water')) || saveData.team[0];
+    riderOf() ||
+    saveData.team.find(x => x.hp > 0 && SPECIES[x.sp] && SPECIES[x.sp].types.includes('Water')) ||
+    saveData.team.find(x => SPECIES[x.sp] && SPECIES[x.sp].types.includes('Water'));
   if (!m || !SPECIES[m.sp]) return null;
   const back = P.dir === 'up',
     R = rigParts(m.sp, back ? 2 : 1, m.coat);
@@ -169,10 +177,12 @@ export function rideMountItem(P, t) {
     hm = 0.75 + ht * 0.32,
     mpp = hm / Math.max(40, R.base - (R.geo && R.geo.top != null ? R.geo.top : 0)),
     bob = reducedMotion ? 0 : Math.sin(t / 420) * 0.05,
-    y = standingHeightAt(P.x, P.z) + bob - 0.08;
-  if (!reducedMotion && P.walk && (!walkRenderer.wakeT || t - walkRenderer.wakeT > 320)) {
+    /* WA-6b: mounting at the edge: the lift eased in over a quarter second (P.surfT, when you got on) */
+    ease = surf && !sc.ride && P.surfT != null && !reducedMotion ? clamp((walkView.t - P.surfT) / 250, 0, 1) : 1,
+    y = (P.climb ? (P.yv ?? standingHeightAt(P.x, P.z)) : standingHeightAt(P.x, P.z)) + bob - 0.08;
+  if (!reducedMotion && !P.climb && (!walkRenderer.wakeT || t - walkRenderer.wakeT > (P.walk ? 320 : 1800))) {
     walkRenderer.wakeT = t;
-    addRipple(P.x, P.z - 0.1, 0.9);
+    addRipple(P.x, P.z - 0.1, P.walk ? 0.9 : 0.5);
   }
   walkRenderer.mountOn = true;
   return {
@@ -193,7 +203,7 @@ export function rideMountItem(P, t) {
       aoR: 0,
       person: 1,
     },
-    lift: hm * 0.62 + bob - 0.12,
+    lift: (hm * 0.62 + bob - 0.12) * ease * ease * (3 - 2 * ease),
   };
 }
 /* ---------- v32: every prop its own look ----------

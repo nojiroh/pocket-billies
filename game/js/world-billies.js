@@ -241,6 +241,14 @@ function buddyItems(out, t, dt) {
       break;
     }
   }
+  /* WA-6b: while you Surf (or climb a waterfall) your buddy rides along out of sight, and comes ashore beside you */
+  if (P.surf || (P.climb && P.climb.fall)) {
+    b.x = P.x;
+    b.z = P.z;
+    b.tx = null;
+    worldBillies.trail = [[P.x, P.z]];
+    return;
+  }
   const moving = !!P.route || P.walk > 0;
   if (!moving) {
     /* pottering about while you stand: a short wander now and then, never far */
