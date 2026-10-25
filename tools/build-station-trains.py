@@ -687,7 +687,7 @@ def add_props(C):
         B1.shift_y(r['layers'], TRAIN_HALF)
         C[key] = ISL.new_prop(key, name, r, group='sky_train', shadow=1.0, tags=('hub', 'station', 'train'), box_=(11.8, 2.6),
                               vary=FIXED, bob=0.04, about=f'The {name} (HB-7), a sky train for its region theme '
-                              '(regions.json themes.<id>.train): it rides the sky rail on its skids, facing +x')
+                              "(regions.json, its theme's train): it rides the sky rail on its skids, facing +x")
 
 
 # ================================================================ the showcase map
