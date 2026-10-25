@@ -109,6 +109,12 @@ town node needs it.
   "Running sessions in parallel"). Done 2026-10-23 (rounds 1-3; round 3 is TC-4 items 1, 2, 5, 6): the full check
   about 21 min (41 before), smoke about 3, the fast check about 11, `npm test` 20 s; the 10- and 3-minute budgets are
   missed for reasons docs/TESTING.md gives. Tag `tc-done`.
+- **Hub track** (docs/phases/hub-track.md, the owner's brief 2026-10-25): Copperleaf's island revamped. HB-1 (the
+  world map's pin at the player, decals fixed), HB-2 (the run's loading screen), HB-3 (the world map's lagoon,
+  waterfalls and detail), HB-4a/4b (island sketches, then the island rebuilt: doors to the camera, a second street, no
+  lookout), HB-5 (building variety), HB-6 (a natural pasture fence), HB-7 (the train station and one flying train per
+  region theme), HB-8 (departure through the portal and the return), HB-9 (the phone look pass). Planned 2026-10-25;
+  HB-1 (the pin, decals) done 2026-10-25 on the planning session's branch; HB-2 and HB-4a next. Tags `hb-N-done`. Branch `track/hub`.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all
