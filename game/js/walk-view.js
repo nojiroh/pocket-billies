@@ -54,7 +54,7 @@ import {
 import { clamp } from './util.js';
 import { pointInProp, turnedBounds, turnedPoint } from './logic/prop-turn.js';
 import { roomDoorPush, roomToLocal } from './logic/room-turn.js';
-import { WADE_COST, wadeWalkable } from './logic/wading.js';
+import { WADE_COST, wadeDepthAt, wadeSpeed, wadeWalkable } from './logic/wading.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
 import { orbitStickYaw, orbitWalkStep } from './logic/camera-orbit.js';
 import { frameStop } from './frame-scheduler.js';
@@ -3584,7 +3584,9 @@ function movePlayer(st, dt) {
       const run = walkView.run || K.run || (km > 0.92 && alwaysRun()) ? RUN_FACTOR : km < 0.5 ? 0.6 : 1;
       /* CAM-2: whether you run, for the camera's ease out (walk/camera.js) */
       P.running = run === RUN_FACTOR;
-      const s = WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l);
+      /* WA-6a: slower in the shallows, the deeper the slower (logic/wading.js) */
+      const s =
+        WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l) * wadeSpeed(wadeDepthAt(sc, P.x, P.z));
       let nx = P.x + (wx / l) * s,
         nz = P.z + (wz / l) * s;
       if (OrbM) [nx, nz] = orbitWalkStep(OrbM.c, P.x, P.z, wx / l, wz / l, s, OrbM.dead || 0);
@@ -3613,7 +3615,8 @@ function movePlayer(st, dt) {
         (P.rush || 1) *
         (K.run || alwaysRun() ? RUN_FACTOR : 1) *
         dt *
-        slopeSpeedFactor(P.x, P.z, (tg0[0] - P.x) / d0, (tg0[1] - P.z) / d0);
+        slopeSpeedFactor(P.x, P.z, (tg0[0] - P.x) / d0, (tg0[1] - P.z) / d0) *
+        wadeSpeed(wadeDepthAt(sc, P.x, P.z));
       while (left > 0 && P.route) {
         const tg = P.route[P.ri],
           dx = tg[0] - P.x,
