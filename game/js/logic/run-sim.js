@@ -21,6 +21,7 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   MAX_TURNS: [() => MAX_TURNS],
+  SIM_CLOCK: [() => SIM_CLOCK],
   SIM_LITE_PLACE: [() => SIM_LITE_PLACE],
   SIM_NOTE: [() => SIM_NOTE],
   SIM_POLICIES: [() => SIM_POLICIES],
@@ -53,6 +54,9 @@ export const MAX_TURNS = 60;
  * - ring: the throw's ring timing (0 to 1, the page's ring phase; 0.5: a "Great throw")
  * - lane: the next place drawn from the run's seed among the ones linked ahead (never back)
  * - keep: on a loss, the highest-level Billie comes home
+ * - trainers: RT-2's route trainers: 'required+healthy' fights the ones by the road (you can't pass them unseen) and
+ *   an optional one while the party is above `fightAbove`; 'required' only the ones by the road
+ * - rewards: the pick after a route trainer: 'first-item' takes its first card that isn't a move to learn, else none
  * - perks: Perks (Studio plan T3.3). 'greedy': the pick after a mini-boss takes the rarest offered (the lowest
  *   rules.json run.perks.rarity weight, then in perks.json's order), and a town shop's Perk is bought when the money is there
  *   beyond `reserve`; past the cap only for a rarer one than the plainest held, which is let go. 'never': none taken
@@ -71,8 +75,15 @@ export const SIM_POLICY = Object.freeze({
   ring: 0.5,
   lane: 'seeded',
   keep: 'top-level',
+  trainers: 'required+healthy',
+  rewards: 'first-item',
   perks: 'greedy',
 });
+/**
+ * RT-2: what a run's length is estimated from (a guess at a phone's pace, to compare data before and after, not a
+ * measurement): seconds a place takes to walk, a battle's own (its start, its end and its pick), and each turn's
+ */
+export const SIM_CLOCK = Object.freeze({ placeS: 60, battleS: 15, turnS: 6 });
 /** the named policies a report can be asked for (`policy` in the options; greedy-forward by default) */
 export const SIM_POLICIES = Object.freeze({
   'greedy-forward': SIM_POLICY,
@@ -136,6 +147,8 @@ export function runSimOn(env) {
     { runStartOn, runStartPlan } = modules['run-start'],
     { runRegionData } = modules['run-region'],
     { runUnlocks } = modules.unlocks,
+    { routeTrainerTally, runRouteTrainers } = modules['route-trainers'],
+    { rewardDataGame, rewardTake } = modules.rewards,
     { perkBuy, perkChoose, perkPrice, perkShelf } = modules.perks,
     { pointBudget, pointPick } = modules['starter-points'],
     { modTypeFits } = modules.modifiers;
@@ -247,7 +260,11 @@ export function runSimOn(env) {
     const balance = o.scenes === 'skip',
       scenes = balance ? null : runScenesMake(run, worldData()),
       W = runWorldTables(run, data.LOCATIONS[0], worldData()),
-      foes = runFoes(run, { leaders: Object.values(TRAINERS).filter((/** @type {any} */ T) => T.miniboss), rules: R });
+      foes = runFoes(run, { leaders: Object.values(TRAINERS).filter((/** @type {any} */ T) => T.miniboss), rules: R }),
+      /* RT-2: the route trainers, and the wild Billies they stand in for (as run-world.js puts them) */
+      route = runRouteTrainers(run, { classes: data.EVENTS.classes, species: data.SPECIES, rules: R }),
+      tally = routeTrainerTally(route);
+    for (const L of W.locations) if (L.runNode != null && tally[L.runNode]) L.trainerCount = tally[L.runNode];
     data.worldPut({
       ...W,
       maps: Object.fromEntries(
@@ -258,7 +275,7 @@ export function runSimOn(env) {
             scenes ? scenes[i] : { _lite: { ...SIM_LITE_PLACE } },
           ])
       ),
-      trainers: foes,
+      trainers: { ...foes, ...route },
     });
     /** @type {any} */
     const log = {
@@ -272,6 +289,8 @@ export function runSimOn(env) {
       },
       stats = {
         battles: 0,
+        /** RT-2: route trainers fought (a pair is one battle) */
+        trainers: 0,
         turns: 0,
         caught: 0,
         healed: 0,
@@ -340,6 +359,52 @@ export function runSimOn(env) {
             stats.spent += price;
             stats.moneyOut.shop += price;
           }
+        }
+        /* RT-2: its route trainers, in the order they stand: the required ones always, an optional one as the policy
+           says; their pick answered as the policy says (rewards.js rewardTake) */
+        for (const T of Object.values(route)
+          .filter((/** @type {any} */ F) => F.runNode === i && !s.flags[F.id])
+          .sort((/** @type {any} */ a, /** @type {any} */ b) => a.route.k - b.route.k)) {
+          if (T.route.opt) {
+            const hp = s.team.reduce((/** @type {number} */ a, /** @type {any} */ m) => a + m.hp, 0),
+              full = s.team.reduce((/** @type {number} */ a, /** @type {any} */ m) => a + fn('maxHp')(m), 0);
+            if (P.trainers === 'required' || hp < full * P.fightAbove) continue;
+          }
+          if (!s.team.some((/** @type {any} */ m) => m.hp > 0)) return lose(node);
+          const k = run.battleN;
+          fn('startTrainer')(T.id, {
+            host: SIM_HOST,
+            extra: runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.PERKS)),
+          });
+          if (!hooks.activeBattle) continue;
+          run.battleN = k + 1;
+          const team = hooks.activeBattle.sides[1].team,
+            res = playOut(),
+            B = hooks.activeBattle;
+          B.over = res.over;
+          const { pay } = fn('battleSettle')(B, s);
+          hooks.provide({ activeBattle: null });
+          hooks.uiState.learnQ.length = 0;
+          stats.battles++;
+          stats.trainers++;
+          stats.turns += res.turns;
+          at.battles.push({
+            k,
+            trainer: T.cls + (T.mate ? '+' + T.mate.cls : ''),
+            foe: team.map(brief).join(','),
+            over: res.over,
+            turns: res.turns,
+            team: s.team.map(brief),
+          });
+          if (pay.o !== 'win') return lose(node);
+          fn('battleSettleWin')(B, s, pay, run);
+          stats.moneyIn.reward += pay.reward;
+          const pick = run.enc && run.enc.reward,
+            c =
+              pick && P.rewards === 'first-item'
+                ? pick.cards.findIndex((/** @type {any} */ x) => x.kind !== 'tutor')
+                : -1;
+          if (pick) rewardTake(run, s, c >= 0 ? c : null, rewardDataGame(s.team));
         }
         /* the place's wild Billies, up to `fights` of them */
         const stock = fn('encountersHere')(wn).slice(0, P.fights);
@@ -522,6 +587,10 @@ export function runSimOn(env) {
       days: avg(x => x.days),
       places: avg(x => x.places),
       battles: avg(x => x.battles),
+      trainers: avg(x => x.trainers || 0),
+      /* RT-2: the estimated minutes a run takes (SIM_CLOCK: a guess, to compare before and after) */
+      minutes: avg(x => (x.places * SIM_CLOCK.placeS + x.battles * SIM_CLOCK.battleS + x.turns * SIM_CLOCK.turnS) / 60),
+      clock: { ...SIM_CLOCK },
       turnsPerBattle:
         Math.round(
           (all.reduce((a, x) => a + x.turns, 0) /
