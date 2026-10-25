@@ -32,6 +32,7 @@ expose({
   MAPGEN_FOUR: [() => MAPGEN_FOUR],
   MAPGEN_GRASS_PATCH: [() => MAPGEN_GRASS_PATCH],
   MAPGEN_HABITAT: [() => MAPGEN_HABITAT],
+  MAPGEN_HABITAT_ROUND: [() => MAPGEN_HABITAT_ROUND],
   MAPGEN_HUB_BUILDINGS: [() => MAPGEN_HUB_BUILDINGS],
   MAPGEN_INWARD: [() => MAPGEN_INWARD],
   MAPGEN_LAYOUTS: [() => MAPGEN_LAYOUTS],
@@ -4733,7 +4734,7 @@ export function mapgenStagePieces(G, sc, scenery, D) {
 /** a habitat's most points a place, and how far apart they stand (m) */
 export const MAPGEN_HABITAT = { most: 12, apart: 3 };
 /** the eight ways a metre round a point mapgenHabitats looks for water or a forest */
-const MAPGEN_HABITAT_ROUND = [
+export const MAPGEN_HABITAT_ROUND = [
   [1, 0],
   [-1, 0],
   [0, 1],
