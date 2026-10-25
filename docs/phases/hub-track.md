@@ -7,8 +7,8 @@ player's spot is shown in the right place; the map is more detailed and looks li
 Building doors are placed so the orbit camera sees them. More variety in building types. The building and prop decal
 system works. The ranch's fence looks naturally placed. Runs (Expeditions) start from a train station with varying
 retro-futuristic flying trains that fly into the sky through a portal, and a loading screen makes sure everything is
-loaded in. Planned in Plan Mode on 2026-10-25 (session branch `claude/hub-island-revamp-4fskxy`); the owner makes
-`track/hub` from main and every HB session works there (docs/BRANCHES.md). Tags `hb-N-done` (the owner pushes them).
+loaded in. Planned in Plan Mode on 2026-10-25 (session branch `claude/hub-island-revamp-4fskxy`, where HB-1 was built too at
+the owner's word); the owner makes `track/hub` from main and every later HB session works there (docs/BRANCHES.md). Tags `hb-N-done` (the owner pushes them).
 Every session starts in Plan Mode and ends with a HANDOFF entry.
 
 Before proposing anything in a session: read the latest HANDOFF.md entries and recent merges, then check the facts
@@ -124,6 +124,15 @@ About 10-15 sessions. HB-1, HB-2 and HB-4a can run side by side; then HB-3 besid
   never the picture (or refuse flip on models with lettering; ask). Unit tests: position, size, flip, turn. A Studio
   overlay "Decals" drawing each decal's frame. Headless pictures of every model with a fixed decal (tools/).
 - Fix the Studio's room warning to "15 degrees from a quarter turn".
+
+**Done in HB-1** (2026-10-25, on `claude/hub-island-revamp-4fskxy` at the owner's word: `track/hub` didn't exist
+yet). Answers: a mirrored model's lettering is never mirrored (it moves and faces the mirrored way); a pictures tool
+(tools/look-decals.py), no Studio overlay. Checked against the code:
+- The walk on the island was never found by the world map: the hub's walk view is `w:copperleaf*`, not the map's
+  id, so the map's "opens from where you stand" never did either. Both read `worldBowlWalkOnIsland` now.
+- `decalPlace` (logic/prop-turn.js) is tested against the model shaders' own transform, so a decal can't drift from
+  its model again without a test failing.
+- Left for HB-3: a flat landmark picture with no prop of its own still stands at the map's middle.
 
 ### HB-2 Loading screen
 - A loading screen (UI kit, `pb-*`) with a progress bar and a list of stages; reused by HB-8 with the carriage view.
