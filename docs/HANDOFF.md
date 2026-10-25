@@ -130,6 +130,259 @@ once it lands, merge main into track/story. TW-3 also edits `validRun` (`run.que
   - The writing is placeholder-free but untested in play: the owner should read it in the game.
 - Next: RL-S2 (rival and relationships: Blake's `rival` node, `meta.rel`, the `rel:` and `chapter:` conditions,
   Chapter 1's beats) on `track/story`, beside RL-14. Merge main in first (PR #188).
+### Hub track - the finished hub branches merged together (HB-4a/4b, HB-5 art, HB-6, HB-7 art) - 2026-10-25
+Branch `track/hub-merge` (from main 83e7bdd: HB-1, HB-2, the run-zone-biome fix). Plan approved in Plan Mode. One
+merge commit per branch (no rebase, no squash), in this order: `track/hub` (HB-4a, HB-4b), `art/hub-station-trains`
+(HB-7's art and sheet), `art/hub-buildings` (HB-5's art half), `props/hub-fence` (HB-6). For a PR into main.
+- Where the brief was off (checked): merged one after another the branches conflict in more files than each does
+  alone: station-trains also in .gitignore and copperleaf.json; buildings also in game/data/index.json, scenery.json
+  and the check-data snapshot; the fence also in scenery.json. All of these are both sides adding at the end: both
+  kept. game/data/gamedata.js is generated and not in git (CLAUDE.md's note is stale), so nothing to regenerate there.
+- Resolved: docs kept from every side (HANDOFF newest on top; hub-track.md gets every "Done in" note); .gitignore
+  lines from all four; prop-turn.js keeps HB-1's `decalPlace` and HB-6's `spanFit`/`tiltSpin`, prop-turn.test.mjs
+  both blocks; the check-data snapshot remade (`--test-update-snapshots`, its file count only); hooks.js through
+  `npm run modules` after each merge (0 changed every time).
+- Rebuilt, never hand-merged: copperleaf.json from track/hub's island by `node tools/build-copperleaf.mjs` in the
+  station merge (Skyline Station placed, the mast's act taken) and again in the fence merge (the fence follows HB-4b's
+  pasture: 48 `fence_post` and 48 `fence_rail` for 47 `fence_wood` sections and 11 corner posts, the gate on the west
+  side where the path arrives, the swell up to 0.5 m; about 40 dressing props move). Then one round of
+  `node tools/build-island.mjs` and build-copperleaf (its own commit): HB-6's swell levels the pasture from its rim's
+  median, up to 0.02 m off the old flat level, and build-island blends the land round the locked zone, so the slow
+  test "the game's island is the generator's own output" failed. **It fails on `props/hub-fence` alone** (main and
+  track/hub pass; HB-6 didn't run the slow tier). The round moved 614 height cells by at most 0.02 m and made the
+  walking checks again (the pasture walk one leg to the new gate instead of three; the same 21 places). A second round
+  of both tools writes the same file. Every other field and building of HB-4b's island is unchanged.
+- Done on the old island, to redo on the new one (later sessions, not this one):
+  - HB-7: Skyline Station stands on the open ground nearest the mast (78.97, 41.39), not on HB-4b's station headland
+    (a bare plot), and no sky rail or portal is laid out yet (`landmarks {rail, portal}` are data only).
+  - HB-5: the Workshop, Gene Bank, lighthouse and windmill are on their showcase map only; their plots stay bare. The
+    inn and library stand on their plots (HB-4b) with no act, so their doors don't open HB-5's rooms yet (`enter`).
+    Copperleaf's cottages now show their colour variants.
+  - HB-6: the gate side is island-gen's spoke on the new zone (west, on the coast path): judge it in the pictures.
+  - HB-8: `flyMenu`'s hub branch (unreachable) and the run sheet's airship lines.
+- Verified: after each merge check:modules, lint, typecheck, format:check, check:data, `npm test` (947, 948, 953,
+  957, all passing); at the end `npm test` 957/957, `npm run test:slow` 71/71, check-fast in full 29/29 (938 s),
+  `check:smoke` 6/6 (204 s, the phone flow taps the station). Pictures (not committed, git-ignored tools): `tools/island-shots.py` (14 views: HB-4b's island
+  with its square and the station by the mast, no page errors) and `tools/look-pasture.py` (8 views: the bending fence
+  all round HB-4b's pasture, its gap and open gate on the west side, 48 posts, 48 rails, no page errors).
+- Next: the PR into main (the planning session opens it); then the placing half: the station on its headland with
+  the sky rail and portal, the new buildings on their plots (and the inn's, library's and store's acts), HB-3, HB-8.
+
+### Hub track HB-6 - The natural pasture fence - 2026-10-25
+Branch `props/hub-fence` (the session's brief named it; the plan's `Branch:` line says `track/hub`: a cloud session
+pushes only to its own branch). Plan approved in Plan Mode. The owner's answers: the gate where the island's path
+arrives; the field swells up to 0.5 m; fixed-length rails rather than an engine stretch.
+- Checked against the code (main f779581). The facts held, plus: `fence_wood` is a 2.2 m section with three posts
+  built in, and the corner post `fence_wood_post` is an 8 vox/m model, not 32 px/m low-poly. Low-poly models ignore
+  `wear`, `tint` and the variety lean (only pictures read them). The model shaders already turn a whole model about
+  any axis (RF-2's `it.spin`), but nothing in the walk view set it. A prop scales by one number only. A variant's
+  `span` already means its width, so the new catalogue flag is `restEnds`.
+- Changed (one cause per commit):
+  - Engine: `logic/prop-turn.js` `spanFit` and `tiltSpin`. In `walk/prop-look.js` `stillPropState`, a catalogue model
+    with `restEnds` rests on the ground under each end of its box's width, tipped between them; any other model leans
+    by its placement's `tilt` [deg toward +x, deg toward its back]. Computed once with the still state; pictures don't
+    tip. Map schema and types describe both.
+  - Art: `tools/make-fence-parts.mjs` makes `fence_post` (variant 1 silvered) and `fence_rail` (2 m, the two rails
+    running into the posts' middles; variants weathered, broken, both) from `fence_wood`'s own layers.
+    `fence_wood` stays for the other maps.
+  - Pasture line (`logic/pasture.js`): the zone lightly smoothed (`pastureSmooth`: every metre, a 5-point mean,
+    twice), then 1.2 m in. `pastureStraight` is gone.
+  - Fence (`tools/build-pasture.mjs`): posts spaced evenly round the line. Each post is turned up to 12 degrees, leans
+    0.6-2.2 degrees and is sometimes silvered. One rail per span, sized to it (`s` within 8%; on the hub within 2%).
+    About a quarter of the rails are weathered and a few are broken (never by the gate, never two side by side). The
+    gate hangs on its own post at one end of the gap, so there is no doubled post; the trough goes on the roomier side.
+  - Gate: where island-gen's spoke ("pasture to the coast": from the island's middle out through the zone's middle)
+    crosses the fence. On the hub that is the west side, on the coast path; it was the north side, which no path
+    reaches. A map with no island keeps the barn door.
+  - Ground (`pastureGround`): the zone's level plus a seeded swell, up to 0.5 m across the field. Along the fence it's
+    about ±0.2 m, so the rails tilt up to about 3 degrees. It fades in over 2.6 m from the zone's edge and is level
+    within 3 m of the gate. `build-copperleaf.mjs` runs it after the pasture's props; a rerun writes the same map.
+  - `tools/look-pasture.py`: free-camera pictures of the pasture (validation/look-pasture/, git-ignored).
+  - copperleaf.json rebuilt by `tools/build-copperleaf.mjs`, never by hand. The dressing's draws follow the pasture's
+    props, so about 50 forest-floor props moved.
+- Risky:
+  - The engine change touches every prop's still state (one more field, and `turnedPoint` plus two height samples
+    for `restEnds` models only).
+  - A rail's spin also tips its shadow (the same uniform); its walk box doesn't tip (no need, it's on the ground).
+  - Only looked at with the game's own graphics defaults; not with "Props as low-poly" off.
+  - A phone with the old art cache has no `fence_post` or `fence_rail` recipes until the cache refreshes. Until then
+    they should draw as their catalogue pictures (the old section's and post's).
+  - HB-4b: build-pasture works on any pasture zone (it throws if a span can't fit a rail within 8%, or the trough
+    finds no room).
+- Verified:
+  - lint, typecheck, check:modules, check:data, prettier.
+  - `npm test` 941/941. New tests: `spanFit`/`tiltSpin` against the shaders' own spin; the line follows the zone
+    (within 0.6 m, bends of at most 35 degrees per 2 m); one rail per span fitting end to end; rails meet only at
+    posts; a post at every joint except the gate's; no posts side by side; the posts on the line the Billies wander
+    inside; the roam line inside the posts; a path tile just outside the gap, walked to in a straight line; the flood
+    still leaves only through the gap; the ground rerun the same, level by the gate, nothing outside the zone moved.
+  - `check:smoke` after the engine change (307 s) and at the end (297 s): no problems.
+  - Before (f779581) and after pictures with `tools/look-pasture.py`.
+- Next: the owner's look on the phone (the swell's height, the broken and weathered share, the gate's side). HB-4b
+  reruns build-copperleaf (the pasture and its ground follow the new zone). The quick check's baseline pictures near
+  the pasture will differ.
+
+### Hub track HB-5, the art half - Building variety - 2026-10-25
+Branch `art/hub-buildings` (the owner named it for this session; the plan file says `track/hub`). Plan approved in Plan
+Mode. The owner's answers: all five new buildings get a room (Ask me before 3: the Gene Bank too); their doors open
+with a new act `enter`; from PR #193 only the plan file and tools/look-decals.py come in; the Gene Bank is a solarpunk
+lab-vault. Not this session: placing them on Copperleaf (the placing half, after HB-4b). No tag: `hb-5-done` waits for
+the placing half.
+- What differed from the plan's facts (in the code): `variants` is a scenery.json key, never a model one, and no model
+  building had any (barn aside); the cottages' roofs had no `roof: 1` either. The General store has no act at all (not
+  just closed): a door opens a room only through its act. `lighthouse` and `windmill` were already catalogue keys (old
+  pictures on legacy maps). Low-poly glass is opaque, so the Gene Bank's helix stands in an open frame on the roof,
+  not under a glass dome. Rooms open only in a seamless world (`roomLayIn` needs the place's parts), not on a test map.
+- Changed (one cause per commit):
+  - Engine: `roof: 2` (a model's roof dressing, the cottages' moss tufts) hides under a placed roof style
+    (prop-models.js `swappedRecipe`); the Studio's model editor has "Roof part". Unit test model-roof.test.mjs.
+  - Engine: door act `enter` (data-files.js `ROOM_BY_USE.enter`, `opensRoom`): the room set on the building or its
+    kind, else "The door is locked."; the tap, the room's lay-in, the self-test's room list and check-data ask
+    `opensRoom`; the Studio's "When tapped" list has it. Unit test door-rooms.test.mjs.
+  - Data: tools/mark-cottage-roofs.py (one-off) marks the three cottages' roofs; tools/add-building-variants.py gives
+    colour-swap variants to cottage_moss and cottage_solar (3 each, so Copperleaf's existing `v` now shows), the
+    coloured houses and the townhouses (2 each).
+  - Art: tools/build-props-hub.py (rerunnable) models workshop, gene_bank (new keys, pictures baked to scene/next/hub)
+    and lighthouse, windmill (swapped in under their keys, old picture kept), with glass numbers, roof parts, turning
+    parts (the Workshop's gear, the helix, the lighthouse's shutter, the sails) and the WORKSHOP and GENE BANK
+    lettering decals. Triangles 1,613 / 4,873 / 1,242 / 2,132.
+  - Rooms: tools/build-hub-rooms.py brings int_inn and int_library back from legacy (and its index) and makes
+    int_workshop and int_gene_bank in the store's 12 x 10 frame; workshop and gene_bank name their rooms.
+  - Showcase: tools/build-hub-showcase.py, test_hub_buildings (every variant and roof style, the rooms' buildings, the
+    landmarks, quarter turns). tools/look-hub-buildings.py takes its pictures and walks into each door on Copperleaf.
+- Risky: Copperleaf's cottages change colour now (their `v` works): the quick check's hub pictures will differ from
+  the baseline. Rerunning build-props-batch7.py would drop the houses' new variants (it rewrites `variants` from the
+  old `build` looks). The Gene Bank's glass door glows strongly at night (a big glass area): judge it on a phone.
+  `lighthouse` and `windmill` are boxed and solid now (3.6 m): legacy maps that place them are not loaded.
+  look-decals.py's mirrored state needs HB-1's `decalPlace` (PR #193): until it merges, a flipped Workshop or Gene
+  Bank would mirror its lettering, so none is flipped.
+- Verified: lint, typecheck, check:modules, format:check; `npm test` 942/942; check:data (146 files; the snapshot
+  remade twice, only its file count); look-hub-buildings: every row (variants and roof styles distinct, moss tufts
+  gone under solar and chrome), the four new models at noon, the sails, gear, helix and shutter turning between
+  frames; at night on Copperleaf the Workshop's window, the lighthouse's light room and windows and the Gene Bank's
+  door glass lit; walk-ins on Copperleaf: shop, inn, library, Workshop, Gene Bank and the turned Workshop (90) and Gene
+  Bank (180) each opened their room. `check:smoke` 6/6 (269 s).
+- Next: the placing half after HB-4b: the buildings on the island's plots (doors on quarter turns), the General store's
+  `act: 'shop'` and a stock (shops.json is empty: the owner's call), Juniper's `home` act (still no room), the Gene
+  Bank's place (the splicing track's Ask me before). The owner's look at the variants' palette and the pictures in
+  validation/look-hub-buildings/.
+
+### Hub track HB-7 - Skyline Station and the sky trains (the art and the sheet) - 2026-10-25
+Branch `art/hub-station-trains` (one session of the hub track, started from main with PR #193's branch merged in for
+HB-1's decalPlace and the plan file). Plan approved in Plan Mode. The owner's answers: the station is **Skyline
+Station**; the trains are **the Lakeland Clipper, the Greenbelt Sunrunner, the Wildwood Zephyr, the Highland Arrow,
+the Harvest Comet**; merge HB-1 in. Notes mid-session: the trains have rocket engines; the portal is a tear floating
+in the sky, retro-futuristic. Tag `hb-7-done` for the owner to push.
+- Where the plan was wrong (checked in the code): see hub-track.md "Done in HB-7". In short: the portal models didn't
+  fit; a model can't stand above the ground, so every rail piece carries its pylon; the airship's act was read by
+  `standByMast`, check-data's buildings rule, airship-data.test (which also forbids a prop of kind `station`) and
+  three check-quick steps besides the ones listed; Copperleaf is generated, so the station goes in through
+  build-copperleaf.mjs. Found on main: Copperleaf's input still said "tax them all" (RF-1 changed only the map), so a
+  rerun of the builder changed the lab's line; fixed in the input first.
+- Changed (one cause per commit):
+  - Art: `tools/build-station-trains.py` (rerunnable): `train_station` (platform, verdigris canopy, departures board,
+    name boards, ticket kiosk, clock, benches, lamps, track bed), `sky_rail` (flat and its looks bend, rise, rise
+    high, crest), `sky_portal` (a tear hanging in the sky, always turned to the eye, past a launch lip; chrome Googie
+    stabilisers and a turning brass hoop; a gold look for HB-8's return), five `train_<theme>` (group `sky_train`,
+    hover skids over the rail, rocket engines and their plumes at the tail, lettering as fixed decals, a light bob).
+    The showcase map `test_station_trains` (`?test=1&scene=test_station_trains`). `tools/look-station.py`: phone
+    pictures of the showcase, or `--hub` the station in Copperleaf from four sides (validation/look-station/).
+  - Data: regions.json `themes.<id>.train` (`{k, name}`): schema, type, check-data (a sky train prop), a test.
+  - Sheet: `stationMenu` (airship.js): "Start a run" (runStartSheet unchanged) and the station's Crest upgrades;
+    the walk's act `station` opens it, an upgrade bought on it opens it again; `standByMast` finds a station first.
+  - Copperleaf: build-copperleaf.mjs places the station on the open ground nearest the mast (118.9, 93.2, turned
+    as the mast) and takes the mast's act and label away: the airship is scenery. buildings.json's act `station`.
+    Checks retargeted: check-quick's phone step and RL-8 tap the station, airship_moored finds the mast by kind,
+    check-fast's Lab step buys on the station's sheet; airship-data.test wants Copperleaf's station.
+  - Player words: "Pick it at Skyline Station", "Start one at Skyline Station", the welcome's "Skyline Station sends
+    you out on a run", the Lab's "at Skyline Station", "Station upgrades", buildings.json's name, "Station Lv 2".
+  - Rename (no behaviour): the building `airship` -> `station`, the unlock `airship_2` -> `station_2`.
+- Risky or unfinished:
+  - The run still leaves on the airship's flight over the world map, and the run sheet still says "The airship flies
+    you out" and "The airship adds": HB-8 swaps both for the train. `flyMenu`'s hub branch (Start a run, upgrades,
+    tickets) can no longer be reached (the hub has no `fly` prop, a run town's mast only offers Fly home); left as
+    it is because track/hub's HB-2 edits airship.js's take-off. Remove it in HB-8.
+  - The station stands beside the mast for now with its rail ending at its right end (no sky rail in Copperleaf):
+    HB-4b gives it the headland and lays the rail out to sea (12 m pieces on one heading; the portal piece last).
+  - Expect merges with track/hub (HB-2) in airship.js and run.js: my edits there are `stationMenu`, `standByMast`'s
+    lookup and one hint line. Never hand-merge hooks.js (npm run modules).
+  - The portal's tear is a camera-facing picture (one draw); the stabilisers' and hoop's turning layers are a few
+    more spin meshes. Phone cost not measured.
+  - A save with the old `airship_2` loses that row (old saves don't matter).
+- Verified: lint, typecheck, check:modules, format:check, check:data; unit tests 941/941 (the check-data snapshot
+  counts one more data file; a test that every theme has its own sky train). check-fast: the Lab (Station Lv 2 bought
+  on the station's sheet), packing for a run, a run's world, a run's battle and home: 5/5. check-quick: the phone
+  step (Start-Game, the station's sheet, Start a run) and airship_moored pass; RL-8 gets past the station's sheet
+  and fails later at "the town's shop has no Perk", as on main (RL-12c's entry). `check:smoke` 6/6 (the in-game test's
+  first step, the debug log export). The in-game full test's run phase fails with "a place on row 4 isn't its zone's
+  biome" on this branch and on main f779581 alike (fix/run-zone-biome's work); it still logs "a run starts" and ends
+  in Copperleaf. Pictures: validation/look-station/ (showcase at noon, Copperleaf from four sides). The full quick
+  check was not run (not a phase end).
+- Next: the owner's look at the pictures; HB-8 (departure and return: the train on the rail, the tear, the carriage
+  loading screen) after HB-2; HB-4b places the station on its headland.
+
+### Hub track HB-4b - The island rebuilt - 2026-10-25
+Branch `track/hub` (main and `art/hub-island-sketches` merged in first). Plan approved in Plan Mode. The owner's
+answers: the sky rail and portal as data now (HB-7 draws them in the sea's skirt); the inn and library models on their
+plots, the other new plots bare; a 12 m square; at least 8 cottages. Tag `hb-4b-done` for the owner to push. Details:
+docs/phases/hub-track.md, "Done in HB-4b".
+- Where the plan's facts were off (checked in the code): B made 5 house plots, not 16; `cam.orbit.c` is the summit
+  spot, up to 5 m off the peak the plots turn from (a door could stand 47 degrees off); nearly every hub position is
+  derived by the build tools (only cutscenes/opening.json holds literal metres, rewritten from the lab's door); RF-1's
+  "catch" was missing from tools/data/copperleaf-town.json; HB-4a never ran `npm run modules`; islandProblems and the
+  map schema didn't know the new plot kinds.
+- Changed (one cause per commit): island-gen.js `town.square {r, off, front}`, a house plot never under a cottage, the
+  quarter turn guarded from the diagonals, the station chosen before the paths are painted and the coast road pushed
+  round it, the opening's stage kept clear, no plot facing the airship from close behind; build-island and
+  build-copperleaf keep `landmarks {rail, portal}` and place the inn and library (the barn on its quarter turn);
+  island-dress has no summit lookout; the world map draws the inn and library on their plots. Copperleaf rebuilt as
+  B2 through the tools: 18 buildings (10 cottages), every door within 34 degrees of outward on a quarter turn, `hub`
+  [151.63, 59.36]. New tests: tools/test/hub-doors.test.mjs (quick), island-gen-doors (square, floor, quarter from the
+  summit, the station's road), hub-sketches.json `base` (the dial tests and sketches start from the pre-HB-4b dials).
+- Risky: Juniper's home now stands 54 m south-west of the square (by the lighthouse), the inn 41 m away; the wild
+  grass has 3 patches of 6 (the arc street takes the heath); fewer trees (129 from 151, the town is bigger). The
+  quarter-check guard and the airship rule cost plots on other seeds. Nothing looked at on a phone.
+- Verified: lint, typecheck, prettier, check:modules, check:data, build; `npm test` 945/945; `npm run test:slow`
+  71/71; smoke clean (its window check found the airship hiding a cottage window: fixed in the generator); check:fast
+  29/29 (23 walking checks, 16 doors a tap away, the orbit). Full quick check: no picture problems; 2 problems, **both
+  on main too** (reproduced on 77bba24, the merges before any HB-4b change): RL-8's run town shop shows no Perk
+  (RL-12), and the sound baseline lacks the cave song's "mid" and "late" (RL-R2b added it; the baseline was never
+  remade). Neither is fixed here.
+- For the water track (lane G, WA-2b): the hub fall's site is unchanged by B2: `falls: [{x: 92.79, z: 89.67, dir:
+  [0.83, -0.56], w: 3, h: 4.14, pool: 4}]`, 16 m up from the pond toward the summit; a shelf has to be cut there. Not
+  written into the map (the scene's `falls` are lane G's).
+- Next: the owner's look at the hub (tools/island-sketches.py validation/hub-sketches b2, or island-shots) and a phone
+  test; HB-5 (the new buildings' models and rooms; maybe move Juniper's home nearer the square), HB-6, HB-7 (the
+  station, the rail into the sea's skirt). The two main failures above need their own sessions.
+
+### Hub track HB-4a - Island sketches - 2026-10-25
+Branch `art/hub-island-sketches` (a one-session art branch at the owner's word; the plan file's `Branch:` is
+`track/hub`, where HB-4b merges this branch). Plan approved in Plan Mode. Tag `hb-4a-done` for the owner to push.
+**The owner's pick: a version of B (East crescent) with more of a town square; the hub waterfall above the pond.**
+- Where the plan was wrong (checked in the code): the orbit pivot is the summit spot, not the island's middle; the
+  door figures hold (3 of 12 props within 50 degrees, 2 of 12 plots within 45). The town's doors miss because its main
+  street and east bank run toward the mountain: a plot facing its street there faces 90 degrees off outward.
+- Changed (one cause per commit; every dial off by default, copperleaf's ground unchanged): island-gen.js dials
+  `town.face`, `town.quarter` (and its 3 m step back), `town.second` (beside a street, or an arc round the pivot),
+  `town.scale`, `town.extra` (`ISLAND_TOWN_EXTRA`), `landmarks` (station, sky rail, portal, lighthouse, windmill) and
+  `landmarks.shore` (3 m from the water, asked for after the water track's plan: its tide, WA-4, and wading, WA-6a).
+  New tools/test/island-gen-doors.test.mjs (8 tests, slow tier). tools/island-sketches.mjs and .py (relief maps, a
+  contact sheet, `--above` the game's own pictures from draft maps put in the game data and removed after),
+  tools/data/hub-sketches.json (today, A Back lane, B East crescent, C Harbour station). The plan file came in from
+  the planning branch with its "Done in HB-4a" notes (B's dials, what HB-4b needs).
+- Not changed: game/data/maps/copperleaf.json, build-copperleaf, island-dress (the lookout stays until HB-4b), runtime
+  code. The Studio's Hub island dials card does not show the new dials yet (its list is by hand).
+- Risky: the draft maps must never be committed (8 unit tests fail while they are in the data; `node
+  tools/island-sketches.mjs --clean` removes them). Landmark plots ignore the coast path's margins (the path needs
+  re-routing round the station). The rail and portal stand past the map's 10 m of sea.
+- Verified: lint, typecheck, prettier; `npm test` 937/937; `npm run test:slow` 65/65 (with the drafts out); each
+  generator commit ran island-gen and island-gen-doors tests green; a planted `shore: 0` fails the landmark test.
+  Pictures: relief maps of all four, the game's own overview and orbit views of each (no page errors). No smoke or
+  quick check: no game runtime file changed.
+- Next: HB-4b on `track/hub`: merge this branch; a town-square dial (the square's radius is fixed at 7.5 m) with
+  buildings fronting it; build B's dials into copperleaf through build-island and build-copperleaf; the lookout out of
+  the dressing; re-point the hub's positions; the door check. Tell the water track (lane G, WA-2b) the waterfall site.
+
 ### Water track WA-6b (lane P) - Surf and the Waterfall climb - 2026-10-25
 Branch `track/water` (main merged in at the start: hub track HB-1, .gitignore and HANDOFF kept both sides; lanes R's
 WA-1 and G's work merged in before each push). Plan approved in Plan Mode; the owner's answers: Surf needs the Water

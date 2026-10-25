@@ -231,7 +231,7 @@ export function startGame(l, o = {}) {
   const W = {
     title: `${speciesOf(m).name} joined your team`,
     top: `<div class="sheet-art">${rigCanvasHTML(m.sp, 128)}</div>`,
-    html: `${nE ? `<p>${words[nE] || nE} Billie${nE === 1 ? ' is' : 's are'} already rustling in the grass. Tap one to battle it, then throw a pyramid.</p>` : ''}<p>When you’re ready, the airship at the mast flies you out on a run.</p>`,
+    html: `${nE ? `<p>${words[nE] || nE} Billie${nE === 1 ? ' is' : 's are'} already rustling in the grass. Tap one to battle it, then throw a pyramid.</p>` : ''}<p>When you’re ready, Skyline Station sends you out on a run.</p>`,
     btns: [{ l: 'Let’s go', c: 'dark', f: closeModal }],
   };
   if (o.rival && TRAINERS.blake0 && typeof storyRivalBattle === 'function') {

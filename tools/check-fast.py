@@ -840,7 +840,7 @@ def breed(pg, base):
 def lab(pg, base):
     """RL-11: the lab fixture stands in Copperleaf after a run (500 Research, 60 Scrap, 2 Crests, one run ended). The
     first milestone was granted on load; the bottom bar's Lab tab opens the board with every row; a board row bought
-    pays its Research; the ranch's sheet sells Ranch Lv 2 for Scrap (its slots rise); the mast's sheet sells Airship Lv 2
+    pays its Research; the ranch's sheet sells Ranch Lv 2 for Scrap (its slots rise); the station's sheet sells Station Lv 2
     for a Crest and then offers the ridge lands; a run would carry the shop unlock; a reload (?fixture=stored) keeps it all"""
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.meta.unlocks.first_run&&walkView.ready", 60): raise Exception(f'no first milestone on load: {pg.evaluate("JSON.stringify(saveData.meta)")}')
     if pg.evaluate("saveData.meta.scrap") != 70: raise Exception(f'the milestone paid {pg.evaluate("saveData.meta.scrap") - 60} Scrap, not 10')
@@ -857,16 +857,16 @@ def lab(pg, base):
     pg.click("#ov .ranch-sheet [data-a=lab-buy][data-k=ranch_2]")
     st = pg.evaluate("[saveData.meta.scrap,ranchLevel(saveData),ranchSlots(saveData,RULES.ranch),uiState.modal&&uiState.modal.title]")
     if st[:3] != [70 - pg.evaluate("UNLOCK_DATA.unlocks.ranch_2.cost"), 2, pg.evaluate("RULES.ranch.slots[1]")] or 'Lv 2' not in (st[3] or ''): raise Exception(f'Ranch Lv 2: Scrap, level, slots, title {st}')
-    pg.evaluate("uiState.modal=null;uiState.mq=[];flyMenu(walkView.sc.props.find(q=>q.act==='fly'));0")
-    pg.click("#ov .fly-sheet [data-a=lab-buy][data-k=airship_2]")
-    if not until(pg, "saveData.meta.crests===1&&!!document.querySelector('#ov .fly-sheet [data-k=biome_ridge]:not([disabled])')", 10): raise Exception('Airship Lv 2 didn’t open the ridge lands on the mast’s sheet')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];stationMenu(walkView.sc.props.find(q=>q.act==='station'));0")
+    pg.click("#ov .fly-sheet [data-a=lab-buy][data-k=station_2]")
+    if not until(pg, "saveData.meta.crests===1&&!!document.querySelector('#ov .fly-sheet [data-k=biome_ridge]:not([disabled])')", 10): raise Exception('Station Lv 2 didn’t open the ridge lands on the station’s sheet')
     if pg.evaluate("runUnlocks(saveData,UNLOCK_DATA).join()") != 'shop_revive': raise Exception('a run wouldn’t carry the shop unlock')
     keep = pg.evaluate("JSON.stringify(saveData.meta)")
     pg.goto(base + '/index.html?fixture=stored')
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.meta&&!document.getElementById('loader')", 90): raise Exception('the reload never booted')
     back = pg.evaluate("JSON.stringify(saveData.meta)")
     if back != keep: raise Exception(f'after a reload {back}, not {keep}')
-    return f'the first milestone on load (+10 Scrap); {rows} rows on the board; Revives for {cost} Research; Ranch Lv 2 (3 slots); Airship Lv 2 opened the ridge lands; a reload kept it'
+    return f'the first milestone on load (+10 Scrap); {rows} rows on the board; Revives for {cost} Research; Ranch Lv 2 (3 slots); Station Lv 2 opened the ridge lands; a reload kept it'
 
 
 def save_round_trip(pg, base):
@@ -1352,7 +1352,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('relics', [("Perks: the pick (again after a reload), the tab, a battle's and a walk's effects, a town's prices, buying at the cap (RL-12)", relics)]),
     ('ranch', [('Breeding: a safe egg shown and hatched, a risky pair, a clock turned back, a reload (RL-10)', breed)]),
     ('ranch', [('Income: started at the first opening, Collect, a clock turned back and forward, a reload (RL-10b)', income)]),
-    ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the mast, a reload (RL-11)', lab)]),
+    ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the station, a reload (RL-11)', lab)]),
     ('ranch', [('Packing for a run: a Billie from storage, a packed bag; kept on a loss, the bag home on a win (RL-9b)', run_pack)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),

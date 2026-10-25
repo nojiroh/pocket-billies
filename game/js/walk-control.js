@@ -15,7 +15,6 @@ import { activeBattle, save, saveData, saveNow, uiState } from './game-state.js'
 import { userFps } from './frame-scheduler.js';
 import { artLoad } from './art.js';
 import {
-  ROOM_BY_USE,
   closedText,
   directionOf,
   doorLinkOf,
@@ -52,7 +51,7 @@ import { runArriveSound, soundEffect } from './sound.js';
 import { talkChosen } from './talk.js';
 import { cutscene } from './cutscene/director.js';
 import { loreBook } from './lore.js';
-import { flyMenu, rideGlassLift } from './airship.js';
+import { flyMenu, rideGlassLift, stationMenu } from './airship.js';
 import { runWorldData } from './run-world.js';
 import { runArrivedFx, runArrivedHint } from './run.js';
 import { fieldMoveOpen, fieldWayOut } from './field-moves.js';
@@ -226,7 +225,7 @@ function roomRefresh() {
   walkView.nav = null;
 }
 function roomAim(h) {
-  if (!h || h.k !== 'act' || !ROOM_BY_USE[h.act] || uiState.inside) return;
+  if (!h || h.k !== 'act' || !PB_DATA.opensRoom(h.act) || uiState.inside) return;
   if (typeof isOpenNow === 'function' && !isOpenNow(openingHoursKind(h.act, h.p))) return;
   const q = doorBuildingOf(h.act, h.p),
     id = roomFor(h.act, q);
@@ -602,6 +601,11 @@ export function walkPick(h) {
       rideGlassLift(p);
       return;
     }
+    /* HB-7: Skyline Station, where runs start */
+    if (a === 'station' && typeof stationMenu === 'function') {
+      stationMenu(p);
+      return;
+    }
     /* RL-R2: a field move's obstacle (Cut, Rock Smash, Surf) and a side area's way out (field-moves.js) */
     if (a === 'field' && typeof fieldMoveOpen === 'function') {
       fieldMoveOpen(p);
@@ -635,7 +639,7 @@ export function walkPick(h) {
       ranchOpen();
       return;
     }
-    if (ROOM_BY_USE[a] && enterRoom(a, p)) return;
+    if (PB_DATA.opensRoom(a) && enterRoom(a, p)) return;
     if (a === 'shop') {
       const id = p.shop || here.shop;
       if (id && SHOPS[id]) openShop(id);
@@ -657,6 +661,7 @@ export function walkPick(h) {
             lab: 'The lab is busy with research.',
             house: 'Nobody answers the door.',
             home: 'Nobody answers the door.',
+            enter: 'The door is locked.',
             sign: `You’re in ${here.name}.`,
           }[a] ||
           'Nothing happens.'

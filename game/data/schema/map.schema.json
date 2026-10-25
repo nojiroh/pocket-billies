@@ -24,7 +24,7 @@
   "people": {"description": "people who only talk (Project Story: their script; when / unless: there only while the story allows)", "type": "array", "items": {"type": "object", "required": ["id", "who"], "properties": {"id": {"type": "string"}, "who": {"type": "string"}, "script": {"type": "array", "items": {"type": "string"}}, "when": {"type": "string"}, "unless": {"type": "string"}}}},
   "props": {
    "type": "array",
-   "items": {"type": "object", "required": ["k", "x", "z"], "properties": {"k": {"type": "string", "minLength": 1}, "x": {"type": "number"}, "z": {"type": "number"}, "s": {"type": "number"}, "rot": {"description": "degrees it is turned about its base point (the middle of its front): positive turns its right-hand end away from you; -180 to 180", "type": "number", "minimum": -180, "maximum": 180}}}
+   "items": {"type": "object", "required": ["k", "x", "z"], "properties": {"k": {"type": "string", "minLength": 1}, "x": {"type": "number"}, "z": {"type": "number"}, "s": {"type": "number"}, "rot": {"description": "degrees it is turned about its base point (the middle of its front): positive turns its right-hand end away from you; -180 to 180", "type": "number", "minimum": -180, "maximum": 180}, "tilt": {"description": "HB-6: a model's lean about its base point: degrees its top leans toward its own right-hand end (+x) and toward its back (+z); a few degrees at most", "type": "array", "items": {"type": "number", "minimum": -8, "maximum": 8}, "minItems": 2, "maxItems": 2}}}
   },
   "chat": {"type": "array", "items": {"type": "string"}},
   "cam": {
@@ -56,7 +56,13 @@
   "plots": {
    "description": "island track: building plots the island generator laid out (IS-2): where a building of kind k may stand, its middle (x, z), width along its street, depth, the angle its front faces (degrees, 0 east, 90 north) and the level its pad was made at; the buildings themselves are props",
    "type": "array",
-   "items": {"type": "object", "required": ["k", "x", "z", "w", "d", "a"], "properties": {"k": {"enum": ["house", "home", "lab", "mast", "shop", "well", "farmhouse"]}, "x": {"type": "number"}, "z": {"type": "number"}, "w": {"type": "number", "exclusiveMinimum": 0}, "d": {"type": "number", "exclusiveMinimum": 0}, "a": {"type": "number"}, "y": {"type": "number"}}}
+   "items": {"type": "object", "required": ["k", "x", "z", "w", "d", "a"], "properties": {"k": {"enum": ["house", "home", "lab", "mast", "shop", "well", "farmhouse", "inn", "workshop", "genebank", "library", "station", "lighthouse", "windmill"]}, "x": {"type": "number"}, "z": {"type": "number"}, "w": {"type": "number", "exclusiveMinimum": 0}, "d": {"type": "number", "exclusiveMinimum": 0}, "a": {"type": "number"}, "y": {"type": "number"}}}
+  },
+  "landmarks": {
+   "description": "HB-4b: the island generator's landmarks (landmarks.on): the station's sky rail, points [x, z, y] in metres (y above sea level) from the platform out over the sea, climbing to the portal (its last point); the rail runs on past the map's edge (HB-7 draws it in the sea's skirt)",
+   "type": "object",
+   "required": ["rail", "portal"],
+   "properties": {"rail": {"type": "array", "items": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}}, "portal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}}
   },
   "islandGen": {
    "description": "island track: the island generator's version, seed and dials (IS-2 owns the dials), so the ground can be made again; lock and hash freeze the ground",

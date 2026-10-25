@@ -197,7 +197,8 @@ test('the island’s town on the bowl: a model on every free plot, the barn in i
   const M0 = maps[HUB_ISLAND],
     M = { ...M0, props: [] },
     T = bowlIslandPlotThings(M, isBuilding);
-  assert.equal(T.length, M.plots.length + 1, 'every plot and the barn');
+  /* every plot whose kind has a model (HB-4b: the Workshop, the Gene Bank and the landmarks wait for theirs) */
+  assert.equal(T.length, M.plots.filter(p => BOWL_PLOT_PROPS[p.k]).length + 1, 'every plot and the barn');
   /* with its buildings: none of the plots or the barn is drawn twice */
   assert.equal(bowlIslandPlotThings(M0, isBuilding).length, 0, 'every plot built on');
   for (const t of T) {
