@@ -6,6 +6,7 @@
 import { expose } from '../test-globals.js';
 import { SPECIES, propBaseHeight, provide, reducedMotion, riderOf, saveData } from '../hooks.js';
 import { clamp } from '../util.js';
+import { spanFit, tiltSpin, turnedPoint } from '../logic/prop-turn.js';
 import { hexToRgb, makeCanvas } from '../art.js';
 import { drawRig, rigFrame, rigParts, rigPreload } from '../skeleton-rig.js';
 import { artImage, hash2d, imageReady, terrainAt, walkView } from '../walk-view.js';
@@ -37,6 +38,7 @@ expose({
   propLook: [() => propLook, v => (propLook = v)],
   propLookSettings: [() => propLookSettings, v => (propLookSettings = v)],
   propMaterial: [() => propMaterial, v => (propMaterial = v)],
+  propModelTip: [() => propModelTip, v => (propModelTip = v)],
   propVariety: [() => propVariety, v => (propVariety = v)],
   rideMountItem: [() => rideMountItem, v => (rideMountItem = v)],
   setPropLookUniforms: [() => setPropLookUniforms, v => ((setPropLookUniforms = v), provide({ setPropLookUniforms }))],
@@ -408,8 +410,24 @@ export function stillPropState(p, M, im, sc) {
     bob: BOBBING_PROPS.test(p.k),
     flag: WAVING_PROPS.test(p.k),
   };
+  propModelTip(p, M, c);
   STILL_PROP_CACHE.set(p, c);
   return c;
+}
+/* HB-6: a model tipped off the upright (logic/prop-turn.js): one that spans two points (a fence rail between its posts:
+   the catalogue's restEnds) rests on the ground under each end, tipped between them; any other leans by its placement's
+   tilt. Pictures don't tip. */
+function propModelTip(p, M, c) {
+  c.spin = null;
+  if (!M.model) return;
+  if (M.restEnds && M.box) {
+    const L = M.box[0] * (p.s || 1),
+      a = turnedPoint(p, -L / 2, 0),
+      b = turnedPoint(p, L / 2, 0),
+      F = spanFit(L, standingHeightAt(a[0], a[1]), standingHeightAt(b[0], b[1]), p.f ? -1 : 1);
+    c.y = F.y;
+    c.spin = F.spin;
+  } else c.spin = tiltSpin(p.tilt);
 }
 /* alpha 0.4.1: the settings a prop's look depends on, read once a frame rather than once a prop */
 function propLookSettings(sc) {

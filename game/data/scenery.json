@@ -11828,6 +11828,55 @@
     {"k":"glow","x":21,"y":-51}
    ],
    "room": "int_gene_bank"
+  },
+  "fence_post": {
+   "name": "Fence post (pasture)",
+   "img": "scene/props/fence_wood_post.png",
+   "ox": -6,
+   "oy": -37,
+   "shadow": 0.15,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["route","farm","town"],
+   "group": "fence_wood",
+   "solid": 0.15,
+   "model": "scene/next/models/fence_post.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0.05},
+   "variants": [
+    {
+     "name": "Fence post (weathered)",
+     "swap": {"#B27648":"#9C8F7E","#A06A42":"#8D8274"}
+    }
+   ]
+  },
+  "fence_rail": {
+   "name": "Fence rails (pasture)",
+   "img": "scene/props/fence_wood.png",
+   "ox": -42,
+   "oy": -37,
+   "shadow": 0.3,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["route","farm","town"],
+   "group": "fence_wood",
+   "box": [2,0.25],
+   "restEnds": 1,
+   "model": "scene/next/models/fence_rail.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "name": "Fence rails (weathered)",
+     "swap": {"#B27648":"#9C8F7E","#A06A42":"#8D8274"}
+    },
+    {"name":"Fence rails (broken)","model":"scene/next/models/fence_rail_broken.json"},
+    {
+     "name": "Fence rails (broken, weathered)",
+     "swap": {"#B27648":"#9C8F7E","#A06A42":"#8D8274"},
+     "model": "scene/next/models/fence_rail_broken.json"
+    }
+   ]
   }
  },
  "person": 1.75,

@@ -85,6 +85,9 @@ Every figure is a claim from a read of the code: check it again at the start of 
   ~0.4 m into the gap, long sides leave hairline gaps; every post rot 0; every rail on a side the same rot.
 - A boxed prop sits at the ground height of its middle, no tilt (frame-items.js `propBaseHeight`); the zone is
   flattened, so nothing floats today, but a fence off the flat would.
+- (HB-6, rechecked) `fence_wood` is a 2.2 m section with three posts of its own, and the corner post is an 8 vox/m
+  model. Low-poly models ignore `wear`/`tint`/lean. The model shaders' spin (RF-2) was unused by the walk view.
+  Done in HB-6 below.
 
 **Run start** (airship.js, run.js, run-world.js)
 - `flyMenu` → `runStartSheet` → "Take off" → `runTakeOff`: `runWorldSync` makes all 12-14 run scenes in one tick
@@ -297,6 +300,19 @@ kind); the Gene Bank is a solarpunk lab-vault. Checked against the code:
   post at its own ground height and the rail tilted between posts (the field may then be gently uneven); a few
   weathered or broken rails; the gate where the path arrives. Pasture tests: no gaps, no overlaps, the Billies' roam
   line inside, the gate reachable.
+
+**Done in HB-6** (2026-10-25, on `props/hub-fence`, the session's brief). Answers: the gate where the island's path
+arrives; the field swells up to 0.5 m; fixed rails, not an engine stretch. Checked against the code:
+- Rail tilt needed engine support, though not a new shader. The model shaders already apply RF-2's `it.spin`. The
+  walk view now sets it (`logic/prop-turn.js spanFit`, `tiltSpin`; `walk/prop-look.js`): a catalogue model with
+  `restEnds` rests on the ground at both ends of its width, and a placement's `tilt` leans a model.
+- One rail model fits every span. The posts are evenly spaced round the line, so the spans come out nearly equal, and
+  the 2 m rail (`fence_rail`) takes its span's size (`s`, within 2% on the hub, the tool refuses more than 8%).
+  Weathered and broken are its variants. Every part is made from `fence_wood`'s own layers by
+  tools/make-fence-parts.mjs.
+- The gate is where island-gen's spoke crosses the fence: the west side, on the coast path. It hangs on its own post.
+- The ground swell belongs to tools/build-pasture.mjs (`pastureGround`): level at the zone's edge and round the gate,
+  so HB-4b's rebuilt island gets it again from `build-copperleaf.mjs`.
 
 ### HB-7 Station and trains
 - Models: the station (platform, canopy, a departures board), the sky rail (pylons out over the sea, climbing), and
