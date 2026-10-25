@@ -74,6 +74,7 @@ expose({
   mapExits: [() => mapExits, v => (mapExits = v)],
   mapIdAt: [() => mapIdAt, v => ((mapIdAt = v), provide({ mapIdAt }))],
   mapOffsetInView: [() => mapOffsetInView, v => ((mapOffsetInView = v), provide({ mapOffsetInView }))],
+  piecePersonTalk: [() => piecePersonTalk, v => (piecePersonTalk = v)],
   roomAct: [() => roomAct, v => (roomAct = v)],
   roomAim: [() => roomAim, v => (roomAim = v)],
   roomFor: [() => roomFor, v => (roomFor = v)],
@@ -512,6 +513,21 @@ export function walkState() {
             dir: P.dir || 'down',
             at: [P.x + o[0], P.z + o[1]],
           });
+    /* RT-3: a set piece's people (the Bureau checkpoint's agent), facing the road; tapped, piecePersonTalk */
+    if (base && bid === mapIdAt(v.node))
+      (base.pieces || []).forEach((/** @type {any} */ L, /** @type {number} */ n) =>
+        (L.people || []).forEach((/** @type {any} */ q, /** @type {number} */ m) =>
+          v.npcs.push({
+            who: q.who,
+            id: `_piece:${n}:${m}`,
+            piece: q,
+            done: true,
+            exit: null,
+            dir: directionOf(Math.cos((q.face * Math.PI) / 180), Math.sin((q.face * Math.PI) / 180)),
+            at: [q.x + o[0], q.z + o[1]],
+          })
+        )
+      );
   }
   v.who = 'me';
   v.enc = encountersHere().map(q => ({
@@ -522,6 +538,16 @@ export function walkState() {
     build: encounterBuild(q),
   }));
   return v;
+}
+/** RT-3: a set piece's person: its event (encounter-screen.js) the first time this run, then what they say
+ * @param {{ who: string, event?: string, say?: string }} q */
+function piecePersonTalk(q) {
+  const run = saveData.run;
+  if (q.event && run && !(run.enc && run.enc.seen.includes(q.event))) {
+    encounterOpen(null, q.event);
+    return;
+  }
+  toast(q.say || '…');
 }
 export function walkPick(h) {
   const node = saveData.trip.node,
@@ -548,6 +574,10 @@ export function walkPick(h) {
     if (at) walkRenderer.talkAt = { x: at[0], z: at[1], t: walkView.t };
     if (h.n && h.n.talk && typeof personTalk === 'function') {
       personTalk(h.n.talk);
+      return;
+    }
+    if (h.n && h.n.piece) {
+      piecePersonTalk(h.n.piece);
       return;
     }
     trainerTalk(h.n.talkAs || h.n.id);
