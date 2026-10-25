@@ -173,3 +173,12 @@ test('genes: a splice survives evolving', () => {
   assert.equal(m.sp, 'swift1');
   assert.deepEqual(m.graft, { front: 'musk3', sig: 'zuck2' });
 });
+
+test('genes: a spliced Billie has its dominant Gene type in battle and on its card; an unspliced one its own', () => {
+  const s = startedSave('gates0', 20),
+    m = s.team[0],
+    own = fn('billyTypes')(m);
+  assert.equal(own, data.SPECIES.gates0.types, 'the same list, untouched');
+  m.graft = { sig: 'musk0' };
+  assert.deepEqual(fn('billyTypes')(m), ['Grass', 'Fire']);
+});

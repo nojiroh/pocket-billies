@@ -32,8 +32,18 @@ import {
 import { $, $$, clamp, random } from './util.js';
 import { ITEMS, MOVES, PYRAMIDS, STAT_NAMES, TYPES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
 import { graftOf } from './logic/graft-art.js';
-import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
-import { billyName, healAll, maxHp, moveUsable, partBroken, partHpLeft, partMaxHp, plural } from './logic/rules.js';
+import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef } from './logic/fighters.js';
+import {
+  billyName,
+  billyTypes,
+  healAll,
+  maxHp,
+  moveUsable,
+  partBroken,
+  partHpLeft,
+  partMaxHp,
+  plural,
+} from './logic/rules.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
 import {
   ACTOR_SIDE,
@@ -694,7 +704,7 @@ function hpMini(m) {
   return `<span class="hpmini"><i class="${p < 0.25 ? 'low' : p < 0.5 ? 'mid' : ''}" style="width:${p * 100}%"></i></span>`;
 }
 function billyPickHTML(m, act, attrs, dis, note) {
-  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { coat: m.coat })}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${speciesOf(m).types.map(typeBadgeHTML).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
+  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { coat: m.coat })}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${billyTypes(m).map(typeBadgeHTML).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
 }
 function teamPick(back) {
   const on = activeBattle.sides[0].f.filter(f => f.on).map(f => f.act),
@@ -884,7 +894,7 @@ export function showAim() {
 function runCatchFits() {
   if (!activeBattle || !saveData.run) return true;
   const e = fighter(1);
-  return !e || modTypeFits(saveData.run, speciesOf(e).types);
+  return !e || modTypeFits(saveData.run, billyTypes(e));
 }
 export function doThrow(spin) {
   if (uiState.throwing || !activeBattle || activeBattle.phase !== 'aim') return;

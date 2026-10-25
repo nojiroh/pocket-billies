@@ -16,7 +16,7 @@ import { expose } from './test-globals.js';
 import { provide, render, toast } from './hooks.js';
 import { FIELD_MOVES, LOCATIONS } from './game-data.js';
 import { speciesOf } from './logic/fighters.js';
-import { billyName } from './logic/rules.js';
+import { billyName, billyTypes } from './logic/rules.js';
 import { fieldMoveState, fieldMoveText, runSideOpen } from './logic/run-side.js';
 import { runArrive } from './logic/run-map.js';
 import { reducedMotion, saveData, saveNow, uiState } from './game-state.js';
@@ -51,7 +51,7 @@ function fieldSideHere() {
 }
 /** the team's Billies still standing, as fieldMoveState reads them (their names and types) */
 const fieldTeam = () =>
-  saveData.team.filter(m => m.hp > 0 && speciesOf(m)).map(m => ({ name: billyName(m), types: speciesOf(m).types, m }));
+  saveData.team.filter(m => m.hp > 0 && speciesOf(m)).map(m => ({ name: billyName(m), types: billyTypes(m), m }));
 /** tap the obstacle (walk-control.js walkPick, act 'field'): Pokémon's way, in the talk box at the foot of the screen
  * (not a sheet): what it says, then a yes or no when the move can be used. `p` is the prop tapped (where the effect
  * plays) */

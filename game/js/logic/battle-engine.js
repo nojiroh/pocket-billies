@@ -46,6 +46,7 @@ import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, moveSources, robotGemDef, robot
 import {
   addBilly,
   billyName,
+  billyTypes,
   brokenParts,
   coatPrefix,
   encounterBuild,
@@ -267,7 +268,7 @@ export const allActors = () => {
 export const liveActors = si =>
   allActors().filter(k => (si == null || ACTOR_SIDE[k] === si) && fighter(k) && fighter(k).hp > 0);
 export const foeSide = k => 1 - ACTOR_SIDE[k];
-export const actorTypes = k => fieldState(k).ov || speciesOf(fighter(k)).types;
+export const actorTypes = k => fieldState(k).ov || billyTypes(fighter(k));
 export const shockName = () => BATTLE_RULES.shockName || `${BATTLE_RULES.shockType} storm`;
 export const isMulti = () => !!battleNow() && (battleNow().sides[0].f.length > 1 || battleNow().sides[1].f.length > 1);
 /** what a stat's stages multiply it by in battle: +1 is x1.5, -1 is x2/3 (Studio plan T4.1: the Perk preview
@@ -372,7 +373,7 @@ export function calcDamage(k, tk, mid, src) {
       eco =
         1 +
         BATTLE_RULES.alloyBoost *
-          sd.team.filter(m => m !== me && m.hp > 0 && speciesOf(m).types.some(t => syn.includes(t))).length;
+          sd.team.filter(m => m !== me && m.hp > 0 && billyTypes(m).some(t => syn.includes(t))).length;
     }
   }
   /* RF-3 Undertow (Water): its moves of a type with Undertow hit harder at a third of its HP or less */
@@ -801,7 +802,7 @@ export function heldStages(k) {
 /** RF-3 Parting Roar (Dragon, id `inherit`): when it faints, the next teammate in gets +1 Attack and +1 Sp. Atk
  * (before RF-3 it passed on its own boosts, if it had any) */
 export function inherit(k) {
-  const ty = speciesOf(fighter(k)).types;
+  const ty = billyTypes(fighter(k));
   if (!hasPassive(ty, 'partingroar')) return;
   battleNow().sides[ACTOR_SIDE[k]].roar = {
     lev: 1,
@@ -845,7 +846,7 @@ export function doSwitch(k, idx, b) {
     );
     if (!isRobot(m)) battleSeen()[m.sp] = 1;
     heldStages(k);
-    if (sd.stones && !hasPassive(speciesOf(m).types, 'bedrock')) {
+    if (sd.stones && !hasPassive(billyTypes(m), 'bedrock')) {
       const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, BATTLE_RULES.stonesFraction)));
       m.hp = Math.max(0, m.hp - d);
       battleSay(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'stones', dmg: d });

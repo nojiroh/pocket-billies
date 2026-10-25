@@ -8,7 +8,7 @@ import { clamp } from './util.js';
 import { TYPE_COLORS } from './game-data.js';
 import { graftOf } from './logic/graft-art.js';
 import { speciesOf } from './logic/fighters.js';
-import { billyName, formatNumber, maxHp, maxLevel, teamSize, xpFor } from './logic/rules.js';
+import { billyName, billyTypes, formatNumber, maxHp, maxLevel, teamSize, xpFor } from './logic/rules.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { workshopSectionHTML } from './workshop.js';
@@ -30,7 +30,7 @@ expose({
 /* to-module: end */
 /* ---------- team: the lead up top, the party as cards, then storage ---------- */
 export const plateVars = m => {
-  const t = speciesOf(m).types;
+  const t = billyTypes(m);
   return `--c1:${TYPE_COLORS[t[0]][0]};--c2:${TYPE_COLORS[t[t.length - 1]][0]}`;
 };
 provide({ plateVars }); /* to-module */
@@ -58,10 +58,10 @@ function boxSection() {
     return '<section class="tpanel tm-box"><div class="sec-h"><h2>Storage</h2></div><div class="empty tm-empty">Storage stays in Copperleaf while you’re on a run. Your party holds six: catch a seventh and one of them leaves.</div></section>';
   const all = saveData.box,
     so = uiState.boxSort || 'new',
-    types = [...new Set(all.flatMap(m => speciesOf(m).types))].sort();
+    types = [...new Set(all.flatMap(m => billyTypes(m)))].sort();
   let f = uiState.boxF || 'all';
   if (f !== 'all' && !types.includes(f)) f = 'all';
-  let L = all.filter(m => f === 'all' || speciesOf(m).types.includes(f));
+  let L = all.filter(m => f === 'all' || billyTypes(m).includes(f));
   L =
     so === 'lvl'
       ? L.slice().sort((a, b) => b.lvl - a.lvl)

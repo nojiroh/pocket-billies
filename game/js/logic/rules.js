@@ -59,7 +59,7 @@ import {
 import { rngFn } from './rng.js';
 import { wildOddsBy } from './weather.js';
 import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
-import { graftFit, graftRel } from './genes.js';
+import { graftFit, graftRel, graftTypes } from './genes.js';
 import {
   ROBOT_LIMBS,
   ROBOT_SLOTS,
@@ -93,6 +93,7 @@ expose({
   billyName: [() => billyName],
   billyPrime: [() => billyPrime],
   billyRel: [() => billyRel],
+  billyTypes: [() => billyTypes],
   billyWeight: [() => billyWeight],
   // @ts-expect-error -- replaced on purpose
   blockerAt: [() => blockerAt, v => (blockerAt = v)],
@@ -335,6 +336,9 @@ export const billyGraft = m => (m && m.graft && m.kind !== 'robot' ? graftFit(ge
 /** SP-2: per spliced slot, its part's weight over the Billie's own part's; null with no splice
  * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m */
 export const billyRel = m => (m && billyGraft(m) ? graftRel(geneData(), m.sp, m.graft) : null);
+/** SP-2: a Billie's types: its species', the second replaced by its heaviest dominant Gene's (logic/genes.js
+ * graftTypes); a robot's or an unspliced Billie's are its species' own @param {any} m @returns {string[]} */
+export const billyTypes = m => (billyGraft(m) ? graftTypes(geneData(), m.sp, m.graft, m.build) : speciesOf(m).types);
 /** SP-2: Prime: every part its own and at M @param {any} m */
 export const billyPrime = m => isPrime(billyBuild(m), !!billyGraft(m));
 /** @param {Build} b @param {string} k a stat id @param {Record<string, number> | null} [rel] SP-2 (billyRel)
@@ -702,7 +706,7 @@ export function gateText(n) {
     if (!M) return 'The way is blocked.';
     const team = saveData.team
         .filter(m => m.hp > 0 && speciesOf(m))
-        .map(m => ({ name: billyName(m), types: speciesOf(m).types })),
+        .map(m => ({ name: billyName(m), types: billyTypes(m) })),
       st = fieldMoveState(M, (saveData.meta || {}).badges, team);
     return st.state === 'ask' ? `Use ${M.name} on what blocks the way first.` : fieldMoveText(M, st.state);
   }
