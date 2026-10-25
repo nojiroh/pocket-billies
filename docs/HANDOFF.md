@@ -2,6 +2,42 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Hub track - the finished hub branches merged together (HB-4a/4b, HB-5 art, HB-6, HB-7 art) - 2026-10-25
+Branch `track/hub-merge` (from main 83e7bdd: HB-1, HB-2, the run-zone-biome fix). Plan approved in Plan Mode. One
+merge commit per branch (no rebase, no squash), in this order: `track/hub` (HB-4a, HB-4b), `art/hub-station-trains`
+(HB-7's art and sheet), `art/hub-buildings` (HB-5's art half), `props/hub-fence` (HB-6). For a PR into main.
+- Where the brief was off (checked): merged one after another the branches conflict in more files than each does
+  alone: station-trains also in .gitignore and copperleaf.json; buildings also in game/data/index.json, scenery.json
+  and the check-data snapshot; the fence also in scenery.json. All of these are both sides adding at the end: both
+  kept. game/data/gamedata.js is generated and not in git (CLAUDE.md's note is stale), so nothing to regenerate there.
+- Resolved: docs kept from every side (HANDOFF newest on top; hub-track.md gets every "Done in" note); .gitignore
+  lines from all four; prop-turn.js keeps HB-1's `decalPlace` and HB-6's `spanFit`/`tiltSpin`, prop-turn.test.mjs
+  both blocks; the check-data snapshot remade (`--test-update-snapshots`, its file count only); hooks.js through
+  `npm run modules` after each merge (0 changed every time).
+- Rebuilt, never hand-merged: copperleaf.json from track/hub's island by `node tools/build-copperleaf.mjs` in the
+  station merge (Skyline Station placed, the mast's act taken) and again in the fence merge (the fence follows HB-4b's
+  pasture: 48 `fence_post` and 48 `fence_rail` for 47 `fence_wood` sections and 11 corner posts, the gate on the west
+  side where the path arrives, the swell up to 0.5 m; about 40 dressing props move). Then one round of
+  `node tools/build-island.mjs` and build-copperleaf (its own commit): HB-6's swell levels the pasture from its rim's
+  median, up to 0.02 m off the old flat level, and build-island blends the land round the locked zone, so the slow
+  test "the game's island is the generator's own output" failed. **It fails on `props/hub-fence` alone** (main and
+  track/hub pass; HB-6 didn't run the slow tier). The round moved 614 height cells by at most 0.02 m and made the
+  walking checks again (the pasture walk one leg to the new gate instead of three; the same 21 places). A second round
+  of both tools writes the same file. Every other field and building of HB-4b's island is unchanged.
+- Done on the old island, to redo on the new one (later sessions, not this one):
+  - HB-7: Skyline Station stands on the open ground nearest the mast (78.97, 41.39), not on HB-4b's station headland
+    (a bare plot), and no sky rail or portal is laid out yet (`landmarks {rail, portal}` are data only).
+  - HB-5: the Workshop, Gene Bank, lighthouse and windmill are on their showcase map only; their plots stay bare. The
+    inn and library stand on their plots (HB-4b) with no act, so their doors don't open HB-5's rooms yet (`enter`).
+    Copperleaf's cottages now show their colour variants.
+  - HB-6: the gate side is island-gen's spoke on the new zone (west, on the coast path): judge it in the pictures.
+  - HB-8: `flyMenu`'s hub branch (unreachable) and the run sheet's airship lines.
+- Verified: after each merge check:modules, lint, typecheck, format:check, check:data, `npm test` (947, 948, 953,
+  957, all passing); at the end `npm test` 957/957, `npm run test:slow` 71/71, check-fast in full 29/29 (938 s),
+  `check:smoke` 6/6 (204 s, the phone flow taps the station). Pictures: island-shots and look-pasture (below).
+- Next: the PR into main (the planning session opens it); then the placing half: the station on its headland with
+  the sky rail and portal, the new buildings on their plots (and the inn's, library's and store's acts), HB-3, HB-8.
+
 ### Hub track HB-6 - The natural pasture fence - 2026-10-25
 Branch `props/hub-fence` (the session's brief named it; the plan's `Branch:` line says `track/hub`: a cloud session
 pushes only to its own branch). Plan approved in Plan Mode. The owner's answers: the gate where the island's path

@@ -66,6 +66,7 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | `track/hub` | Hub track (docs/phases/hub-track.md): every HB session works here (made from main 2026-10-25). HB-2 (the run's loading screen) and HB-4b (the island rebuilt; HB-4a's `art/hub-island-sketches` merged in) done 2026-10-25; HB-1 is finished on `claude/hub-island-revamp-4fskxy`. |
 | `track/test-cleanup` | Test clean-up track (docs/phases/test-cleanup-track.md): every lane of TC-1..TC-4 works here; round 1 in PR #155. |
 | `art/hub-buildings` | Hub track HB-5, the art half (docs/phases/hub-track.md): cottage variants and roofs, the `enter` door act, models for the Workshop, Gene Bank, lighthouse and windmill, five rooms, the showcase map test_hub_buildings. One session (2026-10-25); the placing half follows HB-4b. |
+| `track/hub-merge` | Hub track: `track/hub` (HB-4a, HB-4b), `art/hub-station-trains` (HB-7 art), `art/hub-buildings` (HB-5 art) and `props/hub-fence` (HB-6) merged together for one PR into main (2026-10-25), Copperleaf rebuilt by the tools. Delete it, and the three one-session branches, once the PR merges. |
 | `terrain-generation` | Terrain track: TR-2c part 1 merged; one leftover HANDOFF note on top. Part 2 next. |
 | `terrain/tr-1-roads` | Terrain TR-1: road gradient cap and switchbacks. Not merged. |
 | `ccr-be1fe0b2-8j7yqr` | The TR-1 session's own branch: 9 commits not in main, 4 of them not in `terrain/tr-1-roads` either (MAPGEN_VERSION 3, stairs, walls). Check against `terrain/tr-1-roads` before deleting. |

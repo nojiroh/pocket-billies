@@ -117,6 +117,13 @@ Every figure is a claim from a read of the code: check it again at the start of 
 
 About 10-15 sessions. HB-1, HB-2 and HB-4a can run side by side; then HB-3 beside HB-4b; then HB-5, HB-6 and HB-7.
 
+**Merged together** (2026-10-25, on `track/hub-merge`, for one PR into main): `track/hub` (HB-4a, HB-4b),
+`art/hub-station-trains` (HB-7's art), `art/hub-buildings` (HB-5's art half), `props/hub-fence` (HB-6), a merge
+commit each. Copperleaf rebuilt by the tools (build-copperleaf, then one round of build-island and build-copperleaf so
+the ground meets HB-6's swell); see HANDOFF. Still to do on the new island: Skyline Station onto its headland with the
+sky rail and portal (HB-7 placed it beside the mast); the Workshop, Gene Bank, lighthouse and windmill onto their plots,
+the inn's, library's and store's door acts (HB-5's placing half); HB-3, HB-8, HB-9.
+
 ### HB-1 Pin and decals
 - Pin: when the walk view is on the island map, the pin, the "here" ring and the walker use
   `bowlMapPoint(spot, M, walkView.pl.x, walkView.pl.z)`, else the map's `hub` point; the height from
