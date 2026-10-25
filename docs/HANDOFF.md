@@ -2,6 +2,60 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Hub track HB-7 - Skyline Station and the sky trains (the art and the sheet) - 2026-10-25
+Branch `art/hub-station-trains` (one session of the hub track, started from main with PR #193's branch merged in for
+HB-1's decalPlace and the plan file). Plan approved in Plan Mode. The owner's answers: the station is **Skyline
+Station**; the trains are **the Lakeland Clipper, the Greenbelt Sunrunner, the Wildwood Zephyr, the Highland Arrow,
+the Harvest Comet**; merge HB-1 in. Notes mid-session: the trains have rocket engines; the portal is a tear floating
+in the sky, retro-futuristic. Tag `hb-7-done` for the owner to push.
+- Where the plan was wrong (checked in the code): see hub-track.md "Done in HB-7". In short: the portal models didn't
+  fit; a model can't stand above the ground, so every rail piece carries its pylon; the airship's act was read by
+  `standByMast`, check-data's buildings rule, airship-data.test (which also forbids a prop of kind `station`) and
+  three check-quick steps besides the ones listed; Copperleaf is generated, so the station goes in through
+  build-copperleaf.mjs. Found on main: Copperleaf's input still said "tax them all" (RF-1 changed only the map), so a
+  rerun of the builder changed the lab's line; fixed in the input first.
+- Changed (one cause per commit):
+  - Art: `tools/build-station-trains.py` (rerunnable): `train_station` (platform, verdigris canopy, departures board,
+    name boards, ticket kiosk, clock, benches, lamps, track bed), `sky_rail` (flat and its looks bend, rise, rise
+    high, crest), `sky_portal` (a tear hanging in the sky, always turned to the eye, past a launch lip; chrome Googie
+    stabilisers and a turning brass hoop; a gold look for HB-8's return), five `train_<theme>` (group `sky_train`,
+    hover skids over the rail, rocket engines and their plumes at the tail, lettering as fixed decals, a light bob).
+    The showcase map `test_station_trains` (`?test=1&scene=test_station_trains`). `tools/look-station.py`: phone
+    pictures of the showcase, or `--hub` the station in Copperleaf from four sides (validation/look-station/).
+  - Data: regions.json `themes.<id>.train` (`{k, name}`): schema, type, check-data (a sky train prop), a test.
+  - Sheet: `stationMenu` (airship.js): "Start a run" (runStartSheet unchanged) and the station's Crest upgrades;
+    the walk's act `station` opens it, an upgrade bought on it opens it again; `standByMast` finds a station first.
+  - Copperleaf: build-copperleaf.mjs places the station on the open ground nearest the mast (118.9, 93.2, turned
+    as the mast) and takes the mast's act and label away: the airship is scenery. buildings.json's act `station`.
+    Checks retargeted: check-quick's phone step and RL-8 tap the station, airship_moored finds the mast by kind,
+    check-fast's Lab step buys on the station's sheet; airship-data.test wants Copperleaf's station.
+  - Player words: "Pick it at Skyline Station", "Start one at Skyline Station", the welcome's "Skyline Station sends
+    you out on a run", the Lab's "at Skyline Station", "Station upgrades", buildings.json's name, "Station Lv 2".
+  - Rename (no behaviour): the building `airship` -> `station`, the unlock `airship_2` -> `station_2`.
+- Risky or unfinished:
+  - The run still leaves on the airship's flight over the world map, and the run sheet still says "The airship flies
+    you out" and "The airship adds": HB-8 swaps both for the train. `flyMenu`'s hub branch (Start a run, upgrades,
+    tickets) can no longer be reached (the hub has no `fly` prop, a run town's mast only offers Fly home); left as
+    it is because track/hub's HB-2 edits airship.js's take-off. Remove it in HB-8.
+  - The station stands beside the mast for now with its rail ending at its right end (no sky rail in Copperleaf):
+    HB-4b gives it the headland and lays the rail out to sea (12 m pieces on one heading; the portal piece last).
+  - Expect merges with track/hub (HB-2) in airship.js and run.js: my edits there are `stationMenu`, `standByMast`'s
+    lookup and one hint line. Never hand-merge hooks.js (npm run modules).
+  - The portal's tear is a camera-facing picture (one draw); the stabilisers' and hoop's turning layers are a few
+    more spin meshes. Phone cost not measured.
+  - A save with the old `airship_2` loses that row (old saves don't matter).
+- Verified: lint, typecheck, check:modules, format:check, check:data; unit tests 941/941 (the check-data snapshot
+  counts one more data file; a test that every theme has its own sky train). check-fast: the Lab (Station Lv 2 bought
+  on the station's sheet), packing for a run, a run's world, a run's battle and home: 5/5. check-quick: the phone
+  step (Start-Game, the station's sheet, Start a run) and airship_moored pass; RL-8 gets past the station's sheet
+  and fails later at "the town's shop has no Perk", as on main (RL-12c's entry). `check:smoke` 6/6 (the in-game test's
+  first step, the debug log export). The in-game full test's run phase fails with "a place on row 4 isn't its zone's
+  biome" on this branch and on main f779581 alike (fix/run-zone-biome's work); it still logs "a run starts" and ends
+  in Copperleaf. Pictures: validation/look-station/ (showcase at noon, Copperleaf from four sides). The full quick
+  check was not run (not a phase end).
+- Next: the owner's look at the pictures; HB-8 (departure and return: the train on the rail, the tear, the carriage
+  loading screen) after HB-2; HB-4b places the station on its headland.
+
 ### Hub track HB-1 - the world map's pin, decals on their models (done) - 2026-10-25
 Branch `claude/hub-island-revamp-4fskxy` (the planning session's branch: `track/hub` didn't exist yet and a cloud
 session pushes only to its own branch; the owner chose to build HB-1 here, as RL-12c was). Plan approved in Plan Mode
