@@ -2074,17 +2074,24 @@ function worldBowlReady() {
 }
 /* the map's slow parts done ahead, in idle time and without the GPU: the places, the island's own heights, the terrain
    map and its pictures, each place's map, the models' recipes and the pictures of things without one. The walk scene
-   starts it in the hub, the opening fall as it begins. */
-const worldMapWarm = { on: false };
-export function worldMapPrewarm() {
-  if (worldMapWarm.on || !worldMapWanted()) return;
+   starts it in the hub, the opening fall as it begins. HB-2: done(ok) when it has finished (a run's loading screen
+   waits on it); a second call while it works waits for the same end. */
+const worldMapWarm = { on: false, done: /** @type {((ok: boolean) => void)[]} */ ([]) };
+export function worldMapPrewarm(done) {
+  if (done) worldMapWarm.done.push(done);
+  if (worldMapWarm.on) return;
+  const end = ok => {
+    worldMapWarm.on = false;
+    for (const f of worldMapWarm.done.splice(0)) f(ok);
+  };
+  if (!worldMapWanted()) return end(false);
   worldMapWarm.on = true;
   const later = f =>
     typeof requestIdleCallback === 'function' ? requestIdleCallback(f, { timeout: 200 }) : setTimeout(f, 16);
   let tries = 0;
   const step = () => {
     try {
-      if (++tries > 4000) return (worldMapWarm.on = false);
+      if (++tries > 4000) return end(false);
       worldBowlSpots();
       const g = worldBowl.ground,
         id = worldBowl.islandLoading,
@@ -2113,10 +2120,10 @@ export function worldMapPrewarm() {
         if (imgs.length) Promise.resolve(artLoad(imgs)).catch(() => {});
         g.warmThings = true;
       }
-      worldMapWarm.on = false;
+      end(true);
     } catch (e) {
       console.error(e);
-      worldMapWarm.on = false;
+      end(false);
     }
   };
   later(step);
