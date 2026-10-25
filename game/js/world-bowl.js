@@ -280,7 +280,7 @@ const BOWL_SEA_FAR = [0.16, 0.42, 0.62]; /* the sea's colour far away (the walk 
 
 /* the ground's scale: metres to the bowl's radius, squares across the terrain map, and the far-colours' size */
 export const BOWL_METRES = 1000;
-const BOWL_INDEX = 2048;
+export const BOWL_INDEX = 2048;
 const BOWL_MIX = 1024;
 /* the routes' and rivers' line map: distance to the nearest route (red, up to BOWL_ROUTE_FIELD), whether a place's own
    ground is there (green: up close its own paths show instead), distance to the nearest river (blue) */
@@ -2075,19 +2075,23 @@ function worldBowlReady() {
 /* the map's slow parts done ahead, in idle time and without the GPU: the places, the island's own heights, the terrain
    map and its pictures, each place's map, the models' recipes and the pictures of things without one. The walk scene
    starts it in the hub, the opening fall as it begins. HB-2: done(ok) when it has finished (a run's loading screen
-   waits on it); a second call while it works waits for the same end. */
-const worldMapWarm = { on: false, done: /** @type {((ok: boolean) => void)[]} */ ([]) };
-export function worldMapPrewarm(done) {
+   waits on it, eager: on a timer, not in idle time, which a page drawing every frame seldom has); a second call while
+   it works waits for the same end. */
+const worldMapWarm = { on: false, eager: false, done: /** @type {((ok: boolean) => void)[]} */ ([]) };
+export function worldMapPrewarm(done, eager) {
   if (done) worldMapWarm.done.push(done);
+  if (eager) worldMapWarm.eager = true;
   if (worldMapWarm.on) return;
   const end = ok => {
-    worldMapWarm.on = false;
+    worldMapWarm.on = worldMapWarm.eager = false;
     for (const f of worldMapWarm.done.splice(0)) f(ok);
   };
   if (!worldMapWanted()) return end(false);
   worldMapWarm.on = true;
   const later = f =>
-    typeof requestIdleCallback === 'function' ? requestIdleCallback(f, { timeout: 200 }) : setTimeout(f, 16);
+    worldMapWarm.eager || typeof requestIdleCallback !== 'function'
+      ? setTimeout(f, worldMapWarm.eager ? 0 : 16)
+      : requestIdleCallback(f, { timeout: 200 });
   let tries = 0;
   const step = () => {
     try {
@@ -2100,7 +2104,11 @@ export function worldMapPrewarm(done) {
       if (M && bowlHasCoast(M) && !bowlIslandHeights(M)) return later(step);
       const T = worldBowlTerrainStart();
       if (!T.ready) {
-        T.fill(48);
+        const t0 = performance.now();
+        if (!worldMapWarm.eager) T.fill(48);
+        else
+          do T.fill(16);
+          while (!T.ready && performance.now() - t0 < 12);
         return later(step);
       }
       worldBowlStampMaps(T);

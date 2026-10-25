@@ -21,7 +21,7 @@ import { mapArtPaths, mapById, prepareMap, walkData, walkView } from './walk-vie
 import { walkRenderer } from './walk/walk-state.js';
 import { loadPropModelRecipe } from './prop-models.js';
 import { seamlessHubMap } from './seamless-world.js';
-import { worldMapPrewarm } from './world-bowl.js';
+import { BOWL_INDEX, worldBowl, worldMapPrewarm } from './world-bowl.js';
 import { loreLoadingLines } from './lore.js';
 import { runWorld } from './run-world.js';
 /* eslint-disable no-func-assign */
@@ -49,7 +49,7 @@ const RUN_LOAD_STAGES = [
 ];
 /** the loading under way (or the last one): `on` while it runs, `ready` once it has ended, its stages (logic/run-load.js)
  * and the screen while it shows */
-const runLoad = {
+export const runLoad = {
   on: false,
   ready: true,
   /** @type {import('./logic/run-load.js').RunLoad | null} */
@@ -104,7 +104,7 @@ export function runLoadBegin(why, node) {
         if (mine()) runLoadModels(mapById(sc.id) || sc, f => part('models', f));
       });
   /* the run's world map, its slow parts done ahead */
-  if (typeof worldMapPrewarm === 'function') worldMapPrewarm(() => part('bowl', 1));
+  if (typeof worldMapPrewarm === 'function') worldMapPrewarm(() => part('bowl', 1), true);
   else part('bowl', 1);
   runLoad.timer = setInterval(() => runLoadStep(gen), 100);
 }
@@ -158,6 +158,13 @@ function runLoadStep(gen) {
   /* the run ended or the save was swapped: nothing to wait for */
   if (!saveData.run) return runLoadEnd('gone');
   if (runLoadWalkReady()) runLoadPart(L, 'walk', 1, performance.now());
+  /* the world map's share: the rows of its terrain worked out (most of the prewarm's time) */
+  const T = worldBowl.ground && worldBowl.ground.terrain;
+  if (T && !T.ready) {
+    const a = T.row0 || 0,
+      z = T.rowEnd ?? BOWL_INDEX;
+    runLoadPart(L, 'bowl', (0.9 * (T.row - a)) / Math.max(1, z - a), performance.now());
+  }
   const end = runLoadTick(L, performance.now(), (RULES.run.load && RULES.run.load.capMs) || 20000);
   if (runLoad.el) {
     const el = /** @type {any} */ (runLoad.el);
@@ -185,7 +192,7 @@ function runLoadEnd(how) {
 
 /** show the screen over the page while the loading runs (the take-off's landing, a resume); nothing when it has
  * ended already */
-function runLoadShow() {
+export function runLoadShow() {
   if (!runLoad.on || runLoad.el || !runLoad.L) return;
   const el = /** @type {any} */ (document.createElement('pb-loading')),
     run = saveData.run,
