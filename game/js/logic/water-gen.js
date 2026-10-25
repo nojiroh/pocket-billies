@@ -28,6 +28,8 @@ import {
   mapgenOccAdd,
   mapgenPaintDisc,
   mapgenPaintStream,
+  mapgenReach,
+  mapgenReached,
   mapgenResample,
   mapgenRound2,
   mapgenSegCross,
@@ -36,15 +38,24 @@ import {
 } from './mapgen.js';
 /* eslint-disable no-func-assign */
 expose({
+  WATERGEN_CLIMB_MIN: [() => WATERGEN_CLIMB_MIN],
   WATERGEN_DEPTH: [() => WATERGEN_DEPTH],
+  WATERGEN_FALL_MIN: [() => WATERGEN_FALL_MIN],
   WATERGEN_FLAT: [() => WATERGEN_FLAT],
+  WATERGEN_LOST_MAX: [() => WATERGEN_LOST_MAX],
   WATERGEN_NB8: [() => WATERGEN_NB8],
   WATERGEN_RAPID: [() => WATERGEN_RAPID],
   WATERGEN_RAPID_LEN: [() => WATERGEN_RAPID_LEN],
   WATERGEN_SEAM_REACH: [() => WATERGEN_SEAM_REACH],
+  WATERGEN_SET_CHANCE: [() => WATERGEN_SET_CHANCE],
+  WATERGEN_SET_CHANCE_CAVE: [() => WATERGEN_SET_CHANCE_CAVE],
+  WATERGEN_SET_PIECE: [() => WATERGEN_SET_PIECE],
+  WATERGEN_STEP: [() => WATERGEN_STEP],
   WATERGEN_STRAIGHT: [() => WATERGEN_STRAIGHT],
   WATERGEN_TRIES: [() => WATERGEN_TRIES],
   WATERGEN_UNDER: [() => WATERGEN_UNDER],
+  // @ts-expect-error -- replaced on purpose
+  waterGenBankRaise: [() => waterGenBankRaise, v => (waterGenBankRaise = v)],
   waterGenBetween: [() => waterGenBetween],
   // @ts-expect-error -- replaced on purpose
   waterGenBlocked: [() => waterGenBlocked, v => (waterGenBlocked = v)],
@@ -55,9 +66,15 @@ expose({
   // @ts-expect-error -- replaced on purpose
   waterGenCarve: [() => waterGenCarve, v => ((waterGenCarve = v), provide({ waterGenCarve }))],
   // @ts-expect-error -- replaced on purpose
+  waterGenClimbs: [() => waterGenClimbs, v => ((waterGenClimbs = v), provide({ waterGenClimbs }))],
+  // @ts-expect-error -- replaced on purpose
   waterGenCorners: [() => waterGenCorners, v => (waterGenCorners = v)],
   // @ts-expect-error -- replaced on purpose
   waterGenCutsOff: [() => waterGenCutsOff, v => (waterGenCutsOff = v)],
+  waterGenFallEnds: [() => waterGenFallEnds],
+  waterGenFallEntry: [() => waterGenFallEntry],
+  // @ts-expect-error -- replaced on purpose
+  waterGenFalls: [() => waterGenFalls, v => ((waterGenFalls = v), provide({ waterGenFalls }))],
   // @ts-expect-error -- replaced on purpose
   waterGenFits: [() => waterGenFits, v => (waterGenFits = v)],
   // @ts-expect-error -- replaced on purpose
@@ -68,11 +85,27 @@ expose({
   waterGenHeap: [() => waterGenHeap, v => (waterGenHeap = v)],
   // @ts-expect-error -- replaced on purpose
   waterGenHeightAt: [() => waterGenHeightAt, v => (waterGenHeightAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  waterGenLevels: [() => waterGenLevels, v => (waterGenLevels = v)],
+  // @ts-expect-error -- replaced on purpose
+  waterGenLost: [() => waterGenLost, v => (waterGenLost = v)],
   waterGenOnSide: [() => waterGenOnSide],
   // @ts-expect-error -- replaced on purpose
   waterGenPaint: [() => waterGenPaint, v => (waterGenPaint = v)],
   // @ts-expect-error -- replaced on purpose
+  waterGenPlungePool: [() => waterGenPlungePool, v => (waterGenPlungePool = v)],
+  // @ts-expect-error -- replaced on purpose
+  waterGenReach: [() => waterGenReach, v => (waterGenReach = v)],
+  // @ts-expect-error -- replaced on purpose
+  waterGenReachedNear: [() => waterGenReachedNear, v => (waterGenReachedNear = v)],
+  // @ts-expect-error -- replaced on purpose
+  waterGenReachedRing: [() => waterGenReachedRing, v => (waterGenReachedRing = v)],
+  waterGenRestore: [() => waterGenRestore],
+  // @ts-expect-error -- replaced on purpose
   waterGenRiver: [() => waterGenRiver, v => ((waterGenRiver = v), provide({ waterGenRiver }))],
+  // @ts-expect-error -- replaced on purpose
+  waterGenRiverFalls: [() => waterGenRiverFalls, v => (waterGenRiverFalls = v)],
+  waterGenSave: [() => waterGenSave],
   // @ts-expect-error -- replaced on purpose
   waterGenSeamCells: [() => waterGenSeamCells, v => (waterGenSeamCells = v)],
   // @ts-expect-error -- replaced on purpose
@@ -80,6 +113,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   waterGenSeamRiver: [() => waterGenSeamRiver, v => (waterGenSeamRiver = v)],
   waterGenSegDist: [() => waterGenSegDist],
+  // @ts-expect-error -- replaced on purpose
+  waterGenSetPiece: [() => waterGenSetPiece, v => (waterGenSetPiece = v)],
+  // @ts-expect-error -- replaced on purpose
+  waterGenSetPieceSpots: [() => waterGenSetPieceSpots, v => (waterGenSetPieceSpots = v)],
   // @ts-expect-error -- replaced on purpose
   waterGenShape: [() => waterGenShape, v => (waterGenShape = v)],
   // @ts-expect-error -- replaced on purpose
@@ -91,10 +128,12 @@ expose({
   // @ts-expect-error -- replaced on purpose
   waterGenSmoothLine: [() => waterGenSmoothLine, v => (waterGenSmoothLine = v)],
   // @ts-expect-error -- replaced on purpose
+  waterGenStepRiver: [() => waterGenStepRiver, v => (waterGenStepRiver = v)],
+  // @ts-expect-error -- replaced on purpose
   waterGenTry: [() => waterGenTry, v => (waterGenTry = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ waterGenCarve, waterGenRiver });
+provide({ waterGenCarve, waterGenClimbs, waterGenFalls, waterGenRiver });
 /* to-module: end */
 /** metres a river runs straight across a side before it turns, so a seam is crossed head on */
 export const WATERGEN_STRAIGHT = 8;
@@ -990,5 +1029,563 @@ export function waterGenCarve(G) {
       const [x, z] = waterGenOnSide(G, s.side, u, 0);
       G.H[Math.round(z) * W + Math.round(x)] = v;
     }
+  }
+}
+
+/* ================= WATERFALLS PLACED (water track WA-2b, lane G) =================
+   After the land stage (terraces, mountains, ledges: mapgen.js calls waterGenFalls once):
+   - the river steps with the land: the terraces and a massif's shelves leave the ground under water at 0 (a river in a
+     trench), so its water is lifted to the step raise of its lower bank, never higher than the point before;
+   - a drop of WATERGEN_FALL_MIN or more is a fall (the scene's `falls`, the contract in water-track.md), with a plunge
+     pool at its foot when one fits on the foot's level and you can walk to it; smaller drops stay the renderer's
+     automatic cascades;
+   - now and then a set piece (WATERGEN_SET_PIECE metres): a spring on a massif's shelf spilling off its cliff into a
+     pool below (more often in a cave);
+   - `climb: 1` where the fall is WATERGEN_CLIMB_MIN or taller and both its top and its foot can be walked to, so the
+     Waterfall field move is a short cut, never the only way.
+   Its own random stream ('heights', 'falls'). */
+/** the smallest drop that makes a fall (m); smaller steps are the automatic cascades */
+export const WATERGEN_FALL_MIN = 0.6;
+/** a set piece's drop (m, the owner's answer) */
+export const WATERGEN_SET_PIECE = [4, 15];
+/** how often a route with mountains gets a set piece, and a cave */
+export const WATERGEN_SET_CHANCE = 0.4;
+export const WATERGEN_SET_CHANCE_CAVE = 0.7;
+/** the shortest fall the Waterfall field move climbs (m) */
+export const WATERGEN_CLIMB_MIN = 2;
+/** the half-metre cells a pool or a set piece may cut off from the road (as a river's 25 cells, WA-3a): a notch down
+ * a massif's shelves splits a shelf that is only walked along its length, so most places are refused */
+export const WATERGEN_LOST_MAX = 25;
+/** a step you walk up or down (walk-view.js MAX_STEP_RISE) */
+export const WATERGEN_STEP = 0.34;
+
+/** the walked level of each half-metre cell (smooth ground and its raise), and whether it is dry ground */
+export function waterGenLevels(G) {
+  const { w, h } = G,
+    W2 = w * 2,
+    H2 = h * 2,
+    lv = new Float32Array(W2 * H2),
+    dry = new Uint8Array(W2 * H2);
+  for (let j = 0; j < H2; j++)
+    for (let i = 0; i < W2; i++) {
+      const q = j * W2 + i,
+        f = G.F[(j >> 1) * w + (i >> 1)];
+      lv[q] = waterGenHeightAt(G.H, w, h, (i + 0.5) / 2, (j + 0.5) / 2) + G.S[q];
+      dry[q] = !(f & 4) || f & 8 ? 1 : 0;
+    }
+  return { lv, dry, W2, H2 };
+}
+/** the dry half-metre cells you can walk to from the road (steps of WATERGEN_STEP at most, up or down; a ledge's hop
+ * is not counted, so this is a little short of the game's own reach, never past it) */
+export function waterGenReach(G) {
+  const { lv, dry, W2, H2 } = waterGenLevels(G),
+    seen = new Uint8Array(W2 * H2),
+    list = [];
+  for (let q = 0; q < W2 * H2; q++)
+    if (dry[q] && G.F[((q / W2) >> 1) * G.w + ((q % W2) >> 1)] & 1) {
+      seen[q] = 1;
+      list.push(q);
+    }
+  for (let k = 0; k < list.length; k++) {
+    const q = list[k],
+      i = q % W2,
+      j = (q - i) / W2;
+    for (const [a, b] of [
+      [i + 1, j],
+      [i - 1, j],
+      [i, j + 1],
+      [i, j - 1],
+    ]) {
+      if (a < 0 || b < 0 || a >= W2 || b >= H2) continue;
+      const o = b * W2 + a;
+      if (seen[o] || !dry[o] || Math.abs(lv[o] - lv[q]) > WATERGEN_STEP) continue;
+      seen[o] = 1;
+      list.push(o);
+    }
+  }
+  return seen;
+}
+/** is any reached dry half-metre cell within r of (x, z) */
+export function waterGenReachedNear(G, seen, x, z, r) {
+  const W2 = G.w * 2,
+    H2 = G.h * 2;
+  for (let j = Math.max(0, Math.floor((z - r) * 2)); j <= Math.min(H2 - 1, Math.floor((z + r) * 2)); j++)
+    for (let i = Math.max(0, Math.floor((x - r) * 2)); i <= Math.min(W2 - 1, Math.floor((x + r) * 2)); i++)
+      if (seen[j * W2 + i] && Math.hypot((i + 0.5) / 2 - x, (j + 0.5) / 2 - z) <= r) return true;
+  return false;
+}
+/** the lowest raise of the river's banks at each point of its line: dry ground just beyond its edge on either side,
+ * the lower side (other water, a road or the map's edge counts 0, a bridge its deck's raise), then the lowest over
+ * 1.5 m either way along the line, so the water steps only at a terrace's front or a shelf's edge */
+export function waterGenBankRaise(G, river) {
+  const { w, h } = G,
+    W2 = w * 2,
+    { pts, wid } = river,
+    N = pts.length,
+    raw = new Float32Array(N);
+  const sideAt = (x, z) => {
+    const i = Math.floor(x * 2),
+      j = Math.floor(z * 2);
+    if (i < 0 || j < 0 || i >= W2 || j >= h * 2) return 0;
+    const f = G.F[(j >> 1) * w + (i >> 1)];
+    if (f & (1 | 2 | 4 | 128)) return f & 8 ? G.S[j * W2 + i] : 0;
+    return G.S[j * W2 + i];
+  };
+  const pinned = (G.P.pin || '') + G.joined.map(s => s.side).join('');
+  for (let k = 0; k < N; k++) {
+    const [x, z] = pts[k],
+      a = pts[Math.max(0, k - 2)],
+      b = pts[Math.min(N - 1, k + 2)],
+      L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1,
+      nx = -(b[1] - a[1]) / L,
+      nz = (b[0] - a[0]) / L,
+      half = wid[k] / 2;
+    let lo = Infinity;
+    for (const s of [1, -1]) {
+      let m = Infinity;
+      for (const d of [half + 0.6, half + 1.1]) m = Math.min(m, sideAt(x + nx * d * s, z + nz * d * s));
+      lo = Math.min(lo, m);
+    }
+    /* by a pinned or joined side the water stays at the neighbour's level */
+    for (const s of pinned) if (mapgenDepth(G, s, x, z) <= WATERGEN_STRAIGHT + 1) lo = 0;
+    raw[k] = Math.max(0, lo);
+  }
+  /* the river ends in the sea or a lake at its level */
+  if (river.mouth === 'sea' || river.mouth === 'lake') for (let k = Math.max(0, N - 8); k < N; k++) raw[k] = 0;
+  const out = new Float32Array(N);
+  for (let k = 0; k < N; k++) {
+    let m = raw[k];
+    for (let d = -3; d <= 3; d++) m = Math.min(m, raw[waterGenBetween(k + d, 0, N - 1)]);
+    out[k] = m;
+  }
+  return out;
+}
+/** the river's water lifted to its banks' raise (never higher than the point before, in 5 cm steps): the raise of each
+ * point of its line (G.S under its water and its pool set to it) */
+export function waterGenStepRiver(G, river) {
+  const { w, h } = G,
+    W2 = w * 2,
+    H2 = h * 2,
+    { pts, wid } = river,
+    N = pts.length,
+    t = waterGenBankRaise(G, river),
+    r = new Float32Array(N);
+  for (let k = 0; k < N; k++) r[k] = Math.floor(Math.min(k ? r[k - 1] : Infinity, t[k]) * 20 + 1e-6) / 20;
+  if (!r.some(v => v > 0)) return r;
+  /* each half-metre water cell's nearest point of the line */
+  const best = new Float32Array(W2 * H2).fill(1e9),
+    who = new Int32Array(W2 * H2).fill(-1);
+  for (let k = 0; k < N; k++) {
+    const R = wid[k] / 2 + 1,
+      [x, z] = pts[k];
+    for (let j = Math.max(0, Math.floor((z - R) * 2)); j <= Math.min(H2 - 1, Math.floor((z + R) * 2)); j++)
+      for (let i = Math.max(0, Math.floor((x - R) * 2)); i <= Math.min(W2 - 1, Math.floor((x + R) * 2)); i++) {
+        const d = Math.hypot((i + 0.5) / 2 - x, (j + 0.5) / 2 - z);
+        if (d <= R && d < best[j * W2 + i]) {
+          best[j * W2 + i] = d;
+          who[j * W2 + i] = k;
+        }
+      }
+  }
+  const pool = river.pool;
+  for (let q = 0; q < W2 * H2; q++) {
+    const i = q % W2,
+      j = (q - i) / W2,
+      f = G.F[(j >> 1) * w + (i >> 1)];
+    if (!(f & 4) || f & 8) continue;
+    let k = who[q];
+    if (pool && Math.hypot((i + 0.5) / 2 - pool.at[0], (j + 0.5) / 2 - pool.at[1]) <= pool.r + 1) k = N - 1;
+    if (k < 0 || r[k] <= 0) continue;
+    G.S[q] = Math.max(G.S[q], r[k]);
+  }
+  /* dry ground right beside the lifted water, lower than it, comes up to it (not a road, a bridge or a jetty) */
+  for (let q = 0; q < W2 * H2; q++) {
+    const i = q % W2,
+      j = (q - i) / W2,
+      f = G.F[(j >> 1) * w + (i >> 1)];
+    if (f & (1 | 4 | 8 | 128)) continue;
+    let up = 0;
+    for (const [a, b] of [
+      [i + 1, j],
+      [i - 1, j],
+      [i, j + 1],
+      [i, j - 1],
+    ]) {
+      if (a < 0 || b < 0 || a >= W2 || b >= H2) continue;
+      const o = b * W2 + a,
+        fo = G.F[(b >> 1) * w + (a >> 1)];
+      if (fo & 4 && !(fo & 8) && who[o] >= 0) up = Math.max(up, G.S[o]);
+    }
+    if (up > G.S[q]) G.S[q] = up;
+  }
+  G.stepsUsed = true;
+  return r;
+}
+/** a plunge pool of radius r centred at (cx, cz) on ground whose raise is s0 and water level lev, in whole cells (a
+ * cell is in it when its middle is): its cells must be dry ground at that raise (within 0.4 m; higher ground is cut
+ * down to it when carve is set) or water no higher, clear of roads, bridges, jetties, a town's square and the hub,
+ * and of the map's last 6 m; painted as a river's water (deep more than 1.1 m from its edge), its bed carved like the
+ * river's. Returns false (nothing painted) when it does not fit */
+export function waterGenPlungePool(G, cx, cz, r, s0, lev, carve) {
+  const { w, h } = G,
+    W2 = w * 2,
+    W = w + 1;
+  if (Math.min(cx, cz, w - cx, h - cz) < r + 6) return false;
+  if (G.town) {
+    const [x0, z0, x1, z1] = G.town.square;
+    if (cx > x0 - 12 - r && cx < x1 + 12 + r && cz > z0 - 12 - r && cz < z1 + 12 + r) return false;
+  }
+  if (Math.hypot(cx - G.hub[0], cz - G.hub[1]) < r + 6) return false;
+  const cells = [];
+  let ok = true;
+  mapgenPaintDisc(G, cx, cz, r + 1, (q, d) => {
+    const f = G.F[q];
+    if (f & (1 | 8 | 128)) ok = false;
+    if (d > r) return;
+    const i = q % w,
+      j = (q - i) / w;
+    for (const o of [0, 1, W2, W2 + 1]) {
+      const v = G.S[j * 2 * W2 + i * 2 + o];
+      if (f & 4 ? v > s0 + 0.05 : v < s0 - 0.4 || (!carve && v > s0 + 0.4)) ok = false;
+    }
+    cells.push(q);
+  });
+  if (!ok || !cells.length) return false;
+  for (const q of cells) {
+    const i = q % w,
+      j = (q - i) / w,
+      d = Math.hypot(i + 0.5 - cx, j + 0.5 - cz);
+    if (!(G.F[q] & 4)) G.T[q] = d < r - 1.1 ? 'd' : 'w';
+    G.F[q] = (G.F[q] & ~(2 | 32 | 64)) | 4;
+    for (const o of [0, 1, W2, W2 + 1]) {
+      G.S[j * 2 * W2 + i * 2 + o] = s0;
+      G.M[j * 2 * W2 + i * 2 + o] = 0;
+    }
+  }
+  mapgenPaintDisc(G, cx, cz, r + 0.9, q => {
+    if (!(G.F[q] & (1 | 4))) {
+      G.T[q] = G.B.ground.bank;
+      G.F[q] |= 64;
+    }
+  });
+  /* the bed under its level, deeper toward the middle */
+  const core = Math.max(0.75, r - 0.75);
+  for (let j = Math.max(0, Math.ceil(cz - r - 1)); j <= Math.min(h, Math.floor(cz + r + 1)); j++)
+    for (let i = Math.max(0, Math.ceil(cx - r - 1)); i <= Math.min(w, Math.floor(cx + r + 1)); i++) {
+      const d = Math.hypot(i - cx, j - cz);
+      if (d > r + 0.5) continue;
+      G.H[j * W + i] = Math.min(
+        G.H[j * W + i],
+        lev - WATERGEN_DEPTH * (1 - waterGenSmooth(waterGenBetween((d - core) / 0.8, 0, 1)))
+      );
+    }
+  return true;
+}
+/** copies of what a plunge pool paints, to take it back when it cuts ground off */
+export const waterGenSave = G => ({ T: G.T.slice(), F: G.F.slice(), S: G.S.slice(), H: G.H.slice() });
+export const waterGenRestore = (G, s) => {
+  G.T = s.T;
+  G.F.set(s.F);
+  G.S.set(s.S);
+  G.H.set(s.H);
+};
+/** reached half-metre cells lost (dry before, still dry, no longer reached) */
+export function waterGenLost(G, before, after) {
+  const W2 = G.w * 2;
+  let lost = 0;
+  for (let q = 0; q < before.length; q++)
+    if (before[q] && !after[q]) {
+      const f = G.F[((q / W2) >> 1) * G.w + ((q % W2) >> 1)];
+      if (!(f & 4)) lost++;
+    }
+  return lost;
+}
+/** a fall's entry (the contract): x, z the lip's middle, dir the way it falls, w, h, pool (0 none), climb */
+export const waterGenFallEntry = (x, z, dir, w, h, pool, climb, k) => {
+  /** @type {any} */
+  const f = {
+    x: mapgenRound2(x),
+    z: mapgenRound2(z),
+    dir: [mapgenRound2(dir[0]), mapgenRound2(dir[1])],
+    w: mapgenRound2(w),
+    h: mapgenRound2(h),
+    pool: mapgenRound2(pool),
+  };
+  if (k && k !== 'stream') f.k = k;
+  if (climb) f.climb = 1;
+  return f;
+};
+/** the river's falls: where its lifted water drops WATERGEN_FALL_MIN or more between two points of its line */
+export function waterGenRiverFalls(G, river, r) {
+  const { pts, wid, lev } = river,
+    N = pts.length,
+    out = [];
+  for (let k = 1; k < N; k++) {
+    const drop = r[k - 1] - r[k] + Math.max(0, lev[k - 1] - lev[k]);
+    if (r[k - 1] - r[k] < 0.05 || drop < WATERGEN_FALL_MIN) continue;
+    const a = pts[Math.max(0, k - 3)],
+      b = pts[Math.min(N - 1, k + 2)],
+      L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    out.push({
+      k,
+      x: (pts[k - 1][0] + pts[k][0]) / 2,
+      z: (pts[k - 1][1] + pts[k][1]) / 2,
+      dir: [(b[0] - a[0]) / L, (b[1] - a[1]) / L],
+      w: Math.max(wid[k - 1], wid[k]),
+      h: drop,
+    });
+  }
+  return out;
+}
+/** a set piece's place: the edge of a massif's shelf over a run of shelves going down (never up) that drops
+ * WATERGEN_SET_PIECE metres within 6 m, its lip on a whole metre (so cells split cleanly at it), the shelf behind flat
+ * for a spring's run of 4 m, and the ground below walked to. Candidates every metre, the tallest first */
+export function waterGenSetPieceSpots(G, seen) {
+  const { w } = G,
+    { lv, dry, W2, H2 } = waterGenLevels(G),
+    out = [];
+  const clear = (i, j) => {
+    if (i < 0 || j < 0 || i >= W2 || j >= H2) return false;
+    const f = G.F[(j >> 1) * w + (i >> 1)];
+    return dry[j * W2 + i] && !(f & (1 | 2 | 4 | 8 | 128));
+  };
+  for (let j = 16; j < H2 - 16; j++)
+    for (let i = 16; i < W2 - 16; i++)
+      for (const [di, dj] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]) {
+        /* the lip on a whole metre: the top cell is the last half of its metre in the way it falls */
+        if ((di === 1 && i % 2 === 0) || (di === -1 && i % 2) || (dj === 1 && j % 2 === 0) || (dj === -1 && j % 2))
+          continue;
+        if (!clear(i, j)) continue;
+        const top = lv[j * W2 + i];
+        if (!clear(i + di, j + dj) || top - lv[(j + dj) * W2 + i + di] < 0.3) continue;
+        /* down the shelves to where they stop going down, 6 m at most */
+        let m = 0,
+          prev = top;
+        for (let n = 1; n <= 12; n++) {
+          const a = i + di * n,
+            b = j + dj * n,
+            v = lv[b * W2 + a];
+          if (!clear(a, b) || v > prev + 0.05) break;
+          if (prev - v < 0.05 && m && top - prev >= WATERGEN_SET_PIECE[0]) break;
+          prev = v;
+          m = n;
+        }
+        if (!m || top - prev < WATERGEN_SET_PIECE[0]) continue;
+        const fi = i + di * m,
+          fj = j + dj * m,
+          drop = top - lv[fj * W2 + fi];
+        if (drop > WATERGEN_SET_PIECE[1]) continue;
+        /* the shelf behind: 4 m back and 1 m either side at the top's raise */
+        let flat = true;
+        for (let n = 0; n <= 8 && flat; n++)
+          for (let s = -2; s <= 2 && flat; s++) {
+            const a = i - di * n + dj * s,
+              b = j - dj * n + di * s;
+            if (!clear(a, b) || Math.abs(G.S[b * W2 + a] - G.S[j * W2 + i]) > 0.05) flat = false;
+          }
+        if (!flat) continue;
+        /* no road or trail within 6 m of the face (a notch across the shelves beside one would cut it off) */
+        let far = true;
+        for (let b = Math.max(0, (j >> 1) - 8); b <= Math.min(G.h - 1, (j >> 1) + 8) && far; b++)
+          for (let a = Math.max(0, (i >> 1) - 8); a <= Math.min(w - 1, (i >> 1) + 8) && far; a++)
+            if (G.F[b * w + a] & 1) far = false;
+        if (!far) continue;
+        const x = (i + 0.5 + di * 0.5) / 2,
+          z = (j + 0.5 + dj * 0.5) / 2;
+        if (!waterGenReachedNear(G, seen, (fi + 0.5) / 2 + di, (fj + 0.5) / 2 + dj, 3)) continue;
+        out.push({ i, j, di, dj, x, z, run: m / 2, h: drop, foot: G.S[fj * W2 + fi] });
+      }
+  out.sort((a, b) => b.h - a.h || a.j - b.j || a.i - b.i || a.di - b.di || a.dj - b.dj);
+  /* one a place: none within 6 m of a taller one */
+  const kept = [];
+  for (const S of out) if (!kept.some(K => Math.hypot(K.x - S.x, K.z - S.z) < 6)) kept.push(S);
+  return kept;
+}
+/** a set piece: a spring on the shelf, its run to the edge, a notch cut down the shelves below to the foot's level,
+ * the fall and its pool; returns its fall or null */
+export function waterGenSetPiece(G, rnd, seen) {
+  const spots = waterGenSetPieceSpots(G, seen);
+  if (!spots.length) return null;
+  const { w, h } = G,
+    W = w + 1,
+    W2 = w * 2;
+  /* one of the tallest few, by the random stream, else the next ones down */
+  const start = Math.floor(rnd.next() * Math.min(4, spots.length));
+  for (const S of spots.slice(start).concat(spots.slice(0, start)).slice(0, 12)) {
+    const width = 1.5 + rnd.next(),
+      prW = waterGenBetween(width * 0.6 + S.h * 0.08, 1.6, 2.8),
+      save = waterGenSave(G);
+    /* the notch: whole cells past the lip, within the run's width of the line to the pool, cut down to the foot */
+    let ok = true,
+      s0 = S.foot;
+    const notch = [];
+    const fx = S.x + S.di * S.run,
+      fz = S.z + S.dj * S.run;
+    mapgenPaintDisc(G, (S.x + fx) / 2, (S.z + fz) / 2, S.run / 2 + width, q => {
+      const i = q % w,
+        j = (q - i) / w,
+        x = i + 0.5,
+        z = j + 0.5;
+      if ((x - S.x) * S.di + (z - S.z) * S.dj <= 0) return;
+      if (waterGenSegDist(x, z, [S.x, S.z], [fx, fz]) > width / 2 + 0.25) return;
+      if (G.F[q] & (1 | 4 | 8 | 128)) ok = false;
+      for (const o of [0, 1, W2, W2 + 1]) s0 = Math.min(s0, G.S[j * 2 * W2 + i * 2 + o]);
+      notch.push(q);
+    });
+    /* the foot at the lowest shelf the notch reaches */
+    const h0 = S.h + S.foot - s0;
+    if (h0 > WATERGEN_SET_PIECE[1]) ok = false;
+    if (!ok) continue;
+    for (const q of notch) {
+      const i = q % w,
+        j = (q - i) / w;
+      for (const o of [0, 1, W2, W2 + 1]) {
+        G.S[j * 2 * W2 + i * 2 + o] = s0;
+        G.M[j * 2 * W2 + i * 2 + o] = 0;
+      }
+      G.T[q] = 'w';
+      G.F[q] = (G.F[q] & ~(2 | 16 | 32 | 64)) | 4;
+    }
+    /* its pool: the widest that fits on the foot's shelf */
+    let pr = 0,
+      cx = 0,
+      cz = 0;
+    /* the pool reaches back to the notch's foot (its middle a radius and a quarter metre past the lip, as a river's) */
+    for (const r of [Math.max(prW, S.run / 2), 1.4]) {
+      if (S.run > r * 2 + 0.01) continue;
+      cx = S.x + S.di * (r + 0.25);
+      cz = S.z + S.dj * (r + 0.25);
+      if (waterGenPlungePool(G, cx, cz, r, s0, waterGenHeightAt(G.H, w, h, cx, cz) - WATERGEN_UNDER, true)) {
+        pr = r;
+        break;
+      }
+    }
+    if (!pr) {
+      waterGenRestore(G, save);
+      continue;
+    }
+    /* the spring's run on the shelf: 4 m back from the lip, whole cells behind it */
+    const sx = S.x - S.di * 4,
+      sz = S.z - S.dj * 4;
+    mapgenPaintDisc(G, (S.x + sx) / 2, (S.z + sz) / 2, 2 + width, q => {
+      const i = q % w,
+        j = (q - i) / w,
+        x = i + 0.5,
+        z = j + 0.5;
+      if ((x - S.x) * S.di + (z - S.z) * S.dj >= 0) return;
+      if (waterGenSegDist(x, z, [sx, sz], [S.x, S.z]) > width / 2 + 0.25) return;
+      if (G.F[q] & 4) return;
+      G.T[q] = 'w';
+      G.F[q] = (G.F[q] & ~(2 | 16 | 32 | 64)) | 4;
+    });
+    /* its bed a little under the shelf (the corners inside its run only) */
+    const topLev = waterGenHeightAt(G.H, w, h, sx, sz) - WATERGEN_UNDER;
+    for (let j = 0; j <= h; j++)
+      for (let i = 0; i <= w; i++) {
+        if ((i - S.x) * S.di + (j - S.z) * S.dj >= -0.25) continue;
+        if (waterGenSegDist(i, j, [sx, sz], [S.x, S.z]) < width / 2 - 0.25)
+          G.H[j * W + i] = Math.min(G.H[j * W + i], topLev);
+      }
+    const after = waterGenReach(G);
+    if (waterGenLost(G, seen, after) > WATERGEN_LOST_MAX) {
+      waterGenRestore(G, save);
+      continue;
+    }
+    const pts = [
+      [sx, sz],
+      [S.x, S.z],
+      [cx, cz],
+    ];
+    G.streams.push({
+      pts: pts.map(p => [mapgenRound2(p[0]), mapgenRound2(p[1])]),
+      speed: 0.9,
+      w: pts.map(() => mapgenRound2(width)),
+      src: 'spring',
+      mouth: 'pool',
+    });
+    for (const p of pts) mapgenOccAdd(G, p[0], p[1], 0.8);
+    G.waterKind = G.waterKind || G.B.water;
+    G.stepsUsed = true;
+    return waterGenFallEntry(S.x, S.z, [S.di, S.dj], width, h0, pr, false, G.B.water === 'spring' ? 'spring' : '');
+  }
+  return null;
+}
+/**
+ * WA-2b: the scene's waterfalls (G.falls, the scene's `falls`), after the land stage: the river lifted to its banks'
+ * steps, a fall at each drop of WATERGEN_FALL_MIN or more with its plunge pool, and now and then a set piece
+ */
+export function waterGenFalls(G) {
+  G.falls = [];
+  const rnd = G.rng('heights', 'falls'),
+    river = G.river,
+    falls = [];
+  if (river && G.stepsUsed) {
+    const r = waterGenStepRiver(G, river);
+    let seen = waterGenReach(G);
+    for (const F of waterGenRiverFalls(G, river, r)) {
+      const k = F.k,
+        pr = waterGenBetween(F.w * 0.55 + F.h * 0.1, 1.4, 3),
+        cx = F.x + F.dir[0] * (pr + 0.25),
+        cz = F.z + F.dir[1] * (pr + 0.25),
+        save = waterGenSave(G);
+      let pool = 0;
+      if (
+        waterGenReachedNear(G, seen, cx, cz, pr + 1.5) &&
+        waterGenPlungePool(G, cx, cz, pr, r[k], river.lev[k], false)
+      ) {
+        const after = waterGenReach(G);
+        if (waterGenLost(G, seen, after) > WATERGEN_LOST_MAX) waterGenRestore(G, save);
+        else {
+          pool = pr;
+          seen = after;
+        }
+      }
+      falls.push(waterGenFallEntry(F.x, F.z, F.dir, F.w, F.h, pool, false, null));
+    }
+  }
+  /* a set piece now and then: a route or a cave with mountains (never a town) */
+  const chance = G.P.biome === 'cave' ? WATERGEN_SET_CHANCE_CAVE : WATERGEN_SET_CHANCE;
+  if (G.mtnE && G.P.kind !== 'town' && rnd.next() < chance) {
+    const S = waterGenSetPiece(G, rnd, waterGenReach(G));
+    if (S) falls.push(S);
+  }
+  G.falls = falls;
+  return falls;
+}
+/** where a fall's top and foot are tested for being walked to: 4 m back from its lip (its river or spring above it),
+ * and its pool's middle (WATERGEN's pools lie their radius and a quarter metre past the lip) */
+export const waterGenFallEnds = f => ({
+  top: [f.x - f.dir[0] * 4, f.z - f.dir[1] * 4, f.w / 2 + 3],
+  foot: [f.x + f.dir[0] * (f.pool + 0.25), f.z + f.dir[1] * (f.pool + 0.25), f.pool + 2.5],
+});
+/** is dry, reached ground within r of (x, z) (sampled on rings) */
+export function waterGenReachedRing(sc, R, x, z, r) {
+  for (let a = 0; a < 32; a++)
+    for (const d of [r * 0.5, r * 0.75, r]) {
+      const px = x + Math.cos((a / 32) * Math.PI * 2) * d,
+        pz = z + Math.sin((a / 32) * Math.PI * 2) * d;
+      if (px < 0 || pz < 0 || px >= sc.w || pz >= sc.h) continue;
+      const t = sc.tiles[sc.h - 1 - Math.floor(pz)][Math.floor(px)];
+      if (t !== 'w' && t !== 'd' && mapgenReached(R, px, pz)) return true;
+    }
+  return false;
+}
+/**
+ * on the finished scene (mapgen.js, last): `climb: 1` on a fall WATERGEN_CLIMB_MIN or taller with a pool whose top and
+ * foot the game's own reach (mapgenReach, props and slopes) walks to, so the Waterfall field move is a short cut,
+ * never the only way
+ */
+export function waterGenClimbs(sc, scenery) {
+  if (!sc.falls || !sc.falls.some(f => f.pool && f.h >= WATERGEN_CLIMB_MIN)) return;
+  const R = mapgenReach(sc, scenery, sc.hub, { slope: true });
+  for (const f of sc.falls) {
+    if (!f.pool || f.h < WATERGEN_CLIMB_MIN) continue;
+    const { top, foot } = waterGenFallEnds(f);
+    if (waterGenReachedRing(sc, R, ...top) && waterGenReachedRing(sc, R, ...foot)) f.climb = 1;
   }
 }
