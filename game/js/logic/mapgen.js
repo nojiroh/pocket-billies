@@ -4732,6 +4732,17 @@ export function mapgenStagePieces(G, sc, scenery, D) {
 /* ---------- RT-4: habitats ---------- */
 /** a habitat's most points a place, and how far apart they stand (m) */
 export const MAPGEN_HABITAT = { most: 12, apart: 3 };
+/** the eight ways a metre round a point mapgenHabitats looks for water or a forest */
+const MAPGEN_HABITAT_ROUND = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+  [0.7, 0.7],
+  [-0.7, 0.7],
+  [0.7, -0.7],
+  [-0.7, -0.7],
+];
 /**
  * RT-4: the points where a laid-out place's wild Billies of a habitat wait (rules.json run.wild.habitats; tall grass
  * is the grass habitat's own, sc.grassPatches): `water`, dry ground you walk to within a metre of water; `woods`,
@@ -4758,16 +4769,7 @@ export function mapgenHabitats(G, sc, R) {
         held[j * gw + i] = 1;
   }
   const beside = (x, z, test) => {
-    for (const [dx, dz] of [
-      [1, 0],
-      [-1, 0],
-      [0, 1],
-      [0, -1],
-      [0.7, 0.7],
-      [-0.7, 0.7],
-      [0.7, -0.7],
-      [-0.7, -0.7],
-    ]) {
+    for (const [dx, dz] of MAPGEN_HABITAT_ROUND) {
       const q = tile(x + dx, z + dz);
       if (q >= 0 && test(q)) return true;
     }
@@ -4784,11 +4786,14 @@ export function mapgenHabitats(G, sc, R) {
       z = (Math.floor(q / gw) + 0.5) / N,
       t = tile(x, z);
     if (t < 0 || G.T[t] === 't' || G.T[t] === 'b' || x < 2 || x > w - 2) continue;
+    /* the cheap tests first: most cells are beside neither */
+    const by = Object.keys(kinds).filter(k => beside(x, z, kinds[k]));
+    if (!by.length) continue;
     if (G.near[t] >= 0 && G.dist[t] - G.roadPts[G.near[t]].r < 1.5) continue;
     if (Math.hypot(x - sc.hub[0], z - sc.hub[1]) < 6 || exits.some(e => Math.hypot(e[0] - x, e[1] - z) < 5)) continue;
     if (stands.some(s => Math.hypot(s[0] - x, s[1] - z) < 2.5) || pieces.some(s => Math.hypot(s[0] - x, s[1] - z) < 4))
       continue;
-    for (const k in kinds) if (beside(x, z, kinds[k])) found[k].push(q);
+    for (const k of by) found[k].push(q);
   }
   /** @type {Record<string, [number, number][]>} */
   const out = {};
