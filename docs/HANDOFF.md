@@ -39,7 +39,16 @@ remaining props"; the vines as cut strips, the palm fronds modelled, no `phase-0
   have no emissive light): they are brighter colours plus their sparkle and glow effects.
 - Verified: lint, type-check, unit tests (917 pass), check-data, the smoke check (6 of 6); headless pictures of each
   `test_props_biomes` row (game camera and turned), and the seven run places above with models and with pictures (no
-  page errors). Full quick check: running when this was written; its result follows in the next commit.
+  page errors).
+- Full quick check (1249 s): 35 of 37 steps pass. The song fingerprints' "cave mid" and "cave late" (missing from
+  validation/sound-baseline, as in part 1). RL-8 failed at "“Take off” didn’t start a run’s flight", earlier than
+  part 1's known "the town’s shop has no Perk": the step waits for a run on the save while the flight is on, and the
+  flight lasts 2.5-3.5 s of wall clock, while headless frames after the take-off stall 3-5 s (drawing items, the map,
+  finishing shaders) on part 1's commit and on this one alike, so the flight can start and land inside one stall. On
+  this branch the step failed there 2 runs out of 3 (the third reached the shop Perk); on part 1's commit 0 out of 2.
+  A probe of the take-off alone found the flight on after 4.7-13 s in both builds, and no page errors; I found no
+  cause in this batch, but the counts are too few to rule one out. Not changed here; a fix would be for the step to
+  accept a run on the save that has landed as well as one in flight. Watch the take-off on the phone.
 - Phone check wanted: a tundra, a jungle, a volcano and a cave run (a cave town for the cave houses and a crystal
   spire); turn the camera round the palms, the jungle trees and the crystals; export the debug log.
 - Next: batch 11 is done. Phase 09 task 10 (far versions and instancing, the jungle's draws first), or the owner's pick.
