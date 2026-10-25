@@ -4006,7 +4006,8 @@ export function mapgenLayoutSpots(sc, scenery, G) {
         }
     }
   }
-  /* RT-2: at a bridge's ends, a step back from the deck and to one side, facing along it */
+  /* RT-2: at a bridge's ends, a step back from the deck and to one side, facing the deck's middle (WA-3a: a river
+     that runs downhill can leave the road beyond the bridge out of a sight that runs along it) */
   for (const S of sc.bridges || []) {
     const dx = S.b[0] - S.a[0],
       dz = S.b[1] - S.a[1],
@@ -4026,7 +4027,7 @@ export function mapgenLayoutSpots(sc, scenery, G) {
           x: mapgenRound2(x),
           z: mapgenRound2(z),
           y: yOf(qOf(x, z), x, z),
-          face: deg(-ux * u, -uz * u),
+          face: deg((S.a[0] + S.b[0]) / 2 - x, (S.a[1] + S.b[1]) / 2 - z),
         });
         break found;
       }
