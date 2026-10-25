@@ -1432,16 +1432,21 @@ function worldBowlThingScale() {
 /* the town's smaller structures the bowl draws as their models though they are no buildings (no door, small) */
 const BOWL_STRUCTURE = /^(airship_station|airship_mast|well|fountain|clock_tower|greenhouse)$/;
 /* one model standing at (x, y) on the bowl: its scale and the map's east and north there (group 1, a map's own) */
-function worldBowlModelInto(W, model, x, y, k, east, north) {
-  const key = 'm:' + model;
+/* HB-3: turned by the placement's rot (degrees, logic/prop-turn.js turnedPoint: its across toward its back), as the
+   walk scene turns it */
+function worldBowlModelInto(W, model, x, y, k, east, north, rot = 0) {
+  const key = 'm:' + model,
+    a = (rot * Math.PI) / 180,
+    ca = Math.cos(a),
+    sa = Math.sin(a);
   W.models.add(model);
   (W.inst[key] = W.inst[key] || []).push([
     ...bowlToGpu(x, y, worldBowlSkyFloor(x, y)),
     k,
-    east[0],
-    east[1],
-    north[0],
-    north[1],
+    ca * east[0] + sa * north[0],
+    ca * east[1] + sa * north[1],
+    ca * north[0] - sa * east[0],
+    ca * north[1] - sa * east[1],
     1,
     0.05 + ((0.9 * (((Math.sin(x * 9137.1 + y * 5711.3) * 43758.5) % 1) + 1)) % 1),
     0,
@@ -1495,7 +1500,7 @@ function worldBowlThingsOfPlace(W, i) {
         0,
       ]);
     } else if ((cls === 'building' || art.landmark || structure) && modelOf(art)) {
-      worldBowlModelInto(W, art.model, x, y, k * (p.s || 1), east, north);
+      worldBowlModelInto(W, art.model, x, y, k * (p.s || 1), east, north, +(p.rot || 0));
     } else if (art && art.img) W.stand.push({ i, k: p.k, x, y, g: 1, s: p.s || 1 });
   }
   /* IS-7: an island map's plots no building stands on yet get one of their kind, turned to face where the plot does */
@@ -1504,24 +1509,8 @@ function worldBowlThingsOfPlace(W, i) {
     if (!art || !art.model || !/\.json$/.test(art.model)) continue;
     const [x, y] = bowlMapPoint(s, M, t.x, t.z, BOWL_METRES);
     if (Math.hypot(x, y) > 0.99) continue;
-    const a = (t.turn * Math.PI) / 180,
-      ca = Math.cos(a),
-      sa = Math.sin(a),
-      key = 'm:' + art.model;
-    W.models.add(art.model);
     n++;
-    (W.inst[key] = W.inst[key] || []).push([
-      ...base(x, y),
-      k,
-      ca * east[0] + sa * north[0],
-      ca * east[1] + sa * north[1],
-      ca * north[0] - sa * east[0],
-      ca * north[1] - sa * east[1],
-      1,
-      0.05 + ((0.9 * (((Math.sin(x * 9137.1 + y * 5711.3) * 43758.5) % 1) + 1)) % 1),
-      0,
-      0,
-    ]);
+    worldBowlModelInto(W, art.model, x, y, k, east, north, t.turn);
   }
   W.counts[i] = n;
   return true;
