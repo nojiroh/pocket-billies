@@ -2122,6 +2122,7 @@ export function mapgenTrailSearch(G, goal, isRoad, s) {
       if (
         done[st2] ||
         G.F[mapgenCellAt(G, ii, jj)] & 4 ||
+        G.F[mapgenCellAt(G, i + di / 2, j + dj / 2)] & 4 /* WA-3a: a 2 m step never hops a narrow stream */ ||
         mapgenSteepAt(G, c2) ||
         mapgenSteepAt(G, (c + c2) >> 1) ||
         mapgenNearPinned(G, ii, jj)
