@@ -312,6 +312,7 @@ document.addEventListener('click', ev => {
     case 'mbuddy':
     case 'mheal':
     case 'mhealuse':
+    case 'mheldgive':
     case 'mteam':
     case 'tmadd':
     case 'tmaddon':
