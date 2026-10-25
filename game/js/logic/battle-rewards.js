@@ -10,6 +10,7 @@
 import { expose } from '../test-globals.js';
 import { PERKS, RULES } from '../game-data.js';
 import { dropEncounter, findBilly, wildPrize } from './rules.js';
+import { runLostTo } from './run-history.js';
 import { fieldBadgeKey } from './run-side.js';
 import { runFragileDrop } from './run-loop.js';
 import { fxMoney } from './effects.js';
@@ -84,6 +85,12 @@ export function battleSettle(b, s) {
     lead = findBilly(b.lead),
     run = s.run && b.runK != null ? s.run : null;
   if (run) run.at = { phase: 'walk', battle: -1 };
+  /* RL-S1: the story remembers what ended a run and the leaders beaten (logic/run-history.js) */
+  if (run && o === 'lose') run.lostTo = runLostTo(b);
+  if (run && o === 'win' && b.T && (b.T.runFoe === 'miniboss' || b.T.runFoe === 'boss') && b.T.from) {
+    const beat = run.beat || (run.beat = []);
+    if (!beat.includes(b.T.from) && beat.length < 16) beat.push(b.T.from);
+  }
   /* v36: the Hype counter */
   if (o === 'win') for (const m of s.team) if (m.hp > 0) m.wins = (m.wins || 0) + 1;
   if (b.kind === 'wild') dropEncounter(b.qid);

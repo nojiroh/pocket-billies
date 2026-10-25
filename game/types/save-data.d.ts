@@ -102,6 +102,41 @@ export interface Meta {
   expedition: number;
   /** RL-R2: badges kept for good, by type id in lower case (`water`): the first win over a leader of the type */
   badges: Record<string, 1>;
+  /** RL-S1: the newest runs, oldest first (logic/run-history.js, at most 20); the story's `last:`, `lastby:`,
+      `history:` and `rematch` read it */
+  history: HistoryEntry[];
+}
+
+/** RL-S1: what ended a lost run (logic/run-history.js runLostTo): the battle's kind, its leader's or class's id, the
+    Billie standing, and whether it was the Bureau's */
+export interface RunLostTo {
+  kind: 'wild' | 'route' | 'event' | 'miniboss' | 'boss' | 'trainer';
+  id?: string;
+  sp?: SpeciesId;
+  bureau?: 1;
+}
+
+/** RL-S1: one past run (logic/run-history.js historyEntry) */
+export interface HistoryEntry {
+  seed: string;
+  /** its region's theme and name ('' on a run without one) */
+  theme: string;
+  region: string;
+  /** its Expedition */
+  exp: number;
+  end: 'won' | 'lost' | 'quit';
+  /** what beat you (a loss only) */
+  by: RunLostTo | null;
+  /** the furthest row reached, the days it took */
+  row: number;
+  days: number;
+  /** the team's species as it ended, the Perks held */
+  team: SpeciesId[];
+  perks: string[];
+  /** the region's leaders (and a side area's), each beaten or not */
+  leaders: { id: string; beat: 0 | 1 }[];
+  /** RL-S2: the rival's result (none yet) */
+  rival: null;
 }
 
 /** roguelite track RL-3: the ranch, a hub building (logic/ranch-state.js; filled in RL-9 and RL-10) */
@@ -264,6 +299,10 @@ export interface Run {
   pack?: { items: Record<DataId, number>; pyramids: Record<DataId, number> };
   /** RL-12b: its events and reward picks (logic/run-enc.js); missing on a run from before */
   enc?: RunEnc;
+  /** RL-S1: what beat you, kept from the lost battle to the payout (logic/run-history.js runLostTo) */
+  lostTo?: RunLostTo;
+  /** RL-S1: the leaders (trainer ids) beaten this run */
+  beat?: string[];
 }
 
 /** RL-12b: a run's events and reward picks (logic/run-enc.js, logic/encounters.js, logic/rewards.js) */

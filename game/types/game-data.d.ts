@@ -1813,6 +1813,8 @@ export interface TrainerClass {
   team: [number, number];
   sight: string;
   lose: string;
+  /** RL-S1: one of the Bureau's agents */
+  bureau?: 1;
 }
 /** events.json events: one event, its intro and 2-3 options */
 export interface RunEvent {

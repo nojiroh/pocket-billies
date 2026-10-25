@@ -77,6 +77,7 @@ import '../../game/js/logic/route-trainers.js';
 import '../../game/js/logic/rules.js';
 import '../../game/js/logic/run-bowl.js';
 import '../../game/js/logic/run-enc.js';
+import '../../game/js/logic/run-history.js';
 import '../../game/js/logic/run-loop.js';
 import '../../game/js/logic/run-map.js';
 import '../../game/js/logic/run-marks.js';

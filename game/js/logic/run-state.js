@@ -13,6 +13,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
+import { historyEntry, historyPush, validLostTo } from './run-history.js';
 import { META_IDS, META_MAX, recordOf, wholeIn } from './meta-state.js';
 import { expeditionAfterWin } from './modifiers.js';
 /* eslint-disable no-func-assign */
@@ -234,6 +235,9 @@ export function validRun(o) {
   if (o.pack !== undefined && !(packed(o.pack.items || {}) && packed(o.pack.pyramids || {}))) return false;
   /* RL-12b: its events and reward picks (missing on a run from before) */
   if (o.enc !== undefined && !validRunEnc(o.enc)) return false;
+  /* RL-S1: what beat you (to the payout) and the leaders beaten (logic/run-history.js) */
+  if (o.lostTo !== undefined && !validLostTo(o.lostTo)) return false;
+  if (o.beat !== undefined && (!list(o.beat, 16) || !o.beat.every(id))) return false;
   /* the hub as the run started: shapes only (validSave checks its Billies like the team's) */
   const st = o.start,
     counts = v => recordOf(v, 500, n => wholeIn(n, 0, META_MAX));
@@ -454,7 +458,9 @@ export function runEnd(s, how, rates, itemPrice) {
     itemPrice
   );
   const kept = how.keep.map(uid => s.team.find(m => m.uid === uid)).filter(m => !!m),
-    bag = how.won ? { items: copyOf(s.items || {}), pyramids: copyOf(s.pyramids || {}) } : null;
+    bag = how.won ? { items: copyOf(s.items || {}), pyramids: copyOf(s.pyramids || {}) } : null,
+    /* RL-S1: the run as the story remembers it, read while the team and the run's records are the run's */
+    entry = historyEntry(s, how.won);
   runRestore(s);
   for (const m of /** @type {Billy[]} */ (copyOf(kept))) {
     const inTeam = s.team.findIndex(t => t.uid === m.uid),
@@ -474,6 +480,7 @@ export function runEnd(s, how, rates, itemPrice) {
   if (how.won) s.meta.wins += 1;
   /* RL-13: winning the highest Expedition open opens the next (logic/modifiers.js) */
   s.meta.expedition = expeditionAfterWin(s.meta.expedition || 1, run.expedition || 1, how.won);
+  s.meta.history = historyPush(s.meta.history, entry);
   return pay;
 }
 /** put the hub's working fields back from run.start and leave the run, paying nothing (runEnd's last step; also a
