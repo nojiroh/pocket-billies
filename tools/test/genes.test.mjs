@@ -31,6 +31,16 @@ test('genes: the game data passes dataGenes; planted mistakes are named', () => 
   assert.ok(got.includes('stability'));
 });
 
+test('genes: SP-3 the wild odds leave some Billies plain and every spliceable kind has a word', () => {
+  const G = structuredClone(GAME_DATA.genes);
+  Object.assign(G.wild, { graft: 0.7, chimera: 0.3, escaped: 0.1, chimeraParts: [3, 2] });
+  delete G.kinds.tail.word;
+  const got = C.dataGenes({ ...GAME_DATA, genes: G }).map(p => p[1].split(':')[0]);
+  assert.ok(got.includes('wild'), got.join(' | '));
+  assert.ok(got.includes('wild.chimeraParts'));
+  assert.ok(got.includes('kinds.tail.word'));
+});
+
 const N = modules.genes,
   STATS = GAME_DATA.stats.map(s => s.id),
   D = {

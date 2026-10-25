@@ -1794,12 +1794,21 @@ export type FxRow =
 export interface Genes {
   about?: string;
   /** a part kind (partKits.json parts.kind) and the trait it brings */
-  kinds: Record<string, { trait: string }>;
+  kinds: Record<string, { trait: string; word?: string }>;
   traits: Record<string, GeneTrait>;
   /** per part id: its dominant type (the Billie's second type) and the move it teaches (SP-4) */
   parts: Record<string, { type?: string; move?: string }>;
   /** the most traits a Billie has */
   maxTraits: number;
+  /** SP-3: the share of a run place's wild Billies spliced at spawn (a Graft, a Chimera; escaped waits for SP-5's
+   * Augments), a Chimera's fewest and most foreign parts, and the DNA a beaten one pays */
+  wild: {
+    graft: number;
+    chimera: number;
+    escaped: number;
+    chimeraParts: [number, number];
+    dna: { graft: number; chimera: number };
+  };
   /** a foreign part's cost (same line, same kit, another kit, an Augment), the limit, how far past it is refused */
   stability: { line: number; kit: number; other: number; augment: number; limit: number; refuse: number };
   /** a splice past the limit: one stat times up, another times down, and the drawback */

@@ -1141,11 +1141,14 @@ export function dataGenes(D, valid = () => true) {
     if (!kinds.has(k)) problem(`kinds.${k}: no part of that kind (partKits.json)`);
     if (!traits[R.trait]) problem(`kinds.${k}.trait: no trait "${R.trait}"`);
   }
+  const wordless = new Set();
   for (const F of (D.kitBuilds && D.kitBuilds.forms) || [])
     for (const bone of ['arm', 'leg', 'tail']) {
       const P = F.parts && F.parts[bone] && parts[F.parts[bone][0]];
       if (P && !(G.kinds || {})[P.kind]) problem(`kinds: no row for "${P.kind}" (${F.rig}'s ${bone} can be spliced)`);
+      else if (P && !G.kinds[P.kind].word) wordless.add(P.kind);
     }
+  for (const k of wordless) problem(`kinds.${k}.word: a spliceable kind needs one (SP-3's battle line)`);
   for (const [k, T] of Object.entries(traits))
     (T.fx || []).forEach((/** @type {any} */ f, /** @type {number} */ n) =>
       fxRowProblems(f, `traits.${k}.fx[${n}]`, GENE_KINDS, D, problem)
@@ -1158,6 +1161,10 @@ export function dataGenes(D, valid = () => true) {
     if (P.type != null && !types.has(P.type)) problem(`parts.${k}.type: no type "${P.type}" (types.json)`);
     if (P.move != null && !moves[P.move]) problem(`parts.${k}.move: no move "${P.move}" (moves.json)`);
   }
+  const W = G.wild;
+  if (W.graft + W.chimera + W.escaped >= 1)
+    problem('wild: graft, chimera and escaped must leave some wild Billies plain');
+  if (W.chimeraParts[0] > W.chimeraParts[1]) problem('wild.chimeraParts: the fewest first');
   const S = G.stability;
   if (!(S.line <= S.kit && S.kit <= S.other && S.other <= S.augment))
     problem('stability: the costs must rise from line to kit, other and augment');

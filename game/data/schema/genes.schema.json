@@ -10,7 +10,8 @@
   "parts",
   "maxTraits",
   "stability",
-  "unstable"
+  "unstable",
+  "wild"
  ],
  "properties": {
   "about": {
@@ -29,6 +30,12 @@
      "trait"
     ],
     "properties": {
+     "word": {
+      "description": "the part's name in text, after the donor animal (\"a shark's tail\"; SP-3's battle line); a spliceable kind needs one",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 16
+     },
      "trait": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9_]*$",
@@ -205,6 +212,66 @@
    "type": "integer",
    "minimum": 1,
    "maximum": 5
+  },
+  "wild": {
+   "description": "SP-3: the share of a run place's wild Billies spliced at spawn: graft (one foreign part from a Billie of the same place), chimera (chimeraParts of them), escaped (an Augment; unused until SP-5); and the DNA a beaten one pays",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "graft",
+    "chimera",
+    "escaped",
+    "chimeraParts",
+    "dna"
+   ],
+   "properties": {
+    "graft": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "chimera": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "escaped": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "chimeraParts": {
+     "description": "the fewest and most foreign parts on a Chimera",
+     "type": "array",
+     "minItems": 2,
+     "maxItems": 2,
+     "items": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 3
+     }
+    },
+    "dna": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "graft",
+      "chimera"
+     ],
+     "properties": {
+      "graft": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 1000
+      },
+      "chimera": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 1000
+      }
+     }
+    }
+   }
   },
   "stability": {
    "description": "what a foreign part costs: from the Billie's own line, from another species whose part is of the same kit, from another kit, an Augment; the limit before a splice is Unstable, and how far past the limit a splice is refused",
