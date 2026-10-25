@@ -62,6 +62,7 @@ expose({
   ISLAND_RAD: [() => ISLAND_RAD],
   ISLAND_RIVER_W: [() => ISLAND_RIVER_W],
   ISLAND_SEA_BED: [() => ISLAND_SEA_BED],
+  ISLAND_TOWN_EXTRA: [() => ISLAND_TOWN_EXTRA],
   ISLAND_VALLEY: [() => ISLAND_VALLEY],
   islandAngle: [() => islandAngle],
   islandAngleDiff: [() => islandAngleDiff],
