@@ -1931,7 +1931,10 @@
    "flat": 0,
    "tags": ["town","farm"],
    "group": "tent",
-   "box": [3.2,2.4]
+   "box": [3.2,2.4],
+   "model": "scene/next/models/tent.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "stall": {
    "name": "Fruit stall",
@@ -1973,8 +1976,10 @@
    "group": "campfire",
    "solid": 0.5,
    "fx": [
-    {"k":"fire","x":0,"y":-13}
-   ]
+    {"k":"fire","x":0,"y":-12}
+   ],
+   "model": "scene/next/models/campfire.json",
+   "ppm": 32
   },
   "arch": {
    "name": "Town gate",
@@ -2830,7 +2835,9 @@
    "flat": 0,
    "tags": ["farm","town"],
    "group": "crates",
-   "solid": 0.5
+   "solid": 0.5,
+   "model": "scene/next/models/sack.json",
+   "ppm": 32
   },
   "stalagmite_b": {
    "name": "Stalagmite cluster",
@@ -4838,7 +4845,9 @@
    "sway": 0,
    "flat": 0,
    "tags": ["battle"],
-   "group": "barrel"
+   "group": "barrel",
+   "model": "scene/next/models/barrel.json",
+   "ppm": 32
   },
   "pipe": {
    "name": "Pipe",
@@ -5569,7 +5578,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "shop_counter",
-   "box": [2.6,0.9]
+   "box": [2.6,0.9],
+   "model": "scene/next/models/shop_counter.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "counter_white": {
    "name": "Reception desk",
@@ -5583,8 +5595,11 @@
    "group": "counter_white",
    "box": [2.6,0.9],
    "fx": [
-    {"k":"glow","x":26,"y":-41}
-   ]
+    {"k":"glow","x":26,"y":-43}
+   ],
+   "model": "scene/next/models/counter_white.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "shop_shelf": {
    "name": "Shelves of goods",
@@ -5596,7 +5611,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "shop_shelf",
-   "box": [2,0.6]
+   "box": [2,0.6],
+   "model": "scene/next/models/shop_shelf.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "fridge_drinks": {
    "name": "Drinks fridge",
@@ -5610,8 +5628,11 @@
    "group": "fridge_drinks",
    "box": [1,0.7],
    "fx": [
-    {"k":"glow","x":0,"y":-47}
-   ]
+    {"k":"glow","x":0,"y":-42}
+   ],
+   "model": "scene/next/models/fridge_drinks.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "clinic_bed": {
    "name": "Clinic bed",
@@ -5623,7 +5644,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "clinic_bed",
-   "box": [1,2]
+   "box": [1,2],
+   "model": "scene/next/models/clinic_bed.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "privacy_screen": {
    "name": "Privacy screen",
@@ -5635,7 +5659,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "privacy_screen",
-   "box": [1.6,0.3]
+   "box": [1.6,0.3],
+   "model": "scene/next/models/privacy_screen.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "bookshelf": {
    "name": "Bookcase",
@@ -5647,7 +5674,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "bookshelf",
-   "box": [1.8,0.5]
+   "box": [1.8,0.5],
+   "model": "scene/next/models/bookshelf.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "lab_desk": {
    "name": "Desk with a computer",
@@ -5661,8 +5691,11 @@
    "group": "lab_desk",
    "box": [1.8,0.8],
    "fx": [
-    {"k":"glow","x":-4,"y":-47}
-   ]
+    {"k":"glow","x":-8,"y":-43}
+   ],
+   "model": "scene/next/models/lab_desk.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "lab_machine": {
    "name": "Evolution machine",
@@ -5676,9 +5709,12 @@
    "group": "lab_machine",
    "box": [1.8,1.2],
    "fx": [
-    {"k":"glow","x":0,"y":-59},
-    {"k":"sparkle","x":0,"y":-71}
-   ]
+    {"k":"glow","x":0,"y":-56},
+    {"k":"sparkle","x":0,"y":-67}
+   ],
+   "model": "scene/next/models/lab_machine.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "table_round": {
    "name": "Round table",
@@ -5716,7 +5752,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "sofa",
-   "box": [2,0.9]
+   "box": [2,0.9],
+   "model": "scene/next/models/sofa.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "fireplace": {
    "name": "Fireplace",
@@ -5730,8 +5769,11 @@
    "group": "fireplace",
    "box": [1.8,0.6],
    "fx": [
-    {"k":"fire","x":0,"y":-9}
-   ]
+    {"k":"fire","x":0,"y":-10}
+   ],
+   "model": "scene/next/models/fireplace.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "plant_tall": {
    "name": "Potted plant",
@@ -5743,7 +5785,9 @@
    "flat": 0,
    "tags": ["indoor","town"],
    "group": "plant_tall",
-   "solid": 0.3
+   "solid": 0.3,
+   "model": "scene/next/models/plant_tall.json",
+   "ppm": 32
   },
   "rug_round": {
    "name": "Round rug",
@@ -5779,7 +5823,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "wall_painting",
-   "solid": 0
+   "solid": 0,
+   "model": "scene/next/models/wall_painting.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "wall_clock": {
    "name": "Clock on the wall",
@@ -5791,7 +5838,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "wall_clock",
-   "solid": 0
+   "solid": 0,
+   "model": "scene/next/models/wall_clock.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "wall_window": {
    "name": "Window",
@@ -5805,8 +5855,11 @@
    "group": "wall_window",
    "solid": 0,
    "fx": [
-    {"k":"window","x":0,"y":-71}
-   ]
+    {"k":"window","x":0,"y":-68}
+   ],
+   "model": "scene/next/models/wall_window.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "crate_goods": {
    "name": "Crate of goods",
@@ -5818,7 +5871,10 @@
    "flat": 0,
    "tags": ["indoor","town"],
    "group": "crate_goods",
-   "box": [0.9,0.7]
+   "box": [0.9,0.7],
+   "model": "scene/next/models/crate_goods.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "ladder": {
    "name": "Ladder",
@@ -5858,7 +5914,9 @@
    "tags": ["farm","route"],
    "group": "haybale_stack",
    "solid": 1,
-   "vol": ["puff",1]
+   "model": "scene/next/models/haybale_stack.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "stump_mossy": {
    "name": "Mossy stump",
@@ -9281,7 +9339,10 @@
    "sway": 0,
    "flat": 0,
    "tags": ["indoor"],
-   "group": "blackboard"
+   "group": "blackboard",
+   "model": "scene/next/models/blackboard.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "wall_map": {
    "name": "Map on the wall",
@@ -9514,12 +9575,13 @@
    "tags": ["route"],
    "group": "lookout_tower",
    "fx": [
-    {"k":"window","x":0,"y":-220}
+    {"k":"window","x":0,"y":-190}
    ],
    "solid": 1.5,
    "landmark": 1,
-   "vol": "block",
-   "volDepth": 2.4
+   "model": "scene/next/models/lookout_tower.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "shipwreck": {
    "name": "Shipwreck",
@@ -10168,10 +10230,11 @@
    "group": "mine_entrance",
    "box": [4.6,2.2],
    "fx": [
-    {"k":"glow","x":44,"y":-62}
+    {"k":"glow","x":40,"y":-60}
    ],
-   "vol": "block",
-   "volDepth": 2
+   "model": "scene/next/models/mine_entrance.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "yacht_super": {
    "name": "Superyacht",
