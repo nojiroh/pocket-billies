@@ -245,7 +245,17 @@ const storyGameStage = {
       T = storyRun.id && storyRun.id.startsWith('trainer:') ? TRAINERS[storyRun.id.slice(8)] : null;
     return storySceneOn()
       ? cutsceneSay(who, l.text, l.expr)
-      : talkLine(who, l.text, l.expr, T && T.cls && who === T.who ? { name: T.name } : {});
+      : talkLine(
+          who,
+          l.text,
+          l.expr,
+          /* RT-2: a pair's second trainer by its own class's name */
+          T && T.cls && who === T.who
+            ? { name: T.mate ? T.name.split(' & ')[0] : T.name }
+            : T && T.mate && who === T.mate.who
+              ? { name: T.mate.name }
+              : {}
+        );
   },
   choose: async options => {
     await storyWindowsClosed();

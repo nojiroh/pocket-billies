@@ -91,6 +91,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataSceneFindings: [() => dataSceneFindings, v => (dataSceneFindings = v)],
   // @ts-expect-error -- replaced on purpose
+  dataSetPieces: [() => dataSetPieces, v => (dataSetPieces = v)],
+  // @ts-expect-error -- replaced on purpose
   dataSpeciesKind: [() => dataSpeciesKind, v => (dataSpeciesKind = v)],
   // @ts-expect-error -- replaced on purpose
   dataUiTheme: [() => dataUiTheme, v => (dataUiTheme = v)],
@@ -438,15 +440,18 @@ export function dataRunScene(D) {
       !whole(W.lv[1], W.lv[0], 100) ||
       !whole(W.perRow, 0, 20) ||
       !whole(W.back, 0, 20) ||
-      !whole(W.waystation, 0, 20)
+      !whole(W.waystation, 0, 20) ||
+      !whole(W.route, 0, 20) ||
+      !whole(W.routeMin, 0, W.route)
     )
       problem(
         'rules.json',
-        'run.wild: lv [low, high] (1-100), perRow (0-20), back (0-20) and waystation (0-20) are not whole numbers'
+        'run.wild: lv [low, high] (1-100), perRow (0-20), back (0-20), waystation (0-20), route (0-20) and routeMin (0-route) are not whole numbers'
       );
     else
       for (const k of Object.keys(W))
-        if (!['lv', 'perRow', 'back', 'waystation'].includes(k)) problem('rules.json', `run.wild.${k}: no such rule`);
+        if (!['lv', 'perRow', 'back', 'waystation', 'route', 'routeMin'].includes(k))
+          problem('rules.json', `run.wild.${k}: no such rule`);
     if (!whole(R.seamIn, 1, 30)) problem('rules.json', 'run.seamIn is not a whole number of metres from 1 to 30');
   }
   return out;
@@ -547,14 +552,17 @@ export function dataRunLoop(D) {
       RW = R.rewards;
     if (!rec(TR)) problem('rules.json', 'run.trainers missing');
     else {
-      only(TR, ['perRoute', 'up', 'reward', 'sight'], 'run.trainers');
+      only(TR, ['perRoute', 'required', 'pair', 'up', 'reward', 'sight'], 'run.trainers');
       if (
         !Array.isArray(TR.perRoute) ||
-        TR.perRoute.length !== 2 ||
-        !whole(TR.perRoute[0], 0, 4) ||
-        !whole(TR.perRoute[1], TR.perRoute[0], 4)
+        !TR.perRoute.length ||
+        !TR.perRoute.every(r => Array.isArray(r) && r.length === 2 && whole(r[0], 0, 7) && whole(r[1], r[0], 7))
       )
-        problem('rules.json', 'run.trainers.perRoute: [fewest, most], whole, 0-4');
+        problem('rules.json', 'run.trainers.perRoute: [fewest, most] by row, whole, 0-7 (the classes)');
+      if (!(typeof TR.required === 'number' && TR.required >= 0 && TR.required <= 1))
+        problem('rules.json', 'run.trainers.required: a share, 0-1');
+      if (!(typeof TR.pair === 'number' && TR.pair >= 0 && TR.pair <= 1))
+        problem('rules.json', 'run.trainers.pair: a chance, 0-1');
       if (!whole(TR.up, -20, 20)) problem('rules.json', 'run.trainers.up: whole, -20-20');
       if (!whole(TR.reward, 0, 1e6)) problem('rules.json', 'run.trainers.reward: whole Moneys, 0-1,000,000');
       if (!(typeof TR.sight === 'number' && TR.sight >= 1 && TR.sight <= 20))
@@ -833,6 +841,49 @@ export function dataFieldMoves(D, valid = () => true) {
   }
   if (!Object.values(W).some(w => typeof w === 'number' && w > 0))
     problem('rules.json', 'run.side.moves: no move has a weight, so no side area can be made');
+  return out;
+}
+// RT-3: set pieces (setPieces.json): the schema, perPlace [fewest, most], every prop a scenery.json prop and within the
+// piece's r of its origin, a boat (water) only on a jetty's piece, biomes and plans that exist, people a person sprite
+// and an event that exists, and one piece at least that some biome draws
+/** RT-3: setPieces.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataSetPieces(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    F = 'setPieces.json',
+    problem = (/** @type {string} */ what) => out.push([F, what]),
+    S = D.setPieces;
+  if (!S || !valid('setPieces.schema.json', S, F)) return out;
+  const props = (D.scenery && D.scenery.props) || {},
+    biomes = D.biomes || {},
+    people = new Set(
+      Array.isArray(D.people) ? D.people.map((/** @type {any} */ x) => x.id) : Object.keys(D.people || {})
+    ),
+    events = (D.events && D.events.events) || {};
+  if (!(S.perPlace[0] <= S.perPlace[1])) problem('perPlace is not [fewest, most]');
+  let drawn = false;
+  for (const [k, P] of Object.entries(/** @type {Record<string, any>} */ (S.pieces || {}))) {
+    for (const b of Object.keys(P.biomes))
+      if (b !== 'default' && !biomes[b]) problem(`pieces.${k}.biomes: no biome "${b}" (biomes.json)`);
+    for (const l of Object.keys(P.plans || {}))
+      if (!MAPGEN_LAYOUTS[l]) problem(`pieces.${k}.plans: no layout plan "${l}"`);
+    if (Object.values(P.biomes).some(w => +w > 0)) drawn = true;
+    P.props.forEach((/** @type {any} */ q, /** @type {number} */ i) => {
+      if (!props[q.k]) problem(`pieces.${k}.props[${i}]: no prop "${q.k}" (scenery.json)`);
+      if (Math.hypot(q.x, q.z) > P.r)
+        problem(`pieces.${k}.props[${i}]: ${q.k} is further than r (${P.r} m) from the piece's origin`);
+      if (q.water && !P.on.includes('jetty'))
+        problem(`pieces.${k}.props[${i}]: ${q.k} stands on water, but the piece never takes a jetty`);
+    });
+    (P.people || []).forEach((/** @type {any} */ q, /** @type {number} */ i) => {
+      if (people.size && !people.has(q.who)) problem(`pieces.${k}.people[${i}]: no person "${q.who}" (people)`);
+      if (q.event && !events[q.event]) problem(`pieces.${k}.people[${i}]: no event "${q.event}" (events.json)`);
+      if (!q.event && !q.say) problem(`pieces.${k}.people[${i}]: neither an event nor words to say`);
+      if (Math.hypot(q.x, q.z) > P.r)
+        problem(`pieces.${k}.people[${i}]: further than r (${P.r} m) from the piece's origin`);
+    });
+  }
+  if (S.perPlace[1] > 0 && !drawn) problem('no piece has a weight above 0, so no place gets one');
   return out;
 }
 // RL-13: modifiers.json: the schema; each challenge's `when` reads as a condition; the Expeditions are no more than

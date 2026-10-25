@@ -509,6 +509,16 @@ debugLog.state = () => {
                 }
               : null,
             spottedBy: GAME.routeSight ? GAME.routeSight.busy || null : null,
+            /* RT-2: this place's route trainers: id, the spot kind it stands on, r(equired) or o(ptional), a pair,
+               beaten (ids and kinds only) */
+            routeTrainers: Object.values(GAME.TRAINERS || {})
+              .filter(T => T.route && T.runNode === GAME.saveData.trip.node - 1)
+              .map(
+                T =>
+                  `${T.id}:${T.route.spot || '?'}:${T.route.opt ? 'o' : 'r'}${T.mate ? ':pair' : ''}${GAME.saveData.flags[T.id] ? ':beaten' : ''}`
+              ),
+            /* RT-3: this place's set pieces (setPieces.json ids) and the spot kind each took */
+            pieces: ((placeMap && placeMap.pieces) || []).map((/** @type {any} */ L) => `${L.id}:${L.spot}`),
           }
         : null;
     /* RL-8: what the runs brought home (numbers only) */

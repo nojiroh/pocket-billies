@@ -49,7 +49,9 @@ test('rng: a generated scene hashes the same as before the move', () => {
   // (and 721684391 until MAPGEN_VERSION 8, RT-1: run routes laid out; this scene has no layout, so only gen.v)
   // (and 1980759144 until MAPGEN_VERSION 9, TW-2: a town's life; this scene, a route, is the same but for gen.v)
   // (and 3519803741 until MAPGEN_VERSION 10, TW-3: a town's notice board; this scene, a route, is the same but for gen.v)
-  assert.equal(hashString(JSON.stringify(sc)), 1207890043);
+  // (and 1207890043 until MAPGEN_VERSION 12: the routes track merged in after the towns track, RT-2 (11: no room kept
+  // for straight-line trainers) and RT-3 (12: an exit's signpost can be read, act 'sign'))
+  assert.equal(hashString(JSON.stringify(sc)), 4139710699);
 });
 
 test('rng: the helpers stay in their ranges', () => {

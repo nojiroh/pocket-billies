@@ -402,6 +402,134 @@ counted as flat).
 - Phone check wanted: the house, lab, shop, clinic and barn (turn the camera); a waystation (the tent); a run with a
   glade (campfire) and a lookout; a cave run's mine entrance; export the debug log.
 - Next: part 2 in a new session: the 23 standing pictures the run biomes still place (docs/phases/09, status).
+### Routes track RT-3 - Set pieces - 2026-10-25
+Branch `track/routes` (fast-forwarded to origin's RT-2 head first: the local checkout was 14 commits behind; main had
+nothing new, so the merge was a no-op). Plan approved in Plan Mode with the owner's answers: **all seven pieces**
+(ruins of broken stone walls), **pieces on spare roadside spots and clearings** (pockets and dead ends left for RT-4),
+and the **Bureau checkpoint carries an agent with an event**. Tag `rt-3-done` for the owner to push; `rt-1-done` and
+`rt-2-done` are not on the remote either.
+- Where the plan file and notes were wrong (checked in the code):
+  - Spots exist only on the finished scene (`mapgenLayoutSpots`), so pieces go after them (after plants) and clear the
+    small plants under them; the walkable share is measured after the pieces.
+  - The roadmap's `lamp` and `bench_*` are `lantern` and `bench_wood` / `bench_metal`. There is no camp tent: `tent` is
+    a striped market tent and read as a stall in the game, so the campsite is a fireside one. No ruin art, no jetty deck
+    prop (a jetty is ground tiles `b`, built only by the jetty feature), no Bureau prop or logo.
+  - An exit's signpost was already placed (one per exit) but had no `act`; walk-control already says "You're in
+    <place>." for a sign with no words, so the route-name sign needed no new UI.
+  - TW-1 built nothing reusable (hand-written placement). `mapgenStagePieces` and setPieces.json are written so a town
+    can call them later.
+- Changed (one cause per commit):
+  - **Signposts** (MAPGEN_VERSION 10): every generated scene's exit signposts have `act: 'sign'` (golden, run-start and
+    rng snapshots remade on purpose).
+  - **events.json `bureau_checkpoint`** (weight 0: never drawn for an event node): Declare everything (a common find),
+    Let them inspect your team (a Bureau Clerk battle, a reward pick), Walk on. My wording; change freely.
+  - **setPieces.json** + schema, type, `SET_PIECES`, `dataSetPieces` (check-data, the Studio's Check, a planted
+    snapshot): `perPlace` [2, 4]; seven pieces of existing props, each with `on` (spot kinds), `r`, biome weights,
+    plan multipliers, props in the piece's own metres (`rot`, a sign's `say`, `water` for a boat) and `people`.
+  - **mapgen**: `mapgenJetty` moved out of the jetty feature (no change), then the `pieces` dial (0-6, kept only when
+    given) and `mapgenStagePieces`: drawn by biome x plan weight on its own stream, no piece twice; a piece goes on a
+    roadside spot, a clearing or (fishing jetty) a jetty, its front turned to the road, tried as drawn then mirrored
+    (a piece with people first the way round that has them nearer the camera); all or none: every cell it covers
+    on ground walked to past everything but small plants, off the road, verge and tall grass, 1.5 m from every
+    other spot's stand and out of its sight strip (6.5 x 2.2 m); it leaves 4 spots by the road and 4 aside for the
+    trainers. Then the last piece comes out while an exit, a spot or a person is cut off or a ledge traps you
+    (`mapgenTraps`). `scene.pieces` = [{ id, x, z, rot, spot, f, people }]. A laid-out place with a pond builds a
+    jetty before the layout when a piece wants one (its path from the road kept clear); its land end is a `jetty`
+    spot (trainers don't use it; left for RT-4/TR-8). Ledge tops are still not spots.
+  - **Runs**: `runPiecesOf` (perPlace on the node's `scene|pieces` stream) for laid-out places; setPieces passed by
+    run-world, the run preview, the run sim and the real-run tests.
+  - **The agent**: walk-control puts a piece's people in the view, facing the road; tapping opens their event until
+    the run has played it (`run.enc.seen`), then toasts their line. The run sim ignores them (an optional event).
+  - **Studio**: Set pieces dial (0-6) and reroll on the Generate card. **Debug log**: `run.pieces` (id:spot).
+  - **Checks**: slow test mapgen-pieces (15 places: whole, turned and mirrored as recorded, off the road, clear of
+    spots, 55-65% walkable, reached, no traps, spots left, fishing jetty only on a jetty, a misfit leaves the scene
+    as it was); in-game step "A route's set pieces..." (pieces whole, an exit signpost says the place's name, the
+    agent opens bureau_checkpoint once); check-quick step RT-3 runs it.
+- Measured:
+  - 40 mapgen places asked 2-4: 2.85 placed of 3 asked; 8 real runs: **2.8 pieces a laid-out place** (campsite 29,
+    rest stop 22, woodcutter 19, farm pen 18, Bureau 15, ruins 11, fishing jetty 6), props a place 625 -> 639,
+    walkable 56-64%, the same 50 trainers with none off their pool.
+  - The fishing jetty fits about one lakeside jetty in three (shores near the road leave no room).
+  - **Draws a frame** (route-perf, low graphics, 6 spots west, before = 2e54cea): forest 562 -> 576 (+2.5%),
+    farmland 526 -> 519, lakeside 497 -> 539 (+8.5%: its jetty also changes the layout). Frame time within noise.
+  - **Making a run's world**: 638 -> 791 ms on this machine (two more walk floods a place).
+- Verified: lint, typecheck, check:modules, check:data, format:check, build; unit tests 921 quick and 64 slow;
+  check-quick RT-3 alone (56 s). **Full quick check** (1308 s): 37 of 39. Song fingerprints (cave mid, cave late not in
+  the baseline) fails on main too. RL-8 timed out at "Take off" under the paired load (60 s; the take-off makes the
+  run's world, a little slower now); alone it passes the take-off and stops at main's own "the town's shop has no
+  Perk". Not seen on a phone. CI not run (no PR).
+- Risky / open:
+  - **Not seen on a phone**: about 14 more props a place; the agent's sprite beside the tollbooth picture (headless
+    showed the booth hiding it before the mirror rule).
+  - RL-8's take-off wait (60 s) is close under the full check's load; raise it if it keeps timing out there.
+  - Sprite props (the tollbooth, statue, firewood) never turn, so a piece reads slightly differently by road angle.
+  - A camp tent model would make the campsite read better (art, the owner's call).
+- Next: RT-4 (more Billies, habitats, a rare one in a hard pocket, items at dead ends, Cut bramble shortcuts, animals).
+  Pockets, dead ends and unused jetty spots are free for it.
+
+### Routes track RT-2 - Battle spots and route trainers - 2026-10-25
+Branch `track/routes` (fast-forwarded to main 2cfef57 first; plan approved in Plan Mode with the owner's answers:
+**trainers replace some wild Billies** (a route's wild stock is 8 less its trainers, at least 2) and **pairs now and
+then** (about one route place in three)). Tag `rt-2-done` for the owner to push.
+- Where the plan file was wrong (checked in the code):
+  - The run sim had **no route trainers** (only `runFoes`) and **no measure of minutes**. Both added.
+  - A double is **one trainer entry with 2+ Billies** (`startTrainer`'s `T.double`); there is no two-trainer battle. A
+    pair is one entry (both teams, at most two Billies each, `double`, `mate`, both rewards, both lines) drawn as two
+    people sharing one flag.
+  - Bridges, jetties and ledge tops were not spots. RT-2 adds `roadside` and `bridge`; jetties (only a grid flag) and
+    ledge tops stay for TR-8 / RT-3.
+  - Only `pinch` had a direction, and the scene keeps no road polyline (`edgeExits[].path`) or reach grid, so facings
+    are worked out in mapgen.
+  - Trainers counting toward the wild stock is `rules.js encounterStock` (an RT-4 file), needed now.
+- Changed (one cause per commit):
+  - **mapgen** (MAPGEN_VERSION 9): RT-1's room kept for the straight-line trainers is gone. On laid-out places:
+    `roadside` spots (every ~12 m along each hub-to-exit road, 2-3.5 m off its edge, alternating sides, standable,
+    reached, `face` toward the road), `bridge` spots (a step back from each end, facing along it), a `stand` at a
+    pinch's side facing across, and a `face` on pockets (TR-2c's too), clearings and dead ends: the way in, 2 m down
+    the walk from the hub (6 m faced a wall at a dead end's bend).
+  - **Route trainers** (`logic/route-trainers.js`): `run.trainers.perRoute` by row `[[4,4],[4,5],[5,6]]`, `required`
+    0.5 (the first half stand by the road: roadside, pinch, bridge; the rest optional: pocket, clearing, dead end),
+    `pair` 0.33. `routeTrainersPlace` puts them on the scene's spots (the kinds `events.json classes.<c>.likes` first,
+    6 m apart; the other pool, then a point by the way west, when a place runs out), `route.at/look/spot/mate`.
+    `routeTrainerSpot` (the straight line) went. run-world places them after the scenes; walk-control stands them
+    there and a pair's second beside the first (`<id>~b`, tapping it talks to the pair); story-stage names each of a
+    pair by its class; a pair's opening line says "want".
+  - **Wild stock**: `run.wild.route` 8 and `routeMin` 2; a run place carries `trainerCount` (routeTrainerTally).
+  - **Run sim**: route trainers fought (required always, optional while above `fightAbove`), the pick taking its first
+    non-tutor card; `trainers` and `minutes` in the report (`SIM_CLOCK`: 60 s a place, 15 s a battle, 6 s a turn, a
+    guess to compare before and after). The Studio's sim worker loads route-trainers and rewards.
+  - **Debug**: the debug log's `run.routeTrainers` (id:spot:r|o[:pair][:beaten]); the debug menu's "Walk into a route
+    trainer's sight" (lists this place's trainers, walks 3 m in front of the nearest unbeaten one). A spot-marker
+    overlay was planned but the menu has no map markers: the list and the walk stand in.
+  - **Checks**: in-game test step "A route's trainers: on their spots, a pair as a double"; check-quick step RT-2 (that
+    step, then outside the self-test a pair that sees you walks up, both say their lines, a double starts).
+- Measured:
+  - Spots a route place (5 seeds, 14 places): roadside 8.6, clearing 3.0, dead end 2.9, pocket 1.5, pinch 0.7,
+    bridge 0.1. Trainers over 8 seeds (75 entries): required on roadside 35 (5 of them pairs) and pinch 2; optional on
+    clearings 20, dead ends 13, pockets 5; no fallbacks; every pair's second on walkable ground.
+  - **Run sim**, 200 runs, balance mode, six at home at level 20, five Potions: before 66% won, 17.1 battles, ~14.2
+    min (SIM_CLOCK on the old numbers); after 67%, 19.7 battles (3.4 route trainers), 15.7 min. Fighting up to 8 wild
+    a place: 69% / 26.1 battles / 17.7 min before, 68.5% / 27.4 / 18.5 after. Well under the ~35 minutes of
+    ask-me-before item 3. A fresh save (one Billie, level 5) wins none either way, but now loses on a route 31 times in
+    200 (was 13): the required trainers stand at the place's top wild level.
+- Verified: lint, typecheck, check:modules, check:data, format:check; unit tests 919 quick and 58 slow (new:
+  route-trainers rewritten, route-trainer-spots (slow, real runs), battle-formats a pair's double incl. 1 vs 2,
+  rewards a pair's one pick, saves-real the wild stock, run-sim route trainers fought); smoke 6 of 6; check-quick
+  RT-2 alone. **Full quick check** (1244 s): 35 of 38. Song fingerprints ("cave mid", "cave late" not in the
+  baseline) fails on main too (main at 2cfef57, same steps alone): not RT-2's; the baseline needs the RL-R2b cave songs.
+  RL-8 ("Take off didn't start a run's flight" in 60 s) and the Actions sheet ("a run's sheet has no day chip" in 5 s)
+  timed out under the full check's paired load; alone, the Actions sheet passes and RL-8 runs past the take-off, the
+  battle and the seam to main's own failure, "the town's shop has no Perk" (twice). CI not run (no PR).
+- Risky / open:
+  - **Not seen on a phone**: 4-6 more people on a route place (sprites and their pets) on top of RT-1's forests.
+  - Required trainers make the first route harder for a weak party (the fresh-save number above). If it bites,
+    `run.trainers.up` below 0 for the first row, or fewer required, is the knob.
+  - Sight still passes through hedges and forest (it is a strip, 6 m by 1.8 m); a pocket trainer can see you through
+    its fence. Emerald's sight is about 3 tiles: worth a look once it has been played.
+  - Spots are made only on laid-out places; an old or Studio scene without them gets the way-west fallback.
+  - RL-8's "the town's shop has no Perk" fails on main (not RT-2's; RT-1's entry).
+- Next: RT-3 (set pieces) or RT-4 (more Billies, items in pockets, Cut shortcuts; it re-tunes the wild stock with
+  trainers counted).
 
 ### Routes track RT-1 - Route layouts - 2026-10-24
 Branch `track/routes` (plan approved in Plan Mode; the owner's answers: all five plans, and **every non-town place**

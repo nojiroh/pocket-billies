@@ -77,6 +77,8 @@ export interface GameData {
   regions: RegionsData;
   /** RL-R2: the field moves that open a run's side areas */
   fieldMoves?: { about?: string; moves: Record<DataId, FieldMove> };
+  /** RT-3: set pieces, prop groups placed as a unit on a laid-out place */
+  setPieces?: SetPiecesData;
   /** RL-13: a run's Expeditions and challenges */
   modifiers?: ModifiersData;
   /** TW-3: a run's quests */
@@ -415,6 +417,8 @@ export interface LocationData {
   noFly?: number;
   /** roguelite track RL-7: a run's place: its node on the run's map (logic/run-scenes.js; world node runNode + 1) */
   runNode?: number;
+  /** RT-2: a run route's trainers (a pair is two; logic/route-trainers.js routeTrainerTally): its wild stock is less */
+  trainerCount?: number;
   /** RL-R2: a side area's first place: closed until the run's field move obstacle (this move) is open */
   field?: DataId;
   /** RL-R2: 1 on a side area's place */
@@ -817,6 +821,8 @@ export interface TrainerEntry extends Trainer {
   alpha?: boolean;
   /** RL-13: a run boss's HP times this (the Expedition's, logic/run-loop.js runFoes) */
   hpMult?: number;
+  /** RT-2: a route pair's second trainer (logic/route-trainers.js runRouteTrainers): its class, look and name */
+  mate?: { cls: DataId; who: DataId; name: string };
 }
 
 /** a trainer's Billie: a species, or '@rival' ('@rival1', '@rival2': evolved) for the starter that beats yours */
@@ -1003,8 +1009,9 @@ export interface Rules {
     layouts?: Record<string, Record<string, number>>;
     /** RL-7: a run node's wild Billies: levels `lv` on the landing's row, `perRow` more on each row after; a node
         walked back to rolls `back` of them again (the hub's stock on a first visit); a waystation (an event or a
-        stall: RL-12b) holds `waystation` */
-    wild: { lv: [number, number]; perRow: number; back: number; waystation: number };
+        stall: RL-12b) holds `waystation`; RT-2: a run route's first visit holds `route` less its trainers, `routeMin`
+        at least */
+    wild: { lv: [number, number]; perRow: number; back: number; waystation: number; route: number; routeMin: number };
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;
@@ -1023,9 +1030,17 @@ export interface Rules {
     shop: { always: string[]; more: number; pick: Record<string, number> };
     /** RL-8: a mini-boss's and the boss's levels: `up` over the top wild level of their row; their reward in $ */
     foes: { miniboss: { up: number; reward: number }; boss: { up: number; reward: number } };
-    /** RL-12b: route trainers: how many a route (fewest, most), levels over the place's top wild level, what each
-     * pays, how far they see (m) */
-    trainers: { perRoute: [number, number]; up: number; reward: number; sight: number };
+    /** RL-12b: route trainers: how many a route place by row ([fewest, most] from the first route row, the last for
+     * every row after; RT-2), the share that stands by the road (`required`), the chance a place has a pair fought as
+     * a double, levels over the place's top wild level, what each pays, how far they see (m) */
+    trainers: {
+      perRoute: [number, number][];
+      required: number;
+      pair: number;
+      up: number;
+      reward: number;
+      sight: number;
+    };
     /** RL-12b: the reward pick after a trainer battle: cards, a reroll's first price, how it grows each time */
     rewards: { pick: number; reroll: number; grow: number };
     /** RL-12: Perks: at most `cap` held, a pick of `pick` after a mini-boss, offered by `rarity` weight, sold in a
@@ -1876,6 +1891,8 @@ export interface TrainerClass {
   lose: string;
   /** RL-S1: one of the Bureau's agents */
   bureau?: 1;
+  /** RT-2: the spot kinds a route trainer of the class stands on first (logic/route-trainers.js ROUTE_SPOTS) */
+  likes?: ('roadside' | 'pinch' | 'bridge' | 'pocket' | 'clearing' | 'deadend')[];
 }
 /** events.json events: one event, its intro and 2-3 options */
 export interface RunEvent {
@@ -2050,6 +2067,47 @@ export interface FieldMove {
   ask: string;
   used: string;
   out: string;
+}
+/** RT-3: setPieces.json: small groups of existing props placed as a unit on a laid-out place's spots
+ * (logic/mapgen.js mapgenStagePieces), in the piece's own metres (x across its front, z back from it) */
+export interface SetPiecesData {
+  about?: string;
+  /** how many a laid-out place gets, at least and at most (logic/run-scenes.js runPiecesOf) */
+  perPlace: [number, number];
+  pieces: Record<DataId, SetPiece>;
+}
+export interface SetPiece {
+  name: string;
+  /** the spot kinds it may take (scene.spots) */
+  on: ('roadside' | 'clearing' | 'jetty')[];
+  /** every prop lies within this many metres of its origin (the middle of its front) */
+  r: number;
+  /** draw weights by biome, `default` for one not listed */
+  biomes: Record<string, number>;
+  /** a layout plan's multiplier on its weight */
+  plans?: Record<string, number>;
+  props: SetPieceProp[];
+  people?: SetPiecePerson[];
+}
+export interface SetPieceProp {
+  /** a scenery.json prop */
+  k: string;
+  x: number;
+  z: number;
+  /** degrees, on top of the piece's own turn (models only: a picture stays facing you) */
+  rot?: number;
+  /** a sign's words */
+  say?: string;
+  /** stands on water (a boat) */
+  water?: boolean;
+}
+/** someone who stands in a piece: tapped, opens an event once a run, then says `say` */
+export interface SetPiecePerson {
+  who: string;
+  x: number;
+  z: number;
+  event?: string;
+  say?: string;
 }
 /** RL-R2: rules.json run.side: the chance a run has a detour or an alternate path (never both), a detour's places, an
  * alternate path's rows and the chance it ends at a boss of its own, each move's weight and the lean toward a move of

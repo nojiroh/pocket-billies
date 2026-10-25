@@ -51,7 +51,8 @@ test('encounters: a place holds the same event for the same run, kept; a played 
   const E2 = structuredClone(E);
   for (const ev of Object.values(E2.events)) ev.biomes = ['lake'];
   assert.deepEqual(X.eventPool(b, E2, 'meadow'), []);
-  assert.equal(X.eventPool(b, E2, 'lake').length, Object.keys(E.events).length);
+  /* RT-3: weight 0 is never drawn (the Bureau checkpoint's event, opened by its agent) */
+  assert.equal(X.eventPool(b, E2, 'lake').length, Object.values(E.events).filter(ev => ev.weight > 0).length);
 });
 
 test('encounters: an option is open when its need holds and the Moneys are there; a closed one says why', () => {

@@ -10,44 +10,57 @@
    "who": "intern",
    "team": [1,2],
    "sight": "You are in my content! I mean, my battle!",
-   "lose": "I did that for free, you know."
+   "lose": "I did that for free, you know.",
+   "likes": ["roadside"]
   },
   "beta_tester": {
    "name": "Beta Tester",
    "who": "boy",
    "team": [2,3],
    "sight": "Found a bug! It is you. Let me reproduce it.",
-   "lose": "Works as intended, apparently."
+   "lose": "Works as intended, apparently.",
+   "likes": ["clearing"]
   },
   "hustle_coach": {
    "name": "Hustle Coach",
    "who": "broker",
    "team": [2,3],
    "sight": "Rise and grind! You look like you need a mentor!",
-   "lose": "Losing is just winning in beta."
+   "lose": "Losing is just winning in beta.",
+   "likes": ["roadside","pinch"]
   },
   "vlogger": {
    "name": "Lifestyle Vlogger",
    "who": "girl",
    "team": [1,3],
    "sight": "Hi guys! Today I battle a random stranger!",
-   "lose": "Cut that. Cut all of that."
+   "lose": "Cut that. Cut all of that.",
+   "likes": ["bridge","clearing"]
   },
-  "speedrunner": {"name":"Speedrunner","who":"diver","team":[1,2],"sight":"No time! Battle any percent!","lose":"Reset. Reset!"},
+  "speedrunner": {
+   "name": "Speedrunner",
+   "who": "diver",
+   "team": [1,2],
+   "sight": "No time! Battle any percent!",
+   "lose": "Reset. Reset!",
+   "likes": ["pinch","deadend"]
+  },
   "bureau_clerk": {
    "name": "Bureau Clerk",
    "who": "clerk",
    "team": [2,3],
    "sight": "You look lost. That is our department.",
    "lose": "I will need that in writing.",
-   "bureau": 1
+   "bureau": 1,
+   "likes": ["bridge","roadside"]
   },
   "ethicist": {
    "name": "Clone Ethicist",
    "who": "geo",
    "team": [2,3],
    "sight": "Is it right to battle a clone? Let us find out empirically.",
-   "lose": "Inconclusive. Very inconclusive."
+   "lose": "Inconclusive. Very inconclusive.",
+   "likes": ["pocket","clearing"]
   }
  },
  "events": {
@@ -268,6 +281,34 @@
     {"text":"Leave","then":["Merchant: Everything must go! Except me, apparently."]}
    ],
    "weight": 1
+  },
+  "bureau_checkpoint": {
+   "title": "Bureau Checkpoint",
+   "intro": [
+    "A striped barrier, a tollbooth and a flag with a bean on it. An agent in a grey coat steps out with a clipboard.",
+    "Agent: Routine check, Bureau of Lost, Found and Beans. Lost anything? Found anything? Beans of any kind?"
+   ],
+   "options": [
+    {
+     "text": "Declare everything",
+     "then": [
+      "You declare everything. It takes a while. The agent stamps a form in three places.",
+      "Agent: Thank you for your honesty. Here is your complimentary Found Item.",
+      "loot common"
+     ]
+    },
+    {
+     "text": "Let them inspect your team",
+     "then": [
+      "Agent: Unregistered clones. I will have to inspect them. Personally.",
+      "foe bureau_clerk",
+      "Agent: Everything appears to be in order. Suspiciously in order. Take this and move along.",
+      "reward"
+     ]
+    },
+    {"text":"Walk on","then":["Agent: We'll be in touch."]}
+   ],
+   "weight": 0
   },
   "speedrunner": {
    "title": "Speedrunner",

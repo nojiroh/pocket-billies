@@ -45,6 +45,7 @@ import {
   dataRunPayout,
   dataRunScene,
   dataSceneFindings,
+  dataSetPieces,
   dataSpeciesKind,
   dataUnlocks,
 } from '../../game/js/logic/data-checks.js';
@@ -414,6 +415,7 @@ const STUDIO_DATA_FAMILIES = /** @type {[string, (D: any) => [string, string][]]
   ['biome', dataBiomes],
   ['region', dataRegions],
   ['field move', dataFieldMoves],
+  ['set piece', dataSetPieces],
   ['modifier', dataModifiers],
   ['held item', dataHeldItems],
   ['quest', dataQuests],

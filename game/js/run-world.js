@@ -22,6 +22,7 @@ import {
   NODE_TYPES,
   POOLS,
   RULES,
+  SET_PIECES,
   SPECIES,
   START_NODE,
   TRAINERS,
@@ -38,7 +39,7 @@ import { runScenesMake, runWorldTables } from './logic/run-scenes.js';
 import { runBowlLook } from './logic/run-bowl.js';
 import { runFoes } from './logic/run-loop.js';
 import { encEventFoe } from './logic/encounters.js';
-import { runRouteTrainers } from './logic/route-trainers.js';
+import { routeTrainerTally, routeTrainersPlace, runRouteTrainers } from './logic/route-trainers.js';
 import { bowlXY } from './logic/bowl.js';
 import { bowlTreeStyle } from './logic/bowl-things.js';
 import { saveData, uiState } from './game-state.js';
@@ -74,6 +75,8 @@ export function runWorldData() {
     region: runRegionData(gameData, TRAINERS),
     /* RL-R2: the field moves that open a run's side area (logic/run-side.js) */
     fieldMoves: FIELD_MOVES,
+    /* RT-3: the set pieces a laid-out place is dressed with (logic/mapgen.js mapgenStagePieces) */
+    setPieces: SET_PIECES,
   };
 }
 /** put in the world the save needs, if it isn't in yet: the run's while one is on with its map, else the hub's.
@@ -88,6 +91,8 @@ export function runWorldSync() {
         data = runWorldData(),
         scenes = runScenesMake(run, data),
         W = runWorldTables(run, gameData.locations[START_NODE], data),
+        /* RL-12b: the route trainers who walk up on sight (logic/route-trainers.js); RT-2: on their places' spots */
+        route = runRouteTrainers(run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run }),
         /* RL-8b: the run's own world map, from its seed */
         look = runBowlLook(
           run.seed,
@@ -101,6 +106,10 @@ export function runWorldSync() {
           bowlTreeStyle,
           rngFrom
         );
+      routeTrainersPlace(run, route, scenes, EVENTS.classes);
+      /* RT-2: a route's trainers stand in for some of its wild Billies (logic/rules.js encounterStock) */
+      const tally = routeTrainerTally(route);
+      for (const L of W.locations) if (L.runNode != null && tally[L.runNode]) L.trainerCount = tally[L.runNode];
       worldPut({
         ...W,
         look,
@@ -108,8 +117,7 @@ export function runWorldSync() {
         /* RL-8: its mini-bosses and boss, each a leader's copy (logic/run-loop.js runFoes) */
         trainers: {
           ...runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run }),
-          /* RL-12b: the route trainers who walk up on sight (logic/route-trainers.js) */
-          ...runRouteTrainers(run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run }),
+          ...route,
         },
       });
       /* RL-12b: an event's foe a reload stopped in the middle of (its battle starts again: run.js runBattleAgain) */

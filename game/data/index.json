@@ -27,6 +27,7 @@
   "locations",
   "regions",
   "fieldMoves",
+  "setPieces",
   "modifiers",
   "quests",
   "pools",
