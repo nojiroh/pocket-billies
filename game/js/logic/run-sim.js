@@ -286,6 +286,11 @@ export function runSimOn(env) {
         /** each run foe fought: its leader, its node's type, won or not @type {any[]} */
         foes: [],
         /** @type {any} */ days: 0,
+        /** SP-3: wild splices fought, caught, and what beating them banked (DNA, Genes sampled for the first time) */
+        splices: 0,
+        caughtSpliced: 0,
+        dna: 0,
+        genes: 0,
       };
     try {
       runArrive(s, 0, MAP_DATA);
@@ -363,6 +368,7 @@ export function runSimOn(env) {
           run.battleN = k + 1;
           const foe = hooks.activeBattle.sides[1].team[0];
           const B = hooks.activeBattle;
+          if (q.graft) stats.splices++;
           let res;
           /* catch it while the party is small and there are pyramids: one throw, then fight on */
           if (
@@ -377,6 +383,7 @@ export function runSimOn(env) {
             if (c.caught) {
               fn('catchKeep')(foe);
               stats.caught++;
+              if (q.graft) stats.caughtSpliced++;
               res = { over: 'caught', turns: B.turn };
             } else {
               /* a miss: the foe's turn */
@@ -389,6 +396,9 @@ export function runSimOn(env) {
           const { pay } = fn('battleSettle')(B, s);
           fn('battleSettleWin')(B, s, pay, run);
           if (pay.o === 'win' && pay.prize > 0) stats.moneyIn.prize += pay.prize;
+          const sampled = /** @type {{ dna?: number, sampled?: unknown[] }} */ (pay);
+          stats.dna += sampled.dna || 0;
+          stats.genes += (sampled.sampled || []).length;
           hooks.provide({ activeBattle: null });
           hooks.uiState.learnQ.length = 0;
           stats.battles++;
@@ -536,6 +546,11 @@ export function runSimOn(env) {
       moneyLeft: avg(x => x.se),
       research: avg(x => x.research),
       topLevel: avg(x => x.top),
+      /* SP-3: wild splices fought and caught a run, the DNA and new Genes beating them banked */
+      splices: avg(x => x.splices || 0),
+      caughtSpliced: avg(x => x.caughtSpliced || 0),
+      dna: avg(x => x.dna || 0),
+      genes: avg(x => x.genes || 0),
     };
   }
 

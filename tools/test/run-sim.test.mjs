@@ -25,7 +25,8 @@ test('run sim: a seed played twice is the same run, whatever util.js random draw
 test('run sim: the report has its numbers', () => {
   const R = runStats(3, B);
   assert.equal(R.runs, 3);
-  for (const k of ['days', 'places', 'battles', 'turnsPerBattle', 'research']) assert.ok(R[k] >= 0, k);
+  for (const k of ['days', 'places', 'battles', 'turnsPerBattle', 'research', 'splices', 'dna', 'genes'])
+    assert.ok(R[k] >= 0, k);
   assert.ok(R.won >= 0 && R.won <= 3);
   // Studio plan T3.2: every report names its bot policy, its settings and the numbers it drives
   assert.equal(R.policy.name, 'greedy-forward');
