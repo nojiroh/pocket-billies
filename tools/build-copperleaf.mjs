@@ -7,7 +7,7 @@
 //
 // The ground is copperleaf_island's while that map exists, else copperleaf's own (every ground field below). The
 // generator laid the town out and left plots facing their streets (IS-2): the lab, the airship station on the mast
-// plot, Juniper's home, the shop (the General store, closed: Copperleaf has nothing to buy), the well; cottages on
+// plot, Juniper's home, the shop (the General store: its room opens, nothing for sale yet), the well; cottages on
 // every house plot and the farmhouse plot. A building stands in the middle of its plot (its level pad), its door
 // toward the plot's front: rot = the front's angle + 90 (logic/prop-turn.js: a building at rot 0 faces south). The
 // props round a building in the old town (its garden) move with it, turned with it: worked out in the building's own
@@ -152,19 +152,22 @@ const pairs = [
   [oldBuildings.find(B => B.act === 'fly'), plotOf('mast')],
   [oldBuildings.find(B => B.act === 'home'), plotOf('home')],
   [oldBuildings.find(B => B.k === 'well'), well],
-  [{ k: 'shop', x: 0, z: 0, label: 'General store' }, plotOf('shop')],
-  /* HB-4b: the inn and the library (the archive) stand on their plots, closed (HB-5 gives them their rooms and names);
-     hub placing: HB-5's Workshop and Gene Bank on theirs, the lighthouse on the cove, the windmill by the farm */
+  /* hub placing: the General store opens (its room, int_shop; its counter is closed until shops.json has a stock) */
+  [{ k: 'shop', x: 0, z: 0, act: 'shop', label: 'General store' }, plotOf('shop')],
+  /* HB-4b: the inn and the library (the archive) on their plots; hub placing: HB-5's Workshop and Gene Bank on theirs,
+     the lighthouse on the cove, the windmill by the farm. The inn's, the library's, the Workshop's and the Gene Bank's
+     doors open their rooms (HB-5's act enter: the room named on the model; the Gene Bank's machines wait for the
+     splicing track); the lighthouse and the windmill are scenery */
   ...[
-    ['inn', 'inn'],
-    ['library', 'library'],
-    ['workshop', 'workshop'],
-    ['genebank', 'gene_bank'],
+    ['inn', 'inn', 'Inn'],
+    ['library', 'library', 'Library'],
+    ['workshop', 'workshop', 'Workshop'],
+    ['genebank', 'gene_bank', 'Gene Bank'],
     ['lighthouse', 'lighthouse'],
     ['windmill', 'windmill'],
   ]
     .filter(([L]) => plotOf(L))
-    .map(([L, k]) => [{ k, x: 0, z: 0 }, plotOf(L)]),
+    .map(([L, k, label]) => [{ k, x: 0, z: 0, ...(label ? { act: 'enter', label } : {}) }, plotOf(L)]),
   ...oldCottages.map((B, i) => [B, townHouses[i]]),
   /* the new cottages: the two kinds and their looks taken in turn */
   ...[...townHouses.slice(oldCottages.length), ...otherHouses].map((L, i) => [
