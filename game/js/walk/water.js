@@ -25,7 +25,7 @@ import { skyColors } from './sky.js';
 /* eslint-disable no-func-assign */
 expose({
   WATER_KIND_UNIFORMS: [() => WATER_KIND_UNIFORMS],
-  addRipple: [() => addRipple, v => (addRipple = v)],
+  addRipple: [() => addRipple, v => ((addRipple = v), provide({ addRipple }))],
   drawWater: [() => drawWater, v => setDrawWater(v)],
   mirrorInView: [() => mirrorInView, v => (mirrorInView = v)],
   reflectionLevel: [() => reflectionLevel, v => (reflectionLevel = v)],
@@ -36,6 +36,7 @@ expose({
   waterNear: [() => waterNear, v => (waterNear = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ addRipple });
 export function setDrawWater(v) {
   drawWater = v; // eslint-disable-line no-func-assign
   provide({ drawWater });
