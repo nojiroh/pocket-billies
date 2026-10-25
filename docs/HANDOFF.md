@@ -255,6 +255,43 @@ Branch `art/hub-island-sketches` (a one-session art branch at the owner's word; 
   buildings fronting it; build B's dials into copperleaf through build-island and build-copperleaf; the lookout out of
   the dressing; re-point the hub's positions; the door check. Tell the water track (lane G, WA-2b) the waterfall site.
 
+### Hub track HB-3 - the floating world map's ocean and detail - 2026-10-25
+Branch `art/hub-world-map` (made from main at f691ce9, HB-1 and HB-2 merged; the owner's choice, beside HB-4b on
+`track/hub`). Plan approved in Plan Mode with the owner's answers: **3 falls, silent**; the lagoon on the bowl's own
+water now, the water track's WA-7 swaps in the pixel water after this merges; work on this branch. Tag `hb-3-done` for
+the owner. Details: docs/phases/hub-track.md, "Done in HB-3".
+- Where the plan's facts were off (checked in the code): the bowl clumps (0) and a landmark picture at the middle (0)
+  were already gone on main; every map model ignored its placement's `rot`; the tree models are limbs and leaf
+  pictures, which the map's model builder drops (so "trees as their models" needed a builder of its own); the Bowl map
+  test's sea, landmark and rim steps failed on the floating island since IS-7. `BOWL_ISLAND_LIFT` was read only in
+  `bowlSeaInput` (and the test's text). The coast is ~10 m from the map's edges, so the lagoon's outer part is made,
+  not read from the map's sea letters.
+- Changed (one cause per commit): real height (lift 1 on the hub's floating island, 3 on a run's bowl); no clumps and
+  no landmark at the middle (guards); the ground letters clipped by the map's coast; logic/float-island.js lagoon,
+  falls and mist (tests); the World map Engine settings (lagoon, falls, trees as models, simple trees past, fences,
+  bridges); the lagoon and its mist; three falls (`mfallw`); map models turned by `rot`; trees from their recipes
+  (logic/bowl-things.js `bowlTreeFromRecipe`, tests); fences and bridges (`bowlBridgeShape`, tests); the Bowl map
+  test's frame-time step and its floating-island steps; check-fast's map check; the orbit a little further back.
+  tools/look-worldmap.py: the hub's world map at hours times orbit angles, `--eng`, `--at`, `--map` (another island
+  file served to the page only).
+- Water track: its milestone 1 (WA-1 pixel water and the rest) merged into main during this session and was merged in
+  at the end (only HANDOFF conflicted). HB-3 neither uses nor edits it. HB-3's water is `mwater` (world-bowl.js)
+  with a lagoon mode (`uRim`, vS.y as the rim's fade) and `mfallw`. For WA-7 (lane B): the lagoon's colour is the `mwater` block after
+  `float dep=…`, and the falls' colour the first lines of `mfallw`; that is where `PIXEL_WATER_GLSL` goes.
+- Verified: lint, typecheck, `npm test` (955), check:modules after each commit; `check-fast --only=map` 2/2 (new: lift
+  1, the lagoon and 3 falls up, 0 clumps, 0 standees, the ring 1.15-1.5x); `check:smoke` 6/6 (205 s); the Bowl map
+  test headless, every step ok; pictures before (f691ce9) and after at 7, 13, 19 and 23 h and 0/90/180/270 degrees
+  (validation is not committed: `python3 tools/look-worldmap.py OUT`), close views of the pasture fence, the stream's
+  bridges and the pier; HB-4b's island (`track/hub` copperleaf.json via `--map`) draws with no change.
+- Risky: **phone cost**: ~44k triangles of things (was 14k) plus the lagoon (10k) and 72 mist puffs drawn every
+  frame. Fallbacks in Settings → Engine → World map: Simple trees past (e.g. 150 m), Trees as models off, Falls 0,
+  Lagoon off. The opening fall films the same island (smoke passed; its look not judged by eye). Buildings on the
+  map now turn as in the walk (rot), so they face other ways than before.
+- Not done: picture standees draw as red squares on the floating island (the atlas reads right; not found), so the
+  far trees fall back to simple shapes, not flat pictures; the stream and pond stay painted water letters (no surface
+  of their own); the falls end in the cloud colour, no splash.
+- Next: the owner's phone test: open the map at a few hours and turn it; run Debug → Bowl map test and send the log
+  (the step "The floating island's frame times"). If it is slow, try Simple trees past first.
 ### Water track WA-6b (lane P) - Surf and the Waterfall climb - 2026-10-25
 Branch `track/water` (main merged in at the start: hub track HB-1, .gitignore and HANDOFF kept both sides; lanes R's
 WA-1 and G's work merged in before each push). Plan approved in Plan Mode; the owner's answers: Surf needs the Water
