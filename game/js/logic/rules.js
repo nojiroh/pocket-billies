@@ -61,7 +61,16 @@ import { rngFn } from './rng.js';
 import { wildOddsBy } from './weather.js';
 import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
 import { graftKey } from './graft-art.js';
-import { graftFit, graftRel, graftStability, graftTraits, graftTypes, graftUnstable, wildSplice } from './genes.js';
+import {
+  geneWords,
+  graftFit,
+  graftRel,
+  graftStability,
+  graftTraits,
+  graftTypes,
+  graftUnstable,
+  wildSplice,
+} from './genes.js';
 import {
   ROBOT_LIMBS,
   ROBOT_SLOTS,
@@ -206,6 +215,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   spliceReport: [() => spliceReport, v => (spliceReport = v)],
   // @ts-expect-error -- replaced on purpose
+  spliceWords: [() => spliceWords, v => (spliceWords = v)],
+  // @ts-expect-error -- replaced on purpose
   stat: [() => stat, v => (stat = v)],
   // @ts-expect-error -- replaced on purpose
   stopTrip: [() => stopTrip, v => (stopTrip = v)],
@@ -349,6 +360,16 @@ export const billyRel = m => (m && billyGraft(m) ? graftRel(geneData(), m.sp, m.
 /** SP-2: a Billie's types: its species', the second replaced by its heaviest dominant Gene's (logic/genes.js
  * graftTypes); a robot's or an unspliced Billie's are its species' own @param {any} m @returns {string[]} */
 export const billyTypes = m => (billyGraft(m) ? graftTypes(geneData(), m.sp, m.graft, m.build) : speciesOf(m).types);
+/** SP-3: a spliced Billie's foreign parts in words, in slot order ("a shark’s tail"); [] with no splice
+ * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m @returns {string[]} */
+export function spliceWords(m) {
+  const g = billyGraft(m);
+  return g
+    ? Object.entries(g)
+        .map(([slot, donor]) => geneWords(geneData(), slot, donor))
+        .filter(Boolean)
+    : [];
+}
 /** SP-2: the debug log's splices: per spliced Billie on the team, its place, species, splice code, Stability, traits
  * and types (data ids only: no names) */
 export function spliceReport() {

@@ -64,6 +64,7 @@ import {
   pickWeighted,
   plural,
   repairParts,
+  spliceWords,
   stat,
   xpFor,
 } from './rules.js';
@@ -1092,6 +1093,11 @@ export function startWild(q, o = {}) {
     battleSay(`A wild ${coatPrefix(q.coat)}${nm} appeared.`, { k: 'wild' });
     battleSay(`“${nm}!”`, { k: 'cry', si: 1 });
   }
+  /* SP-3: a spliced wild Billie shows what it wears */
+  const parts = spliceWords(foe);
+  if (parts.length === 1) battleSay(`This ${nm} has ${parts[0]}!`);
+  else if (parts.length)
+    battleSay(`This ${nm} is a patchwork: ${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}!`);
   if (CATCH_RULES.luxury.includes(SPECIES[q.sp].line))
     battleSay(`It looks too picky for ${PYRAMIDS.pyramid ? 'a ' + PYRAMIDS.pyramid.n : 'cheap pyramids'}.`);
   const K = liveActors(0);

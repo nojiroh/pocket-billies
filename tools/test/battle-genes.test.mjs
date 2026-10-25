@@ -82,3 +82,23 @@ test("battle genes: a spliced Billie fights as its dominant Gene's type", () => 
   battle(null);
   assert.deepEqual(fn('actorTypes')(0), ['Grass']);
 });
+
+test('battle genes: SP-3 a spliced wild Billie says what it wears as the battle opens; a plain one says nothing more', () => {
+  const s = startedSave('gates0', 20),
+    q = { id: 'q1', sp: 'swift0', lvl: 5, no: 1, build: { head: 'M', body: 'M', front: 'M', back: 'M', sig: 'M' } },
+    open = (/** @type {any} */ e) => {
+      hooks.provide({ activeBattle: null });
+      fn('startWild')(e);
+      return texts(hooks.activeBattle);
+    };
+  s.wild = {};
+  const plain = open({ ...q });
+  assert.doesNotMatch(plain, /This Swiftlet/);
+  const words = fn('spliceWords')({ sp: 'swift0', graft: { front: 'hughes2' } });
+  assert.deepEqual(words, ['an eagle’s wings']);
+  assert.match(open({ ...q, graft: { front: 'hughes2' } }), /This Swiftlet has an eagle’s wings!/);
+  assert.match(
+    open({ ...q, graft: { front: 'hughes2', sig: 'zuck2' } }),
+    /This Swiftlet is a patchwork: an eagle’s wings and an? [a-z]+’s [a-z]+!/
+  );
+});
