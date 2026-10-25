@@ -25,7 +25,8 @@ import { engineSetting } from '../engine/settings.js';
 import { freeMesh, gpuState, normalize3, smooth01, uploadMesh } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
 import { defaultWallMaterial, rawHeightAt } from './heights.js';
-import { WATER_KIND_LOOKS, shoreField, waterFlowField, waterKindLookup } from './water-data.js';
+import { flowMapAt, waterFlowMap } from './water-flow.js';
+import { WATER_KIND_LOOKS, flowTexture, shoreField, waterKindLookup } from './water-data.js';
 import { groundNormalTexture, groundOcclusion, groundOcclusionSteps, repeatingTexture } from './ground-textures.js';
 import { buildGrass } from './grass-build.js';
 /* eslint-disable no-func-assign */
@@ -472,7 +473,9 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       return c === 'w' || c === 'd';
     },
     wlev = (x, z) => rawHeightAt(sc, x, z) + stp(x, z) - 0.12,
-    flowAt = waterFlowField(sc);
+    /* water track WA-2a: which way the water runs and where it foams, a half-metre grid built once (walk/water-flow.js) */
+    flowMap = waterFlowMap(sc),
+    flowAt = (x, z) => flowMapAt(flowMap, x, z);
   const W2 = W * 2,
     H2 = H * 2,
     wd = new Float32Array(W2 * H2).fill(-2),
@@ -858,6 +861,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
   T.streamCells = stream;
   T.springCells = spring.filter((_, i) => i % 3 === 0).slice(0, 10);
   T.flowAt = flowAt;
+  T.flowMap = flowMap;
+  flowTexture(T, bare ? null : flowMap);
   T.leaves = null;
   T.rings = [];
   /* v22: one mirror plane per body of water level (buckets a few cm apart that overlap are one pool); the reflections use

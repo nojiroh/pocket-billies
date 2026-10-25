@@ -19,7 +19,7 @@ import { engineColor, engineSetting } from '../engine/settings.js';
 import { bindQuad, gpuState, imageTexture, matrix4, renderTarget } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
 import { setSpriteUniforms, useWalkProgram } from './draw-common.js';
-import { WATER_KIND_LOOKS, setPixelWaterUniform, setShoreUniforms } from './water-data.js';
+import { WATER_KIND_LOOKS, setFlowUniforms, setPixelWaterUniform, setShoreUniforms } from './water-data.js';
 import { computeFrustum, inFrustum } from './quality-cull.js';
 import { skyColors } from './sky.js';
 /* eslint-disable no-func-assign */
@@ -318,6 +318,7 @@ export function drawWater(C, X, rw, rh) {
   gl.uniform1f(U.uLevel, walkRenderer.wlevelR ?? walkRenderer.wlevel ?? 0);
   setWaterUniforms(U);
   setShoreUniforms(U, sc);
+  setFlowUniforms(U, sc);
   if (U.uHole) gl.uniform4fv(U.uHole, roomHole(sc));
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -331,6 +332,7 @@ export function drawWater(C, X, rw, rh) {
   if (walkRenderer.basin) {
     gl.uniform1f(U.uLevel, -99);
     if (U.uShoreR) gl.uniform3f(U.uShoreR, 1, 1, 0);
+    setFlowUniforms(U, sc, false);
     gl.bindVertexArray(walkRenderer.basin.vao);
     gl.drawElements(gl.TRIANGLES, walkRenderer.basin.n, gl.UNSIGNED_INT, 0);
     gl.bindVertexArray(null);

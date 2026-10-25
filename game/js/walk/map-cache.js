@@ -432,6 +432,8 @@ export const MAP_CACHE_FIELDS = [
   'streamCells',
   'springCells',
   'flowAt',
+  'flowMap',
+  'flowTex',
   'wlevels',
   'wlevel',
   /* 0.1.0 alpha: the sea's skirt out to the horizon (it stayed behind when a view prepared ahead was swapped in) */
@@ -532,7 +534,7 @@ export function freeMapCacheEntry(e) {
     e.ring = null;
   }
   try {
-    for (const k of ['gtex', 'ftex', 'ctex', 'gntex', 'shoreTex', 'gaoTex'])
+    for (const k of ['gtex', 'ftex', 'ctex', 'gntex', 'shoreTex', 'gaoTex', 'flowTex'])
       if (e[k] && e[k] !== gpuState.white && e[k] !== gpuState.flatN) gl.deleteTexture(e[k]);
     for (const k of ['mesh', 'water', 'fallMesh']) if (e[k]) freeMesh(e[k]);
     if (e.grass) {
