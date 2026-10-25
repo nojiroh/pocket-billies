@@ -264,11 +264,18 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
  float fishK=0.;for(int i=0;i<4;i++){vec4 F=uFish[i];if(far>.5)break;if(F.w<=0.)continue;vec2 d=wp-F.xy;vec2 fw=vec2(cos(F.z),sin(F.z));float lx=dot(d,fw)/F.w,ly=dot(d,vec2(-fw.y,fw.x))/F.w;
   float wig=sin(ts*9.+F.x*3.)*.04*(lx<0.?-lx*4.:0.);ly+=wig;float body=step(lx*lx/.09+ly*ly/.0081,1.);float tail=step(-.42,lx)*step(lx,-.24)*step(abs(ly),(-lx-.22)*.7);fishK=max(fishK,max(body,tail));}
  base*=1.-fishK*.45*smoothstep(.2,.45,dep);
+ /* water track WA-4: kelp at middle depth in the sea, out of the reef's shallows: dark fronds just under the surface in a cell of 2.6 m here and there, swaying in steps */
+ float kelp=0.;vec3 kelpC=vec3(0.);if(pix>.5&&K==6&&far<.5){float kz=smoothstep(.32,.45,depC)*(1.-smoothstep(.955,.995,depC))*(1.-reef);vec2 kc=floor(wp/2.6),kf=wp-kc*2.6;
+  vec3 kh=fract(sin(vec3(dot(kc,vec2(127.1,311.7)),dot(kc,vec2(269.5,183.3)),dot(kc,vec2(419.2,371.9))))*43758.55);
+  if(kz>0.&&kh.z<.45){vec2 ko=vec2(.9)+kh.xy*.8;float ka2=kh.x*6.283+.3*sin(ts*.8+kh.y*6.),km=0.;
+   for(int f=0;f<3;f++){float a2=ka2+float(f-1)*.6+.18*sin(ts*1.1+float(f)*2.1+kh.z*9.);vec2 dr=vec2(cos(a2),sin(a2)),d=kf-ko;float al=dot(d,dr),la=abs(dot(d,vec2(-dr.y,dr.x))),L=.8+.5*fract(kh.y*7.+float(f)*.37);
+    km=max(km,step(0.,al)*step(al,L)*step(la,.13*(1.-al/L)+.05));}
+   kelp=km*kz;kelpC=mix(vec3(.13,.22,.08),vec3(.24,.32,.1),step(.5,fract(dot(kf,vec2(7.3,5.1)))))*(.6+.4*sh)*(.55+.45*uAmbK);base=mix(base,kelpC,kelp*.8);}}
  base*=mix(uShTint*.85,vec3(1.),sh)*(.55+.45*uAmbK);
  /* light on the bed, brightest in the clear shallows */
  float cz=far>.5?0.:caust(wp*1.5,ts*(.6+.4*rk));cz=(pix>.5?step(.3,cz)*.8*pwQ(1.-depC,3.,pc)*(1.+reef*.6):cz*(1.-dep))*ka.y*uCaus;base+=uSunCol*cz*.32*sh;
  base+=shal*kb.x*(.6+.4*sin(ts*1.3+wp.x*1.7+wp.y));
- vec3 refl=mix(uSkyR,rf.rgb,rf.a);vec3 c=mix(base,refl,clamp(fr,0.,1.));
+ vec3 refl=mix(uSkyR,rf.rgb,rf.a);vec3 c=mix(base,refl,clamp(fr,0.,1.));c=mix(c,kelpC,kelp*.45);
  float foam=(pwHard(.75,1.,vS2+(r1-.5)*.35)*(.6+.4*sin(ts*2.+wp.x*3.))+flowing*pwHard(.6,.9,r2)*.5)*uFoam*ka.z;
  /* WA-2a: white water from the flow map: rapids, a river's churn into still water, a fall's foot; it boils in place, in steps */
  if(fm.z>.01){float bo=lnoise(wp*5.3+vec2(ts*1.7,-ts*1.3))*.55+lnoise(wp*11.-fv*ts*.6)*.45;foam=max(foam,pwHard(.62,.72,bo+fm.z*.55)*min(1.,fm.z*1.6)*uFoam*max(ka.z,.8));}foam=pwQ(foam,3.,pc);c=mix(c,vec3(.95,.98,1.),clamp(foam,0.,1.));
