@@ -896,6 +896,38 @@ def run_shop(pg, base):
     return f'{n} wares'
 
 
+def run_town_life(pg, base):
+    """TW-2: the run fixture's first town (a jump): its folk are there, as many as its houses give (2-6), drawn no more
+    than the graphics cap; they walk, and sent home (their hour moved to the evening) at least one goes indoors; its
+    animals, chat and a named local who talks by their own name"""
+    i = pg.evaluate("saveData.run.map.nodes.findIndex(n=>n.type==='town')")
+    if i < 0: raise Exception("the run fixture's map has no town")
+    node = pg.evaluate(f"runWorldNode({i})")
+    go_scene(pg, node, 90)
+    want = pg.evaluate(f"mapById(LOCATIONS[{node}].mapId).folk")
+    if not 2 <= want <= 6: raise Exception(f'the town has {want} folk, not 2-6')
+    if not until(pg, f"(walkView.folkAll||[]).length==={want}", 60): raise Exception(f'the folk never came out: {pg.evaluate("(walkView.folkAll||[]).length")} of {want}')
+    cap = pg.evaluate("runTownFolkCap(RULES.run.town,walkRenderer.q,saveData.preferences&&saveData.preferences.aim)")
+    if not until(pg, f"walkView.folk.length<={cap}", 20): raise Exception(f'{pg.evaluate("walkView.folk.length")} folk drawn, over the cap of {cap}')
+    pg.evaluate("walkView.folkAll.forEach(f=>{f.x0=f.x;f.z0=f.z});0")
+    if not until(pg, "walkView.folkAll.some(f=>Math.hypot(f.x-f.x0,f.z-f.z0)>1)", 90): raise Exception('nobody walked in 90 s')
+    # the evening: each one's own hours moved to 19:00, so the day sends them home and in at their door
+    pg.evaluate("(()=>{const h=folkHour();walkView.folkAll.forEach(f=>{f.off=19-h;f.owl=false});return 0})()")
+    if not until(pg, "walkView.folkAll.some(f=>f.in)", 150): raise Exception('sent home, nobody went indoors in 150 s')
+    life = pg.evaluate(f"(mapById(LOCATIONS[{node}].mapId).life||[]).filter(l=>l.area).map(l=>l.k)")
+    if not life and pg.evaluate(f"!!((gameData.biomes[mapById(LOCATIONS[{node}].mapId).biome]||{{}}).town||{{}}).life"): raise Exception('the town has none of its biome\'s town animals')
+    if not pg.evaluate(f"(()=>{{const k={json.dumps(life)};return ambientLife.list.some(a=>k.includes(a.k))}})()"): raise Exception(f'none of the town animals {life} is about')
+    chat = pg.evaluate("mapChatLines([]).length")
+    if chat < 6: raise Exception(f'the town says {chat} lines, not its biome\'s 6 and more')
+    n = pg.evaluate("(walkState().npcs||[]).filter(n=>String(n.id).startsWith('_talk:local')).length")
+    if not n: raise Exception('no named local in the town')
+    name = pg.evaluate("(()=>{const n=walkState().npcs.find(n=>String(n.id).startsWith('_talk:local'));walkPick({k:'npc',n});return n.talk.name})()")
+    if not until(pg, f"talkBox.on&&document.querySelector('.talk-who')&&document.querySelector('.talk-who').textContent==={json.dumps(name)}", 20):
+        raise Exception(f'tapping {name} didn’t open the talk box with their name')
+    pg.evaluate("talkHide();0")
+    return f'{want} folk ({pg.evaluate("walkView.folk.length")} drawn, cap {cap}), walked and went indoors; animals {life}; {chat} lines; {n} local(s), {name} talked'
+
+
 def waystations(pg, base):
     """RL-12b: the in-game test's own phase, "A run's waystation and stall" (self-test.js), on a copy of the save: the
     first seed with both, the stand tapped (its event's sheet), the stall tapped (its shop's wares), the wild stock"""
@@ -1160,7 +1192,8 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('ranch', [('Packing for a run: a Billie from storage, a packed bag; kept on a loss, the bag home on a win (RL-9b)', run_pack)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
-             ("A run town's shop opens (UI-5)", run_shop)]),
+             ("A run town's shop opens (UI-5)", run_shop),
+             ("A run town's life: folk walk and go indoors, the graphics cap, a named local talks (TW-2)", run_town_life)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home", run_loop)]),
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; none on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),
