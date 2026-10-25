@@ -2,6 +2,36 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Water track WA-0 - the plan, the contract, the water bench - 2026-10-25
+Branch `ccr-4ae7bdc4-46vu9r` (the plan's own branch `track/water` did not exist yet; the owner makes it, and every
+later WA session starts on it). The owner's brief: water "waterfalls, ocean, rivers, everything", good fidelity in the
+pixel style, research, and which sessions can run at once. Plan and the owner's answers in Plan Mode (hybrid pixel
+look, about 10 frames a second, wading plus Surf plus a Waterfall climb, big falls plus cascades plus caves plus the hub
+island's (asked again in WA-2b), 3 lanes, its own track, a new `logic/water-gen.js` module, sounds, Studio tools,
+weather and life on water).
+- Changed:
+  - docs/phases/water-track.md: verified facts, research with sources, the data contract (`falls`, the `streams`
+    fields, `w` wade / `d` surf, the appended kinds, the `pixel`/`bands`/`frames` settings, the shared shader snippet),
+    the lanes and who owns which files, rounds 0-5, the ask-me-before list. ROADMAP, BRANCHES (`track/water`) and a
+    pointer in terrain-track.md (TR-6's falls, TR-10's water and "rivers downhill" moved here).
+  - test_water grown to 58 x 28 m: a 6 m cliff with a stream falling into a plunge pool, pools of lava and ice and a
+    strip of sea; four shots and a walking check (hub to the fall's foot).
+  - `tools/look-water.py`: a scene's shots (or four spots by its water) at phone size with the game's graphics, and
+    the water's numbers (tiles, triangles, fall sheets, kinds, mirror levels) to validation/look-water/ (ignored).
+  - The data check knew six water kinds: sea, lava and ice rectangles warned as unknown (`logic/data-checks.js`).
+- Found (wrong or missing in the docs): the water is on a 16 texels a metre grid, not 32, with smooth colours; the
+  pixel-water patch was never in the repository; waterfalls are only automatic 0.5 m sheets (the 6 m test fall is a
+  third of its stream's width and ends in a point); rivers are lines across the map; **riding on water already exists**
+  (v24: `sc.ride`, `rules.ride`, `rideMountItem`; run side areas set it), so Surf grows it rather than starting new.
+- Risky: nothing in the game flow changed (a test scene, a tool, a data-check list). The Python Playwright pinned in
+  tools/requirements-check.txt (1.56.0) wants a browser build this container lacks; 1.63.0 (the one matching the
+  installed Chromium) ran every check here.
+- Verified: lint, typecheck, format, check:modules, check:data, `npm test` (0 failures), `check:smoke` 6/6 (186 s);
+  test_water's walking checks (both ok, through `testMapChecks`); look-water's 11 pictures and numbers.
+- Next: the owner makes `track/water`; round 1 runs three sessions at once: WA-1 (lane R, pixel water), WA-3a (lane
+  G, rivers downhill), WA-6a (lane P, wading). WA-1 takes its "before" pictures with `tools/look-water.py --out=` at
+  this commit. Open: lane B (WA-7) in round 3.
+
 ### Window glass on the low-poly buildings (no more glowing orbs) - 2026-10-25
 Branch `ccr-7161a124-txw6o4` (one session, not part of a plan). The owner's ask: windows on 3D buildings looked like a
 weird orb at night. Plan approved in Plan Mode; the owner chose to mark the glass with a new recipe key (`glass: n`)
