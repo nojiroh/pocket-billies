@@ -117,6 +117,8 @@ expose({
   mapgenGrowWild: [() => mapgenGrowWild, v => (mapgenGrowWild = v)],
   mapgenInLot: [() => mapgenInLot],
   // @ts-expect-error -- replaced on purpose
+  mapgenJetty: [() => mapgenJetty, v => (mapgenJetty = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenJoinOffset: [() => mapgenJoinOffset, v => (mapgenJoinOffset = v)],
   mapgenLaidOut: [() => mapgenLaidOut],
   // @ts-expect-error -- replaced on purpose
@@ -4135,43 +4137,46 @@ export function mapgenStageFeature(G) {
       mapgenPutProp(G, i ? 'log' : 'stump', x + Math.cos(a) * 2.2, z + Math.sin(a) * 2.2, { force: true });
     }
     mapgenSpur(G, x, z);
-  } else if (f === 'jetty' && G.pond) {
-    /* boards from the bank toward the pond's middle, over the water */
-    const { x: px, z: pz, r } = G.pond;
-    const M = G.road[0].pts;
-    let best = M[0],
-      bd = 1e9;
-    for (const p of M) {
-      const d = Math.hypot(p[0] - px, p[1] - pz);
-      if (d < bd) {
-        bd = d;
-        best = p;
+  } else if (f === 'jetty' && G.pond) mapgenJetty(G);
+}
+/** boards from the bank toward the pond's middle, over the water, from the main road's nearest point (a path of the
+ * road's surface to the bank, mooring posts on both sides); RT-3: G.jetty, where it starts on land and its way out */
+export function mapgenJetty(G) {
+  const { P } = G;
+  const { x: px, z: pz, r } = G.pond;
+  const M = G.road[0].pts;
+  let best = M[0],
+    bd = 1e9;
+  for (const p of M) {
+    const d = Math.hypot(p[0] - px, p[1] - pz);
+    if (d < bd) {
+      bd = d;
+      best = p;
+    }
+  }
+  const dx = (px - best[0]) / (bd || 1),
+    dz = (pz - best[1]) / (bd || 1);
+  const start = bd - r - 2,
+    end = bd - r * 0.25;
+  for (let t = Math.max(0, start - 3); t < end; t += 0.25)
+    for (let o = -0.9; o <= 0.9; o += 0.3) {
+      const x = best[0] + dx * t - dz * o,
+        z = best[1] + dz * t + dx * o,
+        q = mapgenCellAt(G, x, z);
+      if (t < start && !(G.F[q] & (1 | 4))) {
+        G.T[q] = MAPGEN_SURFACES[P.road.surface];
+        G.F[q] |= 2;
+      } else if (t >= start) {
+        G.T[q] = 'b';
+        G.F[q] = (G.F[q] & ~4) | 128;
       }
     }
-    const dx = (px - best[0]) / (bd || 1),
-      dz = (pz - best[1]) / (bd || 1);
-    const start = bd - r - 2,
-      end = bd - r * 0.25;
-    for (let t = Math.max(0, start - 3); t < end; t += 0.25)
-      for (let o = -0.9; o <= 0.9; o += 0.3) {
-        const x = best[0] + dx * t - dz * o,
-          z = best[1] + dz * t + dx * o,
-          q = mapgenCellAt(G, x, z);
-        if (t < start && !(G.F[q] & (1 | 4))) {
-          G.T[q] = MAPGEN_SURFACES[P.road.surface];
-          G.F[q] |= 2;
-        } else if (t >= start) {
-          G.T[q] = 'b';
-          G.F[q] = (G.F[q] & ~4) | 128;
-        }
-      }
-    for (const o of [-1.1, 1.1])
-      for (let t = start + 1; t < end; t += 2.4)
-        mapgenPutProp(G, 'dock_post', best[0] + dx * t - dz * o, best[1] + dz * t + dx * o, {
-          force: true,
-          water: true,
-        });
-  }
+  for (const o of [-1.1, 1.1])
+    for (let t = start + 1; t < end; t += 2.4)
+      mapgenPutProp(G, 'dock_post', best[0] + dx * t - dz * o, best[1] + dz * t + dx * o, {
+        force: true,
+        water: true,
+      });
 }
 export function mapgenClearRound(G, x, z, r) {
   G.props = G.props.filter(p => Math.hypot(p.x - x, p.z - z) > r);
