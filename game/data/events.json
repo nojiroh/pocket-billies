@@ -281,6 +281,34 @@
    ],
    "weight": 1
   },
+  "bureau_checkpoint": {
+   "title": "Bureau Checkpoint",
+   "intro": [
+    "A striped barrier, a tollbooth and a flag with a bean on it. An agent in a grey coat steps out with a clipboard.",
+    "Agent: Routine check, Bureau of Lost, Found and Beans. Lost anything? Found anything? Beans of any kind?"
+   ],
+   "options": [
+    {
+     "text": "Declare everything",
+     "then": [
+      "You declare everything. It takes a while. The agent stamps a form in three places.",
+      "Agent: Thank you for your honesty. Here is your complimentary Found Item.",
+      "loot common"
+     ]
+    },
+    {
+     "text": "Let them inspect your team",
+     "then": [
+      "Agent: Unregistered clones. I will have to inspect them. Personally.",
+      "foe bureau_clerk",
+      "Agent: Everything appears to be in order. Suspiciously in order. Take this and move along.",
+      "reward"
+     ]
+    },
+    {"text":"Walk on","then":["Agent: We'll be in touch."]}
+   ],
+   "weight": 0
+  },
   "speedrunner": {
    "title": "Speedrunner",
    "intro": ["A trainer sprints past, turns, and jogs on the spot in front of you.","Speedrunner: No time! Battle any percent!"],
