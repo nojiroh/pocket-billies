@@ -52,6 +52,7 @@ expose({
   rideGlassLift: [() => rideGlassLift, v => (rideGlassLift = v)],
   standByMast: [() => standByMast, v => (standByMast = v)],
   startAirshipFlight: [() => startAirshipFlight, v => (startAirshipFlight = v)],
+  stationMenu: [() => stationMenu, v => (stationMenu = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ flyDraw, flySkip, flyTick });
@@ -135,6 +136,32 @@ export function flyMenu(p) {
         : runRow
           ? ''
           : `<p>The airships fly to the towns you’ve already been to. Walk on to another town, and you can fly back here from its mast whenever you like.</p>`),
+    btns: [{ l: 'Not now', c: 'quiet', f: closeModal }],
+  });
+}
+/* HB-7: Skyline Station's sheet (a prop with act 'station', the hub's): "Start a run" (run.js runStartSheet) and the
+   station's upgrades, paid in Crests; the airship moored beside it is scenery. Before HB-8 the run still sets off on
+   the airship's flight over the world map */
+export function stationMenu(p) {
+  if (airshipFlight.on || !saveData.started) return;
+  if (saveData.run) {
+    toast('The trains wait here for the end of the run.');
+    return;
+  }
+  /* the sheet comes back after an upgrade bought on it (lab-board.js labAction) */
+  uiState.stationAt = p;
+  const runRow =
+    typeof runStartable === 'function' && runStartable()
+      ? `<button class="pickrow fly-row" data-a="runstart"><span class="fly-ico">${uiIconHTML('map', 18)}</span><span class="pr-t"><b>Start a run</b><small>Expedition I · the wild lands past the island</small></span><span class="fly-fare">Free</span></button>`
+      : '';
+  const ups = typeof buildingRowsHTML === 'function' ? buildingRowsHTML('airship', 'station') : '',
+    upHTML = ups
+      ? `<p class="note">Airship upgrades, paid in Crests. You have ${formatNumber(saveData.meta.crests)}.</p>${ups}`
+      : '';
+  modal({
+    title: escapeHtml((p && p.label) || 'Skyline Station'),
+    cls: 'fly-sheet station-sheet',
+    html: (runRow ? `<div class="list">${runRow}</div>` : '') + upHTML,
     btns: [{ l: 'Not now', c: 'quiet', f: closeModal }],
   });
 }
@@ -281,11 +308,13 @@ function flyDraw(c, t, proj) {
   }
 }
 /* RL-8: stand beside a place's airship mast (the first prop with act 'fly' in its own map), where a flight lands you
-   and where a run's end leaves you in Copperleaf; at the place's middle when it has none. Returns whether it has one */
+   and where a run's end leaves you in Copperleaf; at the place's middle when it has none. Returns whether it has one.
+   HB-7: Skyline Station first (act 'station', the hub's), where runs start */
 export function standByMast(b) {
   const sid = mapIdAt(b),
     sc = typeof mapById === 'function' ? mapById(sid) : null,
-    m = sc && (sc.props || []).find(p => p.act === 'fly');
+    P = (sc && sc.props) || [],
+    m = P.find(p => p.act === 'station') || P.find(p => p.act === 'fly');
   if (!m || typeof walkData !== 'function') return false;
   const C = walkData().sc,
     M = C.props[m.k] || {},

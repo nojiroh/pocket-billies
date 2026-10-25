@@ -53,7 +53,7 @@ import { runArriveSound, soundEffect } from './sound.js';
 import { talkChosen } from './talk.js';
 import { cutscene } from './cutscene/director.js';
 import { loreBook } from './lore.js';
-import { flyMenu, rideGlassLift } from './airship.js';
+import { flyMenu, rideGlassLift, stationMenu } from './airship.js';
 import { runWorldData } from './run-world.js';
 import { runArrivedFx, runArrivedHint } from './run.js';
 import { fieldMoveOpen, fieldWayOut } from './field-moves.js';
@@ -566,6 +566,11 @@ export function walkPick(h) {
     }
     if (a === 'lift' && typeof rideGlassLift === 'function') {
       rideGlassLift(p);
+      return;
+    }
+    /* HB-7: Skyline Station, where runs start */
+    if (a === 'station' && typeof stationMenu === 'function') {
+      stationMenu(p);
       return;
     }
     /* RL-R2: a field move's obstacle (Cut, Rock Smash, Surf) and a side area's way out (field-moves.js) */

@@ -15,7 +15,7 @@ import { incomeBank } from './logic/ranch-income.js';
 import { buildingLevel, unlockAuto, unlockBuy, unlockCurrency, unlockReady, unlockRows } from './logic/unlocks.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
-import { flyMenu } from './airship.js';
+import { flyMenu, stationMenu } from './airship.js';
 import { ranchOpen } from './ranch-screen.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -184,5 +184,8 @@ export function labAction(a, d) {
     /* in place of the open sheet (a second one would wait behind it) */
     uiState.modal = null;
     flyMenu(uiState.flyAt);
+  } else if (d.then === 'station' && typeof stationMenu === 'function') {
+    uiState.modal = null;
+    stationMenu(uiState.stationAt);
   }
 }
