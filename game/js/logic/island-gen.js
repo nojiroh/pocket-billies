@@ -64,7 +64,9 @@ expose({
   ISLAND_SEA_BED: [() => ISLAND_SEA_BED],
   ISLAND_TOWN_EXTRA: [() => ISLAND_TOWN_EXTRA],
   ISLAND_VALLEY: [() => ISLAND_VALLEY],
+  SKY_RAIL: [() => SKY_RAIL],
   STATION_PLOT: [() => STATION_PLOT],
+  STATION_TURN: [() => STATION_TURN],
   islandAngle: [() => islandAngle],
   islandAngleDiff: [() => islandAngleDiff],
   // @ts-expect-error -- replaced on purpose
@@ -84,6 +86,8 @@ expose({
   islandZoneRect: [() => islandZoneRect, v => (islandZoneRect = v)],
   // @ts-expect-error -- replaced on purpose
   islandZoneShape: [() => islandZoneShape, v => (islandZoneShape = v)],
+  // @ts-expect-error -- replaced on purpose
+  skyRailHeight: [() => skyRailHeight, v => (skyRailHeight = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -114,6 +118,33 @@ export const ISLAND_GEN_BUILT = ['town', 'barn', 'pasture'];
 /** HB-4a: the town's other buildings (town.extra): plot sizes [width, width, depth, depth] */
 /** HB-4b: the station's plot (w across its front, d deep), metres */
 export const STATION_PLOT = [14, 8];
+/** hub placing: the station stands side-on, its front a quarter turn clockwise from facing out (radians), so the rail
+    out of its right-hand end (HB-7's art) runs straight out to sea */
+export const STATION_TURN = -Math.PI / 2;
+/** hub placing: HB-7's sky rail (tools/build-station-trains.py), chained from the station's right-hand end: `from`, the
+    rail's start from the station plot's middle in metres [toward its right-hand end, behind it] (train_station stands
+    in the middle of its plot, 6.6 m deep, its rail 6.1 m behind its front and its right-hand end 6.3 m out); `piece`
+    metres a piece, one piece per look of sky_rail; then sky_portal, its launch lip `lip` and its tear `tear` [metres
+    along, height] past the start */
+export const SKY_RAIL = {
+  from: [6.3, 2.8],
+  piece: 12,
+  looks: ['', 'bend', 'rise', 'rise_high', 'crest'],
+  lip: 64.6,
+  tear: [68, 17.05],
+};
+/** hub placing: the sky rail's middle (its tube's axis) over the station's ground s metres along from its start, as
+    build-station-trains.py draws its pieces: flat 0.13 m, easing into a climb of 5 m a piece, easing out at 15.13 m */
+export function skyRailHeight(s) {
+  const i = Math.max(0, Math.floor(s / SKY_RAIL.piece)),
+    t = Math.min(1, Math.max(0, s / SKY_RAIL.piece - i));
+  if (i === 0) return 0.13;
+  if (i === 1) return 0.13 + 2.5 * t * t;
+  if (i === 2) return 2.63 + 5 * t;
+  if (i === 3) return 7.63 + 5 * t;
+  if (i === 4) return 12.63 + 2.5 * (2 * t - t * t);
+  return 15.13;
+}
 export const ISLAND_TOWN_EXTRA = {
   inn: [10, 12, 8, 9],
   workshop: [9, 10, 7, 8],
@@ -193,8 +224,8 @@ export const ISLAND_GEN_DEFAULTS = {
     square: { r: 7.5, off: 0, front: 0 },
   },
   /* HB-4a: the landmarks round the town, for the hub track (on 0: none). station: the train station on the headland by
-     the town that stands out furthest (a: its angle round the middle, -1 to pick), its sky rail running len metres out
-     over the sea and climbing rise metres to the portal; lighthouse: on an arm of the cove (arm 1 or -1; 0 the one
+     the town that stands out furthest (a: its angle round the middle, -1 to pick; len and rise, the sky rail's length
+     and climb, unused since the rail follows HB-7's pieces: SKY_RAIL); lighthouse: on an arm of the cove (arm 1 or -1; 0 the one
      further from the station); windmill: beside the farm (0 none); shore: how far every landmark keeps from the water
      (metres), room for the water track's tide and wading shallows (docs/phases/water-track.md WA-4, WA-6a) */
   landmarks: { on: 0, station: { a: -1, len: 70, rise: 45 }, lighthouse: { arm: 0 }, windmill: 1, shore: 3 },
@@ -1701,8 +1732,8 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
   };
   /* a landmark's plot fits at x, z (HB-4a): on fine land, off the built zones, landmarks.shore metres from the water all
      round; its front's angle (the quarter turn with town.quarter, else a0), or null */
-  const landmarkFits = (x, z, size, a0) => {
-    const a = D.town.quarter ? quarterOut(x, z) : a0;
+  const landmarkFits = (x, z, size, a0, turn = 0) => {
+    const a = (D.town.quarter ? quarterOut(x, z) : a0) + turn;
     return plotPts(x, z, size[0], size[1], a, 0.5).every(
       ([px, pz]) =>
         inLand(px, pz) &&
@@ -1747,7 +1778,7 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     for (const t of cands.slice(0, 40)) {
       for (let r = coastAt(t) - 6; r > coastAt(t) - 20 && !stationSite; r -= 1) {
         const [x, z] = at(r, t);
-        if (landmarkFits(x, z, STATION_PLOT, (t + 180) * ISLAND_RAD) !== null) stationSite = { x, z, t };
+        if (landmarkFits(x, z, STATION_PLOT, (t + 180) * ISLAND_RAD, STATION_TURN) !== null) stationSite = { x, z, t };
       }
       if (stationSite) break;
     }
@@ -1756,7 +1787,7 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     /* every path point on the plot (and its path's half width and 1.5 m round) pushed toward the island's middle till
        it is clear, then the bend smoothed; three times, as the smoothing pulls the corners back in */
     const S0 = stationSite,
-      a = landmarkFits(S0.x, S0.z, STATION_PLOT, (S0.t + 180) * ISLAND_RAD) ?? 0,
+      a = landmarkFits(S0.x, S0.z, STATION_PLOT, (S0.t + 180) * ISLAND_RAD, STATION_TURN) ?? 0,
       on = (p, m) => {
         const dx = p[0] - S0.x,
           dz = p[1] - S0.z;
@@ -2085,8 +2116,8 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
   /* HB-4a: a landmark's plot (turned to face out with town.quarter). A headland is narrower than the coast path's
      margins allow a 14 m station: a landmark only needs dry land, clear of the other plots and off the mountain; a
      path through it is re-routed when the island is built */
-  const landmarkAt = (k, x, z, size, a0) => {
-    const a = landmarkFits(x, z, size, a0),
+  const landmarkAt = (k, x, z, size, a0, turn = 0) => {
+    const a = landmarkFits(x, z, size, a0, turn),
       rr = Math.hypot(size[0], size[1]) / 2;
     if (a === null || plots.some(L => Math.hypot(L.x - x, L.z - z) < rr + Math.hypot(L.w, L.d) / 2 + 0.6)) return false;
     plots.push({ k, x, z, w: size[0], d: size[1], a, y: cornerAt(x, z), at: 'landmark' });
@@ -2109,20 +2140,31 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     /* the station: on the headland chosen before the paths were painted (stationSite) */
     let st = /** @type {number[] | null} */ (null);
     const stA = stationSite ? stationSite.t : 0;
-    if (stationSite && landmarkAt('station', stationSite.x, stationSite.z, STATION_PLOT, (stA + 180) * ISLAND_RAD))
+    if (
+      stationSite &&
+      landmarkAt('station', stationSite.x, stationSite.z, STATION_PLOT, (stA + 180) * ISLAND_RAD, STATION_TURN)
+    )
       st = [stationSite.x, stationSite.z];
     if (!st) notes.push('no headland for the station');
     else {
-      /* the rail: from the platform straight out to sea, levelling off at the portal */
-      const y0 = cornerAt(st[0], st[1]),
-        r0 = Math.hypot(st[0] - c[0], st[1] - c[1]),
-        n = Math.ceil(LM.station.len / 2),
-        rail = [...Array(n + 1).keys()].map(k => {
-          const f = k / n,
-            [x, z] = at(r0 + f * (coastAt(stA) - r0 + LM.station.len), stA);
-          return [mapgenRound2(x), mapgenRound2(z), mapgenRound2(y0 + 4 + LM.station.rise * f * f * (3 - 2 * f))];
-        });
-      landmarks = { rail, portal: rail[rail.length - 1] };
+      /* hub placing: the rail as HB-7's pieces lay it (SKY_RAIL): from the station's right-hand end straight out (the
+         way it faces turned back a quarter, out to sea), every 2 m to the portal's launch lip, its height over the
+         station's ground; the portal is its tear */
+      const L = plots[plots.length - 1],
+        y0 = L.y,
+        fx = Math.cos(L.a),
+        fz = Math.sin(L.a),
+        along = (u, h) => [
+          mapgenRound2(L.x - fz * u - fx * SKY_RAIL.from[1]),
+          mapgenRound2(L.z + fx * u - fz * SKY_RAIL.from[1]),
+          mapgenRound2(y0 + h),
+        ],
+        ss = [...Array(Math.floor(SKY_RAIL.lip / 2) + 1).keys()].map(k => k * 2);
+      if (ss[ss.length - 1] < SKY_RAIL.lip) ss.push(SKY_RAIL.lip);
+      landmarks = {
+        rail: ss.map(u => along(SKY_RAIL.from[0] + u, skyRailHeight(u))),
+        portal: along(SKY_RAIL.from[0] + SKY_RAIL.tear[0], SKY_RAIL.tear[1]),
+      };
     }
     /* the lighthouse: the cove's arm further from the station (or the one asked for), as far out as fits */
     if (D.cove.on) {
