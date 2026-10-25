@@ -7,10 +7,11 @@ import { expose } from '../test-globals.js';
 import { loadingScreen, provide, reducedMotion } from '../hooks.js';
 import { clamp } from '../util.js';
 import { pictureFacing } from '../logic/prop-turn.js';
-import { hiddenEase, pictureCovers } from '../logic/occlude.js';
+import { hiddenEase, outlineColour, pictureCovers } from '../logic/occlude.js';
 import { INTEREST_DEFAULTS } from '../logic/camera-interest.js';
 import { filterInto } from '../engine/frame-lists.js';
 import { makeCanvas } from '../art.js';
+import { lookOf, wardrobeData } from '../person-art.js';
 import {
   actionLabel,
   actionSpot,
@@ -35,6 +36,7 @@ expose({
   BOX_INFO_CACHE: [() => BOX_INFO_CACHE],
   DOOR_INTEREST: [() => DOOR_INTEREST],
   IMAGE_IDS: [() => IMAGE_IDS],
+  OUTLINE_COLOURS: [() => OUTLINE_COLOURS],
   SILHOUETTE_AMOUNT: [() => SILHOUETTE_AMOUNT],
   SILHOUETTE_PULL: [() => SILHOUETTE_PULL],
   SILHOUETTE_TINT: [() => SILHOUETTE_TINT],
@@ -56,6 +58,7 @@ expose({
   imageIdCount: [() => imageIdCount, v => (imageIdCount = v)],
   interestPoints: [() => interestPoints, v => (interestPoints = v)],
   landmarkTilt: [() => landmarkTilt, v => (landmarkTilt = v)],
+  outlineColourOf: [() => outlineColourOf, v => (outlineColourOf = v)],
   readHideQueries: [() => readHideQueries, v => (readHideQueries = v)],
   spriteDrawn: [() => spriteDrawn],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
@@ -308,6 +311,26 @@ const BOX_INFO_CACHE = new WeakMap();
 const SILHOUETTE_TINT = [0.16, 0.27, 0.55],
   SILHOUETTE_AMOUNT = 0.55,
   SILHOUETTE_PULL = 0.8;
+/* player visibility: the outline's colour is the colour of the top someone wears (logic/occlude.js outlineColour
+   lifts a dark one), looked up at most once a second for each person ('me', a person's id, 'folk:<seed>') */
+const OUTLINE_COLOURS = new Map();
+function outlineColourOf(who) {
+  const now = performance.now(),
+    e = OUTLINE_COLOURS.get(who);
+  if (e && now - e.t < 1000) return e.c;
+  let hex = null;
+  try {
+    const L = lookOf(who),
+      top = L && L.wear && L.wear.top,
+      I = top && wardrobeData() && wardrobeData().items[top];
+    hex = (top && L.colors[top] && L.colors[top][0]) || (I && I.colors && I.colors[0] && I.colors[0][1]) || null;
+  } catch (err) {
+    hex = null;
+  }
+  const c = outlineColour(hex) || SILHOUETTE_TINT;
+  OUTLINE_COLOURS.set(who, { t: now, c });
+  return c;
+}
 /* the occlusion queries in flight, oldest first (made on gpuState.gl; a lost context drops them) */
 const hideQuery = { gl: null, q: /** @type {WebGLQuery[]} */ ([]), at: 0 };
 function readHideQueries(gl) {
@@ -369,8 +392,13 @@ export function drawPlayerSilhouette(C, items, X) {
     gl.colorMask(true, true, true, true);
     hideQuery.q.push(q);
   }
-  gl.uniform4f(U.uGhost, SILHOUETTE_TINT[0], SILHOUETTE_TINT[1], SILHOUETTE_TINT[2], SILHOUETTE_AMOUNT);
+  const ow = +(engineSetting('camera', 'outline') ?? 1) || 0,
+    fill = Math.max(0.001, +(engineSetting('camera', 'outlineFill') ?? 0.25)),
+    tint = ow > 0 ? outlineColourOf('me') : SILHOUETTE_TINT;
+  if (U.uGhostE) gl.uniform1f(U.uGhostE, ow);
+  gl.uniform4f(U.uGhost, tint[0], tint[1], tint[2], ow > 0 ? fill : SILHOUETTE_AMOUNT);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
+  if (U.uGhostE) gl.uniform1f(U.uGhostE, 0);
   gl.depthFunc(gl.LEQUAL);
   gl.depthMask(true);
   gl.uniform4f(U.uGhost, 0, 0, 0, 0);

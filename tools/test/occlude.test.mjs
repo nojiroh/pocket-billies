@@ -35,3 +35,24 @@ test('the hidden amount comes on quickly, goes slowly and settles exactly', () =
   assert.equal(j, 0);
   assert.equal(O.hiddenEase(0.5, 1, 0), 0.5, 'no time, no change');
 });
+
+test('the outline colour keeps a bright top’s colour and lifts a dark one', () => {
+  assert.deepEqual(
+    O.outlineColour('#ff0000'),
+    [1, 0, 0].map(v => (v === 1 ? 1 : 0.2)),
+    'pure red lifted to 0.6'
+  );
+  const navy = O.outlineColour('#2E3A6A');
+  const L = (Math.max(...navy) + Math.min(...navy)) / 2;
+  assert.ok(Math.abs(L - 0.6) < 0.01, `navy lifted to lightness 0.6: ${navy}`);
+  assert.ok(navy[2] > navy[0] && navy[2] > navy[1], 'still blue');
+  const cream = O.outlineColour('#F2EEE4');
+  assert.ok(
+    cream.every(v => v > 0.85),
+    'a light colour stays light'
+  );
+  const grey = O.outlineColour('#202020');
+  assert.ok(Math.abs(grey[0] - grey[2]) < 1e-9 && grey[0] >= 0.6 - 1e-9, 'a dark grey becomes a light grey');
+  assert.equal(O.outlineColour('red'), null);
+  assert.equal(O.outlineColour(null), null);
+});

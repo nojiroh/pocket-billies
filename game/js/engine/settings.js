@@ -229,6 +229,8 @@ export const ENGINE_DEFAULTS = {
     rise: 18,
     rockFade: true,
     silhouette: true,
+    outline: 1,
+    outlineFill: 0.25,
     /* island track IS-1: an island map's camera turns round its middle (cam.orbit); the sun turns with the camera
        (off: the sun stays put in the world, the owner's pick) */
     orbit: true,
@@ -1010,6 +1012,22 @@ export const ENGINE_SPEC = [
         'Your silhouette through rock',
         'bool',
         'Terrain TR-3: where rock still hides you, your shape shows through it as a tint.',
+      ],
+      [
+        'outline',
+        'Silhouette outline (art pixels)',
+        0,
+        3,
+        1,
+        "Player visibility: where something hides you, your outline shows in the colour of your top (lifted if dark); this wide in the picture's own pixels. 0: the plain dark blue tint instead.",
+      ],
+      [
+        'outlineFill',
+        'Silhouette fill inside the outline',
+        0,
+        1,
+        0.05,
+        "Player visibility: how much of the inside of your hidden shape is dotted in, in the outline's colour.",
       ],
       [
         'orbit',
