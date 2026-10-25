@@ -18,9 +18,15 @@ expose({
   // @ts-expect-error -- replaced on purpose
   bowlArtSize: [() => bowlArtSize, v => (bowlArtSize = v)],
   // @ts-expect-error -- replaced on purpose
+  bowlAverageColour: [() => bowlAverageColour, v => (bowlAverageColour = v)],
+  // @ts-expect-error -- replaced on purpose
   bowlClumps: [() => bowlClumps, v => (bowlClumps = v)],
   // @ts-expect-error -- replaced on purpose
+  bowlHexColour: [() => bowlHexColour, v => (bowlHexColour = v)],
+  // @ts-expect-error -- replaced on purpose
   bowlLandmarkPick: [() => bowlLandmarkPick, v => (bowlLandmarkPick = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlLeafHash: [() => bowlLeafHash, v => (bowlLeafHash = v)],
   // @ts-expect-error -- replaced on purpose
   bowlMapPoint: [() => bowlMapPoint, v => (bowlMapPoint = v)],
   // @ts-expect-error -- replaced on purpose
@@ -29,6 +35,8 @@ expose({
   bowlPropClass: [() => bowlPropClass, v => (bowlPropClass = v)],
   // @ts-expect-error -- replaced on purpose
   bowlThingHash: [() => bowlThingHash, v => (bowlThingHash = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlTreeFromRecipe: [() => bowlTreeFromRecipe, v => (bowlTreeFromRecipe = v)],
   // @ts-expect-error -- replaced on purpose
   bowlTreeStyle: [() => bowlTreeStyle, v => (bowlTreeStyle = v)],
   // @ts-expect-error -- replaced on purpose
@@ -234,4 +242,129 @@ export function bowlClumps(G, places, roads, relAt, spacing = 0.026, trees = BOW
       }
     }
   return out;
+}
+
+/* ---------- HB-3: a tree as its own model on the floating island's map ----------
+   A tree's walk model (scene/next/models/tree_*.json) is limbs (tapered tubes along points [x, y, z up, radius]) and
+   leaf cards (pictures standing up, each with its bottom at x, y, z: a circle cut [cx, cy, r] in the leaf picture's
+   pixels, a rectangle [x, y, w, h] for a conifer's tier, or the whole picture for the crown's core). The map draws only
+   flat-faced coloured triangles, so it is made again from the recipe: the trunk and the main limbs as prisms, each
+   leaf card as a low-poly blob where the card stands, as big as it, in the leaf picture's average colour. */
+/** @typedef {{ col: number[], w: number, h: number }} BowlLeafLook a leaf picture's average colour (0-1) and size */
+/**
+ * @param {{ ppm?: number, layers?: any[] }} rec the tree's model recipe
+ * @param {(img: string) => BowlLeafLook | null} leafOf a leaf picture's look (null: not in yet)
+ * @returns {Float32Array | null} triangles, per corner [x, y up, z, normal, colour]; null while a picture is not in
+ */
+export function bowlTreeFromRecipe(rec, leafOf) {
+  const ppm = rec.ppm || 32,
+    out = /** @type {number[]} */ ([]),
+    /** @param {number[]} a @param {number[]} b @param {number[]} c @param {number[]} col */
+    tri = (a, b, c, col) => {
+      const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]],
+        v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]],
+        n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]],
+        l = Math.hypot(n[0], n[1], n[2]) || 1;
+      for (const p of [a, b, c]) out.push(p[0], p[1], p[2], n[0] / l, n[1] / l, n[2] / l, col[0], col[1], col[2]);
+    },
+    /* the recipe's x, y (depth), z (up) as the map's x, y up, z */
+    at = (/** @type {number[]} */ p) => [p[0], p[2], p[1]];
+  for (const L of rec.layers || []) {
+    if (L.hide) continue;
+    if (L.k === 'limb' && Array.isArray(L.pts) && L.pts.length > 1 && L.pts[0][3] >= 0.1) {
+      /* a tube from its first point to its last through its middle one, five sides */
+      const P = L.pts,
+        keep = P.length > 2 ? [P[0], P[Math.floor(P.length / 2)], P[P.length - 1]] : P,
+        col = bowlHexColour(L.col || '#7a5a3c');
+      for (let s = 0; s + 1 < keep.length; s++) {
+        const A = at(keep[s]),
+          B = at(keep[s + 1]),
+          ax = [B[0] - A[0], B[1] - A[1], B[2] - A[2]],
+          al = Math.hypot(ax[0], ax[1], ax[2]) || 1,
+          d = ax.map(v => v / al),
+          /* two directions square to the tube */
+          e = Math.abs(d[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0],
+          p1 = [d[1] * e[2] - d[2] * e[1], d[2] * e[0] - d[0] * e[2], d[0] * e[1] - d[1] * e[0]],
+          pl = Math.hypot(p1[0], p1[1], p1[2]) || 1,
+          q1 = p1.map(v => v / pl),
+          q2 = [d[1] * q1[2] - d[2] * q1[1], d[2] * q1[0] - d[0] * q1[2], d[0] * q1[1] - d[1] * q1[0]],
+          ring = (/** @type {number[]} */ c, /** @type {number} */ r) =>
+            Array.from({ length: 5 }, (_, i) => {
+              const a = (i / 5) * Math.PI * 2;
+              return [0, 1, 2].map(k => c[k] + (q1[k] * Math.cos(a) + q2[k] * Math.sin(a)) * r);
+            }),
+          R0 = ring(A, keep[s][3]),
+          R1 = ring(B, Math.max(0.02, keep[s + 1][3]));
+        for (let i = 0; i < 5; i++) {
+          const j = (i + 1) % 5;
+          tri(R0[i], R0[j], R1[j], col);
+          tri(R0[i], R1[j], R1[i], col);
+        }
+      }
+    } else if (L.k === 'img' && L.img && /leaves\//.test(L.img)) {
+      const look = leafOf(L.img);
+      if (!look) return null;
+      const C = L.clip,
+        /* half its width and its height, metres */
+        [hw, hh] =
+          Array.isArray(C) && C.length >= 4
+            ? [C[2] / 2 / ppm, C[3] / ppm]
+            : Array.isArray(C) && C.length === 3
+              ? [C[2] / ppm, (C[2] * 2) / ppm]
+              : [look.w / 2 / ppm, look.h / ppm],
+        k = (L.s || 1) * 0.92,
+        base = at([L.x || 0, L.y || 0, L.z || 0]),
+        cy = base[1] + (hh * k) / 2,
+        rx = hw * k,
+        ry = (hh * k) / 2,
+        h = bowlLeafHash(base[0], base[2], cy),
+        /* a little lighter than the picture's average, which counts its dark outline */
+        col = look.col.map(v => Math.min(1, v * 1.12 * (L.shade || 1) * (0.92 + h * 0.16))),
+        /* an octahedron squashed to the card's size and turned by its place: eight faces, lit facet by facet */
+        top = [base[0], cy + ry, base[2]],
+        bot = [base[0], cy - ry, base[2]],
+        M = Array.from({ length: 4 }, (_, i) => {
+          const a = h * 1.6 + (i / 4) * Math.PI * 2;
+          return [base[0] + Math.cos(a) * rx, cy, base[2] + Math.sin(a) * rx];
+        });
+      for (let i = 0; i < 4; i++) {
+        const j = (i + 1) % 4;
+        tri(top, M[j], M[i], col);
+        tri(
+          bot,
+          M[i],
+          M[j],
+          col.map(v => v * 0.85)
+        );
+      }
+    }
+  }
+  return new Float32Array(out);
+}
+/** a hash in 0-1 of a place @param {number} x @param {number} y @param {number} z */
+export function bowlLeafHash(x, y, z) {
+  const v = Math.sin(x * 91.7 + y * 47.3 + z * 13.1) * 43758.5453;
+  return v - Math.floor(v);
+}
+/** '#rrggbb' as [r, g, b] in 0-1 @param {string} h */
+export function bowlHexColour(h) {
+  const n = parseInt(String(h).slice(1, 7), 16) || 0;
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
+/** a picture's average colour over its opaque pixels (packed RGBA words, as art.js artPixels gives them), 0-1
+ * @param {Uint32Array} px @returns {number[]} */
+export function bowlAverageColour(px) {
+  let r = 0,
+    g = 0,
+    b = 0,
+    n = 0;
+  for (let i = 0; i < px.length; i++) {
+    const v = px[i];
+    if (v >>> 24 < 128) continue;
+    r += v & 255;
+    g += (v >>> 8) & 255;
+    b += (v >>> 16) & 255;
+    n++;
+  }
+  return n ? [r / n / 255, g / n / 255, b / n / 255] : [0.3, 0.5, 0.25];
 }

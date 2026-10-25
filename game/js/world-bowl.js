@@ -73,10 +73,12 @@ import {
 import {
   BOWL_REGION_TREES,
   BOWL_THING_SCALE,
+  bowlAverageColour,
   bowlClumps,
   bowlLandmarkPick,
   bowlMapPoint,
   bowlPropClass,
+  bowlTreeFromRecipe,
   bowlTreeStyle,
   bowlYouPoint,
 } from './logic/bowl-things.js';
@@ -143,6 +145,7 @@ expose({
   BOWL_SUN_NOW: [() => BOWL_SUN_NOW],
   BOWL_TREE_LOOK: [() => BOWL_TREE_LOOK],
   BOWL_WALL_W: [() => BOWL_WALL_W],
+  WORLD_BOWL_LEAVES: [() => WORLD_BOWL_LEAVES],
   WORLD_BOWL_SHADERS: [() => WORLD_BOWL_SHADERS],
   bowlHash: [() => bowlHash],
   bowlNoise: [() => bowlNoise, v => (bowlNoise = v)],
@@ -167,16 +170,19 @@ expose({
   worldBowlFlying: [() => worldBowlFlying],
   worldBowlGpu: [() => worldBowlGpu, v => (worldBowlGpu = v)],
   worldBowlHex: [() => worldBowlHex],
+  worldBowlInst: [() => worldBowlInst, v => (worldBowlInst = v)],
   worldBowlIslandLift: [() => worldBowlIslandLift, v => (worldBowlIslandLift = v)],
   worldBowlIslandLoad: [() => worldBowlIslandLoad, v => (worldBowlIslandLoad = v)],
   worldBowlIslandPoly: [() => worldBowlIslandPoly, v => (worldBowlIslandPoly = v)],
   worldBowlIsleUniform: [() => worldBowlIsleUniform, v => (worldBowlIsleUniform = v)],
+  worldBowlLeafLook: [() => worldBowlLeafLook, v => (worldBowlLeafLook = v)],
   worldBowlLightMatrix: [() => worldBowlLightMatrix, v => (worldBowlLightMatrix = v)],
   worldBowlLine: [() => worldBowlLine, v => (worldBowlLine = v)],
   worldBowlLineMap: [() => worldBowlLineMap, v => (worldBowlLineMap = v)],
   worldBowlLock: [() => worldBowlLock, v => (worldBowlLock = v)],
   worldBowlMapId: [() => worldBowlMapId, v => (worldBowlMapId = v)],
   worldBowlMapOf: [() => worldBowlMapOf, v => (worldBowlMapOf = v)],
+  worldBowlMapSettingsKey: [() => worldBowlMapSettingsKey, v => (worldBowlMapSettingsKey = v)],
   worldBowlMesh: [() => worldBowlMesh, v => (worldBowlMesh = v)],
   worldBowlMistDraw: [() => worldBowlMistDraw, v => (worldBowlMistDraw = v)],
   worldBowlMixRgb: [() => worldBowlMixRgb],
@@ -213,6 +219,7 @@ expose({
   worldBowlThingsDraw: [() => worldBowlThingsDraw, v => (worldBowlThingsDraw = v)],
   worldBowlThingsOfPlace: [() => worldBowlThingsOfPlace, v => (worldBowlThingsOfPlace = v)],
   worldBowlThingsTick: [() => worldBowlThingsTick, v => (worldBowlThingsTick = v)],
+  worldBowlTreeModelShape: [() => worldBowlTreeModelShape, v => (worldBowlTreeModelShape = v)],
   worldBowlTreeShape: [() => worldBowlTreeShape, v => (worldBowlTreeShape = v)],
   worldBowlWalkOnIsland: [() => worldBowlWalkOnIsland, v => (worldBowlWalkOnIsland = v)],
   worldBowlWaterMesh: [() => worldBowlWaterMesh, v => (worldBowlWaterMesh = v)],
@@ -283,6 +290,8 @@ export const worldBowl = {
   ts: [],
   /** the bowl map test: keep drawing every frame and turn by this many radians a second */
   bench: null,
+  /* HB-3: the World map settings the floating island was made with (worldBowlMapSettingsKey) */
+  mapSettings: null,
   /** where each pin is on screen, last drawn: { i, base, top, z } */
   marks: [],
 };
@@ -399,8 +408,11 @@ void main(){vec3 c=vK<.5?vec3(.72,.8,.92):vK<1.5?vec3(1.):vec3(.35,.32,.3);c*=1.
   mthing: [
     `#version 300 es
 precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=2) in vec3 aCol;layout(location=8) in vec4 iP;layout(location=9) in vec4 iR;layout(location=10) in vec4 iK;
-uniform mat4 uVP;uniform float uNear;out vec3 vW,vN,vC,vL;out vec2 vK;
+uniform mat4 uVP;uniform float uNear,uFlat;uniform vec3 uC;out vec3 vW,vN,vC,vL;out vec2 vK;
 void main(){vec3 E=vec3(iR.x,0.,-iR.y),N=vec3(iR.z,0.,-iR.w);float k=iP.w*(iK.x>.5?mix(.3,1.,uNear):1.);
+ vW=iP.xyz;vN=vec3(0.,1.,0.);vC=aCol;vL=aPos;vK=iK.xy;
+ /* HB-3: past the World map's Simple trees past a tree's own model (iK.z 1) gives way to its simple shape (2) */
+ if(iK.z>.5){bool far=uFlat>0.&&length(iP.xyz-uC)>uFlat;if(iK.z<1.5?far:!far){gl_Position=vec4(2.,2.,2.,1.);return;}}
  vec3 p=iP.xyz+(E*aPos.x+N*aPos.z)*k+vec3(0.,aPos.y*k,0.);vN=E*aNrm.x+N*aNrm.z+vec3(0.,aNrm.y,0.);vW=p;vC=aCol;vL=aPos;vK=iK.xy;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
 precision highp float;precision highp sampler2DShadow;in vec3 vW,vN,vC,vL;in vec2 vK;out vec4 o;uniform vec3 uC,uLd,uHaze;uniform float uNear,uLit,uShadowPass;
@@ -678,6 +690,11 @@ function worldBowlFloatIsland() {
 function worldBowlIsleUniform(U, F) {
   if (!F) gpuState.gl.uniform4f(U.uIsle, 0, 0, 0, 0);
   else gpuState.gl.uniform4f(U.uIsle, F.c[0], F.c[1], F.lagoon ? F.lr * 1.15 : F.r * 1.25, F.lagoon ? 2 : 1);
+}
+/* the World map settings the floating island is built with (the simple trees' distance only says whether they exist) */
+function worldBowlMapSettingsKey() {
+  const e = k => engineSetting('worldMap', k);
+  return [e('lagoon'), e('falls'), e('treeModels'), (e('treeFar') || 0) > 0, e('fences'), e('bridges')].join();
 }
 /* HB-3: the falls off the lagoon's rim as one mesh: per corner its place (GPU) and (across, down) */
 function worldBowlFallsMesh(lag, coast, depth) {
@@ -1389,6 +1406,30 @@ function worldBowlTreeShape(style) {
   }
   return new Float32Array(out);
 }
+/* HB-3: a tree's own model for the map, from its recipe (logic/bowl-things.js bowlTreeFromRecipe), its leaf pictures
+   (a prop's swap, an autumn tree's) read for their colour and size first; null while any is still coming */
+const WORLD_BOWL_LEAVES = new Map();
+function worldBowlLeafLook(path) {
+  if (WORLD_BOWL_LEAVES.has(path)) return WORLD_BOWL_LEAVES.get(path);
+  WORLD_BOWL_LEAVES.set(path, null);
+  artPixels(path)
+    .then(px => {
+      const im = ART_CACHE.img[path];
+      WORLD_BOWL_LEAVES.set(path, { col: bowlAverageColour(px), w: im.naturalWidth, h: im.naturalHeight });
+    })
+    .catch(() => WORLD_BOWL_LEAVES.set(path, { col: [0.3, 0.5, 0.25], w: 64, h: 64 }))
+    .finally(() => (worldBowl.dirty = true));
+  return null;
+}
+function worldBowlTreeModelShape(pk) {
+  const art = ((gameData.scenery && gameData.scenery.props) || {})[pk],
+    rec = art && loadPropModelRecipe(art.model);
+  if (!rec) return null;
+  const swap = art.swap || {},
+    T = bowlTreeFromRecipe(rec, img => worldBowlLeafLook(swap[img] || img));
+  /* one with no limbs or leaves (a mushroom: domes and spheres) is drawn as any model is */
+  return T && !T.length ? worldBowlModelShape(art.model) : T;
+}
 /* a building's low-poly model from its recipe (prop-models.js lowPolyFromRecipe), kept simple for the map: small
    parts left out, round parts with few sides; unpacked to floats [x, y up, z, normal, colour] */
 function worldBowlModelShape(path) {
@@ -1435,11 +1476,16 @@ const BOWL_STRUCTURE = /^(airship_station|airship_mast|well|fountain|clock_tower
 /* HB-3: turned by the placement's rot (degrees, logic/prop-turn.js turnedPoint: its across toward its back), as the
    walk scene turns it */
 function worldBowlModelInto(W, model, x, y, k, east, north, rot = 0) {
-  const key = 'm:' + model,
-    a = (rot * Math.PI) / 180,
+  W.models.add(model);
+  worldBowlInst(W, 'm:' + model, x, y, k, east, north, rot, 0);
+}
+/* one instance of a shape (key: a tree style, 'm:' a model, 't:' a tree's own model by its prop): lod 0 a building
+   (its windows light at night), 1 a tree's own model (not drawn past the World map's Simple trees past), 2 that tree's
+   simple shape (drawn only past it), 3 any other thing (a fence, a bridge) */
+function worldBowlInst(W, key, x, y, k, east, north, rot = 0, lod = 0) {
+  const a = (rot * Math.PI) / 180,
     ca = Math.cos(a),
     sa = Math.sin(a);
-  W.models.add(model);
   (W.inst[key] = W.inst[key] || []).push([
     ...bowlToGpu(x, y, worldBowlSkyFloor(x, y)),
     k,
@@ -1448,8 +1494,8 @@ function worldBowlModelInto(W, model, x, y, k, east, north, rot = 0) {
     ca * north[0] - sa * east[0],
     ca * north[1] - sa * east[1],
     1,
-    0.05 + ((0.9 * (((Math.sin(x * 9137.1 + y * 5711.3) * 43758.5) % 1) + 1)) % 1),
-    0,
+    lod ? 0 : 0.05 + ((0.9 * (((Math.sin(x * 9137.1 + y * 5711.3) * 43758.5) % 1) + 1)) % 1),
+    lod === 1 || lod === 2 ? lod : 0,
     0,
   ]);
 }
@@ -1467,7 +1513,9 @@ function worldBowlThingsOfPlace(W, i) {
     /* the landmark from the place's own map (Copperleaf's oak until IS-5 moves the town onto its island) */
     lm = bowlLandmarkPick(l, own && own.props ? own : M, A);
   /* a landmark with a model of its own is drawn as that model (where the map puts it), never as a flat picture */
-  const modelOf = (/** @type {any} */ a) => !!(a && a.model && /\.json$/.test(a.model));
+  const modelOf = (/** @type {any} */ a) => !!(a && a.model && /\.json$/.test(a.model)),
+    treeModels = worldBowlFloats() && !!engineSetting('worldMap', 'treeModels'),
+    treeFar = (engineSetting('worldMap', 'treeFar') || 0) > 0;
   /* HB-3: the floating island draws its own things where they stand; a landmark that is not one of them would stand
      at the map's middle (its spot), so none is added there */
   if (lm && A[lm.k] && !worldBowlFloats()) {
@@ -1485,7 +1533,13 @@ function worldBowlThingsOfPlace(W, i) {
     const [x, y] = bowlMapPoint(s, M, p.x, p.z, BOWL_METRES);
     if (Math.hypot(x, y) > 0.99) continue;
     n++;
-    if (cls === 'tree') {
+    if (cls === 'tree' && treeModels && modelOf(art)) {
+      /* HB-3: the floating island's trees as their own models (the World map settings: off, the simple shapes), and
+         with Simple trees past set, a simple shape of each drawn instead when it is that far */
+      worldBowlInst(W, 't:' + p.k, x, y, k * (p.s || 1), east, north, +(p.rot || 0), 1);
+      W.models.add(art.model);
+      if (treeFar) worldBowlInst(W, bowlTreeStyle(p.k), x, y, k * (p.s || 1), east, north, +(p.rot || 0), 2);
+    } else if (cls === 'tree') {
       const style = bowlTreeStyle(p.k);
       (W.inst[style] = W.inst[style] || []).push([
         ...base(x, y),
@@ -1648,7 +1702,11 @@ function worldBowlThingsTick(g) {
   let waiting = false;
   for (const key of Object.keys(W.inst)) {
     if (G.kinds[key] && G.kinds[key].shape) continue;
-    const shape = key.startsWith('m:') ? worldBowlModelShape(key.slice(2)) : worldBowlTreeShape(key);
+    const shape = key.startsWith('m:')
+      ? worldBowlModelShape(key.slice(2))
+      : key.startsWith('t:')
+        ? worldBowlTreeModelShape(key.slice(2))
+        : worldBowlTreeShape(key);
     if (!shape) {
       waiting = true;
       continue;
@@ -1706,8 +1764,8 @@ function worldBowlThingsTick(g) {
       const u = at.uv[q.k];
       if (!u) continue;
       const b = bowlToGpu(q.x, q.y, worldBowlSkyFloor(q.x, q.y)),
-        w = (u.w * q.s * BOWL_THING_SCALE) / BOWL_METRES,
-        h = (u.h * q.s * BOWL_THING_SCALE) / BOWL_METRES;
+        w = (u.w * q.s * worldBowlThingScale()) / BOWL_METRES,
+        h = (u.h * q.s * worldBowlThingScale()) / BOWL_METRES;
       for (const [cx, cy] of [
         [-0.5, 0],
         [0.5, 0],
@@ -1761,6 +1819,8 @@ function worldBowlThingsDraw(W, VP, F, shadowPass) {
   gl.uniformMatrix4fv(U.uVP, false, VP);
   gl.uniform1f(U.uNear, near);
   gl.uniform1f(U.uShadowPass, shadowPass ? 1 : 0);
+  /* HB-3: trees as simple shapes past this far (World map settings, metres; 0 never; the shadows keep the models) */
+  gl.uniform1f(U.uFlat, shadowPass || !fl ? 0 : (engineSetting('worldMap', 'treeFar') || 0) / BOWL_METRES);
   if (shadowPass) {
     gl.uniform1i(U.uSh, 3);
     gl.uniform1i(U.uSky, 7);
@@ -2548,6 +2608,12 @@ export function worldBowlRender(t) {
   if (cv.width !== rw || cv.height !== rh) {
     cv.width = rw;
     cv.height = rh;
+  }
+  /* HB-3: the World map settings are built into the floating island's meshes: when they change it is made again */
+  const ms = worldBowlMapSettingsKey();
+  if (worldBowl.mapSettings !== ms) {
+    if (worldBowl.mapSettings != null && worldBowlFloats()) worldBowlReset();
+    worldBowl.mapSettings = ms;
   }
   worldBowlSpots();
   const g = worldBowlGpu();

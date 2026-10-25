@@ -7,6 +7,7 @@ angles, the map's canvas alone, and the map's numbers (things, clumps, the lagoo
     python3 tools/look-worldmap.py OUT_DIR --close             # zoomed in on the town too (one more picture an hour)
     python3 tools/look-worldmap.py OUT_DIR --map=PATH.json     # another island's map file in place of copperleaf.json
                                                               # (served to the page only; nothing is written)
+    python3 tools/look-worldmap.py OUT_DIR --eng='{"worldMap":{"treeFar":120}}'   # Engine dials, as a player's own
 
 Run `npm run data` first (the page reads game/data/gamedata.js). Software drawing: a look note, never a frame time
 (the debug menu's Bowl map test measures those on a phone). Nothing is sent anywhere."""
@@ -23,6 +24,7 @@ HOURS = [float(h) for h in opt('hours', '7,13,19,23').split(',')]
 ANGLES = [float(a) for a in opt('angles', '0,90,180,270').split(',')]
 CLOSE = '--close' in ARGS
 MAP = opt('map', None)
+ENG = opt('eng', None)
 W, H = 390, 760
 NAV = "document.querySelector('#nav')?.shadowRoot?.querySelector('button[data-t=map]')"
 
@@ -56,6 +58,9 @@ def main():
         if MAP:
             # the page's own copy of the map is from gamedata.js: put the file's in its place before the map opens
             pg.evaluate(f"(()=>{{gameData.maps.copperleaf=JSON.parse({json.dumps(body)});return 0}})()")
+        if ENG:
+            # a player's own Engine dials (the expert switch on), as tools/island-shots.py sets them
+            pg.evaluate(f"(()=>{{const p=saveData.preferences=saveData.preferences||{{}};p.expert=true;p.eng={ENG};return 0}})()")
         pg.evaluate(f"(()=>{{{NAV}.click();return 0}})()")
         if not fast.until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3", 60): raise Exception('the map never opened')
         if not fast.until(pg, "worldBowlReady()&&!!worldBowl.ground.float&&!worldBowl.tween&&!document.getElementById('mapfade')", 180): raise Exception('the map never got ready')
@@ -83,7 +88,7 @@ def main():
                 print(f'[{time.time() - t0:5.0f}s] {name}', flush=True)
         b.close()
     srv.shutdown()
-    (OUT / 'shots.json').write_text(json.dumps({'size': [W, H], 'map': MAP, 'numbers': numbers, 'shots': shots, 'pageErrors': errs[:10]}, indent=1))
+    (OUT / 'shots.json').write_text(json.dumps({'size': [W, H], 'map': MAP, 'eng': ENG, 'numbers': numbers, 'shots': shots, 'pageErrors': errs[:10]}, indent=1))
     print(f'{len(shots)} pictures in {OUT}; page errors: {len(errs)}')
 
 
