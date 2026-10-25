@@ -37,6 +37,8 @@ const R = GAME_DATA.rules.run,
     pools: data.POOLS,
     scenery: GAME_DATA.scenery,
     rules: R,
+    /* RT-3: laid-out places get their set pieces, as the game's do */
+    setPieces: GAME_DATA.setPieces,
   },
   HUB = GAME_DATA.locations[0];
 /** a run with its map, as the mast gives it (RL-8) */

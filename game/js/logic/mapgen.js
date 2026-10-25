@@ -4335,8 +4335,10 @@ export function mapgenEncodeBase64(bytes) {
   return s;
 }
 /**
- * the scene for these dials: { scene, notes }. ctx: { scenery (terrains, props), biomes }.
- * @param {any} params @param {{ scenery: any, biomes: Record<string, Biome> }} ctx
+ * the scene for these dials: { scene, notes }. ctx: { scenery (terrains, props), biomes, setPieces (RT-3: what the
+ * pieces dial draws from; none without it) }.
+ * @param {any} params
+ * @param {{ scenery: any, biomes: Record<string, Biome>, setPieces?: import('../../types/game-data').SetPiecesData | null }} ctx
  */
 export function mapgenScene(params, ctx) {
   const P0 = mapgenParams(params);

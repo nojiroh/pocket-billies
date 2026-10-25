@@ -43,6 +43,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runLayoutOf: [() => runLayoutOf, v => (runLayoutOf = v)],
   runMapIdOf: [() => runMapIdOf],
+  // @ts-expect-error -- replaced on purpose
+  runPiecesOf: [() => runPiecesOf, v => (runPiecesOf = v)],
   runPlaceId: [() => runPlaceId],
   // @ts-expect-error -- replaced on purpose
   runPlaceName: [() => runPlaceName, v => (runPlaceName = v)],
@@ -71,7 +73,8 @@ expose({
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, Biome>, pools: Record<string, Pool>,
  *   scenery: any, rules: { scene: RunSceneRules, layouts?: Record<string, Record<string, number>>,
  *   wild: { lv: [number, number], perRow: number, back: number } },
- *   dex?: string[] | null, fieldMoves?: Record<string, import('../../types/game-data').FieldMove> }} RunWorldData
+ *   dex?: string[] | null, fieldMoves?: Record<string, import('../../types/game-data').FieldMove>,
+ *   setPieces?: import('../../types/game-data').SetPiecesData | null }} RunWorldData
  * RO-1: dex, a region's species, cuts each place's biome pool to them (logic/wild-pool.js); RL-R1: without it, the
  * run's region's (run.region.dex, its other varieties swapped to the region's)
  */
@@ -142,7 +145,8 @@ export function runSceneParams(run, i, scenes, data) {
     nodeSeed = runNodeSeed(run.seed, i),
     exits = runSceneExits(map, i),
     dials = runSceneDials(data.rules.scene, rngFrom(nodeSeed, 'scene|dials')),
-    layout = runLayoutOf(run, i, data);
+    layout = runLayoutOf(run, i, data),
+    pieces = layout ? runPiecesOf(run, i, data) : 0;
   /* its parents: the neighbours made before it (a main place's east ones; RL-R2: a side place's south or east one) */
   const edges = exits
     .filter(e => e.node < i)
@@ -172,6 +176,8 @@ export function runSceneParams(run, i, scenes, data) {
       : {}),
     /* RT-1: a laid-out place's plan (a route, the landing, a mini-boss's or the boss's place) */
     ...(layout ? { layout } : {}),
+    /* RT-3: and its set pieces (setPieces.json perPlace) */
+    ...(pieces ? { pieces } : {}),
     /* TW-1: a town node is a town (mapgen.js mapgenStageTown: a street, a square, houses) */
     kind: node.type === 'town' ? 'town' : 'route',
     biome: node.biome || Object.keys(data.biomes)[0],
@@ -213,6 +219,14 @@ export function runLayoutOf(run, i, data) {
   if (!W || !Object.values(W).some(w => w > 0)) return null;
   const id = rngFrom(runNodeSeed(run.seed, i), 'scene|layout').pick(Object.fromEntries(Object.entries(W).sort()));
   return id === 'none' ? null : id;
+}
+/** RT-3: how many set pieces node i's place asks for: setPieces.json perPlace, drawn from its own stream (so no other
+ * dial's draw moves); 0 with no set pieces. Only a laid-out place asks (runSceneParams)
+ * @param {Run} run @param {number} i @param {RunWorldData} data @returns {number} */
+export function runPiecesOf(run, i, data) {
+  const S = data.setPieces;
+  if (!S || !S.perPlace) return 0;
+  return rngFrom(runNodeSeed(run.seed, i), 'scene|pieces').int(S.perPlace[0], S.perPlace[1]);
 }
 /** TW-1: a town's through road (mapgen's road dials): straight, a little wobble */
 export const RUN_TOWN_ROAD = { shape: 'straight', wobble: 0.25 };
@@ -308,6 +322,7 @@ export function runSceneMake(run, i, scenes, data) {
     { scene, notes } = mapgenScene(runSceneParams(run, i, scenes, data), {
       scenery: data.scenery,
       biomes: data.biomes,
+      setPieces: data.setPieces || null,
     });
   Object.assign(scene, {
     name: runPlaceName(map, i, data),

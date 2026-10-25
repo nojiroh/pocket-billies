@@ -168,6 +168,8 @@ export function runSimOn(env) {
     scenery: GAME_DATA.scenery,
     rules: R,
     fieldMoves: MOVES,
+    /* RT-3: the set pieces, so a run's places are the game's */
+    setPieces: GAME_DATA.setPieces || null,
   });
   /* a battle's host in the simulation: shows and saves nothing, and plays the battle's own weather (b.wx, as the page's
      battleWeatherMultiplier does once a run battle has its forecast's weather) */

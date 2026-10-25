@@ -20,6 +20,8 @@ const RT = modules['route-trainers'],
     pools: GAME_DATA.pools,
     scenery: GAME_DATA.scenery,
     rules: RUN,
+    /* RT-3: the set pieces take spots before the trainers do, as in the game */
+    setPieces: GAME_DATA.setPieces,
     unlockData: UNLOCK_DATA,
     region: modules['run-region'].runRegionData(GAME_DATA, GAME_DATA.trainers),
   },

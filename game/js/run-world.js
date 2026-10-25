@@ -22,6 +22,7 @@ import {
   NODE_TYPES,
   POOLS,
   RULES,
+  SET_PIECES,
   SPECIES,
   START_NODE,
   TRAINERS,
@@ -74,6 +75,8 @@ export function runWorldData() {
     region: runRegionData(gameData, TRAINERS),
     /* RL-R2: the field moves that open a run's side area (logic/run-side.js) */
     fieldMoves: FIELD_MOVES,
+    /* RT-3: the set pieces a laid-out place is dressed with (logic/mapgen.js mapgenStagePieces) */
+    setPieces: SET_PIECES,
   };
 }
 /** put in the world the save needs, if it isn't in yet: the run's while one is on with its map, else the hub's.
