@@ -58,6 +58,23 @@ export function renameTypeIn(D, from, to) {
         if (to) f.type = to;
         else delete f.type; /* a damage row for any type */
       }
+  /* SP-2: a Gene's dominant type (a deleted one leaves the part with none, and a part with nothing left goes) and its
+     traits' damage rows */
+  const G = D.genes;
+  if (G) {
+    for (const [k, P] of Object.entries(G.parts || {}))
+      if (/** @type {any} */ (P).type === from) {
+        if (to) /** @type {any} */ (P).type = to;
+        else if (Object.keys(/** @type {any} */ (P)).length > 1) delete (/** @type {any} */ (P).type);
+        else delete G.parts[k];
+      }
+    for (const T of [...Object.values(G.traits || {}), G.unstable || {}])
+      for (const f of /** @type {any} */ (T).fx || [])
+        if (f.type === from) {
+          if (to) f.type = to;
+          else delete f.type;
+        }
+  }
   /* a deleted type is still in D.types here (the Studio removes it after): the rules take the first other one */
   const R = D.rules.battle,
     left = to || (D.types.find((/** @type {any} */ t) => t.id !== from) || { id: 'None' }).id;

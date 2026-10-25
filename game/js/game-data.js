@@ -28,6 +28,7 @@ expose({
   EGG_TIERS: [() => EGG_TIERS],
   EVENTS: [() => EVENTS],
   FIELD_MOVES: [() => FIELD_MOVES],
+  GENES: [() => GENES],
   HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   HUB_LOCATIONS: [() => HUB_LOCATIONS],
   ITEMS: [() => ITEMS],
@@ -402,6 +403,17 @@ export const NODE_TYPES = gameData.nodeTypes || {};
 export const MUSIC = gameData.music || { songs: {}, jingles: {}, cries: { bases: [] }, where: [] };
 /* roguelite track RL-R2: the field moves that open a run's side areas (fieldMoves.json; logic/run-side.js) */
 export const FIELD_MOVES = (gameData.fieldMoves && gameData.fieldMoves.moves) || {};
+/* splicing track SP-2: what spliced parts do (genes.json; logic/genes.js) */
+export const GENES = /** @type {import('../types/game-data').Genes} */ (
+  gameData.genes || {
+    kinds: {},
+    traits: {},
+    parts: {},
+    maxTraits: 3,
+    stability: { line: 0, kit: 1, other: 2, augment: 3, limit: 3, refuse: 3 },
+    unstable: { up: 1.3, down: 0.75, name: 'Unstable', d: '', fx: [] },
+  }
+);
 /* roguelite track RL-13: a run's Expeditions and challenges (modifiers.json; logic/modifiers.js) */
 export const MODIFIERS = /** @type {import('../types/game-data').ModifiersData} */ (
   gameData.modifiers || { expeditions: [{ name: 'Expedition I', d: '', fx: [] }], challenges: {} }

@@ -46,6 +46,8 @@ export interface GameData {
   partKits?: PartKits;
   /** Studio plan Phase 5 (T5.1): the kit Billies' recipes, baked by logic/kit-assemble.js (game/data/kitBuilds.json) */
   kitBuilds?: KitBuilds;
+  /** splicing track SP-2: Genes (game/data/genes.json; logic/genes.js) */
+  genes?: Genes;
   /** phase 10: the world map's look: the sea, the relief, each region's ground and trees (game/data/worldmap.json) */
   worldmap?: WorldMapLook;
   /** map generator MG-1: the generator's recipe per biome (game/data/biomes.json) */
@@ -1785,7 +1787,29 @@ export type FxRow =
       a share of its HP at `at` of its HP or below */
   | { kind: 'xp'; mult: number }
   | { kind: 'turnHeal'; share: number }
-  | { kind: 'pinchHeal'; at: number; share: number };
+  | { kind: 'pinchHeal'; at: number; share: number }
+  /** SP-2 (genes.json unstable only): the Billie loses a share of its HP at each turn's end */
+  | { kind: 'turnHurt'; share: number };
+/** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
+export interface Genes {
+  about?: string;
+  /** a part kind (partKits.json parts.kind) and the trait it brings */
+  kinds: Record<string, { trait: string }>;
+  traits: Record<string, GeneTrait>;
+  /** per part id: its dominant type (the Billie's second type) and the move it teaches (SP-4) */
+  parts: Record<string, { type?: string; move?: string }>;
+  /** the most traits a Billie has */
+  maxTraits: number;
+  /** a foreign part's cost (same line, same kit, another kit, an Augment), the limit, how far past it is refused */
+  stability: { line: number; kit: number; other: number; augment: number; limit: number; refuse: number };
+  /** a splice past the limit: one stat times up, another times down, and the drawback */
+  unstable: GeneTrait & { up: number; down: number };
+}
+export interface GeneTrait {
+  name: string;
+  d: string;
+  fx: FxRow[];
+}
 /** RL-13: modifiers.json: a run's Expedition (one row each, I first) and its challenges (logic/modifiers.js) */
 export interface Modifier {
   name: string;

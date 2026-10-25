@@ -1,0 +1,122 @@
+{
+ "about": "Splicing track SP-2 (docs/phases/splicing-track.md; logic/genes.js). A Gene is a slot's part taken from a donor's kit recipe (kitBuilds.json): Billy.graft is { slot: donor rig }. kinds: the trait each part kind (partKits.json parts.kind) brings; traits: what a trait does, as effect rows on the Billie that wears it (logic/effects.js fxOfBillie); parts: a part's dominant type (it becomes the second type) and, from SP-4, the move it teaches; stability: what a foreign part costs and the limit; unstable: a splice past the limit. Every trait, number and dominant type is a PLACEHOLDER until the owner sets them (the track's Ask me before).",
+ "kinds": {
+  "arm": {"trait":"grip"},
+  "wing": {"trait":"airborne"},
+  "frontfin": {"trait":"swimmer"},
+  "leg": {"trait":"stride"},
+  "foot": {"trait":"stride"},
+  "backfin": {"trait":"swimmer"},
+  "tail": {"trait":"counterweight"},
+  "tailfin": {"trait":"swimmer"},
+  "shell": {"trait":"armored"},
+  "horn": {"trait":"gore"},
+  "spikes": {"trait":"barbed"},
+  "spike": {"trait":"barbed"},
+  "mane": {"trait":"showy"},
+  "crest": {"trait":"showy"},
+  "ruff": {"trait":"showy"},
+  "crown": {"trait":"showy"},
+  "plume": {"trait":"showy"},
+  "ear": {"trait":"keen"},
+  "lure": {"trait":"lure"}
+ },
+ "traits": {
+  "airborne": {
+   "name": "Airborne",
+   "d": "Takes half damage from Ground moves.",
+   "fx": [
+    {"kind":"damage","side":"take","type":"Ground","mult":0.5}
+   ]
+  },
+  "swimmer": {
+   "name": "Swimmer",
+   "d": "Its Water moves deal 15% more.",
+   "fx": [
+    {"kind":"damage","side":"deal","type":"Water","mult":1.15}
+   ]
+  },
+  "counterweight": {
+   "name": "Counterweight",
+   "d": "Starts each battle with Defense up a stage.",
+   "fx": [
+    {"kind":"stat","stat":"law","stages":1}
+   ]
+  },
+  "grip": {
+   "name": "Grip",
+   "d": "Its physical moves deal 10% more.",
+   "fx": [
+    {"kind":"damage","side":"deal","cat":"H","mult":1.1}
+   ]
+  },
+  "stride": {
+   "name": "Stride",
+   "d": "Starts each battle with Speed up a stage.",
+   "fx": [
+    {"kind":"stat","stat":"hus","stages":1}
+   ]
+  },
+  "armored": {
+   "name": "Armored",
+   "d": "Takes 15% less from physical moves.",
+   "fx": [
+    {"kind":"damage","side":"take","cat":"H","mult":0.85}
+   ]
+  },
+  "gore": {
+   "name": "Gore",
+   "d": "Its physical moves deal 15% more.",
+   "fx": [
+    {"kind":"damage","side":"deal","cat":"H","mult":1.15}
+   ]
+  },
+  "barbed": {
+   "name": "Barbed",
+   "d": "Takes 10% less from physical moves.",
+   "fx": [
+    {"kind":"damage","side":"take","cat":"H","mult":0.9}
+   ]
+  },
+  "showy": {
+   "name": "Showy",
+   "d": "Starts each battle with Sp. Atk up a stage.",
+   "fx": [
+    {"kind":"stat","stat":"lob","stages":1}
+   ]
+  },
+  "keen": {
+   "name": "Keen",
+   "d": "Starts each battle with Sp. Def up a stage.",
+   "fx": [
+    {"kind":"stat","stat":"pr","stages":1}
+   ]
+  },
+  "lure": {
+   "name": "Lure",
+   "d": "Battles it wins pay 10% more.",
+   "fx": [
+    {"kind":"money","mult":1.1}
+   ]
+  }
+ },
+ "parts": {
+  "eagle_wing": {"type":"Flying"},
+  "owl_wing": {"type":"Psychic"},
+  "shark_tailfin": {"type":"Water"},
+  "reptile_tail": {"type":"Dragon"},
+  "bear_arm": {"type":"Ground"},
+  "fox_tail": {"type":"Fire"}
+ },
+ "maxTraits": 3,
+ "stability": {"line":0,"kit":1,"other":2,"augment":3,"limit":3,"refuse":3},
+ "unstable": {
+  "up": 1.3,
+  "down": 0.75,
+  "name": "Unstable",
+  "d": "Its cells don't agree: it loses a little HP at each turn's end.",
+  "fx": [
+   {"kind":"turnHurt","share":0.0625}
+  ]
+ }
+}

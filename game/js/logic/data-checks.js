@@ -32,6 +32,7 @@ import { islandProblems } from './island.js';
 import { parseScript, scriptProblem } from './script-parse.js';
 /* eslint-disable no-func-assign */
 expose({
+  GENE_KINDS: [() => GENE_KINDS],
   HOLD_KINDS: [() => HOLD_KINDS],
   ROBOT_FITS: [() => ROBOT_FITS],
   RUN_MAP_ROLE_NAMES: [() => RUN_MAP_ROLE_NAMES],
@@ -52,6 +53,8 @@ expose({
   dataEvents: [() => dataEvents, v => (dataEvents = v)],
   // @ts-expect-error -- replaced on purpose
   dataFieldMoves: [() => dataFieldMoves, v => (dataFieldMoves = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataGenes: [() => dataGenes, v => (dataGenes = v)],
   // @ts-expect-error -- replaced on purpose
   dataHeldItems: [() => dataHeldItems, v => (dataHeldItems = v)],
   // @ts-expect-error -- replaced on purpose
@@ -94,6 +97,8 @@ expose({
   dataUnderscoreKeys: [() => dataUnderscoreKeys, v => (dataUnderscoreKeys = v)],
   // @ts-expect-error -- replaced on purpose
   dataUnlocks: [() => dataUnlocks, v => (dataUnlocks = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxRowProblems: [() => fxRowProblems, v => (fxRowProblems = v)],
   // @ts-expect-error -- replaced on purpose
   runMapProblems: [() => runMapProblems, v => (runMapProblems = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1063,6 +1068,35 @@ export function dataPerks(D, valid = () => true) {
   }
   return out;
 }
+/** RL-12c, SP-2: one effect row a Billie has (a held item's or a Gene's): one of `kinds`, its numbers within the code's
+ * limits @param {any} f @param {string} at @param {string[]} kinds @param {any} D
+ * @param {(what: string) => void} problem */
+export function fxRowProblems(f, at, kinds, D, problem) {
+  const types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
+    stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
+    share = (/** @type {any} */ v) => typeof v === 'number' && v > 0 && v <= 1;
+  if (!f || !kinds.includes(f.kind))
+    return problem(`${at}: no effect kind "${f && f.kind}" here (${kinds.join(', ')})`);
+  if ('mult' in f || ['money', 'damage', 'xp'].includes(f.kind))
+    if (!(typeof f.mult === 'number' && f.mult >= FX_LIMIT.lo && f.mult <= FX_LIMIT.hi))
+      problem(
+        `${at}.mult: ${f.mult} is outside the code's limits, ${FX_LIMIT.lo} to ${FX_LIMIT.hi} (effects.js FX_LIMIT)`
+      );
+  if (f.kind === 'stat') {
+    if (f.stat === 'hp' || !stats.has(f.stat))
+      problem(`${at}.stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
+    if (!(Number.isInteger(f.stages) && f.stages !== 0 && Math.abs(f.stages) <= FX_STAGES))
+      problem(`${at}.stages: a whole number of stages from -${FX_STAGES} to ${FX_STAGES}, not 0`);
+  }
+  if (f.kind === 'damage') {
+    if (!['deal', 'take'].includes(f.side)) problem(`${at}.side: deal or take`);
+    if (f.cat != null && !['H', 'S'].includes(f.cat)) problem(`${at}.cat: H or S`);
+    if (f.type != null && !types.has(f.type)) problem(`${at}.type: no type "${f.type}" (types.json)`);
+  }
+  if (['turnHeal', 'pinchHeal', 'turnHurt'].includes(f.kind) && !share(f.share))
+    problem(`${at}.share: a share of HP above 0, at most 1`);
+  if (f.kind === 'pinchHeal' && !share(f.at)) problem(`${at}.at: a share of HP above 0, at most 1`);
+}
 // RL-12c: items.json's held items: 1-4 `hold` rows of the kinds a holder can have, their numbers within the code's
 // limits, and nothing else an item does (a held item is never used up)
 export const HOLD_KINDS = ['money', 'stat', 'damage', 'xp', 'turnHeal', 'pinchHeal'];
@@ -1070,10 +1104,7 @@ export const HOLD_KINDS = ['money', 'stat', 'damage', 'xp', 'turnHeal', 'pinchHe
 export function dataHeldItems(D) {
   /** @type {DataProblem[]} */
   const out = [],
-    problem = (/** @type {string} */ what) => out.push(['items.json', what]),
-    types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
-    stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
-    share = (/** @type {any} */ v) => typeof v === 'number' && v > 0 && v <= 1;
+    problem = (/** @type {string} */ what) => out.push(['items.json', what]);
   for (const [k, I] of Object.entries(D.items || {})) {
     const H = /** @type {any} */ (I).hold;
     if (H === undefined) continue;
@@ -1083,31 +1114,54 @@ export function dataHeldItems(D) {
     }
     for (const use of ['hp', 'hpAll', 'cure', 'revive', 'evoItem', 'lvlUp', 'repair'])
       if (/** @type {any} */ (I)[use] != null) problem(`${k}: a held item can't also be used (${use})`);
-    H.forEach((/** @type {any} */ f, /** @type {number} */ n) => {
-      const at = `${k}.hold[${n}]`;
-      if (!f || !HOLD_KINDS.includes(f.kind))
-        return problem(`${at}: no held effect kind "${f && f.kind}" (${HOLD_KINDS.join(', ')})`);
-      if ('mult' in f || ['money', 'damage', 'xp'].includes(f.kind))
-        if (!(typeof f.mult === 'number' && f.mult >= FX_LIMIT.lo && f.mult <= FX_LIMIT.hi))
-          problem(
-            `${at}.mult: ${f.mult} is outside the code's limits, ${FX_LIMIT.lo} to ${FX_LIMIT.hi} (effects.js FX_LIMIT)`
-          );
-      if (f.kind === 'stat') {
-        if (f.stat === 'hp' || !stats.has(f.stat))
-          problem(`${at}.stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
-        if (!(Number.isInteger(f.stages) && f.stages !== 0 && Math.abs(f.stages) <= FX_STAGES))
-          problem(`${at}.stages: a whole number of stages from -${FX_STAGES} to ${FX_STAGES}, not 0`);
-      }
-      if (f.kind === 'damage') {
-        if (!['deal', 'take'].includes(f.side)) problem(`${at}.side: deal or take`);
-        if (f.cat != null && !['H', 'S'].includes(f.cat)) problem(`${at}.cat: H or S`);
-        if (f.type != null && !types.has(f.type)) problem(`${at}.type: no type "${f.type}" (types.json)`);
-      }
-      if ((f.kind === 'turnHeal' || f.kind === 'pinchHeal') && !share(f.share))
-        problem(`${at}.share: a share of HP above 0, at most 1`);
-      if (f.kind === 'pinchHeal' && !share(f.at)) problem(`${at}.at: a share of HP above 0, at most 1`);
-    });
+    H.forEach((/** @type {any} */ f, /** @type {number} */ n) =>
+      fxRowProblems(f, `${k}.hold[${n}]`, HOLD_KINDS, D, problem)
+    );
   }
+  return out;
+}
+// SP-2: genes.json: the schema; every kind is a part kind of partKits.json with a trait that exists, and every kind a
+// recipe's slot bone uses (the parts a splice swaps) has one; a part's dominant type and move exist; a trait's rows are
+// of the kinds a Billie's own rows can be, Unstable's a turnHurt; Stability's costs rise from line to Augment
+export const GENE_KINDS = ['money', 'stat', 'damage'];
+/** SP-2: genes.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataGenes(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['genes.json', what]),
+    G = D.genes;
+  if (!G) return out;
+  if (!valid('genes.schema.json', G, 'genes.json')) return out;
+  const parts = (D.partKits && D.partKits.parts) || {},
+    kinds = new Set(Object.values(parts).map((/** @type {any} */ p) => p.kind)),
+    types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
+    moves = D.moves || {},
+    traits = G.traits || {};
+  for (const [k, R] of Object.entries(G.kinds || {})) {
+    if (!kinds.has(k)) problem(`kinds.${k}: no part of that kind (partKits.json)`);
+    if (!traits[R.trait]) problem(`kinds.${k}.trait: no trait "${R.trait}"`);
+  }
+  for (const F of (D.kitBuilds && D.kitBuilds.forms) || [])
+    for (const bone of ['arm', 'leg', 'tail']) {
+      const P = F.parts && F.parts[bone] && parts[F.parts[bone][0]];
+      if (P && !(G.kinds || {})[P.kind]) problem(`kinds: no row for "${P.kind}" (${F.rig}'s ${bone} can be spliced)`);
+    }
+  for (const [k, T] of Object.entries(traits))
+    (T.fx || []).forEach((/** @type {any} */ f, /** @type {number} */ n) =>
+      fxRowProblems(f, `traits.${k}.fx[${n}]`, GENE_KINDS, D, problem)
+    );
+  (G.unstable.fx || []).forEach((/** @type {any} */ f, /** @type {number} */ n) =>
+    fxRowProblems(f, `unstable.fx[${n}]`, ['turnHurt', ...GENE_KINDS], D, problem)
+  );
+  for (const [k, P] of Object.entries(G.parts || {})) {
+    if (!parts[k]) problem(`parts.${k}: no such part (partKits.json)`);
+    if (P.type != null && !types.has(P.type)) problem(`parts.${k}.type: no type "${P.type}" (types.json)`);
+    if (P.move != null && !moves[P.move]) problem(`parts.${k}.move: no move "${P.move}" (moves.json)`);
+  }
+  const S = G.stability;
+  if (!(S.line <= S.kit && S.kit <= S.other && S.other <= S.augment))
+    problem('stability: the costs must rise from line to kit, other and augment');
+  if (S.refuse < 1) problem('stability.refuse: at least 1 (a splice past the limit is Unstable before it is refused)');
   return out;
 }
 // RF-2: every catch item (pyramids.json; the ids stay the pyramids' until RF-4) has its icons and the model it is thrown as
