@@ -107,6 +107,26 @@ test('rock fade: off on flat ground, on (feet, circle) when ground cuts the line
   walkRenderer.bt = null;
 });
 
+test('see-through circle: on flat ground while something hides you, as strong as it is hidden; off with its setting', () => {
+  let C = camera();
+  setup(C);
+  walkRenderer.hidK = 1;
+  let R = rockUniformsFor(C);
+  assert.equal(R.rock[0], 0, "the player's feet");
+  assert.ok(Math.abs(R.rock[1] - 0.3) < 1e-6, `the circle's size: ${R.rock[1]}`);
+  assert.ok(Math.abs(R.rock[2] - 0.7) < 1e-6, `most of it goes, not all: ${R.rock[2]}`);
+  walkRenderer.hidK = 0.5;
+  C = camera();
+  walkView.C = C;
+  assert.ok(Math.abs(rockUniformsFor(C).rock[2] - 0.35) < 1e-6, 'half hidden, half as strong');
+  G.setEngineDataSource(() => ({ defaults: { camera: { hideFade: false } } }));
+  C = camera();
+  walkView.C = C;
+  assert.deepEqual(Array.from(rockUniformsFor(C).rock), [0, 0, 0, 0], 'setting off');
+  G.setEngineDataSource(() => null);
+  walkRenderer.hidK = 0;
+});
+
 test('silhouette: a hidden query draw, then the tint; depth GREATER and no depth writes, put back after', () => {
   const C = camera();
   const calls = setup(C);

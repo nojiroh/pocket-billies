@@ -231,6 +231,9 @@ export const ENGINE_DEFAULTS = {
     silhouette: true,
     outline: 1,
     outlineFill: 0.25,
+    hideFade: true,
+    hideSize: 0.3,
+    hideAmount: 0.7,
     /* island track IS-1: an island map's camera turns round its middle (cam.orbit); the sun turns with the camera
        (off: the sun stays put in the world, the owner's pick) */
     orbit: true,
@@ -1028,6 +1031,28 @@ export const ENGINE_SPEC = [
         1,
         0.05,
         "Player visibility: how much of the inside of your hidden shape is dotted in, in the outline's colour.",
+      ],
+      [
+        'hideFade',
+        'See-through circle when hidden',
+        'bool',
+        'Player visibility: while a building, tree or anything else nearer the camera hides you, it thins out in a soft circle round you (as rock does on tall ground).',
+      ],
+      [
+        'hideSize',
+        'See-through circle size',
+        0.1,
+        0.8,
+        0.02,
+        "Player visibility: its radius on screen (1 is half the screen's height).",
+      ],
+      [
+        'hideAmount',
+        'See-through circle strength',
+        0,
+        0.85,
+        0.05,
+        'Player visibility: how much of what hides you goes in the middle of the circle (never all: some stays, so the game still knows you are behind it).',
       ],
       [
         'orbit',

@@ -409,23 +409,22 @@ BEHIND_SPOTS = """(() => {
   const sc = walkView.sc, P = walkView.pl, C = walkView.C, D = walkData().sc.props, fl = Math.hypot(C.fwd[0], C.fwd[2]) || 1,
     f = [C.fwd[0] / fl, C.fwd[2] / fl], out = [];
   for (const p of sc.props || []) {
-    const M = D[p.k] || {};
-    if (!(M.build || /tree|oak|pine|birch|beech/.test(p.k))) continue;
-    for (let d = 1.5; d <= 4; d += 0.5) {
+    const M = D[p.k] || {}, bld = !!(M.build || M.door);
+    if (!(bld || /tree|oak|pine|birch|beech/.test(p.k))) continue;
+    for (let d = 1.5; d <= (bld ? 12 : 4); d += 0.5) {
       const x = p.x + f[0] * d, z = p.z + f[1] * d;
       if (!isWalkable(x, z)) continue;
-      if (findPath(P.x, P.z, x, z, { max: 1e6 })) { out.push({ k: p.k, x, z }); break; }
+      if (findPath(P.x, P.z, x, z, { max: 1e6 })) { out.push({ k: p.k, x, z, bld }); break; }
     }
-    if (out.length >= 6) break;
   }
-  return out;
+  return out.filter(s => s.bld).slice(0, 3).concat(out.filter(s => !s.bld).slice(0, 3));
 })()"""
 
 
 def behind_things(pg, base):
     """Player visibility: in Copperleaf, standing just behind trees and buildings (away from the camera), something
-    covers you at most of them: the occlusion query says so (walkRenderer.hidT), the hidden amount comes on and the
-    silhouette is shown; back where you started, in the open, none of it"""
+    covers you at most of them: the occlusion query says so (walkRenderer.hidT), the hidden amount comes on, the
+    silhouette is shown and the see-through circle is on; back where you started, in the open, none of it"""
     drawing(pg)
     home = pg.evaluate('[walkView.pl.x, walkView.pl.z]')
     stand(pg, home[0], home[1], 30)
@@ -435,11 +434,11 @@ def behind_things(pg, base):
     hid = []
     for s in spots:
         stand(pg, s['x'], s['z'], 30)
-        if pg.evaluate('walkRenderer.hidT === 1 && walkRenderer.hidK > 0.9'): hid.append(s['k'])
+        if pg.evaluate('walkRenderer.hidT === 1 && walkRenderer.hidK > 0.9 && rockUniformsFor(walkView.C).rock[2] > 0.5'): hid.append(s['k'])
     if len(hid) * 2 < len(spots): raise Exception(f'hidden behind only {hid} of {[s["k"] for s in spots]}')
     stand(pg, home[0], home[1], 60)
-    k = pg.evaluate('walkRenderer.hidK || 0')
-    if k > 0.05: raise Exception(f'back in the open, still hidden ({k})')
+    k, circle = pg.evaluate('[walkRenderer.hidK || 0, rockUniformsFor(walkView.C).rock[2]]')
+    if k > 0.05 or circle > 0: raise Exception(f'back in the open, still hidden ({k}) or the circle on ({circle})')
     return f'hidden behind {len(hid)} of {len(spots)} ({", ".join(hid)}); in the open not'
 
 
@@ -1191,7 +1190,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
               ('Copperleaf is the island: the sea skirt from 8 angles; the orbit camera from 8 places, on the summit, holding right (IS-1, IS-3)', hub_orbit)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('town', [('Blur focus: on you, between you in a talk, on the encounter; the slider at Off; the cheap blur (CAM-3)', blur_focus),
-              ('Behind things: at most spots behind a tree or building something hides you (the query, the silhouette); in the open nothing', behind_things),
+              ('Behind things: at most spots behind a tree or building something hides you (the query, the silhouette, the circle); in the open nothing', behind_things),
               ("Encounters: a run's waystation stand opens its event, a stall its shop; both hold fewer wild Billies (RL-12b)", waystations)]),
     ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back and forward, a reload (RL-9, RL-10b)', ranch)]),
     ('pasture', [('The pasture: Billies wander inside the fence, a tap on one or the gate opens the ranch (IS-8)', pasture)]),
