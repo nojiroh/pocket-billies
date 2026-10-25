@@ -59,7 +59,7 @@ import {
 import { rngFn } from './rng.js';
 import { wildOddsBy } from './weather.js';
 import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
-import { graftFit } from './genes.js';
+import { graftFit, graftRel } from './genes.js';
 import {
   ROBOT_LIMBS,
   ROBOT_SLOTS,
@@ -91,6 +91,8 @@ expose({
   billyBuild: [() => billyBuild],
   billyGraft: [() => billyGraft],
   billyName: [() => billyName],
+  billyPrime: [() => billyPrime],
+  billyRel: [() => billyRel],
   billyWeight: [() => billyWeight],
   // @ts-expect-error -- replaced on purpose
   blockerAt: [() => blockerAt, v => (blockerAt = v)],
@@ -311,12 +313,14 @@ export function encounterBuild(q) {
   return cleanBuild(q.build);
 }
 export const billyBuild = m => cleanBuild(m && m.build);
-/** @param {Build} b */
-export const isPrime = b => partsPrime(RULES.parts, b);
-/** @param {Build} b the weight as a share of the species' own weight (1 = all M) */
-export const buildWeightRatio = b => partsWeightRatio(RULES.parts, b);
-/** @returns {number} a Billie's weight in kg (its species' weight times its build) */
-export const billyWeight = m => Math.round(speciesOf(m).wt * buildWeightRatio(billyBuild(m)) * 10) / 10;
+/** @param {Build} b @param {boolean} [spliced] SP-2: a splice is never Prime */
+export const isPrime = (b, spliced) => partsPrime(RULES.parts, b, spliced);
+/** @param {Build} b the weight as a share of the species' own weight (1 = all M)
+ * @param {Record<string, number> | null} [rel] SP-2: the spliced slots' relative weights (billyRel) */
+export const buildWeightRatio = (b, rel) => partsWeightRatio(RULES.parts, b, rel);
+/** @returns {number} a Billie's weight in kg (its species' weight times its build; SP-2: its foreign parts weigh what
+ * they did on their donors) */
+export const billyWeight = m => Math.round(speciesOf(m).wt * buildWeightRatio(billyBuild(m), billyRel(m)) * 10) / 10;
 /* SP-2: the game's data for logic/genes.js @returns {import('./genes.js').GeneData} */
 export const geneData = () => ({
   kitBuilds: gameData.kitBuilds || { forms: [] },
@@ -328,17 +332,25 @@ export const geneData = () => ({
 /** SP-2: a Billie's (or an encounter's) splice, the slots that still fit it; null for none or a robot
  * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m */
 export const billyGraft = m => (m && m.graft && m.kind !== 'robot' ? graftFit(geneData(), m.sp, m.graft) : null);
-/** @param {Build} b @param {string} k a stat id @returns {number} what the build does to that stat (1 = nothing) */
-export const buildStatFactor = (b, k) => partsStatFactor(RULES.parts, b, k);
-/** @param {Build} b phase 06: which way the build leans (attack, speed, lean, off, prime), for the Build tab */
-export const buildLean = b => partsLean(RULES.parts, b);
+/** SP-2: per spliced slot, its part's weight over the Billie's own part's; null with no splice
+ * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m */
+export const billyRel = m => (m && billyGraft(m) ? graftRel(geneData(), m.sp, m.graft) : null);
+/** SP-2: Prime: every part its own and at M @param {any} m */
+export const billyPrime = m => isPrime(billyBuild(m), !!billyGraft(m));
+/** @param {Build} b @param {string} k a stat id @param {Record<string, number> | null} [rel] SP-2 (billyRel)
+ * @returns {number} what the build does to that stat (1 = nothing) */
+export const buildStatFactor = (b, k, rel) => partsStatFactor(RULES.parts, b, k, rel);
+/** @param {Build} b phase 06: which way the build leans (attack, speed, lean, off, prime), for the Build tab
+ * @param {Record<string, number> | null} [rel] SP-2 (billyRel) */
+export const buildLean = (b, rel) => partsLean(RULES.parts, b, rel);
 
 /* ---------- billionaires ---------- */
 export function stat(m, k) {
   const b = speciesOf(m).base[STAT_IDS.indexOf(k)];
   let v = k === 'hp' ? Math.floor((2 * b * m.lvl) / 100) + m.lvl + 10 : Math.floor((2 * b * m.lvl) / 100) + 5;
   /* phase 16: its parts (weight and Prime) */
-  if (m.build) v = Math.max(1, Math.round(v * buildStatFactor(m.build, k)));
+  /* SP-2: and its foreign parts' weight (a splice is never Prime) */
+  if (m.build || m.graft) v = Math.max(1, Math.round(v * buildStatFactor(m.build, k, billyRel(m))));
   /* RL-10: an abomination's spike and drawback (rules.json ranch.breed) */
   const mu = m.mut,
     B = mu && mu.k === 'abom' && RULES.ranch && RULES.ranch.breed;

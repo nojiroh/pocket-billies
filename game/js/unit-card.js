@@ -26,11 +26,12 @@ import {
 import {
   billyBuild,
   billyName,
+  billyPrime,
+  billyRel,
   billyWeight,
   buildLean,
   coatPrefix,
   formatNumber,
-  isPrime,
   maxHp,
   partBroken,
   partHpLeft,
@@ -77,7 +78,8 @@ provide({
  *   kind: 'billy' | 'bot', id: string, name: string, sub: string, lvl: number, types: string[],
  *   hp: number, max: number, art: (px: number) => string, plate: string, down: boolean,
  *   lead: boolean, buddy: boolean, coat: string, prime: boolean, care: boolean,
- *   build: Record<string, string>, kg: number, wclass: string, slotNames: Record<string, string>,
+ *   build: Record<string, string>, rel?: Record<string, number> | null, kg: number, wclass: string,
+ *   slotNames: Record<string, string>,
  *   limbs: Record<string, number> | null
  * }} Unit */
 
@@ -107,7 +109,9 @@ function billyUnit(m) {
     lead: saveData.team[0] === m,
     buddy: saveData.buddy === m.uid,
     coat: coatPrefix(m.coat).trim(),
-    prime: !bot && isPrime(b),
+    prime: !bot && billyPrime(m),
+    /* SP-2: the spliced slots' relative weights, for the balance meter */
+    rel: bot ? null : billyRel(m),
     /* RL-12c: the name of the item it holds */
     held: m.held && ITEMS[m.held] ? ITEMS[m.held].n : '',
     care: needsCare(m),
@@ -174,7 +178,7 @@ function unitBalanceHTML(L) {
 
 /** a unit's Build tab: each slot with its size marked on an S M L dial, the weight and its balance, Prime */
 function unitBuildHTML(u, slots) {
-  const L = buildLean(u.build);
+  const L = buildLean(u.build, u.rel);
   return `<div class="u-build">
   <div class="u-build-h"><b>Build</b><span class="tnum">${formatNumber(u.kg)} kg · ${escapeHtml(u.wclass)}</span></div>
   <ul class="u-slots">${slots

@@ -10,13 +10,12 @@ import { graftOf } from './logic/graft-art.js';
 import { isRobot, speciesOf } from './logic/fighters.js';
 import {
   allBillies,
-  billyBuild,
   billyName,
+  billyPrime,
   cleanName,
   evolutionHint,
   feedLevels,
   findBilly,
-  isPrime,
   maxHp,
   partSlots,
   stat,
@@ -296,7 +295,7 @@ function billySheet(m) {
     title: escapeHtml(billyName(m)),
     cls: 'mon-sheet',
     acts,
-    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${!isRobot(m) && isPrime(billyBuild(m)) ? '<span class="tm-ribbon prime">Prime</span>' : ''}${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat, graft: graftOf(m) })}</div>`,
+    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${!isRobot(m) && billyPrime(m) ? '<span class="tm-ribbon prime">Prime</span>' : ''}${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat, graft: graftOf(m) })}</div>`,
     html: `<p class="row ms-chips">${s.types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${escapeHtml(s.name)}</span>` : ''}</p>
   <div class="ms-tabs" role="tablist" aria-label="About ${escapeHtml(billyName(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
   <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', progressBarHTML(xpProgress(m), 'xpb'), xpLeft(m))}</div>
