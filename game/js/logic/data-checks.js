@@ -32,6 +32,7 @@ import { islandProblems } from './island.js';
 import { parseScript, scriptProblem } from './script-parse.js';
 /* eslint-disable no-func-assign */
 expose({
+  HOLD_KINDS: [() => HOLD_KINDS],
   ROBOT_FITS: [() => ROBOT_FITS],
   RUN_MAP_ROLE_NAMES: [() => RUN_MAP_ROLE_NAMES],
   RUN_MAP_ROLE_TYPES: [() => RUN_MAP_ROLE_TYPES],
@@ -51,6 +52,8 @@ expose({
   dataEvents: [() => dataEvents, v => (dataEvents = v)],
   // @ts-expect-error -- replaced on purpose
   dataFieldMoves: [() => dataFieldMoves, v => (dataFieldMoves = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataHeldItems: [() => dataHeldItems, v => (dataHeldItems = v)],
   // @ts-expect-error -- replaced on purpose
   dataModifiers: [() => dataModifiers, v => (dataModifiers = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1054,6 +1057,53 @@ export function dataPerks(D, valid = () => true) {
       if (D.perks && !Object.values(D.perks).some(R => (RR.rarity || {})[R.rarity] > 0))
         problem('rules.json', 'run.perks.rarity gives every Perk in perks.json a weight of 0: nothing can be offered');
     }
+  }
+  return out;
+}
+// RL-12c: items.json's held items: 1-4 `hold` rows of the kinds a holder can have, their numbers within the code's
+// limits, and nothing else an item does (a held item is never used up)
+export const HOLD_KINDS = ['money', 'stat', 'damage', 'xp', 'turnHeal', 'pinchHeal'];
+/** RL-12c: items.json `hold` @param {any} D @returns {DataProblem[]} */
+export function dataHeldItems(D) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['items.json', what]),
+    types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
+    stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
+    share = (/** @type {any} */ v) => typeof v === 'number' && v > 0 && v <= 1;
+  for (const [k, I] of Object.entries(D.items || {})) {
+    const H = /** @type {any} */ (I).hold;
+    if (H === undefined) continue;
+    if (!Array.isArray(H) || !H.length || H.length > 4) {
+      problem(`${k}.hold: a list of 1-4 effect rows`);
+      continue;
+    }
+    for (const use of ['hp', 'hpAll', 'cure', 'revive', 'evoItem', 'lvlUp', 'repair'])
+      if (/** @type {any} */ (I)[use] != null) problem(`${k}: a held item can't also be used (${use})`);
+    H.forEach((/** @type {any} */ f, /** @type {number} */ n) => {
+      const at = `${k}.hold[${n}]`;
+      if (!f || !HOLD_KINDS.includes(f.kind))
+        return problem(`${at}: no held effect kind "${f && f.kind}" (${HOLD_KINDS.join(', ')})`);
+      if ('mult' in f || ['money', 'damage', 'xp'].includes(f.kind))
+        if (!(typeof f.mult === 'number' && f.mult >= FX_LIMIT.lo && f.mult <= FX_LIMIT.hi))
+          problem(
+            `${at}.mult: ${f.mult} is outside the code's limits, ${FX_LIMIT.lo} to ${FX_LIMIT.hi} (effects.js FX_LIMIT)`
+          );
+      if (f.kind === 'stat') {
+        if (f.stat === 'hp' || !stats.has(f.stat))
+          problem(`${at}.stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
+        if (!(Number.isInteger(f.stages) && f.stages !== 0 && Math.abs(f.stages) <= FX_STAGES))
+          problem(`${at}.stages: a whole number of stages from -${FX_STAGES} to ${FX_STAGES}, not 0`);
+      }
+      if (f.kind === 'damage') {
+        if (!['deal', 'take'].includes(f.side)) problem(`${at}.side: deal or take`);
+        if (f.cat != null && !['H', 'S'].includes(f.cat)) problem(`${at}.cat: H or S`);
+        if (f.type != null && !types.has(f.type)) problem(`${at}.type: no type "${f.type}" (types.json)`);
+      }
+      if ((f.kind === 'turnHeal' || f.kind === 'pinchHeal') && !share(f.share))
+        problem(`${at}.share: a share of HP above 0, at most 1`);
+      if (f.kind === 'pinchHeal' && !share(f.at)) problem(`${at}.at: a share of HP above 0, at most 1`);
+    });
   }
   return out;
 }
