@@ -141,7 +141,7 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
 | 1 | WA-1 | R | (**done** 2026-10-25, notes below) **Pixel water.** Water, shore and falls on the 32 texels a metre grid; `bands` (a kind's tones, dithered between shallow and deep on the world grid), `frames` (stepped time for ripples, foam, caustics, glints); hard 1-pixel foam lines at the shore; reflections offset by whole pixels; the shared snippet; models in the reflection (check); the `pixel` switch. | look-water before and after (every shot, noon and night), bench Pond station cost, smoke |
 | 1 | WA-3a | G | (**done** 2026-10-25, notes below) **Rivers that run downhill.** In `water-gen.js`: fill the dips, flow and its sum on the height grid, a source (spring, edge, lake) to a mouth (sea, lake, edge, a plunge pool), carved banks, wider downstream, meanders on flat ground, rapids on steep stretches; seams match the neighbour's river; joins mapgen's existing water stage and bridges. | unit tests (same seed same river; every cell of a river lower than the one before; mouths reached), the mapgenUnreachable sweep, golden water scene remade on purpose |
 | 1 | WA-6a | P | **Wading.** `w` tiles walkable, slower; the player and Billies cut at the waterline; splashes and a wake (`addRipple`); deep `d` still blocks; Studio and quick-check walking checks updated. | unit tests (the walk grid), a walking check in test_water, smoke |
-| 2 | WA-2a | R | **Waterfalls drawn.** Each `falls` entry: a curled lip, a sheet of streaks in pixel columns over a slower large pattern, white water at the foot, a churning foam ring and rings on the plunge pool, mist that rises and drifts, wet dark rock beside it, the light it throws; the small automatic sheets the same style; the flow map (a texture of flow and foam) replacing the per-vertex segment search. | look-water (tall-fall, stream-and-falls), bench cost, smoke |
+| 2 | WA-2a | R | (**done** 2026-10-25, notes below) **Waterfalls drawn.** Each `falls` entry: a curled lip, a sheet of streaks in pixel columns over a slower large pattern, white water at the foot, a churning foam ring and rings on the plunge pool, mist that rises and drifts, wet dark rock beside it, the light it throws; the small automatic sheets the same style; the flow map (a texture of flow and foam) replacing the per-vertex segment search. | look-water (tall-fall, stream-and-falls), bench cost, smoke |
 | 2 | WA-2b | G | (**done** 2026-10-25, notes below) **Waterfalls placed.** Off terrace and cliff edges where a river meets a drop, in caves (rooms), as a route's set piece; `climb` on some (the Waterfall move's way up); the hub island's fall only with the owner's yes. | unit tests (a fall's lip and foot on its river; its pool reached), sweep |
 | 2 | WA-6b | P | **Surf and Waterfall climb.** Riding per cell: walk into `d` with a rider (`rules.ride`) and the Water badge, mount and leave at the shore; the mount's bob, wake and rings; encounters on water (the region's water pool); the Waterfall field move (badge: ask) climbing a `climb` fall. Builds on the contract while WA-2b lands. | unit tests (riding rules, badge), a surf walk check, smoke |
 | 3 | WA-4 | R | **The sea and the coast.** Surf as hard stepped bands breaking along the coast, foam round rocks, a slow tide (the waterline and wet sand move, tide pools), reef shallows (turquoise, see-through), kelp, sandbars, a sun and a moon path on the open sea, a storm sea from the forecast. | look-water --scene=test_island, island-shots, smoke |
@@ -277,3 +277,49 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
   exit reached, no generator note; every pool walked to. Cost: about 15% more on a mountain scene in Node (224 to
   258 ms), 13 ms on a river over terraces.
 
+## WA-2a notes (2026-10-25)
+- **The flow map** (`walk/water-flow.js`, new, Node-testable): flow (x, z), foam and how far into its stream, on the
+  water mesh's half-metre grid, built once with the mesh. Each stream segment visits only the cells within its reach
+  (2.5 m, or `w/2 + 1` on a wide river), the nearest segment winning as before: a plain `{pts, speed}` stream gives
+  exactly the old flow at every cell (tools/test/water-flow.test.mjs). It reads WA-3a's `w` (reach), `rapids` (1.6
+  times faster, white water along the middle), `mouth` (churn into a `pool`, `lake` or `sea`), `src` (`spring`
+  bubbles) and each fall's foot (churn). `waterFlowField` (water-data.js) is gone; `flowAt` and the leaves read the
+  map. Build cost in Node, flow map against the old search over every water cell three times (as the mesh asks):
+  58 x 28 m 3 against 6 ms, 120 x 80 m 6 against 37 ms, 180 x 90 m with a 120-point river 3 against 124 ms.
+- On the card: a half-float RGBA texture (unit 7, `water-data.js flowTexture` / `setFlowUniforms`), off for the
+  basins. With pixel water the surface pattern is carried down the flow in two phases half a loop (2 s) apart and
+  blended, so it never drifts without end (it did before; pixel off keeps that old drift); the foam channel boils in
+  place in steps.
+- **Falls entries** (`ground-mesh.js placeFalls`, `fallSheet`): the lip at the water's level 0.3 m upstream; `h`, or
+  the drop to the lowest water or ground 0.5-2 m past the lip (an entry under 0.3 m is left to the automatic sheets);
+  the sheet lands `min(1.8, 0.25 + 0.45 sqrt(h))` m out (the water leaves the lip moving); a quarter-turn curl over
+  the lip, rows leaning out with the square root of the drop, 6% narrower at the lip and 10% wider at the foot, sunk
+  0.1 m into the pool; columns every 0.25 m, rows every 0.5 m. An automatic sheet whose edge lies within the entry's
+  width (+0.35 m) from 1 m behind the lip to 1 m past its landing is left out. `T.fallSets` holds the placed entries
+  (kept by map-cache.js with the fall mesh).
+- **The fall shader** with pixel water: the 32 grid's texels across the sheet in metres and down it along the water;
+  each pixel column its own streaks stepping down at its own speed (1.4-2.7 m/s) over a slow large pattern; four
+  tones (the shallow colour to white); a glassy lip with one highlight row; white water at the foot with a broken top
+  edge (0.3 m + 9% of the length, at most 1.1 m; a cascade's 0.18 m); a pale veil over the last 1.6 m of a big one;
+  the outer columns ragged. Lit mostly grey (the warm sun turned it tan) and kept bright in a cliff's shade. The
+  automatic sheets (cascades) use the same code at 0.5 m wide. Pixel water off: the sheet of before.
+- **Pool, rock and light** (`walk-shaders.js FALL_GLSL`, `water-data.js setFallUniforms`: the four entries nearest
+  you): the water churns white round the foot (a line as wide as the fall) and rings one texel wide spread across the
+  plunge pool (every 0.67 m, outward, stepped); the rock beside and under the lip is dark, cool and shiny with
+  trickles stepping down in pixel columns; the ground round the foot is wet; the white water's light is a stepped
+  shimmer on rock and ground (faint by day, stronger at night). Not a real light (the owner's choice).
+- **Spray and mist** (`effects.js`): with pixel water on the 32 grid and in `water.frames` steps. A cascade's mist
+  sits out from its step (the automatic sheets carry their direction now), so the cliff no longer cuts it into the
+  half-disc WA-6b saw. An entry: spray along its width at the foot (6-24 droplets), droplets off the lip, 3-8 mist
+  puffs rising from the pool and drifting with the wind.
+- **Wading** (WA-6a's asks): splashes (`walkView.parts` kind `splash`) are the spray's droplets; the wake's rings
+  have their own pool (`addWakeRipple`, 4 kept; the shader's 8 slots take up to 3 of them first), so wading no longer
+  pushes out the scene's rings. The one call in walk-view.js switched (lane P's file, the owner's yes).
+- **Cost**: per frame, the ground and water shaders loop over up to 4 falls (a box test first; nothing when a scene
+  has none, `uFallN` 0), the water shader reads the flow map once and its ripple and glint noise twice on running
+  water (the two phases); an entry's sheet is (w/0.25) x (h/0.5 + 4) quads (test_water's 6 m: 113 triangles) and
+  9-40 effect quads. The headless browser draws in software (0.4-2 s a frame, swinging more between runs than
+  between settings): no numbers here. The phone should compare the frame time standing at test_water's tall fall
+  with Pixel water on and off, and by a river (the flow map's two phases).
+- Not in WA-2a: the Surf mount's wake (`prop-look.js rideMountItem`, lane P) still uses `addRipple`; the climb's
+  spray on the rider (WA-6b's ask); look-water's numbers count only the automatic sheets (`fallSheets`), not entries.
