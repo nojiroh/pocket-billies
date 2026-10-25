@@ -14,6 +14,7 @@ import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import {
   EVENTS,
+  FIELD_MOVES,
   ITEMS,
   LOCATIONS,
   MOVES,
@@ -1253,13 +1254,20 @@ async function runFullTest(mode) {
               landing = 'w:' + LOCATIONS[1].mapId + '*';
             if (!(await wait(() => walkView.ready && walkView.id === landing, 15000)))
               throw new Error(`landed but the view is ${walkView.id}`);
-            /* RL-R1: the run's region: the short map's 5 rows in its zones, each place its zone's biome, its name on
-               the Map tab */
-            const G = saveData.run.region;
+            /* RL-R1: the run's region: the short map's 5 rows in its zones, each place its zone's biome (RL-R2: a
+               side area's its field move's), its name on the Map tab */
+            const G = saveData.run.region,
+              side = saveData.run.map.side,
+              sideBiome = side && FIELD_MOVES[side.move] ? FIELD_MOVES[side.move].biome : '';
             if (!G || G.zones.reduce((n, z) => n + z.rows, 0) !== 5)
               throw new Error(`the run's region doesn't fit its 5 rows: ${JSON.stringify(G && G.zones)}`);
-            const off = saveData.run.map.nodes.find(n => !G.zones[n.zone] || G.zones[n.zone].biome !== n.biome);
-            if (off) throw new Error(`a place on row ${off.row + 1} isn't its zone's biome`);
+            const off = saveData.run.map.nodes.find(
+              n => !G.zones[n.zone] || (n.side ? sideBiome : G.zones[n.zone].biome) !== n.biome
+            );
+            if (off)
+              throw new Error(
+                `a place on row ${off.row + 1} isn't its ${off.side ? "side area's move's" : "zone's"} biome`
+              );
             if (!renderWorldMapTab().includes(escapeHtml(G.name)))
               throw new Error('the Map tab doesn’t name the region');
             measureFromHere();
