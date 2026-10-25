@@ -209,3 +209,13 @@ test('landmarks: the station with its rail out to sea and up to the portal, the 
   /* off by default */
   assert.equal(islandGenerate(hub.dials, hub.seed, ctx).landmarks, undefined);
 });
+
+/* ---------- HB-4b ---------- */
+test("town.scale: a house plot is never smaller than a cottage's footprint (3.4 x 2.4 m) and 0.2 m round", () => {
+  for (const scale of [0.6, 0.7]) {
+    const { scene } = islandGenerate(withTown({ face: 'out', tol: 90, quarter: 1, houses: 20, scale }), hub.seed, ctx),
+      houses = scene.plots.filter(L => L.k === 'house');
+    assert.ok(houses.length >= 5);
+    for (const L of houses) assert.ok(L.w >= 3.8 - 1e-9 && L.d >= 2.8 - 1e-9, `${L.w} x ${L.d}`);
+  }
+});

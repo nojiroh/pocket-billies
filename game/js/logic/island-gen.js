@@ -1799,6 +1799,8 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
   /* HB-4a: the quarter turn nearest to facing out from the pivot (town.quarter), in radians */
   const quarterOut = (x, z) => Math.round(Math.atan2(z - peakP[1], x - peakP[0]) / (Math.PI / 2)) * (Math.PI / 2);
   const addPlot = (k, x, z, pw, pd, a, front, where) => {
+    /* HB-4b: a house plot never smaller than a cottage (3.4 x 2.4 m) with 0.2 m round (town.scale's smaller plots) */
+    if (k === 'house') [pw, pd] = [Math.max(pw, 3.8), Math.max(pd, 2.8)];
     if (D.town.quarter && k !== 'well') {
       /* turned, its corner may reach the street: stepped back from it a metre at a time, up to 3 */
       const bx = x - front[0],
