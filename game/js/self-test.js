@@ -1337,7 +1337,8 @@ async function runFullTest(mode) {
               throw new Error('the pick wasn’t taken');
             uiState.modal = null;
             uiState.mq = [];
-            const boss = map.nodes.length;
+            /* RL-R2: a side area's places come after the main path's, so the boss is the main path's, not the last */
+            const boss = runWorldNode(map.nodes.findIndex(n => n.type === 'boss' && !n.side));
             runJump(boss);
             const B = trainersAt(boss)[0];
             if (!B || !B.alpha) throw new Error('no Alpha boss on the boss’s place');
