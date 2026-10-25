@@ -24,7 +24,7 @@
 /** @typedef {FxRow & { src: string }} Fx */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide } from '../hooks.js';
+import { billyGeneFx, provide } from '../hooks.js';
 import { modFxRows } from './modifiers.js';
 import { encBoonRows } from './run-enc.js';
 /* eslint-disable no-func-assign */
@@ -50,6 +50,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fxStages: [() => fxStages, v => (fxStages = v)],
   fxTurnHeal: [() => fxTurnHeal],
+  fxTurnHurt: [() => fxTurnHurt],
   fxXp: [() => fxXp],
 });
 /* eslint-enable no-func-assign */
@@ -67,6 +68,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'xp',
   'turnHeal',
   'pinchHeal',
+  'turnHurt',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -90,13 +92,16 @@ export const fxOfRun = (run, perks) => {
 };
 provide({ fxOfRun }); /* to-module */
 
-/** RL-12c: a Billie's own effect rows: its held item's (items.json `hold`), tagged `held:<id>`; null with none or an
- * item that holds nothing. Later sources of a Billie's own rows (its parts) join here
- * @param {{ held?: string } | null | undefined} m @param {Record<string, { hold?: import('../../types/game-data').FxRow[] }>} items
- * @returns {Fx[] | null} */
+/** RL-12c: a Billie's own effect rows: its held item's (items.json `hold`), tagged `held:<id>`, then (SP-2) its
+ * splice's (rules.js billyGeneFx: its traits', tagged `gene:<trait>`, and an Unstable splice's drawback, `unstable`);
+ * null with none @param {{ held?: string, sp?: string, graft?: Record<string, string> } | null | undefined} m
+ * @param {Record<string, { hold?: import('../../types/game-data').FxRow[] }>} items @returns {Fx[] | null} */
 export const fxOfBillie = (m, items) => {
-  const I = m && m.held ? items[m.held] : null;
-  return I && I.hold && I.hold.length ? I.hold.map(f => /** @type {Fx} */ ({ ...f, src: 'held:' + m?.held })) : null;
+  const I = m && m.held ? items[m.held] : null,
+    held = I && I.hold && I.hold.length ? I.hold.map(f => /** @type {Fx} */ ({ ...f, src: 'held:' + m?.held })) : null;
+  if (!m || !m.graft) return held;
+  const gene = /** @type {Fx[]} */ (billyGeneFx(m));
+  return held || gene.length ? [...(held || []), ...gene] : null;
 };
 
 /** the product of the multipliers of the rows that pass `test`, smallest first, within FX_LIMIT (1 when none)
@@ -198,6 +203,14 @@ export const fxTurnHeal = fx =>
   Math.min(
     1,
     (fx || []).reduce((a, f) => a + (f.kind === 'turnHeal' ? f.share : 0), 0)
+  );
+
+/** SP-2: the share of its HP a Billie loses at each turn's end (an Unstable splice's drawback), at most a half
+ * @param {Fx[] | null | undefined} fx */
+export const fxTurnHurt = fx =>
+  Math.min(
+    0.5,
+    (fx || []).reduce((a, f) => a + (f.kind === 'turnHurt' ? f.share : 0), 0)
   );
 
 /** RL-12c: a holder's once-a-battle heal when low: the first pinchHeal row, or null

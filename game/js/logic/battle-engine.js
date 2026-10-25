@@ -67,7 +67,7 @@ import {
   stat,
   xpFor,
 } from './rules.js';
-import { fxCatch, fxDamage, fxOfBillie, fxPinchHeal, fxStages, fxTurnHeal, fxXp } from './effects.js';
+import { fxCatch, fxDamage, fxOfBillie, fxPinchHeal, fxStages, fxTurnHeal, fxTurnHurt, fxXp } from './effects.js';
 import { makeBattle, newFieldState } from './battle-state.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -721,6 +721,13 @@ export function endTurn() {
         sd.ate = [...ate, f.act];
         m.hp += g;
         battleSay(`${billyName(m)} ate its ${name} and restored HP.`, { k: 'heal', si: k, amt: g });
+      }
+      /* SP-2: an Unstable splice's drawback: a share of its HP at each turn's end */
+      const hurt = fxTurnHurt(hx);
+      if (hurt > 0 && m.hp > 0) {
+        const d = Math.min(m.hp, Math.max(1, Math.floor(mx * hurt)));
+        m.hp -= d;
+        battleSay(`${billyName(m)}’s unstable cells hurt it.`, { k: 'hurt', si: k, dmg: d });
       }
     }
     f.v.turnsIn++;

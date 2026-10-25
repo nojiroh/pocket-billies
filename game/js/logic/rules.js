@@ -59,7 +59,7 @@ import {
 import { rngFn } from './rng.js';
 import { wildOddsBy } from './weather.js';
 import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
-import { graftFit, graftRel, graftTypes } from './genes.js';
+import { graftFit, graftRel, graftTraits, graftTypes, graftUnstable } from './genes.js';
 import {
   ROBOT_LIMBS,
   ROBOT_SLOTS,
@@ -89,11 +89,15 @@ expose({
   // @ts-expect-error -- replaced on purpose
   autoSlot: [() => autoSlot, v => (autoSlot = v)],
   billyBuild: [() => billyBuild],
+  // @ts-expect-error -- replaced on purpose
+  billyGeneFx: [() => billyGeneFx, v => ((billyGeneFx = v), provide({ billyGeneFx }))],
   billyGraft: [() => billyGraft],
   billyName: [() => billyName],
   billyPrime: [() => billyPrime],
   billyRel: [() => billyRel],
   billyTypes: [() => billyTypes],
+  // @ts-expect-error -- replaced on purpose
+  billyUnstable: [() => billyUnstable, v => (billyUnstable = v)],
   billyWeight: [() => billyWeight],
   // @ts-expect-error -- replaced on purpose
   blockerAt: [() => blockerAt, v => (blockerAt = v)],
@@ -220,7 +224,7 @@ expose({
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
-provide({ addWalked, makeBilly, makeRobot, riderOf });
+provide({ addWalked, billyGeneFx, makeBilly, makeRobot, riderOf });
 export function setSetTrip(v) {
   // @ts-expect-error -- replaced on purpose
   setTrip = v; // eslint-disable-line no-func-assign
@@ -339,6 +343,23 @@ export const billyRel = m => (m && billyGraft(m) ? graftRel(geneData(), m.sp, m.
 /** SP-2: a Billie's types: its species', the second replaced by its heaviest dominant Gene's (logic/genes.js
  * graftTypes); a robot's or an unspliced Billie's are its species' own @param {any} m @returns {string[]} */
 export const billyTypes = m => (billyGraft(m) ? graftTypes(geneData(), m.sp, m.graft, m.build) : speciesOf(m).types);
+/** SP-2: an Unstable Billie's raised and lowered stats and the donor its name merges with; null when its splice is
+ * within Stability's limit @param {any} m */
+export function billyUnstable(m) {
+  const g = billyGraft(m);
+  return g ? graftUnstable(geneData(), { sp: m.sp, uid: m.uid, graft: g, build: m.build }, STAT_IDS) : null;
+}
+/** SP-2: a spliced Billie's own effect rows (logic/effects.js fxOfBillie): its traits', tagged gene:<trait>, and an
+ * Unstable splice's drawback, tagged unstable @param {any} m @returns {(import('../../types/game-data').FxRow & { src: string })[]} */
+export function billyGeneFx(m) {
+  const g = billyGraft(m);
+  if (!g) return [];
+  const out = [];
+  for (const t of graftTraits(geneData(), m.sp, g))
+    for (const f of GENES.traits[t].fx) out.push({ ...f, src: 'gene:' + t });
+  if (billyUnstable(m)) for (const f of GENES.unstable.fx) out.push({ ...f, src: 'unstable' });
+  return out;
+}
 /** SP-2: Prime: every part its own and at M @param {any} m */
 export const billyPrime = m => isPrime(billyBuild(m), !!billyGraft(m));
 /** @param {Build} b @param {string} k a stat id @param {Record<string, number> | null} [rel] SP-2 (billyRel)
