@@ -415,12 +415,12 @@ export function stillPropState(p, M, im, sc) {
   return c;
 }
 /* HB-6: a model tipped off the upright (logic/prop-turn.js): one that spans two points (a fence rail between its posts:
-   the catalogue's span) rests on the ground under each end, tipped between them; any other leans by its placement's
+   the catalogue's restEnds) rests on the ground under each end, tipped between them; any other leans by its placement's
    tilt. Pictures don't tip. */
 function propModelTip(p, M, c) {
   c.spin = null;
   if (!M.model) return;
-  if (M.span && M.box) {
+  if (M.restEnds && M.box) {
     const L = M.box[0] * (p.s || 1),
       a = turnedPoint(p, -L / 2, 0),
       b = turnedPoint(p, L / 2, 0),

@@ -1435,7 +1435,7 @@ export interface PropKind {
   box?: number[];
   /** HB-6: a model that spans its box's width (a fence rail): it rests on the ground under each end, tipped between
    * them (logic/prop-turn.js spanFit) */
-  span?: number;
+  restEnds?: number;
   /** the rest: door, fx, build, layers, glow, vol... read by the renderers and the Studio */
   [key: string]: any;
 }
