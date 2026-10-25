@@ -50,8 +50,9 @@ test('town.quarter 1: every building plot stands on the quarter turn nearest to 
     assert.ok(all.length >= 5, `${all.length} plots`);
     for (const o of all) {
       assert.equal(((o.L.a % 90) + 90) % 90, 0, `${o.L.k} at ${o.L.a}`);
-      /* the pivot is the summit spot, the dials turn from the peak's middle a few metres away: a few degrees apart */
-      assert.ok(Math.abs(o.off) <= 50, `${o.L.k} at ${o.L.x}, ${o.L.z}: ${o.off}`);
+      /* the pivot is the summit spot, a few metres from the peak the dials turn from: plots keep clear of the
+         diagonals by as much (HB-4b), so the quarter turn holds from the summit spot too */
+      assert.ok(Math.abs(o.off) <= 45, `${o.L.k} at ${o.L.x}, ${o.L.z}: ${o.off}`);
     }
     /* no two plots' rectangles overlap */
     const corners = L => {
@@ -217,5 +218,13 @@ test("town.scale: a house plot is never smaller than a cottage's footprint (3.4 
       houses = scene.plots.filter(L => L.k === 'house');
     assert.ok(houses.length >= 5);
     for (const L of houses) assert.ok(L.w >= 3.8 - 1e-9 && L.d >= 2.8 - 1e-9, `${L.w} x ${L.d}`);
+  }
+});
+
+test('town.quarter: within 45 degrees of facing out from the summit spot itself (cam.orbit.c), on other seeds too', () => {
+  for (const seed of [hub.seed, 'another', 's1']) {
+    const { scene } = islandGenerate(withTown({ face: 'out', tol: 90, quarter: 1, houses: 16, scale: 0.7 }), seed, ctx);
+    for (const o of offOut(scene))
+      assert.ok(Math.abs(o.off) <= 45, `${seed}: ${o.L.k} at ${o.L.x}, ${o.L.z}: ${o.off}`);
   }
 });

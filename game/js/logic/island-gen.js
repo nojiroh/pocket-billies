@@ -1798,6 +1798,16 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       D.town.tol;
   /* HB-4a: the quarter turn nearest to facing out from the pivot (town.quarter), in radians */
   const quarterOut = (x, z) => Math.round(Math.atan2(z - peakP[1], x - peakP[0]) / (Math.PI / 2)) * (Math.PI / 2);
+  /* HB-4b: the orbit's pivot is the summit spot, which the trail finds within 5 m of the peak later on: a quarter-turned
+     plot keeps clear of the diagonals by as much as 5 m turns it seen from here, so its quarter turn is the one nearest
+     facing out from the summit spot too (cam.orbit.c; the hub's door check) */
+  const quarterHolds = (x, z) => {
+    const d = Math.hypot(x - peakP[0], z - peakP[1]),
+      t = Math.atan2(z - peakP[1], x - peakP[0]),
+      fromDiag = Math.abs(t - quarterOut(x, z)),
+      margin = d > 5.5 ? Math.asin(5.5 / d) : Math.PI;
+    return Math.PI / 4 - fromDiag > margin;
+  };
   const addPlot = (k, x, z, pw, pd, a, front, where) => {
     /* HB-4b: a house plot never smaller than a cottage (3.4 x 2.4 m) with 0.2 m round (town.scale's smaller plots) */
     if (k === 'house') [pw, pd] = [Math.max(pw, 3.8), Math.max(pd, 2.8)];
@@ -1810,7 +1820,7 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         const qx = x + (bx / bl) * m,
           qz = z + (bz / bl) * m,
           qa = quarterOut(qx, qz);
-        if (plotFits(qx, qz, pw, pd, qa)) {
+        if (quarterHolds(qx, qz) && plotFits(qx, qz, pw, pd, qa)) {
           plots.push({ k, x: qx, z: qz, w: pw, d: pd, a: qa, y: cornerAt(front[0], front[1]), at: where });
           return true;
         }
