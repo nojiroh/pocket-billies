@@ -17,6 +17,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
+import { waterKindHeals, waterKindShut, waterKindWalkOn } from './water-kinds.js';
 import {
   MAPGEN_INWARD,
   MAPGEN_STRAIGHT_IN,
@@ -52,6 +53,7 @@ expose({
   WATERGEN_SET_CHANCE: [() => WATERGEN_SET_CHANCE],
   WATERGEN_SET_CHANCE_CAVE: [() => WATERGEN_SET_CHANCE_CAVE],
   WATERGEN_SET_PIECE: [() => WATERGEN_SET_PIECE],
+  WATERGEN_SHALLOW_PROP: [() => WATERGEN_SHALLOW_PROP],
   WATERGEN_SPRING_CHANCE: [() => WATERGEN_SPRING_CHANCE],
   WATERGEN_SPRING_R: [() => WATERGEN_SPRING_R],
   WATERGEN_STEP: [() => WATERGEN_STEP],
@@ -91,6 +93,8 @@ expose({
   waterGenHeightAt: [() => waterGenHeightAt, v => (waterGenHeightAt = v)],
   // @ts-expect-error -- replaced on purpose
   waterGenHotSpring: [() => waterGenHotSpring, v => (waterGenHotSpring = v)],
+  // @ts-expect-error -- replaced on purpose
+  waterGenKindAt: [() => waterGenKindAt, v => (waterGenKindAt = v)],
   // @ts-expect-error -- replaced on purpose
   waterGenKinds: [() => waterGenKinds, v => ((waterGenKinds = v), provide({ waterGenKinds }))],
   // @ts-expect-error -- replaced on purpose
@@ -132,6 +136,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   waterGenSetPieceSpots: [() => waterGenSetPieceSpots, v => (waterGenSetPieceSpots = v)],
   // @ts-expect-error -- replaced on purpose
+  waterGenShallows: [() => waterGenShallows, v => ((waterGenShallows = v), provide({ waterGenShallows }))],
+  // @ts-expect-error -- replaced on purpose
   waterGenShape: [() => waterGenShape, v => (waterGenShape = v)],
   // @ts-expect-error -- replaced on purpose
   waterGenShorten: [() => waterGenShorten, v => (waterGenShorten = v)],
@@ -147,7 +153,15 @@ expose({
   waterGenTry: [() => waterGenTry, v => (waterGenTry = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ waterGenCarve, waterGenClimbs, waterGenFalls, waterGenKinds, waterGenReeds, waterGenRiver });
+provide({
+  waterGenCarve,
+  waterGenClimbs,
+  waterGenFalls,
+  waterGenKinds,
+  waterGenReeds,
+  waterGenRiver,
+  waterGenShallows,
+});
 /* to-module: end */
 /** metres a river runs straight across a side before it turns, so a seam is crossed head on */
 export const WATERGEN_STRAIGHT = 8;
@@ -1797,4 +1811,28 @@ export function waterGenReeds(G, sc) {
         break;
       }
   }
+}
+
+/* ---------- WA-5a: shallows for others (WA-6a's ask, the owner: a later lane G session) ----------
+   Rocks and people may stand in shallows you wade (`w` of a kind waded: not lava, rapids, ice or a hot spring), never in
+   deep water; the map generator's reach check keeps all water dry as before, so nothing here opens or shuts a way. */
+/** the props that may stand in shallows: boulders, rocks and flat stones (not a molehill, roots or lava rock) */
+export const WATERGEN_SHALLOW_PROP = /^(boulder|rock|stones)/;
+provide({ WATERGEN_SHALLOW_PROP }); /* to-module */
+/** the water kind of cell q (the last of G.waters holding its middle, else the scene's) */
+export function waterGenKindAt(G, q) {
+  const x = (q % G.w) + 0.5,
+    z = Math.floor(q / G.w) + 0.5;
+  for (let i = G.waters.length - 1; i >= 0; i--) {
+    const r = G.waters[i];
+    if (x >= r.x && z >= r.z && x < r.x + r.w && z < r.z + r.h) return r.k || G.waterKind || 'pond';
+  }
+  return G.waterKind || 'pond';
+}
+/** may someone or something stand in cell q's water: shallows of a kind you wade that does nothing else (not a hot
+ * spring, whose pool stays clear to step into) */
+export function waterGenShallows(G, q) {
+  if (G.T[q] !== 'w' || G.F[q] & (8 | 128)) return false;
+  const k = waterGenKindAt(G, q);
+  return !waterKindShut(k) && !waterKindWalkOn(k) && !waterKindHeals(k);
 }

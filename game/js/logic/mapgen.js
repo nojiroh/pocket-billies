@@ -16,7 +16,16 @@
 /** @import { Biome } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { waterGenCarve, waterGenClimbs, waterGenFalls, waterGenKinds, waterGenReeds, waterGenRiver } from '../hooks.js';
+import {
+  WATERGEN_SHALLOW_PROP,
+  waterGenCarve,
+  waterGenClimbs,
+  waterGenFalls,
+  waterGenKinds,
+  waterGenReeds,
+  waterGenRiver,
+  waterGenShallows,
+} from '../hooks.js';
 import { hashString, rngFrom } from './rng.js';
 import { pointInProp, turnedBounds, turnedPoint } from './prop-turn.js';
 /* eslint-disable no-func-assign */
@@ -719,8 +728,9 @@ export function mapgenPutProp(G, k, x0, z0, o = {}) {
   if (x < 0.5 || z < 0.5 || x > G.w - 0.5 || z > G.h - 0.5) return null;
   const q = mapgenCellAt(G, x, z),
     ch = G.T[q];
-  /* never in water (unless it grows there), on a bridge or a jetty, even when placed by hand (force) */
-  if (G.F[q] & (4 | 8 | 128) && !o.water) return null;
+  /* never in water (unless it grows there), on a bridge or a jetty, even when placed by hand (force); WA-5a: rocks may
+     stand in shallows you wade (logic/water-gen.js waterGenShallows) */
+  if (G.F[q] & (4 | 8 | 128) && !o.water && !(WATERGEN_SHALLOW_PROP.test(k) && waterGenShallows(G, q))) return null;
   if (!o.force) {
     if (G.F[q] & 1) return null;
     if (o.avoid && o.avoid.includes(ch)) return null;
@@ -3936,7 +3946,8 @@ export function mapgenStagePlants(G) {
       mapgenPutProp(G, rnd.pick(pool), x, z, {
         s: rnd.range(0.85, 1.15),
         f: rnd.chance(0.45),
-        avoid: treeAvoid,
+        /* WA-5a: rocks may stand in shallows (mapgenPutProp) */
+        avoid: pool === B.rocks ? MAPGEN_PATH_GROUND : treeAvoid,
         road: 0.9,
       });
     }
@@ -4183,7 +4194,7 @@ export function mapgenStageProps(G) {
     const k = Math.floor(R.length * rnd.range(0.15, 0.85)),
       [x, z] = side(k, (rnd.chance(0.5) ? 1 : -1) * 1.1),
       q = mapgenCellAt(G, x, z);
-    if (!(G.F[q] & 4) && mapgenOccFree(G, x, z, 0.6)) {
+    if ((!(G.F[q] & 4) || waterGenShallows(G, q)) && mapgenOccFree(G, x, z, 0.6)) {
       G.npcSpots.push([mapgenRound2(x), mapgenRound2(z)]);
       G.keep.push([x, z, 1]);
     }

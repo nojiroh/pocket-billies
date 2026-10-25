@@ -355,3 +355,25 @@ test('WA-5a: the same seed places the same kinds; a town never gets a hot spring
     assert.ok(!(t.waters || []).some(r => r.k === 'hotspring'), `seed ${c.seed}: a town`);
   }
 });
+
+test('WA-5a: shallows for others: rocks and folk stand only in shallows you wade, never deep water or a hot spring', () => {
+  const W = modules['wading'];
+  let rocks = 0;
+  for (const { c, scene: sc } of [...KIND_MADE, ...MADE]) {
+    const where = `seed ${c.seed} ${c.biome}`;
+    for (const p of sc.props) {
+      const ch = tileAt(sc, p.x, p.z);
+      if (!'wd'.includes(ch) || /[wd]/.test(GAME_DATA.scenery.props[p.k].grow || '') || p.k === 'dock_post') continue;
+      assert.equal(ch, 'w', `${where}: ${p.k} at ${p.x},${p.z} not in deep water`);
+      assert.ok(WG.WATERGEN_SHALLOW_PROP.test(p.k), `${where}: ${p.k} is a rock`);
+      const k = W.wadeKindAt(sc, p.x, p.z);
+      assert.ok(W.wadeWalkable(sc, 'w', null, p.x, p.z) && k !== 'hotspring', `${where}: ${p.k} in ${k}`);
+      rocks++;
+    }
+    for (const [x, z] of sc.npcSpots || []) {
+      const ch = tileAt(sc, x, z);
+      if ('wd'.includes(ch)) assert.ok(ch === 'w' && W.wadeHere(sc, x, z), `${where}: a folk spot at ${x},${z}`);
+    }
+  }
+  assert.ok(rocks > 0, 'some rocks stand in shallows');
+});
