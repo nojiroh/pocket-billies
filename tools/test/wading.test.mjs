@@ -22,7 +22,7 @@ const pond = () => ({
 const tile = (sc, x, z) => sc.tiles[sc.h - 1 - Math.floor(z)][Math.floor(x)];
 const walk = (sc, x, z, T = null) => wadeWalkable(sc, tile(sc, x, z), T, x, z);
 
-test('wading: shallows open, deep water, lava and ice shut, land as before', () => {
+test('wading: shallows open, deep water and lava shut, ice walked on, land as before', () => {
   const sc = pond();
   assert.equal(walk(sc, 0.5, 0.5), true, 'grass');
   assert.equal(walk(sc, 1.5, 1.5), true, 'shallows');
@@ -31,7 +31,10 @@ test('wading: shallows open, deep water, lava and ice shut, land as before', () 
   assert.equal(wadeKindAt(sc, 6.5, 2.5), 'lava');
   assert.equal(wadeKindAt(sc, 1.5, 1.5), 'pond', 'no rectangle: the scene kind, pond by default');
   const ice = Object.assign(pond(), { waterKind: 'ice', waters: [] });
-  assert.equal(walk(ice, 1.5, 1.5), false, 'a scene of ice: not waded');
+  assert.equal(walk(ice, 1.5, 1.5), true, 'WA-5a: a scene of ice: walked on top');
+  assert.equal(walk(ice, 2.5, 2.5), true, 'WA-5a: its deep middle too (a frozen pond)');
+  assert.equal(wadeHere(ice, 1.5, 1.5), false, 'on the ice, not wading');
+  assert.equal(wadeDepthAt(ice, 1.5, 1.5), 0, 'standing on top');
   const lake = Object.assign(pond(), { waterKind: 'lake' });
   assert.equal(walk(lake, 1.5, 1.5), true, 'a lake scene: waded');
   assert.equal(wadeHere(sc, 1.5, 1.5), true);
@@ -116,4 +119,19 @@ test('wading: from the bank into the shallows and back out, never stuck (a walk 
     }
   assert.ok(wet === 9 * N * N, `${wet} wading cells`);
   assert.ok(open < gw * gh, 'deep and lava cells stay shut');
+});
+
+test('wading (WA-5a): rapids shut, the marsh and the bog slower, a hot spring waded', () => {
+  const kind = k => Object.assign(pond(), { waters: [{ x: 1, z: 1, w: 4, h: 3, k }] });
+  assert.equal(walk(kind('rapids'), 1.5, 1.5), false, 'rapids: not waded');
+  assert.equal(wadeHere(kind('rapids'), 1.5, 1.5), false);
+  assert.equal(walk(kind('hotspring'), 1.5, 1.5), true, 'a hot spring is waded');
+  assert.equal(walk(kind('bog'), 1.5, 1.5), true, 'the bog is waded');
+  assert.equal(walk(kind('bog'), 2.5, 2.5), false, 'its deep middle is not');
+  const pondSpeed = wadeSpeed(WADE_DEPTH, 'pond'),
+    marsh = wadeSpeed(WADE_DEPTH, 'swamp'),
+    bog = wadeSpeed(WADE_DEPTH, 'bog');
+  assert.equal(pondSpeed, WADE_SLOW, 'a pond as before');
+  assert.ok(marsh < pondSpeed && bog < marsh && bog > 0.2, `pond ${pondSpeed}, marsh ${marsh}, bog ${bog}`);
+  assert.equal(wadeSpeed(0, 'bog'), 1, 'out of the water, no slow');
 });

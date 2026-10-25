@@ -115,6 +115,7 @@ import '../../game/js/logic/unlock-graph.js';
 import '../../game/js/logic/unlocks.js';
 import '../../game/js/logic/wading.js';
 import '../../game/js/logic/water-gen.js';
+import '../../game/js/logic/water-kinds.js';
 import '../../game/js/logic/weather.js';
 import '../../game/js/logic/wild-pool.js';
 export { runPreview } from '../../game/js/logic/run-preview.js';

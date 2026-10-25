@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import Ajv2020 from 'ajv/dist/2020.js';
 import { GAME_DATA, ROOT } from './setup-real.mjs';
+import { WATER_KINDS } from '../../game/js/logic/water-kinds.js';
 import {
   ISLAND_PLOT_KINDS,
   ISLAND_ZONE_KINDS,
@@ -196,12 +197,14 @@ test('a point is inside a polygon or not', () => {
   assert.equal(islandPointIn(L, 8, 2), true);
 });
 
-test("the schema's water kinds are the renderer's", () => {
+test("the schema's water kinds are logic/water-kinds.js's, the renderer's looks in their order", () => {
   const src = readFileSync(join(ROOT, 'game/js/walk/water-data.js'), 'utf8'),
     looks = src.slice(src.indexOf('WATER_KIND_LOOKS = ['), src.indexOf('const WATER_KIND_INDEX')),
     kinds = [...looks.matchAll(/^ {4}k: '(\w+)'/gm)].map(m => m[1]);
   assert.ok(kinds.length >= 9, `found ${kinds.length} kinds`);
-  assert.deepEqual(MAP_SCHEMA.properties.waterKind.enum, kinds);
+  /* WA-5a: six kinds appended before the renderer draws them (WA-5b): its looks are the list's start, in order */
+  assert.deepEqual(MAP_SCHEMA.properties.waterKind.enum, WATER_KINDS);
+  assert.deepEqual(WATER_KINDS.slice(0, kinds.length), kinds);
   assert.deepEqual(MAP_SCHEMA.properties.zones.items.properties.k.enum, ISLAND_ZONE_KINDS);
   assert.deepEqual(MAP_SCHEMA.properties.plots.items.properties.k.enum, ISLAND_PLOT_KINDS);
 });
