@@ -314,7 +314,7 @@ provide({ storyRun }); /* to-module */
 const storySlots = { name: () => lookOf('me').name || 'Trainer' };
 /* RL-S1: the script command `pick <who>`: the story director's line (logic/story-pick.js) on the game's save, marked
    said; in a trainer's script `rematch` reads that trainer's leader or class. Its tree, or null for nothing to say */
-function storyPickTree(who, id) {
+export function storyPickTree(who, id) {
   const k = storyPickId(who, id);
   return k ? storyTree('banter:' + k) : null;
 }
