@@ -19,6 +19,15 @@ TOP, FOOT, RING, SAND, COAST = 3, 27, 48, 51, 52  # radii, metres: flat top, con
 # the town's side is the south (small z: z grows northward), where the camera first looks from
 PROPS = [('signpost', 55.5, 29), ('house_blue', 66, 19), ('bench_wood', 72, 32), ('tree_oak', 40, 40),
          ('tree_oak', 82, 76), ('streetlamp', 48, 32)]
+# water track WA-4: a coast to picture the sea on, away from the town (north and west), its side unchanged: rocks
+# standing in the sea (foam round them), a sandbar off the north-east (sand the high tide covers, the surf breaks on),
+# a reef shelf of shallows off the north-west (turquoise, see-through) and a flat of wet sand on the west with two
+# tide pools in it (sea water the low tide leaves behind)
+SEA_ROCKS = [('boulder_granite', 60, 115.5), ('boulder_basalt', 68.5, 114), ('boulder_granite', 30.3, 107.5)]
+BAR = (59, 61.5, 28, 62)  # radii and angles (degrees) of the sandbar
+REEF = (52, 68, 115, 152)  # the reef shelf: shallows this far out between these angles
+FLAT = (49, 56, 165, 200)  # the flat of wet sand
+POOLS = [(6.6, 61.6, 1.4), (7.4, 56.6, 1.1)]  # the tide pools: x, z, radius (metres)
 
 
 def height(r):
@@ -31,10 +40,27 @@ def height(r):
     return round(max(0.0, 0.5 - 0.35 * (r - RING) / (COAST - RING)), 2) if r <= COAST else 0.0
 
 
-def ground(r):
+def ground(r, a=None, x=None, z=None):
     # WA-6a: shallows are waded, so the sea is deep past a 2 m band of shallows (as Copperleaf's), and "out into the
-    # sea" stays out of reach
+    # sea" stays out of reach. WA-4: `a` the angle round the middle (degrees, 0 east, 90 north) and x, z the point
+    # (metres), for the far side's coast
+    if a is not None:
+        if any(math.hypot(x - px, z - pz) < pr for px, pz, pr in POOLS):
+            return 'w'
+        if FLAT[0] <= r < FLAT[1] and FLAT[2] <= a < FLAT[3] and r >= SAND:
+            return 'S'
+        if BAR[0] <= r < BAR[1] and BAR[2] <= a < BAR[3]:
+            return 'S'
+        # shallows round the bar and off the flat
+        if (BAR[0] - 2 <= r < BAR[1] + 2 and BAR[2] - 4 <= a < BAR[3] + 4) or (FLAT[1] <= r < FLAT[1] + 2 and FLAT[2] <= a < FLAT[3]):
+            return 'w'
+        if COAST <= r < REEF[1] and REEF[2] <= a < REEF[3]:
+            return 'w'
     return 'r' if r < FOOT else 'g' if r < RING else 's' if r < SAND else 'S' if r < COAST else 'w' if r < COAST + 2 else 'd'
+
+
+def angle(x, z):
+    return math.degrees(math.atan2(z - C, x - C)) % 360
 
 
 def ring(r, n, a0=0, a1=360):
@@ -70,14 +96,15 @@ def test_map():
         'shots': [{'x': C, 'z': 30, 'yaw': 0, 'label': 'island-south'}, {'x': C, 'z': C, 'yaw': 0, 'label': 'island-top'}],
         'heights': [[height(rad(x, N - z)) for x in range(N + 1)] for z in range(N + 1)],
         # rows far (north) first, as every map's: symmetric here, but kept right for whoever reuses this
-        'tiles': [''.join(ground(rad(x + 0.5, N - z - 0.5)) for x in range(N)) for z in range(N)],
-        'props': [{'k': k, 'x': x, 'z': z} for k, x, z in PROPS],
+        'tiles': [''.join(ground(rad(x + 0.5, N - z - 0.5), angle(x + 0.5, N - z - 0.5), x + 0.5, N - z - 0.5)
+                          for x in range(N)) for z in range(N)],
+        'props': [{'k': k, 'x': x, 'z': z} for k, x, z in PROPS + SEA_ROCKS],
     }
 
 
 def main():
     D = gamedata.load()
-    missing = sorted({k for k, _, _ in PROPS} - set(D['scenery']['props']))
+    missing = sorted({k for k, _, _ in PROPS + SEA_ROCKS} - set(D['scenery']['props']))
     if missing:
         sys.exit('not in the catalogue: ' + ', '.join(missing))
     D['maps'][ID] = test_map()

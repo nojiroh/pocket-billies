@@ -10,6 +10,7 @@ expose({
   PIXEL_WATER_GLSL: [() => PIXEL_WATER_GLSL],
   RING_AT_GLSL: [() => RING_AT_GLSL],
   ROCK_GLSL: [() => ROCK_GLSL],
+  TIDE_GLSL: [() => TIDE_GLSL],
   WALK_SHADERS: [() => WALK_SHADERS],
 });
 /* to-module: end */
@@ -37,6 +38,12 @@ float pwBand(float v,vec2 c){return pwQ(v,uPixW.y,c);}
 vec3 pwTone(vec3 shal,vec3 deep,float d,vec2 c){return mix(shal,deep,pwBand(d,c));}
 float pwHard(float e0,float e1,float x){return uPixW.x>.5?step((e0+e1)*.5,x):smoothstep(e0,e1,x);}
 `;
+/* water track WA-4: the sea's tide and storm (walk/water-data.js setShoreUniforms): uTide.x the tide (1 high ... -1 low),
+   y the storm (0-1), z whether the shore texture has the tide's lines (green the high water's, blue the low water's;
+   walk/sea-tide.js). tideSF gives the shoreline value with the tide in: the waterline moves between them */
+const TIDE_GLSL = `uniform vec4 uTide;
+float tideSF(vec4 s){return uTide.z>.5?mix(s.r,uTide.x>0.?s.g:s.b,abs(uTide.x)):s.r;}
+`;
 /* water track WA-2a: the scene's nearest waterfalls (walk/water-data.js setFallUniforms: up to 4, nearest you first):
    uFallA (the lip's x, z and the way it falls), uFallB (width, drop, plunge pool's radius, the lip's height). fallReach
    is how far out the sheet lands (as ground-mesh.js placeFalls); fallNear gives, at a point, how wet the rock and
@@ -58,7 +65,7 @@ export const WALK_SHADERS = {
 precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=2) in vec3 aWall;uniform mat4 uVP;uniform vec3 uOrg;out vec3 vW;out vec3 vN;out vec3 vWall;out vec4 vClip;${COMMON_GLSL}
 void main(){vec3 p=aPos+uOrg;p.y+=curveY(p.xz);vW=p;vN=aNrm;vWall=aWall;gl_Position=uVP*vec4(p,1.);vClip=gl_Position;}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec3 vWall;in vec4 vClip;out vec4 o;uniform sampler2D uGround,uFar,uCliff,uGNrm,uWallA;uniform vec4 uGRect;uniform vec3 uFarTint;uniform float uGStr,uGShine,uWallDef;uniform vec3 uWallCol[12];uniform sampler2D uShore;uniform vec3 uShoreR,uBed;uniform vec4 uSea;uniform vec4 uRoom;uniform vec4 uRoomT;uniform float uRoomY;uniform sampler2D uGAO;uniform vec3 uGAOR,uSkyW;uniform float uWet,uRainK,uCausW;uniform sampler2D uRing,uRingN;uniform vec2 uRingC[16];uniform vec4 uRingBox;uniform vec3 uCanvas;uniform vec4 uHole;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}${FALL_GLSL}
+precision highp float;in vec3 vW;in vec3 vN;in vec3 vWall;in vec4 vClip;out vec4 o;uniform sampler2D uGround,uFar,uCliff,uGNrm,uWallA;uniform vec4 uGRect;uniform vec3 uFarTint;uniform float uGStr,uGShine,uWallDef;uniform vec3 uWallCol[12];uniform sampler2D uShore;uniform vec3 uShoreR,uBed;uniform vec4 uSea;uniform vec4 uRoom;uniform vec4 uRoomT;uniform float uRoomY;uniform sampler2D uGAO;uniform vec3 uGAOR,uSkyW;uniform float uWet,uRainK,uCausW;uniform sampler2D uRing,uRingN;uniform vec2 uRingC[16];uniform vec4 uRingBox;uniform vec3 uCanvas;uniform vec4 uHole;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}${FALL_GLSL}${TIDE_GLSL}
 /* v46: the near ring: the 16 m squares round you at full size (4 x 4 of them in one texture, each in the slot its
    position mod 4 gives); the view's whole ground is the small distant picture. 0 = not in the ring */
 ${RING_AT_GLSL}
@@ -100,14 +107,16 @@ void main(){/* phase 08b: a room drawn over the place: the place's ground leaves
  if(g.x>0.&&g.y>0.&&g.x<1.&&g.y<1.){a=texture(uGround,g).rgb;if(rw>0.)a=mix(a,textureGrad(uRing,ruv,rdx,rdy).rgb,rw);/* v24: snow reads white, not grey */{float lm=dot(a,vec3(.3,.59,.11));a*=1.+.3*smoothstep(.74,.9,lm)*clamp(1.-abs(a.r-a.b)*4.,0.,1.);}vec4 gm=texture(uGNrm,g);if(rw>0.)gm=mix(gm,textureGrad(uRingN,ruv,rdx,rdy),rw);n=normalize(n+vec3(gm.r*2.-1.,0.,gm.g*2.-1.)*uGStr*(1.-c));spec=gm.a;
   /* v31: the shore: water tile art becomes a sandy-muddy bed, and a wet rim darkens the bank along the curved edge */
   if(uRoom.w>.5){vec2 rl=roomOwn(vW.xz);float dw=min(min(rl.x-uRoom.x,uRoom.y-rl.x),uRoom.z-rl.y);a*=mix(.7,1.,smoothstep(0.,.75,dw));}
-  if(uShoreR.z>.5){vec2 su=(pwSnap(vW.xz)+.5/pwRes())*uShoreR.xy;if(su.x>0.&&su.y>0.&&su.x<1.&&su.y<1.){float sf=texture(uShore,su).r;
+  if(uShoreR.z>.5){vec2 su=(pwSnap(vW.xz)+.5/pwRes())*uShoreR.xy;if(su.x>0.&&su.y>0.&&su.x<1.&&su.y<1.){vec4 s4=texture(uShore,su);float sf=s4.r,sft=tideSF(s4);
    float blu=smoothstep(.02,.1,a.b-max(a.r,a.g)*.9)*step(.12,sf);vec3 bed=uBed*(.82+.3*lnoise(pwSnap(vW.xz)*3.36))*mix(1.,.7,smoothstep(.55,.9,sf));
    /* v47: pebbles on the bed, one to a cell of an eighth of a metre (most cells), lit on their far side, on the pixel grid */
    {vec2 pq=(floor(vW.xz*32.)+.5)/32.*8.,pc=floor(pq),pf=fract(pq);vec3 ph=fract(sin(vec3(dot(pc,vec2(127.1,311.7)),dot(pc,vec2(269.5,183.3)),dot(pc,vec2(419.2,371.9))))*43758.55);
     vec2 pd=pf-(.3+ph.xy*.4);float pr=.16+ph.z*.17;if(ph.z>.28&&length(pd*vec2(1.,1.25))<pr){bed=mix(bed,vec3(.6,.58,.54)*(.7+.5*ph.x),.55)*(pd.y>pr*.25?1.18:pd.y<-pr*.4?.82:1.);}}a=mix(a,bed,max(blu,smoothstep(.5,.75,sf)*.65));
-   float wet=smoothstep(.2,.46,sf);
+   float wet=smoothstep(.2,.46,max(sf,sft));
+   /* water track WA-4: below the high water's line the sand stays wet, drying as the tide goes out; the bed the low tide leaves is wet and shiny */
+   if(uTide.z>.5){wet=max(wet,smoothstep(.3,.5,s4.g)*(.45+.2*(uTide.x+1.)));}
    /* IS-3: on a sea coast the sand is wet further up, and darkest just above the line as the swash runs up and back (the water shader's lap) */
-   if(uSea.z>.5){float sw=.5+.5*sin(uTime*.00085+dot(pwSnap(vW.xz),vec2(.21,.17)));wet=max(wet,smoothstep(.02,.3,sf)*.7);wet=max(wet,smoothstep(.4-.16*sw,.47,sf));}/* water track WA-1: the wet rim in a few tones on the pixel grid */wet=pwQ(wet,3.,pwCell(vW.xz));a*=1.-.26*wet;a=mix(a,a*vec3(.9,.95,1.04),wet*.5);spec=max(spec,wet*(1.-smoothstep(.5,.6,sf))*.55);n=normalize(mix(n,vec3(0.,1.,0.),wet*.6));}}}
+   if(uSea.z>.5){float sw=.5+.5*sin(uTime*.00085+dot(pwSnap(vW.xz),vec2(.21,.17)));wet=max(wet,smoothstep(.02,.3,sft)*.7);wet=max(wet,smoothstep(.4-.16*sw,.47,sft));}/* water track WA-1: the wet rim in a few tones on the pixel grid */wet=pwQ(wet,3.,pwCell(vW.xz));a*=1.-.26*wet;a=mix(a,a*vec3(.9,.95,1.04),wet*.5);spec=max(spec,wet*(1.-smoothstep(.5,.6,sft))*.55);n=normalize(mix(n,vec3(0.,1.,0.),wet*.6));}}}
  else a=texture(uFar,vW.xz).rgb*uFarTint*(.82+.36*lnoise(vW.xz*.11))*(.9+.2*lnoise(vW.xz*.37+7.));
  /* v32: after rain the ground is darker and a little shiny, with puddles on level paths and paving that mirror the sky */
  float pud=0.;if(uWet>0.&&g.x>0.&&g.y>0.&&g.x<1.&&g.y<1.){float grs=smoothstep(.015,.07,a.g-max(a.r,a.b));a*=1.-uWet*(.2-grs*.08);spec=max(spec,uWet*(1.-grs)*.45);
@@ -219,7 +228,7 @@ precision highp float;in vec3 aPos;in float aShore;layout(location=2) in vec2 aF
 void main(){vec3 p=aPos;p.y+=curveY(p.xz);vW=p;vS=aShore;vF=aFlow;vDK=aDK;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
 precision highp float;in vec3 vW;in float vS;in vec2 vF;in vec2 vDK;out vec4 o;uniform sampler2D uRefl;uniform vec2 uRes;uniform vec3 uDeep,uShallow,uSkyR;uniform float uReflK,uRip,uFoam,uGlint,uLevel,uCaus,uClar;
-uniform vec3 uKD[9],uKS[9];uniform vec4 uKA[9],uKB[9];uniform vec4 uFish[4];uniform vec4 uRings[8];uniform sampler2D uShore;uniform vec3 uShoreR;uniform vec4 uHole;uniform vec4 uSea;uniform sampler2D uFlowTex;uniform vec3 uFlowR;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}${FALL_GLSL}
+uniform vec3 uKD[9],uKS[9];uniform vec4 uKA[9],uKB[9];uniform vec4 uFish[4];uniform vec4 uRings[8];uniform sampler2D uShore;uniform vec3 uShoreR;uniform vec4 uHole;uniform vec4 uSea;uniform sampler2D uFlowTex;uniform vec3 uFlowR;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}${FALL_GLSL}${TIDE_GLSL}
 /* sunlight focused by the ripples onto the bed: thin bright lines that wander */
 float caust(vec2 p,float t){vec2 q=p+vec2(lnoise(p*.7+t*.21),lnoise(p.yx*.7-t*.17))*1.6;float a=sin(q.x*4.1+t*.9)+sin(q.y*3.7-t*.7)+sin((q.x+q.y)*2.9+t*.5);return pow(clamp(1.-abs(a)*.42,0.,1.),5.);}
 void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y&&vW.z<uHole.w)discard;float t=uTime*.001;int K=int(vDK.y+.5);
@@ -234,9 +243,13 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
  vec4 fm=uFlowR.z>.5?texture(uFlowTex,wq*uFlowR.xy):vec4(vF,0.,0.);vec2 fv=fm.xy;float fph=fract(ts*.5),fbw=abs(1.-2.*fph);bool fl2=pix>.5&&dot(fv,fv)>1e-6;
  vec2 w=wp-fv*(fl2?fph*2.8:ts*1.4),w2=wp-fv*fract(fph+.5)*2.8+vec2(.37,.71);float flowing=clamp(length(fv),0.,1.);float rk=ka.w*uRip;
  /* v31: fill to the curved shoreline, lapping a little in still water */
- float vS2=vS,edge=0.;if(uShoreR.z>.5){vec2 su=(wp+.5/pr)*uShoreR.xy;float sf=(su.x>0.&&su.y>0.&&su.x<1.&&su.y<1.)?texture(uShore,su).r:1.;float lap=(1.-flowing)*.016*sin(t*1.2+dot(wp,vec2(2.3,1.7)))+seaK*.07*sin(t*.85+dot(wp,vec2(.21,.17)));if(sf<.5+lap)discard;vS2=max(vS,1.-smoothstep(.5,.68,sf-lap));
+ float vS2=vS,edge=0.;if(uShoreR.z>.5){vec2 su=(wp+.5/pr)*uShoreR.xy;vec4 s4=(su.x>0.&&su.y>0.&&su.x<1.&&su.y<1.)?texture(uShore,su):vec4(1.);float sf=tideSF(s4);float lap=(1.-flowing)*.016*sin(t*1.2+dot(wp,vec2(2.3,1.7)))+seaK*.07*sin(t*.85+dot(wp,vec2(.21,.17)));
+  /* water track WA-4: the shallows the low tide leaves are drawn as wet sand on the water's own surface (the bed under them lies low, between steep banks), darker and shinier near the water */
+  if(sf<.5+lap&&uTide.z>.5&&s4.r>=.5+lap){float wl=smoothstep(.5+lap-.18,.5+lap,sf);vec3 ws=vec3(.5,.41,.29)*(.86+.28*pwQ(lnoise(wp*1.7),3.,pc))*(1.-.18*pwQ(wl,3.,pc));float shs=shadowAt(vW,.002);ws*=ambient(vec3(0.,1.,0.),1.,shs)+uSunCol*max(uSunDir.y,0.)*shs;
+   vec3 vv=normalize(uEye-vW);ws+=mix(uSkyR,ws,.6)*pwQ(wl*.5,3.,pc)*.25*(.3+.7*pow(1.-max(vv.y,0.),2.));o=vec4(fogit(ws,vW),1.);return;}
+  if(sf<.5+lap)discard;vS2=max(vS,1.-smoothstep(.5,.68,sf-lap));
   /* WA-1: the shore's foam, a hard line one texel wide: a texel kept beside one the shoreline cuts away */
-  if(pix>.5&&sf<.8+lap){vec2 e=uShoreR.xy/pr;float m=min(min(texture(uShore,su+vec2(e.x,0.)).r,texture(uShore,su-vec2(e.x,0.)).r),min(texture(uShore,su+vec2(0.,e.y)).r,texture(uShore,su-vec2(0.,e.y)).r));edge=step(m,.5+lap);}}
+  if(pix>.5&&sf<.8+lap){vec2 e=uShoreR.xy/pr;float m=min(min(tideSF(texture(uShore,su+vec2(e.x,0.))),tideSF(texture(uShore,su-vec2(e.x,0.)))),min(tideSF(texture(uShore,su+vec2(0.,e.y))),tideSF(texture(uShore,su-vec2(0.,e.y)))));edge=step(m,.5+lap);}}
  float r1=lnoise(w*2.3+vec2(ts*.6,ts*.4)*rk),r2=lnoise(w*3.7-vec2(ts*.5,ts*.7)*rk);if(fl2){r1=mix(r1,lnoise(w2*2.3+vec2(ts*.6,ts*.4)*rk),fbw);r2=mix(r2,lnoise(w2*3.7-vec2(ts*.5,ts*.7)*rk),fbw);}vec2 rip=(vec2(r1,r2)-.5)*.035*rk;
  /* ripple rings: from ducks, fish and insects */
  float ring=0.;for(int i=0;i<8;i++){vec4 R=uRings[i];if(far>.5)break;if(R.w<=0.)continue;float d=length(wq-R.xy),r=.08+pwStep(R.z)*.55;float band=pix>.5?step(abs(d-r),.6/pr):1.-smoothstep(.0,.06,abs(d-r));ring+=band*R.w*clamp(1.-R.z/2.4,0.,1.)*step(d,r+.1);}
