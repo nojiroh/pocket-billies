@@ -168,6 +168,10 @@ export const ENGINE_DEFAULTS = {
     bed: '#74654A',
     fountains: true,
     wallLight: 1,
+    /* water track WA-1: the pixel look (the 32 texels a metre grid, a kind's tones dithered, stepped animation) */
+    pixel: true,
+    bands: 5,
+    frames: 10,
   },
   /* HB-3: the hub's world map (the floating island): its lagoon and falls, and how much of the island's own detail it
      draws; the phone's fallbacks */
@@ -797,6 +801,28 @@ export const ENGINE_SPEC = [
         2,
         0.05,
         'Sunlight thrown up off the water dances on walls beside it.',
+      ],
+      [
+        'pixel',
+        'Pixel water',
+        'bool',
+        'Water, its shore and waterfalls drawn in pixels like the ground, in a few tones, moving in small steps.',
+      ],
+      [
+        'bands',
+        'Water tones',
+        2,
+        8,
+        1,
+        'How many tones each kind of water has between shallow and deep (pixel water).',
+      ],
+      [
+        'frames',
+        'Water frames a second',
+        0,
+        20,
+        1,
+        'How often ripples, foam and sparkles step (pixel water; 0 moves smoothly).',
       ],
     ],
   ],

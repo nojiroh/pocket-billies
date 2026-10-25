@@ -10,26 +10,33 @@
    gateText).
    At the side area's last place its way out (act 'fieldout') takes you back to the main path's next row, a day as any
    arrival (logic/run-map.js runArrive, one way); RL-R2b: as a moment, the picture dipping to dark with the move's
-   words on it (fieldMoves.json `travel`) and fading in on the main path. */
+   words on it (fieldMoves.json `travel`) and fading in on the main path.
+   WA-6b: the Waterfall climb (fieldMoves.json `waterfall`, logic/surf.js). In the water at the foot of a fall marked
+   `climb: 1`, pushing up it (walk-view.js movePlayer) asks in the talk box as the obstacles do: without every badge
+   it needs (the owner: Water and Steel) or a Billie of its type standing, a line; else "Would you like to use
+   Waterfall?", and a yes climbs it on your mount (walk-view.js startFallClimb) to the water or ground at its top. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, render, toast } from './hooks.js';
-import { FIELD_MOVES, LOCATIONS } from './game-data.js';
+import { FIELD_MOVES, LOCATIONS, gameData } from './game-data.js';
 import { speciesOf } from './logic/fighters.js';
 import { billyName } from './logic/rules.js';
 import { fieldMoveState, fieldMoveText, runSideOpen } from './logic/run-side.js';
+import { climbState, climbText, fallTop } from './logic/surf.js';
 import { runArrive } from './logic/run-map.js';
 import { reducedMotion, saveData, saveNow, uiState } from './game-state.js';
-import { walkView } from './walk-view.js';
+import { playerOpenAt, startFallClimb, walkView } from './walk-view.js';
 import { addRipple } from './walk/water.js';
 import { soundEffect } from './sound.js';
 import { talkBox, talkChoose, talkHide, talkLine } from './talk.js';
 import { runWorldData } from './run-world.js';
 /* eslint-disable no-func-assign */
 expose({
+  FIELD_CLIMB_AGAIN: [() => FIELD_CLIMB_AGAIN],
   FIELD_TRAVEL_MS: [() => FIELD_TRAVEL_MS],
   fieldBackToast: [() => fieldBackToast],
   fieldBadgeLine: [() => fieldBadgeLine, v => ((fieldBadgeLine = v), provide({ fieldBadgeLine }))],
+  fieldClimb: [() => fieldClimb, v => ((fieldClimb = v), provide({ fieldClimb }))],
   fieldMoveBurst: [() => fieldMoveBurst, v => (fieldMoveBurst = v)],
   fieldMoveOpen: [() => fieldMoveOpen, v => (fieldMoveOpen = v)],
   fieldMoveUse: [() => fieldMoveUse, v => (fieldMoveUse = v)],
@@ -40,7 +47,7 @@ expose({
   fieldWayOutTravel: [() => fieldWayOutTravel, v => (fieldWayOutTravel = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ fieldBadgeLine });
+provide({ fieldBadgeLine, fieldClimb });
 /* to-module: end */
 /** the side area of the run you are on, its field move and whether it is open, or null */
 function fieldSideHere() {
@@ -194,10 +201,51 @@ export function fieldWayOutGo(quiet) {
   return true;
 }
 const fieldBackToast = () => toast(`Back on the main path: ${LOCATIONS[saveData.trip.node].name}.`);
+/** WA-6b: how far (m) you move from where a fall last asked before it asks again */
+const FIELD_CLIMB_AGAIN = 1.5;
+/** WA-6b: at a climbable fall's foot, pushing up it (walk-view.js movePlayer): what it says, or the question and the
+ * climb. Asked once each time you come to it @param {any} F the scene's `falls` entry */
+async function fieldClimb(F) {
+  const W = gameData.fieldMoves && gameData.fieldMoves.waterfall,
+    P = walkView.pl;
+  if (!W || !P || P.climb || talkBox.on) return;
+  const A = walkView.climbAsked;
+  if (A && A.F === F && A.id === walkView.id && Math.hypot(P.x - A.x, P.z - A.z) < FIELD_CLIMB_AGAIN) return;
+  walkView.climbAsked = { F, id: walkView.id, x: P.x, z: P.z };
+  const team = fieldTeam(),
+    st = climbState(W, (saveData.meta || {}).badges, team),
+    top = fallTop(F),
+    room = playerOpenAt(top[0], top[1], true);
+  if (typeof debugLog !== 'undefined')
+    debugLog.add('scene', `waterfall at ${F.x},${F.z}: ${room ? st.state : 'no top'}`);
+  if (st.state !== 'ask' || !room) {
+    const line = climbText(W, st.state !== 'ask' ? st.state : 'top');
+    await talkLine('me', line, null);
+    talkHide();
+    return;
+  }
+  const ask = climbText(W, 'ask');
+  await talkLine('me', ask, null);
+  const yes = (await talkChoose([{ text: 'Yes' }, { text: 'No' }])) === 0;
+  if (!yes) return talkHide();
+  const B = team.find(t => t.types.includes(W.type)),
+    used = climbText(W, 'used', B ? billyName(B.m) : ''),
+    said = talkLine('me', used, null);
+  if (typeof soundEffect === 'function') soundEffect('whoosh');
+  startFallClimb(F);
+  await said;
+  talkHide();
+}
 /** a badge kept for good (battle.js endBattle, after a run leader's first win): the sheet's line, and what it opens */
 function fieldBadgeLine(type) {
   const M = Object.values(FIELD_MOVES).find(x => x.type === type);
-  return M
+  const line = M
     ? `You'll keep the ${type} Badge for good. ${type} Billies can now use ${M.name} outside battle.`
     : `You'll keep the ${type} Badge for good.`;
+  /* WA-6b: the badge that completes the Waterfall climb's set says so */
+  const W = gameData.fieldMoves && gameData.fieldMoves.waterfall,
+    kept = (saveData.meta || {}).badges || {};
+  return W && (W.badges || []).includes(type) && W.badges.every(t => t === type || kept[t.toLowerCase()])
+    ? `${line} ${W.type} Billies can now climb waterfalls with ${W.name}.`
+    : line;
 }

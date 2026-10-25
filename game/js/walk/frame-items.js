@@ -26,6 +26,7 @@ import {
   worldBillyItem,
 } from '../hooks.js';
 import { turnedPoint } from '../logic/prop-turn.js';
+import { WADE_DEPTH } from '../logic/wading.js';
 import { folkFrames, personBattlePose, personWalkFrames, pickWalkFrame, warmPerson } from '../person-art.js';
 import {
   WALK_FRAME_M,
@@ -42,6 +43,7 @@ import {
   propWithVariant,
   stepLevelAt,
   tallGrassProps,
+  wadeDepthHere,
   walkView,
   walkablePointNear,
 } from '../walk-view.js';
@@ -66,6 +68,7 @@ expose({
   gatherFrameItems: [() => gatherFrameItems, v => setGatherFrameItems(v)],
   personItem: [() => personItem, v => (personItem = v)],
   propBaseHeight: [() => propBaseHeight, v => ((propBaseHeight = v), provide({ propBaseHeight }))],
+  wadeItem: [() => wadeItem, v => (wadeItem = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ propBaseHeight });
@@ -425,6 +428,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
       { shear: reducedMotion ? 0 : P.lean || 0 }
     );
     if (P.yv != null && P.yId === walkView.id) me.y = P.yv;
+    if (!P.hop) wadeItem(me);
     const mt = rideMountItem(P, t);
     if (mt) {
       out.push(mt.it);
@@ -473,6 +477,23 @@ function propBaseHeight(p, M) {
   }
   const g = (M.group || '') + ' ' + p.k;
   return y - (M.sink ?? (/rock|boulder|stone_|pebble|stalag/.test(g) ? 0.07 : 0));
+}
+/* WA-6a: someone in the shallows stands on the bed and is cut at the waterline (walk/draw-common.js setSpriteUniforms
+   leaves off its bottom it.cut rows). The water lies 0.12 m under the bank's ground (walk/heights.js); from the bank you
+   sink smoothly from the ground to WADE_DEPTH under the surface, and the cut starts once your feet are under it. */
+export function wadeItem(it) {
+  const d = typeof wadeDepthHere === 'function' ? wadeDepthHere(it.x, it.z) : 0;
+  if (!(d > 0) || !(it.mpp > 0)) return it;
+  const surf = standingHeightAt(it.x, it.z),
+    base = surf + 0.12 - (0.12 + WADE_DEPTH) * (d / WADE_DEPTH),
+    under = surf - base;
+  it.y = base;
+  if (under > 0) {
+    const c = Math.round(under / it.mpp);
+    it.y = surf - c * it.mpp;
+    it.cut = c + it.h + it.oy;
+  }
+  return it;
 }
 export function personItem(k, im, x, z, C0, extra) {
   const mpp = (C0.person || 1.75) / 1.75 / (im.ppm || 42);

@@ -199,6 +199,10 @@ Sources: [pret/pokeemerald](https://github.com/pret/pokeemerald) (map data, deco
 | TR-11 | Things on the land and puzzles: boulders, fallen trees, ruins, standing stones, fossils and bones (dig minigame, revive at the ranch), wrecks (bot guards, salvage, story clues); currents, quicksand, pressure plates, dark caves; the six landmarks. Rare features wired to the unlock pool. | unit tests, run sim |
 | Later | Rivers flowing downhill (after TR-2); hillside towns (after MG-3). | |
 
+**Moved to the water track (docs/phases/water-track.md, 2026-10-25):** TR-6's waterfalls off terrace edges, TR-10's
+water (waterfalls, rapids, hot springs, oases, marsh and bog, floods) and "Rivers flowing downhill" (Later). TR-6
+keeps vines and cave doors; TR-10 keeps the ground surfaces (mud, cracking ice on land, lava's edge damage).
+
 ## Checked at main 3479f01 (MG-2 session, 2026-10-21)
 - Main had moved on from c2d51d6 and 072f993 (RL-2, RL-3, RL-4 and UI-1 merged). mapgen.js changed only by RL-2's move
   of its random numbers into logic/rng.js; MG-2..MG-5 had not started.

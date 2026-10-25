@@ -74,7 +74,7 @@ export interface GameData {
   /** RL-R1: the run's region themes (logic/run-region.js) */
   regions: RegionsData;
   /** RL-R2: the field moves that open a run's side areas */
-  fieldMoves?: { about?: string; moves: Record<DataId, FieldMove> };
+  fieldMoves?: { about?: string; moves: Record<DataId, FieldMove>; waterfall?: FieldClimb };
   /** RL-13: a run's Expeditions and challenges */
   modifiers?: ModifiersData;
   pools: Record<DataId, Pool>;
@@ -947,7 +947,8 @@ export interface Rules {
     luxuryPyramid: number;
     alpha: number;
   };
-  ride: { minHeight: number; types: TypeId[] };
+  /** WA-6b: minHeight (m) is optional, none by default: any Billie of the types carries you */
+  ride: { minHeight?: number; types: TypeId[] };
   fishing: { biteMin: number; biteMax: number; reactTime: number; reelTime: number };
   /** the legendary encounters, one per map (scene is a map id) */
   legends: { sp: SpeciesId; scene: DataId; lvl: number; title: string; text: string; line: string }[];
@@ -1998,6 +1999,20 @@ export interface FieldMove {
   ask: string;
   used: string;
   out: string;
+}
+/** WA-6b: the Waterfall climb (fieldMoves.json waterfall): a field move used in the walk on a fall marked climb: 1 */
+export interface FieldClimb {
+  name: string;
+  /** the type of the Billie that climbs */
+  type: string;
+  /** the badges it needs, every one kept (meta.badges by type) */
+  badges: string[];
+  look: string;
+  needBadge: string;
+  needType: string;
+  ask: string;
+  used: string;
+  top: string;
 }
 /** RL-R2: rules.json run.side: the chance a run has a detour or an alternate path (never both), a detour's places, an
  * alternate path's rows and the chance it ends at a boss of its own, each move's weight and the lean toward a move of
