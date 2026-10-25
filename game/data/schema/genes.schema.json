@@ -11,7 +11,8 @@
   "maxTraits",
   "stability",
   "unstable",
-  "wild"
+  "wild",
+  "bank"
  ],
  "properties": {
   "about": {
@@ -40,6 +41,11 @@
       "type": "string",
       "pattern": "^[a-z][a-z0-9_]*$",
       "description": "a key of traits"
+     },
+     "field": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "SP-4: a field move (fieldMoves.json) a Billie wearing it can use as if it were of the move's type (the badge is still needed)"
      }
     }
    }
@@ -203,6 +209,11 @@
       "type": "string",
       "minLength": 1,
       "description": "a move of moves.json"
+     },
+     "field": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "SP-4: a field move (fieldMoves.json) a Billie wearing it can use as if it were of the move's type (the badge is still needed)"
      }
     }
    }
@@ -458,6 +469,76 @@
        }
       ]
      }
+    }
+   }
+  },
+  "bank": {
+   "description": "SP-4: the Gene Bank (buildings.json genebank; logic/gene-bank.js): per level its Stability limit and the slots it splices (level 1 first, its limit stability.limit), what a splice costs in DNA (base + perCost x the Gene's Stability cost), and the chance an egg keeps each parent's spliced slot",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "levels",
+    "price",
+    "inherit"
+   ],
+   "properties": {
+    "levels": {
+     "type": "array",
+     "minItems": 1,
+     "maxItems": 9,
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "limit",
+       "slots"
+      ],
+      "properties": {
+       "limit": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 20
+       },
+       "slots": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 3,
+        "uniqueItems": true,
+        "items": {
+         "enum": [
+          "front",
+          "back",
+          "sig"
+         ]
+        }
+       }
+      }
+     }
+    },
+    "price": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "base",
+      "perCost"
+     ],
+     "properties": {
+      "base": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 1000
+      },
+      "perCost": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 1000
+      }
+     }
+    },
+    "inherit": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
     }
    }
   }

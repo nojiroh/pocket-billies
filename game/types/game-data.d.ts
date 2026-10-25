@@ -1805,10 +1805,10 @@ export type FxRow =
 export interface Genes {
   about?: string;
   /** a part kind (partKits.json parts.kind) and the trait it brings */
-  kinds: Record<string, { trait: string; word?: string }>;
+  kinds: Record<string, { trait: string; word?: string; field?: string }>;
   traits: Record<string, GeneTrait>;
   /** per part id: its dominant type (the Billie's second type) and the move it teaches (SP-4) */
-  parts: Record<string, { type?: string; move?: string }>;
+  parts: Record<string, { type?: string; move?: string; field?: string }>;
   /** the most traits a Billie has */
   maxTraits: number;
   /** SP-3: the share of a run place's wild Billies spliced at spawn (a Graft, a Chimera; escaped waits for SP-5's
@@ -1820,10 +1820,18 @@ export interface Genes {
     chimeraParts: [number, number];
     dna: { graft: number; chimera: number };
   };
+  /** SP-4: the Gene Bank: per level its Stability limit and the slots it splices, a splice's DNA price (base + perCost x
+   * the Gene's Stability cost), the chance an egg keeps each parent's spliced slot */
+  bank: GeneBank;
   /** a foreign part's cost (same line, same kit, another kit, an Augment), the limit, how far past it is refused */
   stability: { line: number; kit: number; other: number; augment: number; limit: number; refuse: number };
   /** a splice past the limit: one stat times up, another times down, and the drawback */
   unstable: GeneTrait & { up: number; down: number };
+}
+export interface GeneBank {
+  levels: { limit: number; slots: ('front' | 'back' | 'sig')[] }[];
+  price: { base: number; perCost: number };
+  inherit: number;
 }
 export interface GeneTrait {
   name: string;

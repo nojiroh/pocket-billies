@@ -1,14 +1,14 @@
 {
- "about": "Splicing track SP-2 (docs/phases/splicing-track.md; logic/genes.js). A Gene is a kit part (partKits.json) with the donor it came from (a kitBuilds.json rig: its species, weight and colour): Billy.graft is { slot: \"part@donor\" }. kinds: the trait each part kind (partKits.json parts.kind) brings; traits: what a trait does, as effect rows on the Billie that wears it (logic/effects.js fxOfBillie); parts: a part's dominant type (it becomes the second type) and, from SP-4, the move it teaches; stability: what a foreign part costs and the limit; unstable: a splice past the limit. wild (SP-3): the share of a run place's wild Billies that are a Graft (one foreign part from a Billie of the same place) or a Chimera (chimeraParts of them), escaped (an Augment: unused until SP-5), and the DNA a beaten one pays. A kind's word names its part in text (\"a shark's tail\"). Every trait, number and dominant type is a PLACEHOLDER until the owner sets them (the track's Ask me before).",
+ "about": "Splicing track SP-2 (docs/phases/splicing-track.md; logic/genes.js). A Gene is a kit part (partKits.json) with the donor it came from (a kitBuilds.json rig: its species, weight and colour): Billy.graft is { slot: \"part@donor\" }. kinds: the trait each part kind (partKits.json parts.kind) brings; traits: what a trait does, as effect rows on the Billie that wears it (logic/effects.js fxOfBillie); parts: a part's dominant type (it becomes the second type) and, from SP-4, the move it teaches; stability: what a foreign part costs and the limit; unstable: a splice past the limit. wild (SP-3): the share of a run place's wild Billies that are a Graft (one foreign part from a Billie of the same place) or a Chimera (chimeraParts of them), escaped (an Augment: unused until SP-5), and the DNA a beaten one pays. A kind's word names its part in text (\"a shark's tail\"). bank (SP-4, logic/gene-bank.js): the Gene Bank's levels (buildings.json genebank; each level's Stability limit and the slots it splices), what a splice costs in DNA (base + perCost x the Gene's Stability cost), and the chance an egg keeps each parent's spliced slot. A kind's or part's field is the field move (fieldMoves.json) a Billie wearing it can use, as if it were of that move's type. Every trait, number and dominant type is a PLACEHOLDER until the owner sets them (the track's Ask me before).",
  "kinds": {
   "arm": {"word":"arms","trait":"grip"},
   "wing": {"word":"wings","trait":"airborne"},
-  "frontfin": {"word":"fins","trait":"swimmer"},
+  "frontfin": {"word":"fins","trait":"swimmer","field":"surf"},
   "leg": {"word":"legs","trait":"stride"},
   "foot": {"word":"feet","trait":"stride"},
-  "backfin": {"word":"fins","trait":"swimmer"},
+  "backfin": {"word":"fins","trait":"swimmer","field":"surf"},
   "tail": {"word":"tail","trait":"counterweight"},
-  "tailfin": {"word":"tail","trait":"swimmer"},
+  "tailfin": {"word":"tail","trait":"swimmer","field":"surf"},
   "shell": {"trait":"armored"},
   "horn": {"trait":"gore"},
   "spikes": {"trait":"barbed"},
@@ -105,7 +105,7 @@
   "owl_wing": {"type":"Psychic"},
   "shark_tailfin": {"type":"Water"},
   "reptile_tail": {"type":"Dragon"},
-  "bear_arm": {"type":"Ground"},
+  "bear_arm": {"type":"Ground","field":"smash"},
   "fox_tail": {"type":"Fire"},
   "koi_frontfin": {"type":"Electric"},
   "piranha_backfin": {"type":"Steel"},
@@ -118,6 +118,15 @@
   "escaped": 0.005,
   "chimeraParts": [2,3],
   "dna": {"graft":5,"chimera":12}
+ },
+ "bank": {
+  "levels": [
+   {"limit":3,"slots":["sig"]},
+   {"limit":4,"slots":["sig","front"]},
+   {"limit":5,"slots":["sig","front","back"]}
+  ],
+  "price": {"base":5,"perCost":5},
+  "inherit": 0.5
  },
  "stability": {"line":0,"kit":1,"other":2,"augment":3,"limit":3,"refuse":3},
  "unstable": {

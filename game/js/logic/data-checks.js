@@ -1185,6 +1185,26 @@ export function dataGenes(D, valid = () => true) {
   if (!(S.line <= S.kit && S.kit <= S.other && S.other <= S.augment))
     problem('stability: the costs must rise from line to kit, other and augment');
   if (S.refuse < 1) problem('stability.refuse: at least 1 (a splice past the limit is Unstable before it is refused)');
+  /* SP-4: a field part names a field move; the Gene Bank's levels start at the default limit, never take a slot or
+     a point of limit back, and are as many as buildings.json sells */
+  const fields = (D.fieldMoves && D.fieldMoves.moves) || {};
+  for (const [where, rows] of [
+    ['kinds', G.kinds || {}],
+    ['parts', G.parts || {}],
+  ])
+    for (const [k, R] of Object.entries(rows))
+      if (R.field != null && !fields[R.field])
+        problem(`${where}.${k}.field: no field move "${R.field}" (fieldMoves.json)`);
+  const L = G.bank.levels;
+  if (L[0].limit !== S.limit) problem(`bank.levels[0].limit: ${L[0].limit}, but stability.limit is ${S.limit}`);
+  L.forEach((/** @type {any} */ R, /** @type {number} */ i) => {
+    const was = L[i - 1];
+    if (was && (R.limit < was.limit || was.slots.some((/** @type {string} */ k) => !R.slots.includes(k))))
+      problem(`bank.levels[${i}]: takes back a slot or some of the limit level ${i} had`);
+  });
+  const B = D.buildings && D.buildings.genebank;
+  if (B && B.levels !== L.length)
+    problem(`bank.levels: ${L.length}, but buildings.json genebank.levels is ${B.levels}`);
   return out;
 }
 // RF-2: every catch item (pyramids.json; the ids stay the pyramids' until RF-4) has its icons and the model it is thrown as

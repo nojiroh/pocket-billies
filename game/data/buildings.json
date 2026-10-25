@@ -20,6 +20,12 @@
   "levels": 3,
   "about": "The barn by the farm patch. Each level trains more Billies, higher."
  },
+ "genebank": {
+  "name": "Gene Bank",
+  "currency": "dna",
+  "levels": 3,
+  "about": "A vault of Genes. Sequence a Billie's parts into the library, then splice them on for DNA. Each level splices more slots, more steadily."
+ },
  "workshop": {
   "name": "Workshop",
   "currency": "scrap",
