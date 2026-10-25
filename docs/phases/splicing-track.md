@@ -85,6 +85,17 @@ on-hit, immunity, crit or foe-debuff kind. Abominations have no drawback passive
 have no move; `upgradePart` is a function, the rules are `upgradeStat` and `maxUpgrade`. `regions.json dex` is a size
 range, not a species list. Moves have no "family".
 
+**Corrections found by SP-3 (2026-10-25, on SP-2's branch):** Scrap isn't banked when it drops: it is paid at a run's
+end (`run-state.js payoutOf`: per place cleared and a win); no currency was banked mid-run before DNA (`meta` isn't in
+`RUN_FIELDS`, so a mid-run deposit survives a lost run). `currencies.schema.json` allowed exactly four. "Tax" isn't
+the catch word any more ("Catch it", pyramids), and catching happens during the battle: a win means the foe fainted,
+so "Tax or Sample after a win" became catch (keeps its parts) or knock out (samples them). There are no Bureau nodes
+(nodeTypes has none; the Bureau is a trainer and two event texts), and Escaped specimens need SP-5's Augments.
+Species come from `pools.json` (a place's `pool`), cut to the region's dex by `wildPoolList`. Fishing doesn't go
+through `spawn` (no fished splices). A run place's stock comes from one seeded stream: a roll inside `spawn` would
+change every later Billie of the place, so splices roll from a stream of their own. The run-start snapshots hold no
+wild stock (unchanged).
+
 ## Sessions
 
 Each session: one cause per commit, lint, type-check and unit tests after each change, the smoke subset, the quick
@@ -114,7 +125,13 @@ part an optional move and dominant type). Optional `graft` (slot -> Gene id) and
 RL-12c has not landed), the dominant type, Stability and Unstable. Unit tests, and the balance sim against Prime
 (the result sets Prime's bonus with the owner). Depends on RL-12c's effect path, or builds it.
 
-**SP-3 Wild splices.** Graft, Chimera and Escaped-specimen rolls in `spawn` from the biome pool and the regional dex;
+**SP-3 Wild splices.** Built 2026-10-25 on `claude/sp-3-wild-splices`, on top of SP-2's branch (HANDOFF): genes.json
+`wild` (Graft 12 %, Chimera 2.5 %, DNA 5 / 12, all placeholders; `escaped` unused until SP-5), `genes.js wildSplice`
+and `geneWords`, run places' stocks spliced from a `splice|visit` stream (Unstable rolled there too), the battle's
+opening line, DNA (the fifth currency, banked at the win), `meta.genes` (Gene ids sampled), the Gene Sample sheet, the
+run sim's counts, the debug buttons and the full test's step. Tax = the existing catch (no new choice). Waiting on
+the owner: the odds, DNA's amounts.
+ Graft, Chimera and Escaped-specimen rolls in `spawn` from the biome pool and the regional dex;
 the battle intro line ("This Swiftlet has a shark's tail!"); Tax or Sample after a win; DNA in `currencies.json`
 (banked when it drops, like Scrap); Gene Samples. The run sim learns the odds. Could break: wild battles, the run sim's
 numbers, the run-start snapshots.
@@ -127,7 +144,8 @@ Parts section gets the Gene fields and a splice preview. The in-game full test g
 in battle).
 
 **SP-5 Augments.** After RL-14's salvage: the Workshop built, fitting arms and legs on Billies for Scrap, breaking in
-battle and repair in towns, upgrades, the Augment art on the Billie's sockets, Escaped specimens wearing them.
+battle and repair in towns, upgrades, the Augment art on the Billie's sockets, Escaped specimens wearing them
+(genes.json `wild.escaped` is in the data since SP-3, unused; "more near the Bureau" needs a Bureau tag on places).
 Depends on RL-14.
 
 **SP-6 Run events.** The splice events in `events.json` (back-alley splicer, Bureau field lab, Gene auction, recall)
@@ -140,6 +158,8 @@ Seedling line, custom species in ghost teams and daily seeds (with RL-15; names 
 - SP-1's exit: runtime baking or the offline fallback, from the measured numbers.
 - Prime's bonus after SP-2's sim.
 - The trait list and numbers, the dominant Genes, the DNA prices and the Gene Bank's levels (all placeholders).
+- SP-3: the wild splice odds (Graft 12 %, Chimera 2.5 %), the DNA a Graft and a Chimera pay (5, 12), and whether DNA
+  has other sources; Tax as the existing catch.
 - The Gene Bank's look and where it stands in Copperleaf.
 - The Seedling line's names and art.
 

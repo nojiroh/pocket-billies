@@ -17,6 +17,12 @@ kept aside in the browser).
   **Unstable**: a merged name, one stat up and one down (rolled once, kept until it's stable again), and it loses
   a little HP each turn. A spliced Billie is never
   Prime. Splices survive evolving. **Prime** (every part its own and Normal sized) now gives +5% instead of +10%.
+- **Wild splices** (splicing track SP-3; odds and amounts are placeholders): on a run, about one wild Billie in eight
+  wears a part from another Billie of the same place (a **Graft**), and now and then one wears two or three (a
+  **Chimera**, often Unstable). The battle says so as it opens ("This Swiftlet has an eagle's wings!"). Catch one and
+  it keeps its parts; knock it out and you take a **Gene Sample** of what it wore and some **DNA**, a new currency
+  banked at once (kept even if the run is lost). Copperleaf's Gene Bank, coming later, will splice your samples into
+  your own Billies.
 - **Held items** (roguelite track RL-12c): every Billie has one held-item slot. Eight to start with: Leftover
   Sandwich (heals a little each turn), Snack Pack (a quarter of its HP once a battle, when low), Lucky Coin (wins pay
   25% more), Study Notes (50% more XP), Iron Vest (15% less damage taken), Quick Laces (Speed up as it comes in), Brass
