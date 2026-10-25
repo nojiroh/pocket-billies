@@ -225,7 +225,13 @@ void main(){vec4 a=uIVP*vec4(vP,-1.,1.),b=uIVP*vec4(vP,1.,1.);vec3 d=normalize(b
   water: [
     `#version 300 es
 precision highp float;in vec3 aPos;in float aShore;layout(location=2) in vec2 aFlow;layout(location=3) in vec2 aDK;uniform mat4 uVP;out vec3 vW;out float vS;out vec2 vF;out vec2 vDK;${COMMON_GLSL}
-void main(){vec3 p=aPos;p.y+=curveY(p.xz);vW=p;vS=aShore;vF=aFlow;vDK=aDK;gl_Position=uVP*vec4(p,1.);}`,
+uniform vec4 uSea,uTide;uniform vec3 uPixW,uShoreR;
+void main(){vec3 p=aPos;
+ /* water track WA-4: a storm heaves the open sea with its swell (the swell's own bands rolling in, uTide.w its clock), out where it is deep, fading past the
+    scene's edge so the skirt's widening rings never show it; it only lifts (dipping, the ground at the scene's border showed through) */
+ if(uTide.y>.01&&uSea.z>.5&&uPixW.x>.5&&int(aDK.y+.5)==6){vec2 r=p.xz-uSea.xy,sz=1./max(uShoreR.xy,vec2(1e-4));float ou=max(max(-p.x,p.x-sz.x),max(-p.z,p.z-sz.y));
+  p.y+=(.5+.5*sin(length(r)*.55+uTide.w*1.3))*.2*uTide.y*smoothstep(.45,.9,aDK.x)*(1.-smoothstep(4.,14.,ou));}
+ p.y+=curveY(p.xz);vW=p;vS=aShore;vF=aFlow;vDK=aDK;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
 precision highp float;in vec3 vW;in float vS;in vec2 vF;in vec2 vDK;out vec4 o;uniform sampler2D uRefl;uniform vec2 uRes;uniform vec3 uDeep,uShallow,uSkyR;uniform float uReflK,uRip,uFoam,uGlint,uLevel,uCaus,uClar;
 uniform vec3 uKD[9],uKS[9];uniform vec4 uKA[9],uKB[9];uniform vec4 uFish[4];uniform vec4 uRings[8];uniform sampler2D uShore;uniform vec3 uShoreR;uniform vec4 uHole;uniform vec4 uSea;uniform sampler2D uFlowTex;uniform vec3 uFlowR;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}${FALL_GLSL}${TIDE_GLSL}
@@ -292,10 +298,12 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
  if(kb.z>0.){vec2 dw=wp+vec2(sin(ts*.05),cos(ts*.04))*.4;float pch=pwHard(.55,.75,lnoise(dw*.7)+(1.-dep)*.3);float speck=step(.45,fract(sin(dot(floor(dw*pr),vec2(12.9898,78.233)))*43758.5));
   float wd=pch*speck*kb.z;c=mix(c,mix(vec3(.36,.5,.16),vec3(.55,.66,.24),speck*fract(dw.x*3.1))*(.55+.45*sh)*(.6+.4*uAmbK),clamp(wd,0.,1.));}
  /* v47: whitecaps on the open sea: small crests that come and go, only out where it is deep */
- if(K==6){vec2 q=uSea.z>.5?vec2(dot(w,vec2(-rd.y,rd.x)),dot(w,rd))*vec2(2.1,4.6)+vec2(ts*.05,ts*.24):w*vec2(2.1,4.6)+vec2(ts*.21,ts*.09);float wc=lnoise(q)*lnoise(q*1.9+vec2(5.2,1.3)-vec2(ts*.17,0.));wc=pwHard(.46,.52,wc)*pwQ(smoothstep(.45,.85,depC),3.,pc)*uFoam*(uSea.z>.5?1.-calm*.85:1.);c=mix(c,vec3(.95,.98,1.)*(.75+.25*sh),clamp(wc*.65,0.,.65));}
+ if(K==6){vec2 q=uSea.z>.5?vec2(dot(w,vec2(-rd.y,rd.x)),dot(w,rd))*vec2(2.1,4.6)+vec2(ts*.05,ts*.24):w*vec2(2.1,4.6)+vec2(ts*.21,ts*.09);float wc=lnoise(q)*lnoise(q*1.9+vec2(5.2,1.3)-vec2(ts*.17,0.));float sk=pix>.5?uTide.y:0.;wc=pwHard(.46-.1*sk,.52-.1*sk,wc)*pwQ(smoothstep(.45-.2*sk,.85-.25*sk,depC),3.,pc)*uFoam*(1.+sk)*(uSea.z>.5?1.-calm*.85:1.);c=mix(c,vec3(.95,.98,1.)*(.75+.25*sh),clamp(wc*.65,0.,.65+.2*sk));
+  /* water track WA-4: a storm's sea is darker and greyer */
+  c=mix(c,dot(c,vec3(.3,.59,.11))*vec3(.62,.68,.72),.35*sk)*(1.-.25*sk*(1.-calm));}
  /* IS-3: the swell, long low bands rolling in toward the island, and the surf: lines of foam that roll in over the
     shallows and break along the whole coast, broken up along it; a cove gets little of either */
- if(seaK>0.){float rr=dot(vW.xz-uSea.xy,rd);c*=1.+sin(rr*.55+t*1.3+lnoise(wp*.05)*3.)*.045*seaK*smoothstep(.1,.6,dep);
+ if(seaK>0.){float rr=dot(vW.xz-uSea.xy,rd);c*=1.+sin(rr*.55+t*1.3+lnoise(wp*.05)*3.)*.045*(1.+(pix>.5?2.5*uTide.y:0.))*seaK*smoothstep(.1,.6,dep);
   float sv;if(pix>.5){
    /* water track WA-4: the surf in hard stepped bands: each wave a white crest on its shore side with a broken lace trailing out to sea, rolling in
       (the phase falls with the depth), the crest thickening as the water shallows and breaking into white water at the edge; a storm sends more, wider ones */
