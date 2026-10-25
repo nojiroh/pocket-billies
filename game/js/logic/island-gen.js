@@ -164,7 +164,7 @@ export const ISLAND_GEN_DEFAULTS = {
      a line round the pivot through the square, span degrees long, its middle turned at degrees round the pivot from
      the square, so the street runs round the mountain), on its side toward the pivot ('in') or away from it ('out';
      on the main street 'out' is away from the river), joined to that street at both ends; houses line it as they
-     line the others */
+     line the others. scale (HB-4a): the house plots' size, times (0.6-1.2; smaller makes a denser town) */
   town: {
     on: 1,
     houses: 7,
@@ -173,6 +173,7 @@ export const ISLAND_GEN_DEFAULTS = {
     tol: 50,
     quarter: 0,
     second: { on: 0, along: 'quay', side: 'in', off: 15, span: 70, at: 0 },
+    scale: 1,
   },
   /* a hamlet: a few houses round a green under the mountains, joined to the coast road (off since the look pass: the
      owner, a smaller island) */
@@ -314,6 +315,7 @@ export function islandGenDials(d) {
   if (D.town.face !== 'out') D.town.face = 'street';
   D.town.tol = num(D.town.tol, 10, 90, 50);
   D.town.quarter = D.town.quarter ? 1 : 0;
+  D.town.scale = num(D.town.scale, 0.6, 1.2, 1);
   if (!D.town.second || typeof D.town.second !== 'object') D.town.second = { on: 0 };
   D.town.second.on = D.town.second.on ? 1 : 0;
   if (!['quay', 'cross', 'main', 'arc'].includes(D.town.second.along)) D.town.second.along = 'quay';
@@ -1901,6 +1903,8 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     if (!plotsAlong(townSt('town main street'), 3.6, [sideBank], 'home', [8, 8, 7, 7], 1, 'town'))
       townStreets.some(r => plotsAlong(r.pts, r.width, [1, -1], 'home', [7, 8, 6, 7], 1, 'town')) ||
         plotsAlong(nearSquare(), D.paths.width, [1, -1], 'home', [7, 8, 6, 7], 1, 'town');
+    /* HB-4a: house plots town.scale times their size (a denser town of smaller, terraced cottages) */
+    const hs = size => (D.town.scale === 1 ? size : size.map(v => v * D.town.scale));
     let left = D.town.houses;
     for (const [name, wd, sides] of [
       ['town main street', 3.6, [sideBank]],
@@ -1915,19 +1919,19 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         /** @type {number} */ (wd),
         /** @type {number[]} */ (sides),
         'house',
-        [6, 9, 5, 7],
+        hs([6, 9, 5, 7]),
         Math.ceil(left / 2),
         'town'
       );
     if (left > 0)
-      for (const r of townStreets) left -= plotsAlong(r.pts, r.width, [1, -1], 'house', [6, 8, 5, 6], left, 'town');
+      for (const r of townStreets) left -= plotsAlong(r.pts, r.width, [1, -1], 'house', hs([6, 8, 5, 6]), left, 'town');
     /* still short: cottages along any road within 60 m of the square (the coast road through the town included) */
     if (left > 0)
       for (const r of roads) {
         if (left <= 0) break;
         if (r.name === 'hamlet lane') continue;
         const near = r.pts.filter(p => Math.hypot(p[0] - square[0], p[1] - square[1]) < 60);
-        if (near.length > 10) left -= plotsAlong(near, r.width, [1, -1], 'house', [5, 7, 4.5, 5.5], left, 'town');
+        if (near.length > 10) left -= plotsAlong(near, r.width, [1, -1], 'house', hs([5, 7, 4.5, 5.5]), left, 'town');
       }
   }
   if (hamletAt) {

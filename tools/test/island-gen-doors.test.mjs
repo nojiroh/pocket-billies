@@ -1,8 +1,8 @@
 // Hub track HB-4a: the island generator's sketch dials. town.face 'out' keeps a plot only on the street side whose
 // front faces out from the orbit's pivot (the summit) within town.tol degrees, so the orbit camera sees the doors;
 // town.quarter turns every building plot to the quarter turn nearest to facing out; town.second a second built-up
-// street. The defaults leave the hub's island as it is (island-gen.test.mjs checks the game's map is the generator's
-// own output).
+// street; town.scale the house plots' size. The defaults leave the hub's island as it is (island-gen.test.mjs checks
+// the game's map is the generator's own output).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readGameData } from '../data-files.mjs';
@@ -83,13 +83,14 @@ test('town.quarter 1: every building plot stands on the quarter turn nearest to 
 const reached = (sc, R, p) => R.dist[Math.floor(p[1] * R.N) * R.gw + Math.floor(p[0] * R.N)] >= 0;
 const near = (L, pts, m) => pts.some(q => Math.hypot(q[0] - L.x, q[1] - L.z) < m);
 
-test('town.second: a second street beside the main street, walked to from the square, a house along it', () => {
+test('town.second: a second street beside the main street, walked to from the square, houses along it', () => {
   const { scene, paths } = islandGenerate(
       withTown({
         face: 'out',
         tol: 100,
         quarter: 1,
         houses: 16,
+        scale: 0.7,
         second: { on: 1, along: 'main', side: 'out', off: 13 },
       }),
       hub.seed,
@@ -102,7 +103,7 @@ test('town.second: a second street beside the main street, walked to from the sq
   assert.ok(pts.length >= 32, `${pts.length} points`);
   for (const q of [pts[0], pts[Math.floor(pts.length / 2)], pts[pts.length - 1]])
     assert.ok(reached(scene, R, q), `${q} not walked to from the square`);
-  assert.ok(scene.plots.filter(L => L.k === 'house' && near(L, pts, 10)).length >= 1, 'houses along it');
+  assert.ok(scene.plots.filter(L => L.k === 'house' && near(L, pts, 10)).length >= 2, 'houses along it');
 });
 
 test("town.second 'arc': pieces of a street round the pivot, each joined to the town", () => {
@@ -122,4 +123,13 @@ test("town.second 'arc': pieces of a street round the pivot, each joined to the 
     assert.ok(Math.max(...rs) - Math.min(...rs) < 4, `${P.name}: ${Math.min(...rs)} - ${Math.max(...rs)} m out`);
     assert.ok(reached(scene, R, P.pts[Math.floor(P.pts.length / 2)]), `${P.name} not walked to`);
   }
+});
+
+test('town.scale: smaller house plots, more of them', () => {
+  const big = islandGenerate(withTown({ houses: 30 }), hub.seed, ctx).scene.plots.filter(L => L.k === 'house'),
+    small = islandGenerate(withTown({ houses: 30, scale: 0.7 }), hub.seed, ctx).scene.plots.filter(
+      L => L.k === 'house'
+    );
+  for (const L of small) assert.ok(L.w <= 9 * 0.7 + 0.01 && L.d <= 7 * 0.7 + 0.01, `${L.w} x ${L.d}`);
+  assert.ok(small.length > big.length, `${small.length} small, ${big.length} big`);
 });
