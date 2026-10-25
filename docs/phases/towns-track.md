@@ -58,7 +58,7 @@ below against main and report what differs.
 | TW-0 | Rooms fix (done 2026-10-24) | walking out of a room's doorway leaves it (every room); "Go outside" stays on screen with the card closed | none | in the planning session |
 | TW-1 | Town layout (done 2026-10-24) | a `town` scene kind in mapgen at the route size: a main street off the through road, a small level square (fountain or well, the clinic and shop on it, the notice board's spot), 4-7 house plots both sides with fences, gardens, lamps and benches, building sets by biome; a tall-grass patch kept at the edge; MAPGEN_VERSION bump | none | 1-2 |
 | TW-2 | Life (done 2026-10-25) | `folk` on in run towns (capped, by town size and the graphics setting), town detection by the scene's kind, homes and work places from TW-1's plots, animals (`sc.life`: chickens, cats, birds by biome), chat lines by biome and region, 1-2 named locals | TW-1 | 1 |
-| TW-3 | Run quests | `quests.json` + schema (kind, goal, text, reward), `run.quests` (held, progress, done) in `validRun`, a quest giver per town (seeded look, marker, offer and accept), progress hooks (catch, trainer win, arrival, mini-boss result), the notice board pays done quests with the reward pick, a quest list on the run's screen, unfinished quests end with the run | TW-2, RL-12b part 1 | 1-2 |
+| TW-3 | Run quests (done 2026-10-25) | `quests.json` + schema (kind, goal, text, reward), `run.quests` (held, progress, done) in `validRun`, a quest giver per town (seeded look, marker, offer and accept), progress hooks (catch, trainer win, arrival, mini-boss result), the notice board pays done quests with the reward pick, a quest list on the run's screen, unfinished quests end with the run | TW-2, RL-12b part 1 | 1-2 |
 
 **Each session's shape**, for its own Plan Mode:
 - **TW-1.** Files: `logic/mapgen.js` (the town kind, a `square` and `plots` stage reusing island-gen's plot helpers
@@ -83,8 +83,10 @@ below against main and report what differs.
 1. TW-1: towns bigger than a route (better towns, but the seams and the bowl layout would need work). Recommendation:
    keep the route size. **Answered 2026-10-24: the route size. Also: every house faces the camera (not turned to its
    street); south of the through road stays gardens and grass; a well or a fountain by biome.**
-2. TW-3: hand-in at a notice board (recommended) or by talking to any quest giver.
-3. TW-3: the first quests' texts (Claude drafts 12-16, the owner approves).
+2. TW-3: hand-in at a notice board (recommended) or by talking to any quest giver. **Answered 2026-10-25: the notice
+   board (a new low-poly prop); the quest list on the Map tab.**
+3. TW-3: the first quests' texts (Claude drafts 12-16, the owner approves). **Answered 2026-10-25: the 16 drafted,
+   approved with the plan (quests.json).**
 4. TW-3: a quest kind that needs a side area or a field move (later).
 
 ## Noticed, not in scope

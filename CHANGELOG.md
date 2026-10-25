@@ -32,6 +32,10 @@ kept aside in the browser).
   volcano and the badlands) keep to the town. Folk talk about their biome and the run's region, and one or two named
   locals stand about with something to say. Beautiful draws up to 6 folk, Balanced 5, and 3 while the game is
   softening the picture to keep up.
+- Run towns give quests (towns track TW-3): a townsperson with a gold "!" by the notice board on each town's square
+  offers one quest (catch a Billie of a type, beat route trainers, carry a parcel to the next town, or beat the next
+  mini-boss with nobody fainting), only ever one you can finish on this run. Hold up to three; the Map tab lists them.
+  Hand a finished quest in at another town's notice board for a reward pick. Quests end with the run.
 - Three new Billies and five regional forms (roster track RO-2c): **Siliclet**, a black gecko with one glowing scale,
   evolving at level 20 into **Jenzard** and at 40 into **Gigajenzard**, a rare Electric/Dragon data-centre dragon
   whose keynote dims the lights. Five Billies you already know now have a regional form, met in the biomes it suits:
