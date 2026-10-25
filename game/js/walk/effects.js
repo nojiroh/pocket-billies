@@ -175,6 +175,8 @@ export function effectsPass(C, items, X, dark, t, dt) {
         (walkRenderer.fires || (walkRenderer.fires = [])).push([x, y + 0.8 * sz, z, sz]);
       } else if (e.k === 'window') {
         if (it.bld3 && !(sc.room && !out) && buildingState.mesh.get(it.p)) return;
+        /* a low-poly building's glass lights itself (prop-models.js glassLit): a disc here floated in front of it */
+        if (it.wins) return;
         const RS = sc.room && !out ? roomSkyLight() : null;
         let k = RS ? RS.I * (1 - RS.night) * 0.9 * windowLightShare(sc) : dark ? 1 : winDay;
         if (
