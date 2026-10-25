@@ -27,7 +27,7 @@ bool rockHides(vec3 w){return rockBay(gl_FragCoord.xy)<rockCut(w);}
    water. uPixW: on, tones a kind (water.bands), animation steps a second (water.frames). On, water lies on the
    ground's 32 texels a metre grid, a kind's colours fall in a few tones with an ordered dither fixed to that grid (it
    does not swim as the camera moves), and the small motions step; off, the 16 grid and smooth tones of before. */
-const PIXEL_WATER_GLSL = `uniform vec3 uPixW;
+export const PIXEL_WATER_GLSL = `uniform vec3 uPixW;
 float pwRes(){return uPixW.x>.5?32.:16.;}
 vec2 pwCell(vec2 xz){return floor(xz*pwRes());}
 vec2 pwSnap(vec2 xz){return floor(xz*pwRes())/pwRes();}

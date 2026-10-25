@@ -22,6 +22,7 @@ import {
   noWebGL,
   propModelShaders,
   provide,
+  runWaterWeatherSync,
   seamlessLookTick,
   seamlessPrepareAhead,
   worldBillyLabels,
@@ -392,6 +393,8 @@ function drawWalkFrame(ts, dtm) {
     return;
   }
   if (!walkView.ready || gpuState.lost) return;
+  /* WA-5a: a new run day lays its weather on the places' water (run-world.js; nothing to do on the same day) */
+  if (typeof runWaterWeatherSync === 'function') runWaterWeatherSync();
   const w0 = performance.now(),
     gl = gpuState.gl,
     sc = walkView.sc;

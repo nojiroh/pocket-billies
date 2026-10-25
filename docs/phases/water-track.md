@@ -109,8 +109,13 @@ Nothing here is built in WA-0; this is what the lanes agree on so they can work 
 - **Tiles**: `w` (shallow) becomes wadeable (WA-6a); `d` (deep) becomes surfable (WA-6b). A scene's `ride` stays as a
   whole-scene "surf anywhere" for the existing side areas.
 - **Kinds**: appended, never reordered (the index is built into a scene's water mesh each time it is built; maps
-  name kinds by their key): `rapids`, `hotspring`, `oasis`, `bog`, `reef`, `cave` (WA-5). `swamp` stays the marsh.
-  Lava is never entered; ice is walked on (WA-5a, the slip with TR-10's cracking ice).
+  name kinds by their key): `rapids`, `hotspring`, `oasis`, `bog`, `reef`, `cave` (WA-5; the owner confirmed the six in
+  WA-5a). `swamp` stays the marsh. The list and each kind's play live in `logic/water-kinds.js` (`WATER_KINDS`,
+  `WATER_KIND_PLAY`; WA-5a): lava and rapids are never entered (neither waded nor surfed); ice is walked on, its `d`
+  too (the slip waits for TR-10's cracking ice); the marsh (0.8) and the bog (0.6) slow wading; a hot spring heals.
+  Until WA-5b draws them, a new kind borrows an old look (`WATER_KIND_BASE`: rapids stream, hotspring spring, oasis
+  pond, bog swamp, reef sea, cave spring); generated scenes keep their `waterKind` and lay the new kinds as `waters`
+  rectangles, so the renderer (an unknown rectangle draws as the scene's kind) shows the right old look meanwhile.
 - **Settings** (engine.json `water`): `pixel` (on/off, default on after WA-1), `bands` (tones a kind, 2-8, default
   5), `frames` (animation steps a second, 0 = smooth, default 10). The names follow the old patch's.
 - **Shared shader code**: WA-1 puts the pixel water's colour bands, dither and stepped time in one GLSL snippet in
@@ -145,7 +150,7 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
 | 2 | WA-2b | G | (**done** 2026-10-25, notes below) **Waterfalls placed.** Off terrace and cliff edges where a river meets a drop, in caves (rooms), as a route's set piece; `climb` on some (the Waterfall move's way up); the hub island's fall only with the owner's yes. | unit tests (a fall's lip and foot on its river; its pool reached), sweep |
 | 2 | WA-6b | P | **Surf and Waterfall climb.** Riding per cell: walk into `d` with a rider (`rules.ride`) and the Water badge, mount and leave at the shore; the mount's bob, wake and rings; encounters on water (the region's water pool); the Waterfall field move (badge: ask) climbing a `climb` fall. Builds on the contract while WA-2b lands. | unit tests (riding rules, badge), a surf walk check, smoke |
 | 3 | WA-4 | R | **The sea and the coast.** Surf as hard stepped bands breaking along the coast, foam round rocks, a slow tide (the waterline and wet sand move, tide pools), reef shallows (turquoise, see-through), kelp, sandbars, a sun and a moon path on the open sea, a storm sea from the forecast. | look-water --scene=test_island, island-shots, smoke |
-| 3 | WA-5a | G | **New kinds' play and weather on water.** Hot springs heal the party, oases, marsh and bog slow you (their encounter pools, hidden items in reeds), rapids block, floods in storms keep the main path open, ponds freeze in snow, rain rings (exist). | unit tests (a flooded path keeps the main path open; heal once a run), smoke |
+| 3 | WA-5a | G | (**done** 2026-10-25, notes below) **New kinds' play and weather on water.** Hot springs heal the party, oases, marsh and bog slow you (their encounter pools, hidden items in reeds), rapids block, floods in storms keep the main path open, ponds freeze in snow, rain rings (exist). | unit tests (a flooded path keeps the main path open; heal once a run), smoke |
 | 3 | WA-7 | B | **World map and battles.** The bowl's rivers and seas in the same tones and steps (the shared snippet); water backdrops on battle stages by a node's biome. | bowl map test, battle stage pictures, smoke |
 | 4 | WA-5b | R | **Kinds as a texture and water life.** Kind looks in a small texture (no cap at 9), the new kinds drawn (steam on hot springs, rapids' white water, bog's scum, reef, cave water lit by its own glow); lily pads that bob, reeds that sway, frogs, fish that jump (sprites), birds that dive. | look-water, smoke |
 | 4 | WA-9 | G | **Studio tools.** A river brush (source to mouth, regenerates its bed), a waterfall placer (lip, width, pool, climb), a water-kind painter, a live preview; STUDIO.md. | Studio check, a hand-placed fall survives a regenerate |
@@ -157,7 +162,7 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
 - Surf's details (WA-6b): which badge (the Water badge, as VISION's side areas), encounters while surfing, whether
   the existing "1.5 m tall Water Billie" rule stays.
 - The Waterfall climb's badge (WA-6b).
-- The new kinds list before WA-5a (the six above are a proposal).
+- The new kinds list before WA-5a (the six above are a proposal). (Answered in WA-5a: all six, in that order.)
 - Water sounds after SND-6 merges (WA-8).
 
 ## WA-0 notes (2026-10-25)
@@ -323,3 +328,40 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
   with Pixel water on and off, and by a river (the flow map's two phases).
 - Not in WA-2a: the Surf mount's wake (`prop-look.js rideMountItem`, lane P) still uses `addRipple`; the climb's
   spray on the rider (WA-6b's ask); look-water's numbers count only the automatic sheets (`fallSheets`), not entries.
+
+## WA-5a notes (2026-10-25)
+- The owner's answers: all six kinds; WA-6a's "shallows for others" taken here; small hooks in lane P's files allowed
+  (lane P has no round-3 session; the rules live in lane G modules); hot springs about one run in two.
+- **Kinds and their play** (`logic/water-kinds.js`): the list above; `wading.js` and `surf.js` read the play table
+  (`WADE_SHUT_KINDS` is now lava, rapids and ice for wading; ice is walked on instead); `wadeSpeed(depth, kind)`
+  takes the marsh's and the bog's slow (`walk-view.js wadeSpeedHere`); fishing fishes a new kind as its look; the data
+  check, the map and biome schemas and the Studio's water painter know the six.
+- **Placed** (`water-gen.js waterGenKinds`, one call after `waterGenFalls`; `waterGenReeds` on the finished scene;
+  MAPGEN_VERSION 17): rapids rectangles over a river's steep stretches (WA-3a's `rapids`), clear of roads, bridges
+  and jetties by 2 m; a hot spring on 8% of routes (never a town), a round pool of shallows 1.2-1.7 m in radius
+  2-7 m off the road's middle, 3 m from other water, placed as a plunge pool (it cuts nothing off); a marsh biome's
+  pond a bog 40% of the time; a dry place's pond an oasis (badlands, canyon: no run biome is dry, so not in runs yet);
+  a cave's water cave water (a whole-map rectangle under the rest); a reed or two in a marsh hides an item (`hide`:
+  potion, trail mix, pretzel, hi-potion, burn salve, nerve tonic, revive).
+- **Play** (`logic/water-play.js`): stepping into a hot spring with someone hurt heals the whole team, once a run
+  (`saveData.flags.hotspring`, a run's own copy); passing within 0.9 m of a hiding reed gives its item once a run (its
+  flag in world metres, so a reed seen across a seam is one find); a run place with marsh or bog water weights its
+  wild odds by type (marsh Water and Grass 1.8; bog Ground 2, Water 1.5, Grass 1.3: the game has no Bug or Poison),
+  through the place's row (`marsh`, set by `run-world.js`) in `rules.js spawn`.
+- **Shallows for others**: boulders, rocks and flat stones (`WATERGEN_SHALLOW_PROP`) and folk spots may stand in
+  shallows you wade (`waterGenShallows`: not lava, rapids, ice or a hot spring), never in deep water; wild Billies
+  may wait in shallows inside a grass patch (2 m further in a marsh), never in a hot spring (`walk-view.js
+  encounterCandidates`). Route trainers stand where `route-trainers.js` puts them (unchanged: it never checks water).
+- **Weather on water** (`logic/water-weather.js`, run places only): snow lays `ice` rectangles over still water (a
+  stream's line keeps flowing); a storm floods the cells beside floodable water and runs a river's middle deep, never
+  a road surface or the cells beside it, a door, the hub, an exit or a bridge's end, checked with `mapgenUnreachable`
+  (dry water) and held back 4 m from the road, then left out, when it would cut an exit off; a kept dry copy so the
+  next day starts from the scene as made. `run-world.js runWaterWeatherSync` lays it when the world is put in and on
+  each new run day (the walk frame asks; nothing to do on the same day), then remakes the views and the walk view.
+- Numbers: 200 run-like routes over eight biomes: 18 hot springs (9%), rapids on 32, 10 bogs, 10 oases, 20 cave
+  scenes, finds in 40; every exit reached, no generator note; about 45 ms a scene in Node (unchanged within noise). A
+  storm on 93 wet routes: 90 flood (135 more water cells on average), none cuts an exit off, 6 ms a place; snow
+  freezes 28 (the ponds). In the page (the run fixture, a forced forecast, a seam walked): the debug log's `water by
+  the weather` line, flooded and frozen places, 239 of 240 ice cells walkable in a frozen town (a prop on the last).
+- Not done here: the new kinds' looks (WA-5b), reef shallows on a coast (WA-4's coast; the kind and its rules are in),
+  the slip on ice (TR-10), rain rings that skip ice and lava (lane R), the flood's look on raised banks (lane R).

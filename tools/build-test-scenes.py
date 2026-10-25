@@ -137,17 +137,30 @@ def t_water():
     s.blob(45.5, 6.5, 2.4, 1.6, 'w', .15); s.blob(50.8, 6.5, 2.0, 1.6, 'w', .15); s.rect(55, 2, 58, 10, 'w')
     s.d['waters'] += [{'x': 42.5, 'z': 4.5, 'w': 6, 'h': 4, 'k': 'lava'}, {'x': 48.6, 'z': 4.5, 'w': 5, 'h': 4, 'k': 'ice'},
                       {'x': 55, 'z': 2, 'w': 3, 'h': 8, 'k': 'sea'}]
+    # water track WA-5a: the new kinds' play: a hot spring (waded, heals once a run), rapids (neither waded nor surfed:
+    # shallows to the south, deep to the north) and a bog (waded, slower)
+    # (painted after the ground's patches, below, which would paint over them)
+    s.d['waters'] += [{'x': 35.5, 'z': 1.8, 'w': 3, 'h': 2.4, 'k': 'hotspring'}, {'x': 39, 'z': 1, 'w': 2, 'h': 4, 'k': 'rapids'},
+                      {'x': 12.9, 'z': 11, 'w': 3.4, 'h': 2.4, 'k': 'bog'}]
     s.life('duck', 3)
     for x, z, l in ((8, 4, 'pond'), (30, 9, 'stream-and-falls'), (21, 6, 'stepped-pools'), (36, 15, 'high-water-lake'),
                     (6, 12, 'swamp'), (12.5, 16.5, 'spring'), (9, 21.5, 'canal'), (50, 8.2, 'tall-fall'),
-                    (45.5, 3, 'lava'), (50.8, 3, 'ice'), (53.5, 6, 'sea-strip')):
+                    (45.5, 3, 'lava'), (50.8, 3, 'ice'), (53.5, 6, 'sea-strip'), (38, 0.6, 'hot-spring-and-rapids'),
+                    (14.6, 9.4, 'bog')):
         shot(s, x, z, l)
     check(s, (20, 3), (50, 8.2), True, 'the hub to the foot of the tall fall')
     check(s, (1.2, 9.4), (5.5, 9.3), True, "wade into the pond's shallows")                # WA-6a: shallows are waded
     check(s, (41, 6.5), (45.5, 6.5), False, 'the lava pool stays shut (should be impossible)')
     check(s, (4.5, 8.5), (8.5, 8.5), True, "surf out onto the pond's deep middle", surf=True)   # WA-6b: Surf
     check(s, (4.5, 8.5), (8.5, 8.5), False, 'deep water stays shut without Surf (should be impossible)')
+    check(s, (37, 1.2), (37, 3), True, 'wade into the hot spring')                         # WA-5a: the new kinds' play
+    check(s, (38.6, 2), (40, 2), False, 'the rapids stay shut to wading (should be impossible)')
+    check(s, (38.4, 3.5), (40, 3.5), False, 'the rapids stay shut to Surf (should be impossible)', surf=True)
+    check(s, (14.6, 10.4), (14.6, 12.2), True, 'wade into the bog')
+    check(s, (50.8, 3.4), (50.8, 6.5), True, 'walk out onto the ice pool')
     s.patches('G', .6, 6, seed=6)
+    s.blob(37, 3, 1.4, 1.1, 'w', .1); s.rect(39, 1, 41, 3, 'w'); s.rect(39, 3, 41, 5, 'd')     # WA-5a's pools
+    s.blob(14.6, 12.2, 1.5, 1.0, 'w', .15)
     return s.out(7, 'wood')
 
 
