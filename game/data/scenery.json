@@ -11628,7 +11628,8 @@
     {"k":"window","x":43,"y":-44},
     {"k":"glow","x":11,"y":-59},
     {"k":"smoke","x":51,"y":-167}
-   ]
+   ],
+   "room": "int_workshop"
   },
   "gene_bank": {
    "name": "Gene Bank",
@@ -11650,7 +11651,8 @@
     {"k":"window","x":-61,"y":-66},
     {"k":"glow","x":-21,"y":-51},
     {"k":"glow","x":21,"y":-51}
-   ]
+   ],
+   "room": "int_gene_bank"
   }
  },
  "person": 1.75,
