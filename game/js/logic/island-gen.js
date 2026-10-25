@@ -109,6 +109,13 @@ export const ISLAND_CRAG = 0.45;
 /* the zones a dial places as a rectangle (flat, empty and locked: the town and the barn are built there by hand) */
 export const ISLAND_GEN_BUILT = ['town', 'barn', 'pasture'];
 
+/** HB-4a: the town's other buildings (town.extra): plot sizes [width, width, depth, depth] */
+export const ISLAND_TOWN_EXTRA = {
+  inn: [10, 12, 8, 9],
+  workshop: [9, 10, 7, 8],
+  genebank: [9, 10, 8, 9],
+  library: [10, 11, 8, 9],
+};
 /** the dials (IS-6b shows them): sizes in metres, angles in degrees (0 east, 90 north, 270 south) */
 export const ISLAND_GEN_DEFAULTS = {
   /* the land's radius round the middle (the coast is pushed out further round the zones), how much the coast wobbles
@@ -164,7 +171,8 @@ export const ISLAND_GEN_DEFAULTS = {
      a line round the pivot through the square, span degrees long, its middle turned at degrees round the pivot from
      the square, so the street runs round the mountain), on its side toward the pivot ('in') or away from it ('out';
      on the main street 'out' is away from the river), joined to that street at both ends; houses line it as they
-     line the others. scale (HB-4a): the house plots' size, times (0.6-1.2; smaller makes a denser town) */
+     line the others. scale (HB-4a): the house plots' size, times (0.6-1.2; smaller makes a denser town). extra
+     (HB-4a): the town's other buildings, from ISLAND_TOWN_EXTRA, on its streets nearest the square */
   town: {
     on: 1,
     houses: 7,
@@ -174,6 +182,7 @@ export const ISLAND_GEN_DEFAULTS = {
     quarter: 0,
     second: { on: 0, along: 'quay', side: 'in', off: 15, span: 70, at: 0 },
     scale: 1,
+    extra: [],
   },
   /* a hamlet: a few houses round a green under the mountains, joined to the coast road (off since the look pass: the
      owner, a smaller island) */
@@ -316,6 +325,7 @@ export function islandGenDials(d) {
   D.town.tol = num(D.town.tol, 10, 90, 50);
   D.town.quarter = D.town.quarter ? 1 : 0;
   D.town.scale = num(D.town.scale, 0.6, 1.2, 1);
+  D.town.extra = (Array.isArray(D.town.extra) ? D.town.extra : []).filter(k => ISLAND_TOWN_EXTRA[k]);
   if (!D.town.second || typeof D.town.second !== 'object') D.town.second = { on: 0 };
   D.town.second.on = D.town.second.on ? 1 : 0;
   if (!['quay', 'cross', 'main', 'arc'].includes(D.town.second.along)) D.town.second.along = 'quay';
@@ -1903,6 +1913,18 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     if (!plotsAlong(townSt('town main street'), 3.6, [sideBank], 'home', [8, 8, 7, 7], 1, 'town'))
       townStreets.some(r => plotsAlong(r.pts, r.width, [1, -1], 'home', [7, 8, 6, 7], 1, 'town')) ||
         plotsAlong(nearSquare(), D.paths.width, [1, -1], 'home', [7, 8, 6, 7], 1, 'town');
+    /* HB-4a: the town's other buildings, on its streets nearest the square first */
+    for (const k of D.town.extra)
+      if (
+        !townStreets.some(r => plotsAlong(r.pts, r.width, [1, -1], k, ISLAND_TOWN_EXTRA[k], 1, 'town')) &&
+        !plotsAlong(nearSquare(), D.paths.width, [1, -1], k, ISLAND_TOWN_EXTRA[k], 1, 'town') &&
+        /* still none: along any road within 60 m of the square, as the last cottages */
+        !roads.some(r => {
+          const near = r.pts.filter(p => Math.hypot(p[0] - square[0], p[1] - square[1]) < 60);
+          return near.length > 10 && plotsAlong(near, r.width, [1, -1], k, ISLAND_TOWN_EXTRA[k], 1, 'town');
+        })
+      )
+        notes.push(`no room for the ${k} in the town`);
     /* HB-4a: house plots town.scale times their size (a denser town of smaller, terraced cottages) */
     const hs = size => (D.town.scale === 1 ? size : size.map(v => v * D.town.scale));
     let left = D.town.houses;

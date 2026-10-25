@@ -1,8 +1,8 @@
 // Hub track HB-4a: the island generator's sketch dials. town.face 'out' keeps a plot only on the street side whose
 // front faces out from the orbit's pivot (the summit) within town.tol degrees, so the orbit camera sees the doors;
 // town.quarter turns every building plot to the quarter turn nearest to facing out; town.second a second built-up
-// street; town.scale the house plots' size. The defaults leave the hub's island as it is (island-gen.test.mjs checks
-// the game's map is the generator's own output).
+// street; town.scale the house plots' size; town.extra the town's other buildings. The defaults leave the hub's island
+// as it is (island-gen.test.mjs checks the game's map is the generator's own output).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readGameData } from '../data-files.mjs';
@@ -132,4 +132,32 @@ test('town.scale: smaller house plots, more of them', () => {
     );
   for (const L of small) assert.ok(L.w <= 9 * 0.7 + 0.01 && L.d <= 7 * 0.7 + 0.01, `${L.w} x ${L.d}`);
   assert.ok(small.length > big.length, `${small.length} small, ${big.length} big`);
+});
+
+const sketchA = more =>
+  islandGenerate(
+    withTown(
+      {
+        face: 'out',
+        tol: 100,
+        quarter: 1,
+        houses: 16,
+        scale: 0.7,
+        extra: ['inn', 'workshop', 'genebank', 'library'],
+        second: { on: 1, along: 'main', side: 'out', off: 13 },
+      },
+      more
+    ),
+    hub.seed,
+    ctx
+  );
+const only = (sc, k) => {
+  const L = sc.plots.filter(P => P.k === k);
+  assert.equal(L.length, 1, `${k}: ${L.length}`);
+  return L[0];
+};
+
+test('town.extra: the inn, the Workshop, the Gene Bank and the library each get a plot in the town', () => {
+  const { scene } = sketchA();
+  for (const k of ['inn', 'workshop', 'genebank', 'library']) only(scene, k);
 });
