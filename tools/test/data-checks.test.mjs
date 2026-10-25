@@ -37,6 +37,7 @@ const FAMILIES = [
   'dataUiTheme',
   'dataBiomes',
   'dataNodeTypes',
+  'dataQuests',
   'dataPerks',
   'dataEvents',
   'dataRewards',

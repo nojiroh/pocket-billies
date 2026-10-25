@@ -146,3 +146,17 @@ test('check-data: planted Expeditions and challenges (RL-13)', t => {
     })
   );
 });
+
+test('check-data: planted quests (TW-3)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'quests.json': Q => {
+        Q.kinds.trainers.goal = [3, 2];
+        Q.texts = Q.texts.filter(x => x.kind !== 'parcel');
+        Q.texts[0].ask = 'Catch me {n} of them.';
+        Q.texts[1].id = Q.texts[0].id;
+        Q.say.done = 'Done: {what}.';
+      },
+    })
+  );
+});

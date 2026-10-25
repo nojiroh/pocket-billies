@@ -58,6 +58,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataPerks: [() => dataPerks, v => (dataPerks = v)],
   // @ts-expect-error -- replaced on purpose
+  dataQuests: [() => dataQuests, v => (dataQuests = v)],
+  // @ts-expect-error -- replaced on purpose
   dataRanchRules: [() => dataRanchRules, v => (dataRanchRules = v)],
   // @ts-expect-error -- replaced on purpose
   dataRegions: [() => dataRegions, v => (dataRegions = v)],
@@ -848,6 +850,40 @@ export function dataModifiers(D, valid = () => true) {
     if (up < last) problem(`expeditions[${i}]: foes' levels go down from the Expedition before (${last} to ${up})`);
     last = up;
   });
+  return out;
+}
+// TW-3: quests.json: the schema; every kind has a text; a goal's fewest is no more than its most; a line names only
+// what its kind fills in ({type} a catch's, {n} a goal of more than one, {title} the board's and a failure's lines);
+// no text id twice
+/** TW-3: quests.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataQuests(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['quests.json', what]),
+    Q = D.quests;
+  if (!Q) return [['quests.json', 'missing']];
+  if (!valid('quests.schema.json', Q, 'quests.json')) return out;
+  /** what a line may fill in @param {string} where @param {string} line @param {string[]} may */
+  const fills = (where, line, may) => {
+    for (const m of line.match(/\{[^}]*\}/g) || [])
+      if (!may.includes(m)) problem(`${where}: "${m}" isn't filled in here`);
+  };
+  /** @param {string} kind */
+  const mayOf = kind => (kind === 'catch' ? ['{type}'] : Q.kinds[kind].goal[1] > 1 ? ['{n}'] : []);
+  for (const [k, R] of Object.entries(Q.kinds)) {
+    const r = /** @type {any} */ (R);
+    if (r.goal[0] > r.goal[1]) problem(`kinds.${k}.goal: the fewest is more than the most`);
+    fills(`kinds.${k}.title`, r.title, mayOf(k));
+    if (!Q.texts.some((/** @type {any} */ t) => t.kind === k)) problem(`kinds.${k}: no text offers it`);
+  }
+  const ids = new Set();
+  Q.texts.forEach((/** @type {any} */ t, /** @type {number} */ i) => {
+    if (ids.has(t.id)) problem(`texts[${i}]: the id "${t.id}" twice`);
+    ids.add(t.id);
+    fills(`texts[${i}] (${t.id})`, t.ask, mayOf(t.kind));
+  });
+  for (const [k, line] of Object.entries(Q.say))
+    fills(`say.${k}`, /** @type {string} */ (line), k === 'done' || k === 'fail' ? ['{title}'] : []);
   return out;
 }
 // RL-12b: events.json: the schema; every intro reads as lines only, every option's need as a condition and its `then`

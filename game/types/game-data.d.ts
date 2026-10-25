@@ -77,6 +77,8 @@ export interface GameData {
   fieldMoves?: { about?: string; moves: Record<DataId, FieldMove> };
   /** RL-13: a run's Expeditions and challenges */
   modifiers?: ModifiersData;
+  /** TW-3: a run's quests */
+  quests?: QuestsData;
   pools: Record<DataId, Pool>;
   /** the egg tiers, keyed by the distance in km that hatches them ('2', '5', '10') */
   eggs: Record<string, EggTier>;
@@ -1807,6 +1809,29 @@ export interface ModifiersData {
   about?: string;
   expeditions: Modifier[];
   challenges: Partial<Record<ChallengeId, Modifier>>;
+}
+/** TW-3: quests.json: a run's quests (logic/run-quests.js) */
+export type QuestKind = 'catch' | 'trainers' | 'parcel' | 'miniboss';
+export interface QuestKindRule {
+  weight: number;
+  /** [fewest, most] to do ({n}) */
+  goal: [number, number];
+  /** the quest list's line ({type}, {n}) */
+  title: string;
+}
+export interface QuestText {
+  id: string;
+  kind: QuestKind;
+  /** the giver's offer ({type}, {n}) */
+  ask: string;
+}
+export interface QuestsData {
+  about?: string;
+  /** the most held at once */
+  held: number;
+  kinds: Record<QuestKind, QuestKindRule>;
+  texts: QuestText[];
+  say: Record<'take' | 'yes' | 'no' | 'full' | 'taken' | 'none' | 'done' | 'empty' | 'fail', string>;
 }
 /** events.json: a run's events, loot tables and trainer classes (roguelite track RL-12b; logic/encounters.js) */
 export interface EventsData {
