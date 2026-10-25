@@ -16,7 +16,7 @@
 /** @import { Biome } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { waterGenCarve, waterGenClimbs, waterGenFalls, waterGenRiver } from '../hooks.js';
+import { waterGenCarve, waterGenClimbs, waterGenFalls, waterGenKinds, waterGenReeds, waterGenRiver } from '../hooks.js';
 import { hashString, rngFrom } from './rng.js';
 import { pointInProp, turnedBounds, turnedPoint } from './prop-turn.js';
 /* eslint-disable no-func-assign */
@@ -280,7 +280,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 16; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9-14: taken by the towns and routes tracks (TW-2, TW-3, RT-2 to RT-4b); 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b) */
+export const MAPGEN_VERSION = 17; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9-14: taken by the towns and routes tracks (TW-2, TW-3, RT-2 to RT-4b); 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a) */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -4258,6 +4258,7 @@ export function mapgenBuild(P, ctx, aim) {
   mapgenStageExits(G);
   mapgenStageLand(G);
   waterGenFalls(G); /* WA-2b: the river steps with the land, its waterfalls and a set piece (logic/water-gen.js) */
+  waterGenKinds(G); /* WA-5a: rapids, a hot spring, the bog, an oasis, cave water (logic/water-gen.js) */
   mapgenStageFeature(G);
   mapgenStageEdgeGround(G);
   mapgenStageTown(G);
@@ -4326,6 +4327,7 @@ export function mapgenBuild(P, ctx, aim) {
     sc.layout = { plan: P.layout, walk: Math.round(mapgenWalkShare(L.walk) * 1000) / 1000 };
   }
   waterGenClimbs(sc, ctx.scenery); /* WA-2b: which falls the Waterfall field move climbs (logic/water-gen.js) */
+  waterGenReeds(G, sc); /* WA-5a: a reed or two in a marsh hides an item (logic/water-gen.js) */
   sc.gen = { v: MAPGEN_VERSION, params: P, seed: P.seed };
   return { scene: sc, notes: G.notes };
 }

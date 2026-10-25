@@ -38,6 +38,7 @@ import {
 } from './mapgen.js';
 /* eslint-disable no-func-assign */
 expose({
+  WATERGEN_BOG: [() => WATERGEN_BOG],
   WATERGEN_CLIMB_MIN: [() => WATERGEN_CLIMB_MIN],
   WATERGEN_DEPTH: [() => WATERGEN_DEPTH],
   WATERGEN_FALL_MIN: [() => WATERGEN_FALL_MIN],
@@ -46,10 +47,13 @@ expose({
   WATERGEN_NB8: [() => WATERGEN_NB8],
   WATERGEN_RAPID: [() => WATERGEN_RAPID],
   WATERGEN_RAPID_LEN: [() => WATERGEN_RAPID_LEN],
+  WATERGEN_REED_ITEMS: [() => WATERGEN_REED_ITEMS],
   WATERGEN_SEAM_REACH: [() => WATERGEN_SEAM_REACH],
   WATERGEN_SET_CHANCE: [() => WATERGEN_SET_CHANCE],
   WATERGEN_SET_CHANCE_CAVE: [() => WATERGEN_SET_CHANCE_CAVE],
   WATERGEN_SET_PIECE: [() => WATERGEN_SET_PIECE],
+  WATERGEN_SPRING_CHANCE: [() => WATERGEN_SPRING_CHANCE],
+  WATERGEN_SPRING_R: [() => WATERGEN_SPRING_R],
   WATERGEN_STEP: [() => WATERGEN_STEP],
   WATERGEN_STRAIGHT: [() => WATERGEN_STRAIGHT],
   WATERGEN_TRIES: [() => WATERGEN_TRIES],
@@ -86,6 +90,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   waterGenHeightAt: [() => waterGenHeightAt, v => (waterGenHeightAt = v)],
   // @ts-expect-error -- replaced on purpose
+  waterGenHotSpring: [() => waterGenHotSpring, v => (waterGenHotSpring = v)],
+  // @ts-expect-error -- replaced on purpose
+  waterGenKinds: [() => waterGenKinds, v => ((waterGenKinds = v), provide({ waterGenKinds }))],
+  // @ts-expect-error -- replaced on purpose
   waterGenLevels: [() => waterGenLevels, v => (waterGenLevels = v)],
   // @ts-expect-error -- replaced on purpose
   waterGenLost: [() => waterGenLost, v => (waterGenLost = v)],
@@ -95,11 +103,17 @@ expose({
   // @ts-expect-error -- replaced on purpose
   waterGenPlungePool: [() => waterGenPlungePool, v => (waterGenPlungePool = v)],
   // @ts-expect-error -- replaced on purpose
+  waterGenRapids: [() => waterGenRapids, v => (waterGenRapids = v)],
+  // @ts-expect-error -- replaced on purpose
   waterGenReach: [() => waterGenReach, v => (waterGenReach = v)],
   // @ts-expect-error -- replaced on purpose
   waterGenReachedNear: [() => waterGenReachedNear, v => (waterGenReachedNear = v)],
   // @ts-expect-error -- replaced on purpose
   waterGenReachedRing: [() => waterGenReachedRing, v => (waterGenReachedRing = v)],
+  // @ts-expect-error -- replaced on purpose
+  waterGenRects: [() => waterGenRects, v => (waterGenRects = v)],
+  // @ts-expect-error -- replaced on purpose
+  waterGenReeds: [() => waterGenReeds, v => ((waterGenReeds = v), provide({ waterGenReeds }))],
   waterGenRestore: [() => waterGenRestore],
   // @ts-expect-error -- replaced on purpose
   waterGenRiver: [() => waterGenRiver, v => ((waterGenRiver = v), provide({ waterGenRiver }))],
@@ -133,7 +147,7 @@ expose({
   waterGenTry: [() => waterGenTry, v => (waterGenTry = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ waterGenCarve, waterGenClimbs, waterGenFalls, waterGenRiver });
+provide({ waterGenCarve, waterGenClimbs, waterGenFalls, waterGenKinds, waterGenReeds, waterGenRiver });
 /* to-module: end */
 /** metres a river runs straight across a side before it turns, so a seam is crossed head on */
 export const WATERGEN_STRAIGHT = 8;
@@ -1587,5 +1601,200 @@ export function waterGenClimbs(sc, scenery) {
     if (!f.pool || f.h < WATERGEN_CLIMB_MIN) continue;
     const { top, foot } = waterGenFallEnds(f);
     if (waterGenReachedRing(sc, R, ...top) && waterGenReachedRing(sc, R, ...foot)) f.climb = 1;
+  }
+}
+
+/* ---------- WA-5a: the new kinds placed (rapids, a hot spring, the bog, an oasis, cave water, reeds' finds) ----------
+   Where the kinds of logic/water-kinds.js lie, as `waters` rectangles over the scene's water (the data contract: maps
+   name kinds by their key). The renderer draws an unknown rectangle with the scene's own kind until WA-5b draws the
+   new ones, so a scene keeps its `waterKind` (the bog's swamp, the cave's spring) and its look.
+   - rapids over a river's steep stretches (WA-3a's `rapids`), never on or by a road or a bridge: neither waded nor
+     surfed;
+   - a hot spring now and then by a route's road (WATERGEN_SPRING_CHANCE): a small round pool of shallows that heals
+     the party once a run (logic/water-play.js), placed as a plunge pool is, so it cuts nothing off;
+   - a marsh biome's pond is a bog now and then (WATERGEN_BOG); a dry place's pond is an oasis; a cave's water is cave
+     water;
+   - on the finished scene, a reed or two in a marsh or a bog hides an item (`hide`, found once a run).
+   Its own random streams ('heights', 'kinds') and ('props', 'reeds'). */
+/** how often a route gets a hot spring (the owner: about one run in two, ~7 routes a run) */
+export const WATERGEN_SPRING_CHANCE = 0.08;
+/** a hot spring's radius (m) */
+export const WATERGEN_SPRING_R = [1.2, 1.7];
+/** how often a marsh biome's pond is a bog */
+export const WATERGEN_BOG = 0.4;
+/** what a reed may hide, by weight (items.json) */
+export const WATERGEN_REED_ITEMS = [
+  ['potion', 5],
+  ['trailmix', 3],
+  ['pretzel', 3],
+  ['hi_potion', 2],
+  ['burn_salve', 1],
+  ['nerve_tonic', 1],
+  ['revive', 1],
+];
+
+/** rectangles over the given cells (cell indexes j * w + i, z from the near edge), row runs joined down the rows when
+ * they match @param {number} w @param {Iterable<number>} cells @param {string} k */
+export function waterGenRects(w, cells, k) {
+  const rows = new Map();
+  for (const q of [...cells].sort((a, b) => a - b)) {
+    const j = Math.floor(q / w);
+    if (!rows.has(j)) rows.set(j, []);
+    rows.get(j).push(q % w);
+  }
+  /** @type {{ x: number, z: number, w: number, h: number, k: string }[]} */
+  const out = [],
+    open = new Map();
+  for (const j of [...rows.keys()].sort((a, b) => a - b)) {
+    const runs = [],
+      xs = rows.get(j);
+    for (let n = 0; n < xs.length; n++) {
+      let m = n;
+      while (m + 1 < xs.length && xs[m + 1] === xs[m] + 1) m++;
+      runs.push([xs[n], xs[m] - xs[n] + 1]);
+      n = m;
+    }
+    const next = new Map();
+    for (const [x, len] of runs) {
+      const key = x + ',' + len,
+        r = open.get(key);
+      if (r && r.z + r.h === j) {
+        r.h++;
+        next.set(key, r);
+      } else {
+        const o = { x, z: j, w: len, h: 1, k };
+        out.push(o);
+        next.set(key, o);
+      }
+    }
+    open.clear();
+    for (const [key, r] of next) open.set(key, r);
+  }
+  return out;
+}
+/** the river's rapids: its water cells within its half width (and half a metre) of its line along each steep
+ * stretch, less any within 2 m of a road, a bridge or a jetty */
+export function waterGenRapids(G) {
+  const R = G.river;
+  if (!R || !R.rapids || !R.rapids.length) return [];
+  const { w } = G,
+    M = R.pts.length,
+    cells = new Set();
+  for (const [t0, t1] of R.rapids)
+    for (let i = Math.round(t0 * (M - 1)); i <= Math.round(t1 * (M - 1)); i++) {
+      const [x, z] = R.pts[i];
+      mapgenPaintDisc(G, x, z, R.wid[i] / 2 + 0.5, q => {
+        if (G.F[q] & 4 && !(G.F[q] & 8)) cells.add(q);
+      });
+    }
+  for (const q of [...cells]) {
+    let near = false;
+    mapgenPaintDisc(G, (q % w) + 0.5, Math.floor(q / w) + 0.5, 2, o => {
+      if (G.F[o] & (1 | 8 | 128)) near = true;
+    });
+    if (near) cells.delete(q);
+  }
+  return waterGenRects(w, cells, 'rapids');
+}
+/** a hot spring by the road: a round pool of shallows WATERGEN_SPRING_R across, 2-7 m off the road's middle, 3 m from
+ * other water, clear of what the road keeps (exits, the hub, buildings' spots), cutting nothing off; null when none
+ * fits after 60 tries */
+export function waterGenHotSpring(G, rnd) {
+  const { w, h } = G,
+    W2 = w * 2;
+  /** @type {Uint8Array | null} */
+  let seen = null;
+  for (let t = 0; t < 60; t++) {
+    const q0 = Math.floor(rnd.next() * w * h),
+      cx = (q0 % w) + 0.5,
+      cz = Math.floor(q0 / w) + 0.5,
+      r = WATERGEN_SPRING_R[0] + rnd.next() * (WATERGEN_SPRING_R[1] - WATERGEN_SPRING_R[0]);
+    if (G.dist[q0] < r + 2 || G.dist[q0] > r + 7) continue;
+    let wet = false;
+    mapgenPaintDisc(G, cx, cz, r + 3, q => {
+      if (G.F[q] & (4 | 128)) wet = true;
+    });
+    if (wet || G.keep.some(o => Math.hypot(cx - o[0], cz - o[1]) < o[2] + r + 1)) continue;
+    seen = seen || waterGenReach(G);
+    if (!waterGenReachedNear(G, seen, cx, cz, r + 1.5)) continue;
+    const s0 = G.S[Math.floor(cz * 2) * W2 + Math.floor(cx * 2)],
+      lev = waterGenHeightAt(G.H, w, h, cx, cz) - WATERGEN_UNDER,
+      save = waterGenSave(G);
+    if (!waterGenPlungePool(G, cx, cz, r, s0, lev, false)) continue;
+    if (waterGenLost(G, seen, waterGenReach(G)) > WATERGEN_LOST_MAX) {
+      waterGenRestore(G, save);
+      continue;
+    }
+    const cells = [];
+    mapgenPaintDisc(G, cx, cz, r, q => {
+      if (G.F[q] & 4) {
+        G.T[q] = 'w';
+        cells.push(q);
+      }
+    });
+    G.keep.push([cx, cz, r + 1]);
+    return {
+      x: mapgenRound2(cx),
+      z: mapgenRound2(cz),
+      r: mapgenRound2(r),
+      rects: waterGenRects(w, cells, 'hotspring'),
+    };
+  }
+  return null;
+}
+/** the new kinds' rectangles (mapgen.js, once after the falls): rapids, the pond's kind, cave water, a hot spring */
+export function waterGenKinds(G) {
+  const { P, B, w, h } = G,
+    rnd = G.rng('heights', 'kinds'),
+    R = [];
+  if (P.biome === 'cave' && G.F.some(f => f & 4)) R.push({ x: 0, z: 0, w, h, k: 'cave' });
+  if (G.pond) {
+    const k =
+      B.water === 'swamp' && rnd.next() < WATERGEN_BOG
+        ? 'bog'
+        : B.climate === 'dry' && P.biome !== 'cave'
+          ? 'oasis'
+          : '';
+    if (k) {
+      const cells = [];
+      mapgenPaintDisc(G, G.pond.x, G.pond.z, G.pond.r + 1, q => {
+        if (G.F[q] & 4) cells.push(q);
+      });
+      R.push(...waterGenRects(w, cells, k));
+    }
+  }
+  R.push(...waterGenRapids(G));
+  if (P.kind === 'route' && rnd.next() < WATERGEN_SPRING_CHANCE) {
+    const S = waterGenHotSpring(G, rnd);
+    if (S) {
+      R.push(...S.rects);
+      G.hotspring = { x: S.x, z: S.z, r: S.r };
+    }
+  }
+  /* the cave's whole-map rectangle first, so lava's and the rest lie over it (the last rectangle holding a point wins) */
+  G.waters = [...R.filter(r => r.k === 'cave'), ...G.waters, ...R.filter(r => r.k !== 'cave')];
+}
+/** on the finished scene (mapgen.js, last): a reed or two in a marsh or a bog hides an item (`hide`, an items.json
+ * key) */
+export function waterGenReeds(G, sc) {
+  const marsh = sc.waterKind === 'swamp' || (sc.waters || []).some(r => r.k === 'bog');
+  if (!marsh) return;
+  const reeds = sc.props.filter(p => {
+    const M = G.cat[p.k];
+    return M && M.grow && /[wd]/.test(M.grow);
+  });
+  if (!reeds.length) return;
+  const rnd = G.rng('props', 'reeds'),
+    n = Math.min(reeds.length, 1 + (rnd.next() < 0.5 ? 1 : 0)),
+    total = WATERGEN_REED_ITEMS.reduce((a, [, wt]) => a + /** @type {number} */ (wt), 0);
+  for (let i = 0; i < n; i++) {
+    const p = reeds.splice(Math.floor(rnd.next() * reeds.length), 1)[0];
+    let r = rnd.next() * total;
+    p.hide = WATERGEN_REED_ITEMS[0][0];
+    for (const [k, wt] of WATERGEN_REED_ITEMS)
+      if ((r -= /** @type {number} */ (wt)) < 0) {
+        p.hide = k;
+        break;
+      }
   }
 }

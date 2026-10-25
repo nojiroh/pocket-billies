@@ -244,3 +244,114 @@ test('the same seed makes the same falls; no river or mountain, no fall; the hub
   const hub = modules['island-gen'].islandGenerate({}, 'copperleaf', ctx).scene;
   assert.equal(hub.falls, undefined, 'the hub island (locked; its fall waits for HB-4b)');
 });
+
+/* ---------- WA-5a: the new kinds placed ---------- */
+/* run-like routes (pinned east and west, two exits) over the biomes with marsh, dry and cave water */
+const KIND_BIOMES = ['meadow', 'lake', 'thicket', 'ridge', 'autumn', 'canyon', 'cave', 'jungle'];
+const KIND_CASES = Array.from({ length: 48 }, (_, i) => ({
+  seed: 9000 + i,
+  biome: KIND_BIOMES[i % KIND_BIOMES.length],
+  kind: 'route',
+  pin: 'EW',
+  w: 96,
+  h: 64,
+  road: {
+    exits: [
+      { side: 'E', t: 0.5, width: 2 },
+      { side: 'W', t: 0.5, width: 2 },
+    ],
+  },
+  land: {
+    water: ['stream', 'pond', 'none', 'stream', 'pond'][i % 5],
+    waterAmount: 0.3 + (i % 5) / 10,
+    hills: (i % 4) / 4,
+  },
+}));
+const KIND_MADE = KIND_CASES.map(c => ({ c, ...G.mapgenScene(c, ctx) }));
+/** the cells of a scene's rectangles of kind k, as [x + 0.5, z + 0.5] */
+const cellsOf = (sc, k) =>
+  (sc.waters || [])
+    .filter(r => r.k === k)
+    .flatMap(r =>
+      Array.from({ length: r.w * r.h }, (_, n) => [r.x + (n % r.w) + 0.5, r.z + Math.floor(n / r.w) + 0.5])
+    );
+
+test('WA-5a: rectangles over row runs, joined down the rows when they match', () => {
+  const w = 10,
+    cells = [2, 3, 4, 12, 13, 14, 22, 23, 27];
+  assert.deepEqual(WG.waterGenRects(w, cells, 'bog'), [
+    { x: 2, z: 0, w: 3, h: 2, k: 'bog' },
+    { x: 2, z: 2, w: 2, h: 1, k: 'bog' },
+    { x: 7, z: 2, w: 1, h: 1, k: 'bog' },
+  ]);
+});
+
+test("WA-5a: rapids lie on the river's water, clear of roads and bridges; a hot spring is shallows walked to", () => {
+  let springs = 0,
+    rapids = 0;
+  for (const { c, scene: sc, notes } of KIND_MADE) {
+    const where = `seed ${c.seed} ${c.biome}`;
+    assert.deepEqual(notes, [], where);
+    assert.deepEqual(G.mapgenUnreachable(sc, GAME_DATA.scenery), [], `${where}: every exit reached`);
+    const rp = cellsOf(sc, 'rapids');
+    if (rp.length) rapids++;
+    for (const [x, z] of rp) {
+      assert.ok('wd'.includes(tileAt(sc, x, z)), `${where}: rapids at ${x},${z} on water`);
+      assert.ok(!'pvKq'.includes(tileAt(sc, x, z)), `${where}: rapids at ${x},${z} off the road`);
+      assert.ok(riverOf(sc) && riverOf(sc).rapids, `${where}: rapids on a river with rapids`);
+    }
+    const hs = cellsOf(sc, 'hotspring');
+    if (!hs.length) continue;
+    springs++;
+    const R = G.mapgenReach(sc, GAME_DATA.scenery, sc.hub, { slope: true });
+    for (const [x, z] of hs) assert.equal(tileAt(sc, x, z), 'w', `${where}: the hot spring at ${x},${z} is shallows`);
+    const [mx, mz] = hs[Math.floor(hs.length / 2)];
+    assert.ok(WG.waterGenReachedRing(sc, R, mx, mz, 3.5), `${where}: the hot spring is walked to`);
+  }
+  assert.ok(rapids > 0, 'some rivers have rapids');
+  assert.ok(springs >= 1 && springs <= 16, `${springs} hot springs in ${KIND_MADE.length} routes`);
+});
+
+test('WA-5a: the bog in a marsh biome, an oasis in a dry one, cave water in a cave; reeds hide items there only', () => {
+  const items = new Set(WG.WATERGEN_REED_ITEMS.map(([k]) => k));
+  let bog = 0,
+    reeds = 0;
+  for (const { c, scene: sc } of KIND_MADE) {
+    const where = `seed ${c.seed} ${c.biome}`,
+      B = GAME_DATA.biomes[c.biome],
+      W = sc.waters || [];
+    for (const r of W) assert.ok(modules['water-kinds'].waterKindKnown(r.k), `${where}: ${r.k}`);
+    if (W.some(r => r.k === 'bog')) {
+      bog++;
+      assert.equal(B.water, 'swamp', `${where}: a bog in a marsh biome`);
+      assert.equal(sc.waterKind, 'swamp', `${where}: the scene keeps the marsh's look`);
+    }
+    if (W.some(r => r.k === 'oasis')) assert.equal(B.climate, 'dry', `${where}: an oasis in a dry place`);
+    if (W.some(r => r.k === 'cave')) assert.equal(c.biome, 'cave', where);
+    if (c.biome === 'cave' && sc.waterKind) assert.equal(W[0].k, 'cave', `${where}: cave water first, lava over it`);
+    const hid = sc.props.filter(p => p.hide);
+    if (hid.length) reeds++;
+    for (const p of hid) {
+      assert.ok(items.has(p.hide), `${where}: ${p.hide}`);
+      assert.ok(/[wd]/.test(GAME_DATA.scenery.props[p.k].grow || ''), `${where}: ${p.k} is a water plant`);
+      assert.ok(sc.waterKind === 'swamp', `${where}: reeds hide items in a marsh`);
+    }
+  }
+  assert.ok(bog > 0 && reeds > 0, `${bog} bogs, ${reeds} scenes with a find`);
+});
+
+test('WA-5a: the same seed places the same kinds; a town never gets a hot spring', () => {
+  for (const { c, scene } of KIND_MADE.slice(0, 8)) {
+    const again = G.mapgenScene(c, ctx).scene;
+    assert.deepEqual(again.waters, scene.waters, `seed ${c.seed}`);
+    assert.deepEqual(
+      again.props.filter(p => p.hide),
+      scene.props.filter(p => p.hide),
+      `seed ${c.seed}`
+    );
+  }
+  for (const { c } of KIND_MADE.slice(0, 8)) {
+    const t = G.mapgenScene({ ...c, kind: 'town' }, ctx).scene;
+    assert.ok(!(t.waters || []).some(r => r.k === 'hotspring'), `seed ${c.seed}: a town`);
+  }
+});
