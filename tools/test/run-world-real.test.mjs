@@ -15,7 +15,8 @@ const { runArrive, runMapStart, runNext } = modules['run-map'];
 const { newRun } = modules['run-state'];
 const { seamRulesLinks } = modules['seam-rules'];
 const { MAPGEN_VERSION, mapgenSeamAgreement, mapgenUnreachable } = modules.mapgen;
-const { runSceneExits, runSceneMake, runSceneParams, runScenesMake, runWorldTables } = modules['run-scenes'];
+const { runSceneExits, runSceneMake, runSceneParams, runScenesMake, runScenesSlices, runWorldTables } =
+  modules['run-scenes'];
 
 const START = {
   team: [],
@@ -153,6 +154,20 @@ test('the same seed makes the same scenes; every node its own', () => {
   assert.deepEqual(a, b);
   assert.equal(new Set(a.map(sc => sc.gen.seed)).size, a.length);
   assert.notDeepEqual(runScenesMake(runOf('RL7OTHER'), WORLD_DATA)[0].tiles, a[0].tiles);
+});
+
+test('HB-2: the scenes made one a step are the scenes made at once, each step counting up to the last', () => {
+  const run = runOf('HB2SLICES'),
+    it = runScenesSlices(run, WORLD_DATA),
+    steps = [];
+  let r = it.next();
+  for (; !r.done; r = it.next()) steps.push(r.value);
+  const n = run.map.nodes.length;
+  assert.deepEqual(
+    steps,
+    Array.from({ length: n - 1 }, (_, i) => [i + 1, n])
+  );
+  assert.deepEqual(r.value, runScenesMake(runOf('HB2SLICES'), WORLD_DATA));
 });
 
 test("a node's dials are frozen: a change to how they are drawn changes every run's scenes", t => {
