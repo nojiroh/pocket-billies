@@ -49,6 +49,8 @@ hub branch left for it). Details: docs/phases/hub-track.md, "Done in the placing
   doors a tap away, Station Lv 2 bought on the station's sheet); `check:smoke` 6/6 (206 s; the phone flow taps the station on its headland, the window check passes). Pictures (tools/island-shots.py, not
   committed): the rail climbing from the headland to the portal and its tear, the station on its headland, the
   lighthouse on the cove, the windmill by the farm, the town; the game's own camera at the station; no page errors.
+  After merging main (HB-3, SP-1): `npm test` 996/996, `test:slow` 73/73, check-fast's boot, island, world map and
+  Studio world map steps green.
 - Next: the owner's look at the pictures and on the phone (HB-3, merged meanwhile in PR #202, merged in here); HB-8 (the departure on this rail: the
   train along `landmarks.rail`, the sea past the edge, `flyMenu`'s hub branch); a stock for the General store when
   the owner picks one; HB-9.
