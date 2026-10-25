@@ -8,8 +8,8 @@
 // zone's outline lightly smoothed and set a little inside it (logic/pasture.js, the same line the game's Billies wander
 // inside). HB-6: a weathered post-and-rail fence that bends as the zone does: posts (`fence_post`) spaced evenly round
 // the line, each a few degrees turned and leaning a little; between each two a rail (`fence_rail`) sized to its span,
-// resting on the ground at both posts; a few rails weathered, a few broken; a gap where the line comes nearest the
-// barn's door with the field gate (`fence_gate`, act `pasture`: it opens the ranch's sheet) hung on its own post at one
+// resting on the ground at both posts; a few rails weathered, a few broken; a gap where the island's path to the
+// pasture arrives (or nearest the barn's door on a map with no island) with the field gate (`fence_gate`, act `pasture`: it opens the ranch's sheet) hung on its own post at one
 // end of the gap and standing swung open into the field, so you can walk in; the water trough by the gate; the hay
 // rack with round bales by it in the middle; two more bales. Nothing but props is touched: the ground, the zones,
 // people and life stay as they were.
@@ -52,7 +52,7 @@ export function pastureProps(sc, scenery) {
     RAIL = C.fence_rail.box[0],
     line = pastureFenceLine(zone),
     n = line.length;
-  /* the barn's door: where you come from */
+  /* the barn's door: where you come from on a map with no island */
   const barn = (sc.props || []).find(p => p.act === 'ranch'),
     door = barn
       ? (() => {
@@ -76,12 +76,26 @@ export function pastureProps(sc, scenery) {
         f = (d - at[i]) / (at[i + 1] - at[i] || 1);
       return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
     };
-  /* the gate: the gap's middle where the line comes nearest the door */
+  /* the gate: where the path arrives. The island's generator lays a path (a spoke) from the middle of the zone's side
+     facing the sea, straight out from the island's middle through the zone's middle (logic/island-gen.js, the flat
+     zones' spokes): the gap's middle is where that line crosses the fence. With no island, where the line comes
+     nearest the barn's door. */
+  const zm = zone.reduce((a, p) => [a[0] + p[0] / zone.length, a[1] + p[1] / zone.length], [0, 0]),
+    ic = sc.island && Array.isArray(sc.island.c) ? sc.island.c : null,
+    aim = (() => {
+      if (!ic) return door;
+      const dl = Math.hypot(zm[0] - ic[0], zm[1] - ic[1]) || 1,
+        dx = (zm[0] - ic[0]) / dl,
+        dz = (zm[1] - ic[1]) / dl;
+      let r = 0;
+      while (r < 200 && pastureIn(line, zm[0] + dx * r, zm[1] + dz * r)) r += 0.05;
+      return [zm[0] + dx * r, zm[1] + dz * r];
+    })();
   let gd = 0,
     best = Infinity;
   for (let d = 0; d < P; d += 0.1) {
     const q = pointAt(d),
-      e = Math.hypot(q[0] - door[0], q[1] - door[1]);
+      e = Math.hypot(q[0] - aim[0], q[1] - aim[1]);
     if (e < best) [gd, best] = [d, e];
   }
   /* the gap's two posts, then the posts round the rest of the line spaced evenly (a rail's length apart, near enough

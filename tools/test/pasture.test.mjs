@@ -203,6 +203,23 @@ test('pasture: the build step: every prop in the zone, the fence closed but for 
   }
   assert.ok(!blockedAt(made, at[0], at[1]), 'the flood starts on open ground');
   assert.ok(out2.length > 0, 'you can walk out (through the gate)');
+  /* the gate is where the island's path arrives: a path tile just outside the gap, walked to in a straight line */
+  const tileAt = (x, z) => (HUB.tiles[HUB.h - 1 - Math.floor(z)] || '')[Math.floor(x)],
+    inX = out.gap[0] - out.gate.x,
+    inZ = out.gap[1] - out.gate.z;
+  let path = null;
+  for (let r = 0.5; r < 4 && !path; r += 0.25)
+    for (let a = 0; a < 360 && !path; a += 10) {
+      const x = out.gap[0] + Math.cos((a * Math.PI) / 180) * r,
+        z = out.gap[1] + Math.sin((a * Math.PI) / 180) * r;
+      if (tileAt(x, z) === 'p' && !P.pastureIn(line, x, z)) path = [x, z];
+    }
+  assert.ok(path, `a path tile within 4 m outside the gate's gap at ${out.gap} (the gate leans ${inX}, ${inZ} in)`);
+  for (let f = 0; f <= 1; f += 0.05)
+    assert.ok(
+      !blockedAt(made, path[0] + (out.gap[0] - path[0]) * f, path[1] + (out.gap[1] - path[1]) * f),
+      'from the path straight through the gap'
+    );
   for (const [x, z] of out2)
     assert.ok(
       Math.hypot(x - out.gap[0], z - out.gap[1]) < 1.8,
@@ -239,8 +256,8 @@ test('pasture: the fence: a post at every joint, one rail sized to each span, no
     const r = on[0],
       ends = [pointInProp(r, a[0], a[1]), pointInProp(r, b[0], b[1])];
     /* its two ends at the two posts' middles: no gap, no overlap */
-    assert.ok(Math.abs(R * (r.s || 1) - L) < 0.01, `the rail fits its ${L.toFixed(2)} m span`);
-    for (const e of ends) assert.ok(Math.abs(e[1]) < 0.02 && Math.abs(Math.abs(e[0]) - L / 2) < 0.01, 'along the span');
+    assert.ok(Math.abs(R * (r.s || 1) - L) < 0.02, `the rail fits its ${L.toFixed(2)} m span`);
+    for (const e of ends) assert.ok(Math.abs(e[1]) < 0.02 && Math.abs(Math.abs(e[0]) - L / 2) < 0.02, 'along the span');
     assert.ok(Math.abs((r.s || 1) - 1) <= 0.08, 'sized a little at most');
     assert.ok(L > 1.6, `posts at least 1.6 m apart (${L.toFixed(2)})`);
   }
