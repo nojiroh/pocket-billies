@@ -26,7 +26,6 @@ import importlib.util
 import math
 import sys
 import tempfile
-from collections import deque
 from pathlib import Path
 
 import numpy as np
@@ -98,25 +97,6 @@ def cap(S, k, col, name, lump=0.15, over=1.05, extra=0.05):
             'lump': lump, 'facet': 1, 'col': col, 'tex': 'leaves' if col in (MOSS, MOSS_L, MOSS_D) else 'plain', 'name': name}
 
 
-def components(mask, least=1):
-    """the mask's connected parts (8 neighbours) as lists of (y, x), the ones of at least `least` pixels"""
-    H, W = mask.shape
-    seen = np.zeros_like(mask)
-    out = []
-    for y0, x0 in zip(*np.nonzero(mask)):
-        if seen[y0, x0]: continue
-        comp, q = [], deque([(y0, x0)]); seen[y0, x0] = True
-        while q:
-            y, x = q.popleft(); comp.append((y, x))
-            for dy in (-1, 0, 1):
-                for dx in (-1, 0, 1):
-                    yy, xx = y + dy, x + dx
-                    if 0 <= yy < H and 0 <= xx < W and mask[yy, xx] and not seen[yy, xx]:
-                        seen[yy, xx] = True; q.append((yy, xx))
-        if len(comp) >= least: out.append(comp)
-    return out
-
-
 # ================================================================ trees
 SNOW_PINES = {
     # key: (picture, limbs: the trunk and the mast hidden in the crown, as batch 10's pines)
@@ -139,9 +119,10 @@ def olive_recipe():
 
 
 def jungle_recipe():
-    """The jungle tree: a tall pale trunk on brown buttress roots, its crown cut into clumps (the drawing's back leaf
-    layer behind them, its front clumps before them), the hanging vines as strips cut from the drawing, each strip
-    at its own depth under the crown so they hang all round when the camera turns."""
+    """The jungle tree: a tall pale trunk on brown buttress roots, its crown (with the drawing's front leaf layer laid
+    over it) cut into clumps, the drawing's back leaf layer behind them, and the hanging vines as two sheets cut from
+    the drawing, every other vine in front of the trunk and the rest behind it, so they hang all round when the camera
+    turns. Each picture in a model costs a draw, so it keeps to nine (a run's jungle has twenty or so of these trees)."""
     P = 'tree_jungle'
     a = B1.rgba(B1.PROPS / f'{P}.png')
     H, W = a.shape[:2]
@@ -151,11 +132,15 @@ def jungle_recipe():
     crown_bottom = max(wide)
     vines = canopy.copy(); vines[:crown_bottom + 1] = False
     clean = a.copy(); clean[vines, 3] = 0
+    # the front leaf layer's leaves (its green parts; the bits of trunk drawn on it are the model's now) over the crown
+    lf = B1.rgba(B1.PROPS / 'layers' / 'tree_jungle_lf.png')
+    lfm = (lf[..., 3] > 0) & (lf[..., 1].astype(int) > lf[..., 0].astype(int) + 8)
+    clean[lfm] = lf[lfm]
     with tempfile.TemporaryDirectory() as tmp:
         src = Path(tmp) / P
         Image.fromarray(clean.astype(np.uint8), 'RGBA').save(src.with_suffix('.png'))
         limbs = [((111.5, 300), (111, 84), 30, 22), ((106, 86), (93, 66), 12, 7), ((117, 86), (128, 66), 12, 7)]
-        r, sheet_path, sheet, crown = B1.tree_recipe('jungle', str(src), 8, limbs, LEAVES, 1160)
+        r, sheet_path, sheet, crown = B1.tree_recipe('jungle', str(src), 6, limbs, LEAVES, 1160)
     L = r['layers']
     ys, xs = np.nonzero(crown)
     Rc = (xs.max() - xs.min() + 1) / 2 / PPM
@@ -176,47 +161,21 @@ def jungle_recipe():
     back_path = B1.save_png(back, LEAVES / 'jungle_back.png')
     L.append(img(back_path, ((bxs.min() + bxs.max() + 1) / 2 - ax) / PPM, Rc * 0.45, (by - bys.max()) / PPM,
                  shade=0.85, recv=0, sway=0.6, name='back leaves'))
-    # the front leaf layer's clumps (the green parts; the bits of trunk drawn on it are the model's now)
-    lf = B1.rgba(B1.PROPS / 'layers' / 'tree_jungle_lf.png')
-    lfm = (lf[..., 3] > 0) & (lf[..., 1].astype(int) > lf[..., 0].astype(int) + 8)
-    parts = components(lfm, 150)
-    fy, fx_ = np.nonzero(lfm)
-    fy0, fx0 = fy.min(), fx_.min()
-    front = np.zeros_like(lf); front[lfm] = lf[lfm]
-    front = front[fy0:fy.max() + 1, fx0:fx_.max() + 1]
-    front_path = B1.save_png(front, LEAVES / 'jungle_front.png')
-    for i, comp in enumerate(sorted(parts, key=lambda c: min(x for _, x in c))):
-        cy = [p[0] for p in comp]; cx = [p[1] for p in comp]
-        x0, x1, y0, y1 = min(cx), max(cx), min(cy), max(cy)
-        xm = ((x0 + x1 + 1) / 2 - ax) / PPM
-        xn = max(-1, min(1, xm / Rc))
-        L.append(img(front_path, xm, -math.sqrt(1 - xn * xn) * Rc * (0.35 + 0.08 * (i % 2)), (by - y1) / PPM,
-                     clip=[int(x0 - fx0), int(y0 - fy0), int(x1 + 1 - fx0), int(y1 + 1 - fy0)], recv=0, sway=1.2,
-                     name=f'front leaves {i + 1}'))
-    # the vines: runs of columns, grouped into strips, each at its own depth under the crown
-    vy, vx = np.nonzero(vines)
-    vy0, vx0 = vy.min(), vx.min()
-    vsheet = np.zeros_like(a); vsheet[vines] = a[vines]
-    vsheet = vsheet[vy0:vy.max() + 1, vx0:vx.max() + 1]
-    vine_path = B1.save_png(vsheet, LEAVES / 'jungle_vines.png')
+    # the vines: each run of columns is a vine; every other one goes on the front sheet, the rest on the back one
     cols = vines.any(0)
     runs, cur = [], None
     for x in range(W):
         if cols[x] and cur is None: cur = x
         if not cols[x] and cur is not None: runs.append((cur, x - 1)); cur = None
     if cur is not None: runs.append((cur, W - 1))
-    groups = [runs[i:i + 2] for i in range(0, len(runs), 2)]
-    depth = (-0.55, 0.45, -0.15, 0.7, -0.75, 0.2, 0.55, -0.4, 0.05)
-    for i, g in enumerate(groups):
-        x0, x1 = g[0][0], g[-1][1]
-        sub = vines[:, x0:x1 + 1]
-        rows = np.nonzero(sub.any(1))[0]
-        y0, y1 = rows.min(), rows.max()
-        xm = ((x0 + x1 + 1) / 2 - ax) / PPM
-        xn = max(-1, min(1, xm / Rc))
-        L.append(img(vine_path, xm, depth[i % len(depth)] * math.sqrt(1 - xn * xn) * Rc * 0.8, (by - y1) / PPM,
-                     clip=[int(x0 - vx0), int(y0 - vy0), int(x1 + 1 - vx0), int(y1 + 1 - vy0)], recv=0, sway=0.7,
-                     name=f'vines {i + 1}'))
+    vy, vx = np.nonzero(vines)
+    vy0, vy1, vx0, vx1 = vy.min(), vy.max(), vx.min(), vx.max()
+    for side, name, y in ((0, 'front', -0.4), (1, 'back', 0.4)):
+        m = np.zeros_like(vines)
+        for x0, x1 in runs[side::2]: m[:, x0:x1 + 1] = vines[:, x0:x1 + 1]
+        part = np.zeros_like(a); part[m] = a[m]
+        path = B1.save_png(part[vy0:vy1 + 1, vx0:vx1 + 1], LEAVES / f'jungle_vines_{name}.png')
+        L.append(img(path, ((vx0 + vx1 + 1) / 2 - ax) / PPM, Rc * y, (by - vy1) / PPM, recv=0, sway=0.7, name=f'vines {name}'))
     L.sort(key=lambda l: l['k'] == 'img')
     return r
 
