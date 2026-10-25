@@ -2,6 +2,60 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Hub track HB-6 - The natural pasture fence - 2026-10-25
+Branch `props/hub-fence` (the session's brief named it; the plan's `Branch:` line says `track/hub`: a cloud session
+pushes only to its own branch). Plan approved in Plan Mode. The owner's answers: the gate where the island's path
+arrives; the field swells up to 0.5 m; fixed-length rails rather than an engine stretch.
+- Checked against the code (main f779581). The facts held, plus: `fence_wood` is a 2.2 m section with three posts
+  built in, and the corner post `fence_wood_post` is an 8 vox/m model, not 32 px/m low-poly. Low-poly models ignore
+  `wear`, `tint` and the variety lean (only pictures read them). The model shaders already turn a whole model about
+  any axis (RF-2's `it.spin`), but nothing in the walk view set it. A prop scales by one number only. A variant's
+  `span` already means its width, so the new catalogue flag is `restEnds`.
+- Changed (one cause per commit):
+  - Engine: `logic/prop-turn.js` `spanFit` and `tiltSpin`. In `walk/prop-look.js` `stillPropState`, a catalogue model
+    with `restEnds` rests on the ground under each end of its box's width, tipped between them; any other model leans
+    by its placement's `tilt` [deg toward +x, deg toward its back]. Computed once with the still state; pictures don't
+    tip. Map schema and types describe both.
+  - Art: `tools/make-fence-parts.mjs` makes `fence_post` (variant 1 silvered) and `fence_rail` (2 m, the two rails
+    running into the posts' middles; variants weathered, broken, both) from `fence_wood`'s own layers.
+    `fence_wood` stays for the other maps.
+  - Pasture line (`logic/pasture.js`): the zone lightly smoothed (`pastureSmooth`: every metre, a 5-point mean,
+    twice), then 1.2 m in. `pastureStraight` is gone.
+  - Fence (`tools/build-pasture.mjs`): posts spaced evenly round the line. Each post is turned up to 12 degrees, leans
+    0.6-2.2 degrees and is sometimes silvered. One rail per span, sized to it (`s` within 8%; on the hub within 2%).
+    About a quarter of the rails are weathered and a few are broken (never by the gate, never two side by side). The
+    gate hangs on its own post at one end of the gap, so there is no doubled post; the trough goes on the roomier side.
+  - Gate: where island-gen's spoke ("pasture to the coast": from the island's middle out through the zone's middle)
+    crosses the fence. On the hub that is the west side, on the coast path; it was the north side, which no path
+    reaches. A map with no island keeps the barn door.
+  - Ground (`pastureGround`): the zone's level plus a seeded swell, up to 0.5 m across the field. Along the fence it's
+    about ±0.2 m, so the rails tilt up to about 3 degrees. It fades in over 2.6 m from the zone's edge and is level
+    within 3 m of the gate. `build-copperleaf.mjs` runs it after the pasture's props; a rerun writes the same map.
+  - `tools/look-pasture.py`: free-camera pictures of the pasture (validation/look-pasture/, git-ignored).
+  - copperleaf.json rebuilt by `tools/build-copperleaf.mjs`, never by hand. The dressing's draws follow the pasture's
+    props, so about 50 forest-floor props moved.
+- Risky:
+  - The engine change touches every prop's still state (one more field, and `turnedPoint` plus two height samples
+    for `restEnds` models only).
+  - A rail's spin also tips its shadow (the same uniform); its walk box doesn't tip (no need, it's on the ground).
+  - Only looked at with the game's own graphics defaults; not with "Props as low-poly" off.
+  - A phone with the old art cache has no `fence_post` or `fence_rail` recipes until the cache refreshes. Until then
+    they should draw as their catalogue pictures (the old section's and post's).
+  - HB-4b: build-pasture works on any pasture zone (it throws if a span can't fit a rail within 8%, or the trough
+    finds no room).
+- Verified:
+  - lint, typecheck, check:modules, check:data, prettier.
+  - `npm test` 941/941. New tests: `spanFit`/`tiltSpin` against the shaders' own spin; the line follows the zone
+    (within 0.6 m, bends of at most 35 degrees per 2 m); one rail per span fitting end to end; rails meet only at
+    posts; a post at every joint except the gate's; no posts side by side; the posts on the line the Billies wander
+    inside; the roam line inside the posts; a path tile just outside the gap, walked to in a straight line; the flood
+    still leaves only through the gap; the ground rerun the same, level by the gate, nothing outside the zone moved.
+  - `check:smoke` after the engine change and at the end (see below).
+  - Before (f779581) and after pictures with `tools/look-pasture.py`.
+- Next: the owner's look on the phone (the swell's height, the broken and weathered share, the gate's side). HB-4b
+  reruns build-copperleaf (the pasture and its ground follow the new zone). The quick check's baseline pictures near
+  the pasture will differ.
+
 ### Window glass on the low-poly buildings (no more glowing orbs) - 2026-10-25
 Branch `ccr-7161a124-txw6o4` (one session, not part of a plan). The owner's ask: windows on 3D buildings looked like a
 weird orb at night. Plan approved in Plan Mode; the owner chose to mark the glass with a new recipe key (`glass: n`)
