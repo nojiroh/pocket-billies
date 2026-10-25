@@ -10,7 +10,7 @@
   "required": ["kind", "weight"],
   "additionalProperties": false,
   "properties": {
-   "kind": {"description": "item: an item or pyramids into the bag; candy: a level item (lvlUp); evo: an evolution item (drawn only when a Billie of the team evolves with it); tutor: a move a Billie of the team can learn; held: a held item (RL-12c, keep its weight 0)", "enum": ["item", "candy", "evo", "tutor", "held"]},
+   "kind": {"description": "item: an item or pyramids into the bag; candy: a level item (lvlUp); evo: an evolution item (drawn only when a Billie of the team evolves with it); tutor: a move a Billie of the team can learn; held: a held item (RL-12c), drawn from items.json's held items that nobody on the team holds", "enum": ["item", "candy", "evo", "tutor", "held"]},
    "item": {"description": "the item (items.json)", "type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
    "pyramid": {"description": "or the pyramid (pyramids.json), for kind item", "type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
    "n": {"description": "how many (1 when left out)", "type": "integer", "minimum": 1, "maximum": 20},

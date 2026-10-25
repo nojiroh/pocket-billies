@@ -3,7 +3,7 @@
    The pick after a route trainer's battle (or an event's "reward"): run.enc.reward's cards (logic/rewards.js), saved
    before the sheet shows, as face-up pick cards. Tap one, then "Take it"; "Reroll" draws them again for Moneys (the
    price doubles each time); "Take none" leaves them. A tutor card asks which Billie learns the move, then, when its
-   moves are full, which one it forgets. The sheet can't be closed any other way, and a reload opens it again
+   moves are full, which one it forgets. A held item's card (RL-12c) asks who holds it (or into the bag). The sheet can't be closed any other way, and a reload opens it again
    (run.js runResume). Every change is saved at once (saveNow). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
@@ -20,6 +20,7 @@ expose({
   rewardAnswer: [() => rewardAnswer, v => (rewardAnswer = v)],
   rewardCardHTML: [() => rewardCardHTML, v => (rewardCardHTML = v)],
   rewardDone: [() => rewardDone, v => (rewardDone = v)],
+  rewardHolder: [() => rewardHolder, v => (rewardHolder = v)],
   rewardPickOpen: [() => rewardPickOpen, v => ((rewardPickOpen = v), provide({ rewardPickOpen }))],
   rewardSheet: [() => rewardSheet, v => (rewardSheet = v)],
   rewardTakeTap: [() => rewardTakeTap, v => (rewardTakeTap = v)],
@@ -44,7 +45,7 @@ function rewardCardHTML(c, k, on) {
     return `<pb-pick-card data-k="${k}" heading="${escapeHtml(n + P.n)}" sub="Pyramid"${on ? ' selected' : ''}><span slot="art">${pyramidHTML(c.item.slice(5), 40)}</span>${escapeHtml(P.d || '')}</pb-pick-card>`;
   }
   const I = ITEMS[/** @type {string} */ (c.item)] || { n: c.item, d: '' },
-    sub = c.kind === 'candy' ? 'Candy' : c.kind === 'evo' ? 'Evolution item' : 'Item';
+    sub = c.kind === 'candy' ? 'Candy' : c.kind === 'evo' ? 'Evolution item' : c.kind === 'held' ? 'Held item' : 'Item';
   return `<pb-pick-card data-k="${k}" heading="${escapeHtml(n + I.n)}" sub="${sub}"${on ? ' selected' : ''}><span slot="art">${itemIcon(/** @type {string} */ (c.item), 40)}</span>${escapeHtml(I.d || '')}</pb-pick-card>`;
 }
 /** show the pick's sheet (in place when it is up; ahead of any other) */
@@ -102,6 +103,10 @@ function rewardTakeTap(k) {
     R = run && run.enc && run.enc.reward,
     c = R && R.cards[k];
   if (!c) return;
+  if (c.kind === 'held') {
+    rewardHolder(k);
+    return;
+  }
   if (c.kind !== 'tutor') {
     rewardAnswer(k);
     return;
@@ -118,6 +123,26 @@ function rewardTakeTap(k) {
     after: () => {
       for (const b of document.querySelectorAll('#ov .pickrow[data-u]'))
         b.addEventListener('click', () => rewardTeach(k, /** @type {HTMLElement} */ (b).dataset.u || ''));
+    },
+  });
+}
+/** RL-12c: a held item's card: who holds it (one holding another gives that back to the bag), or into the bag
+ * @param {number} k */
+function rewardHolder(k) {
+  const c = saveData.run.enc.reward.cards[k],
+    I = ITEMS[c.item] || { n: c.item };
+  rewardSheet({
+    title: `Who holds the ${escapeHtml(I.n)}?`,
+    cls: 'reward-pick',
+    lock: true,
+    html: `<div class="list">${saveData.team.map(m => `<button class="pickrow" data-u="${m.uid}">${bustHTML(m.sp, 40, { coat: m.coat })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>Lv ${m.lvl} · ${m.held && ITEMS[m.held] ? `holding ${escapeHtml(ITEMS[m.held].n)}` : 'holding nothing'}</small></span></button>`).join('')}</div>`,
+    btns: [
+      { l: 'Into the bag', c: 'dark', f: () => rewardAnswer(k) },
+      { l: 'Back', c: 'quiet', f: () => rewardPickOpen() },
+    ],
+    after: () => {
+      for (const b of document.querySelectorAll('#ov .pickrow[data-u]'))
+        b.addEventListener('click', () => rewardAnswer(k, { uid: /** @type {HTMLElement} */ (b).dataset.u || '' }));
     },
   });
 }
@@ -163,6 +188,9 @@ function rewardAnswer(k, o) {
   if (c && c.kind === 'tutor' && o && o.uid) {
     const m = saveData.team.find(b => b.uid === o.uid);
     if (m) toast(`${billyName(m)} learned ${MOVES[/** @type {string} */ (c.move)].n}.`);
+  } else if (c && c.kind === 'held' && o && o.uid) {
+    const m = saveData.team.find(b => b.uid === o.uid);
+    if (m && m.held === c.item) toast(`${billyName(m)} is holding the ${ITEMS[/** @type {string} */ (c.item)].n}.`);
   } else if (c && c.item) toast(`Into the bag.`);
   rewardDone();
 }

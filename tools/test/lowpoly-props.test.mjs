@@ -62,3 +62,32 @@ test('as voxels one to a pixel, Copperleaf’s props build within 50,000 quads e
     assert.ok(V.quads <= 50000, `${k}: ${V.quads} quads`);
   }
 });
+
+test('a building with picture windows has its glass marked: each window lights from its own glass', () => {
+  /* the picture's window glows (scenery fx) are drawn by the glass instead (walk/effects.js skips them, it.wins) */
+  const unmarked = SHAPED.filter(({ M, rec }) => (M.fx || []).some(e => e.k === 'window') && lowPolyFromRecipe(rec))
+    .filter(({ rec }) => !lowPolyFromRecipe(rec).wins.length)
+    .map(({ k }) => k);
+  assert.deepEqual(unmarked, []);
+});
+
+test('window glass: its vertices carry the window (2-32), each window its middle and an outward look', () => {
+  const rec = {
+      layers: [
+        { k: 'box', x: 0, y: 1, z: 0, w: 3, d: 2, h: 2, col: '#ffffff', name: 'walls' },
+        { k: 'box', x: -0.8, y: -0.02, z: 1, w: 0.8, d: 0.04, h: 0.6, col: '#7EB8D4', glass: 1 },
+        { k: 'box', x: 1.52, y: 1, z: 1, w: 0.03, d: 0.7, h: 0.6, col: '#7EB8D4', glass: 2 },
+      ],
+    },
+    M = lowPolyFromRecipe(rec),
+    u8 = new Uint8Array(M.vb),
+    kinds = new Set();
+  for (let o = 18; o < u8.length; o += 24) kinds.add(u8[o]);
+  assert.deepEqual([...kinds].sort(), [0, 2, 3]);
+  const [front, side] = M.wins;
+  assert.equal(front.id, 1);
+  assert.deepEqual(front.n, [0, 0, -1]);
+  assert.ok(Math.abs(front.p[0] + 0.8) < 1e-6 && Math.abs(front.p[1] - 1.3) < 1e-6);
+  assert.equal(side.id, 2);
+  assert.deepEqual(side.n, [1, 0, 0]);
+});

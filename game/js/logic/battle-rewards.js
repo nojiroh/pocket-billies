@@ -8,17 +8,19 @@
    endBattle as it was (tools/test/battle-rewards.test.mjs). Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { PERKS, RULES } from '../game-data.js';
+import { ITEMS, PERKS, RULES } from '../game-data.js';
 import { dropEncounter, findBilly, wildPrize } from './rules.js';
 import { runLostTo } from './run-history.js';
 import { fieldBadgeKey } from './run-side.js';
 import { runFragileDrop } from './run-loop.js';
-import { fxMoney } from './effects.js';
+import { fxMoney, fxOfBillie } from './effects.js';
 import { perkOfferMake } from './perks.js';
 import { rewardDataGame, rewardOfferMake } from './rewards.js';
 import { battleRoll } from './battle-engine.js';
 /* eslint-disable no-func-assign */
 expose({
+  // @ts-expect-error -- replaced on purpose
+  battleMoneyFx: [() => battleMoneyFx, v => (battleMoneyFx = v)],
   battleOutcome: [() => battleOutcome],
   // @ts-expect-error -- replaced on purpose
   battleRewards: [() => battleRewards, v => (battleRewards = v)],
@@ -66,6 +68,15 @@ export function battleRewards(b, s, roll, rules = RULES) {
   return out;
 }
 
+/** RL-12c: the rows that change a battle's money: the run's (b.fx) and the money rows of the held items of yours still
+ * standing (null with none) @param {any} b */
+export function battleMoneyFx(b) {
+  const held = b.sides[0].team
+    .filter((/** @type {any} */ m) => m.hp > 0)
+    .flatMap((/** @type {any} */ m) => (fxOfBillie(m, ITEMS) || []).filter(f => f.kind === 'money'));
+  return held.length ? [...(b.fx || []), ...held] : b.fx;
+}
+
 /* Studio plan T3.2: what an ended battle does to the save, the same on the page (battle.js endBattle, which shows the
    sheets, seats and the tutorial) and in a run's simulation (logic/run-sim.js) */
 /**
@@ -77,7 +88,7 @@ export function battleRewards(b, s, roll, rules = RULES) {
  */
 export function battleSettle(b, s) {
   const pay = battleRewards(
-      { kind: b.kind, over: b.over, T: b.T, tid: b.tid, foe: b.sides[1].team, fx: b.fx },
+      { kind: b.kind, over: b.over, T: b.T, tid: b.tid, foe: b.sides[1].team, fx: battleMoneyFx(b) },
       s,
       battleRoll
     ),

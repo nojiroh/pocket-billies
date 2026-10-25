@@ -6,9 +6,9 @@
    (tools/test/battle-state.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { RULES, STAT_IDS } from '../game-data.js';
+import { ITEMS, RULES, STAT_IDS } from '../game-data.js';
 import { rngFn } from './rng.js';
-import { fxStages } from './effects.js';
+import { fxOfBillie, fxStages } from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -98,6 +98,13 @@ export function makeBattle(kind, team, foe, extra) {
     for (const f of b.sides[0].f)
       if (f.on) for (const s in up) f.v.st[s] = Math.max(-most, Math.min(most, (f.v.st[s] || 0) + up[s]));
   }
+  /* RL-12c: a held item's stat stages for each fighter on the field as it starts (doSwitch for those coming in) */
+  for (const sd of b.sides)
+    for (const f of sd.f) {
+      const up = f.on ? fxStages(fxOfBillie(sd.team[f.act], ITEMS)) : {},
+        most = RULES.battle.stageMax;
+      for (const s in up) f.v.st[s] = Math.max(-most, Math.min(most, (f.v.st[s] || 0) + up[s]));
+    }
   /* RL-4: a battle with a seed draws its chances from its own stream (battle-engine.js battleRoll) */
   if (b.seed != null && !b.rng) b.rng = rngFn(String(b.seed), 'battle');
   return b;
