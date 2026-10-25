@@ -2,6 +2,68 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Splicing track SP-2 - Rules: Genes, Stability, Unstable, the balance sim (built, waiting on the owner's numbers) - 2026-10-25
+Branch `claude/sp-2-rules`, **on top of SP-1's branch `ccr-dde1a5bd-nx5zdl`** (the owner's word: SP-2 started before
+SP-1 was merged or tagged, and `track/splicing` didn't exist). It merges SP-1's branch when it moves (a merge, never a
+rebase): merge SP-1 first, then this. Plan approved in Plan Mode. Tag `sp-2-done` for the owner once the numbers are set.
+- Where the track was wrong: written into the track file's "Corrections found by SP-2". The ones that changed the
+  plan: the spliceable parts are only the slot bones (arm, wing, frontfin; leg, foot, backfin; tail, tailfin), so the
+  track's trait list mostly named extras that can't be spliced yet and arm, leg and foot had no trait; Prime's +10 %
+  sits outside the +/-20 % cap and lifts HP too; the per-Billie path is `fxOfBillie`; abominations have no drawback
+  passive; the effect kinds have no on-hit or immunity kind; regional forms without a rig of their own can't be spliced.
+- Decided in the plan (push-back the owner can still undo): a Gene is a slot's part from a donor's recipe, so
+  `Billy.graft` stays `{ slot: donor rig }` (no separate Gene id); `aug` moves to SP-5 (nothing reads it before);
+  Unstable is worked out from the Billie's uid and splice, never stored or rolled again; Gene moves are data only until
+  SP-4's splice screen (learning one needs a "forget which move" choice).
+- Changed (one cause per commit):
+  - game/data/genes.json + schema: a trait per part kind, the traits as effect rows, dominant types per part,
+    Stability (line 0, kit 1, other kit 2, Augment 3; limit 3; refused past limit + 3), Unstable (x1.3, x0.75, a
+    turnHurt drawback). **Every number is a placeholder.** data-checks `dataGenes` (check-data and the Studio's Check;
+    the held items' row check is shared with it); a type renamed or deleted in the Studio reaches the Genes.
+  - logic/genes.js (pure, on the game page after graft-art.js and in the Studio's logic worker): geneOf, graftFit,
+    graftGenes, geneCost, graftStability, graftRel, graftHeaviest, graftTypes, graftTraits, graftUnstable.
+  - Save: optional `graft` on Billy and on a wild Encounter; billiesOk and the wild lists refuse a bad shape, saveFill
+    keeps the slots that still fit and drops a splice with none left or past what Stability allows. No SAVE_VERSION bump.
+  - graft-art.js graftOf/graftSet read and write `m.graft` (SP-1's WeakMap is gone): a grafted Billie stays grafted
+    through a reload, and a caught grafted foe keeps its splice. A splice survives evolving.
+  - parts.js: an optional per-slot relative weight (donor `wt` over the Billie's) and a spliced flag; with neither
+    every number is as before. rules.js billyRel, billyPrime, billyTypes, billyGraft, billyUnstable, billyGeneFx,
+    unstableName, spliceReport. stat() applies the donor weight and Unstable's two stats; billyName merges an
+    Unstable Billie's name with its heaviest donor's (unless nicknamed); the Prime tag goes on a spliced Billie.
+  - Types: the heaviest dominant Gene gives the second type (never a third) in battle (types, matchups, passives, the
+    stones, the bench's type count), the switch list, the mono-type catch rule, field moves, the Team tab and cards.
+  - fxOfBillie adds the splice's rows after the held item's (`gene:<trait>`, `unstable`); a new kind `turnHurt` (the
+    drawback, its own battle line "X's unstable cells hurt it").
+  - debugLog.state `splices`: per spliced team member its place, species, splice code, Stability, traits, types (data
+    ids only, no names). The debug menu's graft buttons now say the graft is saved.
+  - tools/test/genes.test.mjs, battle-genes.test.mjs, parts.test.mjs additions; tools/test/sim/splice-sim.mjs.
+- The balance sim (`node tools/test/sim/splice-sim.mjs`, 51 species with a kit rig, 1176 splices of 1-3 random Genes,
+  every part at M, against the Prime twin, each side first once on one seed; control 0.5; 42.5 % of splices Unstable
+  at limit 3). The spliced side's share of wins:
+
+  | Prime bonus | all | 1 Gene | 2 Genes | 3 Genes | stable | Unstable |
+  |---|---|---|---|---|---|---|
+  | +10 % (now) | 0.31 | 0.27 | 0.31 | 0.35 | 0.32 | 0.30 |
+  | +5 % | 0.42 | 0.42 | 0.43 | 0.41 | 0.46 | 0.37 |
+  | 0 | 0.55 | 0.61 | 0.54 | 0.49 | 0.61 | 0.47 |
+
+  At +10 % a splice loses about 2 fights in 3 to its Prime twin; at +5 % a little under even; with no bonus a single
+  Gene wins 61 % (the trait plus the donor weight). Unstable splices do worse than stable ones at every bonus.
+- Verified: lint, typecheck, check:modules, unit tests after every commit (968 quick, all pass); the golden battles
+  unchanged (snapshot not remade); check-data's snapshot remade for its file count only (141 to 142); slow tier 58 of
+  58 (SP-1's graft sweep included); smoke 6 of 6. Headless on the page (town fixture): the lead (Memeox) grafted
+  sig=bezos0, saved; the stored save passes validSave and saveFill keeps the graft; no Prime ribbon on its sheet; in a
+  wild battle it starts with Defense +1 (Counterweight); kg 420 to 358.8; the debug state lists the splice.
+  Full quick check: running at the time of this entry (result added when it ends).
+- Risky: every stat, type and effect-row read for a Billie now checks for a splice (unspliced ones return the same
+  values, the same list objects included). The Unstable drawback can knock a Billie out at a turn's end, like a burn.
+  saveFill drops a splice on a regional form with no rig of its own (such a splice can't be drawn or ruled).
+  graftTidy uses the default Stability limit: SP-4 must pass the Gene Bank's limit there.
+- Next: the owner's answers (Ask me before): Prime's bonus from the table above, the trait list and numbers
+  (placeholders: Airborne Ground x0.5 taken, Swimmer Water x1.15 dealt, Counterweight Defense +1, Grip physical x1.1,
+  Stride Speed +1; extras' traits written but not reachable), the dominant Genes (now eagle_wing Flying, owl_wing
+  Psychic, shark_tailfin Water, reptile_tail Dragon, bear_arm Ground, fox_tail Fire: 6 of 36 spliceable parts), and
+  the push-backs above. Then SP-3 (wild splices) on `track/splicing` once it exists.
 ### Splicing track SP-1 - Art spike: grafted Billies baked at runtime (built, waiting on the phone) - 2026-10-25
 Branch `ccr-dde1a5bd-nx5zdl` (`track/splicing` didn't exist yet; the owner chose to build SP-1 here, as RL-12c and
 HB-1 were). Plan approved in Plan Mode. SP-2 started in a new session on top of this branch at the owner's word,
