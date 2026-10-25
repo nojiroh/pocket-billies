@@ -1951,6 +1951,16 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     D.town.face !== 'out' ||
     Math.abs(islandAngleDiff((a / ISLAND_RAD) % 360, Math.atan2(z - peakP[1], x - peakP[0]) / ISLAND_RAD)) <=
       D.town.tol;
+  /* HB-4b: the airship hovers over its mast, tall: with the doors turned to the camera (town.quarter) no plot faces it
+     from close behind (16 m, 35 degrees off its front), where it would stand between the camera and the front */
+  const shipAhead = (k, x, z, a) => {
+    if (!D.town.quarter) return false;
+    const faces = (L, px, pz) =>
+      Math.hypot(px - L.x, pz - L.z) < 16 &&
+      Math.abs(islandAngleDiff(Math.atan2(pz - L.z, px - L.x) / ISLAND_RAD, L.a / ISLAND_RAD)) < 35;
+    if (k === 'mast') return plots.some(L => L.k !== 'well' && faces(L, x, z));
+    return plots.some(M => M.k === 'mast' && faces({ x, z, a }, M.x, M.z));
+  };
   const addPlot = (k, x, z, pw, pd, a, front, where, tight = false) => {
     /* HB-4b: a house plot never smaller than a cottage (3.4 x 2.4 m) with 0.2 m round (town.scale's smaller plots) */
     if (k === 'house') [pw, pd] = [Math.max(pw, 3.8), Math.max(pd, 2.8)];
@@ -1963,7 +1973,7 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         const qx = x + (bx / bl) * m,
           qz = z + (bz / bl) * m,
           qa = quarterOut(qx, qz);
-        if (quarterHolds(qx, qz) && plotFits(qx, qz, pw, pd, qa, tight)) {
+        if (quarterHolds(qx, qz) && !shipAhead(k, qx, qz, qa) && plotFits(qx, qz, pw, pd, qa, tight)) {
           plots.push({ k, x: qx, z: qz, w: pw, d: pd, a: qa, y: cornerAt(front[0], front[1]), at: where });
           return true;
         }
