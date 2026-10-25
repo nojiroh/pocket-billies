@@ -1519,7 +1519,9 @@ function worldBowlThingsTick(g) {
   let W = g.things;
   if (!W) {
     W = g.things = { inst: {}, stand: [], models: new Set(), done: new Set(), counts: {}, ver: 0, dirty: true, at: 0 };
-    worldBowlClumpsInto(W);
+    /* HB-3: the floating island has its own trees, never the bowl's clumps between places */
+    if (worldBowlFloats()) W.clumps = 0;
+    else worldBowlClumpsInto(W);
   }
   for (let i = 0; i < LOCATIONS.length; i++)
     if (
