@@ -3,6 +3,8 @@
 // town.quarter turns every building plot to the quarter turn nearest to facing out; town.second a second built-up
 // street; town.scale the house plots' size; town.extra the town's other buildings; landmarks the station with its sky
 // rail and portal, the lighthouse and the windmill. The defaults leave the hub's island as it is (island-gen.test.mjs
+// HB-4b: town.square (the square's radius, how far it stands back from the main street, the buildings round it), the
+// house plots' floor and the quarter turn seen from the summit spot.
 // checks the game's map is the generator's own output).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -211,7 +213,96 @@ test('landmarks: the station with its rail out to sea and up to the portal, the 
   assert.equal(islandGenerate(hub.dials, hub.seed, ctx).landmarks, undefined);
 });
 
-/* ---------- HB-4b ---------- */
+/* ---------- HB-4b: the town square (town.square), the plot floor, the quarter turn seen from the summit spot ---------- */
+/** B with a town square (tools/data/hub-sketches.json b2's town dials) and the square's dials changed */
+const sketchB2 = (square, town = {}) =>
+  islandGenerate(
+    withTown(
+      {
+        face: 'out',
+        tol: 90,
+        quarter: 1,
+        houses: 20,
+        lanes: 2,
+        scale: 0.6,
+        extra: ['library', 'inn', 'workshop', 'genebank'],
+        second: { on: 1, along: 'arc', side: 'in', off: 9, span: 140, at: 40 },
+        square,
+        ...town,
+      },
+      { landmarks: { on: 1 } }
+    ),
+    hub.seed,
+    ctx
+  );
+const plaza = (sc, W, r) => {
+  let n = 0;
+  for (let j = Math.floor(W.z - r - 2); j <= W.z + r + 2; j++)
+    for (let i = Math.floor(W.x - r - 2); i <= W.x + r + 2; i++)
+      if (Math.hypot(i + 0.5 - W.x, j + 0.5 - W.z) <= r && sc.tiles[sc.h - 1 - j][i] === 'c') n++;
+  return n;
+};
+
+test('town.square r: the paved square that wide round the well; off: further from the main street', () => {
+  const near = (sc, W) =>
+    Math.min(
+      ...sc.paths
+        .filter(p => p.name === 'town main street')
+        .flatMap(p => p.pts)
+        .map(p => Math.hypot(p[0] - W.x, p[1] - W.z))
+    );
+  const seen = [];
+  for (const [r, off] of [
+    [7.5, 0],
+    [12, 0],
+    [12, 6],
+  ]) {
+    const { scene: sc, paths } = sketchB2({ r, off, front: 0 }),
+      W = only(sc, 'well');
+    /* most of the disc paved (the streets that cross it keep their own ground) */
+    assert.ok(plaza(sc, W, r) >= Math.PI * r * r * 0.6, `r ${r}: ${plaza(sc, W, r)} paved cells`);
+    seen.push(near({ paths }, W));
+  }
+  assert.ok(seen[1] - seen[0] > 3.5, `r 12 stands further out than 7.5: ${seen}`);
+  assert.ok(seen[2] - seen[1] > 5, `off 6 sets it 6 m further back: ${seen}`);
+  /* the default is today's square */
+  const { scene } = islandGenerate(hub.dials, hub.seed, ctx);
+  assert.equal(
+    islandGenerate(withTown({ square: { r: 7.5, off: 0, front: 0 } }), hub.seed, ctx).scene.plots.length,
+    scene.plots.length
+  );
+});
+
+test('town.square front: buildings round the square, by its rim, one facing into it, every door out on a quarter turn', () => {
+  const r = 12,
+    { scene: sc } = sketchB2({ r, off: 6, front: 6 }),
+    W = only(sc, 'well'),
+    /* how far a plot's nearest edge stands from the square's rim */
+    gap = L => {
+      const a = (L.a * Math.PI) / 180,
+        dx = W.x - L.x,
+        dz = W.z - L.z,
+        u = Math.max(0, Math.abs(dx * Math.cos(a) + dz * Math.sin(a)) - L.d / 2),
+        v = Math.max(0, Math.abs(-dx * Math.sin(a) + dz * Math.cos(a)) - L.w / 2);
+      return Math.hypot(u, v) - r;
+    },
+    round = sc.plots.filter(L => L.k !== 'well' && gap(L) < 4);
+  assert.ok(round.length >= 3, `${round.length} plots by the square: ${round.map(L => L.k)}`);
+  for (const L of round) assert.ok(gap(L) > 0, `${L.k} stands on the square`);
+  const facing = round.filter(L => {
+    const a = (L.a * Math.PI) / 180;
+    return Math.cos(a) * (W.x - L.x) + Math.sin(a) * (W.z - L.z) > 0.7 * Math.hypot(W.x - L.x, W.z - L.z);
+  });
+  assert.ok(facing.length >= 1, 'one of them faces into the square');
+  for (const o of offOut(sc)) {
+    assert.equal(((o.L.a % 90) + 90) % 90, 0, `${o.L.k} at ${o.L.a}`);
+    assert.ok(Math.abs(o.off) <= 45, `${o.L.k} at ${o.L.x}, ${o.L.z}: ${o.off}`);
+  }
+  /* B2: at least 8 cottages, and every one of the town's buildings */
+  assert.ok(sc.plots.filter(L => L.k === 'house').length >= 8, 'houses');
+  for (const k of ['lab', 'shop', 'home', 'mast', 'inn', 'library', 'workshop', 'genebank', 'station']) only(sc, k);
+});
+
 test("town.scale: a house plot is never smaller than a cottage's footprint (3.4 x 2.4 m) and 0.2 m round", () => {
   for (const scale of [0.6, 0.7]) {
     const { scene } = islandGenerate(withTown({ face: 'out', tol: 90, quarter: 1, houses: 20, scale }), hub.seed, ctx),
