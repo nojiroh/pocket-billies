@@ -243,7 +243,7 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
  vec4 fm=uFlowR.z>.5?texture(uFlowTex,wq*uFlowR.xy):vec4(vF,0.,0.);vec2 fv=fm.xy;float fph=fract(ts*.5),fbw=abs(1.-2.*fph);bool fl2=pix>.5&&dot(fv,fv)>1e-6;
  vec2 w=wp-fv*(fl2?fph*2.8:ts*1.4),w2=wp-fv*fract(fph+.5)*2.8+vec2(.37,.71);float flowing=clamp(length(fv),0.,1.);float rk=ka.w*uRip;
  /* v31: fill to the curved shoreline, lapping a little in still water */
- float vS2=vS,edge=0.;if(uShoreR.z>.5){vec2 su=(wp+.5/pr)*uShoreR.xy;vec4 s4=(su.x>0.&&su.y>0.&&su.x<1.&&su.y<1.)?texture(uShore,su):vec4(1.);float sf=tideSF(s4);float lap=(1.-flowing)*.016*sin(t*1.2+dot(wp,vec2(2.3,1.7)))+seaK*.07*sin(t*.85+dot(wp,vec2(.21,.17)));
+ float vS2=vS,edge=0.,tcov=0.;if(uShoreR.z>.5){vec2 su=(wp+.5/pr)*uShoreR.xy;vec4 s4=(su.x>0.&&su.y>0.&&su.x<1.&&su.y<1.)?texture(uShore,su):vec4(1.);float sf=tideSF(s4);tcov=uTide.z>.5?step(s4.r,.45)*step(.5,s4.g):0.;float lap=(1.-flowing)*.016*sin(t*1.2+dot(wp,vec2(2.3,1.7)))+seaK*.07*sin(t*.85+dot(wp,vec2(.21,.17)));
   /* water track WA-4: the shallows the low tide leaves are drawn as wet sand on the water's own surface (the bed under them lies low, between steep banks), darker and shinier near the water */
   if(sf<.5+lap&&uTide.z>.5&&s4.r>=.5+lap){float wl=smoothstep(.5+lap-.18,.5+lap,sf);vec3 ws=vec3(.5,.41,.29)*(.86+.28*pwQ(lnoise(wp*1.7),3.,pc))*(1.-.18*pwQ(wl,3.,pc));float shs=shadowAt(vW,.002);ws*=ambient(vec3(0.,1.,0.),1.,shs)+uSunCol*max(uSunDir.y,0.)*shs;
    vec3 vv=normalize(uEye-vW);ws+=mix(uSkyR,ws,.6)*pwQ(wl*.5,3.,pc)*.25*(.3+.7*pow(1.-max(vv.y,0.),2.));o=vec4(fogit(ws,vW),1.);return;}
@@ -286,8 +286,15 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
  /* IS-3: the swell, long low bands rolling in toward the island, and the surf: lines of foam that roll in over the
     shallows and break along the whole coast, broken up along it; a cove gets little of either */
  if(seaK>0.){float rr=dot(vW.xz-uSea.xy,rd);c*=1.+sin(rr*.55+t*1.3+lnoise(wp*.05)*3.)*.045*seaK*smoothstep(.1,.6,dep);
-  float ph=dep*4.+ts*.7+lnoise(wp*.3)*1.6+lnoise(wp*.07)*2.,fb=fract(ph),ln=pwHard(.45,.82,fb)*(1.-pwHard(.88,1.,fb))*smoothstep(.72,.15,dep)*smoothstep(0.,.05,dep)*pwHard(.2,.45,lnoise(wp*.45+vec2(ts*.08,0.)));
-  float sv=ln*seaK*uFoam*2.;c=mix(c,vec3(.95,.98,1.)*(.8+.2*sh),clamp(sv,0.,.85));foam=max(foam,sv);}
+  float sv;if(pix>.5){
+   /* water track WA-4: the surf in hard stepped bands: each wave a white crest on its shore side with a broken lace trailing out to sea, rolling in
+      (the phase falls with the depth), the crest thickening as the water shallows and breaking into white water at the edge; a storm sends more, wider ones */
+   float st=uTide.y,nb=3.+1.5*st,ph=dep*nb+ts*(.7+.3*st)+lnoise(wp*.3)*1.6+lnoise(wp*.07)*2.,fb=fract(ph),sh2=1.-smoothstep(0.,.4,dep);
+   float cw=.12+.24*sh2+.08*st,cr=step(.5,fb)*step(fb,.5+cw),lc=step(.5+cw,fb)*step(fb,.5+cw+.22+.1*st)*step(.42-.12*st,lnoise(wp*1.3+vec2(ts*.11,-ts*.07)))*(1.-(fb-.5-cw)*2.5);
+   float brk=pwHard(.35,.4,lnoise(wp*.45+vec2(ts*.08,0.))+.15*sh2+.15*st),wash=pwHard(.6,.66,vS2+.08*st+(lnoise(wp*2.1+vec2(0.,ts*.4))-.5)*.3);
+   float zone=step(dep,.72+.1*st)*(1.-tcov);sv=max(max(cr*brk,pwQ(lc,3.,pc)*.6)*zone,wash*.8)*seaK*min(1.,uFoam*2.5);}
+  else{float ph=dep*4.+ts*.7+lnoise(wp*.3)*1.6+lnoise(wp*.07)*2.,fb=fract(ph),ln=pwHard(.45,.82,fb)*(1.-pwHard(.88,1.,fb))*smoothstep(.72,.15,dep)*smoothstep(0.,.05,dep)*pwHard(.2,.45,lnoise(wp*.45+vec2(ts*.08,0.)));sv=ln*seaK*uFoam*2.;}
+  c=mix(c,vec3(.95,.98,1.)*(.8+.2*sh),clamp(sv,0.,.9));foam=max(foam,sv);}
  float n3=lnoise(w*9.+vec2(ts*1.3,-ts*.9))*lnoise(w*7.3-vec2(ts*.8,ts*1.1));if(fl2)n3=mix(n3,lnoise(w2*9.+vec2(ts*1.3,-ts*.9))*lnoise(w2*7.3-vec2(ts*.8,ts*1.1)),fbw);float gl=(pix>.5?step(.78,n3)*.6:pow(max(n3-.55,0.)*2.2,3.)*2.2)*uGlint*(1.-kb.y);c+=uSunCol*gl*sh;
  /* v24: lava glows under a cracked dark crust that drifts with the flow; ice is white-blue with cracks and a sheen */
  if(kb.w>.5&&kb.w<1.5){vec2 q=wp*1.3-vF*ts*.5;float n1=lnoise(q*1.7+vec2(ts*.05,0.)),n2=lnoise(q*4.1-vec2(0.,ts*.07));float crust=pwQ(smoothstep(.45,.62,n1*.7+n2*.3),3.,pc);
