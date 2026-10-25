@@ -120,9 +120,8 @@ About 10-15 sessions. HB-1, HB-2 and HB-4a can run side by side; then HB-3 besid
 **Merged together** (2026-10-25, on `track/hub-merge`, for one PR into main): `track/hub` (HB-4a, HB-4b),
 `art/hub-station-trains` (HB-7's art), `art/hub-buildings` (HB-5's art half), `props/hub-fence` (HB-6), a merge
 commit each. Copperleaf rebuilt by the tools (build-copperleaf, then one round of build-island and build-copperleaf so
-the ground meets HB-6's swell); see HANDOFF. Still to do on the new island: Skyline Station onto its headland with the
-sky rail and portal (HB-7 placed it beside the mast); the Workshop, Gene Bank, lighthouse and windmill onto their plots,
-the inn's, library's and store's door acts (HB-5's placing half); HB-3, HB-8, HB-9.
+the ground meets HB-6's swell); see HANDOFF. The placing half (the station on its headland with the rail and portal,
+the new buildings on their plots, the doors' acts) followed on `props/hub-placing`; still to do: HB-3, HB-8, HB-9.
 
 ### HB-1 Pin and decals
 - Pin: when the walk view is on the island map, the pin, the "here" ring and the walker use
@@ -347,6 +346,34 @@ engines; the portal is a tear floating in the sky, retro-futuristic (not a ring 
 - Copperleaf is generated: build-copperleaf.mjs places the station on the open ground nearest the mast (now 118.9,
   93.2, turned -64.5, 13 m from it). HB-4b moves it to the headland and lays the rail out to sea.
 - The run still sets off on the airship's flight over the world map and the run sheet still says so: HB-8.
+
+**Done in the placing half of HB-5 and HB-7** (2026-10-25, on `props/hub-placing` from main after PR #201, the
+session's brief). The owner's answers: the station side-on (its rail straight out to sea, no new art); the Gene
+Bank's door opens its room now (its machines wait for the splicing track); the General store opens with no stock.
+Checked against the code:
+- `landmarks.rail` didn't match HB-7's art: it started at the plot's middle on the island's spoke and climbed 45 m over
+  85 m; the art is five 12 m pieces from the station's right-hand end, 0.13 m to 15.13 m, then the portal. HB-4b's
+  plot faced the station out to sea, so a rail out of its right-hand end would have run along the coast over land.
+  Now island-gen turns the station's plot a quarter turn clockwise from facing out (`STATION_TURN`) and lays
+  `landmarks.rail` as the pieces do (`SKY_RAIL`, `skyRailHeight`): every 2 m from the right-hand end to the portal's
+  launch lip, its height over the plot's level; `portal` is the tear (17.05 m up). The dials' `len` and `rise` are
+  no longer read. A fresh B2 now has room for 6 house plots, not 9 (the coast road goes round the station's longer
+  inland end); the hub keeps its town zone and its 10 cottages.
+- The headland is low (0.91 m) and the sea about a metre under it: a placement's `y` (new, walk/frame-items.js
+  `propBaseHeight`) stands each piece and the portal level with the station; the rail's piers and pylons reach 2.5 m
+  under their base (build-station-trains.py `SINK`). seamless-world.js dropped props more than 2 m outside the place's
+  box, which took the last three pieces and the portal (past the east edge): a placement with `y` now stays.
+- build-copperleaf.mjs puts the station on its plot (rot 0 on the hub, facing south, its rail east), the five pieces
+  (one per look) and `sky_portal` 12 m apart behind its right-hand end; the Workshop, the Gene Bank, the lighthouse
+  and the windmill on their plots; the store's act `shop` (int_shop; its counter says it's closed: shops.json is
+  empty), the inn's, library's, Workshop's and Gene Bank's act `enter` with their names. The world map's plot models
+  know the new kinds (bowl-island.js `BOWL_PLOT_PROPS`). Tests: hub-doors.test (the buildings on their plots, the
+  acts, the rail against the station and `landmarks.rail`), island-gen-doors (the side-on plot, the rail data),
+  hub-data (Copperleaf sells nothing, rather than has no shop).
+- Left for later: the walk view draws the ground and sea only 8 m past the map's edge (`GROUND_BORDER_M`), so the
+  last pieces' pylons and the portal stand over the haze, not the sea (the orbit camera faces inland, so this shows
+  from free cameras and will in HB-8's departure: HB-8 or HB-3 widens the sea there). `flyMenu`'s hub branch stays
+  for HB-8.
 
 ### HB-8 Departure and return
 - Departure: the train glides in, you board, the camera follows it up the rail, the portal opens, the train flies in,

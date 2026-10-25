@@ -129,8 +129,11 @@ town node needs it.
   sky rail, the tear portal, five trains; runs start at the station) done 2026-10-25 on `art/hub-station-trains`.
   HB-5's art half (cottage variants, the Workshop, Gene Bank, lighthouse and windmill models, five rooms) on
   `art/hub-buildings` and HB-6 (the natural pasture fence, a gentle swell) on `props/hub-fence`, done 2026-10-25.
-  All four merged together on `track/hub-merge` (2026-10-25, Copperleaf rebuilt by the tools), PR into main next;
-  placing the station and the new buildings on the new island comes after. Tags `hb-N-done`. Branch `track/hub`.
+  All four merged together on `track/hub-merge` (2026-10-25, Copperleaf rebuilt by the tools), merged (PR #201).
+  The placing half of HB-5 and HB-7 done 2026-10-25 on `props/hub-placing`: Skyline Station side-on on its headland
+  with the sky rail out to sea and the portal at its top, the Workshop, Gene Bank, lighthouse and windmill on their
+  plots, the store's, inn's, library's, Workshop's and Gene Bank's doors open their rooms. HB-3 in PR #202; HB-8 and
+  HB-9 next. Tags `hb-N-done`. Branch `track/hub`.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all

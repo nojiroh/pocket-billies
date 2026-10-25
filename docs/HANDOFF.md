@@ -2,6 +2,57 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Hub track - the placing half of HB-5 and HB-7: Skyline Station on its headland, the new buildings on their plots - 2026-10-25
+Branch `props/hub-placing` (the session's brief; from main aea7a48 after PR #201). Plan approved in Plan Mode. The
+owner's answers: the station side-on, its rail straight out to sea (no new art); the Gene Bank's door opens its room
+now (its machines wait for the splicing track); the General store opens with no stock. Not built: HB-8 (`flyMenu`'s
+hub branch left for it). Details: docs/phases/hub-track.md, "Done in the placing half of HB-5 and HB-7".
+- Where the brief and the code differed (checked): `landmarks.rail` was not HB-7's rail (from the plot's middle on
+  the island's spoke, 45 m up over 85 m; the art is five 12 m pieces from the station's right-hand end, 0.13 m to
+  15.13 m, then the portal); HB-4b's station plot faced the sea, so the rail out of the station's right-hand end would
+  have run along the coast over land; the headland stands 0.91 m up with the sea a metre under it; the walk view
+  dropped props more than 2 m outside the map (the last three pieces and the portal) and draws its ground and sea only
+  8 m past the edge. build-station-trains.py still wrote the trains' old descriptions (the merge fixed the data only).
+  The windmill has a door (in the door check), the lighthouse none. RL-5's hub-data test forbade any shop act in
+  Copperleaf.
+- Changed (one cause per commit):
+  - Tools: build-station-trains.py writes the trains' descriptions as the data has them.
+  - Engine: a placement's `y` (walk/frame-items.js `propBaseHeight`, the prop cells' heights; schema and types): the
+    height its base stands at. seamless-world.js keeps a placement with `y` past the place's box.
+  - Art: the sky rail's piers and pylons reach 2.5 m under their base (`SINK`), into the sea when the rail is raised.
+  - Generator (island-gen.js): the station's plot a quarter turn clockwise from facing out (`STATION_TURN`);
+    `landmarks.rail` laid as the pieces lie (`SKY_RAIL`, `skyRailHeight`), `portal` the tear. `len`/`rise` unused.
+  - Copperleaf (build-copperleaf.mjs, rebuilt by build-island then build-copperleaf; a second round writes the same
+    file each time): Skyline Station on its plot (158.89, 97.48, facing south), five `sky_rail` pieces and
+    `sky_portal` east of it at y 0.91 out to x 231 (41 m past the edge); the Workshop (165.36, 55.51), the Gene Bank
+    (117.8, 107.31), the lighthouse (93.83, 19.61, on the cove), the windmill (78.53, 62.39, by the farm); act `shop`
+    on the store, `enter` with names on the inn, library, Workshop and Gene Bank. 22 buildings, 10 cottages; `hub`,
+    `npcSpots`, people, life and the opening's spots unchanged; the walking checks re-pointed by the tools (the
+    station's door now 158.89, 95.88).
+  - World map: bowl-island.js `BOWL_PLOT_PROPS` knows the new plots' models.
+  - Tests: hub-doors.test (the new buildings on their plots, their acts, the store with no stock, the rail against
+    the station and `landmarks.rail`), island-gen-doors (the side-on plot, the rail data), hub-data (Copperleaf sells
+    nothing). tools/island-shots.py: station, station-rail, station-near, lighthouse, windmill and town views, the
+    player standing beside each.
+- Risky:
+  - A fresh B2 now has room for 6 house plots, not 9 (the coast road goes round the station's longer inland end; the
+    test now asks for 6). The hub keeps its town zone and its 10 cottages; a `--fresh` rebuild would lose 3.
+  - Past the map's east edge the rail's last pylons and the portal stand over the haze, not the sea
+    (`GROUND_BORDER_M` 8 m). The orbit camera faces inland, so play doesn't show it; free cameras and HB-8's departure
+    will. HB-8 (or HB-3) should widen the sea there.
+  - The station's front faces south, side-on to the orbit camera; the station has no door, so no door check covers it.
+  - The quick check's hub pictures differ from the baseline (the station moved, four new buildings). A placement's
+    `y` has no control in the Studio's map editor (not checked whether a Studio save keeps it).
+- Verified: after each change lint, typecheck, check:modules, check:data, check-data-text and `npm test` (976/976
+  at the end); `npm run test:slow` 72/72 (the island is the generator's own output); check-fast 29/29 (28 in the run,
+  "Every screen opens with its parts" timed out once under two browsers and passed alone; 21 walking checks, all 21
+  doors a tap away, Station Lv 2 bought on the station's sheet); `check:smoke` 6/6 (206 s; the phone flow taps the station on its headland, the window check passes). Pictures (tools/island-shots.py, not
+  committed): the rail climbing from the headland to the portal and its tear, the station on its headland, the
+  lighthouse on the cove, the windmill by the farm, the town; the game's own camera at the station; no page errors.
+- Next: the owner's look at the pictures and on the phone; HB-3 (PR #202); HB-8 (the departure on this rail: the
+  train along `landmarks.rail`, the sea past the edge, `flyMenu`'s hub branch); a stock for the General store when
+  the owner picks one; HB-9.
+
 ### Hub track - the finished hub branches merged together (HB-4a/4b, HB-5 art, HB-6, HB-7 art) - 2026-10-25
 Branch `track/hub-merge` (from main 83e7bdd: HB-1, HB-2, the run-zone-biome fix). Plan approved in Plan Mode. One
 merge commit per branch (no rebase, no squash), in this order: `track/hub` (HB-4a, HB-4b), `art/hub-station-trains`
