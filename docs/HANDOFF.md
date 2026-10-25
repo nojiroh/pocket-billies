@@ -402,6 +402,71 @@ counted as flat).
 - Phone check wanted: the house, lab, shop, clinic and barn (turn the camera); a waystation (the tent); a run with a
   glade (campfire) and a lookout; a cave run's mine entrance; export the debug log.
 - Next: part 2 in a new session: the 23 standing pictures the run biomes still place (docs/phases/09, status).
+### Routes track RT-4a - Wild Billies: the stock, habitats, a rarer one - 2026-10-25
+Branch `track/routes` (fast-forwarded to origin's RT-3 head first: the checkout was 27 commits behind; main had nothing
+new). Plan approved in Plan Mode with the owner's answers: **stock 10 less a place's trainers, 4 at least**; **RT-4 in
+two sessions** (RT-4a here; RT-4b: finds, Cut brambles, animals); items: **the reward pick's small items, a rare find
+about 1 in 12, no Bean**; a find shown as **the pyramid's icon**; **brambles plug a pocket's mouth** (the last three for
+RT-4b). Tag `rt-4a-done` for the owner to push.
+- Where the plan file and notes were wrong (checked in the code):
+  - "6-8 counting trainers" already held (8 less them, 2 at least: 8 visible), but with 4-6 trainers a place kept only
+    2-4 wild Billies, fewer than the 4 before RT-2. Hence the owner's 10 / 4.
+  - A place's pool is only **4-6 species** after the region's dex cut (22 places measured), so three habitats can't each
+    get a share of it. A habitat is a species' types instead (`rules.json run.wild.habitats`), and the draw is unchanged.
+  - Where a wild Billie stands was the view's alone (`walk-view.js encounterSpot` hashes its id onto tall grass), and the
+    walk state dropped every field but id, level, species, Alpha and sizes. mapgen now marks habitat points.
+  - SPECIES has no rarity field: the rarer one is drawn from the pool's lowest weight (3-5 against 14-34).
+  - Ambient animals already reach every generated place (`biomes.json life` copied by mapgen, drawn by
+    `ambient-life.js`); `chicken`, `sheep`, `crow` and `cat` have art but no route uses them (RT-4b).
+  - Cut works only on the run's one side area (`fieldMoveOpen` reads `run.map.side`). There is no find prop, no `find`
+    act and no Bean item (RT-4b).
+- Changed (one cause per commit):
+  - **Stock**: `run.wild.route` 10, `routeMin` 4. A route place with 4-6 trainers keeps 4-6 wild Billies.
+  - **mapgen** (MAPGEN_VERSION 11): `mapgenHabitats` after the set pieces, on its own stream (no other draw moves):
+    `water` (dry ground you walk to within a metre of water) and `woods` (the same beside a forest mass), off the road,
+    hub, exits, spots and pieces, clear of props, up to 12 a habitat 3 m apart: `sc.habitats`. Golden, rng and run-start
+    snapshots remade on purpose. Cheap tests first: a run's world ~35 ms slower than RT-3's (608-625 -> ~652 ms here).
+  - **Habitats**: `run.wild.habitats` water: Water; woods: Grass, Psychic, Dragon; the rest the tall grass
+    (`wild-pool.js wildHabitat`, an Encounter's `hab`). check-data checks them; a type rename rewrites them. The walk
+    stands a water or woods Billie on its habitat's points (the seamless world carries `sc.habitats`), else in the grass.
+  - **The rarer one**: a route's first visit keeps the last of its stock for one of the rarest (`wildRareList`),
+    `run.wild.rare.up` 2 levels above, never an Alpha (`rules.js spawnRare`, `rare: 1`). It waits on a free pocket, else
+    a dead end, else a clearing, 6 m from the trainers, 4 m from the pieces, where no canopy piece hides it
+    (`route-trainers.js routeRareSpots`, `routeUnderCanopy`; the place's `rareAt`, put by run-world); none free: the grass.
+  - **Debug log**: `run.habitats` (points by habitat), `run.wild` (sp:lvl:habitat, the rarer one `rare`; read, never
+    stocked), `run.rareAt`.
+  - **Checks**: slow tests mapgen-habitats (12 places: same dials same points; reached, off grass and jetties, clear of
+    props, spaced; water by water, woods by the forest; lakeside always has water; no layout none), route-trainer-spots
+    (the rarer one's spot), run-world-real (the rarer one: last of the stock, of the rarest, levels up, none on a return);
+    saves-real (each Billie in its own habitat); in-game step "A route's wild Billies: in their habitats, the rarer one
+    in its pocket"; check-quick step RT-4a runs it.
+- Measured:
+  - Habitat points (5 seeds, 29 laid-out places): woods 12 on every place; water 12 on each of the 12 places with water.
+  - The rarer one's spot: 8 of 9 route places over 5 seeds (dead end 5, pocket 2, clearing 1). Headless, a dead end
+    hemmed in by canopy showed only the Billie's label over the leaves; the canopy rule came from that.
+  - **Run sim** (200 runs, balance mode, six at home at level 20, five Potions; before = c736048): the default policy
+    identical (67% won, 19.7 battles, 15.7 min); fighting up to 8 wild a place 68.5% -> 67%, 27.4 -> 28.4 battles,
+    18.5 -> 19.0 min.
+  - Draws a frame not re-measured: route-perf's fixture is no run place (no stock, no habitats); a run route shows up
+    to 2 more wild Billies (a grass tuft and a sprite each), no new props.
+- Verified: lint, typecheck, check:modules, check:data, format:check, build; unit tests 921 quick and 68 slow;
+  check-quick RT-4a alone (SELFTESTWH1: Meadow Route, 5 wild with 5 trainers: woods 2, grass 1, water 1, the rarer one
+  bezos0 lv 10 in its dead end). **Full quick check**: running when this was written; the result follows in the next commit.
+- Risky / open:
+  - **Not seen on a phone**: up to 2 more wild Billies a route place; a woods or water Billie still hides in a tall
+    grass tuft (the tuft is the encounter's own picture; a reed or a bush tuft would read better by habitat, art).
+  - With Psychic in woods a place can have no Billie left in its tall grass (SELFTESTWH0's Meadow Route: all three in
+    the woods). Moving Psychic out of `woods` is the knob if the grass looks empty.
+  - Dead ends under canopy also hide RT-2's optional trainers there (not changed here).
+  - RL-8's shop Perk and the Song fingerprints fail on main too (earlier entries).
+  - **MAPGEN_VERSION clash with track/towns** (the merge-coordination session, 2026-10-25): towns uses 9 (TW-2) and 10
+    (TW-3); routes uses 9 (RT-2), 10 (RT-3) and now **11 (RT-4a: habitat points, `mapgenHabitats`; its only change)**.
+    The plan the owner approved for the merge: towns keeps 9-10, routes takes the numbers after (RT-2 + RT-3 -> 11,
+    RT-4a -> 12). In the merge, keep both RunWorldData fields (`town?`, `setPieces?`), give rng.test.mjs a fresh pinned
+    hash and regenerate the snapshots (check-data, mapgen-golden, run-start, rng), never hand-merge them.
+- Next: RT-4b (finds at dead ends and pockets, Cut brambles at a pocket's mouth guarding the rarer one or a find,
+  animals by layout and set piece). routes-track.md has its shape.
+
 ### Routes track RT-3 - Set pieces - 2026-10-25
 Branch `track/routes` (fast-forwarded to origin's RT-2 head first: the local checkout was 14 commits behind; main had
 nothing new, so the merge was a no-op). Plan approved in Plan Mode with the owner's answers: **all seven pieces**
@@ -5448,7 +5513,7 @@ lines send you to the mast. The plan's decisions 1-13 were taken as written.
     places, 92 bridges) after the bridge fixes: every exit reachable, every bridge crossable.
   - Node sweeps: 200 runs, 2,500 scenes with the buildings: all placed, every seam joined, no new generator note;
     100 runs after the bridge fix: 421 bridges, none ending in water, all at 65 degrees or more to the stream.
-  - End of the phase: FULLCHECK
+  - End of the phase: **Full quick check**: running when this was written; the result follows in the next commit.
 - Run simulation (report only; the bounds are the owner's): on the placeholders a lone level-5 starter loses 50 of 50
   runs (31 on the landing, about 1.6 places); three level-5 starters lose 50 of 50 too (20 at the first mini-boss,
   levels 9-11 in doubles). No run reaches the boss.

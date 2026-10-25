@@ -81,6 +81,24 @@ test('wild Billies by place: a route keeps 4, a town with tall grass 2, a town w
   try {
     assert.equal(stock(route), RULES.encounters.route);
     assert.equal(fn('encountersHere')(route).length, RULES.encounters.route, 'full on the first visit');
+    /* RT-4: each waits in its habitat, by its types: the water's and the woods' only theirs, the rest in the grass */
+    const H = RULES.run.wild.habitats,
+      hab = (/** @type {string} */ sp) => modules['wild-pool'].wildHabitat(SPECIES[sp].types, H);
+    for (let n = 0; n < 40; n++) fn('spawn')(false, null, route);
+    for (const q of fn('wildList')(route)) {
+      assert.equal(q.hab || 'grass', hab(q.sp), `${q.sp} (${SPECIES[q.sp].types}) waits in its habitat`);
+      if (q.hab)
+        assert.ok(
+          H[q.hab].some(t => SPECIES[q.sp].types.includes(t)),
+          `${q.sp} is a ${q.hab} Billie`
+        );
+      else
+        assert.ok(
+          Object.values(H).every(T => !T.some(t => SPECIES[q.sp].types.includes(t))),
+          q.sp
+        );
+    }
+    s.wild = {};
     /* RT-2: a run route's trainers stand in for some of its wild Billies, down to routeMin */
     const L = data.LOCATIONS[route],
       Wr = RULES.run.wild;

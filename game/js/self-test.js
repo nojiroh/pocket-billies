@@ -39,11 +39,12 @@ import { runRestore, validRun } from './logic/run-state.js';
 import { RUN_SIDE_MOD, runSideOpen } from './logic/run-side.js';
 import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
-import { runScenesMake } from './logic/run-scenes.js';
+import { wildHabitat } from './logic/wild-pool.js';
+import { runScenesMake, runWorldTables } from './logic/run-scenes.js';
 import { runClinic, runFoes, runHealCost, runShopOpen, runWareHeals } from './logic/run-loop.js';
 import { perkOfferMake } from './logic/perks.js';
 import { eventAt } from './logic/encounters.js';
-import { runRouteTrainers } from './logic/route-trainers.js';
+import { routeRareSpots, routeTrainersPlace, runRouteTrainers } from './logic/route-trainers.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { questOffer, questTake } from './logic/run-quests.js';
 import { runUnlocks } from './logic/unlocks.js';
@@ -1290,6 +1291,102 @@ async function runFullTest(mode) {
               stopTimers();
               setActiveBattle(null);
             }
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        180
+      );
+    /* RT-4: a run route's wild Billies, on a copy of the save: the first seed (SELFTESTWH0, 1, ...) with a route place
+       (trainers on it, a spot for its rarer one) whose scene has points for a habitat its pool has Billies of; there the stock is 10 less its
+       trainers (4 at least), one of them the rarer one, standing on the place's rareAt, and every water or woods
+       Billie on one of its habitat's points. Then the save as it was */
+    if (typeof runWorldSync === 'function' && RULES.run.wild.habitats && !selfTest.stop)
+      await phase(
+        "A route's wild Billies: in their habitats, the rarer one in its pocket",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            H = RULES.run.wild.habitats,
+            wait = async (/** @type {() => any} */ f, /** @type {number} */ ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            let seed = '',
+              node = -1;
+            for (let k = 0; k < 20 && node < 0; k++) {
+              const t = JSON.parse(JSON.stringify(s));
+              runStartOn(t, runStartPlan(`SELFTESTWH${k}`, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+              const T = runRouteTrainers(t.run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run }),
+                routes = new Set(Object.values(T).map(q => q.runNode)),
+                made = runScenesMake(t.run, data),
+                W = runWorldTables(t.run, LOCATIONS[0], data);
+              routeTrainersPlace(t.run, T, made, EVENTS.classes);
+              const rareAt = routeRareSpots(t.run, T, made);
+              node = made.findIndex((sc, i) => {
+                if (!routes.has(i) || !rareAt[i] || (t.run.map.nodes[i] || {}).side || !sc.habitats) return false;
+                const P = W.pools[W.locations[i + 1].pool];
+                return P.list.some(([sp]) => !!sc.habitats[wildHabitat(SPECIES[sp].types, H)]);
+              });
+              if (node >= 0) seed = `SELFTESTWH${k}`;
+            }
+            if (node < 0) throw new Error('no seed of the first 20 has a route whose pool fits its habitats');
+            runStartOn(s, runStartPlan(seed, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            setSaveData(s);
+            const n = runWorldNode(node);
+            if (!runJump(n)) throw new Error('couldn’t walk to the route');
+            uiState.roam = null;
+            render();
+            const id = 'w:' + LOCATIONS[n].mapId + '*';
+            if (!(await wait(() => walkView.ready && walkView.id === id, 60000)))
+              throw new Error(`the route isn't shown (still ${walkView.id})`);
+            const L = LOCATIONS[n],
+              list = encountersHere(n),
+              want = Math.max(RULES.run.wild.routeMin, RULES.run.wild.route - (L.trainerCount || 0));
+            if (list.length !== want)
+              throw new Error(`${list.length} wild Billies with ${L.trainerCount} trainers (want ${want})`);
+            if (!(await wait(() => list.every(q => walkView.enc[q.id]), 10000)))
+              throw new Error('a wild Billie isn’t on the map');
+            const sc = walkView.sc,
+              o = sc.baseOff || [0, 0],
+              near = (/** @type {any} */ e, /** @type {number[]} */ p) => Math.hypot(e.x - p[0], e.z - p[1]) < 0.6,
+              rare = list.filter(q => q.rare);
+            if (rare.length !== 1) throw new Error(`${rare.length} rarer ones`);
+            if (!L.rareAt) throw new Error('the place has no spot for its rarer one');
+            if (!near(walkView.enc[rare[0].id], [L.rareAt[0] + o[0], L.rareAt[1] + o[1]]))
+              throw new Error('the rarer one isn’t in its pocket');
+            const by = /** @type {Record<string, number>} */ ({});
+            for (const q of list) {
+              if (q.rare) continue;
+              const k = q.hab || 'grass';
+              by[k] = (by[k] || 0) + 1;
+              const pts = q.hab && sc.habitats && sc.habitats[q.hab];
+              if (pts && !pts.some(p => near(walkView.enc[q.id], p)))
+                throw new Error(`a ${q.hab} Billie (${q.sp}) isn’t on its habitat's points`);
+            }
+            return `${seed}: ${L.name}, ${list.length} wild with ${L.trainerCount} trainers (${Object.entries(by)
+              .map(([k, v]) => k + ' ' + v)
+              .join(
+                ', '
+              )}, the rarer one ${rare[0].sp} lv ${rare[0].lvl} in its ${(mapById(L.mapId).spots || []).find(p => p.x === L.rareAt[0] && p.z === L.rareAt[1]).kind})`;
+          } finally {
             uiState.modal = null;
             uiState.mq = [];
             renderOverlay();

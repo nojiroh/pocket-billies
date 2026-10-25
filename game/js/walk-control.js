@@ -538,6 +538,9 @@ export function walkState() {
     sp: q.sp,
     alpha: !!q.alpha,
     build: encounterBuild(q),
+    /* RT-4: where it waits (walk/frame-items.js: its habitat's points, the rarer one's pocket) */
+    hab: q.hab,
+    rare: q.rare,
   }));
   return v;
 }

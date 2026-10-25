@@ -1609,6 +1609,20 @@ def set_pieces_step(P):
     return ph['why'] or 'in-game step passed'
 
 
+@step("RT-4a: wild Billies — a route's stock with its trainers, water and woods Billies on their habitats, the rarer one in its pocket (the in-game step)", 420)
+def route_wild_step(P):
+    """The in-game test's route wild Billies step (its own seed search: a route whose pool fits its habitats): the
+    stock is 10 less the place's trainers (4 at least), one rarer one stands on the place's rareAt, every water or
+    woods Billie on one of its habitat's points"""
+    pg = P.pg
+    if not pg.evaluate("typeof runWorldSync==='function'&&!!RULES.run.wild.habitats"): return 'not in this build'
+    name = "A route's wild Billies: in their habitats, the rarer one in its pocket"
+    r = run_in_game_test(pg, [name], False, 360)
+    ph = next((p for p in r['phases'] if p['name'] == name), None)
+    if not ph: raise Exception('the in-game test has no route wild Billies step')
+    return ph['why'] or 'in-game step passed'
+
+
 @step('RL-8: a run from the mast — the flight, a battle, a seam, a paid heal, the shop, a mini-boss and its Perk pick (RL-12), the boss, the payout, home', 420)
 def rl8_run_from_mast(P):
     """Copperleaf's mast sheet (tapped as walkPick does) offers "Start a run"; its sheet's "Take off" puts a run on the
@@ -1973,7 +1987,7 @@ def pages():
              ('town', low, [rl8_run_from_mast, route_trainers_step, juniper_and_lab, airship_moored]),
              ('town', {}, [walking, atmosphere, animals, frames_rooms_settings_map]),
              ('town', {}, [culling_cache_wear, buildings_and_rooms, lowpoly_props, night_lights_and_front]),
-             ('town', low, [postcard_visit, run_speeds, settings, set_pieces_step]),
+             ('town', low, [postcard_visit, run_speeds, settings, set_pieces_step, route_wild_step]),
              ('title', {'width': 390, 'height': 844, 'mobile': True}, [phone_flow]),
              ('run', phone, [sound_effects_step]),
              ('run', phone, [run_music_step, run_map_weather_step, battle_music_step]),

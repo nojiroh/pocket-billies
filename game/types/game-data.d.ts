@@ -419,6 +419,8 @@ export interface LocationData {
   runNode?: number;
   /** RT-2: a run route's trainers (a pair is two; logic/route-trainers.js routeTrainerTally): its wild stock is less */
   trainerCount?: number;
+  /** RT-4: where a run route's rarer one waits (a free pocket or dead end: logic/route-trainers.js routeRareSpots) */
+  rareAt?: [number, number];
   /** RL-R2: a side area's first place: closed until the run's field move obstacle (this move) is open */
   field?: DataId;
   /** RL-R2: 1 on a side area's place */
@@ -1010,8 +1012,18 @@ export interface Rules {
     /** RL-7: a run node's wild Billies: levels `lv` on the landing's row, `perRow` more on each row after; a node
         walked back to rolls `back` of them again (the hub's stock on a first visit); a waystation (an event or a
         stall: RL-12b) holds `waystation`; RT-2: a run route's first visit holds `route` less its trainers, `routeMin`
-        at least */
-    wild: { lv: [number, number]; perRow: number; back: number; waystation: number; route: number; routeMin: number };
+        at least; RT-4: `habitats`, the types whose Billies wait by the water and in the woods (the rest: tall grass) */
+    wild: {
+      lv: [number, number];
+      perRow: number;
+      back: number;
+      waystation: number;
+      route: number;
+      routeMin: number;
+      habitats?: Record<string, string[]>;
+      /** RT-4: a run route's rarer one, `up` levels above the rest (rules.js spawnRare) */
+      rare?: { up: number };
+    };
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;

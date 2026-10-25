@@ -31,6 +31,8 @@ import {
   storyHolds,
   toast,
   uiState,
+  wildHabitat,
+  wildRareList,
 } from '../hooks.js';
 import { random } from '../util.js';
 import {
@@ -189,6 +191,8 @@ expose({
   setTrip: [() => setTrip, v => setSetTrip(v)],
   // @ts-expect-error -- replaced on purpose
   spawn: [() => spawn, v => (spawn = v)],
+  // @ts-expect-error -- replaced on purpose
+  spawnRare: [() => spawnRare, v => (spawnRare = v)],
   speciesStep: [() => speciesStep],
   // @ts-expect-error -- replaced on purpose
   stat: [() => stat, v => (stat = v)],
@@ -809,7 +813,10 @@ export function encountersHere(node = saveData.trip.node) {
     if (!w || w.v !== visit) {
       const rnd = rngFn(runNodeSeed(saveData.run.seed, L.runNode), 'wild|' + visit);
       W[L.id] = { at: now, list: [], v: visit };
-      while (W[L.id].list.length < cap) spawn(false, null, node, rnd);
+      /* RT-4: a run route's first visit keeps the last of its stock for a rarer one (rules.json run.wild.rare) */
+      const rare = visit === 1 && !!L.trainerCount && !!RULES.run.wild.rare && cap > 0;
+      while (W[L.id].list.length < cap - (rare ? 1 : 0)) spawn(false, null, node, rnd);
+      if (rare) spawnRare(node, rnd);
     }
     return W[L.id].list;
   }
@@ -837,6 +844,16 @@ export function dropEncounter(id) {
     w.list = w.list.filter(q => q.id !== id);
     if (full) w.at = saveData.playMs || 0;
   }
+}
+/** RT-4: a run route's rarer one: of the rarest of its list (wild-pool.js wildRareList), `up` levels above the rest,
+ * never an Alpha; it waits in a hard pocket (route-trainers.js routeRareSpots, the place's rareAt)
+ * @param {number} node @param {() => number} rnd */
+export function spawnRare(node, rnd) {
+  const P = encounterPoolHere(node),
+    q = spawn(false, pickWeighted(wildRareList(P.list), rnd), node, rnd);
+  q.lvl = Math.min(100, q.lvl + (RULES.run.wild.rare ? RULES.run.wild.rare.up : 0));
+  q.rare = 1;
+  return q;
 }
 /* RL-2: every outcome draw (species, level, sizes, coat, Alpha) comes from rnd; a run passes its own stream */
 export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
@@ -868,6 +885,11 @@ export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
     no: ++saveData.serial,
     build: rollBuild(rnd),
   };
+  /* RT-4: a run place's Billie waits in its habitat (by its types): by the water, in the woods, else the tall grass */
+  if (L && L.runNode != null) {
+    const hab = wildHabitat(SPECIES[sp].types, RULES.run.wild.habitats);
+    if (hab !== 'grass') q.hab = hab;
+  }
   /* studio track ST-0: a coat, once in its odds (none: never) */
   const coat = coatRoll(COATS, 'wild', rnd) || SPECIES[sp].coat;
   if (coat) q.coat = coat;

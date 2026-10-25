@@ -163,7 +163,16 @@
    "ridge": {"ledges":3,"forest":2,"lanes":1},
    "autumn": {"forest":3,"farmland":2,"lanes":2,"lakeside":1}
   },
-  "wild": {"lv":[3,5],"perRow":1,"back":2,"waystation":2,"route":8,"routeMin":2},
+  "wild": {
+   "lv": [3,5],
+   "perRow": 1,
+   "back": 2,
+   "waystation": 2,
+   "route": 10,
+   "routeMin": 4,
+   "habitats": {"water":["Water"],"woods":["Grass","Psychic","Dragon"]},
+   "rare": {"up":2}
+  },
   "seamIn": 6,
   "start": {
    "se": 600,

@@ -519,6 +519,18 @@ debugLog.state = () => {
               ),
             /* RT-3: this place's set pieces (setPieces.json ids) and the spot kind each took */
             pieces: ((placeMap && placeMap.pieces) || []).map((/** @type {any} */ L) => `${L.id}:${L.spot}`),
+            /* RT-4: how many habitat points this place has (water, woods), and its wild Billies by habitat (species
+               ids, levels, the rarer one marked; read, never stocked here) and where its rarer one waits */
+            habitats:
+              placeMap && placeMap.habitats
+                ? Object.fromEntries(
+                    Object.entries(placeMap.habitats).map(([k, L]) => [k, /** @type {any[]} */ (L).length])
+                  )
+                : null,
+            wild: (
+              ((GAME.saveData.wild || {})[((GAME.LOCATIONS || [])[GAME.saveData.trip.node] || {}).id] || {}).list || []
+            ).map((/** @type {any} */ q) => `${q.sp}:${q.lvl}:${q.rare ? 'rare' : q.hab || 'grass'}`),
+            rareAt: ((GAME.LOCATIONS || [])[GAME.saveData.trip.node] || {}).rareAt || null,
           }
         : null;
     /* RL-8: what the runs brought home (numbers only) */

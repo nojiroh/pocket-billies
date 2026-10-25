@@ -22,10 +22,13 @@ import { runNodeSeed } from './run-map.js';
 import { encClassFoe } from './encounters.js';
 /* eslint-disable no-func-assign */
 expose({
+  ROUTE_RARE_SPOTS: [() => ROUTE_RARE_SPOTS],
   ROUTE_SIGHT_HALF: [() => ROUTE_SIGHT_HALF],
   ROUTE_SPOTS: [() => ROUTE_SPOTS],
   // @ts-expect-error -- replaced on purpose
   routeInSight: [() => routeInSight, v => (routeInSight = v)],
+  // @ts-expect-error -- replaced on purpose
+  routeRareSpots: [() => routeRareSpots, v => (routeRareSpots = v)],
   // @ts-expect-error -- replaced on purpose
   routeTrainerCount: [() => routeTrainerCount, v => (routeTrainerCount = v)],
   routeTrainerId: [() => routeTrainerId],
@@ -33,6 +36,7 @@ expose({
   routeTrainerTally: [() => routeTrainerTally, v => (routeTrainerTally = v)],
   // @ts-expect-error -- replaced on purpose
   routeTrainersPlace: [() => routeTrainersPlace, v => (routeTrainersPlace = v)],
+  routeUnderCanopy: [() => routeUnderCanopy],
   // @ts-expect-error -- replaced on purpose
   routeWaySpot: [() => routeWaySpot, v => (routeWaySpot = v)],
   // @ts-expect-error -- replaced on purpose
@@ -206,6 +210,56 @@ export function routeTrainersPlace(run, trainers, scenes, classes) {
     }
   }
 }
+
+/** RT-4: the spot kinds a route's rarer one waits in, the hardest to reach first */
+export const ROUTE_RARE_SPOTS = ['pocket', 'deadend', 'clearing'];
+/**
+ * RT-4: where each run route's rarer one waits (logic/rules.js spawnRare), in its scene's own metres: a pocket, else a
+ * dead end, else a clearing (ROUTE_RARE_SPOTS), more than 6 m from every trainer of the place and 4 m from its set
+ * pieces, where no forest canopy hides it from the camera (routeUnderCanopy), drawn from the node's 'route|rare' stream; none on a place with no such spot (it waits in the grass then).
+ * After routeTrainersPlace @param {Run} run @param {Record<string, any>} trainers @param {any[]} scenes
+ * @returns {Record<number, [number, number]>}
+ */
+export function routeRareSpots(run, trainers, scenes) {
+  /** @type {Record<number, [number, number][]>} */
+  const stand = {};
+  for (const T of Object.values(trainers))
+    if (T.route && T.runNode != null && T.route.at) {
+      (stand[T.runNode] ||= []).push(T.route.at);
+      if (T.route.mate) stand[T.runNode].push(T.route.mate);
+    }
+  /** @type {Record<number, [number, number]>} */
+  const out = {};
+  if (!run.map) return out;
+  for (const ni of Object.keys(stand)) {
+    const i = +ni,
+      sc = scenes[i];
+    if (!sc) continue;
+    const g = rngFrom(runNodeSeed(run.seed, i), 'route|rare'),
+      pieces = sc.pieces || [],
+      canopy = (sc.props || []).filter((/** @type {any} */ q) => /canopy/.test(q.k)),
+      free = (sc.spots || []).filter(
+        (/** @type {any} */ p) =>
+          stand[i].every(t => Math.hypot(t[0] - p.x, t[1] - p.z) > 6) &&
+          pieces.every((/** @type {any} */ q) => Math.hypot(q.x - p.x, q.z - p.z) > 4) &&
+          canopy.every((/** @type {any} */ q) => !routeUnderCanopy(q, p))
+      );
+    for (const kind of ROUTE_RARE_SPOTS) {
+      const pool = free.filter((/** @type {any} */ p) => p.kind === kind);
+      if (!pool.length) continue;
+      const p = pool[g.int(0, pool.length - 1)];
+      out[i] = [p.x, p.z];
+      break;
+    }
+  }
+  return out;
+}
+
+/** RT-4: whether a forest's canopy piece q hides spot p from the camera (it looks north, from the south): within 4.5 m,
+ * or up to 7 m south of it and within 3 m to the side @param {{ x: number, z: number }} q
+ * @param {{ x: number, z: number }} p */
+export const routeUnderCanopy = (q, p) =>
+  Math.hypot(q.x - p.x, q.z - p.z) < 4.5 || (q.z < p.z && p.z - q.z < 7 && Math.abs(q.x - p.x) < 3);
 
 /** a place with no spot left: on the way west (its west exit's road, else the first) at (k + 1) / (n + 1) of it, 3 m
  * to one side for even k and the other for odd ones, facing it @param {any} sc @param {number} k @param {number} n

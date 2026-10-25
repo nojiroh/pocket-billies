@@ -450,8 +450,35 @@ export function dataRunScene(D) {
       );
     else
       for (const k of Object.keys(W))
-        if (!['lv', 'perRow', 'back', 'waystation', 'route', 'routeMin'].includes(k))
+        if (!['lv', 'perRow', 'back', 'waystation', 'route', 'routeMin', 'habitats', 'rare'].includes(k))
           problem('rules.json', `run.wild.${k}: no such rule`);
+    /* RT-4: a run route's rarer one, levels up */
+    if (
+      W &&
+      W.rare !== undefined &&
+      !(W.rare && typeof W.rare === 'object' && whole(W.rare.up, 0, 20) && Object.keys(W.rare).length === 1)
+    )
+      problem('rules.json', 'run.wild.rare is not { up } (whole levels, 0-20)');
+    /* RT-4: the habitats (logic/mapgen.js mapgenHabitats makes their points), each a list of types, no type twice */
+    const H = W && W.habitats;
+    if (H !== undefined) {
+      const had = new Set(),
+        types = (D.types || []).map((/** @type {any} */ t) => t.id);
+      if (!H || typeof H !== 'object' || Array.isArray(H)) problem('rules.json', 'run.wild.habitats is not a record');
+      else
+        for (const [k, T] of Object.entries(H)) {
+          if (!['water', 'woods'].includes(k))
+            problem('rules.json', `run.wild.habitats.${k}: no such habitat (water, woods)`);
+          if (!Array.isArray(T) || !T.length) problem('rules.json', `run.wild.habitats.${k} is not a list of types`);
+          else
+            for (const t of T) {
+              if (types.length && !types.includes(t))
+                problem('rules.json', `run.wild.habitats.${k}: no type "${t}" (types.json)`);
+              else if (had.has(t)) problem('rules.json', `run.wild.habitats.${k}: "${t}" is in another habitat too`);
+              had.add(t);
+            }
+        }
+    }
     if (!whole(R.seamIn, 1, 30)) problem('rules.json', 'run.seamIn is not a whole number of metres from 1 to 30');
   }
   return out;

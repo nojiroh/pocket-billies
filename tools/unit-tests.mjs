@@ -13,6 +13,7 @@ export const SLOW_TESTS = [
   'island-gen.test.mjs',
   'mapgen-dials.test.mjs',
   'mapgen-grass.test.mjs',
+  'mapgen-habitats.test.mjs',
   'mapgen-layout.test.mjs',
   'mapgen-ledges.test.mjs',
   'mapgen-lots.test.mjs',
