@@ -41,6 +41,7 @@ import {
   trainerTeam,
   typeEffectiveness,
 } from '../game-data.js';
+import { graftOf, graftSet } from './graft-art.js';
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, moveSources, robotGemDef, robotRules, speciesOf } from './fighters.js';
 import {
   addBilly,
@@ -306,6 +307,8 @@ export function actorSnapshot(k) {
     st: m.status,
     build: m.build,
     coat: m.coat,
+    /* SP-1: a grafted Billie's graft code, only when it has one (the snapshot of an ungrafted one is unchanged) */
+    ...(graftOf(m) ? { graft: graftOf(m) } : {}),
     alpha: !!(m.boss || m.alpha),
     boss: !!m.boss,
     ty: actorTypes(k).slice(),
@@ -1061,6 +1064,7 @@ export function bossAlpha(e, hpMult) {
 export function startWild(q, o = {}) {
   const made = { build: encounterBuild(q), coat: q.coat },
     foe = q.alpha ? makeAlpha(q.sp, q.lvl, made) : makeBilly(q.sp, q.lvl, made);
+  if (graftOf(q)) graftSet(foe, graftOf(q)); /* SP-1: a grafted wild Billie stays grafted in battle */
   if (
     !newBattle('wild', [foe], {
       qid: q.id,

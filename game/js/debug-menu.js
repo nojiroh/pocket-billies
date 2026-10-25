@@ -43,7 +43,9 @@ import {
   SPECIES,
   TRAINERS,
   TYPES,
+  gameData,
 } from './game-data.js';
+import { GRAFT_SLOTS, graftDonors, graftKey, graftParse, graftSet } from './logic/graft-art.js';
 import { speciesOf } from './logic/fighters.js';
 import {
   addBilly,
@@ -84,6 +86,8 @@ expose({
   debugButtonHTML: [() => debugButtonHTML],
   debugFind: [() => debugFind, v => (debugFind = v)],
   debugFps: [() => debugFps, v => ((debugFps = v), provide({ debugFps }))],
+  debugGraftFor: [() => debugGraftFor, v => (debugGraftFor = v)],
+  debugGraftWords: [() => debugGraftWords],
   debugHTML: [() => debugHTML, v => (debugHTML = v)],
   debugMenu: [() => debugMenu],
   debugOpenKeep: [() => debugOpenKeep, v => (debugOpenKeep = v)],
@@ -192,7 +196,8 @@ function debugHTML() {
   const billies = `<div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level">${debugSelectHTML('dbgCoat', [['', 'No coat'], ...Object.entries(COATS).map(([k, c]) => [k, c.name])], uiState.dbgCoat || '')}</div>
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
   <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels', 'gold')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide', 'gold')}</div>
-  <div class="dbg-row">${debugButtonHTML('bots', 'Give the robot kit', 'gold')}</div><p class="note">Two robots and one of every robot part and gem. Battle Tinker Rho (under Places and test scenes) for a mixed team.</p>`;
+  <div class="dbg-row">${debugButtonHTML('bots', 'Give the robot kit', 'gold')}</div><p class="note">Two robots and one of every robot part and gem. Battle Tinker Rho (under Places and test scenes) for a mixed team.</p>
+  <div class="dbg-row">${debugButtonHTML('graftlead', 'Graft the lead', 'gold')}${debugButtonHTML('graftenc', 'Add a grafted encounter')}${debugButtonHTML('graftwild', 'Battle a grafted one', 'red')}${debugButtonHTML('graftclear', 'Clear grafts')}</div><p class="note">Splicing art spike: a random other species’ arm, leg or tail, baked on this device (the species above for an encounter). Until a reload only, never saved. Each bake’s time goes to the debug log: open the team and a battle, then export it.</p>`;
   const battle = `<div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Catching works as normal' : 'Every throw catches')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div>`;
   const run = saveData.run
@@ -349,6 +354,23 @@ function debugFps() {
   const m = frameScheduler.meter;
   el.textContent = `${m.fps} fps · ${m.workAvg.toFixed(1)} ms${typeof gpuState !== 'undefined' && gpuState.gpuMs ? ' · GPU ' + gpuState.gpuMs.toFixed(1) + ' ms' : ''} · Q${battleStage.q.lvl} · ${frameScheduler.hz} Hz`;
 }
+/* SP-1: a random graft for a species (one slot, a random donor with a part that fits it), '' when none fits */
+function debugGraftFor(sp) {
+  const B = gameData.kitBuilds,
+    K = gameData.partKits,
+    slots = GRAFT_SLOTS.filter(slot => graftDonors(B, K, sp, slot).length);
+  if (!slots.length) return '';
+  const slot = slots[Math.floor(Math.random() * slots.length)],
+    list = graftDonors(B, K, sp, slot);
+  return graftKey({ [slot]: list[Math.floor(Math.random() * list.length)] });
+}
+const debugGraftWords = g =>
+  Object.entries(graftParse(g) || {})
+    .map(
+      ([slot, d]) =>
+        `${SPECIES[d] ? SPECIES[d].name : d}’s ${{ front: 'arms', back: 'legs', sig: 'tail' }[slot] || slot}`
+    )
+    .join(' and ');
 function debugAction(x) {
   const v = id => {
       const e = $('#' + id);
@@ -439,6 +461,36 @@ function debugAction(x) {
       startWild(q);
       return;
     }
+    case 'graftlead': {
+      const m = saveData.team[0],
+        g = m ? debugGraftFor(m.sp) : '';
+      if (!g) return toast(m ? 'No other species has a part that fits your lead.' : 'No lead to graft.');
+      graftSet(m, g);
+      if (typeof debugLog !== 'undefined') debugLog.add('graft', `debug: lead ${m.sp} ${g}`);
+      said = `Your lead now wears ${debugGraftWords(g)}.`;
+      break;
+    }
+    case 'graftenc':
+    case 'graftwild': {
+      if (x === 'graftwild' && activeBattle) return toast('Finish the current battle first.');
+      const g = debugGraftFor(sp);
+      if (!g) return toast(`No other species has a part that fits ${SPECIES[sp].name}.`);
+      const q = { id: newUid(), sp, lvl: lv, coat: $('#dbgCoat').value || undefined, no: ++saveData.serial };
+      graftSet(q, g);
+      encountersHere().push(q);
+      if (typeof debugLog !== 'undefined') debugLog.add('graft', `debug: wild ${sp} ${g}`);
+      if (x === 'graftenc') {
+        said = `A ${SPECIES[sp].name} wearing ${debugGraftWords(g)} added to the encounters here.`;
+        break;
+      }
+      closeModal();
+      startWild(q);
+      return;
+    }
+    case 'graftclear':
+      for (const m of [...saveData.team, ...encountersHere()]) graftSet(m, '');
+      said = 'Grafts taken off the team and the encounters here.';
+      break;
     case 'heal':
       healAll();
       said = `Healed: ${saveData.team.length} on your team.`;

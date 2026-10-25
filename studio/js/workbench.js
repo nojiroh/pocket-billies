@@ -12,10 +12,6 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { wbPart, wbPartSection } from '../../game/js/hooks.js';
-import { makeCanvas } from '../../game/js/art.js';
-import { escapeHtml } from './game-stand-ins.js';
-import { pixelHex, pixelRgba } from '../../game/js/logic/pixel-ops.js';
-import { snapDetect, snapToPixels } from '../../game/js/logic/pixel-snap.js';
 import {
   asepriteBoxes,
   sheetArtBox,
@@ -32,6 +28,10 @@ import {
   sheetPiece,
   sheetSliceKit,
 } from '../../game/js/logic/sheet-slice.js';
+import { makeCanvas } from '../../game/js/art.js';
+import { escapeHtml } from './game-stand-ins.js';
+import { pixelHex, pixelRgba } from '../../game/js/logic/pixel-ops.js';
+import { snapDetect, snapToPixels } from '../../game/js/logic/pixel-snap.js';
 import {
   ACTIONS,
   SECTIONS,
