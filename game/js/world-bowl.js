@@ -77,6 +77,7 @@ import {
   bowlMapPoint,
   bowlPropClass,
   bowlTreeStyle,
+  bowlYouPoint,
 } from './logic/bowl-things.js';
 import { bowlHasCoast, bowlIslandHeights, bowlIslandMapId, bowlIslandPlotThings } from './logic/bowl-island.js';
 import {
@@ -197,6 +198,7 @@ expose({
   worldBowlThingsOfPlace: [() => worldBowlThingsOfPlace, v => (worldBowlThingsOfPlace = v)],
   worldBowlThingsTick: [() => worldBowlThingsTick, v => (worldBowlThingsTick = v)],
   worldBowlTreeShape: [() => worldBowlTreeShape, v => (worldBowlTreeShape = v)],
+  worldBowlWalkOnIsland: [() => worldBowlWalkOnIsland, v => (worldBowlWalkOnIsland = v)],
   worldBowlWaterMesh: [() => worldBowlWaterMesh, v => (worldBowlWaterMesh = v)],
   worldMap: [() => worldMap],
   worldMapAction: [() => worldMapAction, v => (worldMapAction = v)],
@@ -280,7 +282,7 @@ const BOWL_SEA_FAR = [0.16, 0.42, 0.62]; /* the sea's colour far away (the walk 
 
 /* the ground's scale: metres to the bowl's radius, squares across the terrain map, and the far-colours' size */
 export const BOWL_METRES = 1000;
-const BOWL_INDEX = 2048;
+export const BOWL_INDEX = 2048;
 const BOWL_MIX = 1024;
 /* the routes' and rivers' line map: distance to the nearest route (red, up to BOWL_ROUTE_FIELD), whether a place's own
    ground is there (green: up close its own paths show instead), distance to the nearest river (blue) */
@@ -589,12 +591,22 @@ function worldBowlFloatCam() {
   bowlCamUseFloat(F ? { c: F.c, r: F.r, th: F.th } : null);
   return F;
 }
+/* you on the floating island's map, in its own metres, or null when the walk is elsewhere. HB-1: the hub's walk view
+   is 'w:<map>*' (seamless-world.js seamlessHubMap), never the bare map id, so this was never found; a view joined
+   to other scenes may be offset from the map's own metres: not read */
+function worldBowlWalkOnIsland() {
+  const id = worldBowl.ground && worldBowl.ground.islandMap,
+    v = walkView;
+  if (!id || !v || !v.pl || !v.sc) return null;
+  if (v.id === id) return v.pl;
+  return v.id === 'w:' + id + '*' && !(v.sc.scenes && v.sc.scenes.length) ? v.pl : null;
+}
 /* the floating island's opening view: from where you stand on it, looking across to its middle (the walk's orbit
    camera, logic/camera-orbit.js), else from the south */
 function worldBowlFloatHome(F, yaw) {
   const M = gameData.maps[worldBowl.ground.islandMap],
     s = worldBowl.spots[F.i],
-    pl = walkView && walkView.pl && walkView.id === worldBowl.ground.islandMap ? walkView.pl : null;
+    pl = worldBowlWalkOnIsland();
   if (pl && M && s) {
     const [x, y] = bowlMapPoint(s, M, pl.x, pl.z, BOWL_METRES);
     if (Math.hypot(x - F.c[0], y - F.c[1]) > F.r * 0.1) yaw = orbitYawAt(F.c, x, y);
@@ -2074,17 +2086,28 @@ function worldBowlReady() {
 }
 /* the map's slow parts done ahead, in idle time and without the GPU: the places, the island's own heights, the terrain
    map and its pictures, each place's map, the models' recipes and the pictures of things without one. The walk scene
-   starts it in the hub, the opening fall as it begins. */
-const worldMapWarm = { on: false };
-export function worldMapPrewarm() {
-  if (worldMapWarm.on || !worldMapWanted()) return;
+   starts it in the hub, the opening fall as it begins. HB-2: done(ok) when it has finished (a run's loading screen
+   waits on it, eager: on a timer, not in idle time, which a page drawing every frame seldom has); a second call while
+   it works waits for the same end. */
+const worldMapWarm = { on: false, eager: false, done: /** @type {((ok: boolean) => void)[]} */ ([]) };
+export function worldMapPrewarm(done, eager) {
+  if (done) worldMapWarm.done.push(done);
+  if (eager) worldMapWarm.eager = true;
+  if (worldMapWarm.on) return;
+  const end = ok => {
+    worldMapWarm.on = worldMapWarm.eager = false;
+    for (const f of worldMapWarm.done.splice(0)) f(ok);
+  };
+  if (!worldMapWanted()) return end(false);
   worldMapWarm.on = true;
   const later = f =>
-    typeof requestIdleCallback === 'function' ? requestIdleCallback(f, { timeout: 200 }) : setTimeout(f, 16);
+    worldMapWarm.eager || typeof requestIdleCallback !== 'function'
+      ? setTimeout(f, worldMapWarm.eager ? 0 : 16)
+      : requestIdleCallback(f, { timeout: 200 });
   let tries = 0;
   const step = () => {
     try {
-      if (++tries > 4000) return (worldMapWarm.on = false);
+      if (++tries > 4000) return end(false);
       worldBowlSpots();
       const g = worldBowl.ground,
         id = worldBowl.islandLoading,
@@ -2093,7 +2116,11 @@ export function worldMapPrewarm() {
       if (M && bowlHasCoast(M) && !bowlIslandHeights(M)) return later(step);
       const T = worldBowlTerrainStart();
       if (!T.ready) {
-        T.fill(48);
+        const t0 = performance.now();
+        if (!worldMapWarm.eager) T.fill(48);
+        else
+          do T.fill(16);
+          while (!T.ready && performance.now() - t0 < 12);
         return later(step);
       }
       worldBowlStampMaps(T);
@@ -2113,10 +2140,10 @@ export function worldMapPrewarm() {
         if (imgs.length) Promise.resolve(artLoad(imgs)).catch(() => {});
         g.warmThings = true;
       }
-      worldMapWarm.on = false;
+      end(true);
     } catch (e) {
       console.error(e);
-      worldMapWarm.on = false;
+      end(false);
     }
   };
   later(step);
@@ -2924,6 +2951,18 @@ function worldBowlOverlay(t) {
   c.setTransform(d, 0, 0, d, 0, 0);
   c.lineJoin = c.lineCap = 'round';
   const at = s => bowlCamProject(v, bowlToGpu(s.x, s.y, s.h + 0.003));
+  /* HB-1: on the floating island the place's pin stands at its hub (the town) and you where you stand, on its own
+     ground (its spot is the map's middle, on the bowl's coarse grid) */
+  const FI = worldBowlFloatIsland(),
+    floatAt = pl => {
+      const M = gameData.maps[worldBowl.ground.islandMap],
+        s = FI && worldBowl.spots[FI.i];
+      if (!M || !s) return null;
+      const [x, y] = bowlYouPoint(s, M, pl, BOWL_METRES);
+      return { x, y, h: worldBowlSkyFloor(x, y) };
+    },
+    floatPin = FI ? floatAt(null) : null,
+    floatMe = FI ? floatAt(worldBowlWalkOnIsland()) : null;
   /* your trip, gold */
   const trip = [saveData.trip.node, ...saveData.trip.plan],
     flying = typeof airshipFlight !== 'undefined' && airshipFlight.on;
@@ -2942,7 +2981,7 @@ function worldBowlOverlay(t) {
   worldBowl.marks = [];
   LOCATIONS.forEach((l, i) => {
     const s = worldBowl.spots[i],
-      base = at(s),
+      base = at(floatPin && i === FI.i ? floatPin : s),
       rm = worldBowlRunMark(i);
     /* RL-7: a run's place the map doesn't show yet has no pin at all */
     if (!base || s.off || (rm && !rm.seen)) return;
@@ -2970,12 +3009,13 @@ function worldBowlOverlay(t) {
     const here = i === saveData.trip.node,
       locked = !rm && !canEnter(i),
       fresh = !rm && !saveData.visited[i] && !locked;
-    if (here) {
+    const ring = here && floatMe && i === FI.i ? at(floatMe) : here ? base : null;
+    if (ring) {
       const k = 1 + 0.15 * Math.sin(t / 300);
       c.strokeStyle = 'rgba(255,226,122,.95)';
       c.lineWidth = 2.5;
       c.beginPath();
-      c.ellipse(base.x, base.y, 16 * k, 6 * k, 0, 0, 7);
+      c.ellipse(ring.x, ring.y, 16 * k, 6 * k, 0, 0, 7);
       c.stroke();
     }
     if (i === sel) {
@@ -3004,8 +3044,12 @@ function worldBowlOverlay(t) {
   /* the airship on its way, or you standing at your place */
   if (flying && typeof flyDraw === 'function') flyDraw(c, t, (x, y, h) => bowlCamProject(v, bowlToGpu(x, y, h)));
   else {
-    const me = worldBowl.spots[saveData.trip.node],
-      pq = me && at(me);
+    const onIsle = floatMe && FI.i === saveData.trip.node,
+      me = onIsle ? floatMe : worldBowl.spots[saveData.trip.node],
+      pq = me && at(me),
+      /* beside the place's pin on the bowl; on the floating island on your own spot */
+      dx = onIsle ? 0 : 18;
+    worldBowl.me = me ? { x: me.x, y: me.y, isle: !!onIsle } : null;
     if (pq) {
       const fr = personWalkFrames('me'),
         f = (fr.down || fr[Object.keys(fr)[0]])[0],
@@ -3014,11 +3058,11 @@ function worldBowlOverlay(t) {
       c.imageSmoothingEnabled = false;
       c.fillStyle = 'rgba(20,10,40,.35)';
       c.beginPath();
-      c.ellipse(pq.x + 18, pq.y, 9, 3, 0, 0, 7);
+      c.ellipse(pq.x + dx, pq.y, 9, 3, 0, 0, 7);
       c.fill();
       c.drawImage(
         f,
-        Math.round(pq.x + 18 - (f.ax || f.width / 2) * k),
+        Math.round(pq.x + dx - (f.ax || f.width / 2) * k),
         Math.round(pq.y - (f.ay || f.height) * k + bob),
         Math.round(f.width * k),
         Math.round(f.height * k)

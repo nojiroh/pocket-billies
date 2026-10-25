@@ -144,6 +144,13 @@ test('every run town has a street, a square with the clinic and the shop on it, 
         `${where}: a vegetable plot south of the road`
       );
       assert.deepEqual(G.mapgenUnreachable(sc, C), [], where);
+      /* a run's scenes meet any neighbour at height 0 on their east and west edges, but where a river crosses (WA-3a:
+         its bed keeps its height, the neighbour takes it from the edge strip) */
+      const wetBy = (x, r) =>
+        [r - 1, r].some(k => k >= 0 && k < sc.h && 'wd'.includes(sc.tiles[k][Math.min(sc.w - 1, x)]));
+      sc.heights.forEach((row, r) => {
+        for (const x of [0, sc.w]) assert.ok(row[x] === 0 || wetBy(x, r), `${where}: the edges pinned`);
+      });
       /* TW-2: townsfolk by its houses (2, one more every 2 houses, at most 6) */
       const F = G.MAPGEN_TOWN.folk;
       assert.equal(sc.folk, Math.min(F.most, F.base + Math.floor(houses.length / F.houses)), `${where}: folk`);
@@ -183,8 +190,6 @@ test('every run town has a street, a square with the clinic and the shop on it, 
       assert.ok(R.town.names.includes(Q[0].name) && !P.some(p => p.name === Q[0].name), `${where}: the giver's name`);
       assert.ok(G.mapgenReached(reach, Q[0].x, Q[0].z), `${where}: the quest giver can't be walked to`);
       assert.ok(G.mapgenReached(reach, board.x, board.z - 0.8), `${where}: the board can't be walked to`);
-      /* a run's scenes meet any neighbour at height 0 on their east and west edges */
-      for (const row of sc.heights) assert.ok(row[0] === 0 && row[sc.w] === 0, `${where}: the edges pinned`);
     }
   }
   assert.ok(towns >= 15, `${towns} towns`);

@@ -76,7 +76,7 @@ export interface GameData {
   /** RL-R1: the run's region themes (logic/run-region.js) */
   regions: RegionsData;
   /** RL-R2: the field moves that open a run's side areas */
-  fieldMoves?: { about?: string; moves: Record<DataId, FieldMove> };
+  fieldMoves?: { about?: string; moves: Record<DataId, FieldMove>; waterfall?: FieldClimb };
   /** RT-3: set pieces, prop groups placed as a unit on a laid-out place */
   setPieces?: SetPiecesData;
   /** RL-13: a run's Expeditions and challenges */
@@ -967,7 +967,8 @@ export interface Rules {
     luxuryPyramid: number;
     alpha: number;
   };
-  ride: { minHeight: number; types: TypeId[] };
+  /** WA-6b: minHeight (m) is optional, none by default: any Billie of the types carries you */
+  ride: { minHeight?: number; types: TypeId[] };
   fishing: { biteMin: number; biteMax: number; reactTime: number; reelTime: number };
   /** the legendary encounters, one per map (scene is a map id) */
   legends: { sp: SpeciesId; scene: DataId; lvl: number; title: string; text: string; line: string }[];
@@ -1027,6 +1028,9 @@ export interface Rules {
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;
+    /** HB-2: the run's loading screen (logic/run-load.js): it lifts at capMs even when a stage is still waiting (the
+        owner: 20 s) */
+    load: { capMs: number };
     /** RL-8: what a run starts with, besides the Billies from home and the packed bag: its money, pyramids and items (placeholders) */
     start: { se: number; pyramids: Record<string, number>; items: Record<string, number> };
     /** RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): how many items and pyramids (in all) are
@@ -2120,6 +2124,20 @@ export interface SetPiecePerson {
   z: number;
   event?: string;
   say?: string;
+}
+/** WA-6b: the Waterfall climb (fieldMoves.json waterfall): a field move used in the walk on a fall marked climb: 1 */
+export interface FieldClimb {
+  name: string;
+  /** the type of the Billie that climbs */
+  type: string;
+  /** the badges it needs, every one kept (meta.badges by type) */
+  badges: string[];
+  look: string;
+  needBadge: string;
+  needType: string;
+  ask: string;
+  used: string;
+  top: string;
 }
 /** RL-R2: rules.json run.side: the chance a run has a detour or an alternate path (never both), a detour's places, an
  * alternate path's rows and the chance it ends at a boss of its own, each move's weight and the lean toward a move of

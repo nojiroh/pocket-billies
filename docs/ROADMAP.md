@@ -53,6 +53,13 @@ town node needs it.
   pairs; done 2026-10-25), RT-3 (set pieces for a lived-in feel; done 2026-10-25), RT-4a (more wild Billies, habitats, a rarer one in a
   hard pocket; done 2026-10-25), RT-4b (items at dead ends, Cut bramble shortcuts, animals). Tags `rt-N-done`, `rt-4a-done`.
   Branch `track/routes`.
+- **Water track** (docs/phases/water-track.md, the owner's brief and answers 2026-10-25): pixel water on the 32 texels
+  a metre grid (hybrid: banded tones, stepped frames, smooth reflections), waterfalls as set pieces with plunge pools
+  and mist, rivers that run downhill, the sea and the coast, wading, Surf and a Waterfall climb, new kinds, water
+  life, sounds and Studio tools. WA-0 (the plan, the contract, test_water and `tools/look-water.py`) done 2026-10-25; WA-1 (pixel water) done 2026-10-25;
+  then three lanes at once (renderer, generation, play; rounds 1-4; a fourth, world map and battles, in round 3), WA-8
+  alone last. Takes over TR-6's waterfalls, TR-10's water and "rivers downhill" from the terrain track. Tags
+  `wa-N-done`. Branch `track/water`.
 - **Splicing track** (docs/phases/splicing-track.md, the owner's brief and answers 2026-10-25): Genes from kit parts
   with readable traits, wild Billies with mixed parts (Graft, Chimera), a Gene Bank building paid in DNA, a Stability
   budget with Unstable abominations past it, Augments from the bots' salvage. SP-1 (an art spike on the phone) first;
@@ -111,6 +118,14 @@ town node needs it.
   "Running sessions in parallel"). Done 2026-10-23 (rounds 1-3; round 3 is TC-4 items 1, 2, 5, 6): the full check
   about 21 min (41 before), smoke about 3, the fast check about 11, `npm test` 20 s; the 10- and 3-minute budgets are
   missed for reasons docs/TESTING.md gives. Tag `tc-done`.
+- **Hub track** (docs/phases/hub-track.md, the owner's brief 2026-10-25): Copperleaf's island revamped. HB-1 (the
+  world map's pin at the player, decals fixed), HB-2 (the run's loading screen), HB-3 (the world map's lagoon,
+  waterfalls and detail), HB-4a/4b (island sketches, then the island rebuilt: doors to the camera, a second street, no
+  lookout), HB-5 (building variety), HB-6 (a natural pasture fence), HB-7 (the train station and one flying train per
+  region theme), HB-8 (departure through the portal and the return), HB-9 (the phone look pass). Planned 2026-10-25.
+  HB-1 (the pin, decals) done 2026-10-25 on the planning session's branch, merged (PR #193). HB-2 (the run's loading
+  screen: scenes made over frames, the landing waits for its map, models, the run's world map and the walk view, a 20 s
+  cap; fly, then load) done 2026-10-25 on `track/hub`, waiting on the owner's phone test. Tags `hb-N-done`. Branch `track/hub`.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all

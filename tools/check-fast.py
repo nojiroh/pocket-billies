@@ -98,7 +98,7 @@ def walk_over(pg, n1, past, sec=60):
 
 def run_world(pg, base):
     """RL-7: the run fixture boots on its landing (day 1), its world made from the seed at boot: Copperleaf and a place
-    per node, the landing's view drawing; the Map tab opens as the bowl with every place on it; a walk over the
+    per node, the landing's view drawing; HB-2: its loading screen lifts and logs a resume line (no seed); the Map tab opens as the bowl with every place on it; a walk over the
     landing's west seam (the way ahead; rules.json run.seamIn metres in) arrives at the next node on day 2 and opens its view"""
     drawing(pg)
     seed, scenes, ms, places, want, node, day, view = pg.evaluate("[runWorld.seed, runWorld.scenes, runWorld.ms, LOCATIONS.length, 1 + saveData.run.map.nodes.length, saveData.trip.node, saveData.run.clock, walkView.id]")
@@ -106,6 +106,11 @@ def run_world(pg, base):
     if node != 1 or day != 1: raise Exception(f'not on the landing on day 1: node {node}, day {day}')
     if view != pg.evaluate("'w:' + LOCATIONS[1].mapId + '*'"): raise Exception(f'the landing’s view isn’t open: {view}')
     if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
+    # HB-2: a boot on a run is a resume: the landing's loading ends (ready, or lifted by the cap) and logs its stages,
+    # milliseconds only
+    if not until(pg, "runLoad.ready&&!document.getElementById('runload')", 40): raise Exception("the run's loading screen never lifted")
+    line = pg.evaluate("(debugLog.ev.filter(e=>e.kind==='load'&&e.msg.startsWith('run resume ')).pop()||{}).msg||''")
+    if not line or 'RL7FIXTURE' in line or ' map ' not in line + ' ': raise Exception(f"the resume's load line is {line!r}")
     bar = pg.evaluate("document.querySelector('#nav').set")
     if bar != 'run': raise Exception(f"the bottom bar shows the {bar} tabs on a run")
     if not pg.evaluate(nav_tap('map')): raise Exception('no Map tab on the bottom bar')
@@ -117,7 +122,7 @@ def run_world(pg, base):
     if not walk_over(pg, n1, pg.evaluate('RULES.run.seamIn') + 6): raise Exception(f'walked toward {pg.evaluate(f"LOCATIONS[{n1}].name")} and never crossed')
     if pg.evaluate('saveData.run.clock') != 2: raise Exception(f'arrived on day {pg.evaluate("saveData.run.clock")}, not 2')
     if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 60): raise Exception(f'crossed but the view is still {pg.evaluate("walkView.id")}')
-    return f'{scenes} scenes made in {ms} ms; walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day 2'
+    return f'{scenes} scenes made in {ms} ms; {line}; walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day 2'
 
 
 def bowl_map(pg, base):
@@ -153,6 +158,14 @@ def bowl_map(pg, base):
     # its own sky (a run's world keeps the bowl's sea: look session 1)
     if pg.evaluate("!!worldBowl.ground.islandMap&&!worldExtra.look"):
         if not until(pg, "!!(worldBowl.ground.float&&worldBowl.ground.float.gpu&&!worldBowl.ground.water&&gpuState.P.mrock&&gpuState.P.mskyf)", 10): raise Exception('the hub’s island doesn’t float (a sea, or no rock under it)')
+        # HB-1: you are drawn where you stand on the island (its pin was at the map's middle, ~50 m off)
+        off = pg.evaluate("(()=>{const g=worldBowl.ground,F=g.float,m=worldBowl.me;if(!m||!m.isle)return -1;const w=bowlYouPoint(worldBowl.spots[F.i],gameData.maps[g.islandMap],walkView.pl,1000);return Math.hypot(m.x-w[0],m.y-w[1])*1000})()")
+        if off < 0 or off > 0.5: raise Exception('you aren’t drawn on the island' if off < 0 else f'you are drawn {off:.1f} m from where you stand')
+        # and you follow when you stand somewhere else (40 m west of the hub)
+        pg.evaluate("(()=>{const P=walkView.pl;worldBowl.hb1=[P.x,P.z];P.x-=40;worldBowl.dirty=true;return 0})()")
+        f0 = pg.evaluate("worldBowl.frames"); until(pg, f"worldBowl.frames>={f0 + 2}", 10)
+        off2 = pg.evaluate("(()=>{const g=worldBowl.ground,F=g.float,m=worldBowl.me,P=walkView.pl,w=bowlYouPoint(worldBowl.spots[F.i],gameData.maps[g.islandMap],P,1000);[P.x,P.z]=worldBowl.hb1;return m?Math.hypot(m.x-w[0],m.y-w[1])*1000:-1})()")
+        if off2 < 0 or off2 > 0.5: raise Exception(f'you don’t follow on the island: drawn {off2:.1f} m from where you stand')
     elif not pg.evaluate("!!(worldBowl.ground.water&&gpuState.P.mwater)"): raise Exception('the sea isn’t drawn')
     # look session 2: the shadow map, the routes' and rivers' line map and the rivers
     # RL-8b: the hub is an island (worldmap.json sea.island): a river or two, not four; IS-7: none on an island drawn
@@ -1141,7 +1154,9 @@ def run_pack(pg, base):
     its training stopped, the hub's team and storage left as they were, the bag the gift and the pack, Copperleaf's
     two Potions fewer. Given up, keeping it: back in storage once (no second copy) with its run's levels, the team and
     buddy the hub's, the packed Potions gone. A second run (the default pick, one Potion packed), won: no items row on
-    the payout, the run's bag added to Copperleaf's. A reload (?fixture=stored) keeps it all"""
+    the payout, the run's bag added to Copperleaf's. A reload (?fixture=stored) keeps it all. HB-2: Take off counts
+    the scenes as they are made over several frames (no task as long as their work), the landing's loading screen
+    lifts and logs a take-off line without the seed"""
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.ranch&&!document.getElementById('loader')&&walkView.ready", 90): raise Exception('the ranch fixture never booted')
     pg.evaluate("uiState.inside=null;uiState.modal=null;uiState.mq=[];renderOverlay();saveData.items.potion=3;saveData.pyramids.pyramid=2;0")
     who = pg.evaluate("saveData.box[1].uid")
@@ -1156,14 +1171,24 @@ def run_pack(pg, base):
     for _ in range(2): pg.click("#ov [data-pk=items][data-k=potion][data-d='1']")
     packed = pg.evaluate("document.querySelector('#ov h3 small').textContent")
     if not packed.startswith('2 of '): raise Exception(f'the pack says “{packed}”')
+    # HB-2: the long tasks from the tap to the flight: the run's scenes are made over several frames (one scene the
+    # longest task), never in one (the take-off's work in one task, as before HB-2)
+    pg.evaluate("window._lt=[];new PerformanceObserver(l=>{for(const e of l.getEntries())window._lt.push(e.duration)}).observe({type:'longtask'});0")
     pg.click('#ov [data-a=mb][data-i="0"]')
+    if not until(pg, "!!document.querySelector('#ov .run-takeoff')&&/Readying the airship/.test(document.querySelector('#ov .run-takeoff').textContent)||airshipFlight.on", 10): raise Exception('Take off didn’t count the scenes')
     # the flight is 2-3 s: on a slow page (CI's software drawing) it may have landed already when the wait first looks
-    if not until(pg, "!!saveData.run&&(airshipFlight.on||saveData.run.at.phase==='walk')", 30): raise Exception('“Take off” didn’t start a run')
+    if not until(pg, "!!saveData.run&&(airshipFlight.on||saveData.run.at.phase==='walk')", 60): raise Exception('“Take off” didn’t start a run')
+    work, wall, longest = pg.evaluate("[runWorld.ms,runWorld.wall,Math.round(Math.max(0,...window._lt))]")
+    if not wall or longest >= work: raise Exception(f'the take-off froze the page: its longest task {longest} ms, the scenes {work} ms of work over {wall} ms')
     got = pg.evaluate(f"JSON.stringify([saveData.team.map(m=>m.uid),saveData.team[0].hp===maxHp(saveData.team[0]),saveData.ranch.trainees.some(t=>t.uid==='{who}'),saveData.run.start.team.map(m=>m.uid),saveData.box.map(m=>m.uid),saveData.run.start.items.potion,saveData.items.potion,saveData.buddy])")
     want = json.dumps([[who], True, False, json.loads(hub)[0], json.loads(hub)[1], 1, gift + 2, who], separators=(',', ':'))
     if got != want: raise Exception(f'at take-off {got}, not {want}')
     pg.evaluate("flySkip();0")
     if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready", 90): raise Exception('never landed')
+    # HB-2: the landing's loading screen lifts (every stage ready, or the cap) and logs a take-off line, ms only
+    if not until(pg, "runLoad.ready&&!document.getElementById('runload')", 40): raise Exception("the landing's loading screen never lifted")
+    line = pg.evaluate("(debugLog.ev.filter(e=>e.kind==='load'&&e.msg.startsWith('run take-off ')).pop()||{}).msg||''")
+    if not line or pg.evaluate("saveData.run.seed") in line: raise Exception(f"the take-off's load line is {line!r}")
     lv = pg.evaluate("saveData.team[0].lvl+=3")
     pg.evaluate("uiState.modal=null;uiState.mq=[];runOver(false);0")
     if not until(pg, "!!uiState.modal&&uiState.modal.cls==='run-payout'&&!!document.querySelector('#ov pb-pick-card')", 30): raise Exception('no payout after giving up')

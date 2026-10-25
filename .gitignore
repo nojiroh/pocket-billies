@@ -25,6 +25,8 @@ validation/tall-ground/
 validation/behind/
 validation/look-blur/
 validation/look-windows/
+validation/look-water*/
+validation/look-decals/
 validation/style-diff/
 validation/ui-gallery-out/
 validation/sim/

@@ -55,13 +55,16 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | `ccr-9023a485-qr0fhf` | Project Story: Professor Chosen replaces Hazel (PR #142, open). |
 | `ccr-305ae8d3-6ivodu` | UI track UI-7b (14 commits, no pull request yet). |
 | `track/encounters` | Encounter sessions of the roguelite track (RL-12b's two parts, then RL-12c held items; roguelite-track.md 9.4): RL-12b part 1 (events, reward picks, route trainers) done 2026-10-23; part 2 (waystations, stalls, no two shops) done 2026-10-24. RL-12c (held items) was built on `claude/project-thread-ka73c4` from main (2026-10-25, the owner's answer: a cloud session pushes only to its own branch; this one was merged into main). |
+| `claude/hub-island-revamp-4fskxy` | Hub track: the plan (docs/phases/hub-track.md) and HB-1 (the world map's pin, decals), built here at the owner's word because `track/hub` didn't exist yet. Later HB sessions start on `track/hub` (the owner makes it). |
 | `track/expeditions` | RL-13 of the roguelite track (Expeditions I-V, challenges, starter points, leader teams; roguelite-track.md 9.4): made from main 2026-10-24 at the owner's word. |
 | `track/story` | Story sessions of the roguelite track (RL-S1, RL-S2; roguelite-track.md 9.4): made from main 2026-10-25 at the owner's word. RL-S1 (story director: run history, banter.json, the hub's lines, the lost run's scene) done 2026-10-25. |
 | `track/regions` | Region sessions of the roguelite track (RL-R1, RL-R2; roguelite-track.md 9.4): RL-R1 (region generator) done 2026-10-23, merged; RL-R2a (side areas, field moves, the deadline dropped) done 2026-10-23, merged (PR #176); RL-R2b (a cave, an islet town, the way-out moment, side areas in the Run Lab, preview and sim) done 2026-10-24, PR open. |
 | `track/roster` | Roster track (RO-1, RO-2..; roguelite-track.md section 9.4): every RO session works here. RO-1 (forms, biome pools) done 2026-10-23. |
 | `track/reflavour` | Reflavour track (docs/phases/reflavour-track.md): RF-1..RF-6 work here; RF-2 (pyramids) pushed 2026-10-23. |
+| `track/water` | Water track (docs/phases/water-track.md): WA-1..WA-9 in lanes R, G, P (and B). To be made by the owner; WA-0 (the plan) was done on `ccr-4ae7bdc4-46vu9r`. |
 | `track/towns` | Towns track (docs/phases/towns-track.md): TW-1..TW-3 (town layout, townsfolk, run quests) work here. TW-1 (the town layout) done 2026-10-24; TW-2 (townsfolk, animals, chat, named locals) done 2026-10-25; TW-3 (run quests) done 2026-10-25. |
 | `track/routes` | Routes track (docs/phases/routes-track.md): RT-1..RT-4 (route layouts, trainers, set pieces, Billies and finds) work here. |
+| `track/hub` | Hub track (docs/phases/hub-track.md): every HB session works here (made from main 2026-10-25). HB-2 (the run's loading screen) done 2026-10-25; HB-1 is finished on `claude/hub-island-revamp-4fskxy`. |
 | `track/test-cleanup` | Test clean-up track (docs/phases/test-cleanup-track.md): every lane of TC-1..TC-4 works here; round 1 in PR #155. |
 | `terrain-generation` | Terrain track: TR-2c part 1 merged; one leftover HANDOFF note on top. Part 2 next. |
 | `terrain/tr-1-roads` | Terrain TR-1: road gradient cap and switchbacks. Not merged. |

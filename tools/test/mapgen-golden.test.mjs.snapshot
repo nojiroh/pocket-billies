@@ -75,14 +75,14 @@ exports[`golden scene: threeExits 1`] = `
 
 exports[`golden scene: water 1`] = `
 {
-  "tiles": 3794724355,
-  "heights": 2025232876,
+  "tiles": 3231332864,
+  "heights": 3618791476,
   "steps": 238425371,
-  "props": 662745912,
+  "props": 921342369,
   "exits": 2419090157,
-  "rest": 1564552049,
+  "rest": 468900664,
   "counts": {
-    "props": 598,
+    "props": 583,
     "raised": false
   }
 }

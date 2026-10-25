@@ -10,7 +10,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { gameData, provide, reducedMotion } from './hooks.js';
-import { propTurn } from './logic/prop-turn.js';
+import { decalPlace, propTurn } from './logic/prop-turn.js';
 import { artImg, artURL, hexToRgb, makeCanvas } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
@@ -1515,11 +1515,14 @@ function tagPropModel(it) {
 function propModelImageItems(it, out) {
   const rec = it.vox;
   if (!rec) return;
-  const s = it.p.s || 1,
-    f = it.flip || 1,
-    ro = propTurn(it) /* phase 09 batch 9: the placement's turn too (logic/prop-turn.js) */,
-    cr = Math.cos(ro),
-    sr = Math.sin(ro);
+  /* HB-1: on the model as its shaders draw it (logic/prop-turn.js decalPlace): its size with the look's wobble, its
+     turn (phase 09 batch 9: the placement's too), its mirror (lettering never mirrored) and its bob */
+  const m = {
+    s: (it.p.s || 1) * (it.lk ? it.lk.size : 1),
+    f: it.flip || 1,
+    turn: propTurn(it),
+    bob: mooredBob(it),
+  };
   for (const L of rec.layers || []) {
     if (L.k !== 'img' || L.hide) continue;
     const im0 = typeof artImage === 'function' ? artImage(L.img) : null;
@@ -1529,8 +1532,8 @@ function propModelImageItems(it, out) {
     }
     const im = L.clip || L.shade ? leafCut(im0, L) : im0;
     if (!im) continue;
-    const lx = (L.x || 0) * s * f,
-      lz = (L.y || 0) * s,
+    const d = decalPlace(it, L, m),
+      s = d.s,
       w = im.naturalWidth || im.width,
       h = im.naturalHeight || im.height,
       mpp =
@@ -1540,15 +1543,15 @@ function propModelImageItems(it, out) {
       p: it.p,
       M: layerProp(it.M),
       im,
-      x: it.x + lx * cr - lz * sr,
-      z: it.z + lx * sr + lz * cr,
-      y: it.y + (L.z || 0) * s,
+      x: d.x,
+      z: d.z,
+      y: d.y,
       mpp: mpp * s,
       ox: -(w / 2),
       oy: -(h - 1),
       w,
       h,
-      flip: L.flip ? -f : f,
+      flip: d.flip,
       shear: (it.shear || 0) * (L.sway ?? 1),
       sh: L.shadow ? (it.M && it.M.shadow ? it.M.shadow : 1) * s : 0,
       glow: L.glow ? L.glow * (typeof lampLit === 'function' ? lampLit(it.x, it.z, 0) : 1) : 0,
@@ -1558,7 +1561,7 @@ function propModelImageItems(it, out) {
       eyeward: L.front && L.face !== 'fixed' ? L.front * s : 0,
       fixed: L.face === 'fixed',
       plane: L.face === 'fixed',
-      yaw: L.face === 'fixed' ? (+L.yaw || 0) + ro : 0 /* phase 09 batch 9: a decal turns with its model */,
+      yaw: d.yaw /* phase 09 batch 9: a decal turns with its model */,
       mat: it.mat,
       layer: L,
       still: it.still,

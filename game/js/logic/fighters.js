@@ -15,6 +15,7 @@
 /** @import { PartInstance, RobotFit } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 import { MOVES, ROBOTS, RULES, SPECIES, STAT_IDS } from '../game-data.js';
 import {
   robotMathAttack,
@@ -61,11 +62,12 @@ expose({
   // @ts-expect-error -- replaced on purpose
   speciesById: [() => speciesById, v => (speciesById = v)],
   // @ts-expect-error -- replaced on purpose
-  speciesOf: [() => speciesOf, v => (speciesOf = v)],
+  speciesOf: [() => speciesOf, v => ((speciesOf = v), provide({ speciesOf }))],
   // @ts-expect-error -- replaced on purpose
   validRobot: [() => validRobot, v => (validRobot = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ speciesOf });
 /* to-module: end */
 /** the numbers when rules.json has no robots section (older data, the tests' small fixture) */
 export const DEFAULT_ROBOT_RULES = /** @type {RobotRules} */ ({

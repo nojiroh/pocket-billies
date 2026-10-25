@@ -60,6 +60,8 @@ expose({
   runSceneParams: [() => runSceneParams, v => (runSceneParams = v)],
   // @ts-expect-error -- replaced on purpose
   runScenesMake: [() => runScenesMake, v => (runScenesMake = v)],
+  // @ts-expect-error -- replaced on purpose
+  runScenesSlices: [() => runScenesSlices, v => (runScenesSlices = v)],
   runShopId: [() => runShopId],
   // @ts-expect-error -- replaced on purpose
   runSideLand: [() => runSideLand, v => (runSideLand = v)],
@@ -409,9 +411,21 @@ export function runTownQuest(run, i, scene, data) {
 /** every scene of a run's map, in order (each after its parents), by map node @param {Run} run
  * @param {RunWorldData} data @returns {any[]} */
 export function runScenesMake(run, data) {
+  const it = runScenesSlices(run, data);
+  let r = it.next();
+  while (!r.done) r = it.next();
+  return r.value;
+}
+/** HB-2: the same scenes one at a time, so the page can make them over several frames behind its loading screen:
+ * each step makes one and yields how many are made of how many; the last returns the scenes
+ * @param {Run} run @param {RunWorldData} data @returns {Generator<[number, number], any[], void>} */
+export function* runScenesSlices(run, data) {
   const map = /** @type {RunMap} */ (run.map),
     scenes = /** @type {any[]} */ ([]);
-  for (let i = 0; i < map.nodes.length; i++) scenes.push(runSceneMake(run, i, scenes, data).scene);
+  for (let i = 0; i < map.nodes.length; i++) {
+    scenes.push(runSceneMake(run, i, scenes, data).scene);
+    if (i + 1 < map.nodes.length) yield [i + 1, map.nodes.length];
+  }
   return scenes;
 }
 /** node i's wild levels: rules.json run.wild's on the landing's row, perRow more on each row after, and `more` (RL-13:
