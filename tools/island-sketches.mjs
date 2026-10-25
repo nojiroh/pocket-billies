@@ -91,6 +91,55 @@ function draft(sc, id) {
   return m;
 }
 
+/** the water track's hub waterfall (docs/phases/water-track.md WA-2b, the owner's yes first): candidate sites in its
+ * falls contract ({x, z, dir, w, h, pool}, the lip's middle, the way it falls, metres). 'cliff': the island's biggest
+ * drop of 4 m or more within 3 m onto water (a sea cliff; a stream would have to reach it). 'pond': above the pond at
+ * the stream's head, toward the summit, where the ground first stands 4 m over the pond (a shelf to cut there) */
+function fallSites(G, sc, dials) {
+  const W1 = G.w + 1,
+    hAt = (x, z) => G.H[Math.round(z) * W1 + Math.round(x)],
+    wet = (x, z) => 'wd'.includes(G.T[Math.floor(z) * G.w + Math.floor(x)]),
+    r2 = v => Math.round(v * 100) / 100,
+    out = [];
+  let best = null;
+  for (let z = 3; z < G.h - 3; z++)
+    for (let x = 3; x < G.w - 3; x++)
+      for (const [dx, dz] of [
+        [3, 0],
+        [-3, 0],
+        [0, 3],
+        [0, -3],
+      ]) {
+        const drop = hAt(x, z) - hAt(x + dx, z + dz);
+        if (drop >= 4 && wet(x + dx, z + dz) && (!best || drop > best.h))
+          best = { site: 'cliff', x, z, dir: [dx / 3, dz / 3], w: 3, h: r2(drop), pool: 0 };
+      }
+  if (best) out.push(best);
+  const pond = (sc.spots || []).find(S => S.kind === 'pond'),
+    top = (sc.spots || []).find(S => S.kind === 'summit');
+  if (pond && top) {
+    const L = Math.hypot(top.x - pond.x, top.z - pond.z) || 1,
+      ux = (top.x - pond.x) / L,
+      uz = (top.z - pond.z) / L,
+      y0 = hAt(pond.x, pond.z);
+    for (let r = 2; r < L; r += 0.5)
+      if (hAt(pond.x + ux * r, pond.z + uz * r) >= y0 + 4) {
+        out.push({
+          site: 'pond',
+          x: r2(pond.x + ux * r),
+          z: r2(pond.z + uz * r),
+          dir: [r2(-ux), r2(-uz)],
+          w: 3,
+          h: r2(hAt(pond.x + ux * r, pond.z + uz * r) - y0),
+          pool: dials.stream.pond,
+          run: r2(r),
+        });
+        break;
+      }
+  }
+  return out;
+}
+
 for (const dir of dirs) {
   if (ONLY.length && !ONLY.includes(dir.id)) continue;
   const t0 = Date.now(),
@@ -138,6 +187,7 @@ for (const dir of dirs) {
       spots: sc.spots || [],
       plots: sc.plots,
       landmarks: landmarks || null,
+      falls: fallSites(G, sc, merge(hub.dials, dir.dials)),
       doors,
       n45,
       quarter,

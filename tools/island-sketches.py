@@ -122,9 +122,17 @@ def draw(d):
         X, Y = P(*L['portal'][:2])
         dr.ellipse([X - 16, Y - 16, X + 16, Y + 16], outline=(170, 80, 255), width=6)
         dr.text((X, Y + 26), f"portal {L['portal'][2]:.0f} m up", fill=(80, 30, 140), font=f, anchor='mm')
+    for F in d.get('falls') or []:
+        X, Y = P(F['x'], F['z'])
+        tx, ty = P(F['x'] + F['dir'][0] * 6, F['z'] + F['dir'][1] * 6)
+        dr.line([X, Y, tx, ty], fill=(255, 255, 255), width=5)
+        dr.ellipse([X - 7, Y - 7, X + 7, Y + 7], fill=(40, 140, 255), outline=(255, 255, 255), width=2)
+        lab = f"fall? {F['h']:.0f} m" + (' (sea cliff)' if F['site'] == 'cliff' else ' (into the pond)')
+        dr.text((X + 11, Y - 14 + 1), lab, fill=(0, 0, 0), font=f, anchor='lm')
+        dr.text((X + 10, Y - 14), lab, fill=(255, 255, 255), font=f, anchor='lm')
     X, Y = P(*d['pivot'])
     dr.line([X - 9, Y, X + 9, Y], fill=(20, 20, 20), width=3); dr.line([X, Y - 9, X, Y + 9], fill=(20, 20, 20), width=3)
-    dr.text((X + 12, Y), 'orbit pivot (summit)', fill=(20, 20, 20), font=f, anchor='lm')
+    dr.text((X - 12, Y), 'orbit pivot (summit)', fill=(20, 20, 20), font=f, anchor='rm')
     # the panel
     x0 = mw + 14
     dr.rectangle([mw, 0, mw + PANEL, mh], fill=(250, 248, 242))
@@ -145,7 +153,9 @@ def draw(d):
         dr.text((x0 + 22, y), f"{lab or 'Cottage'} x{cnt}", fill=(20, 20, 20), font=mid); y += 20
     y += 10
     for col, lab in (((255, 200, 40), 'the second street'), ((245, 235, 215), 'town streets'), ((225, 205, 165), 'paths'),
-                     ((200, 70, 40), 'bridges'), ((90, 220, 255), 'sky rail'), ((30, 200, 60), 'door faces out'),
+                     ((200, 70, 40), 'bridges'), ((90, 220, 255), 'sky rail'),
+                     (COL['w'], 'shallows: wading (water track WA-6a)'), (COL['d'], 'deep: Surf (WA-6b)'),
+                     ((40, 140, 255), "waterfall site (WA-2b, you decide)"), ((30, 200, 60), 'door faces out'),
                      ((230, 30, 30), 'door does not')):
         dr.line([x0, y + 8, x0 + 16, y + 8], fill=col, width=5)
         dr.text((x0 + 22, y), lab, fill=(20, 20, 20), font=mid); y += 20
