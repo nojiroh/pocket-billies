@@ -19,6 +19,7 @@ import { provide, toast } from './hooks.js';
 import {
   EVENTS,
   FIELD_MOVES,
+  LOCATIONS,
   LOCATION_BY_ID,
   NODE_TYPES,
   POOLS,
@@ -37,6 +38,7 @@ import { waterMarshOf } from './logic/water-play.js';
 import { runRestore } from './logic/run-state.js';
 import { runRegionData } from './logic/run-region.js';
 import { runSpot, runWeather } from './logic/run-map.js';
+import { waterWeatherApply } from './logic/water-weather.js';
 import { runScenesMake, runScenesSlices, runWorldTables } from './logic/run-scenes.js';
 import { runBowlLook } from './logic/run-bowl.js';
 import { runFoes } from './logic/run-loop.js';
@@ -45,14 +47,17 @@ import { routeRareSpots, routeTrainerTally, routeTrainersPlace, runRouteTrainers
 import { bowlXY } from './logic/bowl.js';
 import { bowlTreeStyle } from './logic/bowl-things.js';
 import { saveData, uiState } from './game-state.js';
-import { stopWalkView, walkView } from './walk-view.js';
+import { mapById, stopWalkView, walkView } from './walk-view.js';
 import { environment } from './environment.js';
+import { walkRenderer } from './walk/walk-state.js';
 import { seamlessWorld } from './seamless-world.js';
 import { worldBowl, worldBowlReset } from './world-bowl.js';
 import { airshipFlight } from './airship.js';
 /* eslint-disable no-func-assign */
 expose({
   runPlaceWeather: [() => runPlaceWeather, v => ((runPlaceWeather = v), provide({ runPlaceWeather }))],
+  runWaterWeatherSync: [() => runWaterWeatherSync, v => ((runWaterWeatherSync = v), provide({ runWaterWeatherSync }))],
+  runWaterWx: [() => runWaterWx],
   runWorld: [() => runWorld],
   runWorldData: [() => runWorldData, v => (runWorldData = v)],
   runWorldFailed: [() => runWorldFailed, v => (runWorldFailed = v)],
@@ -64,7 +69,7 @@ expose({
   runWorldSync: [() => runWorldSync, v => ((runWorldSync = v), provide({ runWorldSync }))],
 });
 /* eslint-enable no-func-assign */
-provide({ runPlaceWeather, runWorldSync });
+provide({ runPlaceWeather, runWaterWeatherSync, runWorldSync });
 /* to-module: end */
 /** the world that is in: the seed of the run it was made from ('' for the hub's), its scenes and how long they took
  * to make (HB-2: ms the work, wall from start to swap when made over frames); live once boot has put the first world in (before that a swapped save waits for boot) */
@@ -160,6 +165,42 @@ export function runWorldMake(onStep) {
   Object.assign(runWorldMaking, { p, run });
   return p;
 }
+/** WA-5a: each run place's water by the day's forecast (logic/water-weather.js: a storm floods, snow freezes still
+ * water), laid again when the run's day changes (any arrival: a seam, the map, a field move); the views and the walk
+ * view made again when any place's water changed. Cheap when the day is the same (the walk frame asks every frame);
+ * putting: the run's world is being put in (runWorldPutRun), before runWorld names its seed */
+function runWaterWeatherSync(putting = false) {
+  const run = saveData && saveData.run;
+  if (!run || !run.map || (!putting && runWorld.seed !== run.seed)) return false;
+  const key = run.seed + '|' + run.clock;
+  if (runWaterWx.key === key) return false;
+  runWaterWx.key = key;
+  const said = [];
+  for (const L of Object.values(LOCATIONS)) {
+    const sc = L && L.runNode != null ? gameData.maps[L.mapId] : null;
+    if (!sc) continue;
+    const was = sc.wx || '',
+      now = waterWeatherApply(sc, runWeather(run, L.runNode, run.clock), gameData.scenery);
+    if (now !== was) said.push(`${L.name} ${now || 'as made'}`);
+  }
+  if (!said.length) return false;
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', 'water by the weather: ' + said.join(', '));
+  seamlessWorld.gen++;
+  seamlessWorld.cache.clear();
+  if (typeof walkView !== 'undefined' && walkView.id) {
+    const sc = mapById(walkView.id);
+    if (sc) {
+      walkView.sc = sc;
+      walkView.gkey = '';
+      walkView.nav = null;
+      walkView.cand = null;
+      if (typeof walkRenderer !== 'undefined') walkRenderer.hkey = '';
+    }
+  }
+  return true;
+}
+/** WA-5a: the run day whose weather the run's water shows */
+const runWaterWx = { key: '' };
 /** HB-2: f after the page has drawn a frame (a hidden page draws none: then a timer) @param {() => void} f */
 function runWorldNextFrame(f) {
   if (document.hidden || typeof requestAnimationFrame !== 'function') setTimeout(f, 16);
@@ -208,6 +249,9 @@ function runWorldPutRun(run, scenes, data) {
       ...route,
     },
   });
+  /* WA-5a: the places' water by today's forecast, before any view of them is made */
+  runWaterWx.key = '';
+  runWaterWeatherSync(true);
   /* RL-12b: an event's foe a reload stopped in the middle of (its battle starts again: run.js runBattleAgain) */
   const P = run.enc && run.enc.play;
   if (P && P.foe && EVENTS.classes[P.foe.cls])
