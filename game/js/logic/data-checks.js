@@ -972,7 +972,7 @@ export function dataEvents(D, valid = () => true) {
 }
 
 // RL-12b: rewards.json: the schema; every item and pyramid there, a candy a level item, an evolution item one, held
-// cards switched off until RL-12c, and something to offer
+// cards drawing from held items that exist (RL-12c), and something to offer
 /** RL-12b: rewards.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataRewards(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -995,7 +995,10 @@ export function dataRewards(D, valid = () => true) {
     if (r.kind === 'evo' && r.item && items[r.item] && !items[r.item].evoItem)
       problem(`${k}: an evolution item's item is one (evoItem in items.json)`);
     if (r.kind === 'tutor' && (r.item || r.pyramid || r.n)) problem(`${k}: a tutor card names no item`);
-    if (r.kind === 'held' && r.weight > 0) problem(`${k}: held items come with RL-12c; keep its weight 0`);
+    /* RL-12c: a held card draws its item from items.json's held items, so it names none, and there must be some */
+    if (r.kind === 'held' && (r.item || r.pyramid || r.n)) problem(`${k}: a held card names no item (it draws one)`);
+    if (r.kind === 'held' && r.weight > 0 && !Object.values(items).some((/** @type {any} */ I) => I.hold))
+      problem(`${k}: no held item in items.json (hold) for it to offer`);
   }
   if (!Object.values(R).some((/** @type {any} */ r) => r.kind === 'item' && r.weight > 0))
     problem('no item card with a weight above 0: a pick could be empty');

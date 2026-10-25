@@ -46,7 +46,7 @@ test('rewards: a pick is the same for the same run, distinct, of rules.pick card
   assert.notDeepEqual(next.cards, A.cards, 'the next pick draws from the next stream (on this seed)');
 });
 
-test('rewards: an evolution item only when a Billie evolves with it; a held card never (RL-12c)', () => {
+test('rewards: an evolution item only when a Billie evolves with it', () => {
   const D0 = W.rewardDataGame(setup([['zuck0', 10]]).team),
     D1 = W.rewardDataGame(setup([['zuck1', 20]]).team);
   assert.equal(W.evoUsable('bell', D0), false, 'Facelet evolves by level');
@@ -54,10 +54,41 @@ test('rewards: an evolution item only when a Billie evolves with it; a held card
   const g = { pick: w => Object.keys(w).sort()[0], int: lo => lo };
   for (let k = 0; k < 20; k++) {
     for (const c of W.rewardDraw(modules.rng.rngFrom('E' + k, 'x'), D0, { n: 5 })) assert.notEqual(c.kind, 'evo');
-    for (const c of W.rewardDraw(modules.rng.rngFrom('H' + k, 'x'), D1, { n: 5 })) assert.notEqual(c.kind, 'held');
   }
   assert.deepEqual(W.rewardDraw(g, D1, { kind: 'evo' }), [{ id: 'shining_stone', kind: 'evo', item: 'bell' }]);
   assert.deepEqual(W.rewardDraw(g, D0, { kind: 'evo' }), []);
+});
+
+test('rewards: a held card (RL-12c) draws a held item nobody on the team holds; none when all are held', () => {
+  const s = setup([['zuck0', 10]]),
+    D = W.rewardDataGame(s.team),
+    ids = modules.held.heldIds(GAME_DATA.items),
+    g = { pick: w => Object.keys(w).sort()[0], int: lo => lo };
+  assert.deepEqual(W.rewardDraw(g, D, { kind: 'held' }), [{ id: 'held', kind: 'held', item: ids[0] }]);
+  s.team[0].held = ids[0];
+  assert.equal(W.rewardDraw(g, D, { kind: 'held' })[0].item, ids[1], 'not the one it holds');
+  for (let k = 0; k < 20; k++)
+    for (const c of W.rewardDraw(modules.rng.rngFrom('H' + k, 'x'), D, { n: 5 }))
+      if (c.kind === 'held') assert.ok(ids.includes(c.item) && c.item !== ids[0], c.item);
+  const full = setup(ids.map(() => ['zuck0', 10]));
+  full.team.forEach((m, i) => (m.held = ids[i]));
+  assert.deepEqual(W.rewardDraw(g, W.rewardDataGame(full.team), { kind: 'held' }), []);
+});
+
+test('rewards: taking a held card gives it to the Billie named (its old one to the bag), or into the bag', () => {
+  const ids = modules.held.heldIds(GAME_DATA.items);
+  for (const uid of [null, 'me']) {
+    const s = setup([['zuck0', 10]]);
+    s.team[0].uid = 'me';
+    s.team[0].held = ids[1];
+    s.run.enc = {
+      ...encOf(s.run),
+      reward: { cards: [{ id: 'held', kind: 'held', item: ids[0] }], rolls: 0, from: 't' },
+    };
+    assert.equal(W.rewardTake(s.run, s, 0, W.rewardDataGame(s.team), uid ? { uid } : {}), '');
+    if (uid) assert.deepEqual([s.team[0].held, s.items[ids[0]] || 0, s.items[ids[1]]], [ids[0], 0, 1]);
+    else assert.deepEqual([s.team[0].held, s.items[ids[0]]], [ids[1], 1]);
+  }
 });
 
 test('rewards: tutor moves are the line’s above its level, then its types’, none it knows', () => {

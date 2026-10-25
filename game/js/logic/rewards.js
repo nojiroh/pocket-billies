@@ -8,19 +8,21 @@
    - the cards come from the run's reward stream, rngFrom(run.seed, 'reward|' + n + '|' + rolls), n the picks made
      before (run.enc.rewardN); the pick is saved in run.enc.reward before it shows, so a reload shows the same;
    - a card is only drawn when it can be used: an evolution item when a Billie of the team evolves with it, a tutor
-     when a Billie has a move to learn; a `held` card (RL-12c) has weight 0 until held items exist;
+     when a Billie has a move to learn; a `held` card (RL-12c) when some held item (items.json `hold`) is held by
+     nobody on the team: its item is drawn from those, and taking it gives it to a Billie (or into the bag);
    - none twice in one pick.
    Logic only: no DOM, no Date, no Math.random (tools/test/rewards.test.mjs). */
 /** @import { Run, Billy, RewardCard, RunReward } from '../../types/save-data' */
 /** @typedef {{ kind: RewardCard['kind'], item?: string, pyramid?: string, n?: number, weight: number }} RewardRow */
 /** @typedef {{ cards: Record<string, RewardRow>, rules: { pick: number, reroll: number, grow: number },
  *   team: Billy[], species: Record<string, any>, lines: Record<string, any>, moves: Record<string, any>,
- *   slots: number }} RewardData */
+ *   slots: number, items?: Record<string, { hold?: unknown[] }> }} RewardData items (RL-12c): the held items' table */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { LINE_BY_ID, MOVES, REWARDS, RULES, SPECIES } from '../game-data.js';
+import { ITEMS, LINE_BY_ID, MOVES, REWARDS, RULES, SPECIES } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { moveSlotCount } from './rules.js';
+import { heldGive, heldIds } from './held.js';
 import { encOf } from './run-enc.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -81,10 +83,11 @@ export const evoUsable = (item, D) =>
 export function rewardDraw(g, D, o = {}) {
   const n = o.n || D.rules.pick,
     tutors = [...new Set(D.team.flatMap(m => tutorMoves(m, D)))].sort(),
+    helds = heldIds(D.items || {}).filter(k => !D.team.some(m => m.held === k)),
     ok = (/** @type {string} */ id) => {
       const R = D.cards[id];
       if (!(R.weight > 0) || (o.kind && R.kind !== o.kind)) return false;
-      if (R.kind === 'held') return false;
+      if (R.kind === 'held') return helds.length > 0;
       if (R.kind === 'evo') return !!R.item && evoUsable(R.item, D);
       if (R.kind === 'tutor') return tutors.length > 0;
       return true;
@@ -106,6 +109,12 @@ export function rewardDraw(g, D, o = {}) {
       out.push({ id, kind: 'tutor', move: mv });
       /* a tutor card may come again in the same pick, with another move, while the team has some */
       if (taught.size >= tutors.length || !o.kind) left = left.filter(k => k !== id);
+      continue;
+    }
+    if (R.kind === 'held') {
+      const item = helds[g.int(0, helds.length - 1)];
+      out.push({ id, kind: 'held', item });
+      left = left.filter(k => k !== id);
       continue;
     }
     out.push({
@@ -154,7 +163,8 @@ export function rewardReroll(run, s, D) {
 }
 
 /**
- * Take a card of the pick (or none: `k` null): an item (or pyramids) into the bag; a tutor's move to the Billie
+ * Take a card of the pick (or none: `k` null): an item (or pyramids) into the bag (a held item, RL-12c: then given to
+ * the Billie `uid` when one is named, the one it held going back to the bag); a tutor's move to the Billie
  * `uid` (in place of `forget` when its moves are full). The pick is cleared once answered. '' when done, else why not
  * ('none': no pick or card, 'who': that Billie can't learn it, 'full': its moves are full and none to forget given).
  * @param {Run} run @param {{ items: Record<string, number>, pyramids: Record<string, number> }} s
@@ -180,7 +190,11 @@ export function rewardTake(run, s, k, D, o = {}) {
   } else if (c.item && c.item.startsWith('coin_')) {
     const p = c.item.slice(5);
     s.pyramids[p] = (s.pyramids[p] || 0) + (c.n || 1);
-  } else if (c.item) s.items[c.item] = (s.items[c.item] || 0) + (c.n || 1);
+  } else if (c.item) {
+    s.items[c.item] = (s.items[c.item] || 0) + (c.n || 1);
+    const m = c.kind === 'held' && o.uid ? D.team.find(b => b.uid === o.uid) : null;
+    if (m) heldGive(s, m, c.item, D.items || {});
+  }
   /** @type {any} */ (run.enc).reward = null;
   return '';
 }
@@ -194,4 +208,5 @@ export const rewardDataGame = team => ({
   lines: LINE_BY_ID,
   moves: MOVES,
   slots: moveSlotCount(),
+  items: ITEMS,
 });
