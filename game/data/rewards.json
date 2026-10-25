@@ -11,5 +11,5 @@
  "protein_bars": {"kind":"candy","item":"protein_bar","n":2,"weight":1},
  "shining_stone": {"kind":"evo","item":"bell","weight":3},
  "tutor": {"kind":"tutor","weight":5},
- "held": {"kind":"held","weight":0}
+ "held": {"kind":"held","weight":3}
 }

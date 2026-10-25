@@ -15,6 +15,7 @@ import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
 import { META_IDS, META_MAX, recordOf, wholeIn } from './meta-state.js';
 import { expeditionAfterWin } from './modifiers.js';
+import { heldAllOff } from './held.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_DAYS: [() => RUN_DAYS],
@@ -383,6 +384,8 @@ export function runBegin(s, give) {
   run.home = travel.map(m => m.uid);
   run.pack = copyOf(pack);
   s.team = /** @type {Billy[]} */ (copyOf(travel));
+  /* RL-12c: a traveller leaves its held item at home (the hub's Billie keeps it), so a run's end can't bring it twice */
+  for (const m of s.team) delete m.held;
   s.buddy = travel[0].uid;
   s.se = give.se;
   s.items = add(Object.assign(zero(start.items), give.items || {}), pack.items);
@@ -447,6 +450,8 @@ export function payoutOf(end, rates, itemPrice) {
 export function runEnd(s, how, rates, itemPrice) {
   const run = s.run;
   if (!run) throw new Error('runEnd: no run is on');
+  /* RL-12c: held items last one run: they go back into the bag first, so the payout counts them like the rest */
+  heldAllOff(s, [...s.team, ...s.box]);
   const pay = payoutOf(
     /* nodes cleared: each node once (the path counts every arrival, backtracking included) */
     { se: s.se, items: s.items, released: run.released.length, cleared: new Set(run.path).size, won: how.won },
@@ -459,6 +464,9 @@ export function runEnd(s, how, rates, itemPrice) {
   for (const m of /** @type {Billy[]} */ (copyOf(kept))) {
     const inTeam = s.team.findIndex(t => t.uid === m.uid),
       inBox = s.box.findIndex(t => t.uid === m.uid);
+    /* RL-12c: the hub's Billie kept its held item at home (runBegin), so its kept self holds it again */
+    const home = inTeam >= 0 ? s.team[inTeam] : inBox >= 0 ? s.box[inBox] : null;
+    if (home && home.held) m.held = home.held;
     if (inTeam >= 0) s.team[inTeam] = m;
     else if (inBox >= 0) s.box[inBox] = m;
     else if (s.team.length < 6) s.team.push(m);

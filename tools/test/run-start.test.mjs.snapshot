@@ -16,7 +16,15 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "pretzel": 0,
         "full_remedy": 0,
         "max_revive": 0,
-        "repairkit": 0
+        "repairkit": 0,
+        "leftover_sandwich": 0,
+        "snack_pack": 0,
+        "lucky_coin": 0,
+        "study_notes": 0,
+        "iron_vest": 0,
+        "quick_laces": 0,
+        "brass_knuckles": 0,
+        "smart_specs": 0
       },
       "pyramids": {
         "pyramid": 5,
@@ -339,7 +347,15 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "pretzel": 0,
         "full_remedy": 0,
         "max_revive": 0,
-        "repairkit": 0
+        "repairkit": 0,
+        "leftover_sandwich": 0,
+        "snack_pack": 0,
+        "lucky_coin": 0,
+        "study_notes": 0,
+        "iron_vest": 0,
+        "quick_laces": 0,
+        "brass_knuckles": 0,
+        "smart_specs": 0
       },
       "pyramids": {
         "pyramid": 5,
@@ -671,7 +687,15 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "pretzel": 0,
         "full_remedy": 0,
         "max_revive": 0,
-        "repairkit": 0
+        "repairkit": 0,
+        "leftover_sandwich": 0,
+        "snack_pack": 0,
+        "lucky_coin": 0,
+        "study_notes": 0,
+        "iron_vest": 0,
+        "quick_laces": 0,
+        "brass_knuckles": 0,
+        "smart_specs": 0
       },
       "pyramids": {
         "pyramid": 5,
@@ -868,6 +892,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "152b6e91b3f212717697ecffee76959becd3c544ff58cc2537898ee514fc3480"
+  "all": "5217430af4e2001c21548562dc429c35dc1bd289faf265d5e5e50035260617dc"
 }
 `;
