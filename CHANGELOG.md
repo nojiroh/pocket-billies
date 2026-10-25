@@ -14,8 +14,9 @@ kept aside in the browser).
   its donor (a bear's arm on a Swiftlet hits harder and slows it down), brings a trait (wings: Airborne, half damage
   from Ground; fins: Swimmer; tails: Counterweight; arms: Grip; legs and feet: Stride), and some parts carry a
   dominant type that becomes the Billie's second type. Each foreign part costs Stability; past the limit the Billie is
-  **Unstable**: a merged name, one stat up, one down, and it loses a little HP each turn. A spliced Billie is never
-  Prime. Splices survive evolving.
+  **Unstable**: a merged name, one stat up and one down (rolled once, kept until it's stable again), and it loses
+  a little HP each turn. A spliced Billie is never
+  Prime. Splices survive evolving. **Prime** (every part its own and Normal sized) now gives +5% instead of +10%.
 - **Held items** (roguelite track RL-12c): every Billie has one held-item slot. Eight to start with: Leftover
   Sandwich (heals a little each turn), Snack Pack (a quarter of its HP once a battle, when low), Lucky Coin (wins pay
   25% more), Study Notes (50% more XP), Iron Vest (15% less damage taken), Quick Laces (Speed up as it comes in), Brass

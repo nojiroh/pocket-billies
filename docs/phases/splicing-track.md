@@ -103,10 +103,10 @@ Grafts offline per biome pool and keep runtime baking for the Gene Bank preview 
 kit-bake-parity must not move for ungrafted Billies.
 
 **SP-2 Rules.** Built 2026-10-25 on `claude/sp-2-rules`, on top of SP-1's branch (HANDOFF): `genes.json` (traits,
-dominant types, Stability, Unstable; every number a placeholder), `logic/genes.js`, the saved `Billy.graft` (slot ->
-donor rig: a Gene is a slot's part from a donor's recipe, so no separate Gene id), donor weight, the dominant type,
-traits and Unstable through `fxOfBillie`, `tools/test/sim/splice-sim.mjs`. `aug` moved to SP-5 (nothing reads it
-before). Waiting on the owner: Prime's bonus, the traits and the dominant Genes.
+9 dominant types, Stability, Unstable; trait numbers placeholders), `logic/genes.js`, the saved `Billy.graft` (slot ->
+Gene id "part@donor") and `Billy.unstable` (rolled once past the limit), donor weight, the dominant type, traits and
+Unstable through `fxOfBillie`, `tools/test/sim/splice-sim.mjs`. The owner's answers: Prime +5 %, `aug` in SP-5.
+Waiting on the owner: Gene moves.
  `genes.json` + schema, types and check-data (trait, move family and Stability cost per part kind; per
 part an optional move and dominant type). Optional `graft` (slot -> Gene id) and `aug` (slot -> robot
 `PartInstance`) on `Billy`, kept by the validators, dropped when unknown: no SAVE_VERSION bump. Donor weights in
