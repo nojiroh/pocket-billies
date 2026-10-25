@@ -2,6 +2,7 @@
  "about": "Project Story: the story layer's own data. flags: every story flag the game keeps in saveData.story, and what it means. patterns: flags made from an id. kept: the story's own records in the same object (not flags). speakers: the names a script may write before a line, and whose portrait and name they stand for. quests: each quest's stages in order. presets: start points for ?story=name (test runs only): place, story flags, trainers beaten (with their badges), pyramids, items, team.",
  "flags": {
   "rival0": "how Blake's first battle went: win, lose or skip (story.js storyAfterRival; read by scripts.blake-first-battle)",
+  "firstLoss": "RL-S1: the first lost run's scene has played (story.json scripts.back-lost); later losses get a picked pair (banter.json back_lost)",
   "ending": "the last clue: the story's last stage (story.js storyEnding, lore.js loreStage)",
   "flights": "airship flights taken, a count (airship.js)",
   "clueLanyard": "the lanyard clue found (lore.json clues: lanyard)",
@@ -41,6 +42,23 @@
   "You": "me"
  },
  "scripts": {
+  "back-lost": {
+   "about": "RL-S1: home after a lost run, by the mast (run.js runEndHome, story-stage.js storyPendingCheck): the first time Chosen takes the credit and Hazel has her doubts; later a pair picked by the run history (banter.json back_lost)",
+   "who": "chosen",
+   "script": [
+    "if firstLoss",
+    "  pick back_lost",
+    "else",
+    "  set firstLoss",
+    "  [happy] Chosen: There you are! Face-down by the mast. You’re welcome. #l:4571",
+    "  Chosen: I sensed you were in danger and pulled you back. Professor powers. Don’t ask how. I don’t know either. #l:bd04",
+    "  Hazel: He was asleep in the lab when you landed. #l:d779",
+    "  Hazel: You came through a little hole in the sky over the dock. Like the first time, only smaller. #l:b000",
+    "  Hazel: It closed behind you. Neatly. Like someone shutting a drawer. #l:7301",
+    "  [happy] Chosen: A drawer. My drawer. Professor powers. #l:978e",
+    "  Hazel: ...Get some rest. I’d like to look at that hole again before it forgets where it was. #l:03eb"
+   ]
+  },
   "chosen": {
    "about": "Professor Chosen in his lab (talk.js talkChosen): your Index, your badges, where Blake went",
    "who": "chosen",

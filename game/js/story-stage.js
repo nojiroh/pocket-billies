@@ -16,7 +16,7 @@
 /* the script lines of a person, a trainer or the story: person:<id> (in a map's people), trainer:<id>, story:<id> */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide, render, toast } from './hooks.js';
+import { provide, render, selfTest, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { BANTER, LOCATIONS, STORY_DATA, TRAINERS, gameData } from './game-data.js';
 import { healAll } from './logic/rules.js';
@@ -49,9 +49,13 @@ expose({
   cutsceneWorldBegin: [() => cutsceneWorldBegin, v => (cutsceneWorldBegin = v)],
   cutsceneWorldEnd: [() => cutsceneWorldEnd, v => (cutsceneWorldEnd = v)],
   playStoryScript: [() => playStoryScript, v => ((playStoryScript = v), provide({ playStoryScript }))],
+  storyFreshTake: [() => storyFreshTake, v => ((storyFreshTake = v), provide({ storyFreshTake }))],
   storyGameStage: [() => storyGameStage],
   storyHold: [() => storyHold, v => (storyHold = v)],
+  storyHomeArrive: [() => storyHomeArrive, v => ((storyHomeArrive = v), provide({ storyHomeArrive }))],
   storyOwner: [() => storyOwner, v => (storyOwner = v)],
+  storyPendingCheck: [() => storyPendingCheck, v => ((storyPendingCheck = v), provide({ storyPendingCheck }))],
+  storyPickId: [() => storyPickId, v => (storyPickId = v)],
   storyPickTree: [() => storyPickTree, v => (storyPickTree = v)],
   storyResumeCheck: [() => storyResumeCheck, v => (storyResumeCheck = v)],
   storyRun: [() => storyRun],
@@ -70,7 +74,7 @@ expose({
   storyWorldOK: [() => storyWorldOK, v => ((storyWorldOK = v), provide({ storyWorldOK }))],
 });
 /* eslint-enable no-func-assign */
-provide({ playStoryScript, storyScriptIds, storyWorldOK });
+provide({ playStoryScript, storyFreshTake, storyHomeArrive, storyPendingCheck, storyScriptIds, storyWorldOK });
 /* to-module: end */
 function storyScriptLines(id) {
   const i = id.indexOf(':'),
@@ -311,6 +315,11 @@ const storySlots = { name: () => lookOf('me').name || 'Trainer' };
 /* RL-S1: the script command `pick <who>`: the story director's line (logic/story-pick.js) on the game's save, marked
    said; in a trainer's script `rematch` reads that trainer's leader or class. Its tree, or null for nothing to say */
 function storyPickTree(who, id) {
+  const k = storyPickId(who, id);
+  return k ? storyTree('banter:' + k) : null;
+}
+/* the line picked for who (marked said), or null */
+function storyPickId(who, id) {
   const S = saveData,
     story = S.story || (S.story = {}),
     runs = (S.meta && S.meta.runs) || 0,
@@ -325,7 +334,39 @@ function storyPickTree(who, id) {
   if (!k) return null;
   storyPickSaid(k, BANTER, story, runs);
   if (typeof debugLog !== 'undefined') debugLog.add('story', `pick ${who}: ${k}`);
-  return storyTree('banter:' + k);
+  return k;
+}
+/* RL-S1: home from a run (run.js runEndHome, after the run has ended): each hub character's first line is picked
+   now (story.fresh, said at the first talk after: storyFreshTake), and a lost run's scene waits to play
+   (story.pending, storyPendingCheck) */
+function storyHomeArrive(won) {
+  const story = saveData.story || (saveData.story = {}),
+    fresh = {};
+  for (const who of BANTER_HUB) {
+    const k = storyPickId(who, null);
+    if (k) fresh[who] = k;
+  }
+  story.fresh = fresh;
+  if (won) delete story.pending;
+  else story.pending = 'back-lost';
+}
+/* the line picked for who on the way home, taken (a talk plays it once in place of their own script), or null */
+function storyFreshTake(who) {
+  const fresh = saveData.story && saveData.story.fresh,
+    k = fresh && fresh[who];
+  if (!k) return null;
+  delete fresh[who];
+  return BANTER[k] ? k : null;
+}
+/* a scene waiting since the way home (story.pending): it plays once the hub's walk scene is up, nothing else open */
+export function storyPendingCheck() {
+  const story = saveData.story,
+    p = story && story.pending;
+  if (!p || saveData.run || storyRun.on || activeBattle || uiState.modal || talkBox.on || !walkView.ready) return;
+  if (uiState.tab !== 'walk' || (typeof cutscene !== 'undefined' && cutscene.on)) return;
+  if (typeof selfTest !== 'undefined' && selfTest.on) return;
+  delete story.pending;
+  playStoryScript('story:' + p);
 }
 /* plays a script by id; resume: where a saved run goes on from */
 async function playStoryScript(id, o = {}) {

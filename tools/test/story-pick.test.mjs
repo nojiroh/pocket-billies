@@ -89,3 +89,36 @@ test("the game's lines: each who has lines, leaders and agents always have one, 
   assert.equal(storyPick('juniper', G, h, {}, 1), 'juniper_lost');
   assert.ok(['lost_rescued', 'lost_reflexes'].includes(storyPick('back_lost', G, h, {}, 1)));
 });
+
+test('the lost run scene: the first time in full (and marked), later a picked pair', async () => {
+  const lines = GAME_DATA.story.scripts['back-lost'].script,
+    G = GAME_DATA.banter;
+  const play = async story => {
+    const said = [];
+    const save = { story, items: {}, pyramids: {}, meta: { runs: 2, history: [] } };
+    const S = storyStateOf(save);
+    await runScript(
+      parseScript(lines),
+      { say: l => said.push(`${l.who}: ${l.text}`), choose: () => 0 },
+      {
+        save,
+        id: 'story:back-lost',
+        speaker: 'chosen',
+        pick: who => {
+          const k = storyPick(who, G, c => conditionHolds(c, S), story, 2);
+          return k ? parseScript(G[k].script) : null;
+        },
+      }
+    );
+    return said;
+  };
+  const story = {};
+  const first = await play(story);
+  assert.equal(first.length, 7);
+  assert.match(first[0], /^Chosen: There you are!/);
+  assert.equal(story.firstLoss, 1);
+  const later = await play(story);
+  assert.equal(later.length, 2);
+  assert.match(later[0], /^Chosen: /);
+  assert.match(later[1], /^Hazel: /);
+});
