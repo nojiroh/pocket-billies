@@ -1519,6 +1519,19 @@ export function dataSceneFindings(D, roadOf) {
       if (!['pond', 'stream', 'canal', 'spring', 'swamp', 'lake', 'sea', 'lava', 'ice'].includes(r.k))
         warn(`Scene ${s.name || k}: water rectangle ${n + 1} has an unknown kind “${r.k}”.`, 'scenes', g);
     });
+    /* water track WA-2b: a waterfall's entry (water-track.md's contract): on the map, falling a unit way, its lip on water */
+    (s.falls || []).forEach((f, n) => {
+      const at = `Scene ${s.name || k}: waterfall ${n + 1}`,
+        d = f.dir || [];
+      if (!(f.x >= 0 && f.z >= 0 && f.x <= s.w && f.z <= s.h)) warn(`${at} is off the map.`, 'scenes', g);
+      else if (!(Math.abs(Math.hypot(d[0], d[1]) - 1) < 0.05)) warn(`${at} has no direction (dir).`, 'scenes', g);
+      else if (!(f.w > 0) || (f.h != null && !(f.h > 0)) || (f.pool != null && !(f.pool >= 0)))
+        warn(`${at} needs a width, a drop and a pool of 0 or more.`, 'scenes', g);
+      else {
+        const ch = ((s.tiles || [])[s.h - 1 - Math.floor(f.z - d[1] * 0.3)] || '')[Math.floor(f.x - d[0] * 0.3)];
+        if (ch !== 'w' && ch !== 'd') warn(`${at}'s lip is not on water.`, 'scenes', g);
+      }
+    });
     const users = locations.map((r, i) => [r, i]).filter(([r]) => r.mapId === k);
     users.forEach(([r, i]) => {
       const n = roads.filter(l => l.kind === 'seam' && (l.a === i || l.b === i)).length;

@@ -32,8 +32,10 @@ def hub(s, x, z):
     s.d['hub'] = [x, z]; s.clear.append((x, z, 1.2))
 
 
-def check(s, a, b, reach, what):
-    s.d['checks'].append({'from': [round(a[0], 2), round(a[1], 2)], 'to': [round(b[0], 2), round(b[1], 2)], 'reach': reach, 'what': what})
+def check(s, a, b, reach, what, surf=False):
+    c = {'from': [round(a[0], 2), round(a[1], 2)], 'to': [round(b[0], 2), round(b[1], 2)], 'reach': reach, 'what': what}
+    if surf: c['surf'] = True                                                       # WA-6b: walked with Surf on
+    s.d['checks'].append(c)
 
 
 def shot(s, x, z, label, yaw=0):
@@ -128,7 +130,10 @@ def t_water():
     # water track WA-0: a tall fall (a stream off a 6 m cliff into a plunge pool) and the kinds the west half lacks
     s.terrace(43, 17, 59, 30, 6.0, wall=False, wobble=.3, mat=3)
     s.stream([(50, 27.5), (50.3, 22), (49.8, 17.5), (50, 14.5)], 1.6, 1.0)
-    s.pond(50, 12.4, 3.2, 2.2, sand=False, reeds=5, lilies=0, deep=False, rocks=3, dip=.6)
+    s.pond(50, 14.3, 3.2, 2.2, sand=False, reeds=5, lilies=0, deep=False, rocks=3, dip=.6)   # WA-2b: at the cliff's foot
+    # WA-2b: the fall as a scene's `falls` entry (water-track.md's contract): the lip on the 6 m cliff at z 17, falling
+    # south into the pool, whose middle lies its radius and a quarter metre past the lip as a generated one's; climbable
+    s.d['falls'] = [{'x': 50, 'z': 17, 'dir': [0, -1], 'w': 1.6, 'h': 6, 'pool': 2.2, 'climb': 1}]
     s.blob(45.5, 6.5, 2.4, 1.6, 'w', .15); s.blob(50.8, 6.5, 2.0, 1.6, 'w', .15); s.rect(55, 2, 58, 10, 'w')
     s.d['waters'] += [{'x': 42.5, 'z': 4.5, 'w': 6, 'h': 4, 'k': 'lava'}, {'x': 48.6, 'z': 4.5, 'w': 5, 'h': 4, 'k': 'ice'},
                       {'x': 55, 'z': 2, 'w': 3, 'h': 8, 'k': 'sea'}]
@@ -140,6 +145,8 @@ def t_water():
     check(s, (20, 3), (50, 8.2), True, 'the hub to the foot of the tall fall')
     check(s, (1.2, 9.4), (5.5, 9.3), True, "wade into the pond's shallows")                # WA-6a: shallows are waded
     check(s, (41, 6.5), (45.5, 6.5), False, 'the lava pool stays shut (should be impossible)')
+    check(s, (4.5, 8.5), (8.5, 8.5), True, "surf out onto the pond's deep middle", surf=True)   # WA-6b: Surf
+    check(s, (4.5, 8.5), (8.5, 8.5), False, 'deep water stays shut without Surf (should be impossible)')
     s.patches('G', .6, 6, seed=6)
     return s.out(7, 'wood')
 

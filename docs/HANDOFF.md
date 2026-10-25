@@ -2,6 +2,60 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Water track WA-2b (lane G) - waterfalls placed - 2026-10-25
+Branch `track/water` (main merged in at the start: nothing new since db9d87a; lane R's WA-2a and lane P's WA-6b merged
+in before the push). Plan approved in Plan Mode. The owner's answers: the hub island's fall waits for HB-4b; WA-6a's
+"shallows for others" goes to a later lane G session; the river steps with the land; "caves" means the generated
+cave biome; the run dials stay as they are. Tag to suggest: `wa-2b-done` (the owner pushes tags).
+- Changed:
+  - `logic/water-gen.js` `waterGenFalls` (called once after mapgen's land stage): the river's water lifted to its
+    lower bank's step raise, never higher than the point before; a drop of 0.6 m or more is a `falls` entry with a
+    plunge pool where one fits on the foot's level and is walked to (radius 1.4-3 m, its middle `pool + 0.25` m past
+    the lip); now and then a 4-15 m set piece on a mountain route or a cave (a spring on a shelf, a notch cut down the
+    shelves to a pool). `waterGenClimbs` (once, on the finished scene): `climb: 1` on a fall of 2 m or more whose top
+    and foot the game's reach (`mapgenReach`, props and slopes) walks to. `sc.falls` beside `sc.streams`.
+  - `mapgen.js`: those two calls and the `sc.falls` line only. **MAPGEN_VERSION 16**.
+  - The data check warns on a fall off the map, with no direction, no width or drop, or its lip off water.
+  - test_water: the 6 m fall is a `falls` entry (`{x 50, z 17, dir [0,-1], w 1.6, h 6, pool 2.2, climb 1}`); its
+    pond moved 1.9 m north to the cliff's foot (its middle where the contract puts it); WA-6b's two Surf checks.
+  - Tests (water-gen.test.mjs): a fall's lip on water, water below it, a drop at the lip, on a stream's line; pools
+    and climbs walked to and exits reached; same seed same falls; none without a river or mountains; none on the hub
+    island. Remade on purpose: rng.test's pinned hash and the run-start snapshot (only gen.v / mapgenV).
+- Found (where the plan or the docs were wrong):
+  - Terraces and a massif leave the ground under water at 0 (`mapgenTerraces` "water lies at the bottom"; the
+    mountain field fades out within 1-4 m of water): a river crossing them ran in a trench and never met a drop.
+  - River falls are rare all the same (4 in 60 stream scenes with terraces, 0.7-1.3 m): the level only goes down from
+    the source, and WA-3a's rivers follow the smooth ground, which the terraces (made later, rising toward the back)
+    don't know. A later lane G session could let the water stage see the terraces' levels (mapgen.js's busy water
+    stage) or turn a river round when its banks rise downstream.
+  - **Runs have no terraces or mountains** (rules.json `run.scene`): falls show in a run only in the Rock Smash cave
+    (about 1 cave in 8 gets a set piece). Left as it is (the owner); for the roguelite or routes tracks: an
+    occasional terraces or massif dial on run nodes would bring falls to routes.
+  - A massif makes staircases of 0.8-2 m shelves, not cliffs; a notch cut down them splits a shelf walked only along
+    its length, so most set piece places are refused (more than 25 half-metre cells cut off).
+  - Climb decided before the props went in disagreed with the game's reach; hence the second call on the finished
+    scene.
+- Risky:
+  - **MAPGEN_VERSION 16** on this branch (main 8; PR #194 takes it to 13, RT-4b holds 14, WA-3a 15): whichever merges
+    second remakes rng.test's hash and the run-start snapshot on purpose. Generated scenes change where a river
+    crosses terraces or a massif and on some mountain scenes (a set piece).
+  - Cost: about 15% more on a mountain scene in Node (224 to 258 ms), 13 ms on a river over terraces (the reach
+    flood on the half-metre grid, a few times).
+  - Set piece pools and notches are cut into the shelves: the walls round them are the shelves' own faces.
+- Verified: lint, typecheck, check:modules, check:data, prettier; `npm test` 965/965 after the merges; `npm run
+  test:slow` 58/58 (the mapgenUnreachable sweeps, seams, towns, mountains and ledges, the run worlds); `check:smoke`
+  6/6 before the game/ commits and after the merges; the walking-rules step (28 test scenes, 77 checks, test_water 6
+  of 6). Sweeps outside the tests: 120 terrace, mountain and cave scenes (11 falls, 5 set pieces, 6 pools, 1
+  climbable; every exit reached, no note, every pool walked to); 80 mountain scenes (6 set pieces, 4.1-7.6 m, 2
+  climbable). Not run: pictures of generated falls (lane R's look-water) and the quick-check baseline (WA-8).
+- For lane R (its files, not edited here): a generated pool's middle is `pool + 0.25` m past the lip along `dir`
+  (in the contract now); a set piece's notch is up to 6 m long, its water at the foot's level from the lip on, so
+  the sheet's `reach` lands in water. Set pieces carry `k: 'spring'` in a cave (the cave's water kind).
+- For lane P: generated `climb` falls have water at `fallTop` (the river or the spring's run) and at the foot (the
+  pool); test_water's entry has `climb: 1`.
+- Next: WA-5a (lane G, round 3, new kinds' play); the shallows for others (a later lane G session); the hub island's
+  fall after HB-4b; the owner's look at a cave's set piece on the phone.
+
 ### Water track WA-6b (lane P) - Surf and the Waterfall climb - 2026-10-25
 Branch `track/water` (main merged in at the start: hub track HB-1, .gitignore and HANDOFF kept both sides; lanes R's
 WA-1 and G's work merged in before each push). Plan approved in Plan Mode; the owner's answers: Surf needs the Water

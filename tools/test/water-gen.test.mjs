@@ -135,3 +135,112 @@ test('no stream dial, no river; a river never runs off a scene through an exit r
     }
   }
 });
+
+/* ---------- WA-2b: waterfalls placed ---------- */
+/** a scene's step raise at (x, z) (scene.steps: 5 cm units, a half-metre grid, row 0 at the near edge) */
+function raiseAt(sc, x, z) {
+  if (!sc.steps) return 0;
+  const b = Buffer.from(sc.steps, 'base64'),
+    S = new Int16Array(b.buffer, b.byteOffset, b.length / 2),
+    i = Math.max(0, Math.min(sc.w * 2 - 1, Math.floor(x * 2))),
+    j = Math.max(0, Math.min(sc.h * 2 - 1, Math.floor(z * 2)));
+  return S[j * sc.w * 2 + i] / 20;
+}
+/* rivers across terraces that step down toward them (the seeds of a sweep that made falls), and massifs whose cliffs
+   take a set piece (the cave's dials, Rock Smash's side area) */
+const FALL_CASES = [917, 931, 933, 941].map(seed => {
+  const i = seed - 900;
+  return {
+    seed,
+    biome: BIOMES[i % BIOMES.length],
+    pin: i % 2 ? 'EW' : '',
+    land: {
+      water: 'stream',
+      waterAmount: 0.5,
+      terraces: [0, 0.4, 0.7, 1][i % 4],
+      mountains: i % 3 === 0 ? 1 : 0,
+      massif: 'NS',
+      cliffs: (i % 5) / 4,
+    },
+  };
+});
+const SET_CASES = [301, 305, 342].map(seed => ({
+  seed,
+  biome: seed % 2 ? 'cave' : 'ridge',
+  pin: 'EW',
+  land: { water: 'none', mountains: 1, massif: 'NS', cliffs: 0.5, terraces: 0.5, ledges: 1 },
+}));
+const FALLS_MADE = [...FALL_CASES, ...SET_CASES].map(c => ({ c, ...G.mapgenScene(c, ctx) }));
+
+test('a fall: its lip on its water, its foot on water below it, the contract fields', () => {
+  let falls = 0,
+    sets = 0,
+    pools = 0,
+    climbs = 0;
+  for (const { c, scene: sc, notes } of FALLS_MADE) {
+    const where = `seed ${c.seed} ${c.biome}`;
+    assert.ok(sc.falls && sc.falls.length, `${where}: a fall (${notes.join('; ')})`);
+    for (const f of sc.falls) {
+      const at = `${where} fall at ${f.x},${f.z}`,
+        [dx, dz] = f.dir;
+      falls++;
+      assert.ok(Math.abs(Math.hypot(dx, dz) - 1) < 0.02, `${at}: dir is a unit`);
+      assert.ok(
+        f.w >= 1.4 && f.h >= WG.WATERGEN_FALL_MIN && f.h <= WG.WATERGEN_SET_PIECE[1],
+        `${at}: w ${f.w} h ${f.h}`
+      );
+      if (f.h >= WG.WATERGEN_SET_PIECE[0]) sets++;
+      /* the lip: water just above it and just below it, the water above raised more than below */
+      const up = [f.x - dx * 0.3, f.z - dz * 0.3],
+        down = [f.x + dx * 0.3, f.z + dz * 0.3];
+      assert.ok('wd'.includes(tileAt(sc, ...up)), `${at}: water above the lip`);
+      assert.ok('wd'.includes(tileAt(sc, ...down)), `${at}: water below the lip`);
+      assert.ok(raiseAt(sc, ...up) - raiseAt(sc, ...down) >= 0.05, `${at}: it drops at the lip`);
+      /* on a river: a stream's line passes the lip */
+      assert.ok(
+        (sc.streams || []).some(st =>
+          st.pts.some((p, i) => i && WG.waterGenSegDist(f.x, f.z, st.pts[i - 1], p) < f.w / 2 + 0.5)
+        ),
+        `${at}: on a stream's line`
+      );
+      if (f.pool) pools++;
+      if (f.climb) climbs++;
+    }
+  }
+  assert.ok(sets > 0, 'a set piece among the cases');
+  assert.ok(pools > 0, 'a plunge pool among the cases');
+  assert.ok(climbs > 0, 'a climbable fall among the cases');
+  assert.ok(falls >= FALLS_MADE.length);
+});
+
+test('a plunge pool and a climbable fall are walked to; the exits still are', () => {
+  for (const { c, scene: sc } of FALLS_MADE) {
+    const where = `seed ${c.seed} ${c.biome}`,
+      R = G.mapgenReach(sc, GAME_DATA.scenery, sc.hub, { slope: true });
+    assert.deepEqual(G.mapgenUnreachable(sc, GAME_DATA.scenery, { slope: true }), [], where);
+    for (const f of sc.falls || []) {
+      const at = `${where} fall at ${f.x},${f.z}`,
+        { top, foot } = WG.waterGenFallEnds(f);
+      if (f.pool) {
+        assert.ok('wd'.includes(tileAt(sc, foot[0], foot[1])), `${at}: the pool's water`);
+        assert.ok(WG.waterGenReachedRing(sc, R, ...foot), `${at}: its pool is walked to`);
+      }
+      if (f.climb) {
+        assert.ok(f.pool > 0 && f.h >= WG.WATERGEN_CLIMB_MIN, `${at}: a climb has a pool and is tall`);
+        assert.ok(WG.waterGenReachedRing(sc, R, ...top), `${at}: its top is walked to`);
+      }
+    }
+  }
+});
+
+test('the same seed makes the same falls; no river or mountain, no fall; the hub island has none', () => {
+  for (const { c, scene } of FALLS_MADE.slice(0, 4)) {
+    const again = G.mapgenScene(c, ctx).scene;
+    assert.deepEqual(again.falls, scene.falls, `seed ${c.seed}`);
+    assert.equal(again.steps, scene.steps, `seed ${c.seed}`);
+  }
+  assert.equal(G.mapgenScene({ seed: 77, land: { water: 'none' } }, ctx).scene.falls, undefined);
+  assert.equal(G.mapgenScene({ seed: 77, land: { water: 'stream', terraces: 0 } }, ctx).scene.falls, undefined);
+  const hub = modules['island-gen'].islandGenerate({}, 'copperleaf', ctx).scene;
+  assert.equal(hub.falls, undefined, 'the hub island (locked; its fall waits for HB-4b)');
+});
