@@ -2143,15 +2143,16 @@
    "flat": 0,
    "tags": ["farm"],
    "group": "windmill",
-   "box": [1.6,1.6],
+   "box": [3.6,3.6],
    "door": {"x":0,"y":0},
    "fx": [
-    {"k":"spin","x":0,"y":-139},
-    {"k":"window","x":0,"y":-81},
-    {"k":"window","x":0,"y":-54}
+    {"k":"window","x":0,"y":-90}
    ],
    "landmark": 1,
-   "vol": "lathe"
+   "model": "scene/next/models/windmill.json",
+   "ppm": 32,
+   "solid": 1,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "tree_oak_b": {
    "name": "Spreading oak",
@@ -5164,9 +5165,13 @@
    "group": "lighthouse",
    "solid": 1,
    "fx": [
-    {"k":"glow","x":0,"y":-251}
+    {"k":"glow","x":0,"y":-304}
    ],
-   "landmark": 1
+   "landmark": 1,
+   "model": "scene/next/models/lighthouse.json",
+   "ppm": 32,
+   "box": [3.6,3.6],
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "buoy": {
    "name": "Buoy",
@@ -11603,6 +11608,49 @@
    "ppm": 32,
    "model": "scene/next/models/forest_canopy_autumn.json",
    "vary": {"rot":1,"lean":0}
+  },
+  "workshop": {
+   "name": "Workshop",
+   "img": "scene/next/hub/workshop.png",
+   "ox": -85,
+   "oy": -196,
+   "shadow": 1.8,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town"],
+   "group": "workshop",
+   "model": "scene/next/models/workshop.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [4.6,3],
+   "door": {"x":-27,"y":0},
+   "fx": [
+    {"k":"window","x":43,"y":-44},
+    {"k":"glow","x":11,"y":-59},
+    {"k":"smoke","x":51,"y":-167}
+   ]
+  },
+  "gene_bank": {
+   "name": "Gene Bank",
+   "img": "scene/next/hub/gene_bank.png",
+   "ox": -76,
+   "oy": -245,
+   "shadow": 1.8,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town"],
+   "group": "gene_bank",
+   "model": "scene/next/models/gene_bank.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [4.4,4.6],
+   "door": {"x":0,"y":0},
+   "fx": [
+    {"k":"window","x":61,"y":-66},
+    {"k":"window","x":-61,"y":-66},
+    {"k":"glow","x":-21,"y":-51},
+    {"k":"glow","x":21,"y":-51}
+   ]
   }
  },
  "person": 1.75,
