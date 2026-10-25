@@ -11,7 +11,7 @@ import { engineColor, engineSetting } from '../engine/settings.js';
 import { bindQuad, gpuState, imageTexture, matrix4, renderTarget } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
 import { setSpriteUniforms, useWalkProgram } from './draw-common.js';
-import { WATER_KIND_LOOKS, setShoreUniforms } from './water-data.js';
+import { WATER_KIND_LOOKS, setPixelWaterUniform, setShoreUniforms } from './water-data.js';
 import { computeFrustum, inFrustum } from './quality-cull.js';
 import { skyColors } from './sky.js';
 /* eslint-disable no-func-assign */
@@ -319,6 +319,7 @@ export function drawWater(C, X, rw, rh) {
   if (walkRenderer.fallMesh) {
     const f = useWalkProgram('fall', C, X);
     gl.uniform3fv(f.U.uShallow, engineColor('water', 'shallow', '#4FA6C0'));
+    setPixelWaterUniform(f.U);
     gl.disable(gl.CULL_FACE);
     gl.bindVertexArray(walkRenderer.fallMesh.vao);
     gl.drawElements(gl.TRIANGLES, walkRenderer.fallMesh.n, gl.UNSIGNED_INT, 0);

@@ -241,9 +241,8 @@ export function* shoreField(sc, isW, T = walkRenderer) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   T.shoreF = { W, H, d, FW, FH };
 }
-/* the shoreline value at a spot (0 dry ... 0.5 the water's edge ... 1 open water); 1 where there is no field */
 /* water track WA-1: the pixel water's switch, tones and steps (walk-shaders.js PIXEL_WATER_GLSL) */
-function setPixelWaterUniform(U) {
+export function setPixelWaterUniform(U) {
   if (!U.uPixW) return;
   gpuState.gl.uniform3f(
     U.uPixW,
@@ -252,6 +251,7 @@ function setPixelWaterUniform(U) {
     clamp(engineSetting('water', 'frames') ?? 10, 0, 60)
   );
 }
+/* the shoreline value at a spot (0 dry ... 0.5 the water's edge ... 1 open water); 1 where there is no field */
 export function setShoreUniforms(U, sc) {
   setPixelWaterUniform(U);
   if (!U.uShoreR) return;

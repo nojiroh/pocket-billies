@@ -260,9 +260,11 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
 precision highp float;in vec3 aPos;in float aShore;layout(location=2) in vec2 aFl;uniform mat4 uVP;out vec3 vW;out vec2 vT;${COMMON_GLSL}
 out float vH;void main(){vec3 p=aPos;p.y+=curveY(p.xz);vW=p;vT=vec2(aFl.y,aShore*aFl.x);vH=aFl.x;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec2 vT;in float vH;out vec4 o;uniform vec3 uShallow;${LIGHT_GLSL}${ROCK_GLSL}
-void main(){if(rockHides(vW))discard;float t=uTime*.001,x=vT.x*7.,y=vT.y;float s=lnoise(vec2(x,y*2.2-t*4.5))*.6+lnoise(vec2(x*2.3+5.,y*4.-t*6.))*.4;
- vec3 c=mix(uShallow*1.1,vec3(.92,.97,1.),smoothstep(.45,.8,s));float foot=smoothstep(.3,0.,vH-y);c=mix(c,vec3(.97,.99,1.),foot*.7+smoothstep(.12,0.,y)*.4);
+precision highp float;in vec3 vW;in vec2 vT;in float vH;out vec4 o;uniform vec3 uShallow;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}
+void main(){if(rockHides(vW))discard;
+ /* water track WA-1: with pixel water the sheet is drawn in the 32 grid's texels (fc: across its half metre, down in metres), its streaks in pixel columns stepping down */
+ float pr=pwRes(),pix=uPixW.x;vec2 fc=vec2(floor(vT.x*.5*pr),floor(vT.y*pr));float t=pwStep(uTime*.001),x=(pix>.5?(fc.x+.5)/(.5*pr):vT.x)*7.,y=pix>.5?(fc.y+.5)/pr:vT.y;float s=lnoise(vec2(x,y*2.2-t*4.5))*.6+lnoise(vec2(x*2.3+5.,y*4.-t*6.))*.4;
+ vec3 c=mix(uShallow*1.1,vec3(.92,.97,1.),pwQ(smoothstep(.45,.8,s),3.,fc));float foot=1.-pwHard(0.,.3,vH-y);c=mix(c,vec3(.97,.99,1.),foot*.7+(1.-pwHard(0.,.12,y))*.4);
  float sh=shadowAt(vW,.002);vec3 L=ambient(vec3(0,0,-1),1.,sh)*1.2+uSunCol*.6*sh;o=vec4(fogit(c*L,vW),.82+foot*.15);}`,
   ],
   /* 0.1.0 alpha: the grass in the 32 px a metre pixel style, coloured by the ground it grows from. A blade is a quad
