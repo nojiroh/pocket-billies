@@ -156,8 +156,10 @@ export const ISLAND_GEN_DEFAULTS = {
   /* the town (the owner, after the sketches: a market town on the river, a harbour quarter on the bay): it stands
      where the stream comes down into the bay; its streets, square, bridges and plots are laid out on the land as it
      is, with a level pad under each plot only. houses: how many house plots it aims for; lanes: side lanes. A town
-     zone in the zones above makes the old flat town instead */
-  town: { on: 1, houses: 7, lanes: 2 },
+     zone in the zones above makes the old flat town instead. face (HB-4a): 'street' puts plots on both sides of a
+     street; 'out' keeps only a side whose front lies within tol degrees of facing out from the orbit's pivot (the
+     summit), so the orbit camera sees the doors.*/
+  town: { on: 1, houses: 7, lanes: 2, face: 'street', tol: 50 },
   /* a hamlet: a few houses round a green under the mountains, joined to the coast road (off since the look pass: the
      owner, a smaller island) */
   hamlet: { on: 0, houses: 4 },
@@ -295,6 +297,8 @@ export function islandGenDials(d) {
   D.town.on = D.town.on ? 1 : 0;
   D.town.houses = Math.round(num(D.town.houses, 0, 40, 14));
   D.town.lanes = Math.round(num(D.town.lanes, 0, 6, 3));
+  if (D.town.face !== 'out') D.town.face = 'street';
+  D.town.tol = num(D.town.tol, 10, 90, 50);
   D.hamlet.on = D.hamlet.on ? 1 : 0;
   D.hamlet.houses = Math.round(num(D.hamlet.houses, 0, 10, 4));
   D.wild.n = Math.round(num(D.wild.n, 0, 12, 5));
@@ -1684,6 +1688,12 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     return Math.max(...hs) - Math.min(...hs) <= 2.4;
   };
   /* a plot facing its street: `front` the street's edge it opens onto (its pad lies at the street's level there) */
+  /* HB-4a: the orbit's pivot (the peak; the summit spot is put on it) and whether a front at angle a, standing at x, z,
+     faces out from it closely enough (town.face 'out'; always with 'street') */
+  const facesOut = (x, z, a) =>
+    D.town.face !== 'out' ||
+    Math.abs(islandAngleDiff((a / ISLAND_RAD) % 360, Math.atan2(z - peakP[1], x - peakP[0]) / ISLAND_RAD)) <=
+      D.town.tol;
   const addPlot = (k, x, z, pw, pd, a, front, where) => {
     if (!plotFits(x, z, pw, pd, a)) return false;
     plots.push({ k, x, z, w: pw, d: pd, a, y: cornerAt(front[0], front[1]), at: where });
@@ -1705,6 +1715,7 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
           nz = (dx / L) * sd,
           /* the angle its front faces: back toward the street */
           a = Math.atan2(-nz, -nx);
+        if (!facesOut(p[0] + nx * (width / 2 + 4), p[1] + nz * (width / 2 + 4), a)) continue;
         /* as asked, else a size smaller (a cottage where a house won't go) */
         for (const f of [1, 0.8]) {
           const pw = pw0 * f,
@@ -1738,6 +1749,7 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         rr = r0 + pd / 2 + 1.2,
         x = cx + Math.cos(f) * rr,
         z = cz + Math.sin(f) * rr;
+      if (!facesOut(x, z, Math.atan2(cz - z, cx - x))) continue;
       if (
         addPlot(k, x, z, size[0], pd, Math.atan2(cz - z, cx - x), [cx + Math.cos(f) * r0, cz + Math.sin(f) * r0], where)
       )
