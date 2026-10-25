@@ -492,8 +492,6 @@ debugLog.state = () => {
             groundTris: GAME.walkRenderer && GAME.walkRenderer.mesh ? Math.round(GAME.walkRenderer.mesh.n / 3) : null,
             /* TR-3: the camera's extra tilt on tall ground right now (degrees) */
             camRise: GAME.walkRenderer && GAME.walkRenderer.occT != null ? +GAME.walkRenderer.occT.toFixed(1) : null,
-            /* player visibility: how hidden you are right now (0-1: something nearer the camera covers you) */
-            hidden: GAME.walkRenderer && GAME.walkRenderer.hidK != null ? +GAME.walkRenderer.hidK.toFixed(2) : null,
             /* RL-12: the Perks held (perks.json ids, not names), the pick waiting (how many) and offers made */
             relics: (run.perks || []).slice(),
             offer: run.offer ? run.offer.length : 0,
@@ -635,7 +633,7 @@ debugLog.more = () => {
      tall ground, the goals in play with their weights, the look-ahead and how far the aim is from its goal (metres).
      CAM-2: the zoom the camera uses (yours times the goals'), the moment (talk, boss, interest, idle, run, or none),
      the points of interest in reach and the strongest's weight, the camera zone you stand in (its index, -1 for none)
-     and how long you have stood still (seconds). Only numbers and ids, no names */
+     and how long you have stood still (seconds). Player visibility: how hidden you are. Only numbers and ids, no names */
   t('camera', () => {
     const W = typeof GAME.walkRenderer !== 'undefined' ? GAME.walkRenderer : null,
       I = W && W.camInfo,
@@ -649,6 +647,8 @@ debugLog.more = () => {
       yaw: C && C.yaw != null ? r((C.yaw * 180) / Math.PI) : null,
       pitch: C && C.sp != null ? r((Math.asin(C.sp) * 180) / Math.PI) : null,
       rise: W.occT != null ? r(W.occT) : null,
+      /* player visibility: how hidden you are (0-1: something nearer the camera covers you) */
+      hidden: W.hidK != null ? r(W.hidK) : null,
       goals: I.goals.map(([id, w]) => [id, r(w)]),
       lead: [r(I.lead[0]), r(I.lead[1])],
       off: [r(I.goal[0] - T[0]), r(I.goal[1] - T[1])],
