@@ -947,7 +947,8 @@ export interface Rules {
     luxuryPyramid: number;
     alpha: number;
   };
-  ride: { minHeight: number; types: TypeId[] };
+  /** WA-6b: minHeight (m) is optional, none by default: any Billie of the types carries you */
+  ride: { minHeight?: number; types: TypeId[] };
   fishing: { biteMin: number; biteMax: number; reactTime: number; reelTime: number };
   /** the legendary encounters, one per map (scene is a map id) */
   legends: { sp: SpeciesId; scene: DataId; lvl: number; title: string; text: string; line: string }[];
