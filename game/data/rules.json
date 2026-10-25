@@ -170,7 +170,8 @@
    "waystation": 2,
    "route": 10,
    "routeMin": 4,
-   "habitats": {"water":["Water"],"woods":["Grass","Psychic","Dragon"]}
+   "habitats": {"water":["Water"],"woods":["Grass","Psychic","Dragon"]},
+   "rare": {"up":2}
   },
   "seamIn": 6,
   "start": {

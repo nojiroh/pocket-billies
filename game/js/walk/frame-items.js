@@ -4,6 +4,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import {
+  LOCATIONS,
   buddyItems,
   buildingFrontPicture,
   buildingGuard,
@@ -16,6 +17,7 @@ import {
   propModelImageItems,
   provide,
   reducedMotion,
+  saveData,
   solidPropLevelOfDetail,
   soundEffectAt,
   tagPropModel,
@@ -304,7 +306,10 @@ export function gatherFrameItems(st, C, PPU, C0) {
   (st.enc || []).forEach(e => {
     let s = walkView.enc[e.id];
     if (!s || s.sc !== walkView.id) {
-      const sp = encounterSpot(sc, e.id, used, e.hab);
+      /* RT-4: a route's rarer one waits in its hard pocket (the place's rareAt, in its scene's metres) */
+      const R = e.rare ? LOCATIONS[saveData.trip.node] : null,
+        O = sc.baseOff || [0, 0],
+        sp = R && R.rareAt ? [R.rareAt[0] + O[0], R.rareAt[1] + O[1]] : encounterSpot(sc, e.id, used, e.hab);
       s = walkView.enc[e.id] = { x: sp[0], z: sp[1], tx: sp[0], tz: sp[1], sc: walkView.id };
     }
     /* v46: they keep their spot in the tall grass until you battle them: no wandering. They stay alive in place (a bob,

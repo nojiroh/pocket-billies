@@ -430,6 +430,8 @@ export interface Encounter {
   alpha?: boolean;
   /** RT-4: a run place's habitat it waits in (rules.json run.wild.habitats: water, woods); none is the tall grass */
   hab?: string;
+  /** RT-4: a run route's rarer one (rules.js spawnRare), waiting in a hard pocket */
+  rare?: number;
   /** phase 16: its part sizes, rolled when it appears (rules.js encounterBuild) */
   build?: Build;
 }

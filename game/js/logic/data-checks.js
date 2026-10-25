@@ -442,8 +442,15 @@ export function dataRunScene(D) {
       );
     else
       for (const k of Object.keys(W))
-        if (!['lv', 'perRow', 'back', 'waystation', 'route', 'routeMin', 'habitats'].includes(k))
+        if (!['lv', 'perRow', 'back', 'waystation', 'route', 'routeMin', 'habitats', 'rare'].includes(k))
           problem('rules.json', `run.wild.${k}: no such rule`);
+    /* RT-4: a run route's rarer one, levels up */
+    if (
+      W &&
+      W.rare !== undefined &&
+      !(W.rare && typeof W.rare === 'object' && whole(W.rare.up, 0, 20) && Object.keys(W.rare).length === 1)
+    )
+      problem('rules.json', 'run.wild.rare is not { up } (whole levels, 0-20)');
     /* RT-4: the habitats (logic/mapgen.js mapgenHabitats makes their points), each a list of types, no type twice */
     const H = W && W.habitats;
     if (H !== undefined) {

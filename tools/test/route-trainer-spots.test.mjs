@@ -86,3 +86,39 @@ test('RT-2: route trainers on real runs stand where you walk, face open ground, 
   /* the game stands the second at the walkable point nearest (walk/frame-items.js walkablePointNear) */
   assert.ok(!mates || matesOK / mates >= 0.75, `${matesOK} of ${mates} pairs' seconds stand where you walk`);
 });
+
+test('RT-4: a route’s rarer one waits on a free pocket, dead end or clearing, clear of its trainers; the same run, the same spot', () => {
+  const C = GAME_DATA.scenery;
+  let places = 0,
+    held = 0;
+  /** @type {Record<string, number>} */
+  const kinds = {};
+  for (let k = 0; k < 5; k++) {
+    const a = run('RT2SPOT' + k),
+      scenes = runScenesMake(a, DATA),
+      T = RT.runRouteTrainers(a, TD);
+    RT.routeTrainersPlace(a, T, scenes, TD.classes);
+    const S = RT.routeRareSpots(a, T, scenes);
+    assert.deepEqual(RT.routeRareSpots(a, T, scenes), S, 'the same spots');
+    const nodes = new Set(Object.values(T).map(t => t.runNode));
+    places += nodes.size;
+    for (const [ni, at] of Object.entries(S)) {
+      const sc = scenes[+ni],
+        where = `RT2SPOT${k} node ${ni} at ${at}`,
+        spot = (sc.spots || []).find((/** @type {any} */ p) => p.x === at[0] && p.z === at[1]);
+      assert.ok(nodes.has(+ni), `${where}: a place with no route trainers`);
+      assert.ok(spot && RT.ROUTE_RARE_SPOTS.includes(spot.kind), `${where}: not on a pocket, dead end or clearing`);
+      kinds[spot.kind] = (kinds[spot.kind] || 0) + 1;
+      assert.ok(M.mapgenReached(M.mapgenReach(sc, C, sc.hub, { slope: true }), ...at), `${where}: can't be walked to`);
+      for (const t of Object.values(T))
+        if (t.runNode === +ni)
+          assert.ok(Math.hypot(t.route.at[0] - at[0], t.route.at[1] - at[1]) > 6, `${where}: by ${t.id}`);
+      held++;
+    }
+  }
+  assert.ok(held / places >= 0.8, `${held} of ${places} route places have a spot for their rarer one`);
+  assert.ok(
+    (kinds.pocket || 0) + (kinds.deadend || 0) >= held * 0.8,
+    `mostly pockets and dead ends: ${JSON.stringify(kinds)}`
+  );
+});

@@ -415,6 +415,8 @@ export interface LocationData {
   runNode?: number;
   /** RT-2: a run route's trainers (a pair is two; logic/route-trainers.js routeTrainerTally): its wild stock is less */
   trainerCount?: number;
+  /** RT-4: where a run route's rarer one waits (a free pocket or dead end: logic/route-trainers.js routeRareSpots) */
+  rareAt?: [number, number];
   /** RL-R2: a side area's first place: closed until the run's field move obstacle (this move) is open */
   field?: DataId;
   /** RL-R2: 1 on a side area's place */
@@ -1004,6 +1006,8 @@ export interface Rules {
       route: number;
       routeMin: number;
       habitats?: Record<string, string[]>;
+      /** RT-4: a run route's rarer one, `up` levels above the rest (rules.js spawnRare) */
+      rare?: { up: number };
     };
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */

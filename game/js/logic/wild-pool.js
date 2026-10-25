@@ -14,9 +14,11 @@ expose({
   wildHabitat: [() => wildHabitat, v => ((wildHabitat = v), provide({ wildHabitat }))],
   // @ts-expect-error -- replaced on purpose
   wildPoolList: [() => wildPoolList, v => (wildPoolList = v)],
+  // @ts-expect-error -- replaced on purpose
+  wildRareList: [() => wildRareList, v => ((wildRareList = v), provide({ wildRareList }))],
 });
 /* eslint-enable no-func-assign */
-provide({ wildHabitat });
+provide({ wildHabitat, wildRareList });
 /* to-module: end */
 /** a copy of a pool's list, keeping only the species a dex names; a dex that names none of them (or no dex) keeps the
  * whole list, so a place never has nothing to meet. RL-R1: `swap` first turns a species into the region's variety of
@@ -43,4 +45,10 @@ export function wildPoolList(list, dex, swap) {
 export function wildHabitat(types, habitats) {
   for (const [k, T] of Object.entries(habitats || {})) if (T.some(t => types.includes(t))) return k;
   return 'grass';
+}
+/** RT-4: the rarest of a place's list (the lowest weight, all that share it), where its rare one is drawn from
+ * @param {WeightedSpecies[]} list @returns {WeightedSpecies[]} */
+export function wildRareList(list) {
+  const low = Math.min(...list.map(e => e[1]));
+  return list.filter(e => e[1] === low);
 }
