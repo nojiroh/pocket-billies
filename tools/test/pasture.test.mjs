@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { GAME_DATA, fn, modules, reseed, startedSave } from './setup-real.mjs';
-import { pastureProps } from '../build-pasture.mjs';
+import { PASTURE_SWELL, pastureGround, pastureProps } from '../build-pasture.mjs';
 import { pointInProp, turnedPoint as turnedPointOf } from '../../game/js/logic/prop-turn.js';
 
 const P = modules.pasture,
@@ -305,4 +305,37 @@ test('pasture: the hub as built carries the pasture (rerun tools/build-copperlea
   const town = { ...HUB, props: HUB.props.filter(p => !p.dress) };
   const out = pastureProps(town, SC);
   assert.deepEqual(out.props, town.props);
+});
+
+test('pasture: the field gently uneven, level at its edge and round the gate, nothing outside it changed', () => {
+  const town = { ...HUB, props: HUB.props.filter(p => !p.dress) },
+    out = pastureProps(town, SC),
+    sc = { ...HUB, heights: HUB.heights.map(r => [...r]) },
+    S = PASTURE_SWELL;
+  /* the hub as built carries it: running it again moves nothing */
+  assert.equal(pastureGround(sc, out.gap), 0, 'rerun tools/build-copperleaf.mjs');
+  /* flatten the zone, swell it again: the same ground; outside the zone nothing moved */
+  const flat = { ...HUB, heights: HUB.heights.map(r => [...r]) },
+    inZone = (a, b) => P.pastureIn(ZONE, a, b);
+  let level = null;
+  for (let b = 0; b <= HUB.h; b++)
+    for (let a = 0; a <= HUB.w; a++)
+      if (inZone(a, b)) {
+        const d = Math.min(...ZONE.map((q, i) => P.pastureSegDist(q, ZONE[(i + 1) % ZONE.length], a, b)));
+        if (d < S.fade[0]) level = HUB.heights[HUB.h - b][a];
+      }
+  assert.ok(level != null, "the zone's edge has corners at its level");
+  for (let b = 0; b <= HUB.h; b++)
+    for (let a = 0; a <= HUB.w; a++) if (inZone(a, b)) flat.heights[HUB.h - b][a] = level;
+  pastureGround(flat, out.gap);
+  assert.deepEqual(flat.heights, HUB.heights, 'made again from a flat field: the same ground');
+  let most = 0;
+  for (let b = 0; b <= HUB.h; b++)
+    for (let a = 0; a <= HUB.w; a++) {
+      const v = HUB.heights[HUB.h - b][a] - level;
+      if (!inZone(a, b)) continue;
+      most = Math.max(most, Math.abs(v));
+      if (Math.hypot(a - out.gap[0], b - out.gap[1]) <= S.gate) assert.equal(v, 0, `level by the gate at ${a}, ${b}`);
+    }
+  assert.ok(most <= S.h + 0.005 && most > S.h / 2, `the field rises and sinks up to ${most.toFixed(2)} m`);
 });

@@ -9,10 +9,11 @@
 // inside). HB-6: a weathered post-and-rail fence that bends as the zone does: posts (`fence_post`) spaced evenly round
 // the line, each a few degrees turned and leaning a little; between each two a rail (`fence_rail`) sized to its span,
 // resting on the ground at both posts; a few rails weathered, a few broken; a gap where the island's path to the
-// pasture arrives (or nearest the barn's door on a map with no island) with the field gate (`fence_gate`, act `pasture`: it opens the ranch's sheet) hung on its own post at one
-// end of the gap and standing swung open into the field, so you can walk in; the water trough by the gate; the hay
-// rack with round bales by it in the middle; two more bales. Nothing but props is touched: the ground, the zones,
-// people and life stay as they were.
+// pasture arrives (or nearest the barn's door on a map with no island) with the field gate (`fence_gate`, act
+// `pasture`: it opens the ranch's sheet) hung on its own post at one end of the gap and standing swung open into the
+// field, so you can walk in; the water trough by the gate; the hay rack with round bales by it in the middle; two more
+// bales. Then the field's ground (pastureGround): a gentle swell inside the zone, level at its edge and round the gate.
+// Nothing else is touched: the ground outside the zone, the zones, people and life stay as they were.
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -213,12 +214,69 @@ export function pastureProps(sc, scenery) {
   };
 }
 
+/** HB-6: how high the field swells and sinks (m), how far a swell runs (two waves, m), how far in from the zone's edge
+ * the swell has all its height (m), how far round the gate it stays level (m) */
+export const PASTURE_SWELL = { h: 0.5, waves: [20, 13], fade: [0.2, 2.6], gate: 3 };
+
+/**
+ * HB-6: the field gently uneven: the ground inside the pasture zone at its level plus a seeded swell (two long waves,
+ * up to PASTURE_SWELL.h), fading to nothing at the zone's edge (so nothing outside changes) and level round the
+ * gate's gap (a trodden gateway; the gate swung open hangs level). The level is read from the zone's own edge, which
+ * this never changes, so running it again gives the same ground. Changes sc.heights (a new array) and returns how
+ * many corners it moved.
+ * @param {any} sc the map @param {[number, number]} gap the gate's gap's middle
+ */
+export function pastureGround(sc, gap) {
+  const zone = pastureZone(sc);
+  if (!zone || !Array.isArray(sc.heights) || !sc.heights.length) return 0;
+  const S = PASTURE_SWELL,
+    H = sc.heights.map(r => [...r]),
+    xs = zone.map(p => p[0]),
+    zs = zone.map(p => p[1]),
+    edge = (x, z) => Math.min(...zone.map((a, i) => pastureSegDist(a, zone[(i + 1) % zone.length], x, z))),
+    /** the corners inside the zone: [x, z, how far in] */
+    corners = [];
+  for (let b = Math.ceil(Math.min(...zs)); b <= Math.floor(Math.max(...zs)); b++)
+    for (let a = Math.ceil(Math.min(...xs)); a <= Math.floor(Math.max(...xs)); a++)
+      if (pastureIn(zone, a, b) && H[sc.h - b] && H[sc.h - b][a] != null) corners.push([a, b, edge(a, b)]);
+  /* the level: the corners at the zone's edge, where the swell is nothing */
+  const rim = corners.filter(c => c[2] < S.fade[0]).map(c => +H[sc.h - c[1]][c[0]]);
+  if (!rim.length) return 0;
+  rim.sort((a, b) => a - b);
+  const level = rim[rim.length >> 1],
+    rnd = rngFn('copperleaf pasture', 'ground'),
+    W = S.waves.map((L, i) => {
+      const a = rnd() * Math.PI * 2;
+      return {
+        kx: (Math.cos(a) * 2 * Math.PI) / L,
+        kz: (Math.sin(a) * 2 * Math.PI) / L,
+        ph: rnd() * Math.PI * 2,
+        w: i ? 0.3 : 0.7,
+      };
+    }),
+    smooth = (e0, e1, v) => {
+      const t = Math.max(0, Math.min(1, (v - e0) / (e1 - e0)));
+      return t * t * (3 - 2 * t);
+    };
+  let moved = 0;
+  for (const [a, b, d] of corners) {
+    const sw = W.reduce((t, w) => t + w.w * Math.sin(w.kx * a + w.kz * b + w.ph), 0),
+      g = smooth(S.gate, S.gate + 3, Math.hypot(a - gap[0], b - gap[1])),
+      v = Math.round((level + S.h * sw * smooth(S.fade[0], S.fade[1], d) * g) * 100) / 100;
+    if (v !== +H[sc.h - b][a]) moved++;
+    H[sc.h - b][a] = v;
+  }
+  sc.heights = H;
+  return moved;
+}
+
 /* alone: the pasture on the hub as it stands */
 if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
   const D = readGameData(),
     sc = D.maps.copperleaf,
     out = pastureProps(sc, D.scenery);
   sc.props = out.props;
+  pastureGround(sc, out.gap);
   execFileSync('node', [join(ROOT, 'tools/write-data.mjs')], {
     input: JSON.stringify(D),
     stdio: ['pipe', 'inherit', 'inherit'],

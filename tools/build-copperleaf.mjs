@@ -19,7 +19,7 @@ import { join } from 'node:path';
 import { readGameData, ROOT } from './data-files.mjs';
 import { islandPointIn, islandProblems } from '../game/js/logic/island.js';
 import { hashString } from '../game/js/logic/rng.js';
-import { pastureProps } from './build-pasture.mjs';
+import { pastureGround, pastureProps } from './build-pasture.mjs';
 import { islandDress } from './island-dress.mjs';
 
 const INPUT = join(ROOT, 'tools/data/copperleaf-town.json');
@@ -520,8 +520,11 @@ for (const k of [
   if (k in TOWN) sc[k] = TOWN[k];
 for (const k of GROUND) if (k in G) sc[k] = G[k];
 Object.assign(sc, { edgeExits: [], bridges: bridgesOut, props: kept, people, npcSpots, life });
-/* IS-8: the fenced pasture, a step of its own limited to the pasture zone (tools/build-pasture.mjs) */
-sc.props = pastureProps(sc, D.scenery).props;
+/* IS-8: the fenced pasture, a step of its own limited to the pasture zone (tools/build-pasture.mjs); HB-6: then its
+   field's ground, gently uneven */
+const fenced = pastureProps(sc, D.scenery);
+sc.props = fenced.props;
+pastureGround(sc, fenced.gap);
 /* the walking checks are the island's (build-island.mjs: from the square to each plot's front, the barn, the summit,
    the dock); the in-game full test walks from the hub to every door besides (self-test.js stGeometry). One that ends
    where a building now stands (the barn's zone's middle) ends at its door instead */
