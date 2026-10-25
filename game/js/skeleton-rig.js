@@ -619,7 +619,7 @@ export function rigPreload(list) {
 const GRAFT_KEEP = 12;
 const GRAFT_BAKES = new Map(); /* sp~graft -> { wait, rig, sheet, bytes, bad, keys: its rigParts cache keys } */
 const GRAFT_PIXELS = new Map(); /* a kit part's picture path -> its pixels */
-const graftReport = () => {
+export const graftReport = () => {
   const S = graftStats,
     ms = S.ms.slice().sort((a, b) => a - b);
   return {
