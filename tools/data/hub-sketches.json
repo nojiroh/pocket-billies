@@ -1,0 +1,247 @@
+{
+ "about": "HB-4a island sketches (tools/island-sketches.mjs, .py): the hub's dials and seed (copperleaf-e9) with each direction's changes on top. base: the hub's dials and seed before HB-4b built B2 into it (every direction is these with its changes on top).",
+ "base": {
+  "seed": "copperleaf-e9",
+  "dials": {
+   "size": {
+    "r": 66,
+    "wobble": 0.35,
+    "sea": 10,
+    "stretch": 0.5,
+    "lobes": 0.8
+   },
+   "organic": 0.7,
+   "mountain": {
+    "r": 22,
+    "peak": 24,
+    "cliffs": 0.5,
+    "stretch": 0.6,
+    "shoulder": 0.6,
+    "range": 0.9
+   },
+   "hills": 0.4,
+   "cove": {
+    "on": 1,
+    "a": 300,
+    "span": 60,
+    "depth": 18,
+    "channel": 6,
+    "beach": 7,
+    "shape": "bay"
+   },
+   "shore": 3,
+   "beaches": [
+    {
+     "a": 185,
+     "span": 90,
+     "w": 16
+    },
+    {
+     "a": 60,
+     "span": 50,
+     "w": 12
+    }
+   ],
+   "cliffs": [
+    {
+     "a": 120,
+     "span": 24,
+     "h": 5
+    }
+   ],
+   "dunes": {
+    "a": 220,
+    "span": 50
+   },
+   "heath": {
+    "a": 0,
+    "span": 30
+   },
+   "forest": {
+    "a": 120,
+    "span": 200,
+    "deep": 40,
+    "density": 0.9
+   },
+   "stream": {
+    "on": 1,
+    "pond": 4,
+    "fall": 0.8
+   },
+   "paths": {
+    "width": 2.2,
+    "inland": 3,
+    "wander": 0.6
+   },
+   "zones": [
+    {
+     "k": "barn",
+     "a": 205,
+     "d": 46,
+     "w": 18,
+     "h": 16
+    },
+    {
+     "k": "pasture",
+     "a": 185,
+     "d": 50,
+     "w": 26,
+     "h": 20
+    }
+   ],
+   "town": {
+    "on": 1,
+    "houses": 7,
+    "lanes": 2
+   },
+   "hamlet": {
+    "on": 0,
+    "houses": 4
+   },
+   "wild": {
+    "n": 6
+   },
+   "level": 1.2,
+   "seeds": {}
+  }
+ },
+ "directions": [
+  {
+   "id": "today",
+   "name": "Today (copperleaf-e9)",
+   "blurb": "The hub as it is: the town along the stream into the bay, every plot facing its street.",
+   "dials": {}
+  },
+  {
+   "id": "a",
+   "name": "A  Back lane",
+   "blurb": "Today's town kept; a back lane parallel to the main street, smaller terraced cottages on both, every door turned to the quarter facing out. Station on the east headland, its rail out to the north-east; lighthouse on the bay's west arm.",
+   "dials": {
+    "town": {
+     "houses": 16,
+     "quarter": 1,
+     "extra": [
+      "inn",
+      "workshop",
+      "genebank",
+      "library"
+     ],
+     "face": "out",
+     "scale": 0.7,
+     "tol": 100,
+     "second": {
+      "on": 1,
+      "along": "main",
+      "side": "out",
+      "off": 13
+     }
+    },
+    "landmarks": {
+     "on": 1
+    }
+   }
+  },
+  {
+   "id": "b",
+   "name": "B  East crescent",
+   "blurb": "The second street curves round the mountain across the heath east of the stream: a new quarter between the square and the station headland, its houses facing out over the street.",
+   "dials": {
+    "town": {
+     "houses": 16,
+     "quarter": 1,
+     "extra": [
+      "inn",
+      "workshop",
+      "genebank",
+      "library"
+     ],
+     "face": "out",
+     "scale": 0.8,
+     "second": {
+      "on": 1,
+      "along": "arc",
+      "side": "in",
+      "off": 9,
+      "span": 110,
+      "at": 40
+     }
+    },
+    "landmarks": {
+     "on": 1
+    }
+   }
+  },
+  {
+   "id": "c",
+   "name": "C  Harbour station",
+   "blurb": "A's town, but the station sits on the bay's east arm, its rail running out over the bay's mouth; the lighthouse on the west arm faces it across the water. Both landmarks frame the first view of the town.",
+   "dials": {
+    "town": {
+     "houses": 16,
+     "quarter": 1,
+     "extra": [
+      "inn",
+      "workshop",
+      "genebank",
+      "library"
+     ],
+     "face": "out",
+     "scale": 0.7,
+     "tol": 100,
+     "second": {
+      "on": 1,
+      "along": "main",
+      "side": "out",
+      "off": 13
+     }
+    },
+    "landmarks": {
+     "on": 1,
+     "station": {
+      "a": 335
+     },
+     "lighthouse": {
+      "arm": -1
+     }
+    }
+   }
+  },
+  {
+   "id": "b2",
+   "name": "B2  East crescent, a town square",
+   "blurb": "HB-4b, built into the hub: B with a 12 m town square set 6 m back from the main street, the lab, the library and the Workshop round it; smaller cottages (scale 0.6, never under a cottage's size) on looser street sides (tol 90: the quarter turn keeps every door within 45 degrees); the coast road round the station.",
+   "dials": {
+    "town": {
+     "houses": 20,
+     "quarter": 1,
+     "extra": [
+      "library",
+      "inn",
+      "workshop",
+      "genebank"
+     ],
+     "face": "out",
+     "scale": 0.6,
+     "second": {
+      "on": 1,
+      "along": "arc",
+      "side": "in",
+      "off": 15,
+      "span": 140,
+      "at": 40
+     },
+     "square": {
+      "r": 12,
+      "off": 6,
+      "front": 6
+     },
+     "lanes": 3,
+     "tol": 90
+    },
+    "landmarks": {
+     "on": 1
+    }
+   }
+  }
+ ]
+}

@@ -98,7 +98,7 @@ def walk_over(pg, n1, past, sec=60):
 
 def run_world(pg, base):
     """RL-7: the run fixture boots on its landing (day 1), its world made from the seed at boot: Copperleaf and a place
-    per node, the landing's view drawing; the Map tab opens as the bowl with every place on it; a walk over the
+    per node, the landing's view drawing; HB-2: its loading screen lifts and logs a resume line (no seed); the Map tab opens as the bowl with every place on it; a walk over the
     landing's west seam (the way ahead; rules.json run.seamIn metres in) arrives at the next node on day 2 and opens its view"""
     drawing(pg)
     seed, scenes, ms, places, want, node, day, view = pg.evaluate("[runWorld.seed, runWorld.scenes, runWorld.ms, LOCATIONS.length, 1 + saveData.run.map.nodes.length, saveData.trip.node, saveData.run.clock, walkView.id]")
@@ -106,6 +106,11 @@ def run_world(pg, base):
     if node != 1 or day != 1: raise Exception(f'not on the landing on day 1: node {node}, day {day}')
     if view != pg.evaluate("'w:' + LOCATIONS[1].mapId + '*'"): raise Exception(f'the landing’s view isn’t open: {view}')
     if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
+    # HB-2: a boot on a run is a resume: the landing's loading ends (ready, or lifted by the cap) and logs its stages,
+    # milliseconds only
+    if not until(pg, "runLoad.ready&&!document.getElementById('runload')", 40): raise Exception("the run's loading screen never lifted")
+    line = pg.evaluate("(debugLog.ev.filter(e=>e.kind==='load'&&e.msg.startsWith('run resume ')).pop()||{}).msg||''")
+    if not line or 'RL7FIXTURE' in line or ' map ' not in line + ' ': raise Exception(f"the resume's load line is {line!r}")
     bar = pg.evaluate("document.querySelector('#nav').set")
     if bar != 'run': raise Exception(f"the bottom bar shows the {bar} tabs on a run")
     if not pg.evaluate(nav_tap('map')): raise Exception('no Map tab on the bottom bar')
@@ -117,7 +122,7 @@ def run_world(pg, base):
     if not walk_over(pg, n1, pg.evaluate('RULES.run.seamIn') + 6): raise Exception(f'walked toward {pg.evaluate(f"LOCATIONS[{n1}].name")} and never crossed')
     if pg.evaluate('saveData.run.clock') != 2: raise Exception(f'arrived on day {pg.evaluate("saveData.run.clock")}, not 2')
     if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 60): raise Exception(f'crossed but the view is still {pg.evaluate("walkView.id")}')
-    return f'{scenes} scenes made in {ms} ms; walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day 2'
+    return f'{scenes} scenes made in {ms} ms; {line}; walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day 2'
 
 
 def bowl_map(pg, base):
@@ -770,7 +775,7 @@ def breed(pg, base):
 def lab(pg, base):
     """RL-11: the lab fixture stands in Copperleaf after a run (500 Research, 60 Scrap, 2 Crests, one run ended). The
     first milestone was granted on load; the bottom bar's Lab tab opens the board with every row; a board row bought
-    pays its Research; the ranch's sheet sells Ranch Lv 2 for Scrap (its slots rise); the mast's sheet sells Airship Lv 2
+    pays its Research; the ranch's sheet sells Ranch Lv 2 for Scrap (its slots rise); the station's sheet sells Station Lv 2
     for a Crest and then offers the ridge lands; a run would carry the shop unlock; a reload (?fixture=stored) keeps it all"""
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.meta.unlocks.first_run&&walkView.ready", 60): raise Exception(f'no first milestone on load: {pg.evaluate("JSON.stringify(saveData.meta)")}')
     if pg.evaluate("saveData.meta.scrap") != 70: raise Exception(f'the milestone paid {pg.evaluate("saveData.meta.scrap") - 60} Scrap, not 10')
@@ -787,16 +792,16 @@ def lab(pg, base):
     pg.click("#ov .ranch-sheet [data-a=lab-buy][data-k=ranch_2]")
     st = pg.evaluate("[saveData.meta.scrap,ranchLevel(saveData),ranchSlots(saveData,RULES.ranch),uiState.modal&&uiState.modal.title]")
     if st[:3] != [70 - pg.evaluate("UNLOCK_DATA.unlocks.ranch_2.cost"), 2, pg.evaluate("RULES.ranch.slots[1]")] or 'Lv 2' not in (st[3] or ''): raise Exception(f'Ranch Lv 2: Scrap, level, slots, title {st}')
-    pg.evaluate("uiState.modal=null;uiState.mq=[];flyMenu(walkView.sc.props.find(q=>q.act==='fly'));0")
-    pg.click("#ov .fly-sheet [data-a=lab-buy][data-k=airship_2]")
-    if not until(pg, "saveData.meta.crests===1&&!!document.querySelector('#ov .fly-sheet [data-k=biome_ridge]:not([disabled])')", 10): raise Exception('Airship Lv 2 didn’t open the ridge lands on the mast’s sheet')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];stationMenu(walkView.sc.props.find(q=>q.act==='station'));0")
+    pg.click("#ov .fly-sheet [data-a=lab-buy][data-k=station_2]")
+    if not until(pg, "saveData.meta.crests===1&&!!document.querySelector('#ov .fly-sheet [data-k=biome_ridge]:not([disabled])')", 10): raise Exception('Station Lv 2 didn’t open the ridge lands on the station’s sheet')
     if pg.evaluate("runUnlocks(saveData,UNLOCK_DATA).join()") != 'shop_revive': raise Exception('a run wouldn’t carry the shop unlock')
     keep = pg.evaluate("JSON.stringify(saveData.meta)")
     pg.goto(base + '/index.html?fixture=stored')
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.meta&&!document.getElementById('loader')", 90): raise Exception('the reload never booted')
     back = pg.evaluate("JSON.stringify(saveData.meta)")
     if back != keep: raise Exception(f'after a reload {back}, not {keep}')
-    return f'the first milestone on load (+10 Scrap); {rows} rows on the board; Revives for {cost} Research; Ranch Lv 2 (3 slots); Airship Lv 2 opened the ridge lands; a reload kept it'
+    return f'the first milestone on load (+10 Scrap); {rows} rows on the board; Revives for {cost} Research; Ranch Lv 2 (3 slots); Station Lv 2 opened the ridge lands; a reload kept it'
 
 
 def save_round_trip(pg, base):
@@ -1008,7 +1013,9 @@ def run_pack(pg, base):
     its training stopped, the hub's team and storage left as they were, the bag the gift and the pack, Copperleaf's
     two Potions fewer. Given up, keeping it: back in storage once (no second copy) with its run's levels, the team and
     buddy the hub's, the packed Potions gone. A second run (the default pick, one Potion packed), won: no items row on
-    the payout, the run's bag added to Copperleaf's. A reload (?fixture=stored) keeps it all"""
+    the payout, the run's bag added to Copperleaf's. A reload (?fixture=stored) keeps it all. HB-2: Take off counts
+    the scenes as they are made over several frames (no task as long as their work), the landing's loading screen
+    lifts and logs a take-off line without the seed"""
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.ranch&&!document.getElementById('loader')&&walkView.ready", 90): raise Exception('the ranch fixture never booted')
     pg.evaluate("uiState.inside=null;uiState.modal=null;uiState.mq=[];renderOverlay();saveData.items.potion=3;saveData.pyramids.pyramid=2;0")
     who = pg.evaluate("saveData.box[1].uid")
@@ -1023,14 +1030,24 @@ def run_pack(pg, base):
     for _ in range(2): pg.click("#ov [data-pk=items][data-k=potion][data-d='1']")
     packed = pg.evaluate("document.querySelector('#ov h3 small').textContent")
     if not packed.startswith('2 of '): raise Exception(f'the pack says “{packed}”')
+    # HB-2: the long tasks from the tap to the flight: the run's scenes are made over several frames (one scene the
+    # longest task), never in one (the take-off's work in one task, as before HB-2)
+    pg.evaluate("window._lt=[];new PerformanceObserver(l=>{for(const e of l.getEntries())window._lt.push(e.duration)}).observe({type:'longtask'});0")
     pg.click('#ov [data-a=mb][data-i="0"]')
+    if not until(pg, "!!document.querySelector('#ov .run-takeoff')&&/Readying the airship/.test(document.querySelector('#ov .run-takeoff').textContent)||airshipFlight.on", 10): raise Exception('Take off didn’t count the scenes')
     # the flight is 2-3 s: on a slow page (CI's software drawing) it may have landed already when the wait first looks
-    if not until(pg, "!!saveData.run&&(airshipFlight.on||saveData.run.at.phase==='walk')", 30): raise Exception('“Take off” didn’t start a run')
+    if not until(pg, "!!saveData.run&&(airshipFlight.on||saveData.run.at.phase==='walk')", 60): raise Exception('“Take off” didn’t start a run')
+    work, wall, longest = pg.evaluate("[runWorld.ms,runWorld.wall,Math.round(Math.max(0,...window._lt))]")
+    if not wall or longest >= work: raise Exception(f'the take-off froze the page: its longest task {longest} ms, the scenes {work} ms of work over {wall} ms')
     got = pg.evaluate(f"JSON.stringify([saveData.team.map(m=>m.uid),saveData.team[0].hp===maxHp(saveData.team[0]),saveData.ranch.trainees.some(t=>t.uid==='{who}'),saveData.run.start.team.map(m=>m.uid),saveData.box.map(m=>m.uid),saveData.run.start.items.potion,saveData.items.potion,saveData.buddy])")
     want = json.dumps([[who], True, False, json.loads(hub)[0], json.loads(hub)[1], 1, gift + 2, who], separators=(',', ':'))
     if got != want: raise Exception(f'at take-off {got}, not {want}')
     pg.evaluate("flySkip();0")
     if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready", 90): raise Exception('never landed')
+    # HB-2: the landing's loading screen lifts (every stage ready, or the cap) and logs a take-off line, ms only
+    if not until(pg, "runLoad.ready&&!document.getElementById('runload')", 40): raise Exception("the landing's loading screen never lifted")
+    line = pg.evaluate("(debugLog.ev.filter(e=>e.kind==='load'&&e.msg.startsWith('run take-off ')).pop()||{}).msg||''")
+    if not line or pg.evaluate("saveData.run.seed") in line: raise Exception(f"the take-off's load line is {line!r}")
     lv = pg.evaluate("saveData.team[0].lvl+=3")
     pg.evaluate("uiState.modal=null;uiState.mq=[];runOver(false);0")
     if not until(pg, "!!uiState.modal&&uiState.modal.cls==='run-payout'&&!!document.querySelector('#ov pb-pick-card')", 30): raise Exception('no payout after giving up')
@@ -1193,7 +1210,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('relics', [("Perks: the pick (again after a reload), the tab, a battle's and a walk's effects, a town's prices, buying at the cap (RL-12)", relics)]),
     ('ranch', [('Breeding: a safe egg shown and hatched, a risky pair, a clock turned back, a reload (RL-10)', breed)]),
     ('ranch', [('Income: started at the first opening, Collect, a clock turned back and forward, a reload (RL-10b)', income)]),
-    ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the mast, a reload (RL-11)', lab)]),
+    ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the station, a reload (RL-11)', lab)]),
     ('ranch', [('Packing for a run: a Billie from storage, a packed bag; kept on a loss, the bag home on a win (RL-9b)', run_pack)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),

@@ -25,13 +25,15 @@ import {
 } from './logic/pasture.js';
 import { battleStageKey } from './logic/battle-engine.js';
 import { densityWorldMpp } from './logic/pixel-density.js';
-import { save, saveData, uiState } from './game-state.js';
+import { reducedMotion, save, saveData, uiState } from './game-state.js';
 import { makeCanvas } from './art.js';
 import { RIG_BACK_VIEW, buildCode, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { battleStagePrepare } from './battle-stage.js';
 import { walkData, walkView, walkablePointNear, worldToScreen } from './walk-view.js';
 import { environment } from './environment.js';
 import { standingHeightAt } from './walk/heights.js';
+import { addRipple } from './walk/water.js';
+import { wadeItem } from './walk/frame-items.js';
 /* eslint-disable no-func-assign */
 expose({
   BILLY_FRAME_CACHE_MAX: [() => BILLY_FRAME_CACHE_MAX],
@@ -162,7 +164,8 @@ export function worldBillyItem(k, sp, view, pose, t, seed, x, z, o = {}) {
   const R = im.__R,
     mpp = worldBillyMetersPerPixel(sp, R, o.big || 1),
     gy = standingHeightAt(x, z);
-  return Object.assign(
+  /* WA-6a: a Billie in the shallows stands on the bed, cut at the waterline (walk/frame-items.js wadeItem) */
+  const it = Object.assign(
     {
       k,
       im,
@@ -183,6 +186,7 @@ export function worldBillyItem(k, sp, view, pose, t, seed, x, z, o = {}) {
     },
     o.extra || {}
   );
+  return o.dy || typeof wadeItem !== 'function' ? it : wadeItem(it);
 }
 /* ---------- the buddy ---------- */
 /* your buddy (the one you made buddy on its sheet; it earns XP as you walk), or your lead if you haven't picked one */
@@ -251,6 +255,14 @@ function buddyItems(out, t, dt) {
       gz = T[i - 1][1];
       break;
     }
+  }
+  /* WA-6b: while you Surf (or climb a waterfall) your buddy rides along out of sight, and comes ashore beside you */
+  if (P.surf || (P.climb && P.climb.fall)) {
+    b.x = P.x;
+    b.z = P.z;
+    b.tx = null;
+    worldBillies.trail = [[P.x, P.z]];
+    return;
   }
   const moving = !!P.route || P.walk > 0;
   if (!moving) {
@@ -321,6 +333,11 @@ function buddyItems(out, t, dt) {
       { flip: b.flip, dy, big: m.alpha ? 1.12 : 1, build: m.build, coat: m.coat, graft: graftOf(m), extra: { mon: m } }
     );
   if (it) out.push(it);
+  /* WA-6a: your buddy leaves rings behind it as it wades (walk/water.js addRipple) */
+  if (it && it.cut && walk && !reducedMotion && typeof addRipple === 'function' && t - (b.wakeT || 0) > 450) {
+    b.wakeT = t;
+    addRipple(b.x, b.z - 0.05, 0.6);
+  }
   if (worldBillies.sayT > 0) worldBillies.sayT = Math.max(0, worldBillies.sayT - dt);
 }
 /* tapping your buddy: it reacts, and says how it's doing */

@@ -81,7 +81,7 @@ export const FIXTURE = {
       luxuryPyramid: 0.5,
       alpha: 0.4,
     },
-    ride: { minHeight: 1.5, types: ['Water'] },
+    ride: { types: ['Water'] },
   },
   types: [
     { id: 'Fire', color: '#e0603a', strong: ['Grass'], weak: ['Fire', 'Water'], passive: '' },

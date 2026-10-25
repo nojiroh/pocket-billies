@@ -74,7 +74,7 @@ export interface GameData {
   /** RL-R1: the run's region themes (logic/run-region.js) */
   regions: RegionsData;
   /** RL-R2: the field moves that open a run's side areas */
-  fieldMoves?: { about?: string; moves: Record<DataId, FieldMove> };
+  fieldMoves?: { about?: string; moves: Record<DataId, FieldMove>; waterfall?: FieldClimb };
   /** RL-13: a run's Expeditions and challenges */
   modifiers?: ModifiersData;
   pools: Record<DataId, Pool>;
@@ -480,6 +480,8 @@ export interface RegionTheme {
   types: Record<string, number>;
   ends?: string[];
   nouns?: string[];
+  /** HB-7: its sky train from Skyline Station: the prop (scenery.json, group sky_train) and its name */
+  train?: { k: string; name: string };
 }
 
 /** RL-R1: regions.json, what a run's region is made from (logic/run-region.js runRegionMake) */
@@ -639,6 +641,8 @@ export interface MapProp {
   /** flipped */
   f?: number | boolean;
   rot?: number;
+  /** HB-6: a model's lean in degrees: toward its own +x, toward its back (+z) (logic/prop-turn.js tiltSpin) */
+  tilt?: [number, number];
   /** variant */
   v?: number;
   act?: string;
@@ -947,7 +951,8 @@ export interface Rules {
     luxuryPyramid: number;
     alpha: number;
   };
-  ride: { minHeight: number; types: TypeId[] };
+  /** WA-6b: minHeight (m) is optional, none by default: any Billie of the types carries you */
+  ride: { minHeight?: number; types: TypeId[] };
   fishing: { biteMin: number; biteMax: number; reactTime: number; reelTime: number };
   /** the legendary encounters, one per map (scene is a map id) */
   legends: { sp: SpeciesId; scene: DataId; lvl: number; title: string; text: string; line: string }[];
@@ -996,6 +1001,9 @@ export interface Rules {
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;
+    /** HB-2: the run's loading screen (logic/run-load.js): it lifts at capMs even when a stage is still waiting (the
+        owner: 20 s) */
+    load: { capMs: number };
     /** RL-8: what a run starts with, besides the Billies from home and the packed bag: its money, pyramids and items (placeholders) */
     start: { se: number; pyramids: Record<string, number>; items: Record<string, number> };
     /** RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): how many items and pyramids (in all) are
@@ -1431,6 +1439,9 @@ export interface PropKind {
   model?: string;
   solid?: number;
   box?: number[];
+  /** HB-6: a model that spans its box's width (a fence rail): it rests on the ground under each end, tipped between
+   * them (logic/prop-turn.js spanFit) */
+  restEnds?: number;
   /** the rest: door, fx, build, layers, glow, vol... read by the renderers and the Studio */
   [key: string]: any;
 }
@@ -1995,6 +2006,20 @@ export interface FieldMove {
   ask: string;
   used: string;
   out: string;
+}
+/** WA-6b: the Waterfall climb (fieldMoves.json waterfall): a field move used in the walk on a fall marked climb: 1 */
+export interface FieldClimb {
+  name: string;
+  /** the type of the Billie that climbs */
+  type: string;
+  /** the badges it needs, every one kept (meta.badges by type) */
+  badges: string[];
+  look: string;
+  needBadge: string;
+  needType: string;
+  ask: string;
+  used: string;
+  top: string;
 }
 /** RL-R2: rules.json run.side: the chance a run has a detour or an alternate path (never both), a detour's places, an
  * alternate path's rows and the chance it ends at a boss of its own, each move's weight and the lean toward a move of

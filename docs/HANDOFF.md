@@ -43,6 +43,560 @@ before SP-1 is merged or tagged. Tag `sp-1-done` for the owner once the exit is 
 - Next: the owner presses the graft buttons on the phone (the lead, a grafted battle, the team screen), exports the
   debug log and picks SP-1's exit from `graphics.grafts`: runtime baking, or Grafts baked offline per biome pool.
   SP-2 (rules) is under way in its own session.
+### Hub track - the finished hub branches merged together (HB-4a/4b, HB-5 art, HB-6, HB-7 art) - 2026-10-25
+Branch `track/hub-merge` (from main 83e7bdd: HB-1, HB-2, the run-zone-biome fix). Plan approved in Plan Mode. One
+merge commit per branch (no rebase, no squash), in this order: `track/hub` (HB-4a, HB-4b), `art/hub-station-trains`
+(HB-7's art and sheet), `art/hub-buildings` (HB-5's art half), `props/hub-fence` (HB-6). For a PR into main.
+- Where the brief was off (checked): merged one after another the branches conflict in more files than each does
+  alone: station-trains also in .gitignore and copperleaf.json; buildings also in game/data/index.json, scenery.json
+  and the check-data snapshot; the fence also in scenery.json. All of these are both sides adding at the end: both
+  kept. game/data/gamedata.js is generated and not in git (CLAUDE.md's note is stale), so nothing to regenerate there.
+- Resolved: docs kept from every side (HANDOFF newest on top; hub-track.md gets every "Done in" note); .gitignore
+  lines from all four; prop-turn.js keeps HB-1's `decalPlace` and HB-6's `spanFit`/`tiltSpin`, prop-turn.test.mjs
+  both blocks; the check-data snapshot remade (`--test-update-snapshots`, its file count only); hooks.js through
+  `npm run modules` after each merge (0 changed every time).
+- Rebuilt, never hand-merged: copperleaf.json from track/hub's island by `node tools/build-copperleaf.mjs` in the
+  station merge (Skyline Station placed, the mast's act taken) and again in the fence merge (the fence follows HB-4b's
+  pasture: 48 `fence_post` and 48 `fence_rail` for 47 `fence_wood` sections and 11 corner posts, the gate on the west
+  side where the path arrives, the swell up to 0.5 m; about 40 dressing props move). Then one round of
+  `node tools/build-island.mjs` and build-copperleaf (its own commit): HB-6's swell levels the pasture from its rim's
+  median, up to 0.02 m off the old flat level, and build-island blends the land round the locked zone, so the slow
+  test "the game's island is the generator's own output" failed. **It fails on `props/hub-fence` alone** (main and
+  track/hub pass; HB-6 didn't run the slow tier). The round moved 614 height cells by at most 0.02 m and made the
+  walking checks again (the pasture walk one leg to the new gate instead of three; the same 21 places). A second round
+  of both tools writes the same file. Every other field and building of HB-4b's island is unchanged.
+- Done on the old island, to redo on the new one (later sessions, not this one):
+  - HB-7: Skyline Station stands on the open ground nearest the mast (78.97, 41.39), not on HB-4b's station headland
+    (a bare plot), and no sky rail or portal is laid out yet (`landmarks {rail, portal}` are data only).
+  - HB-5: the Workshop, Gene Bank, lighthouse and windmill are on their showcase map only; their plots stay bare. The
+    inn and library stand on their plots (HB-4b) with no act, so their doors don't open HB-5's rooms yet (`enter`).
+    Copperleaf's cottages now show their colour variants.
+  - HB-6: the gate side is island-gen's spoke on the new zone (west, on the coast path): judge it in the pictures.
+  - HB-8: `flyMenu`'s hub branch (unreachable) and the run sheet's airship lines.
+- Verified: after each merge check:modules, lint, typecheck, format:check, check:data, `npm test` (947, 948, 953,
+  957, all passing); at the end `npm test` 957/957, `npm run test:slow` 71/71, check-fast in full 29/29 (938 s),
+  `check:smoke` 6/6 (204 s, the phone flow taps the station). Pictures (not committed, git-ignored tools): `tools/island-shots.py` (14 views: HB-4b's island
+  with its square and the station by the mast, no page errors) and `tools/look-pasture.py` (8 views: the bending fence
+  all round HB-4b's pasture, its gap and open gate on the west side, 48 posts, 48 rails, no page errors).
+- Next: the PR into main (the planning session opens it); then the placing half: the station on its headland with
+  the sky rail and portal, the new buildings on their plots (and the inn's, library's and store's acts), HB-3, HB-8.
+
+### Hub track HB-6 - The natural pasture fence - 2026-10-25
+Branch `props/hub-fence` (the session's brief named it; the plan's `Branch:` line says `track/hub`: a cloud session
+pushes only to its own branch). Plan approved in Plan Mode. The owner's answers: the gate where the island's path
+arrives; the field swells up to 0.5 m; fixed-length rails rather than an engine stretch.
+- Checked against the code (main f779581). The facts held, plus: `fence_wood` is a 2.2 m section with three posts
+  built in, and the corner post `fence_wood_post` is an 8 vox/m model, not 32 px/m low-poly. Low-poly models ignore
+  `wear`, `tint` and the variety lean (only pictures read them). The model shaders already turn a whole model about
+  any axis (RF-2's `it.spin`), but nothing in the walk view set it. A prop scales by one number only. A variant's
+  `span` already means its width, so the new catalogue flag is `restEnds`.
+- Changed (one cause per commit):
+  - Engine: `logic/prop-turn.js` `spanFit` and `tiltSpin`. In `walk/prop-look.js` `stillPropState`, a catalogue model
+    with `restEnds` rests on the ground under each end of its box's width, tipped between them; any other model leans
+    by its placement's `tilt` [deg toward +x, deg toward its back]. Computed once with the still state; pictures don't
+    tip. Map schema and types describe both.
+  - Art: `tools/make-fence-parts.mjs` makes `fence_post` (variant 1 silvered) and `fence_rail` (2 m, the two rails
+    running into the posts' middles; variants weathered, broken, both) from `fence_wood`'s own layers.
+    `fence_wood` stays for the other maps.
+  - Pasture line (`logic/pasture.js`): the zone lightly smoothed (`pastureSmooth`: every metre, a 5-point mean,
+    twice), then 1.2 m in. `pastureStraight` is gone.
+  - Fence (`tools/build-pasture.mjs`): posts spaced evenly round the line. Each post is turned up to 12 degrees, leans
+    0.6-2.2 degrees and is sometimes silvered. One rail per span, sized to it (`s` within 8%; on the hub within 2%).
+    About a quarter of the rails are weathered and a few are broken (never by the gate, never two side by side). The
+    gate hangs on its own post at one end of the gap, so there is no doubled post; the trough goes on the roomier side.
+  - Gate: where island-gen's spoke ("pasture to the coast": from the island's middle out through the zone's middle)
+    crosses the fence. On the hub that is the west side, on the coast path; it was the north side, which no path
+    reaches. A map with no island keeps the barn door.
+  - Ground (`pastureGround`): the zone's level plus a seeded swell, up to 0.5 m across the field. Along the fence it's
+    about ±0.2 m, so the rails tilt up to about 3 degrees. It fades in over 2.6 m from the zone's edge and is level
+    within 3 m of the gate. `build-copperleaf.mjs` runs it after the pasture's props; a rerun writes the same map.
+  - `tools/look-pasture.py`: free-camera pictures of the pasture (validation/look-pasture/, git-ignored).
+  - copperleaf.json rebuilt by `tools/build-copperleaf.mjs`, never by hand. The dressing's draws follow the pasture's
+    props, so about 50 forest-floor props moved.
+- Risky:
+  - The engine change touches every prop's still state (one more field, and `turnedPoint` plus two height samples
+    for `restEnds` models only).
+  - A rail's spin also tips its shadow (the same uniform); its walk box doesn't tip (no need, it's on the ground).
+  - Only looked at with the game's own graphics defaults; not with "Props as low-poly" off.
+  - A phone with the old art cache has no `fence_post` or `fence_rail` recipes until the cache refreshes. Until then
+    they should draw as their catalogue pictures (the old section's and post's).
+  - HB-4b: build-pasture works on any pasture zone (it throws if a span can't fit a rail within 8%, or the trough
+    finds no room).
+- Verified:
+  - lint, typecheck, check:modules, check:data, prettier.
+  - `npm test` 941/941. New tests: `spanFit`/`tiltSpin` against the shaders' own spin; the line follows the zone
+    (within 0.6 m, bends of at most 35 degrees per 2 m); one rail per span fitting end to end; rails meet only at
+    posts; a post at every joint except the gate's; no posts side by side; the posts on the line the Billies wander
+    inside; the roam line inside the posts; a path tile just outside the gap, walked to in a straight line; the flood
+    still leaves only through the gap; the ground rerun the same, level by the gate, nothing outside the zone moved.
+  - `check:smoke` after the engine change (307 s) and at the end (297 s): no problems.
+  - Before (f779581) and after pictures with `tools/look-pasture.py`.
+- Next: the owner's look on the phone (the swell's height, the broken and weathered share, the gate's side). HB-4b
+  reruns build-copperleaf (the pasture and its ground follow the new zone). The quick check's baseline pictures near
+  the pasture will differ.
+
+### Hub track HB-5, the art half - Building variety - 2026-10-25
+Branch `art/hub-buildings` (the owner named it for this session; the plan file says `track/hub`). Plan approved in Plan
+Mode. The owner's answers: all five new buildings get a room (Ask me before 3: the Gene Bank too); their doors open
+with a new act `enter`; from PR #193 only the plan file and tools/look-decals.py come in; the Gene Bank is a solarpunk
+lab-vault. Not this session: placing them on Copperleaf (the placing half, after HB-4b). No tag: `hb-5-done` waits for
+the placing half.
+- What differed from the plan's facts (in the code): `variants` is a scenery.json key, never a model one, and no model
+  building had any (barn aside); the cottages' roofs had no `roof: 1` either. The General store has no act at all (not
+  just closed): a door opens a room only through its act. `lighthouse` and `windmill` were already catalogue keys (old
+  pictures on legacy maps). Low-poly glass is opaque, so the Gene Bank's helix stands in an open frame on the roof,
+  not under a glass dome. Rooms open only in a seamless world (`roomLayIn` needs the place's parts), not on a test map.
+- Changed (one cause per commit):
+  - Engine: `roof: 2` (a model's roof dressing, the cottages' moss tufts) hides under a placed roof style
+    (prop-models.js `swappedRecipe`); the Studio's model editor has "Roof part". Unit test model-roof.test.mjs.
+  - Engine: door act `enter` (data-files.js `ROOM_BY_USE.enter`, `opensRoom`): the room set on the building or its
+    kind, else "The door is locked."; the tap, the room's lay-in, the self-test's room list and check-data ask
+    `opensRoom`; the Studio's "When tapped" list has it. Unit test door-rooms.test.mjs.
+  - Data: tools/mark-cottage-roofs.py (one-off) marks the three cottages' roofs; tools/add-building-variants.py gives
+    colour-swap variants to cottage_moss and cottage_solar (3 each, so Copperleaf's existing `v` now shows), the
+    coloured houses and the townhouses (2 each).
+  - Art: tools/build-props-hub.py (rerunnable) models workshop, gene_bank (new keys, pictures baked to scene/next/hub)
+    and lighthouse, windmill (swapped in under their keys, old picture kept), with glass numbers, roof parts, turning
+    parts (the Workshop's gear, the helix, the lighthouse's shutter, the sails) and the WORKSHOP and GENE BANK
+    lettering decals. Triangles 1,613 / 4,873 / 1,242 / 2,132.
+  - Rooms: tools/build-hub-rooms.py brings int_inn and int_library back from legacy (and its index) and makes
+    int_workshop and int_gene_bank in the store's 12 x 10 frame; workshop and gene_bank name their rooms.
+  - Showcase: tools/build-hub-showcase.py, test_hub_buildings (every variant and roof style, the rooms' buildings, the
+    landmarks, quarter turns). tools/look-hub-buildings.py takes its pictures and walks into each door on Copperleaf.
+- Risky: Copperleaf's cottages change colour now (their `v` works): the quick check's hub pictures will differ from
+  the baseline. Rerunning build-props-batch7.py would drop the houses' new variants (it rewrites `variants` from the
+  old `build` looks). The Gene Bank's glass door glows strongly at night (a big glass area): judge it on a phone.
+  `lighthouse` and `windmill` are boxed and solid now (3.6 m): legacy maps that place them are not loaded.
+  look-decals.py's mirrored state needs HB-1's `decalPlace` (PR #193): until it merges, a flipped Workshop or Gene
+  Bank would mirror its lettering, so none is flipped.
+- Verified: lint, typecheck, check:modules, format:check; `npm test` 942/942; check:data (146 files; the snapshot
+  remade twice, only its file count); look-hub-buildings: every row (variants and roof styles distinct, moss tufts
+  gone under solar and chrome), the four new models at noon, the sails, gear, helix and shutter turning between
+  frames; at night on Copperleaf the Workshop's window, the lighthouse's light room and windows and the Gene Bank's
+  door glass lit; walk-ins on Copperleaf: shop, inn, library, Workshop, Gene Bank and the turned Workshop (90) and Gene
+  Bank (180) each opened their room. `check:smoke` 6/6 (269 s).
+- Next: the placing half after HB-4b: the buildings on the island's plots (doors on quarter turns), the General store's
+  `act: 'shop'` and a stock (shops.json is empty: the owner's call), Juniper's `home` act (still no room), the Gene
+  Bank's place (the splicing track's Ask me before). The owner's look at the variants' palette and the pictures in
+  validation/look-hub-buildings/.
+
+### Hub track HB-7 - Skyline Station and the sky trains (the art and the sheet) - 2026-10-25
+Branch `art/hub-station-trains` (one session of the hub track, started from main with PR #193's branch merged in for
+HB-1's decalPlace and the plan file). Plan approved in Plan Mode. The owner's answers: the station is **Skyline
+Station**; the trains are **the Lakeland Clipper, the Greenbelt Sunrunner, the Wildwood Zephyr, the Highland Arrow,
+the Harvest Comet**; merge HB-1 in. Notes mid-session: the trains have rocket engines; the portal is a tear floating
+in the sky, retro-futuristic. Tag `hb-7-done` for the owner to push.
+- Where the plan was wrong (checked in the code): see hub-track.md "Done in HB-7". In short: the portal models didn't
+  fit; a model can't stand above the ground, so every rail piece carries its pylon; the airship's act was read by
+  `standByMast`, check-data's buildings rule, airship-data.test (which also forbids a prop of kind `station`) and
+  three check-quick steps besides the ones listed; Copperleaf is generated, so the station goes in through
+  build-copperleaf.mjs. Found on main: Copperleaf's input still said "tax them all" (RF-1 changed only the map), so a
+  rerun of the builder changed the lab's line; fixed in the input first.
+- Changed (one cause per commit):
+  - Art: `tools/build-station-trains.py` (rerunnable): `train_station` (platform, verdigris canopy, departures board,
+    name boards, ticket kiosk, clock, benches, lamps, track bed), `sky_rail` (flat and its looks bend, rise, rise
+    high, crest), `sky_portal` (a tear hanging in the sky, always turned to the eye, past a launch lip; chrome Googie
+    stabilisers and a turning brass hoop; a gold look for HB-8's return), five `train_<theme>` (group `sky_train`,
+    hover skids over the rail, rocket engines and their plumes at the tail, lettering as fixed decals, a light bob).
+    The showcase map `test_station_trains` (`?test=1&scene=test_station_trains`). `tools/look-station.py`: phone
+    pictures of the showcase, or `--hub` the station in Copperleaf from four sides (validation/look-station/).
+  - Data: regions.json `themes.<id>.train` (`{k, name}`): schema, type, check-data (a sky train prop), a test.
+  - Sheet: `stationMenu` (airship.js): "Start a run" (runStartSheet unchanged) and the station's Crest upgrades;
+    the walk's act `station` opens it, an upgrade bought on it opens it again; `standByMast` finds a station first.
+  - Copperleaf: build-copperleaf.mjs places the station on the open ground nearest the mast (118.9, 93.2, turned
+    as the mast) and takes the mast's act and label away: the airship is scenery. buildings.json's act `station`.
+    Checks retargeted: check-quick's phone step and RL-8 tap the station, airship_moored finds the mast by kind,
+    check-fast's Lab step buys on the station's sheet; airship-data.test wants Copperleaf's station.
+  - Player words: "Pick it at Skyline Station", "Start one at Skyline Station", the welcome's "Skyline Station sends
+    you out on a run", the Lab's "at Skyline Station", "Station upgrades", buildings.json's name, "Station Lv 2".
+  - Rename (no behaviour): the building `airship` -> `station`, the unlock `airship_2` -> `station_2`.
+- Risky or unfinished:
+  - The run still leaves on the airship's flight over the world map, and the run sheet still says "The airship flies
+    you out" and "The airship adds": HB-8 swaps both for the train. `flyMenu`'s hub branch (Start a run, upgrades,
+    tickets) can no longer be reached (the hub has no `fly` prop, a run town's mast only offers Fly home); left as
+    it is because track/hub's HB-2 edits airship.js's take-off. Remove it in HB-8.
+  - The station stands beside the mast for now with its rail ending at its right end (no sky rail in Copperleaf):
+    HB-4b gives it the headland and lays the rail out to sea (12 m pieces on one heading; the portal piece last).
+  - Expect merges with track/hub (HB-2) in airship.js and run.js: my edits there are `stationMenu`, `standByMast`'s
+    lookup and one hint line. Never hand-merge hooks.js (npm run modules).
+  - The portal's tear is a camera-facing picture (one draw); the stabilisers' and hoop's turning layers are a few
+    more spin meshes. Phone cost not measured.
+  - A save with the old `airship_2` loses that row (old saves don't matter).
+- Verified: lint, typecheck, check:modules, format:check, check:data; unit tests 941/941 (the check-data snapshot
+  counts one more data file; a test that every theme has its own sky train). check-fast: the Lab (Station Lv 2 bought
+  on the station's sheet), packing for a run, a run's world, a run's battle and home: 5/5. check-quick: the phone
+  step (Start-Game, the station's sheet, Start a run) and airship_moored pass; RL-8 gets past the station's sheet
+  and fails later at "the town's shop has no Perk", as on main (RL-12c's entry). `check:smoke` 6/6 (the in-game test's
+  first step, the debug log export). The in-game full test's run phase fails with "a place on row 4 isn't its zone's
+  biome" on this branch and on main f779581 alike (fix/run-zone-biome's work); it still logs "a run starts" and ends
+  in Copperleaf. Pictures: validation/look-station/ (showcase at noon, Copperleaf from four sides). The full quick
+  check was not run (not a phase end).
+- Next: the owner's look at the pictures; HB-8 (departure and return: the train on the rail, the tear, the carriage
+  loading screen) after HB-2; HB-4b places the station on its headland.
+
+### Hub track HB-4b - The island rebuilt - 2026-10-25
+Branch `track/hub` (main and `art/hub-island-sketches` merged in first). Plan approved in Plan Mode. The owner's
+answers: the sky rail and portal as data now (HB-7 draws them in the sea's skirt); the inn and library models on their
+plots, the other new plots bare; a 12 m square; at least 8 cottages. Tag `hb-4b-done` for the owner to push. Details:
+docs/phases/hub-track.md, "Done in HB-4b".
+- Where the plan's facts were off (checked in the code): B made 5 house plots, not 16; `cam.orbit.c` is the summit
+  spot, up to 5 m off the peak the plots turn from (a door could stand 47 degrees off); nearly every hub position is
+  derived by the build tools (only cutscenes/opening.json holds literal metres, rewritten from the lab's door); RF-1's
+  "catch" was missing from tools/data/copperleaf-town.json; HB-4a never ran `npm run modules`; islandProblems and the
+  map schema didn't know the new plot kinds.
+- Changed (one cause per commit): island-gen.js `town.square {r, off, front}`, a house plot never under a cottage, the
+  quarter turn guarded from the diagonals, the station chosen before the paths are painted and the coast road pushed
+  round it, the opening's stage kept clear, no plot facing the airship from close behind; build-island and
+  build-copperleaf keep `landmarks {rail, portal}` and place the inn and library (the barn on its quarter turn);
+  island-dress has no summit lookout; the world map draws the inn and library on their plots. Copperleaf rebuilt as
+  B2 through the tools: 18 buildings (10 cottages), every door within 34 degrees of outward on a quarter turn, `hub`
+  [151.63, 59.36]. New tests: tools/test/hub-doors.test.mjs (quick), island-gen-doors (square, floor, quarter from the
+  summit, the station's road), hub-sketches.json `base` (the dial tests and sketches start from the pre-HB-4b dials).
+- Risky: Juniper's home now stands 54 m south-west of the square (by the lighthouse), the inn 41 m away; the wild
+  grass has 3 patches of 6 (the arc street takes the heath); fewer trees (129 from 151, the town is bigger). The
+  quarter-check guard and the airship rule cost plots on other seeds. Nothing looked at on a phone.
+- Verified: lint, typecheck, prettier, check:modules, check:data, build; `npm test` 945/945; `npm run test:slow`
+  71/71; smoke clean (its window check found the airship hiding a cottage window: fixed in the generator); check:fast
+  29/29 (23 walking checks, 16 doors a tap away, the orbit). Full quick check: no picture problems; 2 problems, **both
+  on main too** (reproduced on 77bba24, the merges before any HB-4b change): RL-8's run town shop shows no Perk
+  (RL-12), and the sound baseline lacks the cave song's "mid" and "late" (RL-R2b added it; the baseline was never
+  remade). Neither is fixed here.
+- For the water track (lane G, WA-2b): the hub fall's site is unchanged by B2: `falls: [{x: 92.79, z: 89.67, dir:
+  [0.83, -0.56], w: 3, h: 4.14, pool: 4}]`, 16 m up from the pond toward the summit; a shelf has to be cut there. Not
+  written into the map (the scene's `falls` are lane G's).
+- Next: the owner's look at the hub (tools/island-sketches.py validation/hub-sketches b2, or island-shots) and a phone
+  test; HB-5 (the new buildings' models and rooms; maybe move Juniper's home nearer the square), HB-6, HB-7 (the
+  station, the rail into the sea's skirt). The two main failures above need their own sessions.
+
+### Hub track HB-4a - Island sketches - 2026-10-25
+Branch `art/hub-island-sketches` (a one-session art branch at the owner's word; the plan file's `Branch:` is
+`track/hub`, where HB-4b merges this branch). Plan approved in Plan Mode. Tag `hb-4a-done` for the owner to push.
+**The owner's pick: a version of B (East crescent) with more of a town square; the hub waterfall above the pond.**
+- Where the plan was wrong (checked in the code): the orbit pivot is the summit spot, not the island's middle; the
+  door figures hold (3 of 12 props within 50 degrees, 2 of 12 plots within 45). The town's doors miss because its main
+  street and east bank run toward the mountain: a plot facing its street there faces 90 degrees off outward.
+- Changed (one cause per commit; every dial off by default, copperleaf's ground unchanged): island-gen.js dials
+  `town.face`, `town.quarter` (and its 3 m step back), `town.second` (beside a street, or an arc round the pivot),
+  `town.scale`, `town.extra` (`ISLAND_TOWN_EXTRA`), `landmarks` (station, sky rail, portal, lighthouse, windmill) and
+  `landmarks.shore` (3 m from the water, asked for after the water track's plan: its tide, WA-4, and wading, WA-6a).
+  New tools/test/island-gen-doors.test.mjs (8 tests, slow tier). tools/island-sketches.mjs and .py (relief maps, a
+  contact sheet, `--above` the game's own pictures from draft maps put in the game data and removed after),
+  tools/data/hub-sketches.json (today, A Back lane, B East crescent, C Harbour station). The plan file came in from
+  the planning branch with its "Done in HB-4a" notes (B's dials, what HB-4b needs).
+- Not changed: game/data/maps/copperleaf.json, build-copperleaf, island-dress (the lookout stays until HB-4b), runtime
+  code. The Studio's Hub island dials card does not show the new dials yet (its list is by hand).
+- Risky: the draft maps must never be committed (8 unit tests fail while they are in the data; `node
+  tools/island-sketches.mjs --clean` removes them). Landmark plots ignore the coast path's margins (the path needs
+  re-routing round the station). The rail and portal stand past the map's 10 m of sea.
+- Verified: lint, typecheck, prettier; `npm test` 937/937; `npm run test:slow` 65/65 (with the drafts out); each
+  generator commit ran island-gen and island-gen-doors tests green; a planted `shore: 0` fails the landmark test.
+  Pictures: relief maps of all four, the game's own overview and orbit views of each (no page errors). No smoke or
+  quick check: no game runtime file changed.
+- Next: HB-4b on `track/hub`: merge this branch; a town-square dial (the square's radius is fixed at 7.5 m) with
+  buildings fronting it; build B's dials into copperleaf through build-island and build-copperleaf; the lookout out of
+  the dressing; re-point the hub's positions; the door check. Tell the water track (lane G, WA-2b) the waterfall site.
+
+### Water track WA-6b (lane P) - Surf and the Waterfall climb - 2026-10-25
+Branch `track/water` (main merged in at the start: hub track HB-1, .gitignore and HANDOFF kept both sides; lanes R's
+WA-1 and G's work merged in before each push). Plan approved in Plan Mode; the owner's answers: Surf needs the Water
+Badge and a Water Billie standing (RL-R2's rule); the "1.5 m tall" rule is dropped; no encounters while surfing for
+now; the Waterfall climb needs the Water Badge AND the Steel Badge and a Water Billie. My defaults (not asked):
+mounting is automatic at the edge (no question, the stick never stops); the climb asks in the talk box. Tag to
+suggest: `wa-6b-done` (the owner pushes tags).
+- Changed:
+  - Riding rule (`logic/rules.js riderOf`, rules.json `ride`): the tallest Water Billie still standing (hp > 0, as
+    RL-R2's fieldTeam), no height floor; `minHeight` is optional and gone from the data. gateText's ride line loses the
+    legacy "Quant and Billigator".
+  - `game/js/logic/surf.js` (new, lane P, Node-testable): `surfCan` (fieldMoveState on fieldMoves.json `surf`),
+    `surfable` (a `d` cell: no terrain `walk`, not lava or ice, not a `ride` scene), `SURF_COST` 1.5, `SURF_SPEED`
+    0.9, and the climb: `fallsClimbable`, `fallDir`, `fallFoot`, `fallTop` (0.7 m back from the lip), `climbAt` (from
+    against the wall to 1.6 m out, within half the width, pushing up it), `climbState` / `climbText`.
+  - fieldMoves.json gets a top-level `waterfall` block (name, type Water, badges [Water, Steel], its lines), outside
+    `moves` so the side-area pick, the biome check, the sim and the preview never see it; its schema, a type, a data
+    check of its types and the Studio's type rename (`type-rename.js`).
+  - The walk (`walk-view.js`): navGrid's `surf` mask (surfable deep cells, still in `blk`, so people, grass, encounter
+    spots, ambient life and the buddy stay dry; a deck, a stone or a solid thing in the water wins); `navOpen`,
+    `canStepTo(..., deep)`, `findPath(..., {surf})` for the player alone; `surfOn()` (allowed now, or already afloat:
+    never stranded); `P.surf` flips at the edge (`surfMount`: rings, "{billie} used Surf!" once a place, a debug line
+    `surf on`/`surf off`); `startFallClimb` reuses the ladder's `stepClimb` (rings at the foot for rungs, facing up
+    the fall). `field-moves.js fieldClimb`: at a climb fall's foot in the water, pushing up it asks once per approach
+    (again after 1.5 m), checks there is room at the top (`playerOpenAt`), climbs on a yes; `fieldBadgeLine` says when
+    a badge completes the climb's set.
+  - The mount (`walk/prop-look.js rideMountItem`): drawn when surfing or climbing a fall too, the lift eased in over
+    0.25 s, a slow ring every 1.8 s while you sit still, never a non-Water Billie; `ride` scenes as before. Your buddy
+    rides along unseen while you surf and comes ashore at your side (`world-billies.js`).
+  - Test-map checks may carry `surf: true` (self-test.js: walked as the player with Surf on).
+- Found (wrong or missing in the docs): RL-R2's Surf obstacle already ignored the 1.5 m rule, and rideMountItem fell
+  back to any Billie (even `team[0]`), so the two rules disagreed; `falls` is in no scene or code yet (only the
+  renderer's automatic `T.falls`); a `moves` entry needs a biome and is a side-area candidate, hence the separate
+  block; test_water's plunge pool is all shallows (`deep=False`), so its fall is climbed wading, which is allowed.
+- For lane G (its files, not edited here):
+  - test_water (`tools/build-test-scenes.py`): `check()` could take `surf=False` and write `'surf': True`; then
+    `check(s, (4.5, 8.5), (8.5, 8.5), True, 'surf out onto the pond's deep middle', surf=True)` and the same without
+    surf as False ('deep water stays shut without Surf (should be impossible)'). Verified by hand here: both hold.
+  - A `falls` entry with `climb: 1` needs water or open ground at `fallTop` (0.7 m back from the lip against `dir`)
+    and water (shallows or deep) at its foot; otherwise the climb says the top is too rough. I tested on a hand-made
+    `{x: 50, z: 17, dir: [0, -1], w: 1.6, h: 6, climb: 1}` in test_water: it climbs from the pool to the stream on top.
+  - Deep water for Surf: generated `d` tiles are surfable unless lava or ice; nothing else is needed.
+- For lane R: the mount's rings (a wake every 0.32 s moving, every 1.8 s still) share `addRipple`'s 16 with the scene;
+  the climb has no spray on the rider yet (a splash look would help); the mist's grey half-disc on the cliff in
+  test_water at the tall fall (seen in my picture, not mine to judge).
+- Not changed: encounters (none on water, the owner), mapgenReach and the seam rules (dry), fishing, sounds (WA-8,
+  the climb plays `whoosh`), the Studio's "Smallest Billie you can ride" field (still writes `ride.minHeight` if the
+  owner sets one: an optional floor again).
+- Risky: tap-to-walk with Surf on copies the grid's blocked array per tap (a hub of ~220,000 cells: one copy a tap);
+  a scene whose deep water touches an exit lets you surf to the seam, where the seam rules (dry) decide. The climb
+  pushes through `P.climb`, so anything that reads `P.climb` as "on a ladder" now also sees a fall (`C.fall`).
+- Verified: lint, typecheck, check:modules, check:data, `npm test` 957/957 (7 new in tools/test/surf.test.mjs),
+  `check:smoke` 6/6 before each game/ commit (Playwright 1.63.0). In the page (a scratch Playwright script on
+  test_water): without the badge tap-to-walk stops at the shallows and `surfOn()` is false; with it you ride to the
+  pond's deep middle (mount on), back to the shore (off), the stick crosses the pond and lands; people's paths and
+  `isWalkable` keep deep water shut (72 surf cells); at the hand-made fall the Water Badge alone gives the two-badge
+  line, both badges ask, a yes climbs from height -0.22 to 5.88 m and lands at its top; the debug log has `surf on`,
+  `surf off`, `waterfall at 50,17: needBadge`, `...: ask`; no page errors.
+- Next: lane G adds the test_water surf checks and real `climb` falls (WA-2b); the owner's phone look at the mount on
+  deep water and the climb; encounters on water when wanted.
+
+### Water track WA-1 (lane R) - pixel water - 2026-10-25
+Branch `track/water` (main merged in at the start: nothing new; lanes G's WA-3a and P's WA-6a merged in before each
+push). Plan approved in Plan Mode. Tag to suggest: `wa-1-done` (the owner pushes tags).
+- Changed (one cause a commit):
+  - Settings: `water.pixel` (on), `water.bands` (5), `water.frames` (10) with panel rows; one uniform `uPixW` set by
+    `water-data.js setPixelWaterUniform`. **The shared snippet** `walk-shaders.js PIXEL_WATER_GLSL` (the 32 grid, a
+    world-grid Bayer dither, stepped time, banded tones; the list in water-track.md, WA-1 notes).
+  - The water shader on the 32 texels a metre grid (was 16): a kind's colours in 5 dithered tones between shallow
+    and deep; ripples, rings, foam, caustics, glints, duckweed, whitecaps, the surf's lines, lava's crust and ice's
+    sheen stepped at 10 a second and drawn as hard pixels; a hard foam line one texel wide at the shore (pale scum on
+    murky water); the mirror offset by whole pixels and kept smooth. The swell, the lap and the swash stay smooth.
+  - The ground's shore parts (bed, wet rim in three tones, the sea's swash), the light thrown up on walls and puddles
+    after rain on the grid. Fall sheets in pixel columns, three tones, a hard foot and lip (shape unchanged).
+  - **Models in the reflection (the check): they were missing.** The reflection pass drew props as pictures, and a
+    prop drawn as a model (every game-flow building, the hub's trees) shows none: Copperleaf's moss cottage by the
+    sea had no reflection. They are now drawn as models with the mirrored camera (`drawPropModels`, no shadows).
+  - The graphics bench's Pond station measures `water.pixel` (off, on); docs/graphics-bench.md.
+- Risky: the reflection now draws the near-water models a second time (on a phone by the sea in Copperleaf: 5
+  models); the shore line reads the shore mask 4 more times near the edge. Both are what the bench's Pond station
+  and the owner's phone should price. The model shader's world curve is not turned off in the mirror (the sprites'
+  is): far models could sit a little low in the water on curved maps; nothing seen at the spots checked.
+  `water.pixel` off draws the old look (measured: off vs before differs no more than two before runs do).
+- Verified: lint, typecheck, format, check:modules, `npm test` (942, 0 failures after the merges), `check:smoke`
+  before every commit touching game/ (all passed); look-water before/after at noon and 22.5 (11 shots each,
+  validation/look-water-before*, -after*, not committed; the water's numbers identical, no page errors); close-ups
+  from a pitched-down camera with the blur off (a scratch script) for the pond, ice, lava, the tall fall and
+  Copperleaf's mirror. Not run: the quick-check baseline (WA-8) and the bench's cost (the phone).
+- Pictures: at phone size with the depth of field the change is small (the hard shore line, the falls' columns,
+  finer shorelines); close up the dither, the one-texel foam line and the hard glints show, ice keeps its sheen
+  patches with dithered edges. In test_water's haze the pond's tones read faintly under the sky's reflection.
+- For the other lanes: lane B (WA-7) includes `PIXEL_WATER_GLSL` and calls `setPixelWaterUniform(U)` on its
+  program; read-only. Lane G and lane P: nothing needed for WA-1.
+- WA-6a's notes (relayed after the work above): a wader in test_water's pond (0.3 m deep) is cut at the waterline and
+  mirrored the same with pixel water on and off (rechecked in the browser); WA-1 did not touch `frame-items.js` or
+  `draw-common.js`. Left for WA-2a: wading splashes as droplets like the `spray` quads (they fall through to the pale
+  puff in `effects.js`), and a few rings of the wake's own so it doesn't starve the scene's 16 (`addRipple`).
+- Next for lane R: WA-2a (waterfalls drawn, spray and mist on the grid, the flow map). For the owner: look at the
+  water on the phone with Pixel water on and off (Settings, Water), and run the bench's Pond station.
+
+### Water track WA-3a (lane G) - rivers that run downhill - 2026-10-25
+Branch `track/water` (main merged in at the start: nothing new; lane P's WA-6a and lane R's WA-1 commits merged in
+before each push). Plan approved in Plan Mode; the owner's answers: a river may cross a joined edge and carry on in
+the neighbour; MAPGEN_VERSION 15; lava keeps its old line. Tag to suggest: `wa-3a-done` (the owner pushes tags).
+- Changed:
+  - `game/js/logic/water-gen.js` (new, lane G, Node-testable; after mapgen.js on both pages and in the Studio's
+    worker): sources (a side, a spring, a pond, a joined edge's incoming river) and mouths (sea, pond, side, pool),
+    the land flooded from each mouth (priority flood), the longest way down that fits kept; smoothed, meandering on
+    the flat, wider downstream, its level never rising, rapids where it drops steeply; painted as mapgenPaintStream
+    did; `streams` gains `w`, `src`, `mouth`, `rapids` (the contract). Details and numbers: water-track.md, WA-3a notes.
+  - The hook in `logic/mapgen.js`, as small as it could be: in mapgenStageWater the stream line becomes
+    `waterGenRiver` (after the pond and coast, so a river can end in them) and `waterGenCarve` runs after
+    mapgenLowerWater; `mapgenPinSides` skips `G.riverKeep` corners (a seam crossing's bed). MAPGEN_VERSION 15.
+  - A pre-existing bug found by the sweeps, own commit: `mapgenTrailSearch` (TR-2b's mountain trails) stepped 2 m and
+    tested only the landing cell, so a trail could hop a narrow stream and leave its summit cut off. It now tests the
+    middle of the step too (goldens and mountain sweeps unchanged).
+  - test_water: lane P's two walking checks (wade into the pond; the lava pool stays shut), 75 checks pass.
+  - Tests: `tools/test/water-gen.test.mjs` (quick: the flood, same dials same river, downhill on water, wider
+    downstream, mouths reached, no river without the dial, clear of the exits); a seam case in mapgen-seams.test.mjs
+    (slow: the child's river comes in at the seam, the same wet cells and heights, the seam rules met, with and
+    without the child's own stream dial). Remade on purpose: the golden `water` scene (the other five unchanged),
+    rng.test's pinned hash and the run-start snapshot (only gen.v / mapgenV). mapgen-town.test.mjs (towns track's):
+    a run scene's east and west edge corners are 0 except where a river crosses.
+- Found (where the plan or the docs were wrong):
+  - In runs no river could reach a seam: rivers went north to south, run routes join east to west, and the water
+    stage dries every joined strip. And mapgenPinSides forced a run scene's whole east and west edges to 0, which
+    makes any river leaving a node run uphill over its last metres; hence the riverKeep exception.
+  - A river must not cut ground off: an east to west river that never crosses the road leaves half a map unreachable
+    while mapgenUnreachable (exits only) still passes. Now refused (a pool ends it partway).
+  - Rivers ran along roads (the road's flattened bed is the easiest way down) and the road dried them in pieces;
+    run towns lost their clinic and shop to a river. Both now kept clear.
+  - `island-gen.js` also calls mapgenPaintStream: left as it is (the hub island is locked).
+- Risky:
+  - **MAPGEN_VERSION**: main is at 8; PR #194 (towns + routes) takes it to 13 and RT-4b holds 14. Whichever of #194 or
+    this track merges second keeps the higher number for its own change (15 stays WA-3a's) and remakes rng.test's
+    hash and the run-start snapshot on purpose. Every run scene with a stream (about 1 node in 5) and every child of a
+    river crossing changes.
+  - Speed: a scene with a river takes about 60 ms in Node (24 ms without; the old line cost nothing). On a phone that
+    is roughly 0.1-0.2 s more for each node with a river at a run's start: worth a look in WA-8.
+  - A seam river is carried on even where it has to cut ground off; that leaves a note ("the neighbour's river cuts
+    ground off from the road"), which the run tests treat as a failure. None of the sweeps here hit it.
+  - A jetty (the jetty feature) may lie across a river where it reaches the pond (boards over water, walkable).
+- Verified: lint, typecheck, check:modules, check:data, prettier; `npm test` 947/947; `npm run test:slow` 58/58 (the
+  mapgenUnreachable sweeps, seams, towns, mountains and ledges runs, the run worlds); `check:smoke` 6/6 (178 s); the
+  walking-rules step (28 test scenes, 75 checks). Sweeps outside the tests: 120 stream scenes (every biome, hills,
+  pinned or not): none uphill, every point on water, every exit reached, no fallback; 80 pond, coast and bridge
+  scenes; 19 of 19 parent and child pairs whose river crosses the seam agree. The quick check's baseline was not
+  remade (WA-8's job): expect generated scenes with rivers to differ.
+- For lane R (its files, not edited here): `streams[].w` (a width per point), `rapids` ([[t0, t1]] along the line),
+  `src`, `mouth` are there to read (the flow field, white water on rapids, a pool's churn). The bed lies 0.3 m deeper
+  within 0.75 m of the line, eased up to the edge.
+- Next: WA-2b (lane G, round 2) places waterfalls where a river meets a drop (water-gen.js has each river's line and
+  level); the hub island's fall needs the owner's yes.
+- Not done here, waiting on the owner: WA-6a's "shallows for others" (wild Billies, props and trainers standing in
+  `w`, never `d` or lava: mapgenPutProp's water flag, the encounter and trainer spot pickers, the "nothing in water"
+  asserts in mapgen.test.mjs, mapgen-dials.test.mjs and mapgen-lots.test.mjs, with MAPGEN_VERSION and the golden
+  scene). It is outside WA-3a's river scope; left for a later lane G session unless the owner says otherwise.
+
+### Water track WA-6a (lane P) - wading - 2026-10-25
+Branch `track/water` (main merged in at the start: nothing new). Plan approved in Plan Mode; the owner's answers: wade
+every shallow `w` except lava and ice; mapgen's reach check and the seam rules stay dry; no encounters while wading;
+wild Billies, props and trainers may stand in shallows (the generator side is left to lane G, below). Tag to suggest:
+`wa-6a-done` (the owner pushes tags).
+- Changed:
+  - `game/js/logic/wading.js` (new, lane P, Node-testable): `wadeWalkable` (the walk grid's water rule: a terrain's
+    `walk` first, then `ride` scenes cross all water as v24, else `w` is walkable unless its kind is lava or ice, `d`
+    blocks), `wadeKindAt` (the scene's `waters` rectangles / `waterKind`, never the renderer's lookup, so a graphics
+    setting can't open lava), `wadeDepthAt` (0 on land, eased to `WADE_DEPTH` 0.3 m over the first 0.6 m from the
+    nearest dry tile), `wadeSpeed` (down to 0.6 of walking). On both pages and in the Studio's logic worker list.
+  - `walk-view.js`: the walk grid uses `wadeWalkable`; shallows cost 2 (people and tap-to-walk keep to land); a new
+    `nav.dry` marks cells over water but out of it (bridge decks, stepping stones, jetties); `wadeDepthHere(x, z)`
+    reads it. `movePlayer` slows by `wadeSpeed` (stick and route). Rings behind you as you wade (one every 1.6 s
+    standing), and `walkView.parts` of kind `splash` at your steps.
+  - The waterline cut: `walk/frame-items.js wadeItem` sinks you and world Billies (`worldBillyItem`, so your buddy)
+    smoothly from the bank's ground to 0.3 m under the surface and sets `it.cut`; `walk/draw-common.js
+    setSpriteUniforms` leaves those bottom rows off in whole texels (`uOff`/`uUV`), so shadows, reflections and the
+    TR-3 silhouette agree with no shader edit. The buddy leaves rings when it wades.
+  - Checks: test_island's sea was shallows to the map's edge, so its "out into the sea" check became a wade: now deep
+    past a 2 m band of shallows (`tools/build-test-island.py`, as Copperleaf's). The data check's "bridge ends in the
+    water" warns only for an end you can't wade.
+- Found (wrong or missing in the docs): the water rule is copied three times (walk-view.js, seam-rules.js:58,
+  mapgen.js:4338 mapgenReach), not once; only the walk grid's changed. **Lava is painted as `w`** (mapgen's lava
+  streams, test_water's pool): only the kind keeps you out. Streams under ~2.2 m are all `w`, so their bridges are
+  now optional. You stood AT the surface on water before (`standingHeightAt` = ground - 0.12 = the water's level).
+  The player's speed is in walk-view.js, not walk-control.js. No test scene `checks` assumed water blocks except
+  test_island's.
+- For lane G (its files, not edited here):
+  - test_water (`tools/build-test-scenes.py t_water`), the walking checks WA-6a wants: `check(s, (1.2, 9.4), (5.5,
+    9.3), True, 'wade into the pond's shallows')` and `check(s, (41, 6.5), (45.5, 6.5), False, 'the lava pool stays
+    shut (should be impossible)')` (verified by hand here: both hold).
+  - Shallows for others (the owner: wild Billies, props and trainers may stand in them): `mapgenPutProp`'s water flag
+    (mapgen.js ~721, the "never in water" line) and the encounter / trainer spot pickers can allow `w` (not `d`, not
+    lava); relax the "nothing in water" asserts in mapgen.test.mjs, mapgen-dials.test.mjs and mapgen-lots.test.mjs in
+    the same commit, with MAPGEN_VERSION and the golden scene.
+- For lane R (its files, not edited here): `walkView.parts` of kind `splash` fall through to the pale puff in
+  `walk/effects.js`; a droplet look (the `spray` quads) would read better. Rings (`addRipple`) are capped at 16 with
+  the scene's own; a wading wake may want its own few.
+- Not changed: encounters, fishing (still from the bank; off while wading, as before), mapgenReach and the seam rules
+  (dry: a generated map keeps a dry way to every exit), `ride` scenes, deep water (WA-6b), water footstep sounds (WA-8).
+- Risky: NPC paths may now cross shallows when it is much shorter (cost 2). Two data warnings (Copperleaf bridge 3,
+  test_props_island bridge 1) stay: those ends are in deep water.
+- Verified: lint, typecheck, check:modules, check:data, `npm test` 942/942 (5 new in tools/test/wading.test.mjs),
+  `check:smoke` 6/6 before each game/ commit (Playwright 1.63.0). In the page: every test map's `testMapChecks` ok;
+  test_water: pond shallows walkable at 0.3 m, its deep middle, the lava and the ice pools blocked; wading speed about
+  2.3 m/s against 3.4 on land; a phone-size picture of you cut at the waterline in the pond with the reflection from
+  the surface; no bridge point in any test map wades; Copperleaf's shallows' water level equals `standingHeightAt`.
+- Next: WA-6b (Surf and the Waterfall climb) grows `ride` into per-cell `d`; lane G adds the two test_water checks.
+
+### Water track WA-0 - the plan, the contract, the water bench - 2026-10-25
+Branch `ccr-4ae7bdc4-46vu9r` (the plan's own branch `track/water` did not exist yet; the owner makes it, and every
+later WA session starts on it). The owner's brief: water "waterfalls, ocean, rivers, everything", good fidelity in the
+pixel style, research, and which sessions can run at once. Plan and the owner's answers in Plan Mode (hybrid pixel
+look, about 10 frames a second, wading plus Surf plus a Waterfall climb, big falls plus cascades plus caves plus the hub
+island's (asked again in WA-2b), 3 lanes, its own track, a new `logic/water-gen.js` module, sounds, Studio tools,
+weather and life on water).
+- Changed:
+  - docs/phases/water-track.md: verified facts, research with sources, the data contract (`falls`, the `streams`
+    fields, `w` wade / `d` surf, the appended kinds, the `pixel`/`bands`/`frames` settings, the shared shader snippet),
+    the lanes and who owns which files, rounds 0-5, the ask-me-before list. ROADMAP, BRANCHES (`track/water`) and a
+    pointer in terrain-track.md (TR-6's falls, TR-10's water and "rivers downhill" moved here).
+  - test_water grown to 58 x 28 m: a 6 m cliff with a stream falling into a plunge pool, pools of lava and ice and a
+    strip of sea; four shots and a walking check (hub to the fall's foot).
+  - `tools/look-water.py`: a scene's shots (or four spots by its water) at phone size with the game's graphics, and
+    the water's numbers (tiles, triangles, fall sheets, kinds, mirror levels) to validation/look-water/ (ignored).
+  - The data check knew six water kinds: sea, lava and ice rectangles warned as unknown (`logic/data-checks.js`).
+- Found (wrong or missing in the docs): the water is on a 16 texels a metre grid, not 32, with smooth colours; the
+  pixel-water patch was never in the repository; waterfalls are only automatic 0.5 m sheets (the 6 m test fall is a
+  third of its stream's width and ends in a point); rivers are lines across the map; **riding on water already exists**
+  (v24: `sc.ride`, `rules.ride`, `rideMountItem`; run side areas set it), so Surf grows it rather than starting new.
+- Risky: nothing in the game flow changed (a test scene, a tool, a data-check list). The Python Playwright pinned in
+  tools/requirements-check.txt (1.56.0) wants a browser build this container lacks; 1.63.0 (the one matching the
+  installed Chromium) ran every check here.
+- Verified: lint, typecheck, format, check:modules, check:data, `npm test` (0 failures), `check:smoke` 6/6 (186 s);
+  test_water's walking checks (both ok, through `testMapChecks`); look-water's 11 pictures and numbers.
+- Next: the owner makes `track/water`; round 1 runs three sessions at once: WA-1 (lane R, pixel water), WA-3a (lane
+  G, rivers downhill), WA-6a (lane P, wading). WA-1 takes its "before" pictures with `tools/look-water.py --out=` at
+  this commit. Lane B (WA-7) runs in round 3 as a fourth lane (the owner, after WA-0).
+### The in-game test's run phase and side areas (zone biome, the boss) - 2026-10-25
+Branch `fix/run-zone-biome` (one session, not part of a plan). The bug: the full test's "A run: airship, nodes,
+payout" failed on main f779581 with "a place on row 4 isn't its zone's biome". Plan approved in Plan Mode (the
+approval was relayed by the planning session at the owner's word, not typed in this session).
+- What was wrong (the self-test, not the run logic): on the debug short map, SELFTESTRUN8 rolls a Cut detour, two
+  places (a route, its leader) on row 4. They are thicket in a meadow zone, as RL-R2a/RL-R2b mean them to be: a side
+  area's places are its field move's biome (`run-side.js` `biome: M.biome`; Cut thicket, Surf lake, Rock Smash the
+  `cave` no region draws) and take the zone of their row only for the world map's bands. The phase's RL-R1 rule
+  predates side areas. A Node sweep (800 runs, both map sizes): no main place off its zone, 1,275 side places
+  off theirs, a side area on 578 runs (72%), so the phase failed on most seeds. That failure hid a second one: the phase took the
+  boss as the last map node (`map.nodes.length`), which is a side place on any run with a side area ("no Alpha boss
+  on the boss's place").
+- Changed (one cause per commit): new `tools/test/run-zone-biome.test.mjs` (the seed's detour off its zone, the
+  rule over 150 seeds on the short and full maps, every move rolled); `self-test.js` checks main places against
+  their zone and side places against their move's biome (`FIELD_MOVES`, `npm run modules`); the phase's boss is
+  the main path's (`type === 'boss' && !side`). No run logic, generated runs, snapshots or versions changed. No game
+  code takes the boss as the last node (searched).
+- Verified: lint, typecheck, check:modules, prettier; `npm test` 939/939; headless (Playwright 1.63.0,
+  `?fixture=town`, `selfTest.slow=3; selfTest.only=['A run: airship']`): before, the zone message, then (biome fix only)
+  the boss message; after, ok ("Sidequest Flats (thicket, meadow): 9 scenes ...", no page errors). Not run: the full
+  quick check and check-fast (not a phase end; no drawing changed).
+- Risky: none known; the phase still walks to the first town and the first mini-boss by `findIndex`, which are main
+  places because the side's come after them.
+- Next: nothing for this fix. (HB-2's entry below saw the same failure on main; this fixes it.)
+
+### Hub track HB-2 - The run's loading screen - 2026-10-25
+Branch `track/hub` (made from main at f779581; the plan file and ROADMAP brought in from
+`claude/hub-island-revamp-4fskxy` as their own commit). Plan approved in Plan Mode. The owner's answers: the cap 20 s;
+**fly, then load**. Tag `hb-2-done` for the owner to push. Details: docs/phases/hub-track.md, "Done in HB-2".
+- Where the plan's facts were off (checked in the code): a reload mid-run already made the run's world behind the
+  boot's loader, but in one tick (the loader froze); `runWorldSync` has two more callers (`setSaveData`, `runEndHome`);
+  `prepareMap` fetches no model recipes, so a first landing missed the decal pictures too; `worldMapPrewarm` had no
+  "done"; the scenes could already be made one at a time (`runSceneMake` reads only earlier scenes). Measured in
+  headless software drawing: 8-17 scenes, 50-300 ms each (one scene is the longest task), the swap 5 ms.
+- "Fly, then load": the flight crosses the run's own map, so its places have to be made before the flight. Take off
+  counts them on the sheet; the loading screen comes at the landing, and its stages start with the flight.
+- Changed (one cause per commit): logic/run-load.js and `run.load.capMs`; `pb-loading` (UI kit, gallery section);
+  `runScenesSlices` + `runWorldMake`; `worldMapPrewarm(done)`; the take-off and run-loading.js (the landing's screen,
+  a one-line hook in airship.js `flyLand`); the eager prewarm and the map stage's share; the resume at boot; the checks.
+- world-bowl.js (shared with HB-1): only `worldMapPrewarm` (~2075-2130: the `done` callbacks, an `eager` timer mode)
+  and `BOWL_INDEX` exported by the module tool. HB-1's pin (~2926) and prop-models.js are untouched: the merge should
+  be clean.
+- Risky:
+  - **The world map stage is the slow one.** It fills the run map's 2048-row terrain. In headless software drawing
+    that takes 10-16 s (the screen up ~11-17 s after Take off; a resume capped once at 20 s in check-fast); on a phone
+    it should take a few seconds. The debug log's `load` line will say: if `bowl` is the late stage, the next step is
+    to stop the screen waiting for the map (you aren't looking at it at the landing), or fill only the run's band.
+  - The page no longer freezes, but each slice is one whole scene (up to ~300 ms in software drawing, ~30 ms in
+    Node). Splitting a scene would mean changes inside mapgen.
+  - The start sheet stays open (inert) while the world is made. A save swapped in mid-game holding a run (cloud
+    restore) still uses the synchronous build, with no screen.
+  - Planned and not done: the Take off button filling as a bar. The fill didn't show in headless pictures, so the
+    button counts in its label instead ("Readying the airship… 6/14").
+- Verified: lint, typecheck, check:modules, format:check, check:data, build; `npm test` 940/940 (new: run-load, the
+  data check, and a slow test that the sliced scenes equal the one-tick ones); the UI gallery's new "loading" section
+  (4 pictures, light and dark, 320/390); check-fast in full, 29/29 in 757 s, including Packing (take-off: counted,
+  no task as long as the scenes' work, the screen lifted, a log line without the seed), run_world (resume line), Play
+  this seed, the debug log holds no names, boots, the Studio; `check:smoke` 6/6 (phone flow, the in-game test step).
+  The in-game full test's run phase was run alone: take-off, landing and screen pass (`run take-off 10717 ms … shown
+  1`), then it fails at "a place on row 4 isn't its zone's biome". **Main at f779581 fails the same way**, so it is
+  not from HB-2; it needs a look (the RL-R1 region check against the short map).
+- Next: the owner's phone test of a take-off and a reload mid-run, with the debug log's `load` line; the HB-1 merge.
+  HB-8 puts the carriage in `pb-loading`'s `view` slot (`runLoadView`).
+
 ### Hub track HB-1 - the world map's pin, decals on their models (done) - 2026-10-25
 Branch `claude/hub-island-revamp-4fskxy` (the planning session's branch: `track/hub` didn't exist yet and a cloud
 session pushes only to its own branch; the owner chose to build HB-1 here, as RL-12c was). Plan approved in Plan Mode
@@ -80,6 +634,7 @@ decal check is a headless pictures tool, not a Studio overlay. Tag `hb-1-done` f
 - Not done: a flat landmark picture with no prop of its own still stands at the map's middle on the floating island
   (world-bowl.js worldBowlThingsOfPlace); HB-3 removes or moves it with the island's detail.
 - Next: HB-2 (the loading screen) and HB-4a (island sketches) can start now; HB-3 after this merges.
+
 ### Window glass on the low-poly buildings (no more glowing orbs) - 2026-10-25
 Branch `ccr-7161a124-txw6o4` (one session, not part of a plan). The owner's ask: windows on 3D buildings looked like a
 weird orb at night. Plan approved in Plan Mode; the owner chose to mark the glass with a new recipe key (`glass: n`)
