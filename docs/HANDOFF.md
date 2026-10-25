@@ -2,43 +2,31 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
-### Hub track HB-1 - the world map's pin, decals on their models (done) - 2026-10-25
-Branch `claude/hub-island-revamp-4fskxy` (the planning session's branch: `track/hub` didn't exist yet and a cloud
-session pushes only to its own branch; the owner chose to build HB-1 here, as RL-12c was). Plan approved in Plan Mode
-with the owner's answers: lettering on a mirrored model moves and faces the mirrored way but is never mirrored; the
-decal check is a headless pictures tool, not a Studio overlay. Tag `hb-1-done` for the owner.
-- What was wrong (in the code):
-  - The floating island's pin, its "here" ring and you were drawn at the location's spot, which on the island is the
-    map's middle (95, 77: the mountain's flank), ~50 m from the town; the height from the bowl's 6 m grid; you 18 px
-    beside the pin. The fast check, once it measured it, found you drawn 152 m from where you stood.
-  - The walk on the island was never found: the hub's walk view is `w:copperleaf*` (seamlessHubMap), never the bare
-    map id world-bowl.js compared with, so the map never opened from where you stand either (worldBowlFloatHome).
-  - Decals (a model's `face: "fixed"` picture layers: a shop's lettering, the lab's window, washing, bunting, the giant
-    trees' knots) used the placement's size alone while the model draws at size x its look's wobble (`lk.size`), so
-    they drifted and mis-scaled on Juniper's home (6 %), the laundry lines (8 %), the giant trees (14 %); a mirrored
-    model mirrored its lettering and left side decals facing the unmirrored way; a bobbing model left its decals.
-- Changed (one cause per commit):
-  - logic/bowl-things.js `bowlYouPoint` (tests): you on a walk map shown on the bowl: your spot, else the map's hub,
-    else its middle.
-  - world-bowl.js: on the floating island the place's pin at the map's hub (the town), the ring and you at your own
-    spot on the island's fine ground (`worldBowlSkyFloor`); `worldBowlWalkOnIsland` finds the walk on the island for
-    the pin and the opening view; `worldBowl.me` keeps where you were drawn. Runs' bowl unchanged.
-  - logic/prop-turn.js `decalPlace` (tests against the shaders' own transform at 3 sizes, both mirrors, 3 turns, with
-    and without a bob, and the face's outward way); prop-models.js `propModelImageItems` uses it.
-  - Studio: the room warning (map-editor.js) measures from the nearest quarter turn (rooms face four ways since IS-5).
-  - check-fast's map check: you are drawn where you stand on the island, and follow when you move 40 m.
-  - tools/look-decals.py: every decal model on a test map, as placed, mirrored, turned 30 degrees and wobbled.
-- Verified: lint, typecheck, unit tests (940 pass), check:modules after each commit; `check-fast --only=map` (2 of
-  2); the smoke check; headless pictures of the hub map before and after (you by the barn: before, you and the pin
-  on the mountain's flank; after, you by the barn, the pin on the town) and look-decals before and after on
-  test_props_next and test_windows: lettering on mirrored buildings reads right (market, library, bakery), decals
-  stay on turned fronts, and a laundry line 25% bigger keeps its washing across the line (before: small and bunched
-  to one side).
-- Risky: decals on a mirrored building now face the other way than before (on purpose); run maps' mirrored props with
-  decals change too. Nothing judged on a phone.
-- Not done: a flat landmark picture with no prop of its own still stands at the map's middle on the floating island
-  (world-bowl.js worldBowlThingsOfPlace); HB-3 removes or moves it with the island's detail.
-- Next: HB-2 (the loading screen) and HB-4a (island sketches) can start now; HB-3 after this merges.
+### The in-game test's run phase and side areas (zone biome, the boss) - 2026-10-25
+Branch `fix/run-zone-biome` (one session, not part of a plan). The bug: the full test's "A run: airship, nodes,
+payout" failed on main f779581 with "a place on row 4 isn't its zone's biome". Plan approved in Plan Mode (the
+approval was relayed by the planning session at the owner's word, not typed in this session).
+- What was wrong (the self-test, not the run logic): on the debug short map, SELFTESTRUN8 rolls a Cut detour, two
+  places (a route, its leader) on row 4. They are thicket in a meadow zone, as RL-R2a/RL-R2b mean them to be: a side
+  area's places are its field move's biome (`run-side.js` `biome: M.biome`; Cut thicket, Surf lake, Rock Smash the
+  `cave` no region draws) and take the zone of their row only for the world map's bands. The phase's RL-R1 rule
+  predates side areas. A Node sweep (800 runs, both map sizes): no main place off its zone, 1,275 side places
+  off theirs, a side area on 578 runs (72%), so the phase failed on most seeds. That failure hid a second one: the phase took the
+  boss as the last map node (`map.nodes.length`), which is a side place on any run with a side area ("no Alpha boss
+  on the boss's place").
+- Changed (one cause per commit): new `tools/test/run-zone-biome.test.mjs` (the seed's detour off its zone, the
+  rule over 150 seeds on the short and full maps, every move rolled); `self-test.js` checks main places against
+  their zone and side places against their move's biome (`FIELD_MOVES`, `npm run modules`); the phase's boss is
+  the main path's (`type === 'boss' && !side`). No run logic, generated runs, snapshots or versions changed. No game
+  code takes the boss as the last node (searched).
+- Verified: lint, typecheck, check:modules, prettier; `npm test` 939/939; headless (Playwright 1.63.0,
+  `?fixture=town`, `selfTest.slow=3; selfTest.only=['A run: airship']`): before, the zone message, then (biome fix only)
+  the boss message; after, ok ("Sidequest Flats (thicket, meadow): 9 scenes ...", no page errors). Not run: the full
+  quick check and check-fast (not a phase end; no drawing changed).
+- Risky: none known; the phase still walks to the first town and the first mini-boss by `findIndex`, which are main
+  places because the side's come after them.
+- Next: nothing for this fix. (HB-2's entry below saw the same failure on main; this fixes it.)
+
 ### Hub track HB-2 - The run's loading screen - 2026-10-25
 Branch `track/hub` (made from main at f779581; the plan file and ROADMAP brought in from
 `claude/hub-island-revamp-4fskxy` as their own commit). Plan approved in Plan Mode. The owner's answers: the cap 20 s;
@@ -77,6 +65,44 @@ Branch `track/hub` (made from main at f779581; the plan file and ROADMAP brought
   not from HB-2; it needs a look (the RL-R1 region check against the short map).
 - Next: the owner's phone test of a take-off and a reload mid-run, with the debug log's `load` line; the HB-1 merge.
   HB-8 puts the carriage in `pb-loading`'s `view` slot (`runLoadView`).
+
+### Hub track HB-1 - the world map's pin, decals on their models (done) - 2026-10-25
+Branch `claude/hub-island-revamp-4fskxy` (the planning session's branch: `track/hub` didn't exist yet and a cloud
+session pushes only to its own branch; the owner chose to build HB-1 here, as RL-12c was). Plan approved in Plan Mode
+with the owner's answers: lettering on a mirrored model moves and faces the mirrored way but is never mirrored; the
+decal check is a headless pictures tool, not a Studio overlay. Tag `hb-1-done` for the owner.
+- What was wrong (in the code):
+  - The floating island's pin, its "here" ring and you were drawn at the location's spot, which on the island is the
+    map's middle (95, 77: the mountain's flank), ~50 m from the town; the height from the bowl's 6 m grid; you 18 px
+    beside the pin. The fast check, once it measured it, found you drawn 152 m from where you stood.
+  - The walk on the island was never found: the hub's walk view is `w:copperleaf*` (seamlessHubMap), never the bare
+    map id world-bowl.js compared with, so the map never opened from where you stand either (worldBowlFloatHome).
+  - Decals (a model's `face: "fixed"` picture layers: a shop's lettering, the lab's window, washing, bunting, the giant
+    trees' knots) used the placement's size alone while the model draws at size x its look's wobble (`lk.size`), so
+    they drifted and mis-scaled on Juniper's home (6 %), the laundry lines (8 %), the giant trees (14 %); a mirrored
+    model mirrored its lettering and left side decals facing the unmirrored way; a bobbing model left its decals.
+- Changed (one cause per commit):
+  - logic/bowl-things.js `bowlYouPoint` (tests): you on a walk map shown on the bowl: your spot, else the map's hub,
+    else its middle.
+  - world-bowl.js: on the floating island the place's pin at the map's hub (the town), the ring and you at your own
+    spot on the island's fine ground (`worldBowlSkyFloor`); `worldBowlWalkOnIsland` finds the walk on the island for
+    the pin and the opening view; `worldBowl.me` keeps where you were drawn. Runs' bowl unchanged.
+  - logic/prop-turn.js `decalPlace` (tests against the shaders' own transform at 3 sizes, both mirrors, 3 turns, with
+    and without a bob, and the face's outward way); prop-models.js `propModelImageItems` uses it.
+  - Studio: the room warning (map-editor.js) measures from the nearest quarter turn (rooms face four ways since IS-5).
+  - check-fast's map check: you are drawn where you stand on the island, and follow when you move 40 m.
+  - tools/look-decals.py: every decal model on a test map, as placed, mirrored, turned 30 degrees and wobbled.
+- Verified: lint, typecheck, unit tests (940 pass), check:modules after each commit; `check-fast --only=map` (2 of
+  2); the smoke check; headless pictures of the hub map before and after (you by the barn: before, you and the pin
+  on the mountain's flank; after, you by the barn, the pin on the town) and look-decals before and after on
+  test_props_next and test_windows: lettering on mirrored buildings reads right (market, library, bakery), decals
+  stay on turned fronts, and a laundry line 25% bigger keeps its washing across the line (before: small and bunched
+  to one side).
+- Risky: decals on a mirrored building now face the other way than before (on purpose); run maps' mirrored props with
+  decals change too. Nothing judged on a phone.
+- Not done: a flat landmark picture with no prop of its own still stands at the map's middle on the floating island
+  (world-bowl.js worldBowlThingsOfPlace); HB-3 removes or moves it with the island's detail.
+- Next: HB-2 (the loading screen) and HB-4a (island sketches) can start now; HB-3 after this merges.
 
 ### Window glass on the low-poly buildings (no more glowing orbs) - 2026-10-25
 Branch `ccr-7161a124-txw6o4` (one session, not part of a plan). The owner's ask: windows on 3D buildings looked like a
