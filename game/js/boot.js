@@ -52,7 +52,8 @@ import { worldBowlReset } from './world-bowl.js';
 import { cutsceneStart, cutsceneWanted } from './cutscene/opening.js';
 import { titleMount, titleScreen, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
-import { runWorld, runWorldSync } from './run-world.js';
+import { runWorld, runWorldMake } from './run-world.js';
+import { runLoadBegin, runLoadShow } from './run-loading.js';
 import { runResume, runTakeOff } from './run.js';
 import { labMilestones } from './lab-board.js';
 import { initAccount } from './account.js';
@@ -73,6 +74,7 @@ expose({
   UI_ICONS: [() => UI_ICONS],
   artCacheCheck: [() => artCacheCheck, v => (artCacheCheck = v)],
   bootLoad: [() => bootLoad, v => (bootLoad = v)],
+  bootWorldIn: [() => bootWorldIn],
   idle: [() => idle],
   loadList: [() => loadList, v => (loadList = v)],
   loadOne: [() => loadOne, v => (loadOne = v)],
@@ -969,13 +971,17 @@ function noWebGL(why) {
   document.body.appendChild(el);
 }
 /* RL-7: the world the save needs goes in before anything reads where you stand (a run's, made from its seed; the
-   hub's is in already); from here a swapped save brings its own (game-state.js setSaveData) */
-runWorldSync();
+   hub's is in already); from here a swapped save brings its own (game-state.js setSaveData). HB-2: a run's scenes are
+   made over several frames behind the loader (run-world.js runWorldMake), which says how far it is */
+const bootWorldIn = runWorldMake((made, of) => {
+  const ph = document.querySelector('#loader .ld-phase');
+  if (ph) ph.textContent = `Making the run’s places ${made}/${of}`;
+});
 runWorld.live = true;
 if (!webgl2Supported()) noWebGL();
 else
   /* phase 04b: the maps round where you are come with the art check; the others after the loader (js/map-files.js) */
-  Promise.all([artCacheCheck(), loadMapsAhead(saveData.trip ? saveData.trip.node : START_NODE)])
+  Promise.all([artCacheCheck(), bootWorldIn.then(() => loadMapsAhead(saveData.trip ? saveData.trip.node : START_NODE))])
     .then(() => bootLoad())
     .then(async () => {
       if (typeof debugLog !== 'undefined') debugLog.hook();
@@ -993,7 +999,12 @@ else
         try {
           studioChannel.postMessage({ type: 'hello' });
         } catch (e) {}
+      /* HB-2: a reload mid-run: the landing's loading (its map, models, the run's world map), its screen over the page
+         as the loader goes until it is ready (run-loading.js) */
+      const resume = saveData.started && saveData.run && saveData.run.map && runWorld.seed && !TEST_RUN;
+      if (resume) runLoadBegin('resume', saveData.trip.node);
       await walkViewWarmup();
+      if (resume) runLoadShow();
       loaderHide();
       if (quickOpening && uiState.intro === 0 && typeof cutsceneWanted === 'function' && cutsceneWanted())
         cutsceneStart({ quick: true });

@@ -64,7 +64,8 @@ import { rigCanvasHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
 import { JINGLES, jingle } from './sound.js';
 import { standByMast, startAirshipFlight } from './airship.js';
-import { runWorld, runWorldData, runWorldSync } from './run-world.js';
+import { runWorld, runWorldData, runWorldMake, runWorldSync } from './run-world.js';
+import { runLoadBegin } from './run-loading.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_HINTS: [() => RUN_HINTS],
@@ -95,6 +96,8 @@ expose({
   runStartSheet: [() => runStartSheet, v => ((runStartSheet = v), provide({ runStartSheet }))],
   runStartable: [() => runStartable, v => ((runStartable = v), provide({ runStartable }))],
   runTakeOff: [() => runTakeOff, v => ((runTakeOff = v), provide({ runTakeOff }))],
+  runTakeOffBar: [() => runTakeOffBar, v => (runTakeOffBar = v)],
+  runTakeOffGo: [() => runTakeOffGo, v => (runTakeOffGo = v)],
 });
 /* eslint-enable no-func-assign */
 provide({
@@ -226,6 +229,8 @@ export function runResume() {
   else if (run.enc && run.enc.reward && run.at.phase === 'walk') rewardPickOpen();
   /* killed mid-battle: the same battle again, from its seed (the owner's answer, roguelite-track.md 8.7) */
   if (run.at.phase === 'battle') runBattleAgain();
+  /* HB-2: killed while the take-off made the world (a save written meanwhile): the take-off's arrival, then as below */
+  if (run.at.phase === 'fly' && !run.path.length) runTakeOffGo(saveData, runWorldData(), false);
   /* killed mid-flight: you are on the landing (runArrive ran before the flight) */
   if (run.at.phase === 'fly') {
     run.at.phase = 'walk';
@@ -461,10 +466,13 @@ export function runStartSheet() {
   renderOverlay();
 }
 /**
- * Take off on a run, in one tick: the run on the save with its map (logic/run-start.js runStartPlan, runStartOn), its world
- * (runWorldSync; a world that can't be made leaves the run), day 1 on the landing (runArrive) in phase 'fly', saved
- * with the account at once, then the airship's free flight from Copperleaf (it starts after the world goes in, which
- * would stop it, and is told where from: runArrive has moved the trip already). A reload mid-flight is on the landing.
+ * Take off on a run: the run on the save with its map (logic/run-start.js runStartPlan, runStartOn) at once, then its
+ * world (HB-2: run-world.js runWorldMake, the scenes made over several frames while the start sheet's Take off shows
+ * how far it is; a world that can't be made leaves the run), then runTakeOffGo: day 1 on the landing (runArrive) in
+ * phase 'fly', saved with the account at once, the airship's free flight from Copperleaf (it starts after the world
+ * goes in, which would stop it, and is told where from: runArrive has moved the trip already) and the landing's
+ * loading (run-loading.js: its screen shows at the landing if it isn't ready by then). A reload mid-flight is on the
+ * landing; a reload before the world went in finds the run with no arrival yet (runResume finishes the take-off).
  * RL-9b: `pick` is who comes from home and what is packed (the start sheet's runPickNow); left out (the debug menu, the
  * tests), the default pick alone and nothing packed. A Billie training at the ranch stops (its bank collected) and
  * everyone at home is healed first (the hub's healing is free), so the travellers leave healed.
@@ -479,7 +487,6 @@ export function runTakeOff(seed, map, mods, pick, expedition) {
   if (!P.home.length) return;
   uiState.runPick = uiState.runPack = null;
   uiState.runExp = uiState.runChal = uiState.runMonoType = null;
-  closeModal();
   const s = saveData,
     sd = seed || runSeedRoll(),
     data = runWorldData();
@@ -496,14 +503,39 @@ export function runTakeOff(seed, map, mods, pick, expedition) {
   runStartOn(s, plan, { home: P.home, pack: P.pack });
   uiState.learnQ = [];
   runCatch.m = null;
-  runWorldSync();
-  if (!s.run || runWorld.seed !== sd) return;
+  /* HB-2: the start sheet stays while the world is made, its Take off a bar (nothing else on it can be tapped) */
+  runTakeOffBar(0, 0);
+  runWorldMake(runTakeOffBar).then(() => {
+    const sheet = uiState.modal && uiState.modal.cls === 'fly-sheet run-start';
+    if (sheet) closeModal();
+    if (saveData !== s || !s.run || runWorld.seed !== sd) return;
+    runTakeOffGo(s, data);
+  });
+}
+/** HB-2: the start sheet's Take off counts the run's scenes as they are made (made of `of`); the sheet can't be
+ * tapped meanwhile. Nothing when the sheet isn't open (the debug menu, the tests) @param {number} made
+ * @param {number} of */
+function runTakeOffBar(made, of) {
+  const sheet = /** @type {HTMLElement | null} */ (document.querySelector('#ov .sheet'));
+  if (!sheet || !uiState.modal || uiState.modal.cls !== 'fly-sheet run-start') return;
+  sheet.inert = true;
+  const b = /** @type {HTMLElement | null} */ (sheet.querySelector('[data-a=mb][data-i="0"]'));
+  if (!b) return;
+  b.classList.add('run-takeoff');
+  b.textContent = of ? `Readying the airship… ${made}/${of}` : 'Readying the airship…';
+}
+/** the take-off once the run's world is in: day 1 on the landing (runArrive) in phase 'fly', saved with the account,
+ * the flight and the landing's loading. runResume finishes a take-off a reload stopped before this with it too
+ * @param {any} s the save @param {any} data runWorldData() @param {boolean} [fly] false: no flight (a resume) */
+function runTakeOffGo(s, data, fly = true) {
   runArrive(s, 0, data);
   s.visited[s.trip.node] = 1;
   s.run.at.phase = 'fly';
   saveNow();
   if (typeof debugLog !== 'undefined') debugLog.add('scene', `a run starts: ${s.run.map.nodes.length} places`);
+  if (!fly) return;
   startAirshipFlight(s.trip.node, { free: true, from: START_NODE });
+  runLoadBegin('take-off', s.trip.node);
   /* SND-4: the run's first bookend, the title's motif as the airship leaves the mast (the payout is the other) */
   if (typeof jingle === 'function' && JINGLES.motif) jingle(JINGLES.motif);
 }
