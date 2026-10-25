@@ -153,19 +153,39 @@ test('genes: traits come one per kind, in slot order, at most maxTraits', () => 
   );
 });
 
-test('genes: Unstable picks two different stats from the Billie and its splice, the same each time', () => {
+test('genes: an Unstable roll is two different stats and its heaviest donor', () => {
   const g = { front: 'bear_arm@musk3', back: 'bear_leg@musk3', sig: 'shark_tailfin@zuck2' },
-    m = { sp: 'swift0', uid: 'b1', graft: g },
-    u = N.graftUnstable(D, m, STATS);
-  assert.ok(u && STATS.includes(u.up) && STATS.includes(u.down) && u.up !== u.down);
-  assert.deepEqual(N.graftUnstable(D, { ...m }, STATS), u);
-  assert.equal(u.donor, 'musk3');
-  assert.equal(N.graftUnstable(D, { ...m, graft: { front: 'eagle_wing@hughes2' } }, STATS), null);
-  assert.equal(N.graftUnstable(D, { sp: 'swift0', uid: 'b1' }, STATS), null);
-  const many = new Set(
-    ['a', 'b', 'c', 'd', 'e', 'f'].map(uid => JSON.stringify(N.graftUnstable(D, { ...m, uid }, STATS)))
-  );
-  assert.ok(many.size > 1, 'another Billie can come out another way');
+    seen = new Set();
+  for (const x of [0, 0.3, 0.6, 0.99]) {
+    const u = N.graftUnstable(D, { sp: 'swift0', graft: g }, STATS, () => x);
+    assert.ok(STATS.includes(u.up) && STATS.includes(u.down) && u.up !== u.down, JSON.stringify(u));
+    assert.equal(u.donor, 'musk3');
+    seen.add(u.up);
+  }
+  assert.ok(seen.size > 1, 'the roll decides');
+});
+
+test('genes: Unstable is rolled once past the limit, kept through a new splice past it, gone when stable', () => {
+  const S = data.GENES.stability,
+    was = S.limit,
+    m = startedSave('swift0', 30).team[0],
+    far = { front: 'bear_arm@musk3', back: 'bear_leg@musk3' };
+  fn('spliceSet')(m, { front: 'eagle_wing@hughes2' });
+  assert.equal(m.unstable, undefined, 'within the limit');
+  fn('spliceSet')(m, far);
+  const u = m.unstable;
+  assert.ok(u && u.up !== u.down && u.name, 'past the limit: rolled');
+  assert.equal(fn('billyUnstable')(m), u);
+  fn('spliceSet')(m, { ...far, sig: 'shark_tailfin@zuck2' });
+  assert.equal(m.unstable, u, 'still past it: the same roll');
+  S.limit = 99;
+  try {
+    assert.equal(fn('billyUnstable')(m), null, 'a higher limit: not Unstable while it holds');
+  } finally {
+    S.limit = was;
+  }
+  fn('spliceSet')(m, '');
+  assert.equal('unstable' in m, false, 'no splice, no roll');
 });
 
 test('genes: a splice is saved with its Billie; saveFill trims what no longer fits; billiesOk refuses a bad shape', () => {
@@ -225,11 +245,12 @@ test('genes: an Unstable Billie has one stat raised and one lowered, and a merge
     s = startedSave('swift0', 30),
     m = s.team[0];
   m.build = { head: 'M', body: 'M', front: 'M', back: 'M', sig: 'M' };
-  m.graft = { front: 'eagle_wing@hughes2' };
+  fn('spliceSet')(m, { front: 'eagle_wing@hughes2' });
   const stable = Object.fromEntries(STATS.map(k => [k, fn('stat')(m, k)]));
   assert.equal(fn('billyName')(m), 'Swiftlet');
   S.limit = 0;
   try {
+    fn('unstableTidy')(m);
     const un = fn('billyUnstable')(m);
     assert.ok(un);
     for (const k of STATS) {
@@ -263,4 +284,23 @@ test("genes: the debug log's splice report names data ids only, never a Billie's
     },
   ]);
   assert.doesNotMatch(JSON.stringify(r), /Secret/);
+});
+
+test('genes: an Unstable roll is saved with its Billie; saveFill drops a stale or broken one', () => {
+  const { billiesOk } = modules.saves,
+    fill = s => fn('saveFill')(JSON.parse(JSON.stringify(s))),
+    s = startedSave('swift0', 30),
+    m = s.team[0];
+  fn('spliceSet')(m, { front: 'bear_arm@musk3', back: 'bear_leg@musk3' });
+  assert.deepEqual(fill(s).team[0].unstable, m.unstable, 'kept through a save and load');
+  const keep = m.unstable;
+  m.graft = { front: 'eagle_wing@hughes2' };
+  assert.equal('unstable' in fill(s).team[0], false, 'stable again: gone');
+  m.graft = { front: 'bear_arm@musk3', back: 'bear_leg@musk3' };
+  m.unstable = { ...keep, up: keep.down };
+  const again = fill(s).team[0].unstable;
+  assert.notEqual(again.up, again.down, 'a broken roll is rolled again');
+  assert.equal(billiesOk([{ ...m, unstable: { up: 'lev', down: 'hus', name: 'X' } }]), true);
+  assert.equal(billiesOk([{ ...m, unstable: 'lev' }]), false);
+  assert.equal(billiesOk([{ ...m, unstable: { up: 'lev', down: 7, name: 'X' } }]), false);
 });

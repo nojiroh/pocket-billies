@@ -45,7 +45,7 @@ import {
   TYPES,
   gameData,
 } from './game-data.js';
-import { GRAFT_SLOTS, geneSplit, graftDonors, graftKey, graftParse, graftSet } from './logic/graft-art.js';
+import { GRAFT_SLOTS, geneSplit, graftDonors, graftKey, graftParse } from './logic/graft-art.js';
 import { speciesOf } from './logic/fighters.js';
 import {
   addBilly,
@@ -58,6 +58,7 @@ import {
   newUid,
   plural,
   spawn,
+  spliceSet,
   xpFor,
 } from './logic/rules.js';
 import { CHALLENGE_IDS, expeditionNumeral, modsMake } from './logic/modifiers.js';
@@ -465,7 +466,7 @@ function debugAction(x) {
       const m = saveData.team[0],
         g = m ? debugGraftFor(m.sp) : '';
       if (!g) return toast(m ? 'No other species has a part that fits your lead.' : 'No lead to graft.');
-      graftSet(m, g);
+      spliceSet(m, g);
       if (typeof debugLog !== 'undefined') debugLog.add('graft', `debug: lead ${m.sp} ${g}`);
       said = `Your lead now wears ${debugGraftWords(g)}.`;
       break;
@@ -476,7 +477,7 @@ function debugAction(x) {
       const g = debugGraftFor(sp);
       if (!g) return toast(`No other species has a part that fits ${SPECIES[sp].name}.`);
       const q = { id: newUid(), sp, lvl: lv, coat: $('#dbgCoat').value || undefined, no: ++saveData.serial };
-      graftSet(q, g);
+      spliceSet(q, g);
       encountersHere().push(q);
       if (typeof debugLog !== 'undefined') debugLog.add('graft', `debug: wild ${sp} ${g}`);
       if (x === 'graftenc') {
@@ -488,7 +489,7 @@ function debugAction(x) {
       return;
     }
     case 'graftclear':
-      for (const m of [...saveData.team, ...encountersHere()]) graftSet(m, '');
+      for (const m of [...saveData.team, ...encountersHere()]) spliceSet(m, '');
       said = 'Grafts taken off the team and the encounters here.';
       break;
     case 'heal':

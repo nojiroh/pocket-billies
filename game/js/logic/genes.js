@@ -11,8 +11,8 @@
      type       the heaviest grafted slot's dominant type becomes the second type (never a third)
      traits     one per kind, in slot order, at most genes.json maxTraits; their effect rows join the Billie's own
                 (logic/effects.js fxOfBillie)
-     Unstable   one stat times unstable.up, another times unstable.down, picked from the Billie's uid and its graft
-                (the same splice always gives the same two; undoing it undoes them), and the drawback's rows
+     Unstable   one stat times unstable.up, another times unstable.down, rolled once when the splice goes past the
+                limit and kept on the Billie until it is stable again (rules.js unstableTidy), and the drawback's rows
    Every function takes the data as D = { kitBuilds, partKits, genes, species, parts } (species: SPECIES; parts:
    rules.json parts). Logic only: no DOM, no Math.random (tools/test/genes.test.mjs). */
 /** @import { Genes, PartKits, PartRules } from '../../types/game-data' */
@@ -25,8 +25,7 @@
  *   trait: string | null, type: string | null, move: string | null }} Gene */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { rngFrom } from './rng.js';
-import { GRAFT_SLOTS, geneSplit, graftForm, graftKey, graftKind, graftRecipe } from './graft-art.js';
+import { GRAFT_SLOTS, geneSplit, graftForm, graftKind, graftRecipe } from './graft-art.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -169,16 +168,14 @@ export function graftTraits(D, sp, g) {
   return out.slice(0, D.genes.maxTraits);
 }
 
-/** an Unstable Billie's raised and lowered stats (stats ids, never the same) and the donor its name is merged with
- * (its heaviest foreign part's), from its uid and graft; null when its splice isn't Unstable
- * @param {GeneData} D @param {{ sp: string, uid?: string, graft?: Graft, build?: Build }} m @param {string[]} stats
- * @param {number} [limit] @returns {{ up: string, down: string, donor: string } | null} */
-export function graftUnstable(D, m, stats, limit) {
-  if (!m || !m.graft || !stats.length || !graftStability(D, m.sp, m.graft, limit).unstable) return null;
-  const r = rngFrom(`${m.uid || ''}|${graftKey(m.graft)}`, 'unstable'),
-    ids = stats.slice(),
-    up = ids.splice(r.int(0, ids.length - 1), 1)[0],
-    down = ids[r.int(0, ids.length - 1)],
+/** an Unstable splice's roll: a stat to raise, another to lower, and the donor its name merges with (its heaviest
+ * foreign part's); rolled once when a splice goes past the limit and kept on the Billie (rules.js unstableTidy)
+ * @param {GeneData} D @param {{ sp: string, graft?: Graft, build?: Build }} m @param {string[]} stats
+ * @param {() => number} rnd a number in [0, 1) @returns {{ up: string, down: string, donor: string }} */
+export function graftUnstable(D, m, stats, rnd) {
+  const ids = stats.slice(),
+    up = ids.splice(Math.floor(rnd() * ids.length), 1)[0],
+    down = ids[Math.floor(rnd() * ids.length)],
     heavy = graftHeaviest(D, m.sp, m.graft, m.build)[0];
   return { up, down, donor: heavy ? heavy.sp : m.sp };
 }

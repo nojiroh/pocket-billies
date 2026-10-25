@@ -63,6 +63,7 @@ test("battle genes: an Unstable splice loses a share of HP at each turn's end; a
   try {
     const { B, me } = battle({ front: 'bear_arm@musk3' }),
       mx = fn('maxHp')(me);
+    fn('unstableTidy')(me);
     assert.ok(fn('billyUnstable')(me));
     me.hp = mx;
     fn('endTurn')();

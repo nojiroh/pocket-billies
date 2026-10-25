@@ -381,6 +381,9 @@ export interface Billy {
   /** SP-2: its splice, slot (rules.json parts.slots) -> Gene id, "part@donor" (a partKits.json part, a kitBuilds.json
       rig); missing for a Billie with none */
   graft?: Record<string, string>;
+  /** SP-2: a splice past Stability's limit: the stat it raises and the one it lowers (rolled once, kept while it stays
+      past the limit) and its merged name */
+  unstable?: { up: string; down: string; name: string };
   /** phase 17: 'robot' for a robot (sp is then made from its parts: logic/fighters.js robotSp); missing for a Billie */
   kind?: 'robot';
   /** phase 17: a robot's gem (a key of robots.json gems): the gem is the robot, its level and XP */
@@ -437,6 +440,8 @@ export interface Encounter {
   build?: Build;
   /** SP-2: its splice, as a Billie's (Billy.graft) */
   graft?: Record<string, string>;
+  /** SP-2: its Unstable roll, as a Billie's (Billy.unstable) */
+  unstable?: { up: string; down: string; name: string };
 }
 
 /** an egg (game-state.js addEgg) */
