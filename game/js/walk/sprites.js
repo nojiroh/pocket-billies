@@ -7,6 +7,7 @@ import { expose } from '../test-globals.js';
 import { loadingScreen, provide, reducedMotion } from '../hooks.js';
 import { clamp } from '../util.js';
 import { pictureFacing } from '../logic/prop-turn.js';
+import { pictureCovers } from '../logic/occlude.js';
 import { INTEREST_DEFAULTS } from '../logic/camera-interest.js';
 import { filterInto } from '../engine/frame-lists.js';
 import { makeCanvas } from '../art.js';
@@ -180,11 +181,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     let fade = it.fade ?? 1;
     if (me && !walkRenderer.bt && !it.person && it.k === 'prop' && hM > 1.6) {
       const q = worldToScreen(C, it.x, 0, it.z);
-      if (q && q.d < me.d - 0.3) {
-        const half = it.w * s * 0.5 * q.s,
-          top = q.y - hM * q.s;
-        if (me.x > q.x - half && me.x < q.x + half && me.y > top && me.y < q.y) fade = 0.4;
-      }
+      if (q && pictureCovers(me, q, it.w * s * 0.5, hM)) fade = 0.4;
     }
     const rk = walkRenderer.rise ? townRiseAmount(it) : 1;
     if (rk < 0.002 && !it.person) continue;

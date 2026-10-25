@@ -15,6 +15,7 @@ import { expose } from './test-globals.js';
 import { provide, reducedMotion } from './hooks.js';
 import { clamp } from './util.js';
 import { placedTurn } from './logic/prop-turn.js';
+import { pictureCovers } from './logic/occlude.js';
 import { makeCanvas } from './art.js';
 import { artImage, hash2d, walkView, worldToScreen } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
@@ -1281,11 +1282,7 @@ export function drawSolidProps(C, items, X, hits, labels, PPU) {
       let fade = it.fade ?? 1;
       if (me && !walkRenderer.bt && hM > 1.6) {
         const q = worldToScreen(C, it.x, 0, it.z);
-        if (q && q.d < me.d - 0.3) {
-          const half = it.w * s * 0.5 * q.s,
-            top = q.y - hM * q.s;
-          if (me.x > q.x - half && me.x < q.x + half && me.y > top && me.y < q.y) fade = 0.4;
-        }
+        if (q && pictureCovers(me, q, it.w * s * 0.5, hM)) fade = 0.4;
       }
       const mt = SURFACE_MATERIALS[it.mat] || SURFACE_MATERIALS.plain;
       gl.uniform4f(p.U.uMat, mt.spec, mt.shin, mt.transl, mt.wrap);

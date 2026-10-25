@@ -52,6 +52,7 @@ import '../../game/js/logic/meta-state.js';
 import '../../game/js/logic/modifiers.js';
 import '../../game/js/logic/music-studio.js';
 import '../../game/js/logic/music-where.js';
+import '../../game/js/logic/occlude.js';
 import '../../game/js/logic/part-joints.js';
 import '../../game/js/logic/parts.js';
 import '../../game/js/logic/pasture.js';
