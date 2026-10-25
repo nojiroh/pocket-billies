@@ -61,8 +61,9 @@ town node needs it.
   `wa-N-done`. Branch `track/water`.
 - **Splicing track** (docs/phases/splicing-track.md, the owner's brief and answers 2026-10-25): Genes from kit parts
   with readable traits, wild Billies with mixed parts (Graft, Chimera), a Gene Bank building paid in DNA, a Stability
-  budget with Unstable abominations past it, Augments from the bots' salvage. SP-1 (an art spike on the phone) first;
-  SP-5 waits for RL-14. Tags `sp-N-done`. Branch `track/splicing`.
+  budget with Unstable abominations past it, Augments from the bots' salvage. SP-1 (an art spike on the phone) built
+  2026-10-25 on `ccr-dde1a5bd-nx5zdl` (the owner's word: `track/splicing` didn't exist yet), waiting on the phone's
+  bake times for its exit; SP-5 waits for RL-14. Tags `sp-N-done`. Branch `track/splicing`.
 - **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
   out of any room's doorway; "Go outside" stays with the card closed) done 2026-10-24; TW-1 (a town layout: street,
   square, houses with gardens, mapgen's `town` kind) done 2026-10-24; TW-2 (townsfolk, animals, chat) and TW-3 (run

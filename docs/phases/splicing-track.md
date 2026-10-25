@@ -57,7 +57,8 @@ below against main and report what differs.
   in battle reads them.
 - **Art is baked offline.** `logic/kit-assemble.js` (`kitBakeWhole`) and `logic/rig-swap.js` (`rigRefit`) are logic
   only (no DOM) and run in the Studio (`studio/js/kit-recipe.js`) and `npm run bake:kits`; the game itself never
-  calls them. `skeleton-rig.js` scales pieces for sizes. Every Billie (40 species) is built from the kit parts on a
+  calls them. (SP-1, checked at 501b286: kit-assemble.js wasn't even on the game page; SP-1 put it there. Rebaking
+  the whole recipe with a part swapped is exact and needs no `rigRefit`, which stays a Studio tool.) `skeleton-rig.js` scales pieces for sizes. Every Billie (40 species) is built from the kit parts on a
   biped rig, so a part from one fits another's sockets (`partKits.json socketRules`).
 - **Parts library:** `partKits.json parts`, 120 parts from 3 kits (beasts, birds, fish); no claws yet.
 - **Abominations** (`logic/breeding.js`, RL-10a): `m.mut` with a name, one stat up (`abomUp` 1.3), one down
@@ -78,7 +79,10 @@ Each session: one cause per commit, lint, type-check and unit tests after each c
 check at the end, a HANDOFF entry, tag `sp-N-done`. Battles with no graft stay byte-identical (the golden battles must
 not move), as RL-12c does for held items.
 
-**SP-1 Art spike (prove it on the phone first).** Compose a grafted Billie at runtime: bake its sheet and rig from its
+**SP-1 Art spike (prove it on the phone first).** Built 2026-10-25 (HANDOFF): `logic/graft-art.js` (a graft is
+`{ slot: donor species }`, swapped bone kind for bone kind), the runtime bake in skeleton-rig.js, the debug buttons
+and the debug log's `graphics.grafts`. Waiting on the phone's numbers for the exit.
+ Compose a grafted Billie at runtime: bake its sheet and rig from its
 species recipe with one bone's part swapped (`kitBakeWhole`, `rigRefit`), cache it per build, and draw it everywhere a
 Billie shows (battle, grass, follower, menus). A debug button grafts a random Gene onto the lead. Measure the bake
 time and memory on the owner's phone (debug log). Exit: a number the owner accepts, or the fallback: bake the wild
