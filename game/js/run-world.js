@@ -57,6 +57,7 @@ expose({
   runWorldLetGo: [() => runWorldLetGo, v => (runWorldLetGo = v)],
   runWorldMake: [() => runWorldMake, v => (runWorldMake = v)],
   runWorldMaking: [() => runWorldMaking],
+  runWorldNextFrame: [() => runWorldNextFrame, v => (runWorldNextFrame = v)],
   runWorldPutRun: [() => runWorldPutRun, v => (runWorldPutRun = v)],
   runWorldSync: [() => runWorldSync, v => ((runWorldSync = v), provide({ runWorldSync }))],
 });
@@ -105,11 +106,11 @@ export function runWorldSync() {
   return true;
 }
 /** HB-2: a run's world put in as runWorldSync does, its scenes made over several frames (a slice of at most ~8 ms of
- * work, at least one scene, then the page draws), so the page never freezes; onStep(made, of) after each slice. The
+ * work, at least one scene, then the page draws a frame), so the page never freezes; onStep(made, of) after each slice. The
  * swap itself is one tick, as runWorldSync's. Resolves whether the world changed; a save swapped in the meantime
  * (another run, or none) ends it unput, and a runWorldSync that got there first leaves nothing to do
  * @param {(made: number, of: number) => void} [onStep] @returns {Promise<boolean>} */
-function runWorldMake(onStep) {
+export function runWorldMake(onStep) {
   const run = saveData && saveData.run;
   if (!run || !run.map) return Promise.resolve(runWorldSync());
   if (run.seed === runWorld.seed) return Promise.resolve(false);
@@ -132,7 +133,7 @@ function runWorldMake(onStep) {
         work += performance.now() - a;
         if (!r.done) {
           if (onStep) onStep(r.value[0], r.value[1]);
-          return void setTimeout(step, 0);
+          return void runWorldNextFrame(step);
         }
         const b = performance.now();
         runWorldPutRun(run, r.value, data);
@@ -150,10 +151,15 @@ function runWorldMake(onStep) {
       runWorldLetGo();
       end(true);
     };
-    setTimeout(step, 0);
+    runWorldNextFrame(step);
   });
   Object.assign(runWorldMaking, { p, run });
   return p;
+}
+/** HB-2: f after the page has drawn a frame (a hidden page draws none: then a timer) @param {() => void} f */
+function runWorldNextFrame(f) {
+  if (document.hidden || typeof requestAnimationFrame !== 'function') setTimeout(f, 16);
+  else requestAnimationFrame(() => setTimeout(f, 0));
 }
 /** HB-2: the run whose world runWorldMake is making, and its promise */
 const runWorldMaking = { p: /** @type {Promise<boolean> | null} */ (null), run: /** @type {any} */ (null) };
