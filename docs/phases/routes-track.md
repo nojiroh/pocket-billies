@@ -41,6 +41,14 @@ Measured on 5 seeds (20 route places) with the game's own data, `runSceneMake` a
   RL-R2a) but only at a side area's entrance.
 - **Phone cost:** towns ran at 27-28 fps on the owner's phone (phase 09). Routes already carry ~600 props.
 
+**RT-3 corrections (2026-10-25, HANDOFF):** spots exist only on the finished scene (`mapgenLayoutSpots`), so pieces go
+after them, before the walkable share is measured, and clear the small plants under them; the roadmap's props `lamp`
+and `bench_*` are `lantern` and `bench_wood` / `bench_metal`; there is no camp tent (the `tent` is a market tent and read
+as a stall), no ruin art and no jetty deck prop (a jetty is ground tiles `b`, built only by the jetty feature until
+RT-3); an exit's signpost was already placed but could not be tapped; no Bureau prop or logo exists. The owner's
+answers: all seven pieces (ruins of broken stone walls), pieces on spare roadside spots and clearings, and the Bureau
+checkpoint carries an agent who opens an event (`bureau_checkpoint`, weight 0).
+
 **RT-2 corrections (2026-10-25, HANDOFF):** the run sim had no route trainers and no minutes (both added: `SIM_CLOCK`,
 a guess); a double is one trainer entry with 2+ Billies, so a pair is one entry (both teams, `double`, `mate`) shown as
 two people; bridges, jetties and ledge tops were not spots (RT-2 adds `roadside` and `bridge`; jetties and ledge tops
@@ -68,7 +76,7 @@ them, `routeMin` 2, the owner's answer); pairs about one route place in three (t
 |---|---|---|---|---|
 | RT-1 | Route layouts (**done** 2026-10-24) | a `layout` stage after the road: a seeded route plan (forest trail, farmland, lakeside, ledge drop, two lanes with a grass detour) that lays blockers (forest masses, fence and hedge runs with gaps and gates, rock outcrops, water) to 55-65% walkable; marked spots (pockets, dead ends, corridor pinches, clearings) in `scene.spots`; MAPGEN_VERSION bump | none | 1-2 |
 | RT-2 | Battle spots and trainers (**done** 2026-10-25) | trainers stand on RT-1's spots (a clearing, a bridge, a fence gap, a ledge top, a jetty) facing the path along the real road; 4-6 a route place by row, about half optional; trainer pairs as doubles; a class likes some spots; run sim for length and difficulty | RT-1 | 1 |
-| RT-3 | Set pieces | `setPieces.json` + schema: small hand-designed prop groups (campsite, farm pen and scarecrow, rest stop, woodcutter's clearing, fishing jetty, ruins, a Bureau checkpoint) placed as a unit, 2-4 a route by biome; a signpost with the route's name at each entrance; existing props only; shared with TW-1 | RT-1 | 1 |
+| RT-3 | Set pieces (**done** 2026-10-25) | `setPieces.json` + schema: small hand-designed prop groups (campsite, farm pen and scarecrow, rest stop, woodcutter's clearing, fishing jetty, ruins, a Bureau checkpoint) placed as a unit, 2-4 a route by biome; a signpost with the route's name at each entrance; existing props only; shared with TW-1 | RT-1 | 1 |
 | RT-4 | Billies and finds | 6-8 visible wild Billies (counting trainers, see above); habitats (water edge, woods, grass) each draw from part of the region's dex; a rarer one in a hard pocket; items at dead ends; Cut bramble shortcuts (Grass badge); ambient animals (shared with TW-2) | RT-1, RT-2 | 1-2 |
 
 **Each session's shape**, for its own Plan Mode:
@@ -101,7 +109,8 @@ them, `routeMin` 2, the owner's answer); pairs about one route place in three (t
 2. RT-1: forest mass look, if neither the canopy model nor the solid area looks right on the phone.
 3. RT-2: trainer count vs run length, if the run sim says runs go past ~35 minutes (recommended: more optional
    trainers, not fewer).
-4. RT-3: the set pieces list, and whether the Bureau checkpoint carries story (a line, an agent).
+4. RT-3: the set pieces list, and whether the Bureau checkpoint carries story (a line, an agent). **Answered 2026-10-25:** all seven,
+   ruins of broken stone walls; an agent with an event.
 5. RT-4: what items lie in pockets (recommended: the reward pick's small items, a Bean as a rare find).
 
 ## Noticed, not in scope
