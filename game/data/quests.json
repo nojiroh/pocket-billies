@@ -1,5 +1,5 @@
 {
- "about": "Towns track TW-3: a run's quests (logic/run-quests.js). Each run town's quest giver offers one, drawn from the town's own stream; at most `held` are held; a done quest is handed in at a later town's notice board for a reward pick. Texts drafted by Claude, approved by the owner (2026-10-25). {type} is a Billie type, {n} the goal.",
+ "about": "Towns track TW-3: a run's quests (logic/run-quests.js). Each run town's quest giver offers one, drawn from the town's own stream; at most the rules' held count are held; a done quest is handed in at a later town's notice board for a reward pick. Texts drafted by Claude, approved by the owner (2026-10-25). {type} is a Billie type, {n} the goal.",
  "held": 3,
  "kinds": {
   "catch": {"weight":3,"goal":[1,1],"title":"Catch a {type} Billie"},
