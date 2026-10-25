@@ -64,6 +64,7 @@ expose({
   ISLAND_SEA_BED: [() => ISLAND_SEA_BED],
   ISLAND_TOWN_EXTRA: [() => ISLAND_TOWN_EXTRA],
   ISLAND_VALLEY: [() => ISLAND_VALLEY],
+  STATION_PLOT: [() => STATION_PLOT],
   islandAngle: [() => islandAngle],
   islandAngleDiff: [() => islandAngleDiff],
   // @ts-expect-error -- replaced on purpose
@@ -112,7 +113,7 @@ export const ISLAND_GEN_BUILT = ['town', 'barn', 'pasture'];
 
 /** HB-4a: the town's other buildings (town.extra): plot sizes [width, width, depth, depth] */
 /** HB-4b: the station's plot (w across its front, d deep), metres */
-const STATION_PLOT = [14, 8];
+export const STATION_PLOT = [14, 8];
 export const ISLAND_TOWN_EXTRA = {
   inn: [10, 12, 8, 9],
   workshop: [9, 10, 7, 8],
