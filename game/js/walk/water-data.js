@@ -9,7 +9,9 @@ import { seaCentre } from '../logic/sea.js';
 import { valueNoise2d, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { gpuState } from '../engine/webgl.js';
+import { environment } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
+import { tideLevel } from './sea-tide.js';
 /* eslint-disable no-func-assign */
 expose({
   FALL_A: [() => FALL_A],
@@ -172,7 +174,10 @@ export const WATER_KIND_LOOKS = [
 const WATER_KIND_INDEX = Object.fromEntries(WATER_KIND_LOOKS.map((w, i) => [w.k, i]));
 /* 0.1.0 alpha: in steps (a generator, drained with yield*), so building a place's ground a slice at a time (map-cache.js
    prepareMapGround) doesn't stop here: a big place's field is millions of samples, about 0.4 s in one go */
-export function* shoreField(sc, isW, T = walkRenderer) {
+/* water track WA-4: `tide` (walk/sea-tide.js tideCells: per tile, the land the high tide covers and the water the low
+   tide leaves) adds two more shorelines in the texture's green (high water) and blue (low water); the shaders move the
+   waterline between them (setShoreUniforms' uTide) */
+export function* shoreField(sc, isW, T = walkRenderer, tide = null) {
   const gl = gpuState.gl,
     W = sc.w,
     H = sc.h,
@@ -212,14 +217,27 @@ export function* shoreField(sc, isW, T = walkRenderer) {
         }
       }
     };
+  /* the tide's masks: the water plus the land it covers, the water less what it leaves */
+  const tw = tide && (tide.nCover || tide.nDry) ? [new Float32Array(m), new Float32Array(m)] : null;
+  if (tw)
+    for (let tj = 0; tj < H; tj++)
+      for (let ti = 0; ti < W; ti++) {
+        const q = tj * W + ti;
+        if (!tide.cover[q] && !tide.dry[q]) continue;
+        const M = tide.cover[q] ? tw[0] : tw[1],
+          v = tide.cover[q] ? 1 : 0;
+        for (let j = tj * R; j < tj * R + R; j++) M.fill(v, j * FW + ti * R, j * FW + ti * R + R);
+      }
   yield;
-  for (let n = 0; n < 2; n++) {
-    blur(m, tmp, 1);
-    yield;
-    blur(tmp, m, 0);
-    yield;
-  }
-  const d = new Uint8Array(FW * FH);
+  for (const M of tw ? [m, ...tw] : [m])
+    for (let n = 0; n < 2; n++) {
+      blur(M, tmp, 1);
+      yield;
+      blur(tmp, M, 0);
+      yield;
+    }
+  const d = new Uint8Array(FW * FH),
+    dt = tw ? new Uint8Array(FW * FH * 4) : null;
   for (let j = 0; j < FH; j++) {
     if (j % 64 === 63) yield;
     for (let i = 0; i < FW; i++) {
@@ -231,18 +249,27 @@ export function* shoreField(sc, isW, T = walkRenderer) {
       const e = f * (1 - f) * 4,
         nz = (valueNoise2d(x * 1.1 + 3.7, z * 1.1) - 0.5) * 0.34 + (valueNoise2d(x * 3.3, z * 3.3 + 9.1) - 0.5) * 0.12;
       d[q] = Math.round(clamp(f + nz * e, 0, 1) * 255);
+      if (dt) {
+        dt[q * 4] = d[q];
+        for (let c = 0; c < 2; c++) {
+          const g = tw[c][q];
+          dt[q * 4 + 1 + c] = Math.round(clamp(g + nz * g * (1 - g) * 4, 0, 1) * 255);
+        }
+        dt[q * 4 + 3] = 255;
+      }
     }
   }
   if (!T.shoreTex) T.shoreTex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, T.shoreTex);
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, FW, FH, 0, gl.RED, gl.UNSIGNED_BYTE, d);
+  if (dt) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, FW, FH, 0, gl.RGBA, gl.UNSIGNED_BYTE, dt);
+  else gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, FW, FH, 0, gl.RED, gl.UNSIGNED_BYTE, d);
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  T.shoreF = { W, H, d, FW, FH };
+  T.shoreF = { W, H, d, FW, FH, tide: !!dt };
 }
 /* water track WA-1: the pixel water's switch, tones and steps (walk-shaders.js PIXEL_WATER_GLSL) */
 export function setPixelWaterUniform(U) {
@@ -270,6 +297,15 @@ export function setShoreUniforms(U, sc) {
   if (U.uSea) {
     const c = seaCentre(sc);
     gl.uniform4f(U.uSea, c[0], c[1], sc.flatFar ? 1 : 0, 0);
+  }
+  /* water track WA-4: the tide (1 high ... -1 low; 0 where the shore texture has no tide's lines or it is switched off)
+     and the storm on the sea (0-1, the weather's, eased). walkRenderer.tideForce / stormForce pin them (pictures) */
+  if (U.uTide) {
+    const F = walkRenderer.shoreF,
+      on = !!(sc.flatFar && F && F.tide && engineSetting('water', 'tide') !== false),
+      td = walkRenderer.tideForce ?? tideLevel(environment.tod),
+      st = walkRenderer.stormForce ?? environment.storm;
+    gl.uniform4f(U.uTide, on ? clamp(td, -1, 1) : 0, sc.flatFar ? clamp(st, 0, 1) : 0, on ? 1 : 0, 0);
   }
 }
 function shoreAt(x, z) {

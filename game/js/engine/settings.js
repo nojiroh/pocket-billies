@@ -172,6 +172,8 @@ export const ENGINE_DEFAULTS = {
     pixel: true,
     bands: 5,
     frames: 10,
+    /* water track WA-4: the sea's slow tide (the waterline and the wet sand move with the day's clock) */
+    tide: true,
   },
   camera: {
     pitch: null,
@@ -820,6 +822,12 @@ export const ENGINE_SPEC = [
         20,
         1,
         'How often ripples, foam and sparkles step (pixel water; 0 moves smoothly).',
+      ],
+      [
+        'tide',
+        'Tide',
+        'bool',
+        'On a sea coast the water comes in and goes out twice a day, covering the wet sand and leaving tide pools.',
       ],
     ],
   ],
