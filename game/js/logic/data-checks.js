@@ -321,6 +321,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'side',
   'trainers',
   'rewards',
+  'town',
 ]);
 /** RL-6: rules.json run.clock, run.reveal and the run keys @param {any} D @returns {DataProblem[]} */
 export function dataRunClock(D) {
@@ -560,6 +561,30 @@ export function dataRunLoop(D) {
       if (!(typeof RW.grow === 'number' && RW.grow >= 1 && RW.grow <= 10))
         problem('rules.json', 'run.rewards.grow: 1-10');
     }
+    /* TW-2: a run town's life: the folk drawn at most by graphics, the named locals (fewest, most) and their names,
+       the region themes' chat lines */
+    const TN = R.town;
+    if (!rec(TN)) problem('rules.json', 'run.town missing');
+    else {
+      only(TN, ['cap', 'locals', 'names', 'chat'], 'run.town');
+      if (!rec(TN.cap) || !['busy', 'balanced', 'best'].every(k => whole(TN.cap[k], 0, 12)))
+        problem('rules.json', 'run.town.cap: busy, balanced and best, whole, 0-12 folk');
+      else only(TN.cap, ['busy', 'balanced', 'best'], 'run.town.cap');
+      const L = TN.locals;
+      if (!Array.isArray(L) || L.length !== 2 || !whole(L[0], 0, 4) || !whole(L[1], L[0], 4))
+        problem('rules.json', 'run.town.locals: [fewest, most], whole, 0-4');
+      if (!Array.isArray(TN.names) || !TN.names.length || TN.names.some(n => typeof n !== 'string' || !n))
+        problem('rules.json', 'run.town.names: a list of names');
+      else if (new Set(TN.names).size !== TN.names.length) problem('rules.json', 'run.town.names: a name twice');
+      if (!rec(TN.chat)) problem('rules.json', 'run.town.chat: region theme to lines');
+      else
+        for (const [k, C] of Object.entries(TN.chat)) {
+          if (!((D.regions && D.regions.themes) || {})[k])
+            problem('rules.json', `run.town.chat.${k}: no region theme "${k}" (regions.json)`);
+          if (!Array.isArray(C) || !C.length || C.some(c => typeof c !== 'string' || !c || c.length > 120))
+            problem('rules.json', `run.town.chat.${k}: lines of 1-120 characters`);
+        }
+    }
   }
   return out;
 }
@@ -653,6 +678,8 @@ export function dataBiomes(D, valid = () => true) {
           if (B.town[f] && !props[B.town[f]]) problem('biomes.json', `${b}.town.${f}: no prop ${B.town[f]}`);
         if (B.town.square && !terr[B.town.square])
           problem('biomes.json', `${b}.town.square: no terrain "${B.town.square}" (scenery.json terrains)`);
+        /* TW-2: its animals are real */
+        for (const L of B.town.life || []) if (!life[L.k]) problem('biomes.json', `${b}.town.life: no animal ${L.k}`);
       }
     }
   }

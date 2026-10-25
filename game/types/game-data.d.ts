@@ -467,6 +467,14 @@ export interface RoadEnds {
   name: string;
 }
 
+/** TW-2: rules.json run.town */
+export interface RunTownRules {
+  cap: { busy: number; balanced: number; best: number };
+  locals: [number, number];
+  names: string[];
+  chat: Record<DataId, string[]>;
+}
+
 /** RL-R1: a region theme (regions.json themes): where its zones start, the biomes it walks through, the types it
  * leans to (its dex's lines and its leaders) and its own name endings and nouns */
 export interface RegionTheme {
@@ -1023,6 +1031,10 @@ export interface Rules {
     };
     /** RL-R2: side areas (logic/run-side.js) */
     side?: RunSideRules;
+    /** TW-2: a run town's life: how many folk are drawn at most (busy: the game stepped its quality down; balanced
+        and best: the Graphics presets), how many named locals (fewest, most) and their names, and each region
+        theme's chat lines (added to the biome's) */
+    town: RunTownRules;
   };
   /** roguelite track RL-9: the ranch (logic/ranch.js). Placeholders until the owner has played it */
   ranch: RanchRules;
@@ -1687,6 +1699,10 @@ export interface Biome {
     square?: string;
     lamp?: string;
     bench?: string;
+    /** TW-2: its own animals, kept to the town's ground (houses: only with that many houses; square: on the square) */
+    life?: { k: string; n: number; houses?: number; square?: 1 }[];
+    /** TW-2: what its folk and named locals say (with the region's: rules.json run.town.chat) */
+    chat?: string[];
   };
   from?: string;
 }

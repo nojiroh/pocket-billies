@@ -115,7 +115,7 @@
     }
    },
    "town": {
-    "description": "TW-1: a run town's buildings and dressing (logic/mapgen.js mapgenStageTown): house props by weight (shut, only for show), the square's centre (a well or a fountain), the fence along the house plots, the square's ground letter, and optionally the lamp and the bench",
+    "description": "TW-1: a run town's buildings and dressing (logic/mapgen.js mapgenStageTown): house props by weight (shut, only for show), the square's centre (a well or a fountain), the fence along the house plots, the square's ground letter, and optionally the lamp and the bench; TW-2: its animals and its chat",
     "type": "object",
     "required": ["houses", "centre"],
     "additionalProperties": false,
@@ -125,7 +125,28 @@
      "fence": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
      "square": { "$ref": "#/$defs/letter" },
      "lamp": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
-     "bench": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" }
+     "bench": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+     "life": {
+      "description": "TW-2: a run town's own animals (scenery.json life), added to the biome's wild ones and kept to the town's ground; houses: only in a town with at least that many houses; square: kept to the square",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "required": ["k", "n"],
+       "additionalProperties": false,
+       "properties": {
+        "k": { "type": "string" },
+        "n": { "type": "integer", "minimum": 1 },
+        "houses": { "type": "integer", "minimum": 0 },
+        "square": { "const": 1 }
+       }
+      }
+     },
+     "chat": {
+      "description": "TW-2: what a run town's folk say (with the run's region's lines, rules.json run.town.chat); its named locals say them too",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 120 },
+      "minItems": 1
+     }
     }
    },
    "from": {
