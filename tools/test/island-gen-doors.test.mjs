@@ -1,12 +1,14 @@
 // Hub track HB-4a: the island generator's sketch dials. town.face 'out' keeps a plot only on the street side whose
 // front faces out from the orbit's pivot (the summit) within town.tol degrees, so the orbit camera sees the doors;
 // town.quarter turns every building plot to the quarter turn nearest to facing out; town.second a second built-up
-// street; town.scale the house plots' size; town.extra the town's other buildings. The defaults leave the hub's island
-// as it is (island-gen.test.mjs checks the game's map is the generator's own output).
+// street; town.scale the house plots' size; town.extra the town's other buildings; landmarks the station with its sky
+// rail and portal, the lighthouse and the windmill. The defaults leave the hub's island as it is (island-gen.test.mjs
+// checks the game's map is the generator's own output).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readGameData } from '../data-files.mjs';
 import { islandAngleDiff, islandGenerate } from '../../game/js/logic/island-gen.js';
+import { islandPointIn } from '../../game/js/logic/island.js';
 import { mapgenReach } from '../../game/js/logic/mapgen.js';
 
 const D = readGameData(),
@@ -160,4 +162,32 @@ const only = (sc, k) => {
 test('town.extra: the inn, the Workshop, the Gene Bank and the library each get a plot in the town', () => {
   const { scene } = sketchA();
   for (const k of ['inn', 'workshop', 'genebank', 'library']) only(scene, k);
+});
+
+test('landmarks: the station with its rail out to sea and up to the portal, the lighthouse on the cove, the windmill by the farm', () => {
+  const res = sketchA({ landmarks: { on: 1 } }),
+    sc = res.scene,
+    coast = sc.island.coast,
+    st = only(sc, 'station'),
+    { rail, portal } = res.landmarks;
+  assert.ok(Math.hypot(rail[0][0] - st.x, rail[0][1] - st.z) < 1, 'the rail starts at the station');
+  assert.ok(!islandPointIn(coast, portal[0], portal[1]), 'the portal is out over the sea');
+  for (let i = 1; i < rail.length; i++) assert.ok(rail[i][2] >= rail[i - 1][2], 'the rail climbs all the way');
+  assert.ok(portal[2] - rail[0][2] >= 40, `climbs ${portal[2] - rail[0][2]} m`);
+  const lh = only(sc, 'lighthouse'),
+    cove = hub.dials.cove,
+    [ix, iz] = sc.island.c,
+    lhA = (Math.atan2(lh.z - iz, lh.x - ix) * 180) / Math.PI;
+  assert.ok(Math.abs(islandAngleDiff(lhA, cove.a)) <= cove.span / 2 + 14, `lighthouse at ${lhA}`);
+  const wm = only(sc, 'windmill'),
+    barn = sc.zones.find(Z => Z.k === 'barn'),
+    bc = barn.poly.reduce((m, p) => [m[0] + p[0] / barn.poly.length, m[1] + p[1] / barn.poly.length], [0, 0]);
+  assert.ok(Math.hypot(wm.x - bc[0], wm.z - bc[1]) < 45, 'the windmill by the barn');
+  /* every landmark on the island, its door turned out on a quarter turn */
+  for (const L of [st, lh, wm]) {
+    assert.ok(islandPointIn(coast, L.x, L.z), `${L.k} on the island`);
+    assert.equal(((L.a % 90) + 90) % 90, 0, `${L.k} at ${L.a}`);
+  }
+  /* off by default */
+  assert.equal(islandGenerate(hub.dials, hub.seed, ctx).landmarks, undefined);
 });
