@@ -2,6 +2,71 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Routes track RT-3 - Set pieces - 2026-10-25
+Branch `track/routes` (fast-forwarded to origin's RT-2 head first: the local checkout was 14 commits behind; main had
+nothing new, so the merge was a no-op). Plan approved in Plan Mode with the owner's answers: **all seven pieces**
+(ruins of broken stone walls), **pieces on spare roadside spots and clearings** (pockets and dead ends left for RT-4),
+and the **Bureau checkpoint carries an agent with an event**. Tag `rt-3-done` for the owner to push; `rt-1-done` and
+`rt-2-done` are not on the remote either.
+- Where the plan file and notes were wrong (checked in the code):
+  - Spots exist only on the finished scene (`mapgenLayoutSpots`), so pieces go after them (after plants) and clear the
+    small plants under them; the walkable share is measured after the pieces.
+  - The roadmap's `lamp` and `bench_*` are `lantern` and `bench_wood` / `bench_metal`. There is no camp tent: `tent` is
+    a striped market tent and read as a stall in the game, so the campsite is a fireside one. No ruin art, no jetty deck
+    prop (a jetty is ground tiles `b`, built only by the jetty feature), no Bureau prop or logo.
+  - An exit's signpost was already placed (one per exit) but had no `act`; walk-control already says "You're in
+    <place>." for a sign with no words, so the route-name sign needed no new UI.
+  - TW-1 built nothing reusable (hand-written placement). `mapgenStagePieces` and setPieces.json are written so a town
+    can call them later.
+- Changed (one cause per commit):
+  - **Signposts** (MAPGEN_VERSION 10): every generated scene's exit signposts have `act: 'sign'` (golden, run-start and
+    rng snapshots remade on purpose).
+  - **events.json `bureau_checkpoint`** (weight 0: never drawn for an event node): Declare everything (a common find),
+    Let them inspect your team (a Bureau Clerk battle, a reward pick), Walk on. My wording; change freely.
+  - **setPieces.json** + schema, type, `SET_PIECES`, `dataSetPieces` (check-data, the Studio's Check, a planted
+    snapshot): `perPlace` [2, 4]; seven pieces of existing props, each with `on` (spot kinds), `r`, biome weights,
+    plan multipliers, props in the piece's own metres (`rot`, a sign's `say`, `water` for a boat) and `people`.
+  - **mapgen**: `mapgenJetty` moved out of the jetty feature (no change), then the `pieces` dial (0-6, kept only when
+    given) and `mapgenStagePieces`: drawn by biome x plan weight on its own stream, no piece twice; a piece goes on a
+    roadside spot, a clearing or (fishing jetty) a jetty, its front turned to the road, tried as drawn then mirrored
+    (a piece with people first the way round that has them nearer the camera); all or none: every cell it covers
+    on ground walked to past everything but small plants, off the road, verge and tall grass, 1.5 m from every
+    other spot's stand and out of its sight strip (6.5 x 2.2 m); it leaves 4 spots by the road and 4 aside for the
+    trainers. Then the last piece comes out while an exit, a spot or a person is cut off or a ledge traps you
+    (`mapgenTraps`). `scene.pieces` = [{ id, x, z, rot, spot, f, people }]. A laid-out place with a pond builds a
+    jetty before the layout when a piece wants one (its path from the road kept clear); its land end is a `jetty`
+    spot (trainers don't use it; left for RT-4/TR-8). Ledge tops are still not spots.
+  - **Runs**: `runPiecesOf` (perPlace on the node's `scene|pieces` stream) for laid-out places; setPieces passed by
+    run-world, the run preview, the run sim and the real-run tests.
+  - **The agent**: walk-control puts a piece's people in the view, facing the road; tapping opens their event until
+    the run has played it (`run.enc.seen`), then toasts their line. The run sim ignores them (an optional event).
+  - **Studio**: Set pieces dial (0-6) and reroll on the Generate card. **Debug log**: `run.pieces` (id:spot).
+  - **Checks**: slow test mapgen-pieces (15 places: whole, turned and mirrored as recorded, off the road, clear of
+    spots, 55-65% walkable, reached, no traps, spots left, fishing jetty only on a jetty, a misfit leaves the scene
+    as it was); in-game step "A route's set pieces..." (pieces whole, an exit signpost says the place's name, the
+    agent opens bureau_checkpoint once); check-quick step RT-3 runs it.
+- Measured:
+  - 40 mapgen places asked 2-4: 2.85 placed of 3 asked; 8 real runs: **2.8 pieces a laid-out place** (campsite 29,
+    rest stop 22, woodcutter 19, farm pen 18, Bureau 15, ruins 11, fishing jetty 6), props a place 625 -> 639,
+    walkable 56-64%, the same 50 trainers with none off their pool.
+  - The fishing jetty fits about one lakeside jetty in three (shores near the road leave no room).
+  - **Draws a frame** (route-perf, low graphics, 6 spots west, before = 2e54cea): forest 562 -> 576 (+2.5%),
+    farmland 526 -> 519, lakeside 497 -> 539 (+8.5%: its jetty also changes the layout). Frame time within noise.
+  - **Making a run's world**: 638 -> 791 ms on this machine (two more walk floods a place).
+- Verified: lint, typecheck, check:modules, check:data, format:check, build; unit tests 921 quick and 64 slow;
+  check-quick RT-3 alone (56 s). **Full quick check** (1308 s): 37 of 39. Song fingerprints (cave mid, cave late not in
+  the baseline) fails on main too. RL-8 timed out at "Take off" under the paired load (60 s; the take-off makes the
+  run's world, a little slower now); alone it passes the take-off and stops at main's own "the town's shop has no
+  Perk". Not seen on a phone. CI not run (no PR).
+- Risky / open:
+  - **Not seen on a phone**: about 14 more props a place; the agent's sprite beside the tollbooth picture (headless
+    showed the booth hiding it before the mirror rule).
+  - RL-8's take-off wait (60 s) is close under the full check's load; raise it if it keeps timing out there.
+  - Sprite props (the tollbooth, statue, firewood) never turn, so a piece reads slightly differently by road angle.
+  - A camp tent model would make the campsite read better (art, the owner's call).
+- Next: RT-4 (more Billies, habitats, a rare one in a hard pocket, items at dead ends, Cut bramble shortcuts, animals).
+  Pockets, dead ends and unused jetty spots are free for it.
+
 ### Routes track RT-2 - Battle spots and route trainers - 2026-10-25
 Branch `track/routes` (fast-forwarded to main 2cfef57 first; plan approved in Plan Mode with the owner's answers:
 **trainers replace some wild Billies** (a route's wild stock is 8 less its trainers, at least 2) and **pairs now and
