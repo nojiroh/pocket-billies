@@ -163,7 +163,7 @@ function modelEditorHTML(k) {
         'Shape',
         `${p}.k`,
         MODEL_LAYER_KINDS.filter(q => !['img', 'raw'].includes(q[0]))
-      )}${textField('Name', `${p}.name`, { opt: 1 })}${colorField('Colour', `${p}.col`)}${selectField('Texture', `${p}.tex`, tex, { opt: 1 })}${checkboxField('Hidden', `${p}.hide`, { num: 1 })}${numberField('Window glass', `${p}.glass`, { opt: 1, min: 1, max: 31, step: 1, help: 'Empty: not a window. A number (1-31): this is a window’s glass, the sky in it by day and lit from inside after dark. Parts with the same number are one window (a tall window and its arched top).' })}</div><div class="grid">${pos}</div><div class="grid">${size}</div>`;
+      )}${textField('Name', `${p}.name`, { opt: 1 })}${colorField('Colour', `${p}.col`)}${selectField('Texture', `${p}.tex`, tex, { opt: 1 })}${checkboxField('Hidden', `${p}.hide`, { num: 1 })}${numberField('Window glass', `${p}.glass`, { opt: 1, min: 1, max: 31, step: 1, help: 'Empty: not a window. A number (1-31): this is a window’s glass, the sky in it by day and lit from inside after dark. Parts with the same number are one window (a tall window and its arched top).' })}${numberField('Roof part', `${p}.roof`, { opt: 1, min: 1, max: 2, step: 1, help: 'Empty: not the roof. 1: a roof part, recoloured by a placed roof style (moss, solar, chrome). 2: dressing that fits only this roof (moss tufts), hidden under another style.' })}</div><div class="grid">${pos}</div><div class="grid">${size}</div>`;
     }
     /* alpha 0.4: a part that turns (a propeller, a windmill's sails, a wheel): about which way, through which point, how fast */
     if (kind !== 'img') {

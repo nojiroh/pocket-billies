@@ -175,6 +175,9 @@ export const ENGINE_DEFAULTS = {
     /* water track WA-4: the sea's slow tide (the waterline and the wet sand move with the day's clock) */
     tide: true,
   },
+  /* HB-3: the hub's world map (the floating island): its lagoon and falls, and how much of the island's own detail it
+     draws; the phone's fallbacks */
+  worldMap: { lagoon: true, falls: 3, treeModels: true, treeFar: 0, fences: true, bridges: true },
   camera: {
     pitch: null,
     pitchAdd: -3,
@@ -829,6 +832,35 @@ export const ENGINE_SPEC = [
         'bool',
         'On a sea coast the water comes in and goes out twice a day, covering the wet sand and leaving tide pools.',
       ],
+    ],
+  ],
+  [
+    'worldMap',
+    'World map',
+    [
+      [
+        'lagoon',
+        'Lagoon round the island',
+        'bool',
+        'A shallow lagoon round the floating island, fading into the clouds.',
+      ],
+      ['falls', 'Waterfalls off the rim', 0, 4, 1, 'How many waterfalls pour off the floating rock (0: none).'],
+      [
+        'treeModels',
+        'Trees as models',
+        'bool',
+        'The island’s trees as their own low-poly models (off: simple shapes).',
+      ],
+      [
+        'treeFar',
+        'Simple trees past',
+        0,
+        400,
+        10,
+        'Trees farther than this many metres from the camera are drawn as simple shapes (0: never).',
+      ],
+      ['fences', 'Fences', 'bool', 'The island’s fences on the map.'],
+      ['bridges', 'Bridges', 'bool', 'The island’s bridges and pier on the map.'],
     ],
   ],
   [

@@ -30,6 +30,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   propTurn: [() => propTurn, v => (propTurn = v)],
   // @ts-expect-error -- replaced on purpose
+  spanFit: [() => spanFit, v => (spanFit = v)],
+  // @ts-expect-error -- replaced on purpose
+  tiltSpin: [() => tiltSpin, v => (tiltSpin = v)],
+  // @ts-expect-error -- replaced on purpose
   turnedBounds: [() => turnedBounds, v => (turnedBounds = v)],
   // @ts-expect-error -- replaced on purpose
   turnedPoint: [() => turnedPoint, v => (turnedPoint = v)],
@@ -163,4 +167,37 @@ export function decalPlace(at, L, m) {
     yaw: fixed ? (+(L.yaw || 0) || 0) * f + ro : 0,
     flip: fixed ? (L.flip ? -1 : 1) : L.flip ? -f : f,
   };
+}
+
+/* ---------- HB-6: a model tipped off the upright ----------
+   The model shaders turn a whole model about any axis through a pivot (RF-2's spin: a unit axis in the model's own
+   metres, up as y, an angle in radians, the pivot), before its mirror, size and turn. A fence rail spans two posts on
+   uneven ground (tipped end to end); a post leans a little (tipped by its placement's tilt). */
+/** @typedef {{ a: [number, number, number], an: number, c: [number, number, number] }} ModelSpin */
+
+/**
+ * a model that spans two points len apart along its x, the ground h0 under its left-hand end (-x) and h1 under its
+ * right-hand end (+x): its base point at their mean height, tipped about its depth so each end meets its own ground.
+ * Mirrored (flip -1) its own x runs the other way, so the tip turns the other way too. No spin when the ends are level.
+ * @param {number} len @param {number} h0 @param {number} h1 @param {number} [flip]
+ * @returns {{ y: number, spin: ModelSpin | null }}
+ */
+export function spanFit(len, h0, h1, flip = 1) {
+  const an = len > 0 ? Math.asin(Math.max(-1, Math.min(1, (h1 - h0) / len))) * (flip < 0 ? -1 : 1) : 0;
+  return { y: (h0 + h1) / 2, spin: Math.abs(an) > 1e-4 ? { a: [0, 0, 1], an, c: [0, 0, 0] } : null };
+}
+
+/**
+ * a placement's lean: tilt [degrees its top leans toward its own +x, degrees toward its back (+z)], about its base
+ * point; null when it stands upright
+ * @param {unknown} tilt @returns {ModelSpin | null}
+ */
+export function tiltSpin(tilt) {
+  if (!Array.isArray(tilt)) return null;
+  const tx = +tilt[0] || 0,
+    tz = +tilt[1] || 0,
+    an = (Math.hypot(tx, tz) * Math.PI) / 180;
+  if (an < 1e-4) return null;
+  const L = Math.hypot(tx, tz);
+  return { a: [tz / L, 0, -tx / L], an, c: [0, 0, 0] };
 }

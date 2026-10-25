@@ -108,6 +108,16 @@ test('the coast is exactly the island’s: land just inside, sea just outside, a
     }
 });
 
+test('HB-3: the lift: real height when asked (the floating island), BOWL_ISLAND_LIFT by default (a run’s bowl)', () => {
+  const P = [place('hub', 0, 0)],
+    H = () => () => 30,
+    lifted = bowlSeaInput(P, [], () => ISLE_MAP, 1000, SEA, H),
+    real = bowlSeaInput(P, [], () => ISLE_MAP, 1000, SEA, H, 1),
+    at = (/** @type {any} */ S) => S.places[0].hAt(S.places[0].x, S.places[0].y) * 1000;
+  assert.ok(Math.abs(at(lifted) - 30 * BOWL_ISLAND_LIFT) < 1e-6, `lifted ${at(lifted)}`);
+  assert.ok(Math.abs(at(real) - 30) < 1e-6, `real ${at(real)}`);
+});
+
 test('an island world still: sea to the rim; the sea.island round only without an island map', () => {
   const P = [place('hub', 0, 0)],
     S = bowlSeaInput(P, [], () => ISLE_MAP, 1000, SEA),
@@ -197,7 +207,8 @@ test('the island’s town on the bowl: a model on every free plot, the barn in i
   const M0 = maps[HUB_ISLAND],
     M = { ...M0, props: [] },
     T = bowlIslandPlotThings(M, isBuilding);
-  assert.equal(T.length, M.plots.length + 1, 'every plot and the barn');
+  /* every plot whose kind has a model (HB-4b: the Workshop, the Gene Bank and the landmarks wait for theirs) */
+  assert.equal(T.length, M.plots.filter(p => BOWL_PLOT_PROPS[p.k]).length + 1, 'every plot and the barn');
   /* with its buildings: none of the plots or the barn is drawn twice */
   assert.equal(bowlIslandPlotThings(M0, isBuilding).length, 0, 'every plot built on');
   for (const t of T) {
