@@ -2,6 +2,46 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Phase 09 batch 11 part 1 - The rooms' furniture and the generator's made things as models - 2026-10-25
+Branch `ccr-abb116a0-en5q2d`: the session's own; BRANCHES.md would name it `props/batch11-rooms`, but a cloud
+session can push only to the branch it was started on. Plan approved in Plan Mode. The owner's ask: of the 47
+standing pictures the game still shows (hub, its rooms, the run biomes, the generator; legacy maps left out), convert
+the first half. Flat on purpose: the 11 ground decals and the flat plants (sunflowers, crops, molehill and roots
+counted as flat).
+- Changed (tools/build-props-batch11.py, swapped in under their own keys like batches 1-10; rerunnable):
+  - **Rooms (20)**: plant_tall (an aloe), bookshelf, shop_shelf (bottles, boxes, jars), sack (three), crate_goods,
+    shop_counter (panelled, a till, a bag, a bell), sofa, fireplace, barrel (a blue steel drum, as its picture; not
+    batch 4's wooden one), clinic_bed (head to the wall), counter_white (the red cross, a screen, a plant),
+    fridge_drinks, haybale_stack (three round bales, twine), lab_desk (a box monitor), lab_machine, privacy_screen;
+    on the back wall wall_clock, wall_painting, wall_window, blackboard as shallow reliefs.
+  - **Generator (4)**: campfire (stones, logs, embers), lookout_tower (trestle, ladder, railed deck, glazed cabin,
+    tiled hip roof), tent (the waystation: a striped pyramid marquee with scallops, a counter of goods),
+    mine_entrance (a rock hump round a timber frame, the shaft, rails, a lantern).
+  - Sizes, base points and footprints (`box`) unchanged, so room layouts and walking round things are the same.
+    `fx` (fire, glow, window, sparkle) moved onto the models. Kept as cuts of the old pictures
+    (scene/next/decals): the painting's canvas, the window's view, the chalk, the fridge's bottles, the desk's screen,
+    the lab's glass tube (it faces the camera, as a round tube looks the same from every side) and the campfire's
+    flames. Plant, sacks, drum and campfire still turn at random; the rest stand square (`vary` rot/lean 0).
+  - Every room's back wall is at z 8.5 (measured, `roomBoxOf`); wall pieces are placed at 8.45, so their backs sit
+    on it, and wall-side furniture is no deeper than its gap (fireplace 0.35 m, fridge 0.5 m, lab machine 0.9 m:
+    their footprints stay as they were).
+  - Showcase map `test_props_rooms` (five rows). check-data's snapshot remade on purpose (142 data files, was 141).
+- Not changed: wind_sail_flower is placed nowhere now, so it was dropped from the list. The old pictures stay as
+  the fallback with 3D props off (with `ppm` 32 they draw about 6% bigger there, as batch 4's did).
+- Draws a frame at phone size (390 x 760, the game's defaults, 20 frames; with 3D props off for the pictures):
+  house 61 -> 48, lab 106 -> 58, shop 73 -> 42, clinic 64 -> 40, barn 38 -> 37. The models cost fewer draws.
+  Headless milliseconds (software drawing) say nothing for a phone.
+- Risky: the lab machine's tube and
+  the campfire's flames are camera-facing pictures: from straight above they look flat. The mine's rock is dark and
+  lumpy; check it in a cave run on your phone.
+- Verified: lint, type-check, unit tests (917 pass), check-data, the smoke check (6 of 6); headless pictures of
+  `test_props_rooms` (each row, the outdoor row turned), the five rooms (game camera and a turned view: nothing
+  through a wall), int_lab with 3D props off (the pictures draw), and a laid-out run place with the lookout (drawn,
+  no page errors). The waystation tent and the mine were seen only on the showcase map.
+- Phone check wanted: the house, lab, shop, clinic and barn (turn the camera); a waystation (the tent); a run with a
+  glade (campfire) and a lookout; a cave run's mine entrance; export the debug log.
+- Next: part 2 in a new session: the 23 standing pictures the run biomes still place (docs/phases/09, status).
+
 ### Routes track RT-1 - Route layouts - 2026-10-24
 Branch `track/routes` (plan approved in Plan Mode; the owner's answers: all five plans, and **every non-town place**
 laid out: landing, route, mini-boss, boss; towns, waystations and stalls keep their open ground). Tag `rt-1-done`
