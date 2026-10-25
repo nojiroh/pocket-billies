@@ -114,7 +114,7 @@ export function renderLabBoard() {
   const s = saveData,
     M = s.meta,
     rows = unlockRows(s, UNLOCK_DATA),
-    chips = ['research', 'scrap', 'crests']
+    chips = ['research', 'scrap', 'crests', ...(M.dna ? ['dna'] : [])]
       .map(
         c =>
           `<pb-coin kind="${c}" value="${M[c]}" label="${escapeHtml((CURRENCIES[c] || { name: c }).name)}"></pb-coin>`

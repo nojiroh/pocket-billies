@@ -1882,7 +1882,7 @@ export interface Perk {
 }
 
 /** currencies.json: one of the game's four currencies (roguelite track RL-11) */
-export type CurrencyId = 'money' | 'research' | 'scrap' | 'crests';
+export type CurrencyId = 'money' | 'research' | 'scrap' | 'crests' | 'dna';
 export interface Currency {
   /** what the player reads; `long` where the short name is a sign ($); `one` for a count of one */
   name: string;

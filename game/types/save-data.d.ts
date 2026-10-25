@@ -91,6 +91,8 @@ export interface Meta {
   research: number;
   scrap: number;
   crests: number;
+  /** SP-3: splicing's currency, banked when a spliced wild Billie is beaten (logic/battle-rewards.js) */
+  dna: number;
   /** unlock ids: 1 (unlocks.json, RL-11) */
   unlocks: Record<string, 1>;
   /** hub building id -> level (buildings.json, RL-11) */

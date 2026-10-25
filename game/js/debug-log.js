@@ -524,6 +524,7 @@ debugLog.state = () => {
           capital: meta.research,
           seals: meta.crests,
           scrap: meta.scrap,
+          dna: meta.dna,
           /* RL-11: the unlock ids owned (game data ids, no names) and the buildings' levels */
           unlocks: Object.keys(meta.unlocks || {}).sort(),
           buildings: Object.assign({}, meta.buildings || {}),

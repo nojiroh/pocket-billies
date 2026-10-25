@@ -21,6 +21,13 @@
   "kept": "meta",
   "about": "The building material. A little for every place a run reaches; spent at the ranch."
  },
+ "dna": {
+  "name": "DNA",
+  "one": "DNA",
+  "icon": "dna",
+  "kept": "meta",
+  "about": "Splicing's currency (SP-3): banked the moment a spliced wild Billie is beaten. The Gene Bank will spend it."
+ },
  "crests": {
   "name": "Crests",
   "one": "Crest",
