@@ -19,6 +19,7 @@ import {
   MOVES,
   PERKS,
   RULES,
+  SET_PIECES,
   SHOPS,
   SPECIES,
   START_NODE,
@@ -37,6 +38,7 @@ import { runRestore } from './logic/run-state.js';
 import { RUN_SIDE_MOD, runSideOpen } from './logic/run-side.js';
 import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
+import { runScenesMake } from './logic/run-scenes.js';
 import { runClinic, runFoes, runHealCost, runShopOpen, runWareHeals } from './logic/run-loop.js';
 import { perkOfferMake } from './logic/perks.js';
 import { eventAt } from './logic/encounters.js';
@@ -1284,6 +1286,108 @@ async function runFullTest(mode) {
               stopTimers();
               setActiveBattle(null);
             }
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        180
+      );
+    /* RT-3: a run route's set pieces, on a copy of the save: the first seed (SELFTESTSP0, 1, ...) whose map has a
+       Bureau checkpoint on a main place; on that place every piece has all its props round it, the agent stands in
+       the checkpoint, tapping it opens the bureau_checkpoint event, walking on plays it, and tapping again only
+       talks. Then the save as it was */
+    if (typeof runWorldSync === 'function' && SET_PIECES && !selfTest.stop)
+      await phase(
+        "A route's set pieces: whole, the Bureau's agent opens its event once",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            wait = async (/** @type {() => any} */ f, /** @type {number} */ ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            let seed = '',
+              node = -1;
+            for (let k = 0; k < 12 && node < 0; k++) {
+              const t = JSON.parse(JSON.stringify(s));
+              runStartOn(t, runStartPlan(`SELFTESTSP${k}`, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+              const made = runScenesMake(t.run, data);
+              node = made.findIndex(
+                (sc, i) => !(t.run.map.nodes[i] || {}).side && (sc.pieces || []).some(L => L.id === 'bureau_checkpoint')
+              );
+              if (node >= 0) seed = `SELFTESTSP${k}`;
+            }
+            if (node < 0) throw new Error('no seed of the first 12 has a Bureau checkpoint on a main place');
+            runStartOn(s, runStartPlan(seed, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            setSaveData(s);
+            const n = runWorldNode(node);
+            if (!runJump(n)) throw new Error('couldn’t walk to the route');
+            uiState.roam = null;
+            render();
+            const id = 'w:' + LOCATIONS[n].mapId + '*';
+            if (!(await wait(() => walkView.ready && walkView.id === id, 60000)))
+              throw new Error(`the route isn't shown (still ${walkView.id})`);
+            const sc = mapById(LOCATIONS[n].mapId),
+              L = sc.pieces || [];
+            for (const P of L) {
+              const S = SET_PIECES.pieces[P.id];
+              for (const q of S.props)
+                if (!sc.props.some(o => o.k === q.k && Math.hypot(o.x - P.x, o.z - P.z) <= S.r + 0.5))
+                  throw new Error(`the ${S.name} has no ${q.k}`);
+            }
+            /* an exit's signpost reads the place's name */
+            const sign = sc.props.find(o => o.k === 'signpost' && o.act === 'sign' && !o.say),
+              toasts = () =>
+                [uiState.toastOn, ...(uiState.toastQ || [])]
+                  .map(t => (t && typeof t === 'object' ? t.text : t))
+                  .join(' | ');
+            if (!sign) throw new Error('the route has no signpost you can read');
+            walkPick({ k: 'act', act: 'sign', p: sign });
+            if (!(await wait(() => toasts().includes(LOCATIONS[n].name), 3000)))
+              throw new Error(`the signpost says “${toasts()}”, not the place’s name`);
+            const agent = walkState().npcs.find(m => m.piece && m.piece.event === 'bureau_checkpoint');
+            if (!agent) throw new Error('the Bureau checkpoint has no agent');
+            if (!(await wait(() => walkView.npcAt[agent.id], 10000))) throw new Error('the agent isn’t on the map');
+            walkPick({ k: 'npc', n: agent });
+            if (!(await wait(() => uiState.modal && uiState.modal.cls === 'event-sheet', 5000)))
+              throw new Error('tapping the agent opened no event');
+            const go = uiState.modal.btns[uiState.modal.btns.length - 1];
+            go.f();
+            if (!(await wait(() => saveData.run.enc && saveData.run.enc.seen.includes('bureau_checkpoint'), 15000)))
+              throw new Error('walking on didn’t play the event');
+            /* its lines, each with a Go on */
+            for (let k = 0; k < 10 && saveData.run.enc.play; k++) {
+              await wait(() => uiState.modal && uiState.modal.cls === 'event-sheet', 5000);
+              const b = uiState.modal && uiState.modal.btns;
+              if (b && b.length === 1) b[0].f();
+              await selfTestSleep(200);
+            }
+            if (saveData.run.enc.play) throw new Error('walking on didn’t end the event');
+            uiState.modal = null;
+            renderOverlay();
+            walkPick({ k: 'npc', n: agent });
+            await selfTestSleep(300);
+            if (uiState.modal && uiState.modal.cls === 'event-sheet')
+              throw new Error('the agent opened the event twice');
+            return `${seed}: ${LOCATIONS[n].name}, ${L.map(P => P.id + '@' + P.spot).join(', ')}; the signpost reads its name; the agent's event once`;
+          } finally {
             uiState.modal = null;
             uiState.mq = [];
             renderOverlay();

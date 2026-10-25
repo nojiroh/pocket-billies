@@ -1595,6 +1595,20 @@ def route_trainers_step(P):
         pg.evaluate("if(activeBattle){stopTimers();setActiveBattle(null);battleStageStop()}if(talkBox.on)talkHide();uiState.modal=null;uiState.mq=[];renderOverlay();setSaveData(window.rt2Hub);render();0")
 
 
+@step("RT-3: set pieces — a route's pieces whole, its signpost reads the place's name, the Bureau's agent opens its event once (the in-game step)", 420)
+def set_pieces_step(P):
+    """The in-game test's set pieces step (its own seed search: a run with a Bureau checkpoint on a main place): every
+    piece there has all its props round it, an exit's signpost tapped says the place's name, the agent tapped opens
+    the bureau_checkpoint event, Walk on plays it, and tapped again it only talks"""
+    pg = P.pg
+    if not pg.evaluate("typeof SET_PIECES!=='undefined'&&!!SET_PIECES&&typeof runWorldSync==='function'"): return 'not in this build'
+    name = "A route's set pieces: whole, the Bureau's agent opens its event once"
+    r = run_in_game_test(pg, [name], False, 360)
+    ph = next((p for p in r['phases'] if p['name'] == name), None)
+    if not ph: raise Exception('the in-game test has no set pieces step')
+    return ph['why'] or 'in-game step passed'
+
+
 @step('RL-8: a run from the mast — the flight, a battle, a seam, a paid heal, the shop, a mini-boss and its Perk pick (RL-12), the boss, the payout, home', 420)
 def rl8_run_from_mast(P):
     """Copperleaf's mast sheet (tapped as walkPick does) offers "Start a run"; its sheet's "Take off" puts a run on the
@@ -1959,7 +1973,7 @@ def pages():
              ('town', low, [rl8_run_from_mast, route_trainers_step, juniper_and_lab, airship_moored]),
              ('town', {}, [walking, atmosphere, animals, frames_rooms_settings_map]),
              ('town', {}, [culling_cache_wear, buildings_and_rooms, lowpoly_props, night_lights_and_front]),
-             ('town', low, [postcard_visit, run_speeds, settings]),
+             ('town', low, [postcard_visit, run_speeds, settings, set_pieces_step]),
              ('title', {'width': 390, 'height': 844, 'mobile': True}, [phone_flow]),
              ('run', phone, [sound_effects_step]),
              ('run', phone, [run_music_step, run_map_weather_step, battle_music_step]),
