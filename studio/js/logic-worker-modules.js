@@ -39,6 +39,7 @@ import '../../game/js/logic/fighters.js';
 import '../../game/js/logic/float-island.js';
 import '../../game/js/logic/forms.js';
 import '../../game/js/logic/free-camera.js';
+import '../../game/js/logic/genes.js';
 import '../../game/js/logic/graft-art.js';
 import '../../game/js/logic/held.js';
 import '../../game/js/logic/history.js';
