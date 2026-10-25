@@ -735,7 +735,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           fv.push(ex + px * 0.25 * s2, t2 ? y2 : yt + 0.02, ez + pz * 0.25 * s2, t2, yt - y2, s2 * 0.5 + 0.5, 0.5, 0);
         }
         fi.push(fb0, fb0 + 2, fb0 + 1, fb0 + 1, fb0 + 2, fb0 + 3);
-        T.falls.push([ex + di * 0.12, y2 + 0.05, ez + dj * 0.12, yt - y2]);
+        T.falls.push([ex + di * 0.12, y2 + 0.05, ez + dj * 0.12, yt - y2, di, dj]);
       }
     }
   }
