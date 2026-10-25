@@ -76,3 +76,57 @@ test('a picture that stays put faces the placement turn; a camera-facing one nev
   assert.deepEqual(fn('pictureRight')({ fixed: false, p }, [9, 9, 9]), [9, 9, 9]);
   near(fn('propTurn')({ p, lk: { rot: 0.5 } }), Math.PI / 2 + 0.3, 'model with a little random turn');
 });
+
+/* HB-1: a model's point as its shaders place it (prop-models.js: x mirrored, times the size, turned, then the base
+   and the bob's rise) and a face's outward way (a decal's yaw 0 faces the front, -z) */
+const modelPoint = (at, q, m) => {
+  const f = m.f || 1,
+    ro = m.turn + (m.bob ? m.bob[1] : 0),
+    x = q[0] * f * m.s,
+    y = q[1] * m.s,
+    z = q[2] * m.s;
+  return [
+    at.x + x * Math.cos(ro) - z * Math.sin(ro),
+    at.y + y + (m.bob ? m.bob[0] : 0),
+    at.z + x * Math.sin(ro) + z * Math.cos(ro),
+  ];
+};
+const faceOut = (yaw, m) => {
+  const ro = m.turn + (m.bob ? m.bob[1] : 0),
+    nx = Math.sin(yaw) * (m.f || 1),
+    nz = -Math.cos(yaw);
+  return [nx * Math.cos(ro) - nz * Math.sin(ro), nx * Math.sin(ro) + nz * Math.cos(ro)];
+};
+
+test('HB-1: a decal stays on its model: size and wobble, turn, mirror and bob as the shaders draw the model', () => {
+  const at = { x: 3, y: 0.5, z: -2 },
+    L = { k: 'img', x: 0.8, y: -0.1, z: 1.6, face: 'fixed', yaw: Math.PI / 2 };
+  for (const s of [1, 1.06 * 1.2, 0.92])
+    for (const f of [1, -1])
+      for (const turn of [0, 0.4, -2.1])
+        for (const bob of [null, [0.07, 0.02]]) {
+          const m = { s, f, turn, bob },
+            d = fn('decalPlace')(at, L, m),
+            w = modelPoint(at, [L.x, L.z, L.y], m),
+            tag = `s ${s} f ${f} turn ${turn} bob ${!!bob}`;
+          near(d.x, w[0], tag + ' x');
+          near(d.y, w[1], tag + ' y');
+          near(d.z, w[2], tag + ' z');
+          near(d.s, s, tag + ' size');
+          /* it faces the way the model's face does (pictureRight's angle a: its outward way is (sin a, -cos a)) */
+          const o = faceOut(L.yaw, m);
+          near(Math.sin(d.yaw), o[0], tag + ' facing x');
+          near(-Math.cos(d.yaw), o[1], tag + ' facing z');
+        }
+});
+
+test('HB-1: a mirrored model never mirrors its lettering; a camera-facing layer mirrors with it', () => {
+  const at = { x: 0, y: 0, z: 0 },
+    m = { s: 1, f: -1, turn: 0 };
+  assert.equal(fn('decalPlace')(at, { face: 'fixed' }, m).flip, 1);
+  assert.equal(fn('decalPlace')(at, { face: 'fixed', flip: 1 }, m).flip, -1, 'a layer drawn mirrored on purpose');
+  assert.equal(fn('decalPlace')(at, {}, m).flip, -1);
+  assert.equal(fn('decalPlace')(at, {}, { s: 1, turn: 0 }).flip, 1);
+  near(fn('decalPlace')(at, { face: 'fixed', yaw: 1 }, m).yaw, -1, 'the side decal faces the other side');
+  assert.equal(fn('decalPlace')(at, { yaw: 1 }, m).yaw, 0, 'a camera-facing layer has no yaw');
+});
