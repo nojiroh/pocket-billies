@@ -11,7 +11,7 @@ import { test } from 'node:test';
 import { readGameData } from '../data-files.mjs';
 import { islandAngleDiff, islandGenerate } from '../../game/js/logic/island-gen.js';
 import { islandPointIn } from '../../game/js/logic/island.js';
-import { mapgenReach } from '../../game/js/logic/mapgen.js';
+import { mapgenReach, mapgenReached } from '../../game/js/logic/mapgen.js';
 
 const D = readGameData(),
   ctx = { scenery: D.scenery },
@@ -223,10 +223,10 @@ const sketchB2 = (square, town = {}) =>
         tol: 90,
         quarter: 1,
         houses: 20,
-        lanes: 2,
+        lanes: 3,
         scale: 0.6,
         extra: ['library', 'inn', 'workshop', 'genebank'],
-        second: { on: 1, along: 'arc', side: 'in', off: 9, span: 140, at: 40 },
+        second: { on: 1, along: 'arc', side: 'in', off: 15, span: 140, at: 40 },
         square,
         ...town,
       },
@@ -288,7 +288,9 @@ test('town.square front: buildings round the square, by its rim, one facing into
     },
     round = sc.plots.filter(L => L.k !== 'well' && gap(L) < 4);
   assert.ok(round.length >= 3, `${round.length} plots by the square: ${round.map(L => L.k)}`);
-  for (const L of round) assert.ok(gap(L) > 0, `${L.k} stands on the square`);
+  /* a plot keeps off paving as off a street: sampled 0.6 m inside its edge, the paving per metre cell (island-gen.js
+     plotFits) */
+  for (const L of round) assert.ok(gap(L) > -1.2, `${L.k} stands on the square: ${gap(L)}`);
   const facing = round.filter(L => {
     const a = (L.a * Math.PI) / 180;
     return Math.cos(a) * (W.x - L.x) + Math.sin(a) * (W.z - L.z) > 0.7 * Math.hypot(W.x - L.x, W.z - L.z);
@@ -317,5 +319,36 @@ test('town.quarter: within 45 degrees of facing out from the summit spot itself 
     const { scene } = islandGenerate(withTown({ face: 'out', tol: 90, quarter: 1, houses: 16, scale: 0.7 }), seed, ctx);
     for (const o of offOut(scene))
       assert.ok(Math.abs(o.off) <= 45, `${seed}: ${o.L.k} at ${o.L.x}, ${o.L.z}: ${o.off}`);
+  }
+});
+
+test('landmarks: the coast road goes round the station plot, which stands where it did', () => {
+  const { scene: sc, paths, notes } = sketchB2({ r: 12, off: 6, front: 6 }),
+    st = only(sc, 'station'),
+    a = (st.a * Math.PI) / 180,
+    on = (p, m) => {
+      const dx = p[0] - st.x,
+        dz = p[1] - st.z;
+      return (
+        Math.abs(dx * Math.cos(a) + dz * Math.sin(a)) <= st.d / 2 + m &&
+        Math.abs(-dx * Math.sin(a) + dz * Math.cos(a)) <= st.w / 2 + m
+      );
+    };
+  assert.ok(notes.includes('loop goes round the station'), notes.join('; '));
+  for (const p of paths) assert.ok(!p.pts.some(q => on(q, p.width / 2)), `${p.name} through the station`);
+  /* no path tile under it */
+  for (let z = Math.floor(st.z - 8); z < st.z + 8; z++)
+    for (let x = Math.floor(st.x - 8); x < st.x + 8; x++)
+      if (on([x + 0.5, z + 0.5], 0)) assert.ok(!'pvc'.includes(sc.tiles[sc.h - 1 - z][x]), `a path at ${x}, ${z}`);
+  /* the summit, the dock and every plot's front still walked to from the hub */
+  const R = mapgenReach(sc, sc.scenery, sc.hub, { slope: true });
+  for (const S of sc.spots.filter(S => ['summit', 'dock'].includes(S.kind)))
+    assert.ok(mapgenReached(R, S.x, S.z), S.kind);
+  for (const L of sc.plots.filter(L => L.k !== 'well')) {
+    const b = (L.a * Math.PI) / 180;
+    assert.ok(
+      mapgenReached(R, L.x + Math.cos(b) * (L.d / 2 + 0.9), L.z + Math.sin(b) * (L.d / 2 + 0.9)),
+      `${L.k} at ${L.x}, ${L.z}`
+    );
   }
 });
