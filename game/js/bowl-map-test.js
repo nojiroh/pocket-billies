@@ -18,14 +18,7 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { $ } from './util.js';
 import { LOCATIONS, gameData } from './game-data.js';
-import {
-  BOWL_ISLAND_BASE,
-  BOWL_ISLAND_LIFT,
-  BOWL_RIM_HEIGHT,
-  bowlBaseHeight,
-  bowlCoastAt,
-  bowlGridHeight,
-} from './logic/bowl.js';
+import { BOWL_ISLAND_BASE, BOWL_RIM_HEIGHT, bowlBaseHeight, bowlCoastAt, bowlGridHeight } from './logic/bowl.js';
 import {
   BOWL_CAMERA,
   bowlCamHome,
@@ -46,6 +39,7 @@ import {
   BOWL_METRES,
   WORLD_BOWL_SHADERS,
   worldBowl,
+  worldBowlIslandLift,
   worldBowlPick,
   worldBowlSunNow,
   worldMap,
@@ -323,9 +317,10 @@ async function runBowlMapTest() {
             tx = x;
             tz = z;
           }
-      const [px, py] = bowlMapPoint(s, M, tx, tz, BOWL_METRES),
-        drawn =
-          ((bowlGridHeight(G, px, py) - bowlBaseHeight(px, py) - BOWL_ISLAND_BASE) * BOWL_METRES) / BOWL_ISLAND_LIFT;
+      /* HB-3: real height on the hub's floating island, BOWL_ISLAND_LIFT on a run's bowl */
+      const lift = worldBowlIslandLift(),
+        [px, py] = bowlMapPoint(s, M, tx, tz, BOWL_METRES),
+        drawn = ((bowlGridHeight(G, px, py) - bowlBaseHeight(px, py) - BOWL_ISLAND_BASE) * BOWL_METRES) / lift;
       if (Math.abs(drawn - top) > Math.max(3, top * 0.25))
         return { ok: false, note: `${id}: its top is ${top.toFixed(1)} m, drawn ${drawn.toFixed(1)} m` };
       /* its town: a model on every plot nothing stands on yet (and its own buildings) */
@@ -333,7 +328,7 @@ async function runBowlMapTest() {
         plots = bowlIslandPlotThings(M, p => bowlPropClass(p.k, A[p.k]) === 'building').length,
         drawnN = g.things.counts[0] || 0;
       if (drawnN < plots) return { ok: false, note: `${id}: ${drawnN} things drawn for ${plots} plots` };
-      return `${id}: its coast (${C.length} points; ${tried} land and sea checks hold), its ground laid on, its top ${top.toFixed(1)} m drawn ${drawn.toFixed(1)} m (x${BOWL_ISLAND_LIFT}), ${plots} plot buildings of ${drawnN} things; ready in ${Math.round(performance.now() - t)} ms`;
+      return `${id}: its coast (${C.length} points; ${tried} land and sea checks hold), its ground laid on, its top ${top.toFixed(1)} m drawn ${drawn.toFixed(1)} m (x${lift}), ${plots} plot buildings of ${drawnN} things; ready in ${Math.round(performance.now() - t)} ms`;
     });
     await step('Every place is on the bowl', async () => {
       const S = worldBowl.spots || [],

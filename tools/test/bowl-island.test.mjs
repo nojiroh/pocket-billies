@@ -108,6 +108,16 @@ test('the coast is exactly the island’s: land just inside, sea just outside, a
     }
 });
 
+test('HB-3: the lift: real height when asked (the floating island), BOWL_ISLAND_LIFT by default (a run’s bowl)', () => {
+  const P = [place('hub', 0, 0)],
+    H = () => () => 30,
+    lifted = bowlSeaInput(P, [], () => ISLE_MAP, 1000, SEA, H),
+    real = bowlSeaInput(P, [], () => ISLE_MAP, 1000, SEA, H, 1),
+    at = (/** @type {any} */ S) => S.places[0].hAt(S.places[0].x, S.places[0].y) * 1000;
+  assert.ok(Math.abs(at(lifted) - 30 * BOWL_ISLAND_LIFT) < 1e-6, `lifted ${at(lifted)}`);
+  assert.ok(Math.abs(at(real) - 30) < 1e-6, `real ${at(real)}`);
+});
+
 test('an island world still: sea to the rim; the sea.island round only without an island map', () => {
   const P = [place('hub', 0, 0)],
     S = bowlSeaInput(P, [], () => ISLE_MAP, 1000, SEA),

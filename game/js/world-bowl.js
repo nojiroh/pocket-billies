@@ -21,6 +21,7 @@ import { runMarkDraw } from './logic/run-marks.js';
 import {
   BOWL_GROUND_EXTENT,
   BOWL_ISLAND_BASE,
+  BOWL_ISLAND_LIFT,
   bowlBaseHeight,
   bowlCoastAt,
   bowlCompass,
@@ -155,6 +156,7 @@ expose({
   worldBowlFlying: [() => worldBowlFlying],
   worldBowlGpu: [() => worldBowlGpu, v => (worldBowlGpu = v)],
   worldBowlHex: [() => worldBowlHex],
+  worldBowlIslandLift: [() => worldBowlIslandLift, v => (worldBowlIslandLift = v)],
   worldBowlIslandLoad: [() => worldBowlIslandLoad, v => (worldBowlIslandLoad = v)],
   worldBowlLightMatrix: [() => worldBowlLightMatrix, v => (worldBowlLightMatrix = v)],
   worldBowlLine: [() => worldBowlLine, v => (worldBowlLine = v)],
@@ -735,6 +737,11 @@ const BOWL_KIND_GROUND = {
   bins: 'xvxu',
   grotto: 'krkM',
 };
+/* HB-3: how much higher than they are an island map's heights are drawn: real height on the hub's floating island
+   (its buildings and trees are life size), BOWL_ISLAND_LIFT on a run's bowl (worldExtra.look, as worldBowlFloats) */
+export function worldBowlIslandLift() {
+  return worldExtra.look ? BOWL_ISLAND_LIFT : 1;
+}
 function worldBowlSpots() {
   if (worldBowl.spots) return worldBowl.spots;
   /* the sea (look session 1): every place's walk map and every road on land, the rest of the line drawn so about 40%
@@ -751,7 +758,8 @@ function worldBowlSpots() {
       l => {
         const M = worldBowlMapOf(LOCATIONS.indexOf(l));
         return bowlHasCoast(M) ? bowlIslandHeights(M) : null;
-      }
+      },
+      worldBowlIslandLift()
     ),
     F = bowlReliefFeatures(LOCATIONS, look.relief, look.seed),
     G = bowlGroundGrid(F, undefined, sea);
