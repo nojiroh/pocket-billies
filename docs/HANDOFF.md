@@ -2,6 +2,53 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Towns track TW-2 - Life: townsfolk, animals, chat, named locals - 2026-10-25
+Branch `track/towns` (TW-2 of docs/phases/towns-track.md); main (2cfef57) fast-forwarded in first: the conflict markers
+the branch carried in HANDOFF.md and BRANCHES.md were already resolved on main. Plan approved with the owner's answers: at
+most 6 folk (2 + 1 per two houses), the graphics cap 3/5/6 (3 while the game has stepped quality down, `walkRenderer.q`
+2 or more; 5 on Balanced; 6 on Beautiful), 1-2 standing named locals, chat lines drafted by Claude and approved as
+written. Tag `tw-2-done` for the owner (this session's git proxy refuses tag pushes).
+- Where the plan's notes were wrong (checked in the code):
+  - There is no three-level graphics setting: Settings has two presets (Balanced, Beautiful: `preferences.aim`
+    smooth/sharp) and the automatic quality ladder (0-4). The cap maps onto those (above).
+  - "2 + 1 per two houses" gives 2-5, not up to 6 (a town has 0-7 houses; under 4 only when its square didn't fit, which
+    gets the base 2). So only the busy cap (3) ever bites today.
+  - Named people only talked through a story script (`story.js personTalk`) and `walk-control.js` took only people with
+    a portrait (`PEOPLE`). A person with `lines` and a townsfolk look (`who: 'folk:<n>'`) now talks by their own name.
+  - Chat needed no new runtime code: `mapChatLines` already prefers the scene's own `sc.chat`, and the seamless world
+    carries `chat` (a look key). Towns no longer fall back to FOLK_CHAT, whose "the clinic patches up your team for free"
+    is wrong in a run.
+- Changed:
+  - **Data:** biomes.json `town.life` (chickens and cats; pigeons on the square of a 5-house town in meadow, lake and
+    autumn; crows in volcano and badlands; none in the cave) and `town.chat` (6 lines a biome); rules.json `run.town`
+    (`cap`, `locals` [1, 2], 16 `names`, `chat` 2 lines per region theme). Schema, types, check-data (`RUN_RULE_KEYS`
+    gained `town`).
+  - **mapgen.js** (MAPGEN_VERSION 9): `mapgenTownFolk` (`MAPGEN_TOWN.folk`), `mapgenSceneLife` (the biome's wild animals
+    plus the town's, kept to `G.town.area`: the houses' and the square's width, from the vegetable plots to the square's
+    back), the biome's chat on a town, `spots` kind `local` (the square's west half first, then one by each house's gate,
+    in front of its fence). Routes: `folk: 0`, no chat, no locals, as before.
+  - **run-scenes.js:** `runTownLife` (stream `town|life`): the region's lines after the biome's, the named locals on the
+    local spots (`scene.people`, ids `local0/1`); `runTownFolkCap`.
+  - **Game:** walk-view `updateFolk` draws only the first `cap` folk of a generated town (the rest keep their day, so a
+    tier change never restarts them); walk-control and story.js for the locals; talk.js exports `talk`.
+  - **Tests:** mapgen-town.test.mjs: folk by houses, town animals and their ground, chat (biome then region), 1-2 locals
+    on the square first, reachable, named once, two biome lines each; the cap; a route has none. Remade on purpose: the
+    rng scene hash and run-start (version only: a route scene is the same). New check-fast step "A run town's life".
+- Verified: lint, typecheck, check:modules, format:check, check:data; unit tests 976 of 976 (all tiers); check-fast 29
+  of 29 (569 s); looked at Thicket Town in the game (folk on the square by the benches, chickens and a cat, a local).
+  Full quick check 35 of 37: the two problems are on main too (2cfef57): **RL-8**'s "the town's shop has no Perk"
+  (already noted under RT-1) and **Song fingerprints** "cave mid / cave late: not in the baseline" (RL-R2b's cave songs
+  never made it into validation/sound-baseline; run alone on a main worktree, same result). Neither is TW-2's.
+- Risky / open:
+  - **Not tried on the phone.** Up to 5 walkers and 2-6 animals in a town that ran at 27-28 fps (phase 09); the busy
+    cap (3) only kicks in after the quality ladder has stepped down. Check a run town's line in the debug log.
+  - A local by a gate stands in front of the fence beside the path: fine in the sweep, but a person's sprite can overlap
+    the fence from some camera angles.
+  - Locals' names can repeat across towns in a run (each town draws from its own stream).
+  - The talk two-shot with a local by a house: not looked at on the phone.
+- Next: TW-3 (run quests). The board's spot (`spots` kind `board`) is clear; a quest giver can reuse the locals' path
+  (`scene.people` with lines, a townsfolk look) plus a marker. Ask-me-before items 2 and 3 are TW-3's.
+
 ### Routes track RT-1 - Route layouts - 2026-10-24
 Branch `track/routes` (plan approved in Plan Mode; the owner's answers: all five plans, and **every non-town place**
 laid out: landing, route, mini-boss, boss; towns, waystations and stalls keep their open ground). Tag `rt-1-done`
