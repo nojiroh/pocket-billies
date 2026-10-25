@@ -30,7 +30,7 @@ weather and life on water).
   test_water's walking checks (both ok, through `testMapChecks`); look-water's 11 pictures and numbers.
 - Next: the owner makes `track/water`; round 1 runs three sessions at once: WA-1 (lane R, pixel water), WA-3a (lane
   G, rivers downhill), WA-6a (lane P, wading). WA-1 takes its "before" pictures with `tools/look-water.py --out=` at
-  this commit. Open: lane B (WA-7) in round 3.
+  this commit. Lane B (WA-7) runs in round 3 as a fourth lane (the owner, after WA-0).
 
 ### Window glass on the low-poly buildings (no more glowing orbs) - 2026-10-25
 Branch `ccr-7161a124-txw6o4` (one session, not part of a plan). The owner's ask: windows on 3D buildings looked like a

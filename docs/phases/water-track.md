@@ -18,13 +18,13 @@ TR-6 keeps vines and cave doors; TR-10 keeps the ground surfaces (mud, cracking 
 | Animation | **Stepped, about 10 frames a second** for ripples, foam and fall streaks; the swell and the water's level stay smooth |
 | Moving through water | **Wading** in shallows, **Surf** on a Billie, a **Waterfall climb** field move |
 | Waterfalls | **Big set pieces** (4-15 m, a plunge pool, mist, sound), **small cascades** (the automatic sheets, improved), **in caves**, and **one on the hub island** (ask again in WA-2b: the island is locked once right) |
-| Sessions at once | **3 lanes** (renderer, generation, play) |
+| Sessions at once | **3 lanes** (renderer, generation, play); a fourth, B, in round 3 (asked after WA-0: yes) |
 | Where it lives | **Its own track**, `track/water` |
 | Mapgen | **A new module**, `logic/water-gen.js`, with one small hook in `mapgen.js` |
 | Extras | **Water sounds, Studio tools, weather on water, water life** |
 
-Open (ask before round 3): a fourth lane B (WA-7, the world map's and battles' water) in round 3, making four
-sessions at once for one round. Recommendation: yes, its files overlap nothing else in that round.
+Lane B (WA-7, the world map's and battles' water) runs in round 3 as a fourth lane: four sessions at once for that
+round (the owner, 2026-10-25, after WA-0).
 
 ## Verified facts (main f779581, 2026-10-25)
 - **Nine kinds** (`walk/water-data.js WATER_KIND_LOOKS`: pond, stream, canal, spring, swamp, lake, sea, lava, ice), each
@@ -128,7 +128,7 @@ merge it by hand. Pictures: lanes run the smoke check only; the quick-check base
 | **R, renderer** | `walk/walk-shaders.js` (water, fall, the ground's shore parts), `walk/water.js`, `walk/water-data.js`, `walk/ground-mesh.js` (the water and fall parts), `walk/effects.js` (spray, mist, steam, leaves), the `water` group of `engine/settings.js` and `game/data/engine.json` |
 | **G, generation** | `logic/water-gen.js` (new), its one hook in `logic/mapgen.js`, `logic/sea.js`, the scene data's `falls` and `streams`, the test scenes' water (`tools/build-test-scenes.py t_water`), the Studio's water tools |
 | **P, play** | `walk-control.js`, the walk grid's water rule (`walk-view.js:2722`), `walk/prop-look.js rideMountItem`, `walk/sprites.js` (the waterline cut), `field-moves.js`, `game/data/fieldMoves.json`, `logic/rules.js` (riding), `fishing.js` hooks |
-| **B, world map and battles** (round 3, if the owner says yes) | `world-bowl.js` (its water and rivers), `battle-stage.js` (water backdrops) |
+| **B, world map and battles** (round 3) | `world-bowl.js` (its water and rivers), `battle-stage.js` (water backdrops) |
 
 The renderer lane's sessions run one after another (one shader file, one mesh builder); the track's length is that
 lane. Lane G lands its `mapgen.js` hook while no other track has a mapgen session open (routes, towns, TR-2c part 2,
@@ -158,7 +158,6 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
 - The Waterfall climb's badge (WA-6b).
 - The new kinds list before WA-5a (the six above are a proposal).
 - Water sounds after SND-6 merges (WA-8).
-- Lane B in round 3 (above).
 
 ## WA-0 notes (2026-10-25)
 - test_water (58 x 28 m, was 40 x 28): the old west half unchanged; east of x 42 a 6 m cliff (rock) with a 1.6 m

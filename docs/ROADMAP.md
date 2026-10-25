@@ -52,12 +52,13 @@ town node needs it.
   route: RT-1 (layouts: forest masses, fences, 55-65% walkable, marked spots; done 2026-10-24), RT-2 (battle spots, 4-6 trainers,
   pairs), RT-3 (set pieces for a lived-in feel), RT-4 (more Billies, items, Cut shortcuts, animals). Tags `rt-N-done`.
   Branch `track/routes`.
-- **Water track** (docs/phases/water-track.md, the owner's brief and answers 2026-10-25): pixel water on the 32
-  texels a metre grid (hybrid: banded tones, stepped frames, smooth reflections), waterfalls as set pieces with plunge
-  pools and mist, rivers that run downhill, the sea and the coast, wading, Surf and a Waterfall climb, new kinds,
-  water life, sounds and Studio tools. WA-0 (the plan, the contract, test_water and `tools/look-water.py`) done
-  2026-10-25; then three lanes at once (renderer, generation, play; rounds 1-4), WA-8 alone last. Takes over TR-6's
-  waterfalls, TR-10's water and "rivers downhill" from the terrain track. Tags `wa-N-done`. Branch `track/water`.
+- **Water track** (docs/phases/water-track.md, the owner's brief and answers 2026-10-25): pixel water on the 32 texels
+  a metre grid (hybrid: banded tones, stepped frames, smooth reflections), waterfalls as set pieces with plunge pools
+  and mist, rivers that run downhill, the sea and the coast, wading, Surf and a Waterfall climb, new kinds, water
+  life, sounds and Studio tools. WA-0 (the plan, the contract, test_water and `tools/look-water.py`) done 2026-10-25;
+  then three lanes at once (renderer, generation, play; rounds 1-4; a fourth, world map and battles, in round 3), WA-8
+  alone last. Takes over TR-6's waterfalls, TR-10's water and "rivers downhill" from the terrain track. Tags
+  `wa-N-done`. Branch `track/water`.
 - **Splicing track** (docs/phases/splicing-track.md, the owner's brief and answers 2026-10-25): Genes from kit parts
   with readable traits, wild Billies with mixed parts (Graft, Chimera), a Gene Bank building paid in DNA, a Stability
   budget with Unstable abominations past it, Augments from the bots' salvage. SP-1 (an art spike on the phone) first;
