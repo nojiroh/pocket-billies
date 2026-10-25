@@ -93,6 +93,9 @@ export interface Meta {
   crests: number;
   /** SP-3: splicing's currency, banked when a spliced wild Billie is beaten (logic/battle-rewards.js) */
   dna: number;
+  /** SP-3: the Genes sampled from beaten wild splices, each a one-slot graft code ("sig=zuck2"), the Gene Bank's
+   * library (SP-4) */
+  genes: string[];
   /** unlock ids: 1 (unlocks.json, RL-11) */
   unlocks: Record<string, 1>;
   /** hub building id -> level (buildings.json, RL-11) */

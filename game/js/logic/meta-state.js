@@ -14,6 +14,7 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   META_EXPEDITIONS: [() => META_EXPEDITIONS],
+  META_GENES: [() => META_GENES],
   META_IDS: [() => META_IDS],
   META_MAX: [() => META_MAX],
   // @ts-expect-error -- replaced on purpose
@@ -35,6 +36,7 @@ export function newMeta() {
     scrap: 0,
     crests: 0,
     dna: 0,
+    genes: [],
     unlocks: {},
     buildings: {},
     runs: 0,
@@ -43,7 +45,8 @@ export function newMeta() {
     badges: {},
   };
 }
-export const META_MAX = 1e12,
+export const META_GENES = 1000,
+  META_MAX = 1e12,
   META_IDS = 200,
   META_EXPEDITIONS = 9;
 /** a whole number from min to max */
@@ -67,7 +70,11 @@ export function validMeta(o) {
     wholeIn(o.expedition, 1, META_EXPEDITIONS) &&
     recordOf(o.unlocks, META_IDS, v => v === 1) &&
     recordOf(o.buildings, META_IDS, v => wholeIn(v, 0, 99)) &&
-    recordOf(o.badges, 32, v => v === 1)
+    recordOf(o.badges, 32, v => v === 1) &&
+    Array.isArray(o.genes) &&
+    o.genes.length <= META_GENES &&
+    o.genes.every((/** @type {unknown} */ g) => typeof g === 'string' && /^[a-z]{1,8}=[a-z0-9_]{1,64}$/.test(g)) &&
+    new Set(o.genes).size === o.genes.length
   );
 }
 /** a stored meta filled out with anything new (fields a later version adds); one that still fails the check is

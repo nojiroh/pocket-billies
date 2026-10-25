@@ -36,6 +36,7 @@ import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef } from './logic/fi
 import {
   billyName,
   billyTypes,
+  formatNumber,
   healAll,
   maxHp,
   moveUsable,
@@ -988,6 +989,16 @@ export function endBattle() {
      a run's mini-boss a pick of Perks, saved on the run before it shows (logic/battle-rewards.js battleSettleWin) */
   battleSettleWin(activeBattle, saveData, pay, run);
   if (kind === 'wild' && o === 'win' && pay.prize > 0) toast(`You earned ${plural(pay.prize, 'Money')}.`);
+  /* SP-3: a spliced wild Billie knocked out: its DNA, and a sheet for a Gene sampled for the first time */
+  const spliced = /** @type {{ dna?: number, sampled?: { gene: string, words: string }[] }} */ (pay);
+  if (spliced.sampled && spliced.sampled.length)
+    after.push({
+      title: 'Gene Sample',
+      html: `<p>You took a sample from what it wore: ${escapeHtml(spliced.sampled.map(x => x.words).join(', '))}.</p><p><pb-coin kind="dna" value="${saveData.meta.dna}" label="DNA"></pb-coin> +${formatNumber(spliced.dna || 0)} DNA</p><p class="note">Copperleaf’s Gene Bank will splice it into your own Billies. Coming later.</p>`,
+      btns: [{ l: 'Nice', c: 'dark', f: closeModal }],
+    });
+  else if (spliced.dna)
+    toast(`+${formatNumber(spliced.dna)} DNA from the splice. You have ${formatNumber(saveData.meta.dna)}.`);
   /* RL-13: the "Fainted is gone" challenge took them out of the run (logic/run-loop.js runFragileDrop) */
   if (gone && gone.length) toast(`${gone.map(m => billyName(m)).join(' and ')} fainted and left the run.`);
   if (kind === 'trainer' && o === 'win') {

@@ -525,6 +525,8 @@ debugLog.state = () => {
           seals: meta.crests,
           scrap: meta.scrap,
           dna: meta.dna,
+          /* SP-3: how many Genes are sampled (the codes are data ids, but a count is enough) */
+          genes: (meta.genes || []).length,
           /* RL-11: the unlock ids owned (game data ids, no names) and the buildings' levels */
           unlocks: Object.keys(meta.unlocks || {}).sort(),
           buildings: Object.assign({}, meta.buildings || {}),

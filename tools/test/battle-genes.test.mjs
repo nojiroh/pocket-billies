@@ -102,3 +102,35 @@ test('battle genes: SP-3 a spliced wild Billie says what it wears as the battle 
     /This Swiftlet is a patchwork: an eagle’s wings and an? [a-z]+’s [a-z]+!/
   );
 });
+
+test('battle genes: SP-3 a spliced wild Billie knocked out banks DNA and samples its Genes once; caught, it leaves none', () => {
+  const W = data.GENES.wild.dna,
+    /* a battle against a Pupfin spliced with foeGraft, ended as `over` and settled; `meta` carries an earlier save's */
+    end = (/** @type {any} */ foeGraft, /** @type {string} */ over, /** @type {any} */ meta) => {
+      const { s, B } = battle(null, foeGraft);
+      if (meta) s.meta = meta;
+      B.over = over;
+      const { pay, run } = fn('battleSettle')(B, s);
+      fn('battleSettleWin')(B, s, pay, run);
+      return { s, pay };
+    };
+  const first = end({ front: 'hughes2' }, 'win'),
+    meta = first.s.meta;
+  assert.equal(meta.dna, W.graft);
+  assert.deepEqual(meta.genes, ['front=hughes2']);
+  assert.deepEqual(first.pay.sampled, [{ gene: 'front=hughes2', words: 'an eagle’s wings' }]);
+  /* a Chimera with that Gene again: its own DNA, and only the new Gene joins */
+  const again = end({ front: 'hughes2', sig: 'zuck2' }, 'win', meta);
+  assert.equal(meta.dna, W.graft + W.chimera);
+  assert.deepEqual(meta.genes, ['front=hughes2', 'sig=zuck2']);
+  assert.deepEqual(
+    again.pay.sampled.map(x => x.gene),
+    ['sig=zuck2']
+  );
+  /* caught (Taxed): it keeps its parts, no sample; a plain Billie beaten: nothing */
+  assert.equal(end({ front: 'hughes2' }, 'caught').s.meta.dna, 0);
+  const plain = end(null, 'win');
+  assert.deepEqual([plain.s.meta.dna, plain.s.meta.genes, plain.pay.dna], [0, [], 0]);
+  assert.ok(fn('validMeta')(meta), 'the sampled meta passes the save check');
+  assert.equal(fn('validMeta')({ ...meta, genes: ['sig=zuck2', 'sig=zuck2'] }), false, 'a Gene twice is refused');
+});
