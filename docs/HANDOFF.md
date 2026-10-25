@@ -2,6 +2,48 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Water track WA-4 (lane R) - the sea and the coast - 2026-10-25
+Branch `track/water` (main merged in at the start: #195, HB-2 #196, the self-test fix #197; HANDOFF kept both sides;
+lanes G's WA-5a and B's WA-7 and the hub's merges merged in before each push). Plan approved in Plan Mode; the
+owner's answers: test_island gets a coast to picture, a subtle tide, reef shallows by depth, the tide on Copperleaf
+too. Tag to suggest: `wa-4-done` (the owner pushes tags).
+- Changed (one cause a commit; details and numbers in water-track.md, WA-4 notes; all new looks with pixel water on,
+  pixel water off keeps the look of before, the tide has its own switch):
+  - **test_island's coast** (`tools/build-test-island.py`, the island track's tool, the owner's yes): two sea rocks, a
+    sandbar, a reef shelf and a wet flat with two tide pools, north and west of the town (its side unchanged).
+  - **A slow tide** (`walk/sea-tide.js`, new, on both pages, unit-tested): read from the tiles, no new data. Wet sand
+    joined to the sea is covered at high tide (sandbars, flats), the open sea's shallows beside land go dry at low
+    tide, sea water cut off from the open sea is a tide pool. Highs at 9:00 and 21:00. The shore texture carries the
+    high and low lines (RGBA on a tidal scene); a skin of sea over the covered sand; the dried shallows draw as wet
+    sand; the sand below the high line stays darker. Setting `water.tide` (Settings, Water: Tide).
+  - **Surf** in hard stepped bands (a white crest, a broken lace, white water at the line), **foam round sea rocks**
+    (a collar that pulses with the swell, rings), **reef shallows** (turquoise and clearer on `w` sea and near the
+    shore, the skirt matched), **kelp** at middle depth, **the sun's and the moon's path**, **a storm sea** from the
+    weather (`environment.storm`; heave, more whitecaps and surf, darker).
+- Risky: the shore texture is RGBA on a tidal scene (Copperleaf 7.5 MB instead of 1.9) and two more fields are
+  blurred at build (about 88 ms on Copperleaf in Node, in the existing slices); the water shader does more per sea
+  pixel (the surf bands, three kelp fronds, the path, the rock foam). The kind's fraction now carries the sea's
+  shallows below the index (a cove's calm stays above): anything else reading `aDK.y` must round, as the shader
+  does. `w` sea everywhere is turquoise now (Copperleaf's wide shallows too).
+- Verified: lint, typecheck, prettier, check:modules, `npm test` (1023, 0 failures after the merges, 6 new tide
+  tests), `check:smoke` before every game/ commit (all passed, Playwright 1.63.0). Pictures (validation/, not
+  committed; no page errors): look-water --scene=test_island before and after at noon and 22.5 (its two shots face
+  the cone: no sea in them, the same; water triangles 91,456 to 95,000, the high tide's skins); island-shots of
+  test_island before and after (the rock's collar, the reef shelf, calm pools); close-ups with the blur off from a
+  scratch script, before, after, and after with pixel water off (rocks by day and night, the flat at low tide, the
+  sandbar at high and low tide, the reef, the surf, the sun's and the moon's path, a storm, the skirt from high up);
+  Copperleaf's coast after (N, E, S, top-down).
+- For lane G: nothing needed. The tide reads `S` (wet sand) joined to the sea and `w` / `d`: a generated coast gets a
+  tide if it paints wet sand there; sandbars are `S` in the sea, tide pools sea water cut off from it.
+- For WA-5b (lane R): `waterKindLookup` knows only the nine looks, so a `reef` (or any new kind's) rectangle draws as
+  the scene's default kind, not `WATER_KIND_BASE`'s; coral patches for `reef`; and WA-5a's asks (rain rings on ice
+  and lava, flooded banks above the water, a hot spring's steam).
+- For WA-8: the tide's texture size and the sea's extra work belong in the water quality tiers.
+- For the owner, on the phone: Copperleaf's beach at noon and at night (the moon's path), with Pixel water on and off
+  and Tide on and off (Settings, Water), comparing the frame time; a stormy day on a coast (a run's forecast or the
+  debug weather).
+- Next for lane R: WA-5b (kinds as a texture, the new kinds drawn, water life).
+
 ### Water track WA-5a (lane G) - new kinds' play, weather on water, shallows for others - 2026-10-25
 Branch `track/water` (main merged in at the start: hub HB-2 #196 and self-test #197; HANDOFF kept both sides; lane R's
 WA-4 and lane B's WA-7 commits merged in before each push). Plan approved in Plan Mode. The owner's answers: all six
