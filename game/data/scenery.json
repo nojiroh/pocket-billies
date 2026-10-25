@@ -11714,7 +11714,7 @@
    "vary": {"rot":0,"lean":0,"size":0},
    "box": [11.8,2.6],
    "bob": 0.04,
-   "about": "The Lakeland Clipper (HB-7), a sky train for its region theme (regions.json themes.<id>.train): it rides the sky rail on its skids, facing +x"
+   "about": "The Lakeland Clipper (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x"
   },
   "train_greenbelt": {
    "name": "Greenbelt Sunrunner",
@@ -11731,7 +11731,7 @@
    "vary": {"rot":0,"lean":0,"size":0},
    "box": [11.8,2.6],
    "bob": 0.04,
-   "about": "The Greenbelt Sunrunner (HB-7), a sky train for its region theme (regions.json themes.<id>.train): it rides the sky rail on its skids, facing +x"
+   "about": "The Greenbelt Sunrunner (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x"
   },
   "train_wildwood": {
    "name": "Wildwood Zephyr",
@@ -11748,7 +11748,7 @@
    "vary": {"rot":0,"lean":0,"size":0},
    "box": [11.8,2.6],
    "bob": 0.04,
-   "about": "The Wildwood Zephyr (HB-7), a sky train for its region theme (regions.json themes.<id>.train): it rides the sky rail on its skids, facing +x"
+   "about": "The Wildwood Zephyr (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x"
   },
   "train_highland": {
    "name": "Highland Arrow",
@@ -11765,7 +11765,7 @@
    "vary": {"rot":0,"lean":0,"size":0},
    "box": [11.8,2.6],
    "bob": 0.04,
-   "about": "The Highland Arrow (HB-7), a sky train for its region theme (regions.json themes.<id>.train): it rides the sky rail on its skids, facing +x"
+   "about": "The Highland Arrow (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x"
   },
   "train_harvest": {
    "name": "Harvest Comet",
@@ -11782,7 +11782,7 @@
    "vary": {"rot":0,"lean":0,"size":0},
    "box": [11.8,2.6],
    "bob": 0.04,
-   "about": "The Harvest Comet (HB-7), a sky train for its region theme (regions.json themes.<id>.train): it rides the sky rail on its skids, facing +x"
+   "about": "The Harvest Comet (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x"
   },
   "workshop": {
    "name": "Workshop",
