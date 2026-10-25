@@ -54,6 +54,7 @@ import {
 import { clamp } from './util.js';
 import { pointInProp, turnedBounds, turnedPoint } from './logic/prop-turn.js';
 import { roomDoorPush, roomToLocal } from './logic/room-turn.js';
+import { WADE_COST, wadeWalkable } from './logic/wading.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
 import { orbitStickYaw, orbitWalkStep } from './logic/camera-orbit.js';
 import { frameStop } from './frame-scheduler.js';
@@ -2719,9 +2720,20 @@ export function navGrid() {
         tz = Math.floor(j / N),
         ch = (rows[sc.h - 1 - tz] || '')[ti] || sc.edge,
         T = C.terrains[ch];
-      const wk = T && T.walk != null ? !!T.walk : !'wd'.includes(ch) || !!sc.ride;
-      /* v24: in a riding scene you cross water on your billionaire */ if (!wk) blk[j * gw + i] = 1;
-      cost[j * gw + i] = (T && T.paved) || 'pcmbaqhe'.includes(ch) ? 0.7 : ch === 't' ? 1.25 : ch === 'y' ? 1.1 : 1;
+      /* v24: in a riding scene you cross water on your billionaire; WA-6a: elsewhere you wade the shallows (not lava or
+         ice), slowly, and deep water blocks (logic/wading.js) */
+      const wk = wadeWalkable(sc, ch, T, (i + 0.5) / N, (j + 0.5) / N);
+      if (!wk) blk[j * gw + i] = 1;
+      cost[j * gw + i] =
+        (T && T.paved) || 'pcmbaqhe'.includes(ch)
+          ? 0.7
+          : ch === 't'
+            ? 1.25
+            : ch === 'y'
+              ? 1.1
+              : ch === 'w' && !sc.ride
+                ? WADE_COST
+                : 1;
     }
   const each = (x0, z0, x1, z1, fn) => {
     for (let j = Math.max(0, Math.floor(z0 * N)); j < Math.min(gh, Math.ceil(z1 * N)); j++)
