@@ -38,7 +38,7 @@ import { runScenesMake, runWorldTables } from './logic/run-scenes.js';
 import { runBowlLook } from './logic/run-bowl.js';
 import { runFoes } from './logic/run-loop.js';
 import { encEventFoe } from './logic/encounters.js';
-import { routeTrainersPlace, runRouteTrainers } from './logic/route-trainers.js';
+import { routeTrainerTally, routeTrainersPlace, runRouteTrainers } from './logic/route-trainers.js';
 import { bowlXY } from './logic/bowl.js';
 import { bowlTreeStyle } from './logic/bowl-things.js';
 import { saveData, uiState } from './game-state.js';
@@ -104,6 +104,9 @@ export function runWorldSync() {
           rngFrom
         );
       routeTrainersPlace(run, route, scenes, EVENTS.classes);
+      /* RT-2: a route's trainers stand in for some of its wild Billies (logic/rules.js encounterStock) */
+      const tally = routeTrainerTally(route);
+      for (const L of W.locations) if (L.runNode != null && tally[L.runNode]) L.trainerCount = tally[L.runNode];
       worldPut({
         ...W,
         look,

@@ -776,6 +776,8 @@ export function encounterStock(node) {
   if (encounterRunVisits(node) > 1) return RULES.run.wild.back;
   /* RL-12b: a waystation (an event's or a stall's place) holds fewer */
   if (L.waystation) return RULES.run.wild.waystation;
+  /* RT-2: a run route's trainers stand in for some of its wild Billies */
+  if (L.trainerCount) return Math.max(RULES.run.wild.routeMin, RULES.run.wild.route - L.trainerCount);
   if (!isTown(node)) return R.route;
   const sc = L.mapId && gameData.maps ? gameData.maps[L.mapId] : null,
     tiles = sc ? (sc._lite ? sc._lite.tiles : (sc.tiles || []).join('')) : '';

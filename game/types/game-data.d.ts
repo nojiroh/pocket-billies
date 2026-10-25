@@ -411,6 +411,8 @@ export interface LocationData {
   noFly?: number;
   /** roguelite track RL-7: a run's place: its node on the run's map (logic/run-scenes.js; world node runNode + 1) */
   runNode?: number;
+  /** RT-2: a run route's trainers (a pair is two; logic/route-trainers.js routeTrainerTally): its wild stock is less */
+  trainerCount?: number;
   /** RL-R2: a side area's first place: closed until the run's field move obstacle (this move) is open */
   field?: DataId;
   /** RL-R2: 1 on a side area's place */
@@ -990,8 +992,9 @@ export interface Rules {
     layouts?: Record<string, Record<string, number>>;
     /** RL-7: a run node's wild Billies: levels `lv` on the landing's row, `perRow` more on each row after; a node
         walked back to rolls `back` of them again (the hub's stock on a first visit); a waystation (an event or a
-        stall: RL-12b) holds `waystation` */
-    wild: { lv: [number, number]; perRow: number; back: number; waystation: number };
+        stall: RL-12b) holds `waystation`; RT-2: a run route's first visit holds `route` less its trainers, `routeMin`
+        at least */
+    wild: { lv: [number, number]; perRow: number; back: number; waystation: number; route: number; routeMin: number };
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;

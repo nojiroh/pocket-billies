@@ -81,6 +81,18 @@ test('wild Billies by place: a route keeps 4, a town with tall grass 2, a town w
   try {
     assert.equal(stock(route), RULES.encounters.route);
     assert.equal(fn('encountersHere')(route).length, RULES.encounters.route, 'full on the first visit');
+    /* RT-2: a run route's trainers stand in for some of its wild Billies, down to routeMin */
+    const L = data.LOCATIONS[route],
+      Wr = RULES.run.wild;
+    for (const [n, want] of [
+      [4, Wr.route - 4],
+      [5, Wr.route - 5],
+      [Wr.route, Wr.routeMin],
+    ]) {
+      L.trainerCount = n;
+      assert.equal(stock(route), Math.max(Wr.routeMin, want), `${n} trainers`);
+    }
+    delete L.trainerCount;
     assert.equal(stock(town), RULES.encounters.townGrass);
     const sc = maps[W.locations[town].mapId];
     sc.tiles = sc.tiles.map((/** @type {string} */ row) => row.replaceAll('t', '.'));

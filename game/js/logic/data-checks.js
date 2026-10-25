@@ -430,15 +430,18 @@ export function dataRunScene(D) {
       !whole(W.lv[1], W.lv[0], 100) ||
       !whole(W.perRow, 0, 20) ||
       !whole(W.back, 0, 20) ||
-      !whole(W.waystation, 0, 20)
+      !whole(W.waystation, 0, 20) ||
+      !whole(W.route, 0, 20) ||
+      !whole(W.routeMin, 0, W.route)
     )
       problem(
         'rules.json',
-        'run.wild: lv [low, high] (1-100), perRow (0-20), back (0-20) and waystation (0-20) are not whole numbers'
+        'run.wild: lv [low, high] (1-100), perRow (0-20), back (0-20), waystation (0-20), route (0-20) and routeMin (0-route) are not whole numbers'
       );
     else
       for (const k of Object.keys(W))
-        if (!['lv', 'perRow', 'back', 'waystation'].includes(k)) problem('rules.json', `run.wild.${k}: no such rule`);
+        if (!['lv', 'perRow', 'back', 'waystation', 'route', 'routeMin'].includes(k))
+          problem('rules.json', `run.wild.${k}: no such rule`);
     if (!whole(R.seamIn, 1, 30)) problem('rules.json', 'run.seamIn is not a whole number of metres from 1 to 30');
   }
   return out;

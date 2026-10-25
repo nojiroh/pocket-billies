@@ -30,6 +30,8 @@ expose({
   routeTrainerCount: [() => routeTrainerCount, v => (routeTrainerCount = v)],
   routeTrainerId: [() => routeTrainerId],
   // @ts-expect-error -- replaced on purpose
+  routeTrainerTally: [() => routeTrainerTally, v => (routeTrainerTally = v)],
+  // @ts-expect-error -- replaced on purpose
   routeTrainersPlace: [() => routeTrainersPlace, v => (routeTrainersPlace = v)],
   // @ts-expect-error -- replaced on purpose
   routeWaySpot: [() => routeWaySpot, v => (routeWaySpot = v)],
@@ -130,6 +132,16 @@ export function runRouteTrainers(run, data) {
       };
     }
   });
+  return out;
+}
+
+/** RT-2: how many route trainers each map node has (a pair is two), for its wild stock (logic/rules.js
+ * encounterStock) @param {Record<string, any>} trainers runRouteTrainers' @returns {Record<number, number>} */
+export function routeTrainerTally(trainers) {
+  /** @type {Record<number, number>} */
+  const out = {};
+  for (const T of Object.values(trainers))
+    if (T.route && T.runNode != null) out[T.runNode] = (out[T.runNode] || 0) + (T.mate ? 2 : 1);
   return out;
 }
 
