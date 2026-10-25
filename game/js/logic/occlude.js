@@ -8,6 +8,8 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
+  hiddenEase: [() => hiddenEase, v => (hiddenEase = v)],
+  // @ts-expect-error -- replaced on purpose
   pictureCovers: [() => pictureCovers, v => (pictureCovers = v)],
 });
 /* eslint-enable no-func-assign */
@@ -26,4 +28,17 @@ export function pictureCovers(me, q, halfW, hM) {
   const half = halfW * q.s,
     top = q.y - hM * q.s;
   return me.x > q.x - half && me.x < q.x + half && me.y > top && me.y < q.y;
+}
+
+/**
+ * The eased "something hides you" amount (0-1): toward `target` quickly (about a sixth of a second) when you go
+ * behind something, slowly (about half a second) when you come out, so a thin post passing doesn't flicker it.
+ * @param {number} k the amount last frame
+ * @param {number} target 1 hidden, 0 not
+ * @param {number} dt seconds since last frame
+ */
+export function hiddenEase(k, target, dt) {
+  const rate = target > k ? 12 : 4,
+    v = k + (target - k) * Math.min(1, dt * rate);
+  return Math.abs(v - target) < 0.005 ? target : v;
 }

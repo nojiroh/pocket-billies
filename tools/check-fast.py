@@ -382,7 +382,9 @@ def tall_ground(pg, base):
     """TR-3: the mountains fixture (the run fixture with the debug menu's mountains mod: mountains north and south) at
     its landing; at the reachable spot with the most rock on the camera's side the camera tilts down further (rise),
     the rock between it and the player thins out (the rock fade's circle is on) and the player's silhouette is drawn;
-    back where the player started (flat ground) none of it. No pictures: tools/look-tall-ground.py takes those"""
+    back where the player started (flat ground) no rise and no rock fade (the silhouette may still show there: since
+    player visibility it shows wherever anything covers you, and the landing's bushes can). No pictures:
+    tools/look-tall-ground.py takes those"""
     drawing(pg)
     if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
     if pg.evaluate("(((mapById(walkView.sc.baseId||walkView.id).gen||{}).params||{}).land||{}).mountains||0") != 1: raise Exception('the landing has no mountains: the mod isn’t on')
@@ -396,10 +398,49 @@ def tall_ground(pg, base):
     if not (k > 0.9 and circle > 0): raise Exception(f'the rock fade isn’t on there: rockK {k}, circle {circle}')
     if not sil: raise Exception('no silhouette was drawn there')
     stand(pg, home[0], home[1], 60)
-    rise2, k2, circle2, sil0 = pg.evaluate("[walkRenderer.occT, walkView.C.rockK, rockUniformsFor(walkView.C).rock[1], window.__sil]")
-    stand(pg, home[0], home[1], 5)
-    if pg.evaluate('window.__sil') != sil0 or circle2 != 0 or rise2 > 0.05: raise Exception(f'on flat ground: rise {rise2}, rockK {k2}, circle {circle2}, silhouettes still drawn')
-    return f'at the foot of {spot["up"]} m of rock: the camera rose {rise:.1f} degrees, the rock fade and the silhouette on; on flat ground off'
+    rise2, k2 = pg.evaluate("[walkRenderer.occT, walkView.C.rockK]")
+    if k2 > 0.01 or rise2 > 0.05: raise Exception(f'on flat ground: rise {rise2}, rockK {k2}')
+    return f'at the foot of {spot["up"]} m of rock: the camera rose {rise:.1f} degrees, the rock fade and the silhouette on; on flat ground no rise or rock fade'
+
+
+# player visibility: reachable spots just behind trees and buildings (on the side away from the camera), each with
+# what stands in front of it
+BEHIND_SPOTS = """(() => {
+  const sc = walkView.sc, P = walkView.pl, C = walkView.C, D = walkData().sc.props, fl = Math.hypot(C.fwd[0], C.fwd[2]) || 1,
+    f = [C.fwd[0] / fl, C.fwd[2] / fl], out = [];
+  for (const p of sc.props || []) {
+    const M = D[p.k] || {};
+    if (!(M.build || /tree|oak|pine|birch|beech/.test(p.k))) continue;
+    for (let d = 1.5; d <= 4; d += 0.5) {
+      const x = p.x + f[0] * d, z = p.z + f[1] * d;
+      if (!isWalkable(x, z)) continue;
+      if (findPath(P.x, P.z, x, z, { max: 1e6 })) { out.push({ k: p.k, x, z }); break; }
+    }
+    if (out.length >= 6) break;
+  }
+  return out;
+})()"""
+
+
+def behind_things(pg, base):
+    """Player visibility: in Copperleaf, standing just behind trees and buildings (away from the camera), something
+    covers you at most of them: the occlusion query says so (walkRenderer.hidT), the hidden amount comes on and the
+    silhouette is shown; back where you started, in the open, none of it"""
+    drawing(pg)
+    home = pg.evaluate('[walkView.pl.x, walkView.pl.z]')
+    stand(pg, home[0], home[1], 30)
+    if pg.evaluate('walkRenderer.hidK || 0') > 0.05: raise Exception('hidden where the player starts, in the open')
+    spots = pg.evaluate(BEHIND_SPOTS)
+    if len(spots) < 3: raise Exception(f'only {len(spots)} reachable spots behind trees or buildings')
+    hid = []
+    for s in spots:
+        stand(pg, s['x'], s['z'], 30)
+        if pg.evaluate('walkRenderer.hidT === 1 && walkRenderer.hidK > 0.9'): hid.append(s['k'])
+    if len(hid) * 2 < len(spots): raise Exception(f'hidden behind only {hid} of {[s["k"] for s in spots]}')
+    stand(pg, home[0], home[1], 60)
+    k = pg.evaluate('walkRenderer.hidK || 0')
+    if k > 0.05: raise Exception(f'back in the open, still hidden ({k})')
+    return f'hidden behind {len(hid)} of {len(spots)} ({", ".join(hid)}); in the open not'
 
 
 def camera_follow(pg, base):
@@ -1150,6 +1191,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
               ('Copperleaf is the island: the sea skirt from 8 angles; the orbit camera from 8 places, on the summit, holding right (IS-1, IS-3)', hub_orbit)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('town', [('Blur focus: on you, between you in a talk, on the encounter; the slider at Off; the cheap blur (CAM-3)', blur_focus),
+              ('Behind things: at most spots behind a tree or building something hides you (the query, the silhouette); in the open nothing', behind_things),
               ("Encounters: a run's waystation stand opens its event, a stall its shop; both hold fewer wild Billies (RL-12b)", waystations)]),
     ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back and forward, a reload (RL-9, RL-10b)', ranch)]),
     ('pasture', [('The pasture: Billies wander inside the fence, a tap on one or the gate opens the ranch (IS-8)', pasture)]),
@@ -1162,7 +1204,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
              ("A run town's shop opens (UI-5)", run_shop)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home", run_loop)]),
-    ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; none on flat ground', tall_ground)]),
+    ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; no rise or rock fade on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),
     ('title', [('The game boots with no console or page errors', boots)]),
     ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap)]),

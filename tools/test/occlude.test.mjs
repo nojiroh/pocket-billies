@@ -23,3 +23,15 @@ test('a picture at the player’s depth or behind them does not', () => {
   assert.equal(O.pictureCovers(me, at(100, 250, 9.8), 1, 4), false, 'within 0.3 m');
   assert.equal(O.pictureCovers(me, at(100, 250, 12), 1, 4), false, 'behind');
 });
+
+test('the hidden amount comes on quickly, goes slowly and settles exactly', () => {
+  let k = 0;
+  for (let i = 0; i < 6; i++) k = O.hiddenEase(k, 1, 1 / 60);
+  assert.ok(k > 0.6, `a tenth of a second behind something: ${k}`);
+  let j = 1;
+  for (let i = 0; i < 6; i++) j = O.hiddenEase(j, 0, 1 / 60);
+  assert.ok(j > 0.6, `a tenth of a second out: ${j}`);
+  for (let i = 0; i < 300; i++) j = O.hiddenEase(j, 0, 1 / 60);
+  assert.equal(j, 0);
+  assert.equal(O.hiddenEase(0.5, 1, 0), 0.5, 'no time, no change');
+});

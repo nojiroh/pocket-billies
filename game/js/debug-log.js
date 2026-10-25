@@ -492,6 +492,8 @@ debugLog.state = () => {
             groundTris: GAME.walkRenderer && GAME.walkRenderer.mesh ? Math.round(GAME.walkRenderer.mesh.n / 3) : null,
             /* TR-3: the camera's extra tilt on tall ground right now (degrees) */
             camRise: GAME.walkRenderer && GAME.walkRenderer.occT != null ? +GAME.walkRenderer.occT.toFixed(1) : null,
+            /* player visibility: how hidden you are right now (0-1: something nearer the camera covers you) */
+            hidden: GAME.walkRenderer && GAME.walkRenderer.hidK != null ? +GAME.walkRenderer.hidK.toFixed(2) : null,
             /* RL-12: the Perks held (perks.json ids, not names), the pick waiting (how many) and offers made */
             relics: (run.perks || []).slice(),
             offer: run.offer ? run.offer.length : 0,

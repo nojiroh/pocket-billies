@@ -7,7 +7,7 @@ import { expose } from '../test-globals.js';
 import { loadingScreen, provide, reducedMotion } from '../hooks.js';
 import { clamp } from '../util.js';
 import { pictureFacing } from '../logic/prop-turn.js';
-import { pictureCovers } from '../logic/occlude.js';
+import { hiddenEase, pictureCovers } from '../logic/occlude.js';
 import { INTEREST_DEFAULTS } from '../logic/camera-interest.js';
 import { filterInto } from '../engine/frame-lists.js';
 import { makeCanvas } from '../art.js';
@@ -50,10 +50,13 @@ expose({
   drawPlayerSilhouette: [() => drawPlayerSilhouette, v => setDrawPlayerSilhouette(v)],
   drawRotatingBlades: [() => drawRotatingBlades, v => (drawRotatingBlades = v)],
   drawSprites: [() => drawSprites, v => setDrawSprites(v)],
+  easeHidden: [() => easeHidden, v => (easeHidden = v)],
+  hideQuery: [() => hideQuery],
   imageId: [() => imageId, v => (imageId = v)],
   imageIdCount: [() => imageIdCount, v => (imageIdCount = v)],
   interestPoints: [() => interestPoints, v => (interestPoints = v)],
   landmarkTilt: [() => landmarkTilt, v => (landmarkTilt = v)],
+  readHideQueries: [() => readHideQueries, v => (readHideQueries = v)],
   spriteDrawn: [() => spriteDrawn],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
   townRiseAmount: [() => townRiseAmount, v => (townRiseAmount = v)],
@@ -295,24 +298,49 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
    Worked out once per picture: where the walls stand at the base, which rows reach each wall (so a gable or an
    awning shapes the side), the wall colour just inside each edge and the roof colour at the eaves. */
 const BOX_INFO_CACHE = new WeakMap();
-/* terrain TR-3: your silhouette through rock. Where ground cuts the camera's line to you (walk/camera.js rockK), you
-   are drawn again as a flat dithered tint wherever something clearly nearer the camera hides you (depth GREATER, the
-   picture pulled 0.6 m toward the eye so the ground at your feet doesn't count); nothing is written to depth. Off on
-   flat ground, indoors, in battle and with Engine > Camera > "Your silhouette through rock" off */
+/* terrain TR-3, then player visibility: your silhouette wherever something hides you (rock, a building, a tree, a
+   model). You are drawn again as a flat dithered tint wherever something clearly nearer the camera hides you (depth
+   GREATER, the picture pulled 0.8 m toward the eye so the ground at your feet, grass and low things right by you don't
+   count); nothing is written to depth. A first, invisible draw of the whole picture is an occlusion query: its answer
+   (a frame or two late) says whether anything hides you at all, eased into walkRenderer.hidK (0-1), which turns on
+   the see-through circle (draw-common.js rockUniformsFor). Off indoors, in battle and with Engine > Camera >
+   "Your silhouette through rock" off */
 const SILHOUETTE_TINT = [0.16, 0.27, 0.55],
   SILHOUETTE_AMOUNT = 0.55,
-  SILHOUETTE_PULL = 0.6;
+  SILHOUETTE_PULL = 0.8;
+/* the occlusion queries in flight, oldest first (made on gpuState.gl; a lost context drops them) */
+const hideQuery = { gl: null, q: /** @type {WebGLQuery[]} */ ([]), at: 0 };
+function readHideQueries(gl) {
+  if (hideQuery.gl !== gl) ((hideQuery.gl = gl), (hideQuery.q = []));
+  const Q = hideQuery.q;
+  try {
+    while (Q.length && gl.getQueryParameter(Q[0], gl.QUERY_RESULT_AVAILABLE)) {
+      const q = Q.shift();
+      walkRenderer.hidT = gl.getQueryParameter(q, gl.QUERY_RESULT) ? 1 : 0;
+      gl.deleteQuery(q);
+    }
+  } catch (e) {
+    hideQuery.q = [];
+  }
+}
+function easeHidden(on) {
+  const now = performance.now(),
+    dt = Math.min(0.1, Math.max(0, (now - (hideQuery.at || now)) / 1000));
+  hideQuery.at = now;
+  if (!on) walkRenderer.hidT = 0;
+  walkRenderer.hidK = hiddenEase(walkRenderer.hidK || 0, on ? walkRenderer.hidT || 0 : 0, dt);
+}
 export function drawPlayerSilhouette(C, items, X) {
-  const sc = walkView.sc,
-    k = C.rockK || 0;
-  if (walkRenderer.bt || !sc || sc.indoor || sc.room || k < 0.01 || !engineSetting('camera', 'silhouette')) return 0;
+  const sc = walkView.sc;
+  if (walkRenderer.bt || !sc || sc.indoor || sc.room || !engineSetting('camera', 'silhouette'))
+    return (easeHidden(false), 0);
   const it = items.find(i => i.k === 'me');
-  if (!it || !it.im) return 0;
-  const T = imageTexture(it.im);
-  if (!T) return 0;
+  const T = it && it.im && imageTexture(it.im);
+  if (!T) return (easeHidden(false), 0);
   const gl = gpuState.gl,
     p = useWalkProgram('sprite', C, X),
     U = p.U;
+  readHideQueries(gl);
   bindQuad();
   gl.uniform3fv(U.uRight, C.right);
   gl.uniform3fv(U.uBack, C.back);
@@ -322,7 +350,6 @@ export function drawPlayerSilhouette(C, items, X) {
   gl.uniform1f(U.uAlpha, 1);
   gl.uniform1f(U.uFade, 1);
   if (U.uWave) gl.uniform3f(U.uWave, 0, 0, 0);
-  gl.uniform4f(U.uGhost, SILHOUETTE_TINT[0], SILHOUETTE_TINT[1], SILHOUETTE_TINT[2], SILHOUETTE_AMOUNT * k);
   gl.uniform4f(U.uGhostV, C.eye[0], C.eye[1], C.eye[2], SILHOUETTE_PULL);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, T.t);
@@ -331,12 +358,25 @@ export function drawPlayerSilhouette(C, items, X) {
   gl.depthFunc(gl.GREATER);
   gl.depthMask(false);
   gl.disable(gl.BLEND);
+  /* the query: every pixel of you, nothing drawn; one in flight at a time is plenty */
+  if (hideQuery.q.length < 2) {
+    const q = gl.createQuery();
+    gl.colorMask(false, false, false, false);
+    gl.uniform4f(U.uGhost, 0, 0, 0, 1);
+    gl.beginQuery(gl.ANY_SAMPLES_PASSED_CONSERVATIVE, q);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    gl.endQuery(gl.ANY_SAMPLES_PASSED_CONSERVATIVE);
+    gl.colorMask(true, true, true, true);
+    hideQuery.q.push(q);
+  }
+  gl.uniform4f(U.uGhost, SILHOUETTE_TINT[0], SILHOUETTE_TINT[1], SILHOUETTE_TINT[2], SILHOUETTE_AMOUNT);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
   gl.depthFunc(gl.LEQUAL);
   gl.depthMask(true);
   gl.uniform4f(U.uGhost, 0, 0, 0, 0);
   gl.uniform4f(U.uGhostV, 0, 0, 0, 0);
-  return 1;
+  easeHidden(true);
+  return walkRenderer.hidT ? 1 : 0;
 }
 function boxInfo(im) {
   let B = BOX_INFO_CACHE.get(im);
