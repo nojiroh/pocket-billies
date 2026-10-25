@@ -164,3 +164,12 @@ test('genes: a splice is saved with its Billie; saveFill trims what no longer fi
   assert.equal(billiesOk([{ ...m, graft: { front: 'x'.repeat(41) } }]), false);
   assert.equal(billiesOk([{ ...m, graft: ['musk3'] }]), false);
 });
+
+test('genes: a splice survives evolving', () => {
+  const s = startedSave('swift0', 30),
+    m = s.team[0];
+  m.graft = { front: 'musk3', sig: 'zuck2' };
+  fn('evolve')(m);
+  assert.equal(m.sp, 'swift1');
+  assert.deepEqual(m.graft, { front: 'musk3', sig: 'zuck2' });
+});

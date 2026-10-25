@@ -612,6 +612,13 @@ export function evolve(m, path = 'A') {
     from = billyName(m),
     s0 = speciesOf(m);
   m.sp = s0.evo && s0.evo.k === 'split' && s0.alt && path === 'B' ? s0.alt : s0.next;
+  /* SP-2: a splice survives evolving (its foreign parts stay and are drawn at the new stage's size); a slot the new
+     stage has no bone for loses its Gene */
+  if (m.graft) {
+    const g = billyGraft(m);
+    if (g) m.graft = g;
+    else delete m.graft;
+  }
   if (m.hp > 0) m.hp = Math.max(1, Math.min(maxHp(m), m.hp + maxHp(m) - old));
   saveData.caught[m.sp] = 1;
   saveData.seen[m.sp] = 1;
