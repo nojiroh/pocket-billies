@@ -1352,9 +1352,14 @@ function worldBowlThingsOfPlace(W, i) {
     lm = bowlLandmarkPick(l, own && own.props ? own : M, A);
   /* a landmark with a model of its own is drawn as that model (where the map puts it), never as a flat picture */
   const modelOf = (/** @type {any} */ a) => !!(a && a.model && /\.json$/.test(a.model));
-  if (lm && A[lm.k] && modelOf(A[lm.k])) {
-    if (!M.props.some(p => p.k === lm.k)) worldBowlModelInto(W, A[lm.k].model, s.x, s.y, k * (lm.s || 1), east, north);
-  } else if (lm && A[lm.k] && A[lm.k].img) W.stand.push({ i, k: lm.k, x: s.x, y: s.y, g: 0, s: lm.s || 1 });
+  /* HB-3: the floating island draws its own things where they stand; a landmark that is not one of them would stand
+     at the map's middle (its spot), so none is added there */
+  if (lm && A[lm.k] && !worldBowlFloats()) {
+    if (modelOf(A[lm.k])) {
+      if (!M.props.some(p => p.k === lm.k))
+        worldBowlModelInto(W, A[lm.k].model, s.x, s.y, k * (lm.s || 1), east, north);
+    } else if (A[lm.k].img) W.stand.push({ i, k: lm.k, x: s.x, y: s.y, g: 0, s: lm.s || 1 });
+  }
   let n = 0;
   for (const p of M.props) {
     const art = A[p.k],
