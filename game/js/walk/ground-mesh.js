@@ -814,8 +814,19 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           }
         }
         /* water track WA-4: wet sand the high tide covers gets a skin of sea just over the sand, however far from the
-           water (the shaders keep it only while the tide's line lies past it) */
-        const tc = tide && tide.cover[Math.floor(cz) * W + Math.floor(cx)];
+           water, and half a metre past it so the rounded line never ends at a tile's edge (the shaders keep it only
+           while the tide's line lies past it) */
+        let tc = false;
+        if (tide && tide.nCover)
+          for (let b = -1; b <= 1 && !tc; b++)
+            for (let a = -1; a <= 1; a++) {
+              const ti = Math.floor(cx + a * 0.5),
+                tj = Math.floor(cz + b * 0.5);
+              if (ti >= 0 && tj >= 0 && ti < W && tj < H && tide.cover[tj * W + ti]) {
+                tc = true;
+                break;
+              }
+            }
         if (tc) {
           const b0 = wv.length / 8;
           for (const [a, c] of [
