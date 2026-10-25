@@ -26,7 +26,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       },
       "seed": "S0START",
       "expedition": 1,
-      "mapgenV": 8,
+      "mapgenV": 9,
       "unlocks": [],
       "mods": [],
       "clock": 1,
@@ -349,7 +349,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       },
       "seed": "S0START",
       "expedition": 1,
-      "mapgenV": 8,
+      "mapgenV": 9,
       "unlocks": [
         "biome_autumn",
         "biome_ridge",
@@ -681,7 +681,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       },
       "seed": "S0START",
       "expedition": 1,
-      "mapgenV": 8,
+      "mapgenV": 9,
       "unlocks": [],
       "mods": [],
       "clock": 1,
@@ -868,6 +868,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "152b6e91b3f212717697ecffee76959becd3c544ff58cc2537898ee514fc3480"
+  "all": "dcb954fa984d72149de32d57254522ef68fee550053453ef7cf571093a3d79dd"
 }
 `;

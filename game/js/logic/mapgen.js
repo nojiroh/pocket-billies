@@ -220,6 +220,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenSceneGroundOf: [() => mapgenSceneGroundOf, v => (mapgenSceneGroundOf = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenSceneLife: [() => mapgenSceneLife, v => (mapgenSceneLife = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenSeamAgreement: [() => mapgenSeamAgreement, v => (mapgenSeamAgreement = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenSegCross: [() => mapgenSegCross, v => (mapgenSegCross = v)],
@@ -263,6 +265,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenTerraces: [() => mapgenTerraces, v => (mapgenTerraces = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenTownFolk: [() => mapgenTownFolk, v => (mapgenTownFolk = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenTrailSearch: [() => mapgenTrailSearch, v => (mapgenTrailSearch = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenTrails: [() => mapgenTrails, v => (mapgenTrails = v)],
@@ -279,7 +283,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 8; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track) */
+export const MAPGEN_VERSION = 9; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2) */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -2941,6 +2945,8 @@ export const MAPGEN_TOWN = {
   houses: [4, 7],
   garden: 2.6,
   fence: 1.1,
+  /* TW-2: its townsfolk: `base`, one more for every `houses` houses, at most `most` (the owner, TW-2) */
+  folk: { base: 2, houses: 2, most: 6 },
 };
 /** a town (kind 'town'), laid before the hub's buildings (mapgenStageLots, which then only adds what the town did
  * not place): a short main street north off the main road near the hub, to a small level square (the biome's well
@@ -3081,8 +3087,12 @@ export function mapgenStageTown(G) {
   const kinds = Object.keys(S.houses).filter(k => G.cat[k] && G.cat[k].box);
   const smallest = kinds.reduce((m, k) => (!m || G.cat[k].box[0] < G.cat[m].box[0] ? k : m), '');
   let built = 0,
-    lamp = 0;
-  const tried = new Set();
+    lamp = 0,
+    tx0 = sq.x0,
+    tx1 = sq.x1;
+  const tried = new Set(),
+    /* TW-2: where a named local may stand: on the square (first), then by a house's gate */
+    locals = [[sq.x0 + 3.4, sq.z0 + 1.4]];
   for (let d = 8; d < M.length && built < nHouses && kinds.length; d += 2)
     for (const k of [sq.k - d, sq.k + d]) {
       if (built >= nHouses || k < 6 || k > M.length - 7 || tried.has(k)) continue;
@@ -3158,6 +3168,9 @@ export function mapgenStageTown(G) {
         const lx = gs > 0 ? px0 - 0.5 : px1 + 0.5;
         if (!(G.F[mapgenCellAt(G, lx, fz)] & (1 | 4))) mapgenPutProp(G, S.lamp, lx, fz, { force: true });
       }
+      locals.push([door[0] - gs * 0.9, fz - 0.6]);
+      tx0 = Math.min(tx0, px0);
+      tx1 = Math.max(tx1, px1);
       built++;
     }
   /* ---- south of the road (the camera's side): 1-2 vegetable plots in farm soil, planters in two rows, a fence along
@@ -3191,7 +3204,47 @@ export function mapgenStageTown(G) {
       G.lots.push([x0, z0 - 0.8, x1, z1]);
       plots++;
     }
-  G.town = { square: [sq.x0, sq.z0, sq.x1, sq.z1], street: [sq.jx, sq.edge, sq.z0], houses: built, plots };
+  /* TW-2: the named locals' places, and the town's ground (its animals keep to it): the houses' and the square's
+     width, from the vegetable plots south of the road to the square's back */
+  for (const [x, z] of locals) {
+    G.spots.push({
+      kind: 'local',
+      x: mapgenRound2(x),
+      z: mapgenRound2(z),
+      y: mapgenRound2(mapgenCornerHeight(G, x, z)),
+    });
+    G.keep.push([x, z, 0.6]);
+  }
+  let rz = Infinity;
+  for (const R of M) if (R[0] >= tx0 && R[0] <= tx1) rz = Math.min(rz, R[1]);
+  const area = [tx0 - 1, (isFinite(rz) ? rz : sq.edge) - half - 7, tx1 + 1, sq.z1].map(mapgenRound2);
+  G.town = {
+    square: [sq.x0, sq.z0, sq.x1, sq.z1],
+    street: [sq.jx, sq.edge, sq.z0],
+    houses: built,
+    plots,
+    area: [Math.max(1, area[0]), Math.max(1, area[1]), Math.min(w - 1, area[2]), Math.min(h - 1, area[3])],
+  };
+}
+/** TW-2: a scene's townsfolk: a town's by its houses (MAPGEN_TOWN.folk; a town whose square didn't fit, the base),
+ * none elsewhere */
+export function mapgenTownFolk(G) {
+  const F = MAPGEN_TOWN.folk;
+  if (G.P.kind !== 'town') return 0;
+  return G.town ? Math.min(F.most, F.base + Math.floor(G.town.houses / F.houses)) : F.base;
+}
+/** TW-2: a scene's animals: its biome's wild ones, and in a town its biome's town ones (biomes.json town.life) kept to
+ * the town's ground or its square, those that want more houses than it has left out */
+export function mapgenSceneLife(G) {
+  const wild = (G.B.life || []).map(l => ({ ...l })),
+    T = G.P.kind === 'town' && G.town;
+  if (!T) return wild;
+  const own = [];
+  for (const L of (G.B.town && G.B.town.life) || []) {
+    if (L.houses && T.houses < L.houses) continue;
+    own.push({ k: L.k, n: L.n, area: (L.square ? T.square : T.area).map(mapgenRound2) });
+  }
+  return wild.concat(own);
 }
 /* ---------- 6. plants: groves and an edge belt of trees, shrubs, rocks, tall grass, then the wild growth ---------- */
 /* ---------- RT-1: route layouts (the routes track) ---------- */
@@ -4277,7 +4330,7 @@ export function mapgenBuild(P, ctx, aim) {
     edge: B.ground.base,
     cam: { pitch: 34, h: 9, fov: 1 },
     blur: 1,
-    folk: 0,
+    folk: mapgenTownFolk(G),
     ...(B.look || {}),
     hub: G.hub,
     exits: G.edgeExits.map(e => mapgenExitPoint(w, h, e)),
@@ -4285,7 +4338,7 @@ export function mapgenBuild(P, ctx, aim) {
     tiles,
     heights,
     props: G.props,
-    life: (B.life || []).map(l => ({ ...l })),
+    life: mapgenSceneLife(G),
     npcSpots: G.npcSpots,
     wild: MAPGEN_WILD_MARK,
   };
@@ -4295,6 +4348,8 @@ export function mapgenBuild(P, ctx, aim) {
   if (G.waterKind) sc.waterKind = G.waterKind;
   if (G.spots.length) sc.spots = G.spots;
   if (G.grassPatches.length) sc.grassPatches = G.grassPatches;
+  /* TW-2: what a town's folk say (run-scenes.js adds the region's) */
+  if (P.kind === 'town' && B.town && B.town.chat) sc.chat = B.town.chat.slice();
   if (G.stepsUsed) {
     const raw = new Int16Array(G.S.length);
     let any = false;

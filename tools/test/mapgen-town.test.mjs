@@ -1,8 +1,11 @@
 // Towns track TW-1: a run town (mapgen.js mapgenStageTown, kind 'town'). On real runs' town nodes: a street off the
 // main road to a level square with its middle (a well or a fountain) and a notice board's spot, the clinic and the
 // shop on the square's north side facing the camera with their doors a walk from the hub and their rooms fitting
-// behind them, 4-7 shut houses (no act, no room) facing the camera, a vegetable plot south of the road, tall grass kept, no townsfolk yet, no note,
+// behind them, 4-7 shut houses (no act, no room) facing the camera, a vegetable plot south of the road, tall grass kept, no note,
 // nothing unreachable, the east and west edges still pinned; the same seed makes the same town; a route has none.
+// TW-2: its townsfolk by its houses, its biome's town animals on its ground, its biome's and region's chat, 1-2
+// named locals on its square and by a gate, each with a townsfolk look, a name and two of the biome's lines; a route
+// has no folk, no chat and no locals.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { data, GAME_DATA, modules } from './setup-real.mjs';
@@ -27,7 +30,9 @@ const C = GAME_DATA.scenery,
     seats: [],
     visited: {},
   };
-const HOUSE = /house|cottage/;
+const HOUSE = /house|cottage/,
+  /* half the deepest square's depth (MAPGEN_TOWN.squares) */
+  SQUARE_HALF_DEPTH = 4;
 
 /** every scene of a run's map, with the nodes' types */
 function runScenes(/** @type {string} */ seed) {
@@ -37,7 +42,7 @@ function runScenes(/** @type {string} */ seed) {
   return run.map.nodes.map((node, i) => {
     const { scene, notes } = runSceneMake(run, i, made, WORLD_DATA);
     made[i] = scene;
-    return { node, i, scene, notes };
+    return { node, i, scene, notes, run };
   });
 }
 
@@ -49,13 +54,27 @@ test('a route has no square and no houses', () => {
   assert.equal(sc.kind, 'route');
   assert.ok(!(sc.spots || []).some(s => s.kind === 'square' || s.kind === 'board'));
   assert.ok(!sc.props.some(p => HOUSE.test(p.k)));
+  assert.equal(sc.folk, 0);
+  assert.ok(!sc.chat && !sc.people);
+  assert.ok(
+    sc.life.every(l => !l.area),
+    "only the biome's wild animals"
+  );
+});
+
+test('a run town draws 3 folk when busy, 5 on Balanced, 6 on Beautiful', () => {
+  const { runTownFolkCap } = modules['run-scenes'];
+  assert.equal(runTownFolkCap(R.town, 0, 'sharp'), 6);
+  assert.equal(runTownFolkCap(R.town, 1, 'smooth'), 5);
+  assert.equal(runTownFolkCap(R.town, 2, 'sharp'), 3);
+  assert.equal(runTownFolkCap(R.town, 4, 'smooth'), 3);
 });
 
 test('every run town has a street, a square with the clinic and the shop on it, and 4-7 shut houses', () => {
   let towns = 0,
     four = 0;
   for (const seed of ['TW1A', 'TW1B', 'TW1C', 'TW1D', 'TW1E', 'TW1F']) {
-    for (const { node, i, scene: sc, notes } of runScenes(seed)) {
+    for (const { node, i, scene: sc, notes, run } of runScenes(seed)) {
       const where = `${seed} node ${i}`;
       if (node.type !== 'town') {
         assert.equal(sc.kind, 'route', where);
@@ -64,7 +83,6 @@ test('every run town has a street, a square with the clinic and the shop on it, 
       towns++;
       assert.equal(sc.kind, 'town', where);
       assert.deepEqual(notes, [], where);
-      assert.equal(sc.folk, 0, `${where}: no townsfolk yet (TW-2)`);
       const B = GAME_DATA.biomes[node.biome],
         sq = (sc.spots || []).find(s => s.kind === 'square'),
         board = (sc.spots || []).find(s => s.kind === 'board');
@@ -118,6 +136,37 @@ test('every run town has a street, a square with the clinic and the shop on it, 
         `${where}: a vegetable plot south of the road`
       );
       assert.deepEqual(G.mapgenUnreachable(sc, C), [], where);
+      /* TW-2: townsfolk by its houses (2, one more every 2 houses, at most 6) */
+      const F = G.MAPGEN_TOWN.folk;
+      assert.equal(sc.folk, Math.min(F.most, F.base + Math.floor(houses.length / F.houses)), `${where}: folk`);
+      assert.ok(sc.folk >= 2 && sc.folk <= 6, where);
+      /* its biome's town animals, on its ground (pigeons only with 5 houses or more, on the square) */
+      for (const L of B.town.life || []) {
+        const got = sc.life.find(l => l.k === L.k && l.area);
+        if (L.houses && houses.length < L.houses) assert.ok(!got, `${where}: no ${L.k} in a small town`);
+        else {
+          assert.ok(got && got.n === L.n, `${where}: ${L.k} in town`);
+          const [x0, z0, x1, z1] = got.area;
+          assert.ok(x0 < x1 && z0 < z1 && x0 >= 1 && z1 <= sc.h - 1, `${where}: ${L.k}'s ground`);
+          if (L.square) assert.ok(x0 >= sq.x - 9 && x1 <= sq.x + 9, `${where}: ${L.k} on the square`);
+        }
+      }
+      /* its chat: the biome's lines, then the region's */
+      const own = (run.region && R.town.chat[run.region.theme]) || [];
+      assert.deepEqual(sc.chat, B.town.chat.concat(own), `${where}: chat`);
+      /* 1-2 named locals, on the square first, a walk from the hub, each with a townsfolk look and two lines */
+      const P = sc.people || [];
+      assert.ok(P.length >= R.town.locals[0] && P.length <= R.town.locals[1], `${where}: ${P.length} locals`);
+      assert.equal(new Set(P.map(p => p.name)).size, P.length, `${where}: no name twice`);
+      P.forEach((p, k) => {
+        assert.ok(R.town.names.includes(p.name), where);
+        assert.match(p.who, /^folk:\d+$/, where);
+        assert.equal(p.lines.length, 2, where);
+        assert.notEqual(p.lines[0], p.lines[1], where);
+        for (const l of p.lines) assert.ok(B.town.chat.includes(l), `${where}: ${p.name} says the biome's lines`);
+        assert.ok(G.mapgenReached(reach, p.x, p.z), `${where}: ${p.name} can't be walked to`);
+        if (k === 0) assert.ok(Math.abs(p.z - sq.z) < SQUARE_HALF_DEPTH, `${where}: the first local on the square`);
+      });
       /* a run's scenes meet any neighbour at height 0 on their east and west edges */
       for (const row of sc.heights) assert.ok(row[0] === 0 && row[sc.w] === 0, `${where}: the edges pinned`);
     }
@@ -132,4 +181,16 @@ test('the same seed makes the same town', () => {
   const towns = a.filter(t => t.node.type === 'town');
   assert.ok(towns.length > 0);
   for (const t of towns) assert.equal(JSON.stringify(t.scene), JSON.stringify(b[t.i].scene));
+});
+
+test("a run town's chat ends with its region's lines", () => {
+  const { runTownLife } = modules['run-scenes'];
+  const t = runScenes('TW2REGION').find(x => x.node.type === 'town');
+  assert.ok(t);
+  const sc = JSON.parse(JSON.stringify(t.scene)),
+    biome = GAME_DATA.biomes[t.node.biome].town.chat;
+  sc.chat = biome.slice();
+  runTownLife({ ...t.run, region: { theme: 'harvest' } }, t.i, sc, WORLD_DATA);
+  assert.deepEqual(sc.chat, biome.concat(R.town.chat.harvest));
+  assert.deepEqual(sc.people, t.scene.people, 'the same locals: the region moves no draw');
 });
