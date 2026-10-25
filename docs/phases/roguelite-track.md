@@ -1116,6 +1116,14 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
 - **RL-12b part 1** (done 2026-10-23; HANDOFF and section 0 "Corrected in RL-12b" have what changed). Part 2 (after
   RL-R2 merges): the `event` and `stall` waystation node types and their stand, the no-two-shops rule in run-map.js,
   the run sim and preview, a check-fast page and the in-game test's step. RL-12c: held items (9.6 27).
+- **RL-12c as built (2026-10-25).** Held items are items.json items with `hold` effect rows (not a file of their own:
+  the bag carries them, taking one off puts it back, the payout counts them), eight placeholders. `Billy.held`
+  (optional, no SAVE_VERSION change); logic/held.js (give, take, all off); logic/effects.js `fxOfBillie` (a Billie's
+  own rows; where parts can join later) and three holder-only kinds, `xp`, `turnHeal`, `pinchHeal`. The battle reads
+  them at calcDamage, makeBattle/doSwitch (stages), endTurn (heals), award (XP) and battleMoneyFx (money, holders
+  standing). The owner's answers (2026-10-25): held items last one run (runEnd takes them off first: a loss pays them at
+  the item share, a win takes them home in the bag), foes hold none (RL-14 may give leaders some), the eight
+  placeholders stand. The reward pick's `held` card is on (weight 3) and asks who holds it.
 - **RL-13 as built (2026-10-24).** `modifiers.json` + `logic/modifiers.js` (the Expedition's and challenges' effect
   rows, joined to the Perks' in `fxOfRun`; two new kinds, `level` and `bossHp`), `logic/starter-points.js` +
   `rules.json run.points` (`run.home` gone; the cost counts any levels above 5, since ranch levels are not tracked),

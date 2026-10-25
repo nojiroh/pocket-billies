@@ -5,7 +5,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { buildingState, frontWindowLight, litWindowFraction } from '../hooks.js';
-import { placedTurn, turnedPoint } from '../logic/prop-turn.js';
+import { placedTurn, propTurn, turnedPoint } from '../logic/prop-turn.js';
 import { nearestFirst, pooledQuad } from '../engine/frame-lists.js';
 import { hexToRgb } from '../art.js';
 import { hash2d, walkView } from '../walk-view.js';
@@ -26,6 +26,7 @@ expose({
   ROOM_DIM: [() => ROOM_DIM],
   lampLit: [() => lampLit, v => (lampLit = v)],
   mapSun: [() => mapSun, v => (mapSun = v)],
+  modelWindowLight: [() => modelWindowLight, v => (modelWindowLight = v)],
   roomDimming: [() => roomDimming, v => (roomDimming = v)],
   walkLightContext: [() => walkLightContext, v => (walkLightContext = v)],
   windowLit: [() => windowLit, v => (windowLit = v)],
@@ -98,6 +99,36 @@ function windowLit(x, z) {
     ? environmentWindowLit(x, z, environment.tod)
     : true;
 }
+/* a low-poly building's windows (its recipe's glass numbers, it.wins from prop-models.js): where each is in the place
+   and which way it looks out, which are lit at this hour (each by where it is, as an old house's window) as a bit
+   each (on), and how strongly the lit ones shine (k: 1 after dark, the daytime dial by day, none from inside a room) */
+export function modelWindowLight(it, dark0) {
+  const sc = walkView.sc,
+    RR = sc.roomRect,
+    out = !!RR && (it.x < RR[0] || it.x > RR[0] + RR[2] || it.z < RR[1] || it.z > RR[1] + RR[3]),
+    dOut = RR && typeof environment !== 'undefined' && engineContext.env ? environment.lampK || 0 : 0,
+    dark = out ? (dOut > 0.4 ? dOut : 0) : dark0,
+    k =
+      sc.room && !out ? 0 : (dark ? 1 : engineSetting('lights', 'windowsDay')) * engineSetting('lights', 'brightness'),
+    s = (it.p.s || 1) * (it.lk ? it.lk.size : 1),
+    f = it.flip || 1,
+    ro = propTurn(it),
+    cr = Math.cos(ro),
+    sr = Math.sin(ro),
+    P = [];
+  let on = 0;
+  for (const w of it.wins) {
+    const x = w.p[0] * f * s,
+      z = w.p[2] * s,
+      nx = w.n[0] * f,
+      nz = w.n[2],
+      p = [it.x + x * cr - z * sr, it.y + w.p[1] * s, it.z + x * sr + z * cr],
+      lit = windowLit(p[0], p[2]);
+    if (lit) on |= 1 << w.id;
+    P.push({ p, n: [nx * cr - nz * sr, nx * sr + nz * cr], lit });
+  }
+  return { k, on, P, dark };
+}
 /* phase 20 C2: the contact-shadow blobs, refilled in place each frame (engine/frame-lists.js) */
 const AO_POOL = [],
   AO_ALL = [],
@@ -105,6 +136,8 @@ const AO_POOL = [],
 export function walkLightContext(C, sun, dark, items, shadow, BT) {
   AO_ALL.length = 0;
   const dark0L = dark;
+  /* the low-poly buildings' windows read it (prop-models.js drawLowPolyModels) */
+  walkRenderer.dark = dark;
   const sc = walkView.sc,
     t = walkView.t,
     R = C.right,
@@ -153,11 +186,23 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
       G = [],
       inRoom = !!sc.room && !out,
       E = it.bld3 && typeof buildingState !== 'undefined' ? buildingState.mesh.get(it.p) : null;
-    let W = null;
+    let W = null,
+      WN = null;
+    /* a low-poly building's lit ground-floor windows, each pushed out its own way (its glass, not the picture's) */
+    if (it.wins) {
+      it.winL = modelWindowLight(it, dark0L);
+      if (!inRoom)
+        for (const q of it.winL.P)
+          if (q.lit && q.p[1] - it.y < 2.6) {
+            (W || (W = [])).push(q.p);
+            (WN || (WN = [0, 0]))[0] += q.n[0];
+            WN[1] += q.n[1];
+          }
+    }
     for (const e of M.fx || []) {
       if (e.k === 'fire')
         L.push({ p: at(e.x, e.y), r: 4.4, c: [1.7, 0.8, 0.32].map(v => v * fl * lb * (dark ? 1 : 0.6)) });
-      else if (e.k === 'window' && !inRoom && !E) {
+      else if (e.k === 'window' && !inRoom && !E && !it.wins) {
         const p = at(e.x, e.y);
         if (p[1] - it.y < 2.6 && windowLit(p[0], p[2])) (W || (W = [])).push(p);
       } else if (e.k === 'glow') G.push(at(e.x, e.y));
@@ -169,7 +214,12 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
     const wk = inRoom ? 0 : dark ? 1 : winDay;
     if (W && wk > 0.01) {
       const n = W.length,
-        fn = E ? E.fn : [Math.sin(ta), -Math.cos(ta)] /* phase 09 batch 9: out of a turned front */,
+        wl = WN && Math.hypot(WN[0], WN[1]),
+        fn = E
+          ? E.fn
+          : wl > 0.01
+            ? [WN[0] / wl, WN[1] / wl]
+            : [Math.sin(ta), -Math.cos(ta)] /* phase 09 batch 9: out of a turned front */,
         cx = W.reduce((a, q) => a + q[0], 0) / n,
         cz = W.reduce((a, q) => a + q[2], 0) / n;
       L.push({

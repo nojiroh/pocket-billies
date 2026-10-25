@@ -32,5 +32,77 @@
   "icon": "remedy"
  },
  "max_revive": {"n":"Max Revive","price":1600,"revive":1,"d":"Revives a fainted Billie with full HP.","mint":false,"icon":"maxrevive"},
- "repairkit": {"n":"Repair Kit","price":300,"repair":1,"d":"Fixes every part of one robot.","icon":"tonic"}
+ "repairkit": {"n":"Repair Kit","price":300,"repair":1,"d":"Fixes every part of one robot.","icon":"tonic"},
+ "leftover_sandwich": {
+  "n": "Leftover Sandwich",
+  "price": 1200,
+  "d": "Held: heals 1/16 of its HP at the end of each turn.",
+  "icon": "pretzel",
+  "hold": [
+   {"kind":"turnHeal","share":0.0625}
+  ]
+ },
+ "snack_pack": {
+  "n": "Snack Pack",
+  "price": 800,
+  "d": "Held: once a battle, heals a quarter of its HP at a turn’s end when at half HP or below.",
+  "icon": "trailmix",
+  "hold": [
+   {"kind":"pinchHeal","at":0.5,"share":0.25}
+  ]
+ },
+ "lucky_coin": {
+  "n": "Lucky Coin",
+  "price": 1000,
+  "d": "Held: a win pays 25% more Moneys while its holder is standing.",
+  "icon": "bell",
+  "hold": [
+   {"kind":"money","mult":1.25}
+  ]
+ },
+ "study_notes": {
+  "n": "Study Notes",
+  "price": 1000,
+  "d": "Held: its holder gains 50% more XP.",
+  "icon": "appeal",
+  "hold": [
+   {"kind":"xp","mult":1.5}
+  ]
+ },
+ "iron_vest": {
+  "n": "Iron Vest",
+  "price": 1200,
+  "d": "Held: its holder takes 15% less damage.",
+  "icon": "settlement",
+  "hold": [
+   {"kind":"damage","side":"take","mult":0.85}
+  ]
+ },
+ "quick_laces": {
+  "n": "Quick Laces",
+  "price": 1000,
+  "d": "Held: its holder’s Speed goes up as it comes in.",
+  "icon": "taxbreak",
+  "hold": [
+   {"kind":"stat","stat":"hus","stages":1}
+  ]
+ },
+ "brass_knuckles": {
+  "n": "Brass Knuckles",
+  "price": 1200,
+  "d": "Held: its holder’s physical moves hit 20% harder.",
+  "icon": "bailout",
+  "hold": [
+   {"kind":"damage","side":"deal","cat":"H","mult":1.2}
+  ]
+ },
+ "smart_specs": {
+  "n": "Smart Specs",
+  "price": 1200,
+  "d": "Held: its holder’s special moves hit 20% harder.",
+  "icon": "loophole",
+  "hold": [
+   {"kind":"damage","side":"deal","cat":"S","mult":1.2}
+  ]
+ }
 }

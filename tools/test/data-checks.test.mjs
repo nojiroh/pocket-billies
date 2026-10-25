@@ -121,7 +121,7 @@ test('a planted fault is found by its family, in the file check-data names', () 
     [R => (R.step_pyramids.pyramid = 'nosuch'), 'no pyramid "nosuch"'],
     [R => (R.protein_bar.item = 'potion'), 'gives levels'],
     [R => (R.shining_stone.item = 'potion'), 'evoItem'],
-    [R => (R.held.weight = 1), 'RL-12c'],
+    [R => (R.held.item = 'potion'), 'a held card names no item'],
     [R => (R.tutor.item = 'potion'), 'names no item'],
     [R => Object.values(R).forEach(r => r.kind === 'item' && (r.weight = 0)), 'could be empty'],
   ]) {
