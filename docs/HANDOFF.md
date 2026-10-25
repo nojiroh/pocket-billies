@@ -2,6 +2,214 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Water track WA-6b (lane P) - Surf and the Waterfall climb - 2026-10-25
+Branch `track/water` (main merged in at the start: hub track HB-1, .gitignore and HANDOFF kept both sides; lanes R's
+WA-1 and G's work merged in before each push). Plan approved in Plan Mode; the owner's answers: Surf needs the Water
+Badge and a Water Billie standing (RL-R2's rule); the "1.5 m tall" rule is dropped; no encounters while surfing for
+now; the Waterfall climb needs the Water Badge AND the Steel Badge and a Water Billie. My defaults (not asked):
+mounting is automatic at the edge (no question, the stick never stops); the climb asks in the talk box. Tag to
+suggest: `wa-6b-done` (the owner pushes tags).
+- Changed:
+  - Riding rule (`logic/rules.js riderOf`, rules.json `ride`): the tallest Water Billie still standing (hp > 0, as
+    RL-R2's fieldTeam), no height floor; `minHeight` is optional and gone from the data. gateText's ride line loses the
+    legacy "Quant and Billigator".
+  - `game/js/logic/surf.js` (new, lane P, Node-testable): `surfCan` (fieldMoveState on fieldMoves.json `surf`),
+    `surfable` (a `d` cell: no terrain `walk`, not lava or ice, not a `ride` scene), `SURF_COST` 1.5, `SURF_SPEED`
+    0.9, and the climb: `fallsClimbable`, `fallDir`, `fallFoot`, `fallTop` (0.7 m back from the lip), `climbAt` (from
+    against the wall to 1.6 m out, within half the width, pushing up it), `climbState` / `climbText`.
+  - fieldMoves.json gets a top-level `waterfall` block (name, type Water, badges [Water, Steel], its lines), outside
+    `moves` so the side-area pick, the biome check, the sim and the preview never see it; its schema, a type, a data
+    check of its types and the Studio's type rename (`type-rename.js`).
+  - The walk (`walk-view.js`): navGrid's `surf` mask (surfable deep cells, still in `blk`, so people, grass, encounter
+    spots, ambient life and the buddy stay dry; a deck, a stone or a solid thing in the water wins); `navOpen`,
+    `canStepTo(..., deep)`, `findPath(..., {surf})` for the player alone; `surfOn()` (allowed now, or already afloat:
+    never stranded); `P.surf` flips at the edge (`surfMount`: rings, "{billie} used Surf!" once a place, a debug line
+    `surf on`/`surf off`); `startFallClimb` reuses the ladder's `stepClimb` (rings at the foot for rungs, facing up
+    the fall). `field-moves.js fieldClimb`: at a climb fall's foot in the water, pushing up it asks once per approach
+    (again after 1.5 m), checks there is room at the top (`playerOpenAt`), climbs on a yes; `fieldBadgeLine` says when
+    a badge completes the climb's set.
+  - The mount (`walk/prop-look.js rideMountItem`): drawn when surfing or climbing a fall too, the lift eased in over
+    0.25 s, a slow ring every 1.8 s while you sit still, never a non-Water Billie; `ride` scenes as before. Your buddy
+    rides along unseen while you surf and comes ashore at your side (`world-billies.js`).
+  - Test-map checks may carry `surf: true` (self-test.js: walked as the player with Surf on).
+- Found (wrong or missing in the docs): RL-R2's Surf obstacle already ignored the 1.5 m rule, and rideMountItem fell
+  back to any Billie (even `team[0]`), so the two rules disagreed; `falls` is in no scene or code yet (only the
+  renderer's automatic `T.falls`); a `moves` entry needs a biome and is a side-area candidate, hence the separate
+  block; test_water's plunge pool is all shallows (`deep=False`), so its fall is climbed wading, which is allowed.
+- For lane G (its files, not edited here):
+  - test_water (`tools/build-test-scenes.py`): `check()` could take `surf=False` and write `'surf': True`; then
+    `check(s, (4.5, 8.5), (8.5, 8.5), True, 'surf out onto the pond's deep middle', surf=True)` and the same without
+    surf as False ('deep water stays shut without Surf (should be impossible)'). Verified by hand here: both hold.
+  - A `falls` entry with `climb: 1` needs water or open ground at `fallTop` (0.7 m back from the lip against `dir`)
+    and water (shallows or deep) at its foot; otherwise the climb says the top is too rough. I tested on a hand-made
+    `{x: 50, z: 17, dir: [0, -1], w: 1.6, h: 6, climb: 1}` in test_water: it climbs from the pool to the stream on top.
+  - Deep water for Surf: generated `d` tiles are surfable unless lava or ice; nothing else is needed.
+- For lane R: the mount's rings (a wake every 0.32 s moving, every 1.8 s still) share `addRipple`'s 16 with the scene;
+  the climb has no spray on the rider yet (a splash look would help); the mist's grey half-disc on the cliff in
+  test_water at the tall fall (seen in my picture, not mine to judge).
+- Not changed: encounters (none on water, the owner), mapgenReach and the seam rules (dry), fishing, sounds (WA-8,
+  the climb plays `whoosh`), the Studio's "Smallest Billie you can ride" field (still writes `ride.minHeight` if the
+  owner sets one: an optional floor again).
+- Risky: tap-to-walk with Surf on copies the grid's blocked array per tap (a hub of ~220,000 cells: one copy a tap);
+  a scene whose deep water touches an exit lets you surf to the seam, where the seam rules (dry) decide. The climb
+  pushes through `P.climb`, so anything that reads `P.climb` as "on a ladder" now also sees a fall (`C.fall`).
+- Verified: lint, typecheck, check:modules, check:data, `npm test` 957/957 (7 new in tools/test/surf.test.mjs),
+  `check:smoke` 6/6 before each game/ commit (Playwright 1.63.0). In the page (a scratch Playwright script on
+  test_water): without the badge tap-to-walk stops at the shallows and `surfOn()` is false; with it you ride to the
+  pond's deep middle (mount on), back to the shore (off), the stick crosses the pond and lands; people's paths and
+  `isWalkable` keep deep water shut (72 surf cells); at the hand-made fall the Water Badge alone gives the two-badge
+  line, both badges ask, a yes climbs from height -0.22 to 5.88 m and lands at its top; the debug log has `surf on`,
+  `surf off`, `waterfall at 50,17: needBadge`, `...: ask`; no page errors.
+- Next: lane G adds the test_water surf checks and real `climb` falls (WA-2b); the owner's phone look at the mount on
+  deep water and the climb; encounters on water when wanted.
+
+### Water track WA-1 (lane R) - pixel water - 2026-10-25
+Branch `track/water` (main merged in at the start: nothing new; lanes G's WA-3a and P's WA-6a merged in before each
+push). Plan approved in Plan Mode. Tag to suggest: `wa-1-done` (the owner pushes tags).
+- Changed (one cause a commit):
+  - Settings: `water.pixel` (on), `water.bands` (5), `water.frames` (10) with panel rows; one uniform `uPixW` set by
+    `water-data.js setPixelWaterUniform`. **The shared snippet** `walk-shaders.js PIXEL_WATER_GLSL` (the 32 grid, a
+    world-grid Bayer dither, stepped time, banded tones; the list in water-track.md, WA-1 notes).
+  - The water shader on the 32 texels a metre grid (was 16): a kind's colours in 5 dithered tones between shallow
+    and deep; ripples, rings, foam, caustics, glints, duckweed, whitecaps, the surf's lines, lava's crust and ice's
+    sheen stepped at 10 a second and drawn as hard pixels; a hard foam line one texel wide at the shore (pale scum on
+    murky water); the mirror offset by whole pixels and kept smooth. The swell, the lap and the swash stay smooth.
+  - The ground's shore parts (bed, wet rim in three tones, the sea's swash), the light thrown up on walls and puddles
+    after rain on the grid. Fall sheets in pixel columns, three tones, a hard foot and lip (shape unchanged).
+  - **Models in the reflection (the check): they were missing.** The reflection pass drew props as pictures, and a
+    prop drawn as a model (every game-flow building, the hub's trees) shows none: Copperleaf's moss cottage by the
+    sea had no reflection. They are now drawn as models with the mirrored camera (`drawPropModels`, no shadows).
+  - The graphics bench's Pond station measures `water.pixel` (off, on); docs/graphics-bench.md.
+- Risky: the reflection now draws the near-water models a second time (on a phone by the sea in Copperleaf: 5
+  models); the shore line reads the shore mask 4 more times near the edge. Both are what the bench's Pond station
+  and the owner's phone should price. The model shader's world curve is not turned off in the mirror (the sprites'
+  is): far models could sit a little low in the water on curved maps; nothing seen at the spots checked.
+  `water.pixel` off draws the old look (measured: off vs before differs no more than two before runs do).
+- Verified: lint, typecheck, format, check:modules, `npm test` (942, 0 failures after the merges), `check:smoke`
+  before every commit touching game/ (all passed); look-water before/after at noon and 22.5 (11 shots each,
+  validation/look-water-before*, -after*, not committed; the water's numbers identical, no page errors); close-ups
+  from a pitched-down camera with the blur off (a scratch script) for the pond, ice, lava, the tall fall and
+  Copperleaf's mirror. Not run: the quick-check baseline (WA-8) and the bench's cost (the phone).
+- Pictures: at phone size with the depth of field the change is small (the hard shore line, the falls' columns,
+  finer shorelines); close up the dither, the one-texel foam line and the hard glints show, ice keeps its sheen
+  patches with dithered edges. In test_water's haze the pond's tones read faintly under the sky's reflection.
+- For the other lanes: lane B (WA-7) includes `PIXEL_WATER_GLSL` and calls `setPixelWaterUniform(U)` on its
+  program; read-only. Lane G and lane P: nothing needed for WA-1.
+- WA-6a's notes (relayed after the work above): a wader in test_water's pond (0.3 m deep) is cut at the waterline and
+  mirrored the same with pixel water on and off (rechecked in the browser); WA-1 did not touch `frame-items.js` or
+  `draw-common.js`. Left for WA-2a: wading splashes as droplets like the `spray` quads (they fall through to the pale
+  puff in `effects.js`), and a few rings of the wake's own so it doesn't starve the scene's 16 (`addRipple`).
+- Next for lane R: WA-2a (waterfalls drawn, spray and mist on the grid, the flow map). For the owner: look at the
+  water on the phone with Pixel water on and off (Settings, Water), and run the bench's Pond station.
+
+### Water track WA-3a (lane G) - rivers that run downhill - 2026-10-25
+Branch `track/water` (main merged in at the start: nothing new; lane P's WA-6a and lane R's WA-1 commits merged in
+before each push). Plan approved in Plan Mode; the owner's answers: a river may cross a joined edge and carry on in
+the neighbour; MAPGEN_VERSION 15; lava keeps its old line. Tag to suggest: `wa-3a-done` (the owner pushes tags).
+- Changed:
+  - `game/js/logic/water-gen.js` (new, lane G, Node-testable; after mapgen.js on both pages and in the Studio's
+    worker): sources (a side, a spring, a pond, a joined edge's incoming river) and mouths (sea, pond, side, pool),
+    the land flooded from each mouth (priority flood), the longest way down that fits kept; smoothed, meandering on
+    the flat, wider downstream, its level never rising, rapids where it drops steeply; painted as mapgenPaintStream
+    did; `streams` gains `w`, `src`, `mouth`, `rapids` (the contract). Details and numbers: water-track.md, WA-3a notes.
+  - The hook in `logic/mapgen.js`, as small as it could be: in mapgenStageWater the stream line becomes
+    `waterGenRiver` (after the pond and coast, so a river can end in them) and `waterGenCarve` runs after
+    mapgenLowerWater; `mapgenPinSides` skips `G.riverKeep` corners (a seam crossing's bed). MAPGEN_VERSION 15.
+  - A pre-existing bug found by the sweeps, own commit: `mapgenTrailSearch` (TR-2b's mountain trails) stepped 2 m and
+    tested only the landing cell, so a trail could hop a narrow stream and leave its summit cut off. It now tests the
+    middle of the step too (goldens and mountain sweeps unchanged).
+  - test_water: lane P's two walking checks (wade into the pond; the lava pool stays shut), 75 checks pass.
+  - Tests: `tools/test/water-gen.test.mjs` (quick: the flood, same dials same river, downhill on water, wider
+    downstream, mouths reached, no river without the dial, clear of the exits); a seam case in mapgen-seams.test.mjs
+    (slow: the child's river comes in at the seam, the same wet cells and heights, the seam rules met, with and
+    without the child's own stream dial). Remade on purpose: the golden `water` scene (the other five unchanged),
+    rng.test's pinned hash and the run-start snapshot (only gen.v / mapgenV). mapgen-town.test.mjs (towns track's):
+    a run scene's east and west edge corners are 0 except where a river crosses.
+- Found (where the plan or the docs were wrong):
+  - In runs no river could reach a seam: rivers went north to south, run routes join east to west, and the water
+    stage dries every joined strip. And mapgenPinSides forced a run scene's whole east and west edges to 0, which
+    makes any river leaving a node run uphill over its last metres; hence the riverKeep exception.
+  - A river must not cut ground off: an east to west river that never crosses the road leaves half a map unreachable
+    while mapgenUnreachable (exits only) still passes. Now refused (a pool ends it partway).
+  - Rivers ran along roads (the road's flattened bed is the easiest way down) and the road dried them in pieces;
+    run towns lost their clinic and shop to a river. Both now kept clear.
+  - `island-gen.js` also calls mapgenPaintStream: left as it is (the hub island is locked).
+- Risky:
+  - **MAPGEN_VERSION**: main is at 8; PR #194 (towns + routes) takes it to 13 and RT-4b holds 14. Whichever of #194 or
+    this track merges second keeps the higher number for its own change (15 stays WA-3a's) and remakes rng.test's
+    hash and the run-start snapshot on purpose. Every run scene with a stream (about 1 node in 5) and every child of a
+    river crossing changes.
+  - Speed: a scene with a river takes about 60 ms in Node (24 ms without; the old line cost nothing). On a phone that
+    is roughly 0.1-0.2 s more for each node with a river at a run's start: worth a look in WA-8.
+  - A seam river is carried on even where it has to cut ground off; that leaves a note ("the neighbour's river cuts
+    ground off from the road"), which the run tests treat as a failure. None of the sweeps here hit it.
+  - A jetty (the jetty feature) may lie across a river where it reaches the pond (boards over water, walkable).
+- Verified: lint, typecheck, check:modules, check:data, prettier; `npm test` 947/947; `npm run test:slow` 58/58 (the
+  mapgenUnreachable sweeps, seams, towns, mountains and ledges runs, the run worlds); `check:smoke` 6/6 (178 s); the
+  walking-rules step (28 test scenes, 75 checks). Sweeps outside the tests: 120 stream scenes (every biome, hills,
+  pinned or not): none uphill, every point on water, every exit reached, no fallback; 80 pond, coast and bridge
+  scenes; 19 of 19 parent and child pairs whose river crosses the seam agree. The quick check's baseline was not
+  remade (WA-8's job): expect generated scenes with rivers to differ.
+- For lane R (its files, not edited here): `streams[].w` (a width per point), `rapids` ([[t0, t1]] along the line),
+  `src`, `mouth` are there to read (the flow field, white water on rapids, a pool's churn). The bed lies 0.3 m deeper
+  within 0.75 m of the line, eased up to the edge.
+- Next: WA-2b (lane G, round 2) places waterfalls where a river meets a drop (water-gen.js has each river's line and
+  level); the hub island's fall needs the owner's yes.
+- Not done here, waiting on the owner: WA-6a's "shallows for others" (wild Billies, props and trainers standing in
+  `w`, never `d` or lava: mapgenPutProp's water flag, the encounter and trainer spot pickers, the "nothing in water"
+  asserts in mapgen.test.mjs, mapgen-dials.test.mjs and mapgen-lots.test.mjs, with MAPGEN_VERSION and the golden
+  scene). It is outside WA-3a's river scope; left for a later lane G session unless the owner says otherwise.
+
+### Water track WA-6a (lane P) - wading - 2026-10-25
+Branch `track/water` (main merged in at the start: nothing new). Plan approved in Plan Mode; the owner's answers: wade
+every shallow `w` except lava and ice; mapgen's reach check and the seam rules stay dry; no encounters while wading;
+wild Billies, props and trainers may stand in shallows (the generator side is left to lane G, below). Tag to suggest:
+`wa-6a-done` (the owner pushes tags).
+- Changed:
+  - `game/js/logic/wading.js` (new, lane P, Node-testable): `wadeWalkable` (the walk grid's water rule: a terrain's
+    `walk` first, then `ride` scenes cross all water as v24, else `w` is walkable unless its kind is lava or ice, `d`
+    blocks), `wadeKindAt` (the scene's `waters` rectangles / `waterKind`, never the renderer's lookup, so a graphics
+    setting can't open lava), `wadeDepthAt` (0 on land, eased to `WADE_DEPTH` 0.3 m over the first 0.6 m from the
+    nearest dry tile), `wadeSpeed` (down to 0.6 of walking). On both pages and in the Studio's logic worker list.
+  - `walk-view.js`: the walk grid uses `wadeWalkable`; shallows cost 2 (people and tap-to-walk keep to land); a new
+    `nav.dry` marks cells over water but out of it (bridge decks, stepping stones, jetties); `wadeDepthHere(x, z)`
+    reads it. `movePlayer` slows by `wadeSpeed` (stick and route). Rings behind you as you wade (one every 1.6 s
+    standing), and `walkView.parts` of kind `splash` at your steps.
+  - The waterline cut: `walk/frame-items.js wadeItem` sinks you and world Billies (`worldBillyItem`, so your buddy)
+    smoothly from the bank's ground to 0.3 m under the surface and sets `it.cut`; `walk/draw-common.js
+    setSpriteUniforms` leaves those bottom rows off in whole texels (`uOff`/`uUV`), so shadows, reflections and the
+    TR-3 silhouette agree with no shader edit. The buddy leaves rings when it wades.
+  - Checks: test_island's sea was shallows to the map's edge, so its "out into the sea" check became a wade: now deep
+    past a 2 m band of shallows (`tools/build-test-island.py`, as Copperleaf's). The data check's "bridge ends in the
+    water" warns only for an end you can't wade.
+- Found (wrong or missing in the docs): the water rule is copied three times (walk-view.js, seam-rules.js:58,
+  mapgen.js:4338 mapgenReach), not once; only the walk grid's changed. **Lava is painted as `w`** (mapgen's lava
+  streams, test_water's pool): only the kind keeps you out. Streams under ~2.2 m are all `w`, so their bridges are
+  now optional. You stood AT the surface on water before (`standingHeightAt` = ground - 0.12 = the water's level).
+  The player's speed is in walk-view.js, not walk-control.js. No test scene `checks` assumed water blocks except
+  test_island's.
+- For lane G (its files, not edited here):
+  - test_water (`tools/build-test-scenes.py t_water`), the walking checks WA-6a wants: `check(s, (1.2, 9.4), (5.5,
+    9.3), True, 'wade into the pond's shallows')` and `check(s, (41, 6.5), (45.5, 6.5), False, 'the lava pool stays
+    shut (should be impossible)')` (verified by hand here: both hold).
+  - Shallows for others (the owner: wild Billies, props and trainers may stand in them): `mapgenPutProp`'s water flag
+    (mapgen.js ~721, the "never in water" line) and the encounter / trainer spot pickers can allow `w` (not `d`, not
+    lava); relax the "nothing in water" asserts in mapgen.test.mjs, mapgen-dials.test.mjs and mapgen-lots.test.mjs in
+    the same commit, with MAPGEN_VERSION and the golden scene.
+- For lane R (its files, not edited here): `walkView.parts` of kind `splash` fall through to the pale puff in
+  `walk/effects.js`; a droplet look (the `spray` quads) would read better. Rings (`addRipple`) are capped at 16 with
+  the scene's own; a wading wake may want its own few.
+- Not changed: encounters, fishing (still from the bank; off while wading, as before), mapgenReach and the seam rules
+  (dry: a generated map keeps a dry way to every exit), `ride` scenes, deep water (WA-6b), water footstep sounds (WA-8).
+- Risky: NPC paths may now cross shallows when it is much shorter (cost 2). Two data warnings (Copperleaf bridge 3,
+  test_props_island bridge 1) stay: those ends are in deep water.
+- Verified: lint, typecheck, check:modules, check:data, `npm test` 942/942 (5 new in tools/test/wading.test.mjs),
+  `check:smoke` 6/6 before each game/ commit (Playwright 1.63.0). In the page: every test map's `testMapChecks` ok;
+  test_water: pond shallows walkable at 0.3 m, its deep middle, the lava and the ice pools blocked; wading speed about
+  2.3 m/s against 3.4 on land; a phone-size picture of you cut at the waterline in the pond with the reflection from
+  the surface; no bridge point in any test map wades; Copperleaf's shallows' water level equals `standingHeightAt`.
+- Next: WA-6b (Surf and the Waterfall climb) grows `ride` into per-cell `d`; lane G adds the two test_water checks.
+
 ### Water track WA-0 - the plan, the contract, the water bench - 2026-10-25
 Branch `ccr-4ae7bdc4-46vu9r` (the plan's own branch `track/water` did not exist yet; the owner makes it, and every
 later WA session starts on it). The owner's brief: water "waterfalls, ocean, rivers, everything", good fidelity in the

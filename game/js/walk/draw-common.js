@@ -12,6 +12,7 @@ import { walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
 /* eslint-disable no-func-assign */
 expose({
+  CUT_UV: [() => CUT_UV],
   FULL_UV: [() => FULL_UV],
   ROCK_STATE: [() => ROCK_STATE],
   rockUniformsFor: [() => rockUniformsFor, v => (rockUniformsFor = v)],
@@ -88,13 +89,21 @@ function setRockUniforms(p, C) {
 }
 /* phase 20 C2: z and rk stand in for a copy of the item (a slice of a thick sprite at another depth, a picture rising
    with its town at rk of its height), so nothing is made per draw */
-const FULL_UV = new Float32Array([0, 0, 1, 1]);
+const FULL_UV = new Float32Array([0, 0, 1, 1]),
+  CUT_UV = new Float32Array([0, 0, 1, 1]);
 export function setSpriteUniforms(p, it, uv, z = it.z, rk = 1) {
   const gl = gpuState.gl,
     U = p.U,
     s = it.mpp,
-    oy = rk === 1 ? it.oy : it.oy * rk,
-    h = rk === 1 ? it.h : it.h * rk;
+    oy = rk === 1 ? it.oy : it.oy * rk;
+  let h = rk === 1 ? it.h : it.h * rk;
+  /* WA-6a: someone wading (walk/frame-items.js wadeItem) has its bottom it.cut rows left off, in whole texels, so its
+     legs end at the waterline; its shadow, reflection and silhouette the same */
+  if (it.cut > 0 && !uv && rk === 1 && it.cut < it.h) {
+    h = it.h - it.cut;
+    CUT_UV[3] = h / it.h;
+    uv = CUT_UV;
+  }
   gl.uniform3f(U.uBase, it.x, it.y, z);
   gl.uniform4f(U.uOff, it.ox * s, oy * s, it.w * s, h * s);
   gl.uniform4fv(U.uUV, uv || FULL_UV);

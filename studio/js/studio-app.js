@@ -120,6 +120,7 @@ expose({
   writeStaged: [() => writeStaged, v => (writeStaged = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ toast });
 /* to-module: end */
 export const studioState = {
   D: null,

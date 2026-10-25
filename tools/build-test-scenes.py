@@ -138,6 +138,8 @@ def t_water():
                     (45.5, 3, 'lava'), (50.8, 3, 'ice'), (53.5, 6, 'sea-strip')):
         shot(s, x, z, l)
     check(s, (20, 3), (50, 8.2), True, 'the hub to the foot of the tall fall')
+    check(s, (1.2, 9.4), (5.5, 9.3), True, "wade into the pond's shallows")                # WA-6a: shallows are waded
+    check(s, (41, 6.5), (45.5, 6.5), False, 'the lava pool stays shut (should be impossible)')
     s.patches('G', .6, 6, seed=6)
     return s.out(7, 'wood')
 

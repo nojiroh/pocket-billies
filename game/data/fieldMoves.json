@@ -47,5 +47,16 @@
    "out": "A trail through the undergrowth leads back to the main path.",
    "travel": "Through the undergrowth…"
   }
+ },
+ "waterfall": {
+  "name": "Waterfall",
+  "type": "Water",
+  "badges": ["Water","Steel"],
+  "look": "A wall of water crashes down from above.",
+  "needBadge": "A wall of water crashes down from above. With {badges}, a Water Billie could climb it.",
+  "needType": "A wall of water crashes down from above. You have {badges}, but no Water Billie in your team to climb it.",
+  "ask": "It's a large waterfall. Would you like to use Waterfall?",
+  "used": "{billie} used Waterfall!",
+  "top": "The water at the top is too rough to come out on."
  }
 }

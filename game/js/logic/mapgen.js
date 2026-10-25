@@ -16,6 +16,7 @@
 /** @import { Biome } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { waterGenCarve, waterGenRiver } from '../hooks.js';
 import { hashString, rngFrom } from './rng.js';
 import { pointInProp, turnedBounds, turnedPoint } from './prop-turn.js';
 /* eslint-disable no-func-assign */
@@ -279,7 +280,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 8; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track) */
+export const MAPGEN_VERSION = 15; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9-14: taken by the towns and routes tracks (TW-2, TW-3, RT-2 to RT-4b); 15: rivers run downhill (WA-3a, logic/water-gen.js) */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -943,7 +944,9 @@ export function mapgenPinSides(G, fade) {
     for (let j = 0; j <= G.h; j++)
       for (let i = 0; i <= G.w; i++) {
         const d = mapgenDepth(G, side, i, j);
-        if (d < fade) G.H[j * (G.w + 1) + i] *= mapgenSmooth(d / fade);
+        /* WA-3a: a river's crossing keeps its bed (the neighbour takes it from the edge strip) */
+        if (d < fade && !(G.riverKeep && G.riverKeep[j * (G.w + 1) + i]))
+          G.H[j * (G.w + 1) + i] *= mapgenSmooth(d / fade);
       }
 }
 /** is (x, z) within `depth` metres of a joined edge's strip (with its 4 m fade) */
@@ -2122,6 +2125,7 @@ export function mapgenTrailSearch(G, goal, isRoad, s) {
       if (
         done[st2] ||
         G.F[mapgenCellAt(G, ii, jj)] & 4 ||
+        G.F[mapgenCellAt(G, i + di / 2, j + dj / 2)] & 4 /* WA-3a: a 2 m step never hops a narrow stream */ ||
         mapgenSteepAt(G, c2) ||
         mapgenSteepAt(G, (c + c2) >> 1) ||
         mapgenNearPinned(G, ii, jj)
@@ -2427,13 +2431,14 @@ export function mapgenStageWater(G) {
     rnd = G.rng('heights', 'water');
   const wk = P.land.water,
     amt = P.land.waterAmount;
-  if (wk === 'stream' || P.feature === 'bridge')
-    mapgenPaintStream(G, mapgenStreamLine(G, rnd, 'w'), 1.6 + amt * 2.6, 'w');
   if (P.feature === 'lava') mapgenPaintStream(G, mapgenStreamLine(G, rnd, 'lava'), 2 + amt * 2, 'lava');
   if (wk === 'pond' || P.feature === 'jetty')
     G.pond = mapgenPaintPond(G, rnd, wk === 'pond' ? amt : Math.max(0.5, amt));
   if (wk === 'coast') mapgenPaintCoast(G, rnd, amt);
   if (wk === 'islet') mapgenPaintIslet(G, amt);
+  /* WA-3a: the river runs downhill (logic/water-gen.js), into the pond or the sea when there is one; a joined
+     neighbour's river always goes on */
+  waterGenRiver(G, rnd, 1.6 + amt * 2.6, wk === 'stream' || P.feature === 'bridge');
   if (G.F.some(f => f & 4)) {
     G.waterKind = G.waterKind || (P.feature === 'lava' && wk === 'none' ? 'lava' : B.water);
     for (const e of G.exits) {
@@ -2454,6 +2459,7 @@ export function mapgenStageWater(G) {
       }
     mapgenRoadOverWater(G);
     mapgenLowerWater(G);
+    waterGenCarve(G);
   }
   mapgenBridgesOverWater(G);
 }
