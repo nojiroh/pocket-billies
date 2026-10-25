@@ -279,7 +279,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 9; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: no room kept for the straight-line route trainers (RT-2) */
+export const MAPGEN_VERSION = 10; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: no room kept for the straight-line route trainers (RT-2); 10: an exit's signpost reads the place's name, set pieces (RT-3) */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -4235,7 +4235,9 @@ export function mapgenStageProps(G) {
         for (const sg of [1, -1]) {
           const x = pts[k][0] + nx * r * sg,
             z = pts[k][1] + nz * r * sg;
-          if (!mapgenInLot(G, x, z, 0.6) && mapgenPutProp(G, 'signpost', x, z, { force: true })) return;
+          /* RT-3: tapped, it reads the place's name (walk-control.js: a sign with no words of its own) */
+          if (!mapgenInLot(G, x, z, 0.6) && mapgenPutProp(G, 'signpost', x, z, { force: true, extra: { act: 'sign' } }))
+            return;
         }
       }
     });
