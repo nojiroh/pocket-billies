@@ -507,6 +507,7 @@ export function upgradePart(p) {
   return true;
 }
 export const billyName = m => m.nick || (m.mut && m.mut.name) || speciesOf(m).name;
+provide({ billyName }); /* to-module */
 /* RL-8: during a run storage stays in Copperleaf (the box isn't a run field): only the party counts, so nothing in a run
    reads, heals, merges or moves a Billie that is resting at home */
 export const allBillies = () => (saveData.run ? saveData.team.slice() : saveData.team.concat(saveData.box));
@@ -704,6 +705,7 @@ export const riderName = () => {
   const m = riderOf();
   return m ? m.nick || speciesOf(m).name : '';
 };
+provide({ riderName }); /* to-module */
 /** RL-R2: whether the run's side area is open (its field move used; logic/run-side.js runSideOpen) */
 export const fieldOpen = () => {
   const run = saveData.run;

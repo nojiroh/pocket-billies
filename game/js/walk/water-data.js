@@ -14,16 +14,16 @@ import { walkRenderer } from './walk-state.js';
 expose({
   WATER_KIND_INDEX: [() => WATER_KIND_INDEX],
   WATER_KIND_LOOKS: [() => WATER_KIND_LOOKS],
+  flowTexture: [() => flowTexture, v => (flowTexture = v)],
+  setFlowUniforms: [() => setFlowUniforms, v => (setFlowUniforms = v)],
   setPixelWaterUniform: [() => setPixelWaterUniform, v => (setPixelWaterUniform = v)],
   setShoreUniforms: [() => setShoreUniforms, v => (setShoreUniforms = v)],
   shoreAt: [() => shoreAt, v => (shoreAt = v)],
   shoreField: [() => shoreField, v => (shoreField = v)],
-  waterFlowField: [() => waterFlowField, v => (waterFlowField = v)],
   waterKindLookup: [() => waterKindLookup, v => (waterKindLookup = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/* which way water flows: along the scene's streams (sc.streams: [{pts:[[x,z],…]}]), still everywhere else */
 /* v22: kinds of water. r = how quickly it deepens away from the shore (m), top = how deep the middle gets; colours multiply
    the Look's water colours; clarity = how much bed shows in the shallows; caus = light patterns on the bed */
 export const WATER_KIND_LOOKS = [
@@ -287,29 +287,30 @@ export function waterKindLookup(sc) {
     return run && def !== 2 && !WATER_KIND_LOOKS[def].mode ? 1 : def;
   };
 }
-export function waterFlowField(sc) {
-  const S = sc.streams || [];
-  if (!S.length) return () => [0, 0];
-  return (x, z) => {
-    let best = null,
-      bd = 2.5;
-    for (const st of S) {
-      const p = st.pts || [];
-      for (let k = 0; k < p.length - 1; k++) {
-        const a = p[k],
-          b = p[k + 1],
-          vx = b[0] - a[0],
-          vz = b[1] - a[1],
-          l2 = vx * vx + vz * vz || 1e-9,
-          t = clamp(((x - a[0]) * vx + (z - a[1]) * vz) / l2, 0, 1),
-          d = Math.hypot(a[0] + vx * t - x, a[1] + vz * t - z);
-        if (d < bd) {
-          bd = d;
-          const l = Math.sqrt(l2);
-          best = [(vx / l) * (st.speed || 1), (vz / l) * (st.speed || 1)];
-        }
-      }
-    }
-    return best || [0, 0];
-  };
+/* water track WA-2a: the flow map on the card (walk/water-flow.js): flow in red and green, foam in blue, how far into
+   its stream in alpha, one texel a half metre, half floats so still water reads exactly 0 */
+export function flowTexture(T, F) {
+  const gl = gpuState.gl;
+  if (T.flowTex) gl.deleteTexture(T.flowTex);
+  T.flowTex = null;
+  if (!F || !F.d.some(v => v !== 0)) return;
+  T.flowTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, T.flowTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, F.W2, F.H2, 0, gl.RGBA, gl.FLOAT, F.d);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+}
+/* the water shader's flow map (texture unit 7); off where the scene has none, and for the basins (on = false) */
+export function setFlowUniforms(U, sc, on = true) {
+  if (!U.uFlowR) return;
+  const gl = gpuState.gl,
+    t = on && walkRenderer.flowTex;
+  gl.activeTexture(gl.TEXTURE7);
+  gl.bindTexture(gl.TEXTURE_2D, t || gpuState.white);
+  gl.bindSampler(7, null);
+  gl.uniform1i(U.uFlowTex, 7);
+  gl.uniform3f(U.uFlowR, 1 / sc.w, 1 / sc.h, t ? 1 : 0);
+  gl.activeTexture(gl.TEXTURE0);
 }

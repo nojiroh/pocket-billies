@@ -2,6 +2,67 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Water track WA-6b (lane P) - Surf and the Waterfall climb - 2026-10-25
+Branch `track/water` (main merged in at the start: hub track HB-1, .gitignore and HANDOFF kept both sides; lanes R's
+WA-1 and G's work merged in before each push). Plan approved in Plan Mode; the owner's answers: Surf needs the Water
+Badge and a Water Billie standing (RL-R2's rule); the "1.5 m tall" rule is dropped; no encounters while surfing for
+now; the Waterfall climb needs the Water Badge AND the Steel Badge and a Water Billie. My defaults (not asked):
+mounting is automatic at the edge (no question, the stick never stops); the climb asks in the talk box. Tag to
+suggest: `wa-6b-done` (the owner pushes tags).
+- Changed:
+  - Riding rule (`logic/rules.js riderOf`, rules.json `ride`): the tallest Water Billie still standing (hp > 0, as
+    RL-R2's fieldTeam), no height floor; `minHeight` is optional and gone from the data. gateText's ride line loses the
+    legacy "Quant and Billigator".
+  - `game/js/logic/surf.js` (new, lane P, Node-testable): `surfCan` (fieldMoveState on fieldMoves.json `surf`),
+    `surfable` (a `d` cell: no terrain `walk`, not lava or ice, not a `ride` scene), `SURF_COST` 1.5, `SURF_SPEED`
+    0.9, and the climb: `fallsClimbable`, `fallDir`, `fallFoot`, `fallTop` (0.7 m back from the lip), `climbAt` (from
+    against the wall to 1.6 m out, within half the width, pushing up it), `climbState` / `climbText`.
+  - fieldMoves.json gets a top-level `waterfall` block (name, type Water, badges [Water, Steel], its lines), outside
+    `moves` so the side-area pick, the biome check, the sim and the preview never see it; its schema, a type, a data
+    check of its types and the Studio's type rename (`type-rename.js`).
+  - The walk (`walk-view.js`): navGrid's `surf` mask (surfable deep cells, still in `blk`, so people, grass, encounter
+    spots, ambient life and the buddy stay dry; a deck, a stone or a solid thing in the water wins); `navOpen`,
+    `canStepTo(..., deep)`, `findPath(..., {surf})` for the player alone; `surfOn()` (allowed now, or already afloat:
+    never stranded); `P.surf` flips at the edge (`surfMount`: rings, "{billie} used Surf!" once a place, a debug line
+    `surf on`/`surf off`); `startFallClimb` reuses the ladder's `stepClimb` (rings at the foot for rungs, facing up
+    the fall). `field-moves.js fieldClimb`: at a climb fall's foot in the water, pushing up it asks once per approach
+    (again after 1.5 m), checks there is room at the top (`playerOpenAt`), climbs on a yes; `fieldBadgeLine` says when
+    a badge completes the climb's set.
+  - The mount (`walk/prop-look.js rideMountItem`): drawn when surfing or climbing a fall too, the lift eased in over
+    0.25 s, a slow ring every 1.8 s while you sit still, never a non-Water Billie; `ride` scenes as before. Your buddy
+    rides along unseen while you surf and comes ashore at your side (`world-billies.js`).
+  - Test-map checks may carry `surf: true` (self-test.js: walked as the player with Surf on).
+- Found (wrong or missing in the docs): RL-R2's Surf obstacle already ignored the 1.5 m rule, and rideMountItem fell
+  back to any Billie (even `team[0]`), so the two rules disagreed; `falls` is in no scene or code yet (only the
+  renderer's automatic `T.falls`); a `moves` entry needs a biome and is a side-area candidate, hence the separate
+  block; test_water's plunge pool is all shallows (`deep=False`), so its fall is climbed wading, which is allowed.
+- For lane G (its files, not edited here):
+  - test_water (`tools/build-test-scenes.py`): `check()` could take `surf=False` and write `'surf': True`; then
+    `check(s, (4.5, 8.5), (8.5, 8.5), True, 'surf out onto the pond's deep middle', surf=True)` and the same without
+    surf as False ('deep water stays shut without Surf (should be impossible)'). Verified by hand here: both hold.
+  - A `falls` entry with `climb: 1` needs water or open ground at `fallTop` (0.7 m back from the lip against `dir`)
+    and water (shallows or deep) at its foot; otherwise the climb says the top is too rough. I tested on a hand-made
+    `{x: 50, z: 17, dir: [0, -1], w: 1.6, h: 6, climb: 1}` in test_water: it climbs from the pool to the stream on top.
+  - Deep water for Surf: generated `d` tiles are surfable unless lava or ice; nothing else is needed.
+- For lane R: the mount's rings (a wake every 0.32 s moving, every 1.8 s still) share `addRipple`'s 16 with the scene;
+  the climb has no spray on the rider yet (a splash look would help); the mist's grey half-disc on the cliff in
+  test_water at the tall fall (seen in my picture, not mine to judge).
+- Not changed: encounters (none on water, the owner), mapgenReach and the seam rules (dry), fishing, sounds (WA-8,
+  the climb plays `whoosh`), the Studio's "Smallest Billie you can ride" field (still writes `ride.minHeight` if the
+  owner sets one: an optional floor again).
+- Risky: tap-to-walk with Surf on copies the grid's blocked array per tap (a hub of ~220,000 cells: one copy a tap);
+  a scene whose deep water touches an exit lets you surf to the seam, where the seam rules (dry) decide. The climb
+  pushes through `P.climb`, so anything that reads `P.climb` as "on a ladder" now also sees a fall (`C.fall`).
+- Verified: lint, typecheck, check:modules, check:data, `npm test` 957/957 (7 new in tools/test/surf.test.mjs),
+  `check:smoke` 6/6 before each game/ commit (Playwright 1.63.0). In the page (a scratch Playwright script on
+  test_water): without the badge tap-to-walk stops at the shallows and `surfOn()` is false; with it you ride to the
+  pond's deep middle (mount on), back to the shore (off), the stick crosses the pond and lands; people's paths and
+  `isWalkable` keep deep water shut (72 surf cells); at the hand-made fall the Water Badge alone gives the two-badge
+  line, both badges ask, a yes climbs from height -0.22 to 5.88 m and lands at its top; the debug log has `surf on`,
+  `surf off`, `waterfall at 50,17: needBadge`, `...: ask`; no page errors.
+- Next: lane G adds the test_water surf checks and real `climb` falls (WA-2b); the owner's phone look at the mount on
+  deep water and the climb; encounters on water when wanted.
+
 ### Water track WA-1 (lane R) - pixel water - 2026-10-25
 Branch `track/water` (main merged in at the start: nothing new; lanes G's WA-3a and P's WA-6a merged in before each
 push). Plan approved in Plan Mode. Tag to suggest: `wa-1-done` (the owner pushes tags).

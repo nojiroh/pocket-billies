@@ -115,6 +115,7 @@ test('waterfall: climbed from its foot pushing up it, not across, not from the s
   const sc = fixture(),
     [F] = sc.falls;
   assert.equal(climbAt(sc, 5, 5.2, 0, 1), F, 'at the foot, pushing north (up the fall)');
+  assert.equal(climbAt(sc, 5, 5.97, 0, 1), F, 'against its wall, where the wall stops you');
   assert.equal(climbAt(sc, 5.8, 5.2, 0.3, 1), F, 'near its edge, pushing mostly up it');
   assert.equal(climbAt(sc, 5, 5.2, 1, 0), null, 'pushing along the cliff');
   assert.equal(climbAt(sc, 5, 5.2, 0, -1), null, 'pushing away from it');
