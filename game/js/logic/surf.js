@@ -48,9 +48,9 @@ expose({
 export const SURF_COST = 1.5;
 /** your speed on the mount, as a share of walking on land */
 export const SURF_SPEED = 0.9;
-/** the foot of a fall: how far out from its lip (m) along the way it falls you stand to climb it, and how far
- * across its middle (as a share of half its width) */
-export const CLIMB_FOOT = [0.1, 1.6];
+/** the foot of a fall: how far out from its lip (m) along the way it falls you stand to climb it, from against its
+ * wall (a little behind the lip's line: the wall stops you about there) to out in its pool */
+export const CLIMB_FOOT = [-0.25, 1.6];
 /** where you come out at the top: this far back from the lip (m), against the way it falls */
 export const CLIMB_TOP = 0.7;
 

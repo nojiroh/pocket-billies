@@ -187,7 +187,8 @@ function testMapChecks(id) {
       hc = navCellAt(hub[0], hub[1]);
     out.push({ what: 'where you arrive is open ground', reach: true, ok: hc >= 0 && !G.blk[hc] });
     for (const c of sc.checks || []) {
-      const got = !far(findPath(c.from[0], c.from[1], c.to[0], c.to[1], c.noHop ? { noHop: true } : {}), c.to);
+      /* WA-6b: a check with `surf` walks as the player with Surf on (deep water open, logic/surf.js) */
+      const got = !far(findPath(c.from[0], c.from[1], c.to[0], c.to[1], { noHop: !!c.noHop, surf: !!c.surf }), c.to);
       out.push({ what: c.what, reach: c.reach, got, ok: got === !!c.reach });
     }
   } finally {
