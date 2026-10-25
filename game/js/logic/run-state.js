@@ -384,6 +384,8 @@ export function runBegin(s, give) {
   run.home = travel.map(m => m.uid);
   run.pack = copyOf(pack);
   s.team = /** @type {Billy[]} */ (copyOf(travel));
+  /* RL-12c: a traveller leaves its held item at home (the hub's Billie keeps it), so a run's end can't bring it twice */
+  for (const m of s.team) delete m.held;
   s.buddy = travel[0].uid;
   s.se = give.se;
   s.items = add(Object.assign(zero(start.items), give.items || {}), pack.items);
@@ -462,6 +464,9 @@ export function runEnd(s, how, rates, itemPrice) {
   for (const m of /** @type {Billy[]} */ (copyOf(kept))) {
     const inTeam = s.team.findIndex(t => t.uid === m.uid),
       inBox = s.box.findIndex(t => t.uid === m.uid);
+    /* RL-12c: the hub's Billie kept its held item at home (runBegin), so its kept self holds it again */
+    const home = inTeam >= 0 ? s.team[inTeam] : inBox >= 0 ? s.box[inBox] : null;
+    if (home && home.held) m.held = home.held;
     if (inTeam >= 0) s.team[inTeam] = m;
     else if (inBox >= 0) s.box[inBox] = m;
     else if (s.team.length < 6) s.team.push(m);

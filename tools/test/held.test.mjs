@@ -64,3 +64,15 @@ test("held: saveFill drops a held item the data doesn't have; billiesOk refuses 
   assert.equal(billiesOk([{ ...m, held: 7 }]), false);
   assert.equal(billiesOk([{ ...m, held: 'x'.repeat(41) }]), false);
 });
+
+test('held: a traveller leaves its held item at home (a won run never brings it back twice, the kept one holds it again)', () => {
+  const s = startedSave('sparky0', 10);
+  s.team[0].held = 'potion';
+  const hub = s.items.potion || 0;
+  runBegin(s, { seed: 'ABCDE12345', expedition: 1, mapgenV: 1, se: 0, items: {} });
+  assert.equal(s.team[0].held, undefined, 'the traveller holds nothing');
+  for (const k of Object.keys(s.items)) s.items[k] = 0;
+  runEnd(s, { won: true, keep: [s.team[0].uid] }, RATES, () => 0);
+  assert.equal(s.items.potion || 0, hub, 'no second one in the bag');
+  assert.equal(s.team[0].held, 'potion', 'the kept Billie holds its item from home again');
+});
