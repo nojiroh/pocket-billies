@@ -25,7 +25,46 @@ approval was relayed by the planning session at the owner's word, not typed in t
   quick check and check-fast (not a phase end; no drawing changed).
 - Risky: none known; the phase still walks to the first town and the first mini-boss by `findIndex`, which are main
   places because the side's come after them.
-- Next: nothing for this fix.
+- Next: nothing for this fix. (HB-2's entry below saw the same failure on main; this fixes it.)
+
+### Hub track HB-2 - The run's loading screen - 2026-10-25
+Branch `track/hub` (made from main at f779581; the plan file and ROADMAP brought in from
+`claude/hub-island-revamp-4fskxy` as their own commit). Plan approved in Plan Mode. The owner's answers: the cap 20 s;
+**fly, then load**. Tag `hb-2-done` for the owner to push. Details: docs/phases/hub-track.md, "Done in HB-2".
+- Where the plan's facts were off (checked in the code): a reload mid-run already made the run's world behind the
+  boot's loader, but in one tick (the loader froze); `runWorldSync` has two more callers (`setSaveData`, `runEndHome`);
+  `prepareMap` fetches no model recipes, so a first landing missed the decal pictures too; `worldMapPrewarm` had no
+  "done"; the scenes could already be made one at a time (`runSceneMake` reads only earlier scenes). Measured in
+  headless software drawing: 8-17 scenes, 50-300 ms each (one scene is the longest task), the swap 5 ms.
+- "Fly, then load": the flight crosses the run's own map, so its places have to be made before the flight. Take off
+  counts them on the sheet; the loading screen comes at the landing, and its stages start with the flight.
+- Changed (one cause per commit): logic/run-load.js and `run.load.capMs`; `pb-loading` (UI kit, gallery section);
+  `runScenesSlices` + `runWorldMake`; `worldMapPrewarm(done)`; the take-off and run-loading.js (the landing's screen,
+  a one-line hook in airship.js `flyLand`); the eager prewarm and the map stage's share; the resume at boot; the checks.
+- world-bowl.js (shared with HB-1): only `worldMapPrewarm` (~2075-2130: the `done` callbacks, an `eager` timer mode)
+  and `BOWL_INDEX` exported by the module tool. HB-1's pin (~2926) and prop-models.js are untouched: the merge should
+  be clean.
+- Risky:
+  - **The world map stage is the slow one.** It fills the run map's 2048-row terrain. In headless software drawing
+    that takes 10-16 s (the screen up ~11-17 s after Take off; a resume capped once at 20 s in check-fast); on a phone
+    it should take a few seconds. The debug log's `load` line will say: if `bowl` is the late stage, the next step is
+    to stop the screen waiting for the map (you aren't looking at it at the landing), or fill only the run's band.
+  - The page no longer freezes, but each slice is one whole scene (up to ~300 ms in software drawing, ~30 ms in
+    Node). Splitting a scene would mean changes inside mapgen.
+  - The start sheet stays open (inert) while the world is made. A save swapped in mid-game holding a run (cloud
+    restore) still uses the synchronous build, with no screen.
+  - Planned and not done: the Take off button filling as a bar. The fill didn't show in headless pictures, so the
+    button counts in its label instead ("Readying the airship… 6/14").
+- Verified: lint, typecheck, check:modules, format:check, check:data, build; `npm test` 940/940 (new: run-load, the
+  data check, and a slow test that the sliced scenes equal the one-tick ones); the UI gallery's new "loading" section
+  (4 pictures, light and dark, 320/390); check-fast in full, 29/29 in 757 s, including Packing (take-off: counted,
+  no task as long as the scenes' work, the screen lifted, a log line without the seed), run_world (resume line), Play
+  this seed, the debug log holds no names, boots, the Studio; `check:smoke` 6/6 (phone flow, the in-game test step).
+  The in-game full test's run phase was run alone: take-off, landing and screen pass (`run take-off 10717 ms … shown
+  1`), then it fails at "a place on row 4 isn't its zone's biome". **Main at f779581 fails the same way**, so it is
+  not from HB-2; it needs a look (the RL-R1 region check against the short map).
+- Next: the owner's phone test of a take-off and a reload mid-run, with the debug log's `load` line; the HB-1 merge.
+  HB-8 puts the carriage in `pb-loading`'s `view` slot (`runLoadView`).
 
 ### Hub track HB-1 - the world map's pin, decals on their models (done) - 2026-10-25
 Branch `claude/hub-island-revamp-4fskxy` (the planning session's branch: `track/hub` didn't exist yet and a cloud

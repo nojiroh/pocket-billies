@@ -104,6 +104,7 @@ import { cutscene, cutsceneTeardown } from './cutscene/director.js';
 import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
 import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
+import { runLoad } from './run-loading.js';
 import { runClinicEach, runJump, runTakeOff } from './run.js';
 import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
@@ -1235,7 +1236,8 @@ async function runFullTest(mode) {
             render();
             const hubTeam = saveData.team.map(m => m.uid).join();
             runTakeOff('SELFTESTRUN8', { rows: 5, minibosses: 1 });
-            if (!saveData.run || !(await wait(() => airshipFlight.on, 5000)))
+            /* HB-2: the run's world is made over several frames before the flight */
+            if (!saveData.run || !(await wait(() => airshipFlight.on, 30000)))
               throw new Error('the run didn’t take off');
             /* RL-13: the starter points' default pick travels; the hub's team waits in Copperleaf as it was */
             if (
@@ -1254,6 +1256,9 @@ async function runFullTest(mode) {
               landing = 'w:' + LOCATIONS[1].mapId + '*';
             if (!(await wait(() => walkView.ready && walkView.id === landing, 15000)))
               throw new Error(`landed but the view is ${walkView.id}`);
+            /* HB-2: the landing's loading screen lifts (every stage ready, or the cap) */
+            if (!(await wait(() => runLoad.ready && !document.getElementById('runload'), RULES.run.load.capMs + 5000)))
+              throw new Error('the landing’s loading screen never lifted');
             /* RL-R1: the run's region: the short map's 5 rows in its zones, each place its zone's biome (RL-R2: a
                side area's its field move's), its name on the Map tab */
             const G = saveData.run.region,
