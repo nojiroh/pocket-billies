@@ -54,7 +54,10 @@ rebase): merge SP-1 first, then this. Plan approved in Plan Mode. Tag `sp-2-done
   58 (SP-1's graft sweep included); smoke 6 of 6. Headless on the page (town fixture): the lead (Memeox) grafted
   sig=bezos0, saved; the stored save passes validSave and saveFill keeps the graft; no Prime ribbon on its sheet; in a
   wild battle it starts with Defense +1 (Counterweight); kg 420 to 358.8; the debug state lists the splice.
-  Full quick check: running at the time of this entry (result added when it ends).
+  Full quick check: 34 of 37, none SP-2's. Song fingerprints (cave mid/late not in the sound baseline, as SP-1
+  found); Sound settings (a mute row in the full run; passes alone); the RL-8 run from the mast (in the full run "the
+  battle's end didn't let saving go on", alone "the town's shop has no Perk"; the same step fails the same way alone on
+  SP-1's branch, and SP-1 saw it fail on main 501b286 at take-off, so it is older than the splicing track).
 - Risky: every stat, type and effect-row read for a Billie now checks for a splice (unspliced ones return the same
   values, the same list objects included). The Unstable drawback can knock a Billie out at a turn's end, like a burn.
   saveFill drops a splice on a regional form with no rig of its own (such a splice can't be drawn or ruled).
