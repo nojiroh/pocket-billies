@@ -2,6 +2,62 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Player visibility - you stay visible behind buildings and trees - 2026-10-25
+Branch `ccr-bdf253b3-4vm5w6` (the session's own: the owner chose to work here instead of `fix/player-visibility`,
+which didn't exist; one session's work, one PR). Not a phase: the owner asked for a system and approved the plan in
+Plan Mode with these answers: all three layers (silhouette, see-through circle, a better whole-object fade); the
+silhouette an outline in the colour of your top (lifted if dark); you and the one you talk to; the setting renamed
+"Your outline when hidden". No tag (not a phase).
+- What was there (TR-3, checked in the code): the silhouette and the rock's see-through circle only while ground cuts
+  the camera's line (`rockK`); behind a house or tree on flat ground neither showed. A 0.4 fade written out twice
+  (walk/sprites.js, solid-props.js): one test point, instant, props over 1.6 m, and **never the low-poly models**,
+  which are Copperleaf's buildings (lab, shop, cottages: `M.model` with a door, not `M.build`).
+- Changed (one cause per commit):
+  - **logic/occlude.js** (new, tests occlude.test.mjs): `pictureCovers` (the cover test, moved first with no change),
+    `hiddenEase`, `outlineColour`, `coverTarget`, `fadeEase`.
+  - **Silhouette for anything that hides you** (sprites.js `drawPlayerSilhouette`): no `rockK` gate; an invisible first
+    draw is an occlusion query (`ANY_SAMPLES_PASSED_CONSERVATIVE`), its answer `walkRenderer.hidT`, eased into `hidK`;
+    pull toward the eye 0.8 m (was 0.6). Debug log `hidden`.
+  - **Outline** (sprite shader `uGhostE`): the picture's edge whole, the inside dotted (`outlineFill`), in the top's
+    colour (`lookOf`, the worn top's first colour, else the wardrobe's; looked up once a second). Engine > Camera
+    `outline` (1 art pixel; 0 = the old dark blue tint), `outlineFill` (0.25).
+  - **Talk partner**: while `talkBox.on`, the person or townsperson within 1.5 m of `walkRenderer.talkAt` gets the same
+    outline in their own top's colour; not counted toward your `hidK`.
+  - **See-through circle when hidden** (draw-common.js `rockUniformsFor`): on with `hidK` as well as `rockK`; the
+    buildings' three shaders got ROCK_GLSL (the models, built on them, no longer add it). Engine > Camera `hideFade`,
+    `hideSize` (0.3), `hideAmount` (0.7, capped at 0.85).
+  - **Circle dither moved by (2, 1)** (walk-shaders.js `rockHides`): with the fades' own pattern, a picture both faded
+    and in the circle lost every pixel, the query saw nothing and the circle flickered off (found in the pictures:
+    lab, shop, a tree). Now at least 2 cells in 16 stay for any fade from 0.1 and circle up to 0.85.
+  - **Whole-object fade** (walk/quality-cull.js `coverItems`, after culling): your feet, middle and head; to
+    `coverFade` (0.4), halfway back while the circle is on; eased per placement (out about 0.25 s, back about 0.5 s);
+    models and voxel props fade now (they read `it.fade`).
+  - **Rename**: "Your silhouette through rock" is "Your outline when hidden" (label and help text only).
+  - **Checks**: fast check "Behind things" (Copperleaf: hidden behind at least half of three buildings and three trees,
+    four samples in a row, circle on; not in the open); "Tall ground" no longer expects no silhouette on flat ground (the
+    mountains landing's bushes really cover you there; it checks no rise and no rock fade); tall-ground-draw tests for
+    the query, the talk partner and the circle; `tools/look-behind.py` (pictures, validation/behind/, ignored).
+- Where the plan was wrong: an occlusion query that says "how much" needs `SAMPLES_PASSED`, which WebGL2 doesn't have;
+  `ANY_SAMPLES` is yes or no, so the "minimum amount hidden" filter is the 0.8 m pull alone (a lamp post in front of
+  you turns the circle on; it only cuts what is in front of you inside it). No `?fixture=behind`: the spots are found
+  in the town fixture (check-fast.py `BEHIND_SPOTS`), so no game code was added for it. "Buildings fade as a whole"
+  was mostly the old `M.build` pictures; the real buildings are models and never faded before.
+- Verified: unit tests 927; lint, typecheck, modules, format, check-data; smoke 6 of 6 after every step; check-fast
+  "Behind things" and "Tall ground"; pictures behind the lab, shop, two cottages and three trees (hidden 1, circle 0.7;
+  in the open 0). The full quick check: started at the end of the session (result added below when it finished).
+- **Not verified**: on a phone (cost, how the outline reads at real resolution); the talk partner's outline in a
+  browser (unit test only).
+- Risky / open:
+  - Phone cost: one extra quad draw and one query every frame outdoors (the silhouette used to draw only on tall
+    ground), one more quad while talking, three screen points per tall item a frame (was one, in two places), the
+    circle's shader maths while hidden. Old drivers can answer queries late: `hidK` eases, so that is a slower fade-in,
+    not a flicker.
+  - The outline is 1 art pixel; at the checks' low graphics it is thin. `outline` 2 if it reads weakly on the phone.
+  - Copperleaf's buildings now fade as a whole (0.7 while hidden) and in the circle: it reads as busy dithering on the
+    shop. `coverFade` 1 keeps only the circle.
+- Next: the owner plays Copperleaf on the phone and sends a debug log (`hidden` on the run line is how hidden you
+  were). Then a PR from this branch to main if it reads well.
+
 ### Routes track RT-1 - Route layouts - 2026-10-24
 Branch `track/routes` (plan approved in Plan Mode; the owner's answers: all five plans, and **every non-town place**
 laid out: landing, route, mini-boss, boss; towns, waystations and stalls keep their open ground). Tag `rt-1-done`

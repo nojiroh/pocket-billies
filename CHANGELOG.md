@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **You stay visible behind things**: when a building, a tree or anything else stands between the camera and you,
+  your outline shows through it in the colour of your top, the thing in front thins out in a soft circle round you,
+  and tall things covering you fade a little (now smoothly, and the modelled buildings too). Out in the open nothing
+  changes. The one you are talking to shows through the same way. Engine > Camera has the dials: "Your outline when
+  hidden" (was "Your silhouette through rock"), the outline's width and fill, the circle's switch, size and strength,
+  and how far things covering you fade.
 - **Expeditions, challenges and starter points** (roguelite track RL-13): runs now have difficulty tiers.
   **Expedition I** is the game as it was; winning the highest one open unlocks the next, up to **V**. Each one above I
   sends foes out 2 levels higher, makes the final boss tougher (+15% HP a step), raises run shop and clinic prices by
