@@ -50,7 +50,11 @@ then** (about one route place in three)). Tag `rt-2-done` for the owner to push.
 - Verified: lint, typecheck, check:modules, check:data, format:check; unit tests 919 quick and 58 slow (new:
   route-trainers rewritten, route-trainer-spots (slow, real runs), battle-formats a pair's double incl. 1 vs 2,
   rewards a pair's one pick, saves-real the wild stock, run-sim route trainers fought); smoke 6 of 6; check-quick
-  RT-2 alone. The full quick check: (see the next commit).
+  RT-2 alone. **Full quick check** (1244 s): 35 of 38. Song fingerprints ("cave mid", "cave late" not in the
+  baseline) fails on main too (main at 2cfef57, same steps alone): not RT-2's; the baseline needs the RL-R2b cave songs.
+  RL-8 ("Take off didn't start a run's flight" in 60 s) and the Actions sheet ("a run's sheet has no day chip" in 5 s)
+  timed out under the full check's paired load; alone, the Actions sheet passes and RL-8 runs past the take-off, the
+  battle and the seam to main's own failure, "the town's shop has no Perk" (twice). CI not run (no PR).
 - Risky / open:
   - **Not seen on a phone**: 4-6 more people on a route place (sprites and their pets) on top of RT-1's forests.
   - Required trainers make the first route harder for a weak party (the fresh-save number above). If it bites,
