@@ -263,15 +263,25 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
   ],
   fall: [
     `#version 300 es
-precision highp float;in vec3 aPos;in float aShore;layout(location=2) in vec2 aFl;uniform mat4 uVP;out vec3 vW;out vec2 vT;${COMMON_GLSL}
-out float vH;void main(){vec3 p=aPos;p.y+=curveY(p.xz);vW=p;vT=vec2(aFl.y,aShore*aFl.x);vH=aFl.x;gl_Position=uVP*vec4(p,1.);}`,
+precision highp float;in vec3 aPos;in float aShore;layout(location=2) in vec2 aFl;layout(location=3) in vec2 aBig;uniform mat4 uVP;out vec3 vW;out vec2 vT;out vec2 vB;${COMMON_GLSL}
+out float vH;void main(){vec3 p=aPos;p.y+=curveY(p.xz);vW=p;vT=vec2(aFl.y,aShore*aFl.x);vH=aFl.x;vB=aBig;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec2 vT;in float vH;out vec4 o;uniform vec3 uShallow;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}
+precision highp float;in vec3 vW;in vec2 vT;in float vH;in vec2 vB;out vec4 o;uniform vec3 uShallow;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}
 void main(){if(rockHides(vW))discard;
- /* water track WA-1: with pixel water the sheet is drawn in the 32 grid's texels (fc: across its half metre, down in metres), its streaks in pixel columns stepping down */
- float pr=pwRes(),pix=uPixW.x;vec2 fc=vec2(floor(vT.x*.5*pr),floor(vT.y*pr));float t=pwStep(uTime*.001),x=(pix>.5?(fc.x+.5)/(.5*pr):vT.x)*7.,y=pix>.5?(fc.y+.5)/pr:vT.y;float s=lnoise(vec2(x,y*2.2-t*4.5))*.6+lnoise(vec2(x*2.3+5.,y*4.-t*6.))*.4;
- vec3 c=mix(uShallow*1.1,vec3(.92,.97,1.),pwQ(smoothstep(.45,.8,s),3.,fc));float foot=1.-pwHard(0.,.3,vH-y);c=mix(c,vec3(.97,.99,1.),foot*.7+(1.-pwHard(0.,.12,y))*.4);
- float sh=shadowAt(vW,.002);vec3 L=ambient(vec3(0,0,-1),1.,sh)*1.2+uSunCol*.6*sh;o=vec4(fogit(c*L,vW),.82+foot*.15);}`,
+ float pr=pwRes(),pix=uPixW.x,t=pwStep(uTime*.001),sh=shadowAt(vW,.002);vec3 Lt=ambient(vec3(0,0,-1),1.,sh)*1.2+uSunCol*.6*sh;
+ if(pix<.5){/* pixel water off: the sheet of before */float x=vT.x*7.,y=vT.y;float s=lnoise(vec2(x,y*2.2-t*4.5))*.6+lnoise(vec2(x*2.3+5.,y*4.-t*6.))*.4;
+  vec3 c=mix(uShallow*1.1,vec3(.92,.97,1.),smoothstep(.45,.8,s));float foot=1.-smoothstep(0.,.3,vH-y);c=mix(c,vec3(.97,.99,1.),foot*.7+(1.-smoothstep(0.,.12,y))*.4);o=vec4(fogit(c*Lt,vW),.82+foot*.15);return;}
+ /* water track WA-2a: the sheet in the 32 grid's texels (fc: across it in metres, down it along the water), each pixel column its own streaks stepping
+    down at its own speed over a slow large pattern; a glassy curled lip; white water at the foot with a broken top edge; the outer columns thin */
+ float wM=vB.x,big=vB.y,L=vH,ax=vT.x*wM;vec2 fc=vec2(floor(ax*pr),floor(vT.y*pr));float y=(fc.y+.5)/pr,ch=fract(sin(fc.x*12.9898+wM*7.13)*43758.5453);
+ float sp=1.4+ch*1.3,sv=fract(y*.8-t*sp+ch*5.3),streak=step(sv,.16+.2*ch)*step(.25,ch+.2);float large=lnoise(vec2(ax*1.4+.7,y*.4-t*1.05));
+ float v=clamp(.22+large*.5+streak*.5,0.,1.);float lip=big>.5?.32:.06,footL=big>.5?min(.3+L*.09,1.1):min(.18,L*.45);
+ float ft=step(L-footL*(.62+.38*lnoise(vec2(ax*3.1,pwStep(uTime*.001)*2.3))),y),glass=1.-step(lip,y);
+ v=mix(v,.55+.35*step(abs(y-lip*.45),1.5/pr),glass);v=max(v,ft*(.75+.25*lnoise(vec2(ax*7.,y*7.-t*3.))));v=max(v,pwQ(smoothstep(L-1.6,L,y)*.45*big,3.,fc));
+ float q=pwQ(v,4.,fc);vec3 c=q<.2?uShallow*.9:q<.5?mix(uShallow,vec3(.9,.96,1.),.38):q<.8?mix(uShallow,vec3(.93,.97,1.),.7):vec3(.95,.98,1.);
+ float e=min(ax,wM-ax)*pr,rag=step(e,1.+2.*step(.55,lnoise(vec2(y*2.-t*2.,fc.x*.3))));
+ /* falling water stays bright in the cliff's shade (it catches the sky), and a little of its own at night */
+ Lt=ambient(vec3(0,0,-1),1.,sh)*1.3+uSunCol*(.3+.4*sh);Lt=mix(Lt,vec3(dot(Lt,vec3(.3,.59,.11))),.6);c+=c*.08*(1.-uAmbK);o=vec4(fogit(c*Lt,vW),mix(.9+q*.08,.62,rag*(1.-ft)));}`,
   ],
   /* 0.1.0 alpha: the grass in the 32 px a metre pixel style, coloured by the ground it grows from. A blade is a quad
      on the pixel grid (vP: its pixels across and up); the fragment shader draws it in whole pixels: a staircase that
