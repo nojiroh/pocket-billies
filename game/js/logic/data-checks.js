@@ -1505,7 +1505,8 @@ export function dataSceneFindings(D, roadOf) {
           }
         }
       if (!wet) warn(`Scene ${s.name || k}: water rectangle ${n + 1} (${r.k}) covers no water.`, 'scenes', g);
-      if (!['pond', 'stream', 'canal', 'spring', 'swamp', 'lake'].includes(r.k))
+      /* the kinds walk/water-data.js WATER_KIND_LOOKS draws (water track WA-0: sea, lava and ice were missing) */
+      if (!['pond', 'stream', 'canal', 'spring', 'swamp', 'lake', 'sea', 'lava', 'ice'].includes(r.k))
         warn(`Scene ${s.name || k}: water rectangle ${n + 1} has an unknown kind “${r.k}”.`, 'scenes', g);
     });
     const users = locations.map((r, i) => [r, i]).filter(([r]) => r.mapId === k);
