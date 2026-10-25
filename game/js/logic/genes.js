@@ -26,13 +26,15 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
-import { GRAFT_SLOTS, graftForm, graftKey, graftKind, graftRecipe } from './graft-art.js';
+import { GRAFT_SLOTS, graftDonors, graftForm, graftKey, graftKind, graftRecipe } from './graft-art.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
   geneCost: [() => geneCost, v => (geneCost = v)],
   // @ts-expect-error -- replaced on purpose
   geneOf: [() => geneOf, v => (geneOf = v)],
+  // @ts-expect-error -- replaced on purpose
+  geneWords: [() => geneWords, v => (geneWords = v)],
   // @ts-expect-error -- replaced on purpose
   graftFit: [() => graftFit, v => (graftFit = v)],
   // @ts-expect-error -- replaced on purpose
@@ -49,6 +51,8 @@ expose({
   graftTypes: [() => graftTypes, v => (graftTypes = v)],
   // @ts-expect-error -- replaced on purpose
   graftUnstable: [() => graftUnstable, v => (graftUnstable = v)],
+  // @ts-expect-error -- replaced on purpose
+  wildSplice: [() => wildSplice, v => (wildSplice = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -180,4 +184,47 @@ export function graftUnstable(D, m, stats, limit) {
     down = ids[r.int(0, ids.length - 1)],
     heavy = graftHeaviest(D, m.sp, m.graft, m.build)[0];
   return { up, down, donor: heavy ? heavy.sp : m.sp };
+}
+
+/* ---------- SP-3: wild splices ---------- */
+/** a wild Billie's splice, rolled at spawn: none, a Graft (one foreign part) or a Chimera (genes.json wild.chimeraParts
+ * of them), by genes.json wild's odds. Its donors are of the lines the place's pool holds (other lines than its own,
+ * graftDonors), and it is never refused (past the limit it is Unstable, as a Chimera often is). Draws only on rnd.
+ * @param {GeneData} D @param {string} sp @param {string[]} pool the species ids the place spawns
+ * @param {() => number} rnd @returns {Graft | null} */
+export function wildSplice(D, sp, pool, rnd) {
+  const W = D.genes.wild,
+    x = rnd(),
+    chimera = x >= W.graft;
+  if (x >= W.graft + W.chimera) return null;
+  const lines = new Set(pool.map(id => D.species[id] && D.species[id].line).filter(Boolean)),
+    lineOf = (/** @type {string} */ rig) => (graftRecipe(D.kitBuilds, rig) || { line: '' }).line,
+    open = GRAFT_SLOTS.map(slot => ({
+      slot,
+      donors: graftDonors(D.kitBuilds, D.partKits, sp, slot).filter(r => lines.has(lineOf(r))),
+    })).filter(o => o.donors.length);
+  if (!open.length) return null;
+  const [lo, hi] = W.chimeraParts,
+    n = Math.min(open.length, chimera ? lo + Math.floor(rnd() * (hi - lo + 1)) : 1);
+  /** @type {Graft} */
+  const g = {};
+  for (let i = 0; i < n; i++) {
+    const o = open.splice(Math.floor(rnd() * open.length), 1)[0];
+    g[o.slot] = o.donors[Math.floor(rnd() * o.donors.length)];
+  }
+  /* past what Stability allows, the last slots picked go first (one foreign part is never refused) */
+  const order = Object.keys(g);
+  while (order.length > 1 && graftStability(D, sp, g).refused) delete g[/** @type {string} */ (order.pop())];
+  return graftStability(D, sp, g).refused ? null : g;
+}
+
+/** a Gene in words, for the battle's lines: "a shark’s tail", "an eagle’s wings" (its part's animal, then its kind's
+ * genes.json word); '' when the donor has no part for the slot @param {GeneData} D @param {string} slot @param {string} donor */
+export function geneWords(D, slot, donor) {
+  const gene = geneOf(D, slot, donor),
+    P = gene && D.partKits.parts[gene.part];
+  if (!gene || !P) return '';
+  const animal = P.animal && P.animal !== 'any' ? P.animal : gene.kind,
+    word = (D.genes.kinds[gene.kind] && D.genes.kinds[gene.kind].word) || gene.kind;
+  return `${/^[aeiou]/.test(animal) ? 'an' : 'a'} ${animal}’s ${word}`;
 }

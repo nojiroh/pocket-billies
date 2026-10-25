@@ -239,3 +239,48 @@ test("genes: the debug log's splice report names data ids only, never a Billie's
   ]);
   assert.doesNotMatch(JSON.stringify(r), /Secret/);
 });
+
+test('genes: SP-3 a wild splice is a Graft or a Chimera by the odds, from the pool, never refused, the same per stream', () => {
+  const R = modules.rng,
+    pools = Object.values(GAME_DATA.pools).map(P => P.list.map(([id]) => id)),
+    W = GAME_DATA.genes.wild,
+    lineOf = rig => GAME_DATA.kitBuilds.forms.find(f => f.rig === rig).line;
+  let n = 0,
+    grafts = 0,
+    chimeras = 0;
+  for (const pool of pools)
+    for (const sp of pool)
+      for (let i = 0; i < 200; i++) {
+        const rnd = R.rngFn(`${sp}|${i}`, 'splice'),
+          g = N.wildSplice(D, sp, pool, rnd),
+          again = N.wildSplice(D, sp, pool, R.rngFn(`${sp}|${i}`, 'splice'));
+        assert.deepEqual(g, again, 'the same stream gives the same splice');
+        n++;
+        if (!g) continue;
+        const slots = Object.keys(g);
+        if (slots.length === 1) grafts++;
+        else chimeras++;
+        assert.ok(slots.length <= W.chimeraParts[1]);
+        assert.deepEqual(N.graftFit(D, sp, g), g, `${sp} ${JSON.stringify(g)} fits`);
+        assert.equal(N.graftStability(D, sp, g).refused, false);
+        const lines = new Set(pool.map(id => data.SPECIES[id].line));
+        for (const donor of Object.values(g)) {
+          assert.ok(lines.has(lineOf(donor)), `${donor} is of a line the pool holds`);
+          assert.notEqual(lineOf(donor), data.SPECIES[sp].line);
+        }
+      }
+  /* a pool of one line gives no donors; a pool's own odds stay near genes.json's (some species have fewer open slots) */
+  assert.equal(
+    N.wildSplice(D, 'swift0', ['swift0'], () => 0),
+    null
+  );
+  assert.ok(grafts / n > W.graft * 0.7 && grafts / n < W.graft * 1.3, `grafts ${grafts}/${n}`);
+  assert.ok(chimeras > 0 && chimeras / n < (W.chimera + W.graft) * 1.3, `chimeras ${chimeras}/${n}`);
+});
+
+test('genes: SP-3 a Gene in words names its animal and its kind', () => {
+  assert.equal(N.geneWords(D, 'front', 'hughes2'), 'an eagle’s wings');
+  const sharkTail = GAME_DATA.kitBuilds.forms.find(f => Object.values(f.parts).some(p => p[0] === 'shark_tailfin'));
+  assert.equal(N.geneWords(D, 'sig', sharkTail.rig), 'a shark’s tail');
+  assert.equal(N.geneWords(D, 'front', 'nobody'), '');
+});
