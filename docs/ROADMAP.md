@@ -113,8 +113,9 @@ town node needs it.
   world map's pin at the player, decals fixed), HB-2 (the run's loading screen), HB-3 (the world map's lagoon,
   waterfalls and detail), HB-4a/4b (island sketches, then the island rebuilt: doors to the camera, a second street, no
   lookout), HB-5 (building variety), HB-6 (a natural pasture fence), HB-7 (the train station and one flying train per
-  region theme), HB-8 (departure through the portal and the return), HB-9 (the phone look pass). Planned 2026-10-25;
-  no session started. Tags `hb-N-done`. Branch `track/hub`.
+  region theme), HB-8 (departure through the portal and the return), HB-9 (the phone look pass). Planned 2026-10-25.
+  HB-2 (the run's loading screen: scenes made over frames, the landing waits for its map, models, the run's world map
+  and the walk view, a 20 s cap; fly, then load) done 2026-10-25 on `track/hub`, waiting on the owner's phone test. Tags `hb-N-done`. Branch `track/hub`.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all

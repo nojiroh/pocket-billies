@@ -135,6 +135,33 @@ About 10-15 sessions. HB-1, HB-2 and HB-4a can run side by side; then HB-3 besid
 - Resume of a run (a reload mid-run) goes through the same screen.
 - Checks: check-fast's run start step waits on the ready signal; the in-game full test and Start-Game unbroken.
 
+**Done in HB-2** (2026-10-25, branch `track/hub`; tag `hb-2-done` for the owner). The owner's answers: a 20 s cap;
+**fly, then load** (the flight crosses the run's own map, so its places are made before it; the loading screen comes
+at the landing).
+- `logic/run-load.js` (stages, share, cap, the log line; unit-tested), `rules.json run.load.capMs` 20000 (check-data
+  checks it).
+- `pb-loading` in ui-run-kit.js (heading, sub, tip, bar, stages; slot `view` for HB-8's carriage; `contained` for the
+  gallery's "loading" section, baseline taken).
+- `runScenesSlices` (logic/run-scenes.js) and `runWorldMake` (run-world.js): the scenes made one a frame
+  (requestAnimationFrame then a timer), the put shared with `runWorldSync` (which stays for the hub's world back and a
+  save swapped in). The swap is one tick as before.
+- Take-off: the save part at once; the start sheet stays (inert) and Take off counts the scenes ("Readying the
+  airship… 6/14"); then the arrival, the flight and `run-loading.js` from the flight's start: the landing map
+  (`prepareMap`), its models' recipes (landing and joined places, from the composed view) then their decal pictures,
+  the run's world map prewarm (`worldMapPrewarm(done, eager)`: on a timer, its share from the terrain's rows), the walk
+  view drawn a few frames (not the GPU's normal-map queue: it drains a few a second in software drawing). `flyLand`
+  shows the screen if the landing isn't ready; it lifts when every stage is, or at the cap.
+- Resume: boot makes the run's world with `runWorldMake` behind the boot's loader ("Making the run's places 6/14"),
+  then begins the landing's loading and shows the screen as the loader goes. `runResume` finishes a take-off a reload
+  stopped before the arrival (phase 'fly', no path).
+- Debug log: one `load` line, e.g. `run take-off 11042 ms: map 2361, models 2899, bowl 11037, walk 6052; scenes 14,
+  work 2030, wall 4212, shown 1` (`late NN%` and `capped` when the cap lifted it). No seed, name or save.
+- Checks: check-fast run_pack (Take off counts; no task as long as the scenes' work; the screen lifts; a take-off line
+  without the seed), run_world (a resume line); check-quick's run step and the self-test's run phase wait on
+  `runLoad.ready`.
+- Not done: the Take off button filling as a bar (tried; the fill didn't show in headless pictures, so it counts in
+  its label instead); the screen isn't shown on a save swapped in mid-game (cloud restore: the sync build, rare).
+
 ### HB-3 World map: ocean and detail
 - Lagoon: a water disc round the island at sea level (~1.3x the coast's radius, the `mwater` program), a soft fade
   at its rim into the cloud sea; the shallows from the map's own sea letters inside it; the rock starts under the
