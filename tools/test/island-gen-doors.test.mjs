@@ -3,9 +3,9 @@
 // town.quarter turns every building plot to the quarter turn nearest to facing out; town.second a second built-up
 // street; town.scale the house plots' size; town.extra the town's other buildings; landmarks the station with its sky
 // rail and portal, the lighthouse and the windmill. The defaults leave the hub's island as it is (island-gen.test.mjs
+// checks the game's map is the generator's own output).
 // HB-4b: town.square (the square's radius, how far it stands back from the main street, the buildings round it), the
 // house plots' floor and the quarter turn seen from the summit spot.
-// checks the game's map is the generator's own output).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readGameData } from '../data-files.mjs';
