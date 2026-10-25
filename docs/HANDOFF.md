@@ -112,7 +112,7 @@ once it lands, merge main into track/story. TW-3 also edits `validRun` (`run.que
   - Fast checks clean: lint, typecheck, check:modules, format:check, check:data.
   - Unit tests: 948 quick and 57 slow, all passing. New: run-history, story-pick, conditions' RL-S1 test, and the
     data-checks plants. check-data's snapshot was remade on purpose (142 files, a planted banter case).
-  - check-fast "run" (run_loop) passes with the new steps: the history after a lost run, the picks, the scene (it waits
+  - **check-fast: 29 of 29** (727 s). Its "run" step (run_loop) passes with the new steps: the history after a lost run, the picks, the scene (it waits
     for an open evolution sheet, as it should) and Chosen's fresh line.
   - **Full quick check: 35 of 37.**
     - **Song fingerprints** "cave mid / cave late not in the baseline": on main.
