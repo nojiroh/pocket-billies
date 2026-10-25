@@ -4,7 +4,9 @@
 and takes: each row from the front at noon (landscape: the variants and roof styles side by side); the new buildings
 close up, phone sized, at noon and at night, and two pictures a second and a half apart of their turning parts; then
 walks into every door the map gives an act (the General store, the inn, the library, the Workshop, the Gene Bank, also
-turned) and notes the room it opened. Software drawing is slow: about a minute a picture.
+turned) and notes the room it opened. Rooms open only in a seamless world (walk-control.js roomLayIn needs the
+place's parts), not on a test map: the walk-ins happen on Copperleaf (?fixture=town), each door added beside you for
+the moment. Software drawing is slow: about a minute a picture.
 
     python3 tools/look-hub-buildings.py                     # in validation/look-hub-buildings/
     python3 tools/look-hub-buildings.py --only=windmill     # close-ups of only these props
@@ -64,7 +66,7 @@ def main():
             settle(pg, 10)
         pg.evaluate(HIDE_HUD)
         if 'rows' in TIMES:
-            pg.set_viewport_size({'width': 960, 'height': 540})
+            pg.set_viewport_size({'width': 720, 'height': 405})
             for sh in pg.evaluate('walkView.sc.shots.filter(s=>!s.yaw)'):
                 z = sh['z'] + 4
                 pg.evaluate(f"(()=>{{const x={sh['x']},z={z},y=groundHeightAt(x,z);walkView.opt.look=()=>({{eye:[x,y+9,z-24],tgt:[x,y+2,z],fov:62}});return 0}})()")
@@ -87,17 +89,26 @@ def main():
                 print(name_of(s), time, flush=True)
         pg.evaluate('delete walkView.opt.look')
         pg.evaluate(SHOW_HUD)
-        pg.evaluate("environment.force={time:12.5,weather:'clear'};0")
-        # walk in through each door with an act, note the room, take a picture inside, come back out
-        for s in props:
-            if 'rooms' not in TIMES or not s['act'] or (ONLY and s['k'] not in ONLY): continue
-            got = pg.evaluate(f"(()=>{{const p=walkView.sc.props[{s['i']}];walkView.pl.x=p.x;walkView.pl.z=p.z-3;const ok=enterRoom(p.act,p);return {{ok,inside:uiState.inside?uiState.inside.id:null}}}})()")
-            settle(pg, 30)
-            pg.screenshot(path=str(OUT / f"room-{name_of(s)}.png"))
-            notes['rooms'][name_of(s)] = got
-            pg.evaluate("(()=>{if(uiState.inside&&typeof leaveRoom==='function')leaveRoom();return 0})()")
-            settle(pg, 10)
-            print('room', name_of(s), got, flush=True)
+        if 'rooms' in TIMES:
+            pg.goto(base + '/index.html?fixture=town')
+            CF.drawing(pg)
+            pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();environment.force={time:12.5,weather:'clear'};0")
+            for s in props:
+                if not s['act'] or (ONLY and s['k'] not in ONLY): continue
+                # the door 6 m ahead of you (a turned one to the side or further on, so its door faces you)
+                pg.evaluate(f"""(()=>{{const P=walkView.pl,r={s['rot']},p={{k:'{s['k']}',act:'{s['act']}',x:+P.x.toFixed(1),z:+(P.z+6).toFixed(1),rot:r}};
+                  if(r===90)p.x-=6;if(r===180)p.z+=4;walkView.sc.props.push(p);walkRenderer.itemGen=(walkRenderer.itemGen||0)+1;window.__door=p;return 0}})()""")
+                pg.wait_for_timeout(10000)
+                ok = pg.evaluate('enterRoom(__door.act,__door)')
+                CF.until(pg, 'uiState.inside||false', 60)
+                pg.wait_for_timeout(2500)
+                got = {'ok': ok, 'inside': pg.evaluate('uiState.inside?uiState.inside.id:null')}
+                pg.screenshot(path=str(OUT / f"room-{name_of(s)}.png"))
+                notes['rooms'][name_of(s)] = got
+                pg.evaluate("(()=>{if(uiState.inside)leaveRoom();return 0})()")
+                pg.wait_for_timeout(3000)
+                pg.evaluate("(()=>{const i=walkView.sc.props.indexOf(__door);if(i>=0)walkView.sc.props.splice(i,1);walkRenderer.itemGen++;return 0})()")
+                print('room', name_of(s), got, flush=True)
         ctx.close(); b.close()
     srv.shutdown()
     notes['errors'] = errs[:6]
