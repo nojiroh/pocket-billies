@@ -34,6 +34,10 @@ push). Plan approved in Plan Mode. Tag to suggest: `wa-1-done` (the owner pushes
   patches with dithered edges. In test_water's haze the pond's tones read faintly under the sky's reflection.
 - For the other lanes: lane B (WA-7) includes `PIXEL_WATER_GLSL` and calls `setPixelWaterUniform(U)` on its
   program; read-only. Lane G and lane P: nothing needed for WA-1.
+- WA-6a's notes (relayed after the work above): a wader in test_water's pond (0.3 m deep) is cut at the waterline and
+  mirrored the same with pixel water on and off (rechecked in the browser); WA-1 did not touch `frame-items.js` or
+  `draw-common.js`. Left for WA-2a: wading splashes as droplets like the `spray` quads (they fall through to the pale
+  puff in `effects.js`), and a few rings of the wake's own so it doesn't starve the scene's 16 (`addRipple`).
 - Next for lane R: WA-2a (waterfalls drawn, spray and mist on the grid, the flow map). For the owner: look at the
   water on the phone with Pixel water on and off (Settings, Water), and run the bench's Pond station.
 
