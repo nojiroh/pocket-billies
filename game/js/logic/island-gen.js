@@ -1896,6 +1896,9 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
   };
   /* tight (HB-4b, the square's ring): the plots' rectangles kept 0.6 m apart, not their round reach (a ring of plots
      round the square stands closer than the round test allows) */
+  /* HB-4b: the opening's stage (cutscenes/opening.json: you wake in front of the lab, the others round you): in front of
+     the lab's plot and to its sides, kept clear of every other plot */
+  const stages = /** @type {{ x: number, z: number, w: number, d: number, a: number }[]} */ ([]);
   const plotFits = (x, z, pw, pd, a, tight = false) => {
     /* the street field is measured per metre cell: the check samples half a metre inside the plot */
     for (const [px, pz] of plotPts(x, z, pw, pd, a, -0.6)) {
@@ -1927,6 +1930,17 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     } else if (plots.some(L => Math.hypot(L.x - x, L.z - z) < r + Math.hypot(L.w, L.d) / 2 + 0.6)) return false;
     /* a kept (locked) zone's plots are its own: no new one inside it */
     if (kept.some(Z => islandPointIn(Z.poly, x, z))) return false;
+    if (stages.length) {
+      const me = { x, z, w: pw, d: pd, a };
+      if (
+        stages.some(
+          R =>
+            plotPts(x, z, pw, pd, a, 0).some(p => inPlotRect(R, p[0], p[1], 0)) ||
+            plotPts(R.x, R.z, R.w, R.d, R.a, 0).some(p => inPlotRect(me, p[0], p[1], 0))
+        )
+      )
+        return false;
+    }
     const hs = plotPts(x, z, pw, pd, a, 0).map(p => cornerAt(p[0], p[1]));
     return Math.max(...hs) - Math.min(...hs) <= 2.4;
   };
@@ -2129,6 +2143,11 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       !plotsAlong(nearSquare(), D.paths.width, [1, -1], 'lab', [12, 14, 9, 10], 1, 'town')
     )
       notes.push('no room for the lab in the town');
+    else {
+      /* the stage: 2 m past the lab plot's front and 3.5 m past each side */
+      const L = plots[plots.length - 1];
+      stages.push({ x: L.x + Math.cos(L.a), z: L.z + Math.sin(L.a), w: L.w + 7, d: L.d + 2, a: L.a });
+    }
     /* HB-4b: house plots town.scale times their size (a denser town of smaller, terraced cottages) */
     const hs = size => (D.town.scale === 1 ? size : size.map(v => v * D.town.scale));
     /* HB-4b: the plots round the square (town.square.front): the shop, the home, the town's other buildings, then
