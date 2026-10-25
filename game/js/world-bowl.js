@@ -198,6 +198,7 @@ expose({
   worldBowlThingsOfPlace: [() => worldBowlThingsOfPlace, v => (worldBowlThingsOfPlace = v)],
   worldBowlThingsTick: [() => worldBowlThingsTick, v => (worldBowlThingsTick = v)],
   worldBowlTreeShape: [() => worldBowlTreeShape, v => (worldBowlTreeShape = v)],
+  worldBowlWalkOnIsland: [() => worldBowlWalkOnIsland, v => (worldBowlWalkOnIsland = v)],
   worldBowlWaterMesh: [() => worldBowlWaterMesh, v => (worldBowlWaterMesh = v)],
   worldMap: [() => worldMap],
   worldMapAction: [() => worldMapAction, v => (worldMapAction = v)],
