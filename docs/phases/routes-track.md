@@ -41,6 +41,13 @@ Measured on 5 seeds (20 route places) with the game's own data, `runSceneMake` a
   RL-R2a) but only at a side area's entrance.
 - **Phone cost:** towns ran at 27-28 fps on the owner's phone (phase 09). Routes already carry ~600 props.
 
+**RT-2 corrections (2026-10-25, HANDOFF):** the run sim had no route trainers and no minutes (both added: `SIM_CLOCK`,
+a guess); a double is one trainer entry with 2+ Billies, so a pair is one entry (both teams, `double`, `mate`) shown as
+two people; bridges, jetties and ledge tops were not spots (RT-2 adds `roadside` and `bridge`; jetties and ledge tops
+stay for TR-8/RT-3); the scene keeps no road polyline (`edgeExits[].path`) and no reach grid, so facings (`face`) are
+worked out in mapgen; route trainers count toward the wild stock in `rules.js encounterStock` (`run.wild.route` 8 less
+them, `routeMin` 2, the owner's answer); pairs about one route place in three (the owner's answer).
+
 **RT-1 corrections (2026-10-24, HANDOFF):** `MAPGEN_STAGES` drives nothing (the order is in `mapgenScene`);
 `scene.spots` already existed; `mapgenWalkGrid` ignored `rot` (fixed); plan weights are `rules.json run.layouts`, not
 `run.scene`; laid-out places are those whose node type has `layout` (landing, route, miniboss, boss: the owner).
@@ -60,7 +67,7 @@ Measured on 5 seeds (20 route places) with the game's own data, `runSceneMake` a
 | # | Session | Goal | Depends on | Sessions |
 |---|---|---|---|---|
 | RT-1 | Route layouts (**done** 2026-10-24) | a `layout` stage after the road: a seeded route plan (forest trail, farmland, lakeside, ledge drop, two lanes with a grass detour) that lays blockers (forest masses, fence and hedge runs with gaps and gates, rock outcrops, water) to 55-65% walkable; marked spots (pockets, dead ends, corridor pinches, clearings) in `scene.spots`; MAPGEN_VERSION bump | none | 1-2 |
-| RT-2 | Battle spots and trainers | trainers stand on RT-1's spots (a clearing, a bridge, a fence gap, a ledge top, a jetty) facing the path along the real road; 4-6 a route place by row, about half optional; trainer pairs as doubles; a class likes some spots; run sim for length and difficulty | RT-1 | 1 |
+| RT-2 | Battle spots and trainers (**done** 2026-10-25) | trainers stand on RT-1's spots (a clearing, a bridge, a fence gap, a ledge top, a jetty) facing the path along the real road; 4-6 a route place by row, about half optional; trainer pairs as doubles; a class likes some spots; run sim for length and difficulty | RT-1 | 1 |
 | RT-3 | Set pieces | `setPieces.json` + schema: small hand-designed prop groups (campsite, farm pen and scarecrow, rest stop, woodcutter's clearing, fishing jetty, ruins, a Bureau checkpoint) placed as a unit, 2-4 a route by biome; a signpost with the route's name at each entrance; existing props only; shared with TW-1 | RT-1 | 1 |
 | RT-4 | Billies and finds | 6-8 visible wild Billies (counting trainers, see above); habitats (water edge, woods, grass) each draw from part of the region's dex; a rarer one in a hard pocket; items at dead ends; Cut bramble shortcuts (Grass badge); ambient animals (shared with TW-2) | RT-1, RT-2 | 1-2 |
 
