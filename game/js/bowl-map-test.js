@@ -41,6 +41,7 @@ import {
   BOWL_METRES,
   WORLD_BOWL_SHADERS,
   worldBowl,
+  worldBowlFloatFrame,
   worldBowlFloats,
   worldBowlIslandLift,
   worldBowlPick,
@@ -433,7 +434,7 @@ async function runBowlMapTest() {
     await step('The floating island’s frame times', async () => {
       if (!worldBowlFloats()) return 'not the floating island (a run’s bowl)';
       const f = m => `${m.fps ?? '–'} fps (worst gap ${m.worstMs ?? '–'} ms, ${m.drawMs ?? '–'} ms to draw)`,
-        home = a => still(bowlCamHomeFloat(worldBowl.ground.float, (a * Math.PI) / 180)),
+        home = a => still(bowlCamHomeFloat(worldBowlFloatFrame(worldBowl.ground.float), (a * Math.PI) / 180)),
         angles = [],
         off = [],
         P = saveData.preferences,

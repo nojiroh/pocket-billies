@@ -164,6 +164,7 @@ expose({
   worldBowlFallsMesh: [() => worldBowlFallsMesh, v => (worldBowlFallsMesh = v)],
   worldBowlFilm: [() => worldBowlFilm, v => (worldBowlFilm = v)],
   worldBowlFloatCam: [() => worldBowlFloatCam, v => (worldBowlFloatCam = v)],
+  worldBowlFloatFrame: [() => worldBowlFloatFrame, v => (worldBowlFloatFrame = v)],
   worldBowlFloatGpu: [() => worldBowlFloatGpu, v => (worldBowlFloatGpu = v)],
   worldBowlFloatHome: [() => worldBowlFloatHome, v => (worldBowlFloatHome = v)],
   worldBowlFloatIsland: [() => worldBowlFloatIsland, v => (worldBowlFloatIsland = v)],
@@ -719,7 +720,7 @@ function worldBowlFallsMesh(lag, coast, depth) {
 /* the camera's limits: the floating island's orbit, or the bowl's */
 function worldBowlFloatCam() {
   const F = worldBowlFloatIsland();
-  bowlCamUseFloat(F ? { c: F.c, r: F.r, th: F.th } : null);
+  bowlCamUseFloat(F ? worldBowlFloatFrame(F) : null);
   return F;
 }
 /* you on the floating island's map, in its own metres, or null when the walk is elsewhere. HB-1: the hub's walk view
@@ -742,7 +743,12 @@ function worldBowlFloatHome(F, yaw) {
     const [x, y] = bowlMapPoint(s, M, pl.x, pl.z, BOWL_METRES);
     if (Math.hypot(x - F.c[0], y - F.c[1]) > F.r * 0.1) yaw = orbitYawAt(F.c, x, y);
   }
-  return bowlCamHomeFloat({ c: F.c, r: F.r, th: F.th }, yaw ?? 0);
+  return bowlCamHomeFloat(worldBowlFloatFrame(F), yaw ?? 0);
+}
+/* the orbit's frame round the floating island: its middle, radius and pivot height. HB-3: with its lagoon round it the
+   orbit stands a little further back, so the ring fits a phone's width */
+export function worldBowlFloatFrame(F) {
+  return { c: F.c, r: F.lagoon ? F.r * 1.25 : F.r, th: F.th };
 }
 /* the floating island's rock on the GPU: position, normal, band and drift per corner */
 function worldBowlFloatGpu(F) {

@@ -84,7 +84,7 @@ def main():
             views = [(a, False) for a in ANGLES] + ([(ANGLES[0], True)] if CLOSE else [])
             for a, close in views:
                 # the camera still (no slow idle turn), from the island's own home at that angle
-                pg.evaluate(f"(()=>{{const F=worldBowl.ground.float;worldBowl.goal=null;worldBowl.tween=null;worldBowl.bench={{turn:0}};let c=bowlCamHomeFloat(F,{a}*Math.PI/180);if({str(close).lower()}){{c={{...c,dist:c.dist*.45,tilt:c.tilt*.8}};if({json.dumps(AT)}){{const [mx,mz]={json.dumps(AT)}.split(',').map(Number),g=worldBowl.ground,M=gameData.maps[g.islandMap],p=bowlMapPoint(worldBowl.spots[F.i],M,mx,mz,1000);c={{...c,tx:p[0],ty:p[1],dist:c.dist*.5,tilt:70*Math.PI/180}}}}c=bowlCamClamp(c)}}worldBowl.cam=c;worldBowl.dirty=true;return 0}})()")
+                pg.evaluate(f"(()=>{{const F=worldBowl.ground.float;worldBowl.goal=null;worldBowl.tween=null;worldBowl.bench={{turn:0}};let c=bowlCamHomeFloat(worldBowlFloatFrame(F),{a}*Math.PI/180);if({str(close).lower()}){{c={{...c,dist:c.dist*.45,tilt:c.tilt*.8}};if({json.dumps(AT)}){{const [mx,mz]={json.dumps(AT)}.split(',').map(Number),g=worldBowl.ground,M=gameData.maps[g.islandMap],p=bowlMapPoint(worldBowl.spots[F.i],M,mx,mz,1000);c={{...c,tx:p[0],ty:p[1],dist:c.dist*.5,tilt:70*Math.PI/180}}}}c=bowlCamClamp(c)}}worldBowl.cam=c;worldBowl.dirty=true;return 0}})()")
                 settle()
                 name = f"h{int(hr):02d}-a{int(a):03d}{'-close' if close else ''}"
                 box = pg.evaluate("(()=>{const r=worldMap.cv.getBoundingClientRect();return [r.x,r.y,r.width,r.height]})()")
