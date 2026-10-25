@@ -2,6 +2,68 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Hub track HB-4b - The island rebuilt - 2026-10-25
+Branch `track/hub` (main and `art/hub-island-sketches` merged in first). Plan approved in Plan Mode. The owner's
+answers: the sky rail and portal as data now (HB-7 draws them in the sea's skirt); the inn and library models on their
+plots, the other new plots bare; a 12 m square; at least 8 cottages. Tag `hb-4b-done` for the owner to push. Details:
+docs/phases/hub-track.md, "Done in HB-4b".
+- Where the plan's facts were off (checked in the code): B made 5 house plots, not 16; `cam.orbit.c` is the summit
+  spot, up to 5 m off the peak the plots turn from (a door could stand 47 degrees off); nearly every hub position is
+  derived by the build tools (only cutscenes/opening.json holds literal metres, rewritten from the lab's door); RF-1's
+  "catch" was missing from tools/data/copperleaf-town.json; HB-4a never ran `npm run modules`; islandProblems and the
+  map schema didn't know the new plot kinds.
+- Changed (one cause per commit): island-gen.js `town.square {r, off, front}`, a house plot never under a cottage, the
+  quarter turn guarded from the diagonals, the station chosen before the paths are painted and the coast road pushed
+  round it, the opening's stage kept clear, no plot facing the airship from close behind; build-island and
+  build-copperleaf keep `landmarks {rail, portal}` and place the inn and library (the barn on its quarter turn);
+  island-dress has no summit lookout; the world map draws the inn and library on their plots. Copperleaf rebuilt as
+  B2 through the tools: 18 buildings (10 cottages), every door within 34 degrees of outward on a quarter turn, `hub`
+  [151.63, 59.36]. New tests: tools/test/hub-doors.test.mjs (quick), island-gen-doors (square, floor, quarter from the
+  summit, the station's road), hub-sketches.json `base` (the dial tests and sketches start from the pre-HB-4b dials).
+- Risky: Juniper's home now stands 54 m south-west of the square (by the lighthouse), the inn 41 m away; the wild
+  grass has 3 patches of 6 (the arc street takes the heath); fewer trees (129 from 151, the town is bigger). The
+  quarter-check guard and the airship rule cost plots on other seeds. Nothing looked at on a phone.
+- Verified: lint, typecheck, prettier, check:modules, check:data, build; `npm test` 945/945; `npm run test:slow`
+  71/71; smoke clean (its window check found the airship hiding a cottage window: fixed in the generator); check:fast
+  29/29 (23 walking checks, 16 doors a tap away, the orbit). Full quick check: no picture problems; 2 problems, **both
+  on main too** (reproduced on 77bba24, the merges before any HB-4b change): RL-8's run town shop shows no Perk
+  (RL-12), and the sound baseline lacks the cave song's "mid" and "late" (RL-R2b added it; the baseline was never
+  remade). Neither is fixed here.
+- For the water track (lane G, WA-2b): the hub fall's site is unchanged by B2: `falls: [{x: 92.79, z: 89.67, dir:
+  [0.83, -0.56], w: 3, h: 4.14, pool: 4}]`, 16 m up from the pond toward the summit; a shelf has to be cut there. Not
+  written into the map (the scene's `falls` are lane G's).
+- Next: the owner's look at the hub (tools/island-sketches.py validation/hub-sketches b2, or island-shots) and a phone
+  test; HB-5 (the new buildings' models and rooms; maybe move Juniper's home nearer the square), HB-6, HB-7 (the
+  station, the rail into the sea's skirt). The two main failures above need their own sessions.
+
+### Hub track HB-4a - Island sketches - 2026-10-25
+Branch `art/hub-island-sketches` (a one-session art branch at the owner's word; the plan file's `Branch:` is
+`track/hub`, where HB-4b merges this branch). Plan approved in Plan Mode. Tag `hb-4a-done` for the owner to push.
+**The owner's pick: a version of B (East crescent) with more of a town square; the hub waterfall above the pond.**
+- Where the plan was wrong (checked in the code): the orbit pivot is the summit spot, not the island's middle; the
+  door figures hold (3 of 12 props within 50 degrees, 2 of 12 plots within 45). The town's doors miss because its main
+  street and east bank run toward the mountain: a plot facing its street there faces 90 degrees off outward.
+- Changed (one cause per commit; every dial off by default, copperleaf's ground unchanged): island-gen.js dials
+  `town.face`, `town.quarter` (and its 3 m step back), `town.second` (beside a street, or an arc round the pivot),
+  `town.scale`, `town.extra` (`ISLAND_TOWN_EXTRA`), `landmarks` (station, sky rail, portal, lighthouse, windmill) and
+  `landmarks.shore` (3 m from the water, asked for after the water track's plan: its tide, WA-4, and wading, WA-6a).
+  New tools/test/island-gen-doors.test.mjs (8 tests, slow tier). tools/island-sketches.mjs and .py (relief maps, a
+  contact sheet, `--above` the game's own pictures from draft maps put in the game data and removed after),
+  tools/data/hub-sketches.json (today, A Back lane, B East crescent, C Harbour station). The plan file came in from
+  the planning branch with its "Done in HB-4a" notes (B's dials, what HB-4b needs).
+- Not changed: game/data/maps/copperleaf.json, build-copperleaf, island-dress (the lookout stays until HB-4b), runtime
+  code. The Studio's Hub island dials card does not show the new dials yet (its list is by hand).
+- Risky: the draft maps must never be committed (8 unit tests fail while they are in the data; `node
+  tools/island-sketches.mjs --clean` removes them). Landmark plots ignore the coast path's margins (the path needs
+  re-routing round the station). The rail and portal stand past the map's 10 m of sea.
+- Verified: lint, typecheck, prettier; `npm test` 937/937; `npm run test:slow` 65/65 (with the drafts out); each
+  generator commit ran island-gen and island-gen-doors tests green; a planted `shore: 0` fails the landmark test.
+  Pictures: relief maps of all four, the game's own overview and orbit views of each (no page errors). No smoke or
+  quick check: no game runtime file changed.
+- Next: HB-4b on `track/hub`: merge this branch; a town-square dial (the square's radius is fixed at 7.5 m) with
+  buildings fronting it; build B's dials into copperleaf through build-island and build-copperleaf; the lookout out of
+  the dressing; re-point the hub's positions; the door check. Tell the water track (lane G, WA-2b) the waterfall site.
+
 ### The in-game test's run phase and side areas (zone biome, the boss) - 2026-10-25
 Branch `fix/run-zone-biome` (one session, not part of a plan). The bug: the full test's "A run: airship, nodes,
 payout" failed on main f779581 with "a place on row 4 isn't its zone's biome". Plan approved in Plan Mode (the

@@ -152,6 +152,10 @@ const pairs = [
   [oldBuildings.find(B => B.act === 'home'), plotOf('home')],
   [oldBuildings.find(B => B.k === 'well'), well],
   [{ k: 'shop', x: 0, z: 0, label: 'General store' }, plotOf('shop')],
+  /* HB-4b: the inn and the library (the archive) stand on their plots as the existing models, closed (HB-5 gives them
+     their rooms and names); the Workshop's, the Gene Bank's, the station's, the lighthouse's and the windmill's plots
+     wait for their models (HB-5, HB-7) */
+  ...['inn', 'library'].filter(k => plotOf(k)).map(k => [{ k, x: 0, z: 0 }, plotOf(k)]),
   ...oldCottages.map((B, i) => [B, townHouses[i]]),
   /* the new cottages: the two kinds and their looks taken in turn */
   ...[...townHouses.slice(oldCottages.length), ...otherHouses].map((L, i) => [
@@ -230,8 +234,12 @@ const barnZone = G.zones.find(Z => Z.k === 'barn'),
 {
   const B = oldBuildings.find(b => b.act === 'ranch'),
     [cx, cz] = mid(barnZone.poly),
-    /* its doors toward the farmhouse */
-    a = Math.atan2(farm.z - cz, farm.x - cx) / RAD,
+    /* its doors toward the farmhouse; HB-4b, with the town's quarter turns (islandGen town.quarter): the quarter turn
+       nearest facing out from the orbit's pivot, as every plot's */
+    pv = G.cam.orbit.c,
+    a = G.islandGen.dials.town?.quarter
+      ? Math.round(Math.atan2(cz - pv[1], cx - pv[0]) / (Math.PI / 2)) * 90
+      : Math.atan2(farm.z - cz, farm.x - cx) / RAD,
     L = { k: 'barn', x: cx, z: cz, w: 12, d: 12, a, i: -1 };
   const N = place(B, L);
   props.push(N);
@@ -498,6 +506,7 @@ const GROUND = [
   'stepm',
   'grassPatches',
   'checks',
+  'landmarks',
 ];
 const sc = {};
 for (const k of [

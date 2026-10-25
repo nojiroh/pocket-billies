@@ -43,7 +43,10 @@ const dials = opt('--dials')
       ? {}
       : (prev && prev.islandGen && prev.islandGen.dials) || {},
   seed = opt('--seed') || (prev && prev.islandGen && prev.islandGen.seed) || 'copperleaf';
-const { scene: sc, notes, paths } = islandGenerate(dials, seed, { scenery: D.scenery }, FRESH ? null : prev);
+const { scene: sc, notes, paths, landmarks } = islandGenerate(dials, seed, { scenery: D.scenery }, FRESH ? null : prev);
+/* HB-4b: the station's sky rail and its portal (landmarks.on), [x, z, y] each: the rail runs on past the map's edge out
+   over the sea (HB-7 draws it in the sea's skirt) */
+if (landmarks) sc.landmarks = landmarks;
 
 /* IS-5: what the generator makes (the rest of a place's map is its own) */
 const GROUND = [
@@ -70,6 +73,7 @@ const GROUND = [
   'grassPatches',
   'checks',
   'bridges',
+  'landmarks',
 ];
 const place = !!(prev && prev.locationId);
 if (place) {
@@ -140,7 +144,9 @@ sc.checks = [
     .filter(Z => ['barn', 'pasture', 'hamlet'].includes(Z.k))
     .flatMap(Z => legs(sc.hub, mid(Z.poly).map(r2), `from the town to the ${Z.k}`)),
   ...(sc.plots || [])
-    .filter(L => ['lab', 'mast', 'home', 'shop', 'farmhouse'].includes(L.k))
+    .filter(L =>
+      ['lab', 'mast', 'home', 'shop', 'farmhouse', 'inn', 'library', 'workshop', 'genebank', 'station'].includes(L.k)
+    )
     .flatMap(L => legs(sc.hub, front(L), `from the square to the ${L.k}'s door`)),
   ...(foot && summit
     ? [

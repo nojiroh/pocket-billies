@@ -11,6 +11,7 @@ const ROOT = join(import.meta.dirname, '..');
 // their scenes, or sweep every roll
 export const SLOW_TESTS = [
   'island-gen.test.mjs',
+  'island-gen-doors.test.mjs',
   'mapgen-dials.test.mjs',
   'mapgen-grass.test.mjs',
   'mapgen-layout.test.mjs',
