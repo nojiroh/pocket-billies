@@ -2,6 +2,61 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Splicing track SP-3 - Wild splices: Grafts and Chimeras, the battle's line, DNA, Gene Samples (built, waiting on the owner's numbers) - 2026-10-25
+Branch `claude/sp-3-wild-splices`, **on top of SP-2's branch `claude/sp-2-rules`** (itself on SP-1's
+`ccr-dde1a5bd-nx5zdl`; none merged or tagged, `track/splicing` doesn't exist). It merges SP-2's branch when it moves
+(a merge, never a rebase; done once this session, for the owner's answers: Gene ids `part@donor`, Unstable kept on
+the Billie). Merge SP-1, then SP-2, then this. Plan approved in Plan Mode. Tag `sp-3-done` for the owner.
+- Where the track was wrong: written into the track file's "Corrections found by SP-3". The ones that changed the
+  plan: Scrap is paid at a run's end, not when it drops (DNA is the first currency banked mid-run); the currencies
+  schema allowed exactly four; "Tax" is no longer the catch word and catching happens in battle, so a win means the
+  foe fainted; there are no Bureau nodes and Escaped specimens need SP-5's Augments; one more roll in `spawn` would
+  have changed every later Billie of a run place.
+- Decided in the plan (push-backs the owner can still undo, each a line of data or one function): **Tax = the
+  existing catch** (pyramids; it keeps its parts) and **Sample = knocking it out** (no new post-battle choice);
+  Escaped specimens wait for SP-5 (`wild.escaped` is in the data, unused); wild splices on run places only (not the
+  hub's grass, the gentle starter encounters or fishing); Gene Samples are a set of Gene ids on `meta.genes`.
+- Changed (one cause per commit):
+  - genes.json `wild` (Graft 0.12, Chimera 0.025, escaped 0.005 unused, a Chimera's 2-3 parts, DNA 5 for a Graft and
+    12 for a Chimera: **placeholders**) and a `word` per spliceable kind (arms, wings, fins, legs, feet, tail); schema,
+    type, dataGenes (odds leave some Billies plain, every spliceable kind has a word).
+  - logic/genes.js `wildSplice` (none / Graft / Chimera by the odds; Genes whose donors are of the lines the place's
+    pool holds, never the Billie's own; never refused, past the limit Unstable) and `geneWords` ("an eagle's wings").
+  - rules.js `encountersHere`: a run place's new encounters roll their splice from a stream of their own
+    (`splice|visit` off the node's seed), after `spawn`, so species, levels, sizes and coats are what they were; an
+    Unstable one gets its roll there too (the same on a reload). `spliceWords`.
+  - battle-engine.js `startWild`: "This Swiftlet has an eagle's wings!" or "This X is a patchwork: ...!" after "A wild
+    X appeared." (the species' own name: an Unstable foe's merged name is on its plate).
+  - DNA, the fifth currency: currencies.json (schema to five), `CurrencyId`, `Meta.dna`, newMeta/validMeta, a helix
+    icon (tools/build-ui-icons.py, 50 icons), the chip's tone, the Lab board and map chips once you have some, the
+    debug log's meta, the unlock graph, the economy view (genes.json wild.dna as its sources; its link goes to the
+    Studio's Parts section until SP-4 gives the Genes one). VISION.md: five currencies.
+  - battle-rewards.js `spliceSample` from `battleSettleWin` (so the run sim does it too): a spliced wild foe knocked
+    out banks DNA on `meta` at once and adds each Gene not yet sampled to `meta.genes` (at most 1000; validMeta checks
+    the ids' shape and no repeats). Caught, it leaves no sample. endBattle: a "Gene Sample" sheet for a new Gene, else
+    a DNA toast. Debug log: `meta.dna` and `meta.genes` as a count.
+  - run-sim.js: `splices`, `caughtSpliced`, `dna`, `genes` per run and in the report.
+  - Debug menu: +50 DNA, Battle a Chimera (wildSplice with every species as its pool); the graft buttons' words are
+    the battle's. In-game full test: "Wild splice: its line, DNA and a Gene Sample" (on a copy of the save).
+- The run sim (balance mode, 500 seeds, against SP-2's head): the default bot (one starter, loses within ~2 places)
+  fights 0.3 splices a run, banks 0.9 DNA and 0.2 new Genes; paired compare: battles -0.06, research +0.1, no run
+  won or lost differently. A stronger bot (`--team=3 --fights=4 --pack=5 --lvl=20 --unlocks=all`, 7.2 places a run):
+  2.6 splices fought, 16 DNA, 3.1 new Genes a run; wins 235 -> 233 of 500 (2 won, 4 lost: inside the noise), research
+  616 -> 614, healed +1.5. The bot never catches a splice when its party is full (caughtSpliced ~0).
+- Verified: lint, typecheck, check:modules, unit tests after every commit (976 quick, all pass; new: dataGenes'
+  wild rules, wildSplice over every pool and 200 streams a species, geneWords, a run place's stock unchanged with
+  splices on or off and the same on a reload, Unstable rolled at stocking, the opening line, DNA and samples once,
+  caught leaves none, validMeta); check:data; golden battles unchanged; smoke 6 of 6. Headless on the page (town
+  fixture): the full test's new step passes (Emberox with a fox's arms: +5 DNA, its Gene sampled); a Chimera
+  Versewift (back, front and tail from three donors, Unstable "Verseprat") opens with its line, the win shows the
+  Gene Sample sheet (+12 DNA, three Genes), the debug log's meta has `dna: 12, genes: 3`, no console errors.
+  Full quick check: QUICK_RESULT
+- Risky: every run place's wild Billies can now be spliced (about 15 %), so run battles differ from before (the
+  stock's species and levels don't). DNA is banked mid-run, the first currency that is. `meta.genes` is checked
+  strictly like the rest of meta: a tampered entry restarts meta (as for any meta field). The economy view's DNA link
+  opens the Studio's Parts section, which has no Gene fields yet.
+- Next: the owner's answers (Ask me before): the wild odds, DNA per Graft and Chimera, whether DNA has other sources,
+  and Tax as the existing catch. Then SP-4 (the Gene Bank: spends DNA, opens `meta.genes`).
 ### Splicing track SP-2 - Rules: Genes, Stability, Unstable, the balance sim (built, waiting on the owner's numbers) - 2026-10-25
 Branch `claude/sp-2-rules`, **on top of SP-1's branch `ccr-dde1a5bd-nx5zdl`** (the owner's word: SP-2 started before
 SP-1 was merged or tagged, and `track/splicing` didn't exist). It merges SP-1's branch when it moves (a merge, never a
