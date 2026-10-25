@@ -2,6 +2,56 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Water track WA-2a (lane R) - waterfalls drawn, the flow map - 2026-10-25
+Branch `track/water` (main merged in at the start: nothing new; lane P's WA-6b and lane G's WA-2b merged in before
+the pushes). Plan approved in Plan Mode; the owner's answers: the wake's call switched in walk-view.js by this lane;
+the flow map in a new `walk/water-flow.js`; "the light it throws" a stepped shimmer, not a real light; one-line
+additions to map-cache.js and the pages' module lists allowed. Tag to suggest: `wa-2a-done` (the owner pushes tags).
+- Changed (one cause a commit; details and numbers in water-track.md, WA-2a notes):
+  - **The flow map** (`walk/water-flow.js`, new, on both pages): flow, foam and stream strength on the half-metre
+    grid, each segment visiting only the cells it reaches; a plain `{pts, speed}` stream runs exactly as the old
+    search said (unit test). Reads `streams[].w`, `rapids` (faster, white water), `mouth` (churn into a pool, lake or
+    sea), `src` (a spring bubbles) and the falls' feet. `water-data.js waterFlowField` removed. A half-float texture
+    for the water shader: the pattern carried down the flow in two blended phases (no endless drift) and white water
+    from the foam channel. Build: 3 against 124 ms on a 180 x 90 m river scene (Node).
+  - **Falls entries** (`ground-mesh.js placeFalls`, `fallSheet`): a curled lip, a sheet leaning out with the square
+    root of the drop, landing in the pool; it replaces the automatic sheets across its width (the rest stay as
+    cascades). **The fall shader**: pixel columns of streaks stepping down at their own speeds over a slow large
+    pattern, four tones, a glassy lip, a broken white foot, ragged edges; the cascades the same; pixel water off draws
+    the sheet of before.
+  - **Pool, rock and light** (`FALL_GLSL`, the four nearest entries): churn and one-texel rings on the plunge pool;
+    wet, dark rock with stepping trickles beside and under the lip; wet ground round the foot; the white water's light
+    as a stepped shimmer (faint by day, stronger at night).
+  - **Spray and mist** on the 32 grid in `water.frames` steps; an entry's spray along its width, droplets off its lip,
+    mist rising and drifting with the wind; a cascade's mist moved out from its step (WA-6b's "grey half-disc").
+  - **Wading** (WA-6a's asks): splashes drawn as droplets; the wake's own rings (`water.js addWakeRipple`, 4 kept, up
+    to 3 of the shader's 8), the one call in `walk-view.js` switched (lane P's file, the owner's yes).
+  - `map-cache.js`: keeps `flowMap`, `flowTex` (freed with the others) and `fallSets`, clears the wake on a swap.
+    The `fallSets` line was missed at first and found in the close-ups (a swapped-in view lost its falls' pools,
+    rock, light and mist): its own commit.
+- Found: `uploadMesh` only knows fixed attribute names (aPos, aShore, aUV, aDK): a new attribute must ride under one
+  of them (the fall mesh's width and big flag go as `aDK`, location 3), or it silently lands on location 0. The pages
+  export from a walk/ module only what another module imports, so a unit test can't import its constants.
+- Risky: every ground and water pixel runs the falls loop when a scene has falls (a box test first; 0 without);
+  running water reads its ripple and glint noise twice (the two phases). The headless browser's frame times (0.4-2
+  s, software) swing more between runs than between settings: no cost measured. Pixel water off keeps the old drift
+  and sheets, but the entries' shape and the pool, rock and mist are new in both.
+- Verified: lint, typecheck, check:modules, prettier, `npm test` (965, 0 failures after the merges), `check:smoke`
+  before every game/ commit (all passed); look-water before and after at noon and 22.5 (validation/look-water-
+  before-2a*, -after-2a*, not committed; no page errors; with WA-2b's real entry): the tall fall goes from a narrow
+  sheet ending in a point to a full-width sheet with white water, a churning pool and mist; the stream's cascades
+  look as before at phone size. Close-ups with the blur off and the camera pitched down
+  (validation/look-water-after-2a-close*, a scratch script; also pixel water off): the streak columns, the pool's
+  rings, the wet rock and the night's thrown light. A hand-made entry before WA-2b's landed, then theirs.
+- For lane P (its files, not edited here): the Surf mount's wake (`prop-look.js rideMountItem`) still calls
+  `addRipple`; `addWakeRipple(x, z, k)` keeps it from pushing out the scene's rings. A spray on the rider climbing a
+  fall is not done (WA-6b's ask; `T.fallSets` has the lip and foot if an effect wants them).
+- For lane G and WA-0's tool: look-water's numbers count only the automatic sheets (`fallSheets`, `tallestFall`), so
+  test_water now reports 8 sheets, 1 m; `walkRenderer.fallSets` holds the entries if the tool should count them.
+- For the owner: on the phone, stand at test_water's tall fall (and by a river) with Pixel water on and off and
+  compare the frame time; the bench's Pond station has no fall.
+- Next for lane R: WA-4 (the sea and the coast).
+
 ### Water track WA-2b (lane G) - waterfalls placed - 2026-10-25
 Branch `track/water` (main merged in at the start: nothing new since db9d87a; lane R's WA-2a and lane P's WA-6b merged
 in before the push). Plan approved in Plan Mode. The owner's answers: the hub island's fall waits for HB-4b; WA-6a's
