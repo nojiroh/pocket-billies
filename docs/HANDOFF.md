@@ -317,6 +317,91 @@ written. Tag `tw-2-done` for the owner (this session's git proxy refuses tag pus
   - The talk two-shot with a local by a house: not looked at on the phone.
 - Next: TW-3 (run quests). The board's spot (`spots` kind `board`) is clear; a quest giver can reuse the locals' path
   (`scene.people` with lines, a townsfolk look) plus a marker. Ask-me-before items 2 and 3 are TW-3's.
+### Phase 09 batch 11 part 2 - The run biomes' trees, rocks and cave things as models - 2026-10-25
+Branch `ccr-abb116a0-en5q2d` (part 1's). Plan approved in Plan Mode (relayed from the owner's session: "continue the
+remaining props"; the vines as cut strips, the palm fronds modelled, no `phase-09-done` tag).
+- Changed (tools/build-props-batch11b.py, swapped in under their own keys like batches 1-11 part 1; rerunnable):
+  - **Trees (8)**: tree_pine_snow, _b, _small (batch 10's conifers: the drawn snowy tiers as bands on a modelled mast);
+    tree_olive (batch 1's broadleaf: a gnarled trunk splitting in two, six clumps cut from the picture); tree_jungle
+    (a pale trunk on brown buttress roots, the front leaf layer laid over the crown before it is cut into six clumps,
+    the back leaf layer behind, the vines as two cut sheets: every other vine in front of the trunk, the rest behind);
+    tree_dead (every limb modelled, bent in depth); palm_tree and palm_small (a ringed trunk following the drawing's
+    curve, eight modelled fronds with leaflet pairs, young fronds, coconuts).
+  - **Rocks (8)**: boulder, boulder_b, boulder_mossy (a moss cap, drips, grass, a toadstool), boulder_snow (snow caps),
+    boulder_basalt, rocks_basalt (column stubs), lava_rock (orange cracks all round, its glow), basalt_columns (eleven
+    hexagonal prisms with pale tops and joints) as IS-4's faceted stones.
+  - **Cave (7)**: stalagmite, stalagmite_b (stacked tapering cones), crystal, crystal_purple, crystal_cluster,
+    crystal_spire (hexagonal prisms with pointed tips; their sparkles and glows moved to the same place in metres),
+    cave_house (a rock mound, a moss top, a stone porch round an arched door at its door point, a round lit window, a
+    lantern, a chimney with its smoke; moved back so its 4 x 2.4 m footprint is behind its base point, as drawn).
+  - Base points, `solid` and footprints unchanged. The rocks, crystals and cave house keep their size in metres; the
+    trees cut from their pictures come out at 32 px/m like batch 10's (about 6% taller, as the pines beside them).
+    The crystals, columns and cave house stand square (`vary` rot/lean 0); trees, rocks and stalagmites still turn.
+  - Showcase map `test_props_biomes` (six rows). Snapshots remade on purpose: check-data's (143 data files, was 142)
+    and the map generator's golden scene "feature" (mapgenPutProp gives a model its size range and never scales a
+    picture, so the glade's mossy boulders, now a model, carry a size s 0.94; nothing else in the scene moved).
+- Draws a frame at phone size (390 x 760, the game's defaults, 20 frames; pictures = 3D props off), in the run
+  fixture with its nodes' biomes set and its world rebuilt (names as the game gave them):
+  Tundra Waystation 266 -> 299, Jungle Mini-boss 352 -> 596, Volcano Mini-boss 650 -> 559, Coast Waystation (with
+  volcano rocks) 109 -> 116, Bramble Grove Route (a cave side area) 649 -> 523, Bramble Grove Mini-boss (cave)
+  795 -> 556, Bramble Grove Town (cave houses) 556 -> 531. The jungle's first model drew 642: each picture inside a
+  model costs a draw and a jungle place has twenty-odd jungle trees, so the tree went from 19 pictures to 10. What is
+  left in the jungle: leaf pictures +134, the models themselves +48, the models in the water's reflection +35.
+- Risky: the jungle costs about 70% more draws than with pictures (broadleaf trees in batch 1's style: modelled
+  limbs and cut leaf clumps; the oak has eight clumps). Task 10 (a cheap far version, instancing) is where to win
+  it back; fewer clumps would flatten the crown. The palms are the heaviest models in vertices (128 parts: the fronds'
+  leaflets), and modelled fronds don't sway (only pictures sway). The crystals can't glow on their own (solid parts
+  have no emissive light): they are brighter colours plus their sparkle and glow effects.
+- Verified: lint, type-check, unit tests (917 pass), check-data, the smoke check (6 of 6); headless pictures of each
+  `test_props_biomes` row (game camera and turned), and the seven run places above with models and with pictures (no
+  page errors). Full quick check: running when this was written; its result follows in the next commit.
+- Phone check wanted: a tundra, a jungle, a volcano and a cave run (a cave town for the cave houses and a crystal
+  spire); turn the camera round the palms, the jungle trees and the crystals; export the debug log.
+- Next: batch 11 is done. Phase 09 task 10 (far versions and instancing, the jungle's draws first), or the owner's pick.
+
+### Phase 09 batch 11 part 1 - The rooms' furniture and the generator's made things as models - 2026-10-25
+Branch `ccr-abb116a0-en5q2d`: the session's own; BRANCHES.md would name it `props/batch11-rooms`, but a cloud
+session can push only to the branch it was started on. Plan approved in Plan Mode. The owner's ask: of the 47
+standing pictures the game still shows (hub, its rooms, the run biomes, the generator; legacy maps left out), convert
+the first half. Flat on purpose: the 11 ground decals and the flat plants (sunflowers, crops, molehill and roots
+counted as flat).
+- Changed (tools/build-props-batch11.py, swapped in under their own keys like batches 1-10; rerunnable):
+  - **Rooms (20)**: plant_tall (an aloe), bookshelf, shop_shelf (bottles, boxes, jars), sack (three), crate_goods,
+    shop_counter (panelled, a till, a bag, a bell), sofa, fireplace, barrel (a blue steel drum, as its picture; not
+    batch 4's wooden one), clinic_bed (head to the wall), counter_white (the red cross, a screen, a plant),
+    fridge_drinks, haybale_stack (three round bales, twine), lab_desk (a box monitor), lab_machine, privacy_screen;
+    on the back wall wall_clock, wall_painting, wall_window, blackboard as shallow reliefs.
+  - **Generator (4)**: campfire (stones, logs, embers), lookout_tower (trestle, ladder, railed deck, glazed cabin,
+    tiled hip roof), tent (the waystation: a striped pyramid marquee with scallops, a counter of goods),
+    mine_entrance (a rock hump round a timber frame, the shaft, rails, a lantern).
+  - Sizes, base points and footprints (`box`) unchanged, so room layouts and walking round things are the same.
+    `fx` (fire, glow, window, sparkle) moved onto the models. Kept as cuts of the old pictures
+    (scene/next/decals): the painting's canvas, the window's view, the chalk, the fridge's bottles, the desk's screen,
+    the lab's glass tube (it faces the camera, as a round tube looks the same from every side) and the campfire's
+    flames. Plant, sacks, drum and campfire still turn at random; the rest stand square (`vary` rot/lean 0).
+  - Every room's back wall is at z 8.5 (measured, `roomBoxOf`); wall pieces are placed at 8.45, so their backs sit
+    on it, and wall-side furniture is no deeper than its gap (fireplace 0.35 m, fridge 0.5 m, lab machine 0.9 m:
+    their footprints stay as they were).
+  - Showcase map `test_props_rooms` (five rows). check-data's snapshot remade on purpose (142 data files, was 141).
+- Not changed: wind_sail_flower is placed nowhere now, so it was dropped from the list. The old pictures stay as
+  the fallback with 3D props off (with `ppm` 32 they draw about 6% bigger there, as batch 4's did).
+- Draws a frame at phone size (390 x 760, the game's defaults, 20 frames; with 3D props off for the pictures):
+  house 61 -> 48, lab 106 -> 58, shop 73 -> 42, clinic 64 -> 40, barn 38 -> 37. The models cost fewer draws.
+  Headless milliseconds (software drawing) say nothing for a phone.
+- Risky: the lab machine's tube and
+  the campfire's flames are camera-facing pictures: from straight above they look flat. The mine's rock is dark and
+  lumpy; check it in a cave run on your phone.
+- Verified: lint, type-check, unit tests (917 pass), check-data, the smoke check (6 of 6); headless pictures of
+  `test_props_rooms` (each row, the outdoor row turned), the five rooms (game camera and a turned view: nothing
+  through a wall), int_lab with 3D props off (the pictures draw), and a laid-out run place with the lookout (drawn,
+  no page errors). The waystation tent and the mine were seen only on the showcase map.
+- Full quick check (1341 s): every step passes but two, both found on main before this batch: RL-8's "the town's
+  shop has no Perk (RL-12)" (RT-1's entry) and the song fingerprints' "cave mid" and "cave late" missing from
+  validation/sound-baseline (RL-R2b's cave song, no baseline made). No picture baseline here (CI keeps it); the
+  rooms' pictures will differ from it on purpose.
+- Phone check wanted: the house, lab, shop, clinic and barn (turn the camera); a waystation (the tent); a run with a
+  glade (campfire) and a lookout; a cave run's mine entrance; export the debug log.
+- Next: part 2 in a new session: the 23 standing pictures the run biomes still place (docs/phases/09, status).
 
 ### Routes track RT-1 - Route layouts - 2026-10-24
 Branch `track/routes` (plan approved in Plan Mode; the owner's answers: all five plans, and **every non-town place**

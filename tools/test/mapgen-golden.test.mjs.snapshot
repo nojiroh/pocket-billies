@@ -18,7 +18,7 @@ exports[`golden scene: feature 1`] = `
   "tiles": 1110730745,
   "heights": 2142064282,
   "steps": 238425371,
-  "props": 791271990,
+  "props": 1233002292,
   "exits": 138117495,
   "rest": 186633712,
   "counts": {
