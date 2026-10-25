@@ -1253,7 +1253,15 @@
    ],
    "model": "scene/next/models/house_red.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#F8D6B2":"#EAEEEC","#E86256":"#608CEC","#36968A":"#D65C4E","#3EA89A":"#E86A5A"}
+    },
+    {
+     "swap": {"#F8D6B2":"#F6E6BE","#E86256":"#6CB262","#36968A":"#4E6E9E","#3EA89A":"#5E7EB0"}
+    }
+   ]
   },
   "shop": {
    "name": "General store",
@@ -2706,7 +2714,15 @@
    ],
    "model": "scene/next/models/house_blue.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#EAEEEC":"#F2C4B4","#608CEC":"#E86256","#E04848":"#3EA89A"}
+    },
+    {
+     "swap": {"#EAEEEC":"#D6E6C8","#608CEC":"#B288E2","#E04848":"#D9A040"}
+    }
+   ]
   },
   "house_green": {
    "name": "Green-roof cottage",
@@ -2728,7 +2744,15 @@
    ],
    "model": "scene/next/models/house_green.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#E0D4EE":"#F6E6BE","#6CB262":"#E86256","#4E9A58":"#4E6E9E"}
+    },
+    {
+     "swap": {"#E0D4EE":"#C8DCEC","#6CB262":"#B288E2","#4E9A58":"#D65C4E"}
+    }
+   ]
   },
   "house_large": {
    "name": "Two-storey house",
@@ -2755,7 +2779,15 @@
    ],
    "model": "scene/next/models/house_large.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#F8D6B2":"#E0D4EE","#B288E2":"#608CEC","#E8604E":"#4E6E9E","#3EA89A":"#D9A040"}
+    },
+    {
+     "swap": {"#F8D6B2":"#D6E6C8","#B288E2":"#E86256","#E8604E":"#E8B450","#3EA89A":"#E04848"}
+    }
+   ]
   },
   "house_cottage": {
    "name": "Thatched cottage",
@@ -3618,7 +3650,15 @@
    ],
    "model": "scene/next/models/townhouse_red.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#C46C54":"#4E6E9E","#3EA89A":"#E8B450"}
+    },
+    {
+     "swap": {"#C46C54":"#5E9A6E","#3EA89A":"#E04848"}
+    }
+   ]
   },
   "townhouse_blue": {
    "name": "Blue townhouse",
@@ -3708,7 +3748,15 @@
    ],
    "model": "scene/next/models/townhouse_yellow.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#F6E6BE":"#F2C4B4","#6CB262":"#608CEC","#3EA89A":"#E04848"}
+    },
+    {
+     "swap": {"#F6E6BE":"#C8DCEC","#6CB262":"#E86256","#3EA89A":"#D9A040"}
+    }
+   ]
   },
   "shop_cafe": {
    "name": "Corner café",
@@ -10518,7 +10566,18 @@
    ],
    "model": "scene/next/models/cottage_moss.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#F2DCA0":"#C8DCEC","#4E957C":"#D65C4E","#5EA88E":"#E86A5A"}
+    },
+    {
+     "swap": {"#F2DCA0":"#F2C4B4","#4E957C":"#4E6E9E","#5EA88E":"#5E7EB0"}
+    },
+    {
+     "swap": {"#F2DCA0":"#D6E6C8","#4E957C":"#D9A040","#5EA88E":"#E8B450"}
+    }
+   ]
   },
   "cottage_solar": {
    "name": "Solar-shingle cottage",
@@ -10540,7 +10599,18 @@
    ],
    "model": "scene/next/models/cottage_solar.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#D6E6C8":"#F2DCA0","#D65C4E":"#4E957C","#E86A5A":"#5EA88E"}
+    },
+    {
+     "swap": {"#D6E6C8":"#C8DCEC","#D65C4E":"#D9A040","#E86A5A":"#E8B450"}
+    },
+    {
+     "swap": {"#D6E6C8":"#F2C4B4","#D65C4E":"#4E6E9E","#E86A5A":"#5E7EB0"}
+    }
+   ]
   },
   "cottage_juniper": {
    "name": "Beekeeper’s cottage",
