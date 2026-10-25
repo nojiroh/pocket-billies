@@ -3844,7 +3844,7 @@ export function mapgenLayoutSpots(sc, scenery, G) {
     }
   }
   /* RT-2: where a route trainer stands. `face` (degrees, as pinch's dir: 0 east, 90 south) is the way it looks.
-     Pockets, clearings and dead ends face the way in (down the walk from the hub, 6 m on), so a trainer there sees
+     Pockets, clearings and dead ends face the way in (down the walk from the hub, 2 m on), so a trainer there sees
      you come in (TR-2c's pockets too); a pinch gets a place to stand at its side (`stand`), facing across the road */
   const qOf = (x, z) => mapgenBetween(Math.floor(z * N), 0, gh - 1) * gw + mapgenBetween(Math.floor(x * N), 0, gw - 1),
     deg = (dx, dz) => Math.round((Math.atan2(dz, dx) * 180) / Math.PI),
@@ -3865,7 +3865,7 @@ export function mapgenLayoutSpots(sc, scenery, G) {
     }
     let q = qOf(p.x, p.z);
     const q0 = q;
-    for (let n = 0; n < 12 && dist[q] > 0; n++) {
+    for (let n = 0; n < 4 && dist[q] > 0; n++) {
       const i = q % gw,
         j = Math.floor(q / gw);
       let best = q;

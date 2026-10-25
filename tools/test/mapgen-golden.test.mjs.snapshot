@@ -35,7 +35,7 @@ exports[`golden scene: laidOut 1`] = `
   "steps": 238425371,
   "props": 535077378,
   "exits": 2118420281,
-  "rest": 155233615,
+  "rest": 3209697738,
   "counts": {
     "props": 599,
     "raised": false
