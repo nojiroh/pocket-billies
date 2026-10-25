@@ -4110,7 +4110,7 @@ export function drawExitLabels(C, st, hits, hub) {
   }
 }
 /* a label's gold: an exit you're headed for, the Actions sheet's marker */
-const LABEL_GOLD = '#C99A1E';
+export const LABEL_GOLD = '#C99A1E';
 /* the Actions sheet's marker (walk-tab.js walkMarkTo): a gold label bobbing over the building with that act, above its
    own label when that shows; at the screen's edge, pointing the way, when the building is off screen. It goes once
    you stand near the building, or when the building isn't in this map (a room, a run) */

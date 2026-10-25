@@ -9,6 +9,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { PERKS, RULES } from '../game-data.js';
+import { speciesOf } from './fighters.js';
 import { dropEncounter, findBilly, wildPrize } from './rules.js';
 import { fieldBadgeKey } from './run-side.js';
 import { runFragileDrop } from './run-loop.js';
@@ -16,6 +17,7 @@ import { fxMoney } from './effects.js';
 import { perkOfferMake } from './perks.js';
 import { rewardDataGame, rewardOfferMake } from './rewards.js';
 import { battleRoll } from './battle-engine.js';
+import { questCatch, questWin } from './run-quests.js';
 /* eslint-disable no-func-assign */
 expose({
   battleOutcome: [() => battleOutcome],
@@ -71,7 +73,8 @@ export function battleRewards(b, s, roll, rules = RULES) {
  * The battle has ended: what it pays (battleRewards, with the battle's Perks), and on the save: a run battle's
  * checkpoint back to walking, the Hype counter (wins) of everyone standing on a win, a wild encounter gone, the lead's
  * streak (one more on a win, 0 on a loss). RL-13: the "Fainted is gone" challenge takes the fainted out of the run.
- * Returns the pay, the run when it was a run battle (b.runK), and the Billies that left it (`gone`).
+ * Returns the pay, the run when it was a run battle (b.runK), and the Billies that left it (`gone`). TW-3: and the
+ * run's quests it finished or failed (`quests`, logic/run-quests.js).
  * @param {any} b the battle @param {any} s the save it was fought on (saveData)
  */
 export function battleSettle(b, s) {
@@ -89,11 +92,21 @@ export function battleSettle(b, s) {
   if (b.kind === 'wild') dropEncounter(b.qid);
   /* RL-13: the "Fainted is gone" challenge: the fainted leave the run (logic/run-loop.js) */
   const gone = run ? runFragileDrop(s) : [];
+  /* TW-3: a run's quests: a Billie caught of a quest's type; a route trainer or the mini-boss beaten (nobody of
+     yours fainted: b.fainted) */
+  /** @type {{ done: any[], failed: any[] }} */
+  const quests = { done: [], failed: [] };
+  if (run && b.over === 'caught')
+    quests.done = questCatch(
+      run,
+      b.sides[1].team.flatMap((/** @type {any} */ e) => speciesOf(e).types || [])
+    );
+  if (run && o === 'win' && b.T) Object.assign(quests, questWin(run, b.T.runFoe, (b.fainted || 0) > 0));
   if (lead) {
     if (o === 'win') lead.streak = (lead.streak || 0) + 1;
     else if (o === 'lose') lead.streak = 0;
   }
-  return { pay, run, gone };
+  return { pay, run, gone, quests };
 }
 /**
  * A win's money and marks (after battleSettle; not for the opening's tutorial battle): a wild win's prize, a

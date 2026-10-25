@@ -264,6 +264,34 @@ export interface Run {
   pack?: { items: Record<DataId, number>; pyramids: Record<DataId, number> };
   /** RL-12b: its events and reward picks (logic/run-enc.js); missing on a run from before */
   enc?: RunEnc;
+  /** TW-3: its quests (logic/run-quests.js); missing until the first is taken */
+  quests?: RunQuests;
+}
+
+/** TW-3: a quest held on a run (logic/run-quests.js) */
+export interface RunQuest {
+  /** 'q' + its number in the run */
+  id: string;
+  kind: import('./game-data').QuestKind;
+  /** its text's id (quests.json texts) */
+  text: string;
+  /** the map node of the town it came from */
+  at: number;
+  /** how many to do, and done so far */
+  goal: number;
+  n: number;
+  /** a catch quest's type */
+  type?: string;
+  done: 0 | 1;
+}
+/** TW-3: a run's quests */
+export interface RunQuests {
+  held: RunQuest[];
+  /** the towns (map nodes) whose offer was taken */
+  took: number[];
+  /** quests taken so far (the next id) and handed in */
+  n: number;
+  paid: number;
 }
 
 /** RL-12b: a run's events and reward picks (logic/run-enc.js, logic/encounters.js, logic/rewards.js) */

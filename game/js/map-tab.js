@@ -20,6 +20,7 @@ import {
   worldMapZoom,
 } from './world-bowl.js';
 import { runHint } from './run.js';
+import { questListHTML } from './quest-board.js';
 import { toast } from './overlay.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -46,7 +47,7 @@ export function renderWorldMapTab() {
         ? `<p class="map-meta"><pb-coin kind="research" value="${M.research}" label="Research"></pb-coin>${M.scrap ? ` <pb-coin kind="scrap" value="${M.scrap}" label="Scrap"></pb-coin>` : ''}${M.crests ? ` <pb-coin kind="crests" value="${M.crests}" label="Crests"></pb-coin>` : ''}</p>`
         : '';
   return `<div class="map-full"><canvas id="mapcv" width="${worldMapWidth}" height="${worldMapHeight}" aria-label="World map. Drag to look around, tap a place."></canvas><div id="maplabels"></div>
- <div class="map-head glass k-panel">${run && run.region ? `<div class="sub">World map</div><h1 class="where">${escapeHtml(run.region.name)}</h1>` : '<div class="sub">The Hollow Earth</div><h1 class="where">World map</h1>'}${day}<p class="map-trip ${tripStatus().k}">${escapeHtml(tripStatus().t)}</p></div>
+ <div class="map-head glass k-panel">${run && run.region ? `<div class="sub">World map</div><h1 class="where">${escapeHtml(run.region.name)}</h1>` : '<div class="sub">The Hollow Earth</div><h1 class="where">World map</h1>'}${day}<p class="map-trip ${tripStatus().k}">${escapeHtml(tripStatus().t)}</p>${run ? questListHTML() : ''}</div>
  <div class="mapctl"><button class="mbtn" data-a="mzoom" data-k="in" aria-label="Zoom in">+</button><button class="mbtn" data-a="mzoom" data-k="out" aria-label="Zoom out">−</button><button class="mbtn" data-a="mreset" aria-label="Back to you">${uiIconHTML('walk', 16)}</button></div>
  <div class="mapcard px glass k-panel" id="mapcard">${worldMapCardHTML()}</div></div>`;
 }

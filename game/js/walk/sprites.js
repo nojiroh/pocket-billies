@@ -4,13 +4,14 @@
    items, the title's town rise and tap targets, moved from walk-view-gl.js as they were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { loadingScreen, provide, reducedMotion } from '../hooks.js';
+import { loadingScreen, provide, questMarked, reducedMotion } from '../hooks.js';
 import { clamp } from '../util.js';
 import { pictureFacing } from '../logic/prop-turn.js';
 import { INTEREST_DEFAULTS } from '../logic/camera-interest.js';
 import { filterInto } from '../engine/frame-lists.js';
 import { makeCanvas } from '../art.js';
 import {
+  LABEL_GOLD,
   actionLabel,
   actionSpot,
   approachPoint,
@@ -704,6 +705,13 @@ export function addHitTarget(it, C, hits, labels, PPU) {
     /* RL-12b: a route trainer's "!" only once it has spotted you */
     if (!it.n.done && (!it.n.route || walkView.spotted[it.n.id]))
       labels.push({ k: 'bang', x: q.x, y: box.y0, col: it.n.col || '#D9434B' });
+    /* TW-3: a quest giver's gold "!" while their town's offer is open */ else if (
+      it.n.talk &&
+      it.n.talk.quest &&
+      typeof questMarked === 'function' &&
+      questMarked(it.n.talk)
+    )
+      labels.push({ k: 'bang', x: q.x, y: box.y0, col: LABEL_GOLD });
   } else if (it.k === 'folk') {
     hits.push({ k: 'folk', f: it.f, ...box, x0: q.x - 16 * k, x1: q.x + 16 * k, z: q.d });
     if (it.f.sayT > 0) labels.push({ k: 'say', x: q.x, y: box.y0 - 2, t: it.f.say, a: Math.min(1, it.f.sayT * 3) });

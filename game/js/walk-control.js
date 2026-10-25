@@ -58,6 +58,7 @@ import { runWorldData } from './run-world.js';
 import { runArrivedFx, runArrivedHint } from './run.js';
 import { fieldMoveOpen, fieldWayOut } from './field-moves.js';
 import { encounterOpen } from './encounter-screen.js';
+import { questBoardOpen } from './quest-board.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBoardOpen } from './lab-board.js';
 import { postcardCheck } from './postcards.js';
@@ -612,6 +613,11 @@ export function walkPick(h) {
     else if (a === 'read' && typeof loreBook === 'function') loreBook(p.book);
     else if (a === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
     else if (a === 'board' && typeof labBoardOpen === 'function') labBoardOpen();
+    /* TW-3: a run town's notice board hands in the quests that are done (quest-board.js) */ else if (
+      a === 'notice' &&
+      typeof questBoardOpen === 'function'
+    )
+      questBoardOpen();
     else
       toast(
         p.say ||

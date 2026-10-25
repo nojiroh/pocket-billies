@@ -29,6 +29,7 @@ import { music } from './sound.js';
 import { talk, talkBox } from './talk.js';
 import { cutscene } from './cutscene/director.js';
 import { loreClue, loreData } from './lore.js';
+import { questGiverTalk } from './quest-board.js';
 /* eslint-disable no-func-assign */
 expose({
   legendCheck: [() => legendCheck, v => (legendCheck = v)],
@@ -152,7 +153,9 @@ provide({ storyState }); /* to-module */
 /* someone who only talks (a map's people: Granny Juniper, Curator Nacre): their script */
 export async function personTalk(P) {
   if (!P || talkBox.on || storyRun.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
-  if (P.script) await playStoryScript('person:' + P.id);
+  /* TW-3: a run town's quest giver offers the town's quest (quest-board.js) */
+  if (P.quest && typeof questGiverTalk === 'function') await questGiverTalk(P);
+  else if (P.script) await playStoryScript('person:' + P.id);
   else if (P.lines && P.lines.length)
     /* TW-2: a run town's named local says their own lines, by their name (logic/run-scenes.js runTownLife) */
     await talk(
