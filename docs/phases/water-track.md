@@ -139,7 +139,7 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
 |---|---|---|---|---|
 | 0 | WA-0 | (alone) | (**done** 2026-10-25) This file, the contract, the lanes; test_water grown with a 6 m fall into a plunge pool, lava, ice and a strip of sea; `tools/look-water.py` (pictures and the water's numbers, before and after). | check:data, smoke |
 | 1 | WA-1 | R | **Pixel water.** Water, shore and falls on the 32 texels a metre grid; `bands` (a kind's tones, dithered between shallow and deep on the world grid), `frames` (stepped time for ripples, foam, caustics, glints); hard 1-pixel foam lines at the shore; reflections offset by whole pixels; the shared snippet; models in the reflection (check); the `pixel` switch. | look-water before and after (every shot, noon and night), bench Pond station cost, smoke |
-| 1 | WA-3a | G | **Rivers that run downhill.** In `water-gen.js`: fill the dips, flow and its sum on the height grid, a source (spring, edge, lake) to a mouth (sea, lake, edge, a plunge pool), carved banks, wider downstream, meanders on flat ground, rapids on steep stretches; seams match the neighbour's river; joins mapgen's existing water stage and bridges. | unit tests (same seed same river; every cell of a river lower than the one before; mouths reached), the mapgenUnreachable sweep, golden water scene remade on purpose |
+| 1 | WA-3a | G | (**done** 2026-10-25, notes below) **Rivers that run downhill.** In `water-gen.js`: fill the dips, flow and its sum on the height grid, a source (spring, edge, lake) to a mouth (sea, lake, edge, a plunge pool), carved banks, wider downstream, meanders on flat ground, rapids on steep stretches; seams match the neighbour's river; joins mapgen's existing water stage and bridges. | unit tests (same seed same river; every cell of a river lower than the one before; mouths reached), the mapgenUnreachable sweep, golden water scene remade on purpose |
 | 1 | WA-6a | P | **Wading.** `w` tiles walkable, slower; the player and Billies cut at the waterline; splashes and a wake (`addRipple`); deep `d` still blocks; Studio and quick-check walking checks updated. | unit tests (the walk grid), a walking check in test_water, smoke |
 | 2 | WA-2a | R | **Waterfalls drawn.** Each `falls` entry: a curled lip, a sheet of streaks in pixel columns over a slower large pattern, white water at the foot, a churning foam ring and rings on the plunge pool, mist that rises and drifts, wet dark rock beside it, the light it throws; the small automatic sheets the same style; the flow map (a texture of flow and foam) replacing the per-vertex segment search. | look-water (tall-fall, stream-and-falls), bench cost, smoke |
 | 2 | WA-2b | G | **Waterfalls placed.** Off terrace and cliff edges where a river meets a drop, in caves (rooms), as a route's set piece; `climb` on some (the Waterfall move's way up); the hub island's fall only with the owner's yes. | unit tests (a fall's lip and foot on its river; its pool reached), sweep |
@@ -170,3 +170,32 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
 - What the before pictures show: the tall fall is a narrow sheet (about a third of its stream) ending in a point; the
   sea strip and the canal look tile-edged where they are rectangles; at phone size the depth of field blurs the near
   water.
+
+## WA-3a notes (2026-10-25)
+- `logic/water-gen.js` (lane G): `waterGenRiver` from mapgen's water stage, `waterGenCarve` after the water is
+  lowered. Sources: a free side (`edge`), a `spring` (high ground away from the road), a pond (`lake`), or a joined
+  edge where the neighbour's river comes in. Mouths: the `sea` (a coast), a pond (`lake`), a side (`edge`), a `pool`
+  it fills. Up to 12 source and mouth pairs are tried, each with the land flooded from the mouth (priority flood);
+  the longest that fits is kept, and the old line only when none does (a note).
+- What a river keeps clear of: the exits' straight road runs, the main road's middle (the hub's place), a town's
+  street and lots (24 m either side of the road's middle, from 8 m south of it to 32 m north), other water, and the
+  sides it neither starts nor ends at. It crosses a road nearly square (ground by a road counts 0.6 m higher in the
+  flood), at most twice, once at least with the bridge feature. A river that would cut 25 cells or more off from the
+  road is ended in a pool partway (one end inland cuts nothing off).
+- Its shape: straight for 8 m across a side, smoothed, meandering where the slope is under 2%, 1.5 m wide at least
+  and 0.6-1.2 times the dial's width by the square root of the flow, never narrower downstream. The level is 0.15 m
+  under the bank, never higher than the point before. The bed is 0.3 m deeper within 0.75 m of the line (more on a
+  wide river), so the level read along the line never rises. Banks eased. Rapids where the level drops more than
+  6% over 3 m.
+- Seams (the owner: a river may cross a joined edge and carry on): a crossing of a side with an exit lies within 16 m
+  of the exit (`WATERGEN_SEAM_REACH`; two exits on a side may be 44 m apart, so the other exit's 26 m band starts
+  18 m away), clear of the exit's road run. A joined edge is never a mouth. The child finds the parent's water in
+  its edge strip, starts its river there (`src: 'edge'`) even when its own dial has no stream, copies the cells and
+  corners exactly, and `mapgenPinSides` leaves the crossing's corners (`G.riverKeep`), so a run scene's east and west
+  edges are 0 except where a river crosses.
+- Numbers (50 pinned run-like routes with the stream dial, 7 of them coast): 42 rivers; 24 edge to edge, 12 spring
+  to edge, 4 edge to pool, 2 edge to lake; no fallback; 78-218 m long (136 on average), dropping 0.7 m on average
+  (1.73 m at most), widest 3.5 m on average, 15 with rapids, 37 bridges. A river scene takes about 60 ms in Node
+  against 24 ms without one (the old line: 22 ms).
+- Not done here: lava keeps the old line (the owner); the hub island's river (`island-gen.js`) is untouched (the
+  island is locked); test_water keeps its hand-made streams. The renderer still reads only `pts` and `speed`.

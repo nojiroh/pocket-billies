@@ -2,6 +2,64 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Water track WA-3a (lane G) - rivers that run downhill - 2026-10-25
+Branch `track/water` (main merged in at the start: nothing new; lane P's WA-6a and lane R's WA-1 commits merged in
+before each push). Plan approved in Plan Mode; the owner's answers: a river may cross a joined edge and carry on in
+the neighbour; MAPGEN_VERSION 15; lava keeps its old line. Tag to suggest: `wa-3a-done` (the owner pushes tags).
+- Changed:
+  - `game/js/logic/water-gen.js` (new, lane G, Node-testable; after mapgen.js on both pages and in the Studio's
+    worker): sources (a side, a spring, a pond, a joined edge's incoming river) and mouths (sea, pond, side, pool),
+    the land flooded from each mouth (priority flood), the longest way down that fits kept; smoothed, meandering on
+    the flat, wider downstream, its level never rising, rapids where it drops steeply; painted as mapgenPaintStream
+    did; `streams` gains `w`, `src`, `mouth`, `rapids` (the contract). Details and numbers: water-track.md, WA-3a notes.
+  - The hook in `logic/mapgen.js`, as small as it could be: in mapgenStageWater the stream line becomes
+    `waterGenRiver` (after the pond and coast, so a river can end in them) and `waterGenCarve` runs after
+    mapgenLowerWater; `mapgenPinSides` skips `G.riverKeep` corners (a seam crossing's bed). MAPGEN_VERSION 15.
+  - A pre-existing bug found by the sweeps, own commit: `mapgenTrailSearch` (TR-2b's mountain trails) stepped 2 m and
+    tested only the landing cell, so a trail could hop a narrow stream and leave its summit cut off. It now tests the
+    middle of the step too (goldens and mountain sweeps unchanged).
+  - test_water: lane P's two walking checks (wade into the pond; the lava pool stays shut), 75 checks pass.
+  - Tests: `tools/test/water-gen.test.mjs` (quick: the flood, same dials same river, downhill on water, wider
+    downstream, mouths reached, no river without the dial, clear of the exits); a seam case in mapgen-seams.test.mjs
+    (slow: the child's river comes in at the seam, the same wet cells and heights, the seam rules met, with and
+    without the child's own stream dial). Remade on purpose: the golden `water` scene (the other five unchanged),
+    rng.test's pinned hash and the run-start snapshot (only gen.v / mapgenV). mapgen-town.test.mjs (towns track's):
+    a run scene's east and west edge corners are 0 except where a river crosses.
+- Found (where the plan or the docs were wrong):
+  - In runs no river could reach a seam: rivers went north to south, run routes join east to west, and the water
+    stage dries every joined strip. And mapgenPinSides forced a run scene's whole east and west edges to 0, which
+    makes any river leaving a node run uphill over its last metres; hence the riverKeep exception.
+  - A river must not cut ground off: an east to west river that never crosses the road leaves half a map unreachable
+    while mapgenUnreachable (exits only) still passes. Now refused (a pool ends it partway).
+  - Rivers ran along roads (the road's flattened bed is the easiest way down) and the road dried them in pieces;
+    run towns lost their clinic and shop to a river. Both now kept clear.
+  - `island-gen.js` also calls mapgenPaintStream: left as it is (the hub island is locked).
+- Risky:
+  - **MAPGEN_VERSION**: main is at 8; PR #194 (towns + routes) takes it to 13 and RT-4b holds 14. Whichever of #194 or
+    this track merges second keeps the higher number for its own change (15 stays WA-3a's) and remakes rng.test's
+    hash and the run-start snapshot on purpose. Every run scene with a stream (about 1 node in 5) and every child of a
+    river crossing changes.
+  - Speed: a scene with a river takes about 60 ms in Node (24 ms without; the old line cost nothing). On a phone that
+    is roughly 0.1-0.2 s more for each node with a river at a run's start: worth a look in WA-8.
+  - A seam river is carried on even where it has to cut ground off; that leaves a note ("the neighbour's river cuts
+    ground off from the road"), which the run tests treat as a failure. None of the sweeps here hit it.
+  - A jetty (the jetty feature) may lie across a river where it reaches the pond (boards over water, walkable).
+- Verified: lint, typecheck, check:modules, check:data, prettier; `npm test` 947/947; `npm run test:slow` 58/58 (the
+  mapgenUnreachable sweeps, seams, towns, mountains and ledges runs, the run worlds); `check:smoke` 6/6 (178 s); the
+  walking-rules step (28 test scenes, 75 checks). Sweeps outside the tests: 120 stream scenes (every biome, hills,
+  pinned or not): none uphill, every point on water, every exit reached, no fallback; 80 pond, coast and bridge
+  scenes; 19 of 19 parent and child pairs whose river crosses the seam agree. The quick check's baseline was not
+  remade (WA-8's job): expect generated scenes with rivers to differ.
+- For lane R (its files, not edited here): `streams[].w` (a width per point), `rapids` ([[t0, t1]] along the line),
+  `src`, `mouth` are there to read (the flow field, white water on rapids, a pool's churn). The bed lies 0.3 m deeper
+  within 0.75 m of the line, eased up to the edge.
+- Next: WA-2b (lane G, round 2) places waterfalls where a river meets a drop (water-gen.js has each river's line and
+  level); the hub island's fall needs the owner's yes.
+- Not done here, waiting on the owner: WA-6a's "shallows for others" (wild Billies, props and trainers standing in
+  `w`, never `d` or lava: mapgenPutProp's water flag, the encounter and trainer spot pickers, the "nothing in water"
+  asserts in mapgen.test.mjs, mapgen-dials.test.mjs and mapgen-lots.test.mjs, with MAPGEN_VERSION and the golden
+  scene). It is outside WA-3a's river scope; left for a later lane G session unless the owner says otherwise.
+
 ### Water track WA-6a (lane P) - wading - 2026-10-25
 Branch `track/water` (main merged in at the start: nothing new). Plan approved in Plan Mode; the owner's answers: wade
 every shallow `w` except lava and ice; mapgen's reach check and the seam rules stay dry; no encounters while wading;
@@ -82,6 +140,43 @@ weather and life on water).
   G, rivers downhill), WA-6a (lane P, wading). WA-1 takes its "before" pictures with `tools/look-water.py --out=` at
   this commit. Lane B (WA-7) runs in round 3 as a fourth lane (the owner, after WA-0).
 
+### Hub track HB-1 - the world map's pin, decals on their models (done) - 2026-10-25
+Branch `claude/hub-island-revamp-4fskxy` (the planning session's branch: `track/hub` didn't exist yet and a cloud
+session pushes only to its own branch; the owner chose to build HB-1 here, as RL-12c was). Plan approved in Plan Mode
+with the owner's answers: lettering on a mirrored model moves and faces the mirrored way but is never mirrored; the
+decal check is a headless pictures tool, not a Studio overlay. Tag `hb-1-done` for the owner.
+- What was wrong (in the code):
+  - The floating island's pin, its "here" ring and you were drawn at the location's spot, which on the island is the
+    map's middle (95, 77: the mountain's flank), ~50 m from the town; the height from the bowl's 6 m grid; you 18 px
+    beside the pin. The fast check, once it measured it, found you drawn 152 m from where you stood.
+  - The walk on the island was never found: the hub's walk view is `w:copperleaf*` (seamlessHubMap), never the bare
+    map id world-bowl.js compared with, so the map never opened from where you stand either (worldBowlFloatHome).
+  - Decals (a model's `face: "fixed"` picture layers: a shop's lettering, the lab's window, washing, bunting, the giant
+    trees' knots) used the placement's size alone while the model draws at size x its look's wobble (`lk.size`), so
+    they drifted and mis-scaled on Juniper's home (6 %), the laundry lines (8 %), the giant trees (14 %); a mirrored
+    model mirrored its lettering and left side decals facing the unmirrored way; a bobbing model left its decals.
+- Changed (one cause per commit):
+  - logic/bowl-things.js `bowlYouPoint` (tests): you on a walk map shown on the bowl: your spot, else the map's hub,
+    else its middle.
+  - world-bowl.js: on the floating island the place's pin at the map's hub (the town), the ring and you at your own
+    spot on the island's fine ground (`worldBowlSkyFloor`); `worldBowlWalkOnIsland` finds the walk on the island for
+    the pin and the opening view; `worldBowl.me` keeps where you were drawn. Runs' bowl unchanged.
+  - logic/prop-turn.js `decalPlace` (tests against the shaders' own transform at 3 sizes, both mirrors, 3 turns, with
+    and without a bob, and the face's outward way); prop-models.js `propModelImageItems` uses it.
+  - Studio: the room warning (map-editor.js) measures from the nearest quarter turn (rooms face four ways since IS-5).
+  - check-fast's map check: you are drawn where you stand on the island, and follow when you move 40 m.
+  - tools/look-decals.py: every decal model on a test map, as placed, mirrored, turned 30 degrees and wobbled.
+- Verified: lint, typecheck, unit tests (940 pass), check:modules after each commit; `check-fast --only=map` (2 of
+  2); the smoke check; headless pictures of the hub map before and after (you by the barn: before, you and the pin
+  on the mountain's flank; after, you by the barn, the pin on the town) and look-decals before and after on
+  test_props_next and test_windows: lettering on mirrored buildings reads right (market, library, bakery), decals
+  stay on turned fronts, and a laundry line 25% bigger keeps its washing across the line (before: small and bunched
+  to one side).
+- Risky: decals on a mirrored building now face the other way than before (on purpose); run maps' mirrored props with
+  decals change too. Nothing judged on a phone.
+- Not done: a flat landmark picture with no prop of its own still stands at the map's middle on the floating island
+  (world-bowl.js worldBowlThingsOfPlace); HB-3 removes or moves it with the island's detail.
+- Next: HB-2 (the loading screen) and HB-4a (island sketches) can start now; HB-3 after this merges.
 ### Window glass on the low-poly buildings (no more glowing orbs) - 2026-10-25
 Branch `ccr-7161a124-txw6o4` (one session, not part of a plan). The owner's ask: windows on 3D buildings looked like a
 weird orb at night. Plan approved in Plan Mode; the owner chose to mark the glass with a new recipe key (`glass: n`)

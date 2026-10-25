@@ -153,6 +153,14 @@ def bowl_map(pg, base):
     # its own sky (a run's world keeps the bowl's sea: look session 1)
     if pg.evaluate("!!worldBowl.ground.islandMap&&!worldExtra.look"):
         if not until(pg, "!!(worldBowl.ground.float&&worldBowl.ground.float.gpu&&!worldBowl.ground.water&&gpuState.P.mrock&&gpuState.P.mskyf)", 10): raise Exception('the hub’s island doesn’t float (a sea, or no rock under it)')
+        # HB-1: you are drawn where you stand on the island (its pin was at the map's middle, ~50 m off)
+        off = pg.evaluate("(()=>{const g=worldBowl.ground,F=g.float,m=worldBowl.me;if(!m||!m.isle)return -1;const w=bowlYouPoint(worldBowl.spots[F.i],gameData.maps[g.islandMap],walkView.pl,1000);return Math.hypot(m.x-w[0],m.y-w[1])*1000})()")
+        if off < 0 or off > 0.5: raise Exception('you aren’t drawn on the island' if off < 0 else f'you are drawn {off:.1f} m from where you stand')
+        # and you follow when you stand somewhere else (40 m west of the hub)
+        pg.evaluate("(()=>{const P=walkView.pl;worldBowl.hb1=[P.x,P.z];P.x-=40;worldBowl.dirty=true;return 0})()")
+        f0 = pg.evaluate("worldBowl.frames"); until(pg, f"worldBowl.frames>={f0 + 2}", 10)
+        off2 = pg.evaluate("(()=>{const g=worldBowl.ground,F=g.float,m=worldBowl.me,P=walkView.pl,w=bowlYouPoint(worldBowl.spots[F.i],gameData.maps[g.islandMap],P,1000);[P.x,P.z]=worldBowl.hb1;return m?Math.hypot(m.x-w[0],m.y-w[1])*1000:-1})()")
+        if off2 < 0 or off2 > 0.5: raise Exception(f'you don’t follow on the island: drawn {off2:.1f} m from where you stand')
     elif not pg.evaluate("!!(worldBowl.ground.water&&gpuState.P.mwater)"): raise Exception('the sea isn’t drawn')
     # look session 2: the shadow map, the routes' and rivers' line map and the rivers
     # RL-8b: the hub is an island (worldmap.json sea.island): a river or two, not four; IS-7: none on an island drawn
