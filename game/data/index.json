@@ -146,7 +146,8 @@
     "test_props_turn",
     "test_props_wild",
     "test_island",
-    "test_props_island"
+    "test_props_island",
+    "test_props_rooms"
    ]
   },
   "cutscenes": {"ids":["opening","city"]}
