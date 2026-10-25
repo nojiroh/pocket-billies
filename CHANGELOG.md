@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Held items** (roguelite track RL-12c): every Billie has one held-item slot. Eight to start with: Leftover
+  Sandwich (heals a little each turn), Snack Pack (a quarter of its HP once a battle, when low), Lucky Coin (wins pay
+  25% more), Study Notes (50% more XP), Iron Vest (15% less damage taken), Quick Laces (Speed up as it comes in), Brass
+  Knuckles and Smart Specs (physical or special moves 20% harder). A trainer's reward pick can offer one; you choose
+  who holds it, or put it in the bag. Give, swap or take off held items from a Billie's details. They last one run: at
+  the end they go back into the bag (paid as Research on a loss, taken home on a win).
 - **Expeditions, challenges and starter points** (roguelite track RL-13): runs now have difficulty tiers.
   **Expedition I** is the game as it was; winning the highest one open unlocks the next, up to **V**. Each one above I
   sends foes out 2 levels higher, makes the final boss tougher (+15% HP a step), raises run shop and clinic prices by

@@ -54,7 +54,7 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | `RL-10b` | RL-10b, Ranch B second half (PR #144, open). |
 | `ccr-9023a485-qr0fhf` | Project Story: Professor Chosen replaces Hazel (PR #142, open). |
 | `ccr-305ae8d3-6ivodu` | UI track UI-7b (14 commits, no pull request yet). |
-| `track/encounters` | Encounter sessions of the roguelite track (RL-12b's two parts, then RL-12c held items; roguelite-track.md 9.4): RL-12b part 1 (events, reward picks, route trainers) done 2026-10-23; part 2 (waystations, stalls, no two shops) done 2026-10-24. |
+| `track/encounters` | Encounter sessions of the roguelite track (RL-12b's two parts, then RL-12c held items; roguelite-track.md 9.4): RL-12b part 1 (events, reward picks, route trainers) done 2026-10-23; part 2 (waystations, stalls, no two shops) done 2026-10-24. RL-12c (held items) was built on `claude/project-thread-ka73c4` from main (2026-10-25, the owner's answer: a cloud session pushes only to its own branch; this one was merged into main). |
 | `track/expeditions` | RL-13 of the roguelite track (Expeditions I-V, challenges, starter points, leader teams; roguelite-track.md 9.4): made from main 2026-10-24 at the owner's word. |
 | `track/regions` | Region sessions of the roguelite track (RL-R1, RL-R2; roguelite-track.md 9.4): RL-R1 (region generator) done 2026-10-23, merged; RL-R2a (side areas, field moves, the deadline dropped) done 2026-10-23, merged (PR #176); RL-R2b (a cave, an islet town, the way-out moment, side areas in the Run Lab, preview and sim) done 2026-10-24, PR open. |
 | `track/roster` | Roster track (RO-1, RO-2..; roguelite-track.md section 9.4): every RO session works here. RO-1 (forms, biome pools) done 2026-10-23. |
