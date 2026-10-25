@@ -583,6 +583,7 @@ def blur_focus(pg, base):
     spot; tilted fully the plane of focus stands upright; the player's slider at Off stops the blur pass; the slowest
     quality setting takes the cheap blur instead of none"""
     drawing(pg)
+    home = pg.evaluate('[walkView.pl.x, walkView.pl.z]')
     sp = pg.evaluate(MOMENT_SPOTS)
     if not sp['quiet']: raise Exception('no reachable spot without a point of interest near the hub')
     pg.evaluate("(()=>{const D=gameData.engine.defaults;D.lens=Object.assign({},D.lens,{blur:2,focusTilt:1});return 0})()")
@@ -618,6 +619,7 @@ def blur_focus(pg, base):
     e = pg.evaluate(info)
     pg.evaluate("(()=>{gameData.engine.defaults.quality.auto=false;walkRenderer.adaptT=0;walkRenderer.q=0;const D=gameData.engine.defaults;D.lens=Object.assign({},D.lens,{blur:0,focusTilt:0});return 0})()")
     if e['path'] != 'cheap': raise Exception(f'on the slowest setting the blur isn’t the cheap one: {e}')
+    stand(pg, home[0], home[1], 5)   # back where it started: the page's next check (Behind things) starts there, in the open
     return f'on you, upright at tilt 1; talking {b["d"][0]:.2f} m toward them (the middle); the encounter {c["d"][1]:.2f} m ahead; Off: no blur pass; slowest: the cheap blur'
 
 
