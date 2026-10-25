@@ -54,6 +54,7 @@ import {
   encountersHere,
   gainXp,
   geneData,
+  geneLimit,
   healAll,
   makeBilly,
   maxLevel,
@@ -477,7 +478,7 @@ function debugAction(x) {
       const m = saveData.team[0],
         g = m ? debugGraftFor(m.sp) : '';
       if (!g) return toast(m ? 'No other species has a part that fits your lead.' : 'No lead to graft.');
-      spliceSet(m, g);
+      spliceSet(m, g, geneLimit());
       if (typeof debugLog !== 'undefined') debugLog.add('graft', `debug: lead ${m.sp} ${g}`);
       said = `Your lead now wears ${debugGraftWords(m.sp, g)}.`;
       break;

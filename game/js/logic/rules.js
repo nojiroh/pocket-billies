@@ -163,6 +163,8 @@ expose({
   gateText: [() => gateText, v => (gateText = v)],
   geneData: [() => geneData],
   // @ts-expect-error -- replaced on purpose
+  geneLimit: [() => geneLimit, v => (geneLimit = v)],
+  // @ts-expect-error -- replaced on purpose
   hatchEgg: [() => hatchEgg, v => (hatchEgg = v)],
   hatchable: [() => hatchable],
   // @ts-expect-error -- replaced on purpose
@@ -382,7 +384,7 @@ export function spliceReport() {
     .filter(({ m }) => billyGraft(m))
     .map(({ m, i }) => {
       const g = /** @type {Record<string, string>} */ (billyGraft(m)),
-        st = graftStability(geneData(), m.sp, g);
+        st = graftStability(geneData(), m.sp, g, geneLimit());
       return {
         at: i,
         sp: m.sp,
@@ -395,18 +397,27 @@ export function spliceReport() {
       };
     });
 }
-/** SP-2: an Unstable Billie's roll (its raised and lowered stats and merged name, Billy.unstable); null when its
- * splice is within Stability's limit @param {any} m @returns {{ up: string, down: string, name: string } | null} */
+/** SP-2: an Unstable Billie's roll (its raised and lowered stats and merged name, Billy.unstable); null with no splice.
+ * SP-4: a stored fact, settled by unstableTidy with its owner's limit (yours: the Gene Bank's; a wild one's: the
+ * default), so it is never worked out again here @param {any} m
+ * @returns {{ up: string, down: string, name: string } | null} */
 export function billyUnstable(m) {
-  const g = m && m.unstable ? billyGraft(m) : null;
-  return g && graftStability(geneData(), m.sp, g).unstable ? m.unstable : null;
+  return m && m.unstable && billyGraft(m) ? m.unstable : null;
+}
+/** SP-4: the Stability limit your Billies are held to: the Gene Bank's level's (genes.json bank.levels; buildings.json
+ * genebank, a level raised by its unlock rows), the default (stability.limit) with no Bank data @param {any} [s] */
+export function geneLimit(s = saveData) {
+  const L = GENES.bank && GENES.bank.levels,
+    lv = Math.max(1, (s && s.meta && s.meta.buildings && s.meta.buildings.genebank) || 1);
+  return L && L.length ? L[Math.min(lv, L.length) - 1].limit : GENES.stability.limit;
 }
 /** SP-2: after a splice changes (or the Billie evolves, or a save loads): past the limit it is Unstable, rolled once
- * and kept while it stays past it (a new splice keeps the old roll); within the limit the roll goes
- * @param {any} m @param {() => number} [rnd] */
-export function unstableTidy(m, rnd = random) {
+ * and kept while it stays past it (a new splice keeps the old roll); within the limit the roll goes. SP-4: the limit
+ * is the owner's (geneLimit() for yours; the default for a wild one)
+ * @param {any} m @param {() => number} [rnd] @param {number} [limit] */
+export function unstableTidy(m, rnd = random, limit) {
   const g = billyGraft(m);
-  if (!g || !graftStability(geneData(), m.sp, g).unstable) {
+  if (!g || !graftStability(geneData(), m.sp, g, limit).unstable) {
     delete m.unstable;
     return;
   }
@@ -416,11 +427,12 @@ export function unstableTidy(m, rnd = random) {
     donor = SPECIES[r.donor];
   m.unstable = { up: r.up, down: r.down, name: breedName(speciesOf(m).name, donor ? donor.name : speciesOf(m).name) };
 }
-/** SP-2: give a Billie (or an encounter) a splice ('' or null takes it off), then settle Unstable
- * @param {any} m @param {Record<string, string> | string | null} graft a graft or a graft code */
-export function spliceSet(m, graft) {
+/** SP-2: give a Billie (or an encounter) a splice ('' or null takes it off), then settle Unstable (SP-4: with the
+ * owner's limit; the default when not given, as for a wild one)
+ * @param {any} m @param {Record<string, string> | string | null} graft a graft or a graft code @param {number} [limit] */
+export function spliceSet(m, graft, limit) {
   graftSet(m, typeof graft === 'string' ? graft : graftKey(graft));
-  unstableTidy(m);
+  unstableTidy(m, random, limit);
 }
 /** SP-2: a spliced Billie's own effect rows (logic/effects.js fxOfBillie): its traits', tagged gene:<trait>, and an
  * Unstable splice's drawback, tagged unstable @param {any} m @returns {(import('../../types/game-data').FxRow & { src: string })[]} */
@@ -741,7 +753,7 @@ export function evolve(m, path = 'A') {
     if (g) m.graft = g;
     else delete m.graft;
   }
-  unstableTidy(m);
+  unstableTidy(m, random, geneLimit());
   if (m.hp > 0) m.hp = Math.max(1, Math.min(maxHp(m), m.hp + maxHp(m) - old));
   saveData.caught[m.sp] = 1;
   saveData.seen[m.sp] = 1;
@@ -782,6 +794,8 @@ export function toTeam(m) {
   return true;
 }
 export function addBilly(m) {
+  /* SP-4: a caught spliced Billie is held to your Gene Bank's limit from now on */
+  if (m.graft) unstableTidy(m, random, geneLimit());
   /* phase 17: robots aren't in the Guide */
   if (!isRobot(m)) {
     saveData.caught[m.sp] = 1;

@@ -188,12 +188,9 @@ test('genes: Unstable is rolled once past the limit, kept through a new splice p
   assert.equal(fn('billyUnstable')(m), u);
   fn('spliceSet')(m, { ...far, sig: 'shark_tailfin@zuck2' });
   assert.equal(m.unstable, u, 'still past it: the same roll');
-  S.limit = 99;
-  try {
-    assert.equal(fn('billyUnstable')(m), null, 'a higher limit: not Unstable while it holds');
-  } finally {
-    S.limit = was;
-  }
+  fn('unstableTidy')(m, undefined, 99);
+  assert.equal(fn('billyUnstable')(m), null, "settled at a higher limit (SP-4: the Gene Bank's): not Unstable");
+  assert.equal(S.limit, was);
   fn('spliceSet')(m, '');
   assert.equal('unstable' in m, false, 'no splice, no roll');
 });

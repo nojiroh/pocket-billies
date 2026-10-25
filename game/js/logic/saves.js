@@ -26,7 +26,7 @@ import {
 } from '../game-data.js';
 import { graftStability } from './genes.js';
 import { isRobot, robotGemDef, robotPartDef, robotRules, speciesOf } from './fighters.js';
-import { billyGraft, cleanName, geneData, movesAt, refreshRobot, teamSize, unstableTidy } from './rules.js';
+import { billyGraft, cleanName, geneData, geneLimit, movesAt, refreshRobot, teamSize, unstableTidy } from './rules.js';
 import { metaFill, newMeta, validMeta } from './meta-state.js';
 import { newRanch, ranchFill, validRanch } from './ranch-state.js';
 import { ranchTidy } from './ranch.js';
@@ -144,6 +144,8 @@ export function saveFill(o) {
   const start = s.run && s.run.start;
   if (start) start.team = start.team.filter(m => speciesOf(m));
   s.ranch.nursery = s.ranch.nursery.filter(n => !isRobot(n.egg) && speciesOf(n.egg));
+  /* SP-4: your Billies are held to your Gene Bank's limit (meta is filled above), a wild list to the default */
+  const ownLimit = geneLimit(s);
   /* every Billie the save holds: the team, the box, the nursery's eggs (RL-10) and, during a run, the hub's team as
      the run started */
   const members = () => [...s.team, ...s.box, ...s.ranch.nursery.map(n => n.egg), ...(start ? start.team : [])];
@@ -160,7 +162,7 @@ export function saveFill(o) {
     /* RL-12c: a held item the data no longer has as one is dropped */
     if (m.held != null && !(ITEMS[m.held] && ITEMS[m.held].hold)) delete m.held;
     /* SP-2: a splice keeps the slots that still fit; one with none left, or past what Stability ever allows, goes */
-    graftTidy(m);
+    graftTidy(m, ownLimit);
   });
   if (s.avatar && typeof s.avatar === 'object' && 'name' in s.avatar)
     s.avatar.name = cleanName(s.avatar.name, 18) || 'Trainer';
@@ -173,7 +175,7 @@ export function saveFill(o) {
   if (!s.wild || typeof s.wild !== 'object') s.wild = {};
   for (const w of Object.values(s.wild)) {
     w.list = (w.list || []).filter(q => SPECIES[q.sp]);
-    w.list.forEach(graftTidy);
+    w.list.forEach(q => graftTidy(q));
   }
   s.eggs = s.eggs.filter(e => EGGS[e.tier]);
   /* RL-9: a trainee whose Billie isn't in storage any more stops training */
@@ -293,21 +295,21 @@ export function graftShapeOk(g) {
   return pairs.length <= 8 && pairs.every(([k, v]) => k.length <= 12 && typeof v === 'string' && v.length <= 64);
 }
 /** SP-2: a loaded Billie's or encounter's splice: the slots that still fit it; none left, or a splice past what
- * Stability allows at the default limit, and it goes @param {{ sp: string, graft?: Record<string, string>,
- *   unstable?: { up: string, down: string, name: string } }} m */
-export function graftTidy(m) {
+ * Stability allows, and it goes. SP-4: at the owner's limit (the default for a wild one) @param {{ sp: string,
+ *   graft?: Record<string, string>, unstable?: { up: string, down: string, name: string } }} m @param {number} [limit] */
+export function graftTidy(m, limit) {
   if (m.graft == null) {
     delete m.unstable;
     return;
   }
   const g = billyGraft(m);
-  if (!g || graftStability(geneData(), m.sp, g).refused) delete m.graft;
+  if (!g || graftStability(geneData(), m.sp, g, limit).refused) delete m.graft;
   else m.graft = g;
   /* an Unstable roll keeps two different stats and a clean name, and goes with a splice that is stable again */
   const u = m.unstable;
   if (u && (!STAT_IDS.includes(u.up) || !STAT_IDS.includes(u.down) || u.up === u.down)) delete m.unstable;
   else if (u) u.name = cleanName(u.name, 24) || speciesOf(m).name;
-  unstableTidy(m);
+  unstableTidy(m, random, limit);
 }
 /** a list of Billies a save holds: each one well formed, no uid twice */
 export function billiesOk(list) {

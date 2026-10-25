@@ -44,3 +44,29 @@ test('gene bank: a milestone that grants DNA pays it (it was dropped before SP-4
   K.unlockGrant(s, { name: 'x', about: 'x', when: 'runs >= 1', grant: { dna: 7 } });
   assert.equal(s.meta.dna, 10);
 });
+
+test('gene bank: your Billies are held to the Bank level’s limit through a reload and an evolve; wild ones to 3', () => {
+  const { geneData, geneLimit, spliceSet, billyUnstable, evolve } = modules.rules,
+    { saveFill } = modules.saves,
+    L = GAME_DATA.genes.bank.levels,
+    s = startedSave('swift0', 30),
+    m = s.team[0],
+    far = { front: 'bear_arm@musk3', back: 'bear_leg@musk3' };
+  assert.equal(geneLimit(s), L[0].limit);
+  s.meta.buildings.genebank = 3;
+  assert.equal(geneLimit(s), L[2].limit);
+  const cost = modules.genes.graftStability(geneData(), 'swift0', far).cost;
+  assert.ok(cost > L[0].limit && cost <= L[2].limit, `the test splice costs ${cost}`);
+  spliceSet(m, far, geneLimit(s));
+  assert.equal(billyUnstable(m), null, 'within the Bank’s limit');
+  evolve(m);
+  assert.ok(m.graft && !m.unstable, 'evolving keeps it stable at the Bank’s limit (the save is the page’s)');
+  const back = saveFill(structuredClone(s));
+  assert.ok(back.team[0].graft && !back.team[0].unstable, 'a reload keeps it, stable');
+  const q = structuredClone(m);
+  spliceSet(q, far);
+  assert.ok(billyUnstable(q), 'the same splice on a wild one is Unstable at the default limit');
+  s.meta.buildings.genebank = 1;
+  const low = saveFill(structuredClone(s));
+  assert.ok(low.team[0].unstable, 'at Lv 1 a reload settles it Unstable');
+});
