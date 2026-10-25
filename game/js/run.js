@@ -212,7 +212,7 @@ export function runEndHome(won, keep, itemPrice) {
   );
   /* RL-13: a win that opens the next Expedition says so */
   if (saveData.meta.expedition > opened)
-    toast(`${MODIFIERS.expeditions[saveData.meta.expedition - 1].name} is open. Pick it at the mast.`);
+    toast(`${MODIFIERS.expeditions[saveData.meta.expedition - 1].name} is open. Pick it at Skyline Station.`);
   /* RL-11: milestones the run has met (ended runs, wins), each with its own toast after this one */
   if (typeof labMilestones === 'function') labMilestones();
 }
