@@ -247,7 +247,7 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
   o=vec4(fogit(c,vW),1.);return;}
  if(kb.w>1.5){vec2 q=wp*2.;float cr=abs(lnoise(q)-.5),cr2=abs(lnoise(q*2.3+7.)-.5);float line=1.-pwHard(.0,.03,min(cr,cr2*1.3));
   vec3 ic=mix(shal,vec3(.94,.97,1.),.55+.3*pwQ(lnoise(wp*.6),3.,pc));ic*=mix(uShTint*.9,vec3(1.),sh)*(.6+.4*uAmbK);ic=mix(ic,ic*.72,line*.7);
-  vec3 icr=mix(ic,mix(uSkyR,rf.rgb,rf.a*.5),clamp(fr*.6,0.,.5));float isn=lnoise(wp*5.+ts*.02);icr+=uSunCol*(pix>.5?step(.86,lnoise(wp*11.+ts*.05))*step(.62,isn)*.6:pow(max(isn-.6,0.)*2.5,3.)*1.5)*sh;
+  vec3 icr=mix(ic,mix(uSkyR,rf.rgb,rf.a*.5),clamp(fr*.6,0.,.5));float isn=lnoise(wp*5.+ts*.02),isv=pow(max(isn-.6,0.)*2.5,3.)*1.5;icr+=uSunCol*(pix>.5?pwQ(min(isv,1.),3.,pc)+step(.86,lnoise(wp*11.+ts*.05))*step(.62,isn)*.4:isv)*sh;
   o=vec4(fogit(icr,vW),.97);return;}
  /* the shallows let the bed show; murky water never does */
  float a=mix(clamp(ka.x/max(uClar,.05),0.,1.),.94,smoothstep(0.,.8,dep));a=mix(a,.97,kb.y*.6);a=max(a,clamp(foam,0.,1.)*.9);
