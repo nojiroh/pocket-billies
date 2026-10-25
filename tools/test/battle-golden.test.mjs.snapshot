@@ -6099,6 +6099,1856 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
 }
 `;
 
+exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, a pinch heal, damage dealt and taken, XP) 1`] = `
+{
+  "fmt": "single",
+  "kind": "wild",
+  "over": "lose",
+  "turns": 7,
+  "mine": [
+    {
+      "sp": "musk0",
+      "lvl": 10,
+      "hp": 0,
+      "xp": 800,
+      "status": null
+    },
+    {
+      "sp": "gates0",
+      "lvl": 10,
+      "hp": 0,
+      "xp": 800,
+      "status": null
+    },
+    {
+      "sp": "swift1",
+      "lvl": 10,
+      "hp": 0,
+      "xp": 800,
+      "status": null
+    }
+  ],
+  "foes": [
+    {
+      "sp": "swift0",
+      "lvl": 13,
+      "hp": 6,
+      "xp": 1757,
+      "status": null
+    }
+  ],
+  "se": 600,
+  "said": [
+    "playTurnEvents",
+    "playTurnEvents",
+    "playTurnEvents",
+    "playTurnEvents",
+    "playTurnEvents",
+    "playTurnEvents",
+    "playTurnEvents"
+  ],
+  "log": [
+    {
+      "turn": 0,
+      "events": []
+    },
+    {
+      "turn": 1,
+      "events": [
+        {
+          "t": "Emberox used Zip.",
+          "an": {
+            "k": "move",
+            "si": 0,
+            "ti": 1,
+            "mid": "movefast",
+            "dmg": 12,
+            "te": 2,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 33,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 24,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "It’s super effective!",
+          "an": null,
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 33,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 24,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Swiftlet used Character Limit.",
+          "an": {
+            "k": "move",
+            "si": 1,
+            "ti": 0,
+            "mid": "charlimit",
+            "dmg": 18,
+            "te": 1,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 15,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 24,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Emberox’s Leftover Sandwich restored a little HP.",
+          "an": {
+            "k": "heal",
+            "si": 0,
+            "amt": 2
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 17,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 24,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "events": [
+        {
+          "t": "Swiftlet used Mind Pulse.",
+          "an": {
+            "k": "move",
+            "si": 1,
+            "ti": 0,
+            "mid": "pump",
+            "dmg": 9,
+            "te": 1,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 8,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 24,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Emberox used Searing Beam.",
+          "an": {
+            "k": "move",
+            "si": 0,
+            "ti": 1,
+            "mid": "hottake",
+            "dmg": 9,
+            "te": 1,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 8,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 15,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Emberox’s Leftover Sandwich restored a little HP.",
+          "an": {
+            "k": "heal",
+            "si": 0,
+            "amt": 2
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 10,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 15,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        }
+      ]
+    },
+    {
+      "turn": 3,
+      "events": [
+        {
+          "t": "Swiftlet used Mind Pulse.",
+          "an": {
+            "k": "move",
+            "si": 1,
+            "ti": 0,
+            "mid": "pump",
+            "dmg": 25,
+            "te": 1,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 0,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 15,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Emberox fainted.",
+          "an": {
+            "k": "faint",
+            "si": 0
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 0,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 15,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        }
+      ]
+    },
+    {
+      "turn": 4,
+      "events": [
+        {
+          "t": "Emberox, come back.",
+          "an": {
+            "k": "recall",
+            "si": 0
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 10,
+              "hp": 0,
+              "max": 33,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 15,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Go, Kidling!",
+          "an": {
+            "k": "enter",
+            "si": 0
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "gates0",
+              "name": "Kidling",
+              "lvl": 10,
+              "hp": 34,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Grass"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 15,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Swiftlet used Character Limit.",
+          "an": {
+            "k": "move",
+            "si": 1,
+            "ti": 0,
+            "mid": "charlimit",
+            "dmg": 40,
+            "te": 2,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "gates0",
+              "name": "Kidling",
+              "lvl": 10,
+              "hp": 0,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Grass"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 15,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "It’s super effective!",
+          "an": null,
+          "s": [
+            {
+              "k": 0,
+              "sp": "gates0",
+              "name": "Kidling",
+              "lvl": 10,
+              "hp": 0,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Grass"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 15,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Kidling fainted.",
+          "an": {
+            "k": "faint",
+            "si": 0
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "gates0",
+              "name": "Kidling",
+              "lvl": 10,
+              "hp": 0,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Grass"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 15,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        }
+      ]
+    },
+    {
+      "turn": 5,
+      "events": [
+        {
+          "t": "Kidling, come back.",
+          "an": {
+            "k": "recall",
+            "si": 0
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "gates0",
+              "name": "Kidling",
+              "lvl": 10,
+              "hp": 0,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Grass"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 15,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Go, Versewift!",
+          "an": {
+            "k": "enter",
+            "si": 0
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "swift1",
+              "name": "Versewift",
+              "lvl": 10,
+              "hp": 34,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 15,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Swiftlet used Character Limit.",
+          "an": {
+            "k": "move",
+            "si": 1,
+            "ti": 0,
+            "mid": "charlimit",
+            "dmg": 8,
+            "te": 1,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "swift1",
+              "name": "Versewift",
+              "lvl": 10,
+              "hp": 26,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 15,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        }
+      ]
+    },
+    {
+      "turn": 6,
+      "events": [
+        {
+          "t": "Versewift used Mind Pulse.",
+          "an": {
+            "k": "move",
+            "si": 0,
+            "ti": 1,
+            "mid": "pump",
+            "dmg": 2,
+            "te": 0.5,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "swift1",
+              "name": "Versewift",
+              "lvl": 10,
+              "hp": 26,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 13,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "It’s not very effective.",
+          "an": null,
+          "s": [
+            {
+              "k": 0,
+              "sp": "swift1",
+              "name": "Versewift",
+              "lvl": 10,
+              "hp": 26,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 13,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Swiftlet used Wing Strike.",
+          "an": {
+            "k": "move",
+            "si": 1,
+            "ti": 0,
+            "mid": "liftoff",
+            "dmg": 14,
+            "te": 1,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "swift1",
+              "name": "Versewift",
+              "lvl": 10,
+              "hp": 12,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 13,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        }
+      ]
+    },
+    {
+      "turn": 7,
+      "events": [
+        {
+          "t": "Versewift used Wing Strike.",
+          "an": {
+            "k": "move",
+            "si": 0,
+            "ti": 1,
+            "mid": "liftoff",
+            "dmg": 7,
+            "te": 1,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "swift1",
+              "name": "Versewift",
+              "lvl": 10,
+              "hp": 12,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 6,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Swiftlet used Character Limit.",
+          "an": {
+            "k": "move",
+            "si": 1,
+            "ti": 0,
+            "mid": "charlimit",
+            "dmg": 15,
+            "te": 1,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "swift1",
+              "name": "Versewift",
+              "lvl": 10,
+              "hp": 0,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 6,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Versewift fainted.",
+          "an": {
+            "k": "faint",
+            "si": 0
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "swift1",
+              "name": "Versewift",
+              "lvl": 10,
+              "hp": 0,
+              "max": 34,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 13,
+              "hp": 6,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        }
+      ]
+    }
+  ]
+}
+`;
+
 exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`] = `
 {
   "fmt": "alpha",

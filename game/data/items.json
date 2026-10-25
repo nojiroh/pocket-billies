@@ -45,7 +45,7 @@
  "snack_pack": {
   "n": "Snack Pack",
   "price": 800,
-  "d": "Held: once a battle, heals a quarter of its HP at half HP or below.",
+  "d": "Held: once a battle, heals a quarter of its HP at a turn’s end when at half HP or below.",
   "icon": "trailmix",
   "hold": [
    {"kind":"pinchHeal","at":0.5,"share":0.25}
