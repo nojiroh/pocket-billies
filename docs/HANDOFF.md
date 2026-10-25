@@ -61,8 +61,9 @@ RT-4b). Tag `rt-4a-done` for the owner to push.
   - RL-8's shop Perk and the Song fingerprints fail on main too (earlier entries).
   - **MAPGEN_VERSION clash with track/towns** (the merge-coordination session, 2026-10-25): towns uses 9 (TW-2) and 10
     (TW-3); routes uses 9 (RT-2), 10 (RT-3) and now **11 (RT-4a: habitat points, `mapgenHabitats`; its only change)**.
-    The plan the owner approved for the merge: towns keeps 9-10, routes takes the numbers after (RT-2 + RT-3 -> 11,
-    RT-4a -> 12). In the merge, keep both RunWorldData fields (`town?`, `setPieces?`), give rng.test.mjs a fresh pinned
+    The plan the owner approved for the merge: towns keeps 9-10, routes takes the numbers after. In the combined PR
+    #194: RT-2 = 11, RT-3 = 12, RT-4a = 13 (rng.test's pinned hash there 1600371078); RT-4b merges main first and
+    takes 14. In the merge, keep both RunWorldData fields (`town?`, `setPieces?`), give rng.test.mjs a fresh pinned
     hash and regenerate the snapshots (check-data, mapgen-golden, run-start, rng), never hand-merge them.
 - Next: RT-4b (finds at dead ends and pockets, Cut brambles at a pocket's mouth guarding the rarer one or a find,
   animals by layout and set piece). routes-track.md has its shape.
