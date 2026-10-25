@@ -718,6 +718,7 @@ function graftBake(sp, graft) {
 }
 function graftForget(id) {
   for (const k of GRAFT_BAKES.get(id).keys) delete RIG_PARTS_CACHE[k];
+  for (const k of COAT_ATLASES.keys()) if (k.startsWith(`graft:${id}#`)) COAT_ATLASES.delete(k);
   GRAFT_BAKES.delete(id);
 }
 function graftRigParts(sp, view, coat, graft, key) {
