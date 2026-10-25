@@ -31,6 +31,7 @@ import {
   storyHolds,
   toast,
   uiState,
+  wildHabitat,
 } from '../hooks.js';
 import { random } from '../util.js';
 import {
@@ -868,6 +869,11 @@ export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
     no: ++saveData.serial,
     build: rollBuild(rnd),
   };
+  /* RT-4: a run place's Billie waits in its habitat (by its types): by the water, in the woods, else the tall grass */
+  if (L && L.runNode != null) {
+    const hab = wildHabitat(SPECIES[sp].types, RULES.run.wild.habitats);
+    if (hab !== 'grass') q.hab = hab;
+  }
   /* studio track ST-0: a coat, once in its odds (none: never) */
   const coat = coatRoll(COATS, 'wild', rnd) || SPECIES[sp].coat;
   if (coat) q.coat = coat;

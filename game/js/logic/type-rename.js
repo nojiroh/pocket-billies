@@ -52,6 +52,12 @@ export function renameTypeIn(D, from, to) {
   const ride = D.rules.ride;
   if (ride && Array.isArray(ride.types))
     ride.types = ride.types.map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
+  /* RT-4: the habitats' types (rules.json run.wild.habitats); a habitat left with none goes */
+  const hab = D.rules.run && D.rules.run.wild && D.rules.run.wild.habitats;
+  for (const k of Object.keys(hab || {})) {
+    hab[k] = hab[k].map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
+    if (!hab[k].length) delete hab[k];
+  }
   for (const L of Object.values(D.perks || {}))
     for (const f of /** @type {any} */ (L).fx || [])
       if (f.type === from) {

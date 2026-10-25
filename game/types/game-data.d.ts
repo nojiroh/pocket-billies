@@ -995,8 +995,16 @@ export interface Rules {
     /** RL-7: a run node's wild Billies: levels `lv` on the landing's row, `perRow` more on each row after; a node
         walked back to rolls `back` of them again (the hub's stock on a first visit); a waystation (an event or a
         stall: RL-12b) holds `waystation`; RT-2: a run route's first visit holds `route` less its trainers, `routeMin`
-        at least */
-    wild: { lv: [number, number]; perRow: number; back: number; waystation: number; route: number; routeMin: number };
+        at least; RT-4: `habitats`, the types whose Billies wait by the water and in the woods (the rest: tall grass) */
+    wild: {
+      lv: [number, number];
+      perRow: number;
+      back: number;
+      waystation: number;
+      route: number;
+      routeMin: number;
+      habitats?: Record<string, string[]>;
+    };
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;

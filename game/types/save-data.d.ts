@@ -428,6 +428,8 @@ export interface Encounter {
   /** its encounter number (serial) */
   no: number;
   alpha?: boolean;
+  /** RT-4: a run place's habitat it waits in (rules.json run.wild.habitats: water, woods); none is the tall grass */
+  hab?: string;
   /** phase 16: its part sizes, rolled when it appears (rules.js encounterBuild) */
   build?: Build;
 }
