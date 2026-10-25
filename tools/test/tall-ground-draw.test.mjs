@@ -9,6 +9,9 @@ import assert from 'node:assert/strict';
 import { recordingGL } from './walk-renderer.mjs';
 
 const G = globalThis;
+// the conversation box stands in for talk.js (which needs the game data)
+const talkBox = { on: false };
+(await import('../../game/js/hooks.js')).provide({ talkBox });
 const { gpuState, walkView, walkRenderer, rockUniformsFor, drawPlayerSilhouette } = G;
 
 // a camera 20 m back and 15 m up from a player at (10, 0, 30), looking along +z: a plain perspective matrix
@@ -148,6 +151,23 @@ test('silhouette: once the query says something covers you, you are hidden', () 
   drawPlayerSilhouette(C, [me], {});
   assert.equal(walkRenderer.hidT, 0, 'in battle it is dropped');
   walkRenderer.bt = null;
+});
+
+test('silhouette: while you talk, the one you talk to shows too; not once the talk is over', () => {
+  const C = camera();
+  const npc = { ...me, k: 'npc', x: 11, z: 31, n: { who: 'hazel' } };
+  let calls = setup(C);
+  talkBox.on = true;
+  walkRenderer.talkAt = { x: 11, z: 31, t: 0 };
+  drawPlayerSilhouette(C, [me, npc], {});
+  assert.equal(calls.filter(c => c[0] === 'drawArrays').length, 3, 'the query, you, them');
+  const bases = uniform(calls, 'uBase');
+  assert.deepEqual(bases.at(-1), [11, 0, 31], 'the last tint is drawn where they stand');
+  talkBox.on = false;
+  calls = setup(C);
+  drawPlayerSilhouette(C, [me, npc], {});
+  assert.equal(calls.filter(c => c[0] === 'drawArrays').length, 2, 'the query and you');
+  walkRenderer.talkAt = null;
 });
 
 test('no silhouette in battle, indoors or without the player', () => {

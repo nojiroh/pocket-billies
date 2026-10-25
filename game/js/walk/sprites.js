@@ -4,7 +4,7 @@
    items, the title's town rise and tap targets, moved from walk-view-gl.js as they were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { loadingScreen, provide, reducedMotion } from '../hooks.js';
+import { loadingScreen, provide, reducedMotion, talkBox } from '../hooks.js';
 import { clamp } from '../util.js';
 import { pictureFacing } from '../logic/prop-turn.js';
 import { hiddenEase, outlineColour, pictureCovers } from '../logic/occlude.js';
@@ -59,9 +59,11 @@ expose({
   interestPoints: [() => interestPoints, v => (interestPoints = v)],
   landmarkTilt: [() => landmarkTilt, v => (landmarkTilt = v)],
   outlineColourOf: [() => outlineColourOf, v => (outlineColourOf = v)],
+  personWho: [() => personWho, v => (personWho = v)],
   readHideQueries: [() => readHideQueries, v => (readHideQueries = v)],
   spriteDrawn: [() => spriteDrawn],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
+  talkPartner: [() => talkPartner, v => (talkPartner = v)],
   townRiseAmount: [() => townRiseAmount, v => (townRiseAmount = v)],
   useFxProgram: [() => useFxProgram, v => (useFxProgram = v)],
 });
@@ -353,6 +355,23 @@ function easeHidden(on) {
   if (!on) walkRenderer.hidT = 0;
   walkRenderer.hidK = hiddenEase(walkRenderer.hidK || 0, on ? walkRenderer.hidT || 0 : 0, dt);
 }
+/* player visibility: the one you are talking to (walkRenderer.talkAt marks where) shows the same way, in their top's
+   colour, while the conversation is open; it doesn't count toward your hidden amount */
+function talkPartner(items) {
+  const ta = walkRenderer.talkAt;
+  if (!talkBox || !talkBox.on || !ta) return null;
+  let best = null,
+    bd = 1.5;
+  for (const it of items)
+    if ((it.k === 'npc' || it.k === 'folk') && it.im) {
+      const d = Math.hypot(it.x - ta.x, it.z - ta.z);
+      if (d < bd) ((bd = d), (best = it));
+    }
+  return best;
+}
+function personWho(it) {
+  return it.k === 'me' ? 'me' : it.n ? it.n.who : it.f ? 'folk:' + it.f.seed : null;
+}
 export function drawPlayerSilhouette(C, items, X) {
   const sc = walkView.sc;
   if (walkRenderer.bt || !sc || sc.indoor || sc.room || !engineSetting('camera', 'silhouette'))
@@ -375,12 +394,12 @@ export function drawPlayerSilhouette(C, items, X) {
   if (U.uWave) gl.uniform3f(U.uWave, 0, 0, 0);
   gl.uniform4f(U.uGhostV, C.eye[0], C.eye[1], C.eye[2], SILHOUETTE_PULL);
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, T.t);
-  setSpriteUniforms(p, it);
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.GREATER);
   gl.depthMask(false);
   gl.disable(gl.BLEND);
+  gl.bindTexture(gl.TEXTURE_2D, T.t);
+  setSpriteUniforms(p, it);
   /* the query: every pixel of you, nothing drawn; one in flight at a time is plenty */
   if (hideQuery.q.length < 2) {
     const q = gl.createQuery();
@@ -393,11 +412,21 @@ export function drawPlayerSilhouette(C, items, X) {
     hideQuery.q.push(q);
   }
   const ow = +(engineSetting('camera', 'outline') ?? 1) || 0,
-    fill = Math.max(0.001, +(engineSetting('camera', 'outlineFill') ?? 0.25)),
-    tint = ow > 0 ? outlineColourOf('me') : SILHOUETTE_TINT;
+    fill = Math.max(0.001, +(engineSetting('camera', 'outlineFill') ?? 0.25));
   if (U.uGhostE) gl.uniform1f(U.uGhostE, ow);
-  gl.uniform4f(U.uGhost, tint[0], tint[1], tint[2], ow > 0 ? fill : SILHOUETTE_AMOUNT);
-  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  const ghost = who => {
+    const tint = ow > 0 ? outlineColourOf(who) : SILHOUETTE_TINT;
+    gl.uniform4f(U.uGhost, tint[0], tint[1], tint[2], ow > 0 ? fill : SILHOUETTE_AMOUNT);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  };
+  ghost('me');
+  const pt = talkPartner(items),
+    PT = pt && imageTexture(pt.im);
+  if (PT) {
+    gl.bindTexture(gl.TEXTURE_2D, PT.t);
+    setSpriteUniforms(p, pt);
+    ghost(personWho(pt));
+  }
   if (U.uGhostE) gl.uniform1f(U.uGhostE, 0);
   gl.depthFunc(gl.LEQUAL);
   gl.depthMask(true);
