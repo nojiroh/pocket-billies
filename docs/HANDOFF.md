@@ -2,6 +2,41 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Water track WA-1 (lane R) - pixel water - 2026-10-25
+Branch `track/water` (main merged in at the start: nothing new; lanes G's WA-3a and P's WA-6a merged in before each
+push). Plan approved in Plan Mode. Tag to suggest: `wa-1-done` (the owner pushes tags).
+- Changed (one cause a commit):
+  - Settings: `water.pixel` (on), `water.bands` (5), `water.frames` (10) with panel rows; one uniform `uPixW` set by
+    `water-data.js setPixelWaterUniform`. **The shared snippet** `walk-shaders.js PIXEL_WATER_GLSL` (the 32 grid, a
+    world-grid Bayer dither, stepped time, banded tones; the list in water-track.md, WA-1 notes).
+  - The water shader on the 32 texels a metre grid (was 16): a kind's colours in 5 dithered tones between shallow
+    and deep; ripples, rings, foam, caustics, glints, duckweed, whitecaps, the surf's lines, lava's crust and ice's
+    sheen stepped at 10 a second and drawn as hard pixels; a hard foam line one texel wide at the shore (pale scum on
+    murky water); the mirror offset by whole pixels and kept smooth. The swell, the lap and the swash stay smooth.
+  - The ground's shore parts (bed, wet rim in three tones, the sea's swash), the light thrown up on walls and puddles
+    after rain on the grid. Fall sheets in pixel columns, three tones, a hard foot and lip (shape unchanged).
+  - **Models in the reflection (the check): they were missing.** The reflection pass drew props as pictures, and a
+    prop drawn as a model (every game-flow building, the hub's trees) shows none: Copperleaf's moss cottage by the
+    sea had no reflection. They are now drawn as models with the mirrored camera (`drawPropModels`, no shadows).
+  - The graphics bench's Pond station measures `water.pixel` (off, on); docs/graphics-bench.md.
+- Risky: the reflection now draws the near-water models a second time (on a phone by the sea in Copperleaf: 5
+  models); the shore line reads the shore mask 4 more times near the edge. Both are what the bench's Pond station
+  and the owner's phone should price. The model shader's world curve is not turned off in the mirror (the sprites'
+  is): far models could sit a little low in the water on curved maps; nothing seen at the spots checked.
+  `water.pixel` off draws the old look (measured: off vs before differs no more than two before runs do).
+- Verified: lint, typecheck, format, check:modules, `npm test` (942, 0 failures after the merges), `check:smoke`
+  before every commit touching game/ (all passed); look-water before/after at noon and 22.5 (11 shots each,
+  validation/look-water-before*, -after*, not committed; the water's numbers identical, no page errors); close-ups
+  from a pitched-down camera with the blur off (a scratch script) for the pond, ice, lava, the tall fall and
+  Copperleaf's mirror. Not run: the quick-check baseline (WA-8) and the bench's cost (the phone).
+- Pictures: at phone size with the depth of field the change is small (the hard shore line, the falls' columns,
+  finer shorelines); close up the dither, the one-texel foam line and the hard glints show, ice keeps its sheen
+  patches with dithered edges. In test_water's haze the pond's tones read faintly under the sky's reflection.
+- For the other lanes: lane B (WA-7) includes `PIXEL_WATER_GLSL` and calls `setPixelWaterUniform(U)` on its
+  program; read-only. Lane G and lane P: nothing needed for WA-1.
+- Next for lane R: WA-2a (waterfalls drawn, spray and mist on the grid, the flow map). For the owner: look at the
+  water on the phone with Pixel water on and off (Settings, Water), and run the bench's Pond station.
+
 ### Water track WA-3a (lane G) - rivers that run downhill - 2026-10-25
 Branch `track/water` (main merged in at the start: nothing new; lane P's WA-6a and lane R's WA-1 commits merged in
 before each push). Plan approved in Plan Mode; the owner's answers: a river may cross a joined edge and carry on in
