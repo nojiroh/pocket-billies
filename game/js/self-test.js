@@ -65,7 +65,6 @@ import { battleStage, battleStageStop } from './battle-stage.js';
 import {
   GROUND_CACHE,
   PROP_CLOCK,
-  ROOM_BY_USE,
   actionSpot,
   climbEnds,
   findPath,
@@ -2249,8 +2248,8 @@ function selfTestWalkScenes() {
     },
     roomOf = (p, act) => PB_DATA.doorRooms(p, p && P[p.k], act).find(id => sc[id] && sc[id].kind === 'room');
   add(hub);
-  for (const p of (sc[hub] && sc[hub].props) || []) if (ROOM_BY_USE[p.act]) add(roomOf(p, p.act));
-  for (const [, , act] of MAPGEN_HUB_BUILDINGS) if (ROOM_BY_USE[act]) add(roomOf(null, act));
+  for (const p of (sc[hub] && sc[hub].props) || []) if (PB_DATA.opensRoom(p.act)) add(roomOf(p, p.act));
+  for (const [, , act] of MAPGEN_HUB_BUILDINGS) if (PB_DATA.opensRoom(act)) add(roomOf(null, act));
   return out;
 }
 /* the diagnostics' walk: the hub and its busiest room (a run's generated scene is the "A run's road" phase) */

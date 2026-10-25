@@ -16,7 +16,6 @@ import { activeBattle, save, saveData, saveNow, uiState } from './game-state.js'
 import { userFps } from './frame-scheduler.js';
 import { artLoad } from './art.js';
 import {
-  ROOM_BY_USE,
   closedText,
   directionOf,
   doorLinkOf,
@@ -225,7 +224,7 @@ function roomRefresh() {
   walkView.nav = null;
 }
 function roomAim(h) {
-  if (!h || h.k !== 'act' || !ROOM_BY_USE[h.act] || uiState.inside) return;
+  if (!h || h.k !== 'act' || !PB_DATA.opensRoom(h.act) || uiState.inside) return;
   if (typeof isOpenNow === 'function' && !isOpenNow(openingHoursKind(h.act, h.p))) return;
   const q = doorBuildingOf(h.act, h.p),
     id = roomFor(h.act, q);
@@ -601,7 +600,7 @@ export function walkPick(h) {
       ranchOpen();
       return;
     }
-    if (ROOM_BY_USE[a] && enterRoom(a, p)) return;
+    if (PB_DATA.opensRoom(a) && enterRoom(a, p)) return;
     if (a === 'shop') {
       const id = p.shop || here.shop;
       if (id && SHOPS[id]) openShop(id);
@@ -618,6 +617,7 @@ export function walkPick(h) {
             lab: 'The lab is busy with research.',
             house: 'Nobody answers the door.',
             home: 'Nobody answers the door.',
+            enter: 'The door is locked.',
             sign: `You’re in ${here.name}.`,
           }[a] ||
           'Nothing happens.'
