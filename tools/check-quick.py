@@ -1556,7 +1556,7 @@ def terraces_and_floating(P):
 def route_trainers_step(P):
     """The in-game test's route trainers step (its own seed search: a route with a pair; every trainer on its spot,
     the wild stock less them, the pair a double leaving one pick). Then, out of the self-test (route sight is off while
-    it runs), the same run on a copy of the save: stood 3 m in front of the pair, it sees you ("!"), walks up, each of
+    it runs), the same run on a copy of the save, walking (as landed): stood 3 m in front of the pair, it sees you ("!"), walks up, each of
     the two says its line under its own class's name, and the double battle starts. The hub's save is put back after"""
     pg = P.pg
     if not pg.evaluate("typeof routeSight!=='undefined'&&typeof runWorldSync==='function'"): return 'not in this build'
@@ -1569,7 +1569,7 @@ def route_trainers_step(P):
         found = pg.evaluate("""(()=>{const s=JSON.parse(JSON.stringify(saveData)),data=runWorldData();if(s.run)runRestore(s);
           for(let k=0;k<40;k++){const t=JSON.parse(JSON.stringify(s)),seed='SELFTESTRT'+k;runStartOn(t,runStartPlan(seed,{...data,unlockData:UNLOCK_DATA},{unlocks:[]}));
             const p=Object.values(runRouteTrainers(t.run,{classes:EVENTS.classes,species:SPECIES,rules:RULES.run})).find(T=>T.mate&&!(t.run.map.nodes[T.runNode]||{}).side);
-            if(p){runStartOn(s,runStartPlan(seed,{...data,unlockData:UNLOCK_DATA},{unlocks:[]}));runArrive(s,0,data);s.visited[s.trip.node]=1;s.team.forEach(m=>{m.hp=maxHp(m);m.status=null});
+            if(p){runStartOn(s,runStartPlan(seed,{...data,unlockData:UNLOCK_DATA},{unlocks:[]}));runArrive(s,0,data);s.visited[s.trip.node]=1;s.run.at.phase='walk';s.team.forEach(m=>{m.hp=maxHp(m);m.status=null});
               uiState.inside=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';setSaveData(s);const n=runWorldNode(p.runNode);
               if(!runJump(n))return null;uiState.roam=null;render();return [n,p.id]}}return null})()""")
         if not found: raise Exception('no seed of the first 40 has a route with a pair to walk to')
@@ -1577,7 +1577,7 @@ def route_trainers_step(P):
         if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n}].mapId+'*'&&!!walkView.npcAt['{tid}']&&!!walkView.npcAt['{tid}~b']", 120): raise Exception('the route with the pair isn’t shown, or the pair isn’t on it')
         pg.evaluate(f"""(()=>{{const a=walkView.npcAt['{tid}'],l=walkView.npcLook['{tid}'],fx=l[0]-a[0],fz=l[1]-a[1],d=Math.hypot(fx,fz)||1;
           walkView.pl.route=null;walkView.pl.goal=null;walkView.pl.x=a[0]+fx/d*3;walkView.pl.z=a[1]+fz/d*3}})();0""")
-        if not until(pg, f"routeSight.busy==='{tid}'&&!!walkView.spotted['{tid}']", 30): raise Exception(f'stood in front of the pair, it never saw you ({pg.evaluate("routeSight.busy")})')
+        if not until(pg, f"routeSight.busy==='{tid}'&&!!walkView.spotted['{tid}']", 30): raise Exception(f'stood in front of the pair, it never saw you ({pg.evaluate(f"JSON.stringify({{busy:routeSight.busy,phase:saveData.run.at.phase,tab:uiState.tab,modal:uiState.modal&&(uiState.modal.title||uiState.modal.cls||1),talk:talkBox.on,ready:walkView.ready,dir:!!walkView.director,pl:[walkView.pl.x,walkView.pl.z],at:walkView.npcAt['{tid}'],look:walkView.npcLook['{tid}']}})")})')
         names = []
         for _ in range(120):
             st = pg.evaluate("[!!activeBattle,talkBox.on?document.querySelector('#talk .talk-who').textContent:'']")

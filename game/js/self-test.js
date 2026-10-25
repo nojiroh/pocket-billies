@@ -1268,7 +1268,7 @@ async function runFullTest(mode) {
             const stock = encounterStock(n);
             if (stock !== Math.max(RULES.run.wild.routeMin, RULES.run.wild.route - count))
               throw new Error(`the route holds ${stock} wild Billies with ${count} trainers`);
-            const picks = saveData.run.enc.rewardN;
+            const picks = (saveData.run.enc && saveData.run.enc.rewardN) || 0;
             startTrainer(P.id, { talked: true });
             if (!activeBattle || activeBattle.fmt !== 'double') throw new Error('the pair didn’t start a double');
             stopTimers();
@@ -1276,7 +1276,8 @@ async function runFullTest(mode) {
             endBattle();
             if (!(await wait(() => !activeBattle && saveData.flags[P.id], 15000)))
               throw new Error('the pair’s battle didn’t end');
-            if (saveData.run.enc.rewardN !== picks + 1) throw new Error('the pair left no reward pick (or two)');
+            if (((saveData.run.enc && saveData.run.enc.rewardN) || 0) !== picks + 1)
+              throw new Error('the pair left no reward pick (or two)');
             return `${seed}: ${LOCATIONS[n].name}, ${count} trainers (${here.map(T => T.route.spot + (T.route.opt ? '?' : '') + (T.mate ? '+2' : '')).join(', ')}), ${stock} wild; the pair a double, one pick`;
           } finally {
             if (activeBattle) {
