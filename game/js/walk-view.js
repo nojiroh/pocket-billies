@@ -62,7 +62,7 @@ import {
 import { clamp } from './util.js';
 import { pointInProp, turnedBounds, turnedPoint } from './logic/prop-turn.js';
 import { roomDoorPush, roomToLocal } from './logic/room-turn.js';
-import { WADE_COST, wadeDepthAt, wadeHere, wadeSpeed, wadeWalkable } from './logic/wading.js';
+import { WADE_COST, wadeDepthAt, wadeHere, wadeKindAt, wadeSpeed, wadeWalkable } from './logic/wading.js';
 import { fieldMoveText } from './logic/run-side.js';
 import { SURF_COST, SURF_SPEED, climbAt, fallDir, fallTop, surfCan, surfable } from './logic/surf.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
@@ -251,6 +251,7 @@ expose({
   updatePlayerHeight: [() => updatePlayerHeight, v => (updatePlayerHeight = v)],
   valueNoise2d: [() => valueNoise2d, v => (valueNoise2d = v)],
   wadeDepthHere: [() => wadeDepthHere, v => (wadeDepthHere = v)],
+  wadeSpeedHere: [() => wadeSpeedHere, v => (wadeSpeedHere = v)],
   walkData: [() => walkData, v => setWalkData(v)],
   walkTo: [() => walkTo, v => (walkTo = v)],
   walkView: [() => walkView],
@@ -3006,6 +3007,12 @@ export function wadeDepthHere(x, z) {
   if (c >= 0 && walkView.nav.dry[c]) return 0;
   return wadeDepthAt(sc, x, z);
 }
+/** WA-5a: your speed at (x, z) as a share of walking on land: the shallows' depth and their kind (the marsh and the
+ * bog slow you more, logic/water-kinds.js) */
+function wadeSpeedHere(x, z) {
+  const d = wadeDepthHere(x, z);
+  return d > 0 ? wadeSpeed(d, wadeKindAt(walkView.sc, x, z)) : 1;
+}
 /** WA-6b: the team's Billies still standing, as fieldMoveState reads them (their names and types) */
 function surfTeam() {
   return (saveData.team || [])
@@ -3711,7 +3718,7 @@ function movePlayer(st, dt) {
         dt *
         run *
         slopeSpeedFactor(P.x, P.z, wx / l, wz / l) *
-        wadeSpeed(wadeDepthHere(P.x, P.z)) *
+        wadeSpeedHere(P.x, P.z) *
         (P.surf ? SURF_SPEED : 1);
       /* WA-6b: with Surf you ride out onto deep water; at a climbable fall's foot, pushing up it asks to climb */
       const deep = surfOn();
@@ -3748,7 +3755,7 @@ function movePlayer(st, dt) {
         (K.run || alwaysRun() ? RUN_FACTOR : 1) *
         dt *
         slopeSpeedFactor(P.x, P.z, (tg0[0] - P.x) / d0, (tg0[1] - P.z) / d0) *
-        wadeSpeed(wadeDepthHere(P.x, P.z)) *
+        wadeSpeedHere(P.x, P.z) *
         (P.surf ? SURF_SPEED : 1);
       while (left > 0 && P.route) {
         const tg = P.route[P.ri],

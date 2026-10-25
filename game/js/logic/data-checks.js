@@ -15,6 +15,7 @@ import { lineSpeciesIds } from './forms.js';
 import { CLIMATE_WEATHER_ODDS } from './weather.js';
 import { uiThemeContrast } from './ui-theme.js';
 import { RUN_MARK_TYPES } from './run-marks.js';
+import { waterKindKnown } from './water-kinds.js';
 import { wadeWalkable } from './wading.js';
 import { runRegionData, runRegionMake } from './run-region.js';
 import { runMapMake, runMapRows, runMapRowsFit } from './run-map.js';
@@ -1510,6 +1511,8 @@ export function dataSceneFindings(D, roadOf) {
       if (a.x < 0 || a.z < 0 || a.x > s.w || a.z > s.h)
         warn(`Scene ${s.name || k}: arch ${n + 1} is off the map.`, 'scenes', g);
     });
+    if (s.waterKind && !waterKindKnown(s.waterKind))
+      warn(`Scene ${s.name || k}: its water kind “${s.waterKind}” is unknown (logic/water-kinds.js).`, 'scenes', g);
     (s.waters || []).forEach((r, n) => {
       let wet = false;
       for (let z = Math.floor(r.z); z < r.z + r.h && !wet; z++)
@@ -1521,8 +1524,8 @@ export function dataSceneFindings(D, roadOf) {
           }
         }
       if (!wet) warn(`Scene ${s.name || k}: water rectangle ${n + 1} (${r.k}) covers no water.`, 'scenes', g);
-      /* the kinds walk/water-data.js WATER_KIND_LOOKS draws (water track WA-0: sea, lava and ice were missing) */
-      if (!['pond', 'stream', 'canal', 'spring', 'swamp', 'lake', 'sea', 'lava', 'ice'].includes(r.k))
+      /* the water kinds (logic/water-kinds.js; WA-0: sea, lava and ice were missing; WA-5a: six appended) */
+      if (!waterKindKnown(r.k))
         warn(`Scene ${s.name || k}: water rectangle ${n + 1} has an unknown kind “${r.k}”.`, 'scenes', g);
     });
     /* water track WA-2b: a waterfall's entry (water-track.md's contract): on the map, falling a unit way, its lip on water */
