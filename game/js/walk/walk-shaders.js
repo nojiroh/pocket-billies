@@ -310,6 +310,11 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
    float fr=max(pwHard(.6,.66,rk*(.62+.5*sw+.15*uTide.y)+(r1-.5)*.4),step(abs(fract(rk*2.2+ts*.45)-.5),.06)*step(.25,rk)*(.4+.6*sw)*step(.35,lnoise(wp*3.1+ts*.2)))*seaK*min(1.,uFoam*2.5);
    c=mix(c,vec3(.95,.98,1.)*(.8+.2*sh),clamp(fr,0.,.9));foam=max(foam,fr);}}
  float n3=lnoise(w*9.+vec2(ts*1.3,-ts*.9))*lnoise(w*7.3-vec2(ts*.8,ts*1.1));if(fl2)n3=mix(n3,lnoise(w2*9.+vec2(ts*1.3,-ts*.9))*lnoise(w2*7.3-vec2(ts*.8,ts*1.1)),fbw);float gl=(pix>.5?step(.78,n3)*.6:pow(max(n3-.55,0.)*2.2,3.)*2.2)*uGlint*(1.-kb.y);c+=uSunCol*gl*sh;
+ /* water track WA-4: the sun's path on the open sea, and by night the moon's (the light's direction then): the swell's facets that mirror it, a soft smooth glow under
+    hard sparkling pixels that come and go in steps, kept bright enough at night to read */
+ if(pix>.5&&K==6&&uSunDir.y>.02){vec2 sq=wp*.9;vec3 sn=normalize(vec3((r1-.5)*.36+(lnoise(sq+vec2(t*.11,0.))-.5)*.3,1.,(r2-.5)*.36+(lnoise(sq.yx*1.1-vec2(0.,t*.09))-.5)*.3));
+  float al=max(dot(reflect(-v,sn),uSunDir),0.),lum=dot(uSunCol,vec3(.3,.59,.11));vec3 pcol=uSunCol/max(lum,.05)*min(1.2,lum*1.6+.45);
+  float spk=step(.993,al)*step(.45,lnoise(wp*13.+vec2(ts*2.3,-ts*1.7)))+step(.998,al);c+=pcol*(pow(al,160.)*.4+min(spk,1.)*.75)*(.4+.6*sh)*(1.-reef*.6)*(1.-calm);}
  /* v24: lava glows under a cracked dark crust that drifts with the flow; ice is white-blue with cracks and a sheen */
  if(kb.w>.5&&kb.w<1.5){vec2 q=wp*1.3-vF*ts*.5;float n1=lnoise(q*1.7+vec2(ts*.05,0.)),n2=lnoise(q*4.1-vec2(0.,ts*.07));float crust=pwQ(smoothstep(.45,.62,n1*.7+n2*.3),3.,pc);
   vec3 hot=mix(vec3(1.,.42,.08),vec3(1.,.82,.35),pwQ(smoothstep(.55,.2,n1),3.,pc))*(1.6+.5*sin(ts*2.+n2*6.));c=mix(hot*1.3,vec3(.16,.1,.1)*(.6+.4*sh)*(.55+.45*uAmbK),crust*.85);
