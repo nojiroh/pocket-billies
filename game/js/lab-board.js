@@ -71,7 +71,7 @@ const LAB_WHY = {
   unknown: 'Gone',
 };
 /** where a building's rows are bought, for its section */
-const LAB_WHERE = { station: 'at Skyline Station', ranch: 'at the ranch' };
+const LAB_WHERE = { station: 'at Skyline Station', ranch: 'at the ranch', genebank: 'at the Gene Bank' };
 /** a price: "60 Research", "1 Crest" @param {number} n @param {string | null} c */
 function labPrice(n, c) {
   const C = (c && CURRENCIES[c]) || { name: c || '', one: c || '' };

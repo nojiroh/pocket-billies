@@ -156,6 +156,8 @@ const pairs = [
      their rooms and names); the Workshop's, the Gene Bank's, the station's, the lighthouse's and the windmill's plots
      wait for their models (HB-5, HB-7) */
   ...['inn', 'library'].filter(k => plotOf(k)).map(k => [{ k, x: 0, z: 0 }, plotOf(k)]),
+  /* SP-4: the Gene Bank (HB-5's model and room) on its plot; its door and console open the splice screen (act genebank) */
+  ...(plotOf('genebank') ? [[{ k: 'gene_bank', x: 0, z: 0, act: 'genebank', label: 'Gene Bank' }, plotOf('genebank')]] : []),
   ...oldCottages.map((B, i) => [B, townHouses[i]]),
   /* the new cottages: the two kinds and their looks taken in turn */
   ...[...townHouses.slice(oldCottages.length), ...otherHouses].map((L, i) => [

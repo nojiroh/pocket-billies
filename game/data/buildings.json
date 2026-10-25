@@ -23,6 +23,7 @@
  "genebank": {
   "name": "Gene Bank",
   "currency": "dna",
+  "act": "genebank",
   "levels": 3,
   "about": "A vault of Genes. Sequence a Billie's parts into the library, then splice them on for DNA. Each level splices more slots, more steadily."
  },

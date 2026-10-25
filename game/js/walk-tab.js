@@ -210,6 +210,7 @@ function walkSheetHTML() {
 const HUB_MARKS = [
   ['ranch', 'Ranch', 'Train and breed your Billies'],
   ['lab', 'Hazel’s lab', 'Talk to the professor'],
+  ['genebank', 'Gene Bank', 'Splice Genes onto your Billies'],
 ];
 /** in the hub: start a run (the mast's sheet, opened here), and the ranch and the lab, marked in the world to walk to */
 function hubHTML() {

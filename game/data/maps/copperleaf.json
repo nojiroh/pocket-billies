@@ -1169,6 +1169,7 @@
   {"k":"shop","x":138.02,"z":84.03,"label":"General store","rot":90},
   {"k":"inn","x":130.72,"z":94.9,"rot":90},
   {"k":"library","x":131.14,"z":70.45,"rot":90},
+  {"k":"gene_bank","x":117.8,"z":107.31,"act":"genebank","label":"Gene Bank","rot":90},
   {"k":"cottage_moss","x":136.15,"z":60.49,"act":"house","rot":90},
   {"k":"cottage_solar","x":152.76,"z":90.33,"act":"house","v":1,"rot":90},
   {"k":"flowerpot","x":152.38,"z":92.75,"s":1.05,"f":1,"rot":89},
