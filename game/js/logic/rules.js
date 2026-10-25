@@ -38,6 +38,7 @@ import {
   EGGS,
   EGG_TIERS,
   FIELD_MOVES,
+  GENES,
   ITEMS,
   LINE_BY_ID,
   LOCATIONS,
@@ -58,6 +59,7 @@ import {
 import { rngFn } from './rng.js';
 import { wildOddsBy } from './weather.js';
 import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
+import { graftFit } from './genes.js';
 import {
   ROBOT_LIMBS,
   ROBOT_SLOTS,
@@ -87,6 +89,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   autoSlot: [() => autoSlot, v => (autoSlot = v)],
   billyBuild: [() => billyBuild],
+  billyGraft: [() => billyGraft],
   billyName: [() => billyName],
   billyWeight: [() => billyWeight],
   // @ts-expect-error -- replaced on purpose
@@ -140,6 +143,7 @@ expose({
   gateOwner: [() => gateOwner, v => (gateOwner = v)],
   // @ts-expect-error -- replaced on purpose
   gateText: [() => gateText, v => (gateText = v)],
+  geneData: [() => geneData],
   // @ts-expect-error -- replaced on purpose
   hatchEgg: [() => hatchEgg, v => (hatchEgg = v)],
   hatchable: [() => hatchable],
@@ -313,6 +317,17 @@ export const isPrime = b => partsPrime(RULES.parts, b);
 export const buildWeightRatio = b => partsWeightRatio(RULES.parts, b);
 /** @returns {number} a Billie's weight in kg (its species' weight times its build) */
 export const billyWeight = m => Math.round(speciesOf(m).wt * buildWeightRatio(billyBuild(m)) * 10) / 10;
+/* SP-2: the game's data for logic/genes.js @returns {import('./genes.js').GeneData} */
+export const geneData = () => ({
+  kitBuilds: gameData.kitBuilds || { forms: [] },
+  partKits: /** @type {import('../../types/game-data').PartKits} */ (gameData.partKits),
+  genes: GENES,
+  species: SPECIES,
+  parts: RULES.parts,
+});
+/** SP-2: a Billie's (or an encounter's) splice, the slots that still fit it; null for none or a robot
+ * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m */
+export const billyGraft = m => (m && m.graft && m.kind !== 'robot' ? graftFit(geneData(), m.sp, m.graft) : null);
 /** @param {Build} b @param {string} k a stat id @returns {number} what the build does to that stat (1 = nothing) */
 export const buildStatFactor = (b, k) => partsStatFactor(RULES.parts, b, k);
 /** @param {Build} b phase 06: which way the build leans (attack, speed, lean, off, prime), for the Build tab */

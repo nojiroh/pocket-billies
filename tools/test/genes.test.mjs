@@ -2,7 +2,7 @@
 // weight, dominant type, traits and Unstable, and a grafted Billie in the save.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { data, GAME_DATA, modules } from './setup-real.mjs';
+import { data, fn, GAME_DATA, modules, startedSave } from './setup-real.mjs';
 
 const C = modules['data-checks'];
 
@@ -135,4 +135,32 @@ test('genes: Unstable picks two different stats from the Billie and its splice, 
     ['a', 'b', 'c', 'd', 'e', 'f'].map(uid => JSON.stringify(N.graftUnstable(D, { ...m, uid }, STATS)))
   );
   assert.ok(many.size > 1, 'another Billie can come out another way');
+});
+
+test('genes: a splice is saved with its Billie; saveFill trims what no longer fits; billiesOk refuses a bad shape', () => {
+  const { billiesOk } = modules.saves,
+    fill = s => fn('saveFill')(JSON.parse(JSON.stringify(s))),
+    s = startedSave('swift0', 10);
+  s.team[0].graft = { front: 'musk3', sig: 'zuck2' };
+  assert.deepEqual(fill(s).team[0].graft, { front: 'musk3', sig: 'zuck2' }, 'kept through a save and load');
+  s.team[0].graft = { front: 'musk3', back: 'trump0', head: 'musk0', sig: 'nobody' };
+  assert.deepEqual(fill(s).team[0].graft, { front: 'musk3' }, 'the slots that fit stay');
+  s.team[0].graft = { back: 'trump0' };
+  assert.equal('graft' in fill(s).team[0], false, 'nothing fits: gone');
+  /* past what Stability ever allows: gone */
+  const S = data.GENES.stability,
+    was = S.refuse;
+  S.refuse = 0;
+  try {
+    s.team[0].graft = { front: 'musk3', back: 'musk3', sig: 'zuck2' };
+    assert.equal('graft' in fill(s).team[0], false);
+  } finally {
+    S.refuse = was;
+  }
+  const m = fn('makeBilly')('swift0', 5);
+  assert.equal(billiesOk([{ ...m, graft: { front: 'musk3' } }]), true);
+  assert.equal(billiesOk([{ ...m, graft: 'front=musk3' }]), false);
+  assert.equal(billiesOk([{ ...m, graft: { front: 7 } }]), false);
+  assert.equal(billiesOk([{ ...m, graft: { front: 'x'.repeat(41) } }]), false);
+  assert.equal(billiesOk([{ ...m, graft: ['musk3'] }]), false);
 });

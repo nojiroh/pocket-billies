@@ -24,8 +24,9 @@ import {
   UNLOCK_DATA,
   hubRoadCost,
 } from '../game-data.js';
+import { graftStability } from './genes.js';
 import { isRobot, robotGemDef, robotPartDef, robotRules, speciesOf } from './fighters.js';
-import { cleanName, movesAt, refreshRobot, teamSize } from './rules.js';
+import { billyGraft, cleanName, geneData, movesAt, refreshRobot, teamSize } from './rules.js';
 import { metaFill, newMeta, validMeta } from './meta-state.js';
 import { newRanch, ranchFill, validRanch } from './ranch-state.js';
 import { ranchTidy } from './ranch.js';
@@ -37,6 +38,10 @@ expose({
   SAVE_VERSION: [() => SAVE_VERSION],
   // @ts-expect-error -- replaced on purpose
   billiesOk: [() => billiesOk, v => (billiesOk = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftShapeOk: [() => graftShapeOk, v => (graftShapeOk = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftTidy: [() => graftTidy, v => (graftTidy = v)],
   // @ts-expect-error -- replaced on purpose
   loadSave: [() => loadSave, v => (loadSave = v)],
   // @ts-expect-error -- replaced on purpose
@@ -154,6 +159,8 @@ export function saveFill(o) {
     if (m.mut && m.mut.name != null) m.mut.name = cleanName(m.mut.name, 24) || speciesOf(m).name;
     /* RL-12c: a held item the data no longer has as one is dropped */
     if (m.held != null && !(ITEMS[m.held] && ITEMS[m.held].hold)) delete m.held;
+    /* SP-2: a splice keeps the slots that still fit; one with none left, or past what Stability ever allows, goes */
+    graftTidy(m);
   });
   if (s.avatar && typeof s.avatar === 'object' && 'name' in s.avatar)
     s.avatar.name = cleanName(s.avatar.name, 18) || 'Trainer';
@@ -164,7 +171,10 @@ export function saveFill(o) {
   for (const key of ['seen', 'caught'])
     if (s[key] && typeof s[key] === 'object') for (const id of Object.keys(s[key])) if (!SPECIES[id]) delete s[key][id];
   if (!s.wild || typeof s.wild !== 'object') s.wild = {};
-  for (const w of Object.values(s.wild)) w.list = (w.list || []).filter(q => SPECIES[q.sp]);
+  for (const w of Object.values(s.wild)) {
+    w.list = (w.list || []).filter(q => SPECIES[q.sp]);
+    w.list.forEach(graftTidy);
+  }
   s.eggs = s.eggs.filter(e => EGGS[e.tier]);
   /* RL-9: a trainee whose Billie isn't in storage any more stops training */
   ranchTidy(s);
@@ -258,7 +268,7 @@ export function validSave(o) {
         !num(w.at, 0, 1e13) ||
         !Array.isArray(w.list) ||
         w.list.length > 12 ||
-        w.list.some(q => !q || !SPECIES[q.sp] || !num(q.lvl, 1, 100))
+        w.list.some(q => !q || !SPECIES[q.sp] || !num(q.lvl, 1, 100) || !graftShapeOk(q.graft))
     )
   )
     return false;
@@ -273,6 +283,21 @@ export function validSave(o) {
     return false;
   if (!num(o.serial, 0, 1e12)) return false;
   return true;
+}
+/** SP-2: a splice as a save holds it: none, or a few slot -> donor rig pairs of short strings @param {unknown} g */
+export function graftShapeOk(g) {
+  if (g == null) return true;
+  if (typeof g !== 'object' || Array.isArray(g) || Object.hasOwn(g, '__proto__')) return false;
+  const pairs = Object.entries(g);
+  return pairs.length <= 8 && pairs.every(([k, v]) => k.length <= 12 && typeof v === 'string' && v.length <= 40);
+}
+/** SP-2: a loaded Billie's or encounter's splice: the slots that still fit it; none left, or a splice past what
+ * Stability allows at the default limit, and it goes @param {{ sp: string, graft?: Record<string, string> }} m */
+export function graftTidy(m) {
+  if (m.graft == null) return;
+  const g = billyGraft(m);
+  if (!g || graftStability(geneData(), m.sp, g).refused) delete m.graft;
+  else m.graft = g;
 }
 /** a list of Billies a save holds: each one well formed, no uid twice */
 export function billiesOk(list) {
@@ -306,6 +331,8 @@ export function billiesOk(list) {
     if (typeof (m.nick || '') !== 'string' || (m.status != null && !STATUS_NAMES[m.status])) return false;
   /* RL-12c: a held item is an item id (saveFill drops one the data doesn't have) */
   for (const m of list) if (m.held != null && (typeof m.held !== 'string' || m.held.length > 40)) return false;
+  /* SP-2: a splice is a few slot -> donor pairs (saveFill drops what the data no longer fits) */
+  for (const m of list) if (!graftShapeOk(m.graft)) return false;
   /* RL-10: a bred Billie's mark: a quirk, or an abomination with a short name and two different stats */
   for (const m of list) {
     const u = m.mut;

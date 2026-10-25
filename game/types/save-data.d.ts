@@ -378,6 +378,8 @@ export interface Billy {
   mut?: BillieMut;
   /** RL-12c: the item it holds (an items.json id with `hold`), or none; a run's held items go back to the bag at its end */
   held?: string;
+  /** SP-2: its splice, slot (rules.json parts.slots) -> donor rig (kitBuilds.json); missing for a Billie with none */
+  graft?: Record<string, string>;
   /** phase 17: 'robot' for a robot (sp is then made from its parts: logic/fighters.js robotSp); missing for a Billie */
   kind?: 'robot';
   /** phase 17: a robot's gem (a key of robots.json gems): the gem is the robot, its level and XP */
@@ -432,6 +434,8 @@ export interface Encounter {
   alpha?: boolean;
   /** phase 16: its part sizes, rolled when it appears (rules.js encounterBuild) */
   build?: Build;
+  /** SP-2: its splice, as a Billie's (Billy.graft) */
+  graft?: Record<string, string>;
 }
 
 /** an egg (game-state.js addEgg) */
