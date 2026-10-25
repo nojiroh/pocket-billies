@@ -480,6 +480,8 @@ export interface RegionTheme {
   types: Record<string, number>;
   ends?: string[];
   nouns?: string[];
+  /** HB-7: its sky train from Skyline Station: the prop (scenery.json, group sky_train) and its name */
+  train?: { k: string; name: string };
 }
 
 /** RL-R1: regions.json, what a run's region is made from (logic/run-region.js runRegionMake) */

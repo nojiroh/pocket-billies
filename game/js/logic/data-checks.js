@@ -692,6 +692,10 @@ export function dataRegions(D, valid = () => true) {
       }
     for (const t of Object.keys(T.types))
       if (!types.has(t)) problem('regions.json', `themes.${k}.types: no type "${t}"`);
+    /* HB-7: its sky train is a train prop */
+    const P = T.train && ((D.scenery && D.scenery.props) || {})[T.train.k];
+    if (T.train && (!P || P.group !== 'sky_train'))
+      problem('regions.json', `themes.${k}.train: "${T.train.k}" is not a sky train (scenery.json, group sky_train)`);
   }
   for (const f of ['rows', 'dex'])
     if (R[f][0] > R[f][1]) problem('regions.json', `${f}: the fewest (${R[f][0]}) is more than the most (${R[f][1]})`);

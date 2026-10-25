@@ -168,3 +168,10 @@ test("the world map: each zone's places stand in a region of their own, with the
     assert.ok(look.regions.starter, `${seed}: the starter region stays (between the zones)`);
   }
 });
+
+test('HB-7: every region theme has its own sky train, a train prop', () => {
+  const props = RAW.scenery.props,
+    trains = Object.values(RAW.regions.themes).map(T => T.train && T.train.k);
+  for (const k of trains) assert.equal(props[k] && props[k].group, 'sky_train', `${k} is not a sky train`);
+  assert.equal(new Set(trains).size, trains.length, 'two themes share a train');
+});
