@@ -9,12 +9,16 @@ expose({ RING_AT_GLSL: [() => RING_AT_GLSL], ROCK_GLSL: [() => ROCK_GLSL], WALK_
 /* to-module: end */
 /* ---------- shaders ---------- */
 /* terrain TR-3: rock between the camera and you thins out: a spot nearer the camera than you, half a metre above your
-   feet, in a soft circle round you on screen, is dropped by a dither (draw-common.js setRockUniforms sets these) */
+   feet, in a soft circle round you on screen, is dropped by a dither (draw-common.js setRockUniforms sets these).
+   Player visibility: its dither is the fades' pattern moved by (2, 1) pixels, so a picture that is both faded (it
+   keeps the low cells) and in the circle (it drops the low cells) always keeps a few pixels: at least 2 in 16 for any
+   fade from 0.1 and circle up to 0.85. With the same pattern the two together dropped every pixel, the silhouette's
+   occlusion query saw nothing in front of you and the circle went off again */
 export const ROCK_GLSL = `uniform mat4 uVP;uniform vec3 uPlC;uniform vec4 uRock;uniform float uAspect;
 float rockBay(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
 float rockCut(vec3 w){if(uRock.y<=0.||w.y<uRock.x+.5)return 0.;vec4 c=uVP*vec4(w,1.);if(c.w>=uPlC.z-.6)return 0.;vec2 nd=c.xy/c.w;
  return (1.-smoothstep(uRock.y*.55,uRock.y,length((nd-uPlC.xy)*vec2(uAspect,1.))))*uRock.z;}
-bool rockHides(vec3 w){return rockBay(gl_FragCoord.xy)<rockCut(w);}
+bool rockHides(vec3 w){return rockBay(gl_FragCoord.xy+vec2(2.,1.))<rockCut(w);}
 `;
 /* v46: the near ring lookup, shared by the ground and the grass (their uniforms: uRingC, uRingBox, uCanvas) */
 const RING_AT_GLSL = `float ringAt(vec2 cc,out vec2 ruv){ruv=vec2(0.);if(uCanvas.z<.5)return 0.;vec2 ch=floor(cc/16.),s=mod(ch,4.);int si=int(s.x+.5)+int(s.y+.5)*4;vec2 h=uRingC[si];if(abs(h.x-ch.x)>.5||abs(h.y-ch.y)>.5)return 0.;
