@@ -274,6 +274,23 @@ their plots, the other new plots bare pads; a 12 m square; at least 8 cottages. 
   low-poly models (32 px/m) for the Workshop, the Gene Bank, the lighthouse and the windmill (turning sails).
   Rooms: which get one (ask: rec the store, inn, library, Workshop; the Gene Bank waits for the splicing track).
 
+**Done in HB-5, the art half** (2026-10-25, on `art/hub-buildings` at the owner's word). Answers: all five new
+buildings get a room (the Gene Bank too); their doors open with a new act `enter` (the room set on the building or its
+kind); the Gene Bank is a solarpunk lab-vault. Checked against the code:
+- The cottages' `v` did nothing because no model building had catalogue `variants` (barn aside); the roof layers were
+  missing too. Now: `roof: 1` on the cottages' roofs, `roof: 2` on their moss tufts (hidden under another roof style),
+  colour-swap variants on the cottages, the coloured houses and the townhouses (tools/add-building-variants.py).
+- A door opens a room only through its act (`ROOM_BY_USE`): the General store has no act at all, so it is not just
+  closed. `enter` was added (data-files.js `opensRoom`). The store's stock (shops.json is `{}`) and its `act: 'shop'`
+  on Copperleaf wait for the placing half.
+- `lighthouse` and `windmill` were already catalogue keys (old pictures, legacy maps only): the models are swapped in
+  under them. New keys: `workshop`, `gene_bank`. Rooms: int_inn and int_library back from legacy, int_workshop and
+  int_gene_bank new.
+- Rooms open only in a seamless world (`roomLayIn` needs the place's parts): the showcase map (test_hub_buildings)
+  shows the buildings, the walk-ins are checked on Copperleaf (tools/look-hub-buildings.py).
+- Left for the placing half: place them on the HB-4b island (doors on quarter turns), the store's act and stock, the
+  Gene Bank's place (splicing track's Ask me before).
+
 ### HB-6 Natural fence
 - The line follows the zone with gentle bends (a light smoothing, not Douglas-Peucker to straight sides); rails cut
   to fit each span (a stretched or shortened rail, never overlapping); posts with a small seeded lean and turn; each

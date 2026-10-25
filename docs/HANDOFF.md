@@ -2,6 +2,51 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Hub track HB-5, the art half - Building variety - 2026-10-25
+Branch `art/hub-buildings` (the owner named it for this session; the plan file says `track/hub`). Plan approved in Plan
+Mode. The owner's answers: all five new buildings get a room (Ask me before 3: the Gene Bank too); their doors open
+with a new act `enter`; from PR #193 only the plan file and tools/look-decals.py come in; the Gene Bank is a solarpunk
+lab-vault. Not this session: placing them on Copperleaf (the placing half, after HB-4b). No tag: `hb-5-done` waits for
+the placing half.
+- What differed from the plan's facts (in the code): `variants` is a scenery.json key, never a model one, and no model
+  building had any (barn aside); the cottages' roofs had no `roof: 1` either. The General store has no act at all (not
+  just closed): a door opens a room only through its act. `lighthouse` and `windmill` were already catalogue keys (old
+  pictures on legacy maps). Low-poly glass is opaque, so the Gene Bank's helix stands in an open frame on the roof,
+  not under a glass dome. Rooms open only in a seamless world (`roomLayIn` needs the place's parts), not on a test map.
+- Changed (one cause per commit):
+  - Engine: `roof: 2` (a model's roof dressing, the cottages' moss tufts) hides under a placed roof style
+    (prop-models.js `swappedRecipe`); the Studio's model editor has "Roof part". Unit test model-roof.test.mjs.
+  - Engine: door act `enter` (data-files.js `ROOM_BY_USE.enter`, `opensRoom`): the room set on the building or its
+    kind, else "The door is locked."; the tap, the room's lay-in, the self-test's room list and check-data ask
+    `opensRoom`; the Studio's "When tapped" list has it. Unit test door-rooms.test.mjs.
+  - Data: tools/mark-cottage-roofs.py (one-off) marks the three cottages' roofs; tools/add-building-variants.py gives
+    colour-swap variants to cottage_moss and cottage_solar (3 each, so Copperleaf's existing `v` now shows), the
+    coloured houses and the townhouses (2 each).
+  - Art: tools/build-props-hub.py (rerunnable) models workshop, gene_bank (new keys, pictures baked to scene/next/hub)
+    and lighthouse, windmill (swapped in under their keys, old picture kept), with glass numbers, roof parts, turning
+    parts (the Workshop's gear, the helix, the lighthouse's shutter, the sails) and the WORKSHOP and GENE BANK
+    lettering decals. Triangles 1,613 / 4,873 / 1,242 / 2,132.
+  - Rooms: tools/build-hub-rooms.py brings int_inn and int_library back from legacy (and its index) and makes
+    int_workshop and int_gene_bank in the store's 12 x 10 frame; workshop and gene_bank name their rooms.
+  - Showcase: tools/build-hub-showcase.py, test_hub_buildings (every variant and roof style, the rooms' buildings, the
+    landmarks, quarter turns). tools/look-hub-buildings.py takes its pictures and walks into each door on Copperleaf.
+- Risky: Copperleaf's cottages change colour now (their `v` works): the quick check's hub pictures will differ from
+  the baseline. Rerunning build-props-batch7.py would drop the houses' new variants (it rewrites `variants` from the
+  old `build` looks). The Gene Bank's glass door glows strongly at night (a big glass area): judge it on a phone.
+  `lighthouse` and `windmill` are boxed and solid now (3.6 m): legacy maps that place them are not loaded.
+  look-decals.py's mirrored state needs HB-1's `decalPlace` (PR #193): until it merges, a flipped Workshop or Gene
+  Bank would mirror its lettering, so none is flipped.
+- Verified: lint, typecheck, check:modules, format:check; `npm test` 942/942; check:data (146 files; the snapshot
+  remade twice, only its file count); look-hub-buildings: every row (variants and roof styles distinct, moss tufts
+  gone under solar and chrome), the four new models at noon, the sails, gear, helix and shutter turning between
+  frames; at night on Copperleaf the Workshop's window, the lighthouse's light room and windows and the Gene Bank's
+  door glass lit; walk-ins on Copperleaf: shop, inn, library, Workshop, Gene Bank and the turned Workshop (90) and Gene
+  Bank (180) each opened their room. `check:smoke` 6/6 (269 s).
+- Next: the placing half after HB-4b: the buildings on the island's plots (doors on quarter turns), the General store's
+  `act: 'shop'` and a stock (shops.json is empty: the owner's call), Juniper's `home` act (still no room), the Gene
+  Bank's place (the splicing track's Ask me before). The owner's look at the variants' palette and the pictures in
+  validation/look-hub-buildings/.
+
 ### Hub track HB-7 - Skyline Station and the sky trains (the art and the sheet) - 2026-10-25
 Branch `art/hub-station-trains` (one session of the hub track, started from main with PR #193's branch merged in for
 HB-1's decalPlace and the plan file). Plan approved in Plan Mode. The owner's answers: the station is **Skyline
