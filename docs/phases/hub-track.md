@@ -227,6 +227,46 @@ town square; the hub waterfall above the pond.**
   steps, the opening fall's landing, island-gen.test, the quick check's pictures.
 - A check: every building's door within 45 degrees of outward and on a quarter turn.
 
+**Done in HB-4b** (2026-10-25, branch `track/hub`; tag `hb-4b-done` for the owner). The owner's answers: the rail
+and portal as data now, drawn in the sea's skirt by HB-7 (`size.sea` stays 10); the inn and the library models on
+their plots, the other new plots bare pads; a 12 m square; at least 8 cottages. Merged main (HB-1) and
+`art/hub-island-sketches` (HB-4a) first.
+- Facts that differed: B made 5 house plots, not 16 (fewer than today's 7); `cam.orbit.c` is the summit spot, up to
+  5 m from the peak the plots turned from, so a quarter-turned door could stand 47 degrees off (now guarded); the hub's
+  positions are almost all derived (npcSpots, people, life, checks, fixtures, the fall's landing, the opening's spots
+  rewritten by build-copperleaf from the lab's door); RF-1's "catch" never reached tools/data/copperleaf-town.json
+  (a rebuild put "tax" back: fixed); HB-4a missed `npm run modules`; islandProblems and the map schema didn't know the
+  new plot kinds.
+- Generator (island-gen.js; each its own commit, unit tests in tools/test/island-gen-doors.test.mjs, slow tier):
+  `town.square {r, off, front}` (radius; set back from the main street, room for a row facing in; plots round its rim,
+  the shop, the home, the extras, then houses, the side open toward the camera left free, rectangles kept 0.6 m apart);
+  a house plot never under a cottage (3.8 x 2.8 m); the quarter turn keeps clear of the diagonals by asin(5.5/d) so it
+  holds from the summit spot; the station's headland chosen before the paths are painted and every path on its plot
+  pushed inland round it (the same headland as HB-4a's); the opening's stage in front of the lab kept clear; no plot
+  facing the airship's mast from 16 m behind (with `town.quarter`; smoke's window check found the airship hiding a
+  cottage window). `STATION_PLOT`, `landmarkFits`.
+- The hub is **B2** (tools/data/hub-sketches.json `b2`: B with `town {tol: 90, scale: 0.6, lanes: 3, houses: 20,
+  extra: [library, inn, workshop, genebank], second.off: 15, span: 140, square: {r: 12, off: 6, front: 6}}`), built with
+  `build-island --dials <hub+b2> --fresh`, `build-copperleaf`, then both again with the new town zone kept (a rerun's
+  output; island-gen.test checks it). 18 buildings (10 cottages, the inn, the library), plots for the Workshop, the
+  Gene Bank, the station, the lighthouse and the windmill; the lab, the library and the Workshop round the square;
+  every door within 34 degrees of outward on a quarter turn (tools/test/hub-doors.test.mjs, quick tier). `hub`
+  [151.63, 59.36] (was [141.49, 56.63]). `landmarks: {rail, portal}` kept by both tools (schema too): the portal at
+  [243.5, 128.3], 50 m up, 53 m past the map's east edge. hub-sketches.json `base` holds the pre-HB-4b dials (the
+  sketches and the dial tests start from it).
+- Dressing: no summit lookout (island-dress.mjs and its test); the summit spot stays free.
+- World map: the inn and the library drawn on their plots (bowl-island.js `BOWL_PLOT_PROPS`); the kinds with no
+  model yet are skipped.
+- **The hub waterfall, for the water track (lane G, WA-2b)**: the site is unchanged by B2 (the mountain and pond
+  didn't move): `falls: [{x: 92.79, z: 89.67, dir: [0.83, -0.56], w: 3, h: 4.14, pool: 4}]` on copperleaf, 16 m up
+  from the pond toward the summit; a shelf has to be cut there. Not written into the map (the scene's `falls` are lane
+  G's).
+- Not done / for later: Juniper's home lands 54 m south-west of the square (by the lighthouse), the inn 41 m and the
+  store 27 m away up the arc street (the square's ring had no room left facing out); the tall grass has 3 patches of 6
+  (the arc street takes the heath; `wild.n` 6); the Studio's Hub island card doesn't show the new dials;
+  tools/build-postcards.py's view (3 m off the hub) not looked at.
+
+
 ### HB-5 Building variety
 - Cottages: `roof: 1` layers and `variants` colour swaps so `v` and `roof` work; mixed with the coloured houses and
   townhouses.
