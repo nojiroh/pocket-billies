@@ -62,7 +62,7 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | `track/reflavour` | Reflavour track (docs/phases/reflavour-track.md): RF-1..RF-6 work here; RF-2 (pyramids) pushed 2026-10-23. |
 | `track/towns` | Towns track (docs/phases/towns-track.md): TW-1..TW-3 (town layout, townsfolk, run quests) work here. TW-1 (the town layout) done 2026-10-24. |
 | `track/routes` | Routes track (docs/phases/routes-track.md): RT-1..RT-4 (route layouts, trainers, set pieces, Billies and finds) work here. |
-| `track/hub` | Hub track (docs/phases/hub-track.md): every HB session works here (made from main 2026-10-25). HB-2 (the run's loading screen) done 2026-10-25; HB-1 is finished on `claude/hub-island-revamp-4fskxy`. |
+| `track/hub` | Hub track (docs/phases/hub-track.md): every HB session works here (made from main 2026-10-25). HB-2 (the run's loading screen) and HB-4b (the island rebuilt; HB-4a's `art/hub-island-sketches` merged in) done 2026-10-25; HB-1 is finished on `claude/hub-island-revamp-4fskxy`. |
 | `track/test-cleanup` | Test clean-up track (docs/phases/test-cleanup-track.md): every lane of TC-1..TC-4 works here; round 1 in PR #155. |
 | `terrain-generation` | Terrain track: TR-2c part 1 merged; one leftover HANDOFF note on top. Part 2 next. |
 | `terrain/tr-1-roads` | Terrain TR-1: road gradient cap and switchbacks. Not merged. |
