@@ -11,6 +11,7 @@ import {
   bowlMapTurn,
   bowlPropClass,
   bowlTreeStyle,
+  bowlYouPoint,
 } from '../../game/js/logic/bowl-things.js';
 import {
   bowlCoastAt,
@@ -88,6 +89,19 @@ test('a walk map lies on the bowl as the terrain stamps it: its middle on the pl
   const east = bowlMapPoint(s, M, 70, 42),
     t = bowlMapTurn(s);
   assert.ok(Math.abs(Math.atan2(east[1] - mid[1], east[0] - mid[0]) - t) < 1e-9);
+});
+
+test('HB-1: you are drawn where you stand on the map, else at its hub, never at its middle', () => {
+  const M = GAME_DATA.maps.copperleaf,
+    s = { x: 0.2, y: -0.1 },
+    at = (mx, mz) => bowlMapPoint(s, M, mx, mz, 1000),
+    near = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-12;
+  assert.ok(M.hub && M.hub.length > 1, 'Copperleaf has a hub point');
+  assert.ok(near(bowlYouPoint(s, M, { x: 30, z: 120 }, 1000), at(30, 120)), 'your own spot');
+  assert.ok(near(bowlYouPoint(s, M, null, 1000), at(M.hub[0], M.hub[1])), 'no walk on the map: its hub');
+  assert.ok(near(bowlYouPoint(s, M, { x: NaN, z: 3 }, 1000), at(M.hub[0], M.hub[1])), 'a bad spot: its hub');
+  assert.ok(near(bowlYouPoint(s, { w: 40, h: 20 }, null, 1000), [s.x, s.y]), 'no hub either: the middle');
+  assert.ok(!near(bowlYouPoint(s, M, null, 1000), [s.x, s.y]), 'the hub is not the map’s middle');
 });
 
 test('what props are on the map: trees, buildings, nothing', () => {
