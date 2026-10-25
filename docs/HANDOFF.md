@@ -2,6 +2,60 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Towns track TW-3 - Run quests - 2026-10-25
+Branch `track/towns` (TW-3 of docs/phases/towns-track.md, the track's last session). main (2cfef57) had not moved
+since TW-2: nothing to merge, no conflict markers; the local branch was only fast-forwarded to TW-2's push. Plan
+approved in Plan Mode with the owner's answers: hand-in at a **notice board** (ask-me-before 2), the board a **new
+low-poly prop**, the quest list on the **Map tab**, and the 16 drafted quest texts as written (ask-me-before 3). Tag
+`tw-3-done`.
+- Where the notes and the plan file were wrong (checked in the code):
+  - The act name `board` is the Lab's unlock board (walk-control.js): the town's board uses act `notice`.
+  - `validRun` never rejected unknown top-level keys (only sub-records check theirs): `validRunQuests` checks its own.
+  - Nothing recorded who fainted in a battle (the team is `saveData.team`, so end HP misses a revived Billie):
+    `checkFaints` now counts `b.fainted`.
+  - perRoute is 1-2 route trainers a route, so "beat 2-3" could be impossible between two towns: a trainers quest is
+    offered only when that many stand on some way ahead to a town with a board, and its goal is capped by it.
+  - A town whose square doesn't fit has no board and no giver; none turned up in mapgen-town's seeds (every town
+    there has its square).
+- Changed (one cause per commit):
+  - **Data:** `game/data/quests.json` (held 3; kinds catch, trainers [2,3], parcel, miniboss with weights and list
+    titles; 16 texts; the giver's and the board's lines) + schema, types, `QUESTS`, `dataQuests` in check-data and
+    the Studio's Check, a planted-fault snapshot.
+  - **Logic:** `logic/run-quests.js` (pure): `questOffer` (the node's own stream `quest`; only a kind that can be
+    finished and handed in on this run: a board town reachable ahead, after a mini-boss for that kind, enough route
+    trainers on the way for that kind, a type from the region's dex for a catch), `questTake` (the cap; a town's
+    offer once), `questCatch`, `questWin` (route trainers count; the mini-boss: done with nobody fainted, else
+    dropped), `questArrive` (a parcel to a town on a later row), `questPayable` (any town but its own), `questPay`
+    (gone before its pick is made, so a reload never pays twice). `run.quests = { held, took, n, paid }`.
+  - **Hooks:** `battleSettle` (a catch, a win: page and sim share it; returns `quests`), `checkFaints`; the page's
+    `runArrivedFx` (a parcel delivered).
+  - **Art:** `tools/build-notice-board.py`: `notice_board` (posts, planked board, roof, four pinned papers; 30 mesh
+    layers, 32 px/m, a fallback picture).
+  - **mapgen** (MAPGEN_VERSION 10): the board on the square's `board` spot (act `notice`, label "Notice board"), a
+    `giver` spot in front of it to the west. **run-scenes:** `runTownQuest` (stream `town|quest`, so the locals'
+    draws didn't move): `scene.people` id `quest`, `quest: 1`, a townsfolk look, a name none of the locals has.
+  - **Page:** new `quest-board.js` (the giver's talk with Yes/No, the board's hand-in with a reward pick each, toasts,
+    the Map tab list `questListHTML`); a gold "!" over the giver while the offer is open (sprites.js, `LABEL_GOLD`);
+    the reward sheet says "A thank-you for the quest".
+  - **Tests:** run-quests.test.mjs (same offers; nothing unfinishable; each kind; a faint fails the mini-boss quest;
+    the cap; a parcel only to a later town; no hand-in at its own town; once only; validRun round trip and bad
+    shapes; the run's end clears them); mapgen-town (board, giver spot, giver reachable, name); check-fast step "A
+    run town's quest"; the in-game full test's run phase checks the town's board, giver and a quest taken. Remade on
+    purpose: rng's scene hash and run-start (version only).
+- Verified: lint, typecheck, check:modules, format:check, check:data; unit tests 982 of 982 (all tiers); check-fast
+  30 of 30 (838 s); headless look at Thicket Town (board, pill, giver's "!") and the Map tab list. Full quick check
+  34 of 37: **RL-8** "the town's shop has no Perk" and **Song fingerprints** "cave mid / cave late" (both on main,
+  noted under TW-2 and RT-1) and **Postcards** "the picture didn't load", which passed alone (57 s): the full run's
+  load, as RT-1 found.
+- Risky / open:
+  - **Not tried on the phone.** One more person and prop a town.
+  - The giver's "!" sits close to the board's "Notice board" pill from the default camera (looked at headless).
+  - The in-game full test's quest check sits before RL-8's shop-Perk check in the same phase, so it runs, but the
+    phase still fails at the shop until RL-8's problem is fixed on main.
+  - Done but unpaid quests are lost at the run's end (as planned: no payout row). Quests count only from when taken.
+  - The run sim takes no quests (its results are unchanged).
+- Next: the towns track is done. Ask-me-before 4 (a quest kind needing a side area or a field move) is later.
+
 ### Towns track TW-2 - Life: townsfolk, animals, chat, named locals - 2026-10-25
 Branch `track/towns` (TW-2 of docs/phases/towns-track.md); main (2cfef57) fast-forwarded in first: the conflict markers
 the branch carried in HANDOFF.md and BRANCHES.md were already resolved on main. Plan approved with the owner's answers: at
