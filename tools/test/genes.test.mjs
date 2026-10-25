@@ -209,3 +209,23 @@ test('genes: an Unstable Billie has one stat raised and one lowered, and a merge
     S.limit = was;
   }
 });
+
+test("genes: the debug log's splice report names data ids only, never a Billie's name", () => {
+  const s = startedSave('gates0', 20);
+  s.team[0].nick = 'Secret Name';
+  s.team[0].graft = { sig: 'musk0' };
+  const r = fn('spliceReport')();
+  assert.deepEqual(r, [
+    {
+      at: 0,
+      sp: 'gates0',
+      graft: 'sig=musk0',
+      cost: 1,
+      limit: 3,
+      unstable: false,
+      traits: ['counterweight'],
+      types: ['Grass', 'Fire'],
+    },
+  ]);
+  assert.doesNotMatch(JSON.stringify(r), /Secret/);
+});

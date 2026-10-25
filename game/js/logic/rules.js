@@ -60,7 +60,8 @@ import {
 import { rngFn } from './rng.js';
 import { wildOddsBy } from './weather.js';
 import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
-import { graftFit, graftRel, graftTraits, graftTypes, graftUnstable } from './genes.js';
+import { graftKey } from './graft-art.js';
+import { graftFit, graftRel, graftStability, graftTraits, graftTypes, graftUnstable } from './genes.js';
 import {
   ROBOT_LIMBS,
   ROBOT_SLOTS,
@@ -202,6 +203,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   spawn: [() => spawn, v => (spawn = v)],
   speciesStep: [() => speciesStep],
+  // @ts-expect-error -- replaced on purpose
+  spliceReport: [() => spliceReport, v => (spliceReport = v)],
   // @ts-expect-error -- replaced on purpose
   stat: [() => stat, v => (stat = v)],
   // @ts-expect-error -- replaced on purpose
@@ -346,6 +349,27 @@ export const billyRel = m => (m && billyGraft(m) ? graftRel(geneData(), m.sp, m.
 /** SP-2: a Billie's types: its species', the second replaced by its heaviest dominant Gene's (logic/genes.js
  * graftTypes); a robot's or an unspliced Billie's are its species' own @param {any} m @returns {string[]} */
 export const billyTypes = m => (billyGraft(m) ? graftTypes(geneData(), m.sp, m.graft, m.build) : speciesOf(m).types);
+/** SP-2: the debug log's splices: per spliced Billie on the team, its place, species, splice code, Stability, traits
+ * and types (data ids only: no names) */
+export function spliceReport() {
+  return (saveData.team || [])
+    .map((m, i) => ({ m, i }))
+    .filter(({ m }) => billyGraft(m))
+    .map(({ m, i }) => {
+      const g = /** @type {Record<string, string>} */ (billyGraft(m)),
+        st = graftStability(geneData(), m.sp, g);
+      return {
+        at: i,
+        sp: m.sp,
+        graft: graftKey(g),
+        cost: st.cost,
+        limit: st.limit,
+        unstable: st.unstable,
+        traits: graftTraits(geneData(), m.sp, g),
+        types: billyTypes(m),
+      };
+    });
+}
 /** SP-2: an Unstable Billie's raised and lowered stats and the donor its name merges with; null when its splice is
  * within Stability's limit @param {any} m */
 export function billyUnstable(m) {

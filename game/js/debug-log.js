@@ -448,6 +448,8 @@ debugLog.state = () => {
     s.scene = typeof GAME.walkView !== 'undefined' ? GAME.walkView.id : null;
     s.team = GAME.saveData.team ? GAME.saveData.team.length : 0;
     s.encounters = GAME.encountersHere ? GAME.encountersHere().length : 0;
+    /* SP-2: the team's splices (species and data ids, no names): Stability, traits, types */
+    if (typeof GAME.spliceReport === 'function') s.splices = GAME.spliceReport();
     s.badges = (GAME.saveData.seats || []).length;
     s.visited = Object.keys(GAME.saveData.visited || {}).length;
     /* RL-7: on a run, where it stands (no names): its seed (to make the same run again), the day, the
