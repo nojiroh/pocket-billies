@@ -606,7 +606,7 @@ function worldBowlIslandLoad(i) {
 }
 /* the owner, 2026-10-23: the hub's world map is Copperleaf's island floating in open sky (no bowl, no sea round it);
    a run's world keeps the bowl */
-function worldBowlFloats() {
+export function worldBowlFloats() {
   const g = worldBowl.ground;
   return !!(g && g.islandMap && !worldExtra.look);
 }
@@ -2317,7 +2317,7 @@ function bowlWallTexture() {
 /* ---------- ready before it shows (the owner: "every time the world map opens it hasn't fully loaded yet") ----------
    Everything the map shows is in: the island's own heights (their arrival works the ground out again), the terrain map
    and its pictures, each place's map stamped, the things' shapes and pictures on the GPU and their shadows. */
-function worldBowlReady() {
+export function worldBowlReady() {
   const g = worldBowl.ground,
     T = g && g.terrain,
     W = g && g.things,

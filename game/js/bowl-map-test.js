@@ -22,6 +22,7 @@ import { BOWL_ISLAND_BASE, BOWL_RIM_HEIGHT, bowlBaseHeight, bowlCoastAt, bowlGri
 import {
   BOWL_CAMERA,
   bowlCamHome,
+  bowlCamHomeFloat,
   bowlCamOverview,
   bowlCamPan,
   bowlCamProject,
@@ -39,8 +40,10 @@ import {
   BOWL_METRES,
   WORLD_BOWL_SHADERS,
   worldBowl,
+  worldBowlFloats,
   worldBowlIslandLift,
   worldBowlPick,
+  worldBowlReady,
   worldBowlSunNow,
   worldMap,
   worldMapHeight,
@@ -127,7 +130,7 @@ async function runBowlMapTest() {
   };
   const stepEl = box.querySelector('.nb-step'),
     bar = box.querySelector('.nb-bar i'),
-    TOTAL = 10;
+    TOTAL = 11;
   const step = async (name, fn) => {
     if (bowlMapTest.stop) return;
     stepEl.textContent = name;
@@ -412,6 +415,53 @@ async function runBowlMapTest() {
         d = Math.hypot(worldBowl.cam.tx - me.x, worldBowl.cam.ty - me.y),
         note = `${Math.round(performance.now() - t)} ms to settle over ${LOCATIONS[saveData.trip.node].id}, ${d.toFixed(3)} off`;
       return d < 0.01 ? note : { ok: false, note };
+    });
+    /* HB-3: on the hub's floating island, its frame times at four orbit angles (the camera still), then what the
+       lagoon, the falls and the trees as models each cost (one switched off at a time in the World map settings, the
+       island made again); numbers only in the debug log */
+    await step('The floating island’s frame times', async () => {
+      if (!worldBowlFloats()) return 'not the floating island (a run’s bowl)';
+      const f = m => `${m.fps ?? '–'} fps (worst gap ${m.worstMs ?? '–'} ms, ${m.drawMs ?? '–'} ms to draw)`,
+        home = a => still(bowlCamHomeFloat(worldBowl.ground.float, (a * Math.PI) / 180)),
+        angles = [],
+        off = [],
+        P = saveData.preferences,
+        keep = { expert: P.expert, eng: P.eng },
+        mine = keep.expert && keep.eng ? keep.eng : {};
+      worldBowl.bench = { turn: 0 };
+      try {
+        for (const a of [0, 90, 180, 270]) {
+          home(a);
+          await bowlTestFrames(3);
+          const m = await bowlTestMeasure(BOWL_TEST_MEASURE_MS);
+          angles.push(m);
+          measures['float' + a] = m;
+        }
+        for (const [k, v, name] of [
+          ['lagoon', false, 'no lagoon'],
+          ['falls', 0, 'no falls'],
+          ['treeModels', false, 'simple trees'],
+        ]) {
+          if (bowlMapTest.stop) break;
+          P.expert = true;
+          P.eng = { ...mine, worldMap: { ...(mine.worldMap || {}), [k]: v } };
+          worldBowl.dirty = true;
+          const t = performance.now();
+          await bowlTestFrames(2);
+          while (!(worldBowlReady() && worldBowl.ground.float) && performance.now() - t < 30000)
+            await bowlTestWait(100);
+          home(0);
+          await bowlTestFrames(3);
+          off.push(`${name} ${f(await bowlTestMeasure(BOWL_TEST_MEASURE_MS))}`);
+        }
+      } finally {
+        P.expert = keep.expert;
+        P.eng = keep.eng;
+        worldBowl.dirty = true;
+        worldBowl.bench = null;
+      }
+      const note = `${[0, 90, 180, 270].map((a, i) => `${a}° ${f(angles[i])}`).join('; ')}; at 0°: ${off.join('; ')}`;
+      return angles.every(m => m.fps != null) ? note : { ok: false, note: 'frames stopped coming: ' + note };
     });
     await step('Frame rate', async () => {
       const me = worldBowl.spots[saveData.trip.node];
