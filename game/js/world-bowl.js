@@ -77,6 +77,7 @@ import {
   bowlMapPoint,
   bowlPropClass,
   bowlTreeStyle,
+  bowlYouPoint,
 } from './logic/bowl-things.js';
 import { bowlHasCoast, bowlIslandHeights, bowlIslandMapId, bowlIslandPlotThings } from './logic/bowl-island.js';
 import {
@@ -589,12 +590,22 @@ function worldBowlFloatCam() {
   bowlCamUseFloat(F ? { c: F.c, r: F.r, th: F.th } : null);
   return F;
 }
+/* you on the floating island's map, in its own metres, or null when the walk is elsewhere. HB-1: the hub's walk view
+   is 'w:<map>*' (seamless-world.js seamlessHubMap), never the bare map id, so this was never found; a view joined
+   to other scenes may be offset from the map's own metres: not read */
+function worldBowlWalkOnIsland() {
+  const id = worldBowl.ground && worldBowl.ground.islandMap,
+    v = walkView;
+  if (!id || !v || !v.pl || !v.sc) return null;
+  if (v.id === id) return v.pl;
+  return v.id === 'w:' + id + '*' && !(v.sc.scenes && v.sc.scenes.length) ? v.pl : null;
+}
 /* the floating island's opening view: from where you stand on it, looking across to its middle (the walk's orbit
    camera, logic/camera-orbit.js), else from the south */
 function worldBowlFloatHome(F, yaw) {
   const M = gameData.maps[worldBowl.ground.islandMap],
     s = worldBowl.spots[F.i],
-    pl = walkView && walkView.pl && walkView.id === worldBowl.ground.islandMap ? walkView.pl : null;
+    pl = worldBowlWalkOnIsland();
   if (pl && M && s) {
     const [x, y] = bowlMapPoint(s, M, pl.x, pl.z, BOWL_METRES);
     if (Math.hypot(x - F.c[0], y - F.c[1]) > F.r * 0.1) yaw = orbitYawAt(F.c, x, y);
@@ -2924,6 +2935,18 @@ function worldBowlOverlay(t) {
   c.setTransform(d, 0, 0, d, 0, 0);
   c.lineJoin = c.lineCap = 'round';
   const at = s => bowlCamProject(v, bowlToGpu(s.x, s.y, s.h + 0.003));
+  /* HB-1: on the floating island the place's pin stands at its hub (the town) and you where you stand, on its own
+     ground (its spot is the map's middle, on the bowl's coarse grid) */
+  const FI = worldBowlFloatIsland(),
+    floatAt = pl => {
+      const M = gameData.maps[worldBowl.ground.islandMap],
+        s = FI && worldBowl.spots[FI.i];
+      if (!M || !s) return null;
+      const [x, y] = bowlYouPoint(s, M, pl, BOWL_METRES);
+      return { x, y, h: worldBowlSkyFloor(x, y) };
+    },
+    floatPin = FI ? floatAt(null) : null,
+    floatMe = FI ? floatAt(worldBowlWalkOnIsland()) : null;
   /* your trip, gold */
   const trip = [saveData.trip.node, ...saveData.trip.plan],
     flying = typeof airshipFlight !== 'undefined' && airshipFlight.on;
@@ -2942,7 +2965,7 @@ function worldBowlOverlay(t) {
   worldBowl.marks = [];
   LOCATIONS.forEach((l, i) => {
     const s = worldBowl.spots[i],
-      base = at(s),
+      base = at(floatPin && i === FI.i ? floatPin : s),
       rm = worldBowlRunMark(i);
     /* RL-7: a run's place the map doesn't show yet has no pin at all */
     if (!base || s.off || (rm && !rm.seen)) return;
@@ -2970,12 +2993,13 @@ function worldBowlOverlay(t) {
     const here = i === saveData.trip.node,
       locked = !rm && !canEnter(i),
       fresh = !rm && !saveData.visited[i] && !locked;
-    if (here) {
+    const ring = here && floatMe && i === FI.i ? at(floatMe) : here ? base : null;
+    if (ring) {
       const k = 1 + 0.15 * Math.sin(t / 300);
       c.strokeStyle = 'rgba(255,226,122,.95)';
       c.lineWidth = 2.5;
       c.beginPath();
-      c.ellipse(base.x, base.y, 16 * k, 6 * k, 0, 0, 7);
+      c.ellipse(ring.x, ring.y, 16 * k, 6 * k, 0, 0, 7);
       c.stroke();
     }
     if (i === sel) {
@@ -3004,8 +3028,12 @@ function worldBowlOverlay(t) {
   /* the airship on its way, or you standing at your place */
   if (flying && typeof flyDraw === 'function') flyDraw(c, t, (x, y, h) => bowlCamProject(v, bowlToGpu(x, y, h)));
   else {
-    const me = worldBowl.spots[saveData.trip.node],
-      pq = me && at(me);
+    const onIsle = floatMe && FI.i === saveData.trip.node,
+      me = onIsle ? floatMe : worldBowl.spots[saveData.trip.node],
+      pq = me && at(me),
+      /* beside the place's pin on the bowl; on the floating island on your own spot */
+      dx = onIsle ? 0 : 18;
+    worldBowl.me = me ? { x: me.x, y: me.y, isle: !!onIsle } : null;
     if (pq) {
       const fr = personWalkFrames('me'),
         f = (fr.down || fr[Object.keys(fr)[0]])[0],
@@ -3014,11 +3042,11 @@ function worldBowlOverlay(t) {
       c.imageSmoothingEnabled = false;
       c.fillStyle = 'rgba(20,10,40,.35)';
       c.beginPath();
-      c.ellipse(pq.x + 18, pq.y, 9, 3, 0, 0, 7);
+      c.ellipse(pq.x + dx, pq.y, 9, 3, 0, 0, 7);
       c.fill();
       c.drawImage(
         f,
-        Math.round(pq.x + 18 - (f.ax || f.width / 2) * k),
+        Math.round(pq.x + dx - (f.ax || f.width / 2) * k),
         Math.round(pq.y - (f.ay || f.height) * k + bob),
         Math.round(f.width * k),
         Math.round(f.height * k)
