@@ -250,3 +250,26 @@ test('a picture’s average colour over its opaque pixels', () => {
   assert.deepEqual(B.bowlAverageColour(px), [0.5, 0.5, 0]);
   assert.deepEqual(B.bowlHexColour('#ff8000'), [1, 128 / 255, 0]);
 });
+
+test('a bridge on the map: its deck from 0 to its length and across its width, rails on a bridge, posts under a pier', () => {
+  const S = B.bowlBridgeShape(5, 2),
+    P = B.bowlBridgeShape(6, 1.7, { pier: true, drop: 2 }),
+    pts = T => {
+      const V = [];
+      for (let i = 0; i < T.length; i += 9) V.push(Array.from(T.slice(i, i + 9)));
+      return V;
+    };
+  for (const [T, len, w] of [
+    [S, 5, 2],
+    [P, 6, 1.7],
+  ]) {
+    assert.equal(T.length % 27, 0);
+    const V = pts(T);
+    assert.ok(Math.abs(Math.min(...V.map(v => v[0]))) < 1e-6 && Math.abs(Math.max(...V.map(v => v[0])) - len) < 1e-6);
+    assert.ok(Math.abs(Math.max(...V.map(v => v[2])) - w / 2) < 1e-6);
+  }
+  assert.ok(Math.max(...pts(S).map(v => v[1])) > 0.8, 'rails');
+  assert.ok(Math.abs(Math.min(...pts(P).map(v => v[1])) + 2) < 1e-6, 'posts down to the drop');
+  // faces turned outward: each normal points away from its box's middle (the deck's top up)
+  assert.ok(pts(S).some(v => v[4] === 1));
+});

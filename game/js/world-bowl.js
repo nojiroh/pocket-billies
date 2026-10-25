@@ -74,6 +74,7 @@ import {
   BOWL_REGION_TREES,
   BOWL_THING_SCALE,
   bowlAverageColour,
+  bowlBridgeShape,
   bowlClumps,
   bowlLandmarkPick,
   bowlMapPoint,
@@ -153,6 +154,7 @@ expose({
   runPinColors: [() => runPinColors],
   worldBowl: [() => worldBowl],
   worldBowlAtlas: [() => worldBowlAtlas, v => (worldBowlAtlas = v)],
+  worldBowlBridgeShape: [() => worldBowlBridgeShape, v => (worldBowlBridgeShape = v)],
   worldBowlCloudsNow: [() => worldBowlCloudsNow, v => (worldBowlCloudsNow = v)],
   worldBowlClumpsInto: [() => worldBowlClumpsInto, v => (worldBowlClumpsInto = v)],
   worldBowlColorAt: [() => worldBowlColorAt, v => (worldBowlColorAt = v)],
@@ -1406,6 +1408,13 @@ function worldBowlTreeShape(style) {
   }
   return new Float32Array(out);
 }
+/* HB-3: a bridge's shape from its key ('b:length:width:pier'), its deck a little over the bank it starts from */
+function worldBowlBridgeShape(key) {
+  const [, len, w, pier] = key.split(':').map(Number),
+    T = bowlBridgeShape(len, w, { pier: !!pier, drop: 1.5 });
+  if (!pier) for (let i = 1; i < T.length; i += 9) T[i] += 0.3;
+  return T;
+}
 /* HB-3: a tree's own model for the map, from its recipe (logic/bowl-things.js bowlTreeFromRecipe), its leaf pictures
    (a prop's swap, an autumn tree's) read for their colour and size first; null while any is still coming */
 const WORLD_BOWL_LEAVES = new Map();
@@ -1475,9 +1484,9 @@ const BOWL_STRUCTURE = /^(airship_station|airship_mast|well|fountain|clock_tower
 /* one model standing at (x, y) on the bowl: its scale and the map's east and north there (group 1, a map's own) */
 /* HB-3: turned by the placement's rot (degrees, logic/prop-turn.js turnedPoint: its across toward its back), as the
    walk scene turns it */
-function worldBowlModelInto(W, model, x, y, k, east, north, rot = 0) {
+function worldBowlModelInto(W, model, x, y, k, east, north, rot = 0, lod = 0) {
   W.models.add(model);
-  worldBowlInst(W, 'm:' + model, x, y, k, east, north, rot, 0);
+  worldBowlInst(W, 'm:' + model, x, y, k, east, north, rot, lod);
 }
 /* one instance of a shape (key: a tree style, 'm:' a model, 't:' a tree's own model by its prop): lod 0 a building
    (its windows light at night), 1 a tree's own model (not drawn past the World map's Simple trees past), 2 that tree's
@@ -1515,7 +1524,8 @@ function worldBowlThingsOfPlace(W, i) {
   /* a landmark with a model of its own is drawn as that model (where the map puts it), never as a flat picture */
   const modelOf = (/** @type {any} */ a) => !!(a && a.model && /\.json$/.test(a.model)),
     treeModels = worldBowlFloats() && !!engineSetting('worldMap', 'treeModels'),
-    treeFar = (engineSetting('worldMap', 'treeFar') || 0) > 0;
+    treeFar = (engineSetting('worldMap', 'treeFar') || 0) > 0,
+    fences = worldBowlFloats() && !!engineSetting('worldMap', 'fences');
   /* HB-3: the floating island draws its own things where they stand; a landmark that is not one of them would stand
      at the map's middle (its spot), so none is added there */
   if (lm && A[lm.k] && !worldBowlFloats()) {
@@ -1528,6 +1538,13 @@ function worldBowlThingsOfPlace(W, i) {
   for (const p of M.props) {
     const art = A[p.k],
       cls = bowlPropClass(p.k, art);
+    /* HB-3: the floating island's fences as their models (World map settings: Fences) */
+    if (fences && /fence/.test(p.k) && modelOf(art)) {
+      const [x, y] = bowlMapPoint(s, M, p.x, p.z, BOWL_METRES);
+      worldBowlModelInto(W, art.model, x, y, k * (p.s || 1), east, north, +(p.rot || 0), 3);
+      n++;
+      continue;
+    }
     const structure = !!(art && BOWL_STRUCTURE.test(art.group || p.k) && modelOf(art));
     if (!cls && !(art && art.landmark) && !structure) continue;
     const [x, y] = bowlMapPoint(s, M, p.x, p.z, BOWL_METRES);
@@ -1557,6 +1574,31 @@ function worldBowlThingsOfPlace(W, i) {
       worldBowlModelInto(W, art.model, x, y, k * (p.s || 1), east, north, +(p.rot || 0));
     } else if (art && art.img) W.stand.push({ i, k: p.k, x, y, g: 1, s: p.s || 1 });
   }
+  /* HB-3: its bridges and pier (the map's own `bridges`, not props), each from its higher end (World map settings) */
+  if (worldBowlFloats() && engineSetting('worldMap', 'bridges'))
+    for (const b of M.bridges || []) {
+      if (!Array.isArray(b.a) || !Array.isArray(b.b)) continue;
+      const A = bowlMapPoint(s, M, b.a[0], b.a[1], BOWL_METRES),
+        B = bowlMapPoint(s, M, b.b[0], b.b[1], BOWL_METRES),
+        up = worldBowlSkyFloor(B[0], B[1]) > worldBowlSkyFloor(A[0], A[1]),
+        [from, to] = up ? [b.b, b.a] : [b.a, b.b],
+        len = Math.hypot(to[0] - from[0], to[1] - from[1]),
+        rot = (Math.atan2(to[1] - from[1], to[0] - from[0]) * 180) / Math.PI,
+        at = up ? B : A;
+      if (len < 0.5) continue;
+      worldBowlInst(
+        W,
+        `b:${len.toFixed(1)}:${(+b.w || 2).toFixed(1)}:${b.pier ? 1 : 0}`,
+        at[0],
+        at[1],
+        k,
+        east,
+        north,
+        rot,
+        3
+      );
+      n++;
+    }
   /* IS-7: an island map's plots no building stands on yet get one of their kind, turned to face where the plot does */
   for (const t of bowlIslandPlotThings(M, p => bowlPropClass(p.k, A[p.k]) === 'building')) {
     const art = A[t.k];
@@ -1706,7 +1748,9 @@ function worldBowlThingsTick(g) {
       ? worldBowlModelShape(key.slice(2))
       : key.startsWith('t:')
         ? worldBowlTreeModelShape(key.slice(2))
-        : worldBowlTreeShape(key);
+        : key.startsWith('b:')
+          ? worldBowlBridgeShape(key)
+          : worldBowlTreeShape(key);
     if (!shape) {
       waiting = true;
       continue;

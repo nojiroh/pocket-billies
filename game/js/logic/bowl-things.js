@@ -20,6 +20,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   bowlAverageColour: [() => bowlAverageColour, v => (bowlAverageColour = v)],
   // @ts-expect-error -- replaced on purpose
+  bowlBridgeShape: [() => bowlBridgeShape, v => (bowlBridgeShape = v)],
+  // @ts-expect-error -- replaced on purpose
   bowlClumps: [() => bowlClumps, v => (bowlClumps = v)],
   // @ts-expect-error -- replaced on purpose
   bowlHexColour: [() => bowlHexColour, v => (bowlHexColour = v)],
@@ -368,4 +370,61 @@ export function bowlAverageColour(px) {
     n++;
   }
   return n ? [r / n / 255, g / n / 255, b / n / 255] : [0.3, 0.5, 0.25];
+}
+
+/**
+ * HB-3: a bridge on the floating island's map (a map's `bridges` entry, not a prop): a plank deck from its start
+ * along x, its width across z, side rails, and posts under it down to the water for a pier. Metres, per corner
+ * [x, y up, z, normal, colour].
+ * @param {number} len @param {number} w @param {{ pier?: boolean, drop?: number }} [o] drop: how far the posts go down
+ * @returns {Float32Array}
+ */
+export function bowlBridgeShape(len, w, o = {}) {
+  const out = /** @type {number[]} */ ([]),
+    deck = [0.55, 0.4, 0.26],
+    rail = [0.45, 0.32, 0.2],
+    /** @param {number} x0 @param {number} x1 @param {number} y0 @param {number} y1 @param {number} z0 @param {number} z1
+     * @param {number[]} col */
+    box = (x0, x1, y0, y1, z0, z1, col) => {
+      const P = (/** @type {number} */ i) => [i & 1 ? x1 : x0, i & 2 ? y1 : y0, i & 4 ? z1 : z0];
+      /* each face: four corners (counter-clockwise from outside) and its normal */
+      for (const [f, n] of /** @type {[number[], number[]][]} */ ([
+        [
+          [0, 4, 6, 2],
+          [-1, 0, 0],
+        ],
+        [
+          [1, 3, 7, 5],
+          [1, 0, 0],
+        ],
+        [
+          [0, 1, 5, 4],
+          [0, -1, 0],
+        ],
+        [
+          [2, 6, 7, 3],
+          [0, 1, 0],
+        ],
+        [
+          [0, 2, 3, 1],
+          [0, 0, -1],
+        ],
+        [
+          [4, 5, 7, 6],
+          [0, 0, 1],
+        ],
+      ]))
+        for (const i of [f[0], f[1], f[2], f[0], f[2], f[3]]) out.push(...P(i), ...n, ...col);
+    };
+  box(0, len, -0.18, 0, -w / 2, w / 2, deck);
+  if (!o.pier)
+    for (const z of [-w / 2, w / 2 - 0.1]) {
+      box(0, len, 0.8, 0.9, z, z + 0.1, rail);
+      for (let x = 0; x <= len + 1e-6; x += Math.max(1, len / Math.max(1, Math.round(len / 1.6))))
+        box(Math.min(x, len - 0.12), Math.min(x, len - 0.12) + 0.12, 0, 0.9, z, z + 0.1, rail);
+    }
+  else
+    for (let x = 0.2; x < len; x += 1.8)
+      for (const z of [-w / 2 + 0.05, w / 2 - 0.2]) box(x, x + 0.15, -(o.drop ?? 1.5), 0, z, z + 0.15, rail);
+  return new Float32Array(out);
 }
