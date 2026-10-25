@@ -2,6 +2,56 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Water track WA-6a (lane P) - wading - 2026-10-25
+Branch `track/water` (main merged in at the start: nothing new). Plan approved in Plan Mode; the owner's answers: wade
+every shallow `w` except lava and ice; mapgen's reach check and the seam rules stay dry; no encounters while wading;
+wild Billies, props and trainers may stand in shallows (the generator side is left to lane G, below). Tag to suggest:
+`wa-6a-done` (the owner pushes tags).
+- Changed:
+  - `game/js/logic/wading.js` (new, lane P, Node-testable): `wadeWalkable` (the walk grid's water rule: a terrain's
+    `walk` first, then `ride` scenes cross all water as v24, else `w` is walkable unless its kind is lava or ice, `d`
+    blocks), `wadeKindAt` (the scene's `waters` rectangles / `waterKind`, never the renderer's lookup, so a graphics
+    setting can't open lava), `wadeDepthAt` (0 on land, eased to `WADE_DEPTH` 0.3 m over the first 0.6 m from the
+    nearest dry tile), `wadeSpeed` (down to 0.6 of walking). On both pages and in the Studio's logic worker list.
+  - `walk-view.js`: the walk grid uses `wadeWalkable`; shallows cost 2 (people and tap-to-walk keep to land); a new
+    `nav.dry` marks cells over water but out of it (bridge decks, stepping stones, jetties); `wadeDepthHere(x, z)`
+    reads it. `movePlayer` slows by `wadeSpeed` (stick and route). Rings behind you as you wade (one every 1.6 s
+    standing), and `walkView.parts` of kind `splash` at your steps.
+  - The waterline cut: `walk/frame-items.js wadeItem` sinks you and world Billies (`worldBillyItem`, so your buddy)
+    smoothly from the bank's ground to 0.3 m under the surface and sets `it.cut`; `walk/draw-common.js
+    setSpriteUniforms` leaves those bottom rows off in whole texels (`uOff`/`uUV`), so shadows, reflections and the
+    TR-3 silhouette agree with no shader edit. The buddy leaves rings when it wades.
+  - Checks: test_island's sea was shallows to the map's edge, so its "out into the sea" check became a wade: now deep
+    past a 2 m band of shallows (`tools/build-test-island.py`, as Copperleaf's). The data check's "bridge ends in the
+    water" warns only for an end you can't wade.
+- Found (wrong or missing in the docs): the water rule is copied three times (walk-view.js, seam-rules.js:58,
+  mapgen.js:4338 mapgenReach), not once; only the walk grid's changed. **Lava is painted as `w`** (mapgen's lava
+  streams, test_water's pool): only the kind keeps you out. Streams under ~2.2 m are all `w`, so their bridges are
+  now optional. You stood AT the surface on water before (`standingHeightAt` = ground - 0.12 = the water's level).
+  The player's speed is in walk-view.js, not walk-control.js. No test scene `checks` assumed water blocks except
+  test_island's.
+- For lane G (its files, not edited here):
+  - test_water (`tools/build-test-scenes.py t_water`), the walking checks WA-6a wants: `check(s, (1.2, 9.4), (5.5,
+    9.3), True, 'wade into the pond's shallows')` and `check(s, (41, 6.5), (45.5, 6.5), False, 'the lava pool stays
+    shut (should be impossible)')` (verified by hand here: both hold).
+  - Shallows for others (the owner: wild Billies, props and trainers may stand in them): `mapgenPutProp`'s water flag
+    (mapgen.js ~721, the "never in water" line) and the encounter / trainer spot pickers can allow `w` (not `d`, not
+    lava); relax the "nothing in water" asserts in mapgen.test.mjs, mapgen-dials.test.mjs and mapgen-lots.test.mjs in
+    the same commit, with MAPGEN_VERSION and the golden scene.
+- For lane R (its files, not edited here): `walkView.parts` of kind `splash` fall through to the pale puff in
+  `walk/effects.js`; a droplet look (the `spray` quads) would read better. Rings (`addRipple`) are capped at 16 with
+  the scene's own; a wading wake may want its own few.
+- Not changed: encounters, fishing (still from the bank; off while wading, as before), mapgenReach and the seam rules
+  (dry: a generated map keeps a dry way to every exit), `ride` scenes, deep water (WA-6b), water footstep sounds (WA-8).
+- Risky: NPC paths may now cross shallows when it is much shorter (cost 2). Two data warnings (Copperleaf bridge 3,
+  test_props_island bridge 1) stay: those ends are in deep water.
+- Verified: lint, typecheck, check:modules, check:data, `npm test` 942/942 (5 new in tools/test/wading.test.mjs),
+  `check:smoke` 6/6 before each game/ commit (Playwright 1.63.0). In the page: every test map's `testMapChecks` ok;
+  test_water: pond shallows walkable at 0.3 m, its deep middle, the lava and the ice pools blocked; wading speed about
+  2.3 m/s against 3.4 on land; a phone-size picture of you cut at the waterline in the pond with the reflection from
+  the surface; no bridge point in any test map wades; Copperleaf's shallows' water level equals `standingHeightAt`.
+- Next: WA-6b (Surf and the Waterfall climb) grows `ride` into per-cell `d`; lane G adds the two test_water checks.
+
 ### Water track WA-0 - the plan, the contract, the water bench - 2026-10-25
 Branch `ccr-4ae7bdc4-46vu9r` (the plan's own branch `track/water` did not exist yet; the owner makes it, and every
 later WA session starts on it). The owner's brief: water "waterfalls, ocean, rivers, everything", good fidelity in the
