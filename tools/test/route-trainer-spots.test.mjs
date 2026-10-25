@@ -109,6 +109,10 @@ test('RT-4: a route’s rarer one waits on a free pocket, dead end or clearing, 
       assert.ok(nodes.has(+ni), `${where}: a place with no route trainers`);
       assert.ok(spot && RT.ROUTE_RARE_SPOTS.includes(spot.kind), `${where}: not on a pocket, dead end or clearing`);
       kinds[spot.kind] = (kinds[spot.kind] || 0) + 1;
+      assert.ok(
+        sc.props.every((/** @type {any} */ q) => !/canopy/.test(q.k) || !RT.routeUnderCanopy(q, spot)),
+        `${where}: under a forest's canopy`
+      );
       assert.ok(M.mapgenReached(M.mapgenReach(sc, C, sc.hub, { slope: true }), ...at), `${where}: can't be walked to`);
       for (const t of Object.values(T))
         if (t.runNode === +ni)
