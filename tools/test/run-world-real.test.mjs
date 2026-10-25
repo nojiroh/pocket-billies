@@ -279,6 +279,36 @@ test("a run's place is stocked once a visit from its own stream at its row's lev
     /* the same visit rolled again (a reload, another device) meets the same Billies */
     delete s.wild.run_0;
     assert.deepEqual(seen(stock()), seen(first));
+    /* SP-3: its wild splices come from a stream of their own: the same on a reload, and with none at all (or every
+       Billie spliced) the stock's species, levels, sizes and coats are the same */
+    const whole = (/** @type {any[]} */ L) =>
+        L.map(({ sp, lvl, build, coat, alpha }) => ({ sp, lvl, build, coat, alpha })),
+      grafts = (/** @type {any[]} */ L) => L.map(q => q.graft || null),
+      G = data.GENES.wild,
+      odds = { ...G },
+      kept = { whole: whole(stock()), grafts: grafts(stock()) };
+    delete s.wild.run_0;
+    assert.deepEqual(grafts(stock()), kept.grafts, 'the same splices on a reload');
+    try {
+      Object.assign(G, { graft: 0, chimera: 0 });
+      delete s.wild.run_0;
+      assert.deepEqual(whole(stock()), kept.whole);
+      assert.ok(
+        stock().every(q => !q.graft),
+        'no odds, no splices'
+      );
+      Object.assign(G, { graft: 0.5, chimera: 0.49 });
+      delete s.wild.run_0;
+      assert.deepEqual(whole(stock()), kept.whole);
+      assert.ok(
+        stock().some(q => q.graft),
+        'nearly every Billie spliced'
+      );
+    } finally {
+      Object.assign(G, odds);
+      delete s.wild.run_0;
+      stock();
+    }
     /* no top-up by play time in a run */
     fn('dropEncounter')(stock()[0].id);
     s.playMs = (s.playMs || 0) + 10 * E.refillMs;

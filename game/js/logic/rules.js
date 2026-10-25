@@ -61,7 +61,7 @@ import { rngFn } from './rng.js';
 import { wildOddsBy } from './weather.js';
 import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
 import { graftKey } from './graft-art.js';
-import { graftFit, graftRel, graftStability, graftTraits, graftTypes, graftUnstable } from './genes.js';
+import { graftFit, graftRel, graftStability, graftTraits, graftTypes, graftUnstable, wildSplice } from './genes.js';
 import {
   ROBOT_LIMBS,
   ROBOT_SLOTS,
@@ -902,9 +902,17 @@ export function encountersHere(node = saveData.trip.node) {
      visit)), and not topped up by play time: a run's time is its days */
   if (visit) {
     if (!w || w.v !== visit) {
-      const rnd = rngFn(runNodeSeed(saveData.run.seed, L.runNode), 'wild|' + visit);
+      const rnd = rngFn(runNodeSeed(saveData.run.seed, L.runNode), 'wild|' + visit),
+        /* SP-3: now and then a wild splice (genes.json wild), from a stream of its own: the stock's species, levels,
+           sizes and coats stay what they were */
+        spl = rngFn(runNodeSeed(saveData.run.seed, L.runNode), 'splice|' + visit),
+        pool = encounterPoolHere(node).list.map(([id]) => id);
       W[L.id] = { at: now, list: [], v: visit };
-      while (W[L.id].list.length < cap) spawn(false, null, node, rnd);
+      while (W[L.id].list.length < cap) {
+        const q = spawn(false, null, node, rnd),
+          g = wildSplice(geneData(), q.sp, pool, spl);
+        if (g) q.graft = g;
+      }
     }
     return W[L.id].list;
   }
