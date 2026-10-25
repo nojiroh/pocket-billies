@@ -75,6 +75,8 @@ export interface GameData {
   regions: RegionsData;
   /** RL-R2: the field moves that open a run's side areas */
   fieldMoves?: { about?: string; moves: Record<DataId, FieldMove> };
+  /** RT-3: set pieces, prop groups placed as a unit on a laid-out place */
+  setPieces?: SetPiecesData;
   /** RL-13: a run's Expeditions and challenges */
   modifiers?: ModifiersData;
   pools: Record<DataId, Pool>;
@@ -2002,6 +2004,47 @@ export interface FieldMove {
   ask: string;
   used: string;
   out: string;
+}
+/** RT-3: setPieces.json: small groups of existing props placed as a unit on a laid-out place's spots
+ * (logic/mapgen.js mapgenStagePieces), in the piece's own metres (x across its front, z back from it) */
+export interface SetPiecesData {
+  about?: string;
+  /** how many a laid-out place gets, at least and at most (logic/run-scenes.js runPiecesOf) */
+  perPlace: [number, number];
+  pieces: Record<DataId, SetPiece>;
+}
+export interface SetPiece {
+  name: string;
+  /** the spot kinds it may take (scene.spots) */
+  on: ('roadside' | 'clearing' | 'jetty')[];
+  /** every prop lies within this many metres of its origin (the middle of its front) */
+  r: number;
+  /** draw weights by biome, `default` for one not listed */
+  biomes: Record<string, number>;
+  /** a layout plan's multiplier on its weight */
+  plans?: Record<string, number>;
+  props: SetPieceProp[];
+  people?: SetPiecePerson[];
+}
+export interface SetPieceProp {
+  /** a scenery.json prop */
+  k: string;
+  x: number;
+  z: number;
+  /** degrees, on top of the piece's own turn (models only: a picture stays facing you) */
+  rot?: number;
+  /** a sign's words */
+  say?: string;
+  /** stands on water (a boat) */
+  water?: boolean;
+}
+/** someone who stands in a piece: tapped, opens an event once a run, then says `say` */
+export interface SetPiecePerson {
+  who: string;
+  x: number;
+  z: number;
+  event?: string;
+  say?: string;
 }
 /** RL-R2: rules.json run.side: the chance a run has a detour or an alternate path (never both), a detour's places, an
  * alternate path's rows and the chance it ends at a boss of its own, each move's weight and the lean toward a move of

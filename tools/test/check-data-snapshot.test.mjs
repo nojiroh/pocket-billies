@@ -136,6 +136,23 @@ test('check-data: planted field moves and side areas (RL-R2)', t => {
   );
 });
 
+test('check-data: planted set pieces (RT-3)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'setPieces.json': S => {
+        S.perPlace = [3, 1];
+        S.pieces.campsite.props[0].k = 'nosuchprop';
+        S.pieces.campsite.props[1].x = 9;
+        S.pieces.campsite.biomes.nosuchbiome = 1;
+        S.pieces.rest_stop.props[0].water = true;
+        S.pieces.ruins.plans = { nosuchplan: 2 };
+        S.pieces.bureau_checkpoint.people[0].event = 'nosuchevent';
+        S.pieces.bureau_checkpoint.people[0].who = 'nosuchperson';
+      },
+    })
+  );
+});
+
 test('check-data: planted Expeditions and challenges (RL-13)', t => {
   t.assert.snapshot(
     checkDataOn({

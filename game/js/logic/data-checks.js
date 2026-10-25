@@ -84,6 +84,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataSceneFindings: [() => dataSceneFindings, v => (dataSceneFindings = v)],
   // @ts-expect-error -- replaced on purpose
+  dataSetPieces: [() => dataSetPieces, v => (dataSetPieces = v)],
+  // @ts-expect-error -- replaced on purpose
   dataSpeciesKind: [() => dataSpeciesKind, v => (dataSpeciesKind = v)],
   // @ts-expect-error -- replaced on purpose
   dataUiTheme: [() => dataUiTheme, v => (dataUiTheme = v)],
@@ -805,6 +807,49 @@ export function dataFieldMoves(D, valid = () => true) {
   }
   if (!Object.values(W).some(w => typeof w === 'number' && w > 0))
     problem('rules.json', 'run.side.moves: no move has a weight, so no side area can be made');
+  return out;
+}
+// RT-3: set pieces (setPieces.json): the schema, perPlace [fewest, most], every prop a scenery.json prop and within the
+// piece's r of its origin, a boat (water) only on a jetty's piece, biomes and plans that exist, people a person sprite
+// and an event that exists, and one piece at least that some biome draws
+/** RT-3: setPieces.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataSetPieces(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    F = 'setPieces.json',
+    problem = (/** @type {string} */ what) => out.push([F, what]),
+    S = D.setPieces;
+  if (!S || !valid('setPieces.schema.json', S, F)) return out;
+  const props = (D.scenery && D.scenery.props) || {},
+    biomes = D.biomes || {},
+    people = new Set(
+      Array.isArray(D.people) ? D.people.map((/** @type {any} */ x) => x.id) : Object.keys(D.people || {})
+    ),
+    events = (D.events && D.events.events) || {};
+  if (!(S.perPlace[0] <= S.perPlace[1])) problem('perPlace is not [fewest, most]');
+  let drawn = false;
+  for (const [k, P] of Object.entries(/** @type {Record<string, any>} */ (S.pieces || {}))) {
+    for (const b of Object.keys(P.biomes))
+      if (b !== 'default' && !biomes[b]) problem(`pieces.${k}.biomes: no biome "${b}" (biomes.json)`);
+    for (const l of Object.keys(P.plans || {}))
+      if (!MAPGEN_LAYOUTS[l]) problem(`pieces.${k}.plans: no layout plan "${l}"`);
+    if (Object.values(P.biomes).some(w => +w > 0)) drawn = true;
+    P.props.forEach((/** @type {any} */ q, /** @type {number} */ i) => {
+      if (!props[q.k]) problem(`pieces.${k}.props[${i}]: no prop "${q.k}" (scenery.json)`);
+      if (Math.hypot(q.x, q.z) > P.r)
+        problem(`pieces.${k}.props[${i}]: ${q.k} is further than r (${P.r} m) from the piece's origin`);
+      if (q.water && !P.on.includes('jetty'))
+        problem(`pieces.${k}.props[${i}]: ${q.k} stands on water, but the piece never takes a jetty`);
+    });
+    (P.people || []).forEach((/** @type {any} */ q, /** @type {number} */ i) => {
+      if (people.size && !people.has(q.who)) problem(`pieces.${k}.people[${i}]: no person "${q.who}" (people)`);
+      if (q.event && !events[q.event]) problem(`pieces.${k}.people[${i}]: no event "${q.event}" (events.json)`);
+      if (!q.event && !q.say) problem(`pieces.${k}.people[${i}]: neither an event nor words to say`);
+      if (Math.hypot(q.x, q.z) > P.r)
+        problem(`pieces.${k}.people[${i}]: further than r (${P.r} m) from the piece's origin`);
+    });
+  }
+  if (S.perPlace[1] > 0 && !drawn) problem('no piece has a weight above 0, so no place gets one');
   return out;
 }
 // RL-13: modifiers.json: the schema; each challenge's `when` reads as a condition; the Expeditions are no more than
