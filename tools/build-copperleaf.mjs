@@ -204,6 +204,9 @@ for (const [B, L] of pairs) {
   if (B.act === 'fly') {
     const ship = OLD.find(p => p.k === 'airship');
     props.push({ ...ship, x: N.x, z: N.z, ...(N.rot ? { rot: N.rot } : {}) });
+    /* HB-7: the airship is scenery; runs start at Skyline Station beside it */
+    delete N.act;
+    delete N.label;
   }
   if (C[N.k] && C[N.k].door) {
     const dx = (C[N.k].door.x / PPU) * (N.s || 1) * (N.f ? -1 : 1),
@@ -226,6 +229,35 @@ for (const [B, L] of pairs) {
     props.push(q);
   }
 }
+/* ---------- HB-7: Skyline Station beside the airship mast, until HB-4b gives it its headland ---------- */
+/* turned as the mast is, on the open ground nearest it: its whole footprint on grass, meadow, heather or forest floor
+   (no street, tall grass, rock, water or plot), 2 m clear of every building and 4 m of the mast */
+const station = (() => {
+  const mast = props.find(p => p.k === 'airship_station'),
+    [bw, bd] = boxOf('train_station'),
+    others = props.filter(p => boxOf(p.k) && p !== mast && p.k !== 'airship');
+  if (!mast) throw new Error('no airship mast to put the station beside');
+  const fits = q => {
+    for (let v = -1; v <= bd + 1; v += 0.5)
+      for (let u = -bw / 2 - 1; u <= bw / 2 + 1; u += 0.5) {
+        const [x, z] = world(q, u, v);
+        if (!'gGEHyMLfCB'.includes(tileAt(x, z)) || plots.some(L => inPlot(L, x, z, 0.5))) return false;
+        if (others.some(B => footDist(B, x, z) < 2) || footDist(mast, x, z) < 4) return false;
+      }
+    return true;
+  };
+  for (let d = 4; d <= 40; d += 0.5)
+    for (let k = 0; k < 48; k++) {
+      const a = (k / 48) * Math.PI * 2,
+        q = { k: 'train_station', x: r2(mast.x + Math.cos(a) * d), z: r2(mast.z + Math.sin(a) * d) };
+      if (mast.rot) q.rot = mast.rot;
+      if (fits(q)) return { ...q, act: 'station', label: 'Skyline Station' };
+    }
+  throw new Error('no room for Skyline Station within 40 m of the airship mast');
+})();
+props.push(station);
+const byStation = (x, z, m) => footDist(station, x, z) < m;
+
 /* the farm patch's crops by the barn, the barn in its zone beside the pasture */
 const barnZone = G.zones.find(Z => Z.k === 'barn'),
   pasture = G.zones.find(Z => Z.k === 'pasture'),
@@ -296,7 +328,7 @@ const barnZone = G.zones.find(Z => Z.k === 'barn'),
           d = Math.hypot(dx, dz);
         if (best && d >= best[2]) continue;
         if (!islandPointIn(townZone.poly, x, z) || !'gGE'.includes(tileAt(x, z))) continue;
-        if (plots.some(L => inPlot(L, x, z, 4)) || !clear(x, z, 4)) continue;
+        if (plots.some(L => inPlot(L, x, z, 4)) || byStation(x, z, 4) || !clear(x, z, 4)) continue;
         best = [x, z, d];
       }
     if (!oak || !best) throw new Error('no room for the great oak by the square');
@@ -308,7 +340,8 @@ const barnZone = G.zones.find(Z => Z.k === 'barn'),
       x = townZone.poly.reduce((m, p) => Math.min(m, p[0]), 1e9) + ((h % 1000) / 1000) * 100,
       z = townZone.poly.reduce((m, p) => Math.min(m, p[1]), 1e9) + ((Math.floor(h / 1000) % 1000) / 1000) * 90;
     if (!islandPointIn(townZone.poly, x, z) || !'gGE'.includes(tileAt(x, z))) continue;
-    if (plots.some(L => inPlot(L, x, z, 3)) || spots.some(s => Math.hypot(s[0] - x, s[1] - z) < 9)) continue;
+    if (plots.some(L => inPlot(L, x, z, 3)) || byStation(x, z, 3) || spots.some(s => Math.hypot(s[0] - x, s[1] - z) < 9))
+      continue;
     let near = false;
     for (let a = 0; a < 8 && !near; a++)
       near =
@@ -326,7 +359,7 @@ const kept = props.filter(p => {
   const t = tileAt(p.x, p.z);
   if (STREET.includes(t)) return !++left.street;
   if (WATER.includes(t) || onBridge(p.x, p.z)) return !++left.water;
-  if (plots.some(L => L.i !== p._from && inPlot(L, p.x, p.z, 0.3))) return !++left.plot;
+  if (plots.some(L => L.i !== p._from && inPlot(L, p.x, p.z, 0.3)) || byStation(p.x, p.z, 0.5)) return !++left.plot;
   /* nothing in front of a door: 1.6 m either side of it, 3 m out */
   for (const [ax, az, fx, fz] of doorFronts) {
     const u = (p.x - ax) * fx + (p.z - az) * fz,

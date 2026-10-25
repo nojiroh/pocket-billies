@@ -289,6 +289,25 @@ their plots, the other new plots bare pads; a 12 m square; at least 8 cottages. 
   stays moored as scenery: no act.
 - Player-facing words: the station's name and lines (ask; this phase changes them).
 
+**Done in HB-7** (2026-10-25, on `art/hub-station-trains` from main with HB-1 merged in, at the owner's word). Answers
+(Ask me before 4): **Skyline Station**; the trains **the Lakeland Clipper, the Greenbelt Sunrunner, the Wildwood
+Zephyr, the Highland Arrow, the Harvest Comet**. The owner's notes on the first pictures: the trains have rocket
+engines; the portal is a tear floating in the sky, retro-futuristic (not a ring on a gantry). Checked against the code:
+- Region themes: 5 (`lakeland`, `greenbelt`, `wildwood`, `highland`, `harvest`); a run keeps `run.region.theme`;
+  `runRegionMake` can return null, so HB-8 needs a fallback train (rec: the Sunrunner). regions.json
+  `themes.<id>.train` names each theme's train (`{k, name}`), checked by check-data.
+- The portal models didn't fit: `portal_ring` is shards and a flat picture, `portal_gate` 3.3 m. `sky_portal` is new.
+- A model can't stand above the ground (`propBaseHeight`), so each `sky_rail` piece carries its own pylon; nothing
+  moves a prop along a path (HB-8's engine work). Pieces chain 12 m apart on one heading: flat (out of the station's
+  right end), bend, rise, rise high, crest (15.5 m), then `sky_portal` (the launch lip at its x -1.4, the tear at x 2).
+- The airship's act was read in more places than the plan listed: `standByMast` (run end, resume, landing: now the
+  station first), check-data's `dataBuildings` (a building's act must stand in Copperleaf), airship-data.test (every
+  town needs act `fly`, and no prop of kind `station`: the new kind is `train_station`), check-quick's phone step,
+  RL-8 and airship_moored, check-fast's Lab step.
+- Copperleaf is generated: build-copperleaf.mjs places the station on the open ground nearest the mast (now 118.9,
+  93.2, turned -64.5, 13 m from it). HB-4b moves it to the headland and lays the rail out to sea.
+- The run still sets off on the airship's flight over the world map and the run sheet still says so: HB-8.
+
 ### HB-8 Departure and return
 - Departure: the train glides in, you board, the camera follows it up the rail, the portal opens, the train flies in,
   a white-out into the loading screen (HB-2) shown as the carriage's inside with the portal tunnel past the windows,

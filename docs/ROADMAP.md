@@ -118,7 +118,9 @@ town node needs it.
   over frames, the landing waits for its map, models, the run's world map and the walk view, a 20 s cap; fly, then
   load) done 2026-10-25 on `track/hub`, waiting on the owner's phone test. HB-4a (sketches; the pick: B, East
   crescent, with a town square) and HB-4b (the island rebuilt as B2: a 12 m square, 18 buildings, every door facing
-  out, no lookout, the coast road round the station) done 2026-10-25. Tags `hb-N-done`. Branch `track/hub`.
+  out, no lookout, the coast road round the station) done 2026-10-25. HB-7's art and sheet (Skyline Station, the
+  sky rail, the tear portal, five trains; runs start at the station) done 2026-10-25 on `art/hub-station-trains`.
+  Tags `hb-N-done`. Branch `track/hub`.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all
