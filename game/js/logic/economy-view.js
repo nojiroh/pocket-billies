@@ -126,7 +126,7 @@ export function economyLines(D) {
   const B = D.buildings || {};
   for (const [k, U] of Object.entries(D.unlocks || {})) {
     const G = /** @type {any} */ (U).grant || {};
-    for (const c of ['research', 'scrap', 'crests'])
+    for (const c of ['research', 'scrap', 'crests', 'dna'])
       if (G[c])
         add({
           currency: c,

@@ -1926,7 +1926,8 @@ export type UnlockGrant =
   | { biome: string }
   | { research: number }
   | { scrap: number }
-  | { crests: number };
+  | { crests: number }
+  | { dna: number };
 /** unlocks.json: one row of the unlock table (roguelite track RL-11): sold at a building (at + cost, in its currency;
  * the Lab's rows are its board) or earned when a condition holds (when) */
 export interface Unlock {

@@ -71,7 +71,7 @@ export function unlockReady(s, id, D) {
 export function unlockGrant(s, R) {
   const G = /** @type {any} */ (R.grant);
   if (G.building) s.meta.buildings[G.building] = Math.max(buildingLevel(s, G.building), G.level);
-  for (const c of /** @type {const} */ (['research', 'scrap', 'crests']))
+  for (const c of /** @type {const} */ (['research', 'scrap', 'crests', 'dna']))
     if (G[c]) s.meta[c] = Math.min(META_MAX, s.meta[c] + G[c]);
 }
 /** buy a sold row: pays its cost in its building's currency, owns it and grants it. Returns whether it was bought

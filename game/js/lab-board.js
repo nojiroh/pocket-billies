@@ -38,7 +38,7 @@ provide({ buildingLabel, buildingRowsHTML, labMilestones });
 /** what an unlock gives, in a few words: "+10 Scrap", or its name @param {any} R */
 function unlockGiftText(R) {
   const G = R.grant || {};
-  for (const c of ['research', 'scrap', 'crests'])
+  for (const c of ['research', 'scrap', 'crests', 'dna'])
     if (G[c]) {
       const C = CURRENCIES[c] || { name: c, one: c };
       return `+${formatNumber(G[c])} ${G[c] === 1 ? C.one : C.name}`;
