@@ -32,6 +32,7 @@ import {
   worldPut,
 } from './game-data.js';
 import { rngFrom } from './logic/rng.js';
+import { waterMarshOf } from './logic/water-play.js';
 import { runRestore } from './logic/run-state.js';
 import { runRegionData } from './logic/run-region.js';
 import { runSpot, runWeather } from './logic/run-map.js';
@@ -180,6 +181,11 @@ function runWorldPutRun(run, scenes, data) {
       bowlTreeStyle,
       rngFrom
     );
+  /* WA-5a: a place with marsh or bog water has the marsh's own wild Billies (rules.js spawn, logic/water-play.js) */
+  W.locations.slice(1).forEach((L, i) => {
+    const m = waterMarshOf(scenes[i]);
+    if (m) L.marsh = m;
+  });
   worldPut({
     ...W,
     look,
