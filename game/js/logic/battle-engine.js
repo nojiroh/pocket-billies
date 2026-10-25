@@ -1076,7 +1076,8 @@ export function startTrainer(id, o = {}) {
     T.alpha
       ? `${T.name} sends out an Alpha! It acts twice a turn. Your team steps up together.`
       : dbl
-        ? `${T.name} wants a double battle!`
+        ? /* RT-2: a route pair is two trainers */
+          `${T.name} ${T.mate ? 'want' : 'wants'} a double battle!`
         : `${T.name} wants to battle.`,
     { k: 'trainerIn', who: T.who }
   );
