@@ -31,6 +31,8 @@ expose({
   bowlThingHash: [() => bowlThingHash, v => (bowlThingHash = v)],
   // @ts-expect-error -- replaced on purpose
   bowlTreeStyle: [() => bowlTreeStyle, v => (bowlTreeStyle = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlYouPoint: [() => bowlYouPoint, v => (bowlYouPoint = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -50,6 +52,19 @@ export function bowlMapPoint(spot, map, mx, mz, metres = 1000) {
     u = (mx - map.w / 2) / metres,
     v = (mz - map.h / 2) / metres;
   return [spot.x + east[0] * u + north[0] * v, spot.y + east[1] * u + north[1] * v];
+}
+/** where you are on a walk map shown on the bowl (HB-1: the floating island's pin was drawn at the map's middle):
+ * your own spot when the walk is on that map, else the map's hub (where you stand on arrival), else its middle
+ * @param {{ x: number, y: number, up?: number }} spot @param {{ w: number, h: number, hub?: number[] }} map
+ * @param {{ x: number, z: number } | null | undefined} pl @param {number} [metres] @returns {[number, number]} */
+export function bowlYouPoint(spot, map, pl, metres = 1000) {
+  const [mx, mz] =
+    pl && Number.isFinite(pl.x) && Number.isFinite(pl.z)
+      ? [pl.x, pl.z]
+      : map.hub && map.hub.length > 1
+        ? map.hub
+        : [map.w / 2, map.h / 2];
+  return bowlMapPoint(spot, map, mx, mz, metres);
 }
 /** the turn of a walk map on the bowl (radians, counter-clockwise from the bowl's own east to the map's east)
  * @param {{ x: number, y: number, up?: number }} spot */
