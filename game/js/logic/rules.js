@@ -402,7 +402,8 @@ export function stat(m, k) {
   let v = k === 'hp' ? Math.floor((2 * b * m.lvl) / 100) + m.lvl + 10 : Math.floor((2 * b * m.lvl) / 100) + 5;
   /* phase 16: its parts (weight and Prime) */
   /* SP-2: and its foreign parts' weight (a splice is never Prime) */
-  if (m.build || m.graft) v = Math.max(1, Math.round(v * buildStatFactor(m.build, k, billyRel(m))));
+  const rel = m.graft ? billyRel(m) : null;
+  if (m.build || rel) v = Math.max(1, Math.round(v * buildStatFactor(m.build, k, rel)));
   /* RL-10: an abomination's spike and drawback (rules.json ranch.breed) */
   const mu = m.mut,
     B = mu && mu.k === 'abom' && RULES.ranch && RULES.ranch.breed;

@@ -146,3 +146,12 @@ test('SP-2: a spliced Billie: its weight, its stats and its Prime tag follow its
   assert.ok(fn('stat')(m, 'lev') > lev / (1 + P.primeBonus), 'heavier: more attack than an un-Prime twin');
   assert.ok(fn('stat')(m, 'hus') < hus, 'and slower');
 });
+
+test('SP-2: a Billie with no build and a splice that no longer fits gets no build factor (and no Prime bonus)', () => {
+  const s = startedSave('swift0', 30),
+    m = s.team[0];
+  delete m.build;
+  const plain = fn('stat')(m, 'hp');
+  m.graft = { back: 'trump0' };
+  assert.equal(fn('stat')(m, 'hp'), plain);
+});
