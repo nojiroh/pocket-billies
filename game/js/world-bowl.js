@@ -121,6 +121,8 @@ import {
 import { POST_EFFECT_SHADERS, drawPostEffects, projectToScreenUv } from './engine/post-effects.js';
 import { WEATHER_LOOKS, environmentLitFraction, environmentLookAt, environmentState } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
+import { PIXEL_WATER_GLSL } from './walk/walk-shaders.js';
+import { setPixelWaterUniform } from './walk/water-data.js';
 import { clampZoom } from './walk/camera.js';
 import { loadPropModelRecipe, lowPolyFromRecipe } from './prop-models.js';
 /* eslint-disable no-func-assign */
@@ -133,6 +135,7 @@ expose({
   BOWL_METRES: [() => BOWL_METRES],
   BOWL_MIX: [() => BOWL_MIX],
   BOWL_PIN: [() => BOWL_PIN],
+  BOWL_PIXEL_GLSL: [() => BOWL_PIXEL_GLSL],
   BOWL_REGION_GROUND: [() => BOWL_REGION_GROUND],
   BOWL_REGION_SHADE: [() => BOWL_REGION_SHADE],
   BOWL_RIVER_FIELD: [() => BOWL_RIVER_FIELD],
@@ -331,6 +334,17 @@ vec3 bowlAmb(float ny){return mix(vec3(.4,.45,.56)+.16*ny,vec3(.1,.13,.27)+.05*n
 vec3 bowlSunCol(){return mix(vec3(1.,.94,.82)*.74,vec3(.5,.18,.1)*.5,uNight*(1.-uTodOn))*uLight*uSunTint;}
 float bowlCloudShade(vec2 q){float s=1.;for(int i=0;i<40;i++){if(i>=uCn)break;vec4 c=uCs[i];float d=length(q-c.xy)/c.z;s*=1.-c.w*(1.-smoothstep(.55,1.,d));}return s;}
 float bowlH(vec2 q){float r=min(1.,length(q));return ${Math.SQRT2.toFixed(6)}-sqrt(2.-r*r);}`;
+/* water track WA-7: the walk's pixel water (walk-shaders.js PIXEL_WATER_GLSL: banded tones, an ordered dither fixed to
+   the ground, stepped time) on the bowl. Its grid is the ground pictures' 16 texels a metre close up and coarser by
+   powers of two further out, so a texel stays at least about two screen pixels (px: metres a screen pixel) and the
+   dither never shimmers. bwK: a texel's size in metres; bwAt: the texel's middle; bwFix: a value that varies smoothly
+   over the screen (its change along dFdx, dFdy) read at the texel's middle instead, so its edges step with the grid */
+const BOWL_PIXEL_GLSL = `${PIXEL_WATER_GLSL}
+float bwK(float px){return exp2(max(0.,ceil(log2(px*32.))))/16.;}
+vec2 bwCell(vec2 m,float k){return floor(m/k);}
+vec2 bwAt(vec2 m,float k){return (floor(m/k)+.5)*k;}
+float bwFix(float v,vec2 m,vec2 ma){mat2 J=mat2(dFdx(m),dFdy(m));float dt=determinant(J);if(abs(dt)<1e-12)return v;
+ vec2 g=inverse(transpose(J))*vec2(dFdx(v),dFdy(v));return v+dot(g,ma-m);}`;
 export const WORLD_BOWL_SHADERS = {
   /* the sky: pale towards the rim line, the Inner Sun overhead (depth at the very back) */
   msky: [
@@ -357,6 +371,7 @@ precision highp float;in vec3 aPos;uniform mat4 uVP;out vec3 vW;void main(){vW=a
 precision highp float;precision highp sampler2DArray;precision highp sampler2DShadow;in vec3 vW;out vec4 o;uniform sampler2D uIdx,uMix,uRoute;uniform sampler2DArray uLay;uniform vec3 uC,uLd,uHaze;uniform float uOn,uT;uniform vec2 uWaterL;uniform vec4 uIsle;
 ${BOWL_SHADOW_GLSL}
 ${BOWL_SKY_GLSL}
+${BOWL_PIXEL_GLSL}
 void main(){vec3 n=normalize(cross(dFdx(vW),dFdy(vW)));if(n.y<0.)n=-n;
  /* the floating island: only its land, nothing under the water's line (HB-3: but its lagoon's bed) or away from it */
  if(uIsle.w>.5){vec2 qi=vec2(vW.x,-vW.z);if((uIsle.w<1.5&&vW.y-bowlH(qi)<0.)||length(qi-uIsle.xy)>uIsle.z)discard;}
@@ -365,14 +380,26 @@ void main(){vec3 n=normalize(cross(dFdx(vW),dFdy(vW)));if(n.y<0.)n=-n;
  if(uOn>.5&&px<4.){ivec2 ti=ivec2(clamp(uv*${BOWL_INDEX.toFixed(1)},vec2(0.),vec2(${(BOWL_INDEX - 1).toFixed(1)})));float L=floor(texelFetch(uIdx,ti,0).r*255.+.5);
   near=textureGrad(uLay,vec3(fract(m),L),dFdx(m),dFdy(m)).rgb;
   /* a place's own water and the rivers (fix 2026-10-19): drawn as water, not as a tile; foam where it meets land */
-  if(abs(L-uWaterL.x)<.5||abs(L-uWaterL.y)<.5){near=abs(L-uWaterL.y)<.5?vec3(.1,.45,.66):vec3(.26,.66,.74);
+  if((abs(L-uWaterL.x)<.5||abs(L-uWaterL.y)<.5)&&uPixW.x>.5){
+   /* WA-7, pixel water on: the shimmer in three tones on the bowl's grid, stepped; the foam a hard line one texel wide
+      (a dithered second) along each side of the map's square that meets land */
+   float kk=bwK(px);vec2 cl=bwCell(m,kk),ma=bwAt(m,kk);float tt=pwStep(uT),sv=.5+.5*sin(ma.x*.7+ma.y*.5+tt*1.3)*sin(ma.y*.9-ma.x*.3-tt*.9);
+   near=(abs(L-uWaterL.y)<.5?vec3(.1,.45,.66):vec3(.26,.66,.74))*(.93+.07*(pwQ(sv,3.,cl)*2.-1.));
+   vec2 qa=ma/${BOWL_METRES.toFixed(1)},fi=fract(vec2(qa.x*.5+.5,.5-qa.y*.5)*${BOWL_INDEX.toFixed(1)});float e=9.;
+   for(int k=0;k<4;k++){ivec2 o=ivec2(k==0?1:k==1?-1:0,k==2?1:k==3?-1:0);float Ln=floor(texelFetch(uIdx,clamp(ti+o,ivec2(0),ivec2(${BOWL_INDEX - 1})),0).r*255.+.5);
+    if(!(abs(Ln-uWaterL.x)<.5||abs(Ln-uWaterL.y)<.5))e=min(e,k==0?1.-fi.x:k==1?fi.x:k==2?1.-fi.y:fi.y);}
+   e*=${((2 * BOWL_METRES) / BOWL_INDEX).toFixed(4)};near=mix(near,vec3(.9,.95,.97),(e<kk?.8:e<2.*kk&&pwBayer(cl)>.5?.5:0.));}
+  else if(abs(L-uWaterL.x)<.5||abs(L-uWaterL.y)<.5){near=abs(L-uWaterL.y)<.5?vec3(.1,.45,.66):vec3(.26,.66,.74);
    near*=.93+.07*sin(m.x*.7+m.y*.5+uT*1.3)*sin(m.y*.9-m.x*.3-uT*.9);
    float sh=0.;for(int k=0;k<4;k++){ivec2 o=ivec2(k==0?1:k==1?-1:0,k==2?1:k==3?-1:0);float Ln=floor(texelFetch(uIdx,clamp(ti+o,ivec2(0),ivec2(${BOWL_INDEX - 1})),0).r*255.+.5);sh+=(abs(Ln-uWaterL.x)<.5||abs(Ln-uWaterL.y)<.5)?0.:1.;}
    near=mix(near,vec3(.9,.95,.97),min(1.,sh)*.55);}
   c=mix(near,far,smoothstep(1.4,4.,px));}
  if(uOn>.5){vec3 rq=texture(uRoute,uv).rgb;float aa=pb*.75+1e-5;
   float rv=rq.b*${BOWL_RIVER_FIELD.toFixed(3)},rw=max(.0012,pb*.9);
-  c=mix(c,mix(vec3(.2,.47,.72),near,1.-smoothstep(1.,3.,px)),(1.-smoothstep(rw-aa,rw+aa,rv))*smoothstep(.6,2.,px));
+  /* WA-7, pixel water on: the river's line with a hard edge, a paler middle in dithered tones on the bowl's grid */
+  if(uPixW.x>.5){float tn=pwQ(clamp((1.-rv/rw)*1.6,0.,1.),3.,bwCell(m,bwK(px)));
+   c=mix(c,mix(mix(vec3(.16,.4,.64),vec3(.3,.6,.8),tn),near,1.-smoothstep(1.,3.,px)),step(rv,rw)*smoothstep(.6,2.,px));}
+  else c=mix(c,mix(vec3(.2,.47,.72),near,1.-smoothstep(1.,3.,px)),(1.-smoothstep(rw-aa,rw+aa,rv))*smoothstep(.6,2.,px));
   float rd=rq.r*${BOWL_ROUTE_FIELD.toFixed(3)},hw=max(.0018,pb*1.6),ow=hw+max(.0011,pb*1.1),vis=1.-rq.g*(1.-smoothstep(1.5,4.,px));
   vec3 rc=mix(vec3(.95,.87,.66),near*1.08,1.-smoothstep(1.,3.,px));
   c=mix(c,vec3(.22,.15,.1),(1.-smoothstep(ow-aa,ow+aa,rd))*vis*.85);c=mix(c,rc,(1.-smoothstep(hw-aa,hw+aa,rd))*vis);}
@@ -519,8 +546,38 @@ precision highp float;in vec3 aPos;in vec2 aShore;uniform mat4 uVP;out vec3 vW;o
 precision highp float;precision highp sampler2DShadow;in vec3 vW;in vec2 vS;out vec4 o;uniform vec3 uC,uLd,uHaze,uRimCol;uniform float uT,uRim;
 ${BOWL_SHADOW_GLSL}
 ${BOWL_SKY_GLSL}
+${BOWL_PIXEL_GLSL}
 float wv(vec2 p,vec2 d,float f,float s,float t){return sin(dot(p,d)*f+t*s);}
-void main(){vec2 q=vec2(vW.x,-vW.z)*${BOWL_METRES.toFixed(1)};float t=uT;
+/* WA-7, pixel water on: the same sea in banded tones on the bowl's grid (BOWL_PIXEL_GLSL); its waves, foam and glint
+   read at each texel's middle in stepped time; the sky's mirror and its glancing mix stay smooth (the hybrid answer) */
+void bowlWaterPixel(){vec2 q0=vec2(vW.x,-vW.z)*${BOWL_METRES.toFixed(1)};float t=pwStep(uT);
+ float px=max(length(dFdx(q0)),length(dFdy(q0))),k=bwK(px);vec2 cl=bwCell(q0,k),q=bwAt(q0,k);
+ vec3 up=normalize(vec3(0.,${Math.SQRT2.toFixed(6)},0.)-vW);float pk=max(px,k);vec2 g=vec2(0.);
+ g+=vec2(.8,.6)*cos(dot(q,vec2(.8,.6))*.09+t*1.1)*.09*(1.-smoothstep(.2,.45,pk*.09/6.283));
+ g+=vec2(-.5,.86)*cos(dot(q,vec2(-.5,.86))*.17+t*1.7)*.06*(1.-smoothstep(.2,.45,pk*.17/6.283));
+ g+=vec2(.2,-.98)*cos(dot(q,vec2(.2,-.98))*.31+t*2.3)*.035*(1.-smoothstep(.2,.45,pk*.31/6.283));
+ g+=vec2(-.94,-.34)*cos(dot(q,vec2(-.94,-.34))*.6+t*3.1)*.02*(1.-smoothstep(.2,.45,pk*.6/6.283));
+ vec3 n=normalize(up+vec3(-g.x,0.,g.y)*.35);
+ vec3 v=normalize(uC-vW),l=uLd;vec2 qb=vec2(vW.x,-vW.z);vec4 wx=texture(uSky,vec2(qb.x*.5+.5,.5-qb.y*.5));float sh=bowlShadow(vW+vec3(0.,.0015,0.),1.)*bowlCloudShade(qb);
+ float dep=max(0.,bwFix(vS.x,q0,q));
+ vec3 shallow=vec3(.33,.78,.78),mid=vec3(.1,.48,.68),deep=vec3(.04,.2,.42);
+ float b=pwBand(.5*smoothstep(.0,.006,dep)+.5*smoothstep(.007,.024,dep),cl);
+ vec3 col=b<.5?mix(shallow,mid,b*2.):mix(mid,deep,b*2.-1.);
+ col*=(bowlAmb(1.)*1.4+bowlSunCol()*.4*pwQ(max(0.,dot(n,l)),4.,cl))*(.72+.28*sh);
+ vec3 r=reflect(-v,n);float ry=dot(r,up);
+ vec3 sky=mix(vec3(.98,.87,.72),vec3(.6,.71,.95),smoothstep(-.05,.7,ry));sky=mix(sky,vec3(.62,.66,.72),wx.r*.5);sky=mix(sky,vec3(.06,.08,.18),uNight);
+ float fr=.04+.96*pow(1.-max(0.,dot(n,v)),5.);col=mix(col,sky,clamp(fr,0.,.85));
+ float sp=step(.35,pow(max(0.,dot(reflect(-l,n),v)),120.))*(1.-smoothstep(2.,10.,px));col+=mix(vec3(1.,.95,.8),vec3(.9,.35,.2),uNight)*sp*.9*sh*uLight;
+ col=mix(col,mix(vec3(.82,.85,.88),vec3(.2,.22,.3),uNight),wx.b*.35);
+ /* the foam: stepped bands rolling in over the shallows and a hard line at the land, both in whole texels */
+ float fb=1.-smoothstep(.0,.0035,dep),fw=.5+.5*sin(dep*2600.-t*2.2+wv(q,vec2(.6,.8),.4,0.,0.)*1.5);
+ fw=mix(fw,.55,smoothstep(.3,1.5,pk));
+ float foam=max(step(.5,fb*smoothstep(.35,.75,fw))*.9,step(dep,.0008)*.8);
+ foam=max(foam,step(dep,.0016)*step(.5,pwBayer(cl))*.5);col=mix(col,vec3(.95,.98,1.),foam*.85);
+ float a=mix(.45,.92,pwQ(smoothstep(.0,.006,dep),3.,cl));a=max(a,foam*.9);
+ float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(col,uHaze,clamp(fk,0.,.6)),a);}
+void main(){if(uPixW.x>.5){bowlWaterPixel();return;}
+vec2 q=vec2(vW.x,-vW.z)*${BOWL_METRES.toFixed(1)};float t=uT;
  vec3 up=normalize(vec3(0.,${Math.SQRT2.toFixed(6)},0.)-vW);
  /* each wave fades out once it is smaller than about two pixels (fix 2026-10-19: from far away they made stripes) */
  float px=max(length(dFdx(q)),length(dFdy(q)));vec2 g=vec2(0.);
@@ -2725,6 +2782,7 @@ export function worldBowlRender(t) {
   gl.uniform3fv(U.uLd, sun.ld);
   worldBowlShadowUniforms(U, g);
   worldBowlSkyUniforms(U, sky, sun);
+  setPixelWaterUniform(U);
   gl.uniform3fv(U.uHaze, haze);
   const T = g.terrain || worldBowl.ground.terrain;
   gl.uniform1f(U.uOn, g.ok ? 1 : 0);
@@ -2781,6 +2839,7 @@ export function worldBowlRender(t) {
     gl.uniform3fv(U.uLd, sun.ld);
     worldBowlShadowUniforms(U, g);
     worldBowlSkyUniforms(U, sky, sun);
+    setPixelWaterUniform(U);
     gl.uniform3fv(U.uHaze, haze);
     gl.uniform1f(U.uT, reducedMotion ? 0 : (t % 600000) / 1000);
     gl.uniform1f(U.uRim, 0);

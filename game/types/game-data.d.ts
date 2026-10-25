@@ -417,6 +417,8 @@ export interface LocationData {
   side?: 1;
   /** RL-12b: 1 on a run's waystation (an event's or a stall's place): fewer wild Billies (rules.json run.wild) */
   waystation?: 1;
+  /** WA-5a: a run's place with marsh or bog water: its wild Billies weighted toward the marsh's (logic/water-play.js) */
+  marsh?: string;
   v47region?: number;
   a04place?: number;
   a04pearl?: number;

@@ -38,7 +38,7 @@ expose({
   saveHeld: [() => saveHeld, v => (saveHeld = v)],
   saveHold: [() => saveHold, v => setSaveHold(v)],
   // @ts-expect-error -- replaced on purpose
-  saveNow: [() => saveNow, v => (saveNow = v)],
+  saveNow: [() => saveNow, v => ((saveNow = v), provide({ saveNow }))],
   saveTimer: [() => saveTimer, v => (saveTimer = v)],
   // @ts-expect-error -- replaced on purpose
   setActiveBattle: [() => setActiveBattle, v => ((setActiveBattle = v), provide({ setActiveBattle }))],
@@ -57,7 +57,7 @@ expose({
   writeStoredSave: [() => writeStoredSave, v => (writeStoredSave = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ save, setActiveBattle });
+provide({ save, saveNow, setActiveBattle });
 /* to-module: end */
 export const escapeHtml = s =>
   String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);

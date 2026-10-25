@@ -70,7 +70,7 @@
    "required": ["v", "seed"],
    "properties": {"v": {"type": "integer", "minimum": 0}, "seed": {"type": "string"}, "dials": {"type": "object"}, "lock": {"description": "the ground is frozen: a change to it fails the data check (props stay free)", "type": "boolean"}, "hash": {"description": "the frozen ground's fingerprint (logic/island.js islandGroundHash)", "type": "string"}}
   },
-  "waterKind": {"description": "the kind of the map's water (walk/water-data.js WATER_KIND_LOOKS)", "enum": ["pond", "stream", "canal", "spring", "swamp", "lake", "sea", "lava", "ice"]},
+  "waterKind": {"description": "the kind of the map's water (logic/water-kinds.js WATER_KINDS)", "enum": ["pond", "stream", "canal", "spring", "swamp", "lake", "sea", "lava", "ice", "rapids", "hotspring", "oasis", "bog", "reef", "cave"]},
   "camZones": {"description": "CAM-2: camera zones (walk/camera.js): standing in one, the camera takes its zoom, tilt and aim offset; the highest priority wins. rect: x, z (corner), w, h; circle: x, z (centre), r. Metres.", "type": "array", "items": {"type": "object", "required": ["shape", "x", "z"], "additionalProperties": false, "properties": {
     "shape": {"enum": ["rect", "circle"]}, "x": {"type": "number"}, "z": {"type": "number"},
     "w": {"type": "number", "exclusiveMinimum": 0}, "h": {"type": "number", "exclusiveMinimum": 0}, "r": {"type": "number", "exclusiveMinimum": 0},

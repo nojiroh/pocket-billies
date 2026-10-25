@@ -19,13 +19,14 @@ import { engineColor, engineSetting } from '../engine/settings.js';
 import { bindQuad, gpuState, imageTexture, matrix4, renderTarget } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
 import { setSpriteUniforms, useWalkProgram } from './draw-common.js';
-import { WATER_KIND_LOOKS, setPixelWaterUniform, setShoreUniforms } from './water-data.js';
+import { WATER_KIND_LOOKS, setFlowUniforms, setPixelWaterUniform, setShoreUniforms } from './water-data.js';
 import { computeFrustum, inFrustum } from './quality-cull.js';
 import { skyColors } from './sky.js';
 /* eslint-disable no-func-assign */
 expose({
   WATER_KIND_UNIFORMS: [() => WATER_KIND_UNIFORMS],
   addRipple: [() => addRipple, v => ((addRipple = v), provide({ addRipple }))],
+  addWakeRipple: [() => addWakeRipple, v => ((addWakeRipple = v), provide({ addWakeRipple }))],
   drawWater: [() => drawWater, v => setDrawWater(v)],
   mirrorInView: [() => mirrorInView, v => (mirrorInView = v)],
   reflectionLevel: [() => reflectionLevel, v => (reflectionLevel = v)],
@@ -36,7 +37,7 @@ expose({
   waterNear: [() => waterNear, v => (waterNear = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ addRipple });
+provide({ addRipple, addWakeRipple });
 export function setDrawWater(v) {
   drawWater = v; // eslint-disable-line no-func-assign
   provide({ drawWater });
@@ -257,15 +258,25 @@ function waterLife() {
       }
     }
   }
-  const R = walkRenderer.rings || [];
+  const R = walkRenderer.rings || [],
+    Wk = walkRenderer.wake || [];
   for (const r of R) r[2] += dt;
+  for (const r of Wk) r[2] += dt;
   walkRenderer.rings = R.filter(r => r[2] < 2.4);
-  walkRenderer.rings.slice(-8).forEach((r, i) => rings.set(r, i * 4));
+  walkRenderer.wake = Wk.filter(r => r[2] < 2.4);
+  /* WA-2a: the shader's 8: the wake's newest (up to 3) first, then the scene's newest */
+  const w = walkRenderer.wake.slice(-3);
+  w.concat(walkRenderer.rings.slice(-(8 - w.length))).forEach((r, i) => rings.set(r, i * 4));
   return { fish, rings };
 }
 export function addRipple(x, z, k) {
   (walkRenderer.rings = walkRenderer.rings || []).push([x, z, 0, k]);
   if (walkRenderer.rings.length > 16) walkRenderer.rings.shift();
+}
+/* water track WA-2a: rings of your wake as you wade, kept apart (4 at most) so they never push out the scene's own */
+function addWakeRipple(x, z, k) {
+  (walkRenderer.wake = walkRenderer.wake || []).push([x, z, 0, k]);
+  if (walkRenderer.wake.length > 4) walkRenderer.wake.shift();
 }
 function setWaterUniforms(U) {
   const gl = gpuState.gl;
@@ -318,6 +329,7 @@ export function drawWater(C, X, rw, rh) {
   gl.uniform1f(U.uLevel, walkRenderer.wlevelR ?? walkRenderer.wlevel ?? 0);
   setWaterUniforms(U);
   setShoreUniforms(U, sc);
+  setFlowUniforms(U, sc);
   if (U.uHole) gl.uniform4fv(U.uHole, roomHole(sc));
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -331,6 +343,7 @@ export function drawWater(C, X, rw, rh) {
   if (walkRenderer.basin) {
     gl.uniform1f(U.uLevel, -99);
     if (U.uShoreR) gl.uniform3f(U.uShoreR, 1, 1, 0);
+    setFlowUniforms(U, sc, false);
     gl.bindVertexArray(walkRenderer.basin.vao);
     gl.drawElements(gl.TRIANGLES, walkRenderer.basin.n, gl.UNSIGNED_INT, 0);
     gl.bindVertexArray(null);
