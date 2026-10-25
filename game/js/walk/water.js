@@ -4,14 +4,22 @@
    walk-view-gl.js as they were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { ambientLife, provide, reducedMotion, roomHole, setPropLookUniforms, soundEffectAt } from '../hooks.js';
+import {
+  ambientLife,
+  drawPropModels,
+  provide,
+  reducedMotion,
+  roomHole,
+  setPropLookUniforms,
+  soundEffectAt,
+} from '../hooks.js';
 import { pictureRight } from '../logic/prop-turn.js';
 import { walkData, walkView } from '../walk-view.js';
 import { engineColor, engineSetting } from '../engine/settings.js';
 import { bindQuad, gpuState, imageTexture, matrix4, renderTarget } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
 import { setSpriteUniforms, useWalkProgram } from './draw-common.js';
-import { WATER_KIND_LOOKS, setShoreUniforms } from './water-data.js';
+import { WATER_KIND_LOOKS, setPixelWaterUniform, setShoreUniforms } from './water-data.js';
 import { computeFrustum, inFrustum } from './quality-cull.js';
 import { skyColors } from './sky.js';
 /* eslint-disable no-func-assign */
@@ -121,11 +129,18 @@ export function reflectionPass(items, C, rw, rh, X) {
   /* alpha 0.2: near water by a summed table (a joined view can hold thousands of water tiles, and walking them all for
     every thing cost the iPad about 10 ms a frame), and only what shows in the water: its mirror image in view */
   const FR = computeFrustum(C.vp),
-    cut = engineSetting('quality', 'cull') ?? true;
+    cut = engineSetting('quality', 'cull') ?? true,
+    models = [];
   for (const it of items) {
     if (it.flat || it.far) continue;
     if (!waterNear(it.x, it.z)) continue;
     if (cut && !it.person && !mirrorInView(FR, it, L)) continue;
+    /* water track WA-1: a prop drawn as a model (every game-flow building) is mirrored as that model, not as its old
+       flat picture turned to the camera (the main pass draws no picture for it either) */
+    if (it.vox) {
+      models.push(it);
+      continue;
+    }
     const T = imageTexture(it.im);
     if (!T) continue;
     /* phase 09 batch 9: a turned picture's reflection turns with it (logic/prop-turn.js pictureRight) */
@@ -139,6 +154,9 @@ export function reflectionPass(items, C, rw, rh, X) {
     setSpriteUniforms(p, it);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
+  if (models.length && typeof drawPropModels === 'function')
+    drawPropModels(RC, models, Object.assign({}, X, { shadow: null }));
+  walkRenderer.reflModels = models.length;
 }
 /* v22: the kinds' colours and the water's small lives: fish circling their deep spots, rings from ducks, fish and insects */
 const WATER_KIND_UNIFORMS = {
@@ -320,6 +338,7 @@ export function drawWater(C, X, rw, rh) {
   if (walkRenderer.fallMesh) {
     const f = useWalkProgram('fall', C, X);
     gl.uniform3fv(f.U.uShallow, engineColor('water', 'shallow', '#4FA6C0'));
+    setPixelWaterUniform(f.U);
     gl.disable(gl.CULL_FACE);
     gl.bindVertexArray(walkRenderer.fallMesh.vao);
     gl.drawElements(gl.TRIANGLES, walkRenderer.fallMesh.n, gl.UNSIGNED_INT, 0);
