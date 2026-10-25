@@ -31,6 +31,7 @@ import {
   storyHolds,
   toast,
   uiState,
+  waterWildOdds,
 } from '../hooks.js';
 import { random } from '../util.js';
 import {
@@ -144,7 +145,7 @@ expose({
   hatchEgg: [() => hatchEgg, v => (hatchEgg = v)],
   hatchable: [() => hatchable],
   // @ts-expect-error -- replaced on purpose
-  healAll: [() => healAll, v => (healAll = v)],
+  healAll: [() => healAll, v => ((healAll = v), provide({ healAll }))],
   hereLocation: [() => hereLocation],
   isPrime: [() => isPrime],
   // @ts-expect-error -- replaced on purpose
@@ -213,7 +214,7 @@ expose({
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
-provide({ addWalked, makeBilly, makeRobot, riderOf });
+provide({ addWalked, healAll, makeBilly, makeRobot, riderOf });
 export function setSetTrip(v) {
   // @ts-expect-error -- replaced on purpose
   setTrip = v; // eslint-disable-line no-func-assign
@@ -857,6 +858,8 @@ export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
       : typeof environmentOdds === 'function'
         ? environmentOdds(P.list)
         : P.list;
+  /* WA-5a: a place with marsh or bog water draws more of the Billies that like it (logic/water-play.js) */
+  if (L && L.marsh) list = waterWildOdds(list, L.marsh, typesOf);
   if (gentle) {
     const my = SPECIES[saveData.starter + '0'].types,
       g = list.filter(([id]) => !SPECIES[id].types.some(t => typeEffectiveness(t, my) > 1));

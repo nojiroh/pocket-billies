@@ -18,7 +18,7 @@ exports[`golden scene: feature 1`] = `
   "tiles": 1110730745,
   "heights": 2142064282,
   "steps": 238425371,
-  "props": 791271990,
+  "props": 2299098104,
   "exits": 138117495,
   "rest": 186633712,
   "counts": {
@@ -78,11 +78,11 @@ exports[`golden scene: water 1`] = `
   "tiles": 3231332864,
   "heights": 3618791476,
   "steps": 238425371,
-  "props": 3398633543,
+  "props": 3834214251,
   "exits": 2419090157,
-  "rest": 468900664,
+  "rest": 3210305612,
   "counts": {
-    "props": 583,
+    "props": 585,
     "raised": false
   }
 }

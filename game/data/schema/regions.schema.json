@@ -29,7 +29,8 @@
      "biomes": {"description": "its biomes, by weight (times the graph's)", "$ref": "#/$defs/weights"},
      "types": {"description": "the types it leans to (types.json ids): its dex's lines and its leaders", "$ref": "#/$defs/weights"},
      "ends": {"description": "its own name endings, joined on (\"mere\")", "$ref": "#/$defs/words"},
-     "nouns": {"description": "its own name nouns, after a space (\"Shores\")", "$ref": "#/$defs/words"}
+     "nouns": {"description": "its own name nouns, after a space (\"Shores\")", "$ref": "#/$defs/words"},
+     "train": {"description": "HB-7: its sky train, which takes a run of this region from Skyline Station: the prop (scenery.json, group sky_train) and its name", "type": "object", "additionalProperties": false, "required": ["k", "name"], "properties": {"k": {"type": "string", "minLength": 1}, "name": {"type": "string", "minLength": 1, "maxLength": 24}}}
     }
    }
   },

@@ -422,6 +422,8 @@ debugLog.glInfo = () => {
   /* alpha 0.4: the helper threads: the ground painter's (ground-paint-worker.js) and the bump maps' (engine/webgl.js) */
   try {
     if (typeof GAME.paintWorkerReport === 'function') o.groundPainter = GAME.paintWorkerReport();
+    /* SP-1: the grafted Billies baked on this device (skeleton-rig.js graftReport): bake times and memory */
+    if (typeof GAME.graftReport === 'function') o.grafts = GAME.graftReport();
     if (typeof GAME.normalMapWorkerState !== 'undefined')
       o.bumpHelper = GAME.normalMapWorkerState.w ? 'on' : GAME.normalMapWorkerState.bad ? 'off' : 'not started';
   } catch (e) {}

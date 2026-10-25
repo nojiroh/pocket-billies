@@ -343,6 +343,7 @@ SECTIONS.scenes = () => {
         ['house', 'Show a message (house)'],
         ['home', 'Granny Juniper’s cottage (no room)'],
         ['ranch', 'The ranch (walk in; training and storage)'],
+        ['enter', 'Walk in (the room set on it or its kind)'],
         ['pasture', 'The pasture’s gate (opens the ranch’s sheet)'],
         ['board', 'The Lab’s unlock board (opens the Lab tab)'],
         ['climb', 'A ladder to climb'],
@@ -2910,6 +2911,13 @@ const PAINTED_WATER_KINDS = [
   ['spring', 'Spring', '#3FD6D0'],
   ['swamp', 'Swamp', '#6B7A34'],
   ['lake', 'Lake', '#2E6FB0'],
+  /* water track WA-5a: the appended kinds (logic/water-kinds.js; drawn with an old kind's look until WA-5b) */
+  ['rapids', 'Rapids', '#D8F0F4'],
+  ['hotspring', 'Hot spring', '#7FD8C8'],
+  ['oasis', 'Oasis', '#3FB8A8'],
+  ['bog', 'Bog', '#5A5A2A'],
+  ['reef', 'Reef', '#3FD0C8'],
+  ['cave', 'Cave', '#2A5A70'],
 ];
 function waterToolBarHTML(p) {
   const sc = currentMap();

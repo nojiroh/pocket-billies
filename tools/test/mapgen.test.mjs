@@ -149,7 +149,7 @@ test('a road runs straight in from each exit, on its surface', () => {
   }
 });
 
-test('nothing grows on a path, on a bridge, or in water it does not grow in', () => {
+test('nothing grows on a path, on a bridge, or in water it does not grow in (rocks in shallows, WA-5a)', () => {
   for (const { c, scene: sc } of MADE) {
     for (const p of sc.props) {
       const M = P[p.k];
@@ -157,7 +157,9 @@ test('nothing grows on a path, on a bridge, or in water it does not grow in', ()
       const ch = at(sc, p.x, p.z),
         where = `${c.biome} seed ${c.seed}: ${p.k} at ${p.x},${p.z} on ${ch}`;
       assert.ok(!(T[ch] && T[ch].paved) && !'pvKqb'.includes(ch), where);
-      if ('wd'.includes(ch)) assert.ok(M.grow && /[wd]/.test(M.grow), where);
+      /* WA-5a: rocks may stand in shallows you wade, never in deep water */
+      const rockInShallows = ch === 'w' && modules['water-gen'].WATERGEN_SHALLOW_PROP.test(p.k);
+      if ('wd'.includes(ch) && !rockInShallows) assert.ok(M.grow && /[wd]/.test(M.grow), where);
       for (const b of sc.bridges || []) {
         const vx = b.b[0] - b.a[0],
           vz = b.b[1] - b.a[1],

@@ -13,6 +13,7 @@ import { expose } from './test-globals.js';
 import {
   ALTERNATE_PROPS,
   FIELD_MOVES,
+  ITEMS,
   TERRAIN_MATERIALS,
   addRipple,
   addWakeRipple,
@@ -30,12 +31,14 @@ import {
   fieldClimb,
   gameData,
   groundHeightAt,
+  healAll,
   leaveRoom,
   lifePaths,
   loreFlags,
   mapChatLines,
   mapFiles,
   mapsOfView,
+  maxHp,
   needMaps,
   paintGroundRect,
   paintWorkerState,
@@ -46,6 +49,7 @@ import {
   reducedMotion,
   riderName,
   saveData,
+  saveNow,
   seamlessMapById,
   smooth01,
   soundEffect,
@@ -62,7 +66,9 @@ import {
 import { clamp } from './util.js';
 import { pointInProp, turnedBounds, turnedPoint } from './logic/prop-turn.js';
 import { roomDoorPush, roomToLocal } from './logic/room-turn.js';
-import { WADE_COST, wadeDepthAt, wadeHere, wadeSpeed, wadeWalkable } from './logic/wading.js';
+import { waterKindHeals } from './logic/water-kinds.js';
+import { WADE_COST, wadeDepthAt, wadeHere, wadeKindAt, wadeSpeed, wadeWalkable } from './logic/wading.js';
+import { WATER_HEAL_FLAG, waterHealDue, waterHurt, waterMarshOf, waterReedAt } from './logic/water-play.js';
 import { fieldMoveText } from './logic/run-side.js';
 import { SURF_COST, SURF_SPEED, climbAt, fallDir, fallTop, surfCan, surfable } from './logic/surf.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
@@ -251,10 +257,12 @@ expose({
   updatePlayerHeight: [() => updatePlayerHeight, v => (updatePlayerHeight = v)],
   valueNoise2d: [() => valueNoise2d, v => (valueNoise2d = v)],
   wadeDepthHere: [() => wadeDepthHere, v => (wadeDepthHere = v)],
+  wadeSpeedHere: [() => wadeSpeedHere, v => (wadeSpeedHere = v)],
   walkData: [() => walkData, v => setWalkData(v)],
   walkTo: [() => walkTo, v => (walkTo = v)],
   walkView: [() => walkView],
   walkablePointNear: [() => walkablePointNear, v => (walkablePointNear = v)],
+  waterPlayStep: [() => waterPlayStep, v => (waterPlayStep = v)],
   worldPatchTilesOn: [() => worldPatchTilesOn, v => (worldPatchTilesOn = v)],
   worldToScreen: [() => worldToScreen, v => setWorldToScreen(v)],
 });
@@ -3006,6 +3014,42 @@ export function wadeDepthHere(x, z) {
   if (c >= 0 && walkView.nav.dry[c]) return 0;
   return wadeDepthAt(sc, x, z);
 }
+/** WA-5a: your speed at (x, z) as a share of walking on land: the shallows' depth and their kind (the marsh and the
+ * bog slow you more, logic/water-kinds.js) */
+function wadeSpeedHere(x, z) {
+  const d = wadeDepthHere(x, z);
+  return d > 0 ? wadeSpeed(d, wadeKindAt(walkView.sc, x, z)) : 1;
+}
+/** WA-5a: a hot spring heals the party once a run as you step in with someone hurt; a reed gives what it hides as
+ * you pass it, once a run (logic/water-play.js; the run's own flags) */
+function waterPlayStep(P, wd) {
+  const sc = walkView.sc;
+  if (!sc || !saveData) return;
+  const F = saveData.flags || (saveData.flags = {});
+  if (
+    wd > 0.05 &&
+    waterHealDue(
+      wadeKindAt(sc, P.x, P.z),
+      F,
+      (saveData.team || []).some(m => waterHurt(m, maxHp(m)))
+    )
+  ) {
+    F[WATER_HEAL_FLAG] = 1;
+    healAll();
+    if (typeof debugLog !== 'undefined') debugLog.add('scene', 'hot spring: the team healed');
+    if (typeof toast === 'function') toast('The hot spring’s warmth restores your team!');
+    if (typeof saveNow === 'function') saveNow();
+  }
+  if (!(sc.props || []).some(p => p.hide)) return;
+  const box = (sc.comp && sc.comp.box) || [0, 0],
+    R = waterReedAt(sc, P.x, P.z, F, box[0], box[1]);
+  if (!R || !ITEMS[R.k]) return;
+  F[R.flag] = 1;
+  saveData.items[R.k] = (saveData.items[R.k] || 0) + 1;
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', `reeds: found ${R.k}`);
+  if (typeof toast === 'function') toast(`You found a ${ITEMS[R.k].n} in the reeds!`);
+  if (typeof saveNow === 'function') saveNow();
+}
 /** WA-6b: the team's Billies still standing, as fieldMoveState reads them (their names and types) */
 function surfTeam() {
   return (saveData.team || [])
@@ -3189,14 +3233,25 @@ function encounterCandidates(sc) {
     rows = sc.tiles || [],
     hub = mapHub(sc),
     ex = sc.exits || [],
-    patches = sc.grassPatches && sc.grassPatches.length ? sc.grassPatches : null;
+    patches = sc.grassPatches && sc.grassPatches.length ? sc.grassPatches : null,
+    marsh = !!waterMarshOf(sc);
   navGrid();
   for (let j = 0; j < sc.h; j++)
     for (let i = 1; i < sc.w - 1; i++) {
       const ch = (rows[j] || '')[i];
-      if (!good.includes(ch)) continue;
       const x = i + 0.5,
         z = sc.h - j - 0.5;
+      /* WA-5a: shallows for others: in a generated place a wild Billie may wait in shallows you wade by its tall grass
+         (within a patch, 2 m further in a marsh or a bog), never in a hot spring */
+      if (ch === 'w' && patches && wadeHere(sc, x, z) && !waterKindHeals(wadeKindAt(sc, x, z))) {
+        const more = marsh ? 2 : 0;
+        if (Math.hypot(x - hub[0], z - hub[1]) < 2.2 || ex.some(e => Math.hypot(e[0] - x, e[1] - z) < 2.2)) continue;
+        if (!patches.some(g => Math.hypot(g.x - x, g.z - z) <= g.r + more)) continue;
+        if ((sc.props || []).some(p => Math.hypot(p.x - x, p.z - z) < 0.9)) continue;
+        out.push([x, z, 1]);
+        continue;
+      }
+      if (!good.includes(ch)) continue;
       if (!isWalkable(x, z)) continue;
       const d = Math.hypot(x - hub[0], z - hub[1]);
       if (ex.some(e => Math.hypot(e[0] - x, e[1] - z) < 2.2)) continue;
@@ -3711,7 +3766,7 @@ function movePlayer(st, dt) {
         dt *
         run *
         slopeSpeedFactor(P.x, P.z, wx / l, wz / l) *
-        wadeSpeed(wadeDepthHere(P.x, P.z)) *
+        wadeSpeedHere(P.x, P.z) *
         (P.surf ? SURF_SPEED : 1);
       /* WA-6b: with Surf you ride out onto deep water; at a climbable fall's foot, pushing up it asks to climb */
       const deep = surfOn();
@@ -3748,7 +3803,7 @@ function movePlayer(st, dt) {
         (K.run || alwaysRun() ? RUN_FACTOR : 1) *
         dt *
         slopeSpeedFactor(P.x, P.z, (tg0[0] - P.x) / d0, (tg0[1] - P.z) / d0) *
-        wadeSpeed(wadeDepthHere(P.x, P.z)) *
+        wadeSpeedHere(P.x, P.z) *
         (P.surf ? SURF_SPEED : 1);
       while (left > 0 && P.route) {
         const tg = P.route[P.ri],
@@ -3812,6 +3867,7 @@ function movePlayer(st, dt) {
     afloat = pc >= 0 && !!NG.surf[pc];
   if (afloat !== !!P.surf || P.surfId !== walkView.id) surfMount(P, afloat, P.surfId !== walkView.id);
   const wd = wadeDepthHere(P.x, P.z);
+  if (P.walk) waterPlayStep(P, wd);
   if (wd > 0.05 && typeof addRipple === 'function') {
     P.wakeT = (P.wakeT || 0) - dt;
     if (P.wakeT <= 0) {

@@ -146,7 +146,13 @@
     "test_props_turn",
     "test_props_wild",
     "test_island",
-    "test_props_island"
+    "test_props_island",
+    "test_station_trains",
+    "test_hub_buildings",
+    "int_inn",
+    "int_library",
+    "int_workshop",
+    "int_gene_bank"
    ]
   },
   "cutscenes": {"ids":["opening","city"]}

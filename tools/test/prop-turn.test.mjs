@@ -130,3 +130,38 @@ test('HB-1: a mirrored model never mirrors its lettering; a camera-facing layer 
   near(fn('decalPlace')(at, { face: 'fixed', yaw: 1 }, m).yaw, -1, 'the side decal faces the other side');
   assert.equal(fn('decalPlace')(at, { yaw: 1 }, m).yaw, 0, 'a camera-facing layer has no yaw');
 });
+
+/* the model shaders' spin (prop-models.js SPIN_GLSL): Rodrigues' turn of d about the unit axis k by an */
+const spun = (S, d) => {
+  const [kx, ky, kz] = S.a,
+    c = Math.cos(S.an),
+    s = Math.sin(S.an),
+    dot = kx * d[0] + ky * d[1] + kz * d[2],
+    cr = [ky * d[2] - kz * d[1], kz * d[0] - kx * d[2], kx * d[1] - ky * d[0]];
+  return [0, 1, 2].map(i => d[i] * c + cr[i] * s + S.a[i] * dot * (1 - c));
+};
+
+test('HB-6: a rail spanning two posts meets the ground at both ends, mirrored or not', () => {
+  const F = fn('spanFit')(2, 1.1, 1.3);
+  near(F.y, 1.2, 'its base at the mean');
+  /* its ends (the model's x = -1 and +1, up as y) after the spin, from the base */
+  near(F.y + spun(F.spin, [1, 0, 0])[1], 1.3, 'the right-hand end on its ground');
+  near(F.y + spun(F.spin, [-1, 0, 0])[1], 1.1, 'the left-hand end on its ground');
+  /* mirrored, the shader flips x after the spin: the model's -x end is drawn on the right */
+  const M = fn('spanFit')(2, 1.1, 1.3, -1);
+  near(M.y + spun(M.spin, [-1, 0, 0])[1], 1.3, 'mirrored: the end drawn on the right');
+  assert.equal(fn('spanFit')(2, 1.2, 1.2).spin, null, 'level: no spin');
+});
+
+test('HB-6: a tilt leans the top its own way by its own degrees', () => {
+  assert.equal(fn('tiltSpin')(undefined), null);
+  assert.equal(fn('tiltSpin')([0, 0]), null);
+  const x = spun(fn('tiltSpin')([3, 0]), [0, 1, 0]);
+  near(x[0], Math.sin((3 * Math.PI) / 180), 'toward +x');
+  near(x[2], 0, 'not toward z');
+  const z = spun(fn('tiltSpin')([0, -2]), [0, 1, 0]);
+  near(z[2], -Math.sin((2 * Math.PI) / 180), 'toward its front');
+  const b = spun(fn('tiltSpin')([1.5, 2]), [0, 1, 0]);
+  near(Math.acos(b[1]), (2.5 * Math.PI) / 180, 'the two together: 2.5 degrees');
+  near(Math.atan2(b[2], b[0]), Math.atan2(2, 1.5), 'toward their sum');
+});

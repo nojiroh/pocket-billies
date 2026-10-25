@@ -26,6 +26,7 @@ import { freeMesh, gpuState, normalize3, smooth01, uploadMesh } from '../engine/
 import { walkRenderer } from './walk-state.js';
 import { defaultWallMaterial, rawHeightAt } from './heights.js';
 import { flowMapAt, waterFlowMap } from './water-flow.js';
+import { tideCells } from './sea-tide.js';
 import { WATER_KIND_LOOKS, flowTexture, shoreField, waterKindLookup } from './water-data.js';
 import { groundNormalTexture, groundOcclusion, groundOcclusionSteps, repeatingTexture } from './ground-textures.js';
 import { buildGrass } from './grass-build.js';
@@ -600,7 +601,17 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
   /* v31: the shoreline: the water mask at 8 samples a metre, softened twice and nudged by noise, so the water's edge
     curves round corners instead of following the tiles; the water shader fills to its 0.5 line, the ground shader
     darkens a wet rim just outside it and paints a bed under it */
-  yield* shoreField(sc, isW, T);
+  /* water track WA-4: on a sea all round, the tide's cells (walk/sea-tide.js): wet sand it covers, shallows it leaves */
+  const tide =
+    sc.flatFar && !bare
+      ? tideCells(
+          W,
+          H,
+          (i, j) => ter(i + 0.5, j + 0.5),
+          (i, j) => WATER_KIND_LOOKS[kindAt(i + 0.5, j + 0.5, false)].k === 'sea'
+        )
+      : null;
+  yield* shoreField(sc, isW, T, tide);
   yield;
   if (T === walkRenderer) groundOcclusion(sc);
   else {
@@ -608,7 +619,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
     if (r) T.gaoTex = groundOcclusionTexture(r);
   }
   /* rocks standing in the water throw foam around themselves */
-  const C1 = walkData().sc,
+  const SEA_KIND = WATER_KIND_LOOKS.findIndex(k => k.k === 'sea'),
+    C1 = walkData().sc,
     rocks = [];
   for (const p of sc.props || []) {
     const M = C1.props[p.k];
@@ -635,6 +647,34 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
     /* IS-3: a cove's calm rides in the kind (kind + calm * 0.4; the water shader takes it apart) */
     cove = sea && (sc.zones || []).some(zn => zn && zn.k === 'cove'),
     calmK = (kd, x, z) => (cove && WATER_KIND_LOOKS[kd].k === 'sea' ? seaCalmAt(sc, x, z) * 0.4 : 0);
+  /* WA-4: the sea's level, for the tide's skins and pools: the commonest level of its cells */
+  let seaY = -0.12;
+  /* the high tide's skin lies just over the sand; the sea's own corners beside it rise to meet it (no step between) */
+  const tideY = (x, z) => Math.max(seaY, rawHeightAt(sc, x, z) + stp(x, z) + 0.03),
+    nearCover = (x, z) => {
+      if (!tide || !tide.nCover) return false;
+      for (const [p, q2] of [
+        [-0.25, -0.25],
+        [0.25, -0.25],
+        [-0.25, 0.25],
+        [0.25, 0.25],
+      ]) {
+        const i = Math.floor(x + p),
+          j = Math.floor(z + q2);
+        if (i >= 0 && j >= 0 && i < W && j < H && tide.cover[j * W + i]) return true;
+      }
+      return false;
+    };
+  if (tide && (tide.nCover || tide.nPool)) {
+    const lv = new Map();
+    let best = 0;
+    for (let q = 0; q < wk.length; q++) if (wd[q] !== -2 && wk[q] === SEA_KIND) lv.set(wy[q], (lv.get(wy[q]) || 0) + 1);
+    for (const [v, n] of lv)
+      if (n > best) {
+        best = n;
+        seaY = v;
+      }
+  }
   const stream = [],
     spring = [];
   for (let j = 0; j < H2; j++) {
@@ -662,8 +702,10 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
         fw = flowAt(cx, cz);
       if (kd === 1 && (i + j * 3) % 2 === 0) stream.push([cx, cz]);
       if (kd === 3) spring.push([cx, cz, dep[q]]);
-      /* running water follows the slope of its bed (one smooth surface down a stream); still water lies level */
-      const run = fw[0] !== 0 || fw[1] !== 0,
+      /* running water follows the slope of its bed (one smooth surface down a stream); still water lies level. WA-4: a
+         tide pool is calm and brims at the level of the high tide's skin, so the two meet when the sea comes in */
+      const pool = !!(tide && tide.pool[Math.floor(cz) * W + Math.floor(cx)]),
+        run = fw[0] !== 0 || fw[1] !== 0,
         sc0 = stp(cx, cz);
       for (const [a, c] of [
         [0, 0],
@@ -690,13 +732,17 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
         const rf = rocks.length && (kd === 1 || kd === 5 || kd === 0) ? rockFoam(vx, vz) : 0;
         wv.push(
           vx,
-          run ? rawHeightAt(sc, vx, vz) + sc0 - 0.12 : y,
+          run
+            ? rawHeightAt(sc, vx, vz) + sc0 - 0.12
+            : pool || (kd === SEA_KIND && nearCover(vx, vz))
+              ? Math.max(y, tideY(vx, vz))
+              : y,
           vz,
           T.shoreF ? rf * (kd === 1 ? 1 : 0.6) : Math.max(Math.min(1, sh / 2), rf * (kd === 1 ? 1 : 0.6)),
           fw[0],
           fw[1],
           dd / 4,
-          kd + calmK(kd, vx, vz)
+          kd + (pool ? 0.4 : calmK(kd, vx, vz))
         );
       }
       wi.push(b0, b0 + 2, b0 + 1, b0 + 1, b0 + 2, b0 + 3);
@@ -766,6 +812,24 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
             nq = jj * W2 + ii;
             break;
           }
+        }
+        /* water track WA-4: wet sand the high tide covers gets a skin of sea just over the sand, however far from the
+           water (the shaders keep it only while the tide's line lies past it) */
+        const tc = tide && tide.cover[Math.floor(cz) * W + Math.floor(cx)];
+        if (tc) {
+          const b0 = wv.length / 8;
+          for (const [a, c] of [
+            [0, 0],
+            [1, 0],
+            [0, 1],
+            [1, 1],
+          ]) {
+            const vx = i * 0.5 + a * 0.5,
+              vz = j * 0.5 + c * 0.5;
+            wv.push(vx, tideY(vx, vz), vz, 0, 0, 0, 0, SEA_KIND + calmK(SEA_KIND, vx, vz));
+          }
+          wi.push(b0, b0 + 2, b0 + 1, b0 + 1, b0 + 2, b0 + 3);
+          continue;
         }
         if (nq < 0) continue;
         const ni = nq % W2,

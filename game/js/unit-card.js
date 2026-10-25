@@ -10,6 +10,7 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { ITEMS, MOVES } from './game-data.js';
 import { weightClass } from './logic/parts.js';
+import { graftOf } from './logic/graft-art.js';
 import {
   ROBOT_LIMBS,
   ROBOT_SLOTS,
@@ -100,7 +101,7 @@ function billyUnit(m) {
     types: s.types,
     hp: m.hp,
     max: maxHp(m),
-    art: px => rigCanvasHTML(m.sp, px, { build: m.build, coat: m.coat }),
+    art: px => rigCanvasHTML(m.sp, px, { build: m.build, coat: m.coat, graft: graftOf(m) }),
     plate: plateVars(m),
     down: m.hp <= 0,
     lead: saveData.team[0] === m,

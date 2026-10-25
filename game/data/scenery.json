@@ -1253,7 +1253,15 @@
    ],
    "model": "scene/next/models/house_red.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#F8D6B2":"#EAEEEC","#E86256":"#608CEC","#36968A":"#D65C4E","#3EA89A":"#E86A5A"}
+    },
+    {
+     "swap": {"#F8D6B2":"#F6E6BE","#E86256":"#6CB262","#36968A":"#4E6E9E","#3EA89A":"#5E7EB0"}
+    }
+   ]
   },
   "shop": {
    "name": "General store",
@@ -2135,15 +2143,16 @@
    "flat": 0,
    "tags": ["farm"],
    "group": "windmill",
-   "box": [1.6,1.6],
+   "box": [3.6,3.6],
    "door": {"x":0,"y":0},
    "fx": [
-    {"k":"spin","x":0,"y":-139},
-    {"k":"window","x":0,"y":-81},
-    {"k":"window","x":0,"y":-54}
+    {"k":"window","x":0,"y":-90}
    ],
    "landmark": 1,
-   "vol": "lathe"
+   "model": "scene/next/models/windmill.json",
+   "ppm": 32,
+   "solid": 1,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "tree_oak_b": {
    "name": "Spreading oak",
@@ -2706,7 +2715,15 @@
    ],
    "model": "scene/next/models/house_blue.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#EAEEEC":"#F2C4B4","#608CEC":"#E86256","#E04848":"#3EA89A"}
+    },
+    {
+     "swap": {"#EAEEEC":"#D6E6C8","#608CEC":"#B288E2","#E04848":"#D9A040"}
+    }
+   ]
   },
   "house_green": {
    "name": "Green-roof cottage",
@@ -2728,7 +2745,15 @@
    ],
    "model": "scene/next/models/house_green.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#E0D4EE":"#F6E6BE","#6CB262":"#E86256","#4E9A58":"#4E6E9E"}
+    },
+    {
+     "swap": {"#E0D4EE":"#C8DCEC","#6CB262":"#B288E2","#4E9A58":"#D65C4E"}
+    }
+   ]
   },
   "house_large": {
    "name": "Two-storey house",
@@ -2755,7 +2780,15 @@
    ],
    "model": "scene/next/models/house_large.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#F8D6B2":"#E0D4EE","#B288E2":"#608CEC","#E8604E":"#4E6E9E","#3EA89A":"#D9A040"}
+    },
+    {
+     "swap": {"#F8D6B2":"#D6E6C8","#B288E2":"#E86256","#E8604E":"#E8B450","#3EA89A":"#E04848"}
+    }
+   ]
   },
   "house_cottage": {
    "name": "Thatched cottage",
@@ -3618,7 +3651,15 @@
    ],
    "model": "scene/next/models/townhouse_red.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#C46C54":"#4E6E9E","#3EA89A":"#E8B450"}
+    },
+    {
+     "swap": {"#C46C54":"#5E9A6E","#3EA89A":"#E04848"}
+    }
+   ]
   },
   "townhouse_blue": {
    "name": "Blue townhouse",
@@ -3708,7 +3749,15 @@
    ],
    "model": "scene/next/models/townhouse_yellow.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#F6E6BE":"#F2C4B4","#6CB262":"#608CEC","#3EA89A":"#E04848"}
+    },
+    {
+     "swap": {"#F6E6BE":"#C8DCEC","#6CB262":"#E86256","#3EA89A":"#D9A040"}
+    }
+   ]
   },
   "shop_cafe": {
    "name": "Corner café",
@@ -5116,9 +5165,13 @@
    "group": "lighthouse",
    "solid": 1,
    "fx": [
-    {"k":"glow","x":0,"y":-251}
+    {"k":"glow","x":0,"y":-304}
    ],
-   "landmark": 1
+   "landmark": 1,
+   "model": "scene/next/models/lighthouse.json",
+   "ppm": 32,
+   "box": [3.6,3.6],
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "buoy": {
    "name": "Buoy",
@@ -10518,7 +10571,18 @@
    ],
    "model": "scene/next/models/cottage_moss.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#F2DCA0":"#C8DCEC","#4E957C":"#D65C4E","#5EA88E":"#E86A5A"}
+    },
+    {
+     "swap": {"#F2DCA0":"#F2C4B4","#4E957C":"#4E6E9E","#5EA88E":"#5E7EB0"}
+    },
+    {
+     "swap": {"#F2DCA0":"#D6E6C8","#4E957C":"#D9A040","#5EA88E":"#E8B450"}
+    }
+   ]
   },
   "cottage_solar": {
    "name": "Solar-shingle cottage",
@@ -10540,7 +10604,18 @@
    ],
    "model": "scene/next/models/cottage_solar.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#D6E6C8":"#F2DCA0","#D65C4E":"#4E957C","#E86A5A":"#5EA88E"}
+    },
+    {
+     "swap": {"#D6E6C8":"#C8DCEC","#D65C4E":"#D9A040","#E86A5A":"#E8B450"}
+    },
+    {
+     "swap": {"#D6E6C8":"#F2C4B4","#D65C4E":"#4E6E9E","#E86A5A":"#5E7EB0"}
+    }
+   ]
   },
   "cottage_juniper": {
    "name": "Beekeeper’s cottage",
@@ -11533,6 +11608,275 @@
    "ppm": 32,
    "model": "scene/next/models/forest_canopy_autumn.json",
    "vary": {"rot":1,"lean":0}
+  },
+  "train_station": {
+   "name": "Skyline Station",
+   "img": "scene/next/station/train_station.png",
+   "ox": -215,
+   "oy": -219,
+   "shadow": 1.4,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["hub","station"],
+   "group": "train_station",
+   "model": "scene/next/models/train_station.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [12.6,6.6],
+   "about": "Skyline Station (HB-7): the platform where runs start, its trains behind it (+y) on the rail, which runs out of its right end into sky_rail. Its act (station) comes from the map"
+  },
+  "sky_rail": {
+   "name": "Sky rail (flat)",
+   "img": "scene/next/station/sky_rail.png",
+   "ox": -194,
+   "oy": -25,
+   "shadow": 0.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["hub","station"],
+   "group": "sky_rail",
+   "model": "scene/next/models/sky_rail.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "solid": 0.7,
+   "variants": [
+    {
+     "img": "scene/next/station/sky_rail_bend.png",
+     "ox": -194,
+     "oy": -99,
+     "model": "scene/next/models/sky_rail_bend.json",
+     "name": "Sky rail (bend)",
+     "form": "bend"
+    },
+    {
+     "img": "scene/next/station/sky_rail_rise.png",
+     "ox": -198,
+     "oy": -259,
+     "model": "scene/next/models/sky_rail_rise.json",
+     "name": "Sky rail (rise)",
+     "form": "rise"
+    },
+    {
+     "img": "scene/next/station/sky_rail_rise_high.png",
+     "ox": -198,
+     "oy": -419,
+     "model": "scene/next/models/sky_rail_rise_high.json",
+     "name": "Sky rail (rise high)",
+     "form": "rise_high"
+    },
+    {
+     "img": "scene/next/station/sky_rail_crest.png",
+     "ox": -198,
+     "oy": -499,
+     "model": "scene/next/models/sky_rail_crest.json",
+     "name": "Sky rail (crest)",
+     "form": "crest"
+    }
+   ],
+   "about": "The sky rail (HB-7): 12 m pieces along x, chained end to end on one heading: flat, bend, rise, rise high, crest (the top, 15.5 m up), then sky_portal"
+  },
+  "sky_portal": {
+   "name": "Sky portal",
+   "img": "scene/next/station/sky_portal.png",
+   "ox": -258,
+   "oy": -790,
+   "shadow": 1.2,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["hub","station"],
+   "group": "sky_portal",
+   "model": "scene/next/models/sky_portal.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "solid": 1.2,
+   "glow": {"c":"#7FD8FF","r":6,"y":17.13,"day":0.5},
+   "variants": [
+    {
+     "swap": {"scene/next/decals/sky_portal_tear.png":"scene/next/decals/sky_portal_tear_gold.png"},
+     "glow": {"c":"#FFC94A","r":6,"y":17.13,"day":0.5},
+     "name": "Sky portal (gold)"
+    }
+   ],
+   "about": "The tear in the sky at the sky rail's top (HB-7): the rail climbs into it from -x and stops at a launch lip; HB-8 flies the train off it into the tear. Its gold look for the way home after a win"
+  },
+  "train_lakeland": {
+   "name": "Lakeland Clipper",
+   "img": "scene/next/station/train_lakeland.png",
+   "ox": -197,
+   "oy": -145,
+   "shadow": 1,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["hub","station","train"],
+   "group": "sky_train",
+   "model": "scene/next/models/train_lakeland.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [11.8,2.6],
+   "bob": 0.04,
+   "about": "The Lakeland Clipper (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x"
+  },
+  "train_greenbelt": {
+   "name": "Greenbelt Sunrunner",
+   "img": "scene/next/station/train_greenbelt.png",
+   "ox": -197,
+   "oy": -142,
+   "shadow": 1,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["hub","station","train"],
+   "group": "sky_train",
+   "model": "scene/next/models/train_greenbelt.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [11.8,2.6],
+   "bob": 0.04,
+   "about": "The Greenbelt Sunrunner (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x"
+  },
+  "train_wildwood": {
+   "name": "Wildwood Zephyr",
+   "img": "scene/next/station/train_wildwood.png",
+   "ox": -180,
+   "oy": -242,
+   "shadow": 1,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["hub","station","train"],
+   "group": "sky_train",
+   "model": "scene/next/models/train_wildwood.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [11.8,2.6],
+   "bob": 0.04,
+   "about": "The Wildwood Zephyr (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x"
+  },
+  "train_highland": {
+   "name": "Highland Arrow",
+   "img": "scene/next/station/train_highland.png",
+   "ox": -207,
+   "oy": -143,
+   "shadow": 1,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["hub","station","train"],
+   "group": "sky_train",
+   "model": "scene/next/models/train_highland.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [11.8,2.6],
+   "bob": 0.04,
+   "about": "The Highland Arrow (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x"
+  },
+  "train_harvest": {
+   "name": "Harvest Comet",
+   "img": "scene/next/station/train_harvest.png",
+   "ox": -209,
+   "oy": -138,
+   "shadow": 1,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["hub","station","train"],
+   "group": "sky_train",
+   "model": "scene/next/models/train_harvest.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [11.8,2.6],
+   "bob": 0.04,
+   "about": "The Harvest Comet (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x"
+  },
+  "workshop": {
+   "name": "Workshop",
+   "img": "scene/next/hub/workshop.png",
+   "ox": -85,
+   "oy": -196,
+   "shadow": 1.8,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town"],
+   "group": "workshop",
+   "model": "scene/next/models/workshop.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [4.6,3],
+   "door": {"x":-27,"y":0},
+   "fx": [
+    {"k":"window","x":43,"y":-44},
+    {"k":"glow","x":11,"y":-59},
+    {"k":"smoke","x":51,"y":-167}
+   ],
+   "room": "int_workshop"
+  },
+  "gene_bank": {
+   "name": "Gene Bank",
+   "img": "scene/next/hub/gene_bank.png",
+   "ox": -76,
+   "oy": -245,
+   "shadow": 1.8,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town"],
+   "group": "gene_bank",
+   "model": "scene/next/models/gene_bank.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [4.4,4.6],
+   "door": {"x":0,"y":0},
+   "fx": [
+    {"k":"window","x":61,"y":-66},
+    {"k":"window","x":-61,"y":-66},
+    {"k":"glow","x":-21,"y":-51},
+    {"k":"glow","x":21,"y":-51}
+   ],
+   "room": "int_gene_bank"
+  },
+  "fence_post": {
+   "name": "Fence post (pasture)",
+   "img": "scene/props/fence_wood_post.png",
+   "ox": -6,
+   "oy": -37,
+   "shadow": 0.15,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["route","farm","town"],
+   "group": "fence_wood",
+   "solid": 0.15,
+   "model": "scene/next/models/fence_post.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0.05},
+   "variants": [
+    {
+     "name": "Fence post (weathered)",
+     "swap": {"#B27648":"#9C8F7E","#A06A42":"#8D8274"}
+    }
+   ]
+  },
+  "fence_rail": {
+   "name": "Fence rails (pasture)",
+   "img": "scene/props/fence_wood.png",
+   "ox": -42,
+   "oy": -37,
+   "shadow": 0.3,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["route","farm","town"],
+   "group": "fence_wood",
+   "box": [2,0.25],
+   "restEnds": 1,
+   "model": "scene/next/models/fence_rail.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "name": "Fence rails (weathered)",
+     "swap": {"#B27648":"#9C8F7E","#A06A42":"#8D8274"}
+    },
+    {"name":"Fence rails (broken)","model":"scene/next/models/fence_rail_broken.json"},
+    {
+     "name": "Fence rails (broken, weathered)",
+     "swap": {"#B27648":"#9C8F7E","#A06A42":"#8D8274"},
+     "model": "scene/next/models/fence_rail_broken.json"
+    }
+   ]
   }
  },
  "person": 1.75,

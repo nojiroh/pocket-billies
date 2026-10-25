@@ -78,8 +78,8 @@
     "$ref": "#/$defs/letter"
    },
    "water": {
-    "description": "the water kind of its ponds and streams (walk/water-data.js kinds)",
-    "enum": ["pond", "stream", "canal", "spring", "swamp", "lake", "sea", "lava", "ice"]
+    "description": "the water kind of its ponds and streams (logic/water-kinds.js WATER_KINDS)",
+    "enum": ["pond", "stream", "canal", "spring", "swamp", "lake", "sea", "lava", "ice", "rapids", "hotspring", "oasis", "bog", "reef", "cave"]
    },
    "trees": { "$ref": "#/$defs/pool" },
    "shrubs": { "$ref": "#/$defs/pool" },
