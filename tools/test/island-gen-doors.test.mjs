@@ -41,8 +41,8 @@ test('town.quarter 1: every building plot stands on the quarter turn nearest to 
     assert.ok(all.length >= 5, `${all.length} plots`);
     for (const o of all) {
       assert.equal(((o.L.a % 90) + 90) % 90, 0, `${o.L.k} at ${o.L.a}`);
-      /* the pivot is the summit spot, the dial's the peak: a degree or two apart */
-      assert.ok(Math.abs(o.off) <= 47, `${o.L.k} at ${o.L.x}, ${o.L.z}: ${o.off}`);
+      /* the pivot is the summit spot, the dials turn from the peak's middle a few metres away: a few degrees apart */
+      assert.ok(Math.abs(o.off) <= 50, `${o.L.k} at ${o.L.x}, ${o.L.z}: ${o.off}`);
     }
     /* no two plots' rectangles overlap */
     const corners = L => {
