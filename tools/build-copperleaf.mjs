@@ -18,6 +18,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readGameData, ROOT } from './data-files.mjs';
 import { islandPointIn, islandProblems } from '../game/js/logic/island.js';
+import { SKY_RAIL } from '../game/js/logic/island-gen.js';
 import { hashString } from '../game/js/logic/rng.js';
 import { pastureGround, pastureProps } from './build-pasture.mjs';
 import { islandDress } from './island-dress.mjs';
@@ -229,33 +230,31 @@ for (const [B, L] of pairs) {
     props.push(q);
   }
 }
-/* ---------- HB-7: Skyline Station beside the airship mast, until HB-4b gives it its headland ---------- */
-/* turned as the mast is, on the open ground nearest it: its whole footprint on grass, meadow, heather or forest floor
-   (no street, tall grass, rock, water or plot), 2 m clear of every building and 4 m of the mast */
-const station = (() => {
-  const mast = props.find(p => p.k === 'airship_station'),
-    [bw, bd] = boxOf('train_station'),
-    others = props.filter(p => boxOf(p.k) && p !== mast && p.k !== 'airship');
-  if (!mast) throw new Error('no airship mast to put the station beside');
-  const fits = q => {
-    for (let v = -1; v <= bd + 1; v += 0.5)
-      for (let u = -bw / 2 - 1; u <= bw / 2 + 1; u += 0.5) {
-        const [x, z] = world(q, u, v);
-        if (!'gGEHyMLfCB'.includes(tileAt(x, z)) || plots.some(L => inPlot(L, x, z, 0.5))) return false;
-        if (others.some(B => footDist(B, x, z) < 2) || footDist(mast, x, z) < 4) return false;
-      }
-    return true;
-  };
-  for (let d = 4; d <= 40; d += 0.5)
-    for (let k = 0; k < 48; k++) {
-      const a = (k / 48) * Math.PI * 2,
-        q = { k: 'train_station', x: r2(mast.x + Math.cos(a) * d), z: r2(mast.z + Math.sin(a) * d) };
-      if (mast.rot) q.rot = mast.rot;
-      if (fits(q)) return { ...q, act: 'station', label: 'Skyline Station' };
-    }
-  throw new Error('no room for Skyline Station within 40 m of the airship mast');
-})();
+/* ---------- hub placing: Skyline Station on its headland plot, its sky rail out to sea and the portal at the top ----------
+   island-gen turns the plot side-on (STATION_TURN), so the rail out of the station's right-hand end runs straight out
+   (HB-7's pieces, one per look of sky_rail, 12 m apart, SKY_RAIL; then sky_portal). Every piece stands level with the
+   station (a placement's y: the plot's level), its pylons reaching down into the sea. landmarks.rail is the same rail. */
+const station = place({ k: 'train_station', x: 0, z: 0, act: 'station', label: 'Skyline Station' }, plotOf('station'));
 props.push(station);
+{
+  const L = plotOf('station'),
+    [, bd] = boxOf('train_station'),
+    /* the rail's start in the station's own metres: its right-hand end, SKY_RAIL.from behind the plot's middle */
+    u0 = SKY_RAIL.from[0],
+    v0 = bd / 2 + SKY_RAIL.from[1],
+    at = (k, u, extra) => {
+      const [x, z] = world(station, u0 + u, v0),
+        q = { k, x: r2(x), z: r2(z), ...extra, y: L.y };
+      if (station.rot) q.rot = station.rot;
+      return q;
+    };
+  SKY_RAIL.looks.forEach((look, i) => {
+    const v = look ? (C.sky_rail.variants || []).findIndex(V => V.form === look) + 1 : 0;
+    if (look && !v) throw new Error('sky_rail has no look ' + look);
+    props.push(at('sky_rail', SKY_RAIL.piece * (i + 0.5), v ? { v } : {}));
+  });
+  props.push(at('sky_portal', SKY_RAIL.piece * (SKY_RAIL.looks.length + 0.5)));
+}
 const byStation = (x, z, m) => footDist(station, x, z) < m;
 
 /* the farm patch's crops by the barn, the barn in its zone beside the pasture */
