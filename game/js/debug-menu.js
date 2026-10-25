@@ -60,6 +60,7 @@ import {
 } from './logic/rules.js';
 import { CHALLENGE_IDS, expeditionNumeral, modsMake } from './logic/modifiers.js';
 import { ranchNow } from './logic/ranch-clock.js';
+import { heldIds } from './logic/held.js';
 import { RUN_SIDE_MOD } from './logic/run-side.js';
 import { MAPGEN_LAYOUTS } from './logic/mapgen.js';
 import { RUN_LAYOUT_MOD, RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
@@ -203,7 +204,7 @@ function debugHTML() {
         'dbgEvent',
         Object.keys(EVENTS.events).map(k => [k, EVENTS.events[k].title]),
         uiState.dbgEvent || Object.keys(EVENTS.events)[0] || ''
-      )}${debugButtonHTML('eventplay', 'Play this event', 'gold')}${debugButtonHTML('rewardpick', 'A trainer’s reward pick')}</div><p class="note">An event here, as a waystation would hold it (played events: ${escapeHtml(((saveData.run.enc && saveData.run.enc.seen) || []).join(', ') || 'none')}). The reward pick is a route trainer’s.</p>`
+      )}${debugButtonHTML('eventplay', 'Play this event', 'gold')}${debugButtonHTML('rewardpick', 'A trainer’s reward pick')}${debugButtonHTML('heldpick', 'A held item’s pick')}${debugButtonHTML('heldall', 'Every held item into the bag')}</div><p class="note">An event here, as a waystation would hold it (played events: ${escapeHtml(((saveData.run.enc && saveData.run.enc.seen) || []).join(', ') || 'none')}). The reward pick is a route trainer’s.</p>`
     : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><div class="dbg-row">${debugSelectHTML(
         'dbgRunSide',
         [['', 'Side area: as the seed rolls'], ...debugSideOptions()],
@@ -630,6 +631,19 @@ function debugAction(x) {
       encounterOpen(null, id);
       return;
     }
+    /* RL-12c: a pick of held items only (the reward pick's held cards), and one of each into the bag */
+    case 'heldpick':
+      if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
+      if (!rewardOfferMake(saveData.run, 'debug', rewardDataGame(saveData.team), { kind: 'held', n: 3 }))
+        return refreshDebugMenu('Every held item is held.');
+      saveNow();
+      uiState.modal = null;
+      rewardPickOpen();
+      return;
+    case 'heldall':
+      for (const k of heldIds(ITEMS)) saveData.items[k] = (saveData.items[k] || 0) + 1;
+      saveNow();
+      return refreshDebugMenu('One of each held item is in the bag: give them from a Billie’s details.');
     case 'rewardpick':
       if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
       if (!rewardOfferMake(saveData.run, 'debug', rewardDataGame(saveData.team)))

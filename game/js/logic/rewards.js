@@ -94,7 +94,8 @@ export function rewardDraw(g, D, o = {}) {
     };
   let left = Object.keys(D.cards).filter(ok).sort();
   const out = /** @type {RewardCard[]} */ ([]),
-    taught = new Set();
+    taught = new Set(),
+    given = new Set();
   while (out.length < n && left.length) {
     const id = g.pick(Object.fromEntries(left.map(k => [k, D.cards[k].weight]))),
       R = D.cards[id];
@@ -112,9 +113,12 @@ export function rewardDraw(g, D, o = {}) {
       continue;
     }
     if (R.kind === 'held') {
-      const item = helds[g.int(0, helds.length - 1)];
+      const free = helds.filter(k => !given.has(k)),
+        item = free[g.int(0, free.length - 1)];
+      given.add(item);
       out.push({ id, kind: 'held', item });
-      left = left.filter(k => k !== id);
+      /* like a tutor's: a pick of held items only (`kind`) may hold several, each another item */
+      if (given.size >= helds.length || !o.kind) left = left.filter(k => k !== id);
       continue;
     }
     out.push({

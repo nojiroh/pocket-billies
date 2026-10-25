@@ -64,9 +64,11 @@ test('rewards: a held card (RL-12c) draws a held item nobody on the team holds; 
     D = W.rewardDataGame(s.team),
     ids = modules.held.heldIds(GAME_DATA.items),
     g = { pick: w => Object.keys(w).sort()[0], int: lo => lo };
-  assert.deepEqual(W.rewardDraw(g, D, { kind: 'held' }), [{ id: 'held', kind: 'held', item: ids[0] }]);
+  assert.deepEqual(W.rewardDraw(g, D, { kind: 'held', n: 1 }), [{ id: 'held', kind: 'held', item: ids[0] }]);
+  const three = W.rewardDraw(g, D, { kind: 'held', n: 3 }).map(c => c.item);
+  assert.deepEqual(three, ids.slice(0, 3), 'a pick of held items only: three, each another');
   s.team[0].held = ids[0];
-  assert.equal(W.rewardDraw(g, D, { kind: 'held' })[0].item, ids[1], 'not the one it holds');
+  assert.equal(W.rewardDraw(g, D, { kind: 'held', n: 1 })[0].item, ids[1], 'not the one it holds');
   for (let k = 0; k < 20; k++)
     for (const c of W.rewardDraw(modules.rng.rngFrom('H' + k, 'x'), D, { n: 5 }))
       if (c.kind === 'held') assert.ok(ids.includes(c.item) && c.item !== ids[0], c.item);

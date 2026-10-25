@@ -896,6 +896,35 @@ def run_shop(pg, base):
     return f'{n} wares'
 
 
+def held_items(pg, base):
+    """RL-12c: a pick of held items opens with three cards; one taken asks who holds it; the lead holds it and it is
+    stored; its sheet shows it and gives it back with Take off (the item in the bag again); a battle's fighter holding
+    it has its rows"""
+    pick = "!!uiState.modal&&uiState.modal.cls==='reward-pick'&&document.querySelectorAll('#ov pb-pick-card').length===3"
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();"
+                "rewardOfferMake(saveData.run,'check',rewardDataGame(saveData.team),{kind:'held',n:3});saveNow();rewardPickOpen();0")
+    if not until(pg, pick, 10):
+        raise Exception('the pick of held items didn’t open with three cards: ' + str(pg.evaluate(
+            "JSON.stringify([uiState.modal&&uiState.modal.cls,saveData.run.enc&&saveData.run.enc.reward,typeof rewardOfferMake,document.querySelectorAll('#ov pb-pick-card').length])")))
+    item = pg.evaluate("saveData.run.enc.reward.cards[0].item")
+    pg.evaluate("document.querySelectorAll('#ov pb-pick-card')[0].shadowRoot.querySelector('button').click();0")
+    if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('a card didn’t enable Take it')
+    pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
+    if not until(pg, "!!document.querySelector('#ov .pickrow[data-u]')", 10): raise Exception('no “Who holds it?”')
+    pg.evaluate("document.querySelector('#ov .pickrow[data-u]').click();0")
+    if not until(pg, f"saveData.team[0].held==='{item}'&&!saveData.run.enc.reward", 10): raise Exception(f'the lead doesn’t hold {item}')
+    if pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).team[0].held") != item: raise Exception('the held item wasn’t stored')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];billySheet(saveData.team[0]);0")
+    if not until(pg, f"[...document.querySelectorAll('#ov .ms-met')].some(e=>e.textContent.includes('Holding')&&e.textContent.includes(ITEMS['{item}'].n))", 10):
+        raise Exception('the sheet doesn’t show what it holds')
+    rows = pg.evaluate("fxOfBillie(saveData.team[0],ITEMS).length")
+    bag = pg.evaluate(f"saveData.items['{item}']||0")
+    pg.evaluate("uiState.modal.acts.find(a=>a.l.startsWith('Take off')).f();0")
+    if not until(pg, f"!saveData.team[0].held&&(saveData.items['{item}']||0)==={bag}+1", 10): raise Exception('Take off didn’t put it back in the bag')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
+    return f'{item} held by the lead ({rows} effect rows), shown on its sheet, taken off into the bag'
+
+
 def waystations(pg, base):
     """RL-12b: the in-game test's own phase, "A run's waystation and stall" (self-test.js), on a copy of the save: the
     first seed with both, the stand tapped (its event's sheet), the stall tapped (its shop's wares), the wild stock"""
@@ -1160,7 +1189,8 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('ranch', [('Packing for a run: a Billie from storage, a packed bag; kept on a loss, the bag home on a win (RL-9b)', run_pack)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
-             ("A run town's shop opens (UI-5)", run_shop)]),
+             ("A run town's shop opens (UI-5)", run_shop),
+             ("Held items: a pick of them, who holds it, the sheet, Take off (RL-12c)", held_items)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home", run_loop)]),
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; none on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),
