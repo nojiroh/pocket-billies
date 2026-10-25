@@ -109,6 +109,13 @@ export const ISLAND_CRAG = 0.45;
 /* the zones a dial places as a rectangle (flat, empty and locked: the town and the barn are built there by hand) */
 export const ISLAND_GEN_BUILT = ['town', 'barn', 'pasture'];
 
+/** HB-4a: the town's other buildings (town.extra): plot sizes [width, width, depth, depth] */
+export const ISLAND_TOWN_EXTRA = {
+  inn: [10, 12, 8, 9],
+  workshop: [9, 10, 7, 8],
+  genebank: [9, 10, 8, 9],
+  library: [10, 11, 8, 9],
+};
 /** the dials (IS-6b shows them): sizes in metres, angles in degrees (0 east, 90 north, 270 south) */
 export const ISLAND_GEN_DEFAULTS = {
   /* the land's radius round the middle (the coast is pushed out further round the zones), how much the coast wobbles
@@ -156,8 +163,33 @@ export const ISLAND_GEN_DEFAULTS = {
   /* the town (the owner, after the sketches: a market town on the river, a harbour quarter on the bay): it stands
      where the stream comes down into the bay; its streets, square, bridges and plots are laid out on the land as it
      is, with a level pad under each plot only. houses: how many house plots it aims for; lanes: side lanes. A town
-     zone in the zones above makes the old flat town instead */
-  town: { on: 1, houses: 7, lanes: 2 },
+     zone in the zones above makes the old flat town instead. face (HB-4a): 'street' puts plots on both sides of a
+     street; 'out' keeps only a side whose front lies within tol degrees of facing out from the orbit's pivot (the
+     summit), so the orbit camera sees the doors. quarter (HB-4a, 0-1): 1 turns every building's plot to the quarter turn
+     (0, 90, 180, 270) nearest to facing out from the pivot, so its room stays square with its walls. second (HB-4a): a
+     second built-up street, off metres beside one of the town's streets (along: 'quay', 'cross' or 'main', or 'arc':
+     a line round the pivot through the square, span degrees long, its middle turned at degrees round the pivot from
+     the square, so the street runs round the mountain), on its side toward the pivot ('in') or away from it ('out';
+     on the main street 'out' is away from the river), joined to that street at both ends; houses line it as they
+     line the others. scale (HB-4a): the house plots' size, times (0.6-1.2; smaller makes a denser town). extra
+     (HB-4a): the town's other buildings, from ISLAND_TOWN_EXTRA, on its streets nearest the square */
+  town: {
+    on: 1,
+    houses: 7,
+    lanes: 2,
+    face: 'street',
+    tol: 50,
+    quarter: 0,
+    second: { on: 0, along: 'quay', side: 'in', off: 15, span: 70, at: 0 },
+    scale: 1,
+    extra: [],
+  },
+  /* HB-4a: the landmarks round the town, for the hub track (on 0: none). station: the train station on the headland by
+     the town that stands out furthest (a: its angle round the middle, -1 to pick), its sky rail running len metres out
+     over the sea and climbing rise metres to the portal; lighthouse: on an arm of the cove (arm 1 or -1; 0 the one
+     further from the station); windmill: beside the farm (0 none); shore: how far every landmark keeps from the water
+     (metres), room for the water track's tide and wading shallows (docs/phases/water-track.md WA-4, WA-6a) */
+  landmarks: { on: 0, station: { a: -1, len: 70, rise: 45 }, lighthouse: { arm: 0 }, windmill: 1, shore: 3 },
   /* a hamlet: a few houses round a green under the mountains, joined to the coast road (off since the look pass: the
      owner, a smaller island) */
   hamlet: { on: 0, houses: 4 },
@@ -295,6 +327,26 @@ export function islandGenDials(d) {
   D.town.on = D.town.on ? 1 : 0;
   D.town.houses = Math.round(num(D.town.houses, 0, 40, 14));
   D.town.lanes = Math.round(num(D.town.lanes, 0, 6, 3));
+  if (D.town.face !== 'out') D.town.face = 'street';
+  D.town.tol = num(D.town.tol, 10, 90, 50);
+  D.town.quarter = D.town.quarter ? 1 : 0;
+  D.town.scale = num(D.town.scale, 0.6, 1.2, 1);
+  D.town.extra = (Array.isArray(D.town.extra) ? D.town.extra : []).filter(k => ISLAND_TOWN_EXTRA[k]);
+  const LM = D.landmarks;
+  LM.on = LM.on ? 1 : 0;
+  LM.station.a = LM.station.a < 0 ? -1 : islandAngle(num(LM.station.a, -720, 720, 0));
+  LM.station.len = num(LM.station.len, 10, 200, 70);
+  LM.station.rise = num(LM.station.rise, 0, 120, 45);
+  LM.lighthouse.arm = Math.sign(num(LM.lighthouse.arm, -1, 1, 0));
+  LM.windmill = LM.windmill ? 1 : 0;
+  LM.shore = num(LM.shore, 0, 10, 3);
+  if (!D.town.second || typeof D.town.second !== 'object') D.town.second = { on: 0 };
+  D.town.second.on = D.town.second.on ? 1 : 0;
+  if (!['quay', 'cross', 'main', 'arc'].includes(D.town.second.along)) D.town.second.along = 'quay';
+  D.town.second.span = num(D.town.second.span, 20, 140, 70);
+  D.town.second.at = num(D.town.second.at, -120, 120, 0);
+  if (D.town.second.side !== 'out') D.town.second.side = 'in';
+  D.town.second.off = num(D.town.second.off, 9, 30, 15);
   D.hamlet.on = D.hamlet.on ? 1 : 0;
   D.hamlet.houses = Math.round(num(D.hamlet.houses, 0, 10, 4));
   D.wild.n = Math.round(num(D.wild.n, 0, 12, 5));
@@ -1347,6 +1399,59 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         );
         if (clear) street(lane, 2.6, `town lane ${k + 1}`);
       }
+      /* HB-4a: the second street beside one of them, joined to it at both ends */
+      const S2 = D.town.second,
+        sqPolar = Math.atan2(square[1] - peakP[1], square[0] - peakP[0]),
+        sqDist = Math.hypot(square[0] - peakP[0], square[1] - peakP[1]),
+        /* 'arc': a street round the pivot through the square (the line the others are beside), span degrees long */
+        arcSt = [...Array(Math.ceil((sqDist * S2.span * ISLAND_RAD) / 0.5) + 1).keys()].map(k => {
+          const f = sqPolar + S2.at * ISLAND_RAD + (k * 0.5) / sqDist - (S2.span * ISLAND_RAD) / 2;
+          return [peakP[0] + Math.cos(f) * sqDist, peakP[1] + Math.sin(f) * sqDist];
+        }),
+        base2 = S2.on && { quay: quaySt, cross: crossSt, main: mainSt, arc: arcSt }[S2.along];
+      if (S2.on && !base2) notes.push(`no ${S2.along} street for the second street`);
+      if (base2) {
+        const [plus, minus] = [1, -1].map(sg => beside(base2, S2.off * sg)),
+          toPivot = L => L.reduce((m, p) => m + Math.hypot(p[0] - peakP[0], p[1] - peakP[1]), 0) / (L.length || 1),
+          inSide = toPivot(plus) < toPivot(minus) ? plus : minus,
+          pick =
+            S2.side === 'in'
+              ? inSide
+              : S2.along === 'main'
+                ? beside(base2, S2.off * sideBank)
+                : inSide === plus
+                  ? minus
+                  : plus,
+          /* stretches on fine land 7 m or more from every other road (room for a plot between): the longest, or for an
+             arc every one 16 m long or more (the streets it crosses split it; each piece is joined at both ends) */
+          clear = pick.map(
+            q =>
+              okAt(q[0], q[1]) &&
+              roads.every(r => r.pts.every((o, m) => m % 2 || Math.hypot(o[0] - q[0], o[1] - q[1]) > 7))
+          ),
+          runs = [];
+        for (let i = 0, a = 0; i <= pick.length; i++)
+          if (i === pick.length || !clear[i]) {
+            if (i - a >= 32) runs.push([a, i - 1]);
+            a = i + 1;
+          }
+        runs.sort((u, v) => v[1] - v[0] - (u[1] - u[0]));
+        const pieces = /** @type {number[][][]} */ (
+          (S2.along === 'arc' ? runs : runs.slice(0, 1))
+            .map((r, n) => street(pick.slice(r[0], r[1] + 1), 3, `town second street${n ? ' ' + (n + 1) : ''}`))
+            .filter(Boolean)
+        );
+        if (!pieces.length) notes.push('no room for the second street');
+        for (const L2 of pieces)
+          /* joined at both ends: to the street it is beside, or (an arc) to the nearest other road */
+          for (const end of [L2[0], L2[L2.length - 1]]) {
+            const to = S2.along === 'arc' ? roads.filter(r => r.pts !== L2).flatMap(r => r.pts) : base2;
+            let b = to[0];
+            for (const q of to)
+              if (Math.hypot(q[0] - end[0], q[1] - end[1]) < Math.hypot(b[0] - end[0], b[1] - end[1])) b = q;
+            spoke(end, b, 'town second street, a join');
+          }
+      }
       /* the town meets the coast road at its ends */
       if (crossSt) {
         tieToLoop(crossSt[0], 'town to the coast road');
@@ -1684,7 +1789,31 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     return Math.max(...hs) - Math.min(...hs) <= 2.4;
   };
   /* a plot facing its street: `front` the street's edge it opens onto (its pad lies at the street's level there) */
+  /* HB-4a: the orbit's pivot (the peak; the summit spot is put on it) and whether a front at angle a, standing at x, z,
+     faces out from it closely enough (town.face 'out'; always with 'street') */
+  const facesOut = (x, z, a) =>
+    D.town.face !== 'out' ||
+    Math.abs(islandAngleDiff((a / ISLAND_RAD) % 360, Math.atan2(z - peakP[1], x - peakP[0]) / ISLAND_RAD)) <=
+      D.town.tol;
+  /* HB-4a: the quarter turn nearest to facing out from the pivot (town.quarter), in radians */
+  const quarterOut = (x, z) => Math.round(Math.atan2(z - peakP[1], x - peakP[0]) / (Math.PI / 2)) * (Math.PI / 2);
   const addPlot = (k, x, z, pw, pd, a, front, where) => {
+    if (D.town.quarter && k !== 'well') {
+      /* turned, its corner may reach the street: stepped back from it a metre at a time, up to 3 */
+      const bx = x - front[0],
+        bz = z - front[1],
+        bl = Math.hypot(bx, bz) || 1;
+      for (const m of [0, 1, 2, 3]) {
+        const qx = x + (bx / bl) * m,
+          qz = z + (bz / bl) * m,
+          qa = quarterOut(qx, qz);
+        if (plotFits(qx, qz, pw, pd, qa)) {
+          plots.push({ k, x: qx, z: qz, w: pw, d: pd, a: qa, y: cornerAt(front[0], front[1]), at: where });
+          return true;
+        }
+      }
+      return false;
+    }
     if (!plotFits(x, z, pw, pd, a)) return false;
     plots.push({ k, x, z, w: pw, d: pd, a, y: cornerAt(front[0], front[1]), at: where });
     return true;
@@ -1705,6 +1834,7 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
           nz = (dx / L) * sd,
           /* the angle its front faces: back toward the street */
           a = Math.atan2(-nz, -nx);
+        if (!facesOut(p[0] + nx * (width / 2 + 4), p[1] + nz * (width / 2 + 4), a)) continue;
         /* as asked, else a size smaller (a cottage where a house won't go) */
         for (const f of [1, 0.8]) {
           const pw = pw0 * f,
@@ -1738,6 +1868,7 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         rr = r0 + pd / 2 + 1.2,
         x = cx + Math.cos(f) * rr,
         z = cz + Math.sin(f) * rr;
+      if (!facesOut(x, z, Math.atan2(cz - z, cx - x))) continue;
       if (
         addPlot(k, x, z, size[0], pd, Math.atan2(cz - z, cx - x), [cx + Math.cos(f) * r0, cz + Math.sin(f) * r0], where)
       )
@@ -1764,6 +1895,99 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     });
     return best[1] > best[0] + 10 ? L.pts.slice(best[0], best[1]) : null;
   };
+  /* HB-4a: a landmark's plot (turned to face out with town.quarter). A headland is narrower than the coast path's
+     margins allow a 14 m station: a landmark only needs dry land, clear of the other plots and off the mountain; a
+     path through it is re-routed when the island is built */
+  const landmarkAt = (k, x, z, size, a0) => {
+    const a = D.town.quarter ? quarterOut(x, z) : a0,
+      rr = Math.hypot(size[0], size[1]) / 2;
+    if (
+      !plotPts(x, z, size[0], size[1], a, 0.5).every(
+        ([px, pz]) =>
+          inLand(px, pz) &&
+          !(G.F[mapgenCellAt(G, px, pz)] & 4) &&
+          Eat(px, pz) <= 0.6 &&
+          !builtZones.some(Z => islandPointIn(Z.poly, px, pz)) &&
+          /* landmarks.shore metres from the water all round */
+          [0, 1, 2, 3, 4, 5, 6, 7].every(
+            n =>
+              !(
+                G.F[
+                  mapgenCellAt(
+                    G,
+                    px + Math.cos((n * Math.PI) / 4) * D.landmarks.shore,
+                    pz + Math.sin((n * Math.PI) / 4) * D.landmarks.shore
+                  )
+                ] & 4
+              )
+          )
+      ) ||
+      plots.some(L => Math.hypot(L.x - x, L.z - z) < rr + Math.hypot(L.w, L.d) / 2 + 0.6)
+    )
+      return false;
+    plots.push({ k, x, z, w: size[0], d: size[1], a, y: cornerAt(x, z), at: 'landmark' });
+    return true;
+  };
+  /* HB-4a: the landmarks (landmarks.on): the station on a headland by the town, its rail out over the sea up to the
+     portal, and the lighthouse on an arm of the cove, before the town's plots take the coast (the windmill by the
+     farm after the farmhouse) */
+  let landmarks = /** @type {{ rail: number[][], portal: number[] } | null} */ (null);
+  const LM = D.landmarks;
+  if (LM.on) {
+    const sqA = square ? polar(square[0], square[1])[1] : D.cove.a,
+      inCove = t => D.cove.on && Math.abs(islandAngleDiff(t, D.cove.a)) < D.cove.span / 2 + 6;
+    /* a plot as near the coast at angle t as fits, its front toward the middle */
+    const nearCoast = (k, t, size, from = 5) => {
+      for (let r = coastAt(t) - from; r > coastAt(t) - from - 14; r -= 1) {
+        const [x, z] = at(r, t);
+        if (landmarkAt(k, x, z, size, (t + 180) * ISLAND_RAD)) return [x, z];
+      }
+      return null;
+    };
+    /* the station: the headland within 80 degrees of the town's square that stands out furthest past its neighbours */
+    const cands =
+      LM.station.a >= 0
+        ? [LM.station.a]
+        : [...Array(161).keys()]
+            .map(k => sqA - 80 + k)
+            .filter(t => !inCove(t))
+            .sort(
+              (a, b) =>
+                coastAt(b) -
+                (coastAt(b - 25) + coastAt(b + 25)) / 2 -
+                (coastAt(a) - (coastAt(a - 25) + coastAt(a + 25)) / 2)
+            );
+    let st = /** @type {number[] | null} */ (null),
+      stA = 0;
+    for (const t of cands.slice(0, 40))
+      if ((st = nearCoast('station', t, [14, 8], 6))) {
+        stA = t;
+        break;
+      }
+    if (!st) notes.push('no headland for the station');
+    else {
+      /* the rail: from the platform straight out to sea, levelling off at the portal */
+      const y0 = cornerAt(st[0], st[1]),
+        r0 = Math.hypot(st[0] - c[0], st[1] - c[1]),
+        n = Math.ceil(LM.station.len / 2),
+        rail = [...Array(n + 1).keys()].map(k => {
+          const f = k / n,
+            [x, z] = at(r0 + f * (coastAt(stA) - r0 + LM.station.len), stA);
+          return [mapgenRound2(x), mapgenRound2(z), mapgenRound2(y0 + 4 + LM.station.rise * f * f * (3 - 2 * f))];
+        });
+      landmarks = { rail, portal: rail[rail.length - 1] };
+    }
+    /* the lighthouse: the cove's arm further from the station (or the one asked for), as far out as fits */
+    if (D.cove.on) {
+      const arms = [-1, 1].map(sg => D.cove.a + sg * (D.cove.span / 2 + 4)),
+        arm =
+          LM.lighthouse.arm !== 0
+            ? arms[LM.lighthouse.arm > 0 ? 1 : 0]
+            : arms.sort((a, b) => Math.abs(islandAngleDiff(b, stA)) - Math.abs(islandAngleDiff(a, stA)))[0];
+      if (![0, 3, -3, 6, -6].some(o => nearCoast('lighthouse', arm + o, [5, 5], 3)))
+        notes.push('no room for the lighthouse on the cove');
+    }
+  }
   if (square) {
     plots.push({
       k: 'well',
@@ -1796,12 +2020,27 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     if (!plotsAlong(townSt('town main street'), 3.6, [sideBank], 'home', [8, 8, 7, 7], 1, 'town'))
       townStreets.some(r => plotsAlong(r.pts, r.width, [1, -1], 'home', [7, 8, 6, 7], 1, 'town')) ||
         plotsAlong(nearSquare(), D.paths.width, [1, -1], 'home', [7, 8, 6, 7], 1, 'town');
+    /* HB-4a: the town's other buildings, on its streets nearest the square first */
+    for (const k of D.town.extra)
+      if (
+        !townStreets.some(r => plotsAlong(r.pts, r.width, [1, -1], k, ISLAND_TOWN_EXTRA[k], 1, 'town')) &&
+        !plotsAlong(nearSquare(), D.paths.width, [1, -1], k, ISLAND_TOWN_EXTRA[k], 1, 'town') &&
+        /* still none: along any road within 60 m of the square, as the last cottages */
+        !roads.some(r => {
+          const near = r.pts.filter(p => Math.hypot(p[0] - square[0], p[1] - square[1]) < 60);
+          return near.length > 10 && plotsAlong(near, r.width, [1, -1], k, ISLAND_TOWN_EXTRA[k], 1, 'town');
+        })
+      )
+        notes.push(`no room for the ${k} in the town`);
+    /* HB-4a: house plots town.scale times their size (a denser town of smaller, terraced cottages) */
+    const hs = size => (D.town.scale === 1 ? size : size.map(v => v * D.town.scale));
     let left = D.town.houses;
     for (const [name, wd, sides] of [
       ['town main street', 3.6, [sideBank]],
       ['town cross street', 3.4, [1, -1]],
       ['town quay', 3.4, [1, -1]],
       ['town east bank', 3, [-sideBank]],
+      ...townStreets.filter(r => r.name.startsWith('town second street')).map(r => [r.name, 3, [1, -1]]),
       ...[...Array(D.town.lanes).keys()].map(k => [`town lane ${k + 1}`, 2.6, [1, -1]]),
     ])
       left -= plotsAlong(
@@ -1809,19 +2048,19 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         /** @type {number} */ (wd),
         /** @type {number[]} */ (sides),
         'house',
-        [6, 9, 5, 7],
+        hs([6, 9, 5, 7]),
         Math.ceil(left / 2),
         'town'
       );
     if (left > 0)
-      for (const r of townStreets) left -= plotsAlong(r.pts, r.width, [1, -1], 'house', [6, 8, 5, 6], left, 'town');
+      for (const r of townStreets) left -= plotsAlong(r.pts, r.width, [1, -1], 'house', hs([6, 8, 5, 6]), left, 'town');
     /* still short: cottages along any road within 60 m of the square (the coast road through the town included) */
     if (left > 0)
       for (const r of roads) {
         if (left <= 0) break;
         if (r.name === 'hamlet lane') continue;
         const near = r.pts.filter(p => Math.hypot(p[0] - square[0], p[1] - square[1]) < 60);
-        if (near.length > 10) left -= plotsAlong(near, r.width, [1, -1], 'house', [5, 7, 4.5, 5.5], left, 'town');
+        if (near.length > 10) left -= plotsAlong(near, r.width, [1, -1], 'house', hs([5, 7, 4.5, 5.5]), left, 'town');
       }
   }
   if (hamletAt) {
@@ -1859,6 +2098,24 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       br = Math.max(...barnZ.poly.map(p => Math.hypot(p[0] - bc[0], p[1] - bc[1])));
     if (!plotRing(bc[0], bc[1], br + 2, 'farmhouse', [8, 7], 24, 'farm'))
       notes.push('no room for the farmhouse by the barn');
+  }
+  if (LM.on) {
+    /* the windmill: beside the farm, a ring out past the farmhouse */
+    if (LM.windmill && barnZ) {
+      const bc = barnZ.poly.reduce(
+          (m, p) => [m[0] + p[0] / barnZ.poly.length, m[1] + p[1] / barnZ.poly.length],
+          [0, 0]
+        ),
+        br = Math.max(...barnZ.poly.map(p => Math.hypot(p[0] - bc[0], p[1] - bc[1])));
+      /* the nearest ring round the barn with room, from just past the farmhouse out to 30 m */
+      let done = false;
+      for (let r = br + 6; r <= br + 30 && !done; r += 4)
+        for (let n = 0; n < 36 && !done; n++) {
+          const f = (n / 36) * Math.PI * 2;
+          done = landmarkAt('windmill', bc[0] + Math.cos(f) * r, bc[1] + Math.sin(f) * r, [7, 7], f + Math.PI);
+        }
+      if (!done) notes.push('no room for the windmill by the farm');
+    }
   }
   /* the pads: level at the street's height under each plot and a metre round it, eased back into the land over 3 m;
      the yard's ground is grass (the well's, the plaza). Every plot's easing first, then every pad level (plots close
@@ -2367,5 +2624,5 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
   }
   /* the paths as lines (not stored in the scene, whose ground shows them): the tool's lap and the tests read them */
   const paths = roads.map(r => ({ name: r.name, pts: r.pts.map(islandRound2pt) }));
-  return { scene: sc, notes, paths };
+  return { scene: sc, notes, paths, ...(landmarks ? { landmarks } : {}) };
 }

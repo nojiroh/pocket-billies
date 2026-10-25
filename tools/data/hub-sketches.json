@@ -1,0 +1,105 @@
+{
+ "about": "HB-4a island sketches (tools/island-sketches.mjs, .py): the hub's dials and seed (copperleaf-e9) with each direction's changes on top.",
+ "directions": [
+  {
+   "id": "today",
+   "name": "Today (copperleaf-e9)",
+   "blurb": "The hub as it is: the town along the stream into the bay, every plot facing its street.",
+   "dials": {}
+  },
+  {
+   "id": "a",
+   "name": "A  Back lane",
+   "blurb": "Today's town kept; a back lane parallel to the main street, smaller terraced cottages on both, every door turned to the quarter facing out. Station on the east headland, its rail out to the north-east; lighthouse on the bay's west arm.",
+   "dials": {
+    "town": {
+     "houses": 16,
+     "quarter": 1,
+     "extra": [
+      "inn",
+      "workshop",
+      "genebank",
+      "library"
+     ],
+     "face": "out",
+     "scale": 0.7,
+     "tol": 100,
+     "second": {
+      "on": 1,
+      "along": "main",
+      "side": "out",
+      "off": 13
+     }
+    },
+    "landmarks": {
+     "on": 1
+    }
+   }
+  },
+  {
+   "id": "b",
+   "name": "B  East crescent",
+   "blurb": "The second street curves round the mountain across the heath east of the stream: a new quarter between the square and the station headland, its houses facing out over the street.",
+   "dials": {
+    "town": {
+     "houses": 16,
+     "quarter": 1,
+     "extra": [
+      "inn",
+      "workshop",
+      "genebank",
+      "library"
+     ],
+     "face": "out",
+     "scale": 0.8,
+     "second": {
+      "on": 1,
+      "along": "arc",
+      "side": "in",
+      "off": 9,
+      "span": 110,
+      "at": 40
+     }
+    },
+    "landmarks": {
+     "on": 1
+    }
+   }
+  },
+  {
+   "id": "c",
+   "name": "C  Harbour station",
+   "blurb": "A's town, but the station sits on the bay's east arm, its rail running out over the bay's mouth; the lighthouse on the west arm faces it across the water. Both landmarks frame the first view of the town.",
+   "dials": {
+    "town": {
+     "houses": 16,
+     "quarter": 1,
+     "extra": [
+      "inn",
+      "workshop",
+      "genebank",
+      "library"
+     ],
+     "face": "out",
+     "scale": 0.7,
+     "tol": 100,
+     "second": {
+      "on": 1,
+      "along": "main",
+      "side": "out",
+      "off": 13
+     }
+    },
+    "landmarks": {
+     "on": 1,
+     "station": {
+      "a": 335
+     },
+     "lighthouse": {
+      "arm": -1
+     }
+    }
+   }
+  }
+ ]
+}
