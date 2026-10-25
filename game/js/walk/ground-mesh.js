@@ -628,11 +628,12 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
     if (/rock|boulder|stone|pebble/.test(p.k + ' ' + (M.group || '')) && isW(p.x, p.z))
       rocks.push([p.x, p.z, 0.45 + (0.25 * (M.w || 32)) / 32]);
   }
-  const rockFoam = (x, z) => {
+  /* WA-4: in the sea the foam reaches further (`reach` metres; its shader turns it into rings that come and go with the swell) */
+  const rockFoam = (x, z, reach = 0.6) => {
     let f = 0;
     for (const r of rocks) {
       const d = Math.hypot(x - r[0], z - r[1]);
-      if (d < r[2] + 0.6) f = Math.max(f, 1 - Math.max(0, d - r[2]) / 0.6);
+      if (d < r[2] + reach) f = Math.max(f, 1 - Math.max(0, d - r[2]) / reach);
     }
     return f;
   };
@@ -729,7 +730,13 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           if (!isW(vx + p, vz + q2)) sh++;
           else if (ii >= 0 && jj >= 0 && ii < W2 && jj < H2) dd += dep[jj * W2 + ii];
         }
-        const rf = rocks.length && (kd === 1 || kd === 5 || kd === 0) ? rockFoam(vx, vz) : 0;
+        const rf = !rocks.length
+          ? 0
+          : kd === 1 || kd === 5 || kd === 0
+            ? rockFoam(vx, vz)
+            : kd === SEA_KIND
+              ? rockFoam(vx, vz, 1.4)
+              : 0;
         wv.push(
           vx,
           run

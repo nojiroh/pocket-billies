@@ -294,7 +294,11 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
    float brk=pwHard(.35,.4,lnoise(wp*.45+vec2(ts*.08,0.))+.15*sh2+.15*st),wash=pwHard(.6,.66,vS2+.08*st+(lnoise(wp*2.1+vec2(0.,ts*.4))-.5)*.3);
    float zone=step(dep,.72+.1*st)*(1.-tcov);sv=max(max(cr*brk,pwQ(lc,3.,pc)*.6)*zone,wash*.8)*seaK*min(1.,uFoam*2.5);}
   else{float ph=dep*4.+ts*.7+lnoise(wp*.3)*1.6+lnoise(wp*.07)*2.,fb=fract(ph),ln=pwHard(.45,.82,fb)*(1.-pwHard(.88,1.,fb))*smoothstep(.72,.15,dep)*smoothstep(0.,.05,dep)*pwHard(.2,.45,lnoise(wp*.45+vec2(ts*.08,0.)));sv=ln*seaK*uFoam*2.;}
-  c=mix(c,vec3(.95,.98,1.)*(.8+.2*sh),clamp(sv,0.,.9));foam=max(foam,sv);}
+  c=mix(c,vec3(.95,.98,1.)*(.8+.2*sh),clamp(sv,0.,.9));foam=max(foam,sv);
+  /* water track WA-4: foam round a rock standing in the sea (vS: 1 at the rock ... 0 1.4 m out): a white collar that swells and shrinks with the swell, and rings stepping out from it */
+  if(pix>.5&&vS>.01){float rk=clamp(vS/.6,0.,1.),sw=.5+.5*sin(rr*.55+t*1.3+lnoise(wp*.05)*3.);
+   float fr=max(pwHard(.6,.66,rk*(.62+.5*sw+.15*uTide.y)+(r1-.5)*.4),step(abs(fract(rk*2.2+ts*.45)-.5),.06)*step(.25,rk)*(.4+.6*sw)*step(.35,lnoise(wp*3.1+ts*.2)))*seaK*min(1.,uFoam*2.5);
+   c=mix(c,vec3(.95,.98,1.)*(.8+.2*sh),clamp(fr,0.,.9));foam=max(foam,fr);}}
  float n3=lnoise(w*9.+vec2(ts*1.3,-ts*.9))*lnoise(w*7.3-vec2(ts*.8,ts*1.1));if(fl2)n3=mix(n3,lnoise(w2*9.+vec2(ts*1.3,-ts*.9))*lnoise(w2*7.3-vec2(ts*.8,ts*1.1)),fbw);float gl=(pix>.5?step(.78,n3)*.6:pow(max(n3-.55,0.)*2.2,3.)*2.2)*uGlint*(1.-kb.y);c+=uSunCol*gl*sh;
  /* v24: lava glows under a cracked dark crust that drifts with the flow; ice is white-blue with cracks and a sheen */
  if(kb.w>.5&&kb.w<1.5){vec2 q=wp*1.3-vF*ts*.5;float n1=lnoise(q*1.7+vec2(ts*.05,0.)),n2=lnoise(q*4.1-vec2(0.,ts*.07));float crust=pwQ(smoothstep(.45,.62,n1*.7+n2*.3),3.,pc);
