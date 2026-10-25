@@ -1438,8 +1438,10 @@ function swappedRecipe(path, rec, swap) {
         const n = { ...L };
         if (n.col && S.has(up(n.col))) n.col = S.get(up(n.col));
         if (n.img && S.has(up(n.img))) n.img = S.get(up(n.img));
-        /* phase 09: a roof style (the walk view's propWithVariant) on the model's roof parts */
-        if (n.roof && rf) {
+        /* phase 09: a roof style (the walk view's propWithVariant) on the model's roof parts; HB-5: roof 2 is dressing
+           that fits only the model's own roof (a cottage's moss tufts and roof flowers), gone under another style */
+        if (n.roof === 2 && rf) n.hide = 1;
+        else if (n.roof && rf) {
           n.col = rf.col;
           n.tex = rf.tex;
         }
