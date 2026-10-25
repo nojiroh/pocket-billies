@@ -317,7 +317,7 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
   pushes out the scene's rings. The one call in walk-view.js switched (lane P's file, the owner's yes).
 - **Cost**: per frame, the ground and water shaders loop over up to 4 falls (a box test first; nothing when a scene
   has none, `uFallN` 0), the water shader reads the flow map once and its ripple and glint noise twice on running
-  water (the two phases); an entry's sheet is (w/0.25) x (h/0.5 + 4) quads (test_water's 6 m: 113 triangles) and
+  water (the two phases); an entry's sheet is (w/0.25) x (h/0.5 + 3) quads (test_water's 6 m: 210 triangles) and
   9-40 effect quads. The headless browser draws in software (0.4-2 s a frame, swinging more between runs than
   between settings): no numbers here. The phone should compare the frame time standing at test_water's tall fall
   with Pixel water on and off, and by a river (the flow map's two phases).
