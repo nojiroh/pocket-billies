@@ -2,11 +2,14 @@
 'use strict';
 /* ================= ROUTE TRAINERS (roguelite track RL-12b) =================
    Trainers who stand by a run route's road and walk up when they see you, as in Pokémon (the owner's answer, 9.6 28):
-   - each route place has rules.json run.trainers.perRoute of them (fewest-most, from the node's stream), each of a
-     different class (events.json classes), its Billies from the region's dex at the place's top wild level plus `up`
-     (logic/encounters.js encClassFoe); a route trainer beaten leaves a reward pick (logic/rewards.js);
-   - where they stand: spread along the road from the hub to the way ahead (west), off to one side and the other in
-     turn, facing the road (routeTrainerSpot);
+   - each route place has rules.json run.trainers.perRoute of them by its row (fewest-most, from the node's stream),
+     each of a different class (events.json classes), its Billies from the region's dex at the place's top wild level
+     plus `up` (logic/encounters.js encClassFoe); a route trainer beaten leaves a reward pick (logic/rewards.js);
+   - RT-2: about half of them (`required`) stand by the road, where you can't help being seen; the rest are optional,
+     in the layout's pockets, clearings and dead ends; now and then (`pair`) two stand together and fight as a double
+     battle, one entry with both teams that counts as two;
+   - where they stand: on the spots the generator marked (logic/mapgen.js mapgenLayoutSpots), the kinds its class
+     likes first (events.json classes.<c>.likes), facing the way the spot faces (routeTrainersPlace);
    - they see a straight line `sight` metres long the way they face, a metre and a bit wide (routeInSight); walking
      into it, they spot you: a "!", they walk up, say their line and the battle starts (route-sight.js, the page's).
    Logic only: no DOM, no Date, no Math.random (tools/test/route-trainers.test.mjs). */
@@ -20,11 +23,16 @@ import { encClassFoe } from './encounters.js';
 /* eslint-disable no-func-assign */
 expose({
   ROUTE_SIGHT_HALF: [() => ROUTE_SIGHT_HALF],
+  ROUTE_SPOTS: [() => ROUTE_SPOTS],
   // @ts-expect-error -- replaced on purpose
   routeInSight: [() => routeInSight, v => (routeInSight = v)],
+  // @ts-expect-error -- replaced on purpose
+  routeTrainerCount: [() => routeTrainerCount, v => (routeTrainerCount = v)],
   routeTrainerId: [() => routeTrainerId],
   // @ts-expect-error -- replaced on purpose
-  routeTrainerSpot: [() => routeTrainerSpot, v => (routeTrainerSpot = v)],
+  routeTrainersPlace: [() => routeTrainersPlace, v => (routeTrainersPlace = v)],
+  // @ts-expect-error -- replaced on purpose
+  routeWaySpot: [() => routeWaySpot, v => (routeWaySpot = v)],
   // @ts-expect-error -- replaced on purpose
   runRouteTrainers: [() => runRouteTrainers, v => (runRouteTrainers = v)],
 });
@@ -33,14 +41,32 @@ expose({
 /** half the width of a trainer's line of sight (m) */
 export const ROUTE_SIGHT_HALF = 0.9;
 
+/** RT-2: the spot kinds a required trainer stands on (by the road: its sight crosses it) and an optional one's */
+export const ROUTE_SPOTS = {
+  road: ['roadside', 'pinch', 'bridge'],
+  aside: ['pocket', 'clearing', 'deadend'],
+};
+
 /** a route trainer's id @param {number} i the map node @param {number} k its number on the route */
 export const routeTrainerId = (i, k) => `run_${i}_t${k}`;
 
+/** how many trainers stand on route node i's place (a pair counts as two), from its row: rules.json
+ * run.trainers.perRoute is [fewest, most] by row from the first route row on, the last for every row after
+ * @param {{ row: number }} node @param {any} R rules.json run.trainers @param {{ int: (a: number, b: number) => number }} g */
+export function routeTrainerCount(node, R, g) {
+  const rows = R.perRoute,
+    [lo, hi] = rows[Math.max(0, Math.min(rows.length - 1, node.row - 1))];
+  return g.int(lo, hi);
+}
+
 /**
- * The run's route trainers, by id (trainer entries, as runFoes makes them): on each `route` node, perRoute of them,
- * classes drawn without repeats from the node's stream ('route|trainers'), each one's Billies from its own
- * ('route|<k>'). Each carries its line and a script (its line, then the battle) for trainerTalk, `route` {k, n} for
- * where it stands, and pays run.trainers.reward.
+ * The run's route trainers, by id (trainer entries, as runFoes makes them): on each `route` node, routeTrainerCount
+ * of them, classes drawn without repeats from the node's stream ('route|trainers'), each one's Billies from its own
+ * ('route|<k>'). The first `required` share stand by the road, the rest aside (`route.opt`); with the `pair` chance
+ * ('route|pair') the first entry is two trainers fought together as a double (its own two classes, at most two
+ * Billies each, paying both rewards; the second class is `mate`). Each carries its line(s) and a script (the lines,
+ * then the battle) for trainerTalk and `route` {k, n, opt}; where it stands comes later, from the place's scene
+ * (routeTrainersPlace).
  * @param {Run} run @param {{ classes: EventsData['classes'], species: Record<string, any>, rules: any }} data rules:
  *   rules.json run (its trainers and wild)
  * @returns {Record<string, any>}
@@ -53,47 +79,148 @@ export function runRouteTrainers(run, data) {
   if (!run.map || !R || !classes.length) return out;
   run.map.nodes.forEach((node, i) => {
     if (node.type !== 'route') return;
-    const g = rngFrom(runNodeSeed(run.seed, i), 'route|trainers'),
-      n = Math.min(classes.length, g.int(R.perRoute[0], R.perRoute[1]));
+    const seed = runNodeSeed(run.seed, i),
+      g = rngFrom(seed, 'route|trainers'),
+      total = Math.min(classes.length, routeTrainerCount(node, R, g)),
+      pair = total >= 2 && rngFrom(seed, 'route|pair').chance(R.pair || 0),
+      n = pair ? total - 1 : total,
+      need = Math.max(1, Math.round(total * (R.required ?? 1)));
     let left = classes.slice();
+    const draw = () => {
+      const c = left[g.int(0, left.length - 1)];
+      left = left.filter(x => x !== c);
+      return c;
+    };
+    /* how many trainers stand ahead of entry k (a pair is two) */
+    const before = k => k + (pair && k > 0 ? 1 : 0);
     for (let k = 0; k < n; k++) {
-      const cls = left[g.int(0, left.length - 1)],
-        id = routeTrainerId(i, k);
-      left = left.filter(c => c !== cls);
-      const T = encClassFoe(run, i, id, cls, {
-        classes: data.classes,
-        species: data.species,
-        rules: data.rules,
-        up: R.up,
-        salt: 'route|' + k,
-        reward: R.reward,
-        foe: 'route',
-      });
-      if (!T.team.length) continue;
-      out[id] = { ...T, route: { k, n }, script: [`“${T.sight}”`, `battle ${id}`] };
+      const cls = draw(),
+        mate = pair && k === 0 ? draw() : null,
+        id = routeTrainerId(i, k),
+        foe = (/** @type {string} */ c, /** @type {string} */ salt) =>
+          encClassFoe(run, i, id, c, {
+            classes: data.classes,
+            species: data.species,
+            rules: data.rules,
+            up: R.up,
+            salt,
+            reward: R.reward,
+            foe: 'route',
+          }),
+        T = foe(cls, 'route|' + k),
+        route = { k, n, opt: before(k) >= need };
+      if (!mate) {
+        if (!T.team.length) continue;
+        out[id] = { ...T, route, script: [`“${T.sight}”`, `battle ${id}`] };
+        continue;
+      }
+      const B = foe(mate, 'route|' + k + '|b'),
+        team = [...T.team.slice(-2), ...B.team.slice(-2)];
+      if (team.length < 2) continue;
+      const M = data.classes[mate];
+      out[id] = {
+        ...T,
+        name: `${T.name} & ${B.name}`,
+        team,
+        double: true,
+        reward: T.reward + B.reward,
+        mate: { cls: mate, who: B.who, name: M.name },
+        route,
+        script: [`“${T.sight}”`, `${B.who}: “${B.sight}”`, `battle ${id}`],
+      };
     }
   });
   return out;
 }
 
 /**
- * Where route trainer k of n stands in its place, in the place's own metres: along the road from the hub to the way
- * ahead (the westmost exit), at (k + 1) / (n + 1) of the way, `off` metres to the north for even k and to the south
- * for odd ones; `road` is the point of the road it faces. Null without a way ahead.
- * @param {[number, number]} hub @param {[number, number][]} exits @param {number} k @param {number} n
- * @param {number} [off] @returns {{ at: [number, number], road: [number, number] } | null}
+ * RT-2: where each route trainer stands, from its place's scene (the generator's spots, in the scene's own metres):
+ * `route.at`, `route.look` (a point 2 m the way it faces), `route.spot` (the spot's kind) and, for a pair,
+ * `route.mate` (where the second stands, 1.2 m to the side). Required ones take ROUTE_SPOTS.road, optional ones
+ * ROUTE_SPOTS.aside, the kinds their class likes first, drawn from the node's 'route|spots' stream, each spot 6 m
+ * from the ones taken; when a place runs out of one, the other; with no spot left, a point 3 m off the way west.
+ * Changes the entries in place.
+ * @param {Run} run @param {Record<string, any>} trainers runRouteTrainers' @param {any[]} scenes the run's, by node
+ * @param {EventsData['classes']} classes
  */
-export function routeTrainerSpot(hub, exits, k, n, off = 3) {
-  if (!exits || !exits.length) return null;
-  const ahead = exits.reduce((a, e) => (e[0] < a[0] ? e : a)),
-    t = (k + 1) / (n + 1),
-    road = /** @type {[number, number]} */ ([hub[0] + (ahead[0] - hub[0]) * t, hub[1] + (ahead[1] - hub[1]) * t]),
-    dx = ahead[0] - hub[0],
-    dz = ahead[1] - hub[1],
-    l = Math.hypot(dx, dz) || 1,
+export function routeTrainersPlace(run, trainers, scenes, classes) {
+  if (!run.map) return;
+  /** @type {Record<number, any[]>} */
+  const byNode = {};
+  for (const T of Object.values(trainers)) if (T.route && T.runNode != null) (byNode[T.runNode] ||= []).push(T);
+  for (const [ni, list] of Object.entries(byNode)) {
+    const i = +ni,
+      sc = scenes[i];
+    if (!sc) continue;
+    const g = rngFrom(runNodeSeed(run.seed, i), 'route|spots'),
+      taken = /** @type {[number, number][]} */ ([]),
+      spots = (sc.spots || []).filter(p => Number.isFinite(p.face) && (p.kind !== 'pinch' || p.stand)),
+      free = (/** @type {string[]} */ kinds) =>
+        spots.filter(p => kinds.includes(p.kind) && taken.every(t => Math.hypot(t[0] - p.x, t[1] - p.z) > 6));
+    list.sort((a, b) => a.route.k - b.route.k);
+    for (const T of list) {
+      const likes = (classes[T.cls] && classes[T.cls].likes) || [],
+        mine = T.route.opt ? ROUTE_SPOTS.aside : ROUTE_SPOTS.road,
+        other = T.route.opt ? ROUTE_SPOTS.road : ROUTE_SPOTS.aside;
+      let pool = free(mine);
+      if (!pool.length) pool = free(other);
+      const liked = pool.filter(p => likes.includes(p.kind)),
+        from = liked.length ? liked : pool,
+        p = from.length ? from[g.int(0, from.length - 1)] : null;
+      /** @type {[number, number]} */
+      let at, look;
+      if (p) {
+        at = p.stand ? [p.stand[0], p.stand[1]] : [p.x, p.z];
+        const a = (p.face * Math.PI) / 180;
+        look = [at[0] + Math.cos(a) * 2, at[1] + Math.sin(a) * 2];
+        taken.push([p.x, p.z]);
+      } else {
+        const S = routeWaySpot(sc, T.route.k, T.route.n);
+        if (!S) continue;
+        [at, look] = [S.at, S.road];
+      }
+      const r2 = (/** @type {number} */ v) => Math.round(v * 100) / 100;
+      T.route.at = [r2(at[0]), r2(at[1])];
+      T.route.look = [r2(look[0]), r2(look[1])];
+      T.route.spot = p ? p.kind : 'way';
+      if (T.mate) {
+        const fx = look[0] - at[0],
+          fz = look[1] - at[1],
+          l = Math.hypot(fx, fz) || 1;
+        T.route.mate = [r2(at[0] - (fz / l) * 1.2), r2(at[1] + (fx / l) * 1.2)];
+      }
+    }
+  }
+}
+
+/** a place with no spot left: on the way west (its west exit's road, else the first) at (k + 1) / (n + 1) of it, 3 m
+ * to one side for even k and the other for odd ones, facing it @param {any} sc @param {number} k @param {number} n
+ * @returns {{ at: [number, number], road: [number, number] } | null} */
+export function routeWaySpot(sc, k, n) {
+  const E = sc.edgeExits || [],
+    west = E.filter(e => e.side === 'W' && e.path && e.path.length > 1)[0] || E.find(e => e.path && e.path.length > 1);
+  if (!west) return null;
+  const P = west.path,
+    seg = [];
+  let L = 0;
+  for (let j = 1; j < P.length; j++) {
+    const d = Math.hypot(P[j][0] - P[j - 1][0], P[j][1] - P[j - 1][1]);
+    seg.push(d);
+    L += d;
+  }
+  let want = (L * (k + 1)) / (n + 1),
+    j = 0;
+  while (j < seg.length - 1 && want > seg[j]) want -= seg[j++];
+  const a = P[j],
+    b = P[j + 1],
+    t = seg[j] ? want / seg[j] : 0,
+    road = /** @type {[number, number]} */ ([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]),
+    l = seg[j] || 1,
     side = k % 2 ? 1 : -1;
-  /* the road's normal, to one side or the other */
-  return { at: [road[0] + (-dz / l) * off * side, road[1] + (dx / l) * off * side], road };
+  return {
+    at: [road[0] + (-(b[1] - a[1]) / l) * 3 * side, road[1] + ((b[0] - a[0]) / l) * 3 * side],
+    road,
+  };
 }
 
 /** whether a trainer at `at` facing `look` sees the point `p`: within `range` metres ahead of it, ROUTE_SIGHT_HALF to

@@ -802,6 +802,8 @@ export interface TrainerEntry extends Trainer {
   alpha?: boolean;
   /** RL-13: a run boss's HP times this (the Expedition's, logic/run-loop.js runFoes) */
   hpMult?: number;
+  /** RT-2: a route pair's second trainer (logic/route-trainers.js runRouteTrainers): its class, look and name */
+  mate?: { cls: DataId; who: DataId; name: string };
 }
 
 /** a trainer's Billie: a species, or '@rival' ('@rival1', '@rival2': evolved) for the starter that beats yours */
@@ -1008,9 +1010,17 @@ export interface Rules {
     shop: { always: string[]; more: number; pick: Record<string, number> };
     /** RL-8: a mini-boss's and the boss's levels: `up` over the top wild level of their row; their reward in $ */
     foes: { miniboss: { up: number; reward: number }; boss: { up: number; reward: number } };
-    /** RL-12b: route trainers: how many a route (fewest, most), levels over the place's top wild level, what each
-     * pays, how far they see (m) */
-    trainers: { perRoute: [number, number]; up: number; reward: number; sight: number };
+    /** RL-12b: route trainers: how many a route place by row ([fewest, most] from the first route row, the last for
+     * every row after; RT-2), the share that stands by the road (`required`), the chance a place has a pair fought as
+     * a double, levels over the place's top wild level, what each pays, how far they see (m) */
+    trainers: {
+      perRoute: [number, number][];
+      required: number;
+      pair: number;
+      up: number;
+      reward: number;
+      sight: number;
+    };
     /** RL-12b: the reward pick after a trainer battle: cards, a reroll's first price, how it grows each time */
     rewards: { pick: number; reroll: number; grow: number };
     /** RL-12: Perks: at most `cap` held, a pick of `pick` after a mini-boss, offered by `rarity` weight, sold in a
@@ -1813,6 +1823,8 @@ export interface TrainerClass {
   team: [number, number];
   sight: string;
   lose: string;
+  /** RT-2: the spot kinds a route trainer of the class stands on first (logic/route-trainers.js ROUTE_SPOTS) */
+  likes?: ('roadside' | 'pinch' | 'bridge' | 'pocket' | 'clearing' | 'deadend')[];
 }
 /** events.json events: one event, its intro and 2-3 options */
 export interface RunEvent {

@@ -539,14 +539,17 @@ export function dataRunLoop(D) {
       RW = R.rewards;
     if (!rec(TR)) problem('rules.json', 'run.trainers missing');
     else {
-      only(TR, ['perRoute', 'up', 'reward', 'sight'], 'run.trainers');
+      only(TR, ['perRoute', 'required', 'pair', 'up', 'reward', 'sight'], 'run.trainers');
       if (
         !Array.isArray(TR.perRoute) ||
-        TR.perRoute.length !== 2 ||
-        !whole(TR.perRoute[0], 0, 4) ||
-        !whole(TR.perRoute[1], TR.perRoute[0], 4)
+        !TR.perRoute.length ||
+        !TR.perRoute.every(r => Array.isArray(r) && r.length === 2 && whole(r[0], 0, 7) && whole(r[1], r[0], 7))
       )
-        problem('rules.json', 'run.trainers.perRoute: [fewest, most], whole, 0-4');
+        problem('rules.json', 'run.trainers.perRoute: [fewest, most] by row, whole, 0-7 (the classes)');
+      if (!(typeof TR.required === 'number' && TR.required >= 0 && TR.required <= 1))
+        problem('rules.json', 'run.trainers.required: a share, 0-1');
+      if (!(typeof TR.pair === 'number' && TR.pair >= 0 && TR.pair <= 1))
+        problem('rules.json', 'run.trainers.pair: a chance, 0-1');
       if (!whole(TR.up, -20, 20)) problem('rules.json', 'run.trainers.up: whole, -20-20');
       if (!whole(TR.reward, 0, 1e6)) problem('rules.json', 'run.trainers.reward: whole Moneys, 0-1,000,000');
       if (!(typeof TR.sight === 'number' && TR.sight >= 1 && TR.sight <= 20))

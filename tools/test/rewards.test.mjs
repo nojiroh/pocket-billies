@@ -135,3 +135,22 @@ test('rewards: a route trainer beaten leaves a pick; a mini-boss still leaves Pe
     assert.equal(!!s.run.offer, want === 'perks', String(runFoe));
   }
 });
+
+test('rewards: a route pair beaten (RT-2, one entry for two) leaves one pick, pays both rewards and sets one flag', () => {
+  const settle = modules['battle-rewards'].battleSettleWin,
+    s = setup(),
+    se = s.se;
+  settle(
+    { kind: 'trainer', tid: 'run_3_t0', T: { runFoe: 'route', mate: { cls: 'vlogger' } } },
+    s,
+    {
+      o: 'win',
+      prize: 0,
+      reward: 300,
+    },
+    s.run
+  );
+  assert.equal(s.run.enc.rewardN, 1, 'one pick');
+  assert.equal(s.se - se, 300);
+  assert.equal(s.flags.run_3_t0, 1);
+});

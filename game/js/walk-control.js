@@ -9,7 +9,6 @@ import { LOCATIONS, PEOPLE, ROADS, ROADS_BY_NODE, RULES, SHOPS, gameData, traine
 import { blockerAt, canEnter, encounterBuild, encountersHere, gateText, healAll } from './logic/rules.js';
 import { roomTurnOf } from './logic/room-turn.js';
 import { runArrive, runMapNode } from './logic/run-map.js';
-import { routeTrainerSpot } from './logic/route-trainers.js';
 import { startWild } from './logic/battle-engine.js';
 import { storyAllows } from './logic/script.js';
 import { activeBattle, save, saveData, saveNow, uiState } from './game-state.js';
@@ -473,29 +472,29 @@ export function walkState() {
         const e = v.exits.find(e => !saveData.visited[e.to]);
         if (e && sc.exits) exit = sc.exits[e.i];
       }
-      /* RL-12b: a route trainer stands by the road, facing it (logic/route-trainers.js); it sees you from there */
-      if (T.route) {
-        const bid = sc.baseId || v.id,
-          base = mapById(bid) || sc,
-          o = sc.baseOff || [0, 0],
-          S = routeTrainerSpot(mapHub(base), base.exits || [], T.route.k, T.route.n);
-        if (S) {
-          const at = /** @type {[number, number]} */ ([S.at[0] + o[0], S.at[1] + o[1]]),
-            look = /** @type {[number, number]} */ ([S.road[0] + o[0], S.road[1] + o[1]]);
-          walkView.npcLook[T.id] = look;
-          return {
-            who: T.who,
-            id: T.id,
-            done: !!saveData.flags[T.id],
-            exit: null,
-            dir: directionOf(look[0] - at[0], look[1] - at[1]),
-            route: true,
-            at,
-          };
-        }
+      /* RL-12b: a route trainer stands on its spot, facing the way the spot faces (RT-2, logic/route-trainers.js
+         routeTrainersPlace: in its place's own metres); it sees you from there */
+      if (T.route && T.route.at) {
+        const o = sc.baseOff || [0, 0],
+          at = /** @type {[number, number]} */ ([T.route.at[0] + o[0], T.route.at[1] + o[1]]),
+          look = /** @type {[number, number]} */ ([T.route.look[0] + o[0], T.route.look[1] + o[1]]),
+          dir = directionOf(look[0] - at[0], look[1] - at[1]);
+        walkView.npcLook[T.id] = look;
+        const me = { who: T.who, id: T.id, done: !!saveData.flags[T.id], exit: null, dir, route: true, at };
+        /* RT-2: a pair's second trainer stands beside the first; talking to either is talking to the pair */
+        if (!T.mate || !T.route.mate) return me;
+        const mate = {
+          ...me,
+          who: T.mate.who,
+          id: T.id + '~b',
+          talkAs: T.id,
+          at: /** @type {[number, number]} */ ([T.route.mate[0] + o[0], T.route.mate[1] + o[1]]),
+        };
+        return [me, mate];
       }
       return { who: T.who, id: T.id, done: !!saveData.flags[T.id], exit, dir: 'down', boss: T.runFoe === 'boss' };
-    });
+    })
+    .flat();
   /* alpha 0.4: people who only talk (Granny Juniper in her garden): the place's own (scene.people), in the view's metres */
   {
     const bid = sc.baseId || v.id,
@@ -551,7 +550,7 @@ export function walkPick(h) {
       personTalk(h.n.talk);
       return;
     }
-    trainerTalk(h.n.id);
+    trainerTalk(h.n.talkAs || h.n.id);
   } else if (h.k === 'act') {
     const p = h.p,
       a = h.act;
