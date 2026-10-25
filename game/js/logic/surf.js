@@ -4,7 +4,7 @@
    Surf: deep water (`d` tiles) is ridden on a Water Billie, cell by cell. With the Water Badge kept and a Water Billie
    standing (RL-R2's rule for the Surf obstacle, logic/run-side.js fieldMoveState; the owner, WA-6b: no height floor)
    you wade out through the shallows (logic/wading.js), mount at the edge of the deep water and get off at the first
-   shallows or shore. Lava and ice are never surfed; a terrain's own `walk` (scenery.json) still decides first; a
+   shallows or shore. Lava, rapids and ice are never surfed (WA-5a: ice is walked on); a terrain's own `walk` (scenery.json) still decides first; a
    scene with `ride` (v24, RL-R2's Surf side areas) keeps crossing all its water as before, so this is for the rest.
    Only the player surfs: the walk grid keeps deep water blocked for everyone else (walk-view.js navGrid's `surf`
    cells), and the map generator's reach check and the seam rules keep it dry.
@@ -62,7 +62,7 @@ export function surfCan(M, badges, team) {
   return !!M && fieldMoveState(M, badges, team).state === 'ask';
 }
 /** is (x, z) deep water the player may Surf on (ch: the tile there, T: its scenery.json terrain): a `d` tile with no
- * terrain `walk` of its own, not lava or ice (logic/wading.js), in a scene that isn't a whole riding scene (those are
+ * terrain `walk` of its own, not lava, rapids or ice (logic/wading.js), in a scene that isn't a whole riding scene (those are
  * walkable already) @param {any} sc @param {string} ch @param {any} T @param {number} x @param {number} z */
 export function surfable(sc, ch, T, x, z) {
   if (ch !== 'd' || sc.ride || (T && T.walk != null)) return false;

@@ -167,7 +167,10 @@ async function runBowlMapTest() {
       ensurePrograms(WORLD_BOWL_SHADERS);
       const miss = Object.keys(WORLD_BOWL_SHADERS).filter(k => !gpuState.P || !gpuState.P[k]);
       if (miss.length) return { ok: false, note: `missing: ${miss.join(', ')}` };
-      return `${Object.keys(WORLD_BOWL_SHADERS).join(' and ')} compiled and linked`;
+      /* water track WA-7: the sea and the ground's water carry the walk's pixel water (its switch, tones and steps) */
+      const noPix = ['mwater', 'mground'].filter(k => !gpuState.P[k].U.uPixW);
+      if (noPix.length) return { ok: false, note: `no pixel water in: ${noPix.join(', ')}` };
+      return `${Object.keys(WORLD_BOWL_SHADERS).join(' and ')} compiled and linked, the water with the pixel water's switch`;
     });
     await step('The Map tab opens as the bowl', async () => {
       uiState.mapSel = null;
