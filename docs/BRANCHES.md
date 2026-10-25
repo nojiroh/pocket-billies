@@ -60,6 +60,7 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | `track/regions` | Region sessions of the roguelite track (RL-R1, RL-R2; roguelite-track.md 9.4): RL-R1 (region generator) done 2026-10-23, merged; RL-R2a (side areas, field moves, the deadline dropped) done 2026-10-23, merged (PR #176); RL-R2b (a cave, an islet town, the way-out moment, side areas in the Run Lab, preview and sim) done 2026-10-24, PR open. |
 | `track/roster` | Roster track (RO-1, RO-2..; roguelite-track.md section 9.4): every RO session works here. RO-1 (forms, biome pools) done 2026-10-23. |
 | `track/reflavour` | Reflavour track (docs/phases/reflavour-track.md): RF-1..RF-6 work here; RF-2 (pyramids) pushed 2026-10-23. |
+| `track/water` | Water track (docs/phases/water-track.md): WA-1..WA-9 in lanes R, G, P (and B). To be made by the owner; WA-0 (the plan) was done on `ccr-4ae7bdc4-46vu9r`. |
 | `track/towns` | Towns track (docs/phases/towns-track.md): TW-1..TW-3 (town layout, townsfolk, run quests) work here. TW-1 (the town layout) done 2026-10-24. |
 | `track/routes` | Routes track (docs/phases/routes-track.md): RT-1..RT-4 (route layouts, trainers, set pieces, Billies and finds) work here. |
 | `track/hub` | Hub track (docs/phases/hub-track.md): every HB session works here (made from main 2026-10-25). HB-2 (the run's loading screen) done 2026-10-25; HB-1 is finished on `claude/hub-island-revamp-4fskxy`. |

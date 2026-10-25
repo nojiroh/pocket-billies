@@ -15,6 +15,7 @@ import { lineSpeciesIds } from './forms.js';
 import { CLIMATE_WEATHER_ODDS } from './weather.js';
 import { uiThemeContrast } from './ui-theme.js';
 import { RUN_MARK_TYPES } from './run-marks.js';
+import { wadeWalkable } from './wading.js';
 import { runRegionData, runRegionMake } from './run-region.js';
 import { runMapMake, runMapRows, runMapRowsFit } from './run-map.js';
 import {
@@ -784,6 +785,11 @@ export function dataFieldMoves(D, valid = () => true) {
       if (!types.has(M.type)) problem('fieldMoves.json', `moves.${k}: no type "${M.type}" (types.json)`);
       if (!(D.biomes || {})[M.biome]) problem('fieldMoves.json', `moves.${k}: no biome "${M.biome}" (biomes.json)`);
     }
+  /* WA-6b: the Waterfall climb's Billie type and its badges are real types */
+  const WF = FM && FM.waterfall;
+  if (WF)
+    for (const t of [WF.type, ...(WF.badges || [])])
+      if (!types.has(t)) problem('fieldMoves.json', `waterfall: no type "${t}" (types.json)`);
   const S = D.rules && D.rules.run && D.rules.run.side;
   if (!S) return out;
   const chance = (/** @type {any} */ v) => typeof v === 'number' && v >= 0 && v <= 1,
@@ -1489,7 +1495,11 @@ export function dataSceneFindings(D, roadOf) {
       const off = (/** @type {number[]} */ p) => p[0] < 0 || p[1] < 0 || p[0] > s.w || p[1] > s.h;
       if (L < 1) warn(`Scene ${s.name || k}: bridge ${n + 1} is shorter than a metre.`, 'scenes', g);
       else if (off(b.a) || off(b.b)) warn(`Scene ${s.name || k}: bridge ${n + 1} runs off the map.`, 'scenes', g);
-      else if ('wd'.includes(ter(b.a[0], b.a[1])) || 'wd'.includes(ter(b.b[0], b.b[1])))
+      else if (
+        /* WA-6a: an end in shallows you wade is fine; deep water, lava or ice is not (logic/wading.js) */
+        !wadeWalkable(s, ter(b.a[0], b.a[1]), null, b.a[0], b.a[1]) ||
+        !wadeWalkable(s, ter(b.b[0], b.b[1]), null, b.b[0], b.b[1])
+      )
         warn(
           `Scene ${s.name || k}: bridge ${n + 1} ends in the water, so nobody can step onto it. Drag it from bank to bank.`,
           'scenes',
@@ -1511,7 +1521,8 @@ export function dataSceneFindings(D, roadOf) {
           }
         }
       if (!wet) warn(`Scene ${s.name || k}: water rectangle ${n + 1} (${r.k}) covers no water.`, 'scenes', g);
-      if (!['pond', 'stream', 'canal', 'spring', 'swamp', 'lake'].includes(r.k))
+      /* the kinds walk/water-data.js WATER_KIND_LOOKS draws (water track WA-0: sea, lava and ice were missing) */
+      if (!['pond', 'stream', 'canal', 'spring', 'swamp', 'lake', 'sea', 'lava', 'ice'].includes(r.k))
         warn(`Scene ${s.name || k}: water rectangle ${n + 1} has an unknown kind “${r.k}”.`, 'scenes', g);
     });
     const users = locations.map((r, i) => [r, i]).filter(([r]) => r.mapId === k);

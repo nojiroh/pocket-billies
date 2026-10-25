@@ -76,7 +76,7 @@
   "luxuryPyramid": 0.5,
   "alpha": 0.4
  },
- "ride": {"minHeight":1.5,"types":["Water"]},
+ "ride": {"types":["Water"]},
  "fishing": {"biteMin":2.5,"biteMax":8,"reactTime":0.9,"reelTime":7},
  "legends": [
   {

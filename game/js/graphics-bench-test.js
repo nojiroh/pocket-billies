@@ -71,6 +71,8 @@ const GRAPHICS_TEST_HIDDEN = [
   ['shadows.cascades', 'Near shadow map', { values: [false, true] }],
   ['shadows.ao', 'Ambient occlusion', { range: [0, 1.5, 0.05] }],
   ['shadows.contact', 'Contact shadows', { range: [0, 1, 0.01] }],
+  /* water track WA-1: pixel water's extra shore reads and steps */
+  ['water.pixel', 'Pixel water', { values: [false, true] }],
   /* phase 20 C3: the same look either way, so it is left out of "everything lowest / highest" */
   ['quality.frameBlock', 'One light block per frame', { values: [false, true], alone: true }],
 ];
@@ -83,7 +85,7 @@ const GRAPHICS_TEST_STATIONS = [
     sun: { angle: 30, height: 30 },
     dials: ['shadows.strength', 'quality.shadowMap', 'shadows.cascades', 'shadows.ao', 'shadows.contact'],
   },
-  { id: 'pond', name: 'Pond', dials: ['water.reflection'] },
+  { id: 'pond', name: 'Pond', dials: ['water.reflection', 'water.pixel'] },
   { id: 'sun', name: 'Sun gap', sun: { angle: -90, height: 18 }, dials: ['air.godRays'] },
   { id: 'lamps', name: 'Lamp square', time: 22, dials: ['color.bloom', 'lights.brightness', 'quality.frameBlock'] },
   { id: 'meadow', name: 'Meadow', dials: ['grass.density', 'air.particles', 'air.mist'] },

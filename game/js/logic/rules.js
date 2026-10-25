@@ -507,6 +507,7 @@ export function upgradePart(p) {
   return true;
 }
 export const billyName = m => m.nick || (m.mut && m.mut.name) || speciesOf(m).name;
+provide({ billyName }); /* to-module */
 /* RL-8: during a run storage stays in Copperleaf (the box isn't a run field): only the party counts, so nothing in a run
    reads, heals, merges or moves a Billie that is resting at home */
 export const allBillies = () => (saveData.run ? saveData.team.slice() : saveData.team.concat(saveData.box));
@@ -673,8 +674,8 @@ export function gateText(n) {
     return st.state === 'ask' ? `Use ${M.name} on what blocks the way first.` : fieldMoveText(M, st.state);
   }
   if (n.ride && !canRide()) {
-    const R = RULES.ride || { minHeight: 1.5 };
-    return `To cross ${n.name} you need a Water Billie at least ${R.minHeight || 1.5} m tall in your team to ride on. Quant and Billigator are big enough.`;
+    const R = RULES.ride || {};
+    return `To cross ${n.name} you need a Water Billie${R.minHeight ? ` at least ${R.minHeight} m tall` : ''} in your team to ride on.`;
   }
   if (n.gateText) return n.gateText;
   const T = gateOwner(n.gate);
@@ -684,14 +685,17 @@ export function blockerAt(i) {
   return trainersAt(i).find(T => T.blocks && !saveData.flags[T.id]) || null;
 }
 /* ---------- travel: a plan of stops to walk to, one link at a time; an empty plan means staying put ---------- */
-/* v24: lake and sea roads need a Water billionaire big enough to ride (rules.ride: types, minHeight in metres) */
+/* v24: lake and sea roads need a Water billionaire to ride (rules.ride: types, an optional minHeight in metres); WA-6b:
+   the owner dropped the 1.5 m floor (any Water Billie carries you, as RL-R2's Surf), and only one still standing
+   (hp > 0, as field-moves.js fieldTeam) does. The tallest rides */
 export function riderOf() {
-  const R = RULES.ride || { minHeight: 1.5, types: ['Water'] };
+  const R = RULES.ride || { types: ['Water'] };
   /** @type {Billy | null} */
   let best = null;
   for (const m of saveData.team) {
     const sp = speciesOf(m);
-    if (!sp || !sp.types.some(t => (R.types || ['Water']).includes(t)) || sp.ht < (R.minHeight || 1.5)) continue;
+    if (!sp || !(m.hp > 0) || !sp.types.some(t => (R.types || ['Water']).includes(t)) || sp.ht < (R.minHeight || 0))
+      continue;
     if (!best || sp.ht > speciesOf(best).ht) best = m;
   }
   return best;
@@ -701,6 +705,7 @@ export const riderName = () => {
   const m = riderOf();
   return m ? m.nick || speciesOf(m).name : '';
 };
+provide({ riderName }); /* to-module */
 /** RL-R2: whether the run's side area is open (its field move used; logic/run-side.js runSideOpen) */
 export const fieldOpen = () => {
   const run = saveData.run;
