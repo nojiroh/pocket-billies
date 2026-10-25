@@ -187,8 +187,9 @@ export const ISLAND_GEN_DEFAULTS = {
   /* HB-4a: the landmarks round the town, for the hub track (on 0: none). station: the train station on the headland by
      the town that stands out furthest (a: its angle round the middle, -1 to pick), its sky rail running len metres out
      over the sea and climbing rise metres to the portal; lighthouse: on an arm of the cove (arm 1 or -1; 0 the one
-     further from the station); windmill: beside the farm (0 none) */
-  landmarks: { on: 0, station: { a: -1, len: 70, rise: 45 }, lighthouse: { arm: 0 }, windmill: 1 },
+     further from the station); windmill: beside the farm (0 none); shore: how far every landmark keeps from the water
+     (metres), room for the water track's tide and wading shallows (docs/phases/water-track.md WA-4, WA-6a) */
+  landmarks: { on: 0, station: { a: -1, len: 70, rise: 45 }, lighthouse: { arm: 0 }, windmill: 1, shore: 3 },
   /* a hamlet: a few houses round a green under the mountains, joined to the coast road (off since the look pass: the
      owner, a smaller island) */
   hamlet: { on: 0, houses: 4 },
@@ -338,6 +339,7 @@ export function islandGenDials(d) {
   LM.station.rise = num(LM.station.rise, 0, 120, 45);
   LM.lighthouse.arm = Math.sign(num(LM.lighthouse.arm, -1, 1, 0));
   LM.windmill = LM.windmill ? 1 : 0;
+  LM.shore = num(LM.shore, 0, 10, 3);
   if (!D.town.second || typeof D.town.second !== 'object') D.town.second = { on: 0 };
   D.town.second.on = D.town.second.on ? 1 : 0;
   if (!['quay', 'cross', 'main', 'arc'].includes(D.town.second.along)) D.town.second.along = 'quay';
@@ -1905,7 +1907,20 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
           inLand(px, pz) &&
           !(G.F[mapgenCellAt(G, px, pz)] & 4) &&
           Eat(px, pz) <= 0.6 &&
-          !builtZones.some(Z => islandPointIn(Z.poly, px, pz))
+          !builtZones.some(Z => islandPointIn(Z.poly, px, pz)) &&
+          /* landmarks.shore metres from the water all round */
+          [0, 1, 2, 3, 4, 5, 6, 7].every(
+            n =>
+              !(
+                G.F[
+                  mapgenCellAt(
+                    G,
+                    px + Math.cos((n * Math.PI) / 4) * D.landmarks.shore,
+                    pz + Math.sin((n * Math.PI) / 4) * D.landmarks.shore
+                  )
+                ] & 4
+              )
+          )
       ) ||
       plots.some(L => Math.hypot(L.x - x, L.z - z) < rr + Math.hypot(L.w, L.d) / 2 + 0.6)
     )

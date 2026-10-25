@@ -188,6 +188,24 @@ test('landmarks: the station with its rail out to sea and up to the portal, the 
     assert.ok(islandPointIn(coast, L.x, L.z), `${L.k} on the island`);
     assert.equal(((L.a % 90) + 90) % 90, 0, `${L.k} at ${L.a}`);
   }
+  /* landmarks.shore (3 m) from the water: room for the water track's tide and wading shallows */
+  const wet = (x, z) => 'wd'.includes(sc.tiles[sc.h - 1 - Math.floor(z)][Math.floor(x)]);
+  for (const L of [st, lh, wm])
+    for (const [u, v] of [
+      [-1, -1],
+      [1, -1],
+      [1, 1],
+      [-1, 1],
+    ])
+      for (let n = 0; n < 8; n++) {
+        const a = (L.a * Math.PI) / 180,
+          x = L.x - Math.sin(a) * u * (L.w / 2) + Math.cos(a) * v * (L.d / 2),
+          z = L.z + Math.cos(a) * u * (L.w / 2) + Math.sin(a) * v * (L.d / 2);
+        assert.ok(
+          !wet(x + Math.cos((n * Math.PI) / 4) * 2.9, z + Math.sin((n * Math.PI) / 4) * 2.9),
+          `${L.k} by the water`
+        );
+      }
   /* off by default */
   assert.equal(islandGenerate(hub.dials, hub.seed, ctx).landmarks, undefined);
 });
