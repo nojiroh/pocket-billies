@@ -6,6 +6,7 @@ import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
 import { COMMON_GLSL, LIGHT_GLSL, LOOK_GLSL } from '../engine/webgl.js';
 expose({
+  FALL_GLSL: [() => FALL_GLSL],
   PIXEL_WATER_GLSL: [() => PIXEL_WATER_GLSL],
   RING_AT_GLSL: [() => RING_AT_GLSL],
   ROCK_GLSL: [() => ROCK_GLSL],
@@ -36,6 +37,18 @@ float pwBand(float v,vec2 c){return pwQ(v,uPixW.y,c);}
 vec3 pwTone(vec3 shal,vec3 deep,float d,vec2 c){return mix(shal,deep,pwBand(d,c));}
 float pwHard(float e0,float e1,float x){return uPixW.x>.5?step((e0+e1)*.5,x):smoothstep(e0,e1,x);}
 `;
+/* water track WA-2a: the scene's nearest waterfalls (walk/water-data.js setFallUniforms: up to 4, nearest you first):
+   uFallA (the lip's x, z and the way it falls), uFallB (width, drop, plunge pool's radius, the lip's height). fallReach
+   is how far out the sheet lands (as ground-mesh.js placeFalls); fallNear gives, at a point, how wet the rock and
+   ground beside and below a fall are (x) and how much of the white water's light reaches it (y) */
+const FALL_GLSL = `uniform vec4 uFallA[4],uFallB[4];uniform int uFallN;
+float fallReach(float h){return min(1.8,.25+.45*sqrt(h));}
+vec2 fallNear(vec3 p){vec2 r=vec2(0.);for(int i=0;i<4;i++){if(i>=uFallN)break;vec4 A=uFallA[i],B=uFallB[i];vec2 d=A.zw,q=p.xz-A.xy;float rc=fallReach(B.y),al=dot(q,d),la=abs(dot(q,vec2(-d.y,d.x)));
+ if(al<-1.6||al>rc+B.z+2.5||la>B.x*.5+B.z+2.5||p.y>B.w+.3||p.y<B.w-B.y-1.)continue;
+ float wet=(1.-smoothstep(B.x*.5+.1,B.x*.5+.5+B.y*.08,la))*(1.-smoothstep(rc+.2,rc+1.2,al))*smoothstep(-1.4,-.4,al)*step(p.y,B.w+.04);
+ vec2 f=q-d*rc;float df=length(vec2(dot(f,d),max(abs(dot(f,vec2(-d.y,d.x)))-B.x*.5,0.)));
+ float lt=(1.-smoothstep(.2,max(B.z*.6,.8)+1.2,df))*(1.-smoothstep(0.,1.5+B.y*.3,p.y-(B.w-B.y)))*clamp(B.y/4.,.35,1.);r=max(r,vec2(wet,lt));}return r;}
+`;
 /* v46: the near ring lookup, shared by the ground and the grass (their uniforms: uRingC, uRingBox, uCanvas) */
 const RING_AT_GLSL = `float ringAt(vec2 cc,out vec2 ruv){ruv=vec2(0.);if(uCanvas.z<.5)return 0.;vec2 ch=floor(cc/16.),s=mod(ch,4.);int si=int(s.x+.5)+int(s.y+.5)*4;vec2 h=uRingC[si];if(abs(h.x-ch.x)>.5||abs(h.y-ch.y)>.5)return 0.;
  ruv=(s*16.+(cc-ch*16.))/64.;vec2 e=min(cc-uRingBox.xy,uRingBox.zw-cc);return clamp(min(e.x,e.y)/3.,0.,1.);}`;
@@ -45,7 +58,7 @@ export const WALK_SHADERS = {
 precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=2) in vec3 aWall;uniform mat4 uVP;uniform vec3 uOrg;out vec3 vW;out vec3 vN;out vec3 vWall;out vec4 vClip;${COMMON_GLSL}
 void main(){vec3 p=aPos+uOrg;p.y+=curveY(p.xz);vW=p;vN=aNrm;vWall=aWall;gl_Position=uVP*vec4(p,1.);vClip=gl_Position;}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec3 vWall;in vec4 vClip;out vec4 o;uniform sampler2D uGround,uFar,uCliff,uGNrm,uWallA;uniform vec4 uGRect;uniform vec3 uFarTint;uniform float uGStr,uGShine,uWallDef;uniform vec3 uWallCol[12];uniform sampler2D uShore;uniform vec3 uShoreR,uBed;uniform vec4 uSea;uniform vec4 uRoom;uniform vec4 uRoomT;uniform float uRoomY;uniform sampler2D uGAO;uniform vec3 uGAOR,uSkyW;uniform float uWet,uRainK,uCausW;uniform sampler2D uRing,uRingN;uniform vec2 uRingC[16];uniform vec4 uRingBox;uniform vec3 uCanvas;uniform vec4 uHole;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}
+precision highp float;in vec3 vW;in vec3 vN;in vec3 vWall;in vec4 vClip;out vec4 o;uniform sampler2D uGround,uFar,uCliff,uGNrm,uWallA;uniform vec4 uGRect;uniform vec3 uFarTint;uniform float uGStr,uGShine,uWallDef;uniform vec3 uWallCol[12];uniform sampler2D uShore;uniform vec3 uShoreR,uBed;uniform vec4 uSea;uniform vec4 uRoom;uniform vec4 uRoomT;uniform float uRoomY;uniform sampler2D uGAO;uniform vec3 uGAOR,uSkyW;uniform float uWet,uRainK,uCausW;uniform sampler2D uRing,uRingN;uniform vec2 uRingC[16];uniform vec4 uRingBox;uniform vec3 uCanvas;uniform vec4 uHole;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}${FALL_GLSL}
 /* v46: the near ring: the 16 m squares round you at full size (4 x 4 of them in one texture, each in the slot its
    position mod 4 gives); the view's whole ground is the small distant picture. 0 = not in the ring */
 ${RING_AT_GLSL}
@@ -68,7 +81,13 @@ void main(){/* phase 08b: a room drawn over the place: the place's ground leaves
    if(top<rag)a=texture(uGround,gt).rgb*(top>rag-.03?.78:1.);else if(top<rag+.05)a*=.62;}
   /* scree: pebbles fallen at the foot */
   if((m<4||m==9)&&hy<.12){float sp=fract(sin(dot(floor(vec2(tc.x,hy)*16.),vec2(12.9898,78.233)))*43758.5);if(sp>.72)a=mix(a,vec3(.62,.58,.52)*(.8+.4*sp),.6);}
-  float sh=shadowAtN(vW+n*.04,n,.0012),ao=mix(contactAO(vW),1.,clamp(hy/.6,0.,1.));if(uRoom.w>.5&&m==10)ao=mix(ao,1.,.6);vec3 lit=shade(a,n,vW,sh,ao,vec4(0.,1.,0.,.25),0.);
+  /* water track WA-2a: rock beside a waterfall and under its lip is dark and wet, with trickles stepping down it in pixel columns */
+  vec2 fn=uFallN>0?fallNear(vW):vec2(0.);float fw=pwQ(fn.x,3.,pwCell(vec2(tc.x,vW.y)));if(fw>0.){a*=1.-.42*fw;a=mix(a,a*vec3(.86,.93,1.05),fw);}
+  float sh=shadowAtN(vW+n*.04,n,.0012),ao=mix(contactAO(vW),1.,clamp(hy/.6,0.,1.));if(uRoom.w>.5&&m==10)ao=mix(ao,1.,.6);vec3 lit=shade(a,n,vW,sh,ao,vec4(fw*.5,24.,0.,.25),0.);
+  if(fw>0.||fn.y>0.){float pr=pwRes(),cx=floor(tc.x*pr),t=pwStep(uTime*.001),hc=fract(sin(cx*91.7)*437.58);
+   lit+=(uSunCol*.5+uAmbTop*.5)*fw*step(.8,hc)*step(fract(vW.y*1.1+t*(1.+hc)+hc*7.),.22)*.35;
+   /* the white water's light thrown up on the rock: a stepped shimmer, stronger at night */
+   float k=sin(cx/pr*5.1+t*1.6+sin(floor(vW.y*pr)/pr*3.7-t)*1.4)+sin(cx/pr*3.3-t*1.1+floor(vW.y*pr)/pr*4.2);lit+=vec3(.82,.9,1.)*pwQ(fn.y*(.45+.55*pow(clamp(1.-abs(k)*.5,0.,1.),3.)),3.,vec2(cx,floor(vW.y*pr)))*(.05+.3*(1.-uAmbK));}
   /* v32: sunlight thrown up off water in front of a wall: thin wandering bright lines near its foot */
   vec3 caw=vec3(0.);if(uShoreR.z>.5&&uCausW>0.){vec2 su=(vW.xz+n.xz*.7)*uShoreR.xy;if(su.x>0.&&su.y>0.&&su.x<1.&&su.y<1.){float sf=texture(uShore,su).r;if(sf>.5){float pr=pwRes();vec2 q=floor(vec2(dot(vW.xz,vec2(n.z,-n.x)),vW.y)*pr)/pr;float t=pwStep(uTime*.001);
    float k=sin(q.x*5.1+t*1.3+sin(q.y*3.7-t)*1.4)+sin(q.x*3.3-t*.9+q.y*4.2);float cl=pwQ(pow(clamp(1.-abs(k)*.55,0.,1.),6.),3.,q*pr);caw=uSunCol*cl*.35*uCausW*smoothstep(.5,.66,sf)*(1.-smoothstep(.2,1.8,hy))*sh;}}}
@@ -100,7 +119,11 @@ if(c>0.){vec3 cx=texture(uCliff,vec2(vW.z,-vW.y)*.9).rgb,cz=texture(uCliff,vec2(
  float gao=1.;if(uGAOR.z>0.){vec2 gu=vW.xz*uGAOR.xy;if(gu.x>0.&&gu.y>0.&&gu.x<1.&&gu.y<1.)gao=mix(1.,texture(uGAO,gu).r,uGAOR.z);}
  if(pud>0.){vec3 vv=normalize(uEye-vW);float fr=.35+.6*pow(1.-max(vv.y,0.),3.);float rr=0.;if(uRainK>0.){vec2 cq=pwSnap(vW.xz)*2.2,ci=floor(cq),cf=fract(cq)-.5;float ph=fract(pwStep(uTime*.001)*1.1+fract(sin(dot(ci,vec2(12.9,78.2)))*437.5));rr=(1.-smoothstep(0.,.06,abs(length(cf)-ph*.5)))*(1.-ph)*uRainK;}
   float rim=smoothstep(.15,.4,pud)*(1.-smoothstep(.45,.75,pud));a=mix(a,mix(a*.3,uSkyW*1.3+.04,fr*.85)+rr*.3,smoothstep(.35,.7,pud)*.9);a*=1.-rim*.35;n=normalize(mix(n,vec3(0.,1.,0.),pud));spec=max(spec,pud*1.6);}
+ /* water track WA-2a: the ground round a waterfall's foot is wet from its spray, and lit by its white water */
+ vec2 fn=uFallN>0?fallNear(vW):vec2(0.);float fw=pwQ(fn.x,3.,pwCell(vW.xz));if(fw>0.){a*=1.-.3*fw;spec=max(spec,fw*.6);}
  vec3 lit=shade(a*mix(1.,gao,.35),n,vW,sh,mix(1.,ao,.7)*gao,vec4(spec*uGShine*.9,24.,0.,0.),0.);
+ if(fn.y>0.){vec2 q=pwSnap(vW.xz);float t=pwStep(uTime*.001),k=sin(q.x*5.1+t*1.6+sin(q.y*3.7-t)*1.4)+sin(q.x*3.3-t*1.1+q.y*4.2);
+  lit+=vec3(.82,.9,1.)*pwQ(fn.y*(.4+.6*pow(clamp(1.-abs(k)*.5,0.,1.),3.)),3.,pwCell(vW.xz))*(.035+.25*(1.-uAmbK));}
  /* v47: alpha 0 marks the ground for the post pass: no ink outlines on it */o=vec4(fogit(lit,vW),0.);}`,
   ],
   sprite: [
@@ -196,7 +219,7 @@ precision highp float;in vec3 aPos;in float aShore;layout(location=2) in vec2 aF
 void main(){vec3 p=aPos;p.y+=curveY(p.xz);vW=p;vS=aShore;vF=aFlow;vDK=aDK;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
 precision highp float;in vec3 vW;in float vS;in vec2 vF;in vec2 vDK;out vec4 o;uniform sampler2D uRefl;uniform vec2 uRes;uniform vec3 uDeep,uShallow,uSkyR;uniform float uReflK,uRip,uFoam,uGlint,uLevel,uCaus,uClar;
-uniform vec3 uKD[9],uKS[9];uniform vec4 uKA[9],uKB[9];uniform vec4 uFish[4];uniform vec4 uRings[8];uniform sampler2D uShore;uniform vec3 uShoreR;uniform vec4 uHole;uniform vec4 uSea;uniform sampler2D uFlowTex;uniform vec3 uFlowR;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}
+uniform vec3 uKD[9],uKS[9];uniform vec4 uKA[9],uKB[9];uniform vec4 uFish[4];uniform vec4 uRings[8];uniform sampler2D uShore;uniform vec3 uShoreR;uniform vec4 uHole;uniform vec4 uSea;uniform sampler2D uFlowTex;uniform vec3 uFlowR;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}${FALL_GLSL}
 /* sunlight focused by the ripples onto the bed: thin bright lines that wander */
 float caust(vec2 p,float t){vec2 q=p+vec2(lnoise(p*.7+t*.21),lnoise(p.yx*.7-t*.17))*1.6;float a=sin(q.x*4.1+t*.9)+sin(q.y*3.7-t*.7)+sin((q.x+q.y)*2.9+t*.5);return pow(clamp(1.-abs(a)*.42,0.,1.),5.);}
 void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y&&vW.z<uHole.w)discard;float t=uTime*.001;int K=int(vDK.y+.5);
@@ -236,6 +259,12 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
  /* WA-1: the shore's 1-pixel line, white on clear water, a pale scum on murky */
  float ek=edge*clamp(.35+ka.z*uFoam,0.,.9);c=mix(c,mix(vec3(.95,.98,1.),shal*1.5,kb.y*.6)*(.8+.2*sh),ek);foam=max(foam,ek);
  c=mix(c,vec3(.94,.97,1.),clamp(ring*.45,0.,.6));
+ /* water track WA-2a: a waterfall's plunge pool: white water churning round its foot (a line as wide as the fall), and rings one texel wide spreading out from it, in steps */
+ for(int i=0;i<4;i++){if(i>=uFallN||far>.5)break;vec4 A=uFallA[i],B=uFallB[i];vec2 d=A.zw,f=wq-A.xy-d*fallReach(B.y);float pl=max(B.z,B.x*.6);
+  float dl=length(vec2(dot(f,d),max(abs(dot(f,vec2(-d.y,d.x)))-B.x*.5,0.)));if(dl>pl+.6||abs(vW.y-(B.w-B.y))>.6)continue;
+  float cw=B.x*.12+.25+min(B.y,8.)*.05,bo=lnoise(wq*6.3+vec2(ts*2.1,-ts*1.7))*.5+lnoise(wq*13.-vec2(ts*1.3,ts*2.9))*.5;float chn=1.-pwHard(.45,.65,dl/cw+(bo-.5)*.9);
+  float rp=fract(dl*1.5-ts*.8),rg=(pix>.5?step(rp,1.5/pr):1.-smoothstep(0.,.08,rp))*(1.-smoothstep(pl*.4,pl+.5,dl))*step(cw*.8,dl);
+  c=mix(c,vec3(.95,.98,1.)*(.85+.15*sh),clamp(chn*.95+rg*.55,0.,.95));foam=max(foam,chn);}
  /* duckweed and scum: little green specks drifting together in still, murky water */
  if(kb.z>0.){vec2 dw=wp+vec2(sin(ts*.05),cos(ts*.04))*.4;float pch=pwHard(.55,.75,lnoise(dw*.7)+(1.-dep)*.3);float speck=step(.45,fract(sin(dot(floor(dw*pr),vec2(12.9898,78.233)))*43758.5));
   float wd=pch*speck*kb.z;c=mix(c,mix(vec3(.36,.5,.16),vec3(.55,.66,.24),speck*fract(dw.x*3.1))*(.55+.45*sh)*(.6+.4*uAmbK),clamp(wd,0.,1.));}

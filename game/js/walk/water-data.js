@@ -6,15 +6,18 @@
 import { expose } from '../test-globals.js';
 import { clamp } from '../util.js';
 import { seaCentre } from '../logic/sea.js';
-import { valueNoise2d } from '../walk-view.js';
+import { valueNoise2d, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { gpuState } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
 /* eslint-disable no-func-assign */
 expose({
+  FALL_A: [() => FALL_A],
+  FALL_B: [() => FALL_B],
   WATER_KIND_INDEX: [() => WATER_KIND_INDEX],
   WATER_KIND_LOOKS: [() => WATER_KIND_LOOKS],
   flowTexture: [() => flowTexture, v => (flowTexture = v)],
+  setFallUniforms: [() => setFallUniforms, v => (setFallUniforms = v)],
   setFlowUniforms: [() => setFlowUniforms, v => (setFlowUniforms = v)],
   setPixelWaterUniform: [() => setPixelWaterUniform, v => (setPixelWaterUniform = v)],
   setShoreUniforms: [() => setShoreUniforms, v => (setShoreUniforms = v)],
@@ -254,6 +257,7 @@ export function setPixelWaterUniform(U) {
 /* the shoreline value at a spot (0 dry ... 0.5 the water's edge ... 1 open water); 1 where there is no field */
 export function setShoreUniforms(U, sc) {
   setPixelWaterUniform(U);
+  setFallUniforms(U);
   if (!U.uShoreR) return;
   const gl = gpuState.gl,
     on = !!(walkRenderer.shoreF && walkRenderer.shoreTex);
@@ -286,6 +290,31 @@ export function waterKindLookup(sc) {
     }
     return run && def !== 2 && !WATER_KIND_LOOKS[def].mode ? 1 : def;
   };
+}
+/* water track WA-2a: the nearest four waterfalls (walk-shaders.js FALL_GLSL), for the ground's wet rock and thrown
+   light and the plunge pools' churn and rings */
+const FALL_A = new Float32Array(16),
+  FALL_B = new Float32Array(16);
+function setFallUniforms(U) {
+  if (!U.uFallN) return;
+  const F = walkRenderer.fallSets || [],
+    P = walkView.pl,
+    near =
+      F.length > 4 && P
+        ? [...F].sort((a, b) => Math.hypot(a.fx - P.x, a.fz - P.z) - Math.hypot(b.fx - P.x, b.fz - P.z))
+        : F,
+    n = Math.min(4, near.length),
+    gl = gpuState.gl;
+  for (let i = 0; i < n; i++) {
+    const f = near[i];
+    FALL_A.set([f.x, f.z, f.dx, f.dz], i * 4);
+    FALL_B.set([f.w, f.h, f.pool, f.lipY], i * 4);
+  }
+  gl.uniform1i(U.uFallN, n);
+  if (n) {
+    gl.uniform4fv(U.uFallA, FALL_A);
+    gl.uniform4fv(U.uFallB, FALL_B);
+  }
 }
 /* water track WA-2a: the flow map on the card (walk/water-flow.js): flow in red and green, foam in blue, how far into
    its stream in alpha, one texel a half metre, half floats so still water reads exactly 0 */
