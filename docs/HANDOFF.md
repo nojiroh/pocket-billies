@@ -38,6 +38,10 @@ counted as flat).
   `test_props_rooms` (each row, the outdoor row turned), the five rooms (game camera and a turned view: nothing
   through a wall), int_lab with 3D props off (the pictures draw), and a laid-out run place with the lookout (drawn,
   no page errors). The waystation tent and the mine were seen only on the showcase map.
+- Full quick check (1341 s): every step passes but two, both found on main before this batch: RL-8's "the town's
+  shop has no Perk (RL-12)" (RT-1's entry) and the song fingerprints' "cave mid" and "cave late" missing from
+  validation/sound-baseline (RL-R2b's cave song, no baseline made). No picture baseline here (CI keeps it); the
+  rooms' pictures will differ from it on purpose.
 - Phone check wanted: the house, lab, shop, clinic and barn (turn the camera); a waystation (the tent); a run with a
   glade (campfire) and a lookout; a cave run's mine entrance; export the debug log.
 - Next: part 2 in a new session: the 23 standing pictures the run biomes still place (docs/phases/09, status).
