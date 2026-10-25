@@ -52,6 +52,10 @@ town node needs it.
   route: RT-1 (layouts: forest masses, fences, 55-65% walkable, marked spots; done 2026-10-24), RT-2 (battle spots, 4-6 trainers,
   pairs), RT-3 (set pieces for a lived-in feel), RT-4 (more Billies, items, Cut shortcuts, animals). Tags `rt-N-done`.
   Branch `track/routes`.
+- **Splicing track** (docs/phases/splicing-track.md, the owner's brief and answers 2026-10-25): Genes from kit parts
+  with readable traits, wild Billies with mixed parts (Graft, Chimera), a Gene Bank building paid in DNA, a Stability
+  budget with Unstable abominations past it, Augments from the bots' salvage. SP-1 (an art spike on the phone) first;
+  SP-5 waits for RL-14. Tags `sp-N-done`. Branch `track/splicing`.
 - **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
   out of any room's doorway; "Go outside" stays with the card closed) done 2026-10-24; TW-1 (a town layout: street,
   square, houses with gardens, mapgen's `town` kind) done 2026-10-24; TW-2 (townsfolk, animals, chat) and TW-3 (run
