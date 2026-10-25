@@ -41,7 +41,7 @@ the placing half.
   gone under solar and chrome), the four new models at noon, the sails, gear, helix and shutter turning between
   frames; at night on Copperleaf the Workshop's window, the lighthouse's light room and windows and the Gene Bank's
   door glass lit; walk-ins on Copperleaf: shop, inn, library, Workshop, Gene Bank and the turned Workshop (90) and Gene
-  Bank (180) each opened their room. check:smoke: pending (filled in when it ends).
+  Bank (180) each opened their room. `check:smoke` 6/6 (269 s).
 - Next: the placing half after HB-4b: the buildings on the island's plots (doors on quarter turns), the General store's
   `act: 'shop'` and a stock (shops.json is empty: the owner's call), Juniper's `home` act (still no room), the Gene
   Bank's place (the splicing track's Ask me before). The owner's look at the variants' palette and the pictures in
