@@ -11533,6 +11533,21 @@
    "ppm": 32,
    "model": "scene/next/models/forest_canopy_autumn.json",
    "vary": {"rot":1,"lean":0}
+  },
+  "notice_board": {
+   "name": "Notice board",
+   "img": "scene/next/town/notice_board.png",
+   "ox": -35,
+   "oy": -71,
+   "shadow": 0.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town"],
+   "group": "signpost",
+   "solid": 0.5,
+   "ppm": 32,
+   "model": "scene/next/models/notice_board.json",
+   "vary": {"rot":0,"lean":0}
   }
  },
  "person": 1.75,

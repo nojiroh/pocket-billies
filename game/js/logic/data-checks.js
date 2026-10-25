@@ -63,6 +63,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataPerks: [() => dataPerks, v => (dataPerks = v)],
   // @ts-expect-error -- replaced on purpose
+  dataQuests: [() => dataQuests, v => (dataQuests = v)],
+  // @ts-expect-error -- replaced on purpose
   dataRanchRules: [() => dataRanchRules, v => (dataRanchRules = v)],
   // @ts-expect-error -- replaced on purpose
   dataRegions: [() => dataRegions, v => (dataRegions = v)],
@@ -326,6 +328,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'side',
   'trainers',
   'rewards',
+  'town',
 ]);
 /** RL-6: rules.json run.clock, run.reveal and the run keys @param {any} D @returns {DataProblem[]} */
 export function dataRunClock(D) {
@@ -565,6 +568,30 @@ export function dataRunLoop(D) {
       if (!(typeof RW.grow === 'number' && RW.grow >= 1 && RW.grow <= 10))
         problem('rules.json', 'run.rewards.grow: 1-10');
     }
+    /* TW-2: a run town's life: the folk drawn at most by graphics, the named locals (fewest, most) and their names,
+       the region themes' chat lines */
+    const TN = R.town;
+    if (!rec(TN)) problem('rules.json', 'run.town missing');
+    else {
+      only(TN, ['cap', 'locals', 'names', 'chat'], 'run.town');
+      if (!rec(TN.cap) || !['busy', 'balanced', 'best'].every(k => whole(TN.cap[k], 0, 12)))
+        problem('rules.json', 'run.town.cap: busy, balanced and best, whole, 0-12 folk');
+      else only(TN.cap, ['busy', 'balanced', 'best'], 'run.town.cap');
+      const L = TN.locals;
+      if (!Array.isArray(L) || L.length !== 2 || !whole(L[0], 0, 4) || !whole(L[1], L[0], 4))
+        problem('rules.json', 'run.town.locals: [fewest, most], whole, 0-4');
+      if (!Array.isArray(TN.names) || !TN.names.length || TN.names.some(n => typeof n !== 'string' || !n))
+        problem('rules.json', 'run.town.names: a list of names');
+      else if (new Set(TN.names).size !== TN.names.length) problem('rules.json', 'run.town.names: a name twice');
+      if (!rec(TN.chat)) problem('rules.json', 'run.town.chat: region theme to lines');
+      else
+        for (const [k, C] of Object.entries(TN.chat)) {
+          if (!((D.regions && D.regions.themes) || {})[k])
+            problem('rules.json', `run.town.chat.${k}: no region theme "${k}" (regions.json)`);
+          if (!Array.isArray(C) || !C.length || C.some(c => typeof c !== 'string' || !c || c.length > 120))
+            problem('rules.json', `run.town.chat.${k}: lines of 1-120 characters`);
+        }
+    }
   }
   return out;
 }
@@ -658,6 +685,8 @@ export function dataBiomes(D, valid = () => true) {
           if (B.town[f] && !props[B.town[f]]) problem('biomes.json', `${b}.town.${f}: no prop ${B.town[f]}`);
         if (B.town.square && !terr[B.town.square])
           problem('biomes.json', `${b}.town.square: no terrain "${B.town.square}" (scenery.json terrains)`);
+        /* TW-2: its animals are real */
+        for (const L of B.town.life || []) if (!life[L.k]) problem('biomes.json', `${b}.town.life: no animal ${L.k}`);
       }
     }
   }
@@ -826,6 +855,40 @@ export function dataModifiers(D, valid = () => true) {
     if (up < last) problem(`expeditions[${i}]: foes' levels go down from the Expedition before (${last} to ${up})`);
     last = up;
   });
+  return out;
+}
+// TW-3: quests.json: the schema; every kind has a text; a goal's fewest is no more than its most; a line names only
+// what its kind fills in ({type} a catch's, {n} a goal of more than one, {title} the board's and a failure's lines);
+// no text id twice
+/** TW-3: quests.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataQuests(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['quests.json', what]),
+    Q = D.quests;
+  if (!Q) return [['quests.json', 'missing']];
+  if (!valid('quests.schema.json', Q, 'quests.json')) return out;
+  /** what a line may fill in @param {string} where @param {string} line @param {string[]} may */
+  const fills = (where, line, may) => {
+    for (const m of line.match(/\{[^}]*\}/g) || [])
+      if (!may.includes(m)) problem(`${where}: "${m}" isn't filled in here`);
+  };
+  /** @param {string} kind */
+  const mayOf = kind => (kind === 'catch' ? ['{type}'] : Q.kinds[kind].goal[1] > 1 ? ['{n}'] : []);
+  for (const [k, R] of Object.entries(Q.kinds)) {
+    const r = /** @type {any} */ (R);
+    if (r.goal[0] > r.goal[1]) problem(`kinds.${k}.goal: the fewest is more than the most`);
+    fills(`kinds.${k}.title`, r.title, mayOf(k));
+    if (!Q.texts.some((/** @type {any} */ t) => t.kind === k)) problem(`kinds.${k}: no text offers it`);
+  }
+  const ids = new Set();
+  Q.texts.forEach((/** @type {any} */ t, /** @type {number} */ i) => {
+    if (ids.has(t.id)) problem(`texts[${i}]: the id "${t.id}" twice`);
+    ids.add(t.id);
+    fills(`texts[${i}] (${t.id})`, t.ask, mayOf(t.kind));
+  });
+  for (const [k, line] of Object.entries(Q.say))
+    fills(`say.${k}`, /** @type {string} */ (line), k === 'done' || k === 'fail' ? ['{title}'] : []);
   return out;
 }
 // RL-12b: events.json: the schema; every intro reads as lines only, every option's need as a condition and its `then`

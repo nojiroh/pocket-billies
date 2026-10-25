@@ -163,6 +163,21 @@ body.on-map #bgfx {
 .map-trip.hold {
   color: #b9541c;
 }
+/* TW-3: the run's quests (quest-board.js questListHTML) */
+.map-quests {
+  margin-top: var(--s1);
+  font-size: 13px;
+}
+.map-quests ul {
+  margin: 0;
+  padding-left: var(--s4);
+}
+.map-quests li.done {
+  color: var(--gold);
+}
+.map-quests small {
+  color: var(--text2);
+}
 .map-full .mapctl {
   position: absolute;
   right: 12px;

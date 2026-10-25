@@ -180,6 +180,41 @@
    "team": 6
   },
   "pack": [5],
+  "town": {
+   "cap": {"busy":3,"balanced":5,"best":6},
+   "locals": [1,2],
+   "names": [
+    "Old Tam",
+    "Auntie Rue",
+    "Farmer Bryn",
+    "Nell the Baker",
+    "Pip",
+    "Grandpa Oak",
+    "Mo",
+    "Widow Ash",
+    "Little Fen",
+    "Captain Rook",
+    "Dot",
+    "Uncle Hal",
+    "Bee",
+    "Sister Wren",
+    "Kip",
+    "Mags"
+   ],
+   "chat": {
+    "lakeland": ["Lakeland has more water than land. The ducks voted for it.","Every town in Lakeland has a jetty, even the dry ones."],
+    "greenbelt": [
+     "Greenbelt grows the best hedges in the land. We have the trophies.",
+     "They say the whole Greenbelt was a golf course once. A Billie lost a ball."
+    ],
+    "wildwood": ["Wildwood doesn’t do straight roads. Ask anyone who’s tried.","In Wildwood we don’t get lost. We get found later."],
+    "highland": ["In the Highland, every walk is uphill. Both ways.","Highland folk are tough. We have to be, the sheep are tougher."],
+    "harvest": [
+     "Harvest Country feeds half the land and the Billies eat the other half.",
+     "Ask a farmer in Harvest Country for the time and they’ll tell you the season."
+    ]
+   }
+  },
   "healCost": 60,
   "shop": {
    "always": ["coin:pyramid","potion"],

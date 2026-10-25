@@ -20,6 +20,7 @@
 /** @import { Biome, LocationData, NodeType, Pool, RoadLink, RunSceneRules } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 import { hashString, rngFrom } from './rng.js';
 import { modFoeLevels } from './modifiers.js';
 import { runZoneRegion } from './run-region.js';
@@ -61,16 +62,23 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runSideLand: [() => runSideLand, v => (runSideLand = v)],
   // @ts-expect-error -- replaced on purpose
+  runTownFolkCap: [() => runTownFolkCap, v => ((runTownFolkCap = v), provide({ runTownFolkCap }))],
+  // @ts-expect-error -- replaced on purpose
+  runTownLife: [() => runTownLife, v => (runTownLife = v)],
+  // @ts-expect-error -- replaced on purpose
+  runTownQuest: [() => runTownQuest, v => (runTownQuest = v)],
+  // @ts-expect-error -- replaced on purpose
   runWildLevels: [() => runWildLevels, v => (runWildLevels = v)],
   // @ts-expect-error -- replaced on purpose
   runWorldTables: [() => runWorldTables, v => (runWorldTables = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ runTownFolkCap });
 /* to-module: end */
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, Biome>, pools: Record<string, Pool>,
  *   scenery: any, rules: { scene: RunSceneRules, layouts?: Record<string, Record<string, number>>,
- *   wild: { lv: [number, number], perRow: number, back: number } },
+ *   wild: { lv: [number, number], perRow: number, back: number }, town?: import('../../types/game-data').RunTownRules },
  *   dex?: string[] | null, fieldMoves?: Record<string, import('../../types/game-data').FieldMove> }} RunWorldData
  * RO-1: dex, a region's species, cuts each place's biome pool to them (logic/wild-pool.js); RL-R1: without it, the
  * run's region's (run.region.dex, its other varieties swapped to the region's)
@@ -316,7 +324,72 @@ export function runSceneMake(run, i, scenes, data) {
     climate: B.climate,
   });
   runFieldProps(map, i, scene, data);
+  if (scene.kind === 'town') {
+    runTownLife(run, i, scene, data);
+    runTownQuest(run, i, scene, data);
+  }
   return { scene, notes };
+}
+/** TW-2: how many of a run town's folk are drawn (rules.json run.town.cap): `busy` once the game has stepped its
+ * quality down (walkRenderer.q 2 or more: frames came late), else by the Graphics preset (preferences.aim: smooth is
+ * Balanced, sharp is Beautiful) @param {import('../../types/game-data').RunTownRules} T @param {number} q
+ * @param {string} [aim] @returns {number} */
+export function runTownFolkCap(T, q, aim) {
+  if (q >= 2) return T.cap.busy;
+  return aim === 'smooth' ? T.cap.balanced : T.cap.best;
+}
+/** TW-2: a run town's own life, from its node's stream ('town|life'): its region's chat lines after its biome's
+ * (rules.json run.town.chat by the region's theme), and its named locals (scene.people), run.town.locals of them on
+ * the town's local spots (mapgen.js: the square's first, then a house's gate drawn), each with a seeded look (a
+ * townsfolk one), a name from run.town.names (none twice in a town) and two of the biome's lines
+ * @param {Run} run @param {number} i @param {any} scene @param {RunWorldData} data */
+export function runTownLife(run, i, scene, data) {
+  const T = data.rules.town;
+  if (!T) return;
+  const own = (run.region && T.chat[run.region.theme]) || [],
+    lines = scene.chat || [];
+  if (own.length) scene.chat = lines.concat(own);
+  const rnd = rngFrom(runNodeSeed(run.seed, i), 'town|life'),
+    spots = (scene.spots || []).filter((/** @type {any} */ s) => s.kind === 'local'),
+    gates = spots.slice(1),
+    names = T.names.slice(),
+    n = Math.min(spots.length, rnd.int(T.locals[0], T.locals[1])),
+    people = [];
+  for (let k = 0; k < n && names.length; k++) {
+    const at = k ? gates.splice(rnd.int(0, gates.length - 1), 1)[0] : spots[0];
+    if (!at) break;
+    const name = names.splice(rnd.int(0, names.length - 1), 1)[0],
+      said = lines.length ? [rnd.int(0, lines.length - 1)] : [];
+    if (lines.length > 1) said.push((said[0] + 1 + rnd.int(0, lines.length - 2)) % lines.length);
+    people.push({
+      id: `local${k}`,
+      who: 'folk:' + rnd.int(1000, 99999),
+      name,
+      x: at.x,
+      z: at.z,
+      dir: 'down',
+      lines: said.map(q => lines[q]),
+    });
+  }
+  if (people.length) scene.people = people;
+}
+/** TW-3: a run town's quest giver (scene.people id 'quest', `quest: 1`: quest-board.js offers the town's quest),
+ * from the node's own stream ('town|quest', so the locals' draws stay as they were): on the giver's spot by the notice
+ * board (mapgen.js), a seeded townsfolk look and a name from run.town.names that none of the town's locals has. None
+ * when the town has no board (its square didn't fit) @param {Run} run @param {number} i @param {any} scene
+ * @param {RunWorldData} data */
+export function runTownQuest(run, i, scene, data) {
+  const T = data.rules.town,
+    at = (scene.spots || []).find((/** @type {any} */ s) => s.kind === 'giver');
+  if (!T || !at) return;
+  const rnd = rngFrom(runNodeSeed(run.seed, i), 'town|quest'),
+    taken = new Set((scene.people || []).map((/** @type {any} */ p) => p.name)),
+    names = T.names.filter(n => !taken.has(n));
+  if (!names.length) return;
+  const name = names[rnd.int(0, names.length - 1)];
+  scene.people = (scene.people || []).concat([
+    { id: 'quest', who: 'folk:' + rnd.int(1000, 99999), name, x: at.x, z: at.z, dir: 'down', lines: [], quest: 1 },
+  ]);
 }
 /** every scene of a run's map, in order (each after its parents), by map node @param {Run} run
  * @param {RunWorldData} data @returns {any[]} */

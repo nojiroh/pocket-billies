@@ -17,6 +17,7 @@ import {
   modal,
   perkPickOpen,
   provide,
+  questArrived,
   render,
   renderOverlay,
   rewardPickOpen,
@@ -623,6 +624,8 @@ export const runClinicEach = () => fxRunPrice(saveData.run, PERKS, 'heal', RULES
 export function runArrivedFx() {
   const gained = runArriveFx(saveData, PERKS);
   if (gained > 0) toast(`Your Perks paid out: your team healed ${formatNumber(gained)} HP.`);
+  /* TW-3: a parcel delivered (quest-board.js) */
+  if (typeof questArrived === 'function') questArrived();
 }
 
 /* ---------- hints, on a player's first run only ---------- */

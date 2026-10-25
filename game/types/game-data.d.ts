@@ -79,6 +79,8 @@ export interface GameData {
   fieldMoves?: { about?: string; moves: Record<DataId, FieldMove> };
   /** RL-13: a run's Expeditions and challenges */
   modifiers?: ModifiersData;
+  /** TW-3: a run's quests */
+  quests?: QuestsData;
   pools: Record<DataId, Pool>;
   /** the egg tiers, keyed by the distance in km that hatches them ('2', '5', '10') */
   eggs: Record<string, EggTier>;
@@ -467,6 +469,14 @@ export interface RoadEnds {
   from: DataId;
   to: DataId;
   name: string;
+}
+
+/** TW-2: rules.json run.town */
+export interface RunTownRules {
+  cap: { busy: number; balanced: number; best: number };
+  locals: [number, number];
+  names: string[];
+  chat: Record<DataId, string[]>;
 }
 
 /** RL-R1: a region theme (regions.json themes): where its zones start, the biomes it walks through, the types it
@@ -1028,6 +1038,10 @@ export interface Rules {
     };
     /** RL-R2: side areas (logic/run-side.js) */
     side?: RunSideRules;
+    /** TW-2: a run town's life: how many folk are drawn at most (busy: the game stepped its quality down; balanced
+        and best: the Graphics presets), how many named locals (fewest, most) and their names, and each region
+        theme's chat lines (added to the biome's) */
+    town: RunTownRules;
   };
   /** roguelite track RL-9: the ranch (logic/ranch.js). Placeholders until the owner has played it */
   ranch: RanchRules;
@@ -1692,6 +1706,10 @@ export interface Biome {
     square?: string;
     lamp?: string;
     bench?: string;
+    /** TW-2: its own animals, kept to the town's ground (houses: only with that many houses; square: on the square) */
+    life?: { k: string; n: number; houses?: number; square?: 1 }[];
+    /** TW-2: what its folk and named locals say (with the region's: rules.json run.town.chat) */
+    chat?: string[];
   };
   from?: string;
 }
@@ -1801,6 +1819,29 @@ export interface ModifiersData {
   about?: string;
   expeditions: Modifier[];
   challenges: Partial<Record<ChallengeId, Modifier>>;
+}
+/** TW-3: quests.json: a run's quests (logic/run-quests.js) */
+export type QuestKind = 'catch' | 'trainers' | 'parcel' | 'miniboss';
+export interface QuestKindRule {
+  weight: number;
+  /** [fewest, most] to do ({n}) */
+  goal: [number, number];
+  /** the quest list's line ({type}, {n}) */
+  title: string;
+}
+export interface QuestText {
+  id: string;
+  kind: QuestKind;
+  /** the giver's offer ({type}, {n}) */
+  ask: string;
+}
+export interface QuestsData {
+  about?: string;
+  /** the most held at once */
+  held: number;
+  kinds: Record<QuestKind, QuestKindRule>;
+  texts: QuestText[];
+  say: Record<'take' | 'yes' | 'no' | 'full' | 'taken' | 'none' | 'done' | 'empty' | 'fail', string>;
 }
 /** events.json: a run's events, loot tables and trainer classes (roguelite track RL-12b; logic/encounters.js) */
 export interface EventsData {

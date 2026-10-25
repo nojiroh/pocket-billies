@@ -47,6 +47,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   validRunFoe: [() => validRunFoe, v => (validRunFoe = v)],
   // @ts-expect-error -- replaced on purpose
+  validRunQuests: [() => validRunQuests, v => (validRunQuests = v)],
+  // @ts-expect-error -- replaced on purpose
   validRunRegion: [() => validRunRegion, v => (validRunRegion = v)],
 });
 /* eslint-enable no-func-assign */
@@ -239,6 +241,8 @@ export function validRun(o) {
   /* RL-S1: what beat you (to the payout) and the leaders beaten (logic/run-history.js) */
   if (o.lostTo !== undefined && !validLostTo(o.lostTo)) return false;
   if (o.beat !== undefined && (!list(o.beat, 16) || !o.beat.every(id))) return false;
+  /* TW-3: its quests (missing until the first is taken) */
+  if (o.quests !== undefined && !validRunQuests(o.quests)) return false;
   /* the hub as the run started: shapes only (validSave checks its Billies like the team's) */
   const st = o.start,
     counts = v => recordOf(v, 500, n => wholeIn(n, 0, META_MAX));
@@ -323,6 +327,35 @@ export function validRunEnc(e) {
         (e.reward.n === undefined || wholeIn(e.reward.n, 1, 5)) &&
         typeof e.reward.from === 'string' &&
         e.reward.from.length <= 60))
+  );
+}
+/** TW-3: a run's quests (logic/run-quests.js): shapes only @param {any} e @returns {boolean} */
+export function validRunQuests(e) {
+  const plain = (/** @type {any} */ v) =>
+      !!v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__'),
+    id = (/** @type {any} */ v) => typeof v === 'string' && /^[a-z0-9_]{1,40}$/.test(v),
+    quest = (/** @type {any} */ q) =>
+      plain(q) &&
+      Object.keys(q).every(k => ['id', 'kind', 'text', 'at', 'goal', 'n', 'type', 'done'].includes(k)) &&
+      id(q.id) &&
+      ['catch', 'trainers', 'parcel', 'miniboss'].includes(q.kind) &&
+      id(q.text) &&
+      wholeIn(q.at, 0, RUN_NODES - 1) &&
+      wholeIn(q.goal, 1, 9) &&
+      wholeIn(q.n, 0, q.goal) &&
+      (q.type === undefined || (typeof q.type === 'string' && /^[A-Za-z]{1,20}$/.test(q.type))) &&
+      (q.done === 0 || q.done === 1);
+  return (
+    plain(e) &&
+    Object.keys(e).every(k => ['held', 'took', 'n', 'paid'].includes(k)) &&
+    Array.isArray(e.held) &&
+    e.held.length <= 9 &&
+    e.held.every(quest) &&
+    Array.isArray(e.took) &&
+    e.took.length <= RUN_NODES &&
+    e.took.every((/** @type {any} */ n) => wholeIn(n, 0, RUN_NODES - 1)) &&
+    wholeIn(e.n, 0, RUN_NODES) &&
+    wholeIn(e.paid, 0, RUN_NODES)
   );
 }
 /** RL-8: a run battle's foe as it began, kept in run.at so a reload starts the same battle again: its kind and
