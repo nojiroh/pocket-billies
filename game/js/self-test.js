@@ -27,7 +27,21 @@ import {
   gameData,
   trainersAt,
 } from './game-data.js';
-import { canEnter, encountersHere, gateText, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
+import { rngFn } from './logic/rng.js';
+import { graftKey } from './logic/graft-art.js';
+import { wildSplice } from './logic/genes.js';
+import {
+  canEnter,
+  encountersHere,
+  gateText,
+  geneData,
+  makeBilly,
+  maxHp,
+  newUid,
+  plural,
+  spawn,
+  spliceWords,
+} from './logic/rules.js';
 import { modBossHp, modFoeLevels, modsMake } from './logic/modifiers.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
@@ -1826,6 +1840,63 @@ async function runFullTest(mode) {
     await phase('Battle on the 3D stage', 'scene', () => battle(), 7, 120);
     await phase('Double battle with a trainer', 'scene', () => teamBattle('double'), 8, 150);
     await phase('Alpha battle: your team against one', 'scene', () => teamBattle('alpha'), 8, 150);
+    /* SP-3: a spliced wild Billie: the battle says what it wears; knocked out, it banks DNA and samples its Gene (on
+       a copy of the save) */
+    if (!selfTest.stop)
+      await phase(
+        'Wild splice: its line, DNA and a Gene Sample',
+        'dio',
+        async () => {
+          const was = saveData,
+            wait = async (/** @type {() => any} */ f, /** @type {number} */ ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                if (activeBattle && activeBattle.phase === 'playing') tapMessage();
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              D = geneData(),
+              one = { ...D, genes: { ...D.genes, wild: { ...D.genes.wild, graft: 1, chimera: 0 } } },
+              rnd = rngFn('self-test', 'splice'),
+              sp = Object.keys(SPECIES).find(id => wildSplice(one, id, Object.keys(SPECIES), rngFn(id, 'splice')));
+            if (!sp) throw new Error('no species can be spliced');
+            const graft = /** @type {Record<string, string>} */ (wildSplice(one, sp, Object.keys(SPECIES), rnd)),
+              gene = graftKey(graft);
+            Object.assign(s.meta, { dna: 0, genes: [] });
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = { id: newUid(), sp, lvl: 3, no: ++s.serial, graft };
+            encountersHere().push(q);
+            startWild(q);
+            if (!activeBattle) throw new Error('the battle didn’t start');
+            const words = spliceWords(q);
+            if (!JSON.stringify(activeBattle.events).includes(`has ${words[0]}!`))
+              throw new Error(`the opening doesn’t say it has ${words[0]}`);
+            stopTimers();
+            activeBattle.over = 'win';
+            endBattle();
+            if (!(await wait(() => !activeBattle, 15000))) throw new Error('the battle never ended');
+            if (s.meta.dna !== D.genes.wild.dna.graft || !s.meta.genes.includes(gene))
+              throw new Error(`after the win: ${s.meta.dna} DNA, Genes ${s.meta.genes.join()}`);
+            if (!(await wait(() => uiState.modal && uiState.modal.title === 'Gene Sample', 5000)))
+              throw new Error('no Gene Sample sheet');
+            return `${SPECIES[sp].name} with ${words.join(', ')}: +${s.meta.dna} DNA, Gene ${gene} sampled`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
     /* v47: the opening's fall into the Hollow Earth (the bowl's own ground, past the Inner Sun), timed */
     if (typeof fallOverWorldMap === 'function' && !selfTest.stop)
       await phase(
