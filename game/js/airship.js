@@ -156,7 +156,7 @@ export function stationMenu(p) {
       : '';
   const ups = typeof buildingRowsHTML === 'function' ? buildingRowsHTML('airship', 'station') : '',
     upHTML = ups
-      ? `<p class="note">Airship upgrades, paid in Crests. You have ${formatNumber(saveData.meta.crests)}.</p>${ups}`
+      ? `<p class="note">Station upgrades, paid in Crests. You have ${formatNumber(saveData.meta.crests)}.</p>${ups}`
       : '';
   modal({
     title: escapeHtml((p && p.label) || 'Skyline Station'),

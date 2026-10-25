@@ -21,8 +21,8 @@
   "grant": {"shop":"revive"}
  },
  "airship_2": {
-  "name": "Airship Lv 2",
-  "about": "A longer reach: the airship can learn the way to new lands.",
+  "name": "Station Lv 2",
+  "about": "A longer line: the trains learn the way to new lands.",
   "at": "airship",
   "cost": 1,
   "grant": {"building":"airship","level":2}
