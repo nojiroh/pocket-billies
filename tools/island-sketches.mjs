@@ -32,8 +32,10 @@ if (CLEAN) {
   process.exit(0);
 }
 const D = readGameData(),
-  hub = D.maps.copperleaf.islandGen,
-  dirs = JSON.parse(readFileSync(join(ROOT, 'tools/data/hub-sketches.json'), 'utf8')).directions;
+  SK = JSON.parse(readFileSync(join(ROOT, 'tools/data/hub-sketches.json'), 'utf8')),
+  /* the hub as it was before HB-4b built B2 into it (tools/data/hub-sketches.json base) */
+  hub = SK.base,
+  dirs = SK.directions;
 mkdirSync(OUT, { recursive: true });
 
 /** the hub's dials with a direction's changes on top: objects merge one level down, everything else replaces */

@@ -2,20 +2,23 @@
 // front faces out from the orbit's pivot (the summit) within town.tol degrees, so the orbit camera sees the doors;
 // town.quarter turns every building plot to the quarter turn nearest to facing out; town.second a second built-up
 // street; town.scale the house plots' size; town.extra the town's other buildings; landmarks the station with its sky
-// rail and portal, the lighthouse and the windmill. The defaults leave the hub's island as it is (island-gen.test.mjs
-// checks the game's map is the generator's own output).
+// rail and portal, the lighthouse and the windmill. The defaults leave the hub's island as it was before HB-4b
+// (tools/data/hub-sketches.json base; island-gen.test.mjs checks the game's map is the generator's own output).
 // HB-4b: town.square (the square's radius, how far it stands back from the main street, the buildings round it), the
 // house plots' floor and the quarter turn seen from the summit spot.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { readGameData } from '../data-files.mjs';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { readGameData, ROOT } from '../data-files.mjs';
 import { islandAngleDiff, islandGenerate } from '../../game/js/logic/island-gen.js';
 import { islandPointIn } from '../../game/js/logic/island.js';
 import { mapgenReach, mapgenReached } from '../../game/js/logic/mapgen.js';
 
 const D = readGameData(),
   ctx = { scenery: D.scenery },
-  hub = D.maps.copperleaf.islandGen;
+  /* the hub as it was before HB-4b built B2 into it: the dials' base (tools/data/hub-sketches.json) */
+  hub = JSON.parse(readFileSync(join(ROOT, 'tools/data/hub-sketches.json'), 'utf8')).base;
 /** the hub's own dials with some town dials changed */
 const withTown = (town, more = {}) => ({
   ...structuredClone(hub.dials),
