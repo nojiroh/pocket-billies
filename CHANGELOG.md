@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Spliced Billies, the rules** (splicing track SP-2; for now only through the debug menu, numbers are placeholders):
+  a Billie can wear another species' arm, leg or tail, and it is saved with it. A foreign part weighs what it did on
+  its donor (a bear's arm on a Swiftlet hits harder and slows it down), brings a trait (wings: Airborne, half damage
+  from Ground; fins: Swimmer; tails: Counterweight; arms: Grip; legs and feet: Stride), and some parts carry a
+  dominant type that becomes the Billie's second type. Each foreign part costs Stability; past the limit the Billie is
+  **Unstable**: a merged name, one stat up, one down, and it loses a little HP each turn. A spliced Billie is never
+  Prime. Splices survive evolving.
 - **Held items** (roguelite track RL-12c): every Billie has one held-item slot. Eight to start with: Leftover
   Sandwich (heals a little each turn), Snack Pack (a quarter of its HP once a battle, when low), Lucky Coin (wins pay
   25% more), Study Notes (50% more XP), Iron Vest (15% less damage taken), Quick Laces (Speed up as it comes in), Brass

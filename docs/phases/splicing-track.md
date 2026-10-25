@@ -73,6 +73,18 @@ below against main and report what differs.
   `soon`), `currencies.json` (money, research, scrap, crests).
 - **Wild spawns:** `rules.js spawn`; run pools come from `biomes.json` and the region's dex (`regions.json`).
 
+**Corrections found by SP-2 (2026-10-25, on SP-1's branch):** Prime's +10 % is applied after the +/-20 % cap and to
+every stat, HP included (so the cap doesn't bound it). `partsLean` isn't the Studio's (it uses WeightRatio, StatFactor,
+Prime, PrimeOdds). `lines/<id>.json parts` are part ids for the art, not sizes. The parts a splice can swap are only
+the slot bones (front: arm, wing, frontfin; back: leg, foot, backfin; sig: tail, tailfin): the trait list's extras
+(shell, horn, spikes, mane, crest, ruff, crown, plume, ear, lure) aren't spliced yet, `lure` is in no recipe, and arm,
+leg and foot had no trait (SP-2 gives them placeholders: Grip, Stride). SPECIES has 63 ids, the 40 species and 23
+regional forms; kitBuilds has 51 rigs, so a regional form with no rig of its own (e.g. `swift_folklore0`) can't be
+spliced yet. The per-Billie effect path is `fxOfBillie` (RL-12c is on main), not `fxHeld`; the effect kinds have no
+on-hit, immunity, crit or foe-debuff kind. Abominations have no drawback passive (only the two stats). Robots: torsos
+have no move; `upgradePart` is a function, the rules are `upgradeStat` and `maxUpgrade`. `regions.json dex` is a size
+range, not a species list. Moves have no "family".
+
 ## Sessions
 
 Each session: one cause per commit, lint, type-check and unit tests after each change, the smoke subset, the quick
@@ -90,7 +102,12 @@ Grafts offline per biome pool and keep runtime baking for the Gene Bank preview 
 `logic/graft-art.js`, `skeleton-rig.js`, `debug-*`. Could break: every Billie's drawing, so the pixel tests and
 kit-bake-parity must not move for ungrafted Billies.
 
-**SP-2 Rules.** `genes.json` + schema, types and check-data (trait, move family and Stability cost per part kind; per
+**SP-2 Rules.** Built 2026-10-25 on `claude/sp-2-rules`, on top of SP-1's branch (HANDOFF): `genes.json` (traits,
+dominant types, Stability, Unstable; every number a placeholder), `logic/genes.js`, the saved `Billy.graft` (slot ->
+donor rig: a Gene is a slot's part from a donor's recipe, so no separate Gene id), donor weight, the dominant type,
+traits and Unstable through `fxOfBillie`, `tools/test/sim/splice-sim.mjs`. `aug` moved to SP-5 (nothing reads it
+before). Waiting on the owner: Prime's bonus, the traits and the dominant Genes.
+ `genes.json` + schema, types and check-data (trait, move family and Stability cost per part kind; per
 part an optional move and dominant type). Optional `graft` (slot -> Gene id) and `aug` (slot -> robot
 `PartInstance`) on `Billy`, kept by the validators, dropped when unknown: no SAVE_VERSION bump. Donor weights in
 `partsWeightRatio`, traits through the per-Billie effect path (generalized from RL-12c's `fxHeld`, or added if
