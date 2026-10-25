@@ -209,7 +209,7 @@
   {
    "id": "b2",
    "name": "B2  East crescent, a town square",
-   "blurb": "HB-4b: B with a 12 m town square set 6 m back from the main street, the store, Juniper's home, the library and the inn round it, smaller cottages (scale 0.6, never under a cottage's size) on looser street sides (tol 90; the quarter turn keeps every door within 45 degrees).",
+   "blurb": "HB-4b, built into the hub: B with a 12 m town square set 6 m back from the main street, the lab, the library and the Workshop round it; smaller cottages (scale 0.6, never under a cottage's size) on looser street sides (tol 90: the quarter turn keeps every door within 45 degrees); the coast road round the station.",
    "dials": {
     "town": {
      "houses": 20,
