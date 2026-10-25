@@ -14,6 +14,7 @@
    dialogue and every choice option ends with " #l:3fa9". Logic only: no DOM, no game data of its own, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { HISTORY_FACTS, LAST_FACTS, LOST_TO_KINDS } from './run-history.js';
 import { conditionHolds, conditionNames, conditionProblem, conditionTree, storyStateOf } from './conditions.js';
 import { CUTSCENE_YOU, cutsceneNames, cutsceneStep } from './cutscene-set.js';
 import { LINE_ID, SCRIPT_COMMANDS, parseScript } from './script-parse.js';
@@ -208,6 +209,21 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
     for (const q of N.quest || []) if (!quests[q]) problems.push(at, `quest:${q}, no such quest (story.json quests)`);
     for (const u of N.unlock || [])
       if (!(G.unlocks || {})[u]) problems.push(at, `unlock:${u}, no such unlock (unlocks.json)`);
+    /* RL-S1: the run history's facts (logic/run-history.js) */
+    for (const f of N.last || [])
+      if (!LAST_FACTS.includes(f)) problems.push(at, `last:${f}, no such fact (${LAST_FACTS.join(', ')})`);
+    for (const f of N.history || [])
+      if (!HISTORY_FACTS.includes(f)) problems.push(at, `history:${f}, no such fact (${HISTORY_FACTS.join(', ')})`);
+    for (const b of N.lastby || [])
+      if (
+        !LOST_TO_KINDS.includes(b) &&
+        b !== 'bureau' &&
+        !trainers[b] &&
+        !((G.events || {}).classes || {})[b] &&
+        !lines.has(b) &&
+        !species.has(b)
+      )
+        problems.push(at, `lastby:${b}, not a kind of foe, a trainer, a class nor a Billie`);
   };
   const who = (w, at) => {
     if (w && !(w in speakers) && !(G.people || {})[w] && w !== 'me')
