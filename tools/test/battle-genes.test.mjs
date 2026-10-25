@@ -27,12 +27,12 @@ function battle(graft, foeGraft) {
 const texts = B => JSON.stringify(B.events);
 
 test("battle genes: a trait row is the Billie's own: Stride and Counterweight raise stages as it takes the field", () => {
-  assert.equal(battle({ back: 'swift0' }).B.sides[0].f[0].v.st.hus, 1, 'a foot: Stride');
-  assert.equal(battle({ sig: 'musk0' }).B.sides[0].f[0].v.st.law, 1, 'a tail: Counterweight');
+  assert.equal(battle({ back: 'sparrow_foot@swift0' }).B.sides[0].f[0].v.st.hus, 1, 'a foot: Stride');
+  assert.equal(battle({ sig: 'fox_tail@musk0' }).B.sides[0].f[0].v.st.law, 1, 'a tail: Counterweight');
   assert.equal(battle(null).B.sides[0].f[0].v.st.hus, 0);
-  assert.equal(battle(null, { back: 'swift0' }).B.sides[1].f[0].v.st.hus, 1, 'the foe has its own');
+  assert.equal(battle(null, { back: 'sparrow_foot@swift0' }).B.sides[1].f[0].v.st.hus, 1, 'the foe has its own');
   assert.deepEqual(
-    fn('fxOfBillie')(battle({ back: 'swift0' }).me, data.ITEMS).map(f => f.src),
+    fn('fxOfBillie')(battle({ back: 'sparrow_foot@swift0' }).me, data.ITEMS).map(f => f.src),
     ['gene:stride']
   );
 });
@@ -48,9 +48,12 @@ test('battle genes: damage rows count for the spliced side alone', () => {
   assert.ok(ground, 'a Ground move to test with');
   const base = dmg(null, null, 1, 0, ground);
   /* Airborne (a wing) takes half from Ground; the Kidling keeps its type (a chick wing has no dominant type) */
-  assert.ok(dmg({ front: 'hughes0' }, null, 1, 0, ground) < base, 'Airborne takes less from Ground');
+  assert.ok(dmg({ front: 'chick_wing@hughes0' }, null, 1, 0, ground) < base, 'Airborne takes less from Ground');
   /* the foe's own wing shields the foe, not you (its weight moves its own attack, so compare what it takes) */
-  assert.ok(dmg(null, { front: 'hughes0' }, 0, 1, ground) < dmg(null, null, 0, 1, ground), 'the foe takes less');
+  assert.ok(
+    dmg(null, { front: 'chick_wing@hughes0' }, 0, 1, ground) < dmg(null, null, 0, 1, ground),
+    'the foe takes less'
+  );
 });
 
 test("battle genes: an Unstable splice loses a share of HP at each turn's end; a stable one none", () => {
@@ -58,8 +61,9 @@ test("battle genes: an Unstable splice loses a share of HP at each turn's end; a
     was = S.limit;
   S.limit = 0;
   try {
-    const { B, me } = battle({ front: 'musk3' }),
+    const { B, me } = battle({ front: 'bear_arm@musk3' }),
       mx = fn('maxHp')(me);
+    fn('unstableTidy')(me);
     assert.ok(fn('billyUnstable')(me));
     me.hp = mx;
     fn('endTurn')();
@@ -68,7 +72,7 @@ test("battle genes: an Unstable splice loses a share of HP at each turn's end; a
   } finally {
     S.limit = was;
   }
-  const { B, me } = battle({ front: 'musk3' }),
+  const { B, me } = battle({ front: 'bear_arm@musk3' }),
     mx = fn('maxHp')(me);
   me.hp = mx;
   fn('endTurn')();
@@ -77,7 +81,7 @@ test("battle genes: an Unstable splice loses a share of HP at each turn's end; a
 });
 
 test("battle genes: a spliced Billie fights as its dominant Gene's type", () => {
-  battle({ sig: 'musk0' });
+  battle({ sig: 'fox_tail@musk0' });
   assert.deepEqual(fn('actorTypes')(0), ['Grass', 'Fire']);
   battle(null);
   assert.deepEqual(fn('actorTypes')(0), ['Grass']);
@@ -94,12 +98,12 @@ test('battle genes: SP-3 a spliced wild Billie says what it wears as the battle 
   s.wild = {};
   const plain = open({ ...q });
   assert.doesNotMatch(plain, /This Swiftlet/);
-  const words = fn('spliceWords')({ sp: 'swift0', graft: { front: 'hughes2' } });
+  const words = fn('spliceWords')({ sp: 'swift0', graft: { front: 'eagle_wing@hughes2' } });
   assert.deepEqual(words, ['an eagle’s wings']);
-  assert.match(open({ ...q, graft: { front: 'hughes2' } }), /This Swiftlet has an eagle’s wings!/);
+  assert.match(open({ ...q, graft: { front: 'eagle_wing@hughes2' } }), /This Swiftlet has an eagle’s wings!/);
   assert.match(
-    open({ ...q, graft: { front: 'hughes2', sig: 'zuck2' } }),
-    /This Swiftlet is a patchwork: an eagle’s wings and an? [a-z]+’s [a-z]+!/
+    open({ ...q, graft: { front: 'eagle_wing@hughes2', sig: 'shark_tailfin@zuck2' } }),
+    /This Swiftlet is a patchwork: an eagle’s wings and a shark’s tail!/
   );
 });
 
@@ -114,23 +118,27 @@ test('battle genes: SP-3 a spliced wild Billie knocked out banks DNA and samples
       fn('battleSettleWin')(B, s, pay, run);
       return { s, pay };
     };
-  const first = end({ front: 'hughes2' }, 'win'),
+  const first = end({ front: 'eagle_wing@hughes2' }, 'win'),
     meta = first.s.meta;
   assert.equal(meta.dna, W.graft);
-  assert.deepEqual(meta.genes, ['front=hughes2']);
-  assert.deepEqual(first.pay.sampled, [{ gene: 'front=hughes2', words: 'an eagle’s wings' }]);
+  assert.deepEqual(meta.genes, ['eagle_wing@hughes2']);
+  assert.deepEqual(first.pay.sampled, [{ gene: 'eagle_wing@hughes2', words: 'an eagle’s wings' }]);
   /* a Chimera with that Gene again: its own DNA, and only the new Gene joins */
-  const again = end({ front: 'hughes2', sig: 'zuck2' }, 'win', meta);
+  const again = end({ front: 'eagle_wing@hughes2', sig: 'shark_tailfin@zuck2' }, 'win', meta);
   assert.equal(meta.dna, W.graft + W.chimera);
-  assert.deepEqual(meta.genes, ['front=hughes2', 'sig=zuck2']);
+  assert.deepEqual(meta.genes, ['eagle_wing@hughes2', 'shark_tailfin@zuck2']);
   assert.deepEqual(
     again.pay.sampled.map(x => x.gene),
-    ['sig=zuck2']
+    ['shark_tailfin@zuck2']
   );
   /* caught (Taxed): it keeps its parts, no sample; a plain Billie beaten: nothing */
-  assert.equal(end({ front: 'hughes2' }, 'caught').s.meta.dna, 0);
+  assert.equal(end({ front: 'eagle_wing@hughes2' }, 'caught').s.meta.dna, 0);
   const plain = end(null, 'win');
   assert.deepEqual([plain.s.meta.dna, plain.s.meta.genes, plain.pay.dna], [0, [], 0]);
   assert.ok(fn('validMeta')(meta), 'the sampled meta passes the save check');
-  assert.equal(fn('validMeta')({ ...meta, genes: ['sig=zuck2', 'sig=zuck2'] }), false, 'a Gene twice is refused');
+  assert.equal(
+    fn('validMeta')({ ...meta, genes: ['shark_tailfin@zuck2', 'shark_tailfin@zuck2'] }),
+    false,
+    'a Gene twice is refused'
+  );
 });

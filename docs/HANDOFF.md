@@ -54,16 +54,26 @@ rebase): merge SP-1 first, then this. Plan approved in Plan Mode. Tag `sp-2-done
   58 (SP-1's graft sweep included); smoke 6 of 6. Headless on the page (town fixture): the lead (Memeox) grafted
   sig=bezos0, saved; the stored save passes validSave and saveFill keeps the graft; no Prime ribbon on its sheet; in a
   wild battle it starts with Defense +1 (Counterweight); kg 420 to 358.8; the debug state lists the splice.
-  Full quick check: running at the time of this entry (result added when it ends).
+  Full quick check: 34 of 37, none SP-2's. Song fingerprints (cave mid/late not in the sound baseline, as SP-1
+  found); Sound settings (a mute row in the full run; passes alone); the RL-8 run from the mast (in the full run "the
+  battle's end didn't let saving go on", alone "the town's shop has no Perk"; the same step fails the same way alone on
+  SP-1's branch, and SP-1 saw it fail on main 501b286 at take-off, so it is older than the splicing track).
 - Risky: every stat, type and effect-row read for a Billie now checks for a splice (unspliced ones return the same
   values, the same list objects included). The Unstable drawback can knock a Billie out at a turn's end, like a burn.
   saveFill drops a splice on a regional form with no rig of its own (such a splice can't be drawn or ruled).
   graftTidy uses the default Stability limit: SP-4 must pass the Gene Bank's limit there.
-- Next: the owner's answers (Ask me before): Prime's bonus from the table above, the trait list and numbers
-  (placeholders: Airborne Ground x0.5 taken, Swimmer Water x1.15 dealt, Counterweight Defense +1, Grip physical x1.1,
-  Stride Speed +1; extras' traits written but not reachable), the dominant Genes (now eagle_wing Flying, owl_wing
-  Psychic, shark_tailfin Water, reptile_tail Dragon, bear_arm Ground, fox_tail Fire: 6 of 36 spliceable parts), and
-  the push-backs above. Then SP-3 (wild splices) on `track/splicing` once it exists.
+- The owner's answers (2026-10-25, after the entry above): Prime's bonus **+5 %** (rules.json; the golden battles'
+  snapshot remade for it alone); traits and numbers kept as placeholders, Grip and Stride included; three more dominant
+  Genes (koi_frontfin Electric, piranha_backfin Steel, rabbit_tail Grass: 9 of 36, every type); `aug` to SP-5
+  accepted. Rejected and changed: a splice names each Gene as **"part@donor"** (`Billy.graft = { front:
+  'eagle_wing@hughes2' }`; graft-art.js geneSplit, graftForm puts the named part on the slot's bone, graftDonors lists
+  Gene ids), and Unstable is **rolled once and stored** (`Billy.unstable = { up, down, name }`, rules.js unstableTidy and
+  spliceSet; kept through a new splice past the limit, dropped when stable; an encounter's roll goes to its foe). The
+  points above that say "derived from uid and splice" and "{ slot: donor rig }" are replaced by these. The sim at +5 %
+  after the changes: spliced 0.42 against the Prime twin (1 Gene 0.42, stable 0.45, Unstable 0.39). Checks after them:
+  971 quick tests, the slow graft sweep (1597 bakes, median 17 ms).
+- Next: Gene moves (the owner wants to explain what they want first), then tag `sp-2-done`; SP-3 (wild splices) is
+  being planned in its own session on top of this branch.
 ### Splicing track SP-1 - Art spike: grafted Billies baked at runtime (built, waiting on the phone) - 2026-10-25
 Branch `ccr-dde1a5bd-nx5zdl` (`track/splicing` didn't exist yet; the owner chose to build SP-1 here, as RL-12c and
 HB-1 were). Plan approved in Plan Mode. SP-2 started in a new session on top of this branch at the owner's word,

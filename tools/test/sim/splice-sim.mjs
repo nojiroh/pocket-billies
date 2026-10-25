@@ -21,7 +21,7 @@ const LVL = 30,
 /** a Billie of `sp` at LVL, every part at M, with `graft` (or none) */
 function billie(sp, graft) {
   const m = fn('makeBilly')(sp, LVL, { build: M() });
-  if (graft) m.graft = { ...graft };
+  if (graft) fn('spliceSet')(m, { ...graft });
   m.hp = fn('maxHp')(m);
   return m;
 }

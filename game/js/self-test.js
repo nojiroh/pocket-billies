@@ -28,7 +28,6 @@ import {
   trainersAt,
 } from './game-data.js';
 import { rngFn } from './logic/rng.js';
-import { graftKey } from './logic/graft-art.js';
 import { wildSplice } from './logic/genes.js';
 import {
   canEnter,
@@ -1865,7 +1864,7 @@ async function runFullTest(mode) {
               sp = Object.keys(SPECIES).find(id => wildSplice(one, id, Object.keys(SPECIES), rngFn(id, 'splice')));
             if (!sp) throw new Error('no species can be spliced');
             const graft = /** @type {Record<string, string>} */ (wildSplice(one, sp, Object.keys(SPECIES), rnd)),
-              gene = graftKey(graft);
+              gene = Object.values(graft)[0];
             Object.assign(s.meta, { dna: 0, genes: [] });
             setSaveData(s);
             uiState.modal = null;

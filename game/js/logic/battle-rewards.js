@@ -9,7 +9,6 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { GENES, ITEMS, PERKS, RULES } from '../game-data.js';
-import { graftKey } from './graft-art.js';
 import { geneWords } from './genes.js';
 import { billyGraft, dropEncounter, findBilly, geneData, wildPrize } from './rules.js';
 import { META_GENES, META_MAX } from './meta-state.js';
@@ -145,7 +144,7 @@ export function battleSettleWin(b, s, pay, run) {
 
 /** SP-3: the beaten wild Billies' splices sampled: each spliced one banks DNA at once (genes.json wild.dna, a Graft's
  * or a Chimera's: meta, kept even if the run is lost), and each of its Genes not in s.meta.genes yet joins it (the
- * library SP-4's Gene Bank opens; a Gene is its graft code, "sig=zuck2"). Returns the DNA and the new Genes in words
+ * library SP-4's Gene Bank opens; a Gene is its id, "shark_tailfin@zuck2"). Returns the DNA and the new Genes in words
  * for the sheet @param {any[]} foes @param {any} s @returns {{ dna: number, sampled: { gene: string, words: string }[] }} */
 export function spliceSample(foes, s) {
   const W = GENES.wild.dna,
@@ -157,11 +156,10 @@ export function spliceSample(foes, s) {
     if (!g) continue;
     dna += Object.keys(g).length > 1 ? W.chimera : W.graft;
     const lib = s.meta.genes || (s.meta.genes = []);
-    for (const [slot, donor] of Object.entries(g)) {
-      const gene = graftKey({ [slot]: donor });
+    for (const [slot, gene] of Object.entries(g)) {
       if (lib.includes(gene) || lib.length >= META_GENES) continue;
       lib.push(gene);
-      sampled.push({ gene, words: geneWords(geneData(), slot, donor) });
+      sampled.push({ gene, words: geneWords(geneData(), slot, gene) });
     }
   }
   if (dna) s.meta.dna = Math.min(META_MAX, (s.meta.dna || 0) + dna);

@@ -73,7 +73,7 @@ export function validMeta(o) {
     recordOf(o.badges, 32, v => v === 1) &&
     Array.isArray(o.genes) &&
     o.genes.length <= META_GENES &&
-    o.genes.every((/** @type {unknown} */ g) => typeof g === 'string' && /^[a-z]{1,8}=[a-z0-9_]{1,64}$/.test(g)) &&
+    o.genes.every((/** @type {unknown} */ g) => typeof g === 'string' && /^[a-z0-9_]{1,64}@[a-z0-9_]{1,64}$/.test(g)) &&
     new Set(o.genes).size === o.genes.length
   );
 }

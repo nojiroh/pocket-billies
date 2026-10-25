@@ -23,15 +23,27 @@ export const pics = (/** @type {string} */ id, /** @type {string} */ view) => {
 };
 
 test('graft-art: graftKey is stable whatever the order, empty for none', () => {
-  assert.equal(G.graftKey({ sig: 'zuck2', front: 'swift1' }), 'front=swift1,sig=zuck2');
-  assert.equal(G.graftKey({ front: 'swift1', sig: 'zuck2' }), 'front=swift1,sig=zuck2');
+  assert.equal(
+    G.graftKey({ sig: 'shark_tailfin@zuck2', front: 'hawk_wing@swift1' }),
+    'front=hawk_wing@swift1,sig=shark_tailfin@zuck2'
+  );
+  assert.equal(
+    G.graftKey({ front: 'hawk_wing@swift1', sig: 'shark_tailfin@zuck2' }),
+    'front=hawk_wing@swift1,sig=shark_tailfin@zuck2'
+  );
   assert.equal(G.graftKey(null), '');
   assert.equal(G.graftKey({}), '');
 });
 
 test('graft-art: graftParse reads a graftKey back, null for nothing', () => {
-  assert.deepEqual(G.graftParse('front=swift1,sig=zuck2'), { front: 'swift1', sig: 'zuck2' });
-  assert.equal(G.graftKey(G.graftParse('sig=zuck2,front=swift1')), 'front=swift1,sig=zuck2');
+  assert.deepEqual(G.graftParse('front=hawk_wing@swift1,sig=shark_tailfin@zuck2'), {
+    front: 'hawk_wing@swift1',
+    sig: 'shark_tailfin@zuck2',
+  });
+  assert.equal(
+    G.graftKey(G.graftParse('sig=shark_tailfin@zuck2,front=hawk_wing@swift1')),
+    'front=hawk_wing@swift1,sig=shark_tailfin@zuck2'
+  );
   assert.equal(G.graftParse(''), null);
   assert.equal(G.graftParse('front'), null);
 });
@@ -39,10 +51,14 @@ test('graft-art: graftParse reads a graftKey back, null for nothing', () => {
 test('graft-art: graftSet and graftOf keep a graft on the Billie (SP-2: Billy.graft, saved with it)', () => {
   const m = { uid: 'a', sp: 'musk0' };
   assert.equal(G.graftOf(m), '');
-  G.graftSet(m, 'sig=zuck2,front=swift1');
-  assert.deepEqual(m.graft, { sig: 'zuck2', front: 'swift1' });
-  assert.equal(G.graftOf(m), 'front=swift1,sig=zuck2');
-  assert.equal(G.graftOf(structuredClone(m)), 'front=swift1,sig=zuck2', 'a copy (a reloaded save) keeps it');
+  G.graftSet(m, 'sig=shark_tailfin@zuck2,front=hawk_wing@swift1');
+  assert.deepEqual(m.graft, { sig: 'shark_tailfin@zuck2', front: 'hawk_wing@swift1' });
+  assert.equal(G.graftOf(m), 'front=hawk_wing@swift1,sig=shark_tailfin@zuck2');
+  assert.equal(
+    G.graftOf(structuredClone(m)),
+    'front=hawk_wing@swift1,sig=shark_tailfin@zuck2',
+    'a copy (a reloaded save) keeps it'
+  );
   G.graftSet(m, '');
   assert.equal('graft' in m, false);
   assert.equal(G.graftOf(m), '');
@@ -62,20 +78,29 @@ test('graft-art: graftKind reads partKits slots, and a form\'s "slots" first (th
 test("graft-art: graftForm swaps the slot's part for the donor's, its colour and its size on the donor", () => {
   const ox = G.graftRecipe(B, 'musk0'),
     swift = G.graftRecipe(B, 'swift1'),
-    f = G.graftForm(B, K, 'musk0', { front: 'swift1' });
+    f = G.graftForm(B, K, 'musk0', { front: 'hawk_wing@swift1' });
   assert.equal(f.parts.arm[0], swift.parts.arm[0]);
   assert.equal(f.parts.arm[2], swift.parts.arm[2]);
   assert.ok(Math.abs(f.parts.arm[1] * ox.scale - swift.parts.arm[1] * swift.scale) < 1e-3);
   assert.deepEqual(f.parts.leg, ox.parts.leg);
-  assert.equal(f.name, `${ox.name}~front=swift1`);
+  assert.equal(f.name, `${ox.name}~front=hawk_wing@swift1`);
   assert.equal(ox.parts.arm[0], 'bear_arm', 'the recipe itself is untouched');
 });
 
 test('graft-art: graftForm is null for an unknown species or donor, or a donor without that kind', () => {
   const slug = B.forms.find((/** @type {any} */ f) => f.slots?.tail === 'back');
-  assert.equal(G.graftForm(B, K, 'nobody', { front: 'swift1' }), null);
+  assert.equal(G.graftForm(B, K, 'nobody', { front: 'hawk_wing@swift1' }), null);
   assert.equal(G.graftForm(B, K, 'musk0', { front: 'nobody' }), null);
   assert.equal(G.graftForm(B, K, 'musk0', { back: slug.rig }), null, 'a slug tail never stands in for legs');
+});
+
+test('graft-art: a Gene id is part@donor', () => {
+  assert.deepEqual(G.geneSplit('eagle_wing@hughes2'), { part: 'eagle_wing', donor: 'hughes2' });
+  for (const bad of ['hughes2', '@hughes2', 'eagle_wing@', 'a@b@c', 7, null]) assert.equal(G.geneSplit(bad), null);
+  /* the named part on the donor's colour and size, even when the donor's own part there is another */
+  assert.equal(G.graftForm(B, K, 'musk0', { front: 'eagle_wing@swift1' }).parts.arm[0], 'eagle_wing');
+  assert.equal(G.graftForm(B, K, 'musk0', { front: 'bear_leg@swift1' }), null, 'a leg never goes on an arm');
+  assert.equal(G.graftForm(B, K, 'musk0', { front: 'swift1' }), null, 'a bare donor is not a Gene');
 });
 
 test('graft-art: graftDonors are other lines with the same bone kind and another part', () => {
@@ -84,8 +109,9 @@ test('graft-art: graftDonors are other lines with the same bone kind and another
     const kind = G.graftKind(K, ox, slot),
       list = G.graftDonors(B, K, 'musk0', slot);
     assert.ok(list.length > 0, slot);
-    for (const sp of list) {
-      const f = G.graftRecipe(B, sp);
+    for (const id of list) {
+      const f = G.graftRecipe(B, G.geneSplit(id).donor);
+      assert.equal(G.geneSplit(id).part, f.parts[kind][0], "the Gene names the donor's part");
       assert.notEqual(f.line, 'musk');
       assert.equal(G.graftKind(K, f, slot), kind);
       assert.notEqual(f.parts[kind][0], ox.parts[kind][0]);
@@ -101,7 +127,7 @@ test('graft-art: every recipe with its first donor per slot bakes, fits and wear
       if (!donor) continue;
       const f = G.graftForm(B, K, base.rig, { [slot]: donor }),
         made = kitBakeWhole(D, f, pics);
-      assert.equal(made.parts[slot], G.graftRecipe(B, donor).parts[G.graftKind(K, base, slot)][0], `${f.name}`);
+      assert.equal(made.parts[slot], G.geneSplit(donor).part, `${f.name}`);
       assert.ok(made.sheet.width > 0 && made.rig.front.bones.length > 0, f.name);
       n++;
     }

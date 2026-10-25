@@ -26,7 +26,7 @@ import {
 } from '../game-data.js';
 import { graftStability } from './genes.js';
 import { isRobot, robotGemDef, robotPartDef, robotRules, speciesOf } from './fighters.js';
-import { billyGraft, cleanName, geneData, movesAt, refreshRobot, teamSize } from './rules.js';
+import { billyGraft, cleanName, geneData, movesAt, refreshRobot, teamSize, unstableTidy } from './rules.js';
 import { metaFill, newMeta, validMeta } from './meta-state.js';
 import { newRanch, ranchFill, validRanch } from './ranch-state.js';
 import { ranchTidy } from './ranch.js';
@@ -284,20 +284,30 @@ export function validSave(o) {
   if (!num(o.serial, 0, 1e12)) return false;
   return true;
 }
-/** SP-2: a splice as a save holds it: none, or a few slot -> donor rig pairs of short strings @param {unknown} g */
+/** SP-2: a splice as a save holds it: none, or a few slot -> Gene id ("part@donor") pairs of short strings
+ * @param {unknown} g */
 export function graftShapeOk(g) {
   if (g == null) return true;
   if (typeof g !== 'object' || Array.isArray(g) || Object.hasOwn(g, '__proto__')) return false;
   const pairs = Object.entries(g);
-  return pairs.length <= 8 && pairs.every(([k, v]) => k.length <= 12 && typeof v === 'string' && v.length <= 40);
+  return pairs.length <= 8 && pairs.every(([k, v]) => k.length <= 12 && typeof v === 'string' && v.length <= 64);
 }
 /** SP-2: a loaded Billie's or encounter's splice: the slots that still fit it; none left, or a splice past what
- * Stability allows at the default limit, and it goes @param {{ sp: string, graft?: Record<string, string> }} m */
+ * Stability allows at the default limit, and it goes @param {{ sp: string, graft?: Record<string, string>,
+ *   unstable?: { up: string, down: string, name: string } }} m */
 export function graftTidy(m) {
-  if (m.graft == null) return;
+  if (m.graft == null) {
+    delete m.unstable;
+    return;
+  }
   const g = billyGraft(m);
   if (!g || graftStability(geneData(), m.sp, g).refused) delete m.graft;
   else m.graft = g;
+  /* an Unstable roll keeps two different stats and a clean name, and goes with a splice that is stable again */
+  const u = m.unstable;
+  if (u && (!STAT_IDS.includes(u.up) || !STAT_IDS.includes(u.down) || u.up === u.down)) delete m.unstable;
+  else if (u) u.name = cleanName(u.name, 24) || speciesOf(m).name;
+  unstableTidy(m);
 }
 /** a list of Billies a save holds: each one well formed, no uid twice */
 export function billiesOk(list) {
@@ -331,8 +341,14 @@ export function billiesOk(list) {
     if (typeof (m.nick || '') !== 'string' || (m.status != null && !STATUS_NAMES[m.status])) return false;
   /* RL-12c: a held item is an item id (saveFill drops one the data doesn't have) */
   for (const m of list) if (m.held != null && (typeof m.held !== 'string' || m.held.length > 40)) return false;
-  /* SP-2: a splice is a few slot -> donor pairs (saveFill drops what the data no longer fits) */
+  /* SP-2: a splice is a few slot -> Gene id pairs (saveFill drops what the data no longer fits) */
   for (const m of list) if (!graftShapeOk(m.graft)) return false;
+  for (const m of list) {
+    const u = m.unstable;
+    if (u == null) continue;
+    if (typeof u !== 'object' || Array.isArray(u)) return false;
+    if ([u.up, u.down, u.name].some(v => typeof v !== 'string' || v.length > 24)) return false;
+  }
   /* RL-10: a bred Billie's mark: a quirk, or an abomination with a short name and two different stats */
   for (const m of list) {
     const u = m.mut;

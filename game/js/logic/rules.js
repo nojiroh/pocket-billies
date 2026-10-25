@@ -60,7 +60,7 @@ import {
 import { rngFn } from './rng.js';
 import { wildOddsBy } from './weather.js';
 import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
-import { graftKey } from './graft-art.js';
+import { graftKey, graftSet } from './graft-art.js';
 import {
   geneWords,
   graftFit,
@@ -215,6 +215,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   spliceReport: [() => spliceReport, v => (spliceReport = v)],
   // @ts-expect-error -- replaced on purpose
+  spliceSet: [() => spliceSet, v => (spliceSet = v)],
+  // @ts-expect-error -- replaced on purpose
   spliceWords: [() => spliceWords, v => (spliceWords = v)],
   // @ts-expect-error -- replaced on purpose
   stat: [() => stat, v => (stat = v)],
@@ -230,6 +232,8 @@ expose({
   tripTo: [() => tripTo, v => (tripTo = v)],
   // @ts-expect-error -- replaced on purpose
   unstableName: [() => unstableName, v => (unstableName = v)],
+  // @ts-expect-error -- replaced on purpose
+  unstableTidy: [() => unstableTidy, v => (unstableTidy = v)],
   // @ts-expect-error -- replaced on purpose
   upgradePart: [() => upgradePart, v => (upgradePart = v)],
   // @ts-expect-error -- replaced on purpose
@@ -391,11 +395,32 @@ export function spliceReport() {
       };
     });
 }
-/** SP-2: an Unstable Billie's raised and lowered stats and the donor its name merges with; null when its splice is
- * within Stability's limit @param {any} m */
+/** SP-2: an Unstable Billie's roll (its raised and lowered stats and merged name, Billy.unstable); null when its
+ * splice is within Stability's limit @param {any} m @returns {{ up: string, down: string, name: string } | null} */
 export function billyUnstable(m) {
+  const g = m && m.unstable ? billyGraft(m) : null;
+  return g && graftStability(geneData(), m.sp, g).unstable ? m.unstable : null;
+}
+/** SP-2: after a splice changes (or the Billie evolves, or a save loads): past the limit it is Unstable, rolled once
+ * and kept while it stays past it (a new splice keeps the old roll); within the limit the roll goes
+ * @param {any} m @param {() => number} [rnd] */
+export function unstableTidy(m, rnd = random) {
   const g = billyGraft(m);
-  return g ? graftUnstable(geneData(), { sp: m.sp, uid: m.uid, graft: g, build: m.build }, STAT_IDS) : null;
+  if (!g || !graftStability(geneData(), m.sp, g).unstable) {
+    delete m.unstable;
+    return;
+  }
+  if (m.unstable) return;
+  const D = geneData(),
+    r = graftUnstable(D, { sp: m.sp, graft: g, build: m.build }, STAT_IDS, rnd),
+    donor = SPECIES[r.donor];
+  m.unstable = { up: r.up, down: r.down, name: breedName(speciesOf(m).name, donor ? donor.name : speciesOf(m).name) };
+}
+/** SP-2: give a Billie (or an encounter) a splice ('' or null takes it off), then settle Unstable
+ * @param {any} m @param {Record<string, string> | string | null} graft a graft or a graft code */
+export function spliceSet(m, graft) {
+  graftSet(m, typeof graft === 'string' ? graft : graftKey(graft));
+  unstableTidy(m);
 }
 /** SP-2: a spliced Billie's own effect rows (logic/effects.js fxOfBillie): its traits', tagged gene:<trait>, and an
  * Unstable splice's drawback, tagged unstable @param {any} m @returns {(import('../../types/game-data').FxRow & { src: string })[]} */
@@ -616,7 +641,7 @@ export const billyName = m => m.nick || (m.mut && m.mut.name) || unstableName(m)
 /** SP-2: an Unstable Billie's merged name ('' when it isn't one) @param {any} m */
 export function unstableName(m) {
   const un = m.graft ? billyUnstable(m) : null;
-  return un && SPECIES[un.donor] ? breedName(speciesOf(m).name, SPECIES[un.donor].name) : '';
+  return un ? un.name : '';
 }
 /* RL-8: during a run storage stays in Copperleaf (the box isn't a run field): only the party counts, so nothing in a run
    reads, heals, merges or moves a Billie that is resting at home */
@@ -715,6 +740,7 @@ export function evolve(m, path = 'A') {
     if (g) m.graft = g;
     else delete m.graft;
   }
+  unstableTidy(m);
   if (m.hp > 0) m.hp = Math.max(1, Math.min(maxHp(m), m.hp + maxHp(m) - old));
   saveData.caught[m.sp] = 1;
   saveData.seen[m.sp] = 1;

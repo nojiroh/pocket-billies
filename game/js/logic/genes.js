@@ -1,9 +1,9 @@
 // @ts-check
 'use strict';
 /* ================= GENES (splicing track SP-2) =================
-   The rules of a spliced Billie. A graft is { slot: donor rig } (graft-art.js); each slot's Gene is the part the
-   donor's kit recipe has for that slot's bone (kitBuilds.json), with what genes.json says about the part's kind (its
-   trait) and the part itself (its dominant type, its move). From those:
+   The rules of a spliced Billie. A graft is { slot: Gene id } (graft-art.js), a Gene id "part@donor": a kit part
+   (partKits.json) and the donor rig it came from (kitBuilds.json: its species, weight, colour), with what genes.json
+   says about the part's kind (its trait) and the part itself (its dominant type, its move). From those:
      Stability  a foreign part costs genes.json stability.line (the Billie's own line), .kit (the same kit as the part
                 it replaces), or .other; past the limit the splice is Unstable, past limit + refuse it is refused
      weight     a foreign part weighs what it did on its donor: the slot's weight times the donor's `wt` over the
@@ -11,8 +11,8 @@
      type       the heaviest grafted slot's dominant type becomes the second type (never a third)
      traits     one per kind, in slot order, at most genes.json maxTraits; their effect rows join the Billie's own
                 (logic/effects.js fxOfBillie)
-     Unstable   one stat times unstable.up, another times unstable.down, picked from the Billie's uid and its graft
-                (the same splice always gives the same two; undoing it undoes them), and the drawback's rows
+     Unstable   one stat times unstable.up, another times unstable.down, rolled once when the splice goes past the
+                limit and kept on the Billie until it is stable again (rules.js unstableTidy), and the drawback's rows
    Every function takes the data as D = { kitBuilds, partKits, genes, species, parts } (species: SPECIES; parts:
    rules.json parts). Logic only: no DOM, no Math.random (tools/test/genes.test.mjs). */
 /** @import { Genes, PartKits, PartRules } from '../../types/game-data' */
@@ -21,12 +21,11 @@
 /** @typedef {import('./graft-art.js').Graft} Graft */
 /** @typedef {{ kitBuilds: { forms: KitForm[] }, partKits: PartKits, genes: Genes,
  *   species: Record<string, { wt: number, types: string[], line: string, name: string }>, parts?: PartRules }} GeneData */
-/** @typedef {{ slot: string, donor: string, sp: string, line: string, part: string, kind: string, kit: string,
+/** @typedef {{ slot: string, id: string, donor: string, sp: string, line: string, part: string, kind: string, kit: string,
  *   trait: string | null, type: string | null, move: string | null }} Gene */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { rngFrom } from './rng.js';
-import { GRAFT_SLOTS, graftDonors, graftForm, graftKey, graftKind, graftRecipe } from './graft-art.js';
+import { GRAFT_SLOTS, geneSplit, graftDonors, graftForm, graftKind, graftRecipe } from './graft-art.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -56,22 +55,23 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** a donor's Gene for a slot: the part its recipe has there, or null when it has none of the slot's bone
- * @param {GeneData} D @param {string} slot @param {string} donor a kitBuilds rig @returns {Gene | null} */
-export function geneOf(D, slot, donor) {
-  const form = graftRecipe(D.kitBuilds, donor),
-    bone = form && graftKind(D.partKits, form, slot),
-    pid = bone && form.parts[bone][0],
-    P = pid && D.partKits.parts[pid];
-  if (!form || !P) return null;
+/** a slot's Gene from its id ("part@donor"): the part, its kind and kit, the donor's species and line, the trait,
+ * dominant type and move genes.json gives the part; null for an id with no such part or donor (graftFit says
+ * whether it fits a species) @param {GeneData} D @param {string} slot @param {string} id @returns {Gene | null} */
+export function geneOf(D, slot, id) {
+  const gene = geneSplit(id),
+    form = gene && graftRecipe(D.kitBuilds, gene.donor),
+    P = gene && D.partKits.parts[gene.part];
+  if (!gene || !form || !P) return null;
   const G = D.genes,
-    own = G.parts[/** @type {string} */ (pid)] || {};
+    own = G.parts[gene.part] || {};
   return {
     slot,
-    donor,
+    id: /** @type {string} */ (id),
+    donor: gene.donor,
     sp: form.line + form.stage,
     line: form.line,
-    part: /** @type {string} */ (pid),
+    part: gene.part,
     kind: P.kind,
     kit: P.kit,
     trait: (G.kinds[P.kind] && G.kinds[P.kind].trait) || null,
@@ -172,24 +172,22 @@ export function graftTraits(D, sp, g) {
   return out.slice(0, D.genes.maxTraits);
 }
 
-/** an Unstable Billie's raised and lowered stats (stats ids, never the same) and the donor its name is merged with
- * (its heaviest foreign part's), from its uid and graft; null when its splice isn't Unstable
- * @param {GeneData} D @param {{ sp: string, uid?: string, graft?: Graft, build?: Build }} m @param {string[]} stats
- * @param {number} [limit] @returns {{ up: string, down: string, donor: string } | null} */
-export function graftUnstable(D, m, stats, limit) {
-  if (!m || !m.graft || !stats.length || !graftStability(D, m.sp, m.graft, limit).unstable) return null;
-  const r = rngFrom(`${m.uid || ''}|${graftKey(m.graft)}`, 'unstable'),
-    ids = stats.slice(),
-    up = ids.splice(r.int(0, ids.length - 1), 1)[0],
-    down = ids[r.int(0, ids.length - 1)],
+/** an Unstable splice's roll: a stat to raise, another to lower, and the donor its name merges with (its heaviest
+ * foreign part's); rolled once when a splice goes past the limit and kept on the Billie (rules.js unstableTidy)
+ * @param {GeneData} D @param {{ sp: string, graft?: Graft, build?: Build }} m @param {string[]} stats
+ * @param {() => number} rnd a number in [0, 1) @returns {{ up: string, down: string, donor: string }} */
+export function graftUnstable(D, m, stats, rnd) {
+  const ids = stats.slice(),
+    up = ids.splice(Math.floor(rnd() * ids.length), 1)[0],
+    down = ids[Math.floor(rnd() * ids.length)],
     heavy = graftHeaviest(D, m.sp, m.graft, m.build)[0];
   return { up, down, donor: heavy ? heavy.sp : m.sp };
 }
 
 /* ---------- SP-3: wild splices ---------- */
 /** a wild Billie's splice, rolled at spawn: none, a Graft (one foreign part) or a Chimera (genes.json wild.chimeraParts
- * of them), by genes.json wild's odds. Its donors are of the lines the place's pool holds (other lines than its own,
- * graftDonors), and it is never refused (past the limit it is Unstable, as a Chimera often is). Draws only on rnd.
+ * of them), by genes.json wild's odds. Its Genes' donors are of the lines the place's pool holds (other lines than its
+ * own, graftDonors), and it is never refused (past the limit it is Unstable, as a Chimera often is). Draws only on rnd.
  * @param {GeneData} D @param {string} sp @param {string[]} pool the species ids the place spawns
  * @param {() => number} rnd @returns {Graft | null} */
 export function wildSplice(D, sp, pool, rnd) {
@@ -198,7 +196,11 @@ export function wildSplice(D, sp, pool, rnd) {
     chimera = x >= W.graft;
   if (x >= W.graft + W.chimera) return null;
   const lines = new Set(pool.map(id => D.species[id] && D.species[id].line).filter(Boolean)),
-    lineOf = (/** @type {string} */ rig) => (graftRecipe(D.kitBuilds, rig) || { line: '' }).line,
+    lineOf = (/** @type {string} */ id) => {
+      const gene = geneSplit(id),
+        form = gene && graftRecipe(D.kitBuilds, gene.donor);
+      return form ? form.line : '';
+    },
     open = GRAFT_SLOTS.map(slot => ({
       slot,
       donors: graftDonors(D.kitBuilds, D.partKits, sp, slot).filter(r => lines.has(lineOf(r))),
@@ -219,9 +221,10 @@ export function wildSplice(D, sp, pool, rnd) {
 }
 
 /** a Gene in words, for the battle's lines: "a shark’s tail", "an eagle’s wings" (its part's animal, then its kind's
- * genes.json word); '' when the donor has no part for the slot @param {GeneData} D @param {string} slot @param {string} donor */
-export function geneWords(D, slot, donor) {
-  const gene = geneOf(D, slot, donor),
+ * genes.json word); '' for an id with no such part or donor @param {GeneData} D @param {string} slot
+ * @param {string} id a Gene id, "part@donor" */
+export function geneWords(D, slot, id) {
+  const gene = geneOf(D, slot, id),
     P = gene && D.partKits.parts[gene.part];
   if (!gene || !P) return '';
   const animal = P.animal && P.animal !== 'any' ? P.animal : gene.kind,

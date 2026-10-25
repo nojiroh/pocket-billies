@@ -93,8 +93,8 @@ export interface Meta {
   crests: number;
   /** SP-3: splicing's currency, banked when a spliced wild Billie is beaten (logic/battle-rewards.js) */
   dna: number;
-  /** SP-3: the Genes sampled from beaten wild splices, each a one-slot graft code ("sig=zuck2"), the Gene Bank's
-   * library (SP-4) */
+  /** SP-3: the Genes sampled from beaten wild splices, by Gene id ("shark_tailfin@zuck2"), the Gene Bank's library
+   * (SP-4) */
   genes: string[];
   /** unlock ids: 1 (unlocks.json, RL-11) */
   unlocks: Record<string, 1>;
@@ -383,8 +383,12 @@ export interface Billy {
   mut?: BillieMut;
   /** RL-12c: the item it holds (an items.json id with `hold`), or none; a run's held items go back to the bag at its end */
   held?: string;
-  /** SP-2: its splice, slot (rules.json parts.slots) -> donor rig (kitBuilds.json); missing for a Billie with none */
+  /** SP-2: its splice, slot (rules.json parts.slots) -> Gene id, "part@donor" (a partKits.json part, a kitBuilds.json
+      rig); missing for a Billie with none */
   graft?: Record<string, string>;
+  /** SP-2: a splice past Stability's limit: the stat it raises and the one it lowers (rolled once, kept while it stays
+      past the limit) and its merged name */
+  unstable?: { up: string; down: string; name: string };
   /** phase 17: 'robot' for a robot (sp is then made from its parts: logic/fighters.js robotSp); missing for a Billie */
   kind?: 'robot';
   /** phase 17: a robot's gem (a key of robots.json gems): the gem is the robot, its level and XP */
@@ -441,6 +445,8 @@ export interface Encounter {
   build?: Build;
   /** SP-2: its splice, as a Billie's (Billy.graft) */
   graft?: Record<string, string>;
+  /** SP-2: its Unstable roll, as a Billie's (Billy.unstable) */
+  unstable?: { up: string; down: string; name: string };
 }
 
 /** an egg (game-state.js addEgg) */

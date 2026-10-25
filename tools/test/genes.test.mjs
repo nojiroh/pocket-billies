@@ -51,9 +51,10 @@ const N = modules.genes,
     parts: GAME_DATA.rules.parts,
   };
 
-test('genes: a donor gives the part its recipe has for the slot, with its kind, kit, trait and dominant type', () => {
-  assert.deepEqual(N.geneOf(D, 'front', 'hughes2'), {
+test("genes: a Gene id gives its part, kind, kit, the donor's species, the trait and dominant type", () => {
+  assert.deepEqual(N.geneOf(D, 'front', 'eagle_wing@hughes2'), {
     slot: 'front',
+    id: 'eagle_wing@hughes2',
     donor: 'hughes2',
     sp: 'hughes2',
     line: 'hughes',
@@ -65,33 +66,42 @@ test('genes: a donor gives the part its recipe has for the slot, with its kind, 
     move: null,
   });
   /* a regional form's rig is a donor too; its species is its line's stage */
-  assert.equal(N.geneOf(D, 'front', 'hughes_harbour2').sp, 'hughes2');
-  assert.equal(N.geneOf(D, 'front', 'nobody'), null);
+  assert.equal(N.geneOf(D, 'front', 'eagle_wing@hughes_harbour2').sp, 'hughes2');
+  assert.equal(N.geneOf(D, 'front', 'eagle_wing@nobody'), null);
+  assert.equal(N.geneOf(D, 'front', 'hughes2'), null, 'a bare donor is not a Gene');
   /* a lookup for any slot (head Genes come with SP-7); graftFit keeps only the slots that are spliced */
-  assert.equal(N.geneOf(D, 'head', 'hughes2').part, 'duck_head');
+  assert.equal(N.geneOf(D, 'head', 'duck_head@hughes2').part, 'duck_head');
 });
 
 test('genes: graftFit keeps the slots that fit and drops the rest', () => {
-  assert.deepEqual(N.graftFit(D, 'swift0', { front: 'musk3', sig: 'zuck2' }), { front: 'musk3', sig: 'zuck2' });
+  assert.deepEqual(N.graftFit(D, 'swift0', { front: 'bear_arm@musk3', sig: 'shark_tailfin@zuck2' }), {
+    front: 'bear_arm@musk3',
+    sig: 'shark_tailfin@zuck2',
+  });
   /* trump's tail is its back: it can't stand in for Swiftlet's foot; an unknown donor, the head, a number go */
-  assert.deepEqual(N.graftFit(D, 'swift0', { back: 'trump0', head: 'musk0', sig: 7, front: 'nobody' }), null);
-  assert.deepEqual(N.graftFit(D, 'swift0', { back: 'trump0', front: 'gates0' }), { front: 'gates0' });
+  assert.deepEqual(
+    N.graftFit(D, 'swift0', { back: 'reptile_tail@trump0', head: 'bear_head@musk0', sig: 7, front: 'nobody' }),
+    null
+  );
+  assert.deepEqual(N.graftFit(D, 'swift0', { back: 'reptile_tail@trump0', front: 'rabbit_arm@gates0' }), {
+    front: 'rabbit_arm@gates0',
+  });
   assert.equal(N.graftFit(D, 'swift0', null), null);
 });
 
 test('genes: Stability costs the line, the kit or another kit; past the limit Unstable, then refused', () => {
   const S = D.genes.stability,
     cost = (sp, slot, donor) => N.geneCost(D, sp, N.geneOf(D, slot, donor));
-  assert.equal(cost('swift0', 'front', 'swift2'), S.line);
-  assert.equal(cost('swift0', 'front', 'hughes2'), S.kit, 'a bird wing for a bird wing');
-  assert.equal(cost('swift0', 'front', 'musk3'), S.other, 'a bear arm for a bird wing');
-  assert.deepEqual(N.graftStability(D, 'swift0', { front: 'hughes2' }), {
+  assert.equal(cost('swift0', 'front', 'hawk_wing@swift2'), S.line);
+  assert.equal(cost('swift0', 'front', 'eagle_wing@hughes2'), S.kit, 'a bird wing for a bird wing');
+  assert.equal(cost('swift0', 'front', 'bear_arm@musk3'), S.other, 'a bear arm for a bird wing');
+  assert.deepEqual(N.graftStability(D, 'swift0', { front: 'eagle_wing@hughes2' }), {
     cost: S.kit,
     limit: S.limit,
     unstable: false,
     refused: false,
   });
-  const three = { front: 'musk3', back: 'musk3', sig: 'zuck2' },
+  const three = { front: 'bear_arm@musk3', back: 'bear_leg@musk3', sig: 'shark_tailfin@zuck2' },
     st = N.graftStability(D, 'swift0', three);
   assert.equal(st.cost, 3 * S.other);
   assert.equal(st.unstable, st.cost > S.limit);
@@ -101,87 +111,132 @@ test('genes: Stability costs the line, the kit or another kit; past the limit Un
 });
 
 test('genes: a foreign part weighs what it did on its donor', () => {
-  assert.deepEqual(N.graftRel(D, 'swift0', { front: 'musk3' }), { front: 160 / 0.4 });
-  assert.deepEqual(N.graftRel(D, 'musk3', { front: 'swift0' }), { front: 0.4 / 160 });
+  assert.deepEqual(N.graftRel(D, 'swift0', { front: 'bear_arm@musk3' }), { front: 160 / 0.4 });
+  assert.deepEqual(N.graftRel(D, 'musk3', { front: 'hawk_wing@swift0' }), { front: 0.4 / 160 });
   assert.equal(N.graftRel(D, 'swift0', null), null);
 });
 
 test('genes: the heaviest dominant Gene gives the second type, never a third', () => {
-  assert.deepEqual(N.graftTypes(D, 'gates0', { sig: 'musk0' }, undefined), ['Grass', 'Fire'], 'fox tail: Fire');
-  assert.deepEqual(N.graftTypes(D, 'swift0', { front: 'hughes2' }, undefined), ['Flying', 'Psychic'], 'Flying already');
-  assert.deepEqual(N.graftTypes(D, 'gates0', { front: 'hughes0' }, undefined), ['Grass'], 'no dominant type');
-  const g = { front: 'musk3', sig: 'bezos0' },
+  assert.deepEqual(
+    N.graftTypes(D, 'gates0', { sig: 'fox_tail@musk0' }, undefined),
+    ['Grass', 'Fire'],
+    'fox tail: Fire'
+  );
+  assert.deepEqual(
+    N.graftTypes(D, 'swift0', { front: 'eagle_wing@hughes2' }, undefined),
+    ['Flying', 'Psychic'],
+    'Flying already'
+  );
+  assert.deepEqual(
+    N.graftTypes(D, 'gates0', { front: 'chick_wing@hughes0' }, undefined),
+    ['Grass'],
+    'no dominant type'
+  );
+  const g = { front: 'bear_arm@musk3', sig: 'reptile_tail@bezos0' },
     heavy = N.graftHeaviest(D, 'gates0', g, undefined);
   assert.equal(heavy[0].part, 'bear_arm');
   assert.deepEqual(N.graftTypes(D, 'gates0', g, undefined), ['Grass', 'Ground']);
   /* sizes count: a small heavy arm can lose to a big tail */
-  const t = N.graftTypes(D, 'gates0', { front: 'musk0', sig: 'bezos3' }, { front: 'S', sig: 'L' });
+  const t = N.graftTypes(
+    D,
+    'gates0',
+    { front: 'bear_arm@musk0', sig: 'reptile_tail@bezos3' },
+    { front: 'S', sig: 'L' }
+  );
   assert.equal(t.length, 2);
 });
 
 test('genes: traits come one per kind, in slot order, at most maxTraits', () => {
-  assert.deepEqual(N.graftTraits(D, 'gates0', { front: 'hughes2', back: 'zuck0', sig: 'musk0' }), [
-    'airborne',
-    'swimmer',
-    'counterweight',
-  ]);
-  assert.deepEqual(N.graftTraits(D, 'gates0', { back: 'zuck0', sig: 'zuck0' }), ['swimmer']);
   assert.deepEqual(
-    N.graftTraits({ ...D, genes: { ...D.genes, maxTraits: 1 } }, 'gates0', { front: 'hughes2', sig: 'musk0' }),
+    N.graftTraits(D, 'gates0', { front: 'eagle_wing@hughes2', back: 'piranha_backfin@zuck0', sig: 'fox_tail@musk0' }),
+    ['airborne', 'swimmer', 'counterweight']
+  );
+  assert.deepEqual(N.graftTraits(D, 'gates0', { back: 'piranha_backfin@zuck0', sig: 'shark_tailfin@zuck0' }), [
+    'swimmer',
+  ]);
+  assert.deepEqual(
+    N.graftTraits({ ...D, genes: { ...D.genes, maxTraits: 1 } }, 'gates0', {
+      front: 'eagle_wing@hughes2',
+      sig: 'fox_tail@musk0',
+    }),
     ['airborne']
   );
 });
 
-test('genes: Unstable picks two different stats from the Billie and its splice, the same each time', () => {
-  const g = { front: 'musk3', back: 'musk3', sig: 'zuck2' },
-    m = { sp: 'swift0', uid: 'b1', graft: g },
-    u = N.graftUnstable(D, m, STATS);
-  assert.ok(u && STATS.includes(u.up) && STATS.includes(u.down) && u.up !== u.down);
-  assert.deepEqual(N.graftUnstable(D, { ...m }, STATS), u);
-  assert.equal(u.donor, 'musk3');
-  assert.equal(N.graftUnstable(D, { ...m, graft: { front: 'hughes2' } }, STATS), null);
-  assert.equal(N.graftUnstable(D, { sp: 'swift0', uid: 'b1' }, STATS), null);
-  const many = new Set(
-    ['a', 'b', 'c', 'd', 'e', 'f'].map(uid => JSON.stringify(N.graftUnstable(D, { ...m, uid }, STATS)))
-  );
-  assert.ok(many.size > 1, 'another Billie can come out another way');
+test('genes: an Unstable roll is two different stats and its heaviest donor', () => {
+  const g = { front: 'bear_arm@musk3', back: 'bear_leg@musk3', sig: 'shark_tailfin@zuck2' },
+    seen = new Set();
+  for (const x of [0, 0.3, 0.6, 0.99]) {
+    const u = N.graftUnstable(D, { sp: 'swift0', graft: g }, STATS, () => x);
+    assert.ok(STATS.includes(u.up) && STATS.includes(u.down) && u.up !== u.down, JSON.stringify(u));
+    assert.equal(u.donor, 'musk3');
+    seen.add(u.up);
+  }
+  assert.ok(seen.size > 1, 'the roll decides');
+});
+
+test('genes: Unstable is rolled once past the limit, kept through a new splice past it, gone when stable', () => {
+  const S = data.GENES.stability,
+    was = S.limit,
+    m = startedSave('swift0', 30).team[0],
+    far = { front: 'bear_arm@musk3', back: 'bear_leg@musk3' };
+  fn('spliceSet')(m, { front: 'eagle_wing@hughes2' });
+  assert.equal(m.unstable, undefined, 'within the limit');
+  fn('spliceSet')(m, far);
+  const u = m.unstable;
+  assert.ok(u && u.up !== u.down && u.name, 'past the limit: rolled');
+  assert.equal(fn('billyUnstable')(m), u);
+  fn('spliceSet')(m, { ...far, sig: 'shark_tailfin@zuck2' });
+  assert.equal(m.unstable, u, 'still past it: the same roll');
+  S.limit = 99;
+  try {
+    assert.equal(fn('billyUnstable')(m), null, 'a higher limit: not Unstable while it holds');
+  } finally {
+    S.limit = was;
+  }
+  fn('spliceSet')(m, '');
+  assert.equal('unstable' in m, false, 'no splice, no roll');
 });
 
 test('genes: a splice is saved with its Billie; saveFill trims what no longer fits; billiesOk refuses a bad shape', () => {
   const { billiesOk } = modules.saves,
     fill = s => fn('saveFill')(JSON.parse(JSON.stringify(s))),
     s = startedSave('swift0', 10);
-  s.team[0].graft = { front: 'musk3', sig: 'zuck2' };
-  assert.deepEqual(fill(s).team[0].graft, { front: 'musk3', sig: 'zuck2' }, 'kept through a save and load');
-  s.team[0].graft = { front: 'musk3', back: 'trump0', head: 'musk0', sig: 'nobody' };
-  assert.deepEqual(fill(s).team[0].graft, { front: 'musk3' }, 'the slots that fit stay');
-  s.team[0].graft = { back: 'trump0' };
+  s.team[0].graft = { front: 'bear_arm@musk3', sig: 'shark_tailfin@zuck2' };
+  assert.deepEqual(
+    fill(s).team[0].graft,
+    { front: 'bear_arm@musk3', sig: 'shark_tailfin@zuck2' },
+    'kept through a save and load'
+  );
+  s.team[0].graft = { front: 'bear_arm@musk3', back: 'reptile_tail@trump0', head: 'bear_head@musk0', sig: 'nobody' };
+  assert.deepEqual(fill(s).team[0].graft, { front: 'bear_arm@musk3' }, 'the slots that fit stay');
+  s.team[0].graft = { back: 'reptile_tail@trump0' };
   assert.equal('graft' in fill(s).team[0], false, 'nothing fits: gone');
   /* past what Stability ever allows: gone */
   const S = data.GENES.stability,
     was = S.refuse;
   S.refuse = 0;
   try {
-    s.team[0].graft = { front: 'musk3', back: 'musk3', sig: 'zuck2' };
+    s.team[0].graft = { front: 'bear_arm@musk3', back: 'bear_leg@musk3', sig: 'shark_tailfin@zuck2' };
     assert.equal('graft' in fill(s).team[0], false);
   } finally {
     S.refuse = was;
   }
   const m = fn('makeBilly')('swift0', 5);
-  assert.equal(billiesOk([{ ...m, graft: { front: 'musk3' } }]), true);
-  assert.equal(billiesOk([{ ...m, graft: 'front=musk3' }]), false);
+  assert.equal(billiesOk([{ ...m, graft: { front: 'bear_arm@musk3' } }]), true);
+  assert.equal(billiesOk([{ ...m, graft: 'front=bear_arm@musk3' }]), false);
   assert.equal(billiesOk([{ ...m, graft: { front: 7 } }]), false);
-  assert.equal(billiesOk([{ ...m, graft: { front: 'x'.repeat(41) } }]), false);
+  assert.equal(billiesOk([{ ...m, graft: { front: 'x'.repeat(65) } }]), false);
   assert.equal(billiesOk([{ ...m, graft: ['musk3'] }]), false);
 });
 
 test('genes: a splice survives evolving', () => {
   const s = startedSave('swift0', 30),
     m = s.team[0];
-  m.graft = { front: 'musk3', sig: 'zuck2' };
+  m.graft = { front: 'bear_arm@musk3', sig: 'shark_tailfin@zuck2' };
   fn('evolve')(m);
   assert.equal(m.sp, 'swift1');
-  assert.deepEqual(m.graft, { front: 'musk3', sig: 'zuck2' });
+  assert.deepEqual(m.graft, { front: 'bear_arm@musk3', sig: 'shark_tailfin@zuck2' });
 });
 
 test('genes: a spliced Billie has its dominant Gene type in battle and on its card; an unspliced one its own', () => {
@@ -189,7 +244,7 @@ test('genes: a spliced Billie has its dominant Gene type in battle and on its ca
     m = s.team[0],
     own = fn('billyTypes')(m);
   assert.equal(own, data.SPECIES.gates0.types, 'the same list, untouched');
-  m.graft = { sig: 'musk0' };
+  m.graft = { sig: 'fox_tail@musk0' };
   assert.deepEqual(fn('billyTypes')(m), ['Grass', 'Fire']);
 });
 
@@ -200,11 +255,12 @@ test('genes: an Unstable Billie has one stat raised and one lowered, and a merge
     s = startedSave('swift0', 30),
     m = s.team[0];
   m.build = { head: 'M', body: 'M', front: 'M', back: 'M', sig: 'M' };
-  m.graft = { front: 'hughes2' };
+  fn('spliceSet')(m, { front: 'eagle_wing@hughes2' });
   const stable = Object.fromEntries(STATS.map(k => [k, fn('stat')(m, k)]));
   assert.equal(fn('billyName')(m), 'Swiftlet');
   S.limit = 0;
   try {
+    fn('unstableTidy')(m);
     const un = fn('billyUnstable')(m);
     assert.ok(un);
     for (const k of STATS) {
@@ -223,13 +279,13 @@ test('genes: an Unstable Billie has one stat raised and one lowered, and a merge
 test("genes: the debug log's splice report names data ids only, never a Billie's name", () => {
   const s = startedSave('gates0', 20);
   s.team[0].nick = 'Secret Name';
-  s.team[0].graft = { sig: 'musk0' };
+  s.team[0].graft = { sig: 'fox_tail@musk0' };
   const r = fn('spliceReport')();
   assert.deepEqual(r, [
     {
       at: 0,
       sp: 'gates0',
-      graft: 'sig=musk0',
+      graft: 'sig=fox_tail@musk0',
       cost: 1,
       limit: 3,
       unstable: false,
@@ -244,7 +300,7 @@ test('genes: SP-3 a wild splice is a Graft or a Chimera by the odds, from the po
   const R = modules.rng,
     pools = Object.values(GAME_DATA.pools).map(P => P.list.map(([id]) => id)),
     W = GAME_DATA.genes.wild,
-    lineOf = rig => GAME_DATA.kitBuilds.forms.find(f => f.rig === rig).line;
+    lineOf = id => GAME_DATA.kitBuilds.forms.find(f => f.rig === modules['graft-art'].geneSplit(id).donor).line;
   let n = 0,
     grafts = 0,
     chimeras = 0;
@@ -279,8 +335,27 @@ test('genes: SP-3 a wild splice is a Graft or a Chimera by the odds, from the po
 });
 
 test('genes: SP-3 a Gene in words names its animal and its kind', () => {
-  assert.equal(N.geneWords(D, 'front', 'hughes2'), 'an eagle’s wings');
-  const sharkTail = GAME_DATA.kitBuilds.forms.find(f => Object.values(f.parts).some(p => p[0] === 'shark_tailfin'));
-  assert.equal(N.geneWords(D, 'sig', sharkTail.rig), 'a shark’s tail');
+  assert.equal(N.geneWords(D, 'front', 'eagle_wing@hughes2'), 'an eagle’s wings');
+  assert.equal(N.geneWords(D, 'sig', 'shark_tailfin@zuck2'), 'a shark’s tail');
   assert.equal(N.geneWords(D, 'front', 'nobody'), '');
+  assert.equal(N.geneWords(D, 'front', 'eagle_wing@nobody'), '');
+});
+
+test('genes: an Unstable roll is saved with its Billie; saveFill drops a stale or broken one', () => {
+  const { billiesOk } = modules.saves,
+    fill = s => fn('saveFill')(JSON.parse(JSON.stringify(s))),
+    s = startedSave('swift0', 30),
+    m = s.team[0];
+  fn('spliceSet')(m, { front: 'bear_arm@musk3', back: 'bear_leg@musk3' });
+  assert.deepEqual(fill(s).team[0].unstable, m.unstable, 'kept through a save and load');
+  const keep = m.unstable;
+  m.graft = { front: 'eagle_wing@hughes2' };
+  assert.equal('unstable' in fill(s).team[0], false, 'stable again: gone');
+  m.graft = { front: 'bear_arm@musk3', back: 'bear_leg@musk3' };
+  m.unstable = { ...keep, up: keep.down };
+  const again = fill(s).team[0].unstable;
+  assert.notEqual(again.up, again.down, 'a broken roll is rolled again');
+  assert.equal(billiesOk([{ ...m, unstable: { up: 'lev', down: 'hus', name: 'X' } }]), true);
+  assert.equal(billiesOk([{ ...m, unstable: 'lev' }]), false);
+  assert.equal(billiesOk([{ ...m, unstable: { up: 'lev', down: 7, name: 'X' } }]), false);
 });

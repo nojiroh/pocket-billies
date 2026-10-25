@@ -66,6 +66,7 @@ import {
   repairParts,
   spliceWords,
   stat,
+  unstableTidy,
   xpFor,
 } from './rules.js';
 import { fxCatch, fxDamage, fxOfBillie, fxPinchHeal, fxStages, fxTurnHeal, fxTurnHurt, fxXp } from './effects.js';
@@ -1073,7 +1074,12 @@ export function bossAlpha(e, hpMult) {
 export function startWild(q, o = {}) {
   const made = { build: encounterBuild(q), coat: q.coat },
     foe = q.alpha ? makeAlpha(q.sp, q.lvl, made) : makeBilly(q.sp, q.lvl, made);
-  if (graftOf(q)) graftSet(foe, graftOf(q)); /* SP-1: a grafted wild Billie stays grafted in battle */
+  /* SP-1: a grafted wild Billie stays grafted in battle; SP-2: with its Unstable roll */
+  if (graftOf(q)) {
+    graftSet(foe, graftOf(q));
+    if (q.unstable) foe.unstable = { ...q.unstable };
+    unstableTidy(foe);
+  }
   if (
     !newBattle('wild', [foe], {
       qid: q.id,
