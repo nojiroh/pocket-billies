@@ -4473,11 +4473,16 @@ export function mapgenPieceWeight(P, S) {
 export function mapgenPiecesWant(P, D, kind) {
   return !!D && Object.values(D.pieces || {}).some(S => S.on.includes(kind) && mapgenPieceWeight(P, S) > 0);
 }
-/** the half-metre cells a placed prop covers, as walk-view.js navGrid blocks them (a box its turned rectangle, else a
- * disc; at least 0.3 m round, so a prop that blocks nothing still keeps its place) */
-export function mapgenPropCells(p, M, N = 2) {
+/** the half-metre cells a placed prop covers, as walk-view.js navGrid blocks them (a box its turned rectangle, posts
+ * their discs, else a disc; at least 0.3 m round, so a prop that blocks nothing still keeps its place) */
+export function mapgenPropCells(p, M, N = 2, ppu = 34) {
   const out = [],
-    s = p.s || 1;
+    s = p.s || 1,
+    disc = (cx, cz, r) => {
+      for (let j = Math.floor((cz - r) * N); j < Math.ceil((cz + r) * N); j++)
+        for (let i = Math.floor((cx - r) * N); i < Math.ceil((cx + r) * N); i++)
+          if (Math.hypot((i + 0.5) / N - cx, (j + 0.5) / N - cz) <= r) out.push([i, j]);
+    };
   if (M && M.box) {
     const w = M.box[0] * s,
       d = M.box[1] * s,
@@ -4489,11 +4494,14 @@ export function mapgenPropCells(p, M, N = 2) {
       }
     return out;
   }
+  if (M && M.posts)
+    for (const o of M.posts) {
+      const [px, pz] = turnedPoint(p, (o.x / ppu) * s * (p.f ? -1 : 1), 0.15);
+      disc(px, pz, Math.max(0.3, (o.r || 0.4) * s));
+    }
   const r = Math.max(0.3, M && M.solid != null ? M.solid * s : M && M.flat ? 0 : ((M && M.shadow) || 0) * 0.42 * s),
     [cx, cz] = turnedPoint(p, 0, r * 0.2);
-  for (let j = Math.floor((cz - r) * N); j < Math.ceil((cz + r) * N); j++)
-    for (let i = Math.floor((cx - r) * N); i < Math.ceil((cx + r) * N); i++)
-      if (Math.hypot((i + 0.5) / N - cx, (j + 0.5) / N - cz) <= r) out.push([i, j]);
+  disc(cx, cz, r);
   return out;
 }
 /**
@@ -4596,7 +4604,7 @@ export function mapgenStagePieces(G, sc, scenery, D) {
       }
       if (q.say) Object.assign(p, { act: 'sign', say: q.say });
       if (q.water && !(G.F[mapgenCellAt(G, p.x, p.z)] & 4)) return null;
-      const cells = mapgenPropCells(p, M, N);
+      const cells = mapgenPropCells(p, M, N, scenery.ppu || 34);
       if (!cells.every(([i, j]) => cellOK(i, j, !!q.water))) return null;
       add.push(p);
       cover.push(...cells);
@@ -4663,9 +4671,17 @@ export function mapgenStagePieces(G, sc, scenery, D) {
         .map(o => [rnd.next(), o])
         .sort((a, b) => a[0] - b[0])
         .map(a => a[1]);
-    /* each spot as drawn, then mirrored (left for right) */
+    /* each spot as drawn, then mirrored (left for right); a piece with people first the way that has them nearer the
+       camera (its south side, low z) than its props, so a booth's picture doesn't hide them */
+    const lead = (/** @type {any} */ sp, /** @type {number} */ flip) => {
+      if (!S.people || !S.people.length) return 0;
+      const O = anchor(S, sp),
+        z = (/** @type {any} */ q) => turnedPoint(O, q.x * flip, q.z)[1],
+        mean = (/** @type {any[]} */ L) => L.reduce((a, q) => a + z(q), 0) / L.length;
+      return mean(S.people) - mean(S.props);
+    };
     found: for (const sp of cands)
-      for (const flip of [1, -1]) {
+      for (const flip of Number.isFinite(sp.face) && lead(sp, -1) < lead(sp, 1) ? [-1, 1] : [1, -1]) {
         const F = fit(S, sp, flip);
         if (!F) continue;
         put(id, sp, F);

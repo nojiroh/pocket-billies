@@ -8,11 +8,13 @@
    "r": 4.5,
    "biomes": {"meadow":3,"thicket":3,"autumn":3,"lake":2,"ridge":2,"tundra":2,"jungle":2,"default":1},
    "props": [
-    {"k":"tent","x":0.8,"z":2.4},
-    {"k":"campfire","x":-0.8,"z":1.2},
-    {"k":"log","x":-2.6,"z":1.6,"rot":75},
-    {"k":"stump","x":0.6,"z":0.6},
-    {"k":"firewood_b","x":-2.2,"z":3.4}
+    {"k":"campfire","x":0,"z":1.6},
+    {"k":"log","x":-1.9,"z":1.2,"rot":70},
+    {"k":"log","x":1.7,"z":2.6,"rot":-60},
+    {"k":"stump","x":1,"z":0.6},
+    {"k":"laundry_line","x":0,"z":3.8},
+    {"k":"firewood_b","x":-2.4,"z":3.2},
+    {"k":"crate","x":2.6,"z":0.8}
    ]
   },
   "farm_pen": {
@@ -96,15 +98,15 @@
    "r": 3.8,
    "biomes": {"default":1},
    "props": [
-    {"k":"tollbooth","x":-1.8,"z":1.6},
-    {"k":"bollard","x":-0.5,"z":0.3},
+    {"k":"tollbooth","x":-2.5,"z":1.2},
+    {"k":"bollard","x":-0.9,"z":0.3},
     {"k":"bollard","x":1.7,"z":0.3},
     {"k":"flag_pole","x":2.6,"z":2.2},
-    {"k":"crates","x":0.4,"z":3},
+    {"k":"crates","x":-1.2,"z":3},
     {"k":"signpost","x":2.9,"z":0.6,"say":"Bureau of Lost, Found and Beans. Checkpoint. Have your forms ready."}
    ],
    "people": [
-    {"who":"clerk","x":0.6,"z":1.3,"event":"bureau_checkpoint","say":"Agent: You've been processed. Move along."}
+    {"who":"clerk","x":0.4,"z":0.9,"event":"bureau_checkpoint","say":"Agent: You've been processed. Move along."}
    ]
   }
  }
