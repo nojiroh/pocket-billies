@@ -121,7 +121,7 @@
       "on": 1,
       "along": "arc",
       "side": "in",
-      "off": 9,
+      "off": 15,
       "span": 140,
       "at": 40
      },
@@ -130,7 +130,7 @@
       "off": 6,
       "front": 6
      },
-     "lanes": 2,
+     "lanes": 3,
      "tol": 90
     },
     "landmarks": {
