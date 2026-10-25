@@ -29,6 +29,26 @@ test('graft-art: graftKey is stable whatever the order, empty for none', () => {
   assert.equal(G.graftKey({}), '');
 });
 
+test('graft-art: graftParse reads a graftKey back, null for nothing', () => {
+  assert.deepEqual(G.graftParse('front=swift1,sig=zuck2'), { front: 'swift1', sig: 'zuck2' });
+  assert.equal(G.graftKey(G.graftParse('sig=zuck2,front=swift1')), 'front=swift1,sig=zuck2');
+  assert.equal(G.graftParse(''), null);
+  assert.equal(G.graftParse('front'), null);
+});
+
+test('graft-art: graftSet and graftOf keep a graft per Billie object, never on the Billie', () => {
+  const m = { uid: 'a', sp: 'musk0' },
+    twin = { uid: 'a', sp: 'musk0' };
+  assert.equal(G.graftOf(m), '');
+  G.graftSet(m, 'front=swift1');
+  assert.equal(G.graftOf(m), 'front=swift1');
+  assert.equal(G.graftOf(twin), '', 'by object, not uid: a reloaded save has none');
+  assert.deepEqual(Object.keys(m), ['uid', 'sp'], 'nothing is written on the Billie, so nothing reaches the save');
+  G.graftSet(m, '');
+  assert.equal(G.graftOf(m), '');
+  assert.equal(G.graftOf(null), '');
+});
+
 test('graft-art: graftKind reads partKits slots, and a form\'s "slots" first (the slug\'s tail is its back)', () => {
   const ox = G.graftRecipe(B, 'musk0'),
     slug = B.forms.find((/** @type {any} */ f) => f.slots?.tail === 'back');

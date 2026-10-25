@@ -13,19 +13,27 @@
 /** @typedef {Record<string, string>} Graft slot (rules.json parts.slots) -> donor species id */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
+  GRAFTS: [() => GRAFTS],
   GRAFT_SLOTS: [() => GRAFT_SLOTS],
   // @ts-expect-error -- replaced on purpose
   graftDonors: [() => graftDonors, v => (graftDonors = v)],
   // @ts-expect-error -- replaced on purpose
-  graftForm: [() => graftForm, v => (graftForm = v)],
+  graftForm: [() => graftForm, v => ((graftForm = v), provide({ graftForm }))],
   graftKey: [() => graftKey],
   // @ts-expect-error -- replaced on purpose
   graftKind: [() => graftKind, v => (graftKind = v)],
+  graftOf: [() => graftOf],
+  // @ts-expect-error -- replaced on purpose
+  graftParse: [() => graftParse, v => ((graftParse = v), provide({ graftParse }))],
   graftRecipe: [() => graftRecipe],
+  // @ts-expect-error -- replaced on purpose
+  graftSet: [() => graftSet, v => (graftSet = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ graftForm, graftParse });
 /* to-module: end */
 /** the slots SP-1 grafts */
 export const GRAFT_SLOTS = ['front', 'back', 'sig'];
@@ -49,6 +57,30 @@ export const graftKey = g =>
         .map(s => `${s}=${g[s]}`)
         .join(',')
     : '';
+
+/** a graft code (graftKey) back as a graft; null for '' or a code with no slot=donor pair @param {string | null | undefined} key
+ * @returns {Graft | null} */
+export function graftParse(key) {
+  if (!key) return null;
+  /** @type {Graft} */
+  const g = {};
+  for (const pair of key.split(',')) {
+    const [slot, sp] = pair.split('=');
+    if (slot && sp) g[slot] = sp;
+  }
+  return Object.keys(g).length ? g : null;
+}
+
+/* SP-1: this session's grafts, by Billie object (or wild encounter), as graft codes. Never saved: saveFill keeps a
+   Billie's unknown fields, so a field would land in the save; SP-2 gives Billy a validated `graft` instead. */
+export const GRAFTS = new WeakMap();
+/** a Billie's graft code, '' for none @param {object | null | undefined} m */
+export const graftOf = m => (m && typeof m === 'object' && GRAFTS.get(m)) || '';
+/** give a Billie (or an encounter) a graft code; '' takes it off @param {object} m @param {string} key */
+export function graftSet(m, key) {
+  if (key) GRAFTS.set(m, key);
+  else GRAFTS.delete(m);
+}
 
 /** the recipe of a species with its grafted slots' parts from their donors, or null when a donor or a slot doesn't fit
  * (no recipe, no part of that kind) @param {{ forms: KitForm[] }} B @param {PartKits} K @param {string} sp
