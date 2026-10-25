@@ -5,7 +5,7 @@
 import { expose } from '../test-globals.js';
 import { freeNearRing, groundOcclusionTexture, provide } from '../hooks.js';
 import { clamp } from '../util.js';
-import { seaCalmAt, seaSkirt } from '../logic/sea.js';
+import { SEA_RAMP, seaCalmAt, seaSkirt, seaSmooth } from '../logic/sea.js';
 import { stepGridCorners } from '../logic/step-grid.js';
 import {
   GROUND_BORDER_M,
@@ -628,11 +628,12 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
     if (/rock|boulder|stone|pebble/.test(p.k + ' ' + (M.group || '')) && isW(p.x, p.z))
       rocks.push([p.x, p.z, 0.45 + (0.25 * (M.w || 32)) / 32]);
   }
-  const rockFoam = (x, z) => {
+  /* WA-4: in the sea the foam reaches further (`reach` metres; its shader turns it into rings that come and go with the swell) */
+  const rockFoam = (x, z, reach = 0.6) => {
     let f = 0;
     for (const r of rocks) {
       const d = Math.hypot(x - r[0], z - r[1]);
-      if (d < r[2] + 0.6) f = Math.max(f, 1 - Math.max(0, d - r[2]) / 0.6);
+      if (d < r[2] + reach) f = Math.max(f, 1 - Math.max(0, d - r[2]) / reach);
     }
     return f;
   };
@@ -716,7 +717,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
         const vx = i * 0.5 + a * 0.5,
           vz = j * 0.5 + c * 0.5;
         let sh = 0,
-          dd = 0;
+          dd = 0,
+          rs = 0;
         for (const [p, q2] of [
           [-0.25, -0.25],
           [0.25, -0.25],
@@ -727,9 +729,21 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           const ii = sea ? clamp(Math.floor((vx + p) * 2), 0, W2 - 1) : Math.floor((vx + p) * 2),
             jj = sea ? clamp(Math.floor((vz + q2) * 2), 0, H2 - 1) : Math.floor((vz + q2) * 2);
           if (!isW(vx + p, vz + q2)) sh++;
-          else if (ii >= 0 && jj >= 0 && ii < W2 && jj < H2) dd += dep[jj * W2 + ii];
+          else if (ii >= 0 && jj >= 0 && ii < W2 && jj < H2) {
+            dd += dep[jj * W2 + ii];
+            if (ter((ii + 0.5) * 0.5, (jj + 0.5) * 0.5) === 'w') rs++;
+          }
         }
-        const rf = rocks.length && (kd === 1 || kd === 5 || kd === 0) ? rockFoam(vx, vz) : 0;
+        /* water track WA-4: the sea's shallows (w, wadeable) ride below the kind (kind - shallows * 0.45) for the reef's
+           turquoise; a calm cove or a tide pool (above the kind) keeps its calm instead */
+        const calm = pool ? 0.4 : calmK(kd, vx, vz);
+        const rf = !rocks.length
+          ? 0
+          : kd === 1 || kd === 5 || kd === 0
+            ? rockFoam(vx, vz)
+            : kd === SEA_KIND
+              ? rockFoam(vx, vz, 1.4)
+              : 0;
         wv.push(
           vx,
           run
@@ -742,7 +756,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           fw[0],
           fw[1],
           dd / 4,
-          kd + (pool ? 0.4 : calmK(kd, vx, vz))
+          kd + (calm || (kd === SEA_KIND ? (-0.45 * rs) / 4 : 0))
         );
       }
       wi.push(b0, b0 + 2, b0 + 1, b0 + 1, b0 + 2, b0 + 3);
@@ -814,8 +828,19 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           }
         }
         /* water track WA-4: wet sand the high tide covers gets a skin of sea just over the sand, however far from the
-           water (the shaders keep it only while the tide's line lies past it) */
-        const tc = tide && tide.cover[Math.floor(cz) * W + Math.floor(cx)];
+           water, and half a metre past it so the rounded line never ends at a tile's edge (the shaders keep it only
+           while the tide's line lies past it) */
+        let tc = false;
+        if (tide && tide.nCover)
+          for (let b = -1; b <= 1 && !tc; b++)
+            for (let a = -1; a <= 1; a++) {
+              const ti = Math.floor(cx + a * 0.5),
+                tj = Math.floor(cz + b * 0.5);
+              if (ti >= 0 && tj >= 0 && ti < W && tj < H && tide.cover[tj * W + ti]) {
+                tc = true;
+                break;
+              }
+            }
         if (tc) {
           const b0 = wv.length / 8;
           for (const [a, c] of [
@@ -826,7 +851,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           ]) {
             const vx = i * 0.5 + a * 0.5,
               vz = j * 0.5 + c * 0.5;
-            wv.push(vx, tideY(vx, vz), vz, 0, 0, 0, 0, SEA_KIND + calmK(SEA_KIND, vx, vz));
+            wv.push(vx, tideY(vx, vz), vz, 0, 0, 0, 0, SEA_KIND + (calmK(SEA_KIND, vx, vz) || -0.45));
           }
           wi.push(b0, b0 + 2, b0 + 1, b0 + 1, b0 + 2, b0 + 3);
           continue;
@@ -900,7 +925,28 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       },
       S = seaSkirt(W, H, edgeDep),
       b0 = wv.length / 8;
-    for (let q = 0; q < S.x.length; q++) wv.push(S.x[q], y, S.z[q], 0, 0, 0, S.dep[q], kd + calmK(kd, S.x[q], S.z[q]));
+    /* WA-4: the shallows' share at a point on the edge, as the scene's water vertex there works it out, fading out
+       over the skirt's ramp, so the reef's turquoise meets the skirt without a seam */
+    const edgeReef = (vx, vz) => {
+        let rs = 0;
+        for (const [p, q2] of [
+          [-0.25, -0.25],
+          [0.25, -0.25],
+          [-0.25, 0.25],
+          [0.25, 0.25],
+        ]) {
+          const ii = clamp(Math.floor((vx + p) * 2), 0, W2 - 1),
+            jj = clamp(Math.floor((vz + q2) * 2), 0, H2 - 1);
+          if (isW(vx + p, vz + q2) && ter((ii + 0.5) * 0.5, (jj + 0.5) * 0.5) === 'w') rs++;
+        }
+        return rs / 4;
+      },
+      r0 = kd === SEA_KIND ? Array.from({ length: S.n }, (_, i) => edgeReef(S.x[i], S.z[i])) : null;
+    for (let q = 0; q < S.x.length; q++) {
+      const cm = calmK(kd, S.x[q], S.z[q]),
+        rf = r0 ? r0[q % S.n] * (1 - seaSmooth(S.o[q] / SEA_RAMP)) : 0;
+      wv.push(S.x[q], y, S.z[q], 0, 0, 0, S.dep[q], kd + (cm || -0.45 * rf));
+    }
     for (let m = 0; m < S.idx.length; m++) wi.push(b0 + S.idx[m]);
     T.seaSkirt = { level: y, rings: S.rings, n: S.n, out: S.o[S.o.length - 1] };
   }

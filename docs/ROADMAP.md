@@ -61,8 +61,9 @@ town node needs it.
   `wa-N-done`. Branch `track/water`.
 - **Splicing track** (docs/phases/splicing-track.md, the owner's brief and answers 2026-10-25): Genes from kit parts
   with readable traits, wild Billies with mixed parts (Graft, Chimera), a Gene Bank building paid in DNA, a Stability
-  budget with Unstable abominations past it, Augments from the bots' salvage. SP-1 (an art spike on the phone) first;
-  SP-5 waits for RL-14. Tags `sp-N-done`. Branch `track/splicing`.
+  budget with Unstable abominations past it, Augments from the bots' salvage. SP-1 (an art spike on the phone) built
+  2026-10-25 on `ccr-dde1a5bd-nx5zdl` (the owner's word: `track/splicing` didn't exist yet), waiting on the phone's
+  bake times for its exit; SP-5 waits for RL-14. Tags `sp-N-done`. Branch `track/splicing`.
 - **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
   out of any room's doorway; "Go outside" stays with the card closed) done 2026-10-24; TW-1 (a town layout: street,
   square, houses with gardens, mapgen's `town` kind) done 2026-10-24; TW-2 (townsfolk, animals, chat) and TW-3 (run
@@ -121,9 +122,18 @@ town node needs it.
   waterfalls and detail), HB-4a/4b (island sketches, then the island rebuilt: doors to the camera, a second street, no
   lookout), HB-5 (building variety), HB-6 (a natural pasture fence), HB-7 (the train station and one flying train per
   region theme), HB-8 (departure through the portal and the return), HB-9 (the phone look pass). Planned 2026-10-25.
-  HB-1 (the pin, decals) done 2026-10-25 on the planning session's branch, merged (PR #193). HB-2 (the run's loading
-  screen: scenes made over frames, the landing waits for its map, models, the run's world map and the walk view, a 20 s
-  cap; fly, then load) done 2026-10-25 on `track/hub`, waiting on the owner's phone test. Tags `hb-N-done`. Branch `track/hub`.
+  HB-1 (the pin, decals) done 2026-10-25 on the planning session's branch, merged (PR #193). HB-2 (the run's loading screen: scenes made
+  over frames, the landing waits for its map, models, the run's world map and the walk view, a 20 s cap; fly, then
+  load) done 2026-10-25 on `track/hub`, waiting on the owner's phone test. HB-4a (sketches; the pick: B, East
+  crescent, with a town square) and HB-4b (the island rebuilt as B2: a 12 m square, 18 buildings, every door facing
+  out, no lookout, the coast road round the station) done 2026-10-25. HB-7's art and sheet (Skyline Station, the
+  sky rail, the tear portal, five trains; runs start at the station) done 2026-10-25 on `art/hub-station-trains`.
+  HB-5's art half (cottage variants, the Workshop, Gene Bank, lighthouse and windmill models, five rooms) on
+  `art/hub-buildings` and HB-6 (the natural pasture fence, a gentle swell) on `props/hub-fence`, done 2026-10-25.
+  HB-3 (the world map: real height, a lagoon ring fading into mist, three silent falls, trees, fences, bridges, World
+  map settings, frame times in the Bowl map test) done 2026-10-25 on `art/hub-world-map`, waiting on the owner's phone test.
+  All four merged together on `track/hub-merge` (2026-10-25, Copperleaf rebuilt by the tools), merged into main (PR #201);
+  placing the station and the new buildings on the new island comes after. Tags `hb-N-done`. Branch `track/hub`.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all

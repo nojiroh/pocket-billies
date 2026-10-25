@@ -9,9 +9,9 @@
    Billie is already as baked. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
+import { kitBakeWhole } from '../../game/js/logic/kit-assemble.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { kitBakeWhole } from '../../game/js/logic/kit-assemble.js';
 import { ACTIONS, changed, clone, commit, render, snapshotParts, studioState, toast } from './studio-app.js';
 import { artSteps, pictureImage } from './pixel-canvas.js';
 import { atlasGet, loadedAtlas, markArt } from './sprites.js';

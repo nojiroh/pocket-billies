@@ -166,6 +166,10 @@ export const BOWL_PLOT_PROPS = {
   well: ['well'],
   farmhouse: ['house_cottage'],
   barn: ['barn'],
+  /* HB-4b: the inn and the library (HB-5 adds the Workshop's, the Gene Bank's, the station's, the lighthouse's and the
+     windmill's models) */
+  inn: ['inn'],
+  library: ['library'],
 };
 /** @typedef {{ k: string, x: number, z: number, turn: number }} BowlPlotThing */
 /** the buildings the bowl adds to an island map: one on every plot no building prop stands on yet, and the barn in the

@@ -19,7 +19,7 @@ import { join } from 'node:path';
 import { readGameData, ROOT } from './data-files.mjs';
 import { islandPointIn, islandProblems } from '../game/js/logic/island.js';
 import { hashString } from '../game/js/logic/rng.js';
-import { pastureProps } from './build-pasture.mjs';
+import { pastureGround, pastureProps } from './build-pasture.mjs';
 import { islandDress } from './island-dress.mjs';
 
 const INPUT = join(ROOT, 'tools/data/copperleaf-town.json');
@@ -152,6 +152,10 @@ const pairs = [
   [oldBuildings.find(B => B.act === 'home'), plotOf('home')],
   [oldBuildings.find(B => B.k === 'well'), well],
   [{ k: 'shop', x: 0, z: 0, label: 'General store' }, plotOf('shop')],
+  /* HB-4b: the inn and the library (the archive) stand on their plots as the existing models, closed (HB-5 gives them
+     their rooms and names); the Workshop's, the Gene Bank's, the station's, the lighthouse's and the windmill's plots
+     wait for their models (HB-5, HB-7) */
+  ...['inn', 'library'].filter(k => plotOf(k)).map(k => [{ k, x: 0, z: 0 }, plotOf(k)]),
   ...oldCottages.map((B, i) => [B, townHouses[i]]),
   /* the new cottages: the two kinds and their looks taken in turn */
   ...[...townHouses.slice(oldCottages.length), ...otherHouses].map((L, i) => [
@@ -200,6 +204,9 @@ for (const [B, L] of pairs) {
   if (B.act === 'fly') {
     const ship = OLD.find(p => p.k === 'airship');
     props.push({ ...ship, x: N.x, z: N.z, ...(N.rot ? { rot: N.rot } : {}) });
+    /* HB-7: the airship is scenery; runs start at Skyline Station beside it */
+    delete N.act;
+    delete N.label;
   }
   if (C[N.k] && C[N.k].door) {
     const dx = (C[N.k].door.x / PPU) * (N.s || 1) * (N.f ? -1 : 1),
@@ -222,6 +229,35 @@ for (const [B, L] of pairs) {
     props.push(q);
   }
 }
+/* ---------- HB-7: Skyline Station beside the airship mast, until HB-4b gives it its headland ---------- */
+/* turned as the mast is, on the open ground nearest it: its whole footprint on grass, meadow, heather or forest floor
+   (no street, tall grass, rock, water or plot), 2 m clear of every building and 4 m of the mast */
+const station = (() => {
+  const mast = props.find(p => p.k === 'airship_station'),
+    [bw, bd] = boxOf('train_station'),
+    others = props.filter(p => boxOf(p.k) && p !== mast && p.k !== 'airship');
+  if (!mast) throw new Error('no airship mast to put the station beside');
+  const fits = q => {
+    for (let v = -1; v <= bd + 1; v += 0.5)
+      for (let u = -bw / 2 - 1; u <= bw / 2 + 1; u += 0.5) {
+        const [x, z] = world(q, u, v);
+        if (!'gGEHyMLfCB'.includes(tileAt(x, z)) || plots.some(L => inPlot(L, x, z, 0.5))) return false;
+        if (others.some(B => footDist(B, x, z) < 2) || footDist(mast, x, z) < 4) return false;
+      }
+    return true;
+  };
+  for (let d = 4; d <= 40; d += 0.5)
+    for (let k = 0; k < 48; k++) {
+      const a = (k / 48) * Math.PI * 2,
+        q = { k: 'train_station', x: r2(mast.x + Math.cos(a) * d), z: r2(mast.z + Math.sin(a) * d) };
+      if (mast.rot) q.rot = mast.rot;
+      if (fits(q)) return { ...q, act: 'station', label: 'Skyline Station' };
+    }
+  throw new Error('no room for Skyline Station within 40 m of the airship mast');
+})();
+props.push(station);
+const byStation = (x, z, m) => footDist(station, x, z) < m;
+
 /* the farm patch's crops by the barn, the barn in its zone beside the pasture */
 const barnZone = G.zones.find(Z => Z.k === 'barn'),
   pasture = G.zones.find(Z => Z.k === 'pasture'),
@@ -230,8 +266,12 @@ const barnZone = G.zones.find(Z => Z.k === 'barn'),
 {
   const B = oldBuildings.find(b => b.act === 'ranch'),
     [cx, cz] = mid(barnZone.poly),
-    /* its doors toward the farmhouse */
-    a = Math.atan2(farm.z - cz, farm.x - cx) / RAD,
+    /* its doors toward the farmhouse; HB-4b, with the town's quarter turns (islandGen town.quarter): the quarter turn
+       nearest facing out from the orbit's pivot, as every plot's */
+    pv = G.cam.orbit.c,
+    a = G.islandGen.dials.town?.quarter
+      ? Math.round(Math.atan2(cz - pv[1], cx - pv[0]) / (Math.PI / 2)) * 90
+      : Math.atan2(farm.z - cz, farm.x - cx) / RAD,
     L = { k: 'barn', x: cx, z: cz, w: 12, d: 12, a, i: -1 };
   const N = place(B, L);
   props.push(N);
@@ -288,7 +328,7 @@ const barnZone = G.zones.find(Z => Z.k === 'barn'),
           d = Math.hypot(dx, dz);
         if (best && d >= best[2]) continue;
         if (!islandPointIn(townZone.poly, x, z) || !'gGE'.includes(tileAt(x, z))) continue;
-        if (plots.some(L => inPlot(L, x, z, 4)) || !clear(x, z, 4)) continue;
+        if (plots.some(L => inPlot(L, x, z, 4)) || byStation(x, z, 4) || !clear(x, z, 4)) continue;
         best = [x, z, d];
       }
     if (!oak || !best) throw new Error('no room for the great oak by the square');
@@ -300,7 +340,8 @@ const barnZone = G.zones.find(Z => Z.k === 'barn'),
       x = townZone.poly.reduce((m, p) => Math.min(m, p[0]), 1e9) + ((h % 1000) / 1000) * 100,
       z = townZone.poly.reduce((m, p) => Math.min(m, p[1]), 1e9) + ((Math.floor(h / 1000) % 1000) / 1000) * 90;
     if (!islandPointIn(townZone.poly, x, z) || !'gGE'.includes(tileAt(x, z))) continue;
-    if (plots.some(L => inPlot(L, x, z, 3)) || spots.some(s => Math.hypot(s[0] - x, s[1] - z) < 9)) continue;
+    if (plots.some(L => inPlot(L, x, z, 3)) || byStation(x, z, 3) || spots.some(s => Math.hypot(s[0] - x, s[1] - z) < 9))
+      continue;
     let near = false;
     for (let a = 0; a < 8 && !near; a++)
       near =
@@ -318,7 +359,7 @@ const kept = props.filter(p => {
   const t = tileAt(p.x, p.z);
   if (STREET.includes(t)) return !++left.street;
   if (WATER.includes(t) || onBridge(p.x, p.z)) return !++left.water;
-  if (plots.some(L => L.i !== p._from && inPlot(L, p.x, p.z, 0.3))) return !++left.plot;
+  if (plots.some(L => L.i !== p._from && inPlot(L, p.x, p.z, 0.3)) || byStation(p.x, p.z, 0.5)) return !++left.plot;
   /* nothing in front of a door: 1.6 m either side of it, 3 m out */
   for (const [ax, az, fx, fz] of doorFronts) {
     const u = (p.x - ax) * fx + (p.z - az) * fz,
@@ -498,6 +539,7 @@ const GROUND = [
   'stepm',
   'grassPatches',
   'checks',
+  'landmarks',
 ];
 const sc = {};
 for (const k of [
@@ -520,8 +562,11 @@ for (const k of [
   if (k in TOWN) sc[k] = TOWN[k];
 for (const k of GROUND) if (k in G) sc[k] = G[k];
 Object.assign(sc, { edgeExits: [], bridges: bridgesOut, props: kept, people, npcSpots, life });
-/* IS-8: the fenced pasture, a step of its own limited to the pasture zone (tools/build-pasture.mjs) */
-sc.props = pastureProps(sc, D.scenery).props;
+/* IS-8: the fenced pasture, a step of its own limited to the pasture zone (tools/build-pasture.mjs); HB-6: then its
+   field's ground, gently uneven */
+const fenced = pastureProps(sc, D.scenery);
+sc.props = fenced.props;
+pastureGround(sc, fenced.gap);
 /* the walking checks are the island's (build-island.mjs: from the square to each plot's front, the barn, the summit,
    the dock); the in-game full test walks from the hub to every door besides (self-test.js stGeometry). One that ends
    where a building now stands (the barn's zone's middle) ends at its door instead */

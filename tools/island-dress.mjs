@@ -1,6 +1,6 @@
 // Island track IS-9: the hub island's dressing. Puts the props that make the ground read as what it is (the forest's
 // trees and its floor, beach grass on the dunes, driftwood and shells on the sand, rocks on the rocky shore, tide pool
-// rims, boulders and scree on the mountain, cairns by the trail, the summit lookout, bushes on the heath, flowers and
+// rims, boulders and scree on the mountain, cairns by the trail, bushes on the heath, flowers and
 // the odd tree in the meadows) onto an island map that already carries its town (tools/build-copperleaf.mjs runs this
 // as its last step). Seeded: the same ground, town and seed give the same props.
 //
@@ -409,48 +409,7 @@ export function islandDress(sc, scenery, o = {}) {
       }
     }
   }
-  /* the summit lookout on the flat top, beside where the trail arrives (the summit spot itself stays free) */
-  {
-    const S = (sc.spots || []).find(s => s.kind === 'summit');
-    if (S && !town.some(p => p.k === 'summit_lookout')) {
-      let done = null;
-      /* on the top's own level (the crags cut into it aside), 3.5 to 8 m from the summit spot, off the trail; the
-         flattest such spot, nearest the summit */
-      const M = C.summit_lookout,
-        R = M ? mapgenRadius(M, 1) : 2,
-        top = groundAt(S.x, S.z);
-      let best = Infinity;
-      for (let dz = -8; dz <= 8; dz += 0.5)
-        for (let dx = -8; dx <= 8; dx += 0.5) {
-          const d = Math.hypot(dx, dz),
-            x = S.x + dx,
-            z = S.z + dz;
-          if (!M || d < 3.5 || d > 8) continue;
-          let lo = 1e9,
-            hi = -1e9,
-            trail = false;
-          for (let b = -R; b <= R; b += 0.5)
-            for (let a = -R; a <= R; a += 0.5) {
-              if (Math.hypot(a, b) > R) continue;
-              const y = groundAt(x + a, z + b);
-              lo = Math.min(lo, y);
-              hi = Math.max(hi, y);
-              if (STREETS.includes(tileAt(x + a, z + b))) trail = true;
-            }
-          if (trail || Math.abs(groundAt(x, z) - top) > 0.6 || !occFree(x, z, R)) continue;
-          const score = (hi - lo) * 4 + d * 0.1;
-          if (hi - lo < 1.2 && score < best) {
-            best = score;
-            done = { k: 'summit_lookout', x: r2(x), z: r2(z), dress: 1 };
-          }
-        }
-      if (done) {
-        placed.push(done);
-        occAdd(done.x, done.z, mapgenRadius(C.summit_lookout, 1));
-        counts.summit_lookout = 1;
-      } else notes.push('no room for the summit lookout by the summit');
-    }
-  }
+  /* HB-4b: no summit lookout (the owner): the summit spot stays free, the orbit's pivot; the model stays in the Studio */
 
   /* ---------- nothing shut in: what the walk reached without the dressing it still reaches ---------- */
   const reachOf = props => {

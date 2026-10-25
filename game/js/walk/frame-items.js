@@ -148,6 +148,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
       cross: !far && S.cross,
       bld3: !far && !!(M.build && M.box) && typeof buildingsOn === 'function' && buildingsOn(),
     });
+    if (S && S.spin) out[out.length - 1].spin = S.spin;
     if (!far) hugSlope(out[out.length - 1], C);
     /* v46: a building whose solid or front isn't made yet (a few are made per frame) shows as its picture meanwhile, never as nothing */
     if (!far) {

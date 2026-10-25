@@ -482,6 +482,8 @@ export interface RegionTheme {
   types: Record<string, number>;
   ends?: string[];
   nouns?: string[];
+  /** HB-7: its sky train from Skyline Station: the prop (scenery.json, group sky_train) and its name */
+  train?: { k: string; name: string };
 }
 
 /** RL-R1: regions.json, what a run's region is made from (logic/run-region.js runRegionMake) */
@@ -641,6 +643,8 @@ export interface MapProp {
   /** flipped */
   f?: number | boolean;
   rot?: number;
+  /** HB-6: a model's lean in degrees: toward its own +x, toward its back (+z) (logic/prop-turn.js tiltSpin) */
+  tilt?: [number, number];
   /** variant */
   v?: number;
   act?: string;
@@ -1437,6 +1441,9 @@ export interface PropKind {
   model?: string;
   solid?: number;
   box?: number[];
+  /** HB-6: a model that spans its box's width (a fence rail): it rests on the ground under each end, tipped between
+   * them (logic/prop-turn.js spanFit) */
+  restEnds?: number;
   /** the rest: door, fx, build, layers, glow, vol... read by the renderers and the Studio */
   [key: string]: any;
 }
