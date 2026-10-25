@@ -5,6 +5,7 @@ angles, the map's canvas alone, and the map's numbers (things, clumps, the lagoo
     python3 tools/look-worldmap.py OUT_DIR                     # hours 7, 13, 19, 23; angles 0, 90, 180, 270
     python3 tools/look-worldmap.py OUT_DIR --hours=13 --angles=0,180
     python3 tools/look-worldmap.py OUT_DIR --close             # zoomed in on the town too (one more picture an hour)
+    python3 tools/look-worldmap.py OUT_DIR --close --at=120,52  # ... zoomed in over that spot of the island map (metres)
     python3 tools/look-worldmap.py OUT_DIR --map=PATH.json     # another island's map file in place of copperleaf.json
                                                               # (served to the page only; nothing is written)
     python3 tools/look-worldmap.py OUT_DIR --eng='{"worldMap":{"treeFar":120}}'   # Engine dials, as a player's own
@@ -25,6 +26,7 @@ ANGLES = [float(a) for a in opt('angles', '0,90,180,270').split(',')]
 CLOSE = '--close' in ARGS
 MAP = opt('map', None)
 ENG = opt('eng', None)
+AT = opt('at', None)
 W, H = 390, 760
 NAV = "document.querySelector('#nav')?.shadowRoot?.querySelector('button[data-t=map]')"
 
@@ -67,6 +69,9 @@ def main():
         # everything but the map's canvas hidden (the card, the bar)
         # (the map's own canvas holds the pins and labels; the graphics card's canvas under it the island)
         pg.evaluate("(()=>{const C=[worldMap.cv,gpuState.cv].filter(Boolean);for(const el of document.body.querySelectorAll('*'))if(!C.some(cv=>el===cv||el.contains(cv)))el.style.setProperty('visibility','hidden','important');for(const cv of C)for(let e=cv;e;e=e.parentElement)e.style.setProperty('visibility','visible','important');return 0})()")
+        if AT:
+            # the orbit's pan limit lifted for these pictures alone, so a spot near the coast can be framed
+            pg.evaluate("(()=>{FLOAT_CAMERA.pan=1.3;return 0})()")
         numbers = pg.evaluate(NUMBERS)
         print('numbers', numbers, flush=True)
 
@@ -79,7 +84,7 @@ def main():
             views = [(a, False) for a in ANGLES] + ([(ANGLES[0], True)] if CLOSE else [])
             for a, close in views:
                 # the camera still (no slow idle turn), from the island's own home at that angle
-                pg.evaluate(f"(()=>{{const F=worldBowl.ground.float;worldBowl.goal=null;worldBowl.tween=null;worldBowl.bench={{turn:0}};let c=bowlCamHomeFloat(F,{a}*Math.PI/180);if({str(close).lower()})c=bowlCamClamp({{...c,dist:c.dist*.45,tilt:c.tilt*.8}});worldBowl.cam=c;worldBowl.dirty=true;return 0}})()")
+                pg.evaluate(f"(()=>{{const F=worldBowl.ground.float;worldBowl.goal=null;worldBowl.tween=null;worldBowl.bench={{turn:0}};let c=bowlCamHomeFloat(F,{a}*Math.PI/180);if({str(close).lower()}){{c={{...c,dist:c.dist*.45,tilt:c.tilt*.8}};if({json.dumps(AT)}){{const [mx,mz]={json.dumps(AT)}.split(',').map(Number),g=worldBowl.ground,M=gameData.maps[g.islandMap],p=bowlMapPoint(worldBowl.spots[F.i],M,mx,mz,1000);c={{...c,tx:p[0],ty:p[1],dist:c.dist*.5,tilt:70*Math.PI/180}}}}c=bowlCamClamp(c)}}worldBowl.cam=c;worldBowl.dirty=true;return 0}})()")
                 settle()
                 name = f"h{int(hr):02d}-a{int(a):03d}{'-close' if close else ''}"
                 box = pg.evaluate("(()=>{const r=worldMap.cv.getBoundingClientRect();return [r.x,r.y,r.width,r.height]})()")
