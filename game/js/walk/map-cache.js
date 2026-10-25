@@ -428,6 +428,7 @@ export const MAP_CACHE_FIELDS = [
   'water',
   'fallMesh',
   'falls',
+  'fallSets',
   'fishHomes',
   'streamCells',
   'springCells',
