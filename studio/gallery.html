@@ -228,6 +228,12 @@
   </div>
 </section>
 
+<section class="g-sec" data-shot="loading"><h2>Loading screen</h2><p>pb-loading (HB-2), the run's loading screen, here in its box (<code>contained</code>; in the game it fills the screen): the region's name, the bar, the stages (ready, working, waiting, late) and a tip. Its picture is the slot <code>view</code> (HB-8: the carriage).</p>
+  <div class="g-stack">
+    <pb-loading contained sub="Landing" heading="The Brindle Vale" tip="Healing in a town costs Moneys. The hub's is free." value="0.55" stages='[{"id":"map","label":"The landing","state":"ready"},{"id":"models","label":"Buildings and things","state":"working"},{"id":"bowl","label":"The world map","state":"waiting"},{"id":"walk","label":"Setting down","state":"late"}]'></pb-loading>
+  </div>
+</section>
+
 </main>
 <!-- UI-1: the game data, for the look in game/data/uiTheme.json (js/theme-sheet.js writes it) -->
 <script src="../game/data/gamedata.js"></script>

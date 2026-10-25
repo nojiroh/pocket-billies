@@ -14,6 +14,7 @@ import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import {
   EVENTS,
+  FIELD_MOVES,
   ITEMS,
   LOCATIONS,
   MOVES,
@@ -103,6 +104,7 @@ import { cutscene, cutsceneTeardown } from './cutscene/director.js';
 import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
 import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
+import { runLoad } from './run-loading.js';
 import { runClinicEach, runJump, runTakeOff } from './run.js';
 import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
@@ -1234,7 +1236,8 @@ async function runFullTest(mode) {
             render();
             const hubTeam = saveData.team.map(m => m.uid).join();
             runTakeOff('SELFTESTRUN8', { rows: 5, minibosses: 1 });
-            if (!saveData.run || !(await wait(() => airshipFlight.on, 5000)))
+            /* HB-2: the run's world is made over several frames before the flight */
+            if (!saveData.run || !(await wait(() => airshipFlight.on, 30000)))
               throw new Error('the run didn’t take off');
             /* RL-13: the starter points' default pick travels; the hub's team waits in Copperleaf as it was */
             if (
@@ -1253,13 +1256,23 @@ async function runFullTest(mode) {
               landing = 'w:' + LOCATIONS[1].mapId + '*';
             if (!(await wait(() => walkView.ready && walkView.id === landing, 15000)))
               throw new Error(`landed but the view is ${walkView.id}`);
-            /* RL-R1: the run's region: the short map's 5 rows in its zones, each place its zone's biome, its name on
-               the Map tab */
-            const G = saveData.run.region;
+            /* HB-2: the landing's loading screen lifts (every stage ready, or the cap) */
+            if (!(await wait(() => runLoad.ready && !document.getElementById('runload'), RULES.run.load.capMs + 5000)))
+              throw new Error('the landing’s loading screen never lifted');
+            /* RL-R1: the run's region: the short map's 5 rows in its zones, each place its zone's biome (RL-R2: a
+               side area's its field move's), its name on the Map tab */
+            const G = saveData.run.region,
+              side = saveData.run.map.side,
+              sideBiome = side && FIELD_MOVES[side.move] ? FIELD_MOVES[side.move].biome : '';
             if (!G || G.zones.reduce((n, z) => n + z.rows, 0) !== 5)
               throw new Error(`the run's region doesn't fit its 5 rows: ${JSON.stringify(G && G.zones)}`);
-            const off = saveData.run.map.nodes.find(n => !G.zones[n.zone] || G.zones[n.zone].biome !== n.biome);
-            if (off) throw new Error(`a place on row ${off.row + 1} isn't its zone's biome`);
+            const off = saveData.run.map.nodes.find(
+              n => !G.zones[n.zone] || (n.side ? sideBiome : G.zones[n.zone].biome) !== n.biome
+            );
+            if (off)
+              throw new Error(
+                `a place on row ${off.row + 1} isn't its ${off.side ? "side area's move's" : "zone's"} biome`
+              );
             if (!renderWorldMapTab().includes(escapeHtml(G.name)))
               throw new Error('the Map tab doesn’t name the region');
             measureFromHere();
@@ -1329,7 +1342,8 @@ async function runFullTest(mode) {
               throw new Error('the pick wasn’t taken');
             uiState.modal = null;
             uiState.mq = [];
-            const boss = map.nodes.length;
+            /* RL-R2: a side area's places come after the main path's, so the boss is the main path's, not the last */
+            const boss = runWorldNode(map.nodes.findIndex(n => n.type === 'boss' && !n.side));
             runJump(boss);
             const B = trainersAt(boss)[0];
             if (!B || !B.alpha) throw new Error('no Alpha boss on the boss’s place');
