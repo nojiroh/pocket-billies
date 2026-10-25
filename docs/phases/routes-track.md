@@ -41,6 +41,15 @@ Measured on 5 seeds (20 route places) with the game's own data, `runSceneMake` a
   RL-R2a) but only at a side area's entrance.
 - **Phone cost:** towns ran at 27-28 fps on the owner's phone (phase 09). Routes already carry ~600 props.
 
+**RT-4 corrections (2026-10-25, HANDOFF):** today's stock already met "6-8 counting trainers" (8 less them, 2 at
+least) but held fewer wild Billies than before RT-2; the owner chose 10 less them, 4 at least. A place's pool is only
+4-6 species after the dex cut, so a habitat is a species' types (rules.json `run.wild.habitats`), not a share of the
+pool, and the draw is unchanged. Where a wild Billie stands was the view's alone (`walk-view.js encounterSpot` hashing
+its id); mapgen now marks habitat points (`sc.habitats`). SPECIES has no rarity: the rarer one is the pool's lowest
+weight. Ambient animals already reach every generated place (`biomes.json life`, `ambient-life.js`). Cut works only on
+the run's one side area (`run.map.side`). No find prop, no `find` act and no Bean item exist. The owner's answers:
+stock 10/4; two sessions; the reward pick's small items, no Bean; a pyramid sprite; brambles plug a pocket.
+
 **RT-3 corrections (2026-10-25, HANDOFF):** spots exist only on the finished scene (`mapgenLayoutSpots`), so pieces go
 after them, before the walkable share is measured, and clear the small plants under them; the roadmap's props `lamp`
 and `bench_*` are `lantern` and `bench_wood` / `bench_metal`; there is no camp tent (the `tent` is a market tent and read
@@ -77,7 +86,8 @@ them, `routeMin` 2, the owner's answer); pairs about one route place in three (t
 | RT-1 | Route layouts (**done** 2026-10-24) | a `layout` stage after the road: a seeded route plan (forest trail, farmland, lakeside, ledge drop, two lanes with a grass detour) that lays blockers (forest masses, fence and hedge runs with gaps and gates, rock outcrops, water) to 55-65% walkable; marked spots (pockets, dead ends, corridor pinches, clearings) in `scene.spots`; MAPGEN_VERSION bump | none | 1-2 |
 | RT-2 | Battle spots and trainers (**done** 2026-10-25) | trainers stand on RT-1's spots (a clearing, a bridge, a fence gap, a ledge top, a jetty) facing the path along the real road; 4-6 a route place by row, about half optional; trainer pairs as doubles; a class likes some spots; run sim for length and difficulty | RT-1 | 1 |
 | RT-3 | Set pieces (**done** 2026-10-25) | `setPieces.json` + schema: small hand-designed prop groups (campsite, farm pen and scarecrow, rest stop, woodcutter's clearing, fishing jetty, ruins, a Bureau checkpoint) placed as a unit, 2-4 a route by biome; a signpost with the route's name at each entrance; existing props only; shared with TW-1 | RT-1 | 1 |
-| RT-4 | Billies and finds | 6-8 visible wild Billies (counting trainers, see above); habitats (water edge, woods, grass) each draw from part of the region's dex; a rarer one in a hard pocket; items at dead ends; Cut bramble shortcuts (Grass badge); ambient animals (shared with TW-2) | RT-1, RT-2 | 1-2 |
+| RT-4a | Wild Billies (**done** 2026-10-25) | the wild stock 10 less a place's trainers, 4 at least (the owner); habitats (water edge, woods, grass) each meet their part of the place's pool; a rarer one in a hard pocket | RT-1, RT-2 | 1 |
+| RT-4b | Finds, Cut, animals | items at dead ends and pockets (the reward pick's small items, a rare find about 1 in 12: max_revive, gold_pyramid, the shining stone; the owner), shown as the pyramid's icon, once a run; Cut brambles plugging a pocket's or dead end's mouth (Grass Billie and badge), guarding the rarer one or a find; ambient animals by layout and set piece (shared with TW-2) | RT-4a | 1 |
 
 **Each session's shape**, for its own Plan Mode:
 - **RT-1.** Files: `logic/mapgen.js` (the `layout` stage between `road` and `plants`, its own stream; plants keep off
@@ -97,7 +107,12 @@ them, `routeMin` 2, the owner's answer); pairs about one route place in three (t
   spot or a clearing, turned to the road, all its props or none); the Studio's Generate card (a pieces dial). Tests:
   a piece never blocks the road or a spot; every piece's props exist in scenery.json; same seed same pieces. Could
   break: the walk grid, fps.
-- **RT-4.** Files: `logic/rules.js` (`encounterStock`), `rules.json` (`encounters.route`), `run-scenes.js` (habitat pools),
+- **RT-4b** (from RT-4a's handoff): a `find` act and a pyramid-icon sprite prop on free dead ends and pockets
+  (`routeRareSpots`' free-spot rule; mapgen can't know the trainers), `run.found` in `validRun`; per-place Cut
+  brambles (`fieldMoveOpen` knows only `run.map.side` today: a place's own opened state, its own `unless`), reach and
+  traps with the bramble solid, nothing required behind it; `life` areas from set pieces and layouts (sheep or
+  chickens in the farm pen, a cat at the campsite, crows on farmland), a cap by graphics.
+- **RT-4 (as first planned).** Files: `logic/rules.js` (`encounterStock`), `rules.json` (`encounters.route`), `run-scenes.js` (habitat pools),
   `walk-view.js encounterSpot` (spots by habitat), items on spots (the run's bag), Cut shortcuts (a bramble prop with
   act `field` on a spot, as RL-R2a's obstacle), `sc.life` animals. Tests: the stock; habitats draw only their part
   of the dex; a shortcut refused without the type or badge; items once a run. Could break: run-sim balance, the catch
@@ -111,7 +126,9 @@ them, `routeMin` 2, the owner's answer); pairs about one route place in three (t
    trainers, not fewer).
 4. RT-3: the set pieces list, and whether the Bureau checkpoint carries story (a line, an agent). **Answered 2026-10-25:** all seven,
    ruins of broken stone walls; an agent with an event.
-5. RT-4: what items lie in pockets (recommended: the reward pick's small items, a Bean as a rare find).
+5. RT-4: what items lie in pockets (recommended: the reward pick's small items, a Bean as a rare find). **Answered
+   2026-10-25:** the reward pick's small items by weight, a rare find about 1 in 12 (max_revive, gold_pyramid, the
+   shining stone), no Bean (none exists); the pyramid's icon as the find; brambles plug a pocket's mouth (RT-4b).
 
 ## Noticed, not in scope
 
