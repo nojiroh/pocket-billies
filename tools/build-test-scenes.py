@@ -110,7 +110,7 @@ def t_bridges():
 
 # ---------------------------------------------------------------- water of every kind
 def t_water():
-    s = base('test_water', 'Test: water', 40, 28, 'g', 904, far='forest')
+    s = base('test_water', 'Test: water', 58, 28, 'g', 904, far='forest')
     hub(s, 20, 3)
     s.pond(8, 8, 5, 3, ducks=3, reeds=8, lilies=6, dip=.8)                             # a still pond, deep in the middle
     for z0, h in ((14, .5), (18, 1.0), (23, 1.6)):                                      # terraces for falls of rising height
@@ -125,10 +125,21 @@ def t_water():
     s.d['waters'] = [{'x': 1.5, 'z': 14.2, 'w': 9, 'h': 3.6, 'k': 'swamp'}, {'x': 9.8, 'z': 18.6, 'w': 5.4, 'h': 4, 'k': 'spring'},
                      {'x': 1.5, 'z': 24.5, 'w': 16, 'h': 2.6, 'k': 'canal'}, {'x': 32.5, 'z': 18, 'w': 7.5, 'h': 10, 'k': 'lake'}]
     s.put('rocks', 30.2, 18.6, .6); s.put('rocks', 30.0, 13.4, .55)                     # rocks in the stream throw foam
+    # water track WA-0: a tall fall (a stream off a 6 m cliff into a plunge pool) and the kinds the west half lacks
+    s.terrace(43, 17, 59, 30, 6.0, wall=False, wobble=.3, mat=3)
+    s.stream([(50, 27.5), (50.3, 22), (49.8, 17.5), (50, 14.5)], 1.6, 1.0)
+    s.pond(50, 12.4, 3.2, 2.2, sand=False, reeds=5, lilies=0, deep=False, rocks=3, dip=.6)
+    s.blob(45.5, 6.5, 2.4, 1.6, 'w', .15); s.blob(50.8, 6.5, 2.0, 1.6, 'w', .15); s.rect(55, 2, 58, 10, 'w')
+    s.d['waters'] += [{'x': 42.5, 'z': 4.5, 'w': 6, 'h': 4, 'k': 'lava'}, {'x': 48.6, 'z': 4.5, 'w': 5, 'h': 4, 'k': 'ice'},
+                      {'x': 55, 'z': 2, 'w': 3, 'h': 8, 'k': 'sea'}]
     s.life('duck', 3)
     for x, z, l in ((8, 4, 'pond'), (30, 9, 'stream-and-falls'), (21, 6, 'stepped-pools'), (36, 15, 'high-water-lake'),
-                    (6, 12, 'swamp'), (12.5, 16.5, 'spring'), (9, 21.5, 'canal')):
+                    (6, 12, 'swamp'), (12.5, 16.5, 'spring'), (9, 21.5, 'canal'), (50, 8.2, 'tall-fall'),
+                    (45.5, 3, 'lava'), (50.8, 3, 'ice'), (53.5, 6, 'sea-strip')):
         shot(s, x, z, l)
+    check(s, (20, 3), (50, 8.2), True, 'the hub to the foot of the tall fall')
+    check(s, (1.2, 9.4), (5.5, 9.3), True, "wade into the pond's shallows")                # WA-6a: shallows are waded
+    check(s, (41, 6.5), (45.5, 6.5), False, 'the lava pool stays shut (should be impossible)')
     s.patches('G', .6, 6, seed=6)
     return s.out(7, 'wood')
 
