@@ -4,7 +4,7 @@
 //   npm run story:ids           gives every line without an id one (and a second copy of an id a new one)
 //   node tools/story-ids.mjs --check    only lists what is missing or doubled (check-data.mjs runs this)
 // The scripts: a map's people (maps/<id>.json), a trainer (trainers/<id>.json), story.json scripts, a cutscene
-// (cutscenes/<id>.json).
+// (cutscenes/<id>.json), RL-S1 banter.json.
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -42,6 +42,10 @@ export function storyScripts(dir = DATA) {
   const S = json('story.json');
   for (const [k, v] of Object.entries(S.scripts || {}))
     out.push({ id: 'story:' + k, file: 'story.json', data: S, lines: v.script, put: L => (v.script = L) });
+  /* RL-S1: the story director's lines */
+  const B = json('banter.json');
+  for (const [k, v] of Object.entries(B))
+    out.push({ id: 'banter:' + k, file: 'banter.json', data: B, lines: v.script, put: L => (v.script = L) });
   return out;
 }
 /** gives each line without an id (or with an id seen before) a new one; returns how many */

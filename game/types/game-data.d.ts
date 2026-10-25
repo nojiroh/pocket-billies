@@ -58,6 +58,8 @@ export interface GameData {
   perks?: Record<DataId, Perk>;
   /** RL-12b: events.json */
   events?: EventsData;
+  /** RL-S1: the story director's lines */
+  banter?: Record<DataId, BanterLine>;
   /** RL-12b: rewards.json */
   rewards?: Record<DataId, RewardRow>;
   /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
@@ -1814,6 +1816,16 @@ export interface RewardRow {
   n?: number;
   weight: number;
 }
+/** RL-S1: banter.json: one of the story director's lines (logic/story-pick.js) */
+export interface BanterLine {
+  who: 'chosen' | 'hazel' | 'juniper' | 'back_lost' | 'leader' | 'bureau';
+  when?: string;
+  priority: number;
+  once?: boolean;
+  cooldown?: number;
+  must?: boolean;
+  script: string[];
+}
 /** events.json classes: a kind of trainer (route trainers, the `foe` command) */
 export interface TrainerClass {
   name: string;
@@ -1821,6 +1833,8 @@ export interface TrainerClass {
   team: [number, number];
   sight: string;
   lose: string;
+  /** RL-S1: one of the Bureau's agents */
+  bureau?: 1;
 }
 /** events.json events: one event, its intro and 2-3 options */
 export interface RunEvent {

@@ -109,6 +109,7 @@ import { perkPickOpen } from './perk-screen.js';
 import { encounterOpen } from './encounter-screen.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
+import { storyPickTree } from './story-stage.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
 import { renderWorldMapTab } from './map-tab.js';
 import { clinicHeal } from './walk-tab.js';
@@ -1310,6 +1311,9 @@ async function runFullTest(mode) {
             if (!MB || MB.runFoe !== 'miniboss') throw new Error('no mini-boss on its place');
             if (MB.from !== G.leaders[0])
               throw new Error(`the mini-boss is ${MB.from}, not the region's ${G.leaders[0]}`);
+            /* RL-S1: the leader's word before the battle is picked by the story director (banter.json leader) */
+            if (!MB.script || MB.script[0] !== 'pick leader') throw new Error('the mini-boss has no picked word');
+            if (!storyPickTree('leader', 'trainer:' + MB.id)) throw new Error('no leader line could be picked');
             startTrainer(MB.id, { talked: true });
             if (!activeBattle) throw new Error('the mini-boss battle didn’t start');
             stopTimers();
@@ -1351,7 +1355,12 @@ async function runFullTest(mode) {
             uiState.modal.btns[0].f();
             if (!(await wait(() => !saveData.run && LOCATIONS.length === gameData.locations.length, 10000)))
               throw new Error('the run didn’t end');
-            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; home with ${saveData.meta.research} Research`;
+            /* RL-S1: the run is in the history, its mini-boss beaten; the hub characters' lines picked, no scene */
+            const H = saveData.meta.history[saveData.meta.history.length - 1];
+            if (!H || H.end !== 'won' || H.seed !== 'SELFTESTRUN8') throw new Error('the won run isn’t in the history');
+            if (!H.leaders.some(l => l.id === MB.from && l.beat)) throw new Error('the history lost the mini-boss win');
+            if (!saveData.story.fresh || saveData.story.pending) throw new Error('home from a win: the story’s picks');
+            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; home with ${saveData.meta.research} Research; in the history`;
           } finally {
             if (activeBattle) {
               stopTimers();

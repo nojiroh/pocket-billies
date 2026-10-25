@@ -21,6 +21,8 @@ import {
   renderOverlay,
   rewardPickOpen,
   runPayoutOpen,
+  storyHomeArrive,
+  storyPendingCheck,
   toast,
   typeBadgeHTML,
 } from './hooks.js';
@@ -199,6 +201,8 @@ export function runEndHome(won, keep, itemPrice) {
       if (stand()) render();
     });
   else stand();
+  /* RL-S1: the hub characters' lines for this return, and a lost run's scene (story-stage.js) */
+  storyHomeArrive(won);
   saveNow();
   closeModal();
   render();
@@ -212,6 +216,7 @@ export function runEndHome(won, keep, itemPrice) {
     toast(`${MODIFIERS.expeditions[saveData.meta.expedition - 1].name} is open. Pick it at the mast.`);
   /* RL-11: milestones the run has met (ended runs, wins), each with its own toast after this one */
   if (typeof labMilestones === 'function') labMilestones();
+  if (typeof storyPendingCheck === 'function') storyPendingCheck();
 }
 
 /* ---------- a reload picks the run up ---------- */

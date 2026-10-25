@@ -16,6 +16,7 @@ import { makeBilly, makeRobot, provide, saveData, storyAllows } from './hooks.js
 import { formSpeciesOf } from './logic/forms.js';
 /* eslint-disable no-func-assign */
 expose({
+  BANTER: [() => BANTER],
   BATTLE_STAGES: [() => BATTLE_STAGES],
   BUILDINGS: [() => BUILDINGS],
   COATS: [() => COATS],
@@ -415,6 +416,8 @@ export const REWARDS = /** @type {Record<string, import('../types/game-data').Re
 export const EVENTS = /** @type {import('../types/game-data').EventsData} */ (
   gameData.events || { loot: {}, classes: {}, events: {} }
 );
+/** RL-S1: the story director's lines (banter.json; logic/story-pick.js) */
+export const BANTER = /** @type {Record<string, import('../types/game-data').BanterLine>} */ (gameData.banter || {});
 /* roguelite track RL-11: the four currencies (currencies.json) */
 export const CURRENCIES = gameData.currencies || {};
 /* RL-11: the hub's buildings, each upgraded with one currency (buildings.json; levels are unlocks.json rows) */

@@ -58,7 +58,7 @@ provide({ storyAllows, storyHolds });
    command it plays (battle, walk, camera, ...). The runner changes the save itself (flags, items, pyramids, quests, once,
    cycles), through `save` (the game's saveData, or a test's object).
    Where it is: a path of numbers, [statement, branch, statement, branch, ..., statement]: the branch is the clause
-   of an if, the option of a choice, the entry of a cycle, 0 for once and call. After a checkpoint command the
+   of an if, the option of a choice, the entry of a cycle, 0 for once, call and pick. After a checkpoint command the
    runner hands onCheckpoint the path of the statement after it, and a run started with that path (resume) carries
    on from there without asking again (conditions, choices and counters are not read twice). */
 
@@ -69,7 +69,8 @@ provide({ storyAllows, storyHolds });
  *   locations?: { id: string }[], questStages?: Record<string, string[]>, resume?: number[] | null,
  *   onCheckpoint?: (path: number[]) => void, beforeCheckpoint?: (path: number[]) => void,
  *   control?: { skipping: boolean },
- *   slots?: Record<string, () => string | number> }} RunOptions */
+ *   slots?: Record<string, () => string | number>,
+ *   pick?: (who: string) => ScriptNode[] | null }} RunOptions */
 
 export const END = Symbol('end');
 /** plays a script; resolves when it is over @param {ScriptNode[]} tree @param {Stage} stage @param {RunOptions} o */
@@ -206,6 +207,11 @@ export async function runScript(tree, stage, o) {
         const t = o.scripts && o.scripts(a);
         if (!t) throw new Error(`${id}, line ${n.line + 1}: no script "${a}" to call`);
         return into(t, 0);
+      }
+      /* RL-S1: the story director's line for who (logic/story-pick.js; the host picks and marks it said) */
+      case 'pick': {
+        const t = o.pick && o.pick(a);
+        return t ? into(t, 0) : undefined;
       }
       case 'wait':
       case 'walk':

@@ -63,7 +63,7 @@ import { labBoardOpen } from './lab-board.js';
 import { postcardCheck } from './postcards.js';
 import { legendCheck, personTalk, storyCheck, trainerTalk } from './story.js';
 import { routeSight } from './route-sight.js';
-import { storyResumeCheck } from './story-stage.js';
+import { storyPendingCheck, storyResumeCheck } from './story-stage.js';
 import { toast } from './overlay.js';
 import { clinicHeal } from './walk-tab.js';
 /* eslint-disable no-func-assign */
@@ -655,6 +655,7 @@ function exitPrompt(e) {
 setInterval(() => {
   try {
     if (typeof storyResumeCheck === 'function') storyResumeCheck();
+    if (typeof storyPendingCheck === 'function') storyPendingCheck();
     if (typeof storyCheck === 'function') storyCheck();
     if (typeof legendCheck === 'function') legendCheck();
     if (typeof postcardCheck === 'function') postcardCheck();

@@ -146,3 +146,16 @@ test('check-data: planted Expeditions and challenges (RL-13)', t => {
     })
   );
 });
+
+test('check-data: planted story director lines (RL-S1)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'banter.json': B => {
+        B.leader_badge.when = 'wins >= 1';
+        B.chosen_won.when = 'last:victory';
+        B.hazel_file.when = 'lastby:nobody';
+        B.chosen_first.cooldown = 2;
+      },
+    })
+  );
+});

@@ -523,6 +523,15 @@ debugLog.state = () => {
           /* RL-11: the unlock ids owned (game data ids, no names) and the buildings' levels */
           unlocks: Object.keys(meta.unlocks || {}).sort(),
           buildings: Object.assign({}, meta.buildings || {}),
+          /* RL-S1: the run history (game data ids and numbers, no names) and the story director's picks */
+          history: (meta.history || []).length,
+          last: (meta.history || []).length
+            ? (h => ({ end: h.end, by: h.by ? [h.by.kind, h.by.id || ''].join(':') : null, row: h.row }))(
+                meta.history[meta.history.length - 1]
+              )
+            : null,
+          fresh: Object.assign({}, (GAME.saveData.story && GAME.saveData.story.fresh) || {}),
+          pending: (GAME.saveData.story && GAME.saveData.story.pending) || null,
         }
       : null;
     /* RL-9: the ranch (numbers only): its level, how many train, how long since each started (hours), storage's size */

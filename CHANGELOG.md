@@ -15,6 +15,12 @@ kept aside in the browser).
   changes. The one you are talking to shows through the same way. Engine > Camera has the dials: "Your outline when
   hidden" (was "Your silhouette through rock"), the outline's width and fill, the circle's switch, size and strength,
   and how far things covering you fade.
+- **The story reacts to your runs** (roguelite track RL-S1, the story director): the game remembers your last 20
+  runs (where, how far, what beat you, who you brought, the Perks and leaders). Back in Copperleaf, **Professor
+  Chosen, Hazel and Granny Juniper** each have a fresh word about your last run the first time you talk to them. After
+  a **lost run** Chosen loudly takes the credit for bringing you back, and Hazel isn't so sure it was him. On a run,
+  **leaders** say something before the battle (they remember beating you), and the **Bureau's clerks** have started
+  keeping a file on you.
 - **Held items** (roguelite track RL-12c): every Billie has one held-item slot. Eight to start with: Leftover
   Sandwich (heals a little each turn), Snack Pack (a quarter of its HP once a battle, when low), Lucky Coin (wins pay
   25% more), Study Notes (50% more XP), Iron Vest (15% less damage taken), Quick Laces (Speed up as it comes in), Brass

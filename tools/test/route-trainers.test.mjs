@@ -52,7 +52,8 @@ test('route trainers: perRoute on every route, of different classes, the region�
       for (const t of here) {
         assert.equal(t.runFoe, 'route');
         assert.equal(t.reward, RUN.trainers.reward);
-        assert.deepEqual(t.script, [`“${t.sight}”`, `battle ${t.id}`]);
+        /* RL-S1: a Bureau agent's line is picked by the run history */
+        assert.deepEqual(t.script, [t.bureau ? 'pick bureau' : `“${t.sight}”`, `battle ${t.id}`]);
         assert.equal(t.team.at(-1).lvl, Math.min(100, X.encPlaceLevel(a, i, RUN) + RUN.trainers.up));
         for (const b of t.team) assert.ok(a.region.dex.includes(b.sp), b.sp);
         assert.ok(!t.blocks, 'they never block the way');

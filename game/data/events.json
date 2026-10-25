@@ -39,7 +39,8 @@
    "who": "clerk",
    "team": [2,3],
    "sight": "You look lost. That is our department.",
-   "lose": "I will need that in writing."
+   "lose": "I will need that in writing.",
+   "bureau": 1
   },
   "ethicist": {
    "name": "Clone Ethicist",

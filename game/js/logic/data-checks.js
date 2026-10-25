@@ -39,6 +39,8 @@ expose({
   RUN_RULE_KEYS: [() => RUN_RULE_KEYS],
   base64Bytes: [() => base64Bytes],
   // @ts-expect-error -- replaced on purpose
+  dataBanter: [() => dataBanter, v => (dataBanter = v)],
+  // @ts-expect-error -- replaced on purpose
   dataBattleRules: [() => dataBattleRules, v => (dataBattleRules = v)],
   // @ts-expect-error -- replaced on purpose
   dataBiomes: [() => dataBiomes, v => (dataBiomes = v)],
@@ -1002,6 +1004,24 @@ export function dataRewards(D, valid = () => true) {
   }
   if (!Object.values(R).some((/** @type {any} */ r) => r.kind === 'item' && r.weight > 0))
     problem('no item card with a weight above 0: a pick could be empty');
+  return out;
+}
+
+// RL-S1: the story director's lines: the schema; a leader and a Bureau agent always have a line to say (one with no
+// `when`); a line said once has no cooldown (its conditions and scripts are the story checks')
+/** RL-S1: banter.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataBanter(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['banter.json', what]),
+    B = D.banter;
+  if (!B) return [['banter.json', 'missing']];
+  if (!valid('banter.schema.json', B, 'banter.json')) return out;
+  for (const [k, b] of Object.entries(B))
+    if (/** @type {any} */ (b).once && /** @type {any} */ (b).cooldown) problem(`${k}: said once, so no cooldown`);
+  for (const who of ['leader', 'bureau'])
+    if (!Object.values(B).some((/** @type {any} */ b) => b.who === who && !b.when))
+      problem(`no ${who} line without a when: a ${who} could have nothing to say`);
   return out;
 }
 

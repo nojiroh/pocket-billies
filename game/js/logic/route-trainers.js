@@ -70,7 +70,9 @@ export function runRouteTrainers(run, data) {
         foe: 'route',
       });
       if (!T.team.length) continue;
-      out[id] = { ...T, route: { k, n }, script: [`“${T.sight}”`, `battle ${id}`] };
+      /* RL-S1: a Bureau agent's line is picked by the run history (banter.json bureau) */
+      const say = T.bureau ? 'pick bureau' : `“${T.sight}”`;
+      out[id] = { ...T, route: { k, n }, script: [say, `battle ${id}`] };
     }
   });
   return out;

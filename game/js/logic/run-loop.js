@@ -8,8 +8,8 @@
      (rngFrom(its node's seed, 'shop|' + day)), so a reload or another device sees the same stock;
    - the run's foes: a mini-boss on each mini-boss node and the boss, each a leader (the trainers with miniboss: true)
      drawn from the node's stream, never one twice in a run, its team's levels set over its row's top wild level
-     (run.foes); a copy with its own id, blocking the way north (mini-bosses), with nothing of the hub's (no script,
-     badge, egg or story conditions);
+     (run.foes); a copy with its own id, blocking the way north (mini-bosses), with nothing of the hub's (no hub
+     script, badge, egg or story conditions; RL-S1: its script is a word picked by the run history, then the battle);
    - a battle's seed (its node's seed and its number in the run), the payout screen's rows, what may be kept.
    Numbers come in as arguments; logic only: no DOM, no Date, no Math.random (tools/test/run-loop.test.mjs). */
 /** @import { Run, RunMap, SaveData, Billy } from '../../types/save-data' */
@@ -264,6 +264,8 @@ export function runFoes(run, data) {
       runFoe: node.type,
       runNode: i,
       from: T.id,
+      /* RL-S1: a word before the battle, picked by the run history (banter.json leader; story-stage.js) */
+      script: ['pick leader', `battle ${runFoeId(i)}`],
       /* RL-R2: its leader's type: the first win over one keeps that type's badge (battle-rewards.js) */
       ...(T.type ? { type: T.type } : {}),
     };

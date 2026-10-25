@@ -13,6 +13,7 @@ import {
   provide,
   selfTest,
   showPendingWindows,
+  storyFreshTake,
   storyRun,
   storyWorldOK,
 } from './hooks.js';
@@ -152,7 +153,10 @@ provide({ storyState }); /* to-module */
 /* someone who only talks (a map's people: Granny Juniper, Curator Nacre): their script */
 export async function personTalk(P) {
   if (!P || talkBox.on || storyRun.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
-  if (P.script) await playStoryScript('person:' + P.id);
+  /* RL-S1: the first talk after a run: their line picked on the way home, once, in place of their own */
+  const fresh = P.who && storyFreshTake(P.who);
+  if (fresh) await playStoryScript('banter:' + fresh);
+  else if (P.script) await playStoryScript('person:' + P.id);
 }
 
 /* ================= v47: BLAKE'S FIRST BATTLE, AND WHAT COMES AFTER =================
