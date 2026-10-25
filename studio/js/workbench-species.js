@@ -11,13 +11,13 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
+import { partForSide, partJoint } from '../../game/js/logic/part-joints.js';
+import { kitBlinkFrame, kitSquashFrames } from '../../game/js/logic/kit-pixels.js';
 import { coatArt } from '../../game/js/logic/coats.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { animFor } from '../../game/js/body-plan-animation.js';
 import { boneSlot, drawRig, rigFrame, rigFromMeta, rigMatrices } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { partForSide, partJoint } from '../../game/js/logic/part-joints.js';
-import { kitBlinkFrame, kitSquashFrames } from '../../game/js/logic/kit-pixels.js';
 import {
   rigBox,
   rigGeo,
