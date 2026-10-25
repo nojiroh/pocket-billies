@@ -15,6 +15,7 @@ import {
   FIELD_MOVES,
   TERRAIN_MATERIALS,
   addRipple,
+  addWakeRipple,
   addWalked,
   artCacheVersion,
   billyName,
@@ -3815,7 +3816,7 @@ function movePlayer(st, dt) {
     P.wakeT = (P.wakeT || 0) - dt;
     if (P.wakeT <= 0) {
       P.wakeT = P.walk ? 0.3 : 1.6;
-      addRipple(P.x, P.z - 0.05, P.walk ? 0.5 + wd : 0.35);
+      addWakeRipple(P.x, P.z - 0.05, P.walk ? 0.5 + wd : 0.35);
     }
   }
   if (P.walk && P.rust <= 0 && !reducedMotion) {

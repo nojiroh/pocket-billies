@@ -501,6 +501,7 @@ export function swapMapCache(oldKey, key) {
     M.delete(key);
     for (const k of MAP_CACHE_FIELDS) walkRenderer[k] = hit[k];
     walkRenderer.rings = [];
+    walkRenderer.wake = [];
     walkRenderer.leaves = null;
     walkRenderer.wlevelR = null;
     walkRenderer.farKey = '';
