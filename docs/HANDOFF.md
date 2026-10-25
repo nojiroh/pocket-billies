@@ -30,6 +30,14 @@ over matching layer names.
 - Risky: the art cache is per version; a phone with the old model JSON cached has no glass numbers, so it keeps the old
   look (the disc) until the art cache refreshes. Glow strength (`e*1.6` against bloom threshold 0.9) was judged in
   software drawing only: check it on a phone at night.
+- Verified: lint, typecheck, check:modules, prettier; `npm test` 919/919 (two new low-poly tests); check:data;
+  `check:smoke` 6/6 (the Shaders step compiles the new model shader). `tools/look-windows.py` before (base 2cfef57)
+  and after at the Lab: before, a big orange ball off the Lab's corner and dark blue boxes for windows; after, the
+  Lab's side window and Juniper's porthole glow in their own shapes, still on the wall with the camera turned 0.5 rad;
+  noon and dusk show no glow. The full quick check was not run (not a phase end): expect its night pictures near
+  model buildings to differ from the baseline.
+- Next: the owner's look on a phone at night (glow strength, how many windows are lit); if wanted, the same glass for
+  the city towers and the greenhouse (no picture windows, so not marked).
 
 ### Routes track RT-1 - Route layouts - 2026-10-24
 Branch `track/routes` (plan approved in Plan Mode; the owner's answers: all five plans, and **every non-town place**
