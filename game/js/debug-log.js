@@ -517,6 +517,8 @@ debugLog.state = () => {
                 T =>
                   `${T.id}:${T.route.spot || '?'}:${T.route.opt ? 'o' : 'r'}${T.mate ? ':pair' : ''}${GAME.saveData.flags[T.id] ? ':beaten' : ''}`
               ),
+            /* RT-3: this place's set pieces (setPieces.json ids) and the spot kind each took */
+            pieces: ((placeMap && placeMap.pieces) || []).map((/** @type {any} */ L) => `${L.id}:${L.spot}`),
           }
         : null;
     /* RL-8: what the runs brought home (numbers only) */
