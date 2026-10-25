@@ -25,14 +25,19 @@ import { engineSetting } from '../engine/settings.js';
 import { freeMesh, gpuState, normalize3, smooth01, uploadMesh } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
 import { defaultWallMaterial, rawHeightAt } from './heights.js';
-import { WATER_KIND_LOOKS, shoreField, waterFlowField, waterKindLookup } from './water-data.js';
+import { flowMapAt, waterFlowMap } from './water-flow.js';
+import { tideCells } from './sea-tide.js';
+import { WATER_KIND_LOOKS, flowTexture, shoreField, waterKindLookup } from './water-data.js';
 import { groundNormalTexture, groundOcclusion, groundOcclusionSteps, repeatingTexture } from './ground-textures.js';
 import { buildGrass } from './grass-build.js';
 /* eslint-disable no-func-assign */
 expose({
   buildGroundMesh: [() => buildGroundMesh, v => setBuildGroundMesh(v)],
   buildGroundMeshSteps: [() => buildGroundMeshSteps, v => (buildGroundMeshSteps = v)],
+  fallCovers: [() => fallCovers, v => (fallCovers = v)],
+  fallSheet: [() => fallSheet, v => (fallSheet = v)],
   makeTextureMipmaps: [() => makeTextureMipmaps, v => (makeTextureMipmaps = v)],
+  placeFalls: [() => placeFalls, v => (placeFalls = v)],
   uploadTextureStrips: [() => uploadTextureStrips, v => (uploadTextureStrips = v)],
 });
 /* eslint-enable no-func-assign */
@@ -472,7 +477,14 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       return c === 'w' || c === 'd';
     },
     wlev = (x, z) => rawHeightAt(sc, x, z) + stp(x, z) - 0.12,
-    flowAt = waterFlowField(sc);
+    /* water track WA-2a: the scene's waterfalls (the contract's falls entries) placed on the ground, and which way the
+       water runs and where it foams, a half-metre grid built once (walk/water-flow.js) */
+    fallSets = bare ? [] : placeFalls(sc, isW, wlev, stp),
+    flowMap = waterFlowMap(
+      sc,
+      fallSets.map(f => [f.fx, f.fz, Math.max(f.pool, f.w * 0.6)])
+    ),
+    flowAt = (x, z) => flowMapAt(flowMap, x, z);
   const W2 = W * 2,
     H2 = H * 2,
     wd = new Float32Array(W2 * H2).fill(-2),
@@ -589,7 +601,17 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
   /* v31: the shoreline: the water mask at 8 samples a metre, softened twice and nudged by noise, so the water's edge
     curves round corners instead of following the tiles; the water shader fills to its 0.5 line, the ground shader
     darkens a wet rim just outside it and paints a bed under it */
-  yield* shoreField(sc, isW, T);
+  /* water track WA-4: on a sea all round, the tide's cells (walk/sea-tide.js): wet sand it covers, shallows it leaves */
+  const tide =
+    sc.flatFar && !bare
+      ? tideCells(
+          W,
+          H,
+          (i, j) => ter(i + 0.5, j + 0.5),
+          (i, j) => WATER_KIND_LOOKS[kindAt(i + 0.5, j + 0.5, false)].k === 'sea'
+        )
+      : null;
+  yield* shoreField(sc, isW, T, tide);
   yield;
   if (T === walkRenderer) groundOcclusion(sc);
   else {
@@ -597,7 +619,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
     if (r) T.gaoTex = groundOcclusionTexture(r);
   }
   /* rocks standing in the water throw foam around themselves */
-  const C1 = walkData().sc,
+  const SEA_KIND = WATER_KIND_LOOKS.findIndex(k => k.k === 'sea'),
+    C1 = walkData().sc,
     rocks = [];
   for (const p of sc.props || []) {
     const M = C1.props[p.k];
@@ -624,6 +647,34 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
     /* IS-3: a cove's calm rides in the kind (kind + calm * 0.4; the water shader takes it apart) */
     cove = sea && (sc.zones || []).some(zn => zn && zn.k === 'cove'),
     calmK = (kd, x, z) => (cove && WATER_KIND_LOOKS[kd].k === 'sea' ? seaCalmAt(sc, x, z) * 0.4 : 0);
+  /* WA-4: the sea's level, for the tide's skins and pools: the commonest level of its cells */
+  let seaY = -0.12;
+  /* the high tide's skin lies just over the sand; the sea's own corners beside it rise to meet it (no step between) */
+  const tideY = (x, z) => Math.max(seaY, rawHeightAt(sc, x, z) + stp(x, z) + 0.03),
+    nearCover = (x, z) => {
+      if (!tide || !tide.nCover) return false;
+      for (const [p, q2] of [
+        [-0.25, -0.25],
+        [0.25, -0.25],
+        [-0.25, 0.25],
+        [0.25, 0.25],
+      ]) {
+        const i = Math.floor(x + p),
+          j = Math.floor(z + q2);
+        if (i >= 0 && j >= 0 && i < W && j < H && tide.cover[j * W + i]) return true;
+      }
+      return false;
+    };
+  if (tide && (tide.nCover || tide.nPool)) {
+    const lv = new Map();
+    let best = 0;
+    for (let q = 0; q < wk.length; q++) if (wd[q] !== -2 && wk[q] === SEA_KIND) lv.set(wy[q], (lv.get(wy[q]) || 0) + 1);
+    for (const [v, n] of lv)
+      if (n > best) {
+        best = n;
+        seaY = v;
+      }
+  }
   const stream = [],
     spring = [];
   for (let j = 0; j < H2; j++) {
@@ -651,8 +702,10 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
         fw = flowAt(cx, cz);
       if (kd === 1 && (i + j * 3) % 2 === 0) stream.push([cx, cz]);
       if (kd === 3) spring.push([cx, cz, dep[q]]);
-      /* running water follows the slope of its bed (one smooth surface down a stream); still water lies level */
-      const run = fw[0] !== 0 || fw[1] !== 0,
+      /* running water follows the slope of its bed (one smooth surface down a stream); still water lies level. WA-4: a
+         tide pool is calm and brims at the level of the high tide's skin, so the two meet when the sea comes in */
+      const pool = !!(tide && tide.pool[Math.floor(cz) * W + Math.floor(cx)]),
+        run = fw[0] !== 0 || fw[1] !== 0,
         sc0 = stp(cx, cz);
       for (const [a, c] of [
         [0, 0],
@@ -679,13 +732,17 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
         const rf = rocks.length && (kd === 1 || kd === 5 || kd === 0) ? rockFoam(vx, vz) : 0;
         wv.push(
           vx,
-          run ? rawHeightAt(sc, vx, vz) + sc0 - 0.12 : y,
+          run
+            ? rawHeightAt(sc, vx, vz) + sc0 - 0.12
+            : pool || (kd === SEA_KIND && nearCover(vx, vz))
+              ? Math.max(y, tideY(vx, vz))
+              : y,
           vz,
           T.shoreF ? rf * (kd === 1 ? 1 : 0.6) : Math.max(Math.min(1, sh / 2), rf * (kd === 1 ? 1 : 0.6)),
           fw[0],
           fw[1],
           dd / 4,
-          kd + calmK(kd, vx, vz)
+          kd + (pool ? 0.4 : calmK(kd, vx, vz))
         );
       }
       wi.push(b0, b0 + 2, b0 + 1, b0 + 1, b0 + 2, b0 + 3);
@@ -712,17 +769,19 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           ez = cz + dj * 0.25,
           px = -dj,
           pz = di,
-          fb0 = fv.length / 6;
+          fb0 = fv.length / 8;
+        /* WA-2a: a falls entry replaces the automatic sheets across its width */
+        if (fallSets.some(f => fallCovers(f, ex, ez))) continue;
         for (const [s2, t2] of [
           [-1, 0],
           [1, 0],
           [-1, 1],
           [1, 1],
         ]) {
-          fv.push(ex + px * 0.25 * s2, t2 ? y2 : yt + 0.02, ez + pz * 0.25 * s2, t2, yt - y2, s2 * 0.5 + 0.5);
+          fv.push(ex + px * 0.25 * s2, t2 ? y2 : yt + 0.02, ez + pz * 0.25 * s2, t2, yt - y2, s2 * 0.5 + 0.5, 0.5, 0);
         }
         fi.push(fb0, fb0 + 2, fb0 + 1, fb0 + 1, fb0 + 2, fb0 + 3);
-        T.falls.push([ex + di * 0.12, y2 + 0.05, ez + dj * 0.12, yt - y2]);
+        T.falls.push([ex + di * 0.12, y2 + 0.05, ez + dj * 0.12, yt - y2, di, dj]);
       }
     }
   }
@@ -753,6 +812,24 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
             nq = jj * W2 + ii;
             break;
           }
+        }
+        /* water track WA-4: wet sand the high tide covers gets a skin of sea just over the sand, however far from the
+           water (the shaders keep it only while the tide's line lies past it) */
+        const tc = tide && tide.cover[Math.floor(cz) * W + Math.floor(cx)];
+        if (tc) {
+          const b0 = wv.length / 8;
+          for (const [a, c] of [
+            [0, 0],
+            [1, 0],
+            [0, 1],
+            [1, 1],
+          ]) {
+            const vx = i * 0.5 + a * 0.5,
+              vz = j * 0.5 + c * 0.5;
+            wv.push(vx, tideY(vx, vz), vz, 0, 0, 0, 0, SEA_KIND + calmK(SEA_KIND, vx, vz));
+          }
+          wi.push(b0, b0 + 2, b0 + 1, b0 + 1, b0 + 2, b0 + 3);
+          continue;
         }
         if (nq < 0) continue;
         const ni = nq % W2,
@@ -858,6 +935,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
   T.streamCells = stream;
   T.springCells = spring.filter((_, i) => i % 3 === 0).slice(0, 10);
   T.flowAt = flowAt;
+  T.flowMap = flowMap;
+  flowTexture(T, bare ? null : flowMap);
   T.leaves = null;
   T.rings = [];
   /* v22: one mirror plane per body of water level (buckets a few cm apart that overlap are one pool); the reflections use
@@ -884,6 +963,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       T.wlevel = g.y;
     }
   T.wlevelR = T.wlevel;
+  for (const f of fallSets) fallSheet(f, fv, fi);
+  T.fallSets = fallSets;
   freeMesh(T.fallMesh);
   T.fallMesh = fv.length
     ? uploadMesh(
@@ -893,14 +974,102 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           ['aPos', 3, 0],
           ['aShore', 1, 12],
           ['aUV', 2, 16],
+          ['aDK', 2, 24] /* WA-2a: the fall shader's aBig (location 3): width and big */,
         ],
-        24
+        32
       )
     : null;
   if (T === walkRenderer) {
     buildGrass();
     T.farKey = '';
   }
+}
+/* water track WA-2a: a scene's waterfalls (the contract: falls [{x, z, dir, w, h, pool, k, climb}], written by lane G).
+   Each is placed on the ground here: its lip at the water's level just upstream, its drop `h` (or, missing, down to the
+   lowest water or ground within 2 m beyond the lip), how far out the sheet lands (the water leaves the lip moving, so
+   it lands further out the higher it falls) and its foot. Entries that drop less than 0.3 m are left to the automatic
+   sheets. */
+function placeFalls(sc, isW, wlev, stp) {
+  const out = [],
+    level = (x, z) => (isW(x, z) ? wlev(x, z) : rawHeightAt(sc, x, z) + stp(x, z));
+  for (const e of sc.falls || []) {
+    const d = e.dir || [0, 1],
+      dl = Math.hypot(d[0], d[1]) || 1,
+      dx = d[0] / dl,
+      dz = d[1] / dl,
+      w = clamp(+e.w || 1.5, 0.5, 30),
+      lipY = level(e.x - dx * 0.3, e.z - dz * 0.3);
+    let h = +e.h || 0;
+    if (!h) {
+      let lo = lipY;
+      for (let k = 0.5; k <= 2.01; k += 0.25) lo = Math.min(lo, level(e.x + dx * k, e.z + dz * k));
+      h = lipY - lo;
+    }
+    if (!(h >= 0.3)) continue;
+    const reach = Math.min(1.8, 0.25 + 0.45 * Math.sqrt(h)),
+      curl = clamp(0.08 + 0.03 * h, 0.1, 0.3);
+    out.push({
+      x: e.x,
+      z: e.z,
+      dx,
+      dz,
+      w,
+      h,
+      pool: Math.max(0, +e.pool || 0),
+      lipY,
+      reach,
+      curl,
+      fx: e.x + dx * reach,
+      fz: e.z + dz * reach,
+      footY: lipY - h,
+    });
+  }
+  return out;
+}
+/* an automatic sheet's edge (x, z) lies across a falls entry's width, at its lip or below it */
+function fallCovers(f, x, z) {
+  const rx = x - f.x,
+    rz = z - f.z,
+    along = rx * f.dx + rz * f.dz,
+    lat = Math.abs(-rx * f.dz + rz * f.dx);
+  return lat <= f.w / 2 + 0.35 && along > -1 && along < f.reach + 1;
+}
+/* a falls entry's sheet: a curled lip (a quarter turn over the edge), then the sheet falling and leaning out as the
+   water does (out with the square root of the drop), a little wider at the foot, sunk 0.1 m into the pool. Its
+   vertices as the automatic sheets' (position, the way down 0-1, the length, across 0-1) plus its width and 1 (big) */
+function fallSheet(f, fv, fi) {
+  const nC = Math.max(2, Math.ceil(f.w / 0.25)),
+    nF = Math.max(4, Math.ceil(f.h / 0.5)),
+    rows = [];
+  for (let k = 0; k <= 3; k++) {
+    const a = (k / 3) * Math.PI * 0.5;
+    rows.push([f.curl * Math.sin(a), f.lipY + 0.02 - f.curl * (1 - Math.cos(a)), 0]);
+  }
+  for (let k = 1; k <= nF; k++) {
+    const s = k / nF,
+      top = f.lipY + 0.02 - f.curl;
+    rows.push([f.curl + (f.reach - f.curl) * Math.sqrt(s), top - (top - f.footY + 0.1) * s, s]);
+  }
+  const len = [0];
+  for (let k = 1; k < rows.length; k++)
+    len.push(len[k - 1] + Math.hypot(rows[k][0] - rows[k - 1][0], rows[k][1] - rows[k - 1][1]));
+  const L = len[len.length - 1],
+    b0 = fv.length / 8,
+    px = -f.dz,
+    pz = f.dx;
+  rows.forEach(([o, y, s], k) => {
+    const hw = (f.w / 2) * (0.94 + 0.16 * s);
+    for (let c = 0; c <= nC; c++) {
+      const u = c / nC,
+        a = (u - 0.5) * 2 * hw;
+      fv.push(f.x + f.dx * o + px * a, y, f.z + f.dz * o + pz * a, len[k] / L, L, u, f.w, 1);
+    }
+  });
+  for (let k = 0; k < rows.length - 1; k++)
+    for (let c = 0; c < nC; c++) {
+      const q = b0 + k * (nC + 1) + c;
+      fi.push(q, q + nC + 1, q + 1, q + 1, q + nC + 1, q + nC + 2);
+    }
 }
 export function buildGroundMesh() {
   const it = buildGroundMeshSteps(walkView.sc.groundOf || walkView.sc, walkView.ground, walkRenderer);

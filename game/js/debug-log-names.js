@@ -12,6 +12,7 @@ import { frameScheduler, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
 import { PERSON_ART_CACHE, personBattleFrames, setPersonBattleFrames } from './person-art.js';
 import { openDressingRoom, setOpenDressingRoom } from './dressing-room.js';
+import { graftReport } from './skeleton-rig.js';
 import {
   battleStage,
   battleStageResize,
@@ -143,6 +144,7 @@ Object.defineProperties(GAME, {
   gpuCountSummary: { get: () => gpuCountSummary },
   gpuCounters: { get: () => gpuCounters },
   gpuState: { get: () => gpuState },
+  graftReport: { get: () => graftReport },
   grassWork: { get: () => grassWork, set: setGrassWork },
   groundOcclusion: { get: () => groundOcclusion, set: setGroundOcclusion },
   lifeStep: { get: () => lifeStep, set: setLifeStep },

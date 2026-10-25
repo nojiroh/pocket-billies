@@ -130,6 +130,151 @@ once it lands, merge main into track/story. TW-3 also edits `validRun` (`run.que
   - The writing is placeholder-free but untested in play: the owner should read it in the game.
 - Next: RL-S2 (rival and relationships: Blake's `rival` node, `meta.rel`, the `rel:` and `chapter:` conditions,
   Chapter 1's beats) on `track/story`, beside RL-14. Merge main in first (PR #188).
+### Water track WA-2a (lane R) - waterfalls drawn, the flow map - 2026-10-25
+Branch `track/water` (main merged in at the start: nothing new; lane P's WA-6b and lane G's WA-2b merged in before
+the pushes). Plan approved in Plan Mode; the owner's answers: the wake's call switched in walk-view.js by this lane;
+the flow map in a new `walk/water-flow.js`; "the light it throws" a stepped shimmer, not a real light; one-line
+additions to map-cache.js and the pages' module lists allowed. Tag to suggest: `wa-2a-done` (the owner pushes tags).
+- Changed (one cause a commit; details and numbers in water-track.md, WA-2a notes):
+  - **The flow map** (`walk/water-flow.js`, new, on both pages): flow, foam and stream strength on the half-metre
+    grid, each segment visiting only the cells it reaches; a plain `{pts, speed}` stream runs exactly as the old
+    search said (unit test). Reads `streams[].w`, `rapids` (faster, white water), `mouth` (churn into a pool, lake or
+    sea), `src` (a spring bubbles) and the falls' feet. `water-data.js waterFlowField` removed. A half-float texture
+    for the water shader: the pattern carried down the flow in two blended phases (no endless drift) and white water
+    from the foam channel. Build: 3 against 124 ms on a 180 x 90 m river scene (Node).
+  - **Falls entries** (`ground-mesh.js placeFalls`, `fallSheet`): a curled lip, a sheet leaning out with the square
+    root of the drop, landing in the pool; it replaces the automatic sheets across its width (the rest stay as
+    cascades). **The fall shader**: pixel columns of streaks stepping down at their own speeds over a slow large
+    pattern, four tones, a glassy lip, a broken white foot, ragged edges; the cascades the same; pixel water off draws
+    the sheet of before.
+  - **Pool, rock and light** (`FALL_GLSL`, the four nearest entries): churn and one-texel rings on the plunge pool;
+    wet, dark rock with stepping trickles beside and under the lip; wet ground round the foot; the white water's light
+    as a stepped shimmer (faint by day, stronger at night).
+  - **Spray and mist** on the 32 grid in `water.frames` steps; an entry's spray along its width, droplets off its lip,
+    mist rising and drifting with the wind; a cascade's mist moved out from its step (WA-6b's "grey half-disc").
+  - **Wading** (WA-6a's asks): splashes drawn as droplets; the wake's own rings (`water.js addWakeRipple`, 4 kept, up
+    to 3 of the shader's 8), the one call in `walk-view.js` switched (lane P's file, the owner's yes).
+  - `map-cache.js`: keeps `flowMap`, `flowTex` (freed with the others) and `fallSets`, clears the wake on a swap.
+    The `fallSets` line was missed at first and found in the close-ups (a swapped-in view lost its falls' pools,
+    rock, light and mist): its own commit.
+- Found: `uploadMesh` only knows fixed attribute names (aPos, aShore, aUV, aDK): a new attribute must ride under one
+  of them (the fall mesh's width and big flag go as `aDK`, location 3), or it silently lands on location 0. The pages
+  export from a walk/ module only what another module imports, so a unit test can't import its constants.
+- Risky: every ground and water pixel runs the falls loop when a scene has falls (a box test first; 0 without);
+  running water reads its ripple and glint noise twice (the two phases). The headless browser's frame times (0.4-2
+  s, software) swing more between runs than between settings: no cost measured. Pixel water off keeps the old drift
+  and sheets, but the entries' shape and the pool, rock and mist are new in both.
+- Verified: lint, typecheck, check:modules, prettier, `npm test` (965, 0 failures after the merges), `check:smoke`
+  before every game/ commit (all passed); look-water before and after at noon and 22.5 (validation/look-water-
+  before-2a*, -after-2a*, not committed; no page errors; with WA-2b's real entry): the tall fall goes from a narrow
+  sheet ending in a point to a full-width sheet with white water, a churning pool and mist; the stream's cascades
+  look as before at phone size. Close-ups with the blur off and the camera pitched down
+  (validation/look-water-after-2a-close*, a scratch script; also pixel water off): the streak columns, the pool's
+  rings, the wet rock and the night's thrown light. A hand-made entry before WA-2b's landed, then theirs.
+- For lane P (its files, not edited here): the Surf mount's wake (`prop-look.js rideMountItem`) still calls
+  `addRipple`; `addWakeRipple(x, z, k)` keeps it from pushing out the scene's rings. A spray on the rider climbing a
+  fall is not done (WA-6b's ask; `T.fallSets` has the lip and foot if an effect wants them).
+- For lane G and WA-0's tool: look-water's numbers count only the automatic sheets (`fallSheets`, `tallestFall`), so
+  test_water now reports 8 sheets, 1 m; `walkRenderer.fallSets` holds the entries if the tool should count them.
+- For the owner: on the phone, stand at test_water's tall fall (and by a river) with Pixel water on and off and
+  compare the frame time; the bench's Pond station has no fall.
+- Next for lane R: WA-4 (the sea and the coast).
+
+### Water track WA-2b (lane G) - waterfalls placed - 2026-10-25
+Branch `track/water` (main merged in at the start: nothing new since db9d87a; lane R's WA-2a and lane P's WA-6b merged
+in before the push). Plan approved in Plan Mode. The owner's answers: the hub island's fall waits for HB-4b; WA-6a's
+"shallows for others" goes to a later lane G session; the river steps with the land; "caves" means the generated
+cave biome; the run dials stay as they are. Tag to suggest: `wa-2b-done` (the owner pushes tags).
+- Changed:
+  - `logic/water-gen.js` `waterGenFalls` (called once after mapgen's land stage): the river's water lifted to its
+    lower bank's step raise, never higher than the point before; a drop of 0.6 m or more is a `falls` entry with a
+    plunge pool where one fits on the foot's level and is walked to (radius 1.4-3 m, its middle `pool + 0.25` m past
+    the lip); now and then a 4-15 m set piece on a mountain route or a cave (a spring on a shelf, a notch cut down the
+    shelves to a pool). `waterGenClimbs` (once, on the finished scene): `climb: 1` on a fall of 2 m or more whose top
+    and foot the game's reach (`mapgenReach`, props and slopes) walks to. `sc.falls` beside `sc.streams`.
+  - `mapgen.js`: those two calls and the `sc.falls` line only. **MAPGEN_VERSION 16**.
+  - The data check warns on a fall off the map, with no direction, no width or drop, or its lip off water.
+  - test_water: the 6 m fall is a `falls` entry (`{x 50, z 17, dir [0,-1], w 1.6, h 6, pool 2.2, climb 1}`); its
+    pond moved 1.9 m north to the cliff's foot (its middle where the contract puts it); WA-6b's two Surf checks.
+  - Tests (water-gen.test.mjs): a fall's lip on water, water below it, a drop at the lip, on a stream's line; pools
+    and climbs walked to and exits reached; same seed same falls; none without a river or mountains; none on the hub
+    island. Remade on purpose: rng.test's pinned hash and the run-start snapshot (only gen.v / mapgenV).
+- Found (where the plan or the docs were wrong):
+  - Terraces and a massif leave the ground under water at 0 (`mapgenTerraces` "water lies at the bottom"; the
+    mountain field fades out within 1-4 m of water): a river crossing them ran in a trench and never met a drop.
+  - River falls are rare all the same (4 in 60 stream scenes with terraces, 0.7-1.3 m): the level only goes down from
+    the source, and WA-3a's rivers follow the smooth ground, which the terraces (made later, rising toward the back)
+    don't know. A later lane G session could let the water stage see the terraces' levels (mapgen.js's busy water
+    stage) or turn a river round when its banks rise downstream.
+  - **Runs have no terraces or mountains** (rules.json `run.scene`): falls show in a run only in the Rock Smash cave
+    (about 1 cave in 8 gets a set piece). Left as it is (the owner); for the roguelite or routes tracks: an
+    occasional terraces or massif dial on run nodes would bring falls to routes.
+  - A massif makes staircases of 0.8-2 m shelves, not cliffs; a notch cut down them splits a shelf walked only along
+    its length, so most set piece places are refused (more than 25 half-metre cells cut off).
+  - Climb decided before the props went in disagreed with the game's reach; hence the second call on the finished
+    scene.
+- Risky:
+  - **MAPGEN_VERSION 16** on this branch (main 8; PR #194 takes it to 13, RT-4b holds 14, WA-3a 15): whichever merges
+    second remakes rng.test's hash and the run-start snapshot on purpose. Generated scenes change where a river
+    crosses terraces or a massif and on some mountain scenes (a set piece).
+  - Cost: about 15% more on a mountain scene in Node (224 to 258 ms), 13 ms on a river over terraces (the reach
+    flood on the half-metre grid, a few times).
+  - Set piece pools and notches are cut into the shelves: the walls round them are the shelves' own faces.
+- Verified: lint, typecheck, check:modules, check:data, prettier; `npm test` 965/965 after the merges; `npm run
+  test:slow` 58/58 (the mapgenUnreachable sweeps, seams, towns, mountains and ledges, the run worlds); `check:smoke`
+  6/6 before the game/ commits and after the merges; the walking-rules step (28 test scenes, 77 checks, test_water 6
+  of 6). Sweeps outside the tests: 120 terrace, mountain and cave scenes (11 falls, 5 set pieces, 6 pools, 1
+  climbable; every exit reached, no note, every pool walked to); 80 mountain scenes (6 set pieces, 4.1-7.6 m, 2
+  climbable). Not run: pictures of generated falls (lane R's look-water) and the quick-check baseline (WA-8).
+- For lane R (its files, not edited here): a generated pool's middle is `pool + 0.25` m past the lip along `dir`
+  (in the contract now); a set piece's notch is up to 6 m long, its water at the foot's level from the lip on, so
+  the sheet's `reach` lands in water. Set pieces carry `k: 'spring'` in a cave (the cave's water kind).
+- For lane P: generated `climb` falls have water at `fallTop` (the river or the spring's run) and at the foot (the
+  pool); test_water's entry has `climb: 1`.
+- Next: WA-5a (lane G, round 3, new kinds' play); the shallows for others (a later lane G session); the hub island's
+  fall after HB-4b; the owner's look at a cave's set piece on the phone.
+
+### Splicing track SP-1 - Art spike: grafted Billies baked at runtime (built, waiting on the phone) - 2026-10-25
+Branch `ccr-dde1a5bd-nx5zdl` (`track/splicing` didn't exist yet; the owner chose to build SP-1 here, as RL-12c and
+HB-1 were). Plan approved in Plan Mode. SP-2 started in a new session on top of this branch at the owner's word,
+before SP-1 is merged or tagged. Tag `sp-1-done` for the owner once the exit is chosen.
+- Where the track was wrong (checked at 501b286): `logic/kit-assemble.js` wasn't on the game page at all. No
+  `rigRefit` is needed: the whole recipe is rebaked with the part swapped, exactly as `npm run bake:kits` bakes it.
+  RL-12c (fxOfBillie) is on main, so SP-2's dependency is met.
+- Changed (one cause per commit):
+  - game/index.html loads kit-assemble.js and its imports, plus the new logic/graft-art.js (also in the Studio's
+    logic worker list).
+  - logic/graft-art.js: a graft is `{ slot: donor species id }` for front, back and sig, swapped bone kind for bone
+    kind (a form's `slots` first: the slug's tail is its back, so no leg donor fits it). The donor's part keeps its
+    colour and its absolute size (size x donor scale / own scale); the fit shrinks the Billie if needed. graftForm,
+    graftKey/graftParse (`front=swift1`), graftDonors, graftKind, graftRecipe. graftOf/graftSet: this session's
+    grafts in a WeakMap by Billie object, **never saved** (saveFill keeps unknown Billie fields; SP-2 adds a
+    validated `Billy.graft`).
+  - skeleton-rig.js: rigParts(sp, k, coat, graft) and rigPreload's 4th tuple element bake a grafted Billie (part
+    pictures loaded, then kitBakeWhole in a task of its own), an LRU of 12, null while baking, the plain species if
+    a bake fails; a coat still recolours it. graftReport: bake and load times, memory held and its peak.
+  - The graft goes wherever `build` goes: actorSnapshot (only when present: golden battles unchanged), a grafted
+    wild encounter's foe, battle-stage syncSide, the battle preload, world-billies (buddy, pasture, grass, warm-up,
+    frame cache key), rigCanvasHTML `data-g`, and the menus that pass `{ build, coat }`. Busts stay plain.
+  - Debug menu, Billies: Graft the lead, Add a grafted encounter, Battle a grafted one, Clear grafts. 'graft' events
+    in the debug log; the export's `graphics.grafts` holds the summary (no names, no save data).
+  - tools/look-grafts.py (pictures before and after, a grafted battle); validation/look-grafts/ is git-ignored.
+- Verified: lint, typecheck, check:modules after each commit; unit tests 948 quick (new graft-art tests, the DOM
+  rig test now also checks the graft is passed), slow-tier graft sweep: 1597 bakes (every recipe x every distinct
+  donor part per slot) all bake and fit, Node median 21 ms, 95th 95 ms, max 221 ms, biggest sheet 482 KB;
+  kit-bake-parity unchanged; smoke 6 of 6. Headless (software drawing): Marsox with Cartotter's arms on its details
+  plate, Versewift with the muskox's arms in battle, both battle sides drawn from their grafted rigs; bakes 297 ms
+  (the first, with warm-up) and 51 ms, pictures 64-99 ms; the debug buttons work, nothing lands in the save. Full
+  quick check: 34 of 37. The three problems aren't SP-1's: song fingerprints (cave mid/late not in the sound
+  baseline), RL-8 "Take off didn't start a run's flight" (fails the same alone on main 501b286), Actions sheet (a
+  page load timeout in the full run; passes alone here and on main).
+- Risky: every Billie's drawing goes through the changed rigParts (ungrafted ones take the old path with the same
+  cache keys). A bake runs on the main thread: on a phone a worst case could stall a frame for up to ~1 s when a
+  Billie is grafted while walking (battles bake while they load). The Prime tag still shows on a grafted Billie
+  (Prime ignores grafts until SP-2).
+- Next: the owner presses the graft buttons on the phone (the lead, a grafted battle, the team screen), exports the
+  debug log and picks SP-1's exit from `graphics.grafts`: runtime baking, or Grafts baked offline per biome pool.
+  SP-2 (rules) is under way in its own session.
 ### Hub track - the finished hub branches merged together (HB-4a/4b, HB-5 art, HB-6, HB-7 art) - 2026-10-25
 Branch `track/hub-merge` (from main 83e7bdd: HB-1, HB-2, the run-zone-biome fix). Plan approved in Plan Mode. One
 merge commit per branch (no rebase, no squash), in this order: `track/hub` (HB-4a, HB-4b), `art/hub-station-trains`
@@ -383,6 +528,43 @@ Branch `art/hub-island-sketches` (a one-session art branch at the owner's word; 
   buildings fronting it; build B's dials into copperleaf through build-island and build-copperleaf; the lookout out of
   the dressing; re-point the hub's positions; the door check. Tell the water track (lane G, WA-2b) the waterfall site.
 
+### Hub track HB-3 - the floating world map's ocean and detail - 2026-10-25
+Branch `art/hub-world-map` (made from main at f691ce9, HB-1 and HB-2 merged; the owner's choice, beside HB-4b on
+`track/hub`). Plan approved in Plan Mode with the owner's answers: **3 falls, silent**; the lagoon on the bowl's own
+water now, the water track's WA-7 swaps in the pixel water after this merges; work on this branch. Tag `hb-3-done` for
+the owner. Details: docs/phases/hub-track.md, "Done in HB-3".
+- Where the plan's facts were off (checked in the code): the bowl clumps (0) and a landmark picture at the middle (0)
+  were already gone on main; every map model ignored its placement's `rot`; the tree models are limbs and leaf
+  pictures, which the map's model builder drops (so "trees as their models" needed a builder of its own); the Bowl map
+  test's sea, landmark and rim steps failed on the floating island since IS-7. `BOWL_ISLAND_LIFT` was read only in
+  `bowlSeaInput` (and the test's text). The coast is ~10 m from the map's edges, so the lagoon's outer part is made,
+  not read from the map's sea letters.
+- Changed (one cause per commit): real height (lift 1 on the hub's floating island, 3 on a run's bowl); no clumps and
+  no landmark at the middle (guards); the ground letters clipped by the map's coast; logic/float-island.js lagoon,
+  falls and mist (tests); the World map Engine settings (lagoon, falls, trees as models, simple trees past, fences,
+  bridges); the lagoon and its mist; three falls (`mfallw`); map models turned by `rot`; trees from their recipes
+  (logic/bowl-things.js `bowlTreeFromRecipe`, tests); fences and bridges (`bowlBridgeShape`, tests); the Bowl map
+  test's frame-time step and its floating-island steps; check-fast's map check; the orbit a little further back.
+  tools/look-worldmap.py: the hub's world map at hours times orbit angles, `--eng`, `--at`, `--map` (another island
+  file served to the page only).
+- Water track: its milestone 1 (WA-1 pixel water and the rest) merged into main during this session and was merged in
+  at the end (only HANDOFF conflicted). HB-3 neither uses nor edits it. HB-3's water is `mwater` (world-bowl.js)
+  with a lagoon mode (`uRim`, vS.y as the rim's fade) and `mfallw`. For WA-7 (lane B): the lagoon's colour is the `mwater` block after
+  `float dep=…`, and the falls' colour the first lines of `mfallw`; that is where `PIXEL_WATER_GLSL` goes.
+- Verified: lint, typecheck, `npm test` (955), check:modules after each commit; `check-fast --only=map` 2/2 (new: lift
+  1, the lagoon and 3 falls up, 0 clumps, 0 standees, the ring 1.15-1.5x); `check:smoke` 6/6 (205 s); the Bowl map
+  test headless, every step ok; pictures before (f691ce9) and after at 7, 13, 19 and 23 h and 0/90/180/270 degrees
+  (validation is not committed: `python3 tools/look-worldmap.py OUT`), close views of the pasture fence, the stream's
+  bridges and the pier; HB-4b's island (`track/hub` copperleaf.json via `--map`) draws with no change.
+- Risky: **phone cost**: ~44k triangles of things (was 14k) plus the lagoon (10k) and 72 mist puffs drawn every
+  frame. Fallbacks in Settings → Engine → World map: Simple trees past (e.g. 150 m), Trees as models off, Falls 0,
+  Lagoon off. The opening fall films the same island (smoke passed; its look not judged by eye). Buildings on the
+  map now turn as in the walk (rot), so they face other ways than before.
+- Not done: picture standees draw as red squares on the floating island (the atlas reads right; not found), so the
+  far trees fall back to simple shapes, not flat pictures; the stream and pond stay painted water letters (no surface
+  of their own); the falls end in the cloud colour, no splash.
+- Next: the owner's phone test: open the map at a few hours and turn it; run Debug → Bowl map test and send the log
+  (the step "The floating island's frame times"). If it is slow, try Simple trees past first.
 ### Water track WA-6b (lane P) - Surf and the Waterfall climb - 2026-10-25
 Branch `track/water` (main merged in at the start: hub track HB-1, .gitignore and HANDOFF kept both sides; lanes R's
 WA-1 and G's work merged in before each push). Plan approved in Plan Mode; the owner's answers: Surf needs the Water
@@ -620,6 +802,7 @@ weather and life on water).
 - Next: the owner makes `track/water`; round 1 runs three sessions at once: WA-1 (lane R, pixel water), WA-3a (lane
   G, rivers downhill), WA-6a (lane P, wading). WA-1 takes its "before" pictures with `tools/look-water.py --out=` at
   this commit. Lane B (WA-7) runs in round 3 as a fourth lane (the owner, after WA-0).
+
 ### The in-game test's run phase and side areas (zone biome, the boss) - 2026-10-25
 Branch `fix/run-zone-biome` (one session, not part of a plan). The bug: the full test's "A run: airship, nodes,
 payout" failed on main f779581 with "a place on row 4 isn't its zone's biome". Plan approved in Plan Mode (the

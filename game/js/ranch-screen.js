@@ -24,6 +24,7 @@ import {
   xpProgress,
 } from './hooks.js';
 import { COATS, RULES, SPECIES } from './game-data.js';
+import { graftOf } from './logic/graft-art.js';
 import { billyName, teamSize, toTeam } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import {
@@ -115,7 +116,7 @@ function breedHTML(s, now, BR) {
     cards = home
       .map(
         m =>
-          `<pb-pick-card data-u="${m.uid}" heading="${escapeHtml(billyName(m))}" sub="Lv ${m.lvl} · ${escapeHtml(SPECIES[m.sp].name)}${s.team.includes(m) ? ' · team' : ''}"${P.a === m.uid || P.b === m.uid ? ' selected' : ''}><span slot="art">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat })}</span></pb-pick-card>`
+          `<pb-pick-card data-u="${m.uid}" heading="${escapeHtml(billyName(m))}" sub="Lv ${m.lvl} · ${escapeHtml(SPECIES[m.sp].name)}${s.team.includes(m) ? ' · team' : ''}"${P.a === m.uid || P.b === m.uid ? ' selected' : ''}><span slot="art">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftOf(m) })}</span></pb-pick-card>`
       )
       .join(''),
     why = breedCan(s, P.a, P.b, P.mode, BR),
@@ -127,7 +128,7 @@ function breedHTML(s, now, BR) {
   if (A && B && why !== 'same' && why !== 'line') {
     if (P.mode === 'safe') {
       const { m } = breedRoll(s, A, B, 'safe', BR);
-      preview = `<div class="bx k-card ranch-card breed-preview"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl} · parts ${Object.values(m.build).join(' ')}</span><span class="bx-sub">${m.coat && COATS[m.coat] ? `${escapeHtml(COATS[m.coat].name)} coat · ` : ''}hatches in ${BR.hours} h</span></div></div>`;
+      preview = `<div class="bx k-card ranch-card breed-preview"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftOf(m) })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl} · parts ${Object.values(m.build).join(' ')}</span><span class="bx-sub">${m.coat && COATS[m.coat] ? `${escapeHtml(COATS[m.coat].name)} coat · ` : ''}hatches in ${BR.hours} h</span></div></div>`;
     } else
       preview = `<p class="note breed-preview">Hatches in ${BR.hours} h: ${escapeHtml([...new Set([breedLine(A), breedLine(B)])].map(l => SPECIES[l + '0'].name).join(' or '))}. ${breedPct(O.safe)} plain, ${breedPct(O.quirk)} a quirk (a parent’s move, an odd size or coat), ${breedPct(O.abom)} an abomination (odd parts, its own name, one stat far up and one down).</p>`;
   }
@@ -137,7 +138,7 @@ function breedHTML(s, now, BR) {
 }
 /** one Billie's card on the ranch's sheet: its picture, name and level, a line under it and its buttons */
 function ranchCardHTML(m, sub, btns) {
-  return `<div class="bx k-card ranch-card"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}${m.mut ? ` · ${breedMark(m)}` : ''}</span>${sub}</div>${btns}</div>`;
+  return `<div class="bx k-card ranch-card"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftOf(m) })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}${m.mut ? ` · ${breedMark(m)}` : ''}</span>${sub}</div>${btns}</div>`;
 }
 /** RL-10b: the ranch's passive income: the pile, how long until it is full, Collect */
 function incomeHTML(s, now, R) {

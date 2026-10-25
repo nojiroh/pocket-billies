@@ -10,6 +10,7 @@ const ROOT = join(import.meta.dirname, '..');
 // the slowest files (several seconds each, in a cloud container): they generate and walk whole scenes, play runs with
 // their scenes, or sweep every roll
 export const SLOW_TESTS = [
+  'graft-art-sweep.test.mjs',
   'island-gen.test.mjs',
   'island-gen-doors.test.mjs',
   'mapgen-dials.test.mjs',

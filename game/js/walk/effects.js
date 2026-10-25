@@ -14,6 +14,7 @@ import {
   reducedMotion,
   worldBillyGlows,
 } from '../hooks.js';
+import { clamp } from '../util.js';
 import { placedTurn } from '../logic/prop-turn.js';
 import { hexToRgb } from '../art.js';
 import { EFFECT_FRAMES, artImage, walkData, walkView } from '../walk-view.js';
@@ -297,43 +298,108 @@ export function effectsPass(C, items, X, dark, t, dt) {
     });
     drawLifeEffects(quad, glows, t, rm, dt, sc, C0, pk);
   }
-  /* v18: spray and mist where water falls over a step */
+  /* v18: spray and mist where water falls over a step. Water track WA-2a: with pixel water they stand on the 32 grid
+     and move in its steps (water.frames); the mist sits out from the step, so the cliff no longer cuts it in half */
+  const pixW = engineSetting('water', 'pixel') !== false,
+    fps = pixW ? (engineSetting('water', 'frames') ?? 10) : 0,
+    tq = fps > 0 ? Math.floor((t * rm * fps) / 1000) * (1000 / fps) : t * rm,
+    g32 = v => (pixW ? Math.round(v * 32) / 32 : v);
   if (walkRenderer.falls && walkRenderer.falls.length) {
     const F = walkRenderer.falls,
       stp = Math.max(1, Math.ceil(F.length / 40));
     for (let k = 0; k < F.length; k += stp) {
-      const [x, y, z, dh] = F[k],
+      const [x, y, z, dh, di = 0, dj = 0] = F[k],
         sd = k * 1.37,
         big = Math.min(1.6, 0.5 + dh * 0.4);
       for (let n = 0; n < 6; n++) {
-        const ph = ((t * rm) / 900 + n / 6 + sd * 0.17) % 1,
+        const ph = (tq / 900 + n / 6 + sd * 0.17) % 1,
           an = n * 2.3 + sd,
           r = ph * 0.6 * big;
         quad(
           'spray',
           n % 4,
-          x + Math.cos(an) * r,
-          y + 0.05 + 2.2 * big * ph * (1 - ph),
-          z + Math.sin(an) * r * 0.5,
+          g32(x + Math.cos(an) * r),
+          g32(y + 0.05 + 2.2 * big * ph * (1 - ph)),
+          g32(z + Math.sin(an) * r * 0.5),
           0.13,
           0.13,
           (1 - ph) * 0.85
         );
       }
       if (k % (2 * stp) === 0) {
-        const ph = ((t * rm) / 2600 + sd * 0.3) % 1;
+        const ph = (tq / 2600 + sd * 0.3) % 1,
+          sz = 0.4 + ph * big * 0.7;
         quad(
           'smoke',
           Math.floor(ph * 4),
-          x + Math.sin(ph * 5 + sd) * 0.3,
-          y + 0.15 + ph * 0.9 * big,
-          z + 0.1,
-          0.5 + ph * big,
-          0.5 + ph * big,
+          g32(x + Math.sin(ph * 5 + sd) * 0.3 + di * sz * 0.5),
+          g32(y + 0.15 + ph * 0.9 * big),
+          g32(z + 0.1 + dj * sz * 0.5),
+          sz,
+          sz,
           0.22 * (1 - ph) * Math.min(1, ph * 5),
           [0.92, 0.97, 1]
         );
       }
+    }
+  }
+  /* WA-2a: a falls entry: spray thrown up and out along its width at the foot, droplets off the curled lip, and mist
+     that rises from the plunge pool and drifts with the wind, the taller the fall the more */
+  for (const f of walkRenderer.fallSets || []) {
+    const px = -f.dz,
+      pz = f.dx,
+      fy = f.footY,
+      nS = clamp(Math.ceil(f.w * 5), 6, 24),
+      up = Math.min(2.2, 0.6 + f.h * 0.18),
+      sd = f.x * 3.1 + f.z * 1.7;
+    for (let n = 0; n < nS; n++) {
+      const ph = (tq / 1000 + n / nS + Math.sin(n * 7.3) * 0.37 + 1) % 1,
+        a = ((n + 0.5) / nS - 0.5) * f.w,
+        out = (0.2 + 0.6 * ((n * 0.618) % 1)) * ph * up;
+      quad(
+        'spray',
+        n % 4,
+        g32(f.fx + px * a * (1 + ph * 0.3) + f.dx * out),
+        g32(fy + 0.05 + up * 1.6 * ph * (1 - ph)),
+        g32(f.fz + pz * a * (1 + ph * 0.3) + f.dz * out),
+        0.13,
+        0.13,
+        (1 - ph) * 0.9,
+        [0.93, 0.97, 1]
+      );
+    }
+    for (let n = 0; n < Math.min(6, nS / 3); n++) {
+      const ph = (tq / 700 + n / 6 + sd) % 1,
+        a = (((n * 0.618 + sd) % 1) - 0.5) * f.w * 0.9;
+      quad(
+        'spray',
+        (n + 1) % 4,
+        g32(f.x + px * a + f.dx * (f.curl + ph * 0.35)),
+        g32(f.lipY - ph * ph * 1.2),
+        g32(f.z + pz * a + f.dz * (f.curl + ph * 0.35)),
+        0.1,
+        0.1,
+        (1 - ph) * 0.7
+      );
+    }
+    const nM = clamp(Math.round(2 + f.h * 0.5 + f.w * 0.4), 3, 8),
+      wind = sc.wind || 1;
+    for (let n = 0; n < nM; n++) {
+      const ph = (tq / (3200 + f.h * 150) + n / nM + sd * 0.11) % 1,
+        a = (((n * 0.618 + sd * 0.3) % 1) - 0.5) * f.w,
+        sz = 0.6 + f.w * 0.35 + ph * (0.8 + f.h * 0.2),
+        drift = ph * (0.4 + 0.5 * wind);
+      quad(
+        'smoke',
+        Math.floor(ph * 4),
+        g32(f.fx + px * (a + Math.sin(ph * 4 + n) * 0.3) + f.dx * (sz * 0.45 + drift)),
+        g32(fy + 0.2 + ph * Math.min(f.h * 0.55, 4)),
+        g32(f.fz + pz * (a + Math.sin(ph * 4 + n) * 0.3) + f.dz * (sz * 0.45 + drift)),
+        sz,
+        sz,
+        (0.28 + Math.min(0.14, f.h * 0.02)) * (1 - ph) * Math.min(1, ph * 4),
+        [0.92, 0.97, 1]
+      );
     }
   }
   /* v22: leaves riding the streams (lying flat on the water), and steam breathing off warm springs */
@@ -475,6 +541,8 @@ export function effectsPass(C, items, X, dark, t, dt) {
     const a = 1 - q.life / q.max,
       gy = standingHeightAt(q.x, q.z);
     if (q.k === 'leaf') quad('leaf', q.fr, q.x, gy + q.y, q.z, 0.16, 0.16, a);
+    /* WA-2a: a wading step's splash: droplets as the spray's, not the dust's puff */ else if (q.k === 'splash')
+      quad('spray', (i + Math.floor(q.life * 12)) % 4, q.x, gy + q.y + 0.05, q.z, 0.09, 0.09, a * 0.9, [0.9, 0.96, 1]);
     else
       quad('smoke', 1, q.x, gy + q.y + 0.1, q.z, 0.25 + q.life * 0.6, 0.25 + q.life * 0.6, a * 0.35, [0.95, 0.9, 0.8]);
   }

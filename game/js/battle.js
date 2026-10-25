@@ -32,6 +32,7 @@ import {
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
 import { ITEMS, MOVES, PYRAMIDS, STAT_NAMES, TYPES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
+import { graftOf } from './logic/graft-art.js';
 import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
 import { billyName, healAll, maxHp, moveUsable, partBroken, partHpLeft, partMaxHp, plural } from './logic/rules.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
@@ -225,8 +226,8 @@ export function openBattle() {
   if (bs && !uiState.dbgSpeed) battleStage.speed = bs === 'fast' ? 1.6 : bs === 'faster' ? 2.2 : 1;
   const area = activeBattle.area || 'grass',
     list = saveData.team
-      .map(m => [m.sp, RIG_BACK_VIEW, m.coat])
-      .concat(activeBattle.sides[1].team.map(m => [m.sp, 1, m.coat]));
+      .map(m => [m.sp, RIG_BACK_VIEW, m.coat, graftOf(m)])
+      .concat(activeBattle.sides[1].team.map(m => [m.sp, 1, m.coat, graftOf(m)]));
   const b = activeBattle;
   Promise.all([battleStagePrepare(area), rigPreload(list)])
     .then(() => {

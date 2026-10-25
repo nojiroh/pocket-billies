@@ -39,6 +39,7 @@ import {
   TYPES,
   UNLOCK_DATA,
 } from './game-data.js';
+import { graftOf } from './logic/graft-art.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { CHALLENGE_IDS, expeditionNumeral, modsMake } from './logic/modifiers.js';
 import { pointBudget, pointPick, pointSpend, pointStartable } from './logic/starter-points.js';
@@ -125,7 +126,7 @@ function runReleaseSheet() {
   if (!m || !saveData.run) return null;
   const all = saveData.team.concat([m]),
     row = (o, i) =>
-      `<button class="pickrow" data-a="mact" data-i="${i}">${rigCanvasHTML(o.sp, 40, { build: o.build, coat: o.coat })}<span class="pr-t"><b>${escapeHtml(billyName(o))}</b><small>Lv ${o.lvl}${o === m ? ', just caught' : ''}${runReleasePays(saveData.run, o) ? '' : ', from Copperleaf: comes home at the end'}</small></span></button>`;
+      `<button class="pickrow" data-a="mact" data-i="${i}">${rigCanvasHTML(o.sp, 40, { build: o.build, coat: o.coat, graft: graftOf(o) })}<span class="pr-t"><b>${escapeHtml(billyName(o))}</b><small>Lv ${o.lvl}${o === m ? ', just caught' : ''}${runReleasePays(saveData.run, o) ? '' : ', from Copperleaf: comes home at the end'}</small></span></button>`;
   return {
     title: 'Your party is full',
     lock: true,
@@ -372,7 +373,7 @@ export function runStartSheet() {
         can = pointStartable(m, picked, SPECIES, RULES.run.points, P.budget, { mods }),
         where = saveData.team.includes(m) ? 'team' : trains(m.uid) ? 'training' : 'storage',
         sub = `Lv ${m.lvl} · ${where} · ${plural(can.cost, 'point')}${!on && can.why ? ` · ${can.why}` : ''}`;
-      return `<pb-pick-card data-u="${m.uid}" heading="${escapeHtml(billyName(m))}" sub="${escapeHtml(sub)}"${on ? ' selected' : ''}${on || can.ok ? '' : ' disabled'}><span slot="art">${rigCanvasHTML(m.sp, 64, { build: m.build, coat: m.coat })}</span></pb-pick-card>`;
+      return `<pb-pick-card data-u="${m.uid}" heading="${escapeHtml(billyName(m))}" sub="${escapeHtml(sub)}"${on ? ' selected' : ''}${on || can.ok ? '' : ' disabled'}><span slot="art">${rigCanvasHTML(m.sp, 64, { build: m.build, coat: m.coat, graft: graftOf(m) })}</span></pb-pick-card>`;
     },
     /* RL-13: the Expedition (those open) and the challenges (those the save may take) as chips */
     expChips = MODIFIERS.expeditions

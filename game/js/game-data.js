@@ -397,6 +397,7 @@ provide({ PYRAMIDS }); /* to-module */
 export const COATS = gameData.coats || {};
 provide({ COATS }); /* to-module */
 export const ITEMS = gameData.items;
+provide({ ITEMS }); /* to-module */
 export const PEOPLE = gameData.people;
 provide({ PEOPLE }); /* to-module */
 export const SHOPS = gameData.shops || {};
