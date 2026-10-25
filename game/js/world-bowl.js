@@ -86,6 +86,7 @@ import {
   FLOAT_STRIDE,
   floatGroundHeight,
   floatGroundMesh,
+  floatInside,
   floatIslandMesh,
 } from './logic/float-island.js';
 import { orbitYawAt } from './logic/camera-orbit.js';
@@ -158,6 +159,7 @@ expose({
   worldBowlHex: [() => worldBowlHex],
   worldBowlIslandLift: [() => worldBowlIslandLift, v => (worldBowlIslandLift = v)],
   worldBowlIslandLoad: [() => worldBowlIslandLoad, v => (worldBowlIslandLoad = v)],
+  worldBowlIslandPoly: [() => worldBowlIslandPoly, v => (worldBowlIslandPoly = v)],
   worldBowlLightMatrix: [() => worldBowlLightMatrix, v => (worldBowlLightMatrix = v)],
   worldBowlLine: [() => worldBowlLine, v => (worldBowlLine = v)],
   worldBowlLineMap: [() => worldBowlLineMap, v => (worldBowlLineMap = v)],
@@ -560,6 +562,12 @@ function worldBowlIslandLoad(i) {
 function worldBowlFloats() {
   const g = worldBowl.ground;
   return !!(g && g.islandMap && !worldExtra.look);
+}
+/* the floating island's coast on the bowl (flat x, y pairs), from the sea's input (its map's own coast) */
+function worldBowlIslandPoly() {
+  const g = worldBowl.ground,
+    P = g && g.sea && g.sea.places.find(q => q && q.poly);
+  return P ? P.poly : null;
 }
 /* the floating island: its rock and small rocks (logic/float-island.js), its middle, radius and the camera's pivot */
 function worldBowlFloatIsland() {
@@ -1748,7 +1756,10 @@ function worldBowlStampMap(T, i) {
     L = T.K.layer,
     /* IS-7: an island map only where the bowl has its land: its own sea squares would show through the water as a
        box round it */
-    G = bowlHasCoast(M) && worldBowl.ground ? worldBowl.ground.G : null;
+    G = bowlHasCoast(M) && worldBowl.ground ? worldBowl.ground.G : null,
+    /* HB-3: the floating island clipped by its own coast (the map's 240 points), not the bowl's 6 m grid: a smooth
+       coast, no blocks */
+    P = G && worldBowlFloats() ? worldBowlIslandPoly() : null;
   for (let j = j0; j <= j1; j++)
     for (let ii = i0; ii <= i1; ii++) {
       const x = -1 + ((ii + 0.5) / N) * 2 - s.x,
@@ -1756,7 +1767,7 @@ function worldBowlStampMap(T, i) {
         mx = (x * east[0] + y * east[1]) * BOWL_METRES + w / 2,
         mz = (x * north[0] + y * north[1]) * BOWL_METRES + h / 2;
       if (mx < 0 || mz < 0 || mx >= w || mz >= h) continue;
-      if (G && bowlCoastAt(G, x + s.x, y + s.y) > 0) continue;
+      if (P ? !floatInside(P, x + s.x, y + s.y) : G && bowlCoastAt(G, x + s.x, y + s.y) > 0) continue;
       const ch = (M.tiles[h - 1 - Math.floor(mz)] || '')[Math.floor(mx)],
         t = L[ch];
       if (t != null) T.idx[j * N + ii] = t;
