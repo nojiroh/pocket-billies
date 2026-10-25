@@ -50,7 +50,7 @@ arrives; the field swells up to 0.5 m; fixed-length rails rather than an engine 
     posts; a post at every joint except the gate's; no posts side by side; the posts on the line the Billies wander
     inside; the roam line inside the posts; a path tile just outside the gap, walked to in a straight line; the flood
     still leaves only through the gap; the ground rerun the same, level by the gate, nothing outside the zone moved.
-  - `check:smoke` after the engine change and at the end (see below).
+  - `check:smoke` after the engine change (307 s) and at the end (297 s): no problems.
   - Before (f779581) and after pictures with `tools/look-pasture.py`.
 - Next: the owner's look on the phone (the swell's height, the broken and weathered share, the gate's side). HB-4b
   reruns build-copperleaf (the pasture and its ground follow the new zone). The quick check's baseline pictures near
