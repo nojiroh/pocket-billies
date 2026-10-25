@@ -143,36 +143,36 @@
   "priority": 3,
   "script": ["You were gone a while. The lavender grew back. Mind where you land. #l:d521"]
  },
- "leader_badge": {"who":"leader","priority":1,"script":["I’m a leader. It says so on my badge. Let’s see yours. #l:8ee4"]},
+ "leader_badge": {"who":"leader","priority":1,"script":["“I’m a leader. It says so on my badge. Let’s see yours.” #l:8ee4"]},
  "leader_again": {
   "who": "leader",
   "when": "rematch >= 1",
   "priority": 5,
-  "script": ["You again! I remember your team. Mostly the fainting. #l:e094"]
+  "script": ["“You again! I remember your team. Mostly the fainting.” #l:e094"]
  },
  "leader_word": {
   "who": "leader",
   "when": "history:wins >= 1",
   "priority": 2,
-  "script": ["Word is you’ve beaten a boss. Word says a lot of things. #l:a4ee"]
+  "script": ["“Word is you’ve beaten a boss. Word says a lot of things.” #l:a4ee"]
  },
- "bureau_lost": {"who":"bureau","priority":1,"script":["You look lost. That is our department. #l:492a"]},
+ "bureau_lost": {"who":"bureau","priority":1,"script":["“You look lost. That is our department.” #l:492a"]},
  "bureau_file": {
   "who": "bureau",
   "when": "history:losses >= 1",
   "priority": 3,
-  "script": ["Ah. You’re on file. Returned item, handled once. #l:7ffb"]
+  "script": ["“Ah. You’re on file. Returned item, handled once.” #l:7ffb"]
  },
  "bureau_drawer": {
   "who": "bureau",
   "when": "history:losses >= 3",
   "priority": 5,
-  "script": ["Your file is getting thick. We’ll need a bigger drawer. #l:2ca8"]
+  "script": ["“Your file is getting thick. We’ll need a bigger drawer.” #l:2ca8"]
  },
  "bureau_win": {
   "who": "bureau",
   "when": "last:won",
   "priority": 4,
-  "script": ["A win, recorded. Wins are reviewed. Reviews take time. #l:aaec"]
+  "script": ["“A win, recorded. Wins are reviewed. Reviews take time.” #l:aaec"]
  }
 }
