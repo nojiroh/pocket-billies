@@ -304,7 +304,7 @@ const BOX_INFO_CACHE = new WeakMap();
    count); nothing is written to depth. A first, invisible draw of the whole picture is an occlusion query: its answer
    (a frame or two late) says whether anything hides you at all, eased into walkRenderer.hidK (0-1), which turns on
    the see-through circle (draw-common.js rockUniformsFor). Off indoors, in battle and with Engine > Camera >
-   "Your silhouette through rock" off */
+   "Your outline when hidden" off */
 const SILHOUETTE_TINT = [0.16, 0.27, 0.55],
   SILHOUETTE_AMOUNT = 0.55,
   SILHOUETTE_PULL = 0.8;

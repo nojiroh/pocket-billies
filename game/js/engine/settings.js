@@ -1013,9 +1013,9 @@ export const ENGINE_SPEC = [
       ],
       [
         'silhouette',
-        'Your silhouette through rock',
+        'Your outline when hidden',
         'bool',
-        'Terrain TR-3: where rock still hides you, your shape shows through it as a tint.',
+        'Terrain TR-3, player visibility: where rock, a building, a tree or anything else nearer the camera hides you, your outline shows through it.',
       ],
       [
         'outline',
