@@ -779,6 +779,11 @@ export function dataFieldMoves(D, valid = () => true) {
       if (!types.has(M.type)) problem('fieldMoves.json', `moves.${k}: no type "${M.type}" (types.json)`);
       if (!(D.biomes || {})[M.biome]) problem('fieldMoves.json', `moves.${k}: no biome "${M.biome}" (biomes.json)`);
     }
+  /* WA-6b: the Waterfall climb's Billie type and its badges are real types */
+  const WF = FM && FM.waterfall;
+  if (WF)
+    for (const t of [WF.type, ...(WF.badges || [])])
+      if (!types.has(t)) problem('fieldMoves.json', `waterfall: no type "${t}" (types.json)`);
   const S = D.rules && D.rules.run && D.rules.run.side;
   if (!S) return out;
   const chance = (/** @type {any} */ v) => typeof v === 'number' && v >= 0 && v <= 1,
