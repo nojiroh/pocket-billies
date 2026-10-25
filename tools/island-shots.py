@@ -134,7 +134,7 @@ def main():
         # hub placing: the landmarks from a free camera: [name, label, prop key, the eye's offset from it, the target's]
         for name, label, k, eye, tgt in (
                 ('station', 'Skyline Station on its headland, the sky rail out to sea and the portal', 'train_station', [-6, 26, -46], [30, 6, 6]),
-                ('station-sea', 'The sky rail climbing to the portal, from over the sea', 'train_station', [58, 12, -34], [52, 12, 6]),
+                ('station-rail', 'The sky rail climbing to the portal, from the headland', 'train_station', [-4, 4, -10], [60, 14, 6]),
                 ('station-near', 'Skyline Station and the rail out of its right-hand end, close', 'train_station', [4, 9, -22], [8, 2, 3]),
                 ('lighthouse', 'The lighthouse on the cove', 'lighthouse', [-14, 10, -18], [0, 4, 0]),
                 ('windmill', 'The windmill by the farm', 'windmill', [-12, 8, -16], [0, 3, 0]),
