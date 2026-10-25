@@ -34,7 +34,9 @@ merge commit per branch (no rebase, no squash), in this order: `track/hub` (HB-4
   - HB-8: `flyMenu`'s hub branch (unreachable) and the run sheet's airship lines.
 - Verified: after each merge check:modules, lint, typecheck, format:check, check:data, `npm test` (947, 948, 953,
   957, all passing); at the end `npm test` 957/957, `npm run test:slow` 71/71, check-fast in full 29/29 (938 s),
-  `check:smoke` 6/6 (204 s, the phone flow taps the station). Pictures: island-shots and look-pasture (below).
+  `check:smoke` 6/6 (204 s, the phone flow taps the station). Pictures (not committed, git-ignored tools): `tools/island-shots.py` (14 views: HB-4b's island
+  with its square and the station by the mast, no page errors) and `tools/look-pasture.py` (8 views: the bending fence
+  all round HB-4b's pasture, its gap and open gate on the west side, 48 posts, 48 rails, no page errors).
 - Next: the PR into main (the planning session opens it); then the placing half: the station on its headland with
   the sky rail and portal, the new buildings on their plots (and the inn's, library's and store's acts), HB-3, HB-8.
 
