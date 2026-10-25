@@ -17,7 +17,7 @@ silhouette an outline in the colour of your top (lifted if dark); you and the on
     `hiddenEase`, `outlineColour`, `coverTarget`, `fadeEase`.
   - **Silhouette for anything that hides you** (sprites.js `drawPlayerSilhouette`): no `rockK` gate; an invisible first
     draw is an occlusion query (`ANY_SAMPLES_PASSED_CONSERVATIVE`), its answer `walkRenderer.hidT`, eased into `hidK`;
-    pull toward the eye 0.8 m (was 0.6). Debug log `hidden`.
+    pull toward the eye 0.8 m (was 0.6). Debug log: the camera line's `hidden`.
   - **Outline** (sprite shader `uGhostE`): the picture's edge whole, the inside dotted (`outlineFill`), in the top's
     colour (`lookOf`, the worn top's first colour, else the wardrobe's; looked up once a second). Engine > Camera
     `outline` (1 art pixel; 0 = the old dark blue tint), `outlineFill` (0.25).
@@ -44,7 +44,11 @@ silhouette an outline in the colour of your top (lifted if dark); you and the on
   was mostly the old `M.build` pictures; the real buildings are models and never faded before.
 - Verified: unit tests 927; lint, typecheck, modules, format, check-data; smoke 6 of 6 after every step; check-fast
   "Behind things" and "Tall ground"; pictures behind the lab, shop, two cottages and three trees (hidden 1, circle 0.7;
-  in the open 0). The full quick check: started at the end of the session (result added below when it finished).
+  in the open 0). Debug log check (camera line).
+  Full quick check (1316 s): 33 of 37. Postcards and Actions sheet passed alone (the full run's load, as RT-1 saw).
+  Song fingerprints fails on main too (cave mid and cave late aren't in validation/sound-baseline). RL-8 failed at
+  "Take off" in the full run and once more paired with another page; alone it gets past it and fails where main does
+  (run alone in a worktree of origin/main 2cfef57): "the town's shop has no Perk (RL-12)", RT-1's open item.
 - **Not verified**: on a phone (cost, how the outline reads at real resolution); the talk partner's outline in a
   browser (unit test only).
 - Risky / open:
@@ -55,7 +59,7 @@ silhouette an outline in the colour of your top (lifted if dark); you and the on
   - The outline is 1 art pixel; at the checks' low graphics it is thin. `outline` 2 if it reads weakly on the phone.
   - Copperleaf's buildings now fade as a whole (0.7 while hidden) and in the circle: it reads as busy dithering on the
     shop. `coverFade` 1 keeps only the circle.
-- Next: the owner plays Copperleaf on the phone and sends a debug log (`hidden` on the run line is how hidden you
+- Next: the owner plays Copperleaf on the phone and sends a debug log (`hidden` on the camera line is how hidden you
   were). Then a PR from this branch to main if it reads well.
 
 ### Routes track RT-1 - Route layouts - 2026-10-24
