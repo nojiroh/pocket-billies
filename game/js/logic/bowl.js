@@ -558,7 +558,8 @@ export const BOWL_ISLE_RIM = 0.86;
 /** @typedef {{ places: BowlSeaPlace[], roads: [number, number, number, number][],
  *   opt?: BowlSeaLook }} BowlSeaInput */
 /** IS-7: how much higher an island's own hills and mountain are drawn on the bowl than they are, like the buildings
- * and trees (logic/bowl-things.js BOWL_THING_SCALE, the owner's "about 3x"), so a 25 m mountain reads */
+ * and trees (logic/bowl-things.js BOWL_THING_SCALE, the owner's "about 3x"), so a 25 m mountain reads. A run's bowl
+ * only: the hub's floating island is drawn at its real height (HB-3, the owner: things there are life size) */
 export const BOWL_ISLAND_LIFT = 3;
 /** IS-7: the island's ground stands this far above the water at its lowest (bowl radii), as the land elsewhere does */
 export const BOWL_ISLAND_BASE = 0.004;
@@ -617,14 +618,23 @@ export function bowlPolyBox(P) {
 }
 /** the land the sea must leave alone: each place with its walk map's half-diagonal (w, h in metres, BOWL_METRES to the
  * radius), and each road. IS-7: a place whose map has an island coast keeps exactly its coast instead (poly), and with
- * heightOf its ground's own heights (hAt, lifted by BOWL_ISLAND_LIFT).
+ * heightOf its ground's own heights (hAt, lifted by lift: BOWL_ISLAND_LIFT on a run's bowl, 1 on the floating island).
  * @param {LocationData[]} places @param {[number, number][]} roads pairs of place numbers
  * @param {(p: LocationData) => { w: number, h: number, island?: { coast?: number[][] } } | null} mapOf
  * @param {number} [metres] @param {BowlSeaLook | null} [opt]
  * @param {((p: LocationData) => ((mx: number, mz: number) => number) | null) | null} [heightOf] the map's ground height
  * in metres at a point of it (east, north from its south-west corner)
+ * @param {number} [lift] how much higher than they are its heights are drawn
  * @returns {BowlSeaInput} */
-export function bowlSeaInput(places, roads, mapOf, metres = 1000, opt = null, heightOf = null) {
+export function bowlSeaInput(
+  places,
+  roads,
+  mapOf,
+  metres = 1000,
+  opt = null,
+  heightOf = null,
+  lift = BOWL_ISLAND_LIFT
+) {
   const byId = (/** @type {string} */ id) => places.find(p => p.id === id),
     at = places.map(p => {
       const s = bowlSpotOf(p, byId);
@@ -646,7 +656,7 @@ export function bowlSeaInput(places, roads, mapOf, metres = 1000, opt = null, he
           const H = heightOf ? heightOf(p) : null;
           if (H) {
             const { north, east } = bowlCompass(o.x, o.y, at[i].up),
-              k = BOWL_ISLAND_LIFT / metres;
+              k = lift / metres;
             o.hAt = (x, y) => {
               const dx = x - o.x,
                 dy = y - o.y;
