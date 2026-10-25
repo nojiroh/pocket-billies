@@ -498,6 +498,7 @@ const GROUND = [
   'stepm',
   'grassPatches',
   'checks',
+  'landmarks',
 ];
 const sc = {};
 for (const k of [
