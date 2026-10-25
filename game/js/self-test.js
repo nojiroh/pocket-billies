@@ -27,7 +27,7 @@ import {
   gameData,
   trainersAt,
 } from './game-data.js';
-import { canEnter, encountersHere, gateText, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
+import { canEnter, encounterStock, encountersHere, gateText, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
 import { modBossHp, modFoeLevels, modsMake } from './logic/modifiers.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
@@ -40,6 +40,7 @@ import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
 import { runClinic, runFoes, runHealCost, runShopOpen, runWareHeals } from './logic/run-loop.js';
 import { perkOfferMake } from './logic/perks.js';
 import { eventAt } from './logic/encounters.js';
+import { runRouteTrainers } from './logic/route-trainers.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { runUnlocks } from './logic/unlocks.js';
 import { runStartOn, runStartPlan } from './logic/run-start.js';
@@ -1189,6 +1190,102 @@ async function runFullTest(mode) {
           } finally {
             uiState.modal = null;
             uiState.mq = [];
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        180
+      );
+    /* RT-2: a run route's trainers, on a copy of the save: the first seed (SELFTESTRT0, 1, ...) whose map has a route
+       with a pair; on its place every trainer stands on its spot (a pair's second beside it), facing the way it
+       looks; the place's wild Billies are fewer for them; the pair starts a double and, beaten, leaves one reward
+       pick. Route sight is off while the test runs, so the battle is started as the walk-up would. Then the save as
+       it was */
+    if (typeof runWorldSync === 'function' && !selfTest.stop)
+      await phase(
+        "A route's trainers: on their spots, a pair as a double",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            wait = async (/** @type {() => any} */ f, /** @type {number} */ ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                if (activeBattle && activeBattle.phase === 'playing') tapMessage();
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            let seed = '',
+              node = -1;
+            for (let k = 0; k < 40 && node < 0; k++) {
+              const t = JSON.parse(JSON.stringify(s));
+              runStartOn(t, runStartPlan(`SELFTESTRT${k}`, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+              const pair = Object.values(
+                runRouteTrainers(t.run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run })
+              ).find(T => T.mate && !(t.run.map.nodes[T.runNode] || {}).side);
+              if (pair) [seed, node] = [`SELFTESTRT${k}`, pair.runNode];
+            }
+            if (node < 0) throw new Error('no seed of the first 40 has a route with a pair');
+            runStartOn(s, runStartPlan(seed, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            s.team.forEach(m => {
+              m.hp = maxHp(m);
+              m.status = null;
+            });
+            setSaveData(s);
+            const n = runWorldNode(node);
+            if (!runJump(n)) throw new Error('couldn’t walk to the route');
+            uiState.roam = null;
+            render();
+            const id = 'w:' + LOCATIONS[n].mapId + '*';
+            if (!(await wait(() => walkView.ready && walkView.id === id, 60000)))
+              throw new Error(`the route isn't shown (still ${walkView.id})`);
+            const here = Object.values(TRAINERS).filter(T => T.route && T.runNode === node),
+              count = here.reduce((a, T) => a + (T.mate ? 2 : 1), 0),
+              o = walkView.sc.baseOff || [0, 0];
+            if (!here.length || !here.every(T => T.route.at && T.route.spot))
+              throw new Error('a route trainer has no spot');
+            if (!(await wait(() => here.every(T => walkView.npcAt[T.id]), 10000)))
+              throw new Error('a route trainer isn’t on the map');
+            for (const T of here) {
+              const p = walkView.npcAt[T.id],
+                d = Math.hypot(p[0] - T.route.at[0] - o[0], p[1] - T.route.at[1] - o[1]);
+              if (d > 1.5) throw new Error(`${T.name} stands ${d.toFixed(1)} m off its ${T.route.spot}`);
+              if (!walkView.npcLook[T.id]) throw new Error(`${T.name} faces nowhere`);
+            }
+            const P = here.find(T => T.mate);
+            if (!P || !walkView.npcAt[P.id + '~b']) throw new Error('the pair’s second isn’t on the map');
+            const stock = encounterStock(n);
+            if (stock !== Math.max(RULES.run.wild.routeMin, RULES.run.wild.route - count))
+              throw new Error(`the route holds ${stock} wild Billies with ${count} trainers`);
+            const picks = saveData.run.enc.rewardN;
+            startTrainer(P.id, { talked: true });
+            if (!activeBattle || activeBattle.fmt !== 'double') throw new Error('the pair didn’t start a double');
+            stopTimers();
+            activeBattle.over = 'win';
+            endBattle();
+            if (!(await wait(() => !activeBattle && saveData.flags[P.id], 15000)))
+              throw new Error('the pair’s battle didn’t end');
+            if (saveData.run.enc.rewardN !== picks + 1) throw new Error('the pair left no reward pick (or two)');
+            return `${seed}: ${LOCATIONS[n].name}, ${count} trainers (${here.map(T => T.route.spot + (T.route.opt ? '?' : '') + (T.mate ? '+2' : '')).join(', ')}), ${stock} wild; the pair a double, one pick`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+            }
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
             setSaveData(was);
             render();
           }

@@ -1552,6 +1552,49 @@ def terraces_and_floating(P):
 
 # RL-5: 'phase 08b: walking across seams — the next view ready ahead, no wait, no jump in the picture' retired: every seam it walked (and --seams=all) joined two parked places (RL-7 walks a run's roads, below)
 
+@step('RT-2: route trainers — on their spots, a pair as a double (the in-game step), and a pair that spots you walks up, both say their line, the double starts', 600)
+def route_trainers_step(P):
+    """The in-game test's route trainers step (its own seed search: a route with a pair; every trainer on its spot,
+    the wild stock less them, the pair a double leaving one pick). Then, out of the self-test (route sight is off while
+    it runs), the same run on a copy of the save: stood 3 m in front of the pair, it sees you ("!"), walks up, each of
+    the two says its line under its own class's name, and the double battle starts. The hub's save is put back after"""
+    pg = P.pg
+    if not pg.evaluate("typeof routeSight!=='undefined'&&typeof runWorldSync==='function'"): return 'not in this build'
+    name = "A route's trainers: on their spots, a pair as a double"
+    r = run_in_game_test(pg, [name], False, 420)
+    ph = next((p for p in r['phases'] if p['name'] == name), None)
+    if not ph: raise Exception('the in-game test has no route trainers step')
+    pg.evaluate("window.rt2Hub=JSON.parse(JSON.stringify(saveData));0")
+    try:
+        found = pg.evaluate("""(()=>{const s=JSON.parse(JSON.stringify(saveData)),data=runWorldData();if(s.run)runRestore(s);
+          for(let k=0;k<40;k++){const t=JSON.parse(JSON.stringify(s)),seed='SELFTESTRT'+k;runStartOn(t,runStartPlan(seed,{...data,unlockData:UNLOCK_DATA},{unlocks:[]}));
+            const p=Object.values(runRouteTrainers(t.run,{classes:EVENTS.classes,species:SPECIES,rules:RULES.run})).find(T=>T.mate&&!(t.run.map.nodes[T.runNode]||{}).side);
+            if(p){runStartOn(s,runStartPlan(seed,{...data,unlockData:UNLOCK_DATA},{unlocks:[]}));runArrive(s,0,data);s.visited[s.trip.node]=1;s.team.forEach(m=>{m.hp=maxHp(m);m.status=null});
+              uiState.inside=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';setSaveData(s);const n=runWorldNode(p.runNode);
+              if(!runJump(n))return null;uiState.roam=null;render();return [n,p.id]}}return null})()""")
+        if not found: raise Exception('no seed of the first 40 has a route with a pair to walk to')
+        n, tid = found
+        if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n}].mapId+'*'&&!!walkView.npcAt['{tid}']&&!!walkView.npcAt['{tid}~b']", 120): raise Exception('the route with the pair isn’t shown, or the pair isn’t on it')
+        pg.evaluate(f"""(()=>{{const a=walkView.npcAt['{tid}'],l=walkView.npcLook['{tid}'],fx=l[0]-a[0],fz=l[1]-a[1],d=Math.hypot(fx,fz)||1;
+          walkView.pl.route=null;walkView.pl.goal=null;walkView.pl.x=a[0]+fx/d*3;walkView.pl.z=a[1]+fz/d*3}})();0""")
+        if not until(pg, f"routeSight.busy==='{tid}'&&!!walkView.spotted['{tid}']", 30): raise Exception(f'stood in front of the pair, it never saw you ({pg.evaluate("routeSight.busy")})')
+        names = []
+        for _ in range(120):
+            st = pg.evaluate("[!!activeBattle,talkBox.on?document.querySelector('#talk .talk-who').textContent:'']")
+            if st[0]: break
+            if st[1] and (not names or names[-1] != st[1]): names.append(st[1])
+            pg.evaluate("talkBox.on&&document.getElementById('talk').click();0")
+            time.sleep(0.25)
+        if not pg.evaluate("!!activeBattle"): raise Exception(f'the pair talked ({names}) but no battle started')
+        fmt = pg.evaluate("activeBattle.fmt")
+        if fmt != 'double': raise Exception(f'the pair’s battle is {fmt}')
+        want = pg.evaluate(f"[TRAINERS['{tid}'].name.split(' & ')[0],TRAINERS['{tid}'].mate.name]")
+        if names[:2] != want: raise Exception(f'the pair’s lines were said by {names}, not {want}')
+        return f'{ph["why"] or "in-game step passed"}; walked up by {" and ".join(want)}, a double'
+    finally:
+        pg.evaluate("if(activeBattle){stopTimers();setActiveBattle(null);battleStageStop()}if(talkBox.on)talkHide();uiState.modal=null;uiState.mq=[];renderOverlay();setSaveData(window.rt2Hub);render();0")
+
+
 @step('RL-8: a run from the mast — the flight, a battle, a seam, a paid heal, the shop, a mini-boss and its Perk pick (RL-12), the boss, the payout, home', 420)
 def rl8_run_from_mast(P):
     """Copperleaf's mast sheet (tapped as walkPick does) offers "Start a run"; its sheet's "Take off" puts a run on the
@@ -1913,7 +1956,7 @@ def pages():
         L = [('town', {}, [in_game_test_step, test_checks] + ([test_draw] if '--tests' in ARGS else []) +
                           [nature_growth_exits, views_flags_wind_light, terraces_and_floating, name_caught_room_windows]),
              ('town', low, [battles_and_world_billies, starter_rigs, battle_weather]),
-             ('town', low, [rl8_run_from_mast, juniper_and_lab, airship_moored]),
+             ('town', low, [rl8_run_from_mast, route_trainers_step, juniper_and_lab, airship_moored]),
              ('town', {}, [walking, atmosphere, animals, frames_rooms_settings_map]),
              ('town', {}, [culling_cache_wear, buildings_and_rooms, lowpoly_props, night_lights_and_front]),
              ('town', low, [postcard_visit, run_speeds, settings]),
