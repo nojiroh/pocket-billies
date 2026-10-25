@@ -283,7 +283,7 @@ test("a run's place is stocked once a visit from its own stream at its row's lev
        Billie spliced) the stock's species, levels, sizes and coats are the same */
     const whole = (/** @type {any[]} */ L) =>
         L.map(({ sp, lvl, build, coat, alpha }) => ({ sp, lvl, build, coat, alpha })),
-      grafts = (/** @type {any[]} */ L) => L.map(q => q.graft || null),
+      grafts = (/** @type {any[]} */ L) => L.map(q => [q.graft || null, q.unstable || null]),
       G = data.GENES.wild,
       odds = { ...G },
       kept = { whole: whole(stock()), grafts: grafts(stock()) };
@@ -304,6 +304,9 @@ test("a run's place is stocked once a visit from its own stream at its row's lev
         stock().some(q => q.graft),
         'nearly every Billie spliced'
       );
+      /* an Unstable one carries its roll (the stream's): its foe in battle keeps it */
+      for (const q of stock())
+        assert.equal(!!q.unstable, !!q.graft && fn('graftStability')(fn('geneData')(), q.sp, q.graft).unstable);
     } finally {
       Object.assign(G, odds);
       delete s.wild.run_0;

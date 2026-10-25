@@ -958,7 +958,9 @@ export function encountersHere(node = saveData.trip.node) {
       while (W[L.id].list.length < cap) {
         const q = spawn(false, null, node, rnd),
           g = wildSplice(geneData(), q.sp, pool, spl);
-        if (g) q.graft = g;
+        if (!g) continue;
+        q.graft = g;
+        unstableTidy(q, spl); /* SP-2: past the limit, its Unstable roll, from the same stream (the same on a reload) */
       }
     }
     return W[L.id].list;
