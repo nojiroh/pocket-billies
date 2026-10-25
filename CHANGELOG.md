@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **The story reacts to your runs** (roguelite track RL-S1, the story director): the game remembers your last 20
+  runs (where, how far, what beat you, who you brought, the Perks and leaders). Back in Copperleaf, **Professor
+  Chosen, Hazel and Granny Juniper** each have a fresh word about your last run the first time you talk to them. After
+  a **lost run** Chosen loudly takes the credit for bringing you back, and Hazel isn't so sure it was him. On a run,
+  **leaders** say something before the battle (they remember beating you), and the **Bureau's clerks** have started
+  keeping a file on you.
 - **Expeditions, challenges and starter points** (roguelite track RL-13): runs now have difficulty tiers.
   **Expedition I** is the game as it was; winning the highest one open unlocks the next, up to **V**. Each one above I
   sends foes out 2 levels higher, makes the final boss tougher (+15% HP a step), raises run shop and clinic prices by
