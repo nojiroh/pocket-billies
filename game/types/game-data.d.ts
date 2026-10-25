@@ -996,6 +996,9 @@ export interface Rules {
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;
+    /** HB-2: the run's loading screen (logic/run-load.js): it lifts at capMs even when a stage is still waiting (the
+        owner: 20 s) */
+    load: { capMs: number };
     /** RL-8: what a run starts with, besides the Billies from home and the packed bag: its money, pyramids and items (placeholders) */
     start: { se: number; pyramids: Record<string, number>; items: Record<string, number> };
     /** RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): how many items and pyramids (in all) are
