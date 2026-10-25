@@ -2,6 +2,72 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-S1 - Story director - 2026-10-25
+Branch `track/story` (new, made from main 2cfef57 in this session at the owner's word; BRANCHES.md and roguelite-track
+9.4 name it). Plan approved in Plan Mode with the owner's answers: the table is **`banter.json`**, **`rel:` and
+`chapter:` move to RL-S2**, a fresh line **replaces the first talk after a run**, and the 28 drafted lines plus the loss
+scene as written. Main moved during the session (RL-12c held items, the splicing plan, window glass): merged in at the
+end (conflicts in CHANGELOG, ROADMAP, check-fast's list; both sides kept). **PR #188 (TW-2, TW-3) was still open**:
+once it lands, merge main into track/story. TW-3 also edits `validRun` (`run.quests`) and `battleSettle` (returns
+`quests`), which RL-S1 also touches (`run.lostTo`, `run.beat`). Tag `rl-s1-done`.
+- Where the docs were wrong (checked in the code):
+  - **`lines.json` was impossible**: `gameData.lines` / `LINES` / `game/data/lines/*.json` is the Billie evolution lines'
+    section, and `billie:` reads it.
+  - **"Hazel's mast lines" (RL-8) never existed**: no code, no data, no `logic/hazel.js` or `talkHazel` (the opening's
+    table is `logic/chosen.js`).
+  - **Nothing recorded what beat you**: `battleSettle` resets `run.at` and drops `run.at.foe` before `runOver(false)`.
+  - **`runEnd` → `runRestore` puts the hub's `flags` back**, wiping the run's record of the leaders beaten (and they are
+    keyed by the run foe's id, not the leader's). So the entry is built in `runEnd` before the restore, from
+    `run.beat`, a new list.
+  - There is no rival yet: an entry's `rival` is `null` until RL-S2.
+- Changed (one cause per commit):
+  - **Run history** (new `logic/run-history.js`, pure, no imports): `historyEntry` (seed, region theme and name,
+    Expedition, end won/lost/quit, `by`, furthest row, days, team species, Perks, the region's and a side area's leaders,
+    each beaten or not, `rival: null`), `historyPush` (the newest 20), `validHistory`, `historyFacts`,
+    `historyRematch`, `runLostTo`. `battleSettle` sets `run.lostTo` on a lost run battle and adds to `run.beat` on a
+    leader win. Both are checked in `validRun`. `runEnd` pushes the entry, so the run sim records it too. `meta.history`
+    is in `newMeta` and `validMeta`, and `metaFill` drops a broken history on its own instead of resetting the meta.
+    The `bureau_clerk` class is marked `"bureau": 1` (events.json, schema, type; `encClassFoe` carries it).
+  - **Conditions**: `last:<fact>`, `lastby:<what>`, `history:<fact>`, `rematch` (conditions.js; `storyStateOf` takes
+    `foe`). The story checks refuse unknown facts and `lastby:` names.
+  - **banter.json** (schema, `BANTER`, types, `dataBanter` in CI and the Studio's Check, the Studio's JSON list,
+    story:ids, the story checks as `banter:<id>` scripts plus their `when`s). A leader and a Bureau agent always have a
+    line with no `when`, and a `once` line has no cooldown.
+  - **The pick** (new `logic/story-pick.js`): `storyPick`, `storyPickSaid`. The script command `pick <who>`
+    (script-parse, the runner's `pick` option). story-stage.js: `storyPickTree`, `storyHomeArrive`, `storyFreshTake`,
+    `storyPendingCheck`. story.json `kept` gains `said`, `fresh`, `pending`, and there is a new flag `firstLoss`.
+  - **Home**: run.js `runEndHome` → `storyHomeArrive`. `talkChosen` and `personTalk` play the fresh line once. The
+    scene story.json `scripts.back-lost` plays by the mast once nothing is open, and also from walk-control's story
+    timer, so a reload plays it too. It never plays during the in-game test.
+  - **In runs**: a leader's script is `pick leader` then its battle (run-loop.js `runFoes`). A Bureau route trainer
+    says `pick bureau` instead of its sight line. Leader and agent lines are quoted like trainers'.
+  - **Debug log**: the meta line has the history count, the last run's end, its foe's kind and id, and its row, plus the
+    fresh line ids and a waiting scene (ids and numbers only).
+  - Docs: SCRIPTS.md (the story director, `pick`, the conditions), NAMING.md, roguelite-track 9.4 "as built", ROADMAP,
+    BRANCHES, CHANGELOG.
+- Verified (after merging main):
+  - Fast checks clean: lint, typecheck, check:modules, format:check, check:data.
+  - Unit tests: 948 quick and 57 slow, all passing. New: run-history, story-pick, conditions' RL-S1 test, and the
+    data-checks plants. check-data's snapshot was remade on purpose (142 files, a planted banter case).
+  - check-fast "run" (run_loop) passes with the new steps: the history after a lost run, the picks, the scene (it waits
+    for an open evolution sheet, as it should) and Chosen's fresh line.
+  - **Full quick check: 35 of 37.**
+    - **Song fingerprints** "cave mid / cave late not in the baseline": on main.
+    - **RL-8** "never landed on the landing" in the full run. Re-run alone it reaches main's known "the town's shop has
+      no Perk", so this was the full run's load timing, as RT-1 found.
+    - Postcards passed this time.
+  - The in-game test's new run-phase checks (the leader's picked line, the won run in the history) sit after RL-8's
+    shop step in the same phase, so they only run once that is fixed on main.
+- Risky / open:
+  - **Not tried on the phone.** The scene plays over the payout toasts. A fresh line is picked at the return and its
+    cooldown starts then, not when it is said.
+  - A save taken mid-scene stores the story from before it, and the scene plays again on Continue (the safe-run rule).
+  - The Studio has no banter editor yet (RL-16), only the JSON list. "Show me" on a banter finding opens the story section.
+  - Juniper's lines need `met_juniper`, and Juniper is out in Copperleaf, not in the lab.
+  - The writing is placeholder-free but untested in play: the owner should read it in the game.
+- Next: RL-S2 (rival and relationships: Blake's `rival` node, `meta.rel`, the `rel:` and `chapter:` conditions,
+  Chapter 1's beats) on `track/story`, beside RL-14. Merge main in first (PR #188).
+
 ### Window glass on the low-poly buildings (no more glowing orbs) - 2026-10-25
 Branch `ccr-7161a124-txw6o4` (one session, not part of a plan). The owner's ask: windows on 3D buildings looked like a
 weird orb at night. Plan approved in Plan Mode; the owner chose to mark the glass with a new recipe key (`glass: n`)
