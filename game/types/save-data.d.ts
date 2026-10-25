@@ -376,6 +376,8 @@ export interface Billy {
   /** RL-10: a risky egg's surprise (logic/breeding.js): a quirk, or an abomination with its own name, one stat raised
       (rules.json ranch.breed.abomUp) and another lowered (abomDown); missing for every other Billie */
   mut?: BillieMut;
+  /** RL-12c: the item it holds (an items.json id with `hold`), or none; a run's held items go back to the bag at its end */
+  held?: string;
   /** phase 17: 'robot' for a robot (sp is then made from its parts: logic/fighters.js robotSp); missing for a Billie */
   kind?: 'robot';
   /** phase 17: a robot's gem (a key of robots.json gems): the gem is the robot, its level and XP */

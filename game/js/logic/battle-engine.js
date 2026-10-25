@@ -65,7 +65,7 @@ import {
   stat,
   xpFor,
 } from './rules.js';
-import { fxCatch, fxDamage, fxStages } from './effects.js';
+import { fxCatch, fxDamage, fxOfBillie, fxPinchHeal, fxStages, fxTurnHeal, fxXp } from './effects.js';
 import { makeBattle, newFieldState } from './battle-state.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -139,6 +139,9 @@ expose({
   fieldState: [() => fieldState],
   fighter: [() => fighter],
   foeSide: [() => foeSide],
+  // @ts-expect-error -- replaced on purpose
+  heldStages: [() => heldStages, v => (heldStages = v)],
+  heldXp: [() => heldXp],
   // @ts-expect-error -- replaced on purpose
   hitPart: [() => hitPart, v => (hitPart = v)],
   // @ts-expect-error -- replaced on purpose
@@ -381,10 +384,16 @@ export function calcDamage(k, tk, mid, src) {
   const fm = battleNow().fx
     ? fxDamage(battleNow().fx, { cat: M.c, type: M.t, deal: !src && ACTOR_SIDE[k] === 0, take: ACTOR_SIDE[tk] === 0 })
     : 1;
+  /* RL-12c: the attacker's held item (what it deals) and the target's (what it takes); 1 when neither holds one */
+  const hk = src ? null : fxOfBillie(fighter(k), ITEMS),
+    ht = fxOfBillie(fighter(tk), ITEMS),
+    hm =
+      (hk ? fxDamage(hk, { cat: M.c, type: M.t, deal: true, take: false }) : 1) *
+      (ht ? fxDamage(ht, { cat: M.c, type: M.t, deal: false, take: true }) : 1);
   return {
     dmg: Math.max(
       1,
-      Math.floor(base * stab * te * roll * (crit ? BATTLE_RULES.critMult : 1) * mk * eco * tow * wx * gx * fm)
+      Math.floor(base * stab * te * roll * (crit ? BATTLE_RULES.critMult : 1) * mk * eco * tow * wx * gx * fm * hm)
     ),
     te,
     crit,
@@ -690,6 +699,26 @@ export function endTurn() {
       m.hp += g;
       battleSay(`${billyName(m)}’s ${passiveName(ty, 'regrowth')} restored a little HP.`, { k: 'heal', si: k, amt: g });
     }
+    /* RL-12c: a held item's heals: a share at each turn's end, and once a battle a share when low */
+    const hx = m.hp > 0 && fxOfBillie(m, ITEMS);
+    if (hx) {
+      const name = (ITEMS[m.held || ''] || { n: 'item' }).n,
+        each = fxTurnHeal(hx);
+      if (each > 0 && m.hp < mx) {
+        const g = Math.min(mx - m.hp, Math.max(1, Math.floor(mx * each)));
+        m.hp += g;
+        battleSay(`${billyName(m)}’s ${name} restored a little HP.`, { k: 'heal', si: k, amt: g });
+      }
+      const pinch = fxPinchHeal(hx),
+        sd = battleNow().sides[ACTOR_SIDE[k]],
+        ate = sd.ate || [];
+      if (pinch && m.hp <= mx * pinch.at && !ate.includes(f.act)) {
+        const g = Math.min(mx - m.hp, Math.max(1, Math.floor(mx * pinch.share)));
+        sd.ate = [...ate, f.act];
+        m.hp += g;
+        battleSay(`${billyName(m)} ate its ${name} and restored HP.`, { k: 'heal', si: k, amt: g });
+      }
+    }
     f.v.turnsIn++;
     f.v.protect = false;
     if (f.v.ovT > 0 && --f.v.ovT === 0) {
@@ -738,23 +767,33 @@ export function award(e) {
   const on = liveActors(0).map(k => fighter(k));
   on.forEach(m => {
     const k = allActors().find(q => fighter(q) === m);
-    battleSay(`${billyName(m)} gained ${formatNumber(amt)} XP.`, { k: 'xp', si: k });
-    gainXp(m, amt, battleSay);
+    const got = heldXp(m, amt);
+    battleSay(`${billyName(m)} gained ${formatNumber(got)} XP.`, { k: 'xp', si: k });
+    gainXp(m, got, battleSay);
   });
   /* phase 08: your buddy gets the full amount even when it didn't fight (it got its XP from walking before) */
   const mine = battleNow().sides[0].team,
     buddy = battleBuddy(battleNow());
   const bud = mine.find(m => m.uid === buddy && !on.includes(m) && m.hp > 0);
   if (bud) {
-    battleSay(`${billyName(bud)} gained ${formatNumber(amt)} XP.`);
-    gainXp(bud, amt, battleSay);
+    const got = heldXp(bud, amt);
+    battleSay(`${billyName(bud)} gained ${formatNumber(got)} XP.`);
+    gainXp(bud, got, battleSay);
   }
   const share = Math.floor(amt * P.teamXpShare),
     rest = mine.filter(m => !on.includes(m) && m !== bud && m.hp > 0);
   if (rest.length && share > 0) {
-    rest.forEach(m => gainXp(m, share, () => {}));
+    rest.forEach(m => gainXp(m, heldXp(m, share), () => {}));
     battleSay(`The rest of the team gained ${formatNumber(share)} XP.`);
   }
+}
+/** RL-12c: XP with the Billie's held item's xp rows @param {any} m @param {number} n */
+export const heldXp = (m, n) => fxXp(fxOfBillie(m, ITEMS), n);
+/** RL-12c: a held item's stat stages for a fighter as it takes the field (the battle's start: battle-state.js) */
+export function heldStages(k) {
+  const up = fxStages(fxOfBillie(fighter(k), ITEMS)),
+    v = fieldState(k);
+  for (const s2 in up) v.st[s2] = clamp((v.st[s2] || 0) + up[s2], -BATTLE_RULES.stageMax, BATTLE_RULES.stageMax);
 }
 /** RF-3 Parting Roar (Dragon, id `inherit`): when it faints, the next teammate in gets +1 Attack and +1 Sp. Atk
  * (before RF-3 it passed on its own boosts, if it had any) */
@@ -802,6 +841,7 @@ export function doSwitch(k, idx, b) {
       }
     );
     if (!isRobot(m)) battleSeen()[m.sp] = 1;
+    heldStages(k);
     if (sd.stones && !hasPassive(speciesOf(m).types, 'bedrock')) {
       const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, BATTLE_RULES.stonesFraction)));
       m.hp = Math.max(0, m.hp - d);
@@ -1263,7 +1303,7 @@ export function catchKeep(e) {
 export const teamNeedsHp = b => (b ? b.sides[0].team : saveData.team).some(m => m.hp > 0 && m.hp < maxHp(m));
 export const canUse = (it, m, b) => {
   const I = ITEMS[it];
-  if (!I || !battleBag(b)[it] || I.evoItem || I.lvlUp) return false;
+  if (!I || !battleBag(b)[it] || I.evoItem || I.lvlUp || I.hold) return false;
   if (I.revive) return m.hp <= 0;
   if (m.hp <= 0) return false;
   if (I.hpAll) return teamNeedsHp(b);

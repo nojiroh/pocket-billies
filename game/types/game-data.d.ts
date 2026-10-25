@@ -692,6 +692,9 @@ export interface Item {
   mint?: boolean;
   /** phase 17: fixes a robot's parts (1 = all of their HP) */
   repair?: number;
+  /** RL-12c: a held item: what it does for the Billie holding it (logic/effects.js fxOfBillie); given from its sheet,
+      never used up, never used in battle */
+  hold?: FxRow[];
 }
 
 /** jobs.json: a day job a boxed Billie can take */
@@ -1777,7 +1780,12 @@ export type FxRow =
   | { kind: 'payout'; what: 'research' | 'itemShare'; mult: number }
   /** RL-13 (modifiers.json only): foes' levels up by n; the boss's HP times mult */
   | { kind: 'level'; n: number }
-  | { kind: 'bossHp'; mult: number };
+  | { kind: 'bossHp'; mult: number }
+  /** RL-12c (held items only, for the holder): its XP times mult; a share of its HP at each turn's end; once a battle,
+      a share of its HP at `at` of its HP or below */
+  | { kind: 'xp'; mult: number }
+  | { kind: 'turnHeal'; share: number }
+  | { kind: 'pinchHeal'; at: number; share: number };
 /** RL-13: modifiers.json: a run's Expedition (one row each, I first) and its challenges (logic/modifiers.js) */
 export interface Modifier {
   name: string;

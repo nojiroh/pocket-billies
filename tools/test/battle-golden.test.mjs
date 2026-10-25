@@ -123,3 +123,18 @@ test('golden: a single wild battle holding Loopholes (RL-12: stages at the start
   fn('sayBattleFx')();
   t.assert.snapshot(play());
 });
+
+test('golden: a single wild battle with held items (RL-12c: a turn-end heal, a pinch heal, damage dealt and taken, XP)', t => {
+  reseed(606);
+  const s = teamOfThree(10);
+  s.team[0].held = 'leftover_sandwich';
+  s.team[1].held = 'snack_pack';
+  s.team[2].held = 'study_notes';
+  const foe = fn('makeBilly')(wildSpecies(), 13);
+  foe.held = 'iron_vest';
+  fn('newBattle')('wild', [foe], { fmt: 'single', seed: 'golden-held' });
+  const out = play(),
+    lines = out.log.flatMap(x => x.events.map(e => e.text || e.t || '')).join('\n');
+  assert.match(lines, /Leftover Sandwich restored/, 'the sandwich healed at a turn end');
+  t.assert.snapshot(out);
+});

@@ -38,6 +38,56 @@ over matching layer names.
   model buildings to differ from the baseline.
 - Next: the owner's look on a phone at night (glow strength, how many windows are lit); if wanted, the same glass for
   the city towers and the greenhouse (no picture windows, so not marked).
+### Roguelite track RL-12c - Held items - 2026-10-25
+Branch `claude/project-thread-ka73c4` from main (a cloud session pushes only to its own branch; `track/encounters` was
+already merged). Plan approved in Plan Mode (/mnt/project-files/plans/rl-12c-held-items-plan.md, the project's
+files), the owner's answers: held items last one run, foes hold none, the eight placeholders stand, this branch. Tag
+`rl-12c-done` for the owner to push.
+- Where the plan was wrong (checked in the code):
+  - Held items are **items.json items with `hold` rows**, not a heldItems.json of their own: the bag already carries
+    items, the payout already counts them at the item share, and "take it off" is "back into the bag". So no new data
+    file, schema or index key; `dataHeldItems` checks the rows.
+  - The battle side already had a `held` field (`side.held`, RF-3 Bedrock's once-a-battle list). The Billie's slot is
+    `Billy.held`; the pinch heal's once-a-battle list is `side.ate`, made only when used, so the battle object's
+    snapshotted shape is unchanged.
+  - Two Perks already use the names "Power Gloves" and "Running Shoes": the held ones are Brass Knuckles and Quick
+    Laces.
+  - The run sim answers no reward pick at all (not only held cards), so it plays no held items; nothing to teach it
+    until it takes picks.
+- Changed (one cause per commit):
+  - items.json: eight held items (placeholder numbers and icons from the atlas: no new art). Effect kinds `xp`,
+    `turnHeal`, `pinchHeal` (held items only); `fxOfBillie`, `fxXp`, `fxTurnHeal`, `fxPinchHeal` (logic/effects.js).
+    `fxOfBillie` is a Billie's own rows, the place where its parts' rows can join later (the splicing brainstorm).
+  - logic/held.js (heldGive, heldTake, heldAllOff, heldIds). `Billy.held` optional: no SAVE_VERSION change; saveFill
+    drops an unknown one, billiesOk refuses a non-string.
+  - Runs: runEnd takes every held item off first (a loss pays them, a win takes them home); runBegin leaves a
+    traveller's held item at home and runEnd gives a kept traveller it back (found late: without it a won run brought
+    a hub Billie's item home twice).
+  - Battle: calcDamage (attacker deal rows, target take rows), makeBattle and doSwitch (stages as it takes the field),
+    endTurn (turn-end heal, once-a-battle pinch heal, both with a line), award (XP), battleMoneyFx (money rows of the
+    holders standing). Held items are never in the battle bag. Every hook is skipped or 1 when nothing is held.
+  - Team: the sheet's Holding row, Give / Swap held item (a pick), Take off; the team cards tag a holder.
+  - Reward pick: `held` weight 0 -> 3 (placeholder); a held card draws an item nobody on the team holds; a held-only
+    pick (`kind: 'held'`) may hold several; taking it asks who holds it (or Into the bag). check-data: a held card
+    names no item and needs held items to exist.
+  - Debug (on a run): A held item's pick; Every held item into the bag. check-fast: "Held items" on the run page.
+- Risky or unfinished:
+  - Every run's reward picks can now draw a held card, so a seed's picks differ from before.
+  - The pinch heal fires at a turn's end, not the moment the hit lands (simpler; the item's text says so).
+  - No in-game full test step (the plan had one): the UI path is in check-fast and the battle rules in Node; a phone
+    step would need a battle on the 3D stage with a held item, worth adding if the owner sees a held item misbehave.
+  - Content preview and the Run Lab don't show held items yet; no shop sells them.
+- Verified: lint, typecheck, check:modules, check:data, format:check, build; unit tests 935 quick (new: held-items,
+  held, battle-held; rewards and data-checks updated) and 57 slow; the golden record's first five battles unchanged, a
+  sixth added; smoke 6 of 6; check-fast's new Held items step and the run page's other steps pass. Full quick check
+  (2078 s): 34 of 37. The three problems, rerun alone on this branch and on main (2cfef57) side by side: Postcards
+  passed on both (load); **RL-8 fails on main too** (a Page.click timeout this time, the shop Perk before: see RT-1);
+  **Song fingerprints fails on main too** ("cave mid" and "cave late" are not in validation/sound-baseline: RL-R2b's
+  cave biome music, the baseline wants remaking with the owner's ear). Snapshots remade on purpose: run-start (the
+  bag lists the new items), battle-golden (one more battle only).
+- Questions waiting for the owner: the eight items' names, numbers and icons; whether shops sell held items; whether
+  RL-14's leaders hold some.
+- Next session starts with: RL-S1 (story director), or RT-2 / TW-2 alongside.
 
 ### Routes track RT-1 - Route layouts - 2026-10-24
 Branch `track/routes` (plan approved in Plan Mode; the owner's answers: all five plans, and **every non-town place**
