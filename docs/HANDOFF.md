@@ -2,6 +2,39 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-8 - The bottom bar with the minimap; merge batch 3 - 2026-10-26
+Branch `ccr-30c007a6-eol40p` (`track/ui` didn't exist; a session pushes only to its own branch). Plan approved after a
+question round and a clickable mockup (docs/phases/ui-track.md, UI-8). Then the owner asked, mid-session: "merge all
+currently open PRs and anything sessions that are done haven't pushed yet".
+- **UI-8 changed:** `<pb-nav-bar>` puts Map as a raised minimap tile in the middle and the other tabs two to a side
+  (Team, Guide | Bag, Perks or Lab; the Guide joins both sets); js/minimap.js draws the ground, roofs, facility icons,
+  unbeaten trainers, wild Billies and you, north up, about 5 times a second; the bar goes compact after 2.5 s of
+  walking; `--nav-h` moves what sat at 96 px above the old bar; uiTheme.json gains a `minimap` group (the Studio's
+  Minimap dials). Tests: the fast check's bar step expects `team,guide,map,bag,lab` and opens the Guide; the
+  gallery's run-hud pictures remade on purpose.
+- **UI-8 risky:** the frame cost on a phone (a 2D canvas at 5 Hz, the ground painted once per view; software
+  drawing here says nothing about it); the compact timing; what else sat over the old bar's spot that `--nav-h` missed
+  (looked at: the town and a run, light and dark, standing and walking). Check on the phone.
+- **Merge batch 3:** merged on GitHub: #223 (the Studio art plan) into main, #222 (RO-3e) into track/roster. Merged
+  here (one PR into main): track/hub (HB-10a and HB-10b, holds `ccr-144f3c08`), `ccr-5d98165a` (route props RP-1),
+  `claude/ro-3b-placeholder-billies` (its HANDOFF note), `art/editable-trainer-sprite-sheets` (adds a CI workflow),
+  track/story (RL-S2 part B's HANDOFF), track/renderer (#219), `ccr-65e11839` (RS-3), track/roster with RO-3e,
+  RO-3f (#221, which conflicts with #222 on track/roster), and `ccr-6f3a4696` (#224).
+- **How the overlaps were settled (check in play):** RS-3 on top of main's RS-2 resolution: banter's `who` takes
+  RL-S2's names and a resident's id; the payout keeps main's Beans chip; a story line's owner is `banterOwner`'s or a
+  resident's. The rosters (RO-3d in main, RO-3e, RO-3f): every list keeps all three; the placeholder rigs rebaked; the
+  cry baseline keeps both sides'. **RO-3e's event command `gift species` is now `revive`**: main's RL-S2 already has
+  `gift who` in the one script table. Snapshots remade on purpose: battle-golden and run-start (the merged roster
+  changes the fixed-seed battles), check-data (the file count). scenery.json keeps HB-10b's string lights and RP-1's
+  route props.
+- **Left out:** `claude/sp-2-rules` and `claude/sp-3-wild-splices` (earlier copies of SP-2 and SP-3: main has them
+  through `sp-5-augments`, merge batch 1; merging them would undo that resolution); `ccr-a073cfde` (the same plan as
+  #223); the old 1000+-commit branches (archive and pre-fresh-base). Unpushed work in other sessions' containers can't
+  be reached from here.
+- **Verified:** lint, typecheck, format:check, check:modules, check:data, bake:placeholders --check, unit tests 1314 pass; `test:slow` and the fast check (check-fast.py) running, their results added when done.
+- **Next:** the owner's phone check of the bar; close #221 by hand (its commits reach main with this PR, not its base);
+  the one-session branches merged here can go (BRANCHES.md), the `track/*` ones stay.
+
 ### Studio art track - the plan (SA) - 2026-10-26
 Branch `ccr-a073cfde-ab64xh` (the track branch `track/studio-art` didn't exist; this session pushes only here).
 Planning only; no code changed. The owner's brief: all art viewable and editable in the Studio, online research on a
