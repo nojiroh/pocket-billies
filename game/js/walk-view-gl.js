@@ -129,6 +129,7 @@ expose({
   ensureWalkGl: [() => ensureWalkGl, v => (ensureWalkGl = v)],
   groundBuiltBeforeShow: [() => groundBuiltBeforeShow, v => (groundBuiltBeforeShow = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
+  litSunScreenPosition: [() => litSunScreenPosition, v => (litSunScreenPosition = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
   phoneStarted: [() => phoneStarted, v => (phoneStarted = v)],
