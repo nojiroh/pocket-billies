@@ -1043,6 +1043,24 @@ canvas.spr-prev.big {
   border-radius: 6px;
   overflow: hidden;
 }
+.sp-wrap {
+  margin: 8px 0;
+}
+.ab-thumb.sp-stage {
+  height: auto;
+  min-height: 72px;
+  padding: 8px;
+  overflow: auto;
+}
+.sp-bar {
+  align-items: center;
+  margin-top: 6px;
+}
+.sp-fps {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 .ab-folder .ab-thumb {
   background: var(--acc2);
   color: var(--acc);

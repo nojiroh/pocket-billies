@@ -11,11 +11,13 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
+import { EFFECT_FRAMES } from '../../game/js/walk-view.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { offPalette, paletteColors, pixelKeyAction } from '../../game/js/logic/pixel-ops.js';
 import {
   artFolderOf,
   artFolderView,
+  artMadeBy,
   artMatch,
   artQueryEmpty,
   artQueryNeedsSize,
@@ -25,6 +27,7 @@ import {
   pngSize,
 } from '../../game/js/logic/art-search.js';
 import { artRefIndex, artRefState } from '../../game/js/logic/art-refs.js';
+import { stripOf } from '../../game/js/logic/frame-strips.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -59,6 +62,7 @@ import {
 } from './sprites.js';
 import { gameFilePath, githubMode } from './github.js';
 import { legacyLoad, legacyView } from './legacy-view.js';
+import { mountStripPlayers, stripPlayerHTML } from './strip-player.js';
 /* eslint-disable no-func-assign */
 expose({
   SHOWN: [() => SHOWN],
@@ -69,11 +73,13 @@ expose({
   artCodeRefsLoad: [() => artCodeRefsLoad, v => (artCodeRefsLoad = v)],
   artDetailNotes: [() => artDetailNotes, v => (artDetailNotes = v)],
   artEditorsFor: [() => artEditorsFor, v => (artEditorsFor = v)],
+  artMadeByHTML: [() => artMadeByHTML, v => (artMadeByHTML = v)],
   artPictures: [() => artPictures],
   artRefs: [() => artRefs, v => (artRefs = v)],
   artSize: [() => artSize, v => (artSize = v)],
   artSizeRead: [() => artSizeRead, v => (artSizeRead = v)],
   artSizesRead: [() => artSizesRead, v => (artSizesRead = v)],
+  artStripOf: [() => artStripOf],
   artTreeHas: [() => artTreeHas, v => (artTreeHas = v)],
   detailHTML: [() => detailHTML, v => (detailHTML = v)],
   editCardHTML: [() => editCardHTML, v => (editCardHTML = v)],
@@ -281,6 +287,14 @@ export function artRefs() {
   return artBrowser.ix;
 }
 const metaOf = (path, ix) => ({ ...(artSize(path) || {}), state: ix ? artRefState(ix.get(path)) : undefined });
+/* SA-2a: a picture's frames, when the game animates it (logic/frame-strips.js), and the builder that draws it */
+const artStripOf = path => stripOf(path, { effects: EFFECT_FRAMES, life: (studioState.D.scenery || {}).life || {} });
+function artMadeByHTML(path) {
+  const t = artMadeBy(path);
+  return t
+    ? `<p class="help warn">Drawn by <code>${escapeHtml(t)}</code>: running it again can draw over edits made here.</p>`
+    : '';
+}
 
 /* ---------- open in its editor ---------- */
 /* where a picture is edited, from what uses it and where it lives: [label, () => void] */
@@ -368,12 +382,18 @@ function detailHTML(path, ix) {
             )
             .join('')}${refs.length > 40 ? `<li class="help">and ${refs.length - 40} more</li>` : ''}</ul>`
         : '<p class="help">Nothing in the data or the code names it. That is a hint, not proof: the code builds some paths in ways the index can’t read.</p>';
-  const frames = artBrowser.frames && artBrowser.frames.path === path ? artBrowser.frames.text : '';
+  const strip = artStripOf(path),
+    frames = strip
+      ? `${strip.n} frames of ${strip.w}×${strip.h}`
+      : artBrowser.frames && artBrowser.frames.path === path
+        ? artBrowser.frames.text
+        : '';
   const pal = artBrowser.pal && artBrowser.pal.path === path ? artBrowser.pal.text : '';
   return `<div class="ab-big"><img src="${escapeHtml(thumbSrc(path))}" alt=""></div>
+  ${strip ? stripPlayerHTML(path, strip) : ''}
   <p class="mono ab-path">${escapeHtml(path)}</p>
   <p class="help">${s ? `${s.w}×${s.h} px` : 'size not read yet'}${f ? ` · ${(f.size / 1024).toFixed(1)} KB` : ''}${studioState.artDirty.has(path) ? ' · edited, not saved' : ''}${frames ? ' · ' + escapeHtml(frames) : ''}</p>
-  ${pal ? `<p class="help">${escapeHtml(pal)}</p>` : ''}
+  ${pal ? `<p class="help">${escapeHtml(pal)}</p>` : ''}${artMadeByHTML(path)}
   <div class="seg-row ab-acts">${png ? `<button class="btn sm primary" data-act="abEdit" data-p="${escapeHtml(path)}">Edit pixels</button>` : ''}<button class="btn sm" data-act="abReplace" data-p="${escapeHtml(path)}">Replace…</button><button class="btn sm" data-act="abDownload" data-p="${escapeHtml(path)}">Download</button>${eds.map(([label], i) => `<button class="btn sm" data-act="abOpen" data-i="${i}" data-p="${escapeHtml(path)}">Open in ${escapeHtml(label)}</button>`).join('')}</div>
   <h4>Used by</h4>${used}`;
 }
@@ -466,6 +486,7 @@ function mountArtBrowser() {
     });
   if (artBrowser.edit) mountArtPixels();
   else artDetailNotes(artBrowser.sel);
+  mountStripPlayers();
 }
 /* a file of game/ is in the repository's tree (the file list keeps pictures only; the tree has every file) */
 let treeFiles = null;
@@ -508,7 +529,10 @@ async function artDetailNotes(path) {
   }
   if (studioState.sec === 'art' && artBrowser.sel === path && !artBrowser.edit) {
     const side = $('.ab-side .card-b');
-    if (side) side.innerHTML = detailHTML(path, artBrowser.ix);
+    if (side) {
+      side.innerHTML = detailHTML(path, artBrowser.ix);
+      mountStripPlayers(side);
+    }
   }
 }
 
@@ -584,11 +608,12 @@ function artBrowserShow(path) {
 
 /* ---------- Edit pixels: the shared pixel canvas on any PNG ---------- */
 function editCardHTML() {
-  const p = artBrowser.edit;
+  const p = artBrowser.edit,
+    strip = artStripOf(p);
   return card(
     `Edit pixels: ${escapeHtml(p.split('/').pop())}`,
     `<div class="sc-pe" id="abPe"><div class="sc-pe-bar">${pixelCanvasToolsHTML()}<span class="colw"><input type="color" id="abPeColor" value="${artBrowser.color}"></span><span class="grow"></span><button class="btn sm primary" data-act="abEditDone">Done</button></div>
-  <div class="sc-pe-body"><div class="sc-pe-stage" id="abPeStage"></div><div class="sc-pe-side">${pixelCanvasPanelHTML()}<p class="help mono">${escapeHtml(p)}</p><p class="help">Each stroke is a step of the Studio’s undo (Ctrl Z). Save to game writes the picture.</p></div></div></div>`
+  <div class="sc-pe-body"><div class="sc-pe-stage" id="abPeStage"></div><div class="sc-pe-side">${strip ? stripPlayerHTML(p, strip) : ''}${pixelCanvasPanelHTML()}<p class="help mono">${escapeHtml(p)}</p>${artMadeByHTML(p)}<p class="help">Each stroke is a step of the Studio’s undo (Ctrl Z). Save to game writes the picture.</p></div></div></div>`
   );
 }
 ACTIONS.abEdit = async d => {
