@@ -119,6 +119,13 @@ This needs: the tradeable things to move out of the save into `inventory/` (phas
 Functions, and App Check at the same time. Nothing in today's rules has to change for it: new collections get their
 own rules.
 
+### ON-1 for the owner to do (2026-10-26)
+1. Sign in, open Debug > Save, copy "Your account id", and put it in place of `PASTE-YOUR-UID-HERE` in
+   `firebase/firestore.rules` (`moderator()`); the rules tests read whatever stands there.
+2. Publish the rules (Firebase console > Firestore Database > Rules > paste the file > Publish). Until then blocking
+   shows "Friends need the updated database rules" and reporting says "You reported them already." (both are the
+   rules' refusal); everything else works as before.
+
 ### Superseded 2026-10-26: the online track on Spark
 The owner chose to stay on the free Spark plan (docs/phases/online-track.md), so the table above (`trades`,
 `inventory` written by a Cloud Function) won't be built. Instead every write comes from a player's own game and the
@@ -131,7 +138,5 @@ the player). If Blaze ever comes, the table above is the plan for trades, boards
 
 ## Found, not fixed (not security)
 
-- Making friends again the other way round fails: if A once sent B a request that was later removed, and B then sends
-  A a new one that A accepts, both games drop each other again (syncFriends applies "removed" from the old request after
-  "accepted" from the new one). Asking again from the same side works. Fix by taking each pair's newest request (`t`).
-  Small; best done with the rest of the friends work (phase 06 or 18).
+- (Fixed in ON-1, 2026-10-26: each pair's newest request decides, logic/online.js `friendListFrom`.) Making friends
+  again the other way round used to drop both sides.

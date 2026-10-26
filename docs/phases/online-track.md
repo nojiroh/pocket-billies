@@ -107,6 +107,32 @@ a cheater can always restore what they gave away. Every session lists what stays
 - **Ask me before:** the report reasons and what a report does (recommend: hide after reports from 3 distinct
   accounts, the owner reviews in the Studio).
 
+**Done in ON-1** (2026-10-26, on `ccr-0b8e3c38-gt7t6a` at the owner's word: `track/online` didn't exist yet; the
+owner's answers: hide after 3 reports, a placeholder moderator uid, Online play off by default):
+- `game/js/logic/online-legal.js`: `onlineCopy(m, me)` (what goes online: the facts in `ONLINE_BILLY_KEYS`, full HP,
+  no status, the XP of its level, no held item; stamps `ot` once), `legalBilly`, `legalEgg`, `legalPart` ('' or a
+  reason word), `legalMoves`. Moves allowed: the line's at any level (tutors), the moves of its types (with a splice's)
+  that some line learns, its Augments' moves, and one more for a quirk egg. Splices within the highest Gene Bank
+  limit; Unstable only past the lowest. Ends with the save's own `billiesOk`, so nothing legal online fails to load.
+  Robots are refused (only parts trade). Tests: `tools/test/online-legal.test.mjs` (every species at 4 levels, 200
+  risky eggs with quirks and abominations, the cheats).
+- `Billy.ot {u, n}` and `Billy.traded {at, from}` (save-data.d.ts; `billiesOk` checks their shapes). Billies made
+  offline get `ot` the first time they go online, so no SAVE_VERSION change.
+- `game/js/logic/online.js`: `friendListFrom` (each pair's newest request decides: the re-add bug fixed),
+  `blockListClean`, `reportTarget`, `reportHidden` (`ONLINE_HIDE_AT` 3), `REPORT_REASONS`, `onlinePlayOn`. Tests:
+  `tools/test/online.test.mjs`.
+- Rules: `blocks/<uid>` `{list, names}` (owner only; a blocked player can't create or renew a request);
+  `reports/<target>` `{n, ok}` and `reports/<target>/by/<uid>` `{reason, t}` (each account counts once, the count
+  and the reporter's document check each other in one batch; the moderator reads and raises `ok`).
+  `moderator()` holds `'PASTE-YOUR-UID-HERE'`: the owner pastes their uid (Debug > Save shows it when signed in).
+  19 emulator tests.
+- friends.js: the ✕ on a friend opens Remove / Block / Report; a request's No opens Decline / Block / Report; a
+  folded "Blocked" list with Unblock; reported names show as "Trainer". Settings > Save: Online play (signed in
+  only, so the headless pictures don't change). The quick check's Safety step covers the new sheets.
+- Changed from the plan above: the block list is its own `blocks/<uid>` (not `users/<uid>.blocked`, which friends
+  can read); a report target is `user_<uid>` for now (ON-3 adds Showcase entries). Not done, moved: the create-only
+  claim helper (ON-4, when the first claim exists) and the Studio's moderation view (ON-3).
+
 ### ON-2 Run record, ghosts, dailies, friends' boards (= RL-15, 2 sessions)
 - RL-15 as planned: `logic/run-record.js` `{v, seed, tier, days, result, score, party ≤ 6, relics ≤ 6, path, name,
   hash}` under 8 KB, `validRunRecord`; `ghosts/{uid}` (owner writes, friends read); a friend's last run as a `rival`
