@@ -14,6 +14,7 @@ import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import {
   EVENTS,
+  FACTIONS,
   FIELD_MOVES,
   ITEMS,
   LOCATIONS,
@@ -30,8 +31,21 @@ import {
   gameData,
   trainersAt,
 } from './game-data.js';
-import { canEnter, encounterStock, encountersHere, gateText, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
+import { robotRules } from './logic/fighters.js';
+import {
+  billyName,
+  canEnter,
+  encounterStock,
+  encountersHere,
+  gateText,
+  makeBilly,
+  maxHp,
+  partMaxHp,
+  plural,
+  spawn,
+} from './logic/rules.js';
 import { modBossHp, modFoeLevels, modsMake } from './logic/modifiers.js';
+import { factionBotSp } from './logic/factions.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
 import { incomeRate } from './logic/ranch-income.js';
@@ -55,6 +69,7 @@ import {
   activeBattle,
   escapeHtml,
   pauseSaving,
+  reducedMotion,
   resumeSaving,
   save,
   saveData,
@@ -912,6 +927,76 @@ async function runFullTest(mode) {
       render();
       await selfTestSleep(600);
       return `${mine} against ${theirs} (${fmt}); ${plates} nameplates; ${picks} picks, ${aimed} aimed; the turn played ${lines} lines in ${(turnMs / 1000).toFixed(1)} s`;
+    };
+    /* RL-14: a wild bot of the Bureau's: "Catch it" greyed out, its limbs one hit from breaking, a turn played; a part
+       that breaks drops off the stage as a falling picture */
+    const fighterLead = () => saveData.team.find(m => m.hp > 0) || saveData.team[0];
+    const botBattle = async () => {
+      uiState.bench = null;
+      uiState.tab = 'walk';
+      saveData.trip.node = back.node;
+      render();
+      await selfTestSleep(1200);
+      saveData.team.forEach(m => {
+        m.hp = maxHp(m);
+        m.status = null;
+      });
+      const B = FACTIONS.bureau.bots[Object.keys(FACTIONS.bureau.bots).sort()[0]],
+        /* above your lead's level, so a hit leaves it standing (a fainted bot's parts take no hit) */
+        q = { id: 'selftest-bot', sp: factionBotSp(B), lvl: Math.min(100, fighterLead().lvl + 10), no: 1 };
+      encountersHere().unshift(q);
+      startWild(q);
+      const g0 = selfTest.gen || 0;
+      const want = async (ph, ms) => {
+        const end = performance.now() + ms * (selfTest.slow || 1);
+        while (performance.now() < end) {
+          if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
+          if (ph.includes(activeBattle.phase)) return true;
+          if (activeBattle.phase === 'playing') tapMessage();
+          await selfTestSleep(120);
+        }
+        return false;
+      };
+      if (!(await want(['choose'], 45000)))
+        throw new Error(`never got to the menu (${activeBattle ? activeBattle.phase : 'no battle'})`);
+      const foe = fighter(1);
+      if (!foe || foe.kind !== 'robot') throw new Error('the wild one is no robot');
+      if (billyName(foe) !== B.name) throw new Error(`it goes by ${billyName(foe)}, not ${B.name}`);
+      const coin = document.querySelector('[data-a=bcoins]');
+      if (!coin || !(/** @type {HTMLButtonElement} */ (coin).disabled)) throw new Error('"Catch it" is open on a bot');
+      /* every limb one point from breaking, and (for this turn) every hit on a limb, so one breaks and drops off */
+      const R = robotRules(),
+        hw = R.hitWeights;
+      R.hitWeights = { torso: 0, armL: 1, armR: 1, legs: 1 };
+      foe.partDmg = foe.partDmg || {};
+      for (const k of ['armL', 'armR', 'legs']) foe.partDmg[k] = partMaxHp(foe, k) - 1;
+      foe.hp = maxHp(foe);
+      let dropped = 0;
+      const watch = setInterval(() => {
+        dropped = Math.max(dropped, battleStage.parts.filter(p => p.img).length);
+      }, 50);
+      const m = fighter(activeBattle.cur),
+        mid = m.moves.find(id => MOVES[id] && MOVES[id].c !== 'X') || m.moves[0];
+      pickMove(mid);
+      if (activeBattle.phase === 'target') pickTarget(1);
+      const tt = performance.now();
+      let done = false;
+      try {
+        done = await want(['choose', 'end', 'switch'], 60000);
+      } finally {
+        R.hitWeights = hw;
+        clearInterval(watch);
+      }
+      if (!done) throw new Error(`the turn never finished (${activeBattle ? activeBattle.phase : 'no battle'})`);
+      const broke = activeBattle.events.filter(e => e.an && e.an.k === 'break').length,
+        turnMs = Math.round(performance.now() - tt);
+      stopTimers();
+      setActiveBattle(null);
+      battleStageStop();
+      render();
+      await selfTestSleep(600);
+      if (broke && !dropped && !reducedMotion) throw new Error('a part broke but nothing dropped off the stage');
+      return `${B.name}, not catchable; ${broke ? `${broke} part(s) broke, ${dropped} dropped` : 'the hit landed on its torso'}; the turn in ${(turnMs / 1000).toFixed(1)} s`;
     };
     /* RL-5: the Road phase (v43, phase 08: out of Marigold Town over its edge and into Tallgrass Meadow on foot) went
        with those places to game/data/legacy: the hub has no road. RL-7: back on a run's road. A run is put on a copy
@@ -2162,6 +2247,9 @@ async function runFullTest(mode) {
     await phase('Battle on the 3D stage', 'scene', () => battle(), 7, 120);
     await phase('Double battle with a trainer', 'scene', () => teamBattle('double'), 8, 150);
     await phase('Alpha battle: your team against one', 'scene', () => teamBattle('alpha'), 8, 150);
+    /* RL-14: the Bureau's bot in the grass: it can't be caught, its limbs break and drop off, it cries */
+    if (typeof FACTIONS !== 'undefined' && FACTIONS.bureau)
+      await phase('A wild bot: never caught, its parts break off', 'scene', () => botBattle(), 8, 150);
     /* v47: the opening's fall into the Hollow Earth (the bowl's own ground, past the Inner Sun), timed */
     if (typeof fallOverWorldMap === 'function' && !selfTest.stop)
       await phase(
