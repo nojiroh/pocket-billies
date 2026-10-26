@@ -16,6 +16,7 @@ import { tideLevel } from './sea-tide.js';
 expose({
   FALL_A: [() => FALL_A],
   FALL_B: [() => FALL_B],
+  NO_GLOW: [() => NO_GLOW],
   WATER_KIND_INDEX: [() => WATER_KIND_INDEX],
   WATER_KIND_LOOKS: [() => WATER_KIND_LOOKS],
   flowTexture: [() => flowTexture, v => (flowTexture = v)],
@@ -25,6 +26,7 @@ expose({
   setShoreUniforms: [() => setShoreUniforms, v => (setShoreUniforms = v)],
   shoreAt: [() => shoreAt, v => (shoreAt = v)],
   shoreField: [() => shoreField, v => (shoreField = v)],
+  waterGlow: [() => waterGlow, v => (waterGlow = v)],
   waterKindLookup: [() => waterKindLookup, v => (waterKindLookup = v)],
 });
 /* eslint-enable no-func-assign */
