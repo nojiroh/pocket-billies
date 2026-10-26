@@ -33,7 +33,8 @@ import { renderTitle, titleMount } from './title.js';
 import { renderPerks } from './perk-screen.js';
 import { labAction, renderLabBoard } from './lab-board.js';
 import { renderBag } from './bag.js';
-import { storyRivalBattle } from './story.js';
+import { residentHomeTalk, storyRivalBattle } from './story.js';
+import { minimapCanvas } from './minimap.js';
 import { workshopAction } from './workshop.js';
 import { closeModal, modal, openInbox } from './overlay.js';
 import { renderProfile } from './profile.js';
@@ -187,9 +188,12 @@ function updateNav(show) {
     n.addEventListener('pb-reselect', () => openTab('walk'));
     document.body.appendChild(n);
   }
+  /* UI-8: the minimap's canvas sits in the bar's middle tile (js/minimap.js draws it) */
+  if (typeof minimapCanvas === 'function' && !n.querySelector('canvas.minimap')) n.appendChild(minimapCanvas());
   n.hidden = !show;
   n.set = saveData.run ? 'run' : 'hub';
-  n.value = ['map', 'team', 'bag', 'perks', 'lab'].includes(uiState.tab) ? uiState.tab : '';
+  if (!show || uiState.tab !== 'walk') n.compact = false;
+  n.value = ['map', 'team', 'guide', 'bag', 'perks', 'lab'].includes(uiState.tab) ? uiState.tab : '';
   /* its labels follow the language (i18nText) */
   if (typeof n.requestUpdate === 'function') n.requestUpdate();
 }
@@ -285,6 +289,10 @@ document.addEventListener('click', ev => {
       break;
     case 'leaveroom':
       leaveRoom();
+      break;
+    /* RS-3: a resident's room card's Talk */
+    case 'restalk':
+      if (d.r && typeof residentHomeTalk === 'function') residentHomeTalk({ res: d.r });
       break;
     case 'walkdown':
       walkSheetOpen();

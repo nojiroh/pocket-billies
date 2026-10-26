@@ -1,0 +1,44 @@
+{
+ "id": "hastings",
+ "names": ["Pilotbat","Bingebat"],
+ "types": [["Flying"],["Flying","Psychic"]],
+ "prof": [0.9,0.95,0.85,1.1,1,1.3],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"hype"],
+  [5,"liftoff"],
+  [9,"subpoena"],
+  [13,"harvest"],
+  [18,"autoplay"],
+  [22,"escvel"],
+  [26,"pump"],
+  [30,"orbit"],
+  [35,"rugpull"],
+  [40,"twoday"],
+  [45,"launch"]
+ ],
+ "cat": ["Pilot Billie","Binge Billie"],
+ "ht": [0.5,1.2],
+ "wt": [4,20],
+ "hab": ["Caves with one flickering light","Dark living rooms"],
+ "diet": ["The first episode of everything","Attention, one more episode at a time"],
+ "bio": [
+  "A small bat that only ever watches the first episode. It hangs upside down in caves and squeaks a theme tune at anything that walks past.",
+  "A red bat that asks \"still watching?\" every third turn and starts the next one before you answer. It sleeps all day and nobody has seen it blink at night."
+ ],
+ "note": ["Mailed discs once. Nobody believes it.","Starts the next one before you can stop it."],
+ "evo": [
+  {"k":"lvl","at":18}
+ ],
+ "parody": "Reed Hastings",
+ "cry": [
+  {"base":"bird","pitch":86,"length":0.5,"name":"placeholder: a squeaky four-note theme tune (Claude's draft)"},
+  {
+   "base": "machine",
+   "pitch": 70,
+   "length": 0.9,
+   "name": "placeholder: a screech and a chime, “still watching?” (Claude’s draft)"
+  }
+ ]
+}

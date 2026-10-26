@@ -465,3 +465,53 @@ test('RL-14: a scrapyard is a laid-out place with scrap heaps, its scenes join, 
     data.worldHubBack();
   }
 });
+
+test('RO-3f: now and then a mythical stands in for the rarer one: by its own stream, once a run, never while one waits', () => {
+  const Wr = data.RULES.run.wild.rare,
+    myth = Wr.myth,
+    sp = myth.list[0];
+  assert.equal(GAME_DATA.lines.find(l => l.id + '0' === sp).rar, 'mythical');
+  /* the rarer one on route 1 of a run, with this chance; the rest of the stock as it was without a mythical */
+  const route = (/** @type {number} */ chance, /** @type {any} */ extra = {}, /** @type {any} */ waiting = null) => {
+    const s = startedSave(GAME_DATA.rules.start.starters[0] + '0', 5),
+      run = Object.assign(runOf('RT4RARE'), extra),
+      made = runScenesMake(run, WORLD_DATA),
+      W = runWorldTables(run, data.LOCATIONS[0], WORLD_DATA);
+    s.run = run;
+    s.trip = { node: 0, plan: [] };
+    runArrive(s, 0, MAP_DATA);
+    W.locations[1].trainerCount = 4;
+    data.worldPut({ ...W, maps: Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, made[i]])) });
+    Wr.myth = { ...myth, chance };
+    if (waiting) s.wild = { ...(s.wild || {}), elsewhere: { at: 0, list: [waiting] } };
+    try {
+      const list = fn('encountersHere')(1);
+      return { s, list: list.map(q => ({ ...q })), rare: list.find(q => q.rare), W };
+    } finally {
+      Wr.myth = myth;
+      data.worldHubBack();
+    }
+  };
+  const never = route(0),
+    always = route(1);
+  assert.notEqual(never.rare.sp, sp, 'chance 0: the rarest of the pool');
+  assert.equal(always.rare.sp, sp, 'chance 1: the mythical');
+  const P = never.W.pools.run_0;
+  assert.ok(always.rare.lvl >= P.lv[0] + Wr.up && always.rare.lvl <= P.lv[1] + Wr.up, 'levelled like a rarer one');
+  assert.ok(!always.rare.alpha);
+  assert.deepEqual(
+    always.list.slice(0, -1).map(q => [q.sp, q.lvl]),
+    never.list.slice(0, -1).map(q => [q.sp, q.lvl]),
+    'the rest of the stock is drawn the same'
+  );
+  assert.equal(route(1, { myth: 1 }).rare.sp, never.rare.sp, 'met this run: not again');
+  assert.equal(route(1, {}, { id: 'w1', sp, lvl: 5 }).rare.sp, never.rare.sp, 'one waits elsewhere: not a second');
+  /* battled or fled from: met */
+  const s = startedSave(GAME_DATA.rules.start.starters[0] + '0', 5);
+  s.run = runOf('RT4RARE');
+  s.wild = { here: { at: 0, list: [{ id: 'q1', sp, lvl: 5 }] } };
+  data.RULES.run.wild.rare.myth = myth;
+  fn('dropEncounter')('q1');
+  assert.equal(s.run.myth, 1);
+  assert.equal(fn('spawnMyth')(1), null, 'none once met');
+});
