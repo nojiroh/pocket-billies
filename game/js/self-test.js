@@ -30,7 +30,19 @@ import {
   gameData,
   trainersAt,
 } from './game-data.js';
-import { canEnter, encounterStock, encountersHere, gateText, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
+import {
+  addBilly,
+  billyName,
+  canEnter,
+  encounterStock,
+  encountersHere,
+  gateText,
+  makeBilly,
+  maxHp,
+  plural,
+  spawn,
+  teamSize,
+} from './logic/rules.js';
 import { modBossHp, modFoeLevels, modsMake } from './logic/modifiers.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
@@ -113,7 +125,7 @@ import { runLoad } from './run-loading.js';
 import { runClinicEach, runJump, runTakeOff } from './run.js';
 import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
-import { encounterOpen } from './encounter-screen.js';
+import { encPlaying, encounterOpen } from './encounter-screen.js';
 import { questData } from './quest-board.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
@@ -1205,6 +1217,75 @@ async function runFullTest(mode) {
         },
         8,
         180
+      );
+    /* RO-3e: the Dig Site, on a copy of the save on a run (seed SELFTESTDIG): reviving the trilobite adds Philanthrobite
+       to a party with room; with a full party the rail snake takes the place of the one you leave behind. Then the save
+       as it was */
+    if (typeof runWorldSync === 'function' && typeof encounterOpen === 'function' && !selfTest.stop)
+      await phase(
+        "The Dig Site's fossils",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            /* tap the event sheet's button whose words start so; false when it never shows */
+            tap = async (/** @type {string} */ words) => {
+              for (let i = 0; i < 80; i++) {
+                const b = [...document.querySelectorAll('#ov .event-sheet button')].find(x =>
+                  (x.textContent || '').trim().startsWith(words)
+                );
+                if (b) {
+                  /** @type {HTMLButtonElement} */ (b).click();
+                  return true;
+                }
+                await selfTestSleep(100);
+              }
+              return false;
+            },
+            /* tap Go on until the sheet closes */
+            finish = async () => {
+              for (let i = 0; i < 20 && document.querySelector('#ov .event-sheet'); i++) await tap('Go on');
+              for (let i = 0; i < 50 && encPlaying; i++) await selfTestSleep(100);
+            },
+            out = [];
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            runStartOn(s, runStartPlan('SELFTESTDIG', { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            s.team = s.team.slice(0, 1);
+            setSaveData(s);
+            render();
+            encounterOpen(null, 'dig_site');
+            if (!(await tap('Revive the trilobite'))) throw new Error('the Dig Site never offered the trilobite');
+            await finish();
+            const got = saveData.team.find(m => m.sp === 'carnegie0');
+            if (!got) throw new Error('no Philanthrobite joined a party with room');
+            out.push(`${billyName(got)} Lv ${got.lvl} joined`);
+            while (saveData.team.length < teamSize()) addBilly(makeBilly('knight0', 5, { wild: true }));
+            const last = saveData.team[saveData.team.length - 1];
+            encounterOpen(null, 'dig_site');
+            if (!(await tap('Revive the rail snake'))) throw new Error('the Dig Site never offered the rail snake');
+            if (!(await tap(billyName(last)))) throw new Error('a full party wasn’t asked who stays behind');
+            await finish();
+            if (saveData.team.includes(last)) throw new Error(`${billyName(last)} was left behind but is still here`);
+            if (saveData.team.length !== teamSize() || !saveData.team.some(m => m.sp === 'vanderbilt0'))
+              throw new Error('the rail snake didn’t take the place in a full party');
+            out.push(`full party: Vanderbolt in, ${billyName(last)} left behind`);
+            return out.join('; ');
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        120
       );
     /* RT-2: a run route's trainers, on a copy of the save: the first seed (SELFTESTRT0, 1, ...) whose map has a route
        with a pair; on its place every trainer stands on its spot (a pair's second beside it), facing the way it
