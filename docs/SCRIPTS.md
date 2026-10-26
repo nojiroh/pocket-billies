@@ -7,7 +7,7 @@ JSON array of lines in the data, next to the thing that owns it:
 - a trainer, `game/data/trainers/<id>.json`: `script` (id `trainer:<id>`).
 - the story itself, `game/data/story.json` `scripts`: `{ "who": <who talks>, "script": [...] }` (id `story:<id>`):
   Professor Chosen in the lab (`story:chosen`), after Blake's first battle, the ending. Hazel's own lab talk is a
-  person in the lab room's map (`person:hazel_lab`, maps/int_lab.json): a room may hold talking people besides its keeper.
+  person in the lab room's map (`person:kappi_lab`, maps/int_lab.json): a room may hold talking people besides its keeper.
 - a cutscene, `game/data/cutscenes/<id>.json` `script` (id `cutscene:<id>`): the opening. A cutscene has commands of
   its own (people, named shots and spots, captions): docs/CUTSCENES.md.
 - RL-S1: a line of the story director's, `game/data/banter.json` `script` (id `banter:<id>`): below, "The story
