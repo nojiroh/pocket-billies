@@ -108,7 +108,14 @@ and RL-14a, then this. Plan approved in Plan Mode. Tag `sp-5-done` for the owner
   - **In-game steps alone:** "Workshop" (musk2 front=hydrant, 10 Scrap, Jet Blast offered, broken and mended, taken
     off free), "Gene Bank", "Wild splice", "Walk: Inside the Workshop", "Walk: Inside the Gene Bank" all pass.
   - The Studio's Augments card at 1920 px.
-  - Full quick check: running as this entry is written; its result follows in the next commit.
+  - **Full quick check: 35 of 40** (1535 s). None of the five is SP-5's:
+    - Main's (2314da8, PR #205; RL-14a found them failing too): terraces ("sky_portal" in the air) and room light.
+    - RL-8 "a run from the mast" fails at "the town's shop has no Perk (RL-12)". It fails the same way run alone on
+      RL-14a's branch `ccr-15fdd30c-5nfh0d` (checked in a worktree). RL-14a saw "Take off didn't start a flight":
+      the step now gets further, to the shop.
+    - Song fingerprints (cave mid/late not in the sound baseline): known since SP-1.
+    - RT-2 "route trainers" failed under the full run's load; alone it passes (`--steps=RT-2`, 29 s).
+    - Two notes for load timing: Running and the Actions sheet took longer than expected.
 - **Risky:**
   - **Not tried on the phone.**
   - The Augment's picture is scaled to the Billie's own limb, a first guess. Treads under a small Billie hide its feet.
