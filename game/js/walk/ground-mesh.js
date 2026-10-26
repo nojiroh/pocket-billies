@@ -5,6 +5,7 @@
 import { expose } from '../test-globals.js';
 import { freeNearRing, groundOcclusionTexture, provide } from '../hooks.js';
 import { clamp } from '../util.js';
+import { waterWeatherDry } from '../logic/water-weather.js';
 import { SEA_RAMP, seaCalmAt, seaSkirt, seaSmooth } from '../logic/sea.js';
 import { stepGridCorners } from '../logic/step-grid.js';
 import {
@@ -491,6 +492,11 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
     wk = new Uint8Array(W2 * H2),
     wy = new Float32Array(W2 * H2),
     kindAt = waterKindLookup(sc),
+    /* water track WA-5b: a storm's flood (logic/water-weather.js) lays shallows on the banks, higher than the water it
+       rose from: those cells lie as a skin 3 cm over their own ground (as the tide's), never lifting a pond's level
+       nor spilling down as cascades (as one level, the pond rose into a raised slab and every bank was a fall) */
+    dryT = sc.wx === 'flood' ? waterWeatherDry(sc).tiles : null,
+    fl = new Uint8Array(dryT ? W2 * H2 : 0),
     Q = [];
   for (let j = 0; j < H2; j++) {
     if (j % 12 === 11) yield;
@@ -501,6 +507,13 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       const q = j * W2 + i;
       wd[q] = -1;
       wy[q] = wlev(cx, cz);
+      if (dryT) {
+        const c = (dryT[sc.h - 1 - Math.floor(cz)] || '')[Math.floor(cx)];
+        if (c !== 'w' && c !== 'd') {
+          fl[q] = 1;
+          wy[q] += 0.15;
+        }
+      }
       const fw = flowAt(cx, cz);
       wk[q] = kindAt(cx, cz, fw[0] !== 0 || fw[1] !== 0);
       let edge = false;
@@ -528,6 +541,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
   {
     const seen = new Uint8Array(W2 * H2),
       still = q => {
+        if (dryT && fl[q]) return false;
         const i = q % W2,
           j = (q - i) / W2,
           f = flowAt((i + 0.5) * 0.5, (j + 0.5) * 0.5);
@@ -611,7 +625,13 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           (i, j) => !!WATER_KIND_LOOKS[kindAt(i + 0.5, j + 0.5, false)].sea
         )
       : null;
-  yield* shoreField(sc, isW, T, tide);
+  /* WA-5b: the shoreline is the dry scene's: a flood's banks keep their grass (the water shader lays puddles on them) */
+  yield* shoreField(
+    sc,
+    dryT ? (x, z) => isW(x, z) && fl[Math.floor(z * 2) * W2 + Math.floor(x * 2)] !== 1 : isW,
+    T,
+    tide
+  );
   yield;
   if (T === walkRenderer) groundOcclusion(sc);
   else {
@@ -722,7 +742,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           vz = j * 0.5 + c * 0.5;
         let sh = 0,
           dd = 0,
-          rs = 0;
+          rs = 0,
+          nb = Infinity;
         for (const [p, q2] of [
           [-0.25, -0.25],
           [0.25, -0.25],
@@ -736,6 +757,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           else if (ii >= 0 && jj >= 0 && ii < W2 && jj < H2) {
             dd += dep[jj * W2 + ii];
             if (ter((ii + 0.5) * 0.5, (jj + 0.5) * 0.5) === 'w') rs++;
+            if (dryT && !fl[jj * W2 + ii]) nb = Math.min(nb, wy[jj * W2 + ii]);
           }
         }
         /* water track WA-4: the sea's shallows (w, wadeable) ride below the kind (kind - shallows * 0.45) for the reef's
@@ -750,16 +772,21 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
               : 0;
         wv.push(
           vx,
-          run
-            ? rawHeightAt(sc, vx, vz) + sc0 - 0.12
-            : pool || (KL.sea && nearCover(vx, vz))
-              ? Math.max(y, tideY(vx, vz))
-              : y,
+          /* WA-5b: a flood's skin meets the water it rose from at that water's level (no step, no seam) */
+          dryT && fl[q]
+            ? nb < Infinity
+              ? nb
+              : rawHeightAt(sc, vx, vz) + sc0 + 0.03
+            : run
+              ? rawHeightAt(sc, vx, vz) + sc0 - 0.12
+              : pool || (KL.sea && nearCover(vx, vz))
+                ? Math.max(y, tideY(vx, vz))
+                : y,
           vz,
           T.shoreF ? rf * (KL.run ? 1 : 0.6) : Math.max(Math.min(1, sh / 2), rf * (KL.run ? 1 : 0.6)),
           fw[0],
           fw[1],
-          dd / 4,
+          dryT && fl[q] ? -1 : dd / 4 /* WA-5b: -1 marks a flood's skin for the water shader */,
           kd + (calm || (KL.sea ? (-0.45 * rs) / 4 : 0))
         );
       }
@@ -775,6 +802,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           nz2 = cz + dj * 0.5;
         if (!isW(nx2, nz2)) continue;
         const nq2 = (j + dj) * W2 + (i + di);
+        if (dryT && (fl[q] || fl[nq2])) continue;
         let yt = y,
           y2 = i + di >= 0 && j + dj >= 0 && i + di < W2 && j + dj < H2 ? wy[nq2] : wlev(nx2, nz2);
         if (run) {

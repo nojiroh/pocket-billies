@@ -248,7 +248,7 @@ uniform vec4 uFish[4];uniform vec4 uRings[8];uniform sampler2D uShore;uniform ve
 float caust(vec2 p,float t){vec2 q=p+vec2(lnoise(p*.7+t*.21),lnoise(p.yx*.7-t*.17))*1.6;float a=sin(q.x*4.1+t*.9)+sin(q.y*3.7-t*.7)+sin((q.x+q.y)*2.9+t*.5);return pow(clamp(1.-abs(a)*.42,0.,1.),5.);}
 void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y&&vW.z<uHole.w)discard;float t=uTime*.001;int K=int(vDK.y+.5);
  /* water track WA-1: pc the world texel (32 a metre with pixel water), ts the stepped time of the small motions; t stays smooth for the swell and the level */
- float ts=pwStep(t),pr=pwRes(),pix=uPixW.x;vec2 pc=pwCell(vW.xz);vec4 ka=kdT(K,2),kb=kdT(K,3),kc=kdT(K,4);vec3 kg=kdT(K,5).rgb;float scum=kdT(K,0).w;bool glowC=kg.r+kg.g+kg.b>.01;float dep=clamp(vDK.x,0.,1.);
+ float ts=pwStep(t),pr=pwRes(),pix=uPixW.x;vec2 pc=pwCell(vW.xz);vec4 ka=kdT(K,2),kb=kdT(K,3),kc=kdT(K,4);vec3 kg=kdT(K,5).rgb;float scum=kdT(K,0).w;bool glowC=kg.r+kg.g+kg.b>.01;float dep=clamp(vDK.x,0.,1.),flo=step(vDK.x,-.5);
  /* island track IS-3: on a sea all round (uSea: the swell's centre, on), a cove's calm rides in the kind (kind + calm * .4);
     far out the small things (fish, rings, light on the bed) aren't worked out */
  float calm=clamp((vDK.y-float(K))*2.5,0.,1.),seaK=(kc.x>.5&&uSea.z>.5)?1.-calm*.85:0.,far=step(140.,length(vW-uEye));vec2 rd=normalize(vW.xz-uSea.xy+vec2(1e-3));
@@ -262,15 +262,16 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
   /* water track WA-4: the shallows the low tide leaves are drawn as wet sand on the water's own surface (the bed under them lies low, between steep banks), darker and shinier near the water */
   if(sf<.5+lap&&uTide.z>.5&&s4.r>=.5+lap){float wl=smoothstep(.5+lap-.18,.5+lap,sf);vec3 ws=vec3(.5,.41,.29)*(.86+.28*pwQ(lnoise(wp*1.7),3.,pc))*(1.-.18*pwQ(wl,3.,pc));float shs=shadowAt(vW,.002);ws*=ambient(vec3(0.,1.,0.),1.,shs)+uSunCol*max(uSunDir.y,0.)*shs;
    vec3 vv=normalize(uEye-vW);ws+=mix(uSkyR,ws,.6)*pwQ(wl*.5,3.,pc)*.25*(.3+.7*pow(1.-max(vv.y,0.),2.));o=vec4(fogit(ws,vW),1.);return;}
-  if(sf<.5+lap)discard;vS2=max(vS,1.-smoothstep(.5,.68,sf-lap));
+  /* WA-5b: past the dry shoreline a flood's skin (flo) is standing puddles in the grass, pixel-edged */
+  if(sf<.5+lap){if(flo<.5||lnoise(wp*.9)*.7+lnoise(wp*2.7+3.1)*.3<.47)discard;}else vS2=max(vS,1.-smoothstep(.5,.68,sf-lap));
   /* WA-1: the shore's foam, a hard line one texel wide: a texel kept beside one the shoreline cuts away */
-  if(pix>.5&&sf<.8+lap){vec2 e=uShoreR.xy/pr;float m=min(min(tideSF(texture(uShore,su+vec2(e.x,0.))),tideSF(texture(uShore,su-vec2(e.x,0.)))),min(tideSF(texture(uShore,su+vec2(0.,e.y))),tideSF(texture(uShore,su-vec2(0.,e.y)))));edge=step(m,.5+lap);}}
+  if(pix>.5&&sf<.8+lap&&flo<.5){vec2 e=uShoreR.xy/pr;float m=min(min(tideSF(texture(uShore,su+vec2(e.x,0.))),tideSF(texture(uShore,su-vec2(e.x,0.)))),min(tideSF(texture(uShore,su+vec2(0.,e.y))),tideSF(texture(uShore,su-vec2(0.,e.y)))));edge=step(m,.5+lap);}}
  float r1=lnoise(w*2.3+vec2(ts*.6,ts*.4)*rk),r2=lnoise(w*3.7-vec2(ts*.5,ts*.7)*rk);if(fl2){r1=mix(r1,lnoise(w2*2.3+vec2(ts*.6,ts*.4)*rk),fbw);r2=mix(r2,lnoise(w2*3.7-vec2(ts*.5,ts*.7)*rk),fbw);}vec2 rip=(vec2(r1,r2)-.5)*.035*rk;
  /* ripple rings: from ducks, fish and insects */
  float ring=0.;for(int i=0;i<8;i++){vec4 R=uRings[i];if(far>.5)break;if(R.w<=0.)continue;float d=length(wq-R.xy),r=.08+pwStep(R.z)*.55;float band=pix>.5?step(abs(d-r),.6/pr):1.-smoothstep(.0,.06,abs(d-r));ring+=band*R.w*clamp(1.-R.z/2.4,0.,1.)*step(d,r+.1);}
  rip+=vec2(ring*.012);
  /* WA-1: the mirror moves by whole pixels (rip is the same over a texel and steps in time); the picture in it stays smooth */
- vec2 s=pix>.5?(gl_FragCoord.xy+floor(rip*uRes+.5))/uRes:gl_FragCoord.xy/uRes+rip;vec4 rf=texture(uRefl,s);rf.a*=clamp(1.-abs(vW.y-uLevel)*3.,0.,1.);vec3 v=normalize(uEye-vW);float fr=(.3+.55*pow(1.-max(v.y,0.),2.))*uReflK*(1.-kb.y*.75);if(glowC)fr*=.4;
+ vec2 s=pix>.5?(gl_FragCoord.xy+floor(rip*uRes+.5))/uRes:gl_FragCoord.xy/uRes+rip;vec4 rf=texture(uRefl,s);rf.a*=clamp(1.-abs(vW.y-uLevel)*3.,0.,1.);vec3 v=normalize(uEye-vW);float fr=(.3+.55*pow(1.-max(v.y,0.),2.))*uReflK*(1.-kb.y*.75);if(glowC)fr*=.4;fr*=1.-.65*flo;
  vec3 shal=uShallow*kdT(K,1).rgb,deep=uDeep*kdT(K,0).rgb;
  /* water track WA-4: reef shallows: the sea's wadeable shallows (they ride below the kind, ground-mesh.js) and its water near the shore turn a clear turquoise; the bed shows through */
  float reef=(pix>.5&&kc.x>.5)?max(max(clamp((float(K)-vDK.y)/.45,0.,1.),1.-smoothstep(.12,.5,dep)),kc.z):0.,depC=mix(dep,min(dep,.28),reef);
@@ -358,8 +359,10 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
   vec3 ic=mix(shal,vec3(.94,.97,1.),.55+.3*pwQ(lnoise(wp*.6),3.,pc));ic*=mix(uShTint*.9,vec3(1.),sh)*(.6+.4*uAmbK);ic=mix(ic,ic*.72,line*.7);
   vec3 icr=mix(ic,mix(uSkyR,rf.rgb,rf.a*.5),clamp(fr*.6,0.,.5));float isn=lnoise(wp*5.+ts*.02),isv=pow(max(isn-.6,0.)*2.5,3.)*1.5;icr+=uSunCol*(pix>.5?pwQ(min(isv,1.),3.,pc)+step(.86,lnoise(wp*11.+ts*.05))*step(.62,isn)*.4:isv)*sh;
   o=vec4(fogit(icr,vW),.97);return;}
+ /* WA-5b: a flood's skin over the banks (depth -1, ground-mesh.js): a thin muddy film the grass shows through */
+ if(flo>.5)c=mix(c,vec3(.42,.36,.24)*(.6+.4*sh)*(.55+.45*uAmbK),.3);
  /* the shallows let the bed show; murky water never does */
- float a=mix(clamp(ka.x/max(uClar,.05),0.,1.),.94,smoothstep(0.,.8,depC));a=mix(a,max(a,.8),reef);a=mix(a,.97,kb.y*.6);a=max(a,clamp(foam,0.,1.)*.9);
+ float a=mix(clamp(ka.x/max(uClar,.05),0.,1.),.94,smoothstep(0.,.8,depC));a=mix(a,max(a,.8),reef);a=mix(a,.97,kb.y*.6);a=max(a,clamp(foam,0.,1.)*.9);a=mix(a,min(a,.42),flo);
  /* IS-3: the sea past the scene's edge has no land under it beyond the 8 m border: there it is opaque */
  {vec2 sz=1./max(uShoreR.xy,vec2(1e-4));float ou=max(max(-vW.x,vW.x-sz.x),max(-vW.z,vW.z-sz.y));a=mix(a,1.,smoothstep(3.,7.,ou));}
  o=vec4(fogit(c,vW),a);}`,
