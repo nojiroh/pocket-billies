@@ -33,6 +33,8 @@ VIEWS = {
     'art': ('art', "artBrowserShow('art/scene/props/house.png')", '#abGrid .ab-tile'),
     'tiles': ('art', "void tileSetOpen('granite', 2)", '#tsStage .pc-art'),
     'strips': ('art', "artBrowserShow('art/scene/life/duck.png')", '.ab-side canvas.sp-cv'),
+    'robots': ('robots', "studioState.sel.rbKind = 'torso'; studioState.sel.rbId = 'bulwark'; render(); setTimeout(() => document.querySelector('.rb-fig').scrollIntoView(), 50)", '.rb-fig'),
+    'pyramids': ('items', "setTimeout(() => document.querySelector('.pyr-art').scrollIntoView(), 50)", '.pyr-art'),
     'workbench': ('workbench', """(async () => { const fs = []; for (const n of ['beasts-front.png', 'beasts-back.png']) {
       const r = await fetch('/tools/art-source/part-kit/' + n); fs.push(new File([await r.blob()], n)); } await wbAddFiles(fs); })()""", '#wbCv'),
 }

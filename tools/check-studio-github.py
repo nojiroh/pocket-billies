@@ -2417,8 +2417,15 @@ def robot_art_steps(pg, errs):
     pg.evaluate('undo()'); time.sleep(0.3)
     if pg.evaluate("'img' in studioState.D.robots.gems.tide"): errs.append('robot art: undo did not take the new picture name back')
     pg.evaluate(f"const G = studioState.D.robots.gems.tide; G.img = G._img; delete G._img; studioState.artDirty.delete({json.dumps(gem)}); commit(true); updateTopBar()")
+    pg.evaluate("void openSection('items')")
+    pg.wait_for_selector('[data-act="pyrPaint"]')
+    pg.click('[data-act="pyrPaint"][data-p="art/coins/pyramid_16.png"]')
+    pg.wait_for_selector('#abPeStage .pc-art'); time.sleep(0.3)
+    if 'tools/build-pyramids.py' not in pg.evaluate("document.querySelector('#abPe').textContent"): errs.append('pyramids: the painter does not say build-pyramids.py draws the icon')
+    pg.click('[data-act="abEditDone"]'); time.sleep(0.4)
+    if pg.evaluate('studioState.sec') != 'items': errs.append('pyramids: Done did not go back to Items & pyramids')
     pg.set_default_timeout(30000)
-    print('robot art: Edit pixels and back, the builds draw the edit, Upload… names a new picture, each one undo step', flush=True)
+    print('robot art: Edit pixels and back, the builds draw the edit, Upload… names a new picture, each one undo step; a pyramid icon painted from Items & pyramids', flush=True)
 
 
 def strips_steps(pg, errs):

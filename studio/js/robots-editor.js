@@ -257,7 +257,7 @@ function rbPartEditorHTML(id) {
   ${card('Stats', rbStatsHTML(p), { sub: 'Added to every robot stat floor (Rules). Upgrades add a share of these.' })}
   ${card(
     'Picture',
-    `${grid(...pics.map(([k, l]) => textField(l, `${p}.art.${k}`, { opt: 1, help: k === 'img' ? 'A path in game/art, like robots/vane.png. Paint it with Edit pixels below, or Upload… a PNG (a part without a picture gets robots/<part>.png).' : '' })))}
+    `${grid(...pics.map(([k, l]) => textField(l, `${p}.art.${k}`, { opt: 1, help: k === 'img' ? 'A path in game/art, like robots/vane.png. Paint it with Edit pixels below, or Upload… a PNG: a picture this part hasn’t got is saved as robots/' + id + RB_PIC_NAME[k] + '.png.' : '' })))}
     <div class="rb-pics">${pics.map(([k, l]) => rbPicHTML(id, k, l, P.art[k], false)).join('')}</div>
     ${rbJointsHTML(id, P)}
     <p class="help">Without a picture the game draws a stand-in from these:</p>${grid(

@@ -5,6 +5,8 @@ import { expose } from '../../game/js/test-globals.js';
 import {
   BODY_TEMPLATES,
   PLAN_INFO,
+  artPaint,
+  artPicSrc,
   loadWardrobe,
   makeBlankBody,
   musicCryCardHTML,
@@ -98,6 +100,7 @@ expose({
   personPreviewHTML: [() => personPreviewHTML, v => (personPreviewHTML = v)],
   poolName: [() => poolName],
   poolPercent: [() => poolPercent],
+  pyramidArtHTML: [() => pyramidArtHTML, v => (pyramidArtHTML = v)],
   refsTo: [() => refsTo, v => (refsTo = v)],
   removeRefs: [() => removeRefs, v => (removeRefs = v)],
   selectedLineIndex: [() => selectedLineIndex],
@@ -1081,11 +1084,22 @@ SECTIONS.items = () => {
   const pyramids = Object.entries(D.pyramids)
     .map(([k, C]) => {
       const p = `pyramids.${k}`;
-      return `<div class="item-row"><div class="item-ic"><img src="../game/art/coins/${k}_32.png" width="40" height="40" class="pix" onerror="this.style.opacity=.2"><small class="mono">${escapeHtml(k)}</small></div><div>${grid(textField('Name', `${p}.n`), numberField('Catch multiplier', `${p}.m`, { min: 0, max: 10, step: 0.1, help: '0 means it always catches.' }), numberField('Shop price (Moneys)', `${p}.price`, { min: 0, step: 10, help: '0 means it can’t be bought.' }), numberField('Badges needed', `${p}.need`, { opt: 1, min: 0, max: 8, step: 1 }))}${textField('Description', `${p}.d`, { area: 1, rows: 2 })}</div></div>`;
+      return `<div class="item-row"><div class="item-ic"><img src="${escapeHtml(artPicSrc(`coins/${k}_32.png`))}" width="40" height="40" class="pix" onerror="this.style.opacity=.2"><small class="mono">${escapeHtml(k)}</small></div><div>${pyramidArtHTML(k)}${grid(textField('Name', `${p}.n`), numberField('Catch multiplier', `${p}.m`, { min: 0, max: 10, step: 0.1, help: '0 means it always catches.' }), numberField('Shop price (Moneys)', `${p}.price`, { min: 0, step: 10, help: '0 means it can’t be bought.' }), numberField('Badges needed', `${p}.need`, { opt: 1, min: 0, max: 8, step: 1 }))}${textField('Description', `${p}.d`, { area: 1, rows: 2 })}</div></div>`;
     })
     .join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Items & pyramids</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Pyramids', pyramids, { sub: 'Pyramid icons are art/coins/<id>_16.png and _32.png (tools/build-pyramids.py). Replace them in the Art browser.' })}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Items & pyramids</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Pyramids', pyramids, { sub: 'Each pyramid has two icons, art/coins/<id>_16.png and _32.png, each drawn at its own size (never scaled), and a 3D model (art/coins/<id>.json, thrown in battle), which is not edited here. tools/build-pyramids.py drew them all: running it again draws over edits made here.' })}</div>`;
 };
+/* SA-2a: a pyramid's two icons at their own size and larger, each with Edit pixels (Done comes back here) */
+function pyramidArtHTML(k) {
+  return `<div class="seg-row pyr-art">${[16, 32]
+    .map(n => {
+      const rel = `coins/${k}_${n}.png`,
+        src = escapeHtml(artPicSrc(rel));
+      return `<figure class="pyr-fig"><span class="seg-row"><img class="pix" src="${src}" width="${n}" height="${n}" alt=""><img class="pix" src="${src}" width="${n * (n === 16 ? 4 : 2)}" height="${n * (n === 16 ? 4 : 2)}" alt=""></span><figcaption>${n} px <button class="btn sm" data-act="pyrPaint" data-p="art/${escapeHtml(rel)}">Edit pixels</button></figcaption></figure>`;
+    })
+    .join('')}</div>`;
+}
+ACTIONS.pyrPaint = d => artPaint(d.p, { label: 'Items & pyramids', fn: () => openSection('items') });
 ACTIONS.itemNew = () => {
   const D = studioState.D,
     k = uniqueKey('item', x => !!D.items[x]);

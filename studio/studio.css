@@ -832,6 +832,19 @@ canvas.spr-prev.big {
   max-width: 26px;
   max-height: 26px;
 }
+.pyr-art {
+  gap: 16px;
+  margin-bottom: 6px;
+}
+.pyr-fig {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+}
+.pyr-fig .seg-row {
+  align-items: end;
+}
 .item-ic {
   display: flex;
   flex-direction: column;
