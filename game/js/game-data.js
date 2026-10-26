@@ -420,6 +420,16 @@ export const GENES = /** @type {import('../types/game-data').Genes} */ (
     stability: { line: 0, kit: 1, other: 2, augment: 3, limit: 3, refuse: 3 },
     bank: { levels: [{ limit: 3, slots: ['sig'] }], price: { base: 5, perCost: 5 }, inherit: 0 },
     unstable: { up: 1.3, down: 0.75, name: 'Unstable', d: '', fx: [] },
+    augment: {
+      slots: {},
+      statShare: 0,
+      field: {},
+      move: 'none',
+      escapedNear: 1,
+      knockout: 'none',
+      levels: [{ slots: [], maxUp: 0 }],
+      price: { fit: 0, up: [] },
+    },
   }
 );
 /* RT-3: set pieces, prop groups placed as a unit on a laid-out place (setPieces.json; logic/mapgen.js) */

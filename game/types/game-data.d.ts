@@ -1890,6 +1890,28 @@ export interface Genes {
   stability: { line: number; kit: number; other: number; augment: number; limit: number; refuse: number };
   /** a splice past the limit: one stat times up, another times down, and the drawback */
   unstable: GeneTrait & { up: number; down: number };
+  /** SP-5: Augments, robots.json arms and legs fitted on a Billie at the Workshop (logic/augments.js) */
+  augment: GeneAugment;
+}
+/** SP-5: genes.json augment (every number a placeholder) */
+export interface GeneAugment {
+  about?: string;
+  /** per slot the robot part it takes, the side an arm goes on, and that side's share of the slot */
+  slots: Partial<Record<'front' | 'back', { part: 'arm' | 'legs'; side?: 'L' | 'R'; share: number }>>;
+  /** the share of the part's stats (robots.json stats, upgrades included) added to the Billie's base stats */
+  statShare: number;
+  /** per robot part id, the field move (fieldMoves.json) it counts for */
+  field: Record<string, string>;
+  /** the part's move: extra (beside the learned ones while fitted) or none */
+  move: 'extra' | 'none';
+  /** the escaped odds' multiplier at a place one step from a scrapyard */
+  escapedNear: number;
+  /** what a knocked-out Escaped specimen leaves beside its DNA: its part, or nothing more */
+  knockout: 'part' | 'none';
+  /** the Workshop's levels: the slots it fits and the highest upgrade */
+  levels: { slots: ('front' | 'back')[]; maxUp: number }[];
+  /** prices in Scrap: a fit, and each upgrade (the first to +1, then +2...) */
+  price: { fit: number; up: number[] };
 }
 export interface GeneBank {
   levels: { limit: number; slots: ('front' | 'back' | 'sig')[] }[];

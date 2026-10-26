@@ -137,5 +137,23 @@
   "fx": [
    {"kind":"turnHurt","share":0.0625}
   ]
+ },
+ "augment": {
+  "about": "SP-5: robots.json arms and legs fitted on a Billie at the Workshop for Scrap (Billy.aug, logic/augments.js). Every number is a placeholder until played.",
+  "slots": {
+   "front": {"part":"arm","side":"R","share":0.5},
+   "back": {"part":"legs","share":1}
+  },
+  "statShare": 0.5,
+  "field": {"hydrant":"surf","auger":"smash"},
+  "move": "extra",
+  "escapedNear": 4,
+  "knockout": "part",
+  "levels": [
+   {"slots":["front"],"maxUp":1},
+   {"slots":["front","back"],"maxUp":2},
+   {"slots":["front","back"],"maxUp":3}
+  ],
+  "price": {"fit":10,"up":[10,20,40]}
  }
 }

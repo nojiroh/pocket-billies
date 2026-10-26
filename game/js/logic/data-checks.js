@@ -1426,6 +1426,35 @@ export function dataGenes(D, valid = () => true) {
   const B = D.buildings && D.buildings.genebank;
   if (B && B.levels !== L.length)
     problem(`bank.levels: ${L.length}, but buildings.json genebank.levels is ${B.levels}`);
+  /* SP-5: Augments: a slot takes a robot part kind robots.json has; a field part is a robots.json arm or legs and
+     names a field move; the Workshop's levels never take a slot or an upgrade back, a price for each upgrade, and as
+     many levels as buildings.json sells (once the Workshop is open) */
+  const A = G.augment,
+    rparts = (D.robots && D.robots.parts) || {};
+  for (const [slot, R] of Object.entries(A.slots))
+    if (!Object.values(rparts).some((/** @type {any} */ p) => p.slot === R.part))
+      problem(`augment.slots.${slot}: robots.json has no ${R.part} part`);
+  for (const [id, f] of Object.entries(A.field)) {
+    const P = rparts[id];
+    if (!P || !Object.values(A.slots).some(R => R && R.part === P.slot))
+      problem(`augment.field.${id}: no robots.json part that a slot takes`);
+    if (!fields[f]) problem(`augment.field.${id}: no field move "${f}" (fieldMoves.json)`);
+  }
+  A.levels.forEach((/** @type {any} */ R, /** @type {number} */ i) => {
+    const was = A.levels[i - 1];
+    if (R.slots.some((/** @type {string} */ k) => !A.slots[/** @type {'front' | 'back'} */ (k)]))
+      problem(`augment.levels[${i}].slots: a slot augment.slots doesn't name`);
+    if (was && (R.maxUp < was.maxUp || was.slots.some((/** @type {string} */ k) => !R.slots.includes(k))))
+      problem(`augment.levels[${i}]: takes back a slot or an upgrade level ${i} had`);
+  });
+  const maxUp = Math.max(...A.levels.map((/** @type {any} */ R) => R.maxUp));
+  if (A.price.up.length < maxUp) problem(`augment.price.up: ${A.price.up.length} prices, but upgrades go to +${maxUp}`);
+  const robotMax = D.rules && D.rules.robots && D.rules.robots.maxUpgrade;
+  if (robotMax != null && maxUp > robotMax)
+    problem(`augment.levels: upgrades to +${maxUp}, past rules.json robots.maxUpgrade ${robotMax}`);
+  const W2 = D.buildings && D.buildings.workshop;
+  if (W2 && !W2.soon && W2.levels !== A.levels.length)
+    problem(`augment.levels: ${A.levels.length}, but buildings.json workshop.levels is ${W2.levels}`);
   return out;
 }
 // RF-2: every catch item (pyramids.json; the ids stay the pyramids' until RF-4) has its icons and the model it is thrown as

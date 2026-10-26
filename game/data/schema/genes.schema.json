@@ -12,7 +12,8 @@
   "stability",
   "unstable",
   "wild",
-  "bank"
+  "bank",
+  "augment"
  ],
  "properties": {
   "about": {
@@ -539,6 +540,147 @@
      "type": "number",
      "minimum": 0,
      "maximum": 1
+    }
+   }
+  },
+  "augment": {
+   "description": "SP-5: Augments, robots.json arms and legs fitted on a Billie at the Workshop (Billy.aug; logic/augments.js): which robot part each slot takes (an arm on one side, the side's share of the slot), the share of the part's stats it adds, the field moves a part counts for, its move (extra: beside the learned ones), the escaped odds' multiplier next to a scrapyard, what a knocked-out Escaped specimen leaves, the Workshop's levels (slots it fits, the highest upgrade) and the prices in Scrap",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "slots",
+    "statShare",
+    "field",
+    "move",
+    "escapedNear",
+    "knockout",
+    "levels",
+    "price"
+   ],
+   "properties": {
+    "about": {
+     "type": "string"
+    },
+    "slots": {
+     "type": "object",
+     "propertyNames": {
+      "enum": [
+       "front",
+       "back"
+      ]
+     },
+     "additionalProperties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "part",
+       "share"
+      ],
+      "properties": {
+       "part": {
+        "enum": [
+         "arm",
+         "legs"
+        ]
+       },
+       "side": {
+        "enum": [
+         "L",
+         "R"
+        ]
+       },
+       "share": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "maximum": 1
+       }
+      }
+     }
+    },
+    "statShare": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "field": {
+     "type": "object",
+     "propertyNames": {
+      "pattern": "^[a-z][a-z0-9_]*$"
+     },
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "move": {
+     "enum": [
+      "extra",
+      "none"
+     ]
+    },
+    "escapedNear": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100
+    },
+    "knockout": {
+     "enum": [
+      "part",
+      "none"
+     ]
+    },
+    "levels": {
+     "type": "array",
+     "minItems": 1,
+     "maxItems": 9,
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "slots",
+       "maxUp"
+      ],
+      "properties": {
+       "slots": {
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+         "enum": [
+          "front",
+          "back"
+         ]
+        }
+       },
+       "maxUp": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9
+       }
+      }
+     }
+    },
+    "price": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "fit",
+      "up"
+     ],
+     "properties": {
+      "fit": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 1000
+      },
+      "up": {
+       "type": "array",
+       "maxItems": 9,
+       "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 1000
+       }
+      }
+     }
     }
    }
   }
