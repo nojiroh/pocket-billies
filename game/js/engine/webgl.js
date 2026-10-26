@@ -621,6 +621,7 @@ export function initWebgl(cv) {
     if (!gl) return false;
     gpuState.gl = gl;
     gpuState.cv = cv;
+    gpuState.made = (gpuState.made || 0) + 1;
     gpuNewGeneration();
     gpuState.P = {};
     gpuState.texL = new Map();
