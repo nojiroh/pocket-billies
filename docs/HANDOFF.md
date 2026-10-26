@@ -1439,18 +1439,23 @@ RT-4b). Tag `rt-4a-done` for the owner to push.
     to 2 more wild Billies (a grass tuft and a sprite each), no new props.
 - Verified: lint, typecheck, check:modules, check:data, format:check, build; unit tests 921 quick and 68 slow;
   check-quick RT-4a alone (SELFTESTWH1: Meadow Route, 5 wild with 5 trainers: woods 2, grass 1, water 1, the rarer one
-  bezos0 lv 10 in its dead end). **Full quick check**: running when this was written; the result follows in the next commit.
+  bezos0 lv 10 in its dead end). **Full quick check** (1241 s): 38 of 40; RT-4a passed in it. Song fingerprints (cave mid, cave
+  late not in the baseline) fails on main too. RL-8 stopped at "a run battle didn't hold the save" (a 20 s wait for the
+  landing's wild battle) under the paired load; alone it passes that and stops at main's own "the town's shop has no
+  Perk". Not seen on a phone. CI not run (no PR from this session; the merge session's #194 carries it).
 - Risky / open:
   - **Not seen on a phone**: up to 2 more wild Billies a route place; a woods or water Billie still hides in a tall
     grass tuft (the tuft is the encounter's own picture; a reed or a bush tuft would read better by habitat, art).
   - With Psychic in woods a place can have no Billie left in its tall grass (SELFTESTWH0's Meadow Route: all three in
     the woods). Moving Psychic out of `woods` is the knob if the grass looks empty.
   - Dead ends under canopy also hide RT-2's optional trainers there (not changed here).
-  - RL-8's shop Perk and the Song fingerprints fail on main too (earlier entries).
+  - RL-8's shop Perk and the Song fingerprints fail on main too (earlier entries); RL-8's waits (the take-off, now the
+    first battle's 20 s) are close under the full check's load.
   - **MAPGEN_VERSION clash with track/towns** (the merge-coordination session, 2026-10-25): towns uses 9 (TW-2) and 10
     (TW-3); routes uses 9 (RT-2), 10 (RT-3) and now **11 (RT-4a: habitat points, `mapgenHabitats`; its only change)**.
-    The plan the owner approved for the merge: towns keeps 9-10, routes takes the numbers after (RT-2 + RT-3 -> 11,
-    RT-4a -> 12). In the merge, keep both RunWorldData fields (`town?`, `setPieces?`), give rng.test.mjs a fresh pinned
+    The plan the owner approved for the merge: towns keeps 9-10, routes takes the numbers after. In the combined PR
+    #194: RT-2 = 11, RT-3 = 12, RT-4a = 13 (rng.test's pinned hash there 1600371078); RT-4b merges main first and
+    takes 14. In the merge, keep both RunWorldData fields (`town?`, `setPieces?`), give rng.test.mjs a fresh pinned
     hash and regenerate the snapshots (check-data, mapgen-golden, run-start, rng), never hand-merge them.
 - Next: RT-4b (finds at dead ends and pockets, Cut brambles at a pocket's mouth guarding the rarer one or a find,
   animals by layout and set piece). routes-track.md has its shape.
@@ -6501,7 +6506,10 @@ lines send you to the mast. The plan's decisions 1-13 were taken as written.
     places, 92 bridges) after the bridge fixes: every exit reachable, every bridge crossable.
   - Node sweeps: 200 runs, 2,500 scenes with the buildings: all placed, every seam joined, no new generator note;
     100 runs after the bridge fix: 421 bridges, none ending in water, all at 65 degrees or more to the stream.
-  - End of the phase: **Full quick check**: running when this was written; the result follows in the next commit.
+  - End of the phase: **Full quick check** (1241 s): 38 of 40; RT-4a passed in it. Song fingerprints (cave mid, cave
+  late not in the baseline) fails on main too. RL-8 stopped at "a run battle didn't hold the save" (a 20 s wait for the
+  landing's wild battle) under the paired load; alone it passes that and stops at main's own "the town's shop has no
+  Perk". Not seen on a phone. CI not run (no PR from this session; the merge session's #194 carries it).
 - Run simulation (report only; the bounds are the owner's): on the placeholders a lone level-5 starter loses 50 of 50
   runs (31 on the landing, about 1.6 places); three level-5 starters lose 50 of 50 too (20 at the first mini-boss,
   levels 9-11 in doubles). No run reaches the boss.
