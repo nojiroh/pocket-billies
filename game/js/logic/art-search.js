@@ -15,8 +15,6 @@
 /** @typedef {{ key: string, text: string, raw: string }} Chip */
 /** @typedef {{ words: string[], dirs: string[], w: SizeRule | null, h: SizeRule | null, unused: boolean, legacy: boolean, chips: Chip[] }} ArtQuery */
 /** @typedef {{ w?: number, h?: number, state?: 'used' | 'legacy' | 'unused' }} ArtMeta */
-/* to-module: start */
-/* to-module: end */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */

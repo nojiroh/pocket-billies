@@ -17,8 +17,6 @@
    Logic only: no DOM, runs in Node (tools/test/art-refs.test.mjs). */
 /** @typedef {{ kind: 'data' | 'code' | 'recipe' | 'rig', from: string, at: string, legacy: boolean }} ArtRef */
 /** @typedef {{ p: string, at: string[] }} CodeRef */
-/* to-module: start */
-/* to-module: end */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */

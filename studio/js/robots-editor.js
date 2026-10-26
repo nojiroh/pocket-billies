@@ -248,7 +248,7 @@ function rbPartEditorHTML(id) {
   ${card('Stats', rbStatsHTML(p), { sub: 'Added to every robot stat floor (Rules). Upgrades add a share of these.' })}
   ${card(
     'Picture',
-    `${grid(...pics.map(([k, l]) => textField(l, `${p}.art.${k}`, { opt: 1, help: k === 'img' ? 'A path in game/art, like robots/vane.png. Upload pictures under Art files.' : '' })))}
+    `${grid(...pics.map(([k, l]) => textField(l, `${p}.art.${k}`, { opt: 1, help: k === 'img' ? 'A path in game/art, like robots/vane.png. Upload pictures in the Art browser.' : '' })))}
     <div class="rb-pics">${pics
       .map(([k, l]) =>
         P.art[k]
