@@ -21,6 +21,12 @@
     "minLength": 1,
     "maxLength": 40
    },
+   "place": {
+    "description": "RL-S2: the word its place's name ends with, when it isn't the type's name (a rival's place is a Route: \"Thicket Route\")",
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 40
+   },
    "mark": {
     "description": "its marker on the run map: an outline of logic/run-marks.js RUN_MARK_TYPES (the type's id when left out)",
     "type": "string",

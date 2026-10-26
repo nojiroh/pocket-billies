@@ -313,15 +313,18 @@ export function runAlongBack(path, d) {
   }
   return path[0].slice();
 }
-/** a run node's name (a placeholder, the owner's call: its biome and its type, "Meadow Route")
+/** a run node's name (a placeholder, the owner's call: its biome and its type, "Meadow Route"; RL-S2: the type's
+ * `place` word when it has one)
  * @param {RunMap} map @param {number} i @param {RunWorldData} data */
 export function runPlaceName(map, i, data) {
   const node = map.nodes[i],
     B = data.biomes[node.biome || ''],
     T = data.nodeTypes[node.type];
+  /* RL-S2: a type's own word for its place, when it has one (a rival's place is a Route) */
+  const word = T ? T.place || T.name : 'Route';
   /* RL-R2: a side area's places carry its name ("Bramble Grove Town") */
-  if (node.side && map.side) return `${map.side.name} ${T ? T.name : 'Route'}`;
-  return `${B ? B.name : 'Wild'} ${T ? T.name : 'Route'}`;
+  if (node.side && map.side) return `${map.side.name} ${word}`;
+  return `${B ? B.name : 'Wild'} ${word}`;
 }
 /** node i's scene, made from its parents' (see runSceneParams), with what the game reads off a place's scene: its
  * place, name, colour grade (mood) and climate (its biome's: environment.js reads a scene's climate first)

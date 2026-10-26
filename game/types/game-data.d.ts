@@ -1769,6 +1769,8 @@ export interface Biome {
 export interface NodeType {
   /** what the player reads */
   name: string;
+  /** RL-S2: the word its place's name ends with, when not the name (a rival's place is a Route) */
+  place?: string;
   /** its marker's outline (logic/run-marks.js RUN_MARK_TYPES); the type's id when left out */
   mark?: string;
   /** how it plays: a walkable map, or a menu (a story script or a shop sheet, RL-12) */
