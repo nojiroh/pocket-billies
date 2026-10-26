@@ -19,6 +19,8 @@ import {
   historyPartsBytes,
   historyPartsData,
 } from '../../game/js/logic/history.js';
+import { artMatch, artQueryParse } from '../../game/js/logic/art-search.js';
+import { artRefState } from '../../game/js/logic/art-refs.js';
 import {
   ACTIONS,
   PANE2_REFUSED,
@@ -48,6 +50,8 @@ import { sceneryCatalog } from './map-editor.js';
 import { buildSearchIndex, findRun } from './find.js';
 import { connectionsHTML } from './connections.js';
 import { githubMode } from './github.js';
+import { legacyLoad } from './legacy-view.js';
+import { artBrowser, artCodeRefsLoad, artPictures, artRefs } from './art-browser.js';
 import { musicPlay, musicPlaying, musicStop, musicStudio } from './music-editor.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -103,6 +107,14 @@ function studioTestHandles() {
     musicStop,
     musicPlaying,
     musicStudio,
+    artBrowser,
+    artCodeRefsLoad,
+    artRefs,
+    artPictures,
+    artQueryParse,
+    artMatch,
+    artRefState,
+    legacyLoad,
     githubOn: !!githubMode.on,
   };
 }

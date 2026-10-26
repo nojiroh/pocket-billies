@@ -456,6 +456,23 @@ async function tools(G, T, fail, stopped, step) {
     }
     T.water = { ms: r1(now() - a) };
   });
+  /* Studio art track SA-1: the Art browser's reference index over every picture (made again, not the kept one), and a
+     search through them all */
+  await run('art browser', async () => {
+    await G.artCodeRefsLoad();
+    await G.legacyLoad();
+    G.artBrowser.ixKey = '';
+    const a = now(),
+      ix = G.artRefs(),
+      b = now();
+    if (!ix) throw new Error('art browser: no reference index');
+    const Q = G.artQueryParse('dir:scene unused'),
+      all = G.artPictures(),
+      hits = all.filter(p => G.artMatch(p, { state: G.artRefState(ix.get(p)) }, Q) === true);
+    if (!all.length || ix.size < all.length / 2)
+      throw new Error(`art browser: ${ix.size} of ${all.length} pictures have a reference`);
+    T.art = { files: all.length, named: ix.size, indexMs: r1(b - a), searchMs: r1(now() - b), unused: hits.length };
+  });
   await run('slice', () => {
     const img = testSheet(512, 512),
       a = now(),
@@ -830,7 +847,7 @@ function showReport(G, r, changes, before) {
 <h3>Look here first</h3>${find}
 <h3>Since the last run</h3>${cmp}
 <h3>Sections (ms; frames p50 / p95; edit / undo)</h3><div class="st-scroll"><table class="tbl"><thead><tr><th>Section</th><th>Open</th><th>HTML</th><th>Page</th><th>After</th><th>Beside</th><th>Again</th><th>Frames</th><th>Draws</th><th>Elements</th><th>Links</th><th>Edit</th></tr></thead><tbody>${rows}</tbody></table></div>
-<h3>Tools, undo and loading</h3><table class="tbl"><tbody>${tool('Find', T.find)}${tool('Check', T.check)}${tool('Save (built)', T.save)}${tool('Propose (built)', T.propose)}${tool('Map generator', T.mapgen)}${tool('Water tools', T.water)}${tool('Sheet slicing', T.slice)}${tool('Pixel editor', T.pixel)}${tool('Skeleton builder', T.skeleton)}${tool('Undo', r.undo)}${tool('Loading', { dataMs: r.load.dataMs, readMs: r.load.readMs, assembleMs: r.load.assembleMs, firstDrawMs: r.load.firstDrawMs, resources: r.load.resources })}</tbody></table>
+<h3>Tools, undo and loading</h3><table class="tbl"><tbody>${tool('Find', T.find)}${tool('Check', T.check)}${tool('Save (built)', T.save)}${tool('Propose (built)', T.propose)}${tool('Map generator', T.mapgen)}${tool('Water tools', T.water)}${tool('Art browser', T.art)}${tool('Sheet slicing', T.slice)}${tool('Pixel editor', T.pixel)}${tool('Skeleton builder', T.skeleton)}${tool('Undo', r.undo)}${tool('Loading', { dataMs: r.load.dataMs, readMs: r.load.readMs, assembleMs: r.load.assembleMs, firstDrawMs: r.load.firstDrawMs, resources: r.load.resources })}</tbody></table>
 ${r.errors.length ? `<h3>Errors</h3><ul>${r.errors.map(e => `<li><b>${esc(e.where)}</b> ${esc(e.msg)}</li>`).join('')}</ul>` : ''}
 </div><div class="dlg-btns"><button class="btn" data-st="copy">Copy</button><button class="btn" data-st="save">Download the report</button><button class="btn primary" data-st="close">Close</button></div></div></div>`;
   const json = JSON.stringify(r, null, 1);

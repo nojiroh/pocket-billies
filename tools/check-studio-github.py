@@ -29,6 +29,7 @@ its sheet and rig as `npm run bake:kits` bakes them (kit_off_placeholder). Nothi
 Studio plan Phase 5 (T5.2): Replace from Parts Library greys a part a child can't hang on, shows before and after,
 and a head swapped keeps a blink as one undo step.
 Studio plan Phase 5 (T5.4): Repack sheet makes a hand-drawn Billie's sheet smaller, drawn the same, one undo step.
+Studio art track SA-1: the Art browser: folders, search tokens and chips, Used by, Edit pixels and its undo, Ctrl K.
 Studio plan Phase 1 (T1.3): the Check lists check-data's own problems (planted), and an error blocks Propose.
 UI track UI-3: the UI look section: a colour dial changed shows in the preview frame, Undo puts the data and the
 preview back; a screen's own colour shows on that screen only and ↺ takes it away; a preset applies and undoes; Find
@@ -2265,11 +2266,74 @@ def polish_steps(pg, errs):
     pg.evaluate("void openSection('jobs')")  # a section with no 3D view, so its frames don't slow the steps after
 
 
+def art_browser_steps(pg, errs):
+    """Studio art track SA-1: the Art browser. Its top folders are the art folder's; a folder opens with breadcrumbs;
+    the search's tokens (dir:, w:, unused) keep the right pictures and show as chips; a picture's Used by lists what
+    names it; Edit pixels paints a PNG on the shared pixel canvas and undo takes the stroke back; Ctrl K finds an art
+    file and opens it here."""
+    pg.set_default_timeout(120000)
+    art = ROOT / 'game' / 'art'
+    pics = lambda d: [p for p in d.rglob('*') if p.is_file() and p.suffix.lower() in ('.png', '.webp', '.jpg', '.svg')]
+    want = sorted(d.name for d in art.iterdir() if d.is_dir() and pics(d))
+    pg.evaluate("artBrowser.q = ''; artBrowser.at = ''; artBrowser.sel = ''; artBrowser.edit = ''; openSection('art')")
+    pg.wait_for_selector('#abGrid')
+    got = pg.evaluate("[...document.querySelectorAll('#abGrid .ab-folder .ab-name')].map(e => e.textContent)")
+    if got != want: errs.append(f'art browser: the top folders are {got}, the art folder has {want}')
+    pg.evaluate("ACTIONS.abGo({ at: 'scene/props' })"); time.sleep(0.3)
+    crumbs = pg.evaluate("document.querySelector('.ab-crumbs').textContent")
+    if crumbs.replace(' ', '') != 'art/scene/props': errs.append(f'art browser: breadcrumbs read {crumbs!r}')
+    titles = lambda: pg.evaluate("[...document.querySelectorAll('#abGrid .ab-tile:not(.ab-folder)')].map(e => e.title)")
+    def search(q, until=None, secs=60):
+        pg.evaluate(f"artBrowser.at = ''; artBrowser.q = {json.dumps(q)}; artBrowser.more = 0; render()")
+        end = time.time() + secs
+        while time.time() < end:
+            t = titles()
+            if until is None or until(t): return t
+            time.sleep(0.5); pg.evaluate('render()')
+        return titles()
+    t = search('dir:scene/props house')
+    if not t or any(not p.startswith('art/scene/props/') or 'house' not in p for p in t): errs.append(f'art browser: dir:scene/props house kept {t[:5]}')
+    chips = pg.evaluate("[...document.querySelectorAll('.ab-chip')].map(e => e.textContent)")
+    if len(chips) != 1 or 'scene/props' not in chips[0]: errs.append(f'art browser: the chips read {chips}')
+    t = search('dir:coins w:32', lambda t: len(t) == 4)
+    if sorted(t) != sorted(f'art/coins/{k}_32.png' for k in ('capstone', 'gold_pyramid', 'pyramid', 'step_pyramid')): errs.append(f'art browser: dir:coins w:32 kept {t}')
+    t = search('unused dir:people', lambda t: len(t) > 0)
+    people = sorted('art/people/' + p.name for p in pics(art / 'people')) if (art / 'people').is_dir() else []
+    if sorted(t) != people: errs.append(f'art browser: unused dir:people kept {len(t)} of {len(people)}')
+    tile = pg.evaluate("Object.values(studioState.D.scenery.terrains).map(T => T.tile).find(Boolean)")
+    path = 'art/' + tile
+    pg.evaluate(f"artBrowser.q = ''; ACTIONS.abPick({{ p: {json.dumps(path)} }})")
+    end = time.time() + 30
+    while time.time() < end and 'scenery' not in pg.evaluate("(document.querySelector('.ab-refs') || {}).textContent || ''"): time.sleep(0.5)
+    if 'scenery' not in pg.evaluate("(document.querySelector('.ab-refs') || {}).textContent || ''"): errs.append(f'art browser: Used by for {path} does not name scenery')
+    if not pg.evaluate("[...document.querySelectorAll('.ab-acts .btn')].some(b => b.textContent === 'Open in Walk scenes')"): errs.append('art browser: a ground tile has no Open in Walk scenes')
+    pg.evaluate(f"ACTIONS.abEdit({{ p: {json.dumps(path)} }})")
+    pg.wait_for_selector('#abPeStage .pc-art'); time.sleep(0.5)
+    h0 = pg.evaluate(f"{PIXELS}({json.dumps(path)})")
+    pg.locator('#abPeStage .pc-art').scroll_into_view_if_needed()
+    box = pg.locator('#abPeStage .pc-art').bounding_box()
+    Z = pg.evaluate('artBrowser.pc.zoom')
+    pg.evaluate("pixelCanvasTool(artBrowser.pc, 'pen'); pixelCanvasColor(artBrowser.pc, '#FF0000')")
+    steps0 = pg.evaluate('studioState.undo.length')
+    pg.mouse.click(box['x'] + Z / 2, box['y'] + Z / 2)
+    if pg.evaluate(f"{PIXEL_AT}({json.dumps(path)}, 0, 0)") != [255, 0, 0, 255]: errs.append('art browser: Edit pixels: a click did not paint')
+    if pg.evaluate('studioState.undo.length') != steps0 + 1: errs.append('art browser: Edit pixels: a stroke is not one step of the undo')
+    if not pg.evaluate(f"studioState.artDirty.has({json.dumps(path)})"): errs.append('art browser: Edit pixels: the picture is not marked to save')
+    pg.evaluate('undo()'); time.sleep(0.3)
+    if pg.evaluate(f"{PIXELS}({json.dumps(path)})") != h0: errs.append('art browser: Edit pixels: undo did not take the stroke back')
+    pg.evaluate(f"studioState.artDirty.delete({json.dumps(path)}); ACTIONS.abEditDone(); updateTopBar()")
+    hit = pg.evaluate("(() => { const r = findRun('pyramid_32.png').find(e => e.kind === 'art'); if (!r) return null; r.fn(); return [studioState.sec, artBrowser.sel] })()")
+    if hit != ['art', 'art/coins/pyramid_32.png']: errs.append(f'art browser: Ctrl K on pyramid_32.png gave {hit}')
+    pg.set_default_timeout(30000)
+    print('art browser: folders, breadcrumbs, dir:/w:/unused, chips, Used by, Edit pixels and its undo, Ctrl K', flush=True)
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
     ('free_camera', free_camera_steps),
     ('tiles', tile_painter_steps),
+    ('art_browser', art_browser_steps),
     ('split', split_steps),
     ('workbench', workbench_steps),
     ('part_mode', part_mode_steps),
