@@ -18,7 +18,7 @@
 import { expose } from './test-globals.js';
 import { provide, render, selfTest, toast } from './hooks.js';
 import { $, clamp } from './util.js';
-import { BANTER, LOCATIONS, STORY_DATA, TRAINERS, gameData } from './game-data.js';
+import { BANTER, LOCATIONS, RESIDENTS, STORY_DATA, TRAINERS, gameData } from './game-data.js';
 import { healAll } from './logic/rules.js';
 import { startTrainer } from './logic/battle-engine.js';
 import { conditionHolds, conditionTree, storyStateOf } from './logic/conditions.js';
@@ -56,7 +56,7 @@ expose({
   storyHomeArrive: [() => storyHomeArrive, v => ((storyHomeArrive = v), provide({ storyHomeArrive }))],
   storyOwner: [() => storyOwner, v => (storyOwner = v)],
   storyPendingCheck: [() => storyPendingCheck, v => ((storyPendingCheck = v), provide({ storyPendingCheck }))],
-  storyPickId: [() => storyPickId, v => (storyPickId = v)],
+  storyPickId: [() => storyPickId, v => ((storyPickId = v), provide({ storyPickId }))],
   storyPickTree: [() => storyPickTree, v => (storyPickTree = v)],
   storyResumeCheck: [() => storyResumeCheck, v => (storyResumeCheck = v)],
   storyRun: [() => storyRun],
@@ -75,7 +75,15 @@ expose({
   storyWorldOK: [() => storyWorldOK, v => ((storyWorldOK = v), provide({ storyWorldOK }))],
 });
 /* eslint-enable no-func-assign */
-provide({ playStoryScript, storyFreshTake, storyHomeArrive, storyPendingCheck, storyScriptIds, storyWorldOK });
+provide({
+  playStoryScript,
+  storyFreshTake,
+  storyHomeArrive,
+  storyPendingCheck,
+  storyPickId,
+  storyScriptIds,
+  storyWorldOK,
+});
 /* to-module: end */
 function storyScriptLines(id) {
   const i = id.indexOf(':'),
@@ -108,7 +116,11 @@ function storyOwner(id) {
   if (id.startsWith('trainer:')) return (TRAINERS[key] && TRAINERS[key].who) || null;
   if (id.startsWith('story:')) return ((STORY_DATA.scripts || {})[key] || {}).who || null;
   /* a hub character's line is theirs (their person id is their `who`); the others name their speakers */
-  if (id.startsWith('banter:')) return (BANTER[key] && BANTER_HUB.includes(BANTER[key].who) && BANTER[key].who) || null;
+  /* RS-3: a resident's line is theirs too (their id is their `who` and their person's) */
+  if (id.startsWith('banter:'))
+    return (
+      (BANTER[key] && (BANTER_HUB.includes(BANTER[key].who) || RESIDENTS[BANTER[key].who]) && BANTER[key].who) || null
+    );
   for (const sc of Object.values(gameData.maps)) {
     const P = (sc.people || []).find(p => p.id === key);
     if (P) return P.who || P.id;

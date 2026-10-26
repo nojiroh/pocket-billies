@@ -14,8 +14,10 @@ import {
   ALTERNATE_PROPS,
   FIELD_MOVES,
   ITEMS,
+  RESIDENTS,
   RULES,
   TERRAIN_MATERIALS,
+  UNLOCK_DATA,
   addRipple,
   addWakeRipple,
   addWalked,
@@ -71,6 +73,7 @@ import { roomDoorPush, roomToLocal } from './logic/room-turn.js';
 import { waterKindHeals } from './logic/water-kinds.js';
 import { WADE_COST, wadeDepthAt, wadeHere, wadeKindAt, wadeSpeed, wadeWalkable } from './logic/wading.js';
 import { WATER_HEAL_FLAG, waterHealDue, waterHurt, waterMarshOf, waterReedAt } from './logic/water-play.js';
+import { residentHomes, residentsHere } from './logic/residents.js';
 import { fieldMoveText } from './logic/run-side.js';
 import { SURF_COST, SURF_SPEED, climbAt, fallDir, fallTop, surfCan, surfable } from './logic/surf.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
@@ -179,6 +182,8 @@ expose({
   hasLineOfSight: [() => hasLineOfSight, v => (hasLineOfSight = v)],
   hash2d: [() => hash2d, v => (hash2d = v)],
   hitAt: [() => hitAt, v => (hitAt = v)],
+  hubResidentWalkers: [() => hubResidentWalkers, v => (hubResidentWalkers = v)],
+  hubWalkers: [() => hubWalkers],
   imageReady: [() => imageReady],
   initFolk: [() => initFolk, v => (initFolk = v)],
   isOpenNow: [() => isOpenNow, v => (isOpenNow = v)],
@@ -3999,10 +4004,15 @@ function initFolk(n) {
   const town = folkTown(sc),
     A = town ? folkAnchors(sc) : null,
     h = folkHour();
-  for (let i = 0; i < n; i++) {
+  /* RS-3: Copperleaf's residents come after its townsfolk, each with their own look, name and door */
+  const W = hubResidentWalkers(sc);
+  for (let i = 0; i < n + W.length; i++) {
     const a = i * 2.4 + 1,
       r = 2.5 + (i % 3) * 1.6,
-      p = walkablePointNear(hub[0] + Math.cos(a) * r, hub[1] + Math.sin(a) * r * 0.7);
+      R = i >= n ? W[i - n] : null,
+      p = R
+        ? walkablePointNear(R.at[0], R.at[1])
+        : walkablePointNear(hub[0] + Math.cos(a) * r, hub[1] + Math.sin(a) * r * 0.7);
     const f = {
       x: p[0],
       z: p[1],
@@ -4018,6 +4028,7 @@ function initFolk(n) {
       line: i,
       waveT: 0,
       waved: -99,
+      ...(R ? { who: R.id, res: R.id, name: R.name } : {}),
     };
     if (A) {
       const pick = (L, m) => L[Math.floor(hash2d(seed + m, i * 7 + m) * L.length) % L.length].slice();
@@ -4027,8 +4038,10 @@ function initFolk(n) {
         hang: pick(i >= (sc.folk || 0) && A.stalls.length ? A.stalls : A.hang, 3),
       };
       if (i >= (sc.folk || 0) && A.stalls.length) f.A.work = f.A.hang.slice();
+      /* a resident sleeps and works at their own door, and is never out all night */
+      if (R) f.A = { home: p.slice(), work: p.slice(), hang: pick(A.hang, 3) };
       f.off = ((seed * 13 + i * 37) % 19) / 10 - 0.9;
-      f.owl = i % 6 === 5;
+      f.owl = !R && i % 6 === 5;
       f.ph = folkPhase(h + f.off, f.owl);
       const at =
         f.ph === 'in'
@@ -4057,6 +4070,25 @@ function initFolk(n) {
     walkView.folkAll.push(f);
   }
   walkView.folk = walkView.folkAll.filter(f => !f.in);
+}
+/* RS-3: the residents who live in Copperleaf, as townsfolk of their own (initFolk): who, their name and the spot by
+   their building's (or their cottage's) door, in the view's metres (logic/residents.js residentHomes); only in
+   Copperleaf's own view. Kept while the view and who lives there stay the same */
+const hubWalkers = { key: '', list: /** @type {{ id: string, name: string, at: number[], prop: any }[]} */ ([]) };
+function hubResidentWalkers(sc) {
+  const bid = (sc && sc.baseId) || walkView.id,
+    hubId = gameData.locations[0] && gameData.locations[0].mapId,
+    ids = bid && bid === hubId ? residentsHere(saveData) : [],
+    o = (sc && sc.baseOff) || [0, 0],
+    key = `${bid}|${o.join(',')}|${ids.join(',')}`;
+  if (hubWalkers.key === key) return hubWalkers.list;
+  const b = ids.length ? mapById(hubId) : null,
+    H = b ? residentHomes(b, ids, RESIDENTS, UNLOCK_DATA.buildings, walkData().sc) : {};
+  hubWalkers.key = key;
+  hubWalkers.list = ids
+    .filter(id => H[id])
+    .map(id => ({ id, name: RESIDENTS[id].name, at: [H[id].at[0] + o[0], H[id].at[1] + o[1]], prop: H[id].prop }));
+  return hubWalkers.list;
 }
 /* somewhere on the streets: another home, a place of work, the square */
 function folkStreetSpot(f) {
@@ -4219,7 +4251,8 @@ function folkCount(sc, n) {
 }
 export function updateFolk(n, dt) {
   n = folkCount(walkView.sc, n);
-  if (walkView.folkId !== walkView.id || (walkView.folkAll || walkView.folk).length !== n) initFolk(n);
+  const all = n + hubResidentWalkers(walkView.sc).length;
+  if (walkView.folkId !== walkView.id || (walkView.folkAll || walkView.folk).length !== all) initFolk(n);
   stepFolk(dt);
   /* TW-2: a run town draws only its first few folk, by the graphics (rules.json run.town.cap); the rest keep their day */
   const b = walkView.sc.baseId ? mapById(walkView.sc.baseId) : walkView.sc;

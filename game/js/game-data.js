@@ -422,6 +422,7 @@ export const QUESTS = /** @type {import('../types/game-data').QuestsData} */ (ga
 export const RESIDENTS = /** @type {Record<string, import('../types/game-data').Resident>} */ (
   gameData.residents || {}
 );
+provide({ RESIDENTS }); /* to-module */
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
 /** RL-12b: the reward pick's cards */
@@ -440,6 +441,7 @@ export const BUILDINGS = gameData.buildings || {};
 export const UNLOCKS = gameData.unlocks || {};
 /* the tables logic/unlocks.js is given */
 export const UNLOCK_DATA = { unlocks: UNLOCKS, buildings: BUILDINGS };
+provide({ UNLOCK_DATA }); /* to-module */
 /* Project Story: the story layer's flags, speakers, quests and start presets (story.json) */
 export const STORY_DATA = gameData.story;
 /* cutscenes, one file each (game/data/cutscenes/<id>.json, docs/CUTSCENES.md) */

@@ -14,6 +14,7 @@ import {
   selfTest,
   showPendingWindows,
   storyFreshTake,
+  storyPickId,
   storyRun,
   storyWorldOK,
 } from './hooks.js';
@@ -23,7 +24,7 @@ import { startTrainer, startWild } from './logic/battle-engine.js';
 import { setStoryFlag } from './logic/script.js';
 import { activeBattle, escapeHtml, save, saveData, uiState } from './game-state.js';
 import { dressingRoom } from './dressing-room.js';
-import { baseMapId, walkView } from './walk-view.js';
+import { baseMapId, turnToPlayer, walkView } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { music } from './sound.js';
@@ -37,6 +38,7 @@ expose({
   openingDone: [() => openingDone, v => ((openingDone = v), provide({ openingDone }))],
   openingMark: [() => openingMark, v => (openingMark = v)],
   personTalk: [() => personTalk, v => (personTalk = v)],
+  residentHomeTalk: [() => residentHomeTalk, v => ((residentHomeTalk = v), provide({ residentHomeTalk }))],
   storyAfterRival: [() => storyAfterRival, v => ((storyAfterRival = v), provide({ storyAfterRival }))],
   storyAfterWin: [() => storyAfterWin, v => ((storyAfterWin = v), provide({ storyAfterWin }))],
   storyCheck: [() => storyCheck, v => (storyCheck = v)],
@@ -47,7 +49,7 @@ expose({
   trainerTalk: [() => trainerTalk, v => (trainerTalk = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ openingDone, storyAfterRival, storyAfterWin, storyFlags });
+provide({ openingDone, residentHomeTalk, storyAfterRival, storyAfterWin, storyFlags });
 /* to-module: end */
 function storyFlags() {
   return saveData.story || (saveData.story = {});
@@ -168,6 +170,23 @@ export async function personTalk(P) {
       P.lines.map((/** @type {string} */ l) => [P.who, l]),
       { name: P.name }
     );
+}
+
+/* RS-3: a resident of Copperleaf (one of its townsfolk, walk-view.js hubResidentWalkers) stops and says the line the
+   story director picks for them (banter.json, their id as `who`; every resident has one that always holds) */
+async function residentHomeTalk(f) {
+  if (talkBox.on || storyRun.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
+  f.wait = 99;
+  f.route = null;
+  f.walk = 0;
+  turnToPlayer(f);
+  if (typeof walkRenderer !== 'undefined') {
+    walkRenderer.focusT = { x: f.x, z: f.z, t: walkView.t };
+    walkRenderer.talkAt = { x: f.x, z: f.z, t: walkView.t };
+  }
+  const k = storyPickId(f.res, null);
+  if (!k || !(await playStoryScript('banter:' + k))) await talk([[f.res, 'Hello again.']]);
+  f.wait = 2;
 }
 
 /* ================= v47: BLAKE'S FIRST BATTLE, AND WHAT COMES AFTER =================
