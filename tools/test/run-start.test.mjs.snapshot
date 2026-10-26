@@ -132,7 +132,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2
           },
           {
-            "type": "route",
+            "type": "scrapyard",
             "row": 6,
             "lane": 0,
             "to": [
@@ -469,7 +469,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2
           },
           {
-            "type": "route",
+            "type": "scrapyard",
             "row": 6,
             "lane": 0,
             "to": [
@@ -892,6 +892,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "5765f6be3530c7d4b9af55cbb0aac02b3a032903b285e584b5bff5a6e835cf77"
+  "all": "6c2f58891103b3557d4f8b0ae9f021e8e70dd70ecfe22c95a064f19f809cd54b"
 }
 `;

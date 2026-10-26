@@ -17,7 +17,17 @@ const area2 = pts =>
   pts.reduce((s, [x, y], i) => s + x * pts[(i + 1) % pts.length][1] - pts[(i + 1) % pts.length][0] * y, 0);
 
 test("the plan's shapes: diamond boss, hexagon town, chevron route, slanted event", () => {
-  assert.deepEqual(RUN_MARK_TYPES, ['landing', 'route', 'town', 'miniboss', 'boss', 'event', 'shop', 'unknown']);
+  assert.deepEqual(RUN_MARK_TYPES, [
+    'landing',
+    'route',
+    'town',
+    'miniboss',
+    'boss',
+    'event',
+    'shop',
+    'scrapyard',
+    'unknown',
+  ]);
   assert.equal(RUN_MARK_SHAPES.boss.length, 4, 'a diamond');
   assert.equal(RUN_MARK_SHAPES.town.length, 6, 'a hexagon');
   assert.equal(RUN_MARK_SHAPES.route.length, 6, 'a chevron');

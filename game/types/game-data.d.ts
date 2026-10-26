@@ -1773,6 +1773,9 @@ export interface NodeType {
   shop?: boolean;
   /** RT-1: its place is laid out as a route (a plan from rules.json run.layouts by biome) */
   layout?: boolean;
+  /** RL-14: instead of a weight, the chance a free node becomes it (on its own stream), from map row fromRow on */
+  chance?: number;
+  fromRow?: number;
 }
 
 /** music.json: a song's recipe, composed into notes by the tracker (game/js/audio/tracker.js; sound track SND-2) */

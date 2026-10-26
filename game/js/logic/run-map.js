@@ -4,7 +4,8 @@
    A run's node map, made from its seed (roguelite-track.md 2e): rows from the landing (row 0, where the airship sets
    you down) to the boss (the last row), one or two nodes a row, links only to the next row, so every path is as long
    as the map has rows. Mini-boss rows and the boss row hold one node, so every path meets them, and the row before
-   each mini-boss is a town (rules.json run.map). The other rows take a filler type by weight (nodeTypes.json).
+   each mini-boss is a town (rules.json run.map). The other rows take a filler type by weight (nodeTypes.json); RL-14:
+   a type with a chance instead (a scrapyard) takes a free node by it, from its fromRow on.
    A link leaves its node by the west side and arrives by the next node's east (the owner: runs go east to west): one
    link at t 0.5, two at 0.15625 and 0.84375, 10 m and 54 m along (the seam rules allow two exits a side, 44 m apart, logic/seam-rules.js, and an
    east or west edge is 64 m), so a node has at most two links each way. runExits' `ahead` is the way west,
@@ -98,6 +99,10 @@ export function runMapMake(seed, nodeTypes, M) {
     throw new Error(`runMapMake: the zones' rows don't add up to the map's ${M.rows}`);
   const roles = runMapRows(M),
     fill = Object.fromEntries(Object.entries(nodeTypes).map(([k, t]) => [k, t.weight || 0])),
+    /* RL-14: the types a free node becomes by a chance of their own (a scrapyard), in order */
+    rare = Object.keys(nodeTypes)
+      .sort()
+      .filter(k => (nodeTypes[k].chance || 0) > 0),
     byRole = { first: M.first, last: M.last, guard: M.guard, rest: M.rest };
   if (!Object.values(fill).some(w => w > 0)) throw new Error('runMapMake: no node type has a weight');
   /* each row's shape: [width, its switch to the next row] (a draw each, whatever the rules, so every row's stream
@@ -117,9 +122,19 @@ export function runMapMake(seed, nodeTypes, M) {
     at.push([]);
     for (let lane = 0; lane < width; lane++) {
       const role = roles[row],
-        type = role
+        drawn = role
           ? byRole[/** @type {keyof typeof byRole} */ (role)]
           : rngFrom(seed, `map|type|${row}|${lane}`).pick(fill),
+        /* RL-14: a free node from a type's row on becomes it by its chance, each on a stream of its own, so every
+           other node keeps the type it drew */
+        type =
+          (!role &&
+            rare.find(
+              k =>
+                row >= (nodeTypes[k].fromRow || 0) &&
+                rngFrom(seed, `map|${k}|${row}|${lane}`).chance(/** @type {number} */ (nodeTypes[k].chance))
+            )) ||
+          drawn,
         zone = zones ? runZoneOf(zones, row) : -1,
         biome = zones ? zones[zone].biome : rngFrom(seed, `map|biome|${row}|${lane}`).pick(M.biomes);
       at[row].push(nodes.length);

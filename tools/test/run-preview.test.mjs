@@ -113,7 +113,8 @@ test('the preview gives a stall a shop and a waystation its event, as the game d
   const { eventAt } = modules.encounters;
   let stalls = 0,
     stands = 0;
-  for (let k = 0; k < 12; k++) {
+  /* 24 seeds: RL-14's scrapyards take some free nodes, stalls among them */
+  for (let k = 0; k < 24; k++) {
     const seed = `PREVWAY${k}`,
       P = runPreview(seed, {});
     P.map.nodes.forEach((/** @type {any} */ n, /** @type {number} */ i) => {
