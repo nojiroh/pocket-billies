@@ -331,6 +331,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'foes',
   'perks',
   'side',
+  'rival',
   'trainers',
   'rewards',
   'town',
@@ -581,6 +582,31 @@ export function dataRunLoop(D) {
           problem('rules.json', `run.foes.${k}: up (whole, -20-50) and reward (whole Moneys, 0-1,000,000) are needed`);
         else only(f, ['up', 'reward'], `run.foes.${k}`);
       }
+    }
+    /* RL-S2: Blake's meetings and team (logic/run-map.js runMapRival, logic/rival.js) */
+    const RV = R.rival;
+    if (!rec(RV)) problem('rules.json', 'run.rival missing');
+    else {
+      only(RV, ['meet', 'on', 'bands', 'size', 'grow', 'max', 'up', 'reward'], 'run.rival');
+      if (!Array.isArray(RV.meet) || !RV.meet.length || !RV.meet.every(n => whole(n, 0, 4)))
+        problem('rules.json', 'run.rival.meet: meetings a run by Expedition, whole, 0-4');
+      if (!Array.isArray(RV.on) || !RV.on.length)
+        problem('rules.json', 'run.rival.on: the node types he can stand in for (a list)');
+      else
+        for (const t of RV.on)
+          if (!D.nodeTypes || !D.nodeTypes[t] || ['landing', 'boss', 'miniboss', 'rival'].includes(t))
+            problem('rules.json', `run.rival.on: "${t}" is not a filler node type (nodeTypes.json)`);
+      if (
+        !Array.isArray(RV.bands) ||
+        !RV.bands.every(b => Array.isArray(b) && b.length === 2 && b[0] >= 0 && b[1] > b[0] && b[1] <= 1)
+      )
+        problem('rules.json', 'run.rival.bands: [from, to) shares of the rows, 0-1');
+      else if (Array.isArray(RV.meet) && Math.max(...RV.meet) > RV.bands.length)
+        problem('rules.json', `run.rival.meet: ${Math.max(...RV.meet)} meetings but ${RV.bands.length} bands`);
+      if (!whole(RV.size, 1, 6) || !whole(RV.max, RV.size, 6) || !whole(RV.grow, 1, 20))
+        problem('rules.json', 'run.rival: size (1-6), max (size-6) and grow (1-20) are whole numbers');
+      if (!whole(RV.up, -20, 50) || !whole(RV.reward, 0, 1e6))
+        problem('rules.json', 'run.rival: up (whole, -20-50) and reward (whole Moneys, 0-1,000,000) are needed');
     }
     /* RL-12b: route trainers (how many a route, levels up, what they pay, how far they see) and the reward pick */
     const TR = R.trainers,

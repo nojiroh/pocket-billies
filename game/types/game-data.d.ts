@@ -1055,6 +1055,8 @@ export interface Rules {
     shop: { always: string[]; more: number; pick: Record<string, number> };
     /** RL-8: a mini-boss's and the boss's levels: `up` over the top wild level of their row; their reward in $ */
     foes: { miniboss: { up: number; reward: number }; boss: { up: number; reward: number } };
+    /** RL-S2: Blake, the rival (logic/run-map.js runMapRival, logic/rival.js; placeholders) */
+    rival: RivalRules;
     /** RL-12b: route trainers: how many a route place by row ([fewest, most] from the first route row, the last for
      * every row after; RT-2), the share that stands by the road (`required`), the chance a place has a pair fought as
      * a double, levels over the place's top wild level, what each pays, how far they see (m) */
@@ -2162,4 +2164,20 @@ export interface RunSideRules {
   altBoss: number;
   moves: Record<string, number>;
   lean: number;
+}
+/** RL-S2: rules.json run.rival: Blake's meetings in a run and his team (placeholders until the owner answers) */
+export interface RivalRules {
+  /** meetings a run by Expedition (index 0 = Expedition I; past the end, the last) */
+  meet: number[];
+  /** the node types he can stand in for, in order: the first a band has */
+  on: string[];
+  /** meeting k's rows: [from, to) as a share of the map's rows */
+  bands: [number, number][];
+  /** his team: Billies at the first meeting, one more per `grow` past meetings, at most `max` */
+  size: number;
+  grow: number;
+  max: number;
+  /** levels over the row's top wild level, and what beating him pays (Moneys) */
+  up: number;
+  reward: number;
 }
