@@ -63,6 +63,7 @@ import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './part
 import { graftKey, graftSet } from './graft-art.js';
 import {
   geneWords,
+  graftFields,
   graftFit,
   graftRel,
   graftStability,
@@ -100,6 +101,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   autoSlot: [() => autoSlot, v => (autoSlot = v)],
   billyBuild: [() => billyBuild],
+  // @ts-expect-error -- replaced on purpose
+  billyFieldTypes: [() => billyFieldTypes, v => (billyFieldTypes = v)],
   // @ts-expect-error -- replaced on purpose
   billyGeneFx: [() => billyGeneFx, v => ((billyGeneFx = v), provide({ billyGeneFx }))],
   billyGraft: [() => billyGraft],
@@ -375,6 +378,17 @@ export const billyRel = m => (m && billyGraft(m) ? graftRel(geneData(), m.sp, m.
 /** SP-2: a Billie's types: its species', the second replaced by its heaviest dominant Gene's (logic/genes.js
  * graftTypes); a robot's or an unspliced Billie's are its species' own @param {any} m @returns {string[]} */
 export const billyTypes = m => (billyGraft(m) ? graftTypes(geneData(), m.sp, m.graft, m.build) : speciesOf(m).types);
+/** SP-4: a Billie's types for the field moves: its own (billyTypes) and, for each part that counts for a field move
+ * (genes.json field: fins for Surf), that move's type @param {any} m @returns {string[]} */
+export function billyFieldTypes(m) {
+  const own = billyTypes(m),
+    g = billyGraft(m);
+  if (!g) return own;
+  const more = graftFields(geneData(), m.sp, g)
+    .map(f => FIELD_MOVES[f] && FIELD_MOVES[f].type)
+    .filter(t => t && !own.includes(t));
+  return more.length ? [...own, ...new Set(more)] : own;
+}
 /** SP-3: a spliced Billie's foreign parts in words, in slot order ("a shark’s tail"); [] with no splice
  * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m @returns {string[]} */
 export function spliceWords(m) {
@@ -836,7 +850,7 @@ export function gateText(n) {
     if (!M) return 'The way is blocked.';
     const team = saveData.team
         .filter(m => m.hp > 0 && speciesOf(m))
-        .map(m => ({ name: billyName(m), types: billyTypes(m) })),
+        .map(m => ({ name: billyName(m), types: billyFieldTypes(m) })),
       st = fieldMoveState(M, (saveData.meta || {}).badges, team);
     return st.state === 'ask' ? `Use ${M.name} on what blocks the way first.` : fieldMoveText(M, st.state);
   }

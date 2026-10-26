@@ -137,3 +137,21 @@ test('gene bank: past the limit it is Unstable; a level up settles your Billies 
   B.bankSettle(s);
   assert.equal(!!m.unstable, modules.genes.graftStability(D, 'swift0', m.graft, 3).unstable);
 });
+
+test('gene bank: a part that counts for a field move (fins: Surf, the bear’s arm: Rock Smash) gives its type there', () => {
+  const R = modules.rules,
+    D = R.geneData(),
+    FM = GAME_DATA.fieldMoves.moves,
+    fin = modules['graft-art'].graftDonors(D.kitBuilds, D.partKits, 'swift0', 'front').find(id => /frontfin@/.test(id));
+  assert.ok(fin, 'a front fin fits a Swiftlet');
+  const m = { sp: 'swift0', graft: { front: fin } };
+  assert.ok(!R.billyTypes(m).includes(FM.surf.type) || D.species.swift0.types.includes(FM.surf.type));
+  assert.ok(R.billyFieldTypes(m).includes(FM.surf.type), R.billyFieldTypes(m).join());
+  assert.deepEqual(R.billyFieldTypes({ sp: 'swift0' }), D.species.swift0.types, 'no splice: its own types');
+  const S = modules['run-side'],
+    badges = { [S.fieldBadgeKey(FM.surf.type)]: 1 };
+  assert.equal(S.fieldMoveState(FM.surf, badges, [{ name: 'x', types: R.billyFieldTypes(m) }]).state, 'ask');
+  assert.equal(S.fieldMoveState(FM.surf, {}, [{ name: 'x', types: R.billyFieldTypes(m) }]).state, 'needBadge');
+  const arm = { sp: 'swift0', graft: { front: 'bear_arm@musk3' } };
+  assert.ok(R.billyFieldTypes(arm).includes(FM.smash.type));
+});

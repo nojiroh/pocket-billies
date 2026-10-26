@@ -474,7 +474,7 @@ export function runSimOn(env) {
     function simTypes() {
       return s.team
         .filter((/** @type {any} */ m) => m.hp > 0 && fn('speciesOf')(m))
-        .map((/** @type {any} */ m) => ({ name: m.uid, types: fn('speciesOf')(m).types }));
+        .map((/** @type {any} */ m) => ({ name: m.uid, types: fn('billyFieldTypes')(m) }));
     }
     /** the run lost at this node @param {any} node */
     function lose(node) {

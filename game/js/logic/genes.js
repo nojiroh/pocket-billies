@@ -22,7 +22,7 @@
 /** @typedef {{ kitBuilds: { forms: KitForm[] }, partKits: PartKits, genes: Genes,
  *   species: Record<string, { wt: number, types: string[], line: string, name: string }>, parts?: PartRules }} GeneData */
 /** @typedef {{ slot: string, id: string, donor: string, sp: string, line: string, part: string, kind: string, kit: string,
- *   trait: string | null, type: string | null, move: string | null }} Gene */
+ *   trait: string | null, type: string | null, move: string | null, field: string | null }} Gene */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { GRAFT_SLOTS, geneSplit, graftDonors, graftForm, graftKind, graftRecipe } from './graft-art.js';
@@ -34,6 +34,8 @@ expose({
   geneOf: [() => geneOf, v => (geneOf = v)],
   // @ts-expect-error -- replaced on purpose
   geneWords: [() => geneWords, v => (geneWords = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftFields: [() => graftFields, v => (graftFields = v)],
   // @ts-expect-error -- replaced on purpose
   graftFit: [() => graftFit, v => (graftFit = v)],
   // @ts-expect-error -- replaced on purpose
@@ -77,6 +79,8 @@ export function geneOf(D, slot, id) {
     trait: (G.kinds[P.kind] && G.kinds[P.kind].trait) || null,
     type: own.type || null,
     move: own.move || null,
+    /* SP-4: the field move it counts for: the part's own, else its kind's */
+    field: own.field || (G.kinds[P.kind] && G.kinds[P.kind].field) || null,
   };
 }
 
@@ -170,6 +174,18 @@ export function graftTraits(D, sp, g) {
   for (const gene of graftGenes(D, sp, g))
     if (gene.trait && D.genes.traits[gene.trait] && !out.includes(gene.trait)) out.push(gene.trait);
   return out.slice(0, D.genes.maxTraits);
+}
+
+/** SP-4: the field moves (fieldMoves.json ids) a graft's parts count for, in slot order, no repeats
+ * @param {GeneData} D @param {string} sp @param {Graft | null | undefined} g @returns {string[]} */
+export function graftFields(D, sp, g) {
+  return [
+    ...new Set(
+      graftGenes(D, sp, g)
+        .map(gene => gene.field)
+        .filter(f => f != null)
+    ),
+  ];
 }
 
 /** an Unstable splice's roll: a stat to raise, another to lower, and the donor its name merges with (its heaviest
