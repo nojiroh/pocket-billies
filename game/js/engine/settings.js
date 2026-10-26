@@ -291,7 +291,7 @@ export const ENGINE_DEFAULTS = {
     /* phase 20 R2: the solid models (voxel props, low-poly models) drawn one draw per mesh for every item with it */
     modelInstances: true,
     /* phase 20 R3 (shadows): the shadow maps' pictures one draw per picture, their models one draw per mesh */
-    shadowInstances: false,
+    shadowInstances: true,
     /* phase 20 R3 (F8): models whose mesh holds still (trees whose leaves sway too) in the far shadow map's cache, the
        ones that bob or turn out of it */
     modelShadowCache: false,
