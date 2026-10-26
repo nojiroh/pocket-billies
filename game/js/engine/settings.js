@@ -121,6 +121,12 @@ export const ENGINE_DEFAULTS = {
     heat: 1,
     wetGround: 1,
     sunFog: 0.4,
+    /* air track AIR-1 (fogit): each 0 is the haze as it was */
+    hazeSky: 0,
+    hazeTint: 0,
+    hazeFalloff: 0,
+    mistRay: 0,
+    skyGlow: 0,
     godRays: 0.5,
     lightsInAir: 0.7,
     /* phase 20 R2 (D7): cheap light shafts (one quad each) while the light in the air is off; 0: none */

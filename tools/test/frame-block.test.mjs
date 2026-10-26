@@ -36,6 +36,18 @@ function declared(glsl) {
   return out;
 }
 const lightUniforms = () => declared(OLD_LIGHT_UNIFORMS);
+// air track AIR-1: the haze's members, added after the old path left (packed from the light context, 0: today's haze)
+const AIR_MEMBERS = [
+  'uSkyTop',
+  'uSkyMid',
+  'uSkyLow',
+  'uHazeSky',
+  'uHazeTint',
+  'uHazeFall',
+  'uSkyGlow',
+  'uHazeY',
+  'uMistRay',
+];
 const mat = k => Array.from({ length: 16 }, (_, i) => k + i * 0.125);
 // a light context with every part filled, odd numbers so a wrong offset shows
 function fixture(o = {}) {
@@ -237,19 +249,24 @@ test('the block declares every light value the old path had (uSH as vec4 slots),
     assert.ok(B[name], name + ' missing from the block');
     assert.deepEqual([B[name][1], B[name][2]], name === 'uSH' ? ['vec4', 9] : [type, len], name);
   }
-  for (const name of Object.keys(B)) assert.ok(L[name] || /Pad/.test(name), name + ' is not a light uniform');
+  for (const name of Object.keys(B))
+    assert.ok(L[name] || AIR_MEMBERS.includes(name) || /Pad/.test(name), name + ' is not a light uniform');
 });
 
-test('std140 offsets: matrices, arrays, vec3 + float pairs, the ints at the end; 2208 bytes', () => {
+test('std140 offsets: matrices, arrays, vec3 + float pairs, the ints, then the haze; 2272 bytes', () => {
   const B = FRAME_BLOCK_LAYOUT.members,
     at = k => B[k][0];
-  assert.equal(FRAME_BLOCK_BYTES, 2208);
+  assert.equal(FRAME_BLOCK_BYTES, 2272);
   assert.deepEqual([at('uShadowM'), at('uShadowM2'), at('uLampM0'), at('uLampM1')], [0, 64, 128, 192]);
   assert.deepEqual([at('uLP'), at('uLC'), at('uAO'), at('uSH')], [256, 512, 768, 1792]);
   assert.deepEqual([at('uEye'), at('uTime'), at('uSunDir'), at('uFogStart')], [1936, 1948, 1952, 1964]);
   assert.deepEqual([at('uValley'), at('uMist'), at('uMistY'), at('uCloudSh')], [2112, 2120, 2124, 2128]);
   assert.deepEqual([at('uShadowTexel'), at('uShadowTexel2'), at('uRoomDim')], [2160, 2168, 2176]);
   assert.deepEqual([at('uNL'), at('uNLS'), at('uNAO')], [2192, 2196, 2200]);
+  assert.deepEqual(
+    [at('uSkyTop'), at('uHazeSky'), at('uSkyMid'), at('uSkyLow'), at('uSkyGlow'), at('uMistRay')],
+    [2208, 2220, 2224, 2240, 2256, 2264]
+  );
   // the rules on their own: a vec3 takes 16-byte alignment, a float may fill its fourth slot, arrays step by vec4
   const t = std140Layout('layout(std140) uniform T{float a;vec3 b;float c;vec2 d[2];int e;};').members;
   assert.deepEqual(
@@ -331,4 +348,34 @@ test('a program with the block: packed and sent once per light context, bound ag
   X.lampSh = [];
   setLightUniforms(B, X);
   assert.equal(calls('bufferSubData').length, 3);
+});
+
+test('packing: the haze (AIR-1): the sky colours and dials at their offsets; with none given, 0 and the haze colour', () => {
+  const X = fixture({
+    sky: [
+      [0.1, 0.2, 0.3],
+      [0.4, 0.5, 0.6],
+      [0.7, 0.8, 0.9],
+    ],
+    hazeSky: 1,
+    hazeTint: 0.5,
+    hazeFall: 0.06,
+  });
+  Object.assign(X, { skyGlow: 0.4, hazeY: 2.5, mistRay: 0.75 });
+  const get = packed(X),
+    F = v => Array.from(Float32Array.from(v));
+  assert.deepEqual(
+    [get('uSkyTop'), get('uSkyMid'), get('uSkyLow')],
+    [F([0.1, 0.2, 0.3]), F([0.4, 0.5, 0.6]), F([0.7, 0.8, 0.9])]
+  );
+  assert.deepEqual(
+    ['uHazeSky', 'uHazeTint', 'uHazeFall', 'uSkyGlow', 'uHazeY', 'uMistRay'].map(k => get(k)[0]),
+    F([1, 0.5, 0.06, 0.4, 2.5, 0.75])
+  );
+  const none = packed(fixture());
+  assert.deepEqual(
+    ['uHazeSky', 'uHazeTint', 'uHazeFall', 'uSkyGlow', 'uHazeY', 'uMistRay'].map(k => none(k)[0]),
+    [0, 0, 0, 0, 0, 0]
+  );
+  assert.deepEqual(none('uSkyLow'), F(fixture().fog));
 });

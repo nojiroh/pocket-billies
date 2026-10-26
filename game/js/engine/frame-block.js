@@ -31,6 +31,7 @@ vec3 uAmbBot;float uSHK;vec3 uFogCol;float uFogSun;vec3 uTint;float uTintAmt;vec
 vec3 uShLift;float uShPx;vec4 uRoomB;vec4 uSeason;vec2 uValley;float uMist,uMistY;
 float uCloudSh,uCloudSpd,uCloudCov,uContact;float uShadowOn,uShadow2On,uShPen,uShPen2;
 vec2 uShadowTexel,uShadowTexel2;float uRoomDim,uShLite,uShSteps,uFramePad;int uNL,uNLS,uNAO,uFramePadI;
+vec3 uSkyTop;float uHazeSky;vec3 uSkyMid;float uHazeTint;vec3 uSkyLow;float uHazeFall;float uSkyGlow,uHazeY,uMistRay,uFramePad2;
 };`;
 /* std140: a member's size and alignment in bytes; an array element and a matrix column take a whole vec4 */
 const STD140 = { float: [4, 4], int: [4, 4], vec2: [8, 8], vec3: [12, 16], vec4: [16, 16], mat4: [64, 16] };
@@ -133,4 +134,15 @@ export function packFrameBlock(X, f, n) {
   f[FRAME_OFFSETS.uShPx] = X.shPx || 0;
   f[FRAME_OFFSETS.uShSteps] = X.shSteps ?? 2;
   if (X.shLift) put(f, FRAME_OFFSETS.uShLift, X.shLift, 3);
+  /* air track AIR-1: the haze's sky colours and dials (fogit; each 0 is today's haze) */
+  const sk = X.sky || [X.fog, X.fog, X.fog];
+  put(f, FRAME_OFFSETS.uSkyTop, sk[0], 3);
+  put(f, FRAME_OFFSETS.uSkyMid, sk[1], 3);
+  put(f, FRAME_OFFSETS.uSkyLow, sk[2], 3);
+  f[FRAME_OFFSETS.uHazeSky] = X.hazeSky || 0;
+  f[FRAME_OFFSETS.uHazeTint] = X.hazeTint || 0;
+  f[FRAME_OFFSETS.uHazeFall] = X.hazeFall || 0;
+  f[FRAME_OFFSETS.uSkyGlow] = X.skyGlow || 0;
+  f[FRAME_OFFSETS.uHazeY] = X.hazeY || 0;
+  f[FRAME_OFFSETS.uMistRay] = X.mistRay || 0;
 }
