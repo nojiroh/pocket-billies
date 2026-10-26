@@ -9,6 +9,9 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Bridges in the new style** (route props track RP-2): wooden bridges have planks with gaps, capped posts and
+  braced trestles and a gentle hump you walk over; rope bridges a dipping hand rope; stone bridges coursed parapets,
+  a coping, moss and an arch ring; jetties capped mooring posts; rails and arches match.
 - **More props on the routes** (route props track RP-1): the last drawn props in the routes' set pieces (firewood,
   the scrap heap, the creature statue, tyres, the tollbooth) are 3D models, and 20 new 3D props: a stile, a
   landing stage, broken columns, a ruined arch and wall corner, a milestone, a trail post, a wayside shrine with a
