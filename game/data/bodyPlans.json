@@ -1230,5 +1230,1827 @@
    ]
   }
  },
- "forms": []
+ "forms": [
+  {
+   "name": "emberox",
+   "rig": "musk0",
+   "line": "musk",
+   "stage": 0,
+   "plan": "quad",
+   "colours": {"main":"#8c8077","accent":"#d1693c"},
+   "scale": 0.93,
+   "add": [
+    {
+     "n": "hornL",
+     "par": "head",
+     "c": [-27,-52.6],
+     "size": [5,6],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "light",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "hornR",
+     "par": "head",
+     "c": [-14,-52.6],
+     "size": [5,6],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "light",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "boostox",
+   "rig": "musk1",
+   "line": "musk",
+   "stage": 1,
+   "plan": "quad",
+   "colours": {"main":"#8c8077","accent":"#d1693c"},
+   "scale": 1.2,
+   "add": [
+    {
+     "n": "hornL",
+     "par": "head",
+     "c": [-27,-53],
+     "size": [6,8],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "light",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "hornR",
+     "par": "head",
+     "c": [-14,-53],
+     "size": [6,8],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "light",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "mane",
+     "par": "body",
+     "c": [-8,-36],
+     "size": [18,8],
+     "pv": [0.5,0.5],
+     "shape": "ellipse",
+     "tone": "dark",
+     "z": 6,
+     "zb": 6,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "marsox",
+   "rig": "musk2",
+   "line": "musk",
+   "stage": 2,
+   "plan": "quad",
+   "colours": {"main":"#9b5349","accent":"#d1683b"},
+   "scale": 1.47,
+   "add": [
+    {
+     "n": "hornL",
+     "par": "head",
+     "c": [-27,-53.4],
+     "size": [7,10],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "light",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "hornR",
+     "par": "head",
+     "c": [-14,-53.4],
+     "size": [7,10],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "light",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "mane",
+     "par": "body",
+     "c": [-8,-36],
+     "size": [22,10],
+     "pv": [0.5,0.5],
+     "shape": "ellipse",
+     "tone": "dark",
+     "z": 6,
+     "zb": 6,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "memeox",
+   "rig": "musk3",
+   "line": "musk",
+   "stage": 3,
+   "plan": "quad",
+   "colours": {"main":"#8c8077","accent":"#5992c6"},
+   "scale": 1.47,
+   "size": {"tail":1.3},
+   "add": [
+    {
+     "n": "mane",
+     "par": "body",
+     "c": [-8,-36],
+     "size": [24,11],
+     "pv": [0.5,0.5],
+     "shape": "ellipse",
+     "tone": "dark",
+     "z": 6,
+     "zb": 6,
+     "slot": null
+    },
+    {
+     "n": "crest",
+     "par": "head",
+     "c": [-20,-55.4],
+     "size": [12,10],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "accent",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "cartotter",
+   "rig": "bezos0",
+   "line": "bezos",
+   "stage": 0,
+   "plan": "biped",
+   "colours": {"main":"#b29776","accent":"#744e32"},
+   "scale": 0.93,
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-10,-61],
+     "size": [8,8],
+     "pv": [0.5,0.9],
+     "shape": "ellipse",
+     "tone": "accent",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {"n":"earR","mirror":"earL"}
+   ]
+  },
+  {
+   "name": "primotter",
+   "rig": "bezos1",
+   "line": "bezos",
+   "stage": 1,
+   "plan": "biped",
+   "colours": {"main":"#b39777","accent":"#714c31"},
+   "scale": 1.2,
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-10,-61],
+     "size": [8,8],
+     "pv": [0.5,0.9],
+     "shape": "ellipse",
+     "tone": "accent",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {"n":"earR","mirror":"earL"},
+    {
+     "n": "pack",
+     "par": "torso",
+     "c": [0,-28],
+     "size": [20,18],
+     "pv": [0.5,0.5],
+     "shape": "round",
+     "tone": "light",
+     "z": 3,
+     "zb": 9,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "orbitotter",
+   "rig": "bezos2",
+   "line": "bezos",
+   "stage": 2,
+   "plan": "biped",
+   "colours": {"main":"#b39777","accent":"#6d82a1"},
+   "scale": 1.47,
+   "size": {"tail":1.2},
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-10,-61],
+     "size": [8,8],
+     "pv": [0.5,0.9],
+     "shape": "ellipse",
+     "tone": "dark",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {"n":"earR","mirror":"earL"},
+    {
+     "n": "crest",
+     "par": "head",
+     "c": [0,-65.2],
+     "size": [9,11],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "accent",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "everyotter",
+   "rig": "bezos3",
+   "line": "bezos",
+   "stage": 3,
+   "plan": "biped",
+   "colours": {"main":"#b29675","accent":"#6f4a2f"},
+   "scale": 1.47,
+   "size": {"torso":1.1},
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-10,-61],
+     "size": [8,8],
+     "pv": [0.5,0.9],
+     "shape": "ellipse",
+     "tone": "accent",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {"n":"earR","mirror":"earL"},
+    {
+     "n": "pack",
+     "par": "torso",
+     "c": [0,-28],
+     "size": [24,22],
+     "pv": [0.5,0.5],
+     "shape": "round",
+     "tone": "light",
+     "z": 3,
+     "zb": 9,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "kidling",
+   "rig": "gates0",
+   "line": "gates",
+   "stage": 0,
+   "plan": "quad",
+   "colours": {"main":"#dcdad4","accent":"#d5c7ad"},
+   "scale": 0.93,
+   "size": {"tail":0.7},
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-33,-44],
+     "size": [9,5],
+     "pv": [0.9,0.5],
+     "shape": "leaf",
+     "tone": "dark",
+     "z": 10,
+     "zb": 8,
+     "slot": null,
+     "rr": 0.3
+    },
+    {
+     "n": "earR",
+     "par": "head",
+     "c": [-8,-45],
+     "size": [9,5],
+     "pv": [0.1,0.5],
+     "shape": "leaf",
+     "tone": "dark",
+     "z": 8,
+     "zb": 10,
+     "slot": null,
+     "rr": -0.3
+    },
+    {
+     "n": "hornL",
+     "par": "head",
+     "c": [-27,-52.2],
+     "size": [4,5],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "light",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "hornR",
+     "par": "head",
+     "c": [-14,-52.2],
+     "size": [4,5],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "light",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "billgoat",
+   "rig": "gates1",
+   "line": "gates",
+   "stage": 1,
+   "plan": "quad",
+   "colours": {"main":"#dedcd6","accent":"#c4b79e"},
+   "scale": 1.2,
+   "size": {"tail":0.8},
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-33,-44],
+     "size": [9,5],
+     "pv": [0.9,0.5],
+     "shape": "leaf",
+     "tone": "dark",
+     "z": 10,
+     "zb": 8,
+     "slot": null,
+     "rr": 0.3
+    },
+    {
+     "n": "earR",
+     "par": "head",
+     "c": [-8,-45],
+     "size": [9,5],
+     "pv": [0.1,0.5],
+     "shape": "leaf",
+     "tone": "dark",
+     "z": 8,
+     "zb": 10,
+     "slot": null,
+     "rr": -0.3
+    },
+    {
+     "n": "hornL",
+     "par": "head",
+     "c": [-27,-53],
+     "size": [6,8],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "light",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "hornR",
+     "par": "head",
+     "c": [-14,-53],
+     "size": [6,8],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "light",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "beard",
+     "par": "head",
+     "c": [-27,-27],
+     "size": [7,9],
+     "pv": [0.5,0.1],
+     "shape": "triDown",
+     "tone": "light",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "windowgoat",
+   "rig": "gates2",
+   "line": "gates",
+   "stage": 2,
+   "plan": "quad",
+   "colours": {"main":"#dddbd6","accent":"#5688ad"},
+   "scale": 1.47,
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-33,-44],
+     "size": [9,5],
+     "pv": [0.9,0.5],
+     "shape": "leaf",
+     "tone": "dark",
+     "z": 10,
+     "zb": 8,
+     "slot": null,
+     "rr": 0.3
+    },
+    {
+     "n": "earR",
+     "par": "head",
+     "c": [-8,-45],
+     "size": [9,5],
+     "pv": [0.1,0.5],
+     "shape": "leaf",
+     "tone": "dark",
+     "z": 8,
+     "zb": 10,
+     "slot": null,
+     "rr": -0.3
+    },
+    {
+     "n": "crest",
+     "par": "head",
+     "c": [-20,-55.6],
+     "size": [13,10],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "accent",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "beard",
+     "par": "head",
+     "c": [-27,-27],
+     "size": [8,10],
+     "pv": [0.5,0.1],
+     "shape": "triDown",
+     "tone": "light",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "harvestgoat",
+   "rig": "gates3",
+   "line": "gates",
+   "stage": 3,
+   "plan": "quad",
+   "colours": {"main":"#dcd9d4","accent":"#73ac64"},
+   "scale": 1.47,
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-33,-44],
+     "size": [9,5],
+     "pv": [0.9,0.5],
+     "shape": "leaf",
+     "tone": "dark",
+     "z": 10,
+     "zb": 8,
+     "slot": null,
+     "rr": 0.3
+    },
+    {
+     "n": "earR",
+     "par": "head",
+     "c": [-8,-45],
+     "size": [9,5],
+     "pv": [0.1,0.5],
+     "shape": "leaf",
+     "tone": "dark",
+     "z": 8,
+     "zb": 10,
+     "slot": null,
+     "rr": -0.3
+    },
+    {
+     "n": "hornL",
+     "par": "head",
+     "c": [-27,-53.4],
+     "size": [7,10],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "light",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "hornR",
+     "par": "head",
+     "c": [-14,-53.4],
+     "size": [7,10],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "light",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "crest",
+     "par": "head",
+     "c": [-20,-55.2],
+     "size": [11,9],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "accent",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "beard",
+     "par": "head",
+     "c": [-27,-27],
+     "size": [8,11],
+     "pv": [0.5,0.1],
+     "shape": "triDown",
+     "tone": "light",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "swiftlet",
+   "rig": "swift0",
+   "line": "swift",
+   "stage": 0,
+   "plan": "bird",
+   "colours": {"main":"#828693","accent":"#4b4c5e"},
+   "scale": 0.9
+  },
+  {
+   "name": "versewift",
+   "rig": "swift1",
+   "line": "swift",
+   "stage": 1,
+   "plan": "bird",
+   "colours": {"main":"#838693","accent":"#4c4c5e"},
+   "scale": 1.17,
+   "size": {"crest":1.4,"tail":1.2}
+  },
+  {
+   "name": "erastar",
+   "rig": "swift2",
+   "line": "swift",
+   "stage": 2,
+   "plan": "bird",
+   "colours": {"main":"#c386b9","accent":"#88527f"},
+   "scale": 1.42,
+   "size": {"crest":1.6,"tail":1.4,"wingL":1.15}
+  },
+  {
+   "name": "kontourlet",
+   "rig": "kardashian0",
+   "line": "kardashian",
+   "stage": 0,
+   "plan": "biped",
+   "colours": {"main":"#b79d94","accent":"#5e534f"},
+   "scale": 0.9,
+   "size": {"tail":1.2},
+   "add": [
+    {
+     "n": "casque",
+     "par": "head",
+     "c": [0,-64.6],
+     "size": [14,7],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "accent",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "filterleon",
+   "rig": "kardashian1",
+   "line": "kardashian",
+   "stage": 1,
+   "plan": "biped",
+   "colours": {"main":"#ba949b","accent":"#5b504c"},
+   "scale": 1.17,
+   "size": {"tail":1.3},
+   "add": [
+    {
+     "n": "casque",
+     "par": "head",
+     "c": [0,-65],
+     "size": [18,9],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "accent",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "frill",
+     "par": "head",
+     "c": [0,-50],
+     "size": [29,13],
+     "pv": [0.5,0.5],
+     "shape": "fan",
+     "tone": "light",
+     "z": 4,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "kardashleon",
+   "rig": "kardashian2",
+   "line": "kardashian",
+   "stage": 2,
+   "plan": "biped",
+   "colours": {"main":"#b5869d","accent":"#5e534e"},
+   "scale": 1.42,
+   "size": {"tail":1.4},
+   "add": [
+    {
+     "n": "casque",
+     "par": "head",
+     "c": [0,-65.4],
+     "size": [22,11],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "accent",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "frill",
+     "par": "head",
+     "c": [0,-50],
+     "size": [36,16],
+     "pv": [0.5,0.5],
+     "shape": "fan",
+     "tone": "light",
+     "z": 4,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "gildlet",
+   "rig": "trump0",
+   "line": "trump",
+   "stage": 0,
+   "plan": "worm",
+   "colours": {"main":"#b67342","accent":"#bf9b41"},
+   "scale": 0.83,
+   "add": [
+    {
+     "n": "hair",
+     "par": "head",
+     "c": [-21,-34],
+     "size": [16,7],
+     "pv": [0.6,0.9],
+     "shape": "leaf",
+     "tone": "accent",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "gildslug",
+   "rig": "trump1",
+   "line": "trump",
+   "stage": 1,
+   "plan": "worm",
+   "colours": {"main":"#b37141","accent":"#bb983f"},
+   "scale": 1.13,
+   "add": [
+    {
+     "n": "hair",
+     "par": "head",
+     "c": [-21,-35],
+     "size": [20,8],
+     "pv": [0.6,0.9],
+     "shape": "leaf",
+     "tone": "accent",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "tremendoslug",
+   "rig": "trump2",
+   "line": "trump",
+   "stage": 2,
+   "plan": "worm",
+   "colours": {"main":"#b47242","accent":"#bd9a40"},
+   "scale": 1.42,
+   "add": [
+    {
+     "n": "hair",
+     "par": "head",
+     "c": [-21,-36],
+     "size": [24,10],
+     "pv": [0.6,0.9],
+     "shape": "leaf",
+     "tone": "accent",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "tie",
+     "par": "s0",
+     "c": [-19,-11],
+     "size": [5,10],
+     "pv": [0.5,0.1],
+     "shape": "triDown",
+     "tone": "dark",
+     "z": 10,
+     "zb": 0,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "facelet",
+   "rig": "zuck0",
+   "line": "zuck",
+   "stage": 0,
+   "plan": "octo",
+   "colours": {"main":"#c2c9cf","accent":"#5e5147"},
+   "scale": 0.83,
+   "add": [
+    {
+     "n": "hair",
+     "par": "head",
+     "c": [0,-54],
+     "size": [18,7],
+     "pv": [0.5,0.5],
+     "shape": "ellipse",
+     "tone": "accent",
+     "z": 6,
+     "zb": 6,
+     "slot": null
+    }
+   ],
+   "drop": ["t02","t12","t22","t32","t42","t52"]
+  },
+  {
+   "name": "feedopus",
+   "rig": "zuck1",
+   "line": "zuck",
+   "stage": 1,
+   "plan": "octo",
+   "colours": {"main":"#c3cad0","accent":"#5e5147"},
+   "scale": 1.13,
+   "add": [
+    {
+     "n": "hair",
+     "par": "head",
+     "c": [0,-55],
+     "size": [20,8],
+     "pv": [0.5,0.5],
+     "shape": "ellipse",
+     "tone": "accent",
+     "z": 6,
+     "zb": 6,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "metapus",
+   "rig": "zuck2",
+   "line": "zuck",
+   "stage": 2,
+   "plan": "octo",
+   "colours": {"main":"#c2c8cf","accent":"#5e5047"},
+   "scale": 1.42,
+   "add": [
+    {
+     "n": "hair",
+     "par": "head",
+     "c": [0,-56],
+     "size": [22,8],
+     "pv": [0.5,0.5],
+     "shape": "ellipse",
+     "tone": "accent",
+     "z": 6,
+     "zb": 6,
+     "slot": null
+    },
+    {
+     "n": "visor",
+     "par": "head",
+     "c": [0,-49],
+     "size": [26,7],
+     "pv": [0.5,0.5],
+     "shape": "round",
+     "tone": "dark",
+     "z": 7,
+     "zb": 3,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "gosling",
+   "rig": "hughes0",
+   "line": "hughes",
+   "stage": 0,
+   "plan": "bird",
+   "colours": {"main":"#ebdd91","accent":"#d0aa7d"},
+   "scale": 0.83,
+   "size": {"crest":0.7,"tail":0.8}
+  },
+  {
+   "name": "sprucegoose",
+   "rig": "hughes1",
+   "line": "hughes",
+   "stage": 1,
+   "plan": "bird",
+   "colours": {"main":"#c5ac94","accent":"#776253"},
+   "scale": 1.2,
+   "size": {"tail":1.2}
+  },
+  {
+   "name": "aviatorgoose",
+   "rig": "hughes2",
+   "line": "hughes",
+   "stage": 2,
+   "plan": "bird",
+   "colours": {"main":"#acb2ba","accent":"#696c77"},
+   "scale": 1.42,
+   "size": {"wingL":1.2,"tail":1.2},
+   "add": [
+    {
+     "n": "ruff",
+     "par": "torso",
+     "c": [0,-36],
+     "size": [24,8],
+     "pv": [0.5,0.5],
+     "shape": "ellipse",
+     "tone": "light",
+     "z": 8,
+     "zb": 8,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "flatpackrat",
+   "rig": "kamprad0",
+   "line": "kamprad",
+   "stage": 0,
+   "plan": "quad",
+   "colours": {"main":"#7497cc","accent":"#bb959c"},
+   "scale": 0.83,
+   "size": {"tail":1.3},
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-28,-50],
+     "size": [8,9],
+     "pv": [0.5,0.9],
+     "shape": "ellipse",
+     "tone": "dark",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "earR",
+     "par": "head",
+     "c": [-13,-50],
+     "size": [8,9],
+     "pv": [0.5,0.9],
+     "shape": "ellipse",
+     "tone": "dark",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "kamprat",
+   "rig": "kamprad1",
+   "line": "kamprad",
+   "stage": 1,
+   "plan": "quad",
+   "colours": {"main":"#4a6ea5","accent":"#b79298"},
+   "scale": 1.2,
+   "size": {"tail":1.4},
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-28,-50],
+     "size": [8,10],
+     "pv": [0.5,0.9],
+     "shape": "ellipse",
+     "tone": "dark",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "earR",
+     "par": "head",
+     "c": [-13,-50],
+     "size": [8,10],
+     "pv": [0.5,0.9],
+     "shape": "ellipse",
+     "tone": "dark",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "pack",
+     "par": "body",
+     "c": [6,-38],
+     "size": [19,12],
+     "pv": [0.5,0.9],
+     "shape": "box",
+     "tone": "accent",
+     "z": 6,
+     "zb": 6,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "pupfin",
+   "rig": "cuban0",
+   "line": "cuban",
+   "stage": 0,
+   "plan": "fish",
+   "colours": {"main":"#d49c73","accent":"#c0875d"},
+   "scale": 0.75,
+   "size": {"dorsal":0.8}
+  },
+  {
+   "name": "sharktank",
+   "rig": "cuban1",
+   "line": "cuban",
+   "stage": 1,
+   "plan": "fish",
+   "colours": {"main":"#97a4b0","accent":"#575e68"},
+   "scale": 1.5,
+   "size": {"dorsal":1.8,"tail":1.4},
+   "add": [
+    {
+     "n": "jaw",
+     "par": "head",
+     "c": [-19,-19],
+     "size": [12,5],
+     "pv": [0.5,0.5],
+     "shape": "triDown",
+     "tone": "light",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "altmowl",
+   "rig": "altman0",
+   "line": "altman",
+   "stage": 0,
+   "plan": "bird",
+   "colours": {"main":"#bec7cc","accent":"#838a93"},
+   "scale": 1.27,
+   "add": [
+    {
+     "n": "tuftL",
+     "par": "head",
+     "c": [-8,-57],
+     "size": [6,9],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "accent",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    },
+    {"n":"tuftR","mirror":"tuftL"},
+    {
+     "n": "ruff",
+     "par": "torso",
+     "c": [0,-36],
+     "size": [20,8],
+     "pv": [0.5,0.5],
+     "shape": "ellipse",
+     "tone": "light",
+     "z": 8,
+     "zb": 8,
+     "slot": null
+    }
+   ],
+   "drop": ["crest"]
+  },
+  {
+   "name": "cliplet",
+   "rig": "yiming0",
+   "line": "yiming",
+   "stage": 0,
+   "plan": "quad",
+   "colours": {"main":"#e4ce5b","accent":"#3acfcf"},
+   "scale": 0.83,
+   "size": {"tail":1.2},
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-28,-50],
+     "size": [6,7],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "earR",
+     "par": "head",
+     "c": [-13,-50],
+     "size": [6,7],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "tiktokferret",
+   "rig": "yiming1",
+   "line": "yiming",
+   "stage": 1,
+   "plan": "quad",
+   "colours": {"main":"#585b65","accent":"#37d1d1"},
+   "scale": 1.23,
+   "size": {"body":1.15,"tail":1.4},
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-28,-50],
+     "size": [7,8],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "earR",
+     "par": "head",
+     "c": [-13,-50],
+     "size": [7,8],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "crest",
+     "par": "head",
+     "c": [-20,-55],
+     "size": [10,8],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "light",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "cublet",
+   "rig": "woods0",
+   "line": "woods",
+   "stage": 0,
+   "plan": "quad",
+   "colours": {"main":"#e79b64","accent":"#e9ca5c"},
+   "scale": 0.9,
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-28,-50],
+     "size": [6,7],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "earR",
+     "par": "head",
+     "c": [-13,-50],
+     "size": [6,7],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "crest",
+     "par": "head",
+     "c": [-20,-54.6],
+     "size": [8,6],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "tigerwoods",
+   "rig": "woods1",
+   "line": "woods",
+   "stage": 1,
+   "plan": "quad",
+   "colours": {"main":"#972c2f","accent":"#6dc257"},
+   "scale": 1.42,
+   "size": {"tail":1.2},
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-28,-50],
+     "size": [8,9],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "earR",
+     "par": "head",
+     "c": [-13,-50],
+     "size": [8,9],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "crest",
+     "par": "head",
+     "c": [-20,-55],
+     "size": [10,8],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "pack",
+     "par": "body",
+     "c": [6,-38],
+     "size": [16,10],
+     "pv": [0.5,0.9],
+     "shape": "capsule",
+     "tone": "accent",
+     "z": 6,
+     "zb": 6,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "peacouture",
+   "rig": "arnault0",
+   "line": "arnault",
+   "stage": 0,
+   "plan": "bird",
+   "colours": {"main":"#c18d63","accent":"#974343"},
+   "scale": 1.2,
+   "size": {"tail":2.2,"crest":1.4},
+   "add": [
+    {
+     "n": "ruff",
+     "par": "torso",
+     "c": [0,-36],
+     "size": [24,8],
+     "pv": [0.5,0.5],
+     "shape": "ellipse",
+     "tone": "light",
+     "z": 8,
+     "zb": 8,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "siliclet",
+   "rig": "huang0",
+   "line": "huang",
+   "stage": 0,
+   "plan": "biped",
+   "colours": {"main":"#617364","accent":"#a1ea75"},
+   "scale": 0.83,
+   "add": [
+    {
+     "n": "crest",
+     "par": "head",
+     "c": [0,-63.6],
+     "size": [6,8],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "accent",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "jenzard",
+   "rig": "huang1",
+   "line": "huang",
+   "stage": 1,
+   "plan": "biped",
+   "colours": {"main":"#4e5e55","accent":"#8fd664"},
+   "scale": 1.2,
+   "size": {"tail":1.3},
+   "add": [
+    {
+     "n": "crest",
+     "par": "head",
+     "c": [0,-64],
+     "size": [8,10],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "accent",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "pack",
+     "par": "torso",
+     "c": [0,-28],
+     "size": [18,16],
+     "pv": [0.5,0.5],
+     "shape": "round",
+     "tone": "accent",
+     "z": 3,
+     "zb": 9,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "gigajenzard",
+   "rig": "huang2",
+   "line": "huang",
+   "stage": 2,
+   "plan": "biped",
+   "colours": {"main":"#4e5f55","accent":"#8acf5f"},
+   "scale": 1.5,
+   "size": {"tail":1.4},
+   "add": [
+    {
+     "n": "crest",
+     "par": "head",
+     "c": [0,-64.2],
+     "size": [9,11],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "accent",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "hornL",
+     "par": "head",
+     "c": [-8,-65],
+     "size": [5,9],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "light",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    },
+    {"n":"hornR","mirror":"hornL"},
+    {
+     "n": "wingL",
+     "par": "torso",
+     "c": [-15,-40],
+     "size": [14,22],
+     "pv": [0.9,0.9],
+     "shape": "wing",
+     "tone": "accent",
+     "z": 2,
+     "zb": 9,
+     "slot": null,
+     "rr": -0.5
+    },
+    {"n":"wingR","mirror":"wingL"}
+   ]
+  },
+  {
+   "name": "harbour_gosling",
+   "rig": "hughes_harbour0",
+   "line": "hughes",
+   "stage": 0,
+   "form": "harbour",
+   "plan": "bird",
+   "colours": {"main":"#beebe6","accent":"#d0aa7d"},
+   "scale": 0.83,
+   "size": {"crest":0.7,"tail":0.8},
+   "add": [
+    {
+     "n": "cap",
+     "par": "head",
+     "c": [0,-56],
+     "size": [18,6],
+     "pv": [0.5,0.9],
+     "shape": "round",
+     "tone": "light",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "harbour_sprucegoose",
+   "rig": "hughes_harbour1",
+   "line": "hughes",
+   "stage": 1,
+   "form": "harbour",
+   "plan": "bird",
+   "colours": {"main":"#74abae","accent":"#334d58"},
+   "scale": 1.2,
+   "size": {"tail":1.2},
+   "add": [
+    {
+     "n": "cap",
+     "par": "head",
+     "c": [0,-56],
+     "size": [18,6],
+     "pv": [0.5,0.9],
+     "shape": "round",
+     "tone": "light",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "harbour_aviatorgoose",
+   "rig": "hughes_harbour2",
+   "line": "hughes",
+   "stage": 2,
+   "form": "harbour",
+   "plan": "bird",
+   "colours": {"main":"#71a8ab","accent":"#35505b"},
+   "scale": 1.42,
+   "size": {"wingL":1.2,"tail":1.2},
+   "add": [
+    {
+     "n": "ruff",
+     "par": "torso",
+     "c": [0,-36],
+     "size": [24,8],
+     "pv": [0.5,0.5],
+     "shape": "ellipse",
+     "tone": "light",
+     "z": 8,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "cap",
+     "par": "head",
+     "c": [0,-56],
+     "size": [18,6],
+     "pv": [0.5,0.9],
+     "shape": "round",
+     "tone": "light",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "meatball_flatpackrat",
+   "rig": "kamprad_meatball0",
+   "line": "kamprad",
+   "stage": 0,
+   "form": "meatball",
+   "plan": "quad",
+   "colours": {"main":"#a16c5c","accent":"#aa5246"},
+   "scale": 0.83,
+   "size": {"tail":1.3,"body":1.1}
+  },
+  {
+   "name": "meatball_kamprat",
+   "rig": "kamprad_meatball1",
+   "line": "kamprad",
+   "stage": 1,
+   "form": "meatball",
+   "plan": "quad",
+   "colours": {"main":"#844d3c","accent":"#a95146"},
+   "scale": 1.2,
+   "size": {"tail":1.4,"body":1.1},
+   "add": [
+    {
+     "n": "pack",
+     "par": "body",
+     "c": [6,-38],
+     "size": [19,12],
+     "pv": [0.5,0.9],
+     "shape": "box",
+     "tone": "accent",
+     "z": 6,
+     "zb": 6,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "courtside_pupfin",
+   "rig": "cuban_courtside0",
+   "line": "cuban",
+   "stage": 0,
+   "form": "courtside",
+   "plan": "fish",
+   "colours": {"main":"#977c5d","accent":"#866c4d"},
+   "scale": 0.75,
+   "size": {"dorsal":0.8},
+   "add": [
+    {
+     "n": "band",
+     "par": "head",
+     "c": [-17,-31],
+     "size": [14,4],
+     "pv": [0.5,0.5],
+     "shape": "box",
+     "tone": "light",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "courtside_sharktank",
+   "rig": "cuban_courtside1",
+   "line": "cuban",
+   "stage": 1,
+   "form": "courtside",
+   "plan": "fish",
+   "colours": {"main":"#a47f5e","accent":"#4e392a"},
+   "scale": 1.5,
+   "size": {"dorsal":1.8,"tail":1.4},
+   "add": [
+    {
+     "n": "jaw",
+     "par": "head",
+     "c": [-19,-19],
+     "size": [12,5],
+     "pv": [0.5,0.5],
+     "shape": "triDown",
+     "tone": "light",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "band",
+     "par": "head",
+     "c": [-17,-31],
+     "size": [14,4],
+     "pv": [0.5,0.5],
+     "shape": "box",
+     "tone": "light",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "livestream_cliplet",
+   "rig": "yiming_livestream0",
+   "line": "yiming",
+   "stage": 0,
+   "form": "livestream",
+   "plan": "quad",
+   "colours": {"main":"#e6c243","accent":"#cf4937"},
+   "scale": 0.83,
+   "size": {"tail":1.2},
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-28,-50],
+     "size": [6,7],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "earR",
+     "par": "head",
+     "c": [-13,-50],
+     "size": [6,7],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "ring",
+     "par": "head",
+     "c": [-14,-44],
+     "size": [30,28],
+     "pv": [0.5,0.5],
+     "shape": "ellipse",
+     "tone": "light",
+     "z": 1,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "livestream_tiktokferret",
+   "rig": "yiming_livestream1",
+   "line": "yiming",
+   "stage": 1,
+   "form": "livestream",
+   "plan": "quad",
+   "colours": {"main":"#b74b6b","accent":"#d14c3a"},
+   "scale": 1.23,
+   "size": {"body":1.15,"tail":1.4},
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-28,-50],
+     "size": [7,8],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "earR",
+     "par": "head",
+     "c": [-13,-50],
+     "size": [7,8],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "crest",
+     "par": "head",
+     "c": [-20,-55],
+     "size": [10,8],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "light",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "ring",
+     "par": "head",
+     "c": [-14,-44],
+     "size": [30,28],
+     "pv": [0.5,0.5],
+     "shape": "ellipse",
+     "tone": "light",
+     "z": 1,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "hazard_cublet",
+   "rig": "woods_hazard0",
+   "line": "woods",
+   "stage": 0,
+   "form": "hazard",
+   "plan": "quad",
+   "colours": {"main":"#61a1b5","accent":"#4fae4d"},
+   "scale": 0.9,
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-28,-50],
+     "size": [6,7],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "earR",
+     "par": "head",
+     "c": [-13,-50],
+     "size": [6,7],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "crest",
+     "par": "head",
+     "c": [-20,-54.6],
+     "size": [8,6],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "cap",
+     "par": "head",
+     "c": [-21,-51],
+     "size": [20,6],
+     "pv": [0.5,0.9],
+     "shape": "round",
+     "tone": "light",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "hazard_tigerwoods",
+   "rig": "woods_hazard1",
+   "line": "woods",
+   "stage": 1,
+   "form": "hazard",
+   "plan": "quad",
+   "colours": {"main":"#3d7e93","accent":"#52b050"},
+   "scale": 1.42,
+   "size": {"tail":1.2},
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-28,-50],
+     "size": [8,9],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {
+     "n": "earR",
+     "par": "head",
+     "c": [-13,-50],
+     "size": [8,9],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "crest",
+     "par": "head",
+     "c": [-20,-55],
+     "size": [10,8],
+     "pv": [0.5,0.95],
+     "shape": "tri",
+     "tone": "dark",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "pack",
+     "par": "body",
+     "c": [6,-38],
+     "size": [16,10],
+     "pv": [0.5,0.9],
+     "shape": "capsule",
+     "tone": "accent",
+     "z": 6,
+     "zb": 6,
+     "slot": null
+    },
+    {
+     "n": "cap",
+     "par": "head",
+     "c": [-21,-51],
+     "size": [20,6],
+     "pv": [0.5,0.9],
+     "shape": "round",
+     "tone": "light",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  }
+ ]
 }

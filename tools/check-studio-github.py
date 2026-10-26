@@ -23,6 +23,9 @@ Studio track ST-T: the Studio self-test runs whole and must pass (no errors, eve
 no token in its report); its times are not judged here.
 Studio plan Phase 5 (T5.1): a kit Billie's recipe edited in Part mode bakes at once (one undo step), and the proposal
 carries its sheet (pixel-equal to the Node bake), rigs-next.js, kitBuilds.json and its line.
+Roster track RO-3b: every kit Billie is on its placeholder (bodyPlans.json), its recipe kept. So the kit steps still run
+on a kit Billie, the stand-in serves the first recipe's Billie off its placeholder: bodyPlans.json without its form,
+its sheet and rig as `npm run bake:kits` bakes them (kit_off_placeholder). Nothing on disk changes.
 Studio plan Phase 5 (T5.2): Replace from Parts Library greys a part a child can't hang on, shows before and after,
 and a head swapped keeps a blink as one undo step.
 Studio plan Phase 5 (T5.4): Repack sheet makes a hand-drawn Billie's sheet smaller, drawn the same, one undo step.
@@ -1467,9 +1470,10 @@ def kit_write_steps(pg, errs):
         t0 = time.time()
         while time.time() - t0 < limit and (pg.evaluate("studioState.undo.length") < steps0 + k or not pg.evaluate(idle)): time.sleep(0.2)
 
-    # parity through the browser: every kit Billie baked in the Studio is its committed sheet and rig
+    # parity through the browser: every kit Billie baked in the Studio is its committed sheet and rig (RO-3b: the one
+    # the stand-in serves off its placeholder; the others' recipes are kept, not baked)
     par = pg.evaluate("""(async () => { const out = [];
-      for (const f of studioState.D.kitBuilds.forms) {
+      for (const f of studioState.D.kitBuilds.forms.filter(f => kitFormOf(f.rig))) {
         const m = await kitBakeInStudio(f), i = new Image(); i.src = '../game/art/next/billionaires/' + f.name + '.png'; await i.decode();
         const c = document.createElement('canvas'); c.width = i.width; c.height = i.height; c.getContext('2d').drawImage(i, 0, 0);
         if (!kitSameShown(m.sheet, kitPixelsOf(c))) out.push(f.name + ' sheet');
@@ -1506,9 +1510,15 @@ def kit_write_steps(pg, errs):
     pg.evaluate("redo()"); time.sleep(0.5)
     if json.loads(pg.evaluate(state)) != s1: errs.append('redo did not put the bake back whole')
     pg.evaluate("window.__kitWrite = " + json.dumps({'name': name, 'rig': sp, 'line': form['line'], 'form': s1['form']}))
+    # RO-3b: a Billie on its placeholder shows its recipe as kept, with nothing to bake or write
+    kept = pg.evaluate("studioState.D.kitBuilds.forms[1]")
+    pg.evaluate(f"wbPart.src = 'species'; wbPart.sp = {json.dumps(kept['rig'])}; wbPart.id = ''; render()")
+    pg.wait_for_selector(f'[data-kit-kept="{kept["name"]}"]', timeout=20000)
+    if pg.locator(f'[data-kit-kept="{kept["name"]}"] [data-kitr], [data-kit-kept="{kept["name"]}"] [data-act=kitWriteBillie]').count():
+        errs.append(f"{kept['name']}'s kept recipe can still be edited or written")
     pg.evaluate("workbench.mode = 'sheet'; wbPart.src = 'kits'")
     if len(errs) > n: errs[n:] = [f'kit write: {e}' for e in errs[n:]]
-    print(f'kit write: all {pg.evaluate("studioState.D.kitBuilds.forms.length")} kit Billies baked in the browser as committed; {name} written as it is (nothing changed), its head {old} -> {new} baked in one undo step, undone and redone, left to propose', flush=True)
+    print(f'kit write: {pg.evaluate("studioState.D.kitBuilds.forms.filter(f => kitFormOf(f.rig)).length")} kit Billie(s) baked in the browser as served, the other recipes kept; {name} written as it is (nothing changed), its head {old} -> {new} baked in one undo step, undone and redone, left to propose', flush=True)
 
 
 def kit_write_sent(pg, bodies, errs):
@@ -1610,9 +1620,10 @@ def repack_steps(pg, errs):
     """Studio plan Phase 5 (T5.4): Repack sheet on a hand-drawn rig (the first rig that is not a kit Billie: since RO-2c
     every game species is one, so a legacy rig): the sheet gets smaller, both views are
     drawn pixel for pixel as before (neutral pose, every face), it is one undo step and undo puts the sheet and rig
-    back; on a kit Billie it refuses (the recipe packs its sheet)."""
+    back; on a kit Billie it refuses (the recipe packs its sheet), and on a placeholder Billie (RO-3b: its body plan
+    does)."""
     n = len(errs)
-    sp = pg.evaluate("Object.keys(studioState.rigs).sort().find(s => !kitFormOf(s) && studioState.rigs[s].front && studioState.rigs[s].back) || ''")
+    sp = pg.evaluate("Object.keys(studioState.rigs).sort().find(s => !kitFormOf(s) && !placeholderFormOf(s) && studioState.rigs[s].front && studioState.rigs[s].back) || ''")
     if not sp:
         errs.append('repack: no hand-drawn rig left to repack'); return
     pg.evaluate(f"wbPart.src = 'species'; wbPart.sp = {json.dumps(sp)}; wbPart.id = 'head'; workbench.mode = 'part'; void openSection('workbench')")
@@ -1639,9 +1650,13 @@ def repack_steps(pg, errs):
     k0 = pg.evaluate("studioState.undo.length")
     pg.locator('[data-act=wbsRepack]').first.click(); time.sleep(0.8)
     if pg.evaluate("studioState.undo.length") != k0 or not pg.locator('.toast', has_text='baked from its recipe').count(): errs.append('Repack sheet on a kit Billie did not refuse')
+    ph = pg.evaluate("studioState.D.bodyPlans.forms[0].rig")
+    pg.evaluate(f"wbPart.sp = {json.dumps(ph)}; render()"); time.sleep(0.5)
+    pg.locator('[data-act=wbsRepack]').first.click(); time.sleep(0.8)
+    if pg.evaluate("studioState.undo.length") != k0 or not pg.locator('.toast', has_text='baked from its body plan').count(): errs.append('Repack sheet on a placeholder Billie did not refuse')
     pg.evaluate("wbPart.src = 'kits'; wbPart.id = ''; workbench.mode = 'sheet'")
     if len(errs) > n: errs[n:] = [f'repack: {e}' for e in errs[n:]]
-    print(f'repack: {sp} {s0} -> {s1}, drawn the same front and back (4 faces), one undo step, undone; a kit Billie refused', flush=True)
+    print(f'repack: {sp} {s0} -> {s1}, drawn the same front and back (4 faces), one undo step, undone; a kit Billie and a placeholder Billie refused', flush=True)
 
 
 def density_steps(pg, errs):
@@ -2727,8 +2742,40 @@ def hub_checks(b, url, errs):
     ctx.close()
 
 
+def kit_off_placeholder():
+    """RO-3b: the files the stand-in serves in place of the repository's so the first kit recipe's Billie is a kit
+    Billie again: {path from the root: bytes}, and that recipe's name and rig"""
+    node = r"""
+      import { readFileSync } from 'node:fs';
+      import vm from 'node:vm';
+      import { readPng, encodePng } from './tools/test/png.mjs';
+      import { kitBakeWhole } from './game/js/logic/kit-assemble.js';
+      const j = f => JSON.parse(readFileSync('game/data/' + f, 'utf8')),
+        D = { partKits: j('partKits.json'), kitBuilds: j('kitBuilds.json'), rules: j('rules.json') },
+        form = D.kitBuilds.forms[0],
+        made = kitBakeWhole(D, form, (id, v) => readPng('game/art/' + D.partKits.parts[id].views[v].file)),
+        P = j('bodyPlans.json'),
+        text = readFileSync('game/art/next/rigs-next.js', 'utf8'),
+        at = text.indexOf('window.RIGS_NEXT='),
+        box = { window: {} };
+      vm.runInNewContext(text, box);
+      box.window.RIGS_NEXT[form.rig] = JSON.parse(JSON.stringify(made.rig));
+      P.forms = P.forms.filter(f => f.rig !== form.rig);
+      const b64 = x => Buffer.from(x).toString('base64');
+      process.stdout.write(JSON.stringify({ name: form.name, rig: form.rig, files: {
+        'game/data/bodyPlans.json': b64(JSON.stringify(P, null, 1)),
+        [`game/art/next/billionaires/${form.name}.png`]: b64(encodePng(made.sheet)),
+        'game/art/next/rigs-next.js': b64(text.slice(0, at) + 'window.RIGS_NEXT=' + JSON.stringify(box.window.RIGS_NEXT) + ';\n'),
+      } }));"""
+    import base64
+    out = json.loads(subprocess.run(['node', '--input-type=module', '-e', node], cwd=REPO, capture_output=True, text=True, check=True).stdout)
+    return {k: base64.b64decode(v) for k, v in out['files'].items()}, out['name'], out['rig']
+
+
 def main():
     _srv, base = serve(ROOT)
+    kit_files, kit_name, kit_rig = kit_off_placeholder()
+    print(f'stand-in: {kit_name} ({kit_rig}) served off its placeholder, as its kit recipe bakes', flush=True)
     tree = [{'type': 'blob', 'path': str(p.relative_to(ROOT)), 'sha': 'x', 'size': p.stat().st_size}
             for p in (ROOT / 'game').rglob('*') if p.is_file()]
     posts, bodies = [], []
@@ -2745,9 +2792,16 @@ def main():
         if '/git/commits/' in p: return route.fulfill(json={'sha': 'x', 'tree': {'sha': 'x'}})
         if '/git/ref' in p: return route.fulfill(json={'object': {'sha': 'x'}})
         if '/contents/' in p:
-            f = ROOT / unquote(p.split('/contents/', 1)[1])
+            rel = unquote(p.split('/contents/', 1)[1])
+            if rel in kit_files: return route.fulfill(body=kit_files[rel])
+            f = ROOT / rel
             if f.is_file(): return route.fulfill(body=f.read_bytes())
         return route.fulfill(status=404, json={'message': 'Not Found'})
+
+    def local(route):
+        rel = unquote(urlparse(route.request.url).path).lstrip('/')
+        if rel in kit_files: return route.fulfill(body=kit_files[rel])
+        return route.continue_()
 
     errs = []
     with sync_playwright() as pw:
@@ -2760,6 +2814,7 @@ def main():
         pg.on('console', lambda m: GL_WARN.append(m.text[:300]) if re.search(r'INVALID_OPERATION|does not belong to this context', m.text) else None)
         pg.on('pageerror', lambda e: errs.append(str(e)[:400]))
         pg.route('https://api.github.com/**', api)
+        pg.route(f'{base}/game/**', local)
         pg.add_init_script("localStorage.setItem('pb-studio-gh-token','ghp_stand-in')")
         t0 = time.time()
         pg.goto(f'{base}/studio/index.html')

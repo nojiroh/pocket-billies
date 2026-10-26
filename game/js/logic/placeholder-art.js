@@ -20,8 +20,8 @@
  *   squash: boolean, lag: number, label: string, src: string, flip: boolean }} PlaceholderBone a bone worked out:
  *   mirrors applied, the form's sizes on; `src` names the bone whose picture it draws (flipped when `flip`)
  * @typedef {{ name: string, rig: string, line?: string, stage?: number, form?: string, plan: string,
- *   colours: { main: string | Rgb, accent?: string | Rgb }, size?: Record<string, number>, add?: PlanBone[],
- *   drop?: string[], q?: Record<string, number> }} PlaceholderForm one placeholder Billie (bodyPlans.json forms)
+ *   colours: { main: string | Rgb, accent?: string | Rgb }, size?: Record<string, number>, scale?: number,
+ *   add?: PlanBone[], drop?: string[], q?: Record<string, number> }} PlaceholderForm one placeholder Billie (bodyPlans.json forms)
  * @typedef {{ bg: Rgb, grid: Rgb, label: number, room: number, min: number }} PlaceholderSheetSet
  * @typedef {{ ink: Rgb, hatch: number, hatchDark: number, dark: number, light: number, back: number, eye: Rgb,
  *   glint: Rgb }} PlaceholderPaintSet
@@ -97,7 +97,8 @@ export const PLACEHOLDER_VIEWS = /** @type {const} */ (['front', 'back']);
 
 /* ---------- the bones ---------- */
 /** a plan's bones for one form: mirrors filled in (middle, pivot and turn mirrored, the parent mirrored too when it
- * has a mirror), the form's dropped bones gone, its added ones on, its sizes applied
+ * has a mirror), the form's dropped bones gone, its added ones on, its sizes applied, then its scale (RO-3b: the whole
+ * Billie, middles and sizes, as a kit recipe's scale sizes a stage)
  * @param {BodyPlans} P @param {PlaceholderForm} form @returns {PlaceholderBone[]} */
 export function placeholderBones(P, form) {
   const plan = P.plans[form.plan];
@@ -106,7 +107,8 @@ export function placeholderBones(P, form) {
     byName = Object.fromEntries(raw.map(b => [b.n, b])),
     /** @type {Record<string, string>} */ twin = {};
   for (const b of raw) if (b.mirror) twin[b.mirror] = b.n;
-  const sz = form.size || {};
+  const sz = form.size || {},
+    sc = form.scale ?? 1;
   return raw.map(b => {
     const s = b.mirror ? byName[b.mirror] : null;
     if (b.mirror && !s) throw new Error(`${form.name}: ${b.n} mirrors ${b.mirror}, which isn't there`);
@@ -119,7 +121,7 @@ export function placeholderBones(P, form) {
       o.rr = b.rr ?? -(s.rr || 0);
       o.label = b.label ?? s.label ?? s.n;
     }
-    const k = sz[s ? s.n : b.n] ?? 1,
+    const k = (sz[s ? s.n : b.n] ?? 1) * sc,
       size =
         o.size == null
           ? null
@@ -127,7 +129,7 @@ export function placeholderBones(P, form) {
     return {
       n: b.n,
       par: o.par || 'root',
-      c: o.c || [0, 0],
+      c: /** @type {[number, number]} */ ((o.c || [0, 0]).map((/** @type {number} */ v) => v * sc)),
       size,
       pv: o.pv || [0.5, 0.5],
       shape: o.shape || 'ellipse',

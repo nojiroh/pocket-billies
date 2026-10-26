@@ -2,6 +2,8 @@
 // three real species of art/next/rigs-next.js with the real kit parts and sheets: musk0 (a kit Billie, biped, horns on
 // its head), ma0 (hand-drawn, four legs) and trump0 (kit, no legs, a crest). Which parts fit, where the children go,
 // the frames (blink, squash), the sheet and geo.
+// Roster track RO-3b: musk0 and trump0 are placeholder Billies now; their kit recipes (kept in kitBuilds.json) are
+// baked here (kitBakeWhole, as `npm run bake:kits` would) so the swaps are still tried on kit Billies.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -20,6 +22,7 @@ import {
   rigSwapSocketsAt,
 } from '../../game/js/logic/rig-swap.js';
 import { kitBlinkFrame, kitSquashFrames } from '../../game/js/logic/kit-pixels.js';
+import { kitBakeWhole } from '../../game/js/logic/kit-assemble.js';
 
 globalThis.requestAnimationFrame ??= () => 0;
 const { boneSlot, rigPose } = await import('../../game/js/skeleton-rig.js');
@@ -28,7 +31,31 @@ const ROOT = new URL('../../', import.meta.url).pathname;
 const src = readFileSync(join(ROOT, 'game/art/next/rigs-next.js'), 'utf8');
 const RIGS = JSON.parse(src.slice(src.indexOf('RIGS_NEXT=') + 10).replace(/;\s*$/, ''));
 const K = JSON.parse(readFileSync(join(ROOT, 'game/data/partKits.json'), 'utf8'));
-const BAKE = JSON.parse(readFileSync(join(ROOT, 'game/data/kitBuilds.json'), 'utf8')).bake;
+const part = (id, view) => readPng(join(ROOT, 'game/art', K.parts[id].views[view].file));
+const BUILDS = JSON.parse(readFileSync(join(ROOT, 'game/data/kitBuilds.json'), 'utf8'));
+const BAKE = BUILDS.bake;
+/** the rigs the swaps are tried on: the committed ones, musk0 and trump0 baked from their kit recipes */
+const KIT_BAKES = Object.fromEntries(
+  ['musk0', 'trump0'].map(sp => {
+    const data = {
+      partKits: K,
+      kitBuilds: BUILDS,
+      rules: JSON.parse(readFileSync(join(ROOT, 'game/data/rules.json'), 'utf8')),
+    };
+    return [
+      sp,
+      kitBakeWhole(
+        data,
+        BUILDS.forms.find(f => f.rig === sp),
+        (id, view) => part(id, view)
+      ),
+    ];
+  })
+);
+const SW = {
+  ...RIGS,
+  ...Object.fromEntries(Object.entries(KIT_BAKES).map(([sp, m]) => [sp, JSON.parse(JSON.stringify(m.rig))])),
+};
 const slotOf = b => rigSwapSlot(b, boneSlot);
 const P = Object.assign(rigPose(null, 0, 0, 0), {
   sy: 1,
@@ -43,13 +70,13 @@ const P = Object.assign(rigPose(null, 0, 0, 0), {
   hov: { dx: 0, dy: 0, r: 0 },
 });
 const geoOf = (M, view) => rigGeo(M, view, animFor(M.plan, M.q || {})(P, view === 'back') || {}, P);
-const pathOf = sp => view => 'art/' + RIGS[sp][view].sheet;
+const pathOf = sp => view => 'art/' + SW[sp][view].sheet;
 const sheetsOf = sp => {
   const m = new Map();
-  for (const v of ['front', 'back']) m.set(pathOf(sp)(v), readPng(join(ROOT, 'game', pathOf(sp)(v))));
+  for (const v of ['front', 'back'])
+    m.set(pathOf(sp)(v), KIT_BAKES[sp] ? KIT_BAKES[sp].sheet : readPng(join(ROOT, 'game', pathOf(sp)(v))));
   return m;
 };
-const part = (id, view) => readPng(join(ROOT, 'game/art', K.parts[id].views[view].file));
 const cut = (p, [x, y, w, h]) => {
   const out = { width: w, height: h, data: new Uint8ClampedArray(w * h * 4) };
   for (let j = 0; j < h; j++)
@@ -64,7 +91,7 @@ function placed(sp, view, n, id) {
     pv = v.pivot || K.pivots[K.parts[id].kind],
     ox = -Math.round(pv[0] * pic.width),
     oy = -Math.round(pv[1] * pic.height),
-    needs = rigSwapNeeds(K, RIGS[sp][view], n, slotOf, K.parts[id].slot, view),
+    needs = rigSwapNeeds(K, SW[sp][view], n, slotOf, K.parts[id].slot, view),
     at = rigSwapSocketsAt(v.sockets || {}, pv, pic.width, pic.height, false, 0, [
       ox + pv[0] * pic.width,
       oy + pv[1] * pic.height,
@@ -73,7 +100,7 @@ function placed(sp, view, n, id) {
 }
 
 test("a torso's children need its named sockets, on their own side; a head's horns need none", () => {
-  const n = rigSwapNeeds(K, RIGS.musk0.front, 'torso', slotOf, 'body', 'front');
+  const n = rigSwapNeeds(K, SW.musk0.front, 'torso', slotOf, 'body', 'front');
   assert.deepEqual(Object.fromEntries(n.map(x => [x.child, x.sockets[0]])), {
     legL: 'hipL',
     legR: 'hipR',
@@ -82,7 +109,7 @@ test("a torso's children need its named sockets, on their own side; a head's hor
     tail: 'tail',
     head: 'neck',
   });
-  const q = rigSwapNeeds(K, RIGS.ma0.front, 'torso', slotOf, 'body', 'front');
+  const q = rigSwapNeeds(K, SW.ma0.front, 'torso', slotOf, 'body', 'front');
   assert.deepEqual(Object.fromEntries(q.map(x => [x.child, x.sockets[0]])), {
     legBF: 'hipR',
     legFF: 'shoulderR',
@@ -91,13 +118,13 @@ test("a torso's children need its named sockets, on their own side; a head's hor
     legFN: 'shoulderL',
     head: 'neck',
   });
-  assert.deepEqual(rigSwapNeeds(K, RIGS.musk0.front, 'head', slotOf, 'head', 'front'), []);
-  const t = rigSwapNeeds(K, RIGS.trump0.front, 'torso', slotOf, 'body', 'front');
+  assert.deepEqual(rigSwapNeeds(K, SW.musk0.front, 'head', slotOf, 'head', 'front'), []);
+  const t = rigSwapNeeds(K, SW.trump0.front, 'torso', slotOf, 'body', 'front');
   assert.deepEqual(t.map(x => x.child).sort(), ['armL', 'armR', 'head', 'tail']);
 });
 
 test('a part without a socket a child needs is a misfit, with the reason; every library torso fits musk0', () => {
-  const needs = rigSwapNeeds(K, RIGS.musk0.front, 'torso', slotOf, 'body', 'front');
+  const needs = rigSwapNeeds(K, SW.musk0.front, 'torso', slotOf, 'body', 'front');
   for (const [id, p] of Object.entries(K.parts))
     if (p.slot === 'body' && p.kind === 'torso') assert.equal(rigSwapMisfit(K, id, 'front', needs), '', id);
   const K2 = JSON.parse(JSON.stringify(K));
@@ -111,16 +138,16 @@ test('the same picture swapped in changes nothing the game reads: children, geo,
   for (const sp of ['musk0', 'ma0', 'trump0']) {
     const sheets = sheetsOf(sp),
       prepared = ['front', 'back'].map(view => {
-        const M = RIGS[sp][view],
+        const M = SW[sp][view],
           P0 = M.imgs[bone(M, 'torso').i],
           frames = Object.fromEntries(Object.entries(P0.f).map(([n, b]) => [n, cut(sheets.get(pathOf(sp)(view)), b)]));
         return { view, bone: 'torso', frames, ox: P0.ox, oy: P0.oy, at: {}, needs: [] };
       }),
-      before = JSON.stringify(RIGS[sp]),
-      { rig } = rigSwapApply(RIGS[sp], sheets, pathOf(sp), prepared, geoOf);
-    assert.equal(JSON.stringify(RIGS[sp]), before, `${sp}: the input rig changed`);
+      before = JSON.stringify(SW[sp]),
+      { rig } = rigSwapApply(SW[sp], sheets, pathOf(sp), prepared, geoOf);
+    assert.equal(JSON.stringify(SW[sp]), before, `${sp}: the input rig changed`);
     for (const view of ['front', 'back']) {
-      const A = RIGS[sp][view],
+      const A = SW[sp][view],
         B = rig[view];
       assert.deepEqual(B.geo, A.geo, `${sp} ${view} geo`);
       for (const b of A.bones) assert.deepEqual(bone(B, b.n).at, b.at, `${sp} ${view} ${b.n}`);
@@ -137,7 +164,7 @@ test('musk0: a library torso refits every child onto its socket and squashes aga
         frames = kitSquashFrames(pic, BAKE.pad, BAKE.squash);
       return { view, bone: 'torso', frames, ox: ox - BAKE.pad, oy: oy - BAKE.pad, at, needs };
     }),
-    { rig, sheets: out, how } = rigSwapApply(RIGS[sp], sheets, pathOf(sp), prepared, geoOf);
+    { rig, sheets: out, how } = rigSwapApply(SW[sp], sheets, pathOf(sp), prepared, geoOf);
   assert.deepEqual(how['front torso'], {
     legL: 'hipL',
     legR: 'hipR',
@@ -174,7 +201,7 @@ test('musk0: a library torso refits every child onto its socket and squashes aga
     }
   const [x, y, w, h] = t.f.main;
   assert.deepEqual(cut(S1, [x, y, w, h]).data, prepared[0].frames.main.data);
-  assert.notEqual(rig.front.geo.hw, RIGS[sp].front.geo.hw, 'a cat torso is not the bear one: the width moves');
+  assert.notEqual(rig.front.geo.hw, SW[sp].front.geo.hw, 'a cat torso is not the bear one: the width moves');
 });
 
 test('a head swap on a kit Billie keeps a blink and its horns in proportion; keeping the old frames keeps them', () => {
@@ -183,12 +210,12 @@ test('a head swap on a kit Billie keeps a blink and its horns in proportion; kee
     ['trump0', 'crest'],
   ]) {
     const sheets = sheetsOf(sp),
-      M = RIGS[sp].front,
+      M = SW[sp].front,
       { pic, ox, oy, needs, at } = placed(sp, 'front', 'head', 'cat_head'),
       blink = kitBlinkFrame(pic);
     assert.ok(blink, 'the cat head has eyes to shut');
     const { rig, how } = rigSwapApply(
-      RIGS[sp],
+      SW[sp],
       sheets,
       pathOf(sp),
       [{ view: 'front', bone: 'head', frames: { idle: pic, blink }, ox, oy, at, needs }],
@@ -207,7 +234,7 @@ test('a head swap on a kit Billie keeps a blink and its horns in proportion; kee
       `${sp} ${extra}`
     );
     const kept = rigSwapApply(
-      RIGS[sp],
+      SW[sp],
       sheets,
       pathOf(sp),
       [

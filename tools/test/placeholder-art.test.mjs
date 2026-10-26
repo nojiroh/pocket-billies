@@ -75,6 +75,18 @@ test('a sample Billie on each plan bakes inside the box, the same twice, with a 
   }
 });
 
+test("RO-3b: a form's scale sizes the whole Billie, standing on the same ground", () => {
+  for (const plan of PLANS) {
+    const full = PA.placeholderBake(P, sample(plan), D).rig.front.geo,
+      half = PA.placeholderBake(P, { ...sample(plan), scale: 0.5 }, D).rig.front.geo,
+      tall = full.base - full.top,
+      short = half.base - half.top;
+    assert.equal(half.base, full.base, plan);
+    assert.ok(Math.abs(short / tall - 0.5) < 0.15, `${plan}: ${short} of ${tall} high at scale 0.5`);
+    assert.ok(Math.abs(half.hw / full.hw - 0.5) < 0.2, `${plan}: ${half.hw} of ${full.hw} wide at scale 0.5`);
+  }
+});
+
 test('every plan fills every slot (splicing maps parts by slot); the octopus and blob share one bone', () => {
   for (const plan of PLANS) {
     const bones = PA.placeholderBones(P, sample(plan)),

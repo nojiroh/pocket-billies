@@ -2,6 +2,63 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roster track RO-3b - Every Billie on its body plan as a placeholder - 2026-10-26
+Branch `claude/ro-3b-placeholder-billies` (from RO-3a's branch; pull request into `track/roster`; #213 and RO-3c's
+#215 merged there meanwhile, and track/roster is merged in). Plan approved in Plan Mode. The owner's answers: a spliced Billie draws as its plain placeholder until
+RO-3c; the starters keep today's colours, a size per stage from today's scales and their horns, crest and tail colour
+as added bones, nothing more; no player-facing name changes; I trigger the picture baseline (held back, see Risky).
+Tag `ro-3b-done` for the owner.
+- Where the plan and the code differed (checked): `bake:kits` and `bake:placeholders` write the same files (the sheet
+  and the rig), and so does the Studio's kit recipe card; kit-bake-parity compared every recipe with the committed art
+  (its header said 24 recipes, there are 51); a placeholder form had no whole-Billie size (kit recipes have `scale`);
+  kit colours are hue/saturation/value shifts, not RGB; runtime grafts (SP-1) bake from the kit recipe; the only "kit
+  count" was pixel-density's 51; the quick-check picture baseline is not committed but one CI release per version.
+- Changed:
+  - **How `bake:kits` leaves the placeholders alone**: tools/bake-kit-billies.mjs skips every recipe whose rig a
+    bodyPlans.json form owns ("kept: on its placeholder") and writes nothing for it (sheet, rig, line parts). The
+    Studio's kit recipe card shows such a recipe as **kept, not baked** (no fields, no Write Billie); Repack refuses a
+    placeholder Billie. To bring a kit look back: take the Billie out of bodyPlans.json `forms`, `npm run bake:kits`.
+    **tools/test/kit-bake.json** keeps every recipe's bake as fingerprints (`--fingerprints`, written from the committed
+    kit art while `bake:kits --check` was clean); kit-bake-parity compares every recipe with them.
+  - **bodyPlans.json forms `scale`** (schema, baker, test): the whole Billie's size, middles and sizes, on the same
+    ground.
+  - **The 51 forms**: quad (Musk muskox, Gates goat, Woods tiger, Kamprad rat, Yiming ferret), bird (Hughes goose,
+    Swift, Altmowl, Peacouture), fish (Cuban), worm (Trump slug), octo (Zuckerberg), biped (Bezos otter, Kardashian
+    chameleon, Huang gecko-dragon). Colours measured from the kit sheets (body main, tail/wings/crest accent); each
+    stage's scale is its kit scale x 1.5 (all fit); added bones keep horns, ears, crests, manes, beards, packs, wings,
+    growing by stage (Facelet drops its tentacle tips, Metapus adds a visor, Tremendoslug a tie, Altmowl swaps its crest
+    for ear tufts); regional forms: their own colours plus one add or drop (Harbour a cap, Meatball no ears and a
+    rounder body, Courtside a headband, Livestream a ring light, Hazard a cap). The Swift line is kept plain (colours
+    and sizes only) for RO-3g. Baked with `npm run bake:placeholders`: 51 sheets and rigs.
+  - **Grafts**: RO-3b first drew a grafted placeholder Billie plain (the owner's call until RO-3c); RO-3c (#215)
+    merged into track/roster meanwhile and grafts placeholder Billies by slot, so the merge keeps RO-3c's graft path
+    whole. After the merge `npm run bake:placeholders` rebaked the three Zuckerberg rigs (the octopus mantle is slot
+    body, also head), and graft-placeholder.test.mjs runs RO-3c's graft over the 51 real forms (765 grafts: every
+    slot from a Billie of each other plan, inside the box, the same bones; head refused to and from the octopus).
+  - Studio: the Roster board's silhouettes treat a placeholder rig like a kit rig (no piece layout: it asked for 50
+    missing `<name>.json`); the Pixel density report shows a placeholder Billie's plan and scale.
+- Remade on purpose: kit-bake.json (new); data-rigs' planted fault names musk0's first bone `body` (the quad's, was
+  `torso`); rig-swap tries its swaps on musk0 and trump0 baked from their kept recipes (in memory); pixel-density: kit
+  rows 51 -> 0, placeholder rows 0 -> 51; check-studio-github.py: the stand-in serves emberox (musk0) off its
+  placeholder as its recipe bakes (bodyPlans.json without it, its sheet and rig; nothing on disk changes), so kit
+  write, library swap, repack's refusal and density still run on a kit Billie, plus a kept recipe shown as kept and a
+  placeholder refused by Repack. The check-data snapshot, the UI gallery (no Billie in it), the run-start and sound
+  baselines did not change.
+- Verified: lint, typecheck, check:modules, format, check:data; unit tests (1071 pass); `bake:kits --check` and
+  `bake:placeholders --check` clean; all 51 drawn by the game's renderer (idle, walk, attack, back) on a contact sheet;
+  tools/look-grafts.py (team, details, walk, a battle with two grafted Billies: drawn plain, no bakes, no errors);
+  smoke (Start-Game on a phone, five screens, a battle, the in-game full test's step, the debug log: 112 KB, no
+  names); the Studio check up to density with the kit steps on the served kit Billie (IN PROGRESS: the rest).
+- Risky / open:
+  - **The picture baseline is not remade yet.** check.yml keeps one baseline per version (release
+    `baseline-0.1.0-alpha`) for every branch; remade from this branch before it reaches main, main's quick check
+    would show 51 Billies as changed. Run "Make the picture baseline" once this is on main.
+  - RO-3c's grafts on the real forms are tested for fit and bones, not judged by eye on each pair.
+  - The labels on a back view read mirrored (RO-3a's design: the back cell is drawn as it shows and flipped).
+  - The kit recipes' native parts (lines/*.json `parts`) stay the kit's: splicing's slot data is RO-3c's.
+  - Looks judged on a contact sheet and on a phone-sized page in this container, not on a phone.
+- Next: RO-3d, RO-3e, RO-3f (side by side), RO-3g last; the picture baseline once this is on main.
+
 ### Roster track RO-3c - Splicing by slot across body plans - 2026-10-26
 Branch `claude/ro-3c-splice-by-slot`, made from RO-3a's `claude/happy-ramanujan-jiipux` (PR #213, not merged yet);
 pull request into `track/roster` stacked on #213. Plan approved in Plan Mode. RO-3b ran at the same time: this session
