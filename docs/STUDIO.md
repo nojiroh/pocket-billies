@@ -626,7 +626,7 @@ The **Art browser** (section `art`, group Game) shows every picture under `game/
   the painter: running that builder again can draw over edits made here. The list is `ART_BUILDERS` in
   `game/js/logic/art-search.js`: effects and animals (build-fx-v47.py, build-life-v47.py), pyramids
   (build-pyramids.py), walls, buildings' detail and rooms (build-walls.py, build-buildings.py, build-props-a04.py),
-  flags (build-flags.py) and the UI icons (build-ui-icons.py, until SA-2b). The owner's choice (2026-10-26): the
+  flags (build-flags.py). The UI icons' builder retired in SA-2b (their SVG files are the source). The owner's choice (2026-10-26): the
   builders stay and the Studio warns.
 - **Another editor's Edit pixels** (Robots, Items & pyramids) opens this painter too; its button then reads "Done,
   back to …" and goes back there.
