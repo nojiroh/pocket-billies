@@ -674,7 +674,7 @@ function drawDivers(quad, dt, rm, sc, g32, fps) {
       D.splice(i, 1);
       continue;
     }
-    quad('bird', fr, g32(x), g32(y), g32(z), 0.34, 0.2, al, [0.92, 0.94, 0.98]);
+    quad('bird', fr, g32(x), g32(y), g32(z), 0.46, 0.28, al, [0.92, 0.94, 0.98]);
   }
 }
 /* water track WA-5b: spray on you while you climb a waterfall on your mount (walk-view.js startFallClimb: P.climb.fall),
