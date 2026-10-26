@@ -271,6 +271,8 @@ export const ENGINE_DEFAULTS = {
        be lit at once (the shaders hold 16) */
     stableLights: false,
     lights: 16,
+    /* phase 20 R2: the solid models (voxel props, low-poly models) drawn one draw per mesh for every item with it */
+    modelInstances: false,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -1214,6 +1216,12 @@ export const ENGINE_SPEC = [
         16,
         1,
         'How many lamps, windows and fires near you light the scene at once (the nearest ones). Fewer is faster on phones; farther lamps still glow but no longer light the ground.',
+      ],
+      [
+        'modelInstances',
+        'Models in batches',
+        'bool',
+        'Every tree, house or lamp post of one kind is drawn in one go instead of one at a time: fewer draws, the same look. The shadows still draw them one at a time.',
       ],
       [
         'gpuTimer',
