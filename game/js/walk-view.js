@@ -94,6 +94,7 @@ expose({
   GROUND_BUILDS_PENDING: [() => GROUND_BUILDS_PENDING],
   GROUND_CACHE: [() => GROUND_CACHE],
   GROUND_CACHE_SIZE: [() => GROUND_CACHE_SIZE],
+  GROUND_DETAIL_TILES: [() => GROUND_DETAIL_TILES],
   LABEL_GOLD: [() => LABEL_GOLD],
   MAX_HOP_DOWN: [() => MAX_HOP_DOWN],
   MAX_STEP_RISE: [() => MAX_STEP_RISE],
@@ -174,6 +175,7 @@ expose({
   folkTown: [() => folkTown, v => (folkTown = v)],
   groundKey: [() => groundKey, v => (groundKey = v)],
   groundTileFolder: [() => groundTileFolder, v => (groundTileFolder = v)],
+  groundTileRole: [() => groundTileRole, v => (groundTileRole = v)],
   groundToneAt: [() => groundToneAt, v => (groundToneAt = v)],
   handleWalkClick: [() => handleWalkClick, v => (handleWalkClick = v)],
   hasLineOfSight: [() => hasLineOfSight, v => (hasLineOfSight = v)],
@@ -1032,6 +1034,17 @@ export function scaleColor(c, k) {
     Math.min(255, (c & 255) * k)
   );
 }
+/* v46: which of a kind's twelve tiles a metre of ground shows (0-11), at its spot (sx, sz) with the scene's salt sa:
+   the worn ones (10, 11) where people walk, the touched ones (1-5, 8, 9) gathered in slow patches of detail, the plain
+   ones (0, 6, 7) over the rest (v47: picked evenly, plainTileIndex). The ground painter and the Studio's tile set
+   preview (studio/js/tile-set.js, SA-2a) both pick with it */
+const GROUND_DETAIL_TILES = [1, 2, 3, 4, 5, 8, 9];
+function groundTileRole(sx, sz, sa, worn, t47) {
+  const r = hash2d(sx * 3 + 11 + sa * 7919, sz * 7 + 5);
+  if (worn) return r < 0.5 ? 10 : 11;
+  if (valueNoise2d(sx / 4.7 + sa * 0.013, sz / 4.7 + 31) > 0.63) return GROUND_DETAIL_TILES[Math.floor(r * 7)];
+  return t47 ? plainTileIndex(sx, sz, sa) : r < 0.5 ? 0 : r < 0.75 ? 6 : 7;
+}
 export function plainTileIndex(sx, sz, sa) {
   const h = (x, z) => Math.floor(hash2d(x * 3 + 11 + sa * 7919, z * 7 + 5) * 3),
     p = h(sx, sz),
@@ -1187,8 +1200,7 @@ export function* paintGroundSteps(sc, o) {
     ST = stableCells(sc, wx0, wy0, CW, CH);
   /* v46: with twelve tiles a kind, each has a role: plain ones (0, 6, 7) over most of the ground, the touched ones
     (1-5, 8, 9) gathered in slow patches of detail, the worn ones (10, 11) along the lines people walk */
-  const DET = [1, 2, 3, 4, 5, 8, 9],
-    wornAt = pathWearFn(sc, wx0, wy0);
+  const wornAt = pathWearFn(sc, wx0, wy0);
   /* alpha 0.4: the cells on such an edge, one bit per neighbour across it (left, right, up, down, then the corners):
     breaking paving with natural ground beside it, or natural ground beside breaking paving */
   const ND = [
@@ -1214,23 +1226,9 @@ export function* paintGroundSteps(sc, o) {
         sa = ST.salt[q],
         r = hash2d(sx * 3 + 11 + sa * 7919, sz * 7 + 5);
       cellK[q] = k;
-      if (n >= 12) {
-        const det = valueNoise2d(sx / 4.7 + sa * 0.013, sz / 4.7 + 31),
-          wr = !pav[k] && wornAt(gx - P + 0.5, H - (gy - P) - 0.5, sx, sz);
-        pick[q] = wr
-          ? r < 0.5
-            ? 10
-            : 11
-          : det > 0.63
-            ? DET[Math.floor(r * 7)]
-            : t47
-              ? plainTileIndex(sx, sz, sa)
-              : r < 0.5
-                ? 0
-                : r < 0.75
-                  ? 6
-                  : 7;
-      } else pick[q] = n > 1 && r > 0.4 ? 1 + Math.min(n - 2, Math.floor(((r - 0.4) / 0.6) * (n - 1))) : 0;
+      if (n >= 12)
+        pick[q] = groundTileRole(sx, sz, sa, !pav[k] && wornAt(gx - P + 0.5, H - (gy - P) - 0.5, sx, sz), t47);
+      else pick[q] = n > 1 && r > 0.4 ? 1 + Math.min(n - 2, Math.floor(((r - 0.4) / 0.6) * (n - 1))) : 0;
       fl[q] = flip[k] ? Math.floor(hash2d(sx + 71 + sa * 104729, sz + 13) * 4) : 0;
     }
   if (brkOn) {

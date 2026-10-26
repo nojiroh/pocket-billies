@@ -18,19 +18,19 @@
   {
    "p": "battle/cloud_0.png",
    "at": [
-    "game/js/walk-view.js:716"
+    "game/js/walk-view.js:718"
    ]
   },
   {
    "p": "battle/cloud_1.png",
    "at": [
-    "game/js/walk-view.js:717"
+    "game/js/walk-view.js:719"
    ]
   },
   {
    "p": "battle/cloud_2.png",
    "at": [
-    "game/js/walk-view.js:718"
+    "game/js/walk-view.js:720"
    ]
   },
   {
@@ -105,7 +105,7 @@
   {
    "p": "next/*/*_*.png",
    "at": [
-    "game/js/walk-view.js:477"
+    "game/js/walk-view.js:479"
    ]
   },
   {
@@ -151,47 +151,47 @@
    "at": [
     "game/js/buildings.js:170",
     "game/js/prop-models.js:2163",
-    "game/js/walk-view.js:740"
+    "game/js/walk-view.js:742"
    ]
   },
   {
    "p": "scene/build/rooms.png",
    "at": [
     "game/js/buildings.js:170",
-    "game/js/walk-view.js:740"
+    "game/js/walk-view.js:742"
    ]
   },
   {
    "p": "scene/build/walls.png",
    "at": [
-    "game/js/walk-view.js:715",
+    "game/js/walk-view.js:717",
     "game/js/walk/ground-draw.js:71"
    ]
   },
   {
    "p": "scene/far/*.png",
    "at": [
-    "game/js/walk-view.js:752"
+    "game/js/walk-view.js:754"
    ]
   },
   {
    "p": "scene/flags/*.png",
    "at": [
-    "game/js/walk-view.js:493"
+    "game/js/walk-view.js:495"
    ]
   },
   {
    "p": "scene/flags/default.png",
    "at": [
     "game/js/postcards.js:49",
-    "game/js/walk-view.js:750",
+    "game/js/walk-view.js:752",
     "game/js/walk/frame-items.js:189"
    ]
   },
   {
    "p": "scene/fx/*.png",
    "at": [
-    "game/js/walk-view.js:719",
+    "game/js/walk-view.js:721",
     "game/js/walk/effects.js:190"
    ]
   },
