@@ -22,7 +22,8 @@ Branch `ccr-a98cc267-eqso1d`, built here at the owner's word (`track/vfx` didn't
 - Risky, check on the phone: the throw's feel (the hang at the top); in a landscape window the arc's top leaves the
   frame (as before), and now spends longer there; in a phone's portrait view it stays in frame.
 - Verified: lint, typecheck, format, check:modules, unit tests 1291 pass; a headless film of a slowed throw (landscape
-  and phone): the copies trail the pyramid and run out after the hit. Smoke check: see below.
+  and phone): the copies trail the pyramid and run out after the hit. Smoke check (check-quick --smoke): 6 of 6
+  passed in 195 s. Tags `vfx-0-done` and `vfx-1-done` (the owner may need to push tags: the session pushed them).
 - Next: VFX-2 (the motion-line ribbon with the white core) on `track/vfx`.
 
 ### Merge batch 2: PRs #219 (renderer) and #217 (roster RO-3a..RO-3d) into main - 2026-10-26
