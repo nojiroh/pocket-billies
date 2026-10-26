@@ -151,7 +151,7 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
 | 2 | WA-6b | P | **Surf and Waterfall climb.** Riding per cell: walk into `d` with a rider (`rules.ride`) and the Water badge, mount and leave at the shore; the mount's bob, wake and rings; encounters on water (the region's water pool); the Waterfall field move (badge: ask) climbing a `climb` fall. Builds on the contract while WA-2b lands. | unit tests (riding rules, badge), a surf walk check, smoke |
 | 3 | WA-4 | R | (**done** 2026-10-25, notes below) **The sea and the coast.** Surf as hard stepped bands breaking along the coast, foam round rocks, a slow tide (the waterline and wet sand move, tide pools), reef shallows (turquoise, see-through), kelp, sandbars, a sun and a moon path on the open sea, a storm sea from the forecast. | look-water --scene=test_island, island-shots, smoke |
 | 3 | WA-5a | G | (**done** 2026-10-25, notes below) **New kinds' play and weather on water.** Hot springs heal the party, oases, marsh and bog slow you (their encounter pools, hidden items in reeds), rapids block, floods in storms keep the main path open, ponds freeze in snow, rain rings (exist). | unit tests (a flooded path keeps the main path open; heal once a run), smoke |
-| 3 | WA-7 | B | **World map and battles.** The bowl's rivers and seas in the same tones and steps (the shared snippet); water backdrops on battle stages by a node's biome. | bowl map test, battle stage pictures, smoke |
+| 3 | WA-7 | B | (**done** 2026-10-26, notes below) **World map and battles.** The bowl's rivers and seas in the same tones and steps (the shared snippet); water backdrops on battle stages by a node's biome. | bowl map test, battle stage pictures, smoke |
 | 4 | WA-5b | R | **Kinds as a texture and water life.** Kind looks in a small texture (no cap at 9), the new kinds drawn (steam on hot springs, rapids' white water, bog's scum, reef, cave water lit by its own glow); lily pads that bob, reeds that sway, frogs, fish that jump (sprites), birds that dive. | look-water, smoke |
 | 4 | WA-9 | G | **Studio tools.** A river brush (source to mouth, regenerates its bed), a waterfall placer (lip, width, pool, climb), a water-kind painter, a live preview; STUDIO.md. | Studio check, a hand-placed fall survives a regenerate |
 | 5 | WA-8 | (alone) | **Phone pass, sounds, baseline.** Quality tiers for water (bands, mist, reflections) measured at the bench; the owner's phone frame time; water sound beds (falls by height, rapids, surf, lapping, the plunge pool) with SND-6's mix; the quick-check baseline made again on purpose. | full quick check, the owner's phone |
@@ -410,3 +410,33 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
   The headless browser draws in software: no frame times. The phone should compare the frame time on Copperleaf's
   beach with Pixel water on and off, and Tide on and off.
 
+## WA-7 notes (2026-10-26)
+- The owner's answers (Plan Mode): `PIXEL_WATER_GLSL` exported from walk-shaders.js by this lane (one word; `npm run
+  modules` drops an export nothing imports, so it landed with its first use, the world map's sea); battles turn to face
+  nearby water (a small change in battle-3d.js) plus water effects in battle-stage.js; the `lake` biome's battle stage
+  (`golf`, though a `lake` stage exists in battleStages.json) only noted, for whoever owns biomes.json.
+- **The world map** (world-bowl.js): `BOWL_PIXEL_GLSL` is the shared snippet plus the bowl's grid: the ground pictures'
+  16 texels a metre close up, coarser by powers of two further out so a texel stays at least about 2 screen pixels
+  (`bwK`), and `bwFix` (a smooth value read at the texel's middle from its screen derivatives, so the shoreline steps
+  in whole texels). The sea (`mwater`, `bowlWaterPixel`): five dithered tones from shallow to deep, the waves read per
+  texel in stepped time, the light in 4 steps, hard glints, foam bands and a hard line at the land in whole texels, a
+  dithered second line; the sky's mirror and its Fresnel mix smooth. A place's own water tiles and the rivers
+  stamped in the index (the ground shader): a 3-tone stepped shimmer, foam a line one texel wide (a dithered second)
+  along each side of the map's square that meets land. The rivers' lines far out: a hard edge, a paler middle in
+  dithered tones. HB-3's lagoon (same program, `uRim`): its foam by the beach and sill, its rim fading into the
+  clouds' colour in dithered steps; its falls (`mfallw`): stepped streaks with hard ends, three tones, a hard lip,
+  dithered edges and fade. `BOWL_SEA_FAR` left as it was (the pictures showed no clash). The hub's island still has
+  no sea (only HB-3's lagoon). Pixel water off runs each shader's old code unchanged.
+- **Battles**: `logic/battle-facing.js` (new, Node-tested) tries 16 turns round the middle of the action and keeps the
+  one that shows clearly more water (nearer tiles count more; water behind a tree or a house is not counted) when water
+  lies within 12 m, never one that puts a fighter, a trainer or the camera in water or off the map; never indoors.
+  battle-3d.js turns everything it puts in the scene and the battle camera with it; battle-stage.js works in battle
+  space as before. Glints on the water in view and rings round a fighter standing in water (battle-stage.js).
+- Found: 20 m (the first reach) was too far: a pond 15-19 m away from the battle camera's 1.6 m is a thin line under
+  the depth of field. Even at 12 m, in the headless pictures the run's pond (0.5 m under its banks, reeds round it,
+  haze) reads faintly after the turn (208 water tiles in the frame against none before). The phone should judge it;
+  if still weak: lift the battle camera a little when it faces water, or count only water at about the fighters' level.
+- Pictures: `tools/look-bowl-water.py` (the run's bowl: whole, coast, coast-low, river, river-low, place; the hub's
+  island; `--battle`: a battle with water 7-11 m away in clear view and none ahead; each with Pixel water on and off),
+  validation/look-water-bowl-before/ and -after/ (not committed). On the hub zoom the lagoon's dither between its
+  first two tones reads as scattered dots: the phone should say if it wants fewer tones there.
