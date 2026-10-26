@@ -377,3 +377,125 @@ test('WA-5a: shallows for others: rocks and folk stand only in shallows you wade
   }
   assert.ok(rocks > 0, 'some rocks stand in shallows');
 });
+
+/* ---------- WA-9: the Studio's hand water (params.hand) survives a regenerate ---------- */
+const HAND_BASE = { seed: 7, land: { water: 'none' } };
+const handRiverOf = (sc, a, b) =>
+  (sc.streams || []).find(st => {
+    const s = st.pts[0],
+      e = st.pts[st.pts.length - 1];
+    return Math.hypot(s[0] - a[0], s[1] - a[1]) < 1 && Math.hypot(e[0] - b[0], e[1] - b[1]) < 1;
+  });
+
+test('WA-9: no hand water, or an empty hand, makes the scene exactly as before', () => {
+  const plain = G.mapgenScene(HAND_BASE, ctx).scene,
+    empty = G.mapgenScene({ ...HAND_BASE, hand: {} }, ctx).scene;
+  delete empty.gen.params.hand;
+  assert.deepEqual(empty, plain);
+  const { scene: withRiver } = MADE[0],
+    again = G.mapgenScene({ ...MADE[0].c, hand: { rivers: [], falls: [], waters: [] } }, ctx).scene;
+  assert.deepEqual(again.streams, withRiver.streams);
+  assert.deepEqual(again.heights, withRiver.heights);
+});
+
+test('WA-9: a hand river runs from its source to its mouth downhill, and survives a new seed, a dial and a reroll', () => {
+  const sc0 = G.mapgenScene(HAND_BASE, ctx).scene,
+    a = [0, sc0.h - 14],
+    b = [sc0.w - 24, 12],
+    hand = { rivers: [{ pts: [a, [sc0.w * 0.4, sc0.h * 0.5], b] }] };
+  const remakes = [
+    { ...HAND_BASE, hand },
+    { ...HAND_BASE, seed: 8, hand },
+    { ...HAND_BASE, land: { ...HAND_BASE.land, hills: 0.9 }, hand },
+    { ...HAND_BASE, seeds: { plants: 99, props: 5 }, hand },
+  ];
+  for (const P of remakes) {
+    const { scene: sc, notes } = G.mapgenScene(P, ctx),
+      where = `${JSON.stringify({ seed: P.seed, seeds: P.seeds, hills: P.land.hills })} (${notes.join('; ')})`,
+      st = handRiverOf(sc, a, b);
+    assert.ok(st, `${where}: the hand river is there`);
+    assert.equal(st.src, 'edge', `${where}: it comes in at the west side`);
+    assert.equal(st.mouth, 'pool', `${where}: it ends inland in a pool`);
+    assert.equal(st.w.length, st.pts.length);
+    for (let i = 1; i < st.pts.length; i++) {
+      assert.ok(heightAt(sc, ...st.pts[i]) <= heightAt(sc, ...st.pts[i - 1]) + 0.02, `${where}: point ${i} higher`);
+      assert.ok(st.w[i] >= st.w[i - 1], `${where}: narrower at point ${i}`);
+    }
+    /* it keeps to the line drawn (smoothed, never meandered) and its bed is water (a bridge's deck may lie over it) */
+    const drawn = hand.rivers[0].pts;
+    for (const p of st.pts) {
+      const d = Math.min(...drawn.slice(1).map((q, i) => WG.waterGenSegDist(p[0], p[1], drawn[i], q)));
+      assert.ok(d < 3, `${where}: ${p} is ${d.toFixed(2)} m off the line drawn`);
+    }
+    for (const p of st.pts.slice(2, -2)) assert.ok('wdb'.includes(tileAt(sc, ...p)), `${where}: ${p} dry`);
+    assert.deepEqual(sc.gen.params.hand, hand, `${where}: kept in the scene's dials`);
+  }
+  /* the same hand, the same scene */
+  assert.deepEqual(G.mapgenScene(remakes[1], ctx).scene, G.mapgenScene(remakes[1], ctx).scene);
+});
+
+test("WA-9: a hand river is an extra river: the scene's own stays", () => {
+  const { c, scene: own } = MADE.find(m => m.c.land.water === 'stream' && riverOf(m.scene).mouth === 'edge'),
+    st0 = riverOf(own),
+    mid = st0.pts[Math.floor(st0.pts.length / 2)],
+    a = [mid[0] < own.w / 2 ? own.w - 14 : 14, own.h - 10],
+    b = [a[0], 12];
+  const { scene: sc } = G.mapgenScene({ ...c, hand: { rivers: [{ pts: [a, b], w: 2 }] } }, ctx);
+  assert.ok(handRiverOf(sc, a, b), 'the hand river');
+  assert.ok(
+    sc.streams.filter(st => st.src).length >= 2,
+    `two rivers (${sc.streams.map(st => `${st.src}>${st.mouth}`).join(', ')})`
+  );
+});
+
+test('WA-9: a hand fall writes a falls entry, keeps its pool and survives a regenerate; its climb only where walked', () => {
+  const { c, scene: own } = FALLS_MADE.find(m => (m.scene.falls || []).some(f => !f.pool && f.h < 2)),
+    F = own.falls.find(f => !f.pool && f.h < 2),
+    fall = { x: F.x, z: F.z, dir: F.dir, w: 3, pool: 2.5, climb: 1 };
+  for (const P of [
+    { ...c, hand: { falls: [fall] } },
+    { ...c, seeds: { plants: 3 }, hand: { falls: [fall] } },
+  ]) {
+    const { scene: sc } = G.mapgenScene(P, ctx),
+      e = sc.falls.find(f => Math.hypot(f.x - F.x, f.z - F.z) < 0.01);
+    assert.ok(e, 'the hand fall is there');
+    assert.equal(sc.falls.filter(f => Math.hypot(f.x - F.x, f.z - F.z) < 2).length, 1, 'it replaces the generated one');
+    assert.equal(e.w, 3);
+    assert.ok(e.h > 0.3, `a drop from the ground (${e.h})`);
+    assert.equal(e.pool, 2.5, 'its pool painted');
+    const { foot } = WG.waterGenFallEnds(e);
+    assert.ok('wd'.includes(tileAt(sc, foot[0], foot[1])), "the pool's water");
+    /* under 2 m: never climbed, ticked or not */
+    assert.ok(!e.climb, 'a short fall is not climbed');
+    assert.deepEqual(G.mapgenUnreachable(sc, GAME_DATA.scenery, { slope: true }), [], 'the exits still reached');
+  }
+  /* a tall fall placed without its climb never gets one */
+  const tall = FALLS_MADE.map(m => ({ m, f: (m.scene.falls || []).find(f => f.climb) })).find(x => x.f);
+  if (tall) {
+    const { f } = tall,
+      { scene: sc } = G.mapgenScene(
+        { ...tall.m.c, hand: { falls: [{ x: f.x, z: f.z, dir: f.dir, w: f.w, h: f.h, pool: f.pool }] } },
+        ctx
+      );
+    assert.ok(!sc.falls.find(e => Math.hypot(e.x - f.x, e.z - f.z) < 0.01).climb, 'no climb when not ticked');
+  }
+});
+
+test('WA-9: hand kinds lie last in the waters; nonsense in the hand is left out', () => {
+  const r = { x: 4, z: 4, w: 6, h: 3, k: 'hotspring' },
+    { scene: sc } = G.mapgenScene(
+      {
+        ...MADE[0].c,
+        hand: {
+          waters: [r, { x: 1, z: 1, w: 2, h: 2, k: 'nope' }],
+          rivers: [{ pts: [[3, 3]] }, 'x'],
+          falls: [{ x: 3, z: 3, dir: [0, 0] }],
+        },
+      },
+      ctx
+    );
+  assert.deepEqual(sc.waters[sc.waters.length - 1], r);
+  assert.ok(!sc.waters.some(q => q.k === 'nope'));
+  assert.deepEqual(sc.streams, MADE[0].scene.streams);
+  assert.deepEqual(sc.falls, MADE[0].scene.falls);
+});

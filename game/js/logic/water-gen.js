@@ -17,7 +17,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
-import { waterKindHeals, waterKindShut, waterKindWalkOn } from './water-kinds.js';
+import { WATER_KINDS, waterKindHeals, waterKindShut, waterKindWalkOn } from './water-kinds.js';
 import {
   MAPGEN_INWARD,
   MAPGEN_STRAIGHT_IN,
@@ -44,6 +44,7 @@ expose({
   WATERGEN_DEPTH: [() => WATERGEN_DEPTH],
   WATERGEN_FALL_MIN: [() => WATERGEN_FALL_MIN],
   WATERGEN_FLAT: [() => WATERGEN_FLAT],
+  WATERGEN_HAND_MAX: [() => WATERGEN_HAND_MAX],
   WATERGEN_LOST_MAX: [() => WATERGEN_LOST_MAX],
   WATERGEN_NB8: [() => WATERGEN_NB8],
   WATERGEN_RAPID: [() => WATERGEN_RAPID],
@@ -72,6 +73,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   waterGenCarve: [() => waterGenCarve, v => ((waterGenCarve = v), provide({ waterGenCarve }))],
   // @ts-expect-error -- replaced on purpose
+  waterGenCarveRiver: [() => waterGenCarveRiver, v => (waterGenCarveRiver = v)],
+  // @ts-expect-error -- replaced on purpose
   waterGenClimbs: [() => waterGenClimbs, v => ((waterGenClimbs = v), provide({ waterGenClimbs }))],
   // @ts-expect-error -- replaced on purpose
   waterGenCorners: [() => waterGenCorners, v => (waterGenCorners = v)],
@@ -87,6 +90,13 @@ expose({
   waterGenFlood: [() => waterGenFlood, v => (waterGenFlood = v)],
   // @ts-expect-error -- replaced on purpose
   waterGenFlowSum: [() => waterGenFlowSum, v => (waterGenFlowSum = v)],
+  // @ts-expect-error -- replaced on purpose
+  waterGenHand: [() => waterGenHand, v => (waterGenHand = v)],
+  waterGenHandClimb: [() => waterGenHandClimb],
+  // @ts-expect-error -- replaced on purpose
+  waterGenHandFalls: [() => waterGenHandFalls, v => (waterGenHandFalls = v)],
+  // @ts-expect-error -- replaced on purpose
+  waterGenHandRivers: [() => waterGenHandRivers, v => (waterGenHandRivers = v)],
   // @ts-expect-error -- replaced on purpose
   waterGenHeap: [() => waterGenHeap, v => (waterGenHeap = v)],
   // @ts-expect-error -- replaced on purpose
@@ -141,6 +151,7 @@ expose({
   waterGenShape: [() => waterGenShape, v => (waterGenShape = v)],
   // @ts-expect-error -- replaced on purpose
   waterGenShorten: [() => waterGenShorten, v => (waterGenShorten = v)],
+  waterGenSideBy: [() => waterGenSideBy],
   waterGenSideLen: [() => waterGenSideLen],
   // @ts-expect-error -- replaced on purpose
   waterGenSideSpans: [() => waterGenSideSpans, v => (waterGenSideSpans = v)],
@@ -530,6 +541,163 @@ export function waterGenSmoothLine(pts, win) {
   return out;
 }
 
+/* ---------- WA-9: the Studio's hand water ----------
+   The Generate card's river brush, waterfall placer and kind painter write the draft's dials (`params.hand`, kept in
+   a scene's `gen` when it is added): every remake of the draft (a dial, a new seed, a part's reroll) makes them again,
+   so they survive a regenerate. A hand river is an extra river (the generated one stays), shaped, painted and carved
+   as the generated one is; a hand fall writes a `falls` entry as WA-2b's do; a hand kind is a `waters` rectangle
+   laid last. A scene made without them is made exactly as before. */
+/** the most hand rivers and falls a scene keeps */
+export const WATERGEN_HAND_MAX = 8;
+/** a hand fall's wanted climb (1 or 0) by its entry: waterGenClimbs keeps a 1 only where WA-2b's rule passes and never
+ * adds one to a fall placed without */
+export const waterGenHandClimb = new WeakMap();
+/**
+ * the draft's hand water, checked: rivers [{pts, w}], falls [{x, z, dir, w, h, pool, climb, k}], waters [{x, z, w, h,
+ * k}], all inside the map (kept on G)
+ */
+export function waterGenHand(G) {
+  if (G.hand) return G.hand;
+  const H = (G.P && G.P.hand) || {},
+    num = v => typeof v === 'number' && Number.isFinite(v),
+    pt = p => Array.isArray(p) && num(p[0]) && num(p[1]),
+    list = v => (Array.isArray(v) ? v : []),
+    X = v => waterGenBetween(v, 0, G.w),
+    Z = v => waterGenBetween(v, 0, G.h);
+  const rivers = list(H.rivers)
+    .filter(r => r && list(r.pts).filter(pt).length >= 2)
+    .slice(0, WATERGEN_HAND_MAX)
+    .map(r => ({ pts: r.pts.filter(pt).map(p => [X(p[0]), Z(p[1])]), w: num(r.w) ? waterGenBetween(r.w, 1.5, 8) : 0 }));
+  const falls = list(H.falls)
+    .filter(f => f && num(f.x) && num(f.z) && pt(f.dir) && Math.hypot(f.dir[0], f.dir[1]) > 1e-3)
+    .slice(0, WATERGEN_HAND_MAX)
+    .map(f => {
+      const L = Math.hypot(f.dir[0], f.dir[1]);
+      return {
+        x: X(f.x),
+        z: Z(f.z),
+        dir: [f.dir[0] / L, f.dir[1] / L],
+        w: num(f.w) ? waterGenBetween(f.w, 0.5, 12) : 1.5,
+        h: num(f.h) && f.h > 0 ? waterGenBetween(f.h, 0.3, 15) : 0,
+        pool: num(f.pool) ? waterGenBetween(f.pool, 0, 4) : 0,
+        climb: f.climb ? 1 : 0,
+        k: typeof f.k === 'string' && WATER_KINDS.includes(f.k) ? f.k : null,
+      };
+    });
+  const waters = list(H.waters)
+    .filter(r => r && num(r.x) && num(r.z) && num(r.w) && num(r.h) && r.w > 0 && r.h > 0 && WATER_KINDS.includes(r.k))
+    .map(r => ({ x: X(r.x), z: Z(r.z), w: Math.min(r.w, G.w - X(r.x)), h: Math.min(r.h, G.h - Z(r.z)), k: r.k }))
+    .filter(r => r.w > 0 && r.h > 0);
+  return (G.hand = { rivers, falls, waters });
+}
+/** the side a point lies by (within 1.5 m of it), or '' */
+export const waterGenSideBy = (G, x, z) => 'NSEW'.split('').find(s => mapgenDepth(G, s, x, z) < 1.5) || '';
+/**
+ * the hand rivers (waterGenRiver, first): each drawn line from its source to its mouth made into a river as WA-3a's
+ * are (smoothed, its level never rising, wider downstream, rapids; no meanders: it keeps the line drawn), painted and
+ * carved. Its source and mouth come from its ends: a side (`edge`), water already there (`lake`, or `sea` on a coast
+ * away from the pond), else a `spring` at the source and a `pool` at the mouth. A river that runs along the road,
+ * crosses it more than twice or cuts ground off from it is still made, with a note.
+ * @param {any} G mapgen's working state @param {number} width the scene's river width (the dial's), when the line has
+ * none of its own
+ */
+export function waterGenHandRivers(G, width) {
+  const hand = waterGenHand(G).rivers;
+  if (!hand.length) return [];
+  const out = [];
+  for (const H of hand) {
+    const pts = mapgenResample(H.pts, 1),
+      last = H.pts[H.pts.length - 1],
+      tail = pts[pts.length - 1];
+    if (Math.hypot(tail[0] - last[0], tail[1] - last[1]) > 0.05) pts.push(last.slice());
+    if (pts.length < 3) {
+      G.notes.push('a hand river shorter than 2 m: left out');
+      continue;
+    }
+    const wide = H.w || width,
+      a = pts[0],
+      b = pts[pts.length - 1],
+      wetAt = p => !!(G.F[mapgenCellAt(G, p[0], p[1])] & 4),
+      sideA = waterGenSideBy(G, a[0], a[1]),
+      sideB = waterGenSideBy(G, b[0], b[1]),
+      inPond = p => !!G.pond && Math.hypot(p[0] - G.pond.x, p[1] - G.pond.z) < G.pond.r * 1.5 + 3;
+    const src = sideA ? 'edge' : wetAt(a) ? 'lake' : 'spring',
+      mouth = sideB ? 'edge' : wetAt(b) ? (G.P.land.water === 'coast' && !inPond(b) ? 'sea' : 'lake') : 'pool';
+    const plan = {
+      src: { src },
+      mouth: { kind: mouth === 'pool' ? 'pool' : 'hand', mouth, at: b, pr: Math.max(2.5, wide * 0.8) },
+    };
+    const river = waterGenShape(G, null, plan, { pts, flow: pts.map((_, i) => i + 1) }, wide, false);
+    river.srcSide = sideA || null;
+    river.mouthSide = sideB || null;
+    river.hand = 1;
+    if (!waterGenFits(G, river)) G.notes.push('a hand river runs along the road or crosses it more than twice');
+    const reach = G.riverReach;
+    delete G.riverReach;
+    if (waterGenCutsOff(G, river)) G.notes.push('a hand river cuts ground off from the road');
+    G.riverReach = reach;
+    waterGenPaint(G, river);
+    out.push(river);
+  }
+  /* the generated river's "before" is the ground with the hand rivers in it */
+  delete G.riverReach;
+  return out;
+}
+/**
+ * the hand falls (waterGenFalls, last): each one replaces a generated fall within 2 m of its lip; its drop is the one
+ * given, or the ground's from 0.3 m behind the lip to the lowest 0.5-2 m past it; its pool is painted as a plunge
+ * pool (higher ground cut down to it) where it fits and cuts no ground off, else it has none (a note). Its climb is
+ * decided on the finished scene (waterGenClimbs).
+ * @param {any} G mapgen's working state @param {any[]} falls the scene's falls so far (changed in place)
+ */
+export function waterGenHandFalls(G, falls) {
+  const hand = waterGenHand(G).falls;
+  if (!hand.length) return;
+  const { w, h } = G,
+    W2 = w * 2,
+    { lv } = waterGenLevels(G),
+    at = (x, z) =>
+      lv[waterGenBetween(Math.floor(z * 2), 0, h * 2 - 1) * W2 + waterGenBetween(Math.floor(x * 2), 0, W2 - 1)];
+  let seen = /** @type {Uint8Array | null} */ (null);
+  for (const f of hand) {
+    for (let n = falls.length - 1; n >= 0; n--)
+      if (Math.hypot(falls[n].x - f.x, falls[n].z - f.z) < 2) falls.splice(n, 1);
+    const [dx, dz] = f.dir,
+      where = `${mapgenRound2(f.x)}, ${mapgenRound2(f.z)}`;
+    if (!(G.F[mapgenCellAt(G, f.x - dx * 0.3, f.z - dz * 0.3)] & 4))
+      G.notes.push(`the hand fall at ${where}: its lip is not on water`);
+    let drop = f.h;
+    if (!drop) {
+      let low = Infinity;
+      for (let d = 0.5; d <= 2; d += 0.25) low = Math.min(low, at(f.x + dx * d, f.z + dz * d));
+      drop = Math.max(0, at(f.x - dx * 0.3, f.z - dz * 0.3) - low);
+    }
+    if (drop < 0.3) G.notes.push(`the hand fall at ${where} drops under 0.3 m: the automatic sheets draw it`);
+    let pool = 0;
+    if (f.pool) {
+      const cx = f.x + dx * (f.pool + 0.25),
+        cz = f.z + dz * (f.pool + 0.25),
+        s0 =
+          G.S[waterGenBetween(Math.floor(cz * 2), 0, h * 2 - 1) * W2 + waterGenBetween(Math.floor(cx * 2), 0, W2 - 1)],
+        lev = waterGenHeightAt(G.H, w, h, cx, cz) - WATERGEN_UNDER,
+        save = waterGenSave(G);
+      seen = seen || waterGenReach(G);
+      if (waterGenPlungePool(G, cx, cz, f.pool, s0, lev, true)) {
+        const after = waterGenReach(G);
+        if (waterGenLost(G, seen, after) > WATERGEN_LOST_MAX) waterGenRestore(G, save);
+        else {
+          pool = f.pool;
+          seen = after;
+        }
+      }
+      if (!pool) G.notes.push(`the hand fall at ${where}: no room for its pool (or it would cut ground off)`);
+    }
+    const e = waterGenFallEntry(f.x, f.z, f.dir, f.w, drop, pool, false, f.k);
+    waterGenHandClimb.set(e, f.climb);
+    falls.push(e);
+  }
+}
+
 /**
  * the scene's river (mapgen's water stage, for the stream dial or the bridge feature): tried from several sources to
  * several mouths, the longest that keeps clear of the exits and the hub's place kept; painted, its line in G.streams
@@ -540,6 +708,8 @@ export function waterGenSmoothLine(pts, win) {
  * river is carried on
  */
 export function waterGenRiver(G, rnd, width, want) {
+  /* WA-9: the Studio's hand-drawn rivers first, so the generated one finds them as other water */
+  waterGenHandRivers(G, width);
   const seam = waterGenSeamRiver(G);
   if (!want && !seam) return null;
   const R = G.rng('heights', 'river'),
@@ -674,9 +844,9 @@ export function waterGenRiver(G, rnd, width, want) {
 
 /**
  * the way found made into a river: straight runs across its sides, smoothed, meandering on the flat, its level (never
- * rising), widths (never narrowing) and rapids
+ * rising), widths (never narrowing) and rapids; bend false (a hand-drawn line, WA-9) keeps it unmeandered
  */
-export function waterGenShape(G, R, plan, got, width) {
+export function waterGenShape(G, R, plan, got, width, bend = true) {
   const { w, h } = G,
     { src, mouth } = plan;
   let pts = got.pts.map(p => p.slice()),
@@ -741,7 +911,7 @@ export function waterGenShape(G, R, plan, got, width) {
       nx = -(b[1] - a[1]) / L,
       nz = (b[0] - a[0]) / L,
       fade = waterGenSmooth(waterGenBetween(Math.min(i - endA, N - 1 - i - endB) / 12, 0, 1)),
-      o = (mapgenNoise((i * 0.5) / 7, 3.7, ns) - 0.5) * 2 * amp * ease[i] * fade;
+      o = bend ? (mapgenNoise((i * 0.5) / 7, 3.7, ns) - 0.5) * 2 * amp * ease[i] * fade : 0;
     return [waterGenBetween(p[0] + nx * o, 0, w), waterGenBetween(p[1] + nz * o, 0, h)];
   });
   line = mapgenResample(bent, 0.5);
@@ -953,7 +1123,8 @@ export function waterGenPaint(G, river) {
   if (river.rapids.length) st.rapids = river.rapids;
   G.streams.push(st);
   for (let i = 0; i < pts.length; i += 3) mapgenOccAdd(G, pts[i][0], pts[i][1], 0.8);
-  G.river = river;
+  G.river = G.river || river;
+  (G.rivers || (G.rivers = [])).push(river);
 }
 /** a joined edge's water cells copied across its straight run in (depth 0 to WATERGEN_STRAIGHT) */
 export function waterGenSeamCells(G, seam) {
@@ -979,8 +1150,10 @@ export function waterGenSeamCells(G, seam) {
  * leaves them: the neighbour takes them from the edge strip
  */
 export function waterGenCarve(G) {
-  const river = G.river;
-  if (!river) return;
+  for (const river of G.rivers || []) waterGenCarveRiver(G, river);
+}
+/** waterGenCarve for one river (WA-9: a scene may have hand-drawn rivers beside its own) */
+export function waterGenCarveRiver(G, river) {
   const { w, h } = G,
     W = w + 1,
     { pts, wid, lev } = river;
@@ -1550,9 +1723,8 @@ export function waterGenSetPiece(G, rnd, seen) {
 export function waterGenFalls(G) {
   G.falls = [];
   const rnd = G.rng('heights', 'falls'),
-    river = G.river,
     falls = [];
-  if (river && G.stepsUsed) {
+  for (const river of G.stepsUsed ? G.rivers || [] : []) {
     const r = waterGenStepRiver(G, river);
     let seen = waterGenReach(G);
     for (const F of waterGenRiverFalls(G, river, r)) {
@@ -1582,6 +1754,7 @@ export function waterGenFalls(G) {
     const S = waterGenSetPiece(G, rnd, waterGenReach(G));
     if (S) falls.push(S);
   }
+  waterGenHandFalls(G, falls);
   G.falls = falls;
   return falls;
 }
@@ -1612,6 +1785,8 @@ export function waterGenClimbs(sc, scenery) {
   if (!sc.falls || !sc.falls.some(f => f.pool && f.h >= WATERGEN_CLIMB_MIN)) return;
   const R = mapgenReach(sc, scenery, sc.hub, { slope: true });
   for (const f of sc.falls) {
+    /* WA-9: a hand fall placed without its climb stays without */
+    if (waterGenHandClimb.get(f) === 0) continue;
     if (!f.pool || f.h < WATERGEN_CLIMB_MIN) continue;
     const { top, foot } = waterGenFallEnds(f);
     if (waterGenReachedRing(sc, R, ...top) && waterGenReachedRing(sc, R, ...foot)) f.climb = 1;
@@ -1689,18 +1864,19 @@ export function waterGenRects(w, cells, k) {
 /** the river's rapids: its water cells within its half width (and half a metre) of its line along each steep
  * stretch, less any within 2 m of a road, a bridge or a jetty */
 export function waterGenRapids(G) {
-  const R = G.river;
-  if (!R || !R.rapids || !R.rapids.length) return [];
   const { w } = G,
-    M = R.pts.length,
     cells = new Set();
-  for (const [t0, t1] of R.rapids)
-    for (let i = Math.round(t0 * (M - 1)); i <= Math.round(t1 * (M - 1)); i++) {
-      const [x, z] = R.pts[i];
-      mapgenPaintDisc(G, x, z, R.wid[i] / 2 + 0.5, q => {
-        if (G.F[q] & 4 && !(G.F[q] & 8)) cells.add(q);
-      });
-    }
+  for (const R of G.rivers || []) {
+    const M = R.pts.length;
+    for (const [t0, t1] of R.rapids || [])
+      for (let i = Math.round(t0 * (M - 1)); i <= Math.round(t1 * (M - 1)); i++) {
+        const [x, z] = R.pts[i];
+        mapgenPaintDisc(G, x, z, R.wid[i] / 2 + 0.5, q => {
+          if (G.F[q] & 4 && !(G.F[q] & 8)) cells.add(q);
+        });
+      }
+  }
+  if (!cells.size) return [];
   for (const q of [...cells]) {
     let near = false;
     mapgenPaintDisc(G, (q % w) + 0.5, Math.floor(q / w) + 0.5, 2, o => {
@@ -1787,6 +1963,8 @@ export function waterGenKinds(G) {
   }
   /* the cave's whole-map rectangle first, so lava's and the rest lie over it (the last rectangle holding a point wins) */
   G.waters = [...R.filter(r => r.k === 'cave'), ...G.waters, ...R.filter(r => r.k !== 'cave')];
+  /* WA-9: the Studio's hand-painted kinds last, so they win where they lie */
+  G.waters.push(...waterGenHand(G).waters);
 }
 /** on the finished scene (mapgen.js, last): a reed or two in a marsh or a bog hides an item (`hide`, an items.json
  * key) */
