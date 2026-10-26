@@ -63,7 +63,7 @@
   width: 100%;
   transition:
     background 0.2s,
-    transform 0.14s var(--spring);
+    transform var(--m-fast) var(--spring);
 }
 .bag-row + .bag-row {
   border-top: 1px solid rgba(46, 33, 64, 0.08);

@@ -140,7 +140,7 @@
   cursor: pointer;
   transition:
     background 0.2s,
-    transform 0.14s var(--spring);
+    transform var(--m-fast) var(--spring);
 }
 .ms-tabs button[aria-selected='true'] {
   background: linear-gradient(var(--gold-a), var(--gold-b));

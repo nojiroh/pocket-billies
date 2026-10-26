@@ -557,7 +557,7 @@
     animation-delay: 210ms;
   }
   .screen.enter .ledger > li:nth-child(n + 9) {
-    animation-delay: 240ms;
+    animation-delay: var(--m-base);
   }
   .dexpage > section {
     animation: rise 0.4s var(--out) backwards;

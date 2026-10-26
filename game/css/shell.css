@@ -309,7 +309,7 @@ body:has(.topbar) .toast {
   }
   /* toasts and modals */
   .toast {
-    animation: nwToast 0.42s var(--spring);
+    animation: nwToast var(--m-slow) var(--spring);
   }
   .toast::before {
     animation: nwFlip 0.5s ease-out 0.12s backwards;
@@ -318,7 +318,7 @@ body:has(.topbar) .toast {
     animation: fade 0.22s ease-out;
   }
   .scrim:not(.still) .sheet {
-    animation: nwSheet 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.05);
+    animation: nwSheet var(--m-slow) cubic-bezier(0.2, 0.9, 0.3, 1.05);
   }
   .scrim:not(.still) .sheet > :is(h2, .body, .btns) {
     animation: nwFadeUp 0.34s var(--out) backwards;
@@ -330,7 +330,7 @@ body:has(.topbar) .toast {
     animation-delay: 100ms;
   }
   .scrim:not(.still) .sheet > .btns {
-    animation-delay: 140ms;
+    animation-delay: var(--m-fast);
   }
   .scrim:not(.still) .sheet > h2::before {
     animation: nwSpark 0.45s var(--spring) 0.18s backwards;

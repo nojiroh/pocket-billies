@@ -225,7 +225,7 @@ section > h2,
 .screen.enter .dex,
 .screen.enter .ware,
 .screen.enter section {
-  animation: rise 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards;
+  animation: rise var(--m-slow) cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards;
   animation-delay: var(--d, 0ms);
 }
 .big {
@@ -967,7 +967,7 @@ section > h2::before,
   }
   /* staggered entrances on tab change */
   .screen.enter :is(.slot, .vit, .empty) {
-    animation: rise 0.42s var(--out) backwards;
+    animation: rise var(--m-slow) var(--out) backwards;
     animation-delay: var(--d, 0ms);
   }
   .screen.enter .fchip {
@@ -1304,7 +1304,7 @@ html[data-contrast='high'] .px {
     var(--g-in),
     0 6px 14px -6px rgba(46, 33, 64, 0.45) !important;
   transition:
-    transform 0.14s var(--spring),
+    transform var(--m-fast) var(--spring),
     box-shadow 0.2s,
     filter 0.2s;
 }

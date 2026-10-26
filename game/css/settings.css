@@ -264,7 +264,7 @@ html[data-contrast='high'] small {
   color: var(--text);
   cursor: pointer;
   box-shadow: 0 8px 16px -10px rgba(46, 33, 64, 0.5);
-  transition: transform 0.14s var(--spring);
+  transition: transform var(--m-fast) var(--spring);
 }
 .gfx-pre b {
   font: 700 15px/1.1 var(--font-voice);

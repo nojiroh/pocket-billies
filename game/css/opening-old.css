@@ -174,7 +174,7 @@ body.cs-falling #dioui {
 .cs-bars i {
   transition:
     transform 0.7s cubic-bezier(0.2, 0.8, 0.3, 1),
-    height 0.24s ease-out;
+    height var(--m-base) ease-out;
 }
 body.cs-blink .cs-bars i {
   height: 51vh;
