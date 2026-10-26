@@ -39,7 +39,7 @@ import {
 import { walkRenderer } from './walk/walk-state.js';
 import { ROCK_GLSL } from './walk/walk-shaders.js';
 import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
-import { setPropLookUniforms, windLeanAt } from './walk/prop-look.js';
+import { windLeanAt } from './walk/prop-look.js';
 import { addHitTarget } from './walk/sprites.js';
 import { lampLit, modelWindowLight } from './walk/lighting.js';
 import { BUILDING_SHADERS, buildingArt, buildingTextureGrid } from './buildings.js';
@@ -58,6 +58,7 @@ expose({
   MODEL_SHADOW_SHADERS: [() => MODEL_SHADOW_SHADERS],
   MODEL_VALUES: [() => MODEL_VALUES],
   NEUTRAL_MODEL_LOOK: [() => NEUTRAL_MODEL_LOOK],
+  PROP_MODEL_PROGRAMS: [() => PROP_MODEL_PROGRAMS],
   PROP_MODEL_SHADERS: [() => PROP_MODEL_SHADERS],
   PROP_MODEL_SHAPES: [() => PROP_MODEL_SHAPES],
   PROP_MODEL_TEXTURES: [() => PROP_MODEL_TEXTURES],
@@ -72,7 +73,6 @@ expose({
   addRawVoxels: [() => addRawVoxels, v => (addRawVoxels = v)],
   asFlatInputs: [() => asFlatInputs, v => (asFlatInputs = v)],
   decodeRawVoxels: [() => decodeRawVoxels, v => (decodeRawVoxels = v)],
-  drawLowPolyItems: [() => drawLowPolyItems, v => (drawLowPolyItems = v)],
   drawLowPolyModels: [() => drawLowPolyModels, v => (drawLowPolyModels = v)],
   drawModelInstances: [() => drawModelInstances, v => (drawModelInstances = v)],
   drawModelPart: [() => drawModelPart, v => (drawModelPart = v)],
@@ -85,7 +85,6 @@ expose({
   drawPropModelShadowsInstanced: [() => drawPropModelShadowsInstanced, v => (drawPropModelShadowsInstanced = v)],
   drawPropModels: [() => drawPropModels, v => setDrawPropModels(v)],
   drawSpinningParts: [() => drawSpinningParts, v => (drawSpinningParts = v)],
-  drawVoxItems: [() => drawVoxItems, v => (drawVoxItems = v)],
   flushPropModelMeshes: [
     () => flushPropModelMeshes,
     v => ((flushPropModelMeshes = v), provide({ flushPropModelMeshes })),
@@ -103,7 +102,6 @@ expose({
   lowPolyOn: [() => lowPolyOn, v => (lowPolyOn = v)],
   lowPolyVertexShader: [() => lowPolyVertexShader],
   meshAttribs: [() => meshAttribs, v => (meshAttribs = v)],
-  modelInstancesOn: [() => modelInstancesOn, v => (modelInstancesOn = v)],
   modelShadowInstancesReady: [() => modelShadowInstancesReady, v => (modelShadowInstancesReady = v)],
   modelShadowState: [() => modelShadowState],
   mooredBob: [() => mooredBob, v => (mooredBob = v)],
@@ -1423,26 +1421,27 @@ function lowPolyFragmentShader() {
     .replace('uniform vec3 uBP;', 'uniform vec3 uBP;uniform float uCel;' + GLASS_GLSL);
 }
 /* the models among the items, drawn after the voxel props: L is [item, mesh] */
-/* alpha 0.4: the props' shaders with the low-poly model's, for compiling ahead when the 3D view starts (walk-view-gl.js ensureWalkGl) */
+/* alpha 0.4: the props' programs, for compiling ahead when the 3D view starts (walk-view-gl.js ensureWalkGl). Phase 20
+   R4: the instanced pair (made from the plain vox and mdl texts, which are no longer compiled themselves) and the
+   shadows' voxS */
+const PROP_MODEL_PROGRAMS = {};
 export function propModelShaders() {
   if (!PROP_MODEL_SHADERS.mdl && typeof BUILDING_SHADERS !== 'undefined')
     PROP_MODEL_SHADERS.mdl = [lowPolyVertexShader(), lowPolyFragmentShader()];
-  /* phase 20 R2: the instanced pair, only once "Models in batches" is on (nothing more to compile while it's off) */
-  if (modelInstancesOn()) {
-    if (!PROP_MODEL_SHADERS.voxI) PROP_MODEL_SHADERS.voxI = voxInstancedShaders();
-    if (!PROP_MODEL_SHADERS.mdlI && PROP_MODEL_SHADERS.mdl) PROP_MODEL_SHADERS.mdlI = lowPolyInstancedShaders();
-  }
-  return PROP_MODEL_SHADERS;
+  const P = PROP_MODEL_PROGRAMS;
+  P.voxS = PROP_MODEL_SHADERS.voxS;
+  if (!P.voxI) P.voxI = voxInstancedShaders();
+  if (!P.mdlI && PROP_MODEL_SHADERS.mdl) P.mdlI = lowPolyInstancedShaders();
+  return P;
 }
-function drawLowPolyModels(C, X, L, inst) {
+function drawLowPolyModels(C, X, L) {
   if (!L.length || typeof BUILDING_SHADERS === 'undefined' || typeof buildingArt !== 'function') return;
   const gl = gpuState.gl;
-  propModelShaders();
-  ensurePrograms(PROP_MODEL_SHADERS);
+  ensurePrograms(propModelShaders());
   const A = buildingArt(),
     det = imageTexture(artImage(A.detail), { noNormal: true });
   if (!det) return;
-  const p = useWalkProgram(inst ? 'mdlI' : 'mdl', C, X);
+  const p = useWalkProgram('mdlI', C, X);
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
   gl.disable(gl.BLEND);
@@ -1452,32 +1451,7 @@ function drawLowPolyModels(C, X, L, inst) {
   gl.uniform1i(p.U.uDet, 0);
   gl.uniform2fv(p.U.uAtl, buildingTextureGrid(A));
   if (p.U.uScroll) gl.uniform2f(p.U.uScroll, 0, 0);
-  if (inst) drawModelInstances(p, 'mdl', L);
-  else drawLowPolyItems(p, L);
-}
-/* the models one at a time: each item's own uniforms, then its mesh, its extra parts and its turning parts */
-function drawLowPolyItems(p, L) {
-  const gl = gpuState.gl;
-  for (const [it, m] of L) {
-    gl.uniform1f(p.U.uFade, it.fade ?? 1);
-    gl.uniform1f(p.U.uBaseY, it.y);
-    if (p.U.uCel) gl.uniform1f(p.U.uCel, it.vox && it.vox.cel != null ? it.vox.cel : 0.75);
-    if (typeof setPropLookUniforms === 'function') setPropLookUniforms(p.U, it.lk, [it.x, it.y, it.z]);
-    setPropModelUniforms(p, it);
-    setItemSpin(p, it);
-    if (p.U.uWinK) {
-      const W = it.wins ? it.winL || (it.winL = modelWindowLight(it, walkRenderer.dark || 0)) : null;
-      gl.uniform1f(p.U.uWinK, W ? W.k : 0);
-      gl.uniform1i(p.U.uWinOn, W ? W.on : 0);
-      gl.uniform1f(p.U.uWinSeed, W ? (Math.abs(Math.sin(it.x * 12.9898 + it.z * 78.233)) * 43.7585) % 1 : 0);
-    }
-    drawPropModelMesh(m);
-    for (const q of m.more || []) drawPropModelMesh(q);
-    drawSpinningParts(p, m);
-    propModelState.drawn++;
-    propModelState.lowPoly++;
-  }
-  gl.bindVertexArray(null);
+  drawModelInstances(p, 'mdl', L);
 }
 /* alpha 0.4: a part that turns (a propeller): its own mesh, turned uSpin.w radians about the axis uSpin.xyz (a unit
    vector, up as y) through its pivot uSpinC (the model's metres, up as y) */
@@ -1822,21 +1796,6 @@ function setPropModelUniforms(p, it) {
   gl.uniform1f(U.uRot, propTurn(it) + (bo ? bo[1] : 0)); /* phase 09 batch 9: and the placement's turn */
   gl.uniform1f(U.uFlip, it.flip || 1);
 }
-/* the voxel props one at a time (L is [item, mesh]): each item's own uniforms, then its mesh and its turning parts */
-function drawVoxItems(p, L) {
-  const gl = gpuState.gl;
-  for (const [it, m] of L) {
-    gl.uniform3f(p.U.uBaseP, it.x, it.y, it.z);
-    gl.uniform1f(p.U.uFade, it.fade ?? 1);
-    gl.uniform1f(p.U.uEmit, it.glow ? it.glow : 0);
-    setPropModelUniforms(p, it);
-    gl.uniform1f(p.U.uQ, m.q || 1);
-    setItemSpin(p, it);
-    drawPropModelMesh(m);
-    drawSpinningParts(p, m);
-    propModelState.drawn++;
-  }
-}
 export function drawPropModels(C, items, X, hits, labels, PPU) {
   propModelState.drawn = 0;
   propModelState.lowPoly = 0;
@@ -1844,10 +1803,8 @@ export function drawPropModels(C, items, X, hits, labels, PPU) {
   /* R1 measure: every draw a model makes counted apart, in whichever pass draws it (engine/gpu-counters.js) */
   gpuTag('model');
   propModelGuard(() => {
-    const gl = gpuState.gl,
-      inst = modelInstancesOn();
-    if (inst) propModelShaders();
-    ensurePrograms(PROP_MODEL_SHADERS);
+    const gl = gpuState.gl;
+    ensurePrograms(propModelShaders());
     const VL = [],
       ML = [];
     for (const it of items) {
@@ -1856,31 +1813,27 @@ export function drawPropModels(C, items, X, hits, labels, PPU) {
       if (m) (m.model ? ML : VL).push([it, m]);
     }
     if (VL.length) {
-      const p = useWalkProgram(inst ? 'voxI' : 'vox', C, X);
+      const p = useWalkProgram('voxI', C, X);
       gl.enable(gl.DEPTH_TEST);
       gl.depthMask(true);
       gl.disable(gl.BLEND);
       gl.disable(gl.CULL_FACE);
-      if (inst) drawModelInstances(p, 'vox', VL);
-      else drawVoxItems(p, VL);
+      drawModelInstances(p, 'vox', VL);
     }
     gl.bindVertexArray(null);
     if (hits) for (const [it] of VL) if (!it.far) addHitTarget(it, C, hits, labels, PPU);
-    drawLowPolyModels(C, X, ML, inst);
+    drawLowPolyModels(C, X, ML);
     if (hits) for (const [it] of ML) if (!it.far) addHitTarget(it, C, hits, labels, PPU);
   });
   gpuTag(0);
 }
-/* ---------- phase 20 R2: the models instanced (Engine > Quality > "Models in batches", quality.modelInstances) ----------
+/* ---------- phase 20 R2: the models instanced (the only path since R4) ----------
    One draw per mesh part for every item with that mesh (engine/model-instances.js): each item's values, the ones the
-   one-at-a-time loops above set as uniforms, are one record in a buffer uploaded once a pass; extra parts draw over
-   the same records, turning parts too (their turn, the same for every item, replacing the item's own as it does
-   above: uPart). The shadow maps still draw one at a time (round 3's shadows lane). */
-function modelInstancesOn() {
-  return typeof engineSetting === 'function' && !!engineSetting('quality', 'modelInstances');
-}
+   plain vox and mdl programs took as uniforms, are one record in a buffer uploaded once a pass; extra parts draw over
+   the same records, turning parts too (their turn, the same for every item, replacing the item's own: uPart). The
+   one-at-a-time loops live on in tools/test/model-loops-ref.mjs as the tests' reference. */
 /* a voxel prop's or a low-poly model's values (kind 'vox' or 'mdl') into v (engine/model-instances.js
-   modelInstanceValues), exactly as drawVoxItems and drawLowPolyItems set them */
+   modelInstanceValues), exactly as the old one-at-a-time loops set them (tools/test/model-loops-ref.mjs) */
 const NEUTRAL_MODEL_LOOK = { wear: [0, 0, 0, 0], hsv: [0, 0, 0, 0], tint: [1, 1, 1, 0], mask: [0, 0] };
 function propModelInstanceValues(it, kind, v) {
   const bo = mooredBob(it),
@@ -2015,7 +1968,7 @@ function drawPropModelShadows(SH, items) {
   gpuTag('model');
   propModelGuard(() => {
     const gl = gpuState.gl;
-    ensurePrograms(PROP_MODEL_SHADERS);
+    ensurePrograms(propModelShaders());
     if (modelShadowInstancesReady()) {
       drawPropModelShadowsInstanced(SH, items);
       return;

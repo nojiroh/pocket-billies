@@ -78,8 +78,6 @@ const GRAPHICS_TEST_HIDDEN = [
      the scene (8 is the phone limit stage D6 may take) */
   ['quality.stableLights', 'Steady lamps', { values: [false, true], alone: true }],
   ['quality.lights', 'Lamps lit at once', { values: [8, 16], alone: true }],
-  /* phase 20 R2: the models drawn one draw per mesh; the same look, so left out of "everything lowest / highest" */
-  ['quality.modelInstances', 'Models in batches', { values: [false, true], alone: true }],
   /* phase 20 R2 (pixels): each on its own, out of "everything lowest / highest" (Phone pixel budget is not here: the
      test pins resolution 1, under the phone's budget either way; the diagnostics' Renderer baseline measures it) */
   ['quality.skyLast', 'Sky last', { values: [false, true], alone: true }],
@@ -122,14 +120,7 @@ const GRAPHICS_TEST_STATIONS = [
     id: 'lamps',
     name: 'Lamp square',
     time: 22,
-    dials: [
-      'color.bloom',
-      'lights.brightness',
-      'quality.stableLights',
-      'quality.lights',
-      'quality.modelInstances',
-      'quality.shadowInstances',
-    ],
+    dials: ['color.bloom', 'lights.brightness', 'quality.stableLights', 'quality.lights', 'quality.shadowInstances'],
   },
   {
     id: 'meadow',
@@ -143,7 +134,6 @@ const GRAPHICS_TEST_STATIONS = [
       'lens.blur',
       'world.farProps',
       'quality.stableLights',
-      'quality.modelInstances',
       'quality.spriteInstances',
       'quality.shadowInstances',
       'quality.modelShadowCache',

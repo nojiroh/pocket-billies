@@ -97,7 +97,9 @@ function setup(on) {
   const gl = namingGL();
   gpuState.gl = gl;
   // every model program there already (nothing compiles on a stand-in)
-  gpuState.P = Object.fromEntries(Object.keys(G.PROP_MODEL_SHADERS).map(k => [k, prog(k, NAMES)]));
+  gpuState.P = Object.fromEntries(
+    Object.keys({ ...G.PROP_MODEL_SHADERS, ...G.propModelShaders() }).map(k => [k, prog(k, NAMES)])
+  );
   gpuState.P.voxSI = prog('voxSI', NAMES);
   G.propModelState.fail = 0;
   walkView.t = 98765;
