@@ -19,7 +19,7 @@ import { placedTurn } from '../logic/prop-turn.js';
 import { hexToRgb } from '../art.js';
 import { EFFECT_FRAMES, artImage, walkData, walkView } from '../walk-view.js';
 import { engineContext, engineSetting } from '../engine/settings.js';
-import { bindQuad, gpuState, imageTexture, windGustAt } from '../engine/webgl.js';
+import { LIGHT_GLSL, bindQuad, ensurePrograms, gpuState, imageTexture, windGustAt } from '../engine/webgl.js';
 import { environment, environmentWindowLit } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
@@ -28,12 +28,113 @@ import { drawRoomEffects, roomSkyLight, windowLightShare } from './rooms.js';
 import { waterAt } from './water.js';
 import { lampLit } from './lighting.js';
 import { drawFootprints, drawFountainEffects, drawLifeEffects, drawWeather } from './fountains-weather.js';
-expose({ effectsPass: [() => effectsPass, v => setEffectsPass(v)] });
+expose({
+  WEATHER_FLOATS: [() => WEATHER_FLOATS],
+  WEATHER_FX_SHADERS: [() => WEATHER_FX_SHADERS],
+  effectsPass: [() => effectsPass, v => setEffectsPass(v)],
+  weatherBatch: [() => weatherBatch],
+});
 export function setEffectsPass(v) {
   effectsPass = v; // eslint-disable-line no-func-assign
   provide({ effectsPass });
 }
 /* to-module: end */
+/* phase 20 R2 (pixels): the weather's quads (rain, snow, ash and their splashes, one picture) in one draw
+   (quality.rainBatch): the fx program's maths, with each quad's place, size, frame, colour and up axis per instance,
+   drawn in the same order */
+export const WEATHER_FX_SHADERS = {
+  fxW: [
+    `#version 300 es
+precision highp float;in vec2 aC;layout(location=1) in vec3 iP;layout(location=2) in vec2 iS;layout(location=3) in vec4 iUV;layout(location=4) in vec4 iCol;layout(location=5) in vec3 iUp;
+uniform mat4 uVP;uniform vec3 uRight;out vec2 vUV;out vec3 vW;out vec4 vCol;
+void main(){vec2 c=aC-.5;vec3 p=iP+uRight*c.x*iS.x+iUp*(-c.y)*iS.y;vW=p;vUV=vec2(iUV.x+aC.x*iUV.z,iUV.y+aC.y*iUV.w);vCol=iCol;gl_Position=uVP*vec4(p,1.);}`,
+    `#version 300 es
+precision highp float;in vec2 vUV;in vec3 vW;in vec4 vCol;out vec4 o;uniform sampler2D uTex;uniform float uLitFx;${LIGHT_GLSL}
+void main(){vec4 c=texture(uTex,vUV)*vCol;if(c.a<.02)discard;if(uLitFx>.5)c.rgb*=mix(uAmbTop,vec3(1.),.5)+uSunCol*.4;c.rgb=fogit(c.rgb,vW);o=c;}`,
+  ],
+};
+const WEATHER_FLOATS = 16;
+const weatherBatch = {
+  n: 0,
+  d: new Float32Array(WEATHER_FLOATS * 256),
+  T: null,
+  m: null,
+  C: null,
+  X: null,
+  R: null,
+  /* one quad, as the effects pass's quad() takes it, and the up axis it would have set */
+  put(fr, x, y, z, sw, sh, a, col, up) {
+    if ((this.n + 1) * WEATHER_FLOATS > this.d.length) {
+      const d = new Float32Array(this.d.length * 2);
+      d.set(this.d);
+      this.d = d;
+    }
+    const d = this.d,
+      o = this.n++ * WEATHER_FLOATS,
+      m = this.m,
+      w = this.T.w;
+    d[o] = x;
+    d[o + 1] = y + worldCurveDrop(x, z);
+    d[o + 2] = z;
+    d[o + 3] = sw;
+    d[o + 4] = sh;
+    d[o + 5] = ((fr % m[2]) * m[0]) / w;
+    d[o + 6] = 0;
+    d[o + 7] = m[0] / w;
+    d[o + 8] = 1;
+    d[o + 9] = col ? col[0] : 1;
+    d[o + 10] = col ? col[1] : 1;
+    d[o + 11] = col ? col[2] : 1;
+    d[o + 12] = a;
+    d[o + 13] = up[0];
+    d[o + 14] = up[1];
+    d[o + 15] = up[2];
+  },
+  /* the quads put so far in one instanced draw; the fx program is in use again after */
+  flush() {
+    const n = this.n;
+    this.n = 0;
+    if (!n) return;
+    const gl = gpuState.gl;
+    ensurePrograms(WEATHER_FX_SHADERS);
+    const p = useWalkProgram('fxW', this.C, this.X);
+    if (!p.wx) {
+      /* made with the program, so a new context (initWebgl empties gpuState.P) makes them again */
+      const vao = gl.createVertexArray(),
+        buf = gl.createBuffer(),
+        S = WEATHER_FLOATS * 4;
+      gl.bindVertexArray(vao);
+      gl.bindBuffer(gl.ARRAY_BUFFER, gpuState.quad);
+      gl.enableVertexAttribArray(0);
+      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      [
+        [1, 3, 0],
+        [2, 2, 3],
+        [3, 4, 5],
+        [4, 4, 9],
+        [5, 3, 13],
+      ].forEach(([l, k, o]) => {
+        gl.enableVertexAttribArray(l);
+        gl.vertexAttribPointer(l, k, gl.FLOAT, false, S, o * 4);
+        gl.vertexAttribDivisor(l, 1);
+      });
+      gl.bindVertexArray(null);
+      p.wx = { vao, buf };
+    }
+    gl.uniform3fv(p.U.uRight, this.R);
+    gl.uniform1i(p.U.uTex, 0);
+    gl.uniform1f(p.U.uLitFx, 1);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.T.t);
+    gl.bindBuffer(gl.ARRAY_BUFFER, p.wx.buf);
+    gl.bufferData(gl.ARRAY_BUFFER, this.d.subarray(0, n * WEATHER_FLOATS), gl.DYNAMIC_DRAW);
+    gl.bindVertexArray(p.wx.vao);
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, n);
+    gl.useProgram(gpuState.P.fx.p);
+    bindQuad();
+  },
+};
 export function effectsPass(C, items, X, dark, t, dt) {
   const gl = gpuState.gl,
     p = useWalkProgram('fx', C, X),
@@ -70,6 +171,19 @@ export function effectsPass(C, items, X, dark, t, dt) {
       gl.uniform1f(U.uGlow, 0);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
+  /* phase 20 R2: the weather's batch of picture k (null until its picture is loaded) */
+  quad.batch = k => {
+    const T = fxT(k);
+    if (!T) return null;
+    const B = weatherBatch;
+    B.n = 0;
+    B.T = T;
+    B.m = EFFECT_FRAMES[k];
+    B.C = C;
+    B.X = X;
+    B.R = R;
+    return B;
+  };
   const glows = [];
   walkRenderer.fires = [];
   const RR = sc.roomRect,

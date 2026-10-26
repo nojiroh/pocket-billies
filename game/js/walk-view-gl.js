@@ -114,11 +114,12 @@ import { mapSun, walkLightContext } from './walk/lighting.js';
 import { lampShadowMaps, shadowPass } from './walk/shadows.js';
 import { drawGrass, drawGround } from './walk/ground-draw.js';
 import { gatherFountainBasins } from './walk/fountains-weather.js';
-import { effectsPass } from './walk/effects.js';
+import { WEATHER_FX_SHADERS, effectsPass } from './walk/effects.js';
 import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
 expose({
   GROUND_SLICE_MS: [() => GROUND_SLICE_MS],
+  PHONE: [() => PHONE],
   baseStopWalkView: [() => baseStopWalkView],
   canvasForContext: [() => canvasForContext, v => (canvasForContext = v)],
   drawWalkFrame: [() => drawWalkFrame, v => (drawWalkFrame = v)],
@@ -129,6 +130,7 @@ expose({
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
+  phoneStarted: [() => phoneStarted, v => (phoneStarted = v)],
   screenToGround2d: [() => screenToGround2d],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
   worldToScreen2d: [() => worldToScreen2d],
@@ -243,6 +245,9 @@ export function mountWalkView(cv, id, opt = {}) {
    2 s on a phone, 3 s on a laptop and 12 s on an iPad. Now the page keeps answering while it is built, and the first
    frame only swaps it in (swapMapCache). A room's floor is small and is built as before; so is a view whose job is
    dropped (it failed), or one still not ready after 30 s. */
+/* phase 20 R2 (D4): a phone, as the automatic quality has it (walk/quality-cull.js); the iPad is not one */
+const PHONE = typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent);
+let phoneStarted = false;
 const GROUND_SLICE_MS = 10; /* an urgent job gets twice this (groundPrepWork) */
 function groundBuiltBeforeShow(id, sc) {
   if (!walkRenderer.on || !walkView.ground || sc.groundOf || sc.roomScene) return Promise.resolve();
@@ -306,6 +311,8 @@ export function ensureWalkGl(cv) {
       typeof WORLD_BOWL_SHADERS !== 'undefined' && WORLD_BOWL_SHADERS,
       /* phase 20 E6: the instanced pictures' program, while Engine > Quality "Pictures in batches" is on */
       engineSetting('quality', 'spriteInstances') && SPRITE_INSTANCE_SHADERS,
+      /* phase 20 R2: the weather in one draw, while Engine > Quality "Rain in one go" is on */
+      engineSetting('quality', 'rainBatch') && WEATHER_FX_SHADERS,
     ])
       if (d)
         precompilePrograms(
@@ -446,8 +453,15 @@ function drawWalkFrame(ts, dtm) {
   const cssW = cv.clientWidth,
     cssH = cv.clientHeight;
   if (!cssW || !cssH) return;
+  /* phase 20 R2 (D4): with quality.phonePixels a phone (Android, iPhone) draws at most 1.2 million pixels (1.6
+     elsewhere), and its automatic resolution starts a step lower (0.9; it climbs back when frames have room) */
+  const phoneK = PHONE && !!engineSetting('quality', 'phonePixels');
+  if (phoneK && !phoneStarted) {
+    phoneStarted = true;
+    if (walkView.R >= 1) walkView.R = 0.9;
+  }
   const R0 = Math.min(devicePixelRatio || 1, 1.75) * engineSetting('quality', 'resolution'),
-    R = R0 * Math.min(1, Math.sqrt(1.6e6 / (cssW * cssH * R0 * R0))) * walkView.R,
+    R = R0 * Math.min(1, Math.sqrt((phoneK ? 1.2e6 : 1.6e6) / (cssW * cssH * R0 * R0))) * walkView.R,
     rw = Math.max(64, Math.min(2400, Math.round(cssW * R))),
     rh = Math.max(64, Math.round((cssH * rw) / cssW));
   if (cv.width !== rw || cv.height !== rh) {
@@ -568,8 +582,14 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   walkRenderer.X = X;
   if (dark > 0.3 && !BT && shadow) lampShadowMaps(items, X, dark);
   gpuPass('reflection');
-  if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && gpuState.fb.refl))
+  if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && gpuState.fb.refl)) {
     reflectionPass(items, C, rw, rh, X);
+    /* phase 20 R2 (D3): only the reflection's colour is read (by the water), so its depth needn't be kept */
+    if (engineSetting('quality', 'invalidate') && gpuState.fb.refl) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, gpuState.fb.refl.f);
+      gl.invalidateFramebuffer(gl.FRAMEBUFFER, [gl.DEPTH_ATTACHMENT]);
+    }
+  }
   gpuPass('sky');
   const S = renderTarget('scene', rw, rh, { depth: true, hdr: true });
   gl.bindFramebuffer(gl.FRAMEBUFFER, S.f);
@@ -577,24 +597,49 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   gl.clearColor(0, 0, 0, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   const D = walkRenderer.dbg || {};
-  drawSky(C, sun, 0);
+  /* phase 20 R2 (D1): with quality.skyLast the sky fills only what the opaque things left at the cleared depth (1.0),
+     drawn after them and before anything blended (building fronts, water, effects); a room's front is blended over
+     the ground, so a frame that shows one keeps the sky first. D5: with quality.solidFirst the models, buildings and
+     structures go before the sprites, so leaves behind a trunk or a wall fail the depth test */
+  const skyLast =
+      !!engineSetting('quality', 'skyLast') && !(sc.room && (engineSetting('lights', 'roomLight') ?? true) !== false),
+    solidFirst = !!engineSetting('quality', 'solidFirst'),
+    bpart = skyLast || solidFirst ? 'solid' : undefined;
+  const drawSolids = () => {
+    gpuPass('models');
+    if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
+    if (!solidFirst) {
+      gpuPass('box');
+      drawBoxFaces(C, items, X);
+    }
+    gpuPass('buildings');
+    if (typeof drawBuildings === 'function') drawBuildings(C, X, items, walkRenderer.bfade, bpart);
+    gpuPass('structures');
+    if (typeof drawStructures === 'function') drawStructures(C, X);
+  };
+  if (!skyLast) drawSky(C, sun);
   gpuPass('ground');
   drawGround(C, X);
   drawRoomFront(C, X);
   gpuPass('grass');
   if (walkRenderer.grass && !D.noGrass) drawGrass(C, X);
+  if (solidFirst) drawSolids();
   gpuPass('sprites');
   drawSprites(C, items, X, hits, labels, PPU);
   gpuPass('solid');
   if (typeof drawSolidProps === 'function') drawSolidProps(C, items, X, hits, labels, PPU);
-  gpuPass('models');
-  if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
-  gpuPass('box');
-  drawBoxFaces(C, items, X);
-  gpuPass('buildings');
-  if (typeof drawBuildings === 'function') drawBuildings(C, X, items, walkRenderer.bfade);
-  gpuPass('structures');
-  if (typeof drawStructures === 'function') drawStructures(C, X);
+  if (solidFirst) {
+    gpuPass('box');
+    drawBoxFaces(C, items, X);
+  } else drawSolids();
+  if (skyLast) {
+    gpuPass('sky');
+    drawSky(C, sun, true);
+  }
+  if (bpart && typeof drawBuildings === 'function') {
+    gpuPass('buildings');
+    drawBuildings(C, X, items, walkRenderer.bfade, 'fronts');
+  }
   gpuPass('silhouette');
   drawPlayerSilhouette(C, items, X);
   gpuPass('water');
@@ -670,6 +715,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       ivp: C.ivp,
       noVol: QE >= 3 || (!!sc.indoor && !dark),
       volDens: sc.indoor ? 0.5 : 1 + (engineContext.env ? environment.fog * 1.5 + environment.rain * 0.4 : 0),
+      airLamps: PHONE && engineSetting('quality', 'phoneLamps') ? 4 : 6,
     });
   /* CAM-3: what the blur did this frame, for the debug log, the Studio's blur guides and the checks (no names) */
   walkRenderer.lensInfo = {
