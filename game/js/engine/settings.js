@@ -289,7 +289,7 @@ export const ENGINE_DEFAULTS = {
     /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each) */
     spriteInstances: false,
     /* phase 20 R2: the solid models (voxel props, low-poly models) drawn one draw per mesh for every item with it */
-    modelInstances: false,
+    modelInstances: true,
     /* phase 20 R3 (shadows): the shadow maps' pictures one draw per picture, their models one draw per mesh */
     shadowInstances: false,
     /* phase 20 R3 (F8): models whose mesh holds still (trees whose leaves sway too) in the far shadow map's cache, the
