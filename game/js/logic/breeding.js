@@ -23,7 +23,7 @@ import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
 import { COATS, GENES, MOVES, STAT_IDS } from '../game-data.js';
 import { hashString, rngFrom } from './rng.js';
-import { graftStability } from './genes.js';
+import { graftFit, graftStability } from './genes.js';
 import { isRobot, speciesOf } from './fighters.js';
 import {
   billyGraft,

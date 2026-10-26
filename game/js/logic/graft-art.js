@@ -52,8 +52,6 @@ expose({
   // @ts-expect-error -- replaced on purpose
   graftDonors: [() => graftDonors, v => (graftDonors = v)],
   // @ts-expect-error -- replaced on purpose
-  graftFit: [() => graftFit, v => (graftFit = v)],
-  // @ts-expect-error -- replaced on purpose
   graftForm: [() => graftForm, v => (graftForm = v)],
   // @ts-expect-error -- replaced on purpose
   graftGroupPic: [() => graftGroupPic, v => (graftGroupPic = v)],
@@ -71,6 +69,8 @@ expose({
   graftParse: [() => graftParse, v => (graftParse = v)],
   // @ts-expect-error -- replaced on purpose
   graftPic: [() => graftPic, v => (graftPic = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftPicFit: [() => graftPicFit, v => (graftPicFit = v)],
   // @ts-expect-error -- replaced on purpose
   graftPlaceholder: [() => graftPlaceholder, v => (graftPlaceholder = v)],
   // @ts-expect-error -- replaced on purpose
@@ -294,7 +294,7 @@ export const graftTurn = g => ({ pic: kitTurnRight(g.pic), pv: [g.pic.height - g
  * pivot on the bone's joint; when either is held at its middle, turned to lie along it, inside its box and held where
  * it holds its own; at most 1.5 times its longest side, then scaled by `k`
  * @param {GraftPic} d @param {GraftPic} r @param {number} k @returns {GraftPic} */
-export function graftFit(d, r, k = 1) {
+export function graftPicFit(d, r, k = 1) {
   const [ax, ay] = graftAim(r),
     [bx, by] = graftAim(d),
     aimed = (ax || ay) && (bx || by);
@@ -351,7 +351,7 @@ export function graftPlaceholderAt(bones, D, recv, donors, mine, theirs, k) {
         const d = theirs[slot][i % theirs[slot].length],
           fit = (/** @type {GraftPic | null} */ dp, /** @type {string} */ n) => {
             const rp = graftPic(recv, view, n);
-            return dp && rp ? graftFit(dp, rp, k) : null;
+            return dp && rp ? graftPicFit(dp, rp, k) : null;
           };
         if (g.length === 1) v[g[0]] = fit(graftGroupPic(donor, view, d), g[0]);
         else g.forEach((n, j) => (v[n] = fit(graftPic(donor, view, d[Math.floor((j * d.length) / g.length)]), n)));
