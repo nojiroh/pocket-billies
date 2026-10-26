@@ -1031,7 +1031,7 @@ export function dataResidents(D, valid = () => true) {
 }
 // RL-12b: events.json: the schema; every intro reads as lines only, every option's need as a condition and its `then`
 // as a script; what they name is there (items, pyramids, loot tables, classes, types, statuses, Perks, biomes, people)
-// and the event commands' arguments make sense
+// and the event commands' arguments make sense; RS-2: `invite` only in a resident event, and every one has one
 /** RL-12b: events.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataEvents(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -1077,6 +1077,9 @@ export function dataEvents(D, valid = () => true) {
     for (const id of [...(N.type || []), ...(N.badge || [])])
       if (types.size && !types.has(id)) problem(`${where}: no type "${id}" (types.json)`);
   };
+  /* RS-2: the event being checked is a resident one, and its invites so far */
+  let inviting = false,
+    invites = 0;
   /** @param {string} where @param {any} n a command */
   const command = (where, n) => {
     const [a, b] = n.args,
@@ -1121,6 +1124,10 @@ export function dataEvents(D, valid = () => true) {
       case 'money':
         if (!(Number.isInteger(num(a)) && num(a) !== 0)) problem(`${at}: a whole number of Moneys, not 0`);
         return;
+      case 'invite':
+        if (!inviting) problem(`${at}: only a resident event (resident: true) invites`);
+        invites++;
+        return;
       case 'reward':
         if (a != null && !['item', 'tutor', 'candy', 'evo'].includes(a))
           problem(`${at}: a kind (item, tutor, candy, evo)`);
@@ -1153,6 +1160,8 @@ export function dataEvents(D, valid = () => true) {
         parseScript(ev.intro),
         n => n.k !== 'say' && problem(`events.${k}.intro: lines only, no "${n.name || n.k}"`)
       );
+    inviting = !!ev.resident;
+    invites = 0;
     ev.options.forEach((/** @type {any} */ o, i) => {
       const where = `events.${k}.options[${i}]`;
       if (o.need) {
@@ -1170,6 +1179,7 @@ export function dataEvents(D, valid = () => true) {
         else if (n.k === 'if') n.clauses.forEach((/** @type {any} */ c) => c.cond && names(`${where}.then`, c.cond));
       });
     });
+    if (inviting && !invites) problem(`events.${k}: a resident event with no option that invites ("invite")`);
   }
   return out;
 }

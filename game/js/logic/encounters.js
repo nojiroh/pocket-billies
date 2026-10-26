@@ -73,25 +73,32 @@ export function encRng(run) {
 }
 
 /** the events a place may hold: weight above 0, its biome's (or every biome's), not played this run unless `repeat`,
- * by id @param {Run} run @param {EventsData} E @param {string | undefined} biome */
-export function eventPool(run, E, biome) {
+ * by id; RS-2: a `resident` event only when `meet` (the run's resident can be met at an event, logic/residents.js)
+ * @param {Run} run @param {EventsData} E @param {string | undefined} biome @param {boolean} [meet] */
+export function eventPool(run, E, biome, meet = false) {
   const seen = new Set(run.enc ? run.enc.seen : []);
   return Object.keys(E.events)
     .filter(id => {
       const ev = E.events[id];
-      return ev.weight > 0 && (!ev.biomes || !biome || ev.biomes.includes(biome)) && (ev.repeat || !seen.has(id));
+      return (
+        ev.weight > 0 &&
+        (!ev.biomes || !biome || ev.biomes.includes(biome)) &&
+        (ev.repeat || !seen.has(id)) &&
+        (!ev.resident || meet)
+      );
     })
     .sort();
 }
 
-/** the event at a map node: the one kept, else drawn now from the node's stream and kept ('' when none is left)
- * @param {Run} run @param {number} i the map node @param {EventsData} E */
-export function eventAt(run, i, E) {
+/** the event at a map node: the one kept, else drawn now from the node's stream and kept ('' when none is left);
+ * `meet`: RS-2, the run's resident can be met at an event (eventPool)
+ * @param {Run} run @param {number} i the map node @param {EventsData} E @param {boolean} [meet] */
+export function eventAt(run, i, E, meet = false) {
   const e = encOf(run),
     k = String(i);
   if (Object.hasOwn(e.node, k)) return e.node[k];
   const node = run.map && run.map.nodes[i],
-    pool = eventPool(run, E, (node && node.biome) || undefined),
+    pool = eventPool(run, E, (node && node.biome) || undefined, meet),
     id = pool.length
       ? rngFrom(runNodeSeed(run.seed, i), 'event').pick(Object.fromEntries(pool.map(p => [p, E.events[p].weight])))
       : '';

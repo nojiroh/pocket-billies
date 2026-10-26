@@ -1959,6 +1959,8 @@ export interface RunEvent {
   repeat?: boolean;
   biomes?: DataId[];
   options: RunEventOption[];
+  /** residents track RS-2: only while the run's resident can be met at an event; `invite` invites them */
+  resident?: true;
 }
 export interface RunEventOption {
   text: string;

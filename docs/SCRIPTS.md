@@ -131,7 +131,7 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 | `go place [entrance]` | a checkpoint; from S2 |
 | `actor`, `act`, `caption`, `blink`, `screen`, `effect`, `hide`, `sound`, `walk who spot`, `camera shot`, `wait who` | a cutscene's: docs/CUTSCENES.md (only in a cutscene) |
 | `dressing-room`, `throw-coins`, `pick-starter`, `staged-fight`, `rival-battle`, `fall` | the opening's: docs/CUTSCENES.md |
-| `perk [rarity or id]`, `money n`, `hurt share`, `heal [share]`, `status id`, `fx n kind key=value...`, `wager percent`, `loot table [n]`, `level n`, `recall [up]`, `foe class [up]`, `wild [up]`, `reward [kind] [n]` | an event's (events.json, on a run; RL-12b): below |
+| `perk [rarity or id]`, `money n`, `hurt share`, `heal [share]`, `status id`, `fx n kind key=value...`, `wager percent`, `loot table [n]`, `level n`, `recall [up]`, `foe class [up]`, `wild [up]`, `reward [kind] [n]`, `invite` | an event's (events.json, on a run; RL-12b): below |
 
 ### Event commands (RL-12b)
 
@@ -154,6 +154,7 @@ plays the same.
 | `foe hustle_coach 1` | a battle with a trainer of that class (events.json `classes`), 1 level over the place; lost, the run ends |
 | `wild 2` | a wild battle with a Billie of the region, 2 levels over the place |
 | `reward`, `reward tutor 2` | a reward pick (rewards.json): of every kind, or of one (item, candy, evo, tutor), n cards |
+| `invite` | RS-2: the run's resident is invited to Copperleaf (only in an event with `resident: true`, drawn only while they can be met at an event); they move in when the run ends |
 
 Speakers in an event are one word (`Clerk: ...`): the parser reads a single word before the colon as the speaker.
 

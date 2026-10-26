@@ -155,6 +155,12 @@ export const SCRIPT_COMMANDS = {
     checkpoint: true,
     about: 'a wild battle with a Billie of the region, n levels up',
   },
+  invite: {
+    args: [],
+    group: 'event',
+    about:
+      'RS-2: the run’s resident (an event with resident: true) is invited to Copperleaf, and moves in when the run ends',
+  },
   reward: {
     args: ['kind?', 'n?'],
     group: 'event',

@@ -425,6 +425,32 @@
     {"text":"Leave","then":["The drone follows you for a bit, then gives up."]}
    ],
    "weight": 1
+  },
+  "stranded_cart": {
+   "title": "Stranded Cart",
+   "intro": [
+    "A cart sits in the ditch with one wheel off. Its owner sits on a crate beside it, reading a map of somewhere nicer.",
+    "Traveller: I was heading nowhere in particular. Now I’m not even heading there."
+   ],
+   "options": [
+    {
+     "text": "Let your Ground Billie dig it out",
+     "need": "type:Ground",
+     "then": [
+      "Your Ground Billie digs the wheel free and props the cart back up. It looks very pleased with itself.",
+      "Traveller: Well! You’d make good neighbours. Got room where you live?",
+      "invite"
+     ]
+    },
+    {
+     "text": "Pay for a new wheel",
+     "cost": 150,
+     "then": ["Traveller: A wheel! A round one! I owe you. Where do you live? I’ll pay you back in kind.","invite"]
+    },
+    {"text":"Leave","then":["Traveller: I’ll wait for the ditch to get bored of me."]}
+   ],
+   "weight": 2,
+   "resident": true
   }
  }
 }
