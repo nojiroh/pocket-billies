@@ -294,3 +294,38 @@ the main-road pathfinder and the four mountain route types.
 - Corrections: the hop arc was already in (walk-view.js `updatePlayerHeight`); `run.mapgenV` is stored but never
   compared, so a run already going simply remakes its scenes with the new generator (no "left" path for a version
   bump).
+
+## TR-4 as built (2026-10-26, branch `ccr-6e23f760-mdbx5x`)
+Every look change is behind its own Engine > World switch, **all off by default** (phase 20's rule), so the game looks
+as before until the owner turns them on after a phone check. The debug menu has the three as session toggles.
+- **Owner's decisions (this session):** grow the wall atlas to 4 x 4 with four rock faces; strata as shader tints from
+  biome data; snow lines tundra 4 m, ridge 11 m, meadow/thicket/lake/autumn 15 m, none elsewhere.
+- **Biome data:** `biomes.json` `cliff: { mat, strata: [3 colours], band, snowLine }` per biome (schema in
+  `schema/biomes.schema.json`). Read when a scene is drawn (`walk/heights.js` `biomeCliff`: the scene's `biome`, or a
+  seamless view's base place's), **not copied by mapgen**: no mapgen output change, no `MAPGEN_VERSION` bump, no
+  frozen hash remade. Hand-made maps (Copperleaf, legacy) have no biome and keep today's look.
+- **Biome cliffs** (`world.cliffFaces`): step walls of material 0 take the biome's `mat` (`defaultWallMaterial`);
+  natural-rock walls (rock, sandstone, cave rock, mossy rock, slate, the four new faces) get strata bands of the
+  biome's three colours, edges wobbling on the pixel grid; steep smooth land samples the same atlas cell at 32 px/m in
+  hard steps (was the `r` ground tile at 0.9 a metre, about 29 px/m), with its steepness measured from the surface
+  itself (screen-space derivatives), since the massif's natural edges carry smooth-land normals; the existing turf
+  overhang on wall tops reaches the new natural faces.
+- **Snow line** (`world.snowLine`): snow on level ground above the biome's line (`uSnowL`), a ragged edge 1.5 m deep,
+  three hard tones on the pixel grid; steep rock stays bare. Winter snow (`snowOnF`) is unchanged and adds on top.
+  Heights are the scene's own metres (a run's edges are pinned at 0).
+- **Scree and turf edges** (`world.cliffEdges`, painted, `walk-view.js` `paintGroundSteps` and `cliffEdgeLook`): below a
+  natural face 0.7 m or taller, a ragged band 0.5-1.5 m deep (deeper under taller faces) of the biome's `ground.rock`
+  pixels, thinning out from the foot, never on paving or water; on grassy tops a dark turf edge with tufts instead of
+  the light lip. The look is part of the ground's key and goes to the helper thread with the scene (`sc.ce`). Cost in
+  Node: within noise on a 16 m square at 32 px/m.
+- **Corrections to the facts above:** no snow line existed anywhere; the paint worker got no heights and no biome (it
+  needs neither now: scree reads the step grid it already gets); the wall atlas was full at 12 cells (the shader
+  clamped to 11); mapgen sets no `cliff`, `cliffMat` or `wallCol`; the turf overhang on natural wall tops already
+  existed (walk-shaders.js, `m<4||m==9`). Most of a massif's look is its painted rock ground (`ground.rock`) on the
+  shelves; its faces are step walls.
+- **Not done:** a Graphics test station (its map, `test_graphics`, has no cliffs); strata per biome painted into the
+  art (decided against: tints instead); the grass lip as a separate overhang in the shader (the existing one serves).
+- Tests: `tools/test/terrain-look.test.mjs` (the atlas's first three rows frozen by hash, the cliff blocks and snow
+  lines, the switch gating, the uniforms sent, scree and turf on a 1.2 m step with nothing else changed). Pictures:
+  `python3 tools/look-terrain.py` (validation/terrain-look/, the mountains fixture, each switch on in turn).
+

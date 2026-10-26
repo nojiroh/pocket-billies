@@ -2,6 +2,29 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Terrain track TR-4: the look by height and steepness - 2026-10-26
+Branch `ccr-6e23f760-mdbx5x` (this cloud session's own; BRANCHES.md would call it `track/terrain`, which doesn't exist
+yet). Started from main da51c766. Tag to suggest: `tr-4-done` (the owner pushes tags). Details: docs/phases/terrain-track.md,
+"TR-4 as built". The owner asked how to improve the terrain textures; the review found mountains showing the top-down
+rock ground tile on every steep slope (about 29 px/m, the same in every biome) and no snow by height.
+- Changed: the wall atlas `walls.png` 4 x 3 -> 4 x 4 (columnar basalt, limestone, crystal-veined rock, speckled granite;
+  the first three rows unchanged, checked by hash; `tools/build-walls.py --extend`); 16 wall materials in the shader,
+  `WALL_MATERIALS`/`WALL_COLORS` and the Studio's wall picker; a `cliff` block per biome in `biomes.json` (face, three
+  strata colours, band, snow line). **Three Engine > World switches, all off**: Biome cliffs (`cliffFaces`), Snow line
+  (`snowLine`), Scree and turf edges (`cliffEdges`). The debug menu toggles them for a session (beside "Lose the GPU
+  context"); a mountains run (Runs, "Mountains and ledges") shows them best.
+- **Risky:** strata colours and snow tones are judged only from headless low-graphics pictures (`tools/look-terrain.py`);
+  steepness from screen-space derivatives can flicker along triangle edges at a distance; the steep-land rock now
+  changes in three hard steps (it faded softly). A view across two places takes its base place's biome for the whole
+  view. Nothing changes with the switches off (unit test: no painted pixel differs; the smoke check's pictures pass).
+- Verified: lint, typecheck, format, check:modules, check:data, unit tests (1309 pass, `terrain-look.test.mjs` new),
+  the smoke check 6 of 6 (35 shaders build), headless pictures of the mountains fixture with each switch (biome, strata
+  on the walls, the snow line moving with the data, scree at a cliff foot); the scree pass's cost in Node is within
+  noise.
+- Not done: a Graphics test station (its map has no cliffs).
+- Next: the owner on the phone: a mountains run, the three toggles in the debug menu, a debug log; then one commit per
+  switch to turn on what stays, and the colours tuned in `biomes.json`. After that TR-2c part 2 or TR-5.
+
 ### HD-2D audit fixes and smart light shafts (one session, not a phase) - 2026-10-26
 Branch `ccr-6f3a4696-vl6nkg` (this session's own: a cloud session pushes only there; BRANCHES.md would call it
 `art/hd2d-fixes`). Started from main b87b818d (phase 20 R2-R3 merged). The owner asked for an audit of the HD-2D
