@@ -16,6 +16,7 @@
    straight line, so they give the zoom before CAM-4b exactly. A pinch let go near a stop eases to it. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   STOP_VALUES: [() => STOP_VALUES],
@@ -42,13 +43,14 @@ expose({
   // @ts-expect-error -- replaced on purpose
   stopsOrDefault: [() => stopsOrDefault, v => (stopsOrDefault = v)],
   // @ts-expect-error -- replaced on purpose
-  stopsProblems: [() => stopsProblems, v => (stopsProblems = v)],
+  stopsProblems: [() => stopsProblems, v => ((stopsProblems = v), provide({ stopsProblems }))],
   // @ts-expect-error -- replaced on purpose
   zoomBand: [() => zoomBand, v => (zoomBand = v)],
   // @ts-expect-error -- replaced on purpose
   zoomEase: [() => zoomEase, v => (zoomEase = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ stopsProblems });
 /* to-module: end */
 /**
  * CAM-4a: the zoom eased toward its target in log space, exact at any frame rate: after `smooth` seconds it has gone
@@ -132,6 +134,7 @@ export const ZOOM_STOPS = /** @type {ZoomStop[]} */ ([
   { id: 'normal', name: 'Normal', zoom: 1, pitch: 0, dist: 1, fov: 1, blur: 1, lead: 1 },
   { id: 'far', name: 'Far', zoom: 1.7, pitch: 9.8, dist: 1.7, fov: 1, blur: 1, lead: 1 },
 ]);
+provide({ ZOOM_STOPS }); /* to-module */
 /** the values a stop carries, in the order the curve graph draws them */
 export const STOP_VALUES = /** @type {const} */ (['pitch', 'dist', 'fov', 'blur', 'lead']);
 /**

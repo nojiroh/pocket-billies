@@ -11,6 +11,7 @@
 /** @typedef {(schema: string, value: unknown, where: string) => boolean} DataValid */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { ZOOM_STOPS, stopsProblems } from '../hooks.js';
 import { lineSpeciesIds } from './forms.js';
 import { CLIMATE_WEATHER_ODDS } from './weather.js';
 import { uiThemeContrast } from './ui-theme.js';
@@ -48,6 +49,8 @@ expose({
   dataBiomes: [() => dataBiomes, v => (dataBiomes = v)],
   // @ts-expect-error -- replaced on purpose
   dataBuildings: [() => dataBuildings, v => (dataBuildings = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataCameraStops: [() => dataCameraStops, v => (dataCameraStops = v)],
   // @ts-expect-error -- replaced on purpose
   dataCatchArt: [() => dataCatchArt, v => (dataCatchArt = v)],
   // @ts-expect-error -- replaced on purpose
@@ -687,6 +690,28 @@ export function dataUiTheme(D, valid = () => true) {
         'uiTheme.json',
         `${f.where || 'defaults'} ${f.side}: ${f.fg} on ${f.bg} reads at ${f.ratio.toFixed(2)}:1, under ${f.min}`
       );
+  return out;
+}
+// camera track CAM-4b: the zoom stops are the whole game's (engine.json defaults.camera.stops): 3-5 in zoom order,
+// never a scene's own (look.camera.stops); a scene's starting stop (cam.stop) names one of them
+/** CAM-4b: the zoom stops @param {any} D @returns {DataProblem[]} */
+export function dataCameraStops(D) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    own = (((D.engine || {}).defaults || {}).camera || {}).stops,
+    S = own === undefined ? ZOOM_STOPS : own;
+  if (own !== undefined) for (const p of stopsProblems(own)) out.push(['engine.json', `defaults.camera.stops: ${p}`]);
+  const ids = new Set(Array.isArray(S) ? S.map(s => s && s.id) : []);
+  for (const [id, sc] of Object.entries(D.maps || {})) {
+    if (!sc || typeof sc !== 'object') continue;
+    if (sc.look && sc.look.camera && 'stops' in sc.look.camera)
+      out.push([
+        `maps/${id}`,
+        'look.camera.stops: the zoom stops are the whole game’s (Camera section), not a scene’s',
+      ]);
+    const st = sc.cam && sc.cam.stop;
+    if (st != null && !ids.has(st)) out.push([`maps/${id}`, `cam.stop "${st}" is not a zoom stop`]);
+  }
   return out;
 }
 // map generator MG-1: the biome recipes: the schema, then the ground letters, prop kinds and life they name

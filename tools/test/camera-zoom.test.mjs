@@ -179,3 +179,15 @@ test('a broken list of stops is caught and the default ones used', () => {
   const own = ZOOM_STOPS.map(s => ({ ...s }));
   assert.equal(stopsOrDefault(own), own);
 });
+
+test('the data check: the whole game’s stops, never a scene’s, and a starting stop that names one', async () => {
+  const { dataCameraStops } = await import('../../game/js/logic/data-checks.js');
+  assert.deepEqual(dataCameraStops({ maps: { a: { cam: { stop: 'far' } } } }), []);
+  const bad = dataCameraStops({
+    engine: { defaults: { camera: { stops: ZOOM_STOPS.slice(0, 2) } } },
+    maps: { a: { cam: { stop: 'wide' } }, b: { look: { camera: { stops: [] } } } },
+  });
+  assert.ok(bad.some(([w, p]) => w === 'engine.json' && /2 stops/.test(p)));
+  assert.ok(bad.some(([w, p]) => w === 'maps/a' && /"wide" is not a zoom stop/.test(p)));
+  assert.ok(bad.some(([w, p]) => w === 'maps/b' && /whole game/.test(p)));
+});
