@@ -15,7 +15,8 @@ were picked in chat: one colour each for the bottom bar, the controls and the st
     they were (already gold-only).
   - CSS: the bottom bar (`pb-nav-bar#nav`, shell.css) is at most 480 px wide and centred; a phone (390 px) is
     unchanged (374 px, 8 px margins).
-- Verified: build-ui-icons.py --check, ui-icons.test.mjs, `npm test`, `npm run lint`, prettier on shell.css;
+- Verified: build-ui-icons.py --check, ui-icons.test.mjs, `npm test`, `npm run lint`, prettier on shell.css,
+  `npm run check:smoke` (6 steps passed: phone flow, actions sheet, in-game full test);
   screenshots of the Team tab at 390x844 and 1280x720, both themes (the bar's box: 8..382 on the phone, 400..880
   wide).
 - Risky: at 22 px the sand pyramid nearly blends into the gold "selected" tab, and the gold bag and Lab icons are
