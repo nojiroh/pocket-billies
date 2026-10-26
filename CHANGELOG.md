@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Lighter shadows** (phase 20, test switches, all off for now; Studio > Engine > Quality): "Shadows in batches"
+  draws the shadows of grass, bushes, leaves, people and models in batches, one draw for all the copies of a picture
+  or a model (in a jungle route the shadows from about 360 draws a frame to about 120), with the same look. "Models
+  in the shadow cache" keeps the far shadows of trees and other standing models from frame to frame (boats, the
+  airship, windmill sails and propellers are drawn each frame, so their far shadows move again). "Far shadows hold
+  still" stops the shadows of grass and leaves swaying past the sharp shadows round you (about 13 m) and keeps them
+  from frame to frame. They are in the graphics test.
 - **Lighter drawing for phones** (phase 20, test switches, all off for now; Studio > Engine > Quality): "Sky last"
   draws the sky only where it shows, "Solid things first" lets the graphics card skip leaves hidden behind trunks and
   walls, "Drop spent pictures" saves memory traffic between the effects, "Rain in one go" draws rain, snow and ash in
