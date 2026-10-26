@@ -4,7 +4,7 @@
    Each task has its own cap; the battle and map follow the 30 / 60 / 120 FPS setting. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { debugFps, gpuState, saveData } from './hooks.js';
+import { debugFps, gpuFrame, gpuState, saveData } from './hooks.js';
 import { countersOff, countersOn, gpuCountDue, gpuFrameDone } from './engine/gpu-counters.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -78,6 +78,8 @@ function frameLoop(ts) {
   frameScheduler.last = ts;
   if (document.hidden) return;
   const w0 = performance.now();
+  /* phase 20 H: retired GPU objects freed, a context that died before its lost event noticed (engine/webgl.js) */
+  if (typeof gpuFrame === 'function') gpuFrame();
   /* phase 20: one tick a second (every tick while a test measures) has its graphics calls counted; the counters are
      put on and taken off within this tick, so no other frame carries them (engine/gpu-counters.js) */
   const gl = typeof gpuState !== 'undefined' && !gpuState.lost ? gpuState.gl : null,

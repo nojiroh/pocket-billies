@@ -22,7 +22,7 @@ import {
   walkView,
 } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
-import { freeMesh, gpuState, setTextureParams } from '../engine/webgl.js';
+import { freeMesh, gpuFree, gpuState, gpuTexture, setTextureParams } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
 import { groundOcclusion } from './ground-textures.js';
 import { buildGroundMesh, buildGroundMeshSteps } from './ground-mesh.js';
@@ -75,7 +75,7 @@ function newNearRing() {
     TP = bigTilesOn() ? 32 : 16,
     S = NEAR_RING_SIZE * NEAR_RING_CHUNK_M * TP,
     mk = (sz, lin) => {
-      const t = gl.createTexture();
+      const t = gpuTexture('ring', Math.round(sz * sz * 4 * 1.34));
       gl.bindTexture(gl.TEXTURE_2D, t);
       gl.texStorage2D(gl.TEXTURE_2D, Math.log2(sz) + 1, gl.RGBA8, sz, sz);
       /* alpha 0.4: a square's small sizes are made with it (on the helper thread) and only those of a square are used, so
@@ -111,10 +111,8 @@ function freeNearRing(R) {
       J.it.return();
     } catch (e) {}
   R.jobs = [];
-  try {
-    gl.deleteTexture(R.tex);
-    gl.deleteTexture(R.ntex);
-  } catch (e) {}
+  gpuFree(R.tex);
+  gpuFree(R.ntex);
   R.tex = R.ntex = null;
 }
 /* which squares are wanted: the 4 x 4 round the focus (a little ahead of it, the way the camera looks) */
@@ -281,7 +279,7 @@ export function setNearRingUniforms(U, sc) {
 function groundOcclusionTexture(r) {
   const gl = gpuState.gl,
     { FW, FH, d } = r,
-    t = gl.createTexture();
+    t = gpuTexture('ground', FW * FH);
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, FW, FH, 0, gl.RED, gl.UNSIGNED_BYTE, d);
@@ -535,14 +533,12 @@ export function freeMapCacheEntry(e) {
     freeNearRing(e.ring);
     e.ring = null;
   }
-  try {
-    for (const k of ['gtex', 'ftex', 'ctex', 'gntex', 'shoreTex', 'gaoTex', 'flowTex'])
-      if (e[k] && e[k] !== gpuState.white && e[k] !== gpuState.flatN) gl.deleteTexture(e[k]);
-    for (const k of ['mesh', 'water', 'fallMesh']) if (e[k]) freeMesh(e[k]);
-    if (e.grass) {
-      gl.deleteVertexArray(e.grass.vao);
-      gl.deleteBuffer(e.grass.ib);
-      gl.deleteBuffer(e.grass.vb);
-    }
-  } catch (err) {}
+  for (const k of ['gtex', 'ftex', 'ctex', 'gntex', 'shoreTex', 'gaoTex', 'flowTex'])
+    if (e[k] && e[k] !== gpuState.white && e[k] !== gpuState.flatN) gpuFree(e[k]);
+  for (const k of ['mesh', 'water', 'fallMesh']) if (e[k]) freeMesh(e[k]);
+  if (e.grass) {
+    gpuFree(e.grass.vao);
+    gpuFree(e.grass.ib);
+    gpuFree(e.grass.vb);
+  }
 }

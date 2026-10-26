@@ -871,7 +871,7 @@ def graphics_test_ready(pg):
       const plan=graphicsTestPlan();for(const p of plan)for(const gk of Object.keys(p.set||{})){const[g,k]=gk.split('.');
         if(!ENGINE_DEFAULTS[g]||!(k in ENGINE_DEFAULTS[g]))bad.push('unknown setting '+gk)}
       const keep=[walkView.sc,walkView.nav,walkView.gkey];walkView.sc=sc;walkView.nav=null;walkView.gkey='check-gfx';
-      try{const G=navGrid();for(const st of GRAPHICS_TEST_STATIONS){const at=(sc.bench||{})[st.id];
+      try{const G=navGrid();for(const st of GRAPHICS_TEST_STATIONS){const at=(sc.bench||{})[st.spot||st.id];
         if(!at){bad.push(st.id+': no spot');continue}const c=navCellAt(at[0],at[1]);if(c<0||G.blk[c])bad.push(st.id+': spot blocked')}}
       finally{[walkView.sc,walkView.nav,walkView.gkey]=keep}
       const keys=new Set(plan.filter(p=>p.kind==='dial').map(p=>p.key));

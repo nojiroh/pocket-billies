@@ -7,7 +7,7 @@ import { provide } from '../hooks.js';
 import { clamp } from '../util.js';
 import { hash2d, isWalkable, navGrid, stepRaiseAt, valueNoise2d, walkData, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
-import { gpuState } from '../engine/webgl.js';
+import { gpuBuffer, gpuFree, gpuState, gpuVao } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
 import { rawHeightAt } from './heights.js';
 /* eslint-disable no-func-assign */
@@ -81,9 +81,9 @@ export function buildGrass() {
     sc = walkView.sc;
   walkRenderer.grassDrawn = 0;
   /* v46: a room has none (the count used to carry over from the last place) */ if (walkRenderer.grass) {
-    gl.deleteVertexArray(walkRenderer.grass.vao);
-    gl.deleteBuffer(walkRenderer.grass.ib);
-    gl.deleteBuffer(walkRenderer.grass.vb);
+    gpuFree(walkRenderer.grass.vao);
+    gpuFree(walkRenderer.grass.ib);
+    gpuFree(walkRenderer.grass.vb);
   }
   walkRenderer.grass = null;
   walkRenderer.grassJob = null;
@@ -247,14 +247,14 @@ export function buildGrass() {
       start[k]++;
     }
     J.I = null;
-    const vao = gl.createVertexArray();
+    const vao = gpuVao('ground');
     gl.bindVertexArray(vao);
-    const vb = gl.createBuffer();
+    const vb = gpuBuffer('ground', 48);
     gl.bindBuffer(gl.ARRAY_BUFFER, vb);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8, 0);
-    const ib = gl.createBuffer();
+    const ib = gpuBuffer('ground', I.byteLength);
     gl.bindBuffer(gl.ARRAY_BUFFER, ib);
     gl.bufferData(gl.ARRAY_BUFFER, I, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(1);

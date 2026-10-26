@@ -77,31 +77,98 @@ const GRAPHICS_TEST_HIDDEN = [
      the scene (8 is the phone limit stage D6 may take) */
   ['quality.stableLights', 'Steady lamps', { values: [false, true], alone: true }],
   ['quality.lights', 'Lamps lit at once', { values: [8, 16], alone: true }],
+  /* phase 20 R2: the models drawn one draw per mesh; the same look, so left out of "everything lowest / highest" */
+  ['quality.modelInstances', 'Models in batches', { values: [false, true], alone: true }],
+  /* phase 20 R2 (pixels): each on its own, out of "everything lowest / highest" (Phone pixel budget is not here: the
+     test pins resolution 1, under the phone's budget either way; the diagnostics' Renderer baseline measures it) */
+  ['quality.skyLast', 'Sky last', { values: [false, true], alone: true }],
+  ['quality.solidFirst', 'Solid things first', { values: [false, true], alone: true }],
+  ['quality.invalidate', 'Drop spent pictures', { values: [false, true], alone: true }],
+  ['quality.phoneLamps', 'Phone lamps', { values: [false, true], alone: true }],
+  ['quality.rainBatch', 'Rain in one go', { values: [false, true], alone: true }],
+  ['air.cheapShafts', 'Cheap light shafts', { values: [0, 0.6], alone: true }],
+  /* phase 20 E7-E10: the standing pictures (and the reflection's) drawn one draw per run of one picture; the same look */
+  ['quality.spriteInstances', 'Pictures in batches', { values: [false, true], alone: true }],
+  /* phase 20 R3 (shadows): the shadow maps' pictures and models in batches (the same look); models in the far shadow
+     cache and the far shadows held still (a look change past 13 m), each on its own */
+  ['quality.shadowInstances', 'Shadows in batches', { values: [false, true], alone: true }],
+  ['quality.modelShadowCache', 'Models in the shadow cache', { values: [false, true], alone: true }],
+  ['quality.farShadowsStill', 'Far shadows hold still', { values: [false, true], alone: true }],
 ];
 /* the stations, in the order the test walks them; their spots are the map's `bench` ([x, z, camera turn, zoom]) */
 const GRAPHICS_TEST_STATIONS = [
-  { id: 'control', name: 'Control pad', dials: ['quality.resolution', 'lens.vignette', 'lens.grain'] },
+  {
+    id: 'control',
+    name: 'Control pad',
+    dials: ['quality.resolution', 'lens.vignette', 'lens.grain', 'quality.invalidate'],
+  },
   {
     id: 'shadows',
     name: 'Shadow court',
     sun: { angle: 30, height: 30 },
-    dials: ['shadows.strength', 'quality.shadowMap', 'shadows.cascades', 'shadows.ao', 'shadows.contact'],
+    dials: [
+      'shadows.strength',
+      'quality.shadowMap',
+      'shadows.cascades',
+      'shadows.ao',
+      'shadows.contact',
+      'quality.shadowInstances',
+    ],
   },
-  { id: 'pond', name: 'Pond', dials: ['water.reflection', 'water.pixel'] },
-  { id: 'sun', name: 'Sun gap', sun: { angle: -90, height: 18 }, dials: ['air.godRays'] },
+  { id: 'pond', name: 'Pond', dials: ['water.reflection', 'water.pixel', 'quality.spriteInstances'] },
+  {
+    id: 'sun',
+    name: 'Sun gap',
+    sun: { angle: -90, height: 18 },
+    dials: ['air.godRays', 'quality.solidFirst', 'quality.skyLast'],
+  },
+  /* phase 20 R2 (D7): the Sun gap with God rays off, where the cheap shafts stand in (a station may borrow another's
+     spot, and fix values of its own under every step) */
+  {
+    id: 'shafts',
+    name: 'Sun gap, no god rays',
+    spot: 'sun',
+    sun: { angle: -90, height: 18 },
+    fixed: { 'air.godRays': 0 },
+    dials: ['air.cheapShafts'],
+  },
   {
     id: 'lamps',
     name: 'Lamp square',
     time: 22,
-    dials: ['color.bloom', 'lights.brightness', 'quality.stableLights', 'quality.lights'],
+    dials: [
+      'color.bloom',
+      'lights.brightness',
+      'quality.stableLights',
+      'quality.lights',
+      'quality.modelInstances',
+      'quality.phoneLamps',
+      'quality.invalidate',
+      'quality.shadowInstances',
+    ],
   },
-  { id: 'meadow', name: 'Meadow', dials: ['grass.density', 'air.particles', 'air.mist'] },
+  {
+    id: 'meadow',
+    name: 'Meadow',
+    dials: ['grass.density', 'air.particles', 'air.mist', 'quality.farShadowsStill'],
+  },
   {
     id: 'depth',
     name: 'Depth corridor',
-    dials: ['lens.blur', 'world.farProps', 'quality.stableLights'],
+    dials: [
+      'lens.blur',
+      'world.farProps',
+      'quality.stableLights',
+      'quality.modelInstances',
+      'quality.spriteInstances',
+      'quality.shadowInstances',
+      'quality.modelShadowCache',
+      'quality.farShadowsStill',
+    ],
   },
-  { id: 'sky', name: 'Open sky', dials: ['sun.clouds', 'sun.cloudShadows'] },
+  { id: 'sky', name: 'Open sky', dials: ['sun.clouds', 'sun.cloudShadows', 'quality.skyLast'] },
+  /* phase 20 R2: the meadow in the rain (a station may name its weather; clear otherwise) */
+  { id: 'rain', name: 'Meadow in the rain', spot: 'meadow', weather: 'rain', dials: ['quality.rainBatch'] },
   { id: 'everything', name: 'Everything', all: true },
 ];
 const GRAPHICS_TEST_MAP = 'test_graphics';
@@ -168,7 +235,7 @@ function graphicsTestPlan() {
 function graphicsTestPrefs(st, set) {
   const eng = { quality: { auto: false, resolution: 1 } };
   if (st.sun) eng.sun = Object.assign({}, st.sun);
-  for (const [gk, v] of Object.entries(set || {})) {
+  for (const [gk, v] of Object.entries({ ...(st.fixed || {}), ...(set || {}) })) {
     const [g, k] = gk.split('.');
     (eng[g] = eng[g] || {})[k] = v;
   }
@@ -176,7 +243,7 @@ function graphicsTestPrefs(st, set) {
   saveData.preferences.eng = eng;
 }
 function graphicsTestStand(sc, st) {
-  const at = (sc.bench || {})[st.id] || [...mapHub(sc), 0, 1],
+  const at = (sc.bench || {})[st.spot || st.id] || [...mapHub(sc), 0, 1],
     o = (walkView.sc && walkView.sc.baseOff) || [0, 0];
   walkView.pl.x = at[0] + o[0];
   walkView.pl.z = at[1] + o[1];
@@ -279,7 +346,7 @@ async function runGraphicsBench() {
         }
         const h0 = hid,
           got = [];
-        environment.force = { time: st.time || 14, weather: 'clear', season: 'summer' };
+        environment.force = { time: st.time || 14, weather: st.weather || 'clear', season: 'summer' };
         let rebuilt = false;
         for (const p of mine) {
           if (graphicsTest.stop) break;

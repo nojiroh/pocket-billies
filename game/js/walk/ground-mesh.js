@@ -23,7 +23,7 @@ import {
   walkView,
 } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
-import { freeMesh, gpuState, normalize3, smooth01, uploadMesh } from '../engine/webgl.js';
+import { freeMesh, gpuFree, gpuState, gpuTexture, normalize3, smooth01, uploadMesh } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
 import { defaultWallMaterial, rawHeightAt } from './heights.js';
 import { flowMapAt, waterFlowMap } from './water-flow.js';
@@ -66,7 +66,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       return i < 0 || j < 0 || i >= sc.w || j >= sc.h ? sc.edge : ((sc.tiles || [])[j] || '')[i] || sc.edge;
     };
   walkRenderer.builds = (walkRenderer.builds || 0) + 1;
-  if (T.gtex) gl.deleteTexture(T.gtex);
+  gpuFree(T.gtex);
   T.gtex = null;
   T.gtex = yield* uploadTextureStrips(G.width, G.height, G._px || G, { nearest: true });
   if (T.ring) freeNearRing(T.ring);
@@ -85,7 +85,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
     cl = tile(sc.cliff || (sc.indoor ? 'k' : 'r')) || fe;
   T.ftex = repeatingTexture(fe, T.ftex);
   T.ctex = repeatingTexture(cl, T.ctex);
-  if (T.gntex && T.gntex !== gpuState.flatN) gl.deleteTexture(T.gntex);
+  if (T.gntex !== gpuState.flatN) gpuFree(T.gntex);
   T.gntex = null;
   T.gntex = G._nrm ? yield* uploadTextureStrips(G.width, G.height, G._nrm, {}) : groundNormalTexture(G, null, sc);
   yield;
@@ -455,7 +455,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       ['aNrm', 3, 12],
       ['aUV', 3, 24],
     ],
-    36
+    36,
+    'ground'
   );
   /* v23: a gorge or valley floor well below where you walk gathers mist (Engine: Air, Mist in low ground) */
   T.valley = null;
@@ -1065,7 +1066,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           ['aUV', 2, 16],
           ['aDK', 2, 24],
         ],
-        32
+        32,
+        'ground'
       )
     : null;
   /* fish live where the water is deep all round; leaves start on streams; springs steam (hot springs more) */
@@ -1130,7 +1132,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           ['aUV', 2, 16],
           ['aDK', 2, 24] /* WA-2a: the fall shader's aBig (location 3): width and big */,
         ],
-        32
+        32,
+        'ground'
       )
     : null;
   if (T === walkRenderer) {
@@ -1233,7 +1236,7 @@ export function buildGroundMesh() {
 /* v46: a big texture goes up to the card a strip at a time (about 1 MB a strip), then its mipmaps are made on the card */
 function* uploadTextureStrips(w, h, data, o = {}) {
   const gl = gpuState.gl,
-    t = gl.createTexture();
+    t = gpuTexture('ground', Math.round(w * h * 4 * 1.34));
   if (!(data instanceof Uint8Array)) {
     gl.bindTexture(gl.TEXTURE_2D, t);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, data);

@@ -123,6 +123,8 @@ export const ENGINE_DEFAULTS = {
     sunFog: 0.4,
     godRays: 0.5,
     lightsInAir: 0.7,
+    /* phase 20 R2 (D7): cheap light shafts (one quad each) while the light in the air is off; 0: none */
+    cheapShafts: 0,
   },
   world: {
     hugSlopes: true,
@@ -280,6 +282,33 @@ export const ENGINE_DEFAULTS = {
        be lit at once (the shaders hold 16) */
     stableLights: false,
     lights: 16,
+    /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1); models, buildings and structures before the
+       sprites (D5) */
+    skyLast: false,
+    solidFirst: false,
+    /* a phone's pixel budget 1.2 MP instead of 1.6, its automatic resolution starting at 0.9 (D4) */
+    phonePixels: false,
+    /* a phone's lamps: at most 8 lit at once, 4 of them in the air (D6) */
+    phoneLamps: false,
+    /* render targets' old content dropped before a pass that draws over all of it, the reflection's depth after it
+       (D3) */
+    invalidate: false,
+    /* rain, snow, ash and their splashes in one draw */
+    rainBatch: false,
+    /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each) */
+    spriteInstances: false,
+    /* phase 20 R2: the solid models (voxel props, low-poly models) drawn one draw per mesh for every item with it */
+    modelInstances: false,
+    /* phase 20 R3 (shadows): the shadow maps' pictures one draw per picture, their models one draw per mesh */
+    shadowInstances: false,
+    /* phase 20 R3 (F8): models whose mesh holds still (trees whose leaves sway too) in the far shadow map's cache, the
+       ones that bob or turn out of it */
+    modelShadowCache: false,
+    /* phase 20 R3 (E11, the owner's option a): the far shadow map draws what only the wind sways at rest and keeps it
+       in its cache; within the near map (13 m) shadows sway as before */
+    farShadowsStill: false,
+    /* phase 20 R3 (battle): a battle rig's canvas drawn and uploaded again only when its pose, face or tint changes */
+    rigReuse: false,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -638,6 +667,14 @@ export const ENGINE_SPEC = [
         'Sunlight in the air, shadowed by what stands in it: beams between trees and buildings (v43). A march through the air at half resolution.',
       ],
       ['lightsInAir', 'Lamps in the air', 0, 2, 0.05, 'A glow in the air round lamps and fires at night (v43).'],
+      [
+        'cheapShafts',
+        'Cheap light shafts',
+        0,
+        1.5,
+        0.05,
+        'When God rays are off (or the automatic quality turns them off): a few soft beams of sunlight from the trees near you, strongest at dawn and golden hour. Cheap; 0 for none.',
+      ],
       ['mistHeight', 'Mist height (m)', 0, 2, 0.05],
       [
         'valleyMist',
@@ -1256,6 +1293,78 @@ export const ENGINE_SPEC = [
         16,
         1,
         'How many lamps, windows and fires near you light the scene at once (the nearest ones). Fewer is faster on phones; farther lamps still glow but no longer light the ground.',
+      ],
+      [
+        'skyLast',
+        'Sky last',
+        'bool',
+        'The sky is drawn after the ground, props and buildings, only where it shows, instead of over the whole screen first. Same picture, fewer pixels drawn.',
+      ],
+      [
+        'phonePixels',
+        'Phone pixel budget',
+        'bool',
+        'On a phone (Android, iPhone) the scene is drawn at most 1.2 million pixels instead of 1.6, and the automatic quality starts one step lower. Softer, faster; tablets and computers are unchanged.',
+      ],
+      [
+        'phoneLamps',
+        'Phone lamps',
+        'bool',
+        'On a phone (Android, iPhone) at most 8 lamps, windows and fires light the scene at once (fewer if Lamps lit at once says so), and 4 of them glow in the air. Tablets and computers are unchanged.',
+      ],
+      [
+        'invalidate',
+        'Drop spent pictures',
+        'bool',
+        'Tells the graphics card which in-between pictures (blur, glow, shading, the reflection’s depth) need not be kept or read back. Same picture; it saves memory traffic on phones.',
+      ],
+      [
+        'rainBatch',
+        'Rain in one go',
+        'bool',
+        'Rain, snow and ash (and the splashes) are drawn in one go instead of one drop at a time: the same drops, far less work for the processor in bad weather.',
+      ],
+      [
+        'solidFirst',
+        'Solid things first',
+        'bool',
+        'Models, buildings and structures are drawn before the leaf and prop pictures, so leaves hidden behind a trunk or a wall are skipped by the graphics card. Faster in groves; a picture lying flat on a model may show differently.',
+      ],
+      [
+        'spriteInstances',
+        'Pictures in batches',
+        'bool',
+        'Trees, leaves, people and the other standing pictures are drawn in batches, one draw for all the copies of a picture, instead of one draw each. The same look; fewer calls to the graphics card.',
+      ],
+      [
+        'modelInstances',
+        'Models in batches',
+        'bool',
+        'Every tree, house or lamp post of one kind is drawn in one go instead of one at a time: fewer draws, the same look. The shadows still draw them one at a time.',
+      ],
+      [
+        'shadowInstances',
+        'Shadows in batches',
+        'bool',
+        'The shadows of grass, bushes, leaves, people and models are drawn in batches, one draw for all the copies of a picture or a model, instead of one draw each. The same shadows; fewer calls to the graphics card.',
+      ],
+      [
+        'modelShadowCache',
+        'Models in the shadow cache',
+        'bool',
+        'The far shadows of trees and other models that stand still are kept from frame to frame instead of drawn again each frame (a tree whose leaves sway still counts: its trunk doesn’t move). Boats, the airship, windmill sails and propellers are drawn each frame, so their far shadows move again.',
+      ],
+      [
+        'farShadowsStill',
+        'Far shadows hold still',
+        'bool',
+        'Past the sharp shadows round you (about 13 m) the shadows of grass, bushes and leaves stop swaying in the wind and are kept from frame to frame instead of drawn again each frame. Close by they sway as before.',
+      ],
+      [
+        'rigReuse',
+        'Reuse battle rigs',
+        'bool',
+        'In a battle each Billie’s picture is drawn and sent to the graphics card again only when its pose, face or tint changes (about 6 times a second), not on every frame. Same picture, less work.',
       ],
       [
         'gpuTimer',

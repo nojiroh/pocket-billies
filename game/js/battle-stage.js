@@ -20,6 +20,7 @@ import {
   battle3dStop,
   battleFreeArea,
   battleLayoutChanged,
+  engineSetting,
   fighter,
   hudHit,
   hudPop,
@@ -38,7 +39,7 @@ import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './fra
 import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
 import { ROBOT_PART_BONES } from './robot-art.js';
 import { personBattleFrames, personBattlePose, wardrobeData } from './person-art.js';
-import { drawRig, rigFrame, rigParts, rigTint } from './skeleton-rig.js';
+import { drawRig, rigFrame, rigFrameKey, rigParts, rigTint } from './skeleton-rig.js';
 /* eslint-disable no-func-assign */
 expose({
   ACTOR_RIG_SCALES: [() => ACTOR_RIG_SCALES],
@@ -140,6 +141,7 @@ expose({
   particleSprite: [() => particleSprite, v => (particleSprite = v)],
   punch: [() => punch, v => (punch = v)],
   pyramidArc: [() => pyramidArc, v => (pyramidArc = v)],
+  rigStats: [() => rigStats],
   ringFx: [() => ringFx, v => (ringFx = v)],
   scheduleAt: [() => scheduleAt, v => (scheduleAt = v)],
   setActorAction: [() => setActorAction, v => (setActorAction = v)],
@@ -1098,6 +1100,9 @@ function softDraw(c, img, x, y, w, h, blur, slot) {
   c.drawImage(sm, 0, 0, sw + 2 * P, sh + 2 * P, x - P * kx, y - P * ky, (sw + 2 * P) * kx, (sh + 2 * P) * ky);
   c.imageSmoothingEnabled = prev;
 }
+/* phase 20 R3: what the rigs cost, summed until the diagnostics read and clear it: calls that got to a rig, the
+   canvases redrawn (each one an upload for the 3D stage), their bytes and the processor's time drawing them */
+export const rigStats = { calls: 0, redraws: 0, bytes: 0, ms: 0 };
 /* one billionaire's current frame, drawn into its buffer (the 2D stage draws the buffer; the 3D stage uploads it) */
 export function actorBuffer(i) {
   const s = battleStage.s[i];
@@ -1108,6 +1113,24 @@ export function actorBuffer(i) {
     view = actorTeam(i) === 0 ? 'back' : 'front',
     buf = battleStage.buf[i] || (battleStage.buf[i] = makeCanvas(10, 10));
   if (!R) return null;
+  const t0 = performance.now();
+  rigStats.calls++;
+  const a = s.act,
+    tau = a ? battleStage.t - a.t0 : 0,
+    ak = a && (a.k === 'faint' || tau < a.dur) ? a.k : null,
+    t16 = Math.floor(battleStage.t / 16) * 16;
+  /* phase 20 R3 (quality.rigReuse): the same rig, pose, face, build, faint parts and tints as the last frame drawn here
+     is the same picture: the canvas stays, its counter too, so nothing is uploaded again */
+  let key = null;
+  if (engineSetting('quality', 'rigReuse')) {
+    key =
+      rigFrameKey(R, ak, tau, t16, s.seed) +
+      `|${view}|${s.build ? JSON.stringify(s.build) : ''}|${s.dim ? s.dim.join() : ''}|${s.white}|${s.dark}`;
+    if (buf.__R === R && buf.__key === key && buf.width === R.BW && buf.height === R.BH) {
+      rigStats.ms += performance.now() - t0;
+      return { s, k, R, P: buf.__P, ak, buf };
+    }
+  }
   if (buf.width !== R.BW || buf.height !== R.BH) {
     buf.width = R.BW;
     buf.height = R.BH;
@@ -1116,16 +1139,19 @@ export function actorBuffer(i) {
   bx.imageSmoothingEnabled = false;
   bx.setTransform(1, 0, 0, 1, 0, 0);
   bx.clearRect(0, 0, buf.width, buf.height);
-  const a = s.act,
-    tau = a ? battleStage.t - a.t0 : 0,
-    ak = a && (a.k === 'faint' || tau < a.dur) ? a.k : null;
-  const P = rigFrame(R, ak, tau, Math.floor(battleStage.t / 16) * 16, s.seed);
+  const P = rigFrame(R, ak, tau, t16, s.seed);
   if (s.build) P.build = s.build;
   if (s.dim) P.dim = s.dim;
   drawRig(bx, R, P, view);
   rigTint(bx, buf.width, buf.height, '#FFFFFF', s.white);
   rigTint(bx, buf.width, buf.height, '#0C0A16', s.dark);
   buf.__v = (buf.__v || 0) + 1;
+  buf.__R = key ? R : null;
+  buf.__key = key;
+  buf.__P = P;
+  rigStats.redraws++;
+  rigStats.bytes += buf.width * buf.height * 4;
+  rigStats.ms += performance.now() - t0;
   return { s, k, R, P, ak, buf };
 }
 /* the trainers: you from behind (left), the rival facing you (right); they throw coins and cheer */

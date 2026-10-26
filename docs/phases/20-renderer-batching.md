@@ -18,10 +18,11 @@ detailed task list (task ids A1...I3) and their "what the renderer does today" n
 | C3 | Done (R1 light lane, 2026-10-26): the owner's verdict "same look, not slower"; the Frame block is the only path, `quality.frameBlock` deleted. |
 | C4 | Done. |
 | C5 | Ported (R1 light lane, 2026-10-26) behind `quality.stableLights` (off) and `quality.lights` (16); waiting on the owner's phone verdict. |
-| D1-D7 | Not done (the sky draws first, no `mediump`, no `invalidateFramebuffer`, pixel cap 1.75 DPR / 1.6 MP; the automatic quality can drop phones to 0.6 resolution since 2026-10-23). |
-| E1-E13 | Not started; the E3 bug (reflection never sets `uSelf` / `uFol`, walk/water.js) is still there. |
-| F1-F9 | Not started. Retargeted: the models (`vox`, `mdl`, `voxS` in prop-models.js) are now the solid geometry; `tagSolidProp` skips every model, so F3 (solid props instanced) is dropped unless R1's numbers show a real `solid` pass. |
-| G | Not done (battle-stage.js still draws each rig on a canvas). Only if R1's battle numbers ask for it. |
+| D1, D3-D7 | Built (R2 pixels lane, 2026-10-26), each behind its own switch, off: `quality.skyLast` (D1), `quality.invalidate` (D3, the table under D3), `quality.phonePixels` (D4: 1.2 MP and a 0.9 start on phones, the owner's numbers), `quality.solidFirst` (D5 option (a); (b) and (c) wait for the phone's numbers), `quality.phoneLamps` (D6: 8 lamps, 4 in the air on phones, the owner's numbers), `air.cheapShafts` (D7), and rain's cost: `quality.rainBatch`. Waiting on the owner's phone run. |
+| D2 | Not done (round 4, alone): every shader is still `highp`. |
+| E1-E8, E10 | Done (R2 sprites lane, 2026-10-26) behind `quality.spriteInstances` (off); E3 fixed (the owner's choice), the reflection grouped by picture. E12 left out by the counters. E13 waits on the owner's phone verdict. E9 done (R3 shadows lane) behind `quality.shadowInstances`; E11 done as the owner's option (a), the far map at rest, behind `quality.farShadowsStill` (no sway in the shaders). |
+| F1-F9 | F1, F2, F4, F5 done (R2 models lane); the shadow maps' models instanced (R3, `voxSI`, behind `quality.shadowInstances`); F8 done as models in the far cache with a caster signature in the key (`quality.modelShadowCache`). F6-F7 (merged casters) left until the counts ask (the owner, R3): after instancing the models are one draw per mesh part. Earlier: the models (`vox`, `mdl`, `voxS` in prop-models.js) are now the solid geometry; `tagSolidProp` skips every model, so F3 (solid props instanced) is dropped unless R1's numbers show a real `solid` pass. |
+| G | R3 battle lane (2026-10-26): the battle's CPU measure fixed (it timed `scene` only; the 3D frame is `dio`), the rigs' cost in the baseline, and G-lite built: `quality.rigReuse` (off) redraws and uploads a rig only when its pose, face or tint changes. Full G (instanced part quads) not built: headless the rigs are ~1 ms of a 12-22 ms frame; it waits on the owner's phone numbers. |
 | H | Not done. Restore re-mounts the walk view only; the world map is now world-bowl.js, which also calls `initWebgl`, so the listener pile-up holds. |
 | I1 | Done another way: five looks, logic/time-of-day.js. |
 | I2 | Partly done: model window glass glows by its own lamp (HANDOFF 2026-10-25). Left: lantern glass flicker with its lamp, unlit glass dimmed, a night fill for characters. Moved to a later look task (it changes the look). |
@@ -335,6 +336,26 @@ D2. **`mediump` where it is safe.** Colour, fog, grade, bloom and look maths in 
 D3. **`invalidateFramebuffer`** after each pass whose depth (or colour) is not read again: the scene depth after the
     post passes that read it, each bloom level after use, the shadow maps' unused parts. A table of every render target,
     who reads it and when it can be dropped.
+    **The table (R2 pixels, 2026-10-26, checked in the code).** Every render target (engine/webgl.js `renderTarget`;
+    sizes from the scene's rw x rh), who writes and reads it, and what `quality.invalidate` drops. A tiled chip
+    (the phones') loads a target's old content into its tiles unless it was cleared or dropped, and stores what it
+    drew unless dropped; dropping something read later would break the picture.
+
+    | Target | Size, kind | Written by | Read by | Dropped |
+    |---|---|---|---|---|
+    | `scene` | rw x rh, colour (16F) + depth | the walk frame (cleared first) | colour: bloom's bright pass, blur, shafts, grade; depth: blur, AO, shafts, vol, grade | nothing: it is cleared at the start (as good as a drop) and both halves are read after; once the grade has read it the data is already stored, so a drop then saves nothing |
+    | `refl` | rw/2 x rh/2, colour + depth | reflectionPass (cleared first) | colour: the water; depth: nobody | its depth, right after the pass (not stored) |
+    | `shadow`, the far map, `lamp0`, `lamp1` | square, depth only | the shadow passes (cleared first) | every lit program | nothing (read after); unused parts of a map are never drawn |
+    | `shadowS` | square, depth only | a blit of the far map (the still-shadows cache) | blitted back each frame | nothing |
+    | `dof` | rw/2 x rh/2, colour | the blur (full or cheap 'up') | grade | its old colour, before the pass |
+    | `dofk0`, `dofk1` | 1/2, 1/4, colour | the cheap blur's 'down' passes | the next step | old colour, before each |
+    | `b0` ... `b4` | 1/2 down to 1/32, colour | bright pass, then 'down' passes; then the 'up' passes blend into b3...b0 | the next level; grade reads b0 | old colour before the bright and 'down' passes only (the 'up' passes add to what is there) |
+    | `ao` | 1/2, colour (8 bit) | AO pass | grade | old colour, before |
+    | `rays` | 1/4, colour | shafts pass | grade | old colour, before |
+    | `vol0`, `vol1` | 1/4, colour | vol pass, then its softening | vol1: grade | old colour, before each |
+    | the screen | the canvas | grade | the page | colour, depth and stencil, before the grade (the canvas's depth is never used) |
+    | `snap` | up to 480 px, colour | screenSnapshot (a blit, rare) | the debug log's picture | nothing (rare) |
+
 D4. **Phone pixel budget.** A separate budget for phones (proposal: 1.2 MP instead of 1.6 MP) and the adaptive scale
     starting one step lower on phones. **Ask me before:** the number.
 D5. **Overdraw in groves.** Cut-out sprites (`discard`) stop the GPU from skipping hidden pixels early. Options, to be
