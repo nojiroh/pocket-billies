@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readGameData } from '../data-files.mjs';
-import { WALK_R } from '../square-props.mjs';
+import { SQUARE_FOLK, WALK_R } from '../square-props.mjs';
 import { mapgenReach } from '../../game/js/logic/mapgen.js';
 import {
   folkCap,
@@ -23,6 +23,11 @@ const D = readGameData(),
   well = M.plots.find(L => L.k === 'well'),
   stops = squareStops(M.props),
   count = k => stops.filter(s => s.k === k).length;
+
+test('Copperleaf has SQUARE_FOLK townsfolk, the most the Engine draws at once by default', () => {
+  assert.equal(M.folk, SQUARE_FOLK);
+  assert.equal(SQUARE_FOLK, 10);
+});
 
 test('the middle is the fountain; a map without a square has no stops', () => {
   assert.deepEqual(squareMiddle(M.props), [well.x, well.z]);

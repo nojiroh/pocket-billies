@@ -22,6 +22,9 @@ export const WALK_R = 4.6; /* nothing stands nearer the square's middle than thi
 export const VIEW = [15, 45]; /* degrees round the square kept low toward the portal */
 /* [kind, degrees round the middle (0 east, 90 north), metres in from the rim, 'in' (its front to the fountain) or a
    rot] */
+/** HB-10c: Copperleaf's folk (the map's `folk`): 10, the most drawn at once (the Engine's quality.townFolk) */
+export const SQUARE_FOLK = 10;
+
 export const SQUARE_EDGE = [
   /* the market on the north rim */
   ['market_cart', 58, 1.3, 'in'],
