@@ -625,6 +625,17 @@ the placing half.
   `act: 'shop'` and a stock (shops.json is empty: the owner's call), Juniper's `home` act (still no room), the Gene
   Bank's place (the splicing track's Ask me before). The owner's look at the variants' palette and the pictures in
   validation/look-hub-buildings/.
+- For the placing session (buildings onto the new island's plots, via tools/build-copperleaf.mjs `pairs`, whose
+  `place()` copies a building's own keys):
+  - Kinds and footprints (`box`, metres): workshop [4.6, 3.0], gene_bank [4.4, 4.6], inn [5.6, 3.4], library
+    [5.4, 3.4], shop [3.8, 2.4], lighthouse and windmill [3.6, 3.6] (solid, tall: 11 m and 8 m to the cap).
+  - Acts: the store `act: 'shop'` (int_shop; give it a `shop` id once there is a stock), inn, library, workshop,
+    gene_bank `act: 'enter'` (their catalogue room). Lighthouse and windmill: no act (scenery).
+  - Rooms turn by quarter turns only (`roomTurnOf`): snap `rot` to 0/90/180/270 or the room is crooked.
+  - Cottages take `v` 1-3 and `roof: 'moss'|'solar'|'chrome'`; houses and townhouses `v` 1-2.
+  - The Workshop's door is off-centre (`door.x` -27 px, 0.85 m left); the others are centred.
+  - Rooms open only in the seamless world: check the doors on Copperleaf (tools/look-hub-buildings.py's rooms step
+    adds each door beside the player; once placed, the self-test's room list walks them).
 
 ### Hub track HB-7 - Skyline Station and the sky trains (the art and the sheet) - 2026-10-25
 Branch `art/hub-station-trains` (one session of the hub track, started from main with PR #193's branch merged in for
