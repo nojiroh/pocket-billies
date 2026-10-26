@@ -1,0 +1,31 @@
+{
+ "look": {
+  "name": "Dottie Filewell",
+  "body": {"height":0.96,"body":1,"chest":0.5,"hips":1.04},
+  "skin": "#F0C8A8",
+  "hair": "#7A4A2A",
+  "eyes": "#5A6A8A",
+  "wear": {
+   "hair": "hair_bob",
+   "eyes": "eyes_round",
+   "brows": "brows_soft",
+   "mouth": "mouth_smile",
+   "top": "dress_shirt",
+   "outer": "blazer",
+   "bottom": "skirt",
+   "shoes": "oxfords",
+   "glasses": "glasses_square",
+   "neck": "nametag",
+   "bag": "satchel"
+  },
+  "colors": {
+   "dress_shirt": ["#F2EEE2","#D8D0BC"],
+   "blazer": ["#C98A5A","#A86A3E"],
+   "skirt": ["#5A4A6A"],
+   "oxfords": ["#4A3020","#2A1A10"],
+   "glasses_square": ["#3A2A20"],
+   "nametag": ["#F2EEE2","#B8423A"],
+   "satchel": ["#8A5A32","#5A3A20"]
+  }
+ }
+}

@@ -337,7 +337,7 @@ function playBattlePreviewMove(si) {
   const D = studioState.D,
     M = D.moves[battlePreview.move],
     fx = M.fx || {},
-    onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe,
+    onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe || fx.copyTypes,
     an = { k: 'move', si, mid: battlePreview.move };
   if (fx.protect) an.protect = true;
   else if (!onFoe) an.self = true;

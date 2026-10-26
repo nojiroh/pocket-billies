@@ -3,7 +3,7 @@
    animates its eyes and mouth), a name tag over the line, the line in the reading font. Clear of the screen's edges
    and above the bottom bar. Only tokens from css/tokens.css. */
 .talk-box {
-  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
   width: min(560px, calc(100% - 2 * var(--gutter)));
   grid-template-columns: 96px minmax(0, 1fr);
   align-items: start;
