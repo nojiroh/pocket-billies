@@ -33,6 +33,7 @@ import { groundNormalTexture, groundOcclusion, groundOcclusionSteps, repeatingTe
 import { buildGrass } from './grass-build.js';
 /* eslint-disable no-func-assign */
 expose({
+  LEV_LIFT: [() => LEV_LIFT],
   buildGroundMesh: [() => buildGroundMesh, v => setBuildGroundMesh(v)],
   buildGroundMeshSteps: [() => buildGroundMeshSteps, v => (buildGroundMeshSteps = v)],
   fallCovers: [() => fallCovers, v => (fallCovers = v)],
@@ -51,6 +52,8 @@ export function setBuildGroundMesh(v) {
 /* v46: the ground of a scene, built a slice at a time into T. With T = walkRenderer it runs to the end at once (opening a scene);
    with a fresh T it runs a few milliseconds a frame for the view that comes next (prepareMapGround), so walking from one view
    to the next finds everything ready: the textures go up to the card in strips, the mesh and water are built in slices */
+/* water track WA-10: how far a river's edge may rise toward its bank above the river's level (m) */
+const LEV_LIFT = 0.07;
 export function* buildGroundMeshSteps(sc, G, T, bare) {
   const gl = gpuState.gl,
     W = sc.w,
@@ -506,7 +509,25 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
        nor spilling down as cascades (as one level, the pond rose into a raised slab and every bank was a fall) */
     dryT = sc.wx === 'flood' ? waterWeatherDry(sc).tiles : null,
     fl = new Uint8Array(dryT ? W2 * H2 : 0),
-    Q = [];
+    Q = [],
+    /* WA-10: a running vertex at the river's level: the mean of the cells round it that have one (so the cells
+       sharing a corner meet), else the bed's rule as before. Toward a bank it rises with the bed by up to LEV_LIFT
+       (level across, it sank under the banks' shallow edge and the river read narrow, its shore line gone) */
+    levV = (/** @type {number} */ vx, /** @type {number} */ vz, /** @type {number} */ fb) => {
+      const L = flowMap.lev;
+      if (!L) return fb;
+      const i0 = Math.round(vx * 2),
+        j0 = Math.round(vz * 2);
+      let s = 0,
+        c = 0;
+      for (let jj = j0 - 1; jj <= j0; jj++)
+        for (let ii = i0 - 1; ii <= i0; ii++) {
+          if (ii < 0 || jj < 0 || ii >= W2 || jj >= H2) continue;
+          const v = L[jj * W2 + ii];
+          if (!isNaN(v)) ((s += v), c++);
+        }
+      return c ? s / c + Math.min(LEV_LIFT, Math.max(0, fb - s / c)) : fb;
+    };
   for (let j = 0; j < H2; j++) {
     if (j % 12 === 11) yield;
     for (let i = 0; i < W2; i++) {
@@ -515,7 +536,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       if (!isW(cx, cz)) continue;
       const q = j * W2 + i;
       wd[q] = -1;
-      wy[q] = wlev(cx, cz);
+      /* WA-10: a river's cells at its level along its line (walk/water-flow.js: never rising, smoothed), not the bed's */
+      wy[q] = flowMap.lev && !isNaN(flowMap.lev[q]) ? flowMap.lev[q] : wlev(cx, cz);
       if (dryT) {
         const c = (dryT[sc.h - 1 - Math.floor(cz)] || '')[Math.floor(cx)];
         if (c !== 'w' && c !== 'd') {
@@ -781,7 +803,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
               ? nb
               : rawHeightAt(sc, vx, vz) + sc0 + 0.03
             : run
-              ? rawHeightAt(sc, vx, vz) + sc0 - 0.12
+              ? levV(vx, vz, rawHeightAt(sc, vx, vz) + sc0 - 0.12)
               : pool || (KL.sea && nearCover(vx, vz))
                 ? Math.max(y, tideY(vx, vz))
                 : y,
@@ -808,7 +830,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
         if (dryT && (fl[q] || fl[nq2])) continue;
         let yt = y,
           y2 = i + di >= 0 && j + dj >= 0 && i + di < W2 && j + dj < H2 ? wy[nq2] : wlev(nx2, nz2);
-        if (run) {
+        /* WA-10: a river's cells lie at its levels, so its steps are read like still water's */
+        if (run && !flowMap.lev) {
           if (sc0 - stp(nx2, nz2) < 0.15) continue;
           const eh = rawHeightAt(sc, cx + di * 0.25, cz + dj * 0.25);
           yt = eh + sc0 - 0.12;
@@ -911,7 +934,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
             vz = j * 0.5 + c * 0.5;
           wv.push(
             vx,
-            run ? rawHeightAt(sc, vx, vz) + s0 - 0.12 : wy[nq],
+            run ? levV(vx, vz, rawHeightAt(sc, vx, vz) + s0 - 0.12) : wy[nq],
             vz,
             0,
             fw[0],
