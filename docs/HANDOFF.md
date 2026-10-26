@@ -2,6 +2,23 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Online track ON-0 planned: leaderboards, Showcase, trading, live battles - 2026-10-26
+Branch `ccr-0b8e3c38-gt7t6a` (a planning session; the owner: expand the friend system with trading, real-time
+battles, global trading, leaderboards for runs and shared Billies with votes, with online research). Docs only, no
+code. Tag to suggest: `on-0-done` (the owner pushes tags).
+- docs/phases/online-track.md: the owner's answers, the verified facts, the research (Pokémon SV, HOME, GO, Showdown,
+  Slay the Spire, PokeRogue, Mario Maker, Firebase), what the rules can do without a server, sessions ON-1..ON-7.
+- The owner's answers: stay on Spark (no Cloud Functions); boards first; trade ranch Billies, eggs and robot parts;
+  global trading on trust; friends-only leaderboards; names as typed; level 50 PvP with splices allowed; a few trade
+  evolutions with a solo route. No ranked ladder on Spark (my call, written in the track: it can't be verified).
+- VISION's Online line, ROADMAP (RL-15 is ON-2, phase 18 absorbed, the track listed), SECURITY (the phase 18 table
+  superseded, what stays open), BRANCHES (`track/online`).
+- Found: the battle field is uneven (`SIDE_ACTORS` three slots for side 0, two for side 1): ON-6 checks a fair mirror
+  match first. The friend re-add bug is still open (ON-1).
+- **Risky**: the friend-trade swap without a server relies on `getAfter`/`existsAfter` across two players' batches:
+  ON-4 proves it on the emulator before any screen is built. Spark's 50k reads a day for GTS and Showcase browsing.
+- Next: the owner makes `track/online` from main; ON-1 there (it can start before RL-14b; ON-2 replaces RL-15).
+
 ### HD-2D audit fixes and smart light shafts (one session, not a phase) - 2026-10-26
 Branch `ccr-6f3a4696-vl6nkg` (this session's own: a cloud session pushes only there; BRANCHES.md would call it
 `art/hd2d-fixes`). Started from main b87b818d (phase 20 R2-R3 merged). The owner asked for an audit of the HD-2D

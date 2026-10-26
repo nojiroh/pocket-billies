@@ -119,6 +119,16 @@ This needs: the tradeable things to move out of the save into `inventory/` (phas
 Functions, and App Check at the same time. Nothing in today's rules has to change for it: new collections get their
 own rules.
 
+### Superseded 2026-10-26: the online track on Spark
+The owner chose to stay on the free Spark plan (docs/phases/online-track.md), so the table above (`trades`,
+`inventory` written by a Cloud Function) won't be built. Instead every write comes from a player's own game and the
+rules guard shape, size, single claims (create-only documents) and linked writes (`getAfter`/`existsAfter`). What
+stays open, accepted by the owner: a cheater can keep a Billie, egg or part they traded away by restoring their save
+(friend trades, GTS, Surprise Trade); hacked-but-legal Billies pass `legalBilly`; a friend can post a faked score
+(boards are friends only for that reason); there is no ranked ladder. Names show as typed in global views (only
+`cleanName`); the block list and reports are the answer. App Check is still not worth it (it proves the page, not
+the player). If Blaze ever comes, the table above is the plan for trades, boards and ranked matches.
+
 ## Found, not fixed (not security)
 
 - Making friends again the other way round fails: if A once sent B a request that was later removed, and B then sends
