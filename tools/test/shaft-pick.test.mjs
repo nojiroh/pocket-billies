@@ -136,3 +136,11 @@ test('never across you, and nothing right at the camera or past the range', () =
   assert.equal(pickShafts([crown('cam', 0, 18, 15)], base).length, 0);
   assert.equal(pickShafts([crown('far', 0, -60)], base).length, 0);
 });
+
+test('the range counts from where the camera looks, so a walk camera 45 m back still gets shafts near you', () => {
+  const far = [0, 30, 36],
+    vpFar = mul(persp(0.9, 4 / 3, 0.5, 420), look(far, [0, 0, 0])),
+    o = { ...base, eye: far, vp: vpFar };
+  assert.ok(pickShafts([crown('a', -4, -4)], { ...o, focus: [0, 0, 0] }).length === 1);
+  assert.equal(pickShafts([crown('a', -4, -40)], { ...o, focus: [0, 0, 0] }).length, 0);
+});

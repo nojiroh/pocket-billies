@@ -8,8 +8,8 @@
      corners of buildings' roofs, and a place's own `shafts` list.
    - A beam reads only against shade behind it, so the ground round its foot should lie in the shadow of the crowns
      and roofs near it (worked out here from their circles, no shadow map read back). Beams are strongest looking
-     into the light (forward scattering: a Henyey-Greenstein weight on the view and the sun), at a middle distance
-     from the camera, and never over you.
+     into the light (forward scattering: a Henyey-Greenstein weight on the view and the sun), near where the camera
+     looks (counted from you: the walk camera stands 35-60 m back), not right at the camera, and never over you.
    - Picked greedily by score, apart in the world and on screen, up to a count and a share of the screen they may
      cover; a beam already showing keeps its place unless another scores clearly better, so nothing pops. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -81,8 +81,8 @@ export function footShade(x, y, z, w, sun, blockers) {
     if (inShade(x + dx, y, z + dz, sun, blockers)) n++;
   return n / 4;
 }
-/* the gaps between crowns: the middle of two crowns 1.5-3.5 radii apart (centre to centre), as wide as the space
-   between their edges; the caller adds them to the candidates */
+/* the gaps between crowns: between two crowns whose edges stand 0.5-4.5 m apart, about as wide as half that space; the
+   caller adds them to the candidates */
 export function crownGaps(crowns, max = 40) {
   /** @type {ShaftCand[]} */
   const out = [];
@@ -90,17 +90,14 @@ export function crownGaps(crowns, max = 40) {
     for (let j = i + 1; j < crowns.length && out.length < max; j++) {
       const a = crowns[i],
         b = crowns[j],
-        d = Math.hypot(a.x - b.x, a.z - b.z),
-        r = (a.r + b.r) / 2;
-      if (d < r * 1.5 || d > r * 3.5) continue;
-      const gap = d - a.r - b.r;
-      if (gap < 0.5) continue;
+        gap = Math.hypot(a.x - b.x, a.z - b.z) - a.r - b.r;
+      if (gap < 0.5 || gap > 4.5) continue;
       out.push({
         key: `g:${a.key}|${b.key}`,
         x: (a.x * b.r + b.x * a.r) / (a.r + b.r),
         z: (a.z * b.r + b.z * a.r) / (a.r + b.r),
         top: Math.min(a.top, b.top) - Math.min(a.r, b.r) * 0.5,
-        w: Math.min(2, Math.max(0.6, gap * 0.5)),
+        w: Math.min(2.4, Math.max(0.8, gap * 0.6)),
         kind: 'gap',
       });
     }
@@ -109,9 +106,11 @@ export function crownGaps(crowns, max = 40) {
 /**
  * the shafts to draw this moment, best first.
  * @param {ShaftCand[]} cands
- * @param {{ eye: number[], vp: ArrayLike<number>, sun: number[], player?: number[] | null, ground: (x: number, z: number) => number,
- *   blockers: ShaftBlocker[], keep?: Set<string>, max?: number, cover?: number, range?: number }} o
- *   sun: the unit vector toward the sun; ground(x, z): the ground's height; keep: the keys showing now
+ * @param {{ eye: number[], vp: ArrayLike<number>, sun: number[], player?: number[] | null, focus?: number[] | null,
+ *   ground: (x: number, z: number) => number, blockers: ShaftBlocker[], keep?: Set<string>, max?: number, cover?: number,
+ *   range?: number }} o
+ *   sun: the unit vector toward the sun; focus: where the camera looks (you; the walk camera stands 35-60 m back), the
+ *   range is counted from it; ground(x, z): the ground's height; keep: the keys showing now
  * @returns {ShaftPick[]}
  */
 export function pickShafts(cands, o) {
@@ -120,6 +119,7 @@ export function pickShafts(cands, o) {
     coverMax = o.cover ?? 0.25,
     range = o.range ?? 30,
     keep = o.keep || new Set(),
+    fc = o.focus || o.player || eye,
     up = sun[1],
     pl = o.player ? projectNdc(vp, o.player[0], o.player[1] + 0.9, o.player[2]) : null;
   if (up <= 0.03 || max <= 0) return [];
@@ -138,8 +138,9 @@ export function pickShafts(cands, o) {
       vx = mx - eye[0],
       vy = my - eye[1],
       vz = mz - eye[2],
-      dc = Math.hypot(vx, vy, vz);
-    if (dc < 4 || dc > range) continue;
+      dc = Math.hypot(vx, vy, vz),
+      df = Math.hypot(mx - fc[0], mz - fc[2]);
+    if (dc < 4 || df > range) continue;
     const s = projectNdc(vp, mx, my, mz);
     if (!s || Math.abs(s[0]) > 1.05 || Math.abs(s[1]) > 1.05) continue;
     /* its size on screen: from its top to its foot, and across */
@@ -155,7 +156,7 @@ export function pickShafts(cands, o) {
       (0.3 + 0.7 * footShade(fx, o.ground(fx, fz), fz, c.w, sun, blockers)) *
       forwardScatter((vx * sun[0] + vy * sun[1] + vz * sun[2]) / dc) *
       shaftStep(4, 8, dc) *
-      (1 - shaftStep(18, range, dc));
+      (1 - shaftStep(range * 0.6, range, df));
     /* never across you: a beam whose line on screen passes close to you counts for little */
     if (pl && screenLineGap(pl, a, b) < 0.12) k *= 0.15;
     if (keep.has(c.key)) k *= SHAFT_HOLD;
