@@ -14,6 +14,7 @@ import {
   soundEffectAt,
 } from '../hooks.js';
 import { pictureRight } from '../logic/prop-turn.js';
+import { gpuTag } from '../engine/gpu-counters.js';
 import { walkData, walkView } from '../walk-view.js';
 import { engineColor, engineSetting } from '../engine/settings.js';
 import { bindQuad, gpuState, imageTexture, matrix4, renderTarget } from '../engine/webgl.js';
@@ -142,6 +143,7 @@ export function reflectionPass(items, C, rw, rh, X) {
       models.push(it);
       continue;
     }
+    gpuTag(it.voxImg ? 'modelPic' : 0); /* R1 measure: a model's picture layer counted apart */
     const T = imageTexture(it.im);
     if (!T) continue;
     /* phase 09 batch 9: a turned picture's reflection turns with it (logic/prop-turn.js pictureRight) */
@@ -155,6 +157,7 @@ export function reflectionPass(items, C, rw, rh, X) {
     setSpriteUniforms(p, it);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
+  gpuTag(0);
   if (models.length && typeof drawPropModels === 'function')
     drawPropModels(RC, models, Object.assign({}, X, { shadow: null }));
   walkRenderer.reflModels = models.length;

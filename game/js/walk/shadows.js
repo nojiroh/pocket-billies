@@ -18,7 +18,7 @@ import {
   roomFloorOf,
 } from '../hooks.js';
 import { pictureRight, placedTurn } from '../logic/prop-turn.js';
-import { gpuPass } from '../engine/gpu-counters.js';
+import { gpuPass, gpuTag } from '../engine/gpu-counters.js';
 import { filterInto } from '../engine/frame-lists.js';
 import { walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
@@ -199,6 +199,7 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
   for (const it of L) {
     if (it.flat || it.far || it.k === 'enc2' || it.vol || it.k === 'flag' || it.vox) continue;
     if (it.k === 'prop' && !(it.sh > 0)) continue;
+    gpuTag(it.voxImg ? 'modelPic' : 0); /* R1 measure: a model's picture layer counted apart */
     const T = imageTexture(it.im);
     if (!T) {
       miss++;
@@ -255,6 +256,7 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
     setSpriteUniforms(p, it);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
+  gpuTag(0);
   return miss;
 }
 function fittedShadowPass(items0, sun, C) {
@@ -329,6 +331,7 @@ function fittedShadowPass(items0, sun, C) {
     for (const it of L) {
       if (it.flat || it.far || it.k === 'enc2' || it.vol || it.k === 'flag' || it.vox) continue;
       if (it.k === 'prop' && !(it.sh > 0)) continue;
+      gpuTag(it.voxImg ? 'modelPic' : 0); /* R1 measure: a model's picture layer counted apart */
       const T = imageTexture(it.im);
       if (!T) {
         miss++;
@@ -381,6 +384,7 @@ function fittedShadowPass(items0, sun, C) {
       setSpriteUniforms(p, it);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
+    gpuTag(0);
   };
   if (!hit) {
     let p = gpuState.P.shadowG;

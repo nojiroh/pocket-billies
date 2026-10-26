@@ -228,6 +228,10 @@ debugLog.ctx = () => {
         c.dc = g.dc;
         c.dcp = g.dcp;
         c.up = g.up;
+        /* R1 measure: each pass's draws of models and of model pictures (`dct`), and its distinct textures and vertex
+           arrays (`dcu`: the fewest draws grouping could reach) */
+        if (g.dct && Object.keys(g.dct).length) c.dct = g.dct;
+        if (g.dcu) c.dcu = g.dcu;
       }
     }
     if (typeof GAME.gpuState !== 'undefined' && GAME.gpuState.pcl && (GAME.gpuState.pcl[0] || GAME.gpuState.pcl[1]))
