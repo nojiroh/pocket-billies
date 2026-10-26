@@ -180,6 +180,7 @@ export function lightContext(o) {
     shLift,
     shPx: engineSetting('shadows', 'pixel') ? (engineSetting('shadows', 'pixelSize') ?? 32) : 0,
     shSteps: engineSetting('shadows', 'pixelSteps') ?? 2,
+    shFix: (engineSetting('shadows', 'steadyEdges') ? 1 : 0) + (engineSetting('shadows', 'lampFix') ? 2 : 0),
     roomB: o.roomB || [0, 0, 0, 0],
     roomDim: o.roomDim || 0,
     shadow: o.shadow || null,
@@ -311,7 +312,10 @@ export function beginSunShadow(cx, cz, radius, sun, res, name = 'shadow', cy = 0
     cx += dx + f[0] * t;
     cz += dz + f[2] * t;
   }
-  const eye = [cx - tr[0] * dist, cy - tr[1] * dist + 2, cz - tr[2] * dist];
+  /* Steady shadow edges (shadows.steadyEdges): the eye on the light's own line through the centre, the line the snapping
+     above assumes; 2 m higher (as before) tilts the view a little off it and the snapped grid drifts as you walk */
+  const lift = engineSetting('shadows', 'steadyEdges') ? 0 : 2,
+    eye = [cx - tr[0] * dist, cy - tr[1] * dist + lift, cz - tr[2] * dist];
   const view = matrix4.look(eye, [cx, cy, cz], Math.abs(tr[1]) > 0.98 ? [0, 0, 1] : [0, 1, 0]),
     depth = 140,
     proj = matrix4.ortho(-radius, radius, -radius, radius, 1, depth),
