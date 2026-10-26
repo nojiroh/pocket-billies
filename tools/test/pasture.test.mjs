@@ -301,8 +301,9 @@ test('pasture: the fence: a post at every joint, one rail sized to each span, no
 });
 
 test('pasture: the hub as built carries the pasture (rerun tools/build-copperleaf.mjs if this fails)', () => {
-  /* the build adds the pasture before IS-9's dressing (props marked dress), so it is checked on the hub without it */
-  const town = { ...HUB, props: HUB.props.filter(p => !p.dress) };
+  /* the build adds the pasture before IS-9's dressing (props marked dress) and HB-10b's square edges (marked sq), so it
+     is checked on the hub without them */
+  const town = { ...HUB, props: HUB.props.filter(p => !p.dress && !p.sq) };
   const out = pastureProps(town, SC);
   assert.deepEqual(out.props, town.props);
 });

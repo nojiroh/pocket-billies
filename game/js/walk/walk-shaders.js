@@ -473,13 +473,19 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;c.rgb=lookOn(c.rgb,floor(
 precision highp float;in vec2 aC;uniform mat4 uVP;uniform vec3 uP,uRight,uUp;uniform vec2 uS;uniform vec4 uUV;out vec2 vUV;out vec3 vW;
 void main(){vec2 c=aC-.5;vec3 p=uP+uRight*c.x*uS.x+uUp*(-c.y)*uS.y;vW=p;vUV=vec2(uUV.x+aC.x*uUV.z,uUV.y+aC.y*uUV.w);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex;uniform vec4 uCol;uniform vec2 uS;uniform float uGlow,uLitFx;${LIGHT_GLSL}
+precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex,uGround;uniform vec4 uCol,uGRect,uGTint;uniform vec2 uS;uniform float uGlow,uLitFx;${LIGHT_GLSL}
+/* 0.1.0 alpha: a flat grass prop (moss, clover) on grass takes the grass's colour, as the blades do: the ground picture
+   round its middle (uGTint.xy, five taps), its own pixels' lightness over the picture's mean (uGTint.w) keeping its tones, a tenth lighter (as the blades' tips are) so it still reads, lit as the blades and the ground are */
+vec3 groundTap(vec2 w){return textureLod(uGround,vec2((w.x-uGRect.x)*uGRect.z,(uGRect.y-w.y)*uGRect.w),0.).rgb;}
+vec3 groundTone(vec2 w){return (groundTap(w)+groundTap(w+vec2(.25,0.))+groundTap(w-vec2(.25,0.))+groundTap(w+vec2(0.,.25))+groundTap(w-vec2(0.,.25)))*.2;}
 void main(){vec4 c;if(uGlow>1.5){/* a smart light shaft (walk/effects.js): soft across, faded in at its top and out over its lower half (no hard
   line where it meets the ground or a trunk), a few faint streaks four pixels wide that drift slowly */
   float x=abs(vUV.x*2.-1.),y=vUV.y,a=(1.-x*x)*(1.-x*x)*smoothstep(0.,.18,y)*(1.-smoothstep(.35,1.,y));
   float cl=floor(vUV.x*uS.x*8.),ph=uTime*.00035+fract(sin(cl*12.9898)*43758.5)*6.,f0=floor(ph);
   float h0=fract(sin((cl+f0*7.31)*91.7)*437.58),h1=fract(sin((cl+(f0+1.)*7.31)*91.7)*437.58);
-  a*=.55+.6*mix(h0,h1,smoothstep(0.,1.,fract(ph)));c=vec4(uCol.rgb*a*uCol.a,1.);}else if(uGlow>.5){vec2 q=vUV*2.-1.;float d=dot(q,q);if(d>1.)discard;float f=(1.-d);c=vec4(uCol.rgb*f*f*f*uCol.a,1.);}else{c=texture(uTex,vUV)*uCol;if(c.a<.02)discard;if(uLitFx>.5)c.rgb*=mix(uAmbTop,vec3(1.),.5)+uSunCol*.4;c.rgb=fogit(c.rgb,vW);}o=c;}`,
+  a*=.55+.6*mix(h0,h1,smoothstep(0.,1.,fract(ph)));c=vec4(uCol.rgb*a*uCol.a,1.);}else if(uGlow>.5){vec2 q=vUV*2.-1.;float d=dot(q,q);if(d>1.)discard;float f=(1.-d);c=vec4(uCol.rgb*f*f*f*uCol.a,1.);}else{c=texture(uTex,vUV)*uCol;if(c.a<.02)discard;
+ if(uGTint.z>.5){float sh=shadowAt(vW,.002),ao=contactAO(vW),occ=min(sh,ao);c.rgb=seasonalF(groundTone(uGTint.xy)*dot(c.rgb,vec3(.299,.587,.114))/max(uGTint.w,.02)*1.1,vW,vec2(.75,1.))*
+  (ambient(vec3(0,1,0),ao,occ)+uSunCol*max(uSunDir.y,0.)*occ+points(vW,vec3(0,1,0)));}else if(uLitFx>.5)c.rgb*=mix(uAmbTop,vec3(1.),.5)+uSunCol*.4;c.rgb=fogit(c.rgb,vW);}o=c;}`,
   ],
 };
 provide({ WALK_SHADERS }); /* to-module */

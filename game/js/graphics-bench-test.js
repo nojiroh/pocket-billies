@@ -60,6 +60,7 @@ expose({
   graphicsTestShow: [() => graphicsTestShow, v => (graphicsTestShow = v)],
   graphicsTestStand: [() => graphicsTestStand, v => (graphicsTestStand = v)],
   graphicsTestValue: [() => graphicsTestValue],
+  graphicsTestWaterNote: [() => graphicsTestWaterNote],
   runGraphicsBench: [() => runGraphicsBench, v => ((runGraphicsBench = v), provide({ runGraphicsBench }))],
 });
 /* eslint-enable no-func-assign */
@@ -255,6 +256,12 @@ function graphicsTestPlan() {
   return plan;
 }
 
+/* phase 20 R4: a step that turns the water's mirror or pixel water off says so, so a flat, see-through pond there
+   reads as the step, not a fault */
+const graphicsTestWaterNote = set =>
+  set && (set['water.reflection'] === 0 || set['water.pixel'] === false)
+    ? ' (the water is meant to look flat now)'
+    : '';
 /* the player's settings for one step: the game's own values, pinned, with the station's light and the step's value */
 function graphicsTestPrefs(st, set) {
   const eng = { quality: { auto: false, resolution: 1 } };
@@ -374,7 +381,7 @@ async function runGraphicsBench() {
         let rebuilt = false;
         for (const p of mine) {
           if (graphicsTest.stop) break;
-          stepEl.textContent = `${st.name}: ${p.kind === 'dial' ? `${p.label} ${graphicsTestValue(p.value)}` : p.label}`;
+          stepEl.textContent = `${st.name}: ${p.kind === 'dial' ? `${p.label} ${graphicsTestValue(p.value)}` : p.label}${graphicsTestWaterNote(p.set)}`;
           graphicsTestPrefs(st, p.set);
           /* a rebuild before this step, and back after a step that rebuilt, so the ground and grass match */
           const rb = p.rebuild || rebuilt;

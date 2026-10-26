@@ -343,26 +343,29 @@ export const ENGINE_DEFAULTS = {
     /* a phone's pixel budget 1.2 MP instead of 1.6, its automatic resolution starting at 0.9 (D4) */
     phonePixels: false,
     /* a phone's lamps: at most 8 lit at once, 4 of them in the air (D6) */
-    phoneLamps: false,
+    phoneLamps: true,
     /* render targets' old content dropped before a pass that draws over all of it, the reflection's depth after it
        (D3) */
     invalidate: false,
     /* rain, snow, ash and their splashes in one draw */
-    rainBatch: false,
+    rainBatch: true,
     /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each) */
     spriteInstances: false,
     /* phase 20 R2: the solid models (voxel props, low-poly models) drawn one draw per mesh for every item with it */
-    modelInstances: false,
+    modelInstances: true,
     /* phase 20 R3 (shadows): the shadow maps' pictures one draw per picture, their models one draw per mesh */
-    shadowInstances: false,
+    shadowInstances: true,
     /* phase 20 R3 (F8): models whose mesh holds still (trees whose leaves sway too) in the far shadow map's cache, the
        ones that bob or turn out of it */
-    modelShadowCache: false,
+    modelShadowCache: true,
     /* phase 20 R3 (E11, the owner's option a): the far shadow map draws what only the wind sways at rest and keeps it
        in its cache; within the near map (13 m) shadows sway as before */
-    farShadowsStill: false,
+    farShadowsStill: true,
     /* phase 20 R3 (battle): a battle rig's canvas drawn and uploaded again only when its pose, face or tint changes */
-    rigReuse: false,
+    rigReuse: true,
+    /* phase 20 R3 (context, H5): a place is shown once two frames have drawn behind its fade (at most 1.5 s), so its
+       first draws compile and upload out of sight; a restored context fades back in the same way */
+    warmUp: true,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -1505,6 +1508,12 @@ export const ENGINE_SPEC = [
         'Reuse battle rigs',
         'bool',
         'In a battle each Billie’s picture is drawn and sent to the graphics card again only when its pose, face or tint changes (about 6 times a second), not on every frame. Same picture, less work.',
+      ],
+      [
+        'warmUp',
+        'Warm up before showing',
+        'bool',
+        'A place fades in only once its first two frames are drawn (never more than 1.5 s later), so the hitch of their first draws, getting shaders ready and pictures onto the graphics card, happens out of sight. After the graphics card is lost and comes back, the place fades back in the same way.',
       ],
       [
         'gpuTimer',

@@ -53,6 +53,129 @@ changes until the owner turns them on after a phone check.
 - Next: the owner on the Android phone and the iPad: Graphics test (Sun gap smart shafts; Shadow court, Lamp square,
   Meadow and Depth corridor now hold the new switches) and a debug log; then one commit per switch to turn on what
   stays. After that: cavity darkening from the same sheet, short self-shadows on the ground.
+### Hub track HB-10a: the square's shape and fountain (and HB-10b started) - 2026-10-26
+Branch `ccr-144f3c08-vf09lo` (the planning session's; the owner: "make it 10m and start"). Merge into `track/hub`.
+Tag to suggest: `hb-10a-done` (the owner pushes tags). Details: docs/phases/hub-track.md, "Done in HB-10a".
+- Changed: Copperleaf's square paved to a lobed rim about 10 m out (mean 10, 8.2-11.8, bulging north-east toward the
+  sky rail and the portal) by `tools/patch-copperleaf-square.mjs --outline`; the fountain in place of the well and the
+  signpost 4.5 m out (`--fountain`; build-copperleaf.mjs does the same on a rebuild; the world map draws a fountain on
+  the well plot). WA-10's `patch-copperleaf-water.mjs --square` removed (it would shrink the square back to 8 m).
+  `squareRim` lives in tools/square-props.mjs. The fountain model's waters and lily pads were hidden under its solid
+  bowl tops (it looked dry): lifted (build-props-batch6.py). island-shots.py: `square-portal`, `square-near`.
+- Risky: the plot kind stays `well` (internal). Rebuilding batch 6 rewrites `clock_tower.json` and
+  `test_props_marigold.json` (old drift between the script and later edits): reverted here, so the next batch 6 run
+  must revert them again or their owner settles it. The pinwheel street entries moved to HB-10f.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build, `npm test` 1288 pass (one after-edit hook
+  run reported a failure that two reruns didn't show), smoke 6 of 6 (Python Playwright 1.63.0; the pinned 1.56 wants a
+  browser this container lacks), tools/test/hub-square.test.mjs, headless pictures before and after. The full quick
+  check was still running at the session's end: 13 of 37 steps ok, 2 PROBLEMs that look unrelated, not yet checked on
+  main: "Terraces ... props in the air: copperleaf: sky_portal" (the portal floats by design, HB-7) and "RL-8 ... the
+  town's shop has no Perk (RL-12)". **Next session: run the quick check again and run both steps on main.**
+- **HB-10b started, not committed**: docs/plans/hb-10b-wip.patch (`git apply` it; it applies on 7c41fad6). It holds
+  the edge layout (tools/square-props.mjs `SQUARE_EDGE`: three stalls, a cart, crates, sacks, six planters at the
+  street mouths, five streetlamps, a solar canopy, three benches, two string lights; nothing nearer the middle than
+  4.6 m, only planters in the portal view, a reach test that nothing is shut in), `--edges` on the patch tool, the
+  call in build-copperleaf.mjs, tools/build-props-square.py (the new `string_lights` model, its bulbs lamp glows), the
+  fountain's night fx in build-props-batch6.py (three glows round the basin, `fireflies`), and the edge tests. Not
+  yet done: the `fireflies` effect in game/js/walk/effects.js (and the Studio's PROP_EFFECT_KINDS), running
+  build-props-square.py, batch 6 (revert the drift above) and `--edges`, the pictures by day and night, and checking
+  that the 3D buildings' windows already light at night (they should: prop-models.js glassLit). A dry run of the
+  layout passed every test. cafe_table and crates are voxel models (not the airship style): left out, remakes later.
+- Next: HB-10b on `track/hub` (or this branch at the owner's word) from the patch above.
+
+### Hub track HB-10 planned: the square alive - 2026-10-26
+Branch `ccr-144f3c08-vf09lo` (a planning session; the owner: "make a plan to make the hub island feel more alive",
+with online research and questions). Docs only, no code.
+- docs/phases/hub-track.md: HB-10 split into HB-10a-f with the verified facts, the research, the owner's answers
+  and the Ask me befores; ROADMAP's hub line.
+- Found: the square holds 8 props within 18 m and no building fronts it (store 27 m, inn 41 m); 17 town furniture
+  models exist unused on the hub.
+- The square's size: the owner settled on about 10 m (between WA-10's ~8 m and the generator's 12 m).
+- Next: HB-10a on `track/hub` (shape and fountain).
+### Phase 20 R3, lane context (H1-H3, H5: the resource registry, freeing, memory by kind, warm-up) - 2026-10-26
+Branch `track/renderer` (one of three R3 lanes: shadows, context, battle). Plan approved ("Continue") with my
+recommendations: each owner drops its own handles on a restore and makes them again lazily (no stored rebuild per
+object, which would have kept every mesh's and texture's data twice); the warm-up is on by default behind its own
+switch (it doesn't change the look); the other lanes may create through the registry.
+- Where the phase file, R1's notes and the code differed (checked):
+  - Nothing needs deleting after a loss: the old handles died with the context (a delete on them does nothing). The
+    real gaps were caches fooled by the restored context being the same object, and objects dropped without delete.
+  - Already fine after a restore: the sprite instance buffer (keyed on `gpuState.quad`, new with each context), the
+    rain batch's arrays (kept on the program; `gpuState.P` is emptied), the models' record buffer (flushed).
+  - Not fine, found here: the cloth grid (`gpuState.gridGL === gl`) kept its dead buffer after a restore.
+  - No program was ever replaced within a context, but a background compile whose program had been made on the spot
+    meanwhile was dropped undeleted, a failed compile left its shaders and program, and no shader was ever deleted.
+  - The walk set (WALK_SHADERS, POST_EFFECT_SHADERS) compiles in one blocking go in `ensureWalkGl`; the debug log
+    already blames compiles ("compiling shaders", "finishing a shader"), and your Copperleaf hitches were blamed on
+    the ground setup, not compiles: H5 doesn't touch the ground setup.
+  - The precompile list (walk-view-gl.js `ensureWalkGl`, not webgl.js) already had every new instanced and batched
+    program, the shadows lane's two included.
+- Changed (one kind per commit; files of other lanes: create and delete lines only):
+  - The known bugs: engine/light.js `frameBlockLost()` and walk/sprites.js `hideQueriesLost()`, run on every restore.
+  - The registry (engine/webgl.js, "resources"): `gpuBuffer/gpuTexture/gpuVao/gpuFramebuffer/gpuMake(type, kind,
+    bytes)`, `gpuSized`, `gpuFree` (a handle of an older context is only forgotten; one made outside it is deleted by
+    its type), `gpuRetire` (freed two frame ticks later), `gpuOnRestore(name, fn)`, `gpuMemory()`. Entries sit in a
+    WeakMap and never keep an object alive; one collected without `gpuFree` counts as "dropped" (a leak's sign).
+    `gpuState.gen` goes up with every context and restore; caches compare it. The frame scheduler's tick calls
+    `gpuFrame()`: retired objects freed, and a context that died before its lost event is marked lost at once.
+  - Moved onto it: the engine's own objects (quad, stand-ins, samplers, pictures, canvases, normal maps, render
+    targets, meshes, GPU timers); programs and shaders (shaders deleted once linked; duplicates and failures
+    deleted); buffers and vertex arrays in prop-models.js (both halves: I moved the shadow maps' record buffer's
+    create line, `MODEL_SHADOW_INSTANCES`), model-instances.js, sprite-instances.js, buildings.js, structures.js,
+    solid-props.js, walk/effects.js (rain), walk/grass-build.js, engine/light.js, walk/sprites.js (queries); the
+    ground (ground-textures.js, map-cache.js, ground-mesh.js, water-data.js: kinds ground and ring); the world map
+    (world-bowl.js). Left on purpose: self-test.js's probes (they delete their own).
+  - Restore: the walk view's drop (`walkViewGpuLost`) and the world map's (`worldBowlDropGpu`) registered with
+    `gpuOnRestore`; the registry runs every drop first, then the walk view and the map are handed back.
+  - H3, debug log: `gpuMemory` in the report (MB, objects and dropped objects by kind, the picture cap's own count,
+    pictures trimmed, contexts made, `lateCompiles`: the names behind `pcl`), `gmb` (total MB) in every sample.
+  - H5: `quality.warmUp` ("Warm up before showing", on): a place fades in once two frames have drawn behind its fade
+    (at most 1.5 s), `mountWalkView`'s promise waits for it; a restore fades out and back in the same way.
+  - Debug menu: the diagnostics test's note says 4-5 min on a phone (the R1 measure lane's note for this lane).
+- Verified: lint, typecheck, `npm test` (1132), check:modules after every commit; the smoke check on every commit
+  touching game/ (run from a worktree of the commit). New tests: tools/test/gpu-registry.test.mjs (counts, sizes,
+  free, retire, generations, the early loss, owners' drops, render targets, meshes, programs). One headless crash check
+  at low graphics (scratch script, no pictures compared), the town fixture: two forced losses, the world map with a
+  loss, back to walk, a wild battle with a loss: every one restored and faded back in, **0 console warnings and 0 page
+  errors after each loss** (R1's run had hundreds of "used but unbound" and getQueryParameter warnings), 0 objects
+  dropped without being freed, `pcl` 0. Memory there (low graphics, 800 x 500): Copperleaf about 9 MB targets, 66 MB
+  ground, 27 MB near ring, 15 MB pictures, 4 MB meshes; the world map adds about 20 MB pictures and 20 MB targets.
+- Risky:
+  - Shaders are now detached and deleted once their program links. It is the standard practice and passed the
+    in-game shader test headless, but an old driver that misbehaves would show as a shader error in the log.
+  - The warm-up holds a place's fade-in for up to 1.5 s on a device that draws slower than two frames in that time;
+    turn "Warm up before showing" off if opening a place feels slower.
+  - For the shadows lane: `shadowInstanceState.bad === gl` and `modelShadowState.bad === gl` (walk/shadows.js,
+    prop-models.js) still compare the context, so a failure before a restore stays after it; compare `gpuState.gen`.
+  - H2's `gpuRetire` is in place but no site needed it: WebGL keeps a deleted object alive until the commands using
+    it are done, and no replacement found here was read after its old one was freed.
+- To test on your phone (debug menu → "Lose the GPU context", wait 2 s, each one; send the debug log after):
+  - Copperleaf by day: the town comes back whole and lit (buildings, trees, ground, water, shadows, lamps), fading
+    back in; tap the button twice in a row, a few seconds apart.
+  - Copperleaf at night (lamps and windows lit after the loss), and in the rain.
+  - The world map (Map tab), then back to the walk view.
+  - A battle at its move menu, and again with "Reuse battle rigs" on.
+  - A run place (jungle) and a run town, with "Shadows in batches" and "Models in batches" on.
+  - The Studio with `?glLose=12`: the battle preview with a walk scene open before 12 s pass.
+  - In each debug log: `gpuMemory` (what each kind holds; `dropped` should stay 0), `lateCompiles` empty after a tour
+    of the town, a route and a room (`pcl` 0), and whether opening a place feels slower with the warm-up.
+- Next: round 4 (D2 `mediump`, old paths deleted after your verdicts, the `phase-20-done` tag).
+### Studio art track - the plan (SA) - 2026-10-26
+Branch `ccr-a073cfde-ab64xh` (the track branch `track/studio-art` didn't exist; this session pushes only here).
+Planning only; no code changed. The owner's brief: all art viewable and editable in the Studio, online research on a
+more intuitive Studio, and what no longer fits the Vision taken out.
+- Changed: docs/phases/studio-art-track.md (findings, research with sources, five sessions SA-1..SA-5, the owner's
+  decisions); ROADMAP's tracks list; BRANCHES' `track/studio-art` row.
+- Risky or unfinished: nothing built. The orphan lists in the plan come from greps of game/js and studio/js; SA-5
+  checks them again before deleting.
+- Verified: the main claims by grep and ls (Art files' four empty tabs and missing folders; tiles47 read only by
+  walk-view.js and built by tools/build-terrain-v47.py; `addEgg`/`hatchEgg` with no caller; `starterEgg`,
+  `dropTiers`, `restCost`, `endText` unread; portraits and art/people read by nothing; the Workbench's disabled modes).
+- Decisions (the owner, every recommendation): tiles47 PNGs are the source and the builder retires; orphans deleted,
+  legacy art parked; the clean-up reaches the game (Jobs, Town shops, walk eggs); `track/studio-art`, SA-1 first.
+- Questions waiting for the owner: make `track/studio-art` from main (after this branch's PR merges, so the plan file
+  is on it).
+- Next session starts with: SA-1 (the Art browser) on `track/studio-art`, in Plan Mode.
 
 ### Merge batch 2: PRs #219 (renderer) and #217 (roster RO-3a..RO-3d) into main - 2026-10-26
 Branch `ccr-ed7f65cb-dk7xqw` (the owner: "look at the open PRs and merge them to main"). Both conflicted with main, so
@@ -586,18 +709,6 @@ only if the phone still says the rigs matter.
   `uploadMs` x redraws exceeds ~3 ms a frame, or `ownRigReuse` shows a clearly higher fps than `own`; otherwise close
   G and, after your verdict, turn `rigReuse` on by default.
 - Next: the round 3 phone run covering every lane's switches.
-
-### Phase 20 R3, lane context (H1-H3, H5) - in progress, 2026-10-26: the resource registry's API, for the other lanes
-The full entry replaces this one at the end of the lane. Pushed now so the shadows and battle lanes can make their GPU
-objects through it (engine/webgl.js, "resources"):
-- `gpuBuffer(kind, bytes)`, `gpuTexture(kind, bytes)`, `gpuVao(kind)`, `gpuFramebuffer(kind)`, `gpuMake(type, kind,
-  bytes)` for the rest (renderbuffer, sampler, query, program); kinds: programs, pictures, targets, ground, ring,
-  meshes, instances, canvases, other. `gpuSized(h, bytes)` after a bufferData or texImage at a new size.
-- `gpuFree(h)` instead of `gl.deleteX(h)` (null-safe; a handle of an older context is only forgotten).
-  `gpuRetire(h)` frees it two frame ticks later (a replaced object the frames in flight may still read).
-- A cache checks `x.gen !== gpuState.gen` (with or instead of `x.gl !== gl`): a restored context is the same object.
-- `gpuOnRestore(name, fn)`: fn drops what that owner holds on a restore (it is made again on next use).
-- I moved the create line of the shadow maps' model record buffer (prop-models.js, `MODEL_SHADOW_INSTANCES`) onto it.
 
 ### Phase 20 R2, lane pixels (stage 6 without D2) - 2026-10-26
 Branch `track/renderer` (one of three R2 lanes: models, sprites, pixels). Plan approved in Plan Mode; the owner's

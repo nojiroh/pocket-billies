@@ -76,6 +76,7 @@ import {
   endGpuTimer,
   ensurePrograms,
   gpuLoading,
+  gpuOnRestore,
   gpuState,
   initWebgl,
   normalize3,
@@ -135,6 +136,8 @@ expose({
   phoneStarted: [() => phoneStarted, v => (phoneStarted = v)],
   screenToGround2d: [() => screenToGround2d],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
+  walkViewGpuLost: [() => walkViewGpuLost, v => (walkViewGpuLost = v)],
+  walkWarmUp: [() => walkWarmUp, v => (walkWarmUp = v)],
   worldToScreen2d: [() => worldToScreen2d],
 });
 /* eslint-enable no-func-assign */
@@ -236,9 +239,9 @@ export function mountWalkView(cv, id, opt = {}) {
       if (walkView.id !== id) return;
       walkView.ready = true;
       frameTask('dio', drawWalkFrame, () => (walkView.opt.cap ? walkView.opt.cap() : userFps()));
-      cv.classList.add('in');
       /* the hub: the world map's slow parts done ahead, so it opens whole (world-bowl.js worldMapPrewarm) */
       if (typeof worldMapPrewarm === 'function' && !worldExtra.look) setTimeout(worldMapPrewarm, 1500);
+      return walkWarmUp(cv, id);
     })
     .catch(e => {
       walkView.err = e;
@@ -345,8 +348,8 @@ export function ensureWalkGl(cv) {
 }
 /* phase 20 H: a restored context is the same object with nothing on it, so every cache that keeps a buffer or a
    texture is dropped (not freed: the old ones are gone with the context), whether or not the walk view shows: the world
-   map may make the context again first, and the walk view then skips ensureWalkGl's own clearing. What still keeps
-   dead handles waits for the resource registry (HANDOFF, phase 20 round 1 context lane) */
+   map may make the context again first, and the walk view then skips ensureWalkGl's own clearing. Run by the resource
+   registry on every restore (engine/webgl.js gpuOnRestore), before the walk view is mounted again */
 function dropWalkGpuCaches() {
   walkRenderer.gkey = '';
   walkRenderer.farKey = '';
@@ -383,13 +386,35 @@ function dropWalkGpuCaches() {
     structureState.key = '';
   }
 }
-function onGlContextRestored(cv) {
+function walkViewGpuLost() {
   dropWalkGpuCaches();
   frameBlockLost();
   hideQueriesLost();
+}
+gpuOnRestore('walk view', walkViewGpuLost);
+/* phase 20 H5: the view is shown once two frames have drawn behind its fade (at most 1.5 s): their first draws compile
+   what the background compile hasn't finished and upload their pictures while nothing can be seen. A restore fades
+   out and back in the same way (Engine > Quality "Warm up before showing", on) */
+function walkWarmUp(cv, id) {
+  const f0 = walkRenderer.frames,
+    t0 = performance.now(),
+    n = engineSetting('quality', 'warmUp') === false ? 0 : 2;
+  return new Promise(done => {
+    const look = () => {
+      if (walkView.id !== id) return done();
+      if (walkRenderer.frames < f0 + n && performance.now() - t0 < 1500) return void requestAnimationFrame(look);
+      cv.classList.add('in');
+      if (n && typeof debugLog !== 'undefined') debugLog.mark('warming up a scene', t0, performance.now());
+      done();
+    };
+    look();
+  });
+}
+function onGlContextRestored(cv) {
   if (walkView.id && walkView.cv === cv) {
     const id = walkView.id;
     walkView.id = null;
+    if (engineSetting('quality', 'warmUp') !== false) cv.classList.remove('in');
     mountWalkView(cv, id, walkView.opt);
   }
 }
