@@ -738,6 +738,8 @@ debugLog.more = () => {
           picturesCapMB: GAME.gpuState.texB ? Math.round(GAME.gpuState.texB / 1048576) : 0,
           trimmed: GAME.gpuState.texTrimmed || 0,
           contexts: GAME.gpuState.gen || 0,
+          /* H5: the programs compiled after a place had settled (pcl's names): each one a warm-up missed */
+          lateCompiles: (GAME.gpuState.pclNames || []).slice(),
         }
       : null
   );

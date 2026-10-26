@@ -62,6 +62,7 @@ expose({
   gpuVao: [() => gpuVao],
   imageTexture: [() => imageTexture, v => (imageTexture = v)],
   initWebgl: [() => initWebgl, v => (initWebgl = v)],
+  lateCompile: [() => lateCompile, v => (lateCompile = v)],
   lossWatched: [() => lossWatched],
   makeNormalMap: [() => makeNormalMap, v => setMakeNormalMap(v)],
   matrix4: [() => matrix4],
@@ -123,6 +124,7 @@ export const gpuState = {
   loaded: false,
   loadAt: 0,
   pcl: [0, 0],
+  pclNames: [],
   /* phase 20 H1: the context's generation, one more for every context made (a restored one too): gpuRes */
   gen: 0,
 };
@@ -369,8 +371,15 @@ function frameBlockBinding(gl, p) {
   gl.uniformBlockBinding(p, i, 0);
   return true;
 }
+/* phase 20 H5: a program compiled after a place has settled (pcl), and its name (the last few, for the debug log) */
+function lateCompile(i, name) {
+  gpuState.pcl[i]++;
+  const L = gpuState.pclNames;
+  if (!L.includes(name)) L.push(name);
+  if (L.length > 12) L.shift();
+}
 function startProgramCompile([vs, fs], name) {
-  if (gpuState.loaded) gpuState.pcl[1]++;
+  if (gpuState.loaded) lateCompile(1, name);
   const gl = gpuState.gl,
     mk = (t, src) => {
       const s = gpuShader(t);
@@ -465,7 +474,7 @@ export function pollPendingPrograms(max = 2) {
   }
 }
 function compileProgram([vs, fs], name) {
-  if (gpuState.loaded) gpuState.pcl[0]++;
+  if (gpuState.loaded) lateCompile(0, name);
   const gl = gpuState.gl,
     made = [],
     mk = (t, src) => {
@@ -525,6 +534,7 @@ function compileProgram([vs, fs], name) {
 export function frameBlockCheck(defs) {
   const gl = gpuState.gl,
     pcl = gpuState.pcl[0],
+    names = gpuState.pclNames.slice(),
     bad = [];
   let n = 0;
   try {
@@ -555,6 +565,7 @@ export function frameBlockCheck(defs) {
     }
   } finally {
     gpuState.pcl[0] = pcl;
+    gpuState.pclNames = names;
   }
   return { n, bad };
 }
