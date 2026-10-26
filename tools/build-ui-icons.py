@@ -6,6 +6,9 @@ The tool adds the rest the same way for every icon, so the set stays consistent:
   - a 2 px block side to the lower right, in a darker shade of each colour;
   - the front split on the 45-degree line through the icon's middle: paler above, full colour below;
   - a lit edge (top and left) and a darker seam where two colours meet (right and below).
+A one-colour icon (MONO, 2026-10-26) names its colour there and draws with the digits 1-4 (that colour's light, mid,
+dark and ink shades, RAMP); its letters are accents. Shades of one colour never get a seam between them, so the
+tones read as one block. Ink is for details inside the shape only: it is too dark to read on the dark theme's panels.
 The colours are the light theme's (game/data/uiTheme.json) plus a few for things; icons are objects, so they keep
 the same colours on both themes (art.js uiIconHTML shows the SVG as an image, not as a tinted mask). Shapes follow
 the UI track's 45-degree grid: straight lines and 45-degree steps, octagons for circles. Edit a grid, then run:
@@ -40,6 +43,16 @@ PALETTE = {
     'V': '#6A4FB0',  # deep violet
     'c': '#D3DCE0',  # cloud
 }
+RAMP = {  # light, mid, dark, ink: the digits 1-4 in a MONO icon's grid
+    'gold': ('#FBE3A0', '#F6D06C', '#D99E33', '#8A5A14'),
+    'red': ('#E8846B', '#C8492F', '#8E2E1C', '#6E1F12'),
+    'green': ('#7DBF6E', '#3B8446', '#24572C', '#173D1E'),
+    'steel': ('#C9D2DB', '#9AA7B4', '#5E6B78', '#3E4852'),
+    'blue': ('#A9D4EE', '#4F9BD1', '#2C6A9A', '#1B4466'),
+    'teal': ('#8FD6CC', '#2A9D8F', '#1B6B61', '#0F4740'),
+    'violet': ('#B9A3E3', '#8A6CC9', '#5A3F9E', '#3A2670'),
+}
+MONO = {}
 SHADOW = '#14200F'
 WHITE = '#FFFFFF'
 SIDE = (0.4, 0.5)  # the block side's shade, near and far
@@ -1824,34 +1837,39 @@ def mix(a, b, t):
     return '#%02X%02X%02X' % tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3))
 
 
-def render(rows):
-    """the 36 x 36 picture of one grid: {(x, y): '#RRGGBB'}"""
+def render(rows, hue=None):
+    """the 36 x 36 picture of one grid: {(x, y): '#RRGGBB'}; hue is a MONO icon's RAMP colour"""
+    colour = dict(PALETTE, **({str(i + 1): c for i, c in enumerate(RAMP[hue])} if hue else {}))
+
     def at(x, y):
         return rows[y][x] if 0 <= x < FRONT and 0 <= y < FRONT and rows[y][x] != '.' else ''
+
+    def kin(m):  # the shades of the icon's colour are one family
+        return 'mono' if m.isdigit() else m
     px = {}
     for k in range(DEPTH, 0, -1):  # the side, far shade first
         for y in range(SIZE):
             for x in range(SIZE):
                 m = at(x - k, y - k)
                 if m and not at(x, y):
-                    px[(x, y)] = mix(PALETTE[m], SHADOW, SIDE[k - 1])
+                    px[(x, y)] = mix(colour[m], SHADOW, SIDE[k - 1])
     front = [(x, y) for y in range(FRONT) for x in range(FRONT) if at(x, y)]
     mid = sum(x + y for x, y in front) / len(front)
     for x, y in front:
         m = at(x, y)
-        c = PALETTE[m]
-        if at(x + 1, y) not in ('', m) or at(x, y + 1) not in ('', m):
+        c = colour[m]
+        if kin(at(x + 1, y)) not in ('', kin(m)) or kin(at(x, y + 1)) not in ('', kin(m)):
             px[(x, y)] = mix(c, SHADOW, SEAM)
-        elif at(x, y - 1) != m or at(x - 1, y) != m:
+        elif kin(at(x, y - 1)) != kin(m) or kin(at(x - 1, y)) != kin(m):
             px[(x, y)] = mix(c, WHITE, LIT)
         else:
             px[(x, y)] = mix(c, WHITE, PALE) if x + y < mid else c
     return px
 
 
-def svg(rows):
+def svg(rows, hue=None):
     """one path of horizontal runs per colour"""
-    px = render(rows)
+    px = render(rows, hue)
     paths = {}
     for y in range(SIZE):
         x = 0
@@ -1874,9 +1892,10 @@ def main():
     bad = []
     for name, rows in ICONS.items():
         assert len(rows) == FRONT and all(len(r) == FRONT for r in rows), name
-        assert all(ch in PALETTE or ch == '.' for r in rows for ch in r), name
+        hue = MONO.get(name)
+        assert all(ch in PALETTE or ch == '.' or (hue and ch in '1234') for r in rows for ch in r), name
         f = OUT / f'{name}.svg'
-        text = svg(rows)
+        text = svg(rows, hue)
         if '--check' in sys.argv:
             if not f.exists() or f.read_text() != text:
                 bad.append(name)
@@ -1889,4 +1908,5 @@ def main():
 
 
 if __name__ == '__main__':
+    assert all(name in ICONS and hue in RAMP for name, hue in MONO.items())
     main()
