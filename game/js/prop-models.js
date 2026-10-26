@@ -54,6 +54,8 @@ expose({
   MDL_ATTRIBS: [() => MDL_ATTRIBS],
   MDL_FLAT: [() => MDL_FLAT],
   MODEL_INSTANCES: [() => MODEL_INSTANCES],
+  MODEL_SHADOW_INSTANCES: [() => MODEL_SHADOW_INSTANCES],
+  MODEL_SHADOW_SHADERS: [() => MODEL_SHADOW_SHADERS],
   MODEL_VALUES: [() => MODEL_VALUES],
   NEUTRAL_MODEL_LOOK: [() => NEUTRAL_MODEL_LOOK],
   PROP_MODEL_SHADERS: [() => PROP_MODEL_SHADERS],
@@ -74,11 +76,13 @@ expose({
   drawLowPolyModels: [() => drawLowPolyModels, v => (drawLowPolyModels = v)],
   drawModelInstances: [() => drawModelInstances, v => (drawModelInstances = v)],
   drawModelPart: [() => drawModelPart, v => (drawModelPart = v)],
+  drawModelShadowPart: [() => drawModelShadowPart, v => (drawModelShadowPart = v)],
   drawPropModelMesh: [() => drawPropModelMesh, v => (drawPropModelMesh = v)],
   drawPropModelShadows: [
     () => drawPropModelShadows,
     v => ((drawPropModelShadows = v), provide({ drawPropModelShadows })),
   ],
+  drawPropModelShadowsInstanced: [() => drawPropModelShadowsInstanced, v => (drawPropModelShadowsInstanced = v)],
   drawPropModels: [() => drawPropModels, v => setDrawPropModels(v)],
   drawSpinningParts: [() => drawSpinningParts, v => (drawSpinningParts = v)],
   drawVoxItems: [() => drawVoxItems, v => (drawVoxItems = v)],
@@ -100,12 +104,14 @@ expose({
   lowPolyVertexShader: [() => lowPolyVertexShader],
   meshAttribs: [() => meshAttribs, v => (meshAttribs = v)],
   modelInstancesOn: [() => modelInstancesOn, v => (modelInstancesOn = v)],
+  modelShadowInstancesReady: [() => modelShadowInstancesReady, v => (modelShadowInstancesReady = v)],
+  modelShadowState: [() => modelShadowState],
   mooredBob: [() => mooredBob, v => (mooredBob = v)],
   propModelArtPaths: [() => propModelArtPaths, v => ((propModelArtPaths = v), provide({ propModelArtPaths }))],
   propModelGuard: [() => propModelGuard, v => (propModelGuard = v)],
   propModelImageItems: [() => propModelImageItems, v => ((propModelImageItems = v), provide({ propModelImageItems }))],
   propModelInstanceValues: [() => propModelInstanceValues, v => (propModelInstanceValues = v)],
-  propModelMesh: [() => propModelMesh, v => (propModelMesh = v)],
+  propModelMesh: [() => propModelMesh, v => ((propModelMesh = v), provide({ propModelMesh }))],
   propModelShaders: [() => propModelShaders, v => ((propModelShaders = v), provide({ propModelShaders }))],
   propModelState: [() => propModelState],
   propModelsOn: [() => propModelsOn, v => (propModelsOn = v)],
@@ -130,6 +136,7 @@ provide({
   flushPropModelMeshes,
   propModelArtPaths,
   propModelImageItems,
+  propModelMesh,
   propModelShaders,
   tagPropModel,
 });
@@ -834,10 +841,11 @@ function drawSpinningParts(p, m) {
 function flushPropModelMeshes() {
   for (const k of [...propModelState.meshes.keys()]) invalidatePropModel(k, true);
   /* phase 20 R2: the instanced models' record buffer too (a restored context may hand back the same context object) */
-  const S = MODEL_INSTANCES;
-  gpuFree(S.buf);
-  S.buf = null;
-  S.gl = null;
+  for (const S of [MODEL_INSTANCES, MODEL_SHADOW_INSTANCES]) {
+    gpuFree(S.buf);
+    S.buf = null;
+    S.gl = null;
+  }
 }
 export function invalidatePropModel(path, keep) {
   const m = propModelState.meshes.get(path);
@@ -845,6 +853,7 @@ export function invalidatePropModel(path, keep) {
     for (const q of [m, ...(m.more || []), ...(m.spins || [])]) {
       gpuFree(q.vao);
       gpuFree(q.ivao);
+      gpuFree(q.sivao);
       for (const b of q.bufs || []) gpuFree(b);
     }
   }
@@ -1628,6 +1637,8 @@ function propModelImageItems(it, out) {
       h,
       flip: d.flip,
       shear: (it.shear || 0) * (L.sway ?? 1),
+      /* phase 20 R3: at rest (no wind) when the model itself stands still (walk/shadows.js, "Far shadows hold still") */
+      rest: it.rest !== undefined && !(it.M && it.M.bob) ? it.rest * (L.sway ?? 1) : undefined,
       sh: L.shadow ? (it.M && it.M.shadow ? it.M.shadow : 1) * s : 0,
       glow: L.glow ? L.glow * (typeof lampLit === 'function' ? lampLit(it.x, it.z, 0) : 1) : 0,
       noRecv: L.recv === 0,
@@ -2005,6 +2016,10 @@ function drawPropModelShadows(SH, items) {
   propModelGuard(() => {
     const gl = gpuState.gl;
     ensurePrograms(PROP_MODEL_SHADERS);
+    if (modelShadowInstancesReady()) {
+      drawPropModelShadowsInstanced(SH, items);
+      return;
+    }
     let p = null;
     const ca = typeof worldCurveArgs === 'function' ? worldCurveArgs() : [0, 0, 0, 1e9];
     for (const it of items) {
@@ -2028,6 +2043,100 @@ function drawPropModelShadows(SH, items) {
     gl.bindVertexArray(null);
   });
   gpuTag(0);
+}
+/* ---------- phase 20 R3: the shadow maps' models instanced (Engine > Quality "Shadows in batches") ----------
+   One draw per mesh part for every item with that mesh, as the main pass's "Models in batches" does: each item's
+   record (the same values: its place with the bob, scale, turn, flip, its own spin) in a buffer of the shadows' own,
+   drawn by voxSI (voxI's placing, depth only). Voxel props and low-poly models alike, each with its own mesh layout,
+   as voxS draws them; extra parts and turning parts over the same records. If voxSI does not build the maps keep
+   one draw an item (the debug log says so). */
+const MODEL_SHADOW_SHADERS = {
+  voxSI: [
+    `#version 300 es
+precision highp float;layout(location=0) in vec3 qPos;${INSTANCE_IN_GLSL}uniform mat4 uVP;uniform float uQ;${COMMON_GLSL}${SPIN_BY_GLSL}
+void main(){vec3 P=qPos*uQ,N=vec3(0.,1.,0.);${INSTANCE_PLACE_GLSL}gl_Position=uVP*vec4(w,1.);}`,
+    PROP_MODEL_SHADERS.voxS[1],
+  ],
+};
+provide({ MODEL_SHADOW_SHADERS }); /* to-module */
+const modelShadowState = { bad: null, list: [] },
+  MODEL_SHADOW_INSTANCES = modelInstanceStore();
+function modelShadowInstancesReady() {
+  if (typeof engineSetting !== 'function' || !engineSetting('quality', 'shadowInstances')) return false;
+  const gl = gpuState.gl;
+  if (modelShadowState.bad === gl) return false;
+  if (!gpuState.P.voxSI)
+    try {
+      ensurePrograms(MODEL_SHADOW_SHADERS);
+    } catch (e) {
+      modelShadowState.bad = gl;
+      console.error(e);
+      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'model shadows in batches off: ' + e.message);
+      return false;
+    }
+  return true;
+}
+function drawPropModelShadowsInstanced(SH, items) {
+  const gl = gpuState.gl,
+    L = modelShadowState.list,
+    S = MODEL_SHADOW_INSTANCES,
+    I = MODEL_INSTANCE_ATTRIBS.vox,
+    t = (reducedMotion ? 0 : walkView.t || 0) / 1000;
+  L.length = 0;
+  for (const it of items) {
+    if (!it.vox) continue;
+    const m = propModelMesh(it.voxPath, it.vox);
+    if (m) L.push([it, m]);
+  }
+  if (!L.length) return;
+  const B = buildModelBatches(L);
+  reserveModelInstances(S, L.length);
+  let i = 0;
+  for (const b of B)
+    for (const [it] of b.list) {
+      propModelInstanceValues(it, 'vox', MODEL_VALUES);
+      writeModelInstance(S, i++, MODEL_VALUES);
+    }
+  if (!S.buf || S.gl !== gl) {
+    S.buf = gl.createBuffer();
+    S.gl = gl;
+  }
+  gl.bindBuffer(gl.ARRAY_BUFFER, S.buf);
+  gl.bufferData(gl.ARRAY_BUFFER, S.B.subarray(0, i * MODEL_INSTANCE_BYTES), gl.STREAM_DRAW);
+  const p = gpuState.P.voxSI,
+    ca = typeof worldCurveArgs === 'function' ? worldCurveArgs() : [0, 0, 0, 1e9];
+  gl.useProgram(p.p);
+  gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
+  gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
+  gl.uniform1f(p.U.uCurveD0, ca[3]);
+  gl.uniform1f(p.U.uPart, 0);
+  for (const b of B) {
+    const m = b.mesh,
+      A = m.model ? MDL_ATTRIBS : VOX_ATTRIBS,
+      n = b.list.length;
+    gl.uniform1f(p.U.uQ, m.q || 1);
+    drawModelShadowPart(m, A, I, S.buf, b.at, n);
+    for (const q of m.more || []) drawModelShadowPart(q, A, I, S.buf, b.at, n);
+    if (m.spins && m.spins.length) {
+      gl.uniform1f(p.U.uPart, 1);
+      for (const s of m.spins) {
+        gl.uniform4f(p.U.uSpin, s.a[0], s.a[1], s.a[2], spinPartAngle(s, t));
+        gl.uniform3fv(p.U.uSpinC, s.c);
+        drawModelShadowPart(s, A, I, S.buf, b.at, n);
+      }
+      gl.uniform1f(p.U.uPart, 0);
+    }
+  }
+  gl.bindVertexArray(null);
+}
+/* one mesh part for n items from record `at`, in the part's shadow vertex array (its own: five instance attributes) */
+function drawModelShadowPart(q, A, I, buf, at, n) {
+  const gl = gpuState.gl;
+  gl.bindVertexArray(modelInstanceVao(gl, q, A, I, 'sivao'));
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  pointModelInstances(gl, I, at);
+  if (q.el) gl.drawElementsInstanced(gl.TRIANGLES, q.n, q.u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT, 0, n);
+  else gl.drawArraysInstanced(gl.TRIANGLES, 0, q.n, n);
 }
 /* art the scene needs for its voxel props' picture layers (mapArtPaths asks) */
 function propModelArtPaths(sc, C) {

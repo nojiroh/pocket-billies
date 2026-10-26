@@ -223,9 +223,10 @@ function splitPieces(items, o, boxOf) {
 /* ---------- WebGL ---------- */
 /* a mesh part's own vertex array for instanced draws (made once; its vertex and index buffers are the part's own, so
    the part's plain vertex array and the shadows' draws are untouched): the mesh layout A (prop-models.js
-   VOX_ATTRIBS / MDL_ATTRIBS), the instance attributes I with a divisor of one */
-export function modelInstanceVao(gl, q, A, I) {
-  if (q.ivao !== undefined) return q.ivao;
+   VOX_ATTRIBS / MDL_ATTRIBS), the instance attributes I with a divisor of one. key: the part's field it is kept in
+   (phase 20 R3: the shadow maps keep their own, 'sivao', with fewer instance attributes) */
+export function modelInstanceVao(gl, q, A, I, key = 'ivao') {
+  if (q[key] !== undefined) return q[key];
   const v = gpuVao('meshes');
   gl.bindVertexArray(v);
   gl.bindBuffer(gl.ARRAY_BUFFER, q.bufs[0]);
@@ -238,7 +239,7 @@ export function modelInstanceVao(gl, q, A, I) {
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribDivisor(loc, 1);
   }
-  q.ivao = v;
+  q[key] = v;
   return v;
 }
 /* the instance attributes pointed at a batch's first record (the instance buffer bound as the array buffer) */

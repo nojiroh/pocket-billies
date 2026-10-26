@@ -89,6 +89,11 @@ const GRAPHICS_TEST_HIDDEN = [
   ['air.cheapShafts', 'Cheap light shafts', { values: [0, 0.6], alone: true }],
   /* phase 20 E7-E10: the standing pictures (and the reflection's) drawn one draw per run of one picture; the same look */
   ['quality.spriteInstances', 'Pictures in batches', { values: [false, true], alone: true }],
+  /* phase 20 R3 (shadows): the shadow maps' pictures and models in batches (the same look); models in the far shadow
+     cache and the far shadows held still (a look change past 13 m), each on its own */
+  ['quality.shadowInstances', 'Shadows in batches', { values: [false, true], alone: true }],
+  ['quality.modelShadowCache', 'Models in the shadow cache', { values: [false, true], alone: true }],
+  ['quality.farShadowsStill', 'Far shadows hold still', { values: [false, true], alone: true }],
 ];
 /* the stations, in the order the test walks them; their spots are the map's `bench` ([x, z, camera turn, zoom]) */
 const GRAPHICS_TEST_STATIONS = [
@@ -101,7 +106,14 @@ const GRAPHICS_TEST_STATIONS = [
     id: 'shadows',
     name: 'Shadow court',
     sun: { angle: 30, height: 30 },
-    dials: ['shadows.strength', 'quality.shadowMap', 'shadows.cascades', 'shadows.ao', 'shadows.contact'],
+    dials: [
+      'shadows.strength',
+      'quality.shadowMap',
+      'shadows.cascades',
+      'shadows.ao',
+      'shadows.contact',
+      'quality.shadowInstances',
+    ],
   },
   { id: 'pond', name: 'Pond', dials: ['water.reflection', 'water.pixel', 'quality.spriteInstances'] },
   {
@@ -132,13 +144,27 @@ const GRAPHICS_TEST_STATIONS = [
       'quality.modelInstances',
       'quality.phoneLamps',
       'quality.invalidate',
+      'quality.shadowInstances',
     ],
   },
-  { id: 'meadow', name: 'Meadow', dials: ['grass.density', 'air.particles', 'air.mist'] },
+  {
+    id: 'meadow',
+    name: 'Meadow',
+    dials: ['grass.density', 'air.particles', 'air.mist', 'quality.farShadowsStill'],
+  },
   {
     id: 'depth',
     name: 'Depth corridor',
-    dials: ['lens.blur', 'world.farProps', 'quality.stableLights', 'quality.modelInstances', 'quality.spriteInstances'],
+    dials: [
+      'lens.blur',
+      'world.farProps',
+      'quality.stableLights',
+      'quality.modelInstances',
+      'quality.spriteInstances',
+      'quality.shadowInstances',
+      'quality.modelShadowCache',
+      'quality.farShadowsStill',
+    ],
   },
   { id: 'sky', name: 'Open sky', dials: ['sun.clouds', 'sun.cloudShadows', 'quality.skyLast'] },
   /* phase 20 R2: the meadow in the rain (a station may name its weather; clear otherwise) */

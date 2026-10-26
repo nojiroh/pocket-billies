@@ -14,6 +14,7 @@ import {
   drawPropModelShadows,
   drawSolidPropShadows,
   drawStructureShadows,
+  propModelMesh,
   provide,
   roomFloorOf,
 } from '../hooks.js';
@@ -49,6 +50,8 @@ expose({
   fittedShadowPass: [() => fittedShadowPass, v => (fittedShadowPass = v)],
   lampShadowMaps: [() => lampShadowMaps, v => (lampShadowMaps = v)],
   pickShadowLamps: [() => pickShadowLamps, v => (pickShadowLamps = v)],
+  shadowCasterSignature: [() => shadowCasterSignature, v => (shadowCasterSignature = v)],
+  shadowHoldsStill: [() => shadowHoldsStill, v => (shadowHoldsStill = v)],
   shadowInstanceState: [() => shadowInstanceState],
   shadowInstanceVertex: [() => shadowInstanceVertex, v => (shadowInstanceVertex = v)],
   shadowInstancesReady: [() => shadowInstancesReady, v => (shadowInstancesReady = v)],
@@ -195,8 +198,9 @@ export function lampShadowMaps(items, X, dark) {
   });
 }
 /* the sprites of a shadow pass, each turned to face the sun (fixed ones and buildings as they stand); for a lamp, each turned to face the lamp */
-function drawShadowSprites(SH, L, sun, ca, lamp) {
-  if (shadowInstancesReady()) return drawShadowSpritesInstanced(SH, L, sun, ca, lamp);
+/* phase 20 R3: rest, the far map's still part with "Far shadows hold still" on: a prop the wind sways at its rest */
+function drawShadowSprites(SH, L, sun, ca, lamp, rest) {
+  if (shadowInstancesReady()) return drawShadowSpritesInstanced(SH, L, sun, ca, lamp, rest);
   const gl = gpuState.gl,
     p = gpuState.P.shadow,
     solid = engineSetting('shadows', 'buildings'),
@@ -248,6 +252,7 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
     if (it.plane && !(solid && it.M && it.M.box)) {
       gl.uniform3fv(p.U.uRight, it.fixed ? pictureRight(it, FIXED_RIGHT) : FIXED_RIGHT);
       setSpriteUniforms(p, it);
+      if (rest && it.rest !== undefined) gl.uniform1f(p.U.uShear, it.rest);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       gl.uniform3fv(p.U.uRight, Rs);
       continue;
@@ -271,6 +276,7 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
     }
     gl.uniform3fv(p.U.uRight, Rs);
     setSpriteUniforms(p, it);
+    if (rest && it.rest !== undefined) gl.uniform1f(p.U.uShear, it.rest);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   gpuTag(0);
@@ -299,7 +305,10 @@ function fittedShadowPass(items0, sun, C) {
     };
   const solid = engineSetting('shadows', 'buildings'),
     tr = sun.travel;
-  const still = it => it.k === 'prop' && it.still && !it.vol,
+  const mc = engineSetting('quality', 'modelShadowCache'),
+    fs = cache && !!engineSetting('quality', 'farShadowsStill'),
+    held = mc ? shadowHoldsStill : it => it.k === 'prop' && it.still && !it.vol,
+    still = fs ? it => held(it) || (it.k === 'prop' && !it.vol && !it.vox && it.rest !== undefined) : held,
     stat = cache ? filterInto(items, still, SHADOW_LISTS.stat) : items,
     dyn = cache
       ? filterInto(items, it => !still(it), SHADOW_LISTS.dyn)
@@ -322,6 +331,7 @@ function fittedShadowPass(items0, sun, C) {
         sc.heights ? sc.heights.length : 0,
         typeof buildingsOn === 'function' && buildingsOn() ? 1 : 0,
         typeof buildingState !== 'undefined' ? buildingState.made || 0 : 0,
+        mc || fs ? shadowCasterSignature(stat) : '',
       ].join('|')
     : '';
   const SF = gpuState.fb.shadow;
@@ -336,8 +346,8 @@ function fittedShadowPass(items0, sun, C) {
   }
   let miss = 0;
   /* phase 20 R3: the same pictures' loop as the near map's (sun set, no lamp) */
-  const sprites = L => {
-    miss += drawShadowSprites(SH, L, sun, ca);
+  const sprites = (L, rest) => {
+    miss += drawShadowSprites(SH, L, sun, ca, null, rest);
   };
   if (!hit) {
     let p = gpuState.P.shadowG;
@@ -345,7 +355,7 @@ function fittedShadowPass(items0, sun, C) {
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
     curve(p);
     drawGroundDepth(p, sc);
-    sprites(stat);
+    sprites(stat, fs);
     if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, stat);
     if (typeof drawStructureShadows === 'function') drawStructureShadows(SH);
     if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, stat);
@@ -410,7 +420,7 @@ function shadowInstancesReady() {
    tag, the picture's group (its texture's first-met number) and the values packShadowInstance packs; a group's tag is
    its first quad's (a picture is a model's layer or it isn't) */
 const SHADOW_QUADS = { list: [], n: 0, groups: new Map(), count: [], tags: [], order: [] };
-function shadowQuad(T, it, right, z, x) {
+function shadowQuad(T, it, right, z, x, rest) {
   const Q = SHADOW_QUADS;
   let q = Q.list[Q.n];
   if (!q)
@@ -437,6 +447,7 @@ function shadowQuad(T, it, right, z, x) {
   spriteGeometry(q, it, z);
   if (x !== undefined) q.x = x;
   q.shown = q.uv[3];
+  if (rest && it.rest !== undefined) q.shear = it.rest;
   q.T = T;
   q.tag = it.voxImg ? 'modelPic' : 0;
   q.rx = right[0];
@@ -452,7 +463,7 @@ function shadowQuad(T, it, right, z, x) {
   Q.count[g]++;
 }
 /* the quads drawShadowSprites would draw, the same items skipped and missed; the number missed */
-function shadowSpriteQuads(L, sun, lamp) {
+function shadowSpriteQuads(L, sun, lamp, rest) {
   const solid = engineSetting('shadows', 'buildings'),
     tr = sun ? sun.travel : [0, -1, 0],
     h = normalize3([tr[0], 0, tr[2]]),
@@ -492,7 +503,7 @@ function shadowSpriteQuads(L, sun, lamp) {
       continue;
     }
     if (it.plane && !(solid && it.M && it.M.box)) {
-      shadowQuad(T.t, it, it.fixed ? pictureRight(it, FIXED_RIGHT) : FIXED_RIGHT);
+      shadowQuad(T.t, it, it.fixed ? pictureRight(it, FIXED_RIGHT) : FIXED_RIGHT, it.z, undefined, rest);
       continue;
     }
     if (solid && it.M && it.M.box) {
@@ -509,12 +520,12 @@ function shadowSpriteQuads(L, sun, lamp) {
       }
       continue;
     }
-    shadowQuad(T.t, it, Rs);
+    shadowQuad(T.t, it, Rs, it.z, undefined, rest);
   }
   return miss;
 }
-function drawShadowSpritesInstanced(SH, L, sun, ca, lamp) {
-  const miss = shadowSpriteQuads(L, sun, lamp),
+function drawShadowSpritesInstanced(SH, L, sun, ca, lamp, rest) {
+  const miss = shadowSpriteQuads(L, sun, lamp, rest),
     Q = SHADOW_QUADS,
     G = Q.groups.size;
   if (!Q.n) return miss;
@@ -550,4 +561,27 @@ function drawShadowSpritesInstanced(SH, L, sun, ca, lamp) {
   gpuTag(0);
   gl.bindVertexArray(null);
   return miss;
+}
+/* ---------- phase 20 R3 (F8): models in the far map's cache (Engine > Quality "Models in the shadow cache") ----------
+   A model's shadow is its mesh, which never sways (only its leaf pictures do): a tree whose leaves sway is cached
+   like any still prop. A model that moves is not: one that bobs (moored, or rocking on the water), tumbles, has
+   turning parts (sails, propellers) or moves along a path; without the setting those were cached when the prop was
+   otherwise still, so their far shadows stood still. Everything else as before. */
+function shadowHoldsStill(it) {
+  if (it.k !== 'prop' || it.vol) return false;
+  if (!it.vox) return !!it.still;
+  if (it.bobs || it.spin || (it.p && it.p.moving) || (it.M && it.M.bob)) return false;
+  const m = typeof propModelMesh === 'function' ? propModelMesh(it.voxPath, it.vox) : null;
+  return !!m && !(m.spins && m.spins.length);
+}
+/* which items the cached map holds: a number from each one's place and whether it is a model, in order, so a model
+   that finished loading (it was its picture before) or an item gone or added draws the cache again */
+function shadowCasterSignature(L) {
+  let h = L.length | 0;
+  for (const it of L) {
+    h = Math.imul(h ^ Math.round(it.x * 64), 0x01000193) | 0;
+    h = Math.imul(h ^ Math.round(it.z * 64), 0x01000193) | 0;
+    h = Math.imul(h ^ (it.vox ? 7 : 3), 0x01000193) | 0;
+  }
+  return (h >>> 0).toString(36);
 }
