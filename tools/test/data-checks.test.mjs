@@ -138,10 +138,7 @@ test('a planted fault is found by its family, in the file check-data names', () 
     [B => (B.leader_badge.when = 'wins >= 1'), 'no leader line without a when'],
     [B => delete B.bureau_lost, 'no bureau line without a when'],
     /* RL-S2 part B: Blake and a thank-you, once they have lines, have one they can always say */
-    [
-      B => (B.rival_x = { who: 'rival', when: 'last:won', script: ['Hi. #l:zz91'] }),
-      'no rival line without a when that is said more than once',
-    ],
+    [B => (B.rival_built.when = 'last:won'), 'no rival line without a when that is said more than once'],
     [
       B => (B.thanks_x = { who: 'thanks_hazel', once: true, script: ['Thanks. #l:zz92'] }),
       'no thanks_hazel line without a when',

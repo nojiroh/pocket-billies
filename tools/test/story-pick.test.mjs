@@ -56,8 +56,8 @@ test('the script command pick plays the picked line inline, with the speaker of 
 
 test("the game's lines: each who has lines, leaders and agents always have one, every when reads", () => {
   const G = GAME_DATA.banter;
-  /* RL-S2: Blake's lines and the thank-yous go in once the owner approves them */
-  for (const who of BANTER_WHO.filter(w => w !== 'rival' && !w.startsWith('thanks_')))
+  /* RL-S2: the thank-yous go in with the hub folk's lines */
+  for (const who of BANTER_WHO.filter(w => !w.startsWith('thanks_')))
     assert.ok(
       Object.values(G).some(b => b.who === who),
       who
@@ -67,6 +67,8 @@ test("the game's lines: each who has lines, leaders and agents always have one, 
   const holds = c => conditionHolds(c, S);
   assert.equal(storyPick('leader', G, holds, {}, 0), 'leader_badge');
   assert.equal(storyPick('bureau', G, holds, {}, 0), 'bureau_lost');
+  assert.equal(storyPick('rival', G, holds, {}, 0), 'rival_first', 'Blake introduces himself first');
+  assert.equal(storyPick('rival', G, holds, { once: { 'banter:rival_first': 1 } }, 0), 'rival_built');
   assert.equal(storyPick('chosen', G, holds, {}, 0), null, 'nothing to react to before the first run');
   // after a first lost run: Chosen's must line
   const first = {

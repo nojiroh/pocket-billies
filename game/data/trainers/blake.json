@@ -9,7 +9,7 @@
   {"sp":"@rival","lvl":10}
  ],
  "reward": 0,
- "win": "",
+ "win": "“Fine. FINE. Your lead is just statistically annoying.”",
  "lose": "“Ha! Told you. Mine beats yours.”",
  "script": ["battle blake"]
 }

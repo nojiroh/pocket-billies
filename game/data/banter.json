@@ -34,6 +34,15 @@
    "Hazel: There was a stamp on your sleeve. “Returned to sender.” It wasn’t there when you left. #l:0df7"
   ]
  },
+ "lost_postcard": {
+  "who": "back_lost",
+  "when": "lastby:rival",
+  "priority": 6,
+  "script": [
+   "Chosen: Blake sent a postcard. It just says “Ha.” #l:3c86",
+   "Hazel: Same spot over the dock. He didn’t even ruffle you. #l:5ea5"
+  ]
+ },
  "chosen_first": {
   "who": "chosen",
   "when": "history:runs = 1",
@@ -142,6 +151,33 @@
   "when": "met_juniper and last:days >= 12",
   "priority": 3,
   "script": ["You were gone a while. The lavender grew back. Mind where you land. #l:d521"]
+ },
+ "rival_first": {
+  "who": "rival",
+  "when": "history:rivalmet = 0 and rival = 0",
+  "priority": 9,
+  "once": true,
+  "must": true,
+  "script": ["“Blake. You’ve heard of me. You haven’t? Weird. I’ve been out here being heard of.” #l:7ea4"]
+ },
+ "rival_built": {"who":"rival","priority":1,"script":["“I built this team for yours. Specifically. It took ages.” #l:8db3"]},
+ "rival_warmup": {
+  "who": "rival",
+  "when": "history:rivalwon >= 1",
+  "priority": 4,
+  "script": ["“Last time doesn’t count. I was warming up. For a whole battle.” #l:239c"]
+ },
+ "rival_longway": {
+  "who": "rival",
+  "when": "history:rivallost >= 1",
+  "priority": 5,
+  "script": ["“Last time I sent you home the long way. Through the sky.” #l:6a21"]
+ },
+ "rival_routes": {
+  "who": "rival",
+  "when": "rival >= 1",
+  "priority": 6,
+  "script": ["“Our routes aren’t the same route. Stop following me.” #l:acbd"]
  },
  "leader_badge": {"who":"leader","priority":1,"script":["“I’m a leader. It says so on my badge. Let’s see yours.” #l:8ee4"]},
  "leader_again": {
