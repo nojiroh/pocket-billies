@@ -392,7 +392,8 @@ One cause per commit, each checked against the commit before it (fingerprints re
 
 Corrections to this section's plan, found in SND-6:
 - Item 1's "a robot's cry comes from its torso part": no robot is heard crying anywhere today (only a wild Billie cried,
-  as it appeared, and bots are never wild before RL-14); a robot in battle stays silent. RL-14 adds it.
+  as it appeared, and bots are never wild before RL-14); a robot in battle stays silent. RL-14 adds it (done in RL-14a: logic/cries.js cryOfBot, the machine base pitched by
+  the bot's build).
 - Item 1's low-HP cry had nowhere to be heard: the game cried only for a wild Billie appearing, at full health. A
   Billie now cries as it comes out and as it faints; SND-3's `cryLowHealth` (slower, a preview only) became the
   plan's faster version.

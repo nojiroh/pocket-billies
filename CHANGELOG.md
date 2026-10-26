@@ -9,6 +9,14 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **The Bureau's bots** (roguelite track RL-14, first half): the Bureau of Lost, Found and Beans now fields an army
+  of bots built from robot parts (Courier Units, Repossession Units, Shredders, Stamp Presses, Filing Drones, Audit
+  Units). Deeper into a run (from the fourth row on) about one wild encounter in ten on rocky, hot or cold ground is
+  a bot instead of a Billie; the Bureau's clerks and its new **Reclamation Agents** bring one or two bots along. Bots
+  **can't be caught**. Their limbs break in battle and now **drop off**, and every bot has a beeping cry. Beat bots and
+  they leave **salvage**: pick one of two of their parts (kept for the Workshop) or a stack of **Scrap** sent home.
+  About a third of runs now have a **Scrapyard**: a place where every wild one is a bot, Reclamation Agents stand guard
+  and scrap heaps line the way.
 - **You stay visible behind things**: when a building, a tree or anything else stands between the camera and you,
   your outline shows through it in the colour of your top, the thing in front thins out in a soft circle round you,
   and tall things covering you fade a little (now smoothly, and the modelled buildings too). Out in the open nothing

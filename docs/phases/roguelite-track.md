@@ -1153,6 +1153,29 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   fresh lines (replacing the first talk after a run, the owner's choice), story.json `scripts.back-lost`, and the
   leaders' and Bureau agents' words in runs. "Hazel's mast lines" (RL-8) never existed in the code.
 
+- **The bots sessions (RL-14a, RL-14b)** were meant for a branch of their own (`track/bots`); RL-14a was built on its
+  session's branch, `ccr-15fdd30c-5nfh0d`, at the owner's word (2026-10-26). RL-14b starts on `track/bots` once the
+  owner makes it from main.
+  Branch: track/bots
+- **RL-14 split (the owner, 2026-10-26).** RL-14a: the Bureau's bots, salvage, the scrapyard; RL-14b: the Voltron
+  (`bosses.json`, `alphaPhase` from data, the join intro, the story scene last, beside RL-S2). The owner's answers: the
+  build may start on the session branch; salvage is 2 parts + 1 Scrap stack (parts kept in `saveData.parts` for SP-5
+  and the Workshop); the Voltron is Expedition I's boss only (leaders stay the boss from II up); wild bots yes, rare;
+  the scrapyard built in RL-14a; the Voltron's four boss parts placeholders drawn by robot-art.js; phase 17's numbers
+  kept, tuned by the sim, the gem's story role left open.
+- **RL-14a as built (2026-10-26; HANDOFF has the detail).** `factions.json` (the Bureau: six bots, `wild` 10% from row
+  3 in six biomes, `agents` the Bureau Clerk and a new Reclamation Agent with 1-2 bots, `scrapyard`, `salvage`),
+  `logic/factions.js`; `rules.js spawnBot` (a wild bot is a wild entry with a robot's sp), `battle-engine.js
+  startWildBot` and `catchable`; `encounters.js encClassFoe` fields an agent's bots from a stream of their own;
+  `battle-rewards.js battleSalvage` and `rewards.js salvageOfferMake` (salvage in place of a reward pick, never
+  rerolled; a part into `saveData.parts`, Scrap into `meta.scrap`); a `scrapyard` node type by its own `chance` (12%)
+  from `fromRow` 3, not a weight (a weight moved every free node's draw), with its agents (`scrapyardAgents`) and set
+  pieces by a scene `site` dial (setPieces.json `sites`, the Scrap heap); bots' cries (`cries.js cryOfBot`); a broken
+  part drops off the battle stage. Where the plan was wrong: the robot prototype was already in main (not only on
+  `archive/phase-17-robots`), robots have no head slot, `trainerTeam` already took robot entries, the Bureau's agents
+  already existed (`bureau_clerk`, RL-S1), so "Collectors" are Bureau agents; wild bots are full builds, not
+  `'bot:<torso>'`.
+
 ### 9.5 The organization: three name options (superseded 2026-10-23: finance names; see reflavour-track.md section 4)
 
 1. **The Office of Unclaimed Property (OUP)** (recommended). It files everything that falls through a portal as

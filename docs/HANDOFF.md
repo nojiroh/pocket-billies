@@ -2,6 +2,94 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-14a - The Bureau's bots, salvage, the scrapyard - 2026-10-26
+Branch `ccr-15fdd30c-5nfh0d` (the session's own; `track/bots` didn't exist and the owner said to build here), from
+main 2314da8. Plan approved in Plan Mode with the owner's answers: RL-14 split in two (RL-14a bots, salvage, the
+scrapyard; RL-14b the Voltron); salvage is **2 parts + 1 Scrap stack**; the Voltron is **Expedition I's boss only**;
+**wild bots yes, rare**; the **scrapyard built now**; the Voltron's boss parts **placeholders** (RL-14b); phase 17's
+numbers **kept, tuned by the sim**, the gem's story role open. Tag `rl-14a-done` for the owner. RL-14b starts on
+`track/bots` (the owner makes it from main), beside RL-S2 (the Voltron's story scene last).
+- Where the plan was wrong (checked in the code):
+  - **Phase 17's prototype is in main**, not only on `archive/phase-17-robots`: `makeRobot`, `buildRobot`, part hits
+    and breaks, aimed moves, repair, the Workshop sheet (`workshop.js`), `robots.test.mjs`, the robot sim and the
+    Studio's robots editor. RL-14 builds on it.
+  - Robots have **no head slot** (the head is torso art): 3 torsos, 6 arms, 3 legs, 3 gems, as findings C said.
+  - `trainerTeam` already took robot entries (`sp: 'robot'`, Tinker Rho). The Bureau's agents already existed
+    (`bureau_clerk`, `bureau: 1`, RL-S1's `pick bureau` lines), so the plan's "Collectors" are Bureau agents.
+  - A wild bot is a full build (`bot:<gem>.<torso>.<armL>.<armR>.<legs>`, a robot's own sp), not `'bot:<torso>'`.
+  - The run's boss is the region's last leader's top Billie (`bossAlpha` takes a species only): RL-14b's work.
+  - The foe side holds 2 fighters at most (`SIDE_ACTORS`): the Voltron stays one robot with `m.boss`.
+  - A scrapyard as a node-type **weight** moved every free node's draw (two seeds' scenes then hit a river note in the
+    generator), so it is a **chance on its own stream** instead.
+- Changed (one cause per commit, 13 commits):
+  - **events.json**: a second Bureau agent class, the **Reclamation Agent** (1-2 Billies, dead ends and pockets).
+  - **factions.json** (schema, types, `FACTIONS`, check-data and the Studio's Check `dataFactions`, the module on both
+    pages and the logic worker): the Bureau's six bots (Courier Unit, Repossession Unit, Shredder Unit, Stamp Press,
+    Filing Drone, Audit Unit; gem + four parts, a name, a weight), `wild` (10% from map row 3 in canyon, volcano,
+    ridge, badlands, tundra, cave), `agents` (both classes, 1-2 bots), `scrapyard`, `salvage` (2 parts, 3 Scrap +1 a
+    bot after the first). New `logic/factions.js`.
+  - **Never caught**: `battle-engine.js catchable` (a robot never is; catchOdds 0, catchRoll misses even with the
+    Capstone, the one pyramid that could take a bot before). "Catch it" greyed out with "Not a Billie".
+  - **Agents field bots**: `encClassFoe` adds 1-2 bots after an agent's Billies from a stream of their own (the
+    Billies stay what they were); a bot's name is its nickname (`trainerTeam`). The walk view loads their parts.
+  - **Wild bots**: `rules.js spawnBot` (only a place that can have one draws for it, so every other place's Billies
+    are as before); `startWildBot` (single, never an Alpha, its Bureau name); the walk view draws one from its parts
+    (`world-billies.js` reads `speciesById`); the save keeps it (`saves.js`).
+  - **Salvage**: `battle-rewards.js battleSalvage` + `rewards.js salvageOfferMake`: beating bots on a run leaves a
+    salvage pick (kind `salvage`) **in place of a route trainer's reward pick**; two of their parts and a Scrap stack;
+    never rerolled. A part goes into `saveData.parts` (uid from the run's counter), Scrap into `meta.scrap`: both kept
+    whatever the run's end. The sheet "Salvage" shows the parts' pictures; a wild bot's opens after the battle.
+  - **Scrapyard** (nodeTypes.json `scrapyard`, new `chance` 0.12 and `fromRow` 3; a cog marker, danger tone; a
+    first-run hint): every wild one a bot, no rarer one; 1-2 Reclamation Agents by the road (`scrapyardAgents`); its
+    scene gets a `site` dial and draws only set pieces made for it (setPieces.json `sites`: a new **Scrap heap**, now
+    and then the Bureau checkpoint). About a third of runs get one (0.33 of 1000 seeds; 0.40 a run).
+  - **Cries**: `cries.js cryOfBot` (the machine base, a heavier torso lower, the gem's length); robots were silent.
+  - **The stage**: a broken part's picture drops off the bot, tumbles, bounces and fades (the limb stays faint).
+  - **Checks**: check-fast "Salvage" (run page); the in-game full test's "A wild bot" phase (not catchable, a part
+    breaks and drops off).
+  - Docs: roguelite-track 9.4 (the split, the answers, as built, `Branch: track/bots`), ROADMAP, BRANCHES, NAMING,
+    sound-track, CHANGELOG.
+- Snapshots remade on purpose: check-data's (one more file, a planted factions case, the marker list), run-start's (a
+  scrapyard in the short map's row 7, where a town was). run-preview's stall test looks at 24 seeds.
+- **The run sim** (200 seeds, balance mode, 6 at the ranch, 4 fights, 5 Potions; paired against main's data):
+
+  | party | Expedition | wins before | wins after | paired difference |
+  |---|---|---|---|---|
+  | level 20 | I | 68.5% | 64.5% | -4.0 points [-8.4, +0.4] |
+  | level 15 | I | 31.0% | 30.0% | -1.0 [-3.8, +1.8] |
+  | level 20 | II | 26.5% | 25.5% | -1.0 [-4.1, +2.1] |
+
+  Research a run falls 5-8% (727 to 697 at level 20): fewer Moneys left (a scrapyard can stand where a town was;
+  salvage replaces an agent's item pick). Runs lost at a scrapyard: 4, 8 and 5 of 200. The bot policy is a floor on a
+  player; no bound is asserted.
+- Verified: after every change lint, typecheck, check:modules, format:check, check:data and `npm test`; `test:all`
+  1155/1155 before the checks commits. New tests: factions (4), robots (+2), encounters (+1), route-trainers (+1,
+  and the agents' bots in the old one), run-world-real (+2: wild bots' share, a scrapyard's scene), rewards (+2), cries
+  (+1). check:smoke 6/6 (322 s). Headless pictures at 390x760 (not committed): the salvage sheet, a wild bot's battle
+  with "Catch it" greyed out, a part falling off and lying on the ground. The in-game phase alone: "Audit Unit, not
+  catchable; 1 part(s) broke, 1 dropped".
+  - **check-fast: 28 of 33** (1407 s, slow here). The new "Salvage" step passed. Failing **on main too** (checked
+    alone in a copy of main 2314da8; main's own CI went red with PR #205): "A room opens and draws (the lab)",
+    "Breeding" and "Income" (all "not in the room/ranch": the hub's doors since #205). "A battle plays to the end"
+    (91.6 s alone here, 89.7 s on main, against a 120 s limit) and "Packing for a run" passed alone: load timing.
+  - **Full quick check: 35 of 40** (2169 s). Failing on main too: "RL-8: a run from the mast" ("Take off" didn't start
+    a flight: the station since #205), song fingerprints (cave mid/late, known since RL-S1), terraces ("sky_portal" in
+    the air: #205's portal past the map's edge), room light (rooms, as above). "Actions sheet" (no day chip) passed
+    alone on this branch: load timing.
+- Risky / open:
+  - **Not tried on the phone.** The dropped part's size and the cry are first guesses.
+  - An agent who fields bots now leaves salvage **instead of** its item reward pick: Bureau agents give parts and
+    Scrap, never items. Say if both should come.
+  - Salvaged parts have no use until the Workshop opens (it is "soon") or SP-5's Augments: they pile up in
+    `saveData.parts` (validSave caps it at 5000).
+  - A run in progress when this lands keeps its map (no scrapyard), but its route trainers are made again from the
+    seed: its Bureau agents gain bots. Wild stocks already rolled stay.
+  - Places in a bot biome from row 3 draw one more number, so their wild Billies differ from before on the same seed.
+  - A scrapyard on a farmland or lake layout plan still carries that plan's own props (crops, scarecrows) beside its
+    scrap heaps. A layout of its own would be RL-14b's or a routes-track session's.
+  - No song for a scrapyard yet (music.json `where` can add one by node type).
+- Next: RL-14b (the Voltron: `bosses.json`, `makeBossRobot`, `alphaPhase` from data, the join intro, its boss parts
+  as placeholders, Expedition I's boss) on `track/bots`, beside RL-S2; SP-5 (Augments) can start from RL-14a's parts.
 ### Hub track - the placing half of HB-5 and HB-7: Skyline Station on its headland, the new buildings on their plots - 2026-10-25
 Branch `props/hub-placing` (the session's brief; from main aea7a48 after PR #201). Plan approved in Plan Mode. The
 owner's answers: the station side-on, its rail straight out to sea (no new art); the Gene Bank's door opens its room
