@@ -663,6 +663,9 @@ export interface MapProp {
   rot?: number;
   /** HB-6: a model's lean in degrees: toward its own +x, toward its back (+z) (logic/prop-turn.js tiltSpin) */
   tilt?: [number, number];
+  /** hub placing: the height its base stands at (metres), not the ground's: the sky rail out over the sea, level with
+   * its station (walk/frame-items.js propBaseHeight) */
+  y?: number;
   /** variant */
   v?: number;
   act?: string;

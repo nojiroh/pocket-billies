@@ -743,7 +743,8 @@ function seamlessCompose(id, F) {
     for (const p of S.props || []) {
       const x = +(p.x + O[0]).toFixed(2),
         z = +(p.z + O[1]).toFixed(2);
-      if (band ? !inq(x, z) : !(x >= -2 && z >= -2 && x <= w + 2 && z <= h + 2)) continue;
+      /* hub placing: a placement at its own height (y: the sky rail out over the sea) stands past the box too */
+      if (band ? !inq(x, z) : typeof p.y !== 'number' && !(x >= -2 && z >= -2 && x <= w + 2 && z <= h + 2)) continue;
       const c = Object.assign({}, p);
       c.x = x;
       c.z = z;
