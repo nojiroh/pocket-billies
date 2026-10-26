@@ -2,6 +2,34 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Route props track RP-1 - more 3D props for the routes - 2026-10-26
+Branch `ccr-5d98165a-i1ustq` (the session's own: `track/route-props` didn't exist; the owner makes it from this
+branch, docs/BRANCHES.md). Plan in docs/phases/route-props-track.md, approved in Plan Mode with the owner's answers.
+- What differed from the plan: 6 set-piece props were still pictures, not 16 (the rest were models or batch 1's
+  colour swaps; `fence` is a battle prop). No route stream crossing lacks a bridge, so the footbridge is in the
+  catalogue and the showcase only. The CC0 pack sites (kenney.nl, opengameart.org, quaternius.com, itch.io) are
+  unreachable from the container, so the converter test (RP-2) needs the files uploaded.
+- Changed: tools/build-props-routes.py (rerunnable) swaps in firewood, firewood_b, scrap, statue, tires and tollbooth
+  as models and adds 20 props with baked pictures (scene/next/routes); setPieces.json uses them (ruins round an arch,
+  a stile in the farm pen, a solar path light and a seed library at the rest stop, a tool shed, a landing stage at
+  the fishing jetty, a Bureau barrier and crate) and adds `wayside_shrine` and `solar_garden`. MAPGEN_VERSION 18.
+- Measured on 66 generated routes (2-4 pieces asked each, the same seeds): pieces placed 188 -> 193, the fishing
+  jetty 4 -> 4 (its landing stage first cut it to 1: the rowboat moved to the other side, r 5 -> 5.5), props a
+  route 802.7 -> 804.1, model parts a route 5815 -> 5932 (+2%). Draws at a piece, headless, phone size (each piece
+  alone on a test map, neighbours partly in view, so +-7): most the same; Bureau checkpoint 22 -> 31, farm pen
+  48 -> 54; the new pieces 39 (solar garden) and 53 (wayside shrine), as the old ones. Not quite "the same draws":
+  the Bureau's two new models cost the most.
+- Snapshots remade on purpose: check-data's (161 data files), rng's scene hash (only gen.v), run-start's (mapgenV 18).
+- Verified: lint, type-check, check-data, unit tests (1284 pass), headless pictures of every new prop on
+  `test_props_routes` (no page errors) and the baked pictures, the smoke check (6 of 6; its unused-art note,
+  detail-a04.png and airship_mast, predates this). The full quick check was not run.
+- Risky: the turbine's blades stand still; the statue's face reads oddly from the side; a set piece's props may
+  overlap each other (mapgen doesn't check a piece against itself, as before).
+- Phone check wanted: `test_props_routes`, and a meadow or lake run for the solar garden, the fishing jetty and the
+  rest stop at dusk (the solar light, the shrine's seed and the seed library glow); export the debug log.
+- Next: the bridges, rails and arches in the props' style (the owner asked 2026-10-26), then RP-2 (the converter)
+  once CC0 files are uploaded.
+
 ### Merge batch 2: PRs #219 (renderer) and #217 (roster RO-3a..RO-3d) into main - 2026-10-26
 Branch `ccr-ed7f65cb-dk7xqw` (the owner: "look at the open PRs and merge them to main"). Both conflicted with main, so
 they were merged here (merge commits) for one PR.
