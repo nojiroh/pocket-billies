@@ -360,7 +360,7 @@ export function propGrid(sc) {
     }
     c.list.push(p);
     const r = 2.5 * (p.s || 1),
-      y = typeof standingHeightAt === 'function' ? standingHeightAt(p.x, p.z) : 0;
+      y = typeof p.y === 'number' ? p.y : typeof standingHeightAt === 'function' ? standingHeightAt(p.x, p.z) : 0;
     c.x0 = Math.min(c.x0, p.x - r);
     c.x1 = Math.max(c.x1, p.x + r);
     c.z0 = Math.min(c.z0, p.z - r);

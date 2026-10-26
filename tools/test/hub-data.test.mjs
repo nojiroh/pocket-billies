@@ -1,6 +1,6 @@
 // RL-5: Copperleaf Town, the hub, on its own in the game data: a new game starts there, it is the only place, nothing
 // leads out of it, the lab and Granny Juniper's cottage stand there and nowhere else outdoors, she stands in her garden,
-// the hamlet has no shop or clinic, and nothing solid stands on the opening's stage. (TC-3: was the full check's
+// the hamlet sells nothing (the General store's room opens, empty) and has no clinic, and nothing solid stands on the opening's stage. (TC-3: was the full check's
 // "Copperleaf Town, the hub on its own" step, tools/check-quick.py.)
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -28,9 +28,18 @@ test('the lab and Granny Juniper’s cottage stand in Copperleaf and in no other
   }
 });
 
-test('Copperleaf has no shop or clinic; Granny Juniper stands there with her script, a page in the Lore', () => {
+test('Copperleaf sells nothing and has no clinic; Granny Juniper stands there with her script, a page in the Lore', () => {
   const acts = new Set(HUB.props.map(p => p.act));
-  assert.ok(!acts.has('shop') && !acts.has('clinic'), 'Copperleaf has a shop or a clinic');
+  assert.ok(!acts.has('clinic'), 'Copperleaf has a clinic');
+  /* hub placing (the owner): the General store's door opens its room, nothing for sale until it has a stock */
+  const shops = HUB.props.filter(p => p.act === 'shop');
+  assert.deepEqual(
+    shops.map(p => p.k),
+    ['shop'],
+    'the General store is the one shop door'
+  );
+  const here = D.locations.find(l => l.id === 'copperleaf') || {};
+  assert.ok(!shops[0].shop && !here.shop, 'the General store has a stock');
   assert.ok(
     (HUB.people || []).some(p => p.who === 'juniper' && p.script),
     'Granny Juniper isn’t in Copperleaf'

@@ -446,11 +446,13 @@ export function gatherFrameItems(st, C, PPU, C0) {
   }
   return out;
 }
-/* a prop's base height: on a slope the lowest point under it on its own terrace (so it never floats on the downhill
+/* a prop's base height (its placement's y, else the ground's): on a slope the lowest point under it on its own terrace (so it never floats on the downhill
    side), rocks and boulders sunk a little into the ground */
 /* alpha 0.2: a rock formation or a hill-built thing with a footprint stands at the lowest point under it (it sinks into the slope, it never hangs over it) */
 const SUNKEN_FOOTPRINT_PROPS = /mesa|vault_door|mine_entrance|shipwreck|stilt|spore_mill/;
 function propBaseHeight(p, M) {
+  /* hub placing: a placement's own height (the sky rail out over the sea, level with its station) */
+  if (typeof p.y === 'number') return p.y;
   const y0 = standingHeightAt(p.x, p.z);
   if (M.box && SUNKEN_FOOTPRINT_PROPS.test(p.k)) {
     const s = p.s || 1,
