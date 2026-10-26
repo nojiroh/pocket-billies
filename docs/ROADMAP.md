@@ -95,6 +95,12 @@ town node needs it.
   Beans. RF-1 and RF-2 before RO-1, RF-3 before RL-12b, RF-4 before RL-S1. Tags `rf-N-done`. Branch `track/reflavour`.
   RF-1 (the words players see), RF-2 (pyramids: names, icons, the 3D throw, its sounds) and RF-3 (type passives) done
   2026-10-23. RF-4 (internal renames, SAVE_VERSION 5) and RF-5 (the new tone in text) done 2026-10-23; RF-6 (the game's name) next.
+- **Studio art track** (docs/phases/studio-art-track.md, the owner's brief 2026-10-26): every piece of art viewable
+  and editable in the Studio, with online research, and what no longer fits the Vision taken out. SA-1 (an Art
+  browser over the whole art tree: search, Used by, Edit pixels, Open in its editor) next, then SA-2 (the missing
+  editors: tiles47 ground, robots, coins, SVG icons, scene art), SA-3 (clean-up in the Studio and the game: Jobs,
+  Town shops, dead Rules fields, the walk eggs), SA-4 (navigation as workspaces), SA-5 (unused art). Planned
+  2026-10-26 on `ccr-a073cfde-ab64xh`. Tags `sa-N-done`. Branch `track/studio-art` (the owner makes it from main).
 - **Studio track** (docs/phases/studio-track.md): ST-0..ST-6 done; ST-7 (Model mode import) next. Independent of the
   rework; the editors for the new data sections come with their sessions (RL-11..RL-16). Side session ST-T, the
   Studio self-test (docs/phases/studio-self-test.md, approved 2026-10-21): measure the Studio; fixes come after.
