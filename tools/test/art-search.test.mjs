@@ -1,7 +1,7 @@
 // Studio art track SA-1: the Art browser's search and folders (game/js/logic/art-search.js): the tokens and their
 // chips, what a query keeps, the folders from the file list, a PNG's size from its header.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { modules, ROOT } from './setup-real.mjs';
@@ -139,4 +139,14 @@ test('pngSize reads a real PNG’s header; anything else is null', () => {
   assert.deepEqual(S.pngSize(b), { w: 192, h: 192 });
   assert.equal(S.pngSize(b.subarray(0, 20)), null);
   assert.equal(S.pngSize(new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"></svg>')), null);
+});
+
+test('SA-2a: the builder that draws a picture, for the Studio`s warning', () => {
+  assert.equal(S.artMadeBy('art/coins/pyramid_32.png'), 'tools/build-pyramids.py');
+  assert.equal(S.artMadeBy('scene/life/crow.png'), 'tools/build-fx-v47.py');
+  assert.equal(S.artMadeBy('scene/life/duck.png'), 'tools/build-life-v47.py');
+  assert.equal(S.artMadeBy('art/scene/build/rooms.png'), 'tools/build-buildings.py');
+  assert.equal(S.artMadeBy('art/next/tiles47/grass_1.png'), '');
+  assert.equal(S.artMadeBy('art/robots/vane.png'), '');
+  for (const [, tool] of S.ART_BUILDERS) assert.ok(existsSync(join(ROOT, tool)), tool);
 });

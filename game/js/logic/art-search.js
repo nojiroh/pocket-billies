@@ -19,11 +19,14 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  ART_BUILDERS: [() => ART_BUILDERS],
   ART_ROOT: [() => ART_ROOT],
   // @ts-expect-error -- replaced on purpose
   artFolderOf: [() => artFolderOf, v => (artFolderOf = v)],
   // @ts-expect-error -- replaced on purpose
   artFolderView: [() => artFolderView, v => (artFolderView = v)],
+  // @ts-expect-error -- replaced on purpose
+  artMadeBy: [() => artMadeBy, v => (artMadeBy = v)],
   // @ts-expect-error -- replaced on purpose
   artMatch: [() => artMatch, v => (artMatch = v)],
   artQueryEmpty: [() => artQueryEmpty],
@@ -211,4 +214,25 @@ export function pngSize(b) {
   if (String.fromCharCode(b[12], b[13], b[14], b[15]) !== 'IHDR') return null;
   const u32 = (/** @type {number} */ i) => ((b[i] << 24) | (b[i + 1] << 16) | (b[i + 2] << 8) | b[i + 3]) >>> 0;
   return { w: u32(16), h: u32(20) };
+}
+
+/* SA-2a: art a Python builder in tools/ draws, so running it again can draw over a Studio edit (the owner,
+   2026-10-26: the builders stay and the Studio says so; tiles47's builder retired). [path pattern, builder] */
+export const ART_BUILDERS = [
+  [/^scene\/fx\/(bee|fish|moth)\.png$/, 'tools/build-fx-v47.py'],
+  [/^scene\/life\/crow\.png$/, 'tools/build-fx-v47.py'],
+  [/^scene\/life\/[\w-]+\.png$/, 'tools/build-life-v47.py'],
+  [/^coins\/[\w-]+\.(png|json)$/, 'tools/build-pyramids.py'],
+  [/^scene\/build\/walls\.png$/, 'tools/build-walls.py'],
+  [/^scene\/build\/(detail|rooms)\.png$/, 'tools/build-buildings.py'],
+  [/^scene\/build\/detail-a04\.png$/, 'tools/build-props-a04.py'],
+  [/^scene\/flags\/[\w-]+\.png$/, 'tools/build-flags.py'],
+  [/^ui\/[\w-]+\.svg$/, 'tools/build-ui-icons.py'],
+];
+/** the builder that draws a picture, or '' (a path under art/, with or without art/ in front)
+ * @param {string} path */
+export function artMadeBy(path) {
+  const p = String(path || '').replace(/^art\//, '');
+  const hit = ART_BUILDERS.find(([re]) => /** @type {RegExp} */ (re).test(p));
+  return hit ? /** @type {string} */ (hit[1]) : '';
 }
