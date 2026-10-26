@@ -7,6 +7,7 @@ import { expose } from '../test-globals.js';
 import {
   ambientLife,
   drawPropModels,
+  drawReflectionRuns,
   provide,
   reducedMotion,
   roomHole,
@@ -157,6 +158,8 @@ export function reflectionPass(items, C, rw, rh, X) {
   /* phase 20 (the owner's choice): grouped by picture as the main pass is (walk/sprites.js), so runs of one picture
      can be one draw */
   sortByPicture(pics);
+  /* phase 20 E10: as instances while Engine > Quality "Pictures in batches" is on (walk/sprites.js) */
+  if (drawReflectionRuns(RC, C, Object.assign({}, X, { shadow: null }), pics, SF)) pics.length = 0;
   for (const it of pics) {
     gpuTag(it.voxImg ? 'modelPic' : 0); /* R1 measure: a model's picture layer counted apart */
     const T = imageTexture(it.im);

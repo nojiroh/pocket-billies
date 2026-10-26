@@ -6,7 +6,7 @@
 import { expose } from '../test-globals.js';
 import { loadingScreen, provide, questMarked, reducedMotion, talkBox } from '../hooks.js';
 import { clamp } from '../util.js';
-import { pictureFacing } from '../logic/prop-turn.js';
+import { pictureFacing, pictureRight } from '../logic/prop-turn.js';
 import { hiddenEase, outlineColour } from '../logic/occlude.js';
 import { INTEREST_DEFAULTS } from '../logic/camera-interest.js';
 import { gpuTag } from '../engine/gpu-counters.js';
@@ -55,6 +55,8 @@ expose({
   DOOR_INTEREST: [() => DOOR_INTEREST],
   IMAGE_IDS: [() => IMAGE_IDS],
   OUTLINE_COLOURS: [() => OUTLINE_COLOURS],
+  REFLECTION_MATERIALS: [() => REFLECTION_MATERIALS],
+  REFLECTION_RECORDS: [() => REFLECTION_RECORDS],
   SILHOUETTE_AMOUNT: [() => SILHOUETTE_AMOUNT],
   SILHOUETTE_PULL: [() => SILHOUETTE_PULL],
   SILHOUETTE_TINT: [() => SILHOUETTE_TINT],
@@ -70,6 +72,7 @@ expose({
   drawClockHands: [() => drawClockHands, v => (drawClockHands = v)],
   drawFlatItem: [() => drawFlatItem, v => (drawFlatItem = v)],
   drawPlayerSilhouette: [() => drawPlayerSilhouette, v => setDrawPlayerSilhouette(v)],
+  drawReflectionRuns: [() => drawReflectionRuns, v => ((drawReflectionRuns = v), provide({ drawReflectionRuns }))],
   drawRotatingBlades: [() => drawRotatingBlades, v => (drawRotatingBlades = v)],
   drawSpriteRuns: [() => drawSpriteRuns, v => (drawSpriteRuns = v)],
   drawSpriteWave: [() => drawSpriteWave, v => (drawSpriteWave = v)],
@@ -85,6 +88,7 @@ expose({
   outlineColourOf: [() => outlineColourOf, v => (outlineColourOf = v)],
   personWho: [() => personWho, v => (personWho = v)],
   readHideQueries: [() => readHideQueries, v => (readHideQueries = v)],
+  reflectionRecord: [() => reflectionRecord, v => (reflectionRecord = v)],
   setSpriteCrossRecord: [() => setSpriteCrossRecord, v => (setSpriteCrossRecord = v)],
   setSpriteRecord: [() => setSpriteRecord, v => (setSpriteRecord = v)],
   setSpriteShadeUniforms: [
@@ -98,6 +102,7 @@ expose({
   spriteHasParts: [() => spriteHasParts],
   spriteInstanceProgram: [() => spriteInstanceProgram, v => (spriteInstanceProgram = v)],
   spriteInstanceState: [() => spriteInstanceState],
+  spriteInstancesReady: [() => spriteInstancesReady, v => (spriteInstancesReady = v)],
   spriteRecord: [() => spriteRecord, v => setSpriteRecord(v)],
   spriteRecordAt: [() => spriteRecordAt, v => (spriteRecordAt = v)],
   spriteSelfShade: [() => spriteSelfShade, v => (spriteSelfShade = v)],
@@ -108,7 +113,7 @@ expose({
   useFxProgram: [() => useFxProgram, v => (useFxProgram = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ setSpriteShadeUniforms, sortByPicture, spriteFrame });
+provide({ drawReflectionRuns, setSpriteShadeUniforms, sortByPicture, spriteFrame });
 export function setDrawBoxFaces(v) {
   drawBoxFaces = v; // eslint-disable-line no-func-assign
   provide({ drawBoxFaces });
@@ -254,6 +259,7 @@ function newSpriteRecord(cross) {
     crossOn: false,
     cr: cross ? newSpriteRecord(false) : null,
     inst: 0,
+    cam: false,
   };
 }
 const SPRITE_RECORDS = [];
@@ -448,10 +454,11 @@ function drawSpriteWave(p, r) {
    picture with turning blades or clock hands (drawn right after it) end a run. If the program does not build on this
    device the pass keeps one draw a picture (the debug log says so). */
 const spriteInstanceState = { bad: null };
-function spriteInstanceProgram(C, X, sh) {
-  if (!engineSetting('quality', 'spriteInstances')) return null;
+/* is the instanced program on and built (built on first use if the precompile list did not start it) */
+function spriteInstancesReady() {
+  if (!engineSetting('quality', 'spriteInstances')) return false;
   const gl = gpuState.gl;
-  if (spriteInstanceState.bad === gl) return null;
+  if (spriteInstanceState.bad === gl) return false;
   if (!gpuState.P.spriteI)
     try {
       ensurePrograms(SPRITE_INSTANCE_SHADERS);
@@ -459,9 +466,14 @@ function spriteInstanceProgram(C, X, sh) {
       spriteInstanceState.bad = gl;
       console.error(e);
       if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'pictures in batches off: ' + e.message);
-      return null;
+      return false;
     }
-  const ip = useWalkProgram('spriteI', C, X),
+  return true;
+}
+function spriteInstanceProgram(C, X, sh) {
+  if (!spriteInstancesReady()) return null;
+  const gl = gpuState.gl,
+    ip = useWalkProgram('spriteI', C, X),
     U = ip.U;
   gl.uniform3fv(U.uCamRight, C.right);
   gl.uniform3fv(U.uCamBack, C.back);
@@ -1132,4 +1144,84 @@ export function addHitTarget(it, C, hits, labels, PPU) {
     });
     labels.push({ k: 'enc', x: q.x, y: by, e: it.e });
   }
+}
+/* ---------- phase 20 E10: the reflection's pictures as instances ----------
+   The values the reflection's own loop (walk/water.js reflectionPass) sends: the picture's right as it turns
+   (pictureRight), the camera's back, no fade, rim or emit, its fixed lighting (uMat 0, 1, 0, .15 for every picture:
+   the material table filled with it), the season and self-shade as the main pass (E3). Drawn in runs as the main pass
+   is, on the mirrored camera RC with no world curve. */
+const REFLECTION_RECORDS = [],
+  REFLECTION_MATERIALS = new Float32Array(32);
+for (let i = 0; i < 8; i++) REFLECTION_MATERIALS.set([0, 1, 0, 0.15], i * 4);
+function reflectionRecord(it, F, C, r) {
+  r.it = it;
+  r.crossOn = false;
+  const T = (r.T = imageTexture(it.im));
+  if (!T) return (r.mode = 'none');
+  const R = pictureRight(it, C.right);
+  r.cam = R === C.right;
+  r.right.set(R);
+  r.back.set(C.back);
+  r.fixed = 0;
+  r.noRecv = it.noRecv ? 1 : 0;
+  r.flipN = 1;
+  r.lk = it.lk;
+  r.mt = SURFACE_MATERIALS.plain;
+  const f = foliageAmount(it);
+  r.fol[0] = f[0];
+  r.fol[1] = f[1];
+  r.self[0] = spriteSelfShade(it, F);
+  r.self[1] = F.selfD[0] * (it.flip || 1);
+  r.self[2] = F.selfD[1];
+  r.emit = 0;
+  r.fade = 1;
+  r.rim = 0;
+  r.lit = 1;
+  r.shade = 0.3;
+  spriteGeometry(r, it);
+  r.dz = 0;
+  r.wave = null;
+  return (r.mode = 'quad');
+}
+/* the reflection's pictures (already in the main pass's order) on the mirrored camera RC; C is the frame's camera */
+function drawReflectionRuns(RC, C, X, pics, F) {
+  if (!spriteInstancesReady()) return false;
+  const gl = gpuState.gl,
+    ip = useWalkProgram('spriteI', RC, X),
+    U = ip.U,
+    R = SPRITE_RUN;
+  gl.uniform3fv(U.uCamRight, C.right);
+  gl.uniform3fv(U.uCamBack, C.back);
+  gl.uniform3fv(U.uFwd, C.fwd);
+  gl.uniform3f(U.uSunH, 0, 0, 0);
+  gl.uniform1i(U.uTex, 0);
+  gl.uniform1i(U.uNrm, 1);
+  gl.uniform1f(U.uAlpha, 1);
+  gl.uniform1f(U.uCurveOn, 0);
+  if (U.uSelOut) gl.uniform1f(U.uSelOut, 0);
+  gl.uniform4fv(U.uMats, REFLECTION_MATERIALS);
+  let k = 0;
+  for (let i = 0; i < pics.length; i++) {
+    const r = REFLECTION_RECORDS[i] || (REFLECTION_RECORDS[i] = newSpriteRecord(false));
+    reflectionRecord(pics[i], F, C, r);
+    r.inst = k;
+    if (r.mode === 'quad') packSpriteInstance(k++, r, r.cam);
+  }
+  uploadSpriteInstances(k * SPRITE_INSTANCE_STRIDE);
+  R.n = 0;
+  R.on = true;
+  for (let i = 0; i < pics.length; i++) {
+    const r = REFLECTION_RECORDS[i];
+    if (r.mode !== 'quad') continue;
+    if (R.n && R.T !== r.T) flushSpriteRun(ip);
+    if (!R.n) {
+      R.T = r.T;
+      R.first = r.inst;
+      R.tag = r.it.voxImg ? 'modelPic' : 0;
+    }
+    R.n++;
+  }
+  flushSpriteRun(ip);
+  R.on = false;
+  return true;
 }
