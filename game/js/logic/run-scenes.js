@@ -20,7 +20,6 @@
 /** @import { Biome, LocationData, NodeType, Pool, RoadLink, RunSceneRules } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide } from '../hooks.js';
 import { hashString, rngFrom } from './rng.js';
 import { modFoeLevels } from './modifiers.js';
 import { runZoneRegion } from './run-region.js';
@@ -66,8 +65,6 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runSideLand: [() => runSideLand, v => (runSideLand = v)],
   // @ts-expect-error -- replaced on purpose
-  runTownFolkCap: [() => runTownFolkCap, v => ((runTownFolkCap = v), provide({ runTownFolkCap }))],
-  // @ts-expect-error -- replaced on purpose
   runTownLife: [() => runTownLife, v => (runTownLife = v)],
   // @ts-expect-error -- replaced on purpose
   runTownQuest: [() => runTownQuest, v => (runTownQuest = v)],
@@ -79,7 +76,6 @@ expose({
   runWorldTables: [() => runWorldTables, v => (runWorldTables = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ runTownFolkCap });
 /* to-module: end */
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, Biome>, pools: Record<string, Pool>,
@@ -353,14 +349,6 @@ export function runSceneMake(run, i, scenes, data) {
     runTownQuest(run, i, scene, data);
   }
   return { scene, notes };
-}
-/** TW-2: how many of a run town's folk are drawn (rules.json run.town.cap): `busy` once the game has stepped its
- * quality down (walkRenderer.q 2 or more: frames came late), else by the Graphics preset (preferences.aim: smooth is
- * Balanced, sharp is Beautiful) @param {import('../../types/game-data').RunTownRules} T @param {number} q
- * @param {string} [aim] @returns {number} */
-export function runTownFolkCap(T, q, aim) {
-  if (q >= 2) return T.cap.busy;
-  return aim === 'smooth' || aim === 'off' ? T.cap.balanced : T.cap.best;
 }
 /** TW-2: a run town's own life, from its node's stream ('town|life'): its region's chat lines after its biome's
  * (rules.json run.town.chat by the region's theme), and its named locals (scene.people), run.town.locals of them on

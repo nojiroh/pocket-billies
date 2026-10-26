@@ -7,7 +7,7 @@
  "amb": "pollen",
  "tint": null,
  "indoor": 0,
- "folk": 5,
+ "folk": 10,
  "kind": "town",
  "locationId": "copperleaf",
  "wind": 1,
@@ -695,7 +695,7 @@
    "seeds": {}
   }
  },
- "hub": [151.63,59.36],
+ "hub": [152.38,60.86],
  "exits": [],
  "tiles": [
   "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
@@ -1056,31 +1056,31 @@
   {"x":118.14,"z":124.97,"r":7.03,"n":24,"across":false}
  ],
  "checks": [
-  {"from":[151.63,59.36],"to":[65.39,44.98],"reach":true,"what":"from the town to the barn's door"},
-  {"from":[151.63,59.36],"to":[48.31,76.6],"reach":true,"what":"from the town to the pasture"},
-  {"from":[151.63,59.36],"to":[158.89,95.88],"reach":true,"what":"from the square to the station's door"},
-  {"from":[151.63,59.36],"to":[120.75,50.25],"reach":true,"what":"from the square to the farmhouse's door (1 of 2)"},
+  {"from":[152.38,60.86],"to":[65.39,44.98],"reach":true,"what":"from the town to the barn's door"},
+  {"from":[152.38,60.86],"to":[48.31,76.6],"reach":true,"what":"from the town to the pasture"},
+  {"from":[152.38,60.86],"to":[158.89,95.88],"reach":true,"what":"from the square to the station's door"},
+  {"from":[152.38,60.86],"to":[120.75,50.25],"reach":true,"what":"from the square to the farmhouse's door (1 of 2)"},
   {"from":[120.75,50.25],"to":[86.02,48.73],"reach":true,"what":"from the square to the farmhouse's door (2 of 2)"},
-  {"from":[151.63,59.36],"to":[159.75,77.84],"reach":true,"what":"from the square to the lab's door"},
-  {"from":[151.63,59.36],"to":[134.34,70.45],"reach":true,"what":"from the square to the library's door"},
-  {"from":[151.63,59.36],"to":[120.75,50.25],"reach":true,"what":"from the square to the mast's door (1 of 2)"},
+  {"from":[152.38,60.86],"to":[159.75,77.84],"reach":true,"what":"from the square to the lab's door"},
+  {"from":[152.38,60.86],"to":[134.34,70.45],"reach":true,"what":"from the square to the library's door"},
+  {"from":[152.38,60.86],"to":[120.75,50.25],"reach":true,"what":"from the square to the mast's door (1 of 2)"},
   {"from":[120.75,50.25],"to":[101.49,50.16],"reach":true,"what":"from the square to the mast's door (2 of 2)"},
-  {"from":[151.63,59.36],"to":[141.04,84.03],"reach":true,"what":"from the square to the shop's door"},
-  {"from":[151.63,59.36],"to":[120.75,50.25],"reach":true,"what":"from the square to the home's door (1 of 2)"},
+  {"from":[152.38,60.86],"to":[141.04,84.03],"reach":true,"what":"from the square to the shop's door"},
+  {"from":[152.38,60.86],"to":[120.75,50.25],"reach":true,"what":"from the square to the home's door (1 of 2)"},
   {"from":[120.75,50.25],"to":[101.06,30.03],"reach":true,"what":"from the square to the home's door (2 of 2)"},
-  {"from":[151.63,59.36],"to":[147.25,94.75],"reach":true,"what":"from the square to the inn's door (1 of 2)"},
+  {"from":[152.38,60.86],"to":[147.25,94.75],"reach":true,"what":"from the square to the inn's door (1 of 2)"},
   {"from":[147.25,94.75],"to":[134.09,94.9],"reach":true,"what":"from the square to the inn's door (2 of 2)"},
-  {"from":[151.63,59.36],"to":[167.68,55.51],"reach":true,"what":"from the square to the workshop's door"},
+  {"from":[152.38,60.86],"to":[167.68,55.51],"reach":true,"what":"from the square to the workshop's door"},
   {
-   "from": [151.63,59.36],
+   "from": [152.38,60.86],
    "to": [151.91,96.89],
    "reach": true,
    "what": "from the square to the genebank's door 's door (1 of 2)"
   },
   {"from":[147.75,95.25],"to":[119.93,107.31],"reach":true,"what":"from the square to the genebank's door (2 of 2)"},
-  {"from":[151.63,59.36],"to":[120.75,50.25],"reach":true,"what":"from the town to the dock (1 of 2)"},
+  {"from":[152.38,60.86],"to":[120.75,50.25],"reach":true,"what":"from the town to the dock (1 of 2)"},
   {"from":[120.75,50.25],"to":[112.05,32],"reach":true,"what":"from the town to the dock (2 of 2)"},
-  {"from":[151.63,59.36],"to":[4,4],"reach":false,"what":"out into the sea"}
+  {"from":[152.38,60.86],"to":[4,4],"reach":false,"what":"out into the sea"}
  ],
  "landmarks": {
   "rail": [

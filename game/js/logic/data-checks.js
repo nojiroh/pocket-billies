@@ -110,6 +110,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataSpeciesKind: [() => dataSpeciesKind, v => (dataSpeciesKind = v)],
   // @ts-expect-error -- replaced on purpose
+  dataSquareRules: [() => dataSquareRules, v => (dataSquareRules = v)],
+  // @ts-expect-error -- replaced on purpose
   dataUiTheme: [() => dataUiTheme, v => (dataUiTheme = v)],
   // @ts-expect-error -- replaced on purpose
   dataUnderscoreKeys: [() => dataUnderscoreKeys, v => (dataUnderscoreKeys = v)],
@@ -284,6 +286,56 @@ export function dataRanchRules(D) {
           problem('rules.json', 'ranch.income.capHours is not a whole number of hours (1-168)');
       }
     }
+  }
+  return out;
+}
+// HB-10c: the town square's day (logic/square-day.js): slots in order and apart within 0-24 hours, each a name of its
+// own, a share 0-1 and stops of the kinds the square has; the visits: 0-4 Billies a block of 1-60 minutes, leaving
+// between two hours, walking 0.3-3 m/s, staying [fewest, most] seconds, at stops of those kinds; nothing else
+/** HB-10c: rules.json square @param {any} D @returns {DataProblem[]} */
+export function dataSquareRules(D) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['rules.json', what]),
+    S = D.rules && D.rules.square,
+    KINDS = ['keep', 'shop', 'sit', 'lamp', 'fountain'],
+    hour = (/** @type {any} */ v) => typeof v === 'number' && v >= 0 && v <= 24,
+    kinds = (/** @type {any} */ L) =>
+      Array.isArray(L) && L.length > 0 && L.every(k => KINDS.includes(k)) && new Set(L).size === L.length;
+  if (!S || typeof S !== 'object' || Array.isArray(S)) {
+    problem('square missing');
+    return out;
+  }
+  for (const k of Object.keys(S)) if (!['day', 'visit'].includes(k)) problem(`square.${k}: no such rule`);
+  const day = S.day;
+  if (!Array.isArray(day) || !day.length) problem('square.day: a list of slots');
+  else
+    day.forEach((/** @type {any} */ T, /** @type {number} */ i) => {
+      const at = `square.day[${i}]`;
+      if (!T || typeof T !== 'object') return problem(`${at}: not a slot`);
+      for (const k of Object.keys(T))
+        if (!['k', 'from', 'to', 'share', 'stops'].includes(k)) problem(`${at}.${k}: no such rule`);
+      if (typeof T.k !== 'string' || !T.k || day.findIndex((/** @type {any} */ o) => o && o.k === T.k) !== i)
+        problem(`${at}.k: a name of its own`);
+      if (!hour(T.from) || !hour(T.to) || T.from >= T.to || (i && day[i - 1] && T.from < day[i - 1].to))
+        problem(`${at}: from before to, within 0-24 hours, after the slot before`);
+      if (!(typeof T.share === 'number' && T.share >= 0 && T.share <= 1)) problem(`${at}.share: 0-1`);
+      if (!kinds(T.stops)) problem(`${at}.stops: kinds of stop (${KINDS.join(', ')}), each once`);
+    });
+  const V = S.visit;
+  if (!V || typeof V !== 'object' || Array.isArray(V)) problem('square.visit missing');
+  else {
+    for (const k of Object.keys(V))
+      if (!['most', 'from', 'to', 'every', 'walk', 'stay', 'stops'].includes(k))
+        problem(`square.visit.${k}: no such rule`);
+    if (!(Number.isInteger(V.most) && V.most >= 0 && V.most <= 4)) problem('square.visit.most: whole, 0-4 Billies');
+    if (!hour(V.from) || !hour(V.to) || V.from >= V.to) problem('square.visit: from before to, within 0-24 hours');
+    if (!(Number.isInteger(V.every) && V.every >= 60 && V.every <= 3600)) problem('square.visit.every: 60-3,600 s');
+    if (!(typeof V.walk === 'number' && V.walk >= 0.3 && V.walk <= 3)) problem('square.visit.walk: 0.3-3 m/s');
+    const T = V.stay;
+    if (!Array.isArray(T) || T.length !== 2 || !(T[0] >= 5 && T[1] >= T[0] && T[1] <= 3600))
+      problem('square.visit.stay: [fewest, most] seconds, 5-3,600');
+    if (!kinds(V.stops)) problem(`square.visit.stops: kinds of stop (${KINDS.join(', ')}), each once`);
   }
   return out;
 }
@@ -682,15 +734,12 @@ export function dataRunLoop(D) {
       if (!(typeof RW.grow === 'number' && RW.grow >= 1 && RW.grow <= 10))
         problem('rules.json', 'run.rewards.grow: 1-10');
     }
-    /* TW-2: a run town's life: the folk drawn at most by graphics, the named locals (fewest, most) and their names,
+    /* TW-2: a run town's life: the named locals (fewest, most) and their names,
        the region themes' chat lines */
     const TN = R.town;
     if (!rec(TN)) problem('rules.json', 'run.town missing');
     else {
-      only(TN, ['cap', 'locals', 'names', 'chat'], 'run.town');
-      if (!rec(TN.cap) || !['busy', 'balanced', 'best'].every(k => whole(TN.cap[k], 0, 12)))
-        problem('rules.json', 'run.town.cap: busy, balanced and best, whole, 0-12 folk');
-      else only(TN.cap, ['busy', 'balanced', 'best'], 'run.town.cap');
+      only(TN, ['locals', 'names', 'chat'], 'run.town');
       const L = TN.locals;
       if (!Array.isArray(L) || L.length !== 2 || !whole(L[0], 0, 4) || !whole(L[1], L[0], 4))
         problem('rules.json', 'run.town.locals: [fewest, most], whole, 0-4');

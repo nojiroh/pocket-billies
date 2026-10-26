@@ -1230,7 +1230,7 @@ def run_town_life(pg, base):
     want = pg.evaluate(f"mapById(LOCATIONS[{node}].mapId).folk")
     if not 2 <= want <= 6: raise Exception(f'the town has {want} folk, not 2-6')
     if not until(pg, f"(walkView.folkAll||[]).length==={want}", 60): raise Exception(f'the folk never came out: {pg.evaluate("(walkView.folkAll||[]).length")} of {want}')
-    cap = pg.evaluate("runTownFolkCap(RULES.run.town,walkRenderer.q,saveData.preferences&&saveData.preferences.aim)")
+    cap = pg.evaluate("folkCap(engineSetting('quality','townFolk')??10,walkRenderer.q,saveData.preferences&&saveData.preferences.aim)")
     if not until(pg, f"walkView.folk.length<={cap}", 20): raise Exception(f'{pg.evaluate("walkView.folk.length")} folk drawn, over the cap of {cap}')
     pg.evaluate("walkView.folkAll.forEach(f=>{f.x0=f.x;f.z0=f.z});0")
     if not until(pg, "walkView.folkAll.some(f=>Math.hypot(f.x-f.x0,f.z-f.z0)>1)", 90): raise Exception('nobody walked in 90 s')
