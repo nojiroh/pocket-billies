@@ -3,6 +3,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import './walk-renderer.mjs';
+/* the walk view's mesh caches live in these (the page loads them; the walk renderer alone doesn't) */
+await import('../../game/js/buildings.js');
+await import('../../game/js/prop-models.js');
+await import('../../game/js/solid-props.js');
+await import('../../game/js/structures.js');
 
 const G = globalThis;
 
@@ -50,5 +55,36 @@ test('a loss marks the context lost and a restore clears it and hands the canvas
     assert.deepEqual(seen, [cv]);
   } finally {
     G.onGlContextRestored = was;
+  }
+});
+
+test("a restore drops the walk view's GPU caches, shown or not (walk-view-gl.js onGlContextRestored)", () => {
+  const { walkRenderer, walkView, buildingState, propModelState, solidPropState, structureState } = G,
+    dead = { dead: true },
+    bmesh = buildingState.mesh,
+    smesh = solidPropState.meshes,
+    id = walkView.id;
+  walkView.id = null;
+  Object.assign(walkRenderer, {
+    sceneCache: new Map([['k', dead]]),
+    mesh: dead,
+    gtex: dead,
+    ring: dead,
+    basin: dead,
+    prep: dead,
+  });
+  propModelState.meshes.set('a.json', dead);
+  solidPropState.live.set(dead, 1);
+  Object.assign(structureState, { mesh: dead, key: 'k', parts: [dead] });
+  try {
+    G.onGlContextRestored({});
+    for (const k of ['sceneCache', 'mesh', 'gtex', 'ring', 'basin', 'prep']) assert.equal(walkRenderer[k], null, k);
+    assert.notEqual(buildingState.mesh, bmesh);
+    assert.notEqual(solidPropState.meshes, smesh);
+    assert.equal(propModelState.meshes.size, 0);
+    assert.equal(solidPropState.live.size, 0);
+    assert.deepEqual([structureState.mesh, structureState.key, structureState.parts], [null, '', []]);
+  } finally {
+    walkView.id = id;
   }
 });

@@ -108,6 +108,7 @@ export const propModelState = {
   fr: -1,
   bt: 0,
 };
+provide({ propModelState }); /* to-module */
 const VOXEL_TEXTURE_GRAIN = {
   plain: 0,
   grain: 0.1,
