@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **More props on the routes** (route props track RP-1): the last drawn props in the routes' set pieces (firewood,
+  the scrap heap, the creature statue, tyres, the tollbooth) are 3D models, and 20 new 3D props: a stile, a
+  landing stage, broken columns, a ruined arch and wall corner, a milestone, a trail post, a wayside shrine with a
+  glowing seed, a haystack, a rain barrel, a water pump, beehives, a tool shed, a vegetable bed, a small wind
+  turbine, a solar path light, a seed library, and a Bureau barrier and crate (plus a footbridge, not placed yet).
+  The ruins, farm pen, rest stop, woodcutter's clearing, fishing jetty and Bureau checkpoint use them, and two new
+  set pieces appear on routes: a wayside shrine and a solar garden. A run's places change (generator version 18).
 - **Battles: rigs reused** (phase 20, a test switch, off for now; Studio > Engine > Quality "Reuse battle rigs"): each
   Billie's picture in a battle is drawn and sent to the graphics card again only when its pose, face or tint changes
   (about 6 times a second) instead of on every frame. Same picture. The diagnostics test now counts a battle's whole
