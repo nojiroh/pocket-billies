@@ -2,6 +2,56 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Air track AIR-2 - the fog grid: a density grid round the player as an R8 3D texture, unread - 2026-10-26
+Branch `track/air` (main merged in first: a conflict in AIR-1's Frame block, main's `uShFix` in the pad slot AIR-1
+kept and both test blocks: resolved side by side, 2272 bytes; AIR-1's work merged before each push). Plan Mode,
+approved. Nothing reads the grid yet (AIR-3), so the game's look doesn't change.
+- New game/js/logic/fog-grid.js (the density as plain numbers, type-checked, in the logic worker's list) and
+  game/js/walk/fog-grid.js (the texture, the uploads, the debug view), both on the game's and the Studio's pages.
+  The split is mine: the plan named walk/fog-grid.js only; the logic folder is what keeps the maths testable.
+- The density: each column's fog top is the mean ground on a ring about 6 m round it (8 samples), plus a layer of
+  0.5-2 m (thicker in fog weather), lifted to the water level plus Mist height near water, plus a valley's mist below
+  its level (`walkRenderer.valley` x the Valley mist dial), times a value noise (5 m, drifting with the wind, faster in
+  storms). The amount: the scene's mist (scaled by the Low mist dial, as lighting.js does) + 0.85 x `environment.fog`.
+  So a hollow fills to its rim, a hilltop's top lies below its ground (clear), none indoors (`sc.indoor` or `sc.room`).
+- **Claim corrected**: the dawn mist isn't a separate input. environment.js folds it into `environment.fog` (the
+  larger of the weather's fog and the morning mist), so the grid reads it once from there.
+- The grid: 48 x 12 x 48 cells of 1 m, 32 x 8 x 32 on phones (`PHONE`, the user agent, as walk-view-gl.js). A ring in x
+  and z: world cell (ix, iy, iz) is texel (ix mod nx, iy - oy, iz mod nz). **For AIR-3**: sample at
+  `(x/(nx*cell), (y/cell - oy)/ny, z/(nz*cell))` with repeat in x and z, clamp in y (the texture's wrap modes are set
+  so). The grid is in flat world positions (no `worldCurveDrop`). `fogGrid` holds `tex`, `G` (nx, ny, nz, cell, ox, oy,
+  oz).
+- The grid's floor follows the ground under you (4 cells below, 3 on phones). When it is 2 cells off, every row is
+  refilled at once. The columns' heights are kept, and the ring's samples share heights by cell (a third of the
+  reads). Uploads:
+  - a step across a cell refills and uploads one slab (texSubImage3D, `UNPACK_ALIGNMENT` 1, then back to 4);
+  - when the weather, mist, valley or water moves by more than 0.02, every row is refilled over a few frames (12 rows a
+    frame);
+  - otherwise one row every 4 frames, so the noise drifts without a seam.
+- Not built indoors (the texture is freed), not updated in battles. The hook is one call after the water in
+  `drawWalkFrameInner` (walk-view-gl.js), in the GPU counters' `other` pass.
+- Debug: the debug menu (Tests and performance) has "Show the fog grid": the cells over 24/255 as see-through blocks,
+  not saved. The debug log's report has `fogGrid`: the size, the heights read, the builds, refills, slabs and rows,
+  the uploads, KB, ms per upload (the CPU's side of the call) and the fill times.
+- Measured headless (software drawing, this container's CPU), Copperleaf (fixture town):
+  - the first build: 48-cell grid 11.6 ms, 32-cell grid 4.7 ms (31 and 11 ms before the shared heights);
+  - a slab: under 1 ms; an upload: 0.005-0.15 ms on average, at most 0.4;
+  - a weather refill: about 1-2 ms a frame for 8 frames on the 48-cell grid.
+  The phone's own numbers are needed: Export debug log after walking in fog.
+- Tests: tools/test/fog-grid.test.mjs: a hollow fills, a hilltop stays clear (even in fog weather), none indoors (even
+  with fog, mist, water and a valley), fog weather, water and a valley thicken it, the sizes, a step refills one slab
+  and reads one strip of heights, and the rolled grid equals one built there.
+- Verified: lint, typecheck, format, check:modules, unit tests 1320 pass. In a browser (fixture town, desktop and an
+  Android user agent): the grid builds, a step uploads one slab, fog weather refills it, a room frees it, the blocks
+  draw, no page errors. The smoke check passed 6 of 6, and its pictures were compared with a smoke run of AIR-1's tip
+  (before AIR-2): the walk, team, guide, shop, profile, mast and run sheet match (under 1.5). phone-map and
+  phone-opening-pick differ by when the picture was taken (the postcard still open; the starter card not yet up), not
+  by the scene: a second run of AIR-1's tip against its first differs as much (opening-pick 77.7, battle 18.6). The exported phone debug log has `fogGrid`.
+- Risky: the build happens in the frame that opens a place (about 5 ms on a phone grid here); the floor's refill on
+  stairs and hills (density only, about 2 ms); the weather refill adds about 1-2 ms a frame for a few frames. 27 KB of
+  texture (8 KB on phones). The Studio's walk views build it too (round `walkView.pl`).
+- Next: AIR-3 (the lit march reads the grid). Tag `air-2-done` for the owner.
+
 ### Air track AIR-1 - haze: follows the sky, RGB fade, height falloff, ray mist, sky glow - 2026-10-26
 Branch `track/air` (main merged in first; a HANDOFF conflict with the Studio art plan: both kept). Plan Mode, approved.
 The owner's answer to the plan's AIR-1 question: **keep a place's own `haze`, shaped by the sky**.
