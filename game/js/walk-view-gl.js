@@ -633,39 +633,28 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   const D = walkRenderer.dbg || {};
   /* phase 20 R2 (D1): with quality.skyLast the sky fills only what the opaque things left at the cleared depth (1.0),
      drawn after them and before anything blended (building fronts, water, effects); a room's front is blended over
-     the ground, so a frame that shows one keeps the sky first. D5: with quality.solidFirst the models, buildings and
-     structures go before the sprites, so leaves behind a trunk or a wall fail the depth test */
+     the ground, so a frame that shows one keeps the sky first */
   const skyLast =
       !!engineSetting('quality', 'skyLast') && !(sc.room && (engineSetting('lights', 'roomLight') ?? true) !== false),
-    solidFirst = !!engineSetting('quality', 'solidFirst'),
-    bpart = skyLast || solidFirst ? 'solid' : undefined;
-  const drawSolids = () => {
-    gpuPass('models');
-    if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
-    if (!solidFirst) {
-      gpuPass('box');
-      drawBoxFaces(C, items, X);
-    }
-    gpuPass('buildings');
-    if (typeof drawBuildings === 'function') drawBuildings(C, X, items, walkRenderer.bfade, bpart);
-    gpuPass('structures');
-    if (typeof drawStructures === 'function') drawStructures(C, X);
-  };
+    bpart = skyLast ? 'solid' : undefined;
   if (!skyLast) drawSky(C, sun);
   gpuPass('ground');
   drawGround(C, X);
   drawRoomFront(C, X);
   gpuPass('grass');
   if (walkRenderer.grass && !D.noGrass) drawGrass(C, X);
-  if (solidFirst) drawSolids();
   gpuPass('sprites');
   drawSprites(C, items, X, hits, labels, PPU);
   gpuPass('solid');
   if (typeof drawSolidProps === 'function') drawSolidProps(C, items, X, hits, labels, PPU);
-  if (solidFirst) {
-    gpuPass('box');
-    drawBoxFaces(C, items, X);
-  } else drawSolids();
+  gpuPass('models');
+  if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
+  gpuPass('box');
+  drawBoxFaces(C, items, X);
+  gpuPass('buildings');
+  if (typeof drawBuildings === 'function') drawBuildings(C, X, items, walkRenderer.bfade, bpart);
+  gpuPass('structures');
+  if (typeof drawStructures === 'function') drawStructures(C, X);
   if (skyLast) {
     gpuPass('sky');
     drawSky(C, sun, true);

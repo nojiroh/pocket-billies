@@ -83,7 +83,6 @@ const GRAPHICS_TEST_HIDDEN = [
   /* phase 20 R2 (pixels): each on its own, out of "everything lowest / highest" (Phone pixel budget is not here: the
      test pins resolution 1, under the phone's budget either way; the diagnostics' Renderer baseline measures it) */
   ['quality.skyLast', 'Sky last', { values: [false, true], alone: true }],
-  ['quality.solidFirst', 'Solid things first', { values: [false, true], alone: true }],
   ['quality.invalidate', 'Drop spent pictures', { values: [false, true], alone: true }],
   ['quality.phoneLamps', 'Phone lamps', { values: [false, true], alone: true }],
   ['quality.rainBatch', 'Rain in one go', { values: [false, true], alone: true }],
@@ -121,7 +120,7 @@ const GRAPHICS_TEST_STATIONS = [
     id: 'sun',
     name: 'Sun gap',
     sun: { angle: -90, height: 18 },
-    dials: ['air.godRays', 'quality.solidFirst', 'quality.skyLast'],
+    dials: ['air.godRays', 'quality.skyLast'],
   },
   /* phase 20 R2 (D7): the Sun gap with God rays off, where the cheap shafts stand in (a station may borrow another's
      spot, and fix values of its own under every step) */

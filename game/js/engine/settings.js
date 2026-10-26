@@ -273,10 +273,8 @@ export const ENGINE_DEFAULTS = {
        be lit at once (the shaders hold 16) */
     stableLights: false,
     lights: 16,
-    /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1); models, buildings and structures before the
-       sprites (D5) */
+    /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1) */
     skyLast: false,
-    solidFirst: false,
     /* a phone's pixel budget 1.2 MP instead of 1.6, its automatic resolution starting at 0.9 (D4) */
     phonePixels: false,
     /* a phone's lamps: at most 8 lit at once, 4 of them in the air (D6) */
@@ -1284,12 +1282,6 @@ export const ENGINE_SPEC = [
         'Rain in one go',
         'bool',
         'Rain, snow and ash (and the splashes) are drawn in one go instead of one drop at a time: the same drops, far less work for the processor in bad weather.',
-      ],
-      [
-        'solidFirst',
-        'Solid things first',
-        'bool',
-        'Models, buildings and structures are drawn before the leaf and prop pictures, so leaves hidden behind a trunk or a wall are skipped by the graphics card. Faster in groves; a picture lying flat on a model may show differently.',
       ],
       [
         'spriteInstances',
