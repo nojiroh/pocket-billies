@@ -44,6 +44,7 @@ expose({
   trainRideDepart: [() => trainRideDepart, v => (trainRideDepart = v)],
   trainRideEnd: [() => trainRideEnd, v => (trainRideEnd = v)],
   trainRideFrame: [() => trainRideFrame, v => (trainRideFrame = v)],
+  trainRideGuard: [() => trainRideGuard, v => (trainRideGuard = v)],
   trainRideHome: [() => trainRideHome, v => (trainRideHome = v)],
   trainRidePerson: [() => trainRidePerson, v => (trainRidePerson = v)],
   trainRideSkip: [() => trainRideSkip, v => (trainRideSkip = v)],
@@ -63,6 +64,8 @@ export const trainRide = {
   t0: 0,
   /** @type {number | null} the pictures tool's fixed moment (ms into the ride), else null */
   hold: null,
+  /** @type {any} the timer that ends a ride whose frames stopped coming (trainRideGuard) */
+  guard: 0,
   skipped: false,
   /** @type {any} */
   W: null,
@@ -328,6 +331,7 @@ function trainRideStart(kind, key, o, done) {
   W.roam = uiState.roam && uiState.roam.id === mapIdAt(0) ? uiState.roam : null;
   W.train = trainProp(W, key, kind === 'home' ? (o.won ? 1 : 2) : 0);
   walkView.director = { frame: trainRideFrame };
+  trainRideGuard();
   trainRideCaption(true);
   if (kind === 'home') trainVeil(false, 600);
 }
@@ -341,11 +345,26 @@ function trainParkHome(key, v, t0) {
   else if (performance.now() - t0 < 30000) setTimeout(() => trainParkHome(key, v, t0), 300);
 }
 
+/** the ride's clock runs in the walk view's frames, which come slowly on a slow phone and not at all while the view
+ * isn't drawn: a timer ends it once its time is up all the same (not while the pictures tool holds a moment) */
+function trainRideGuard() {
+  const R = trainRide,
+    B = R.kind === 'depart' ? DEPART : HOME,
+    ms = Object.values(B).reduce((a, b) => a + b, 0);
+  clearTimeout(R.guard);
+  R.guard = setTimeout(function check() {
+    if (!R.on || !R.W) return;
+    if (R.hold != null || performance.now() - R.t0 < ms) return void (R.guard = setTimeout(check, 500));
+    trainRideEnd(false);
+  }, ms + 1000);
+}
+
 /** the ride ends (played out, or skipped: skip true): the departure behind the white veil, the way home with the train
  * standing at the station; its log line, then the caller's next step */
 function trainRideEnd(skip) {
   const R = trainRide;
   if (!R.on) return;
+  clearTimeout(R.guard);
   const W = R.W,
     ms = Math.round(performance.now() - R.t0);
   R.on = false;
