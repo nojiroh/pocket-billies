@@ -2,6 +2,20 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Air track AIR-0 - the plan: volumetric low fog and better haze - 2026-10-26
+Branch `ccr-c0505a05-bzef90` (`track/air` doesn't exist yet: the owner makes it, and AIR-1 on starts there). Plan Mode;
+the owner asked whether the low fog could be volumetric with simple voxels, then for the same research on haze, then
+answered: soft volumetric (no visible cubes), its own track, all four parts in scope, phones on with a coarser grid.
+- New docs/phases/air-track.md: the verified facts (`fogit` in engine/webgl.js is a colour fade per surface; the v43
+  light-in-air march in engine/post-effects.js already samples the shadow maps and lamps but never paints fog; the
+  haze is one colour, the sky a three-colour gradient), the research with sources, sessions AIR-1..AIR-4, the asks.
+- ROADMAP (Tracks alongside) and BRANCHES rows.
+- No code changed, so no checks were run. Risky: nothing yet; AIR-1 moves every lit shader's colour (`fogit`).
+- Found on the way: the auto-quality ladder drops the light-in-air march at step 3, so a phone under load loses it;
+  the plan keeps `fogit` as the fallback.
+- Next: the owner makes `track/air`; AIR-1 (haze) and AIR-2 (fog grid) can run at the same time. Tag `air-0-done`
+  for the owner.
+
 ### Merge batch 2: PRs #219 (renderer) and #217 (roster RO-3a..RO-3d) into main - 2026-10-26
 Branch `ccr-ed7f65cb-dk7xqw` (the owner: "look at the open PRs and merge them to main"). Both conflicted with main, so
 they were merged here (merge commits) for one PR.

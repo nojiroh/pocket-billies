@@ -175,6 +175,11 @@ town node needs it.
   done 2026-10-22. IS-8 (the barn's fenced pasture, the ranch's Billies wandering in it) done 2026-10-22. IS-9 (dressing,
   the forest, gulls and crabs, the phone pass) done 2026-10-22 headless, waiting on the owner's phone test; then the
   ground is locked. Tags `is-N-done`.
+- **Air track** (docs/phases/air-track.md, the owner's brief and answers 2026-10-26): volumetric low fog and better
+  haze. AIR-1 haze (the colour follows the sky, RGB fade, height falloff), AIR-2 a fog density grid round the player
+  (a small 3D texture, coarser on phones), AIR-3 the light-in-air march lights the fog (sun, shadows, lamps), AIR-4
+  depth-aware edges and shadowed haze. AIR-0 (the plan and research) done 2026-10-26 on `ccr-c0505a05-bzef90`. Tags
+  `air-N-done`. Branch `track/air`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
   (PR #142); his wolf shirt and katana art are next.
