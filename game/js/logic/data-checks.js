@@ -31,6 +31,7 @@ import {
 import { fxRowOf } from './run-enc.js';
 import { FX_KINDS, FX_LIMIT, FX_STAGES } from './effects.js';
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
+import { BANTER_WHO } from './story-pick.js';
 import { islandProblems } from './island.js';
 import { parseScript, scriptProblem } from './script-parse.js';
 /* eslint-disable no-func-assign */
@@ -475,9 +476,27 @@ export function dataRunScene(D) {
     if (
       W &&
       W.rare !== undefined &&
-      !(W.rare && typeof W.rare === 'object' && whole(W.rare.up, 0, 20) && Object.keys(W.rare).length === 1)
+      !(
+        W.rare &&
+        typeof W.rare === 'object' &&
+        whole(W.rare.up, 0, 20) &&
+        Object.keys(W.rare).every(k => k === 'up' || k === 'myth')
+      )
     )
-      problem('rules.json', 'run.wild.rare is not { up } (whole levels, 0-20)');
+      problem('rules.json', 'run.wild.rare is not { up, myth? } (whole levels, 0-20)');
+    /* RO-3f: the mythical that now and then stands in for the rarer one: a chance and real one-stage mythicals */
+    const MY = W && W.rare && W.rare.myth;
+    if (MY !== undefined) {
+      const lines = Object.fromEntries((D.lines || []).map((/** @type {any} */ l) => [l.id, l]));
+      if (!MY || typeof MY.chance !== 'number' || !(MY.chance >= 0 && MY.chance <= 1) || !Array.isArray(MY.list))
+        problem('rules.json', 'run.wild.rare.myth is not { chance (0-1), list }');
+      else
+        for (const sp of MY.list) {
+          const L = typeof sp === 'string' && lines[sp.replace(/\d+$/, '')];
+          if (!L || L.rar !== 'mythical' || sp !== L.id + '0')
+            problem('rules.json', `run.wild.rare.myth: ${sp} is not a mythical line's species (<line>0)`);
+        }
+    }
     /* RT-4: the habitats (logic/mapgen.js mapgenHabitats makes their points), each a list of types, no type twice */
     const H = W && W.habitats;
     if (H !== undefined) {
@@ -1123,12 +1142,15 @@ export function dataResidents(D, valid = () => true) {
   const hub = ((D.maps || {}).copperleaf || {}).props || [],
     B = D.buildings || {},
     U = D.unlocks || {},
+    people = D.people || {},
     firsts = Object.keys(R).filter(k => R[k].first);
   if (firsts.length > 1) problem(`more than one first resident: ${firsts.join(', ')}`);
   for (const [k, r] of Object.entries(R)) {
     const at = /** @type {any} */ (r).home;
     if (at !== 'house' && !B[at] && !hub.some((/** @type {any} */ p) => p.k === at))
       problem(`${k}.home: no building "${at}" (buildings.json or Copperleaf)`);
+    /* RS-3: their look is a person of the same id (people/<id>.json), in a run town and in Copperleaf */
+    if (!people[k]) problem(`${k}: no look (people/${k}.json)`);
     for (const u of /** @type {any} */ (r).levels)
       if (!U[u]) problem(`${k}.levels: no unlock "${u}" (unlocks.json)`);
       else if (U[u].at !== at) problem(`${k}.levels: ${u} is sold at ${U[u].at || 'no building'}, not at ${at}`);
@@ -1153,6 +1175,10 @@ export function dataEvents(D, valid = () => true) {
     stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
     statuses = new Set((D.statuses || []).map((/** @type {any} */ t) => t.id)),
     biomes = new Set(Object.keys(D.biomes || {})),
+    /* RO-3e: the species a revive may name (every stage of every line) */
+    species = new Set(
+      (D.lines || []).flatMap((/** @type {any} */ L) => (L.names || []).map((/** @type {any} */ _, st) => L.id + st))
+    ),
     people = new Set(
       Array.isArray(D.people) ? D.people.map((/** @type {any} */ x) => x.id) : Object.keys(D.people || {})
     ),
@@ -1207,6 +1233,11 @@ export function dataEvents(D, valid = () => true) {
       case 'wild':
       case 'recall':
         if (a != null && !(Number.isInteger(num(a)) && Math.abs(num(a)) <= 20))
+          problem(`${at}: levels up of -20 to 20`);
+        return;
+      case 'revive':
+        if (!species.has(a)) problem(`${at}: no species "${a}" (lines/)`);
+        if (b != null && !(Number.isInteger(num(b)) && Math.abs(num(b)) <= 20))
           problem(`${at}: levels up of -20 to 20`);
         return;
       case 'level':
@@ -1397,6 +1428,16 @@ export function dataBanter(D, valid = () => true) {
     if (mine.length && !mine.some((/** @type {any} */ b) => !b.when && !b.once))
       problem(`no ${who} line without a when that is said more than once: ${who} could have nothing to say`);
   }
+  /* RS-3: a line is for a listed speaker or a resident (residents.json), and every resident has one that always holds */
+  const R = D.residents || {};
+  for (const [k, b] of Object.entries(B)) {
+    const who = /** @type {any} */ (b).who;
+    if (!BANTER_WHO.includes(who) && !R[who])
+      problem(`${k}.who: "${who}" is no speaker and no resident (residents.json)`);
+  }
+  for (const id of Object.keys(R))
+    if (!Object.values(B).some((/** @type {any} */ b) => b.who === id && !b.when))
+      problem(`no line for the resident "${id}" without a when: they could have nothing to say`);
   return out;
 }
 

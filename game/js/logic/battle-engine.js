@@ -533,7 +533,7 @@ export function useMove(k, mid, tk0, part) {
     }
     if (v.hyped === 0) battleSay(`${billyName(u)} snapped out of its confusion.`);
   }
-  const onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe;
+  const onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe || fx.copyTypes;
   const tk = onFoe ? retarget(k, tk0) : k;
   if (onFoe && tk == null) return;
   const t = fighter(tk),
@@ -653,11 +653,30 @@ export function useMove(k, mid, tk0, part) {
       if (fx.spin) {
         fv2.ov = [BATTLE_RULES.spinType];
         fv2.ovT = BATTLE_RULES.spinTurns;
+        delete fv2.ovBy;
         battleSay(`${billyName(t2)} was soaked and became ${BATTLE_RULES.spinType} type.`, {
           k: 'stat',
           si: tk2,
           up: false,
         });
+      }
+      /* RO-3f: Fork (the Satoshi line's move) takes the target's types onto the user for forkTurns turns; it fails
+       * when the target has no type to take or the user already has those types */
+      if (fx.copyTypes) {
+        const mine = actorTypes(k),
+          theirs = actorTypes(tk2).filter(ty => ty !== 'None');
+        if (!theirs.length || (theirs.length === mine.length && theirs.every(ty => mine.includes(ty))))
+          battleSay('But it failed.');
+        else {
+          v.ov = theirs.slice();
+          v.ovT = BATTLE_RULES.forkTurns;
+          v.ovBy = 'fork';
+          battleSay(`${billyName(u)} forked ${billyName(t2)} and became ${theirs.join('/')} type.`, {
+            k: 'stat',
+            si: k,
+            up: true,
+          });
+        }
       }
       if (fx.wipe) {
         let any = false;
@@ -768,7 +787,9 @@ export function endTurn() {
     f.v.protect = false;
     if (f.v.ovT > 0 && --f.v.ovT === 0) {
       f.v.ov = null;
-      battleSay(`${billyName(m)} dried off and is back to its own type.`);
+      if (f.v.ovBy === 'fork') battleSay(`${billyName(m)}’s fork ran out. It is back to its own type.`);
+      else battleSay(`${billyName(m)} dried off and is back to its own type.`);
+      delete f.v.ovBy;
     }
   }
   for (const si of [0, 1]) {
@@ -999,7 +1020,11 @@ export function aiScore(k, id, tk) {
   else if (fx.selfStage) s = Object.keys(fx.selfStage).some(q => fieldState(k).st[q] < 2) ? 28 : 0;
   else if (fx.tgtStage) s = 22;
   else if (fx.spin) s = fieldState(tk).ov ? 0 : 20;
-  else s = 0;
+  else if (fx.copyTypes) {
+    const mine = actorTypes(k),
+      theirs = actorTypes(tk).filter(ty => ty !== 'None');
+    s = !theirs.length || (theirs.length === mine.length && theirs.every(ty => mine.includes(ty))) ? 0 : 20;
+  } else s = 0;
   return s + 5;
 }
 export function chooseAI(k = 1, b) {

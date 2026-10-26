@@ -45,6 +45,7 @@ import { bankLevel, bankPrice, bankSlots } from './logic/gene-bank.js';
 import { geneEventSlots } from './logic/gene-events.js';
 import { isRobot, robotRules } from './logic/fighters.js';
 import {
+  addBilly,
   billyName,
   canEnter,
   encounterStock,
@@ -63,6 +64,7 @@ import {
   plural,
   spawn,
   spliceWords,
+  teamSize,
 } from './logic/rules.js';
 import { rivalSize } from './logic/rival.js';
 import { relFavoursPay, relGift } from './logic/relations.js';
@@ -118,6 +120,7 @@ import {
   actionSpot,
   climbEnds,
   findPath,
+  hubResidentWalkers,
   mapBridges,
   mapById,
   mapHub,
@@ -157,13 +160,14 @@ import { runLoad } from './run-loading.js';
 import { runClinicEach, runJump, runTakeOff } from './run.js';
 import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
-import { encounterOpen } from './encounter-screen.js';
+import { encPlaying, encounterOpen } from './encounter-screen.js';
 import { questData, questMarked, residentTalk } from './quest-board.js';
 import { ranchOpen } from './ranch-screen.js';
 import { geneBankDo, geneBankOpen } from './gene-bank-screen.js';
 import { augmentsDo, augmentsOpen } from './augment-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
-import { storyPickTree } from './story-stage.js';
+import { residentHomeTalk } from './story.js';
+import { storyPickTree, storyRun } from './story-stage.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
 import { renderWorldMapTab } from './map-tab.js';
 import { clinicHeal } from './walk-tab.js';
@@ -1436,6 +1440,89 @@ async function runFullTest(mode) {
         8,
         180
       );
+    /* RO-3e: the Dig Site, on a copy of the save on a run (seed SELFTESTDIG): reviving the trilobite adds Philanthrobite
+       to a party with room; with a full party the rail snake takes the place of the one you leave behind. Then the save
+       as it was */
+    if (typeof runWorldSync === 'function' && typeof encounterOpen === 'function' && !selfTest.stop)
+      await phase(
+        "The Dig Site's fossils",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            /* tap the event sheet's button whose words start with one of these; false when none shows */
+            tap = async (/** @type {string[]} */ ...words) => {
+              for (let i = 0; i < 80; i++) {
+                const b = [...document.querySelectorAll('#ov .event-sheet button')].find(x =>
+                  words.some(w => (x.textContent || '').trim().startsWith(w))
+                );
+                if (b) {
+                  /** @type {HTMLButtonElement} */ (b).click();
+                  return true;
+                }
+                await selfTestSleep(100);
+              }
+              return false;
+            },
+            /* tap Go on, then Keep walking, until the sheet closes */
+            finish = async () => {
+              for (let i = 0; i < 20 && document.querySelector('#ov .event-sheet'); i++)
+                if (!(await tap('Go on', 'Keep walking'))) break;
+              for (let i = 0; i < 50 && encPlaying; i++) await selfTestSleep(100);
+            },
+            out = [];
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            runStartOn(s, runStartPlan('SELFTESTDIG', { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            s.team = s.team.slice(0, 1);
+            setSaveData(s);
+            render();
+            encounterOpen(null, 'dig_site');
+            if (!(await tap('Revive the trilobite'))) throw new Error('the Dig Site never offered the trilobite');
+            await finish();
+            const got = saveData.team.find(m => m.sp === 'carnegie0');
+            if (!got) throw new Error('no Philanthrobite joined a party with room');
+            out.push(`${billyName(got)} Lv ${got.lvl} joined`);
+            while (saveData.team.length < teamSize() - 1) addBilly(makeBilly('knight0', 5, { wild: true }));
+            /* the one left behind: the only one of its kind, so its button is the one tapped */
+            addBilly(makeBilly('cuban0', 5, { wild: true }));
+            const last = saveData.team[saveData.team.length - 1];
+            encounterOpen(null, 'dig_site');
+            if (!(await tap('Revive the rail snake'))) throw new Error('the Dig Site never offered the rail snake');
+            /* the revive's line first (Go on), then who stays behind */
+            let asked = false;
+            for (let i = 0; i < 5 && !asked; i++) {
+              const has = (/** @type {string} */ w) =>
+                [...document.querySelectorAll('#ov .event-sheet button')].some(x =>
+                  (x.textContent || '').trim().startsWith(w)
+                );
+              for (let k = 0; k < 50 && !has(billyName(last)) && !has('Go on'); k++) await selfTestSleep(100);
+              if (has(billyName(last))) asked = await tap(billyName(last));
+              else await tap('Go on');
+            }
+            if (!asked) throw new Error('a full party wasn’t asked who stays behind');
+            await finish();
+            if (saveData.team.includes(last)) throw new Error(`${billyName(last)} was left behind but is still here`);
+            if (saveData.team.length !== teamSize() || !saveData.team.some(m => m.sp === 'vanderbilt0'))
+              throw new Error('the rail snake didn’t take the place in a full party');
+            out.push(`full party: Vanderbolt in, ${billyName(last)} left behind`);
+            return out.join('; ');
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        120
+      );
     /* RT-2: a run route's trainers, on a copy of the save: the first seed (SELFTESTRT0, 1, ...) whose map has a route
        with a pair; on its place every trainer stands on its spot (a pair's second beside it), facing the way it
        looks; the place's wild Billies are fewer for them; the pair starts a double and, beaten, leaves one reward
@@ -1948,7 +2035,44 @@ async function runFullTest(mode) {
             if (!saveData.story.fresh || saveData.story.pending) throw new Error('home from a win: the story’s picks');
             if (!saveData.meta.residents.dottie || H.res !== 'dottie')
               throw new Error('Dottie didn’t move in (or the history lost her)');
-            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; landed ${flew} ms after the train; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; Dottie invited and moved in; home with ${saveData.meta.research} Research; in the history`;
+            /* RS-3: home again, Dottie walks Copperleaf as one of its townsfolk (her own look), from the library's
+               door; talking to her (her line tapped through), her first word is her moving-in line, said once */
+            if (
+              !(await wait(
+                () =>
+                  walkView.ready &&
+                  (walkView.folkAll || []).some(f => f.res === 'dottie' && f.who === 'dottie') &&
+                  hubResidentWalkers(walkView.sc).some(w => w.id === 'dottie' && w.prop.k === 'library'),
+                20000
+              ))
+            )
+              throw new Error('Dottie isn’t walking Copperleaf from the library');
+            /* a story line waits for open windows (the way home's) to close */
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            let homeTalk = false;
+            residentHomeTalk({ res: 'dottie' }).then(() => (homeTalk = true));
+            if (
+              !(await wait(() => {
+                if (talkBox.cur) talkBox.cur.tap();
+                return homeTalk;
+              }, 15000))
+            )
+              throw new Error(
+                'talking to Dottie at home never ended DBG ' +
+                  JSON.stringify([
+                    talkBox.on,
+                    !!talkBox.cur,
+                    storyRun.on,
+                    storyRun.id,
+                    typeof cutscene !== 'undefined' && cutscene.on,
+                    !!uiState.modal,
+                  ])
+              );
+            if (!saveData.story.once || !saveData.story.once['banter:dottie_moved'])
+              throw new Error('Dottie’s first word at home isn’t her moving-in line');
+            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; landed ${flew} ms after the train; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; Dottie invited and moved in, walking Copperleaf, her moving-in line said; home with ${saveData.meta.research} Research; in the history`;
           } finally {
             if (activeBattle) {
               stopTimers();

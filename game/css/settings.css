@@ -342,7 +342,7 @@ html[data-contrast='high'] small {
   position: fixed;
   left: 12px;
   right: 12px;
-  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
   z-index: 7;
   max-width: 460px;
   margin: 0 auto;

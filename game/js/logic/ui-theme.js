@@ -204,6 +204,13 @@ export function sharedVars(look) {
     ['spring', '--spring'],
   ]))
     if (Array.isArray(mo[k]) && mo[k].length === 4) out.push(`${v}: cubic-bezier(${mo[k].join(', ')});`);
+  // UI-8: the minimap (js/minimap.js reads these where its canvas sits): its span, the compact bar's timing, its marks
+  const mm = look.minimap || {};
+  if (typeof mm.span === 'number') out.push(`--minimap-span: ${mm.span};`);
+  if (typeof mm.compactAfter === 'number') out.push(`--minimap-compact-after: ${mm.compactAfter};`);
+  if (typeof mm.fullAfter === 'number') out.push(`--minimap-full-after: ${mm.fullAfter};`);
+  for (const k of /** @type {const} */ (['facilities', 'trainers', 'billies']))
+    if (typeof mm[k] === 'boolean') out.push(`--minimap-${k}: ${mm[k] ? 1 : 0};`);
   return out;
 }
 

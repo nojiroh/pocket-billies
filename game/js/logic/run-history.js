@@ -193,9 +193,10 @@ export function validHistory(v) {
 }
 
 /** the facts the story's conditions read (conditions.js storyStateOf): `last` (LAST_FACTS of the newest entry),
- * `lastby` (what ended it: its kind, its trainer or class id, the Billie, `bureau`) and `history` (HISTORY_FACTS)
- * @param {HistoryEntry[] | undefined} list
- * @returns {{ last: Record<string, number>, lastby: Record<string, number>, history: Record<string, number> }} */
+ * `lastby` (what ended it: its kind, its trainer or class id, the Billie, `bureau`), `lastres` (RS-3: who it brought
+ * to Copperleaf) and `history` (HISTORY_FACTS) @param {HistoryEntry[] | undefined} list
+ * @returns {{ last: Record<string, number>, lastby: Record<string, number>, lastres: Record<string, number>,
+ *   history: Record<string, number> }} */
 export function historyFacts(list) {
   const H = Array.isArray(list) ? list : [],
     e = H[H.length - 1],
@@ -233,6 +234,8 @@ export function historyFacts(list) {
   return {
     last,
     lastby,
+    /* RS-3: who the last run brought to Copperleaf (its `res`): `lastres:<id>` */
+    lastres: e && e.res ? { [e.res]: 1 } : {},
     history: {
       runs: H.length,
       wins: count(e => e.end === 'won'),

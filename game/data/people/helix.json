@@ -1,0 +1,22 @@
+{
+ "look": {
+  "name": "Dr. Helix",
+  "body": {"height":1.02,"body":0.98,"chest":0.5,"hips":1.02},
+  "skin": "#D8A07A",
+  "hair": "#2A3A4A",
+  "eyes": "#3F8A8A",
+  "wear": {
+   "hair": "hair_twin",
+   "eyes": "eyes_sharp",
+   "brows": "brows_straight",
+   "mouth": "mouth_smirk",
+   "top": "sweater",
+   "outer": "labcoat",
+   "bottom": "leggings",
+   "shoes": "runners",
+   "glasses": "glasses_round",
+   "neck": "nametag"
+  },
+  "colors": {"sweater":["#6A3A8A"],"leggings":["#2A2A3A"],"glasses_round":["#3F8A8A"],"nametag":["#F2EEE2","#3F8A8A"]}
+ }
+}

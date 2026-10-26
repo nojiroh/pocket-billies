@@ -20,7 +20,7 @@ expose({
   uiState: [() => uiState, v => ((uiState = v), provide({ uiState }))],
 });
 /* to-module: end */
-var saveData = { preferences: {}, gender: 'boy', avatar: null },
+export var saveData = { preferences: {}, gender: 'boy', avatar: null },
   uiState = {},
   activeBattle = null,
   reducedMotion = false;

@@ -559,3 +559,14 @@ pb-nav-bar#nav {
 pb-nav-bar#nav[hidden] {
   display: none;
 }
+/* UI-8: what sits above the bar (the dialogue box, the hint and Actions, sheets' sticky rows, the d-pad) clears it by
+   --nav-h: the bar's top (its raised minimap tile, full or compact) and a gap; with no bar shown, the old height */
+:root {
+  --nav-h: 96px;
+}
+:root:has(pb-nav-bar#nav:not([hidden])) {
+  --nav-h: 172px;
+}
+:root:has(pb-nav-bar#nav[compact]:not([hidden])) {
+  --nav-h: 102px;
+}
