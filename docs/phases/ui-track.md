@@ -111,6 +111,16 @@ diff has no view of them: the opening cutscene, the postcard pop-up, the airship
 photo mode, the workshop and fishing; and the old shared pieces (.pb, .pbar, .px, .glass, .sec-h, .seg, .tpanel,
 .fchip, .note) stay in the old layers for UI-6 to fold into the kit.
 
+UI-6a found (written up from its commits in UI-6b; the session left no HANDOFF entry or row): of the old layers' rules, 125
+went to the top of their screen files and 51 stayed, each one a rule a move would have put on the other side of a rule it
+fights (a cascade check over every pair whose order changed); the parts the roguelite barely shows got a file each
+(airship, postcard, controls, fishing, photo-mode, workshop, opening-old, evolution, full-test) and style-diff four views
+for them (37 in all); what was left became base.css (the page: fonts, old variables, reset, the world behind the
+screens, reduced motion; 98 rules) and parts.css (the old shared parts not on the kit: .px, .pb, .chip, .pbar, .seg,
+.sec-h, .sheet, .pickrow...; 225 rules). The ratchet (`UI_LINT_CEILING` in logic/ui-lint.js) counts the whole game, so
+two branches each under a ceiling can merge over it (it happened twice on 2026-10-22: lower the value or set the
+ceiling to main's count). The blur budget and the accessibility pass were not done.
+
 No rule yet but needed: a layer scale (24 distinct z-index values, -1 to 2147483000) and cut-corner tokens. The Studio
 is outside the 06 rules (studio.css: 108 raw radii, 372 raw spacing values, its own teal palette). The bottom bar's
 `--t-*` colours are the pre-roguelite game's (UI-5 swapped the bar itself).
@@ -187,7 +197,8 @@ Works like the Engine section (dials in groups, ↺ per dial, presets, Hold to c
 | UI-3b (done 2026-10-21) | Studio UI section, tools | real screens from fixtures beside the gallery (Team, Bag, a battle, the dialogue box; payout and run chip once they exist); inspect (tap a part: its component and tokens) and Ctrl+L the reverse; overlays (tap targets under 44 px, contrast failures, glass layers); before/after shots; the rule check (ui-lint as a browser-safe module with lines) in the Studio's Check with Show me | Studio only | its check steps pass |
 | UI-4 (done 2026-10-21) | Run parts | day and deadline chip, forecast icon row, node markers, the four currency chips, the relic and keep-one card, payout rows with their motion, the hub/run bottom bar | gallery only | RL-7 and RL-8 can use them with no CSS of their own |
 | UI-5 (done 2026-10-22) | Every screen onto the kit | after the RL-8 play test: every screen, including ones the roguelite replaces, moves out of ui.js and the old CSS, one screen per commit, moves only (absorbs 06-5) | every remaining screen | each moved screen passes its UI test; the unused-CSS list shrinks |
-| UI-6 | Old layers gone | style, polish, screens and v05 emptied and deleted; lint and the blur budget enforced (fail when raw values rise); accessibility pass; then `phase-06-done` and `ui-6-done` | none intended | ui-lint at or near zero; full quick check green apart from known reds |
+| UI-6a (done 2026-10-22, PR #112; written up 2026-10-26) | Old layers gone | style, polish, screens, v05 and battle.css deleted: screen rules to their screen files, legacy parts to a file each, the rest to base.css and parts.css; style-diff views for the legacy parts; the ui-lint ratchet in `npm run lint` | none | style-diff 37 of 37 the same; lint fails when a raw count rises |
+| UI-6b | Lint down, blur and accessibility | raw values that equal a token become the token (no change on screen); the blur budget enforced per screen; the accessibility pass (tap targets, contrast, focus, labels); then `phase-06-done` and `ui-6-done` | the accessibility fixes | ui-lint ceilings lowered; full quick check green apart from known reds |
 | UI-7a (done 2026-10-23) | Settings: Sound | the Test buttons go; a slider plays its sound once when let go (the music slider not over a song); each row has its own mute (the Volume row's is the master mute); dragging a muted slider unmutes it; the duplicate on/off switch goes | a mute icon on each sound row, no Test buttons | quick check's Sound settings step passes; phone check by the owner |
 | UI-7b (done 2026-10-23) | Settings: layout | seven tabs (Sound, Display, Controls, Accessibility, Game, Save, Help), opening on the last one used; time, weather and season to the debug menu; Start over into the Save tab's red section, one shared reset that stops a battle; Save card: runs won and taxed; Customize trainer to the trainer card; Help: a Report a problem box (Full test, Export debug log) | the new tabs | quick check green, settings screenshots remade on purpose |
 | UI-7c (done 2026-10-23) | Debug menu | grouped by task (tests, give me, Billies, battle, run, places, story, ranch and time, save); one copy of each test; no phase codes in labels; a search box; open sections remembered; a message saying what changed; the four old buttons gone once checked unused | the new menu | quick check green |
