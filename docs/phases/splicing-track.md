@@ -120,6 +120,21 @@ drawback (a per-Billie row) never read the run's rows. A splice made on a run la
 run's end (run-state.js runEnd brings the others back as they left). The Studio has no events editor (events.json is
 edited as JSON; its Check runs dataEvents).
 
+**Corrections found by SP-5 (2026-10-26, on SP-6's branch with RL-14a's merged in):** `aug` was in no code (not in
+save-data.d.ts, not validated, read nowhere); genes.json `stability.augment` and `wild.escaped` were data only. Every
+limb rule (part HP, breaking, a move lost, repair, the hit's part, the snapshot's limbs) was gated on `isRobot` and
+read `m.fit`. The phase-17 Workshop sheet (workshop.js, a Team-screen panel for robots) already fitted and upgraded
+parts, for nothing; nothing robot-related spent Scrap; repair was the `repairkit` item or `healAll`. The Workshop's
+model, room (`int_workshop`, an "Upgrade bench" with no act) and door (act `enter`) were on main from the hub placing
+session, not on SP-6's branch. Robot arms are per side (armL, armR) while a Billie's front slot is both arms (the
+owner: an arm Augment is one arm, the right); robot legs are one part (a pair, treads or a hover skirt). There are no
+Bureau places: "near the Bureau" is one step from RL-14a's scrapyards (where every wild one is a bot). Older facts out
+of date: buildings `airship` is now `station` and `genebank` exists; there are five currencies (the schema requires
+five); the game calls `kitBakeWhole` since SP-1; Prime is +5 %; the Bureau is in seven events; SP-4's list (the
+limit's default in five places, no Studio reader, no DNA grant, pointCost, breeding) is all fixed; `wild` is in
+RUN_FIELDS (the run-start snapshot holds the hub's wild lists, emptied at runBegin); CLAUDE.md's gamedata.js is
+generated and gitignored, not a 13 MB file in git.
+
 ## Sessions
 
 Each session: one cause per commit, lint, type-check and unit tests after each change, the smoke subset, the quick
@@ -176,7 +191,19 @@ Genes (`breeding.js`), starter-point cost (+1 per 2 Stability spent), field move
 Parts section gets the Gene fields and a splice preview. The in-game full test gets a step (sequence, splice, see it
 in battle).
 
-**SP-5 Augments.** Unblocked 2026-10-26: RL-14a (bots, salvage into `saveData.parts`, the scrapyard) is done on
+**SP-5 Augments.** Built 2026-10-26 on `claude/sp-5-augments`, made from SP-6's branch with RL-14a's
+(`ccr-15fdd30c-5nfh0d`) merged in once (HANDOFF): genes.json `augment` (slots: an arm on the right side of the front,
+legs on the back; statShare 0.5; field parts Hydrant Arm: Surf, Auger Arm: Rock Smash; move `extra`; escapedNear 4;
+knockout `part`; the Workshop's levels and Scrap prices; all placeholders), the saved `Billy.aug`,
+`logic/augments.js`, Augments in Stability (3 each), weight, the dominant type, stats, moves and field moves, limbs that
+break in battle and mend at a clinic, the Workshop open in Copperleaf (buildings.json `workshop`, unlocks
+`workshop_2`, `workshop_3`; the door and the Upgrade bench, act `workshop`; `augment-screen.js`), the Augment drawn on
+the Billie's bones (`graftLook`), Escaped specimens (`wildRoll`, likelier one step from a scrapyard; knocked out,
+their part into your spares), the Studio's Augments card, the debug buttons and the full test's step. The owner's
+answers (2026-10-26): an arm Augment is one arm (the right); its move is an extra one while fitted; a knocked-out
+Escaped specimen leaves its part; "near the Bureau" is one step from a scrapyard. Waiting on the owner: every Scrap
+price, statShare, escapedNear; the Augment's move follows the Gene-move rule once it is decided.
+ Unblocked 2026-10-26: RL-14a (bots, salvage into `saveData.parts`, the scrapyard) is done on
 `ccr-15fdd30c-5nfh0d`; SP-5 starts in a new session from `claude/sp-6-run-events` with that branch merged in once (the
 owner's answer). After RL-14's salvage: the Workshop built, fitting arms and legs on Billies for Scrap, breaking in
 battle and repair in towns, upgrades, the Augment art on the Billie's sockets, Escaped specimens wearing them
@@ -207,6 +234,9 @@ Seedling line, custom species in ghost teams and daily seeds (with RL-15; names 
   `genebank` plot.)
 - SP-6: the splice events' prices (the back alley 150 Moneys or 8 DNA, the lab at the Gene Bank's price, the auction
   250 Moneys or 15 DNA for 2 Genes, the recall's 15 DNA) and the three Perks' numbers and rarities (placeholders).
+- SP-5: the Workshop's Scrap prices (a fit 10, upgrades 10 / 20 / 40, levels 40 and 100), an Augment's share of its
+  part's stats (0.5), the Escaped odds next to a scrapyard (x4) and the DNA an Escaped specimen pays (8)
+  (placeholders).
 - The Seedling line's names and art.
 
 ## Done when

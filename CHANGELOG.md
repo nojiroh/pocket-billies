@@ -40,6 +40,16 @@ kept aside in the browser).
   battles you for it. A Gene spliced on a run also goes into your library, so it isn't lost if that Billie doesn't
   come home. Three new Perks: **Petri Dish** (Gene Samples pay 50% more DNA), **Gene Lure** (wild Billies of the next
   places are spliced twice as often), **Stabilizer Gel** (your Unstable Billies lose half as much HP each turn).
+- **Augments** (splicing track SP-5; prices are placeholders): Copperleaf's **Workshop** opens. Walk in and use the
+  Upgrade bench to fit a bot's arm or legs from your spare parts (salvage from the Bureau's bots) on one of your
+  Billies, for Scrap: an arm replaces its right arm, legs its legs. An Augment brings its move (beside the Billie's
+  own), its type, some of its stats and its weight, and counts for field moves (the Hydrant Arm for **Surf**, the
+  Auger Arm for **Rock Smash**; the badge is still needed). It costs 3 Stability, so a Billie with a Gene and an
+  Augment can turn Unstable. Augments are the only parts that **break** in battle (aimed moves go for them; a broken
+  arm's move fails, broken legs are slow); a town's clinic or a rest mends them. Upgrade them at the Workshop; its
+  levels (bought with Scrap) fit legs and upgrade further. Taking one off is free and the part goes back to your
+  spares. Now and then a wild Billie on a run is an **Escaped specimen** wearing an Augment, more often next to a
+  Scrapyard: catch it and it keeps it, knock it out and you pry the part off (and some DNA).
 - **The Bureau's bots** (roguelite track RL-14, first half): the Bureau of Lost, Found and Beans now fields an army
   of bots built from robot parts (Courier Units, Repossession Units, Shredders, Stamp Presses, Filing Drones, Audit
   Units). Deeper into a run (from the fourth row on) about one wild encounter in ten on rocky, hot or cold ground is

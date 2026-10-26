@@ -72,7 +72,9 @@ town node needs it.
   built 2026-10-26 on `claude/sp-4-gene-bank` on top of SP-3's branch (main merged in once), its numbers placeholders
   until played. SP-6 (run events: the back-alley splicer, the Bureau field lab, the Gene auction, the Gene recall;
   three Perks) built 2026-10-26 on `claude/sp-6-run-events` on top of SP-4's branch, waiting on the owner's prices;
-  SP-5 waits for RL-14 (RL-14a's salvage now puts bot parts in `saveData.parts`). Tags `sp-N-done`. Branch `track/splicing`.
+  SP-5 (Augments: bot arms and legs on Billies at the Workshop for Scrap, breaking in battle and mended at clinics, upgrades,
+  drawn on the Billie, Escaped specimens near scrapyards) built 2026-10-26 on `claude/sp-5-augments`, on SP-6's branch with
+  RL-14a's merged in, its numbers placeholders until played. Tags `sp-N-done`. Branch `track/splicing`.
 - **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
   out of any room's doorway; "Go outside" stays with the card closed) done 2026-10-24; TW-1 (a town layout: street,
   square, houses with gardens, mapgen's `town` kind) done 2026-10-24; TW-2 (townsfolk, animals, chat, named locals)

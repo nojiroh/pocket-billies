@@ -2,6 +2,127 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Splicing track SP-5 - Augments: the Workshop, bot arms and legs on Billies, breaking and mending, Escaped specimens (built, waiting on the owner's prices) - 2026-10-26
+Branch `claude/sp-5-augments`, **made from SP-6's branch `claude/sp-6-run-events` (1c59e9e) with RL-14a's branch
+`ccr-15fdd30c-5nfh0d` (1d4c58f) merged in once** (the owner's answer: a merge, never a rebase). That merge brought main
+up to 2314da8 (PR #205 included). None of SP-2..SP-6 is merged or tagged, and `track/splicing` doesn't exist. This
+branch merges SP-6's and RL-14a's branches (never rebases) when they move. Merge order: SP-1, SP-2, SP-3, SP-4, SP-6
+and RL-14a, then this. Plan approved in Plan Mode. Tag `sp-5-done` for the owner.
+- **Where the track was wrong:** written into the track file's "Corrections found by SP-5". The ones that changed the
+  plan:
+  - `aug` existed in no code. `stability.augment` and `wild.escaped` were data only.
+  - Every limb rule was gated on `isRobot` and read `m.fit`.
+  - The phase-17 Workshop sheet fitted and upgraded robot parts for nothing.
+  - The Workshop's model, room and door were on main (the hub placing session), not on SP-6's branch.
+  - Robot arms are per side, while a Billie's front slot is both arms.
+  - There are no Bureau places.
+  - Out of date in the older facts and corrections: the buildings and currencies lists; "the game never bakes";
+    Prime +10 %; the Bureau's event count; SP-4's list (all fixed since); `wild` in RUN_FIELDS; CLAUDE.md's
+    gamedata.js note (it is generated and gitignored).
+- **The owner's answers in Plan Mode:**
+  - An arm Augment is **one arm, the right**; the front slot's share is split in half.
+  - Its move is an **extra move while fitted**, lost while the limb is broken.
+  - A knocked-out Escaped specimen leaves **its part** in your spares.
+  - "Near the Bureau" is **one step from a scrapyard**.
+- **The merge** (b6f77bf), 23 conflicts:
+  - rules.js stocking: RL-14a's scrapyard and rare draw kept; the stocked Billies still spliced from SP-3's stream; a
+    bot never spliced.
+  - saves.js: wild bots kept, grafts tidied.
+  - Copperleaf: rebuilt with RL-14a's placements, and the Gene Bank keeps its act `genebank`.
+  - Both sides kept in conditions.js and the rest.
+  - hooks.js and the module headers regenerated; the check-data snapshot remade (one more file); the hub-doors test
+    knows the Gene Bank's act.
+  - After the merge: lint, typecheck, check:modules, check:data, 1112 unit tests and smoke 6 of 6 all pass.
+- **Changed** (one cause per commit):
+  - **genes.json `augment`** (schema, type, dataGenes checks):
+    - slots: an arm on the front's right side (half the slot), legs on the back;
+    - `statShare` 0.5;
+    - `field` Hydrant Arm: Surf, Auger Arm: Rock Smash;
+    - `move` 'extra', `escapedNear` 4, `knockout` 'part';
+    - the Workshop's levels (Lv 1 arms to +1, Lv 2 legs and +2, Lv 3 +3) and its prices (a fit 10 Scrap, upgrades
+      10 / 20 / 40);
+    - `wild.dna.escaped` 8.
+    - **Placeholders.**
+  - **The saved `Billy.aug`** (slot -> part instance) and **logic/augments.js** (on the page, in the Studio and in the
+    logic worker):
+    - Stability: 3 each, held to your Bank's limit, so a Billie can turn Unstable; the merged name uses the part's
+      first word.
+    - Weight: the part's kg.
+    - Type: its type joins the dominant-type pick.
+    - Stats: statShare of its stats (upgrades included) added to the base.
+    - Field moves count it; the badge is still needed.
+    - Starter points count it.
+    - Never Prime.
+    - A slot with an Augment has no Gene (the Bank refuses it, 'aug'; the back alley skips it).
+    - saves.js validates it, tidies it (fit, known part, upgrade range), and lets a part be worn once and never also
+      be a spare.
+  - **Limbs in battle:**
+    - rules.js `limbsOf` / `limbKeys`: a robot's fit, or a Billie's Augments as armR and legs.
+    - partMaxHp, partBroken, moveUsable, repairParts and partsDamaged read them, as do the engine's hit, aim and
+      snapshot.
+    - `movesOf` (the Augment's move after the learned ones; the AI and the move tiles use it).
+    - A broken arm's move fails and broken legs are slow.
+    - The clinic's heal, a rest and a repair kit mend them (the clinic already priced partDmg).
+  - **The Workshop opens:**
+    - buildings.json `workshop` (3 levels, act `workshop`), unlocks `workshop_2` (40 Scrap) and `workshop_3` (100).
+    - The door and the room's Upgrade bench take act `workshop`. Also wired: ROOM_BY_USE, the door's camera
+      interest, the Actions sheet's hub mark, the Lab board ("at the Workshop"), the Studio's act list.
+    - The rules: `work*` in augments.js.
+    - The sheet, `augment-screen.js`: your Billies, their slots, the part worn with Upgrade and Take off, your spares
+      that fit, and the picked part's preview (drawn, kg, types, move, field, Stability, stats before and after);
+      Fit pays Scrap; the Workshop's upgrades at the foot.
+    - Debug log: 'augment' lines, data ids only.
+  - **The art:**
+    - graft-art.js `graftLook`: the graft code plus "+slot=part"; it is the plain graft code for a Billie without an
+      Augment, so nothing else changes.
+    - skeleton-rig.js `augRigParts`: the Billie's own rig, the right arm's bone (or the legs') given the part's
+      picture, scaled to the limb it replaces and hung from its joint; treads and a hover skirt as one piece.
+    - The battle dims a broken Augment and drops its picture.
+    - The limb pips show only the limbs it has.
+  - **Escaped specimens:**
+    - genes.js `wildRoll`: the Graft and Chimera draws unchanged; the escaped band after them, times 4 one step from
+      a scrapyard (rules.js `runNearYard`).
+    - In battle it wears a part of its own: "This Swiftlet has a Hydrant Arm!" and "It must have escaped from a
+      Bureau lab."
+    - Caught, it keeps the part. Knocked out, it gives DNA and the part; the sheet says so (and no longer says the
+      Gene Bank is "coming later").
+    - The run sim counts them.
+  - **The Studio's Genes section:** an Augments card (every number above, the Workshop's levels, and a bot part
+    tried on the picked Billie). studio-shots' genes view tries the Hydrant Arm.
+  - **Debug menu:** Open the Workshop, Workshop level +1, Fit a random Augment on the lead, Break the lead's Augments,
+    Battle an Escaped one.
+  - **The in-game full test:** "Workshop: fit an arm, it breaks in battle, the clinic mends it".
+  - **Text:** currencies.json's Scrap (salvage, the Workshop) and DNA (the Gene Bank spends it now).
+- **Verified:**
+  - **After every commit:** lint, typecheck, check:modules and the unit tests (1124 quick, all pass). New:
+    tools/test/augments.test.mjs (11: the data checks, fit, Stability, weight, type, field, stats, moves, the save,
+    limbs, breaking and repair, the Workshop's fit, take off and upgrade, the look code, the escaped band and the
+    scrapyard rule, the battle's lines and the knock-out).
+  - **Golden battles:** the six old ones unchanged. A seventh: a Billie with a Hydrant Arm against a robot (Jet Blast
+    used; its foe's arm broke).
+  - check:data passes.
+  - **Headless on the page** (town fixture, 400 px):
+    - The Workshop sheet: pick, preview, fit the arm and then the treads (Stability 6 of 3: Unstable).
+    - The Billie drawn with the blue Hydrant Arm on its right shoulder and treads under it.
+    - In battle: Jet Blast shown, then "Part broken" when the arm is broken, the arm dimmed.
+  - **In-game steps alone:** "Workshop" (musk2 front=hydrant, 10 Scrap, Jet Blast offered, broken and mended, taken
+    off free), "Gene Bank", "Wild splice", "Walk: Inside the Workshop", "Walk: Inside the Gene Bank" all pass.
+  - The Studio's Augments card at 1920 px.
+  - Full quick check: running as this entry is written; its result follows in the next commit.
+- **Risky:**
+  - **Not tried on the phone.**
+  - The Augment's picture is scaled to the Billie's own limb, a first guess. Treads under a small Billie hide its feet.
+  - The escaped band takes 0.5 % (2 % next to a scrapyard) of what were plain wild Billies: a seed's splice stream
+    gives a few different stocks. Species and levels are unchanged (their own stream).
+  - A Billie's Augment move is a fifth move tile (the keys 1-9 reach it).
+  - The workshop.js robot refit (a Team-screen panel, free upgrades) stays as phase 17 left it.
+  - An Augment's weight is its real kg (a 30 kg tread on a 0.4 kg Swiftlet shows in kg; the stats stay inside the
+    +/-20 % cap).
+- **Next:**
+  - The owner's answers (Ask me before): every Scrap price, statShare, escapedNear and the Escaped DNA; the Gene-move
+    rule (the Augment's move follows it).
+  - Then tag `sp-5-done`.
+  - SP-7 is next to plan. RL-14b (the Voltron) is beside it on `track/bots`.
 ### Splicing track SP-6 - Run events: the back alley, the Bureau's field lab, the Gene auction, the recall; three Perks (built, waiting on the owner's prices) - 2026-10-26
 Branch `claude/sp-6-run-events`, **on top of SP-4's branch `claude/sp-4-gene-bank`** (itself on SP-3's, SP-2's and
 SP-1's; none merged or tagged, `track/splicing` doesn't exist), started from its d560baf. It merges SP-4's branch when
