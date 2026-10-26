@@ -71,7 +71,7 @@ import { rngFn } from './rng.js';
 import { wildOddsBy } from './weather.js';
 import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
 import { graftKey, graftSet } from './graft-art.js';
-import { augBase, augFit } from './augments.js';
+import { augBase, augFit, augLimb, augMoves } from './augments.js';
 import {
   geneWords,
   graftFields,
@@ -190,6 +190,9 @@ expose({
   healAll: [() => healAll, v => ((healAll = v), provide({ healAll }))],
   hereLocation: [() => hereLocation],
   isPrime: [() => isPrime],
+  limbKeys: [() => limbKeys],
+  // @ts-expect-error -- replaced on purpose
+  limbsOf: [() => limbsOf, v => (limbsOf = v)],
   // @ts-expect-error -- replaced on purpose
   makeBilly: [() => makeBilly, v => ((makeBilly = v), provide({ makeBilly }))],
   // @ts-expect-error -- replaced on purpose
@@ -199,9 +202,13 @@ expose({
   metresToKm: [() => metresToKm],
   moveSlotCount: [() => moveSlotCount],
   // @ts-expect-error -- replaced on purpose
+  moveSourceLimbs: [() => moveSourceLimbs, v => (moveSourceLimbs = v)],
+  // @ts-expect-error -- replaced on purpose
   moveUsable: [() => moveUsable, v => (moveUsable = v)],
   // @ts-expect-error -- replaced on purpose
   movesAt: [() => movesAt, v => (movesAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  movesOf: [() => movesOf, v => (movesOf = v)],
   newUid: [() => newUid],
   nextTripNode: [() => nextTripNode],
   partBroken: [() => partBroken],
@@ -631,30 +638,71 @@ export function refreshRobot(m, previousMaxHp) {
   m.hp = m.hp > 0 ? Math.max(1, Math.round(maxHp(m) * was)) : 0;
   m.partDmg = m.partDmg || {};
 }
+/** SP-5: the limbs that can break: a robot's arms and legs (its fit), a Billie's Augments (each on the limb its
+ * slot is: the front's on its side's arm, the back's as legs); null for none @param {any} m
+ * @returns {Partial<Record<'armL' | 'armR' | 'legs', PartInstance>> | null} */
+export function limbsOf(m) {
+  if (!m) return null;
+  if (isRobot(m)) return m.fit ? { armL: m.fit.armL, armR: m.fit.armR, legs: m.fit.legs } : null;
+  const a = m.aug ? billyAug(m) : null;
+  if (!a) return null;
+  /** @type {Partial<Record<'armL' | 'armR' | 'legs', PartInstance>>} */
+  const out = {};
+  for (const [slot, p] of Object.entries(a)) {
+    const limb = augLimb(geneData(), slot);
+    if (limb && p) out[limb] = p;
+  }
+  return Object.keys(out).length ? out : null;
+}
+/** SP-5: the limbs it has, in ROBOT_LIMBS' order ([] for a Billie with no Augment) @param {any} m
+ * @returns {('armL' | 'armR' | 'legs')[]} */
+export const limbKeys = m => {
+  const L = limbsOf(m);
+  return L ? ROBOT_LIMBS.filter(k => L[k]) : [];
+};
 /** a limb's own HP when whole @param {Billy} m @param {'armL' | 'armR' | 'legs'} slot */
 export function partMaxHp(m, slot) {
-  const P = m.fit && robotPartDef(m.fit[slot].id);
+  const L = limbsOf(m),
+    P = L && L[slot] && robotPartDef(/** @type {PartInstance} */ (L[slot]).id);
   return Math.max(1, Math.round(maxHp(m) * robotRules().partHpRatio * ((P && P.dur) ?? 1)));
 }
 /** @param {Billy} m @param {'armL' | 'armR' | 'legs'} slot */
 export const partHpLeft = (m, slot) => Math.max(0, partMaxHp(m, slot) - ((m.partDmg && m.partDmg[slot]) || 0));
-/** @param {Billy} m @param {'armL' | 'armR' | 'legs'} slot */
-export const partBroken = (m, slot) => isRobot(m) && partHpLeft(m, slot) <= 0;
+/** SP-5: a Billie's Augment breaks as a robot's limb does @param {Billy} m @param {'armL' | 'armR' | 'legs'} slot */
+export const partBroken = (m, slot) => limbKeys(m).includes(slot) && partHpLeft(m, slot) <= 0;
 /** @param {Billy} m @returns {('armL' | 'armR' | 'legs')[]} */
-export const brokenParts = m => (isRobot(m) ? ROBOT_LIMBS.filter(k => partBroken(m, k)) : []);
-/** can it use this move now? A robot can't use a move whose every part giving it is broken (the gem's always works)
- * @param {Billy} m @param {string} mid */
+export const brokenParts = m => limbKeys(m).filter(k => partBroken(m, k));
+/** the limbs that give a move (a robot's gem: 'gem'); SP-5: a Billie's Augments that bring it, but none when it
+ * learned the move itself @param {Billy} m @param {string} mid @returns {string[]} */
+export function moveSourceLimbs(m, mid) {
+  if (isRobot(m)) return moveSources(/** @type {string} */ (m.gem), /** @type {RobotFit} */ (m.fit), mid);
+  const L = limbsOf(m);
+  if (!L || (m.moves || []).includes(mid)) return [];
+  return limbKeys(m).filter(k => {
+    const P = robotPartDef(/** @type {PartInstance} */ (L[k]).id);
+    return !!P && P.move === mid;
+  });
+}
+/** can it use this move now? A robot can't use a move whose every part giving it is broken (the gem's always works);
+ * SP-5: nor a Billie the move of a broken Augment @param {Billy} m @param {string} mid */
 export function moveUsable(m, mid) {
-  if (!isRobot(m)) return true;
-  const src = moveSources(/** @type {string} */ (m.gem), /** @type {RobotFit} */ (m.fit), mid);
+  if (!isRobot(m) && !m.aug) return true;
+  const src = moveSourceLimbs(m, mid);
   return !src.length || src.some(k => k === 'gem' || !partBroken(m, /** @type {'armL' | 'armR' | 'legs'} */ (k)));
+}
+/** SP-5: the moves it can pick in battle: its own, then the moves its Augments bring (genes.json augment.move
+ * 'extra'); a robot's and an un-Augmented Billie's are m.moves @param {Billy} m @returns {string[]} */
+export function movesOf(m) {
+  if (isRobot(m) || !m.aug) return m.moves;
+  const more = augMoves(geneData(), m.sp, billyAug(m)).filter(id => MOVES[id] && !m.moves.includes(id));
+  return more.length ? [...m.moves, ...more] : m.moves;
 }
 /** fixes a share (1 = all) of each limb's lost HP; a broken one comes back once it is above zero
  * @param {Billy} m @param {number} share @returns {boolean} whether anything was fixed */
 export function repairParts(m, share = 1) {
-  if (!isRobot(m) || !m.partDmg) return false;
+  if (!m.partDmg || !limbKeys(m).length) return false;
   let any = false;
-  for (const k of ROBOT_LIMBS) {
+  for (const k of limbKeys(m)) {
     const d = m.partDmg[k] || 0;
     if (d <= 0) continue;
     const fix = share >= 1 ? d : Math.ceil(partMaxHp(m, k) * share);
@@ -664,7 +712,7 @@ export function repairParts(m, share = 1) {
   return any;
 }
 /** does it have damaged parts? @param {Billy} m */
-export const partsDamaged = m => isRobot(m) && ROBOT_LIMBS.some(k => ((m.partDmg && m.partDmg[k]) || 0) > 0);
+export const partsDamaged = m => limbKeys(m).some(k => ((m.partDmg && m.partDmg[k]) || 0) > 0);
 /** puts a part from your parts on a robot; the part it replaces goes back to your parts. A gem (slot 'gem') swaps the
  * robot's gem the same way: the robot keeps its level, the old gem goes back as a spare.
  * @param {Billy} m @param {RobotSlot | 'gem'} slot @param {string} uid a part in saveData.parts @returns {boolean} */

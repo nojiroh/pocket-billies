@@ -44,12 +44,10 @@ import {
 } from '../game-data.js';
 import { graftOf, graftSet } from './graft-art.js';
 import {
-  ROBOT_LIMBS,
   ROBOT_SLOT_NAMES,
   fitFromIds,
   isRobot,
   isRobotSp,
-  moveSources,
   robotGemDef,
   robotIdsFromSp,
   robotRules,
@@ -66,10 +64,13 @@ import {
   formatNumber,
   gainXp,
   hereLocation,
+  limbKeys,
   makeBilly,
   makeRobot,
   maxHp,
+  moveSourceLimbs,
   moveUsable,
+  movesOf,
   partBroken,
   partHpLeft,
   partMaxHp,
@@ -344,11 +345,12 @@ export function actorSnapshot(k) {
     ty: actorTypes(k).slice(),
     xp: clamp((m.xp - a) / (b - a), 0, 1),
     stg: { ...f.v.st },
-    /* phase 17: a robot's limbs: which are broken (the stage dims them) and how much HP each has left (0 to 1) */
-    bot: isRobot(m)
+    /* phase 17: a robot's limbs: which are broken (the stage dims them) and how much HP each has left (0 to 1);
+       SP-5: a Billie's Augments the same way */
+    bot: limbKeys(m).length
       ? {
           brk: brokenParts(m),
-          ph: Object.fromEntries(ROBOT_LIMBS.map(q => [q, partHpLeft(m, q) / partMaxHp(m, q)])),
+          ph: Object.fromEntries(limbKeys(m).map(q => [q, partHpLeft(m, q) / partMaxHp(m, q)])),
         }
       : null,
   };
@@ -497,7 +499,7 @@ export function useMove(k, mid, tk0, part) {
     fx = M.fx || {};
   /* phase 17: the part that gives the move broke earlier this turn (or before): the move fails */
   if (!moveUsable(u, mid)) {
-    const src = moveSources(u.gem, u.fit, mid)[0];
+    const src = moveSourceLimbs(u, mid)[0];
     battleSay(`${billyName(u)}’s ${ROBOT_SLOT_NAMES[src] || 'part'} is broken. It can’t use ${M.n}.`, {
       k: 'status',
       si: k,
@@ -608,8 +610,9 @@ export function useMove(k, mid, tk0, part) {
       const held = bedrockHolds(tk2, r);
       t2.hp = Math.max(0, t2.hp - r.dmg);
       alphaPhase(tk2);
-      /* phase 17: a hit on a robot also lands on one of its parts (an aimed move on the one picked) */
-      const hit = isRobot(t2) && t2.hp > 0 ? hitPart(tk2, r.dmg, M, tk2 === tk ? part : null) : null;
+      /* phase 17: a hit on a robot also lands on one of its parts (an aimed move on the one picked); SP-5: and on a
+         Billie's Augments */
+      const hit = limbKeys(t2).length && t2.hp > 0 ? hitPart(tk2, r.dmg, M, tk2 === tk ? part : null) : null;
       if (tk2 === tk) Object.assign(ev.an, { dmg: r.dmg, te: r.te, crit: r.crit, part: hit || undefined });
       else
         battleSay(`${billyName(t2)} was hit too.`, { k: 'hurt', si: tk2, dmg: r.dmg, te: r.te, fx: 'spread', t: M.t });
@@ -1001,7 +1004,7 @@ export function chooseAI(k = 1, b) {
     const T = liveActors(foeSide(k));
     if (!T.length) return null;
     const opts = [];
-    for (const id of m.moves.filter(id => MOVES[id] && moveUsable(m, id)))
+    for (const id of movesOf(m).filter(id => MOVES[id] && moveUsable(m, id)))
       for (const tk of T) opts.push([{ mid: id, tk, part: aiAimPart(id, tk) }, aiScore(k, id, tk)]);
     if (!opts.length) return null;
     /* v34: in a double the second foe knows what its partner is about to do: no piling onto a fighter that's already
@@ -1038,8 +1041,8 @@ export function chooseAI(k = 1, b) {
 export function aiAimPart(mid, tk) {
   const t = fighter(tk),
     M = MOVES[mid];
-  if (!t || !isRobot(t) || !(M.fx && M.fx.aim)) return undefined;
-  const L = ROBOT_LIMBS.filter(q => !partBroken(t, q));
+  if (!t || !limbKeys(t).length || !(M.fx && M.fx.aim)) return undefined;
+  const L = limbKeys(t).filter(q => !partBroken(t, q));
   if (!L.length) return undefined;
   return L.reduce((a, b) => (partHpLeft(t, b) < partHpLeft(t, a) ? b : a));
 }
@@ -1050,10 +1053,11 @@ export function hitPart(tk, dmg, M, aim) {
   const t = fighter(tk),
     R = robotRules(),
     fx = M.fx || {};
-  let slot = aim && fx.aim && ROBOT_LIMBS.includes(aim) && !partBroken(t, aim) ? aim : null;
+  let slot = aim && fx.aim && limbKeys(t).includes(aim) && !partBroken(t, aim) ? aim : null;
   if (!slot) {
     const W = /** @type {[string, number][]} */ ([['torso', R.hitWeights.torso ?? 0.25]]);
-    for (const q of ROBOT_LIMBS) if (!partBroken(t, q)) W.push([q, R.hitWeights[q] ?? 0.25]);
+    /* SP-5: a Billie's body is its torso, its Augments its limbs */
+    for (const q of limbKeys(t)) if (!partBroken(t, q)) W.push([q, R.hitWeights[q] ?? 0.25]);
     slot = pickWeighted(W, battleRoll);
   }
   if (slot === 'torso') return slot;

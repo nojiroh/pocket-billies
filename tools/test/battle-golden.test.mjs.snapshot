@@ -1,3 +1,970 @@
+exports[`golden: a Billie with a Hydrant Arm against a robot (SP-5: the Augment’s move, aimed at a limb) 1`] = `
+{
+  "fmt": "single",
+  "kind": "trainer",
+  "over": "win",
+  "turns": 2,
+  "mine": [
+    {
+      "sp": "musk0",
+      "lvl": 30,
+      "hp": 74,
+      "xp": 22178,
+      "status": null,
+      "aug": {
+        "front": {
+          "uid": "golden-arm",
+          "id": "hydrant",
+          "up": 0
+        }
+      },
+      "partDmg": {}
+    }
+  ],
+  "foes": [
+    {
+      "sp": "bot:ember.bulwark.auger.clamp.treads",
+      "lvl": 18,
+      "hp": 0,
+      "xp": 4665,
+      "status": null,
+      "partDmg": {
+        "armL": 64
+      }
+    }
+  ],
+  "se": 600,
+  "said": [
+    "playTurnEvents",
+    "playTurnEvents"
+  ],
+  "log": [
+    {
+      "turn": 0,
+      "events": []
+    },
+    {
+      "turn": 1,
+      "events": [
+        {
+          "t": "Emberox used Jet Blast.",
+          "an": {
+            "k": "move",
+            "si": 0,
+            "ti": 1,
+            "mid": "jetblast",
+            "dmg": 64,
+            "te": 2,
+            "crit": true,
+            "part": "armL"
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 1,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Ember Bulwark’s left arm broke!",
+          "an": {
+            "k": "break",
+            "si": 1,
+            "part": "armL"
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 1,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "A critical hit!",
+          "an": {
+            "k": "crit",
+            "si": 1
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 1,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "It’s super effective!",
+          "an": null,
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 1,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Ember Bulwark held on with Bedrock!",
+          "an": {
+            "k": "block",
+            "si": 1
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 1,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Ember Bulwark used Flare Core.",
+          "an": {
+            "k": "move",
+            "si": 1,
+            "ti": 0,
+            "mid": "flarecore",
+            "miss": true
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 1,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Ember Bulwark missed.",
+          "an": null,
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 1,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "events": [
+        {
+          "t": "Emberox used Jet Blast.",
+          "an": {
+            "k": "move",
+            "si": 0,
+            "ti": 1,
+            "mid": "jetblast",
+            "dmg": 88,
+            "te": 2,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 0,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "It’s super effective!",
+          "an": null,
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 0,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Ember Bulwark fainted.",
+          "an": {
+            "k": "faint",
+            "si": 1
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 0,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Emberox gained 578 XP.",
+          "an": {
+            "k": "xp",
+            "si": 0
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 0,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        }
+      ]
+    }
+  ]
+}
+`;
+
 exports[`golden: a double trainer battle 1`] = `
 {
   "tid": "crude",

@@ -2,7 +2,7 @@
 // data-checks' rules for it.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { data, fn, GAME_DATA, modules, startedSave } from './setup-real.mjs';
+import { data, fn, GAME_DATA, hooks, modules, startedSave } from './setup-real.mjs';
 
 const C = modules['data-checks'];
 
@@ -109,4 +109,52 @@ test('augments: kept through a save and load; saveFill trims and dedupes; billie
   assert.equal(billiesOk([{ ...s.team[0], aug: { front: 'hydrant' } }]), false);
   assert.equal(billiesOk([{ ...s.team[0], aug: { sig: part('hydrant') } }]), false);
   assert.equal(billiesOk([{ ...s.team[0], aug: { front: part('hydrant') } }]), true);
+});
+
+test('augments: in battle an Augment is a limb: its move beside the learned ones, lost when it breaks; repairs fix it', () => {
+  const s = startedSave('swift0', 30),
+    m = s.team[0];
+  assert.equal(fn('limbsOf')(m), null, 'no Augment, no limbs');
+  assert.deepEqual(fn('movesOf')(m), m.moves);
+  m.aug = { front: part('hydrant'), back: part('treads') };
+  assert.deepEqual(Object.keys(fn('limbsOf')(m)), ['armR', 'legs']);
+  assert.deepEqual(fn('limbKeys')(m), ['armR', 'legs']);
+  const moves = fn('movesOf')(m);
+  assert.deepEqual(moves.slice(0, m.moves.length), m.moves);
+  assert.ok(moves.includes(R.parts.hydrant.move) && moves.includes(R.parts.treads.move));
+  assert.equal(fn('moveUsable')(m, R.parts.hydrant.move), true);
+  m.partDmg = { armR: fn('partMaxHp')(m, 'armR') };
+  assert.equal(fn('partBroken')(m, 'armR'), true);
+  assert.deepEqual(fn('brokenParts')(m), ['armR']);
+  assert.equal(fn('moveUsable')(m, R.parts.hydrant.move), false, 'the arm is broken');
+  assert.equal(fn('moveUsable')(m, m.moves[0]), true, 'its own moves stay');
+  assert.equal(fn('partsDamaged')(m), true);
+  /* the town clinic's heal (healAll) and a repair kit fix it, as a robot's parts */
+  fn('healAll')();
+  assert.equal(fn('partBroken')(m, 'armR'), false);
+  assert.equal(fn('partsDamaged')(m), false);
+  m.partDmg = { legs: 5 };
+  assert.equal(fn('repairParts')(m, 1), true);
+  assert.equal(m.partDmg.legs, 0);
+  /* broken legs slow it as a robot's do */
+  delete m.aug;
+  m.partDmg = { armR: 999 };
+  assert.equal(fn('partBroken')(m, 'armR'), false, 'a part taken off is never broken');
+});
+
+test('augments: a hit on a Billie with an Augment lands on its body or the Augment, never on a robot slot it lacks', () => {
+  const s = startedSave('swift0', 30),
+    m = s.team[0];
+  m.aug = { front: part('hydrant') };
+  const foe = fn('makeBilly')('swift0', 30);
+  fn('newBattle')('wild', [foe], { fmt: 'single', seed: 'aug-hit' });
+  const hits = new Set();
+  for (let i = 0; i < 60; i++) hits.add(fn('hitPart')(0, 1, { fx: {} }));
+  assert.deepEqual([...hits].sort(), ['armR', 'torso']);
+  /* an aimed move picks the Augment (whole again) */
+  m.partDmg = {};
+  assert.equal(fn('hitPart')(0, 1, { fx: { aim: 1 } }, 'armR'), 'armR');
+  assert.equal(fn('hitPart')(0, 1, { fx: { aim: 1 } }, 'legs') !== 'legs', true);
+  assert.ok(fn('actorSnapshot')(0).bot.ph.armR < 1, 'the snapshot shows the arm');
+  hooks.provide({ activeBattle: null });
 });

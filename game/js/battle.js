@@ -33,14 +33,17 @@ import {
 import { $, $$, clamp, random } from './util.js';
 import { ITEMS, MOVES, PYRAMIDS, STAT_NAMES, TYPES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
 import { graftOf } from './logic/graft-art.js';
-import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef } from './logic/fighters.js';
+import { ROBOT_SLOT_NAMES, robotPartDef } from './logic/fighters.js';
 import {
   billyName,
   billyTypes,
   formatNumber,
   healAll,
+  limbKeys,
+  limbsOf,
   maxHp,
   moveUsable,
+  movesOf,
   partBroken,
   partHpLeft,
   partMaxHp,
@@ -696,11 +699,12 @@ function effectivenessLabel(mid, tk) {
       ? '<em class="nve">Not very effective</em>'
       : '';
 }
-/* phase 17: does this move ask which robot part to go for? (an aimed move at a robot with a limb still standing) */
+/* phase 17: does this move ask which robot part to go for? (an aimed move at a robot with a limb still standing; SP-5:
+   or at a Billie's Augment) */
 function needsPart(mid, tk) {
   const M = MOVES[mid],
     t = fighter(tk);
-  return !!(M.fx && M.fx.aim && t && isRobot(t) && ROBOT_LIMBS.some(q => !partBroken(t, q)));
+  return !!(M.fx && M.fx.aim && t && limbKeys(t).some(q => !partBroken(t, q)));
 }
 function hpMini(m) {
   const p = Math.max(0, m.hp / maxHp(m));
@@ -736,7 +740,8 @@ export const itemIcon = (k, size = 30) => {
 };
 /* phase 06-3: the move tiles, shown on the first menu (no Fight button first) and after Back from aiming */
 function moveTilesHTML(m) {
-  return `<div class="moves">${m.moves
+  /* SP-5: and the moves its Augments bring */
+  return `<div class="moves">${movesOf(m)
     .map((id, n) => {
       const M = MOVES[id],
         c = TYPE_COLORS[M.t],
@@ -775,12 +780,16 @@ export function paintActions() {
   <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${escapeHtml(billyName(fighter(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
   } else if (ph === 'part') {
     const t = fighter(activeBattle.tk);
-    h = `<div class="plist">${ROBOT_LIMBS.map(q => {
-      const left = partHpLeft(t, q),
-        mx = partMaxHp(t, q),
-        P = t.fit && robotPartDef(t.fit[q].id);
-      return `<button class="pick part-pick" data-a="bpart" data-p="${q}" ${left <= 0 ? 'disabled' : ''}><span class="pk-t"><b>${escapeHtml(ROBOT_SLOT_NAMES[q][0].toUpperCase() + ROBOT_SLOT_NAMES[q].slice(1))}</b><small>${escapeHtml(P ? P.name : '')}${P && P.move && MOVES[P.move] ? ` · gives ${escapeHtml(MOVES[P.move].n)}` : ''}</small><span class="hpmini"><i class="${left / mx < 0.34 ? 'low' : ''}" style="width:${(left / mx) * 100}%"></i></span></span><span class="pk-s tnum">${left <= 0 ? 'Broken' : `${left}/${mx}`}</span></button>`;
-    }).join('')}</div>${backButtonHTML()}`;
+    /* SP-5: a Billie's Augments are its limbs */
+    const L = limbsOf(t) || {};
+    h = `<div class="plist">${limbKeys(t)
+      .map(q => {
+        const left = partHpLeft(t, q),
+          mx = partMaxHp(t, q),
+          P = L[q] && robotPartDef(L[q].id);
+        return `<button class="pick part-pick" data-a="bpart" data-p="${q}" ${left <= 0 ? 'disabled' : ''}><span class="pk-t"><b>${escapeHtml(ROBOT_SLOT_NAMES[q][0].toUpperCase() + ROBOT_SLOT_NAMES[q].slice(1))}</b><small>${escapeHtml(P ? P.name : '')}${P && P.move && MOVES[P.move] ? ` · gives ${escapeHtml(MOVES[P.move].n)}` : ''}</small><span class="hpmini"><i class="${left / mx < 0.34 ? 'low' : ''}" style="width:${(left / mx) * 100}%"></i></span></span><span class="pk-s tnum">${left <= 0 ? 'Broken' : `${left}/${mx}`}</span></button>`;
+      })
+      .join('')}</div>${backButtonHTML()}`;
   } else if (ph === 'fight') {
     h = `${moveTilesHTML(fighter(activeBattle.cur))}${backButtonHTML()}`;
   } else if (ph === 'target') {
