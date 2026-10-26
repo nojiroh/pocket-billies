@@ -164,7 +164,7 @@ void main(){float d0=texture(uDep,vUV).r;vec4 wp=uIVP*vec4(vUV*2.-1.,min(d0,.999
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform vec4 uDofPl,uDofB;uniform float uDofView;uniform float uVolK,uExp,uShoulder,uCon,uSat,uWarm,uVig,uCA,uGrain,uSharp,uBloomK,uTime,uDofOn,uAOK,uRaysK,uTone,uHeat,uInk,uNear,uFar,uGlare;uniform vec3 uLift,uGam,uGain,uShT,uHiT,uRayC,uSunP;
+precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform vec4 uDofPl,uDofB;uniform float uDofView;uniform vec3 uInkF;uniform float uVolK,uExp,uShoulder,uCon,uSat,uWarm,uVig,uCA,uGrain,uSharp,uBloomK,uTime,uDofOn,uAOK,uRaysK,uTone,uHeat,uInk,uNear,uFar,uGlare;uniform vec3 uLift,uGam,uGain,uShT,uHiT,uRayC,uSunP;
 float linz(float d){float z=d*2.-1.;return 2.*uNear*uFar/(uFar+uNear-z*(uFar-uNear));}
 /* film grain (2026-10): a hash without sine (Dave Hoskins), steady on phone graphics chips where the sine one makes
    patterns; soft grains about 1.5 pixels across, a new field 24 times a second, mostly brightness with a little colour,
@@ -189,10 +189,10 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
     of a blurred thing in front */
  vec4 b=texture(uDof,vUV);vec3 c=s;float kb=0.;if(uDofOn>.5){float dz=linz(texture(uDep,vUV).r)*dot(vec3(1.,vUV),uDofPl.xyz)-uDofPl.w,
   k=dz>0.?smoothstep(uDofB.x,uDofB.x+uDofB.y,dz):smoothstep(uDofB.x*.6,uDofB.x*.6+uDofB.z,-dz);{vec2 e=(vUV-.5)*2.;k=max(k,uDofB.w*smoothstep(.6,1.25,length(vec2(e.x,e.y*.85))));}kb=uDofOn>1.5?k:max(k,b.a);c=mix(s,b.rgb,smoothstep(.02,.4,kb));}
- if(uAOK>0.){vec2 e=uPx*1.5;float ao=texture(uAO,vUV).r*.4+(texture(uAO,vUV+vec2(e.x,e.y)).r+texture(uAO,vUV-vec2(e.x,e.y)).r+texture(uAO,vUV+vec2(e.x,-e.y)).r+texture(uAO,vUV+vec2(-e.x,e.y)).r)*.15;c*=1.-clamp(ao*uAOK,0.,.75);}
+ if(uAOK>0.){vec2 e=uPx*1.5;float ao=texture(uAO,vUV).r*.4+(texture(uAO,vUV+vec2(e.x,e.y)).r+texture(uAO,vUV-vec2(e.x,e.y)).r+texture(uAO,vUV+vec2(e.x,-e.y)).r+texture(uAO,vUV+vec2(-e.x,e.y)).r)*.15;c*=1.-clamp(ao*uAOK,0.,.75)*(1.-uInkF.z*smoothstep(.02,.4,kb));}
  /* v33: ink outlines where depth jumps (silhouettes of props, people and billionaires), thinner with distance */
  if(uInk>0.){float d0=texture(uDep,vUV).r;if(d0<.9999){float z0=linz(d0),e=0.;vec2 q=uPx*1.;float zs[4];zs[0]=linz(texture(uDep,vUV+vec2(q.x,0)).r);zs[1]=linz(texture(uDep,vUV-vec2(q.x,0)).r);zs[2]=linz(texture(uDep,vUV+vec2(0,q.y)).r);zs[3]=linz(texture(uDep,vUV-vec2(0,q.y)).r);
-  for(int i=0;i<4;i++)e=max(e,(zs[i]-z0)/z0);/* v47: one outline rule: a darker shade of the thing's own colour on props, buildings and characters; the ground (alpha 0) gets none */c*=1.-uInk*step(.5,texture(uCol,vUV).a)*smoothstep(.06,.22,e)*.62*(1.-smoothstep(25.,60.,z0));}}
+  for(int i=0;i<4;i++)e=max(e,(zs[i]-z0)/z0);/* v47: one outline rule: a darker shade of the thing's own colour on props, buildings and characters; the ground (alpha 0) gets none *//* Outlines follow the camera (uInkF): fading past where the camera looks, and melting with the blur */c*=1.-uInk*step(.5,texture(uCol,vUV).a)*smoothstep(.06,.22,e)*.62*(1.-smoothstep(uInkF.x,uInkF.y,z0))*(1.-uInkF.z*smoothstep(.02,.4,kb));}}
  c+=texture(uBloom,vUV).rgb*uBloomK;if(uRaysK>0.)c+=texture(uRays,vUV).rgb*uRayC*uRaysK*.4;if(uVolK>0.){vec4 va=texture(uVol,vUV);c=c*(1.-va.a*uVolK)+va.rgb*uVolK;}
  /* v33: sun glare: a soft halo round the sun and a few ghosts along the line through the middle, only when the sun is in the open */
  if(uGlare>0.&&uSunP.z>0.){float vis=texture(uDep,clamp(uSunP.xy,.002,.998)).r>.9999?1.:0.;if(vis>0.){vec2 a=vec2(uPx.y/uPx.x,1.);vec2 sp=uSunP.xy,dv=(vUV-sp)*a;float r=length(dv);
@@ -238,7 +238,7 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   gl.disable(gl.BLEND);
   bindQuad();
   const F = drawDepthOfField(S, C, focusDist, rw, rh, o);
-  drawPostRest(S, C, rw, rh, o, F);
+  drawPostRest(S, C, rw, rh, o, F, focusDist);
   return F;
 }
 /* CAM-3: the blur on its own (the diagnostics test times it apart from the rest of the post chain) */
@@ -312,7 +312,7 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
 }
 /* the rest of the post chain: bloom, AO, shafts, light in the air, then the grade to the screen with the blur F
    (drawDepthOfField's: its target D, whether it's on, its plane and band) */
-export function drawPostRest(S, C, rw, rh, o, F) {
+export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
   const { D, dofOn } = F;
   const gl = gpuState.gl,
     hw = Math.max(16, rw >> 1),
@@ -467,6 +467,14 @@ export function drawPostRest(S, C, rw, rh, o, F) {
     gl.uniform1f(U.uNear, C.near);
     gl.uniform1f(U.uFar, C.far);
     gl.uniform1f(U.uInk, engineSetting('color', 'ink') ?? 0.35);
+    /* Outlines follow the camera (color.inkFollow): [fade from, fade to, melt with the blur] */
+    const ik = !!engineSetting('color', 'inkFollow');
+    gl.uniform3f(
+      U.uInkF,
+      ik ? Math.max(25, (focusDist || 0) * 1.4) : 25,
+      ik ? Math.max(60, (focusDist || 0) * 2.4) : 60,
+      ik ? 1 : 0
+    );
     const sp = o.sun;
     gl.uniform3f(U.uSunP, sp ? sp[0] : 0, sp ? sp[1] : 0, sp ? sp[2] * (sp[3] ? -1 : 1) : 0);
     gl.uniform1f(U.uGlare, !sp ? 0 : (engineSetting('sun', 'glare') ?? 0.6));
