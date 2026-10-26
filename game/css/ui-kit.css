@@ -392,7 +392,8 @@ hr.pb-rule::after {
   .ms-tabs,
   .pickrow
 ):not(#k) {
-  /* !important only against v05.css's .px and .pb.big corners (!important themselves); goes with v05 in UI-6 */
+  /* !important only against the old .px and .pb.big corners (!important themselves, v05's, now in parts.css); goes
+     when parts.css's corners do */
   border-radius: 0 !important;
   clip-path: var(--k-clip);
 }
