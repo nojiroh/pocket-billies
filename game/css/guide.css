@@ -598,6 +598,9 @@
 .guide-tabs,
 .lore-tabs {
   margin: 10px 3px 0;
+  /* UI-6b: the tabs sit on the world, not on a panel: the panel's surface behind them, so a quiet tab's label reads
+     (it was 2.2:1 in light, 1.4:1 in dark over the scene) */
+  --seg-bg: color-mix(in srgb, var(--panel-s) 84%, transparent);
 }
 .lore-tabs button {
   font-size: 12.5px;
