@@ -15,6 +15,8 @@ import { soundEffect } from './sound.js';
 import { talkBox } from './talk.js';
 import { cutscene } from './cutscene/director.js';
 import { airshipFlight } from './airship.js';
+import { trainRide } from './train-ride.js';
+import { runLoad } from './run-loading.js';
 /* eslint-disable no-func-assign */
 expose({
   postcardAllowed: [() => postcardAllowed, v => (postcardAllowed = v)],
@@ -94,7 +96,10 @@ export function postcardCheck() {
     (typeof talkBox !== 'undefined' && talkBox.on) ||
     (typeof cutscene !== 'undefined' && cutscene.on) ||
     (typeof selfTest !== 'undefined' && selfTest.on) ||
-    (typeof airshipFlight !== 'undefined' && airshipFlight.on)
+    (typeof airshipFlight !== 'undefined' && airshipFlight.on) ||
+    /* HB-8: not over the sky train's ride or the run's loading screen */
+    (typeof trainRide !== 'undefined' && trainRide.on) ||
+    (typeof runLoad !== 'undefined' && runLoad.on)
   ) {
     postcardState.calm = 0;
     return;

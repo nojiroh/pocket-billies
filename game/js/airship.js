@@ -170,7 +170,7 @@ export function stationMenu(p) {
    show on the way */
 /* RL-8: o.free: a flight a run pays for itself (run.js, to its landing): from o.from, the trip left as the caller set it
    (runArrive has moved it already), no ticket */
-export function startAirshipFlight(i, o = {}) {
+function startAirshipFlight(i, o = {}) {
   if (airshipFlight.on || !LOCATIONS[i]) return;
   const a = o.free && LOCATIONS[o.from] ? o.from : saveData.trip.node,
     f = o.free ? 0 : flyFare(a, i);
