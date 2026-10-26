@@ -2,6 +2,30 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Online track ON-1: the base (legality, block, report, Online play) - 2026-10-26
+Branch `ccr-0b8e3c38-gt7t6a` (`track/online` doesn't exist; the owner: build here). Tag to suggest: `on-1-done`.
+Details: docs/phases/online-track.md, "Done in ON-1". The owner's answers: hide after 3 reports, a placeholder
+moderator uid, Online play off by default.
+- Changed: `logic/online-legal.js` (onlineCopy, legalBilly/Egg/Part, legalMoves), `logic/online.js` (friendListFrom:
+  the friend re-add bug fixed; blocks, reports, onlinePlayOn), `Billy.ot` / `Billy.traded` (billiesOk checks shapes),
+  firestore.rules `blocks/<uid>` and `reports/<target>` (+ `/by/<uid>`), friends.js sheets (Remove / Block / Report,
+  Decline / Block / Report, the Blocked list, reported names as "Trainer"), Settings > Save "Online play" (signed in
+  only), Debug > Save shows your account id, the quick check's Safety step covers the sheets.
+- **For the owner**: paste your uid over `PASTE-YOUR-UID-HERE` in firestore.rules, then publish the rules
+  (SECURITY.md "ON-1 for the owner to do"). Until published, Block shows the "updated database rules" message and
+  Report says "You reported them already." (the rules' refusal, read as a repeat).
+- **Risky**: legalBilly is as strict as the game's own Billie paths I found (level-up, tutors, quirk eggs, splices,
+  Augments, abominations); a path I missed would make a fair Billie fail (it says why: a reason word). Nothing calls
+  it yet (ON-3 is the first). Blocking and reporting were only tried against the emulator's rules and with fake
+  friend data in the page; never with two real accounts.
+- Verified: lint, typecheck, format:check, check:modules, check:data, build, `npm test` 1320 pass, the rules emulator
+  tests 19 pass (5 new), smoke 6 of 6, headless pictures of the friends panel and the three sheets. Full quick check:
+  35 of 40 ok; the 5 problems (Terraces' sky_portal, RL-8's shop Perk, room light, Running's distances, two cave songs
+  missing from the sound baseline) fail the same on main da51c766, run here in a worktree. Python Playwright 1.63.0
+  (the pinned 1.56 wants a browser this container lacks).
+- Next: the owner publishes the rules and tries Block and Report between two accounts; then ON-2 (= RL-15) on
+  `track/online` (made from this branch).
+
 ### Online track ON-0 planned: leaderboards, Showcase, trading, live battles - 2026-10-26
 Branch `ccr-0b8e3c38-gt7t6a` (a planning session; the owner: expand the friend system with trading, real-time
 battles, global trading, leaderboards for runs and shared Billies with votes, with online research). Docs only, no
