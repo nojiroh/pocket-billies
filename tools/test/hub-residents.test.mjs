@@ -52,3 +52,40 @@ test('hub residents: an unknown id or a building that isn’t there is left out'
   const bare = { ...M, props: M.props.filter((/** @type {any} */ p) => p.k !== 'library') };
   assert.deepEqual(Object.keys(residentHomes(bare, ['dottie'], R, B, C)), []);
 });
+
+test('hub residents: their lines (banter.json): the moving-in one first, once; then a win’s or a loss’s; always something', async () => {
+  const { storyPick, storyPickSaid } = await import('../../game/js/logic/story-pick.js');
+  const { conditionHolds, storyStateOf } = await import('../../game/js/logic/conditions.js');
+  const entry = (end, res) => ({
+    seed: 'S',
+    theme: '',
+    region: '',
+    exp: 1,
+    end,
+    by: null,
+    row: 3,
+    days: 9,
+    team: [],
+    perks: [],
+    leaders: [],
+    rival: null,
+    ...(res ? { res } : {}),
+  });
+  const story = {};
+  const say = (history, runs) => {
+    const S = storyStateOf({ meta: { history, runs, residents: { dottie: 1 } } }),
+      k = storyPick('dottie', D.banter, c => conditionHolds(c, S), story, runs);
+    storyPickSaid(k, D.banter, story, runs);
+    return k;
+  };
+  assert.equal(say([entry('lost', 'dottie')], 1), 'dottie_moved');
+  assert.equal(say([entry('lost', 'dottie')], 1), 'dottie_lost', 'moving in is said once');
+  assert.equal(say([entry('lost', 'dottie'), entry('won')], 2), 'dottie_won');
+  for (const id of Object.keys(R)) {
+    const S = storyStateOf({ meta: { history: [], runs: 0, residents: { [id]: 1 } } });
+    assert.ok(
+      storyPick(id, D.banter, c => conditionHolds(c, S), {}, 0),
+      `${id} has something to say`
+    );
+  }
+});
