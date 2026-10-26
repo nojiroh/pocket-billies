@@ -2,6 +2,40 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Residents track RS-2 - meeting residents in a run: Dottie free, favours, the Stranded Cart, the payout's line - 2026-10-26
+Branch `ccr-65e11839-9p92dx` (the owner's word: `track/residents` doesn't exist yet; pushed there). Plan Mode, plan
+approved. Owner's answers: one invite a run; the event's favour done on the spot; a favour held over the quest cap;
+anyone after the first in one seeded town; Dottie in every town of the first all-town row. Details:
+docs/phases/residents-track.md, "Done in RS-2". CHANGELOG line added.
+- Where RS-1 and the code differed: `residentCandidate` drew among those met at that place, so a town and an event
+  could offer two different people in one run; now one draw a run (`residentDrawn`), `where` only filters. `runEnd`
+  needs no return for the payout's line: the payout screen is drawn before `runEnd` and reads `run.invited`.
+- Changed (one cause per commit): residents.js (`residentDrawn`, `residentFirstTowns`); quests.json `favours` and
+  `invite` + schema, type, check (check-data's planted residents snapshot now also reports the planted first one's
+  favour, on purpose); run-quests.js favours (`questCan` split out of `questOffer` with the same draws, `favourAt`,
+  `favourOffer`, `favourTake` over the cap, `questsHeld`, `questDataOf`, `residentPlan`) and `RunQuest.res` in
+  `validRunQuests`; the resident placed by `runWorldPutRun` (`runTownResident`); `residentTalk`, the "!", the board's
+  invite, the Map list (quest-board.js, story.js, sprites.js); the `stranded_cart` event (`resident: true`,
+  `eventPool`/`eventAt` `meet`, the `invite` command, docs/SCRIPTS.md); the payout's line and the history's `res`; the
+  Run Lab's residents line, the sim's log/stats and the Simulate card's share (`metResident` in SIM_METRICS; the
+  Studio sim worker loads residents.js and run-quests.js); the in-game full test's Dottie step.
+- Risky or unfinished: the favour, invite and event lines are Claude's drafts for the owner. Residents look like
+  seeded townsfolk (RS-3 picks looks). The Run Lab counts every town as having its notice board (it makes no scenes).
+  Nobody does anything in Copperleaf yet (RS-3/RS-4). Not played on a phone.
+- Verified (what ran, what passed): lint, typecheck, check:modules, check:data, `npm test` after each commit (1069 at
+  the end); `npm run test:slow` 87/87 (new resident-towns.test.mjs on real scenes). Smoke 6/6. The full quick check:
+  36/40, the 4 known main failures only, unchanged (RL-8's "Take off didn't start a run's flight", `sky_portal`
+  floating, the room light check, the song fingerprints' cave mid/late). The in-game full test's run phase ("A run:
+  airship, nodes, payout", with the new Dottie step) run alone headless through check-quick's in-game step (pointed
+  at it temporarily, not committed): passed, "Dottie invited and moved in". No quick-baseline pictures in this
+  container. Python Playwright 1.63.
+- Decisions I made (and why): the event names the traveller only when they agree (scripts stay static, any of the
+  three event residents fits); a mini-boss favour that fails is dropped like any quest and offered again if you walk
+  back; the sim's bot does no favour, so its win rates don't move.
+- Questions waiting for the owner: the drafted lines (quests.json `favours`, `invite`; events.json `stranded_cart`);
+  the cottage cap (still open). Please make `track/residents` from main, merge this branch in, tag `rs-2-done`.
+- Next session starts with: RS-3 (living in Copperleaf), in Plan Mode.
+
 ### Residents track RS-1 - data and save: residents.json, meta.residents, run.invited, logic/residents.js - 2026-10-26
 Branch `ccr-65e11839-9p92dx` (the owner's answer: `track/residents` doesn't exist yet, build here as HB-1 and SP-1
 were). Plan Mode, plan approved. Owner's answers: the drafted names; the word "residents". Nothing visible changes
