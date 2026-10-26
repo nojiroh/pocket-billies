@@ -425,6 +425,30 @@
     {"text":"Leave","then":["The drone follows you for a bit, then gives up."]}
    ],
    "weight": 1
+  },
+  "dig_site": {
+   "title": "Dig Site",
+   "intro": [
+    "A Bureau dig site, roped off with tape that says LOST, FOUND. Two fossils lie in labelled trays beside a humming machine.",
+    "Archivist: We may revive one specimen per visitor. One. The form is very clear about the one.",
+    "One tray says CARNEGIE: a trilobite in riveted plate. The other says VANDERBILT: a coil of old iron rail."
+   ],
+   "options": [
+    {
+     "text": "Revive the trilobite",
+     "then": [
+      "The machine hums, then clanks. The trilobite stretches, looks around and starts drawing up plans for a library.",
+      "gift carnegie0"
+     ]
+    },
+    {
+     "text": "Revive the rail snake",
+     "then": ["The machine hisses steam. The rail snake uncoils, puts on its hat and asks who owns this track.","gift vanderbilt0"]
+    },
+    {"text":"Leave them be","then":["Archivist: Very well. I will file them under Found, Not Wanted."]}
+   ],
+   "weight": 1,
+   "biomes": ["ridge","canyon","badlands","cave"]
   }
  }
 }

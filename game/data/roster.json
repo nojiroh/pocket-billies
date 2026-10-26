@@ -484,5 +484,53 @@
   "types": ["Electric","Dragon"],
   "design": "Great black dragon-lizard with wings, horns and a green sail",
   "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "swooshpole",
+  "name": "Swooshpole",
+  "no": 47,
+  "line": "knight",
+  "stage": 1,
+  "kind": "line2",
+  "parody": "Phil Knight",
+  "types": ["Water"],
+  "design": "Blue tadpole-frog with a shoelace tail and an orange tick down its side",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "victoad",
+  "name": "Victoad",
+  "no": 48,
+  "line": "knight",
+  "stage": 2,
+  "kind": "line2",
+  "parody": "Phil Knight",
+  "types": ["Water","Flying"],
+  "design": "Long-legged frog on winged feet, a sweatband round its head, the tick on its side",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "philanthrobite",
+  "name": "Philanthrobite",
+  "no": 49,
+  "line": "carnegie",
+  "stage": 1,
+  "kind": "single",
+  "parody": "Andrew Carnegie",
+  "types": ["Steel","Water"],
+  "design": "Riveted steel trilobite with a white beard, revived from a fossil",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "vanderbolt",
+  "name": "Vanderbolt",
+  "no": 50,
+  "line": "vanderbilt",
+  "stage": 1,
+  "kind": "single",
+  "parody": "Cornelius Vanderbilt",
+  "types": ["Fire","Ground"],
+  "design": "Rail snake with a smokestack, a top hat and sideburns, revived from a fossil",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  }
 ]

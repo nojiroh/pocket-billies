@@ -39,7 +39,17 @@ test('every biome has its own pool of real first stages; every line is met somew
     assert.equal(lines.size, P.list.length, `${b}: a line once (base or form)`);
     lines.forEach(id => met.add(id));
   }
-  assert.deepEqual([...met].sort(), LINES.map(L => L.id).sort(), 'every line is in some biome pool');
+  /* RO-3e: a line never met wild (the fossils) is in no pool; an event gives it */
+  const notWild = LINES.filter(L => L.wild === false).map(L => L.id);
+  assert.deepEqual(
+    [...met].sort(),
+    LINES.filter(L => L.wild !== false)
+      .map(L => L.id)
+      .sort(),
+    'every line met wild is in some biome pool, and no other'
+  );
+  const gifts = JSON.stringify(RAW.events.events);
+  for (const id of notWild) assert.ok(gifts.includes(`"gift ${id}0"`), `${id}: an event gives it`);
 });
 
 test('RO-2: a rare line is met less often than every common line in the same pool', () => {

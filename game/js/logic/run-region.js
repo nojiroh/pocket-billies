@@ -55,12 +55,16 @@ expose({
  * trainers and their type)
  */
 
-/** what a region is made from, out of the game's tables (gameData-like: regions, lines) and its trainers
- * @param {{ regions: RegionsData, lines: RegionLine[] }} G @param {Record<string, any>} trainers @returns {RunRegionData} */
+/** what a region is made from, out of the game's tables (gameData-like: regions, lines) and its trainers; RO-3e: a
+ * line never met wild (`wild: false`, the fossils) is no region's
+ * @param {{ regions: RegionsData, lines: (RegionLine & { wild?: boolean })[] }} G @param {Record<string, any>} trainers
+ * @returns {RunRegionData} */
 export function runRegionData(G, trainers) {
   return {
     regions: G.regions,
-    lines: G.lines.map(L => ({ id: L.id, names: L.names, types: L.types, forms: L.forms || [] })),
+    lines: G.lines
+      .filter(L => L.wild !== false)
+      .map(L => ({ id: L.id, names: L.names, types: L.types, forms: L.forms || [] })),
     leaders: Object.entries(trainers)
       .filter(([, T]) => T && T.miniboss && T.type && T.team && T.team.length)
       .map(([id, T]) => ({ id, type: T.type }))

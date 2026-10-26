@@ -32,14 +32,14 @@ exports[`golden: a double trainer battle 1`] = `
     {
       "sp": "zuck0",
       "lvl": 12,
-      "hp": 34,
+      "hp": 28,
       "xp": 1382,
       "status": null
     },
     {
-      "sp": "swift0",
+      "sp": "carnegie0",
       "lvl": 13,
-      "hp": 14,
+      "hp": 48,
       "xp": 1757,
       "status": null
     },
@@ -160,11 +160,11 @@ exports[`golden: a double trainer battle 1`] = `
             },
             {
               "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 36,
-              "max": 36,
+              "hp": 51,
+              "max": 51,
               "st": null,
               "build": {
                 "head": "M",
@@ -176,8 +176,8 @@ exports[`golden: a double trainer battle 1`] = `
               "alpha": false,
               "boss": false,
               "ty": [
-                "Flying",
-                "Psychic"
+                "Steel",
+                "Water"
               ],
               "xp": 0,
               "stg": {
@@ -291,11 +291,11 @@ exports[`golden: a double trainer battle 1`] = `
             },
             {
               "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 36,
-              "max": 36,
+              "hp": 51,
+              "max": 51,
               "st": null,
               "build": {
                 "head": "M",
@@ -307,8 +307,8 @@ exports[`golden: a double trainer battle 1`] = `
               "alpha": false,
               "boss": false,
               "ty": [
-                "Flying",
-                "Psychic"
+                "Steel",
+                "Water"
               ],
               "xp": 0,
               "stg": {
@@ -328,7 +328,7 @@ exports[`golden: a double trainer battle 1`] = `
           }
         },
         {
-          "t": "Leader Rocco sent out Facelet and Swiftlet.",
+          "t": "Leader Rocco sent out Facelet and Philanthrobite.",
           "an": {
             "k": "enter",
             "si": 1,
@@ -427,11 +427,11 @@ exports[`golden: a double trainer battle 1`] = `
             },
             {
               "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 36,
-              "max": 36,
+              "hp": 51,
+              "max": 51,
               "st": null,
               "build": {
                 "head": "M",
@@ -443,8 +443,8 @@ exports[`golden: a double trainer battle 1`] = `
               "alpha": false,
               "boss": false,
               "ty": [
-                "Flying",
-                "Psychic"
+                "Steel",
+                "Water"
               ],
               "xp": 0,
               "stg": {
@@ -563,11 +563,11 @@ exports[`golden: a double trainer battle 1`] = `
             },
             {
               "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 36,
-              "max": 36,
+              "hp": 51,
+              "max": 51,
               "st": null,
               "build": {
                 "head": "M",
@@ -579,8 +579,8 @@ exports[`golden: a double trainer battle 1`] = `
               "alpha": false,
               "boss": false,
               "ty": [
-                "Flying",
-                "Psychic"
+                "Steel",
+                "Water"
               ],
               "xp": 0,
               "stg": {
@@ -699,11 +699,11 @@ exports[`golden: a double trainer battle 1`] = `
             },
             {
               "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 36,
-              "max": 36,
+              "hp": 51,
+              "max": 51,
               "st": null,
               "build": {
                 "head": "M",
@@ -715,8 +715,8 @@ exports[`golden: a double trainer battle 1`] = `
               "alpha": false,
               "boss": false,
               "ty": [
-                "Flying",
-                "Psychic"
+                "Steel",
+                "Water"
               ],
               "xp": 0,
               "stg": {
@@ -835,11 +835,11 @@ exports[`golden: a double trainer battle 1`] = `
             },
             {
               "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 36,
-              "max": 36,
+              "hp": 51,
+              "max": 51,
               "st": null,
               "build": {
                 "head": "M",
@@ -851,8 +851,8 @@ exports[`golden: a double trainer battle 1`] = `
               "alpha": false,
               "boss": false,
               "ty": [
-                "Flying",
-                "Psychic"
+                "Steel",
+                "Water"
               ],
               "xp": 0,
               "stg": {
@@ -877,685 +877,6 @@ exports[`golden: a double trainer battle 1`] = `
       "turn": 1,
       "events": [
         {
-          "t": "Emberox used Zip on Swiftlet.",
-          "an": {
-            "k": "move",
-            "si": 0,
-            "ti": 3,
-            "mid": "movefast",
-            "dmg": 10,
-            "te": 2,
-            "crit": false
-          },
-          "s": [
-            {
-              "k": 0,
-              "sp": "musk0",
-              "name": "Emberox",
-              "lvl": 7,
-              "hp": 26,
-              "max": 26,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Fire"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 1,
-              "sp": "zuck0",
-              "name": "Facelet",
-              "lvl": 12,
-              "hp": 36,
-              "max": 36,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Electric"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 2,
-              "sp": "gates0",
-              "name": "Kidling",
-              "lvl": 7,
-              "hp": 26,
-              "max": 26,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Grass"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
-              "lvl": 13,
-              "hp": 26,
-              "max": 36,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Flying",
-                "Psychic"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            null
-          ],
-          "mk": {
-            "k": "sand",
-            "n": 5
-          }
-        },
-        {
-          "t": "It’s super effective!",
-          "an": null,
-          "s": [
-            {
-              "k": 0,
-              "sp": "musk0",
-              "name": "Emberox",
-              "lvl": 7,
-              "hp": 26,
-              "max": 26,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Fire"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 1,
-              "sp": "zuck0",
-              "name": "Facelet",
-              "lvl": 12,
-              "hp": 36,
-              "max": 36,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Electric"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 2,
-              "sp": "gates0",
-              "name": "Kidling",
-              "lvl": 7,
-              "hp": 26,
-              "max": 26,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Grass"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
-              "lvl": 13,
-              "hp": 26,
-              "max": 36,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Flying",
-                "Psychic"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            null
-          ],
-          "mk": {
-            "k": "sand",
-            "n": 5
-          }
-        },
-        {
-          "t": "Swiftlet used Character Limit on Kidling.",
-          "an": {
-            "k": "move",
-            "si": 3,
-            "ti": 2,
-            "mid": "charlimit",
-            "dmg": 87,
-            "te": 2,
-            "crit": false
-          },
-          "s": [
-            {
-              "k": 0,
-              "sp": "musk0",
-              "name": "Emberox",
-              "lvl": 7,
-              "hp": 26,
-              "max": 26,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Fire"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 1,
-              "sp": "zuck0",
-              "name": "Facelet",
-              "lvl": 12,
-              "hp": 36,
-              "max": 36,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Electric"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 2,
-              "sp": "gates0",
-              "name": "Kidling",
-              "lvl": 7,
-              "hp": 0,
-              "max": 26,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Grass"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
-              "lvl": 13,
-              "hp": 26,
-              "max": 36,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Flying",
-                "Psychic"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            null
-          ],
-          "mk": {
-            "k": "sand",
-            "n": 5
-          }
-        },
-        {
-          "t": "It’s super effective!",
-          "an": null,
-          "s": [
-            {
-              "k": 0,
-              "sp": "musk0",
-              "name": "Emberox",
-              "lvl": 7,
-              "hp": 26,
-              "max": 26,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Fire"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 1,
-              "sp": "zuck0",
-              "name": "Facelet",
-              "lvl": 12,
-              "hp": 36,
-              "max": 36,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Electric"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 2,
-              "sp": "gates0",
-              "name": "Kidling",
-              "lvl": 7,
-              "hp": 0,
-              "max": 26,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Grass"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
-              "lvl": 13,
-              "hp": 26,
-              "max": 36,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Flying",
-                "Psychic"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            null
-          ],
-          "mk": {
-            "k": "sand",
-            "n": 5
-          }
-        },
-        {
-          "t": "Kidling fainted.",
-          "an": {
-            "k": "faint",
-            "si": 2
-          },
-          "s": [
-            {
-              "k": 0,
-              "sp": "musk0",
-              "name": "Emberox",
-              "lvl": 7,
-              "hp": 26,
-              "max": 26,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Fire"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 1,
-              "sp": "zuck0",
-              "name": "Facelet",
-              "lvl": 12,
-              "hp": 36,
-              "max": 36,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Electric"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 2,
-              "sp": "gates0",
-              "name": "Kidling",
-              "lvl": 7,
-              "hp": 0,
-              "max": 26,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Grass"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
-              "lvl": 13,
-              "hp": 26,
-              "max": 36,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Flying",
-                "Psychic"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            null
-          ],
-          "mk": {
-            "k": "sand",
-            "n": 5
-          }
-        },
-        {
           "t": "Facelet used Spark Shot on Emberox.",
           "an": {
             "k": "move",
@@ -1563,6 +884,146 @@ exports[`golden: a double trainer battle 1`] = `
             "ti": 0,
             "mid": "disrupt",
             "dmg": 23,
+            "te": 1,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 7,
+              "hp": 3,
+              "max": 26,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "zuck0",
+              "name": "Facelet",
+              "lvl": 12,
+              "hp": 36,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Electric"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 2,
+              "sp": "gates0",
+              "name": "Kidling",
+              "lvl": 7,
+              "hp": 26,
+              "max": 26,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Grass"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 3,
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
+              "lvl": 13,
+              "hp": 51,
+              "max": 51,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null
+          ],
+          "mk": {
+            "k": "sand",
+            "n": 5
+          }
+        },
+        {
+          "t": "Philanthrobite used Grip Crush on Kidling.",
+          "an": {
+            "k": "move",
+            "si": 3,
+            "ti": 2,
+            "mid": "gripcrush",
+            "dmg": 27,
             "te": 1,
             "crit": false
           },
@@ -1659,11 +1120,11 @@ exports[`golden: a double trainer battle 1`] = `
             },
             {
               "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 26,
-              "max": 36,
+              "hp": 51,
+              "max": 51,
               "st": null,
               "build": {
                 "head": "M",
@@ -1675,8 +1136,8 @@ exports[`golden: a double trainer battle 1`] = `
               "alpha": false,
               "boss": false,
               "ty": [
-                "Flying",
-                "Psychic"
+                "Steel",
+                "Water"
               ],
               "xp": 0,
               "stg": {
@@ -1696,12 +1157,10 @@ exports[`golden: a double trainer battle 1`] = `
           }
         },
         {
-          "t": "Emberox is buffeted by the sandstorm.",
+          "t": "Kidling fainted.",
           "an": {
-            "k": "hurt",
-            "si": 0,
-            "fx": "oil",
-            "dmg": 1
+            "k": "faint",
+            "si": 2
           },
           "s": [
             {
@@ -1709,7 +1168,7 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 7,
-              "hp": 2,
+              "hp": 3,
               "max": 26,
               "st": null,
               "build": {
@@ -1796,10 +1255,90 @@ exports[`golden: a double trainer battle 1`] = `
             },
             {
               "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 26,
+              "hp": 51,
+              "max": 51,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null
+          ],
+          "mk": {
+            "k": "sand",
+            "n": 5
+          }
+        },
+        {
+          "t": "Emberox used Cinders on Facelet.",
+          "an": {
+            "k": "move",
+            "si": 0,
+            "ti": 1,
+            "mid": "spill",
+            "dmg": 6,
+            "te": 1,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 7,
+              "hp": 3,
+              "max": 26,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "zuck0",
+              "name": "Facelet",
+              "lvl": 12,
+              "hp": 30,
               "max": 36,
               "st": null,
               "build": {
@@ -1812,8 +1351,205 @@ exports[`golden: a double trainer battle 1`] = `
               "alpha": false,
               "boss": false,
               "ty": [
-                "Flying",
-                "Psychic"
+                "Electric"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 2,
+              "sp": "gates0",
+              "name": "Kidling",
+              "lvl": 7,
+              "hp": 0,
+              "max": 26,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Grass"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 3,
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
+              "lvl": 13,
+              "hp": 51,
+              "max": 51,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null
+          ],
+          "mk": {
+            "k": "sand",
+            "n": 5
+          }
+        },
+        {
+          "t": "Emberox is buffeted by the sandstorm.",
+          "an": {
+            "k": "hurt",
+            "si": 0,
+            "fx": "oil",
+            "dmg": 1
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 7,
+              "hp": 2,
+              "max": 26,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "zuck0",
+              "name": "Facelet",
+              "lvl": 12,
+              "hp": 30,
+              "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Electric"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 2,
+              "sp": "gates0",
+              "name": "Kidling",
+              "lvl": 7,
+              "hp": 0,
+              "max": 26,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Grass"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 3,
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
+              "lvl": 13,
+              "hp": 51,
+              "max": 51,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Water"
               ],
               "xp": 0,
               "stg": {
@@ -1876,7 +1612,7 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 34,
+              "hp": 28,
               "max": 36,
               "st": null,
               "build": {
@@ -1933,11 +1669,11 @@ exports[`golden: a double trainer battle 1`] = `
             },
             {
               "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 26,
-              "max": 36,
+              "hp": 51,
+              "max": 51,
               "st": null,
               "build": {
                 "head": "M",
@@ -1949,8 +1685,8 @@ exports[`golden: a double trainer battle 1`] = `
               "alpha": false,
               "boss": false,
               "ty": [
-                "Flying",
-                "Psychic"
+                "Steel",
+                "Water"
               ],
               "xp": 0,
               "stg": {
@@ -1970,12 +1706,12 @@ exports[`golden: a double trainer battle 1`] = `
           }
         },
         {
-          "t": "Swiftlet is buffeted by the sandstorm.",
+          "t": "Philanthrobite is buffeted by the sandstorm.",
           "an": {
             "k": "hurt",
             "si": 3,
             "fx": "oil",
-            "dmg": 2
+            "dmg": 3
           },
           "s": [
             {
@@ -2013,7 +1749,7 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 34,
+              "hp": 28,
               "max": 36,
               "st": null,
               "build": {
@@ -2070,11 +1806,11 @@ exports[`golden: a double trainer battle 1`] = `
             },
             {
               "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 24,
-              "max": 36,
+              "hp": 48,
+              "max": 51,
               "st": null,
               "build": {
                 "head": "M",
@@ -2086,8 +1822,8 @@ exports[`golden: a double trainer battle 1`] = `
               "alpha": false,
               "boss": false,
               "ty": [
-                "Flying",
-                "Psychic"
+                "Steel",
+                "Water"
               ],
               "xp": 0,
               "stg": {
@@ -2153,7 +1889,7 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 34,
+              "hp": 28,
               "max": 36,
               "st": null,
               "build": {
@@ -2210,11 +1946,11 @@ exports[`golden: a double trainer battle 1`] = `
             },
             {
               "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 24,
-              "max": 36,
+              "hp": 48,
+              "max": 51,
               "st": null,
               "build": {
                 "head": "M",
@@ -2226,8 +1962,8 @@ exports[`golden: a double trainer battle 1`] = `
               "alpha": false,
               "boss": false,
               "ty": [
-                "Flying",
-                "Psychic"
+                "Steel",
+                "Water"
               ],
               "xp": 0,
               "stg": {
@@ -2288,7 +2024,7 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 34,
+              "hp": 28,
               "max": 36,
               "st": null,
               "build": {
@@ -2346,11 +2082,11 @@ exports[`golden: a double trainer battle 1`] = `
             },
             {
               "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 24,
-              "max": 36,
+              "hp": 48,
+              "max": 51,
               "st": null,
               "build": {
                 "head": "M",
@@ -2362,8 +2098,8 @@ exports[`golden: a double trainer battle 1`] = `
               "alpha": false,
               "boss": false,
               "ty": [
-                "Flying",
-                "Psychic"
+                "Steel",
+                "Water"
               ],
               "xp": 0,
               "stg": {
@@ -2383,13 +2119,13 @@ exports[`golden: a double trainer battle 1`] = `
           }
         },
         {
-          "t": "Emberox used Zip on Swiftlet.",
+          "t": "Facelet used Spark Shot on Versewift.",
           "an": {
             "k": "move",
-            "si": 0,
-            "ti": 3,
-            "mid": "movefast",
-            "dmg": 10,
+            "si": 1,
+            "ti": 2,
+            "mid": "disrupt",
+            "dmg": 37,
             "te": 2,
             "crit": false
           },
@@ -2429,7 +2165,7 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 34,
+              "hp": 28,
               "max": 36,
               "st": null,
               "build": {
@@ -2459,7 +2195,7 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 7,
-              "hp": 28,
+              "hp": 0,
               "max": 28,
               "st": null,
               "build": {
@@ -2487,11 +2223,11 @@ exports[`golden: a double trainer battle 1`] = `
             },
             {
               "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 14,
-              "max": 36,
+              "hp": 48,
+              "max": 51,
               "st": null,
               "build": {
                 "head": "M",
@@ -2503,8 +2239,8 @@ exports[`golden: a double trainer battle 1`] = `
               "alpha": false,
               "boss": false,
               "ty": [
-                "Flying",
-                "Psychic"
+                "Steel",
+                "Water"
               ],
               "xp": 0,
               "stg": {
@@ -2562,7 +2298,7 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 34,
+              "hp": 28,
               "max": 36,
               "st": null,
               "build": {
@@ -2592,7 +2328,7 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 7,
-              "hp": 28,
+              "hp": 0,
               "max": 28,
               "st": null,
               "build": {
@@ -2620,11 +2356,116 @@ exports[`golden: a double trainer battle 1`] = `
             },
             {
               "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 14,
+              "hp": 48,
+              "max": 51,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null
+          ],
+          "mk": {
+            "k": "sand",
+            "n": 4
+          }
+        },
+        {
+          "t": "Versewift fainted.",
+          "an": {
+            "k": "faint",
+            "si": 2
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 7,
+              "hp": 2,
+              "max": 26,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "zuck0",
+              "name": "Facelet",
+              "lvl": 12,
+              "hp": 28,
               "max": 36,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Electric"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 2,
+              "sp": "swift1",
+              "name": "Versewift",
+              "lvl": 7,
+              "hp": 0,
+              "max": 28,
               "st": null,
               "build": {
                 "head": "M",
@@ -2649,6 +2490,37 @@ exports[`golden: a double trainer battle 1`] = `
               },
               "bot": null
             },
+            {
+              "k": 3,
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
+              "lvl": 13,
+              "hp": 48,
+              "max": 51,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
             null
           ],
           "mk": {
@@ -2657,14 +2529,14 @@ exports[`golden: a double trainer battle 1`] = `
           }
         },
         {
-          "t": "Swiftlet used Character Limit on Emberox.",
+          "t": "Philanthrobite used Splash Shot on Emberox.",
           "an": {
             "k": "move",
             "si": 3,
             "ti": 0,
-            "mid": "charlimit",
-            "dmg": 40,
-            "te": 1,
+            "mid": "interest",
+            "dmg": 34,
+            "te": 2,
             "crit": false
           },
           "s": [
@@ -2703,7 +2575,7 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 34,
+              "hp": 28,
               "max": 36,
               "st": null,
               "build": {
@@ -2728,13 +2600,14 @@ exports[`golden: a double trainer battle 1`] = `
               },
               "bot": null
             },
+            null,
             {
-              "k": 2,
-              "sp": "swift1",
-              "name": "Versewift",
-              "lvl": 7,
-              "hp": 28,
-              "max": 28,
+              "k": 3,
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
+              "lvl": 13,
+              "hp": 48,
+              "max": 51,
               "st": null,
               "build": {
                 "head": "M",
@@ -2746,8 +2619,49 @@ exports[`golden: a double trainer battle 1`] = `
               "alpha": false,
               "boss": false,
               "ty": [
-                "Flying",
-                "Psychic"
+                "Steel",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null
+          ],
+          "mk": {
+            "k": "sand",
+            "n": 4
+          }
+        },
+        {
+          "t": "It’s super effective!",
+          "an": null,
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 7,
+              "hp": 0,
+              "max": 26,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
               ],
               "xp": 0,
               "stg": {
@@ -2760,11 +2674,11 @@ exports[`golden: a double trainer battle 1`] = `
               "bot": null
             },
             {
-              "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
-              "lvl": 13,
-              "hp": 14,
+              "k": 1,
+              "sp": "zuck0",
+              "name": "Facelet",
+              "lvl": 12,
+              "hp": 28,
               "max": 36,
               "st": null,
               "build": {
@@ -2777,8 +2691,39 @@ exports[`golden: a double trainer battle 1`] = `
               "alpha": false,
               "boss": false,
               "ty": [
-                "Flying",
-                "Psychic"
+                "Electric"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            {
+              "k": 3,
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
+              "lvl": 13,
+              "hp": 48,
+              "max": 51,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Water"
               ],
               "xp": 0,
               "stg": {
@@ -2839,119 +2784,7 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 34,
-              "max": 36,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Electric"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 2,
-              "sp": "swift1",
-              "name": "Versewift",
-              "lvl": 7,
               "hp": 28,
-              "max": 28,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Flying",
-                "Psychic"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
-              "lvl": 13,
-              "hp": 14,
-              "max": 36,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Flying",
-                "Psychic"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            null
-          ],
-          "mk": {
-            "k": "sand",
-            "n": 4
-          }
-        },
-        {
-          "t": "Facelet used Spark Shot on Versewift.",
-          "an": {
-            "k": "move",
-            "si": 1,
-            "ti": 2,
-            "mid": "disrupt",
-            "dmg": 41,
-            "te": 2,
-            "crit": false
-          },
-          "s": [
-            null,
-            {
-              "k": 1,
-              "sp": "zuck0",
-              "name": "Facelet",
-              "lvl": 12,
-              "hp": 34,
               "max": 36,
               "st": null,
               "build": {
@@ -2976,148 +2809,14 @@ exports[`golden: a double trainer battle 1`] = `
               },
               "bot": null
             },
-            {
-              "k": 2,
-              "sp": "swift1",
-              "name": "Versewift",
-              "lvl": 7,
-              "hp": 0,
-              "max": 28,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Flying",
-                "Psychic"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
-              "lvl": 13,
-              "hp": 14,
-              "max": 36,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Flying",
-                "Psychic"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            null
-          ],
-          "mk": {
-            "k": "sand",
-            "n": 4
-          }
-        },
-        {
-          "t": "It’s super effective!",
-          "an": null,
-          "s": [
             null,
             {
-              "k": 1,
-              "sp": "zuck0",
-              "name": "Facelet",
-              "lvl": 12,
-              "hp": 34,
-              "max": 36,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Electric"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 2,
-              "sp": "swift1",
-              "name": "Versewift",
-              "lvl": 7,
-              "hp": 0,
-              "max": 28,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Flying",
-                "Psychic"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
               "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
+              "sp": "carnegie0",
+              "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 14,
-              "max": 36,
+              "hp": 48,
+              "max": 51,
               "st": null,
               "build": {
                 "head": "M",
@@ -3129,115 +2828,8 @@ exports[`golden: a double trainer battle 1`] = `
               "alpha": false,
               "boss": false,
               "ty": [
-                "Flying",
-                "Psychic"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            null
-          ],
-          "mk": {
-            "k": "sand",
-            "n": 4
-          }
-        },
-        {
-          "t": "Versewift fainted.",
-          "an": {
-            "k": "faint",
-            "si": 2
-          },
-          "s": [
-            null,
-            {
-              "k": 1,
-              "sp": "zuck0",
-              "name": "Facelet",
-              "lvl": 12,
-              "hp": 34,
-              "max": 36,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Electric"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 2,
-              "sp": "swift1",
-              "name": "Versewift",
-              "lvl": 7,
-              "hp": 0,
-              "max": 28,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Flying",
-                "Psychic"
-              ],
-              "xp": 0,
-              "stg": {
-                "lev": 0,
-                "law": 0,
-                "lob": 0,
-                "pr": 0,
-                "hus": 0
-              },
-              "bot": null
-            },
-            {
-              "k": 3,
-              "sp": "swift0",
-              "name": "Swiftlet",
-              "lvl": 13,
-              "hp": 14,
-              "max": 36,
-              "st": null,
-              "build": {
-                "head": "M",
-                "body": "M",
-                "front": "M",
-                "back": "M",
-                "sig": "M"
-              },
-              "alpha": false,
-              "boss": false,
-              "ty": [
-                "Flying",
-                "Psychic"
+                "Steel",
+                "Water"
               ],
               "xp": 0,
               "stg": {
