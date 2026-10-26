@@ -24,7 +24,10 @@ import {
   LOOK_GLSL,
   SURFACE_MATERIALS,
   ensurePrograms,
+  gpuBuffer,
+  gpuFree,
   gpuState,
+  gpuVao,
   imageTexture,
 } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
@@ -728,9 +731,9 @@ export function buildSolidProp(im, parts) {
 function uploadSolidPropMesh(V, extra) {
   if (!V.length) return null;
   const gl = gpuState.gl,
-    vao = gl.createVertexArray();
+    vao = gpuVao('meshes');
   gl.bindVertexArray(vao);
-  const vb = gl.createBuffer();
+  const vb = gpuBuffer('meshes', V.length * 4);
   gl.bindBuffer(gl.ARRAY_BUFFER, vb);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(V), gl.STATIC_DRAW);
   for (const [l, k, o] of [
@@ -756,8 +759,8 @@ function flushSolidPropMeshes() {
   /* (only those of the context in use: a lost one's are gone already) */
   for (const [m, g] of solidPropState.live)
     if (g === gl) {
-      gl.deleteVertexArray(m.vao);
-      gl.deleteBuffer(m.vb);
+      gpuFree(m.vao);
+      gpuFree(m.vb);
     }
   solidPropState.live.clear();
   solidPropState.meshes = new WeakMap();

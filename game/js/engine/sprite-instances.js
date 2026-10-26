@@ -15,7 +15,7 @@
    the base, the offset, the axes, the sway and the UV (locations 1-4). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { SURFACE_MATERIALS, gpuState } from './webgl.js';
+import { SURFACE_MATERIALS, gpuBuffer, gpuSized, gpuState, gpuVao } from './webgl.js';
 /* eslint-disable no-func-assign */
 expose({
   HALF_F32: [() => HALF_F32],
@@ -259,8 +259,8 @@ function spriteInstanceBuffer() {
     S = spriteInstanceGL;
   if (S.quad === gpuState.quad && S.vao) return S;
   S.quad = gpuState.quad;
-  S.vao = gl.createVertexArray();
-  S.buf = gl.createBuffer();
+  S.vao = gpuVao('instances');
+  S.buf = gpuBuffer('instances');
   S.size = 0;
   S.at = -1;
   gl.bindVertexArray(S.vao);
@@ -282,6 +282,7 @@ export function uploadSpriteInstances(bytes) {
   gl.bindBuffer(gl.ARRAY_BUFFER, S.buf);
   if (bytes > S.size) S.size = Math.max(bytes, S.size * 2, 64 * SPRITE_INSTANCE_STRIDE);
   gl.bufferData(gl.ARRAY_BUFFER, S.size, gl.DYNAMIC_DRAW);
+  gpuSized(S.buf, S.size);
   if (bytes) gl.bufferSubData(gl.ARRAY_BUFFER, 0, spriteInstanceBytes.u8, 0, bytes);
   S.at = -1;
   return S;

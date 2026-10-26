@@ -16,6 +16,7 @@
    20-23 wear, 24-27 hue/saturation/value shift, 28-31 tint, 32-33 the hue mask, 34 the windows' light, 35 unused */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { gpuVao } from './webgl.js';
 /* eslint-disable no-func-assign */
 expose({
   MODEL_INSTANCE_ATTRIBS: [() => MODEL_INSTANCE_ATTRIBS],
@@ -225,7 +226,7 @@ function splitPieces(items, o, boxOf) {
    VOX_ATTRIBS / MDL_ATTRIBS), the instance attributes I with a divisor of one */
 export function modelInstanceVao(gl, q, A, I) {
   if (q.ivao !== undefined) return q.ivao;
-  const v = gl.createVertexArray();
+  const v = gpuVao('meshes');
   gl.bindVertexArray(v);
   gl.bindBuffer(gl.ARRAY_BUFFER, q.bufs[0]);
   for (const [loc, n, ty, nm, off] of A.rows) {

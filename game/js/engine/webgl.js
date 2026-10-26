@@ -764,7 +764,7 @@ if (typeof FinalizationRegistry === 'function')
     gpuRes.dropped[e.kind]++;
   });
 /* a new GPU object of a type (GPU_MAKE) holding a kind of thing (GPU_KINDS), and its size in bytes if known */
-function gpuMake(type, kind = 'other', bytes = 0) {
+export function gpuMake(type, kind = 'other', bytes = 0) {
   return gpuTrack(gpuState.gl[GPU_MAKE[type][0]](), type, kind, bytes);
 }
 /* a shader of a program (deleted once its program has linked) */
@@ -801,19 +801,19 @@ function gpuTypeOf(gl, h) {
     if (gl[f] && gl[f](h)) return t;
   return null;
 }
-const gpuBuffer = (kind, bytes) => gpuMake('buffer', kind, bytes);
+export const gpuBuffer = (kind, bytes) => gpuMake('buffer', kind, bytes);
 const gpuTexture = (kind, bytes) => gpuMake('texture', kind, bytes);
-const gpuVao = kind => gpuMake('vao', kind);
+export const gpuVao = kind => gpuMake('vao', kind);
 const gpuFramebuffer = kind => gpuMake('framebuffer', kind);
 /* the object was filled again (bufferData, texImage2D): its new size */
-function gpuSized(h, bytes) {
+export function gpuSized(h, bytes) {
   const e = h && gpuEntry(h);
   if (!e || e.freed || e.gen !== gpuState.gen) return;
   gpuRes.bytes[e.kind] += bytes - e.bytes;
   e.bytes = bytes;
 }
 /* deleted now (an object of a lost or older context is only forgotten: deleting it does nothing) */
-function gpuFree(h) {
+export function gpuFree(h) {
   if (!h) return;
   const e = gpuEntry(h),
     gl = gpuState.gl;

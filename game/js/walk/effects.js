@@ -19,7 +19,17 @@ import { placedTurn } from '../logic/prop-turn.js';
 import { hexToRgb } from '../art.js';
 import { EFFECT_FRAMES, artImage, walkData, walkView } from '../walk-view.js';
 import { engineContext, engineSetting } from '../engine/settings.js';
-import { LIGHT_GLSL, bindQuad, ensurePrograms, gpuState, imageTexture, windGustAt } from '../engine/webgl.js';
+import {
+  LIGHT_GLSL,
+  bindQuad,
+  ensurePrograms,
+  gpuBuffer,
+  gpuSized,
+  gpuState,
+  gpuVao,
+  imageTexture,
+  windGustAt,
+} from '../engine/webgl.js';
 import { environment, environmentWindowLit } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
@@ -107,8 +117,8 @@ const weatherBatch = {
     const p = useWalkProgram('fxW', this.C, this.X);
     if (!p.wx) {
       /* made with the program, so a new context (initWebgl empties gpuState.P) makes them again */
-      const vao = gl.createVertexArray(),
-        buf = gl.createBuffer(),
+      const vao = gpuVao('instances'),
+        buf = gpuBuffer('instances'),
         S = WEATHER_FLOATS * 4;
       gl.bindVertexArray(vao);
       gl.bindBuffer(gl.ARRAY_BUFFER, gpuState.quad);
@@ -136,6 +146,7 @@ const weatherBatch = {
     gl.bindTexture(gl.TEXTURE_2D, this.T.t);
     gl.bindBuffer(gl.ARRAY_BUFFER, p.wx.buf);
     gl.bufferData(gl.ARRAY_BUFFER, this.d.subarray(0, n * WEATHER_FLOATS), gl.DYNAMIC_DRAW);
+    gpuSized(p.wx.buf, n * WEATHER_FLOATS * 4);
     gl.bindVertexArray(p.wx.vao);
     gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, n);
     gl.useProgram(gpuState.P.fx.p);

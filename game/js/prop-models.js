@@ -15,7 +15,16 @@ import { gpuTag } from './engine/gpu-counters.js';
 import { artImg, artURL, hexToRgb, makeCanvas } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
-import { COMMON_GLSL, LIGHT_GLSL, ensurePrograms, gpuState, imageTexture } from './engine/webgl.js';
+import {
+  COMMON_GLSL,
+  LIGHT_GLSL,
+  ensurePrograms,
+  gpuBuffer,
+  gpuFree,
+  gpuState,
+  gpuVao,
+  imageTexture,
+} from './engine/webgl.js';
 import {
   MODEL_INSTANCE_ATTRIBS,
   MODEL_INSTANCE_BYTES,
@@ -765,13 +774,13 @@ function propModelMesh(path, rec) {
     return null;
   }
   const up = D => {
-    const vao = gl.createVertexArray();
+    const vao = gpuVao('meshes');
     gl.bindVertexArray(vao);
-    const vb = gl.createBuffer();
+    const vb = gpuBuffer('meshes', D.vb.byteLength);
     gl.bindBuffer(gl.ARRAY_BUFFER, vb);
     gl.bufferData(gl.ARRAY_BUFFER, D.vb, gl.STATIC_DRAW);
     meshAttribs(gl, VOX_ATTRIBS);
-    const eb = gl.createBuffer();
+    const eb = gpuBuffer('meshes', D.ib.byteLength);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, eb);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, D.ib, gl.STATIC_DRAW);
     gl.bindVertexArray(null);
@@ -826,18 +835,17 @@ function flushPropModelMeshes() {
   for (const k of [...propModelState.meshes.keys()]) invalidatePropModel(k, true);
   /* phase 20 R2: the instanced models' record buffer too (a restored context may hand back the same context object) */
   const S = MODEL_INSTANCES;
-  if (S.buf && S.gl && S.gl === gpuState.gl) S.gl.deleteBuffer(S.buf);
+  gpuFree(S.buf);
   S.buf = null;
   S.gl = null;
 }
 export function invalidatePropModel(path, keep) {
   const m = propModelState.meshes.get(path);
   if (m && m.vao && typeof gpuState !== 'undefined' && gpuState.gl) {
-    const gl = gpuState.gl;
     for (const q of [m, ...(m.more || []), ...(m.spins || [])]) {
-      gl.deleteVertexArray(q.vao);
-      if (q.ivao) gl.deleteVertexArray(q.ivao);
-      for (const b of q.bufs || []) gl.deleteBuffer(b);
+      gpuFree(q.vao);
+      gpuFree(q.ivao);
+      for (const b of q.bufs || []) gpuFree(b);
     }
   }
   propModelState.meshes.delete(path);
@@ -850,13 +858,13 @@ export function invalidatePropModel(path, keep) {
    voxels' propellers. It stands in for the picture where the voxel props do, and casts its real shadow. */
 function uploadLowPolyMesh(vb, ib) {
   const gl = gpuState.gl,
-    vao = gl.createVertexArray();
+    vao = gpuVao('meshes');
   gl.bindVertexArray(vao);
-  const v = gl.createBuffer();
+  const v = gpuBuffer('meshes', vb.byteLength);
   gl.bindBuffer(gl.ARRAY_BUFFER, v);
   gl.bufferData(gl.ARRAY_BUFFER, vb, gl.STATIC_DRAW);
   meshAttribs(gl, MDL_ATTRIBS);
-  const e = gl.createBuffer();
+  const e = gpuBuffer('meshes', ib.byteLength);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, e);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, ib, gl.STATIC_DRAW);
   gl.bindVertexArray(null);
@@ -1912,9 +1920,10 @@ function drawModelInstances(p, kind, L) {
       propModelInstanceValues(it, kind, MODEL_VALUES);
       writeModelInstance(S, i++, MODEL_VALUES);
     }
-  if (!S.buf || S.gl !== gl) {
-    S.buf = gl.createBuffer();
+  if (!S.buf || S.gl !== gl || S.gen !== gpuState.gen) {
+    S.buf = gpuBuffer('instances');
     S.gl = gl;
+    S.gen = gpuState.gen;
   }
   gl.bindBuffer(gl.ARRAY_BUFFER, S.buf);
   gl.bufferData(gl.ARRAY_BUFFER, S.B.subarray(0, i * MODEL_INSTANCE_BYTES), gl.STREAM_DRAW);
