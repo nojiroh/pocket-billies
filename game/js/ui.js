@@ -189,7 +189,7 @@ function updateNav(show) {
   }
   n.hidden = !show;
   n.set = saveData.run ? 'run' : 'hub';
-  n.value = ['map', 'team', 'bag', 'perks', 'lab'].includes(uiState.tab) ? uiState.tab : '';
+  n.value = ['map', 'team', 'guide', 'bag', 'perks', 'lab'].includes(uiState.tab) ? uiState.tab : '';
   /* its labels follow the language (i18nText) */
   if (typeof n.requestUpdate === 'function') n.requestUpdate();
 }
