@@ -9,6 +9,10 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Battles: rigs reused** (phase 20, a test switch, off for now; Studio > Engine > Quality "Reuse battle rigs"): each
+  Billie's picture in a battle is drawn and sent to the graphics card again only when its pose, face or tint changes
+  (about 6 times a second) instead of on every frame. Same picture. The diagnostics test now counts a battle's whole
+  frame in its CPU time (it counted only the battle's own part, about 1 ms) and reports what the rigs cost.
 - **Lighter shadows** (phase 20, test switches, all off for now; Studio > Engine > Quality): "Shadows in batches"
   draws the shadows of grass, bushes, leaves, people and models in batches, one draw for all the copies of a picture
   or a model (in a jungle route the shadows from about 360 draws a frame to about 120), with the same look. "Models
