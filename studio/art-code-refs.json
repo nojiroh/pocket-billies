@@ -45,21 +45,21 @@
    "at": [
     "game/js/art.js:204",
     "game/js/art.js:206",
-    "game/js/logic/data-checks.js:1622"
+    "game/js/logic/data-checks.js:1663"
    ]
   },
   {
    "p": "coins/*_32.png",
    "at": [
     "game/js/art.js:204",
-    "game/js/logic/data-checks.js:1622"
+    "game/js/logic/data-checks.js:1663"
    ]
   },
   {
    "p": "coins/*.json",
    "at": [
     "game/js/battle-3d.js:367",
-    "game/js/logic/data-checks.js:1624"
+    "game/js/logic/data-checks.js:1665"
    ]
   },
   {
@@ -98,14 +98,14 @@
   {
    "p": "map/airship.png",
    "at": [
-    "game/js/airship.js:161",
-    "game/js/airship.js:239"
+    "game/js/airship.js:167",
+    "game/js/airship.js:245"
    ]
   },
   {
    "p": "next/*/*_*.png",
    "at": [
-    "game/js/walk-view.js:479"
+    "game/js/walk-view.js:486"
    ]
   },
   {
@@ -177,7 +177,7 @@
   {
    "p": "scene/flags/*.png",
    "at": [
-    "game/js/walk-view.js:495"
+    "game/js/walk-view.js:502"
    ]
   },
   {
@@ -201,11 +201,17 @@
     "game/js/art.js:172",
     "game/js/art.js:173",
     "game/js/boot.js:585",
-    "game/js/ui-run-kit.js:54"
+    "game/js/ui-run-kit.js:58"
    ]
   }
  ],
  "recipes": [
+  {
+   "p": "next/billionaires/bingebat.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
   {
    "p": "next/billionaires/cublet.png",
    "at": [
@@ -869,6 +875,8 @@
     "game/art/scene/next/models/house_red.json",
     "game/art/scene/next/models/inn.json",
     "game/art/scene/next/models/lantern.json",
+    "game/art/scene/next/models/shrine_small.json",
+    "game/art/scene/next/models/solar_post_light.json",
     "game/art/scene/next/models/train_greenbelt.json",
     "game/art/scene/next/models/train_harvest.json",
     "game/art/scene/next/models/train_highland.json",
@@ -960,6 +968,12 @@
    "p": "scene/next/decals/station_tickets.png",
    "at": [
     "game/art/scene/next/models/train_station.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/tollbooth_sign.png",
+   "at": [
+    "game/art/scene/next/models/tollbooth.json"
    ]
   },
   {
