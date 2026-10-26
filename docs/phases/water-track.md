@@ -154,6 +154,7 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
 | 3 | WA-7 | B | (**done** 2026-10-26, notes below) **World map and battles.** The bowl's rivers and seas in the same tones and steps (the shared snippet); water backdrops on battle stages by a node's biome. | bowl map test, battle stage pictures, smoke |
 | 4 | WA-5b | R | (**done** 2026-10-26, notes below) **Kinds as a texture and water life.** Kind looks in a small texture (no cap at 9), the new kinds drawn (steam on hot springs, rapids' white water, bog's scum, reef, cave water lit by its own glow); lily pads that bob, reeds that sway, frogs, fish that jump (sprites), birds that dive. | look-water, smoke |
 | 4 | WA-9 | G | (**done** 2026-10-26, notes below) **Studio tools.** A river brush (source to mouth, regenerates its bed), a waterfall placer (lip, width, pool, climb), a water-kind painter, a live preview; STUDIO.md. | Studio check, a hand-placed fall survives a regenerate |
+| 4 | WA-10 | R | (**done** 2026-10-26, notes below) **Copperleaf's river, mouth and outflow** (the owner played it: weird river, weird mouth, weird fall). Kinds by connectivity (a pond behind a coast is a pond), a river runs only in its channel with an estuary blend into the sea, a river's surface at a never-rising level along its line, automatic sheets only down the flow with merged lips; Copperleaf's outflow and town square patched in the data (the owner's yes). | Copperleaf pictures, look-water numbers (test_water, test_island), unit tests, smoke |
 | 5 | WA-8 | (alone) | **Phone pass, sounds, baseline.** Quality tiers for water (bands, mist, reflections) measured at the bench; the owner's phone frame time; water sound beds (falls by height, rapids, surf, lapping, the plunge pool) with SND-6's mix; the quick-check baseline made again on purpose. | full quick check, the owner's phone |
 
 ## Ask me before
@@ -510,3 +511,48 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
 - Numbers (Node, five seeds of a 112 x 64 m meadow): 64 ms a scene without hand water, 74 ms with one hand river.
 - Not done here: a regenerate of a saved scene (MG-4); several rivers joining (a hand river ending in another is a
   `lake` mouth); the hub island's fall (HB-4b).
+
+## WA-10 notes (2026-10-26)
+- The owner's answers (Plan Mode): the four renderer fixes as planned; the hub's outflow and, asked mid-plan, a smaller
+  town square in Copperleaf's data. The plan was a rebuild with the dials (`stream.fall` 0, `town.square.r` 8); found:
+  the town zone is **locked** (a rebuild keeps its ground exactly, so the dials changed nothing), and an unlocked
+  rebuild makes the town again differently even with the original dials (19 plots of 22, three buildings lost). The
+  owner then chose hand patches with the town still locked: `tools/patch-copperleaf-water.mjs --river` and `--square`
+  (rerunnable; they lay the dressing again last, as build-copperleaf.mjs does). The square's natural shape and 3D props
+  went to the hub track (hub-track.md HB-10).
+- **Kinds by connectivity** (`water-flow.js waterOpenSea`, read by `water-data.js waterKindLookup`): on a scene whose
+  own kind is a sea kind, still water reaching the map's edge through still water, or through wet sand (`S`, which the
+  high tide covers: WA-4's tide pools), is the sea; other still bodies are `pond` (`lake` over 600 m^2). Running water
+  joins nothing. Rectangles win. Copperleaf's pond: 202 pond cells (it was 170 sea and 51 stream, with surf rings).
+- **A river's channel** (`waterFlowMap(sc, feet, opts)`: `flowChannels`): water a disc of more than 3.25 m (or the
+  river's half width + 0.75) covers is a body; a river's flow runs only between the body it leaves and the body it
+  reaches, never past its line's end in a small pool. `F.cls` per cell: 1 running, 2 running in its estuary, 3 the
+  plume. **The estuary**: the channel's last 4 m and a plume (an ellipse up to about 11 m out along the river, 7 m to the
+  sides) carry the river's share in the flow map's alpha (it held how far into the stream, which nothing read); the
+  water shader mixes the stream's look into the body's by it (`kdT`, rows 0-3 and 5; what a kind does, row 4, stays the
+  body's), calms the swell, whitecaps and surf by it, tints it fresh and silty (a tint of its own lit colour: a fixed colour
+  glowed at night) in dithered tones with a broken drifting edge, and
+  draws a broken stepped seam of foam where its front meets the swell; the plume's flow fans out and fades; the
+  stream-style flow foam fades with the share.
+- **The river's level** (`waterRiverProfile`, per cell `F.lev`): along the line every half metre, the bed's rule
+  (ground + step - 0.12) at wet points, a running minimum from the head, a moving average over 3 m either way that never
+  crosses a step of the land or a drop of 0.15 m, a running minimum again, never under the body it ends in and easing to
+  it over the last 4 m. A cell takes the level on its own step of the land (a terrace's lip stays where the land has
+  it). Down a cliff in the ground (a drop that is no step) the river keeps following its bed as before (a falls entry
+  draws the fall there). A vertex averages the cells round it and may rise 7 cm toward a bank's own bed (level across,
+  the river sank under its shallow edges and read narrow). Copperleaf's river: never rises, 1.41 m at the pond to the
+  sea's -0.22 m (it went 0.98, 1.00, 1.02, 1.00 ... and uphill twice near the mouth).
+- **Automatic sheets** (ground-mesh.js): where a river is in the step, only across its flow (cos > 0.7); none on its
+  sides, none from still water into its side, none under 0.25 m into sea water; a lip's sheets share their ends' mean
+  lip and foot. Copperleaf near the river: 18 sheets before (15 at the outflow facing three ways, 3 at the mouth), 0
+  after (with the outflow patched; 6 facing downstream before the patch). test_water: 8 sheets, the same places and drops
+  as before WA-10 (on the way: 26, tallest 4.38 m, from three profile bugs fixed in the same commit).
+- **The outflow patch**: the bed over the river's first 6 m ramps from 0.12 m under the pond's water (1.52 m, as the walk
+  view lays it: the mean of its cells' ground less 0.12) down to the bed there (1.1 m): 22 bed and 5 bank corners
+  raised; `stream.fall` 0, the fall spot's y, `rapids: [[0, 0.14]]` on the stream. **The square patch**: paved to
+  about 8 m with a rim wandering 0.7 m in and out, 199 tiles to grass, 44 to street where the two streets met the old
+  rim; the dressing laid again (358 props, 355 before, none in the town zone).
+- Cost: the flow map's channel pass reads the scene's water once (a distance pass, a covering disc only near streams):
+  about 60 ms on Copperleaf in Node, once a build; the water shader's two extra fetches only where the share is over 0.
+- Not done: the quick-check baseline (WA-8); the mouth's pale shallows round its deep hole are the existing `w` sea look
+  (WA-5b), not changed; a renderer profile for lane G to share (water-gen.js makes its own on the height grid).

@@ -2,6 +2,64 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Water track WA-10 (lane R) - Copperleaf's river, its mouth and its pond outflow - 2026-10-26
+Branch `track/water` (main was already in it: nothing to merge). Plan approved in Plan Mode; the owner had played the
+build: the hub's river looks weird, weird where it meets the sea, and the waterfall looks weird. The parent session's
+diagnosis was confirmed in the page (numbers along the river every 0.5 m). Tag to suggest: `wa-10-done` (the owner
+pushes tags).
+- The owner's answers: the four renderer fixes as planned; the outflow and (mid-plan) a smaller town square in
+  Copperleaf's data. **Found**: the town zone is locked, so a rebuild with new dials changes nothing, and an unlocked
+  rebuild makes the town again differently even with the original dials (19 plots of 22, three buildings lost, 114 of
+  155 height rows): the owner chose hand patches with the town still locked. The square's natural shape and 3D props
+  went to the hub track (hub-track.md HB-10). During the session the owner also asked for the river's meeting with
+  the sea to look better overall: the estuary blend and its shader commit.
+- Changed (one cause a commit, details and numbers in water-track.md, WA-10 notes):
+  - **Kinds by connectivity** (`water-flow.js waterOpenSea`, `water-data.js waterKindLookup`): on a sea-kind scene
+    only still water joined to the map's edge (or over wet sand, so WA-4's tide pools stay the sea's) is the sea; the
+    rest is pond, or lake over 600 m^2. Copperleaf's pond lost its surf rings.
+  - **A river runs only in its channel** (`waterFlowMap`'s new third argument, `flowChannels`): no flow in the body it
+    leaves nor past the coast (the pale square tongue at the mouth is gone); an **estuary**: the river's share in the
+    flow map's alpha, mixed by the shader (the stream's look into the sea's, the sea's motion calmed), a silty dithered
+    plume with a broken edge, a seam of foam at its front.
+  - **A smooth river surface**: a never-rising level along the line (smoothed, breaking at steps and drops, easing to
+    the body it ends in), carried onto each cell's own step of the land; cliffs in the ground keep the bed rule; edges
+    may rise 7 cm toward a bank.
+  - **Automatic sheets** only down a river's flow, none on its sides or into sea water under 0.25 m, lips merged.
+  - **Copperleaf's data** (`tools/patch-copperleaf-water.mjs`, rerunnable): `--river` ramps the outflow's bed over 6 m
+    from the pond's water level (rapids, no fall; `stream.fall` 0); `--square` paves the square to about 8 m with an
+    uneven rim, grass round it, the streets carried in; both lay the dressing again last.
+- Found on the way: the profile's first version raised test_water's sheets from 8 to 26 (dry line points lifted the
+  head, smoothing ramped a 6 m cliff, a line ending in a small pool ran on at its own level); fixed in the sheets
+  commit, test_water back to its 8 sheets. Fix 1's first version turned test_island's tide pools into ponds; fixed.
+  **My mistake**: the square commit (615bd50a) was pushed with one unit test failing (island-dress.test: the dressing
+  wasn't laid again); the next commit (3449a858) fixes it. Every other push had npm test and smoke green. The night
+  pictures showed the plume's first tint glowing (a fixed colour, not lit): it now tints the water's own lit colour.
+  The pale V-shaped shallows in the mouth (its deep hole ringed by `w` sea, WA-5b's turquoise and WA-4's surf) are
+  there with the estuary switched off too: not changed here.
+- Risky: the flow map's alpha now means the estuary's share (nothing read it before); `F.cls` / `F.lev` are new and
+  ground-mesh.js leans on them (a scene built without the third argument keeps the old rules). The water level of every
+  river changed (generated rivers are already non-rising: small changes; check a run's rivers and WA-2b's falls on the
+  phone). The channel pass costs about 60 ms on Copperleaf in Node at each build. The estuary's look was judged from
+  headless pictures only. The town's ground now differs from what its dials make (it did already: see HB-10).
+- Verified: lint, typecheck, check:modules, check:data, `npm test` (1072 pass after each commit but 615bd50a), smoke
+  before every game/ commit (all passed, Playwright 1.63.0). Unit tests: kinds by connectivity and tide pools, the
+  channel clip and the plume, a river level that never rises and keeps a terrace's drop. Numbers in the page:
+  Copperleaf's pond 202 pond cells (was 170 sea, 51 stream), fall sheets near the river 0 (were 18), the river's level
+  never rises (1.41 to -0.22); test_water 8 sheets at the same places as before, its kinds unchanged; test_island all
+  sea (22,804 cells), 95,000 water triangles as WA-4's. Pictures (scratchpad, not committed): Copperleaf's mouth
+  (above, low), the river's middle, the outflow, the pond, the square, noon and night, Pixel water on and off, before
+  (a clean worktree at the session's start) and after. `npm run test:slow` not run (no generation code changed). The
+  quick-check baseline not remade (WA-8).
+- For lane G: `waterRiverProfile` (water-flow.js) is a renderer profile on scene data; water-gen.js keeps its own on
+  the height grid. A generated coast with a river now gets an estuary; a river line that runs on into the sea is fine.
+- For the hub track: HB-10 (the square's shape and props, and why a town rebuild is not safe yet); the outflow patch
+  sets `stream.fall` 0, which matches what a future rebuild should make.
+- For WA-8: the estuary's extra fetches and the channel pass in the quality tiers; the baseline will show Copperleaf's
+  new river, mouth, outflow and square.
+- For the owner, on the phone: Copperleaf's river mouth from the beach and the bridge (the plume, the seam), the pond's
+  outflow (rapids, no slabs), the pond (no surf rings), the square; noon and night, Pixel water on and off.
+- Next for lane R: WA-8.
+
 ### Water track WA-9 (lane G) - the Studio's water tools - 2026-10-26
 Branch `track/water` (main merged in at the start: #205, the hub's placing half; HANDOFF kept both sides). Plan
 approved in Plan Mode. The owner's answers: "survives a regenerate" means the Generate card's remakes, the hand water
