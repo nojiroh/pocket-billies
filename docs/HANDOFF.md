@@ -53,7 +53,9 @@ it moves (a merge, never a rebase). Merge SP-1, SP-2, SP-3, SP-4, then this. Pla
   tail offered at 15 DNA, Stability 2 of 4; the tail spliced, 15 DNA paid), the auction in DNA (two Genes, 15 DNA) and
   the back alley in DNA (8 DNA) all play through their sheets with no errors; the lab's pick read well at 400 px. The
   in-game steps "A run's waystation and stall", "Wild splice", "Gene Bank" pass alone.
-  Full quick check: running when this entry was written; its result follows in the next commit.
+  Full quick check (1351 s): 35 of 37. The two problems are the known ones, not SP-6's: RL-8 "Take off didn't start
+  a run's flight" and song fingerprints (cave mid/late not in the sound baseline), both known since SP-1. The Actions
+  sheet passed this time (160 s).
 - Risky: adding four events and three Perks changes which event a waystation holds and which Perks are offered for
   a given seed (no test pinned one). A splice made on a run bakes at runtime (SP-1's path), like the Bank's preview: if
   the owner takes SP-1's offline fallback, events still need the runtime bake. `when` is read when the event is drawn
