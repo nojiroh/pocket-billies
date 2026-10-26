@@ -110,7 +110,18 @@ export const ENGINE_DEFAULTS = {
     lampShadows: 2,
     aoKind: 'horizon',
   },
-  lights: { brightness: 1, glow: 1, flicker: 0.5, windowsDay: 0.15, roomLight: true, windowLight: 1, pools: 1 },
+  lights: {
+    brightness: 1,
+    glow: 1,
+    flicker: 0.5,
+    windowsDay: 0.15,
+    roomLight: true,
+    windowLight: 1,
+    pools: 1,
+    /* a house's window light falls out of its front whichever way the house faces (soft at the wall); off: it is cut
+       off on the far side of a line through it, the same for every house (lit wrong when the house is turned) */
+    windowFacing: false,
+  },
   air: {
     haze: null,
     hazeStart: 0.95,
@@ -653,6 +664,12 @@ export const ENGINE_SPEC = [
       ['glow', 'Glow size', 0, 3, 0.05],
       ['flicker', 'Flicker', 0, 1, 0.05],
       ['windowsDay', 'Window light in daytime', 0, 1, 0.01],
+      [
+        'windowFacing',
+        'Window light faces out',
+        'bool',
+        'The pool of light from a house’s windows falls out of its front whichever way the house is turned, fading softly at the wall (on). Off: the same cut-off line for every house.',
+      ],
       [
         'roomLight',
         'Light through room windows',
