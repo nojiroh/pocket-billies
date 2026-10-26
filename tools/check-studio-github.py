@@ -30,8 +30,8 @@ Studio plan Phase 5 (T5.2): Replace from Parts Library greys a part a child can'
 and a head swapped keeps a blink as one undo step.
 Studio plan Phase 5 (T5.4): Repack sheet makes a hand-drawn Billie's sheet smaller, drawn the same, one undo step.
 Studio art track SA-1: the Art browser: folders, search tokens and chips, Used by, Edit pixels and its undo, Ctrl K.
-Studio art track SA-2a: the ground tile set (a stroke, its Lite tile and the preview in one undo step) and a frame strip
-played in the Art browser.
+Studio art track SA-2a: the ground tile set (a stroke, its Lite tile and the preview in one undo step), a frame strip
+played in the Art browser, robot pictures painted and uploaded from Robots.
 Studio plan Phase 1 (T1.3): the Check lists check-data's own problems (planted), and an error blocks Propose.
 UI track UI-3: the UI look section: a colour dial changed shows in the preview frame, Undo puts the data and the
 preview back; a screen's own colour shows on that screen only and ↺ takes it away; a preset applies and undoes; Find
@@ -2375,6 +2375,52 @@ def tile_set_steps(pg, errs):
     print('tile set: the folder opens it, a stroke paints the tile, its Lite tile (made kinds only) and the preview in one undo step', flush=True)
 
 
+def robot_art_steps(pg, errs):
+    """Studio art track SA-2a: robot pictures. Edit pixels on a part opens the painter, a stroke shows in the Robots
+    section's builds (the game's own drawing) and Done goes back to Robots; Upload… on a gem without a picture names
+    it robots/gem_<id>.png and saves it, one step of the undo."""
+    pg.set_default_timeout(120000)
+    pg.evaluate("studioState.sel.rbKind = 'torso'; studioState.sel.rbId = 'bulwark'; void openSection('robots')")
+    pg.wait_for_selector('[data-act="rbPaint"][data-k="img"]')
+    pg.click('[data-act="rbPaint"][data-k="img"]')
+    pg.wait_for_selector('#abPeStage .pc-art'); time.sleep(0.4)
+    path = 'art/robots/bulwark.png'
+    done = pg.evaluate("document.querySelector('[data-act=\"abEditDone\"]').textContent")
+    if 'Robots' not in done: errs.append(f'robot art: the painter`s Done reads {done!r}')
+    h0 = pg.evaluate(f"{PIXELS}({json.dumps(path)})")
+    pg.locator('#abPeStage .pc-art').scroll_into_view_if_needed()
+    box = pg.locator('#abPeStage .pc-art').bounding_box()
+    Z = pg.evaluate('artBrowser.pc.zoom')
+    pg.evaluate("pixelCanvasTool(artBrowser.pc, 'pen'); pixelCanvasColor(artBrowser.pc, '#FF0000')")
+    steps0 = pg.evaluate('studioState.undo.length')
+    pg.mouse.click(box['x'] + Z / 2, box['y'] + Z / 2)
+    if pg.evaluate('studioState.undo.length') != steps0 + 1: errs.append('robot art: a stroke is not one step of the undo')
+    pg.click('[data-act="abEditDone"]'); time.sleep(0.6)
+    if pg.evaluate('studioState.sec') != 'robots': errs.append('robot art: Done did not go back to Robots')
+    if not pg.evaluate("ART_CACHE.img['robots/bulwark.png'] === loadedAtlas('art/robots/bulwark.png')"): errs.append('robot art: the builds do not draw the painted picture')
+    if not pg.evaluate("[...document.querySelectorAll('.rb-pic')].some(i => (i.src || '').startsWith('data:'))"): errs.append('robot art: the picture card does not show the painted picture')
+    pg.evaluate('undo()'); time.sleep(0.3)
+    if pg.evaluate(f"{PIXELS}({json.dumps(path)})") != h0: errs.append('robot art: undo did not take the stroke back')
+    pg.evaluate(f"studioState.artDirty.delete({json.dumps(path)}); updateTopBar()")
+    gem = 'art/robots/gem_tide.png'
+    pg.evaluate("studioState.sel.rbKind = 'gem'; studioState.sel.rbId = 'tide'; studioState.D.robots.gems.tide._img = studioState.D.robots.gems.tide.img; delete studioState.D.robots.gems.tide.img; commit(true); void openSection('robots')")
+    pg.wait_for_selector('[data-act="rbUpload"][data-gem="1"]')
+    steps0 = pg.evaluate('studioState.undo.length')
+    with pg.expect_file_chooser() as fc:
+        pg.click('[data-act="rbUpload"][data-gem="1"]')
+    fc.value.set_files(str(ROOT / 'game' / 'art' / 'robots' / 'gem_volt.png'))
+    end = time.time() + 10
+    while time.time() < end and not pg.evaluate(f"studioState.artDirty.has({json.dumps(gem)})"): time.sleep(0.2)
+    got = pg.evaluate("studioState.D.robots.gems.tide.img")
+    if got != 'robots/gem_tide.png': errs.append(f'robot art: an upload on a gem without a picture named it {got!r}')
+    if pg.evaluate('studioState.undo.length') != steps0 + 1: errs.append('robot art: an upload is not one step of the undo')
+    pg.evaluate('undo()'); time.sleep(0.3)
+    if pg.evaluate("'img' in studioState.D.robots.gems.tide"): errs.append('robot art: undo did not take the new picture name back')
+    pg.evaluate(f"const G = studioState.D.robots.gems.tide; G.img = G._img; delete G._img; studioState.artDirty.delete({json.dumps(gem)}); commit(true); updateTopBar()")
+    pg.set_default_timeout(30000)
+    print('robot art: Edit pixels and back, the builds draw the edit, Upload… names a new picture, each one undo step', flush=True)
+
+
 def strips_steps(pg, errs):
     """Studio art track SA-2a: a frame strip (an animal) plays in the Art browser's picture panel; Step pauses it and
     shows the next frame."""
@@ -2404,6 +2450,7 @@ STEPS = [
     ('art_browser', art_browser_steps),
     ('tile_set', tile_set_steps),
     ('strips', strips_steps),
+    ('robot_art', robot_art_steps),
     ('split', split_steps),
     ('workbench', workbench_steps),
     ('part_mode', part_mode_steps),

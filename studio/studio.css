@@ -3569,6 +3569,16 @@ body.vp-has-big::after {
   text-align: center;
   font-size: 11px;
 }
+.rb-fig {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+.rb-none {
+  display: grid;
+  place-items: center;
+  color: var(--text2);
+}
 .rb-pic {
   width: 96px;
   height: 96px;

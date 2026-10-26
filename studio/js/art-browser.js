@@ -11,6 +11,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide, tileSetOpen } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
+import { artURL } from '../../game/js/art.js';
 import { EFFECT_FRAMES } from '../../game/js/walk-view.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { offPalette, paletteColors, pixelKeyAction } from '../../game/js/logic/pixel-ops.js';
@@ -74,6 +75,8 @@ expose({
   artDetailNotes: [() => artDetailNotes, v => (artDetailNotes = v)],
   artEditorsFor: [() => artEditorsFor, v => (artEditorsFor = v)],
   artMadeByHTML: [() => artMadeByHTML, v => (artMadeByHTML = v)],
+  artPaint: [() => artPaint, v => ((artPaint = v), provide({ artPaint }))],
+  artPicSrc: [() => artPicSrc],
   artPictures: [() => artPictures],
   artRefs: [() => artRefs, v => (artRefs = v)],
   artSize: [() => artSize, v => (artSize = v)],
@@ -101,7 +104,7 @@ expose({
   treeFiles: [() => treeFiles, v => (treeFiles = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ artBrowserShow });
+provide({ artBrowserShow, artPaint });
 /* to-module: end */
 /* the browser's state: the folder, the search, the picked picture and the one being painted */
 export const artBrowser = {
@@ -111,6 +114,8 @@ export const artBrowser = {
   edit: '',
   /* SA-2a: the ground tile set (tile-set.js) shows in this section's place */
   tiles: false,
+  /* SA-2a: where Done goes back to when another editor opened the painter: { label, fn } */
+  from: null,
   more: 0,
   /** @type {Map<string, { w: number, h: number }>} sizes read this session, by path */
   sizes: new Map(),
@@ -325,8 +330,11 @@ function artEditorsFor(path) {
       });
     else if (r.from === 'wardrobe') add('Wardrobe', () => openSection('wardrobe'));
     else if (r.from === 'robots') {
-      const P = top[0] === 'parts' && ((D.robots || {}).parts || {})[top[1]];
-      add('Robots', () => openSection('robots', P ? { rbKind: P.slot, rbId: top[1] } : {}));
+      const P = top[0] === 'parts' && ((D.robots || {}).parts || {})[top[1]],
+        G = top[0] === 'gems' && ((D.robots || {}).gems || {})[top[1]];
+      add('Robots', () =>
+        openSection('robots', P ? { rbKind: P.slot, rbId: top[1] } : G ? { rbKind: 'gem', rbId: top[1] } : {})
+      );
     } else if (r.from === 'partKits' || r.from === 'kitBuilds') add('Art workbench', () => openSection('workbench'));
   }
   const f = artFolderOf(path);
@@ -544,6 +552,7 @@ async function artDetailNotes(path) {
 /* ---------- actions ---------- */
 ACTIONS.abGo = d => {
   artBrowser.tiles = false;
+  artBrowser.from = null;
   artBrowser.at = d.at || '';
   artBrowser.more = 0;
   render();
@@ -610,6 +619,7 @@ function artBrowserShow(path) {
   artBrowser.sel = path;
   artBrowser.edit = '';
   artBrowser.tiles = false;
+  artBrowser.from = null;
   openSection('art');
 }
 
@@ -619,7 +629,7 @@ function editCardHTML() {
     strip = artStripOf(p);
   return card(
     `Edit pixels: ${escapeHtml(p.split('/').pop())}`,
-    `<div class="sc-pe" id="abPe"><div class="sc-pe-bar">${pixelCanvasToolsHTML()}<span class="colw"><input type="color" id="abPeColor" value="${artBrowser.color}"></span><span class="grow"></span><button class="btn sm primary" data-act="abEditDone">Done</button></div>
+    `<div class="sc-pe" id="abPe"><div class="sc-pe-bar">${pixelCanvasToolsHTML()}<span class="colw"><input type="color" id="abPeColor" value="${artBrowser.color}"></span><span class="grow"></span><button class="btn sm primary" data-act="abEditDone">${artBrowser.from ? 'Done, back to ' + escapeHtml(artBrowser.from.label) : 'Done'}</button></div>
   <div class="sc-pe-body"><div class="sc-pe-stage" id="abPeStage"></div><div class="sc-pe-side">${strip ? stripPlayerHTML(p, strip) : ''}${pixelCanvasPanelHTML()}<p class="help mono">${escapeHtml(p)}</p>${artMadeByHTML(p)}<p class="help">Each stroke is a step of the Studio’s undo (Ctrl Z). Save to game writes the picture.</p></div></div></div>`
   );
 }
@@ -632,14 +642,35 @@ ACTIONS.abEdit = async d => {
   }
   artBrowser.edit = d.p;
   artBrowser.sel = d.p;
+  artBrowser.from = null;
   render();
 };
 ACTIONS.abEditDone = () => {
+  const back = artBrowser.from;
   artBrowser.edit = '';
   artBrowser.pc = null;
   artBrowser.pal = null;
-  render();
+  artBrowser.from = null;
+  if (back) back.fn();
+  else render();
 };
+/** SA-2a: another editor's Edit pixels: the painter on a picture (art/...), and Done goes back with `back`
+ * ({ label, fn }) */
+async function artPaint(path, back = null) {
+  try {
+    await atlasGet(path);
+  } catch (e) {
+    toast('Could not load ' + path, 'err');
+    return;
+  }
+  Object.assign(artBrowser, { tiles: false, edit: path, sel: path, at: artFolderOf(path), q: '', from: back });
+  if (studioState.sec !== 'art') openSection('art');
+  else render();
+}
+/** SA-2a: a picture's src for an <img>: the unsaved canvas when it has been edited, else the game's file
+ * @param {string} rel a path under game/art (robots/vane.png) */
+const artPicSrc = rel => (studioState.artDirty.has('art/' + rel) ? thumbSrc('art/' + rel) : artURL(rel));
+provide({ artPicSrc }); /* to-module */
 function mountArtPixels() {
   const st = $('#abPeStage');
   if (!st) return;
