@@ -2,6 +2,22 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Merge batch 2: PRs #219 (renderer) and #217 (roster RO-3a..RO-3d) into main - 2026-10-26
+Branch `ccr-ed7f65cb-dk7xqw` (the owner: "look at the open PRs and merge them to main"). Both conflicted with main, so
+they were merged here (merge commits) for one PR.
+- #219 `track/renderer` (phase 20 R2-R3: light shafts, the weather batch, the battle rigs' reuse, the frozen sprite and
+  reflection calls). Conflicts with WA-5b and CAM-4b were side-by-side additions: both kept.
+- #217 `claude/ro-3d-silkworm-and-plant`, which holds `track/roster` (RO-3a's last commit, RO-3b #218, RO-3c #215,
+  RO-3d). **Risky, check on the phone**: RO-3c was written on SP-1's graft-art (a session map, slot -> donor species),
+  main has SP-2's (Billy.graft, slot -> Gene id "part@donor"). Kept SP-2's model with RO-3c's placeholder grafting
+  added; skeleton-rig's placeholder bake reads each slot's donor from its Gene id (a bare species id, as RO-3c's debug
+  menu sets, still works). Not yet checked: wild splices and the Gene Bank on placeholder Billies (genes.json's Genes are
+  kit parts, so placeholders likely get none). RO-3c's `graftFit` (a picture fitted onto a bone) clashed with genes.js's
+  `graftFit` (SP-2): renamed `graftPicFit` in its own commit; the RO-3c HANDOFF lines above still say graftFit.
+- Verified: lint, typecheck, format, check:modules, check:data, the data text check, build, unit tests 1284 pass,
+  `test:slow` 88 of 89 (the WA-10 island test, left red at the owner's word); the smoke check's result is in the PR.
+- `track/renderer` and `track/roster` stay (BRANCHES.md); #217's base was `track/roster`, so it closes by hand.
+
 ### Merge batch: finished PRs and sessions into main - 2026-10-26
 Branch `ccr-ed7f65cb-dk7xqw` (one session, the owner's word: "merge finished PRs and finished sessions into main").
 Every open PR conflicted with main (HANDOFF at least), and a session pushes only to its own branch, so the branches
