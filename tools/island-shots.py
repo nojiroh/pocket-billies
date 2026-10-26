@@ -10,6 +10,7 @@ lighthouse, the windmill and the town from a free camera, and a flat ground map 
     python3 tools/island-shots.py OUT_DIR --only=top-down,summit   # only these (the others in OUT_DIR stay)
     python3 tools/island-shots.py OUT_DIR --hud          # the whole page, the HUD too (default: the game's canvas alone)
     python3 tools/island-shots.py OUT_DIR --hour=22      # at this hour, clear summer weather (HB-10b: the square by night)
+    python3 tools/island-shots.py OUT_DIR --last=won     # as after a won (or lost) run: the square's reactions (HB-10d)
 
 Run `npm run data` first (the page reads game/data/gamedata.js). Writes OUT_DIR/<name>.png and OUT_DIR/shots.json
 (the names, where you stood, the frame count). Nothing is sent anywhere."""
@@ -28,6 +29,11 @@ ONLY = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--only
 want = lambda name: not ONLY or name in ONLY
 HOUR = next((float(a.split('=', 1)[1]) for a in ARGS if a.startswith('--hour=')), None)
 SCENE = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--scene=')), 'copperleaf')
+LAST = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--last=')), None)
+# HB-10d: a made-up last run in the save's history (logic/run-history.js historyEntry's fields), so the square reacts
+FAKE_RUN = ("(end=>{{const M=saveData.meta;M.history=[...(M.history||[]),{{seed:'shots',theme:'greenbelt',region:'Shot Vale',"
+            "exp:1,end,by:end==='won'?null:{{kind:'boss'}},row:6,days:9,team:[],perks:[],leaders:[],rival:null}}];"
+            "M.runs=(M.runs||0)+1;return 0}})('{}')")
 W, H = 390, 760
 COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
 
@@ -103,6 +109,7 @@ def main():
         if not fast.until(pg, f"typeof walkView!=='undefined'&&walkView.ready&&walkRenderer.on&&(walkView.sc.baseId||walkView.id)==='{SCENE}'", 240):
             raise Exception('the island never opened')
         if HOUR is not None: pg.evaluate(f"environment.force={{time:{HOUR},weather:'clear',season:'summer'}};0")
+        if LAST: pg.evaluate(FAKE_RUN.format(LAST))
         settle(pg, 10)
 
         def shot(name, label, where=None):
