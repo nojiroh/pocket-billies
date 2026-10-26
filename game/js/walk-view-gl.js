@@ -118,7 +118,7 @@ import { mapSun, walkLightContext } from './walk/lighting.js';
 import { SHADOW_INSTANCE_SHADERS, lampShadowMaps, shadowPass } from './walk/shadows.js';
 import { drawGrass, drawGround } from './walk/ground-draw.js';
 import { gatherFountainBasins } from './walk/fountains-weather.js';
-import { WEATHER_FX_SHADERS, effectsPass } from './walk/effects.js';
+import { RIBBON_SHADERS, WEATHER_FX_SHADERS, effectsPass, ribbonPass } from './walk/effects.js';
 import { drawFogGridBlocks, fogGridFrame, fogGridState, fogMarchNote } from './walk/fog-grid.js';
 import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
@@ -324,6 +324,8 @@ export function ensureWalkGl(cv) {
       engineSetting('quality', 'spriteInstances') && SPRITE_INSTANCE_SHADERS,
       /* phase 20 R2: the weather in one draw, while Engine > Quality "Rain in one go" is on */
       engineSetting('quality', 'rainBatch') && WEATHER_FX_SHADERS,
+      /* VFX-2: a thrown pyramid's ribbon, so the first throw doesn't compile it */
+      RIBBON_SHADERS,
       /* phase 20 R3: the instanced shadow pictures' and shadow models' programs, while Engine > Quality "Shadows in
          batches" is on */
       engineSetting('quality', 'shadowInstances') && SHADOW_INSTANCE_SHADERS,
@@ -708,6 +710,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   }
   gpuPass('effects');
   effectsPass(C, items, X, dark, t, dt);
+  /* VFX-2: a thrown pyramid's motion lines (battle-3d.js) */
+  if (BT && BT.ribbon) ribbonPass(C, BT.ribbon, X);
   gpuPass('post');
   /* focus: on you, or on what you tapped for a moment */
   let fx = BT ? BT.center[0] : P.x,
