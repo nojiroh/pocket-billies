@@ -6,9 +6,11 @@
 import { expose } from '../test-globals.js';
 import { saveData } from '../hooks.js';
 import { clamp } from '../util.js';
+import { pinchZoom } from '../logic/camera-zoom.js';
 import { canvasPoint, handleWalkClick, screenToGround, walkView } from '../walk-view.js';
+import { engineSetting } from '../engine/settings.js';
 import { walkRenderer } from './walk-state.js';
-import { cameraTurnLimit, clampZoom, freeCameraOn } from './camera.js';
+import { cameraTurnLimit, clampZoom, freeCameraOn, stretchZoom } from './camera.js';
 /* eslint-disable no-func-assign */
 expose({
   askDeviceTilt: [() => askDeviceTilt, v => (askDeviceTilt = v)],
@@ -46,6 +48,11 @@ export function bindGestures(cv) {
         zoom: walkRenderer.zoomT,
         cx: (a[0] + b[0]) / 2,
       };
+      /* CAM-4a: the point between the fingers on the ground and the aim, for zooming toward the pinch */
+      const [sx, sy] = canvasPoint({ clientX: g0.cx, clientY: (a[1] + b[1]) / 2 }),
+        g = screenToGround(sx, sy),
+        T = walkRenderer.camT;
+      walkRenderer.pinch = g && T ? { ax: g.x, az: g.z, px: T[0], pz: T[1], z0: walkRenderer.zoom } : null;
     }
     if (ev.button === 2 || ev.button === 1) {
       walkRenderer.drag = { x: ev.clientX, yaw: walkRenderer.yawT };
@@ -68,14 +75,19 @@ export function bindGestures(cv) {
       const [a, b] = [...pts.values()],
         d = Math.hypot(a[0] - b[0], a[1] - b[1]),
         cx = (a[0] + b[0]) / 2;
-      walkRenderer.zoomT = clampZoom((g0.zoom * g0.d) / Math.max(20, d));
+      walkRenderer.zoomT = stretchZoom(pinchZoom(g0.zoom, g0.d, d, engineSetting('camera', 'pinchSpeed')));
       walkRenderer.yawT = clamp(g0.yaw + (cx - g0.cx) * 0.006, -cameraTurnLimit(), cameraTurnLimit());
       walkRenderer.dragged = true;
     }
   });
   const up = ev => {
     pts.delete(ev.pointerId);
-    if (pts.size < 2) g0 = null;
+    if (pts.size < 2) {
+      /* CAM-4a: a pinch stretched past a limit springs back to it */
+      if (g0) walkRenderer.zoomT = clampZoom(walkRenderer.zoomT);
+      g0 = null;
+      walkRenderer.pinch = null;
+    }
     if (walkRenderer.drag && (ev.button === 2 || ev.button === 1 || !ev.buttons)) walkRenderer.drag = null;
   };
   cv.addEventListener('pointerup', up);
@@ -87,7 +99,9 @@ export function bindGestures(cv) {
       if (walkView.opt.active && !walkView.opt.active()) return;
       if (!ev.ctrlKey && !freeCameraOn()) return;
       ev.preventDefault();
-      walkRenderer.zoomT = clampZoom(walkRenderer.zoomT * Math.exp(ev.deltaY * 0.0012));
+      walkRenderer.zoomT = clampZoom(
+        walkRenderer.zoomT * Math.exp(ev.deltaY * 0.0012 * engineSetting('camera', 'wheelSpeed'))
+      );
     },
     { passive: false }
   );

@@ -9,7 +9,7 @@ import { clamp } from '../util.js';
 import { roomToLocal, roomToWorld, roomYaw } from '../logic/room-turn.js';
 import { cameraRiseNeeded } from '../logic/camera-rise.js';
 import { blendGoals, followNew, followStep, leadStep, zoneMetres } from '../logic/camera-follow.js';
-import { zoomShape } from '../logic/camera-zoom.js';
+import { pinchLean, zoomBand, zoomEase, zoomShape } from '../logic/camera-zoom.js';
 import { interestPick, zoneAt } from '../logic/camera-interest.js';
 import { MOMENT_DIALS, momentNew, momentStep } from '../logic/camera-moments.js';
 import { orbitStart, orbitStep, wrapAngle } from '../logic/camera-orbit.js';
@@ -31,6 +31,7 @@ expose({
   moments: [() => moments, v => (moments = v)],
   orbitOf: [() => orbitOf],
   screenRay: [() => screenRay, v => (screenRay = v)],
+  stretchZoom: [() => stretchZoom],
   walkCamera: [() => walkCamera, v => (walkCamera = v)],
   zoomEnds: [() => zoomEnds, v => (zoomEnds = v)],
 });
@@ -78,7 +79,17 @@ export const orbitOf = sc =>
   clampZoom = v =>
     freeCameraOn()
       ? clamp(v, 0.3, 3.2)
-      : clamp(v, engineSetting('camera', 'zoomMin'), engineSetting('camera', 'zoomMax'));
+      : clamp(v, engineSetting('camera', 'zoomMin'), engineSetting('camera', 'zoomMax')),
+  /* CAM-4a: while pinching, a zoom past a limit gives a little (Camera > Feel > Rubber band); clampZoom on release */
+  stretchZoom = v =>
+    freeCameraOn()
+      ? clampZoom(v)
+      : zoomBand(
+          v,
+          engineSetting('camera', 'zoomMin'),
+          engineSetting('camera', 'zoomMax'),
+          engineSetting('camera', 'zoomBand')
+        );
 /* ---------- camera ---------- */
 /* CAM-1: an exact ease toward a value at `rate` a second, the same at any frame rate */
 const ease = (rate, dt) => 1 - Math.exp(-rate * dt);
@@ -214,7 +225,8 @@ export function walkCamera(rw, rh, st, dt) {
   }
   const bf = [Math.sin(baseYaw), Math.cos(baseYaw)],
     turn = wrapAngle(baseYaw + walkRenderer.yaw);
-  walkRenderer.zoom += (walkRenderer.zoomT - walkRenderer.zoom) * ease(5, dt);
+  /* CAM-4a: in log zoom, over Camera > Feel > Zoom smoothing (0.2 s: the old rate of 5 a second) */
+  walkRenderer.zoom = zoomEase(walkRenderer.zoom, walkRenderer.zoomT, set('zoomSmooth'), dt);
   if (snap) walkRenderer.fol = followNew(P.x, P.z, feet);
   const fol = walkRenderer.fol;
   const vx = P.x - (walkRenderer.px ?? P.x),
@@ -313,6 +325,13 @@ export function walkCamera(rw, rh, st, dt) {
   for (const g of M.goals) {
     if (g.at) g.at = upAt(g.at[0], g.at[1]);
     goals.push(g);
+  }
+  /* CAM-4a: zooming toward the pinch (Camera > Feel): while two fingers pinch, the aim leans so the point between
+     them stays put (capped); letting go, the goal ramps out over the goals' blend */
+  const Pn = walkRenderer.pinch;
+  if (Pn && set('zoomToPoint') && !freeCameraOn()) {
+    const L = pinchLean(Pn.ax, Pn.az, Pn.px, Pn.pz, Pn.z0, walkRenderer.zoom, set('zoomPointMax'));
+    goals.push({ id: 'pinch', w: 1, blend: 0.1, at: upAt(P.x + L[0], P.z + L[1]) });
   }
   const G = blendGoals(fol, goals, dt, set('blend'), snap);
   /* CAM-2: one zoom (your pinch times the goals') drives the tilt, distance and field of view along their curves */

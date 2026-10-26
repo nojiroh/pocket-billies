@@ -25,6 +25,9 @@ export const walkRenderer = {
   orbit: null,
   zoom: 1,
   zoomT: 1,
+  /* CAM-4a: a pinch going on ({ax, az}: the point between the fingers on the ground, {px, pz}: the aim then, z0: the
+     zoom then), for the lean toward it (logic/camera-zoom.js pinchLean) */
+  pinch: null,
   tiltX: 0,
   tiltY: 0,
   /* CAM-1: the camera's follow (logic/camera-follow.js) and what it is doing (the debug log, the Studio's guides) */
