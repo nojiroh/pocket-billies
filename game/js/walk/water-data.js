@@ -305,7 +305,15 @@ export function setShoreUniforms(U, sc) {
       on = !!(sc.flatFar && F && F.tide && engineSetting('water', 'tide') !== false),
       td = walkRenderer.tideForce ?? tideLevel(environment.tod),
       st = walkRenderer.stormForce ?? environment.storm;
-    gl.uniform4f(U.uTide, on ? clamp(td, -1, 1) : 0, sc.flatFar ? clamp(st, 0, 1) : 0, on ? 1 : 0, 0);
+    /* w: the storm's heave's clock, the frame's (uTime) seconds wrapped on whole turns of the swell, so the two keep step */
+    const turn = ((2 * Math.PI) / 1.3) * 64;
+    gl.uniform4f(
+      U.uTide,
+      on ? clamp(td, -1, 1) : 0,
+      sc.flatFar ? clamp(st, 0, 1) : 0,
+      on ? 1 : 0,
+      ((walkView.t || 0) / 1000) % turn
+    );
   }
 }
 function shoreAt(x, z) {

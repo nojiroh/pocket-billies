@@ -2,6 +2,121 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Water track WA-4 (lane R) - the sea and the coast - 2026-10-25
+Branch `track/water` (main merged in at the start: #195, HB-2 #196, the self-test fix #197; HANDOFF kept both sides;
+lanes G's WA-5a and B's WA-7 and the hub's merges merged in before each push). Plan approved in Plan Mode; the
+owner's answers: test_island gets a coast to picture, a subtle tide, reef shallows by depth, the tide on Copperleaf
+too. Tag to suggest: `wa-4-done` (the owner pushes tags).
+- Changed (one cause a commit; details and numbers in water-track.md, WA-4 notes; all new looks with pixel water on,
+  pixel water off keeps the look of before, the tide has its own switch):
+  - **test_island's coast** (`tools/build-test-island.py`, the island track's tool, the owner's yes): two sea rocks, a
+    sandbar, a reef shelf and a wet flat with two tide pools, north and west of the town (its side unchanged).
+  - **A slow tide** (`walk/sea-tide.js`, new, on both pages, unit-tested): read from the tiles, no new data. Wet sand
+    joined to the sea is covered at high tide (sandbars, flats), the open sea's shallows beside land go dry at low
+    tide, sea water cut off from the open sea is a tide pool. Highs at 9:00 and 21:00. The shore texture carries the
+    high and low lines (RGBA on a tidal scene); a skin of sea over the covered sand; the dried shallows draw as wet
+    sand; the sand below the high line stays darker. Setting `water.tide` (Settings, Water: Tide).
+  - **Surf** in hard stepped bands (a white crest, a broken lace, white water at the line), **foam round sea rocks**
+    (a collar that pulses with the swell, rings), **reef shallows** (turquoise and clearer on `w` sea and near the
+    shore, the skirt matched), **kelp** at middle depth, **the sun's and the moon's path**, **a storm sea** from the
+    weather (`environment.storm`; heave, more whitecaps and surf, darker).
+- Risky: the shore texture is RGBA on a tidal scene (Copperleaf 7.5 MB instead of 1.9) and two more fields are
+  blurred at build (about 88 ms on Copperleaf in Node, in the existing slices); the water shader does more per sea
+  pixel (the surf bands, three kelp fronds, the path, the rock foam). The kind's fraction now carries the sea's
+  shallows below the index (a cove's calm stays above): anything else reading `aDK.y` must round, as the shader
+  does. `w` sea everywhere is turquoise now (Copperleaf's wide shallows too).
+- Verified: lint, typecheck, prettier, check:modules, `npm test` (1023, 0 failures after the merges, 6 new tide
+  tests), `check:smoke` before every game/ commit (all passed, Playwright 1.63.0). Pictures (validation/, not
+  committed; no page errors): look-water --scene=test_island before and after at noon and 22.5 (its two shots face
+  the cone: no sea in them, the same; water triangles 91,456 to 95,000, the high tide's skins); island-shots of
+  test_island before and after (the rock's collar, the reef shelf, calm pools); close-ups with the blur off from a
+  scratch script, before, after, and after with pixel water off (rocks by day and night, the flat at low tide, the
+  sandbar at high and low tide, the reef, the surf, the sun's and the moon's path, a storm, the skirt from high up);
+  Copperleaf's coast after (N, E, S, top-down).
+- For lane G: nothing needed. The tide reads `S` (wet sand) joined to the sea and `w` / `d`: a generated coast gets a
+  tide if it paints wet sand there; sandbars are `S` in the sea, tide pools sea water cut off from it.
+- For WA-5b (lane R): `waterKindLookup` knows only the nine looks, so a `reef` (or any new kind's) rectangle draws as
+  the scene's default kind, not `WATER_KIND_BASE`'s; coral patches for `reef`; and WA-5a's asks (rain rings on ice
+  and lava, flooded banks above the water, a hot spring's steam).
+- For WA-8: the tide's texture size and the sea's extra work belong in the water quality tiers.
+- For the owner, on the phone: Copperleaf's beach at noon and at night (the moon's path), with Pixel water on and off
+  and Tide on and off (Settings, Water), comparing the frame time; a stormy day on a coast (a run's forecast or the
+  debug weather).
+- Next for lane R: WA-5b (kinds as a texture, the new kinds drawn, water life).
+
+### Water track WA-5a (lane G) - new kinds' play, weather on water, shallows for others - 2026-10-25
+Branch `track/water` (main merged in at the start: hub HB-2 #196 and self-test #197; HANDOFF kept both sides; lane R's
+WA-4 and lane B's WA-7 commits merged in before each push). Plan approved in Plan Mode. The owner's answers: all six
+kinds (`rapids`, `hotspring`, `oasis`, `bog`, `reef`, `cave`); WA-6a's "shallows for others" taken here; small hooks
+in lane P's files allowed (lane P has no round-3 session); hot springs about one run in two. Tag to suggest:
+`wa-5a-done` (the owner pushes tags).
+- Changed:
+  - `logic/water-kinds.js` (new): the 15 kinds in their fixed order, the look each new kind borrows until WA-5b
+    (`WATER_KIND_BASE`) and the play table: lava and rapids shut (neither waded nor surfed), ice walked on (its `d`
+    too), the marsh 0.8 and the bog 0.6 of the wading speed, a hot spring heals, still water freezes. `wading.js`,
+    `surf.js` and `walk-view.js` (movePlayer's speed) read it; fishing, the data check (also `sc.waterKind` now),
+    the map and biome schemas and the Studio's water painter know the six.
+  - `logic/water-gen.js` `waterGenKinds` (mapgen.js: one call after `waterGenFalls`) and `waterGenReeds` (one call on
+    the finished scene): rapids rectangles on a river's steep stretches (2 m clear of roads and bridges), a hot spring
+    on 8% of routes (shallows, placed as a plunge pool: cuts nothing off), a marsh biome's pond a bog 40% of the time,
+    a dry place's pond an oasis, a cave's water cave water, a reed or two in a marsh hiding an item (`hide`).
+    **MAPGEN_VERSION 17.** Scenes keep their `waterKind`, so the renderer draws each new kind with the right old look.
+  - Shallows for others: boulders, rocks and flat stones and folk spots may stand in shallows you wade
+    (`waterGenShallows`), never deep water, lava, rapids, ice or a hot spring; wild Billies may wait in shallows inside
+    a grass patch (2 m further in a marsh). The "nothing in water" asserts (mapgen.test, mapgen-dials.test) allow a
+    rock in shallows.
+  - `logic/water-play.js` (new): a hot spring heals the whole team once a run when someone is hurt (`saveData.flags`,
+    a run's own copy); a hiding reed gives its item as you pass, once a run (flag in world metres); a run place with
+    marsh or bog water weights its wild odds by type (the row's `marsh`, set in `run-world.js`, read in `rules.js
+    spawn`).
+  - `logic/water-weather.js` (new): snow freezes still water into ice rectangles; a storm floods beside floodable
+    water and deepens a river's middle, never a road or the cells beside it, a door, the hub, an exit or a bridge's
+    end, checked with `mapgenUnreachable` (held back 4 m from the road, then left out, if an exit would be cut off);
+    from a kept dry copy. `run-world.js runWaterWeatherSync` lays it when the world goes in and on each new run day
+    (the walk frame asks every frame, a key compare), then remakes the views and the walk view.
+  - test_water: a hot spring, rapids (shallow and deep) and a bog, painted after the ground's patches; checks: wade
+    into the hot spring and the bog, the rapids shut to wading and to Surf, walk out onto the ice pool.
+  - Tests: water-kinds.test.mjs, water-play.test.mjs, water-weather.test.mjs (new); water-gen.test.mjs (kinds placed,
+    shallows for others, same seed same kinds, no hot spring in a town); wading and surf tests (rapids, bog, ice);
+    island-contract's schema test (the schema is `WATER_KINDS`, the renderer's looks its start). Remade on purpose:
+    rng.test's hash (no water in that scene: only gen.v), the run-start snapshot (only mapgenV), the golden 'water'
+    (a rapids rectangle, two rocks in its shallows) and 'feature' (a reed's find) scenes; every golden's tiles,
+    heights and steps unchanged.
+- Found (where the brief or the docs were wrong):
+  - An unknown kind drew with the scene's look but was **waded and surfed** (only lava and ice were shut), and **ice
+    was not walkable**; now from the play table.
+  - **No water encounters, hidden items or terrain slowdown existed**; encounters are visible Billies in tall grass
+    from one pool per place, so "their own encounter pools" is a type weighting of the place's pool (the game's types
+    have no Bug or Poison).
+  - Scenes are made once per run; the weather never reached scene data; the run's day changes only on arrival.
+  - No marsh or desert biome: in runs only thicket has marsh water, and no run biome is dry (oases appear outside
+    runs only). `test_water`'s ground patches paint over water (built pools placed after them).
+- Risky:
+  - **MAPGEN_VERSION 17** on this branch (main 8; PR #194 takes it to 13): whichever merges second remakes rng.test's
+    hash and the run-start snapshot on purpose. Generated scenes change where a river has rapids, a marsh pond, a
+    cave, rocks by shallows, and on 8% of routes (a hot spring).
+  - A storm remakes every view (seamlessWorld.gen) once on the day it comes; a flood lays shallows on banks higher than
+    the water's level (the look is lane R's to judge). Ice is walked on everywhere, test scenes included (`walk` flags
+    still win). Tap-to-walk and people may now cross ice.
+  - Hooks outside lane G (the owner's yes): wading.js, surf.js, walk-view.js (movePlayer, encounterCandidates,
+    wadeSpeedHere), walk-view-gl.js (the frame's sync call), rules.js spawn, run-world.js, fishing.js, data-checks.js.
+- Verified: lint, typecheck, check:modules, check:data; `npm test` 1023/1023; `npm run test:slow` 73/73;
+  `check:smoke` before every game/ commit (all passed, Playwright 1.63.0); check-fast's run checks (6 of 6); the
+  test maps' walking checks in the page (84 of 84, test_water 11 of 11). In the page with the run fixture and a forced
+  forecast: the `water by the weather` debug line on arrival, flooded and frozen places, none cut off, 239 of 240 ice
+  cells walkable in a frozen town; no page errors. Sweeps: 200 routes (18 hot springs, rapids on 32, 10 bogs, 10
+  oases, every exit reached); storms on 93 wet routes (90 flood, none cut off, 6 ms a place). Not run: look-water
+  pictures (lane R) and the quick-check baseline (WA-8).
+- For lane R (its files, not edited here): draw the six (WA-5b; `WATER_KIND_BASE` says which look each borrows now:
+  generated scenes lay them as `waters` rectangles over a scene that keeps its old `waterKind`); rain rings
+  (`walk/fountains-weather.js:336`) also ring ice and lava (`waterAt` gives the kind); flooded banks sit above the
+  water's level; `environment.js environmentHistory` replays the real clock's weather, not a run's forecast (wetness
+  and lying snow ignore it); a hot spring's steam.
+- For lane P: the hooks above; wild Billies in shallows are drawn without the waterline cut (`wadeItem` is the
+  player's and the buddy's); the slip on ice waits for TR-10.
+- Next: WA-5b (lane R, the kinds drawn), WA-9 (lane G, Studio tools); the owner's phone look at a storm's flood, a
+  frozen pond and a hot spring (a debug forecast or the run fixture).
+
 ### Water track WA-2a (lane R) - waterfalls drawn, the flow map - 2026-10-25
 Branch `track/water` (main merged in at the start: nothing new; lane P's WA-6b and lane G's WA-2b merged in before
 the pushes). Plan approved in Plan Mode; the owner's answers: the wake's call switched in walk-view.js by this lane;
