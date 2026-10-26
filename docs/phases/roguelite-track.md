@@ -1113,7 +1113,12 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   - **RO-3d** Ortega silkworm (insect, then shell, then flyer; the early bug) and the Bloomberg plant (plant).
   - **RO-3e** the Knight frog (hopper) and the fossil pair: Carnegie trilobite (crab), Vanderbilt rail snake
     (serpent).
-  - **RO-3f** Satoshi (blob, the mythical copycat) and the Hastings cave bat (flyer).
+  - **RO-3f** Satoshi (blob, the mythical copycat) and the Hastings cave bat (flyer). Done 2026-10-26 (HANDOFF): the
+    owner's picks: **Pseudonymph** (dex 51, Steel, mythical, one stage; **Fork**, a new move: takes the foe's types
+    for 5 turns; met only as a route's rarer one, 2% of routes, once a run, at the rarer one's level; in no pool and
+    no regional dex) and **Pilotbat → Bingebat** (52-53, common, Flying → Flying/Psychic at 18, Autoplay; cave 30,
+    thicket 12, jungle 6). Two new rules: `battle.forkTurns` with the move's `fx.copyTypes`, and
+    `run.wild.rare.myth`.
   - **RO-3g** legendaries Mansa Musa (quad) and Rockefeller (biped), the Eevee-style line, pools and a balance pass.
     **The owner (2026-10-26): the Swift line is the Eevee-style line** (in place of the draft "Pivotlet"): Swiftlet
     the base, branching into one era form per type (Erastar already "changes colour each era"); which eras, their
