@@ -73,7 +73,7 @@ expose({
  *   types?: Record<string, number>, money?: number, team?: number, badgeTypes?: Record<string, number>,
  *   opened?: Record<string, number>, last?: Record<string, number>, lastby?: Record<string, number>,
  *   history?: Record<string, number>, rematch?: number, rel?: Record<string, number>, beans?: number,
- *   gifted?: Record<string, number> }} StoryState */
+ *   gifted?: Record<string, number>, chapter?: number }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
  * reads, for the Studio's reference (Project Story S3) */
@@ -118,6 +118,11 @@ export const CONDITION_KINDS = {
   rel: { id: true, count: true, about: 'your level with a hub person (RL-S2, relations.json): rel:hazel >= 2' },
   beans: { id: false, count: true, about: 'Beans on hand, the gift currency (RL-S2): beans >= 1' },
   gifted: { id: true, count: false, about: 'you gave them a gift since the last run (RL-S2): gifted:hazel' },
+  chapter: {
+    id: false,
+    count: true,
+    about: 'the story’s chapter (RL-S2: one an Expedition, moved on by its boss’s scene): chapter >= 2',
+  },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
 export const WORDS = new Set(['and', 'or', 'not']);
@@ -380,6 +385,8 @@ export function termValue(c, S) {
       return S.beans || 0;
     case 'gifted':
       return !!(S.gifted || {})[c.id];
+    case 'chapter':
+      return S.chapter || 1;
   }
 }
 /** whether a condition holds for the state @param {Cond | string} c @param {StoryState} S @returns {boolean} */
@@ -458,6 +465,7 @@ export function storyStateOf(save, o = {}) {
        given since the last run */
     rel: RELATIONS && meta.rel ? relLevels(meta, RELATIONS) : {},
     beans: meta.beans || 0,
+    chapter: meta.chapter || 1,
     gifted: Object.fromEntries(Object.entries(meta.gifted || {}).filter(([, n]) => n === (meta.runs || 0))),
   };
 }

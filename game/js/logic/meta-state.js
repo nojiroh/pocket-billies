@@ -44,6 +44,7 @@ export function newMeta() {
     runs: 0,
     wins: 0,
     expedition: 1,
+    chapter: 1,
     badges: {},
     history: [],
   };
@@ -72,6 +73,7 @@ export function validMeta(o) {
   return (
     o.wins <= o.runs &&
     wholeIn(o.expedition, 1, META_EXPEDITIONS) &&
+    wholeIn(o.chapter, 1, META_EXPEDITIONS) &&
     recordOf(o.unlocks, META_IDS, v => v === 1) &&
     recordOf(o.buildings, META_IDS, v => wholeIn(v, 0, 99)) &&
     recordOf(o.badges, 32, v => v === 1) &&

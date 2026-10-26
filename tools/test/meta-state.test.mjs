@@ -20,6 +20,7 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
     runs: 0,
     wins: 0,
     expedition: 1,
+    chapter: 1,
     badges: {},
     history: [],
   });
@@ -38,6 +39,7 @@ test('meta: broken or tampered shapes are refused', () => {
     { ...ok, scrap: 1.5 },
     { ...ok, crests: '3' },
     { ...ok, beans: -1 },
+    { ...ok, chapter: 0 },
     { ...ok, rel: { hazel: -1 } },
     { ...ok, gifted: { hazel: 1.5 } },
     { ...ok, research: 1e13 },

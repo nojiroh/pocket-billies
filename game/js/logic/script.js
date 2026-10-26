@@ -207,6 +207,12 @@ export async function runScript(tree, stage, o) {
       case 'beans':
         runBeans(save, count(a));
         return;
+      /* RL-S2: the story's chapter moves on, never back */
+      case 'chapter': {
+        const M = save.meta;
+        if (M) M.chapter = Math.max(M.chapter || 1, Math.min(9, Math.floor(count(a))));
+        return;
+      }
       case 'gift':
       case 'rel': {
         const M = save.meta;

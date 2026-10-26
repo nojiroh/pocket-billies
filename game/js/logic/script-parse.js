@@ -81,6 +81,10 @@ export const SCRIPT_COMMANDS = {
       'give a hub person a gift (RL-S2, relations.json): a Bean, points with them; nothing when you have too few Beans or gave them one since the last run (gate it with "[if beans >= 1 and not gifted:hazel]")',
   },
   rel: { args: ['who', 'n'], about: 'points with a hub person, as for a favour done (RL-S2): rel hazel 2' },
+  chapter: {
+    args: ['n'],
+    about: 'move the story on to chapter n (RL-S2; never back): an Expedition’s boss scene, "chapter 2"',
+  },
   end: { args: [], about: 'stop the script here' },
   /* a cutscene's own (game/data/cutscenes, docs/CUTSCENES.md: logic/cutscene-set.js reads them) */
   actor: {

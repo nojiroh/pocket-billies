@@ -348,6 +348,8 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
             problems.push(at, `${n.name} ${a}, nobody in relations.json people`);
           else if ((n.name === 'rel' && !/^-?\d+$/.test(b || '')) || (n.name === 'beans' && !/^\d+$/.test(a || '')))
             problems.push(at, `${n.name}: ${n.name === 'rel' ? b : a} is not a whole number`);
+          else if (n.name === 'chapter' && !/^[1-9]$/.test(a || ''))
+            problems.push(at, `chapter ${a}: a chapter from 1 to 9`);
           else if (n.name === 'quest') {
             if (!quests[a]) problems.push(at, `quest ${a}, no such quest (story.json quests)`);
             else if (!quests[a].stages.includes(b)) problems.push(at, `quest ${a} has no stage ${b}`);

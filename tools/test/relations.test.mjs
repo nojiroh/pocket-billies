@@ -117,3 +117,13 @@ test('Beans found: into meta at once, counted on the run; a won run pays beansWi
   const crate = JSON.stringify(GAME_DATA.events.events.beans_crate);
   assert.match(crate, /"\s*beans \d"/, 'the crate holds Beans');
 });
+
+test('the chapter: chapter >= n reads meta.chapter; the command moves it on, never back', async () => {
+  const save = /** @type {any} */ ({ story: {}, items: {}, pyramids: {}, meta: { ...newMeta() } });
+  const holds = c => conditionHolds(c, storyStateOf(save));
+  assert.equal(holds('chapter = 1'), true);
+  await runScript(parseScript(['chapter 2', 'chapter 1']), { say: () => {}, choose: () => 0 }, { save, id: 'test' });
+  assert.equal(save.meta.chapter, 2);
+  assert.equal(holds('chapter >= 2'), true);
+  assert.equal(validMeta(save.meta), true);
+});
