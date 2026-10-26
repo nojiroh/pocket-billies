@@ -65,6 +65,11 @@ town node needs it.
   budget with Unstable abominations past it, Augments from the bots' salvage. SP-1 (an art spike on the phone) built
   2026-10-25 on `ccr-dde1a5bd-nx5zdl` (the owner's word: `track/splicing` didn't exist yet), waiting on the phone's
   bake times for its exit; SP-5 waits for RL-14. Tags `sp-N-done`. Branch `track/splicing`.
+- **Residents track** (docs/phases/residents-track.md, the owner's brief and answers 2026-10-26): invite run NPCs to
+  Copperleaf with a favour (a run quest); they move in win or lose and open a service at an empty building (store,
+  inn, library, Workshop, station, ranch, a cottage) with up to 3 levels in the existing currencies, one capped power
+  level each, the rest options. RS-0 (the plan, with research) done 2026-10-26 on `ccr-65e11839-9p92dx`; RS-1 (data
+  and save) next. Tags `rs-N-done`. Branch `track/residents` (the owner makes it from main).
 - **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
   out of any room's doorway; "Go outside" stays with the card closed) done 2026-10-24; TW-1 (a town layout: street,
   square, houses with gardens, mapgen's `town` kind) done 2026-10-24; TW-2 (townsfolk, animals, chat, named locals)

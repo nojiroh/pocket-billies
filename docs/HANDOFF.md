@@ -2,6 +2,23 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Residents track RS-0 - the plan: invite run NPCs to Copperleaf, upgradable services - 2026-10-26
+Branch `ccr-65e11839-9p92dx` (the session's own; `track/residents` doesn't exist yet). Plan Mode, online research,
+plan approved. Owner's answers: inviting is a quest for the NPC (the first one free); they move in win or lose;
+half and half (one capped power level per resident, the rest options); the existing four currencies.
+- Changed: docs/phases/residents-track.md (new: decided, verified facts, research with sources, design, sessions
+  RS-1..RS-5, Ask me before, risks); ROADMAP (Tracks alongside), BRANCHES (`track/residents`), this entry. No code.
+- Risky or unfinished: nothing built. The roster is a draft (roles only). The Gene Bank's resident waits for the
+  splicing track, the Mechanic's power level for RL-14.
+- Verified (what ran, what passed): read on main 2314da82: copperleaf.json's acts (store `shop`; inn, library,
+  Workshop, Gene Bank `enter`; 10 cottages `house`; one named person, Juniper), buildings.json, unlocks.json,
+  currencies.json, events.json, banter.json, the file names the track cites. Docs only, so no quick check run.
+- Decisions I made (and why): residents' levels are ordinary unlocks.json rows `at` their building with a
+  `resident:` requirement, so RL-11's board, `meta.buildings` and `run.fx` are reused, not copied.
+- Questions waiting for the owner: the roster's names and looks; one invite per run and no cottage cap (rec); the
+  word "residents" (rec). Please make `track/residents` from main and push the tag `rs-0-done`.
+- Next session starts with: RS-1 (data and save) on `track/residents`, in Plan Mode.
+
 ### Hub track - the placing half of HB-5 and HB-7: Skyline Station on its headland, the new buildings on their plots - 2026-10-25
 Branch `props/hub-placing` (the session's brief; from main aea7a48 after PR #201). Plan approved in Plan Mode. The
 owner's answers: the station side-on, its rail straight out to sea (no new art); the Gene Bank's door opens its room
