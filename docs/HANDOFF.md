@@ -2,6 +2,60 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Side session - Kappi the Wise, a capybara, replaces Hazel - 2026-10-26
+Branch `ccr-5f47d3ef-j66nm0`, from main b87b818d (no pull request yet). Plan approved in Plan Mode. The owner's answers:
+the exact swap (Hazel's role, gift, favour and Potion bonus); name tag "Kappi", "the Wise" in lore and their
+introduction; they/them; a quad rig and a pixel portrait that blinks and talks; Kappi inherits S4 (a former Bureau
+researcher) and S6 (Kappi vs Blake); lines lean on Billies napping on them, the yuzu bath, unhurried calm and grazing;
+a low soft click for a voice; Hazel's unused sprites deleted; the drafted lines approved as written; the lab tab says
+"Chosen's lab"; a yuzu bath tub in the lab. Research online: no "Kappi" capybara exists; the nearest is Bandai's
+Kapibara-san (onsen, "at your own pace"), so nothing of its look or motto is used. project-story.md has the decisions.
+- Changed (one cause per commit):
+  - Renames: person `hazel` -> `kappi` (with `thanks_hazel` -> `thanks_kappi`: banterOwner reads the person from
+    `thanks_<id>`), `hazel_lab` -> `kappi_lab`, quest `fav_hazel` -> `fav_kappi`, banter ids `hazel_*`/`fav_hazel_*` ->
+    `kappi_*`/`fav_kappi_*`. Kept: the song `hazel`, the opening's spot `hazel` and shot `hazelRuns`, the hazel tree,
+    the history in HANDOFF, CHANGELOG's old lines, meta.json's release notes.
+  - Deleted game/art/people/hazel_*.png (nothing loaded them; the unused-art report missed them because the song and
+    the tree are also named hazel).
+  - Names (speaker, name tags, lore, Field Guide, the lab's text and tab, others' mentions in they/them), then Kappi's
+    lines (the approved drafts; two new lab lines, ids ba82 and ba1a).
+  - Voice: sound.js blip, a soft click then a low falling filtered note.
+  - Body: bodyPlans.json form `kappi` (quad, a stub tail) with a new `talk` flag (a mouth-open face frame; no Billie
+    has it, so their bakes are unchanged); tools/paint-kappi.mjs paints its drawing sheet (placeholders/kappi.png) and
+    bakes it (billionaires/kappi.png, rigs-next.js `kappi`); `--preview=dir` writes both views and the faces.
+  - Creature people: people/<id>.json `creature: {rig, ht}` (person.schema.json, game-data.d.ts). person-art.js lookOf
+    gives a creature look; personFrame draws the rig (walk cycle, front/back, mirrored right, acts mapped to rig poses,
+    ppm from ht), so the walk world, rooms, cutscenes and battle poses use it unchanged; drawPortrait shows its head
+    at twice its size in the people's portrait box. Frames drawn before the rig's sheet loads are not cached
+    (`personArtMissing`). npm run modules routed rigParts and rigPose through hooks.js.
+  - The yuzu bath: tools/build-props-kappi.py (scenery `yuzu_bath`, a low-poly tub with water, yuzu, a step and a
+    wisp of steam), placed in int_lab beside Kappi.
+  - Docs: VISION, ROADMAP, project-story.md (owner decisions 2026-10-26), SCRIPTS, CUTSCENES, STUDIO, TESTING, BRANCHES,
+    CHANGELOG.
+- Risky or unfinished:
+  - Kappi's art is a first pass painted by a script; edit tools/paint-kappi.mjs (or export/import the sheet with
+    tools/bake-placeholders.mjs) to redraw it.
+  - A creature person in a battle (personBattleFrames/Pose: throw, cheer, react) is untried: nobody fights as Kappi
+    until S6, which needs a creature trainer's battle art anyway.
+  - The rig's sheet loads on first use: Kappi may be missing for a moment the very first time; watch for a blank.
+  - The Studio's People editor still edits kappi.json's `look` (kept, unused while `creature` is set).
+  - The tub's picture went into scene/next/island/ (build-props-island.py's bake folder).
+  - tools/check-quick.py --smoke printed "no problems" when Chromium could not start (its browser steps never ran):
+    not fixed here. Locally the pinned Playwright (1.56) wants Chromium 1194; ran through a scratch
+    PLAYWRIGHT_BROWSERS_PATH with links to /opt/pw-browsers' 1243 (chrome-linux -> chrome-linux64, headless_shell).
+- Verified:
+  - Every commit: lint, typecheck, check:modules, format:check, check:data, the data text check, unit tests (1284),
+    smoke 6 of 6 (code and data commits).
+  - In the game, headless: the lab with Kappi beside the tub, Kappi's talk box (portrait, name), the walk frames in
+    every direction next to the Chosen's (68.8 against 66.5 px/m).
+  - Full quick check on adb3df82: 2065 s, 45 steps, 37 passed. Problems: "Time, weather and rooms" (autumn stopped
+    drawing) passes alone here and on the base; "room light" fails the same on the base b87b818d; the other six (sky_portal floating, the town shop's Perk, the run map
+    music, the payout jingles, the run sheet's day chip, two cave song fingerprints) are outside this diff; their run on
+    the base was still going at this commit.
+- Next: the owner's phone test (a new game: Kappi in the opening; the lab: tap Kappi, the voice, the tub's steam; a
+  lost run's return; a Bean for Kappi) and a debug log; a pull request into main when the owner says; then S4
+  (Kappi's past) and S6 (Kappi vs Blake).
+
 ### Merge batch 2: PRs #219 (renderer) and #217 (roster RO-3a..RO-3d) into main - 2026-10-26
 Branch `ccr-ed7f65cb-dk7xqw` (the owner: "look at the open PRs and merge them to main"). Both conflicted with main, so
 they were merged here (merge commits) for one PR.
