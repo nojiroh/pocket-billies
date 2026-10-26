@@ -20,6 +20,7 @@ import {
   MOVES,
   PERKS,
   QUESTS,
+  RELATIONS,
   RULES,
   SET_PIECES,
   SHOPS,
@@ -29,8 +30,11 @@ import {
   UNLOCK_DATA,
   gameData,
   trainersAt,
+  typeEffectiveness,
 } from './game-data.js';
 import { canEnter, encounterStock, encountersHere, gateText, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
+import { rivalSize } from './logic/rival.js';
+import { relGift } from './logic/relations.js';
 import { modBossHp, modFoeLevels, modsMake } from './logic/modifiers.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
@@ -48,6 +52,7 @@ import { eventAt } from './logic/encounters.js';
 import { routeRareSpots, routeTrainersPlace, runRouteTrainers } from './logic/route-trainers.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { questOffer, questTake } from './logic/run-quests.js';
+import { conditionHolds, storyStateOf } from './logic/conditions.js';
 import { runUnlocks } from './logic/unlocks.js';
 import { runStartOn, runStartPlan } from './logic/run-start.js';
 import { loadAllMaps } from './map-files.js';
@@ -1119,6 +1124,65 @@ async function runFullTest(mode) {
           }
         },
         4,
+        60
+      );
+    /* RL-S2: Blake and the hub folk, on a copy of the save: a run at Expedition II knows the lead he counters, each of
+       his places has his foe (person chad, never blocking), his team one Billie bigger by meetings as rules.json
+       run.rival says, his ace of a type that beats the lead's; a Bean for Hazel raises her level and the story reads it
+       (rel:hazel); the run takes off with the levels' bonuses. Then the save as it was */
+    if (typeof rivalSize === 'function' && typeof relGift === 'function' && !selfTest.stop)
+      await phase(
+        'Blake in a run, and a Bean for Hazel',
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData();
+          try {
+            if (s.run) runRestore(s);
+            s.meta.history = [];
+            let plan = null;
+            for (let k = 0; k < 20 && !plan; k++) {
+              const p = runStartPlan(
+                'SELFTESTRIVAL' + k,
+                { ...data, unlockData: UNLOCK_DATA },
+                { unlocks: [], expedition: 2 }
+              );
+              if (p.map.nodes.filter(n => n.type === 'rival').length === 2) plan = p;
+            }
+            if (!plan) throw new Error('no seed of 20 met Blake twice at Expedition II');
+            s.meta.beans = 1;
+            if (!relGift(s.meta, 'hazel', RELATIONS)) throw new Error('the Bean for Hazel wasn’t given');
+            const holds = (/** @type {string} */ c) => conditionHolds(c, storyStateOf(s));
+            if (!holds('rel:hazel >= 1 and gifted:hazel and beans = 0'))
+              throw new Error('the story doesn’t read the gift: ' + JSON.stringify(storyStateOf(s).rel));
+            runStartOn(s, plan);
+            const run = s.run,
+              lead = SPECIES[run.rival.lead];
+            if (!lead || run.rival.lead !== s.team[0].sp) throw new Error(`the lead: ${run.rival.lead}`);
+            if (!run.rel || run.rel.hazel !== 1)
+              throw new Error(`the levels it took off with: ${JSON.stringify(run.rel)}`);
+            const blakes = Object.values(
+              runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run })
+            )
+              .filter(F => F.runFoe === 'rival')
+              .sort((a, b) => a.runNode - b.runNode);
+            if (blakes.length !== 2) throw new Error(`${blakes.length} of Blake's foes for 2 places`);
+            blakes.forEach((F, k) => {
+              if (F.who !== 'chad' || F.blocks) throw new Error(`his foe: ${F.who}, blocks ${F.blocks}`);
+              if (F.team.length !== rivalSize(RULES.run.rival, k))
+                throw new Error(`meeting ${k + 1}: ${F.team.length} Billies`);
+              const ace = SPECIES[F.team[0].sp];
+              if (!ace.types.some(t => typeEffectiveness(t, lead.types) > 1))
+                throw new Error(`his ace ${ace.name} doesn't beat ${lead.name}`);
+            });
+            return `Blake twice against ${lead.name}: ${blakes.map(F => F.team.map(e => SPECIES[e.sp].name).join('+')).join(', then ')}; Hazel level 1`;
+          } finally {
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
         60
       );
     /* RL-12b: a run's waystation and stall, on a copy of the save: the first seed (SELFTESTWAY0, 1, ...) whose map has
