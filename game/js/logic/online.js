@@ -5,7 +5,7 @@
    (tools/test/online.test.mjs); friends.js does the Firestore side.
    - Who is a friend: each pair's newest request decides (an old "removed" from one side no longer undoes a newer
      "accepted" from the other, the bug SECURITY.md listed).
-   - Blocks: blocks/<uid> { list } is the owner's own, read by nobody else (the rules read it to refuse a request).
+   - Blocks: blocks/<uid> { list, names } is the owner's own (names: what each was called, for the Unblock list), read by nobody else (the rules read it to refuse a request).
    - Reports: reports/<target> { n, ok } counts the accounts that reported a target, each once
      (reports/<target>/by/<uid>); a target with ONLINE_HIDE_AT reports more than the moderator last cleared is hidden
      for everyone until the moderator looks at it. */
@@ -20,6 +20,7 @@ expose({
   blockListClean: [() => blockListClean, v => (blockListClean = v)],
   // @ts-expect-error -- replaced on purpose
   friendListFrom: [() => friendListFrom, v => (friendListFrom = v)],
+  onlinePlayOn: [() => onlinePlayOn],
   // @ts-expect-error -- replaced on purpose
   reportHidden: [() => reportHidden, v => (reportHidden = v)],
   reportTarget: [() => reportTarget],
@@ -59,6 +60,11 @@ export function blockListClean(v) {
   if (!Array.isArray(v)) return [];
   return [...new Set(v.filter(u => typeof u === 'string' && u.length > 0 && u.length <= 128))].slice(0, BLOCKS_MOST);
 }
+
+/** whether a player has turned on Online play (Settings; off by default: the owner, 2026-10-26): global views
+ * (the Showcase's browsing, GTS, Surprise Trade, random matches) show only with it; friends work either way
+ * @param {any} prefs saveData.preferences */
+export const onlinePlayOn = prefs => !!(prefs && prefs.online === true);
 
 /** a report target's id: what kind of thing and whose, as one Firestore id ('user_<uid>')
  * @param {'user'} kind @param {string} id */

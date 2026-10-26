@@ -13,7 +13,7 @@ import { expose } from './test-globals.js';
 import { account, accountOn, closeModal, mapIdAt, mapOffsetInView, modal, provide, render, toast } from './hooks.js';
 import { COATS, LOCATIONS, SPECIES } from './game-data.js';
 import { billyName, cleanName, plural } from './logic/rules.js';
-import { friendListFrom } from './logic/online.js';
+import { REPORT_REASONS, blockListClean, friendListFrom, reportHidden, reportTarget } from './logic/online.js';
 import { escapeHtml, saveData, saveHold, uiState } from './game-state.js';
 import { personWalkFrames, portraitHTML, warmPerson } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
@@ -26,7 +26,11 @@ expose({
   FRIEND_CODE_ALPHABET: [() => FRIEND_CODE_ALPHABET],
   addFriend: [() => addFriend, v => (addFriend = v)],
   answerFriendRequest: [() => answerFriendRequest, v => (answerFriendRequest = v)],
+  blockPlayer: [() => blockPlayer, v => (blockPlayer = v)],
   cleanFriend: [() => cleanFriend, v => (cleanFriend = v)],
+  friendBlockNames: [() => friendBlockNames, v => (friendBlockNames = v)],
+  friendReportCheck: [() => friendReportCheck, v => (friendReportCheck = v)],
+  friendShownName: [() => friendShownName, v => (friendShownName = v)],
   friendWatchError: [() => friendWatchError, v => (friendWatchError = v)],
   friendWorldItems: [() => friendWorldItems, v => ((friendWorldItems = v), provide({ friendWorldItems }))],
   friends: [() => friends],
@@ -38,8 +42,11 @@ expose({
   publishToFriends: [() => publishToFriends, v => (publishToFriends = v)],
   refreshFriends: [() => refreshFriends, v => (refreshFriends = v)],
   removeFriend: [() => removeFriend, v => (removeFriend = v)],
+  reportPlayer: [() => reportPlayer, v => (reportPlayer = v)],
+  reportSheet: [() => reportSheet, v => (reportSheet = v)],
   syncFriends: [() => syncFriends, v => (syncFriends = v)],
   timeAgo: [() => timeAgo, v => (timeAgo = v)],
+  unblockPlayer: [() => unblockPlayer, v => (unblockPlayer = v)],
   watchFriends: [() => watchFriends, v => (watchFriends = v)],
 });
 /* eslint-enable no-func-assign */
@@ -59,6 +66,11 @@ const friends = {
   pubT: 0,
   pubSig: '',
   err: '',
+  /* ON-1: who I blocked (blocks/<me>: their uids, and what each was called for the Unblock list), and per player
+     whether their name is hidden by reports (reports/user_<uid>) */
+  blocked: [],
+  blockNames: {},
+  hidden: {},
 };
 provide({ friends }); /* to-module */
 const FRIEND_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -93,6 +105,15 @@ export async function initFriends() {
       }
       await ref.set({ code: friends.code }, { merge: true });
     }
+    /* ON-1: my block list, mine alone (the rules read it to refuse a blocked player's request) */
+    const bl = await db
+      .collection('blocks')
+      .doc(friends.uid)
+      .get()
+      .catch(() => null);
+    const bd = (bl && bl.exists && bl.data()) || {};
+    friends.blocked = blockListClean(bd.list);
+    friends.blockNames = bd.names && typeof bd.names === 'object' && !Array.isArray(bd.names) ? bd.names : {};
     publishToFriends(true);
     watchFriends();
     friends.unsub.push(
@@ -103,6 +124,7 @@ export async function initFriends() {
           friends.inc = q.docs.map(d =>
             Object.assign({ id: d.id }, d.data(), { fromName: cleanName(d.data().fromName, 40) })
           );
+          for (const r of friends.inc) if (r.status === 'pending') friendReportCheck(r.from);
           syncFriends();
         }, friendsError)
     );
@@ -131,7 +153,9 @@ function friendsError(e) {
 /* the two sides of each request decide who is a friend */
 function syncFriends() {
   /* ON-1: each pair's newest request decides (logic/online.js) */
-  const nl = friendListFrom(friends.list, friends.uid, friends.inc, friends.out);
+  const nl = friendListFrom(friends.list, friends.uid, friends.inc, friends.out).filter(
+    u => !friends.blocked.includes(u)
+  );
   if (nl.join() !== friends.list.join()) {
     friends.list = nl;
     friendsDb().collection('users').doc(friends.uid).set({ friends: nl }, { merge: true }).catch(friendsError);
@@ -147,6 +171,7 @@ function watchFriends() {
       friends.watch.delete(u);
       delete friends.data[u];
     }
+  for (const u of friends.list) friendReportCheck(u);
   for (const u of friends.list)
     if (!friends.watch.has(u))
       friends.watch.set(
@@ -206,6 +231,95 @@ function friendWatchError(u, e) {
   }, 60000);
 }
 /* what friends see of you: written when it changes, at most every 20 s (where you stand, every 60 s) */
+/* ON-1: a name reported by enough players (logic/online.js reportHidden) shows as "Trainer" to everyone; looked up
+   once per player a session */
+function friendReportCheck(u) {
+  if (!u || Object.hasOwn(friends.hidden, u)) return;
+  friends.hidden[u] = false;
+  friendsDb()
+    .collection('reports')
+    .doc(reportTarget('user', u))
+    .get()
+    .then(s => {
+      friends.hidden[u] = reportHidden(s.exists ? s.data() : null);
+      if (friends.hidden[u]) refreshFriends();
+    })
+    .catch(() => {});
+}
+/** the name to show for a player: theirs, unless reports hid it @param {string} u @param {string} [name] @param {string} [or] */
+function friendShownName(u, name, or = 'Friend') {
+  return friends.hidden[u] ? 'Trainer' : name || or;
+}
+/* ON-1: block a player: they leave my friends, their requests go, and the rules refuse their new ones */
+async function blockPlayer(u, name) {
+  if (!u || u === friends.uid) return;
+  friends.blocked = blockListClean([...friends.blocked, u]);
+  friends.blockNames = Object.assign({}, friends.blockNames, { [u]: cleanName(name || '', 40) || 'Trainer' });
+  try {
+    await friendsDb().collection('blocks').doc(friends.uid).set({ list: friends.blocked, names: friendBlockNames() });
+    for (const r of friends.inc) if (r.from === u && r.status === 'pending') await answerFriendRequest(r.id, false);
+    if (friends.list.includes(u)) await removeFriend(u);
+    toast(`${friends.blockNames[u]} is blocked. They can’t add you or see you.`);
+  } catch (e) {
+    friendsError(e);
+  }
+  refreshFriends();
+}
+async function unblockPlayer(u) {
+  friends.blocked = friends.blocked.filter(x => x !== u);
+  delete friends.blockNames[u];
+  try {
+    await friendsDb().collection('blocks').doc(friends.uid).set({ list: friends.blocked, names: friendBlockNames() });
+  } catch (e) {
+    friendsError(e);
+  }
+  refreshFriends();
+}
+/* the stored names: only the blocked players', short */
+function friendBlockNames() {
+  return Object.fromEntries(friends.blocked.map(u => [u, cleanName(friends.blockNames[u] || '', 40) || 'Trainer']));
+}
+/* ON-1: report a player once: the count and my own report in one batch (firestore.rules checks each against the
+   other); a reason from REPORT_REASONS */
+async function reportPlayer(u, reason) {
+  if (!u || u === friends.uid || !REPORT_REASONS.includes(reason)) return;
+  const db = friendsDb(),
+    ref = db.collection('reports').doc(reportTarget('user', u)),
+    mine = ref.collection('by').doc(friends.uid);
+  try {
+    const cur = await ref.get(),
+      b = db.batch();
+    b.set(ref, cur.exists ? { n: (cur.data().n || 0) + 1, ok: cur.data().ok || 0 } : { n: 1, ok: 0 });
+    b.set(mine, { reason, t: Date.now() });
+    await b.commit();
+    toast('Thanks. The report went to the game’s moderator.');
+  } catch (e) {
+    /* a second report from the same account is refused by the rules: it counted the first time */
+    toast(
+      e && e.code === 'permission-denied'
+        ? 'You reported them already.'
+        : 'The report didn’t go through. Try again later.'
+    );
+  }
+}
+function reportSheet(u, name) {
+  const why = { name: 'Their name', picture: 'Their look', cheating: 'Cheating', other: 'Something else' };
+  modal({
+    title: `Report ${escapeHtml(friendShownName(u, name, 'this player'))}?`,
+    html: '<p>What’s wrong? The game’s moderator sees who reported and why. A name three players report is hidden until the moderator looks at it.</p>',
+    btns: [
+      ...REPORT_REASONS.map(k => ({
+        l: why[k] || k,
+        c: 'quiet',
+        f: () => {
+          closeModal();
+          reportPlayer(u, k);
+        },
+      })),
+      { l: 'Cancel', c: 'gold', f: closeModal },
+    ],
+  });
+}
 function publishToFriends(now) {
   if (!friends.on || !saveData.started || saveHold) return;
   /* RL-7: on a run your friends see that, not where: a run's places and scenes are made from its seed and mean
@@ -339,7 +453,7 @@ export function friendsHTML() {
     return `<section class="tpanel pf-friends">${head}<p class="note">Friends work when you’re signed in, and this copy of the game has no accounts.</p></section>`;
   if (!friendsOn())
     return `<section class="tpanel pf-friends">${head}<p class="note">Sign in with Google to add friends: you’ll see where they are, with their partner Billie, on your map and in the world.</p><button class="pb small" data-a="acc-in">Sign in</button></section>`;
-  const inc = friends.inc.filter(r => r.status === 'pending'),
+  const inc = friends.inc.filter(r => r.status === 'pending' && !friends.blocked.includes(r.from)),
     wait = friends.out.filter(r => r.status === 'pending');
   const rows = friends.list
     .map(u => {
@@ -348,15 +462,16 @@ export function friendsHTML() {
         p = d.partner;
       return `<div class="fr-row">
   <span class="fr-face">${typeof portraitHTML === 'function' ? portraitHTML('friend:' + u, 44) : ''}</span>
-  <span class="fr-t"><b>${escapeHtml(d.name || 'Friend')}</b><small>${a.place ? `In ${escapeHtml(a.place)} · ${timeAgo(a.t)}` : 'Not seen yet'}</small>${p && SPECIES[p.sp] ? `<small class="fr-pt">with ${escapeHtml(p.name || SPECIES[p.sp].n)} · Lv ${p.lvl || 1}</small>` : ''}</span>
+  <span class="fr-t"><b>${escapeHtml(friendShownName(u, d.name))}</b><small>${a.place ? `In ${escapeHtml(a.place)} · ${timeAgo(a.t)}` : 'Not seen yet'}</small>${p && SPECIES[p.sp] ? `<small class="fr-pt">with ${escapeHtml(p.name || SPECIES[p.sp].n)} · Lv ${p.lvl || 1}</small>` : ''}</span>
   ${p && SPECIES[p.sp] ? `<span class="fr-mon">${rigCanvasHTML(p.sp, 48, { build: p.build, coat: p.coat })}</span>` : ''}
-  <span class="fr-acts">${a.node != null && LOCATIONS[a.node] && !saveData.run ? `<button class="pb small" data-a="fr-map" data-n="${a.node}">Map</button>` : ''}<button class="pb small quiet" data-a="fr-rm" data-u="${escapeHtml(u)}" aria-label="Remove ${escapeHtml(d.name || 'friend')}">✕</button></span></div>`;
+  <span class="fr-acts">${a.node != null && LOCATIONS[a.node] && !saveData.run ? `<button class="pb small" data-a="fr-map" data-n="${a.node}">Map</button>` : ''}<button class="pb small quiet" data-a="fr-rm" data-u="${escapeHtml(u)}" aria-label="Remove, block or report ${escapeHtml(friendShownName(u, d.name, 'friend'))}">✕</button></span></div>`;
     })
     .join('');
   return `<section class="tpanel pf-friends">${head}
-  ${inc.map(r => `<div class="fr-row fr-req"><span class="fr-t"><b>${escapeHtml(r.fromName || 'A player')}</b><small>wants to be friends</small></span><span class="fr-acts"><button class="pb small gold" data-a="fr-yes" data-id="${escapeHtml(r.id)}">Accept</button><button class="pb small quiet" data-a="fr-no" data-id="${escapeHtml(r.id)}">No</button></span></div>`).join('')}
+  ${inc.map(r => `<div class="fr-row fr-req"><span class="fr-t"><b>${escapeHtml(friendShownName(r.from, r.fromName, 'A player'))}</b><small>wants to be friends</small></span><span class="fr-acts"><button class="pb small gold" data-a="fr-yes" data-id="${escapeHtml(r.id)}">Accept</button><button class="pb small quiet" data-a="fr-no" data-id="${escapeHtml(r.id)}">No</button></span></div>`).join('')}
   ${rows || '<p class="note">No friends yet. Swap codes with someone and add theirs here.</p>'}
   ${wait.length ? `<p class="note">${plural(wait.length, 'request')} waiting for an answer.</p>` : ''}
+  ${friends.blocked.length ? `<details class="fr-blocked"><summary>Blocked (${friends.blocked.length})</summary>${friends.blocked.map(u => `<div class="fr-row"><span class="fr-t"><b>${escapeHtml(friends.blockNames[u] || 'Trainer')}</b></span><span class="fr-acts"><button class="pb small quiet" data-a="fr-unblock" data-u="${escapeHtml(u)}">Unblock</button></span></div>`).join('')}</details>` : ''}
   <form class="fr-add" data-a="fr-add"><input name="code" maxlength="7" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Friend code" aria-label="Friend code"><button class="pb small gold" type="submit">Add</button></form>
   ${friends.err ? `<p class="note warn">${escapeHtml(friends.err)}</p>` : ''}</section>`;
 }
@@ -383,12 +498,51 @@ document.addEventListener('click', ev => {
   if (!el || el.tagName === 'FORM') return;
   const d = el.dataset;
   if (d.a === 'fr-yes') answerFriendRequest(d.id, true);
-  else if (d.a === 'fr-no') answerFriendRequest(d.id, false);
-  else if (d.a === 'fr-rm') {
-    const nm = (friends.data[d.u] || {}).name || 'this friend';
+  else if (d.a === 'fr-no') {
+    /* ON-1: decline, or block or report the one asking */
+    const r = friends.inc.find(x => x.id === d.id),
+      nm = r ? friendShownName(r.from, r.fromName, 'this player') : 'this player';
     modal({
-      title: 'Remove friend?',
-      html: `<p>Stop seeing ${escapeHtml(nm)} on your map? They won’t see you either.</p>`,
+      title: 'Not now?',
+      html: `<p>Decline ${escapeHtml(nm)}’s request? Block them too and they can’t ask again.</p>`,
+      btns: [
+        {
+          l: 'Decline',
+          c: 'quiet',
+          f: () => {
+            closeModal();
+            answerFriendRequest(d.id, false);
+          },
+        },
+        ...(r
+          ? [
+              {
+                l: 'Block',
+                c: 'quiet',
+                f: () => {
+                  closeModal();
+                  blockPlayer(r.from, r.fromName);
+                },
+              },
+              {
+                l: 'Report',
+                c: 'quiet',
+                f: () => {
+                  closeModal();
+                  reportSheet(r.from, r.fromName);
+                },
+              },
+            ]
+          : []),
+        { l: 'Back', c: 'gold', f: closeModal },
+      ],
+    });
+  } else if (d.a === 'fr-rm') {
+    const raw = (friends.data[d.u] || {}).name,
+      nm = friendShownName(d.u, raw, 'this friend');
+    modal({
+      title: escapeHtml(nm),
+      html: `<p>Remove ${escapeHtml(nm)} and you stop seeing each other on your maps. Block them and they can’t add you again. Report their name or look to the game’s moderator.</p>`,
       btns: [
         {
           l: 'Remove',
@@ -398,10 +552,27 @@ document.addEventListener('click', ev => {
             removeFriend(d.u);
           },
         },
+        {
+          l: 'Block',
+          c: 'quiet',
+          f: () => {
+            closeModal();
+            blockPlayer(d.u, raw);
+          },
+        },
+        {
+          l: 'Report',
+          c: 'quiet',
+          f: () => {
+            closeModal();
+            reportSheet(d.u, raw);
+          },
+        },
         { l: 'Keep', c: 'gold', f: closeModal },
       ],
     });
-  } else if (d.a === 'fr-map') {
+  } else if (d.a === 'fr-unblock') unblockPlayer(d.u);
+  else if (d.a === 'fr-map') {
     uiState.tab = 'map';
     render();
     setTimeout(() => {
@@ -409,7 +580,9 @@ document.addEventListener('click', ev => {
     }, 300);
   } else if (d.a === 'fr-pin') {
     const f = friends.data[d.u] || {};
-    toast(`${f.name || 'Your friend'} was in ${(f.at && f.at.place) || '?'} ${timeAgo(f.at && f.at.t)}.`);
+    toast(
+      `${friendShownName(d.u, f.name, 'Your friend')} was in ${(f.at && f.at.place) || '?'} ${timeAgo(f.at && f.at.t)}.`
+    );
   }
 });
 /* ---------- in the world: friends standing where they were last, with their partner ---------- */

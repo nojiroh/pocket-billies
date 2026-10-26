@@ -140,6 +140,8 @@ test('a player keeps their own block list, and nobody else reads it', async () =
   await assertFails(setDoc(doc(db('eve'), 'blocks/ann'), { list: [] }));
   await assertFails(getDocs(collection(db('ann'), 'blocks')));
   await assertFails(setDoc(doc(db('ann'), 'blocks/ann'), { list: ['eve'], why: 'x' }));
+  await assertSucceeds(setDoc(doc(db('ann'), 'blocks/ann'), { list: ['eve'], names: { eve: 'Eve' } }));
+  await assertFails(setDoc(doc(db('ann'), 'blocks/ann'), { list: ['eve'], names: 'Eve' }));
   await assertFails(setDoc(doc(db('ann'), 'blocks/ann'), { list: Array.from({ length: 201 }, (_, i) => 'u' + i) }));
 });
 test('a blocked player cannot send a friend request, or ask again', async () => {

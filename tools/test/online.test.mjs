@@ -55,3 +55,11 @@ test('a target is hidden at the third report past what the moderator cleared', (
   assert.equal(reportHidden({ n: 4, ok: 4 }), false);
   assert.equal(reportHidden({ n: 4 + ONLINE_HIDE_AT, ok: 4 }), true);
 });
+
+test('Online play is off until a player turns it on', async () => {
+  const { onlinePlayOn } = await import('../../game/js/logic/online.js');
+  assert.equal(onlinePlayOn(undefined), false);
+  assert.equal(onlinePlayOn({}), false);
+  assert.equal(onlinePlayOn({ online: '1' }), false);
+  assert.equal(onlinePlayOn({ online: true }), true);
+});

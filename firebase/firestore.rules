@@ -7,7 +7,7 @@ rules_version = '2';
 //   users/<uid>             what friends see of a player: name, look, partner, last place, friend list, code
 //   codes/<CODE>            { uid }: a friend code finds a player, and nothing else does
 //   requests/<from>_<to>    a friend request: { from, to, fromName, status, t }
-//   blocks/<uid>            ON-1: the players this one blocked: { list }, read by nobody else
+//   blocks/<uid>            ON-1: the players this one blocked: { list, names }, read by nobody else
 //   reports/<target>        ON-1: { n, ok }: how many accounts reported a target ('user_<uid>'), each once
 //                           (reports/<target>/by/<uid>: { reason, t }), and up to which count the moderator cleared
 // Nobody can list users/ or codes/, so a player is found by their code only, and only their friends see them.
@@ -17,7 +17,7 @@ service cloud.firestore {
     function me() { return request.auth.uid; }
     function shortText(v, n) { return v is string && v.size() <= n; }
     // ON-1: the moderator reads reports and clears them. Paste your own Firebase uid here before you publish (the debug
-    // menu shows it: Debug > Account); the rules tests read whatever stands here.
+    // menu shows it under Save when you're signed in); the rules tests read whatever stands here.
     function moderator() { return signedIn() && me() in ['PASTE-YOUR-UID-HERE']; }
     // ON-1: `who` is on `by`'s block list
     function blocked(by, who) {
@@ -79,8 +79,10 @@ service cloud.firestore {
     match /blocks/{uid} {
       allow get, delete: if signedIn() && me() == uid;
       allow create, update: if signedIn() && me() == uid
-        && request.resource.data.keys().hasOnly(['list'])
-        && request.resource.data.list is list && request.resource.data.list.size() <= 200;
+        && request.resource.data.keys().hasOnly(['list', 'names'])
+        && request.resource.data.list is list && request.resource.data.list.size() <= 200
+        && (!('names' in request.resource.data) || (request.resource.data.names is map
+          && request.resource.data.names.size() <= 200));
     }
 
     // ON-1: reports. A target's count goes up by exactly one with each account's first report (the count and the
