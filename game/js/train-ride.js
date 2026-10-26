@@ -37,6 +37,7 @@ expose({
   portalLook: [() => portalLook, v => (portalLook = v)],
   trainName: [() => trainName, v => (trainName = v)],
   trainOfRun: [() => trainOfRun, v => (trainOfRun = v)],
+  trainParkHome: [() => trainParkHome, v => (trainParkHome = v)],
   trainProp: [() => trainProp, v => (trainProp = v)],
   trainRide: [() => trainRide],
   trainRideCaption: [() => trainRideCaption, v => (trainRideCaption = v)],
@@ -318,8 +319,7 @@ function trainRideStart(kind, key, o, done) {
       trainVeil(true, 400);
       setTimeout(() => trainRideEnd(false), 420);
     } else {
-      const P = trainRideWorld();
-      if (P) placeTrain(trainProp(P, key, o.won ? 1 : 2), trainPathAt(P.B, P.B.len), P.y0);
+      trainParkHome(key, o.won ? 1 : 2, performance.now());
       trainVeil(false, 400);
       setTimeout(() => trainRideEnd(false), 420);
     }
@@ -330,6 +330,15 @@ function trainRideStart(kind, key, o, done) {
   walkView.director = { frame: trainRideFrame };
   trainRideCaption(true);
   if (kind === 'home') trainVeil(false, 600);
+}
+
+/** the train home standing at the platform in its look (v), once the hub's walk view is up to put it in (it can come
+ * up after the ride has given up waiting for it: a slow phone; 30 s at most) @param {string} key @param {number} v
+ * @param {number} t0 */
+function trainParkHome(key, v, t0) {
+  const P = trainRideWorld();
+  if (P) placeTrain(trainProp(P, key, v), trainPathAt(P.B, P.B.len), P.y0);
+  else if (performance.now() - t0 < 30000) setTimeout(() => trainParkHome(key, v, t0), 300);
 }
 
 /** the ride ends (played out, or skipped: skip true): the departure behind the white veil, the way home with the train
@@ -394,14 +403,14 @@ export function trainRideDepart(key, done) {
 }
 /** come home from a run: out of the tear and down the rail to the station (gold after a win, battered after a loss),
  * you step off where the walk stands you (uiState.roam: standByMast); done() once you stand there. It waits (behind
- * the white veil, `on` already) for the hub's walk view to be up, 10 s at most @param {string} key
+ * the white veil, `on` already) for the hub's walk view to be up, 30 s at most (a slow phone) @param {string} key
  * @param {boolean} won @param {() => void} done */
 export function trainRideHome(key, won, done) {
   const t0 = performance.now();
   Object.assign(trainRide, { on: true, kind: 'home', key, W: null, done: null });
   const go = () => {
     if (!trainRide.on || trainRide.W) return;
-    if (!reducedMotion && !trainRideWorld() && performance.now() - t0 < 10000) return void setTimeout(go, 150);
+    if (!reducedMotion && !trainRideWorld() && performance.now() - t0 < 30000) return void setTimeout(go, 150);
     trainRideStart('home', key, { won }, done);
   };
   go();

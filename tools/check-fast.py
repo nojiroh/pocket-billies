@@ -1174,9 +1174,11 @@ def take_off_ride(pg):
 
 def ride_home(pg):
     """HB-8: after Ride home: the train's ride home (skipped once it plays) ends; [the train at the platform, its look]"""
-    if not until(pg, "!trainRide.on||!!trainRide.W", 40): raise Exception('the ride home never started')
+    if not until(pg, "!trainRide.on||!!trainRide.W", 45): raise Exception('the ride home never started')
     pg.evaluate("trainRideSkip();0")
     if not until(pg, "!trainRide.on", 10): raise Exception('the ride home never ended')
+    # the train stays at the platform (put in as soon as the hub's view is up, if that came after the ride)
+    until(pg, "walkView.ready&&!!walkView.sc.props.find(p=>p.trainRide)", 30)
     return pg.evaluate("(p=>p?[p.k,p.v||0]:null)(walkView.sc.props.find(p=>p.trainRide))")
 
 
