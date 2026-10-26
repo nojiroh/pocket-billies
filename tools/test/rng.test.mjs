@@ -54,7 +54,8 @@ test('rng: a generated scene hashes the same as before the move', () => {
   // (and 4139710699 until MAPGEN_VERSION 13, RT-4a: habitats on laid-out places; no layout here, so only gen.v)
   // (and 1600371078 until MAPGEN_VERSION 15, WA-3a: rivers run downhill; this scene has none, so only gen.v)
   // (and 2300136668 until MAPGEN_VERSION 17, WA-2b waterfalls (16) and WA-5a's new water kinds (17); no water here)
-  assert.equal(hashString(JSON.stringify(sc)), 3438053378);
+  // (and 3438053378 until MAPGEN_VERSION 18, the route props track's set pieces; no layout here, so only gen.v)
+  assert.equal(hashString(JSON.stringify(sc)), 2416826045);
 });
 
 test('rng: the helpers stay in their ranges', () => {
