@@ -197,6 +197,8 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
   for (const it of L) {
     if (it.flat || it.far || it.k === 'enc2' || it.vol || it.k === 'flag' || it.vox) continue;
     if (it.k === 'prop' && !(it.sh > 0)) continue;
+    /* a box building's layers cast none (its slices do): skipped before its picture is looked up or bound */
+    if (it.layer && it.M.box) continue;
     gpuTag(it.voxImg ? 'modelPic' : 0); /* R1 measure: a model's picture layer counted apart */
     const T = imageTexture(it.im);
     if (!T) {
@@ -204,7 +206,6 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
       continue;
     }
     gl.bindTexture(gl.TEXTURE_2D, T.t);
-    if (it.layer && it.M.box) continue;
     if (lamp) {
       const dx = it.x - lamp[0],
         dz = it.z - lamp[2],
@@ -329,6 +330,8 @@ function fittedShadowPass(items0, sun, C) {
     for (const it of L) {
       if (it.flat || it.far || it.k === 'enc2' || it.vol || it.k === 'flag' || it.vox) continue;
       if (it.k === 'prop' && !(it.sh > 0)) continue;
+      /* a box building's layers cast none (its slices do): skipped before its picture is looked up or bound */
+      if (it.layer && it.M.box) continue;
       gpuTag(it.voxImg ? 'modelPic' : 0); /* R1 measure: a model's picture layer counted apart */
       const T = imageTexture(it.im);
       if (!T) {
@@ -336,7 +339,6 @@ function fittedShadowPass(items0, sun, C) {
         continue;
       }
       gl.bindTexture(gl.TEXTURE_2D, T.t);
-      if (it.layer && it.M.box) continue;
       /* a 3D building: its front as a cut-out here, walls and roof as geometry below */
       if (it.bld3) {
         let F = null;
