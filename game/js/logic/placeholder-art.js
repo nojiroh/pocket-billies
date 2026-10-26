@@ -21,7 +21,8 @@
  *   mirrors applied, the form's sizes on; `src` names the bone whose picture it draws (flipped when `flip`)
  * @typedef {{ name: string, rig: string, line?: string, stage?: number, form?: string, plan: string,
  *   colours: { main: string | Rgb, accent?: string | Rgb }, size?: Record<string, number>, scale?: number,
- *   add?: PlanBone[], drop?: string[], q?: Record<string, number> }} PlaceholderForm one placeholder Billie (bodyPlans.json forms)
+ *   add?: PlanBone[], drop?: string[], q?: Record<string, number>, talk?: boolean }} PlaceholderForm one placeholder Billie
+ *   (bodyPlans.json forms); `talk`: its face also gets a mouth-open frame (a talking creature person: Kappi)
  * @typedef {{ bg: Rgb, grid: Rgb, label: number, room: number, min: number }} PlaceholderSheetSet
  * @typedef {{ ink: Rgb, hatch: number, hatchDark: number, dark: number, light: number, back: number, eye: Rgb,
  *   glint: Rgb }} PlaceholderPaintSet
@@ -285,7 +286,7 @@ export function placeholderInside(shape, u, v) {
   }
 }
 /** one bone's placeholder picture at its size (no room): the shape in its tone, hatched, outlined, its name inside
- * where it fits; a front face gets eyes (`blink` shuts them); from behind it is darker and has no face
+ * where it fits; a front face gets eyes (`blink` shuts them, `talk` opens a mouth); from behind it is darker and has no face
  * @param {PlaceholderPaintSet} S @param {PlaceholderBone} b @param {ReturnType<typeof placeholderTones>} T
  * @param {string} view @param {string} [frame] */
 export function placeholderPaint(S, b, T, view, frame = 'main') {
@@ -329,6 +330,9 @@ export function placeholderPaint(S, b, T, view, frame = 'main') {
         placeholderPut(p, cx - 1, ey, S.glint);
       }
     }
+    if (frame === 'talk')
+      for (let dy = 0; dy < 2; dy++)
+        for (let dx = -1; dx <= 1; dx++) placeholderPut(p, Math.round(w / 2) + dx, ey + 4 + dy, S.ink);
     const t = b.label.toUpperCase();
     if (placeholderTextW(t) + 6 <= w && h >= 18)
       placeholderText(p, t, Math.floor((w - placeholderTextW(t)) / 2), Math.min(h - 8, ey + 5), text);
@@ -342,7 +346,8 @@ export function placeholderPaint(S, b, T, view, frame = 'main') {
 }
 
 /* ---------- cells ---------- */
-/** the cells a form draws: one per bone with a picture that mirrors nothing, plus a front blink cell per face; each
+/** the cells a form draws: one per bone with a picture that mirrors nothing, plus a front blink cell per face (and a
+ * talk cell when the form talks); each
  * with room round the part (so a drawing may grow) and its pivot inside
  * @param {BodyPlans} P @param {PlaceholderForm} form @returns {CellSpec[]} */
 export function placeholderCellSpecs(P, form) {
@@ -359,6 +364,8 @@ export function placeholderCellSpecs(P, form) {
       py = (H - h) / 2 + b.pv[1] * h;
     out.push({ key: b.n, bone: b.n, frame: 'main', w: W, h: H, px, py, pxb: W - px });
     if (b.face) out.push({ key: b.n + '.blink', bone: b.n, frame: 'blink', w: W, h: H, px, py, pxb: W - px });
+    if (b.face && form.talk)
+      out.push({ key: b.n + '.talk', bone: b.n, frame: 'talk', w: W, h: H, px, py, pxb: W - px });
   }
   return out;
 }
@@ -413,10 +420,7 @@ export function placeholderPieces(P, form, cells, view, D) {
       const flip = b.flip !== (view === 'back'),
         keys =
           b.face && view === 'front'
-            ? [
-                ['idle', b.src],
-                ['blink', b.src + '.blink'],
-              ]
+            ? [['idle', b.src], ['blink', b.src + '.blink'], ...(form.talk ? [['talk', b.src + '.talk']] : [])]
             : [['main', b.src]];
       /* every frame of a bone trims by the box of its first frame, so the pivot stays placeholderPut */
       const first = cells[/** @type {'front' | 'back'} */ (view)][keys[0][1]];
