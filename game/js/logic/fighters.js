@@ -45,7 +45,7 @@ expose({
   robotBase: [() => robotBase],
   robotGemDef: [() => robotGemDef],
   // @ts-expect-error -- replaced on purpose
-  robotIdsFromSp: [() => robotIdsFromSp, v => (robotIdsFromSp = v)],
+  robotIdsFromSp: [() => robotIdsFromSp, v => ((robotIdsFromSp = v), provide({ robotIdsFromSp }))],
   robotMoves: [() => robotMoves],
   // @ts-expect-error -- replaced on purpose
   robotName: [() => robotName, v => (robotName = v)],
@@ -67,7 +67,7 @@ expose({
   validRobot: [() => validRobot, v => (validRobot = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ speciesOf });
+provide({ robotIdsFromSp, speciesOf });
 /* to-module: end */
 /** the numbers when rules.json has no robots section (older data, the tests' small fixture) */
 export const DEFAULT_ROBOT_RULES = /** @type {RobotRules} */ ({
@@ -102,6 +102,7 @@ export const isRobot = m => !!m && m.kind === 'robot';
 export const isRobotSp = sp => typeof sp === 'string' && sp.startsWith('bot:');
 /** @param {string} id @returns {RobotPart | undefined} */
 export const robotPartDef = id => ROBOTS.parts[id];
+provide({ robotPartDef }); /* to-module */
 /** @param {string} id @returns {RobotGem | undefined} */
 export const robotGemDef = id => ROBOTS.gems[id];
 /** does part id fit this slot? @param {string} id @param {RobotSlot} slot */
