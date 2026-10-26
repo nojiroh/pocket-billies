@@ -25,7 +25,9 @@ Details: docs/phases/camera-track.md, "CAM-4a as built". Not tagged yet: `cam-4a
   real phone: please pinch on yours with Zoom toward the pinch on and the rubber band at about 0.15.
 - Verified: lint, typecheck, unit tests (1064 passing, 8 new), check:modules, format:check, check:data, build;
   check-fast --only=Studio (4/4) and --only=Camera (6/6: follow, moments, tall ground, debug log, island orbit and the
-  new Camera section); the Studio's GitHub-mode check with its self-test (opens every section): see the next commit. Full quick check: not run.
+  new Camera section); tools/check-studio-github.py opened all 33 sections (the Camera section among them) with no error, then stopped at
+  Play from here (the second tab never opened): main 2314da8 stops at the same step here (32 sections, then the same
+  Play from here), so it is this container, not CAM-4a; its later steps and the Studio self-test didn't run. Full quick check: not run.
 - Next session starts with: CAM-4b (zoom stops, blur per stop, the pull to a stop, a scene's starting stop, the curve
   graph, camera looks) on `track/camera`, which the owner makes from this branch.
 
