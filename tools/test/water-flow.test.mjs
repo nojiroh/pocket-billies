@@ -1,7 +1,7 @@
 // Water track WA-2a: the flow map (game/js/walk/water-flow.js), built once with the water mesh
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { flowMapAt, waterFlowMap } from '../../game/js/walk/water-flow.js';
+import { flowMapAt, waterFlowMap, waterOpenSea } from '../../game/js/walk/water-flow.js';
 
 const FLOW_RAPIDS = 1.6; /* water-flow.js FLOW_RAPIDS (the page exports only what another module imports) */
 /* the foam at a spot: the cell's third number */
@@ -146,4 +146,24 @@ test('a big map builds quickly', () => {
     t0 = performance.now();
   waterFlowMap(sc);
   assert.ok(performance.now() - t0 < 200);
+});
+
+test('WA-10: only still water joined to the edge is the open sea; a pond behind the beach is not', () => {
+  /* 30 x 20: the sea along the south (j 0-3), a pond in the middle, a river cell column joining them (running) */
+  const w = 30,
+    h = 20,
+    wet = (i, j) => j < 4 || Math.hypot(i - 15, j - 12) < 3 || (i === 15 && j < 12),
+    run = (i, j) => i === 15 && j >= 4 && j < 10,
+    open = waterOpenSea(w, h, (i, j) => wet(i, j) && !run(i, j));
+  assert.equal(open[0], 1, 'the sea at the corner');
+  assert.equal(open[2 * w + 20], 1, 'the sea by the shore');
+  assert.equal(open[12 * w + 15], 2, 'the pond, joined only through running water');
+  assert.equal(open[6 * w + 15], 0, 'the river itself');
+  assert.equal(open[15 * w + 2], 0, 'dry land');
+  /* the same pond with no river between: still water all the way, so it is the sea's */
+  const joined = waterOpenSea(w, h, wet);
+  assert.equal(joined[12 * w + 15], 1);
+  /* a big enclosed body is a lake */
+  const lake = waterOpenSea(60, 60, (i, j) => i > 5 && j > 5 && i < 54 && j < 54);
+  assert.equal(lake[30 * 60 + 30], 3);
 });

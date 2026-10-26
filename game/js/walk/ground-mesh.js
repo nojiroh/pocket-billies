@@ -491,7 +491,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
     wd = new Float32Array(W2 * H2).fill(-2),
     wk = new Uint8Array(W2 * H2),
     wy = new Float32Array(W2 * H2),
-    kindAt = waterKindLookup(sc),
+    kindAt = waterKindLookup(sc, bare ? null : flowMap),
     /* water track WA-5b: a storm's flood (logic/water-weather.js) lays shallows on the banks, higher than the water it
        rose from: those cells lie as a skin 3 cm over their own ground (as the tide's), never lifting a pond's level
        nor spilling down as cascades (as one level, the pond rose into a raised slab and every bank was a fall) */

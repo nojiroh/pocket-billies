@@ -11,6 +11,7 @@ import { engineSetting } from '../engine/settings.js';
 import { gpuState } from '../engine/webgl.js';
 import { environment } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
+import { flowMapAt, waterOpenSea } from './water-flow.js';
 import { tideLevel } from './sea-tide.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -451,16 +452,44 @@ function shoreAt(x, z) {
     j = clamp(Math.floor(z * 8), 0, F.FH - 1);
   return F.d[j * F.FW + i] / 255;
 }
-export function waterKindLookup(sc) {
+/* water track WA-10: on a scene whose own kind is the sea's, only still water joined to the map's edge is the sea
+   (walk/water-flow.js waterOpenSea); a pond or a lake cut off from it takes its own kind (it took the swell and the
+   surf before). F: the scene's flow map (running water joins nothing), else its streams' as they are now */
+export function waterKindLookup(sc, F = walkRenderer.flowMap) {
   if (!engineSetting('water', 'kinds')) return () => 0;
   const R = sc.waters || [],
-    def = WATER_KIND_INDEX[sc.waterKind] ?? (sc.indoor && sc.far === 'cave' ? 3 : sc.far === 'town' ? 2 : 0);
+    def = WATER_KIND_INDEX[sc.waterKind] ?? (sc.indoor && sc.far === 'cave' ? 3 : sc.far === 'town' ? 2 : 0),
+    w = sc.w,
+    T = sc.tiles || [],
+    wet = (/** @type {number} */ i, /** @type {number} */ j) => {
+      const c = (T[sc.h - 1 - j] || '')[i];
+      return c === 'w' || c === 'd';
+    },
+    open =
+      WATER_KIND_LOOKS[def].sea && T.length
+        ? waterOpenSea(w, sc.h, (i, j) => {
+            if (!wet(i, j)) return false;
+            if (!F || F.W2 !== w * 2) return true;
+            const f = flowMapAt(F, i + 0.5, j + 0.5);
+            return f[0] === 0 && f[1] === 0;
+          })
+        : null,
+    POND = WATER_KIND_INDEX.pond,
+    LAKE = WATER_KIND_INDEX.lake;
   return (x, z, run) => {
     for (let i = R.length - 1; i >= 0; i--) {
       const r = R[i];
       if (x >= r.x && z >= r.z && x < r.x + r.w && z < r.z + r.h) return WATER_KIND_INDEX[r.k] ?? def;
     }
-    return run && def !== 2 && !WATER_KIND_LOOKS[def].mode ? 1 : def;
+    if (run && def !== 2 && !WATER_KIND_LOOKS[def].mode) return 1;
+    if (open) {
+      const i = Math.floor(x),
+        j = Math.floor(z),
+        o = i >= 0 && j >= 0 && i < w && j < sc.h ? open[j * w + i] : 1;
+      if (o === 2) return POND;
+      if (o === 3) return LAKE;
+    }
+    return def;
   };
 }
 /* water track WA-2a: the nearest four waterfalls (walk-shaders.js FALL_GLSL), for the ground's wet rock and thrown

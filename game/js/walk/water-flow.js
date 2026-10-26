@@ -18,10 +18,13 @@ expose({
   FLOW_CELLS: [() => FLOW_CELLS],
   FLOW_RAPIDS: [() => FLOW_RAPIDS],
   FLOW_REACH: [() => FLOW_REACH],
+  OPEN_SEA_LAKE: [() => OPEN_SEA_LAKE],
   // @ts-expect-error -- replaced on purpose
   flowMapAt: [() => flowMapAt, v => (flowMapAt = v)],
   // @ts-expect-error -- replaced on purpose
   waterFlowMap: [() => waterFlowMap, v => (waterFlowMap = v)],
+  // @ts-expect-error -- replaced on purpose
+  waterOpenSea: [() => waterOpenSea, v => (waterOpenSea = v)],
   // @ts-expect-error -- replaced on purpose
   widthAt: [() => widthAt, v => (widthAt = v)],
 });
@@ -147,4 +150,53 @@ export function flowMapAt(F, x, z) {
   if (i < 0 || j < 0 || i >= F.W2 || j >= F.H2) return [0, 0];
   const q = (j * F.W2 + i) * 4;
   return [F.d[q], F.d[q + 1]];
+}
+
+/** still water bigger than this (m^2, whole tiles) and cut off from the sea is a lake, not a pond (WA-10) */
+const OPEN_SEA_LAKE = 600;
+/**
+ * Which still water joins the open sea (water track WA-10): on a coast, only water that reaches the map's edge through
+ * still water is the sea; a pond or a lake behind the beach is not (it took the sea's swell and surf before). Running
+ * water (a river) does not join two bodies, so a pond a river drains into the sea stays a pond. Per 1 m tile: 1 the
+ * open sea, 2 an enclosed pond, 3 an enclosed lake (over OPEN_SEA_LAKE tiles), 0 dry or running.
+ * @param {number} w @param {number} h tiles across and down (j counted from the south, as the walk view's z)
+ * @param {(i: number, j: number) => boolean} still tile i, j holds still water
+ */
+export function waterOpenSea(w, h, still) {
+  const n = w * h,
+    out = new Uint8Array(n),
+    seen = new Uint8Array(n),
+    N4 = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ];
+  for (let q0 = 0; q0 < n; q0++) {
+    if (seen[q0]) continue;
+    const i0 = q0 % w,
+      j0 = (q0 - i0) / w;
+    if (!still(i0, j0)) continue;
+    const comp = [q0];
+    seen[q0] = 1;
+    let edge = false;
+    for (let k = 0; k < comp.length; k++) {
+      const q = comp[k],
+        i = q % w,
+        j = (q - i) / w;
+      if (i === 0 || j === 0 || i === w - 1 || j === h - 1) edge = true;
+      for (const [a, b] of N4) {
+        const ii = i + a,
+          jj = j + b;
+        if (ii < 0 || jj < 0 || ii >= w || jj >= h) continue;
+        const m = jj * w + ii;
+        if (seen[m] || !still(ii, jj)) continue;
+        seen[m] = 1;
+        comp.push(m);
+      }
+    }
+    const v = edge ? 1 : comp.length > OPEN_SEA_LAKE ? 3 : 2;
+    for (const q of comp) out[q] = v;
+  }
+  return out;
 }
