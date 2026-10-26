@@ -4079,7 +4079,8 @@ function initFolk(n) {
                 : f.ph === 'owl'
                   ? [hub[0], hub[1]]
                   : null;
-      if (!at) f.in = true;
+      /* HB-10c: out about the streets (placed below) is out, not indoors */
+      if (!at) f.in = f.ph !== 'about';
       else {
         const q = walkablePointNear(at[0] + (((i * 0.37) % 1) - 0.5) * 2.4, at[1] + (((i * 0.61) % 1) - 0.5) * 1.8);
         f.x = q[0];
