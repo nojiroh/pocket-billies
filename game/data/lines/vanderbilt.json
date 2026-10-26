@@ -1,0 +1,35 @@
+{
+ "id": "vanderbilt",
+ "names": ["Vanderbolt"],
+ "types": [["Fire","Ground"]],
+ "prof": [0.95,1.35,1,0.9,0.85,1.1],
+ "rar": "rare",
+ "wild": false,
+ "totals": [490],
+ "learn": [
+  [1,"handshake"],
+  [1,"spill"],
+  [1,"scatterstones"],
+  [8,"pipeline"],
+  [14,"quakestomp"],
+  [20,"augerbore"],
+  [26,"fullsteam"],
+  [32,"bouldertoss"],
+  [38,"cindershot"],
+  [44,"deepdrill"],
+  [50,"gusher"]
+ ],
+ "cat": ["Railway Billie"],
+ "ht": [3.2],
+ "wt": [210],
+ "hab": ["Revived in Bureau labs; once, the first railway cutting"],
+ "diet": ["Coal and other people's railways"],
+ "bio": [
+  "A snake of iron rail with a smokestack and a top hat, dug out of the cutting where the first line was laid. Revived, it lays track wherever it slithers and charges a fare to anyone who crosses it."
+ ],
+ "note": ["The line goes where it says. So do you."],
+ "parody": "Cornelius Vanderbilt",
+ "cry": [
+  {"base":"machine","pitch":50,"length":1.6,"name":"placeholder: a steam whistle with a hiss under it (Claude's draft)"}
+ ]
+}

@@ -251,6 +251,8 @@ export interface MoveEffect {
   delay?: number;
   crit?: number;
   spin?: number;
+  /** RO-3f: Fork: the user takes the target's types for battle.forkTurns turns */
+  copyTypes?: number;
   hold?: number;
   missCost?: number;
   stones?: number;
@@ -953,6 +955,8 @@ export interface Rules {
     shockName: string;
     spinType: TypeId;
     spinTurns: number;
+    /** RO-3f: how long Fork's copied types last */
+    forkTurns: number;
     mailTurns: number;
     holdCap: number;
     alphaHp: number;
@@ -1047,7 +1051,8 @@ export interface Rules {
       routeMin: number;
       habitats?: Record<string, string[]>;
       /** RT-4: a run route's rarer one, `up` levels above the rest (rules.js spawnRare) */
-      rare?: { up: number };
+      /** RO-3f: myth: the chance a run route's rarer one is a mythical instead (at most one a run), and which */
+      rare?: { up: number; myth?: { chance: number; list: DataId[] } };
     };
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */

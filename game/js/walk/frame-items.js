@@ -383,9 +383,11 @@ export function gatherFrameItems(st, C, PPU, C0) {
   });
   if (!st.battle)
     for (const f of walkView.folk) {
-      const fr = folkFrames(f.seed);
+      /* RS-3: a resident wears their own look (people/<id>.json) */
+      const who = f.who || 'folk:' + f.seed,
+        fr = f.who ? personWalkFrames(f.who) : folkFrames(f.seed);
       if (!fr) continue;
-      warmPerson('folk:' + f.seed);
+      warmPerson(who);
       const set = fr[f.dir] || fr.down;
       let fim =
         typeof pickWalkFrame === 'function'
@@ -396,7 +398,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
               : set[1 + (Math.floor(t / 150) % 2)]
             : set[0];
       /* v47: a wave hello */ if (f.waveT > 0 && typeof personBattlePose === 'function') {
-        const w = personBattlePose('folk:' + f.seed, 'front', 'cheer', 0, (1.4 - f.waveT) * 1000);
+        const w = personBattlePose(who, 'front', 'cheer', 0, (1.4 - f.waveT) * 1000);
         if (w) fim = w;
       }
       if (fim) out.push(personItem('folk', fim, f.x, f.z, C0, { f }));

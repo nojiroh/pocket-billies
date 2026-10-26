@@ -5,7 +5,7 @@
 .mapcard {
   padding: 10px 12px 8px;
   position: sticky;
-  bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--nav-h) - 6px + env(safe-area-inset-bottom, 0px));
   z-index: 3;
   margin-top: 14px;
   animation: up 0.3s ease-out;
@@ -190,7 +190,7 @@ body.on-map #bgfx {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
   width: min(560px, calc(100% - 24px));
   max-height: 34vh;
   overflow: auto;
@@ -261,7 +261,7 @@ body.map-gl #dioui {
   position: absolute;
   left: 12px;
   top: calc(70px + env(safe-area-inset-top, 0px));
-  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
   width: min(340px, calc(100% - 24px));
   display: flex;
   flex-direction: column;
@@ -357,7 +357,7 @@ body.map-gl #dioui {
 .mapview {
   position: absolute;
   left: 12px;
-  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--nav-h) - 4px + env(safe-area-inset-bottom, 0px));
   z-index: 5;
   display: flex;
   gap: 4px;
