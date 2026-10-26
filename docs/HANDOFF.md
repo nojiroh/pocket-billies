@@ -2,6 +2,71 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Phase 20 R1, lane measure (stage 2: measure again) - 2026-10-26
+Branch `track/renderer` (one of three R1 lanes: light, measure, context). Plan approved in Plan Mode; the owner's
+answers: the tour in the diagnostics test; each stop at resolution 1 and at the game's own; one tag line in each of
+walk/shadows.js's two picture loops (the light lane's file this round); the jungle forced on a fixed seed.
+- Where the docs and the code differed (checked):
+  - No run reaches the jungle: rules.json run.map.biomes and regions.json's graph and themes hold only meadow, lake,
+    thicket, ridge and autumn. Phase 09's jungle numbers came from a fixture with the biomes forced.
+  - Model pictures are not only the sprite pass: leaf layers with `shadow: 1` draw again in the near, far and lamp
+    shadow maps, and the reflection draws them through its picture loop (the models themselves as models).
+  - One model can make several draws (its extra parts, spinning parts) and draws again in each shadow map.
+  - The graphics test pins resolution 1, not the phone's game value 1.5; A8's stations were at 1.
+- Changed (one cause per commit):
+  - engine/gpu-counters.js: `gpuTag('model' | 'modelPic')` marks the draws that follow (gpuPass clears it); each pass
+    keeps its tagged draws and instances, and counts its distinct textures and vertex arrays (`texKinds`,
+    `vaoKinds`: the fewest draws grouping by picture or mesh could reach). `gpuCountSummary` gives `dct` and `dcu`;
+    the debug log's second samples carry both (docs/TESTING.md). Node tests (9, was 6).
+  - Marks: drawPropModels and drawPropModelShadows tag `model`; drawSprites, both picture loops of walk/shadows.js
+    and the reflection's picture loop (walk/water.js) tag a model's picture layer (`voxImg`, and a modelled clock's
+    hands) `modelPic`. Counting only.
+  - self-test.js: the diagnostics test's new step "Renderer baseline" (docs/graphics-bench.md has the details): five
+    stops, Copperleaf 12:30 and 23:00, a jungle route (seed BASELINE1, its first place forced), a meadow run town
+    (seed BASELINE2), a wild battle at the hub held at its move menu; each at `r1` and `own`, automatic quality off,
+    the game's own values, clear summer, the player on the arrival spot, settled (pictures loaded) then 4 s measured.
+    The run places and the hub stops use copies of the save (a player mid-run is set back in their run after). The
+    report's `baseline` lists each: fps, worst fps, frame, CPU and GPU ms, draws, instances, programs, texture binds,
+    uniform calls, `passDraws`, `tagged`, `kinds`.
+  - Fixed on the way: the first stop was measured while its leaf pictures loaded (4 model pictures, then 645).
+- Headless counts (390 x 760 at DPR 1, the game's full values, `own`; counts only, never speed):
+
+  | Stop | Draws | Sprites (model pictures) | Models | Shadow maps (models / model pictures) | Uniform calls |
+  |---|---|---|---|---|---|
+  | Copperleaf by day | 1,167 | 710 (642) | 185 | near 36, far 34 (33 / 11) | 21,630 |
+  | Copperleaf by night | 1,171 | 712 (645) | 181 | near 36, far 35, lamps 9 (38 / 15) | 21,692 |
+  | Jungle run place | 652 | 232 (123) | 31 | near 143, far 216 (65 / 49) | 8,706 |
+  | Run town | 632 | 178 (52) | 27 | near 154, far 206 (80 / 28) | 7,398 |
+  | Battle | 595 | 211 (174) | 98 | far 90 (58 / 14) | 7,603 |
+
+  What it says:
+  - Copperleaf is all model pictures: 642 of its 710 sprite draws, from about 166 distinct textures (picture and
+    normal map each, so ~85 pictures). Sprite instancing (round 2) is the big win there; Copperleaf is ~2.9x the
+    400-draw budget before the shadows are counted big.
+  - Models: 185 draws from 50 meshes in Copperleaf, 98 from 73 in the battle: instancing models (round 2) halves them
+    at most in town.
+  - In the run places the shadow maps are over half the draws (359 of 652 in the jungle), mostly plain pictures
+    (grass tufts, bushes), not models: round 3's casters.
+  - Uniform calls stay ~18 a draw in Copperleaf (C3's frame block is still off by default).
+- Risky:
+  - The diagnostics test now takes about 4-5 minutes on a phone (was 2). debug-menu.js's note still says "2 min"
+    (**for the context lane**, its file this round).
+  - walk/shadows.js (light lane) has two `gpuTag` lines, one at the top of each picture loop, one after each.
+  - The battle's camera moves on its own, so its two resolutions see slightly different things.
+  - Forcing the first place's biome and type makes a run no real seed makes; its names and pool may read odd.
+- Verified: lint, typecheck, unit tests (1,066), check:modules after every commit; smoke 6/6 on each game commit;
+  the tour headless twice (low graphics and the full values): 10 of 10 measured, no errors, the hub's world back
+  after. No speed judged headless.
+- **Your phone run** (Android phone, then the iPad), at a full charge, nothing else open:
+  1. Open the debug menu, tap **Diagnostics test**; leave the phone alone for about 5 minutes (screen on; the step
+     "Renderer baseline: ..." shows each stop).
+  2. At the end tap **Save the report** (pocket-billies-diagnostics-....json).
+  3. In the debug menu tap **Export debug log**. Send me both files.
+  - Optional: walk Copperleaf at night for a minute first, then export the log, for the `dct` per second.
+- **Ask me before** (once your numbers are in): whether the A8 budgets (400 draws a frame on phones, 60 fps in towns)
+  still stand.
+- Next: the round 1 phone run covering every lane's switches; then round 2 (models, sprites, pixels).
+
 ### Hub track - the placing half of HB-5 and HB-7: Skyline Station on its headland, the new buildings on their plots - 2026-10-25
 Branch `props/hub-placing` (the session's brief; from main aea7a48 after PR #201). Plan approved in Plan Mode. The
 owner's answers: the station side-on, its rail straight out to sea (no new art); the Gene Bank's door opens its room
