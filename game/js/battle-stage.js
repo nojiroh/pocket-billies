@@ -46,6 +46,7 @@ import {
   smearHistory,
   smearRecord,
   smearRibbon,
+  smearStretch,
   throwArcEase,
 } from './logic/smear.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
@@ -127,6 +128,7 @@ expose({
   battleStageStop: [() => battleStageStop, v => ((battleStageStop = v), provide({ battleStageStop }))],
   battleStageTargets: [() => battleStageTargets, v => (battleStageTargets = v)],
   battleStageToCss: [() => battleStageToCss, v => (battleStageToCss = v)],
+  battleStretch: [() => battleStretch, v => (battleStretch = v)],
   blinkActor: [() => blinkActor, v => (blinkActor = v)],
   blurAt: [() => blurAt, v => (blurAt = v)],
   burst: [() => burst, v => (burst = v)],
@@ -833,6 +835,10 @@ function spawnAmbientParticles(dt) {
 export function battleSmearCount() {
   return smearCount(!!reducedMotion, battleStage.q.lvl);
 }
+/* VFX-3: its stretch now (logic/smear.js smearStretch), or null: off where the afterimages are */
+export function battleStretch(C) {
+  return C && C.arc ? smearStretch(C.trail, battleStage.t, battleSmearCount() > 0, battleStage.V) : null;
+}
 /* VFX-2: how many places its ribbon runs along (none where the afterimages are off, fewer at level 2) */
 export function battleRibbonCells() {
   return ribbonCells(!!reducedMotion, battleStage.q.lvl);
@@ -1437,6 +1443,19 @@ function battleStageDrawEffects(c, skip0) {
       c.globalAlpha = 1;
       c.save();
       c.translate(Math.round(q.x), Math.round(q.y));
+      /* VFX-3: on its fastest cells, drawn longer back along its drag (its front edge stays put) */
+      const S = battleStretch(C),
+        sq = S && battleStageProject(C.x + S.d[0], C.y + S.d[1], C.z + S.d[2]);
+      if (sq) {
+        const dx = sq.x - q.x,
+          dy = sq.y - q.y,
+          l = Math.hypot(dx, dy),
+          a = Math.atan2(dy, dx);
+        c.rotate(a);
+        c.translate(l / 2, 0);
+        c.scale(1 + l / (16 * k), 1);
+        c.rotate(-a);
+      }
       c.rotate(C.rot || 0);
       c.drawImage(cc, -8 * k, -8 * k, 16 * k, 16 * k);
       if (C.glow > 0) {
@@ -1621,7 +1640,8 @@ function pyramidArc(from, to, dur, kind, onLand, spin) {
     C.y = from.y + (to.y - from.y) * u + Math.sin(u * Math.PI) * 1.6;
     C.rot = k * Math.PI * (spin ? 6 : 3);
     C.tum = k * Math.PI * (spin ? 7 : 4);
-    if (k < 1) smearRecord(C.trail, battleStage.t, { x: C.x, y: C.y, z: C.z, rot: C.rot, tum: C.tum });
+    /* VFX-3: k too, its pace there says whether the cell is stretched */
+    if (k < 1) smearRecord(C.trail, battleStage.t, { x: C.x, y: C.y, z: C.z, rot: C.rot, tum: C.tum, k });
     if (k < 1) scheduleAt(8, step);
     else {
       C.arc = false;

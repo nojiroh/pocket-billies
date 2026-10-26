@@ -29,6 +29,7 @@ import {
   battleRibbonCells,
   battleSmearCount,
   battleStage,
+  battleStretch,
   particleSprite,
   trainerBattleFrame,
   trainerMetersPerPixel,
@@ -340,6 +341,14 @@ function battle3dFrame() {
   if (py) {
     /* VFX-2: its motion lines along the last of its arc (walk/effects.js ribbonPass) */
     ribbon = ribbonVertices(battleStage.coin, T);
+    /* VFX-3: on its fastest cells its trailing side is dragged back (prop-models.js SMEAR_GLSL); the copies aren't */
+    const C = battleStage.coin,
+      S = battleStretch(C);
+    if (S) {
+      const [x0, z0] = T(C.x, C.z),
+        [x1, z1] = T(C.x + S.d[0], C.z + S.d[2]);
+      py.smear = { d: [x1 - x0, S.d[1], z1 - z0], seed: S.seed };
+    }
     items.push(py);
     if (py.light) lights.push(py.light);
     /* VFX-1: its afterimages, the same model at its older places, dithered and brighter in its own colours (the

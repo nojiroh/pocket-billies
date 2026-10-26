@@ -1,4 +1,4 @@
-// VFX track VFX-1 and VFX-2: the throw's pace, its afterimages and its ribbon (game/js/logic/smear.js)
+// VFX track VFX-1..VFX-3: the throw's pace, its afterimages, its ribbon and its stretch (game/js/logic/smear.js)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -9,6 +9,9 @@ import {
   SMEAR_KEEP,
   SMEAR_NEAR,
   SMEAR_STEP,
+  STRETCH_K,
+  STRETCH_MAX,
+  STRETCH_PACE,
   ribbonCells,
   ribbonEdges,
   ribbonTone,
@@ -17,7 +20,9 @@ import {
   smearHistory,
   smearRecord,
   smearRibbon,
+  smearStretch,
   throwArcEase,
+  throwArcPace,
 } from '../../game/js/logic/smear.js';
 
 test('the throw keeps its start, middle and end, always moves forward, and is fastest at both ends', () => {
@@ -183,4 +188,62 @@ test("the ribbon's colour is the object's own, brighter, never past white", () =
   assert.ok(r > 0xd4 / 255 && r <= 1);
   assert.ok(Math.abs(r / g - 0xd4 / 0x7a) < 1e-9 && Math.abs(g / b - 0x7a / 0x3e) < 1e-9, 'the same hue');
   assert.deepEqual(ribbonTone('#ffffff'), [1, 1, 1]);
+});
+
+/* a 480 ms throw along x, 10 m, from far away from the eye, recorded as battle-stage.js pyramidArc records it */
+function flight(dur = 480, len = 10, until = dur) {
+  const H = smearHistory();
+  for (let t = 0; t < until; t += 8) {
+    const k = Math.min(1, t / dur);
+    if (k < 1) smearRecord(H, t, { x: 20 + throwArcEase(k) * len, y: 1, z: 0, k });
+  }
+  return H;
+}
+
+test("the pace is the ease's slope, fast enough to stretch only at the arc's ends", () => {
+  for (const k of [0.1, 0.3, 0.5, 0.8])
+    assert.ok(Math.abs(throwArcPace(k) - (throwArcEase(k + 1e-6) - throwArcEase(k)) / 1e-6) < 1e-4);
+  assert.ok(throwArcPace(0.05) >= STRETCH_PACE && throwArcPace(0.95) >= STRETCH_PACE);
+  assert.ok(throwArcPace(0.2) < STRETCH_PACE && throwArcPace(0.5) < STRETCH_PACE && throwArcPace(0.8) < STRETCH_PACE);
+});
+
+test('the stretch shows on one or two cells at each end of a throw, dragged back toward the last place', () => {
+  for (const dur of [380, 480]) {
+    const on = [];
+    for (let t = 0; t < dur; t += 8) {
+      const H = flight(dur, 10, t + 1),
+        S = smearStretch(H, t, true);
+      if (!S) continue;
+      on.push(H.cell);
+      const [a, b] = H.list,
+        l = Math.hypot(...S.d);
+      assert.ok(S.d[0] < 0 && Math.abs(S.d[1]) < 1e-12, 'back along the motion');
+      assert.ok(l <= STRETCH_MAX + 1e-9 && Math.abs(l - Math.min(STRETCH_MAX, (a.x - b.x) * STRETCH_K)) < 1e-9);
+      assert.ok(S.seed >= 0 && S.seed < 1);
+    }
+    const cells = [...new Set(on)],
+      last = Math.floor((dur - 1) / SMEAR_STEP);
+    const head = cells.filter(c => c < last / 2),
+      tail = cells.filter(c => c > last / 2);
+    assert.ok(head.length >= 1 && head.length <= 2, `${dur}: at the release ${head}`);
+    assert.ok(tail.length >= 1 && tail.length <= 2, `${dur}: before the hit ${tail}`);
+    assert.ok(tail.includes(last), 'the last cell before the hit');
+  }
+});
+
+test('the stretch holds for its cell, and none once stopped, when off, or near the eye', () => {
+  const H = flight(480, 10, 470),
+    t = 469;
+  assert.ok(smearStretch(H, t, true));
+  assert.deepEqual(smearStretch(H, t + 5, true), smearStretch(H, t, true), 'the same within the cell');
+  assert.equal(smearStretch(H, t + SMEAR_STEP * 2, true), null, 'the cell has passed: stopped');
+  assert.equal(smearStretch(H, t, false), null, 'Reduced motion, the lowest quality');
+  const eye = { x: H.list[1].x - 1, y: 1, z: 0 };
+  assert.equal(smearStretch(H, t, true, eye), null, 'the place a cell ago within SMEAR_NEAR of the eye');
+  assert.ok(smearStretch(H, t, true, { x: H.list[1].x - SMEAR_NEAR - 1, y: 1, z: 0 }));
+  assert.equal(smearStretch(smearHistory(), 0, true), null);
+  const old = smearHistory();
+  smearRecord(old, 0, { x: 0, y: 0, z: 0 });
+  smearRecord(old, 50, { x: 1, y: 0, z: 0 });
+  assert.equal(smearStretch(old, 50, true), null, 'places without a pace (not a thrown arc)');
 });

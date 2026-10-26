@@ -61,6 +61,7 @@ expose({
   PROP_MODEL_SHADERS: [() => PROP_MODEL_SHADERS],
   PROP_MODEL_SHAPES: [() => PROP_MODEL_SHAPES],
   PROP_MODEL_TEXTURES: [() => PROP_MODEL_TEXTURES],
+  SMEAR_GLSL: [() => SMEAR_GLSL],
   SPIN_BY_GLSL: [() => SPIN_BY_GLSL],
   SPIN_GLSL: [() => SPIN_GLSL],
   SWAPPED_RECIPES: [() => SWAPPED_RECIPES],
@@ -115,9 +116,11 @@ expose({
   propModelShaders: [() => propModelShaders, v => ((propModelShaders = v), provide({ propModelShaders }))],
   propModelState: [() => propModelState],
   propModelsOn: [() => propModelsOn, v => (propModelsOn = v)],
+  setItemSmear: [() => setItemSmear, v => (setItemSmear = v)],
   setItemSpin: [() => setItemSpin, v => (setItemSpin = v)],
   setPropModelUniforms: [() => setPropModelUniforms, v => (setPropModelUniforms = v)],
   spinPartAngle: [() => spinPartAngle, v => (spinPartAngle = v)],
+  splitSmeared: [() => splitSmeared, v => (splitSmeared = v)],
   swappedRecipe: [() => swappedRecipe, v => (swappedRecipe = v)],
   tagPropModel: [() => tagPropModel, v => ((tagPropModel = v), provide({ tagPropModel }))],
   uploadLowPolyMesh: [() => uploadLowPolyMesh, v => (uploadLowPolyMesh = v)],
@@ -1395,8 +1398,8 @@ function drawPropModelMesh(m) {
 /* the model's program: its own vertex shader (placed, scaled, turned and spun like a voxel prop), the buildings' look */
 const lowPolyVertexShader = () => `#version 300 es
 precision highp float;layout(location=0) in vec3 mPos;layout(location=1) in vec3 mNrm;layout(location=2) in vec2 mUV;layout(location=3) in vec3 mTex;layout(location=4) in vec3 mCol;
-uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${COMMON_GLSL}${SPIN_GLSL}
-void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(mPos/256.-uSpinC)+uSpinC,n0=voxSpin(mNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
+uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${COMMON_GLSL}${SPIN_GLSL}${SMEAR_GLSL}
+void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(mPos/256.-uSpinC)+uSpinC,n0=voxSpin(mNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);p=smearDrag(p,cr,sr,mPos);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
  vec3 w=uBase+p;w.y+=curveY(uBase.xz);vW=w;vN=n;vUV=mUV/64.;vTex=mTex;vCol=mCol;gl_Position=uVP*vec4(w,1.);}`;
 /* a window's glass (vTex.z 2-32: window 1-31): by day the sky in it, more of it at a grazing look, and a glint of the
    sun; lit from its room when its bit of uWinOn is set, as strongly as uWinK says (1 after dark), a warm lamp, a cooler
@@ -1454,8 +1457,20 @@ function drawLowPolyModels(C, X, L, inst) {
   if (p.U.uScroll) gl.uniform2f(p.U.uScroll, 0, 0);
   /* Building bumpiness: the models wear the buildings' sheet, and bump as the buildings do */
   if (p.U.uBStr) gl.uniform1f(p.U.uBStr, engineSetting('world', 'buildingBumps') || 0);
-  if (inst) drawModelInstances(p, 'mdl', L);
-  else drawLowPolyItems(p, L);
+  if (!inst) drawLowPolyItems(p, L);
+  else {
+    /* VFX-3: as the voxel props: a stretched one one at a time, with the plain program and the same textures */
+    const [one, many] = splitSmeared(L);
+    if (many.length) drawModelInstances(p, 'mdl', many);
+    if (one.length) drawLowPolyModels(C, X, one, false);
+  }
+}
+/* [the stretched (it.smear), the rest] of a list of [item, mesh] */
+function splitSmeared(L) {
+  const one = [],
+    many = [];
+  for (const e of L) (e[0].smear ? one : many).push(e);
+  return [one, many];
 }
 /* the models one at a time: each item's own uniforms, then its mesh, its extra parts and its turning parts */
 function drawLowPolyItems(p, L) {
@@ -1463,6 +1478,7 @@ function drawLowPolyItems(p, L) {
   for (const [it, m] of L) {
     gl.uniform1f(p.U.uFade, it.fade ?? 1);
     gl.uniform1f(p.U.uBaseY, it.y);
+    setItemSmear(p, it);
     if (p.U.uCel) gl.uniform1f(p.U.uCel, it.vox && it.vox.cel != null ? it.vox.cel : 0.75);
     if (typeof setPropLookUniforms === 'function') setPropLookUniforms(p.U, it.lk, [it.x, it.y, it.z]);
     setPropModelUniforms(p, it);
@@ -1484,11 +1500,16 @@ function drawLowPolyItems(p, L) {
 /* alpha 0.4: a part that turns (a propeller): its own mesh, turned uSpin.w radians about the axis uSpin.xyz (a unit
    vector, up as y) through its pivot uSpinC (the model's metres, up as y) */
 const SPIN_GLSL = `vec3 voxSpin(vec3 d){float a=uSpin.w;if(a==0.)return d;vec3 k=uSpin.xyz;float c=cos(a),s=sin(a);return d*c+cross(k,d)*s+k*dot(k,d)*(1.-c);}`;
+/* VFX-3: a thrown pyramid's stretch on its fastest frames (logic/smear.js smearStretch, it.smear): a vertex on the
+   side facing away from the motion (from the spin's pivot, placed, scaled and turned as p is) is dragged back by up to
+   uSmear.xyz (the scene's metres), the more the further round it is, broken up by noise on its own model place m
+   (uSmear.w: the cell's seed); 0 for every other model. After voxSpin and the turn (cr, sr), before the base */
+const SMEAR_GLSL = `uniform vec4 uSmear;vec3 smearDrag(vec3 p,float cr,float sr,vec3 m){if(dot(uSmear.xyz,uSmear.xyz)<1e-8)return p;vec3 c=vec3(uSpinC.x*uFlip,uSpinC.y,uSpinC.z)*uS;vec3 r=p-vec3(c.x*cr-c.z*sr,c.y,c.x*sr+c.z*cr);float l=length(r);if(l<1e-4)return p;float f=clamp(dot(r/l,normalize(uSmear.xyz)),0.,1.),h=fract(sin(dot(m,vec3(12.9898,78.233,37.719))+uSmear.w*61.7)*43758.5453);return p+uSmear.xyz*f*(.7+.3*h);}`;
 const PROP_MODEL_SHADERS = {
   vox: [
     `#version 300 es
-precision highp float;layout(location=0) in vec3 qPos;layout(location=1) in vec3 qNrm;layout(location=2) in vec3 qCol;uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip,uQ;${COMMON_GLSL}out vec3 vW;out vec3 vN;out vec3 vC;${SPIN_GLSL}
-void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(qPos*uQ-uSpinC)+uSpinC,n0=voxSpin(qNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
+precision highp float;layout(location=0) in vec3 qPos;layout(location=1) in vec3 qNrm;layout(location=2) in vec3 qCol;uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip,uQ;${COMMON_GLSL}out vec3 vW;out vec3 vN;out vec3 vC;${SPIN_GLSL}${SMEAR_GLSL}
+void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(qPos*uQ-uSpinC)+uSpinC,n0=voxSpin(qNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);p=smearDrag(p,cr,sr,qPos);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
  vec3 w=uBase+p;w.y+=curveY(uBase.xz);vW=w;vN=n;vC=qCol;gl_Position=uVP*vec4(w,1.);}`,
     `#version 300 es
 precision highp float;in vec3 vW;in vec3 vN;in vec3 vC;out vec4 o;uniform vec3 uBaseP;uniform float uFade,uEmit;${LIGHT_GLSL}${ROCK_GLSL}
@@ -1814,6 +1835,11 @@ function setItemSpin(p, it) {
     gl.uniform3f(p.U.uSpinC, 0, 0, 0);
   }
 }
+/* VFX-3: its stretch, it.smear {d: the drag in the scene's metres; seed: 0..1} (SMEAR_GLSL), else none */
+function setItemSmear(p, it) {
+  const S = it.smear;
+  if (p.U.uSmear) gpuState.gl.uniform4f(p.U.uSmear, S ? S.d[0] : 0, S ? S.d[1] : 0, S ? S.d[2] : 0, S ? S.seed : 0);
+}
 function setPropModelUniforms(p, it) {
   const gl = gpuState.gl,
     U = p.U,
@@ -1831,6 +1857,7 @@ function drawVoxItems(p, L) {
     gl.uniform3f(p.U.uBaseP, it.x, it.y, it.z);
     gl.uniform1f(p.U.uFade, it.fade ?? 1);
     gl.uniform1f(p.U.uEmit, it.glow ? it.glow : 0);
+    setItemSmear(p, it);
     setPropModelUniforms(p, it);
     gl.uniform1f(p.U.uQ, m.q || 1);
     setItemSpin(p, it);
@@ -1863,8 +1890,13 @@ export function drawPropModels(C, items, X, hits, labels, PPU) {
       gl.depthMask(true);
       gl.disable(gl.BLEND);
       gl.disable(gl.CULL_FACE);
-      if (inst) drawModelInstances(p, 'vox', VL);
-      else drawVoxItems(p, VL);
+      if (!inst) drawVoxItems(p, VL);
+      else {
+        /* VFX-3: a stretched item has no place in the instance record: drawn one at a time */
+        const [one, many] = splitSmeared(VL);
+        if (many.length) drawModelInstances(p, 'vox', many);
+        if (one.length) drawVoxItems(useWalkProgram('vox', C, X), one);
+      }
     }
     gl.bindVertexArray(null);
     if (hits) for (const [it] of VL) if (!it.far) addHitTarget(it, C, hits, labels, PPU);
