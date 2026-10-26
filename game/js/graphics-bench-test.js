@@ -83,8 +83,6 @@ const GRAPHICS_TEST_HIDDEN = [
   ['quality.skyLast', 'Sky last', { values: [false, true], alone: true }],
   /* phase 20 E7-E10: the standing pictures (and the reflection's) drawn one draw per run of one picture; the same look */
   ['quality.spriteInstances', 'Pictures in batches', { values: [false, true], alone: true }],
-  /* phase 20 R3 (shadows): the far shadows held still (a look change past 13 m), on its own */
-  ['quality.farShadowsStill', 'Far shadows hold still', { values: [false, true], alone: true }],
 ];
 /* the stations, in the order the test walks them; their spots are the map's `bench` ([x, z, camera turn, zoom]) */
 const GRAPHICS_TEST_STATIONS = [
@@ -115,18 +113,12 @@ const GRAPHICS_TEST_STATIONS = [
   {
     id: 'meadow',
     name: 'Meadow',
-    dials: ['grass.density', 'air.particles', 'air.mist', 'quality.farShadowsStill'],
+    dials: ['grass.density', 'air.particles', 'air.mist'],
   },
   {
     id: 'depth',
     name: 'Depth corridor',
-    dials: [
-      'lens.blur',
-      'world.farProps',
-      'quality.stableLights',
-      'quality.spriteInstances',
-      'quality.farShadowsStill',
-    ],
+    dials: ['lens.blur', 'world.farProps', 'quality.stableLights', 'quality.spriteInstances'],
   },
   { id: 'sky', name: 'Open sky', dials: ['sun.clouds', 'sun.cloudShadows', 'quality.skyLast'] },
   /* phase 20 R2: the meadow in the rain (a station may name its weather; clear otherwise); against the Meadow it shows

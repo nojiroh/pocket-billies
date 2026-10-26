@@ -228,10 +228,12 @@ function fittedShadowPass(items0, sun, C) {
     };
   const solid = engineSetting('shadows', 'buildings'),
     tr = sun.travel;
-  /* phase 20 R3 (F8): models whose mesh holds still are cached too (shadowHoldsStill) */
-  const fs = cache && !!engineSetting('quality', 'farShadowsStill'),
-    held = shadowHoldsStill,
-    still = fs ? it => held(it) || (it.k === 'prop' && !it.vol && !it.vox && it.rest !== undefined) : held,
+  /* phase 20 R3: models whose mesh holds still are cached too (F8, shadowHoldsStill), and so is what only the wind
+     sways, drawn at its rest (E11, the owner's option a); within the near map (13 m) shadows sway as before */
+  const fs = cache,
+    still = fs
+      ? it => shadowHoldsStill(it) || (it.k === 'prop' && !it.vol && !it.vox && it.rest !== undefined)
+      : shadowHoldsStill,
     stat = cache ? filterInto(items, still, SHADOW_LISTS.stat) : items,
     dyn = cache
       ? filterInto(items, it => !still(it), SHADOW_LISTS.dyn)

@@ -120,9 +120,8 @@ function swayers() {
     it('cloud', 5, { shear: 0.1, rest: 0, vol: true }),
   ];
 }
-function farLists(fs, on) {
+function farLists(on) {
   shadowSetup();
-  engineContext.look.quality.farShadowsStill = fs;
   const run = () => G.fittedShadowPass(swayers(), SUN, null);
   if (on) run();
   else withOldShadowSprites(run);
@@ -132,15 +131,12 @@ function farLists(fs, on) {
     key: walkRenderer.shKey,
   };
 }
-test('far shadows hold still: what only the wind sways is cached; anything else as before; off unchanged', () => {
+test('far shadows hold still: what only the wind sways is cached; anything else as before', () => {
   for (const on of [false, true]) {
-    const A = farLists(true, on);
+    const A = farLists(on);
     assert.deepEqual(A.stat, ['grass', 'bush', 'rock']);
     assert.deepEqual(A.dyn, ['flagPole', 'cloud']);
     assert.equal(A.key.split('|').at(-1), G.shadowCasterSignature(G.SHADOW_LISTS.stat));
-    const B = farLists(false, on);
-    assert.deepEqual(B.stat, ['rock']);
-    assert.equal(B.key.split('|').at(-1), G.shadowCasterSignature(G.SHADOW_LISTS.stat));
   }
 });
 // the shear each picture is drawn with, one at a time (the last uShear before its draw) and as instances

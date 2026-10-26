@@ -277,9 +277,6 @@ export const ENGINE_DEFAULTS = {
     phonePixels: false,
     /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each) */
     spriteInstances: false,
-    /* phase 20 R3 (E11, the owner's option a): the far shadow map draws what only the wind sways at rest and keeps it
-       in its cache; within the near map (13 m) shadows sway as before */
-    farShadowsStill: true,
     /* phase 20 R3 (context, H5): a place is shown once two frames have drawn behind its fade (at most 1.5 s), so its
        first draws compile and upload out of sight; a restored context fades back in the same way */
     warmUp: true,
@@ -1244,12 +1241,6 @@ export const ENGINE_SPEC = [
         'Pictures in batches',
         'bool',
         'Trees, leaves, people and the other standing pictures are drawn in batches, one draw for all the copies of a picture, instead of one draw each. The same look; fewer calls to the graphics card.',
-      ],
-      [
-        'farShadowsStill',
-        'Far shadows hold still',
-        'bool',
-        'Past the sharp shadows round you (about 13 m) the shadows of grass, bushes and leaves stop swaying in the wind and are kept from frame to frame instead of drawn again each frame. Close by they sway as before.',
       ],
       [
         'warmUp',
