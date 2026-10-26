@@ -119,6 +119,8 @@ export const ENGINE_DEFAULTS = {
     sunFog: 0.4,
     godRays: 0.5,
     lightsInAir: 0.7,
+    /* phase 20 R2 (D7): cheap light shafts (one quad each) while the light in the air is off; 0: none */
+    cheapShafts: 0,
   },
   world: {
     hugSlopes: true,
@@ -646,6 +648,14 @@ export const ENGINE_SPEC = [
         'Sunlight in the air, shadowed by what stands in it: beams between trees and buildings (v43). A march through the air at half resolution.',
       ],
       ['lightsInAir', 'Lamps in the air', 0, 2, 0.05, 'A glow in the air round lamps and fires at night (v43).'],
+      [
+        'cheapShafts',
+        'Cheap light shafts',
+        0,
+        1.5,
+        0.05,
+        'When God rays are off (or the automatic quality turns them off): a few soft beams of sunlight from the trees near you, strongest at dawn and golden hour. Cheap; 0 for none.',
+      ],
       ['mistHeight', 'Mist height (m)', 0, 2, 0.05],
       [
         'valleyMist',
