@@ -143,6 +143,13 @@ export function gatherFrameItems(st, C, PPU, C0) {
       h,
       flip: p.f ? -1 : 1,
       shear: sw2 + (lk && !M.box && !M.build && !M.flat ? lk.lean : 0),
+      /* phase 20 R3: a prop whose only motion is the wind: its shear at rest (walk/shadows.js, "Far shadows hold still") */
+      rest:
+        !far && M.sway && !S.bob && !S.flag && !p.moving
+          ? lk && !M.box && !M.build && !M.flat
+            ? lk.lean
+            : 0
+          : undefined,
       flat: M.flat,
       sh: (p.lift || 0) > 3 ? 0 : (M.shadow || 0) * (p.s || 1),
       far,
@@ -240,6 +247,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
           h: li.naturalHeight || li.height,
           flip: p.f ? -1 : 1,
           shear: lsh,
+          rest: M.sway && !S.bob && !S.flag && !l.swing && !p.moving ? 0 : undefined,
           flat: LM.flat,
           sh: l.glow || M.box || l.shadow === 0 ? 0 : (M.shadow || 0) * (p.s || 1),
           fixed: l.face !== 'billboard',

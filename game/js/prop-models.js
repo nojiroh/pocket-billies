@@ -1629,6 +1629,8 @@ function propModelImageItems(it, out) {
       h,
       flip: d.flip,
       shear: (it.shear || 0) * (L.sway ?? 1),
+      /* phase 20 R3: at rest (no wind) when the model itself stands still (walk/shadows.js, "Far shadows hold still") */
+      rest: it.rest !== undefined && !(it.M && it.M.bob) ? it.rest * (L.sway ?? 1) : undefined,
       sh: L.shadow ? (it.M && it.M.shadow ? it.M.shadow : 1) * s : 0,
       glow: L.glow ? L.glow * (typeof lampLit === 'function' ? lampLit(it.x, it.z, 0) : 1) : 0,
       noRecv: L.recv === 0,

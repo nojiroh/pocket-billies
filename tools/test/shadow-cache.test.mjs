@@ -5,6 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { shadowSetup } from './shadow-fixture.mjs';
+await import('../../game/js/prop-models.js');
 
 const G = globalThis;
 const { provide } = await import('../../game/js/hooks.js');
@@ -96,4 +97,116 @@ test('on: the cache key carries the signature of what the cache holds', () => {
   assert.ok(k1 && walkRenderer.shKey && k1 !== walkRenderer.shKey);
   assert.equal(walkRenderer.shKey.split('|').at(-1), G.shadowCasterSignature(G.SHADOW_LISTS.stat));
   assert.ok(G.SHADOW_LISTS.stat.some(it => it.id === 'rock' && it.vox));
+});
+
+// ---------- E11, the owner's option (a): "Far shadows hold still" ----------
+function swayers() {
+  const it = (id, x, o = {}) => ({
+    k: 'prop',
+    id,
+    x,
+    y: 0,
+    z: 2,
+    w: 32,
+    h: 32,
+    mpp: 1 / 32,
+    ox: -16,
+    oy: -32,
+    sh: 1,
+    flip: 1,
+    im: { T: { t: id } },
+    p: { x, z: 2 },
+    M: { sway: 1 },
+    still: false,
+    ...o,
+  });
+  return [
+    it('grass', 1, { shear: 0.07, rest: 0 }),
+    it('bush', 2, { shear: -0.05, rest: 0.02, fixed: true, plane: true }),
+    it('flagPole', 3, { shear: 0.09 }),
+    it('rock', 4, { shear: 0, still: true, M: {} }),
+    it('cloud', 5, { shear: 0.1, rest: 0, vol: true }),
+  ];
+}
+function farLists(fs, on) {
+  shadowSetup();
+  engineContext.look.quality.farShadowsStill = fs;
+  engineContext.look.quality.shadowInstances = on;
+  G.fittedShadowPass(swayers(), SUN, null);
+  return {
+    stat: G.SHADOW_LISTS.stat.map(it => it.id),
+    dyn: G.SHADOW_LISTS.dyn.map(it => it.id),
+    key: walkRenderer.shKey,
+  };
+}
+test('far shadows hold still: what only the wind sways is cached; anything else as before; off unchanged', () => {
+  for (const on of [false, true]) {
+    const A = farLists(true, on);
+    assert.deepEqual(A.stat, ['grass', 'bush', 'rock']);
+    assert.deepEqual(A.dyn, ['flagPole', 'cloud']);
+    assert.equal(A.key.split('|').at(-1), G.shadowCasterSignature(G.SHADOW_LISTS.stat));
+    const B = farLists(false, on);
+    assert.deepEqual(B.stat, ['rock']);
+    assert.equal(B.key.split('|').at(-1), '');
+  }
+});
+// the shear each picture is drawn with, one at a time (the last uShear before its draw) and as instances
+function shears(on, rest) {
+  const gl = shadowSetup();
+  engineContext.look.quality.shadowInstances = on;
+  G.drawShadowSprites({ vp: ['x'] }, swayers(), SUN, [0, 0, 0, 1e9], null, rest);
+  const out = {};
+  if (on) {
+    for (let i = 0; i < G.SHADOW_QUADS.n; i++) out[G.SHADOW_QUADS.list[i].T] = G.SHADOW_QUADS.list[i].shear;
+    return out;
+  }
+  let tex = null,
+    sh = null;
+  for (const [k, ...a] of gl.calls) {
+    if (k === 'bindTexture') tex = a[1];
+    else if (k === 'uniform1f' && a[0] === 'uShear') sh = a[1];
+    else if (k === 'drawArrays') out[tex] = sh;
+  }
+  return out;
+}
+test('the far map’s still part draws them at rest, the rest of the time with the wind (both paths)', () => {
+  for (const on of [false, true]) {
+    assert.deepEqual(
+      shears(on, true),
+      { grass: 0, bush: 0.02, flagPole: 0.09, rock: 0 },
+      `instances ${on}`
+    );
+    assert.deepEqual(
+      shears(on, false),
+      { grass: 0.07, bush: -0.05, flagPole: 0.09, rock: 0 },
+      `instances ${on}`
+    );
+  }
+});
+test('a model’s leaf pictures at rest when the model stands still, none when it bobs', () => {
+  G.artImage = () => ({ width: 16, height: 16 });
+  const model = o => ({
+    k: 'prop',
+    x: 1,
+    y: 0,
+    z: 1,
+    p: { s: 1, x: 1, z: 1 },
+    M: {},
+    flip: 1,
+    shear: 0.06,
+    vox: { layers: [{ k: 'img', img: 'leaf.png', x: 0, y: 2, z: 0, sway: 0.5, shadow: 1 }] },
+    ...o,
+  });
+  const out = [];
+  G.propModelImageItems(model({ rest: 0.01 }), out);
+  G.propModelImageItems(model({ rest: 0.01, M: { bob: 0.3 } }), out);
+  G.propModelImageItems(model({}), out);
+  assert.deepEqual(
+    out.map(it => [it.shear, it.rest]),
+    [
+      [0.03, 0.005],
+      [0.03, undefined],
+      [0.03, undefined],
+    ]
+  );
 });
