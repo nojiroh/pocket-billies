@@ -172,7 +172,10 @@
    "route": 10,
    "routeMin": 4,
    "habitats": {"water":["Water"],"woods":["Grass","Psychic","Dragon"]},
-   "rare": {"up":2}
+   "rare": {
+    "up": 2,
+    "myth": {"chance":0.02,"list":["satoshi0"]}
+   }
   },
   "seamIn": 6,
   "load": {"capMs":20000},

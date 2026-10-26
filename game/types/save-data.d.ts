@@ -303,6 +303,8 @@ export interface Run {
   lostTo?: RunLostTo;
   /** RL-S1: the leaders (trainer ids) beaten this run */
   beat?: string[];
+  /** RO-3f: a mythical was met (battled or fled from) this run: no other stands in for a rarer one (logic/rules.js spawnMyth) */
+  myth?: 1;
   /** TW-3: its quests (logic/run-quests.js); missing until the first is taken */
   quests?: RunQuests;
 }
