@@ -332,7 +332,7 @@ const storyGameStage = {
   },
 };
 /* line: the id of the line on screen (tools/story-ids.mjs), for the debug log */
-const storyRun = { on: false, id: null, speaker: null, line: null, base: null, path: null, control: null };
+export const storyRun = { on: false, id: null, speaker: null, line: null, base: null, path: null, control: null };
 provide({ storyRun }); /* to-module */
 const storySlots = { name: () => lookOf('me').name || 'Trainer' };
 /* RL-S1: the script command `pick <who>`: the story director's line (logic/story-pick.js) on the game's save, marked

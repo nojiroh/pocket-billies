@@ -4085,7 +4085,7 @@ function hubResidentTables() {
   const hub = gameData.locations[0] && gameData.locations[0].mapId;
   return hub ? { hub, map: mapById(hub), R: RESIDENTS, B: UNLOCK_DATA.buildings } : null;
 }
-function hubResidentWalkers(sc) {
+export function hubResidentWalkers(sc) {
   const T = hubResidentTables(),
     bid = (sc && sc.baseId) || walkView.id,
     ids = T && T.map && bid === T.hub && saveData ? residentsHere(saveData) : [],
