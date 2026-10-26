@@ -57,7 +57,7 @@ branch when it moves (a merge, never a rebase). Merge SP-1, SP-2, SP-3, then thi
   sheet (the title follows); Take off free. In-game steps alone: "Walk: Inside the Gene Bank", "Wild splice", "Gene
   Bank: sequence, splice, see it in battle" (musk2 front=cat_arm@bezos0: 10 DNA, its Grip row in battle) all pass. The
   Studio's Genes section at 1920 px: a Swiftlet with a shark's tail baked; the Studio's Check lists only older notes.
-  Slow tier: SLOW_RESULT. Full quick check: QUICK_RESULT
+  Slow tier 73 of 73 (the island-generator test after the Copperleaf rebuild included). Full quick check: QUICK_RESULT
 - Risky: Unstable is now stored and trusted (billyUnstable reads it; every place a splice or the limit changes
   settles it): a path that changes a splice without spliceSet, bankSplice or graftTidy would leave it stale until the
   next load. Copperleaf has one more building (the hub pictures differ from the baseline). The preview bakes on the
