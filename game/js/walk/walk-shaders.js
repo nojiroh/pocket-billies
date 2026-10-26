@@ -320,7 +320,10 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
   c=mix(c,vec3(.95,.98,1.)*(.85+.15*sh),clamp(chn*.95+rg*.55,0.,.95));foam=max(foam,chn);}
  /* duckweed and scum: little green specks drifting together in still, murky water */
  if(kb.z>0.){vec2 dw=wp+vec2(sin(ts*.05),cos(ts*.04))*.4;float pch=pwHard(.55,.75,lnoise(dw*.7)+(1.-dep)*.3);float speck=step(.45,fract(sin(dot(floor(dw*pr),vec2(12.9898,78.233)))*43758.5));
-  float wd=pch*mix(speck,max(speck,.7),scum)*kb.z;c=mix(c,mix(mix(vec3(.36,.5,.16),vec3(.55,.66,.24),speck*fract(dw.x*3.1)),mix(vec3(.3,.25,.12),vec3(.5,.42,.2),speck*fract(dw.x*3.1)),scum)*(.55+.45*sh)*(.6+.4*uAmbK),clamp(wd,0.,1.));}
+  /* WA-5b: a bog's brown scum lies in drifting rafts in three tones, dark open water between */
+  if(scum>.5){float sp=pwHard(.5,.58,lnoise(dw*1.1+3.)*.75+lnoise(dw*3.7)*.25+(1.-dep)*.1),st=pwQ(lnoise(dw*4.3+7.),3.,pc);
+   c=mix(c,mix(vec3(.22,.18,.09),vec3(.5,.42,.21),st)*(.55+.45*sh)*(.6+.4*uAmbK),sp*kb.z*.92);}
+  else{float wd=pch*speck*kb.z;c=mix(c,mix(vec3(.36,.5,.16),vec3(.55,.66,.24),speck*fract(dw.x*3.1))*(.55+.45*sh)*(.6+.4*uAmbK),clamp(wd,0.,1.));}}
  /* v47: whitecaps on the open sea: small crests that come and go, only out where it is deep */
  if(kc.x>.5){vec2 q=uSea.z>.5?vec2(dot(w,vec2(-rd.y,rd.x)),dot(w,rd))*vec2(2.1,4.6)+vec2(ts*.05,ts*.24):w*vec2(2.1,4.6)+vec2(ts*.21,ts*.09);float wc=lnoise(q)*lnoise(q*1.9+vec2(5.2,1.3)-vec2(ts*.17,0.));float sk=pix>.5?uTide.y:0.;wc=pwHard(.46-.1*sk,.52-.1*sk,wc)*pwQ(smoothstep(.45-.2*sk,.85-.25*sk,depC),3.,pc)*uFoam*(1.+sk)*(uSea.z>.5?1.-calm*.85:1.);c=mix(c,vec3(.95,.98,1.)*(.75+.25*sh),clamp(wc*.65,0.,.65+.2*sk));
   /* water track WA-4: a storm's sea is darker and greyer */

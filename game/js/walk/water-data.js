@@ -241,7 +241,7 @@ export const WATER_KIND_LOOKS = [
     foam: 0.1,
     rip: 0.22,
     glow: 0,
-    murk: 0.95,
+    murk: 0.8,
     weed: 1,
     fish: 0,
   },
