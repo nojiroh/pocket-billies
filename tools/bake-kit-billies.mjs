@@ -5,12 +5,18 @@
 // - its rig in game/art/next/rigs-next.js (the file is written as the Studio writes it, and only when a rig changed);
 // - the stage's native parts in game/data/lines/<line>.json "parts" (not for a regional form's recipe: it is only a look).
 // Nothing is written for a recipe that bakes as committed, so a run on an unchanged tree changes no file.
+// Roster track RO-3b: a recipe whose rig is a placeholder Billie's (game/data/bodyPlans.json forms) is kept on disk but
+// not baked or written: its sheet, rig and line parts stay the placeholder's. To bring a kit look back, take the
+// Billie out of bodyPlans.json forms and bake again. tools/test/kit-bake.json keeps every recipe's bake as fingerprints
+// (written by --fingerprints), so the kit baker stays checked while its art is not committed.
 //
 //   node tools/bake-kit-billies.mjs                    bake every form, write what changed
 //   node tools/bake-kit-billies.mjs --only=emberox,... only these forms
 //   node tools/bake-kit-billies.mjs --check            write nothing; list what would change (exit 1 if anything)
+//   node tools/bake-kit-billies.mjs --fingerprints     write tools/test/kit-bake.json (every recipe, placeholders too)
 //
 // Unlike the Python builder it draws no preview sheet and no piece layout (<name>.json): the rig holds all a layout did.
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import vm from 'node:vm';
@@ -21,6 +27,22 @@ import { kitBakeWhole } from '../game/js/logic/kit-assemble.js';
 const ART = join(ROOT, 'game', 'art');
 const SHEETS = join(ART, 'next', 'billionaires');
 const RIGS = join(ART, 'next', 'rigs-next.js');
+const PRINTS = join(ROOT, 'tools', 'test', 'kit-bake.json');
+
+/** the rigs a placeholder Billie owns (bodyPlans.json forms): the kit baker leaves them alone */
+export const placeholderRigs = () => new Set((readJson('bodyPlans.json').forms || []).map(f => f.rig));
+
+/** a bake as fingerprints: the sheet's shown pixels (size, alpha, colour where alpha is not 0) and the rig */
+export function kitFingerprint(made) {
+  const { width, height, data } = made.sheet,
+    shown = Buffer.from(data);
+  for (let i = 0; i < shown.length; i += 4) if (!shown[i + 3]) shown[i] = shown[i + 1] = shown[i + 2] = 0;
+  const sha = b => createHash('sha256').update(b).digest('hex').slice(0, 32);
+  return {
+    sheet: `${width}x${height} ${sha(shown)}`,
+    rig: sha(JSON.stringify(JSON.parse(JSON.stringify(made.rig)))),
+  };
+}
 
 /** do two pictures show the same: same size, same alpha, same colour where alpha is not 0 */
 export function sameShown(a, b) {
@@ -46,19 +68,25 @@ function readRigs() {
   return { head: text.slice(0, at), rigs: box.window.RIGS_NEXT };
 }
 
+/** the kit parts' pictures as the baker asks for them, each read once */
+function kitPics(K) {
+  const cache = new Map();
+  return (id, view) => {
+    const key = id + '|' + view;
+    if (!cache.has(key)) cache.set(key, readPng(join(ART, K.parts[id].views[view].file)));
+    return cache.get(key);
+  };
+}
+
 /** bakes the forms and returns what changed, writing it unless `check` */
 export function bakeKitBillies({ only = null, check = false, log = console.log } = {}) {
   const K = readJson('partKits.json'),
     B = readJson('kitBuilds.json'),
     data = { partKits: K, kitBuilds: B, rules: readJson('rules.json') },
-    cache = new Map(),
-    pics = (id, view) => {
-      const key = id + '|' + view;
-      if (!cache.has(key)) cache.set(key, readPng(join(ART, K.parts[id].views[view].file)));
-      return cache.get(key);
-    },
+    pics = kitPics(K),
     forms = only ? B.forms.filter(f => only.includes(f.name)) : B.forms,
     changed = [],
+    kept = placeholderRigs(),
     { head, rigs } = readRigs();
   if (only)
     for (const n of only) if (!B.forms.some(f => f.name === n)) throw new Error(`no form ${n} in kitBuilds.json`);
@@ -66,6 +94,10 @@ export function bakeKitBillies({ only = null, check = false, log = console.log }
   /** @type {Record<string, any>} */
   const lines = {};
   for (const form of forms) {
+    if (kept.has(form.rig)) {
+      log(`${form.rig.padEnd(12)} ${form.name.padEnd(13)} kept: on its placeholder (bodyPlans.json)`);
+      continue;
+    }
     const made = kitBakeWhole(data, form, pics),
       what = [],
       png = join(SHEETS, `${form.name}.png`);
@@ -106,8 +138,23 @@ export function bakeKitBillies({ only = null, check = false, log = console.log }
   return changed;
 }
 
+/** every recipe baked (placeholders' too) as fingerprints, by form name */
+export function kitFingerprints() {
+  const K = readJson('partKits.json'),
+    B = readJson('kitBuilds.json'),
+    data = { partKits: K, kitBuilds: B, rules: readJson('rules.json') },
+    pics = kitPics(K);
+  return Object.fromEntries(B.forms.map(f => [f.name, kitFingerprint(kitBakeWhole(data, f, pics))]));
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
   try {
+    if (process.argv.includes('--fingerprints')) {
+      const prints = kitFingerprints();
+      writeFileSync(PRINTS, JSON.stringify(prints, null, 1) + '\n');
+      console.log(`${Object.keys(prints).length} kit bakes written as fingerprints to tools/test/kit-bake.json`);
+      process.exit(0);
+    }
     const o = process.argv.find(a => a.startsWith('--only=')),
       check = process.argv.includes('--check'),
       changed = bakeKitBillies({ only: o ? o.slice(7).split(',').filter(Boolean) : null, check });

@@ -151,9 +151,10 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
 | 2 | WA-6b | P | **Surf and Waterfall climb.** Riding per cell: walk into `d` with a rider (`rules.ride`) and the Water badge, mount and leave at the shore; the mount's bob, wake and rings; encounters on water (the region's water pool); the Waterfall field move (badge: ask) climbing a `climb` fall. Builds on the contract while WA-2b lands. | unit tests (riding rules, badge), a surf walk check, smoke |
 | 3 | WA-4 | R | (**done** 2026-10-25, notes below) **The sea and the coast.** Surf as hard stepped bands breaking along the coast, foam round rocks, a slow tide (the waterline and wet sand move, tide pools), reef shallows (turquoise, see-through), kelp, sandbars, a sun and a moon path on the open sea, a storm sea from the forecast. | look-water --scene=test_island, island-shots, smoke |
 | 3 | WA-5a | G | (**done** 2026-10-25, notes below) **New kinds' play and weather on water.** Hot springs heal the party, oases, marsh and bog slow you (their encounter pools, hidden items in reeds), rapids block, floods in storms keep the main path open, ponds freeze in snow, rain rings (exist). | unit tests (a flooded path keeps the main path open; heal once a run), smoke |
-| 3 | WA-7 | B | **World map and battles.** The bowl's rivers and seas in the same tones and steps (the shared snippet); water backdrops on battle stages by a node's biome. | bowl map test, battle stage pictures, smoke |
-| 4 | WA-5b | R | **Kinds as a texture and water life.** Kind looks in a small texture (no cap at 9), the new kinds drawn (steam on hot springs, rapids' white water, bog's scum, reef, cave water lit by its own glow); lily pads that bob, reeds that sway, frogs, fish that jump (sprites), birds that dive. | look-water, smoke |
-| 4 | WA-9 | G | **Studio tools.** A river brush (source to mouth, regenerates its bed), a waterfall placer (lip, width, pool, climb), a water-kind painter, a live preview; STUDIO.md. | Studio check, a hand-placed fall survives a regenerate |
+| 3 | WA-7 | B | (**done** 2026-10-26, notes below) **World map and battles.** The bowl's rivers and seas in the same tones and steps (the shared snippet); water backdrops on battle stages by a node's biome. | bowl map test, battle stage pictures, smoke |
+| 4 | WA-5b | R | (**done** 2026-10-26, notes below) **Kinds as a texture and water life.** Kind looks in a small texture (no cap at 9), the new kinds drawn (steam on hot springs, rapids' white water, bog's scum, reef, cave water lit by its own glow); lily pads that bob, reeds that sway, frogs, fish that jump (sprites), birds that dive. | look-water, smoke |
+| 4 | WA-9 | G | (**done** 2026-10-26, notes below) **Studio tools.** A river brush (source to mouth, regenerates its bed), a waterfall placer (lip, width, pool, climb), a water-kind painter, a live preview; STUDIO.md. | Studio check, a hand-placed fall survives a regenerate |
+| 4 | WA-10 | R | (**done** 2026-10-26, notes below) **Copperleaf's river, mouth and outflow** (the owner played it: weird river, weird mouth, weird fall). Kinds by connectivity (a pond behind a coast is a pond), a river runs only in its channel with an estuary blend into the sea, a river's surface at a never-rising level along its line, automatic sheets only down the flow with merged lips; Copperleaf's outflow and town square patched in the data (the owner's yes). | Copperleaf pictures, look-water numbers (test_water, test_island), unit tests, smoke |
 | 5 | WA-8 | (alone) | **Phone pass, sounds, baseline.** Quality tiers for water (bands, mist, reflections) measured at the bench; the owner's phone frame time; water sound beds (falls by height, rapids, surf, lapping, the plunge pool) with SND-6's mix; the quick-check baseline made again on purpose. | full quick check, the owner's phone |
 
 ## Ask me before
@@ -410,3 +411,148 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
   The headless browser draws in software: no frame times. The phone should compare the frame time on Copperleaf's
   beach with Pixel water on and off, and Tide on and off.
 
+## WA-7 notes (2026-10-26)
+- The owner's answers (Plan Mode): `PIXEL_WATER_GLSL` exported from walk-shaders.js by this lane (one word; `npm run
+  modules` drops an export nothing imports, so it landed with its first use, the world map's sea); battles turn to face
+  nearby water (a small change in battle-3d.js) plus water effects in battle-stage.js; the `lake` biome's battle stage
+  (`golf`, though a `lake` stage exists in battleStages.json) only noted, for whoever owns biomes.json.
+- **The world map** (world-bowl.js): `BOWL_PIXEL_GLSL` is the shared snippet plus the bowl's grid: the ground pictures'
+  16 texels a metre close up, coarser by powers of two further out so a texel stays at least about 2 screen pixels
+  (`bwK`), and `bwFix` (a smooth value read at the texel's middle from its screen derivatives, so the shoreline steps
+  in whole texels). The sea (`mwater`, `bowlWaterPixel`): five dithered tones from shallow to deep, the waves read per
+  texel in stepped time, the light in 4 steps, hard glints, foam bands and a hard line at the land in whole texels, a
+  dithered second line; the sky's mirror and its Fresnel mix smooth. A place's own water tiles and the rivers
+  stamped in the index (the ground shader): a 3-tone stepped shimmer, foam a line one texel wide (a dithered second)
+  along each side of the map's square that meets land. The rivers' lines far out: a hard edge, a paler middle in
+  dithered tones. HB-3's lagoon (same program, `uRim`): its foam by the beach and sill, its rim fading into the
+  clouds' colour in dithered steps; its falls (`mfallw`): stepped streaks with hard ends, three tones, a hard lip,
+  dithered edges and fade. `BOWL_SEA_FAR` left as it was (the pictures showed no clash). The hub's island still has
+  no sea (only HB-3's lagoon). Pixel water off runs each shader's old code unchanged.
+- **Battles**: `logic/battle-facing.js` (new, Node-tested) tries 16 turns round the middle of the action and keeps the
+  one that shows clearly more water (nearer tiles count more; water behind a tree or a house is not counted) when water
+  lies within 12 m, never one that puts a fighter, a trainer or the camera in water or off the map; never indoors.
+  battle-3d.js turns everything it puts in the scene and the battle camera with it; battle-stage.js works in battle
+  space as before. Glints on the water in view and rings round a fighter standing in water (battle-stage.js).
+- Found: 20 m (the first reach) was too far: a pond 15-19 m away from the battle camera's 1.6 m is a thin line under
+  the depth of field. Even at 12 m, in the headless pictures the run's pond (0.5 m under its banks, reeds round it,
+  haze) reads faintly after the turn (208 water tiles in the frame against none before). The phone should judge it;
+  if still weak: lift the battle camera a little when it faces water, or count only water at about the fighters' level.
+- Pictures: `tools/look-bowl-water.py` (the run's bowl: whole, coast, coast-low, river, river-low, place; the hub's
+  island; `--battle`: a battle with water 7-11 m away in clear view and none ahead; each with Pixel water on and off),
+  validation/look-water-bowl-before/ and -after/ (not committed). On the hub zoom the lagoon's dither between its
+  first two tones reads as scattered dots: the phone should say if it wants fewer tones there.
+
+## WA-5b notes (2026-10-26)
+- The owner's answers: the small hooks outside lane R allowed (prop-look.js, frame-items.js, sprites.js, and
+  ambient-life.js, which no lane owns); the `reef` kind takes the full turquoise and the sea's own `w` shallows a softer,
+  paler one; water life fills the gaps (ducks, frogs that leap in, gulls, jumping fish and bobbing lily pads already
+  existed), frogs stay as they are.
+- **Kinds as a texture** (`walk/water.js kindTexture`): an RGBA16F texture, a column a kind (its index in
+  `WATER_KIND_LOOKS`), six rows (0 deep and scum, 1 shallow, 2 clarity caustics foam ripples, 3 glow murk weed mode,
+  4 sea white coral bubbles, 5 the glow's colour), read with `texelFetch` on unit 15 (units 0-14 are taken by the walk
+  draws). No cap: a new kind is a new entry in `WATER_KIND_LOOKS`. What a kind does is a flag on its look, not its
+  index: `sea` (the swell, the storm's heave, surf, whitecaps, kelp, the sun's path, the tide, the shallows' share),
+  `run` (leaves, a rock's full foam), `steam` (2.2 a hot spring), `swim: 0` (no ducks, no frog dives), `white`,
+  `bub`, `coral`, `scum`, `glowC`.
+- `waterKindLookup` knows the fifteen (it was the nine), so a `reef` or any new kind's rectangle draws as its own kind.
+  `WATER_KIND_BASE` (logic/water-kinds.js) is now only what a kind fishes as (fishing.js).
+- **The six**: rapids (white water over the whole surface, carried down the flow; WA-3a's `rapids` stretches keep the
+  flow map's white water); hot spring (milky turquoise, bubbles opening as one-texel rings, three steam puffs a cell
+  and thicker); oasis (clear green over the bed, fish); bog (dark olive water with drifting rafts of brown scum in
+  three tones and slow gas bubbles; the first try read as tilled mud); reef (the full turquoise, a clear bed, coral
+  clumps in pink, orange, violet and yellow on its shallow bed with their fans' edges swaying in steps, the sea's swell,
+  surf and tide, no kelp); cave (deep blue-black, lit from below in its own cyan, little sky in it, its light thrown up
+  the walls by it as the sun's shimmer is: `uWGlow`, the brightest glowing kind in the scene).
+- **Rain rings** skip lava and ice. **Ducks** swim and frogs dive only where a duck could (not lava, ice, rapids, a hot
+  spring): before, the test scene's ducks sat on the ice pool.
+- **A storm's flood** (WA-5a's ask: "banks above the water's level"): the flooded cells sat at their bank's ground less
+  0.12 m and joined a pond's one level, so the pond rose into a raised slab, each bank edge spilled as a cascade and
+  the grass under them was painted as a stream bed. Now they stay out of the pond's level and the cascades, meet the
+  water they rose from at its level, the shoreline (and so the grass and the wet rim) is the dry scene's, and they draw
+  as pixel-edged standing puddles over the grass: a muddy, see-through film with little sky (depth -1 in the mesh marks
+  them). Read from `logic/water-weather.js waterWeatherDry`, nothing changed there.
+- **Water life**: a bird (the fx sheet's `bird`, never used before) now and then circles over water deep enough for fish
+  near you by day (none indoors, at night or in a storm), dives in with a splash and flies off low; spray bursts round
+  you while you climb a waterfall (`P.climb.fall`); steam, splashes and the birds on the 32 grid in `water.frames`
+  steps; lotus and duckweed bob as lily pads do, in steps; reeds, cattails and bulrushes bend away as you pass;
+  wild Billies waiting in shallows are cut at the waterline (`frame-items.js wadeItemLift`); the Surf mount's wake uses
+  the wake's own rings (`addWakeRipple`).
+- **Cost** (the headless browser draws in software: no frame times): every water pixel does seven texture fetches for
+  its kind instead of uniform reads (a 15 x 6 texture, in the cache); the coral, bubble and white-water passes run
+  only on their kinds; the vertex shader's fetch only on a stormy sea. The ground shader adds one uniform to its wall
+  shimmer. Building a flooded scene: a mask the size of the water grid. The phone should compare the frame time at
+  test_water's hot spring and rapids and on Copperleaf's beach (the reef shallows) with Pixel water on and off, and in
+  a run's cave with cave water.
+
+## WA-9 notes (2026-10-26)
+- The owner's answers (Plan Mode): "survives a regenerate" means the Generate card's remakes of a draft, with the hand
+  water kept in its dials (`params.hand`) and in a scene's `gen` when added (no regenerate of a saved scene: MG-4's);
+  a brushed river is an **extra** river; the hub island refuses the whole Kinds of water tool.
+- **Found**: MG-4 and TR-7 (regenerate only what was generated, a ground mask, the keep lock) were never built, so
+  there was no hand edit that survives a regenerate to copy. The map editor's painter lacked `sea`, `lava` and `ice`
+  (its own list; now `WATER_KINDS`). The hub island's water rectangles were free (IS-6a locked only the ground).
+- **Generation** (`logic/water-gen.js`, no mapgen.js edit: `mapgenParams` keeps unknown keys and every hook has `G.P`):
+  `waterGenHand` checks the dials' hand water (at most 8 rivers and 8 falls, inside the map, known kinds);
+  `waterGenHandRivers` (first in `waterGenRiver`) shapes each drawn line through `waterGenShape` (no meanders) and
+  `waterGenPaint`; the scene's rivers are a list (`G.rivers`; carve, step with the land, river falls and rapids loop
+  over it; `G.river` the first); `waterGenHandFalls` (last in `waterGenFalls`) writes `falls` entries with their pools
+  (`waterGenPlungePool`, carve on, refused where it cuts ground off) and replaces a generated fall within 2 m;
+  `waterGenClimbs` keeps a hand climb only where WA-2b's rule passes and never adds one to a fall placed without;
+  hand kinds are laid last in `waterGenKinds`. A scene without hand water is made exactly as before (unit test, whole
+  scenes): **no MAPGEN_VERSION bump** (still 17), rng.test's hash, the run-start snapshot and the golden scenes
+  unchanged.
+- `waterGenSceneRiver` (the map editor's Carve the bed): the same shaping, painting and carving on a saved scene's
+  tiles and heights, its level read from the banks (wet corners filled from the dry ground first); carved again, its
+  bed moves 0.12 m at most on test_water.
+- **Studio** (`studio/js/water-tools.js`, new; hooks in map-generate.js's From above card and map-editor.js's water
+  tool): the Generate card's river brush, waterfall placer and kind painter with an overlay (lines, lips, the way they
+  fall, pools, climbs, rectangles), the picked item's fields and what the draft made of it, Look at it; the map
+  editor's Rivers and Falls modes and Carve the bed (one undo step each). STUDIO.md, "Water tools".
+- Numbers (Node, five seeds of a 112 x 64 m meadow): 64 ms a scene without hand water, 74 ms with one hand river.
+- Not done here: a regenerate of a saved scene (MG-4); several rivers joining (a hand river ending in another is a
+  `lake` mouth); the hub island's fall (HB-4b).
+
+## WA-10 notes (2026-10-26)
+- The owner's answers (Plan Mode): the four renderer fixes as planned; the hub's outflow and, asked mid-plan, a smaller
+  town square in Copperleaf's data. The plan was a rebuild with the dials (`stream.fall` 0, `town.square.r` 8); found:
+  the town zone is **locked** (a rebuild keeps its ground exactly, so the dials changed nothing), and an unlocked
+  rebuild makes the town again differently even with the original dials (19 plots of 22, three buildings lost). The
+  owner then chose hand patches with the town still locked: `tools/patch-copperleaf-water.mjs --river` and `--square`
+  (rerunnable; they lay the dressing again last, as build-copperleaf.mjs does). The square's natural shape and 3D props
+  went to the hub track (hub-track.md HB-10).
+- **Kinds by connectivity** (`water-flow.js waterOpenSea`, read by `water-data.js waterKindLookup`): on a scene whose
+  own kind is a sea kind, still water reaching the map's edge through still water, or through wet sand (`S`, which the
+  high tide covers: WA-4's tide pools), is the sea; other still bodies are `pond` (`lake` over 600 m^2). Running water
+  joins nothing. Rectangles win. Copperleaf's pond: 202 pond cells (it was 170 sea and 51 stream, with surf rings).
+- **A river's channel** (`waterFlowMap(sc, feet, opts)`: `flowChannels`): water a disc of more than 3.25 m (or the
+  river's half width + 0.75) covers is a body; a river's flow runs only between the body it leaves and the body it
+  reaches, never past its line's end in a small pool. `F.cls` per cell: 1 running, 2 running in its estuary, 3 the
+  plume. **The estuary**: the channel's last 4 m and a plume (an ellipse up to about 11 m out along the river, 7 m to the
+  sides) carry the river's share in the flow map's alpha (it held how far into the stream, which nothing read); the
+  water shader mixes the stream's look into the body's by it (`kdT`, rows 0-3 and 5; what a kind does, row 4, stays the
+  body's), calms the swell, whitecaps and surf by it, tints it fresh and silty (a tint of its own lit colour: a fixed colour
+  glowed at night) in dithered tones with a broken drifting edge, and
+  draws a broken stepped seam of foam where its front meets the swell; the plume's flow fans out and fades; the
+  stream-style flow foam fades with the share.
+- **The river's level** (`waterRiverProfile`, per cell `F.lev`): along the line every half metre, the bed's rule
+  (ground + step - 0.12) at wet points, a running minimum from the head, a moving average over 3 m either way that never
+  crosses a step of the land or a drop of 0.15 m, a running minimum again, never under the body it ends in and easing to
+  it over the last 4 m. A cell takes the level on its own step of the land (a terrace's lip stays where the land has
+  it). Down a cliff in the ground (a drop that is no step) the river keeps following its bed as before (a falls entry
+  draws the fall there). A vertex averages the cells round it and may rise 7 cm toward a bank's own bed (level across,
+  the river sank under its shallow edges and read narrow). Copperleaf's river: never rises, 1.41 m at the pond to the
+  sea's -0.22 m (it went 0.98, 1.00, 1.02, 1.00 ... and uphill twice near the mouth).
+- **Automatic sheets** (ground-mesh.js): where a river is in the step, only across its flow (cos > 0.7); none on its
+  sides, none from still water into its side, none under 0.25 m into sea water; a lip's sheets share their ends' mean
+  lip and foot. Copperleaf near the river: 18 sheets before (15 at the outflow facing three ways, 3 at the mouth), 0
+  after (with the outflow patched; 6 facing downstream before the patch). test_water: 8 sheets, the same places and drops
+  as before WA-10 (on the way: 26, tallest 4.38 m, from three profile bugs fixed in the same commit).
+- **The outflow patch**: the bed over the river's first 6 m ramps from 0.12 m under the pond's water (1.52 m, as the walk
+  view lays it: the mean of its cells' ground less 0.12) down to the bed there (1.1 m): 22 bed and 5 bank corners
+  raised; `stream.fall` 0, the fall spot's y, `rapids: [[0, 0.14]]` on the stream. **The square patch**: paved to
+  about 8 m with a rim wandering 0.7 m in and out, 199 tiles to grass, 44 to street where the two streets met the old
+  rim; the dressing laid again (358 props, 355 before, none in the town zone).
+- Cost: the flow map's channel pass reads the scene's water once (a distance pass, a covering disc only near streams):
+  about 60 ms on Copperleaf in Node, once a build; the water shader's two extra fetches only where the share is over 0.
+- Not done: the quick-check baseline (WA-8); the mouth's pale shallows round its deep hole are the existing `w` sea look
+  (WA-5b), not changed; a renderer profile for lane G to share (water-gen.js makes its own on the height grid).

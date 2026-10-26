@@ -11,11 +11,13 @@ import { engineSetting } from '../engine/settings.js';
 import { gpuFree, gpuSized, gpuState, gpuTexture } from '../engine/webgl.js';
 import { environment } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
+import { flowMapAt, waterOpenSea } from './water-flow.js';
 import { tideLevel } from './sea-tide.js';
 /* eslint-disable no-func-assign */
 expose({
   FALL_A: [() => FALL_A],
   FALL_B: [() => FALL_B],
+  NO_GLOW: [() => NO_GLOW],
   WATER_KIND_INDEX: [() => WATER_KIND_INDEX],
   WATER_KIND_LOOKS: [() => WATER_KIND_LOOKS],
   flowTexture: [() => flowTexture, v => (flowTexture = v)],
@@ -25,6 +27,7 @@ expose({
   setShoreUniforms: [() => setShoreUniforms, v => (setShoreUniforms = v)],
   shoreAt: [() => shoreAt, v => (shoreAt = v)],
   shoreField: [() => shoreField, v => (shoreField = v)],
+  waterGlow: [() => waterGlow, v => (waterGlow = v)],
   waterKindLookup: [() => waterKindLookup, v => (waterKindLookup = v)],
 });
 /* eslint-enable no-func-assign */
@@ -49,6 +52,7 @@ export const WATER_KIND_LOOKS = [
   },
   {
     k: 'stream',
+    run: 1,
     r: 0.8,
     top: 0.7,
     deep: [0.86, 1.05, 1],
@@ -79,6 +83,7 @@ export const WATER_KIND_LOOKS = [
   },
   {
     k: 'spring',
+    steam: 1,
     r: 1.2,
     top: 0.85,
     deep: [0.36, 1.12, 1.18],
@@ -125,6 +130,7 @@ export const WATER_KIND_LOOKS = [
   /* v24: the open sea, molten lava (mode 1: glowing, crusted, no reflections) and ice (mode 2: frozen, cracked) */
   {
     k: 'sea',
+    sea: 1,
     r: 3.2,
     top: 1,
     deep: [0.58, 0.72, 1.06],
@@ -169,6 +175,112 @@ export const WATER_KIND_LOOKS = [
     weed: 0,
     fish: 0,
     mode: 2,
+  },
+  /* water track WA-5b: the six kinds of WA-5a (logic/water-kinds.js WATER_KINDS, appended in its order, never
+     reordered). The flags the water shader reads besides the colours: white (white water over the whole surface),
+     bub (bubbles rising, the rate), coral (coral on the bed of its shallows), scum (0 green duckweed, 1 brown scum),
+     glowC (the glow's own colour: lit from below, little sky in it, its light thrown up on walls), swim 0 (no duck
+     swims on it, no frog dives in: ambient-life.js) */
+  {
+    k: 'rapids',
+    swim: 0,
+    run: 1,
+    white: 1,
+    r: 0.6,
+    top: 0.8,
+    deep: [0.9, 1.08, 1.05],
+    shal: [1.15, 1.16, 1.1],
+    clar: 0.5,
+    caus: 0.6,
+    foam: 2,
+    rip: 2.4,
+    glow: 0,
+    murk: 0.05,
+    weed: 0,
+    fish: 0,
+  },
+  {
+    k: 'hotspring',
+    swim: 0,
+    steam: 2.2,
+    bub: 1,
+    r: 1.2,
+    top: 0.8,
+    deep: [0.62, 1.14, 1.12],
+    shal: [0.98, 1.34, 1.24],
+    clar: 0.72,
+    caus: 0.45,
+    foam: 0.3,
+    rip: 0.4,
+    glow: 0.12,
+    murk: 0.35,
+    weed: 0,
+    fish: 0,
+  },
+  {
+    k: 'oasis',
+    r: 1.4,
+    top: 0.9,
+    deep: [0.42, 1.08, 0.92],
+    shal: [0.92, 1.32, 1.02],
+    clar: 0.28,
+    caus: 1.35,
+    foam: 0.5,
+    rip: 0.55,
+    glow: 0,
+    murk: 0,
+    weed: 0.05,
+    fish: 1,
+  },
+  {
+    k: 'bog',
+    bub: 0.55,
+    scum: 1,
+    r: 2,
+    top: 0.6,
+    deep: [0.5, 0.44, 0.2],
+    shal: [0.62, 0.53, 0.28],
+    clar: 0.96,
+    caus: 0,
+    foam: 0.1,
+    rip: 0.22,
+    glow: 0,
+    murk: 0.8,
+    weed: 1,
+    fish: 0,
+  },
+  {
+    k: 'reef',
+    sea: 1,
+    coral: 1,
+    r: 2.6,
+    top: 0.9,
+    deep: [0.5, 0.95, 1.08],
+    shal: [0.82, 1.3, 1.16],
+    clar: 0.4,
+    caus: 1.15,
+    foam: 1.3,
+    rip: 1.6,
+    glow: 0,
+    murk: 0,
+    weed: 0,
+    fish: 1,
+  },
+  {
+    k: 'cave',
+    r: 1.2,
+    top: 0.9,
+    deep: [0.24, 0.42, 0.7],
+    shal: [0.4, 1.08, 1.25],
+    clar: 0.42,
+    caus: 0.9,
+    foam: 0.2,
+    rip: 0.3,
+    glow: 0.85,
+    glowC: [0.32, 0.88, 1],
+    murk: 0.1,
+    weed: 0,
+    fish: 0,
   },
 ];
 const WATER_KIND_INDEX = Object.fromEntries(WATER_KIND_LOOKS.map((w, i) => [w.k, i]));
@@ -283,6 +395,22 @@ export function setPixelWaterUniform(U) {
   );
 }
 /* the shoreline value at a spot (0 dry ... 0.5 the water's edge ... 1 open water); 1 where there is no field */
+/* water track WA-5b: the light a glowing water (cave water) throws up on the walls by it: the brightest glowing kind
+   in the scene's water, its colour times its glow; worked out once per built water grid */
+const NO_GLOW = [0, 0, 0];
+function waterGlow() {
+  const G = walkRenderer.wgrid;
+  if (!G) return NO_GLOW;
+  if (!G.glow) {
+    const seen = new Set(G.kind);
+    G.glow = NO_GLOW;
+    for (const i of seen) {
+      const K = WATER_KIND_LOOKS[i];
+      if (K && K.glowC && K.glow * Math.max(...K.glowC) > Math.max(...G.glow)) G.glow = K.glowC.map(v => v * K.glow);
+    }
+  }
+  return G.glow;
+}
 export function setShoreUniforms(U, sc) {
   setPixelWaterUniform(U);
   setFallUniforms(U);
@@ -294,6 +422,7 @@ export function setShoreUniforms(U, sc) {
   gl.bindSampler(5, null);
   gl.uniform1i(U.uShore, 5);
   gl.uniform3f(U.uShoreR, 1 / sc.w, 1 / sc.h, on ? 1 : 0);
+  if (U.uWGlow) gl.uniform3fv(U.uWGlow, waterGlow());
   /* island track IS-3: the sea all round: where its swell rolls in toward, and whether it is on */
   if (U.uSea) {
     const c = seaCentre(sc);
@@ -324,16 +453,55 @@ function shoreAt(x, z) {
     j = clamp(Math.floor(z * 8), 0, F.FH - 1);
   return F.d[j * F.FW + i] / 255;
 }
-export function waterKindLookup(sc) {
+/* water track WA-10: on a scene whose own kind is the sea's, only still water joined to the map's edge is the sea
+   (walk/water-flow.js waterOpenSea); a pond or a lake cut off from it takes its own kind (it took the swell and the
+   surf before). F: the scene's flow map (running water joins nothing), else its streams' as they are now */
+export function waterKindLookup(sc, F = walkRenderer.flowMap) {
   if (!engineSetting('water', 'kinds')) return () => 0;
   const R = sc.waters || [],
-    def = WATER_KIND_INDEX[sc.waterKind] ?? (sc.indoor && sc.far === 'cave' ? 3 : sc.far === 'town' ? 2 : 0);
+    def = WATER_KIND_INDEX[sc.waterKind] ?? (sc.indoor && sc.far === 'cave' ? 3 : sc.far === 'town' ? 2 : 0),
+    w = sc.w,
+    T = sc.tiles || [],
+    wet = (/** @type {number} */ i, /** @type {number} */ j) => {
+      const c = (T[sc.h - 1 - j] || '')[i];
+      return c === 'w' || c === 'd';
+    },
+    open =
+      WATER_KIND_LOOKS[def].sea && T.length
+        ? waterOpenSea(
+            w,
+            sc.h,
+            (i, j) => {
+              if (!wet(i, j)) return false;
+              if (!F || F.W2 !== w * 2) return true;
+              /* WA-10: a channel's running cells join nothing (an estuary's plume is the sea's own water) */
+              if (F.cls) {
+                const c = F.cls[(j * 2 + 1) * F.W2 + i * 2 + 1];
+                return c !== 1 && c !== 2;
+              }
+              const f = flowMapAt(F, i + 0.5, j + 0.5);
+              return f[0] === 0 && f[1] === 0;
+            },
+            /* WA-10: wet sand the tide covers (WA-4's tide pools stay the sea's) */
+            (i, j) => (T[sc.h - 1 - j] || '')[i] === 'S'
+          )
+        : null,
+    POND = WATER_KIND_INDEX.pond,
+    LAKE = WATER_KIND_INDEX.lake;
   return (x, z, run) => {
     for (let i = R.length - 1; i >= 0; i--) {
       const r = R[i];
       if (x >= r.x && z >= r.z && x < r.x + r.w && z < r.z + r.h) return WATER_KIND_INDEX[r.k] ?? def;
     }
-    return run && def !== 2 && !WATER_KIND_LOOKS[def].mode ? 1 : def;
+    if (run && def !== 2 && !WATER_KIND_LOOKS[def].mode) return 1;
+    if (open) {
+      const i = Math.floor(x),
+        j = Math.floor(z),
+        o = i >= 0 && j >= 0 && i < w && j < sc.h ? open[j * w + i] : 1;
+      if (o === 2) return POND;
+      if (o === 3) return LAKE;
+    }
+    return def;
   };
 }
 /* water track WA-2a: the nearest four waterfalls (walk-shaders.js FALL_GLSL), for the ground's wet rock and thrown
@@ -361,8 +529,9 @@ function setFallUniforms(U) {
     gl.uniform4fv(U.uFallB, FALL_B);
   }
 }
-/* water track WA-2a: the flow map on the card (walk/water-flow.js): flow in red and green, foam in blue, how far into
-   its stream in alpha, one texel a half metre, half floats so still water reads exactly 0 */
+/* water track WA-2a: the flow map on the card (walk/water-flow.js): flow in red and green, foam in blue, the river's
+   share in an estuary in alpha (WA-10; it was how far into its stream, which nothing read), one texel a half metre,
+   half floats so still water reads exactly 0 */
 export function flowTexture(T, F) {
   const gl = gpuState.gl;
   gpuFree(T.flowTex);

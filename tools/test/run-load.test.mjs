@@ -47,6 +47,24 @@ test('run load: the cap lifts it and marks the stages still waiting late', () =>
   assert.equal(runLoadTick(runLoadNew('x', DEFS, 0), 1e9, 0), '', 'no cap: it waits');
 });
 
+test('run load: a hard stage is never late, and the cap counts from when the hard stages were ready', () => {
+  const L = runLoadNew('take-off', [{ id: 'places', label: 'The run', hard: true }, ...DEFS], 0);
+  // the places take longer than the cap: nothing is capped while they are made
+  assert.equal(runLoadTick(L, 30000, 20000), '');
+  runLoadPart(L, 'places', 1, 31000);
+  assert.equal(runLoadTick(L, 50000, 20000), '');
+  assert.equal(runLoadTick(L, 51000, 20000), 'capped');
+  assert.deepEqual(
+    L.stages.map(s => [s.id, s.late]),
+    [
+      ['places', false],
+      ['map', true],
+      ['models', true],
+    ]
+  );
+  assert.match(runLoadSummary(L), /^take-off 51000 ms: places 31000, map late 0%, models late 0%; capped$/);
+});
+
 test('run load: rules.json has the cap (the owner: 20 s)', () => {
   assert.equal(GAME_DATA.rules.run.load.capMs, 20000);
 });

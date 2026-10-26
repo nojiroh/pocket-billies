@@ -154,6 +154,8 @@ self.PB_DATA = (() => {
     lab: 'int_lab',
     house: 'int_house',
     ranch: 'int_barn',
+    genebank: 'int_gene_bank',
+    workshop: 'int_workshop',
     enter: '',
   };
   /** does a door that does this (its act) lead into a room? @param {string | null | undefined} act */

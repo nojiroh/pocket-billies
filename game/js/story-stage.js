@@ -18,11 +18,12 @@
 import { expose } from './test-globals.js';
 import { provide, render, selfTest, toast } from './hooks.js';
 import { $, clamp } from './util.js';
-import { BANTER, LOCATIONS, STORY_DATA, TRAINERS, gameData } from './game-data.js';
+import { BANTER, LOCATIONS, PEOPLE, RELATIONS, STORY_DATA, TRAINERS, gameData } from './game-data.js';
 import { healAll } from './logic/rules.js';
+import { relFavoursPay } from './logic/relations.js';
 import { startTrainer } from './logic/battle-engine.js';
 import { conditionHolds, conditionTree, storyStateOf } from './logic/conditions.js';
-import { BANTER_HUB, storyPick, storyPickSaid } from './logic/story-pick.js';
+import { BANTER_HUB, banterOwner, storyPick, storyPickSaid } from './logic/story-pick.js';
 import { parseScript } from './logic/script-parse.js';
 import { runBase, runScript, saveDuringRun, storyTeamLookups } from './logic/script.js';
 import { activeBattle, reducedMotion, save, saveData, uiState } from './game-state.js';
@@ -44,6 +45,7 @@ import {
   cutsceneWait,
   cutsceneWalk,
 } from './cutscene/director.js';
+import { trainRide } from './train-ride.js';
 /* eslint-disable no-func-assign */
 expose({
   cutsceneWorldBegin: [() => cutsceneWorldBegin, v => (cutsceneWorldBegin = v)],
@@ -56,6 +58,7 @@ expose({
   storyOwner: [() => storyOwner, v => (storyOwner = v)],
   storyPendingCheck: [() => storyPendingCheck, v => ((storyPendingCheck = v), provide({ storyPendingCheck }))],
   storyPickId: [() => storyPickId, v => (storyPickId = v)],
+  storyPickPlay: [() => storyPickPlay, v => ((storyPickPlay = v), provide({ storyPickPlay }))],
   storyPickTree: [() => storyPickTree, v => (storyPickTree = v)],
   storyResumeCheck: [() => storyResumeCheck, v => (storyResumeCheck = v)],
   storyRun: [() => storyRun],
@@ -74,7 +77,15 @@ expose({
   storyWorldOK: [() => storyWorldOK, v => ((storyWorldOK = v), provide({ storyWorldOK }))],
 });
 /* eslint-enable no-func-assign */
-provide({ playStoryScript, storyFreshTake, storyHomeArrive, storyPendingCheck, storyScriptIds, storyWorldOK });
+provide({
+  playStoryScript,
+  storyFreshTake,
+  storyHomeArrive,
+  storyPendingCheck,
+  storyPickPlay,
+  storyScriptIds,
+  storyWorldOK,
+});
 /* to-module: end */
 function storyScriptLines(id) {
   const i = id.indexOf(':'),
@@ -107,7 +118,7 @@ function storyOwner(id) {
   if (id.startsWith('trainer:')) return (TRAINERS[key] && TRAINERS[key].who) || null;
   if (id.startsWith('story:')) return ((STORY_DATA.scripts || {})[key] || {}).who || null;
   /* a hub character's line is theirs (their person id is their `who`); the others name their speakers */
-  if (id.startsWith('banter:')) return (BANTER[key] && BANTER_HUB.includes(BANTER[key].who) && BANTER[key].who) || null;
+  if (id.startsWith('banter:')) return (BANTER[key] && banterOwner(BANTER[key].who)) || null;
   for (const sc of Object.values(gameData.maps)) {
     const P = (sc.people || []).find(p => p.id === key);
     if (P) return P.who || P.id;
@@ -328,6 +339,12 @@ export function storyPickTree(who, id) {
   const k = storyPickId(who, id);
   return k ? storyTree('banter:' + k) : null;
 }
+/* RL-S2 part B: the story director's line for who, picked and played (a thank-you after a gift); false when no line
+   fits */
+async function storyPickPlay(who) {
+  const k = storyPickId(who, null);
+  return k ? playStoryScript('banter:' + k) : false;
+}
 /* the line picked for who (marked said), or null */
 function storyPickId(who, id) {
   const S = saveData,
@@ -352,8 +369,25 @@ function storyPickId(who, id) {
 function storyHomeArrive(won) {
   const story = saveData.story || (saveData.story = {}),
     fresh = {};
+  /* RL-S2 part B: the favours the run just ended did are paid first (logic/relations.js), so a thank-you can be
+     picked below */
+  const state = storyStateOf(saveData, {
+    locations: LOCATIONS,
+    questStages: Object.fromEntries(Object.entries(STORY_DATA.quests || {}).map(([k, q]) => [k, q.stages])),
+    ...storyTeamLookups(),
+  });
+  for (const f of relFavoursPay(saveData, c => conditionHolds(conditionTree(c), state), RELATIONS)) {
+    const P = /** @type {any} */ (PEOPLE || {})[f.who],
+      name = (P && P.look && P.look.name) || f.who;
+    toast(f.to > f.from ? `${name}: favour done, level ${f.to}` : `${name}: favour done`);
+    if (typeof debugLog !== 'undefined') debugLog.add('story', `favour ${f.quest} done: ${f.who} +${f.points}`);
+  }
+  /* RL-S2 part B: a `must` line not yet heard (a Chapter beat, a favour's ask or thanks: their scripts set what comes
+     next) waits for the next talk instead of being picked over */
+  const was = story.fresh || {};
   for (const who of BANTER_HUB) {
-    const k = storyPickId(who, null);
+    const keep = was[who] && BANTER[was[who]] && BANTER[was[who]].must ? was[who] : null,
+      k = keep || storyPickId(who, null);
     if (k) fresh[who] = k;
   }
   story.fresh = fresh;
@@ -373,6 +407,8 @@ export function storyPendingCheck() {
   const story = saveData.story,
     p = story && story.pending;
   if (!p || saveData.run || storyRun.on || activeBattle || uiState.modal || talkBox.on || !walkView.ready) return;
+  /* HB-8: not while the train comes home (train-ride.js tells it once you've stepped off) */
+  if (typeof trainRide !== 'undefined' && trainRide.on) return;
   if (uiState.tab !== 'walk' || (typeof cutscene !== 'undefined' && cutscene.on)) return;
   if (typeof selfTest !== 'undefined' && selfTest.on) return;
   delete story.pending;

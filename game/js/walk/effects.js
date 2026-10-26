@@ -12,6 +12,7 @@ import {
   litWindowFraction,
   provide,
   reducedMotion,
+  soundEffectAt,
   worldBillyGlows,
 } from '../hooks.js';
 import { clamp } from '../util.js';
@@ -34,16 +35,21 @@ import { environment, environmentWindowLit } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
 import { useWalkProgram, worldCurveDrop } from './draw-common.js';
+import { WATER_KIND_LOOKS } from './water-data.js';
 import { drawRoomEffects, roomSkyLight, windowLightShare } from './rooms.js';
-import { waterAt } from './water.js';
+import { addRipple, waterAt } from './water.js';
 import { lampLit } from './lighting.js';
 import { drawFootprints, drawFountainEffects, drawLifeEffects, drawWeather } from './fountains-weather.js';
+/* eslint-disable no-func-assign */
 expose({
   WEATHER_FLOATS: [() => WEATHER_FLOATS],
   WEATHER_FX_SHADERS: [() => WEATHER_FX_SHADERS],
+  drawClimbSpray: [() => drawClimbSpray, v => (drawClimbSpray = v)],
+  drawDivers: [() => drawDivers, v => (drawDivers = v)],
   effectsPass: [() => effectsPass, v => setEffectsPass(v)],
   weatherBatch: [() => weatherBatch],
 });
+/* eslint-enable no-func-assign */
 export function setEffectsPass(v) {
   effectsPass = v; // eslint-disable-line no-func-assign
   provide({ effectsPass });
@@ -527,7 +533,8 @@ export function effectsPass(C, items, X, dark, t, dt) {
       );
     }
   }
-  /* v22: leaves riding the streams (lying flat on the water), and steam breathing off warm springs */
+  /* v22: leaves riding the streams (lying flat on the water), and steam breathing off warm springs (WA-5b: a hot spring's
+     thicker, three puffs a cell) */
   if (
     walkRenderer.streamCells &&
     walkRenderer.streamCells.length &&
@@ -558,7 +565,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
         L.z += (f[1] * L.sp + Math.cos(L.age * 1.1 + L.i) * 0.05) * dt;
       }
       const g = waterAt(L.x, L.z);
-      if (!g || (g.kind !== 1 && L.age > 2)) {
+      if (!g || (!WATER_KIND_LOOKS[g.kind].run && L.age > 2)) {
         L.ok = false;
         continue;
       }
@@ -570,26 +577,28 @@ export function effectsPass(C, items, X, dark, t, dt) {
     gl.uniform3fv(U.uUp, Up);
   }
   if (walkRenderer.springCells && walkRenderer.springCells.length && engineSetting('water', 'steam')) {
-    walkRenderer.springCells.forEach(([x, z, dp], k) => {
+    walkRenderer.springCells.forEach(([x, z, dp, st], k) => {
       const g = waterAt(x, z),
         y = g ? g.y : standingHeightAt(x, z);
-      for (let n = 0; n < 2; n++) {
-        const ph = ((t * rm) / 5200 + n / 2 + k * 0.37) % 1,
+      for (let n = 0; n < (st > 1 ? 3 : 2); n++) {
+        const ph = (tq / 5200 + n / (st > 1 ? 3 : 2) + k * 0.37) % 1,
           sz = 0.5 + ph * 1.3;
         quad(
           'smoke',
           Math.floor(ph * 4),
-          x + Math.sin(ph * 4 + k) * 0.35 * (sc.wind || 1),
-          y + 0.05 + ph * 1.6,
-          z + 0.1,
+          g32(x + Math.sin(ph * 4 + k) * 0.35 * (sc.wind || 1)),
+          g32(y + 0.05 + ph * 1.6),
+          g32(z + 0.1),
           sz,
           sz,
-          0.16 * (1 - ph) * Math.min(1, ph * 4) * (0.6 + dp * 0.4),
+          0.16 * (1 - ph) * Math.min(1, ph * 4) * (0.6 + dp * 0.4) * (st > 1 ? 1.5 : 1),
           [0.94, 0.97, 1]
         );
       }
     });
   }
+  drawDivers(quad, dt, rm, sc, g32, fps);
+  drawClimbSpray(quad, tq, g32);
   if (engineContext.env && !sc.indoor && engineSetting('air', 'weather') > 0)
     drawWeather(quad, glows, U, R, Up, dt, rm);
   if (!walkRenderer.bt) drawFootprints(quad, U, R, Up, dt);
@@ -619,24 +628,29 @@ export function effectsPass(C, items, X, dark, t, dt) {
         walkRenderer.splash.splice(i, 1);
         continue;
       }
+      /* WA-5b: on the 32 grid in water.frames steps with pixel water */
+      const qa = fps > 0 ? Math.floor(q.a * fps) / fps : q.a;
       for (let n = 0; n < 8; n++) {
         const an = n * 0.785,
-          r = q.a * 0.9,
-          h = q.a * (2.6 - q.a * 3.4);
+          r = qa * 0.9,
+          h = qa * (2.6 - qa * 3.4);
         quad(
           'spray',
           n % 4,
-          q.x + Math.cos(an) * r,
-          q.y + 0.05 + Math.max(0, h),
-          q.z + Math.sin(an) * r * 0.6,
+          g32(q.x + Math.cos(an) * r),
+          g32(q.y + 0.05 + Math.max(0, h)),
+          g32(q.z + Math.sin(an) * r * 0.6),
           0.1,
           0.1,
-          (1 - q.a / 0.7) * 0.85,
+          (1 - qa / 0.7) * 0.85,
           [0.9, 0.96, 1]
         );
       }
-      /* v47: and the fish itself, arcing out and back in */ if (q.a < 0.62) {
-        const k = q.a / 0.62,
+      /* v47: and the fish itself, arcing out and back in (WA-5b: not after a diving bird's splash) */ if (
+        qa < 0.62 &&
+        !q.bird
+      ) {
+        const k = qa / 0.62,
           dir = q.dir || (q.dir = Math.random() < 0.5 ? -1 : 1);
         quad(
           'fish',
@@ -714,4 +728,99 @@ export function effectsPass(C, items, X, dark, t, dt) {
   gl.uniform1f(U.uGlow, 0);
   gl.depthMask(true);
   gl.disable(gl.BLEND);
+}
+/* water track WA-5b: birds that dive. Now and then by day one circles high over water deep enough for fish near you (a
+   fish's home), folds and dives in with a splash, stays under a moment and flies off low; with pixel water on the 32
+   grid in water.frames steps. The fx sheet's bird (two frames; unused before). One at a time, none indoors, at night
+   or in a storm */
+function drawDivers(quad, dt, rm, sc, g32, fps) {
+  const D = (walkRenderer.divers = walkRenderer.divers || []),
+    P = walkView.pl,
+    hr = environment.tod ?? 12;
+  if (sc.indoor || !P) return void (D.length = 0);
+  if (
+    rm &&
+    !walkRenderer.bt &&
+    !D.length &&
+    hr > 6.5 &&
+    hr < 19.5 &&
+    !((environment.storm || 0) > 0.5) &&
+    Math.random() < dt * 0.035
+  ) {
+    const H = (walkRenderer.fishHomes || []).filter(h => Math.hypot(h[0] - P.x, h[1] - P.z) < 14);
+    if (H.length) {
+      const h = H[Math.floor(Math.random() * H.length)];
+      D.push({ x: h[0], z: h[1], y: h[2], a: 0, an: Math.random() * 6.283, dir: Math.random() < 0.5 ? -1 : 1 });
+    }
+  }
+  const C = 5,
+    R = 2.2;
+  for (let i = D.length - 1; i >= 0; i--) {
+    const b = D[i];
+    b.a += dt;
+    const k = fps > 0 ? Math.floor(b.a * fps) / fps : b.a,
+      an = b.an + Math.min(k, C) * 0.9 * b.dir,
+      cx = b.x + Math.cos(an) * R,
+      cz = b.z + Math.sin(an) * R * 0.7;
+    let x,
+      y,
+      z,
+      fr = 1,
+      al = 1;
+    if (k < C) {
+      x = cx;
+      z = cz;
+      y = b.y + 5.5 + Math.sin(k * 1.3) * 0.3;
+      fr = Math.floor(k * 6) % 2;
+      al = Math.min(1, k * 2);
+    } else if (k < C + 0.55) {
+      const f = (k - C) / 0.55;
+      x = cx + (b.x - cx) * f;
+      z = cz + (b.z - cz) * f;
+      y = b.y + 5.5 * (1 - f * f);
+    } else if (k < C + 1.1) {
+      if (!b.sp) {
+        b.sp = 1;
+        (walkRenderer.splash = walkRenderer.splash || []).push({ x: b.x, z: b.z, y: b.y, a: 0, bird: 1 });
+        addRipple(b.x, b.z, 1);
+        if (typeof soundEffectAt === 'function') soundEffectAt('plop', b.x, b.z);
+      }
+      continue;
+    } else if (k < C + 4) {
+      const f = (k - C - 1.1) / 2.9;
+      x = b.x + b.dir * f * 6;
+      z = b.z + f * 3;
+      y = b.y + 0.1 + f * f * 6;
+      fr = Math.floor(k * 8) % 2;
+      al = Math.min(1, (1 - f) * 5);
+    } else {
+      D.splice(i, 1);
+      continue;
+    }
+    quad('bird', fr, g32(x), g32(y), g32(z), 0.46, 0.28, al, [0.92, 0.94, 0.98]);
+  }
+}
+/* water track WA-5b: spray on you while you climb a waterfall on your mount (walk-view.js startFallClimb: P.climb.fall),
+   droplets bursting round you and falling back, in water.frames steps on the 32 grid */
+function drawClimbSpray(quad, tq, g32) {
+  const P = walkView.pl,
+    C = P && P.climb;
+  if (!C || !C.fall || reducedMotion) return;
+  const y = P.yv ?? standingHeightAt(P.x, P.z);
+  for (let n = 0; n < 10; n++) {
+    const ph = (tq / 650 + n / 10) % 1,
+      an = n * 2.4 + Math.floor(tq / 650 + n / 10) * 1.7,
+      r = 0.25 + ph * 0.45;
+    quad(
+      'spray',
+      n % 4,
+      g32(P.x + Math.cos(an) * r),
+      g32(y + 0.5 + 1.4 * ph * (1 - ph) - ph * 0.4),
+      g32(P.z - 0.15 + Math.sin(an) * r * 0.4),
+      0.11,
+      0.11,
+      (1 - ph) * 0.8,
+      [0.92, 0.97, 1]
+    );
+  }
 }

@@ -66,6 +66,8 @@ test("the game's lines: each who has lines, leaders and agents always have one, 
   const holds = c => conditionHolds(c, S);
   assert.equal(storyPick('leader', G, holds, {}, 0), 'leader_badge');
   assert.equal(storyPick('bureau', G, holds, {}, 0), 'bureau_lost');
+  assert.equal(storyPick('rival', G, holds, {}, 0), 'rival_first', 'Blake introduces himself first');
+  assert.equal(storyPick('rival', G, holds, { once: { 'banter:rival_first': 1 } }, 0), 'rival_built');
   assert.equal(storyPick('chosen', G, holds, {}, 0), null, 'nothing to react to before the first run');
   // after a first lost run: Chosen's must line
   const first = {
@@ -85,8 +87,10 @@ test("the game's lines: each who has lines, leaders and agents always have one, 
   const T = storyStateOf({ meta: { runs: 1, history: [first] }, story: { met_juniper: 1 } });
   const h = c => conditionHolds(c, T);
   assert.equal(storyPick('chosen', G, h, {}, 1), 'chosen_first');
-  assert.equal(storyPick('hazel', G, h, {}, 1), 'hazel_rounder');
-  assert.equal(storyPick('juniper', G, h, {}, 1), 'juniper_lost');
+  assert.equal(storyPick('hazel', G, h, {}, 1), 'ch1_drop', "RL-S2: Chapter 1's first beat");
+  assert.equal(storyPick('hazel', G, h, { once: { 'banter:ch1_drop': 1 } }, 1), 'hazel_rounder');
+  assert.equal(storyPick('juniper', G, h, {}, 1), 'fav_juniper_ask', 'RL-S2: her favour, once');
+  assert.equal(storyPick('juniper', G, h, { once: { 'banter:fav_juniper_ask': 1 } }, 1), 'juniper_lost');
   assert.ok(['lost_rescued', 'lost_reflexes'].includes(storyPick('back_lost', G, h, {}, 1)));
 });
 
@@ -121,4 +125,28 @@ test('the lost run scene: the first time in full (and marked), later a picked pa
   assert.equal(later.length, 2);
   assert.match(later[0], /^Chosen: /);
   assert.match(later[1], /^Hazel: /);
+});
+
+test('RL-S2 part B: a thank-you is its hub person’s line; a leader’s, an agent’s and Blake’s name their speakers', () => {
+  const { banterOwner } = modules['story-pick'];
+  assert.deepEqual(
+    ['chosen', 'thanks_hazel', 'thanks_juniper', 'leader', 'rival', 'back_lost', 'thanks_blake'].map(banterOwner),
+    ['chosen', 'hazel', 'juniper', null, null, null, null]
+  );
+});
+
+test("RL-S2 part B: a gift's thank-you: the level just reached first, once; then their plain thanks", () => {
+  const G = GAME_DATA.banter,
+    story = {};
+  const pick = rel => {
+    const S = storyStateOf({ meta: { runs: 2, history: [], rel: { hazel: rel } }, story });
+    const k = storyPick('thanks_hazel', G, c => conditionHolds(c, S), story, 2);
+    if (k) storyPickSaid(k, G, story, 2);
+    return k;
+  };
+  assert.equal(pick(1), 'thanks_hazel_1');
+  assert.equal(pick(1), 'thanks_hazel');
+  assert.equal(pick(4), 'thanks_hazel_3', 'a jump of two levels: the higher one first');
+  assert.equal(pick(4), 'thanks_hazel_2');
+  assert.equal(pick(4), 'thanks_hazel');
 });

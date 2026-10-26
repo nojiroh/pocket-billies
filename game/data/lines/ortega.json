@@ -1,0 +1,42 @@
+{
+ "id": "ortega",
+ "names": ["Threadling","Zaracoon","Ortegamoth"],
+ "types": [["Grass"],["Grass","Steel"],["Grass","Flying"]],
+ "prof": [0.9,0.8,0.95,1.2,1.05,1.1],
+ "rar": "common",
+ "totals": [205,225,400],
+ "learn": [
+  [1,"handshake"],
+  [1,"snub"],
+  [7,"anchor"],
+  [10,"liftoff"],
+  [13,"harvest"],
+  [16,"markdown"],
+  [20,"fastfashion"],
+  [24,"orbit"],
+  [29,"allowance"],
+  [34,"familyoffice"],
+  [40,"launch"]
+ ],
+ "cat": ["Thread Billie","Fitting Billie","Runway Billie"],
+ "ht": [0.3,0.7,1.2],
+ "wt": [2.9,9.9,32],
+ "hab": ["Mulberry leaves","Changing rooms","Shop windows at closing time"],
+ "diet": ["Mulberry leaves","Nothing; it is being fitted","Last season's stock"],
+ "bio": [
+  "A silkworm that spins a new outfit every morning and has eaten the old one by noon. It copies the pattern of any leaf it sees.",
+  "It hangs in its cocoon like a dress on a rail. Inside it is taking in the seams; tap the cocoon and a price tag rattles.",
+  "A moth whose wings carry this week's print. In two weeks they carry another. It flies to every light in the shopping street and never once to the cameras."
+ ],
+ "note": ["A new look by breakfast.","Do not disturb: being altered.","Has never given an interview."],
+ "evo": [
+  {"k":"lvl","at":7},
+  {"k":"lvl","at":10}
+ ],
+ "parody": "Amancio Ortega",
+ "cry": [
+  {"base":"insect","pitch":76,"length":0.5,"name":"placeholder: a silky chirr (Claude's draft)"},
+  {"base":"insect","pitch":62,"length":0.7,"name":"placeholder: a muffled rustle in a garment bag (Claude's draft)"},
+  {"base":"insect","pitch":68,"length":1.1,"name":"placeholder: a moth's dusty flutter (Claude's draft)"}
+ ]
+}

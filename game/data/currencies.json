@@ -19,13 +19,27 @@
   "one": "Scrap",
   "icon": "scrap",
   "kept": "meta",
-  "about": "The building material. A little for every place a run reaches; spent at the ranch."
+  "about": "The building material. A little for every place a run reaches, and salvage from the Bureau's bots; spent at the ranch and the Workshop."
+ },
+ "dna": {
+  "name": "DNA",
+  "one": "DNA",
+  "icon": "dna",
+  "kept": "meta",
+  "about": "Splicing's currency (SP-3): banked the moment a spliced wild Billie is beaten. The Gene Bank spends it."
  },
  "crests": {
   "name": "Crests",
   "one": "Crest",
   "icon": "crest",
   "kept": "meta",
-  "about": "Rare: one for beating a run's boss. Spent at the airship."
+  "about": "Rare: one for beating a run's boss. Spent at Skyline Station."
+ },
+ "beans": {
+  "name": "Beans",
+  "one": "Bean",
+  "icon": "bean",
+  "kept": "meta",
+  "about": "Rare finds on runs. Hub folk love them as gifts; nobody says why."
  }
 }

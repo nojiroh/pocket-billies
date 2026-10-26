@@ -9,11 +9,12 @@
 import { expose } from './test-globals.js';
 import { cutscene, mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
-import { LOCATIONS, MUSIC, SPECIES } from './game-data.js';
+import { LOCATIONS, MUSIC, ROBOTS, SPECIES } from './game-data.js';
+import { isRobotSp } from './logic/fighters.js';
 import { maxHp } from './logic/rules.js';
 import { runWeather } from './logic/run-map.js';
 import { musicBattleKind, musicRedZone, musicWeatherCut, songFor, songVariant } from './logic/music-where.js';
-import { cryLowHealth, cryRecipe, cryVoices } from './logic/cries.js';
+import { cryLowHealth, cryOfBot, cryRecipe, cryVoices } from './logic/cries.js';
 import { uiSoundFor, uiSoundVoices } from './logic/ui-sounds.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
@@ -537,7 +538,8 @@ export function soundEffect(name, o = {}) {
 function cryPlay(sp, low) {
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return 0;
   const t = soundEngine.ctx.currentTime + 0.005,
-    C = cryRecipe(sp, (SPECIES[sp] || {}).cry, CRIES),
+    /* RL-14: a bot's cry from its build (logic/cries.js cryOfBot) */
+    C = cryRecipe(sp, isRobotSp(sp) ? cryOfBot(sp, ROBOTS) : (SPECIES[sp] || {}).cry, CRIES),
     V = cryVoices(low ? cryLowHealth(C) : C);
   soundLog('cry ' + sp + (low ? ' low' : ''));
   for (const v of V)
@@ -553,10 +555,10 @@ function cryPlay(sp, low) {
   return Math.max(0, ...V.map(v => v.at + v.dur));
 }
 /* SND-6: a Billie's cry in battle, from the line's snapshot of its slot (ev.s: its species and its HP then): its low-HP
-   cry in the red zone (logic/music-where.js musicRedZone, as the music's tense version); robots have no cry yet */
+   cry in the red zone (logic/music-where.js musicRedZone, as the music's tense version); RL-14: a bot's too */
 function battleCry(ev, si, low) {
   const sn = ev && ev.s && ev.s[si];
-  if (!sn || sn.bot || !sn.sp) return 0;
+  if (!sn || !sn.sp) return 0;
   return cryPlay(sn.sp, low || musicRedZone(sn.hp, sn.max));
 }
 /* SND-5: the classic low-HP beep (Settings → Sound, off by default): twice a second-ish while the lead Billie is in the

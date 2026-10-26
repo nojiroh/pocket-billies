@@ -15,10 +15,15 @@
 import { expose } from '../test-globals.js';
 import {
   JINGLES,
+  breedName,
   coatRoll,
   environmentOdds,
+  factionBotSp,
+  factionWildChance,
   fieldMoveState,
   fieldMoveText,
+  fxOfRun,
+  fxSplice,
   jingle,
   provide,
   ranchNow,
@@ -40,14 +45,18 @@ import {
   COATS,
   EGGS,
   EGG_TIERS,
+  FACTIONS,
   FIELD_MOVES,
+  GENES,
   ITEMS,
   LINE_BY_ID,
   LOCATIONS,
   LOCATION_BY_ID,
   MOVES,
+  PERKS,
   POOLS,
   ROADS_BY_NODE,
+  ROBOTS,
   RULES,
   SPECIES,
   SPECIES_FORMS,
@@ -61,10 +70,24 @@ import {
 import { rngFn } from './rng.js';
 import { wildOddsBy } from './weather.js';
 import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
+import { graftKey, graftSet } from './graft-art.js';
+import { augBase, augFit, augLimb, augMoves, augWords } from './augments.js';
+import {
+  geneWords,
+  graftFields,
+  graftFit,
+  graftRel,
+  graftStability,
+  graftTraits,
+  graftTypes,
+  graftUnstable,
+  wildRoll,
+} from './genes.js';
 import {
   ROBOT_LIMBS,
   ROBOT_SLOTS,
   isRobot,
+  isRobotSp,
   moveSources,
   newPart,
   partFits,
@@ -89,8 +112,22 @@ expose({
   allBillies: [() => allBillies],
   // @ts-expect-error -- replaced on purpose
   autoSlot: [() => autoSlot, v => (autoSlot = v)],
+  billyAug: [() => billyAug],
   billyBuild: [() => billyBuild],
+  // @ts-expect-error -- replaced on purpose
+  billyFieldTypes: [() => billyFieldTypes, v => (billyFieldTypes = v)],
+  // @ts-expect-error -- replaced on purpose
+  billyGeneFx: [() => billyGeneFx, v => ((billyGeneFx = v), provide({ billyGeneFx }))],
+  billyGraft: [() => billyGraft],
   billyName: [() => billyName],
+  billyPrime: [() => billyPrime],
+  billyRel: [() => billyRel],
+  // @ts-expect-error -- replaced on purpose
+  billySpliceCost: [() => billySpliceCost, v => ((billySpliceCost = v), provide({ billySpliceCost }))],
+  billySpliced: [() => billySpliced],
+  billyTypes: [() => billyTypes],
+  // @ts-expect-error -- replaced on purpose
+  billyUnstable: [() => billyUnstable, v => (billyUnstable = v)],
   billyWeight: [() => billyWeight],
   // @ts-expect-error -- replaced on purpose
   blockerAt: [() => blockerAt, v => (blockerAt = v)],
@@ -143,6 +180,9 @@ expose({
   gateOwner: [() => gateOwner, v => (gateOwner = v)],
   // @ts-expect-error -- replaced on purpose
   gateText: [() => gateText, v => (gateText = v)],
+  geneData: [() => geneData],
+  // @ts-expect-error -- replaced on purpose
+  geneLimit: [() => geneLimit, v => ((geneLimit = v), provide({ geneLimit }))],
   // @ts-expect-error -- replaced on purpose
   hatchEgg: [() => hatchEgg, v => (hatchEgg = v)],
   hatchable: [() => hatchable],
@@ -150,6 +190,9 @@ expose({
   healAll: [() => healAll, v => ((healAll = v), provide({ healAll }))],
   hereLocation: [() => hereLocation],
   isPrime: [() => isPrime],
+  limbKeys: [() => limbKeys],
+  // @ts-expect-error -- replaced on purpose
+  limbsOf: [() => limbsOf, v => (limbsOf = v)],
   // @ts-expect-error -- replaced on purpose
   makeBilly: [() => makeBilly, v => ((makeBilly = v), provide({ makeBilly }))],
   // @ts-expect-error -- replaced on purpose
@@ -159,9 +202,13 @@ expose({
   metresToKm: [() => metresToKm],
   moveSlotCount: [() => moveSlotCount],
   // @ts-expect-error -- replaced on purpose
+  moveSourceLimbs: [() => moveSourceLimbs, v => (moveSourceLimbs = v)],
+  // @ts-expect-error -- replaced on purpose
   moveUsable: [() => moveUsable, v => (moveUsable = v)],
   // @ts-expect-error -- replaced on purpose
   movesAt: [() => movesAt, v => (movesAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  movesOf: [() => movesOf, v => (movesOf = v)],
   newUid: [() => newUid],
   nextTripNode: [() => nextTripNode],
   partBroken: [() => partBroken],
@@ -189,12 +236,22 @@ expose({
   rollBuild: [() => rollBuild, v => (rollBuild = v)],
   // @ts-expect-error -- replaced on purpose
   rollPartSize: [() => rollPartSize, v => (rollPartSize = v)],
+  // @ts-expect-error -- replaced on purpose
+  runNearYard: [() => runNearYard, v => (runNearYard = v)],
   setTrip: [() => setTrip, v => setSetTrip(v)],
   // @ts-expect-error -- replaced on purpose
   spawn: [() => spawn, v => (spawn = v)],
   // @ts-expect-error -- replaced on purpose
+  spawnBot: [() => spawnBot, v => (spawnBot = v)],
+  // @ts-expect-error -- replaced on purpose
   spawnRare: [() => spawnRare, v => (spawnRare = v)],
   speciesStep: [() => speciesStep],
+  // @ts-expect-error -- replaced on purpose
+  spliceReport: [() => spliceReport, v => (spliceReport = v)],
+  // @ts-expect-error -- replaced on purpose
+  spliceSet: [() => spliceSet, v => (spliceSet = v)],
+  // @ts-expect-error -- replaced on purpose
+  spliceWords: [() => spliceWords, v => (spliceWords = v)],
   // @ts-expect-error -- replaced on purpose
   stat: [() => stat, v => (stat = v)],
   // @ts-expect-error -- replaced on purpose
@@ -208,6 +265,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   tripTo: [() => tripTo, v => (tripTo = v)],
   // @ts-expect-error -- replaced on purpose
+  unstableName: [() => unstableName, v => (unstableName = v)],
+  // @ts-expect-error -- replaced on purpose
+  unstableTidy: [() => unstableTidy, v => ((unstableTidy = v), provide({ unstableTidy }))],
+  // @ts-expect-error -- replaced on purpose
   upgradePart: [() => upgradePart, v => (upgradePart = v)],
   // @ts-expect-error -- replaced on purpose
   walkDistances: [() => walkDistances, v => (walkDistances = v)],
@@ -218,7 +279,7 @@ expose({
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
-provide({ addWalked, healAll, makeBilly, makeRobot, riderOf });
+provide({ addWalked, billyGeneFx, billySpliceCost, geneLimit, healAll, makeBilly, makeRobot, riderOf, unstableTidy });
 export function setSetTrip(v) {
   // @ts-expect-error -- replaced on purpose
   setTrip = v; // eslint-disable-line no-func-assign
@@ -312,27 +373,194 @@ export function encounterBuild(q) {
   return cleanBuild(q.build);
 }
 export const billyBuild = m => cleanBuild(m && m.build);
-/** @param {Build} b */
-export const isPrime = b => partsPrime(RULES.parts, b);
-/** @param {Build} b the weight as a share of the species' own weight (1 = all M) */
-export const buildWeightRatio = b => partsWeightRatio(RULES.parts, b);
-/** @returns {number} a Billie's weight in kg (its species' weight times its build) */
-export const billyWeight = m => Math.round(speciesOf(m).wt * buildWeightRatio(billyBuild(m)) * 10) / 10;
-/** @param {Build} b @param {string} k a stat id @returns {number} what the build does to that stat (1 = nothing) */
-export const buildStatFactor = (b, k) => partsStatFactor(RULES.parts, b, k);
-/** @param {Build} b phase 06: which way the build leans (attack, speed, lean, off, prime), for the Build tab */
-export const buildLean = b => partsLean(RULES.parts, b);
+/** @param {Build} b @param {boolean} [spliced] SP-2: a splice is never Prime */
+export const isPrime = (b, spliced) => partsPrime(RULES.parts, b, spliced);
+/** @param {Build} b the weight as a share of the species' own weight (1 = all M)
+ * @param {Record<string, number> | null} [rel] SP-2: the spliced slots' relative weights (billyRel) */
+export const buildWeightRatio = (b, rel) => partsWeightRatio(RULES.parts, b, rel);
+/** @returns {number} a Billie's weight in kg (its species' weight times its build; SP-2: its foreign parts weigh what
+ * they did on their donors) */
+export const billyWeight = m => Math.round(speciesOf(m).wt * buildWeightRatio(billyBuild(m), billyRel(m)) * 10) / 10;
+/* SP-2: the game's data for logic/genes.js @returns {import('./genes.js').GeneData} */
+export const geneData = () => ({
+  kitBuilds: gameData.kitBuilds || { forms: [] },
+  partKits: /** @type {import('../../types/game-data').PartKits} */ (gameData.partKits),
+  genes: GENES,
+  species: SPECIES,
+  parts: RULES.parts,
+  /* SP-5: Augments are robots.json parts (logic/augments.js) */
+  robots: ROBOTS,
+  robotRules: robotRules(),
+});
+/** SP-2: a Billie's (or an encounter's) splice, the slots that still fit it; null for none or a robot. SP-5: but
+ * not a slot an Augment holds @param {{ sp: string, kind?: string, graft?: Record<string, string>, aug?: any } | null | undefined} m */
+export const billyGraft = m => {
+  if (!m || !m.graft || m.kind === 'robot') return null;
+  const g = graftFit(geneData(), m.sp, m.graft),
+    a = g && m.aug ? billyAug(m) : null;
+  /* SP-5: a slot an Augment holds has no Gene */
+  if (g && a) for (const slot of Object.keys(a)) delete g[slot];
+  return g && Object.keys(g).length ? g : null;
+};
+provide({ billyGraft }); /* to-module */
+/** SP-5: a Billie's (or an encounter's) Augments, the slots that still fit it; null for none or a robot
+ * @param {{ sp: string, kind?: string, aug?: any } | null | undefined} m @returns {import('./augments.js').Aug | null} */
+export const billyAug = m => (m && m.aug && m.kind !== 'robot' ? augFit(geneData(), m.sp, m.aug) : null);
+provide({ billyAug }); /* to-module */
+/** SP-5: spliced at all: a Gene or an Augment (never Prime; Unstable can come with either) @param {any} m */
+export const billySpliced = m => !!(billyGraft(m) || billyAug(m));
+/** SP-4: the Stability a Billie's splice spends (0 with none; starter points charge for it)
+ * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m */
+export function billySpliceCost(m) {
+  return m && billySpliced(m) ? graftStability(geneData(), m.sp, billyGraft(m), undefined, billyAug(m)).cost : 0;
+}
+/** SP-2: per spliced slot, its part's weight over the Billie's own part's; null with no splice
+ * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m */
+export const billyRel = m => (m && billySpliced(m) ? graftRel(geneData(), m.sp, billyGraft(m), billyAug(m)) : null);
+/** SP-2: a Billie's types: its species', the second replaced by its heaviest dominant Gene's (logic/genes.js
+ * graftTypes); a robot's or an unspliced Billie's are its species' own @param {any} m @returns {string[]} */
+export const billyTypes = m =>
+  billySpliced(m) ? graftTypes(geneData(), m.sp, billyGraft(m), m.build, billyAug(m)) : speciesOf(m).types;
+/** SP-4: a Billie's types for the field moves: its own (billyTypes) and, for each part that counts for a field move
+ * (genes.json field: fins for Surf), that move's type @param {any} m @returns {string[]} */
+export function billyFieldTypes(m) {
+  const own = billyTypes(m);
+  if (!billySpliced(m)) return own;
+  const more = graftFields(geneData(), m.sp, billyGraft(m), billyAug(m))
+    .map(f => FIELD_MOVES[f] && FIELD_MOVES[f].type)
+    .filter(t => t && !own.includes(t));
+  return more.length ? [...own, ...new Set(more)] : own;
+}
+/** SP-3: a spliced Billie's foreign parts in words, in slot order ("a shark’s tail"), then (SP-5) its Augments; [] with
+ * no splice @param {{ sp: string, kind?: string, graft?: Record<string, string>, aug?: any } | null | undefined} m
+ * @returns {string[]} */
+export function spliceWords(m) {
+  const g = billyGraft(m),
+    a = m && m.aug ? billyAug(m) : null,
+    out = g
+      ? Object.entries(g)
+          .map(([slot, donor]) => geneWords(geneData(), slot, donor))
+          .filter(Boolean)
+      : [];
+  /* SP-5: and its Augments ("a Hydrant Arm") */
+  if (a) for (const p of Object.values(a)) if (p) out.push(augWords(geneData(), p.id));
+  return out.filter(Boolean);
+}
+/** SP-2: the debug log's splices: per spliced Billie on the team, its place, species, splice code, Stability, traits
+ * and types (data ids only: no names) */
+export function spliceReport() {
+  return (saveData.team || [])
+    .map((m, i) => ({ m, i }))
+    .filter(({ m }) => billySpliced(m))
+    .map(({ m, i }) => {
+      const g = billyGraft(m),
+        a = billyAug(m),
+        st = graftStability(geneData(), m.sp, g, geneLimit(), a);
+      return {
+        at: i,
+        sp: m.sp,
+        graft: graftKey(g),
+        /* SP-5: its Augments, slot=part+upgrade (data ids only) */
+        ...(a
+          ? {
+              aug: Object.entries(a)
+                .map(([s, p]) => `${s}=${p.id}+${p.up || 0}`)
+                .join(','),
+            }
+          : {}),
+        cost: st.cost,
+        limit: st.limit,
+        unstable: st.unstable,
+        traits: g ? graftTraits(geneData(), m.sp, g) : [],
+        types: billyTypes(m),
+      };
+    });
+}
+/** SP-2: an Unstable Billie's roll (its raised and lowered stats and merged name, Billy.unstable); null with no splice.
+ * SP-4: a stored fact, settled by unstableTidy with its owner's limit (yours: the Gene Bank's; a wild one's: the
+ * default), so it is never worked out again here @param {any} m
+ * @returns {{ up: string, down: string, name: string } | null} */
+export function billyUnstable(m) {
+  return m && m.unstable && billySpliced(m) ? m.unstable : null;
+}
+/** SP-4: the Stability limit your Billies are held to: the Gene Bank's level's (genes.json bank.levels; buildings.json
+ * genebank, a level raised by its unlock rows), the default (stability.limit) with no Bank data @param {any} [s] */
+export function geneLimit(s = saveData) {
+  const L = GENES.bank && GENES.bank.levels,
+    lv = Math.max(1, (s && s.meta && s.meta.buildings && s.meta.buildings.genebank) || 1);
+  return L && L.length ? L[Math.min(lv, L.length) - 1].limit : GENES.stability.limit;
+}
+/** SP-2: after a splice changes (or the Billie evolves, or a save loads): past the limit it is Unstable, rolled once
+ * and kept while it stays past it (a new splice keeps the old roll); within the limit the roll goes. SP-4: the limit
+ * is the owner's (geneLimit() for yours; the default for a wild one)
+ * @param {any} m @param {() => number} [rnd] @param {number} [limit] */
+export function unstableTidy(m, rnd = random, limit) {
+  const g = billyGraft(m),
+    a = billyAug(m);
+  if ((!g && !a) || !graftStability(geneData(), m.sp, g, limit, a).unstable) {
+    delete m.unstable;
+    return;
+  }
+  if (m.unstable) return;
+  const D = geneData(),
+    r = graftUnstable(D, { sp: m.sp, graft: g || undefined, build: m.build, aug: a || undefined }, STAT_IDS, rnd),
+    donor = SPECIES[r.donor];
+  /* SP-5: an Augment's name merges as a donor's would */
+  m.unstable = {
+    up: r.up,
+    down: r.down,
+    name: breedName(speciesOf(m).name, donor ? donor.name : r.name || speciesOf(m).name),
+  };
+}
+/** SP-2: give a Billie (or an encounter) a splice ('' or null takes it off), then settle Unstable (SP-4: with the
+ * owner's limit; the default when not given, as for a wild one)
+ * @param {any} m @param {Record<string, string> | string | null} graft a graft or a graft code @param {number} [limit] */
+export function spliceSet(m, graft, limit) {
+  graftSet(m, typeof graft === 'string' ? graft : graftKey(graft));
+  unstableTidy(m, random, limit);
+}
+/** SP-2: a spliced Billie's own effect rows (logic/effects.js fxOfBillie): its traits', tagged gene:<trait>, and an
+ * Unstable splice's drawback, tagged unstable @param {any} m @returns {(import('../../types/game-data').FxRow & { src: string })[]} */
+export function billyGeneFx(m) {
+  const g = billyGraft(m);
+  if (!g && !billyAug(m)) return [];
+  const out = [];
+  if (g)
+    for (const t of graftTraits(geneData(), m.sp, g))
+      for (const f of GENES.traits[t].fx) out.push({ ...f, src: 'gene:' + t });
+  if (billyUnstable(m)) for (const f of GENES.unstable.fx) out.push({ ...f, src: 'unstable' });
+  return out;
+}
+/** SP-2: Prime: every part its own and at M @param {any} m */
+export const billyPrime = m => isPrime(billyBuild(m), billySpliced(m));
+/** @param {Build} b @param {string} k a stat id @param {Record<string, number> | null} [rel] SP-2 (billyRel)
+ * @returns {number} what the build does to that stat (1 = nothing) */
+export const buildStatFactor = (b, k, rel) => partsStatFactor(RULES.parts, b, k, rel);
+/** @param {Build} b phase 06: which way the build leans (attack, speed, lean, off, prime), for the Build tab
+ * @param {Record<string, number> | null} [rel] SP-2 (billyRel) */
+export const buildLean = (b, rel) => partsLean(RULES.parts, b, rel);
 
 /* ---------- billionaires ---------- */
 export function stat(m, k) {
-  const b = speciesOf(m).base[STAT_IDS.indexOf(k)];
+  let b = speciesOf(m).base[STAT_IDS.indexOf(k)];
+  /* SP-5: an Augment's share of its part's stats joins the base */
+  if (m.aug) {
+    const add = augBase(geneData(), m.sp, billyAug(m))[k];
+    if (add) b += add;
+  }
   let v = k === 'hp' ? Math.floor((2 * b * m.lvl) / 100) + m.lvl + 10 : Math.floor((2 * b * m.lvl) / 100) + 5;
   /* phase 16: its parts (weight and Prime) */
-  if (m.build) v = Math.max(1, Math.round(v * buildStatFactor(m.build, k)));
+  /* SP-2: and its foreign parts' weight (a splice is never Prime) */
+  const rel = m.graft || m.aug ? billyRel(m) : null;
+  if (m.build || rel) v = Math.max(1, Math.round(v * buildStatFactor(m.build, k, rel)));
   /* RL-10: an abomination's spike and drawback (rules.json ranch.breed) */
   const mu = m.mut,
     B = mu && mu.k === 'abom' && RULES.ranch && RULES.ranch.breed;
   if (B && (k === mu.up || k === mu.down)) v = Math.max(1, Math.round(v * (k === mu.up ? B.abomUp : B.abomDown)));
+  /* SP-2: an Unstable splice's spike and drawback (genes.json unstable), picked from the Billie and its splice */
+  const un = m.graft || m.aug ? billyUnstable(m) : null;
+  if (un && (k === un.up || k === un.down))
+    v = Math.max(1, Math.round(v * (k === un.up ? GENES.unstable.up : GENES.unstable.down)));
   /* v33: an Alpha in battle is much tougher (m.boss); one you caught keeps a little of it (m.alpha) */
   if (m.boss) v = Math.floor(v * (k === 'hp' ? m.boss.hp : m.boss.st));
   else if (m.alpha) v = Math.floor(v * ((RULES.battle && RULES.battle.alphaKeep) ?? 1.08));
@@ -417,30 +645,71 @@ export function refreshRobot(m, previousMaxHp) {
   m.hp = m.hp > 0 ? Math.max(1, Math.round(maxHp(m) * was)) : 0;
   m.partDmg = m.partDmg || {};
 }
+/** SP-5: the limbs that can break: a robot's arms and legs (its fit), a Billie's Augments (each on the limb its
+ * slot is: the front's on its side's arm, the back's as legs); null for none @param {any} m
+ * @returns {Partial<Record<'armL' | 'armR' | 'legs', PartInstance>> | null} */
+export function limbsOf(m) {
+  if (!m) return null;
+  if (isRobot(m)) return m.fit ? { armL: m.fit.armL, armR: m.fit.armR, legs: m.fit.legs } : null;
+  const a = m.aug ? billyAug(m) : null;
+  if (!a) return null;
+  /** @type {Partial<Record<'armL' | 'armR' | 'legs', PartInstance>>} */
+  const out = {};
+  for (const [slot, p] of Object.entries(a)) {
+    const limb = augLimb(geneData(), slot);
+    if (limb && p) out[limb] = p;
+  }
+  return Object.keys(out).length ? out : null;
+}
+/** SP-5: the limbs it has, in ROBOT_LIMBS' order ([] for a Billie with no Augment) @param {any} m
+ * @returns {('armL' | 'armR' | 'legs')[]} */
+export const limbKeys = m => {
+  const L = limbsOf(m);
+  return L ? ROBOT_LIMBS.filter(k => L[k]) : [];
+};
 /** a limb's own HP when whole @param {Billy} m @param {'armL' | 'armR' | 'legs'} slot */
 export function partMaxHp(m, slot) {
-  const P = m.fit && robotPartDef(m.fit[slot].id);
+  const L = limbsOf(m),
+    P = L && L[slot] && robotPartDef(/** @type {PartInstance} */ (L[slot]).id);
   return Math.max(1, Math.round(maxHp(m) * robotRules().partHpRatio * ((P && P.dur) ?? 1)));
 }
 /** @param {Billy} m @param {'armL' | 'armR' | 'legs'} slot */
 export const partHpLeft = (m, slot) => Math.max(0, partMaxHp(m, slot) - ((m.partDmg && m.partDmg[slot]) || 0));
-/** @param {Billy} m @param {'armL' | 'armR' | 'legs'} slot */
-export const partBroken = (m, slot) => isRobot(m) && partHpLeft(m, slot) <= 0;
+/** SP-5: a Billie's Augment breaks as a robot's limb does @param {Billy} m @param {'armL' | 'armR' | 'legs'} slot */
+export const partBroken = (m, slot) => limbKeys(m).includes(slot) && partHpLeft(m, slot) <= 0;
 /** @param {Billy} m @returns {('armL' | 'armR' | 'legs')[]} */
-export const brokenParts = m => (isRobot(m) ? ROBOT_LIMBS.filter(k => partBroken(m, k)) : []);
-/** can it use this move now? A robot can't use a move whose every part giving it is broken (the gem's always works)
- * @param {Billy} m @param {string} mid */
+export const brokenParts = m => limbKeys(m).filter(k => partBroken(m, k));
+/** the limbs that give a move (a robot's gem: 'gem'); SP-5: a Billie's Augments that bring it, but none when it
+ * learned the move itself @param {Billy} m @param {string} mid @returns {string[]} */
+export function moveSourceLimbs(m, mid) {
+  if (isRobot(m)) return moveSources(/** @type {string} */ (m.gem), /** @type {RobotFit} */ (m.fit), mid);
+  const L = limbsOf(m);
+  if (!L || (m.moves || []).includes(mid)) return [];
+  return limbKeys(m).filter(k => {
+    const P = robotPartDef(/** @type {PartInstance} */ (L[k]).id);
+    return !!P && P.move === mid;
+  });
+}
+/** can it use this move now? A robot can't use a move whose every part giving it is broken (the gem's always works);
+ * SP-5: nor a Billie the move of a broken Augment @param {Billy} m @param {string} mid */
 export function moveUsable(m, mid) {
-  if (!isRobot(m)) return true;
-  const src = moveSources(/** @type {string} */ (m.gem), /** @type {RobotFit} */ (m.fit), mid);
+  if (!isRobot(m) && !m.aug) return true;
+  const src = moveSourceLimbs(m, mid);
   return !src.length || src.some(k => k === 'gem' || !partBroken(m, /** @type {'armL' | 'armR' | 'legs'} */ (k)));
+}
+/** SP-5: the moves it can pick in battle: its own, then the moves its Augments bring (genes.json augment.move
+ * 'extra'); a robot's and an un-Augmented Billie's are m.moves @param {Billy} m @returns {string[]} */
+export function movesOf(m) {
+  if (isRobot(m) || !m.aug) return m.moves;
+  const more = augMoves(geneData(), m.sp, billyAug(m)).filter(id => MOVES[id] && !m.moves.includes(id));
+  return more.length ? [...m.moves, ...more] : m.moves;
 }
 /** fixes a share (1 = all) of each limb's lost HP; a broken one comes back once it is above zero
  * @param {Billy} m @param {number} share @returns {boolean} whether anything was fixed */
 export function repairParts(m, share = 1) {
-  if (!isRobot(m) || !m.partDmg) return false;
+  if (!m.partDmg || !limbKeys(m).length) return false;
   let any = false;
-  for (const k of ROBOT_LIMBS) {
+  for (const k of limbKeys(m)) {
     const d = m.partDmg[k] || 0;
     if (d <= 0) continue;
     const fix = share >= 1 ? d : Math.ceil(partMaxHp(m, k) * share);
@@ -450,7 +719,7 @@ export function repairParts(m, share = 1) {
   return any;
 }
 /** does it have damaged parts? @param {Billy} m */
-export const partsDamaged = m => isRobot(m) && ROBOT_LIMBS.some(k => ((m.partDmg && m.partDmg[k]) || 0) > 0);
+export const partsDamaged = m => limbKeys(m).some(k => ((m.partDmg && m.partDmg[k]) || 0) > 0);
 /** puts a part from your parts on a robot; the part it replaces goes back to your parts. A gem (slot 'gem') swaps the
  * robot's gem the same way: the robot keeps its level, the old gem goes back as a spare.
  * @param {Billy} m @param {RobotSlot | 'gem'} slot @param {string} uid a part in saveData.parts @returns {boolean} */
@@ -511,8 +780,14 @@ export function upgradePart(p) {
   for (const { m, previousMaxHp } of fitted) refreshRobot(m, previousMaxHp);
   return true;
 }
-export const billyName = m => m.nick || (m.mut && m.mut.name) || speciesOf(m).name;
+/* SP-2: an Unstable Billie is called by its own and its heaviest donor's names merged, as an abomination is */
+export const billyName = m => m.nick || (m.mut && m.mut.name) || unstableName(m) || speciesOf(m).name;
 provide({ billyName }); /* to-module */
+/** SP-2: an Unstable Billie's merged name ('' when it isn't one) @param {any} m */
+export function unstableName(m) {
+  const un = m.graft || m.aug ? billyUnstable(m) : null;
+  return un ? un.name : '';
+}
 /* RL-8: during a run storage stays in Copperleaf (the box isn't a run field): only the party counts, so nothing in a run
    reads, heals, merges or moves a Billie that is resting at home */
 export const allBillies = () => (saveData.run ? saveData.team.slice() : saveData.team.concat(saveData.box));
@@ -603,6 +878,14 @@ export function evolve(m, path = 'A') {
     from = billyName(m),
     s0 = speciesOf(m);
   m.sp = s0.evo && s0.evo.k === 'split' && s0.alt && path === 'B' ? s0.alt : s0.next;
+  /* SP-2: a splice survives evolving (its foreign parts stay and are drawn at the new stage's size); a slot the new
+     stage has no bone for loses its Gene */
+  if (m.graft) {
+    const g = billyGraft(m);
+    if (g) m.graft = g;
+    else delete m.graft;
+  }
+  unstableTidy(m, random, geneLimit());
   if (m.hp > 0) m.hp = Math.max(1, Math.min(maxHp(m), m.hp + maxHp(m) - old));
   saveData.caught[m.sp] = 1;
   saveData.seen[m.sp] = 1;
@@ -643,6 +926,8 @@ export function toTeam(m) {
   return true;
 }
 export function addBilly(m) {
+  /* SP-4: a caught spliced Billie is held to your Gene Bank's limit from now on */
+  if (m.graft) unstableTidy(m, random, geneLimit());
   /* phase 17: robots aren't in the Guide */
   if (!isRobot(m)) {
     saveData.caught[m.sp] = 1;
@@ -674,7 +959,7 @@ export function gateText(n) {
     if (!M) return 'The way is blocked.';
     const team = saveData.team
         .filter(m => m.hp > 0 && speciesOf(m))
-        .map(m => ({ name: billyName(m), types: speciesOf(m).types })),
+        .map(m => ({ name: billyName(m), types: billyFieldTypes(m) })),
       st = fieldMoveState(M, (saveData.meta || {}).badges, team);
     return st.state === 'ask' ? `Use ${M.name} on what blocks the way first.` : fieldMoveText(M, st.state);
   }
@@ -805,6 +1090,13 @@ export function encounterRunVisits(node) {
     run = saveData.run;
   return L && L.runNode != null && run ? run.path.filter(i => i === L.runNode).length : 0;
 }
+/** SP-5: is this run map node one step from a scrapyard (a road either way)? @param {any} run @param {number} i */
+export function runNearYard(run, i) {
+  const N = run && run.map && run.map.nodes;
+  if (!N || !N[i]) return false;
+  const yard = (/** @type {number} */ j) => !!N[j] && N[j].type === 'scrapyard';
+  return N[i].to.some(yard) || N.some((/** @type {any} */ n, /** @type {number} */ j) => yard(j) && n.to.includes(i));
+}
 export function encountersHere(node = saveData.trip.node) {
   const L = LOCATIONS[node];
   if (!L) return [];
@@ -817,11 +1109,29 @@ export function encountersHere(node = saveData.trip.node) {
      visit)), and not topped up by play time: a run's time is its days */
   if (visit) {
     if (!w || w.v !== visit) {
-      const rnd = rngFn(runNodeSeed(saveData.run.seed, L.runNode), 'wild|' + visit);
+      const rnd = rngFn(runNodeSeed(saveData.run.seed, L.runNode), 'wild|' + visit),
+        /* SP-3: now and then a wild splice (genes.json wild), from a stream of its own: the stock's species, levels,
+           sizes and coats stay what they were */
+        spl = rngFn(runNodeSeed(saveData.run.seed, L.runNode), 'splice|' + visit),
+        pool = encounterPoolHere(node).list.map(([id]) => id),
+        /* SP-6: a run's splice rows (Perks) on the odds */
+        odds = fxSplice(fxOfRun(saveData.run, PERKS), 'splice');
       W[L.id] = { at: now, list: [], v: visit };
       /* RT-4: a run route's first visit keeps the last of its stock for a rarer one (rules.json run.wild.rare) */
-      const rare = visit === 1 && !!L.trainerCount && !!RULES.run.wild.rare && cap > 0;
-      while (W[L.id].list.length < cap - (rare ? 1 : 0)) spawn(false, null, node, rnd);
+      /* RL-14: none in a scrapyard, where every wild one is a bot */
+      const yard = !!saveData.run.map && saveData.run.map.nodes[/** @type {number} */ (L.runNode)].type === 'scrapyard',
+        rare = visit === 1 && !!L.trainerCount && !!RULES.run.wild.rare && cap > 0 && !yard;
+      /* SP-5: Escaped specimens are likelier one step from a scrapyard (genes.json augment.escapedNear) */
+      const near = runNearYard(saveData.run, /** @type {number} */ (L.runNode)) ? GENES.augment.escapedNear : 1;
+      while (W[L.id].list.length < cap - (rare ? 1 : 0)) {
+        const q = spawn(false, null, node, rnd);
+        /* SP-3: a bot (RL-14) is never spliced and draws nothing from the splice stream */
+        const g = isRobotSp(q.sp) ? null : wildRoll(geneData(), q.sp, pool, spl, odds, near);
+        if (!g) continue;
+        if (g.graft) q.graft = g.graft;
+        if (g.aug) q.aug = g.aug;
+        unstableTidy(q, spl); /* SP-2: past the limit, its Unstable roll, from the same stream (the same on a reload) */
+      }
       if (rare) spawnRare(node, rnd);
     }
     return W[L.id].list;
@@ -861,6 +1171,34 @@ export function spawnRare(node, rnd) {
   q.rare = 1;
   return q;
 }
+/** RL-14: a run place's wild bot (factions.json), or null: a draw against its faction's chance (none for a place that
+ * can't have one), then the bot by weight and its level, all from rnd; it waits in the tall grass, never an Alpha. The
+ * first faction (by id) that can field one here @param {number} where the place (a location) @param {() => number} rnd */
+export function spawnBot(where, rnd) {
+  const L = LOCATIONS[where],
+    run = saveData.run,
+    node = L && L.runNode != null && run && run.map ? run.map.nodes[L.runNode] : null;
+  if (!node) return null;
+  for (const id of Object.keys(FACTIONS).sort()) {
+    const F = FACTIONS[id],
+      chance = factionWildChance(F, node);
+    if (!(chance > 0) || rnd() >= chance) continue;
+    const bots = Object.keys(F.bots)
+        .sort()
+        .filter(k => F.bots[k].weight > 0),
+      B = F.bots[pickWeighted(/** @type {[string, number][]} */ (bots.map(k => [k, F.bots[k].weight])), rnd)],
+      P = encounterPoolHere(where),
+      q = {
+        id: newUid(),
+        sp: factionBotSp(B),
+        lvl: P.lv[0] + Math.floor(rnd() * (P.lv[1] - P.lv[0] + 1)),
+        no: ++saveData.serial,
+      };
+    wildList(where).push(q);
+    return q;
+  }
+  return null;
+}
 /* RL-2: every outcome draw (species, level, sizes, coat, Alpha) comes from rnd; a run passes its own stream */
 export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
   const P = encounterPoolHere(node),
@@ -884,6 +1222,10 @@ export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
       g = list.filter(([id]) => !SPECIES[id].types.some(t => typeEffectiveness(t, my) > 1));
     if (g.length) list = g;
   }
+  /* RL-14: on a run place, now and then the Bureau's bot instead (factions.json wild; every one in a scrapyard). Only
+     a place that can have one draws for it, so the others' Billies stay as they were */
+  const bot = !force && !gentle ? spawnBot(node, rnd) : null;
+  if (bot) return bot;
   const sp = force || pickWeighted(list, rnd),
     lvl = P.lv[0] + Math.floor(rnd() * (P.lv[1] - P.lv[0] + 1));
   const q = {

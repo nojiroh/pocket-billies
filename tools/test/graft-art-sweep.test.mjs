@@ -30,7 +30,7 @@ test('graft-art sweep: every recipe with every distinct donor part per slot bake
       const kind = G.graftKind(K, base, slot),
         seen = new Set();
       for (const donor of G.graftDonors(B, K, base.rig, slot)) {
-        const pid = G.graftRecipe(B, donor).parts[kind][0];
+        const pid = G.geneSplit(donor).part;
         if (seen.has(pid)) continue;
         seen.add(pid);
         const f = G.graftForm(B, K, base.rig, { [slot]: donor }),

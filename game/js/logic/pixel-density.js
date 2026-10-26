@@ -108,24 +108,34 @@ export function densityHeights(lines) {
   return out;
 }
 /**
- * The report: one row per species with a rig (its world numbers; a kit Billie's parts too), and the scalings every
- * Billie gets that are not whole numbers (rules.json part sizes S and L, drawn nearest-neighbour).
- * @param {any} D the game data (lines, kitBuilds, rules) @param {Record<string, any>} rigs
+ * The report: one row per species with a rig (its world numbers; a kit Billie's parts too; a placeholder Billie's
+ * plan and scale, RO-3b: its kit recipe is kept but not baked), and the scalings every Billie gets that are not whole
+ * numbers (rules.json part sizes S and L, drawn nearest-neighbour).
+ * @param {any} D the game data (lines, kitBuilds, bodyPlans, rules) @param {Record<string, any>} rigs
  * @param {Record<string, { ht?: number }>} species by id (the game's SPECIES: line + stage)
  */
 export function densityReport(D, rigs, species) {
-  const kit = new Map((D.kitBuilds?.forms || []).map((/** @type {any} */ f) => [f.rig, f])),
+  const ph = new Map((D.bodyPlans?.forms || []).map((/** @type {any} */ f) => [f.rig, f])),
+    kit = new Map(
+      (D.kitBuilds?.forms || [])
+        .filter((/** @type {any} */ f) => !ph.has(f.rig))
+        .map((/** @type {any} */ f) => [f.rig, f])
+    ),
     rows = [];
   for (const [sp, R] of Object.entries(rigs || {})) {
     const M = R && R.front;
     if (!M || !M.geo || !species[sp]) continue;
     const f = kit.get(sp),
+      p = ph.get(sp),
       parts = f ? densityKitParts(f) : [];
     rows.push({
       sp,
       ...densityWorld(species[sp].ht, M.geo, M.BH),
       kit: f ? f.name : '',
       fit: f ? f.scale : null,
+      placeholder: p ? p.name : '',
+      plan: p ? p.plan : null,
+      scale: p ? (p.scale ?? 1) : null,
       parts,
       flagged: parts.filter(p => p.flag).length,
     });

@@ -13,7 +13,8 @@ import { expose } from './test-globals.js';
 import { provide, ranchOpen, soundEffect } from './hooks.js';
 import { clamp } from './util.js';
 import { RULES, SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
-import { graftOf } from './logic/graft-art.js';
+import { graftLook } from './logic/graft-art.js';
+import { speciesById } from './logic/fighters.js';
 import { billyName, encountersHere, findBilly, maxHp } from './logic/rules.js';
 import {
   pastureBillies,
@@ -33,7 +34,7 @@ import { walkData, walkView, walkablePointNear, worldToScreen } from './walk-vie
 import { environment } from './environment.js';
 import { standingHeightAt } from './walk/heights.js';
 import { addRipple } from './walk/water.js';
-import { wadeItem } from './walk/frame-items.js';
+import { wadeItem, wadeItemLift } from './walk/frame-items.js';
 /* eslint-disable no-func-assign */
 expose({
   BILLY_FRAME_CACHE_MAX: [() => BILLY_FRAME_CACHE_MAX],
@@ -86,7 +87,8 @@ export const worldBillies = {
 provide({ worldBillies }); /* to-module */
 const BILLY_FRAME_CACHE_MAX = 320;
 function worldBillyRig(sp, view, coat, graft) {
-  if (!SPECIES[sp] || typeof rigParts !== 'function') return null;
+  /* RL-14: a wild bot is drawn from its parts (skeleton-rig.js robotRigParts) */
+  if (!speciesById(sp) || typeof rigParts !== 'function') return null;
   const k = view === 'back' ? RIG_BACK_VIEW : 1;
   let R = null;
   try {
@@ -156,7 +158,7 @@ function worldBillyFrame(sp, view, pose, t, seed, build, coat, graft) {
 /* metres per rig pixel: a billionaire stands about 0.9 of its listed height, between 0.6 and 2 m, on the art grid
    (v34); the maths is logic/pixel-density.js densityWorldMpp (Studio plan Phase 5, T5.7: the Studio reports it) */
 function worldBillyMetersPerPixel(sp, R, big = 1) {
-  return densityWorldMpp(SPECIES[sp].ht, R.geo, R.BH, big);
+  return densityWorldMpp(speciesById(sp).ht, R.geo, R.BH, big);
 }
 export function worldBillyItem(k, sp, view, pose, t, seed, x, z, o = {}) {
   const im = worldBillyFrame(sp, view, pose, t, seed, o.build, o.coat, o.graft);
@@ -186,6 +188,8 @@ export function worldBillyItem(k, sp, view, pose, t, seed, x, z, o = {}) {
     },
     o.extra || {}
   );
+  /* WA-5b: a wild one in shallows (o.wade, its hop and bob) is cut at the waterline too */
+  if (o.wade != null && typeof wadeItemLift === 'function') return wadeItemLift(it, o.wade) || it;
   return o.dy || typeof wadeItem !== 'function' ? it : wadeItem(it);
 }
 /* ---------- the buddy ---------- */
@@ -330,7 +334,15 @@ function buddyItems(out, t, dt) {
       b.seed,
       b.x,
       b.z,
-      { flip: b.flip, dy, big: m.alpha ? 1.12 : 1, build: m.build, coat: m.coat, graft: graftOf(m), extra: { mon: m } }
+      {
+        flip: b.flip,
+        dy,
+        big: m.alpha ? 1.12 : 1,
+        build: m.build,
+        coat: m.coat,
+        graft: graftLook(m),
+        extra: { mon: m },
+      }
     );
   if (it) out.push(it);
   /* WA-6a: your buddy leaves rings behind it as it wades (walk/water.js addRipple) */
@@ -491,7 +503,7 @@ function pastureItems(out, t, dt) {
           big: m.alpha ? 1.12 : 1,
           build: m.build,
           coat: m.coat,
-          graft: graftOf(m),
+          graft: graftLook(m),
           extra: { mon: m, uid: m.uid },
         }
       );
@@ -578,7 +590,7 @@ function wildBillyItem(out, e, s, t, dt) {
     w.seed,
     e.build,
     e.coat,
-    graftOf(e)
+    graftLook(e)
   );
   if (!im) return;
   const R = im.__R,
@@ -601,9 +613,10 @@ function wildBillyItem(out, e, s, t, dt) {
       flip: w.flip,
       big,
       dy: -H * sink + hop * 0.32 + bob,
+      wade: hop * 0.32 + bob,
       build: e.build,
       coat: e.coat,
-      graft: graftOf(e),
+      graft: graftLook(e),
       extra: { e },
     }
   );
@@ -648,11 +661,11 @@ function worldBillyLabels(C, labels) {
 function warmWorldBillies() {
   try {
     const L = [];
-    for (const q of encountersHere()) L.push([q.sp, 1, q.coat, graftOf(q)]);
+    for (const q of encountersHere()) L.push([q.sp, 1, q.coat, graftLook(q)]);
     const m = buddyBilly();
     if (m) {
-      L.push([m.sp, 1, m.coat, graftOf(m)]);
-      L.push([m.sp, RIG_BACK_VIEW, m.coat, graftOf(m)]);
+      L.push([m.sp, 1, m.coat, graftLook(m)]);
+      L.push([m.sp, RIG_BACK_VIEW, m.coat, graftLook(m)]);
     }
     if (typeof trainersAt === 'function')
       for (const T of trainersAt(saveData.trip.node)) {
@@ -661,10 +674,15 @@ function warmWorldBillies() {
         for (const e of T.team || []) {
           const s2 = /^@rival\d?$/.test(e.sp) && typeof rivalSpecies === 'function' ? rivalSpecies(e.sp) : e.sp;
           if (SPECIES[s2]) L.push([s2, 1]);
+          /* RL-14: a Bureau agent's bot (its parts' pictures) */
+          else if (e.sp === 'robot' && e.robot) {
+            const R = e.robot;
+            L.push(['bot:' + [R.gem, R.torso, R.armL, R.armR, R.legs].join('.'), 1]);
+          }
         }
       }
     /* v34: what a battle here would need, loaded now while you walk (a battle used to start by loading it: 4 fps at worst) */
-    for (const m of saveData.team.slice(0, 3)) L.push([m.sp, RIG_BACK_VIEW, m.coat, graftOf(m)]);
+    for (const m of saveData.team.slice(0, 3)) L.push([m.sp, RIG_BACK_VIEW, m.coat, graftLook(m)]);
     if (L.length && typeof rigPreload === 'function')
       setTimeout(
         () =>

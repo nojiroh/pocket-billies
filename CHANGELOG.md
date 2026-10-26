@@ -50,12 +50,81 @@ kept aside in the browser).
   many may light the scene (1-16). Both are in the graphics test.
 - **One light block per frame** is now the only way the renderer sends the frame's light (the old switch and path are
   gone); it looks the same.
+- **Residents** (residents track RS-2): runs can now bring people home to Copperleaf. On your first run, **Dottie
+  Filewell**, a clerk who walked out of the Bureau with a cardigan full of files, waits in the first row of towns with
+  a gold "!": say yes and she moves to Copperleaf. After her, one person a run waits in one town with a **favour**
+  (catch a Billie of a type, beat route trainers, carry something to the next town, or beat the mini-boss with nobody
+  fainting). The favour doesn't count towards your three quests; hand it in at another town's notice board and they
+  agree to come. A few of them can also turn up stuck on the road at a waystation (**Stranded Cart**). Whoever you
+  invite moves in when the run ends, **won or lost**, and the payout screen says so. What they do in Copperleaf comes
+  next.
+- **Spliced Billies, the rules** (splicing track SP-2; for now only through the debug menu, numbers are placeholders):
+  a Billie can wear another species' arm, leg or tail, and it is saved with it. A foreign part weighs what it did on
+  its donor (a bear's arm on a Swiftlet hits harder and slows it down), brings a trait (wings: Airborne, half damage
+  from Ground; fins: Swimmer; tails: Counterweight; arms: Grip; legs and feet: Stride), and some parts carry a
+  dominant type that becomes the Billie's second type. Each foreign part costs Stability; past the limit the Billie is
+  **Unstable**: a merged name, one stat up and one down (rolled once, kept until it's stable again), and it loses
+  a little HP each turn. A spliced Billie is never
+  Prime. Splices survive evolving. **Prime** (every part its own and Normal sized) now gives +5% instead of +10%.
+- **Wild splices** (splicing track SP-3; odds and amounts are placeholders): on a run, about one wild Billie in eight
+  wears a part from another Billie of the same place (a **Graft**), and now and then one wears two or three (a
+  **Chimera**, often Unstable). The battle says so as it opens ("This Swiftlet has an eagle's wings!"). Catch one and
+  it keeps its parts; knock it out and you take a **Gene Sample** of what it wore and some **DNA**, a new currency
+  banked at once (kept even if the run is lost). Copperleaf's Gene Bank, coming later, will splice your samples into
+  your own Billies.
+- **The Gene Bank** (splicing track SP-4; prices and levels are placeholders): Copperleaf's new lab-vault stands on
+  its plot by the square. Walk in and use the Splice console: **sequence** any of your Billies (free) to read its
+  parts into the Gene library, next to the Gene Samples your runs bring home, then **splice** a Gene from the library
+  onto a Billie for DNA (5, 10 or 15 by how foreign the part is). A preview shows the Billie wearing it, its weight,
+  stats, trait, types and Stability first. **Take off** is free and the Gene stays in the library, so a splice can
+  always be undone. The Bank splices tails at first; its upgrades, bought with DNA, open front parts (Lv 2) and back
+  parts (Lv 3) and raise the Stability limit from 3 to 4 and 5 (your Billies only: wild ones stay at 3). Eggs can
+  keep a parent's Gene. A spliced Billie costs a starter point more per 2 Stability. Fins count as Water for **Surf**
+  and a bear's arm as Ground for **Rock Smash** (the badge is still needed).
+- **Splice events on runs** (splicing track SP-6; prices are placeholders): four new waystation events. A
+  **back-alley splicer** gives one of your Billies a Gene of his own choosing, any part, for Moneys or DNA. The
+  Bureau's **field lab** splices a Gene from your library at the Gene Bank's price (it only turns up once you have a
+  Gene). A **Gene auction** sells Genes you don't have, for Moneys or DNA. A Bureau **Gene recall** asks one of your
+  spliced Billies to hand its Gene back for DNA (it only turns up when you have a spliced Billie); refuse and a clerk
+  battles you for it. A Gene spliced on a run also goes into your library, so it isn't lost if that Billie doesn't
+  come home. Three new Perks: **Petri Dish** (Gene Samples pay 50% more DNA), **Gene Lure** (wild Billies of the next
+  places are spliced twice as often), **Stabilizer Gel** (your Unstable Billies lose half as much HP each turn).
+- **Augments** (splicing track SP-5; prices are placeholders): Copperleaf's **Workshop** opens. Walk in and use the
+  Upgrade bench to fit a bot's arm or legs from your spare parts (salvage from the Bureau's bots) on one of your
+  Billies, for Scrap: an arm replaces its right arm, legs its legs. An Augment brings its move (beside the Billie's
+  own), its type, some of its stats and its weight, and counts for field moves (the Hydrant Arm for **Surf**, the
+  Auger Arm for **Rock Smash**; the badge is still needed). It costs 3 Stability, so a Billie with a Gene and an
+  Augment can turn Unstable. Augments are the only parts that **break** in battle (aimed moves go for them; a broken
+  arm's move fails, broken legs are slow); a town's clinic or a rest mends them. Upgrade them at the Workshop; its
+  levels (bought with Scrap) fit legs and upgrade further. Taking one off is free and the part goes back to your
+  spares. Now and then a wild Billie on a run is an **Escaped specimen** wearing an Augment, more often next to a
+  Scrapyard: catch it and it keeps it, knock it out and you pry the part off (and some DNA).
+- **The Bureau's bots** (roguelite track RL-14, first half): the Bureau of Lost, Found and Beans now fields an army
+  of bots built from robot parts (Courier Units, Repossession Units, Shredders, Stamp Presses, Filing Drones, Audit
+  Units). Deeper into a run (from the fourth row on) about one wild encounter in ten on rocky, hot or cold ground is
+  a bot instead of a Billie; the Bureau's clerks and its new **Reclamation Agents** bring one or two bots along. Bots
+  **can't be caught**. Their limbs break in battle and now **drop off**, and every bot has a beeping cry. Beat bots and
+  they leave **salvage**: pick one of two of their parts (kept for the Workshop) or a stack of **Scrap** sent home.
+  About a third of runs now have a **Scrapyard**: a place where every wild one is a bot, Reclamation Agents stand guard
+  and scrap heaps line the way.
 - **You stay visible behind things**: when a building, a tree or anything else stands between the camera and you,
   your outline shows through it in the colour of your top, the thing in front thins out in a soft circle round you,
   and tall things covering you fade a little (now smoothly, and the modelled buildings too). Out in the open nothing
   changes. The one you are talking to shows through the same way. Engine > Camera has the dials: "Your outline when
   hidden" (was "Your silhouette through rock"), the outline's width and fill, the circle's switch, size and strength,
   and how far things covering you fade.
+- **Blake is your rival on runs** (roguelite track RL-S2): he waits on a run's map (a "Rival" pin), once a run at
+  Expedition I and up to twice later, with a team built to beat the Billie you set off with. It grows with every
+  meeting. Beat him for a reward pick and Moneys (and a Bean, the first time in a run); lose and the run is over. On a
+  two-place row you can go round him. He has something to say before every battle, and remembers how the last ones went.
+- **Beans and the hub folk** (RL-S2): a fifth currency, **Beans**, found now and then on runs (a certain crate, your
+  first badge of a type, a side area's leader, a won run). Back home, Professor Chosen, Hazel and Granny Juniper each
+  take one Bean each time you are home, and thank you for it. Gifts raise your level with them (five levels), and
+  levels bring small things: a few more Moneys or XP, a Potion, a Hi-Potion or a pyramid at takeoff, better catches, a
+  piece of clothing, and at the top something they've never told anyone.
+- **Favours and Chapter 1** (RL-S2): each of the three asks one favour of you for a run (beat a leader, go far, bring
+  a Grass Billie home); do it and they notice when you get back. Over your first runs Hazel and Chosen piece together
+  Chapter 1 of what's going on with the Bureau, a beat each time home.
 - **The story reacts to your runs** (roguelite track RL-S1, the story director): the game remembers your last 20
   runs (where, how far, what beat you, who you brought, the Perks and leaders). Back in Copperleaf, **Professor
   Chosen, Hazel and Granny Juniper** each have a fresh word about your last run the first time you talk to them. After

@@ -16,6 +16,7 @@
    Logic only: no DOM, runs in Node (tools/test/economy-view.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { META_CURRENCIES } from './meta-state.js';
 /* eslint-disable no-func-assign */
 expose({
   ECONOMY_PAYOUT: [() => ECONOMY_PAYOUT],
@@ -36,6 +37,7 @@ export const ECONOMY_PAYOUT = {
   winCrests: ['crests', 'Crests for a win'],
   scrapNode: ['scrap', 'Scrap per place cleared'],
   scrapWin: ['scrap', 'Scrap for a win'],
+  beansWin: ['beans', 'Beans for a win'],
 };
 
 /**
@@ -126,7 +128,7 @@ export function economyLines(D) {
   const B = D.buildings || {};
   for (const [k, U] of Object.entries(D.unlocks || {})) {
     const G = /** @type {any} */ (U).grant || {};
-    for (const c of ['research', 'scrap', 'crests'])
+    for (const c of META_CURRENCIES)
       if (G[c])
         add({
           currency: c,
@@ -166,6 +168,29 @@ export function economyLines(D) {
         path: `rules.ranch.breed.${k}`,
         section: 'unlocks',
       });
+  /* SP-3: a beaten wild splice banks DNA */
+  const GW = (D.genes && D.genes.wild && D.genes.wild.dna) || {};
+  for (const k of ['graft', 'chimera'])
+    if (typeof GW[k] === 'number')
+      add({
+        currency: 'dna',
+        side: 'in',
+        what: `Wild ${k === 'graft' ? 'Graft' : 'Chimera'} beaten`,
+        value: GW[k],
+        path: `genes.wild.dna.${k}`,
+        section: 'genes',
+      });
+  /* SP-4: the Gene Bank spends it: a splice's price (its levels are unlocks.json rows, listed with the buildings) */
+  const GB = D.genes && D.genes.bank && D.genes.bank.price;
+  if (GB && typeof GB.base === 'number')
+    add({
+      currency: 'dna',
+      side: 'out',
+      what: `Gene Bank: a splice (${GB.base} + ${GB.perCost} per Stability)`,
+      value: GB.base,
+      path: 'genes.bank.price.base',
+      section: 'genes',
+    });
   const order = Object.keys(D.currencies || {}),
     side = { in: 0, turn: 1, out: 2 };
   return out

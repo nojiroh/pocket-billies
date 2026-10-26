@@ -25,6 +25,7 @@ import {
   walkView,
 } from './walk-view.js';
 import { groundHeightAt, rawHeightAt, standingHeightAt } from './walk/heights.js';
+import { WATER_KIND_LOOKS, waterKindLookup } from './walk/water-data.js';
 import { addRipple } from './walk/water.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -43,6 +44,8 @@ expose({
   lifeStep: [() => lifeStep, v => setLifeStep(v)],
   lifeTarget: [() => lifeTarget, v => (lifeTarget = v)],
   rawHeightAtSafe: [() => rawHeightAtSafe, v => (rawHeightAtSafe = v)],
+  swimCache: [() => swimCache, v => (swimCache = v)],
+  swimWater: [() => swimWater, v => (swimWater = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ lifePaths, lifeSprites, lifeStep });
@@ -126,7 +129,7 @@ function lifeInit() {
   ambientLife.key = lifeKey(sc);
   ambientLife.list = [];
   let n = 0;
-  const water = walkView.water || [];
+  const water = swimWater();
   for (const L of sc.life || []) {
     const K = LIFE_KIND[L.k];
     if (!K) continue;
@@ -191,9 +194,24 @@ function lifeInit() {
     }
   }
 }
+/* water track WA-5b: the water a duck swims on and a frog dives into: not lava, ice, rapids or a hot spring (a kind
+   drawn in its own mode, or whose look says `swim: 0`); kept while the scene's water cells and rectangles stay */
+let swimCache = { w: null, s: null, out: [] };
+function swimWater() {
+  const W = walkView.water || [],
+    sc = walkView.sc;
+  if (swimCache.w === W && swimCache.s === sc.waters) return swimCache.out;
+  const kindAt = waterKindLookup(sc),
+    out = W.filter(w => {
+      const K = WATER_KIND_LOOKS[kindAt(w[0], w[1], false)];
+      return !!K && !K.mode && K.swim !== 0;
+    });
+  swimCache = { w: W, s: sc.waters, out };
+  return out;
+}
 /* a dry spot right next to the water (frogs) */
 function lifeShore(a, b) {
-  const W = walkView.water || [];
+  const W = swimWater();
   if (!W.length) return null;
   for (let k = 0; k < 40; k++) {
     const w = W[Math.floor(((a * 977.13 + k * 0.618034) % 1) * W.length)];
@@ -219,7 +237,7 @@ function lifeTarget(c) {
   }
   const sc = walkView.sc;
   if (c.k === 'duck') {
-    const W = walkView.water;
+    const W = swimWater();
     for (let k = 0; k < 12; k++) {
       const w = W[Math.floor(Math.random() * W.length)];
       if (Math.hypot(w[0] - c.x, w[1] - c.z) < 5) {
@@ -321,7 +339,7 @@ export function lifeStep(dt) {
     }
     /* v47: a duck paddles away from you, keeping to the water */
     if (c.k === 'duck' && dp < 1.7 && c.st !== 'run') {
-      const W = walkView.water || [];
+      const W = swimWater();
       let best = null,
         bs = -1;
       for (let k = 0; k < 24 && W.length; k++) {
@@ -395,7 +413,7 @@ export function lifeStep(dt) {
       c.tx = c.x + Math.cos(a) * far;
       c.tz = c.z + Math.sin(a) * far;
       /* a frog leaps into the water instead */ if (K.shore) {
-        const W = walkView.water || [];
+        const W = swimWater();
         let best = null,
           bd = 4;
         for (const w of W) {

@@ -1,0 +1,206 @@
+{
+ "emberox": {
+  "sheet": "512x67 fffd46671b1dde52e7f5440558e33964",
+  "rig": "09d1244a033fbafb800847c5720beb13"
+ },
+ "boostox": {
+  "sheet": "512x108 76baed15e0123fe62c7c231b3c24467d",
+  "rig": "ef1ef41d78b5841ed78c96d349d8b430"
+ },
+ "marsox": {
+  "sheet": "512x116 5188ca8ad5c7ff539e86105d55fd0852",
+  "rig": "aa1480c9317e77b8703966e62c4a1604"
+ },
+ "memeox": {
+  "sheet": "512x106 298fd8c2d00c0d0b24734fe2b306c6d8",
+  "rig": "46e563c4811b965a6f85356f9b9a1eb1"
+ },
+ "cartotter": {
+  "sheet": "512x51 4bd31f6d8346c32ea998a114b5e4909f",
+  "rig": "dddab07d61adfb23d2c04aa5ae9e58e6"
+ },
+ "primotter": {
+  "sheet": "512x108 9dfb1630bbce29f73ef7089dfc422954",
+  "rig": "9d31e4cad191a87c3aaa09bdacbb7a6b"
+ },
+ "orbitotter": {
+  "sheet": "512x106 558e593c7d41079c96fe0d15df2d0868",
+  "rig": "d5d536ac5ef2c0ba31a7c2930129a68c"
+ },
+ "everyotter": {
+  "sheet": "512x128 34ed62ce4cec8d3027a10420a95807bd",
+  "rig": "998d9a0caf019465b2a85b2f62657332"
+ },
+ "kidling": {
+  "sheet": "512x66 ddd95cef836db26086c4e1d7d9111150",
+  "rig": "c691147acee46d9a4b2910d4d21fa083"
+ },
+ "billgoat": {
+  "sheet": "512x108 7141648d614c8bcbc5afb41deae60154",
+  "rig": "26ffe20aea320438f73d3179ebae0a7a"
+ },
+ "windowgoat": {
+  "sheet": "512x105 a0c90a1306739d8c346db6a563e23f8c",
+  "rig": "162cb35f0ef9de3cd924ea343d0fe676"
+ },
+ "harvestgoat": {
+  "sheet": "512x119 ca0571df14b42b57313fbc186a6390b0",
+  "rig": "436a8360c44d547d480da521c206ee16"
+ },
+ "swiftlet": {
+  "sheet": "512x34 50bf5a7d96ade3894dcf50bd593b438d",
+  "rig": "207c5d45d8d8c7e78d3a398f997b9d33"
+ },
+ "versewift": {
+  "sheet": "512x86 60d104791937f929764233df2dded610",
+  "rig": "5f6b731f9437f79e35631d783b4c0ba7"
+ },
+ "erastar": {
+  "sheet": "512x133 bfde7a9a5bc8d3543f3afd02c083391e",
+  "rig": "37bebb3546414bfceb2c5907a95295e8"
+ },
+ "kontourlet": {
+  "sheet": "512x39 9c00448d3da0dc27ef6b92f97b9440c2",
+  "rig": "412232b33eb91ec83de4d4821c61434a"
+ },
+ "filterleon": {
+  "sheet": "512x102 43d7cb7da399df61df4243a3a1514222",
+  "rig": "daa640331c39d61a5ed338e11e4b0b0e"
+ },
+ "kardashleon": {
+  "sheet": "512x114 0232947686fd9301cec07b03d792416e",
+  "rig": "f7603886c81fd9e69c473065881832a6"
+ },
+ "gildlet": {
+  "sheet": "512x48 a1ce941ab979c35cc632c9f03b1abfb3",
+  "rig": "d8177cd761e1838b3ffebf3835508f45"
+ },
+ "gildslug": {
+  "sheet": "512x100 87293d53424dee508b23d712fd9027e2",
+  "rig": "e30d4aaffc73bbeca8c729ec4ebbc5df"
+ },
+ "tremendoslug": {
+  "sheet": "512x134 d8baa3d3e58f06c709ee61f1108342ac",
+  "rig": "d762fa11db7b48523496128cc7aa9961"
+ },
+ "facelet": {
+  "sheet": "512x36 3bc994a95bfdd21ec4c46ba2b0ac7177",
+  "rig": "2f8f1f91f88d50122bce640a709e5ddd"
+ },
+ "feedopus": {
+  "sheet": "512x82 7a69d3eb5e333f4167a602335d1ee7a2",
+  "rig": "ac65ca6a703634f5d5d20037f667af69"
+ },
+ "metapus": {
+  "sheet": "512x108 2fda95823674607cd1403467582d3623",
+  "rig": "eb69f8446014c2db9c682ecac2b7b151"
+ },
+ "gosling": {
+  "sheet": "512x33 c4355a9ec6da046fa40a56c35a263edb",
+  "rig": "9e39c7c29bb43126afa75a9d4458f485"
+ },
+ "sprucegoose": {
+  "sheet": "512x93 411c2717cc874a2a938182259212cbad",
+  "rig": "d1429ff77810076c65620369a6f0745d"
+ },
+ "aviatorgoose": {
+  "sheet": "512x139 cbe9ba6ff766bbeadf8694d37b274ef4",
+  "rig": "a5930273ba948a0bc464331f071b950e"
+ },
+ "flatpackrat": {
+  "sheet": "512x37 29615d5fb5a0908fea9a72546670df77",
+  "rig": "3cbaf6de64daa7469858601162ac81bd"
+ },
+ "kamprat": {
+  "sheet": "512x102 b43b3fd46549298174ba08373f279754",
+  "rig": "5106c397c998007bf0f202171c65ccb4"
+ },
+ "pupfin": {
+  "sheet": "512x31 6ce2609ffcab60db7e373aea137fa762",
+  "rig": "6b7b687435c5bf6bc54d7d34cfe09470"
+ },
+ "sharktank": {
+  "sheet": "512x120 38505084fb6a56554c03b1742eaab80d",
+  "rig": "5c45fffe2ad36babc7f4249925c8aae4"
+ },
+ "altmowl": {
+  "sheet": "512x100 846190269808021d183b9dfc41f5b5e6",
+  "rig": "db131073049a44acf5f000f68b38f51b"
+ },
+ "cliplet": {
+  "sheet": "512x35 7072ef9be558b10b7d796de58fb0d0a5",
+  "rig": "de9422a6f2cf0015445250b59b4c08c9"
+ },
+ "tiktokferret": {
+  "sheet": "512x110 e1fb8e669ffecb61d93dd466ca152dea",
+  "rig": "ebc896c586cf3a0e6be79ce76ae12698"
+ },
+ "cublet": {
+  "sheet": "512x50 29999ce061dfe862788f6121e1263b81",
+  "rig": "519694589306d5095f0a123c0c009da4"
+ },
+ "tigerwoods": {
+  "sheet": "512x120 fe4384309498893386f4aacea2e8abc5",
+  "rig": "723bf253facbe599dd31eb6f51aa4002"
+ },
+ "peacouture": {
+  "sheet": "512x241 380f441415b3f46f55ccfa5fd0a5eef9",
+  "rig": "b579abb656df4d5939d551fe657d3630"
+ },
+ "siliclet": {
+  "sheet": "512x35 666e2a9a6eba964353943b917c1f1e26",
+  "rig": "42822208fa596cf6aa1022ee767c3578"
+ },
+ "jenzard": {
+  "sheet": "512x104 281c89c61bf30f9e3c212e537f390d4b",
+  "rig": "731f72aec4fe6b334e731c0a15a8d35b"
+ },
+ "gigajenzard": {
+  "sheet": "512x184 e91c1302a06ecc14ec5b91c9bf237c2a",
+  "rig": "1d5685f8853d97f43f4de84c66ff290c"
+ },
+ "harbour_gosling": {
+  "sheet": "512x33 4146868ec6c6cabeefd3264b68303510",
+  "rig": "74e693768a3c8c49636e7282c6fa25f4"
+ },
+ "harbour_sprucegoose": {
+  "sheet": "512x93 ebfbb045004a5ba46b2f219ecad48b0f",
+  "rig": "941a7bb06e3eaa0d3214724f5d85df50"
+ },
+ "harbour_aviatorgoose": {
+  "sheet": "512x139 236a6f731355ae400d91e0cff4e68df2",
+  "rig": "284ca9dd3a39cc8653f4d9d3dadfeef6"
+ },
+ "meatball_flatpackrat": {
+  "sheet": "512x37 bf3816e6b1412db0b144e83d83fcabc4",
+  "rig": "1cba22d8b35568ef1acc0dfaeb65c74e"
+ },
+ "meatball_kamprat": {
+  "sheet": "512x102 1881b1e7f0a16243ce47ccdc2dabf8b5",
+  "rig": "7fe5564faeff3b7867fe657d4f849ce6"
+ },
+ "courtside_pupfin": {
+  "sheet": "512x31 c8fdebcf4b9ad72649c1b0f0720e7910",
+  "rig": "b4e3e35e36d21c9bf5050444241aefdc"
+ },
+ "courtside_sharktank": {
+  "sheet": "512x120 e22d8c792968c8c5df973c135cad2f51",
+  "rig": "c40a4e601a441cc17aac7abd448d3e6f"
+ },
+ "livestream_cliplet": {
+  "sheet": "512x35 d5f1f67ae211645d137736156480c195",
+  "rig": "5bc67956fb8e6c31c397612e4da2012b"
+ },
+ "livestream_tiktokferret": {
+  "sheet": "512x110 6bfc6aacd2439c1bc16ee43d42f80d40",
+  "rig": "77a7d738e0365fb77b37be75f1149b82"
+ },
+ "hazard_cublet": {
+  "sheet": "512x50 6fe63441f24d0e90cf8235d98916a860",
+  "rig": "fa2f59725320afbf6c91db075694d16c"
+ },
+ "hazard_tigerwoods": {
+  "sheet": "512x120 7cc1c25186cb01c596c4a42175eeb6d1",
+  "rig": "e803baf369f24470b5bf9fe3027a977f"
+ }
+}

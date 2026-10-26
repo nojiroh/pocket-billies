@@ -23,6 +23,8 @@ import {
   LOCATION_BY_ID,
   NODE_TYPES,
   POOLS,
+  QUESTS,
+  RESIDENTS,
   RULES,
   SET_PIECES,
   SPECIES,
@@ -39,11 +41,12 @@ import { runRestore } from './logic/run-state.js';
 import { runRegionData } from './logic/run-region.js';
 import { runSpot, runWeather } from './logic/run-map.js';
 import { waterWeatherApply } from './logic/water-weather.js';
-import { runScenesMake, runScenesSlices, runWorldTables } from './logic/run-scenes.js';
+import { runScenesMake, runScenesSlices, runTownResident, runWorldTables } from './logic/run-scenes.js';
 import { runBowlLook } from './logic/run-bowl.js';
 import { runFoes } from './logic/run-loop.js';
 import { encEventFoe } from './logic/encounters.js';
 import { routeRareSpots, routeTrainerTally, routeTrainersPlace, runRouteTrainers } from './logic/route-trainers.js';
+import { questDataOf, residentPlan } from './logic/run-quests.js';
 import { bowlXY } from './logic/bowl.js';
 import { bowlTreeStyle } from './logic/bowl-things.js';
 import { saveData, uiState } from './game-state.js';
@@ -228,6 +231,14 @@ function runWorldPutRun(run, scenes, data) {
     /* RL-12b: the route trainers who walk up on sight (logic/route-trainers.js); RT-2: on their places' spots */
     route = runRouteTrainers(run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run });
   routeTrainersPlace(run, route, scenes, EVENTS.classes);
+  /* RS-2: the run's resident in their town or towns (logic/run-quests.js residentPlan), once the boards and the route
+     trainers are known */
+  const meet = residentPlan(
+    /** @type {any} */ ({ meta: saveData.meta, run }),
+    RESIDENTS,
+    questDataOf(run, scenes, route, QUESTS, SPECIES)
+  );
+  if (meet) for (const i of meet.towns) runTownResident(scenes[i], meet.id, RESIDENTS[meet.id].name);
   /* RT-2: a route's trainers stand in for some of its wild Billies (logic/rules.js encounterStock) */
   const tally = routeTrainerTally(route);
   for (const L of W.locations) if (L.runNode != null && tally[L.runNode]) L.trainerCount = tally[L.runNode];

@@ -89,7 +89,6 @@ const DIAL_NEEDS = {
   'grass.bend': ['grass.density'],
   'water.foam': ['water.ripples'],
   'water.rings': ['water.ripples'],
-  'camera.zoomMin': ['camera.zoomMax'],
   'camera.leadSmooth': ['camera.lead'],
   'camera.leadSide': ['camera.lead'],
   'camera.softW': ['camera.deadW'],
@@ -124,7 +123,7 @@ function connectionsTarget() {
   const D = studioState.D,
     s = studioState.sec,
     f = connectionsDrawer.field;
-  if (s === 'engine' && /\.(defaults|map)\.|^maps\.[^.]+\.look\./.test(f)) {
+  if ((s === 'engine' || s === 'camera') && /\.(defaults|map)\.|^maps\.[^.]+\.look\./.test(f)) {
     const m = f.match(/(?:defaults|map|look)\.([^.]+)\.([^.]+)$/);
     if (m) return { kind: 'dial', id: m[1] + '.' + m[2] };
   }

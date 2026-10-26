@@ -25,7 +25,19 @@ test('run sim: a seed played twice is the same run, whatever util.js random draw
 test('run sim: the report has its numbers', () => {
   const R = runStats(3, B);
   assert.equal(R.runs, 3);
-  for (const k of ['days', 'places', 'battles', 'trainers', 'minutes', 'turnsPerBattle', 'research'])
+  for (const k of [
+    'days',
+    'places',
+    'battles',
+    'trainers',
+    'minutes',
+    'turnsPerBattle',
+    'research',
+    'splices',
+    'dna',
+    'genes',
+    'escaped',
+  ])
     assert.ok(R[k] >= 0, k);
   assert.deepEqual(R.clock, { placeS: 60, battleS: 15, turnS: 6 }, 'RT-2: what the minutes are guessed from');
   assert.ok(R.won >= 0 && R.won <= 3);
@@ -225,4 +237,16 @@ test('run sim: a stall sells without healing and a waystation notes its event (R
       } else assert.equal(at.event, undefined);
     }
   assert.ok(stands >= 2, `${stands} waystations`);
+});
+
+test('RS-2: a run’s log names its resident (Dottie on a fresh save) and whether the walk went through their town', () => {
+  for (let k = 0; k < 4; k++) {
+    const { log, stats } = runSim('SIMRES' + k, { ...B, team: 6, lvl: 20 }),
+      R = log.resident;
+    assert.ok(R && R.id === 'dottie' && R.towns.length >= 1, 'Dottie, nobody living in Copperleaf yet');
+    for (const i of R.towns) assert.ok(log.nodes[i].startsWith('town:'), 'in towns');
+    assert.equal(stats.resident, 'dottie');
+    assert.equal(stats.metResident, log.places.some(p => R.towns.includes(p.i)) ? 1 : 0);
+    for (const p of log.places) if (p.resident) assert.ok(R.towns.includes(p.i));
+  }
 });
