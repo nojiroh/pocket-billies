@@ -62,6 +62,7 @@ expose({
   gpuVao: [() => gpuVao],
   imageTexture: [() => imageTexture, v => (imageTexture = v)],
   initWebgl: [() => initWebgl, v => (initWebgl = v)],
+  lateCompile: [() => lateCompile, v => (lateCompile = v)],
   lossWatched: [() => lossWatched],
   makeNormalMap: [() => makeNormalMap, v => setMakeNormalMap(v)],
   matrix4: [() => matrix4],
@@ -123,6 +124,7 @@ export const gpuState = {
   loaded: false,
   loadAt: 0,
   pcl: [0, 0],
+  pclNames: [],
   /* phase 20 H1: the context's generation, one more for every context made (a restored one too): gpuRes */
   gen: 0,
 };
@@ -369,8 +371,15 @@ function frameBlockBinding(gl, p) {
   gl.uniformBlockBinding(p, i, 0);
   return true;
 }
+/* phase 20 H5: a program compiled after a place has settled (pcl), and its name (the last few, for the debug log) */
+function lateCompile(i, name) {
+  gpuState.pcl[i]++;
+  const L = gpuState.pclNames;
+  if (!L.includes(name)) L.push(name);
+  if (L.length > 12) L.shift();
+}
 function startProgramCompile([vs, fs], name) {
-  if (gpuState.loaded) gpuState.pcl[1]++;
+  if (gpuState.loaded) lateCompile(1, name);
   const gl = gpuState.gl,
     mk = (t, src) => {
       const s = gpuShader(t);
@@ -465,7 +474,7 @@ export function pollPendingPrograms(max = 2) {
   }
 }
 function compileProgram([vs, fs], name) {
-  if (gpuState.loaded) gpuState.pcl[0]++;
+  if (gpuState.loaded) lateCompile(0, name);
   const gl = gpuState.gl,
     made = [],
     mk = (t, src) => {
@@ -525,6 +534,7 @@ function compileProgram([vs, fs], name) {
 export function frameBlockCheck(defs) {
   const gl = gpuState.gl,
     pcl = gpuState.pcl[0],
+    names = gpuState.pclNames.slice(),
     bad = [];
   let n = 0;
   try {
@@ -555,6 +565,7 @@ export function frameBlockCheck(defs) {
     }
   } finally {
     gpuState.pcl[0] = pcl;
+    gpuState.pclNames = names;
   }
   return { n, bad };
 }
@@ -610,6 +621,7 @@ export function initWebgl(cv) {
     if (!gl) return false;
     gpuState.gl = gl;
     gpuState.cv = cv;
+    gpuState.made = (gpuState.made || 0) + 1;
     gpuNewGeneration();
     gpuState.P = {};
     gpuState.texL = new Map();
@@ -737,7 +749,7 @@ const GPU_MAKE = {
   program: ['createProgram', 'deleteProgram'],
   shader: ['createShader', 'deleteShader'],
 };
-const gpuRes = {
+export const gpuRes = {
   /* handle -> { type, kind, bytes, gen } */
   at: new WeakMap(),
   flat: new Map(),
@@ -804,7 +816,7 @@ function gpuTypeOf(gl, h) {
 export const gpuBuffer = (kind, bytes) => gpuMake('buffer', kind, bytes);
 export const gpuTexture = (kind, bytes) => gpuMake('texture', kind, bytes);
 export const gpuVao = kind => gpuMake('vao', kind);
-const gpuFramebuffer = kind => gpuMake('framebuffer', kind);
+export const gpuFramebuffer = kind => gpuMake('framebuffer', kind);
 /* the object was filled again (bufferData, texImage2D): its new size */
 export function gpuSized(h, bytes) {
   const e = h && gpuEntry(h);
@@ -853,7 +865,7 @@ function gpuFrame() {
   return true;
 }
 /* an owner's drop on a restore: forgets its handles (they died with the context) so it makes them again on next use */
-function gpuOnRestore(name, fn) {
+export function gpuOnRestore(name, fn) {
   gpuRes.restore.set(name, fn);
 }
 /* a new context (initWebgl): a new generation, nothing on it yet */
@@ -874,7 +886,7 @@ function gpuRestoreOwners() {
     }
 }
 /* H3: the memory by kind for the debug log: MB, objects, objects dropped without being freed */
-function gpuMemory() {
+export function gpuMemory() {
   const o = {};
   for (const k of GPU_KINDS)
     if (gpuRes.n[k] || gpuRes.dropped[k])

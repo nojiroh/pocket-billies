@@ -58,7 +58,7 @@ test('a loss marks the context lost and a restore clears it and hands the canvas
   }
 });
 
-test("a restore drops the walk view's GPU caches, shown or not (walk-view-gl.js onGlContextRestored)", () => {
+test("a restore drops the walk view's GPU caches, shown or not (walk-view-gl.js, through gpuOnRestore)", () => {
   const { walkRenderer, walkView, buildingState, propModelState, solidPropState, structureState } = G,
     dead = { dead: true },
     bmesh = buildingState.mesh,
@@ -79,7 +79,7 @@ test("a restore drops the walk view's GPU caches, shown or not (walk-view-gl.js 
   solidPropState.live.set(dead, 1);
   Object.assign(structureState, { mesh: dead, key: 'k', parts: [dead] });
   try {
-    G.onGlContextRestored({});
+    G.gpuRestoreOwners();
     for (const k of ['sceneCache', 'mesh', 'gtex', 'ring', 'basin', 'prep', 'lastShadow'])
       assert.equal(walkRenderer[k], null, k);
     assert.notEqual(buildingState.mesh, bmesh);
@@ -102,7 +102,7 @@ test("a restore makes the light block's buffer and the hide queries again (light
   frameBlock.buf = { dead: true };
   Object.assign(G.hideQuery, { gl: frameBlock.gl, q: [{ dead: true }] });
   try {
-    G.onGlContextRestored({});
+    G.gpuRestoreOwners();
     assert.equal(frameBlock.gl, null);
     assert.equal(frameBlock.buf, null);
     /* and the occlusion queries of the old context (walk/sprites.js hideQueriesLost) */
@@ -132,7 +132,7 @@ test('a restore drops every GPU copy the world map keeps and keeps the work behi
     skyState: { tex: dead, gpu: dead, clouds: [dead] },
   });
   try {
-    G.worldBowlContextRestored();
+    G.gpuRestoreOwners();
     const g = worldBowl.ground;
     assert.deepEqual([g.gl, g.mesh, g.water, g.shadow, g.lines], [null, null, null, null, null]);
     assert.equal(terrain.gl, null);
