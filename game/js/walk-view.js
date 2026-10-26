@@ -182,6 +182,7 @@ expose({
   hasLineOfSight: [() => hasLineOfSight, v => (hasLineOfSight = v)],
   hash2d: [() => hash2d, v => (hash2d = v)],
   hitAt: [() => hitAt, v => (hitAt = v)],
+  hubResidentTables: [() => hubResidentTables, v => (hubResidentTables = v)],
   hubResidentWalkers: [() => hubResidentWalkers, v => (hubResidentWalkers = v)],
   hubWalkers: [() => hubWalkers],
   imageReady: [() => imageReady],
@@ -4074,21 +4075,28 @@ function initFolk(n) {
 }
 /* RS-3: the residents who live in Copperleaf, as townsfolk of their own (initFolk): who, their name and the spot by
    their building's (or their cottage's) door, in the view's metres (logic/residents.js residentHomes); only in
-   Copperleaf's own view. Kept while the view and who lives there stay the same */
+   Copperleaf's own view. The game's tables, or the ones a preview hands in (the Studio's hub editor: opt.residents,
+   with the map it shows). Kept while the view and who lives there stay the same */
 const hubWalkers = { key: '', list: /** @type {{ id: string, name: string, at: number[], prop: any }[]} */ ([]) };
+function hubResidentTables() {
+  const o = walkView.opt && walkView.opt.residents;
+  if (o) return o();
+  if (typeof gameData === 'undefined' || !gameData || !gameData.locations || !RESIDENTS || !UNLOCK_DATA) return null;
+  const hub = gameData.locations[0] && gameData.locations[0].mapId;
+  return hub ? { hub, map: mapById(hub), R: RESIDENTS, B: UNLOCK_DATA.buildings } : null;
+}
 function hubResidentWalkers(sc) {
-  const bid = (sc && sc.baseId) || walkView.id,
-    hubId = gameData.locations[0] && gameData.locations[0].mapId,
-    ids = bid && bid === hubId ? residentsHere(saveData) : [],
+  const T = hubResidentTables(),
+    bid = (sc && sc.baseId) || walkView.id,
+    ids = T && T.map && bid === T.hub && saveData ? residentsHere(saveData) : [],
     o = (sc && sc.baseOff) || [0, 0],
     key = `${bid}|${o.join(',')}|${ids.join(',')}`;
   if (hubWalkers.key === key) return hubWalkers.list;
-  const b = ids.length ? mapById(hubId) : null,
-    H = b ? residentHomes(b, ids, RESIDENTS, UNLOCK_DATA.buildings, walkData().sc) : {};
+  const H = ids.length && T ? residentHomes(T.map, ids, T.R, T.B, walkData().sc) : {};
   hubWalkers.key = key;
   hubWalkers.list = ids
     .filter(id => H[id])
-    .map(id => ({ id, name: RESIDENTS[id].name, at: [H[id].at[0] + o[0], H[id].at[1] + o[1]], prop: H[id].prop }));
+    .map(id => ({ id, name: T.R[id].name, at: [H[id].at[0] + o[0], H[id].at[1] + o[1]], prop: H[id].prop }));
   return hubWalkers.list;
 }
 /* RS-3: the resident who lives in a building of the view (a prop of it), or null */
