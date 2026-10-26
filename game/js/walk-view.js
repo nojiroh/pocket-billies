@@ -2656,8 +2656,8 @@ export function stepWallAt(x, z, sc = walkView.sc) {
   return E ? E.M[stepCellAt(x, z, E)] : 0;
 }
 /* bridges: a deck from end a to end b, w wide; its height runs from the ground at one end to the other, with a hump
-   (stone), a slight crown (wood) or a sag (rope) */
-const BRIDGE_ARCH = { stone: 0.5, wood: 0.12, rope: -0.32 };
+   (stone), a gentle hump (wood; RP-2, the owner 2026-10-26: 0.12 -> 0.35, like the footbridge prop) or a sag (rope) */
+const BRIDGE_ARCH = { stone: 0.5, wood: 0.35, rope: -0.32 };
 export function mapBridges(sc = walkView.sc) {
   const L = sc && sc.bridges;
   if (!L || !L.length) return null;

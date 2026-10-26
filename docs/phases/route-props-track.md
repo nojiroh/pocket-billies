@@ -3,9 +3,9 @@
 Branch: track/route-props
 
 The owner asked (2026-10-26) for more 3D props for the routes, researched online. Planned in Plan Mode on 2026-10-26
-and approved with the owner's answers below. RP-1 was built on the session's own branch `ccr-5d98165a-i1ustq` (a cloud
+and approved with the owner's answers below. RP-1 and RP-2 were built on the session's own branch `ccr-5d98165a-i1ustq` (a cloud
 session can push only to the branch it was started on; BRANCHES.md); later sessions start on `track/route-props`,
-made from it by the owner. Tag `rp-1-done`.
+made from it by the owner. Tags `rp-1-done`, `rp-2-done`.
 
 ## Verified facts (2026-10-26, main at b87b818d)
 
@@ -47,7 +47,8 @@ made from it by the owner. Tag `rp-1-done`.
 | # | Session | Goal |
 |---|---|---|
 | RP-1 | Models and pieces (**done** 2026-10-26) | the 6 set-piece pictures as models; 20 new props; the pieces use them; two new pieces |
-| RP-2 | The converter test | `tools/glb-to-recipe.py`: a CC0 GLB to a recipe (simplified, our palette, our textures) for the wind turbine, the footbridge and the ruined arch, side by side with RP-1's on the showcase map. Needs the CC0 files uploaded (`validation/cc0-src/`, with a LICENSES.md) |
+| RP-2 | Structures in the props' style (**done** 2026-10-26) | bridges, jetties, rails, arches and tunnels (game/js/structures.js) restyled; wood bridges get a gentle hump. The owner asked after RP-1 |
+| RP-3 | The converter test | `tools/glb-to-recipe.py`: a CC0 GLB to a recipe (simplified, our palette, our textures) for the wind turbine, the footbridge and the ruined arch, side by side with RP-1's on the showcase map. Needs the CC0 files uploaded (`validation/cc0-src/`, with a LICENSES.md) |
 
 ## RP-1: what was built (tools/build-props-routes.py, rerunnable)
 
@@ -64,6 +65,20 @@ made from it by the owner. Tag `rp-1-done`.
   to the other side, r 5 -> 5.5); the Bureau checkpoint a barrier and an evidence crate. New: `wayside_shrine`
   (shrine, milestone, trail post, roses) and `solar_garden` (turbine, vegetable bed, rain barrel, beehives, seed
   library, path light; farmland plans x2). MAPGEN_VERSION 18.
+
+## RP-2: structures in the props' style (the owner's answers, 2026-10-26)
+
+| Question | Answer |
+|---|---|
+| Approach | Restyle in structures.js (same renderer; the code that fits any length, width and bank height stays) |
+| Scope | Bridges and jetties, rails, arches and tunnels (not the city's escalators) |
+| Wood deck | A gentle hump (`BRIDGE_ARCH.wood` 0.12 -> 0.35; walking follows it) |
+| Stone | The ruins' cool grey, with a little moss |
+
+Verified facts: the structures already used the props' texture sheet and the buildings' shader; what differed was
+their shapes (half-metre deck slabs, posts without caps, smooth parapets) and their colours. Triangles a scene, main
+-> RP-2: Copperleaf 1040 -> 2296, test_bridges 1646 -> 3818, test_stairs 1130 -> 1904, test_hilltown 800 -> 1416;
+draws the same (one mesh, the same parts).
 
 ## Ask me before
 
