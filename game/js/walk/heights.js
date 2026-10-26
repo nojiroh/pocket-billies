@@ -4,10 +4,11 @@
    walk-view-gl.js as they were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide } from '../hooks.js';
+import { gameData, provide } from '../hooks.js';
 import { clamp } from '../util.js';
 import { placedTurn, pointInProp, turnedBounds } from '../logic/prop-turn.js';
-import { bridgeAt, navGrid, setNavGrid, stepRaiseAt, terrainAt, walkData, walkView } from '../walk-view.js';
+import { bridgeAt, mapById, navGrid, setNavGrid, stepRaiseAt, terrainAt, walkData, walkView } from '../walk-view.js';
+import { engineSetting } from '../engine/settings.js';
 import { smooth01 } from '../engine/webgl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -15,12 +16,14 @@ expose({
   WALL_COLORS: [() => WALL_COLORS],
   WALL_MATERIALS: [() => WALL_MATERIALS],
   baseNavGrid: [() => baseNavGrid],
+  biomeCliff: [() => biomeCliff, v => (biomeCliff = v)],
   buildingPads: [() => buildingPads, v => (buildingPads = v)],
   defaultWallMaterial: [() => defaultWallMaterial, v => ((defaultWallMaterial = v), provide({ defaultWallMaterial }))],
   groundHeightAt: [() => groundHeightAt, v => ((groundHeightAt = v), provide({ groundHeightAt }))],
   heightGrid: [() => heightGrid, v => (heightGrid = v)],
   rawHeightAt: [() => rawHeightAt, v => ((rawHeightAt = v), provide({ rawHeightAt }))],
   standingHeightAt: [() => standingHeightAt, v => ((standingHeightAt = v), provide({ standingHeightAt }))],
+  wallAtlasRows: [() => wallAtlasRows, v => (wallAtlasRows = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ defaultWallMaterial, groundHeightAt, rawHeightAt, standingHeightAt });
@@ -207,6 +210,11 @@ export const WALL_MATERIALS = [
   'Mossy rock',
   'Concrete',
   'Dark slate',
+  /* terrain TR-4: the biomes' cliff faces (walls.png's fourth row) */
+  'Columnar basalt',
+  'Limestone',
+  'Crystal-veined rock',
+  'Speckled granite',
 ];
 export const WALL_COLORS = [
   [0.47, 0.45, 0.42],
@@ -221,9 +229,30 @@ export const WALL_COLORS = [
   [0.42, 0.47, 0.36],
   [0.62, 0.62, 0.6],
   [0.32, 0.33, 0.38],
+  [0.3, 0.3, 0.33],
+  [0.8, 0.77, 0.68],
+  [0.36, 0.33, 0.46],
+  [0.7, 0.68, 0.66],
 ];
+/* terrain TR-4: how many rows of 64 px cells the wall atlas has (3 before TR-4, 4 after; 3 until the picture is in) */
+export function wallAtlasRows(im) {
+  const w = (im && (im.naturalWidth || im.width)) || 0,
+    h = (im && (im.naturalHeight || im.height)) || 0;
+  return w > 0 && h > 0 ? clamp(Math.round(h / (w / 4)), 3, 4) : 3;
+}
+/* terrain TR-4: a generated place's biome's cliff block (biomes.json cliff: mat, strata, band, snowLine), read when it is
+   drawn (mapgen doesn't copy it, so a scene's hash is unchanged); null for a hand-made map, which has no biome */
+export function biomeCliff(sc) {
+  if (!sc) return null;
+  /* a seamless view carries no biome: its base place (the map you stand in) has it */
+  const base = sc.biome || !sc.baseId ? null : mapById(sc.baseId),
+    B = ((gameData && gameData.biomes) || {})[sc.biome || (base && base.biome) || ''];
+  return (B && B.cliff) || null;
+}
 export function defaultWallMaterial(sc) {
   if (sc.cliffMat) return sc.cliffMat;
+  const K = engineSetting('world', 'cliffFaces') ? biomeCliff(sc) : null;
+  if (K) return K.mat;
   if (sc.far === 'canyon') return 2;
   if (sc.indoor && sc.far === 'cave') return 3;
   if (sc.indoor) return 10;

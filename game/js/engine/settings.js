@@ -177,6 +177,13 @@ export const ENGINE_DEFAULTS = {
     /* bricks, planks and roof tiles on the 3D buildings and the low-poly models catch the light from their own texels
        (buildings.js bldBump); 0: flat walls and roofs, as before */
     buildingBumps: 0,
+    /* terrain TR-4: a generated place's cliffs in its biome's own rock (biomes.json cliff: the wall atlas's material
+       and three strata colours), steep smooth land included; off: the scene's rock and the rock ground picture */
+    cliffFaces: false,
+    /* terrain TR-4: snow on level ground above the biome's snow line (biomes.json cliff.snowLine) */
+    snowLine: false,
+    /* terrain TR-4: scree at the foot of natural cliffs and a turf edge along grassy terrace tops, painted on the ground */
+    cliffEdges: false,
     /* a 3D building's front picture takes the building material's shine and wrap (as its bumps are made with it), and its
        bumps may face a little down; off: a hard-wired wrap of .6 and no bump below a quarter up */
     frontMaterial: false,
@@ -876,6 +883,24 @@ export const ENGINE_SPEC = [
         '3D buildings',
         'bool',
         'Houses and shops as models with real roofs, walls and see-through windows. Off: their pictures stand in.',
+      ],
+      [
+        'cliffFaces',
+        'Biome cliffs',
+        'bool',
+        "Cliffs and steep slopes in a run place take its biome's own rock (basalt, limestone, granite...) in coloured strata bands. Off: the same grey rock everywhere.",
+      ],
+      [
+        'snowLine',
+        'Snow line',
+        'bool',
+        "High ground in a run place is snowy above its biome's snow line (mountain biomes, the tallest peaks elsewhere). Off: snow only in winter.",
+      ],
+      [
+        'cliffEdges',
+        'Scree and turf edges',
+        'bool',
+        'Loose stones gather at the foot of natural cliffs and a darker turf edge lines grassy terrace tops. Off: a plain light lip and shadow.',
       ],
       [
         'hugSlopes',

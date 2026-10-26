@@ -26,6 +26,7 @@ import {
   cachedBuildingSignature,
   currentLocationMap,
   defaultWallMaterial,
+  engineSetting,
   environment,
   environmentSeason,
   environmentState,
@@ -136,6 +137,7 @@ expose({
   canStepTo: [() => canStepTo, v => (canStepTo = v)],
   canvasPixels: [() => canvasPixels],
   canvasPoint: [() => canvasPoint, v => (canvasPoint = v)],
+  cliffEdgeLook: [() => cliffEdgeLook, v => (cliffEdgeLook = v)],
   climbEnds: [() => climbEnds, v => (climbEnds = v)],
   climbStartEnd: [() => climbStartEnd, v => (climbStartEnd = v)],
   clipSegmentToRect: [() => clipSegmentToRect, v => (clipSegmentToRect = v)],
@@ -795,10 +797,21 @@ function tilePixels(path) {
   x.drawImage(im, 0, 0);
   return { w, h, d: new Uint32Array(x.getImageData(0, 0, w, h).data.buffer) };
 }
+/* terrain TR-4 (world.cliffEdges): what the ground painter needs for scree and turf edges, or null when off (and in
+   rooms): whether the scene's own rock (wall material 0) is natural rock, and the scree's ground kind (the biome's
+   ground.rock, else rock). Sent to the helper thread with the scene, and part of the ground's key */
+export function cliffEdgeLook(sc) {
+  if (!engineSetting('world', 'cliffEdges') || sc.indoor) return null;
+  const base = sc.biome || !sc.baseId ? sc : mapById(sc.baseId),
+    B = base && base.biome ? ((gameData && gameData.biomes) || {})[base.biome] : null,
+    m = defaultWallMaterial(sc);
+  return { nat0: m < 4 || m === 9 || m > 10, rock: (B && B.ground && B.ground.rock) || 'r' };
+}
 export function groundKey(sc) {
   if (sc.groundOf) return groundKey(sc.groundOf); /* phase 08b: a room shows its place's ground */
   const C = walkData().sc;
   return JSON.stringify([
+    cliffEdgeLook(sc),
     sc.w,
     sc.h,
     sc.edge,
@@ -1154,6 +1167,11 @@ export function* paintGroundSteps(sc, o) {
     brkOn = brk.some((b, i) => b && used[i]),
     soilK = brkOn ? idx.u : null;
   if (soilK != null) used[soilK] = 1;
+  /* terrain TR-4 (world.cliffEdges): scree at natural cliff feet in the biome's rock ground, turf edges on grassy tops.
+    The helper thread gets the look with the scene (sc.ce); here it is worked out from the settings */
+  const CE = 'ce' in sc ? sc.ce : typeof cliffEdgeLook === 'function' ? cliffEdgeLook(sc) : null,
+    screeK = CE ? (idx[CE.rock] ?? idx.r ?? null) : null;
+  if (screeK != null) used[screeK] = 1;
   const pix = T.map((t, i) => (used[i] ? tileSetPixels(t, TP) : [])),
     pav = T.map((t, i) => (t.paved != null ? !!t.paved : 'mbaqhe'.includes(chars[i]))),
     t47 = worldPatchTilesOn(),
@@ -1944,32 +1962,88 @@ export function* paintGroundSteps(sc, o) {
         out[i] = (c & 0xff000000) | ((((c >> 16) & 255) * k) << 16) | ((((c >> 8) & 255) * k) << 8) | ((c & 255) * k);
       };
     const hAt = (i, j) => E.H[clamp(j, 0, E.h - 1) * E.w + clamp(i, 0, E.w - 1)];
-    /* only the half-metre cells under this rectangle (and one round it) */
-    const i0 = Math.max(0, Math.floor(X0 / half) - P * 2 - 2),
-      i1 = Math.min(E.w, Math.ceil((X0 + TW) / half) - P * 2 + 2),
+    /* only the half-metre cells under this rectangle (and one round it; three with scree, which reaches 1.5 m) */
+    const R4 = CE ? 3 : 0,
+      i0 = Math.max(0, Math.floor(X0 / half) - P * 2 - 2 - R4),
+      i1 = Math.min(E.w, Math.ceil((X0 + TW) / half) - P * 2 + 2 + R4),
       jA = (THf - Y0 - TH) / half - P * 2 - 1,
-      j0 = Math.max(0, Math.floor(jA) - 2),
-      j1 = Math.min(E.h, Math.ceil(jA + TH / half) + 3);
+      j0 = Math.max(0, Math.floor(jA) - 2 - R4),
+      j1 = Math.min(E.h, Math.ceil(jA + TH / half) + 3 + R4);
+    const SIDES = [
+      [0, -1, 's'],
+      [0, 1, 'n'],
+      [-1, 0, 'w'],
+      [1, 0, 'e'],
+    ];
+    /* terrain TR-4: scree first (the foot's shadow then falls on it): below a natural rock face (wall material rock,
+      sandstone, cave rock, mossy rock, slate or a biome face; 0 is the scene's own, CE.nat0) 0.7 m or taller, a ragged
+      band 0.5-1.5 m deep (deeper under taller faces), thinning out away from the foot, of the scree kind's own pixels;
+      never on paving or water */
+    const SK = screeK != null ? pix[screeK].filter(Boolean) : [];
+    if (CE && SK.length) {
+      const natM = m => (m === 0 ? CE.nat0 : m < 4 || m === 9 || m > 10),
+        noScree = T.map((t, k) => pav[k] || chars[k] === 'w' || chars[k] === 'd');
+      for (let j = j0; j < j1; j++) {
+        for (let i = i0; i < i1; i++) {
+          const h = hAt(i, j),
+            x0 = (i + P * 2) * half,
+            y0 = THf - (j + 1 + P * 2) * half;
+          for (const [di, dj, side] of SIDES) {
+            const ni = i + di,
+              nj = j + dj;
+            if (ni < 0 || nj < 0 || ni >= E.w || nj >= E.h) continue;
+            const d = hAt(ni, nj) - h;
+            if (d < 0.7 || !natM(E.M[nj * E.w + ni] & 15)) continue;
+            if (E.sl && stepCellsJoined(E, i, j, di, dj)) continue;
+            const deep = Math.min(1.5, 0.5 + (d - 0.7) * 0.4) * TP;
+            for (let t = 0; t < half; t++)
+              for (let k = 0; k < deep; k++) {
+                /* (px, py): t along the foot, k out from it into this (lower) side */
+                const px = side === 's' || side === 'n' ? x0 + t : side === 'w' ? x0 + k : x0 + half - 1 - k,
+                  py = side === 's' ? y0 + half - 1 - k : side === 'n' ? y0 + k : y0 + t,
+                  x = px - X0,
+                  y = py - Y0;
+                if (x < 0 || y < 0 || x >= TW || y >= TH) continue;
+                const oi = y * TW + x;
+                if (noScree[map[oi]]) continue;
+                const r = hash2d(px * 1.7 + 3, py * 2.3 + 11),
+                  edge = deep * (0.6 + 0.4 * hash2d(Math.floor(px / 3) + 7, Math.floor(py / 3) + 5));
+                if (k > edge || r > 1 - (k / edge) * 0.75) continue;
+                const tl = SK[Math.floor(hash2d(Math.floor(px / TP), Math.floor(py / TP) + 17) * SK.length)];
+                out[oi] = tl.d[(((py % tl.h) + tl.h) % tl.h) * tl.w + (((px % tl.w) + tl.w) % tl.w)];
+              }
+          }
+        }
+        if (j % 32 === 31) yield;
+      }
+    }
+    /* terrain TR-4: a turf edge on grassy tops (CE): the edge pixel dark under the overhanging turf, the next one a
+      little dark, with tufts breaking the line, instead of the plain light lip */
+    const grassy = CE ? T.map(t => /grass|meadow|clover|lawn|moss/.test(String(t.tile || ''))) : null;
     for (let j = j0; j < j1; j++) {
       for (let i = i0; i < i1; i++) {
         const h = hAt(i, j),
           x0 = (i + P * 2) * half,
           y0 = THf - (j + 1 + P * 2) * half;
         /* neighbours: toward the camera (j-1), away (j+1), left, right; a higher cell gets a lip, a lower one a shadow at the foot */
-        for (const [di, dj, side] of [
-          [0, -1, 's'],
-          [0, 1, 'n'],
-          [-1, 0, 'w'],
-          [1, 0, 'e'],
-        ]) {
+        for (const [di, dj, side] of SIDES) {
           const d = h - hAt(i + di, j + dj);
           if (Math.abs(d) < 0.12) continue;
           if (E.sl && stepCellsJoined(E, i, j, di, dj)) continue;
           for (let t = 0; t < half; t++) {
             const px = side === 's' || side === 'n' ? x0 + t : side === 'w' ? x0 : x0 + half - 1,
               py = side === 's' ? y0 + half - 1 : side === 'n' ? y0 : y0 + t;
-            if (d > 0) sh(px, py, 1.22);
-            else {
+            if (d > 0) {
+              const gx = px - X0,
+                gy = py - Y0;
+              if (grassy && gx >= 0 && gy >= 0 && gx < TW && gy < TH && grassy[map[gy * TW + gx]]) {
+                const ox = side === 'w' ? 1 : side === 'e' ? -1 : 0,
+                  oy = side === 's' ? -1 : side === 'n' ? 1 : 0,
+                  tuft = hash2d(px * 3.1 + 1, py * 1.3 + 9);
+                sh(px, py, tuft < 0.3 ? 0.86 : 0.7);
+                sh(px + ox, py + oy, tuft > 0.8 ? 1.12 : 0.88);
+              } else sh(px, py, 1.22);
+            } else {
               const depth = Math.min(4, 1 + Math.round((-d * 2 * TP) / 32)),
                 dpx = Math.max(1, Math.round(TP / 32));
               for (let k = 0; k < depth; k++) {

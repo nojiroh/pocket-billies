@@ -79,26 +79,39 @@ export const WALK_SHADERS = {
 precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=2) in vec3 aWall;uniform mat4 uVP;uniform vec3 uOrg;out vec3 vW;out vec3 vN;out vec3 vWall;out vec4 vClip;${COMMON_GLSL}
 void main(){vec3 p=aPos+uOrg;p.y+=curveY(p.xz);vW=p;vN=aNrm;vWall=aWall;gl_Position=uVP*vec4(p,1.);vClip=gl_Position;}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec3 vWall;in vec4 vClip;out vec4 o;uniform sampler2D uGround,uFar,uCliff,uGNrm,uWallA;uniform vec4 uGRect;uniform vec3 uFarTint;uniform float uGStr,uGShine,uWallDef;uniform vec3 uWallCol[12];uniform sampler2D uShore;uniform vec3 uShoreR,uBed;uniform vec4 uSea;uniform vec4 uRoom;uniform vec4 uRoomT;uniform float uRoomY;uniform sampler2D uGAO;uniform vec3 uGAOR,uSkyW;uniform float uGAOSky;uniform float uWet,uRainK,uCausW;uniform vec3 uWGlow;uniform sampler2D uRing,uRingN;uniform vec2 uRingC[16];uniform vec4 uRingBox;uniform vec3 uCanvas;uniform vec4 uHole;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}${FALL_GLSL}${TIDE_GLSL}
+precision highp float;in vec3 vW;in vec3 vN;in vec3 vWall;in vec4 vClip;out vec4 o;uniform sampler2D uGround,uFar,uCliff,uGNrm,uWallA;uniform vec4 uGRect;uniform vec3 uFarTint;uniform float uGStr,uGShine,uWallDef;uniform vec3 uWallCol[16],uStrata[3];uniform float uWallRows;uniform vec4 uFaceB,uSnowL;uniform sampler2D uShore;uniform vec3 uShoreR,uBed;uniform vec4 uSea;uniform vec4 uRoom;uniform vec4 uRoomT;uniform float uRoomY;uniform sampler2D uGAO;uniform vec3 uGAOR,uSkyW;uniform float uGAOSky;uniform float uWet,uRainK,uCausW;uniform vec3 uWGlow;uniform sampler2D uRing,uRingN;uniform vec2 uRingC[16];uniform vec4 uRingBox;uniform vec3 uCanvas;uniform vec4 uHole;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}${FALL_GLSL}${TIDE_GLSL}
 /* v46: the near ring: the 16 m squares round you at full size (4 x 4 of them in one texture, each in the slot its
    position mod 4 gives); the view's whole ground is the small distant picture. 0 = not in the ring */
 ${RING_AT_GLSL}
 vec3 rampW(vec3 b,float t){vec3 d0=mix(b*.55,vec3(.235,.165,.439),.30),d1=mix(b*.79,vec3(.376,.29,.596),.17),l3=mix(b,vec3(1.,.957,.769),.30),l4=mix(b,vec3(1.,.988,.918),.60);return t<.5?d0:t<1.5?d1:t<2.5?b:t<3.5?l3:l4;}
 float bayerG(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
 /* IS-5: a room turned with its door (logic/room-turn.js): the place's metres in the room's own (uRoomT: the turn's point, cos, sin; cos 1 for a room facing south) */
+/* the wall atlas (scene/build/walls.png, 64 px = 2 m): 4 x 3 cells, 4 x 4 since terrain TR-4 (uWallRows from the picture's height, so an older atlas still reads right); a cell's grey level (0-4) picks a step of the wall colour's ramp */
+float wallLevel(int m,vec2 tc){vec2 gg=tc*.5,cell=vec2(float(m%4),float(m/4)),k=vec2(4.,uWallRows);return textureGrad(uWallA,(cell+fract(gg))/k,dFdx(gg)/k,dFdy(gg)/k).r*4.;}
+/* terrain TR-4: a natural-rock face (not brick, dressed stone, hedge, boards, steps or concrete) */
+bool natRock(int m){return m<4||m==9||m>10;}
+/* terrain TR-4 (world.cliffFaces, uFaceB.y): strata: bands uFaceB.x metres tall up a natural-rock face, each one of the
+   biome's three colours (biomes.json cliff.strata), their edges wobbling on the pixel grid */
+vec3 wallFace(int m,vec2 tc){m=clamp(m,0,int(uWallRows)*4-1);vec3 b=uWallCol[m];
+ if(uFaceB.y>.5&&natRock(m)){float y=floor(vW.y*32.)/32.+(lnoise(pwSnap(vW.xz)*.31)-.5)*uFaceB.x*.7;float k=fract(sin(floor(y/uFaceB.x)*12.9898)*43758.5453);b=uStrata[k<.34?0:k<.67?1:2];}
+ return rampW(b,floor(wallLevel(m,tc)+.5));}
+vec2 wallTC(vec3 n){return abs(n.x)>abs(n.z)?vec2(vW.z,-vW.y):vec2(vW.x,-vW.y);}
+/* terrain TR-4 (world.snowLine, uSnowL: the line in metres, its ragged depth, on): snow on level ground above the
+   biome's snow line, in hard steps on the pixel grid; steep rock stays bare */
+vec3 snowLineOn(vec3 a,vec3 n){if(uSnowL.z<.5)return a;vec2 q=pwSnap(vW.xz);float h=vW.y-uSnowL.x+(lnoise(q*.35)-.5)*uSnowL.y*2.;
+ float s=smoothstep(0.,uSnowL.y,h)*smoothstep(.55,.85,n.y);s=pwQ(s,3.,pwCell(vW.xz));return mix(a,vec3(.9,.93,.98)*(.94+.06*lnoise(q*11.)),s);}
 vec2 roomOwn(vec2 w){if(uRoomT.z>.999)return w;vec2 d=w-uRoomT.xy;return uRoomT.xy+vec2(d.x*uRoomT.z+d.y*uRoomT.w,-d.x*uRoomT.w+d.y*uRoomT.z);}
 vec2 roomOwnDir(vec2 v){return vec2(v.x*uRoomT.z+v.y*uRoomT.w,-v.x*uRoomT.w+v.y*uRoomT.z);}
 void main(){/* phase 08b: a room drawn over the place: the place's ground leaves a hole there */if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y&&vW.z<uHole.w)discard;
  vec3 n=normalize(vN);vec2 rcc=vec2((vW.x-uGRect.x)*uGRect.z,(uGRect.y-vW.z)*uGRect.w)*uCanvas.xy,rdx=dFdx(rcc)/64.,rdy=dFdy(rcc)/64.;vec2 ruv;float rw=ringAt(rcc,ruv);
  if(vWall.z>0.){/* a wall: between the camera and you it thins out so you stay in view */vec2 nd=vClip.xy/vClip.w;float wc=vClip.w<uPlC.z-.6&&length((nd-uPlC.xy)*vec2(uAspect,1.))<.26?.62:0.;if(bayerG(gl_FragCoord.xy)<max(wc,rockCut(vW)))discard;
-  int m=int((vWall.x<.5?uWallDef:vWall.x)+.5);m=clamp(m,0,11);vec2 tc=abs(n.x)>abs(n.z)?vec2(vW.z,-vW.y):vec2(vW.x,-vW.y);vec2 gg=tc*.5,cell=vec2(float(m%4),float(m/4));
-  vec2 aa=(cell+fract(gg))/vec2(4.,3.);float lv=textureGrad(uWallA,aa,dFdx(gg)/vec2(4.,3.),dFdy(gg)/vec2(4.,3.)).r*4.;vec3 a=rampW(uWallCol[m],floor(lv+.5));
+  int m=int((vWall.x<.5?uWallDef:vWall.x)+.5);vec2 tc=wallTC(n);vec3 a=wallFace(m,tc);
   float hy=vWall.y*vWall.z,top=vWall.z-hy;a*=(top<.06?1.22:1.)*mix(.7,1.,clamp(hy/.7,0.,1.));
   /* v31: a room's walls: a skirting board along the floor, a little darker toward the corners */
   if(uRoom.w>.5&&m==10){if(hy<.18){a=vec3(.6,.4,.26)*(hy>.158?1.7:hy>.142?.62:hy<.02?.7:1.15)*(.93+.07*fract(sin(floor(tc.x*1.5)*91.7)*437.5));}else if(hy<.22)a*=.8;vec2 rl=roomOwn(vW.xz);float cd=min(abs(rl.x-uRoom.x),abs(rl.x-uRoom.y));a*=mix(.8,1.,smoothstep(0.,.9,cd));
    /* v47: a corner trim where the back wall meets a side wall: a plain wooden post at wall height closes the joint */
    float dc=abs(roomOwnDir(n.xz).x)>.5?abs(uRoom.z-rl.y):cd;if(dc<.07&&top>.005)a=vec3(.6,.4,.26)*(dc>.055?.62:dc<.02?1.28:1.08)*(top<.04?1.2:1.);}
-  if((m<4||m==9)&&vWall.z>.3){float u=floor(tc.x*16.)/16.,rag=.09+.12*fract(sin(u*127.1)*43758.5)+.04*sin(u*4.7);vec2 gt=vec2((vW.x-n.x*.14-uGRect.x)*uGRect.z,(uGRect.y-(vW.z-n.z*.14))*uGRect.w);
+  if((uFaceB.y>.5?natRock(m):(m<4||m==9))&&vWall.z>.3){float u=floor(tc.x*16.)/16.,rag=.09+.12*fract(sin(u*127.1)*43758.5)+.04*sin(u*4.7);vec2 gt=vec2((vW.x-n.x*.14-uGRect.x)*uGRect.z,(uGRect.y-(vW.z-n.z*.14))*uGRect.w);
    if(top<rag)a=texture(uGround,gt).rgb*(top>rag-.03?.78:1.);else if(top<rag+.05)a*=.62;}
   /* scree: pebbles fallen at the foot */
   if((m<4||m==9)&&hy<.12){float sp=fract(sin(dot(floor(vec2(tc.x,hy)*16.),vec2(12.9898,78.233)))*43758.5);if(sp>.72)a=mix(a,vec3(.62,.58,.52)*(.8+.4*sp),.6);}
@@ -117,7 +130,9 @@ void main(){/* phase 08b: a room drawn over the place: the place's ground leaves
  if(rockHides(vW))discard;
  /* v31: in a room, past the front edge: the floor boards' cut edge, then the dark under the floor */
  if(uRoom.w>.5&&vW.z<-.001){float d=uRoomY-vW.y;vec3 sec=d<.07?vec3(.42,.3,.2)*(d<.015?1.25:1.):d<.13?vec3(.16,.12,.1):mix(vec3(.1,.08,.09),vec3(.02,.02,.03),smoothstep(.13,1.4,d));o=vec4(fogit(sec,vW),0.);return;}
- vec2 g=vec2((vW.x-uGRect.x)*uGRect.z,(uGRect.y-vW.z)*uGRect.w);vec3 a;float spec=0.;float st=1.-n.y,c=smoothstep(.28,.5,st);
+ vec2 g=vec2((vW.x-uGRect.x)*uGRect.z,(uGRect.y-vW.z)*uGRect.w);vec3 a;float spec=0.;float st=1.-n.y;
+ /* terrain TR-4 (world.cliffFaces): steepness from the surface itself (gn), so the massif's natural edges and shoulders, whose normals come from the smooth land, read as steep too */
+ vec3 gn=n;if(uFaceB.z>.5){gn=normalize(cross(dFdx(vW),dFdy(vW)));if(gn.y<0.)gn=-gn;st=max(st,1.-gn.y);}float c=smoothstep(.28,.5,st);
  if(g.x>0.&&g.y>0.&&g.x<1.&&g.y<1.){a=texture(uGround,g).rgb;if(rw>0.)a=mix(a,textureGrad(uRing,ruv,rdx,rdy).rgb,rw);/* v24: snow reads white, not grey */{float lm=dot(a,vec3(.3,.59,.11));a*=1.+.3*smoothstep(.74,.9,lm)*clamp(1.-abs(a.r-a.b)*4.,0.,1.);}vec4 gm=texture(uGNrm,g);if(rw>0.)gm=mix(gm,textureGrad(uRingN,ringIn(ruv,rdx,rdy,float(textureSize(uRingN,0).x)),rdx,rdy),rw);n=normalize(n+vec3(gm.r*2.-1.,0.,gm.g*2.-1.)*uGStr*(1.-c));spec=gm.a;
   /* v31: the shore: water tile art becomes a sandy-muddy bed, and a wet rim darkens the bank along the curved edge */
   if(uRoom.w>.5){vec2 rl=roomOwn(vW.xz);float dw=min(min(rl.x-uRoom.x,uRoom.y-rl.x),uRoom.z-rl.y);a*=mix(.7,1.,smoothstep(0.,.75,dw));}
@@ -136,7 +151,9 @@ void main(){/* phase 08b: a room drawn over the place: the place's ground leaves
  float pud=0.;if(uWet>0.&&g.x>0.&&g.y>0.&&g.x<1.&&g.y<1.){float grs=smoothstep(.015,.07,a.g-max(a.r,a.b));a*=1.-uWet*(.2-grs*.08);spec=max(spec,uWet*(1.-grs)*.45);
   vec2 pq=pwSnap(vW.xz);pud=smoothstep(.56,.72,lnoise(pq*.38+3.1)*.75+lnoise(pq*1.4+7.)*.3)*uWet*smoothstep(.985,.997,normalize(vN).y)*(1.-grs)*(1.-c);}
  a=snowOn(seasonal(a,vW),vW,normalize(vN).y);
-if(c>0.){vec3 cx=texture(uCliff,vec2(vW.z,-vW.y)*.9).rgb,cz=texture(uCliff,vec2(vW.x,-vW.y)*.9).rgb;vec3 cl=mix(cz,cx,abs(n.x)/(abs(n.x)+abs(n.z)+.001));a=mix(a,cl*(.78+.2*n.y),c);}
+if(c>0.){vec3 cl;if(uFaceB.z>.5){/* terrain TR-4: steep smooth land in the biome's cliff face (the wall atlas at 32 px a metre), the change from ground to rock in hard steps */cl=wallFace(int(uFaceB.w+.5),wallTC(gn));c=pwQ(c,3.,pwCell(vW.xz));}
+ else{vec3 cx=texture(uCliff,vec2(vW.z,-vW.y)*.9).rgb,cz=texture(uCliff,vec2(vW.x,-vW.y)*.9).rgb;cl=mix(cz,cx,abs(n.x)/(abs(n.x)+abs(n.z)+.001));}a=mix(a,cl*(.78+.2*n.y),c);}
+ a=snowLineOn(a,gn);
  float bias=.0008+.0025*(1.-max(dot(n,uSunDir),0.));float sh=shadowAtN(vW+n*.03,n,bias);float ao=contactAO(vW);float occ=min(sh,ao);
  /* v32: soft shade baked in round the feet of trees, buildings, rocks and walls */
  float gao=1.;if(uGAOR.z>0.){vec2 gu=vW.xz*uGAOR.xy;if(gu.x>0.&&gu.y>0.&&gu.x<1.&&gu.y<1.)gao=mix(1.,texture(uGAO,gu).r,uGAOR.z);}
