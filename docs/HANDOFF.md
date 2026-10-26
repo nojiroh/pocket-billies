@@ -31,7 +31,12 @@ currently open PRs and anything sessions that are done haven't pushed yet".
   through `sp-5-augments`, merge batch 1; merging them would undo that resolution); `ccr-a073cfde` (the same plan as
   #223); the old 1000+-commit branches (archive and pre-fresh-base). Unpushed work in other sessions' containers can't
   be reached from here.
-- **Verified:** lint, typecheck, format:check, check:modules, check:data, bake:placeholders --check, unit tests 1314 pass; `test:slow` and the fast check (check-fast.py) running, their results added when done.
+- **Verified:** lint, typecheck, format:check, check:modules, check:data, bake:placeholders --check, unit tests 1314 pass; `test:slow` 89 of 90 (the WA-10
+  island test, red on main, left at the owner's word). The fast check (check-fast.py, 2 browsers): 35 of 37; the two
+  reds ("A battle plays to the end" stuck at choose, "Every screen opens with its parts" missing the inbox) pass when
+  run again, alone and paired (battle and screens side by side, twice), and every merge commit passes the screens
+  check alone: flaky under load here, not a code change. The battle check's time is noisy on this machine (main 50-80 s,
+  UI-8 alone 47-49 s, the merged head 63-75 s).
 - **Next:** the owner's phone check of the bar; close #221 by hand (its commits reach main with this PR, not its base);
   the one-session branches merged here can go (BRANCHES.md), the `track/*` ones stay.
 
