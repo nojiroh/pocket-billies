@@ -1802,7 +1802,11 @@ export type FxRow =
   | { kind: 'turnHeal'; share: number }
   | { kind: 'pinchHeal'; at: number; share: number }
   /** SP-2 (genes.json unstable only): the Billie loses a share of its HP at each turn's end */
-  | { kind: 'turnHurt'; share: number };
+  | { kind: 'turnHurt'; share: number }
+  /** SP-6: a Gene Sample's DNA, the wild splice odds, an Unstable splice's turn-end hurt (Perks), times mult */
+  | { kind: 'dna'; mult: number }
+  | { kind: 'splice'; mult: number }
+  | { kind: 'unstable'; mult: number };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;

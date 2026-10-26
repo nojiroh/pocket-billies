@@ -12,6 +12,8 @@
                                                              modBossHp)
      xp      the holder's XP   turnHeal  a share of HP at each turn's end   pinchHeal  once a battle, low on HP
                                                              (RL-12c, held items only)
+     dna     a Gene Sample's DNA (battle-rewards.js spliceSample)    splice  the wild splice odds (rules.js, a run
+     unstable  an Unstable splice's turn-end hurt (battle-engine.js)          place's stocking)   (SP-6, Perks)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -47,6 +49,7 @@ expose({
   fxPrice: [() => fxPrice],
   fxRows: [() => fxRows],
   fxRunPrice: [() => fxRunPrice],
+  fxSplice: [() => fxSplice],
   // @ts-expect-error -- replaced on purpose
   fxStages: [() => fxStages, v => (fxStages = v)],
   fxTurnHeal: [() => fxTurnHeal],
@@ -69,6 +72,9 @@ export const FX_KINDS = /** @type {const} */ ([
   'turnHeal',
   'pinchHeal',
   'turnHurt',
+  'dna',
+  'splice',
+  'unstable',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -212,6 +218,11 @@ export const fxTurnHurt = fx =>
     0.5,
     (fx || []).reduce((a, f) => a + (f.kind === 'turnHurt' ? f.share : 0), 0)
   );
+
+/** SP-6: what multiplies a Gene Sample's DNA, the wild splice odds and an Unstable splice's turn-end hurt: the run's
+ * rows of that kind (1 when none) @param {Fx[] | null | undefined} fx @param {'dna' | 'splice' | 'unstable'} kind */
+export const fxSplice = (fx, kind) => fxMult(fx, f => f.kind === kind);
+provide({ fxSplice }); /* to-module */
 
 /** RL-12c: a holder's once-a-battle heal when low: the first pinchHeal row, or null
  * @param {Fx[] | null | undefined} fx @returns {{ at: number, share: number } | null} */

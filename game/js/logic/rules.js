@@ -20,6 +20,8 @@ import {
   environmentOdds,
   fieldMoveState,
   fieldMoveText,
+  fxOfRun,
+  fxSplice,
   jingle,
   provide,
   ranchNow,
@@ -45,6 +47,7 @@ import {
   LOCATIONS,
   LOCATION_BY_ID,
   MOVES,
+  PERKS,
   POOLS,
   ROADS_BY_NODE,
   RULES,
@@ -995,11 +998,13 @@ export function encountersHere(node = saveData.trip.node) {
         /* SP-3: now and then a wild splice (genes.json wild), from a stream of its own: the stock's species, levels,
            sizes and coats stay what they were */
         spl = rngFn(runNodeSeed(saveData.run.seed, L.runNode), 'splice|' + visit),
-        pool = encounterPoolHere(node).list.map(([id]) => id);
+        pool = encounterPoolHere(node).list.map(([id]) => id),
+        /* SP-6: a run's splice rows (Perks) on the odds */
+        odds = fxSplice(fxOfRun(saveData.run, PERKS), 'splice');
       W[L.id] = { at: now, list: [], v: visit };
       while (W[L.id].list.length < cap) {
         const q = spawn(false, null, node, rnd),
-          g = wildSplice(geneData(), q.sp, pool, spl);
+          g = wildSplice(geneData(), q.sp, pool, spl, odds);
         if (!g) continue;
         q.graft = g;
         unstableTidy(q, spl); /* SP-2: past the limit, its Unstable roll, from the same stream (the same on a reload) */

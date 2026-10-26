@@ -204,13 +204,15 @@ export function graftUnstable(D, m, stats, rnd) {
 /** a wild Billie's splice, rolled at spawn: none, a Graft (one foreign part) or a Chimera (genes.json wild.chimeraParts
  * of them), by genes.json wild's odds. Its Genes' donors are of the lines the place's pool holds (other lines than its
  * own, graftDonors), and it is never refused (past the limit it is Unstable, as a Chimera often is). Draws only on rnd.
- * @param {GeneData} D @param {string} sp @param {string[]} pool the species ids the place spawns
- * @param {() => number} rnd @returns {Graft | null} */
-export function wildSplice(D, sp, pool, rnd) {
+ * SP-6: `odds` multiplies both chances (a run's splice rows, Perks), the two together at most 1; the draws are the
+ * same whatever it is @param {GeneData} D @param {string} sp @param {string[]} pool the species ids the place spawns
+ * @param {() => number} rnd @param {number} [odds] @returns {Graft | null} */
+export function wildSplice(D, sp, pool, rnd, odds = 1) {
   const W = D.genes.wild,
+    k = odds === 1 ? 1 : Math.min(odds, 1 / (W.graft + W.chimera)),
     x = rnd(),
-    chimera = x >= W.graft;
-  if (x >= W.graft + W.chimera) return null;
+    chimera = x >= W.graft * k;
+  if (x >= (W.graft + W.chimera) * k) return null;
   const lines = new Set(pool.map(id => D.species[id] && D.species[id].line).filter(Boolean)),
     lineOf = (/** @type {string} */ id) => {
       const gene = geneSplit(id),

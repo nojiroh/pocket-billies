@@ -101,3 +101,38 @@ test('gene events: the auction’s Gene is one not in the library, of the region
   s.meta.genes.push(a.id);
   assert.notEqual(G.geneEventDraw(D, s, ['zuck0'], seq(0.4)).id, a.id);
 });
+
+test('gene events: the splice kinds (Perks) multiply a Sample’s DNA, the wild splice odds, the Unstable hurt', () => {
+  const E = modules.effects,
+    Gn = modules.genes,
+    D = R.geneData(),
+    fx = [
+      { kind: 'dna', mult: 1.5, src: 'a' },
+      { kind: 'splice', mult: 2, src: 'b' },
+    ];
+  assert.equal(E.fxSplice(null, 'dna'), 1);
+  assert.equal(E.fxSplice(fx, 'dna'), 1.5);
+  assert.equal(E.fxSplice(fx, 'unstable'), 1);
+  /* the odds: the same draws, the same answer at 1; twice the odds turns some plain Billies spliced, never back */
+  const pool = ['zuck0', 'hughes0', 'bezos0'];
+  let one = 0,
+    two = 0;
+  for (let i = 0; i < 400; i++) {
+    const x = (i + 0.5) / 400,
+      a = Gn.wildSplice(D, 'swift0', pool, seq(x, 0.3, 0.6, 0.2)),
+      b = Gn.wildSplice(D, 'swift0', pool, seq(x, 0.3, 0.6, 0.2), 1),
+      c = Gn.wildSplice(D, 'swift0', pool, seq(x, 0.3, 0.6, 0.2), 2);
+    assert.deepEqual(a, b);
+    if (a) assert.ok(c, 'spliced at 1, spliced at 2');
+    one += a ? 1 : 0;
+    two += c ? 1 : 0;
+  }
+  assert.ok(two > one * 1.8, `${one} -> ${two}`);
+  /* a Sample's DNA */
+  const s = startedSave('swift0', 20),
+    foe = { sp: 'swift0', graft: { sig: 'shark_tailfin@zuck2' } },
+    BR = modules['battle-rewards'];
+  s.meta.dna = 0;
+  assert.equal(BR.spliceSample([foe], s).dna, D.genes.wild.dna.graft);
+  assert.equal(BR.spliceSample([foe], s, fx).dna, Math.round(D.genes.wild.dna.graft * 1.5));
+});

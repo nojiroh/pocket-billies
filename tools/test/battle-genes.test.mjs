@@ -69,6 +69,11 @@ test("battle genes: an Unstable splice loses a share of HP at each turn's end; a
     fn('endTurn')();
     assert.equal(me.hp, mx - Math.max(1, Math.floor(mx * data.GENES.unstable.fx[0].share)));
     assert.match(texts(B), /unstable cells hurt it/);
+    /* SP-6: a run's unstable rows (Perks) take a share of the hurt off, on your side */
+    B.fx = [{ kind: 'unstable', mult: 0.5, src: 'stabilizer_gel' }];
+    me.hp = mx;
+    fn('endTurn')();
+    assert.equal(me.hp, mx - Math.max(1, Math.floor(mx * data.GENES.unstable.fx[0].share * 0.5)));
   } finally {
     S.limit = was;
   }

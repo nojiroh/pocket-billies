@@ -14,7 +14,7 @@ import { billyGraft, dropEncounter, findBilly, geneData, wildPrize } from './rul
 import { META_GENES, META_MAX } from './meta-state.js';
 import { fieldBadgeKey } from './run-side.js';
 import { runFragileDrop } from './run-loop.js';
-import { fxMoney, fxOfBillie } from './effects.js';
+import { fxMoney, fxOfBillie, fxSplice } from './effects.js';
 import { perkOfferMake } from './perks.js';
 import { rewardDataGame, rewardOfferMake } from './rewards.js';
 import { battleRoll } from './battle-engine.js';
@@ -123,7 +123,7 @@ export function battleSettleWin(b, s, pay, run) {
   if (pay.o !== 'win') return;
   if (b.kind === 'wild' && pay.prize > 0) s.se += pay.prize;
   /* SP-3: a spliced wild Billie knocked out leaves DNA and a sample of its Genes (caught, it keeps them) */
-  if (b.kind === 'wild' && b.sides) Object.assign(pay, spliceSample(b.sides[1].team, s));
+  if (b.kind === 'wild' && b.sides) Object.assign(pay, spliceSample(b.sides[1].team, s, b.fx));
   if (b.kind === 'trainer') {
     s.se += pay.reward;
     if (run && b.T && (b.T.runFoe === 'miniboss' || b.T.runFoe === 'boss') && b.T.type && s.meta) {
@@ -145,8 +145,9 @@ export function battleSettleWin(b, s, pay, run) {
 /** SP-3: the beaten wild Billies' splices sampled: each spliced one banks DNA at once (genes.json wild.dna, a Graft's
  * or a Chimera's: meta, kept even if the run is lost), and each of its Genes not in s.meta.genes yet joins it (the
  * library SP-4's Gene Bank opens; a Gene is its id, "shark_tailfin@zuck2"). Returns the DNA and the new Genes in words
- * for the sheet @param {any[]} foes @param {any} s @returns {{ dna: number, sampled: { gene: string, words: string }[] }} */
-export function spliceSample(foes, s) {
+ * for the sheet. SP-6: a run's dna rows (Perks) multiply the DNA @param {any[]} foes @param {any} s
+ * @param {any[] | null} [fx] the battle's run rows (logic/effects.js) @returns {{ dna: number, sampled: { gene: string, words: string }[] }} */
+export function spliceSample(foes, s, fx) {
   const W = GENES.wild.dna,
     /** @type {{ gene: string, words: string }[]} */
     sampled = [];
@@ -162,6 +163,7 @@ export function spliceSample(foes, s) {
       sampled.push({ gene, words: geneWords(geneData(), slot, gene) });
     }
   }
+  if (dna && fx) dna = Math.round(dna * fxSplice(fx, 'dna'));
   if (dna) s.meta.dna = Math.min(META_MAX, (s.meta.dna || 0) + dna);
   return { dna, sampled };
 }

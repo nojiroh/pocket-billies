@@ -69,7 +69,17 @@ import {
   unstableTidy,
   xpFor,
 } from './rules.js';
-import { fxCatch, fxDamage, fxOfBillie, fxPinchHeal, fxStages, fxTurnHeal, fxTurnHurt, fxXp } from './effects.js';
+import {
+  fxCatch,
+  fxDamage,
+  fxOfBillie,
+  fxPinchHeal,
+  fxSplice,
+  fxStages,
+  fxTurnHeal,
+  fxTurnHurt,
+  fxXp,
+} from './effects.js';
 import { makeBattle, newFieldState } from './battle-state.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -724,8 +734,9 @@ export function endTurn() {
         m.hp += g;
         battleSay(`${billyName(m)} ate its ${name} and restored HP.`, { k: 'heal', si: k, amt: g });
       }
-      /* SP-2: an Unstable splice's drawback: a share of its HP at each turn's end */
-      const hurt = fxTurnHurt(hx);
+      /* SP-2: an Unstable splice's drawback: a share of its HP at each turn's end (SP-6: on your side, times the run's
+         unstable rows, Perks) */
+      const hurt = fxTurnHurt(hx) * (ACTOR_SIDE[k] === 0 && battleNow().fx ? fxSplice(battleNow().fx, 'unstable') : 1);
       if (hurt > 0 && m.hp > 0) {
         const d = Math.min(m.hp, Math.max(1, Math.floor(mx * hurt)));
         m.hp -= d;
