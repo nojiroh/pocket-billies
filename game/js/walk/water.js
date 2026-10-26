@@ -11,7 +11,9 @@ import {
   reducedMotion,
   roomHole,
   setPropLookUniforms,
+  setSpriteShadeUniforms,
   soundEffectAt,
+  spriteFrame,
 } from '../hooks.js';
 import { pictureRight } from '../logic/prop-turn.js';
 import { gpuTag } from '../engine/gpu-counters.js';
@@ -130,7 +132,8 @@ export function reflectionPass(items, C, rw, rh, X) {
   gl.disable(gl.BLEND);
   /* alpha 0.2: near water by a summed table (a joined view can hold thousands of water tiles, and walking them all for
     every thing cost the iPad about 10 ms a frame), and only what shows in the water: its mirror image in view */
-  const FR = computeFrustum(C.vp),
+  const SF = spriteFrame(C, X.sun),
+    FR = computeFrustum(C.vp),
     cut = engineSetting('quality', 'cull') ?? true,
     models = [];
   for (const it of items) {
@@ -150,6 +153,10 @@ export function reflectionPass(items, C, rw, rh, X) {
     gl.uniform3fv(U.uRight, pictureRight(it, C.right));
     gl.uniform3f(U.uBaseP, it.x, it.y, it.z);
     setPropLookUniforms(U, it.lk);
+    /* phase 20 E3 (the owner: fixed, as the main pass has them): the season on leaves, a crown's self-shade and whether
+       the picture takes the clouds' shade (the pass sent none of them: no season, and the last picture's self-shade
+       and noRecv of the frame before) */
+    setSpriteShadeUniforms(U, it, SF);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, T.t);
     gl.activeTexture(gl.TEXTURE1);

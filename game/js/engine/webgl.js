@@ -288,15 +288,18 @@ vec3 shade(vec3 a,vec3 n,vec3 p,float sh,float ao,vec4 mat,float cel){float occ=
  return a*(amb+uSunCol*dif*occ+points(p+n*.1,n))+uSunCol*spc;}
 /* v26: the season on living green (uFol.x: how much this surface is leaves or grass): autumn gold and red, fresh spring
    green, pale winter; uFol.y lets snow lie on what faces up */
-vec3 seasonal(vec3 c,vec3 p){if(uFol.x<=0.||uSeason.x+uSeason.y+uSeason.z<=0.)return c;float g=clamp((c.g-max(c.r,c.b))*5.,0.,1.);if(g<=0.)return c;float l=dot(c,vec3(.3,.59,.11));
- /* v31: grass on the ground (uFol.x below .9) only dries a little in autumn; leaves (uFol.x 1) turn gold, orange or red,
+vec3 seasonalF(vec3 c,vec3 p,vec2 fol){if(fol.x<=0.||uSeason.x+uSeason.y+uSeason.z<=0.)return c;float g=clamp((c.g-max(c.r,c.b))*5.,0.,1.);if(g<=0.)return c;float l=dot(c,vec3(.3,.59,.11));
+ /* v31: grass on the ground (fol.x below .9) only dries a little in autumn; leaves (fol.x 1) turn gold, orange or red,
     one mix per tree (p is the tree's own position) with a little variety across its crown */
- if(uFol.x<.9){float k=g*uFol.x;vec3 au=mix(c,vec3(l*1.16,l*1.07,l*.62),.42);vec3 wi=mix(c,vec3(l*1.0,l*1.04,l*1.02)*1.04,.5);vec3 sp=c*vec3(1.02,1.07,.95);
+ if(fol.x<.9){float k=g*fol.x;vec3 au=mix(c,vec3(l*1.16,l*1.07,l*.62),.42);vec3 wi=mix(c,vec3(l*1.0,l*1.04,l*1.02)*1.04,.5);vec3 sp=c*vec3(1.02,1.07,.95);
   vec3 r=mix(c,sp,uSeason.y);r=mix(r,au,uSeason.x);r=mix(r,wi,uSeason.z);return mix(c,r,k);}
  float v=fract(sin(dot(floor(p.xz*1.7),vec2(12.9898,78.233)))*43758.5453),w=clamp(v*.85+(l-.35)*.6,0.,1.);
  vec3 au=(w<.4?mix(vec3(1.62,1.18,.34),vec3(1.66,.92,.3),w/.4):mix(vec3(1.66,.92,.3),vec3(1.5,.5,.3),(w-.4)/.6))*l*1.06;vec3 wi=vec3(l*.98,l*1.04,l*1.02)*1.08;vec3 sp=c*vec3(1.03,1.1,.92);
  vec3 r=mix(c,sp,uSeason.y);r=mix(r,au,uSeason.x);r=mix(r,wi,uSeason.z);return mix(c,r,g);}
-vec3 snowOn(vec3 c,vec3 p,float up){if(uSeason.w<=0.||uFol.y<=0.)return c;float s=uSeason.w*uFol.y*smoothstep(.45,.85,up)*smoothstep(.25,.65,lnoise(p.xz*1.9)+uSeason.w*.55);return mix(c,vec3(.9,.93,.98)*(.94+.06*lnoise(p.xz*11.)),clamp(s,0.,1.));}
+vec3 snowOnF(vec3 c,vec3 p,float up,vec2 fol){if(uSeason.w<=0.||fol.y<=0.)return c;float s=uSeason.w*fol.y*smoothstep(.45,.85,up)*smoothstep(.25,.65,lnoise(p.xz*1.9)+uSeason.w*.55);return mix(c,vec3(.9,.93,.98)*(.94+.06*lnoise(p.xz*11.)),clamp(s,0.,1.));}
+/* phase 20 E5: the same with the surface's foliage and snow as a parameter (the instanced sprites feed it per picture) */
+vec3 seasonal(vec3 c,vec3 p){return seasonalF(c,p,uFol);}
+vec3 snowOn(vec3 c,vec3 p,float up){return snowOnF(c,p,up,uFol);}
 vec3 fogit(vec3 c,vec3 p){float d=length(p-uEye);float f=1.-exp(-max(0.,d-uFogStart)/uFogD*1.6);
  float m=uMist*exp(-max(0.,p.y-uMistY)*1.4)*smoothstep(4.,22.,d)*(.55+.45*sin(p.x*.21+uTime*.00012)*sin(p.z*.17-uTime*.0001));f=clamp(f+m*(1.-f),0.,1.);
  /* v23: mist lying in a gorge or valley */
@@ -316,18 +319,20 @@ export const LOOK_GLSL = `
 uniform vec4 uWear,uHsv,uLkTint;uniform vec2 uMaskH;
 vec3 lkHsv(vec3 c){vec4 K=vec4(0.,-1./3.,2./3.,-1.);vec4 p=mix(vec4(c.bg,K.wz),vec4(c.gb,K.xy),step(c.b,c.g));vec4 q=mix(vec4(p.xyw,c.r),vec4(c.r,p.yzx),step(p.x,c.r));float d=q.x-min(q.w,q.y);return vec3(abs(q.z+(q.w-q.y)/(6.*d+1e-10)),d/(q.x+1e-10),q.x);}
 vec3 lkRgb(vec3 c){vec3 p=abs(fract(c.xxx+vec3(1.,2./3.,1./3.))*6.-3.);return c.z*mix(vec3(1.),clamp(p-1.,0.,1.),c.y);}
-vec3 lookOn(vec3 c,vec2 px,float hgt,vec3 bp){
- if(uHsv.w>.5){vec3 h=lkHsv(c);float m=smoothstep(.14,.3,h.y)*smoothstep(.06,.18,h.z);if(uMaskH.y>0.){float dh=abs(fract(h.x-uMaskH.x+.5)-.5);m*=1.-smoothstep(uMaskH.y,uMaskH.y+.05,dh);}
-  h.x=fract(h.x+uHsv.x*m);h.y=clamp(h.y*(1.+uHsv.y*m),0.,1.);h.z=clamp(h.z*(1.+uHsv.z*m),0.,1.);c=lkRgb(h);}
+vec3 lookOnP(vec3 c,vec2 px,float hgt,vec3 bp,vec4 wear,vec4 hsv,vec4 tint,vec2 maskH){
+ if(hsv.w>.5){vec3 h=lkHsv(c);float m=smoothstep(.14,.3,h.y)*smoothstep(.06,.18,h.z);if(maskH.y>0.){float dh=abs(fract(h.x-maskH.x+.5)-.5);m*=1.-smoothstep(maskH.y,maskH.y+.05,dh);}
+  h.x=fract(h.x+hsv.x*m);h.y=clamp(h.y*(1.+hsv.y*m),0.,1.);h.z=clamp(h.z*(1.+hsv.z*m),0.,1.);c=lkRgb(h);}
  float l=dot(c,vec3(.3,.59,.11)),paint=smoothstep(.09,.2,l)*(1.-smoothstep(.88,.98,l));
- if(uLkTint.w>0.)c=mix(c,c*uLkTint.rgb*1.7,uLkTint.w*paint);
- if(uWear.x+uWear.y+uWear.z+uWear.w>.001){float sd=fract(dot(bp,vec3(1.7,3.1,2.3)))*97.;
-  c=mix(c,mix(vec3(l),c,.5)*1.06+.05,uWear.z*paint*.75);
+ if(tint.w>0.)c=mix(c,c*tint.rgb*1.7,tint.w*paint);
+ if(wear.x+wear.y+wear.z+wear.w>.001){float sd=fract(dot(bp,vec3(1.7,3.1,2.3)))*97.;
+  c=mix(c,mix(vec3(l),c,.5)*1.06+.05,wear.z*paint*.75);
   float col=fract(sin(floor(px.x*.5)*91.7+sd)*43758.5),streak=smoothstep(.62,1.,col)*smoothstep(.25,.9,lnoise(vec2(px.x*.5,px.y*.07)+sd))*(.45+.55*(1.-hgt));
-  float foot=1.-smoothstep(0.,.16,hgt);c*=1.-uWear.x*(.34*streak+.3*foot)*paint;
-  float mn=lnoise(px*.11+sd)*.7+lnoise(px*.31+sd*2.)*.3,moss=smoothstep(.56,.72,mn+foot*.45-hgt*.15)*uWear.y*paint;c=mix(c,vec3(.3,.42,.16)*(.75+.5*l),clamp(moss,0.,1.)*.8);
-  float cr=abs(lnoise(px*vec2(.09,.13)+sd*3.)-.5);c*=1.-uWear.w*(1.-smoothstep(0.,.022,cr))*.6*paint;}
+  float foot=1.-smoothstep(0.,.16,hgt);c*=1.-wear.x*(.34*streak+.3*foot)*paint;
+  float mn=lnoise(px*.11+sd)*.7+lnoise(px*.31+sd*2.)*.3,moss=smoothstep(.56,.72,mn+foot*.45-hgt*.15)*wear.y*paint;c=mix(c,vec3(.3,.42,.16)*(.75+.5*l),clamp(moss,0.,1.)*.8);
+  float cr=abs(lnoise(px*vec2(.09,.13)+sd*3.)-.5);c*=1.-wear.w*(1.-smoothstep(0.,.022,cr))*.6*paint;}
  return c;}
+/* phase 20 E5: the look from the prop's uniforms (the instanced sprites pass it per picture to lookOnP) */
+vec3 lookOn(vec3 c,vec2 px,float hgt,vec3 bp){return lookOnP(c,px,hgt,bp,uWear,uHsv,uLkTint,uMaskH);}
 `;
 /* ---------- programs ---------- */
 /* v32: compiling is split in two: start (the GPU driver can work on it in the background) and finish (read the result).

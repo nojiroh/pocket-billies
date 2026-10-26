@@ -284,6 +284,10 @@ export const ENGINE_DEFAULTS = {
     invalidate: false,
     /* rain, snow, ash and their splashes in one draw */
     rainBatch: false,
+    /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each) */
+    spriteInstances: false,
+    /* phase 20 R2: the solid models (voxel props, low-poly models) drawn one draw per mesh for every item with it */
+    modelInstances: false,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -1263,6 +1267,18 @@ export const ENGINE_SPEC = [
         'Solid things first',
         'bool',
         'Models, buildings and structures are drawn before the leaf and prop pictures, so leaves hidden behind a trunk or a wall are skipped by the graphics card. Faster in groves; a picture lying flat on a model may show differently.',
+      ],
+      [
+        'spriteInstances',
+        'Pictures in batches',
+        'bool',
+        'Trees, leaves, people and the other standing pictures are drawn in batches, one draw for all the copies of a picture, instead of one draw each. The same look; fewer calls to the graphics card.',
+      ],
+      [
+        'modelInstances',
+        'Models in batches',
+        'bool',
+        'Every tree, house or lamp post of one kind is drawn in one go instead of one at a time: fewer draws, the same look. The shadows still draw them one at a time.',
       ],
       [
         'gpuTimer',

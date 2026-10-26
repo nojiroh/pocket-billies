@@ -90,7 +90,7 @@ import { POST_EFFECT_SHADERS, drawPostEffects, screenSnapshot, sunScreenPosition
 import { environment, environmentFrame } from './environment.js';
 import { PREP_BUDGET_MS, walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
-import { WALK_SHADERS } from './walk/walk-shaders.js';
+import { SPRITE_INSTANCE_SHADERS, WALK_SHADERS } from './walk/walk-shaders.js';
 import { worldCurveDrop } from './walk/draw-common.js';
 import { groundOcclusionWork } from './walk/ground-textures.js';
 import { buildFarProps, buildGrass, grassWork } from './walk/grass-build.js';
@@ -309,8 +309,10 @@ export function ensureWalkGl(cv) {
       typeof propModelShaders === 'function' && propModelShaders(),
       /* 0.1.0 alpha: the world map's too: its first open compiled its eight programs on the spot */
       typeof WORLD_BOWL_SHADERS !== 'undefined' && WORLD_BOWL_SHADERS,
-      /* phase 20 R2: the weather in one draw (quality.rainBatch) */
-      WEATHER_FX_SHADERS,
+      /* phase 20 E6: the instanced pictures' program, while Engine > Quality "Pictures in batches" is on */
+      engineSetting('quality', 'spriteInstances') && SPRITE_INSTANCE_SHADERS,
+      /* phase 20 R2: the weather in one draw, while Engine > Quality "Rain in one go" is on */
+      engineSetting('quality', 'rainBatch') && WEATHER_FX_SHADERS,
     ])
       if (d)
         precompilePrograms(

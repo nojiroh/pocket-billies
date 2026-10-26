@@ -2,6 +2,93 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Phase 20 R2, lane models (stage 3: models instanced) - 2026-10-26
+Branch `track/renderer` (one of three R2 lanes: models, sprites, pixels). Plan approved in Plan Mode; the owner's
+answers: the jungle broadleaf far version (phase 09 task 10) skipped for now; the reflection uses the same switch;
+thrown pyramids instanced too; the setting `quality.modelInstances` ("Models in batches").
+- Where the docs and the code differed (checked):
+  - The round 1 counts said "185 model draws from 50 distinct meshes": the 50 are distinct vertex arrays (mesh parts:
+    extra parts and turning parts count apart), which is exactly what instancing reaches: 185 -> 50 headless.
+  - Voxel meshes never have extra parts (`more`); only prebuilt and low-poly models do. A turning part's turn
+    replaces the item's own (a propeller on a tumbling thing doesn't tumble with it): kept as it was.
+  - The tests' Node renderer (tools/test/walk-renderer.mjs) doesn't load prop-models.js; tests import it themselves.
+- Changed (one cause per commit):
+  - prop-models.js, no change: the per-item loops in their own functions (`drawVoxItems`, `drawLowPolyItems`), the
+    mesh layouts as data (`VOX_ATTRIBS`, `MDL_ATTRIBS`), a turning part's angle in `spinPartAngle`.
+  - **engine/model-instances.js** (new, script tags on both pages after light-pick.js): an item's record of 36 floats
+    (place with the bob, scale, turn, flip, fade, cel or emit, base point, window seed, its own spin and pivot, the
+    window bits as an integer, the look: wear, hue shift, tint, mask, the windows' light); `buildModelBatches` (by
+    mesh, first-met order); F5's `boxInFrustum` and `splitPieces` (pure, not used yet); two GL helpers (a part's own
+    instanced vertex array; pointing the attributes at a batch's first record, as WebGL2 has no base instance).
+  - **Instanced voxel props and low-poly models** behind `quality.modelInstances` (off; Studio > Engine > Quality
+    "Models in batches"): one draw per mesh part for all items with that mesh, extra parts and turning parts over the
+    same records (`uPart`: the part's turn instead of the item's). Programs `voxI` and `mdlI` are compiled only once
+    the setting is on; their fragment shaders are the plain ones with the per-item uniforms as flat values under the
+    same names (`asFlatInputs` throws if buildings.js's text stops matching). `mdlI` uses 15 of the 16 attributes.
+    A flush (scene dropped, context restored) frees the instanced arrays and the record buffer.
+  - Graphics test: "Models in batches" off and on at the Lamp square and the Depth corridor, out of "everything
+    lowest / highest" (124 steps over 22 settings).
+- Headless counts (390 x 760 at DPR 1, the game's full values, the game's own resolution; the baseline tour run
+  twice from a scratch script, off then on; counts only, never speed):
+
+  | Stop | Draws off -> on | Model draws (models pass) | Uniform calls |
+  |---|---|---|---|
+  | Copperleaf by night | 1,171 -> 1,036 | 185 -> 50 | 21,623 -> 18,652 |
+  | Copperleaf by day | (off mis-measured) -> 1,027 | -> 50 | -> 18,574 |
+  | Jungle run place | 652 -> 631 | 31 -> 9 | 8,685 -> 8,171 |
+  | Run town | 609 -> 600 | 29 -> 20 | 7,454 -> 7,062 |
+  | Battle | 688 -> 648 | 107 -> 75 | 9,784 -> 8,578 |
+
+  Your round 1 phone baseline (Android, Adreno 750, diagnostics 2026-10-26 15:33, setting off), the models pass:
+  Copperleaf 172 draws from 49 vertex arrays by day, 173 / 49 at night; jungle 28 / 8; run town 25 / 20; battle
+  97 / 72 (Copperleaf by day 17 fps at resolution 1, 12.5 at the game's own, CPU ~28 ms, 1,130 draws). With the
+  setting on, the models pass should come down to about those vertex-array counts (49, 8, 20, 72): about 123 fewer
+  draws a frame in Copperleaf. The shadow maps' model draws stay as they are this round (Copperleaf near 23 + far 11;
+  jungle 31 + 36; run town 39 + 37; battle far 48.5: round 3's).
+  The iPad (Apple GPU, 1366 x 886 landscape at DPR 2, diagnostics 15:41; GPU-bound, CPU ~5 ms, Copperleaf by day
+  30 fps): models pass 82 draws from 76 vertex arrays in Copperleaf, jungle 53 / 17, run town 48 / 25, battle
+  152 / 124. Landscape sees fewer copies of each model, so the setting saves little there (82 -> ~76) and most on the
+  upright phone; it can't help a GPU-bound frame much anyway.
+  **Ask the owner** (the far version, from these numbers): the upright Android phone draws ~650 model leaf pictures in
+  Copperleaf against the iPad's ~44, so a cheap far version of models' picture layers (leaf clumps past some distance
+  on phones, e.g. merged into fewer cards or dropped into the trunk's model) may be worth far more than the jungle
+  broadleaf's, which no run shows. It touches the sprite pass (the sprites lane's files) and the leaf art.
+
+  What it says: about 11% fewer draws in Copperleaf, little elsewhere. The rest is the sprites lane (642 model
+  pictures in Copperleaf) and the shadow maps (round 3: over half the run places' draws). The reflection's model
+  draws are instanced too (2 there). The "off" day stop was measured while its pictures loaded (623 draws, 17 models)
+  in a fresh page opened at the town fixture: **for the measure lane**, the first stop's settle may still be short
+  outside the diagnostics test.
+- **For round 3's shadows lane** (drawPropModelShadows and `voxS` are untouched): the same `buildModelBatches` and
+  record store serve the shadow maps. `voxS` needs only the first five instance attributes (locations 5-9: place,
+  scale, turn and flip, the item's spin and pivot), so a `voxSI` program is `voxInstancedShaders()`'s vertex shader
+  without its flat outputs plus the white fragment shader, drawn with `drawModelInstances(p, 'vox', L)`'s loop per
+  map (low-poly parts take `MDL_ATTRIBS` as their mesh layout, as now). For the casters: `splitPieces(items,
+  {maxCount, maxExtent}, boxOf)` gives the pieces with boxes, `boxInFrustum(planes, box)` culls them (the planes as
+  walk/quality-cull.js `computeFrustum` lays them out; a shadow map's own matrix works the same way).
+- Risky:
+  - Draw order is by mesh now, not by item: with depth testing and no blending the picture is the same, except where
+    two identical models overlap on the same surface (z-fighting may pick the other one).
+  - `mdlI`'s fragment shader is made by replacing four declarations in the buildings' shader text; a change there
+    turns the setting into an error the model guard catches (models stop drawing with the setting on).
+  - Window bits for window 31 go through a uint attribute and `int()` in the shader (bit pattern kept).
+  - The jungle broadleaf far version is not done (no run reaches the jungle); phase 09 task 10 stays open for it.
+- Verified: lint, typecheck, unit tests (1,084 -> 1,093), check:modules after every change; smoke "no problems" for
+  every commit touching game/. Node tests: the pure parts (6), and old == new on a stand-in context (5): every
+  (item, part) the old loops draw is drawn once by the instanced path with the same values as 32-bit floats,
+  including window bits up to 31, the bob, a tumbling pyramid, propellers and a swing; planted bugs in flip, window
+  bits, part turns, extra parts and emit each fail it. The four model programs compile and link in headless Chromium
+  (compile only). The baseline tour ran headless both ways with no page errors. No look or speed judged headless.
+- **On your phone** (this round's run), Android then iPad:
+  1. Studio > Engine > Quality: switch **Models in batches** on. Walk Copperleaf by day and at night (lit windows,
+     the moored airship bobbing with its propellers, trees), a run route and a run town, and start a battle. Anything
+     missing, flickering, in the wrong place or the wrong colour (windows lit differently, wear or tints gone)?
+  2. The graphics test: "Models in batches" off and on at the Lamp square and the Depth corridor.
+  3. The diagnostics test with the setting on, then the debug log; I compare the `model` draws and frame times with
+     round 1's.
+  That decides "Models in batches" on by default (the one-at-a-time loops deleted in R4).
+- Next: the shadows lane (round 3) instances the shadow maps' models; the far version when runs reach the jungle.
+
 ### Phase 20 round 1, lane context (H-early): listeners once, the world map rebuilt on restore, a forced loss - 2026-10-26
 Branch `track/renderer` (from 33115c7). Plan approved in Plan Mode. The owner's answers: the Studio is tested through a
 URL flag; the button loses and restores by itself; the world map rebuilds only its GPU parts; the Frame block's stale
