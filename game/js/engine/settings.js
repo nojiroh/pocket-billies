@@ -11,6 +11,7 @@ import { TIME_OF_DAY_DEFAULTS, TIME_OF_DAY_GROUPS, TIME_OF_DAY_KEYS } from '../l
 import { hexToRgb } from '../art.js';
 /* eslint-disable no-func-assign */
 expose({
+  CAMERA_FOLDERS: [() => CAMERA_FOLDERS],
   ENGINE_DEFAULTS: [() => ENGINE_DEFAULTS],
   ENGINE_PRESETS: [() => ENGINE_PRESETS],
   ENGINE_SPEC: [() => ENGINE_SPEC],
@@ -1269,6 +1270,67 @@ export const ENGINE_SPEC = [
   ...TIME_OF_DAY_KEYS.map(k => [TIME_OF_DAY_GROUPS[k], 'Time of day: ' + TOD_NAMES[k], todFields(k)]),
 ];
 provide({ ENGINE_SPEC }); /* to-module */
+/* CAM-4a: the Studio's Camera section shows the Camera group's dials in these folders, each dial in exactly one
+   (tools/test/camera-readout.test.mjs); the data stays engine.camera */
+export const CAMERA_FOLDERS = [
+  ['framing', 'Framing', ['pitch', 'pitchAdd', 'height', 'distance', 'fov', 'turn', 'tilt', 'sway', 'pixelGrid']],
+  [
+    'zoom',
+    'Zoom',
+    [
+      'zoomMin',
+      'zoomMax',
+      'zoomNearPitch',
+      'zoomNearDist',
+      'zoomNearFov',
+      'zoomFarPitch',
+      'zoomFarDist',
+      'zoomFarFov',
+      'zoomCurve',
+    ],
+  ],
+  ['feel', 'Zoom feel', ['zoomSmooth', 'pinchSpeed', 'wheelSpeed', 'zoomBand', 'zoomToPoint', 'zoomPointMax']],
+  [
+    'follow',
+    'Follow',
+    ['lead', 'leadSmooth', 'leadSide', 'smooth', 'deadW', 'deadH', 'softW', 'softH', 'band', 'blend'],
+  ],
+  [
+    'moments',
+    'Moments',
+    [
+      'encZoom',
+      'encMin',
+      'encMax',
+      'leaveZoom',
+      'intOn',
+      'intPull',
+      'talkOn',
+      'talkZoom',
+      'talkBlend',
+      'bossOn',
+      'bossNear',
+      'bossTime',
+      'bossZoom',
+      'bossLean',
+      'idleOn',
+      'idleDelay',
+      'idleZoom',
+      'idleBlend',
+      'runOn',
+      'runZoom',
+      'runBlend',
+      'turnHold',
+      'turnAngle',
+    ],
+  ],
+  [
+    'visibility',
+    'Visibility',
+    ['rise', 'rockFade', 'silhouette', 'outline', 'outlineFill', 'hideFade', 'hideSize', 'hideAmount', 'coverFade'],
+  ],
+  ['island', 'Island orbit', ['orbit', 'sunTurns']],
+];
 /* ready-made looks; a preset only lists what it changes */
 /* phase 09 batch 1: the plain look, for judging props (a scene with plain: 1, the props test map and the Studio's
    prop turntable): no depth of field, bloom, colour grade, film grain, vignette, haze, mist, clouds, sun shafts or
