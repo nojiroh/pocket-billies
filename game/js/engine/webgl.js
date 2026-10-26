@@ -15,6 +15,8 @@ import { engineSetting } from './settings.js';
 expose({
   ATTRIBUTE_LOCATIONS: [() => ATTRIBUTE_LOCATIONS],
   COMMON_GLSL: [() => COMMON_GLSL],
+  GPU_KINDS: [() => GPU_KINDS],
+  GPU_MAKE: [() => GPU_MAKE],
   LIGHT_GLSL: [() => LIGHT_GLSL],
   LOOK_GLSL: [() => LOOK_GLSL],
   NORMAL_MAP_WORKER_SOURCE: [() => NORMAL_MAP_WORKER_SOURCE],
@@ -36,8 +38,25 @@ expose({
   frameBlockCheck: [() => frameBlockCheck, v => (frameBlockCheck = v)],
   freeMesh: [() => freeMesh, v => (freeMesh = v)],
   glLoseArmed: [() => glLoseArmed, v => (glLoseArmed = v)],
+  gpuBuffer: [() => gpuBuffer],
+  gpuCountsReset: [() => gpuCountsReset, v => (gpuCountsReset = v)],
+  gpuFrame: [() => gpuFrame, v => ((gpuFrame = v), provide({ gpuFrame }))],
+  gpuFramebuffer: [() => gpuFramebuffer],
+  gpuFree: [() => gpuFree, v => (gpuFree = v)],
   gpuLoading: [() => gpuLoading, v => (gpuLoading = v)],
+  gpuMake: [() => gpuMake, v => (gpuMake = v)],
+  gpuMemory: [() => gpuMemory, v => (gpuMemory = v)],
+  gpuNewGeneration: [() => gpuNewGeneration, v => (gpuNewGeneration = v)],
+  gpuOnRestore: [() => gpuOnRestore, v => (gpuOnRestore = v)],
+  gpuRes: [() => gpuRes],
+  gpuRestoreOwners: [() => gpuRestoreOwners, v => (gpuRestoreOwners = v)],
+  gpuRetire: [() => gpuRetire, v => (gpuRetire = v)],
+  gpuShader: [() => gpuShader, v => (gpuShader = v)],
+  gpuSized: [() => gpuSized, v => (gpuSized = v)],
   gpuState: [() => gpuState],
+  gpuTexture: [() => gpuTexture],
+  gpuTrack: [() => gpuTrack, v => (gpuTrack = v)],
+  gpuVao: [() => gpuVao],
   imageTexture: [() => imageTexture, v => (imageTexture = v)],
   initWebgl: [() => initWebgl, v => (initWebgl = v)],
   lossWatched: [() => lossWatched],
@@ -63,7 +82,7 @@ expose({
   windGustAt: [() => windGustAt, v => (windGustAt = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ attributeClashes, compileProgram });
+provide({ attributeClashes, compileProgram, gpuFrame });
 export function setEnsurePrograms(v) {
   ensurePrograms = v; // eslint-disable-line no-func-assign
   provide({ ensurePrograms });
@@ -101,6 +120,8 @@ export const gpuState = {
   loaded: false,
   loadAt: 0,
   pcl: [0, 0],
+  /* phase 20 H1: the context's generation, one more for every context made (a restored one too): gpuRes */
+  gen: 0,
 };
 provide({ gpuState }); /* to-module */
 export function webgl2Supported() {
@@ -555,6 +576,7 @@ export function initWebgl(cv) {
     if (!gl) return false;
     gpuState.gl = gl;
     gpuState.cv = cv;
+    gpuNewGeneration();
     gpuState.P = {};
     gpuState.texL = new Map();
     gpuState.texB = 0;
@@ -631,6 +653,8 @@ function watchContextLoss(cv) {
     gpuState.cv = null;
     forcedLoss = null;
     if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context restored');
+    gpuNewGeneration();
+    gpuRestoreOwners();
     if (typeof onGlContextRestored === 'function') onGlContextRestored(cv);
     if (typeof worldBowlContextRestored === 'function') worldBowlContextRestored();
   });
@@ -659,6 +683,147 @@ export function forceContextLoss(ms = 1500) {
   if (typeof debugLog !== 'undefined') debugLog.add('webgl', `context loss forced (back in ${ms} ms)`);
   ext.loseContext();
   return true;
+}
+/* ---------- resources (phase 20 H1-H3) ---------- */
+/* Every GPU object is made through gpuMake (or its short forms) with the kind of thing it holds, so the debug log can
+   say how much memory each kind takes (H3) and a replaced one can be freed once its replacement has drawn (H2).
+   The registry never keeps an object alive: entries sit in a WeakMap, and one dropped without gpuFree is counted off
+   when it is collected (and counted as "dropped", the sign of a leak). A context is one generation (gpuState.gen):
+   a restored context is the same object with nothing on it, so caches check the generation, not `gl`.
+   On a restore, each owner's drop (gpuOnRestore) runs: it forgets its dead handles and makes them again lazily. */
+const GPU_KINDS = ['programs', 'pictures', 'targets', 'ground', 'ring', 'meshes', 'instances', 'canvases', 'other'];
+const GPU_MAKE = {
+  buffer: ['createBuffer', 'deleteBuffer'],
+  texture: ['createTexture', 'deleteTexture'],
+  vao: ['createVertexArray', 'deleteVertexArray'],
+  framebuffer: ['createFramebuffer', 'deleteFramebuffer'],
+  renderbuffer: ['createRenderbuffer', 'deleteRenderbuffer'],
+  sampler: ['createSampler', 'deleteSampler'],
+  query: ['createQuery', 'deleteQuery'],
+  program: ['createProgram', 'deleteProgram'],
+  shader: ['createShader', 'deleteShader'],
+};
+const gpuRes = {
+  /* handle -> { type, kind, bytes, gen } */
+  at: new WeakMap(),
+  /* per kind, this generation: live objects, their bytes, objects collected without being freed */
+  n: {},
+  bytes: {},
+  dropped: {},
+  /* [frame to free it in, handle]: gpuRetire */
+  retired: [],
+  fr: 0,
+  /* name -> what that owner drops on a restore */
+  restore: new Map(),
+  gone: null,
+};
+function gpuCountsReset() {
+  for (const k of GPU_KINDS) gpuRes.n[k] = gpuRes.bytes[k] = gpuRes.dropped[k] = 0;
+}
+gpuCountsReset();
+if (typeof FinalizationRegistry === 'function')
+  gpuRes.gone = new FinalizationRegistry(e => {
+    if (e.freed || e.gen !== gpuState.gen) return;
+    gpuRes.n[e.kind]--;
+    gpuRes.bytes[e.kind] -= e.bytes;
+    gpuRes.dropped[e.kind]++;
+  });
+/* a new GPU object of a type (GPU_MAKE) holding a kind of thing (GPU_KINDS), and its size in bytes if known */
+function gpuMake(type, kind = 'other', bytes = 0) {
+  return gpuTrack(gpuState.gl[GPU_MAKE[type][0]](), type, kind, bytes);
+}
+/* a shader of a program (deleted once its program has linked) */
+function gpuShader(t) {
+  return gpuTrack(gpuState.gl.createShader(t), 'shader', 'programs', 0);
+}
+function gpuTrack(h, type, kind, bytes) {
+  if (!h) return h;
+  if (gpuRes.n[kind] === undefined) kind = 'other';
+  const e = { type, kind, bytes, gen: gpuState.gen, freed: false };
+  gpuRes.at.set(h, e);
+  gpuRes.n[kind]++;
+  gpuRes.bytes[kind] += bytes;
+  if (gpuRes.gone) gpuRes.gone.register(h, e, h);
+  return h;
+}
+const gpuBuffer = (kind, bytes) => gpuMake('buffer', kind, bytes);
+const gpuTexture = (kind, bytes) => gpuMake('texture', kind, bytes);
+const gpuVao = kind => gpuMake('vao', kind);
+const gpuFramebuffer = kind => gpuMake('framebuffer', kind);
+/* the object was filled again (bufferData, texImage2D): its new size */
+function gpuSized(h, bytes) {
+  const e = h && gpuRes.at.get(h);
+  if (!e || e.freed || e.gen !== gpuState.gen) return;
+  gpuRes.bytes[e.kind] += bytes - e.bytes;
+  e.bytes = bytes;
+}
+/* deleted now (an object of a lost or older context is only forgotten: deleting it does nothing) */
+function gpuFree(h) {
+  if (!h) return;
+  const e = gpuRes.at.get(h),
+    gl = gpuState.gl;
+  if (e) {
+    if (e.freed) return;
+    e.freed = true;
+    gpuRes.at.delete(h);
+    if (gpuRes.gone) gpuRes.gone.unregister(h);
+    if (e.gen !== gpuState.gen) return;
+    gpuRes.n[e.kind]--;
+    gpuRes.bytes[e.kind] -= e.bytes;
+  }
+  if (!gl || gpuState.lost) return;
+  const T = e ? e.type : null,
+    del = T ? GPU_MAKE[T][1] : null;
+  try {
+    if (del) gl[del](h);
+  } catch (err) {}
+}
+/* H2: freed a couple of frames from now, once whatever replaced it has drawn (the frames in flight may still read it) */
+function gpuRetire(h, frames = 2) {
+  if (h) gpuRes.retired.push([gpuRes.fr + frames, h]);
+}
+/* once per frame tick (frame-scheduler.js): the retired objects due are freed, and a context that died before its
+   lost event is noticed at once (frames drawn on it in between turned things off for good). False while lost. */
+function gpuFrame() {
+  const gl = gpuState.gl;
+  if (!gl) return false;
+  if (!gpuState.lost && gl.isContextLost && gl.isContextLost()) {
+    gpuState.lost = 1;
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context lost (seen before its event)');
+  }
+  if (gpuState.lost) return false;
+  gpuRes.fr++;
+  const R = gpuRes.retired;
+  while (R.length && R[0][0] <= gpuRes.fr) gpuFree(R.shift()[1]);
+  return true;
+}
+/* an owner's drop on a restore: forgets its handles (they died with the context) so it makes them again on next use */
+function gpuOnRestore(name, fn) {
+  gpuRes.restore.set(name, fn);
+}
+/* a new context (initWebgl): a new generation, nothing on it yet */
+function gpuNewGeneration() {
+  gpuState.gen = (gpuState.gen || 0) + 1;
+  gpuRes.retired = [];
+  gpuCountsReset();
+}
+/* the restored event: every owner drops what it held */
+function gpuRestoreOwners() {
+  for (const [name, fn] of gpuRes.restore)
+    try {
+      fn();
+    } catch (e) {
+      console.error('restore ' + name, e);
+      if (typeof debugLog !== 'undefined') debugLog.add('webgl', `restore ${name} failed: ${e.message || e}`);
+    }
+}
+/* H3: the memory by kind for the debug log: MB, objects, objects dropped without being freed */
+function gpuMemory() {
+  const o = {};
+  for (const k of GPU_KINDS)
+    if (gpuRes.n[k] || gpuRes.dropped[k])
+      o[k] = { mb: Math.round((gpuRes.bytes[k] / 1048576) * 10) / 10, n: gpuRes.n[k], dropped: gpuRes.dropped[k] };
+  return o;
 }
 /* ---------- textures ---------- */
 function textureFromData(w, h, data, o = {}) {
