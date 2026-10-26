@@ -124,7 +124,7 @@ def battle(pg, notes):
         f0 = pg.evaluate('walkRenderer.frames'); CF.until(pg, f'walkRenderer.frames>={f0 + 4}', 120)
         n = f"battle-water-{'pixel' if on else 'smooth'}"
         pg.screenshot(path=str(OUT / f'{n}.png'))
-        notes['shots'].append({'name': n, 'at': at, 'face': pg.evaluate("typeof battle3d!=='undefined'?+(battle3d.yaw||0).toFixed(3):0")})
+        notes['shots'].append({'name': n, 'at': at, 'face': pg.evaluate("typeof battle3d!=='undefined'?+(battle3d.yaw||0).toFixed(3):0"), 'wetInView': pg.evaluate('(battleStage.wet||[]).length'), 'wetFeet': pg.evaluate('battleStage.wetFeet||[]')})
         print(f'  {n}', flush=True)
     pixel(pg, True)
 
