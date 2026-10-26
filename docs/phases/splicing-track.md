@@ -187,7 +187,8 @@ Depends on RL-14.
 `bureau_field_lab` (when `genes >= 1`), `gene_auction`, `gene_recall` (when `spliced >= 1`); effect kinds `dna`,
 `splice`, `unstable` and the Perks Petri Dish, Gene Lure, Stabilizer Gel; the Studio's Perks section; the full
 test's step. Every price and Perk number is a placeholder. The Bureau field lab is an ordinary waystation event (there
-are no Bureau nodes); a Bureau tag on places waits for SP-5. Waiting on the owner: the prices.
+are no Bureau nodes); a Bureau tag on places waits for SP-5. The owner's answers (2026-10-26): the prices and the
+Perks' numbers stay placeholders until played; the back alley has no "Not now" and splices any slot.
  The splice events in `events.json` (back-alley splicer, Bureau field lab, Gene auction, recall)
 on RL-12b's event system, and relics that touch splicing.
 

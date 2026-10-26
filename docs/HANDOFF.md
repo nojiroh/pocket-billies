@@ -63,6 +63,9 @@ it moves (a merge, never a rebase). Merge SP-1, SP-2, SP-3, SP-4, then this. Pla
   play. battle.js's Gene Sample sheet still says the Gene Bank is "Coming later" (SP-3's text, older than SP-4).
 - Next: the owner's answers (Ask me before): the events' prices and the Perks' numbers and rarities; Gene moves
   (still with the owner); SP-3's odds and DNA. Then tag `sp-6-done`. SP-5 waits for RL-14; SP-7 is next to plan.
+- The owner's answers (2026-10-26, after the entry above): the events' prices and the three Perks' numbers and
+  rarities **stay placeholders** for now (to tune after playing on the phone); the back alley's pick keeps **no "Not
+  now"** (it was paid for); the back alley stays **unlicensed** (any slot its form has, whatever the Bank's level).
 ### Splicing track SP-4 - The Gene Bank: the building, the library, splicing for DNA, its levels (built, waiting on the owner's numbers) - 2026-10-26
 Branch `claude/sp-4-gene-bank`, **on top of SP-3's branch `claude/sp-3-wild-splices`** (itself on SP-2's and SP-1's;
 none merged or tagged, `track/splicing` doesn't exist), started from its e24e882, with **main merged in once** (the
