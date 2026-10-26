@@ -2,6 +2,38 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Hub track HB-10b: the square's edges, market and night look - 2026-10-26
+Branch `track/hub` (merged `ccr-144f3c08-vf09lo` with a merge commit, then docs/plans/hb-10b-wip.patch applied and
+finished; the patch file is gone). Plan approved in Plan Mode. Tag to suggest: `hb-10b-done` (the owner pushes tags).
+Details: docs/phases/hub-track.md, "Done in HB-10b".
+- Changed: 24 props round Copperleaf's square (`SQUARE_EDGE` in tools/square-props.mjs, laid by
+  `patch-copperleaf-square.mjs --edges` and by build-copperleaf.mjs): the market on the north rim, planters at the
+  street mouths, five streetlamps, two string lights, a solar canopy, three benches. New model `string_lights`
+  (tools/build-props-square.py, its bulbs lamp glows). The fountain lit from below at night and fireflies round it
+  (build-props-batch6.py). New prop effect `fireflies` (walk/effects.js; listed in the Studio's prop editor).
+  tools/island-shots.py `--hour=H` for night pictures. Lit windows needed nothing (the 3D buildings' glass already
+  lights at night: seen in the pictures).
+- Risky: batch 6's drift in clock_tower.json and test_props_marigold.json reverted again (each batch 6 run brings it
+  back until its owner settles it). The pasture test's rerun check now leaves out `sq` props, as it leaves out the
+  dressing. Phone cost not measured yet (HB-10c measures): at night the square adds about 9 x 2 string bulbs, 5 lamps,
+  3 fountain glows and 7 fireflies to the glow list. In the `square-portal` picture (a free camera 1.7 m up) the
+  south-west string light hangs in front of the lens; the walk camera sits higher.
+- **Found, not fixed (the owner decides)**: the quick check's "Running" step is red since HB-10a. At the hub the
+  orbit camera points the stick's up toward the island's middle, which from the hub spot (1.25 m from the basin) runs
+  into the fountain after about 2 m; the player slides round it and the gait counts more than the metres moved. Green
+  on track/hub before the HB-10a merge (09de1e25) and on main. A player starting at the hub who pushes up walks into
+  the fountain too.
+- Verified: lint, typecheck, check:modules, format:check, check:data (2 old bridge warnings, the same before),
+  build, `npm test` 1291 of 1291, tools/test/hub-square.test.mjs, smoke 6 of 6 (Python Playwright 1.63.0), headless
+  pictures by day (13:00) and night (22:00). Full quick check: 40 steps, 34 passed, 6 PROBLEMs:
+  - also red on main (b87b818d), not this track's: Terraces "props in the air: sky_portal" (the portal floats by
+    design, HB-7: the step needs it on its list), RL-8 "the town's shop has no Perk", "room light" (Walking left and
+    right), Song fingerprints (cave mid and late not in the baseline);
+  - "Run map music hears the forecast": passed alone on track/hub and on main (load);
+  - "Running": red, HB-10a's (above).
+  The HB-10a run's rabbit and payout jingle PROBLEMs passed here and on main.
+- Next: the owner's call on the Running step and the hub spot; HB-10c (started in its own session).
+
 ### Hub track HB-10a: the square's shape and fountain (and HB-10b started) - 2026-10-26
 Branch `ccr-144f3c08-vf09lo` (the planning session's; the owner: "make it 10m and start"). Merge into `track/hub`.
 Tag to suggest: `hb-10a-done` (the owner pushes tags). Details: docs/phases/hub-track.md, "Done in HB-10a".
