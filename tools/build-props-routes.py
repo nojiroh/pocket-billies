@@ -61,6 +61,18 @@ HAY, HAY_D = BI.HAY, BI.HAY_D
 SOLAR = '#3E5A8C'
 SLATE, SLATE_D, MUSTARD = '#7E8496', '#5E6274', '#E0B040'
 WHITE = '#F4F0E8'
+# RP-3: the colours a converted CC0 model snaps to (tools/glb-to-recipe.py), each with the texture it is drawn with
+CC0_PALETTE = {
+    'stone': (STONE, 'stone'), 'stone dark': (STONE_D, 'stone'), 'stone light': (STONE_L, 'stone'),
+    'moss': (MOSS, 'plain'), 'moss light': (MOSS_L, 'plain'), 'leaf': (LEAF, 'leaves'),
+    'wood': (A['wood'], 'wood'), 'dark wood': (A['dwood'], 'wood'), 'plank': (A['plank'], 'wood'), 'bark': (BARK, 'wood'),
+    'end grain': (END, 'wood'), 'copper': (A['copper'], 'metal'), 'verdigris': (A['verd'], 'metal'),
+    'iron': (A['iron'], 'metal'), 'brass': (A['brass'], 'metal'), 'rust': (RUST, 'metal'), 'rust dark': (RUST_D, 'metal'),
+    'slate': (SLATE, 'metal'), 'slate dark': (SLATE_D, 'metal'), 'tyre': (TIRE, 'plain'), 'white': (WHITE, 'plain'),
+    'pale metal': ('#E8E6EE', 'metal'), 'cream': (A['cream'], 'plain'), 'straw': (A['straw'], 'hay'), 'red': (RED, 'plain'),
+    'navy': (NAVY, 'plain'), 'mustard': (MUSTARD, 'plain'), 'glass': (GLASS, 'plain'), 'solar': (SOLAR, 'solar'),
+    'lamp': (A['lamp'], 'plain'),
+}
 
 
 # ================================================================ swapped in: the set pieces' last pictures
