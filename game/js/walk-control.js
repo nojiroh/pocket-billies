@@ -58,6 +58,7 @@ import { runArrivedFx, runArrivedHint } from './run.js';
 import { fieldMoveOpen, fieldWayOut } from './field-moves.js';
 import { encounterOpen } from './encounter-screen.js';
 import { ranchOpen } from './ranch-screen.js';
+import { geneBankOpen } from './gene-bank-screen.js';
 import { labBoardOpen } from './lab-board.js';
 import { postcardCheck } from './postcards.js';
 import { legendCheck, personTalk, storyCheck, trainerTalk } from './story.js';
@@ -325,6 +326,11 @@ function roomAct(h) {
     flyMenu(h.p);
     return;
   }
+  /* SP-4: the Gene Bank's Splice console opens its sheet */
+  if (pa === 'genebank' && typeof geneBankOpen === 'function') {
+    geneBankOpen();
+    return;
+  }
   /* RL-11: the unlock board in the Chosen's lab opens the Lab tab */
   if (pa === 'board' && typeof labBoardOpen === 'function') {
     labBoardOpen();
@@ -355,6 +361,7 @@ function roomAct(h) {
   } else if (I.kind === 'clinic') clinicHeal(I.p.say);
   else if (I.kind === 'lab' && typeof talkChosen === 'function') talkChosen(I.p);
   else if (I.kind === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
+  else if (I.kind === 'genebank' && typeof geneBankOpen === 'function') geneBankOpen();
   else {
     const c = (mapById(I.id) || {}).chat || [];
     toast(c.length ? `“${c[Math.floor(Math.random() * c.length)]}”` : 'They wave hello.');
@@ -615,6 +622,7 @@ export function walkPick(h) {
     else if (a === 'read' && typeof loreBook === 'function') loreBook(p.book);
     else if (a === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
     else if (a === 'board' && typeof labBoardOpen === 'function') labBoardOpen();
+    else if (a === 'genebank' && typeof geneBankOpen === 'function') geneBankOpen();
     else
       toast(
         p.say ||

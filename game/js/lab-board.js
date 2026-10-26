@@ -17,6 +17,7 @@ import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { flyMenu, stationMenu } from './airship.js';
 import { ranchOpen } from './ranch-screen.js';
+import { geneBankLevelled, geneBankOpen } from './gene-bank-screen.js';
 /* eslint-disable no-func-assign */
 expose({
   LAB_WHERE: [() => LAB_WHERE],
@@ -180,7 +181,11 @@ export function labAction(a, d) {
   if (a !== 'lab-buy' || !d.k || !labBuy(d.k)) return;
   /* bought on a building's sheet: that sheet again, with its new level */
   if (d.then === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
-  else if (d.then === 'fly' && typeof flyMenu === 'function') {
+  else if (d.then === 'genebank' && typeof geneBankOpen === 'function') {
+    /* SP-4: your Billies held to the new level's limit, then the sheet again */
+    geneBankLevelled();
+    geneBankOpen();
+  } else if (d.then === 'fly' && typeof flyMenu === 'function') {
     /* in place of the open sheet (a second one would wait behind it) */
     uiState.modal = null;
     flyMenu(uiState.flyAt);
