@@ -104,15 +104,15 @@
  },
  "fav_hazel_ask": {
   "who": "kappi",
-  "when": "ch1_drop and quest:fav_hazel = none",
+  "when": "ch1_drop and quest:fav_kappi = none",
   "priority": 7,
   "once": true,
   "must": true,
-  "script": ["Go far next time. Row six or past it. I need readings from where they park things. #l:ed42","quest fav_hazel asked"]
+  "script": ["Go far next time. Row six or past it. I need readings from where they park things. #l:ed42","quest fav_kappi asked"]
  },
  "fav_hazel_thanks": {
   "who": "kappi",
-  "when": "quest:fav_hazel = done",
+  "when": "quest:fav_kappi = done",
   "priority": 8,
   "once": true,
   "must": true,

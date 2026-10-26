@@ -1316,7 +1316,7 @@ async function runFullTest(mode) {
             /* RL-S2 part B: Hazel's favour, asked, paid on the way home from a run that reached row 7; Chapter 1's end
                moves the story to chapter 2 */
             const story = s.story || (s.story = {});
-            (story.quests || (story.quests = {})).fav_hazel = 'asked';
+            (story.quests || (story.quests = {})).fav_kappi = 'asked';
             s.meta.history.push({
               seed: 'SELFTESTFAV',
               theme: '',
@@ -1332,7 +1332,7 @@ async function runFullTest(mode) {
               rival: null,
             });
             const paid = relFavoursPay(s, c => conditionHolds(c, storyStateOf(s)), RELATIONS);
-            if (paid.length !== 1 || paid[0].who !== 'kappi' || story.quests.fav_hazel !== 'done')
+            if (paid.length !== 1 || paid[0].who !== 'kappi' || story.quests.fav_kappi !== 'done')
               throw new Error(`Hazel's favour: ${JSON.stringify(paid)}`);
             const end = STORY_DATA.scripts && STORY_DATA.scripts['chapter1-end'];
             if (!end) throw new Error('no story.json scripts.chapter1-end');

@@ -22,7 +22,7 @@
    ]
   },
   "kappi": {
-   "favour": {"quest":"fav_hazel","check":"last:row >= 6"},
+   "favour": {"quest":"fav_kappi","check":"last:row >= 6"},
    "levels": [
     {"at":1},
     {

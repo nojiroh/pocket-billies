@@ -452,11 +452,11 @@ def run_rival(pg, base):
     # part B: home with Hazel's favour asked (her first beat said), from a run that reached row 7
     fav = pg.evaluate("""(() => {
       const S = saveData.story, M = saveData.meta, h = M.history || (M.history = []);
-      S.ch1_drop = 1; (S.once || (S.once = {}))['banter:ch1_drop'] = 1; (S.quests || (S.quests = {})).fav_hazel = 'asked';
+      S.ch1_drop = 1; (S.once || (S.once = {}))['banter:ch1_drop'] = 1; (S.quests || (S.quests = {})).fav_kappi = 'asked';
       h.push({ seed: 'FAV', theme: '', region: '', exp: 1, end: 'lost', by: null, row: 7, days: 5, team: [], perks: [], leaders: [], rival: null });
       M.runs = h.length; const had = (M.rel || {}).kappi || 0;
       storyHomeArrive(false);
-      return [S.quests.fav_hazel, (M.rel.kappi || 0) - had, (S.fresh || {}).kappi];
+      return [S.quests.fav_kappi, (M.rel.kappi || 0) - had, (S.fresh || {}).kappi];
     })()""")
     if fav != ['done', pg.evaluate("RELATIONS.gift.favour"), 'fav_hazel_thanks']: raise Exception(f'Hazel’s favour on the way home: quest, points, her line {fav}')
     pg.evaluate("delete saveData.story.pending;0")

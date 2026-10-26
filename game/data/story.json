@@ -126,7 +126,7 @@
    "about": "RL-S2: Chosen's favour: beat a leader on a run (relations.json chosen.favour; asked by banter.json fav_chosen_ask, done on the way home)",
    "stages": ["asked","done"]
   },
-  "fav_hazel": {
+  "fav_kappi": {
    "about": "RL-S2: Hazel's favour: reach row six on a run, for her readings (relations.json kappi.favour)",
    "stages": ["asked","done"]
   },
