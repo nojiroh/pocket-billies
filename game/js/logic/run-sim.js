@@ -151,7 +151,9 @@ export function runSimOn(env) {
     { rewardDataGame, rewardTake } = modules.rewards,
     { perkBuy, perkChoose, perkPrice, perkShelf } = modules.perks,
     { pointBudget, pointPick } = modules['starter-points'],
-    { modTypeFits } = modules.modifiers;
+    { modTypeFits } = modules.modifiers,
+    { residentCandidate } = modules.residents,
+    { questDataOf, residentPlan } = modules['run-quests'];
   const MAP_DATA = {
       nodeTypes: GAME_DATA.nodeTypes,
       biomes: GAME_DATA.biomes,
@@ -171,6 +173,21 @@ export function runSimOn(env) {
     /* RT-3: the set pieces, so a run's places are the game's */
     setPieces: GAME_DATA.setPieces || null,
   });
+  /** RS-2: the run's resident and their towns (run-quests.js residentPlan), or null
+   * @param {any} s the save on its run @param {any[] | null} scenes @param {Record<string, any>} route */
+  const simResident = (s, scenes, route) => {
+    const run = s.run,
+      qd = scenes
+        ? questDataOf(run, scenes, route, data.QUESTS, data.SPECIES)
+        : {
+            ...questDataOf(run, [], route, data.QUESTS, data.SPECIES),
+            boards: run.map.nodes.flatMap((/** @type {any} */ n, /** @type {number} */ i) =>
+              n.type === 'town' ? [i] : []
+            ),
+          },
+      plan = residentPlan(s, data.RESIDENTS, qd);
+    return plan ? { id: plan.id, towns: plan.towns } : null;
+  };
   /* a battle's host in the simulation: shows and saves nothing, and plays the battle's own weather (b.wx, as the page's
      battleWeatherMultiplier does once a run battle has its forecast's weather) */
   const SIM_HOST = Object.freeze({
@@ -287,6 +304,9 @@ export function runSimOn(env) {
         nodes: run.map.nodes.map((/** @type {any} */ n) => `${n.type}:${n.biome}`),
         scenes: scenes ? scenes.map((/** @type {any} */ sc) => sc.gen.seed) : null,
         ...(balance ? { mode: 'balance' } : {}),
+        /* RS-2: the run's resident and their towns, as run-world.js places them (balance mode: every town counted as
+           having its notice board); the bot does no favour, so it changes nothing else */
+        resident: simResident(s, scenes, route),
         places: [],
       },
       stats = {
@@ -320,7 +340,10 @@ export function runSimOn(env) {
         if (fxHealed) at.fxHealed = fxHealed;
         log.places.push(at);
         /* RL-12b: a waystation: the event its stand holds, noted (the bot walks past it: no option is played) */
-        if (node.type === 'event') at.event = eventAt(run, i, data.EVENTS) || null;
+        if (node.type === 'event')
+          at.event = eventAt(run, i, data.EVENTS, !!residentCandidate(s, data.RESIDENTS, 'event')) || null;
+        /* RS-2: walked into the resident's town */
+        if (log.resident && log.resident.towns.includes(i)) at.resident = log.resident.id;
         /* a town: heal when hurt; a town or a stall (RL-12b, nodeTypes.json shop): the day's shop (Pyramids up to
            five) */
         if (node.type === 'town') {
@@ -556,6 +579,9 @@ export function runSimOn(env) {
         party,
         top: top ? top.lvl : 0,
         perks: run.perks.slice(),
+        /* RS-2: the run's resident, and whether the walk went through their town */
+        resident: log.resident ? log.resident.id : null,
+        metResident: log.places.some((/** @type {any} */ p) => p.resident) ? 1 : 0,
       });
       log.end = { ...stats, uids: run.uidN };
       return { log, stats: /** @type {any} */ (stats) };
@@ -607,6 +633,8 @@ export function runSimOn(env) {
       moneyLeft: avg(x => x.se),
       research: avg(x => x.research),
       topLevel: avg(x => x.top),
+      /* RS-2: the runs whose walk went through their resident's town */
+      metResident: all.filter(x => x.metResident).length,
     };
   }
 
