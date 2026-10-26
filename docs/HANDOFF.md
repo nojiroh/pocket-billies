@@ -2,6 +2,51 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio art track SA-1 - the Art browser - 2026-10-26
+Branch `track/studio-art` (main merged first: already up to date). Plan approved in Plan Mode. The owner's picks (all
+Claude's recommendations): sizes from each PNG's header; split SA-1 if it ran long (it didn't); the code's art
+paths generated and checked; the label "Art browser" (section key `art` unchanged). Tag `sa-1-done` for the owner.
+- Changed:
+  - `studio/js/art-browser.js` (new) replaces Art files (`ART_GROUPS` and its actions removed from
+    world-rules-art.js, with the dead "Rebuild sundown.webp" card: `art/background/` is gone).
+  - The browser: folders and breadcrumbs from the file list; thumbnails on a checkerboard, nearest-neighbour, with a
+    size slider; search chips; a picture panel (size, KB, frames, colours and off-palette pixels, Used by); Edit
+    pixels on any PNG (the shared pixel canvas, one undo step a stroke); Replace; Download; Open in its editor.
+  - `game/js/logic/art-search.js`: the tokens `dir:`, `w:`, `h:`, `unused`, `legacy`, the chips, the folder view and
+    `pngSize`.
+  - `game/js/logic/art-refs.js`: the reference index (data texts, the legacy data, rigs, model recipes, code patterns,
+    legacy-only names).
+  - `tools/art-code-refs.mjs` writes `studio/art-code-refs.json` (30 code patterns, 238 recipe references) and checks
+    it with `--check`, now part of `npm run lint`.
+  - github.js's file list carries each file's `sha`.
+  - find.js: Ctrl K finds art files.
+  - Help texts say "Art browser".
+  - The self-test has an "Art browser" row. `check-studio-github.py` has a new step `art_browser`.
+    `studio-shots.py` has a view `art`.
+  - STUDIO.md has an "Art browser" section.
+- Where the plan was wrong:
+  - The browser lists 3,596 pictures (the plan said about 3,850, which counted JSON and JS files).
+  - The 7 folders with no tab hold 3,500 of them (the plan said about 3,700).
+- What the index finds on today's data:
+  - 72 `scene/props` renders unused, matching the plan's 71 `_vN` + clinic_pearl + flag_pole.
+  - Also unused: `people/` (18), `battle/cloud_3-5`, `ui/loader-*.png`, 5 `battle/props`, the palette PNGs (read by a
+    tool, so expected) and `next/billionaires/hand/concept` (24).
+  - 15 postcards are legacy (all but copperleaf), and 6 of 7 flags.
+  - `hand/*.png` counts as used because the archive's own `rigs-hand.json` names it.
+- Risky:
+  - The index reads the code as patterns, so "unused" is a hint: SA-5 must grep before deleting.
+  - A `*` matches one name, so a path the code builds with a slash in a variable is missed.
+  - The w:/h: sizes use Range requests to the site; a host that ignores Range sends the whole file, which is slower
+    but still right.
+  - The Studio is wider than a 390 px screen in every section (not new, not this session's).
+  - The smoke check's own "Unused" step (validation/quick/unused.txt) counts differently from the browser; SA-5 should
+    pick one source.
+- Verified: lint, typecheck, format, check:modules, check:data; unit tests 1301 pass (17 new);
+  `check-studio-github.py --only=sections,art_browser` and `--only=studio_test` (the art section opens in about 60 ms,
+  the index builds in 20 ms); smoke 6 of 6 (170 s); screenshots at 1920, 1024 and 390.
+- Next: SA-2 (the missing editors: tiles47 ground, robots, coins, SVG icons, the icon atlas, scene art), in a new
+  session on `track/studio-art`, in Plan Mode.
+
 ### Studio art track - the plan (SA) - 2026-10-26
 Branch `ccr-a073cfde-ab64xh` (the track branch `track/studio-art` didn't exist; this session pushes only here).
 Planning only; no code changed. The owner's brief: all art viewable and editable in the Studio, online research on a

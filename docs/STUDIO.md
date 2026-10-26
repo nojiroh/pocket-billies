@@ -580,6 +580,49 @@ only after a click). It stops by itself when the section is off screen.
   with Show me, one note on how many Billies use the cry their id makes, and notes listing the hooks, jingles, base
   cries and Billie cries still named "placeholder".
 
+## Art browser (Studio art track SA-1)
+
+The **Art browser** (section `art`, group Game) shows every picture under `game/art`: PNG, WebP, JPEG and SVG, about
+3,600 files. It replaced the old Art files tabs, four of which named folders that no longer existed.
+
+- **Folders** come from the file list (the repository's tree), never from a list in the code. A new folder shows up
+  by itself. The breadcrumbs above the grid go back up.
+- **Thumbnails** are drawn pixel for pixel on a checkerboard. The **Size** slider (32 to 256 px) is remembered in this
+  browser. Each tile shows the picture's size once it is known, "edited" for an unsaved change, and "legacy" for art
+  only the parked world uses. An unused picture has a grey name.
+- **Search** with words and tokens. The tokens show as chips under the box; ✕ takes one off.
+  - Words must all be in the path, upper or lower case alike.
+  - `dir:scene/props` keeps a folder; `dir:props` keeps any folder with that name.
+  - `w:32`, `w:>32`, `w:<=64`, `w:16-64` filter by width; `h:` the same by height. The sizes come from each PNG's
+    header (a 33-byte read) and are kept in this browser by the file's contents hash.
+  - `unused` keeps pictures nothing names; `legacy` keeps pictures only the legacy world names.
+  - With a search, the current folder and everything under it are searched.
+  - The parser is `game/js/logic/art-search.js`, unit-tested in `tools/test/art-search.test.mjs`.
+- **The picture panel** shows the path, the size in pixels and KB, frames or pieces (from a `.json` layout beside the
+  picture), the colour count and how many pixels are off the game palette. Its **Used by** list is built from:
+  - every text in the game data (and the parked legacy data) that is the picture's path;
+  - a Billie's sheet from its rig;
+  - the model recipes in `game/art`;
+  - the art paths the game's code names. `tools/art-code-refs.mjs` reads them into `studio/art-code-refs.json`.
+    `npm run lint` fails when that file is out of date: run `node tools/art-code-refs.mjs` after code that names art
+    changes.
+
+  The index is `game/js/logic/art-refs.js`, unit-tested in `tools/test/art-refs.test.mjs`. The code builds many paths
+  from names, so it is read as patterns (`scene/flags/*.png`). A pattern whose name is only a legacy place's counts as
+  legacy. So **unused means "no reference found", not proof**: SA-5's report checks each file again with grep before
+  anything is deleted.
+- **Actions:**
+  - **Edit pixels** opens any PNG on the shared pixel canvas. Its tools, keys, symmetry and palette lock are the same
+    as everywhere else. Each stroke is one step of the Studio's undo; Done goes back to the grid.
+  - **Replace…** takes a PNG or WebP and warns when the size differs. SVG icons get their own editor in SA-2.
+  - **Download** saves the picture, with your unsaved edit if there is one.
+  - **Open in …** goes to the editor for what uses the picture: Billies, Props, Walk scenes, Wardrobe, Robots or the
+    Art workbench.
+- **Ctrl+K** finds art files by name or path, ranked after the thing a picture belongs to. Picking one opens the
+  browser in its folder with the picture picked.
+- Checks: `check-studio-github.py --only=art_browser`, the Studio self-test's "Art browser" row (the index over every
+  picture and a search through them all), `studio-shots.py --views art`.
+
 ## Sections
 
 | Section | What you can do |
@@ -610,9 +653,9 @@ only after a click). It stops by itself when the section is off screen.
 | **UI look** | The menus' look (uiTheme.json): colours light and dark with contrast grades, glass, depth, shapes, space, type and motion, for the whole game or one screen's colours and shapes; presets, Hold to compare, the UI gallery as a live preview. UI track UI-3, above. |
 | **Music & sound** (group Sound) | The songs (play, loop, the recipe's dials heard at once, a hook and countermelody roll), the where table with Try a place, the jingles, and (SND-6) the base cries, the button sounds and the mix (music.json). A Billy's cry is on its Billies page. Sound track SND-3, above. |
 | **Rules** | Every number that tunes the game: starting items, starters and rival, wild Billies per place and how fast they come back, prize money, leveling curve, team size, eggs, damage, critical hits, type abilities, taxing, bargains. |
-| **Art files** | Browse, download and replace any image. |
+| **Art browser** | Studio art track SA-1: every picture under `game/art` (see "Art browser" above): folders, search with tokens, what uses each picture, Edit pixels, Replace, Download, Open in its editor. |
 | **Check** | Lists problems with "Show me" links (see "The Check" below); downloads or loads the game data; runs the Studio test. Earlier versions are in git: a proposal is a pull request. |
-| **Find and Connections** | Ctrl+K finds any setting or thing and takes you to it; Ctrl+L shows what the thing you're editing uses and what uses it, or, for an engine dial, where its value comes from and what it depends on. |
+| **Find and Connections** | Ctrl+K finds any setting or thing (and, SA-1, any art file) and takes you to it; Ctrl+L shows what the thing you're editing uses and what uses it, or, for an engine dial, where its value comes from and what it depends on. |
 
 ## Saving in local mode
 
