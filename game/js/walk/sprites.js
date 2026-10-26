@@ -726,10 +726,15 @@ function drawFlatItem(fp, it, T) {
     h = it.h * s,
     cx = it.x + (it.ox * s + w / 2) * it.flip,
     cz = it.z - (it.oy * s + h / 2) * 0.95;
-  /* v22: lily pads on water bob and turn a little */ const wet = /lily/.test((it.p && it.p.k) || '') && !reducedMotion,
-    ph = (walkView.t || 0) / 1000 + it.x * 1.3 + it.z * 0.7,
+  /* v22: lily pads on water bob and turn a little. Water track WA-5b: lotus and duckweed too; with pixel water in
+     water.frames steps, the bob in whole texels of the 32 grid */
+  const wet = /lily|lotus|duckweed/.test((it.p && it.p.k) || '') && !reducedMotion,
+    pixW = engineSetting('water', 'pixel') !== false,
+    fps = pixW ? (engineSetting('water', 'frames') ?? 10) : 0,
+    t0 = (walkView.t || 0) / 1000,
+    ph = (fps > 0 ? Math.floor(t0 * fps) / fps : t0) + it.x * 1.3 + it.z * 0.7,
     an = wet ? Math.sin(ph * 0.45) * 0.07 : 0,
-    bob = wet ? Math.sin(ph * 1.2) * 0.012 : 0;
+    bob = wet ? (pixW ? Math.round(Math.sin(ph * 1.2) * 0.012 * 32) / 32 : Math.sin(ph * 1.2) * 0.012) : 0;
   gl.uniform3f(U.uP, cx, standingHeightAt(it.x, it.z) + 0.04 + bob + worldCurveDrop(it.x, it.z), cz);
   gl.uniform3f(U.uRight, it.flip * Math.cos(an), 0, Math.sin(an));
   gl.uniform3f(U.uUp, -Math.sin(an) * it.flip, 0, Math.cos(an));
