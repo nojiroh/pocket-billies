@@ -37,8 +37,13 @@ Details: docs/phases/camera-track.md, "CAM-4b as built". Not tagged yet: `cam-4b
   - The pull after Ctrl+wheel isn't done (the wheel has no "let go").
 - Verified: lint, typecheck, unit tests (1067 passing), check:modules, format:check, check:data (a planted bad
   `cam.stop` caught); check-fast --only=camera (6/6 before the new step), "Zoom stops" and the Studio's Camera section
-  pass; the Studio's stops editor, graph drag and a look tried in a browser (screenshots, no page errors). Full quick
-  check: running at the time of this entry (see the next commit).
+  pass; the Studio's stops editor, graph drag and a look tried in a browser (screenshots, no page errors). check-fast
+  --only=studio,debug,camera,zoom 10/10 at the end. Full quick check (no local picture baseline, so no picture
+  compare): 35 of 40 steps. Four failures are the same on main 2314da8 (run there too): Terraces (`sky_portal` in the
+  air past Copperleaf's edge, HB-5/HB-7), RL-8 (the town's shop has no Perk), room light at night, Song fingerprints
+  (cave mid and cave late not in validation/sound-baseline). The fifth, Sound settings (0.09 against 0.09, a float),
+  passes alone on this branch, which touches no sound code: timing under load. The Python checks ran with Playwright
+  1.56 pointed at the container's newer Chromium through a symlinked browsers folder (no install).
 - Next session starts with: the owner's review of CAM-4b on a phone (the two-finger tap, the pull, the looks), then the
   tag `cam-4b-done` and a pull request from `track/camera` to main.
 
