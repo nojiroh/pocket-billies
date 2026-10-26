@@ -2,6 +2,66 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Phase 20 R3, lane battle (stage 8: battle rigs, by the numbers) - 2026-10-26
+Branch `track/renderer` (one of three R3 lanes: shadows, context, battle). Plan approved in Plan Mode; the owner's
+answer after the numbers: fix the measure, report the rigs, and a small reuse switch (off) instead of full G; full G
+only if the phone still says the rigs matter.
+- Where the docs and the code differed (checked):
+  - **Why the battle's CPU read 1 ms (Android) and 0.2 ms (iPad):** the baseline (and the full test's three battle
+    steps) timed the scheduler task `scene` only, battle-stage.js `battleStageFrame`: tweens, particles and the 2D
+    effects canvas. The battle's 3D frame (the world, the rigs, every draw) is the walk view's own task `dio`
+    (battle-3d.js `battle3dFrame` through `walkView.battle.frame`). Headless: scene 0.9 ms, dio 12-22 ms.
+  - The rig buffer is `actorBuffer`, battle-stage.js ~1076 (not 1086-1113); the re-upload is webgl.js
+    `imageTexture`'s `__v` branch (~693, not 585-596).
+  - "16 ms steps" is only the input: `rigFrame` steps again by the rig's clock, and every rig has `clock: 12` (a pose
+    every 167 ms, attack and hurt every 83 ms, the face every 250 ms). Yet each rig was redrawn and uploaded on every
+    frame: at 34 fps about 5 of 6 redraws repeated the last.
+  - Full G is bigger than it reads: rig parts are cut into separate canvases (no atlas UVs), robots and grafts have
+    their own sheets, tints are `source-atop` fills, positions snap to whole pixels.
+  - Found, **not fixed** (not mine to change in a measure round): battle-stage.js `drawSelectionRing` divides by
+    `R.k2`, which no rig has, so its radius is NaN and the 2D gold/target rings likely never draw (the 3D warm light
+    still marks the one choosing). Worth a look: does a ring show round the one choosing on your phone?
+- Changed (one cause per commit):
+  - self-test.js: `selfTestFrameStats(..., { plus: 'dio' })` adds the walk view's ms; the baseline's battle stop and the
+    full test's battle steps use it, with `cpuTasks: { scene, dio }` in each entry.
+  - The baseline's battle stop reports `rigs` (ms redrawing, calls and redraws a frame, KB redrawn, `uploadMs`: one
+    rig canvas sent 20 times and waited for), every stop `uploadKB` (the counters' `up`). battle-stage.js keeps the
+    sums in `rigStats` (counting only). Done with a counter instead of wrapping `actorBuffer` through the debug log's
+    `GAME` (it has no entry there).
+  - **G-lite** `quality.rigReuse` ("Reuse battle rigs", off): `actorBuffer` keeps a key per canvas (the rig, the key of
+    skeleton-rig.js's new `rigFrameKey`, which is rigFrame's own stepping, the view, build, faint parts, white and dark
+    tints); same key, so the canvas and its `__v` stay and nothing is uploaded. Same pixels. `rigFrameKey` lives next
+    to `rigFrame` in skeleton-rig.js (a new logic file would have needed the Studio's worker list); no other lane
+    touches it. Node test tools/test/rig-frame-key.test.mjs: same key, same pose, for every action, clock 12 and none.
+  - The baseline measures the battle a third time, `ownRigReuse` (the game's own resolution, the switch on), so one
+    diagnostics run gives the before and after. Not added to the graphics test: its stations have no battle.
+- Headless (390 x 760, DPR 1, counts and rough times only, software drawing at ~3 fps):
+
+  | Battle stop | CPU ms (scene + dio) | Rigs ms | Rig redraws / calls a frame | Upload KB (pictures) |
+  |---|---|---|---|---|
+  | own (was reported as 0.6 ms) | 13.4 (0.6 + 12.8) | 0.42 | 2.18 / 2.18 | 128 |
+  | ownRigReuse | 12.0 (0.6 + 11.4) | 0.26 | 1.18 / 2.24 | 70 |
+
+  At 3 fps nearly every frame lands on a new pose step, so headless halves the redraws; at 34 fps on the phone it
+  should skip about 5 in 6. The rigs are ~3-6 % of the CPU frame; the phone is pixel-bound (20 fps at resolution 1,
+  14.5 at its own), so expect a small gain at most.
+- Risky:
+  - Reuse trusts that a rig's picture only changes with its pose, face, build, faint parts and tints. Something
+    drawing into a rig's parts in place (none found) would show late. A robot rig still loading pictures is a new
+    object each frame, so it's never reused.
+  - The diagnostics test is ~15 s longer (the battle's third measurement).
+- Verified: lint, typecheck, unit tests (1,122), check:modules after every change; smoke on each game commit; the
+  diagnostics' baseline headless twice (no errors; battle entries carry cpuTasks, rigs, uploadKB).
+- **Your phone run** (Android, then the iPad; full charge, nothing else open):
+  1. Debug menu > **Diagnostics test**, leave it (~5 min). **Save the report**, then **Export debug log**. Send both.
+  2. Look at the baseline's three battle lines in the debug log: `baseline battle own: ... ms CPU ... rigs X ms, Y KB`
+     and the same for `ownRigReuse`.
+  3. Optional: in a battle, does a gold ring show round the Billie choosing a move? (the `R.k2` question above).
+- **Ask me before** (once your numbers are in): full G. My suggestion: build it only if on Android `rigs.ms` plus
+  `uploadMs` x redraws exceeds ~3 ms a frame, or `ownRigReuse` shows a clearly higher fps than `own`; otherwise close
+  G and, after your verdict, turn `rigReuse` on by default.
+- Next: the round 3 phone run covering every lane's switches.
+
 ### Phase 20 R3, lane context (H1-H3, H5) - in progress, 2026-10-26: the resource registry's API, for the other lanes
 The full entry replaces this one at the end of the lane. Pushed now so the shadows and battle lanes can make their GPU
 objects through it (engine/webgl.js, "resources"):
