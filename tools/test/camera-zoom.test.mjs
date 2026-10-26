@@ -147,3 +147,77 @@ test('the pinch lean keeps the pinched point still, capped', () => {
   near(Math.hypot(c[0], c[1]), 3);
   assert.deepEqual(pinchLean(14, 10, 10, 10, 1, 1, 9), [0, 0]);
 });
+
+// CAM-4b: zoom stops (Camera > Zoom stops)
+const { ZOOM_STOPS, stopShape, stopPull, nextStop, nearestStop, stopsProblems, stopsOrDefault } =
+  await import('../../game/js/logic/camera-zoom.js');
+
+test('the default stops give the zoom before CAM-4b exactly, inside them and past the ends', () => {
+  for (let z = 0.25; z <= 2.4; z += 0.0137) {
+    const A = zoomShape(z, ZOOM_ENDS),
+      B = stopShape(z, ZOOM_STOPS);
+    near(B.pitch, A.pitch, 1e-9);
+    near(B.dist, A.dist, 1e-9);
+    near(B.fov, A.fov, 1e-9);
+    near(B.blur, 1, 1e-9);
+    near(B.lead, 1, 1e-9);
+  }
+});
+
+test('each stop is reached at its zoom, and between stops a value never overshoots its neighbours', () => {
+  const S = [
+    { id: 'a', name: 'A', zoom: 0.5, pitch: -8, dist: 0.5, fov: 1.1, blur: 1.6, lead: 0.6 },
+    { id: 'b', name: 'B', zoom: 0.8, pitch: -1, dist: 0.85, fov: 1, blur: 1.6, lead: 1 },
+    { id: 'c', name: 'C', zoom: 1, pitch: 0, dist: 1, fov: 1, blur: 1, lead: 1 },
+    { id: 'd', name: 'D', zoom: 2, pitch: 14, dist: 1.9, fov: 0.9, blur: 0.3, lead: 1.4 },
+  ];
+  for (const s of S) {
+    const V = stopShape(s.zoom, S);
+    for (const k of ['pitch', 'dist', 'fov', 'blur', 'lead']) near(V[k], s[k], 1e-9);
+  }
+  for (let i = 0; i < S.length - 1; i++)
+    for (let t = 0; t <= 1; t += 0.01) {
+      const z = S[i].zoom + (S[i + 1].zoom - S[i].zoom) * t,
+        V = stopShape(z, S);
+      for (const k of ['pitch', 'dist', 'fov', 'blur', 'lead']) {
+        const lo = Math.min(S[i][k], S[i + 1][k]),
+          hi = Math.max(S[i][k], S[i + 1][k]);
+        assert.ok(V[k] >= lo - 1e-9 && V[k] <= hi + 1e-9, `${k} at ${z.toFixed(3)}: ${V[k]} in ${lo}-${hi}`);
+      }
+    }
+  /* a flat stretch stays flat (blur 1.6 from A to B) */
+  near(stopShape(0.65, S).blur, 1.6, 1e-9);
+});
+
+test('a pinch let go near a stop settles on it; far from any it stays; 0 never pulls', () => {
+  /* Normal 1 and Far 1.7: the gap is ln 1.7 */
+  const g = Math.log(1.7);
+  assert.equal(stopPull(Math.exp(g * 0.9), ZOOM_STOPS, 0.2).stop.id, 'far');
+  assert.equal(stopPull(Math.exp(g * 0.1), ZOOM_STOPS, 0.2).stop.id, 'normal');
+  const mid = Math.exp(g * 0.5);
+  assert.equal(stopPull(mid * 0.98, ZOOM_STOPS, 0.2).stop, null);
+  near(stopPull(mid * 0.98, ZOOM_STOPS, 0.2).zoom, mid * 0.98);
+  /* 0.5: always the nearest */
+  assert.equal(stopPull(mid * 0.98, ZOOM_STOPS, 0.5).stop.id, 'normal');
+  assert.equal(stopPull(Math.exp(g * 0.9), ZOOM_STOPS, 0).stop, null);
+  /* past an end stop (the rubber band) it is pulled to the end */
+  assert.equal(stopPull(1.8, ZOOM_STOPS, 0.2).stop.id, 'far');
+});
+
+test('the stops cycle from the one nearest, round to the first', () => {
+  assert.equal(nearestStop(0.9, ZOOM_STOPS), 1);
+  assert.equal(nextStop(1, ZOOM_STOPS).id, 'far');
+  assert.equal(nextStop(1.7, ZOOM_STOPS).id, 'close');
+  assert.equal(nextStop(0.6, ZOOM_STOPS).id, 'normal');
+});
+
+test('a broken list of stops is caught and the default ones used', () => {
+  assert.deepEqual(stopsProblems(ZOOM_STOPS), []);
+  assert.ok(stopsProblems(ZOOM_STOPS.slice(0, 2)).length);
+  assert.ok(stopsProblems([...ZOOM_STOPS].reverse()).some(p => /rise/.test(p)));
+  assert.ok(stopsProblems([ZOOM_STOPS[0], ZOOM_STOPS[0], ZOOM_STOPS[2]]).some(p => /twice/.test(p)));
+  assert.ok(stopsProblems([{ ...ZOOM_STOPS[0], blur: 'x' }, ZOOM_STOPS[1], ZOOM_STOPS[2]]).length);
+  assert.equal(stopsOrDefault(null), ZOOM_STOPS);
+  const own = ZOOM_STOPS.map(s => ({ ...s }));
+  assert.equal(stopsOrDefault(own), own);
+});
