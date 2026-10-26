@@ -162,3 +162,68 @@ test('two lights with the same key: the first keeps it', () => {
   assert.equal(out.length, 1);
   assert.equal(out[0].p[2], 1);
 });
+
+test('walk lighting: off, the nearest each frame as before; on, the stable picker; quality.lights caps both', () => {
+  const Q = G.ENGINE_DEFAULTS.quality,
+    keep = { ...Q },
+    L = street(40, 11),
+    P = { x: 2, z: -1 },
+    C = { vp: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] };
+  try {
+    assert.deepEqual(G.pickLights(copy(L), C, P, null).map(at), pickPointLights(copy(L), P.x, P.z, 16).map(at));
+    Q.lights = 6;
+    assert.deepEqual(G.pickLights(copy(L), C, P, null).map(at), pickPointLights(copy(L), P.x, P.z, 6).map(at));
+    Q.stableLights = true;
+    Q.cull = false;
+    const out = G.pickLights(L, C, P, null);
+    assert.equal(out, G.LIGHT_PICK.out);
+    assert.deepEqual(out.map(at), pickPointLights(copy(L), P.x, P.z, 6).map(at));
+    // with the view test: the identity camera sees x and y in -1..1 (no far side), so only lights reaching that lit
+    Q.cull = true;
+    const near = [lamp(0, 0.5, { r: 0.5 }), lamp(30, 0.5, { r: 0.5 })];
+    near.forEach(l => (l.p[1] = 0));
+    assert.deepEqual(G.pickLights(near, C, { x: 100, z: 100 }, null).map(at), [at(near[0])]);
+  } finally {
+    Object.assign(Q, keep);
+  }
+});
+
+test('lamp shadows: the lamps the old code shadowed; with steady lights, a shadowed lamp keeps its map', () => {
+  const pick = G.pickShadowLamps,
+    oldPick = (L, x, z, n) =>
+      L.filter(l => !l.front && l.p[1] > 1.6 && l.r >= 3 && Math.hypot(l.p[0] - x, l.p[2] - z) < 22).slice(0, n);
+  // lights made new each frame (the old picker): the same choice as before, whatever was shadowed last frame
+  for (const [x, z, n] of [
+    [0, 0, 2],
+    [5, -8, 1],
+    [-12, 3, 2],
+    [0, 0, 0],
+  ]) {
+    const L = pickPointLights(
+      street(50, 3).concat([lamp(x + 1, z, { r: 2 }), lamp(x, z + 1, { front: true })]),
+      x,
+      z,
+      16
+    );
+    L.push({ ...L[0], p: [x, 1, z] });
+    assert.deepEqual(pick(copy(L), x, z, n).map(at), oldPick(copy(L), x, z, n).map(at), `${x},${z} ${n}`);
+  }
+  // the same lamp objects frame to frame (the stable picker): walking to and fro between two, one keeps the map
+  const A = lamp(-1, 2),
+    B = lamp(1, 2);
+  let swaps = 0,
+    last = null;
+  for (let i = 0; i < 600; i++) {
+    const x = 0.4 * Math.sin(i / 9),
+      got = pick(
+        [A, B].sort((a, b) => Math.abs(a.p[0] - x) - Math.abs(b.p[0] - x)),
+        x,
+        0,
+        1
+      )[0];
+    if (last && got !== last) swaps++;
+    last = got;
+  }
+  assert.equal(swaps, 0);
+  assert.equal(pick([A, B], 3, 0, 1)[0], B);
+});

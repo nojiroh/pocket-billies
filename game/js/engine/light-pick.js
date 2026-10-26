@@ -25,15 +25,15 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /* how long a light takes to fade in or out, how often the lit set is chosen again, how much nearer a lit light counts */
-const LIGHT_FADE_MS = 250,
+export const LIGHT_FADE_MS = 250,
   LIGHT_RANK_MS = 200,
   LIGHT_HOLD_M = 1.5;
 /* a jump farther than this in one frame (a door, a warp) starts again with no fades */
 const LIGHT_JUMP_M = 20;
 /* a light's kind within the thing it comes from (its src): a prop's glow and the pool under it, its windows' light,
    its lamp (scenery glow) and that pool, and its fires (one per fx entry, from 8 on) */
-const LIGHT_KIND = { glow: 0, glowPool: 1, window: 2, lamp: 3, lampPool: 4, fire: 8 };
-function lightPicker() {
+export const LIGHT_KIND = { glow: 0, glowPool: 1, window: 2, lamp: 3, lampPool: 4, fire: 8 };
+export function lightPicker() {
   return {
     owners: new Map(),
     seen: [],
@@ -112,7 +112,7 @@ function rankLights(S, max) {
 /* L: the frame's lights ({p, r, c, front, pool, own} as walk/lighting.js makes them, each with src and kind; one with
    no src is keyed by its place in L); (cx, cz): the player; now: ms; inView(l): whether a light's reach is in view
    (null: all are). Returns the lit lights, nearest first, colours scaled by their fades (S.out, refilled each frame). */
-function pickStableLights(S, L, cx, cz, now, max = 16, inView = null) {
+export function pickStableLights(S, L, cx, cz, now, max = 16, inView = null) {
   const jump = !S.on || Math.hypot(cx - S.cx, cz - S.cz) > LIGHT_JUMP_M;
   if (jump) resetLightPicker(S);
   const k = jump ? 1 : Math.min(100, Math.max(0, now - S.at)) / LIGHT_FADE_MS,

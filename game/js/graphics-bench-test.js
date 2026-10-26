@@ -75,6 +75,10 @@ const GRAPHICS_TEST_HIDDEN = [
   ['water.pixel', 'Pixel water', { values: [false, true] }],
   /* phase 20 C3: the same look either way, so it is left out of "everything lowest / highest" */
   ['quality.frameBlock', 'One light block per frame', { values: [false, true], alone: true }],
+  /* phase 20 C5: the same look when standing still, so left out too; how many lamps light the scene (8 is the phone
+     limit stage D6 may take) */
+  ['quality.stableLights', 'Steady lamps', { values: [false, true], alone: true }],
+  ['quality.lights', 'Lamps lit at once', { values: [8, 16], alone: true }],
 ];
 /* the stations, in the order the test walks them; their spots are the map's `bench` ([x, z, camera turn, zoom]) */
 const GRAPHICS_TEST_STATIONS = [
@@ -87,9 +91,18 @@ const GRAPHICS_TEST_STATIONS = [
   },
   { id: 'pond', name: 'Pond', dials: ['water.reflection', 'water.pixel'] },
   { id: 'sun', name: 'Sun gap', sun: { angle: -90, height: 18 }, dials: ['air.godRays'] },
-  { id: 'lamps', name: 'Lamp square', time: 22, dials: ['color.bloom', 'lights.brightness', 'quality.frameBlock'] },
+  {
+    id: 'lamps',
+    name: 'Lamp square',
+    time: 22,
+    dials: ['color.bloom', 'lights.brightness', 'quality.frameBlock', 'quality.stableLights', 'quality.lights'],
+  },
   { id: 'meadow', name: 'Meadow', dials: ['grass.density', 'air.particles', 'air.mist'] },
-  { id: 'depth', name: 'Depth corridor', dials: ['lens.blur', 'world.farProps', 'quality.frameBlock'] },
+  {
+    id: 'depth',
+    name: 'Depth corridor',
+    dials: ['lens.blur', 'world.farProps', 'quality.frameBlock', 'quality.stableLights'],
+  },
   { id: 'sky', name: 'Open sky', dials: ['sun.clouds', 'sun.cloudShadows'] },
   { id: 'everything', name: 'Everything', all: true },
 ];
