@@ -22,6 +22,8 @@ import {
   MAPGEN_MASSIF,
   MAPGEN_MOUNTAIN_DIALS,
   MAPGEN_OPPOSITE,
+  MAPGEN_PIECES_DIALS,
+  MAPGEN_PIECES_MOST,
   MAPGEN_SHAPES,
   MAPGEN_SIZES,
   MAPGEN_WATER,
@@ -197,6 +199,21 @@ const GEN_DIALS = [
     'Route layout',
     [['layout', 'Layout', 'sel', Object.fromEntries(Object.entries(MAPGEN_LAYOUTS).map(([k, L]) => [k, L.name]))]],
   ],
+  /* RT-3: set pieces (setPieces.json) on a laid-out route's spare spots */
+  [
+    'pieces',
+    'Set pieces',
+    [
+      [
+        'pieces',
+        'Set pieces',
+        0,
+        MAPGEN_PIECES_MOST,
+        1,
+        'Campsites, farm pens, rest stops and the like (setPieces.json), on spare roadside spots and clearings of a laid-out route',
+      ],
+    ],
+  ],
   [
     'props',
     'Props',
@@ -222,6 +239,7 @@ const GEN_REROLL = [
   ['props', 'Props'],
   ['lots', 'Buildings'],
   ['layout', 'Layout'],
+  ['pieces', 'Set pieces'],
 ];
 const genGet = (o, path) => path.split('.').reduce((v, k) => (v == null ? v : v[k]), o);
 function genSet(o, path, v) {
@@ -231,10 +249,13 @@ function genSet(o, path, v) {
   for (const k of ks) t = t[k] == null ? (t[k] = {}) : t[k];
   t[last] = v;
 }
-/* TR-2: the mountains dials are not in MAPGEN_DEFAULTS (scenes made without them keep the dials they stored); nor is
-   RT-1's layout */
+/* TR-2: the mountains dials are not in MAPGEN_DEFAULTS (scenes made without them keep the dials they stored); nor are
+   RT-1's layout and RT-3's pieces */
 const genDefault = path =>
-  genGet(MAPGEN_DEFAULTS, path) ?? genGet({ land: MAPGEN_MOUNTAIN_DIALS }, path) ?? genGet(MAPGEN_LAYOUT_DIALS, path);
+  genGet(MAPGEN_DEFAULTS, path) ??
+  genGet({ land: MAPGEN_MOUNTAIN_DIALS }, path) ??
+  genGet(MAPGEN_LAYOUT_DIALS, path) ??
+  genGet(MAPGEN_PIECES_DIALS, path);
 const genDialValue = (v, step) => (typeof v === 'number' ? +v.toFixed(step < 0.1 ? 2 : 1) : v);
 function genDialHTML(f) {
   const [path, label] = f,
@@ -411,7 +432,10 @@ function genRun() {
     joined.push({ ...J, strip });
   }
   const t = performance.now(),
-    r = mapgenScene({ ...P, edges }, { scenery: sceneryCatalog(), biomes: D.biomes || {} });
+    r = mapgenScene(
+      { ...P, edges },
+      { scenery: sceneryCatalog(), biomes: D.biomes || {}, setPieces: D.setPieces || null }
+    );
   mapGen.ms = performance.now() - t;
   mapGen.notes = r.notes;
   const d = r.scene;

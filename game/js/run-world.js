@@ -24,6 +24,7 @@ import {
   NODE_TYPES,
   POOLS,
   RULES,
+  SET_PIECES,
   SPECIES,
   START_NODE,
   TRAINERS,
@@ -42,7 +43,7 @@ import { runScenesMake, runScenesSlices, runWorldTables } from './logic/run-scen
 import { runBowlLook } from './logic/run-bowl.js';
 import { runFoes } from './logic/run-loop.js';
 import { encEventFoe } from './logic/encounters.js';
-import { runRouteTrainers } from './logic/route-trainers.js';
+import { routeRareSpots, routeTrainerTally, routeTrainersPlace, runRouteTrainers } from './logic/route-trainers.js';
 import { bowlXY } from './logic/bowl.js';
 import { bowlTreeStyle } from './logic/bowl-things.js';
 import { saveData, uiState } from './game-state.js';
@@ -86,6 +87,8 @@ export function runWorldData() {
     region: runRegionData(gameData, TRAINERS),
     /* RL-R2: the field moves that open a run's side area (logic/run-side.js) */
     fieldMoves: FIELD_MOVES,
+    /* RT-3: the set pieces a laid-out place is dressed with (logic/mapgen.js mapgenStagePieces) */
+    setPieces: SET_PIECES,
   };
 }
 /** put in the world the save needs, if it isn't in yet: the run's while one is on with its map, else the hub's.
@@ -221,7 +224,16 @@ function runWorldPutRun(run, scenes, data) {
       gameData.worldmap,
       bowlTreeStyle,
       rngFrom
-    );
+    ),
+    /* RL-12b: the route trainers who walk up on sight (logic/route-trainers.js); RT-2: on their places' spots */
+    route = runRouteTrainers(run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run });
+  routeTrainersPlace(run, route, scenes, EVENTS.classes);
+  /* RT-2: a route's trainers stand in for some of its wild Billies (logic/rules.js encounterStock) */
+  const tally = routeTrainerTally(route);
+  for (const L of W.locations) if (L.runNode != null && tally[L.runNode]) L.trainerCount = tally[L.runNode];
+  /* RT-4: where each route's rarer one waits (logic/rules.js spawnRare) */
+  const rare = routeRareSpots(run, route, scenes);
+  for (const L of W.locations) if (L.runNode != null && rare[L.runNode]) L.rareAt = rare[L.runNode];
   /* WA-5a: a place with marsh or bog water has the marsh's own wild Billies (rules.js spawn, logic/water-play.js) */
   W.locations.slice(1).forEach((L, i) => {
     const m = waterMarshOf(scenes[i]);
@@ -234,8 +246,7 @@ function runWorldPutRun(run, scenes, data) {
     /* RL-8: its mini-bosses and boss, each a leader's copy (logic/run-loop.js runFoes) */
     trainers: {
       ...runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run }),
-      /* RL-12b: the route trainers who walk up on sight (logic/route-trainers.js) */
-      ...runRouteTrainers(run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run }),
+      ...route,
     },
   });
   /* WA-5a: the places' water by today's forecast, before any view of them is made */

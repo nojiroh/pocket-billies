@@ -1337,10 +1337,13 @@
    "box": [4,2.4],
    "door": {"x":6,"y":0},
    "fx": [
-    {"k":"smoke","x":33,"y":-116},
-    {"k":"window","x":-36,"y":-45},
-    {"k":"glow","x":40,"y":-44}
-   ]
+    {"k":"smoke","x":31,"y":-118},
+    {"k":"window","x":-35,"y":-37},
+    {"k":"glow","x":38,"y":-38}
+   ],
+   "model": "scene/next/models/cave_house.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "tree_pine": {
    "name": "Pine tree",
@@ -1764,7 +1767,9 @@
    "flat": 0,
    "tags": ["route","cave"],
    "group": "boulder",
-   "solid": 1.2
+   "solid": 1.2,
+   "model": "scene/next/models/boulder.json",
+   "ppm": 32
   },
   "rocks": {
    "name": "Small rocks",
@@ -1792,12 +1797,15 @@
    "group": "crystal",
    "solid": 0.6,
    "fx": [
-    {"k":"sparkle","x":-26,"y":-45},
-    {"k":"sparkle","x":24,"y":-57},
-    {"k":"sparkle","x":6,"y":-73},
-    {"k":"sparkle","x":-16,"y":-63}
+    {"k":"sparkle","x":-24,"y":-42},
+    {"k":"sparkle","x":23,"y":-54},
+    {"k":"sparkle","x":6,"y":-69},
+    {"k":"sparkle","x":-15,"y":-59}
    ],
-   "glow": {"c":"#8EF0FF","r":1.5,"y":1}
+   "glow": {"c":"#8EF0FF","r":1.5,"y":1},
+   "model": "scene/next/models/crystal.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "stalagmite": {
    "name": "Stalagmite",
@@ -1809,7 +1817,9 @@
    "flat": 0,
    "tags": ["cave"],
    "group": "stalagmite",
-   "solid": 0.5
+   "solid": 0.5,
+   "model": "scene/next/models/stalagmite.json",
+   "ppm": 32
   },
   "well": {
    "name": "Stone well",
@@ -1939,7 +1949,10 @@
    "flat": 0,
    "tags": ["town","farm"],
    "group": "tent",
-   "box": [3.2,2.4]
+   "box": [3.2,2.4],
+   "model": "scene/next/models/tent.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "stall": {
    "name": "Fruit stall",
@@ -1981,8 +1994,10 @@
    "group": "campfire",
    "solid": 0.5,
    "fx": [
-    {"k":"fire","x":0,"y":-13}
-   ]
+    {"k":"fire","x":0,"y":-12}
+   ],
+   "model": "scene/next/models/campfire.json",
+   "ppm": 32
   },
   "arch": {
    "name": "Town gate",
@@ -2651,7 +2666,9 @@
    "flat": 0,
    "tags": ["route","cave"],
    "group": "boulder",
-   "solid": 1
+   "solid": 1,
+   "model": "scene/next/models/boulder_b.json",
+   "ppm": 32
   },
   "boulder_mossy": {
    "name": "Mossy boulder",
@@ -2663,7 +2680,9 @@
    "flat": 0,
    "tags": ["route"],
    "group": "boulder",
-   "solid": 1.2
+   "solid": 1.2,
+   "model": "scene/next/models/boulder_mossy.json",
+   "ppm": 32
   },
   "mushroom_brown": {
    "name": "Brown mushrooms",
@@ -2863,7 +2882,9 @@
    "flat": 0,
    "tags": ["farm","town"],
    "group": "crates",
-   "solid": 0.5
+   "solid": 0.5,
+   "model": "scene/next/models/sack.json",
+   "ppm": 32
   },
   "stalagmite_b": {
    "name": "Stalagmite cluster",
@@ -2875,7 +2896,9 @@
    "flat": 0,
    "tags": ["cave"],
    "group": "stalagmite",
-   "solid": 0.6
+   "solid": 0.6,
+   "model": "scene/next/models/stalagmite_b.json",
+   "ppm": 32
   },
   "crystal_pink": {
    "name": "Pink crystals",
@@ -2908,12 +2931,15 @@
    "group": "crystal",
    "solid": 0.55,
    "fx": [
-    {"k":"sparkle","x":-22,"y":-49},
-    {"k":"sparkle","x":18,"y":-51},
-    {"k":"sparkle","x":-6,"y":-69},
-    {"k":"sparkle","x":12,"y":-31}
+    {"k":"sparkle","x":-21,"y":-46},
+    {"k":"sparkle","x":17,"y":-48},
+    {"k":"sparkle","x":-6,"y":-65},
+    {"k":"sparkle","x":11,"y":-29}
    ],
-   "glow": {"c":"#C79BFF","r":1.4,"y":0.9}
+   "glow": {"c":"#C79BFF","r":1.4,"y":0.9},
+   "model": "scene/next/models/crystal_purple.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "lantern_b": {
    "name": "Paper lantern pole",
@@ -4887,7 +4913,9 @@
    "sway": 0,
    "flat": 0,
    "tags": ["battle"],
-   "group": "barrel"
+   "group": "barrel",
+   "model": "scene/next/models/barrel.json",
+   "ppm": 32
   },
   "pipe": {
    "name": "Pipe",
@@ -5039,7 +5067,9 @@
    "flat": 0,
    "tags": ["beach","island"],
    "group": "palm",
-   "solid": 0.4
+   "solid": 0.4,
+   "model": "scene/next/models/palm_tree.json",
+   "ppm": 32
   },
   "palm_tree_b": {
    "name": "Leaning palm",
@@ -5063,7 +5093,9 @@
    "flat": 0,
    "tags": ["beach","island"],
    "group": "palm",
-   "solid": 0.2
+   "solid": 0.2,
+   "model": "scene/next/models/palm_small.json",
+   "ppm": 32
   },
   "villa": {
    "name": "White villa",
@@ -5249,7 +5281,9 @@
    "flat": 0,
    "tags": ["snow","mountain"],
    "group": "tree_pine_snow",
-   "solid": 0.5
+   "solid": 0.5,
+   "model": "scene/next/models/tree_pine_snow.json",
+   "ppm": 32
   },
   "tree_pine_snow_b": {
    "name": "Tall snowy pine",
@@ -5261,7 +5295,9 @@
    "flat": 0,
    "tags": ["snow","mountain"],
    "group": "tree_pine_snow",
-   "solid": 0.5
+   "solid": 0.5,
+   "model": "scene/next/models/tree_pine_snow_b.json",
+   "ppm": 32
   },
   "tree_pine_snow_small": {
    "name": "Small snowy pine",
@@ -5273,7 +5309,9 @@
    "flat": 0,
    "tags": ["snow","mountain"],
    "group": "tree_pine_snow",
-   "solid": 0.3
+   "solid": 0.3,
+   "model": "scene/next/models/tree_pine_snow_small.json",
+   "ppm": 32
   },
   "chalet": {
    "name": "Chalet",
@@ -5461,7 +5499,9 @@
    "flat": 0,
    "tags": ["snow","mountain"],
    "group": "boulder",
-   "solid": 1
+   "solid": 1,
+   "model": "scene/next/models/boulder_snow.json",
+   "ppm": 32
   },
   "rocks_snow": {
    "name": "Snowy rocks",
@@ -5500,7 +5540,9 @@
    "flat": 0,
    "tags": ["volcano"],
    "group": "tree_dead",
-   "solid": 0.3
+   "solid": 0.3,
+   "model": "scene/next/models/tree_dead.json",
+   "ppm": 32
   },
   "rocks_basalt": {
    "name": "Basalt rocks",
@@ -5512,7 +5554,9 @@
    "flat": 0,
    "tags": ["volcano"],
    "group": "rocks_basalt",
-   "solid": 0
+   "solid": 0,
+   "model": "scene/next/models/rocks_basalt.json",
+   "ppm": 32
   },
   "boulder_basalt": {
    "name": "Basalt boulder",
@@ -5524,7 +5568,9 @@
    "flat": 0,
    "tags": ["volcano"],
    "group": "rocks_basalt",
-   "solid": 1
+   "solid": 1,
+   "model": "scene/next/models/boulder_basalt.json",
+   "ppm": 32
   },
   "basalt_columns": {
    "name": "Basalt columns",
@@ -5536,7 +5582,10 @@
    "flat": 0,
    "tags": ["volcano"],
    "group": "basalt_columns",
-   "solid": 1.1
+   "solid": 1.1,
+   "model": "scene/next/models/basalt_columns.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "obsidian": {
    "name": "Obsidian shards",
@@ -5581,8 +5630,10 @@
    "group": "lava_rock",
    "solid": 0.6,
    "fx": [
-    {"k":"glow","x":0,"y":-25}
-   ]
+    {"k":"glow","x":0,"y":-24}
+   ],
+   "model": "scene/next/models/lava_rock.json",
+   "ppm": 32
   },
   "lava_vent": {
    "name": "Lava vent",
@@ -5622,7 +5673,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "shop_counter",
-   "box": [2.6,0.9]
+   "box": [2.6,0.9],
+   "model": "scene/next/models/shop_counter.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "counter_white": {
    "name": "Reception desk",
@@ -5636,8 +5690,11 @@
    "group": "counter_white",
    "box": [2.6,0.9],
    "fx": [
-    {"k":"glow","x":26,"y":-41}
-   ]
+    {"k":"glow","x":26,"y":-43}
+   ],
+   "model": "scene/next/models/counter_white.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "shop_shelf": {
    "name": "Shelves of goods",
@@ -5649,7 +5706,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "shop_shelf",
-   "box": [2,0.6]
+   "box": [2,0.6],
+   "model": "scene/next/models/shop_shelf.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "fridge_drinks": {
    "name": "Drinks fridge",
@@ -5663,8 +5723,11 @@
    "group": "fridge_drinks",
    "box": [1,0.7],
    "fx": [
-    {"k":"glow","x":0,"y":-47}
-   ]
+    {"k":"glow","x":0,"y":-42}
+   ],
+   "model": "scene/next/models/fridge_drinks.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "clinic_bed": {
    "name": "Clinic bed",
@@ -5676,7 +5739,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "clinic_bed",
-   "box": [1,2]
+   "box": [1,2],
+   "model": "scene/next/models/clinic_bed.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "privacy_screen": {
    "name": "Privacy screen",
@@ -5688,7 +5754,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "privacy_screen",
-   "box": [1.6,0.3]
+   "box": [1.6,0.3],
+   "model": "scene/next/models/privacy_screen.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "bookshelf": {
    "name": "Bookcase",
@@ -5700,7 +5769,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "bookshelf",
-   "box": [1.8,0.5]
+   "box": [1.8,0.5],
+   "model": "scene/next/models/bookshelf.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "lab_desk": {
    "name": "Desk with a computer",
@@ -5714,8 +5786,11 @@
    "group": "lab_desk",
    "box": [1.8,0.8],
    "fx": [
-    {"k":"glow","x":-4,"y":-47}
-   ]
+    {"k":"glow","x":-8,"y":-43}
+   ],
+   "model": "scene/next/models/lab_desk.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "lab_machine": {
    "name": "Evolution machine",
@@ -5729,9 +5804,12 @@
    "group": "lab_machine",
    "box": [1.8,1.2],
    "fx": [
-    {"k":"glow","x":0,"y":-59},
-    {"k":"sparkle","x":0,"y":-71}
-   ]
+    {"k":"glow","x":0,"y":-56},
+    {"k":"sparkle","x":0,"y":-67}
+   ],
+   "model": "scene/next/models/lab_machine.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "table_round": {
    "name": "Round table",
@@ -5769,7 +5847,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "sofa",
-   "box": [2,0.9]
+   "box": [2,0.9],
+   "model": "scene/next/models/sofa.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "fireplace": {
    "name": "Fireplace",
@@ -5783,8 +5864,11 @@
    "group": "fireplace",
    "box": [1.8,0.6],
    "fx": [
-    {"k":"fire","x":0,"y":-9}
-   ]
+    {"k":"fire","x":0,"y":-10}
+   ],
+   "model": "scene/next/models/fireplace.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "plant_tall": {
    "name": "Potted plant",
@@ -5796,7 +5880,9 @@
    "flat": 0,
    "tags": ["indoor","town"],
    "group": "plant_tall",
-   "solid": 0.3
+   "solid": 0.3,
+   "model": "scene/next/models/plant_tall.json",
+   "ppm": 32
   },
   "rug_round": {
    "name": "Round rug",
@@ -5832,7 +5918,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "wall_painting",
-   "solid": 0
+   "solid": 0,
+   "model": "scene/next/models/wall_painting.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "wall_clock": {
    "name": "Clock on the wall",
@@ -5844,7 +5933,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "wall_clock",
-   "solid": 0
+   "solid": 0,
+   "model": "scene/next/models/wall_clock.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "wall_window": {
    "name": "Window",
@@ -5858,8 +5950,11 @@
    "group": "wall_window",
    "solid": 0,
    "fx": [
-    {"k":"window","x":0,"y":-71}
-   ]
+    {"k":"window","x":0,"y":-68}
+   ],
+   "model": "scene/next/models/wall_window.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "crate_goods": {
    "name": "Crate of goods",
@@ -5871,7 +5966,10 @@
    "flat": 0,
    "tags": ["indoor","town"],
    "group": "crate_goods",
-   "box": [0.9,0.7]
+   "box": [0.9,0.7],
+   "model": "scene/next/models/crate_goods.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "ladder": {
    "name": "Ladder",
@@ -5911,7 +6009,9 @@
    "tags": ["farm","route"],
    "group": "haybale_stack",
    "solid": 1,
-   "vol": ["puff",1]
+   "model": "scene/next/models/haybale_stack.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "stump_mossy": {
    "name": "Mossy stump",
@@ -7658,7 +7758,9 @@
    "solid": 0.4,
    "family": "trees",
    "grow": "svl",
-   "weight": 0.8
+   "weight": 0.8,
+   "model": "scene/next/models/tree_olive.json",
+   "ppm": 32
   },
   "tree_cypress": {
    "name": "Cypress",
@@ -9334,7 +9436,10 @@
    "sway": 0,
    "flat": 0,
    "tags": ["indoor"],
-   "group": "blackboard"
+   "group": "blackboard",
+   "model": "scene/next/models/blackboard.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "wall_map": {
    "name": "Map on the wall",
@@ -9567,12 +9672,13 @@
    "tags": ["route"],
    "group": "lookout_tower",
    "fx": [
-    {"k":"window","x":0,"y":-220}
+    {"k":"window","x":0,"y":-190}
    ],
    "solid": 1.5,
    "landmark": 1,
-   "vol": "block",
-   "volDepth": 2.4
+   "model": "scene/next/models/lookout_tower.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "shipwreck": {
    "name": "Shipwreck",
@@ -10014,10 +10120,8 @@
    "tags": ["jungle","route"],
    "group": "tree_jungle",
    "solid": 0.7,
-   "layers": [
-    {"img":"scene/props/layers/tree_jungle_lb.png","dz":0.6,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_jungle_lf.png","dz":-0.45,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_jungle.json",
+   "ppm": 32
   },
   "jungle_fern": {
    "name": "Jungle leaves",
@@ -10075,10 +10179,13 @@
    "tags": ["cave","crystal","route"],
    "group": "crystal_cluster",
    "fx": [
-    {"k":"glow","x":-2,"y":-40},
-    {"k":"glow","x":-11,"y":-27}
+    {"k":"glow","x":-2,"y":-38},
+    {"k":"glow","x":-10,"y":-25}
    ],
-   "solid": 0.5
+   "solid": 0.5,
+   "model": "scene/next/models/crystal_cluster.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "crystal_cluster_violet": {
    "name": "Violet crystal cluster",
@@ -10119,16 +10226,17 @@
    "tags": ["cave","crystal","route"],
    "group": "crystal_spire",
    "fx": [
-    {"k":"glow","x":2,"y":-200},
-    {"k":"glow","x":-34,"y":-150},
-    {"k":"glow","x":74,"y":-130},
-    {"k":"glow","x":6,"y":-90},
-    {"k":"sparkle","x":10,"y":-300}
+    {"k":"glow","x":2,"y":-188},
+    {"k":"glow","x":-32,"y":-141},
+    {"k":"glow","x":70,"y":-122},
+    {"k":"glow","x":6,"y":-85},
+    {"k":"sparkle","x":9,"y":-282}
    ],
    "solid": 1.6,
    "landmark": 1,
-   "vol": "puff",
-   "volDepth": 2.2
+   "model": "scene/next/models/crystal_spire.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "geode_great": {
    "name": "The Great Geode",
@@ -10221,10 +10329,11 @@
    "group": "mine_entrance",
    "box": [4.6,2.2],
    "fx": [
-    {"k":"glow","x":44,"y":-62}
+    {"k":"glow","x":40,"y":-60}
    ],
-   "vol": "block",
-   "volDepth": 2
+   "model": "scene/next/models/mine_entrance.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "yacht_super": {
    "name": "Superyacht",
@@ -11608,6 +11717,21 @@
    "ppm": 32,
    "model": "scene/next/models/forest_canopy_autumn.json",
    "vary": {"rot":1,"lean":0}
+  },
+  "notice_board": {
+   "name": "Notice board",
+   "img": "scene/next/town/notice_board.png",
+   "ox": -35,
+   "oy": -71,
+   "shadow": 0.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town"],
+   "group": "signpost",
+   "solid": 0.5,
+   "ppm": 32,
+   "model": "scene/next/models/notice_board.json",
+   "vary": {"rot":0,"lean":0}
   },
   "train_station": {
    "name": "Skyline Station",

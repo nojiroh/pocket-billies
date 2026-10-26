@@ -14,6 +14,7 @@ import {
   ALTERNATE_PROPS,
   FIELD_MOVES,
   ITEMS,
+  RULES,
   TERRAIN_MATERIALS,
   addRipple,
   addWakeRipple,
@@ -48,6 +49,7 @@ import {
   rawHeightAt,
   reducedMotion,
   riderName,
+  runTownFolkCap,
   saveData,
   saveNow,
   seamlessMapById,
@@ -3283,8 +3285,11 @@ function encounterCandidates(sc) {
     }
   return (walkView.cand = out);
 }
-export function encounterSpot(sc, id, used) {
-  const C = encounterCandidates(sc);
+export function encounterSpot(sc, id, used, hab) {
+  /* RT-4: a Billie of the water or the woods waits on its habitat's points (mapgen.js mapgenHabitats), where the
+     place has them; the rest (and those, where it has none) in the tall grass */
+  const H = hab && sc.habitats && sc.habitats[hab],
+    C = H && H.length ? H.map(p => [p[0], p[1], 1]) : encounterCandidates(sc);
   let h = 0;
   for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   const tot = C.reduce((a, c) => a + c[2], 0);
@@ -4223,6 +4228,12 @@ export function updateFolk(n, dt) {
   n = folkCount(walkView.sc, n);
   if (walkView.folkId !== walkView.id || (walkView.folkAll || walkView.folk).length !== n) initFolk(n);
   stepFolk(dt);
+  /* TW-2: a run town draws only its first few folk, by the graphics (rules.json run.town.cap); the rest keep their day */
+  const b = walkView.sc.baseId ? mapById(walkView.sc.baseId) : walkView.sc;
+  if (b && b.gen && b.kind === 'town' && RULES.run.town) {
+    const cap = runTownFolkCap(RULES.run.town, walkRenderer.q, saveData.preferences && saveData.preferences.aim);
+    if (walkView.folk.length > cap) walkView.folk = walkView.folk.filter(f => walkView.folkAll.indexOf(f) < cap);
+  }
 }
 export function tallGrassProps(C0) {
   const out = [];
@@ -4337,7 +4348,7 @@ export function drawExitLabels(C, st, hits, hub) {
   }
 }
 /* a label's gold: an exit you're headed for, the Actions sheet's marker */
-const LABEL_GOLD = '#C99A1E';
+export const LABEL_GOLD = '#C99A1E';
 /* the Actions sheet's marker (walk-tab.js walkMarkTo): a gold label bobbing over the building with that act, above its
    own label when that shows; at the screen's edge, pointing the way, when the building is off screen. It goes once
    you stand near the building, or when the building isn't in this map (a room, a run) */
