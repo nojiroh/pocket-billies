@@ -114,6 +114,7 @@ import '../../game/js/logic/seam-rules.js';
 import '../../game/js/logic/sheet-slice.js';
 import '../../game/js/logic/sim-compare.js';
 import '../../game/js/logic/square-day.js';
+import '../../game/js/logic/square-talk.js';
 import '../../game/js/logic/starter-points.js';
 import '../../game/js/logic/step-grid.js';
 import '../../game/js/logic/story-checks.js';

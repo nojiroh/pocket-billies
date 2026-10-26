@@ -1437,9 +1437,16 @@ export function dataBanter(D, valid = () => true) {
   if (!valid('banter.schema.json', B, 'banter.json')) return out;
   for (const [k, b] of Object.entries(B))
     if (/** @type {any} */ (b).once && /** @type {any} */ (b).cooldown) problem(`${k}: said once, so no cooldown`);
-  for (const who of ['leader', 'bureau'])
+  for (const who of ['leader', 'bureau', 'square_won', 'square_lost'])
     if (!Object.values(B).some((/** @type {any} */ b) => b.who === who && !b.when))
       problem(`no ${who} line without a when: a ${who} could have nothing to say`);
+  /* HB-10d: the square's folk say a line in a speech bubble: one line, no speaker, no commands */
+  for (const [k, b] of Object.entries(B))
+    if (/^square_/.test(/** @type {any} */ (b).who)) {
+      const S = /** @type {any} */ (b).script;
+      if (S.length !== 1 || /^[A-Z][\w .'-]{0,24}:\s/.test(S[0]) || S[0].replace(/\s+#l:\w+$/, '').length > 70)
+        problem(`${k}: a square line is one line of 70 letters or fewer with no speaker`);
+    }
   /* RL-S2 part B: Blake and the thank-yous, once they have lines, always have one to say */
   for (const who of ['rival', 'thanks_chosen', 'thanks_hazel', 'thanks_juniper']) {
     const mine = Object.values(B).filter((/** @type {any} */ b) => b.who === who);

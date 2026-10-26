@@ -675,6 +675,12 @@ debugLog.more = () => {
          visiting it now */
       folkAll: (GAME.walkView.folkAll || []).length,
       onSquare: (GAME.walkView.folkAll || []).filter(f => f.sq).length,
+      /* HB-10d: the square's mood after the last run (its folk cheer a win, gossip about a loss) */
+      squareMood: (() => {
+        const H = (GAME.saveData && GAME.saveData.meta && GAME.saveData.meta.history) || [],
+          e = H[H.length - 1];
+        return !e ? null : e.end === 'won' ? 'won' : 'lost';
+      })(),
       visitors: typeof GAME.worldBillies !== 'undefined' ? GAME.worldBillies.visitors || 0 : 0,
       water: (GAME.walkView.water || []).length,
       ladders: (sc.props || []).filter(p => p.act === 'climb').length,

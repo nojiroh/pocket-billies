@@ -39,6 +39,9 @@ export const BANTER_WHO = [
     'thanks_chosen',
     'thanks_hazel',
     'thanks_juniper',
+    /* HB-10d: what the town square's folk say after a won or a lost run (logic/square-talk.js: every line that holds) */
+    'square_won',
+    'square_lost',
   ],
   BANTER_HUB = ['chosen', 'hazel', 'juniper'];
 

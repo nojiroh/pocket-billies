@@ -429,5 +429,62 @@
   "when": "last:won",
   "priority": 4,
   "script": ["“A win, recorded. Wins are reviewed. Reviews take time.” #l:aaec"]
+ },
+ "sq_lost_smoke": {"who":"square_lost","priority":1,"script":["The train came home smoking again. #l:8d97"]},
+ "sq_lost_spat": {"who":"square_lost","priority":1,"script":["Back already? The sky spat them out. #l:32b3"]},
+ "sq_lost_credit": {"who":"square_lost","priority":1,"script":["Chosen’s taking credit for the rescue. Shocking. #l:5109"]},
+ "sq_lost_clerk": {"who":"square_lost","when":"lastby:bureau","priority":5,"script":["Lost to a clerk, I heard. A clerk! #l:4ccb"]},
+ "sq_lost_stamp": {
+  "who": "square_lost",
+  "when": "lastby:bureau",
+  "priority": 5,
+  "script": ["Someone saw a stamp on their sleeve. Odd, that. #l:df05"]
+ },
+ "sq_lost_blake": {
+  "who": "square_lost",
+  "when": "lastby:rival",
+  "priority": 5,
+  "script": ["Blake again? Somebody get that boy a hobby. #l:b887"]
+ },
+ "sq_lost_boss": {
+  "who": "square_lost",
+  "when": "lastby:boss",
+  "priority": 4,
+  "script": ["Got right to the end, I heard. Then the end got them. #l:66ba"]
+ },
+ "sq_lost_wild": {
+  "who": "square_lost",
+  "when": "lastby:wild",
+  "priority": 3,
+  "script": ["Beaten by a wild one. It happens. Often, lately. #l:5068"]
+ },
+ "sq_lost_early": {"who":"square_lost","when":"last:row <= 2","priority":4,"script":["Barely left the station, that one. #l:30ed"]},
+ "sq_lost_quit": {
+  "who": "square_lost",
+  "when": "last:quit",
+  "priority": 6,
+  "script": ["Came back early. Left the kettle on, probably. #l:9b5a"]
+ },
+ "sq_lost_streak": {
+  "who": "square_lost",
+  "when": "history:lstreak >= 3",
+  "priority": 6,
+  "script": ["Home on the smoky train again. I’d start walking. #l:51e5"]
+ },
+ "sq_won_gold": {"who":"square_won","priority":1,"script":["The train came home gold! Gold! #l:7605"]},
+ "sq_won_bunting": {"who":"square_won","priority":1,"script":["Bunting’s up. Somebody did something right. #l:faec"]},
+ "sq_won_coin": {"who":"square_won","priority":1,"script":["Toss a coin in the fountain. Luck’s in the air. #l:bd79"]},
+ "sq_won_first": {"who":"square_won","when":"history:wins <= 1","priority":5,"script":["First win! I’m telling everyone. #l:c2bc"]},
+ "sq_won_blake": {
+  "who": "square_won",
+  "when": "last:rivalwon",
+  "priority": 5,
+  "script": ["Beat Blake, I heard. He’ll sulk for a week. #l:dec5"]
+ },
+ "sq_won_streak": {
+  "who": "square_won",
+  "when": "history:streak >= 3",
+  "priority": 6,
+  "script": ["Another win? We’ll run out of bunting. #l:6cd6"]
  }
 }
