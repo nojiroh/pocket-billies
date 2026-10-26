@@ -18,7 +18,8 @@ detailed task list (task ids A1...I3) and their "what the renderer does today" n
 | C3 | Done (R1 light lane, 2026-10-26): the owner's verdict "same look, not slower"; the Frame block is the only path, `quality.frameBlock` deleted. |
 | C4 | Done. |
 | C5 | Ported (R1 light lane, 2026-10-26) behind `quality.stableLights` (off) and `quality.lights` (16); waiting on the owner's phone verdict. |
-| D1-D7 | Not done (the sky draws first, no `mediump`, no `invalidateFramebuffer`, pixel cap 1.75 DPR / 1.6 MP; the automatic quality can drop phones to 0.6 resolution since 2026-10-23). |
+| D1, D3-D7 | Built (R2 pixels lane, 2026-10-26), each behind its own switch, off: `quality.skyLast` (D1), `quality.invalidate` (D3, the table under D3), `quality.phonePixels` (D4: 1.2 MP and a 0.9 start on phones, the owner's numbers), `quality.solidFirst` (D5 option (a); (b) and (c) wait for the phone's numbers), `quality.phoneLamps` (D6: 8 lamps, 4 in the air on phones, the owner's numbers), `air.cheapShafts` (D7), and rain's cost: `quality.rainBatch`. Waiting on the owner's phone run. |
+| D2 | Not done (round 4, alone): every shader is still `highp`. |
 | E1-E13 | Not started; the E3 bug (reflection never sets `uSelf` / `uFol`, walk/water.js) is still there. |
 | F1-F9 | Not started. Retargeted: the models (`vox`, `mdl`, `voxS` in prop-models.js) are now the solid geometry; `tagSolidProp` skips every model, so F3 (solid props instanced) is dropped unless R1's numbers show a real `solid` pass. |
 | G | Not done (battle-stage.js still draws each rig on a canvas). Only if R1's battle numbers ask for it. |

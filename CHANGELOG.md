@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Lighter drawing for phones** (phase 20, test switches, all off for now; Studio > Engine > Quality): "Sky last"
+  draws the sky only where it shows, "Solid things first" lets the graphics card skip leaves hidden behind trunks and
+  walls, "Drop spent pictures" saves memory traffic between the effects, "Rain in one go" draws rain, snow and ash in
+  one go (bad weather cost about 150-230 extra draws a frame), "Phone pixel budget" (phones draw at most 1.2 million
+  pixels, starting a step lower) and "Phone lamps" (8 lamps lit at once on phones, 4 of them glowing in the air).
+  Studio > Engine > Air "Cheap light shafts" adds a few soft sunbeams from the trees when God rays are off. They are
+  in the graphics test, with two new stations (the Sun gap without god rays, the meadow in the rain).
 - **Models in batches** (phase 20, a test switch, off for now): Studio > Engine > Quality "Models in batches" draws
   every tree, house or lamp post of one kind in one go instead of one at a time (about 130 fewer draws a frame in
   Copperleaf), with the same look. It is in the graphics test.

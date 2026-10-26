@@ -2,6 +2,88 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Phase 20 R2, lane pixels (stage 6 without D2) - 2026-10-26
+Branch `track/renderer` (one of three R2 lanes: models, sprites, pixels). Plan approved in Plan Mode; the owner's
+answers: phones (Android, iPhone; not the iPad) get 1.2 MP and the automatic quality starts at 0.9; 8 lamps lit at
+once on phones, 4 of them in the god-ray pass; I may take buildings.js (only the solid/fronts split) and
+walk/fountains-weather.js (only the rain batch); D7's shafts both automatic and from a map's list. Every switch is
+off by default (they change the look or haven't been seen on a phone yet).
+- Where the docs and the code differed (checked):
+  - walk-view-gl.js is 703 lines, not 6,000: the pixel cap is in drawWalkFrame, the draw order in drawWalkFrameInner.
+  - The sky's 0.9999 depth didn't matter: the depth test is off while it draws. `uMirror` was dead, as the phase
+    file says (nothing drew a mirrored sky).
+  - Building fronts are blended inside drawBuildings (buildings.js), and a room's front (walk/rooms.js) is blended
+    over the ground before anything opaque: both had to stay after (or, for the room, before) the sky.
+  - **The A8 phone numbers were taken at fewer pixels than the game draws**: the graphics test pins resolution 1,
+    so your phone (411 x 727 at DPR 3.5) drew 720 x 1272 (0.92 MP) there, while the game's own 1.5 hits the 1.6 MP
+    cap (951 x 1681). At your real values the phone draws 75% more pixels than A8 measured.
+  - The walk camera looks down, so the sky is rarely in the picture (docs/graphics-bench.md, Open sky), yet it was
+    drawn over the whole screen first: its clouds (4 noise layers) ran on every pixel at full resolution. Sky last
+    should save most of that.
+  - D6 was half there: every lit pixel already loops only over the picked lights (`quality.lights`); the god-ray
+    pass checks at most 6 lamps (its comment says 12 steps, not the 14 the phase file has).
+  - Rain is not in effects.js but in walk/fountains-weather.js: every drop and splash its own draw (a picture bind
+    and 5-6 uniform calls each).
+  - The counters count draws, not pixels: D5 can only be judged by your phone's frame rate.
+- Changed (one cause per commit):
+  - Prep, no look change: the sky at depth exactly 1.0; the dead `uMirror` gone; `drawBuildings(..., part)` draws
+    `'solid'` (walls, roofs, windows) or `'fronts'` (the blended front pictures), both by default.
+  - **D1** `quality.skyLast` ("Sky last"): the sky after the models, walls and structures, depth test LEQUAL with no
+    writes, so it fills only what is still at the cleared depth; the building fronts, water and effects after it. A
+    frame showing a room's front keeps the sky first.
+  - **D5 (a)** `quality.solidFirst` ("Solid things first"): models, buildings' walls and structures before the
+    sprites. The box faces stay right after the sprites (they meet their pictures' edges).
+  - **D4** `quality.phonePixels` ("Phone pixel budget"): on Android and iPhone 1.2 MP instead of 1.6, and the
+    automatic resolution starts at 0.9 once (it climbs back when frames have room). At your values: 823 x 1456.
+  - **D6** `quality.phoneLamps` ("Phone lamps"): on phones at most 8 lights picked (one line in walk/lighting.js
+    pickLights, the R1 light lane's file), and the god-ray pass takes 4 of them (a new `uAirN`, 6 elsewhere).
+  - **D3** `quality.invalidate` ("Drop spent pictures"): post passes that cover their whole target drop its old
+    content first (blur, cheap blur, bloom's bright and down passes, AO, shafts, vol, the grade on the screen); the
+    reflection's depth is dropped after its pass. The table of every render target is in the phase file under D3.
+  - **Rain** `quality.rainBatch` ("Rain in one go"): rain, snow, ash and splashes in one instanced draw (new program
+    `fxW`, the fx maths with each quad's values per instance, same order). Headless counts in Copperleaf (counts
+    only): rain added about 150 draws and 1,100 uniform calls a frame, a storm 230 and 1,600; with it on the weather
+    is one draw and the uniform calls stay at the clear day's. Rain also costs pixels I did not touch: the wet ground
+    and denser air in the god-ray pass.
+  - **D7** `air.cheapShafts` (Studio > Engine > Air "Cheap light shafts", 0 = none): up to 6 soft additive beams
+    (the glow disc stretched) from the crowns of about half the trees within 26 m, down along the sun's light, coloured
+    by the sun; strongest with the sun low, gone at night, in grey weather, in rain and close to the camera. Only when
+    the god-ray pass won't draw (quality step 3, Sun rays 0, or no shadow map). A place can list its own:
+    scene `shafts: [[x, z, top above the ground (6), width (1.2)], ...]` (no map has one yet).
+  - Graphics test: the six switches above (each alone, out of "everything") and two stations, "Sun gap, no god
+    rays" and "Meadow in the rain". 145 steps over 28 settings now (with the models and sprites lanes).
+  - Settings.js defaults, the Studio labels, the precompile list (fxW only while its switch is on), CHANGELOG.
+- Edits outside my lane's files (for the owning lanes): walk/lighting.js pickLights (the phone cap, one statement);
+  buildings.js (the part argument); walk/fountains-weather.js (the batch); graphics-bench-test.js has three small
+  edits besides additions (a station's `spot`, `weather` and `fixed`), and tools/check-quick.py's spot check reads
+  `st.spot` (so the test map needed no new spots and gamedata.js no rebuild).
+- Risky:
+  - Sky last: anything blended that is drawn before the sky would show black where only sky is behind it. I found
+    the building fronts and the room front; something I missed would show as black fringes against the sky.
+  - Solid things first: where a picture lies exactly on a model's face, which one wins can flip.
+  - Drop spent pictures: a driver that drops more than asked would show garbage in the blur or glow.
+  - Phone pixel budget: softer on the phone (about 13% fewer pixels across, 25% fewer in all).
+  - Cheap light shafts: the strength (0.22 of the sun's colour per beam at 0.6) and the 26 m range are my guess.
+- Verified: after every commit lint, typecheck, unit tests (1,074, then 1,098 after the merges), check:modules,
+  format:check; check:data once; smoke "no problems" on every commit touching game/ and on each merge. A headless
+  crash check (errors and gl.getError only, no pictures) in Copperleaf, a room and a battle with every new switch
+  on at once, the models and sprites lanes' too: frames drawn, no errors. No speed or look judged headless.
+- **Your phone run** (Android phone, then the iPad), at a full charge, nothing else open:
+  1. Settings > Help > **Graphics test** (now longer: 145 steps). Save the report and send it. It measures each
+     switch off and on at its station. Look at the screen while "Sky last", "Solid things first" and "Drop spent
+     pictures" step: the picture should not change at all; tell me if anything flickers, goes black or loses leaves.
+  2. **Phone pixel budget** isn't in the graphics test (it pins resolution 1). In Studio > Engine > Quality turn
+     "Ease off when slow" off, walk Copperleaf by day for a minute, export the debug log; turn "Phone pixel budget"
+     on, walk again, export again. Send both. Say whether the picture is too soft.
+  3. Rain: the debug menu's **Diagnostics test** has a "Rain and night" step (clear, rain, night in fps). Run it
+     with "Rain in one go" off and again on, save both reports. Watch the rain once: does it look the same?
+  4. Shafts: in the Studio's Engine page set the hour bar to golden hour, Sun rays (Air) to 0 and "Cheap light
+     shafts" to 0.6, and look at a grove (the graphics test's "Sun gap, no god rays" station shows them too): do
+     the beams look right, too strong, too many?
+- **Ask me before** (after your run): which switches go on by default (old paths deleted in their own commits in
+  round 4), whether D5 needs options (b) or (c), and the shafts' strength.
+- Next: your round 2 phone run; D2 (`mediump`) alone in round 4.
+
 ### Phase 20 R2, lane models (stage 3: models instanced) - 2026-10-26
 Branch `track/renderer` (one of three R2 lanes: models, sprites, pixels). Plan approved in Plan Mode; the owner's
 answers: the jungle broadleaf far version (phase 09 task 10) skipped for now; the reflection uses the same switch;
