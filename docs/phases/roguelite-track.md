@@ -1112,7 +1112,9 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
     slot map works on the baked sheets and rigs, not per plan pair; the octopus and blob share one bone (`also`).
   - **RO-3d** Ortega silkworm (insect, then shell, then flyer; the early bug) and the Bloomberg plant (plant).
   - **RO-3e** the Knight frog (hopper) and the fossil pair: Carnegie trilobite (crab), Vanderbilt rail snake
-    (serpent).
+    (serpent). Done 2026-10-26 (HANDOFF): Swooshpole > Victoad (common, Water > Water/Flying, level 18), the fossils
+    as two rare singles (Philanthrobite Steel/Water, Vanderbolt Fire/Ground, totals 490), `wild: false` lines given
+    only by the Dig Site event's new `gift` command (pick one of the two).
   - **RO-3f** Satoshi (blob, the mythical copycat) and the Hastings cave bat (flyer).
   - **RO-3g** legendaries Mansa Musa (quad) and Rockefeller (biped), the Eevee-style line, pools and a balance pass.
     **The owner (2026-10-26): the Swift line is the Eevee-style line** (in place of the draft "Pivotlet"): Swiftlet
