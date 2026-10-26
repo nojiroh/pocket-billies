@@ -12,6 +12,7 @@ import { $ } from '../../game/js/util.js';
 import { walkView } from '../../game/js/walk-view.js';
 import { CAMERA_FOLDERS, ENGINE_SPEC, engineSetting } from '../../game/js/engine/settings.js';
 import { walkRenderer } from '../../game/js/walk/walk-state.js';
+import { zoomLimits } from '../../game/js/walk/camera.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { cameraReadout, crispScale, gameRenderWidth } from '../../game/js/logic/camera-readout.js';
 import {
@@ -111,8 +112,7 @@ studioState.hooks.camera = (p, v) => {
   if (studioState.hooks.engine) studioState.hooks.engine(p, v);
 };
 function cameraPreviewBarsHTML() {
-  const zMin = engineSetting('camera', 'zoomMin'),
-    zMax = engineSetting('camera', 'zoomMax'),
+  const [zMin, zMax] = zoomLimits(),
     z = typeof walkRenderer !== 'undefined' ? walkRenderer.zoomT : 1;
   return `<div class="eng-pvbar cam-bar">Frame ${CAMERA_FRAMES.map(([k, n]) => `<button class="seg ${cameraEditor.frame === k ? 'on' : ''}" data-act="camFrame" data-k="${k}">${n}</button>`).join('')}</div>
   <div class="eng-pvbar cam-bar"><label class="fld cam-zoom"><span>Your zoom <output id="camZoomV">${z.toFixed(2)}</output></span><input type="range" id="camZoom" min="${zMin}" max="${zMax}" step="0.01" value="${z}"></label><button class="btn sm" data-act="camZoomReset" title="Back to zoom 1, the scene’s own framing (R in the game)">Zoom 1</button></div>

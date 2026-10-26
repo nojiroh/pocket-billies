@@ -89,7 +89,6 @@ const DIAL_NEEDS = {
   'grass.bend': ['grass.density'],
   'water.foam': ['water.ripples'],
   'water.rings': ['water.ripples'],
-  'camera.zoomMin': ['camera.zoomMax'],
   'camera.leadSmooth': ['camera.lead'],
   'camera.leadSide': ['camera.lead'],
   'camera.softW': ['camera.deadW'],
