@@ -26,6 +26,7 @@
     "z": {"description": "draw order from the front", "type": "number"},
     "zb": {"description": "draw order from behind", "type": "number"},
     "slot": {"description": "its part slot (rules.json parts.slots); null: none", "anyOf": [{"enum": ["head", "body", "front", "back", "sig"]}, {"type": "null"}]},
+    "also": {"description": "RO-3c: a second slot this bone answers to, where the plan has no bone of its own for it (it takes slot's size and is never grafted)", "enum": ["head", "body", "front", "back", "sig"]},
     "rr": {"description": "its turn at rest (radians)", "type": "number"},
     "face": {"description": "the head: eyes and a blink from the front", "type": "boolean"},
     "squash": {"description": "gets squash and stretch frames", "type": "boolean"},
