@@ -45,6 +45,7 @@ import {
 import { gameData } from './game-data.js';
 import { metresToKm, today } from './logic/rules.js';
 import { SAVE_NEW_MSG, SAVE_OLD_MSG, newSaveKeepingPreferences, saveAge, saveFill, validSave } from './logic/saves.js';
+import { onlinePlayOn } from './logic/online.js';
 import {
   activeBattle,
   escapeHtml,
@@ -538,6 +539,14 @@ function settingsHTML() {
     body =
       `<div class="settings-profile">${personHTML('me', 52)}<div><b>${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)}</b><p class="note">${saveProgressLine()}</p></div></div>` +
       (typeof accountSettingsHTML === 'function' ? accountSettingsHTML() : '') +
+      /* ON-1: off by default; global views (shared Billies, trading with anyone, random matches) show only with it */
+      (typeof account !== 'undefined' && account.user
+        ? settingsRowHTML(
+            'Online play',
+            'Play with people beyond your friends: shared Billies, trading and matches, as each arrives. Friends work either way.',
+            switchHTML('online', onlinePlayOn(p), '1', '')
+          )
+        : '') +
       (typeof accountSetAsideHTML === 'function' ? accountSetAsideHTML() : '') +
       `<p class="note">${typeof account !== 'undefined' && account.user ? 'Your progress is saved to your account, and in this browser.' : 'Your progress is saved in this browser. Sign in to keep it online, or download a backup before changing device or clearing browser data.'}</p><div class="two"><button class="pb small" data-a="export-save">Export save</button><button class="pb small" data-a="import-save">Import save</button></div>` +
       `<h3 class="set-sub set-danger">Start over</h3><p class="note">Erases your team, Field Guide, Moneys and the ranch. Settings stay.</p><button type="button" class="pb small red wide" data-a="start-over">Start over</button>`;
@@ -565,6 +574,11 @@ function changePreference(k, v) {
   }
   if (k === 'expert') {
     saveData.preferences.expert = v === '1';
+    save();
+    return;
+  }
+  if (k === 'online') {
+    saveData.preferences.online = v === '1';
     save();
     return;
   }

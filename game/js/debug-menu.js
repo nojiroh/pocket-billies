@@ -5,6 +5,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
+  account,
   augmentsLevelled,
   augmentsOpen,
   closeModal,
@@ -280,7 +281,12 @@ function debugHTML() {
     ''
   )}${debugButtonHTML('script', 'Play it')}</div><p class="note">The conversations written in the new script format. They play as written, flags and all; hold the dialogue box to skip. Walking and camera lines do nothing yet.</p>`;
   const ranch = `<div class="dbg-row">${debugButtonHTML('ranchhour', 'Age the ranch by an hour')}${debugButtonHTML('eggsready', 'Eggs ready now')}</div>`;
-  const saveRow = `<div class="dbg-row">${debugButtonHTML('copy', 'Copy save as text')}${debugButtonHTML('export', 'Download backup')}${debugButtonHTML('wipe', 'Erase save', 'red')}</div>`;
+  const saveRow = `<div class="dbg-row">${debugButtonHTML('copy', 'Copy save as text')}${debugButtonHTML('export', 'Download backup')}${debugButtonHTML('wipe', 'Erase save', 'red')}</div>${
+    /* ON-1: the moderator's uid goes into firebase/firestore.rules (moderator()); shown here, never sent */
+    typeof account !== 'undefined' && account.user
+      ? `<p class="note">Your account id (for the moderator line in firestore.rules): <b>${escapeHtml(account.user.uid)}</b></p>`
+      : ''
+  }`;
   return `<div class="dbg">
  <input id="dbgFind" type="search" placeholder="Find a button" aria-label="Find a button" autocomplete="off" value="${escapeHtml(uiState.dbgFind || '')}">
  <p class="note">Changes apply to this save right away. Export a backup first if you might want to undo. Gold buttons give you things; red ones erase something or start a battle.</p>
