@@ -55,7 +55,7 @@ import { neutralPose, openSkeleton } from './skeleton.js';
 import { WB_VIEWS, workbench } from './workbench.js';
 import { wbPart, wbpColor, wbpN, wbpRefreshSide, wbpRoot } from './workbench-part.js';
 import { kitFormOf, kitRecipeHTML } from './kit-recipe.js';
-import { placeholderPanelHTML } from './placeholder-sheets.js';
+import { placeholderFormOf, placeholderPanelHTML } from './placeholder-sheets.js';
 /* eslint-disable no-func-assign */
 expose({
   WBS_CROPS: [() => WBS_CROPS],
@@ -473,6 +473,8 @@ ACTIONS.wbsRepack = async () => {
   if (!R) return;
   if (kitFormOf(sp))
     return toast('A kit Billie’s sheet is baked from its recipe (Kit recipe): Write Billie packs it.', 'err');
+  if (placeholderFormOf(sp))
+    return toast('A placeholder Billie’s sheet is baked from its body plan: Write Billie packs it.', 'err');
   const own = Object.entries(studioState.D.coats || {}).find(([, C]) => WB_VIEWS.some(v => coatArt(C, sp, v)));
   if (own) return toast(`The ${own[0]} coat has its own sheet laid out like this one, so it can’t be repacked.`, 'err');
   let rig = R,
