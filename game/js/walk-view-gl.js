@@ -732,7 +732,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       ivp: C.ivp,
       noVol: QE >= 3 || (!!sc.indoor && !dark),
       volDens: sc.indoor ? 0.5 : 1 + (engineContext.env ? environment.fog * 1.5 + environment.rain * 0.4 : 0),
-      airLamps: PHONE && engineSetting('quality', 'phoneLamps') ? 4 : 6,
+      airLamps: PHONE ? 4 : 6,
     });
   /* CAM-3: what the blur did this frame, for the debug log, the Studio's blur guides and the checks (no names) */
   walkRenderer.lensInfo = {

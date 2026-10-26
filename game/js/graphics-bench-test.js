@@ -83,7 +83,6 @@ const GRAPHICS_TEST_HIDDEN = [
   /* phase 20 R2 (pixels): each on its own, out of "everything lowest / highest" (Phone pixel budget is not here: the
      test pins resolution 1, under the phone's budget either way; the diagnostics' Renderer baseline measures it) */
   ['quality.skyLast', 'Sky last', { values: [false, true], alone: true }],
-  ['quality.phoneLamps', 'Phone lamps', { values: [false, true], alone: true }],
   /* phase 20 E7-E10: the standing pictures (and the reflection's) drawn one draw per run of one picture; the same look */
   ['quality.spriteInstances', 'Pictures in batches', { values: [false, true], alone: true }],
   /* phase 20 R3 (shadows): the shadow maps' pictures and models in batches (the same look); models in the far shadow
@@ -129,7 +128,6 @@ const GRAPHICS_TEST_STATIONS = [
       'quality.stableLights',
       'quality.lights',
       'quality.modelInstances',
-      'quality.phoneLamps',
       'quality.shadowInstances',
     ],
   },

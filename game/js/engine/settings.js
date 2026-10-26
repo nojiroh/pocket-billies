@@ -275,8 +275,6 @@ export const ENGINE_DEFAULTS = {
     skyLast: false,
     /* a phone's pixel budget 1.2 MP instead of 1.6, its automatic resolution starting at 0.9 (D4) */
     phonePixels: false,
-    /* a phone's lamps: at most 8 lit at once, 4 of them in the air (D6) */
-    phoneLamps: true,
     /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each) */
     spriteInstances: false,
     /* phase 20 R2: the solid models (voxel props, low-poly models) drawn one draw per mesh for every item with it */
@@ -1236,7 +1234,7 @@ export const ENGINE_SPEC = [
         1,
         16,
         1,
-        'How many lamps, windows and fires near you light the scene at once (the nearest ones). Fewer is faster on phones; farther lamps still glow but no longer light the ground.',
+        'How many lamps, windows and fires near you light the scene at once (the nearest ones). Fewer is faster on phones; farther lamps still glow but no longer light the ground. A phone (Android, iPhone) lights at most 8, and 4 of them glow in the air.',
       ],
       [
         'skyLast',
@@ -1249,12 +1247,6 @@ export const ENGINE_SPEC = [
         'Phone pixel budget',
         'bool',
         'On a phone (Android, iPhone) the scene is drawn at most 1.2 million pixels instead of 1.6, and the automatic quality starts one step lower. Softer, faster; tablets and computers are unchanged.',
-      ],
-      [
-        'phoneLamps',
-        'Phone lamps',
-        'bool',
-        'On a phone (Android, iPhone) at most 8 lamps, windows and fires light the scene at once (fewer if Lamps lit at once says so), and 4 of them glow in the air. Tablets and computers are unchanged.',
       ],
       [
         'spriteInstances',

@@ -390,8 +390,7 @@ export function drawPostRest(S, C, rw, rh, o, F) {
     gl.uniform1f(U.uLK, lk);
     gl.uniform1f(U.uDens, o.volDens ?? 1);
     gl.uniform1f(U.uMaxD, o.volMax || 48);
-    /* phase 20 R2 (D6): how many of the lit lamps glow in the air (6, the most the march checks; 4 on a phone with
-       quality.phoneLamps) */
+    /* phase 20 R2 (D6): how many of the lit lamps glow in the air (6, the most the march checks; 4 on a phone) */
     gl.uniform1f(U.uAirN, o.airLamps ?? 6);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     VO = renderTarget('vol1', qw, qh, { hdr: true });
