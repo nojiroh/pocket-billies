@@ -458,7 +458,7 @@ def run_rival(pg, base):
       storyHomeArrive(false);
       return [S.quests.fav_kappi, (M.rel.kappi || 0) - had, (S.fresh || {}).kappi];
     })()""")
-    if fav != ['done', pg.evaluate("RELATIONS.gift.favour"), 'fav_hazel_thanks']: raise Exception(f'Hazel’s favour on the way home: quest, points, her line {fav}')
+    if fav != ['done', pg.evaluate("RELATIONS.gift.favour"), 'fav_kappi_thanks']: raise Exception(f'Hazel’s favour on the way home: quest, points, her line {fav}')
     pg.evaluate("delete saveData.story.pending;0")
     return f'Blake on node {n} with {size} Billies against {rv["lead"]}, said his first line, beaten ({song} music): a meeting, a win, Beans, a reward pick; a Bean for Chosen: level 1, his thank-you, not offered again; Hazel’s favour paid on the way home, her thanks next'
 

@@ -170,7 +170,7 @@ test('check-data: planted story director lines (RL-S1)', t => {
       'banter.json': B => {
         B.leader_badge.when = 'wins >= 1';
         B.chosen_won.when = 'last:victory';
-        B.hazel_file.when = 'lastby:nobody';
+        B.kappi_file.when = 'lastby:nobody';
         B.chosen_first.cooldown = 2;
       },
     })
@@ -192,7 +192,7 @@ test('check-data: planted relations, the rival and the hub folk in the story (RL
         R.run.rival.meet = [3];
       },
       'banter.json': B => {
-        B.hazel_file.when = 'rel:blake >= 1 or gifted:nobody';
+        B.kappi_file.when = 'rel:blake >= 1 or gifted:nobody';
       },
     })
   );

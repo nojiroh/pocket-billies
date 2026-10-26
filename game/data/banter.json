@@ -102,7 +102,7 @@
   "must": true,
   "script": ["They remembered me? Brand awareness. Have two points of my respect. #l:5363"]
  },
- "fav_hazel_ask": {
+ "fav_kappi_ask": {
   "who": "kappi",
   "when": "ch1_drop and quest:fav_kappi = none",
   "priority": 7,
@@ -110,7 +110,7 @@
   "must": true,
   "script": ["Go far next time. Row six or past it. I need readings from where they park things. #l:ed42","quest fav_kappi asked"]
  },
- "fav_hazel_thanks": {
+ "fav_kappi_thanks": {
   "who": "kappi",
   "when": "quest:fav_kappi = done",
   "priority": 8,
@@ -179,39 +179,39 @@
   "priority": 6,
   "script": ["[angry] A clerk? You lost to paperwork? I once lost to a form. We don’t talk about the form. #l:0564"]
  },
- "hazel_rounder": {
+ "kappi_rounder": {
   "who": "kappi",
   "when": "last:lost",
   "priority": 4,
   "script": ["You came back through the same hole. I measured it. It’s getting rounder. #l:5be0"]
  },
- "hazel_tidy": {
+ "kappi_tidy": {
   "who": "kappi",
   "when": "history:losses >= 2",
   "priority": 6,
   "once": true,
   "script": ["Every time you lose out there, you land in the same spot. Things don’t fall that tidily. #l:2b31"]
  },
- "hazel_won": {
+ "kappi_won": {
   "who": "kappi",
   "when": "last:won",
   "priority": 4,
   "script": ["You won and came home by train. Good. The other way home makes my instruments hum. #l:df6c"]
  },
- "hazel_file": {
+ "kappi_file": {
   "who": "kappi",
   "when": "lastby:bureau",
   "priority": 7,
   "once": true,
   "script": ["The clerk who beat you. Did they mention a file? A number? ...No reason. #l:41c7"]
  },
- "hazel_perks": {
+ "kappi_perks": {
   "who": "kappi",
   "when": "last:perks >= 4",
   "priority": 3,
   "script": ["That many Perks in one run. You sound like someone I work with. Not a compliment. #l:1d8e"]
  },
- "hazel_scrapbook": {
+ "kappi_scrapbook": {
   "who": "kappi",
   "when": "history:runs >= 5",
   "priority": 5,
