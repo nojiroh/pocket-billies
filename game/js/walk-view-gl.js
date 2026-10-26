@@ -14,6 +14,7 @@ import {
   BUILDING_SHADERS,
   SOLID_PROP_SHADERS,
   WORLD_BOWL_SHADERS,
+  buildingState,
   drawBuildings,
   drawPropModels,
   drawSolidProps,
@@ -21,10 +22,13 @@ import {
   lifeStep,
   noWebGL,
   propModelShaders,
+  propModelState,
   provide,
   runWaterWeatherSync,
   seamlessLookTick,
   seamlessPrepareAhead,
+  solidPropState,
+  structureState,
   worldBillyLabels,
   worldExtra,
   worldMapPrewarm,
@@ -119,6 +123,7 @@ expose({
   canvasForContext: [() => canvasForContext, v => (canvasForContext = v)],
   drawWalkFrame: [() => drawWalkFrame, v => (drawWalkFrame = v)],
   drawWalkFrameInner: [() => drawWalkFrameInner, v => (drawWalkFrameInner = v)],
+  dropWalkGpuCaches: [() => dropWalkGpuCaches, v => (dropWalkGpuCaches = v)],
   ensureWalkGl: [() => ensureWalkGl, v => (ensureWalkGl = v)],
   groundBuiltBeforeShow: [() => groundBuiltBeforeShow, v => (groundBuiltBeforeShow = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
@@ -318,7 +323,48 @@ export function ensureWalkGl(cv) {
   for (const k of MAP_CACHE_FIELDS) walkRenderer[k] = null;
   return true;
 }
+/* phase 20 H: a restored context is the same object with nothing on it, so every cache that keeps a buffer or a
+   texture is dropped (not freed: the old ones are gone with the context), whether or not the walk view shows: the world
+   map may make the context again first, and the walk view then skips ensureWalkGl's own clearing. What still keeps
+   dead handles waits for the resource registry (HANDOFF, phase 20 round 1 context lane) */
+function dropWalkGpuCaches() {
+  walkRenderer.gkey = '';
+  walkRenderer.farKey = '';
+  walkRenderer.hkey = '';
+  walkRenderer.sceneCache = null;
+  walkRenderer.roomFloors = null;
+  walkRenderer.wtex = null;
+  walkRenderer.prep = null;
+  walkRenderer.basin = null;
+  walkRenderer.basinKey = null;
+  /* the sun's shadow map of the last frame (drawn every other frame on a struggling phone) and its cache key */
+  walkRenderer.lastShadow = null;
+  walkRenderer.shKey = '';
+  for (const k of MAP_CACHE_FIELDS) walkRenderer[k] = null;
+  walkView.gkey = '';
+  /* a real loss also comes a frame or more before its event, and a frame drawn on the dead context turns the buildings,
+     models and solid props off (their guards): on the new context they try again (a real fault turns them off again) */
+  if (typeof buildingState !== 'undefined') {
+    buildingState.mesh = new WeakMap();
+    buildingState.fail = '';
+  }
+  if (typeof propModelState !== 'undefined') {
+    propModelState.meshes.clear();
+    propModelState.fail = '';
+  }
+  if (typeof solidPropState !== 'undefined') {
+    solidPropState.meshes = new WeakMap();
+    solidPropState.live.clear();
+    solidPropState.fail = '';
+  }
+  if (typeof structureState !== 'undefined') {
+    structureState.mesh = null;
+    structureState.parts = [];
+    structureState.key = '';
+  }
+}
 function onGlContextRestored(cv) {
+  dropWalkGpuCaches();
   if (walkView.id && walkView.cv === cv) {
     const id = walkView.id;
     walkView.id = null;

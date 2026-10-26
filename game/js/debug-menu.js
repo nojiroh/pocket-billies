@@ -75,7 +75,7 @@ import { uiIconHTML } from './art.js';
 import { applyPreferences, exportSave, settingsReset } from './settings-screen.js';
 import { battleStage, battleStageResize } from './battle-stage.js';
 import { mapById, walkTo, walkView } from './walk-view.js';
-import { gpuState } from './engine/webgl.js';
+import { forceContextLoss, gpuState } from './engine/webgl.js';
 import { paintBoxes, playTurnEvents } from './battle.js';
 import { worldMap } from './world-bowl.js';
 /* eslint-disable no-func-assign */
@@ -183,7 +183,7 @@ function debugHTML() {
     inTest = !!(uiState.bench && uiState.bench.test);
   const tests = `<div class="dbg-row"><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="diagtest">Diagnostics test</button><button class="pb small" data-a="gfxtest">Graphics test</button><button class="pb small" data-a="gfxbench">Graphics cost test</button>${debugButtonHTML('bowltest', 'Bowl map test')}<button class="pb small" data-a="dbglog">Export debug log</button></div><p class="note">The full test (a few minutes) walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more until the device can’t keep up. The diagnostics test (2 min) is a shorter run of the same. The graphics test tries each graphics setting on its own and saves a short report; the graphics cost test (10 min) measures what each one costs here. None of them changes the save.</p><p class="note">The bowl map test opens the bowl world map and checks its shaders, that every place is on it and opens its card when tapped, that the camera keeps above the rim, Home, and the frame rate on this device.</p>
   <div class="dbg-row">${debugButtonHTML('fps', debugMenu.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${frameScheduler.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span></div>
-  <div class="dbg-row">${debugButtonHTML('q0', 'Force best quality')}${debugButtonHTML('qauto', 'Automatic quality')}</div>
+  <div class="dbg-row">${debugButtonHTML('q0', 'Force best quality')}${debugButtonHTML('qauto', 'Automatic quality')}${debugButtonHTML('glloss', 'Lose the GPU context')}</div>
   ${
     DATA_WARN.length
       ? `<p class="note">Game data warnings (${DATA_WARN.length}):</p><ul class="dbg-warn">${DATA_WARN.slice(0, 30)
@@ -506,6 +506,14 @@ function debugAction(x) {
       save();
       return refreshDebugMenu(`Time ${L.time}, weather ${L.weather}, season ${L.season}.`);
     }
+    /* phase 20 H4: the screen behind should come back by itself 1.5 s later (the debug log says what happened) */
+    case 'glloss':
+      closeModal();
+      return toast(
+        forceContextLoss()
+          ? 'GPU context lost on purpose: it comes back in 1.5 s.'
+          : 'No GPU context to lose (no 3D view open, or it is lost already).'
+      );
     case 'bowltest':
       closeModal();
       runBowlMapTest();
