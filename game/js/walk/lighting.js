@@ -12,11 +12,12 @@ import { hash2d, walkView } from '../walk-view.js';
 import { ENGINE_DEFAULTS, engineContext, engineSetting } from '../engine/settings.js';
 import { normalize3, smooth01 } from '../engine/webgl.js';
 import { lightContext, pickPointLights } from '../engine/light.js';
-import { LIGHT_KIND } from '../engine/light-pick.js';
+import { LIGHT_KIND, lightPicker, pickStableLights } from '../engine/light-pick.js';
 import { environment, environmentHaze, environmentWindowLit } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
-import { worldCurveArgs } from './draw-common.js';
+import { worldCurveArgs, worldCurveDrop } from './draw-common.js';
+import { computeFrustum, inFrustum } from './quality-cull.js';
 import { skyColors } from './sky.js';
 import { roomLights, roomSkyLight } from './rooms.js';
 /* eslint-disable no-func-assign */
@@ -24,10 +25,15 @@ expose({
   AO_ALL: [() => AO_ALL],
   AO_NEAR: [() => AO_NEAR],
   AO_POOL: [() => AO_POOL],
+  BATTLE_LIGHT_PICK: [() => BATTLE_LIGHT_PICK],
+  LIGHT_PICK: [() => LIGHT_PICK],
   ROOM_DIM: [() => ROOM_DIM],
   lampLit: [() => lampLit, v => (lampLit = v)],
+  lightFrustum: [() => lightFrustum, v => (lightFrustum = v)],
+  lightInView: [() => lightInView],
   mapSun: [() => mapSun, v => (mapSun = v)],
   modelWindowLight: [() => modelWindowLight, v => (modelWindowLight = v)],
+  pickLights: [() => pickLights, v => (pickLights = v)],
   roomDimming: [() => roomDimming, v => (roomDimming = v)],
   walkLightContext: [() => walkLightContext, v => (walkLightContext = v)],
   windowLit: [() => windowLit, v => (windowLit = v)],
@@ -129,6 +135,27 @@ export function modelWindowLight(it, dark0) {
     P.push({ p, n: [nx * cr - nz * sr, nx * sr + nz * cr], lit });
   }
   return { k, on, P, dark };
+}
+/* phase 20 C5: the lit lights out of the frame's, with quality.stableLights on kept from frame to frame
+   (engine/light-pick.js; the walk and the battle stage each have their own), else the nearest each frame */
+const LIGHT_PICK = lightPicker(),
+  BATTLE_LIGHT_PICK = lightPicker();
+let lightFrustum = null;
+const lightInView = l => inFrustum(lightFrustum, l.p[0], l.p[1] + worldCurveDrop(l.p[0], l.p[2]), l.p[2], l.r);
+function pickLights(L, C, P, BT) {
+  const max = Math.max(1, Math.min(16, Math.round(engineSetting('quality', 'lights') ?? 16)));
+  if (!engineSetting('quality', 'stableLights')) return pickPointLights(L, P.x, P.z, max);
+  const cull = !!C.vp && (engineSetting('quality', 'cull') ?? true);
+  if (cull) lightFrustum = computeFrustum(C.vp);
+  return pickStableLights(
+    BT ? BATTLE_LIGHT_PICK : LIGHT_PICK,
+    L,
+    P.x,
+    P.z,
+    performance.now(),
+    max,
+    cull ? lightInView : null
+  );
 }
 /* phase 20 C2: the contact-shadow blobs, refilled in place each frame (engine/frame-lists.js) */
 const AO_POOL = [],
@@ -313,7 +340,7 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
     });
   }
   roomLights(sc, L, lb);
-  const lights = pickPointLights(L, P.x, P.z, 16),
+  const lights = pickLights(L, C, P, BT),
     sky = skyColors(sc);
   let hz = hexToRgb(engineSetting('air', 'haze') || sc.haze || (sc.sky || [])[2] || '#EAD9C0').map(v => v / 255);
   if (E && !sc.indoor) hz = environmentHaze(hz);

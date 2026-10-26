@@ -162,3 +162,28 @@ test('two lights with the same key: the first keeps it', () => {
   assert.equal(out.length, 1);
   assert.equal(out[0].p[2], 1);
 });
+
+test('walk lighting: off, the nearest each frame as before; on, the stable picker; quality.lights caps both', () => {
+  const Q = G.ENGINE_DEFAULTS.quality,
+    keep = { ...Q },
+    L = street(40, 11),
+    P = { x: 2, z: -1 },
+    C = { vp: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] };
+  try {
+    assert.deepEqual(G.pickLights(copy(L), C, P, null).map(at), pickPointLights(copy(L), P.x, P.z, 16).map(at));
+    Q.lights = 6;
+    assert.deepEqual(G.pickLights(copy(L), C, P, null).map(at), pickPointLights(copy(L), P.x, P.z, 6).map(at));
+    Q.stableLights = true;
+    Q.cull = false;
+    const out = G.pickLights(L, C, P, null);
+    assert.equal(out, G.LIGHT_PICK.out);
+    assert.deepEqual(out.map(at), pickPointLights(copy(L), P.x, P.z, 6).map(at));
+    // with the view test: the identity camera sees x and y in -1..1 (no far side), so only lights reaching that lit
+    Q.cull = true;
+    const near = [lamp(0, 0.5, { r: 0.5 }), lamp(30, 0.5, { r: 0.5 })];
+    near.forEach(l => (l.p[1] = 0));
+    assert.deepEqual(G.pickLights(near, C, { x: 100, z: 100 }, null).map(at), [at(near[0])]);
+  } finally {
+    Object.assign(Q, keep);
+  }
+});

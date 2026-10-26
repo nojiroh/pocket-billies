@@ -33,7 +33,7 @@ const LIGHT_JUMP_M = 20;
 /* a light's kind within the thing it comes from (its src): a prop's glow and the pool under it, its windows' light,
    its lamp (scenery glow) and that pool, and its fires (one per fx entry, from 8 on) */
 export const LIGHT_KIND = { glow: 0, glowPool: 1, window: 2, lamp: 3, lampPool: 4, fire: 8 };
-function lightPicker() {
+export function lightPicker() {
   return {
     owners: new Map(),
     seen: [],
@@ -112,7 +112,7 @@ function rankLights(S, max) {
 /* L: the frame's lights ({p, r, c, front, pool, own} as walk/lighting.js makes them, each with src and kind; one with
    no src is keyed by its place in L); (cx, cz): the player; now: ms; inView(l): whether a light's reach is in view
    (null: all are). Returns the lit lights, nearest first, colours scaled by their fades (S.out, refilled each frame). */
-function pickStableLights(S, L, cx, cz, now, max = 16, inView = null) {
+export function pickStableLights(S, L, cx, cz, now, max = 16, inView = null) {
   const jump = !S.on || Math.hypot(cx - S.cx, cz - S.cz) > LIGHT_JUMP_M;
   if (jump) resetLightPicker(S);
   const k = jump ? 1 : Math.min(100, Math.max(0, now - S.at)) / LIGHT_FADE_MS,
