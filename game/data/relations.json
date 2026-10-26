@@ -1,0 +1,43 @@
+{
+ "gift": {"cost":1,"points":1,"favour":2},
+ "people": {
+  "chosen": {
+   "levels": [
+    {"at":1},
+    {
+     "at": 2,
+     "fx": [
+      {"kind":"money","mult":1.05}
+     ]
+    },
+    {"at":4},
+    {"at":6},
+    {"at":9}
+   ]
+  },
+  "hazel": {
+   "levels": [
+    {"at":1},
+    {
+     "at": 2,
+     "items": {"potion":1}
+    },
+    {"at":4},
+    {"at":6},
+    {"at":9}
+   ]
+  },
+  "juniper": {
+   "levels": [
+    {"at":1},
+    {
+     "at": 2,
+     "pyramids": {"pyramid":1}
+    },
+    {"at":4},
+    {"at":6},
+    {"at":9}
+   ]
+  }
+ }
+}

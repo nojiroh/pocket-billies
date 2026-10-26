@@ -23,7 +23,9 @@
    (`item:honey`, `visits:juniper`, `badges`) means more than 0. Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { RELATIONS } from '../hooks.js';
 import { historyFacts, historyRematch } from './run-history.js';
+import { relLevels } from './relations.js';
 /* eslint-disable no-func-assign */
 expose({
   CONDITION_KINDS: [() => CONDITION_KINDS],
@@ -70,7 +72,8 @@ expose({
  *   unlocks: Record<string, any>, runs: number, wins: number, expedition?: number, questStages?: Record<string, string[]>,
  *   types?: Record<string, number>, money?: number, team?: number, badgeTypes?: Record<string, number>,
  *   opened?: Record<string, number>, last?: Record<string, number>, lastby?: Record<string, number>,
- *   history?: Record<string, number>, rematch?: number }} StoryState */
+ *   history?: Record<string, number>, rematch?: number, rel?: Record<string, number>, beans?: number,
+ *   gifted?: Record<string, number> }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
  * reads, for the Studio's reference (Project Story S3) */
@@ -112,6 +115,9 @@ export const CONDITION_KINDS = {
     about: 'over the runs kept (the last 20): history:runs, wins, losses, quits, streak, lstreak, bureau',
   },
   rematch: { id: false, count: true, about: 'in a leader’s or agent’s lines: runs this foe has ended: rematch >= 1' },
+  rel: { id: true, count: true, about: 'your level with a hub person (RL-S2, relations.json): rel:hazel >= 2' },
+  beans: { id: false, count: true, about: 'Beans on hand, the gift currency (RL-S2): beans >= 1' },
+  gifted: { id: true, count: false, about: 'you gave them a gift since the last run (RL-S2): gifted:hazel' },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
 export const WORDS = new Set(['and', 'or', 'not']);
@@ -368,6 +374,12 @@ export function termValue(c, S) {
       return (S.history || {})[c.id] || 0;
     case 'rematch':
       return S.rematch || 0;
+    case 'rel':
+      return (S.rel || {})[c.id] || 0;
+    case 'beans':
+      return S.beans || 0;
+    case 'gifted':
+      return !!(S.gifted || {})[c.id];
   }
 }
 /** whether a condition holds for the state @param {Cond | string} c @param {StoryState} S @returns {boolean} */
@@ -442,6 +454,11 @@ export function storyStateOf(save, o = {}) {
     lastby: facts.lastby,
     history: facts.history,
     rematch: historyRematch(meta.history, o.foe),
+    /* RL-S2: the hub folk's levels (relations.json, through the hooks: none without game data), the Beans, the gifts
+       given since the last run */
+    rel: RELATIONS && meta.rel ? relLevels(meta, RELATIONS) : {},
+    beans: meta.beans || 0,
+    gifted: Object.fromEntries(Object.entries(meta.gifted || {}).filter(([, n]) => n === (meta.runs || 0))),
   };
 }
 

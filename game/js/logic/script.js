@@ -16,9 +16,10 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide, saveData } from '../hooks.js';
-import { LOCATIONS, STORY_DATA, TRAINERS, warnData } from '../game-data.js';
+import { LOCATIONS, RELATIONS, STORY_DATA, TRAINERS, warnData } from '../game-data.js';
 import { speciesOf } from './fighters.js';
 import { makeBilly } from './rules.js';
+import { relAdd, relGift, relReached } from './relations.js';
 import { conditionHolds, conditionTree, storyStateOf } from './conditions.js';
 import { SCRIPT_COMMANDS } from './script-parse.js';
 /* eslint-disable no-func-assign */
@@ -201,6 +202,23 @@ export async function runScript(tree, stage, o) {
       case 'quest':
         (story.quests || (story.quests = {}))[a] = b;
         return;
+      /* RL-S2: the hub folk and you (logic/relations.js): Beans, a gift, points for a favour; a wardrobe piece of a
+         level reached is given then */
+      case 'beans': {
+        const M = save.meta;
+        if (M) M.beans = Math.max(0, Math.min(1e12, (M.beans || 0) + count(a)));
+        return;
+      }
+      case 'gift':
+      case 'rel': {
+        const M = save.meta;
+        if (!M || !RELATIONS) return;
+        const step = n.name === 'gift' ? relGift(M, a, RELATIONS) : relAdd(M, a, count(b), RELATIONS);
+        if (step)
+          for (const L of relReached(a, step, RELATIONS))
+            if (L.wardrobe && save.wardrobe) (save.wardrobe.owned || (save.wardrobe.owned = {}))[L.wardrobe] = 1;
+        return;
+      }
       case 'end':
         return END;
       case 'call': {

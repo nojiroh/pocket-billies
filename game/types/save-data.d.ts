@@ -93,6 +93,9 @@ export interface Meta {
   crests: number;
   /** RL-S2: the gift currency for the hub's folk (rare finds on runs) */
   beans: number;
+  /** RL-S2: points with each hub person (relations.json), and meta.runs when each last had a gift */
+  rel: Record<string, number>;
+  gifted: Record<string, number>;
   /** unlock ids: 1 (unlocks.json, RL-11) */
   unlocks: Record<string, 1>;
   /** hub building id -> level (buildings.json, RL-11) */
@@ -307,6 +310,8 @@ export interface Run {
   /** RL-9b: the uids of the Billies from home (picked at the mast, from the team or storage; logic/run-state.js
       runHome reads a run saved before as the hub's team) */
   home?: string[];
+  /** RL-S2: each hub person's level as the run took off (logic/relations.js: their run bonuses) */
+  rel?: Record<string, number>;
   /** RL-S2: Blake in this run (logic/rival.js); missing on a run from before */
   rival?: RunRival;
   /** RL-9b: what was packed from Copperleaf's bag at the mast */

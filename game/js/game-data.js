@@ -48,6 +48,7 @@ expose({
   PYRAMIDS: [() => PYRAMIDS],
   QUESTS: [() => QUESTS],
   RARITY_STAT_TOTALS: [() => RARITY_STAT_TOTALS],
+  RELATIONS: [() => RELATIONS],
   REWARDS: [() => REWARDS],
   ROADS: [() => ROADS],
   ROADS_BY_NODE: [() => ROADS_BY_NODE],
@@ -415,6 +416,11 @@ export const MODIFIERS = /** @type {import('../types/game-data').ModifiersData} 
   gameData.modifiers || { expeditions: [{ name: 'Expedition I', d: '', fx: [] }], challenges: {} }
 );
 provide({ MODIFIERS }); /* to-module */
+/* roguelite track RL-S2: the hub's folk and you: gifts, favours, levels (relations.json; logic/relations.js) */
+export const RELATIONS = /** @type {import('../types/game-data').RelationsData} */ (
+  gameData.relations || { gift: { cost: 1, points: 1, favour: 0 }, people: {} }
+);
+provide({ RELATIONS }); /* to-module */
 /* towns track TW-3: a run's quests (quests.json; logic/run-quests.js) */
 export const QUESTS = /** @type {import('../types/game-data').QuestsData} */ (gameData.quests);
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */

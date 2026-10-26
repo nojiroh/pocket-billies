@@ -1,0 +1,51 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "relations.schema.json",
+ "title": "game/data/relations.json: the hub's folk and you (roguelite track RL-S2; logic/relations.js): what a gift costs and gives, each person's levels and what each level brings (placeholders until the owner answers)",
+ "type": "object",
+ "required": ["gift", "people"],
+ "additionalProperties": false,
+ "properties": {
+  "gift": {
+   "description": "a gift costs `cost` Beans and gives `points` (one gift a person each time you are home from a run); a favour done gives `favour`",
+   "type": "object",
+   "required": ["cost", "points", "favour"],
+   "additionalProperties": false,
+   "properties": {
+    "cost": {"type": "integer", "minimum": 1, "maximum": 99},
+    "points": {"type": "integer", "minimum": 1, "maximum": 99},
+    "favour": {"type": "integer", "minimum": 0, "maximum": 99}
+   }
+  },
+  "people": {
+   "description": "by person id (people/<id>.json, or a lab keeper such as chosen): their levels, lowest first",
+   "type": "object",
+   "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+   "minProperties": 1,
+   "additionalProperties": {
+    "type": "object",
+    "required": ["levels"],
+    "additionalProperties": false,
+    "properties": {
+     "levels": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": {
+       "type": "object",
+       "required": ["at"],
+       "additionalProperties": false,
+       "properties": {
+        "at": {"description": "the points it takes (rising level by level)", "type": "integer", "minimum": 1, "maximum": 999},
+        "fx": {"description": "effect rows on every run while you hold the level (logic/effects.js FX_KINDS, as a Perk's)", "type": "array", "maxItems": 4, "items": {"type": "object", "required": ["kind"]}},
+        "items": {"description": "items into the bag at each takeoff while you hold the level", "type": "object", "additionalProperties": {"type": "integer", "minimum": 1, "maximum": 9}},
+        "pyramids": {"description": "pyramids at each takeoff while you hold the level", "type": "object", "additionalProperties": {"type": "integer", "minimum": 1, "maximum": 9}},
+        "wardrobe": {"description": "a wardrobe piece given once, when the level is reached (wardrobe.json)", "type": "string", "pattern": "^[a-z][a-z0-9_]*$"}
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

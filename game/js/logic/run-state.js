@@ -233,6 +233,8 @@ export function validRun(o) {
   /* RL-9b: the Billies from home (uids) and what was packed (missing on a run saved before) */
   if (o.home !== undefined && (!list(o.home, 6) || !o.home.every(u => typeof u === 'string' && u.length <= 60)))
     return false;
+  /* RL-S2: the hub folk's levels as it took off (missing on a run from before) */
+  if (o.rel !== undefined && !recordOf(o.rel, 32, v => wholeIn(v, 0, 10))) return false;
   /* RL-S2: Blake in the run (missing on a run from before) */
   const RV = o.rival;
   if (

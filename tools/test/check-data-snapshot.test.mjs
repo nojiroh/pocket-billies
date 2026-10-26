@@ -177,6 +177,27 @@ test('check-data: planted story director lines (RL-S1)', t => {
   );
 });
 
+test('check-data: planted relations, the rival and the hub folk in the story (RL-S2)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'relations.json': R => {
+        R.people.nobody = { levels: [{ at: 1 }] };
+        R.people.hazel.levels[2].at = 1;
+        R.people.chosen.levels[1].fx = [{ kind: 'luck', mult: 9 }];
+        R.people.juniper.levels[1].pyramids = { gold_brick: 1 };
+        R.people.juniper.levels[3].wardrobe = 'no_such_hat';
+      },
+      'rules.json': R => {
+        R.run.rival.on = ['boss'];
+        R.run.rival.meet = [3];
+      },
+      'banter.json': B => {
+        B.hazel_file.when = 'rel:blake >= 1 or gifted:nobody';
+      },
+    })
+  );
+});
+
 test('check-data: planted quests (TW-3)', t => {
   t.assert.snapshot(
     checkDataOn({

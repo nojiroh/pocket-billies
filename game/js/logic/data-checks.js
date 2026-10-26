@@ -71,6 +71,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataRegions: [() => dataRegions, v => (dataRegions = v)],
   // @ts-expect-error -- replaced on purpose
+  dataRelations: [() => dataRelations, v => (dataRelations = v)],
+  // @ts-expect-error -- replaced on purpose
   dataRewards: [() => dataRewards, v => (dataRewards = v)],
   // @ts-expect-error -- replaced on purpose
   dataRigs: [() => dataRigs, v => (dataRigs = v)],
@@ -1188,6 +1190,37 @@ export function dataRewards(D, valid = () => true) {
   }
   if (!Object.values(R).some((/** @type {any} */ r) => r.kind === 'item' && r.weight > 0))
     problem('no item card with a weight above 0: a pick could be empty');
+  return out;
+}
+
+// RL-S2: the hub folk and you: the schema; each person is a person (people/<id>.json); their levels rise; a level's
+// effect rows are effects.js's kinds within its limits; its items, pyramids and wardrobe piece exist
+/** RL-S2: relations.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataRelations(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['relations.json', what]),
+    RL = D.relations;
+  if (!RL) return [['relations.json', 'missing']];
+  if (!valid('relations.schema.json', RL, 'relations.json')) return out;
+  const wardrobe = (D.wardrobe && D.wardrobe.items) || {};
+  for (const [who, P] of Object.entries(/** @type {Record<string, any>} */ (RL.people))) {
+    if (!(D.people || {})[who]) problem(`${who}: no such person (people/${who}.json)`);
+    P.levels.forEach((/** @type {any} */ L, /** @type {number} */ n) => {
+      const at = `${who}.levels[${n}]`;
+      if (n && L.at <= P.levels[n - 1].at) problem(`${at}.at: ${L.at}, not more than the level before's`);
+      for (const [k, f] of (L.fx || []).entries()) {
+        if (!FX_KINDS.includes(f.kind)) problem(`${at}.fx[${k}]: no effect kind "${f.kind}" (effects.js FX_KINDS)`);
+        if ('mult' in f && !(typeof f.mult === 'number' && f.mult >= FX_LIMIT.lo && f.mult <= FX_LIMIT.hi))
+          problem(`${at}.fx[${k}].mult: ${f.mult} is outside ${FX_LIMIT.lo} to ${FX_LIMIT.hi}`);
+      }
+      for (const i of Object.keys(L.items || {}))
+        if (!(D.items || {})[i]) problem(`${at}.items: no item "${i}" (items.json)`);
+      for (const i of Object.keys(L.pyramids || {}))
+        if (!(D.pyramids || {})[i]) problem(`${at}.pyramids: no catch item "${i}" (pyramids.json)`);
+      if (L.wardrobe && !wardrobe[L.wardrobe]) problem(`${at}.wardrobe: no piece "${L.wardrobe}" (wardrobe.json)`);
+    });
+  }
   return out;
 }
 

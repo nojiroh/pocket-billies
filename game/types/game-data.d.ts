@@ -60,6 +60,8 @@ export interface GameData {
   events?: EventsData;
   /** RL-S1: the story director's lines */
   banter?: Record<DataId, BanterLine>;
+  /** RL-S2: the hub folk and you (relations.json) */
+  relations?: RelationsData;
   /** RL-12b: rewards.json */
   rewards?: Record<DataId, RewardRow>;
   /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
@@ -2181,4 +2183,21 @@ export interface RivalRules {
   /** levels over the row's top wild level, and what beating him pays (Moneys) */
   up: number;
   reward: number;
+}
+
+/** RL-S2: relations.json: what a gift costs and gives, and each hub person's levels (logic/relations.js) */
+export interface RelationsData {
+  gift: { cost: number; points: number; favour: number };
+  people: Record<string, { levels: RelationLevel[] }>;
+}
+/** RL-S2: one level of a person's: the points it takes and what it brings */
+export interface RelationLevel {
+  at: number;
+  /** effect rows on every run while held (as a Perk's) */
+  fx?: FxRow[];
+  /** items and pyramids into the bag at each takeoff while held */
+  items?: Record<string, number>;
+  pyramids?: Record<string, number>;
+  /** a wardrobe piece given once, when the level is reached */
+  wardrobe?: string;
 }

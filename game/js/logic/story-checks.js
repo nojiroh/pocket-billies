@@ -227,6 +227,11 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
         !species.has(b)
       )
         problems.push(at, `lastby:${b}, not a kind of foe, a trainer, a class nor a Billie`);
+    /* RL-S2: the hub folk (relations.json people) */
+    const folk = (G.relations || {}).people || {};
+    for (const k of ['rel', 'gifted'])
+      for (const w of N[k] || [])
+        if (!folk[w]) problems.push(at, `${k}:${w}, nobody in relations.json people (${Object.keys(folk).join(', ')})`);
   };
   const who = (w, at) => {
     if (w && !(w in speakers) && !(G.people || {})[w] && w !== 'me')
@@ -338,6 +343,11 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
           else if (n.name === 'pick' && !Object.values(G.banter || {}).some(B => B.who === a))
             problems.push(at, `pick ${a}, no banter.json line is for ${a}`);
           else if (n.name === 'go' && !places.has(a)) problems.push(at, `go ${a}, no such place`);
+          /* RL-S2: the hub folk (relations.json people), whole counts */
+          else if ((n.name === 'gift' || n.name === 'rel') && !((G.relations || {}).people || {})[a])
+            problems.push(at, `${n.name} ${a}, nobody in relations.json people`);
+          else if ((n.name === 'rel' && !/^-?\d+$/.test(b || '')) || (n.name === 'beans' && !/^\d+$/.test(a || '')))
+            problems.push(at, `${n.name}: ${n.name === 'rel' ? b : a} is not a whole number`);
           else if (n.name === 'quest') {
             if (!quests[a]) problems.push(at, `quest ${a}, no such quest (story.json quests)`);
             else if (!quests[a].stages.includes(b)) problems.push(at, `quest ${a} has no stage ${b}`);

@@ -37,6 +37,8 @@ export function newMeta() {
     scrap: 0,
     crests: 0,
     beans: 0,
+    rel: {},
+    gifted: {},
     unlocks: {},
     buildings: {},
     runs: 0,
@@ -73,6 +75,8 @@ export function validMeta(o) {
     recordOf(o.unlocks, META_IDS, v => v === 1) &&
     recordOf(o.buildings, META_IDS, v => wholeIn(v, 0, 99)) &&
     recordOf(o.badges, 32, v => v === 1) &&
+    recordOf(o.rel, 32, v => wholeIn(v, 0, 9999)) &&
+    recordOf(o.gifted, 32, v => wholeIn(v, 0, META_MAX)) &&
     validHistory(o.history)
   );
 }
