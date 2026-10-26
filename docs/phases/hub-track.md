@@ -544,6 +544,7 @@ into `track/hub`). The owner's answer: about 10 m. Checked against the code:
 - **Not done, moved to HB-10f**: the pinwheel street entries. The streets come in from the north-west, west and east
   inside the locked town zone; turning them means re-routing streets, which is the reproducible rebuild's work.
 - The hub spot [151.63, 59.36] stays (1.25 m from the basin's edge): every hub position is unchanged.
+- **HB-10b started**: its work so far is docs/plans/hb-10b-wip.patch (see HANDOFF's HB-10a entry for what's left).
 
 ### HB-9 Look pass on the phone
 The owner looks at headless phone pictures (tools/island-shots.py extended: the station, the departure, the loading
