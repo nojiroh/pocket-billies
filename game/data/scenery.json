@@ -3236,7 +3236,11 @@
    "group": "fountain",
    "solid": 1.6,
    "fx": [
-    {"k":"spray","x":0,"y":-80}
+    {"k":"spray","x":0,"y":-80},
+    {"k":"glow","x":-32,"y":-19,"z":-0.5},
+    {"k":"glow","x":32,"y":-19,"z":-0.5},
+    {"k":"glow","x":0,"y":-19,"z":0.9},
+    {"k":"fireflies","x":0,"y":0,"n":7,"r":3.2}
    ],
    "model": "scene/next/models/fountain.json",
    "ppm": 32,
