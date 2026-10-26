@@ -666,7 +666,8 @@ debugLog.more = () => {
      tall ground, the goals in play with their weights, the look-ahead and how far the aim is from its goal (metres).
      CAM-2: the zoom the camera uses (yours times the goals'), the moment (talk, boss, interest, idle, run, or none),
      the points of interest in reach and the strongest's weight, the camera zone you stand in (its index, -1 for none)
-     and how long you have stood still (seconds). Player visibility: how hidden you are. Only numbers and ids, no names */
+     and how long you have stood still (seconds). CAM-4b: the zoom stop nearest and the one last gone to. Player
+     visibility: how hidden you are. Only numbers and ids, no names */
   t('camera', () => {
     const W = typeof GAME.walkRenderer !== 'undefined' ? GAME.walkRenderer : null,
       I = W && W.camInfo,
@@ -687,6 +688,10 @@ debugLog.more = () => {
       off: [r(I.goal[0] - T[0]), r(I.goal[1] - T[1])],
       moving: r(I.move),
       zoomEff: I.zoom != null ? r(I.zoom) : null,
+      /* CAM-4b: the zoom stop nearest your zoom, and the stop you last went to (a two-finger tap, Z, R, a pull or a
+         scene's start; ids only) */
+      stop: I.stop ?? null,
+      pulled: W.stopAt ?? null,
       moment: I.moment ?? null,
       interest: I.interest ? [I.interest[0], r(I.interest[1])] : null,
       zone: I.zone ?? -1,
