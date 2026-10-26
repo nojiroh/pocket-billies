@@ -28,6 +28,7 @@ expose({
   bindQuad: [() => bindQuad, v => (bindQuad = v)],
   compileProgram: [() => compileProgram, v => ((compileProgram = v), provide({ compileProgram }))],
   cross3: [() => cross3],
+  dropProgramCompile: [() => dropProgramCompile, v => (dropProgramCompile = v)],
   endGpuTimer: [() => endGpuTimer, v => (endGpuTimer = v)],
   ensureNormalMapWorker: [() => ensureNormalMapWorker, v => (ensureNormalMapWorker = v)],
   ensurePrograms: [() => ensurePrograms, v => setEnsurePrograms(v)],
@@ -370,12 +371,12 @@ function startProgramCompile([vs, fs], name) {
   if (gpuState.loaded) gpuState.pcl[1]++;
   const gl = gpuState.gl,
     mk = (t, src) => {
-      const s = gl.createShader(t);
+      const s = gpuShader(t);
       gl.shaderSource(s, src);
       gl.compileShader(s);
       return s;
     };
-  const p = gl.createProgram(),
+  const p = gpuMake('program', 'programs'),
     a = mk(gl.VERTEX_SHADER, vs),
     b = mk(gl.FRAGMENT_SHADER, fs);
   gl.attachShader(p, a);
@@ -396,7 +397,7 @@ function startProgramCompile([vs, fs], name) {
       gl.bindAttribLocation(p, l, n);
   });
   gl.linkProgram(p);
-  return { p, a, b, name, gl };
+  return { p, a, b, name, gl, gen: gpuState.gen };
 }
 export function finishProgramCompile(j) {
   const gl = gpuState.gl,
@@ -405,8 +406,10 @@ export function finishProgramCompile(j) {
     const e =
       (gl.getShaderParameter(j.a, gl.COMPILE_STATUS) ? '' : gl.getShaderInfoLog(j.a)) +
         (gl.getShaderParameter(j.b, gl.COMPILE_STATUS) ? '' : gl.getShaderInfoLog(j.b)) || gl.getProgramInfoLog(p);
+    dropProgramCompile(j, true);
     throw new Error(j.name + ': ' + e);
   }
+  dropProgramCompile(j, false);
   const U = {},
     n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
   for (let i = 0; i < n; i++) {
@@ -415,6 +418,18 @@ export function finishProgramCompile(j) {
     U[nm] = gl.getUniformLocation(p, u.name);
   }
   return { p, U, name: j.name, frame: frameBlockBinding(gl, p) };
+}
+/* phase 20 H2: a linked program no longer needs its shaders (freed with it by the driver); a failed or unused one goes
+   whole. A compile started on an older context is only forgotten (gpuFree knows its generation). */
+function dropProgramCompile(j, whole) {
+  for (const s of [j.a, j.b]) {
+    if (!whole && j.gl === gpuState.gl && !gpuState.lost)
+      try {
+        gpuState.gl.detachShader(j.p, s);
+      } catch (e) {}
+    gpuFree(s);
+  }
+  if (whole) gpuFree(j.p);
 }
 export function precompilePrograms(defs) {
   if (!gpuState.gl || !defs) return;
@@ -432,31 +447,42 @@ export function pollPendingPrograms(max = 2) {
     X = gpuState.pcx === undefined ? (gpuState.pcx = gl.getExtension('KHR_parallel_shader_compile')) : gpuState.pcx;
   let n = 0;
   for (const [k, j] of M) {
-    if (j.gl !== gl) {
+    if (j.gl !== gl || j.gen !== gpuState.gen) {
       M.delete(k);
       continue;
     }
     if (X && !gl.getProgramParameter(j.p, X.COMPLETION_STATUS_KHR)) continue;
     M.delete(k);
-    try {
-      if (!gpuState.P[k]) gpuState.P[k] = finishProgramCompile(j);
-    } catch (e) {}
+    /* made already (ensurePrograms compiled it on the spot): this copy is deleted */
+    if (gpuState.P[k]) dropProgramCompile(j, true);
+    else
+      try {
+        gpuState.P[k] = finishProgramCompile(j);
+      } catch (e) {}
     if (++n >= max) break;
   }
 }
 function compileProgram([vs, fs], name) {
   if (gpuState.loaded) gpuState.pcl[0]++;
   const gl = gpuState.gl,
+    made = [],
     mk = (t, src) => {
-      const s = gl.createShader(t);
+      const s = gpuShader(t);
+      made.push(s);
       gl.shaderSource(s, src);
       gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(name + ': ' + gl.getShaderInfoLog(s));
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        const e = new Error(name + ': ' + gl.getShaderInfoLog(s));
+        made.forEach(gpuFree);
+        throw e;
+      }
       return s;
     };
-  const p = gl.createProgram();
-  gl.attachShader(p, mk(gl.VERTEX_SHADER, vs));
-  gl.attachShader(p, mk(gl.FRAGMENT_SHADER, fs));
+  const a = mk(gl.VERTEX_SHADER, vs),
+    b = mk(gl.FRAGMENT_SHADER, fs),
+    p = gpuMake('program', 'programs');
+  gl.attachShader(p, a);
+  gl.attachShader(p, b);
   /* standard locations for the engine's own inputs; an input that declares layout(location=…) keeps its own (some
     GPUs, Adreno for one, refuse to link when a bound location clashes with another input's) */
   [
@@ -475,7 +501,13 @@ function compileProgram([vs, fs], name) {
       gl.bindAttribLocation(p, l, n);
   });
   gl.linkProgram(p);
-  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(name + ': ' + gl.getProgramInfoLog(p));
+  const ok = gl.getProgramParameter(p, gl.LINK_STATUS);
+  if (!ok) {
+    const e = new Error(name + ': ' + gl.getProgramInfoLog(p));
+    dropProgramCompile({ p, a, b, gl }, true);
+    throw e;
+  }
+  dropProgramCompile({ p, a, b, gl }, false);
   const U = {},
     n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
   for (let i = 0; i < n; i++) {
@@ -517,7 +549,7 @@ export function frameBlockCheck(defs) {
           if (!m || m[0] !== at[j]) bad.push(`${k}: ${nm} at ${at[j]}, packed at ${m ? m[0] : 'nowhere'}`);
         });
       }
-      gl.deleteProgram(P.p);
+      gpuFree(P.p);
     }
   } finally {
     gpuState.pcl[0] = pcl;
@@ -547,7 +579,7 @@ export function ensurePrograms(defs) {
   for (const [k, v] of Object.entries(defs))
     if (!gpuState.P[k]) {
       const j = gpuState.pend && gpuState.pend.get(k);
-      if (j && j.gl === gpuState.gl) {
+      if (j && j.gl === gpuState.gl && j.gen === gpuState.gen) {
         gpuState.pend.delete(k);
         try {
           gpuState.P[k] = finishProgramCompile(j);

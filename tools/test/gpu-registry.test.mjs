@@ -7,11 +7,11 @@ import './walk-renderer.mjs';
 const G = globalThis;
 
 /* a context that makes numbered handles and keeps the deleted ones */
-function handleGL() {
+function handleGL(own = {}) {
   let n = 0;
   const deleted = [],
     gl = new Proxy(
-      { deleted, lost: false, isContextLost: () => gl.lost },
+      { deleted, lost: false, isContextLost: () => gl.lost, ...own },
       {
         get(o, k) {
           if (k in o) return o[k];
@@ -25,10 +25,10 @@ function handleGL() {
   return gl;
 }
 /* runs f with a fresh stand-in context of its own generation, the engine's state put back after */
-function withGL(f) {
+function withGL(f, own) {
   const S = G.gpuState,
-    was = { gl: S.gl, lost: S.lost, gen: S.gen },
-    gl = handleGL();
+    was = { gl: S.gl, lost: S.lost, gen: S.gen, pcl: [...S.pcl] },
+    gl = handleGL(own);
   Object.assign(S, { gl, lost: 0 });
   G.gpuNewGeneration();
   try {
@@ -148,3 +148,49 @@ test("the engine's own objects go through it: a render target resized frees the 
       G.gpuState.fb = fb;
     }
   }));
+
+/* a context whose shaders compile and link (stat: what getShaderParameter and LINK_STATUS answer) */
+const linking = stat => ({
+  getShaderParameter: () => stat,
+  getProgramParameter: (p, k) => (k === 'ACTIVE_UNIFORMS' ? 0 : stat),
+  getShaderInfoLog: () => 'bad',
+  getProgramInfoLog: () => 'bad',
+  VERTEX_SHADER: 'VERTEX_SHADER',
+  FRAGMENT_SHADER: 'FRAGMENT_SHADER',
+  LINK_STATUS: 'LINK_STATUS',
+  ACTIVE_UNIFORMS: 'ACTIVE_UNIFORMS',
+  getUniformBlockIndex: () => null,
+});
+
+test("a linked program's shaders are deleted at once (H2); the program stays", () =>
+  withGL(gl => {
+    const P = G.compileProgram(['void main(){}', 'void main(){}'], 't');
+    assert.equal(G.gpuRes.n.programs, 1, 'only the program is left');
+    assert.equal(gl.deleted.length, 2);
+    assert.ok(!gl.deleted.includes(P.p.id));
+  }, linking(true)));
+
+test('a program that fails to compile leaves nothing behind', () =>
+  withGL(gl => {
+    assert.throws(() => G.compileProgram(['void main(){}', 'void main(){}'], 't'), /t: bad/);
+    assert.equal(G.gpuRes.n.programs, 0);
+    assert.equal(gl.deleted.length, 1, 'the one shader made');
+  }, linking(false)));
+
+test('a background compile of a program made meanwhile is deleted when it finishes (pollPendingPrograms)', () =>
+  withGL(gl => {
+    const S = G.gpuState,
+      was = { P: S.P, pend: S.pend, pcx: S.pcx };
+    Object.assign(S, { P: {}, pend: new Map(), pcx: null });
+    try {
+      G.precompilePrograms({ t: ['void main(){}', 'void main(){}'] });
+      const j = S.pend.get('t');
+      S.P.t = { p: 'made on the spot' };
+      G.pollPendingPrograms(4);
+      assert.equal(S.pend.size, 0);
+      assert.ok(gl.deleted.includes(j.p.id), 'the second copy is deleted');
+      assert.equal(G.gpuRes.n.programs, 0);
+    } finally {
+      Object.assign(S, was);
+    }
+  }, linking(true)));
