@@ -2,6 +2,46 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Camera track - CAM-4b: zoom stops, the curve graph and camera looks - 2026-10-26
+Branch `track/camera` (made by the owner from `ccr-6dfb9e06-vr4uwi`; main 2314da8 already in it, the merge a no-op).
+Plan approved in Plan Mode; the owner's answers at the start: a two-finger tap cycles the stops (not a double-tap), R
+goes to the scene's starting stop and Z cycles, the curve is smooth in plain zoom, the stops are the whole game's.
+Details: docs/phases/camera-track.md, "CAM-4b as built". Not tagged yet: `cam-4b-done` once the owner approves.
+- Where the plan and the code differed: a curve "in log zoom" would have moved every zoomed picture (the default zoom
+  is a straight line in zoom), so the curve is a monotone cubic in zoom, exact on the default stops; the zoom *was*
+  kept between scenes (only not between sessions), so a scene's starting stop applies on a fresh load only, never
+  across a seam, and doors and the world map still put your zoom back; no data set the old zoom ends, so they were
+  simply dropped (with `zoomCurve`); the Studio's slider already scrubbed the preview.
+- Changed (one cause per commit):
+  - Logic: logic/camera-zoom.js zoom stops (`ZOOM_STOPS`, `stopShape`, `stopPull`, `nextStop`, `nearestStop`,
+    `stopsProblems`, `stopsOrDefault`); `zoomShape`/`zoomBend`/`ZOOM_ENDS` gone.
+  - Game: the camera follows the stops (tilt, distance, field of view, blur times the player's slider, look-ahead);
+    the limits are the end stops; Pull to stops on letting go of a pinch (default 0: as before); a two-finger tap and
+    Z go to the next stop (its click doesn't walk); R to the scene's starting stop; a fresh scene starts at `cam.stop`.
+    With reduced motion a stop is reached at once.
+  - Removed: the nine zoom-end dials (`zoomMin`, `zoomMax`, `zoomNear*`, `zoomFar*`, `zoomCurve`).
+  - Data: `cam.stop` (map.schema.json; Walk scenes > Starting zoom stop); `dataCameraStops` in check:data and the
+    Studio's Check.
+  - Studio: Camera > Zoom stops (a column per stop, add in the widest gap without moving the picture, remove, the
+    curve graph with draggable points), stop marks and buttons by the zoom slider, the nearest stop in the readout,
+    camera looks (Diorama, Classic RPG, Close-up, your own in `engine.cameraLooks`).
+  - Debug log: the camera line's `stop` and `pulled` (ids only).
+  - Checks: check-fast "Zoom stops" (new) and the Studio's Camera section (the stops' table, graph and add).
+- Risky:
+  - Entering a scene fresh now resets your zoom to its starting stop (before, a pinch carried over until the next
+    reload). Walking across a seam, a room's door and the world map are unchanged.
+  - A two-finger tap is judged by time (0.3 s) and movement (12 px), both dials; not tried on a real phone. Please try
+    a quick two-finger tap, a slow small pinch, and Pull to stops at about 0.25 on yours.
+  - The camera looks' numbers are a first guess by eye in software drawing; Diorama and Close-up change the tilt
+    (pitchAdd 0 and -12 against the game's -8).
+  - The pull after Ctrl+wheel isn't done (the wheel has no "let go").
+- Verified: lint, typecheck, unit tests (1067 passing), check:modules, format:check, check:data (a planted bad
+  `cam.stop` caught); check-fast --only=camera (6/6 before the new step), "Zoom stops" and the Studio's Camera section
+  pass; the Studio's stops editor, graph drag and a look tried in a browser (screenshots, no page errors). Full quick
+  check: running at the time of this entry (see the next commit).
+- Next session starts with: the owner's review of CAM-4b on a phone (the two-finger tap, the pull, the looks), then the
+  tag `cam-4b-done` and a pull request from `track/camera` to main.
+
 ### Camera track - CAM-4a: the Studio's Camera section and the zoom's feel - 2026-10-26
 Branch `ccr-6dfb9e06-vr4uwi` (from main 2314da8), at the owner's word: `track/camera` didn't exist and a cloud session
 pushes only to its own branch. The same session wrote the CAM-4 plan (owner's answers in camera-track.md, "CAM-4").

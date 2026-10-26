@@ -284,6 +284,10 @@ dial in the look and feel.
 - **Blur per stop**, still times the player's Blur slider.
 - Pixel scale: **shown, not forced** (a readout marks crisp scales; stops are chosen by eye).
 - The branch: `track/camera`, made by the owner.
+- CAM-4b (asked at its start): the stops cycle with a **two-finger tap** (not a one-finger double-tap, which would
+  fight tap-to-walk); **R** goes back to the scene's starting stop and turn 0, **Z** cycles the stops; the curve through
+  the stops is **smooth in plain zoom** (exact with the default stops, so no picture moves; log zoom stays for the ease
+  and the pull); the stops are the **whole game's** only (a scene picks its starting stop, nothing more).
 
 #### CAM-4a - The section, the readouts and the feel
 - `SECTIONS.camera` (studio/js/camera-editor.js): its own live preview of any walk scene, the scopes (whole game,
@@ -355,6 +359,52 @@ own branch); CAM-4b starts on `track/camera`, made from this branch.
 - Debug log: the `camera` section adds `stop` and the stop pulled to. Checks: unit tests for the stops' curve and
   the pull; check-fast "Zoom stops" (a pinch released near Far settles on Far; a scene's start stop; a planted fault
   caught).
+
+#### CAM-4b as built (2026-10-26)
+Built on `track/camera` (made by the owner from `ccr-6dfb9e06-vr4uwi`; main 2314da8 already in it).
+- **Corrections to the plan** (checked against the code at the start of CAM-4b):
+  - "Smooth, in log zoom" would have moved every zoomed picture: the default zoom is a straight line in zoom (14 degrees
+    a unit, the distance times the zoom). The curve is a monotone cubic in zoom (Fritsch-Carlson, as Matlab's pchip):
+    exact on the default stops, never overshooting a stop's neighbours.
+  - The zoom *was* kept between scenes (nothing reset `zoomT` on a scene change), only not between sessions. A scene's
+    starting stop now applies on a fresh load only (walk-view-gl.js mountWalkView): not across a seam, and a room's
+    door and the world map still put your zoom back after it.
+  - "Read `zoomMin`/`zoomMax` once, then drop them": no data set any of the nine zoom-end keys, so they were dropped.
+    `zoomCurve` went with them (the stops and the graph replace it).
+  - The Studio's zoom slider already scrubbed the preview (CAM-4a); CAM-4b marks the stops on it and adds a button per
+    stop. The readout's "nearest stop" (planned for CAM-4a) came now.
+  - A one-finger double-tap clashes with tap-to-walk: the owner chose a two-finger tap. R stays a reset (the scene's
+    starting stop); Z cycles.
+- **Logic** (unit tested): logic/camera-zoom.js `ZOOM_STOPS` (Close 0.55, Normal 1, Far 1.7, from the old ends),
+  `stopShape` (tilt, distance, field of view, blur and look-ahead at a zoom; on along the end slope past the end stops;
+  the curves kept for the last list), `nearestStop` and `stopPull` (in log zoom), `nextStop`, `stopsProblems` and
+  `stopsOrDefault` (a broken list never breaks the camera). `zoomShape`, `zoomBend` and `ZOOM_ENDS` are gone.
+- **The game**: `engine.camera.stops` (default `ZOOM_STOPS`), Pull to stops (`stopPull` 0: a pinch stays where you
+  let go, as before), the two-finger tap (`stopTapTime` 0.3 s, `stopTapMove` 12 px). walk/camera.js: the zoom
+  limits are the end stops; the tilt, distance and field of view come from `stopShape` of the zoom in use (yours times
+  the moments'), so moments still multiply; the stops' blur (`walkRenderer.zoomBlur`) multiplies the walk's lens blur
+  with the player's slider (walk-view-gl.js; battles keep their own); the stops' look-ahead factor scales Follow >
+  Look-ahead at your zoom. walk/input.js: on letting go of a pinch it clamps (rubber band), then `stopPull`; two
+  fingers down and up inside the tap's time and movement put the zoom and turn back and go to the next stop, and the
+  click they leave within 400 ms doesn't walk (`walkRenderer.twoAt`); Z cycles, R goes to the scene's starting stop;
+  with reduced motion a stop is reached at once. A fresh scene starts at `cam.stop` (else the stop nearest zoom 1).
+- **Data**: `cam.stop` in map.schema.json; data-checks.js `dataCameraStops` (check:data and the Studio's Check): the
+  game's stops pass `stopsProblems`, no scene sets `look.camera.stops`, every `cam.stop` names a stop.
+- **The Studio**: Camera > Zoom stops: a column per stop (name, zoom, tilt, distance, field of view, blur,
+  look-ahead), Go, × (3-5; a scene that started at a removed stop starts at the one nearest zoom 1, after asking),
+  + Add a stop (in the widest gap, its values from the curve: the picture doesn't change), Back to the built-in stops,
+  the curve graph (one value at a time against log zoom, the zoom in use as a dashed line; drag a point); on one
+  scene the stops are shown, not edited. The zoom slider marks the stops; a Stops row of buttons (the scene's starting
+  stop marked); the readout names the nearest stop. Camera looks above the folders: Diorama, Classic RPG, Close-up
+  (settings.js `CAMERA_LOOKS`; each sets the tilt, width shown, Pull to stops 0.25 and stops with the ids close,
+  normal, far) and your own (`engine.cameraLooks`). Walk scenes: Starting zoom stop.
+- **Debug log**: the camera line adds `stop` (the nearest) and `pulled` (the last stop gone to); ids only.
+- **Checks**: unit tests (the stops' curve exact on the old zoom, through every stop without overshoot, the pull,
+  the cycle, the validator, the data check); check-fast "Zoom stops" (Copperleaf: a pinch let go at 1.6 settles on
+  Far, with the pull off it stays at 1.6, the planted fault; a two-finger tap from Normal to Far and its click doesn't
+  walk while a plain click does; a scene with `cam.stop` Close opens at 0.55) and the Studio's Camera section (the
+  stops' table and graph, a stop added keeping the picture). A planted bad `cam.stop` is caught by check:data.
+- **Not done**: the pull after Ctrl+wheel (the wheel has no "let go"); zoom about the mouse pointer for Ctrl+wheel.
 
 #### Risks
 - Moving the dials out of Engine touches the Studio's self-test, the scope counts and Engine's presets (a camera key
