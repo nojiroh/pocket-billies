@@ -46,7 +46,8 @@ changes until the owner turns them on after a phone check.
 - **Found, not changed (the owner's call)**: the screen AO fades out by 36 m, nearer than you stand at zoom 1 (reaching
   further darkened every grass blade's foot); props without `ppm` are at 34 px/m (scenery.json `ppu`), people at 42 and
   66.5, Billies on a 68 grid: an art rebake to reach 32; the sprite bump's +0.18 upward tilt may be meant.
-- Verified: lint, typecheck, format, check:modules, unit tests (the smoke and fast town checks: results in the next entry line once they finish), every switch on at once in Copperleaf and a
+- Verified: lint, typecheck, format, check:modules, unit tests 1297 pass, the smoke check 6 of 6, `check-fast --only=town` 4 of
+  5 ("A run town's shop opens (UI-5): no shop with wares" fails on main 0ba64f10 too, not this branch's), every switch on at once in Copperleaf and a
   forest trail (no errors, every lit program builds with the light block), and headless on/off pictures for each
   switch. Not judged headless (phase 20's rule): how any of it looks or costs on the phone.
 - Next: the owner on the Android phone and the iPad: Graphics test (Sun gap smart shafts; Shadow court, Lamp square,
