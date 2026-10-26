@@ -108,6 +108,8 @@ export function historyEntry(s, won) {
     perks: run.perks.filter(histId).slice(0, 32),
     leaders: leaders.filter(histId).map(l => ({ id: l, beat: beat.has(l) ? 1 : 0 })),
     rival: null,
+    /* RS-2: the resident invited on it (they moved in, won or lost) */
+    ...(run.invited && histId(run.invited) ? { res: run.invited } : {}),
   };
 }
 /** the history with a new entry, the newest HISTORY_MAX kept @param {HistoryEntry[] | undefined} list
@@ -127,10 +129,23 @@ export function validHistory(v) {
       e =>
         histPlain(e) &&
         Object.keys(e).every(k =>
-          ['seed', 'theme', 'region', 'exp', 'end', 'by', 'row', 'days', 'team', 'perks', 'leaders', 'rival'].includes(
-            k
-          )
+          [
+            'seed',
+            'theme',
+            'region',
+            'exp',
+            'end',
+            'by',
+            'row',
+            'days',
+            'team',
+            'perks',
+            'leaders',
+            'rival',
+            'res',
+          ].includes(k)
         ) &&
+        (e.res === undefined || histId(e.res)) &&
         typeof e.seed === 'string' &&
         /^[A-Za-z0-9|_-]{1,40}$/.test(e.seed) &&
         (e.theme === '' || histId(e.theme)) &&

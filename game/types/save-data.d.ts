@@ -139,6 +139,8 @@ export interface HistoryEntry {
   leaders: { id: string; beat: 0 | 1 }[];
   /** RL-S2: the rival's result (none yet) */
   rival: null;
+  /** residents track RS-2: the resident invited on the run (they moved in after it) */
+  res?: string;
 }
 
 /** roguelite track RL-3: the ranch, a hub building (logic/ranch-state.js; filled in RL-9 and RL-10) */

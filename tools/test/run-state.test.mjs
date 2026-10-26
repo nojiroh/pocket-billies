@@ -8,7 +8,7 @@ import { fn, modules, startedSave } from './setup-fixture.mjs';
 const { newRun, validRun, runBegin, runEnd, runRestore, payoutOf, runNodeCount, RUN_FIELDS, runHome, runByExpedition } =
   modules['run-state'];
 const { runReleasePays } = modules['run-loop'];
-const { newMeta } = modules['meta-state'];
+const { newMeta, validMeta } = modules['meta-state'];
 const RATES = {
   money: 0.1,
   itemShare: 0.5,
@@ -228,11 +228,14 @@ test('run: RS-1: the resident invited moves in when the run ends, won or lost', 
     runBegin(s, GIVE).invited = 'dottie';
     runEnd(s, { won, keep: [s.team[0].uid] }, RATES, PRICE);
     assert.deepEqual(s.meta.residents, { dottie: 1 }, `won: ${won}`);
+    assert.equal(s.meta.history[0].res, 'dottie', 'RS-2: the run’s history entry names them');
+    assert.ok(validMeta(JSON.parse(JSON.stringify(s.meta))), 'and the meta stays valid');
   }
   const t = hubSave();
   runBegin(t, GIVE);
   runEnd(t, { won: true, keep: [] }, RATES, PRICE);
   assert.deepEqual(t.meta.residents, {}, 'nobody invited, nobody moves in');
+  assert.ok(!('res' in t.meta.history[0]), 'no res without an invite');
 });
 
 test('run: restoring leaves the run without paying (a run that cannot be resumed)', () => {
