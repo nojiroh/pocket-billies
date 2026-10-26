@@ -20,6 +20,7 @@
      lastby:boss, lastby:bureau    what ended the last run: its kind, a leader's or class's id, a Billie, the Bureau
      history:losses >= 2   over the runs kept (HISTORY_FACTS)   rematch >= 1   runs this foe ended (a leader's lines)
      resident:dottie       someone lives in Copperleaf  residents >= 3   how many do (RS-1: meta.residents)
+     lastres:dottie        the last run brought them to Copperleaf (RS-3: its history entry's res)
    combined with `and`, `or`, `not` / `!` and parentheses (`and` binds tighter than `or`). A bare count term
    (`item:honey`, `visits:juniper`, `badges`) means more than 0. Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -71,7 +72,8 @@ expose({
  *   unlocks: Record<string, any>, runs: number, wins: number, expedition?: number, questStages?: Record<string, string[]>,
  *   types?: Record<string, number>, money?: number, team?: number, badgeTypes?: Record<string, number>,
  *   opened?: Record<string, number>, last?: Record<string, number>, lastby?: Record<string, number>,
- *   history?: Record<string, number>, rematch?: number, residents?: Record<string, number> }} StoryState */
+ *   history?: Record<string, number>, rematch?: number, residents?: Record<string, number>,
+ *   lastres?: Record<string, number> }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
  * reads, for the Studio's reference (Project Story S3) */
@@ -115,6 +117,7 @@ export const CONDITION_KINDS = {
   rematch: { id: false, count: true, about: 'in a leader’s or agent’s lines: runs this foe has ended: rematch >= 1' },
   resident: { id: true, count: false, about: 'someone lives in Copperleaf (residents.json, RS-1): resident:dottie' },
   residents: { id: false, count: true, about: 'how many live in Copperleaf (RS-1): residents >= 3' },
+  lastres: { id: true, count: false, about: 'the last run brought them to Copperleaf (RS-3): lastres:dottie' },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
 export const WORDS = new Set(['and', 'or', 'not']);
@@ -365,6 +368,8 @@ export function termValue(c, S) {
       return !!(S.residents || {})[c.id];
     case 'residents':
       return Object.keys(S.residents || {}).length;
+    case 'lastres':
+      return !!(S.lastres || {})[c.id];
     case 'opened':
       return !!(S.opened || {})[c.id];
     case 'last':
@@ -451,6 +456,8 @@ export function storyStateOf(save, o = {}) {
     rematch: historyRematch(meta.history, o.foe),
     /* RS-1: who lives in Copperleaf (logic/residents.js) */
     residents: meta.residents || {},
+    /* RS-3: who the last run brought */
+    lastres: facts.lastres,
   };
 }
 

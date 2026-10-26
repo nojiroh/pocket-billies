@@ -134,6 +134,7 @@ test('history: the facts the story reads', () => {
   assert.deepEqual(H.historyFacts([]), {
     last: {},
     lastby: {},
+    lastres: {},
     history: { runs: 0, wins: 0, losses: 0, quits: 0, streak: 0, lstreak: 0, bureau: 0 },
   });
   const f = H.historyFacts([won, lost, lost]);

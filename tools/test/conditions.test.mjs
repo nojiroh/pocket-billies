@@ -252,3 +252,29 @@ test('RL-S1: last:, lastby:, history: and rematch read the runs kept (meta.histo
   assert.match(conditionProblem('rematch:marina').message, /takes no name/);
   assert.equal(conditionProblem('history:runs >= 5'), null);
 });
+
+test('RS-3: lastres: reads who the last run brought to Copperleaf (its history entry’s res)', () => {
+  const run = (end, res) => ({
+    seed: 'S',
+    theme: '',
+    region: '',
+    exp: 1,
+    end,
+    by: null,
+    row: 3,
+    days: 9,
+    team: ['musk0'],
+    perks: [],
+    leaders: [],
+    rival: null,
+    ...(res ? { res } : {}),
+  });
+  const S = storyStateOf({ meta: { history: [run('won', 'mo'), run('lost', 'dottie')] } });
+  assert.equal(conditionHolds('lastres:dottie', S), true);
+  assert.equal(conditionHolds('lastres:mo', S), false, 'only the last run');
+  const T = storyStateOf({ meta: { history: [run('lost', 'dottie'), run('won')] } });
+  assert.equal(conditionHolds('lastres:dottie', T), false, 'a run since brought nobody');
+  assert.equal(conditionHolds('lastres:dottie', storyStateOf({ meta: {} })), false, 'no runs yet');
+  assert.match(conditionProblem('lastres:dottie >= 1').message, /yes or no/);
+  assert.equal(conditionProblem('lastres:dottie and last:lost'), null);
+});

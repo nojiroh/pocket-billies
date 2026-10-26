@@ -97,6 +97,7 @@ An entry of `cycle` or `seq` starts after `- `; its other lines go under it, two
 | `robot`, `badges >= 2`, `caught >= 15` | you have a robot; badges won; kinds of Billie caught (the Index) |
 | `unlock:ranch_2`, `runs >= 3`, `wins >= 1`, `expedition >= 2` | an unlock is owned (unlocks.json); runs ended; runs won; the highest Expedition open (RL-11, RL-13: what lasts between runs, the same in a run and in the hub) |
 | `resident:dottie`, `residents >= 3` | someone lives in Copperleaf (residents.json); how many do (RS-1: what lasts between runs) |
+| `lastres:dottie` | the last run brought them to Copperleaf (RS-3: its history entry's `res`); a resident's line on moving in |
 | `type:Water`, `type:Fire >= 2` | Billies of that type in the team, fainted ones too (RL-12b) |
 | `money >= 200` | Moneys on hand (RL-12b) |
 | `team >= 2` | Billies in the team (RL-12b) |
