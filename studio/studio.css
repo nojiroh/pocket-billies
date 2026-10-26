@@ -4949,6 +4949,12 @@ body.wb-dropping::after {
   border: 2px dashed #e23d6e;
   box-shadow: none;
 }
+/* RS-3: where each resident lives (the spot by their building's or cottage's door) */
+.hub-legend .hub-res {
+  border-radius: 50%;
+  background: #9b6bff;
+  box-shadow: 0 0 0 2px #1e1a34;
+}
 .hub-note,
 .hub-locked {
   padding: 8px 12px;

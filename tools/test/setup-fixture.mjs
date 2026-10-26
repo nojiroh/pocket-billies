@@ -64,6 +64,7 @@ export const FIXTURE = {
       shockTurns: 5,
       spinType: 'Water',
       spinTurns: 3,
+      forkTurns: 5,
       mailTurns: 2,
       holdCap: 320,
       alphaSleepResist: 0.5,
