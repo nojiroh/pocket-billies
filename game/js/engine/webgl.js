@@ -804,7 +804,7 @@ function gpuTypeOf(gl, h) {
 export const gpuBuffer = (kind, bytes) => gpuMake('buffer', kind, bytes);
 export const gpuTexture = (kind, bytes) => gpuMake('texture', kind, bytes);
 export const gpuVao = kind => gpuMake('vao', kind);
-const gpuFramebuffer = kind => gpuMake('framebuffer', kind);
+export const gpuFramebuffer = kind => gpuMake('framebuffer', kind);
 /* the object was filled again (bufferData, texImage2D): its new size */
 export function gpuSized(h, bytes) {
   const e = h && gpuEntry(h);
