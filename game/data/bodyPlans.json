@@ -2625,6 +2625,114 @@
    ]
   },
   {
+   "name": "pseudonymph",
+   "rig": "satoshi0",
+   "line": "satoshi",
+   "stage": 0,
+   "plan": "blob",
+   "colours": {"main":"#8a9099","accent":"#d4a83a"},
+   "scale": 1.1,
+   "add": [
+    {
+     "n": "mask",
+     "par": "head",
+     "c": [0,-20],
+     "size": [24,9],
+     "pv": [0.5,0.5],
+     "shape": "round",
+     "tone": "light",
+     "z": 5,
+     "zb": 0,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "pilotbat",
+   "rig": "hastings0",
+   "line": "hastings",
+   "stage": 0,
+   "plan": "flyer",
+   "colours": {"main":"#5a4a6e","accent":"#8f7aa8"},
+   "scale": 0.83,
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-6,-55],
+     "size": [7,10],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "accent",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {"n":"earR","mirror":"earL"},
+    {
+     "n": "fang",
+     "par": "head",
+     "c": [3,-38],
+     "size": [3,4],
+     "pv": [0.5,0.1],
+     "shape": "triDown",
+     "tone": "light",
+     "z": 10,
+     "zb": 0,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "bingebat",
+   "rig": "hastings1",
+   "line": "hastings",
+   "stage": 1,
+   "plan": "flyer",
+   "colours": {"main":"#a8323a","accent":"#3d3438"},
+   "scale": 1.3,
+   "size": {"wingL":1.3,"tail":1.2},
+   "add": [
+    {
+     "n": "earL",
+     "par": "head",
+     "c": [-6,-55],
+     "size": [9,14],
+     "pv": [0.5,0.9],
+     "shape": "tri",
+     "tone": "accent",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {"n":"earR","mirror":"earL"},
+    {
+     "n": "fang",
+     "par": "head",
+     "c": [3,-38],
+     "size": [3,4],
+     "pv": [0.5,0.1],
+     "shape": "triDown",
+     "tone": "light",
+     "z": 10,
+     "zb": 0,
+     "slot": null
+    },
+    {
+     "n": "screen",
+     "par": "torso",
+     "c": [0,-27],
+     "size": [11,8],
+     "pv": [0.5,0.5],
+     "shape": "round",
+     "tone": "light",
+     "z": 6,
+     "zb": 2,
+     "slot": null
+    }
+   ]
+  },
+  {
    "name": "harbour_gosling",
    "rig": "hughes_harbour0",
    "line": "hughes",

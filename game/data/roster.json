@@ -604,5 +604,41 @@
   "types": ["Fire","Ground"],
   "design": "Rail snake with a smokestack, a top hat and sideburns, revived from a fossil",
   "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "pseudonymph",
+  "name": "Pseudonymph",
+  "no": 51,
+  "line": "satoshi",
+  "stage": 1,
+  "kind": "mythical",
+  "parody": "Satoshi Nakamoto",
+  "types": ["Steel"],
+  "design": "A smooth grey faceless blob that copies whatever it meets",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "pilotbat",
+  "name": "Pilotbat",
+  "no": 52,
+  "line": "hastings",
+  "stage": 1,
+  "kind": "line2",
+  "parody": "Reed Hastings",
+  "types": ["Flying"],
+  "design": "Small cave bat with big ears, squeaks a theme tune",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "bingebat",
+  "name": "Bingebat",
+  "no": 53,
+  "line": "hastings",
+  "stage": 2,
+  "kind": "line2",
+  "parody": "Reed Hastings",
+  "types": ["Flying","Psychic"],
+  "design": "Red bat with huge ears and a glowing screen on its chest, never sleeps at night",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  }
 ]

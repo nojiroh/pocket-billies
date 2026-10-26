@@ -476,9 +476,27 @@ export function dataRunScene(D) {
     if (
       W &&
       W.rare !== undefined &&
-      !(W.rare && typeof W.rare === 'object' && whole(W.rare.up, 0, 20) && Object.keys(W.rare).length === 1)
+      !(
+        W.rare &&
+        typeof W.rare === 'object' &&
+        whole(W.rare.up, 0, 20) &&
+        Object.keys(W.rare).every(k => k === 'up' || k === 'myth')
+      )
     )
-      problem('rules.json', 'run.wild.rare is not { up } (whole levels, 0-20)');
+      problem('rules.json', 'run.wild.rare is not { up, myth? } (whole levels, 0-20)');
+    /* RO-3f: the mythical that now and then stands in for the rarer one: a chance and real one-stage mythicals */
+    const MY = W && W.rare && W.rare.myth;
+    if (MY !== undefined) {
+      const lines = Object.fromEntries((D.lines || []).map((/** @type {any} */ l) => [l.id, l]));
+      if (!MY || typeof MY.chance !== 'number' || !(MY.chance >= 0 && MY.chance <= 1) || !Array.isArray(MY.list))
+        problem('rules.json', 'run.wild.rare.myth is not { chance (0-1), list }');
+      else
+        for (const sp of MY.list) {
+          const L = typeof sp === 'string' && lines[sp.replace(/\d+$/, '')];
+          if (!L || L.rar !== 'mythical' || sp !== L.id + '0')
+            problem('rules.json', `run.wild.rare.myth: ${sp} is not a mythical line's species (<line>0)`);
+        }
+    }
     /* RT-4: the habitats (logic/mapgen.js mapgenHabitats makes their points), each a list of types, no type twice */
     const H = W && W.habitats;
     if (H !== undefined) {

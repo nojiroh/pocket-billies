@@ -531,6 +531,15 @@
  "cleaningfee": {"n":"Cleaning Fee","t":"Water","c":"S","a":100,"d":"Added at checkout.","sig":"chesky","p":70},
  "autoplay": {"n":"Autoplay","t":"Psychic","c":"S","a":100,"d":"The next one starts before you can stop it.","sig":"hastings","p":80},
  "hallucinate": {"n":"Hallucinate","t":"Psychic","c":"S","a":80,"d":"Confidently wrong, and it still hurts.","sig":"altman","p":100},
+ "fork": {
+  "n": "Fork",
+  "t": "Steel",
+  "c": "X",
+  "a": 0,
+  "d": "Forks the foe's chain and runs its copy: takes the foe's types for 5 turns.",
+  "sig": "satoshi",
+  "fx": {"copyTypes":1}
+ },
  "countstotwo": {"n":"Counts to Two","t":"Water","c":"H","a":100,"d":"Hits twice. Never a third time.","sig":"newell","p":90},
  "fifteensec": {"n":"Fifteen Seconds","t":"Electric","c":"S","a":100,"d":"Over before you know it, then again.","sig":"yiming","p":85},
  "stakeineverything": {"n":"Stake in Everything","t":"Water","c":"S","a":100,"d":"Owns a bit of the foe already.","sig":"ponyma","p":85},

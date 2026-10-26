@@ -200,6 +200,70 @@ refuses tag pushes).
   - Swooshpole's lace tail sits behind its torso from the front (the hopper's tail spot); a drawing can fix it.
   - Not tried on a phone. Looks judged on a contact sheet drawn by the game's renderer in this container.
 - Next: RO-3d and RO-3f merge into track/roster (then merge it in here, rebuild and remake as above), RO-3g last.
+### Roster track RO-3f - Pseudonymph (the mythical copycat) and the Pilotbat line (the cave bat) - 2026-10-26
+Branch `claude/ro-3f-satoshi-hastings` (from `track/roster` at 92ca0db1; pull request into `track/roster`). RO-3d
+(#217) and RO-3e ran beside it; neither had landed on track/roster when this was pushed. Plan approved in Plan Mode.
+The owner's answers: **Pseudonymph** (not Nakamorph), Steel alone, mythical, one stage; its mechanic is **Fork**
+(takes the foe's types); it is met as **a route's rarer one, 2% a route, any biome, once a run, at the rarer one's
+usual level**; **Pilotbat → Bingebat**, Flying → Flying/Psychic, common, evolves at 18, in cave, thicket and jungle.
+Tag `ro-3f-done` for the owner (local only: the proxy refuses tag pushes).
+- Where the brief and the code differed (checked): Hastings already had its signature move (`autoplay`, Psychic, 80)
+  and the game already had a `mythical` rarity (560 total, 0.03 catch, 5 starter points, "Does not evolve."); pools
+  have no time of day, so "night-leaning" means dark and misty biomes; the event script's `wild N` can't name a
+  species; a route's rarer one is the lowest weight of its pool, so a mythical in a pool would be almost every
+  route's rarer one; the blob's face is on its one shared bone, so faceless is an added mask, not a dropped face; the
+  legacy Bingebat sheet was still at `billionaires/bingebat.png`, the name the placeholder bakes to. The regional
+  dex draws from every line, so a mythical could have taken a dex slot: it is left out (below).
+- Changed:
+  - **Lines**: `lines/satoshi.json` (Pseudonymph: prof all 1, a move of each of the 9 types, Fork at 1) and
+    `lines/hastings.json` (Pilotbat, Bingebat: Lullaby, Bewilder, Sap Drain, Autoplay at 18, Mind Wipe, Premonition);
+    index.json lines; roster.json rows 51-53 (kind `mythical` for Pseudonymph). No kit `parts` (optional; no kit
+    art). Bios, notes and cries are Claude's drafts.
+  - **Fork** (moves.json `fork`, Steel status, never misses, sig `satoshi`): `fx.copyTypes` in battle-engine.js
+    useMove sets the user's type override (`ov`, as Soak does on the target) to the target's types for
+    `rules.json battle.forkTurns` (5) turns, marked `ovBy: 'fork'` so it wears off with its own line; fails ("But it
+    failed.") when the target has no type to take or the user already has those types; aiScore 20, or 0 when it
+    would fail. Soak on a forked Billie wins (Water, its own line). The copied types are everything `actorTypes`
+    feeds: the same-type bonus, weaknesses and the **type passives** (a Fork into Grass regrows). battle.js and the
+    Studio's battle preview pick its target in doubles; the Studio's move editor and battle rules have its fields.
+  - **The mythical roll**: `rules.json run.wild.rare.myth {chance: 0.02, list: ["satoshi0"]}`; rules.js `spawnMyth`
+    is asked by `spawnRare` for a run route's rarer one, on its own stream (`rngFn(node seed, 'myth')`), so every
+    other draw is unchanged; none while a mythical waits in any place's list; `dropEncounter` (battled or fled
+    from) sets `run.myth = 1` (validated in run-state.js, typed in save-data.d.ts) and none comes after. It skips the
+    regional dex on purpose. check-data checks the rule (a 0-1 chance, mythical lines' `<line>0`), with a planted
+    fault in the check-data snapshot.
+  - **No mythical in a regional dex**: run-region.js runRegionData leaves mythical lines out of the lines a region's
+    (and a side area's) dex draws from.
+  - **Placeholders** (bodyPlans.json forms, `npm run bake:placeholders`): Pseudonymph on the blob (scale 1.1, steel
+    grey, a gold tuft, a light `mask` over where its eyes are drawn); Pilotbat (0.83) and Bingebat (1.3) on the
+    flyer (ears and a fang added; Bingebat red with dark wings x1.3, tail x1.2 and a `screen` on its chest, hidden from
+    behind). The legacy Bingebat's sheet, layout and rig (`hastings0`) moved into `billionaires/hand`
+    (rigs-hand.json) first, as RO-2 did with the legacy lines.
+  - **Pools**: `hastings0` in cave 30, thicket 12, jungle 6. Pseudonymph in none.
+- Remade on purpose: the check-data snapshot (155 files, the planted myth fault); the run-start snapshot (the
+  regional dex draws from the line list, which grew; one commit's message blamed the pools, the next one corrects
+  it); the sound baseline (the 3 cries and low-HP cries, and `cave mid`/`cave late`, which were already missing from
+  the baseline on track/roster: check-sound said so on the untouched branch); pixel-density counts bodyPlans.json's
+  forms instead of a hard-coded 51 (one number fewer for the parallel sessions to fight over); wild-pools expects
+  every mythical outside every pool and in `run.wild.rare.myth`.
+- Verified: lint, typecheck, check:modules, format:check, check:data after each change; unit tests quick (1083 pass)
+  and slow (87 pass); new tests: battle-fork.test.mjs (4), run-world-real's mythical roll (chance 0 and 1, the level,
+  the rest of the stock unchanged, met, one waiting), run-region-real's no mythical in a dex on every seed;
+  graft-placeholder's real-forms sweep now takes Pseudonymph and Pilotbat as the blob and flyer donors (head refused
+  to and from the blob); `bake:placeholders --check` and `bake:kits --check` clean; every stage drawn by the game's
+  renderer (rigParts, rigFrame, drawRig on the game page) front and back, idle, attack, hurt and faint, on a contact
+  sheet (the faint frame leaves the box like every Billie's does). Smoke (`npm run check:smoke`): 6 steps, 6 passed (241 s; Start-Game on a phone with a battle, the actions sheet, the in-game full test's step: nothing saved).  Not the full quick check: its picture baseline waits for the roster on main (RO-3b).
+- Risky / open:
+  - Fork copies the type passives too (Kindling, Regrowth, Bedrock...). The owner may want types only.
+  - A 2% chance per route is about 1 run in 10; nothing in the run sim or preview counts it yet. To test on the phone,
+    set `run.wild.rare.myth.chance` to 1 in rules.json (or the Studio's rules once a field exists; there is none yet).
+  - Pseudonymph's catch rate is the mythical 0.03, so a run that meets it will often lose it.
+  - Satoshi's placeholder head/body is the blob's shared bone: never grafted, as RO-3c designed.
+  - Python Playwright 1.56 wants Chromium 1194 and this container has 1243: the browser checks ran through a
+    scratchpad folder that maps one onto the other (PLAYWRIGHT_BROWSERS_PATH), not on CI's browser.
+  - Looks judged on a contact sheet in this container, not on a phone.
+- Next: RO-3d and RO-3e merge (rebuild rigs-next.js, the sheets, the snapshots and the sound baseline after each;
+  merge forms, rows, lines and pools by hand); RO-3g last; the picture baseline once the roster reaches main.
 
 ### Roster track RO-3b - Every Billie on its body plan as a placeholder - 2026-10-26
 Branch `claude/ro-3b-placeholder-billies` (from RO-3a's branch; pull request into `track/roster`; #213 and RO-3c's
