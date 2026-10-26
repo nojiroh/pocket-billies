@@ -14,6 +14,7 @@
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
 import { historyEntry, historyPush, validLostTo } from './run-history.js';
+import { rivalRunStart } from './rival.js';
 import { META_IDS, META_MAX, recordOf, wholeIn } from './meta-state.js';
 import { expeditionAfterWin } from './modifiers.js';
 import { heldAllOff } from './held.js';
@@ -232,6 +233,20 @@ export function validRun(o) {
   /* RL-9b: the Billies from home (uids) and what was packed (missing on a run saved before) */
   if (o.home !== undefined && (!list(o.home, 6) || !o.home.every(u => typeof u === 'string' && u.length <= 60)))
     return false;
+  /* RL-S2: Blake in the run (missing on a run from before) */
+  const RV = o.rival;
+  if (
+    RV !== undefined &&
+    !(
+      plain(RV) &&
+      Object.keys(RV).every(k => ['lead', 'past', 'met', 'won'].includes(k)) &&
+      id(RV.lead) &&
+      wholeIn(RV.past, 0, 999) &&
+      wholeIn(RV.met, 0, 9) &&
+      wholeIn(RV.won, 0, RV.met)
+    )
+  )
+    return false;
   const packed = v => recordOf(v, 500, n => wholeIn(n, 0, META_MAX));
   if (o.pack !== undefined && !(plain(o.pack) && Object.keys(o.pack).every(k => k === 'items' || k === 'pyramids')))
     return false;
@@ -419,6 +434,8 @@ export function runBegin(s, give) {
       return to;
     };
   run.home = travel.map(m => m.uid);
+  /* RL-S2: Blake counters the Billie you lead with and remembers every meeting kept (logic/rival.js) */
+  run.rival = rivalRunStart(travel[0].sp, s.meta && s.meta.history);
   run.pack = copyOf(pack);
   s.team = /** @type {Billy[]} */ (copyOf(travel));
   /* RL-12c: a traveller leaves its held item at home (the hub's Billie keeps it), so a run's end can't bring it twice */

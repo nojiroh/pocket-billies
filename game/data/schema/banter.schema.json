@@ -10,7 +10,7 @@
   "required": ["who", "priority", "script"],
   "additionalProperties": false,
   "properties": {
-   "who": {"description": "who it is for: a hub character (chosen, hazel, juniper: their first talk after a run), back_lost (the scene after a lost run), leader (a run's leader before the battle), bureau (a Bureau agent's sight line)", "enum": ["chosen", "hazel", "juniper", "back_lost", "leader", "bureau"]},
+   "who": {"description": "who it is for: a hub character (chosen, hazel, juniper: their first talk after a run), back_lost (the scene after a lost run), leader (a run's leader before the battle), bureau (a Bureau agent's sight line), rival (Blake before a run battle, RL-S2)", "enum": ["chosen", "hazel", "juniper", "back_lost", "leader", "bureau", "rival"]},
    "when": {"description": "a condition (docs/SCRIPTS.md): the line can be picked while it holds", "type": "string", "minLength": 1, "maxLength": 200},
    "priority": {"description": "the highest priority of the lines that can be picked wins; a tie is drawn", "type": "integer", "minimum": 0, "maximum": 99},
    "once": {"description": "said once only", "type": "boolean"},

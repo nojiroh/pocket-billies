@@ -105,6 +105,11 @@ export function battleSettle(b, s) {
     const beat = run.beat || (run.beat = []);
     if (!beat.includes(b.T.from) && beat.length < 16) beat.push(b.T.from);
   }
+  /* RL-S2: a meeting with Blake, and a win (run.rival; the history keeps both) */
+  if (run && run.rival && b.T && b.T.runFoe === 'rival' && (o === 'win' || o === 'lose')) {
+    run.rival.met = Math.min(9, run.rival.met + 1);
+    if (o === 'win') run.rival.won = Math.min(run.rival.met, run.rival.won + 1);
+  }
   /* v36: the Hype counter */
   if (o === 'win') for (const m of s.team) if (m.hp > 0) m.wins = (m.wins || 0) + 1;
   if (b.kind === 'wild') dropEncounter(b.qid);

@@ -72,6 +72,7 @@ import '../../game/js/logic/ranch.js';
 import '../../game/js/logic/rewards.js';
 import '../../game/js/logic/rig-joints.js';
 import '../../game/js/logic/rig-swap.js';
+import '../../game/js/logic/rival.js';
 import '../../game/js/logic/rng.js';
 import '../../game/js/logic/robot-joints.js';
 import '../../game/js/logic/robot-math.js';

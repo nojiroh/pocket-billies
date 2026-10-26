@@ -26,7 +26,7 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /** who a line can be for (banter.schema.json's list); the first three are the hub characters picked on the way home */
-export const BANTER_WHO = ['chosen', 'hazel', 'juniper', 'back_lost', 'leader', 'bureau'],
+export const BANTER_WHO = ['chosen', 'hazel', 'juniper', 'back_lost', 'leader', 'bureau', 'rival'],
   BANTER_HUB = ['chosen', 'hazel', 'juniper'];
 
 /** a small, steady string hash (FNV-1a) for the tie's draw @param {string} s */

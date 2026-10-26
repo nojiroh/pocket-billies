@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readGameData } from '../data-files.mjs';
-import { GAME_DATA, modules } from './setup-real.mjs';
+import { data, fn, GAME_DATA, modules } from './setup-real.mjs';
 
 const { runStartPlan } = modules['run-start'],
   { runRegionData } = modules['run-region'],
@@ -65,4 +65,75 @@ test('he takes a route before a waystation, never a town; the same seed puts him
   const b = { nodes: structuredClone(nodes) };
   assert.deepEqual(runMapRival('X', b, rules, 2), [], 'Expedition II meets him 0 times here');
   assert.deepEqual(runMapRival('X', b, rules, 9), [], 'past the end: the last');
+});
+
+const { rivalTeam, rivalSize, rivalPast } = modules['rival'],
+  typeEffectiveness = fn('typeEffectiveness'),
+  { SPECIES } = data,
+  { speciesStep } = modules['rules'],
+  { rngFrom } = modules['rng'],
+  step = id => speciesStep(SPECIES[id]),
+  team = (seed, lead, met, top, dex = null) =>
+    rivalTeam(rngFrom(seed, 'team'), lead, met, top, R.rival, SPECIES, dex, typeEffectiveness, step);
+
+test('his ace counters the lead, every type; the team is the same for the same seed', () => {
+  const TYPES = [...new Set(Object.values(SPECIES).flatMap(S => S.types || []))];
+  for (const t of TYPES) {
+    const canCounter = Object.values(SPECIES).some(S => (S.types || []).some(a => typeEffectiveness(a, [t]) > 1));
+    for (let k = 0; k < 10; k++) {
+      const [ace] = team(`ACE${t}${k}`, [t], 0, 20);
+      if (canCounter)
+        assert.ok(
+          SPECIES[ace.sp].types.some(a => typeEffectiveness(a, [t]) > 1),
+          `${ace.sp} against ${t}`
+        );
+      assert.equal(ace.lvl, 20);
+    }
+  }
+  assert.deepEqual(team('SAME', ['Fire'], 3, 25), team('SAME', ['Fire'], 3, 25));
+});
+
+test('it grows by meetings, a level down the line, stages fit the level, the dex first', () => {
+  assert.deepEqual(
+    [0, 1, 2, 3, 6, 50].map(m => rivalSize(R.rival, m)),
+    [0, 1, 2, 3, 6, 50].map(m => Math.min(R.rival.max, R.rival.size + Math.floor(m / R.rival.grow)))
+  );
+  const six = team('GROW', ['Water'], 99, 12);
+  assert.equal(six.length, R.rival.max);
+  assert.deepEqual(
+    six.map(e => e.lvl),
+    six.map((_, k) => Math.max(1, 12 - k))
+  );
+  for (const e of six) assert.equal(step(e.sp), 0, `${e.sp} is a first stage at ${e.lvl}`);
+  const dex = Object.keys(SPECIES)
+    .filter(id => step(id) === 0)
+    .slice(0, 4);
+  for (const e of team('DEX', [], 4, 10, dex).slice(1)) assert.ok(dex.includes(e.sp), `${e.sp} from the dex`);
+  assert.equal(rivalPast([{ rival: { met: 2, won: 1 } }, { rival: null }, { rival: { met: 1, won: 0 } }]), 3);
+});
+
+test("a run's foes: Blake on each rival node, his team bigger at the second meeting, a reward, never blocking", () => {
+  const { runFoes } = modules['run-loop'],
+    { newRun } = modules['run-state'],
+    leaders = Object.values(GAME_DATA.trainers).filter(T => T.miniboss);
+  let seen = 0;
+  for (const seed of SEEDS.slice(0, 80)) {
+    const p = runStartPlan(seed, DATA, { expedition: 3 }),
+      run = newRun(seed, 3, 1, {});
+    Object.assign(run, { map: p.map, region: p.region, rival: { lead: 'musk0', past: 1, met: 0, won: 0 } });
+    const blakes = Object.values(runFoes(run, { leaders, rules: R }))
+      .filter(F => F.runFoe === 'rival')
+      .sort((a, b) => a.runNode - b.runNode);
+    assert.equal(blakes.length, p.map.nodes.filter(n => n.type === 'rival').length, seed);
+    blakes.forEach((F, k) => {
+      assert.equal(F.from, 'blake');
+      assert.equal(F.who, 'chad');
+      assert.equal(F.reward, R.rival.reward);
+      assert.equal(F.blocks, false);
+      assert.equal(F.team.length, rivalSize(R.rival, 1 + k), `${seed}: meeting ${k + 1}`);
+      assert.equal(F.script.at(-1), `battle ${F.id}`);
+    });
+    seen += blakes.length;
+  }
+  assert.ok(seen > 80);
 });

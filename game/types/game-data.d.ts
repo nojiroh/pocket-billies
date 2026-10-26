@@ -827,7 +827,7 @@ export interface TrainerEntry extends Trainer {
   /** RL-8: a run's foe (logic/run-loop.js runFoes): its map node, 'miniboss' or 'boss', the leader it copies, and
       for the boss its top Billie fought alone as an Alpha */
   runNode?: number;
-  runFoe?: 'miniboss' | 'boss';
+  runFoe?: 'miniboss' | 'boss' | 'rival';
   from?: DataId;
   alpha?: boolean;
   /** RL-13: a run boss's HP times this (the Expedition's, logic/run-loop.js runFoes) */
@@ -1904,7 +1904,7 @@ export interface RewardRow {
 }
 /** RL-S1: banter.json: one of the story director's lines (logic/story-pick.js) */
 export interface BanterLine {
-  who: 'chosen' | 'hazel' | 'juniper' | 'back_lost' | 'leader' | 'bureau';
+  who: 'chosen' | 'hazel' | 'juniper' | 'back_lost' | 'leader' | 'bureau' | 'rival';
   when?: string;
   priority: number;
   once?: boolean;

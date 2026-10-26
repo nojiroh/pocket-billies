@@ -3,7 +3,8 @@
 /* ================= A RUN'S PREVIEW (Studio plan Phase 2, T2.4) =================
    What a run from a seed holds, worked out by the game's own logic on the game data as game-data.js reads it (its
    POOLS with stand-ins, TRAINERS, PERKS, RULES): the start (run-start.js runStartPlan, as the mast takes off), then
-   - each mini-boss's and the boss's foe (run-loop.js runFoes, with the leaders run-world.js passes);
+   - each mini-boss's and the boss's foe (run-loop.js runFoes, with the leaders run-world.js passes); RL-S2: Blake's
+     on each rival node, against the first starter unless told otherwise;
    - each town's and stall's (RL-12b) stock on every day from the first it can be reached (its row + 1) to RUN_PREVIEW_LATE days past the
      shortest walk's last day (runShopStock with
      the run's shop unlocks, as shop.js opens it) and its shelf's Perk that day (perkShelf);
@@ -37,6 +38,7 @@ import { runPlaceId, runWorldTables } from './run-scenes.js';
 import { runStartPlan } from './run-start.js';
 import { runRegionData } from './run-region.js';
 import { copyOf, newRun } from './run-state.js';
+import { rivalRunStart } from './rival.js';
 import { unlockOpen } from './unlocks.js';
 
 /** RL-R2: the days a town's stock is shown past the shortest walk's last day (the deadline's old slack: the owner
@@ -58,8 +60,9 @@ const runPreviewData = () => ({
 
 /**
  * a run's preview from its seed. `unlocks` is what the run carries (unlocks.js runUnlocks), `map` overrides rules.json
- * run.map (the debug menu's short map), `expedition` the run's Expedition
- * @param {string} seed @param {{ unlocks?: string[], map?: object, expedition?: number }} [o]
+ * run.map (the debug menu's short map), `expedition` the run's Expedition; RL-S2: `lead` the Billie Blake counters
+ * (the first starter's first species unless given) and `past` his meetings before the run (0)
+ * @param {string} seed @param {{ unlocks?: string[], map?: object, expedition?: number, lead?: string, past?: number }} [o]
  */
 export function runPreview(seed, o = {}) {
   const data = runPreviewData(),
@@ -74,6 +77,7 @@ export function runPreview(seed, o = {}) {
   run.map = copyOf(plan.map);
   run.forecast = copyOf(plan.forecast);
   if (plan.region) run.region = copyOf(plan.region);
+  run.rival = { ...rivalRunStart(o.lead || `${RULES.start.starters[0]}0`, []), past: o.past || 0 };
   const map = /** @type {RunMap} */ (run.map),
     foes = runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run }),
     W = runWorldTables(run, gameData.locations[START_NODE], /** @type {any} */ (data)),

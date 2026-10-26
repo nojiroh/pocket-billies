@@ -71,7 +71,7 @@ export const SCRIPT_COMMANDS = {
   pick: {
     args: ['who'],
     about:
-      'say the story director’s line for who (banter.json, picked by the run history: RL-S1): chosen, hazel, juniper, back_lost, leader, bureau; nothing if none fits',
+      'say the story director’s line for who (banter.json, picked by the run history: RL-S1): chosen, hazel, juniper, back_lost, leader, bureau, rival (RL-S2); nothing if none fits',
   },
   end: { args: [], about: 'stop the script here' },
   /* a cutscene's own (game/data/cutscenes, docs/CUTSCENES.md: logic/cutscene-set.js reads them) */

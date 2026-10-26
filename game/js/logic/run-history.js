@@ -4,7 +4,7 @@
    What the story remembers of past runs, kept in the save as saveData.meta.history: the newest HISTORY_MAX runs, oldest
    first, one entry each (historyEntry, made by run-state.js runEnd before the hub's fields come back). The story's
    conditions read it as facts (historyFacts): `last:<fact>` the last run, `lastby:<what>` what ended it, `history:<fact>`
-   all of them, `rematch` how many runs a foe has ended. "What beat you" is caught as the battle ends
+   all of them, `rematch` how many runs a foe has ended; RL-S2: Blake's meetings and wins (run.rival). "What beat you" is caught as the battle ends
    (battle-rewards.js battleSettle: run.lostTo), the leaders beaten likewise (run.beat). No imports: conditions.js and
    meta-state.js read it on both pages. Logic only: no DOM, no Date, no Math.random (tools/test/run-history.test.mjs). */
 /** @import { HistoryEntry, RunLostTo, Run, SaveData } from '../../types/save-data' */
@@ -39,12 +39,24 @@ expose({
 /* to-module: end */
 export const HISTORY_MAX = 20,
   HISTORY_ENDS = ['won', 'lost', 'quit'],
-  /** what can end a run: a wild Billie, a route trainer, an event's foe, a mini-boss, the boss, another trainer */
-  LOST_TO_KINDS = ['wild', 'route', 'event', 'miniboss', 'boss', 'trainer'],
+  /** what can end a run: a wild Billie, a route trainer, an event's foe, a mini-boss, the boss, the rival (RL-S2),
+   * another trainer */
+  LOST_TO_KINDS = ['wild', 'route', 'event', 'miniboss', 'boss', 'rival', 'trainer'],
   /** `last:<fact>`: the last run's numbers (0 with no run yet) */
-  LAST_FACTS = ['won', 'lost', 'quit', 'row', 'days', 'perks', 'team', 'leaders', 'expedition'],
+  LAST_FACTS = ['won', 'lost', 'quit', 'row', 'days', 'perks', 'team', 'leaders', 'expedition', 'rival', 'rivalwon'],
   /** `history:<fact>`: over every run kept */
-  HISTORY_FACTS = ['runs', 'wins', 'losses', 'quits', 'streak', 'lstreak', 'bureau'];
+  HISTORY_FACTS = [
+    'runs',
+    'wins',
+    'losses',
+    'quits',
+    'streak',
+    'lstreak',
+    'bureau',
+    'rivalmet',
+    'rivalwon',
+    'rivallost',
+  ];
 
 export const histPlain = (/** @type {any} */ v) =>
     !!v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__'),
@@ -107,7 +119,11 @@ export function historyEntry(s, won) {
       .slice(0, 6),
     perks: run.perks.filter(histId).slice(0, 32),
     leaders: leaders.filter(histId).map(l => ({ id: l, beat: beat.has(l) ? 1 : 0 })),
-    rival: null,
+    /* RL-S2: Blake's meetings and wins this run (logic/rival.js run.rival) */
+    rival:
+      run.rival && histWhole(run.rival.met, 1, 9)
+        ? { met: run.rival.met, won: Math.max(0, Math.min(run.rival.met, run.rival.won || 0)) }
+        : null,
   };
 }
 /** the history with a new entry, the newest HISTORY_MAX kept @param {HistoryEntry[] | undefined} list
@@ -152,7 +168,11 @@ export function validHistory(v) {
             histId(l.id) &&
             histWhole(l.beat, 0, 1)
         ) &&
-        e.rival === null
+        (e.rival === null ||
+          (histPlain(e.rival) &&
+            Object.keys(e.rival).every(k => k === 'met' || k === 'won') &&
+            histWhole(e.rival.met, 1, 9) &&
+            histWhole(e.rival.won, 0, e.rival.met)))
     )
   );
 }
@@ -184,6 +204,9 @@ export function historyFacts(list) {
       team: e.team.length,
       leaders: e.leaders.filter(l => l.beat).length,
       expedition: e.exp,
+      /* RL-S2: meetings with Blake, and wins over him */
+      rival: e.rival ? e.rival.met : 0,
+      rivalwon: e.rival ? e.rival.won : 0,
     });
     if (e.by) {
       lastby[e.by.kind] = 1;
@@ -203,6 +226,10 @@ export function historyFacts(list) {
       streak: streak('won'),
       lstreak: streak('lost'),
       bureau: count(e => !!(e.by && e.by.bureau)),
+      /* RL-S2: every meeting with Blake kept, the ones won, the runs he ended */
+      rivalmet: H.reduce((n, e) => n + (e.rival ? e.rival.met : 0), 0),
+      rivalwon: H.reduce((n, e) => n + (e.rival ? e.rival.won : 0), 0),
+      rivallost: count(e => !!(e.by && e.by.kind === 'rival')),
     },
   };
 }
