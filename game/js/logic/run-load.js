@@ -24,8 +24,10 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** @typedef {{ id: string, label: string, w?: number }} RunLoadStageDef */
-/** @typedef {{ id: string, label: string, w: number, f: number, ms: number, late: boolean }} RunLoadStage */
+/** HB-8: a `hard` stage is one nothing can show without (the run's places, made behind the screen at a take-off): the cap
+ * never marks it late, and the cap's clock starts once every hard stage is ready */
+/** @typedef {{ id: string, label: string, w?: number, hard?: boolean }} RunLoadStageDef */
+/** @typedef {{ id: string, label: string, w: number, f: number, ms: number, late: boolean, hard: boolean }} RunLoadStage */
 /** @typedef {{ why: string, t0: number, stages: RunLoadStage[], end: '' | 'ready' | 'capped', ms: number }} RunLoad */
 
 /** a new loading, started at `now` @param {string} why what it loads for ('take-off', 'resume')
@@ -34,7 +36,15 @@ export function runLoadNew(why, defs, now) {
   return {
     why,
     t0: now,
-    stages: defs.map(d => ({ id: d.id, label: d.label, w: d.w && d.w > 0 ? d.w : 1, f: 0, ms: -1, late: false })),
+    stages: defs.map(d => ({
+      id: d.id,
+      label: d.label,
+      w: d.w && d.w > 0 ? d.w : 1,
+      f: 0,
+      ms: -1,
+      late: false,
+      hard: !!d.hard,
+    })),
     end: '',
     ms: -1,
   };
@@ -63,13 +73,16 @@ export function runLoadShare(L) {
 /** every stage ready @param {RunLoad} L */
 export const runLoadDone = L => L.stages.every(s => s.f >= 1);
 
-/** look at the loading: 'ready' when every stage is, 'capped' once capMs have gone by (the stages still waiting marked
- * late), else '' (still waiting). The first answer that isn't '' ends it and stays
+/** look at the loading: 'ready' when every stage is, 'capped' once capMs have gone by since the hard stages were ready
+ * (from the start when there are none; the stages still waiting marked late), else '' (still waiting). The first
+ * answer that isn't '' ends it and stays
  * @param {RunLoad} L @param {number} now @param {number} capMs @returns {'' | 'ready' | 'capped'} */
 export function runLoadTick(L, now, capMs) {
   if (L.end) return L.end;
+  const hard = L.stages.filter(s => s.hard),
+    from = hard.length ? (hard.every(s => s.f >= 1) ? L.t0 + Math.max(...hard.map(s => s.ms)) : Infinity) : L.t0;
   if (runLoadDone(L)) L.end = 'ready';
-  else if (capMs > 0 && now - L.t0 >= capMs) {
+  else if (capMs > 0 && now - from >= capMs) {
     L.end = 'capped';
     for (const s of L.stages) if (s.f < 1) s.late = true;
   } else return '';

@@ -1,0 +1,43 @@
+{
+ "id": "bloomberg",
+ "names": ["Tickerbud","Bloomburst","Terminalia"],
+ "types": [["Grass"],["Grass"],["Grass","Psychic"]],
+ "prof": [1,0.85,1,1.25,1.1,0.8],
+ "rar": "common",
+ "totals": [260,380,490],
+ "learn": [
+  [1,"handshake"],
+  [1,"snub"],
+  [5,"harvest"],
+  [9,"terminalfee"],
+  [13,"subpoena"],
+  [17,"allowance"],
+  [21,"fud"],
+  [25,"oldmoney"],
+  [30,"pump"],
+  [34,"hype"],
+  [38,"familyoffice"],
+  [44,"moon"]
+ ],
+ "cat": ["Bud Billie","Screen Billie","Terminal Billie"],
+ "ht": [0.5,0.8,1.2],
+ "wt": [5.4,8.6,18.6],
+ "hab": ["Window boxes on trading floors","Anywhere a screen is left on","The corner office of a city"],
+ "diet": ["Morning light and market news","Quotes, delayed fifteen minutes","A subscription fee"],
+ "bio": [
+  "A flower bud with a pale stripe down its face. One leaf flutters like ticker tape; it knows the price of everything.",
+  "When it bloomed, its petals came out orange on black and full of numbers. People pay to look at it.",
+  "A flower of glowing panels that ran a city once and would like to again. It reads minds the way it reads markets, and charges for both."
+ ],
+ "note": ["Its leaf shows yesterday's close.","Nobody has ever seen it switched off.","Charges rent to the bees."],
+ "evo": [
+  {"k":"lvl","at":14},
+  {"k":"lvl","at":30}
+ ],
+ "parody": "Michael Bloomberg",
+ "cry": [
+  {"base":"slime","pitch":72,"length":0.5,"name":"placeholder: a soft bud's pop (Claude's draft)"},
+  {"base":"machine","pitch":64,"length":0.8,"name":"placeholder: a ticker's chatter (Claude's draft)"},
+  {"base":"machine","pitch":52,"length":1.2,"name":"placeholder: a terminal's start-up chord (Claude's draft)"}
+ ]
+}

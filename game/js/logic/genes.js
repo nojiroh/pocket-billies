@@ -1,0 +1,284 @@
+// @ts-check
+'use strict';
+/* ================= GENES (splicing track SP-2) =================
+   The rules of a spliced Billie. A graft is { slot: Gene id } (graft-art.js), a Gene id "part@donor": a kit part
+   (partKits.json) and the donor rig it came from (kitBuilds.json: its species, weight, colour), with what genes.json
+   says about the part's kind (its trait) and the part itself (its dominant type, its move). From those:
+     Stability  a foreign part costs genes.json stability.line (the Billie's own line), .kit (the same kit as the part
+                it replaces), or .other; past the limit the splice is Unstable, past limit + refuse it is refused
+     weight     a foreign part weighs what it did on its donor: the slot's weight times the donor's `wt` over the
+                Billie's own (logic/parts.js takes the ratios; the +/- cap still holds)
+     type       the heaviest grafted slot's dominant type becomes the second type (never a third)
+     traits     one per kind, in slot order, at most genes.json maxTraits; their effect rows join the Billie's own
+                (logic/effects.js fxOfBillie)
+     Unstable   one stat times unstable.up, another times unstable.down, rolled once when the splice goes past the
+                limit and kept on the Billie until it is stable again (rules.js unstableTidy), and the drawback's rows
+   Every function takes the data as D = { kitBuilds, partKits, genes, species, parts } (species: SPECIES; parts:
+   rules.json parts). Logic only: no DOM, no Math.random (tools/test/genes.test.mjs). */
+/** @import { Genes, PartKits, PartRules } from '../../types/game-data' */
+/** @import { Build } from '../../types/save-data' */
+/** @typedef {import('./kit-assemble.js').KitForm} KitForm */
+/** @typedef {import('./graft-art.js').Graft} Graft */
+/** @typedef {{ kitBuilds: { forms: KitForm[] }, partKits: PartKits, genes: Genes,
+ *   species: Record<string, { wt: number, types: string[], line: string, name: string }>, parts?: PartRules,
+ *   robots?: { parts: Record<string, any> }, robotRules?: { upgradeStat: number, maxUpgrade: number } }} GeneData */
+/** @typedef {import('./augments.js').Aug} Aug */
+/** @typedef {{ slot: string, id: string, donor: string, sp: string, line: string, part: string, kind: string, kit: string,
+ *   trait: string | null, type: string | null, move: string | null, field: string | null }} Gene */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
+import { GRAFT_SLOTS, geneSplit, graftDonors, graftForm, graftKind, graftRecipe } from './graft-art.js';
+import { augChoices, augGenes, augRel } from './augments.js';
+/* eslint-disable no-func-assign */
+expose({
+  // @ts-expect-error -- replaced on purpose
+  geneCost: [() => geneCost, v => (geneCost = v)],
+  // @ts-expect-error -- replaced on purpose
+  geneOf: [() => geneOf, v => (geneOf = v)],
+  // @ts-expect-error -- replaced on purpose
+  geneWords: [() => geneWords, v => (geneWords = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftFields: [() => graftFields, v => (graftFields = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftFit: [() => graftFit, v => (graftFit = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftGenes: [() => graftGenes, v => (graftGenes = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftHeaviest: [() => graftHeaviest, v => (graftHeaviest = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftRel: [() => graftRel, v => (graftRel = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftStability: [() => graftStability, v => ((graftStability = v), provide({ graftStability }))],
+  // @ts-expect-error -- replaced on purpose
+  graftTraits: [() => graftTraits, v => (graftTraits = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftTypes: [() => graftTypes, v => (graftTypes = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftUnstable: [() => graftUnstable, v => (graftUnstable = v)],
+  // @ts-expect-error -- replaced on purpose
+  wildRoll: [() => wildRoll, v => (wildRoll = v)],
+  // @ts-expect-error -- replaced on purpose
+  wildSplice: [() => wildSplice, v => (wildSplice = v)],
+});
+/* eslint-enable no-func-assign */
+provide({ graftStability });
+/* to-module: end */
+/** a slot's Gene from its id ("part@donor"): the part, its kind and kit, the donor's species and line, the trait,
+ * dominant type and move genes.json gives the part; null for an id with no such part or donor (graftFit says
+ * whether it fits a species) @param {GeneData} D @param {string} slot @param {string} id @returns {Gene | null} */
+export function geneOf(D, slot, id) {
+  const gene = geneSplit(id),
+    form = gene && graftRecipe(D.kitBuilds, gene.donor),
+    P = gene && D.partKits.parts[gene.part];
+  if (!gene || !form || !P) return null;
+  const G = D.genes,
+    own = G.parts[gene.part] || {};
+  return {
+    slot,
+    id: /** @type {string} */ (id),
+    donor: gene.donor,
+    sp: form.line + form.stage,
+    line: form.line,
+    part: gene.part,
+    kind: P.kind,
+    kit: P.kit,
+    trait: (G.kinds[P.kind] && G.kinds[P.kind].trait) || null,
+    type: own.type || null,
+    move: own.move || null,
+    /* SP-4: the field move it counts for: the part's own, else its kind's */
+    field: own.field || (G.kinds[P.kind] && G.kinds[P.kind].field) || null,
+  };
+}
+
+/** a graft with only the slots that can be spliced and fit the species (a slot of GRAFT_SLOTS, a donor whose part is
+ * of the slot's bone), or null when none is left @param {GeneData} D @param {string} sp @param {Graft | null | undefined} g
+ * @returns {Graft | null} */
+export function graftFit(D, sp, g) {
+  if (!g || typeof g !== 'object') return null;
+  /** @type {Graft} */
+  const out = {};
+  for (const slot of GRAFT_SLOTS)
+    if (typeof g[slot] === 'string' && graftForm(D.kitBuilds, D.partKits, sp, { [slot]: g[slot] })) out[slot] = g[slot];
+  return Object.keys(out).length ? out : null;
+}
+
+/** the Genes of a species' graft, in slot order (the slots that fit) @param {GeneData} D @param {string} sp
+ * @param {Graft | null | undefined} g @returns {Gene[]} */
+export function graftGenes(D, sp, g) {
+  const fit = graftFit(D, sp, g);
+  return fit ? GRAFT_SLOTS.filter(s => fit[s]).map(s => /** @type {Gene} */ (geneOf(D, s, fit[s]))) : [];
+}
+
+/** what a Gene costs a species: its own line, the same kit as the part it replaces, another kit
+ * @param {GeneData} D @param {string} sp @param {Gene} gene */
+export function geneCost(D, sp, gene) {
+  const S = D.genes.stability,
+    form = graftRecipe(D.kitBuilds, sp),
+    bone = form && graftKind(D.partKits, form, gene.slot),
+    mine = bone && D.partKits.parts[form.parts[bone][0]];
+  if (form && form.line === gene.line) return S.line;
+  return mine && mine.kit === gene.kit ? S.kit : S.other;
+}
+
+/** a graft's Stability: its cost, the limit (genes.json stability.limit unless given: the Gene Bank raises it), and
+ * whether it is Unstable (past the limit) or refused (past limit + refuse). SP-5: each Augment costs
+ * stability.augment @param {GeneData} D @param {string} sp @param {Graft | null | undefined} g @param {number} [limit]
+ * @param {Aug | null} [aug] */
+export function graftStability(D, sp, g, limit, aug) {
+  const S = D.genes.stability,
+    lim = limit ?? S.limit,
+    cost =
+      graftGenes(D, sp, g).reduce((n, gene) => n + geneCost(D, sp, gene), 0) + augGenes(D, sp, aug).length * S.augment;
+  return { cost, limit: lim, unstable: cost > lim, refused: cost > lim + S.refuse };
+}
+
+/** per grafted slot, its part's weight over the species' own part's: the donor's `wt` over the species' (parts.js
+ * partsWeightRatio takes it); null with no graft. SP-5: an Augment's slot, its part's kg (augments.js augRel)
+ * @param {GeneData} D @param {string} sp @param {Graft | null | undefined} g @param {Aug | null} [aug]
+ * @returns {Record<string, number> | null} */
+export function graftRel(D, sp, g, aug) {
+  const genes = graftGenes(D, sp, g),
+    own = D.species[sp],
+    more = augRel(D, sp, aug);
+  if (!genes.length || !own || !(own.wt > 0)) return more;
+  /** @type {Record<string, number>} */
+  const out = {};
+  for (const gene of genes) {
+    const d = D.species[gene.sp];
+    out[gene.slot] = d && d.wt > 0 ? d.wt / own.wt : 1;
+  }
+  return more ? { ...out, ...more } : out;
+}
+
+/** the grafted slots, heaviest first (the slot's share x its size's weight x its relative weight; ties in slot order).
+ * SP-5: and the Augments' slots @param {GeneData} D @param {string} sp @param {Graft | null | undefined} g
+ * @param {Build | undefined} build @param {Aug | null} [aug] @returns {Gene[]} */
+export function graftHeaviest(D, sp, g, build, aug) {
+  const P = D.parts,
+    rel = graftRel(D, sp, g, aug) || {},
+    w = (/** @type {Gene} */ gene) =>
+      P
+        ? (P.share[gene.slot] ?? 0) * (P.sizes[(build && build[gene.slot]) || 'M'] || P.sizes.M).weight * rel[gene.slot]
+        : rel[gene.slot];
+  return [...graftGenes(D, sp, g), ...augGenes(D, sp, aug)]
+    .map((gene, i) => ({ gene, i, w: w(gene) }))
+    .sort((a, b) => b.w - a.w || a.i - b.i)
+    .map(x => x.gene);
+}
+
+/** a spliced species' types: the heaviest grafted slot with a dominant type gives the second type (the first stays;
+ * a dominant type the Billie already has first changes nothing). SP-5: an Augment's type counts as a dominant one
+ * @param {GeneData} D @param {string} sp @param {Graft | null | undefined} g @param {Build | undefined} build
+ * @param {Aug | null} [aug] @returns {string[]} */
+export function graftTypes(D, sp, g, build, aug) {
+  const own = (D.species[sp] && D.species[sp].types) || [],
+    dom = graftHeaviest(D, sp, g, build, aug).find(gene => gene.type);
+  if (!dom || !own.length || own[0] === dom.type) return own;
+  return [own[0], /** @type {string} */ (dom.type)];
+}
+
+/** a graft's traits (trait ids), one per kind of trait, in slot order, at most genes.json maxTraits
+ * @param {GeneData} D @param {string} sp @param {Graft | null | undefined} g @returns {string[]} */
+export function graftTraits(D, sp, g) {
+  /** @type {string[]} */
+  const out = [];
+  for (const gene of graftGenes(D, sp, g))
+    if (gene.trait && D.genes.traits[gene.trait] && !out.includes(gene.trait)) out.push(gene.trait);
+  return out.slice(0, D.genes.maxTraits);
+}
+
+/** SP-4: the field moves (fieldMoves.json ids) a graft's parts count for, in slot order, no repeats. SP-5: and the
+ * Augments' (genes.json augment.field) @param {GeneData} D @param {string} sp @param {Graft | null | undefined} g
+ * @param {Aug | null} [aug] @returns {string[]} */
+export function graftFields(D, sp, g, aug) {
+  return [
+    ...new Set([...graftGenes(D, sp, g), ...augGenes(D, sp, aug)].map(gene => gene.field).filter(f => f != null)),
+  ];
+}
+
+/** an Unstable splice's roll: a stat to raise, another to lower, and the donor its name merges with (its heaviest
+ * foreign part's); rolled once when a splice goes past the limit and kept on the Billie (rules.js unstableTidy).
+ * SP-5: when the heaviest is an Augment, its part's short name is the name to merge with (donor '')
+ * @param {GeneData} D @param {{ sp: string, graft?: Graft, build?: Build, aug?: Aug }} m @param {string[]} stats
+ * @param {() => number} rnd a number in [0, 1) @returns {{ up: string, down: string, donor: string, name?: string }} */
+export function graftUnstable(D, m, stats, rnd) {
+  const ids = stats.slice(),
+    up = ids.splice(Math.floor(rnd() * ids.length), 1)[0],
+    down = ids[Math.floor(rnd() * ids.length)],
+    heavy = /** @type {any} */ (graftHeaviest(D, m.sp, m.graft, m.build, m.aug)[0]);
+  if (heavy && heavy.aug) return { up, down, donor: '', name: heavy.name };
+  return { up, down, donor: heavy ? heavy.sp : m.sp };
+}
+
+/* ---------- SP-3: wild splices ---------- */
+/** a wild Billie's splice, rolled at spawn: none, a Graft (one foreign part) or a Chimera (genes.json wild.chimeraParts
+ * of them), by genes.json wild's odds. Its Genes' donors are of the lines the place's pool holds (other lines than its
+ * own, graftDonors), and it is never refused (past the limit it is Unstable, as a Chimera often is). Draws only on rnd.
+ * SP-6: `odds` multiplies both chances (a run's splice rows, Perks), the two together at most 1; the draws are the
+ * same whatever it is @param {GeneData} D @param {string} sp @param {string[]} pool the species ids the place spawns
+ * @param {() => number} rnd @param {number} [odds] @returns {Graft | null} */
+export function wildSplice(D, sp, pool, rnd, odds = 1) {
+  const W = D.genes.wild,
+    k = odds === 1 ? 1 : Math.min(odds, 1 / (W.graft + W.chimera)),
+    x = rnd(),
+    chimera = x >= W.graft * k;
+  if (x >= (W.graft + W.chimera) * k) return null;
+  const lines = new Set(pool.map(id => D.species[id] && D.species[id].line).filter(Boolean)),
+    lineOf = (/** @type {string} */ id) => {
+      const gene = geneSplit(id),
+        form = gene && graftRecipe(D.kitBuilds, gene.donor);
+      return form ? form.line : '';
+    },
+    open = GRAFT_SLOTS.map(slot => ({
+      slot,
+      donors: graftDonors(D.kitBuilds, D.partKits, sp, slot).filter(r => lines.has(lineOf(r))),
+    })).filter(o => o.donors.length);
+  if (!open.length) return null;
+  const [lo, hi] = W.chimeraParts,
+    n = Math.min(open.length, chimera ? lo + Math.floor(rnd() * (hi - lo + 1)) : 1);
+  /** @type {Graft} */
+  const g = {};
+  for (let i = 0; i < n; i++) {
+    const o = open.splice(Math.floor(rnd() * open.length), 1)[0];
+    g[o.slot] = o.donors[Math.floor(rnd() * o.donors.length)];
+  }
+  /* past what Stability allows, the last slots picked go first (one foreign part is never refused) */
+  const order = Object.keys(g);
+  while (order.length > 1 && graftStability(D, sp, g).refused) delete g[/** @type {string} */ (order.pop())];
+  return graftStability(D, sp, g).refused ? null : g;
+}
+
+/** SP-5: a wild Billie's splice roll with Escaped specimens: wildSplice's Graft or Chimera when its first draw falls
+ * there (the very same draws), else an Escaped specimen (genes.json wild.escaped, times `near`: augment.escapedNear
+ * next to a scrapyard) in the band after them: one Augment, a robots.json arm or legs that fits it (augments.js
+ * augChoices; uid '' until it is caught), drawn only then; never one Stability refuses at the default limit. Draws
+ * only on rnd @param {GeneData} D @param {string} sp @param {string[]} pool @param {() => number} rnd
+ * @param {number} [odds] @param {number} [near] @returns {{ graft?: Graft, aug?: Aug } | null} */
+export function wildRoll(D, sp, pool, rnd, odds = 1, near = 1) {
+  const W = D.genes.wild,
+    k = odds === 1 ? 1 : Math.min(odds, 1 / (W.graft + W.chimera));
+  let first = -1;
+  const graft = wildSplice(D, sp, pool, () => (first < 0 ? (first = rnd()) : rnd()), odds);
+  if (graft) return { graft };
+  const lo = (W.graft + W.chimera) * k,
+    hi = Math.min(1, lo + W.escaped * near * k);
+  if (first < lo || first >= hi || !D.robots) return null;
+  const choices = augChoices(D, sp);
+  if (!choices.length) return null;
+  const [slot, id] = choices[Math.floor(rnd() * choices.length)],
+    aug = /** @type {Aug} */ ({ [slot]: { uid: '', id, up: 0 } });
+  return graftStability(D, sp, null, undefined, aug).refused ? null : { aug };
+}
+
+/** a Gene in words, for the battle's lines: "a shark’s tail", "an eagle’s wings" (its part's animal, then its kind's
+ * genes.json word); '' for an id with no such part or donor @param {GeneData} D @param {string} slot
+ * @param {string} id a Gene id, "part@donor" */
+export function geneWords(D, slot, id) {
+  const gene = geneOf(D, slot, id),
+    P = gene && D.partKits.parts[gene.part];
+  if (!gene || !P) return '';
+  const animal = P.animal && P.animal !== 'any' ? P.animal : gene.kind,
+    word = (D.genes.kinds[gene.kind] && D.genes.kinds[gene.kind].word) || gene.kind;
+  return `${/^[aeiou]/.test(animal) ? 'an' : 'a'} ${animal}’s ${word}`;
+}

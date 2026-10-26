@@ -14,9 +14,11 @@
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
 import { historyEntry, historyPush, validLostTo } from './run-history.js';
+import { rivalRunStart } from './rival.js';
 import { META_IDS, META_MAX, recordOf, wholeIn } from './meta-state.js';
 import { expeditionAfterWin } from './modifiers.js';
 import { heldAllOff } from './held.js';
+import { residentSettle } from './residents.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_DAYS: [() => RUN_DAYS],
@@ -232,6 +234,24 @@ export function validRun(o) {
   /* RL-9b: the Billies from home (uids) and what was packed (missing on a run saved before) */
   if (o.home !== undefined && (!list(o.home, 6) || !o.home.every(u => typeof u === 'string' && u.length <= 60)))
     return false;
+  /* RL-S2: the Beans found on it */
+  if (o.beans !== undefined && !wholeIn(o.beans, 0, 99)) return false;
+  /* RL-S2: the hub folk's levels as it took off (missing on a run from before) */
+  if (o.rel !== undefined && !recordOf(o.rel, 32, v => wholeIn(v, 0, 10))) return false;
+  /* RL-S2: Blake in the run (missing on a run from before) */
+  const RV = o.rival;
+  if (
+    RV !== undefined &&
+    !(
+      plain(RV) &&
+      Object.keys(RV).every(k => ['lead', 'past', 'met', 'won'].includes(k)) &&
+      id(RV.lead) &&
+      wholeIn(RV.past, 0, 999) &&
+      wholeIn(RV.met, 0, 9) &&
+      wholeIn(RV.won, 0, RV.met)
+    )
+  )
+    return false;
   const packed = v => recordOf(v, 500, n => wholeIn(n, 0, META_MAX));
   if (o.pack !== undefined && !(plain(o.pack) && Object.keys(o.pack).every(k => k === 'items' || k === 'pyramids')))
     return false;
@@ -243,6 +263,8 @@ export function validRun(o) {
   if (o.beat !== undefined && (!list(o.beat, 16) || !o.beat.every(id))) return false;
   /* TW-3: its quests (missing until the first is taken) */
   if (o.quests !== undefined && !validRunQuests(o.quests)) return false;
+  /* RS-1: the resident invited (logic/residents.js) */
+  if (o.invited !== undefined && !id(o.invited)) return false;
   /* the hub as the run started: shapes only (validSave checks its Billies like the team's) */
   const st = o.start,
     counts = v => recordOf(v, 500, n => wholeIn(n, 0, META_MAX));
@@ -281,7 +303,7 @@ export function validRunEnc(e) {
       plain(c) &&
       Object.keys(c).every(k => ['id', 'kind', 'item', 'n', 'move'].includes(k)) &&
       id(c.id) &&
-      ['item', 'candy', 'evo', 'tutor', 'held'].includes(c.kind) &&
+      ['item', 'candy', 'evo', 'tutor', 'held', 'part', 'scrap'].includes(c.kind) &&
       (c.item === undefined || id(c.item)) &&
       (c.move === undefined || id(c.move)) &&
       (c.n === undefined || wholeIn(c.n, 1, 99));
@@ -323,20 +345,21 @@ export function validRunEnc(e) {
         e.reward.cards.every(card) &&
         wholeIn(e.reward.rolls, 0, 99) &&
         Object.keys(e.reward).every(k => ['cards', 'rolls', 'from', 'kind', 'n'].includes(k)) &&
-        (e.reward.kind === undefined || ['item', 'candy', 'evo', 'tutor', 'held'].includes(e.reward.kind)) &&
+        (e.reward.kind === undefined || ['item', 'candy', 'evo', 'tutor', 'held', 'salvage'].includes(e.reward.kind)) &&
         (e.reward.n === undefined || wholeIn(e.reward.n, 1, 5)) &&
         typeof e.reward.from === 'string' &&
         e.reward.from.length <= 60))
   );
 }
-/** TW-3: a run's quests (logic/run-quests.js): shapes only @param {any} e @returns {boolean} */
+/** TW-3: a run's quests (logic/run-quests.js; RS-2: a favour's `res`): shapes only @param {any} e @returns {boolean} */
 export function validRunQuests(e) {
   const plain = (/** @type {any} */ v) =>
       !!v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__'),
     id = (/** @type {any} */ v) => typeof v === 'string' && /^[a-z0-9_]{1,40}$/.test(v),
     quest = (/** @type {any} */ q) =>
       plain(q) &&
-      Object.keys(q).every(k => ['id', 'kind', 'text', 'at', 'goal', 'n', 'type', 'done'].includes(k)) &&
+      Object.keys(q).every(k => ['id', 'kind', 'text', 'at', 'goal', 'n', 'type', 'done', 'res'].includes(k)) &&
+      (q.res === undefined || id(q.res)) &&
       id(q.id) &&
       ['catch', 'trainers', 'parcel', 'miniboss'].includes(q.kind) &&
       id(q.text) &&
@@ -419,6 +442,8 @@ export function runBegin(s, give) {
       return to;
     };
   run.home = travel.map(m => m.uid);
+  /* RL-S2: Blake counters the Billie you lead with and remembers every meeting kept (logic/rival.js) */
+  run.rival = rivalRunStart(travel[0].sp, s.meta && s.meta.history);
   run.pack = copyOf(pack);
   s.team = /** @type {Billy[]} */ (copyOf(travel));
   /* RL-12c: a traveller leaves its held item at home (the hub's Billie keeps it), so a run's end can't bring it twice */
@@ -438,14 +463,15 @@ export function runBegin(s, give) {
 /** what a run pays when it ends, as Research and Crests, with the lines the payout screen lists: the money at a
     rate, the items at a share of their price (then at the money rate; RL-9b: on a loss only, a win takes the bag
     home), each released Billie, each node cleared, a win bonus; crests for a win; Scrap (RL-9, the ranch's material)
-    for each node cleared and a win. Rates are rules.json run.payout (placeholders until the first play) */
+    for each node cleared and a win; RL-S2: Beans for a win. Rates are rules.json run.payout (placeholders until the first play) */
 /**
  * @param {{ se: number, items: Record<string, number>, released: number, cleared: number, won: boolean }} end
  * @param {{ money: number, itemShare: number, released: number, node: number, win: number, winCrests: number,
- *   scrapNode?: number, scrapWin?: number, research?: number }} rates research (RL-12, a Perk's): the Research times
+ *   scrapNode?: number, scrapWin?: number, beansWin?: number, research?: number }} rates research (RL-12, a Perk's): the Research times
  *   this, the difference as a line of its own
  * @param {(id: string) => number} itemPrice an item's shop price (Moneys), 0 for none
- * @returns {{ research: number, crests: number, scrap: number, lines: { what: string, n: number, research: number }[] }}
+ * @returns {{ research: number, crests: number, scrap: number, beans: number,
+ *   lines: { what: string, n: number, research: number }[] }}
  */
 export function payoutOf(end, rates, itemPrice) {
   const itemValue = Object.entries(end.won ? {} : end.items || {}).reduce(
@@ -469,6 +495,8 @@ export function payoutOf(end, rates, itemPrice) {
     research: lines.reduce((sum, l) => sum + l.research, 0),
     crests: end.won ? rates.winCrests : 0,
     scrap: Math.max(0, end.cleared) * (rates.scrapNode || 0) + (end.won ? rates.scrapWin || 0 : 0),
+    /* RL-S2: Beans for a win */
+    beans: end.won ? rates.beansWin || 0 : 0,
     lines,
   };
 }
@@ -517,8 +545,11 @@ export function runEnd(s, how, rates, itemPrice) {
   s.meta.research += pay.research;
   s.meta.crests += pay.crests;
   s.meta.scrap += pay.scrap;
+  s.meta.beans = (s.meta.beans || 0) + pay.beans;
   s.meta.runs += 1;
   if (how.won) s.meta.wins += 1;
+  /* RS-1: the resident invited moves in, won or lost (logic/residents.js) */
+  residentSettle(s.meta, run);
   /* RL-13: winning the highest Expedition open opens the next (logic/modifiers.js) */
   s.meta.expedition = expeditionAfterWin(s.meta.expedition || 1, run.expedition || 1, how.won);
   s.meta.history = historyPush(s.meta.history, entry);

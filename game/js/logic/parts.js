@@ -24,44 +24,51 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** @param {PartRules | undefined} P @param {Build | undefined} b */
-export function partsPrime(P, b) {
+/** @param {PartRules | undefined} P @param {Build | undefined} b @param {boolean} [spliced] SP-2: a foreign part
+ * (logic/genes.js) is never Prime */
+export function partsPrime(P, b, spliced) {
+  if (spliced) return false;
   if (!P) return true;
   return P.slots.every(k => (b ? b[k] || 'M' : 'M') === 'M');
 }
-/** @param {PartRules | undefined} P @param {Build | undefined} b the weight as a share of the species' own (1 = all M) */
-export function partsWeightRatio(P, b) {
+/** @param {PartRules | undefined} P @param {Build | undefined} b the weight as a share of the species' own (1 = all M)
+ * @param {Record<string, number> | null} [rel] SP-2: per spliced slot, its part's weight over the species' own part's
+ * (logic/genes.js graftRel); a slot it doesn't name weighs as its size says */
+export function partsWeightRatio(P, b, rel) {
   if (!P) return 1;
   let w = 0,
     tot = 0;
   for (const k of P.slots) {
     const sh = P.share[k] ?? 0,
       sz = P.sizes[(b && b[k]) || 'M'] || P.sizes.M;
-    w += sh * sz.weight;
+    w += sh * sz.weight * ((rel && rel[k]) ?? 1);
     tot += sh;
   }
   return tot ? w / tot : 1;
 }
-/** @param {PartRules | undefined} P @param {Build | undefined} b @param {string} k a stat id @returns {number} */
-export function partsStatFactor(P, b, k) {
+/** @param {PartRules | undefined} P @param {Build | undefined} b @param {string} k a stat id
+ * @param {Record<string, number> | null} [rel] SP-2: the spliced slots' relative weights (partsWeightRatio); a splice
+ * is never Prime @returns {number} */
+export function partsStatFactor(P, b, k, rel) {
   if (!P) return 1;
-  const w = partsWeightRatio(P, b),
+  const w = partsWeightRatio(P, b, rel),
     cap = P.cap ?? 0.2,
     clampF = (/** @type {number} */ f) => Math.min(1 + cap, Math.max(1 - cap, f));
   let f = 1;
   if (k === 'lev' || k === 'lob') f = clampF(Math.pow(w, P.attackExp));
   else if (k === 'hus') f = clampF(Math.pow(w, P.speedExp));
-  if (partsPrime(P, b)) f *= 1 + (P.primeBonus || 0);
+  if (partsPrime(P, b, !!rel)) f *= 1 + (P.primeBonus || 0);
   return f;
 }
 /** phase 06: which way a build leans, for the balance meter in a Billie's (or bot's) Build tab. attack and speed are the
  * changes from weight alone (0.09 = +9%), before Prime's bonus; lean runs from -1 (all speed) to 1 (all attack); off
  * is how many parts are not at normal size.
- * @param {PartRules | undefined} P @param {Build | undefined} b
+ * SP-2: rel, the spliced slots' relative weights (partsWeightRatio); a splice is never Prime
+ * @param {PartRules | undefined} P @param {Build | undefined} b @param {Record<string, number> | null} [rel]
  * @returns {{ attack: number, speed: number, lean: number, off: number, prime: boolean }} */
-export function partsLean(P, b) {
-  if (!P) return { attack: 0, speed: 0, lean: 0, off: 0, prime: true };
-  const w = partsWeightRatio(P, b),
+export function partsLean(P, b, rel) {
+  if (!P) return { attack: 0, speed: 0, lean: 0, off: 0, prime: !rel };
+  const w = partsWeightRatio(P, b, rel),
     cap = P.cap ?? 0.2,
     clampF = (/** @type {number} */ f) => Math.min(1 + cap, Math.max(1 - cap, f)),
     attack = clampF(Math.pow(w, P.attackExp)) - 1,
@@ -72,7 +79,7 @@ export function partsLean(P, b) {
     speed,
     lean: cap ? Math.max(-1, Math.min(1, (attack - speed) / (2 * cap))) : 0,
     off,
-    prime: off === 0,
+    prime: off === 0 && !rel,
   };
 }
 /** @param {PartRules | undefined} P the chance a rolled build is Prime (every slot M) */

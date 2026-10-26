@@ -290,6 +290,7 @@ exports[`as instances: the runs are the old draws grouped by picture, in order; 
   "uniform1f uFade 1",
   "fx",
   "flat puddle tex10",
+  "uniform4f  0 0 0 0",
   "useProgram sprite"
 ]
 `;
@@ -2090,6 +2091,7 @@ exports[`the sprite pass while the title town rises 1`] = `
   "uniform1f uFade 1",
   "fx",
   "flat puddle tex10",
+  "uniform4f  0 0 0 0",
   "useProgram sprite"
 ]
 `;
@@ -2545,6 +2547,7 @@ exports[`the sprite pass: every call it makes, in order 1`] = `
   "uniform1f uFade 1",
   "fx",
   "flat puddle tex10",
+  "uniform4f  0 0 0 0",
   "useProgram sprite"
 ]
 `;

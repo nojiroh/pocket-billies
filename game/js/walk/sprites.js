@@ -14,6 +14,7 @@ import { filterInto } from '../engine/frame-lists.js';
 import { makeCanvas } from '../art.js';
 import { lookOf, wardrobeData } from '../person-art.js';
 import {
+  GROUND_BORDER_M,
   LABEL_GOLD,
   actionLabel,
   actionSpot,
@@ -22,6 +23,7 @@ import {
   climbStartEnd,
   doorOf,
   propShown,
+  terrainAt,
   walkData,
   walkView,
   worldToScreen,
@@ -57,6 +59,7 @@ expose({
   DOOR_INTEREST: [() => DOOR_INTEREST],
   IMAGE_IDS: [() => IMAGE_IDS],
   OUTLINE_COLOURS: [() => OUTLINE_COLOURS],
+  PICTURE_LIGHTNESS: [() => PICTURE_LIGHTNESS],
   REFLECTION_MATERIALS: [() => REFLECTION_MATERIALS],
   REFLECTION_RECORDS: [() => REFLECTION_RECORDS],
   SILHOUETTE_AMOUNT: [() => SILHOUETTE_AMOUNT],
@@ -81,6 +84,7 @@ expose({
   drawSprites: [() => drawSprites, v => setDrawSprites(v)],
   easeHidden: [() => easeHidden, v => (easeHidden = v)],
   flushSpriteRun: [() => flushSpriteRun, v => (flushSpriteRun = v)],
+  groundTintOf: [() => groundTintOf, v => (groundTintOf = v)],
   hideQueriesLost: [() => hideQueriesLost, v => (hideQueriesLost = v)],
   hideQuery: [() => hideQuery],
   imageId: [() => imageId, v => (imageId = v)],
@@ -90,6 +94,7 @@ expose({
   newSpriteRecord: [() => newSpriteRecord, v => (newSpriteRecord = v)],
   outlineColourOf: [() => outlineColourOf, v => (outlineColourOf = v)],
   personWho: [() => personWho, v => (personWho = v)],
+  pictureLightness: [() => pictureLightness, v => (pictureLightness = v)],
   readHideQueries: [() => readHideQueries, v => (readHideQueries = v)],
   reflectionRecord: [() => reflectionRecord, v => (reflectionRecord = v)],
   setSpriteCrossRecord: [() => setSpriteCrossRecord, v => (setSpriteCrossRecord = v)],
@@ -621,7 +626,10 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     if (!T) continue;
     drawFlatItem((fp = fp || useFxProgram(C, X)), it, T);
   }
-  if (fp) gl.useProgram(p.p);
+  if (fp) {
+    gl.uniform4f(fp.U.uGTint, 0, 0, 0, 0); /* the blades and clock hands drawn on fx later keep their own colours */
+    gl.useProgram(p.p);
+  }
 }
 /* ---------- buildings in 3D: side walls and a roof top behind the front picture ----------
    Worked out once per picture: where the walls stand at the base, which rows reach each wall (so a gable or an
@@ -1026,7 +1034,7 @@ export function landmarkTilt(P, sc, yaw = 0) {
    ({weight, radius, zoom, pull}, any of them), else a landmark's default, else a door that counts; props not
    shown now (propShown) are left out when asked */
 /* the doors that count: where you buy, heal or work (a run town's shop and clinic, the hub's lab and ranch) */
-const DOOR_INTEREST = ['shop', 'clinic', 'lab', 'ranch'];
+const DOOR_INTEREST = ['shop', 'clinic', 'lab', 'ranch', 'genebank', 'workshop'];
 export function interestPoints(sc) {
   if (!sc) return [];
   const C0 = walkData().sc;
@@ -1052,6 +1060,39 @@ export function interestPoints(sc) {
   }
   return out;
 }
+/* 0.1.0 alpha: a flat grass prop (scenery groundTint: moss, clover) standing on grass (a terrain that grows plants)
+   takes that grass's colour; anywhere else it keeps its own. The value is its picture's mean lightness, 0 when off */
+const PICTURE_LIGHTNESS = new WeakMap();
+function pictureLightness(im) {
+  let l = PICTURE_LIGHTNESS.get(im);
+  if (l != null) return l;
+  l = 0.5;
+  try {
+    const w = im.naturalWidth || im.width,
+      h = im.naturalHeight || im.height,
+      cv = makeCanvas(w, h),
+      cx = cv.getContext('2d');
+    cx.drawImage(im, 0, 0);
+    const d = cx.getImageData(0, 0, w, h).data;
+    let s = 0,
+      n = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] < 128) continue;
+      s += (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) / 255;
+      n++;
+    }
+    if (n) l = s / n;
+  } catch {
+    /* a picture that can't be read keeps the middle value */
+  }
+  PICTURE_LIGHTNESS.set(im, l);
+  return l;
+}
+function groundTintOf(it) {
+  if (!it.M || !it.M.groundTint || !walkRenderer.gtex || !it.im) return 0;
+  const T = walkData().sc.terrains[terrainAt(it.x, it.z)];
+  return T && T.grow === 'plant' ? pictureLightness(it.im) : 0;
+}
 function drawFlatItem(fp, it, T) {
   const gl = gpuState.gl,
     U = fp.U,
@@ -1060,10 +1101,15 @@ function drawFlatItem(fp, it, T) {
     h = it.h * s,
     cx = it.x + (it.ox * s + w / 2) * it.flip,
     cz = it.z - (it.oy * s + h / 2) * 0.95;
-  /* v22: lily pads on water bob and turn a little */ const wet = /lily/.test((it.p && it.p.k) || '') && !reducedMotion,
-    ph = (walkView.t || 0) / 1000 + it.x * 1.3 + it.z * 0.7,
+  /* v22: lily pads on water bob and turn a little. Water track WA-5b: lotus and duckweed too; with pixel water in
+     water.frames steps, the bob in whole texels of the 32 grid */
+  const wet = /lily|lotus|duckweed/.test((it.p && it.p.k) || '') && !reducedMotion,
+    pixW = engineSetting('water', 'pixel') !== false,
+    fps = pixW ? (engineSetting('water', 'frames') ?? 10) : 0,
+    t0 = (walkView.t || 0) / 1000,
+    ph = (fps > 0 ? Math.floor(t0 * fps) / fps : t0) + it.x * 1.3 + it.z * 0.7,
     an = wet ? Math.sin(ph * 0.45) * 0.07 : 0,
-    bob = wet ? Math.sin(ph * 1.2) * 0.012 : 0;
+    bob = wet ? (pixW ? Math.round(Math.sin(ph * 1.2) * 0.012 * 32) / 32 : Math.sin(ph * 1.2) * 0.012) : 0;
   gl.uniform3f(U.uP, cx, standingHeightAt(it.x, it.z) + 0.04 + bob + worldCurveDrop(it.x, it.z), cz);
   gl.uniform3f(U.uRight, it.flip * Math.cos(an), 0, Math.sin(an));
   gl.uniform3f(U.uUp, -Math.sin(an) * it.flip, 0, Math.cos(an));
@@ -1072,6 +1118,16 @@ function drawFlatItem(fp, it, T) {
   gl.uniform4f(U.uCol, 1, 1, 1, 1);
   gl.uniform1f(U.uGlow, 0);
   gl.uniform1f(U.uLitFx, 1);
+  const gt = groundTintOf(it);
+  gl.uniform4f(U.uGTint, cx, cz, gt ? 1 : 0, gt);
+  if (gt) {
+    const sc = walkView.sc,
+      B = GROUND_BORDER_M;
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, walkRenderer.gtex);
+    gl.uniform1i(U.uGround, 1);
+    gl.uniform4f(U.uGRect, -B, sc.h + B, 1 / (sc.w + 2 * B), 1 / (sc.h + 2 * B));
+  }
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, T.t);
   gl.uniform1i(U.uTex, 0);
@@ -1128,9 +1184,9 @@ export function addHitTarget(it, C, hits, labels, PPU) {
     /* RL-12b: a route trainer's "!" only once it has spotted you */
     if (!it.n.done && (!it.n.route || walkView.spotted[it.n.id]))
       labels.push({ k: 'bang', x: q.x, y: box.y0, col: it.n.col || '#D9434B' });
-    /* TW-3: a quest giver's gold "!" while their town's offer is open */ else if (
+    /* TW-3: a quest giver's gold "!" while their town's offer is open (RS-2: and the run's resident's) */ else if (
       it.n.talk &&
-      it.n.talk.quest &&
+      (it.n.talk.quest || it.n.talk.resident) &&
       typeof questMarked === 'function' &&
       questMarked(it.n.talk)
     )

@@ -68,6 +68,7 @@ const RUN_LAB_SIM_ROWS = [
   ['research', 'Research paid out'],
   ['perks', 'Perks held at the end'],
   ['topLevel', 'Top level'],
+  ['metResident', 'Walked into their resident’s town (share of runs)'],
 ];
 
 /** the options every run is played with (the card's choices; balance mode) */

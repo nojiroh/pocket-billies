@@ -7362,6 +7362,7 @@
    "shadow": 0,
    "sway": 0,
    "flat": 1,
+   "groundTint": 1,
    "tags": ["forest","route","cave"],
    "group": "moss_patch",
    "solid": 0,
@@ -7417,6 +7418,7 @@
    "shadow": 0,
    "sway": 0,
    "flat": 1,
+   "groundTint": 1,
    "tags": ["route","town","farm"],
    "group": "clover",
    "solid": 0,
@@ -11821,6 +11823,7 @@
      "name": "Sky portal (gold)"
     }
    ],
+   "tunnel": ["#1A1240","#2A1E5A","#5A3AC8","#3A8AE8","#8FE4FF","#F4FCFF"],
    "about": "The tear in the sky at the sky rail's top (HB-7): the rail climbs into it from -x and stops at a launch lip; HB-8 flies the train off it into the tear. Its gold look for the way home after a win"
   },
   "train_lakeland": {
@@ -11838,7 +11841,29 @@
    "vary": {"rot":0,"lean":0,"size":0},
    "box": [11.8,2.6],
    "bob": 0.04,
-   "about": "The Lakeland Clipper (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x"
+   "variants": [
+    {
+     "swap": {"#2E9AA0":"#E8B83A","#1E6E78":"#B8862A","#DCE2EC":"#FFE08A","#D6403C":"#E8B83A"},
+     "name": "Lakeland Clipper (gold trim)"
+    },
+    {
+     "swap": {"#F2F0E6":"#9A948A","#2E9AA0":"#3E5A58","#1E6E78":"#3E3A38","#DCE2EC":"#7A766E","#D6403C":"#7A4A30"},
+     "fx": [
+      {"k":"smoke","x":-176,"y":-48,"z":1.3},
+      {"k":"smoke","x":-40,"y":-96,"z":1.3},
+      {"k":"smoke","x":90,"y":-88,"z":1.3}
+     ],
+     "name": "Lakeland Clipper (battered)"
+    }
+   ],
+   "carriage": {
+    "wall": "#E8E4D6",
+    "trim": "#2E9AA0",
+    "seat": "#1E6E78",
+    "dark": "#B8B2A0",
+    "bags": ["#8A5A34","#3A4E7A","#A04A3A","#5E7C4E","#6A4A70"]
+   },
+   "about": "The Lakeland Clipper (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)"
   },
   "train_greenbelt": {
    "name": "Greenbelt Sunrunner",
@@ -11855,7 +11880,29 @@
    "vary": {"rot":0,"lean":0,"size":0},
    "box": [11.8,2.6],
    "bob": 0.04,
-   "about": "The Greenbelt Sunrunner (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x"
+   "variants": [
+    {
+     "swap": {"#3A6A3A":"#B8862A","#E8C060":"#FFE08A","#D6403C":"#E8B83A"},
+     "name": "Greenbelt Sunrunner (gold trim)"
+    },
+    {
+     "swap": {"#4E8A4A":"#4E5644","#3A6A3A":"#3E3A38","#E8C060":"#7A4A30","#D6403C":"#7A4A30"},
+     "fx": [
+      {"k":"smoke","x":-176,"y":-48,"z":1.3},
+      {"k":"smoke","x":-40,"y":-96,"z":1.3},
+      {"k":"smoke","x":90,"y":-88,"z":1.3}
+     ],
+     "name": "Greenbelt Sunrunner (battered)"
+    }
+   ],
+   "carriage": {
+    "wall": "#4E8A4A",
+    "trim": "#E8C060",
+    "seat": "#8A3A2A",
+    "dark": "#3A6A3A",
+    "bags": ["#8A5A34","#3A4E7A","#A04A3A","#5E7C4E","#6A4A70"]
+   },
+   "about": "The Greenbelt Sunrunner (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)"
   },
   "train_wildwood": {
    "name": "Wildwood Zephyr",
@@ -11872,7 +11919,29 @@
    "vary": {"rot":0,"lean":0,"size":0},
    "box": [11.8,2.6],
    "bob": 0.04,
-   "about": "The Wildwood Zephyr (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x"
+   "variants": [
+    {
+     "swap": {"#E8C060":"#FFE08A","#F2DCA0":"#F8E4A0","#7EA858":"#E8B83A","#D6403C":"#E8B83A"},
+     "name": "Wildwood Zephyr (gold trim)"
+    },
+    {
+     "swap": {"#7EA858":"#5A6448","#B27648":"#6A5440","#F2DCA0":"#9A9080","#E8C060":"#7A4A30","#D6403C":"#7A4A30"},
+     "fx": [
+      {"k":"smoke","x":-176,"y":-48,"z":1.3},
+      {"k":"smoke","x":-40,"y":-96,"z":1.3},
+      {"k":"smoke","x":90,"y":-88,"z":1.3}
+     ],
+     "name": "Wildwood Zephyr (battered)"
+    }
+   ],
+   "carriage": {
+    "wall": "#B27648",
+    "trim": "#E8C060",
+    "seat": "#5E8A4A",
+    "dark": "#84543C",
+    "bags": ["#8A5A34","#3A4E7A","#A04A3A","#5E7C4E","#6A4A70"]
+   },
+   "about": "The Wildwood Zephyr (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)"
   },
   "train_highland": {
    "name": "Highland Arrow",
@@ -11889,7 +11958,29 @@
    "vary": {"rot":0,"lean":0,"size":0},
    "box": [11.8,2.6],
    "bob": 0.04,
-   "about": "The Highland Arrow (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x"
+   "variants": [
+    {
+     "swap": {"#C8383C":"#E8B83A","#DCE2EC":"#FFE08A","#D6403C":"#E8B83A"},
+     "name": "Highland Arrow (gold trim)"
+    },
+    {
+     "swap": {"#E2E8F0":"#8A8C90","#C8383C":"#6A3434","#DCE2EC":"#7A766E","#D6403C":"#7A4A30"},
+     "fx": [
+      {"k":"smoke","x":-176,"y":-48,"z":1.3},
+      {"k":"smoke","x":-40,"y":-96,"z":1.3},
+      {"k":"smoke","x":90,"y":-88,"z":1.3}
+     ],
+     "name": "Highland Arrow (battered)"
+    }
+   ],
+   "carriage": {
+    "wall": "#D6DCE6",
+    "trim": "#C8383C",
+    "seat": "#3A4660",
+    "dark": "#9AA2B2",
+    "bags": ["#8A5A34","#3A4E7A","#A04A3A","#5E7C4E","#6A4A70"]
+   },
+   "about": "The Highland Arrow (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)"
   },
   "train_harvest": {
    "name": "Harvest Comet",
@@ -11906,7 +11997,29 @@
    "vary": {"rot":0,"lean":0,"size":0},
    "box": [11.8,2.6],
    "bob": 0.04,
-   "about": "The Harvest Comet (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x"
+   "variants": [
+    {
+     "swap": {"#F49A3A":"#E8B83A","#F2DCA0":"#F8E4A0","#D6403C":"#E8B83A"},
+     "name": "Harvest Comet (gold trim)"
+    },
+    {
+     "swap": {"#CE7C4C":"#6A4A38","#F2DCA0":"#8E8676","#F49A3A":"#7A4A30","#D6403C":"#7A4A30"},
+     "fx": [
+      {"k":"smoke","x":-176,"y":-48,"z":1.3},
+      {"k":"smoke","x":-40,"y":-96,"z":1.3},
+      {"k":"smoke","x":90,"y":-88,"z":1.3}
+     ],
+     "name": "Harvest Comet (battered)"
+    }
+   ],
+   "carriage": {
+    "wall": "#CE7C4C",
+    "trim": "#F2DCA0",
+    "seat": "#6A3A20",
+    "dark": "#9A5A34",
+    "bags": ["#8A5A34","#3A4E7A","#A04A3A","#5E7C4E","#6A4A70"]
+   },
+   "about": "The Harvest Comet (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)"
   },
   "workshop": {
    "name": "Workshop",

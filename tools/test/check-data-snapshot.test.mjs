@@ -177,6 +177,27 @@ test('check-data: planted story director lines (RL-S1)', t => {
   );
 });
 
+test('check-data: planted relations, the rival and the hub folk in the story (RL-S2)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'relations.json': R => {
+        R.people.nobody = { levels: [{ at: 1 }] };
+        R.people.hazel.levels[2].at = 1;
+        R.people.chosen.levels[1].fx = [{ kind: 'luck', mult: 9 }];
+        R.people.juniper.levels[1].pyramids = { gold_brick: 1 };
+        R.people.juniper.levels[3].wardrobe = 'no_such_hat';
+      },
+      'rules.json': R => {
+        R.run.rival.on = ['boss'];
+        R.run.rival.meet = [3];
+      },
+      'banter.json': B => {
+        B.hazel_file.when = 'rel:blake >= 1 or gifted:nobody';
+      },
+    })
+  );
+});
+
 test('check-data: planted quests (TW-3)', t => {
   t.assert.snapshot(
     checkDataOn({
@@ -186,6 +207,52 @@ test('check-data: planted quests (TW-3)', t => {
         Q.texts[0].ask = 'Catch me {n} of them.';
         Q.texts[1].id = Q.texts[0].id;
         Q.say.done = 'Done: {what}.';
+      },
+    })
+  );
+});
+
+test('check-data: planted residents (RS-1)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'residents.json': R => {
+        R.mo.home = 'nosuchbuilding';
+        R.bertha.first = true;
+        R.gus.levels = ['nosuchunlock'];
+        R.rosa.levels = ['ranch_2'];
+      },
+      'unlocks.json': U => {
+        U.caught_15.when = 'resident:nosuchresident';
+      },
+    })
+  );
+});
+
+test('check-data: planted favours (RS-2)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'quests.json': Q => {
+        delete Q.favours.mo;
+        delete Q.favours.bertha.kind;
+        Q.favours.dottie.kind = 'parcel';
+        Q.favours.nobody = { kind: 'parcel', ask: 'Who am I?' };
+        Q.favours.hayden.ask = 'Beat {n} of them.';
+        Q.invite.moving = '{title} moves in.';
+      },
+    })
+  );
+});
+
+test('check-data: planted factions (RL-14)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'factions.json': F => {
+        const B = F.factions.bureau;
+        B.bots.repo.armL = 'treads';
+        B.bots.courier.gem = 'opal';
+        B.agents.classes.push('auditor');
+        B.wild.biomes.push('moon');
+        B.agents.bots = [2, 1];
       },
     })
   );

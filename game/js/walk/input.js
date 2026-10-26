@@ -6,9 +6,20 @@
 import { expose } from '../test-globals.js';
 import { saveData } from '../hooks.js';
 import { clamp } from '../util.js';
+import { pinchZoom, stopPull } from '../logic/camera-zoom.js';
 import { canvasPoint, handleWalkClick, screenToGround, walkView } from '../walk-view.js';
+import { engineSetting } from '../engine/settings.js';
 import { walkRenderer } from './walk-state.js';
-import { cameraTurnLimit, clampZoom, freeCameraOn } from './camera.js';
+import {
+  cameraTurnLimit,
+  clampZoom,
+  cycleZoomStop,
+  freeCameraOn,
+  goToZoomStop,
+  sceneStartStop,
+  stretchZoom,
+  zoomStops,
+} from './camera.js';
 /* eslint-disable no-func-assign */
 expose({
   askDeviceTilt: [() => askDeviceTilt, v => (askDeviceTilt = v)],
@@ -26,6 +37,8 @@ export function handleCanvasClick(ev) {
     walkRenderer.dragged = false;
     return;
   }
+  /* CAM-4b: the click a two-finger touch leaves behind is not a tap to walk */
+  if (performance.now() - walkRenderer.twoAt < 400) return;
   const [sx, sy] = canvasPoint(ev),
     g = screenToGround(sx, sy);
   if (g) {
@@ -45,7 +58,15 @@ export function bindGestures(cv) {
         yaw: walkRenderer.yawT,
         zoom: walkRenderer.zoomT,
         cx: (a[0] + b[0]) / 2,
+        /* CAM-4b: for the two-finger tap: when, and the most the fingers have spread or slid since */
+        t: performance.now(),
+        moved: 0,
       };
+      /* CAM-4a: the point between the fingers on the ground and the aim, for zooming toward the pinch */
+      const [sx, sy] = canvasPoint({ clientX: g0.cx, clientY: (a[1] + b[1]) / 2 }),
+        g = screenToGround(sx, sy),
+        T = walkRenderer.camT;
+      walkRenderer.pinch = g && T ? { ax: g.x, az: g.z, px: T[0], pz: T[1], z0: walkRenderer.zoom } : null;
     }
     if (ev.button === 2 || ev.button === 1) {
       walkRenderer.drag = { x: ev.clientX, yaw: walkRenderer.yawT };
@@ -68,14 +89,39 @@ export function bindGestures(cv) {
       const [a, b] = [...pts.values()],
         d = Math.hypot(a[0] - b[0], a[1] - b[1]),
         cx = (a[0] + b[0]) / 2;
-      walkRenderer.zoomT = clampZoom((g0.zoom * g0.d) / Math.max(20, d));
+      g0.moved = Math.max(g0.moved, Math.abs(d - g0.d), Math.abs(cx - g0.cx));
+      walkRenderer.zoomT = stretchZoom(pinchZoom(g0.zoom, g0.d, d, engineSetting('camera', 'pinchSpeed')));
       walkRenderer.yawT = clamp(g0.yaw + (cx - g0.cx) * 0.006, -cameraTurnLimit(), cameraTurnLimit());
       walkRenderer.dragged = true;
     }
   });
   const up = ev => {
     pts.delete(ev.pointerId);
-    if (pts.size < 2) g0 = null;
+    if (pts.size < 2) {
+      if (g0) {
+        const set = k => engineSetting('camera', k);
+        walkRenderer.twoAt = performance.now();
+        if (
+          !freeCameraOn() &&
+          walkRenderer.twoAt - g0.t < set('stopTapTime') * 1000 &&
+          g0.moved <= set('stopTapMove')
+        ) {
+          /* CAM-4b: a two-finger tap: the zoom and turn as they were, then the next stop */
+          walkRenderer.yawT = g0.yaw;
+          walkRenderer.zoomT = g0.zoom;
+          cycleZoomStop();
+        } else {
+          /* CAM-4a: a pinch stretched past a limit springs back to it; CAM-4b: let go near a stop, it eases there */
+          walkRenderer.zoomT = clampZoom(walkRenderer.zoomT);
+          if (!freeCameraOn()) {
+            const p = stopPull(walkRenderer.zoomT, zoomStops(), set('stopPull'));
+            if (p.stop) goToZoomStop(p.stop);
+          }
+        }
+      }
+      g0 = null;
+      walkRenderer.pinch = null;
+    }
     if (walkRenderer.drag && (ev.button === 2 || ev.button === 1 || !ev.buttons)) walkRenderer.drag = null;
   };
   cv.addEventListener('pointerup', up);
@@ -87,7 +133,9 @@ export function bindGestures(cv) {
       if (walkView.opt.active && !walkView.opt.active()) return;
       if (!ev.ctrlKey && !freeCameraOn()) return;
       ev.preventDefault();
-      walkRenderer.zoomT = clampZoom(walkRenderer.zoomT * Math.exp(ev.deltaY * 0.0012));
+      walkRenderer.zoomT = clampZoom(
+        walkRenderer.zoomT * Math.exp(ev.deltaY * 0.0012 * engineSetting('camera', 'wheelSpeed'))
+      );
     },
     { passive: false }
   );
@@ -101,9 +149,11 @@ export function bindGestures(cv) {
     else if (ev.key === 'e' || ev.key === 'E')
       walkRenderer.yawT = clamp(walkRenderer.yawT + 0.12, -cameraTurnLimit(), cameraTurnLimit());
     else if (ev.key === 'r' || ev.key === 'R') {
+      /* CAM-4b: back to the turn and the scene's starting stop */
       walkRenderer.yawT = 0;
-      walkRenderer.zoomT = 1;
-    }
+      if (freeCameraOn()) walkRenderer.zoomT = 1;
+      else goToZoomStop(sceneStartStop(walkView.sc));
+    } else if ((ev.key === 'z' || ev.key === 'Z') && !freeCameraOn()) cycleZoomStop();
   });
   addEventListener(
     'pointermove',

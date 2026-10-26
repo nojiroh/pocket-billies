@@ -475,6 +475,8 @@ export function mapgenParams(p) {
     P.layout = MAPGEN_LAYOUT_DIALS.layout;
   /* RT-3: how many set pieces, kept only when given (whole, 0-6) */
   if (P.pieces !== undefined) P.pieces = mapgenBetween(Math.round(+P.pieces || 0), 0, MAPGEN_PIECES_MOST);
+  /* RL-14: the kind of place (a run's scrapyard) set pieces may favour, kept only when given */
+  if (P.site !== undefined && (typeof P.site !== 'string' || !/^[a-z][a-z0-9_]{0,23}$/.test(P.site))) delete P.site;
   if (mapgenLaidOut(P)) {
     const d = MAPGEN_LAYOUTS[P.layout].dials || {};
     if (d.water && P.land.water !== 'coast') P.land.water = d.water;
@@ -4559,7 +4561,8 @@ export const MAPGEN_PIECE_LEAVE = {
 /** a set piece's draw weight on this place: its biome's (default for one not listed) times its plan's
  * @param {any} P @param {import('../../types/game-data').SetPiece} S */
 export function mapgenPieceWeight(P, S) {
-  const w = S.biomes[P.biome] ?? S.biomes.default ?? 0;
+  /* RL-14: a place of a kind (the site dial: a run's scrapyard) draws only the pieces made for it, by their own weights */
+  const w = P.site ? ((S.sites && S.sites[P.site]) ?? 0) : (S.biomes[P.biome] ?? S.biomes.default ?? 0);
   return w * ((S.plans && P.layout && S.plans[P.layout]) ?? 1);
 }
 /** does a piece that takes this spot kind have a weight here? @param {any} P @param {any} D setPieces.json @param {string} kind */

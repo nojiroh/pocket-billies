@@ -29,11 +29,13 @@ import { computeFrustum, inFrustum } from './quality-cull.js';
 import { skyColors } from './sky.js';
 /* eslint-disable no-func-assign */
 expose({
+  KIND_ROWS: [() => KIND_ROWS],
   REFLECTION_PICTURES: [() => REFLECTION_PICTURES],
-  WATER_KIND_UNIFORMS: [() => WATER_KIND_UNIFORMS],
   addRipple: [() => addRipple, v => ((addRipple = v), provide({ addRipple }))],
   addWakeRipple: [() => addWakeRipple, v => ((addWakeRipple = v), provide({ addWakeRipple }))],
   drawWater: [() => drawWater, v => setDrawWater(v)],
+  kindTex: [() => kindTex, v => (kindTex = v)],
+  kindTexture: [() => kindTexture, v => (kindTexture = v)],
   mirrorInView: [() => mirrorInView, v => (mirrorInView = v)],
   reflectionLevel: [() => reflectionLevel, v => (reflectionLevel = v)],
   reflectionPass: [() => reflectionPass, v => setReflectionPass(v)],
@@ -185,18 +187,36 @@ export function reflectionPass(items, C, rw, rh, X) {
   walkRenderer.reflModels = models.length;
 }
 /* v22: the kinds' colours and the water's small lives: fish circling their deep spots, rings from ducks, fish and insects */
-const WATER_KIND_UNIFORMS = {
-  D: new Float32Array(27),
-  S: new Float32Array(27),
-  A: new Float32Array(36),
-  B: new Float32Array(36),
-};
-WATER_KIND_LOOKS.forEach((k, i) => {
-  WATER_KIND_UNIFORMS.D.set(k.deep, i * 3);
-  WATER_KIND_UNIFORMS.S.set(k.shal, i * 3);
-  WATER_KIND_UNIFORMS.A.set([k.clar, k.caus, k.foam, k.rip], i * 4);
-  WATER_KIND_UNIFORMS.B.set([k.glow, k.murk, k.weed, k.mode || 0], i * 4);
-});
+/* water track WA-5b: the kinds' looks in a small texture instead of fixed uniform arrays (they stopped at nine): a
+   column a kind (its index in WATER_KIND_LOOKS), a row a group: 0 deep and scum, 1 shallow, 2 clarity caustics foam ripples,
+   3 glow murk weed mode, 4 the sea's family (swell, surf, tide), white water, coral, bubbles, 5 the glow's colour.
+   Made once per context (unit 15, read with texelFetch) */
+const KIND_ROWS = 6;
+let kindTex = null;
+function kindTexture() {
+  const gl = gpuState.gl;
+  if (kindTex && kindTex.gl === gl) return kindTex.t;
+  const N = WATER_KIND_LOOKS.length,
+    d = new Float32Array(N * KIND_ROWS * 4);
+  WATER_KIND_LOOKS.forEach((k, i) => {
+    const row = (r, v) => d.set(v, (r * N + i) * 4);
+    row(0, [...k.deep, k.scum || 0]);
+    row(1, [...k.shal, 0]);
+    row(2, [k.clar, k.caus, k.foam, k.rip]);
+    row(3, [k.glow, k.murk, k.weed, k.mode || 0]);
+    row(4, [k.sea || 0, k.white || 0, k.coral || 0, k.bub || 0]);
+    row(5, [...(k.glowC || [0, 0, 0]), 0]);
+  });
+  const t = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, N, KIND_ROWS, 0, gl.RGBA, gl.FLOAT, d);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  kindTex = { gl, t };
+  return t;
+}
 export function waterAt(x, z) {
   const G = walkRenderer.wgrid;
   if (!G) return null;
@@ -299,17 +319,19 @@ export function addRipple(x, z, k) {
   if (walkRenderer.rings.length > 16) walkRenderer.rings.shift();
 }
 /* water track WA-2a: rings of your wake as you wade, kept apart (4 at most) so they never push out the scene's own */
-function addWakeRipple(x, z, k) {
+export function addWakeRipple(x, z, k) {
   (walkRenderer.wake = walkRenderer.wake || []).push([x, z, 0, k]);
   if (walkRenderer.wake.length > 4) walkRenderer.wake.shift();
 }
 function setWaterUniforms(U) {
   const gl = gpuState.gl;
-  if (!U.uKD) return;
-  gl.uniform3fv(U.uKD, WATER_KIND_UNIFORMS.D);
-  gl.uniform3fv(U.uKS, WATER_KIND_UNIFORMS.S);
-  gl.uniform4fv(U.uKA, WATER_KIND_UNIFORMS.A);
-  gl.uniform4fv(U.uKB, WATER_KIND_UNIFORMS.B);
+  if (U.uKinds == null) return;
+  const t = kindTexture();
+  gl.activeTexture(gl.TEXTURE15);
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.bindSampler(15, null);
+  gl.uniform1i(U.uKinds, 15);
+  gl.activeTexture(gl.TEXTURE0);
   gl.uniform1f(U.uCaus, engineSetting('water', 'caustics'));
   gl.uniform1f(U.uClar, engineSetting('water', 'clarity'));
   const L = waterLife();

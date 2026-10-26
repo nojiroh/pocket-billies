@@ -1,7 +1,7 @@
 // Water track WA-2a: the flow map (game/js/walk/water-flow.js), built once with the water mesh
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { flowMapAt, waterFlowMap } from '../../game/js/walk/water-flow.js';
+import { flowMapAt, waterFlowMap, waterOpenSea } from '../../game/js/walk/water-flow.js';
 
 const FLOW_RAPIDS = 1.6; /* water-flow.js FLOW_RAPIDS (the page exports only what another module imports) */
 /* the foam at a spot: the cell's third number */
@@ -146,4 +146,137 @@ test('a big map builds quickly', () => {
     t0 = performance.now();
   waterFlowMap(sc);
   assert.ok(performance.now() - t0 < 200);
+});
+
+test('WA-10: only still water joined to the edge is the open sea; a pond behind the beach is not', () => {
+  /* 30 x 20: the sea along the south (j 0-3), a pond in the middle, a river cell column joining them (running) */
+  const w = 30,
+    h = 20,
+    wet = (i, j) => j < 4 || Math.hypot(i - 15, j - 12) < 3 || (i === 15 && j < 12),
+    run = (i, j) => i === 15 && j >= 4 && j < 10,
+    open = waterOpenSea(w, h, (i, j) => wet(i, j) && !run(i, j));
+  assert.equal(open[0], 1, 'the sea at the corner');
+  assert.equal(open[2 * w + 20], 1, 'the sea by the shore');
+  assert.equal(open[12 * w + 15], 2, 'the pond, joined only through running water');
+  assert.equal(open[6 * w + 15], 0, 'the river itself');
+  assert.equal(open[15 * w + 2], 0, 'dry land');
+  /* the same pond with no river between: still water all the way, so it is the sea's */
+  const joined = waterOpenSea(w, h, wet);
+  assert.equal(joined[12 * w + 15], 1);
+  /* a tide pool joined to the sea over wet sand stays the sea's; the sand itself is not water */
+  const pool = waterOpenSea(
+    w,
+    h,
+    (i, j) => j < 4 || Math.hypot(i - 5, j - 8) < 2,
+    (i, j) => i < 9 && j >= 4 && j < 11 && !(Math.hypot(i - 5, j - 8) < 2)
+  );
+  assert.equal(pool[8 * w + 5], 1, 'the tide pool');
+  assert.equal(pool[5 * w + 1], 0, 'the wet sand');
+  /* a big enclosed body is a lake */
+  const lake = waterOpenSea(60, 60, (i, j) => i > 5 && j > 5 && i < 54 && j < 54);
+  assert.equal(lake[30 * 60 + 30], 3);
+});
+
+/* WA-10: a pond at the top, a 3 m channel down to the sea along the south; the line starts in the pond and runs on
+   out into the sea (as Copperleaf's does) */
+const pondSea = () => {
+  const sc = {
+      w: 40,
+      h: 40,
+      streams: [
+        {
+          pts: [
+            [20, 30],
+            [20, 25],
+            [21, 15],
+            [20, 2],
+          ],
+          speed: 0.6,
+        },
+      ],
+    },
+    lineDist = (x, z) => {
+      const p = sc.streams[0].pts;
+      let b = Infinity;
+      for (let k = 0; k < p.length - 1; k++) {
+        const [ax, az] = p[k],
+          vx = p[k + 1][0] - ax,
+          vz = p[k + 1][1] - az,
+          t = Math.max(0, Math.min(1, ((x - ax) * vx + (z - az) * vz) / (vx * vx + vz * vz)));
+        b = Math.min(b, Math.hypot(ax + vx * t - x, az + vz * t - z));
+      }
+      return b;
+    },
+    wet = (x, z) => z < 8 || Math.hypot(x - 20, z - 30) < 5 || lineDist(x, z) < 1.5,
+    bed = (x, z) =>
+      Math.hypot(x - 20, z - 30) < 5 ? 1 : z < 8 ? -0.2 : -0.2 + (z - 8) * 0.06 + 0.08 * Math.sin(z * 3),
+    F = waterFlowMap(sc, [], { wet, bed, step: () => 0, sea: true });
+  return { sc, F, wet, bed };
+};
+const cellOf = (F, x, z) => Math.floor(z * 2) * F.W2 + Math.floor(x * 2);
+
+test('WA-10: a river runs only in its channel: not in the pond it leaves, not in the sea it reaches', () => {
+  const { F } = pondSea();
+  assert.deepEqual(flowMapAt(F, 20.25, 30.25), [0, 0], 'the pond is still');
+  assert.deepEqual(flowMapAt(F, 19.25, 27.25), [0, 0], 'the pond by the outflow is still');
+  assert.notDeepEqual(flowMapAt(F, 20.75, 18.25), [0, 0], 'the channel runs');
+  assert.equal(F.cls[cellOf(F, 20.75, 18.25)], 1);
+  /* out in the sea there is no river, only the plume's drift near the mouth, which fades */
+  assert.equal(F.cls[cellOf(F, 20.25, 2.25)] === 1 || F.cls[cellOf(F, 20.25, 2.25)] === 2, false);
+  assert.deepEqual(flowMapAt(F, 5.25, 3.25), [0, 0], 'the open sea away from the mouth');
+  const near = F.d[cellOf(F, 20.25, 6.75) * 4 + 3],
+    far = F.d[cellOf(F, 20.25, 2.25) * 4 + 3];
+  assert.ok(near > far && near > 0.3, `the river's share fades into the sea (${near} then ${far})`);
+});
+
+test("WA-10: a river's level never rises along its line and ends at the sea's", () => {
+  const { sc, F } = pondSea(),
+    p = sc.streams[0].pts;
+  let prev = Infinity,
+    n = 0,
+    lastLev = NaN;
+  for (let k = 0; k < p.length - 1; k++) {
+    const l = Math.hypot(p[k + 1][0] - p[k][0], p[k + 1][1] - p[k][1]);
+    for (let t = 0; t < l; t += 0.5) {
+      const x = p[k][0] + ((p[k + 1][0] - p[k][0]) * t) / l,
+        z = p[k][1] + ((p[k + 1][1] - p[k][1]) * t) / l,
+        v = F.lev[cellOf(F, x, z)];
+      if (isNaN(v)) continue;
+      assert.ok(v <= prev + 1e-6, `rises at ${x.toFixed(2)}, ${z.toFixed(2)}: ${prev} to ${v}`);
+      prev = lastLev = v;
+      n++;
+    }
+  }
+  assert.ok(n > 20, 'levels along the channel');
+  assert.ok(Math.abs(lastLev - -0.2) < 0.05, `meets the sea's level (${lastLev})`);
+});
+
+test("WA-10: a river's level: a bumpy bed never rises, a terrace's drop stays a drop", () => {
+  /* a 3 m channel straight down a 40 m map, no bodies; the land steps down 0.6 m at z 20 */
+  const sc = {
+      w: 20,
+      h: 40,
+      streams: [
+        {
+          pts: [
+            [10, 39],
+            [10, 1],
+          ],
+          speed: 1,
+        },
+      ],
+    },
+    step = (x, z) => (z > 20 ? 0.6 : 0),
+    F = waterFlowMap(sc, [], {
+      wet: x => Math.abs(x - 10) < 1.5,
+      bed: (x, z) => step(x, z) + z * 0.01 + 0.06 * Math.sin(z * 2.7) - 0.12,
+      step,
+    });
+  let prev = Infinity;
+  const at = z => F.lev[Math.floor(z * 2) * F.W2 + 20];
+  for (let z = 38.75; z > 1.5; z -= 0.5) {
+    assert.ok(at(z) <= prev + 1e-6, `rises at z ${z}: ${prev} to ${at(z)}`);
+    prev = at(z);
+  }
+  assert.ok(at(20.75) - at(19.75) > 0.4, `the drop stays a drop (${at(20.75)} to ${at(19.75)})`);
 });

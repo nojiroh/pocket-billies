@@ -11,6 +11,7 @@ import { freeMesh, gpuState, normalize3, uploadMesh, windGustAt } from '../engin
 import { environment } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
+import { WATER_KIND_LOOKS } from './water-data.js';
 import { inFrustum } from './quality-cull.js';
 import { addRipple, waterAt } from './water.js';
 /* eslint-disable no-func-assign */
@@ -350,7 +351,8 @@ export function drawWeather(quad, glows, U, R, Up, dt, rm) {
     const x = P.x + (Math.random() - 0.5) * 16,
       z = P.z - 3 + Math.random() * 12,
       g = waterAt(x, z);
-    if (g && g.dep > 0) addRipple(x, z, 0.3);
+    /* water track WA-5b: no rings on lava or ice (a kind drawn in its own mode) */
+    if (g && g.dep > 0 && !WATER_KIND_LOOKS[g.kind].mode) addRipple(x, z, 0.3);
   }
 }
 /* v27: footprints in snow, sand, ash and mud (and anywhere after rain): yours and the animals', fading in half a minute */

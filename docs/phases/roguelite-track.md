@@ -1081,6 +1081,53 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
     `<name>.json` layouts from the sheets folder; the biome pools; then the counts in kit-bake-parity and
     pixel-density, the check-data and run-start snapshots, and `python3 tools/check-sound.py --baseline` for the new
     cries.
+- **RO-3.. plan (the owner, 2026-10-26): every skeleton, placeholder sheets, about 58 species.** Branch: track/roster
+  (sessions that can only push to their own branch work there and open a pull request into track/roster, the
+  owner's word). Checked at bc106c41: all 40 species and the 11 form sheets are baked `biped` (kit-assemble.js writes
+  `plan: 'biped'`), while body-plan-animation.js animates 14 plans (biped, quad, bird, flyer, fish, serpent, worm,
+  octo, blob, insect, crab, hopper, plant, shell). The owner's decisions:
+  - **Every plan is used** by the roster, whether or not a kit has parts for it.
+  - **Art: new, very obvious placeholders** (flat shapes in the Billie's colours, a thick outline, a diagonal hatch,
+    the part's name inside where it fits), **for every Billie**, kit art included: the kit recipes stay on disk,
+    unused, so the kit look can come back.
+  - **Sheets to draw on outside the game, both kinds:** one sheet per Billie (a column per drawn bone, a row per
+    view) and one sheet per body plan (a column per bone, a row per Billie), magenta cells with a label strip and
+    pivot ticks; export, draw in any tool, import, bake.
+  - **Starters:** the muskox and goat lines move to quad; the otter stays biped.
+  - **Splicing maps parts by slot across plans** (head, body, front, back, sig).
+  - **Scope: everything**: the core lines, the cave bat, two legendaries and an Eevee-style line.
+  - Research (Pokémon's recurring archetypes and its 14 body shapes): the roster had the starters, early bird,
+    early rodent, Electric mascot, joke fish and pseudo-legend; it lacked the early bug, a fossil pair, an early
+    Grass plant, a Water frog, a mythical, a cave bat, legendaries and a branching evolution. With 9 types, the Bug,
+    Rock, Ghost, Normal, Fighting, Poison, Ice, Dark and Fairy niches can only be met by look.
+  - **RO-3a** skeletons and the placeholder pipeline: `game/data/bodyPlans.json` (a template per plan whose bones are
+    the ones the animation moves, with slots, draw order and shapes; `forms`, the placeholder recipes),
+    `logic/placeholder-art.js` (paint, bake, both sheets and their cutting), `npm run bake:placeholders` (bake,
+    export, import). Tests: every bone an animation names exists; a bake is the same twice; export then import gives
+    the same pixels.
+  - **RO-3b** (done 2026-10-26; HANDOFF has what changed) every existing Billie (40 and 11 forms) to placeholders on its plan: quad (muskox, goat, tiger, rat,
+    ferret), bird (goose, Swift, owl, peacock), fish (Pupfin, Sharktank), worm (Trump slug), octo (Zuckerberg),
+    biped (otter, chameleon, gecko). Remakes the quick-check baseline and kit counts on purpose.
+  - **RO-3c** splicing by slot across plans (socket rules per plan pair, graft-art). Done 2026-10-26 (HANDOFF): the
+    slot map works on the baked sheets and rigs, not per plan pair; the octopus and blob share one bone (`also`).
+  - **RO-3d** Ortega silkworm (insect, then shell, then flyer; the early bug) and the Bloomberg plant (plant). Done
+    2026-10-26 (HANDOFF): Threadling → Zaracoon → Ortegamoth (Grass → Grass/Steel → Grass/Flying, 7/10) and Tickerbud →
+    Bloomburst → Terminalia (Grass → Grass → Grass/Psychic, 14/30), both common, dex 41-46, placeholders only.
+  - **RO-3e** the Knight frog (hopper) and the fossil pair: Carnegie trilobite (crab), Vanderbilt rail snake
+    (serpent).
+  - **RO-3f** Satoshi (blob, the mythical copycat) and the Hastings cave bat (flyer).
+  - **RO-3g** legendaries Mansa Musa (quad) and Rockefeller (biped), the Eevee-style line, pools and a balance pass.
+    **The owner (2026-10-26): the Swift line is the Eevee-style line** (in place of the draft "Pivotlet"): Swiftlet
+    the base, branching into one era form per type (Erastar already "changes colour each era"); which eras, their
+    types and how a branch is picked are asked in RO-3g. It changes the Swift line RO-3b moves to the bird plan, so
+    RO-3g comes after RO-3b.
+  - **What can run side by side** (each session on its own branch, merged into track/roster one at a time):
+    RO-3b and RO-3c together (3c needs only 3a's slots, and tests on sample Billies); RO-3d, RO-3e and RO-3f together
+    once 3b is merged (or beside it). They share files that are rebuilt rather than merged by hand: rigs-next.js and
+    the baked sheets (`npm run bake:placeholders` again), the check-data and run-start snapshots, the sound
+    baseline; roster.json rows, index.json lines, bodyPlans.json forms and biome pools merge by hand. Dex numbers
+    given out ahead: RO-3d 41-46, RO-3e 47-50, RO-3f 51-53, RO-3g from 54. RO-3g last (it balances everything). The
+    quick-check baseline: remade by RO-3b, then by whichever session merges after another one's art.
 - **The region sessions (RL-R1, RL-R2)** live on one branch. Branch: track/regions
 - **RL-R1** (done 2026-10-23; HANDOFF has what changed and where this shape was wrong). Files: new `game/data/regions.json` + schema, type, check, export; new `logic/run-region.js`;
   `logic/run-map.js` (rows from zones); `logic/run-bowl.js` (zone bands); the Map tab's header. Tests: same seed same
@@ -1152,6 +1199,52 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   until Chapter 1's beats say more), `logic/story-pick.js storyPick` and the script command `pick <who>`, the hub's
   fresh lines (replacing the first talk after a run, the owner's choice), story.json `scripts.back-lost`, and the
   leaders' and Bureau agents' words in runs. "Hazel's mast lines" (RL-8) never existed in the code.
+- **RL-S2 as built, part A (2026-10-26; HANDOFF has the detail).** Where the row was wrong: a run has **no single
+  starter** since RL-13 (several Billies on starter points), so Blake counters **the lead you take off with**
+  (`run.rival.lead`), by type (`typeEffectiveness`), not by the opening's `rules.start.rival` table; Blake's opening
+  battle (`blake0`) was already dormant since RL-8 and he is in no hub; **favours had no system** (no
+  `things-to-do.js` on main); the hub has **three** people to relate to (Chosen, Hazel, Juniper); `chapter:` would
+  have clashed with story.json's map-variant chapters, so it is a count, `chapter >= n`. Built, every number a
+  placeholder (rules.json `run.rival`, `run.beans`, `run.payout.beansWin`, relations.json): the node type `rival`
+  (`runMapRival`, a post-pass on its own streams after the side area, so no other draw moves), `logic/rival.js`
+  (`rivalTeam`, `run.rival`, the history's `rival: {met, won}`, facts `last:rival`, `history:rivalmet` ...), Beans as
+  currencies.json's fifth row, `logic/relations.js` (`meta.rel`, `meta.gifted`, `run.rel` read by `fxOfRun`, items
+  at takeoff), conditions `rel:`, `beans`, `gifted:`, `chapter`, commands `beans`, `gift`, `rel`, `chapter`, the
+  gift offered before a hub person's talk. Waiting on the owner (9.6-style asks in the session's plan): Blake's
+  rules, the levels and what they bring, Beans' sources, Chapter 1's beats and every line. Part B: Chapter 1's beats
+  and the favours, in the owner's words.
+- **RL-S2 as built, part B (2026-10-26; HANDOFF has the detail).** The owner's answers: A Blake as built (the lead, 1/2/2/2/2
+  meetings, 2 Billies +1 per 2 meetings, a loss ends the run); B level 1 a line, 3 a second bonus (Chosen +5% XP,
+  Hazel a Hi-Potion, Juniper +10% catch), 4 a wardrobe piece, 5 a once-only line; C Beans as built plus 1 for Blake's
+  first defeat in a run; D every drafted line approved. Where part A's notes were wrong: Blake's lose line never
+  shows on a run (battle.js only shows it off a run: a `back_lost` pair says it); a chapter is not one an Expedition
+  (only `chapter n` moves it); part A's six beats were never written down; and two found in the build: an `xp` row
+  on a run did nothing (only held items' were read) and a `must` fresh line not talked to was lost for good (its
+  `once` marked at the pick). Built: favours as relations.json data (`relFavoursPay` on the way home), `thanks_<who>`
+  after a gift, conditions `lastteam:` and `rival`, Chapter 1's five beats and `scripts.chapter1-end` (for RL-14).
+
+- **The bots sessions (RL-14a, RL-14b)** were meant for a branch of their own (`track/bots`); RL-14a was built on its
+  session's branch, `ccr-15fdd30c-5nfh0d`, at the owner's word (2026-10-26). RL-14b starts on `track/bots` once the
+  owner makes it from main.
+  Branch: track/bots
+- **RL-14 split (the owner, 2026-10-26).** RL-14a: the Bureau's bots, salvage, the scrapyard; RL-14b: the Voltron
+  (`bosses.json`, `alphaPhase` from data, the join intro, the story scene last, beside RL-S2). The owner's answers: the
+  build may start on the session branch; salvage is 2 parts + 1 Scrap stack (parts kept in `saveData.parts` for SP-5
+  and the Workshop); the Voltron is Expedition I's boss only (leaders stay the boss from II up); wild bots yes, rare;
+  the scrapyard built in RL-14a; the Voltron's four boss parts placeholders drawn by robot-art.js; phase 17's numbers
+  kept, tuned by the sim, the gem's story role left open.
+- **RL-14a as built (2026-10-26; HANDOFF has the detail).** `factions.json` (the Bureau: six bots, `wild` 10% from row
+  3 in six biomes, `agents` the Bureau Clerk and a new Reclamation Agent with 1-2 bots, `scrapyard`, `salvage`),
+  `logic/factions.js`; `rules.js spawnBot` (a wild bot is a wild entry with a robot's sp), `battle-engine.js
+  startWildBot` and `catchable`; `encounters.js encClassFoe` fields an agent's bots from a stream of their own;
+  `battle-rewards.js battleSalvage` and `rewards.js salvageOfferMake` (salvage in place of a reward pick, never
+  rerolled; a part into `saveData.parts`, Scrap into `meta.scrap`); a `scrapyard` node type by its own `chance` (12%)
+  from `fromRow` 3, not a weight (a weight moved every free node's draw), with its agents (`scrapyardAgents`) and set
+  pieces by a scene `site` dial (setPieces.json `sites`, the Scrap heap); bots' cries (`cries.js cryOfBot`); a broken
+  part drops off the battle stage. Where the plan was wrong: the robot prototype was already in main (not only on
+  `archive/phase-17-robots`), robots have no head slot, `trainerTeam` already took robot entries, the Bureau's agents
+  already existed (`bureau_clerk`, RL-S1), so "Collectors" are Bureau agents; wild bots are full builds, not
+  `'bot:<torso>'`.
 
 ### 9.5 The organization: three name options (superseded 2026-10-23: finance names; see reflavour-track.md section 4)
 

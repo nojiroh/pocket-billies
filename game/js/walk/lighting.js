@@ -409,7 +409,13 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
     noSunLobe: !!roomSH,
     haze: hz,
     fogStart: C.df * engineSetting('air', 'hazeStart') * (E && !sc.indoor ? 1 - E.fog * 0.35 : 1),
-    fogD: (engineSetting('air', 'hazeDistance') ?? (sc.hazeD || 34)) * 1.15 * fogK * (TL ? TL.hazeDistance : 1),
+    /* HB-8: a director's frame may see further than the walk (BT.hazeK: the train ride's shots out over the sea) */
+    fogD:
+      (engineSetting('air', 'hazeDistance') ?? (sc.hazeD || 34)) *
+      1.15 *
+      fogK *
+      (TL ? TL.hazeDistance : 1) *
+      (BT && BT.hazeK ? BT.hazeK : 1),
     tint,
     valley: walkRenderer.valley || null,
     /* a place with mist of its own: the dial scales it (it was ignored there: 24 of 93 maps) */

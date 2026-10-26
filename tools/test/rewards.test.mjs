@@ -187,3 +187,64 @@ test('rewards: a route pair beaten (RT-2, one entry for two) leaves one pick, pa
   assert.equal(s.se - se, 300);
   assert.equal(s.flags.run_3_t0, 1);
 });
+
+test('rewards: RL-14: salvage is two of the bots’ parts and a stack of Scrap, the same for the same run', () => {
+  const F = modules.factions,
+    S = GAME_DATA.factions.factions.bureau.salvage,
+    bot = B => fn('trainerTeam')({ team: [F.factionBotEntry(GAME_DATA.factions.factions.bureau.bots[B], 10)] })[0],
+    bots = [bot('repo'), bot('courier')],
+    parts = F.salvageParts(bots);
+  assert.deepEqual(parts, [...new Set(parts)].sort(), 'each part once, in order');
+  assert.ok(parts.includes('bulwark') && parts.includes('vane') && parts.includes('striders'));
+  const a = setup(),
+    b = setup(),
+    A = W.salvageOfferMake(a.run, 'wild', bots, S);
+  assert.deepEqual(A, W.salvageOfferMake(b.run, 'wild', bots, S));
+  assert.equal(A.kind, 'salvage');
+  assert.equal(A.cards.filter(c => c.kind === 'part').length, S.parts);
+  assert.equal(new Set(A.cards.map(c => c.item)).size, A.cards.length);
+  for (const c of A.cards.filter(c => c.kind === 'part')) assert.ok(parts.includes(c.item), c.item);
+  assert.deepEqual(A.cards.at(-1), { id: 'scrap', kind: 'scrap', n: S.scrap + S.scrapPerBot });
+  assert.equal(validRun(a.run), true, 'a salvage pick saves');
+  /* never rerolled */
+  a.se = 9999;
+  assert.equal(W.rewardReroll(a.run, a, W.rewardDataGame(a.team)), 'none');
+  assert.equal(a.se, 9999);
+  /* a part goes into your parts with a uid of the run's; Scrap into the meta's */
+  const n = a.parts.length;
+  assert.equal(W.rewardTake(a.run, a, 0, W.rewardDataGame(a.team)), '');
+  assert.equal(a.parts.length, n + 1);
+  assert.equal(a.parts.at(-1).id, A.cards[0].item);
+  assert.match(a.parts.at(-1).uid, /^r\d+-\d+$/);
+  assert.equal(a.run.enc.reward, null);
+  const sc = b.meta.scrap;
+  assert.equal(W.rewardTake(b.run, b, A.cards.length - 1, W.rewardDataGame(b.team)), '');
+  assert.equal(b.meta.scrap, sc + S.scrap + S.scrapPerBot);
+  /* no parts to give: Scrap alone */
+  assert.deepEqual(F.salvageCards({ int: () => 0 }, [], 1, S), [{ id: 'scrap', kind: 'scrap', n: S.scrap }]);
+});
+
+test('rewards: RL-14: beating bots leaves salvage in place of the reward pick; a wild bot too; a Billie nothing', () => {
+  const settle = modules['battle-rewards'].battleSettleWin,
+    F = modules.factions,
+    BU = GAME_DATA.factions.factions.bureau,
+    bot = fn('trainerTeam')({ team: [F.factionBotEntry(BU.bots.repo, 10)] })[0],
+    billie = fn('makeBilly')('zuck0', 5),
+    side = team => [{ team: [] }, { team }];
+  for (const [kind, T, team, want] of [
+    ['trainer', { runFoe: 'route', cls: 'bureau_clerk' }, [billie, bot], 'salvage'],
+    ['trainer', { runFoe: 'route', cls: 'vlogger' }, [billie], 'reward'],
+    ['wild', undefined, [bot], 'salvage'],
+    ['wild', undefined, [billie], 'none'],
+  ]) {
+    const s = setup();
+    settle({ kind, tid: 't', T, sides: side(team) }, s, { o: 'win', prize: 0, reward: 10 }, s.run);
+    const R = s.run.enc && s.run.enc.reward;
+    assert.equal(R ? (R.kind === 'salvage' ? 'salvage' : 'reward') : 'none', want, `${kind} ${T ? T.cls : ''}`);
+  }
+  /* off a run, nothing */
+  const s = setup(),
+    run = s.run;
+  settle({ kind: 'wild', sides: side([bot]) }, s, { o: 'win', prize: 0, reward: 0 }, null);
+  assert.equal(run.enc, undefined);
+});

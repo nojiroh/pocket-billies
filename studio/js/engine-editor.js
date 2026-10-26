@@ -35,6 +35,7 @@ import {
   commit,
   dialog,
   fieldOutputId,
+  openSection,
   readPath,
   render,
   studioState,
@@ -60,6 +61,8 @@ expose({
   engineEditorMapId: [() => engineEditorMapId],
   engineGroupHTML: [() => engineGroupHTML, v => (engineGroupHTML = v)],
   enginePresetsHTML: [() => enginePresetsHTML, v => (enginePresetsHTML = v)],
+  enginePreviewBoxHTML: [() => enginePreviewBoxHTML, v => (enginePreviewBoxHTML = v)],
+  enginePreviewOn: [() => enginePreviewOn],
   engineScopePath: [() => engineScopePath],
   engineSettingsHTML: [() => engineSettingsHTML, v => (engineSettingsHTML = v)],
   engineTimeBarHTML: [() => engineTimeBarHTML, v => (engineTimeBarHTML = v)],
@@ -89,17 +92,22 @@ export const engineEditor = {
   scope: 'game',
   scene: null,
   open: { lens: 1, color: 1, sun: 1, shadows: 1 },
+  /* CAM-4a: the Camera section's open folders, and its settings column (camera-editor.js sets it) */
+  camOpen: { framing: 1, zoom: 1, feel: 1 },
+  camHTML: null,
   meterT: null,
 };
+/* CAM-4a: the preview, its guides and its meter run in the Engine section and the Camera section alike */
+const enginePreviewOn = () => studioState.sec === 'engine' || studioState.sec === 'camera';
 export const engineData = () => studioState.D.engine || (studioState.D.engine = { defaults: {}, presets: {} });
-const engineEditorMapId = () => {
+export const engineEditorMapId = () => {
   const S = studioState.D.maps || {};
   if (!S[engineEditor.scene])
     engineEditor.scene =
       studioState.sel.scene && S[studioState.sel.scene] ? studioState.sel.scene : Object.keys(S)[0] || null;
   return engineEditor.scene;
 };
-const engineScopePath = () =>
+export const engineScopePath = () =>
   engineEditor.scope === 'scene'
     ? `maps.${engineEditorMapId()}.look`
     : engineEditor.scope === 'map'
@@ -120,7 +128,7 @@ export const formatDialValue = (v, step) => {
   const t = v.toFixed(step < 0.01 ? 4 : step < 1 ? 2 : 0);
   return t.includes('.') ? t.replace(/0+$/, '').replace(/\.$/, '') : t;
 };
-function engineDialHTML(g, f) {
+export function engineDialHTML(g, f) {
   const [k, label] = f,
     typ = typeof f[2] === 'string' ? f[2] : 'range',
     p = `${engineScopePath()}.${g}.${k}`,
@@ -163,6 +171,7 @@ function enginePresetsHTML() {
  <button class="seg add" data-act="engPresetSave">+ Save as preset</button><button class="seg" data-act="engLookPreviews" title="Draws the preview once with each look and shows them side by side">Preview every look</button></div><p class="help">A preset only changes the dials it lists, on ${engineEditor.scope === 'scene' ? 'this scene' : engineEditor.scope === 'map' ? 'the map' : 'the whole game'}. Undo takes it back.</p>`;
 }
 function engineSettingsHTML() {
+  if (studioState.sec === 'camera' && engineEditor.camHTML) return engineEditor.camHTML();
   const sid = engineEditorMapId(),
     sc = sid ? studioState.D.maps[sid] : null,
     nScene = sc && sc.look ? Object.values(sc.look).reduce((a, o) => a + Object.keys(o || {}).length, 0) : 0,
@@ -172,8 +181,18 @@ function engineSettingsHTML() {
  <p class="help">${engineEditor.scope === 'map' ? 'These override the game-wide values on the Map tab (lens, color, bloom). The preview here shows a walk scene; open the game to see the map.' : engineEditor.scope === 'scene' ? 'These override the game-wide values for this one scene. A dial you haven’t touched follows the game.' : 'These apply to every walk scene unless a scene overrides them. A dial you haven’t touched uses the built-in value.'} Dials you’ve set show a ↺ to undo just that one.</p>
  <h4>Presets</h4>${enginePresetsHTML()}
  <div class="seg-row"><button class="btn sm subtle" data-act="engClear">Clear everything set here</button>${engineEditor.scope === 'scene' && nScene ? `<button class="btn sm subtle" data-act="engPromote">Use these for the whole game</button>` : ''}</div></div></div>
- ${ENGINE_SPEC.map(engineGroupHTML).join('')}`;
+ <div class="card"><div class="card-b"><p class="help">The camera’s dials (framing, zoom and its feel, follow, moments, visibility) are in their own section.</p><button class="btn sm" data-act="openCamera">Open Camera</button></div></div>
+ ${ENGINE_SPEC.filter(G => G[0] !== 'camera')
+   .map(engineGroupHTML)
+   .join('')}`;
 }
+/* the preview (the game's renderer), its guides' canvases and the frame meter; `cls` adds classes to the box (the
+   Camera section's frames) */
+export function enginePreviewBoxHTML(cls) {
+  return `<div class="sc-pv eng-pv ${cls}"><canvas id="engPv" data-keep="walk-gl"></canvas><canvas id="engGuides" class="eng-guides" ${engineEditor.guides ? '' : 'hidden'}></canvas><canvas id="engBlur" class="eng-guides" ${engineEditor.blurGuides ? '' : 'hidden'}></canvas><div class="sc-pv-load" id="engPvLoad">Loading…</div></div>
+  <div class="eng-meter" id="engMeter">–</div>`;
+}
+ACTIONS.openCamera = () => openSection('camera');
 SECTIONS.engine = () => {
   const sid = engineEditorMapId();
   afterRender(mountEnginePreview);
@@ -188,23 +207,13 @@ SECTIONS.engine = () => {
   return `<div class="eng-split"><div class="eng-set" id="engSet">${engineSettingsHTML()}</div>
  <div class="eng-side"><div class="card"><div class="card-b"><div class="eng-pvbar"><label class="fld"><span>Preview scene</span><select id="engScene">${opts}</select></label>
    <button class="btn sm" id="engCmp" title="Hold to see the built-in look without any of your settings">Hold to compare</button>
-   <button class="btn sm ${engineEditor.guides ? 'on' : ''}" id="engGuidesBtn" data-act="engGuides" title="Draws the camera's dead and soft zones (drag their edges), its aim, the look-ahead, the points of interest and the camera zones on the preview">Camera guides</button>
    <button class="btn sm ${engineEditor.blurGuides ? 'on' : ''}" id="engBlurBtn" data-act="engBlurGuides" title="CAM-3: tints the ground the blur keeps sharp (the strip round the plane of focus), marks what the focus is on and names the blur's path, tilt and strength">Blur guides</button>
    <button class="btn sm ${engineEditor.heat ? 'on' : ''}" id="engHeatBtn" data-act="engHeat" title="CAM-3: colours the preview by how blurred each pixel is: green sharp, yellow a little, red full">Blur heatmap</button></div>
   ${engineTimeBarHTML()}
-  <div class="eng-pvbar" title="CAM-2: plays one of the camera's moments in the preview, as if it happened (a talk or a boss 3 m up the screen)">Play moment ${[
-    ['talk', 'Talk'],
-    ['encounter', 'Encounter'],
-    ['boss', 'Boss'],
-    ['idle', 'Standing still'],
-  ]
-    .map(([k, n]) => `<button class="btn sm" data-act="engMoment" data-m="${k}">${n}</button>`)
-    .join('')}</div>
-  <div class="sc-pv eng-pv"><canvas id="engPv" data-keep="walk-gl"></canvas><canvas id="engGuides" class="eng-guides" ${engineEditor.guides ? '' : 'hidden'}></canvas><canvas id="engBlur" class="eng-guides" ${engineEditor.blurGuides ? '' : 'hidden'}></canvas><div class="sc-pv-load" id="engPvLoad">Loading…</div></div>
-  <div class="eng-meter" id="engMeter">–</div>
+  ${enginePreviewBoxHTML('')}
   <p class="help">Click the ground to walk, drag to turn, scroll to zoom. What you see is the game’s own renderer with your unsaved values. Battles happen inside the walk scene, so they follow its look.</p></div></div></div></div>`;
 };
-async function mountEnginePreview() {
+export async function mountEnginePreview() {
   const cv = $('#engPv'),
     id = engineEditorMapId();
   if (!cv || !id) return;
@@ -234,7 +243,7 @@ async function mountEnginePreview() {
     onPick: h => {
       if (h.k !== 'ground') toast('That works in the game; here you can only walk.');
     },
-    cap: () => (studioState.sec === 'engine' ? 60 : 0),
+    cap: () => (enginePreviewOn() ? 60 : 0),
   }).then(() => {
     const l = $('#engPvLoad');
     if (l) l.hidden = true;
@@ -248,13 +257,15 @@ async function mountEnginePreview() {
       engineContext.bypass = v;
       b.classList.toggle('on', v);
     };
-  b.onpointerdown = () => on(true);
+  if (b) {
+    b.onpointerdown = () => on(true);
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, () => on(false)));
+  }
   mountCameraGuides();
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, () => on(false)));
   clearInterval(engineEditor.meterT);
   engineEditor.meterT = setInterval(() => {
     const m = $('#engMeter');
-    if (!m || studioState.sec !== 'engine') {
+    if (!m || !enginePreviewOn()) {
       clearInterval(engineEditor.meterT);
       return;
     }
@@ -493,7 +504,7 @@ function guideEdgeAt(S, x, y) {
 }
 function drawCameraGuides() {
   const g = $('#engGuides');
-  if (!g || !engineEditor.guides || studioState.sec !== 'engine') {
+  if (!g || !engineEditor.guides || !enginePreviewOn()) {
     engineEditor.guideRaf = 0;
     return;
   }
@@ -696,7 +707,7 @@ function engineTimeBarHTML() {
    <select id="engWx" data-eng-env="1" aria-label="Weather">${opt(ENG_WEATHER, e.weather)}</select><select id="engSeason" data-eng-env="1" aria-label="Season">${opt(ENG_SEASONS, e.season)}</select>
    <button class="btn sm ${engineEditor.dayT ? 'on' : ''}" id="engDayBtn" data-act="engPlayDay">Play a day</button><span class="hint" id="engLookNow"></span></div>`;
 }
-function applyEngineEnvironment() {
+export function applyEngineEnvironment() {
   if (typeof environment === 'undefined') return;
   const e = engineEditor.env || { time: 13 },
     f = { time: +e.time, weather: e.weather || 'clear', now: 1 };
@@ -797,7 +808,7 @@ ACTIONS.engMoment = d => {
    a dot where the focus is, and a line with the blur's path, what the focus is on, the tilt and the strength */
 function drawBlurGuides() {
   const g = $('#engBlur');
-  if (!g || !engineEditor.blurGuides || studioState.sec !== 'engine') {
+  if (!g || !engineEditor.blurGuides || !enginePreviewOn()) {
     engineEditor.blurRaf = 0;
     return;
   }
@@ -875,7 +886,7 @@ ACTIONS.engHeat = () => {
 ACTIONS.engGuides = () => {
   engineEditor.guides = !engineEditor.guides;
   /* the zones' dials show beside the guides they draw */
-  if (engineEditor.guides) engineEditor.open.camera = 1;
+  if (engineEditor.guides) engineEditor.camOpen.follow = 1;
   const g = $('#engGuides'),
     b = $('#engGuidesBtn');
   if (g) g.hidden = !engineEditor.guides;

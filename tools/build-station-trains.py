@@ -664,6 +664,45 @@ TRAINS = [  # (key, name, recipe): one per region theme (regions.json themes)
 ]
 TRAIN_HALF = 1.3  # half a train's width: its footprint lies behind its base point, as a building's
 
+# HB-8: each train's two homecoming looks (colour swaps of its own model): v 1 gold-trimmed after a won run, v 2
+# battered and smoking after a lost one. The keys are the colours the train's recipe uses (above)
+GOLD, GOLD_D, GOLD_L = '#E8B83A', '#B8862A', '#FFE08A'
+SOOT, SOOT_D, RUST = '#7A766E', '#3E3A38', '#7A4A30'
+TRAIN_LOOKS = {
+    'train_lakeland': ({'#2E9AA0': GOLD, '#1E6E78': GOLD_D, CHROME: GOLD_L, RED: GOLD},
+                       {'#F2F0E6': '#9A948A', '#2E9AA0': '#3E5A58', '#1E6E78': SOOT_D, CHROME: SOOT, RED: RUST}),
+    'train_greenbelt': ({'#3A6A3A': GOLD_D, A['brass']: GOLD_L, RED: GOLD},
+                        {'#4E8A4A': '#4E5644', '#3A6A3A': SOOT_D, A['brass']: RUST, RED: RUST}),
+    'train_wildwood': ({A['brass']: GOLD_L, A['cream']: '#F8E4A0', '#7EA858': GOLD, RED: GOLD},
+                       {'#7EA858': '#5A6448', A['wood']: '#6A5440', A['cream']: '#9A9080', A['brass']: RUST, RED: RUST}),
+    'train_highland': ({'#C8383C': GOLD, CHROME: GOLD_L, RED: GOLD},
+                       {'#E2E8F0': '#8A8C90', '#C8383C': '#6A3434', CHROME: SOOT, RED: RUST}),
+    'train_harvest': ({'#F49A3A': GOLD, A['cream']: '#F8E4A0', RED: GOLD},
+                      {A['copper']: '#6A4A38', A['cream']: '#8E8676', '#F49A3A': RUST, RED: RUST}),
+}
+# the battered look's smoke (fx, 32 px a metre from the base point; z metres back, the train's middle): the rockets and
+# a split in the roof
+TRAIN_SMOKE = [{'k': 'smoke', 'x': -176, 'y': -48, 'z': 1.3}, {'k': 'smoke', 'x': -40, 'y': -96, 'z': 1.3},
+               {'k': 'smoke', 'x': 90, 'y': -88, 'z': 1.3}]
+
+
+# HB-8: each train's carriage as the run's loading screen draws it (train-carriage.js): its wall, the trim round the
+# windows and the rack, its seats, the shade under them; the bags on the rack; the portal's tunnel past the windows
+CARRIAGES = {
+    'train_lakeland': {'wall': '#E8E4D6', 'trim': '#2E9AA0', 'seat': '#1E6E78', 'dark': '#B8B2A0'},
+    'train_greenbelt': {'wall': '#4E8A4A', 'trim': A['brass'], 'seat': '#8A3A2A', 'dark': '#3A6A3A'},
+    'train_wildwood': {'wall': A['wood'], 'trim': A['brass'], 'seat': '#5E8A4A', 'dark': A['dwood']},
+    'train_highland': {'wall': '#D6DCE6', 'trim': '#C8383C', 'seat': '#3A4660', 'dark': '#9AA2B2'},
+    'train_harvest': {'wall': A['copper'], 'trim': A['cream'], 'seat': '#6A3A20', 'dark': '#9A5A34'},
+}
+CARRIAGE_BAGS = ['#8A5A34', '#3A4E7A', '#A04A3A', '#5E7C4E', '#6A4A70']
+TUNNEL = ['#1A1240', '#2A1E5A', '#5A3AC8', '#3A8AE8', '#8FE4FF', '#F4FCFF']  # the tear's colours, darkest first
+
+
+def train_variants(key, name):
+    gold, bad = TRAIN_LOOKS[key]
+    return [{'swap': gold, 'name': f'{name} (gold trim)'}, {'swap': bad, 'fx': TRAIN_SMOKE, 'name': f'{name} (battered)'}]
+
 
 # ================================================================ the catalogue
 def add_props(C):
@@ -683,7 +722,7 @@ def add_props(C):
     C['sky_portal'] = ISL.new_prop('sky_portal', 'Sky portal', sky_portal(blue), shadow=1.2, tags=('hub', 'station'), solid=1.2,
                                    vary=FIXED, glow={'c': '#7FD8FF', 'r': 6, 'y': r2(Z_TOP + 2), 'day': 0.5},
                                    variants=[{'swap': {blue: gold}, 'glow': {'c': '#FFC94A', 'r': 6, 'y': r2(Z_TOP + 2), 'day': 0.5},
-                                              'name': 'Sky portal (gold)'}],
+                                              'name': 'Sky portal (gold)'}], tunnel=TUNNEL,
                                    about='The tear in the sky at the sky rail\'s top (HB-7): the rail climbs into it from -x and '
                                    'stops at a launch lip; HB-8 flies the train off it into the tear. Its gold look for the way '
                                    'home after a win')
@@ -691,8 +730,10 @@ def add_props(C):
         r = fn()
         B1.shift_y(r['layers'], TRAIN_HALF)
         C[key] = ISL.new_prop(key, name, r, group='sky_train', shadow=1.0, tags=('hub', 'station', 'train'), box_=(11.8, 2.6),
-                              vary=FIXED, bob=0.04, about=f'The {name} (HB-7), a sky train for its region theme '
-                              "(regions.json, its theme's train): it rides the sky rail on its skids, facing +x")
+                              vary=FIXED, bob=0.04, variants=train_variants(key, name),
+                              carriage={**CARRIAGES[key], 'bags': CARRIAGE_BAGS}, about=f'The {name} (HB-7), a sky '
+                              "train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, "
+                              'facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)')
 
 
 # ================================================================ the showcase map

@@ -107,3 +107,18 @@ test('RL-13: speciesStep: how far along its line a species is (a final form is a
   assert.equal(step('musk3'), 2, 'a split line: both finals');
   assert.equal(fn('speciesStep')(undefined), 0);
 });
+
+test('starter points: SP-4 a spliced Billie costs one more per run.points.perStability of Stability its splice spends', () => {
+  const far = { front: 'bear_arm@musk3', back: 'bear_leg@musk3' },
+    spent = fn('billySpliceCost')({ sp: 'swift0', graft: far });
+  assert.ok(spent >= R.perStability, `the splice spends ${spent}`);
+  assert.equal(
+    P.pointCost({ sp: 'swift0', lvl: 5, graft: far }, SPECIES, R),
+    cost('swift0', 5) + Math.floor(spent / R.perStability)
+  );
+  assert.equal(
+    P.pointCost({ sp: 'swift0', lvl: 5, graft: far }, SPECIES, { ...R, perStability: undefined }),
+    cost('swift0', 5)
+  );
+  assert.equal(fn('billySpliceCost')({ sp: 'swift0' }), 0);
+});

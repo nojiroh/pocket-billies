@@ -178,3 +178,85 @@ test('run quests: a reload keeps them (validRun); bad shapes are refused; the ru
   RS.runRestore(s);
   assert.equal(s.run, null);
 });
+
+// RS-2: a resident's favour (quests.json favours): offered in one seeded town where it can be finished and handed in,
+// held over the cap, never twice, kept by validRun, and gone with an invite
+test('run quests: RS-2: a favour’s town, its offer, held over the cap, kept by a reload', () => {
+  const F = QD.favours;
+  let met = 0;
+  for (const seed of SEEDS) {
+    const run = start(seed).run,
+      D = qdata(run);
+    for (const [id, f] of Object.entries(F)) {
+      if (!f.kind) continue;
+      const at = Q.favourAt(run, f.kind, D),
+        okTowns = Q.favourTowns(run, f.kind, D);
+      assert.equal(Q.favourAt(start(seed).run, f.kind, qdata(start(seed).run)), at, 'the same run, the same town');
+      if (at < 0) {
+        assert.deepEqual(okTowns, [], 'no town only when none can');
+        continue;
+      }
+      assert.ok(okTowns.includes(at));
+      const o = Q.favourOffer(run, at, id, f, D);
+      assert.ok(o, `${seed} ${id}: an offer in its town`);
+      assert.equal(o.res, id);
+      assert.equal(o.kind, f.kind);
+      assert.deepEqual(Q.favourOffer(run, at, id, f, D), o, 'the same offer');
+      met++;
+    }
+    /* held over the cap: three town quests, then the favour */
+    const f = Object.entries(F).find(([, x]) => x.kind === 'parcel'),
+      at = Q.favourAt(run, 'parcel', D);
+    if (at < 0) continue;
+    for (const i of towns(run)) {
+      const o = Q.questOffer(run, i, D);
+      if (o) Q.questTake(run, i, o, QD);
+    }
+    const took = run.quests ? run.quests.took.slice() : [];
+    const before = Q.questsHeld(run),
+      o = Q.favourOffer(run, at, f[0], f[1], D),
+      q = Q.favourTake(run, at, o);
+    assert.ok(q && q.res === f[0], 'taken whatever the cap');
+    assert.equal(Q.questsHeld(run), before, 'not counted towards the cap');
+    assert.equal(Q.favourHeld(run), q);
+    assert.equal(Q.favourOffer(run, at, f[0], f[1], D), null, 'not offered again while held');
+    assert.equal(Q.favourTake(run, at, o), null, 'never two');
+    assert.deepEqual(run.quests.took, took, 'the town’s own offer stays open');
+    assert.ok(RS.validRun(JSON.parse(JSON.stringify(run))), 'a reload keeps it');
+    assert.equal(
+      RS.validRun({ ...JSON.parse(JSON.stringify(run)), quests: { ...run.quests, held: [{ ...q, res: 'No!' }] } }),
+      false
+    );
+    Q.questArrive(
+      run,
+      towns(run).find(i => run.map.nodes[i].row > run.map.nodes[at].row)
+    );
+    assert.equal(q.done, 1, 'a parcel favour is done in a later town');
+    assert.ok(Q.questPay(run, q), 'and handed in');
+    assert.equal(Q.favourHeld(run), null);
+    run.invited = f[0];
+    assert.equal(Q.favourOffer(run, at, f[0], f[1], D), null, 'none once invited');
+    assert.equal(Q.favourOffer(run, at, 'dottie', F.dottie, D), null, 'the free first one asks none');
+  }
+  assert.ok(met > SEEDS.length * 3, `favours are met in most runs (${met})`);
+});
+
+test('run quests: RS-2: the run’s resident stands in the first town row while nobody lives there, then one town', () => {
+  const R = GAME_DATA.residents,
+    first = modules.residents.residentFirstTowns;
+  for (const seed of SEEDS.slice(0, 12)) {
+    const s = start(seed),
+      D = qdata(s.run),
+      plan = Q.residentPlan(s, R, D);
+    assert.deepEqual(plan, { id: 'dottie', towns: first(s.run.map) }, `${seed}: Dottie in every first-row town`);
+    assert.ok(plan.towns.length >= 1);
+    s.meta.residents = { dottie: 1 };
+    const next = Q.residentPlan(s, R, D);
+    assert.ok(next && next.id !== 'dottie' && R[next.id].meet.weight > 0, `${seed}: someone else`);
+    assert.ok(next.towns.length <= 1, 'in one town at most');
+    if (next.towns.length)
+      assert.ok(Q.favourOffer(s.run, next.towns[0], next.id, QD.favours[next.id], D), 'offering their favour there');
+    assert.deepEqual(Q.residentPlan(s, R, D), next, 'the same run, the same plan');
+  }
+  assert.equal(Q.residentPlan({ meta: {}, run: null }, R, qdata(start('X').run)), null);
+});

@@ -1,0 +1,67 @@
+{
+ "dottie": {
+  "name": "Dottie Filewell",
+  "role": "Archivist",
+  "home": "library",
+  "first": true,
+  "meet": {"where":["town"],"weight":1},
+  "levels": [],
+  "about": "A clerk who walked out of the Bureau with a cardigan full of files. Keeps the library."
+ },
+ "mo": {
+  "name": "Mo Stockley",
+  "role": "Shopkeeper",
+  "home": "shop",
+  "meet": {"where":["town"],"weight":2},
+  "levels": [],
+  "about": "Has sold everything to everyone at least twice. Opens the General store."
+ },
+ "bertha": {
+  "name": "Bertha Brew",
+  "role": "Innkeeper",
+  "home": "inn",
+  "meet": {"where":["town","event"],"weight":2},
+  "levels": [],
+  "about": "Hears every rumour first and repeats it louder. Runs the inn."
+ },
+ "gus": {
+  "name": "Gus Gasket",
+  "role": "Mechanic",
+  "home": "workshop",
+  "meet": {"where":["town","event"],"weight":1},
+  "levels": [],
+  "about": "Fixes anything with a spanner, a hammer or a firm word. Opens the Workshop."
+ },
+ "hayden": {
+  "name": "Hayden Bales",
+  "role": "Rancher's hand",
+  "home": "ranch",
+  "meet": {"where":["town"],"weight":2},
+  "levels": [],
+  "about": "Talks to Billies more than to people. Helps at the ranch."
+ },
+ "rosa": {
+  "name": "Compass Rosa",
+  "role": "Cartographer",
+  "home": "station",
+  "meet": {"where":["town","event"],"weight":1},
+  "levels": [],
+  "about": "Has drawn maps of places that don't exist yet. Works at Skyline Station."
+ },
+ "seamus": {
+  "name": "Seamus Stitch",
+  "role": "Tailor",
+  "home": "house",
+  "meet": {"where":["town"],"weight":1},
+  "levels": [],
+  "about": "Measures you before saying hello. Sews from a cottage in town."
+ },
+ "helix": {
+  "name": "Dr. Helix",
+  "role": "Geneticist",
+  "home": "gene_bank",
+  "meet": {"where":["town"],"weight":0},
+  "levels": [],
+  "about": "Reads genes like a menu. Keeps the Gene Bank (the splicing track opens her work)."
+ }
+}

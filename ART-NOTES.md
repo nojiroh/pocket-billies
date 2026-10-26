@@ -535,3 +535,18 @@ art pipeline (phase 17 task 11).
   which is light on the dark theme). The darkest colour is slate `#4A5544`, so nothing vanishes on dark panels.
 - Shapes keep the UI track's 45° rule: straight lines and 45° steps, octagons for circles. Strokes are 3 px or
   more so the icons hold up at the 14–22 px the game mostly draws them.
+
+## UI icons in one colour: the bottom bar, controls and stats (2026-10-26)
+- An icon in `MONO` (tools/build-ui-icons.py) names one colour from `RAMP` (gold, red, green, steel, blue, teal,
+  violet) and draws with the digits 1-4: that colour's light, mid, dark and ink shades. Letters in its grid are
+  accents (map's cream pin hole, sound-off's red cross). Shades of one colour get no seam between them, so the
+  tones read as one block; the block side, the lit edge and the pale top half are the same as every other icon.
+  Ink is for details inside a shape only (the bag's clasp): it is too dark to read on the dark theme's panels.
+- One colour each: bottom bar map (red), bag (gold), relic (violet), spark (gold); controls back, chev (gold),
+  close, minus (red), plus, check, bug (green; check was cream, faint on the light theme), list, gear, sound,
+  sound-off (steel); stats heart (red), bolt (gold), drop (blue), scrap (steel), mint (teal). Coin and pyramid were
+  already gold-only and keep their seams (the coin's inner ring is drawn by one).
+- `team` (the Team tab and the battle's Team button) is two pyramids, sand (gold and wood) behind and blue in
+  front, tilted 12 and 10 degrees: the owner asked for playful angles, so this one breaks the 45-degree rule.
+  The far one is sand, not gold: the pale top half washed a gold one out to near white.
+- Weather icons are unchanged (offered, not picked).

@@ -2,7 +2,7 @@
 /* ================= FULL TEST =================
    Settings → Run the full test (and the debug menu) plays through everything that draws, for several minutes:
    the hub and every room the game's doors open (walking, turning and zooming the camera), night, weather and seasons,
-   a run's road, its airship, nodes and payout, the ranch and the Lab, a room that opens in place, the light lab, a
+   a run's road, its train, nodes and payout, the ranch and the Lab, a room that opens in place, the light lab, a
    battle on the 3D stage (double and Alpha too), the opening's fall, Billies in the world, the world map, then a
    stress test that keeps adding load (crowds, particles, extra props, maximum quality) and measures how far the device
    keeps up. Your save is not changed: saving is paused and everything is put back
@@ -14,28 +14,65 @@ import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import {
   EVENTS,
+  FACTIONS,
   FIELD_MOVES,
+  GENES,
   ITEMS,
   LOCATIONS,
   MOVES,
   PERKS,
   QUESTS,
+  RELATIONS,
+  RESIDENTS,
+  ROBOTS,
   RULES,
   SET_PIECES,
   SHOPS,
   SPECIES,
   START_NODE,
+  STORY_DATA,
   TRAINERS,
   UNLOCK_DATA,
   gameData,
   trainersAt,
+  typeEffectiveness,
 } from './game-data.js';
-import { canEnter, encounterStock, encountersHere, gateText, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
+import { rngFn } from './logic/rng.js';
+import { graftDonors, graftRecipe } from './logic/graft-art.js';
+import { augFits } from './logic/augments.js';
+import { wildSplice } from './logic/genes.js';
+import { bankLevel, bankPrice, bankSlots } from './logic/gene-bank.js';
+import { geneEventSlots } from './logic/gene-events.js';
+import { isRobot, robotRules } from './logic/fighters.js';
+import {
+  billyName,
+  canEnter,
+  encounterStock,
+  encountersHere,
+  gateText,
+  geneData,
+  healAll,
+  makeBilly,
+  maxHp,
+  moveUsable,
+  movesOf,
+  newUid,
+  partBroken,
+  partMaxHp,
+  partsDamaged,
+  plural,
+  spawn,
+  spliceWords,
+} from './logic/rules.js';
+import { rivalSize } from './logic/rival.js';
+import { relFavoursPay, relGift } from './logic/relations.js';
 import { modBossHp, modFoeLevels, modsMake } from './logic/modifiers.js';
+import { factionBotSp } from './logic/factions.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
 import { incomeRate } from './logic/ranch-income.js';
 import { pastureBillies, pastureIn, pastureZone } from './logic/pasture.js';
+import { residentFirstTowns } from './logic/residents.js';
 import { runRestore, validRun } from './logic/run-state.js';
 import { RUN_SIDE_MOD, runSideOpen } from './logic/run-side.js';
 import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
@@ -43,18 +80,23 @@ import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
 import { wildHabitat } from './logic/wild-pool.js';
 import { runScenesMake, runWorldTables } from './logic/run-scenes.js';
 import { runClinic, runFoes, runHealCost, runShopOpen, runWareHeals } from './logic/run-loop.js';
+import { fxOfBillie } from './logic/effects.js';
 import { perkOfferMake } from './logic/perks.js';
 import { eventAt } from './logic/encounters.js';
 import { routeRareSpots, routeTrainersPlace, runRouteTrainers } from './logic/route-trainers.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { questOffer, questTake } from './logic/run-quests.js';
+import { conditionHolds, storyStateOf } from './logic/conditions.js';
 import { runUnlocks } from './logic/unlocks.js';
 import { runStartOn, runStartPlan } from './logic/run-start.js';
+import { parseScript } from './logic/script-parse.js';
+import { runScript } from './logic/script.js';
 import { loadAllMaps } from './map-files.js';
 import {
   activeBattle,
   escapeHtml,
   pauseSaving,
+  reducedMotion,
   resumeSaving,
   save,
   saveData,
@@ -109,15 +151,17 @@ import { openShop } from './shop.js';
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene/director.js';
 import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
-import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
+import { trainRide, trainRideSkip } from './train-ride.js';
 import { runLoad } from './run-loading.js';
 import { runClinicEach, runJump, runTakeOff } from './run.js';
 import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
 import { encounterOpen } from './encounter-screen.js';
-import { questData } from './quest-board.js';
+import { questData, questMarked, residentTalk } from './quest-board.js';
 import { ranchOpen } from './ranch-screen.js';
+import { geneBankDo, geneBankOpen } from './gene-bank-screen.js';
+import { augmentsDo, augmentsOpen } from './augment-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
 import { storyPickTree } from './story-stage.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
@@ -941,6 +985,76 @@ async function runFullTest(mode) {
       await selfTestSleep(600);
       return `${mine} against ${theirs} (${fmt}); ${plates} nameplates; ${picks} picks, ${aimed} aimed; the turn played ${lines} lines in ${(turnMs / 1000).toFixed(1)} s`;
     };
+    /* RL-14: a wild bot of the Bureau's: "Catch it" greyed out, its limbs one hit from breaking, a turn played; a part
+       that breaks drops off the stage as a falling picture */
+    const fighterLead = () => saveData.team.find(m => m.hp > 0) || saveData.team[0];
+    const botBattle = async () => {
+      uiState.bench = null;
+      uiState.tab = 'walk';
+      saveData.trip.node = back.node;
+      render();
+      await selfTestSleep(1200);
+      saveData.team.forEach(m => {
+        m.hp = maxHp(m);
+        m.status = null;
+      });
+      const B = FACTIONS.bureau.bots[Object.keys(FACTIONS.bureau.bots).sort()[0]],
+        /* above your lead's level, so a hit leaves it standing (a fainted bot's parts take no hit) */
+        q = { id: 'selftest-bot', sp: factionBotSp(B), lvl: Math.min(100, fighterLead().lvl + 10), no: 1 };
+      encountersHere().unshift(q);
+      startWild(q);
+      const g0 = selfTest.gen || 0;
+      const want = async (ph, ms) => {
+        const end = performance.now() + ms * (selfTest.slow || 1);
+        while (performance.now() < end) {
+          if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
+          if (ph.includes(activeBattle.phase)) return true;
+          if (activeBattle.phase === 'playing') tapMessage();
+          await selfTestSleep(120);
+        }
+        return false;
+      };
+      if (!(await want(['choose'], 45000)))
+        throw new Error(`never got to the menu (${activeBattle ? activeBattle.phase : 'no battle'})`);
+      const foe = fighter(1);
+      if (!foe || foe.kind !== 'robot') throw new Error('the wild one is no robot');
+      if (billyName(foe) !== B.name) throw new Error(`it goes by ${billyName(foe)}, not ${B.name}`);
+      const coin = document.querySelector('[data-a=bcoins]');
+      if (!coin || !(/** @type {HTMLButtonElement} */ (coin).disabled)) throw new Error('"Catch it" is open on a bot');
+      /* every limb one point from breaking, and (for this turn) every hit on a limb, so one breaks and drops off */
+      const R = robotRules(),
+        hw = R.hitWeights;
+      R.hitWeights = { torso: 0, armL: 1, armR: 1, legs: 1 };
+      foe.partDmg = foe.partDmg || {};
+      for (const k of ['armL', 'armR', 'legs']) foe.partDmg[k] = partMaxHp(foe, k) - 1;
+      foe.hp = maxHp(foe);
+      let dropped = 0;
+      const watch = setInterval(() => {
+        dropped = Math.max(dropped, battleStage.parts.filter(p => p.img).length);
+      }, 50);
+      const m = fighter(activeBattle.cur),
+        mid = m.moves.find(id => MOVES[id] && MOVES[id].c !== 'X') || m.moves[0];
+      pickMove(mid);
+      if (activeBattle.phase === 'target') pickTarget(1);
+      const tt = performance.now();
+      let done = false;
+      try {
+        done = await want(['choose', 'end', 'switch'], 60000);
+      } finally {
+        R.hitWeights = hw;
+        clearInterval(watch);
+      }
+      if (!done) throw new Error(`the turn never finished (${activeBattle ? activeBattle.phase : 'no battle'})`);
+      const broke = activeBattle.events.filter(e => e.an && e.an.k === 'break').length,
+        turnMs = Math.round(performance.now() - tt);
+      stopTimers();
+      setActiveBattle(null);
+      battleStageStop();
+      render();
+      await selfTestSleep(600);
+      if (broke && !dropped && !reducedMotion) throw new Error('a part broke but nothing dropped off the stage');
+      return `${B.name}, not catchable; ${broke ? `${broke} part(s) broke, ${dropped} dropped` : 'the hit landed on its torso'}; the turn in ${(turnMs / 1000).toFixed(1)} s`;
+    };
     /* RL-5: the Road phase (v43, phase 08: out of Marigold Town over its edge and into Tallgrass Meadow on foot) went
        with those places to game/data/legacy: the hub has no road. RL-7: back on a run's road. A run is put on a copy
        of the save as the mast will (RL-8), so its world is made from its seed; the landing's north seam is walked over
@@ -1147,6 +1261,94 @@ async function runFullTest(mode) {
           }
         },
         4,
+        60
+      );
+    /* RL-S2: Blake and the hub folk, on a copy of the save: a run at Expedition II knows the lead he counters, each of
+       his places has his foe (person chad, never blocking), his team one Billie bigger by meetings as rules.json
+       run.rival says, his ace of a type that beats the lead's; a Bean for Hazel raises her level and the story reads it
+       (rel:hazel); the run takes off with the levels' bonuses. Then the save as it was */
+    if (typeof rivalSize === 'function' && typeof relGift === 'function' && !selfTest.stop)
+      await phase(
+        'Blake in a run, and a Bean for Hazel',
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData();
+          try {
+            if (s.run) runRestore(s);
+            s.meta.history = [];
+            let plan = null;
+            for (let k = 0; k < 20 && !plan; k++) {
+              const p = runStartPlan(
+                'SELFTESTRIVAL' + k,
+                { ...data, unlockData: UNLOCK_DATA },
+                { unlocks: [], expedition: 2 }
+              );
+              if (p.map.nodes.filter(n => n.type === 'rival').length === 2) plan = p;
+            }
+            if (!plan) throw new Error('no seed of 20 met Blake twice at Expedition II');
+            s.meta.beans = 1;
+            if (!relGift(s.meta, 'hazel', RELATIONS)) throw new Error('the Bean for Hazel wasn’t given');
+            const holds = (/** @type {string} */ c) => conditionHolds(c, storyStateOf(s));
+            if (!holds('rel:hazel >= 1 and gifted:hazel and beans = 0'))
+              throw new Error('the story doesn’t read the gift: ' + JSON.stringify(storyStateOf(s).rel));
+            runStartOn(s, plan);
+            const run = s.run,
+              lead = SPECIES[run.rival.lead];
+            if (!lead || run.rival.lead !== s.team[0].sp) throw new Error(`the lead: ${run.rival.lead}`);
+            if (!run.rel || run.rel.hazel !== 1)
+              throw new Error(`the levels it took off with: ${JSON.stringify(run.rel)}`);
+            const blakes = Object.values(
+              runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run })
+            )
+              .filter(F => F.runFoe === 'rival')
+              .sort((a, b) => a.runNode - b.runNode);
+            if (blakes.length !== 2) throw new Error(`${blakes.length} of Blake's foes for 2 places`);
+            blakes.forEach((F, k) => {
+              if (F.who !== 'chad' || F.blocks) throw new Error(`his foe: ${F.who}, blocks ${F.blocks}`);
+              if (F.team.length !== rivalSize(RULES.run.rival, k))
+                throw new Error(`meeting ${k + 1}: ${F.team.length} Billies`);
+              const ace = SPECIES[F.team[0].sp];
+              if (!ace.types.some(t => typeEffectiveness(t, lead.types) > 1))
+                throw new Error(`his ace ${ace.name} doesn't beat ${lead.name}`);
+            });
+            /* RL-S2 part B: Hazel's favour, asked, paid on the way home from a run that reached row 7; Chapter 1's end
+               moves the story to chapter 2 */
+            const story = s.story || (s.story = {});
+            (story.quests || (story.quests = {})).fav_hazel = 'asked';
+            s.meta.history.push({
+              seed: 'SELFTESTFAV',
+              theme: '',
+              region: '',
+              exp: 1,
+              end: 'lost',
+              by: null,
+              row: 7,
+              days: 5,
+              team: [],
+              perks: [],
+              leaders: [],
+              rival: null,
+            });
+            const paid = relFavoursPay(s, c => conditionHolds(c, storyStateOf(s)), RELATIONS);
+            if (paid.length !== 1 || paid[0].who !== 'hazel' || story.quests.fav_hazel !== 'done')
+              throw new Error(`Hazel's favour: ${JSON.stringify(paid)}`);
+            const end = STORY_DATA.scripts && STORY_DATA.scripts['chapter1-end'];
+            if (!end) throw new Error('no story.json scripts.chapter1-end');
+            await runScript(
+              parseScript(end.script),
+              { say: () => {}, choose: () => 0 },
+              { save: s, id: 'story:chapter1-end' }
+            );
+            if (s.meta.chapter !== 2) throw new Error(`chapter1-end left the chapter at ${s.meta.chapter}`);
+            return `Blake twice against ${lead.name}: ${blakes.map(F => F.team.map(e => SPECIES[e.sp].name).join('+')).join(', then ')}; Hazel level 1, her favour +${paid[0].points}; chapter 2`;
+          } finally {
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
         60
       );
     /* RL-12b: a run's waystation and stall, on a copy of the save: the first seed (SELFTESTWAY0, 1, ...) whose map has
@@ -1529,14 +1731,14 @@ async function runFullTest(mode) {
         8,
         180
       );
-    /* RL-8: a run from the mast to the payout, on a copy of the save (nothing is written while the test runs): a short
-       run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the
-       airship's flight to the landing, a wild battle there, "Go there" to the town (a paid heal; RL-12: its shop's
+    /* RL-8: a run from the station to the payout, on a copy of the save (nothing is written while the test runs): a
+       short run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the
+       sky train to the landing (HB-8: its ride skipped), a wild battle there, "Go there" to the town (a paid heal; RL-12: its shop's
        Perk bought), the mini-boss (beaten: a Perk picked), to the boss (an Alpha, its battle carrying the
        Perks) and its payout, then home: Copperleaf without the run. Then the save as it was */
     if (typeof runTakeOff === 'function' && !selfTest.stop)
       await phase(
-        'A run: airship, nodes, payout',
+        'A run: the train, nodes, payout',
         'dio',
         async () => {
           const was = saveData,
@@ -1558,6 +1760,8 @@ async function runFullTest(mode) {
             uiState.mq = [];
             uiState.tab = 'walk';
             if (s.run) runRestore(s);
+            /* RS-2: nobody lives in Copperleaf on the copy, so the run's resident is the free first one */
+            s.meta.residents = {};
             s.trip = { node: START_NODE, plan: [] };
             s.team.forEach(m => {
               m.hp = maxHp(m);
@@ -1567,9 +1771,11 @@ async function runFullTest(mode) {
             render();
             const hubTeam = saveData.team.map(m => m.uid).join();
             runTakeOff('SELFTESTRUN8', { rows: 5, minibosses: 1 });
-            /* HB-2: the run's world is made over several frames before the flight */
-            if (!saveData.run || !(await wait(() => airshipFlight.on, 30000)))
+            /* HB-8: the sky train's ride (skipped), then the run's world made over several frames behind the carriage's
+               loading screen */
+            if (!saveData.run || !(await wait(() => trainRide.on || runLoad.on, 30000)))
               throw new Error('the run didn’t take off');
+            trainRideSkip();
             /* RL-13: the starter points' default pick travels; the hub's team waits in Copperleaf as it was */
             if (
               !saveData.team.length ||
@@ -1579,11 +1785,11 @@ async function runFullTest(mode) {
               throw new Error(
                 `took off with ${saveData.team.length} Billies, the hub's team ${hubTeam ? 'changed' : 'empty'}`
               );
+            const t0 = performance.now();
+            if (!(await wait(() => !trainRide.on && saveData.run.at.phase === 'walk' && runLoad.node >= 0, 30000)))
+              throw new Error('the run never landed');
             const made = [runWorld.scenes, runWorld.ms],
-              t0 = performance.now();
-            if (!(await wait(() => !airshipFlight.on && saveData.run.at.phase === 'walk', 20000)))
-              throw new Error('the flight never landed');
-            const flew = Math.round(performance.now() - t0),
+              flew = Math.round(performance.now() - t0),
               landing = 'w:' + LOCATIONS[1].mapId + '*';
             if (!(await wait(() => walkView.ready && walkView.id === landing, 15000)))
               throw new Error(`landed but the view is ${walkView.id}`);
@@ -1644,6 +1850,28 @@ async function runFullTest(mode) {
             if (offer && !questTake(saveData.run, town - 1, offer, QUESTS)) throw new Error('the quest wasn’t taken');
             if (!validRun(JSON.parse(JSON.stringify(saveData.run))))
               throw new Error('a run with a quest fails validRun');
+            /* RS-2: Dottie, the free first resident, stands in every town of the first all-town row with a gold "!";
+               talking to her (her lines tapped through, Yes picked) invites her, and the save's check keeps it */
+            const firstTowns = residentFirstTowns(saveData.run.map),
+              dottieScene = firstTowns.length ? mapById(LOCATIONS[runWorldNode(firstTowns[0])].mapId) || {} : {},
+              dottie = (dottieScene.people || []).find((/** @type {any} */ p) => p.resident);
+            if (!dottie || dottie.resident !== 'dottie' || dottie.name !== RESIDENTS.dottie.name)
+              throw new Error('Dottie isn’t in the first town row');
+            if (typeof questMarked !== 'function' || !questMarked(dottie)) throw new Error('Dottie has no "!"');
+            let talked = false;
+            residentTalk(dottie).then(() => (talked = true));
+            if (
+              !(await wait(() => {
+                if (talkBox.choice) talkBox.choice.pick(0);
+                else if (talkBox.cur) talkBox.cur.tap();
+                return talked;
+              }, 15000))
+            )
+              throw new Error('talking to Dottie never ended');
+            if (saveData.run.invited !== 'dottie') throw new Error('Yes didn’t invite Dottie');
+            if (questMarked(dottie)) throw new Error('Dottie still has her "!" once invited');
+            if (!validRun(JSON.parse(JSON.stringify(saveData.run))))
+              throw new Error('a run with a resident invited fails validRun');
             /* RL-12: the town's shop sells the day's Perk; the mini-boss leaves a pick; the boss's battle carries
                both */
             uiState.modal = null;
@@ -1707,6 +1935,9 @@ async function runFullTest(mode) {
             uiState.modal.btns[0].f();
             if (!(await wait(() => uiState.modal && uiState.modal.cls === 'run-payout', 5000)))
               throw new Error('no payout screen');
+            /* RS-2: the payout says who is moving to Copperleaf */
+            if (!uiState.modal.html.includes(escapeHtml(`${RESIDENTS.dottie.name} is moving to Copperleaf`)))
+              throw new Error('the payout doesn’t say Dottie is moving in');
             uiState.modal.btns[0].f();
             if (!(await wait(() => !saveData.run && LOCATIONS.length === gameData.locations.length, 10000)))
               throw new Error('the run didn’t end');
@@ -1715,15 +1946,16 @@ async function runFullTest(mode) {
             if (!H || H.end !== 'won' || H.seed !== 'SELFTESTRUN8') throw new Error('the won run isn’t in the history');
             if (!H.leaders.some(l => l.id === MB.from && l.beat)) throw new Error('the history lost the mini-boss win');
             if (!saveData.story.fresh || saveData.story.pending) throw new Error('home from a win: the story’s picks');
-            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; home with ${saveData.meta.research} Research; in the history`;
+            if (!saveData.meta.residents.dottie || H.res !== 'dottie')
+              throw new Error('Dottie didn’t move in (or the history lost her)');
+            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; landed ${flew} ms after the train; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; Dottie invited and moved in; home with ${saveData.meta.research} Research; in the history`;
           } finally {
             if (activeBattle) {
               stopTimers();
               setActiveBattle(null);
               battleStageStop();
             }
-            airshipFlight.on = false;
-            document.body.classList.remove('flying');
+            trainRideSkip();
             uiState.modal = null;
             uiState.mq = [];
             renderOverlay();
@@ -2211,6 +2443,304 @@ async function runFullTest(mode) {
     await phase('Battle on the 3D stage', 'scene', () => battle(), 7, 120);
     await phase('Double battle with a trainer', 'scene', () => teamBattle('double'), 8, 150);
     await phase('Alpha battle: your team against one', 'scene', () => teamBattle('alpha'), 8, 150);
+    /* SP-3: a spliced wild Billie: the battle says what it wears; knocked out, it banks DNA and samples its Gene (on
+       a copy of the save) */
+    if (!selfTest.stop)
+      await phase(
+        'Wild splice: its line, DNA and a Gene Sample',
+        'dio',
+        async () => {
+          const was = saveData,
+            wait = async (/** @type {() => any} */ f, /** @type {number} */ ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                if (activeBattle && activeBattle.phase === 'playing') tapMessage();
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              D = geneData(),
+              one = { ...D, genes: { ...D.genes, wild: { ...D.genes.wild, graft: 1, chimera: 0 } } },
+              rnd = rngFn('self-test', 'splice'),
+              sp = Object.keys(SPECIES).find(id => wildSplice(one, id, Object.keys(SPECIES), rngFn(id, 'splice')));
+            if (!sp) throw new Error('no species can be spliced');
+            const graft = /** @type {Record<string, string>} */ (wildSplice(one, sp, Object.keys(SPECIES), rnd)),
+              gene = Object.values(graft)[0];
+            Object.assign(s.meta, { dna: 0, genes: [] });
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = { id: newUid(), sp, lvl: 3, no: ++s.serial, graft };
+            encountersHere().push(q);
+            startWild(q);
+            if (!activeBattle) throw new Error('the battle didn’t start');
+            const words = spliceWords(q);
+            if (!JSON.stringify(activeBattle.events).includes(`has ${words[0]}!`))
+              throw new Error(`the opening doesn’t say it has ${words[0]}`);
+            stopTimers();
+            activeBattle.over = 'win';
+            endBattle();
+            if (!(await wait(() => !activeBattle, 15000))) throw new Error('the battle never ended');
+            if (s.meta.dna !== D.genes.wild.dna.graft || !s.meta.genes.includes(gene))
+              throw new Error(`after the win: ${s.meta.dna} DNA, Genes ${s.meta.genes.join()}`);
+            if (!(await wait(() => uiState.modal && uiState.modal.title === 'Gene Sample', 5000)))
+              throw new Error('no Gene Sample sheet');
+            return `${SPECIES[sp].name} with ${words.join(', ')}: +${s.meta.dna} DNA, Gene ${gene} sampled`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* SP-4: the Gene Bank on a copy of the save: its sheet, sequencing the lead, a Gene spliced for its DNA (the sheet's
+       own buttons), the splice in a wild battle (its effect rows), then taken off for free */
+    if (typeof geneBankOpen === 'function' && !selfTest.stop)
+      await phase(
+        'Gene Bank: sequence, splice, see it in battle',
+        'dio',
+        async () => {
+          const was = saveData;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              D = geneData(),
+              m = s.team.find(b => !isRobot(b) && graftRecipe(D.kitBuilds, b.sp));
+            if (!m) throw new Error('no Billie on the team has a kit recipe');
+            delete m.graft;
+            delete m.unstable;
+            Object.assign(s.meta, { dna: 200, genes: [] });
+            s.meta.buildings.genebank = 3;
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            geneBankOpen();
+            if (!uiState.modal || !/Gene Bank/.test(uiState.modal.title)) throw new Error('the sheet didn’t open');
+            geneBankDo('pick', m.uid);
+            geneBankDo('seq');
+            if (!s.meta.genes.length) throw new Error('sequencing read nothing');
+            const slot = bankSlots(D, bankLevel(s)).find(k => graftDonors(D.kitBuilds, D.partKits, m.sp, k).length);
+            if (!slot) throw new Error(`no Gene fits ${m.sp}`);
+            const id = graftDonors(D.kitBuilds, D.partKits, m.sp, slot)[0],
+              price = bankPrice(D, m.sp, slot, id);
+            s.meta.genes.push(id);
+            geneBankDo('slot', slot);
+            geneBankDo('gene', id);
+            if (!document.querySelector('#ov .gene-preview')) throw new Error('no preview for the Gene');
+            geneBankDo('splice');
+            if (!m.graft || m.graft[slot] !== id) throw new Error(`not spliced: ${JSON.stringify(m.graft || null)}`);
+            if (s.meta.dna !== 200 - price) throw new Error(`paid ${200 - s.meta.dna} DNA, the price is ${price}`);
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = { id: newUid(), sp: m.sp, lvl: 3, no: ++s.serial };
+            encountersHere().push(q);
+            startWild(q);
+            if (!activeBattle) throw new Error('the battle didn’t start');
+            const me = activeBattle.sides[0].team.find(b => b.uid === m.uid),
+              rows = me ? fxOfBillie(me, ITEMS).filter(f => /^gene:/.test(f.src)) : [];
+            if (!me || !me.graft) throw new Error('the spliced Billie isn’t spliced in battle');
+            stopTimers();
+            setActiveBattle(null);
+            uiState.modal = null;
+            geneBankOpen();
+            geneBankDo('pick', m.uid);
+            geneBankDo('slot', slot);
+            geneBankDo('off');
+            if (m.graft) throw new Error('Take off left a Gene');
+            if (s.meta.dna !== 200 - price) throw new Error('taking it off cost DNA');
+            return `${m.sp} ${slot}=${id}: ${price} DNA, ${rows.length} Gene row(s) in battle (${rows.map(f => f.src).join(', ') || 'none'}), taken off free`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+            }
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* SP-5: the Workshop, on a copy of the save: a spare Hydrant Arm fitted on a Billie for Scrap (the sheet driven by
+       its own buttons), its Jet Blast in a wild battle, the arm broken (its move lost), then mended by the heal a
+       town's clinic gives (healAll), and taken off for free back to the spares */
+    if (typeof augmentsOpen === 'function' && !selfTest.stop)
+      await phase(
+        'Workshop: fit an arm, it breaks in battle, the clinic mends it',
+        'dio',
+        async () => {
+          const was = saveData;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              D = geneData(),
+              m = s.team.find(b => !isRobot(b) && augFits(D, b.sp, 'front', 'hydrant'));
+            if (!m) throw new Error('no Billie on the team can take an arm');
+            delete m.aug;
+            delete m.graft;
+            delete m.unstable;
+            delete m.partDmg;
+            s.meta.scrap = 100;
+            s.parts = [...(s.parts || []), { uid: 'selftest-arm', id: 'hydrant', up: 0 }];
+            s.meta.buildings.workshop = 1;
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            augmentsOpen();
+            if (!uiState.modal || !/Workshop/.test(uiState.modal.title)) throw new Error('the sheet didn’t open');
+            augmentsDo('pick', m.uid);
+            augmentsDo('slot', 'front');
+            augmentsDo('part', 'selftest-arm');
+            if (!document.querySelector('#ov .aug-sheet .gene-preview')) throw new Error('no preview for the part');
+            augmentsDo('fit');
+            if (!m.aug || !m.aug.front || m.aug.front.id !== 'hydrant')
+              throw new Error(`not fitted: ${JSON.stringify(m.aug || null)}`);
+            const price = GENES.augment.price.fit;
+            if (s.meta.scrap !== 100 - price)
+              throw new Error(`paid ${100 - s.meta.scrap} Scrap, the price is ${price}`);
+            if (s.parts.some(p => p.uid === 'selftest-arm')) throw new Error('the part is still a spare');
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = { id: newUid(), sp: m.sp, lvl: 3, no: ++s.serial };
+            encountersHere().push(q);
+            startWild(q);
+            if (!activeBattle) throw new Error('the battle didn’t start');
+            const me = activeBattle.sides[0].team.find(b => b.uid === m.uid),
+              jet = ROBOTS.parts.hydrant.move;
+            if (!me || !movesOf(me).includes(jet)) throw new Error('the arm’s move isn’t offered in battle');
+            me.partDmg = { armR: partMaxHp(me, 'armR') };
+            if (moveUsable(me, jet)) throw new Error('a broken arm still gives its move');
+            stopTimers();
+            setActiveBattle(null);
+            healAll();
+            if (partBroken(m, 'armR') || partsDamaged(m)) throw new Error('the heal didn’t mend the arm');
+            uiState.modal = null;
+            augmentsOpen();
+            augmentsDo('pick', m.uid);
+            augmentsDo('slot', 'front');
+            augmentsDo('off');
+            if (m.aug) throw new Error('Take off left an Augment');
+            if (!s.parts.some(p => p.uid === 'selftest-arm')) throw new Error('the part didn’t go back to the spares');
+            return `${m.sp} front=hydrant: ${price} Scrap, ${MOVES[jet].n} offered, broken and mended, taken off free`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+            }
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* SP-6: a run's splice events, on a copy of the save on a run: the back-alley splicer splices the lead (paid in
+       Moneys, the event's sheet driven by its own buttons), the splice in a wild battle, then the Gene recall takes the
+       Gene off for its DNA (the Gene stays in the library) */
+    if (typeof encounterOpen === 'function' && typeof runStartOn === 'function' && !selfTest.stop)
+      await phase(
+        'Splice events: the back alley splices, the recall takes it back',
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            /* tap through an event: "Go on" and the like, the Billie `uid` when a pick lists it, the Gene when a
+               recall asks; until "Keep walking" */
+            drive = async (/** @type {string} */ uid, /** @type {number} */ opt) => {
+              let picked = false;
+              for (let i = 0; i < 80; i++) {
+                await selfTestSleep(60);
+                const M = uiState.modal;
+                if (!M || M.cls !== 'event-sheet') continue;
+                const B = M.btns || [];
+                if (B.length === 1 && /Keep walking/.test(B[0].l)) return M;
+                if (!picked && B.length > 1) {
+                  /* the event's options first, then a pick of Billies or Genes: the lead's (by its name) */
+                  picked = true;
+                  if (opt >= 0) {
+                    B[opt].f();
+                    opt = -1;
+                    picked = false;
+                    continue;
+                  }
+                  const m = saveData.team.find(b => b.uid === uid),
+                    k = B.findIndex(b => m && b.l.includes(escapeHtml(billyName(m))));
+                  if (k < 0) throw new Error(`the pick doesn’t list ${m ? billyName(m) : uid}`);
+                  B[k].f();
+                  continue;
+                }
+                B[0].f();
+              }
+              throw new Error('the event never ended');
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.modal = null;
+            uiState.mq = [];
+            if (s.run) runRestore(s);
+            runStartOn(s, runStartPlan('SELFTESTSPLICE', { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            const D = geneData(),
+              m = s.team.find(b => !isRobot(b) && geneEventSlots(D, b).length);
+            if (!m) throw new Error('no Billie on the run’s team can take a Gene');
+            delete m.graft;
+            delete m.unstable;
+            s.se = 1000;
+            Object.assign(s.meta, { dna: 0, genes: [] });
+            setSaveData(s);
+            encounterOpen(null, 'back_alley_splicer');
+            await drive(m.uid, 0);
+            const g = m.graft ? Object.entries(m.graft)[0] : null;
+            if (!g) throw new Error('the back alley spliced nothing');
+            if (s.se !== 1000 - EVENTS.events.back_alley_splicer.options[0].cost) throw new Error(`Moneys ${s.se}`);
+            if (!s.meta.genes.includes(g[1])) throw new Error('the Gene isn’t in the library');
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = { id: newUid(), sp: m.sp, lvl: 3, no: ++s.serial };
+            encountersHere().push(q);
+            startWild(q);
+            if (!activeBattle) throw new Error('the battle didn’t start');
+            const me = activeBattle.sides[0].team.find(b => b.uid === m.uid);
+            if (!me || !me.graft) throw new Error('the spliced Billie isn’t spliced in battle');
+            stopTimers();
+            setActiveBattle(null);
+            uiState.modal = null;
+            encounterOpen(null, 'gene_recall');
+            await drive(m.uid, 0);
+            if (m.graft) throw new Error(`the recall left ${JSON.stringify(m.graft)}`);
+            if (!s.meta.genes.includes(g[1])) throw new Error('the recall took the Gene out of the library');
+            return `${m.sp} ${g[0]}=${g[1]} for ${1000 - s.se} Moneys, spliced in battle; recalled for ${s.meta.dna} DNA`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+            }
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        4,
+        60
+      );
+    /* RL-14: the Bureau's bot in the grass: it can't be caught, its limbs break and drop off, it cries */
+    if (typeof FACTIONS !== 'undefined' && FACTIONS.bureau)
+      await phase('A wild bot: never caught, its parts break off', 'scene', () => botBattle(), 8, 150);
     /* v47: the opening's fall into the Hollow Earth (the bowl's own ground, past the Inner Sun), timed */
     if (typeof fallOverWorldMap === 'function' && !selfTest.stop)
       await phase(
