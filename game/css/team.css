@@ -295,3 +295,8 @@
   gap: var(--s2);
   margin-top: var(--s2);
 }
+/* RL-14: a salvage pick's bot part (reward-screen.js): its pixel art kept crisp */
+.part-pic {
+  image-rendering: pixelated;
+  object-fit: contain;
+}

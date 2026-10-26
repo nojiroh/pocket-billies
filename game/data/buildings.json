@@ -6,12 +6,12 @@
   "levels": 1,
   "about": "Professor Chosen's lab (his assistant Hazel does the work). Its board sells unlocks for Research."
  },
- "airship": {
-  "name": "Airship",
+ "station": {
+  "name": "Skyline Station",
   "currency": "crests",
-  "act": "fly",
+  "act": "station",
   "levels": 2,
-  "about": "The airship at the mast. Upgrades for Crests take runs to new lands."
+  "about": "The station where runs start. Upgrades for Crests take runs to new lands."
  },
  "ranch": {
   "name": "Ranch",
@@ -20,11 +20,18 @@
   "levels": 3,
   "about": "The barn by the farm patch. Each level trains more Billies, higher."
  },
+ "genebank": {
+  "name": "Gene Bank",
+  "currency": "dna",
+  "act": "genebank",
+  "levels": 3,
+  "about": "A vault of Genes. Sequence a Billie's parts into the library, then splice them on for DNA. Each level splices more slots, more steadily."
+ },
  "workshop": {
   "name": "Workshop",
   "currency": "scrap",
-  "levels": 1,
-  "soon": true,
-  "about": "Where robots will be built and refitted. Coming later."
+  "act": "workshop",
+  "levels": 3,
+  "about": "Bot parts fitted on your Billies as Augments, and upgraded, for Scrap. Each level fits more and upgrades further."
  }
 }

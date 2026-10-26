@@ -9,9 +9,10 @@
    Billie is already as baked. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
+import { provide } from '../../game/js/hooks.js';
+import { kitBakeWhole } from '../../game/js/logic/kit-assemble.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { kitBakeWhole } from '../../game/js/logic/kit-assemble.js';
 import { ACTIONS, changed, clone, commit, render, snapshotParts, studioState, toast } from './studio-app.js';
 import { artSteps, pictureImage } from './pixel-canvas.js';
 import { atlasGet, loadedAtlas, markArt } from './sprites.js';
@@ -19,10 +20,11 @@ import { atlasGet, loadedAtlas, markArt } from './sprites.js';
 expose({
   KIT_PARTS_OF: [() => KIT_PARTS_OF],
   KIT_SHEET: [() => KIT_SHEET],
-  kitBakeInStudio: [() => kitBakeInStudio, v => (kitBakeInStudio = v)],
+  kitBakeInStudio: [() => kitBakeInStudio, v => ((kitBakeInStudio = v), provide({ kitBakeInStudio }))],
   kitColourSelect: [() => kitColourSelect, v => (kitColourSelect = v)],
   kitEdited: [() => kitEdited, v => (kitEdited = v)],
   kitFormOf: [() => kitFormOf, v => (kitFormOf = v)],
+  kitKept: [() => kitKept, v => (kitKept = v)],
   kitNum: [() => kitNum],
   kitPixelsOf: [() => kitPixelsOf],
   kitRecipe: [() => kitRecipe],
@@ -33,12 +35,19 @@ expose({
   kitWriteShown: [() => kitWriteShown, v => (kitWriteShown = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ kitBakeInStudio });
 /* to-module: end */
-/** the recipe of a species' rig, with its index in kitBuilds.json forms */
+/** the recipe of a species' rig, with its index in kitBuilds.json forms; null when there is none or when the Billie
+ * is on its placeholder (RO-3b: a bodyPlans.json form owns the rig, so the recipe is kept but not baked) */
 export function kitFormOf(sp) {
   const forms = studioState.D?.kitBuilds?.forms || [],
     i = forms.findIndex(f => f.rig === sp);
-  return i < 0 ? null : { form: forms[i], i };
+  return i < 0 || kitKept(sp) ? null : { form: forms[i], i };
+}
+/** RO-3b: the kept recipe of a Billie on its placeholder, or null */
+function kitKept(sp) {
+  const P = studioState.D?.bodyPlans?.forms || [];
+  return P.some(f => f.rig === sp) ? (studioState.D?.kitBuilds?.forms || []).find(f => f.rig === sp) || null : null;
 }
 const KIT_SHEET = form => `art/next/billionaires/${form.name}.png`;
 /** a picture's pixels, ImageData-shaped (the baker's input) */
@@ -169,7 +178,10 @@ const kitNum = (v, attrs, step = 0.05) =>
   `<input type="number" step="${step}" min="0.05" max="4" value="${v}" ${attrs}>`;
 /** the recipe card for a species, or '' when it is not a kit Billie */
 export function kitRecipeHTML(sp) {
-  const at = kitFormOf(sp);
+  const at = kitFormOf(sp),
+    kept = !at && kitKept(sp);
+  if (kept)
+    return `<div class="px-sec kit-recipe" data-kit-kept="${escapeHtml(kept.name)}"><h4>Kit recipe <small class="mono">${escapeHtml(kept.name)}</small></h4><p class="help">Kept in kitBuilds.json, not baked: this Billie is on its placeholder (bodyPlans.json). To bring the kit look back, take it out of bodyPlans.json forms and bake again (<span class="mono">npm run bake:kits</span>).</p></div>`;
   if (!at) return '';
   const { form } = at,
     D = studioState.D,

@@ -120,6 +120,7 @@ expose({
   writeStaged: [() => writeStaged, v => (writeStaged = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ toast });
 /* to-module: end */
 export const studioState = {
   D: null,
@@ -356,7 +357,7 @@ export function restore(s) {
 /* Studio plan T6.2: data no picture is drawn from (top-level keys of D). An undo that changes only these keeps the
    art caches: a Wardrobe opened after undoing a move edit no longer bakes every clothes thumbnail again */
 const TEXT_ONLY_DATA = new Set(
-  'moves items pyramids lore story jobs stats statuses rarities perks events rewards currencies unlocks shops pools eggs meta uiTheme'.split(
+  'moves items pyramids lore story banter relations jobs stats statuses rarities perks events rewards currencies unlocks shops pools eggs meta uiTheme'.split(
     ' '
   )
 );
@@ -644,6 +645,7 @@ export const SECTION_LIST = [
   ['billionaires', 'Billies', 'The creatures: names, stats, moves, evolution, sprite art'],
   ['roster', 'Roster board', 'The Billies in the game and how far their art is'],
   ['parts', 'Part sizes', 'Part sizes, weight and Prime Billies'],
+  ['genes', 'Genes', 'Splicing: Stability, traits, wild splices, the Gene Bank and a splice preview'],
   ['coats', 'Coats', 'Recolours of a Billie’s art, and how often each turns up'],
   ['workbench', 'Art workbench', 'Cut sheets into parts (drop a PNG anywhere); parts, pixels and models next'],
   ['robots', 'Robots', 'Robot parts, gems, their pictures and the rules behind them'],
@@ -660,7 +662,8 @@ export const SECTION_LIST = [
   ['scenes', 'Walk scenes', 'Towns and routes on the Walk screen: ground, props and camera'],
   ['hub', 'Hub island', 'The hub’s island: an orbit view, its ground, coast, zones and pivot, and the ground lock'],
   ['props', 'Props', 'Every prop: its picture, 3D model, leaves, variants, and where it stands'],
-  ['engine', 'Engine', 'Light, shadows, blur, color and camera of the 3D scenes'],
+  ['engine', 'Engine', 'Light, shadows, blur and color of the 3D scenes'],
+  ['camera', 'Camera', 'The walking camera: framing, zoom and its feel, follow, moments, with its real numbers'],
   ['wardrobe', 'Wardrobe', 'Trainer body, hairstyles, faces and clothes'],
   ['trainers', 'Trainers', 'Rivals and arena leaders'],
   ['lore', 'Lore & story', 'The world, the story, people, places, legends, clues, books and what people say'],
@@ -683,9 +686,9 @@ export const SECTION_LIST = [
 const SECTION_GROUPS = [
   [
     'Billies & battles',
-    ['billionaires', 'parts', 'workbench', 'coats', 'robots', 'roster', 'moves', 'preview', 'types'],
+    ['billionaires', 'parts', 'genes', 'workbench', 'coats', 'robots', 'roster', 'moves', 'preview', 'types'],
   ],
-  ['World & places', ['scenes', 'hub', 'props', 'engine', 'world']],
+  ['World & places', ['scenes', 'hub', 'props', 'engine', 'camera', 'world']],
   ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
   ['Moneys', ['items']],
   ['Game', ['rules', 'ui', 'art', 'check']],
@@ -730,7 +733,7 @@ export function renderSide() {
 }
 /* studio track ST-1: the second pane shows any section but the ones with a 3D view (IS-6a: Hub island too) (they share one) and the one in
    the first pane (its ids would clash); why not, or '' */
-export const PANE2_REFUSED = { scenes: 1, hub: 1, props: 1, engine: 1, preview: 1 };
+export const PANE2_REFUSED = { scenes: 1, hub: 1, props: 1, engine: 1, camera: 1, preview: 1 };
 export function besideRefusal(s) {
   if (PANE2_REFUSED[s]) return 'Has a 3D view, so it only opens on the left';
   if (s === studioState.sec) return 'Already open on the left';

@@ -23,13 +23,17 @@ import {
   LOOK_GLSL,
   bindQuad,
   ensurePrograms,
+  gpuBuffer,
+  gpuFree,
   gpuState,
+  gpuVao,
   imageTexture,
   normalize3,
 } from './engine/webgl.js';
 import { environment, environmentLitFraction } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
+import { ROCK_GLSL } from './walk/walk-shaders.js';
 import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
 import { setPropLookUniforms } from './walk/prop-look.js';
 /* eslint-disable no-func-assign */
@@ -178,8 +182,8 @@ precision highp float;layout(location=0) in vec3 bPosIn;layout(location=1) in ve
 uniform mat4 uVP;uniform vec2 uLift;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${COMMON_GLSL}
 void main(){vec3 p=bPosIn;p.y+=curveY(uLift);vW=p;vN=bNrmIn;vUV=bUVIn;vTex=bTexIn;vCol=bColIn;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in vec3 vTex;in vec3 vCol;out vec4 o;uniform sampler2D uDet;uniform float uFade,uBaseY;uniform vec2 uScroll,uAtl;${LIGHT_GLSL}${BUILDING_RAMP_GLSL}${LOOK_GLSL}uniform vec3 uBP;
-void main(){if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;
+precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in vec3 vTex;in vec3 vCol;out vec4 o;uniform sampler2D uDet;uniform float uFade,uBaseY;uniform vec2 uScroll,uAtl;${LIGHT_GLSL}${BUILDING_RAMP_GLSL}${LOOK_GLSL}uniform vec3 uBP;${ROCK_GLSL}
+void main(){if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;
  vec2 g=(vUV+uScroll)*.5,f=vec2(fract(g.x),1.-fract(g.y)),a=(vTex.xy+f)/uAtl;float lv=textureGrad(uDet,a,dFdx(g)/uAtl,dFdy(g)/uAtl).r*4.;
  vec3 c=vTex.z>.5?vCol:rampC(vCol,floor(lv+.5));c=lookOn(c,floor(vUV*16.),clamp((vW.y-uBaseY)/4.,0.,1.),uBP);vec3 n=normalize(vN);if(uSeason.w>0.)c=mix(c,vec3(.9,.93,.98),min(1.,uSeason.w*1.4)*smoothstep(.3,.6,n.y)*smoothstep(.2,.5,lnoise(vW.xz*2.3)+uSeason.w*.6));
  float sh=shadowAtN(vW+n*.04,n,.0012),ao=mix(contactAO(vW),1.,clamp((vW.y-uBaseY)/.7,0.,1.)),occ=min(sh,ao);
@@ -192,8 +196,8 @@ precision highp float;layout(location=0) in vec3 bPosIn;layout(location=1) in ve
 uniform mat4 uVP;uniform vec2 uLift;out vec3 vW;out vec3 vN;out vec2 vUV;out vec4 vWd;out vec3 vT;out vec4 vF;${COMMON_GLSL}
 void main(){vec3 p=bPosIn;p.y+=curveY(uLift);vW=p;vN=bNrmIn;vUV=bUVIn;vWd=bWIn;vT=bTIn;vF=bFIn;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in vec4 vWd;in vec3 vT;in vec4 vF;out vec4 o;uniform sampler2D uRooms;uniform float uFade,uNight,uDay,uInt,uLitF;uniform vec3 uSkyR;${LIGHT_GLSL}${BUILDING_RAMP_GLSL}
-void main(){if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;
+precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in vec4 vWd;in vec3 vT;in vec4 vF;out vec4 o;uniform sampler2D uRooms;uniform float uFade,uNight,uDay,uInt,uLitF;uniform vec3 uSkyR;${LIGHT_GLSL}${BUILDING_RAMP_GLSL}${ROCK_GLSL}
+void main(){if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;
  float w=vWd.x,h=vWd.y,room=vWd.z,D=vWd.w;vec3 N=normalize(vN),T=normalize(vT);vec2 p=vec2(vUV.x*w,vUV.y*h);
  vec3 d=normalize(vW-uEye);vec3 ld=vec3(dot(d,T),d.y,max(dot(d,-N),.04));
  /* the room behind the pane: wider and taller than the window, D deep; find which wall the view ray meets first */
@@ -232,8 +236,8 @@ void main(){if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;
 precision highp float;layout(location=0) in vec2 bCIn;uniform mat4 uVP;uniform vec3 uO,uA,uB;uniform vec2 uLift;out vec2 vUV;out vec3 vW;${COMMON_GLSL}
 void main(){vec3 p=uO+uA*bCIn.x+uB*bCIn.y;p.y+=curveY(uLift);vW=p;vUV=vec2(bCIn.x,1.-bCIn.y);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uN,uR;uniform float uFade,uFlipN,uBaseY,uGlassN;${LIGHT_GLSL}${BUILDING_RAMP_GLSL}${LOOK_GLSL}uniform vec3 uBP;
-void main(){vec4 c=texture(uTex,vUV);if(c.a<.05)discard;if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;
+precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uN,uR;uniform float uFade,uFlipN,uBaseY,uGlassN;${LIGHT_GLSL}${BUILDING_RAMP_GLSL}${LOOK_GLSL}uniform vec3 uBP;${ROCK_GLSL}
+void main(){vec4 c=texture(uTex,vUV);if(c.a<.05)discard;if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;
  if(c.a>.99)c.rgb=lookOn(c.rgb,floor(vUV*vec2(textureSize(uTex,0))),1.-vUV.y,uBP);
  vec3 nn=texture(uNrm,vUV).xyz*2.-1.;vec3 n=normalize(uR*nn.x*uFlipN+vec3(0.,-nn.y,0.)+uN*max(nn.z,.2));
  float sh=shadowAtN(vW+uN*.06,uN,.001),ao=mix(contactAO(vW),1.,clamp((vW.y-uBaseY)/.7,0.,1.)),occ=min(sh,ao);
@@ -378,14 +382,11 @@ function buildingMesh(it) {
   return E;
 }
 function freeBuildingMesh(E) {
-  const gl = gpuState.gl;
   for (const m of [E.walls, E.wins])
     if (m) {
-      try {
-        gl.deleteVertexArray(m.vao);
-        gl.deleteBuffer(m.vb);
-        gl.deleteBuffer(m.ib);
-      } catch (e) {}
+      gpuFree(m.vao);
+      gpuFree(m.vb);
+      gpuFree(m.ib);
     }
 }
 /* alpha 0.4: p.rot, a building turned a few degrees (along a curved street, toward its square): it turns about its
@@ -1467,12 +1468,12 @@ function makeBuildingModel(it) {
   const gl = gpuState.gl,
     mk = (Vs, Is, attrs, stride) => {
       if (!Is.length) return null;
-      const vao = gl.createVertexArray();
+      const vao = gpuVao('meshes');
       gl.bindVertexArray(vao);
-      const vb = gl.createBuffer();
+      const vb = gpuBuffer('meshes', Vs.length * 4);
       gl.bindBuffer(gl.ARRAY_BUFFER, vb);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(Vs), gl.STATIC_DRAW);
-      const ib = gl.createBuffer();
+      const ib = gpuBuffer('meshes', Is.length * 4);
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(Is), gl.STATIC_DRAW);
       let off = 0;
@@ -1554,10 +1555,12 @@ export function buildingItems(items) {
     if (it.bld3 && !(walkRenderer.bt && walkRenderer.bt.hide && walkRenderer.bt.hide.has(it.p))) out.push(it);
   return out;
 }
-export function drawBuildings(C, X, items, fades) {
-  buildingGuard(() => drawBuildingsUnguarded(C, X, items, fades));
+/* phase 20 R2 (pixels): part 'solid' draws the walls, roofs and windows, 'fronts' the blended front pictures (so the
+   sky, drawn last, can go between them); anything else draws both, as before */
+export function drawBuildings(C, X, items, fades, part) {
+  buildingGuard(() => drawBuildingsUnguarded(C, X, items, fades, part));
 }
-function drawBuildingsUnguarded(C, X, items, fades) {
+function drawBuildingsUnguarded(C, X, items, fades, part) {
   const L = buildingItems(items).filter(it => it.vis !== false);
   buildingState.drawn = L.length;
   if (!L.length) return;
@@ -1572,56 +1575,60 @@ function drawBuildingsUnguarded(C, X, items, fades) {
     lift = it => [it.x, it.z];
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
-  gl.disable(gl.BLEND);
-  let p = useWalkProgram('bld', C, X);
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, det.t);
-  gl.uniform1i(p.U.uDet, 0);
-  gl.uniform2fv(p.U.uAtl, buildingTextureGrid(A));
-  for (const it of L) {
-    const E = buildingMesh(it);
-    if (!E || !E.walls) continue;
-    gl.uniform2fv(p.U.uLift, lift(it));
-    gl.uniform1f(p.U.uFade, fades.get(it) ?? 1);
-    gl.uniform1f(p.U.uBaseY, E.y0);
-    if (typeof setPropLookUniforms === 'function') setPropLookUniforms(p.U, it.lk, [it.x, it.y, it.z]);
-    gl.bindVertexArray(E.walls.vao);
-    gl.drawElements(gl.TRIANGLES, E.walls.n, gl.UNSIGNED_INT, 0);
-  }
-  p = useWalkProgram('bwin', C, X);
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, rm.t);
-  gl.uniform1i(p.U.uRooms, 0);
-  const sky = (sc.sky || ['#8CC6E6', '#BFE3EE'])[1];
-  gl.uniform3fv(
-    p.U.uSkyR,
-    hexToRgb(sky).map(v => v / 255)
-  );
-  /* alpha 0.4: a room whose lamp is off is dark at night (it showed at daylight brightness, so unlit windows looked lit) */ gl.uniform1f(
-    p.U.uDay,
-    sc.indoor
-      ? 0.7
-      : 1 - 0.8 * (dark ? 1 : typeof environment !== 'undefined' && engineContext.env ? environment.night : 0)
-  );
-  gl.uniform1f(
-    p.U.uNight,
-    (dark ? 1 : engineSetting('lights', 'windowsDay') * 2.2) * engineSetting('lights', 'brightness')
-  );
-  gl.uniform1f(p.U.uInt, engineSetting('world', 'interiors') === false ? 0 : 1);
-  if (p.U.uLitF)
+  let p;
+  if (part !== 'fronts') {
+    gl.disable(gl.BLEND);
+    p = useWalkProgram('bld', C, X);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, det.t);
+    gl.uniform1i(p.U.uDet, 0);
+    gl.uniform2fv(p.U.uAtl, buildingTextureGrid(A));
+    for (const it of L) {
+      const E = buildingMesh(it);
+      if (!E || !E.walls) continue;
+      gl.uniform2fv(p.U.uLift, lift(it));
+      gl.uniform1f(p.U.uFade, fades.get(it) ?? 1);
+      gl.uniform1f(p.U.uBaseY, E.y0);
+      if (typeof setPropLookUniforms === 'function') setPropLookUniforms(p.U, it.lk, [it.x, it.y, it.z]);
+      gl.bindVertexArray(E.walls.vao);
+      gl.drawElements(gl.TRIANGLES, E.walls.n, gl.UNSIGNED_INT, 0);
+    }
+    p = useWalkProgram('bwin', C, X);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, rm.t);
+    gl.uniform1i(p.U.uRooms, 0);
+    const sky = (sc.sky || ['#8CC6E6', '#BFE3EE'])[1];
+    gl.uniform3fv(
+      p.U.uSkyR,
+      hexToRgb(sky).map(v => v / 255)
+    );
+    /* alpha 0.4: a room whose lamp is off is dark at night (it showed at daylight brightness, so unlit windows looked lit) */ gl.uniform1f(
+      p.U.uDay,
+      sc.indoor
+        ? 0.7
+        : 1 - 0.8 * (dark ? 1 : typeof environment !== 'undefined' && engineContext.env ? environment.night : 0)
+    );
     gl.uniform1f(
-      p.U.uLitF,
-      litWindowFraction()
-    ); /* v47: windows come on one at a time in the evening and go off one at a time at night (environment.js environmentLitFraction) */
-  for (const it of L) {
-    const E = buildingState.mesh.get(it.p);
-    if (!E || !E.wins) continue;
-    gl.uniform2fv(p.U.uLift, lift(it));
-    gl.uniform1f(p.U.uFade, fades.get(it) ?? 1);
-    gl.bindVertexArray(E.wins.vao);
-    gl.drawElements(gl.TRIANGLES, E.wins.n, gl.UNSIGNED_INT, 0);
+      p.U.uNight,
+      (dark ? 1 : engineSetting('lights', 'windowsDay') * 2.2) * engineSetting('lights', 'brightness')
+    );
+    gl.uniform1f(p.U.uInt, engineSetting('world', 'interiors') === false ? 0 : 1);
+    if (p.U.uLitF)
+      gl.uniform1f(
+        p.U.uLitF,
+        litWindowFraction()
+      ); /* v47: windows come on one at a time in the evening and go off one at a time at night (environment.js environmentLitFraction) */
+    for (const it of L) {
+      const E = buildingState.mesh.get(it.p);
+      if (!E || !E.wins) continue;
+      gl.uniform2fv(p.U.uLift, lift(it));
+      gl.uniform1f(p.U.uFade, fades.get(it) ?? 1);
+      gl.bindVertexArray(E.wins.vao);
+      gl.drawElements(gl.TRIANGLES, E.wins.n, gl.UNSIGNED_INT, 0);
+    }
+    gl.bindVertexArray(null);
   }
-  gl.bindVertexArray(null);
+  if (part === 'solid') return;
   /* fronts last, blended, so the glass shows the rooms behind it */
   p = useWalkProgram('bfac', C, X);
   bindQuad();

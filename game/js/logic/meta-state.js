@@ -5,15 +5,20 @@
    unlock currency; Scrap, the building material; Crests, the rare boss currency), the unlocks, each hub
    building's level, how many runs were played and won, the highest Expedition (the difficulty) open, and (RL-R2) the
    badges kept for good, by type (`{ water: 1 }`: the first win over a leader of a type opens that type's field move,
-   logic/run-side.js). Money ($,
+   logic/run-side.js), (RL-S1) the newest runs' history (logic/run-history.js), and (RS-1) who lives in Copperleaf
+   (residents.json: id -> the run they moved in after, logic/residents.js). Money ($,
    saveData.se) is not here: it is the run's working field. Logic only: no DOM, runs in Node
    (tools/test/meta-state.test.mjs). The sections that spend these (unlocks.json, buildings.json) come in RL-11. */
 /** @import { Meta } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
+import { validHistory } from './run-history.js';
 /* eslint-disable no-func-assign */
 expose({
+  META_CURRENCIES: [() => META_CURRENCIES],
   META_EXPEDITIONS: [() => META_EXPEDITIONS],
+  META_GENES: [() => META_GENES],
   META_IDS: [() => META_IDS],
   META_MAX: [() => META_MAX],
   // @ts-expect-error -- replaced on purpose
@@ -34,17 +39,29 @@ export function newMeta() {
     research: 0,
     scrap: 0,
     crests: 0,
+    beans: 0,
+    rel: {},
+    gifted: {},
+    dna: 0,
+    genes: [],
     unlocks: {},
     buildings: {},
     runs: 0,
     wins: 0,
     expedition: 1,
+    chapter: 1,
     badges: {},
+    history: [],
+    residents: {},
   };
 }
-export const META_MAX = 1e12,
+/** the currencies kept between runs (currencies.json's `kept: meta` rows; RL-S2: Beans, the gift currency; SP-3: DNA) */
+export const META_CURRENCIES = /** @type {const} */ (['research', 'scrap', 'crests', 'beans', 'dna']);
+export const META_GENES = 1000,
+  META_MAX = 1e12,
   META_IDS = 200,
   META_EXPEDITIONS = 9;
+provide({ META_GENES }); /* to-module */
 /** a whole number from min to max */
 export const wholeIn = (v, min, max) => Number.isInteger(v) && v >= min && v <= max;
 /** a plain record (not an array, no __proto__ key) of at most `most` keys whose values pass `ok` */
@@ -60,13 +77,22 @@ export const recordOf = (v, most, ok) =>
 /** @param {any} o @returns {boolean} */
 export function validMeta(o) {
   if (!o || typeof o !== 'object' || Array.isArray(o) || Object.hasOwn(o, '__proto__')) return false;
-  for (const k of ['research', 'scrap', 'crests', 'runs', 'wins']) if (!wholeIn(o[k], 0, META_MAX)) return false;
+  for (const k of [...META_CURRENCIES, 'runs', 'wins']) if (!wholeIn(o[k], 0, META_MAX)) return false;
   return (
     o.wins <= o.runs &&
     wholeIn(o.expedition, 1, META_EXPEDITIONS) &&
+    wholeIn(o.chapter, 1, META_EXPEDITIONS) &&
     recordOf(o.unlocks, META_IDS, v => v === 1) &&
     recordOf(o.buildings, META_IDS, v => wholeIn(v, 0, 99)) &&
-    recordOf(o.badges, 32, v => v === 1)
+    recordOf(o.badges, 32, v => v === 1) &&
+    recordOf(o.rel, 32, v => wholeIn(v, 0, 9999)) &&
+    recordOf(o.gifted, 32, v => wholeIn(v, 0, META_MAX)) &&
+    recordOf(o.residents, 64, v => wholeIn(v, 1, META_MAX)) &&
+    Array.isArray(o.genes) &&
+    o.genes.length <= META_GENES &&
+    o.genes.every((/** @type {unknown} */ g) => typeof g === 'string' && /^[a-z0-9_]{1,64}@[a-z0-9_]{1,64}$/.test(g)) &&
+    new Set(o.genes).size === o.genes.length &&
+    validHistory(o.history)
   );
 }
 /** a stored meta filled out with anything new (fields a later version adds); one that still fails the check is
@@ -74,5 +100,7 @@ export function validMeta(o) {
 /** @param {any} o @returns {Meta} */
 export function metaFill(o) {
   const filled = Object.assign(newMeta(), o && typeof o === 'object' && !Array.isArray(o) ? o : {});
+  /* RL-S1: a broken history is dropped on its own, not the whole meta with it */
+  if (!validHistory(filled.history)) filled.history = [];
   return validMeta(filled) ? filled : newMeta();
 }

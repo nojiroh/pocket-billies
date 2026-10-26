@@ -132,6 +132,7 @@ test("a region run's places meet only its dex, in its varieties; its mini-bosses
       assert.equal(new Set(P.list.map(e => e[0])).size, P.list.length, `${seed}: ${id} lists a species once`);
     }
     const foes = Object.values(runFoes(run, { leaders: TRAINERS.filter(T => T.miniboss), rules: GAME_DATA.rules.run }))
+      .filter(F => F.runFoe !== 'rival')
       .sort((a, b) => a.runNode - b.runNode)
       .map(F => F.from);
     assert.deepEqual(foes, run.region.leaders, `${seed}: the leaders in order`);
@@ -167,4 +168,11 @@ test("the world map: each zone's places stand in a region of their own, with the
     });
     assert.ok(look.regions.starter, `${seed}: the starter region stays (between the zones)`);
   }
+});
+
+test('HB-7: every region theme has its own sky train, a train prop', () => {
+  const props = RAW.scenery.props,
+    trains = Object.values(RAW.regions.themes).map(T => T.train && T.train.k);
+  for (const k of trains) assert.equal(props[k] && props[k].group, 'sky_train', `${k} is not a sky train`);
+  assert.equal(new Set(trains).size, trains.length, 'two themes share a train');
 });

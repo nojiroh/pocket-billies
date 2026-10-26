@@ -1,0 +1,22 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "banter.schema.json",
+ "title": "game/data/banter.json: the story director's lines, picked by who says them and the run history (roguelite track RL-S1; logic/story-pick.js)",
+ "type": "object",
+ "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+ "minProperties": 1,
+ "additionalProperties": {
+  "type": "object",
+  "required": ["who", "priority", "script"],
+  "additionalProperties": false,
+  "properties": {
+   "who": {"description": "who it is for: a hub character (chosen, hazel, juniper: their first talk after a run), back_lost (the scene after a lost run), leader (a run's leader before the battle), bureau (a Bureau agent's sight line), rival (Blake before a run battle, RL-S2), thanks_chosen, thanks_hazel, thanks_juniper (their thank-you for a gift, RL-S2)", "enum": ["chosen", "hazel", "juniper", "back_lost", "leader", "bureau", "rival", "thanks_chosen", "thanks_hazel", "thanks_juniper"]},
+   "when": {"description": "a condition (docs/SCRIPTS.md): the line can be picked while it holds", "type": "string", "minLength": 1, "maxLength": 200},
+   "priority": {"description": "the highest priority of the lines that can be picked wins; a tie is drawn", "type": "integer", "minimum": 0, "maximum": 99},
+   "once": {"description": "said once only", "type": "boolean"},
+   "cooldown": {"description": "runs that must end before it can be said again", "type": "integer", "minimum": 1, "maximum": 50},
+   "must": {"description": "picked before any line without it whenever it can be", "type": "boolean"},
+   "script": {"description": "what is said: a script (docs/SCRIPTS.md), most often one line", "type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 40}
+  }
+ }
+}

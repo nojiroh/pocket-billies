@@ -2,9 +2,10 @@
 /* ================= ENGINE FRAME BLOCK =================
    Phase 20 (stage C3): the frame's light values (sun, sky, fog, shadow maps, lamps, contact shadows) as one std140
    uniform block, packed once per frame and read by every lit program, instead of about 40 uniform calls each time a
-   lit program is bound (light.js setLightUniforms). Used when quality.frameBlock is on. The offsets are worked out from
+   lit program is bound (light.js setLightUniforms; on for every lit program since phase 20 C3's close-out). The offsets are worked out from
    the block's own GLSL by the std140 rules, so the text is the one place the layout is written. Nothing here touches
-   WebGL; Node tests check the packing against setLightUniforms. */
+   WebGL; Node tests check the packing against what the old setLightUniforms sent one uniform at a time (kept in
+   tools/test/frame-block.test.mjs as the reference). */
 /* uCurve stays a plain uniform: the vertex shaders read it, and the shadow passes set it before the frame's light
    context exists */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */

@@ -13,7 +13,7 @@ import { provide, reducedMotion } from './hooks.js';
 import { clamp } from './util.js';
 import { hexToRgb } from './art.js';
 import { artImage, mapBridges, walkView } from './walk-view.js';
-import { ensurePrograms, gpuState, imageTexture } from './engine/webgl.js';
+import { ensurePrograms, gpuBuffer, gpuFree, gpuState, gpuVao, imageTexture } from './engine/webgl.js';
 import { WALL_COLORS, defaultWallMaterial, groundHeightAt, standingHeightAt } from './walk/heights.js';
 import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
 import { BUILDING_SHADERS, buildingArt, buildingGuard } from './buildings.js';
@@ -41,6 +41,7 @@ export function setDrawStructures(v) {
 }
 /* to-module: end */
 export const structureState = { key: '', mesh: null, parts: [] };
+provide({ structureState }); /* to-module */
 const STRUCTURE_MATERIALS = {
   iron: { tex: 15, col: [0.27, 0.3, 0.38] },
   wood: { tex: 14, col: [0.6, 0.42, 0.28] },
@@ -507,12 +508,12 @@ function buildStructures(sc) {
   }
   if (!I.length) return { mesh: null, parts: [] };
   const gl = gpuState.gl,
-    vao = gl.createVertexArray();
+    vao = gpuVao('meshes');
   gl.bindVertexArray(vao);
-  const vb = gl.createBuffer();
+  const vb = gpuBuffer('meshes', V.length * 4);
   gl.bindBuffer(gl.ARRAY_BUFFER, vb);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(V), gl.STATIC_DRAW);
-  const ib = gl.createBuffer();
+  const ib = gpuBuffer('meshes', I.length * 4);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(I), gl.STATIC_DRAW);
   let off = 0;
@@ -549,12 +550,9 @@ function ensureStructures() {
 }
 function freeStructures() {
   if (!structureState.mesh) return;
-  const gl = gpuState.gl;
-  try {
-    gl.deleteVertexArray(structureState.mesh.vao);
-    gl.deleteBuffer(structureState.mesh.vb);
-    gl.deleteBuffer(structureState.mesh.ib);
-  } catch (e) {}
+  gpuFree(structureState.mesh.vao);
+  gpuFree(structureState.mesh.vb);
+  gpuFree(structureState.mesh.ib);
   structureState.mesh = null;
   structureState.parts = [];
 }

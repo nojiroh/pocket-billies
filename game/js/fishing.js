@@ -12,6 +12,7 @@ import { clamp, random } from './util.js';
 import { COATS, RULES, SPECIES, gameData } from './game-data.js';
 import { coatPrefix, encounterPoolHere, newUid, pickWeighted } from './logic/rules.js';
 import { coatRoll } from './logic/coats.js';
+import { waterKindBase } from './logic/water-kinds.js';
 import { startWild } from './logic/battle-engine.js';
 import { activeBattle, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
@@ -105,7 +106,8 @@ function fishKindAt(x, z) {
 }
 /* what bites: the kind's list, at the place's levels plus the kind's bonus */
 function fishPick(kind) {
-  const F = (gameData.fishing || {})[kind] || (gameData.fishing || {}).pond;
+  const T = gameData.fishing || {},
+    F = T[kind] || T[waterKindBase(kind)] || T.pond; /* WA-5a: a new kind fishes as the look it borrows */
   if (!F || !F.list || !F.list.length) return null;
   const list = F.list.filter(([id]) => SPECIES[id]);
   if (!list.length) return null;

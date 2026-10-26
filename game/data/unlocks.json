@@ -20,27 +20,27 @@
   "cost": 150,
   "grant": {"shop":"revive"}
  },
- "airship_2": {
-  "name": "Airship Lv 2",
-  "about": "A longer reach: the airship can learn the way to new lands.",
-  "at": "airship",
+ "station_2": {
+  "name": "Station Lv 2",
+  "about": "A longer line: the trains learn the way to new lands.",
+  "at": "station",
   "cost": 1,
-  "grant": {"building":"airship","level":2}
+  "grant": {"building":"station","level":2}
  },
  "biome_ridge": {
   "name": "Ridge lands",
   "about": "Ridge routes can show up on a run's map.",
-  "at": "airship",
+  "at": "station",
   "cost": 1,
-  "requires": ["airship_2"],
+  "requires": ["station_2"],
   "grant": {"biome":"ridge"}
  },
  "biome_autumn": {
   "name": "Autumn lands",
   "about": "Autumn routes can show up on a run's map.",
-  "at": "airship",
+  "at": "station",
   "cost": 1,
-  "requires": ["airship_2"],
+  "requires": ["station_2"],
   "grant": {"biome":"autumn"}
  },
  "ranch_2": {
@@ -57,6 +57,36 @@
   "cost": 120,
   "requires": ["ranch_2"],
   "grant": {"building":"ranch","level":3}
+ },
+ "genebank_2": {
+  "name": "Gene Bank Lv 2",
+  "about": "Splice front parts too, and a steadier hand: Stability limit 4.",
+  "at": "genebank",
+  "cost": 30,
+  "grant": {"building":"genebank","level":2}
+ },
+ "genebank_3": {
+  "name": "Gene Bank Lv 3",
+  "about": "Splice back parts too, and the steadiest hand: Stability limit 5.",
+  "at": "genebank",
+  "cost": 80,
+  "requires": ["genebank_2"],
+  "grant": {"building":"genebank","level":3}
+ },
+ "workshop_2": {
+  "name": "Workshop Lv 2",
+  "about": "Fit bot legs too, and upgrade an Augment to +2.",
+  "at": "workshop",
+  "cost": 40,
+  "grant": {"building":"workshop","level":2}
+ },
+ "workshop_3": {
+  "name": "Workshop Lv 3",
+  "about": "Upgrade an Augment to +3.",
+  "at": "workshop",
+  "cost": 100,
+  "requires": ["workshop_2"],
+  "grant": {"building":"workshop","level":3}
  },
  "first_run": {
   "name": "First flight",

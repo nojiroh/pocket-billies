@@ -12,9 +12,15 @@
 import { expose } from './test-globals.js';
 import {
   ALTERNATE_PROPS,
+  FIELD_MOVES,
+  ITEMS,
+  RULES,
   TERRAIN_MATERIALS,
+  addRipple,
+  addWakeRipple,
   addWalked,
   artCacheVersion,
+  billyName,
   buddyTap,
   buildingLabel,
   cachedBuildingSignature,
@@ -23,14 +29,17 @@ import {
   environment,
   environmentSeason,
   environmentState,
+  fieldClimb,
   gameData,
   groundHeightAt,
+  healAll,
   leaveRoom,
   lifePaths,
   loreFlags,
   mapChatLines,
   mapFiles,
   mapsOfView,
+  maxHp,
   needMaps,
   paintGroundRect,
   paintWorkerState,
@@ -39,14 +48,19 @@ import {
   provide,
   rawHeightAt,
   reducedMotion,
+  riderName,
+  runTownFolkCap,
   saveData,
+  saveNow,
   seamlessMapById,
   smooth01,
   soundEffect,
   soundEffectAt,
+  speciesOf,
   standingHeightAt,
   storyAllows,
   talkFolk,
+  toast,
   uiState,
   waitForPaintWorker,
   walkRenderer,
@@ -54,6 +68,11 @@ import {
 import { clamp } from './util.js';
 import { pointInProp, turnedBounds, turnedPoint } from './logic/prop-turn.js';
 import { roomDoorPush, roomToLocal } from './logic/room-turn.js';
+import { waterKindHeals } from './logic/water-kinds.js';
+import { WADE_COST, wadeDepthAt, wadeHere, wadeKindAt, wadeSpeed, wadeWalkable } from './logic/wading.js';
+import { WATER_HEAL_FLAG, waterHealDue, waterHurt, waterMarshOf, waterReedAt } from './logic/water-play.js';
+import { fieldMoveText } from './logic/run-side.js';
+import { SURF_COST, SURF_SPEED, climbAt, fallDir, fallTop, surfCan, surfable } from './logic/surf.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
 import { orbitStickYaw, orbitWalkStep } from './logic/camera-orbit.js';
 import { frameStop } from './frame-scheduler.js';
@@ -178,6 +197,7 @@ expose({
   navCellAt: [() => navCellAt, v => (navCellAt = v)],
   navCostAt: [() => navCostAt, v => (navCostAt = v)],
   navGrid: [() => navGrid, v => setNavGrid(v)],
+  navOpen: [() => navOpen],
   nearestWalkableCell: [() => nearestWalkableCell, v => (nearestWalkableCell = v)],
   newStepGrid: [() => newStepGrid, v => (newStepGrid = v)],
   openingHoursKind: [() => openingHoursKind, v => (openingHoursKind = v)],
@@ -191,6 +211,7 @@ expose({
   pixelUnit: [() => pixelUnit, v => (pixelUnit = v)],
   plainPropVariant: [() => plainPropVariant, v => (plainPropVariant = v)],
   plainTileIndex: [() => plainTileIndex, v => (plainTileIndex = v)],
+  playerOpenAt: [() => playerOpenAt, v => (playerOpenAt = v)],
   pointAlongMapPath: [() => pointAlongMapPath, v => (pointAlongMapPath = v)],
   pointAlongPolyline: [() => pointAlongPolyline, v => (pointAlongPolyline = v)],
   polyline: [() => polyline, v => (polyline = v)],
@@ -212,6 +233,7 @@ expose({
   slopeSpeedFactor: [() => slopeSpeedFactor, v => (slopeSpeedFactor = v)],
   stableCells: [() => stableCells, v => (stableCells = v)],
   startClimb: [() => startClimb, v => (startClimb = v)],
+  startFallClimb: [() => startFallClimb, v => (startFallClimb = v)],
   stepCellAt: [() => stepCellAt, v => (stepCellAt = v)],
   stepClimb: [() => stepClimb, v => (stepClimb = v)],
   stepEdgeShape: [() => stepEdgeShape, v => (stepEdgeShape = v)],
@@ -222,6 +244,9 @@ expose({
   stepWallAt: [() => stepWallAt, v => (stepWallAt = v)],
   stopWalkView: [() => stopWalkView, v => setStopWalkView(v)],
   storeStepGrid: [() => storeStepGrid, v => (storeStepGrid = v)],
+  surfMount: [() => surfMount, v => (surfMount = v)],
+  surfOn: [() => surfOn, v => (surfOn = v)],
+  surfTeam: [() => surfTeam, v => (surfTeam = v)],
   syncExits: [() => syncExits, v => (syncExits = v)],
   tallGrassProps: [() => tallGrassProps, v => (tallGrassProps = v)],
   terrainAt: [() => terrainAt, v => (terrainAt = v)],
@@ -233,10 +258,13 @@ expose({
   updatePlayer: [() => updatePlayer, v => setUpdatePlayer(v)],
   updatePlayerHeight: [() => updatePlayerHeight, v => (updatePlayerHeight = v)],
   valueNoise2d: [() => valueNoise2d, v => (valueNoise2d = v)],
+  wadeDepthHere: [() => wadeDepthHere, v => (wadeDepthHere = v)],
+  wadeSpeedHere: [() => wadeSpeedHere, v => (wadeSpeedHere = v)],
   walkData: [() => walkData, v => setWalkData(v)],
   walkTo: [() => walkTo, v => (walkTo = v)],
   walkView: [() => walkView],
   walkablePointNear: [() => walkablePointNear, v => (walkablePointNear = v)],
+  waterPlayStep: [() => waterPlayStep, v => (waterPlayStep = v)],
   worldPatchTilesOn: [() => worldPatchTilesOn, v => (worldPatchTilesOn = v)],
   worldToScreen: [() => worldToScreen, v => setWorldToScreen(v)],
 });
@@ -2712,16 +2740,34 @@ export function navGrid() {
     rows = sc.tiles || [],
     PPU = C.ppu || 34,
     blk = new Uint8Array(gw * gh),
-    cost = new Float32Array(gw * gh).fill(1);
+    cost = new Float32Array(gw * gh).fill(1),
+    dry = new Uint8Array(gw * gh) /* WA-6a: over water but out of it (a stepping stone, a jetty, a bridge deck) */,
+    surf = new Uint8Array(gw * gh); /* WA-6b: deep water the player may Surf on (blocked for everyone else) */
   for (let j = 0; j < gh; j++)
     for (let i = 0; i < gw; i++) {
       const ti = Math.floor(i / N),
         tz = Math.floor(j / N),
         ch = (rows[sc.h - 1 - tz] || '')[ti] || sc.edge,
         T = C.terrains[ch];
-      const wk = T && T.walk != null ? !!T.walk : !'wd'.includes(ch) || !!sc.ride;
-      /* v24: in a riding scene you cross water on your billionaire */ if (!wk) blk[j * gw + i] = 1;
-      cost[j * gw + i] = (T && T.paved) || 'pcmbaqhe'.includes(ch) ? 0.7 : ch === 't' ? 1.25 : ch === 'y' ? 1.1 : 1;
+      /* v24: in a riding scene you cross water on your billionaire; WA-6a: elsewhere you wade the shallows (not lava or
+         ice), slowly, and deep water blocks (logic/wading.js) */
+      const wk = wadeWalkable(sc, ch, T, (i + 0.5) / N, (j + 0.5) / N);
+      /* WA-6b: deep water you may Surf on is left open while the props, rooms and arches close what they stand on,
+         then shut again for all but the surfing player (below) */
+      if (!wk && surfable(sc, ch, T, (i + 0.5) / N, (j + 0.5) / N)) surf[j * gw + i] = 1;
+      else if (!wk) blk[j * gw + i] = 1;
+      cost[j * gw + i] =
+        (T && T.paved) || 'pcmbaqhe'.includes(ch)
+          ? 0.7
+          : ch === 't'
+            ? 1.25
+            : ch === 'y'
+              ? 1.1
+              : ch === 'w' && !sc.ride
+                ? WADE_COST
+                : surf[j * gw + i]
+                  ? SURF_COST
+                  : 1;
     }
   const each = (x0, z0, x1, z1, fn) => {
     for (let j = Math.max(0, Math.floor(z0 * N)); j < Math.min(gh, Math.ceil(z1 * N)); j++)
@@ -2735,7 +2781,13 @@ export function navGrid() {
   /* stepping stones and bridges open water first, then solid things close ground */
   for (const p of sc.props || []) {
     const M = C.props[p.k];
-    if (M && M.walk) disc(p.x, p.z, M.walk * (p.s || 1), 0);
+    if (M && M.walk) {
+      const r = M.walk * (p.s || 1);
+      disc(p.x, p.z, r, 0);
+      each(p.x - r, p.z - r, p.x + r, p.z + r, (q, x, z) => {
+        if (Math.hypot(x - p.x, z - p.z) <= r) dry[q] = 1;
+      });
+    }
   }
   for (const p of sc.props || []) {
     const M = C.props[p.k];
@@ -2832,6 +2884,7 @@ export function navGrid() {
           h = d;
           blk[q] = 0;
           cost[q] = 0.75;
+          dry[q] = 1;
         }
       }
       lv[q] = h;
@@ -2866,8 +2919,15 @@ export function navGrid() {
       else each(a.x, a.z + o - pr / 2, a.x + d, a.z + o + pr / 2, q => (blk[q] = 1));
     }
   }
+  /* WA-6b: deep water a solid thing stands in, or a deck or a stone opened, is not surfed; the rest is shut for
+     everyone but the surfing player (navOpen) */
+  for (let q = 0; q < gw * gh; q++)
+    if (surf[q]) {
+      if (blk[q] || dry[q]) surf[q] = 0;
+      else blk[q] = 1;
+    }
   walkView.navKey = key;
-  return (walkView.nav = { N, gw, gh, blk, cost, lv, hop });
+  return (walkView.nav = { N, gw, gh, blk, cost, lv, hop, dry, surf });
 }
 /* phase 04d: walk/heights.js puts the 3D version in place */
 export function setNavGrid(v) {
@@ -2881,12 +2941,15 @@ export function canStepBetween(G, c, q, noHop) {
   if (d < -MAX_STEP_RISE) return !noHop && !!G.hop[c] && d > -MAX_HOP_DOWN;
   return true;
 }
-/* a straight step from a to b (keyboard walking, animals): free at b and no wall in between */
-export function canStepTo(ax, az, bx, bz, noHop) {
+/** WA-6b: is nav cell q open: not blocked, or deep water you Surf on when `deep` (the player with Surf on) */
+const navOpen = (G, q, deep) => !G.blk[q] || (!!deep && !!G.surf && !!G.surf[q]);
+/* a straight step from a to b (keyboard walking, animals): free at b and no wall in between; `deep`: the player
+   surfing (WA-6b), deep water is open too */
+export function canStepTo(ax, az, bx, bz, noHop, deep) {
   const G = navGrid(),
     c = navCellAt(ax, az),
     q = navCellAt(bx, bz);
-  if (q < 0 || G.blk[q]) return false;
+  if (q < 0 || !navOpen(G, q, deep)) return false;
   if (c < 0 || c === q) return true;
   return canStepBetween(G, c, q, noHop);
 }
@@ -2900,12 +2963,12 @@ export function isWalkable(x, z) {
   const c = navCellAt(x, z);
   return c >= 0 && !walkView.nav.blk[c];
 }
-function nearestWalkableCell(x, z) {
+function nearestWalkableCell(x, z, deep) {
   const G = navGrid(),
-    { N, gw, gh, blk } = G,
+    { N, gw, gh } = G,
     ci = clamp(Math.floor(x * N), 0, gw - 1),
     cj = clamp(Math.floor(z * N), 0, gh - 1);
-  if (!blk[cj * gw + ci]) return { i: ci, j: cj };
+  if (navOpen(G, cj * gw + ci, deep)) return { i: ci, j: cj };
   for (let r = 1; r < 40; r++) {
     let best = null,
       bd = 1e9;
@@ -2914,7 +2977,7 @@ function nearestWalkableCell(x, z) {
         if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue;
         const i = ci + di,
           j = cj + dj;
-        if (i < 0 || j < 0 || i >= gw || j >= gh || blk[j * gw + i]) continue;
+        if (i < 0 || j < 0 || i >= gw || j >= gh || !navOpen(G, j * gw + i, deep)) continue;
         const d = di * di + dj * dj;
         if (d < bd) {
           bd = d;
@@ -2931,36 +2994,126 @@ export function walkablePointNear(x, z) {
   if (isWalkable(x, z)) return [x, z];
   return [(c.i + 0.5) / NAV_CELLS_PER_M, (c.j + 0.5) / NAV_CELLS_PER_M];
 }
-function hasLineOfSight(a, b, mc) {
+function hasLineOfSight(a, b, mc, deep) {
   const G = navGrid(),
     n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 0.18) + 1;
   let pc = -1;
   for (let k = 0; k <= n; k++) {
     const c = navCellAt(a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n);
-    if (c < 0 || G.blk[c]) return false;
+    if (c < 0 || !navOpen(G, c, deep)) return false;
     if (mc != null && G.cost[c] > mc + 0.01) return false;
     if (pc >= 0 && c !== pc && Math.abs(G.lv[c] - G.lv[pc]) > MAX_STEP_RISE) return false;
     pc = c;
   }
   return true;
 }
+/** WA-6a: how far under the surface someone stands at (x, z) in this scene's shallows: 0 on land, on a bridge deck,
+ * a stepping stone or a jetty (logic/wading.js wadeDepthAt) */
+export function wadeDepthHere(x, z) {
+  const sc = walkView.sc;
+  if (!sc || sc.ride) return 0;
+  const c = navCellAt(x, z);
+  if (c >= 0 && walkView.nav.dry[c]) return 0;
+  return wadeDepthAt(sc, x, z);
+}
+/** WA-5a: your speed at (x, z) as a share of walking on land: the shallows' depth and their kind (the marsh and the
+ * bog slow you more, logic/water-kinds.js) */
+function wadeSpeedHere(x, z) {
+  const d = wadeDepthHere(x, z);
+  return d > 0 ? wadeSpeed(d, wadeKindAt(walkView.sc, x, z)) : 1;
+}
+/** WA-5a: a hot spring heals the party once a run as you step in with someone hurt; a reed gives what it hides as
+ * you pass it, once a run (logic/water-play.js; the run's own flags) */
+function waterPlayStep(P, wd) {
+  const sc = walkView.sc;
+  if (!sc || !saveData) return;
+  const F = saveData.flags || (saveData.flags = {});
+  if (
+    wd > 0.05 &&
+    waterHealDue(
+      wadeKindAt(sc, P.x, P.z),
+      F,
+      (saveData.team || []).some(m => waterHurt(m, maxHp(m)))
+    )
+  ) {
+    F[WATER_HEAL_FLAG] = 1;
+    healAll();
+    if (typeof debugLog !== 'undefined') debugLog.add('scene', 'hot spring: the team healed');
+    if (typeof toast === 'function') toast('The hot spring’s warmth restores your team!');
+    if (typeof saveNow === 'function') saveNow();
+  }
+  if (!(sc.props || []).some(p => p.hide)) return;
+  const box = (sc.comp && sc.comp.box) || [0, 0],
+    R = waterReedAt(sc, P.x, P.z, F, box[0], box[1]);
+  if (!R || !ITEMS[R.k]) return;
+  F[R.flag] = 1;
+  saveData.items[R.k] = (saveData.items[R.k] || 0) + 1;
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', `reeds: found ${R.k}`);
+  if (typeof toast === 'function') toast(`You found a ${ITEMS[R.k].n} in the reeds!`);
+  if (typeof saveNow === 'function') saveNow();
+}
+/** WA-6b: the team's Billies still standing, as fieldMoveState reads them (their names and types) */
+function surfTeam() {
+  return (saveData.team || [])
+    .filter(m => m.hp > 0 && speciesOf(m))
+    .map(m => ({ name: billyName(m), types: speciesOf(m).types }));
+}
+/** WA-6b: may the player Surf onto deep water now (logic/surf.js surfCan: the Water Badge and a Water Billie standing),
+ * or already afloat (never stranded if the team changes on the water). Not in a riding scene: its water is walkable */
+function surfOn() {
+  const sc = walkView.sc,
+    P = walkView.pl;
+  if (!sc || sc.ride || !P || typeof saveData === 'undefined' || !saveData || !saveData.team) return false;
+  const G = navGrid(),
+    c = navCellAt(P.x, P.z);
+  if (c >= 0 && G.surf[c]) return true;
+  return surfCan(FIELD_MOVES.surf, (saveData.meta || {}).badges, surfTeam());
+}
+/** WA-6b: can the player stand at (x, z): open ground or shallows, or deep water you Surf on when `deep` */
+export function playerOpenAt(x, z, deep) {
+  const c = navCellAt(x, z);
+  return c >= 0 && navOpen(navGrid(), c, deep);
+}
+/** WA-6b: on or off the mount, at the edge of deep water: rings, the lift eased in or out (walk/prop-look.js
+ * rideMountItem reads P.surfT), the move's line the first time in a place, and the debug log */
+function surfMount(P, on, quiet) {
+  P.surf = on;
+  P.surfId = walkView.id;
+  P.surfT = walkView.t;
+  if (quiet) return;
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', on ? 'surf on' : 'surf off');
+  if (!reducedMotion && typeof addRipple === 'function')
+    for (let k = 0; k < 3; k++) setTimeout(() => addRipple(P.x, P.z - 0.05, 0.6 + k * 0.4), k * 140);
+  const M = FIELD_MOVES.surf;
+  if (on && M && walkView.surfSaid !== walkView.id && typeof toast === 'function') {
+    walkView.surfSaid = walkView.id;
+    toast(fieldMoveText(M, 'used', riderName()));
+  }
+}
 function navCostAt(p) {
   const c = navCellAt(p[0], p[1]);
   return c < 0 ? 1 : walkView.nav.cost[c];
 }
-/* A* on the grid (8 directions, no corner cutting), then string-pulled so people walk in straight lines */
+/* A* on the grid (8 directions, no corner cutting), then string-pulled so people walk in straight lines; `o.surf`:
+   the player surfing (WA-6b), deep water is open too */
 export function findPath(ax, az, bx, bz, o = {}) {
-  const G = navGrid(),
-    { N, gw, gh, blk, cost } = G,
-    a = nearestWalkableCell(ax, az),
-    b = nearestWalkableCell(bx, bz);
+  const deep = !!o.surf,
+    G = navGrid(),
+    { N, gw, gh, cost } = G,
+    a = nearestWalkableCell(ax, az, deep),
+    b = nearestWalkableCell(bx, bz, deep);
   if (!a || !b) return null;
-  const noHop = !!o.noHop;
+  const noHop = !!o.noHop,
+    blk = deep ? G.blk.map((v, q) => (v && !G.surf[q] ? 1 : 0)) : G.blk,
+    here = (x, z) => {
+      const c = navCellAt(x, z);
+      return c >= 0 && !blk[c];
+    };
   const s = a.j * gw + a.i,
     e = b.j * gw + b.i,
-    start = isWalkable(ax, az) ? [ax, az] : [(a.i + 0.5) / N, (a.j + 0.5) / N],
-    end = isWalkable(bx, bz) ? [bx, bz] : [(b.i + 0.5) / N, (b.j + 0.5) / N];
-  if (s === e || hasLineOfSight(start, end, Math.max(navCostAt(start), navCostAt(end)))) return [start, end];
+    start = here(ax, az) ? [ax, az] : [(a.i + 0.5) / N, (a.j + 0.5) / N],
+    end = here(bx, bz) ? [bx, bz] : [(b.i + 0.5) / N, (b.j + 0.5) / N];
+  if (s === e || hasLineOfSight(start, end, Math.max(navCostAt(start), navCostAt(end)), deep)) return [start, end];
   const n = gw * gh;
   if (!walkView._g || walkView._g.length !== n) {
     walkView._g = new Float32Array(n);
@@ -3066,7 +3219,7 @@ export function findPath(ax, az, bx, bz, o = {}) {
   let i = 0;
   while (i < pts.length - 1) {
     let j = pts.length - 1;
-    while (j > i + 1 && !hasLineOfSight(pts[i], pts[j], Math.max(navCostAt(pts[i]), navCostAt(pts[j])))) j--;
+    while (j > i + 1 && !hasLineOfSight(pts[i], pts[j], Math.max(navCostAt(pts[i]), navCostAt(pts[j])), deep)) j--;
     out.push(pts[j]);
     i = j;
   }
@@ -3082,14 +3235,25 @@ function encounterCandidates(sc) {
     rows = sc.tiles || [],
     hub = mapHub(sc),
     ex = sc.exits || [],
-    patches = sc.grassPatches && sc.grassPatches.length ? sc.grassPatches : null;
+    patches = sc.grassPatches && sc.grassPatches.length ? sc.grassPatches : null,
+    marsh = !!waterMarshOf(sc);
   navGrid();
   for (let j = 0; j < sc.h; j++)
     for (let i = 1; i < sc.w - 1; i++) {
       const ch = (rows[j] || '')[i];
-      if (!good.includes(ch)) continue;
       const x = i + 0.5,
         z = sc.h - j - 0.5;
+      /* WA-5a: shallows for others: in a generated place a wild Billie may wait in shallows you wade by its tall grass
+         (within a patch, 2 m further in a marsh or a bog), never in a hot spring */
+      if (ch === 'w' && patches && wadeHere(sc, x, z) && !waterKindHeals(wadeKindAt(sc, x, z))) {
+        const more = marsh ? 2 : 0;
+        if (Math.hypot(x - hub[0], z - hub[1]) < 2.2 || ex.some(e => Math.hypot(e[0] - x, e[1] - z) < 2.2)) continue;
+        if (!patches.some(g => Math.hypot(g.x - x, g.z - z) <= g.r + more)) continue;
+        if ((sc.props || []).some(p => Math.hypot(p.x - x, p.z - z) < 0.9)) continue;
+        out.push([x, z, 1]);
+        continue;
+      }
+      if (!good.includes(ch)) continue;
       if (!isWalkable(x, z)) continue;
       const d = Math.hypot(x - hub[0], z - hub[1]);
       if (ex.some(e => Math.hypot(e[0] - x, e[1] - z) < 2.2)) continue;
@@ -3121,8 +3285,11 @@ function encounterCandidates(sc) {
     }
   return (walkView.cand = out);
 }
-export function encounterSpot(sc, id, used) {
-  const C = encounterCandidates(sc);
+export function encounterSpot(sc, id, used, hab) {
+  /* RT-4: a Billie of the water or the woods waits on its habitat's points (mapgen.js mapgenHabitats), where the
+     place has them; the rest (and those, where it has none) in the tall grass */
+  const H = hab && sc.habitats && sc.habitats[hab],
+    C = H && H.length ? H.map(p => [p[0], p[1], 1]) : encounterCandidates(sc);
   let h = 0;
   for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   const tot = C.reduce((a, c) => a + c[2], 0);
@@ -3244,7 +3411,7 @@ export function handleWalkClick(ev) {
 }
 export function walkTo(pt, cb) {
   const P = walkView.pl,
-    r = findPath(P.x, P.z, pt[0], pt[1]);
+    r = findPath(P.x, P.z, pt[0], pt[1], { surf: surfOn() });
   if (!r) {
     if (cb) cb();
     return;
@@ -3387,6 +3554,28 @@ export function startClimb(p) {
     up,
   };
 }
+/** WA-6b: the Waterfall climb (field-moves.js fieldClimb, after its yes): from where you are at the fall's foot up its
+ * face to the water or ground at its top (logic/surf.js fallTop), on your mount, as a ladder's climb (stepClimb) */
+export function startFallClimb(F) {
+  const P = walkView.pl,
+    top = fallTop(F),
+    [dx, dz] = fallDir(F),
+    y0 = P.yv ?? standingHeightAt(P.x, P.z),
+    y1 = standingHeightAt(top[0], top[1]);
+  P.route = null;
+  P.goal = null;
+  P.climb = {
+    a: [P.x, P.z, y0],
+    b: [top[0], top[1], y1],
+    lx: F.x + dx * 0.3,
+    lz: F.z + dz * 0.3,
+    t: 0,
+    dur: 1.1 + Math.abs(y1 - y0) * 0.22,
+    up: true,
+    fall: 1,
+    face: directionOf(-dx, -dz),
+  };
+}
 function stepClimb(dt) {
   const P = walkView.pl,
     C = P.climb;
@@ -3416,14 +3605,18 @@ function stepClimb(dt) {
   }
   const was = Math.floor(P.climbRung || 0);
   P.climbRung = k * 8;
-  if (Math.floor(P.climbRung) !== was && typeof soundEffect === 'function') soundEffect('step', { ter: 'b' });
+  /* WA-6b: up a waterfall the foot churns with rings instead of the ladder's rungs */
+  if (Math.floor(P.climbRung) !== was)
+    if (!C.fall) {
+      if (typeof soundEffect === 'function') soundEffect('step', { ter: 'b' });
+    } else if (k < k2 && !reducedMotion && typeof addRipple === 'function') addRipple(C.lx, C.lz, 0.8);
   P.gait = (P.gait || 0) + Math.hypot(x - P.x, z - P.z, y - (P.yv ?? y));
   P.x = x;
   P.z = z;
   P.yv = y;
   P.yId = walkView.id;
   P.walk = 1;
-  P.dir = k >= k1 && k < k2 ? 'up' : C.up ? 'up' : 'down';
+  P.dir = C.face || (k >= k1 && k < k2 ? 'up' : C.up ? 'up' : 'down');
   P.hop = null;
   if (k >= 1) {
     P.climb = null;
@@ -3572,12 +3765,25 @@ function movePlayer(st, dt) {
       const run = walkView.run || K.run || (km > 0.92 && alwaysRun()) ? RUN_FACTOR : km < 0.5 ? 0.6 : 1;
       /* CAM-2: whether you run, for the camera's ease out (walk/camera.js) */
       P.running = run === RUN_FACTOR;
-      const s = WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l);
+      /* WA-6a: slower in the shallows, the deeper the slower (logic/wading.js) */
+      const s =
+        WALK_SPEED *
+        dt *
+        run *
+        slopeSpeedFactor(P.x, P.z, wx / l, wz / l) *
+        wadeSpeedHere(P.x, P.z) *
+        (P.surf ? SURF_SPEED : 1);
+      /* WA-6b: with Surf you ride out onto deep water; at a climbable fall's foot, pushing up it asks to climb */
+      const deep = surfOn();
       let nx = P.x + (wx / l) * s,
         nz = P.z + (wz / l) * s;
       if (OrbM) [nx, nz] = orbitWalkStep(OrbM.c, P.x, P.z, wx / l, wz / l, s, OrbM.dead || 0);
-      if (canStepTo(P.x, P.z, nx, P.z)) P.x = nx;
-      if (canStepTo(P.x, P.z, P.x, nz)) P.z = nz;
+      if (canStepTo(P.x, P.z, nx, P.z, false, deep)) P.x = nx;
+      if (canStepTo(P.x, P.z, P.x, nz, false, deep)) P.z = nz;
+      if ((P.surf || wadeHere(sc, P.x, P.z)) && typeof fieldClimb === 'function') {
+        const F = climbAt(sc, P.x, P.z, wx, wz);
+        if (F) fieldClimb(F);
+      }
       mx = wx;
       mz = wz;
       /* towns track TW-0: in a room, pushing out through its doorway takes you outside (as tapping "Outside" does) */
@@ -3601,7 +3807,9 @@ function movePlayer(st, dt) {
         (P.rush || 1) *
         (K.run || alwaysRun() ? RUN_FACTOR : 1) *
         dt *
-        slopeSpeedFactor(P.x, P.z, (tg0[0] - P.x) / d0, (tg0[1] - P.z) / d0);
+        slopeSpeedFactor(P.x, P.z, (tg0[0] - P.x) / d0, (tg0[1] - P.z) / d0) *
+        wadeSpeedHere(P.x, P.z) *
+        (P.surf ? SURF_SPEED : 1);
       while (left > 0 && P.route) {
         const tg = P.route[P.ri],
           dx = tg[0] - P.x,
@@ -3655,9 +3863,41 @@ function movePlayer(st, dt) {
   P.wasWalk = P.walk;
   /* grass rustle and dust */
   P.rust -= dt;
+  /* WA-6a: in the shallows a wake of rings behind you as you wade (one now and then while you stand), and a splash
+     at your steps (walk/water.js addRipple; walkView.parts of kind 'splash', drawn as a pale puff by walk/effects.js) */
+  /* WA-6b: on the mount where you reach deep water you Surf on, off it where you reach shallows or shore (quietly
+     when the place has just changed) */
+  const NG = navGrid(),
+    pc = navCellAt(P.x, P.z),
+    afloat = pc >= 0 && !!NG.surf[pc];
+  if (afloat !== !!P.surf || P.surfId !== walkView.id) surfMount(P, afloat, P.surfId !== walkView.id);
+  const wd = wadeDepthHere(P.x, P.z);
+  if (P.walk) waterPlayStep(P, wd);
+  if (wd > 0.05 && typeof addRipple === 'function') {
+    P.wakeT = (P.wakeT || 0) - dt;
+    if (P.wakeT <= 0) {
+      P.wakeT = P.walk ? 0.3 : 1.6;
+      addWakeRipple(P.x, P.z - 0.05, P.walk ? 0.5 + wd : 0.35);
+    }
+  }
   if (P.walk && P.rust <= 0 && !reducedMotion) {
     const ch = terrainAt(P.x, P.z);
-    if (ch === 't') {
+    if (wd > 0.05) {
+      P.rust = 0.22;
+      for (let i = 0; i < 2; i++)
+        walkView.parts.push({
+          k: 'splash',
+          x: P.x + (Math.random() - 0.5) * 0.3,
+          z: P.z - 0.08,
+          y: 0.02,
+          vx: (Math.random() - 0.5) * 0.6,
+          vz: 0,
+          vy: 0.9 + Math.random() * 0.5,
+          life: 0,
+          max: 0.35,
+          g: 5,
+        });
+    } else if (ch === 't') {
       P.rust = 0.18;
       for (let i = 0; i < 3; i++)
         walkView.parts.push({
@@ -3988,6 +4228,12 @@ export function updateFolk(n, dt) {
   n = folkCount(walkView.sc, n);
   if (walkView.folkId !== walkView.id || (walkView.folkAll || walkView.folk).length !== n) initFolk(n);
   stepFolk(dt);
+  /* TW-2: a run town draws only its first few folk, by the graphics (rules.json run.town.cap); the rest keep their day */
+  const b = walkView.sc.baseId ? mapById(walkView.sc.baseId) : walkView.sc;
+  if (b && b.gen && b.kind === 'town' && RULES.run.town) {
+    const cap = runTownFolkCap(RULES.run.town, walkRenderer.q, saveData.preferences && saveData.preferences.aim);
+    if (walkView.folk.length > cap) walkView.folk = walkView.folk.filter(f => walkView.folkAll.indexOf(f) < cap);
+  }
 }
 export function tallGrassProps(C0) {
   const out = [];
@@ -4102,7 +4348,7 @@ export function drawExitLabels(C, st, hits, hub) {
   }
 }
 /* a label's gold: an exit you're headed for, the Actions sheet's marker */
-const LABEL_GOLD = '#C99A1E';
+export const LABEL_GOLD = '#C99A1E';
 /* the Actions sheet's marker (walk-tab.js walkMarkTo): a gold label bobbing over the building with that act, above its
    own label when that shows; at the screen's edge, pointing the way, when the building is off screen. It goes once
    you stand near the building, or when the building isn't in this map (a room, a run) */

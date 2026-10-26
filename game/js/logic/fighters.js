@@ -15,6 +15,7 @@
 /** @import { PartInstance, RobotFit } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 import { MOVES, ROBOTS, RULES, SPECIES, STAT_IDS } from '../game-data.js';
 import {
   robotMathAttack,
@@ -44,7 +45,7 @@ expose({
   robotBase: [() => robotBase],
   robotGemDef: [() => robotGemDef],
   // @ts-expect-error -- replaced on purpose
-  robotIdsFromSp: [() => robotIdsFromSp, v => (robotIdsFromSp = v)],
+  robotIdsFromSp: [() => robotIdsFromSp, v => ((robotIdsFromSp = v), provide({ robotIdsFromSp }))],
   robotMoves: [() => robotMoves],
   // @ts-expect-error -- replaced on purpose
   robotName: [() => robotName, v => (robotName = v)],
@@ -61,11 +62,12 @@ expose({
   // @ts-expect-error -- replaced on purpose
   speciesById: [() => speciesById, v => (speciesById = v)],
   // @ts-expect-error -- replaced on purpose
-  speciesOf: [() => speciesOf, v => (speciesOf = v)],
+  speciesOf: [() => speciesOf, v => ((speciesOf = v), provide({ speciesOf }))],
   // @ts-expect-error -- replaced on purpose
   validRobot: [() => validRobot, v => (validRobot = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ robotIdsFromSp, speciesOf });
 /* to-module: end */
 /** the numbers when rules.json has no robots section (older data, the tests' small fixture) */
 export const DEFAULT_ROBOT_RULES = /** @type {RobotRules} */ ({
@@ -100,6 +102,7 @@ export const isRobot = m => !!m && m.kind === 'robot';
 export const isRobotSp = sp => typeof sp === 'string' && sp.startsWith('bot:');
 /** @param {string} id @returns {RobotPart | undefined} */
 export const robotPartDef = id => ROBOTS.parts[id];
+provide({ robotPartDef }); /* to-module */
 /** @param {string} id @returns {RobotGem | undefined} */
 export const robotGemDef = id => ROBOTS.gems[id];
 /** does part id fit this slot? @param {string} id @param {RobotSlot} slot */

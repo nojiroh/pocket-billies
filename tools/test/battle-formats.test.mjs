@@ -47,6 +47,35 @@ test('a double battle: two a side, and each move hits the foe it was aimed at', 
   for (const h of hits) assert.ok(h.endsWith(` on ${name}.`), h);
 });
 
+test('RT-2: a route pair (one entry, double) starts a double on its own, even against a single Billie of yours', () => {
+  const T = TRAINERS[doubleTrainer()],
+    id = 'run_9_t0';
+  TRAINERS[id] = { ...T, id, name: 'Unpaid Intern & Lifestyle Vlogger', double: true, mate: { cls: 'vlogger' } };
+  try {
+    teamOfThree();
+    fn('startTrainer')(id, { talked: true });
+    let B = hooks.activeBattle;
+    assert.equal(B.fmt, 'double');
+    assert.ok(
+      B.events.some(e => e.t === 'Unpaid Intern & Lifestyle Vlogger want a double battle!'),
+      B.events.map(e => e.t).join(' / ')
+    );
+    hooks.provide({ activeBattle: null });
+    const s = startedSave(
+      Object.keys(SPECIES).find(k => SPECIES[k].line === RULES.start.starters[0]),
+      12
+    );
+    assert.equal(s.team.length, 1);
+    fn('startTrainer')(id, { talked: true });
+    B = hooks.activeBattle;
+    assert.equal(B.fmt, 'double');
+    assert.equal(liveActors(0).length, 1, 'yours: the one you have');
+    assert.equal(liveActors(1).length, 2, 'theirs: one each');
+  } finally {
+    delete TRAINERS[id];
+  }
+});
+
 test('an Alpha battle: your team against one; below half it raises its shield', () => {
   const s = teamOfThree();
   const sp = Object.keys(SPECIES).find(k => SPECIES[k].stage === 0 && !RULES.start.starters.includes(SPECIES[k].line));
@@ -214,15 +243,31 @@ test("RL-R2: a run leader's first win keeps its type's badge for good (meta.badg
   B.T = { ...B.T, runFoe: 'miniboss', type: 'Water', reward: 10 };
   const run = { offer: null, offerN: 0, perks: [], seed: 'BADGE' },
     { pay } = fn('battleSettle')(B, s);
+  const beans = s.meta.beans || 0;
   fn('battleSettleWin')(B, s, pay, run);
   assert.deepEqual(s.meta.badges, { water: 1 });
   assert.equal(pay.badge, 'Water');
+  /* RL-S2: the first badge of a type finds Beans, counted on the run */
+  assert.equal(s.meta.beans, beans + data.RULES.run.beans.badge);
+  assert.equal(run.beans, data.RULES.run.beans.badge);
   const again = { ...pay, badge: undefined };
   fn('battleSettleWin')(B, s, again, run);
   assert.equal(again.badge, undefined, 'kept already');
+  assert.equal(s.meta.beans, beans + data.RULES.run.beans.badge, 'no Beans for a badge kept already');
   // not off a run, nor a trainer without a type
   const pay2 = { ...pay, badge: undefined };
   B.T = { ...B.T, type: 'Grass' };
   fn('battleSettleWin')(B, s, pay2, null);
   assert.deepEqual(s.meta.badges, { water: 1 });
+});
+
+test("RL-S2 part B: a run's xp rows (a Perk's, a hub person's level) count with the held item's", () => {
+  teamOfThree();
+  fn('startTrainer')(doubleTrainer(), { talked: true });
+  const B = hooks.activeBattle,
+    m = B.sides[0].team[0];
+  B.fx = null;
+  assert.equal(fn('heldXp')(m, 100), 100);
+  B.fx = [{ kind: 'xp', mult: 1.05, src: 'rel:chosen' }];
+  assert.equal(fn('heldXp')(m, 100), 105);
 });

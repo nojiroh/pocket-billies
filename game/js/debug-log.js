@@ -228,6 +228,10 @@ debugLog.ctx = () => {
         c.dc = g.dc;
         c.dcp = g.dcp;
         c.up = g.up;
+        /* R1 measure: each pass's draws of models and of model pictures (`dct`), and its distinct textures and vertex
+           arrays (`dcu`: the fewest draws grouping could reach) */
+        if (g.dct && Object.keys(g.dct).length) c.dct = g.dct;
+        if (g.dcu) c.dcu = g.dcu;
       }
     }
     if (typeof GAME.gpuState !== 'undefined' && GAME.gpuState.pcl && (GAME.gpuState.pcl[0] || GAME.gpuState.pcl[1]))
@@ -422,6 +426,8 @@ debugLog.glInfo = () => {
   /* alpha 0.4: the helper threads: the ground painter's (ground-paint-worker.js) and the bump maps' (engine/webgl.js) */
   try {
     if (typeof GAME.paintWorkerReport === 'function') o.groundPainter = GAME.paintWorkerReport();
+    /* SP-1: the grafted Billies baked on this device (skeleton-rig.js graftReport): bake times and memory */
+    if (typeof GAME.graftReport === 'function') o.grafts = GAME.graftReport();
     if (typeof GAME.normalMapWorkerState !== 'undefined')
       o.bumpHelper = GAME.normalMapWorkerState.w ? 'on' : GAME.normalMapWorkerState.bad ? 'off' : 'not started';
   } catch (e) {}
@@ -446,6 +452,8 @@ debugLog.state = () => {
     s.scene = typeof GAME.walkView !== 'undefined' ? GAME.walkView.id : null;
     s.team = GAME.saveData.team ? GAME.saveData.team.length : 0;
     s.encounters = GAME.encountersHere ? GAME.encountersHere().length : 0;
+    /* SP-2: the team's splices (species and data ids, no names): Stability, traits, types */
+    if (typeof GAME.spliceReport === 'function') s.splices = GAME.spliceReport();
     s.badges = (GAME.saveData.seats || []).length;
     s.visited = Object.keys(GAME.saveData.visited || {}).length;
     /* RL-7: on a run, where it stands (no names): its seed (to make the same run again), the day, the
@@ -509,6 +517,28 @@ debugLog.state = () => {
                 }
               : null,
             spottedBy: GAME.routeSight ? GAME.routeSight.busy || null : null,
+            /* RT-2: this place's route trainers: id, the spot kind it stands on, r(equired) or o(ptional), a pair,
+               beaten (ids and kinds only) */
+            routeTrainers: Object.values(GAME.TRAINERS || {})
+              .filter(T => T.route && T.runNode === GAME.saveData.trip.node - 1)
+              .map(
+                T =>
+                  `${T.id}:${T.route.spot || '?'}:${T.route.opt ? 'o' : 'r'}${T.mate ? ':pair' : ''}${GAME.saveData.flags[T.id] ? ':beaten' : ''}`
+              ),
+            /* RT-3: this place's set pieces (setPieces.json ids) and the spot kind each took */
+            pieces: ((placeMap && placeMap.pieces) || []).map((/** @type {any} */ L) => `${L.id}:${L.spot}`),
+            /* RT-4: how many habitat points this place has (water, woods), and its wild Billies by habitat (species
+               ids, levels, the rarer one marked; read, never stocked here) and where its rarer one waits */
+            habitats:
+              placeMap && placeMap.habitats
+                ? Object.fromEntries(
+                    Object.entries(placeMap.habitats).map(([k, L]) => [k, /** @type {any[]} */ (L).length])
+                  )
+                : null,
+            wild: (
+              ((GAME.saveData.wild || {})[((GAME.LOCATIONS || [])[GAME.saveData.trip.node] || {}).id] || {}).list || []
+            ).map((/** @type {any} */ q) => `${q.sp}:${q.lvl}:${q.rare ? 'rare' : q.hab || 'grass'}`),
+            rareAt: ((GAME.LOCATIONS || [])[GAME.saveData.trip.node] || {}).rareAt || null,
           }
         : null;
     /* RL-8: what the runs brought home (numbers only) */
@@ -520,9 +550,31 @@ debugLog.state = () => {
           capital: meta.research,
           seals: meta.crests,
           scrap: meta.scrap,
+          dna: meta.dna,
+          /* SP-3: how many Genes are sampled (the codes are data ids, but a count is enough) */
+          genes: (meta.genes || []).length,
           /* RL-11: the unlock ids owned (game data ids, no names) and the buildings' levels */
           unlocks: Object.keys(meta.unlocks || {}).sort(),
           buildings: Object.assign({}, meta.buildings || {}),
+          /* RS-1: who lives in Copperleaf (residents.json ids, no names) */
+          residents: Object.keys(meta.residents || {}).sort(),
+          /* RL-S1: the run history (game data ids and numbers, no names) and the story director's picks */
+          history: (meta.history || []).length,
+          last: (meta.history || []).length
+            ? (h => ({ end: h.end, by: h.by ? [h.by.kind, h.by.id || ''].join(':') : null, row: h.row }))(
+                meta.history[meta.history.length - 1]
+              )
+            : null,
+          fresh: Object.assign({}, (GAME.saveData.story && GAME.saveData.story.fresh) || {}),
+          pending: (GAME.saveData.story && GAME.saveData.story.pending) || null,
+          /* RL-S2 (numbers and ids only): Beans, points with each hub person, the gifts given since the last run, the
+             chapter, Blake's last result kept and this run's record of him (the lead's species, meetings, wins) */
+          beans: meta.beans || 0,
+          rel: Object.assign({}, meta.rel || {}),
+          gifted: Object.keys(meta.gifted || {}).filter(k => (meta.gifted || {})[k] === meta.runs),
+          chapter: meta.chapter || 1,
+          rival: (meta.history || []).length ? meta.history[meta.history.length - 1].rival || null : null,
+          runRival: GAME.saveData.run && GAME.saveData.run.rival ? Object.assign({}, GAME.saveData.run.rival) : null,
         }
       : null;
     /* RL-9: the ranch (numbers only): its level, how many train, how long since each started (hours), storage's size */
@@ -633,7 +685,8 @@ debugLog.more = () => {
      tall ground, the goals in play with their weights, the look-ahead and how far the aim is from its goal (metres).
      CAM-2: the zoom the camera uses (yours times the goals'), the moment (talk, boss, interest, idle, run, or none),
      the points of interest in reach and the strongest's weight, the camera zone you stand in (its index, -1 for none)
-     and how long you have stood still (seconds). Only numbers and ids, no names */
+     and how long you have stood still (seconds). CAM-4b: the zoom stop nearest and the one last gone to. Player
+     visibility: how hidden you are. Only numbers and ids, no names */
   t('camera', () => {
     const W = typeof GAME.walkRenderer !== 'undefined' ? GAME.walkRenderer : null,
       I = W && W.camInfo,
@@ -647,11 +700,17 @@ debugLog.more = () => {
       yaw: C && C.yaw != null ? r((C.yaw * 180) / Math.PI) : null,
       pitch: C && C.sp != null ? r((Math.asin(C.sp) * 180) / Math.PI) : null,
       rise: W.occT != null ? r(W.occT) : null,
+      /* player visibility: how hidden you are (0-1: something nearer the camera covers you) */
+      hidden: W.hidK != null ? r(W.hidK) : null,
       goals: I.goals.map(([id, w]) => [id, r(w)]),
       lead: [r(I.lead[0]), r(I.lead[1])],
       off: [r(I.goal[0] - T[0]), r(I.goal[1] - T[1])],
       moving: r(I.move),
       zoomEff: I.zoom != null ? r(I.zoom) : null,
+      /* CAM-4b: the zoom stop nearest your zoom, and the stop you last went to (a two-finger tap, Z, R, a pull or a
+         scene's start; ids only) */
+      stop: I.stop ?? null,
+      pulled: W.stopAt ?? null,
       moment: I.moment ?? null,
       interest: I.interest ? [I.interest[0], r(I.interest[1])] : null,
       zone: I.zone ?? -1,

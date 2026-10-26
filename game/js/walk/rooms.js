@@ -11,6 +11,7 @@ import { hexToRgb, makeCanvas } from '../art.js';
 import { stepRaiseAt, walkData, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { bindQuad, gpuState, imageTexture } from '../engine/webgl.js';
+import { LIGHT_KIND } from '../engine/light-pick.js';
 import { WEATHER_LOOKS, currentLocationMap, environmentState } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
@@ -198,17 +199,22 @@ export function roomLights(sc, L, lb) {
     ws = windowLightShare(sc);
   if (!B) return;
   /* alpha 0.4: the wall lamp's light a little out from the wall (it burned the wall white round it) and a soft pool of it on the floor */
+  let i = 0;
   for (const [x, z, ly] of roomLamps(sc))
     if (R.lamp > 0.02) {
       L.push({
         p: roomP(sc, x, roomHeightAt(sc, x, z - 0.9) + ly, z - 0.9),
         r: 6,
+        src: sc,
+        kind: i++,
         c: [1.4, 1.04, 0.66].map(v => v * R.lamp * lb),
       });
       L.push({
         p: roomP(sc, x, roomHeightAt(sc, x, z - 1.9) + 0.3, z - 1.9),
         r: 3.4,
         pool: 1,
+        src: sc,
+        kind: i++,
         c: [0.85, 0.64, 0.4].map(v => v * R.lamp * lb),
       });
     }
@@ -219,6 +225,8 @@ export function roomLights(sc, L, lb) {
       L.push({
         p: roomP(sc, px + R.dx * u * 0.6, 0.9, Math.max(0.6, pz - u * 0.7)),
         r: 3.6,
+        src: p,
+        kind: LIGHT_KIND.window,
         c: R.c.map(v => v * 1.25 * lb * ws),
       });
     }

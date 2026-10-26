@@ -6,16 +6,17 @@ import { expose } from './test-globals.js';
 import { billyUnit, render, unitBotBuildHTML, unitBuildHTML } from './hooks.js';
 import { $ } from './util.js';
 import { ITEMS, LINE_BY_ID, LOCATIONS, MOVES, SPECIES, STAT_IDS, STAT_NAMES } from './game-data.js';
+import { graftLook } from './logic/graft-art.js';
 import { isRobot, speciesOf } from './logic/fighters.js';
 import {
   allBillies,
-  billyBuild,
   billyName,
+  billyPrime,
+  billyTypes,
   cleanName,
   evolutionHint,
   feedLevels,
   findBilly,
-  isPrime,
   maxHp,
   partSlots,
   stat,
@@ -295,8 +296,8 @@ function billySheet(m) {
     title: escapeHtml(billyName(m)),
     cls: 'mon-sheet',
     acts,
-    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${!isRobot(m) && isPrime(billyBuild(m)) ? '<span class="tm-ribbon prime">Prime</span>' : ''}${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat })}</div>`,
-    html: `<p class="row ms-chips">${s.types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${escapeHtml(s.name)}</span>` : ''}</p>
+    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${!isRobot(m) && billyPrime(m) ? '<span class="tm-ribbon prime">Prime</span>' : ''}${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat, graft: graftLook(m) })}</div>`,
+    html: `<p class="row ms-chips">${billyTypes(m).map(typeBadgeHTML).join('')}${billyConditionHTML(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${escapeHtml(s.name)}</span>` : ''}</p>
   <div class="ms-tabs" role="tablist" aria-label="About ${escapeHtml(billyName(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
   <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', progressBarHTML(xpProgress(m), 'xpb'), xpLeft(m))}</div>
    <div class="ms-chart">${st}</div>${metR}${heldR}
@@ -369,7 +370,7 @@ function heldPick(m) {
 function swapPick(m) {
   modal({
     title: `Swap in ${escapeHtml(billyName(m))}`,
-    html: `<p class="note">Your team is full. Pick who rests in storage instead.</p><div class="list">${saveData.team.map((o, i) => `<button class="pickrow" data-a="mswap" data-u="${m.uid}" data-o="${o.uid}">${rigCanvasHTML(o.sp, 40, { build: o.build, coat: o.coat })}<span class="pr-t"><b>${escapeHtml(billyName(o))}</b><small>Lv ${o.lvl}${i === 0 ? ', your lead' : ''}${o.uid === saveData.buddy ? ', buddy' : ''}</small></span></button>`).join('')}</div>`,
+    html: `<p class="note">Your team is full. Pick who rests in storage instead.</p><div class="list">${saveData.team.map((o, i) => `<button class="pickrow" data-a="mswap" data-u="${m.uid}" data-o="${o.uid}">${rigCanvasHTML(o.sp, 40, { build: o.build, coat: o.coat, graft: graftLook(o) })}<span class="pr-t"><b>${escapeHtml(billyName(o))}</b><small>Lv ${o.lvl}${i === 0 ? ', your lead' : ''}${o.uid === saveData.buddy ? ', buddy' : ''}</small></span></button>`).join('')}</div>`,
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
 }
@@ -381,10 +382,10 @@ function addPick() {
       free
         .map(
           m =>
-            `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { build: m.build, coat: m.coat })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>Lv ${m.lvl}, ${speciesOf(
+            `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { build: m.build, coat: m.coat, graft: graftLook(m) })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>Lv ${m.lvl}, ${billyTypes(
               m
             )
-              .types.map(t => (t === 'None' ? 'Normal' : t))
+              .map(t => (t === 'None' ? 'Normal' : t))
               .join(' and ')}</small></span></button>`
         )
         .join('') || '<p>Storage is empty.</p>'

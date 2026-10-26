@@ -7,6 +7,7 @@ import { expose } from './test-globals.js';
 import { provide, render } from './hooks.js';
 import { $, $$ } from './util.js';
 import { MOVES, SPECIES } from './game-data.js';
+import { graftLook } from './logic/graft-art.js';
 import { speciesOf } from './logic/fighters.js';
 import { allBillies, billyName, canEvolve, coatPrefix, evolve, findBilly, moveSlotCount } from './logic/rules.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, uiState } from './game-state.js';
@@ -95,7 +96,7 @@ function evolutionModal(m) {
   modal({
     title: `${escapeHtml(billyName(m))} is evolving`,
     cls: 'evo-sheet',
-    top: `<div class="evo">${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat })}</div>`,
+    top: `<div class="evo">${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat, graft: graftLook(m) })}</div>`,
     html: `<p>${why} Something bigger is coming.</p>`,
     lock: 1,
     btns: [
@@ -155,7 +156,7 @@ export function runEvolution(m, note, path = 'A') {
             uiState.modal = null;
             modal({
               title: `${escapeHtml(fromName)} became ${escapeHtml(to.name)}`,
-              top: `<div class="evo done">${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat })}</div>`,
+              top: `<div class="evo done">${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat, graft: graftLook(m) })}</div>`,
               html: `<p>${escapeHtml(to.blurb)}</p><p>${to.types.map(typeBadgeHTML).join('')}</p>${note ? `<p class="note">${note}</p>` : ''}`,
               btns: [{ l: 'Nice', c: 'dark', f: closeModal }],
             });
@@ -198,7 +199,7 @@ function hatchModal(tier, hatch, then) {
             uiState.modal = null;
             modal({
               title: `It’s ${/^[AEIOU]/.test(name) ? 'an' : 'a'} ${escapeHtml(name)}`,
-              top: `<div class="hatch done">${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat })}</div>`,
+              top: `<div class="hatch done">${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat, graft: graftLook(m) })}</div>`,
               html: `<p>${s.types.map(typeBadgeHTML).join('')} <b class="tnum">Lv ${m.lvl}</b></p>${mark}<p>${escapeHtml(s.blurb)}</p>${res.where === 'box' ? '<p class="note">It went to storage because your team is full.</p>' : ''}`,
               btns: [
                 {

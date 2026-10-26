@@ -21,13 +21,15 @@ one at its low settings.
 |---|---|---|---|
 | Control pad | 10, 6 · zoom 0.6 | Bare pavers, nothing on them, seen close up | Sharpness (resolution), Dark corners, Film grain |
 | Shadow court | 30, 5.5 | A plaza with trees, a lamp, a flag, a sign, crates, a bench, a boulder, a vending machine; three houses behind. Sun from the side | Shadows, Shadow detail (map size), Near shadow map (cascades), Ambient occlusion, Contact shadows |
-| Pond | 50, 5 | A still pond; five trees and a house on the far bank to mirror | Water reflections |
+| Pond | 50, 5 | A still pond; five trees and a house on the far bank to mirror | Water reflections, pixel water |
 | Sun gap | 10.5, 20 | A tight grove with one path through it and two roofs in front; low sun straight ahead | Sun rays (`air.godRays`) |
 | Lamp square | 30, 20 | Brick paving, ten lamps and lanterns, two fires, crystals, three houses with windows; measured at night | Glow (bloom), Lamps |
 | Meadow | 50, 23.5 | Deep grass with flowers, open to the air | Grass (rebuilds), Particles, Low mist |
 | Everything | 10, 32.5 · zoom 1.3 | A small grove, a pond, a grass patch, four lamps, a house | All settings at their lowest, at the game's own values and at their highest |
 | Depth corridor | 30, 35.5 · zoom 1.3 | An avenue of trees from close by to the hills past the edge | Depth of field, Far trees and hills (rebuilds) |
 | Open sky | 50, 33 · zoom 1.7 | A wide, empty plain (the walk camera looks down, so no sky is in the picture: the clouds show as their light and shadows on the plain) | Clouds, Cloud shadows |
+| Sun gap, no god rays | the Sun gap's spot and sun | The grove with Sun rays at 0 for every step (phase 20 R2) | Cheap light shafts (`air.cheapShafts`) |
+| Meadow in the rain | the Meadow's spot | The meadow with the weather forced to rain (phase 20 R2) | Rain in one go (`quality.rainBatch`) |
 
 The map's own light is a mid sun (angle 35, height 40). A station that needs another light sets it for its steps:
 the shadow court a side sun (angle 30, height 30), the sun gap a low sun ahead (angle -90, height 18), the lamp
@@ -47,6 +49,14 @@ The 15 Expert dials (Settings → Display → Expert) and four hidden ones that 
 - Hidden: Shadow detail (`quality.shadowMap`: 1024, 2048, 4096), Near shadow map (`shadows.cascades`: off, on),
   Ambient occlusion (`shadows.ao`), Contact shadows (`shadows.contact`). Glow size (`color.bloomSize`) was
   measured until 2026-10-19; it barely changes the picture even at full Glow, so it was dropped.
+
+- Phase 20 R2 (pixels lane), each measured alone (off, on) and left out of "everything": Sky last
+  (`quality.skyLast`: Sun gap, Open sky), Solid things first (`quality.solidFirst`: Sun gap), Drop spent pictures
+  (`quality.invalidate`: Control pad, Lamp square), Phone lamps (`quality.phoneLamps`: Lamp square; only a phone
+  changes), Rain in one go (Meadow in the rain), Cheap light shafts (0, 0.6; Sun gap, no god rays). Phone pixel
+  budget (`quality.phonePixels`) is not here: the test pins resolution 1, which is under the phone's 1.2 MP either
+  way; the diagnostics' Renderer baseline (`own`) shows it. A station may borrow another's spot (`spot`), force a
+  weather (`weather`) and hold values under all its steps (`fixed`).
 
 A dial with a range is measured at 5 steps: its lowest, 25 %, 50 %, 75 % and its highest. A choice is measured at
 each of its values.
@@ -97,6 +107,28 @@ table (lowest step → highest).
 
 116 measured steps (90 setting steps, two or three untouched looks per station, everything lowest and highest) at
 about 4.5 s each, plus settling and rebuilds: about 11 to 12 minutes.
+
+## The renderer baseline (diagnostics test, phase 20 R1)
+The graphics test measures what each setting costs on the bench; the baseline measures what the game loads. It is a
+step of the diagnostics test (Settings → Help → Diagnostics), "Renderer baseline", about 2-3 minutes on a phone:
+- Five stops: Copperleaf by day (12:30) and by night (23:00), a jungle run place (seed `BASELINE1`, its first place
+  forced to a jungle route: no run reaches the jungle yet), a run town (seed `BASELINE2`, its first place forced to a
+  meadow town), a wild battle at the hub held at its move menu. The runs are made on a copy of the save.
+- Each stop twice: `r1` at resolution 1 (as the bench's stations) and `own` at the game's own resolution; automatic
+  quality off both times, the player's own dials set aside (the game's own values), clear summer weather, the player
+  on the place's arrival spot, the camera straight. Each settles (up to 10 s) and is measured for 4 s.
+- Each entry in the report's `baseline`: fps, worst fps, frame ms, CPU ms, GPU ms (where the chip has timers), draws,
+  instances, program switches, texture binds, uniform calls, `passDraws` (draws per pass), `tagged` (per pass, the
+  draws of low-poly models `model` and of models' picture layers `modelPic`: leaf clumps, vines, a clock's hands) and
+  `kinds` (per pass, [distinct textures, distinct vertex arrays]: the fewest draws grouping could reach), and
+  (phase 20 R3) `uploadKB` ([pictures, buffers] sent to the chip a frame).
+- The battle (phase 20 R3): its CPU ms is the walk view's frame (`dio`, the world and the rigs) plus the battle
+  stage's own (`scene`, the tweens and the effects canvas), each in `cpuTasks`; before R3 it was `scene` alone, which
+  is why round 1 read 1 ms. Its `rigs`: ms redrawing the rig canvases, `calls` and `redraws` a frame (each redraw is
+  one upload), `kb` redrawn a frame, `uploadMs` (one rig canvas sent 20 times and waited for: ms per upload). The
+  battle is measured a third time, `ownRigReuse`: the game's own resolution with `quality.rigReuse` on. The full
+  test's battle steps count `dio` in their CPU too.
+- Numbers only. It saves nothing and sends nothing; the report is shared only when you export it.
 
 ## Findings so far (format 1 reports, 2026-10-19)
 

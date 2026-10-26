@@ -163,13 +163,19 @@ export const BOWL_PLOT_PROPS = {
   lab: ['lab'],
   mast: ['airship_station'],
   shop: ['shop'],
-  well: ['well'],
+  /* HB-10a: the fountain in the middle of Copperleaf's square */
+  well: ['well', 'fountain'],
   farmhouse: ['house_cottage'],
   barn: ['barn'],
-  /* HB-4b: the inn and the library (HB-5 adds the Workshop's, the Gene Bank's, the station's, the lighthouse's and the
-     windmill's models) */
+  /* HB-4b: the inn and the library; hub placing: the Workshop, the Gene Bank (HB-5), Skyline Station (HB-7), the
+     lighthouse and the windmill */
   inn: ['inn'],
   library: ['library'],
+  workshop: ['workshop'],
+  genebank: ['gene_bank'],
+  station: ['train_station'],
+  lighthouse: ['lighthouse'],
+  windmill: ['windmill'],
 };
 /** @typedef {{ k: string, x: number, z: number, turn: number }} BowlPlotThing */
 /** the buildings the bowl adds to an island map: one on every plot no building prop stands on yet, and the barn in the

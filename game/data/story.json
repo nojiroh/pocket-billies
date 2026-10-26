@@ -2,7 +2,13 @@
  "about": "Project Story: the story layer's own data. flags: every story flag the game keeps in saveData.story, and what it means. patterns: flags made from an id. kept: the story's own records in the same object (not flags). speakers: the names a script may write before a line, and whose portrait and name they stand for. quests: each quest's stages in order. presets: start points for ?story=name (test runs only): place, story flags, trainers beaten (with their badges), pyramids, items, team.",
  "flags": {
   "rival0": "how Blake's first battle went: win, lose or skip (story.js storyAfterRival; read by scripts.blake-first-battle)",
+  "firstLoss": "RL-S1: the first lost run's scene has played (story.json scripts.back-lost); later losses get a picked pair (banter.json back_lost)",
   "ending": "the last clue: the story's last stage (story.js storyEnding, lore.js loreStage)",
+  "ch1_drop": "RL-S2: Chapter 1's first beat said (banter.json ch1_drop, Hazel: you keep falling, on a schedule)",
+  "ch1_blake": "RL-S2: Chapter 1's second beat said (banter.json ch1_blake, Chosen on Blake)",
+  "ch1_beans": "RL-S2: Chapter 1's third beat said (banter.json ch1_beans, Hazel on the Bureau's Beans)",
+  "ch1_number": "RL-S2: Chapter 1's fourth beat said (banter.json ch1_number, Hazel found your number on their forms)",
+  "ch1_signal": "RL-S2: Chapter 1's fifth beat said (banter.json ch1_signal, Chosen: something big on Hazel's instruments); the sixth is scripts.chapter1-end, after the Voltron (RL-14)",
   "flights": "airship flights taken, a count (airship.js)",
   "clueLanyard": "the lanyard clue found (lore.json clues: lanyard)",
   "clueVoice": "the voicemail clue found (lore.json clues: voicemail)",
@@ -25,7 +31,10 @@
   "quests": "each quest's stage (conditions: quest:id)",
   "once": "the once blocks and [once] options already played",
   "cycles": "where each cycle and seq is",
-  "resume": "a script saved halfway: which one, and where it goes on from"
+  "resume": "a script saved halfway: which one, and where it goes on from",
+  "said": "RL-S1: the story director's lines said (banter.json id: the runs ended when it was said; logic/story-pick.js)",
+  "fresh": "RL-S1: each hub character's line picked on the way home, said at the first talk after it (who: banter.json id)",
+  "pending": "RL-S1: a scene to play on arriving home (back-lost after a lost run), kept until it has played"
  },
  "speakers": {
   "Chosen": "chosen",
@@ -38,6 +47,33 @@
   "You": "me"
  },
  "scripts": {
+  "chapter1-end": {
+   "about": "RL-S2: Chapter 1's last beat, after the Voltron is beaten (RL-14 calls it: saveData.story.pending = 'chapter1-end' after storyHomeArrive, as back-lost); it moves the story on to chapter 2",
+   "who": "hazel",
+   "script": [
+    "Hazel: That thing was retrieving. It was built to bring things back. #l:6616",
+    "Chosen: Like me. With you. Constantly. #l:85a4",
+    "Hazel: ...Yes. Exactly like that. Which is the problem. #l:af32",
+    "chapter 2"
+   ]
+  },
+  "back-lost": {
+   "about": "RL-S1: home after a lost run, by the mast (run.js runEndHome, story-stage.js storyPendingCheck): the first time Chosen takes the credit and Hazel has her doubts; later a pair picked by the run history (banter.json back_lost)",
+   "who": "chosen",
+   "script": [
+    "if firstLoss",
+    "  pick back_lost",
+    "else",
+    "  set firstLoss",
+    "  [happy] Chosen: There you are! Face-down by the mast. You’re welcome. #l:4571",
+    "  Chosen: I sensed you were in danger and pulled you back. Professor powers. Don’t ask how. I don’t know either. #l:bd04",
+    "  Hazel: He was asleep in the lab when you landed. #l:d779",
+    "  Hazel: You came through a little hole in the sky over the dock. Like the first time, only smaller. #l:b000",
+    "  Hazel: It closed behind you. Neatly. Like someone shutting a drawer. #l:7301",
+    "  [happy] Chosen: A drawer. My drawer. Professor powers. #l:978e",
+    "  Hazel: ...Get some rest. I’d like to look at that hole again before it forgets where it was. #l:03eb"
+   ]
+  },
   "chosen": {
    "about": "Professor Chosen in his lab (talk.js talkChosen): your Index, your badges, where Blake went",
    "who": "chosen",
@@ -85,7 +121,20 @@
    ]
   }
  },
- "quests": {},
+ "quests": {
+  "fav_chosen": {
+   "about": "RL-S2: Chosen's favour: beat a leader on a run (relations.json chosen.favour; asked by banter.json fav_chosen_ask, done on the way home)",
+   "stages": ["asked","done"]
+  },
+  "fav_hazel": {
+   "about": "RL-S2: Hazel's favour: reach row six on a run, for her readings (relations.json hazel.favour)",
+   "stages": ["asked","done"]
+  },
+  "fav_juniper": {
+   "about": "RL-S2: Juniper's favour: come home with a Grass Billie in the team (relations.json juniper.favour)",
+   "stages": ["asked","done"]
+  }
+ },
  "presets": {
   "after-opening": {
    "about": "Blake's first battle won, in Copperleaf, before anyone else is met",

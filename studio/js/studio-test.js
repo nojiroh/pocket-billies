@@ -428,6 +428,34 @@ async function tools(G, T, fail, stopped, step) {
     G.mapgenScene(G.mapgenParams({ seed: 20261021 }), { scenery: G.sceneryCatalog(), biomes: D.biomes || {} });
     T.mapgen = { ms: r1(now() - a) };
   });
+  /* water track WA-9: the water tools' hand river and fall (the Generate card's dials, params.hand) made into the scene,
+     and made again with a new seed */
+  await run('water tools', () => {
+    const a = now(),
+      hand = {
+        rivers: [
+          {
+            pts: [
+              [0, 50],
+              [44, 32],
+              [88, 12],
+            ],
+          },
+        ],
+        falls: [{ x: 44, z: 32, dir: [0.71, -0.71], w: 2, pool: 2 }],
+      };
+    for (const seed of [7, 8]) {
+      const sc = G.mapgenScene(G.mapgenParams({ seed, land: { water: 'none' }, hand }), {
+        scenery: G.sceneryCatalog(),
+        biomes: D.biomes || {},
+      }).scene;
+      if (!(sc.streams || []).some(st => st.src === 'edge' && st.pts[0][0] === 0))
+        throw new Error(`water tools: seed ${seed} made no hand river`);
+      if (!(sc.falls || []).some(f => f.x === 44 && f.z === 32))
+        throw new Error(`water tools: seed ${seed} made no hand fall`);
+    }
+    T.water = { ms: r1(now() - a) };
+  });
   await run('slice', () => {
     const img = testSheet(512, 512),
       a = now(),
@@ -802,7 +830,7 @@ function showReport(G, r, changes, before) {
 <h3>Look here first</h3>${find}
 <h3>Since the last run</h3>${cmp}
 <h3>Sections (ms; frames p50 / p95; edit / undo)</h3><div class="st-scroll"><table class="tbl"><thead><tr><th>Section</th><th>Open</th><th>HTML</th><th>Page</th><th>After</th><th>Beside</th><th>Again</th><th>Frames</th><th>Draws</th><th>Elements</th><th>Links</th><th>Edit</th></tr></thead><tbody>${rows}</tbody></table></div>
-<h3>Tools, undo and loading</h3><table class="tbl"><tbody>${tool('Find', T.find)}${tool('Check', T.check)}${tool('Save (built)', T.save)}${tool('Propose (built)', T.propose)}${tool('Map generator', T.mapgen)}${tool('Sheet slicing', T.slice)}${tool('Pixel editor', T.pixel)}${tool('Skeleton builder', T.skeleton)}${tool('Undo', r.undo)}${tool('Loading', { dataMs: r.load.dataMs, readMs: r.load.readMs, assembleMs: r.load.assembleMs, firstDrawMs: r.load.firstDrawMs, resources: r.load.resources })}</tbody></table>
+<h3>Tools, undo and loading</h3><table class="tbl"><tbody>${tool('Find', T.find)}${tool('Check', T.check)}${tool('Save (built)', T.save)}${tool('Propose (built)', T.propose)}${tool('Map generator', T.mapgen)}${tool('Water tools', T.water)}${tool('Sheet slicing', T.slice)}${tool('Pixel editor', T.pixel)}${tool('Skeleton builder', T.skeleton)}${tool('Undo', r.undo)}${tool('Loading', { dataMs: r.load.dataMs, readMs: r.load.readMs, assembleMs: r.load.assembleMs, firstDrawMs: r.load.firstDrawMs, resources: r.load.resources })}</tbody></table>
 ${r.errors.length ? `<h3>Errors</h3><ul>${r.errors.map(e => `<li><b>${esc(e.where)}</b> ${esc(e.msg)}</li>`).join('')}</ul>` : ''}
 </div><div class="dlg-btns"><button class="btn" data-st="copy">Copy</button><button class="btn" data-st="save">Download the report</button><button class="btn primary" data-st="close">Close</button></div></div></div>`;
   const json = JSON.stringify(r, null, 1);

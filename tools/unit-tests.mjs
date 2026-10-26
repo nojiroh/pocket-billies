@@ -10,19 +10,24 @@ const ROOT = join(import.meta.dirname, '..');
 // the slowest files (several seconds each, in a cloud container): they generate and walk whole scenes, play runs with
 // their scenes, or sweep every roll
 export const SLOW_TESTS = [
+  'graft-art-sweep.test.mjs',
   'island-gen.test.mjs',
   'island-gen-doors.test.mjs',
   'mapgen-dials.test.mjs',
   'mapgen-grass.test.mjs',
+  'mapgen-habitats.test.mjs',
   'mapgen-layout.test.mjs',
   'mapgen-ledges.test.mjs',
   'mapgen-lots.test.mjs',
   'mapgen-mountains.test.mjs',
+  'mapgen-pieces.test.mjs',
   'mapgen-roads.test.mjs',
   'mapgen-seams.test.mjs',
   'mapgen-town.test.mjs',
+  'route-trainer-spots.test.mjs',
   'run-sim-scenes.test.mjs',
   'run-world-real.test.mjs',
+  'resident-towns.test.mjs',
   'weather-before.test.mjs',
 ];
 

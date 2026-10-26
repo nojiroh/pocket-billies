@@ -102,11 +102,18 @@ test("the run's foes: a leader on every mini-boss node and the boss's, none twic
   assert.equal(LEADERS.length, 8);
   for (let k = 0; k < 200; k++) {
     const run = runOf(`FOES${k}`),
-      foes = L.runFoes(run, { leaders: LEADERS, rules: R }),
+      /* RL-S2: Blake's foes are rival.test.mjs's */
+      leadersOf = (/** @type {any} */ o) =>
+        Object.fromEntries(Object.entries(o).filter(([, F]) => F.runFoe !== 'rival')),
+      foes = leadersOf(L.runFoes(run, { leaders: LEADERS, rules: R })),
       want = run.map.nodes.flatMap((n, i) => (n.type === 'miniboss' || n.type === 'boss' ? [i] : []));
     assert.deepEqual(Object.keys(foes).sort(), want.map(L.runFoeId).sort());
     assert.equal(new Set(Object.values(foes).map(F => F.from)).size, want.length, 'no leader twice in a run');
-    assert.deepEqual(L.runFoes(run, { leaders: LEADERS.slice().reverse(), rules: R }), foes, 'the same foes again');
+    assert.deepEqual(
+      leadersOf(L.runFoes(run, { leaders: LEADERS.slice().reverse(), rules: R })),
+      foes,
+      'the same foes again'
+    );
     for (const F of Object.values(foes)) {
       const i = F.runNode,
         node = run.map.nodes[i],
@@ -115,8 +122,10 @@ test("the run's foes: a leader on every mini-boss node and the boss's, none twic
       assert.equal(F.node, i + 1);
       assert.equal(Math.max(...F.team.map(e => e.lvl)), top);
       assert.ok(F.team.every(e => e.lvl >= 1 && e.lvl <= 100));
-      for (const k of ['script', 'seat', 'egg', 'runsUp', 'after', 'when', 'unless', 'hint', 'miniboss'])
+      for (const k of ['seat', 'egg', 'runsUp', 'after', 'when', 'unless', 'hint', 'miniboss'])
         assert.ok(!(k in F), `a run foe has no ${k}`);
+      /* RL-S1: not its file's script: a word the story director picks, then the battle */
+      assert.deepEqual(F.script, ['pick leader', `battle ${F.id}`]);
       assert.ok(!/Badge/.test(F.win), F.win);
       if (node.type === 'miniboss') {
         assert.deepEqual([F.blocks, F.double, F.alpha], [true, true, undefined]);

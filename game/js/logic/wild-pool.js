@@ -7,12 +7,18 @@
 /** @import { WeightedSpecies } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
+  wildHabitat: [() => wildHabitat, v => ((wildHabitat = v), provide({ wildHabitat }))],
+  // @ts-expect-error -- replaced on purpose
   wildPoolList: [() => wildPoolList, v => (wildPoolList = v)],
+  // @ts-expect-error -- replaced on purpose
+  wildRareList: [() => wildRareList, v => ((wildRareList = v), provide({ wildRareList }))],
 });
 /* eslint-enable no-func-assign */
+provide({ wildHabitat, wildRareList });
 /* to-module: end */
 /** a copy of a pool's list, keeping only the species a dex names; a dex that names none of them (or no dex) keeps the
  * whole list, so a place never has nothing to meet. RL-R1: `swap` first turns a species into the region's variety of
@@ -32,4 +38,17 @@ export function wildPoolList(list, dex, swap) {
   const named = new Set(dex),
     cut = all.filter(([id]) => named.has(id));
   return cut.length ? cut : all;
+}
+/** RT-4: the habitat a run place's wild Billie of these types waits in: the first of rules.json run.wild.habitats
+ * (water, woods) naming one of its types, else `grass` (the tall grass, where every other one waits)
+ * @param {string[]} types @param {Record<string, string[]> | undefined} habitats @returns {string} */
+export function wildHabitat(types, habitats) {
+  for (const [k, T] of Object.entries(habitats || {})) if (T.some(t => types.includes(t))) return k;
+  return 'grass';
+}
+/** RT-4: the rarest of a place's list (the lowest weight, all that share it), where its rare one is drawn from
+ * @param {WeightedSpecies[]} list @returns {WeightedSpecies[]} */
+export function wildRareList(list) {
+  const low = Math.min(...list.map(e => e[1]));
+  return list.filter(e => e[1] === low);
 }

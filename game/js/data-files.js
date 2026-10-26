@@ -145,7 +145,8 @@ self.PB_DATA = (() => {
 
   // phase 08b: a building's door leads to a room: the one set on the building (p.room), else the one made for its kind
   // of building (scenery.json, the kind's room), else the one for what it does. The rooms to try, in that order (the
-  // first that exists is the one); the game's door link is walk-view.js doorLinkOf
+  // first that exists is the one); the game's door link is walk-view.js doorLinkOf. HB-5: 'enter' has no room of its
+  // own: it walks into the room set on the building or its kind (an inn, a library, the Workshop), else nothing
   /** @type {Record<string, string>} */
   const ROOM_BY_USE = {
     shop: 'int_shop',
@@ -153,7 +154,14 @@ self.PB_DATA = (() => {
     lab: 'int_lab',
     house: 'int_house',
     ranch: 'int_barn',
+    genebank: 'int_gene_bank',
+    workshop: 'int_workshop',
+    enter: '',
   };
+  /** does a door that does this (its act) lead into a room? @param {string | null | undefined} act */
+  function opensRoom(act) {
+    return !!act && Object.prototype.hasOwnProperty.call(ROOM_BY_USE, act);
+  }
   /** @param {any} p @param {any} M @param {string | null} act @returns {string[]} */
   function doorRooms(p, M, act) {
     const out = [];
@@ -165,5 +173,5 @@ self.PB_DATA = (() => {
     return out;
   }
 
-  return { SPLIT, files, assemble, split, format, text, road, setRoadEnd, addRoad, ROOM_BY_USE, doorRooms };
+  return { SPLIT, files, assemble, split, format, text, road, setRoadEnd, addRoad, ROOM_BY_USE, opensRoom, doorRooms };
 })();

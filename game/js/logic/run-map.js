@@ -4,7 +4,8 @@
    A run's node map, made from its seed (roguelite-track.md 2e): rows from the landing (row 0, where the airship sets
    you down) to the boss (the last row), one or two nodes a row, links only to the next row, so every path is as long
    as the map has rows. Mini-boss rows and the boss row hold one node, so every path meets them, and the row before
-   each mini-boss is a town (rules.json run.map). The other rows take a filler type by weight (nodeTypes.json).
+   each mini-boss is a town (rules.json run.map). The other rows take a filler type by weight (nodeTypes.json); RL-14:
+   a type with a chance instead (a scrapyard) takes a free node by it, from its fromRow on.
    A link leaves its node by the west side and arrives by the next node's east (the owner: runs go east to west): one
    link at t 0.5, two at 0.15625 and 0.84375, 10 m and 54 m along (the seam rules allow two exits a side, 44 m apart, logic/seam-rules.js, and an
    east or west edge is 64 m), so a node has at most two links each way. runExits' `ahead` is the way west,
@@ -21,7 +22,7 @@
    Logic only: no DOM, runs in Node (tools/test/run-map.test.mjs). It reads no game data: every table comes in as an
    argument, so the data check can use it too. */
 /** @import { Run, RunMap, RunNode, SaveData } from '../../types/save-data' */
-/** @import { NodeType, RunMapRules } from '../../types/game-data' */
+/** @import { NodeType, RivalRules, RunMapRules } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
@@ -46,6 +47,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runMapNoTwoShops: [() => runMapNoTwoShops, v => (runMapNoTwoShops = v)],
   runMapNode: [() => runMapNode],
+  // @ts-expect-error -- replaced on purpose
+  runMapRival: [() => runMapRival, v => (runMapRival = v)],
   // @ts-expect-error -- replaced on purpose
   runMapRows: [() => runMapRows, v => (runMapRows = v)],
   // @ts-expect-error -- replaced on purpose
@@ -98,6 +101,10 @@ export function runMapMake(seed, nodeTypes, M) {
     throw new Error(`runMapMake: the zones' rows don't add up to the map's ${M.rows}`);
   const roles = runMapRows(M),
     fill = Object.fromEntries(Object.entries(nodeTypes).map(([k, t]) => [k, t.weight || 0])),
+    /* RL-14: the types a free node becomes by a chance of their own (a scrapyard), in order */
+    rare = Object.keys(nodeTypes)
+      .sort()
+      .filter(k => (nodeTypes[k].chance || 0) > 0),
     byRole = { first: M.first, last: M.last, guard: M.guard, rest: M.rest };
   if (!Object.values(fill).some(w => w > 0)) throw new Error('runMapMake: no node type has a weight');
   /* each row's shape: [width, its switch to the next row] (a draw each, whatever the rules, so every row's stream
@@ -117,9 +124,19 @@ export function runMapMake(seed, nodeTypes, M) {
     at.push([]);
     for (let lane = 0; lane < width; lane++) {
       const role = roles[row],
-        type = role
+        drawn = role
           ? byRole[/** @type {keyof typeof byRole} */ (role)]
           : rngFrom(seed, `map|type|${row}|${lane}`).pick(fill),
+        /* RL-14: a free node from a type's row on becomes it by its chance, each on a stream of its own, so every
+           other node keeps the type it drew */
+        type =
+          (!role &&
+            rare.find(
+              k =>
+                row >= (nodeTypes[k].fromRow || 0) &&
+                rngFrom(seed, `map|${k}|${row}|${lane}`).chance(/** @type {number} */ (nodeTypes[k].chance))
+            )) ||
+          drawn,
         zone = zones ? runZoneOf(zones, row) : -1,
         biome = zones ? zones[zone].biome : rngFrom(seed, `map|biome|${row}|${lane}`).pick(M.biomes);
       at[row].push(nodes.length);
@@ -171,6 +188,38 @@ export function runMapNoTwoShops(seed, nodeTypes, roles, nodes) {
       if (roles[nodes[i].row] === '') redraw(nodes[i]);
     }
   });
+}
+/** RL-S2: where Blake waits (rules.json run.rival): `meet` meetings a run by Expedition (index 0 = Expedition I; past
+ * the end, the last), meeting k on a main-path place in band k of the first type in `on` the band has (a route, else a waystation) (the row's share of the map, [from, to)), one meeting a
+ * row (the side area's places too may hold him: the main path stays the same with or without a side area). Each meeting draws on its own stream, 'map|rival|k';
+ * a band with no route has no meeting. Turns the nodes' type to 'rival' and returns their indices
+ * @param {string} seed @param {RunMap} map @param {RivalRules} R @param {number} expedition @returns {number[]} */
+export function runMapRival(seed, map, R, expedition) {
+  const n = R.meet[Math.min(Math.max(1, expedition || 1), R.meet.length) - 1] || 0,
+    nodes = map.nodes,
+    main = nodes.filter(nd => !nd.side),
+    rows = main.reduce((m, nd) => Math.max(m, nd.row), 0) + 1,
+    /** @type {number[]} */
+    out = [];
+  for (let k = 0; k < n && k < R.bands.length; k++) {
+    const [lo, hi] = R.bands[k],
+      at = (/** @type {string} */ type) =>
+        nodes.flatMap((nd, i) =>
+          !nd.side &&
+          nd.type === type &&
+          nd.row / rows >= lo &&
+          nd.row / rows < hi &&
+          !out.some(j => nodes[j].row === nd.row)
+            ? [i]
+            : []
+        ),
+      can = R.on.map(at).find(c => c.length) || [];
+    if (!can.length) continue;
+    const i = can[rngFrom(seed, 'map|rival|' + k).int(0, can.length - 1)];
+    nodes[i].type = 'rival';
+    out.push(i);
+  }
+  return out;
 }
 /** the nodes a node leads to (forward, by its north side) @param {RunMap} map @param {number} i @returns {number[]} */
 export const runNext = (map, i) => map.nodes[i].to.slice();
@@ -269,7 +318,7 @@ export const runWeather = (run, i, day) => (run.forecast[runWorldNode(i)] || [])
 provide({ runWeather }); /* to-module */
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, { climate?: string }>,
- *   rules: { map: RunMapRules, clock: { ahead: number }, reveal: { icons: number, unknown: number } },
+ *   rules: { map: RunMapRules, clock: { ahead: number }, reveal: { icons: number, unknown: number }, rival?: RivalRules },
  *   side?: import('./run-side.js').RunSideData | null }} RunMapData
  * RL-R2: side, what the run's side area is made from (run-start.js; none: no side area)
  */
@@ -279,6 +328,8 @@ export function runMapStart(run, data) {
   run.map = runMapMake(run.seed, data.nodeTypes, data.rules.map);
   /* RL-R2: its side area, from streams of its own after the main map (run-side.js) */
   if (data.side) runSideAdd(run.seed, run.map, data.side);
+  /* RL-S2: Blake, on streams of his own after the side area, so neither moves */
+  if (data.rules.rival) runMapRival(run.seed, run.map, data.rules.rival, run.expedition);
   run.forecast = [];
   runReveal(run.map, 0, data.rules.reveal);
   runForecastFill(run, data.biomes, run.clock + data.rules.clock.ahead);

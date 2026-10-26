@@ -32,8 +32,10 @@ def hub(s, x, z):
     s.d['hub'] = [x, z]; s.clear.append((x, z, 1.2))
 
 
-def check(s, a, b, reach, what):
-    s.d['checks'].append({'from': [round(a[0], 2), round(a[1], 2)], 'to': [round(b[0], 2), round(b[1], 2)], 'reach': reach, 'what': what})
+def check(s, a, b, reach, what, surf=False):
+    c = {'from': [round(a[0], 2), round(a[1], 2)], 'to': [round(b[0], 2), round(b[1], 2)], 'reach': reach, 'what': what}
+    if surf: c['surf'] = True                                                       # WA-6b: walked with Surf on
+    s.d['checks'].append(c)
 
 
 def shot(s, x, z, label, yaw=0):
@@ -110,7 +112,7 @@ def t_bridges():
 
 # ---------------------------------------------------------------- water of every kind
 def t_water():
-    s = base('test_water', 'Test: water', 40, 28, 'g', 904, far='forest')
+    s = base('test_water', 'Test: water', 58, 28, 'g', 904, far='forest')
     hub(s, 20, 3)
     s.pond(8, 8, 5, 3, ducks=3, reeds=8, lilies=6, dip=.8)                             # a still pond, deep in the middle
     for z0, h in ((14, .5), (18, 1.0), (23, 1.6)):                                      # terraces for falls of rising height
@@ -125,11 +127,40 @@ def t_water():
     s.d['waters'] = [{'x': 1.5, 'z': 14.2, 'w': 9, 'h': 3.6, 'k': 'swamp'}, {'x': 9.8, 'z': 18.6, 'w': 5.4, 'h': 4, 'k': 'spring'},
                      {'x': 1.5, 'z': 24.5, 'w': 16, 'h': 2.6, 'k': 'canal'}, {'x': 32.5, 'z': 18, 'w': 7.5, 'h': 10, 'k': 'lake'}]
     s.put('rocks', 30.2, 18.6, .6); s.put('rocks', 30.0, 13.4, .55)                     # rocks in the stream throw foam
+    # water track WA-0: a tall fall (a stream off a 6 m cliff into a plunge pool) and the kinds the west half lacks
+    s.terrace(43, 17, 59, 30, 6.0, wall=False, wobble=.3, mat=3)
+    s.stream([(50, 27.5), (50.3, 22), (49.8, 17.5), (50, 14.5)], 1.6, 1.0)
+    s.pond(50, 14.3, 3.2, 2.2, sand=False, reeds=5, lilies=0, deep=False, rocks=3, dip=.6)   # WA-2b: at the cliff's foot
+    # WA-2b: the fall as a scene's `falls` entry (water-track.md's contract): the lip on the 6 m cliff at z 17, falling
+    # south into the pool, whose middle lies its radius and a quarter metre past the lip as a generated one's; climbable
+    s.d['falls'] = [{'x': 50, 'z': 17, 'dir': [0, -1], 'w': 1.6, 'h': 6, 'pool': 2.2, 'climb': 1}]
+    s.blob(45.5, 6.5, 2.4, 1.6, 'w', .15); s.blob(50.8, 6.5, 2.0, 1.6, 'w', .15); s.rect(55, 2, 58, 10, 'w')
+    s.d['waters'] += [{'x': 42.5, 'z': 4.5, 'w': 6, 'h': 4, 'k': 'lava'}, {'x': 48.6, 'z': 4.5, 'w': 5, 'h': 4, 'k': 'ice'},
+                      {'x': 55, 'z': 2, 'w': 3, 'h': 8, 'k': 'sea'}]
+    # water track WA-5a: the new kinds' play: a hot spring (waded, heals once a run), rapids (neither waded nor surfed:
+    # shallows to the south, deep to the north) and a bog (waded, slower)
+    # (painted after the ground's patches, below, which would paint over them)
+    s.d['waters'] += [{'x': 35.5, 'z': 1.8, 'w': 3, 'h': 2.4, 'k': 'hotspring'}, {'x': 39, 'z': 1, 'w': 2, 'h': 4, 'k': 'rapids'},
+                      {'x': 12.9, 'z': 11, 'w': 3.4, 'h': 2.4, 'k': 'bog'}]
     s.life('duck', 3)
     for x, z, l in ((8, 4, 'pond'), (30, 9, 'stream-and-falls'), (21, 6, 'stepped-pools'), (36, 15, 'high-water-lake'),
-                    (6, 12, 'swamp'), (12.5, 16.5, 'spring'), (9, 21.5, 'canal')):
+                    (6, 12, 'swamp'), (12.5, 16.5, 'spring'), (9, 21.5, 'canal'), (50, 8.2, 'tall-fall'),
+                    (45.5, 3, 'lava'), (50.8, 3, 'ice'), (53.5, 6, 'sea-strip'), (38, 0.6, 'hot-spring-and-rapids'),
+                    (14.6, 9.4, 'bog')):
         shot(s, x, z, l)
+    check(s, (20, 3), (50, 8.2), True, 'the hub to the foot of the tall fall')
+    check(s, (1.2, 9.4), (5.5, 9.3), True, "wade into the pond's shallows")                # WA-6a: shallows are waded
+    check(s, (41, 6.5), (45.5, 6.5), False, 'the lava pool stays shut (should be impossible)')
+    check(s, (4.5, 8.5), (8.5, 8.5), True, "surf out onto the pond's deep middle", surf=True)   # WA-6b: Surf
+    check(s, (4.5, 8.5), (8.5, 8.5), False, 'deep water stays shut without Surf (should be impossible)')
+    check(s, (37, 1.2), (37, 3), True, 'wade into the hot spring')                         # WA-5a: the new kinds' play
+    check(s, (38.6, 2), (40, 2), False, 'the rapids stay shut to wading (should be impossible)')
+    check(s, (38.4, 3.5), (40, 3.5), False, 'the rapids stay shut to Surf (should be impossible)', surf=True)
+    check(s, (14.6, 10.4), (14.6, 12.2), True, 'wade into the bog')
+    check(s, (50.8, 3.4), (50.8, 6.5), True, 'walk out onto the ice pool')
     s.patches('G', .6, 6, seed=6)
+    s.blob(37, 3, 1.4, 1.1, 'w', .1); s.rect(39, 1, 41, 3, 'w'); s.rect(39, 3, 41, 5, 'd')     # WA-5a's pools
+    s.blob(14.6, 12.2, 1.5, 1.0, 'w', .15)
     return s.out(7, 'wood')
 
 

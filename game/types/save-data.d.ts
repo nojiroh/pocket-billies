@@ -91,6 +91,18 @@ export interface Meta {
   research: number;
   scrap: number;
   crests: number;
+  /** RL-S2: the gift currency for the hub's folk (rare finds on runs) */
+  beans: number;
+  /** RL-S2: the story's chapter (1 at the start; only the script command `chapter n` moves it on, never back, at most 9) */
+  chapter: number;
+  /** RL-S2: points with each hub person (relations.json), and meta.runs when each last had a gift */
+  rel: Record<string, number>;
+  gifted: Record<string, number>;
+  /** SP-3: splicing's currency, banked when a spliced wild Billie is beaten (logic/battle-rewards.js) */
+  dna: number;
+  /** SP-3: the Genes sampled from beaten wild splices, by Gene id ("shark_tailfin@zuck2"), the Gene Bank's library
+   * (SP-4) */
+  genes: string[];
   /** unlock ids: 1 (unlocks.json, RL-11) */
   unlocks: Record<string, 1>;
   /** hub building id -> level (buildings.json, RL-11) */
@@ -102,6 +114,55 @@ export interface Meta {
   expedition: number;
   /** RL-R2: badges kept for good, by type id in lower case (`water`): the first win over a leader of the type */
   badges: Record<string, 1>;
+  /** RL-S1: the newest runs, oldest first (logic/run-history.js, at most 20); the story's `last:`, `lastby:`,
+      `history:` and `rematch` read it */
+  history: HistoryEntry[];
+  /** RS-1: who lives in Copperleaf (residents.json id -> the run, by meta.runs, they moved in after) */
+  residents: Record<string, number>;
+}
+
+/** RL-S1: what ended a lost run (logic/run-history.js runLostTo): the battle's kind, its leader's or class's id, the
+    Billie standing, and whether it was the Bureau's */
+export interface RunLostTo {
+  kind: 'wild' | 'route' | 'event' | 'miniboss' | 'boss' | 'rival' | 'trainer';
+  id?: string;
+  sp?: SpeciesId;
+  bureau?: 1;
+}
+
+/** RL-S1: one past run (logic/run-history.js historyEntry) */
+export interface HistoryEntry {
+  seed: string;
+  /** its region's theme and name ('' on a run without one) */
+  theme: string;
+  region: string;
+  /** its Expedition */
+  exp: number;
+  end: 'won' | 'lost' | 'quit';
+  /** what beat you (a loss only) */
+  by: RunLostTo | null;
+  /** the furthest row reached, the days it took */
+  row: number;
+  days: number;
+  /** the team's species as it ended, the Perks held */
+  team: SpeciesId[];
+  perks: string[];
+  /** the region's leaders (and a side area's), each beaten or not */
+  leaders: { id: string; beat: 0 | 1 }[];
+  /** RL-S2: the rival's result: meetings and wins (null: you never met him that run) */
+  rival: { met: number; won: number } | null;
+  /** residents track RS-2: the resident invited on the run (they moved in after it) */
+  res?: string;
+}
+
+/** roguelite track RL-S2: what a run keeps of Blake (logic/rival.js) */
+export interface RunRival {
+  /** the species you led the run with (his ace counters it) */
+  lead: SpeciesId;
+  /** meetings in the runs kept before this one, this run's meetings and wins */
+  past: number;
+  met: number;
+  won: number;
 }
 
 /** roguelite track RL-3: the ranch, a hub building (logic/ranch-state.js; filled in RL-9 and RL-10) */
@@ -260,10 +321,52 @@ export interface Run {
   /** RL-9b: the uids of the Billies from home (picked at the mast, from the team or storage; logic/run-state.js
       runHome reads a run saved before as the hub's team) */
   home?: string[];
+  /** RL-S2: Beans found on this run (they go into meta.beans at once; the payout shows them) */
+  beans?: number;
+  /** RL-S2: each hub person's level as the run took off (logic/relations.js: their run bonuses) */
+  rel?: Record<string, number>;
+  /** RL-S2: Blake in this run (logic/rival.js); missing on a run from before */
+  rival?: RunRival;
   /** RL-9b: what was packed from Copperleaf's bag at the mast */
   pack?: { items: Record<DataId, number>; pyramids: Record<DataId, number> };
   /** RL-12b: its events and reward picks (logic/run-enc.js); missing on a run from before */
   enc?: RunEnc;
+  /** RL-S1: what beat you, kept from the lost battle to the payout (logic/run-history.js runLostTo) */
+  lostTo?: RunLostTo;
+  /** RL-S1: the leaders (trainer ids) beaten this run */
+  beat?: string[];
+  /** TW-3: its quests (logic/run-quests.js); missing until the first is taken */
+  quests?: RunQuests;
+  /** RS-1: the resident invited this run (residents.json); they move in when it ends, won or lost */
+  invited?: string;
+}
+
+/** TW-3: a quest held on a run (logic/run-quests.js) */
+export interface RunQuest {
+  /** 'q' + its number in the run */
+  id: string;
+  kind: import('./game-data').QuestKind;
+  /** its text's id (quests.json texts; RS-2: a favour's, the resident's id) */
+  text: string;
+  /** the map node of the town it came from */
+  at: number;
+  /** how many to do, and done so far */
+  goal: number;
+  n: number;
+  /** a catch quest's type */
+  type?: string;
+  done: 0 | 1;
+  /** residents track RS-2: a resident's favour (their id): held over the cap, handed in for their invite */
+  res?: string;
+}
+/** TW-3: a run's quests */
+export interface RunQuests {
+  held: RunQuest[];
+  /** the towns (map nodes) whose offer was taken */
+  took: number[];
+  /** quests taken so far (the next id) and handed in */
+  n: number;
+  paid: number;
 }
 
 /** RL-12b: a run's events and reward picks (logic/run-enc.js, logic/encounters.js, logic/rewards.js) */
@@ -289,7 +392,8 @@ export interface RunReward {
   cards: RewardCard[];
   rolls: number;
   from: string;
-  /** an event's pick of one kind, and of how many cards (a reroll keeps them) */
+  /** an event's pick of one kind, and of how many cards (a reroll keeps them); RL-14: 'salvage', a bot's parts and
+   * Scrap (never rerolled) */
   kind?: string;
   n?: number;
 }
@@ -297,7 +401,8 @@ export interface RunReward {
  * too), or a move a Billie of the team may learn */
 export interface RewardCard {
   id: string;
-  kind: 'item' | 'candy' | 'evo' | 'tutor' | 'held';
+  /** RL-14: a salvage pick's `part` (item: a robots.json part, into saveData.parts) and `scrap` (n: Scrap) */
+  kind: 'item' | 'candy' | 'evo' | 'tutor' | 'held' | 'part' | 'scrap';
   item?: string;
   n?: number;
   move?: string;
@@ -378,6 +483,15 @@ export interface Billy {
   mut?: BillieMut;
   /** RL-12c: the item it holds (an items.json id with `hold`), or none; a run's held items go back to the bag at its end */
   held?: string;
+  /** SP-2: its splice, slot (rules.json parts.slots) -> Gene id, "part@donor" (a partKits.json part, a kitBuilds.json
+      rig); missing for a Billie with none */
+  graft?: Record<string, string>;
+  /** SP-2: a splice past Stability's limit: the stat it raises and the one it lowers (rolled once, kept while it stays
+      past the limit) and its merged name */
+  unstable?: { up: string; down: string; name: string };
+  /** SP-5: Augments: a robots.json arm (front, on one side) or legs (back) fitted at the Workshop (logic/augments.js);
+      a slot with one has no Gene */
+  aug?: Partial<Record<'front' | 'back', PartInstance>>;
   /** phase 17: 'robot' for a robot (sp is then made from its parts: logic/fighters.js robotSp); missing for a Billie */
   kind?: 'robot';
   /** phase 17: a robot's gem (a key of robots.json gems): the gem is the robot, its level and XP */
@@ -430,8 +544,18 @@ export interface Encounter {
   /** its encounter number (serial) */
   no: number;
   alpha?: boolean;
+  /** RT-4: a run place's habitat it waits in (rules.json run.wild.habitats: water, woods); none is the tall grass */
+  hab?: string;
+  /** RT-4: a run route's rarer one (rules.js spawnRare), waiting in a hard pocket */
+  rare?: number;
   /** phase 16: its part sizes, rolled when it appears (rules.js encounterBuild) */
   build?: Build;
+  /** SP-2: its splice, as a Billie's (Billy.graft) */
+  graft?: Record<string, string>;
+  /** SP-2: its Unstable roll, as a Billie's (Billy.unstable) */
+  unstable?: { up: string; down: string; name: string };
+  /** SP-5: an Escaped specimen's Augment, as a Billie's (Billy.aug) */
+  aug?: Partial<Record<'front' | 'back', PartInstance>>;
 }
 
 /** an egg (game-state.js addEgg) */

@@ -10,43 +10,66 @@
    "who": "intern",
    "team": [1,2],
    "sight": "You are in my content! I mean, my battle!",
-   "lose": "I did that for free, you know."
+   "lose": "I did that for free, you know.",
+   "likes": ["roadside"]
   },
   "beta_tester": {
    "name": "Beta Tester",
    "who": "boy",
    "team": [2,3],
    "sight": "Found a bug! It is you. Let me reproduce it.",
-   "lose": "Works as intended, apparently."
+   "lose": "Works as intended, apparently.",
+   "likes": ["clearing"]
   },
   "hustle_coach": {
    "name": "Hustle Coach",
    "who": "broker",
    "team": [2,3],
    "sight": "Rise and grind! You look like you need a mentor!",
-   "lose": "Losing is just winning in beta."
+   "lose": "Losing is just winning in beta.",
+   "likes": ["roadside","pinch"]
   },
   "vlogger": {
    "name": "Lifestyle Vlogger",
    "who": "girl",
    "team": [1,3],
    "sight": "Hi guys! Today I battle a random stranger!",
-   "lose": "Cut that. Cut all of that."
+   "lose": "Cut that. Cut all of that.",
+   "likes": ["bridge","clearing"]
   },
-  "speedrunner": {"name":"Speedrunner","who":"diver","team":[1,2],"sight":"No time! Battle any percent!","lose":"Reset. Reset!"},
+  "speedrunner": {
+   "name": "Speedrunner",
+   "who": "diver",
+   "team": [1,2],
+   "sight": "No time! Battle any percent!",
+   "lose": "Reset. Reset!",
+   "likes": ["pinch","deadend"]
+  },
   "bureau_clerk": {
    "name": "Bureau Clerk",
    "who": "clerk",
    "team": [2,3],
    "sight": "You look lost. That is our department.",
-   "lose": "I will need that in writing."
+   "lose": "I will need that in writing.",
+   "bureau": 1,
+   "likes": ["bridge","roadside"]
+  },
+  "bureau_reclaimer": {
+   "name": "Reclamation Agent",
+   "who": "miner",
+   "team": [1,2],
+   "sight": "That Billie looks unclaimed. Sign here, and here, and here.",
+   "lose": "I'll log it as damaged in transit.",
+   "bureau": 1,
+   "likes": ["deadend","pocket"]
   },
   "ethicist": {
    "name": "Clone Ethicist",
    "who": "geo",
    "team": [2,3],
    "sight": "Is it right to battle a clone? Let us find out empirically.",
-   "lose": "Inconclusive. Very inconclusive."
+   "lose": "Inconclusive. Very inconclusive.",
+   "likes": ["pocket","clearing"]
   }
  },
  "events": {
@@ -111,6 +134,7 @@
       "if wager = win",
       "  There is a gift inside, and a sound like someone saying oh no, very far away.",
       "  perk rare",
+      "  beans 2",
       "else",
       "  Your team looks inside. They all lie down for a bit.",
       "  status slp"
@@ -119,7 +143,7 @@
     {
      "text": "Let Alloy pry it open",
      "need": "type:Steel",
-     "then": ["Your Steel Billie pries the lid up a crack, takes something out and shuts it again without looking.","perk"]
+     "then": ["Your Steel Billie pries the lid up a crack, takes something out and shuts it again without looking.","perk","beans 1"]
     },
     {
      "text": "File it as Found",
@@ -268,6 +292,34 @@
    ],
    "weight": 1
   },
+  "bureau_checkpoint": {
+   "title": "Bureau Checkpoint",
+   "intro": [
+    "A striped barrier, a tollbooth and a flag with a bean on it. An agent in a grey coat steps out with a clipboard.",
+    "Agent: Routine check, Bureau of Lost, Found and Beans. Lost anything? Found anything? Beans of any kind?"
+   ],
+   "options": [
+    {
+     "text": "Declare everything",
+     "then": [
+      "You declare everything. It takes a while. The agent stamps a form in three places.",
+      "Agent: Thank you for your honesty. Here is your complimentary Found Item.",
+      "loot common"
+     ]
+    },
+    {
+     "text": "Let them inspect your team",
+     "then": [
+      "Agent: Unregistered clones. I will have to inspect them. Personally.",
+      "foe bureau_clerk",
+      "Agent: Everything appears to be in order. Suspiciously in order. Take this and move along.",
+      "reward"
+     ]
+    },
+    {"text":"Walk on","then":["Agent: We'll be in touch."]}
+   ],
+   "weight": 0
+  },
   "speedrunner": {
    "title": "Speedrunner",
    "intro": ["A trainer sprints past, turns, and jogs on the spot in front of you.","Speedrunner: No time! Battle any percent!"],
@@ -381,6 +433,121 @@
      "then": ["You sign. You open it. It is beans.","The beans do nothing. You keep them anyway. Everyone does."]
     },
     {"text":"Leave","then":["The drone follows you for a bit, then gives up."]}
+   ],
+   "weight": 1
+  },
+  "stranded_cart": {
+   "title": "Stranded Cart",
+   "intro": [
+    "A cart sits in the ditch with one wheel off. Its owner sits on a crate beside it, reading a map of somewhere nicer.",
+    "Traveller: I was heading nowhere in particular. Now I’m not even heading there."
+   ],
+   "options": [
+    {
+     "text": "Let your Ground Billie dig it out",
+     "need": "type:Ground",
+     "then": [
+      "Your Ground Billie digs the wheel free and props the cart back up. It looks very pleased with itself.",
+      "Traveller: Well! You’d make good neighbours. Got room where you live?",
+      "invite"
+     ]
+    },
+    {
+     "text": "Pay for a new wheel",
+     "cost": 150,
+     "then": ["Traveller: A wheel! A round one! I owe you. Where do you live? I’ll pay you back in kind.","invite"]
+    },
+    {"text":"Leave","then":["Traveller: I’ll wait for the ditch to get bored of me."]}
+   ],
+   "weight": 2,
+   "resident": true
+  },
+  "back_alley_splicer": {
+   "title": "Back-Alley Splicer",
+   "intro": [
+    "Behind a noodle stand, a man in a stained lab coat sits beside a cooler and a dentist's chair.",
+    "Splicer: Genes. Cheap. No forms, no Bureau, no questions. Some answers."
+   ],
+   "options": [
+    {
+     "text": "Let him work",
+     "cost": 150,
+     "then": ["Splicer: Sit. Do not look at the cooler.","splice wild","Splicer: It will itch. That means it took."]
+    },
+    {
+     "text": "Pay him in DNA",
+     "dna": 8,
+     "then": [
+      "Splicer: DNA! A professional. I will even use the clean needle.",
+      "splice wild",
+      "heal 0.25",
+      "Splicer: Free nap included. Your team is fine. Mostly."
+     ]
+    },
+    {"text":"Walk on","then":["Splicer: Your loss. Probably also your gain."]}
+   ],
+   "weight": 1
+  },
+  "bureau_field_lab": {
+   "title": "Bureau Field Lab",
+   "intro": [
+    "A tent of grey canvas stands by the road, stamped FIELD LAB 4. Inside, a centrifuge hums next to a filing cabinet.",
+    "Clerk: Splicing services. By appointment. You have an appointment now."
+   ],
+   "when": "genes >= 1",
+   "options": [
+    {
+     "text": "Book a splice",
+     "then": ["Clerk: Bring your library. We charge the Gene Bank's rate, plus form 9-G.","splice lib","Clerk: Filed under Found."]
+    },
+    {
+     "text": "Swipe a sample",
+     "then": [
+      "You pocket a vial from the rack. The clerk saw that.",
+      "foe bureau_clerk 1",
+      "Clerk: Fine. Keep it. I will need that in writing.",
+      "gene"
+     ]
+    },
+    {"text":"Leave","then":["Clerk: We will keep your sequence on file. We always do."]}
+   ],
+   "weight": 1
+  },
+  "gene_auction": {
+   "title": "Gene Auction",
+   "intro": [
+    "A crowd stands round a cold box on a trestle table. A sign reads LOST SEQUENCES, FOUND BUYERS.",
+    "Auctioneer: Lot one! A Gene! Whose? Nobody remembers! Do I hear 250?"
+   ],
+   "options": [
+    {"text":"Bid 250 Moneys","cost":250,"then":["The hammer falls. A vial is yours.","gene"]},
+    {"text":"Bid in DNA","dna":15,"then":["Auctioneer: DNA! Real currency! Take the lot and the one after it.","gene 2"]},
+    {"text":"Leave","then":["Auctioneer: Going, going, gone, like your chance."]}
+   ],
+   "weight": 1
+  },
+  "gene_recall": {
+   "title": "Gene Recall",
+   "intro": [
+    "A Bureau drone hovers in your way. Its screen reads NOTICE OF RECALL: SEQUENCE NOT APPROVED FOR CLONE USE.",
+    "Drone: One of your Billies wears an unlicensed Gene. Please hand it in. A refund applies."
+   ],
+   "when": "spliced >= 1",
+   "options": [
+    {
+     "text": "Hand it in",
+     "then": ["The drone extends a very small claw.","unsplice 15","Drone: Thank you for your compliance. Your refund is in DNA."]
+    },
+    {
+     "text": "Refuse",
+     "then": [
+      "Drone: Escalating to a clerk.",
+      "foe bureau_clerk 2",
+      "Clerk: Fine. Keep it. Take this too, so the paperwork balances.",
+      "perk"
+     ]
+    },
+    {"text":"Walk round it","then":["The drone follows you for a while, then files a report."]}
    ],
    "weight": 1
   }

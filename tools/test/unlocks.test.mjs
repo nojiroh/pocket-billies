@@ -26,7 +26,7 @@ test('unlocks: each row is sold at its building in that building’s currency, o
   assert.equal(K.unlockDoor(D.unlocks.shop_revive), 'board');
   assert.equal(K.unlockDoor(D.unlocks.ranch_2), 'building');
   assert.equal(K.unlockCurrency(D.unlocks.ranch_2, D), 'scrap');
-  assert.equal(K.unlockCurrency(D.unlocks.airship_2, D), 'crests');
+  assert.equal(K.unlockCurrency(D.unlocks.station_2, D), 'crests');
 });
 
 test('unlocks: buying pays once, in the right currency, and grants', () => {
@@ -43,7 +43,7 @@ test('unlocks: buying pays once, in the right currency, and grants', () => {
   assert.equal(s.meta.scrap, 50 - D.unlocks.ranch_2.cost, 'the ranch is paid in Scrap');
   assert.equal(K.buildingLevel(s, 'ranch'), 2);
   assert.equal(modules.ranch.ranchLevel(s), 2, 'the ranch reads its new level');
-  assert.equal(K.unlockReady(s, 'airship_2', D), 'cost', 'no Crests');
+  assert.equal(K.unlockReady(s, 'station_2', D), 'cost', 'no Crests');
   assert.equal(K.unlockReady(s, 'nope', D), 'unknown');
 });
 
@@ -58,8 +58,10 @@ test('unlocks: what a row needs, earned rows, and the run refuse a purchase', ()
   s.run = null;
   assert.ok(K.unlockBuy(s, 'ranch_2', D) && K.unlockBuy(s, 'ranch_3', D));
   assert.equal(K.buildingLevel(s, 'ranch'), 3);
+  /* SP-5 opened the Workshop: a building marked soon stands in for one coming later */
   const soon = {
     ...D,
+    buildings: { ...D.buildings, workshop: { ...D.buildings.workshop, soon: true, levels: 1 } },
     unlocks: { ...D.unlocks, w: { name: 'w', about: 'w', at: 'workshop', cost: 1, grant: { scrap: 1 } } },
   };
   assert.equal(K.unlockReady(s, 'w', soon), 'soon', 'a building coming later sells nothing');
@@ -106,7 +108,7 @@ test('unlocks: tidy forgets rows the table lost and rebuilds the buildings’ le
 
 test('unlocks: a run’s copy opens its shops and map; the same seed and copy make the same run', () => {
   const s = hubSave();
-  s.meta.unlocks = { shop_revive: 1, ranch_2: 1, biome_ridge: 1, airship_2: 1 };
+  s.meta.unlocks = { shop_revive: 1, ranch_2: 1, biome_ridge: 1, station_2: 1 };
   assert.deepEqual(K.runUnlocks(s, D), ['biome_ridge', 'shop_revive'], 'only shop and biome rows, sorted');
   const none = K.unlockOpen(RUN.shop.pick, 'shop', [], D);
   for (const k of ['nerve_tonic', 'wake_tea', 'revive']) assert.ok(!(k in none), `${k} locked for a new player`);

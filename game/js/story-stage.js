@@ -16,13 +16,16 @@
 /* the script lines of a person, a trainer or the story: person:<id> (in a map's people), trainer:<id>, story:<id> */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide, render, toast } from './hooks.js';
+import { provide, render, selfTest, toast } from './hooks.js';
 import { $, clamp } from './util.js';
-import { LOCATIONS, STORY_DATA, TRAINERS, gameData } from './game-data.js';
+import { BANTER, LOCATIONS, PEOPLE, RELATIONS, STORY_DATA, TRAINERS, gameData } from './game-data.js';
 import { healAll } from './logic/rules.js';
+import { relFavoursPay } from './logic/relations.js';
 import { startTrainer } from './logic/battle-engine.js';
+import { conditionHolds, conditionTree, storyStateOf } from './logic/conditions.js';
+import { BANTER_HUB, banterOwner, storyPick, storyPickSaid } from './logic/story-pick.js';
 import { parseScript } from './logic/script-parse.js';
-import { runBase, runScript, saveDuringRun } from './logic/script.js';
+import { runBase, runScript, saveDuringRun, storyTeamLookups } from './logic/script.js';
 import { activeBattle, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { lookOf } from './person-art.js';
 import { walkView, walkablePointNear } from './walk-view.js';
@@ -42,14 +45,21 @@ import {
   cutsceneWait,
   cutsceneWalk,
 } from './cutscene/director.js';
+import { trainRide } from './train-ride.js';
 /* eslint-disable no-func-assign */
 expose({
   cutsceneWorldBegin: [() => cutsceneWorldBegin, v => (cutsceneWorldBegin = v)],
   cutsceneWorldEnd: [() => cutsceneWorldEnd, v => (cutsceneWorldEnd = v)],
   playStoryScript: [() => playStoryScript, v => ((playStoryScript = v), provide({ playStoryScript }))],
+  storyFreshTake: [() => storyFreshTake, v => ((storyFreshTake = v), provide({ storyFreshTake }))],
   storyGameStage: [() => storyGameStage],
   storyHold: [() => storyHold, v => (storyHold = v)],
+  storyHomeArrive: [() => storyHomeArrive, v => ((storyHomeArrive = v), provide({ storyHomeArrive }))],
   storyOwner: [() => storyOwner, v => (storyOwner = v)],
+  storyPendingCheck: [() => storyPendingCheck, v => ((storyPendingCheck = v), provide({ storyPendingCheck }))],
+  storyPickId: [() => storyPickId, v => (storyPickId = v)],
+  storyPickPlay: [() => storyPickPlay, v => ((storyPickPlay = v), provide({ storyPickPlay }))],
+  storyPickTree: [() => storyPickTree, v => (storyPickTree = v)],
   storyResumeCheck: [() => storyResumeCheck, v => (storyResumeCheck = v)],
   storyRun: [() => storyRun],
   storyRunUp: [() => storyRunUp, v => (storyRunUp = v)],
@@ -67,7 +77,15 @@ expose({
   storyWorldOK: [() => storyWorldOK, v => ((storyWorldOK = v), provide({ storyWorldOK }))],
 });
 /* eslint-enable no-func-assign */
-provide({ playStoryScript, storyScriptIds, storyWorldOK });
+provide({
+  playStoryScript,
+  storyFreshTake,
+  storyHomeArrive,
+  storyPendingCheck,
+  storyPickPlay,
+  storyScriptIds,
+  storyWorldOK,
+});
 /* to-module: end */
 function storyScriptLines(id) {
   const i = id.indexOf(':'),
@@ -75,6 +93,8 @@ function storyScriptLines(id) {
     key = id.slice(i + 1);
   if (kind === 'trainer') return (TRAINERS[key] && TRAINERS[key].script) || null;
   if (kind === 'story') return ((STORY_DATA.scripts || {})[key] || {}).script || null;
+  /* RL-S1: the story director's lines (banter.json) */
+  if (kind === 'banter') return (BANTER[key] && BANTER[key].script) || null;
   if (kind === 'person')
     for (const sc of Object.values(gameData.maps)) {
       const P = (sc.people || []).find(p => p.id === key && p.script);
@@ -89,6 +109,7 @@ function storyScriptIds() {
     for (const P of sc.people || []) if (P.script) ids.push('person:' + P.id);
   for (const [id, T] of Object.entries(TRAINERS)) if (T.script) ids.push('trainer:' + id);
   for (const id of Object.keys(STORY_DATA.scripts || {})) ids.push('story:' + id);
+  for (const id of Object.keys(BANTER)) ids.push('banter:' + id);
   return ids;
 }
 /* who says a line that names nobody: the person or trainer the script belongs to, a story script's `who` */
@@ -96,6 +117,8 @@ function storyOwner(id) {
   const key = id.slice(id.indexOf(':') + 1);
   if (id.startsWith('trainer:')) return (TRAINERS[key] && TRAINERS[key].who) || null;
   if (id.startsWith('story:')) return ((STORY_DATA.scripts || {})[key] || {}).who || null;
+  /* a hub character's line is theirs (their person id is their `who`); the others name their speakers */
+  if (id.startsWith('banter:')) return (BANTER[key] && banterOwner(BANTER[key].who)) || null;
   for (const sc of Object.values(gameData.maps)) {
     const P = (sc.people || []).find(p => p.id === key);
     if (P) return P.who || P.id;
@@ -233,7 +256,17 @@ const storyGameStage = {
       T = storyRun.id && storyRun.id.startsWith('trainer:') ? TRAINERS[storyRun.id.slice(8)] : null;
     return storySceneOn()
       ? cutsceneSay(who, l.text, l.expr)
-      : talkLine(who, l.text, l.expr, T && T.cls && who === T.who ? { name: T.name } : {});
+      : talkLine(
+          who,
+          l.text,
+          l.expr,
+          /* RT-2: a pair's second trainer by its own class's name */
+          T && T.cls && who === T.who
+            ? { name: T.mate ? T.name.split(' & ')[0] : T.name }
+            : T && T.mate && who === T.mate.who
+              ? { name: T.mate.name }
+              : {}
+        );
   },
   choose: async options => {
     await storyWindowsClosed();
@@ -300,6 +333,87 @@ const storyGameStage = {
 const storyRun = { on: false, id: null, speaker: null, line: null, base: null, path: null, control: null };
 provide({ storyRun }); /* to-module */
 const storySlots = { name: () => lookOf('me').name || 'Trainer' };
+/* RL-S1: the script command `pick <who>`: the story director's line (logic/story-pick.js) on the game's save, marked
+   said; in a trainer's script `rematch` reads that trainer's leader or class. Its tree, or null for nothing to say */
+export function storyPickTree(who, id) {
+  const k = storyPickId(who, id);
+  return k ? storyTree('banter:' + k) : null;
+}
+/* RL-S2 part B: the story director's line for who, picked and played (a thank-you after a gift); false when no line
+   fits */
+async function storyPickPlay(who) {
+  const k = storyPickId(who, null);
+  return k ? playStoryScript('banter:' + k) : false;
+}
+/* the line picked for who (marked said), or null */
+function storyPickId(who, id) {
+  const S = saveData,
+    story = S.story || (S.story = {}),
+    runs = (S.meta && S.meta.runs) || 0,
+    T = id && id.startsWith('trainer:') ? TRAINERS[id.slice(8)] : null,
+    state = storyStateOf(S, {
+      locations: LOCATIONS,
+      questStages: Object.fromEntries(Object.entries(STORY_DATA.quests || {}).map(([k, q]) => [k, q.stages])),
+      ...storyTeamLookups(),
+      foe: T ? T.from || T.cls : undefined,
+    }),
+    k = storyPick(who, BANTER, c => conditionHolds(conditionTree(c), state), story, runs);
+  if (!k) return null;
+  storyPickSaid(k, BANTER, story, runs);
+  if (typeof debugLog !== 'undefined') debugLog.add('story', `pick ${who}: ${k}`);
+  return k;
+}
+/* RL-S1: home from a run (run.js runEndHome, after the run has ended): each hub character's first line is picked
+   now (story.fresh, said at the first talk after: storyFreshTake), and a lost run's scene waits to play
+   (story.pending, storyPendingCheck) */
+function storyHomeArrive(won) {
+  const story = saveData.story || (saveData.story = {}),
+    fresh = {};
+  /* RL-S2 part B: the favours the run just ended did are paid first (logic/relations.js), so a thank-you can be
+     picked below */
+  const state = storyStateOf(saveData, {
+    locations: LOCATIONS,
+    questStages: Object.fromEntries(Object.entries(STORY_DATA.quests || {}).map(([k, q]) => [k, q.stages])),
+    ...storyTeamLookups(),
+  });
+  for (const f of relFavoursPay(saveData, c => conditionHolds(conditionTree(c), state), RELATIONS)) {
+    const P = /** @type {any} */ (PEOPLE || {})[f.who],
+      name = (P && P.look && P.look.name) || f.who;
+    toast(f.to > f.from ? `${name}: favour done, level ${f.to}` : `${name}: favour done`);
+    if (typeof debugLog !== 'undefined') debugLog.add('story', `favour ${f.quest} done: ${f.who} +${f.points}`);
+  }
+  /* RL-S2 part B: a `must` line not yet heard (a Chapter beat, a favour's ask or thanks: their scripts set what comes
+     next) waits for the next talk instead of being picked over */
+  const was = story.fresh || {};
+  for (const who of BANTER_HUB) {
+    const keep = was[who] && BANTER[was[who]] && BANTER[was[who]].must ? was[who] : null,
+      k = keep || storyPickId(who, null);
+    if (k) fresh[who] = k;
+  }
+  story.fresh = fresh;
+  if (won) delete story.pending;
+  else story.pending = 'back-lost';
+}
+/* the line picked for who on the way home, taken (a talk plays it once in place of their own script), or null */
+function storyFreshTake(who) {
+  const fresh = saveData.story && saveData.story.fresh,
+    k = fresh && fresh[who];
+  if (!k) return null;
+  delete fresh[who];
+  return BANTER[k] ? k : null;
+}
+/* a scene waiting since the way home (story.pending): it plays once the hub's walk scene is up, nothing else open */
+export function storyPendingCheck() {
+  const story = saveData.story,
+    p = story && story.pending;
+  if (!p || saveData.run || storyRun.on || activeBattle || uiState.modal || talkBox.on || !walkView.ready) return;
+  /* HB-8: not while the train comes home (train-ride.js tells it once you've stepped off) */
+  if (typeof trainRide !== 'undefined' && trainRide.on) return;
+  if (uiState.tab !== 'walk' || (typeof cutscene !== 'undefined' && cutscene.on)) return;
+  if (typeof selfTest !== 'undefined' && selfTest.on) return;
+  delete story.pending;
+  playStoryScript('story:' + p);
+}
 /* plays a script by id; resume: where a saved run goes on from */
 async function playStoryScript(id, o = {}) {
   const tree = storyTree(id);
@@ -314,6 +428,7 @@ async function playStoryScript(id, o = {}) {
       locations: LOCATIONS,
       control: storyRun.control || undefined,
       slots: storySlots,
+      pick: who => storyPickTree(who, id),
     });
     return true;
   }
@@ -343,6 +458,7 @@ async function playStoryScript(id, o = {}) {
       questStages: Object.fromEntries(Object.entries(STORY_DATA.quests || {}).map(([k, q]) => [k, q.stages])),
       resume: o.resume || null,
       control,
+      pick: who => storyPickTree(who, id),
       onCheckpoint: p => {
         storyRun.base = runBase(S);
         storyRun.path = p;

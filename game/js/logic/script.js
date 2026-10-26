@@ -16,9 +16,10 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide, saveData } from '../hooks.js';
-import { LOCATIONS, STORY_DATA, TRAINERS, warnData } from '../game-data.js';
+import { LOCATIONS, RELATIONS, STORY_DATA, TRAINERS, warnData } from '../game-data.js';
 import { speciesOf } from './fighters.js';
 import { makeBilly } from './rules.js';
+import { relAdd, relGift, relReached, runBeans } from './relations.js';
 import { conditionHolds, conditionTree, storyStateOf } from './conditions.js';
 import { SCRIPT_COMMANDS } from './script-parse.js';
 /* eslint-disable no-func-assign */
@@ -58,7 +59,7 @@ provide({ storyAllows, storyHolds });
    command it plays (battle, walk, camera, ...). The runner changes the save itself (flags, items, pyramids, quests, once,
    cycles), through `save` (the game's saveData, or a test's object).
    Where it is: a path of numbers, [statement, branch, statement, branch, ..., statement]: the branch is the clause
-   of an if, the option of a choice, the entry of a cycle, 0 for once and call. After a checkpoint command the
+   of an if, the option of a choice, the entry of a cycle, 0 for once, call and pick. After a checkpoint command the
    runner hands onCheckpoint the path of the statement after it, and a run started with that path (resume) carries
    on from there without asking again (conditions, choices and counters are not read twice). */
 
@@ -69,7 +70,8 @@ provide({ storyAllows, storyHolds });
  *   locations?: { id: string }[], questStages?: Record<string, string[]>, resume?: number[] | null,
  *   onCheckpoint?: (path: number[]) => void, beforeCheckpoint?: (path: number[]) => void,
  *   control?: { skipping: boolean },
- *   slots?: Record<string, () => string | number> }} RunOptions */
+ *   slots?: Record<string, () => string | number>,
+ *   pick?: (who: string) => ScriptNode[] | null }} RunOptions */
 
 export const END = Symbol('end');
 /** plays a script; resolves when it is over @param {ScriptNode[]} tree @param {Stage} stage @param {RunOptions} o */
@@ -200,12 +202,38 @@ export async function runScript(tree, stage, o) {
       case 'quest':
         (story.quests || (story.quests = {}))[a] = b;
         return;
+      /* RL-S2: the hub folk and you (logic/relations.js): Beans, a gift, points for a favour; a wardrobe piece of a
+         level reached is given then */
+      case 'beans':
+        runBeans(save, count(a));
+        return;
+      /* RL-S2: the story's chapter moves on, never back */
+      case 'chapter': {
+        const M = save.meta;
+        if (M) M.chapter = Math.max(M.chapter || 1, Math.min(9, Math.floor(count(a))));
+        return;
+      }
+      case 'gift':
+      case 'rel': {
+        const M = save.meta;
+        if (!M || !RELATIONS) return;
+        const step = n.name === 'gift' ? relGift(M, a, RELATIONS) : relAdd(M, a, count(b), RELATIONS);
+        if (step)
+          for (const L of relReached(a, step, RELATIONS))
+            if (L.wardrobe && save.wardrobe) (save.wardrobe.owned || (save.wardrobe.owned = {}))[L.wardrobe] = 1;
+        return;
+      }
       case 'end':
         return END;
       case 'call': {
         const t = o.scripts && o.scripts(a);
         if (!t) throw new Error(`${id}, line ${n.line + 1}: no script "${a}" to call`);
         return into(t, 0);
+      }
+      /* RL-S1: the story director's line for who (logic/story-pick.js; the host picks and marks it said) */
+      case 'pick': {
+        const t = o.pick && o.pick(a);
+        return t ? into(t, 0) : undefined;
       }
       case 'wait':
       case 'walk':

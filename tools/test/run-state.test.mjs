@@ -8,7 +8,7 @@ import { fn, modules, startedSave } from './setup-fixture.mjs';
 const { newRun, validRun, runBegin, runEnd, runRestore, payoutOf, runNodeCount, RUN_FIELDS, runHome, runByExpedition } =
   modules['run-state'];
 const { runReleasePays } = modules['run-loop'];
-const { newMeta } = modules['meta-state'];
+const { newMeta, validMeta } = modules['meta-state'];
 const RATES = {
   money: 0.1,
   itemShare: 0.5,
@@ -97,6 +97,7 @@ test('run: the load check refuses broken or tampered runs', () => {
   assert.equal(validRun({ ...ok, at: { phase: 'battle', battle: 3, foe: FOE } }), true);
   assert.equal(validRun({ ...ok, unlocks: ['biome_ridge', 'shop_revive'] }), true, 'RL-11: the run’s copy');
   assert.equal(validRun({ ...ok, unlocks: [] }), true);
+  assert.equal(validRun({ ...ok, invited: 'dottie' }), true, 'RS-1: the resident invited');
   const bad = [
     null,
     [],
@@ -137,6 +138,8 @@ test('run: the load check refuses broken or tampered runs', () => {
     { ...ok, start: { ...ok.start, se: -1 } },
     { ...ok, start: { ...ok.start, trip: { node: 'x', plan: [] } } },
     { ...ok, start: { ...ok.start, seats: [1] } },
+    { ...ok, invited: 'Not An Id' }, // RS-1
+    { ...ok, invited: 7 },
   ];
   for (const b of bad) assert.equal(validRun(b), false, JSON.stringify(b).slice(0, 200));
   assert.equal(validRun(JSON.parse(JSON.stringify(ok).replace('"hints":{}', '"hints":{"__proto__":1}'))), false);
@@ -184,7 +187,12 @@ test('run: ending one pays into meta, puts the hub back and keeps the chosen Bil
   const pay = runEnd(s, { won: false, keep: [s.team[0].uid] }, RATES, PRICE);
   assert.equal(s.run, null);
   assert.equal(pay.research, 50 + 20 + 15 + 30);
-  assert.deepEqual(s.meta, { ...newMeta(), research: pay.research, scrap: 3 * 2, runs: 1 });
+  const history = s.meta.history;
+  assert.deepEqual(s.meta, { ...newMeta(), research: pay.research, scrap: 3 * 2, runs: 1, history });
+  /* RL-S1: the run as the story remembers it (no battle lost: given up) */
+  assert.equal(history.length, 1);
+  assert.equal(history[0].end, 'quit');
+  assert.deepEqual(history[0].team, ['sparky0', 'drip0', 'sprout0']);
   for (const k of RUN_FIELDS.filter(k => k !== 'team')) assert.deepEqual(s[k], hub[k], `${k} is the hub's again`);
   assert.equal(s.team.length, 2, 'the Billie caught in the run is gone');
   assert.equal(s.team[0].lvl, 14, 'the kept traveller keeps its gains');
@@ -212,6 +220,22 @@ test('run: ending one pays into meta, puts the hub back and keeps the chosen Bil
   assert.equal(u.box.length, boxBefore + 1);
   assert.equal(u.box.at(-1).uid, 'extra-1');
   assert.throws(() => runEnd(u, { won: false, keep: [] }, RATES, PRICE), /no run/);
+});
+
+test('run: RS-1: the resident invited moves in when the run ends, won or lost', () => {
+  for (const won of [false, true]) {
+    const s = hubSave();
+    runBegin(s, GIVE).invited = 'dottie';
+    runEnd(s, { won, keep: [s.team[0].uid] }, RATES, PRICE);
+    assert.deepEqual(s.meta.residents, { dottie: 1 }, `won: ${won}`);
+    assert.equal(s.meta.history[0].res, 'dottie', 'RS-2: the run’s history entry names them');
+    assert.ok(validMeta(JSON.parse(JSON.stringify(s.meta))), 'and the meta stays valid');
+  }
+  const t = hubSave();
+  runBegin(t, GIVE);
+  runEnd(t, { won: true, keep: [] }, RATES, PRICE);
+  assert.deepEqual(t.meta.residents, {}, 'nobody invited, nobody moves in');
+  assert.ok(!('res' in t.meta.history[0]), 'no res without an invite');
 });
 
 test('run: restoring leaves the run without paying (a run that cannot be resumed)', () => {

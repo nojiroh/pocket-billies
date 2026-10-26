@@ -10,6 +10,7 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { ITEMS, MOVES } from './game-data.js';
 import { weightClass } from './logic/parts.js';
+import { graftLook } from './logic/graft-art.js';
 import {
   ROBOT_LIMBS,
   ROBOT_SLOTS,
@@ -25,11 +26,13 @@ import {
 import {
   billyBuild,
   billyName,
+  billyPrime,
+  billyRel,
+  billyTypes,
   billyWeight,
   buildLean,
   coatPrefix,
   formatNumber,
-  isPrime,
   maxHp,
   partBroken,
   partHpLeft,
@@ -76,7 +79,8 @@ provide({
  *   kind: 'billy' | 'bot', id: string, name: string, sub: string, lvl: number, types: string[],
  *   hp: number, max: number, art: (px: number) => string, plate: string, down: boolean,
  *   lead: boolean, buddy: boolean, coat: string, prime: boolean, care: boolean,
- *   build: Record<string, string>, kg: number, wclass: string, slotNames: Record<string, string>,
+ *   build: Record<string, string>, rel?: Record<string, number> | null, kg: number, wclass: string,
+ *   slotNames: Record<string, string>,
  *   limbs: Record<string, number> | null
  * }} Unit */
 
@@ -97,16 +101,18 @@ function billyUnit(m) {
     name: billyName(m),
     sub: m.nick ? s.name : '',
     lvl: m.lvl,
-    types: s.types,
+    types: bot ? s.types : billyTypes(m),
     hp: m.hp,
     max: maxHp(m),
-    art: px => rigCanvasHTML(m.sp, px, { build: m.build, coat: m.coat }),
+    art: px => rigCanvasHTML(m.sp, px, { build: m.build, coat: m.coat, graft: graftLook(m) }),
     plate: plateVars(m),
     down: m.hp <= 0,
     lead: saveData.team[0] === m,
     buddy: saveData.buddy === m.uid,
     coat: coatPrefix(m.coat).trim(),
-    prime: !bot && isPrime(b),
+    prime: !bot && billyPrime(m),
+    /* SP-2: the spliced slots' relative weights, for the balance meter */
+    rel: bot ? null : billyRel(m),
     /* RL-12c: the name of the item it holds */
     held: m.held && ITEMS[m.held] ? ITEMS[m.held].n : '',
     care: needsCare(m),
@@ -121,11 +127,11 @@ function billyUnit(m) {
 
 /* UI-2: a bot's limbs as pips, the shared bot plate's row (the battle plate and the team row): each limb a slanted
    plate with its letter and four cells lit by the HP it has left; a broken limb goes dark and is struck through.
-   ph: {armL, armR, legs}, each 0..1 */
+   ph: {armL, armR, legs}, each 0..1; SP-5: a Billie's Augments, only the limbs it has */
 const LIMB_SHORT = { armL: 'L', armR: 'R', legs: 'Lg' };
 function limbPipsHTML(ph) {
   const said = [];
-  const pips = ROBOT_LIMBS.map(q => {
+  const pips = ROBOT_LIMBS.filter(q => !ph || q in ph).map(q => {
     const f = Math.max(0, Math.min(1, (ph && ph[q]) ?? 1)),
       lit = f <= 0 ? 0 : Math.ceil(f * 4),
       state = f <= 0 ? 'broken' : f < 0.34 ? 'low' : 'ok';
@@ -173,7 +179,7 @@ function unitBalanceHTML(L) {
 
 /** a unit's Build tab: each slot with its size marked on an S M L dial, the weight and its balance, Prime */
 function unitBuildHTML(u, slots) {
-  const L = buildLean(u.build);
+  const L = buildLean(u.build, u.rel);
   return `<div class="u-build">
   <div class="u-build-h"><b>Build</b><span class="tnum">${formatNumber(u.kg)} kg · ${escapeHtml(u.wclass)}</span></div>
   <ul class="u-slots">${slots

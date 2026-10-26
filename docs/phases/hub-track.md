@@ -85,6 +85,9 @@ Every figure is a claim from a read of the code: check it again at the start of 
   ~0.4 m into the gap, long sides leave hairline gaps; every post rot 0; every rail on a side the same rot.
 - A boxed prop sits at the ground height of its middle, no tilt (frame-items.js `propBaseHeight`); the zone is
   flattened, so nothing floats today, but a fence off the flat would.
+- (HB-6, rechecked) `fence_wood` is a 2.2 m section with three posts of its own, and the corner post is an 8 vox/m
+  model. Low-poly models ignore `wear`/`tint`/lean. The model shaders' spin (RF-2) was unused by the walk view.
+  Done in HB-6 below.
 
 **Run start** (airship.js, run.js, run-world.js)
 - `flyMenu` → `runStartSheet` → "Take off" → `runTakeOff`: `runWorldSync` makes all 12-14 run scenes in one tick
@@ -110,9 +113,21 @@ Every figure is a claim from a read of the code: check it again at the start of 
 | HB-6 | Natural fence | The bending post-and-rail fence | HB-4b | 1 |
 | HB-7 | Station and trains | The station, platform and sky rail models; one train per region theme; the station's sheet takes "Start a run" and the Crest upgrades; the airship scenery only | HB-4b | 1-2 |
 | HB-8 | Departure and return | Board, climb the rail, the portal opens, the train flies in, the carriage loading screen; the return out of the portal (win and loss) | HB-2, HB-7 | 1-2 |
+| HB-10a | Square: shape and fountain (done 2026-10-26) | The lobed ~10 m outline as a rerunnable patch (town locked), the fountain in place of the well, the streets entering in a pinwheel, a framed view of the sky rail and the portal; headless pictures | HB-4b | 1 |
+| HB-10b | Square: edges and market | Benches, planters, streetlamps, stalls, awnings, crates round the edge (existing models, remade where weak); lit windows, string lights, fireflies, the lit fountain | HB-10a | 1-2 |
+| HB-10c | Square: people | Stop points and time-of-day schedules for the townsfolk, 6-10 at once (an Engine setting), your ranch Billies visiting; phone frame times | HB-10b | 1 |
+| HB-10d | Square: reactions and things to do | Win banners, loss gossip, the fountain's chapter changes, the notice board, the fountain's coin gamble, the busker's slot (a resident: RS-3/RS-4) | HB-10c | 1-2 |
+| HB-10e | Square: festivals | Market days and festivals by run count, real dates (clock-safe, offline) and milestones, with a festival market | HB-10d | 1 |
+| HB-10f | Town rebuild reproducible | An unlocked town rebuild that makes the same town from its dials; then the store, inn and library brought to front the square, doors still to the camera; the pinwheel street entries (moved from HB-10a) | HB-10a | 1-2 |
 | HB-9 | Look pass on the phone | Headless phone pictures each round, then the owner's play test and debug log | all | 1 |
 
 About 10-15 sessions. HB-1, HB-2 and HB-4a can run side by side; then HB-3 beside HB-4b; then HB-5, HB-6 and HB-7.
+
+**Merged together** (2026-10-25, on `track/hub-merge`, for one PR into main): `track/hub` (HB-4a, HB-4b),
+`art/hub-station-trains` (HB-7's art), `art/hub-buildings` (HB-5's art half), `props/hub-fence` (HB-6), a merge
+commit each. Copperleaf rebuilt by the tools (build-copperleaf, then one round of build-island and build-copperleaf so
+the ground meets HB-6's swell); see HANDOFF. The placing half (the station on its headland with the rail and portal,
+the new buildings on their plots, the doors' acts) followed on `props/hub-placing`; still to do: HB-3, HB-8, HB-9.
 
 ### HB-1 Pin and decals
 - Pin: when the walk view is on the island map, the pin, the "here" ring and the walker use
@@ -180,6 +195,42 @@ at the landing).
   6 m grid. Trees as their models (far ones flat if the phone asks), fences, bridges, the stream and the pond, paths.
   No bowl clumps off the island.
 - Phone frame times at 4 orbit angles; the fallbacks are Engine settings.
+
+**Done in HB-3** (2026-10-25, branch `art/hub-world-map` at the owner's word, beside HB-4b on `track/hub`; tag
+`hb-3-done` for the owner). The owner's answers: 3 falls, silent; the lagoon on the bowl's own water (`mwater`), WA-7
+swaps in the water track's pixel look after this merges. Checked against main at f691ce9:
+- Already true on main: no bowl clumps on the floating island (0) and no landmark picture at its middle (0 standees):
+  Copperleaf's landmark is a prop with a model. Both are now guarded in code all the same.
+- Not true: every map model ignored its placement's `rot` (only the plots' fill-ins turned); fixed. The tree models
+  are limbs and leaf picture cards, both of which the map's model builder drops: they are made again for the map
+  (`bowlTreeFromRecipe`). Flat pictures on the floating island were still 3x (`BOWL_THING_SCALE`); now life size.
+  The Bowl map test's sea, landmark and rim steps failed on the floating island since IS-7; they know it now.
+- Real height: `bowlSeaInput(…, lift)`, 1 on the hub's floating island (`worldBowlIslandLift`), `BOWL_ISLAND_LIFT` (3)
+  on a run's bowl. The mountain is drawn 20.6 m for its 21.9 m (the Bowl map test reads it).
+- Lagoon (logic/float-island.js, tests): `floatLagoonRing` (the coast's reach at 128 angles, smoothed, pushed out 0.3x
+  the mean radius: 1.3x), the bed `floatLagoonDepth` (a shelf, a 3.2 m basin, a 0.35 m sill), the fine ground runs out
+  to the ring with the land meeting the water at the beach (no 4 m step), `floatLagoonWater` (depth and a rim fade in
+  the bowl sea's mesh layout), the rock under the ring, `floatMistPuffs` (the clouds' puffs along the rim). The coast
+  is where the water meets the 1.5 m ground, and the ground's letters are clipped by the map's own coast.
+- Falls: `floatFallSpots` (the rim nearest the coast, spread a quarter turn apart), `floatFallMesh`, the `mfallw`
+  shader (streak columns in the lagoon's tones, white lip, thinning into the cloud colour). Silent.
+- Trees as their models (`bowlTreeFromRecipe`: trunk and main limbs as five-sided tubes, a crown blob per leaf card,
+  placed and sized as the walk cuts it, in the leaf picture's average colour; a prop's `swap` for autumn trees; a
+  mushroom with no leaves through the normal model builder). Fences as their models; bridges and the pier as plank
+  decks (`bowlBridgeShape`, from the higher end). The stream and the pond show as the stamped water letters (painted
+  water with foam, as before); paths as before, now clipped by the fine coast.
+- World map settings (engine/settings.js `worldMap`, Engine panel): `lagoon`, `falls` (0-4), `treeModels`, `treeFar`
+  (simple shapes past that many metres, switched in the shader; 0 never), `fences`, `bridges`. A change makes the
+  island again (`worldBowlMapSettingsKey`).
+- The orbit stands 1.25x further back with the lagoon (`worldBowlFloatFrame`), so the ring fits a phone's width.
+- Numbers (headless, Copperleaf): 14.4k triangles of things before, ~44k after (193 trees as models); the lagoon
+  10.3k triangles; 72 mist puffs; 3 falls of 96 triangles.
+- Frame times: the debug menu's Bowl map test, step "The floating island's frame times": fps, worst gap and CPU draw
+  time at 0/90/180/270 degrees, then at 0 degrees with no lagoon, no falls and simple trees. Headless numbers are
+  software drawing; the phone's are the owner's.
+- Not done: the picture standees (`mstandee`) draw red squares on the floating island (the atlas is right; the cause
+  is not found), so the far-tree fallback is simple shapes, not flat pictures. The stream and pond are not a water
+  surface of their own. The falls have no plunge or splash (they fade into the clouds).
 
 ### HB-4a Island sketches
 - 3-4 directions from today's island (`copperleaf-e9`), relief maps and from-above pictures with the town, the second
@@ -274,12 +325,42 @@ their plots, the other new plots bare pads; a 12 m square; at least 8 cottages. 
   low-poly models (32 px/m) for the Workshop, the Gene Bank, the lighthouse and the windmill (turning sails).
   Rooms: which get one (ask: rec the store, inn, library, Workshop; the Gene Bank waits for the splicing track).
 
+**Done in HB-5, the art half** (2026-10-25, on `art/hub-buildings` at the owner's word). Answers: all five new
+buildings get a room (the Gene Bank too); their doors open with a new act `enter` (the room set on the building or its
+kind); the Gene Bank is a solarpunk lab-vault. Checked against the code:
+- The cottages' `v` did nothing because no model building had catalogue `variants` (barn aside); the roof layers were
+  missing too. Now: `roof: 1` on the cottages' roofs, `roof: 2` on their moss tufts (hidden under another roof style),
+  colour-swap variants on the cottages, the coloured houses and the townhouses (tools/add-building-variants.py).
+- A door opens a room only through its act (`ROOM_BY_USE`): the General store has no act at all, so it is not just
+  closed. `enter` was added (data-files.js `opensRoom`). The store's stock (shops.json is `{}`) and its `act: 'shop'`
+  on Copperleaf wait for the placing half.
+- `lighthouse` and `windmill` were already catalogue keys (old pictures, legacy maps only): the models are swapped in
+  under them. New keys: `workshop`, `gene_bank`. Rooms: int_inn and int_library back from legacy, int_workshop and
+  int_gene_bank new.
+- Rooms open only in a seamless world (`roomLayIn` needs the place's parts): the showcase map (test_hub_buildings)
+  shows the buildings, the walk-ins are checked on Copperleaf (tools/look-hub-buildings.py).
+- Left for the placing half: place them on the HB-4b island (doors on quarter turns), the store's act and stock, the
+  Gene Bank's place (splicing track's Ask me before).
+
 ### HB-6 Natural fence
 - The line follows the zone with gentle bends (a light smoothing, not Douglas-Peucker to straight sides); rails cut
   to fit each span (a stretched or shortened rail, never overlapping); posts with a small seeded lean and turn; each
   post at its own ground height and the rail tilted between posts (the field may then be gently uneven); a few
   weathered or broken rails; the gate where the path arrives. Pasture tests: no gaps, no overlaps, the Billies' roam
   line inside, the gate reachable.
+
+**Done in HB-6** (2026-10-25, on `props/hub-fence`, the session's brief). Answers: the gate where the island's path
+arrives; the field swells up to 0.5 m; fixed rails, not an engine stretch. Checked against the code:
+- Rail tilt needed engine support, though not a new shader. The model shaders already apply RF-2's `it.spin`. The
+  walk view now sets it (`logic/prop-turn.js spanFit`, `tiltSpin`; `walk/prop-look.js`): a catalogue model with
+  `restEnds` rests on the ground at both ends of its width, and a placement's `tilt` leans a model.
+- One rail model fits every span. The posts are evenly spaced round the line, so the spans come out nearly equal, and
+  the 2 m rail (`fence_rail`) takes its span's size (`s`, within 2% on the hub, the tool refuses more than 8%).
+  Weathered and broken are its variants. Every part is made from `fence_wood`'s own layers by
+  tools/make-fence-parts.mjs.
+- The gate is where island-gen's spoke crosses the fence: the west side, on the coast path. It hangs on its own post.
+- The ground swell belongs to tools/build-pasture.mjs (`pastureGround`): level at the zone's edge and round the gate,
+  so HB-4b's rebuilt island gets it again from `build-copperleaf.mjs`.
 
 ### HB-7 Station and trains
 - Models: the station (platform, canopy, a departures board), the sky rail (pylons out over the sea, climbing), and
@@ -289,6 +370,53 @@ their plots, the other new plots bare pads; a 12 m square; at least 8 cottages. 
   stays moored as scenery: no act.
 - Player-facing words: the station's name and lines (ask; this phase changes them).
 
+**Done in HB-7** (2026-10-25, on `art/hub-station-trains` from main with HB-1 merged in, at the owner's word). Answers
+(Ask me before 4): **Skyline Station**; the trains **the Lakeland Clipper, the Greenbelt Sunrunner, the Wildwood
+Zephyr, the Highland Arrow, the Harvest Comet**. The owner's notes on the first pictures: the trains have rocket
+engines; the portal is a tear floating in the sky, retro-futuristic (not a ring on a gantry). Checked against the code:
+- Region themes: 5 (`lakeland`, `greenbelt`, `wildwood`, `highland`, `harvest`); a run keeps `run.region.theme`;
+  `runRegionMake` can return null, so HB-8 needs a fallback train (rec: the Sunrunner). regions.json
+  `themes.<id>.train` names each theme's train (`{k, name}`), checked by check-data.
+- The portal models didn't fit: `portal_ring` is shards and a flat picture, `portal_gate` 3.3 m. `sky_portal` is new.
+- A model can't stand above the ground (`propBaseHeight`), so each `sky_rail` piece carries its own pylon; nothing
+  moves a prop along a path (HB-8's engine work). Pieces chain 12 m apart on one heading: flat (out of the station's
+  right end), bend, rise, rise high, crest (15.5 m), then `sky_portal` (the launch lip at its x -1.4, the tear at x 2).
+- The airship's act was read in more places than the plan listed: `standByMast` (run end, resume, landing: now the
+  station first), check-data's `dataBuildings` (a building's act must stand in Copperleaf), airship-data.test (every
+  town needs act `fly`, and no prop of kind `station`: the new kind is `train_station`), check-quick's phone step,
+  RL-8 and airship_moored, check-fast's Lab step.
+- Copperleaf is generated: build-copperleaf.mjs places the station on the open ground nearest the mast (now 118.9,
+  93.2, turned -64.5, 13 m from it). HB-4b moves it to the headland and lays the rail out to sea.
+- The run still sets off on the airship's flight over the world map and the run sheet still says so: HB-8.
+
+**Done in the placing half of HB-5 and HB-7** (2026-10-25, on `props/hub-placing` from main after PR #201, the
+session's brief). The owner's answers: the station side-on (its rail straight out to sea, no new art); the Gene
+Bank's door opens its room now (its machines wait for the splicing track); the General store opens with no stock.
+Checked against the code:
+- `landmarks.rail` didn't match HB-7's art: it started at the plot's middle on the island's spoke and climbed 45 m over
+  85 m; the art is five 12 m pieces from the station's right-hand end, 0.13 m to 15.13 m, then the portal. HB-4b's
+  plot faced the station out to sea, so a rail out of its right-hand end would have run along the coast over land.
+  Now island-gen turns the station's plot a quarter turn clockwise from facing out (`STATION_TURN`) and lays
+  `landmarks.rail` as the pieces do (`SKY_RAIL`, `skyRailHeight`): every 2 m from the right-hand end to the portal's
+  launch lip, its height over the plot's level; `portal` is the tear (17.05 m up). The dials' `len` and `rise` are
+  no longer read. A fresh B2 now has room for 6 house plots, not 9 (the coast road goes round the station's longer
+  inland end); the hub keeps its town zone and its 10 cottages.
+- The headland is low (0.91 m) and the sea about a metre under it: a placement's `y` (new, walk/frame-items.js
+  `propBaseHeight`) stands each piece and the portal level with the station; the rail's piers and pylons reach 2.5 m
+  under their base (build-station-trains.py `SINK`). seamless-world.js dropped props more than 2 m outside the place's
+  box, which took the last three pieces and the portal (past the east edge): a placement with `y` now stays.
+- build-copperleaf.mjs puts the station on its plot (rot 0 on the hub, facing south, its rail east), the five pieces
+  (one per look) and `sky_portal` 12 m apart behind its right-hand end; the Workshop, the Gene Bank, the lighthouse
+  and the windmill on their plots; the store's act `shop` (int_shop; its counter says it's closed: shops.json is
+  empty), the inn's, library's, Workshop's and Gene Bank's act `enter` with their names. The world map's plot models
+  know the new kinds (bowl-island.js `BOWL_PLOT_PROPS`). Tests: hub-doors.test (the buildings on their plots, the
+  acts, the rail against the station and `landmarks.rail`), island-gen-doors (the side-on plot, the rail data),
+  hub-data (Copperleaf sells nothing, rather than has no shop).
+- Left for later: the walk view draws the ground and sea only 8 m past the map's edge (`GROUND_BORDER_M`), so the
+  last pieces' pylons and the portal stand over the haze, not the sea (the orbit camera faces inland, so this shows
+  from free cameras and will in HB-8's departure: HB-8 or HB-3 widens the sea there). `flyMenu`'s hub branch stays
+  for HB-8.
+
 ### HB-8 Departure and return
 - Departure: the train glides in, you board, the camera follows it up the rail, the portal opens, the train flies in,
   a white-out into the loading screen (HB-2) shown as the carriage's inside with the portal tunnel past the windows,
@@ -296,6 +424,127 @@ their plots, the other new plots bare pads; a 12 m square; at least 8 cottages. 
 - Return: the train comes out of the portal and down the rail to the station; gold trim after a win, a battered,
   smoking carriage after a loss. Then the payout as now.
 - Reduced motion: a short fade version. Checks: check-fast's run start and return steps.
+
+**Done in HB-8** (2026-10-26, on `art/hub-departure` at the owner's word, from main after PR #205). The owner's
+answers: **climb, white-out, load** (Take off closes the sheet, the ride plays in the hub, the carriage screen comes up
+behind the white-out while the run's places are made, you land straight on the first place: no airship flight for
+runs); **payout, then return** (the payout screen as before, its button "Ride home", then the train home, then the
+toasts and the lost run's scene); the words as proposed. Checked against the code:
+- A prop could already move along a path: the cutscene director's traffic (`cutsceneTraffic`: a placement with `lift`
+  and `moving`) and the walk view's director hook (`walkView.director.frame`: its own camera, items and lights). The
+  ride uses both patterns (train-ride.js), not the cutscene system (its teardown stops the walk view).
+- "The walk view draws the sea only 8 m past the edge" was not so: on a `flatFar` map the sea skirt runs to 400 m
+  (ground-mesh.js `seaSkirt`); `GROUND_BORDER_M` is the land's border. What stood "over haze" was the map's haze
+  (`hazeD` 40) and the walk camera's lens blur focused on the player. The ride's frames focus on their own target, and
+  the shots out over the sea see further (`hazeK` 1.8, a director frame's new haze factor: walk/lighting.js). The
+  level shots over the town keep the walk's haze: stretched there, the far sea shows the world's curve as a band in
+  the sky.
+- The 20 s cap started with the loading: with the places made behind the screen it could have gone off before the run
+  had a world. logic/run-load.js has `hard` stages now (never late; the cap counts from when they are ready).
+- The run's region, and so its train, isn't known on the start sheet (the seed is rolled at Take off): the sheet says
+  "A sky train flies you…"; the payout names the run's train.
+- The self-test, check-fast's run_pack and run_loop and check-quick's RL-8 waited on `airshipFlight`.
+- Built: `logic/train-path.js` (the way: the station's track bed, `landmarks.rail`, the tear; the glide in; the
+  placement: in front of the rail by half the train's width, turned, lifted, nose up), tools/test/train-path.test.mjs;
+  `train-ride.js` (departure ~9.4 s: glide in over the town, you board, the chase up the rail, the tear swells and
+  flashes, the train shrinks into it, the white veil; home ~7 s: the tear opens (gold after a win), the train out of it
+  facing west and down the rail, you step off where `standByMast` stands you; the train stays at the platform, still;
+  a tap skips; reduced motion or no hub view: a 400 ms white fade, the train parked); `train-carriage.js` (a ~144 px
+  pixel canvas: seat backs, the rack and its bags, windows with the tunnel's streaks and rings, faded into the screen's
+  colour under its text); the trains' looks v 1 gold trim and v 2 battered with smoke fx, their carriage colours and
+  the portal's tunnel colours (build-station-trains.py); the take-off's `places` stage; postcards, the update check and
+  the story's waiting scene hold off while the train rides; one debug log line a ride (`train ride departure
+  train_greenbelt 9440 ms`, `(skipped)` when tapped).
+- Removed: `flyMenu`'s hub branch (tickets, Start a run, its upgrades), flyLand's run landing, the Take off button's
+  "Readying the airship" count. The airship flight itself stays (nothing in the game starts one; check-fast flies it).
+- Words beyond the list: Chosen's line after a win "came home by train", the Crest "spent at Skyline Station".
+- Checks: check-fast "The train ride" (played out, both returns), run_pack/run_loop through the ride (skipped), the
+  self-test's run phase "A run: the train, nodes, payout". Pictures: `python3 tools/look-train-ride.py`
+  (validation/look-train-ride/).
+- Not done: the station's own door/boarding animation (you walk to the train and vanish); the train has no sound of
+  its own (the take-off motif and a whoosh at the tear); a save swapped in mid-ride is not handled specially.
+
+### HB-10 The square alive
+Planned 2026-10-26 in Plan Mode with online research (session branch `ccr-144f3c08-vf09lo`). The owner's brief: the
+town square is empty and the layout dull; make the hub island feel more alive. WA-10 left a natural outline, 3D props
+and the front plots here (the old HB-10 row).
+
+**Verified facts** (main at b87b818d; check again each session)
+- The square's middle is the well plot (148.63, 59.36), paved to about 8 m by WA-10 (`patch-copperleaf-water.mjs
+  --square`); dials `town.square {r: 8, off: 6, front: 6}`. Within 18 m stand 8 props: the well, one lantern, a
+  signpost, a fruit tree, the giant swing tree, bracken, the Workshop, one cottage.
+- From the well: Workshop 16 m, lab 19, library 22, General store 27, inn 41, station 43, Juniper's home 54. No
+  building fronts the square.
+- People: Juniper only (at her cottage), `folk: 5` wandering; animals in `life`. No day schedules found.
+- Models in game/art/scene/next/models never placed on the hub: fountain, bench_wood, stall, market_cart,
+  market_hall, streetlamp(_b), notice_board, clock_tower, flag_pole, banner_bunting, planter_round, crate_goods, sack,
+  tent, campfire, bike_rack, bin (low-poly or picture not yet checked).
+- An unlocked town rebuild is not reproducible (WA-10): layout changes are hand patches with the town locked until
+  HB-10f.
+
+**Research** (what we take)
+- Whyte, *The Social Life of Small Urban Spaces*: sittable space, food, water, trees and "triangulation" (a
+  performer or feature that gets strangers talking). → the fountain, the busker, the stalls.
+- Gehl, the edge effect: people stop along edges and facades first; the middle fills last. → edges before middle;
+  the middle stays walkable for the orbit camera.
+- Sitte: irregular but rule-bound squares, streets entering at T-joins or as a pinwheel, bent lines, changing views.
+  → the lobed outline and pinwheel entries.
+- Hades (small hub changes after runs), Animal Crossing (the plaza upgraded at headcount milestones), Stardew
+  (festivals in the square), Lumiose (one landmark per plaza, its use changing). → reactions, festivals, growth by
+  residents.
+- Solarpunk squares: a market, a water feature, outdoor dining, seed exchange, tool library. → the market mood.
+
+**Decided** (the owner, 2026-10-26)
+- Mood: a busy solarpunk market. Bureau: hints only (a notice, a closed kiosk, a watcher).
+- The middle: a **fountain** (the well goes), lit from below at night, changing per chapter.
+- About **10 m with a lobed outline** (the owner, 2026-10-26: between WA-10's ~8 m and the generator's 12 m).
+- Layout in two steps: hand patches now (the square moves toward the buildings), then HB-10f's reproducible rebuild
+  brings the store, inn and library to front it.
+- A framed view from the square to the sky rail and the portal.
+- People: stop points and time of day (morning market, busy midday, quiet lantern evening), 6-10 at once, measured
+  and scaled by an Engine setting; your ranch Billies visit.
+- Growth: residents add stalls (RS-3/RS-4); the square reacts to runs (win banners, loss gossip, the fountain's
+  chapter changes); festivals by run count, real dates and milestones (all three).
+- Interactions: the fountain's coin toss as a **gamble**; a notice board (quests, daily seeds, ghost teams); a busker
+  who is an invited resident and plays your last run's region theme.
+- Night: lit windows, string lights, fireflies, the lit fountain.
+- Art: reuse the existing models, remade low-poly (32 px/m) only where they miss the airship style.
+- Sound: later, by the sound track; leave hooks (fountain, chatter, busker).
+- Order: look first (HB-10a, b), then people, then reactions, festivals, and the rebuild.
+
+**Ask me before** (recommendation first, in the session that needs it)
+- HB-10d: the coin gamble's cost, odds and effects (rec: a small stake, mostly small boons or a joke, a rare big win
+  or a small curse, once per return).
+- HB-10d: the fountain's look per chapter.
+- HB-10e: the festival calendar and names (player-facing words).
+
+**Risks**: phone cost of 6-10 people and the night lights (HB-10c measures); positions (hub, npcSpots, fixtures,
+checks, the fall's landing) when the square or buildings move; the locked town zone (hand patches only until
+HB-10f); one owner per file (`copperleaf.json` with the water track's patches).
+
+**Done in HB-10a** (2026-10-26, on `ccr-144f3c08-vf09lo` at the owner's word, the planning session's branch; merge
+into `track/hub`). The owner's answer: about 10 m. Checked against the code:
+- The generator's old 12 m square was paved and level out to 12 m (1683 of 1789 corner heights 1.14 m; the rest are
+  where streets slope in), so a rim inside 12 m changes ground letters only.
+- `tools/patch-copperleaf-square.mjs` (rerunnable): `--outline` paves to `squareRim(a)` (mean 10 m, a bulge toward the
+  portal's north-east, three soft lobes, 8.2-11.8 m), grass outside, streets carried to the rim; `--fountain` puts the
+  fountain where the well stood and the signpost 4.5 m out (it stood 2.2 m from the middle, against the basin).
+  WA-10's `patch-copperleaf-water.mjs --square` (8 m) is gone, so a rerun can't shrink it again.
+- `build-copperleaf.mjs` places the fountain and the signpost the same way (a rebuild keeps them); the world map draws
+  a fountain on the well plot (`BOWL_PLOT_PROPS`). The plot kind stays `well` (an internal name; a rename is its own
+  commit if wanted).
+- **Model fix**: the fountain's three waters and its lily pads sat just under their bowls' solid tops, so the fountain
+  looked dry; lifted (tools/build-props-batch6.py). Rebuilding batch 6 also rewrote `clock_tower` and
+  `test_props_marigold` (old drift between the script and later edits): not taken, left for whoever owns them.
+- The view: from the square's south-west edge the sky rail and the portal stand open to the north-east (no tall thing on
+  the line); HB-10b frames it with the edge props.
+- Tests: tools/test/hub-square.test.mjs (quick tier: the rim, paved to it, no plot on it, the fountain, the signpost
+  and the hub spot clear). Pictures: `python3 tools/island-shots.py OUT --only=town-square,town,square-portal,square-near`
+  (two new shots; fountain shots stand you 3 m east, not in the basin).
+- **Not done, moved to HB-10f**: the pinwheel street entries. The streets come in from the north-west, west and east
+  inside the locked town zone; turning them means re-routing streets, which is the reproducible rebuild's work.
+- The hub spot [151.63, 59.36] stays (1.25 m from the basin's edge): every hub position is unchanged.
+- **HB-10b started**: its work so far is docs/plans/hb-10b-wip.patch (see HANDOFF's HB-10a entry for what's left).
 
 ### HB-9 Look pass on the phone
 The owner looks at headless phone pictures (tools/island-shots.py extended: the station, the departure, the loading

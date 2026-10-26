@@ -33,7 +33,7 @@ test('each planted fault is named, and only it', () => {
     [R => (R.front.size = [10, 10]), 'musk0 size is 10,10 in front and'],
     [R => (R.back.bones.find(b => b.n === 'head').par = 'neck'), 'musk0 back: head hangs from neck, no such bone'],
     [R => R.back.bones.pop(), 'musk0 front and back have different bones'],
-    [R => (R.front.bones[0].i = 99), 'musk0 front: torso shows picture 99'],
+    [R => (R.front.bones[0].i = 99), 'musk0 front: body shows picture 99'],
     [R => (R.front.geo.mid += 3), 'musk0 front: geo mid'],
     [
       R => ((R.front.geo.top = 0), (R.front.geo.mid = R.front.geo.cy = R.front.base / 2)),

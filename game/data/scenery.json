@@ -1253,7 +1253,15 @@
    ],
    "model": "scene/next/models/house_red.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#F8D6B2":"#EAEEEC","#E86256":"#608CEC","#36968A":"#D65C4E","#3EA89A":"#E86A5A"}
+    },
+    {
+     "swap": {"#F8D6B2":"#F6E6BE","#E86256":"#6CB262","#36968A":"#4E6E9E","#3EA89A":"#5E7EB0"}
+    }
+   ]
   },
   "shop": {
    "name": "General store",
@@ -1329,10 +1337,13 @@
    "box": [4,2.4],
    "door": {"x":6,"y":0},
    "fx": [
-    {"k":"smoke","x":33,"y":-116},
-    {"k":"window","x":-36,"y":-45},
-    {"k":"glow","x":40,"y":-44}
-   ]
+    {"k":"smoke","x":31,"y":-118},
+    {"k":"window","x":-35,"y":-37},
+    {"k":"glow","x":38,"y":-38}
+   ],
+   "model": "scene/next/models/cave_house.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "tree_pine": {
    "name": "Pine tree",
@@ -1756,7 +1767,9 @@
    "flat": 0,
    "tags": ["route","cave"],
    "group": "boulder",
-   "solid": 1.2
+   "solid": 1.2,
+   "model": "scene/next/models/boulder.json",
+   "ppm": 32
   },
   "rocks": {
    "name": "Small rocks",
@@ -1784,12 +1797,15 @@
    "group": "crystal",
    "solid": 0.6,
    "fx": [
-    {"k":"sparkle","x":-26,"y":-45},
-    {"k":"sparkle","x":24,"y":-57},
-    {"k":"sparkle","x":6,"y":-73},
-    {"k":"sparkle","x":-16,"y":-63}
+    {"k":"sparkle","x":-24,"y":-42},
+    {"k":"sparkle","x":23,"y":-54},
+    {"k":"sparkle","x":6,"y":-69},
+    {"k":"sparkle","x":-15,"y":-59}
    ],
-   "glow": {"c":"#8EF0FF","r":1.5,"y":1}
+   "glow": {"c":"#8EF0FF","r":1.5,"y":1},
+   "model": "scene/next/models/crystal.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "stalagmite": {
    "name": "Stalagmite",
@@ -1801,7 +1817,9 @@
    "flat": 0,
    "tags": ["cave"],
    "group": "stalagmite",
-   "solid": 0.5
+   "solid": 0.5,
+   "model": "scene/next/models/stalagmite.json",
+   "ppm": 32
   },
   "well": {
    "name": "Stone well",
@@ -1931,7 +1949,10 @@
    "flat": 0,
    "tags": ["town","farm"],
    "group": "tent",
-   "box": [3.2,2.4]
+   "box": [3.2,2.4],
+   "model": "scene/next/models/tent.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "stall": {
    "name": "Fruit stall",
@@ -1973,8 +1994,10 @@
    "group": "campfire",
    "solid": 0.5,
    "fx": [
-    {"k":"fire","x":0,"y":-13}
-   ]
+    {"k":"fire","x":0,"y":-12}
+   ],
+   "model": "scene/next/models/campfire.json",
+   "ppm": 32
   },
   "arch": {
    "name": "Town gate",
@@ -2135,15 +2158,16 @@
    "flat": 0,
    "tags": ["farm"],
    "group": "windmill",
-   "box": [1.6,1.6],
+   "box": [3.6,3.6],
    "door": {"x":0,"y":0},
    "fx": [
-    {"k":"spin","x":0,"y":-139},
-    {"k":"window","x":0,"y":-81},
-    {"k":"window","x":0,"y":-54}
+    {"k":"window","x":0,"y":-90}
    ],
    "landmark": 1,
-   "vol": "lathe"
+   "model": "scene/next/models/windmill.json",
+   "ppm": 32,
+   "solid": 1,
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "tree_oak_b": {
    "name": "Spreading oak",
@@ -2642,7 +2666,9 @@
    "flat": 0,
    "tags": ["route","cave"],
    "group": "boulder",
-   "solid": 1
+   "solid": 1,
+   "model": "scene/next/models/boulder_b.json",
+   "ppm": 32
   },
   "boulder_mossy": {
    "name": "Mossy boulder",
@@ -2654,7 +2680,9 @@
    "flat": 0,
    "tags": ["route"],
    "group": "boulder",
-   "solid": 1.2
+   "solid": 1.2,
+   "model": "scene/next/models/boulder_mossy.json",
+   "ppm": 32
   },
   "mushroom_brown": {
    "name": "Brown mushrooms",
@@ -2706,7 +2734,15 @@
    ],
    "model": "scene/next/models/house_blue.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#EAEEEC":"#F2C4B4","#608CEC":"#E86256","#E04848":"#3EA89A"}
+    },
+    {
+     "swap": {"#EAEEEC":"#D6E6C8","#608CEC":"#B288E2","#E04848":"#D9A040"}
+    }
+   ]
   },
   "house_green": {
    "name": "Green-roof cottage",
@@ -2728,7 +2764,15 @@
    ],
    "model": "scene/next/models/house_green.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#E0D4EE":"#F6E6BE","#6CB262":"#E86256","#4E9A58":"#4E6E9E"}
+    },
+    {
+     "swap": {"#E0D4EE":"#C8DCEC","#6CB262":"#B288E2","#4E9A58":"#D65C4E"}
+    }
+   ]
   },
   "house_large": {
    "name": "Two-storey house",
@@ -2755,7 +2799,15 @@
    ],
    "model": "scene/next/models/house_large.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#F8D6B2":"#E0D4EE","#B288E2":"#608CEC","#E8604E":"#4E6E9E","#3EA89A":"#D9A040"}
+    },
+    {
+     "swap": {"#F8D6B2":"#D6E6C8","#B288E2":"#E86256","#E8604E":"#E8B450","#3EA89A":"#E04848"}
+    }
+   ]
   },
   "house_cottage": {
    "name": "Thatched cottage",
@@ -2830,7 +2882,9 @@
    "flat": 0,
    "tags": ["farm","town"],
    "group": "crates",
-   "solid": 0.5
+   "solid": 0.5,
+   "model": "scene/next/models/sack.json",
+   "ppm": 32
   },
   "stalagmite_b": {
    "name": "Stalagmite cluster",
@@ -2842,7 +2896,9 @@
    "flat": 0,
    "tags": ["cave"],
    "group": "stalagmite",
-   "solid": 0.6
+   "solid": 0.6,
+   "model": "scene/next/models/stalagmite_b.json",
+   "ppm": 32
   },
   "crystal_pink": {
    "name": "Pink crystals",
@@ -2875,12 +2931,15 @@
    "group": "crystal",
    "solid": 0.55,
    "fx": [
-    {"k":"sparkle","x":-22,"y":-49},
-    {"k":"sparkle","x":18,"y":-51},
-    {"k":"sparkle","x":-6,"y":-69},
-    {"k":"sparkle","x":12,"y":-31}
+    {"k":"sparkle","x":-21,"y":-46},
+    {"k":"sparkle","x":17,"y":-48},
+    {"k":"sparkle","x":-6,"y":-65},
+    {"k":"sparkle","x":11,"y":-29}
    ],
-   "glow": {"c":"#C79BFF","r":1.4,"y":0.9}
+   "glow": {"c":"#C79BFF","r":1.4,"y":0.9},
+   "model": "scene/next/models/crystal_purple.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "lantern_b": {
    "name": "Paper lantern pole",
@@ -3618,7 +3677,15 @@
    ],
    "model": "scene/next/models/townhouse_red.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#C46C54":"#4E6E9E","#3EA89A":"#E8B450"}
+    },
+    {
+     "swap": {"#C46C54":"#5E9A6E","#3EA89A":"#E04848"}
+    }
+   ]
   },
   "townhouse_blue": {
    "name": "Blue townhouse",
@@ -3708,7 +3775,15 @@
    ],
    "model": "scene/next/models/townhouse_yellow.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#F6E6BE":"#F2C4B4","#6CB262":"#608CEC","#3EA89A":"#E04848"}
+    },
+    {
+     "swap": {"#F6E6BE":"#C8DCEC","#6CB262":"#E86256","#3EA89A":"#D9A040"}
+    }
+   ]
   },
   "shop_cafe": {
    "name": "Corner café",
@@ -4838,7 +4913,9 @@
    "sway": 0,
    "flat": 0,
    "tags": ["battle"],
-   "group": "barrel"
+   "group": "barrel",
+   "model": "scene/next/models/barrel.json",
+   "ppm": 32
   },
   "pipe": {
    "name": "Pipe",
@@ -4990,7 +5067,9 @@
    "flat": 0,
    "tags": ["beach","island"],
    "group": "palm",
-   "solid": 0.4
+   "solid": 0.4,
+   "model": "scene/next/models/palm_tree.json",
+   "ppm": 32
   },
   "palm_tree_b": {
    "name": "Leaning palm",
@@ -5014,7 +5093,9 @@
    "flat": 0,
    "tags": ["beach","island"],
    "group": "palm",
-   "solid": 0.2
+   "solid": 0.2,
+   "model": "scene/next/models/palm_small.json",
+   "ppm": 32
   },
   "villa": {
    "name": "White villa",
@@ -5116,9 +5197,13 @@
    "group": "lighthouse",
    "solid": 1,
    "fx": [
-    {"k":"glow","x":0,"y":-251}
+    {"k":"glow","x":0,"y":-304}
    ],
-   "landmark": 1
+   "landmark": 1,
+   "model": "scene/next/models/lighthouse.json",
+   "ppm": 32,
+   "box": [3.6,3.6],
+   "vary": {"rot":0,"lean":0,"size":0}
   },
   "buoy": {
    "name": "Buoy",
@@ -5196,7 +5281,9 @@
    "flat": 0,
    "tags": ["snow","mountain"],
    "group": "tree_pine_snow",
-   "solid": 0.5
+   "solid": 0.5,
+   "model": "scene/next/models/tree_pine_snow.json",
+   "ppm": 32
   },
   "tree_pine_snow_b": {
    "name": "Tall snowy pine",
@@ -5208,7 +5295,9 @@
    "flat": 0,
    "tags": ["snow","mountain"],
    "group": "tree_pine_snow",
-   "solid": 0.5
+   "solid": 0.5,
+   "model": "scene/next/models/tree_pine_snow_b.json",
+   "ppm": 32
   },
   "tree_pine_snow_small": {
    "name": "Small snowy pine",
@@ -5220,7 +5309,9 @@
    "flat": 0,
    "tags": ["snow","mountain"],
    "group": "tree_pine_snow",
-   "solid": 0.3
+   "solid": 0.3,
+   "model": "scene/next/models/tree_pine_snow_small.json",
+   "ppm": 32
   },
   "chalet": {
    "name": "Chalet",
@@ -5408,7 +5499,9 @@
    "flat": 0,
    "tags": ["snow","mountain"],
    "group": "boulder",
-   "solid": 1
+   "solid": 1,
+   "model": "scene/next/models/boulder_snow.json",
+   "ppm": 32
   },
   "rocks_snow": {
    "name": "Snowy rocks",
@@ -5447,7 +5540,9 @@
    "flat": 0,
    "tags": ["volcano"],
    "group": "tree_dead",
-   "solid": 0.3
+   "solid": 0.3,
+   "model": "scene/next/models/tree_dead.json",
+   "ppm": 32
   },
   "rocks_basalt": {
    "name": "Basalt rocks",
@@ -5459,7 +5554,9 @@
    "flat": 0,
    "tags": ["volcano"],
    "group": "rocks_basalt",
-   "solid": 0
+   "solid": 0,
+   "model": "scene/next/models/rocks_basalt.json",
+   "ppm": 32
   },
   "boulder_basalt": {
    "name": "Basalt boulder",
@@ -5471,7 +5568,9 @@
    "flat": 0,
    "tags": ["volcano"],
    "group": "rocks_basalt",
-   "solid": 1
+   "solid": 1,
+   "model": "scene/next/models/boulder_basalt.json",
+   "ppm": 32
   },
   "basalt_columns": {
    "name": "Basalt columns",
@@ -5483,7 +5582,10 @@
    "flat": 0,
    "tags": ["volcano"],
    "group": "basalt_columns",
-   "solid": 1.1
+   "solid": 1.1,
+   "model": "scene/next/models/basalt_columns.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "obsidian": {
    "name": "Obsidian shards",
@@ -5528,8 +5630,10 @@
    "group": "lava_rock",
    "solid": 0.6,
    "fx": [
-    {"k":"glow","x":0,"y":-25}
-   ]
+    {"k":"glow","x":0,"y":-24}
+   ],
+   "model": "scene/next/models/lava_rock.json",
+   "ppm": 32
   },
   "lava_vent": {
    "name": "Lava vent",
@@ -5569,7 +5673,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "shop_counter",
-   "box": [2.6,0.9]
+   "box": [2.6,0.9],
+   "model": "scene/next/models/shop_counter.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "counter_white": {
    "name": "Reception desk",
@@ -5583,8 +5690,11 @@
    "group": "counter_white",
    "box": [2.6,0.9],
    "fx": [
-    {"k":"glow","x":26,"y":-41}
-   ]
+    {"k":"glow","x":26,"y":-43}
+   ],
+   "model": "scene/next/models/counter_white.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "shop_shelf": {
    "name": "Shelves of goods",
@@ -5596,7 +5706,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "shop_shelf",
-   "box": [2,0.6]
+   "box": [2,0.6],
+   "model": "scene/next/models/shop_shelf.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "fridge_drinks": {
    "name": "Drinks fridge",
@@ -5610,8 +5723,11 @@
    "group": "fridge_drinks",
    "box": [1,0.7],
    "fx": [
-    {"k":"glow","x":0,"y":-47}
-   ]
+    {"k":"glow","x":0,"y":-42}
+   ],
+   "model": "scene/next/models/fridge_drinks.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "clinic_bed": {
    "name": "Clinic bed",
@@ -5623,7 +5739,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "clinic_bed",
-   "box": [1,2]
+   "box": [1,2],
+   "model": "scene/next/models/clinic_bed.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "privacy_screen": {
    "name": "Privacy screen",
@@ -5635,7 +5754,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "privacy_screen",
-   "box": [1.6,0.3]
+   "box": [1.6,0.3],
+   "model": "scene/next/models/privacy_screen.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "bookshelf": {
    "name": "Bookcase",
@@ -5647,7 +5769,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "bookshelf",
-   "box": [1.8,0.5]
+   "box": [1.8,0.5],
+   "model": "scene/next/models/bookshelf.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "lab_desk": {
    "name": "Desk with a computer",
@@ -5661,8 +5786,11 @@
    "group": "lab_desk",
    "box": [1.8,0.8],
    "fx": [
-    {"k":"glow","x":-4,"y":-47}
-   ]
+    {"k":"glow","x":-8,"y":-43}
+   ],
+   "model": "scene/next/models/lab_desk.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "lab_machine": {
    "name": "Evolution machine",
@@ -5676,9 +5804,12 @@
    "group": "lab_machine",
    "box": [1.8,1.2],
    "fx": [
-    {"k":"glow","x":0,"y":-59},
-    {"k":"sparkle","x":0,"y":-71}
-   ]
+    {"k":"glow","x":0,"y":-56},
+    {"k":"sparkle","x":0,"y":-67}
+   ],
+   "model": "scene/next/models/lab_machine.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "table_round": {
    "name": "Round table",
@@ -5716,7 +5847,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "sofa",
-   "box": [2,0.9]
+   "box": [2,0.9],
+   "model": "scene/next/models/sofa.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "fireplace": {
    "name": "Fireplace",
@@ -5730,8 +5864,11 @@
    "group": "fireplace",
    "box": [1.8,0.6],
    "fx": [
-    {"k":"fire","x":0,"y":-9}
-   ]
+    {"k":"fire","x":0,"y":-10}
+   ],
+   "model": "scene/next/models/fireplace.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "plant_tall": {
    "name": "Potted plant",
@@ -5743,7 +5880,9 @@
    "flat": 0,
    "tags": ["indoor","town"],
    "group": "plant_tall",
-   "solid": 0.3
+   "solid": 0.3,
+   "model": "scene/next/models/plant_tall.json",
+   "ppm": 32
   },
   "rug_round": {
    "name": "Round rug",
@@ -5779,7 +5918,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "wall_painting",
-   "solid": 0
+   "solid": 0,
+   "model": "scene/next/models/wall_painting.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "wall_clock": {
    "name": "Clock on the wall",
@@ -5791,7 +5933,10 @@
    "flat": 0,
    "tags": ["indoor"],
    "group": "wall_clock",
-   "solid": 0
+   "solid": 0,
+   "model": "scene/next/models/wall_clock.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "wall_window": {
    "name": "Window",
@@ -5805,8 +5950,11 @@
    "group": "wall_window",
    "solid": 0,
    "fx": [
-    {"k":"window","x":0,"y":-71}
-   ]
+    {"k":"window","x":0,"y":-68}
+   ],
+   "model": "scene/next/models/wall_window.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "crate_goods": {
    "name": "Crate of goods",
@@ -5818,7 +5966,10 @@
    "flat": 0,
    "tags": ["indoor","town"],
    "group": "crate_goods",
-   "box": [0.9,0.7]
+   "box": [0.9,0.7],
+   "model": "scene/next/models/crate_goods.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "ladder": {
    "name": "Ladder",
@@ -5858,7 +6009,9 @@
    "tags": ["farm","route"],
    "group": "haybale_stack",
    "solid": 1,
-   "vol": ["puff",1]
+   "model": "scene/next/models/haybale_stack.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "stump_mossy": {
    "name": "Mossy stump",
@@ -7605,7 +7758,9 @@
    "solid": 0.4,
    "family": "trees",
    "grow": "svl",
-   "weight": 0.8
+   "weight": 0.8,
+   "model": "scene/next/models/tree_olive.json",
+   "ppm": 32
   },
   "tree_cypress": {
    "name": "Cypress",
@@ -9281,7 +9436,10 @@
    "sway": 0,
    "flat": 0,
    "tags": ["indoor"],
-   "group": "blackboard"
+   "group": "blackboard",
+   "model": "scene/next/models/blackboard.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "wall_map": {
    "name": "Map on the wall",
@@ -9514,12 +9672,13 @@
    "tags": ["route"],
    "group": "lookout_tower",
    "fx": [
-    {"k":"window","x":0,"y":-220}
+    {"k":"window","x":0,"y":-190}
    ],
    "solid": 1.5,
    "landmark": 1,
-   "vol": "block",
-   "volDepth": 2.4
+   "model": "scene/next/models/lookout_tower.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "shipwreck": {
    "name": "Shipwreck",
@@ -9961,10 +10120,8 @@
    "tags": ["jungle","route"],
    "group": "tree_jungle",
    "solid": 0.7,
-   "layers": [
-    {"img":"scene/props/layers/tree_jungle_lb.png","dz":0.6,"sway":0.7,"shadow":0},
-    {"img":"scene/props/layers/tree_jungle_lf.png","dz":-0.45,"sway":1.4,"shadow":0}
-   ]
+   "model": "scene/next/models/tree_jungle.json",
+   "ppm": 32
   },
   "jungle_fern": {
    "name": "Jungle leaves",
@@ -10022,10 +10179,13 @@
    "tags": ["cave","crystal","route"],
    "group": "crystal_cluster",
    "fx": [
-    {"k":"glow","x":-2,"y":-40},
-    {"k":"glow","x":-11,"y":-27}
+    {"k":"glow","x":-2,"y":-38},
+    {"k":"glow","x":-10,"y":-25}
    ],
-   "solid": 0.5
+   "solid": 0.5,
+   "model": "scene/next/models/crystal_cluster.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "crystal_cluster_violet": {
    "name": "Violet crystal cluster",
@@ -10066,16 +10226,17 @@
    "tags": ["cave","crystal","route"],
    "group": "crystal_spire",
    "fx": [
-    {"k":"glow","x":2,"y":-200},
-    {"k":"glow","x":-34,"y":-150},
-    {"k":"glow","x":74,"y":-130},
-    {"k":"glow","x":6,"y":-90},
-    {"k":"sparkle","x":10,"y":-300}
+    {"k":"glow","x":2,"y":-188},
+    {"k":"glow","x":-32,"y":-141},
+    {"k":"glow","x":70,"y":-122},
+    {"k":"glow","x":6,"y":-85},
+    {"k":"sparkle","x":9,"y":-282}
    ],
    "solid": 1.6,
    "landmark": 1,
-   "vol": "puff",
-   "volDepth": 2.2
+   "model": "scene/next/models/crystal_spire.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "geode_great": {
    "name": "The Great Geode",
@@ -10168,10 +10329,11 @@
    "group": "mine_entrance",
    "box": [4.6,2.2],
    "fx": [
-    {"k":"glow","x":44,"y":-62}
+    {"k":"glow","x":40,"y":-60}
    ],
-   "vol": "block",
-   "volDepth": 2
+   "model": "scene/next/models/mine_entrance.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "yacht_super": {
    "name": "Superyacht",
@@ -10518,7 +10680,18 @@
    ],
    "model": "scene/next/models/cottage_moss.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#F2DCA0":"#C8DCEC","#4E957C":"#D65C4E","#5EA88E":"#E86A5A"}
+    },
+    {
+     "swap": {"#F2DCA0":"#F2C4B4","#4E957C":"#4E6E9E","#5EA88E":"#5E7EB0"}
+    },
+    {
+     "swap": {"#F2DCA0":"#D6E6C8","#4E957C":"#D9A040","#5EA88E":"#E8B450"}
+    }
+   ]
   },
   "cottage_solar": {
    "name": "Solar-shingle cottage",
@@ -10540,7 +10713,18 @@
    ],
    "model": "scene/next/models/cottage_solar.json",
    "ppm": 32,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "swap": {"#D6E6C8":"#F2DCA0","#D65C4E":"#4E957C","#E86A5A":"#5EA88E"}
+    },
+    {
+     "swap": {"#D6E6C8":"#C8DCEC","#D65C4E":"#D9A040","#E86A5A":"#E8B450"}
+    },
+    {
+     "swap": {"#D6E6C8":"#F2C4B4","#D65C4E":"#4E6E9E","#E86A5A":"#5E7EB0"}
+    }
+   ]
   },
   "cottage_juniper": {
    "name": "Beekeeper’s cottage",
@@ -11533,6 +11717,401 @@
    "ppm": 32,
    "model": "scene/next/models/forest_canopy_autumn.json",
    "vary": {"rot":1,"lean":0}
+  },
+  "notice_board": {
+   "name": "Notice board",
+   "img": "scene/next/town/notice_board.png",
+   "ox": -35,
+   "oy": -71,
+   "shadow": 0.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town"],
+   "group": "signpost",
+   "solid": 0.5,
+   "ppm": 32,
+   "model": "scene/next/models/notice_board.json",
+   "vary": {"rot":0,"lean":0}
+  },
+  "train_station": {
+   "name": "Skyline Station",
+   "img": "scene/next/station/train_station.png",
+   "ox": -215,
+   "oy": -219,
+   "shadow": 1.4,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["hub","station"],
+   "group": "train_station",
+   "model": "scene/next/models/train_station.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [12.6,6.6],
+   "about": "Skyline Station (HB-7): the platform where runs start, its trains behind it (+y) on the rail, which runs out of its right end into sky_rail. Its act (station) comes from the map"
+  },
+  "sky_rail": {
+   "name": "Sky rail (flat)",
+   "img": "scene/next/station/sky_rail.png",
+   "ox": -194,
+   "oy": -25,
+   "shadow": 0.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["hub","station"],
+   "group": "sky_rail",
+   "model": "scene/next/models/sky_rail.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "solid": 0.7,
+   "variants": [
+    {
+     "img": "scene/next/station/sky_rail_bend.png",
+     "ox": -194,
+     "oy": -99,
+     "model": "scene/next/models/sky_rail_bend.json",
+     "name": "Sky rail (bend)",
+     "form": "bend"
+    },
+    {
+     "img": "scene/next/station/sky_rail_rise.png",
+     "ox": -198,
+     "oy": -259,
+     "model": "scene/next/models/sky_rail_rise.json",
+     "name": "Sky rail (rise)",
+     "form": "rise"
+    },
+    {
+     "img": "scene/next/station/sky_rail_rise_high.png",
+     "ox": -198,
+     "oy": -419,
+     "model": "scene/next/models/sky_rail_rise_high.json",
+     "name": "Sky rail (rise high)",
+     "form": "rise_high"
+    },
+    {
+     "img": "scene/next/station/sky_rail_crest.png",
+     "ox": -198,
+     "oy": -499,
+     "model": "scene/next/models/sky_rail_crest.json",
+     "name": "Sky rail (crest)",
+     "form": "crest"
+    }
+   ],
+   "about": "The sky rail (HB-7): 12 m pieces along x, chained end to end on one heading: flat, bend, rise, rise high, crest (the top, 15.5 m up), then sky_portal"
+  },
+  "sky_portal": {
+   "name": "Sky portal",
+   "img": "scene/next/station/sky_portal.png",
+   "ox": -258,
+   "oy": -790,
+   "shadow": 1.2,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["hub","station"],
+   "group": "sky_portal",
+   "model": "scene/next/models/sky_portal.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "solid": 1.2,
+   "glow": {"c":"#7FD8FF","r":6,"y":17.13,"day":0.5},
+   "variants": [
+    {
+     "swap": {"scene/next/decals/sky_portal_tear.png":"scene/next/decals/sky_portal_tear_gold.png"},
+     "glow": {"c":"#FFC94A","r":6,"y":17.13,"day":0.5},
+     "name": "Sky portal (gold)"
+    }
+   ],
+   "tunnel": ["#1A1240","#2A1E5A","#5A3AC8","#3A8AE8","#8FE4FF","#F4FCFF"],
+   "about": "The tear in the sky at the sky rail's top (HB-7): the rail climbs into it from -x and stops at a launch lip; HB-8 flies the train off it into the tear. Its gold look for the way home after a win"
+  },
+  "train_lakeland": {
+   "name": "Lakeland Clipper",
+   "img": "scene/next/station/train_lakeland.png",
+   "ox": -197,
+   "oy": -145,
+   "shadow": 1,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["hub","station","train"],
+   "group": "sky_train",
+   "model": "scene/next/models/train_lakeland.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [11.8,2.6],
+   "bob": 0.04,
+   "variants": [
+    {
+     "swap": {"#2E9AA0":"#E8B83A","#1E6E78":"#B8862A","#DCE2EC":"#FFE08A","#D6403C":"#E8B83A"},
+     "name": "Lakeland Clipper (gold trim)"
+    },
+    {
+     "swap": {"#F2F0E6":"#9A948A","#2E9AA0":"#3E5A58","#1E6E78":"#3E3A38","#DCE2EC":"#7A766E","#D6403C":"#7A4A30"},
+     "fx": [
+      {"k":"smoke","x":-176,"y":-48,"z":1.3},
+      {"k":"smoke","x":-40,"y":-96,"z":1.3},
+      {"k":"smoke","x":90,"y":-88,"z":1.3}
+     ],
+     "name": "Lakeland Clipper (battered)"
+    }
+   ],
+   "carriage": {
+    "wall": "#E8E4D6",
+    "trim": "#2E9AA0",
+    "seat": "#1E6E78",
+    "dark": "#B8B2A0",
+    "bags": ["#8A5A34","#3A4E7A","#A04A3A","#5E7C4E","#6A4A70"]
+   },
+   "about": "The Lakeland Clipper (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)"
+  },
+  "train_greenbelt": {
+   "name": "Greenbelt Sunrunner",
+   "img": "scene/next/station/train_greenbelt.png",
+   "ox": -197,
+   "oy": -142,
+   "shadow": 1,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["hub","station","train"],
+   "group": "sky_train",
+   "model": "scene/next/models/train_greenbelt.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [11.8,2.6],
+   "bob": 0.04,
+   "variants": [
+    {
+     "swap": {"#3A6A3A":"#B8862A","#E8C060":"#FFE08A","#D6403C":"#E8B83A"},
+     "name": "Greenbelt Sunrunner (gold trim)"
+    },
+    {
+     "swap": {"#4E8A4A":"#4E5644","#3A6A3A":"#3E3A38","#E8C060":"#7A4A30","#D6403C":"#7A4A30"},
+     "fx": [
+      {"k":"smoke","x":-176,"y":-48,"z":1.3},
+      {"k":"smoke","x":-40,"y":-96,"z":1.3},
+      {"k":"smoke","x":90,"y":-88,"z":1.3}
+     ],
+     "name": "Greenbelt Sunrunner (battered)"
+    }
+   ],
+   "carriage": {
+    "wall": "#4E8A4A",
+    "trim": "#E8C060",
+    "seat": "#8A3A2A",
+    "dark": "#3A6A3A",
+    "bags": ["#8A5A34","#3A4E7A","#A04A3A","#5E7C4E","#6A4A70"]
+   },
+   "about": "The Greenbelt Sunrunner (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)"
+  },
+  "train_wildwood": {
+   "name": "Wildwood Zephyr",
+   "img": "scene/next/station/train_wildwood.png",
+   "ox": -180,
+   "oy": -242,
+   "shadow": 1,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["hub","station","train"],
+   "group": "sky_train",
+   "model": "scene/next/models/train_wildwood.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [11.8,2.6],
+   "bob": 0.04,
+   "variants": [
+    {
+     "swap": {"#E8C060":"#FFE08A","#F2DCA0":"#F8E4A0","#7EA858":"#E8B83A","#D6403C":"#E8B83A"},
+     "name": "Wildwood Zephyr (gold trim)"
+    },
+    {
+     "swap": {"#7EA858":"#5A6448","#B27648":"#6A5440","#F2DCA0":"#9A9080","#E8C060":"#7A4A30","#D6403C":"#7A4A30"},
+     "fx": [
+      {"k":"smoke","x":-176,"y":-48,"z":1.3},
+      {"k":"smoke","x":-40,"y":-96,"z":1.3},
+      {"k":"smoke","x":90,"y":-88,"z":1.3}
+     ],
+     "name": "Wildwood Zephyr (battered)"
+    }
+   ],
+   "carriage": {
+    "wall": "#B27648",
+    "trim": "#E8C060",
+    "seat": "#5E8A4A",
+    "dark": "#84543C",
+    "bags": ["#8A5A34","#3A4E7A","#A04A3A","#5E7C4E","#6A4A70"]
+   },
+   "about": "The Wildwood Zephyr (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)"
+  },
+  "train_highland": {
+   "name": "Highland Arrow",
+   "img": "scene/next/station/train_highland.png",
+   "ox": -207,
+   "oy": -143,
+   "shadow": 1,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["hub","station","train"],
+   "group": "sky_train",
+   "model": "scene/next/models/train_highland.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [11.8,2.6],
+   "bob": 0.04,
+   "variants": [
+    {
+     "swap": {"#C8383C":"#E8B83A","#DCE2EC":"#FFE08A","#D6403C":"#E8B83A"},
+     "name": "Highland Arrow (gold trim)"
+    },
+    {
+     "swap": {"#E2E8F0":"#8A8C90","#C8383C":"#6A3434","#DCE2EC":"#7A766E","#D6403C":"#7A4A30"},
+     "fx": [
+      {"k":"smoke","x":-176,"y":-48,"z":1.3},
+      {"k":"smoke","x":-40,"y":-96,"z":1.3},
+      {"k":"smoke","x":90,"y":-88,"z":1.3}
+     ],
+     "name": "Highland Arrow (battered)"
+    }
+   ],
+   "carriage": {
+    "wall": "#D6DCE6",
+    "trim": "#C8383C",
+    "seat": "#3A4660",
+    "dark": "#9AA2B2",
+    "bags": ["#8A5A34","#3A4E7A","#A04A3A","#5E7C4E","#6A4A70"]
+   },
+   "about": "The Highland Arrow (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)"
+  },
+  "train_harvest": {
+   "name": "Harvest Comet",
+   "img": "scene/next/station/train_harvest.png",
+   "ox": -209,
+   "oy": -138,
+   "shadow": 1,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["hub","station","train"],
+   "group": "sky_train",
+   "model": "scene/next/models/train_harvest.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [11.8,2.6],
+   "bob": 0.04,
+   "variants": [
+    {
+     "swap": {"#F49A3A":"#E8B83A","#F2DCA0":"#F8E4A0","#D6403C":"#E8B83A"},
+     "name": "Harvest Comet (gold trim)"
+    },
+    {
+     "swap": {"#CE7C4C":"#6A4A38","#F2DCA0":"#8E8676","#F49A3A":"#7A4A30","#D6403C":"#7A4A30"},
+     "fx": [
+      {"k":"smoke","x":-176,"y":-48,"z":1.3},
+      {"k":"smoke","x":-40,"y":-96,"z":1.3},
+      {"k":"smoke","x":90,"y":-88,"z":1.3}
+     ],
+     "name": "Harvest Comet (battered)"
+    }
+   ],
+   "carriage": {
+    "wall": "#CE7C4C",
+    "trim": "#F2DCA0",
+    "seat": "#6A3A20",
+    "dark": "#9A5A34",
+    "bags": ["#8A5A34","#3A4E7A","#A04A3A","#5E7C4E","#6A4A70"]
+   },
+   "about": "The Harvest Comet (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)"
+  },
+  "workshop": {
+   "name": "Workshop",
+   "img": "scene/next/hub/workshop.png",
+   "ox": -85,
+   "oy": -196,
+   "shadow": 1.8,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town"],
+   "group": "workshop",
+   "model": "scene/next/models/workshop.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [4.6,3],
+   "door": {"x":-27,"y":0},
+   "fx": [
+    {"k":"window","x":43,"y":-44},
+    {"k":"glow","x":11,"y":-59},
+    {"k":"smoke","x":51,"y":-167}
+   ],
+   "room": "int_workshop"
+  },
+  "gene_bank": {
+   "name": "Gene Bank",
+   "img": "scene/next/hub/gene_bank.png",
+   "ox": -76,
+   "oy": -245,
+   "shadow": 1.8,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town"],
+   "group": "gene_bank",
+   "model": "scene/next/models/gene_bank.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [4.4,4.6],
+   "door": {"x":0,"y":0},
+   "fx": [
+    {"k":"window","x":61,"y":-66},
+    {"k":"window","x":-61,"y":-66},
+    {"k":"glow","x":-21,"y":-51},
+    {"k":"glow","x":21,"y":-51}
+   ],
+   "room": "int_gene_bank"
+  },
+  "fence_post": {
+   "name": "Fence post (pasture)",
+   "img": "scene/props/fence_wood_post.png",
+   "ox": -6,
+   "oy": -37,
+   "shadow": 0.15,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["route","farm","town"],
+   "group": "fence_wood",
+   "solid": 0.15,
+   "model": "scene/next/models/fence_post.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0.05},
+   "variants": [
+    {
+     "name": "Fence post (weathered)",
+     "swap": {"#B27648":"#9C8F7E","#A06A42":"#8D8274"}
+    }
+   ]
+  },
+  "fence_rail": {
+   "name": "Fence rails (pasture)",
+   "img": "scene/props/fence_wood.png",
+   "ox": -42,
+   "oy": -37,
+   "shadow": 0.3,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["route","farm","town"],
+   "group": "fence_wood",
+   "box": [2,0.25],
+   "restEnds": 1,
+   "model": "scene/next/models/fence_rail.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {
+     "name": "Fence rails (weathered)",
+     "swap": {"#B27648":"#9C8F7E","#A06A42":"#8D8274"}
+    },
+    {"name":"Fence rails (broken)","model":"scene/next/models/fence_rail_broken.json"},
+    {
+     "name": "Fence rails (broken, weathered)",
+     "swap": {"#B27648":"#9C8F7E","#A06A42":"#8D8274"},
+     "model": "scene/next/models/fence_rail_broken.json"
+    }
+   ]
   }
  },
  "person": 1.75,

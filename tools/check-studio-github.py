@@ -23,6 +23,9 @@ Studio track ST-T: the Studio self-test runs whole and must pass (no errors, eve
 no token in its report); its times are not judged here.
 Studio plan Phase 5 (T5.1): a kit Billie's recipe edited in Part mode bakes at once (one undo step), and the proposal
 carries its sheet (pixel-equal to the Node bake), rigs-next.js, kitBuilds.json and its line.
+Roster track RO-3b: every kit Billie is on its placeholder (bodyPlans.json), its recipe kept. So the kit steps still run
+on a kit Billie, the stand-in serves the first recipe's Billie off its placeholder: bodyPlans.json without its form,
+its sheet and rig as `npm run bake:kits` bakes them (kit_off_placeholder). Nothing on disk changes.
 Studio plan Phase 5 (T5.2): Replace from Parts Library greys a part a child can't hang on, shows before and after,
 and a head swapped keeps a blink as one undo step.
 Studio plan Phase 5 (T5.4): Repack sheet makes a hand-drawn Billie's sheet smaller, drawn the same, one undo step.
@@ -657,6 +660,126 @@ def generate_steps(pg, errs):
     if len(errs) > n: errs[n:] = [f'generate: {e}' for e in errs[n:]]
     else: print('generate: a canyon route drafted and drawn, dials, a plants reroll and a clinic at the hub, added as a scene in one undo step; a second draft joined to it (meets it, the pair drawn), added too', flush=True)
 
+
+
+# WA-9: pointer events on a map canvas at scene metres (x, z): a press at the first point, moves through the rest, a
+# release at the last; o adds to every event (altKey...)
+WT_STROKE = """((id,sc,pts,o)=>{const c=document.getElementById(id);c.setPointerCapture=()=>{};const r=c.getBoundingClientRect(),kx=r.width/sc.w,kz=r.height/sc.h,
+ ev=(t,p)=>c.dispatchEvent(new PointerEvent(t,Object.assign({clientX:r.left+p[0]*kx,clientY:r.top+(sc.h-p[1])*kz,pointerId:7,bubbles:true,button:0},o||{})));
+ pts.forEach((p,i)=>ev(i?'pointermove':'pointerdown',p));ev('pointerup',pts[pts.length-1])})"""
+
+
+def water_tools_steps(pg, errs):
+    """water track WA-9: the Studio's water tools. On the Generate card: a river drawn with the brush from the west side
+    to a pool, a waterfall placed on it (its pool) and a bog painted over it are made in the draft (the live preview),
+    survive a new seed (they are the draft's dials, params.hand), "Look at it" puts the walker on dry ground beside the
+    fall, and Add as a new scene keeps them in its gen (one undo step). In the map editor's Kinds of water tool on
+    test_water: a fall placed and a stream line drawn and its bed carved, each undone; on the hub island the tool
+    refuses and changes nothing."""
+    n = len(errs)
+    gen = lambda: pg.evaluate("mapGen.draft?JSON.stringify(mapGen.draft.gen.params.hand||null)+mapGen.draft.gen.seed:''")
+
+    def stroke(cid, pts, o=None):
+        sc = "mapGen.draft" if cid == 'genMap' else "currentMap()"
+        pg.evaluate(f"({WT_STROKE})({json.dumps(cid)},{sc},{json.dumps(pts)},{json.dumps(o or {})})")
+
+    def made(cond, sec=60):
+        return poll(pg, f"!!mapGen.draft&&walkView.id==='_gen'&&({cond})", sec)
+
+    pg.evaluate("mapGen.on=false;mapGen.params=mapgenParams({seed:7,land:{water:'none'}});mapGen.joins={};mapGen.pair=false;mapGen.draft=null;studioState.sel.scene='copperleaf';void openSection('scenes')")
+    pg.wait_for_selector('[data-act=genOpen]', timeout=20000)
+    pg.click('[data-act=genOpen]')
+    if not made("walkView.ready"):
+        errs.append('water tools: the draft never drew')
+        return
+    maps0, undo0 = pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]")
+    W, H = pg.evaluate("[mapGen.draft.w, mapGen.draft.h]")
+    a, m, b = [0.3, H - 14], [round(W * 0.4, 2), round(H * 0.5, 2)], [W - 24, 12]
+    pg.click('[data-act=wtTool][data-k=river]')
+    for p in (a, m, b): stroke('genMap', [p])
+    pg.click('[data-act=wtFinish]')
+    river = "(mapGen.draft.streams||[]).find(s=>s.pts[0][0]===0&&Math.abs(s.pts[0][1]-%s)<1&&Math.hypot(s.pts[s.pts.length-1][0]-%s,s.pts[s.pts.length-1][1]-%s)<1)" % (a[1], b[0], b[1])
+    if not made(f"(mapGen.params.hand||{{}}).rivers&&mapGen.params.hand.rivers.length===1&&!!{river}"):
+        errs.append(f"the river brush made no river: hand {pg.evaluate('JSON.stringify(mapGen.params.hand||null)')}, notes {pg.evaluate('mapGen.notes')}")
+        return
+    if pg.evaluate(f"{river}.src+'>'+{river}.mouth") != 'edge>pool': errs.append(f"the river's ends: {pg.evaluate(f'{river}.src+'+chr(39)+'>'+chr(39)+'+{river}.mouth')}")
+    # a fall on it, aimed down the river, with its pool
+    lip = pg.evaluate(f"(()=>{{const s={river};return s.pts[Math.floor(s.pts.length/2)].map(v=>Math.round(v*100)/100)}})()")
+    pg.click('[data-act=wtTool][data-k=fall]')
+    stroke('genMap', [lip, [lip[0] + 1.5, lip[1] - 1.5]])
+    fall = "(mapGen.draft.falls||[]).find(f=>Math.abs(f.x-%s)<0.05&&Math.abs(f.z-%s)<0.05)" % (lip[0], lip[1])
+    if not made(f"!!{fall}"): errs.append(f"the waterfall placer made no fall: notes {pg.evaluate('mapGen.notes')}")
+    elif not pg.evaluate(f"{fall}.pool===2&&{fall}.w===2"): errs.append(f"the hand fall: {pg.evaluate(f'JSON.stringify({fall})')} (notes {pg.evaluate('mapGen.notes')})")
+    # a bog over the river
+    pg.click('[data-act=wtTool][data-k=kind]')
+    pg.click('[data-act=wtKind][data-k=bog]')
+    stroke('genMap', [[m[0] - 3, m[1] - 3], [m[0] + 3, m[1] + 3]])
+    if not made("(mapGen.draft.waters||[]).length&&mapGen.draft.waters[mapGen.draft.waters.length-1].k==='bog'"): errs.append('the kind painter laid no bog last')
+    # a new seed: the hand water is made again
+    hand = pg.evaluate("JSON.stringify(mapGen.params.hand)")
+    pg.click('[data-act=genSeed]')
+    if not made(f"mapGen.draft.gen.seed!==7&&!!{river}&&!!{fall}&&mapGen.draft.waters[mapGen.draft.waters.length-1].k==='bog'"):
+        errs.append(f"the hand water did not survive a new seed (notes {pg.evaluate('mapGen.notes')})")
+    if pg.evaluate("JSON.stringify(mapGen.params.hand)") != hand: errs.append('a new seed changed the hand water')
+    # Look at it: the walker on dry ground by the fall
+    pg.click('[data-act=wtTool][data-k=fall]')
+    stroke('genMap', [lip])
+    pg.click('[data-act=wtLook]')
+    if not pg.evaluate("(()=>{const p=mapGen.pvPos,d=mapGen.draft;return !!p&&!'wd'.includes(d.tiles[d.h-1-Math.floor(p[1])][Math.floor(p[0])])})()"):
+        errs.append(f"Look at it: the walker at {pg.evaluate('mapGen.pvPos')}")
+    if pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]") != [maps0, undo0]: errs.append('the hand water reached the data or the undo history')
+    pg.click('[data-act=genAccept]')
+    pg.fill('#genName', 'Check Brook')
+    pg.click('#dlg [data-dlg="1"]'); time.sleep(0.5)
+    if not pg.evaluate("(()=>{const s=studioState.D.maps.checkbrook;return !!s&&s.gen.params.hand.rivers.length===1&&s.gen.params.hand.falls.length===1&&s.streams.length>=1})()"):
+        errs.append('Add as a new scene did not keep the hand water in gen')
+    elif pg.evaluate("studioState.undo.length") != undo0 + 1: errs.append('adding the scene is not one undo step')
+    pg.evaluate("delete mapGen.params.hand;ACTIONS.wtTool({k:''});void undo()"); time.sleep(0.3)
+    # the map editor on test_water: a fall placed, a stream drawn and carved; each undone
+    pg.evaluate("mapGen.on=false;studioState.sel.scene='test_water';void openSection('scenes')")
+    if not poll(pg, "!!document.getElementById('scMap')", 30):
+        errs.append('Walk scenes never showed test_water')
+        return
+    before = pg.evaluate("JSON.stringify([currentMap().tiles,currentMap().heights,currentMap().streams,currentMap().falls||null])")
+    u0 = pg.evaluate("studioState.undo.length")
+    pg.evaluate("ACTIONS.scTool({t:'water'})"); time.sleep(0.3)
+    pg.click('[data-act=scWMode][data-k=falls]'); time.sleep(0.3)
+    nf = pg.evaluate("(currentMap().falls||[]).length")
+    stroke('scMap', [[30.1, 20], [30.1, 18]])
+    time.sleep(0.3)
+    got = pg.evaluate("(()=>{const f=(currentMap().falls||[]).slice(-1)[0];return [(currentMap().falls||[]).length,f&&f.dir]})()")
+    if got[0] != nf + 1 or got[1] != [0, -1]: errs.append(f'map editor: a fall placed and aimed south gave {got}')
+    if pg.evaluate("studioState.undo.length") != u0 + 1: errs.append('map editor: placing a fall is not one undo step')
+    pg.click('[data-act=scWMode][data-k=rivers]'); time.sleep(0.3)
+    ns = pg.evaluate("(currentMap().streams||[]).length")
+    for p in ([0, 6], [8, 6.5], [20, 3.5]): stroke('scMap', [p])
+    pg.click('[data-act=wtsFinish]')
+    time.sleep(0.3)
+    if pg.evaluate("(currentMap().streams||[]).length") != ns + 1: errs.append('map editor: the stream line was not added')
+    elif not pg.evaluate("!!document.querySelector('[data-act=wtsCarve]')"): errs.append('map editor: the new stream is not picked')
+    else:
+        pg.click('[data-act=wtsCarve]'); time.sleep(0.5)
+        if not pg.evaluate("(()=>{const s=currentMap(),st=s.streams[s.streams.length-1];return 'wd'.includes(s.tiles[s.h-1-6][8])&&st.src==='edge'&&st.mouth==='pool'})()"):
+            errs.append(f"map editor: Carve the bed made no river: {pg.evaluate('JSON.stringify(currentMap().streams.slice(-1))')}")
+    for _ in range(pg.evaluate('studioState.undo.length') - u0): pg.evaluate('undo()')
+    time.sleep(0.3)
+    if pg.evaluate("JSON.stringify([currentMap().tiles,currentMap().heights,currentMap().streams,currentMap().falls||null])") != before:
+        errs.append('map editor: undo did not put test_water back')
+    # the hub island: the tool refuses, nothing changes
+    pg.evaluate("studioState.sel.scene='copperleaf';void openSection('scenes')")
+    poll(pg, "!!document.getElementById('scMap')", 30)
+    isle = pg.evaluate("JSON.stringify([currentMap().waters||null,currentMap().streams||null,currentMap().falls||null])")
+    u1 = pg.evaluate("studioState.undo.length")
+    pg.evaluate("ACTIONS.scTool({t:'water'})"); time.sleep(0.3)
+    if pg.evaluate("!!document.querySelector('[data-act=scWMode]')"): errs.append("the hub island's water tool shows its modes")
+    for mode in ('kinds', 'falls', 'rivers'):
+        pg.evaluate(f"mapEditor.wmode='{mode}'")
+        stroke('scMap', [[40, 40], [44, 44]])
+    if pg.evaluate("JSON.stringify([currentMap().waters||null,currentMap().streams||null,currentMap().falls||null])") != isle or pg.evaluate("studioState.undo.length") != u1:
+        errs.append("the water tools changed the hub island")
+    pg.evaluate("mapEditor.wmode='kinds';ACTIONS.scTool({t:'paint'})")
+    if len(errs) > n: errs[n:] = [f'water tools: {e}' for e in errs[n:]]
+    else: print('water tools: on the Generate card a hand river (edge to pool), a fall with its pool and a bog made live and again after a new seed, Look at it, kept in gen when added; in the map editor a fall placed and a stream drawn and carved, undone; the hub island refused', flush=True)
 
 def species_part_steps(pg, errs):
     """Studio track ST-6: the skeleton builder zooms by whole steps with the pixel canvas's keys; the Billies section
@@ -1467,9 +1590,10 @@ def kit_write_steps(pg, errs):
         t0 = time.time()
         while time.time() - t0 < limit and (pg.evaluate("studioState.undo.length") < steps0 + k or not pg.evaluate(idle)): time.sleep(0.2)
 
-    # parity through the browser: every kit Billie baked in the Studio is its committed sheet and rig
+    # parity through the browser: every kit Billie baked in the Studio is its committed sheet and rig (RO-3b: the one
+    # the stand-in serves off its placeholder; the others' recipes are kept, not baked)
     par = pg.evaluate("""(async () => { const out = [];
-      for (const f of studioState.D.kitBuilds.forms) {
+      for (const f of studioState.D.kitBuilds.forms.filter(f => kitFormOf(f.rig))) {
         const m = await kitBakeInStudio(f), i = new Image(); i.src = '../game/art/next/billionaires/' + f.name + '.png'; await i.decode();
         const c = document.createElement('canvas'); c.width = i.width; c.height = i.height; c.getContext('2d').drawImage(i, 0, 0);
         if (!kitSameShown(m.sheet, kitPixelsOf(c))) out.push(f.name + ' sheet');
@@ -1506,9 +1630,15 @@ def kit_write_steps(pg, errs):
     pg.evaluate("redo()"); time.sleep(0.5)
     if json.loads(pg.evaluate(state)) != s1: errs.append('redo did not put the bake back whole')
     pg.evaluate("window.__kitWrite = " + json.dumps({'name': name, 'rig': sp, 'line': form['line'], 'form': s1['form']}))
+    # RO-3b: a Billie on its placeholder shows its recipe as kept, with nothing to bake or write
+    kept = pg.evaluate("studioState.D.kitBuilds.forms[1]")
+    pg.evaluate(f"wbPart.src = 'species'; wbPart.sp = {json.dumps(kept['rig'])}; wbPart.id = ''; render()")
+    pg.wait_for_selector(f'[data-kit-kept="{kept["name"]}"]', timeout=20000)
+    if pg.locator(f'[data-kit-kept="{kept["name"]}"] [data-kitr], [data-kit-kept="{kept["name"]}"] [data-act=kitWriteBillie]').count():
+        errs.append(f"{kept['name']}'s kept recipe can still be edited or written")
     pg.evaluate("workbench.mode = 'sheet'; wbPart.src = 'kits'")
     if len(errs) > n: errs[n:] = [f'kit write: {e}' for e in errs[n:]]
-    print(f'kit write: all {pg.evaluate("studioState.D.kitBuilds.forms.length")} kit Billies baked in the browser as committed; {name} written as it is (nothing changed), its head {old} -> {new} baked in one undo step, undone and redone, left to propose', flush=True)
+    print(f'kit write: {pg.evaluate("studioState.D.kitBuilds.forms.filter(f => kitFormOf(f.rig)).length")} kit Billie(s) baked in the browser as served, the other recipes kept; {name} written as it is (nothing changed), its head {old} -> {new} baked in one undo step, undone and redone, left to propose', flush=True)
 
 
 def kit_write_sent(pg, bodies, errs):
@@ -1610,9 +1740,10 @@ def repack_steps(pg, errs):
     """Studio plan Phase 5 (T5.4): Repack sheet on a hand-drawn rig (the first rig that is not a kit Billie: since RO-2c
     every game species is one, so a legacy rig): the sheet gets smaller, both views are
     drawn pixel for pixel as before (neutral pose, every face), it is one undo step and undo puts the sheet and rig
-    back; on a kit Billie it refuses (the recipe packs its sheet)."""
+    back; on a kit Billie it refuses (the recipe packs its sheet), and on a placeholder Billie (RO-3b: its body plan
+    does)."""
     n = len(errs)
-    sp = pg.evaluate("Object.keys(studioState.rigs).sort().find(s => !kitFormOf(s) && studioState.rigs[s].front && studioState.rigs[s].back) || ''")
+    sp = pg.evaluate("Object.keys(studioState.rigs).sort().find(s => !kitFormOf(s) && !placeholderFormOf(s) && studioState.rigs[s].front && studioState.rigs[s].back) || ''")
     if not sp:
         errs.append('repack: no hand-drawn rig left to repack'); return
     pg.evaluate(f"wbPart.src = 'species'; wbPart.sp = {json.dumps(sp)}; wbPart.id = 'head'; workbench.mode = 'part'; void openSection('workbench')")
@@ -1639,9 +1770,13 @@ def repack_steps(pg, errs):
     k0 = pg.evaluate("studioState.undo.length")
     pg.locator('[data-act=wbsRepack]').first.click(); time.sleep(0.8)
     if pg.evaluate("studioState.undo.length") != k0 or not pg.locator('.toast', has_text='baked from its recipe').count(): errs.append('Repack sheet on a kit Billie did not refuse')
+    ph = pg.evaluate("studioState.D.bodyPlans.forms[0].rig")
+    pg.evaluate(f"wbPart.sp = {json.dumps(ph)}; render()"); time.sleep(0.5)
+    pg.locator('[data-act=wbsRepack]').first.click(); time.sleep(0.8)
+    if pg.evaluate("studioState.undo.length") != k0 or not pg.locator('.toast', has_text='baked from its body plan').count(): errs.append('Repack sheet on a placeholder Billie did not refuse')
     pg.evaluate("wbPart.src = 'kits'; wbPart.id = ''; workbench.mode = 'sheet'")
     if len(errs) > n: errs[n:] = [f'repack: {e}' for e in errs[n:]]
-    print(f'repack: {sp} {s0} -> {s1}, drawn the same front and back (4 faces), one undo step, undone; a kit Billie refused', flush=True)
+    print(f'repack: {sp} {s0} -> {s1}, drawn the same front and back (4 faces), one undo step, undone; a kit Billie and a placeholder Billie refused', flush=True)
 
 
 def density_steps(pg, errs):
@@ -1936,7 +2071,7 @@ def unlocks_steps(pg, errs):
     want_nodes = pg.evaluate("Object.keys(studioState.D.unlocks).length")
     if nodes != want_nodes: errs.append(f'unlocks: the graph has {nodes} nodes, the table {want_nodes} rows')
     edges = pg.evaluate("[...document.querySelectorAll('#main .ug-map [data-edge]')].map(e=>e.dataset.edge)")
-    for e in ['ranch_2>ranch_3', 'airship_2>biome_ridge', 'airship_2>biome_autumn']:
+    for e in ['ranch_2>ranch_3', 'station_2>biome_ridge', 'station_2>biome_autumn']:
         if e not in edges: errs.append(f'unlocks: no edge {e} in the graph ({edges})')
     owned = pg.evaluate("document.querySelector('#main .ug-save').dataset.owned")
     if owned != ','.join(W['fresh']['owned']): errs.append(f"unlocks: a new save owns {owned!r}, the game's {W['fresh']['owned']}")
@@ -2140,6 +2275,7 @@ STEPS = [
     ('part_mode', part_mode_steps),
     ('robot_joints', robot_joint_steps),
     ('generate', generate_steps),
+    ('water_tools', water_tools_steps),
     ('species_parts', species_part_steps),
     ('rig_preview', rig_preview_steps),
     ('library_swap', library_swap_steps),
@@ -2727,8 +2863,40 @@ def hub_checks(b, url, errs):
     ctx.close()
 
 
+def kit_off_placeholder():
+    """RO-3b: the files the stand-in serves in place of the repository's so the first kit recipe's Billie is a kit
+    Billie again: {path from the root: bytes}, and that recipe's name and rig"""
+    node = r"""
+      import { readFileSync } from 'node:fs';
+      import vm from 'node:vm';
+      import { readPng, encodePng } from './tools/test/png.mjs';
+      import { kitBakeWhole } from './game/js/logic/kit-assemble.js';
+      const j = f => JSON.parse(readFileSync('game/data/' + f, 'utf8')),
+        D = { partKits: j('partKits.json'), kitBuilds: j('kitBuilds.json'), rules: j('rules.json') },
+        form = D.kitBuilds.forms[0],
+        made = kitBakeWhole(D, form, (id, v) => readPng('game/art/' + D.partKits.parts[id].views[v].file)),
+        P = j('bodyPlans.json'),
+        text = readFileSync('game/art/next/rigs-next.js', 'utf8'),
+        at = text.indexOf('window.RIGS_NEXT='),
+        box = { window: {} };
+      vm.runInNewContext(text, box);
+      box.window.RIGS_NEXT[form.rig] = JSON.parse(JSON.stringify(made.rig));
+      P.forms = P.forms.filter(f => f.rig !== form.rig);
+      const b64 = x => Buffer.from(x).toString('base64');
+      process.stdout.write(JSON.stringify({ name: form.name, rig: form.rig, files: {
+        'game/data/bodyPlans.json': b64(JSON.stringify(P, null, 1)),
+        [`game/art/next/billionaires/${form.name}.png`]: b64(encodePng(made.sheet)),
+        'game/art/next/rigs-next.js': b64(text.slice(0, at) + 'window.RIGS_NEXT=' + JSON.stringify(box.window.RIGS_NEXT) + ';\n'),
+      } }));"""
+    import base64
+    out = json.loads(subprocess.run(['node', '--input-type=module', '-e', node], cwd=REPO, capture_output=True, text=True, check=True).stdout)
+    return {k: base64.b64decode(v) for k, v in out['files'].items()}, out['name'], out['rig']
+
+
 def main():
     _srv, base = serve(ROOT)
+    kit_files, kit_name, kit_rig = kit_off_placeholder()
+    print(f'stand-in: {kit_name} ({kit_rig}) served off its placeholder, as its kit recipe bakes', flush=True)
     tree = [{'type': 'blob', 'path': str(p.relative_to(ROOT)), 'sha': 'x', 'size': p.stat().st_size}
             for p in (ROOT / 'game').rglob('*') if p.is_file()]
     posts, bodies = [], []
@@ -2745,9 +2913,16 @@ def main():
         if '/git/commits/' in p: return route.fulfill(json={'sha': 'x', 'tree': {'sha': 'x'}})
         if '/git/ref' in p: return route.fulfill(json={'object': {'sha': 'x'}})
         if '/contents/' in p:
-            f = ROOT / unquote(p.split('/contents/', 1)[1])
+            rel = unquote(p.split('/contents/', 1)[1])
+            if rel in kit_files: return route.fulfill(body=kit_files[rel])
+            f = ROOT / rel
             if f.is_file(): return route.fulfill(body=f.read_bytes())
         return route.fulfill(status=404, json={'message': 'Not Found'})
+
+    def local(route):
+        rel = unquote(urlparse(route.request.url).path).lstrip('/')
+        if rel in kit_files: return route.fulfill(body=kit_files[rel])
+        return route.continue_()
 
     errs = []
     with sync_playwright() as pw:
@@ -2760,6 +2935,7 @@ def main():
         pg.on('console', lambda m: GL_WARN.append(m.text[:300]) if re.search(r'INVALID_OPERATION|does not belong to this context', m.text) else None)
         pg.on('pageerror', lambda e: errs.append(str(e)[:400]))
         pg.route('https://api.github.com/**', api)
+        pg.route(f'{base}/game/**', local)
         pg.add_init_script("localStorage.setItem('pb-studio-gh-token','ghp_stand-in')")
         t0 = time.time()
         pg.goto(f'{base}/studio/index.html')

@@ -6,6 +6,7 @@
 import { expose } from '../test-globals.js';
 import { SPECIES, propBaseHeight, provide, reducedMotion, riderOf, saveData } from '../hooks.js';
 import { clamp } from '../util.js';
+import { spanFit, tiltSpin, turnedPoint } from '../logic/prop-turn.js';
 import { hexToRgb, makeCanvas } from '../art.js';
 import { drawRig, rigFrame, rigParts, rigPreload } from '../skeleton-rig.js';
 import { artImage, hash2d, imageReady, terrainAt, walkView } from '../walk-view.js';
@@ -13,7 +14,7 @@ import { engineSetting } from '../engine/settings.js';
 import { SURFACE_MATERIALS, gpuState, windBendAt } from '../engine/webgl.js';
 import { FIXED_RIGHT, walkRenderer } from './walk-state.js';
 import { groundHeightAt, standingHeightAt } from './heights.js';
-import { addRipple } from './water.js';
+import { addWakeRipple } from './water.js';
 /* eslint-disable no-func-assign */
 expose({
   ALTERNATE_PROPS: [() => ALTERNATE_PROPS],
@@ -37,6 +38,7 @@ expose({
   propLook: [() => propLook, v => (propLook = v)],
   propLookSettings: [() => propLookSettings, v => (propLookSettings = v)],
   propMaterial: [() => propMaterial, v => (propMaterial = v)],
+  propModelTip: [() => propModelTip, v => (propModelTip = v)],
   propVariety: [() => propVariety, v => (propVariety = v)],
   rideMountItem: [() => rideMountItem, v => (rideMountItem = v)],
   setPropLookUniforms: [() => setPropLookUniforms, v => ((setPropLookUniforms = v), provide({ setPropLookUniforms }))],
@@ -125,18 +127,26 @@ export function hugSlope(it, C) {
   if (c.tilt) it.tilt = c.tilt;
 }
 /* v24: riding. On water in a riding scene you sit on your biggest Water billionaire (rules.ride), drawn from its rig,
-   facing away when you head up the screen; it bobs, and leaves ripple rings behind. */
+   facing away when you head up the screen; it bobs, and leaves ripple rings behind. WA-6b: and anywhere you Surf
+   (walk-view.js P.surf: on deep water, and up a waterfall), the lift eased in as you mount at the edge; rings now and
+   then while you sit still. */
 export function rideMountItem(P, t) {
   const sc = walkView.sc;
-  if (!sc || !sc.ride || typeof riderOf !== 'function' || typeof saveData === 'undefined' || !saveData.team)
+  if (!sc || typeof riderOf !== 'function' || typeof saveData === 'undefined' || !saveData.team) return null;
+  const surf = !!P.surf || !!(P.climb && P.climb.fall);
+  if (!sc.ride && !surf) {
+    walkRenderer.mountOn = false;
     return null;
+  }
   const ch = terrainAt(P.x, P.z);
-  if (ch !== 'w' && ch !== 'd') {
+  if (!surf && ch !== 'w' && ch !== 'd') {
     walkRenderer.mountOn = false;
     return null;
   }
   const m =
-    riderOf() || saveData.team.find(x => SPECIES[x.sp] && SPECIES[x.sp].types.includes('Water')) || saveData.team[0];
+    riderOf() ||
+    saveData.team.find(x => x.hp > 0 && SPECIES[x.sp] && SPECIES[x.sp].types.includes('Water')) ||
+    saveData.team.find(x => SPECIES[x.sp] && SPECIES[x.sp].types.includes('Water'));
   if (!m || !SPECIES[m.sp]) return null;
   const back = P.dir === 'up',
     R = rigParts(m.sp, back ? 2 : 1, m.coat);
@@ -169,10 +179,13 @@ export function rideMountItem(P, t) {
     hm = 0.75 + ht * 0.32,
     mpp = hm / Math.max(40, R.base - (R.geo && R.geo.top != null ? R.geo.top : 0)),
     bob = reducedMotion ? 0 : Math.sin(t / 420) * 0.05,
-    y = standingHeightAt(P.x, P.z) + bob - 0.08;
-  if (!reducedMotion && P.walk && (!walkRenderer.wakeT || t - walkRenderer.wakeT > 320)) {
+    /* WA-6b: mounting at the edge: the lift eased in over a quarter second (P.surfT, when you got on) */
+    ease = surf && !sc.ride && P.surfT != null && !reducedMotion ? clamp((walkView.t - P.surfT) / 250, 0, 1) : 1,
+    y = (P.climb ? (P.yv ?? standingHeightAt(P.x, P.z)) : standingHeightAt(P.x, P.z)) + bob - 0.08;
+  if (!reducedMotion && !P.climb && (!walkRenderer.wakeT || t - walkRenderer.wakeT > (P.walk ? 320 : 1800))) {
     walkRenderer.wakeT = t;
-    addRipple(P.x, P.z - 0.1, 0.9);
+    /* water track WA-5b: the wake's own rings (walk/water.js addWakeRipple), so riding never pushes out the scene's */
+    addWakeRipple(P.x, P.z - 0.1, P.walk ? 0.9 : 0.5);
   }
   walkRenderer.mountOn = true;
   return {
@@ -193,7 +206,7 @@ export function rideMountItem(P, t) {
       aoR: 0,
       person: 1,
     },
-    lift: hm * 0.62 + bob - 0.12,
+    lift: (hm * 0.62 + bob - 0.12) * ease * ease * (3 - 2 * ease),
   };
 }
 /* ---------- v32: every prop its own look ----------
@@ -348,7 +361,7 @@ export function propGrid(sc) {
     }
     c.list.push(p);
     const r = 2.5 * (p.s || 1),
-      y = typeof standingHeightAt === 'function' ? standingHeightAt(p.x, p.z) : 0;
+      y = typeof p.y === 'number' ? p.y : typeof standingHeightAt === 'function' ? standingHeightAt(p.x, p.z) : 0;
     c.x0 = Math.min(c.x0, p.x - r);
     c.x1 = Math.max(c.x1, p.x + r);
     c.z0 = Math.min(c.z0, p.z - r);
@@ -408,8 +421,24 @@ export function stillPropState(p, M, im, sc) {
     bob: BOBBING_PROPS.test(p.k),
     flag: WAVING_PROPS.test(p.k),
   };
+  propModelTip(p, M, c);
   STILL_PROP_CACHE.set(p, c);
   return c;
+}
+/* HB-6: a model tipped off the upright (logic/prop-turn.js): one that spans two points (a fence rail between its posts:
+   the catalogue's restEnds) rests on the ground under each end, tipped between them; any other leans by its placement's
+   tilt. Pictures don't tip. */
+function propModelTip(p, M, c) {
+  c.spin = null;
+  if (!M.model) return;
+  if (M.restEnds && M.box) {
+    const L = M.box[0] * (p.s || 1),
+      a = turnedPoint(p, -L / 2, 0),
+      b = turnedPoint(p, L / 2, 0),
+      F = spanFit(L, standingHeightAt(a[0], a[1]), standingHeightAt(b[0], b[1]), p.f ? -1 : 1);
+    c.y = F.y;
+    c.spin = F.spin;
+  } else c.spin = tiltSpin(p.tilt);
 }
 /* alpha 0.4.1: the settings a prop's look depends on, read once a frame rather than once a prop */
 function propLookSettings(sc) {

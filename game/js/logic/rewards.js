@@ -11,17 +11,23 @@
      when a Billie has a move to learn; a `held` card (RL-12c) when some held item (items.json `hold`) is held by
      nobody on the team: its item is drawn from those, and taking it gives it to a Billie (or into the bag);
    - none twice in one pick.
+   RL-14: beating bots leaves a salvage pick in the same place (run.enc.reward, kind 'salvage'): two of their parts and
+   a stack of Scrap (logic/factions.js salvageCards, from the run's salvage stream); a part goes into your parts
+   (saveData.parts, kept whatever the run's end), Scrap into the meta's. A salvage pick is never rerolled.
    Logic only: no DOM, no Date, no Math.random (tools/test/rewards.test.mjs). */
 /** @import { Run, Billy, RewardCard, RunReward } from '../../types/save-data' */
 /** @typedef {{ kind: RewardCard['kind'], item?: string, pyramid?: string, n?: number, weight: number }} RewardRow */
 /** @typedef {{ cards: Record<string, RewardRow>, rules: { pick: number, reroll: number, grow: number },
  *   team: Billy[], species: Record<string, any>, lines: Record<string, any>, moves: Record<string, any>,
- *   slots: number, items?: Record<string, { hold?: unknown[] }> }} RewardData items (RL-12c): the held items' table */
+ *   slots: number, items?: Record<string, { hold?: unknown[] }>, newUid?: () => string }} RewardData items (RL-12c):
+ *   the held items' table; newUid (RL-14): a new part's uid (rules.js newUid: a run's own counter) */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { ITEMS, LINE_BY_ID, MOVES, REWARDS, RULES, SPECIES } from '../game-data.js';
 import { rngFrom } from './rng.js';
-import { moveSlotCount } from './rules.js';
+import { newPart } from './fighters.js';
+import { moveSlotCount, newUid } from './rules.js';
+import { salvageCards, salvageParts } from './factions.js';
 import { heldGive, heldIds } from './held.js';
 import { encOf } from './run-enc.js';
 /* eslint-disable no-func-assign */
@@ -37,6 +43,8 @@ expose({
   rewardRerollCost: [() => rewardRerollCost],
   // @ts-expect-error -- replaced on purpose
   rewardTake: [() => rewardTake, v => (rewardTake = v)],
+  // @ts-expect-error -- replaced on purpose
+  salvageOfferMake: [() => salvageOfferMake, v => (salvageOfferMake = v)],
   // @ts-expect-error -- replaced on purpose
   tutorMoves: [() => tutorMoves, v => (tutorMoves = v)],
   tutorWho: [() => tutorWho],
@@ -146,6 +154,18 @@ export function rewardOfferMake(run, from, D, o = {}) {
   return e.reward;
 }
 
+/** RL-14: make a salvage pick after beating bots (in place of a reward pick): run.enc.reward is set, from the run's
+ * salvage stream (rngFrom(run.seed, 'salvage|' + its counter)), null when nothing can be offered
+ * @param {Run} run @param {string} from who left it (a trainer's id, 'wild') @param {any[]} bots the robots beaten
+ * @param {import('../../types/game-data').Faction['salvage']} S the faction's salvage rules @returns {RunReward | null} */
+export function salvageOfferMake(run, from, bots, S) {
+  const e = encOf(run),
+    cards = salvageCards(rngFrom(run.seed, 'salvage|' + e.rewardN), salvageParts(bots), bots.length, S);
+  e.rewardN++;
+  e.reward = cards.length ? { cards, rolls: 0, from, kind: 'salvage' } : null;
+  return e.reward;
+}
+
 /** what the next reroll costs (Moneys) @param {RunReward} R @param {{ reroll: number, grow: number }} rules */
 export const rewardRerollCost = (R, rules) => Math.round(rules.reroll * Math.pow(rules.grow, R.rolls));
 
@@ -153,7 +173,8 @@ export const rewardRerollCost = (R, rules) => Math.round(rules.reroll * Math.pow
  * ('none': no pick, 'money': not enough) @param {Run} run @param {{ se: number }} s @param {RewardData} D */
 export function rewardReroll(run, s, D) {
   const R = run.enc && run.enc.reward;
-  if (!R) return 'none';
+  /* RL-14: a salvage pick is what the bots left: never drawn again */
+  if (!R || R.kind === 'salvage') return 'none';
   const cost = rewardRerollCost(R, D.rules);
   if (s.se < cost) return 'money';
   s.se -= cost;
@@ -191,6 +212,15 @@ export function rewardTake(run, s, k, D, o = {}) {
       if (at < 0) return 'full';
       m.moves[at] = c.move;
     } else m.moves.push(c.move);
+  } else if (c.kind === 'part') {
+    /* RL-14: a bot's part into your parts (phase 17's inventory, kept whatever the run's end) */
+    const P = /** @type {any} */ (s);
+    if (!c.item || !D.newUid) return 'none';
+    (P.parts || (P.parts = [])).push(newPart(c.item, D.newUid()));
+  } else if (c.kind === 'scrap') {
+    /* RL-14: Scrap goes home with the meta's, kept whatever the run's end */
+    const P = /** @type {any} */ (s);
+    if (P.meta) P.meta.scrap = (P.meta.scrap || 0) + (c.n || 1);
   } else if (c.item && c.item.startsWith('coin_')) {
     const p = c.item.slice(5);
     s.pyramids[p] = (s.pyramids[p] || 0) + (c.n || 1);
@@ -213,4 +243,5 @@ export const rewardDataGame = team => ({
   moves: MOVES,
   slots: moveSlotCount(),
   items: ITEMS,
+  newUid,
 });

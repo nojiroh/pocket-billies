@@ -16,7 +16,7 @@ import { provide, reducedMotion } from './hooks.js';
 import { clamp } from './util.js';
 import { placedTurn } from './logic/prop-turn.js';
 import { makeCanvas } from './art.js';
-import { artImage, hash2d, walkView, worldToScreen } from './walk-view.js';
+import { artImage, hash2d, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import {
   COMMON_GLSL,
@@ -24,7 +24,10 @@ import {
   LOOK_GLSL,
   SURFACE_MATERIALS,
   ensurePrograms,
+  gpuBuffer,
+  gpuFree,
   gpuState,
+  gpuVao,
   imageTexture,
 } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
@@ -84,6 +87,7 @@ export function setDrawSolidProps(v) {
 }
 /* to-module: end */
 export const solidPropState = { meshes: new WeakMap(), live: new Map(), fail: '', drawn: 0 };
+provide({ solidPropState }); /* to-module */
 /* by prop group (or key): the kind of body and its depth at scale 1, in metres */
 export const SOLID_PROP_BODIES = {
   crate: ['block', 0.9],
@@ -727,9 +731,9 @@ export function buildSolidProp(im, parts) {
 function uploadSolidPropMesh(V, extra) {
   if (!V.length) return null;
   const gl = gpuState.gl,
-    vao = gl.createVertexArray();
+    vao = gpuVao('meshes');
   gl.bindVertexArray(vao);
-  const vb = gl.createBuffer();
+  const vb = gpuBuffer('meshes', V.length * 4);
   gl.bindBuffer(gl.ARRAY_BUFFER, vb);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(V), gl.STATIC_DRAW);
   for (const [l, k, o] of [
@@ -755,8 +759,8 @@ function flushSolidPropMeshes() {
   /* (only those of the context in use: a lost one's are gone already) */
   for (const [m, g] of solidPropState.live)
     if (g === gl) {
-      gl.deleteVertexArray(m.vao);
-      gl.deleteBuffer(m.vb);
+      gpuFree(m.vao);
+      gpuFree(m.vb);
     }
   solidPropState.live.clear();
   solidPropState.meshes = new WeakMap();
@@ -1255,8 +1259,6 @@ export function drawSolidProps(C, items, X, hits, labels, PPU) {
     const gl = gpuState.gl;
     ensurePrograms(SOLID_PROP_SHADERS);
     let p = null;
-    const P = walkView.pl,
-      me = worldToScreen(C, P.x, 0.9, P.z);
     for (const it of items) {
       if (!it.vol || it.vis === false) continue;
       const M = solidPropMesh(it.im, it.vol);
@@ -1276,17 +1278,8 @@ export function drawSolidProps(C, items, X, hits, labels, PPU) {
         gl.disable(gl.BLEND);
         gl.disable(gl.CULL_FACE);
       }
-      const s = it.mpp,
-        hM = -it.oy * s;
-      let fade = it.fade ?? 1;
-      if (me && !walkRenderer.bt && hM > 1.6) {
-        const q = worldToScreen(C, it.x, 0, it.z);
-        if (q && q.d < me.d - 0.3) {
-          const half = it.w * s * 0.5 * q.s,
-            top = q.y - hM * q.s;
-          if (me.x > q.x - half && me.x < q.x + half && me.y > top && me.y < q.y) fade = 0.4;
-        }
-      }
+      /* player visibility: a solid covering you is thinned out already (walk/quality-cull.js coverItems) */
+      const fade = it.fade ?? 1;
       const mt = SURFACE_MATERIALS[it.mat] || SURFACE_MATERIALS.plain;
       gl.uniform4f(p.U.uMat, mt.spec, mt.shin, mt.transl, mt.wrap);
       if (p.U.uDet)

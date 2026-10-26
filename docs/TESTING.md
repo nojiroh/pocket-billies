@@ -160,10 +160,15 @@ Two rules hold everywhere:
   ground): `camera-rise.test.mjs` the tilt that clears the line from the eye to your head (logic/camera-rise.js: none
   on flat ground or for ground behind you, capped, follows the camera's turn); `tall-ground-draw.test.mjs`, on the
   walk renderer with a recording WebGL stand-in (`walk-renderer.mjs`), the rock fade's uniforms (off on flat ground,
-  in battle and for a reflection camera), the silhouette's one draw (depth GREATER, no depth writes, the state put
-  back; none on flat ground, in battle, indoors) and the near shadow map centred at your height. The fast check's
+  in battle and for a reflection camera), the silhouette's two draws (player visibility: an invisible occlusion
+  query, then the tint; depth GREATER, no depth writes, the state put back; hidden once the query says so; none in
+  battle, indoors) and the near shadow map centred at your height. The fast check's
   `mountains` fixture is the run fixture with `dbg_mountains`; its step "Tall ground" stands you at the foot of the
-  most rock on the camera's side and checks the rise, the fade and the silhouette are on, and off on flat ground. Its
+  most rock on the camera's side and checks the rise, the fade and the silhouette are on, and no rise or rock fade on
+  flat ground. Player visibility: `occlude.test.mjs` (logic/occlude.js: what covers you, the eased hidden amount);
+  the fast check's "Behind things" stands you behind trees and buildings in Copperleaf (hidden at most of them, frame
+  after frame, not in the open); `python3 tools/look-behind.py` takes the pictures (validation/behind/: settings off
+  and on behind three buildings and three trees). Tall ground's
   pictures come from `python3 tools/look-tall-ground.py` (five, settings off to all on, in validation/tall-ground/;
   `--full` with the game's graphics). `rng.test.mjs` freezes the default scene's hash, `gen` included: a new dial or version changes it
   (remade on purpose, said in the commit). The seam rules are `logic/seam-rules.js` (`seam-rules.test.mjs` freezes
@@ -230,6 +235,9 @@ same phase:
   once, started in the background] once a place has settled (a second after it is ready; counted since the page
   loaded, and the per-dial graphics test's shader check adds to it), `alloc` [hitches, MB freed]: ticks more than
   45 ms apart while the heap shrank (Chrome only, a rough sign of garbage collection). Numbers only.
+  **(Phase 20 R1)** Also `dct` (per pass, the draws of low-poly models `model` and of models' picture layers, their
+  leaf clumps and vines, `modelPic`; the rest of the pass is its `dcp` less these) and `dcu` (per pass, [distinct
+  textures, distinct vertex arrays] bound: the fewest draws grouping by picture or mesh could reach).
 - **(Phase 20 C3)** The full test's Shaders step also builds every program with the light code with the Frame uniform
   block (`frameBlockCheck`, engine/webgl.js) and checks the block's size and each member's offset, as this device's
   driver lays them out, against what engine/frame-block.js packs; smoke shows "N shaders; 14 with the Frame block".

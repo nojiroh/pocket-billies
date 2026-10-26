@@ -52,12 +52,35 @@ export function renameTypeIn(D, from, to) {
   const ride = D.rules.ride;
   if (ride && Array.isArray(ride.types))
     ride.types = ride.types.map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
+  /* RT-4: the habitats' types (rules.json run.wild.habitats); a habitat left with none goes */
+  const hab = D.rules.run && D.rules.run.wild && D.rules.run.wild.habitats;
+  for (const k of Object.keys(hab || {})) {
+    hab[k] = hab[k].map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
+    if (!hab[k].length) delete hab[k];
+  }
   for (const L of Object.values(D.perks || {}))
     for (const f of /** @type {any} */ (L).fx || [])
       if (f.type === from) {
         if (to) f.type = to;
         else delete f.type; /* a damage row for any type */
       }
+  /* SP-2: a Gene's dominant type (a deleted one leaves the part with none, and a part with nothing left goes) and its
+     traits' damage rows */
+  const G = D.genes;
+  if (G) {
+    for (const [k, P] of Object.entries(G.parts || {}))
+      if (/** @type {any} */ (P).type === from) {
+        if (to) /** @type {any} */ (P).type = to;
+        else if (Object.keys(/** @type {any} */ (P)).length > 1) delete (/** @type {any} */ (P).type);
+        else delete G.parts[k];
+      }
+    for (const T of [...Object.values(G.traits || {}), G.unstable || {}])
+      for (const f of /** @type {any} */ (T).fx || [])
+        if (f.type === from) {
+          if (to) f.type = to;
+          else delete f.type;
+        }
+  }
   /* a deleted type is still in D.types here (the Studio removes it after): the rules take the first other one */
   const R = D.rules.battle,
     left = to || (D.types.find((/** @type {any} */ t) => t.id !== from) || { id: 'None' }).id;
@@ -70,6 +93,13 @@ export function renameTypeIn(D, from, to) {
   /* RL-R2: a field move's type (whose Billies use it and whose badge opens it) takes the first other one too */
   for (const M of Object.values((D.fieldMoves && D.fieldMoves.moves) || {}))
     if (/** @type {any} */ (M).type === from) /** @type {any} */ (M).type = left;
+  /* WA-6b: the Waterfall climb's type and its badges too (a badge list stays without repeats) */
+  const WF = D.fieldMoves && D.fieldMoves.waterfall;
+  if (WF) {
+    if (WF.type === from) WF.type = left;
+    if (Array.isArray(WF.badges))
+      WF.badges = [...new Set(WF.badges.map((/** @type {string} */ t) => (t === from ? left : t)))];
+  }
   for (const T of Object.values((D.regions && D.regions.themes) || {})) {
     const lean = /** @type {any} */ (T).types || {};
     if (!Object.hasOwn(lean, from)) continue;

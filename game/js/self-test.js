@@ -2,7 +2,7 @@
 /* ================= FULL TEST =================
    Settings → Run the full test (and the debug menu) plays through everything that draws, for several minutes:
    the hub and every room the game's doors open (walking, turning and zooming the camera), night, weather and seasons,
-   a run's road, its airship, nodes and payout, the ranch and the Lab, a room that opens in place, the light lab, a
+   a run's road, its train, nodes and payout, the ranch and the Lab, a room that opens in place, the light lab, a
    battle on the 3D stage (double and Alpha too), the opening's fall, Billies in the world, the world map, then a
    stress test that keeps adding load (crowds, particles, extra props, maximum quality) and measures how far the device
    keeps up. Your save is not changed: saving is paused and everything is put back
@@ -14,40 +14,89 @@ import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import {
   EVENTS,
+  FACTIONS,
+  FIELD_MOVES,
+  GENES,
   ITEMS,
   LOCATIONS,
   MOVES,
   PERKS,
+  QUESTS,
+  RELATIONS,
+  RESIDENTS,
+  ROBOTS,
   RULES,
+  SET_PIECES,
   SHOPS,
   SPECIES,
   START_NODE,
+  STORY_DATA,
   TRAINERS,
   UNLOCK_DATA,
   gameData,
   trainersAt,
+  typeEffectiveness,
 } from './game-data.js';
-import { canEnter, encountersHere, gateText, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
+import { rngFn } from './logic/rng.js';
+import { graftDonors, graftRecipe } from './logic/graft-art.js';
+import { augFits } from './logic/augments.js';
+import { wildSplice } from './logic/genes.js';
+import { bankLevel, bankPrice, bankSlots } from './logic/gene-bank.js';
+import { geneEventSlots } from './logic/gene-events.js';
+import { isRobot, robotRules } from './logic/fighters.js';
+import {
+  billyName,
+  canEnter,
+  encounterStock,
+  encountersHere,
+  gateText,
+  geneData,
+  healAll,
+  makeBilly,
+  maxHp,
+  moveUsable,
+  movesOf,
+  newUid,
+  partBroken,
+  partMaxHp,
+  partsDamaged,
+  plural,
+  spawn,
+  spliceWords,
+} from './logic/rules.js';
+import { rivalSize } from './logic/rival.js';
+import { relFavoursPay, relGift } from './logic/relations.js';
 import { modBossHp, modFoeLevels, modsMake } from './logic/modifiers.js';
+import { factionBotSp } from './logic/factions.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
 import { incomeRate } from './logic/ranch-income.js';
 import { pastureBillies, pastureIn, pastureZone } from './logic/pasture.js';
-import { runRestore } from './logic/run-state.js';
+import { residentFirstTowns } from './logic/residents.js';
+import { runRestore, validRun } from './logic/run-state.js';
 import { RUN_SIDE_MOD, runSideOpen } from './logic/run-side.js';
 import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
+import { wildHabitat } from './logic/wild-pool.js';
+import { runScenesMake, runWorldTables } from './logic/run-scenes.js';
 import { runClinic, runFoes, runHealCost, runShopOpen, runWareHeals } from './logic/run-loop.js';
+import { fxOfBillie } from './logic/effects.js';
 import { perkOfferMake } from './logic/perks.js';
 import { eventAt } from './logic/encounters.js';
+import { routeRareSpots, routeTrainersPlace, runRouteTrainers } from './logic/route-trainers.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
+import { questOffer, questTake } from './logic/run-quests.js';
+import { conditionHolds, storyStateOf } from './logic/conditions.js';
 import { runUnlocks } from './logic/unlocks.js';
 import { runStartOn, runStartPlan } from './logic/run-start.js';
+import { parseScript } from './logic/script-parse.js';
+import { runScript } from './logic/script.js';
 import { loadAllMaps } from './map-files.js';
 import {
   activeBattle,
   escapeHtml,
   pauseSaving,
+  reducedMotion,
   resumeSaving,
   save,
   saveData,
@@ -59,13 +108,13 @@ import {
 } from './game-state.js';
 import { gpuCountBegin, gpuCountEnd } from './engine/gpu-counters.js';
 import { frameScheduler, userFps } from './frame-scheduler.js';
+import { ART_CACHE } from './art.js';
 import { PERSON_ART_CACHE } from './person-art.js';
 import { closeDressingRoom, dressingRoom } from './dressing-room.js';
-import { battleStage, battleStageStop } from './battle-stage.js';
+import { battleStage, battleStageStop, rigStats } from './battle-stage.js';
 import {
   GROUND_CACHE,
   PROP_CLOCK,
-  ROOM_BY_USE,
   actionSpot,
   climbEnds,
   findPath,
@@ -95,21 +144,26 @@ import { SOLID_PROP_SHADERS, solidPropState } from './solid-props.js';
 import { propModelShaders, propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { seamlessRoomMap, seamlessWorld } from './seamless-world.js';
+import { paintWorkerState } from './ground-paint-worker.js';
 import { endBattle, pickMove, pickTarget, stopTimers, tapMessage } from './battle.js';
 import { WORLD_BOWL_SHADERS, worldBowl, worldBowlReset, worldMap, worldMapReset } from './world-bowl.js';
 import { openShop } from './shop.js';
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene/director.js';
 import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
-import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
+import { trainRide, trainRideSkip } from './train-ride.js';
 import { runLoad } from './run-loading.js';
 import { runClinicEach, runJump, runTakeOff } from './run.js';
 import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
 import { encounterOpen } from './encounter-screen.js';
+import { questData, questMarked, residentTalk } from './quest-board.js';
 import { ranchOpen } from './ranch-screen.js';
+import { geneBankDo, geneBankOpen } from './gene-bank-screen.js';
+import { augmentsDo, augmentsOpen } from './augment-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
+import { storyPickTree } from './story-stage.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
 import { renderWorldMapTab } from './map-tab.js';
 import { clinicHeal } from './walk-tab.js';
@@ -117,7 +171,20 @@ import { leaveRoom, mapIdAt, walkCross, walkPick, walkState } from './walk-contr
 import { render } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
+  BASELINE_RESOLUTIONS: [() => BASELINE_RESOLUTIONS],
+  BASELINE_RIG_REUSE: [() => BASELINE_RIG_REUSE],
+  BASELINE_STOPS: [() => BASELINE_STOPS],
   DIAGNOSTICS_PASSES: [() => DIAGNOSTICS_PASSES],
+  baselineBattle: [() => baselineBattle, v => (baselineBattle = v)],
+  baselineBattleEnd: [() => baselineBattleEnd, v => (baselineBattleEnd = v)],
+  baselineHub: [() => baselineHub, v => (baselineHub = v)],
+  baselineMeasure: [() => baselineMeasure, v => (baselineMeasure = v)],
+  baselineNote: [() => baselineNote, v => (baselineNote = v)],
+  baselineRigs: [() => baselineRigs, v => (baselineRigs = v)],
+  baselineRun: [() => baselineRun, v => (baselineRun = v)],
+  baselineSettle: [() => baselineSettle, v => (baselineSettle = v)],
+  baselineStand: [() => baselineStand, v => (baselineStand = v)],
+  baselineUploadProbe: [() => baselineUploadProbe, v => (baselineUploadProbe = v)],
   diagnosticsMaps: [() => diagnosticsMaps, v => (diagnosticsMaps = v)],
   diagnosticsReport: [() => diagnosticsReport, v => (diagnosticsReport = v)],
   diagnosticsSummary: [() => diagnosticsSummary, v => (diagnosticsSummary = v)],
@@ -125,6 +192,7 @@ expose({
   diagnosticsTimersOn: [() => diagnosticsTimersOn, v => (diagnosticsTimersOn = v)],
   emptyDiagnosticsReport: [() => emptyDiagnosticsReport],
   exportDiagnosticsReport: [() => exportDiagnosticsReport, v => (exportDiagnosticsReport = v)],
+  rendererBaseline: [() => rendererBaseline, v => (rendererBaseline = v)],
   runDiagnostics: [() => runDiagnostics, v => ((runDiagnostics = v), provide({ runDiagnostics }))],
   runFullTest: [() => runFullTest, v => ((runFullTest = v), provide({ runFullTest }))],
   selfTest: [() => selfTest],
@@ -146,25 +214,31 @@ export function selfTestSleep(ms) {
   return new Promise(r => setTimeout(r, ms * (selfTest.slow || 1)));
 }
 /* frame rate of one scheduler task between two moments of the debug log; whole: only the seconds that start after t0;
-   trim: drop the task's first and last second (it starts and stops partway through them, so they read low) */
+   trim: drop the task's first and last second (it starts and stops partway through them, so they read low); plus: a
+   task that runs in the same ticks, its time added to cpuMs (phase 20 R3: a battle's 3D frame is the walk view's 'dio'
+   task, while 'scene' only moves the tweens and draws the effects canvas; cpuTasks then has each task's own ms) */
 export function selfTestFrameStats(t0, t1, task, o) {
   const whole = o && o.whole,
     S = [];
   for (const s of debugLog.samples) {
     if (s.t < t0 || s.t > t1) continue;
     if (whole && s.t - (s.dt || 1000) < t0) continue;
-    if (s.tasks[task]) S.push(s.tasks[task]);
+    if (s.tasks[task]) S.push(o && o.plus ? { ...s.tasks[task], also: s.tasks[o.plus] } : s.tasks[task]);
   }
   if (o && o.trim && S.length >= 3) {
     S.pop();
     S.shift();
   }
   const f = S.map(v => v.fps),
-    m = S.map(v => v.ms),
+    own = S.map(v => v.ms),
+    also = S.map(v => (v.also ? v.also.ms : 0)),
+    m = own.map((v, i) => v + also[i]),
     slow = S.reduce((a, v) => a + v.long, 0);
   if (!f.length) return { fpsAvg: null, fpsWorst: null, cpuMs: null, slow: 0, seconds: 0 };
-  const avg = a => Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10;
-  return { fpsAvg: avg(f), fpsWorst: Math.min(...f), cpuMs: avg(m), slow, seconds: f.length };
+  const avg = a => Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10,
+    out = { fpsAvg: avg(f), fpsWorst: Math.min(...f), cpuMs: avg(m), slow, seconds: f.length };
+  if (o && o.plus) out.cpuTasks = { [task]: avg(own), [o.plus]: avg(also) };
+  return out;
 }
 /* v20: the test scenes, and their walking checks (from, to, reach) worked out from the scene data without drawing */
 function testMaps() {
@@ -188,7 +262,8 @@ function testMapChecks(id) {
       hc = navCellAt(hub[0], hub[1]);
     out.push({ what: 'where you arrive is open ground', reach: true, ok: hc >= 0 && !G.blk[hc] });
     for (const c of sc.checks || []) {
-      const got = !far(findPath(c.from[0], c.from[1], c.to[0], c.to[1], c.noHop ? { noHop: true } : {}), c.to);
+      /* WA-6b: a check with `surf` walks as the player with Surf on (deep water open, logic/surf.js) */
+      const got = !far(findPath(c.from[0], c.from[1], c.to[0], c.to[1], { noHop: !!c.noHop, surf: !!c.surf }), c.to);
       out.push({ what: c.what, reach: c.reach, got, ok: got === !!c.reach });
     }
   } finally {
@@ -259,6 +334,8 @@ async function runFullTest(mode) {
       'Device',
       'Frame budget',
       'Rain and night',
+      /* phase 20 R1: the renderer's baseline tour */
+      'Renderer baseline',
       'Battle on the 3D stage',
       /* 0.1.0 alpha: the map's first open, timed (the owner finds it slow) */
       'World map',
@@ -266,7 +343,7 @@ async function runFullTest(mode) {
     ];
   }
   const total = diag
-    ? scenes.length * 4 + 1 + 1 + 6 + 6 + 10 + 6 + 8 + 1
+    ? scenes.length * 4 + 1 + 1 + 6 + 6 + 10 + 150 + 6 + 8 + 1
     : scenes.length * 4 + 1 + 5 + 8 + 6 + 5 + 8 + 8 + 6 + 6 + 10 + 8 + 8 + 1 + 40;
   let done = 0;
   const tick = s => {
@@ -376,7 +453,11 @@ async function runFullTest(mode) {
       const bg = hid !== h0; /* still interrupted after three tries: not measured */
       if (err && !bg) debugLog.error('test', name + ': ' + why, err && err.stack);
       const m0 = Math.max(t0, measureFrom),
-        st = selfTestFrameStats(m0, debugLog.now(), task, measureFrom ? { whole: true } : { trim: true }),
+        st = selfTestFrameStats(m0, debugLog.now(), task, {
+          ...(measureFrom ? { whole: true } : { trim: true }),
+          /* phase 20 R3: a battle step's CPU is its 3D frame too (the walk view's task) */
+          ...(task === 'scene' && { plus: 'dio' }),
+        }),
         ne = debugLog.err.slice(e0).filter(x => x.kind !== 'test');
       if (ne.length && !bg) {
         ok = false;
@@ -904,6 +985,76 @@ async function runFullTest(mode) {
       await selfTestSleep(600);
       return `${mine} against ${theirs} (${fmt}); ${plates} nameplates; ${picks} picks, ${aimed} aimed; the turn played ${lines} lines in ${(turnMs / 1000).toFixed(1)} s`;
     };
+    /* RL-14: a wild bot of the Bureau's: "Catch it" greyed out, its limbs one hit from breaking, a turn played; a part
+       that breaks drops off the stage as a falling picture */
+    const fighterLead = () => saveData.team.find(m => m.hp > 0) || saveData.team[0];
+    const botBattle = async () => {
+      uiState.bench = null;
+      uiState.tab = 'walk';
+      saveData.trip.node = back.node;
+      render();
+      await selfTestSleep(1200);
+      saveData.team.forEach(m => {
+        m.hp = maxHp(m);
+        m.status = null;
+      });
+      const B = FACTIONS.bureau.bots[Object.keys(FACTIONS.bureau.bots).sort()[0]],
+        /* above your lead's level, so a hit leaves it standing (a fainted bot's parts take no hit) */
+        q = { id: 'selftest-bot', sp: factionBotSp(B), lvl: Math.min(100, fighterLead().lvl + 10), no: 1 };
+      encountersHere().unshift(q);
+      startWild(q);
+      const g0 = selfTest.gen || 0;
+      const want = async (ph, ms) => {
+        const end = performance.now() + ms * (selfTest.slow || 1);
+        while (performance.now() < end) {
+          if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
+          if (ph.includes(activeBattle.phase)) return true;
+          if (activeBattle.phase === 'playing') tapMessage();
+          await selfTestSleep(120);
+        }
+        return false;
+      };
+      if (!(await want(['choose'], 45000)))
+        throw new Error(`never got to the menu (${activeBattle ? activeBattle.phase : 'no battle'})`);
+      const foe = fighter(1);
+      if (!foe || foe.kind !== 'robot') throw new Error('the wild one is no robot');
+      if (billyName(foe) !== B.name) throw new Error(`it goes by ${billyName(foe)}, not ${B.name}`);
+      const coin = document.querySelector('[data-a=bcoins]');
+      if (!coin || !(/** @type {HTMLButtonElement} */ (coin).disabled)) throw new Error('"Catch it" is open on a bot');
+      /* every limb one point from breaking, and (for this turn) every hit on a limb, so one breaks and drops off */
+      const R = robotRules(),
+        hw = R.hitWeights;
+      R.hitWeights = { torso: 0, armL: 1, armR: 1, legs: 1 };
+      foe.partDmg = foe.partDmg || {};
+      for (const k of ['armL', 'armR', 'legs']) foe.partDmg[k] = partMaxHp(foe, k) - 1;
+      foe.hp = maxHp(foe);
+      let dropped = 0;
+      const watch = setInterval(() => {
+        dropped = Math.max(dropped, battleStage.parts.filter(p => p.img).length);
+      }, 50);
+      const m = fighter(activeBattle.cur),
+        mid = m.moves.find(id => MOVES[id] && MOVES[id].c !== 'X') || m.moves[0];
+      pickMove(mid);
+      if (activeBattle.phase === 'target') pickTarget(1);
+      const tt = performance.now();
+      let done = false;
+      try {
+        done = await want(['choose', 'end', 'switch'], 60000);
+      } finally {
+        R.hitWeights = hw;
+        clearInterval(watch);
+      }
+      if (!done) throw new Error(`the turn never finished (${activeBattle ? activeBattle.phase : 'no battle'})`);
+      const broke = activeBattle.events.filter(e => e.an && e.an.k === 'break').length,
+        turnMs = Math.round(performance.now() - tt);
+      stopTimers();
+      setActiveBattle(null);
+      battleStageStop();
+      render();
+      await selfTestSleep(600);
+      if (broke && !dropped && !reducedMotion) throw new Error('a part broke but nothing dropped off the stage');
+      return `${B.name}, not catchable; ${broke ? `${broke} part(s) broke, ${dropped} dropped` : 'the hit landed on its torso'}; the turn in ${(turnMs / 1000).toFixed(1)} s`;
+    };
     /* RL-5: the Road phase (v43, phase 08: out of Marigold Town over its edge and into Tallgrass Meadow on foot) went
        with those places to game/data/legacy: the hub has no road. RL-7: back on a run's road. A run is put on a copy
        of the save as the mast will (RL-8), so its world is made from its seed; the landing's north seam is walked over
@@ -1112,6 +1263,94 @@ async function runFullTest(mode) {
         4,
         60
       );
+    /* RL-S2: Blake and the hub folk, on a copy of the save: a run at Expedition II knows the lead he counters, each of
+       his places has his foe (person chad, never blocking), his team one Billie bigger by meetings as rules.json
+       run.rival says, his ace of a type that beats the lead's; a Bean for Hazel raises her level and the story reads it
+       (rel:hazel); the run takes off with the levels' bonuses. Then the save as it was */
+    if (typeof rivalSize === 'function' && typeof relGift === 'function' && !selfTest.stop)
+      await phase(
+        'Blake in a run, and a Bean for Hazel',
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData();
+          try {
+            if (s.run) runRestore(s);
+            s.meta.history = [];
+            let plan = null;
+            for (let k = 0; k < 20 && !plan; k++) {
+              const p = runStartPlan(
+                'SELFTESTRIVAL' + k,
+                { ...data, unlockData: UNLOCK_DATA },
+                { unlocks: [], expedition: 2 }
+              );
+              if (p.map.nodes.filter(n => n.type === 'rival').length === 2) plan = p;
+            }
+            if (!plan) throw new Error('no seed of 20 met Blake twice at Expedition II');
+            s.meta.beans = 1;
+            if (!relGift(s.meta, 'hazel', RELATIONS)) throw new Error('the Bean for Hazel wasn’t given');
+            const holds = (/** @type {string} */ c) => conditionHolds(c, storyStateOf(s));
+            if (!holds('rel:hazel >= 1 and gifted:hazel and beans = 0'))
+              throw new Error('the story doesn’t read the gift: ' + JSON.stringify(storyStateOf(s).rel));
+            runStartOn(s, plan);
+            const run = s.run,
+              lead = SPECIES[run.rival.lead];
+            if (!lead || run.rival.lead !== s.team[0].sp) throw new Error(`the lead: ${run.rival.lead}`);
+            if (!run.rel || run.rel.hazel !== 1)
+              throw new Error(`the levels it took off with: ${JSON.stringify(run.rel)}`);
+            const blakes = Object.values(
+              runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run })
+            )
+              .filter(F => F.runFoe === 'rival')
+              .sort((a, b) => a.runNode - b.runNode);
+            if (blakes.length !== 2) throw new Error(`${blakes.length} of Blake's foes for 2 places`);
+            blakes.forEach((F, k) => {
+              if (F.who !== 'chad' || F.blocks) throw new Error(`his foe: ${F.who}, blocks ${F.blocks}`);
+              if (F.team.length !== rivalSize(RULES.run.rival, k))
+                throw new Error(`meeting ${k + 1}: ${F.team.length} Billies`);
+              const ace = SPECIES[F.team[0].sp];
+              if (!ace.types.some(t => typeEffectiveness(t, lead.types) > 1))
+                throw new Error(`his ace ${ace.name} doesn't beat ${lead.name}`);
+            });
+            /* RL-S2 part B: Hazel's favour, asked, paid on the way home from a run that reached row 7; Chapter 1's end
+               moves the story to chapter 2 */
+            const story = s.story || (s.story = {});
+            (story.quests || (story.quests = {})).fav_hazel = 'asked';
+            s.meta.history.push({
+              seed: 'SELFTESTFAV',
+              theme: '',
+              region: '',
+              exp: 1,
+              end: 'lost',
+              by: null,
+              row: 7,
+              days: 5,
+              team: [],
+              perks: [],
+              leaders: [],
+              rival: null,
+            });
+            const paid = relFavoursPay(s, c => conditionHolds(c, storyStateOf(s)), RELATIONS);
+            if (paid.length !== 1 || paid[0].who !== 'hazel' || story.quests.fav_hazel !== 'done')
+              throw new Error(`Hazel's favour: ${JSON.stringify(paid)}`);
+            const end = STORY_DATA.scripts && STORY_DATA.scripts['chapter1-end'];
+            if (!end) throw new Error('no story.json scripts.chapter1-end');
+            await runScript(
+              parseScript(end.script),
+              { say: () => {}, choose: () => 0 },
+              { save: s, id: 'story:chapter1-end' }
+            );
+            if (s.meta.chapter !== 2) throw new Error(`chapter1-end left the chapter at ${s.meta.chapter}`);
+            return `Blake twice against ${lead.name}: ${blakes.map(F => F.team.map(e => SPECIES[e.sp].name).join('+')).join(', then ')}; Hazel level 1, her favour +${paid[0].points}; chapter 2`;
+          } finally {
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
     /* RL-12b: a run's waystation and stall, on a copy of the save: the first seed (SELFTESTWAY0, 1, ...) whose map has
        both; at the waystation its stand (act 'event') opens the event the place holds, at the stall its stall opens
        the place's shop with the day's wares; both hold rules.json run.wild.waystation wild Billies. Then the save as
@@ -1197,14 +1436,309 @@ async function runFullTest(mode) {
         8,
         180
       );
-    /* RL-8: a run from the mast to the payout, on a copy of the save (nothing is written while the test runs): a short
-       run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the
-       airship's flight to the landing, a wild battle there, "Go there" to the town (a paid heal; RL-12: its shop's
+    /* RT-2: a run route's trainers, on a copy of the save: the first seed (SELFTESTRT0, 1, ...) whose map has a route
+       with a pair; on its place every trainer stands on its spot (a pair's second beside it), facing the way it
+       looks; the place's wild Billies are fewer for them; the pair starts a double and, beaten, leaves one reward
+       pick. Route sight is off while the test runs, so the battle is started as the walk-up would. Then the save as
+       it was */
+    if (typeof runWorldSync === 'function' && !selfTest.stop)
+      await phase(
+        "A route's trainers: on their spots, a pair as a double",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            wait = async (/** @type {() => any} */ f, /** @type {number} */ ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                if (activeBattle && activeBattle.phase === 'playing') tapMessage();
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            let seed = '',
+              node = -1;
+            for (let k = 0; k < 40 && node < 0; k++) {
+              const t = JSON.parse(JSON.stringify(s));
+              runStartOn(t, runStartPlan(`SELFTESTRT${k}`, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+              const pair = Object.values(
+                runRouteTrainers(t.run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run })
+              ).find(T => T.mate && !(t.run.map.nodes[T.runNode] || {}).side);
+              if (pair) [seed, node] = [`SELFTESTRT${k}`, pair.runNode];
+            }
+            if (node < 0) throw new Error('no seed of the first 40 has a route with a pair');
+            runStartOn(s, runStartPlan(seed, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            s.team.forEach(m => {
+              m.hp = maxHp(m);
+              m.status = null;
+            });
+            setSaveData(s);
+            const n = runWorldNode(node);
+            if (!runJump(n)) throw new Error('couldn’t walk to the route');
+            uiState.roam = null;
+            render();
+            const id = 'w:' + LOCATIONS[n].mapId + '*';
+            if (!(await wait(() => walkView.ready && walkView.id === id, 60000)))
+              throw new Error(`the route isn't shown (still ${walkView.id})`);
+            const here = Object.values(TRAINERS).filter(T => T.route && T.runNode === node),
+              count = here.reduce((a, T) => a + (T.mate ? 2 : 1), 0),
+              o = walkView.sc.baseOff || [0, 0];
+            if (!here.length || !here.every(T => T.route.at && T.route.spot))
+              throw new Error('a route trainer has no spot');
+            if (!(await wait(() => here.every(T => walkView.npcAt[T.id]), 10000)))
+              throw new Error('a route trainer isn’t on the map');
+            for (const T of here) {
+              const p = walkView.npcAt[T.id],
+                d = Math.hypot(p[0] - T.route.at[0] - o[0], p[1] - T.route.at[1] - o[1]);
+              if (d > 1.5) throw new Error(`${T.name} stands ${d.toFixed(1)} m off its ${T.route.spot}`);
+              if (!walkView.npcLook[T.id]) throw new Error(`${T.name} faces nowhere`);
+            }
+            const P = here.find(T => T.mate);
+            if (!P || !walkView.npcAt[P.id + '~b']) throw new Error('the pair’s second isn’t on the map');
+            const stock = encounterStock(n);
+            if (stock !== Math.max(RULES.run.wild.routeMin, RULES.run.wild.route - count))
+              throw new Error(`the route holds ${stock} wild Billies with ${count} trainers`);
+            const picks = (saveData.run.enc && saveData.run.enc.rewardN) || 0;
+            startTrainer(P.id, { talked: true });
+            if (!activeBattle || activeBattle.fmt !== 'double') throw new Error('the pair didn’t start a double');
+            stopTimers();
+            activeBattle.over = 'win';
+            endBattle();
+            if (!(await wait(() => !activeBattle && saveData.flags[P.id], 15000)))
+              throw new Error('the pair’s battle didn’t end');
+            if (((saveData.run.enc && saveData.run.enc.rewardN) || 0) !== picks + 1)
+              throw new Error('the pair left no reward pick (or two)');
+            return `${seed}: ${LOCATIONS[n].name}, ${count} trainers (${here.map(T => T.route.spot + (T.route.opt ? '?' : '') + (T.mate ? '+2' : '')).join(', ')}), ${stock} wild; the pair a double, one pick`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+            }
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        180
+      );
+    /* RT-4: a run route's wild Billies, on a copy of the save: the first seed (SELFTESTWH0, 1, ...) with a route place
+       (trainers on it, a spot for its rarer one) whose scene has points for a habitat its pool has Billies of; there the stock is 10 less its
+       trainers (4 at least), one of them the rarer one, standing on the place's rareAt, and every water or woods
+       Billie on one of its habitat's points. Then the save as it was */
+    if (typeof runWorldSync === 'function' && RULES.run.wild.habitats && !selfTest.stop)
+      await phase(
+        "A route's wild Billies: in their habitats, the rarer one in its pocket",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            H = RULES.run.wild.habitats,
+            wait = async (/** @type {() => any} */ f, /** @type {number} */ ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            let seed = '',
+              node = -1;
+            for (let k = 0; k < 20 && node < 0; k++) {
+              const t = JSON.parse(JSON.stringify(s));
+              runStartOn(t, runStartPlan(`SELFTESTWH${k}`, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+              const T = runRouteTrainers(t.run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run }),
+                routes = new Set(Object.values(T).map(q => q.runNode)),
+                made = runScenesMake(t.run, data),
+                W = runWorldTables(t.run, LOCATIONS[0], data);
+              routeTrainersPlace(t.run, T, made, EVENTS.classes);
+              const rareAt = routeRareSpots(t.run, T, made);
+              node = made.findIndex((sc, i) => {
+                if (!routes.has(i) || !rareAt[i] || (t.run.map.nodes[i] || {}).side || !sc.habitats) return false;
+                const P = W.pools[W.locations[i + 1].pool];
+                return P.list.some(([sp]) => !!sc.habitats[wildHabitat(SPECIES[sp].types, H)]);
+              });
+              if (node >= 0) seed = `SELFTESTWH${k}`;
+            }
+            if (node < 0) throw new Error('no seed of the first 20 has a route whose pool fits its habitats');
+            runStartOn(s, runStartPlan(seed, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            setSaveData(s);
+            const n = runWorldNode(node);
+            if (!runJump(n)) throw new Error('couldn’t walk to the route');
+            uiState.roam = null;
+            render();
+            const id = 'w:' + LOCATIONS[n].mapId + '*';
+            if (!(await wait(() => walkView.ready && walkView.id === id, 60000)))
+              throw new Error(`the route isn't shown (still ${walkView.id})`);
+            const L = LOCATIONS[n],
+              list = encountersHere(n),
+              want = Math.max(RULES.run.wild.routeMin, RULES.run.wild.route - (L.trainerCount || 0));
+            if (list.length !== want)
+              throw new Error(`${list.length} wild Billies with ${L.trainerCount} trainers (want ${want})`);
+            if (!(await wait(() => list.every(q => walkView.enc[q.id]), 10000)))
+              throw new Error('a wild Billie isn’t on the map');
+            const sc = walkView.sc,
+              o = sc.baseOff || [0, 0],
+              near = (/** @type {any} */ e, /** @type {number[]} */ p) => Math.hypot(e.x - p[0], e.z - p[1]) < 0.6,
+              rare = list.filter(q => q.rare);
+            if (rare.length !== 1) throw new Error(`${rare.length} rarer ones`);
+            if (!L.rareAt) throw new Error('the place has no spot for its rarer one');
+            if (!near(walkView.enc[rare[0].id], [L.rareAt[0] + o[0], L.rareAt[1] + o[1]]))
+              throw new Error('the rarer one isn’t in its pocket');
+            const by = /** @type {Record<string, number>} */ ({});
+            for (const q of list) {
+              if (q.rare) continue;
+              const k = q.hab || 'grass';
+              by[k] = (by[k] || 0) + 1;
+              const pts = q.hab && sc.habitats && sc.habitats[q.hab];
+              if (pts && !pts.some(p => near(walkView.enc[q.id], p)))
+                throw new Error(`a ${q.hab} Billie (${q.sp}) isn’t on its habitat's points`);
+            }
+            return `${seed}: ${L.name}, ${list.length} wild with ${L.trainerCount} trainers (${Object.entries(by)
+              .map(([k, v]) => k + ' ' + v)
+              .join(
+                ', '
+              )}, the rarer one ${rare[0].sp} lv ${rare[0].lvl} in its ${(mapById(L.mapId).spots || []).find(p => p.x === L.rareAt[0] && p.z === L.rareAt[1]).kind})`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        180
+      );
+    /* RT-3: a run route's set pieces, on a copy of the save: the first seed (SELFTESTSP0, 1, ...) whose map has a
+       Bureau checkpoint on a main place; on that place every piece has all its props round it, the agent stands in
+       the checkpoint, tapping it opens the bureau_checkpoint event, walking on plays it, and tapping again only
+       talks. Then the save as it was */
+    if (typeof runWorldSync === 'function' && SET_PIECES && !selfTest.stop)
+      await phase(
+        "A route's set pieces: whole, the Bureau's agent opens its event once",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            wait = async (/** @type {() => any} */ f, /** @type {number} */ ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            let seed = '',
+              node = -1;
+            for (let k = 0; k < 12 && node < 0; k++) {
+              const t = JSON.parse(JSON.stringify(s));
+              runStartOn(t, runStartPlan(`SELFTESTSP${k}`, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+              const made = runScenesMake(t.run, data);
+              node = made.findIndex(
+                (sc, i) => !(t.run.map.nodes[i] || {}).side && (sc.pieces || []).some(L => L.id === 'bureau_checkpoint')
+              );
+              if (node >= 0) seed = `SELFTESTSP${k}`;
+            }
+            if (node < 0) throw new Error('no seed of the first 12 has a Bureau checkpoint on a main place');
+            runStartOn(s, runStartPlan(seed, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            setSaveData(s);
+            const n = runWorldNode(node);
+            if (!runJump(n)) throw new Error('couldn’t walk to the route');
+            uiState.roam = null;
+            render();
+            const id = 'w:' + LOCATIONS[n].mapId + '*';
+            if (!(await wait(() => walkView.ready && walkView.id === id, 60000)))
+              throw new Error(`the route isn't shown (still ${walkView.id})`);
+            const sc = mapById(LOCATIONS[n].mapId),
+              L = sc.pieces || [];
+            for (const P of L) {
+              const S = SET_PIECES.pieces[P.id];
+              for (const q of S.props)
+                if (!sc.props.some(o => o.k === q.k && Math.hypot(o.x - P.x, o.z - P.z) <= S.r + 0.5))
+                  throw new Error(`the ${S.name} has no ${q.k}`);
+            }
+            /* an exit's signpost reads the place's name */
+            const sign = sc.props.find(o => o.k === 'signpost' && o.act === 'sign' && !o.say),
+              toasts = () =>
+                [uiState.toastOn, ...(uiState.toastQ || [])]
+                  .map(t => (t && typeof t === 'object' ? t.text : t))
+                  .join(' | ');
+            if (!sign) throw new Error('the route has no signpost you can read');
+            walkPick({ k: 'act', act: 'sign', p: sign });
+            if (!(await wait(() => toasts().includes(LOCATIONS[n].name), 3000)))
+              throw new Error(`the signpost says “${toasts()}”, not the place’s name`);
+            const agent = walkState().npcs.find(m => m.piece && m.piece.event === 'bureau_checkpoint');
+            if (!agent) throw new Error('the Bureau checkpoint has no agent');
+            if (!(await wait(() => walkView.npcAt[agent.id], 10000))) throw new Error('the agent isn’t on the map');
+            walkPick({ k: 'npc', n: agent });
+            if (!(await wait(() => uiState.modal && uiState.modal.cls === 'event-sheet', 5000)))
+              throw new Error('tapping the agent opened no event');
+            const go = uiState.modal.btns[uiState.modal.btns.length - 1];
+            go.f();
+            if (!(await wait(() => saveData.run.enc && saveData.run.enc.seen.includes('bureau_checkpoint'), 15000)))
+              throw new Error('walking on didn’t play the event');
+            /* its lines, each with a Go on */
+            for (let k = 0; k < 10 && saveData.run.enc.play; k++) {
+              await wait(() => uiState.modal && uiState.modal.cls === 'event-sheet', 5000);
+              const b = uiState.modal && uiState.modal.btns;
+              if (b && b.length === 1) b[0].f();
+              await selfTestSleep(200);
+            }
+            if (saveData.run.enc.play) throw new Error('walking on didn’t end the event');
+            uiState.modal = null;
+            renderOverlay();
+            walkPick({ k: 'npc', n: agent });
+            await selfTestSleep(300);
+            if (uiState.modal && uiState.modal.cls === 'event-sheet')
+              throw new Error('the agent opened the event twice');
+            return `${seed}: ${LOCATIONS[n].name}, ${L.map(P => P.id + '@' + P.spot).join(', ')}; the signpost reads its name; the agent's event once`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        180
+      );
+    /* RL-8: a run from the station to the payout, on a copy of the save (nothing is written while the test runs): a
+       short run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the
+       sky train to the landing (HB-8: its ride skipped), a wild battle there, "Go there" to the town (a paid heal; RL-12: its shop's
        Perk bought), the mini-boss (beaten: a Perk picked), to the boss (an Alpha, its battle carrying the
        Perks) and its payout, then home: Copperleaf without the run. Then the save as it was */
     if (typeof runTakeOff === 'function' && !selfTest.stop)
       await phase(
-        'A run: airship, nodes, payout',
+        'A run: the train, nodes, payout',
         'dio',
         async () => {
           const was = saveData,
@@ -1226,6 +1760,8 @@ async function runFullTest(mode) {
             uiState.mq = [];
             uiState.tab = 'walk';
             if (s.run) runRestore(s);
+            /* RS-2: nobody lives in Copperleaf on the copy, so the run's resident is the free first one */
+            s.meta.residents = {};
             s.trip = { node: START_NODE, plan: [] };
             s.team.forEach(m => {
               m.hp = maxHp(m);
@@ -1235,9 +1771,11 @@ async function runFullTest(mode) {
             render();
             const hubTeam = saveData.team.map(m => m.uid).join();
             runTakeOff('SELFTESTRUN8', { rows: 5, minibosses: 1 });
-            /* HB-2: the run's world is made over several frames before the flight */
-            if (!saveData.run || !(await wait(() => airshipFlight.on, 30000)))
+            /* HB-8: the sky train's ride (skipped), then the run's world made over several frames behind the carriage's
+               loading screen */
+            if (!saveData.run || !(await wait(() => trainRide.on || runLoad.on, 30000)))
               throw new Error('the run didn’t take off');
+            trainRideSkip();
             /* RL-13: the starter points' default pick travels; the hub's team waits in Copperleaf as it was */
             if (
               !saveData.team.length ||
@@ -1247,24 +1785,31 @@ async function runFullTest(mode) {
               throw new Error(
                 `took off with ${saveData.team.length} Billies, the hub's team ${hubTeam ? 'changed' : 'empty'}`
               );
+            const t0 = performance.now();
+            if (!(await wait(() => !trainRide.on && saveData.run.at.phase === 'walk' && runLoad.node >= 0, 30000)))
+              throw new Error('the run never landed');
             const made = [runWorld.scenes, runWorld.ms],
-              t0 = performance.now();
-            if (!(await wait(() => !airshipFlight.on && saveData.run.at.phase === 'walk', 20000)))
-              throw new Error('the flight never landed');
-            const flew = Math.round(performance.now() - t0),
+              flew = Math.round(performance.now() - t0),
               landing = 'w:' + LOCATIONS[1].mapId + '*';
             if (!(await wait(() => walkView.ready && walkView.id === landing, 15000)))
               throw new Error(`landed but the view is ${walkView.id}`);
             /* HB-2: the landing's loading screen lifts (every stage ready, or the cap) */
             if (!(await wait(() => runLoad.ready && !document.getElementById('runload'), RULES.run.load.capMs + 5000)))
               throw new Error('the landing’s loading screen never lifted');
-            /* RL-R1: the run's region: the short map's 5 rows in its zones, each place its zone's biome, its name on
-               the Map tab */
-            const G = saveData.run.region;
+            /* RL-R1: the run's region: the short map's 5 rows in its zones, each place its zone's biome (RL-R2: a
+               side area's its field move's), its name on the Map tab */
+            const G = saveData.run.region,
+              side = saveData.run.map.side,
+              sideBiome = side && FIELD_MOVES[side.move] ? FIELD_MOVES[side.move].biome : '';
             if (!G || G.zones.reduce((n, z) => n + z.rows, 0) !== 5)
               throw new Error(`the run's region doesn't fit its 5 rows: ${JSON.stringify(G && G.zones)}`);
-            const off = saveData.run.map.nodes.find(n => !G.zones[n.zone] || G.zones[n.zone].biome !== n.biome);
-            if (off) throw new Error(`a place on row ${off.row + 1} isn't its zone's biome`);
+            const off = saveData.run.map.nodes.find(
+              n => !G.zones[n.zone] || (n.side ? sideBiome : G.zones[n.zone].biome) !== n.biome
+            );
+            if (off)
+              throw new Error(
+                `a place on row ${off.row + 1} isn't its ${off.side ? "side area's move's" : "zone's"} biome`
+              );
             if (!renderWorldMapTab().includes(escapeHtml(G.name)))
               throw new Error('the Map tab doesn’t name the region');
             measureFromHere();
@@ -1294,6 +1839,39 @@ async function runFullTest(mode) {
             uiState.modal.btns[0].f();
             if (saveData.se !== se - cost)
               throw new Error(`the clinic took ${plural(se - saveData.se, 'Money')}, not ${cost}`);
+            /* TW-3: the town has a notice board and a quest giver; its quest (when it has one) is taken and kept
+               by the save's check */
+            const townScene = mapById(LOCATIONS[town].mapId) || {};
+            if (!(townScene.props || []).some((/** @type {any} */ p) => p.act === 'notice'))
+              throw new Error('the town has no notice board');
+            if (!(townScene.people || []).some((/** @type {any} */ p) => p.quest))
+              throw new Error('the town has no quest giver');
+            const offer = questOffer(saveData.run, town - 1, questData());
+            if (offer && !questTake(saveData.run, town - 1, offer, QUESTS)) throw new Error('the quest wasn’t taken');
+            if (!validRun(JSON.parse(JSON.stringify(saveData.run))))
+              throw new Error('a run with a quest fails validRun');
+            /* RS-2: Dottie, the free first resident, stands in every town of the first all-town row with a gold "!";
+               talking to her (her lines tapped through, Yes picked) invites her, and the save's check keeps it */
+            const firstTowns = residentFirstTowns(saveData.run.map),
+              dottieScene = firstTowns.length ? mapById(LOCATIONS[runWorldNode(firstTowns[0])].mapId) || {} : {},
+              dottie = (dottieScene.people || []).find((/** @type {any} */ p) => p.resident);
+            if (!dottie || dottie.resident !== 'dottie' || dottie.name !== RESIDENTS.dottie.name)
+              throw new Error('Dottie isn’t in the first town row');
+            if (typeof questMarked !== 'function' || !questMarked(dottie)) throw new Error('Dottie has no "!"');
+            let talked = false;
+            residentTalk(dottie).then(() => (talked = true));
+            if (
+              !(await wait(() => {
+                if (talkBox.choice) talkBox.choice.pick(0);
+                else if (talkBox.cur) talkBox.cur.tap();
+                return talked;
+              }, 15000))
+            )
+              throw new Error('talking to Dottie never ended');
+            if (saveData.run.invited !== 'dottie') throw new Error('Yes didn’t invite Dottie');
+            if (questMarked(dottie)) throw new Error('Dottie still has her "!" once invited');
+            if (!validRun(JSON.parse(JSON.stringify(saveData.run))))
+              throw new Error('a run with a resident invited fails validRun');
             /* RL-12: the town's shop sells the day's Perk; the mini-boss leaves a pick; the boss's battle carries
                both */
             uiState.modal = null;
@@ -1315,6 +1893,9 @@ async function runFullTest(mode) {
             if (!MB || MB.runFoe !== 'miniboss') throw new Error('no mini-boss on its place');
             if (MB.from !== G.leaders[0])
               throw new Error(`the mini-boss is ${MB.from}, not the region's ${G.leaders[0]}`);
+            /* RL-S1: the leader's word before the battle is picked by the story director (banter.json leader) */
+            if (!MB.script || MB.script[0] !== 'pick leader') throw new Error('the mini-boss has no picked word');
+            if (!storyPickTree('leader', 'trainer:' + MB.id)) throw new Error('no leader line could be picked');
             startTrainer(MB.id, { talked: true });
             if (!activeBattle) throw new Error('the mini-boss battle didn’t start');
             stopTimers();
@@ -1334,7 +1915,8 @@ async function runFullTest(mode) {
               throw new Error('the pick wasn’t taken');
             uiState.modal = null;
             uiState.mq = [];
-            const boss = map.nodes.length;
+            /* RL-R2: a side area's places come after the main path's, so the boss is the main path's, not the last */
+            const boss = runWorldNode(map.nodes.findIndex(n => n.type === 'boss' && !n.side));
             runJump(boss);
             const B = trainersAt(boss)[0];
             if (!B || !B.alpha) throw new Error('no Alpha boss on the boss’s place');
@@ -1353,18 +1935,27 @@ async function runFullTest(mode) {
             uiState.modal.btns[0].f();
             if (!(await wait(() => uiState.modal && uiState.modal.cls === 'run-payout', 5000)))
               throw new Error('no payout screen');
+            /* RS-2: the payout says who is moving to Copperleaf */
+            if (!uiState.modal.html.includes(escapeHtml(`${RESIDENTS.dottie.name} is moving to Copperleaf`)))
+              throw new Error('the payout doesn’t say Dottie is moving in');
             uiState.modal.btns[0].f();
             if (!(await wait(() => !saveData.run && LOCATIONS.length === gameData.locations.length, 10000)))
               throw new Error('the run didn’t end');
-            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; home with ${saveData.meta.research} Research`;
+            /* RL-S1: the run is in the history, its mini-boss beaten; the hub characters' lines picked, no scene */
+            const H = saveData.meta.history[saveData.meta.history.length - 1];
+            if (!H || H.end !== 'won' || H.seed !== 'SELFTESTRUN8') throw new Error('the won run isn’t in the history');
+            if (!H.leaders.some(l => l.id === MB.from && l.beat)) throw new Error('the history lost the mini-boss win');
+            if (!saveData.story.fresh || saveData.story.pending) throw new Error('home from a win: the story’s picks');
+            if (!saveData.meta.residents.dottie || H.res !== 'dottie')
+              throw new Error('Dottie didn’t move in (or the history lost her)');
+            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; landed ${flew} ms after the train; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; Dottie invited and moved in; home with ${saveData.meta.research} Research; in the history`;
           } finally {
             if (activeBattle) {
               stopTimers();
               setActiveBattle(null);
               battleStageStop();
             }
-            airshipFlight.on = false;
-            document.body.classList.remove('flying');
+            trainRideSkip();
             uiState.modal = null;
             uiState.mq = [];
             renderOverlay();
@@ -1828,9 +2419,328 @@ async function runFullTest(mode) {
         6,
         120
       );
+    /* phase 20 R1: the renderer's baseline (diagnostics only): five stops at two resolutions */
+    if (diag)
+      await phase(
+        'Renderer baseline: Copperleaf by day and night, a jungle run place, a run town, a battle',
+        'dio',
+        async () => {
+          const B = await rendererBaseline({
+            foeSp,
+            show: t => {
+              stepEl.textContent = 'Renderer baseline: ' + t;
+            },
+          });
+          diagnosticsReport.baseline = B;
+          if (selfTest.stop) return 'stopped';
+          if (B.length < BASELINE_STOPS.length * BASELINE_RESOLUTIONS.length)
+            throw new Error(`measured ${B.length} of ${BASELINE_STOPS.length * BASELINE_RESOLUTIONS.length}`);
+          return baselineNote(B);
+        },
+        150,
+        600
+      );
     await phase('Battle on the 3D stage', 'scene', () => battle(), 7, 120);
     await phase('Double battle with a trainer', 'scene', () => teamBattle('double'), 8, 150);
     await phase('Alpha battle: your team against one', 'scene', () => teamBattle('alpha'), 8, 150);
+    /* SP-3: a spliced wild Billie: the battle says what it wears; knocked out, it banks DNA and samples its Gene (on
+       a copy of the save) */
+    if (!selfTest.stop)
+      await phase(
+        'Wild splice: its line, DNA and a Gene Sample',
+        'dio',
+        async () => {
+          const was = saveData,
+            wait = async (/** @type {() => any} */ f, /** @type {number} */ ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                if (activeBattle && activeBattle.phase === 'playing') tapMessage();
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              D = geneData(),
+              one = { ...D, genes: { ...D.genes, wild: { ...D.genes.wild, graft: 1, chimera: 0 } } },
+              rnd = rngFn('self-test', 'splice'),
+              sp = Object.keys(SPECIES).find(id => wildSplice(one, id, Object.keys(SPECIES), rngFn(id, 'splice')));
+            if (!sp) throw new Error('no species can be spliced');
+            const graft = /** @type {Record<string, string>} */ (wildSplice(one, sp, Object.keys(SPECIES), rnd)),
+              gene = Object.values(graft)[0];
+            Object.assign(s.meta, { dna: 0, genes: [] });
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = { id: newUid(), sp, lvl: 3, no: ++s.serial, graft };
+            encountersHere().push(q);
+            startWild(q);
+            if (!activeBattle) throw new Error('the battle didn’t start');
+            const words = spliceWords(q);
+            if (!JSON.stringify(activeBattle.events).includes(`has ${words[0]}!`))
+              throw new Error(`the opening doesn’t say it has ${words[0]}`);
+            stopTimers();
+            activeBattle.over = 'win';
+            endBattle();
+            if (!(await wait(() => !activeBattle, 15000))) throw new Error('the battle never ended');
+            if (s.meta.dna !== D.genes.wild.dna.graft || !s.meta.genes.includes(gene))
+              throw new Error(`after the win: ${s.meta.dna} DNA, Genes ${s.meta.genes.join()}`);
+            if (!(await wait(() => uiState.modal && uiState.modal.title === 'Gene Sample', 5000)))
+              throw new Error('no Gene Sample sheet');
+            return `${SPECIES[sp].name} with ${words.join(', ')}: +${s.meta.dna} DNA, Gene ${gene} sampled`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* SP-4: the Gene Bank on a copy of the save: its sheet, sequencing the lead, a Gene spliced for its DNA (the sheet's
+       own buttons), the splice in a wild battle (its effect rows), then taken off for free */
+    if (typeof geneBankOpen === 'function' && !selfTest.stop)
+      await phase(
+        'Gene Bank: sequence, splice, see it in battle',
+        'dio',
+        async () => {
+          const was = saveData;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              D = geneData(),
+              m = s.team.find(b => !isRobot(b) && graftRecipe(D.kitBuilds, b.sp));
+            if (!m) throw new Error('no Billie on the team has a kit recipe');
+            delete m.graft;
+            delete m.unstable;
+            Object.assign(s.meta, { dna: 200, genes: [] });
+            s.meta.buildings.genebank = 3;
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            geneBankOpen();
+            if (!uiState.modal || !/Gene Bank/.test(uiState.modal.title)) throw new Error('the sheet didn’t open');
+            geneBankDo('pick', m.uid);
+            geneBankDo('seq');
+            if (!s.meta.genes.length) throw new Error('sequencing read nothing');
+            const slot = bankSlots(D, bankLevel(s)).find(k => graftDonors(D.kitBuilds, D.partKits, m.sp, k).length);
+            if (!slot) throw new Error(`no Gene fits ${m.sp}`);
+            const id = graftDonors(D.kitBuilds, D.partKits, m.sp, slot)[0],
+              price = bankPrice(D, m.sp, slot, id);
+            s.meta.genes.push(id);
+            geneBankDo('slot', slot);
+            geneBankDo('gene', id);
+            if (!document.querySelector('#ov .gene-preview')) throw new Error('no preview for the Gene');
+            geneBankDo('splice');
+            if (!m.graft || m.graft[slot] !== id) throw new Error(`not spliced: ${JSON.stringify(m.graft || null)}`);
+            if (s.meta.dna !== 200 - price) throw new Error(`paid ${200 - s.meta.dna} DNA, the price is ${price}`);
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = { id: newUid(), sp: m.sp, lvl: 3, no: ++s.serial };
+            encountersHere().push(q);
+            startWild(q);
+            if (!activeBattle) throw new Error('the battle didn’t start');
+            const me = activeBattle.sides[0].team.find(b => b.uid === m.uid),
+              rows = me ? fxOfBillie(me, ITEMS).filter(f => /^gene:/.test(f.src)) : [];
+            if (!me || !me.graft) throw new Error('the spliced Billie isn’t spliced in battle');
+            stopTimers();
+            setActiveBattle(null);
+            uiState.modal = null;
+            geneBankOpen();
+            geneBankDo('pick', m.uid);
+            geneBankDo('slot', slot);
+            geneBankDo('off');
+            if (m.graft) throw new Error('Take off left a Gene');
+            if (s.meta.dna !== 200 - price) throw new Error('taking it off cost DNA');
+            return `${m.sp} ${slot}=${id}: ${price} DNA, ${rows.length} Gene row(s) in battle (${rows.map(f => f.src).join(', ') || 'none'}), taken off free`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+            }
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* SP-5: the Workshop, on a copy of the save: a spare Hydrant Arm fitted on a Billie for Scrap (the sheet driven by
+       its own buttons), its Jet Blast in a wild battle, the arm broken (its move lost), then mended by the heal a
+       town's clinic gives (healAll), and taken off for free back to the spares */
+    if (typeof augmentsOpen === 'function' && !selfTest.stop)
+      await phase(
+        'Workshop: fit an arm, it breaks in battle, the clinic mends it',
+        'dio',
+        async () => {
+          const was = saveData;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              D = geneData(),
+              m = s.team.find(b => !isRobot(b) && augFits(D, b.sp, 'front', 'hydrant'));
+            if (!m) throw new Error('no Billie on the team can take an arm');
+            delete m.aug;
+            delete m.graft;
+            delete m.unstable;
+            delete m.partDmg;
+            s.meta.scrap = 100;
+            s.parts = [...(s.parts || []), { uid: 'selftest-arm', id: 'hydrant', up: 0 }];
+            s.meta.buildings.workshop = 1;
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            augmentsOpen();
+            if (!uiState.modal || !/Workshop/.test(uiState.modal.title)) throw new Error('the sheet didn’t open');
+            augmentsDo('pick', m.uid);
+            augmentsDo('slot', 'front');
+            augmentsDo('part', 'selftest-arm');
+            if (!document.querySelector('#ov .aug-sheet .gene-preview')) throw new Error('no preview for the part');
+            augmentsDo('fit');
+            if (!m.aug || !m.aug.front || m.aug.front.id !== 'hydrant')
+              throw new Error(`not fitted: ${JSON.stringify(m.aug || null)}`);
+            const price = GENES.augment.price.fit;
+            if (s.meta.scrap !== 100 - price)
+              throw new Error(`paid ${100 - s.meta.scrap} Scrap, the price is ${price}`);
+            if (s.parts.some(p => p.uid === 'selftest-arm')) throw new Error('the part is still a spare');
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = { id: newUid(), sp: m.sp, lvl: 3, no: ++s.serial };
+            encountersHere().push(q);
+            startWild(q);
+            if (!activeBattle) throw new Error('the battle didn’t start');
+            const me = activeBattle.sides[0].team.find(b => b.uid === m.uid),
+              jet = ROBOTS.parts.hydrant.move;
+            if (!me || !movesOf(me).includes(jet)) throw new Error('the arm’s move isn’t offered in battle');
+            me.partDmg = { armR: partMaxHp(me, 'armR') };
+            if (moveUsable(me, jet)) throw new Error('a broken arm still gives its move');
+            stopTimers();
+            setActiveBattle(null);
+            healAll();
+            if (partBroken(m, 'armR') || partsDamaged(m)) throw new Error('the heal didn’t mend the arm');
+            uiState.modal = null;
+            augmentsOpen();
+            augmentsDo('pick', m.uid);
+            augmentsDo('slot', 'front');
+            augmentsDo('off');
+            if (m.aug) throw new Error('Take off left an Augment');
+            if (!s.parts.some(p => p.uid === 'selftest-arm')) throw new Error('the part didn’t go back to the spares');
+            return `${m.sp} front=hydrant: ${price} Scrap, ${MOVES[jet].n} offered, broken and mended, taken off free`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+            }
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* SP-6: a run's splice events, on a copy of the save on a run: the back-alley splicer splices the lead (paid in
+       Moneys, the event's sheet driven by its own buttons), the splice in a wild battle, then the Gene recall takes the
+       Gene off for its DNA (the Gene stays in the library) */
+    if (typeof encounterOpen === 'function' && typeof runStartOn === 'function' && !selfTest.stop)
+      await phase(
+        'Splice events: the back alley splices, the recall takes it back',
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            /* tap through an event: "Go on" and the like, the Billie `uid` when a pick lists it, the Gene when a
+               recall asks; until "Keep walking" */
+            drive = async (/** @type {string} */ uid, /** @type {number} */ opt) => {
+              let picked = false;
+              for (let i = 0; i < 80; i++) {
+                await selfTestSleep(60);
+                const M = uiState.modal;
+                if (!M || M.cls !== 'event-sheet') continue;
+                const B = M.btns || [];
+                if (B.length === 1 && /Keep walking/.test(B[0].l)) return M;
+                if (!picked && B.length > 1) {
+                  /* the event's options first, then a pick of Billies or Genes: the lead's (by its name) */
+                  picked = true;
+                  if (opt >= 0) {
+                    B[opt].f();
+                    opt = -1;
+                    picked = false;
+                    continue;
+                  }
+                  const m = saveData.team.find(b => b.uid === uid),
+                    k = B.findIndex(b => m && b.l.includes(escapeHtml(billyName(m))));
+                  if (k < 0) throw new Error(`the pick doesn’t list ${m ? billyName(m) : uid}`);
+                  B[k].f();
+                  continue;
+                }
+                B[0].f();
+              }
+              throw new Error('the event never ended');
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.modal = null;
+            uiState.mq = [];
+            if (s.run) runRestore(s);
+            runStartOn(s, runStartPlan('SELFTESTSPLICE', { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            const D = geneData(),
+              m = s.team.find(b => !isRobot(b) && geneEventSlots(D, b).length);
+            if (!m) throw new Error('no Billie on the run’s team can take a Gene');
+            delete m.graft;
+            delete m.unstable;
+            s.se = 1000;
+            Object.assign(s.meta, { dna: 0, genes: [] });
+            setSaveData(s);
+            encounterOpen(null, 'back_alley_splicer');
+            await drive(m.uid, 0);
+            const g = m.graft ? Object.entries(m.graft)[0] : null;
+            if (!g) throw new Error('the back alley spliced nothing');
+            if (s.se !== 1000 - EVENTS.events.back_alley_splicer.options[0].cost) throw new Error(`Moneys ${s.se}`);
+            if (!s.meta.genes.includes(g[1])) throw new Error('the Gene isn’t in the library');
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = { id: newUid(), sp: m.sp, lvl: 3, no: ++s.serial };
+            encountersHere().push(q);
+            startWild(q);
+            if (!activeBattle) throw new Error('the battle didn’t start');
+            const me = activeBattle.sides[0].team.find(b => b.uid === m.uid);
+            if (!me || !me.graft) throw new Error('the spliced Billie isn’t spliced in battle');
+            stopTimers();
+            setActiveBattle(null);
+            uiState.modal = null;
+            encounterOpen(null, 'gene_recall');
+            await drive(m.uid, 0);
+            if (m.graft) throw new Error(`the recall left ${JSON.stringify(m.graft)}`);
+            if (!s.meta.genes.includes(g[1])) throw new Error('the recall took the Gene out of the library');
+            return `${m.sp} ${g[0]}=${g[1]} for ${1000 - s.se} Moneys, spliced in battle; recalled for ${s.meta.dna} DNA`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+            }
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        4,
+        60
+      );
+    /* RL-14: the Bureau's bot in the grass: it can't be caught, its limbs break and drop off, it cries */
+    if (typeof FACTIONS !== 'undefined' && FACTIONS.bureau)
+      await phase('A wild bot: never caught, its parts break off', 'scene', () => botBattle(), 8, 150);
     /* v47: the opening's fall into the Hollow Earth (the bowl's own ground, past the Inner Sun), timed */
     if (typeof fallOverWorldMap === 'function' && !selfTest.stop)
       await phase(
@@ -2236,7 +3146,14 @@ expose({ runQuickTest: [() => runFullTest] });
    over a seam), where a frame's time goes, memory after,
    a battle's start, what rain and night cost, and any errors. It saves a compact report made to be read (not the whole
    debug log). Like the full test it leaves your save alone and waits for you if the app goes to the background. */
-const emptyDiagnosticsReport = () => ({ device: null, busiest: null, places: [], passes: null, weather: null });
+const emptyDiagnosticsReport = () => ({
+  device: null,
+  busiest: null,
+  places: [],
+  passes: null,
+  weather: null,
+  baseline: null,
+});
 let diagnosticsReport = emptyDiagnosticsReport();
 function runDiagnostics() {
   return runFullTest('diag');
@@ -2254,8 +3171,8 @@ function selfTestWalkScenes() {
     },
     roomOf = (p, act) => PB_DATA.doorRooms(p, p && P[p.k], act).find(id => sc[id] && sc[id].kind === 'room');
   add(hub);
-  for (const p of (sc[hub] && sc[hub].props) || []) if (ROOM_BY_USE[p.act]) add(roomOf(p, p.act));
-  for (const [, , act] of MAPGEN_HUB_BUILDINGS) if (ROOM_BY_USE[act]) add(roomOf(null, act));
+  for (const p of (sc[hub] && sc[hub].props) || []) if (PB_DATA.opensRoom(p.act)) add(roomOf(p, p.act));
+  for (const [, , act] of MAPGEN_HUB_BUILDINGS) if (PB_DATA.opensRoom(act)) add(roomOf(null, act));
   return out;
 }
 /* the diagnostics' walk: the hub and its busiest room (a run's generated scene is the "A run's road" phase) */
@@ -2267,6 +3184,268 @@ function diagnosticsMaps() {
   diagnosticsReport.busiest = hub;
   diagnosticsReport.places = pick;
   return pick;
+}
+/* phase 20 R1 (measure): the renderer's baseline on what the game loads, in the diagnostics test. Five stops, each
+   measured twice: at resolution 1 (as A8's graphics test stations were) and at the game's own resolution; automatic
+   quality off both times, the game's own values otherwise (the player's dials set aside), the light forced, the
+   camera still on the place's arrival spot. A run's places come from fixed seeds on a copy of the save, their first
+   place forced to the jungle (no run reaches it yet) or to a town, so every run of the test sees the same places */
+const BASELINE_STOPS = [
+  { id: 'hubDay', name: 'Copperleaf by day', time: 12.5 },
+  { id: 'hubNight', name: 'Copperleaf by night', time: 23 },
+  { id: 'jungle', name: 'A jungle run place', time: 12.5, run: { seed: 'BASELINE1', type: 'route', biome: 'jungle' } },
+  { id: 'town', name: 'A run town', time: 12.5, run: { seed: 'BASELINE2', type: 'town', biome: 'meadow' } },
+  { id: 'battle', name: 'A battle', time: 12.5, battle: true },
+];
+/* the two resolutions: [name, the engine's quality group for it] */
+const BASELINE_RESOLUTIONS = [
+  ['r1', { auto: false, resolution: 1 }],
+  ['own', { auto: false }],
+];
+/* phase 20 R3: the battle measured a third time, at the game's own resolution with its rigs reused (quality.rigReuse) */
+const BASELINE_RIG_REUSE = ['ownRigReuse', { auto: false, rigReuse: true }];
+/* the player on the place's arrival spot, the camera straight and at its own zoom */
+function baselineStand() {
+  const sc = walkView.sc;
+  if (!sc) return;
+  const base = (sc.baseId && mapById(sc.baseId)) || sc,
+    at = mapHub(base),
+    o = sc.baseOff || [0, 0];
+  walkView.pl.x = at[0] + o[0];
+  walkView.pl.z = at[1] + o[1];
+  walkView.pl.route = null;
+  walkView.pl.fresh = false;
+  if (typeof walkRenderer !== 'undefined') {
+    walkRenderer.yawT = 0;
+    walkRenderer.zoomT = 1;
+  }
+}
+/* nothing left to prepare, plant, paint or load, then two seconds in a row whose frame times agree within 10 % (`sec` at most) */
+async function baselineSettle(task, sec) {
+  const t0 = performance.now(),
+    left = () => sec * 1000 * (selfTest.slow || 1) - (performance.now() - t0),
+    busy = () =>
+      !walkView.ready ||
+      !!(typeof walkRenderer !== 'undefined' && (walkRenderer.prep || walkRenderer.grassJob)) ||
+      !!(typeof paintWorkerState !== 'undefined' && paintWorkerState && paintWorkerState.jobs.size) ||
+      /* a picture still loading (a model's leaf clumps are skipped until theirs is in) */
+      Object.values(ART_CACHE.img).some(im => !im.complete);
+  while (busy() && left() > 0 && !selfTest.stop) await selfTestSleep(100);
+  const a = debugLog.now();
+  while (left() > 0 && !selfTest.stop) {
+    await selfTestSleep(250);
+    const S = debugLog.samples
+      .filter(s => s.t - (s.dt || 1000) >= a && s.tasks[task] && s.tasks[task].fps)
+      .map(s => 1000 / s.tasks[task].fps);
+    if (S.length < 2 || busy()) continue;
+    const [x, y] = S.slice(-2);
+    if (Math.abs(x - y) <= Math.max(0.5, y * 0.1)) break;
+  }
+  return Math.round(performance.now() - t0);
+}
+/* one measurement: frames from the debug log's seconds, the graphics chip's time where it has timers, and every
+   frame's calls counted (draws, the passes, the models' and their pictures' draws, the distinct pictures and meshes) */
+async function baselineMeasure(task, sec) {
+  const t0 = debugLog.now(),
+    T = diagnosticsTimersOn();
+  /* phase 20 R3: a battle's rigs, from battle-stage.js's own sums */
+  if (task === 'scene') Object.assign(rigStats, { calls: 0, redraws: 0, bytes: 0, ms: 0 });
+  let r = null;
+  try {
+    await selfTestSleep(sec * 1000);
+  } finally {
+    r = await diagnosticsTimersOff(T);
+  }
+  const s = selfTestFrameStats(t0, debugLog.now(), task, { whole: true, ...(task === 'scene' && { plus: 'dio' }) }),
+    c = r.calls;
+  return {
+    fps: s.fpsAvg,
+    worstFps: s.fpsWorst,
+    frameMs: s.fpsAvg ? Math.round((1000 / s.fpsAvg) * 10) / 10 : null,
+    cpuMs: s.cpuMs,
+    cpuTasks: s.cpuTasks,
+    gpuMs: r.gpu ? Math.round(Object.values(r.gpu).reduce((a, v) => a + v, 0) * 100) / 100 : null,
+    slow: s.slow,
+    draws: c ? c.dc[0] : null,
+    instances: c ? c.dc[1] : null,
+    programs: c ? c.dc[2] : null,
+    textureBinds: c ? c.dc[3] : null,
+    uniforms: c ? c.dc[4] : null,
+    passDraws: c ? c.dcp : null,
+    tagged: c ? c.dct : null,
+    kinds: c ? c.dcu : null,
+    /* phase 20 R3: KB a frame sent to the graphics chip: [pictures, buffers] */
+    uploadKB: c ? c.up : null,
+    frames: c ? c.frames : 0,
+    ...(task === 'scene' && { rigs: baselineRigs(r.frames) }),
+  };
+}
+/* phase 20 R3: what the battle's rigs cost a frame: the processor's ms redrawing their canvases, how many got to a
+   rig and how many were redrawn (each redraw is one upload), the KB redrawn, and an upload probe */
+function baselineRigs(frames) {
+  const n = Math.max(1, frames),
+    r = v => Math.round((v / n) * 100) / 100;
+  return {
+    ms: r(rigStats.ms),
+    calls: r(rigStats.calls),
+    redraws: r(rigStats.redraws),
+    kb: Math.round(rigStats.bytes / n / 1024),
+    uploadMs: baselineUploadProbe(),
+  };
+}
+/* one rig canvas sent to a scratch texture 20 times, the graphics chip waited for (gl.finish): ms per upload, its own
+   side included. Between frames, so the counters never see it; the texture is deleted, the binding put back */
+function baselineUploadProbe() {
+  const gl = typeof gpuState !== 'undefined' && !gpuState.lost ? gpuState.gl : null,
+    cv = (battleStage.buf || []).find(b => b && b.width > 10);
+  if (!gl || !cv) return null;
+  const was = gl.getParameter(gl.TEXTURE_BINDING_2D),
+    t = gl.createTexture();
+  try {
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv);
+    gl.finish();
+    const t0 = performance.now();
+    for (let i = 0; i < 20; i++) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv);
+    gl.finish();
+    return Math.round(((performance.now() - t0) / 20) * 100) / 100;
+  } finally {
+    gl.bindTexture(gl.TEXTURE_2D, was);
+    gl.deleteTexture(t);
+  }
+}
+/* a run on a copy of the save from a fixed seed, its first place forced, arrived at as the mast's start does */
+async function baselineRun(R) {
+  const s = JSON.parse(JSON.stringify(saveData)),
+    data = runWorldData();
+  uiState.bench = null;
+  uiState.inside = null;
+  uiState.goingIn = null;
+  uiState.tab = 'walk';
+  if (s.run) runRestore(s);
+  const plan = runStartPlan(R.seed, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }),
+    n0 = plan.map.nodes[0];
+  n0.type = R.type;
+  n0.biome = R.biome;
+  runStartOn(s, plan);
+  runArrive(s, 0, data);
+  s.visited[s.trip.node] = 1;
+  setSaveData(s);
+  render();
+  const id = 'w:' + LOCATIONS[runWorldNode(0)].mapId + '*';
+  for (let i = 0; i < 600 && !(walkView.ready && walkView.id === id) && !selfTest.stop; i++) await selfTestSleep(100);
+  if (walkView.id !== id) throw new Error(`the run's place isn't shown (still ${walkView.id})`);
+}
+/* the hub, on a copy of the save with any run set aside (a player mid-run stands in the run's world) */
+async function baselineHub() {
+  const s = JSON.parse(JSON.stringify(saveData));
+  uiState.bench = null;
+  uiState.inside = null;
+  uiState.goingIn = null;
+  uiState.tab = 'walk';
+  if (s.run) runRestore(s);
+  s.trip = { node: START_NODE, plan: [] };
+  setSaveData(s);
+  render();
+  const id = mapIdAt(START_NODE),
+    open = () => walkView.ready && (walkView.id === id || (walkView.sc && walkView.sc.baseId === id));
+  for (let i = 0; i < 300 && !open() && !selfTest.stop; i++) await selfTestSleep(100);
+  if (!open()) throw new Error(`the hub isn't shown (still ${walkView.id})`);
+}
+/* a wild battle at the hub, held at the move menu */
+async function baselineBattle(foeSp) {
+  saveData.team.forEach(m => {
+    m.hp = maxHp(m);
+  });
+  const q = { id: 'selftest', sp: foeSp, lvl: 5, no: 1 };
+  encountersHere().unshift(q);
+  startWild(q);
+  const end = performance.now() + 45000 * (selfTest.slow || 1);
+  while (performance.now() < end && !selfTest.stop) {
+    if (!activeBattle) break;
+    if (activeBattle.phase === 'choose') return;
+    if (activeBattle.phase === 'playing') tapMessage();
+    await selfTestSleep(150);
+  }
+  throw new Error(`the battle never got to the move menu (${activeBattle ? activeBattle.phase : 'no battle'})`);
+}
+function baselineBattleEnd() {
+  stopTimers();
+  setActiveBattle(null);
+  battleStageStop();
+  render();
+}
+/** the tour itself: { foeSp, show(text) } -> one entry per stop and resolution, in order */
+async function rendererBaseline(o) {
+  const out = [],
+    was = saveData,
+    prefs0 = JSON.stringify(saveData.preferences || {}),
+    f0 = environment.force,
+    on0 = environment.on;
+  try {
+    for (const st of BASELINE_STOPS) {
+      if (selfTest.stop) break;
+      o.show(st.name);
+      /* each stop starts from the player's save, and changes only a copy of it */
+      if (saveData !== was) setSaveData(was);
+      if (st.run) await baselineRun(st.run);
+      else await baselineHub();
+      const task = st.battle ? 'scene' : 'dio';
+      try {
+        environment.on = true;
+        environment.force = { time: st.time, weather: 'clear', season: 'summer' };
+        baselineStand();
+        if (st.battle) await baselineBattle(o.foeSp);
+        for (const [res, quality] of st.battle ? [...BASELINE_RESOLUTIONS, BASELINE_RIG_REUSE] : BASELINE_RESOLUTIONS) {
+          if (selfTest.stop) break;
+          o.show(
+            `${st.name}, resolution ${res === 'r1' ? '1' : 'the game’s own'}${quality.rigReuse ? ', rigs reused' : ''}`
+          );
+          saveData.preferences.expert = true;
+          saveData.preferences.eng = { quality: { ...quality } };
+          if (!st.battle) baselineStand();
+          await selfTestSleep(800);
+          const settleMs = await baselineSettle(task, 10);
+          if (!st.battle) baselineStand();
+          const m = await baselineMeasure(task, 4);
+          out.push(Object.assign({ stop: st.id, place: st.name, res, where: walkView.id, settleMs }, m));
+          debugLog.add(
+            'bench',
+            `baseline ${st.id} ${res}: ${m.fps} fps, ${m.cpuMs} ms CPU, ${m.draws} draws` +
+              (m.tagged && m.tagged.sprites ? `, model pictures ${m.tagged.sprites.modelPic || 0}` : '') +
+              (m.rigs ? `, rigs ${m.rigs.ms} ms, ${m.rigs.kb} KB (${m.rigs.redraws} of ${m.rigs.calls} redrawn)` : '')
+          );
+        }
+      } finally {
+        if (st.battle && activeBattle) baselineBattleEnd();
+      }
+    }
+  } finally {
+    environment.force = f0;
+    environment.on = on0;
+    if (saveData !== was) setSaveData(was);
+    saveData.preferences = JSON.parse(prefs0);
+    render();
+    /* the player's world again (the hub's, or their run's) */
+    if (typeof runWorldSync === 'function') runWorldSync();
+  }
+  return out;
+}
+/* the tour's line in the test's list: each stop's fps at both resolutions, its draws and model pictures */
+function baselineNote(B) {
+  return BASELINE_STOPS.map(st => {
+    const L = B.filter(b => b.stop === st.id);
+    if (!L.length) return null;
+    const one = b =>
+      `${b.fps ?? '?'} fps, ${b.draws ?? '?'} draws` +
+      (b.tagged && b.tagged.sprites && b.tagged.sprites.modelPic
+        ? ` (${b.tagged.sprites.modelPic} model pictures)`
+        : '');
+    return `${st.name}: ${L.map(b => `${b.res} ${one(b)}`).join(' / ')}`;
+  })
+    .filter(Boolean)
+    .join('; ');
 }
 /* timers round the render passes: the processor's time for each, and the graphics chip's own (EXT_disjoint_timer_query_webgl2) */
 const DIAGNOSTICS_PASSES = {
@@ -2409,6 +3588,8 @@ function diagnosticsSummary() {
     places: pl,
     frame: (R.diag || diagnosticsReport).passes,
     rainAndNight: (R.diag || diagnosticsReport).weather,
+    /* phase 20 R1: the renderer's baseline tour (rendererBaseline) */
+    baseline: (R.diag || diagnosticsReport).baseline,
     battle: one('Battle on the 3D stage'),
     worldMap: one('World map'),
     memory: one('Memory'),

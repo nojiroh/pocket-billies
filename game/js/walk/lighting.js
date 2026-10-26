@@ -12,10 +12,12 @@ import { hash2d, walkView } from '../walk-view.js';
 import { ENGINE_DEFAULTS, engineContext, engineSetting } from '../engine/settings.js';
 import { normalize3, smooth01 } from '../engine/webgl.js';
 import { lightContext, pickPointLights } from '../engine/light.js';
+import { LIGHT_KIND, lightPicker, pickStableLights } from '../engine/light-pick.js';
 import { environment, environmentHaze, environmentWindowLit } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
-import { worldCurveArgs } from './draw-common.js';
+import { worldCurveArgs, worldCurveDrop } from './draw-common.js';
+import { computeFrustum, inFrustum } from './quality-cull.js';
 import { skyColors } from './sky.js';
 import { roomLights, roomSkyLight } from './rooms.js';
 /* eslint-disable no-func-assign */
@@ -23,10 +25,16 @@ expose({
   AO_ALL: [() => AO_ALL],
   AO_NEAR: [() => AO_NEAR],
   AO_POOL: [() => AO_POOL],
+  BATTLE_LIGHT_PICK: [() => BATTLE_LIGHT_PICK],
+  LIGHT_PICK: [() => LIGHT_PICK],
+  PHONE_LAMPS: [() => PHONE_LAMPS],
   ROOM_DIM: [() => ROOM_DIM],
   lampLit: [() => lampLit, v => (lampLit = v)],
+  lightFrustum: [() => lightFrustum, v => (lightFrustum = v)],
+  lightInView: [() => lightInView],
   mapSun: [() => mapSun, v => (mapSun = v)],
   modelWindowLight: [() => modelWindowLight, v => (modelWindowLight = v)],
+  pickLights: [() => pickLights, v => (pickLights = v)],
   roomDimming: [() => roomDimming, v => (roomDimming = v)],
   walkLightContext: [() => walkLightContext, v => (walkLightContext = v)],
   windowLit: [() => windowLit, v => (windowLit = v)],
@@ -129,6 +137,35 @@ export function modelWindowLight(it, dark0) {
   }
   return { k, on, P, dark };
 }
+/* phase 20 C5: the lit lights out of the frame's, with quality.stableLights on kept from frame to frame
+   (engine/light-pick.js; the walk and the battle stage each have their own), else the nearest each frame */
+const LIGHT_PICK = lightPicker(),
+  BATTLE_LIGHT_PICK = lightPicker();
+let lightFrustum = null;
+const lightInView = l => inFrustum(lightFrustum, l.p[0], l.p[1] + worldCurveDrop(l.p[0], l.p[2]), l.p[2], l.r);
+/* phase 20 R2 (D6): a phone (Android, iPhone; as the automatic quality has it) with quality.phoneLamps lights at most 8 */
+const PHONE_LAMPS = typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent) ? 8 : 16;
+function pickLights(L, C, P, BT) {
+  const max = Math.max(
+    1,
+    Math.min(
+      engineSetting('quality', 'phoneLamps') ? PHONE_LAMPS : 16,
+      Math.round(engineSetting('quality', 'lights') ?? 16)
+    )
+  );
+  if (!engineSetting('quality', 'stableLights')) return pickPointLights(L, P.x, P.z, max);
+  const cull = !!C.vp && (engineSetting('quality', 'cull') ?? true);
+  if (cull) lightFrustum = computeFrustum(C.vp);
+  return pickStableLights(
+    BT ? BATTLE_LIGHT_PICK : LIGHT_PICK,
+    L,
+    P.x,
+    P.z,
+    performance.now(),
+    max,
+    cull ? lightInView : null
+  );
+}
 /* phase 20 C2: the contact-shadow blobs, refilled in place each frame (engine/frame-lists.js) */
 const AO_POOL = [],
   AO_ALL = [],
@@ -187,7 +224,8 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
       inRoom = !!sc.room && !out,
       E = it.bld3 && typeof buildingState !== 'undefined' ? buildingState.mesh.get(it.p) : null;
     let W = null,
-      WN = null;
+      WN = null,
+      fi = 0;
     /* a low-poly building's lit ground-floor windows, each pushed out its own way (its glass, not the picture's) */
     if (it.wins) {
       it.winL = modelWindowLight(it, dark0L);
@@ -201,7 +239,13 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
     }
     for (const e of M.fx || []) {
       if (e.k === 'fire')
-        L.push({ p: at(e.x, e.y), r: 4.4, c: [1.7, 0.8, 0.32].map(v => v * fl * lb * (dark ? 1 : 0.6)) });
+        L.push({
+          p: at(e.x, e.y),
+          r: 4.4,
+          c: [1.7, 0.8, 0.32].map(v => v * fl * lb * (dark ? 1 : 0.6)),
+          src: it.p,
+          kind: LIGHT_KIND.fire + fi++,
+        });
       else if (e.k === 'window' && !inRoom && !E && !it.wins) {
         const p = at(e.x, e.y);
         if (p[1] - it.y < 2.6 && windowLit(p[0], p[2])) (W || (W = [])).push(p);
@@ -226,6 +270,8 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
         p: [cx + fn[0] * 0.5, it.y + 1.2, cz + fn[1] * 0.5],
         r: 2.4 + Math.min(1.6, n * 0.5),
         front: true,
+        src: it.p,
+        kind: LIGHT_KIND.window,
         c: [1.1, 0.8, 0.45].map(v => v * Math.min(2, 0.7 + n * 0.35) * wk * lb * (dark ? 1 : 0.6)),
       });
     }
@@ -238,6 +284,8 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
           p,
           r: 3.6 + 0.35 * Math.min(3, n - 1),
           own: it.p,
+          src: it.p,
+          kind: LIGHT_KIND.glow,
           c: [1.3, 1.05, 0.7].map(v => v * Math.min(1.6, n) * fl * k * lb),
         });
         if (p[1] - it.y > 1.2 && pk > 0)
@@ -245,6 +293,8 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
             p: [p[0], it.y + 0.35, p[2] + 0.05],
             r: Math.min(4.2, (p[1] - it.y) * 1.25),
             pool: 1,
+            src: it.p,
+            kind: LIGHT_KIND.glowPool,
             c: [1, 0.8, 0.52].map(v => v * 0.85 * k * pk * Math.min(1.3, n)),
           });
       }
@@ -256,6 +306,8 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
         p,
         r: M.glow.r * 2.2,
         own: it.p,
+        src: it.p,
+        kind: LIGHT_KIND.lamp,
         c: [(c[0] / 255) * 1.3, (c[1] / 255) * 1.3, (c[2] / 255) * 1.3].map(v => v * lb * on),
       });
       /* v34: a lamp up high also lays a pool of light on the ground under it after dark */
@@ -264,6 +316,8 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
           p: [it.x, it.y + 0.35, it.z + 0.05],
           r: Math.min(4.2, M.glow.y * 1.25),
           pool: 1,
+          src: it.p,
+          kind: LIGHT_KIND.lampPool,
           c: [(c[0] / 255) * 0.9 * pk * on, (c[1] / 255) * 0.78 * pk * on, (c[2] / 255) * 0.55 * pk * on],
         });
     }
@@ -271,7 +325,13 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
   for (const it of items)
     if (it.person || it.k === 'enc' || (it.k === 'life' && it.sh > 0))
       ao.push(pooledQuad(AO_POOL, ao.length, it.x, it.z, it.aoR || 0.34, (it.aoR || 0.34) * 0.76));
-  if (BT) for (const l of BT.lights) L.push(l);
+  if (BT)
+    for (let i = 0; i < BT.lights.length; i++) {
+      const l = BT.lights[i];
+      l.src = BT;
+      l.kind = i;
+      L.push(l);
+    }
   nearestFirst(ao, P.x, P.z, AO_NEAR, 64);
   /* v26: dark caves (and the night) — you carry a lantern */
   const E = typeof environment !== 'undefined' && engineContext.env ? environment : null,
@@ -283,11 +343,13 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
     L.push({
       p: [P.x, y, P.z - 0.25],
       r: cave > 0.02 ? 6.8 : 5,
+      src: 'lantern',
+      kind: 0,
       c: [2.5, 1.95, 1.3].map(v => v * lan * (cave > 0.02 ? 1 : 0.55) * lb),
     });
   }
   roomLights(sc, L, lb);
-  const lights = pickPointLights(L, P.x, P.z, 16),
+  const lights = pickLights(L, C, P, BT),
     sky = skyColors(sc);
   let hz = hexToRgb(engineSetting('air', 'haze') || sc.haze || (sc.sky || [])[2] || '#EAD9C0').map(v => v / 255);
   if (E && !sc.indoor) hz = environmentHaze(hz);
@@ -347,7 +409,13 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
     noSunLobe: !!roomSH,
     haze: hz,
     fogStart: C.df * engineSetting('air', 'hazeStart') * (E && !sc.indoor ? 1 - E.fog * 0.35 : 1),
-    fogD: (engineSetting('air', 'hazeDistance') ?? (sc.hazeD || 34)) * 1.15 * fogK * (TL ? TL.hazeDistance : 1),
+    /* HB-8: a director's frame may see further than the walk (BT.hazeK: the train ride's shots out over the sea) */
+    fogD:
+      (engineSetting('air', 'hazeDistance') ?? (sc.hazeD || 34)) *
+      1.15 *
+      fogK *
+      (TL ? TL.hazeDistance : 1) *
+      (BT && BT.hazeK ? BT.hazeK : 1),
     tint,
     valley: walkRenderer.valley || null,
     /* a place with mist of its own: the dial scales it (it was ignored there: 24 of 93 maps) */

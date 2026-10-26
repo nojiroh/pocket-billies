@@ -12,11 +12,14 @@ import { walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
 /* eslint-disable no-func-assign */
 expose({
+  CUT_UV: [() => CUT_UV],
   FULL_UV: [() => FULL_UV],
   ROCK_STATE: [() => ROCK_STATE],
   rockUniformsFor: [() => rockUniformsFor, v => (rockUniformsFor = v)],
   setRockUniforms: [() => setRockUniforms, v => (setRockUniforms = v)],
+  setSpriteGeometry: [() => setSpriteGeometry, v => (setSpriteGeometry = v)],
   setSpriteUniforms: [() => setSpriteUniforms, v => (setSpriteUniforms = v)],
+  spriteGeometry: [() => spriteGeometry, v => setSpriteGeometry(v)],
   useWalkProgram: [() => useWalkProgram, v => (useWalkProgram = v)],
   worldCurveArgs: [() => worldCurveArgs, v => (worldCurveArgs = v)],
   worldCurveDrop: [() => worldCurveDrop, v => (worldCurveDrop = v)],
@@ -68,13 +71,20 @@ function rockUniformsFor(C) {
   R.plc[0] = (m[0] * P.x + m[4] * y + m[8] * P.z + m[12]) / w;
   R.plc[1] = (m[1] * P.x + m[5] * y + m[9] * P.z + m[13]) / w;
   R.plc[2] = w;
-  /* only while the camera's line to you is cut by ground (walk/camera.js rockK, 0-1): on flat ground nothing changes */
-  const k = C.rockK || 0;
-  if (C === walkView.C && k > 0.01 && !sc.indoor && !sc.room && engineSetting('camera', 'rockFade')) {
+  /* while the camera's line to you is cut by ground (walk/camera.js rockK, 0-1), and (player visibility) while
+     something hides you (walkRenderer.hidK, from the silhouette's occlusion query, last frame): out in the open
+     nothing changes. The circle never takes all of what hides you (at most 85%), so the query still sees it */
+  if (C !== walkView.C || sc.indoor || sc.room) return R;
+  const k = engineSetting('camera', 'rockFade') ? C.rockK || 0 : 0,
+    hk = engineSetting('camera', 'hideFade') ? walkRenderer.hidK || 0 : 0;
+  if (k > 0.01 || hk > 0.01) {
     const rm = +engineSetting('camera', 'rise') || 0;
     R.rock[0] = feet;
-    R.rock[1] = 0.3 + (rm > 0 ? 0.16 * Math.min(1, (C.occ || 0) / rm) : 0.16);
-    R.rock[2] = 0.8 * k;
+    R.rock[1] = Math.max(
+      k > 0.01 ? 0.3 + (rm > 0 ? 0.16 * Math.min(1, (C.occ || 0) / rm) : 0.16) : 0,
+      hk > 0.01 ? +(engineSetting('camera', 'hideSize') ?? 0.3) : 0
+    );
+    R.rock[2] = Math.max(0.8 * k, Math.min(0.85, +(engineSetting('camera', 'hideAmount') ?? 0.7)) * hk);
   }
   return R;
 }
@@ -88,17 +98,56 @@ function setRockUniforms(p, C) {
 }
 /* phase 20 C2: z and rk stand in for a copy of the item (a slice of a thick sprite at another depth, a picture rising
    with its town at rk of its height), so nothing is made per draw */
-const FULL_UV = new Float32Array([0, 0, 1, 1]);
+const FULL_UV = new Float32Array([0, 0, 1, 1]),
+  CUT_UV = new Float32Array([0, 0, 1, 1]);
 export function setSpriteUniforms(p, it, uv, z = it.z, rk = 1) {
   const gl = gpuState.gl,
     U = p.U,
     s = it.mpp,
-    oy = rk === 1 ? it.oy : it.oy * rk,
-    h = rk === 1 ? it.h : it.h * rk;
+    oy = rk === 1 ? it.oy : it.oy * rk;
+  let h = rk === 1 ? it.h : it.h * rk;
+  /* WA-6a: someone wading (walk/frame-items.js wadeItem) has its bottom it.cut rows left off, in whole texels, so its
+     legs end at the waterline; its shadow, reflection and silhouette the same */
+  if (it.cut > 0 && !uv && rk === 1 && it.cut < it.h) {
+    h = it.h - it.cut;
+    CUT_UV[3] = h / it.h;
+    uv = CUT_UV;
+  }
   gl.uniform3f(U.uBase, it.x, it.y, z);
   gl.uniform4f(U.uOff, it.ox * s, oy * s, it.w * s, h * s);
   gl.uniform4fv(U.uUV, uv || FULL_UV);
   gl.uniform1f(U.uFlip, it.flip);
   if (U.uSlope) gl.uniform1f(U.uSlope, it.slope || 0);
   gl.uniform1f(U.uShear, it.shear || 0);
+}
+/* phase 20 E1: the same values into a sprite record (walk/sprites.js spriteRecord), and sent from one */
+export function spriteGeometry(r, it, z = it.z, rk = 1) {
+  const s = it.mpp,
+    oy = rk === 1 ? it.oy : it.oy * rk;
+  let h = rk === 1 ? it.h : it.h * rk;
+  r.uv[3] = 1;
+  if (it.cut > 0 && rk === 1 && it.cut < it.h) {
+    h = it.h - it.cut;
+    r.uv[3] = h / it.h;
+  }
+  r.x = it.x;
+  r.y = it.y;
+  r.z = z;
+  r.ox = it.ox * s;
+  r.oy = oy * s;
+  r.w = it.w * s;
+  r.h = h * s;
+  r.flip = it.flip;
+  r.slope = it.slope || 0;
+  r.shear = it.shear || 0;
+}
+export function setSpriteGeometry(p, r) {
+  const gl = gpuState.gl,
+    U = p.U;
+  gl.uniform3f(U.uBase, r.x, r.y, r.z);
+  gl.uniform4f(U.uOff, r.ox, r.oy, r.w, r.h);
+  gl.uniform4fv(U.uUV, r.uv);
+  gl.uniform1f(U.uFlip, r.flip);
+  if (U.uSlope) gl.uniform1f(U.uSlope, r.slope);
+  gl.uniform1f(U.uShear, r.shear);
 }

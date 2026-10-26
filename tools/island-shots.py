@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Pictures of the hub island (Copperleaf) at phone size, for the owner's look rounds: the game's own orbit camera from
 8 places on the coast (you stand by the coast road at N, NE, E ... NW of the island's middle), the town square (the
-hub), the summit, a top-down view (the Studio's free-camera hook) and a flat ground map coloured by ground kind.
+hub), the summit, a top-down view (the Studio's free-camera hook), Skyline Station with its sky rail and portal, the
+lighthouse, the windmill and the town from a free camera, and a flat ground map coloured by ground kind.
 
     python3 tools/island-shots.py OUT_DIR                # 390 x 760, the game's own graphics defaults
     python3 tools/island-shots.py OUT_DIR --low          # the fast check's low graphics
@@ -130,6 +131,27 @@ def main():
         if want('top-down'): shot('top-down', 'From above (north up)')
         pg.evaluate(f"walkView.opt.look=()=>({{eye:[{c[0]}+{span * 0.55},{span * 0.5},{c[1]}-{span * 0.55}],tgt:[{c[0]},0,{c[1]}],fov:55}})")
         if want('overview-se'): shot('overview-se', 'Overview from the south-east, high up')
+        # hub placing: the landmarks from a free camera: [name, label, prop key, the eye's offset from it, the target's]
+        for name, label, k, eye, tgt in (
+                ('station', 'Skyline Station on its headland, the sky rail out to sea and the portal', 'train_station', [-6, 26, -46], [30, 6, 6]),
+                ('station-rail', 'The sky rail climbing to the portal, from the headland', 'train_station', [-4, 4, -10], [60, 14, 6]),
+                ('station-near', 'Skyline Station and the rail out of its right-hand end, close', 'train_station', [4, 9, -22], [8, 2, 3]),
+                ('lighthouse', 'The lighthouse on the cove', 'lighthouse', [-14, 10, -18], [0, 4, 0]),
+                ('windmill', 'The windmill by the farm', 'windmill', [-12, 8, -16], [0, 3, 0]),
+                ('town', 'The town round the square, from above', 'fountain', [-10, 34, -40], [0, 0, 4]),
+                # HB-10a: the framed view from the square's south-west edge to the sky rail and the portal (north-east)
+                ('square-portal', 'From the square toward the sky rail and the portal', 'fountain', [-7, 1.7, -5], [60, 12, 40]),
+                ('square-near', 'The square and its fountain, close', 'fountain', [-6, 5, -10], [0, 0.5, 0])):
+            p = pg.evaluate(f"(walkView.sc.props.find(p=>p.k==='{k}')||null)")
+            if not p or not want(name): continue
+            # stand beside it (the walk view draws what is near you), then the free camera
+            pg.evaluate('delete walkView.opt.look')
+            # beside a fountain, not in its basin (HB-10a: the hub's own spot is 3 m east of it)
+            sx = p['x'] + (3 if k == 'fountain' else 0)
+            fast.stand(pg, *pg.evaluate(f"walkablePointNear({sx},{p['z']})"), frames=4)
+            y = pg.evaluate(f"standingHeightAt({p['x']},{p['z']})")
+            pg.evaluate(f"walkView.opt.look=()=>({{eye:[{p['x'] + eye[0]},{y + eye[1]},{p['z'] + eye[2]}],tgt:[{p['x'] + tgt[0]},{y + tgt[1]},{p['z'] + tgt[2]}],fov:55}})")
+            shot(name, label, [p['x'], p['z']])
         pg.evaluate('delete walkView.opt.look')
         pg.evaluate("(()=>{const p=saveData.preferences;p.expert=window.__pref.expert;p.eng=window.__pref.eng;return 0})()")
         b.close()

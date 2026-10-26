@@ -13,10 +13,14 @@ import * as effects from '../../game/js/logic/effects.js';
 import * as encounters from '../../game/js/logic/encounters.js';
 import * as fighters from '../../game/js/logic/fighters.js';
 import * as perks from '../../game/js/logic/perks.js';
+import * as residents from '../../game/js/logic/residents.js';
+import * as rewards from '../../game/js/logic/rewards.js';
 import * as rng from '../../game/js/logic/rng.js';
+import * as routeTrainers from '../../game/js/logic/route-trainers.js';
 import * as rules from '../../game/js/logic/rules.js';
 import * as runLoop from '../../game/js/logic/run-loop.js';
 import * as runMap from '../../game/js/logic/run-map.js';
+import * as runQuests from '../../game/js/logic/run-quests.js';
 import * as runRegion from '../../game/js/logic/run-region.js';
 import * as runScenes from '../../game/js/logic/run-scenes.js';
 import * as runSide from '../../game/js/logic/run-side.js';
@@ -38,10 +42,14 @@ export function simWorkerEnv() {
       encounters,
       fighters,
       perks,
+      residents,
+      rewards,
       rng,
+      'route-trainers': routeTrainers,
       rules,
       'run-loop': runLoop,
       'run-map': runMap,
+      'run-quests': runQuests,
       'run-region': runRegion,
       'run-scenes': runScenes,
       'run-side': runSide,

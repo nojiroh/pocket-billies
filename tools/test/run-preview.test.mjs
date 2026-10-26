@@ -31,6 +31,7 @@ const worldData = () => ({
   rules: RULES.run,
   region: modules['run-region'].runRegionData(gameData, TRAINERS),
   fieldMoves: data.FIELD_MOVES,
+  setPieces: data.SET_PIECES,
 });
 
 /** what the game shows for a seed: the run on a save, then each part as the page asks for it */
@@ -112,7 +113,8 @@ test('the preview gives a stall a shop and a waystation its event, as the game d
   const { eventAt } = modules.encounters;
   let stalls = 0,
     stands = 0;
-  for (let k = 0; k < 12; k++) {
+  /* 24 seeds: RL-14's scrapyards take some free nodes, stalls among them */
+  for (let k = 0; k < 24; k++) {
     const seed = `PREVWAY${k}`,
       P = runPreview(seed, {});
     P.map.nodes.forEach((/** @type {any} */ n, /** @type {number} */ i) => {
@@ -126,4 +128,19 @@ test('the preview gives a stall a shop and a waystation its event, as the game d
     });
   }
   assert.ok(stalls >= 1 && stands >= 1, `${stalls} stalls, ${stands} waystations`);
+});
+
+test('the preview names the run’s resident: Dottie in the first town row, then someone in one town (RS-2)', () => {
+  const { residentFirstTowns } = modules.residents;
+  for (const seed of ['LAB1', 'LAB2', 'LAB3']) {
+    const p = runPreview(seed, {}),
+      R = p.residents;
+    assert.deepEqual(R.first.towns, residentFirstTowns(p.map), seed);
+    assert.equal(R.first.id, 'dottie');
+    assert.equal(R.first.kind, '');
+    assert.ok(R.next && R.next.id !== 'dottie' && R.next.kind, `${seed}: someone after her, with a favour`);
+    assert.ok(R.next.towns.length <= 1);
+    for (const i of R.next.events) assert.equal(p.map.nodes[i].type, 'event');
+    assert.deepEqual(runPreview(seed, {}).residents, R, 'the same seed, the same');
+  }
 });

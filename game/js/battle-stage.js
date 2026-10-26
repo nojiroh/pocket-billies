@@ -20,6 +20,7 @@ import {
   battle3dStop,
   battleFreeArea,
   battleLayoutChanged,
+  engineSetting,
   fighter,
   hudHit,
   hudPop,
@@ -27,15 +28,18 @@ import {
   platesTick,
   provide,
   reducedMotion,
+  robotIdsFromSp,
+  robotPartDef,
   saveData,
   soundEffect,
 } from './hooks.js';
 import { $, clamp, random } from './util.js';
+import { graftLookSplit } from './logic/graft-art.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
-import { iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
+import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
 import { ROBOT_PART_BONES } from './robot-art.js';
 import { personBattleFrames, personBattlePose, wardrobeData } from './person-art.js';
-import { drawRig, rigFrame, rigParts, rigTint } from './skeleton-rig.js';
+import { drawRig, rigFrame, rigFrameKey, rigParts, rigTint } from './skeleton-rig.js';
 /* eslint-disable no-func-assign */
 expose({
   ACTOR_RIG_SCALES: [() => ACTOR_RIG_SCALES],
@@ -137,6 +141,7 @@ expose({
   particleSprite: [() => particleSprite, v => (particleSprite = v)],
   punch: [() => punch, v => (punch = v)],
   pyramidArc: [() => pyramidArc, v => (pyramidArc = v)],
+  rigStats: [() => rigStats],
   ringFx: [() => ringFx, v => (ringFx = v)],
   scheduleAt: [() => scheduleAt, v => (scheduleAt = v)],
   setActorAction: [() => setActorAction, v => (setActorAction = v)],
@@ -305,6 +310,10 @@ export const battleStage = {
   el: {},
   leafy: [],
   glint: [],
+  /* water track WA-7: the scene's water in view (battle space, set by battle-3d.js) and the fighters standing in it */
+  wet: /** @type {{x: number, z: number}[]} */ ([]),
+  wetFeet: /** @type {number[]} */ ([]),
+  wetT: 0,
   F: null,
   floorKey: '',
   q: { lvl: 0, since: 0, lowT: 0, highT: 0 },
@@ -406,6 +415,8 @@ export function battleStageStart(area) {
   battleStage.leafy = [];
   battleStage.glint = [];
   battleStage.clouds = [];
+  battleStage.wet = [];
+  battleStage.wetFeet = [];
   battleStage.small = makeCanvas(10, 10);
   battleStageFormat((typeof activeBattle !== 'undefined' && activeBattle && activeBattle.fmt) || 'single');
   battleStage.tr = [
@@ -584,7 +595,7 @@ export function actorCenter(i) {
     s = battleStage.s[i];
   let h = 1.4;
   if (s && s.sp) {
-    const R = rigParts(s.sp, ACTOR_RIG_SCALES[i], s.coat);
+    const R = rigParts(s.sp, ACTOR_RIG_SCALES[i], s.coat, s.graft);
     if (R) h = ((R.geo.base - R.geo.mid) * actorMetersPerPixel[i] * s.sc * (s.big || 1) * (s.fs || 1)) / R.k;
   }
   return { x: w.x, y: w.y + h, z: w.z };
@@ -737,6 +748,26 @@ function spawnAmbientParticles(dt) {
       twinkle: 1,
     });
   }
+  /* WA-7: the water in view catches the light in hard pixels; a fighter standing in water sends out rings */
+  if (battleStage.wet.length && random() < dt / 260) {
+    const p = battleStage.wet[Math.floor(random() * battleStage.wet.length)];
+    addParticle({
+      x: p.x + random() - 0.5,
+      y: 0.04,
+      z: p.z + random() - 0.5,
+      life: 600,
+      spr: 'spark',
+      k: 0.45,
+      glow: 1,
+      twinkle: 1,
+    });
+  }
+  battleStage.wetT += dt;
+  if (battleStage.wetT > 900) {
+    battleStage.wetT = 0;
+    for (const i of battleStage.wetFeet)
+      if (battleStage.s[i] && battleStage.s[i].show) groundRing(i, undefined, 0.9, 800);
+  }
   battleStage.stT += dt;
   if (battleStage.stT > 700) {
     battleStage.stT = 0;
@@ -761,7 +792,7 @@ function spawnAmbientParticles(dt) {
     const sd = battleStage.s[i];
     if (sd.boss && sd.show && sd.a > 0.5 && random() < dt / 90) {
       const w = actorWorldPoint(i),
-        R = sd.sp ? rigParts(sd.sp, ACTOR_RIG_SCALES[i], sd.coat) : null,
+        R = sd.sp ? rigParts(sd.sp, ACTOR_RIG_SCALES[i], sd.coat, sd.graft) : null,
         hw = R ? (R.geo.hw * actorMetersPerPixel[i] * sd.big * (sd.fs || 1)) / R.k : 1,
         a = random() * 6.283;
       addParticle({
@@ -879,7 +910,7 @@ function cameraOverflow(C) {
     if (!s.show || s.a < 0.3) continue;
     const w = actorWorldPoint(i),
       c = actorCenter(i),
-      R = s.sp ? rigParts(s.sp, ACTOR_RIG_SCALES[i], s.coat) : null,
+      R = s.sp ? rigParts(s.sp, ACTOR_RIG_SCALES[i], s.coat, s.graft) : null,
       hw = R
         ? (Math.max(R.geo.hw, (R.geo.base - R.geo.top) * 0.5) *
             actorMetersPerPixel[i] *
@@ -1069,16 +1100,37 @@ function softDraw(c, img, x, y, w, h, blur, slot) {
   c.drawImage(sm, 0, 0, sw + 2 * P, sh + 2 * P, x - P * kx, y - P * ky, (sw + 2 * P) * kx, (sh + 2 * P) * ky);
   c.imageSmoothingEnabled = prev;
 }
+/* phase 20 R3: what the rigs cost, summed until the diagnostics read and clear it: calls that got to a rig, the
+   canvases redrawn (each one an upload for the 3D stage), their bytes and the processor's time drawing them */
+export const rigStats = { calls: 0, redraws: 0, bytes: 0, ms: 0 };
 /* one billionaire's current frame, drawn into its buffer (the 2D stage draws the buffer; the 3D stage uploads it) */
 export function actorBuffer(i) {
   const s = battleStage.s[i];
   if (!s.show || !s.sp || s.a <= 0.01 || s.sc <= 0.01) return null;
   if (battleStage.t < s.blinkUntil && Math.floor(battleStage.t / 60) % 2) return null;
   const k = ACTOR_RIG_SCALES[i],
-    R = rigParts(s.sp, k, s.coat),
+    R = rigParts(s.sp, k, s.coat, s.graft),
     view = actorTeam(i) === 0 ? 'back' : 'front',
     buf = battleStage.buf[i] || (battleStage.buf[i] = makeCanvas(10, 10));
   if (!R) return null;
+  const t0 = performance.now();
+  rigStats.calls++;
+  const a = s.act,
+    tau = a ? battleStage.t - a.t0 : 0,
+    ak = a && (a.k === 'faint' || tau < a.dur) ? a.k : null,
+    t16 = Math.floor(battleStage.t / 16) * 16;
+  /* phase 20 R3 (quality.rigReuse): the same rig, pose, face, build, faint parts and tints as the last frame drawn here
+     is the same picture: the canvas stays, its counter too, so nothing is uploaded again */
+  let key = null;
+  if (engineSetting('quality', 'rigReuse')) {
+    key =
+      rigFrameKey(R, ak, tau, t16, s.seed) +
+      `|${view}|${s.build ? JSON.stringify(s.build) : ''}|${s.dim ? s.dim.join() : ''}|${s.white}|${s.dark}`;
+    if (buf.__R === R && buf.__key === key && buf.width === R.BW && buf.height === R.BH) {
+      rigStats.ms += performance.now() - t0;
+      return { s, k, R, P: buf.__P, ak, buf };
+    }
+  }
   if (buf.width !== R.BW || buf.height !== R.BH) {
     buf.width = R.BW;
     buf.height = R.BH;
@@ -1087,16 +1139,19 @@ export function actorBuffer(i) {
   bx.imageSmoothingEnabled = false;
   bx.setTransform(1, 0, 0, 1, 0, 0);
   bx.clearRect(0, 0, buf.width, buf.height);
-  const a = s.act,
-    tau = a ? battleStage.t - a.t0 : 0,
-    ak = a && (a.k === 'faint' || tau < a.dur) ? a.k : null;
-  const P = rigFrame(R, ak, tau, Math.floor(battleStage.t / 16) * 16, s.seed);
+  const P = rigFrame(R, ak, tau, t16, s.seed);
   if (s.build) P.build = s.build;
   if (s.dim) P.dim = s.dim;
   drawRig(bx, R, P, view);
   rigTint(bx, buf.width, buf.height, '#FFFFFF', s.white);
   rigTint(bx, buf.width, buf.height, '#0C0A16', s.dark);
   buf.__v = (buf.__v || 0) + 1;
+  buf.__R = key ? R : null;
+  buf.__key = key;
+  buf.__P = P;
+  rigStats.redraws++;
+  rigStats.bytes += buf.width * buf.height * 4;
+  rigStats.ms += performance.now() - t0;
   return { s, k, R, P, ak, buf };
 }
 /* the trainers: you from behind (left), the rival facing you (right); they throw coins and cheer */
@@ -1157,6 +1212,16 @@ function drawParticles(c, layer) {
         p.col,
         p.ground ? 2 : Math.max(1, Math.round(k))
       );
+    } else if (p.img) {
+      /* RL-14: a picture (a bot's dropped part), turning as it falls */
+      const kk = Math.max(0.5, Math.round(k * 2) / 4),
+        w = Math.round(p.img.naturalWidth * kk),
+        h = Math.round(p.img.naturalHeight * kk);
+      c.save();
+      c.translate(Math.round(q.x), Math.round(q.y));
+      c.rotate((p.rot || 0) + ((p.vr || 0) * Math.min(p.age, 700)) / 1000);
+      c.drawImage(p.img, -Math.round(w / 2), -Math.round(h / 2), w, h);
+      c.restore();
     } else if (p.spr) {
       const s = particleSprite(p.spr),
         kk = Math.max(1, Math.round(k * 2) / 2);
@@ -1239,7 +1304,7 @@ function drawSelectionRing(c, i, col, pulse) {
     g = battleStageProject(w.x, 0, w.z);
   if (!g) return;
   const s = battleStage.s[i],
-    R = s && s.sp ? rigParts(s.sp, ACTOR_RIG_SCALES[i], s.coat) : null,
+    R = s && s.sp ? rigParts(s.sp, ACTOR_RIG_SCALES[i], s.coat, s.graft) : null,
     hw = R ? (R.geo.hw * actorMetersPerPixel[i] * (s.big || 1) * (s.fs || 1) * 0.8) / R.k2 : 0.5;
   const r = Math.max(6, hw * g.s * (1 + 0.06 * Math.sin(battleStage.t / 180) * pulse)),
     ry = r * clamp(battleStage.V.y / g.z, 0.2, 0.6);
@@ -1478,6 +1543,7 @@ export function battleStagePlay(an, ev) {
       battleStage.s[i].sp = sn.sp;
       battleStage.s[i].build = sn.build || null;
       battleStage.s[i].coat = sn.coat || null;
+      battleStage.s[i].graft = sn.graft || null;
       battleStage.s[i].st = sn.st;
       battleStage.s[i].boss = !!sn.boss;
       battleStage.s[i].big = sn.boss ? 1.6 : sn.alpha ? 1.12 : 1;
@@ -2025,6 +2091,32 @@ export function battleStagePlay(an, ev) {
           spr: 'spark',
           k: 0.8,
           glow: 1,
+        });
+      }
+      /* RL-14: the broken part drops off: its picture falls from the bot, tumbles and bounces on the ground as it
+         fades (the rig keeps the limb faint) */
+      /* SP-5: a Billie's broken Augment drops off the same way (its part from the look code) */
+      const S = battleStage.s[an.si],
+        ids = S && robotIdsFromSp(S.sp),
+        aug = S && !ids ? graftLookSplit(S.graft).aug : null,
+        P = ids ? robotPartDef(ids[an.part]) : aug ? robotPartDef(aug[an.part === 'legs' ? 'back' : 'front']) : null,
+        im = P && P.art && P.art.img ? artImg(P.art.img) : null;
+      if (im && im.complete && im.naturalWidth && !reducedMotion) {
+        const side = an.part === 'armL' ? -1 : an.part === 'armR' ? 1 : random() < 0.5 ? -1 : 1;
+        addParticle({
+          img: im,
+          x: T.x + side * 0.3,
+          y: an.part === 'legs' ? 0.3 : T.y,
+          z: T.z,
+          vx: side * 1.3,
+          vy: 2.2,
+          vz: 0.3,
+          ay: -9,
+          floor: true,
+          life: 1500,
+          rot: 0,
+          vr: side * 6,
+          k: 1,
         });
       }
       battleStageFlash('#FFE7A0', 0.35, 220);

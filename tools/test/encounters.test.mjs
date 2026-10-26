@@ -51,7 +51,35 @@ test('encounters: a place holds the same event for the same run, kept; a played 
   const E2 = structuredClone(E);
   for (const ev of Object.values(E2.events)) ev.biomes = ['lake'];
   assert.deepEqual(X.eventPool(b, E2, 'meadow'), []);
-  assert.equal(X.eventPool(b, E2, 'lake').length, Object.keys(E.events).length);
+  /* RT-3: weight 0 is never drawn (the Bureau checkpoint's event, opened by its agent); SP-6: nor, with no holds
+     given, one with a `when` */
+  assert.equal(
+    X.eventPool(b, E2, 'lake').length,
+    Object.values(E.events).filter(ev => ev.weight > 0 && !ev.when && !ev.resident).length
+  );
+  assert.equal(
+    X.eventPool(b, E2, 'lake', () => true).length,
+    Object.values(E.events).filter(ev => ev.weight > 0 && !ev.resident).length
+  );
+  /* SP-6: an event's `when`: in the pool only while it holds; with no holds given it is left out */
+  const E3 = { ...E, events: { only: { ...E.events[id], when: 'genes >= 1' } } };
+  assert.deepEqual(X.eventPool(b, E3, 'lake'), []);
+  assert.deepEqual(
+    X.eventPool(b, E3, 'lake', () => false),
+    []
+  );
+  assert.deepEqual(
+    X.eventPool(b, E3, 'lake', c => c === 'genes >= 1'),
+    ['only']
+  );
+  /* RS-2: a resident event only when the run's resident can be met at one */
+  const res = Object.keys(E.events).filter(k => E.events[k].resident);
+  assert.ok(res.length >= 1, 'a resident event');
+  assert.ok(!X.eventPool(b, E, undefined).some(k => res.includes(k)), 'not while nobody can be met');
+  assert.ok(
+    res.every(k => X.eventPool(b, E, undefined, undefined, true).includes(k)),
+    'in the pool while someone can'
+  );
 });
 
 test('encounters: an option is open when its need holds and the Moneys are there; a closed one says why', () => {
@@ -69,11 +97,29 @@ test('encounters: an option is open when its need holds and the Moneys are there
     { ok: false, why: 'Needs 200 Moneys' }
   );
   assert.equal(st({ text: 'a', cost: 200, then: [] }, () => true, 200).ok, true);
+  /* SP-6: a DNA price, after the Moneys */
+  assert.deepEqual(
+    X.eventOptionState({ text: 'a', dna: 8, then: [] }, () => true, 0, items, 7),
+    {
+      ok: false,
+      why: 'Needs 8 DNA',
+    }
+  );
+  assert.equal(X.eventOptionState({ text: 'a', dna: 8, then: [] }, () => true, 0, items, 8).ok, true);
+  assert.equal(X.eventOptionState({ text: 'a', dna: 8, then: [] }, () => true, 0, items).ok, false);
+  assert.deepEqual(
+    X.encChanges({ se: 5, dna: 10, items: {}, pyramids: {} }, { se: 5, dna: 2, items: {}, pyramids: {} }),
+    [['dna', -8]]
+  );
   for (const [need, words] of [
     ['badges', 'Needs a badge'],
     ['badge:Water', 'Needs the Water Badge'],
     ['type:Fire >= 2', 'Needs 2 Fire Billies'],
     ['money >= 50', 'Needs 50 Moneys'],
+    ['dna >= 8', 'Needs 8 DNA'],
+    ['genes', 'Needs a Gene'],
+    ['genes >= 3', 'Needs 3 Genes'],
+    ['spliced >= 1', 'Needs a spliced Billie'],
     ['met_juniper', 'Not now'],
   ])
     assert.equal(X.needWords(need, items), words);
@@ -143,6 +189,30 @@ test('encounters: a class foe and a wild one are the region’s Billies at the p
   assert.equal(w.lvl, X.encPlaceLevel(run, i, RUN) + 2);
   assert.ok(run.region.dex.includes(w.sp));
   assert.equal(SPECIES[w.sp].stage, 0, 'a first stage under level 16');
+});
+
+test("encounters: RL-14: a Bureau agent fields its bots after its Billies, at the place's level, named", () => {
+  const s = onRun(),
+    run = s.run,
+    i = run.map.nodes.findIndex(n => n.row === 2),
+    FA = GAME_DATA.factions.factions,
+    o = { classes: E.classes, species: SPECIES, rules: RUN, up: 1, salt: 'route|0', reward: 300, foe: 'route' },
+    F = X.encClassFoe(run, i, 'run_x', 'bureau_clerk', o),
+    [lo, hi] = FA.bureau.agents.bots,
+    bots = F.team.filter(b => b.sp === 'robot');
+  assert.deepEqual(F, X.encClassFoe(onRun().run, i, 'run_x', 'bureau_clerk', o));
+  assert.ok(bots.length >= lo && bots.length <= hi, `${bots.length} bots`);
+  assert.deepEqual(F.team.slice(-bots.length), bots, 'last');
+  for (const b of bots) {
+    assert.equal(b.lvl, X.encPlaceLevel(run, i, RUN) + 1);
+    assert.ok(Object.values(FA.bureau.bots).some(B => B.name === b.nick && B.gem === b.robot.gem));
+    const m = fn('trainerTeam')({ team: [b] })[0];
+    assert.equal(m.kind, 'robot');
+    assert.equal(fn('billyName')(m), b.nick);
+  }
+  /* its Billies are the ones it had before it had bots: a faction of none fields none */
+  const none = X.encClassFoe(run, i, 'run_x', 'bureau_clerk', { ...o, factions: {} });
+  assert.deepEqual(none.team, F.team.slice(0, F.team.length - bots.length));
 });
 
 test('encounters: the summary of what changed', () => {

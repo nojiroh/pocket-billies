@@ -12,8 +12,10 @@
 import { expose } from './test-globals.js';
 import {
   BUILDING_SHADERS,
+  MODEL_SHADOW_SHADERS,
   SOLID_PROP_SHADERS,
   WORLD_BOWL_SHADERS,
+  buildingState,
   drawBuildings,
   drawPropModels,
   drawSolidProps,
@@ -21,9 +23,13 @@ import {
   lifeStep,
   noWebGL,
   propModelShaders,
+  propModelState,
   provide,
+  runWaterWeatherSync,
   seamlessLookTick,
   seamlessPrepareAhead,
+  solidPropState,
+  structureState,
   worldBillyLabels,
   worldExtra,
   worldMapPrewarm,
@@ -77,16 +83,15 @@ import {
   precompilePrograms,
   renderTarget,
   runNormalMapJobs,
-  setFrameBlockMode,
   trimTextures,
   webgl2Supported,
 } from './engine/webgl.js';
-import { sunLight } from './engine/light.js';
+import { frameBlockLost, sunLight } from './engine/light.js';
 import { POST_EFFECT_SHADERS, drawPostEffects, screenSnapshot, sunScreenPosition } from './engine/post-effects.js';
 import { environment, environmentFrame } from './environment.js';
 import { PREP_BUDGET_MS, walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
-import { WALK_SHADERS } from './walk/walk-shaders.js';
+import { SPRITE_INSTANCE_SHADERS, WALK_SHADERS } from './walk/walk-shaders.js';
 import { worldCurveDrop } from './walk/draw-common.js';
 import { groundOcclusionWork } from './walk/ground-textures.js';
 import { buildFarProps, buildGrass, grassWork } from './walk/grass-build.js';
@@ -99,32 +104,34 @@ import {
   swapMapCache,
   updateNearRing,
 } from './walk/map-cache.js';
-import { adaptQuality, cullItems, easedMood, heatHaze, heatSources } from './walk/quality-cull.js';
+import { adaptQuality, coverItems, cullItems, easedMood, heatHaze, heatSources } from './walk/quality-cull.js';
 import { drawSky } from './walk/sky.js';
 import { drawRoomFront } from './walk/rooms.js';
 import { drawWater, reflectionPass } from './walk/water.js';
 import { gatherFrameItems } from './walk/frame-items.js';
-import { drawBoxFaces, drawPlayerSilhouette, drawSprites } from './walk/sprites.js';
-import { battleCamera, cutsceneCamera, screenRay, walkCamera } from './walk/camera.js';
+import { drawBoxFaces, drawPlayerSilhouette, drawSprites, hideQueriesLost } from './walk/sprites.js';
+import { battleCamera, cutsceneCamera, screenRay, startSceneZoom, walkCamera } from './walk/camera.js';
 import { mapSun, walkLightContext } from './walk/lighting.js';
-import { lampShadowMaps, shadowPass } from './walk/shadows.js';
+import { SHADOW_INSTANCE_SHADERS, lampShadowMaps, shadowPass } from './walk/shadows.js';
 import { drawGrass, drawGround } from './walk/ground-draw.js';
 import { gatherFountainBasins } from './walk/fountains-weather.js';
-import { effectsPass } from './walk/effects.js';
+import { WEATHER_FX_SHADERS, effectsPass } from './walk/effects.js';
 import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
 expose({
   GROUND_SLICE_MS: [() => GROUND_SLICE_MS],
+  PHONE: [() => PHONE],
   baseStopWalkView: [() => baseStopWalkView],
   canvasForContext: [() => canvasForContext, v => (canvasForContext = v)],
   drawWalkFrame: [() => drawWalkFrame, v => (drawWalkFrame = v)],
   drawWalkFrameInner: [() => drawWalkFrameInner, v => (drawWalkFrameInner = v)],
-  ensureLitPrograms: [() => ensureLitPrograms, v => (ensureLitPrograms = v)],
+  dropWalkGpuCaches: [() => dropWalkGpuCaches, v => (dropWalkGpuCaches = v)],
   ensureWalkGl: [() => ensureWalkGl, v => (ensureWalkGl = v)],
   groundBuiltBeforeShow: [() => groundBuiltBeforeShow, v => (groundBuiltBeforeShow = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
+  phoneStarted: [() => phoneStarted, v => (phoneStarted = v)],
   screenToGround2d: [() => screenToGround2d],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
   worldToScreen2d: [() => worldToScreen2d],
@@ -178,7 +185,8 @@ export function mountWalkView(cv, id, opt = {}) {
   }
   walkView.cv = cv;
   walkView.opt = opt;
-  if (walkView.id !== id) {
+  const fresh = walkView.id !== id;
+  if (fresh) {
     walkView.id = id;
     walkView.cam = null;
     Object.assign(walkView.pl, { t: -1, fresh: true, route: null, goal: null, walk: 0 });
@@ -197,6 +205,8 @@ export function mountWalkView(cv, id, opt = {}) {
     walkRenderer.farKey = '';
   }
   walkView.sc = mapById(id);
+  /* CAM-4b: a fresh scene starts at its zoom stop (walk/camera.js) */
+  if (fresh) startSceneZoom(walkView.sc);
   walkView.ready = false;
   walkView.err = null;
   gpuLoading();
@@ -239,6 +249,9 @@ export function mountWalkView(cv, id, opt = {}) {
    2 s on a phone, 3 s on a laptop and 12 s on an iPad. Now the page keeps answering while it is built, and the first
    frame only swaps it in (swapMapCache). A room's floor is small and is built as before; so is a view whose job is
    dropped (it failed), or one still not ready after 30 s. */
+/* phase 20 R2 (D4): a phone, as the automatic quality has it (walk/quality-cull.js); the iPad is not one */
+const PHONE = typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent);
+let phoneStarted = false;
 const GROUND_SLICE_MS = 10; /* an urgent job gets twice this (groundPrepWork) */
 function groundBuiltBeforeShow(id, sc) {
   if (!walkRenderer.on || !walkView.ground || sc.groundOf || sc.roomScene) return Promise.resolve();
@@ -291,7 +304,6 @@ export function ensureWalkGl(cv) {
     gpuState.fail = 1;
     return false;
   }
-  setFrameBlockMode(engineSetting('quality', 'frameBlock'));
   try {
     ensurePrograms(WALK_SHADERS);
     ensurePrograms(POST_EFFECT_SHADERS);
@@ -301,6 +313,16 @@ export function ensureWalkGl(cv) {
       typeof propModelShaders === 'function' && propModelShaders(),
       /* 0.1.0 alpha: the world map's too: its first open compiled its eight programs on the spot */
       typeof WORLD_BOWL_SHADERS !== 'undefined' && WORLD_BOWL_SHADERS,
+      /* phase 20 E6: the instanced pictures' program, while Engine > Quality "Pictures in batches" is on */
+      engineSetting('quality', 'spriteInstances') && SPRITE_INSTANCE_SHADERS,
+      /* phase 20 R2: the weather in one draw, while Engine > Quality "Rain in one go" is on */
+      engineSetting('quality', 'rainBatch') && WEATHER_FX_SHADERS,
+      /* phase 20 R3: the instanced shadow pictures' and shadow models' programs, while Engine > Quality "Shadows in
+         batches" is on */
+      engineSetting('quality', 'shadowInstances') && SHADOW_INSTANCE_SHADERS,
+      engineSetting('quality', 'shadowInstances') &&
+        typeof MODEL_SHADOW_SHADERS !== 'undefined' &&
+        MODEL_SHADOW_SHADERS,
     ])
       if (d)
         precompilePrograms(
@@ -320,18 +342,50 @@ export function ensureWalkGl(cv) {
   for (const k of MAP_CACHE_FIELDS) walkRenderer[k] = null;
   return true;
 }
-/* every program with the light code, now (the Frame block was switched; a few frames' stall, only when it is) */
-function ensureLitPrograms() {
-  for (const d of [
-    WALK_SHADERS,
-    POST_EFFECT_SHADERS,
-    typeof BUILDING_SHADERS !== 'undefined' && BUILDING_SHADERS,
-    typeof SOLID_PROP_SHADERS !== 'undefined' && SOLID_PROP_SHADERS,
-    typeof propModelShaders === 'function' && propModelShaders(),
-  ])
-    if (d) ensurePrograms(d);
+/* phase 20 H: a restored context is the same object with nothing on it, so every cache that keeps a buffer or a
+   texture is dropped (not freed: the old ones are gone with the context), whether or not the walk view shows: the world
+   map may make the context again first, and the walk view then skips ensureWalkGl's own clearing. What still keeps
+   dead handles waits for the resource registry (HANDOFF, phase 20 round 1 context lane) */
+function dropWalkGpuCaches() {
+  walkRenderer.gkey = '';
+  walkRenderer.farKey = '';
+  walkRenderer.hkey = '';
+  walkRenderer.sceneCache = null;
+  walkRenderer.roomFloors = null;
+  walkRenderer.wtex = null;
+  walkRenderer.prep = null;
+  walkRenderer.basin = null;
+  walkRenderer.basinKey = null;
+  /* the sun's shadow map of the last frame (drawn every other frame on a struggling phone) and its cache key */
+  walkRenderer.lastShadow = null;
+  walkRenderer.shKey = '';
+  for (const k of MAP_CACHE_FIELDS) walkRenderer[k] = null;
+  walkView.gkey = '';
+  /* a real loss also comes a frame or more before its event, and a frame drawn on the dead context turns the buildings,
+     models and solid props off (their guards): on the new context they try again (a real fault turns them off again) */
+  if (typeof buildingState !== 'undefined') {
+    buildingState.mesh = new WeakMap();
+    buildingState.fail = '';
+  }
+  if (typeof propModelState !== 'undefined') {
+    propModelState.meshes.clear();
+    propModelState.fail = '';
+  }
+  if (typeof solidPropState !== 'undefined') {
+    solidPropState.meshes = new WeakMap();
+    solidPropState.live.clear();
+    solidPropState.fail = '';
+  }
+  if (typeof structureState !== 'undefined') {
+    structureState.mesh = null;
+    structureState.parts = [];
+    structureState.key = '';
+  }
 }
 function onGlContextRestored(cv) {
+  dropWalkGpuCaches();
+  frameBlockLost();
+  hideQueriesLost();
   if (walkView.id && walkView.cv === cv) {
     const id = walkView.id;
     walkView.id = null;
@@ -392,6 +446,8 @@ function drawWalkFrame(ts, dtm) {
     return;
   }
   if (!walkView.ready || gpuState.lost) return;
+  /* WA-5a: a new run day lays its weather on the places' water (run-world.js; nothing to do on the same day) */
+  if (typeof runWaterWeatherSync === 'function') runWaterWeatherSync();
   const w0 = performance.now(),
     gl = gpuState.gl,
     sc = walkView.sc;
@@ -409,8 +465,15 @@ function drawWalkFrame(ts, dtm) {
   const cssW = cv.clientWidth,
     cssH = cv.clientHeight;
   if (!cssW || !cssH) return;
+  /* phase 20 R2 (D4): with quality.phonePixels a phone (Android, iPhone) draws at most 1.2 million pixels (1.6
+     elsewhere), and its automatic resolution starts a step lower (0.9; it climbs back when frames have room) */
+  const phoneK = PHONE && !!engineSetting('quality', 'phonePixels');
+  if (phoneK && !phoneStarted) {
+    phoneStarted = true;
+    if (walkView.R >= 1) walkView.R = 0.9;
+  }
   const R0 = Math.min(devicePixelRatio || 1, 1.75) * engineSetting('quality', 'resolution'),
-    R = R0 * Math.min(1, Math.sqrt(1.6e6 / (cssW * cssH * R0 * R0))) * walkView.R,
+    R = R0 * Math.min(1, Math.sqrt((phoneK ? 1.2e6 : 1.6e6) / (cssW * cssH * R0 * R0))) * walkView.R,
     rw = Math.max(64, Math.min(2400, Math.round(cssW * R))),
     rh = Math.max(64, Math.round((cssH * rw) / cssW));
   if (cv.width !== rw || cv.height !== rh) {
@@ -446,8 +509,6 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (typeof seamlessPrepareAhead === 'function') seamlessPrepareAhead(performance.now());
   /* phase 20 C1: every dial looked up once for this frame (settings.js) */
   beginFrameSettings();
-  /* phase 20 C3: the Frame block switched on or off: the lit programs compile again in the new mode, here */
-  if (setFrameBlockMode(engineSetting('quality', 'frameBlock'))) ensureLitPrograms();
   const gl = gpuState.gl,
     sc = walkView.sc,
     cv = walkView.cv;
@@ -516,6 +577,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     for (const it of BT.items) items.push(it);
   } else walkView.hits = hits;
   cullItems(items, C);
+  coverItems(items, C, dt);
   const dark0 = sc.tint && sc.tint !== '#000000' ? 1 : sc.indoor ? 0.7 : 0,
     lk = engineContext.env && !sc.indoor ? environment.lampK : 0,
     dark = Math.max(dark0, lk > 0.4 ? lk : 0);
@@ -532,8 +594,14 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   walkRenderer.X = X;
   if (dark > 0.3 && !BT && shadow) lampShadowMaps(items, X, dark);
   gpuPass('reflection');
-  if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && gpuState.fb.refl))
+  if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && gpuState.fb.refl)) {
     reflectionPass(items, C, rw, rh, X);
+    /* phase 20 R2 (D3): only the reflection's colour is read (by the water), so its depth needn't be kept */
+    if (engineSetting('quality', 'invalidate') && gpuState.fb.refl) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, gpuState.fb.refl.f);
+      gl.invalidateFramebuffer(gl.FRAMEBUFFER, [gl.DEPTH_ATTACHMENT]);
+    }
+  }
   gpuPass('sky');
   const S = renderTarget('scene', rw, rh, { depth: true, hdr: true });
   gl.bindFramebuffer(gl.FRAMEBUFFER, S.f);
@@ -541,24 +609,49 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   gl.clearColor(0, 0, 0, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   const D = walkRenderer.dbg || {};
-  drawSky(C, sun, 0);
+  /* phase 20 R2 (D1): with quality.skyLast the sky fills only what the opaque things left at the cleared depth (1.0),
+     drawn after them and before anything blended (building fronts, water, effects); a room's front is blended over
+     the ground, so a frame that shows one keeps the sky first. D5: with quality.solidFirst the models, buildings and
+     structures go before the sprites, so leaves behind a trunk or a wall fail the depth test */
+  const skyLast =
+      !!engineSetting('quality', 'skyLast') && !(sc.room && (engineSetting('lights', 'roomLight') ?? true) !== false),
+    solidFirst = !!engineSetting('quality', 'solidFirst'),
+    bpart = skyLast || solidFirst ? 'solid' : undefined;
+  const drawSolids = () => {
+    gpuPass('models');
+    if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
+    if (!solidFirst) {
+      gpuPass('box');
+      drawBoxFaces(C, items, X);
+    }
+    gpuPass('buildings');
+    if (typeof drawBuildings === 'function') drawBuildings(C, X, items, walkRenderer.bfade, bpart);
+    gpuPass('structures');
+    if (typeof drawStructures === 'function') drawStructures(C, X);
+  };
+  if (!skyLast) drawSky(C, sun);
   gpuPass('ground');
   drawGround(C, X);
   drawRoomFront(C, X);
   gpuPass('grass');
   if (walkRenderer.grass && !D.noGrass) drawGrass(C, X);
+  if (solidFirst) drawSolids();
   gpuPass('sprites');
   drawSprites(C, items, X, hits, labels, PPU);
   gpuPass('solid');
   if (typeof drawSolidProps === 'function') drawSolidProps(C, items, X, hits, labels, PPU);
-  gpuPass('models');
-  if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
-  gpuPass('box');
-  drawBoxFaces(C, items, X);
-  gpuPass('buildings');
-  if (typeof drawBuildings === 'function') drawBuildings(C, X, items, walkRenderer.bfade);
-  gpuPass('structures');
-  if (typeof drawStructures === 'function') drawStructures(C, X);
+  if (solidFirst) {
+    gpuPass('box');
+    drawBoxFaces(C, items, X);
+  } else drawSolids();
+  if (skyLast) {
+    gpuPass('sky');
+    drawSky(C, sun, true);
+  }
+  if (bpart && typeof drawBuildings === 'function') {
+    gpuPass('buildings');
+    drawBuildings(C, X, items, walkRenderer.bfade, 'fronts');
+  }
   gpuPass('silhouette');
   drawPlayerSilhouette(C, items, X);
   gpuPass('water');
@@ -615,7 +708,10 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   } else
     LF = drawPostEffects(S, C, walkRenderer.focus, rw, rh, {
       /* CAM-3: times the player's blur slider (Settings → Graphics → Blur), in battles too */
-      blur: (BT ? BT.blur : sc.plain ? 0 : (sc.blur ?? 1) * (walkView.opt.blur ?? 1)) * playerBlur(),
+      /* CAM-4b: times the zoom stops' blur at the zoom (walk/camera.js), not in battles */
+      blur:
+        (BT ? BT.blur : sc.plain ? 0 : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (walkRenderer.zoomBlur ?? 1)) *
+        playerBlur(),
       fast: walkView.R < 0.75 || QE >= 1,
       noAO: QE >= 1,
       noRays: QE >= 3,
@@ -634,6 +730,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       ivp: C.ivp,
       noVol: QE >= 3 || (!!sc.indoor && !dark),
       volDens: sc.indoor ? 0.5 : 1 + (engineContext.env ? environment.fog * 1.5 + environment.rain * 0.4 : 0),
+      airLamps: PHONE && engineSetting('quality', 'phoneLamps') ? 4 : 6,
     });
   /* CAM-3: what the blur did this frame, for the debug log, the Studio's blur guides and the checks (no names) */
   walkRenderer.lensInfo = {

@@ -11,13 +11,13 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
+import { partForSide, partJoint } from '../../game/js/logic/part-joints.js';
+import { kitBlinkFrame, kitSquashFrames } from '../../game/js/logic/kit-pixels.js';
 import { coatArt } from '../../game/js/logic/coats.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { animFor } from '../../game/js/body-plan-animation.js';
 import { boneSlot, drawRig, rigFrame, rigFromMeta, rigMatrices } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { partForSide, partJoint } from '../../game/js/logic/part-joints.js';
-import { kitBlinkFrame, kitSquashFrames } from '../../game/js/logic/kit-pixels.js';
 import {
   rigBox,
   rigGeo,
@@ -55,6 +55,7 @@ import { neutralPose, openSkeleton } from './skeleton.js';
 import { WB_VIEWS, workbench } from './workbench.js';
 import { wbPart, wbpColor, wbpN, wbpRefreshSide, wbpRoot } from './workbench-part.js';
 import { kitFormOf, kitRecipeHTML } from './kit-recipe.js';
+import { placeholderFormOf, placeholderPanelHTML } from './placeholder-sheets.js';
 /* eslint-disable no-func-assign */
 expose({
   WBS_CROPS: [() => WBS_CROPS],
@@ -354,7 +355,12 @@ function wbsSideHTML() {
     K = wbsKit(),
     Pt = K.parts[id],
     sp = wbsSp();
-  if (!Pt) return '<div class="px-sec"><p class="help">Pick a part on the left.</p></div>' + kitRecipeHTML(sp);
+  if (!Pt)
+    return (
+      '<div class="px-sec"><p class="help">Pick a part on the left.</p></div>' +
+      kitRecipeHTML(sp) +
+      placeholderPanelHTML(sp)
+    );
   const fb = wbsBone('front') || wbsBone('back'),
     frames = [...new Set(WB_VIEWS.flatMap(v => Pt.rig[v]?.frames || []))];
   const head = `<div class="px-sec"><h4 class="mono">${escapeHtml(id)}</h4><p class="help">${escapeHtml(speciesName(sp))} (<span class="mono">${escapeHtml(sp)}</span>) · hangs from <b class="mono">${escapeHtml(fb.par || 'root')}</b>${fb.a && fb.a !== id ? ` · moves as ${escapeHtml(fb.a)}` : ''}. rigs-next.js; the back view is drawn mirrored in the game.</p><div class="seg-row"><button class="btn sm" data-act="wbsSkeleton">Skeleton builder</button><button class="btn sm" data-act="wbsPaint">Paint pixels</button><button class="btn sm" data-act="wbsRepack" title="Pack the sheet again without the pixels no frame shows (the Billie is drawn the same)">Repack sheet</button></div></div>`;
@@ -382,6 +388,7 @@ function wbsSideHTML() {
   return (
     head +
     kitRecipeHTML(sp) +
+    placeholderPanelHTML(sp) +
     wbsLibrary.html() +
     frame +
     views +
@@ -466,6 +473,8 @@ ACTIONS.wbsRepack = async () => {
   if (!R) return;
   if (kitFormOf(sp))
     return toast('A kit Billie’s sheet is baked from its recipe (Kit recipe): Write Billie packs it.', 'err');
+  if (placeholderFormOf(sp))
+    return toast('A placeholder Billie’s sheet is baked from its body plan: Write Billie packs it.', 'err');
   const own = Object.entries(studioState.D.coats || {}).find(([, C]) => WB_VIEWS.some(v => coatArt(C, sp, v)));
   if (own) return toast(`The ${own[0]} coat has its own sheet laid out like this one, so it can’t be repacked.`, 'err');
   let rig = R,

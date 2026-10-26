@@ -8,18 +8,19 @@
      (rngFrom(its node's seed, 'shop|' + day)), so a reload or another device sees the same stock;
    - the run's foes: a mini-boss on each mini-boss node and the boss, each a leader (the trainers with miniboss: true)
      drawn from the node's stream, never one twice in a run, its team's levels set over its row's top wild level
-     (run.foes); a copy with its own id, blocking the way north (mini-bosses), with nothing of the hub's (no script,
-     badge, egg or story conditions);
+     (run.foes); a copy with its own id, blocking the way north (mini-bosses), with nothing of the hub's (no hub
+     script, badge, egg or story conditions; RL-S1: its script is a word picked by the run history, then the battle);
    - a battle's seed (its node's seed and its number in the run), the payout screen's rows, what may be kept.
    Numbers come in as arguments; logic only: no DOM, no Date, no Math.random (tools/test/run-loop.test.mjs). */
 /** @import { Run, RunMap, SaveData, Billy } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { encArrive, fxHealShare, fxOfRun, unlockOpen } from '../hooks.js';
-import { ITEMS, SPECIES } from '../game-data.js';
+import { BANTER, ITEMS, SPECIES, TRAINERS, typeEffectiveness } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
 import { healAll, maxHp, plural, speciesStep } from './rules.js';
+import { RIVAL_TRAINER, rivalTeam } from './rival.js';
 import { modBossHp, modFoeLevels, modHas } from './modifiers.js';
 import { RUN_DAYS, runHome } from './run-state.js';
 import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
@@ -207,8 +208,11 @@ export const runFoeId = i => `run_${i}_foe`;
  * picked by its types), in node order, while there are any; RL-R2: a side area's mini-boss or boss its own leader. Its levels: its row's top wild level + run.foes[type].up for its
  * top Billie, the others as far below as in the leader's team (1-100). A mini-boss blocks the way north and fights a
  * double battle; the boss is its leader's top Billie alone, fought as an Alpha (which adds the Alpha's own levels).
+ * RL-S2: on each rival node, Blake (trainers/blake.json's name and words) with his team for that meeting
+ * (logic/rival.js rivalTeam: against run.rival.lead, one meeting more than the last), at its row's top wild level +
+ * run.rival.up; a reward pick after it (battle-rewards.js), never blocking.
  * @param {Run} run
- * @param {{ leaders: any[], rules: { foes: Record<'miniboss' | 'boss', { up: number, reward: number }>,
+ * @param {{ leaders: any[], rival?: import('../../types/game-data').RivalRules, rules: { foes: Record<'miniboss' | 'boss', { up: number, reward: number }>, rival?: import('../../types/game-data').RivalRules,
  *   wild: { lv: [number, number], perRow: number } } }} data leaders: the trainer entries with miniboss: true
  * @returns {Record<string, any>}
  */
@@ -221,7 +225,46 @@ export function runFoes(run, data) {
     /** @type {Record<string, any>} */
     out = {};
   let k = 0;
+  /* RL-S2: Blake on each rival node (logic/rival.js), his team growing meeting by meeting */
+  const B = TRAINERS[RIVAL_TRAINER],
+    RV = data.rules.rival,
+    lead = run.rival && SPECIES[run.rival.lead] ? SPECIES[run.rival.lead].types || [] : [];
+  let met = run.rival ? run.rival.past : 0;
   map.nodes.forEach((node, i) => {
+    if (node.type === 'rival' && B && RV) {
+      const team = rivalTeam(
+        rngFrom(runNodeSeed(run.seed, i), 'team'),
+        lead,
+        met++,
+        runWildLevels(map, i, /** @type {any} */ (data), modFoeLevels(run))[1] + RV.up,
+        RV,
+        SPECIES,
+        (run.region && run.region.dex) || null,
+        typeEffectiveness,
+        id => speciesStep(SPECIES[id])
+      );
+      out[runFoeId(i)] = {
+        id: runFoeId(i),
+        name: B.name,
+        who: B.who,
+        battleStage: B.battleStage,
+        win: B.win,
+        lose: B.lose || '',
+        reward: RV.reward,
+        team,
+        node: runWorldNode(i),
+        blocks: false,
+        runFoe: 'rival',
+        runNode: i,
+        from: RIVAL_TRAINER,
+        /* his word before the battle once banter.json has lines for him (the owner approves them first) */
+        script: [
+          ...(Object.values(BANTER).some(L => L.who === 'rival') ? ['pick rival'] : []),
+          `battle ${runFoeId(i)}`,
+        ],
+      };
+      return;
+    }
     if (node.type !== 'miniboss' && node.type !== 'boss') return;
     const left = pool.filter(T => !used.has(T.id)),
       from = left.length ? left : pool,
@@ -264,6 +307,8 @@ export function runFoes(run, data) {
       runFoe: node.type,
       runNode: i,
       from: T.id,
+      /* RL-S1: a word before the battle, picked by the run history (banter.json leader; story-stage.js) */
+      script: ['pick leader', `battle ${runFoeId(i)}`],
       /* RL-R2: its leader's type: the first win over one keeps that type's badge (battle-rewards.js) */
       ...(T.type ? { type: T.type } : {}),
     };
