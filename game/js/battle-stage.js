@@ -27,12 +27,15 @@ import {
   platesTick,
   provide,
   reducedMotion,
+  robotIdsFromSp,
+  robotPartDef,
   saveData,
   soundEffect,
 } from './hooks.js';
 import { $, clamp, random } from './util.js';
+import { graftLookSplit } from './logic/graft-art.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
-import { iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
+import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
 import { ROBOT_PART_BONES } from './robot-art.js';
 import { personBattleFrames, personBattlePose, wardrobeData } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigTint } from './skeleton-rig.js';
@@ -305,6 +308,10 @@ export const battleStage = {
   el: {},
   leafy: [],
   glint: [],
+  /* water track WA-7: the scene's water in view (battle space, set by battle-3d.js) and the fighters standing in it */
+  wet: /** @type {{x: number, z: number}[]} */ ([]),
+  wetFeet: /** @type {number[]} */ ([]),
+  wetT: 0,
   F: null,
   floorKey: '',
   q: { lvl: 0, since: 0, lowT: 0, highT: 0 },
@@ -406,6 +413,8 @@ export function battleStageStart(area) {
   battleStage.leafy = [];
   battleStage.glint = [];
   battleStage.clouds = [];
+  battleStage.wet = [];
+  battleStage.wetFeet = [];
   battleStage.small = makeCanvas(10, 10);
   battleStageFormat((typeof activeBattle !== 'undefined' && activeBattle && activeBattle.fmt) || 'single');
   battleStage.tr = [
@@ -736,6 +745,26 @@ function spawnAmbientParticles(dt) {
       glow: 1,
       twinkle: 1,
     });
+  }
+  /* WA-7: the water in view catches the light in hard pixels; a fighter standing in water sends out rings */
+  if (battleStage.wet.length && random() < dt / 260) {
+    const p = battleStage.wet[Math.floor(random() * battleStage.wet.length)];
+    addParticle({
+      x: p.x + random() - 0.5,
+      y: 0.04,
+      z: p.z + random() - 0.5,
+      life: 600,
+      spr: 'spark',
+      k: 0.45,
+      glow: 1,
+      twinkle: 1,
+    });
+  }
+  battleStage.wetT += dt;
+  if (battleStage.wetT > 900) {
+    battleStage.wetT = 0;
+    for (const i of battleStage.wetFeet)
+      if (battleStage.s[i] && battleStage.s[i].show) groundRing(i, undefined, 0.9, 800);
   }
   battleStage.stT += dt;
   if (battleStage.stT > 700) {
@@ -1157,6 +1186,16 @@ function drawParticles(c, layer) {
         p.col,
         p.ground ? 2 : Math.max(1, Math.round(k))
       );
+    } else if (p.img) {
+      /* RL-14: a picture (a bot's dropped part), turning as it falls */
+      const kk = Math.max(0.5, Math.round(k * 2) / 4),
+        w = Math.round(p.img.naturalWidth * kk),
+        h = Math.round(p.img.naturalHeight * kk);
+      c.save();
+      c.translate(Math.round(q.x), Math.round(q.y));
+      c.rotate((p.rot || 0) + ((p.vr || 0) * Math.min(p.age, 700)) / 1000);
+      c.drawImage(p.img, -Math.round(w / 2), -Math.round(h / 2), w, h);
+      c.restore();
     } else if (p.spr) {
       const s = particleSprite(p.spr),
         kk = Math.max(1, Math.round(k * 2) / 2);
@@ -2026,6 +2065,32 @@ export function battleStagePlay(an, ev) {
           spr: 'spark',
           k: 0.8,
           glow: 1,
+        });
+      }
+      /* RL-14: the broken part drops off: its picture falls from the bot, tumbles and bounces on the ground as it
+         fades (the rig keeps the limb faint) */
+      /* SP-5: a Billie's broken Augment drops off the same way (its part from the look code) */
+      const S = battleStage.s[an.si],
+        ids = S && robotIdsFromSp(S.sp),
+        aug = S && !ids ? graftLookSplit(S.graft).aug : null,
+        P = ids ? robotPartDef(ids[an.part]) : aug ? robotPartDef(aug[an.part === 'legs' ? 'back' : 'front']) : null,
+        im = P && P.art && P.art.img ? artImg(P.art.img) : null;
+      if (im && im.complete && im.naturalWidth && !reducedMotion) {
+        const side = an.part === 'armL' ? -1 : an.part === 'armR' ? 1 : random() < 0.5 ? -1 : 1;
+        addParticle({
+          img: im,
+          x: T.x + side * 0.3,
+          y: an.part === 'legs' ? 0.3 : T.y,
+          z: T.z,
+          vx: side * 1.3,
+          vy: 2.2,
+          vz: 0.3,
+          ay: -9,
+          floor: true,
+          life: 1500,
+          rot: 0,
+          vr: side * 6,
+          k: 1,
         });
       }
       battleStageFlash('#FFE7A0', 0.35, 220);

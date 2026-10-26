@@ -11,6 +11,7 @@
 import { expose } from './test-globals.js';
 import { gameData, provide, reducedMotion } from './hooks.js';
 import { decalPlace, propTurn } from './logic/prop-turn.js';
+import { gpuTag } from './engine/gpu-counters.js';
 import { artImg, artURL, hexToRgb, makeCanvas } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
@@ -108,6 +109,7 @@ export const propModelState = {
   fr: -1,
   bt: 0,
 };
+provide({ propModelState }); /* to-module */
 const VOXEL_TEXTURE_GRAIN = {
   plain: 0,
   grain: 0.1,
@@ -1742,6 +1744,8 @@ export function drawPropModels(C, items, X, hits, labels, PPU) {
   propModelState.drawn = 0;
   propModelState.lowPoly = 0;
   if (!propModelsOn()) return;
+  /* R1 measure: every draw a model makes counted apart, in whichever pass draws it (engine/gpu-counters.js) */
+  gpuTag('model');
   propModelGuard(() => {
     const gl = gpuState.gl;
     ensurePrograms(PROP_MODEL_SHADERS);
@@ -1777,9 +1781,11 @@ export function drawPropModels(C, items, X, hits, labels, PPU) {
     drawLowPolyModels(C, X, ML);
     if (hits) for (const [it] of ML) if (!it.far) addHitTarget(it, C, hits, labels, PPU);
   });
+  gpuTag(0);
 }
 function drawPropModelShadows(SH, items) {
   if (!propModelsOn()) return;
+  gpuTag('model');
   propModelGuard(() => {
     const gl = gpuState.gl;
     ensurePrograms(PROP_MODEL_SHADERS);
@@ -1805,6 +1811,7 @@ function drawPropModelShadows(SH, items) {
     }
     gl.bindVertexArray(null);
   });
+  gpuTag(0);
 }
 /* art the scene needs for its voxel props' picture layers (mapArtPaths asks) */
 function propModelArtPaths(sc, C) {

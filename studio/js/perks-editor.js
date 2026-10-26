@@ -75,6 +75,9 @@ const PERK_KINDS = {
   damage: 'Damage your Billies deal or take',
   heal: 'Heal a share of HP on walking into a place',
   payout: 'The payout’s Research, or the share items count at',
+  dna: 'A Gene Sample’s DNA (SP-6)',
+  splice: 'How often wild Billies are spliced (SP-6)',
+  unstable: 'The HP Unstable splices lose at each turn’s end (SP-6)',
 };
 /** a new row of a kind: its fields with values that change little */
 const PERK_ROW_NEW = {
@@ -85,6 +88,9 @@ const PERK_ROW_NEW = {
   damage: () => ({ kind: 'damage', side: 'deal', mult: 1.1 }),
   heal: () => ({ kind: 'heal', share: 0.1 }),
   payout: () => ({ kind: 'payout', what: 'research', mult: 1.1 }),
+  dna: () => ({ kind: 'dna', mult: 1.1 }),
+  splice: () => ({ kind: 'splice', mult: 1.1 }),
+  unstable: () => ({ kind: 'unstable', mult: 0.9 }),
 };
 const PERK_RARITIES = ['common', 'uncommon', 'rare'];
 
@@ -181,6 +187,9 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
         ]),
         mult('×'),
       ],
+      dna: () => [mult('Gene Sample DNA ×')],
+      splice: () => [mult('Wild splice odds × (Graft and Chimera together never past 100%)')],
+      unstable: () => [mult('Unstable turn-end hurt ×')],
     }[f.kind];
   return `<div class="relic-row" data-relic-row="${n}"><div class="relic-row-head"><select data-relic-kind="${escapeHtml(k)}" data-n="${n}" aria-label="Kind of effect">${Object.entries(
     PERK_KINDS
@@ -380,6 +389,9 @@ function perkPreviewHTML(/** @type {any} */ v) {
       v.heal.share ? `${perkPct(v.heal.share)} (${v.heal.hp} of ${v.sample.hp} HP)` : 'nothing'
     ),
     one('Payout: Research', perkX(v.payout.research)),
+    one('Gene Sample DNA', perkX(v.splice.dna)),
+    one('Wild splice odds', perkX(v.splice.odds)),
+    one('Unstable turn-end hurt', perkX(v.splice.unstable)),
     one(
       'Payout: items count at',
       `${perkPct(v.payout.itemShare[0])}${v.payout.itemShare[1] !== v.payout.itemShare[0] ? ` → <b>${perkPct(v.payout.itemShare[1])}</b>` : ''} of their price`

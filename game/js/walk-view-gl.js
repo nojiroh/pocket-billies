@@ -14,6 +14,7 @@ import {
   BUILDING_SHADERS,
   SOLID_PROP_SHADERS,
   WORLD_BOWL_SHADERS,
+  buildingState,
   drawBuildings,
   drawPropModels,
   drawSolidProps,
@@ -21,10 +22,13 @@ import {
   lifeStep,
   noWebGL,
   propModelShaders,
+  propModelState,
   provide,
   runWaterWeatherSync,
   seamlessLookTick,
   seamlessPrepareAhead,
+  solidPropState,
+  structureState,
   worldBillyLabels,
   worldExtra,
   worldMapPrewarm,
@@ -78,7 +82,6 @@ import {
   precompilePrograms,
   renderTarget,
   runNormalMapJobs,
-  setFrameBlockMode,
   trimTextures,
   webgl2Supported,
 } from './engine/webgl.js';
@@ -106,7 +109,7 @@ import { drawRoomFront } from './walk/rooms.js';
 import { drawWater, reflectionPass } from './walk/water.js';
 import { gatherFrameItems } from './walk/frame-items.js';
 import { drawBoxFaces, drawPlayerSilhouette, drawSprites } from './walk/sprites.js';
-import { battleCamera, cutsceneCamera, screenRay, walkCamera } from './walk/camera.js';
+import { battleCamera, cutsceneCamera, screenRay, startSceneZoom, walkCamera } from './walk/camera.js';
 import { mapSun, walkLightContext } from './walk/lighting.js';
 import { lampShadowMaps, shadowPass } from './walk/shadows.js';
 import { drawGrass, drawGround } from './walk/ground-draw.js';
@@ -120,7 +123,7 @@ expose({
   canvasForContext: [() => canvasForContext, v => (canvasForContext = v)],
   drawWalkFrame: [() => drawWalkFrame, v => (drawWalkFrame = v)],
   drawWalkFrameInner: [() => drawWalkFrameInner, v => (drawWalkFrameInner = v)],
-  ensureLitPrograms: [() => ensureLitPrograms, v => (ensureLitPrograms = v)],
+  dropWalkGpuCaches: [() => dropWalkGpuCaches, v => (dropWalkGpuCaches = v)],
   ensureWalkGl: [() => ensureWalkGl, v => (ensureWalkGl = v)],
   groundBuiltBeforeShow: [() => groundBuiltBeforeShow, v => (groundBuiltBeforeShow = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
@@ -179,7 +182,8 @@ export function mountWalkView(cv, id, opt = {}) {
   }
   walkView.cv = cv;
   walkView.opt = opt;
-  if (walkView.id !== id) {
+  const fresh = walkView.id !== id;
+  if (fresh) {
     walkView.id = id;
     walkView.cam = null;
     Object.assign(walkView.pl, { t: -1, fresh: true, route: null, goal: null, walk: 0 });
@@ -198,6 +202,8 @@ export function mountWalkView(cv, id, opt = {}) {
     walkRenderer.farKey = '';
   }
   walkView.sc = mapById(id);
+  /* CAM-4b: a fresh scene starts at its zoom stop (walk/camera.js) */
+  if (fresh) startSceneZoom(walkView.sc);
   walkView.ready = false;
   walkView.err = null;
   gpuLoading();
@@ -292,7 +298,6 @@ export function ensureWalkGl(cv) {
     gpuState.fail = 1;
     return false;
   }
-  setFrameBlockMode(engineSetting('quality', 'frameBlock'));
   try {
     ensurePrograms(WALK_SHADERS);
     ensurePrograms(POST_EFFECT_SHADERS);
@@ -321,18 +326,48 @@ export function ensureWalkGl(cv) {
   for (const k of MAP_CACHE_FIELDS) walkRenderer[k] = null;
   return true;
 }
-/* every program with the light code, now (the Frame block was switched; a few frames' stall, only when it is) */
-function ensureLitPrograms() {
-  for (const d of [
-    WALK_SHADERS,
-    POST_EFFECT_SHADERS,
-    typeof BUILDING_SHADERS !== 'undefined' && BUILDING_SHADERS,
-    typeof SOLID_PROP_SHADERS !== 'undefined' && SOLID_PROP_SHADERS,
-    typeof propModelShaders === 'function' && propModelShaders(),
-  ])
-    if (d) ensurePrograms(d);
+/* phase 20 H: a restored context is the same object with nothing on it, so every cache that keeps a buffer or a
+   texture is dropped (not freed: the old ones are gone with the context), whether or not the walk view shows: the world
+   map may make the context again first, and the walk view then skips ensureWalkGl's own clearing. What still keeps
+   dead handles waits for the resource registry (HANDOFF, phase 20 round 1 context lane) */
+function dropWalkGpuCaches() {
+  walkRenderer.gkey = '';
+  walkRenderer.farKey = '';
+  walkRenderer.hkey = '';
+  walkRenderer.sceneCache = null;
+  walkRenderer.roomFloors = null;
+  walkRenderer.wtex = null;
+  walkRenderer.prep = null;
+  walkRenderer.basin = null;
+  walkRenderer.basinKey = null;
+  /* the sun's shadow map of the last frame (drawn every other frame on a struggling phone) and its cache key */
+  walkRenderer.lastShadow = null;
+  walkRenderer.shKey = '';
+  for (const k of MAP_CACHE_FIELDS) walkRenderer[k] = null;
+  walkView.gkey = '';
+  /* a real loss also comes a frame or more before its event, and a frame drawn on the dead context turns the buildings,
+     models and solid props off (their guards): on the new context they try again (a real fault turns them off again) */
+  if (typeof buildingState !== 'undefined') {
+    buildingState.mesh = new WeakMap();
+    buildingState.fail = '';
+  }
+  if (typeof propModelState !== 'undefined') {
+    propModelState.meshes.clear();
+    propModelState.fail = '';
+  }
+  if (typeof solidPropState !== 'undefined') {
+    solidPropState.meshes = new WeakMap();
+    solidPropState.live.clear();
+    solidPropState.fail = '';
+  }
+  if (typeof structureState !== 'undefined') {
+    structureState.mesh = null;
+    structureState.parts = [];
+    structureState.key = '';
+  }
 }
 function onGlContextRestored(cv) {
+  dropWalkGpuCaches();
   if (walkView.id && walkView.cv === cv) {
     const id = walkView.id;
     walkView.id = null;
@@ -449,8 +484,6 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (typeof seamlessPrepareAhead === 'function') seamlessPrepareAhead(performance.now());
   /* phase 20 C1: every dial looked up once for this frame (settings.js) */
   beginFrameSettings();
-  /* phase 20 C3: the Frame block switched on or off: the lit programs compile again in the new mode, here */
-  if (setFrameBlockMode(engineSetting('quality', 'frameBlock'))) ensureLitPrograms();
   const gl = gpuState.gl,
     sc = walkView.sc,
     cv = walkView.cv;
@@ -619,7 +652,10 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   } else
     LF = drawPostEffects(S, C, walkRenderer.focus, rw, rh, {
       /* CAM-3: times the player's blur slider (Settings → Graphics → Blur), in battles too */
-      blur: (BT ? BT.blur : sc.plain ? 0 : (sc.blur ?? 1) * (walkView.opt.blur ?? 1)) * playerBlur(),
+      /* CAM-4b: times the zoom stops' blur at the zoom (walk/camera.js), not in battles */
+      blur:
+        (BT ? BT.blur : sc.plain ? 0 : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (walkRenderer.zoomBlur ?? 1)) *
+        playerBlur(),
       fast: walkView.R < 0.75 || QE >= 1,
       noAO: QE >= 1,
       noRays: QE >= 3,

@@ -58,8 +58,10 @@ test('unlocks: what a row needs, earned rows, and the run refuse a purchase', ()
   s.run = null;
   assert.ok(K.unlockBuy(s, 'ranch_2', D) && K.unlockBuy(s, 'ranch_3', D));
   assert.equal(K.buildingLevel(s, 'ranch'), 3);
+  /* SP-5 opened the Workshop: a building marked soon stands in for one coming later */
   const soon = {
     ...D,
+    buildings: { ...D.buildings, workshop: { ...D.buildings.workshop, soon: true, levels: 1 } },
     unlocks: { ...D.unlocks, w: { name: 'w', about: 'w', at: 'workshop', cost: 1, grant: { scrap: 1 } } },
   };
   assert.equal(K.unlockReady(s, 'w', soon), 'soon', 'a building coming later sells nothing');

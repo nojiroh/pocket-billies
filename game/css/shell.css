@@ -552,6 +552,9 @@ pb-nav-bar#nav {
   right: 8px;
   bottom: 6px;
   z-index: 6;
+  /* a wide screen gets a centred bar, not one across the whole bottom */
+  max-width: 480px;
+  margin-inline: auto;
 }
 pb-nav-bar#nav[hidden] {
   display: none;

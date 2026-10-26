@@ -235,6 +235,9 @@ same phase:
   once, started in the background] once a place has settled (a second after it is ready; counted since the page
   loaded, and the per-dial graphics test's shader check adds to it), `alloc` [hitches, MB freed]: ticks more than
   45 ms apart while the heap shrank (Chrome only, a rough sign of garbage collection). Numbers only.
+  **(Phase 20 R1)** Also `dct` (per pass, the draws of low-poly models `model` and of models' picture layers, their
+  leaf clumps and vines, `modelPic`; the rest of the pass is its `dcp` less these) and `dcu` (per pass, [distinct
+  textures, distinct vertex arrays] bound: the fewest draws grouping by picture or mesh could reach).
 - **(Phase 20 C3)** The full test's Shaders step also builds every program with the light code with the Frame uniform
   block (`frameBlockCheck`, engine/webgl.js) and checks the block's size and each member's offset, as this device's
   driver lays them out, against what engine/frame-block.js packs; smoke shows "N shaders; 14 with the Frame block".

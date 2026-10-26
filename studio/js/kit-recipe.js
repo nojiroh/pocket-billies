@@ -9,6 +9,7 @@
    Billie is already as baked. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
+import { provide } from '../../game/js/hooks.js';
 import { kitBakeWhole } from '../../game/js/logic/kit-assemble.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { escapeHtml } from './game-stand-ins.js';
@@ -19,7 +20,7 @@ import { atlasGet, loadedAtlas, markArt } from './sprites.js';
 expose({
   KIT_PARTS_OF: [() => KIT_PARTS_OF],
   KIT_SHEET: [() => KIT_SHEET],
-  kitBakeInStudio: [() => kitBakeInStudio, v => (kitBakeInStudio = v)],
+  kitBakeInStudio: [() => kitBakeInStudio, v => ((kitBakeInStudio = v), provide({ kitBakeInStudio }))],
   kitColourSelect: [() => kitColourSelect, v => (kitColourSelect = v)],
   kitEdited: [() => kitEdited, v => (kitEdited = v)],
   kitFormOf: [() => kitFormOf, v => (kitFormOf = v)],
@@ -33,6 +34,7 @@ expose({
   kitWriteShown: [() => kitWriteShown, v => (kitWriteShown = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ kitBakeInStudio });
 /* to-module: end */
 /** the recipe of a species' rig, with its index in kitBuilds.json forms */
 export function kitFormOf(sp) {

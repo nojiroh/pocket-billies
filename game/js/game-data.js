@@ -28,7 +28,9 @@ expose({
   EGGS: [() => EGGS],
   EGG_TIERS: [() => EGG_TIERS],
   EVENTS: [() => EVENTS],
+  FACTIONS: [() => FACTIONS],
   FIELD_MOVES: [() => FIELD_MOVES],
+  GENES: [() => GENES],
   HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   HUB_LOCATIONS: [() => HUB_LOCATIONS],
   ITEMS: [() => ITEMS],
@@ -48,6 +50,8 @@ expose({
   PYRAMIDS: [() => PYRAMIDS],
   QUESTS: [() => QUESTS],
   RARITY_STAT_TOTALS: [() => RARITY_STAT_TOTALS],
+  RELATIONS: [() => RELATIONS],
+  RESIDENTS: [() => RESIDENTS],
   REWARDS: [() => REWARDS],
   ROADS: [() => ROADS],
   ROADS_BY_NODE: [() => ROADS_BY_NODE],
@@ -408,6 +412,29 @@ export const MUSIC = gameData.music || { songs: {}, jingles: {}, cries: { bases:
 /* roguelite track RL-R2: the field moves that open a run's side areas (fieldMoves.json; logic/run-side.js) */
 export const FIELD_MOVES = (gameData.fieldMoves && gameData.fieldMoves.moves) || {};
 provide({ FIELD_MOVES }); /* to-module */
+/* splicing track SP-2: what spliced parts do (genes.json; logic/genes.js) */
+export const GENES = /** @type {import('../types/game-data').Genes} */ (
+  gameData.genes || {
+    kinds: {},
+    traits: {},
+    parts: {},
+    maxTraits: 3,
+    stability: { line: 0, kit: 1, other: 2, augment: 3, limit: 3, refuse: 3 },
+    bank: { levels: [{ limit: 3, slots: ['sig'] }], price: { base: 5, perCost: 5 }, inherit: 0 },
+    unstable: { up: 1.3, down: 0.75, name: 'Unstable', d: '', fx: [] },
+    augment: {
+      slots: {},
+      statShare: 0,
+      field: {},
+      move: 'none',
+      escapedNear: 1,
+      knockout: 'none',
+      levels: [{ slots: [], maxUp: 0 }],
+      price: { fit: 0, up: [] },
+    },
+  }
+);
+provide({ GENES }); /* to-module */
 /* RT-3: set pieces, prop groups placed as a unit on a laid-out place (setPieces.json; logic/mapgen.js) */
 export const SET_PIECES = /** @type {import('../types/game-data').SetPiecesData | null} */ (gameData.setPieces || null);
 /* roguelite track RL-13: a run's Expeditions and challenges (modifiers.json; logic/modifiers.js) */
@@ -415,8 +442,21 @@ export const MODIFIERS = /** @type {import('../types/game-data').ModifiersData} 
   gameData.modifiers || { expeditions: [{ name: 'Expedition I', d: '', fx: [] }], challenges: {} }
 );
 provide({ MODIFIERS }); /* to-module */
+/* roguelite track RL-S2: the hub's folk and you: gifts, favours, levels (relations.json; logic/relations.js) */
+export const RELATIONS = /** @type {import('../types/game-data').RelationsData} */ (
+  gameData.relations || { gift: { cost: 1, points: 1, favour: 0 }, people: {} }
+);
+provide({ RELATIONS }); /* to-module */
+/* roguelite track RL-14: the runs' enemy factions and their bots (factions.json; logic/factions.js) */
+export const FACTIONS = /** @type {Record<string, import('../types/game-data').Faction>} */ (
+  (gameData.factions && gameData.factions.factions) || {}
+);
 /* towns track TW-3: a run's quests (quests.json; logic/run-quests.js) */
 export const QUESTS = /** @type {import('../types/game-data').QuestsData} */ (gameData.quests);
+/* residents track RS-1: the people a run can invite to Copperleaf (residents.json; logic/residents.js) */
+export const RESIDENTS = /** @type {Record<string, import('../types/game-data').Resident>} */ (
+  gameData.residents || {}
+);
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
 /** RL-12b: the reward pick's cards */
@@ -609,7 +649,10 @@ export function trainerTeam(T) {
     if (e.sp === 'robot' && e.robot) {
       const R = e.robot,
         fit = Object.fromEntries(['torso', 'armL', 'armR', 'legs'].map(k => [k, { uid: '', id: R[k], up: 0 }]));
-      return makeRobot(R.gem, fit, e.lvl);
+      const m = makeRobot(R.gem, fit, e.lvl);
+      /* RL-14: a faction's bot goes by its name (factions.json) */
+      if (e.nick) m.nick = e.nick;
+      return m;
     }
     const m = makeBilly(/^@rival\d?$/.test(e.sp) ? rivalSpecies(e.sp) : e.sp, e.lvl),
       mv = Array.isArray(e.moves) ? e.moves.filter(k => MOVES[k]) : [];

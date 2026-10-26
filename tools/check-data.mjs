@@ -24,10 +24,14 @@ import { DATA, PB_DATA } from './data-files.mjs';
 import { musicFindings } from '../game/js/logic/music-studio.js';
 import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js';
 import { islandProblems } from '../game/js/logic/island.js';
+import { POSES_BY_PLAN } from '../game/js/body-plan-animation.js';
 import { formProblems, lineSpeciesIds } from '../game/js/logic/forms.js';
+// CAM-4b: the zoom stops reach data-checks.js through hooks.js (the page's load order), so they are loaded first
+import '../game/js/logic/camera-zoom.js';
 import {
   dataBattleRules,
   dataBiomes,
+  dataCameraStops,
   dataBuildings,
   dataCatchArt,
   dataCurrencies,
@@ -37,11 +41,15 @@ import {
   dataFieldMoves,
   dataSetPieces,
   dataModifiers,
+  dataFactions,
   dataHeldItems,
+  dataGenes,
   dataQuests,
+  dataResidents,
   dataPerks,
   dataEvents,
   dataBanter,
+  dataRelations,
   dataRewards,
   dataRoadFindings,
   dataRobotProblems,
@@ -295,17 +303,22 @@ for (const family of [
   dataRunLoop,
   dataRobots,
   dataUiTheme,
+  dataCameraStops,
   dataBiomes,
   dataRegions,
   dataFieldMoves,
   dataSetPieces,
   dataModifiers,
+  dataFactions,
   dataHeldItems,
+  dataGenes,
   dataQuests,
+  dataResidents,
   dataNodeTypes,
   dataPerks,
   dataEvents,
   dataBanter,
+  dataRelations,
   dataRewards,
   dataCurrencies,
   dataBuildings,
@@ -404,6 +417,39 @@ if (D.partKits && check('partKits.schema.json', D.partKits, 'partKits.json')) {
     }
     turnOk(`part ${id}`, P.turn);
     if (P.mirrorOf && !K.parts[P.mirrorOf]) problem('partKits.json', `part ${id} mirrors ${P.mirrorOf}, no such part`);
+  }
+}
+// roster track RO-3a: the body plans and the placeholder Billies: the schema, then every bone's parent and mirror
+// there, the plans the animation knows, a form's plan, and no name or rig twice
+if (D.bodyPlans && check('bodyPlans.schema.json', D.bodyPlans, 'bodyPlans.json')) {
+  const B = D.bodyPlans,
+    at = 'bodyPlans.json',
+    known = Object.keys(POSES_BY_PLAN),
+    bonesOk = (where, bones) => {
+      const names = new Set(['root']);
+      for (const b of bones) {
+        if (names.has(b.n)) problem(at, `${where}: bone ${b.n} twice`);
+        const src = b.mirror ? bones.find(x => x.n === b.mirror) : b;
+        if (b.mirror && !src) problem(at, `${where}: ${b.n} mirrors ${b.mirror}, which isn't there`);
+        else if (!b.mirror && (!b.par || !b.c)) problem(at, `${where}: ${b.n} needs par and c`);
+        else if (!b.mirror && !names.has(b.par)) problem(at, `${where}: ${b.n} hangs on ${b.par}, not a bone before it`);
+        names.add(b.n);
+      }
+    };
+  for (const [id, plan] of Object.entries(B.plans)) {
+    if (!known.includes(id)) problem(at, `plans.${id}: body-plan-animation.js has no such plan (${known.join(', ')})`);
+    bonesOk(`plans.${id}`, plan.bones);
+  }
+  for (const id of known) if (!B.plans[id]) problem(at, `plans: no ${id} (body-plan-animation.js animates it)`);
+  const seen = { name: new Set(), rig: new Set() };
+  for (const f of B.forms) {
+    if (!B.plans[f.plan]) problem(at, `form ${f.name}: no plan ${f.plan}`);
+    else bonesOk(`form ${f.name}`, [...B.plans[f.plan].bones, ...(f.add || [])].filter(b => !(f.drop || []).includes(b.n)));
+    for (const k of ['name', 'rig']) {
+      if (seen[k].has(f[k])) problem(at, `${k} ${f[k]} twice`);
+      seen[k].add(f[k]);
+    }
+    if (f.line && D.lines && !D.lines.some(L => L.id === f.line)) problem(at, `form ${f.name}: no line ${f.line}`);
   }
 }
 // Studio plan Phase 5 (T5.1): the kit Billies' recipes: the schema, then the parts, colours, anchors, rigs and lines

@@ -7,10 +7,13 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { ENVIRONMENT_ENGINE_MODIFIERS, gameData, provide, saveData } from '../hooks.js';
+import { ZOOM_STOPS } from '../logic/camera-zoom.js';
 import { TIME_OF_DAY_DEFAULTS, TIME_OF_DAY_GROUPS, TIME_OF_DAY_KEYS } from '../logic/time-of-day.js';
 import { hexToRgb } from '../art.js';
 /* eslint-disable no-func-assign */
 expose({
+  CAMERA_FOLDERS: [() => CAMERA_FOLDERS],
+  CAMERA_LOOKS: [() => CAMERA_LOOKS],
   ENGINE_DEFAULTS: [() => ENGINE_DEFAULTS],
   ENGINE_PRESETS: [() => ENGINE_PRESETS],
   ENGINE_SPEC: [() => ENGINE_SPEC],
@@ -26,6 +29,7 @@ expose({
   frameSettingsState: [() => frameSettingsState],
   gameDataDials: [() => gameDataDials, v => (gameDataDials = v)],
   lookDials: [() => lookDials, v => (lookDials = v)],
+  lookStop: [() => lookStop],
   playerBlur: [() => playerBlur, v => (playerBlur = v)],
   playerDials: [() => playerDials, v => (playerDials = v)],
   setEngineDataSource: [() => setEngineDataSource, v => (setEngineDataSource = v)],
@@ -198,16 +202,21 @@ export const ENGINE_DEFAULTS = {
     sway: 1,
     tilt: 1,
     turn: 35,
-    zoomMin: 0.55,
-    zoomMax: 1.7,
-    /* CAM-2: the zoom curve's ends (logic/camera-zoom.js); these match zoom before CAM-2 */
-    zoomNearPitch: -6.3,
-    zoomNearDist: 0.55,
-    zoomNearFov: 1,
-    zoomFarPitch: 9.8,
-    zoomFarDist: 1.7,
-    zoomFarFov: 1,
-    zoomCurve: 1,
+    /* CAM-4a: the zoom's feel (logic/camera-zoom.js); these keep the feel before CAM-4a (the ease's 0.2 s is its old
+       rate of 5 a second, now in log zoom) */
+    zoomSmooth: 0.2,
+    pinchSpeed: 1,
+    wheelSpeed: 1,
+    zoomBand: 0,
+    zoomToPoint: false,
+    zoomPointMax: 3,
+    /* CAM-4b: the zoom stops (logic/camera-zoom.js), set for the whole game only; the defaults give the zoom before
+       CAM-4b. Pull to stops 0 keeps a pinch where you let go, as before. A two-finger tap (both fingers down and up
+       within the time, moving less than the pixels) goes to the next stop */
+    stops: ZOOM_STOPS.map(s => ({ ...s })),
+    stopPull: 0,
+    stopTapTime: 0.3,
+    stopTapMove: 12,
     /* CAM-2: the encounter shot and the pull back out after a battle */
     encZoom: 0.5,
     encMin: 400,
@@ -267,8 +276,10 @@ export const ENGINE_DEFAULTS = {
        false) */
     keepScenes: 3,
     paintWorker: true,
-    /* phase 20 C3: the frame's light values in one uniform block (off: each lit program is sent them, as before) */
-    frameBlock: false,
+    /* phase 20 C5: lights picked with stable keys and fades (off: the nearest each frame, as before), and how many may
+       be lit at once (the shaders hold 16) */
+    stableLights: false,
+    lights: 16,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -890,7 +901,14 @@ export const ENGINE_SPEC = [
         0.05,
         'How far back the camera stands. Farther looks flatter and less distorted; the view stays the same width. Indoor scenes keep the camera close, inside their walls.',
       ],
-      ['fov', 'Zoom', 0.5, 2, 0.02],
+      [
+        'fov',
+        'View width',
+        0.5,
+        2,
+        0.02,
+        'Above 1 the scene shows less across, so it looks closer (the width shown divided by this). Not your pinch zoom: that is under Zoom.',
+      ],
       [
         'lead',
         'Look-ahead (m)',
@@ -960,36 +978,62 @@ export const ENGINE_SPEC = [
       ['sway', 'Walk bob', 0, 2, 0.05],
       ['tilt', 'Phone tilt', 0, 3, 0.05],
       ['turn', 'Turn limit (degrees)', 0, 80, 1],
-      ['zoomMin', 'Closest zoom', 0.3, 1, 0.05],
-      ['zoomMax', 'Farthest zoom', 1, 3, 0.05],
       [
-        'zoomNearPitch',
-        'Zoom curve: tilt up close (degrees)',
-        -20,
-        10,
-        0.1,
-        'CAM-2: one zoom drives tilt, distance and field of view. At the closest zoom (pinching in, or a moment like talking) the tilt changes by this much.',
-      ],
-      ['zoomNearDist', 'Zoom curve: distance up close', 0.2, 1, 0.01, 'The distance’s factor at the closest zoom.'],
-      [
-        'zoomNearFov',
-        'Zoom curve: field of view up close',
-        0.5,
-        1.5,
+        'zoomSmooth',
+        'Zoom smoothing (s)',
+        0,
+        1,
         0.01,
-        'The field of view’s factor at the closest zoom (above 1: wider).',
+        'CAM-4a: how long a pinch or the wheel takes to arrive, eased in log zoom so zooming in and out feel alike. 0: at once.',
       ],
-      ['zoomFarPitch', 'Zoom curve: tilt far out (degrees)', -10, 25, 0.1, 'The tilt change at the farthest zoom.'],
-      ['zoomFarDist', 'Zoom curve: distance far out', 1, 3, 0.01],
-      ['zoomFarFov', 'Zoom curve: field of view far out', 0.5, 1.5, 0.01],
       [
-        'zoomCurve',
-        'Zoom curve: shape',
+        'pinchSpeed',
+        'Pinch sensitivity',
         0.3,
+        2,
+        0.05,
+        '1: the picture follows your fingers. Above 1 a pinch zooms further.',
+      ],
+      [
+        'wheelSpeed',
+        'Wheel sensitivity',
+        0.2,
         3,
         0.05,
-        '1: straight. Above 1 the tilt, distance and field of view change little near the scene’s framing and more toward the ends; below 1 the other way.',
+        'How far a turn of the mouse wheel (Ctrl+wheel in the game) zooms.',
       ],
+      [
+        'zoomBand',
+        'Rubber band past the limits',
+        0,
+        0.4,
+        0.01,
+        'A pinch may stretch a little past the closest and farthest zoom and springs back when you let go. 0: a hard stop.',
+      ],
+      [
+        'zoomToPoint',
+        'Zoom toward the pinch',
+        'bool',
+        'While you pinch, the camera leans toward the point between your fingers so it stays put; it eases back when you let go.',
+      ],
+      ['zoomPointMax', 'Zoom toward the pinch: most lean (m)', 0, 8, 0.1],
+      [
+        'stopPull',
+        'Pull to stops',
+        0,
+        0.5,
+        0.01,
+        'CAM-4b: letting go of a pinch this share of the way from a zoom stop (toward its neighbour) eases the zoom to that stop. 0: it stays where you let go; 0.5: always the nearest stop.',
+      ],
+      [
+        'stopTapTime',
+        'Two-finger tap: longest (s)',
+        0.1,
+        0.8,
+        0.01,
+        'Two fingers down and up within this time, hardly moving, go to the next zoom stop (Z on a keyboard).',
+      ],
+      ['stopTapMove', 'Two-finger tap: most movement (px)', 2, 40, 1, 'More spread or slide than this is a pinch.'],
       [
         'encZoom',
         'Encounter shot: zoom',
@@ -1200,10 +1244,18 @@ export const ENGINE_SPEC = [
         'Shadows of things that never move are drawn once and kept; only moving things are drawn each frame.',
       ],
       [
-        'frameBlock',
-        'One light block per frame',
+        'stableLights',
+        'Steady lamps',
         'bool',
-        'Everything lit reads the frame’s light (sun, sky, fog, shadow maps, lamps) from one block sent once a frame, instead of being sent it again for each kind of thing drawn. A test switch (phase 20): it should look the same.',
+        'The lamps, windows and fires that light the scene are chosen five times a second instead of every frame, a lit one stays lit until another is clearly nearer, ones out of view are skipped, and each fades in and out instead of popping. A test switch (phase 20).',
+      ],
+      [
+        'lights',
+        'Lamps lit at once',
+        1,
+        16,
+        1,
+        'How many lamps, windows and fires near you light the scene at once (the nearest ones). Fewer is faster on phones; farther lamps still glow but no longer light the ground.',
       ],
       [
         'gpuTimer',
@@ -1222,6 +1274,53 @@ export const ENGINE_SPEC = [
   ...TIME_OF_DAY_KEYS.map(k => [TIME_OF_DAY_GROUPS[k], 'Time of day: ' + TOD_NAMES[k], todFields(k)]),
 ];
 provide({ ENGINE_SPEC }); /* to-module */
+/* CAM-4a: the Studio's Camera section shows the Camera group's dials in these folders, each dial in exactly one
+   (tools/test/camera-readout.test.mjs); the data stays engine.camera */
+export const CAMERA_FOLDERS = [
+  ['framing', 'Framing', ['pitch', 'pitchAdd', 'height', 'distance', 'fov', 'turn', 'tilt', 'sway', 'pixelGrid']],
+  ['zoom', 'Zoom stops', ['stopPull', 'stopTapTime', 'stopTapMove']],
+  ['feel', 'Zoom feel', ['zoomSmooth', 'pinchSpeed', 'wheelSpeed', 'zoomBand', 'zoomToPoint', 'zoomPointMax']],
+  [
+    'follow',
+    'Follow',
+    ['lead', 'leadSmooth', 'leadSide', 'smooth', 'deadW', 'deadH', 'softW', 'softH', 'band', 'blend'],
+  ],
+  [
+    'moments',
+    'Moments',
+    [
+      'encZoom',
+      'encMin',
+      'encMax',
+      'leaveZoom',
+      'intOn',
+      'intPull',
+      'talkOn',
+      'talkZoom',
+      'talkBlend',
+      'bossOn',
+      'bossNear',
+      'bossTime',
+      'bossZoom',
+      'bossLean',
+      'idleOn',
+      'idleDelay',
+      'idleZoom',
+      'idleBlend',
+      'runOn',
+      'runZoom',
+      'runBlend',
+      'turnHold',
+      'turnAngle',
+    ],
+  ],
+  [
+    'visibility',
+    'Visibility',
+    ['rise', 'rockFade', 'silhouette', 'outline', 'outlineFill', 'hideFade', 'hideSize', 'hideAmount', 'coverFade'],
+  ],
+  ['island', 'Island orbit', ['orbit', 'sunTurns']],
+];
 /* ready-made looks; a preset only lists what it changes */
 /* phase 09 batch 1: the plain look, for judging props (a scene with plain: 1, the props test map and the Studio's
    prop turntable): no depth of field, bloom, colour grade, film grain, vignette, haze, mist, clouds, sun shafts or
@@ -1241,6 +1340,61 @@ export const PLAIN_LOOK = {
     godRays: 0,
     lightsInAir: 0,
     hazeDistance: 900,
+  },
+};
+/* CAM-4b: camera looks (the Studio's Camera section): presets of camera dials only, each setting the same dials so one
+   swaps cleanly for another. Their stops stay on the straight line the default stops lie on (14 degrees of tilt a
+   unit of zoom, the distance times the zoom), so the pull and the cycle feel the same; they differ in the tilt, the
+   stops' zooms and their blur. The ids are always close, normal and far, so a scene's starting stop still names one */
+const lookStop = (id, name, zoom, blur, lead = 1) => ({
+  id,
+  name,
+  zoom,
+  pitch: Math.round((zoom - 1) * 140) / 10,
+  dist: zoom,
+  fov: 1,
+  blur,
+  lead,
+});
+export const CAMERA_LOOKS = {
+  diorama: {
+    name: 'Diorama',
+    camera: {
+      pitchAdd: 0,
+      fov: 0.68,
+      stopPull: 0.25,
+      stops: [
+        lookStop('close', 'Close', 0.6, 1.4, 0.8),
+        lookStop('normal', 'Normal', 1, 1.25),
+        lookStop('far', 'Far', 1.6, 1.1, 1.1),
+      ],
+    },
+  },
+  classic: {
+    name: 'Classic RPG',
+    camera: {
+      pitchAdd: 8,
+      fov: 0.68,
+      stopPull: 0.25,
+      stops: [
+        lookStop('close', 'Close', 0.6, 0.4, 0.8),
+        lookStop('normal', 'Normal', 1, 0.4),
+        lookStop('far', 'Far', 1.6, 0.4, 1.1),
+      ],
+    },
+  },
+  closeup: {
+    name: 'Close-up',
+    camera: {
+      pitchAdd: -12,
+      fov: 0.68,
+      stopPull: 0.25,
+      stops: [
+        lookStop('close', 'Close', 0.45, 1.2, 0.6),
+        lookStop('normal', 'Normal', 0.75, 1),
+        lookStop('far', 'Wide', 1.4, 0.8, 1.1),
+      ],
+    },
   },
 };
 export const ENGINE_PRESETS = {

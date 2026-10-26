@@ -98,6 +98,21 @@ table (lowest step → highest).
 116 measured steps (90 setting steps, two or three untouched looks per station, everything lowest and highest) at
 about 4.5 s each, plus settling and rebuilds: about 11 to 12 minutes.
 
+## The renderer baseline (diagnostics test, phase 20 R1)
+The graphics test measures what each setting costs on the bench; the baseline measures what the game loads. It is a
+step of the diagnostics test (Settings → Help → Diagnostics), "Renderer baseline", about 2-3 minutes on a phone:
+- Five stops: Copperleaf by day (12:30) and by night (23:00), a jungle run place (seed `BASELINE1`, its first place
+  forced to a jungle route: no run reaches the jungle yet), a run town (seed `BASELINE2`, its first place forced to a
+  meadow town), a wild battle at the hub held at its move menu. The runs are made on a copy of the save.
+- Each stop twice: `r1` at resolution 1 (as the bench's stations) and `own` at the game's own resolution; automatic
+  quality off both times, the player's own dials set aside (the game's own values), clear summer weather, the player
+  on the place's arrival spot, the camera straight. Each settles (up to 10 s) and is measured for 4 s.
+- Each entry in the report's `baseline`: fps, worst fps, frame ms, CPU ms, GPU ms (where the chip has timers), draws,
+  instances, program switches, texture binds, uniform calls, `passDraws` (draws per pass), `tagged` (per pass, the
+  draws of low-poly models `model` and of models' picture layers `modelPic`: leaf clumps, vines, a clock's hands) and
+  `kinds` (per pass, [distinct textures, distinct vertex arrays]: the fewest draws grouping could reach).
+- Numbers only. It saves nothing and sends nothing; the report is shared only when you export it.
+
 ## Findings so far (format 1 reports, 2026-10-19)
 
 Two reports: an iPad (Apple GPU, Safari engine, 60 Hz) and an Android phone (Adreno 750, Chrome, screen at 3.5×).

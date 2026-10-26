@@ -12,7 +12,8 @@ Story scripts (a `script` list, docs/SCRIPTS.md) may use > and < as syntax only:
 start of a line and the comparisons in a condition (if / elif / [if ...]). Everything the player sees in them
 is still checked. A `when` field (a condition, docs/SCRIPTS.md: unlocks.json's milestones, RL-11) is never shown to
 the player: its comparisons, with a space each side (`runs >= 5`), are syntax too. RL-12b: an event option's `need`
-is a condition the same way, and its `then` and `intro` lists are scripts.
+is a condition the same way, and its `then` and `intro` lists are scripts. RL-S2: a hub person's favour `check`
+(relations.json) is a condition too.
 
 Exit code 1 if anything is found, with the path of each value.
 
@@ -29,7 +30,7 @@ DATA = 'game/data'
 ANY = re.compile(r'[<>`]')
 NAME_KEYS = {'id', 'name', 'n', 'names', 'title', 'locationId'}
 OPS = re.compile(r'>=|<=|!=|==|[<>]')
-COND_KEYS = {'when', 'need'}
+COND_KEYS = {'when', 'need', 'check'}
 SCRIPT_KEYS = {'script', 'then', 'intro'}
 WHEN_OPS = re.compile(r'\s(?:>=|<=|!=|==|[<>])\s')
 

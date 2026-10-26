@@ -2,7 +2,7 @@
 // spike and drawback), what each mode makes, the egg's timer and hatching, and the save's checks.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { GAME_DATA, fn, modules, reseed, startedSave } from './setup-real.mjs';
+import { GAME_DATA, data, fn, modules, reseed, startedSave } from './setup-real.mjs';
 
 const B = GAME_DATA.rules.ranch.breed;
 
@@ -196,4 +196,29 @@ test('breeding: a save with an egg in the nursery passes the checks and loads wi
   const none = copy();
   delete none.ranch.nursery[0].egg;
   assert.equal(fn('validRanch')(none.ranch), false, 'a pair without its egg');
+});
+
+test('breeding: SP-4 an egg keeps a parent’s spliced slot at genes.json bank.inherit; the rest of the egg is unchanged', () => {
+  const Bk = data.GENES.bank,
+    was = Bk.inherit,
+    tail = 'shark_tailfin@zuck2';
+  try {
+    const { s, a, mate } = breedSave(),
+      want = K.breedRoll(s, a, mate, 'safe', B).m;
+    fn('spliceSet')(a, { sig: tail });
+    assert.ok(a.graft, 'the parent wears the Gene');
+    Bk.inherit = 1;
+    const { m } = K.breedRoll(s, a, mate, 'safe', B);
+    assert.deepEqual(m.graft, { sig: tail }, 'kept');
+    const { graft, unstable, hp, ...rest } = m,
+      { hp: wantHp, ...was } = want;
+    assert.deepEqual(rest, was, 'every other part of the egg as from unspliced parents (HP follows the Gene’s weight)');
+    assert.ok(hp > 0 && wantHp > 0);
+    assert.equal(unstable, undefined);
+    Bk.inherit = 0;
+    assert.equal('graft' in K.breedRoll(s, a, mate, 'safe', B).m, false, 'inherit 0: never');
+    assert.ok(graft);
+  } finally {
+    Bk.inherit = was;
+  }
 });

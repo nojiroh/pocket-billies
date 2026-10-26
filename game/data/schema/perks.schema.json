@@ -38,6 +38,21 @@
        "properties": {"kind": {"const": "catch"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}}
       },
       {
+       "description": "dna (SP-6): the DNA a spliced wild Billie knocked out pays (a Gene Sample), times mult",
+       "type": "object", "additionalProperties": false, "required": ["kind", "mult"],
+       "properties": {"kind": {"const": "dna"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}}
+      },
+      {
+       "description": "splice (SP-6): how often a run place's wild Billies are spliced (genes.json wild's Graft and Chimera odds), times mult, on the places stocked after it is held",
+       "type": "object", "additionalProperties": false, "required": ["kind", "mult"],
+       "properties": {"kind": {"const": "splice"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}}
+      },
+      {
+       "description": "unstable (SP-6): the HP an Unstable splice's drawback takes from your Billies at each turn's end, times mult",
+       "type": "object", "additionalProperties": false, "required": ["kind", "mult"],
+       "properties": {"kind": {"const": "unstable"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}}
+      },
+      {
        "description": "stat: your Billies on the field when a battle starts get stages of a stat (stats.json; not HP)",
        "type": "object", "additionalProperties": false, "required": ["kind", "stat", "stages"],
        "properties": {"kind": {"const": "stat"}, "stat": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "a stat of stats.json other than hp (check-data and the Studio check it against the data)"}, "stages": {"type": "integer", "minimum": -6, "maximum": 6}}

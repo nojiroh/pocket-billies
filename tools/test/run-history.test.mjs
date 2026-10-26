@@ -134,7 +134,18 @@ test('history: the facts the story reads', () => {
   assert.deepEqual(H.historyFacts([]), {
     last: {},
     lastby: {},
-    history: { runs: 0, wins: 0, losses: 0, quits: 0, streak: 0, lstreak: 0, bureau: 0 },
+    history: {
+      runs: 0,
+      wins: 0,
+      losses: 0,
+      quits: 0,
+      streak: 0,
+      lstreak: 0,
+      bureau: 0,
+      rivalmet: 0,
+      rivalwon: 0,
+      rivallost: 0,
+    },
   });
   const f = H.historyFacts([won, lost, lost]);
   assert.deepEqual(f.last, {
@@ -147,13 +158,65 @@ test('history: the facts the story reads', () => {
     team: 2,
     leaders: 0,
     expedition: 2,
+    rival: 0,
+    rivalwon: 0,
   });
   assert.deepEqual(f.lastby, { route: 1, bureau_clerk: 1, bureau: 1 });
-  assert.deepEqual(f.history, { runs: 3, wins: 1, losses: 2, quits: 0, streak: 0, lstreak: 2, bureau: 2 });
+  assert.deepEqual(f.history, {
+    runs: 3,
+    wins: 1,
+    losses: 2,
+    quits: 0,
+    streak: 0,
+    lstreak: 2,
+    bureau: 2,
+    rivalmet: 0,
+    rivalwon: 0,
+    rivallost: 0,
+  });
   assert.equal(H.historyFacts([lost, won, won]).history.streak, 2);
   assert.deepEqual(Object.keys(f.last).sort(), [...H.LAST_FACTS].sort(), 'every LAST_FACTS fact is given');
   assert.deepEqual(Object.keys(f.history).sort(), [...H.HISTORY_FACTS].sort());
   assert.equal(H.historyRematch([lost, won, lost], 'bureau_clerk'), 2);
   assert.equal(H.historyRematch([lost], 'marina'), 0);
   assert.equal(H.historyRematch([lost]), 0);
+});
+
+test("RL-S2: Blake's meetings and wins are counted in the run, kept in the history and read as facts", () => {
+  const s = onRun();
+  assert.deepEqual(s.run.rival, { lead: 'sparky0', past: 0, met: 0, won: 0 }, 'the lead and no meeting yet');
+  const settle = modules['battle-rewards'].battleSettle,
+    blake = { id: 'run_1_foe', from: 'blake', runFoe: 'rival', team: [] };
+  /* RL-S2 part B: the first win over him on a run finds rules.json run.beans.rival Beans, the next none */
+  const RR = hooks.RULES.run || (hooks.RULES.run = {}),
+    hadBeans = RR.beans;
+  RR.beans = { badge: 0, side: 0, rival: 2 };
+  try {
+    settle(battle(s, 'win', blake), s);
+    assert.deepEqual([s.run.rival.met, s.run.rival.won, s.run.beans, s.meta.beans], [1, 1, 2, 2]);
+    settle(battle(s, 'win', { ...blake, id: 'run_3_foe' }), s);
+    assert.deepEqual([s.run.rival.met, s.run.rival.won, s.run.beans], [2, 2, 2], 'only the first win');
+  } finally {
+    RR.beans = hadBeans;
+  }
+  s.run.rival.met = s.run.rival.won = 1;
+  for (const m of s.team) m.hp = 0;
+  settle(battle(s, 'lose', { ...blake, id: 'run_2_foe' }), s);
+  assert.deepEqual([s.run.rival.met, s.run.rival.won], [2, 1]);
+  assert.deepEqual(s.run.lostTo, { kind: 'rival', id: 'blake', sp: 'sprout0' });
+  assert.equal(validRun(s.run), true);
+  assert.equal(validRun({ ...s.run, rival: { ...s.run.rival, won: 3 } }), false, 'never more wins than meetings');
+  runEnd(s, { won: false, keep: [] }, RATES, () => 0);
+  const [e] = s.meta.history;
+  assert.deepEqual(e.rival, { met: 2, won: 1 });
+  assert.equal(H.validHistory(s.meta.history), true);
+  assert.equal(H.validHistory([{ ...e, rival: { met: 0, won: 0 } }]), false, 'a met entry met him');
+  const f = H.historyFacts([e, e]);
+  assert.deepEqual([f.last.rival, f.last.rivalwon, f.lastby.rival, f.lastby.blake], [2, 1, 1, 1]);
+  assert.deepEqual([f.history.rivalmet, f.history.rivalwon, f.history.rivallost], [4, 2, 2]);
+  // the next run starts knowing the meetings before it
+  const t = onRun();
+  t.run = null;
+  t.meta.history = [e, e];
+  assert.equal(runBegin(t, GIVE).rival.past, 4);
 });

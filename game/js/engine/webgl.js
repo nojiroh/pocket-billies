@@ -5,7 +5,7 @@
    One engine state object, gpuState, is shared by every view. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { artCacheVersion, onGlContextRestored, provide, walkRenderer } from '../hooks.js';
+import { artCacheVersion, onGlContextRestored, provide, walkRenderer, worldBowlContextRestored } from '../hooks.js';
 import { clamp } from '../util.js';
 import { FRAME_BLOCK_BYTES, FRAME_BLOCK_GLSL, FRAME_BLOCK_LAYOUT } from './frame-block.js';
 import { makeCanvas } from '../art.js';
@@ -30,13 +30,17 @@ expose({
   ensureNormalMapWorker: [() => ensureNormalMapWorker, v => (ensureNormalMapWorker = v)],
   ensurePrograms: [() => ensurePrograms, v => setEnsurePrograms(v)],
   finishProgramCompile: [() => finishProgramCompile, v => setFinishProgramCompile(v)],
+  forceContextLoss: [() => forceContextLoss, v => (forceContextLoss = v)],
+  forcedLoss: [() => forcedLoss, v => (forcedLoss = v)],
   frameBlockBinding: [() => frameBlockBinding, v => (frameBlockBinding = v)],
   frameBlockCheck: [() => frameBlockCheck, v => (frameBlockCheck = v)],
   freeMesh: [() => freeMesh, v => (freeMesh = v)],
+  glLoseArmed: [() => glLoseArmed, v => (glLoseArmed = v)],
   gpuLoading: [() => gpuLoading, v => (gpuLoading = v)],
   gpuState: [() => gpuState],
   imageTexture: [() => imageTexture, v => (imageTexture = v)],
   initWebgl: [() => initWebgl, v => (initWebgl = v)],
+  lossWatched: [() => lossWatched],
   makeNormalMap: [() => makeNormalMap, v => setMakeNormalMap(v)],
   matrix4: [() => matrix4],
   normalMapWorkerState: [() => normalMapWorkerState],
@@ -44,10 +48,8 @@ expose({
   pollGpuTimers: [() => pollGpuTimers, v => (pollGpuTimers = v)],
   pollPendingPrograms: [() => pollPendingPrograms, v => (pollPendingPrograms = v)],
   precompilePrograms: [() => precompilePrograms, v => (precompilePrograms = v)],
-  programSource: [() => programSource],
   renderTarget: [() => renderTarget, v => (renderTarget = v)],
   runNormalMapJobs: [() => runNormalMapJobs, v => setRunNormalMapJobs(v)],
-  setFrameBlockMode: [() => setFrameBlockMode, v => (setFrameBlockMode = v)],
   setTextureParams: [() => setTextureParams, v => (setTextureParams = v)],
   smooth01: [() => smooth01],
   startProgramCompile: [() => startProgramCompile, v => (startProgramCompile = v)],
@@ -55,6 +57,7 @@ expose({
   trackTexture: [() => trackTexture, v => (trackTexture = v)],
   trimTextures: [() => trimTextures, v => (trimTextures = v)],
   uploadMesh: [() => uploadMesh, v => (uploadMesh = v)],
+  watchContextLoss: [() => watchContextLoss, v => (watchContextLoss = v)],
   webgl2Supported: [() => webgl2Supported, v => (webgl2Supported = v)],
   windBendAt: [() => windBendAt, v => (windBendAt = v)],
   windGustAt: [() => windGustAt, v => (windGustAt = v)],
@@ -237,24 +240,10 @@ export function windBendAt(x, z, t, g) {
    occlusion, point lights (window lights only light what is in front of them), sky and ground ambient, haze and mist */
 export const LIGHT_GLSL = `
 uniform highp sampler2DShadow uShadow,uShadow2,uLampSh0,uLampSh1;uniform highp sampler2D uShadowD,uShadowD2;uniform vec2 uFol;
-/* the frame's light values, the same for every lit program in a frame (SHV: one of the nine sky terms as a vec3); with
-   quality.frameBlock on (phase 20 C3), one uniform block sent once per frame (engine/frame-block.js) */
-#ifdef PB_FRAME_BLOCK
+/* the frame's light values, the same for every lit program in a frame (SHV: one of the nine sky terms as a vec3): one
+   uniform block sent once per frame (phase 20 C3, engine/frame-block.js) */
 ${FRAME_BLOCK_GLSL}
 #define SHV(i) uSH[i].rgb
-#else
-uniform vec3 uEye,uSunDir,uSunCol,uAmbTop,uAmbBot,uFogCol,uTint,uShTint;
-uniform vec4 uRoomB;uniform float uRoomDim;
-uniform vec2 uValley;uniform float uFogStart,uFogD,uTintAmt,uMist,uMistY,uTime,uShStr,uShPen,uCloudSh,uCloudSpd,uCloudCov,uContact,uAmbK,uShLite,uShPx,uShSteps;uniform vec3 uShLift;
-uniform mat4 uShadowM;uniform float uShadowOn;uniform vec2 uShadowTexel;
-uniform mat4 uShadowM2;uniform float uShadow2On,uShPen2;uniform vec2 uShadowTexel2;
-uniform vec4 uLP[16];uniform vec4 uLC[16];uniform int uNL;
-uniform mat4 uLampM0,uLampM1;uniform int uNLS;
-uniform vec4 uAO[64];uniform int uNAO;
-uniform vec4 uSeason;
-uniform vec3 uSH[9];uniform float uSHK,uFogSun;
-#define SHV(i) uSH[i]
-#endif
 const vec2 PD[12]=vec2[12](vec2(-.326,-.406),vec2(-.840,-.074),vec2(-.696,.457),vec2(-.203,.621),vec2(.962,-.195),vec2(.473,-.480),vec2(.519,.767),vec2(.185,-.893),vec2(.507,.064),vec2(.896,.412),vec2(-.322,-.933),vec2(-.792,-.598));
 float lhash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float lnoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(lhash(i),lhash(i+vec2(1,0)),f.x),mix(lhash(i+vec2(0,1)),lhash(i+vec2(1,1)),f.x),f.y);}
@@ -344,31 +333,11 @@ vec3 lookOn(vec3 c,vec2 px,float hgt,vec3 bp){
 /* v32: compiling is split in two: start (the GPU driver can work on it in the background) and finish (read the result).
    Shader sets that are needed later (buildings, solid props, the map) are started when a scene opens and finished a
    few at a time, so the first frame with a building in it no longer stalls while they compile. */
-/* phase 20 C3: with quality.frameBlock on, a program with the light code reads the frame's light from the Frame block */
-const programSource = src =>
-  gpuState.frameBlock && src.includes('PB_FRAME_BLOCK')
-    ? src.replace('#version 300 es', '#version 300 es\n#define PB_FRAME_BLOCK')
-    : src;
 /* the Frame block on binding point 0 (light.js bindFrameBlock fills it); false when the program has none */
 function frameBlockBinding(gl, p) {
   const i = gl.getUniformBlockIndex(p, 'Frame');
   if (i === gl.INVALID_INDEX || i == null) return false;
   gl.uniformBlockBinding(p, i, 0);
-  return true;
-}
-/* the mode the programs are compiled in; on a change, every program with the light code is deleted, to be compiled
-   again in the new mode (true when it changed) */
-export function setFrameBlockMode(on) {
-  on = !!on;
-  if (!!gpuState.frameBlock === on) return false;
-  gpuState.frameBlock = on;
-  const gl = gpuState.gl;
-  for (const [k, P] of Object.entries(gpuState.P || {}))
-    if (P.lit) {
-      if (gl) gl.deleteProgram(P.p);
-      delete gpuState.P[k];
-    }
-  for (const [k, j] of gpuState.pend || []) if (j.lit) gpuState.pend.delete(k);
   return true;
 }
 function startProgramCompile([vs, fs], name) {
@@ -381,8 +350,8 @@ function startProgramCompile([vs, fs], name) {
       return s;
     };
   const p = gl.createProgram(),
-    a = mk(gl.VERTEX_SHADER, programSource(vs)),
-    b = mk(gl.FRAGMENT_SHADER, programSource(fs));
+    a = mk(gl.VERTEX_SHADER, vs),
+    b = mk(gl.FRAGMENT_SHADER, fs);
   gl.attachShader(p, a);
   gl.attachShader(p, b);
   [
@@ -401,7 +370,7 @@ function startProgramCompile([vs, fs], name) {
       gl.bindAttribLocation(p, l, n);
   });
   gl.linkProgram(p);
-  return { p, a, b, name, gl, lit: fs.includes('PB_FRAME_BLOCK') };
+  return { p, a, b, name, gl };
 }
 export function finishProgramCompile(j) {
   const gl = gpuState.gl,
@@ -419,7 +388,7 @@ export function finishProgramCompile(j) {
       nm = u.name.replace(/\[0\]$/, '');
     U[nm] = gl.getUniformLocation(p, u.name);
   }
-  return { p, U, name: j.name, lit: j.lit, frame: frameBlockBinding(gl, p) };
+  return { p, U, name: j.name, frame: frameBlockBinding(gl, p) };
 }
 export function precompilePrograms(defs) {
   if (!gpuState.gl || !defs) return;
@@ -460,8 +429,8 @@ function compileProgram([vs, fs], name) {
       return s;
     };
   const p = gl.createProgram();
-  gl.attachShader(p, mk(gl.VERTEX_SHADER, programSource(vs)));
-  gl.attachShader(p, mk(gl.FRAGMENT_SHADER, programSource(fs)));
+  gl.attachShader(p, mk(gl.VERTEX_SHADER, vs));
+  gl.attachShader(p, mk(gl.FRAGMENT_SHADER, fs));
   /* standard locations for the engine's own inputs; an input that declares layout(location=…) keeps its own (some
     GPUs, Adreno for one, refuse to link when a bound location clashes with another input's) */
   [
@@ -488,21 +457,19 @@ function compileProgram([vs, fs], name) {
       nm = u.name.replace(/\[0\]$/, '');
     U[nm] = gl.getUniformLocation(p, u.name);
   }
-  return { p, U, name, lit: fs.includes('PB_FRAME_BLOCK'), frame: frameBlockBinding(gl, p) };
+  return { p, U, name, frame: frameBlockBinding(gl, p) };
 }
 /* phase 20 C3, for the in-game test: every program with the light code compiles and links with the Frame block, and
    on this device the block's size and each member's offset are the ones engine/frame-block.js packs to. The test
    programs are deleted again and don't count as compiled after load. */
 export function frameBlockCheck(defs) {
   const gl = gpuState.gl,
-    was = gpuState.frameBlock,
     pcl = gpuState.pcl[0],
     bad = [];
   let n = 0;
-  gpuState.frameBlock = true;
   try {
     for (const [k, v] of Object.entries(defs)) {
-      if (!Array.isArray(v) || !v[1].includes('PB_FRAME_BLOCK')) continue;
+      if (!Array.isArray(v) || !v[1].includes(FRAME_BLOCK_GLSL)) continue;
       let P;
       try {
         P = compileProgram(v, k);
@@ -527,7 +494,6 @@ export function frameBlockCheck(defs) {
       gl.deleteProgram(P.p);
     }
   } finally {
-    gpuState.frameBlock = was;
     gpuState.pcl[0] = pcl;
   }
   return { n, bad };
@@ -585,7 +551,6 @@ export function initWebgl(cv) {
     gpuState.gl = gl;
     gpuState.cv = cv;
     gpuState.P = {};
-    gpuState.frameBlock = false;
     gpuState.texL = new Map();
     gpuState.texB = 0;
     gpuState.gpuX = undefined;
@@ -630,17 +595,7 @@ export function initWebgl(cv) {
     gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    cv.addEventListener('webglcontextlost', e => {
-      e.preventDefault();
-      gpuState.lost = 1;
-      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context lost');
-    });
-    cv.addEventListener('webglcontextrestored', () => {
-      gpuState.lost = 0;
-      gpuState.cv = null;
-      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context restored');
-      if (typeof onGlContextRestored === 'function') onGlContextRestored(cv);
-    });
+    watchContextLoss(cv);
     if (typeof debugLog !== 'undefined') debugLog.add('webgl', `ready${gpuState.hdr ? ' (HDR)' : ''}`);
     return true;
   } catch (e) {
@@ -649,6 +604,56 @@ export function initWebgl(cv) {
     gpuState.fail = 1;
     return false;
   }
+}
+/* phase 20 H: the lost and restored listeners, once per canvas (initWebgl runs again on the same canvas after every
+   restore, and each pair it added used to stay: the second loss remounted the walk view twice) */
+const lossWatched = new WeakSet();
+/* H4: a loss forced on purpose (forceContextLoss), which comes back by itself; and whether ?glLose was armed */
+let forcedLoss = null,
+  glLoseArmed = false;
+function watchContextLoss(cv) {
+  if (lossWatched.has(cv)) return false;
+  lossWatched.add(cv);
+  cv.addEventListener('webglcontextlost', e => {
+    e.preventDefault();
+    gpuState.lost = 1;
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context lost');
+    const F = forcedLoss;
+    if (F && F.cv === cv) setTimeout(() => F.ext.restoreContext(), F.ms);
+  });
+  cv.addEventListener('webglcontextrestored', () => {
+    gpuState.lost = 0;
+    gpuState.cv = null;
+    forcedLoss = null;
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context restored');
+    if (typeof onGlContextRestored === 'function') onGlContextRestored(cv);
+    if (typeof worldBowlContextRestored === 'function') worldBowlContextRestored();
+  });
+  /* H4 where there is no debug menu (the Studio): ?glLose=8 forces a loss 8 s after the first context is made */
+  const q =
+    typeof location !== 'undefined' && location.search ? new URLSearchParams(location.search).get('glLose') : null;
+  if (q != null && !glLoseArmed) {
+    glLoseArmed = true;
+    setTimeout(() => forceContextLoss(), Math.max(1, +q || 8) * 1000);
+  }
+  return true;
+}
+/* H4: loses the GPU context on purpose (WEBGL_lose_context) and gets it back ms later, so every screen's recovery can be
+   tried on a phone (the debug menu's button, ?glLose) */
+export function forceContextLoss(ms = 1500) {
+  const gl = gpuState.gl,
+    ext = gl && gpuState.cv && !gpuState.lost && !forcedLoss ? gl.getExtension('WEBGL_lose_context') : null;
+  if (!ext) {
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context loss not forced (no context, or lost already)');
+    return false;
+  }
+  forcedLoss = { cv: gpuState.cv, ext, ms };
+  /* lost at once: the lost event comes a frame or more later, and a frame drawn meanwhile on the dead context turned
+     the buildings, models and solid props off for good (their guards) */
+  gpuState.lost = 1;
+  if (typeof debugLog !== 'undefined') debugLog.add('webgl', `context loss forced (back in ${ms} ms)`);
+  ext.loseContext();
+  return true;
 }
 /* ---------- textures ---------- */
 function textureFromData(w, h, data, o = {}) {

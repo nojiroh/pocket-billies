@@ -7,7 +7,9 @@
   "held",
   "kinds",
   "texts",
-  "say"
+  "say",
+  "favours",
+  "invite"
  ],
  "additionalProperties": false,
  "$defs": {
@@ -162,6 +164,83 @@
      "$ref": "#/$defs/line"
     },
     "fail": {
+     "$ref": "#/$defs/line"
+    }
+   }
+  },
+  "favours": {
+   "description": "residents track RS-2: each resident's favour (residents.json), offered by them in a run town; done and handed in at another town's notice board, it invites them to Copperleaf in place of the reward pick. The free first resident has no kind: talking to them is the invite",
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "ask"
+    ],
+    "properties": {
+     "kind": {
+      "enum": [
+       "catch",
+       "trainers",
+       "parcel",
+       "miniboss"
+      ]
+     },
+     "ask": {
+      "$ref": "#/$defs/line"
+     }
+    }
+   }
+  },
+  "invite": {
+   "description": "residents track RS-2: a resident's lines when met in a run ({name}: theirs; {title}: the quest list's line)",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "come",
+    "take",
+    "yes",
+    "taking",
+    "no",
+    "held",
+    "thanks",
+    "none",
+    "done",
+    "moving",
+    "title"
+   ],
+   "properties": {
+    "come": {
+     "$ref": "#/$defs/line"
+    },
+    "take": {
+     "$ref": "#/$defs/line"
+    },
+    "yes": {
+     "$ref": "#/$defs/line"
+    },
+    "taking": {
+     "$ref": "#/$defs/line"
+    },
+    "no": {
+     "$ref": "#/$defs/line"
+    },
+    "held": {
+     "$ref": "#/$defs/line"
+    },
+    "thanks": {
+     "$ref": "#/$defs/line"
+    },
+    "none": {
+     "$ref": "#/$defs/line"
+    },
+    "done": {
+     "$ref": "#/$defs/line"
+    },
+    "moving": {
+     "$ref": "#/$defs/line"
+    },
+    "title": {
      "$ref": "#/$defs/line"
     }
    }

@@ -276,3 +276,43 @@ for (const health of [1, 0.43, 0]) {
     assert.equal(m.hp, oldHp ? Math.max(1, Math.round((newMax * oldHp) / oldMax)) : 0);
   });
 }
+
+test('RL-14: a bot is never caught, whatever the pyramid; a Billie still is', () => {
+  startedSave('musk0', 20);
+  fn('newBattle')('wild', [robot(ids, 10)]);
+  assert.equal(fn('catchable')(hooks.activeBattle.sides[1].team[0]), false);
+  for (const p of Object.keys(data.PYRAMIDS)) {
+    assert.equal(fn('catchOdds')(p, 3, true), 0, p);
+    assert.equal(fn('catchRoll')(p, 3, true).caught, false, p);
+  }
+  fn('newBattle')('wild', [fn('makeBilly')('musk0', 5)]);
+  assert.equal(fn('catchable')(hooks.activeBattle.sides[1].team[0]), true);
+  assert.ok(fn('catchOdds')('pyramid', 1, false) > 0);
+});
+
+test('RL-14: a wild bot (its sp names its build) fights alone as a robot by its Bureau name, and leaves the place', () => {
+  startedSave('musk0', 30);
+  const B = data.FACTIONS.bureau.bots.repo,
+    sp = fn('factionBotSp')(B),
+    q = { id: 'wildbot', sp, lvl: 9, no: 3 };
+  fn('encountersHere')().push(q);
+  fn('startWild')(q);
+  const b = hooks.activeBattle,
+    foe = b.sides[1].team[0];
+  assert.equal(b.kind, 'wild');
+  assert.equal(b.fmt, 'single');
+  assert.equal(foe.kind, 'robot');
+  assert.equal(foe.sp, sp);
+  assert.equal(foe.lvl, 9);
+  assert.equal(fn('billyName')(foe), B.name);
+  assert.ok(!foe.boss, 'never an Alpha');
+  assert.ok(
+    b.events.some(e => /rolled out/.test(e.t)),
+    'its own line'
+  );
+  b.over = 'win';
+  const { pay } = fn('battleSettle')(b, hooks.saveData);
+  assert.equal(pay.o, 'win');
+  assert.ok(pay.prize > 0, 'a prize like a wild Billie’s');
+  assert.ok(!fn('encountersHere')().some(x => x.id === 'wildbot'), 'gone from the place');
+});

@@ -12,11 +12,13 @@
      likes first (events.json classes.<c>.likes), facing the way the spot faces (routeTrainersPlace);
    - they see a straight line `sight` metres long the way they face, a metre and a bit wide (routeInSight); walking
      into it, they spot you: a "!", they walk up, say their line and the battle starts (route-sight.js, the page's).
+   RL-14: a scrapyard's agents stand and fight the same way (scrapyardAgents).
    Logic only: no DOM, no Date, no Math.random (tools/test/route-trainers.test.mjs). */
 /** @import { Run } from '../../types/save-data' */
 /** @import { EventsData } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { FACTIONS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { runNodeSeed } from './run-map.js';
 import { encClassFoe } from './encounters.js';
@@ -41,6 +43,8 @@ expose({
   routeWaySpot: [() => routeWaySpot, v => (routeWaySpot = v)],
   // @ts-expect-error -- replaced on purpose
   runRouteTrainers: [() => runRouteTrainers, v => (runRouteTrainers = v)],
+  // @ts-expect-error -- replaced on purpose
+  scrapyardAgents: [() => scrapyardAgents, v => (scrapyardAgents = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -84,6 +88,8 @@ export function runRouteTrainers(run, data) {
     classes = Object.keys(data.classes).sort();
   if (!run.map || !R || !classes.length) return out;
   run.map.nodes.forEach((node, i) => {
+    /* RL-14: a scrapyard's agents (factions.json scrapyard) */
+    if (node.type === 'scrapyard') return Object.assign(out, scrapyardAgents(run, i, data));
     if (node.type !== 'route') return;
     const seed = runNodeSeed(run.seed, i),
       g = rngFrom(seed, 'route|trainers'),
@@ -138,6 +144,46 @@ export function runRouteTrainers(run, data) {
       };
     }
   });
+  return out;
+}
+
+/** RL-14: a scrapyard's agents, by id as route trainers are: [least, most] of its faction's scrapyard classes (the
+ * first faction by id that has some), drawn from the node's own stream ('scrapyard|agents'), each fielding its bots
+ * (encClassFoe), standing by the road (none optional, no pairs), paying a route trainer's reward
+ * @param {Run} run @param {number} i @param {{ classes: EventsData['classes'], species: Record<string, any>, rules: any,
+ *   factions?: Record<string, import('../../types/game-data').Faction> }} data @returns {Record<string, any>} */
+export function scrapyardAgents(run, i, data) {
+  const all = data.factions || FACTIONS,
+    id = Object.keys(all)
+      .sort()
+      .find(k => all[k].scrapyard.classes.some(c => data.classes[c])),
+    out = /** @type {Record<string, any>} */ ({});
+  if (!id) return out;
+  const F = all[id],
+    classes = F.scrapyard.classes.filter(c => data.classes[c]),
+    g = rngFrom(runNodeSeed(run.seed, i), 'scrapyard|agents'),
+    n = g.int(F.scrapyard.trainers[0], F.scrapyard.trainers[1]),
+    R = data.rules.trainers;
+  for (let k = 0; k < n; k++) {
+    const tid = routeTrainerId(i, k),
+      cls = classes[g.int(0, classes.length - 1)],
+      T = encClassFoe(run, i, tid, cls, {
+        classes: data.classes,
+        species: data.species,
+        rules: data.rules,
+        up: R.up,
+        salt: 'scrapyard|' + k,
+        reward: R.reward,
+        foe: 'route',
+        factions: all,
+      });
+    if (!T.team.length) continue;
+    out[tid] = {
+      ...T,
+      route: { k, n, opt: false },
+      script: [T.bureau ? 'pick bureau' : `“${T.sight}”`, `battle ${tid}`],
+    };
+  }
   return out;
 }
 

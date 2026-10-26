@@ -8,7 +8,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { noteConnectionsField, provide, uiRulesShow } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
-import { ENGINE_SPEC } from '../../game/js/engine/settings.js';
+import { CAMERA_FOLDERS, ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { UI_DIALS, uiDialList } from '../../game/js/logic/ui-dials.js';
 import { ACTIONS, SECTIONS, SECTION_LIST, clone, openSection, studioState, toast } from './studio-app.js';
@@ -74,9 +74,13 @@ export function findField(sec, p, sel) {
 }
 export function findEngine(g, k) {
   engineEditor.scope = 'game';
-  engineEditor.open[g] = 1;
-  if (studioState.sec === 'engine') refreshEngineSettings();
-  else openSection('engine');
+  /* CAM-4a: a camera dial is in the Camera section, in its folder */
+  const sec = g === 'camera' ? 'camera' : 'engine',
+    F = g === 'camera' && CAMERA_FOLDERS.find(f => f[2].includes(k));
+  if (F) engineEditor.camOpen[F[0]] = 1;
+  else engineEditor.open[g] = 1;
+  if (studioState.sec === sec) refreshEngineSettings();
+  else openSection(sec);
   findFlash(fieldSelector(`engine.defaults.${g}.${k}`));
 }
 /* ---- the index ---- */
@@ -140,7 +144,13 @@ export function buildSearchIndex() {
       F.forEach(f => {
         const typ = typeof f[2] === 'string' ? f[2] : 'range',
           help = typ === 'range' ? f[5] : typ === 'sel' ? '' : f[3];
-        add(f[1], 'Engine › ' + t, 'setting', () => findEngine(g, f[0]), (help || '') + ` ${g}.${f[0]}`);
+        add(
+          f[1],
+          (g === 'camera' ? '' : 'Engine › ') + t,
+          'setting',
+          () => findEngine(g, f[0]),
+          (help || '') + ` ${g}.${f[0]}`
+        );
       })
     );
   /* UI-3: every dial of the UI look (the whole game's) */

@@ -13,6 +13,7 @@
    (props dials mast, clinic, shop). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
+import { waterToolsGenBarHTML, waterToolsGenMap } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import {
   MAPGEN_DEFAULTS,
@@ -89,7 +90,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const mapGen = {
+export const mapGen = {
   on: false,
   params: mapgenParams({}),
   draft: /** @type {any} */ (null),
@@ -399,7 +400,7 @@ function genViewHTML() {
      sub: 'The draft as the game draws it. Walk with W A S D or click the ground; the dials change it as you move them.',
    }
  )}
- ${card('From above', '<canvas id="genMap" class="gen-map"></canvas>', { sub: 'Click to walk there in the preview. Red: the road from the hub to each exit.' })}
+ ${card('From above', `${typeof waterToolsGenBarHTML === 'function' ? waterToolsGenBarHTML() : ''}<canvas id="genMap" class="gen-map"></canvas>`, { sub: 'Click to walk there in the preview. Red: the road from the hub to each exit. Water tools (WA-9): a river brush, waterfalls and water kinds of your own, kept in the dials.' })}
  </div></div>`;
 }
 /* the Walk scenes section shows the Generate view instead of the editor while it is open */
@@ -519,7 +520,7 @@ function genColour(ch) {
   const [r, g, b] = x.getImageData(0, 0, 1, 1).data;
   return (genGroundColour[ch] = `rgb(${r},${g},${b})`);
 }
-function genDrawMap() {
+export function genDrawMap() {
   const cv = /** @type {HTMLCanvasElement|null} */ ($('#genMap')),
     d = mapGen.draft;
   if (!cv || !d) return;
@@ -558,6 +559,8 @@ function genDrawMap() {
   x.beginPath();
   x.arc(d.hub[0] * k, (d.h - d.hub[1]) * k, k * 1.6, 0, Math.PI * 2);
   x.stroke();
+  /* WA-9: the hand water over the map; with a water tool picked, the map's pointer is the tool's (studio/js/water-tools.js) */
+  if (typeof waterToolsGenMap === 'function' && waterToolsGenMap(cv, d, k)) return;
   cv.onclick = ev => {
     const R = cv.getBoundingClientRect(),
       px = ((ev.clientX - R.left) / R.width) * d.w,
@@ -568,7 +571,7 @@ function genDrawMap() {
 }
 /* ---------- dials ---------- */
 let genTimer = 0;
-function genSoon() {
+export function genSoon() {
   clearTimeout(genTimer);
   genTimer = setTimeout(genRun, 180);
 }

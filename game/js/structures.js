@@ -41,6 +41,7 @@ export function setDrawStructures(v) {
 }
 /* to-module: end */
 export const structureState = { key: '', mesh: null, parts: [] };
+provide({ structureState }); /* to-module */
 const STRUCTURE_MATERIALS = {
   iron: { tex: 15, col: [0.27, 0.3, 0.38] },
   wood: { tex: 14, col: [0.6, 0.42, 0.28] },

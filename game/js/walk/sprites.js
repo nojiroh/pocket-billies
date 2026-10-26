@@ -9,6 +9,7 @@ import { clamp } from '../util.js';
 import { pictureFacing } from '../logic/prop-turn.js';
 import { hiddenEase, outlineColour } from '../logic/occlude.js';
 import { INTEREST_DEFAULTS } from '../logic/camera-interest.js';
+import { gpuTag } from '../engine/gpu-counters.js';
 import { filterInto } from '../engine/frame-lists.js';
 import { makeCanvas } from '../art.js';
 import { lookOf, wardrobeData } from '../person-art.js';
@@ -175,6 +176,8 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   const L = filterInto(items, spriteDrawn, SPRITE_LIST);
   L.sort(byImageId);
   for (const it of L) {
+    /* R1 measure: a model's picture layers (and a modelled clock's hands) counted apart (engine/gpu-counters.js) */
+    gpuTag(it.voxImg || it.vox ? 'modelPic' : 0);
     if (it.vox) {
       if (!it.far) addHitTarget(it, C, hits, labels, PPU);
       /* phase 09: a modelled clock tower keeps its moving hands (pictures on its modelled face) */
@@ -281,6 +284,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     if (it.far || it.layer) continue;
     addHitTarget(it, C, hits, labels, PPU);
   }
+  gpuTag(0);
   gl.uniform3fv(U.uRight, C.right);
   gl.uniform3fv(U.uBack, C.back);
   gl.uniform1f(U.uEmit, 0);
@@ -692,7 +696,7 @@ export function landmarkTilt(P, sc, yaw = 0) {
    ({weight, radius, zoom, pull}, any of them), else a landmark's default, else a door that counts; props not
    shown now (propShown) are left out when asked */
 /* the doors that count: where you buy, heal or work (a run town's shop and clinic, the hub's lab and ranch) */
-const DOOR_INTEREST = ['shop', 'clinic', 'lab', 'ranch'];
+const DOOR_INTEREST = ['shop', 'clinic', 'lab', 'ranch', 'genebank', 'workshop'];
 export function interestPoints(sc) {
   if (!sc) return [];
   const C0 = walkData().sc;
@@ -726,10 +730,15 @@ function drawFlatItem(fp, it, T) {
     h = it.h * s,
     cx = it.x + (it.ox * s + w / 2) * it.flip,
     cz = it.z - (it.oy * s + h / 2) * 0.95;
-  /* v22: lily pads on water bob and turn a little */ const wet = /lily/.test((it.p && it.p.k) || '') && !reducedMotion,
-    ph = (walkView.t || 0) / 1000 + it.x * 1.3 + it.z * 0.7,
+  /* v22: lily pads on water bob and turn a little. Water track WA-5b: lotus and duckweed too; with pixel water in
+     water.frames steps, the bob in whole texels of the 32 grid */
+  const wet = /lily|lotus|duckweed/.test((it.p && it.p.k) || '') && !reducedMotion,
+    pixW = engineSetting('water', 'pixel') !== false,
+    fps = pixW ? (engineSetting('water', 'frames') ?? 10) : 0,
+    t0 = (walkView.t || 0) / 1000,
+    ph = (fps > 0 ? Math.floor(t0 * fps) / fps : t0) + it.x * 1.3 + it.z * 0.7,
     an = wet ? Math.sin(ph * 0.45) * 0.07 : 0,
-    bob = wet ? Math.sin(ph * 1.2) * 0.012 : 0;
+    bob = wet ? (pixW ? Math.round(Math.sin(ph * 1.2) * 0.012 * 32) / 32 : Math.sin(ph * 1.2) * 0.012) : 0;
   gl.uniform3f(U.uP, cx, standingHeightAt(it.x, it.z) + 0.04 + bob + worldCurveDrop(it.x, it.z), cz);
   gl.uniform3f(U.uRight, it.flip * Math.cos(an), 0, Math.sin(an));
   gl.uniform3f(U.uUp, -Math.sin(an) * it.flip, 0, Math.cos(an));
@@ -794,9 +803,9 @@ export function addHitTarget(it, C, hits, labels, PPU) {
     /* RL-12b: a route trainer's "!" only once it has spotted you */
     if (!it.n.done && (!it.n.route || walkView.spotted[it.n.id]))
       labels.push({ k: 'bang', x: q.x, y: box.y0, col: it.n.col || '#D9434B' });
-    /* TW-3: a quest giver's gold "!" while their town's offer is open */ else if (
+    /* TW-3: a quest giver's gold "!" while their town's offer is open (RS-2: and the run's resident's) */ else if (
       it.n.talk &&
-      it.n.talk.quest &&
+      (it.n.talk.quest || it.n.talk.resident) &&
       typeof questMarked === 'function' &&
       questMarked(it.n.talk)
     )
