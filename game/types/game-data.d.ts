@@ -2042,7 +2042,7 @@ export interface RewardRow {
 }
 /** RL-S1: banter.json: one of the story director's lines (logic/story-pick.js) */
 export interface BanterLine {
-  who: 'chosen' | 'hazel' | 'juniper' | 'back_lost' | 'leader' | 'bureau' | 'rival';
+  who: 'chosen' | 'kappi' | 'juniper' | 'back_lost' | 'leader' | 'bureau' | 'rival';
   when?: string;
   priority: number;
   once?: boolean;

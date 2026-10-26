@@ -71,16 +71,16 @@ export const SCRIPT_COMMANDS = {
   pick: {
     args: ['who'],
     about:
-      'say the story director’s line for who (banter.json, picked by the run history: RL-S1): chosen, hazel, juniper, back_lost, leader, bureau, rival (RL-S2); nothing if none fits',
+      'say the story director’s line for who (banter.json, picked by the run history: RL-S1): chosen, kappi, juniper, back_lost, leader, bureau, rival (RL-S2); nothing if none fits',
   },
   /* RL-S2: the hub folk and you (logic/relations.js) */
   beans: { args: ['n'], about: 'give Beans, the gift currency, kept between runs (RL-S2): beans 1' },
   gift: {
     args: ['who'],
     about:
-      'give a hub person a gift (RL-S2, relations.json): a Bean, points with them; nothing when you have too few Beans or gave them one since the last run (gate it with "[if beans >= 1 and not gifted:hazel]")',
+      'give a hub person a gift (RL-S2, relations.json): a Bean, points with them; nothing when you have too few Beans or gave them one since the last run (gate it with "[if beans >= 1 and not gifted:kappi]")',
   },
-  rel: { args: ['who', 'n'], about: 'points with a hub person, as for a favour done (RL-S2): rel hazel 2' },
+  rel: { args: ['who', 'n'], about: 'points with a hub person, as for a favour done (RL-S2): rel kappi 2' },
   chapter: {
     args: ['n'],
     about: 'move the story on to chapter n (RL-S2; never back): an Expedition’s boss scene, "chapter 2"',

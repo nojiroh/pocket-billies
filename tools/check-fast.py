@@ -385,7 +385,7 @@ def run_loop(pg, base):
     hist = pg.evaluate("(h=>[h.length,h[0]&&h[0].end,h[0]&&h[0].by&&h[0].by.kind])(saveData.meta.history)")
     if hist != [1, 'lost', 'wild']: raise Exception(f'the run history: {hist}')
     fresh = pg.evaluate("Object.assign({},saveData.story.fresh)")
-    if fresh.get('chosen') != 'chosen_first' or not fresh.get('hazel'): raise Exception(f'the hub characters’ lines picked on the way home: {fresh}')
+    if fresh.get('chosen') != 'chosen_first' or not fresh.get('kappi'): raise Exception(f'the hub characters’ lines picked on the way home: {fresh}')
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")  # an evolution sheet, a milestone: the scene waits for them
     if not until(pg, "storyRun.on&&storyRun.id==='story:back-lost'", 20): raise Exception('the lost run’s scene didn’t play by the mast: ' + str(pg.evaluate("[saveData.story.pending,!!saveData.run,storyRun.on,storyRun.id,!!activeBattle,uiState.modal&&(uiState.modal.cls||uiState.modal.title),talkBox.on,walkView.ready,uiState.tab,typeof cutscene!=='undefined'&&cutscene.on,typeof selfTest!=='undefined'&&selfTest.on]")))
     SKIP = "storyRun.control&&(storyRun.control.skipping=true),talkBox.cur&&talkBox.cur.done(),0"
@@ -395,7 +395,7 @@ def run_loop(pg, base):
     if not until(pg, "storyRun.on&&storyRun.id==='banter:chosen_first'", 10): raise Exception(f'Chosen’s first talk: {pg.evaluate("storyRun.id")}')
     pg.evaluate(SKIP)
     if not until(pg, "!storyRun.on&&!saveData.story.fresh.chosen", 10): raise Exception('Chosen’s fresh line wasn’t taken')
-    return f'a battle held as it began ({seed}), started again after a reload, lost: the payout ({rows} rows, {cards} cards), again after a reload, home with {home[0]} Research; the history, the lost run’s scene and Chosen’s line ({fresh["hazel"]} for Hazel)'
+    return f'a battle held as it began ({seed}), started again after a reload, lost: the payout ({rows} rows, {cards} cards), again after a reload, home with {home[0]} Research; the history, the lost run’s scene and Chosen’s line ({fresh["kappi"]} for Hazel)'
 
 
 
@@ -454,9 +454,9 @@ def run_rival(pg, base):
       const S = saveData.story, M = saveData.meta, h = M.history || (M.history = []);
       S.ch1_drop = 1; (S.once || (S.once = {}))['banter:ch1_drop'] = 1; (S.quests || (S.quests = {})).fav_hazel = 'asked';
       h.push({ seed: 'FAV', theme: '', region: '', exp: 1, end: 'lost', by: null, row: 7, days: 5, team: [], perks: [], leaders: [], rival: null });
-      M.runs = h.length; const had = (M.rel || {}).hazel || 0;
+      M.runs = h.length; const had = (M.rel || {}).kappi || 0;
       storyHomeArrive(false);
-      return [S.quests.fav_hazel, (M.rel.hazel || 0) - had, (S.fresh || {}).hazel];
+      return [S.quests.fav_hazel, (M.rel.kappi || 0) - had, (S.fresh || {}).kappi];
     })()""")
     if fav != ['done', pg.evaluate("RELATIONS.gift.favour"), 'fav_hazel_thanks']: raise Exception(f'Hazel’s favour on the way home: quest, points, her line {fav}')
     pg.evaluate("delete saveData.story.pending;0")

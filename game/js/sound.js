@@ -378,7 +378,7 @@ export function soundEffect(name, o = {}) {
       const base =
         o.who === 'chosen'
           ? 64
-          : o.who === 'hazel'
+          : o.who === 'kappi'
             ? 72
             : o.who === 'me'
               ? 67

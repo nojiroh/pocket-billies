@@ -182,7 +182,7 @@ test('check-data: planted relations, the rival and the hub folk in the story (RL
     checkDataOn({
       'relations.json': R => {
         R.people.nobody = { levels: [{ at: 1 }] };
-        R.people.hazel.levels[2].at = 1;
+        R.people.kappi.levels[2].at = 1;
         R.people.chosen.levels[1].fx = [{ kind: 'luck', mult: 9 }];
         R.people.juniper.levels[1].pyramids = { gold_brick: 1 };
         R.people.juniper.levels[3].wardrobe = 'no_such_hat';

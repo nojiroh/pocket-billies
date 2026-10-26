@@ -106,9 +106,9 @@ An entry of `cycle` or `seq` starts after `- `; its other lines go under it, two
 | `lastby:bureau`, `lastby:boss`, `lastby:marina` | what ended the last run: its kind (`wild`, `route`, `event`, `miniboss`, `boss`, `rival`, `trainer`), a leader's or class's id (Blake's is `blake`), the Billie standing, or `bureau` (a Bureau agent) |
 | `history:losses >= 2` | over the runs kept (the last 20): `runs`, `wins`, `losses`, `quits`, `streak` (wins in a row, newest back), `lstreak` (losses in a row), `bureau` (runs a Bureau agent ended), RL-S2 `rivalmet`, `rivalwon` (meetings with Blake, and wins), `rivallost` (runs he ended) |
 | `rematch >= 1` | in a leader's or agent's line: how many runs kept that foe ended |
-| `rel:hazel >= 2` | your level with a hub person (RL-S2, relations.json: the levels their points reach) |
+| `rel:kappi >= 2` | your level with a hub person (RL-S2, relations.json: the levels their points reach) |
 | `beans >= 1` | Beans on hand, the gift currency (RL-S2) |
-| `gifted:hazel` | you gave them a gift since the last run (RL-S2) |
+| `gifted:kappi` | you gave them a gift since the last run (RL-S2) |
 | `lastteam:Grass`, `lastteam:musk >= 2` | the team the last run ended with (RL-S2, `meta.history`'s newest entry): Billies of a type, a line or a species; `type:` reads the team you have now |
 | `rival >= 1` | on a run, the meetings with Blake so far (RL-S2; before his battle, `rival >= 1` means a second meeting); 0 off a run |
 | `chapter >= 2` | the story's chapter (RL-S2: `meta.chapter`, 1 at the start, moved on only by the command `chapter n`, at most 9) |
@@ -129,9 +129,9 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 | `wait s` | waits, in seconds |
 | `music piece` | plays a piece of music (`rival`, `title`, ...: sound.js) |
 | `call script` | plays another script, then goes on |
-| `pick who` | says the story director's line for who (RL-S1, below): `chosen`, `hazel`, `juniper`, `back_lost`, `leader`, `bureau`, `rival`, RL-S2 `thanks_chosen`, `thanks_hazel`, `thanks_juniper`; nothing if no line fits |
+| `pick who` | says the story director's line for who (RL-S1, below): `chosen`, `kappi`, `juniper`, `back_lost`, `leader`, `bureau`, `rival`, RL-S2 `thanks_chosen`, `thanks_kappi`, `thanks_juniper`; nothing if no line fits |
 | `beans n` | Beans found (RL-S2): into `meta.beans` at once, counted on the run for its payout screen |
-| `gift who` | a gift for a hub person (RL-S2): a Bean, `gift.points` with them; nothing with too few Beans or one given since the last run (gate it: `> [if beans >= 1 and not gifted:hazel] ...`) |
+| `gift who` | a gift for a hub person (RL-S2): a Bean, `gift.points` with them; nothing with too few Beans or one given since the last run (gate it: `> [if beans >= 1 and not gifted:kappi] ...`) |
 | `rel who n` | points with a hub person, as for a favour done (RL-S2) |
 | `chapter n` | moves the story on to chapter n (RL-S2), never back |
 | `end` | stops the script |

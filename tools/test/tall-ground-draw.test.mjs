@@ -175,7 +175,7 @@ test('silhouette: once the query says something covers you, you are hidden', () 
 
 test('silhouette: while you talk, the one you talk to shows too; not once the talk is over', () => {
   const C = camera();
-  const npc = { ...me, k: 'npc', x: 11, z: 31, n: { who: 'hazel' } };
+  const npc = { ...me, k: 'npc', x: 11, z: 31, n: { who: 'kappi' } };
   let calls = setup(C);
   talkBox.on = true;
   walkRenderer.talkAt = { x: 11, z: 31, t: 0 };

@@ -15,38 +15,38 @@ const R = modules.relations,
 const RL = {
   gift: { cost: 1, points: 1, favour: 2 },
   people: {
-    hazel: { levels: [{ at: 1 }, { at: 2, items: { potion: 1 } }, { at: 4, wardrobe: 'tee' }] },
+    kappi: { levels: [{ at: 1 }, { at: 2, items: { potion: 1 } }, { at: 4, wardrobe: 'tee' }] },
     chosen: { levels: [{ at: 1 }, { at: 3, fx: [{ kind: 'money', mult: 1.1 }] }] },
   },
 };
 
 test('levels from points; a gift costs a Bean, once a person each time home; a favour adds points', () => {
-  const P = RL.people.hazel;
+  const P = RL.people.kappi;
   assert.deepEqual(
     [0, 1, 2, 3, 4, 99].map(n => R.relLevel(n, P)),
     [0, 1, 2, 2, 3, 3]
   );
   const m = { ...newMeta(), beans: 2, runs: 3 };
   assert.equal(R.relGiftBlock(m, 'blake', RL), 'nobody');
-  assert.deepEqual(R.relGift(m, 'hazel', RL), { from: 0, to: 1 });
-  assert.deepEqual([m.beans, m.rel.hazel, m.gifted.hazel], [1, 1, 3]);
-  assert.equal(R.relGiftBlock(m, 'hazel', RL), 'given', 'one gift a person until the next run');
-  assert.equal(R.relGift(m, 'hazel', RL), null);
+  assert.deepEqual(R.relGift(m, 'kappi', RL), { from: 0, to: 1 });
+  assert.deepEqual([m.beans, m.rel.kappi, m.gifted.kappi], [1, 1, 3]);
+  assert.equal(R.relGiftBlock(m, 'kappi', RL), 'given', 'one gift a person until the next run');
+  assert.equal(R.relGift(m, 'kappi', RL), null);
   assert.deepEqual(R.relGift(m, 'chosen', RL), { from: 0, to: 1 });
   assert.equal(R.relGiftBlock(m, 'chosen', RL), 'beans');
   m.runs = 4;
   m.beans = 1;
-  assert.deepEqual(R.relGift(m, 'hazel', RL), { from: 1, to: 2 }, 'home again: one more');
-  assert.deepEqual(R.relAdd(m, 'hazel', RL.gift.favour, RL), { from: 2, to: 3 });
-  assert.deepEqual(R.relReached('hazel', { from: 1, to: 3 }, RL), P.levels.slice(1, 3));
-  assert.deepEqual(R.relLevels(m, RL), { hazel: 3, chosen: 1 });
+  assert.deepEqual(R.relGift(m, 'kappi', RL), { from: 1, to: 2 }, 'home again: one more');
+  assert.deepEqual(R.relAdd(m, 'kappi', RL.gift.favour, RL), { from: 2, to: 3 });
+  assert.deepEqual(R.relReached('kappi', { from: 1, to: 3 }, RL), P.levels.slice(1, 3));
+  assert.deepEqual(R.relLevels(m, RL), { kappi: 3, chosen: 1 });
   assert.equal(validMeta(m), true);
 });
 
 test("a run's bonuses: the levels it took off with, their rows tagged rel:<who>, their items in the bag", () => {
-  const s = { meta: { ...newMeta(), rel: { hazel: 2, chosen: 3 } }, run: { perks: [] }, items: { potion: 1 } };
+  const s = { meta: { ...newMeta(), rel: { kappi: 2, chosen: 3 } }, run: { perks: [] }, items: { potion: 1 } };
   const got = R.relTakeoff(/** @type {any} */ (s), RL);
-  assert.deepEqual(s.run.rel, { hazel: 2, chosen: 2 });
+  assert.deepEqual(s.run.rel, { kappi: 2, chosen: 2 });
   assert.deepEqual(got.items, { potion: 1 });
   assert.equal(s.items.potion, 2);
   assert.deepEqual(R.relFxRows(s.run, RL), [{ kind: 'money', mult: 1.1, src: 'rel:chosen' }]);
@@ -76,25 +76,25 @@ test('the story reads rel:, beans and gifted:; the commands give Beans, a gift a
   await runScript(
     parseScript([
       'beans 2',
-      'if beans >= 1 and not gifted:hazel',
-      '  gift hazel',
-      'gift hazel',
+      'if beans >= 1 and not gifted:kappi',
+      '  gift kappi',
+      'gift kappi',
       'rel juniper 2',
-      'if rel:hazel >= 1',
+      'if rel:kappi >= 1',
       '  Hazel: Thanks.',
     ]),
     { say: l => said.push(l.text), choose: () => 0 },
     { save, id: 'test' }
   );
-  assert.deepEqual([save.meta.beans, save.meta.rel.hazel, save.meta.rel.juniper], [1, 1, 2]);
+  assert.deepEqual([save.meta.beans, save.meta.rel.kappi, save.meta.rel.juniper], [1, 1, 2]);
   assert.deepEqual(said, ['Thanks.']);
-  assert.equal(holds('gifted:hazel and rel:hazel = 1 and beans = 1'), true);
+  assert.equal(holds('gifted:kappi and rel:kappi = 1 and beans = 1'), true);
   save.meta.runs = 3;
-  assert.equal(holds('gifted:hazel'), false, 'a new run: a gift can be given again');
+  assert.equal(holds('gifted:kappi'), false, 'a new run: a gift can be given again');
   // before the first run (meta.runs 0) too
   const fresh = /** @type {any} */ ({ story: {}, meta: { ...newMeta(), beans: 1 } });
-  R.relGift(fresh.meta, 'hazel', GAME_DATA.relations);
-  assert.equal(conditionHolds('gifted:hazel', storyStateOf(fresh)), true, 'a gift before any run');
+  R.relGift(fresh.meta, 'kappi', GAME_DATA.relations);
+  assert.equal(conditionHolds('gifted:kappi', storyStateOf(fresh)), true, 'a gift before any run');
 });
 
 /** a run as runBegin starts it (the load check takes it) */
@@ -136,7 +136,7 @@ test('RL-S2 part B: a favour asked is paid on the way home once its check holds:
   const FL = {
     ...RL,
     people: {
-      hazel: { ...RL.people.hazel, favour: { quest: 'fav_hazel', check: 'last:row >= 6' } },
+      kappi: { ...RL.people.kappi, favour: { quest: 'fav_hazel', check: 'last:row >= 6' } },
       chosen: { ...RL.people.chosen, favour: { quest: 'fav_chosen', check: 'last:leaders >= 1', points: 3 } },
     },
   };
@@ -160,9 +160,9 @@ test('RL-S2 part B: a favour asked is paid on the way home once its check holds:
   assert.deepEqual(R.relFavoursPay(s, holds, FL), [], 'not far enough: still asked');
   assert.equal(s.story.quests.fav_hazel, 'asked');
   s.meta.history.push(row(7));
-  s.meta.rel = { hazel: 3 };
-  assert.deepEqual(R.relFavoursPay(s, holds, FL), [{ who: 'hazel', quest: 'fav_hazel', points: 2, from: 2, to: 3 }]);
-  assert.deepEqual([s.story.quests.fav_hazel, s.meta.rel.hazel, s.wardrobe.owned.tee], ['done', 5, 1]);
+  s.meta.rel = { kappi: 3 };
+  assert.deepEqual(R.relFavoursPay(s, holds, FL), [{ who: 'kappi', quest: 'fav_hazel', points: 2, from: 2, to: 3 }]);
+  assert.deepEqual([s.story.quests.fav_hazel, s.meta.rel.kappi, s.wardrobe.owned.tee], ['done', 5, 1]);
   assert.equal(s.meta.rel.chosen, undefined, 'a favour never asked is never paid, its check holding or not');
   assert.deepEqual(R.relFavoursPay(s, holds, FL), [], 'paid once');
   s.story.quests.fav_chosen = 'asked';
@@ -198,7 +198,7 @@ test("RL-S2 part B: Chapter 1's beats come one a return, in order, each once; ch
     Object.assign(save.meta, o);
     const was = fresh;
     fresh = {};
-    for (const who of ['chosen', 'hazel']) {
+    for (const who of ['chosen', 'kappi']) {
       const S = storyStateOf(save),
         keep = was[who] && B[was[who]].must ? was[who] : null,
         k = keep || storyPick(who, B, c => conditionHolds(c, S), save.story, save.meta.runs);
@@ -215,7 +215,7 @@ test("RL-S2 part B: Chapter 1's beats come one a return, in order, each once; ch
     }
     return said.filter(k => k.startsWith('ch1_'));
   };
-  assert.deepEqual(await home(entry(), {}, ['hazel']), [], 'Hazel not talked to: her beat waits');
+  assert.deepEqual(await home(entry(), {}, ['kappi']), [], 'Hazel not talked to: her beat waits');
   assert.deepEqual(await home(entry()), ['ch1_drop'], 'and is said the next time');
   assert.deepEqual(await home(entry()), [], 'Blake not met yet');
   assert.deepEqual(await home(entry({ rival: { met: 1, won: 0 } }), { beans: 1 }), ['ch1_blake']);
@@ -259,15 +259,15 @@ test("RL-S2 part B: the game's favours: Hazel asks, a run reaches row six, home 
   save.meta.history = [run(2)];
   const holds = c => conditionHolds(c, storyStateOf(save)),
     pick = who => storyPick(who, B, holds, save.story, save.meta.runs);
-  assert.equal(pick('hazel'), 'fav_hazel_ask');
+  assert.equal(pick('kappi'), 'fav_hazel_ask');
   await runScript(parseScript(B.fav_hazel_ask.script), { say: () => {}, choose: () => 0 }, { save, id: 'x' });
   assert.equal(save.story.quests.fav_hazel, 'asked');
   save.meta.history.push(run(4));
   assert.deepEqual(R.relFavoursPay(save, holds, RLG), [], 'row four is not far enough');
   save.meta.history.push(run(7));
   const [paid] = R.relFavoursPay(save, holds, RLG);
-  assert.deepEqual(paid, { who: 'hazel', quest: 'fav_hazel', points: RLG.gift.favour, from: 0, to: 2 });
+  assert.deepEqual(paid, { who: 'kappi', quest: 'fav_hazel', points: RLG.gift.favour, from: 0, to: 2 });
   save.story.once['banter:fav_hazel_ask'] = 1;
-  assert.equal(pick('hazel'), 'fav_hazel_thanks');
+  assert.equal(pick('kappi'), 'fav_hazel_thanks');
   assert.deepEqual(R.relFavoursPay(save, holds, RLG), [], 'paid once');
 });

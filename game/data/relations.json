@@ -21,7 +21,7 @@
     {"at":9}
    ]
   },
-  "hazel": {
+  "kappi": {
    "favour": {"quest":"fav_hazel","check":"last:row >= 6"},
    "levels": [
     {"at":1},

@@ -152,7 +152,7 @@ test('a planted fault is found by its family, in the file check-data names', () 
     [B => delete B.bureau_lost, 'no bureau line without a when'],
     /* RL-S2 part B: Blake and a thank-you, once they have lines, have one they can always say */
     [B => (B.rival_built.when = 'last:won'), 'no rival line without a when that is said more than once'],
-    [B => (B.thanks_hazel.once = true), 'no thanks_hazel line without a when'],
+    [B => (B.thanks_kappi.once = true), 'no thanks_kappi line without a when'],
   ]) {
     D = copy();
     plant(D.banter);

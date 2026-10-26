@@ -123,9 +123,9 @@ export const CONDITION_KINDS = {
     about: 'over the runs kept (the last 20): history:runs, wins, losses, quits, streak, lstreak, bureau',
   },
   rematch: { id: false, count: true, about: 'in a leader’s or agent’s lines: runs this foe has ended: rematch >= 1' },
-  rel: { id: true, count: true, about: 'your level with a hub person (RL-S2, relations.json): rel:hazel >= 2' },
+  rel: { id: true, count: true, about: 'your level with a hub person (RL-S2, relations.json): rel:kappi >= 2' },
   beans: { id: false, count: true, about: 'Beans on hand, the gift currency (RL-S2): beans >= 1' },
-  gifted: { id: true, count: false, about: 'you gave them a gift since the last run (RL-S2): gifted:hazel' },
+  gifted: { id: true, count: false, about: 'you gave them a gift since the last run (RL-S2): gifted:kappi' },
   lastteam: {
     id: true,
     count: true,

@@ -1266,7 +1266,7 @@ async function runFullTest(mode) {
     /* RL-S2: Blake and the hub folk, on a copy of the save: a run at Expedition II knows the lead he counters, each of
        his places has his foe (person chad, never blocking), his team one Billie bigger by meetings as rules.json
        run.rival says, his ace of a type that beats the lead's; a Bean for Hazel raises her level and the story reads it
-       (rel:hazel); the run takes off with the levels' bonuses. Then the save as it was */
+       (rel:kappi); the run takes off with the levels' bonuses. Then the save as it was */
     if (typeof rivalSize === 'function' && typeof relGift === 'function' && !selfTest.stop)
       await phase(
         'Blake in a run, and a Bean for Hazel',
@@ -1289,15 +1289,15 @@ async function runFullTest(mode) {
             }
             if (!plan) throw new Error('no seed of 20 met Blake twice at Expedition II');
             s.meta.beans = 1;
-            if (!relGift(s.meta, 'hazel', RELATIONS)) throw new Error('the Bean for Hazel wasn’t given');
+            if (!relGift(s.meta, 'kappi', RELATIONS)) throw new Error('the Bean for Hazel wasn’t given');
             const holds = (/** @type {string} */ c) => conditionHolds(c, storyStateOf(s));
-            if (!holds('rel:hazel >= 1 and gifted:hazel and beans = 0'))
+            if (!holds('rel:kappi >= 1 and gifted:kappi and beans = 0'))
               throw new Error('the story doesn’t read the gift: ' + JSON.stringify(storyStateOf(s).rel));
             runStartOn(s, plan);
             const run = s.run,
               lead = SPECIES[run.rival.lead];
             if (!lead || run.rival.lead !== s.team[0].sp) throw new Error(`the lead: ${run.rival.lead}`);
-            if (!run.rel || run.rel.hazel !== 1)
+            if (!run.rel || run.rel.kappi !== 1)
               throw new Error(`the levels it took off with: ${JSON.stringify(run.rel)}`);
             const blakes = Object.values(
               runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run })
@@ -1332,7 +1332,7 @@ async function runFullTest(mode) {
               rival: null,
             });
             const paid = relFavoursPay(s, c => conditionHolds(c, storyStateOf(s)), RELATIONS);
-            if (paid.length !== 1 || paid[0].who !== 'hazel' || story.quests.fav_hazel !== 'done')
+            if (paid.length !== 1 || paid[0].who !== 'kappi' || story.quests.fav_hazel !== 'done')
               throw new Error(`Hazel's favour: ${JSON.stringify(paid)}`);
             const end = STORY_DATA.scripts && STORY_DATA.scripts['chapter1-end'];
             if (!end) throw new Error('no story.json scripts.chapter1-end');
