@@ -54,6 +54,15 @@
    "bureau": 1,
    "likes": ["bridge","roadside"]
   },
+  "bureau_reclaimer": {
+   "name": "Reclamation Agent",
+   "who": "miner",
+   "team": [1,2],
+   "sight": "That Billie looks unclaimed. Sign here, and here, and here.",
+   "lose": "I'll log it as damaged in transit.",
+   "bureau": 1,
+   "likes": ["deadend","pocket"]
+  },
   "ethicist": {
    "name": "Clone Ethicist",
    "who": "geo",
