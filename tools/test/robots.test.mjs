@@ -276,3 +276,16 @@ for (const health of [1, 0.43, 0]) {
     assert.equal(m.hp, oldHp ? Math.max(1, Math.round((newMax * oldHp) / oldMax)) : 0);
   });
 }
+
+test('RL-14: a bot is never caught, whatever the pyramid; a Billie still is', () => {
+  startedSave('musk0', 20);
+  fn('newBattle')('wild', [robot(ids, 10)]);
+  assert.equal(fn('catchable')(hooks.activeBattle.sides[1].team[0]), false);
+  for (const p of Object.keys(data.PYRAMIDS)) {
+    assert.equal(fn('catchOdds')(p, 3, true), 0, p);
+    assert.equal(fn('catchRoll')(p, 3, true).caught, false, p);
+  }
+  fn('newBattle')('wild', [fn('makeBilly')('musk0', 5)]);
+  assert.equal(fn('catchable')(hooks.activeBattle.sides[1].team[0]), true);
+  assert.ok(fn('catchOdds')('pyramid', 1, false) > 0);
+});

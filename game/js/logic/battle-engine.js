@@ -124,6 +124,7 @@ expose({
   catchOdds: [() => catchOdds, v => (catchOdds = v)],
   // @ts-expect-error -- replaced on purpose
   catchRoll: [() => catchRoll, v => (catchRoll = v)],
+  catchable: [() => catchable],
   // @ts-expect-error -- replaced on purpose
   checkFaints: [() => checkFaints, v => (checkFaints = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1256,9 +1257,12 @@ export function enemyOnly(b) {
     }
   });
 }
+/** RL-14: whether a foe can be caught: a bot (a robot, the Bureau's) never is, whatever the pyramid @param {any} e */
+export const catchable = e => !!e && !isRobot(e);
 export function catchOdds(id, T, spin, b) {
   return withBattle(b, () => {
     const e = fighter(1);
+    if (!catchable(e)) return 0;
     if (PYRAMIDS[id] && PYRAMIDS[id].m === 0) return 1;
     let C = PYRAMIDS[id].m;
     if (id === 'pyramid' && CATCH_RULES.luxury.includes(speciesOf(e).line)) C *= CATCH_RULES.luxuryPyramid;
@@ -1279,6 +1283,7 @@ export function catchOdds(id, T, spin, b) {
 }
 export function catchRoll(id, T, spin, b) {
   return withBattle(b, () => {
+    if (!catchable(fighter(1))) return { caught: false, w: 0, edge: false, P: 0 };
     if (battleHost().sureCatch()) return { caught: true, w: 3, edge: false, P: 1 };
     if (PYRAMIDS[id].m === 0) return { caught: true, w: 3, edge: false, P: 1 };
     if (battleRoll() < CATCH_RULES.edge) return { caught: true, w: 1, edge: true, P: 1 };

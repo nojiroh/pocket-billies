@@ -436,6 +436,8 @@ export function runSimOn(env) {
             s.team.length < P.catchWhileBelow &&
             (s.pyramids.pyramid || 0) > 0 &&
             !q.alpha &&
+            /* RL-14: a bot is never caught */
+            fn('catchable')(foe) &&
             /* RL-13: a mono-type run takes only its own type (logic/modifiers.js) */
             modTypeFits(run, data.SPECIES[q.sp] ? data.SPECIES[q.sp].types : [])
           ) {
