@@ -561,6 +561,9 @@ into `track/hub`). The owner's answer: about 10 m. Checked against the code:
 - Lit windows: already there; the 3D buildings' glass lights at night (prop-models.js glassLit), seen in the pictures.
 - Pictures by day and night: `python3 tools/island-shots.py OUT --hour=22 --only=town-square,town,square-portal,square-near`
   (`--hour=H` is new: clear summer weather at that hour).
+- The hub's spot moved to [152.38, 60.86] (`squareHubSpot`, `--hub`): from HB-10a's spot a push up (the orbit camera
+  points it toward the island's middle) ran into the fountain, red in the quick check's Running step. HB-10a's "every
+  hub position is unchanged" no longer holds: the walking checks start from the new spot.
 - Left out: cafe_table and crates (voxel models, not the airship style; remakes later). The pasture test's rerun check
   leaves out the `sq` props (laid after the pasture).
 

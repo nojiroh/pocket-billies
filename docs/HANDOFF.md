@@ -18,11 +18,14 @@ Details: docs/phases/hub-track.md, "Done in HB-10b".
   dressing. Phone cost not measured yet (HB-10c measures): at night the square adds about 9 x 2 string bulbs, 5 lamps,
   3 fountain glows and 7 fireflies to the glow list. In the `square-portal` picture (a free camera 1.7 m up) the
   south-west string light hangs in front of the lens; the walk camera sits higher.
-- **Found, not fixed (the owner decides)**: the quick check's "Running" step is red since HB-10a. At the hub the
-  orbit camera points the stick's up toward the island's middle, which from the hub spot (1.25 m from the basin) runs
-  into the fountain after about 2 m; the player slides round it and the gait counts more than the metres moved. Green
-  on track/hub before the HB-10a merge (09de1e25) and on main. A player starting at the hub who pushes up walks into
-  the fountain too.
+- **The hub's spot moved** (the owner chose it over fixing only the test): the quick check's "Running" step was red
+  since HB-10a. At the hub the orbit camera points the stick's up toward the island's middle (north-west), which
+  from HB-10a's spot (1.25 m from the basin) ran into the fountain after about 2 m; the player slid round it and the
+  gait counted more than the metres moved (green before the HB-10a merge, 09de1e25, and on main). The spot is now
+  [152.38, 60.86] (`squareHubSpot`, 1.7 m from the old one): the fountain 2.7 m ahead to the left, the run line clear
+  on paving. `patch-copperleaf-square.mjs --hub` and build-copperleaf.mjs set it and move the walking checks' starts
+  with it; hub-square.test.mjs keeps the line clear. Only the hub and the checks' `from` changed in copperleaf.json.
+  **Check on the phone**: Start-Game and coming home land you there.
 - Verified: lint, typecheck, check:modules, format:check, check:data (2 old bridge warnings, the same before),
   build, `npm test` 1291 of 1291, tools/test/hub-square.test.mjs, smoke 6 of 6 (Python Playwright 1.63.0), headless
   pictures by day (13:00) and night (22:00). Full quick check: 40 steps, 34 passed, 6 PROBLEMs:
@@ -30,9 +33,10 @@ Details: docs/phases/hub-track.md, "Done in HB-10b".
     design, HB-7: the step needs it on its list), RL-8 "the town's shop has no Perk", "room light" (Walking left and
     right), Song fingerprints (cave mid and late not in the baseline);
   - "Run map music hears the forecast": passed alone on track/hub and on main (load);
-  - "Running": red, HB-10a's (above).
+  - "Running": red, HB-10a's (above); green after the hub's spot moved (rerun with In-game full test, Terraces,
+    Walking left and right, RL-8, Animals: only the three main has too stayed red), smoke 6 of 6 again.
   The HB-10a run's rabbit and payout jingle PROBLEMs passed here and on main.
-- Next: the owner's call on the Running step and the hub spot; HB-10c (started in its own session).
+- Next: HB-10c (started in its own session; it should pull the new hub spot).
 
 ### Hub track HB-10a: the square's shape and fountain (and HB-10b started) - 2026-10-26
 Branch `ccr-144f3c08-vf09lo` (the planning session's; the owner: "make it 10m and start"). Merge into `track/hub`.
