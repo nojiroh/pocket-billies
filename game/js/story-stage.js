@@ -381,8 +381,12 @@ function storyHomeArrive(won) {
     toast(f.to > f.from ? `${name}: favour done, level ${f.to}` : `${name}: favour done`);
     if (typeof debugLog !== 'undefined') debugLog.add('story', `favour ${f.quest} done: ${f.who} +${f.points}`);
   }
+  /* RL-S2 part B: a `must` line not yet heard (a Chapter beat, a favour's ask or thanks: their scripts set what comes
+     next) waits for the next talk instead of being picked over */
+  const was = story.fresh || {};
   for (const who of BANTER_HUB) {
-    const k = storyPickId(who, null);
+    const keep = was[who] && BANTER[was[who]] && BANTER[was[who]].must ? was[who] : null,
+      k = keep || storyPickId(who, null);
     if (k) fresh[who] = k;
   }
   story.fresh = fresh;
