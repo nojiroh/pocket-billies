@@ -14,7 +14,31 @@
 import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOverlay, rewardPickOpen, toast } from './hooks.js';
 import { EVENTS, ITEMS, PERKS, PYRAMIDS, RULES, SPECIES, worldAddTrainers } from './game-data.js';
-import { billyName, feedLevels, healAll, makeBilly, maxHp, xpFor } from './logic/rules.js';
+import { rngFrom } from './logic/rng.js';
+import { geneWords } from './logic/genes.js';
+import { bankTry } from './logic/gene-bank.js';
+import {
+  geneEventDraw,
+  geneEventLab,
+  geneEventLearn,
+  geneEventRecall,
+  geneEventSlots,
+  geneEventSplice,
+  geneEventWild,
+} from './logic/gene-events.js';
+import {
+  billyGraft,
+  billyName,
+  billyUnstable,
+  feedLevels,
+  geneData,
+  geneLimit,
+  healAll,
+  makeBilly,
+  maxHp,
+  xpFor,
+} from './logic/rules.js';
+import { META_MAX } from './logic/meta-state.js';
 import { runHome } from './logic/run-state.js';
 import { runMapNode } from './logic/run-map.js';
 import { encBoon, encOf, fxRowOf } from './logic/run-enc.js';
@@ -45,14 +69,18 @@ import { perkPickOpen } from './perk-screen.js';
 /* eslint-disable no-func-assign */
 expose({
   ENC_STOP: [() => ENC_STOP],
+  encChoose: [() => encChoose, v => (encChoose = v)],
   encDna: [() => encDna],
   encFight: [() => encFight, v => (encFight = v)],
+  encGeneLog: [() => encGeneLog],
+  encGeneRng: [() => encGeneRng],
   encHere: [() => encHere],
   encHolds: [() => encHolds],
   encLineHTML: [() => encLineHTML],
   encLines: [() => encLines, v => (encLines = v)],
   encNote: [() => encNote],
   encPlaying: [() => encPlaying, v => (encPlaying = v)],
+  encRegion: [() => encRegion],
   encSheet: [() => encSheet, v => (encSheet = v)],
   encSheetClose: [() => encSheetClose, v => (encSheetClose = v)],
   encStep: [() => encStep, v => (encStep = v)],
@@ -415,7 +443,136 @@ function encounterStage(id, i) {
       encSheetClose();
       await new Promise(res => rewardPickOpen(res));
     },
+    /* SP-6: the splice events' (logic/gene-events.js). Their draws come from a stream of the event and the place, so a
+       reload in the middle draws the same Gene again */
+    dna: ([n]) => {
+      saveData.meta.dna = Math.max(0, Math.min(META_MAX, encDna() + +n));
+    },
+    gene: async ([n]) => {
+      const D = geneData(),
+        g = encGeneRng(id, at());
+      let got = 0;
+      for (let k = 0; k < (n == null ? 1 : +n); k++) {
+        const o = geneEventDraw(D, saveData, encRegion(), g.next);
+        if (!o || !geneEventLearn(saveData, o.id)) break;
+        got++;
+        encNote(`A Gene Sample for the Gene Bank’s library: ${geneWords(D, o.slot, o.id)}.`);
+        encGeneLog(`gene ${o.id}`);
+      }
+      if (!got) encNote('There was no Gene here you don’t have.');
+      saveNow();
+      await encStep(title, 'Go on');
+    },
+    splice: async ([how]) => {
+      const D = geneData(),
+        g = encGeneRng(id, at()),
+        limit = geneLimit(),
+        L = team().filter(m => m.kind !== 'robot' && geneEventSlots(D, m).length);
+      if (!L.length) {
+        encNote('None of your Billies can take a Gene.');
+        await encStep(title, 'Go on');
+        return;
+      }
+      /* the back alley is paid for when picked, so it splices someone; the lab charges at the splice, so you can go */
+      const lab = how === 'lib',
+        uid = await encChoose(
+          lab ? 'Who gets a Gene?' : 'Who goes in the chair?',
+          L.map(m => ({ l: `${escapeHtml(billyName(m))} <small>Lv ${m.lvl}</small>`, v: m.uid })),
+          lab
+        );
+      const m = uid && team().find(x => x.uid === uid);
+      if (!m) return;
+      const name = billyName(m);
+      let o = /** @type {{ slot: string, id: string, price?: number } | null} */ (null);
+      if (lab) {
+        const offers = geneEventLab(D, saveData, m);
+        if (!offers.length) {
+          encNote(`No Gene in your library fits ${name} at the lab’s bench.`);
+          await encStep(title, 'Go on');
+          return;
+        }
+        o = await encChoose(
+          `Which Gene for ${escapeHtml(name)}?`,
+          offers.map(x => {
+            const st = bankTry(D, m, x.slot, x.id, limit).st;
+            return {
+              l: `${escapeHtml(geneWords(D, x.slot, x.id))} <small>${x.price} DNA · Stability ${st.cost} of ${limit}${st.unstable ? ' · Unstable' : ''}</small>`,
+              v: x,
+              dis: x.why === 'dna',
+            };
+          }),
+          true
+        );
+        if (!o) return;
+      } else o = geneEventWild(D, m, encRegion(), limit, g.next);
+      if (!o) {
+        encNote(`Nothing in the splicer’s cooler fits ${name}.`);
+        await encStep(title, 'Go on');
+        return;
+      }
+      geneEventSplice(D, saveData, m, o.slot, o.id, g.next, o.price || 0);
+      encNote(
+        `${name} has ${geneWords(D, o.slot, o.id)} now.${billyUnstable(m) ? ` Its cells don’t agree: it is Unstable, and goes by ${billyName(m)}.` : ''}`
+      );
+      encGeneLog(
+        `splice ${m.sp} ${o.slot}=${o.id}${o.price ? `, ${o.price} DNA` : ''}${m.unstable ? ', unstable' : ''}`
+      );
+      await encStep(title, 'Go on');
+    },
+    unsplice: async ([n]) => {
+      const D = geneData(),
+        L = team().flatMap(m =>
+          Object.entries(billyGraft(m) || {}).map(([slot, gene]) => ({
+            l: `${escapeHtml(billyName(m))}: ${escapeHtml(geneWords(D, slot, gene))}`,
+            v: { uid: m.uid, slot },
+          }))
+        );
+      if (!L.length) {
+        encNote('None of your Billies wears a Gene to hand in.');
+        await encStep(title, 'Go on');
+        return;
+      }
+      const o = await encChoose('Which Gene goes back?', L, true),
+        m = o && team().find(x => x.uid === o.uid);
+      if (!o || !m) return;
+      const name = billyName(m),
+        words = geneWords(D, o.slot, (billyGraft(m) || {})[o.slot]);
+      geneEventRecall(D, saveData, m, o.slot, encGeneRng(id, at()).next);
+      if (n != null && +n > 0) saveData.meta.dna = Math.min(META_MAX, encDna() + +n);
+      encNote(`${name} gave back ${words}. The Gene Bank keeps the sequence on file.`);
+      encGeneLog(`unsplice ${m.sp} ${o.slot}`);
+      await encStep(title, 'Go on');
+    },
   };
+}
+/** SP-6: the stream a splice event draws from at a place (the same after a reload) @param {string} id
+ * @param {number} i */
+const encGeneRng = (id, i) => rngFrom(saveData.run.seed, `event|gene|${id}|${i}`);
+/** SP-6: the region's dex, for the Genes an event draws */
+const encRegion = () => (saveData.run && saveData.run.region && saveData.run.region.dex) || [];
+/** SP-6: a splice event's line in the debug log (data ids only) @param {string} text */
+const encGeneLog = text => {
+  if (typeof debugLog !== 'undefined') debugLog.add('event', text);
+};
+/** SP-6: a pick on the event's sheet: the lines so far, a question, one button an option (greyed out with dis), and
+ * "Not now" when one may go; resolves to the option's value (null for Not now)
+ * @template T @param {string} ask @param {{ l: string, v: T, dis?: boolean }[]} options @param {boolean} leave
+ * @returns {Promise<T | null>} */
+function encChoose(ask, options, leave) {
+  const title =
+    saveData.run && saveData.run.enc && saveData.run.enc.play ? EVENTS.events[saveData.run.enc.play.id].title : '';
+  return new Promise(res =>
+    encSheet({
+      title: escapeHtml(title),
+      cls: 'event-sheet',
+      lock: true,
+      html: `<div class="ev-lines">${encLines.join('')}</div><p class="note">${ask}</p>`,
+      btns: [
+        ...options.map(o => ({ l: o.l, c: 'dark', dis: !!o.dis, f: () => res(o.v) })),
+        ...(leave ? [{ l: 'Not now', c: 'quiet', f: () => res(null) }] : []),
+      ],
+    })
+  );
 }
 
 /** a reload in the middle of an event: it opens again where it was (after the battle, if one was on); the debug

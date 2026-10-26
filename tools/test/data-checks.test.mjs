@@ -109,6 +109,12 @@ test('a planted fault is found by its family, in the file check-data names', () 
     [E => (E.events.form_27b.intro[0] = 'money 5'), 'lines only'],
     [E => (E.loot.common.nosuchitem = 1), 'loot.common: no item "nosuchitem"'],
     [E => (E.classes.intern.who = 'nobody'), 'no person "nobody"'],
+    /* SP-6: the splice events' commands and an event's when */
+    [E => (E.events.form_27b.options[0].then[0] = 'splice somehow'), 'wild (the back alley'],
+    [E => (E.events.form_27b.options[0].then[0] = 'dna 0'), 'a whole number of DNA'],
+    [E => (E.events.form_27b.options[0].then[0] = 'gene 9'), '1-5 Genes'],
+    [E => (E.events.form_27b.options[0].then[0] = 'unsplice -1'), '0-1000 DNA'],
+    [E => (E.events.form_27b.when = 'genez:x'), 'events.form_27b.when'],
   ]) {
     D = copy();
     plant(D.events);

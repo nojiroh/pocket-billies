@@ -156,6 +156,26 @@ export const SCRIPT_COMMANDS = {
     checkpoint: true,
     about: 'a reward pick (rewards.json): of every kind, or of one (item, tutor, candy, evo), n cards',
   },
+  /* SP-6: the splice events' (logic/gene-events.js) */
+  dna: { args: ['n'], group: 'event', about: 'DNA gained or lost (never below 0)' },
+  gene: {
+    args: ['n?'],
+    group: 'event',
+    about: 'n Genes (1 if no count) into the Gene Bank’s library, of the region’s lines, none it has',
+  },
+  splice: {
+    args: ['how'],
+    group: 'event',
+    checkpoint: true,
+    about:
+      'you pick a Billie and it gets a Gene: wild, one drawn for it (the back alley: any slot); lib, one of your library on a slot the Gene Bank opens, for its DNA',
+  },
+  unsplice: {
+    args: ['n?'],
+    group: 'event',
+    checkpoint: true,
+    about: 'you pick a spliced Billie’s Gene to hand in (it stays in the library), for n DNA',
+  },
   /* the opening's own (cutscene/opening.js) */
   'dressing-room': {
     args: [],

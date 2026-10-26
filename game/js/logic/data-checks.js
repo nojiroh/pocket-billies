@@ -941,6 +941,21 @@ export function dataEvents(D, valid = () => true) {
       case 'money':
         if (!(Number.isInteger(num(a)) && num(a) !== 0)) problem(`${at}: a whole number of Moneys, not 0`);
         return;
+      /* SP-6: the splice events' */
+      case 'dna':
+        if (!(Number.isInteger(num(a)) && num(a) !== 0 && Math.abs(num(a)) <= 1000))
+          problem(`${at}: a whole number of DNA, not 0, at most 1000 either way`);
+        return;
+      case 'gene':
+        if (a != null && !(Number.isInteger(num(a)) && num(a) >= 1 && num(a) <= 5)) problem(`${at}: 1-5 Genes`);
+        return;
+      case 'splice':
+        if (!['wild', 'lib'].includes(a)) problem(`${at}: wild (the back alley's) or lib (from the library)`);
+        return;
+      case 'unsplice':
+        if (a != null && !(Number.isInteger(num(a)) && num(a) >= 0 && num(a) <= 1000))
+          problem(`${at}: 0-1000 DNA for the Gene handed in`);
+        return;
       case 'reward':
         if (a != null && !['item', 'tutor', 'candy', 'evo'].includes(a))
           problem(`${at}: a kind (item, tutor, candy, evo)`);

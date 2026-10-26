@@ -124,7 +124,7 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 | `go place [entrance]` | a checkpoint; from S2 |
 | `actor`, `act`, `caption`, `blink`, `screen`, `effect`, `hide`, `sound`, `walk who spot`, `camera shot`, `wait who` | a cutscene's: docs/CUTSCENES.md (only in a cutscene) |
 | `dressing-room`, `throw-coins`, `pick-starter`, `staged-fight`, `rival-battle`, `fall` | the opening's: docs/CUTSCENES.md |
-| `perk [rarity or id]`, `money n`, `hurt share`, `heal [share]`, `status id`, `fx n kind key=value...`, `wager percent`, `loot table [n]`, `level n`, `recall [up]`, `foe class [up]`, `wild [up]`, `reward [kind] [n]` | an event's (events.json, on a run; RL-12b): below |
+| `perk [rarity or id]`, `money n`, `hurt share`, `heal [share]`, `status id`, `fx n kind key=value...`, `wager percent`, `loot table [n]`, `level n`, `recall [up]`, `foe class [up]`, `wild [up]`, `reward [kind] [n]`, `dna n`, `gene [n]`, `splice how`, `unsplice [n]` | an event's (events.json, on a run; RL-12b, SP-6): below |
 
 ### Event commands (RL-12b)
 
@@ -147,6 +147,10 @@ plays the same.
 | `foe hustle_coach 1` | a battle with a trainer of that class (events.json `classes`), 1 level over the place; lost, the run ends |
 | `wild 2` | a wild battle with a Billie of the region, 2 levels over the place |
 | `reward`, `reward tutor 2` | a reward pick (rewards.json): of every kind, or of one (item, candy, evo, tutor), n cards |
+| `dna 10`, `dna -5` | DNA gained or lost, never below 0 (SP-6) |
+| `gene`, `gene 2` | Genes not yet in the Gene Bank's library, of the region's lines, into it (SP-6) |
+| `splice wild`, `splice lib` | you pick a Billie and it gets a Gene: `wild`, one the back alley draws for it (any slot its form has, held to your Stability limit; you can't back out, the option was paid); `lib`, one of your library on a slot the Gene Bank's level opens, for the Bank's DNA price ("Not now" leaves). The Gene goes into the library too (SP-6) |
+| `unsplice`, `unsplice 15` | you pick a spliced Billie's Gene to hand in (it comes off and stays in the library), for that much DNA ("Not now" keeps it) (SP-6) |
 
 Speakers in an event are one word (`Clerk: ...`): the parser reads a single word before the colon as the speaker.
 
