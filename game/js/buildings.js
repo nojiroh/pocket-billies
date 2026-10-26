@@ -78,6 +78,7 @@ expose({
 provide({
   buildingFrontPicture,
   buildingGuard,
+  buildingItems,
   buildingMesh,
   cachedBuildingSignature,
   chimneySmoke,
