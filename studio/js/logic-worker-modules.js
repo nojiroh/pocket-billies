@@ -9,6 +9,7 @@
 import './logic-worker-page.js';
 import '../../game/js/game-data.js';
 import '../../game/js/logic/battle-engine.js';
+import '../../game/js/logic/battle-facing.js';
 import '../../game/js/logic/battle-rewards.js';
 import '../../game/js/logic/battle-state.js';
 import '../../game/js/logic/bowl-camera.js';
