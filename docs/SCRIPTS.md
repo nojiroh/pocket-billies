@@ -108,6 +108,7 @@ An entry of `cycle` or `seq` starts after `- `; its other lines go under it, two
 | `beans >= 1` | Beans on hand, the gift currency (RL-S2) |
 | `gifted:hazel` | you gave them a gift since the last run (RL-S2) |
 | `lastteam:Grass`, `lastteam:musk >= 2` | the team the last run ended with (RL-S2, `meta.history`'s newest entry): Billies of a type, a line or a species; `type:` reads the team you have now |
+| `rival >= 1` | on a run, the meetings with Blake so far (RL-S2; before his battle, `rival >= 1` means a second meeting); 0 off a run |
 | `chapter >= 2` | the story's chapter (RL-S2: `meta.chapter`, 1 at the start, moved on only by the command `chapter n`, at most 9) |
 
 Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than `or`. A count on its own

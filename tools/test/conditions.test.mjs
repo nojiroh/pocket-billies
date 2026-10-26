@@ -275,3 +275,15 @@ test('RL-S2: lastteam: reads the team the last run ended with, by type, line and
   assert.equal(conditionHolds('lastteam:Steel', storyStateOf({ meta: {} }, { typesOf })), false, 'no runs yet');
   assert.equal(conditionProblem('lastteam:Grass >= 1'), null);
 });
+
+test('RL-S2 part B: rival reads the meetings with Blake on the run so far (0 off a run)', () => {
+  assert.equal(conditionHolds('rival', storyStateOf({ meta: {} })), false);
+  const S = storyStateOf({ meta: {}, run: { rival: { lead: 'musk0', past: 3, met: 1, won: 0 } } });
+  assert.equal(conditionHolds('rival >= 1', S), true);
+  assert.equal(conditionHolds('rival >= 2', S), false);
+  assert.equal(
+    conditionHolds('rival0 = win', storyStateOf({ story: { rival0: 'win' }, meta: {} })),
+    true,
+    'the flag rival0 is still a flag'
+  );
+});

@@ -75,7 +75,7 @@ expose({
  *   types?: Record<string, number>, money?: number, team?: number, badgeTypes?: Record<string, number>,
  *   opened?: Record<string, number>, last?: Record<string, number>, lastby?: Record<string, number>,
  *   history?: Record<string, number>, rematch?: number, rel?: Record<string, number>, beans?: number,
- *   gifted?: Record<string, number>, chapter?: number, lastteam?: Record<string, number> }} StoryState */
+ *   gifted?: Record<string, number>, chapter?: number, lastteam?: Record<string, number>, rival?: number }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
  * reads, for the Studio's reference (Project Story S3) */
@@ -125,6 +125,11 @@ export const CONDITION_KINDS = {
     count: true,
     about:
       'the team the last run ended with (RL-S2): Billies of a type, a line or a species: lastteam:Grass, lastteam:musk',
+  },
+  rival: {
+    id: false,
+    count: true,
+    about: 'on a run, the meetings with Blake so far (RL-S2: before his battle, rival >= 1 means you met him already)',
   },
   chapter: {
     id: false,
@@ -395,6 +400,8 @@ export function termValue(c, S) {
       return !!(S.gifted || {})[c.id];
     case 'chapter':
       return S.chapter || 1;
+    case 'rival':
+      return S.rival || 0;
     case 'lastteam':
       return (S.lastteam || {})[c.id] || (S.lastteam || {})[c.id.toLowerCase()] || 0;
   }
@@ -477,6 +484,8 @@ export function storyStateOf(save, o = {}) {
     beans: meta.beans || 0,
     chapter: meta.chapter || 1,
     lastteam: lastTeamOf(meta.history, o.typesOf),
+    /* RL-S2 part B: this run's meetings with Blake (logic/rival.js run.rival) */
+    rival: save.run && save.run.rival ? save.run.rival.met || 0 : 0,
     gifted: Object.fromEntries(
       Object.entries(meta.gifted || {}).flatMap(([who, n]) => (n === (meta.runs || 0) ? [[who, 1]] : []))
     ),
