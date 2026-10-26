@@ -65,7 +65,7 @@ body.dressing #nav {
   border-radius: var(--r-pill);
 }
 .dr-tog {
-  min-height: 34px;
+  min-height: 40px;
   padding: 0 var(--s3);
   border: 0;
   border-radius: var(--r-pill);

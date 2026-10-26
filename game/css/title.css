@@ -327,7 +327,7 @@ body.ttl-auto .ttl-ring circle {
   color: #b23a3a !important;
 }
 .ttl-link {
-  min-height: 32px;
+  min-height: 40px;
   padding: 0 var(--s2);
   border: 0;
   background: none;

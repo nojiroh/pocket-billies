@@ -659,7 +659,7 @@ section > h2,
 .help summary {
   cursor: pointer;
   font-weight: 600;
-  min-height: 32px;
+  min-height: 40px;
 }
 .help p {
   font-size: 13px;

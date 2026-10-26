@@ -321,6 +321,10 @@
   gap: 6px;
   font: 400 15px var(--font-voice);
 }
+/* UI-6b: the previous and next arrows are 40 px wide tap targets (phase 06-4) */
+.dexnav .pb {
+  min-width: 40px;
+}
 .dexpage {
   animation: up 0.35s ease-out;
 }

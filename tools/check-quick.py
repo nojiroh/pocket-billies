@@ -527,10 +527,11 @@ def safety_step(P):
 @step('Tap targets: every control on the main screens is big enough to tap (phase 06-4)', 240)
 def targets_step(P):
     """phase 06-4 accessibility: on a 390 px phone every visible control is at least 40 px each way, or one of the small
-    icon controls that carry an invisible margin (game/css/menus.css: 7 px all round)"""
+    icon controls that carry an invisible margin (game/css/menus.css: 7 px all round). 40 px is the game's rule; the
+    Studio's overlay marks under 44 px (WCAG 2.5.5)"""
     pg = P.pg
-    small = """(where)=>{const out=[];const pad=e=>e.matches('.wh-x,.mbtn,.swatch,.tb-btn,.qb')?14:0;
-      for(const e of document.querySelectorAll('button,a[href],[role=button],[role=tab],input,select,[data-a]')){
+    small = """(where)=>{const out=[];const pad=e=>e.matches('.wh-x,.mbtn,.swatch,.tb-btn,.qb,.sw')?14:0;
+      for(const e of document.querySelectorAll('button,a[href],[role=button],[role=tab],input,select,summary,[data-a]')){
         if(e.closest('[hidden],.dbg'))continue;const r=e.getBoundingClientRect();if(!r.width||!r.height||r.bottom<0||r.top>innerHeight)continue;
         const cs=getComputedStyle(e);if(cs.visibility==='hidden'||cs.display==='none'||+cs.opacity===0)continue;
         const m=Math.min(r.width,r.height)+pad(e);if(m<39.5)out.push(where+': '+(e.dataset.a||e.className||e.tagName)+' '+Math.round(r.width)+'x'+Math.round(r.height))}
@@ -542,11 +543,15 @@ def targets_step(P):
     for tab in ['walk', 'team', 'guide', 'profile', 'bag']:
         pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='{tab}';render();scrollTo(0,0);0"); ui(pg)
         bad += pg.evaluate(small, tab)
-    for name, js in [('details', "billySheet(saveData.team[0])"), ('settings', "openSettings()"), ('shop', CHECK_SHOP + "openShop('check_shop')"), ('dressing room', "openDressingRoom({})")]:
+    # UI-6b: a Field Guide entry (its arrows), Settings' Display (switches) and Help (sections) tabs too
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='guide';uiState.dex=saveData.team[0].sp;render();scrollTo(0,0);0"); ui(pg)
+    bad += pg.evaluate(small, 'guide entry')
+    pg.evaluate("uiState.dex=null;0")
+    for name, js in [('details', "billySheet(saveData.team[0])"), ('settings', "openSettings()"), ('settings display', "openSettings('graphics')"), ('settings help', "openSettings('help')"), ('shop', CHECK_SHOP + "openShop('check_shop')"), ('dressing room', "openDressingRoom({})")]:
         pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';render();{js};0"); ui(pg)
         bad += pg.evaluate(small, name)
     if bad: raise Exception(f'{len(bad)} controls too small to tap: ' + '; '.join(bad[:8]))
-    return 'every control on 9 screens is 40 px or more, or an icon with its 7 px tap margin'
+    return 'every control on 12 screens is 40 px or more, or an icon with its 7 px tap margin'
 
 
 @step('Sound settings: each slider sets its bus and sounds on it when let go, each row mutes its bus, the header mute keeps the levels (SND-1, UI-7a)', 120)
