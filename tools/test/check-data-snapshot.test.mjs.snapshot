@@ -11,7 +11,7 @@ exports[`check-data: planted quests (TW-3) 1`] = `
 `;
 
 exports[`check-data: planted residents (RS-1) 1`] = `
-"  warning: maps/copperleaf.json: Scene Copperleaf Town: bridge 3 ends in the water, so nobody can step onto it. Drag it from bank to bank.\\n  warning: maps/test_props_island.json: Scene Test: the island props (island track IS-4): bridge 1 ends in the water, so nobody can step onto it. Drag it from bank to bank.\\n  residents.json: more than one first resident: dottie, bertha\\n  residents.json: mo.home: no building \\"nosuchbuilding\\" (buildings.json or Copperleaf)\\n  residents.json: gus.levels: no unlock \\"nosuchunlock\\" (unlocks.json)\\n  residents.json: rosa.levels: ranch_2 is sold at ranch, not at station\\ngame data: 4 problem(s) in 153 files\\n(exit 1)"
+"  warning: maps/copperleaf.json: Scene Copperleaf Town: bridge 3 ends in the water, so nobody can step onto it. Drag it from bank to bank.\\n  warning: maps/test_props_island.json: Scene Test: the island props (island track IS-4): bridge 1 ends in the water, so nobody can step onto it. Drag it from bank to bank.\\n  residents.json: more than one first resident: dottie, bertha\\n  residents.json: mo.home: no building \\"nosuchbuilding\\" (buildings.json or Copperleaf)\\n  residents.json: gus.levels: no unlock \\"nosuchunlock\\" (unlocks.json)\\n  residents.json: rosa.levels: ranch_2 is sold at ranch, not at station\\n  unlocks.json: caught_15.when: resident:nosuchresident, no such resident\\ngame data: 5 problem(s) in 153 files\\n(exit 1)"
 `;
 
 exports[`check-data: planted robots, biomes, node types, relics, currencies, buildings and unlocks 1`] = `

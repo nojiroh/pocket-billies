@@ -200,6 +200,9 @@ test('check-data: planted residents (RS-1)', t => {
         R.gus.levels = ['nosuchunlock'];
         R.rosa.levels = ['ranch_2'];
       },
+      'unlocks.json': U => {
+        U.caught_15.when = 'resident:nosuchresident';
+      },
     })
   );
 });

@@ -159,6 +159,18 @@ test('RL-11: unlock:, runs and wins read what lasts between runs (saveData.meta)
     assert.equal(conditionHolds(c, none), true, `no meta: ${c}`);
 });
 
+test('RS-1: resident: and residents read who lives in Copperleaf (saveData.meta), in the hub and on a run', () => {
+  for (const run of [null, { seed: 'x' }]) {
+    const S = storyStateOf({ meta: { unlocks: {}, runs: 2, wins: 0, residents: { dottie: 1, mo: 2 } }, run });
+    for (const c of ['resident:dottie', '!resident:gus', 'residents >= 2', 'residents', 'residents < 3'])
+      assert.equal(conditionHolds(c, S), true, c);
+    for (const c of ['resident:gus', 'residents >= 3']) assert.equal(conditionHolds(c, S), false, c);
+  }
+  assert.equal(conditionHolds('residents', storyStateOf({ meta: {} })), false, 'a meta from before: nobody');
+  assert.equal(conditionProblem('resident:dottie and residents >= 3'), null);
+  assert.deepEqual([...conditionNames(conditionTree('resident:a or resident:b')).resident], ['a', 'b']);
+});
+
 test('RL-12b: type:, money and badge: read the team, the Moneys on hand and the badges won', () => {
   const save = {
     se: 250,

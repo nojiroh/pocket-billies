@@ -19,6 +19,7 @@
      last:lost, last:row <= 3      the last run (RL-S1: logic/run-history.js LAST_FACTS)
      lastby:boss, lastby:bureau    what ended the last run: its kind, a leader's or class's id, a Billie, the Bureau
      history:losses >= 2   over the runs kept (HISTORY_FACTS)   rematch >= 1   runs this foe ended (a leader's lines)
+     resident:dottie       someone lives in Copperleaf  residents >= 3   how many do (RS-1: meta.residents)
    combined with `and`, `or`, `not` / `!` and parentheses (`and` binds tighter than `or`). A bare count term
    (`item:honey`, `visits:juniper`, `badges`) means more than 0. Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -70,7 +71,7 @@ expose({
  *   unlocks: Record<string, any>, runs: number, wins: number, expedition?: number, questStages?: Record<string, string[]>,
  *   types?: Record<string, number>, money?: number, team?: number, badgeTypes?: Record<string, number>,
  *   opened?: Record<string, number>, last?: Record<string, number>, lastby?: Record<string, number>,
- *   history?: Record<string, number>, rematch?: number }} StoryState */
+ *   history?: Record<string, number>, rematch?: number, residents?: Record<string, number> }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
  * reads, for the Studio's reference (Project Story S3) */
@@ -112,6 +113,8 @@ export const CONDITION_KINDS = {
     about: 'over the runs kept (the last 20): history:runs, wins, losses, quits, streak, lstreak, bureau',
   },
   rematch: { id: false, count: true, about: 'in a leader’s or agent’s lines: runs this foe has ended: rematch >= 1' },
+  resident: { id: true, count: false, about: 'someone lives in Copperleaf (residents.json, RS-1): resident:dottie' },
+  residents: { id: false, count: true, about: 'how many live in Copperleaf (RS-1): residents >= 3' },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
 export const WORDS = new Set(['and', 'or', 'not']);
@@ -358,6 +361,10 @@ export function termValue(c, S) {
       return S.team || 0;
     case 'badge':
       return !!(S.badgeTypes || {})[c.id.toLowerCase()];
+    case 'resident':
+      return !!(S.residents || {})[c.id];
+    case 'residents':
+      return Object.keys(S.residents || {}).length;
     case 'opened':
       return !!(S.opened || {})[c.id];
     case 'last':
@@ -442,6 +449,8 @@ export function storyStateOf(save, o = {}) {
     lastby: facts.lastby,
     history: facts.history,
     rematch: historyRematch(meta.history, o.foe),
+    /* RS-1: who lives in Copperleaf (logic/residents.js) */
+    residents: meta.residents || {},
   };
 }
 
