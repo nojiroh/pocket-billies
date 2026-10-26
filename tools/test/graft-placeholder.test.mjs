@@ -2,8 +2,8 @@
 // graftPlaceholder). Tested on sample Billies (tools/bake-placeholders.mjs samplePlaceholder), one per plan, until the
 // roster's own are placeholders. A slot's groups per plan; every plan gives every other plan its front, back and sig,
 // inside the stage box, the same twice; the grafted bones wear the donor's colour and the rest keep their pixels; a
-// mirrored twin is its bone flipped; a chain as long as the donor's is taken bone for bone; a slot one side lacks is
-// refused; the donors are other lines with the slot.
+// mirrored twin is its bone flipped; a chain takes the donor's bones spread along it, so every bone draws; a slot one
+// side lacks is refused; the donors are other lines with the slot.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readJson } from '../data-files.mjs';
@@ -111,7 +111,7 @@ test("a mirrored twin wears its bone's new picture flipped", () => {
   }
 });
 
-test("a chain as long as the donor's takes it bone for bone; a shorter one takes it whole on its first bone", () => {
+test("a chain takes the donor's bones spread along it (bone for bone when as long); one bone takes them whole", () => {
   const octo = bake('octo'),
     donor = bake('octo', true),
     made = G.graftPlaceholder(P, D, octo, { front: donor }),
@@ -123,12 +123,17 @@ test("a chain as long as the donor's takes it bone for bone; a shorter one takes
     arm = G.graftPic({ form: bake('biped').form, rig: biped.rig, sheet: biped.sheet }, 'front', 'armL').pic,
     seg = G.graftPic(donor, 'front', 't10').pic;
   assert.ok(arm.height > seg.height * 1.5, 'longer than one tentacle segment');
-  /* an octopus given an arm: the arm on the first segment, the others draw nothing but keep their joints */
-  const given = G.graftPlaceholder(P, D, octo, { front: bake('biped', true) });
-  assert.deepEqual(
-    ['t10', 't11', 't12', 't40', 't41', 't42'].map(n => given.rig.front.bones.find(b => b.n === n).i >= 0),
-    [true, false, false, true, false, false]
-  );
+  /* every bone of a chain still draws: an octopus given an arm, a serpent's neck (it holds the head) given a leg */
+  for (const [to, slot, from, bones] of [
+    ['octo', 'front', 'biped', ['t10', 't11', 't12', 't40', 't41', 't42']],
+    ['serpent', 'front', 'crab', ['n1', 'n2']],
+    ['hopper', 'back', 'octo', ['thighL', 'footL', 'thighR', 'footR']],
+  ]) {
+    const given = G.graftPlaceholder(P, D, bake(to), { [slot]: bake(from, true) });
+    for (const view of PA.PLACEHOLDER_VIEWS)
+      for (const n of bones)
+        assert.ok(given.rig[view].bones.find(b => b.n === n).i >= 0, `${from} -> ${to}: ${view} ${n} draws`);
+  }
 });
 
 test('a slot one side lacks is refused; donors are other lines with the slot', () => {

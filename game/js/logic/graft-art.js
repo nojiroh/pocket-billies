@@ -57,7 +57,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   graftPic: [() => graftPic, v => (graftPic = v)],
   // @ts-expect-error -- replaced on purpose
-  graftPlaceholder: [() => graftPlaceholder, v => (graftPlaceholder = v)],
+  graftPlaceholder: [() => graftPlaceholder, v => ((graftPlaceholder = v), provide({ graftPlaceholder }))],
   // @ts-expect-error -- replaced on purpose
   graftPlaceholderAt: [() => graftPlaceholderAt, v => (graftPlaceholderAt = v)],
   // @ts-expect-error -- replaced on purpose
@@ -68,7 +68,7 @@ expose({
   graftTurn: [() => graftTurn],
 });
 /* eslint-enable no-func-assign */
-provide({ graftForm, graftParse });
+provide({ graftForm, graftParse, graftPlaceholder });
 /* to-module: end */
 /** the slots SP-1 grafts */
 export const GRAFT_SLOTS = ['front', 'back', 'sig'];
@@ -151,8 +151,9 @@ export function graftDonors(B, K, sp, slot) {
    - a slot's groups: a plan's own bones in it (mirrors follow their twin), a bone hanging on another bone of the
      slot carrying on that one's chain (an octopus's tentacle is one group of 3, a quad's front legs two of 1);
    - the receiver's group i takes the donor's group i mod n (a biped's arm fills both of a quad's front legs);
-   - a chain as long as the donor's takes it bone for bone; else the donor's group, put together at rest, goes on the
-     chain's first bone and the rest of the chain keeps its joints but draws nothing (an arm where a tentacle was);
+   - a single bone takes the donor's whole group, put together at rest (a tentacle for an arm); a chain takes the
+     donor's bones spread along it, bone for bone when as long, so every bone still draws (a neck holding a head
+     never breaks: an arm on each of an octopus's tentacle segments);
    - a slot the receiver or the donor has no bone in is refused (the octopus and the blob share one bone between
      body and head, bodyPlans.json `also`, and the body is never grafted);
    - each picture is fitted to the bone it lands on: turned in quarter turns (exact) to point the way that bone
@@ -291,11 +292,8 @@ export function graftPlaceholderAt(bones, D, recv, donors, mine, theirs, k) {
             const rp = graftPic(recv, view, n);
             return dp && rp ? graftFit(dp, rp, k) : null;
           };
-        if (g.length === d.length) g.forEach((n, j) => (v[n] = fit(graftPic(donor, view, d[j]), n)));
-        else {
-          v[g[0]] = fit(graftGroupPic(donor, view, d), g[0]);
-          for (const n of g.slice(1)) v[n] = null;
-        }
+        if (g.length === 1) v[g[0]] = fit(graftGroupPic(donor, view, d), g[0]);
+        else g.forEach((n, j) => (v[n] = fit(graftPic(donor, view, d[Math.floor((j * d.length) / g.length)]), n)));
       });
     /* a mirrored twin draws its bone's new picture flipped */
     for (const b of bones)
