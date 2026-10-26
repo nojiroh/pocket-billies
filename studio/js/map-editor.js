@@ -21,10 +21,16 @@ import {
   propEditorCardHTML,
   provide,
   scatterToolBarHTML,
+  waterToolsSceneBarHTML,
+  waterToolsSceneDown,
+  waterToolsSceneDraw,
+  waterToolsSceneMove,
+  waterToolsSceneUp,
 } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { turnedPoint } from '../../game/js/logic/prop-turn.js';
 import { roomTurnOf } from '../../game/js/logic/room-turn.js';
+import { WATER_KINDS } from '../../game/js/logic/water-kinds.js';
 import {
   storyNamesIn,
   storyPreviewAllows,
@@ -102,6 +108,8 @@ expose({
   GROUND_KEYS: [() => GROUND_KEYS],
   LOCKED_GROUND_TOOLS: [() => LOCKED_GROUND_TOOLS],
   PAINTED_WATER_KINDS: [() => PAINTED_WATER_KINDS],
+  WATER_KIND_SWATCHES: [() => WATER_KIND_SWATCHES],
+  WATER_TOOL_MODES: [() => WATER_TOOL_MODES],
   addSceneryProp: [() => addSceneryProp, v => (addSceneryProp = v)],
   applyPreviewEnvironment: [() => applyPreviewEnvironment, v => (applyPreviewEnvironment = v)],
   artCacheVersion: [() => artCacheVersion, v => ((artCacheVersion = v), provide({ artCacheVersion }))],
@@ -161,6 +169,7 @@ expose({
   waterPointerUp: [() => waterPointerUp, v => (waterPointerUp = v)],
   waterRectAt: [() => waterRectAt, v => (waterRectAt = v)],
   waterToolBarHTML: [() => waterToolBarHTML, v => (waterToolBarHTML = v)],
+  waterToolRefusal: [() => waterToolRefusal],
   watersChanged: [() => watersChanged, v => (watersChanged = v)],
   workingStepGrid: [() => workingStepGrid, v => (workingStepGrid = v)],
 });
@@ -713,7 +722,7 @@ function mapToolHint() {
       height:
         'Drag to raise or lower the ground. Smooth softens bumps, Flatten levels everything to the height where you started. Steep slopes become cliffs nobody can climb; roads should stay gentle.',
       water:
-        'Drag a rectangle over water to make it a pond, stream, canal, spring, swamp or lake. Later rectangles win where they overlap; right-click (or Alt-click) one to remove it. Water you don’t cover uses the scene’s own kind, and running water (a stream path) is a stream.',
+        'Kinds: drag a rectangle over water to give it a kind (pond, stream, lake, sea, lava, ice, rapids, hot spring…). Later rectangles win where they overlap; right-click (or Alt-click) one to remove it. Water you don’t cover uses the scene’s own kind, and running water (a stream path) is a stream. Rivers and Falls: the scene’s stream lines and waterfalls (water-tools.js).',
       exits:
         'Drag the gold star (where you stand when you stay) or a green exit. Click empty ground to add an exit; right-click (or Alt-click) an exit to remove it. Roads leave through the exit that points their way on the world map.',
       erase: 'Click a prop to remove it.',
@@ -1468,6 +1477,9 @@ function bindEditorMap() {
       return;
     }
     if (mapEditor.tool === 'water') {
+      if (waterToolRefusal(sc)) return void toast(waterToolRefusal(sc));
+      if ((mapEditor.wmode || 'kinds') !== 'kinds' && typeof waterToolsSceneDown === 'function')
+        return void waterToolsSceneDown(sc, m, ev);
       const R = sc.waters || [],
         n = waterRectAt(sc, m);
       if (n >= 0 && (ev.button === 2 || ev.altKey || mapEditor.wk === 'erase')) {
@@ -1605,6 +1617,9 @@ function bindEditorMap() {
     } else if (D.k === 'stairs' || D.k === 'bridge' || D.k === 'wrect') {
       D.b = [m.x, m.z];
       drawEditorMap();
+    } else if (D.k.startsWith('wt') && typeof waterToolsSceneMove === 'function') {
+      waterToolsSceneMove(sc, m, D);
+      drawEditorMap();
     } else if (D.k === 'hub' || D.k === 'exit') {
       const q = +clamp(m.x, 0.3, sc.w - 0.3).toFixed(2),
         r = +clamp(m.z, 0.3, sc.h - 0.3).toFixed(2);
@@ -1651,6 +1666,10 @@ function bindEditorMap() {
     }
     if (D.k === 'wrect') {
       waterPointerUp(currentMap(), D);
+      return;
+    }
+    if (D.k.startsWith('wt') && typeof waterToolsSceneUp === 'function') {
+      waterToolsSceneUp(currentMap(), D);
       return;
     }
     if (D.k === 'paint' || D.moved || D.k === 'exit' || D.k === 'height') {
@@ -2904,34 +2923,60 @@ function drawStepsOverlay(x, sc, Z) {
 }
 
 /* ---------- v22: kinds of water, painted as rectangles over the water ---------- */
-const PAINTED_WATER_KINDS = [
-  ['pond', 'Pond', '#4FA6C0'],
-  ['stream', 'Stream', '#7FD0E6'],
-  ['canal', 'Canal', '#5E8C84'],
-  ['spring', 'Spring', '#3FD6D0'],
-  ['swamp', 'Swamp', '#6B7A34'],
-  ['lake', 'Lake', '#2E6FB0'],
-  /* water track WA-5a: the appended kinds (logic/water-kinds.js; drawn with an old kind's look until WA-5b) */
-  ['rapids', 'Rapids', '#D8F0F4'],
-  ['hotspring', 'Hot spring', '#7FD8C8'],
-  ['oasis', 'Oasis', '#3FB8A8'],
-  ['bog', 'Bog', '#5A5A2A'],
-  ['reef', 'Reef', '#3FD0C8'],
-  ['cave', 'Cave', '#2A5A70'],
+/* each kind's name and swatch; the list is logic/water-kinds.js WATER_KINDS (WA-9: sea, lava and ice were missing) */
+const WATER_KIND_SWATCHES = {
+  pond: ['Pond', '#4FA6C0'],
+  stream: ['Stream', '#7FD0E6'],
+  canal: ['Canal', '#5E8C84'],
+  spring: ['Spring', '#3FD6D0'],
+  swamp: ['Swamp', '#6B7A34'],
+  lake: ['Lake', '#2E6FB0'],
+  sea: ['Sea', '#1F5E9A'],
+  lava: ['Lava', '#E2662C'],
+  ice: ['Ice', '#CFE8F2'],
+  /* water track WA-5a: the appended kinds */
+  rapids: ['Rapids', '#D8F0F4'],
+  hotspring: ['Hot spring', '#7FD8C8'],
+  oasis: ['Oasis', '#3FB8A8'],
+  bog: ['Bog', '#5A5A2A'],
+  reef: ['Reef', '#3FD0C8'],
+  cave: ['Cave', '#2A5A70'],
+};
+export const PAINTED_WATER_KINDS = WATER_KINDS.map(k => [k, ...(WATER_KIND_SWATCHES[k] || [k, '#888888'])]);
+/* WA-9: the water tool's modes: kinds (rectangles), a saved scene's rivers (streams) and falls (studio/js/water-tools.js) */
+const WATER_TOOL_MODES = [
+  ['kinds', 'Kinds'],
+  ['rivers', 'Rivers'],
+  ['falls', 'Falls'],
 ];
+/** the hub island's water is not changed here (its fall waits for the hub track's HB-4b): why, or '' */
+export const waterToolRefusal = sc =>
+  sc && sc.islandGen
+    ? "The hub island's water stays as it is: its waterfall waits for the hub track (HB-4b), so the water tools don't change it."
+    : '';
 function waterToolBarHTML(p) {
   const sc = currentMap();
   mapEditor.wk = mapEditor.wk || 'pond';
-  return `<div class="sc-hbar">${PAINTED_WATER_KINDS.map(([k, n, c]) => `<button class="seg ${mapEditor.wk === k ? 'on' : ''}" data-act="scWK" data-k="${k}"><span class="sc-swatch" style="background:${c}"></span>${n}</button>`).join('')}<button class="seg ${mapEditor.wk === 'erase' ? 'on' : ''}" data-act="scWK" data-k="erase">Remove</button>
+  if (waterToolRefusal(sc))
+    return `<div class="sc-hbar"><p class="help warn">${escapeHtml(waterToolRefusal(sc))}</p></div>`;
+  const mode = mapEditor.wmode || 'kinds',
+    modes = `<div class="seg-row">${WATER_TOOL_MODES.map(([k, n]) => `<button class="seg ${mode === k ? 'on' : ''}" data-act="scWMode" data-k="${k}">${n}</button>`).join('')}</div>`;
+  if (mode !== 'kinds' && typeof waterToolsSceneBarHTML === 'function') return modes + waterToolsSceneBarHTML(sc, mode);
+  return `${modes}<div class="sc-hbar">${PAINTED_WATER_KINDS.map(([k, n, c]) => `<button class="seg ${mapEditor.wk === k ? 'on' : ''}" data-act="scWK" data-k="${k}"><span class="sc-swatch" style="background:${c}"></span>${n}</button>`).join('')}<button class="seg ${mapEditor.wk === 'erase' ? 'on' : ''}" data-act="scWK" data-k="erase">Remove</button>
  <label class="mp-size"><span>The rest of the water</span><select id="scWDef">${[['', 'Guess (caves: spring, towns: canal, else pond)'], ...PAINTED_WATER_KINDS.filter(w => w[0] !== 'stream').map(([k, n]) => [k, n])].map(([k, n]) => `<option value="${k}" ${(sc.waterKind || '') === k ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></label>
  ${(sc.waters || []).length ? `<button class="btn sm subtle" data-act="scWClear">Remove all ${(sc.waters || []).length}</button>` : ''}</div>`;
 }
+ACTIONS.scWMode = d => {
+  mapEditor.wmode = d.k;
+  render();
+};
 ACTIONS.scWK = d => {
   mapEditor.wk = d.k;
   render();
 };
 ACTIONS.scWClear = async () => {
   const sc = currentMap();
+  if (waterToolRefusal(sc)) return void toast(waterToolRefusal(sc));
   if (!(await ask('Remove every water rectangle in this scene?', 'Remove'))) return;
   delete sc.waters;
   watersChanged();
@@ -2940,7 +2985,7 @@ ACTIONS.scWClear = async () => {
 document.addEventListener('change', ev => {
   if (ev.target.id !== 'scWDef') return;
   const sc = currentMap();
-  if (!sc) return;
+  if (!sc || waterToolRefusal(sc)) return;
   if (ev.target.value) sc.waterKind = ev.target.value;
   else delete sc.waterKind;
   watersChanged();
@@ -2953,7 +2998,7 @@ function waterRectAt(sc, m) {
   }
   return -1;
 }
-function watersChanged() {
+export function watersChanged() {
   if (typeof walkRenderer !== 'undefined') walkRenderer.hkey = '';
   changed();
   commit(true);
@@ -2976,6 +3021,8 @@ function drawWatersOverlay(x, sc, Z) {
   const on = mapEditor.tool === 'water',
     H = sc.h,
     R = sc.waters || [];
+  if (on && (mapEditor.wmode || 'kinds') !== 'kinds' && typeof waterToolsSceneDraw === 'function')
+    waterToolsSceneDraw(x, sc, Z, mapEditor.wmode);
   if (!R.length && !on) return;
   const col = k => (PAINTED_WATER_KINDS.find(w => w[0] === k) || PAINTED_WATER_KINDS[0])[2];
   R.forEach(r => {
