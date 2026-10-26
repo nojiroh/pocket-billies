@@ -266,6 +266,91 @@ question round first (name Off, full sharpness, time of day and weather off too,
   smoke check (6/6). Headless: Copperleaf on Beautiful vs Off (engine dials read 0, env off, no page errors) and the
   cards at 420 px; tapping Beautiful then Off sets `aim` sharp then off. Full quick check not run (not a phase).
 - **Next:** try Off on the phone; if it isn't fast enough, a lighter post pass (tone map and ink only) is the step.
+### VFX track VFX-3 - The stretched pyramid - 2026-10-26
+Branch `track/vfx` (main merged in first; HANDOFF conflicted, both sides kept). Plan approved in Plan Mode; the
+owner's answers: the 2 m rule near the camera stays (a catch's release is within it, so a catch stretches only before
+the hit; the send-out and the mail coin stretch at both ends); the 2D fallback's icon stretches too.
+- logic/smear.js: `throwArcPace` (the ease's slope) and `smearStretch`: on a cell whose kept place has a pace of 1.3x
+  the mean or more (`STRETCH_PACE`: one or two cells at each end of a 380-480 ms throw), the drag toward the place one
+  cell ago, x0.6 (`STRETCH_K`), at most 0.8 m (`STRETCH_MAX`), and a seed a cell; held for the cell, none once landed,
+  near the camera, under Reduced motion or at quality 3 (the afterimages' gate). Kept places now carry the arc's `k`.
+  Tests in tools/test/smear.test.mjs.
+- prop-models.js `SMEAR_GLSL`/`smearDrag` in both one-at-a-time vertex shaders (low-poly `mdl` and voxel `vox`):
+  from the spin's pivot, a vertex facing away from the motion is pushed back by the drag x clamp(dot) x noise
+  (0.7..1, hashed from its model place and the seed); `setItemSmear` sets `uSmear` for every item (0 unless
+  `it.smear`). "Models in batches" (on by default) has no room for it in the instance record, so a stretched item
+  leaves the batch (`splitSmeared`) and is drawn one at a time. Shadows stay unstretched.
+- battle-stage.js `battleStretch(C)`, used by battle-3d.js (the main pyramid only, not its copies; the drag turned
+  into the walk scene's metres) and the 2D icon (scaled along the projected drag, its front edge kept).
+- Checked: the plan said "the voxel shader"; the pyramid is low-poly by default (`world.voxelLowPoly`), voxel when that
+  is off; both were filmed.
+- Risky, check on the phone: the look (an arrow-like wedge for a cell or two; 0.6/0.8 m are first guesses for VFX-6's
+  dials). At a send-out's release the pyramid is at the top edge, partly under the top bar. In headless films a
+  catch's foe sometimes reads white in the noon sun's glare, in frames before the stretch too (not this change).
+- Verified: lint, typecheck, format, check:modules, unit tests 1329 pass; headless films (landscape catch and
+  send-out, phone portrait, voxel path, batching on, the 2D fallback): the wedge shows on the fast cells only, no
+  errors. Smoke check (check-quick --smoke): 6 of 6 passed in 214 s. Tag `vfx-3-done` for the owner (the git proxy
+  refuses tag pushes).
+- Next: VFX-4 (the impact frame) on `track/vfx`, in Plan Mode.
+
+### VFX track VFX-2 - The motion-line ribbon - 2026-10-26
+Branch `track/vfx` (main merged in first; HANDOFF and BRANCHES conflicted, both sides kept). Plan approved in Plan
+Mode; the owner's answers: the 2D fallback draws it too; the catch, the send-out and the mail coin all leave it;
+six places long (about 250 ms).
+- logic/smear.js: `smearRibbon` (a Catmull-Rom curve through the last kept places, up to where the pyramid is now
+  while it flies; tapered to nothing at the tail; erosion in quarter steps, the tail frayed to 0.75 in flight, then one
+  more step a 24 fps cell once it stops, gone in four cells, about 167 ms), `ribbonEdges` (faces the camera; a spin
+  throw turns it about its tumble axis by a third of the tumble), `ribbonCells` (6, 4 at quality level 2, none under
+  Reduced motion or at level 3), `ribbonTone` (the colour's value x1.35). A history now keeps `SMEAR_KEEP` (6)
+  places; the afterimages read the first ones as before. Tests in tools/test/smear.test.mjs.
+- walk/effects.js `RIBBON_SHADERS`/`ribbonPass`: one triangle strip, unlit, no blending, a 4x4 Bayer dither on the
+  screen's pixels for the erosion, a white core in the middle 40%, fogged; precompiled with the walk programs.
+  walk-view-gl.js calls it after the effects pass when the battle's frame has a ribbon; battle-3d.js builds it while
+  the pyramid's model is drawn (`ribbonVertices`; `ribbonColour`: the recipe's first layer colour, the mail coin the
+  gold pyramid's). battle-stage.js: `C.arc` (on its arc: the ribbon reaches it), `C.rax` (a spin throw's axis, kept
+  when the catch's hit changes `C.ax`), `battleRibbonCells`, and the 2D fallback's `drawRibbon2d` (4x4 dither
+  patterns, a colour and step each, made once).
+- Changed after a headless film: the half width 0.24 m (0.13 m read as a thin line next to the 0.54 m pyramid), the
+  twist a third of the tumble (the whole of it turned the strip nearly twice along its length: mostly edge-on).
+- Found on the way: the UI lint's raw-colour ceiling counts hex in game JS, so the ribbon has no hex of its own (the
+  coin takes the gold pyramid's recipe colour; the 2D core is `'white'`). A pyramid whose recipe hasn't loaded yet
+  draws no ribbon for that moment. In a slow headless browser the battle's adaptive quality reaches level 3 and the
+  smears switch off (the gate working); the films lock quality at 0.
+- Risky, check on the phone: the look (width, the core's share, the twist) and the cost (one strip, a few dozen
+  vertices). At the check's third resolution the white core is about a pixel and barely shows; at full resolution it
+  reads. The ribbon starts only once the pyramid is 2 m from the camera (the first ~130 ms of a catch), as the copies.
+- Verified: lint, typecheck, format, check:modules, unit tests 1316 pass; headless films (landscape, phone portrait,
+  spin and plain catches, the 2D fallback): the strip trails the pyramid, frays at its tail and erodes out in four
+  steps after the hit. Smoke check (check-quick --smoke): 6 of 6 passed in 170 s. Full quick check: 35 of 40, none in
+  battles: the four known main failures (terraces `sky_portal`, RL-8's shop Perk, room light, song fingerprints' cave
+  mid/late) and "Running" (the gait grew too little on a walk; run alone it fails the same way on main 715cf860, the
+  measures vary run to run: a slow headless machine, not this session's). Tag `vfx-2-done` for the owner (the git proxy refuses tag pushes).
+- Next: VFX-3 (the stretched pyramid) on `track/vfx`, in Plan Mode.
+
+### VFX track VFX-0 and VFX-1 - The plan (smears, with research), the eased throw and its afterimages - 2026-10-26
+Branch `ccr-a98cc267-eqso1d`, built here at the owner's word (`track/vfx` didn't exist yet; later sessions start on
+`track/vfx`, made from this branch). Plan approved in Plan Mode; the owner's answers in docs/phases/vfx-track.md.
+- VFX-0: docs/phases/vfx-track.md (the brief, the research and its sources, how smears fit the art, sessions VFX-1..6),
+  ROADMAP and BRANCHES.
+- VFX-1: game/js/logic/smear.js (`throwArcEase`, `smearHistory`/`smearRecord`/`smearGhosts`, `smearCount`) and
+  tools/test/smear.test.mjs. battle-stage.js `pyramidArc` eases its progress (1.45x the mean speed at both ends, 0.55x
+  at the top, the same path and duration) and records `C.trail` on a 24 fps grid; battle-3d.js draws up to three
+  copies of the pyramid model at its older places (the models' Bayer-dithered fade 0.6/0.4/0.25, brighter through
+  the low-poly shader's look: value x1.45..1.95), `it.ghost` skips their shadows (prop-models.js, both paths). The 2D
+  fallback icon draws them too. None under Reduced motion or at battle quality 3, two at level 2, none within 2 m of
+  the camera (a throw leaves the lens: the first copies filled the screen). The send-out and the mail move's coin use
+  the same arc, so they ease and leave copies too.
+- Found on the way: the pyramid is a low-poly model (its recipe has `cel`), so a voxel prop's `glow` doesn't brighten
+  it; the copies are brightened through `it.lk` instead (walk/prop-look.js's look). The trailing copies mostly show the
+  pyramid's shaded faces, so they read darker than the plan's "own colours, brighter"; the white core comes with
+  VFX-2's ribbon. The logic worker's module list (studio/js/logic-worker-modules.js) needs every new logic module.
+- Risky, check on the phone: the throw's feel (the hang at the top); in a landscape window the arc's top leaves the
+  frame (as before), and now spends longer there; in a phone's portrait view it stays in frame.
+- Verified: lint, typecheck, format, check:modules, unit tests 1291 pass; a headless film of a slowed throw (landscape
+  and phone): the copies trail the pyramid and run out after the hit. Smoke check (check-quick --smoke): 6 of 6
+  passed in 195 s. Tags `vfx-0-done` (e437c6f4) and `vfx-1-done` for the owner: the session's git proxy
+  refuses tag pushes.
+- Next: VFX-2 (the motion-line ribbon with the white core) on `track/vfx`.
 
 ### UI track UI-8 - The bottom bar with the minimap; merge batch 3 - 2026-10-26
 Branch `ccr-30c007a6-eol40p` (`track/ui` didn't exist; a session pushes only to its own branch). Plan approved after a
