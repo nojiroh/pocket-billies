@@ -2141,6 +2141,8 @@ export interface SetPiece {
   /** draw weights by biome, `default` for one not listed */
   biomes: Record<string, number>;
   /** a layout plan's multiplier on its weight */
+  /** RL-14: draw weights on a place of a kind (the scene's site dial: a run's scrapyard), in place of its biome's */
+  sites?: Record<string, number>;
   plans?: Record<string, number>;
   props: SetPieceProp[];
   people?: SetPiecePerson[];

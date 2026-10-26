@@ -92,11 +92,27 @@
     {"k":"rocks_mossy","x":2.4,"z":4.2}
    ]
   },
+  "scrap_heap": {
+   "name": "Scrap heap",
+   "on": ["clearing","roadside"],
+   "r": 4.2,
+   "biomes": {"default":0},
+   "sites": {"scrapyard":6},
+   "props": [
+    {"k":"scrap","x":-1.6,"z":2.4},
+    {"k":"scrap","x":1.8,"z":3.2},
+    {"k":"tires","x":-3.2,"z":1},
+    {"k":"barrels","x":3.1,"z":1.2},
+    {"k":"crate","x":0.2,"z":4.1},
+    {"k":"signpost","x":0.4,"z":0.4,"say":"Bureau of Lost, Found and Beans. Unclaimed property. Claims in triplicate."}
+   ]
+  },
   "bureau_checkpoint": {
    "name": "Bureau checkpoint",
    "on": ["roadside"],
    "r": 3.8,
    "biomes": {"default":1},
+   "sites": {"scrapyard":2},
    "props": [
     {"k":"tollbooth","x":-2.5,"z":1.2},
     {"k":"bollard","x":-0.9,"z":0.3},

@@ -78,6 +78,18 @@
        "maximum": 100
       }
      },
+     "sites": {
+      "description": "RL-14: draw weights on a place of a kind (a scene's `site` dial: a run's scrapyard), in place of its biome's",
+      "type": "object",
+      "propertyNames": {
+       "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+       "type": "number",
+       "minimum": 0,
+       "maximum": 100
+      }
+     },
      "plans": {
       "description": "a layout plan's multiplier on the weight (logic/mapgen.js MAPGEN_LAYOUTS)",
       "type": "object",

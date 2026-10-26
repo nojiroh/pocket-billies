@@ -51,6 +51,8 @@ test('route trainers: perRoute by row on every route, of different classes, the 
     assert.deepEqual(T, RT.runRouteTrainers(run(seed), TD));
     a.map.nodes.forEach((node, i) => {
       const here = Object.values(T).filter(t => t.runNode === i);
+      /* RL-14: a scrapyard's agents have their own test below */
+      if (node.type === 'scrapyard') return;
       if (node.type !== 'route') return assert.equal(here.length, 0, `${seed}: none on a ${node.type}`);
       routes++;
       /* a pair counts as two */
@@ -177,4 +179,32 @@ test('route trainers: they see a straight line ahead, sight metres long and a li
   assert.equal(see([11.2, 12]), false, 'too far to the side');
   assert.equal(see([10, 8]), false, 'behind it');
   assert.equal(RT.routeInSight(at, at, [10, 11], 6), false, 'facing nowhere');
+});
+
+test('RL-14: a scrapyard has its faction’s agents by the road, each with its bots; the same run alike', () => {
+  const Y = GAME_DATA.factions.factions.bureau.scrapyard;
+  let yards = 0;
+  for (let k = 0; k < 40 && yards < 4; k++) {
+    const seed = 'YARD' + k,
+      a = run(seed),
+      T = RT.runRouteTrainers(a, TD);
+    assert.deepEqual(T, RT.runRouteTrainers(run(seed), TD));
+    a.map.nodes.forEach((node, i) => {
+      if (node.type !== 'scrapyard') return;
+      yards++;
+      const here = Object.values(T).filter(t => t.runNode === i);
+      assert.ok(here.length >= Y.trainers[0] && here.length <= Y.trainers[1], `${seed} node ${i}: ${here.length}`);
+      for (const t of here) {
+        assert.ok(Y.classes.includes(t.cls), t.cls);
+        assert.equal(t.route.opt, false, 'by the road');
+        assert.ok(!t.mate, 'no pairs');
+        assert.ok(
+          t.team.some(b => b.sp === 'robot'),
+          `${t.id} fields bots`
+        );
+        assert.deepEqual(t.script, ['pick bureau', `battle ${t.id}`]);
+      }
+    });
+  }
+  assert.ok(yards > 0, 'some seed has a scrapyard');
 });

@@ -395,3 +395,40 @@ test("RL-14: a run place's wild ones are now and then the Bureau's bots: from th
     data.worldHubBack();
   }
 });
+
+test('RL-14: a scrapyard is a laid-out place with scrap heaps, its scenes join, and every wild one is a bot', () => {
+  let run = null;
+  for (let k = 0; k < 60 && !run; k++) {
+    const r = runOf('RL14YARD' + k);
+    if (r.map.nodes.some(n => n.type === 'scrapyard')) run = r;
+  }
+  assert.ok(run, 'a seed with a scrapyard');
+  const s = startedSave(GAME_DATA.rules.start.starters[0] + '0', 5),
+    i = run.map.nodes.findIndex(n => n.type === 'scrapyard'),
+    made = runScenesMake(run, WORLD_DATA),
+    sc = made[i],
+    W = runWorldTables(run, data.LOCATIONS[0], WORLD_DATA);
+  assert.equal(runSceneParams(run, i, made, WORLD_DATA).site, 'scrapyard');
+  assert.ok(sc.layout, 'laid out');
+  /* its set pieces are the ones made for it (setPieces.json sites): a scrap heap, now and then a checkpoint */
+  assert.ok((sc.pieces || []).some(p => p.id === 'scrap_heap') && sc.props.some(p => p.k === 'scrap'), 'a scrap heap');
+  for (const p of sc.pieces) assert.ok(GAME_DATA.setPieces.pieces[p.id].sites.scrapyard > 0, p.id);
+  assert.deepEqual(mapgenUnreachable(sc, GAME_DATA.scenery), [], 'all ground reachable');
+  assert.ok(
+    !made.some((m, j) => run.map.nodes[j].type !== 'scrapyard' && (m.pieces || []).some(p => p.id === 'scrap_heap')),
+    'heaps in scrapyards only'
+  );
+  s.run = run;
+  s.trip = { node: 0, plan: [] };
+  runArrive(s, 0, MAP_DATA);
+  data.worldPut({ ...W, maps: Object.fromEntries(W.locations.slice(1).map((p, j) => [p.mapId, made[j]])) });
+  try {
+    W.locations[i + 1].trainerCount = 2;
+    run.path.push(i);
+    const list = fn('encountersHere')(i + 1);
+    assert.ok(list.length > 0);
+    for (const q of list) assert.ok(q.sp.startsWith('bot:') && !q.rare, q.sp);
+  } finally {
+    data.worldHubBack();
+  }
+});

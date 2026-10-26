@@ -188,6 +188,8 @@ export function runSceneParams(run, i, scenes, data) {
     ...(layout ? { layout } : {}),
     /* RT-3: and its set pieces (setPieces.json perPlace) */
     ...(pieces ? { pieces } : {}),
+    /* RL-14: a scrapyard's set pieces lean to its own (setPieces.json sites) */
+    ...(node.type === 'scrapyard' ? { site: 'scrapyard' } : {}),
     /* TW-1: a town node is a town (mapgen.js mapgenStageTown: a street, a square, houses) */
     kind: node.type === 'town' ? 'town' : 'route',
     biome: node.biome || Object.keys(data.biomes)[0],

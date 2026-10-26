@@ -825,7 +825,9 @@ export function encountersHere(node = saveData.trip.node) {
       const rnd = rngFn(runNodeSeed(saveData.run.seed, L.runNode), 'wild|' + visit);
       W[L.id] = { at: now, list: [], v: visit };
       /* RT-4: a run route's first visit keeps the last of its stock for a rarer one (rules.json run.wild.rare) */
-      const rare = visit === 1 && !!L.trainerCount && !!RULES.run.wild.rare && cap > 0;
+      /* RL-14: none in a scrapyard, where every wild one is a bot */
+      const yard = !!saveData.run.map && saveData.run.map.nodes[/** @type {number} */ (L.runNode)].type === 'scrapyard',
+        rare = visit === 1 && !!L.trainerCount && !!RULES.run.wild.rare && cap > 0 && !yard;
       while (W[L.id].list.length < cap - (rare ? 1 : 0)) spawn(false, null, node, rnd);
       if (rare) spawnRare(node, rnd);
     }
