@@ -21,6 +21,7 @@ import {
   COMMON_GLSL,
   LIGHT_GLSL,
   LOOK_GLSL,
+  SURFACE_MATERIALS,
   bindQuad,
   ensurePrograms,
   gpuBuffer,
@@ -38,6 +39,7 @@ import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
 import { setPropLookUniforms } from './walk/prop-look.js';
 /* eslint-disable no-func-assign */
 expose({
+  BUILDING_BUMP_GLSL: [() => BUILDING_BUMP_GLSL],
   BUILDING_RAMP_GLSL: [() => BUILDING_RAMP_GLSL],
   BUILDING_ROOM_NAMES: [() => BUILDING_ROOM_NAMES],
   BUILDING_SHADERS: [() => BUILDING_SHADERS],
@@ -78,6 +80,7 @@ expose({
 provide({
   buildingFrontPicture,
   buildingGuard,
+  buildingItems,
   buildingMesh,
   cachedBuildingSignature,
   chimneySmoke,
@@ -175,6 +178,23 @@ export function buildingTextureGrid(A) {
 }
 const BUILDING_RAMP_GLSL = `vec3 rampC(vec3 b,float t){vec3 d0=mix(b*.55,vec3(.235,.165,.439),.30),d1=mix(b*.79,vec3(.376,.29,.596),.17),l3=mix(b,vec3(1.,.957,.769),.30),l4=mix(b,vec3(1.,.988,.918),.60);return t<.5?d0:t<1.5?d1:t<2.5?b:t<3.5?l3:l4;}
 float bayer4(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}`;
+/* Building bumpiness (world.buildingBumps): bricks, planks and roof tiles catch the light from their own texels. The
+   sheet's shade level (0-4 in red) is the height: one flat normal per texel (three reads at full size, wrapping inside
+   the 2 m cell), tilted only at its seams as the ground's built kinds are (walk/ground-textures.js groundPixelNormal);
+   the tangent frame from the screen's derivatives (no vertex data). Where a texel is smaller than a screen pixel (the
+   walk camera's usual distance) the sheet's smaller size is read instead, so the relief is averaged, not flickering;
+   faded out only when a texel is a sixth of a pixel.
+   Not on flat colour or glass (vTex.z). Shadows and snow keep the face's own normal. The low-poly models' shader is
+   made from this one (prop-models.js), so they bump too */
+const BUILDING_BUMP_GLSL = `uniform float uBStr;
+float bldH(vec2 c0,vec2 f,float cs,float st,float L,vec2 ts){return textureLod(uDet,(c0+mod(f,cs)+.5*st)/ts,L).r;}
+vec3 bldBump(vec3 n,vec2 g){if(uBStr<=0.||vTex.z>.5)return n;vec2 ts=vec2(textureSize(uDet,0));float cs=ts.x/uAtl.x;
+ vec2 f=vec2(fract(g.x),1.-fract(g.y))*cs,tc=vTex.xy*cs+f,dtx=dFdx(tc),dty=dFdy(tc);float tpp=max(length(dtx),length(dty)),k=1.-smoothstep(3.,6.,tpp);if(k<=0.)return n;
+ float L=max(0.,floor(log2(max(tpp,1.)))),st=exp2(L);vec2 c0=vTex.xy*cs,fs=floor(f/st)*st;
+ float h0=bldH(c0,fs,cs,st,L,ts),hx=bldH(c0,fs+vec2(st,0.),cs,st,L,ts),hy=bldH(c0,fs+vec2(0.,st),cs,st,L,ts);
+ vec2 gr=vec2(hx-h0,hy-h0);float gl=length(gr);if(gl<.07)return n;vec2 tl=clamp(-gr*(min(1.,(gl-.07)*6.)*.45/gl)*uBStr,-.45,.45)*k;
+ vec3 dp1=dFdx(vW),dp2=dFdy(vW),p2=cross(dp2,n),p1=cross(n,dp1),T=p2*dtx.x+p1*dty.x,B=p2*dtx.y+p1*dty.y;float iv=inversesqrt(max(max(dot(T,T),dot(B,B)),1e-12));
+ return normalize(n+(T*tl.x+B*tl.y)*iv);}`;
 export const BUILDING_SHADERS = {
   bld: [
     `#version 300 es
@@ -182,12 +202,12 @@ precision highp float;layout(location=0) in vec3 bPosIn;layout(location=1) in ve
 uniform mat4 uVP;uniform vec2 uLift;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${COMMON_GLSL}
 void main(){vec3 p=bPosIn;p.y+=curveY(uLift);vW=p;vN=bNrmIn;vUV=bUVIn;vTex=bTexIn;vCol=bColIn;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in vec3 vTex;in vec3 vCol;out vec4 o;uniform sampler2D uDet;uniform float uFade,uBaseY;uniform vec2 uScroll,uAtl;${LIGHT_GLSL}${BUILDING_RAMP_GLSL}${LOOK_GLSL}uniform vec3 uBP;${ROCK_GLSL}
+precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in vec3 vTex;in vec3 vCol;out vec4 o;uniform sampler2D uDet;uniform float uFade,uBaseY;uniform vec2 uScroll,uAtl;${LIGHT_GLSL}${BUILDING_RAMP_GLSL}${LOOK_GLSL}uniform vec3 uBP;${ROCK_GLSL}${BUILDING_BUMP_GLSL}
 void main(){if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;
  vec2 g=(vUV+uScroll)*.5,f=vec2(fract(g.x),1.-fract(g.y)),a=(vTex.xy+f)/uAtl;float lv=textureGrad(uDet,a,dFdx(g)/uAtl,dFdy(g)/uAtl).r*4.;
  vec3 c=vTex.z>.5?vCol:rampC(vCol,floor(lv+.5));c=lookOn(c,floor(vUV*16.),clamp((vW.y-uBaseY)/4.,0.,1.),uBP);vec3 n=normalize(vN);if(uSeason.w>0.)c=mix(c,vec3(.9,.93,.98),min(1.,uSeason.w*1.4)*smoothstep(.3,.6,n.y)*smoothstep(.2,.5,lnoise(vW.xz*2.3)+uSeason.w*.6));
  float sh=shadowAtN(vW+n*.04,n,.0012),ao=mix(contactAO(vW),1.,clamp((vW.y-uBaseY)/.7,0.,1.)),occ=min(sh,ao);
- vec3 v=normalize(uEye-vW);float sp=pow(max(dot(n,normalize(uSunDir+v)),0.),30.)*.1*occ;
+ n=bldBump(n,g);vec3 v=normalize(uEye-vW);float sp=pow(max(dot(n,normalize(uSunDir+v)),0.),30.)*.1*occ;
  o=vec4(fogit(shade(c,n,vW,sh,ao,vec4(.1,30.,0.,.3),0.),vW),1.);}`,
   ],
   bwin: [
@@ -236,13 +256,13 @@ void main(){if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW)
 precision highp float;layout(location=0) in vec2 bCIn;uniform mat4 uVP;uniform vec3 uO,uA,uB;uniform vec2 uLift;out vec2 vUV;out vec3 vW;${COMMON_GLSL}
 void main(){vec3 p=uO+uA*bCIn.x+uB*bCIn.y;p.y+=curveY(uLift);vW=p;vUV=vec2(bCIn.x,1.-bCIn.y);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uN,uR;uniform float uFade,uFlipN,uBaseY,uGlassN;${LIGHT_GLSL}${BUILDING_RAMP_GLSL}${LOOK_GLSL}uniform vec3 uBP;${ROCK_GLSL}
+precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uN,uR;uniform vec4 uFMat;uniform float uFade,uFlipN,uBaseY,uGlassN;${LIGHT_GLSL}${BUILDING_RAMP_GLSL}${LOOK_GLSL}uniform vec3 uBP;${ROCK_GLSL}
 void main(){vec4 c=texture(uTex,vUV);if(c.a<.05)discard;if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;
  if(c.a>.99)c.rgb=lookOn(c.rgb,floor(vUV*vec2(textureSize(uTex,0))),1.-vUV.y,uBP);
  vec3 nn=texture(uNrm,vUV).xyz*2.-1.;vec3 n=normalize(uR*nn.x*uFlipN+vec3(0.,-nn.y,0.)+uN*max(nn.z,.2));
  float sh=shadowAtN(vW+uN*.06,uN,.001),ao=mix(contactAO(vW),1.,clamp((vW.y-uBaseY)/.7,0.,1.)),occ=min(sh,ao);
  float nl=dot(n,uSunDir),dif=mix(1.,max((nl+.1)/1.1,0.)*.75+.45,.55);vec3 v=normalize(uEye-vW);float sp=pow(max(dot(n,normalize(uSunDir+v)),0.),36.)*.2*occ;
- vec3 lit=shade(c.rgb,normalize(vec3(n.x,max(n.y,.25),n.z)),vW,sh,ao,vec4(.2,36.,0.,.6),0.);
+ vec3 lit=shade(c.rgb,normalize(vec3(n.x,max(n.y,uFMat.z),n.z)),vW,sh,ao,vec4(uFMat.xy,0.,uFMat.w),0.);
  vec3 col=c.a<.99?mix(c.rgb*.55,lit,.45)*(1.-.45*uGlassN)+uSunCol*sp*2.:lit;o=vec4(fogit(col,vW),c.a<.99?c.a*(1.-.5*uGlassN):1.);}`,
   ],
   bshadow: [
@@ -1583,6 +1603,7 @@ function drawBuildingsUnguarded(C, X, items, fades, part) {
     gl.bindTexture(gl.TEXTURE_2D, det.t);
     gl.uniform1i(p.U.uDet, 0);
     gl.uniform2fv(p.U.uAtl, buildingTextureGrid(A));
+    if (p.U.uBStr) gl.uniform1f(p.U.uBStr, engineSetting('world', 'buildingBumps') || 0);
     for (const it of L) {
       const E = buildingMesh(it);
       if (!E || !E.walls) continue;
@@ -1645,6 +1666,14 @@ function drawBuildingsUnguarded(C, X, items, fades, part) {
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.uniform1i(p.U.uTex, 0);
   gl.uniform1i(p.U.uNrm, 1);
+  /* Fronts lit as their material (world.frontMaterial): the building material's shine and wrap (SURFACE_MATERIALS), and
+     bumps may face a little downward; off: as before (wrap .6, and no bump facing below a quarter up). [spec, shininess,
+     lowest normal y, wrap] */
+  {
+    const M = SURFACE_MATERIALS.building;
+    if (engineSetting('world', 'frontMaterial')) gl.uniform4f(p.U.uFMat, M.spec, M.shin, -0.2, M.wrap);
+    else gl.uniform4f(p.U.uFMat, 0.2, 36, 0.25, 0.6);
+  }
   gl.uniform3f(p.U.uN, 0, 0, -1);
   gl.uniform3f(p.U.uR, 1, 0, 0);
   for (const it of L) {

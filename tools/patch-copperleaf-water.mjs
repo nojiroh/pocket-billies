@@ -1,18 +1,15 @@
-// Water track WA-10: two small hand patches to the hub's map (game/data/maps/copperleaf.json) inside its locked town
+// Water track WA-10: a small hand patch to the hub's map (game/data/maps/copperleaf.json) inside its locked town
 // zone, the owner's choice (an unlocked rebuild makes the town again differently: 19 plots of 22, three buildings
 // lost). The ground stays locked; only what is named below changes. Rerunnable: a second run changes nothing.
 //
 //   node tools/patch-copperleaf-water.mjs --river    # the pond's outflow: a slope with a little rapids, no fall
-//   node tools/patch-copperleaf-water.mjs --square   # the town square paved to about 8 m (it was 12), grass round it
 //
 // --river: the river left the pond by a 0.45 m drop over its first metre (island-gen.js, the dial stream.fall 0.8,
 // capped), which the walk view drew as a staircase of fall sheets. Its bed now ramps from the pond's level down to the
 // bed as it was RIVER_RAMP metres along the line, eased; the banks beside the ramp stay 0.25 m over it; the dial
 // stream.fall is set to 0 (what a rebuild of an unlocked town would make), the `fall` spot to the river's start, and
 // the ramp is marked as rapids on the stream (water-flow.js: faster, white water along the middle).
-// --square: the paved square (ground letter c) keeps a gently uneven rim about SQUARE_R metres from the well (it was
-// the generator's 12 m circle); the ring outside it becomes grass (G), except where a street met the old rim: the
-// street carries on to the new one. Heights, plots, buildings and props are untouched (the square was level).
+// (WA-10's --square, the square paved to about 8 m, is now hub track HB-10a's tools/patch-copperleaf-square.mjs.)
 // Written through tools/write-data.mjs, as every build tool writes the data.
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
@@ -22,16 +19,13 @@ import { islandDress } from './island-dress.mjs';
 
 const RIVER_RAMP = 6; /* metres of the river's line the ramp takes */
 const RIVER_HALF = 1.5; /* the river's half width (island-gen.js ISLAND_RIVER_W / 2) */
-const SQUARE_R = 8; /* the square's new radius (m) */
-const SQUARE_WOBBLE = 0.7; /* how far its rim wanders in and out (m) */
-const STREET_HALF = 1.1; /* half a street's width (the island's paths are 2.2 m) */
 
 const D = readGameData(),
   M = D.maps.copperleaf,
   { w, h } = M,
   args = process.argv.slice(2);
-if (!args.includes('--river') && !args.includes('--square')) {
-  console.error('usage: node tools/patch-copperleaf-water.mjs --river | --square');
+if (!args.includes('--river')) {
+  console.error('usage: node tools/patch-copperleaf-water.mjs --river');
   process.exit(1);
 }
 /* corner heights: rows from the far edge (island-gen.js islandDecodeGround), j counted from the south */
@@ -127,45 +121,6 @@ if (args.includes('--river')) {
       `${Math.round((lvl - 0.12) * 100) / 100} m) to ${b6} m over ` +
       `${RIVER_RAMP} m; rapids ${JSON.stringify(st.rapids)}`
   );
-}
-
-if (args.includes('--square')) {
-  const well = M.plots.find(L => L.k === 'well'),
-    [sx, sz] = [well.x, well.z],
-    rimAt = a => SQUARE_R + SQUARE_WOBBLE * (0.55 * Math.sin(3 * a + 0.7) + 0.45 * Math.sin(5 * a + 2.1));
-  /* where the streets meet the old rim: street tiles just outside it, by their angle round the square */
-  const ends = [];
-  for (let j = 0; j < h; j++)
-    for (let i = 0; i < w; i++) {
-      const r = Math.hypot(i + 0.5 - sx, j + 0.5 - sz);
-      if (r > 12 && r <= 13.6 && tile(i, j) === 'p') ends.push(Math.atan2(j + 0.5 - sz, i + 0.5 - sx));
-    }
-  const onStreet = (x, z) =>
-    ends.some(a => {
-      const ux = Math.cos(a),
-        uz = Math.sin(a),
-        al = (x - sx) * ux + (z - sz) * uz;
-      return al > 0 && Math.abs((x - sx) * uz - (z - sz) * ux) <= STREET_HALF;
-    });
-  let grass = 0,
-    street = 0;
-  for (let j = 0; j < h; j++)
-    for (let i = 0; i < w; i++) {
-      if (tile(i, j) !== 'c') continue;
-      const x = i + 0.5,
-        z = j + 0.5,
-        r = Math.hypot(x - sx, z - sz);
-      if (r <= rimAt(Math.atan2(z - sz, x - sx)) || r > 12.6) continue;
-      if (onStreet(x, z)) {
-        setTile(i, j, 'p');
-        street++;
-      } else {
-        setTile(i, j, 'G');
-        grass++;
-      }
-    }
-  M.islandGen.dials.town.square = { ...M.islandGen.dials.town.square, r: SQUARE_R };
-  notes.push(`the square: ${grass} tiles to grass, ${street} to street (${ends.length} street tiles met the old rim)`);
 }
 
 /* the dressing reads the ground (a street, the square), so it is laid again as build-copperleaf.mjs lays it, last */
