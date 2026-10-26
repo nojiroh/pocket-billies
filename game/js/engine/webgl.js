@@ -628,7 +628,12 @@ export function initWebgl(cv) {
     gpuState.fb = {};
     gpuState.tex = new WeakMap();
     gpuState.normQ = [];
-    gpuState.hdr = !!gl.getExtension('EXT_color_buffer_float');
+    /* Half-float HDR (quality.hdrHalf): a chip that can draw to RGBA16F through EXT_color_buffer_half_float only (the
+       render targets are RGBA16F either way) gets HDR too */
+    gpuState.hdr =
+      !!gl.getExtension('EXT_color_buffer_float') ||
+      (!!(typeof engineSetting === 'function' && engineSetting('quality', 'hdrHalf')) &&
+        !!gl.getExtension('EXT_color_buffer_half_float'));
     gpuState.aniso = gl.getExtension('EXT_texture_filter_anisotropic');
     gpuState.anisoMax = gpuState.aniso ? gl.getParameter(gpuState.aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT) : 1;
     gl.getExtension('OES_texture_float_linear');
