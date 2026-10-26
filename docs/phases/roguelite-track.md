@@ -1105,7 +1105,7 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
     `logic/placeholder-art.js` (paint, bake, both sheets and their cutting), `npm run bake:placeholders` (bake,
     export, import). Tests: every bone an animation names exists; a bake is the same twice; export then import gives
     the same pixels.
-  - **RO-3b** every existing Billie (40 and 11 forms) to placeholders on its plan: quad (muskox, goat, tiger, rat,
+  - **RO-3b** (done 2026-10-26; HANDOFF has what changed) every existing Billie (40 and 11 forms) to placeholders on its plan: quad (muskox, goat, tiger, rat,
     ferret), bird (goose, Swift, owl, peacock), fish (Pupfin, Sharktank), worm (Trump slug), octo (Zuckerberg),
     biped (otter, chameleon, gecko). Remakes the quick-check baseline and kit counts on purpose.
   - **RO-3c** splicing by slot across plans (socket rules per plan pair, graft-art).
