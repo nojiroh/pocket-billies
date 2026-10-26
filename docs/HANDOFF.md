@@ -2,6 +2,81 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio art track SA-2a - the missing editors, part 1 - 2026-10-26
+Branch `track/studio-art` (main merged first, a merge commit: only HANDOFF conflicted, both top entries kept). Plan
+approved in Plan Mode. The owner's picks (all Claude's recommendations): the Studio makes the Lite tiles from tiles47;
+the SVG icons become the source and their builder retires (SA-2b); the other builders stay and the Studio warns; SA-2
+split into SA-2a and SA-2b. Recorded as decisions 5-8 in docs/phases/studio-art-track.md. Tag `sa-2a-done` for the
+owner.
+- Changed:
+  - **Ground tile set** (`studio/js/tile-set.js`, new). It takes the Art browser section's place while open
+    (`artBrowser.tiles`) and is opened from the `next/tiles47` folder, a tile's "Open in Ground tile set", or Walk
+    scenes' tile painter ("Paint the 32 px set").
+    - A kind's twelve tiles with their roles; the pixel canvas repeating round the tile.
+    - An 8 × 6 m tiled preview laid by the game's own pick, with soft patches and a path, redrawn each stroke.
+    - The Lite tile at 1x and 4x, and a note when two tiles of a kind are the same.
+  - `walk-view.js`: the ground's role pick became `groundTileRole` (+ `GROUND_DETAIL_TILES`), the same pick, in its
+    own commit (no change in what is drawn: smoke's Ground and phone steps pass).
+  - **Lite tiles** (`game/js/logic/lite-tile.js`, new): the builder's `small()` ported, with walk-view's own tone sums
+    passed in. A stroke on tiles 1-6 of a made kind rewrites its Lite tile in the same undo step (pixel-canvas
+    `companions`). "Make the Lite tiles from this set" does it for a hand-drawn kind (one step).
+  - **tools/build-terrain-v47.py deleted** (decision 1); `tools/art-source/terrain-v47/README.md` keeps its rules.
+    Comments and docs that named it are updated (walk-view, build-interiors, ART-NOTES, roguelite-track,
+    03-audit-notes).
+  - **Frame strips**:
+    - `game/js/logic/frame-strips.js` (new): effects from `EFFECT_FRAMES`, animals and cars from `scenery.life`.
+    - `studio/js/strip-player.js` (new): Play/Pause, Step, speed, scale; in the browser's picture panel and beside
+      the painter, live as you paint.
+  - **The builder warning**: `ART_BUILDERS`/`artMadeBy` in art-search.js, shown in the picture panel and the
+    painter.
+  - **Robots**: Edit pixels and Upload… on every part's and gem's picture.
+    - A missing picture is named `robots/<part>[_back|_head|_head_back].png` or `robots/gem_<gem>.png` and filled
+      in, one undo step.
+    - The builds draw unsaved pictures: the editor puts them in the game's picture cache before drawing.
+    - The Art browser's "Open in Robots" now opens a gem too.
+  - **Pyramids**: Items & pyramids shows each pyramid's 16 and 32 px icons with Edit pixels.
+  - **The Art browser's painter as a service**: `artPaint(path, { label, fn })`, Done reads "Done, back to …".
+    `artPicSrc` gives an `<img>` the unsaved picture.
+  - **Checks**:
+    - `check-studio-github.py` steps `tile_set`, `strips`, `robot_art` (robot pictures, and a pyramid painted and
+      back).
+    - The self-test's "Tile set" row.
+    - `studio-shots.py` views `tiles`, `strips`, `robots`, `pyramids`.
+  - STUDIO.md: Frame strips; Ground tile set; Robot pictures and pyramids; the Art browser's builder warning.
+- Where the plan was wrong:
+  - The builder also wrote the 16 px Lite tiles, but only for the 40 kinds it added. The 38 older kinds' Lite tiles
+    are v46 tiles drawn by hand: they already differ from full mode (up to 174 of 255 in a channel). So the Studio
+    tells the two apart by pixels and never overwrites a hand-drawn one unasked.
+  - Frame strips have no layout file beside them (fx.json misses 4 effects and isn't read).
+  - Pyramids, walls, building detail and rooms, flags, effects and life are all drawn by Python builders (the plan
+    named only the terrain one).
+- Not as planned:
+  - Robot pictures are painted in the Art browser's painter with a way back, not inline in the Robots page. One
+    mechanism for robots and pyramids, and the builds still show the edit.
+  - Making a new ground kind is not in the Studio (noted in STUDIO.md and the README).
+- Risky:
+  - The robot editor tags an unsaved canvas with `complete`/`naturalWidth` so robot-art.js's `artReady` takes it.
+    That is Studio-only and needs no game change, but it is a trick: if robot-art changes how it checks a picture,
+    the builds stop showing edits (the robot_art step would catch it).
+  - The ground pick moved into a function in the renderer's hot loop: the same sums, one call per metre.
+  - The Studio is still wider than a 390 px phone in every section (not new).
+- Verified:
+  - lint, typecheck, format:check, check:modules, check:data.
+  - Unit tests 1331 pass. New: lite-tile, frame-strips, artMadeBy. The 40 made kinds' 240 Lite tiles come out within
+    1 of the committed ones.
+  - `check-studio-github.py --only=sections,art_browser,tile_set,strips,robot_art,studio_test` and `--only=tiles`:
+    all ok. The self-test makes 78 kinds' Lite tiles in about 0.3 s and finds 28 strips.
+  - Smoke 6 of 6 (299 s), the Ground step included.
+  - Screenshots at 1920, 1024 and 390.
+- For the owner on the phone:
+  - Art browser → next/tiles47 → Open as a ground tile set. Paint a tile of a made kind (e.g. Granite flags) and
+    watch the preview and the Lite tile, then try a grass kind (hand-drawn Lite).
+  - A robot picture's Edit pixels and Upload….
+  - A pyramid's Edit pixels and "Done, back to Items & pyramids".
+  - An animal or effect playing in the Art browser.
+- Next: SA-2b (the text-file save, SVG icons and build-ui-icons.py retired, the icon atlas's rectangles, far
+  backdrops, flags, walls and rooms), in a new session on `track/studio-art`, in Plan Mode.
+
 ### Studio art track SA-1 - the Art browser - 2026-10-26
 Branch `track/studio-art` (main merged first: already up to date). Plan approved in Plan Mode. The owner's picks (all
 Claude's recommendations): sizes from each PNG's header; split SA-1 if it ran long (it didn't); the code's art

@@ -614,7 +614,7 @@ The **Art browser** (section `art`, group Game) shows every picture under `game/
 - **Actions:**
   - **Edit pixels** opens any PNG on the shared pixel canvas. Its tools, keys, symmetry and palette lock are the same
     as everywhere else. Each stroke is one step of the Studio's undo; Done goes back to the grid.
-  - **Replace…** takes a PNG or WebP and warns when the size differs. SVG icons get their own editor in SA-2.
+  - **Replace…** takes a PNG or WebP and warns when the size differs. SVG icons get their own editor in SA-2b.
   - **Download** saves the picture, with your unsaved edit if there is one.
   - **Open in …** goes to the editor for what uses the picture: Billies, Props, Walk scenes, Wardrobe, Robots or the
     Art workbench.
@@ -622,6 +622,65 @@ The **Art browser** (section `art`, group Game) shows every picture under `game/
   browser in its folder with the picture picked.
 - Checks: `check-studio-github.py --only=art_browser`, the Studio self-test's "Art browser" row (the index over every
   picture and a search through them all), `studio-shots.py --views art`.
+- **Drawn by a builder.** A picture a Python builder in `tools/` draws says so in red, in the picture panel and in
+  the painter: running that builder again can draw over edits made here. The list is `ART_BUILDERS` in
+  `game/js/logic/art-search.js`: effects and animals (build-fx-v47.py, build-life-v47.py), pyramids
+  (build-pyramids.py), walls, buildings' detail and rooms (build-walls.py, build-buildings.py, build-props-a04.py),
+  flags (build-flags.py) and the UI icons (build-ui-icons.py, until SA-2b). The owner's choice (2026-10-26): the
+  builders stay and the Studio warns.
+- **Another editor's Edit pixels** (Robots, Items & pyramids) opens this painter too; its button then reads "Done,
+  back to …" and goes back there.
+
+## Frame strips (Studio art track SA-2a)
+
+A picture the game animates as a row of frames plays in the Art browser's picture panel, and beside the pixel canvas
+while you paint it, so a stroke shows on the next frame. Play or Pause, Step › (one frame), the speed (1-30 frames a
+second, 8 at first, kept in this browser) and the scale (2x, 4x, 8x).
+
+- Which pictures are strips, and their frames, come from where the game reads them (`game/js/logic/frame-strips.js`):
+  the walk effects (`scene/fx`) from `EFFECT_FRAMES` in walk-view.js, the animals and cars (`scene/life`) from the
+  data's `scenery.life` (with the animal's name and where it lives). No picture has its own layout file; fx.json
+  misses four effects and the game doesn't read it.
+- The game times each strip in its own code (a bird's wings by its flight, a car by its speed), so the player's speed
+  is for looking, not the game's.
+- Checks: `tools/test/frame-strips.test.mjs` (every strip fits its picture), `check-studio-github.py --only=strips`,
+  `studio-shots.py --views strips`.
+
+## Ground tile set (Studio art track SA-2a)
+
+The full-mode ground is `art/next/tiles47`: twelve 32 px tiles for each kind in the catalogue. **These PNGs are the
+source**: tools/build-terrain-v47.py retired (decision 1). Its rules are in `tools/art-source/terrain-v47/README.md`.
+
+- **Open it** from the Art browser (the `next/tiles47` folder → **Open as a ground tile set**, or **Open in Ground
+  tile set** on one of its tiles) or from Walk scenes' tile painter (**Paint the 32 px set**; Back goes back there).
+- **The kind** is picked from the list. Its twelve tiles show with their roles, as the game places them
+  (walk-view.js `groundTileRole`): 1, 7 and 8 plain; 2-6 and 10 detail; 9 damp; 11 and 12 worn.
+- **The pixel canvas** paints the picked tile, repeated round itself so the seams show; clicks wrap.
+- **The tiled preview** beside it is 8 × 6 m of the kind, each metre's tile picked as the game picks it, with the soft
+  patches of light and shade laid over it and a path across (each can be switched off). The tile you paint is
+  outlined. It is drawn again on every stroke.
+- **The Lite tiles** (`art/scene/tiles`: Lite mode and Walk scenes' thumbnails) are made from tiles 1-6
+  (`game/js/logic/lite-tile.js`: the soft patches baked in, then halved, as the builder did). For the 40 kinds made
+  that way, a stroke on tiles 1-6 makes the tile's Lite tile again, in the same undo step; the panel shows it at 1x and
+  4x. The 38 older kinds' Lite tiles were drawn by hand at 16 px, apart from the set: painting here leaves them alone
+  until **Make the Lite tiles from this set** (one undo step).
+- **A note** shows when two of a kind's twelve tiles are the same: the quick check's Ground step wants twelve
+  different tiles.
+- Not here yet: a new ground kind (its catalogue entry and files are made by hand, see the README).
+- Checks: `tools/test/lite-tile.test.mjs` (the 40 made kinds come out as committed), `check-studio-github.py
+  --only=tile_set`, the self-test's "Tile set" row, `studio-shots.py --views tiles`.
+
+## Robot pictures and pyramids (Studio art track SA-2a)
+
+- **Robots → Picture**: every picture of a part (front, back, and a torso's head front and back) and a gem's picture
+  has **Edit pixels** (the Art browser's painter; Done goes back to Robots) and **Upload…** (a PNG; a different size
+  asks first). A picture the part hasn't got is saved as `robots/<part>.png` (`_back`, `_head`, `_head_back`; a gem's
+  `robots/gem_<gem>.png`) and its field filled in, one undo step. The builds on the page ("Try a build", the list)
+  draw unsaved pictures as the game will.
+- **Items & pyramids → Pyramids**: each pyramid's two icons (`coins/<id>_16.png` and `_32.png`, each drawn at its own
+  size, never scaled) at their size and larger, with **Edit pixels** on each (Done comes back). Its 3D model
+  (`coins/<id>.json`) is not edited here. tools/build-pyramids.py drew them all.
+- Checks: `check-studio-github.py --only=robot_art`, `studio-shots.py --views robots,pyramids`.
 
 ## Sections
 

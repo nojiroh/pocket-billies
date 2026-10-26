@@ -97,8 +97,9 @@ town node needs it.
   2026-10-23. RF-4 (internal renames, SAVE_VERSION 5) and RF-5 (the new tone in text) done 2026-10-23; RF-6 (the game's name) next.
 - **Studio art track** (docs/phases/studio-art-track.md, the owner's brief 2026-10-26): every piece of art viewable
   and editable in the Studio, with online research, and what no longer fits the Vision taken out. SA-1 (an Art
-  browser over the whole art tree: search, Used by, Edit pixels, Open in its editor) next, then SA-2 (the missing
-  editors: tiles47 ground, robots, coins, SVG icons, scene art), SA-3 (clean-up in the Studio and the game: Jobs,
+  browser over the whole art tree: search, Used by, Edit pixels, Open in its editor; done 2026-10-26), SA-2a (the
+  ground tile set with its Lite tiles, robots, pyramids, frame strips; the terrain builder retired; done 2026-10-26),
+  SA-2b next (SVG icons and their builder retired, the icon atlas, far backdrops, flags, walls and rooms), SA-3 (clean-up in the Studio and the game: Jobs,
   Town shops, dead Rules fields, the walk eggs), SA-4 (navigation as workspaces), SA-5 (unused art). Planned
   2026-10-26 on `ccr-a073cfde-ab64xh`. Tags `sa-N-done`. Branch `track/studio-art` (the owner makes it from main).
 - **Studio track** (docs/phases/studio-track.md): ST-0..ST-6 done; ST-7 (Model mode import) next. Independent of the
