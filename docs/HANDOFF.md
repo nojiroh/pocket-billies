@@ -48,6 +48,27 @@ docs/phases/hub-track.md, "Done in HB-8".
   errors).
 - Next: the owner's look at the pictures and a phone test of a take-off and both returns (the debug log's
   `train ride` and `load` lines); HB-9 (the phone look pass: the ride's frame times, the sky band).
+### UI icons in one colour, Team as two pyramids, a centred bottom bar - 2026-10-26
+Branch `ccr-9ed218f8-opcrtz` (the session's own; BRANCHES.md would name it `art/...`, but a cloud session pushes only
+to the branch it started on; the owner chose to stay here). Not a phase or track session: an art request. Samples
+were picked in chat: one colour each for the bottom bar, the controls and the stats (weather offered, not picked).
+- Changed (one cause per commit):
+  - Tools: tools/build-ui-icons.py has `RAMP` (seven colours, four shades each) and `MONO` (icon -> colour); a MONO
+    icon's grid draws with the digits 1-4, and shades of one colour get no seam between them. Icons without digits
+    render byte-for-byte as before (checked with `--check` before any grid changed).
+  - Art: 19 icons in one colour (list in ART-NOTES.md, "UI icons in one colour"); `team` redrawn as two tilted
+    pyramids, sand and blue (the owner: "playful angles", "2 different colored pyramids"). Coin and pyramid stay as
+    they were (already gold-only).
+  - CSS: the bottom bar (`pb-nav-bar#nav`, shell.css) is at most 480 px wide and centred; a phone (390 px) is
+    unchanged (374 px, 8 px margins).
+- Verified: build-ui-icons.py --check, ui-icons.test.mjs, `npm test`, `npm run lint`, prettier on shell.css,
+  `npm run check:smoke` (6 steps passed: phone flow, actions sheet, in-game full test);
+  screenshots of the Team tab at 390x844 and 1280x720, both themes (the bar's box: 8..382 on the phone, 400..880
+  wide).
+- Risky: at 22 px the sand pyramid nearly blends into the gold "selected" tab, and the gold bag and Lab icons are
+  pale on the light bar. The nightly full quick check will show icon diffs wherever these icons are drawn (the
+  bottom bar, battle's Team button, the run HUD, shop +/-, settings, money) until its baseline is remade.
+- Next: the owner's verdict on the Team icon's colours on the selected tab; the weather icons if wanted.
 
 ### Hub track - the placing half of HB-5 and HB-7: Skyline Station on its headland, the new buildings on their plots - 2026-10-25
 Branch `props/hub-placing` (the session's brief; from main aea7a48 after PR #201). Plan approved in Plan Mode. The
