@@ -243,6 +243,8 @@ export function validRun(o) {
   if (o.beat !== undefined && (!list(o.beat, 16) || !o.beat.every(id))) return false;
   /* TW-3: its quests (missing until the first is taken) */
   if (o.quests !== undefined && !validRunQuests(o.quests)) return false;
+  /* RS-1: the resident invited (logic/residents.js) */
+  if (o.invited !== undefined && !id(o.invited)) return false;
   /* the hub as the run started: shapes only (validSave checks its Billies like the team's) */
   const st = o.start,
     counts = v => recordOf(v, 500, n => wholeIn(n, 0, META_MAX));

@@ -97,6 +97,7 @@ test('run: the load check refuses broken or tampered runs', () => {
   assert.equal(validRun({ ...ok, at: { phase: 'battle', battle: 3, foe: FOE } }), true);
   assert.equal(validRun({ ...ok, unlocks: ['biome_ridge', 'shop_revive'] }), true, 'RL-11: the run’s copy');
   assert.equal(validRun({ ...ok, unlocks: [] }), true);
+  assert.equal(validRun({ ...ok, invited: 'dottie' }), true, 'RS-1: the resident invited');
   const bad = [
     null,
     [],
@@ -137,6 +138,8 @@ test('run: the load check refuses broken or tampered runs', () => {
     { ...ok, start: { ...ok.start, se: -1 } },
     { ...ok, start: { ...ok.start, trip: { node: 'x', plan: [] } } },
     { ...ok, start: { ...ok.start, seats: [1] } },
+    { ...ok, invited: 'Not An Id' }, // RS-1
+    { ...ok, invited: 7 },
   ];
   for (const b of bad) assert.equal(validRun(b), false, JSON.stringify(b).slice(0, 200));
   assert.equal(validRun(JSON.parse(JSON.stringify(ok).replace('"hints":{}', '"hints":{"__proto__":1}'))), false);
