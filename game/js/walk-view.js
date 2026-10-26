@@ -14,6 +14,7 @@ import {
   ALTERNATE_PROPS,
   FIELD_MOVES,
   ITEMS,
+  RULES,
   TERRAIN_MATERIALS,
   addRipple,
   addWakeRipple,
@@ -70,7 +71,7 @@ import { roomDoorPush, roomToLocal } from './logic/room-turn.js';
 import { waterKindHeals } from './logic/water-kinds.js';
 import { WADE_COST, wadeDepthAt, wadeHere, wadeKindAt, wadeSpeed, wadeWalkable } from './logic/wading.js';
 import { WATER_HEAL_FLAG, waterHealDue, waterHurt, waterMarshOf, waterReedAt } from './logic/water-play.js';
-import { folkCap } from './logic/square-day.js';
+import { folkCap, squareGoers, squareSlot, squareStopFor, squareStops } from './logic/square-day.js';
 import { fieldMoveText } from './logic/run-side.js';
 import { SURF_COST, SURF_SPEED, climbAt, fallDir, fallTop, surfCan, surfable } from './logic/surf.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
@@ -166,10 +167,13 @@ expose({
   flagPicturePath: [() => flagPicturePath, v => (flagPicturePath = v)],
   folkAnchors: [() => folkAnchors, v => (folkAnchors = v)],
   folkCount: [() => folkCount, v => (folkCount = v)],
+  folkFace: [() => folkFace, v => (folkFace = v)],
   folkHello: [() => folkHello, v => (folkHello = v)],
   folkHour: [() => folkHour, v => (folkHour = v)],
   folkPhase: [() => folkPhase, v => (folkPhase = v)],
   folkSay: [() => folkSay, v => (folkSay = v)],
+  folkSquare: [() => folkSquare, v => (folkSquare = v)],
+  folkSquareStop: [() => folkSquareStop, v => (folkSquareStop = v)],
   folkStreetSpot: [() => folkStreetSpot, v => (folkStreetSpot = v)],
   folkTown: [() => folkTown, v => (folkTown = v)],
   groundKey: [() => groundKey, v => (groundKey = v)],
@@ -3995,6 +3999,32 @@ function folkAnchors(sc) {
   if (!A.home.length) A.home = A.hang.slice();
   return A;
 }
+/* HB-10c: the square's day (logic/square-day.js, rules.json square): its stops in this scene, each on the walkable
+   point nearest (at), and per slot of the day who of the n folk go (index -> rank); null when the scene has no square */
+function folkSquare(sc, n) {
+  let S = walkView.square;
+  if (!S || S.id !== walkView.id || S.n !== n) {
+    const stops = folkTown(sc) && RULES.square ? squareStops(sc.props || []) : [];
+    S = walkView.square = {
+      id: walkView.id,
+      n,
+      stops: stops.map(s => ({ ...s, at: walkablePointNear(s.x, s.z) })),
+      goers: {},
+    };
+  }
+  return S.stops.length ? S : null;
+}
+/* the stop a person stands at on the square at hour h (their own hours: h + their offset), or null */
+function folkSquareStop(S, f, h) {
+  const T = squareSlot(RULES.square.day, h + (f.off || 0));
+  if (!T) return null;
+  const G = S.goers[T.k] || (S.goers[T.k] = squareGoers(S.n, T, walkView.id)),
+    r = G.get(f.line);
+  return r == null ? null : squareStopFor(S.stops, T, r);
+}
+function folkFace(f, s) {
+  if (Math.hypot(s.fx - f.x, s.fz - f.z) > 0.05) f.dir = directionOf(s.fx - f.x, s.fz - f.z);
+}
 function initFolk(n) {
   const sc = walkView.sc,
     hub = mapHub(sc);
@@ -4060,6 +4090,14 @@ function initFolk(n) {
         f.x = q[0];
         f.z = q[1];
       }
+      const S = folkSquare(sc, n),
+        s = S && folkSquareStop(S, f, h);
+      if (s) {
+        f.sq = s;
+        f.in = false;
+        [f.x, f.z] = s.at;
+        folkFace(f, s);
+      }
     }
     walkView.folkAll.push(f);
   }
@@ -4102,14 +4140,35 @@ function folkHello() {
 function stepFolk(dt) {
   const P = walkView.pl,
     h = folkHour(),
-    all = walkView.folkAll || walkView.folk;
+    all = walkView.folkAll || walkView.folk,
+    S = folkSquare(walkView.sc, all.length);
   let vis = false;
   for (const f of all) {
     f.sayT = Math.max(0, f.sayT - dt);
     f.waveT = Math.max(0, f.waveT - dt);
     f.walk = 0;
+    /* HB-10c: the square's day: a slot that takes them sends them to their stop (out of their door first); when it
+       ends, their own day takes them on */
+    if (S && f.A) {
+      const s = folkSquareStop(S, f, h);
+      if (s !== (f.sq || null)) {
+        const was = f.sq;
+        f.sq = s;
+        f.route = null;
+        if (s) {
+          if (f.in) {
+            f.in = false;
+            vis = true;
+            [f.x, f.z] = f.A.home;
+            if (typeof soundEffectAt === 'function') soundEffectAt('door', f.x, f.z);
+          }
+          f.wait = Math.random() * 3;
+          f.then = null;
+        } else if (was) f.ph = null;
+      }
+    }
     /* the day moves on: somewhere else to be */
-    if (f.A) {
+    if (f.A && !f.sq) {
       const ph = folkPhase(h + f.off, f.owl);
       if (ph !== f.ph) {
         f.ph = ph;
@@ -4152,6 +4211,7 @@ function stepFolk(dt) {
           if (f.ri >= f.route.length) {
             f.route = null;
             f.wait = 2 + Math.random() * 5;
+            if (f.sq) folkFace(f, f.sq);
             if (f.then === 'inside') {
               f.then = null;
               f.in = true;
@@ -4167,7 +4227,18 @@ function stepFolk(dt) {
       }
       f.walk = f.in ? 0 : 1;
     } else if ((f.wait -= dt) <= 0) {
-      if (f.A && (f.ph === 'home' || f.ph === 'in')) {
+      if (f.sq) {
+        const s = f.sq,
+          away = Math.hypot(f.x - s.at[0], f.z - s.at[1]);
+        f.wait = 5 + Math.random() * 9;
+        if (away > 1.2) {
+          if (!sendFolk(f, s.at)) f.wait = 2;
+        } else if (Math.random() < 0.35) {
+          const a = Math.random() * 6.283,
+            t = walkablePointNear(s.at[0] + Math.cos(a) * 0.5, s.at[1] + Math.sin(a) * 0.4);
+          if (!sendFolk(f, t)) folkFace(f, s);
+        } else folkFace(f, s);
+      } else if (f.A && (f.ph === 'home' || f.ph === 'in')) {
         if (!sendFolk(f, f.A.home, 'inside')) {
           f.in = true;
           vis = true;
