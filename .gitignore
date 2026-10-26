@@ -14,7 +14,7 @@ __pycache__/
 venv/
 
 # Node (phase 04)
-node_modules/
+node_modules
 
 # Quick check output: generated on every run, uploaded by CI as artifacts
 validation/quick/
