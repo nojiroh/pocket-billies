@@ -63,7 +63,15 @@ budget measured first; old paths deleted fully, as C3 was (no fallback to one dr
     and back home. 0 page errors; gl.getError 0 at every step after the fix (1282 from the loss on before it).
 - **Verified** after every commit: lint, typecheck, `npm test` (1,132 → 1,284 with main's tests), check:modules and
   format. The smoke check passed ("no problems") on every commit touching game/, run from a worktree of each commit.
-  check:data after the shafts removal. The full quick check: see the last line of this entry.
+  check:data after the shafts removal.
+- **The full quick check** at ab4f884b: 6 problems. Every one also fails on the upstream tip I merged (dfd24555, main
+  merged in), or passed when re-run on this branch, so none is this lane's. **For main's owners:**
+  - The same on both: "Terraces": props in the air, copperleaf sky_portal at 231.2, 103.6.
+  - The same on both: "room light" day/night values.
+  - The same on both: RT-4a, the rarer wild Billie not in its pocket.
+  - The same on both: song fingerprints, "cave mid" and "cave late" not in validation/sound-baseline.
+  - RL-8, "the town's shop has no Perk": fails on both.
+  - The battle music's drums: passed when re-run (timing under load).
 - **Risky:**
   - There is no fallback now. A device whose driver rejects `voxI`, `mdlI`, `voxSI`, `shadowI` or `fxW` draws no
     models, no model or picture shadows, or no rain. The debug log names it ("model shadows off", "picture shadows
