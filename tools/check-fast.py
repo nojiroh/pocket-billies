@@ -1180,6 +1180,40 @@ def ride_home(pg):
     return pg.evaluate("(p=>p?[p.k,p.v||0]:null)(walkView.sc.props.find(p=>p.trainRide))")
 
 
+def train_ride(pg, base):
+    """HB-8: in Copperleaf, the sky train's ride played out (not skipped): the departure glides in, climbs and ends in
+    the white veil with its log line (the train's key and ms, nothing else); the carriage's canvas draws in the train's
+    colours and moves; the ride home after a win leaves the gold-trimmed train at the platform and the tear as it was,
+    after a loss the battered one with its smoke"""
+    drawing(pg)
+    if not until(pg, "!document.getElementById('loader')&&walkView.ready&&!!walkView.sc.props.find(p=>p.act==='station')", 90): raise Exception('Copperleaf’s station isn’t in the view')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();window._rode=0;trainRideDepart('train_harvest',()=>{window._rode=1});0")
+    if not pg.evaluate("trainRide.on&&!!trainRide.W&&!!walkView.director"): raise Exception('the departure isn’t filmed in the walk view')
+    if not until(pg, "trainRide.W&&trainRide.W.train.lift>5", 30): raise Exception('the train never climbed the rail')
+    if not until(pg, "window._rode===1&&!!document.getElementById('trainveil')", 40): raise Exception('the departure didn’t end in the white veil')
+    line = pg.evaluate("(debugLog.ev.filter(e=>e.msg.startsWith('train ride departure')).pop()||{}).msg||''")
+    if not line.startswith('train ride departure train_harvest ') or 'skipped' in line: raise Exception(f'the departure’s log line: {line!r}')
+    if pg.evaluate("walkView.sc.props.some(p=>p.trainRide)"): raise Exception('the train stayed in the hub after the portal')
+    pg.evaluate("trainVeil(false,0);0")
+    # the carriage: drawn in the train's colours, moving
+    look = pg.evaluate("""new Promise(r=>{const b=trainCarriage('train_harvest',false),cv=b.querySelector('canvas');document.body.appendChild(b);
+      const px=()=>Array.from(cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data.filter((v,i)=>i%4!==3));
+      const a=px();setTimeout(()=>{const c=px();b.remove();r([new Set(a).size,a.some((v,i)=>v!==c[i])])},400)})""")
+    if look[0] < 8 or not look[1]: raise Exception(f'the carriage: {look[0]} colour values, moving {look[1]}')
+    homes = []
+    for won, want in (('true', 1), ('false', 2)):
+        pg.evaluate(f"window._home=0;trainRideHome('train_harvest',{won},()=>{{window._home=1}});0")
+        if not until(pg, "!!trainRide.W", 20): raise Exception('the ride home never started')
+        if not until(pg, "window._home===1&&!trainRide.on", 40): raise Exception('the ride home never ended')
+        got = pg.evaluate("""(()=>{const p=walkView.sc.props.find(p=>p.trainRide),P=walkView.sc.props.find(p=>p.k==='sky_portal'),
+          M=propWithVariant(p,walkData().sc.props[p.k]);return [p.k,p.v||0,!!p.moving,P.v||0,P.s||1,(M.fx||[]).filter(e=>e.k==='smoke').length]})()""")
+        if got[:5] != ['train_harvest', want, False, 0, 1] or (want == 2) != (got[5] > 0): raise Exception(f'home ({"won" if won == "true" else "lost"}): the train and tear {got}')
+        homes.append(got[5])
+    lines = pg.evaluate("debugLog.ev.filter(e=>e.msg.startsWith('train ride')).map(e=>e.msg)")
+    if len(lines) != 3 or any(not l.startswith('train ride ') or 'train_harvest' not in l for l in lines): raise Exception(f'the ride lines: {lines}')
+    return f'{line}; the carriage moved; home gold, then battered with {homes[1]} smoke trails; {len(lines)} log lines'
+
+
 def run_pack(pg, base):
     """RL-9b: from the ranch fixture (three Billies in storage), one of them training: the mast's start sheet picks it
     (a pick card tapped) and packs two Potions (+ tapped twice); "Take off": the party is that Billie alone, healed,
@@ -1384,6 +1418,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('ranch', [('Income: started at the first opening, Collect, a clock turned back and forward, a reload (RL-10b)', income)]),
     ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the station, a reload (RL-11)', lab)]),
     ('ranch', [('Packing for a run: a Billie from storage, a packed bag; kept on a loss, the bag home on a win (RL-9b)', run_pack)]),
+    ('town', [('The train ride: the departure to the white veil, the carriage, the ride home gold and battered (HB-8)', train_ride)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
              ("A run town's shop opens (UI-5)", run_shop),
