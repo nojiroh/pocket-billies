@@ -84,7 +84,6 @@ const GRAPHICS_TEST_HIDDEN = [
      test pins resolution 1, under the phone's budget either way; the diagnostics' Renderer baseline measures it) */
   ['quality.skyLast', 'Sky last', { values: [false, true], alone: true }],
   ['quality.phoneLamps', 'Phone lamps', { values: [false, true], alone: true }],
-  ['quality.rainBatch', 'Rain in one go', { values: [false, true], alone: true }],
   /* phase 20 E7-E10: the standing pictures (and the reflection's) drawn one draw per run of one picture; the same look */
   ['quality.spriteInstances', 'Pictures in batches', { values: [false, true], alone: true }],
   /* phase 20 R3 (shadows): the shadow maps' pictures and models in batches (the same look); models in the far shadow
@@ -154,8 +153,9 @@ const GRAPHICS_TEST_STATIONS = [
     ],
   },
   { id: 'sky', name: 'Open sky', dials: ['sun.clouds', 'sun.cloudShadows', 'quality.skyLast'] },
-  /* phase 20 R2: the meadow in the rain (a station may name its weather; clear otherwise) */
-  { id: 'rain', name: 'Meadow in the rain', spot: 'meadow', weather: 'rain', dials: ['quality.rainBatch'] },
+  /* phase 20 R2: the meadow in the rain (a station may name its weather; clear otherwise); against the Meadow it shows
+     what the rain costs */
+  { id: 'rain', name: 'Meadow in the rain', spot: 'meadow', weather: 'rain', dials: [] },
   { id: 'everything', name: 'Everything', all: true },
 ];
 const GRAPHICS_TEST_MAP = 'test_graphics';

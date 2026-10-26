@@ -50,7 +50,7 @@ export function setEffectsPass(v) {
 }
 /* to-module: end */
 /* phase 20 R2 (pixels): the weather's quads (rain, snow, ash and their splashes, one picture) in one draw
-   (quality.rainBatch): the fx program's maths, with each quad's place, size, frame, colour and up axis per instance,
+   (phase 20 R4: the only path): the fx program's maths, with each quad's place, size, frame, colour and up axis per instance,
    drawn in the same order */
 export const WEATHER_FX_SHADERS = {
   fxW: [

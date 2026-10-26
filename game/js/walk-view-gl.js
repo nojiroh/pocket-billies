@@ -315,8 +315,8 @@ export function ensureWalkGl(cv) {
       typeof WORLD_BOWL_SHADERS !== 'undefined' && WORLD_BOWL_SHADERS,
       /* phase 20 E6: the instanced pictures' program, while Engine > Quality "Pictures in batches" is on */
       engineSetting('quality', 'spriteInstances') && SPRITE_INSTANCE_SHADERS,
-      /* phase 20 R2: the weather in one draw, while Engine > Quality "Rain in one go" is on */
-      engineSetting('quality', 'rainBatch') && WEATHER_FX_SHADERS,
+      /* phase 20 R2: the weather in one draw */
+      WEATHER_FX_SHADERS,
       /* phase 20 R3: the instanced shadow pictures' and shadow models' programs, while Engine > Quality "Shadows in
          batches" is on */
       engineSetting('quality', 'shadowInstances') && SHADOW_INSTANCE_SHADERS,

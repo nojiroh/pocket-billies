@@ -277,8 +277,6 @@ export const ENGINE_DEFAULTS = {
     phonePixels: false,
     /* a phone's lamps: at most 8 lit at once, 4 of them in the air (D6) */
     phoneLamps: true,
-    /* rain, snow, ash and their splashes in one draw */
-    rainBatch: true,
     /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each) */
     spriteInstances: false,
     /* phase 20 R2: the solid models (voxel props, low-poly models) drawn one draw per mesh for every item with it */
@@ -1257,12 +1255,6 @@ export const ENGINE_SPEC = [
         'Phone lamps',
         'bool',
         'On a phone (Android, iPhone) at most 8 lamps, windows and fires light the scene at once (fewer if Lamps lit at once says so), and 4 of them glow in the air. Tablets and computers are unchanged.',
-      ],
-      [
-        'rainBatch',
-        'Rain in one go',
-        'bool',
-        'Rain, snow and ash (and the splashes) are drawn in one go instead of one drop at a time: the same drops, far less work for the processor in bad weather.',
       ],
       [
         'spriteInstances',
