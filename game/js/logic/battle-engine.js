@@ -790,8 +790,12 @@ export function award(e) {
     battleSay(`The rest of the team gained ${formatNumber(share)} XP.`);
   }
 }
-/** RL-12c: XP with the Billie's held item's xp rows @param {any} m @param {number} n */
-export const heldXp = (m, n) => fxXp(fxOfBillie(m, ITEMS), n);
+/** RL-12c: XP with the Billie's held item's xp rows; RL-S2 part B: and the run's (b.fx: a Perk's, a hub person's level)
+ * @param {any} m @param {number} n */
+export const heldXp = (m, n) => {
+  const run = (battleNow() && battleNow().fx) || [];
+  return fxXp([...run, ...(fxOfBillie(m, ITEMS) || [])], n);
+};
 /** RL-12c: a held item's stat stages for a fighter as it takes the field (the battle's start: battle-state.js) */
 export function heldStages(k) {
   const up = fxStages(fxOfBillie(fighter(k), ITEMS)),

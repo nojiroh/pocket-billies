@@ -260,3 +260,14 @@ test("RL-R2: a run leader's first win keeps its type's badge for good (meta.badg
   fn('battleSettleWin')(B, s, pay2, null);
   assert.deepEqual(s.meta.badges, { water: 1 });
 });
+
+test("RL-S2 part B: a run's xp rows (a Perk's, a hub person's level) count with the held item's", () => {
+  teamOfThree();
+  fn('startTrainer')(doubleTrainer(), { talked: true });
+  const B = hooks.activeBattle,
+    m = B.sides[0].team[0];
+  B.fx = null;
+  assert.equal(fn('heldXp')(m, 100), 100);
+  B.fx = [{ kind: 'xp', mult: 1.05, src: 'rel:chosen' }];
+  assert.equal(fn('heldXp')(m, 100), 105);
+});
