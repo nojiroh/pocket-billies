@@ -30,6 +30,7 @@ import {
 import { fxRowOf } from './run-enc.js';
 import { FX_KINDS, FX_LIMIT, FX_STAGES } from './effects.js';
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
+import { BANTER_WHO } from './story-pick.js';
 import { islandProblems } from './island.js';
 import { parseScript, scriptProblem } from './script-parse.js';
 /* eslint-disable no-func-assign */
@@ -1236,6 +1237,16 @@ export function dataBanter(D, valid = () => true) {
   for (const who of ['leader', 'bureau'])
     if (!Object.values(B).some((/** @type {any} */ b) => b.who === who && !b.when))
       problem(`no ${who} line without a when: a ${who} could have nothing to say`);
+  /* RS-3: a line is for a listed speaker or a resident (residents.json), and every resident has one that always holds */
+  const R = D.residents || {};
+  for (const [k, b] of Object.entries(B)) {
+    const who = /** @type {any} */ (b).who;
+    if (!BANTER_WHO.includes(who) && !R[who])
+      problem(`${k}.who: "${who}" is no speaker and no resident (residents.json)`);
+  }
+  for (const id of Object.keys(R))
+    if (!Object.values(B).some((/** @type {any} */ b) => b.who === id && !b.when))
+      problem(`no line for the resident "${id}" without a when: they could have nothing to say`);
   return out;
 }
 
