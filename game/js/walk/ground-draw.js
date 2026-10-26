@@ -109,6 +109,7 @@ export function drawGround(C, X) {
     gl.bindSampler(8, null);
     gl.uniform1i(U.uGAO, 8);
     gl.uniform3f(U.uGAOR, 1 / sc.w, 1 / sc.h, walkRenderer.gaoTex ? (engineSetting('shadows', 'groundAO') ?? 1) : 0);
+    if (U.uGAOSky) gl.uniform1f(U.uGAOSky, engineSetting('shadows', 'groundAOSky') ? 1 : 0);
   }
   if (U.uWet) {
     const E = typeof environment !== 'undefined' && engineContext.env && !sc.indoor ? environment : null,

@@ -130,6 +130,7 @@ expose({
   ensureWalkGl: [() => ensureWalkGl, v => (ensureWalkGl = v)],
   groundBuiltBeforeShow: [() => groundBuiltBeforeShow, v => (groundBuiltBeforeShow = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
+  litSunScreenPosition: [() => litSunScreenPosition, v => (litSunScreenPosition = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
   phoneStarted: [() => phoneStarted, v => (phoneStarted = v)],
@@ -750,7 +751,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       heat: heatHaze(sc),
       heatS: heatSources(C),
       mood: easedMood(sc),
-      sun: sc.indoor ? null : sunScreenPosition(C, sun.dir, 300),
+      sun: sc.indoor ? null : litSunScreenPosition(C, sun),
+      sunCol: engineSetting('sun', 'followLight') ? sun.col : null,
       X,
       ivp: C.ivp,
       noVol: QE >= 3 || (!!sc.indoor && !dark),
@@ -834,4 +836,12 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     H[work < 8 ? 0 : work < 16 ? 1 : work < 33 ? 2 : work < 66 ? 3 : work < 133 ? 4 : 5]++;
   }
   if (typeof frameCount === 'function' && walkView.opt.meter) frameCount(work);
+}
+/* the sun's place on screen for the shafts and the glare; with Rays follow the light (sun.followLight) its strength
+   fades with the night, so the moon gives no full-strength warm glare */
+function litSunScreenPosition(C, sun) {
+  const sp = sunScreenPosition(C, sun.dir, 300);
+  if (!sp || !engineSetting('sun', 'followLight') || !engineContext.env) return sp;
+  sp[2] *= 1 - 0.85 * (environment.night || 0);
+  return sp;
 }

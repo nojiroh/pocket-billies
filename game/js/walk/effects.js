@@ -5,6 +5,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import {
+  buildingItems,
   buildingState,
   chimneySmoke,
   clueDraw,
@@ -17,6 +18,7 @@ import {
 } from '../hooks.js';
 import { clamp } from '../util.js';
 import { placedTurn } from '../logic/prop-turn.js';
+import { crownGaps, pickShafts } from '../logic/shaft-pick.js';
 import { hexToRgb } from '../art.js';
 import { EFFECT_FRAMES, artImage, walkData, walkView } from '../walk-view.js';
 import { engineContext, engineSetting } from '../engine/settings.js';
@@ -42,7 +44,9 @@ import { lampLit } from './lighting.js';
 import { drawFootprints, drawFountainEffects, drawLifeEffects, drawWeather } from './fountains-weather.js';
 /* eslint-disable no-func-assign */
 expose({
+  SHAFT_FADE_S: [() => SHAFT_FADE_S],
   SHAFT_MAX: [() => SHAFT_MAX],
+  SHAFT_PICK_MS: [() => SHAFT_PICK_MS],
   SHAFT_RANGE: [() => SHAFT_RANGE],
   WEATHER_FLOATS: [() => WEATHER_FLOATS],
   WEATHER_FX_SHADERS: [() => WEATHER_FX_SHADERS],
@@ -51,6 +55,9 @@ expose({
   effectsPass: [() => effectsPass, v => setEffectsPass(v)],
   lightShafts: [() => lightShafts, v => (lightShafts = v)],
   shaftList: [() => shaftList],
+  shaftStrength: [() => shaftStrength, v => (shaftStrength = v)],
+  smartLightShafts: [() => smartLightShafts, v => (smartLightShafts = v)],
+  smartShafts: [() => smartShafts],
   volumeAirOn: [() => volumeAirOn, v => (volumeAirOn = v)],
   weatherBatch: [() => weatherBatch],
 });
@@ -755,7 +762,9 @@ export function effectsPass(C, items, X, dark, t, dt) {
   /* phase 20 R2 (D7): cheap light shafts while the light in the air (the vol pass) is off */
   const sk = engineSetting('air', 'cheapShafts') || 0;
   if (sk > 0.01 && !sc.indoor && !volumeAirOn(X)) {
-    const S = lightShafts(items, C, walkRenderer.sun, sk);
+    const smart = !!engineSetting('air', 'shaftPick'),
+      S = smart ? smartLightShafts(items, C, walkRenderer.sun, sk, dt) : lightShafts(items, C, walkRenderer.sun, sk);
+    if (smart) gl.uniform1f(U.uGlow, 2);
     for (const h of S) {
       gl.uniform3fv(U.uRight, h.right);
       gl.uniform3fv(U.uUp, h.up);
@@ -768,7 +777,8 @@ export function effectsPass(C, items, X, dark, t, dt) {
       gl.uniform3fv(U.uRight, R);
       gl.uniform3fv(U.uUp, Up);
     }
-  }
+    if (smart) gl.uniform1f(U.uGlow, 1);
+  } else smartShafts.fade.clear();
   gl.uniform1f(U.uGlow, 0);
   gl.depthMask(true);
   gl.disable(gl.BLEND);
@@ -881,16 +891,22 @@ function volumeAirOn(X) {
 const SHAFT_MAX = 6,
   SHAFT_RANGE = 26;
 const shaftList = [];
+/* how strong the shafts are now: strongest with the sun low (dawn, golden hour), fading as it climbs, at night, in
+   grey weather and in rain */
+function shaftStrength(sun, k) {
+  const E = typeof environment !== 'undefined' && engineContext.env ? environment : null,
+    e = sun.dir[1];
+  return (
+    k *
+    clamp((e - 0.03) / 0.12, 0, 1) *
+    (1 - clamp((e - 0.4) / 0.35, 0, 1)) *
+    (E ? (1 - E.night) * (1 - E.grey * 0.85) * (1 - Math.min(1, E.rain)) : 1)
+  );
+}
 function lightShafts(items, C, sun, k) {
   shaftList.length = 0;
   if (!sun || !C.eye) return shaftList;
-  const E = typeof environment !== 'undefined' && engineContext.env ? environment : null,
-    e = sun.dir[1],
-    tk =
-      k *
-      clamp((e - 0.03) / 0.12, 0, 1) *
-      (1 - clamp((e - 0.4) / 0.35, 0, 1)) *
-      (E ? (1 - E.night) * (1 - E.grey * 0.85) * (1 - Math.min(1, E.rain)) : 1);
+  const tk = shaftStrength(sun, k);
   if (tk < 0.01) return shaftList;
   const P = walkRenderer.bt ? { x: walkRenderer.bt.center[0], z: walkRenderer.bt.center[1] } : walkView.pl,
     byTree = new Map(),
@@ -956,4 +972,143 @@ function lightShafts(items, C, sun, k) {
     });
   }
   return shaftList;
+}
+/* smart light shafts (Engine > Air "Smart light shafts"): the same beams, placed by logic/shaft-pick.js where they show
+   best (shade behind them, looking into the light, apart, never over you) from the crowns near you, the gaps between
+   them, the sides of the roofs and the place's own list. Picked again every 0.4 s; a picked beam fades in over about
+   1.2 s and a dropped one fades out, so none pops. Fewer on a struggling device (the quality step), and together they
+   may cover at most a quarter of the screen: an additive quad costs its pixels */
+const SHAFT_PICK_MS = 400,
+  SHAFT_FADE_S = 1.2;
+const smartShafts = { t: -1e9, fade: new Map(), list: [] };
+function smartLightShafts(items, C, sun, k, dt) {
+  const L = smartShafts.list,
+    F = smartShafts.fade;
+  L.length = 0;
+  if (!sun || !C.eye || !C.vp) return L;
+  const tk = shaftStrength(sun, k),
+    now = performance.now();
+  if (tk < 0.01) {
+    F.clear();
+    return L;
+  }
+  if (now - smartShafts.t > SHAFT_PICK_MS) {
+    smartShafts.t = now;
+    const P = walkRenderer.bt ? { x: walkRenderer.bt.center[0], z: walkRenderer.bt.center[1] } : walkView.pl,
+      qe = walkRenderer.qe || 0,
+      max = qe >= 3 ? 3 : qe >= 1 ? 5 : 8,
+      byTree = new Map(),
+      cands = [],
+      blockers = [];
+    /* buildings: the old 3D ones and the low-poly models with windows (a house, the lab), 3.5 m wide or more */
+    const houses = typeof buildingItems === 'function' ? buildingItems(items).slice() : [],
+      houseOf = new Set(houses.map(it => it.p));
+    for (const it of items)
+      if (it.vox && it.wins && it.vis !== false && it.w * it.mpp >= 3.5 && !houseOf.has(it.p)) {
+        houses.push(it);
+        houseOf.add(it.p);
+      }
+    /* a tree's crown: the highest and widest of its leaf pictures (not a building's vines or flower boxes) */
+    for (const it of items) {
+      if (!it.voxImg || !it.layer || it.vis === false || houseOf.has(it.p)) continue;
+      const top = it.y + it.h * it.mpp,
+        r = (it.w * it.mpp) / 2,
+        c = byTree.get(it.p);
+      if (c) {
+        c.top = Math.max(c.top, top);
+        c.r = Math.max(c.r, r);
+      } else if (Math.hypot(it.x - P.x, it.z - P.z) <= SHAFT_RANGE + 4)
+        byTree.set(it.p, { key: `t:${Math.round(it.x * 10)},${Math.round(it.z * 10)}`, x: it.x, z: it.z, top, r });
+    }
+    const crowns = [...byTree.values()].filter(c => c.r >= 0.7);
+    for (const c of crowns) {
+      blockers.push({ x: c.x, z: c.z, y: c.top - c.r, r: c.r });
+      cands.push({ key: c.key, x: c.x, z: c.z, top: c.top, w: Math.min(2.4, Math.max(0.8, c.r * 0.9)), kind: 'crown' });
+    }
+    for (const g of crownGaps(crowns)) cands.push(g);
+    /* a building: light grazing past its two sides square to the sun, from its roof's height (its picture's size) */
+    const sl = Math.hypot(sun.dir[0], sun.dir[2]) || 1,
+      px = -sun.dir[2] / sl,
+      pz = sun.dir[0] / sl;
+    for (const it of houses) {
+      const hw = (it.w * it.mpp) / 2,
+        top = it.y + it.h * it.mpp * 0.8;
+      if (Math.hypot(it.x - P.x, it.z - P.z) > SHAFT_RANGE + 6) continue;
+      blockers.push({ x: it.x, z: it.z, y: it.y + it.h * it.mpp * 0.4, r: hw });
+      for (const sd of [-1, 1])
+        cands.push({
+          key: `b:${Math.round(it.x * 10)},${Math.round(it.z * 10)},${sd}`,
+          x: it.x + px * (hw + 0.6) * sd,
+          z: it.z + pz * (hw + 0.6) * sd,
+          top,
+          w: 1.6,
+          kind: 'roof',
+        });
+    }
+    for (const f of walkView.sc.shafts || [])
+      cands.push({
+        key: `l:${f[0]},${f[1]}`,
+        x: f[0],
+        z: f[1],
+        top: standingHeightAt(f[0], f[1]) + (f[2] || 6),
+        w: f[3] || 1.2,
+        kind: 'list',
+      });
+    const keep = new Set();
+    for (const [key, f] of F) if (f.on) keep.add(key);
+    const picks = pickShafts(cands, {
+      eye: C.eye,
+      vp: C.vp,
+      sun: sun.dir,
+      player: walkView.pl ? [walkView.pl.x, standingHeightAt(walkView.pl.x, walkView.pl.z), walkView.pl.z] : null,
+      focus: [P.x, 0, P.z],
+      ground: standingHeightAt,
+      blockers,
+      keep,
+      max,
+      range: SHAFT_RANGE,
+    });
+    for (const f of F.values()) f.on = false;
+    for (const q of picks) {
+      const f = F.get(q.key);
+      if (f) Object.assign(f, { q, on: true });
+      else F.set(q.key, { q, on: true, a: 0 });
+    }
+  }
+  const t = sun.travel,
+    up = [-t[0], -t[1], -t[2]];
+  for (const [key, f] of F) {
+    f.a = clamp(f.a + (f.on ? dt : -dt) / SHAFT_FADE_S, 0, 1);
+    if (!f.on && f.a <= 0) {
+      F.delete(key);
+      continue;
+    }
+    const q = f.q,
+      g = standingHeightAt(q.x, q.z),
+      len = Math.min(14, q.top / Math.max(0.25, up[1])),
+      cx = q.x + t[0] * len * 0.5,
+      cy = g + q.top + t[1] * len * 0.5,
+      cz = q.z + t[2] * len * 0.5,
+      tx = C.eye[0] - cx,
+      ty = C.eye[1] - cy,
+      tz = C.eye[2] - cz,
+      de = Math.hypot(tx, ty, tz);
+    let rx = up[1] * tz - up[2] * ty,
+      ry = up[2] * tx - up[0] * tz,
+      rz = up[0] * ty - up[1] * tx;
+    const rl = Math.hypot(rx, ry, rz);
+    if (rl < 1e-4) continue;
+    const a = tk * 0.55 * f.a * clamp((de - 3) / 5, 0, 1) * Math.min(1, 0.55 + q.score * 0.6);
+    if (a < 0.005) continue;
+    L.push({
+      p: [cx, cy, cz],
+      right: [rx / rl, ry / rl, rz / rl],
+      up,
+      w: q.w,
+      len,
+      col: sun.col,
+      a,
+    });
+  }
+  return L;
 }

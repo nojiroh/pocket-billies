@@ -2,6 +2,57 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### HD-2D audit fixes and smart light shafts (one session, not a phase) - 2026-10-26
+Branch `ccr-6f3a4696-vl6nkg` (this session's own: a cloud session pushes only there; BRANCHES.md would call it
+`art/hd2d-fixes`). Started from main b87b818d (phase 20 R2-R3 merged). The owner asked for an audit of the HD-2D
+effects already in the game (three code reviews and a headless on/off run of 14 effects in Copperleaf), then a fix plan
+and smart, cheap god rays. **Every look change is behind its own switch, off by default** (phase 20's rule), so nothing
+changes until the owner turns them on after a phone check.
+- What the audit measured (headless, Copperleaf, 640x480, the share of pixels each effect changes): vignette 51%, bloom
+  26%, ink 26%, outlines 20%, lamps at night 20%, shafts 13%, AO 12%, ground bumps 6%, contact shadows 6%, DOF blur 5%,
+  lamp shadows 4%, ground AO 4%; **god rays 0: engine.json sets `air.godRays` 0 and `air.cheapShafts` defaults to 0, so
+  the game has no light shafts at all today**.
+- Smart light shafts (`air.shaftPick`, Engine > Air, off): `logic/shaft-pick.js` (pure, `tools/test/shaft-pick.test.mjs`)
+  picks the cheap shafts every 0.4 s from tree crowns, the gaps between them, the two sides of houses (old 3D buildings
+  and low-poly models with windows) and a place's `shafts` list; scored by shade behind the beam's foot (crowns and
+  houses as circles seen toward the sun), forward scattering (looking into the light), distance from you (the walk
+  camera stands 36-58 m back; the range counts from you), never over you; at most 3/5/8 by quality step and a quarter of
+  the screen together; a showing shaft holds unless another scores 1.3x; fades in and out over 1.2 s. Drawn as a soft
+  streaked beam (the fx program's uGlow 2). Needs `air.cheapShafts` > 0 and god rays off (as D7). Graphics test: "Sun
+  gap, smart shafts".
+- The fixes, each with its switch (all off): Rays follow the light (`sun.followLight`: the walk view never passed the
+  light's colour, and the moon kept a full-strength warm glare); Window light faces out (`lights.windowFacing`: window
+  pools were cut on a fixed +z line, wrong for every turned house; the facing rides in uLC.w); Steady shadow edges
+  (`shadows.steadyEdges`: the sun maps' eye sat 2 m off the light's line, so the texel snapping drifted, test in
+  tall-ground-draw.test.mjs; and the soft edge's blocker search now reaches its filter); Lamp shadows hold
+  (`shadows.lampFix`: distance-scaled bias for the perspective lamp maps, a lamp's pool takes its lamp's map, lamps
+  high by height above the ground); Shaded tree cores (`world.treeCoreShade`: the 30% darkening solid-props.js worked
+  out and never used); Occlusion follows the slope (`shadows.aoPlane`: both ways along a line in a harmonic mean, so a
+  plane gives none); Feet shade on sky light only (`shadows.groundAOSky`); Lamp light on water (`lights.onWater`);
+  Outlines follow the camera (`color.inkFollow`: ink melts with the blur and fades past the focus, it faded from 25 m:
+  half strength on you at zoom 1); Even bloom (`color.bloomEven`); Half-float HDR (`quality.hdrHalf`, read at start);
+  Steady light on far props (`quality.normalMips`); Fronts lit as their material (`world.frontMaterial`); Building
+  bumpiness (`world.buildingBumps`, 0..3, 0 = off: bricks, planks and roof tiles from the sheet's own texels, on the
+  old 3D buildings and the low-poly models; the hub's houses are models now).
+- Fixed without a switch (artefacts, no look intended): the near ring's bump lookup stays inside its 16 m square (seams);
+  the no-worker fallback bleeds picture edges too (`bleedEdges`, shared with the helper thread).
+- The light block: its float padding slot is now `uShFix` (the shadow fix bits); the size and offsets are unchanged
+  (frame-block.test.mjs knows the new member).
+- **Risky**: the AO slope fix went through two wrong tries (a one-pixel slope was all depth steps at 40 m; a plain mean
+  misreads planes) before the harmonic mean; headless it is within noise at zoom 1, brighter close up. Building bumps at
+  the usual zoom read the sheet's half size (a texel is half a screen pixel there), so they are subtle; 1.5 shows on
+  roofs and planks. Lamp shadows hold and Lamp light on water showed no change in Copperleaf at night (no case near the
+  player); they compile and run.
+- **Found, not changed (the owner's call)**: the screen AO fades out by 36 m, nearer than you stand at zoom 1 (reaching
+  further darkened every grass blade's foot); props without `ppm` are at 34 px/m (scenery.json `ppu`), people at 42 and
+  66.5, Billies on a 68 grid: an art rebake to reach 32; the sprite bump's +0.18 upward tilt may be meant.
+- Verified: lint, typecheck, format, check:modules, unit tests 1297 pass, the smoke check 6 of 6, `check-fast --only=town` 4 of
+  5 ("A run town's shop opens (UI-5): no shop with wares" fails on main 0ba64f10 too, not this branch's), every switch on at once in Copperleaf and a
+  forest trail (no errors, every lit program builds with the light block), and headless on/off pictures for each
+  switch. Not judged headless (phase 20's rule): how any of it looks or costs on the phone.
+- Next: the owner on the Android phone and the iPad: Graphics test (Sun gap smart shafts; Shadow court, Lamp square,
+  Meadow and Depth corridor now hold the new switches) and a debug log; then one commit per switch to turn on what
+  stays. After that: cavity darkening from the same sheet, short self-shadows on the ground.
 ### Hub track HB-10a: the square's shape and fountain (and HB-10b started) - 2026-10-26
 Branch `ccr-144f3c08-vf09lo` (the planning session's; the owner: "make it 10m and start"). Merge into `track/hub`.
 Tag to suggest: `hb-10a-done` (the owner pushes tags). Details: docs/phases/hub-track.md, "Done in HB-10a".
