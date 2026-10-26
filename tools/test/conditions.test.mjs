@@ -189,6 +189,18 @@ test('RL-12b: type:, money and badge: read the team, the Moneys on hand and the 
   assert.ok(conditionProblem('money:gold'), 'money takes no name');
 });
 
+test('SP-6: dna, genes and spliced read meta.dna, the Gene library and the team’s splices', () => {
+  const S = storyStateOf({
+    meta: { dna: 12, genes: ['eagle_wing@hughes2', 'shark_tailfin@bezos0'] },
+    team: [{ sp: 'a', graft: { front: 'eagle_wing@hughes2' } }, { sp: 'b' }, { sp: 'c', graft: {} }],
+  });
+  for (const c of ['dna >= 12', 'dna < 13', 'genes >= 2', 'genes', 'spliced = 1', 'spliced'])
+    assert.equal(conditionHolds(c, S), true, c);
+  const none = storyStateOf({});
+  for (const c of ['dna', 'genes', 'spliced']) assert.equal(conditionHolds(c, none), false, c);
+  assert.ok(conditionProblem('dna:x'), 'dna takes no name');
+});
+
 test("RL-12b: the game reads a team Billie's types from its species, and the leaders' types from their files", () => {
   const { storyTeamLookups } = modules.script;
   const L = storyTeamLookups();

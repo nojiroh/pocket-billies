@@ -65,7 +65,7 @@ expose({
  *   visited: Record<string, any>, lines: Record<string, any>, robots: number, badges: number, caught: number,
  *   unlocks: Record<string, any>, runs: number, wins: number, expedition?: number, questStages?: Record<string, string[]>,
  *   types?: Record<string, number>, money?: number, team?: number, badgeTypes?: Record<string, number>,
- *   opened?: Record<string, number> }} StoryState */
+ *   opened?: Record<string, number>, dna?: number, genes?: number, spliced?: number }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
  * reads, for the Studio's reference (Project Story S3) */
@@ -89,6 +89,9 @@ export const CONDITION_KINDS = {
   team: { id: false, count: true, about: 'Billies in your team: team >= 2' },
   badge: { id: true, count: false, about: 'a badge of that type is won: badge:Water' },
   opened: { id: true, count: false, about: 'a run’s field move obstacle is open (RL-R2): opened:cut' },
+  dna: { id: false, count: true, about: 'DNA on hand (SP-6): dna >= 10' },
+  genes: { id: false, count: true, about: 'Genes in the Gene Bank’s library (SP-6): genes >= 1' },
+  spliced: { id: false, count: true, about: 'spliced Billies in your team (SP-6): spliced >= 1' },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
 export const WORDS = new Set(['and', 'or', 'not']);
@@ -337,6 +340,12 @@ export function termValue(c, S) {
       return !!(S.badgeTypes || {})[c.id.toLowerCase()];
     case 'opened':
       return !!(S.opened || {})[c.id];
+    case 'dna':
+      return S.dna || 0;
+    case 'genes':
+      return S.genes || 0;
+    case 'spliced':
+      return S.spliced || 0;
   }
 }
 /** whether a condition holds for the state @param {Cond | string} c @param {StoryState} S @returns {boolean} */
@@ -405,6 +414,10 @@ export function storyStateOf(save, o = {}) {
     /* RL-R2: the run's side area's move, once its obstacle is open (logic/run-side.js) */
     opened:
       save.run && save.run.map && save.run.map.side && save.run.map.side.open ? { [save.run.map.side.move]: 1 } : {},
+    /* SP-6: DNA, the Gene library and the team's splices (a Billie with a graft) */
+    dna: meta.dna || 0,
+    genes: (meta.genes || []).length,
+    spliced: (save.team || []).filter(m => m && m.graft && Object.keys(m.graft).length).length,
   };
 }
 

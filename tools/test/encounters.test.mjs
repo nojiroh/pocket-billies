@@ -74,6 +74,10 @@ test('encounters: an option is open when its need holds and the Moneys are there
     ['badge:Water', 'Needs the Water Badge'],
     ['type:Fire >= 2', 'Needs 2 Fire Billies'],
     ['money >= 50', 'Needs 50 Moneys'],
+    ['dna >= 8', 'Needs 8 DNA'],
+    ['genes', 'Needs a Gene'],
+    ['genes >= 3', 'Needs 3 Genes'],
+    ['spliced >= 1', 'Needs a spliced Billie'],
     ['met_juniper', 'Not now'],
   ])
     assert.equal(X.needWords(need, items), words);

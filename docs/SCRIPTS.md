@@ -98,6 +98,7 @@ An entry of `cycle` or `seq` starts after `- `; its other lines go under it, two
 | `money >= 200` | Moneys on hand (RL-12b) |
 | `team >= 2` | Billies in the team (RL-12b) |
 | `badge:Water` | a badge of that type is won: `meta.badges` (RL-R2) or a leader's seat (RL-12b) |
+| `dna >= 10`, `genes >= 1`, `spliced >= 1` | DNA on hand; Genes in the Gene Bank's library; spliced Billies in the team (SP-6) |
 
 Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than `or`. A count on its own
 (`item:honey`, `badges`) means more than 0. Conditions are parsed once and never run as code. A mistake says where:

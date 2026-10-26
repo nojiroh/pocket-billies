@@ -121,6 +121,12 @@ export function needWords(need, items) {
   if (/^badges(\s*>=\s*1)?$/.test(need)) return 'Needs a badge';
   if ((m = /^team\s*>=\s*(\d+)$/.exec(need))) return `Needs ${m[1]} Billies`;
   if ((m = /^money\s*>=\s*(\d+)$/.exec(need))) return `Needs ${m[1]} Moneys`;
+  /* SP-6: DNA, the Gene library, a spliced Billie */
+  if ((m = /^dna\s*>=\s*(\d+)$/.exec(need))) return `Needs ${m[1]} DNA`;
+  if (/^genes(\s*>=\s*1)?$/.test(need)) return 'Needs a Gene';
+  if ((m = /^genes\s*>=\s*(\d+)$/.exec(need))) return `Needs ${m[1]} Genes`;
+  if (/^spliced(\s*>=\s*1)?$/.test(need)) return 'Needs a spliced Billie';
+  if ((m = /^spliced\s*>=\s*(\d+)$/.exec(need))) return `Needs ${m[1]} spliced Billies`;
   return 'Not now';
 }
 
