@@ -178,6 +178,7 @@
    "most": 5,
    "levelsFrom": 5,
    "perLevels": 5,
+   "perStability": 2,
    "team": 6
   },
   "pack": [5],

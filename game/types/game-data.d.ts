@@ -1055,6 +1055,8 @@ export interface StarterPointRules {
   levelsFrom: number;
   /** one point more per this many levels above levelsFrom */
   perLevels: number;
+  /** SP-4: one point more per this much Stability a Billie's splice spends (none when left out) */
+  perStability?: number;
   /** the most Billies a run can start with */
   team: number;
 }

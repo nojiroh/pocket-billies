@@ -106,6 +106,8 @@ expose({
   billyName: [() => billyName],
   billyPrime: [() => billyPrime],
   billyRel: [() => billyRel],
+  // @ts-expect-error -- replaced on purpose
+  billySpliceCost: [() => billySpliceCost, v => ((billySpliceCost = v), provide({ billySpliceCost }))],
   billyTypes: [() => billyTypes],
   // @ts-expect-error -- replaced on purpose
   billyUnstable: [() => billyUnstable, v => (billyUnstable = v)],
@@ -247,7 +249,7 @@ expose({
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
-provide({ addWalked, billyGeneFx, geneLimit, makeBilly, makeRobot, riderOf, unstableTidy });
+provide({ addWalked, billyGeneFx, billySpliceCost, geneLimit, makeBilly, makeRobot, riderOf, unstableTidy });
 export function setSetTrip(v) {
   // @ts-expect-error -- replaced on purpose
   setTrip = v; // eslint-disable-line no-func-assign
@@ -361,6 +363,12 @@ export const geneData = () => ({
  * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m */
 export const billyGraft = m => (m && m.graft && m.kind !== 'robot' ? graftFit(geneData(), m.sp, m.graft) : null);
 provide({ billyGraft }); /* to-module */
+/** SP-4: the Stability a Billie's splice spends (0 with none; starter points charge for it)
+ * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m */
+export function billySpliceCost(m) {
+  const g = billyGraft(m);
+  return g && m ? graftStability(geneData(), m.sp, g).cost : 0;
+}
 /** SP-2: per spliced slot, its part's weight over the Billie's own part's; null with no splice
  * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m */
 export const billyRel = m => (m && billyGraft(m) ? graftRel(geneData(), m.sp, m.graft) : null);

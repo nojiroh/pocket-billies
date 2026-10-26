@@ -513,7 +513,7 @@ export function dataRunLoop(D) {
     const PT = R.points;
     if (!rec(PT)) problem('rules.json', 'run.points: the starter points (budget, rarity, stage, most, ...) are needed');
     else {
-      only(PT, ['budget', 'rarity', 'stage', 'most', 'levelsFrom', 'perLevels', 'team'], 'run.points');
+      only(PT, ['budget', 'rarity', 'stage', 'most', 'levelsFrom', 'perLevels', 'perStability', 'team'], 'run.points');
       if (!rec(PT.rarity) || !Object.keys(D.rarities || {}).every(r => whole(PT.rarity[r], 0, 20)))
         problem('rules.json', 'run.points.rarity: a whole cost from 0 to 20 for each rarity (rarities.json)');
       for (const r of Object.keys(PT.rarity || {}))
@@ -522,6 +522,8 @@ export function dataRunLoop(D) {
         problem('rules.json', 'run.points.stage (0-20) and most (1-40) are not whole costs');
       if (!whole(PT.levelsFrom, 1, 100) || !whole(PT.perLevels, 1, 100))
         problem('rules.json', 'run.points.levelsFrom and perLevels are not whole levels from 1 to 100');
+      if (PT.perStability != null && !whole(PT.perStability, 1, 20))
+        problem('rules.json', 'run.points.perStability (SP-4) is not a whole Stability from 1 to 20');
       if (!whole(PT.team, 1, 6)) problem('rules.json', 'run.points.team is not a whole number of Billies from 1 to 6');
     }
     if (!whole(R.healCost, 0, 100000))
