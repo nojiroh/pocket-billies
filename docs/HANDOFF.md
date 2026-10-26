@@ -2,6 +2,71 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Splicing track SP-4 - The Gene Bank: the building, the library, splicing for DNA, its levels (built, waiting on the owner's numbers) - 2026-10-26
+Branch `claude/sp-4-gene-bank`, **on top of SP-3's branch `claude/sp-3-wild-splices`** (itself on SP-2's and SP-1's;
+none merged or tagged, `track/splicing` doesn't exist), started from its e24e882, with **main merged in once** (the
+owner's go on the plan, decision A: the hub track's Gene Bank model, room and `enter` act are on main). It merges SP-3's
+branch when it moves (a merge, never a rebase). Merge SP-1, SP-2, SP-3, then this. Plan approved in Plan Mode. Tag
+`sp-4-done` for the owner.
+- Where the track was wrong: written into the track file's "Corrections found by SP-4". The ones that changed the plan:
+  main already had the Gene Bank's model, room and a bare plot (HB-4b, HB-5); levels are unlocks.json rows; the limit
+  was read at the default in five places, not graftTidy alone; extras can't be spliced, so the levels open sig, front,
+  back; there is no Dig (Rock Smash), and a horn for Cut can't be spliced; no Studio file read genes.json; a DNA grant
+  was dropped.
+- Decided in the plan (the owner's go on all four): A main merged in once; B HB-5's lab-vault on HB-4b's `genebank`
+  plot, act `genebank` (door and Splice console); C the placeholder numbers below; D **your Billies are held to your
+  Bank's limit, wild ones to the default**: Unstable is a stored fact settled with the owner's limit (a splice at the
+  Bank, a level up, evolving, catching, loading), and billyUnstable no longer works it out again.
+- Changed (one cause per commit):
+  - Merge of main (BRANCHES rows from both sides, rules.js billyName with main's provide, game-data.js GENES with
+    main's provide(FIELD_MOVES), hooks.js through `npm run modules`, the check-data snapshot's file count).
+  - A milestone that grants DNA pays it (unlockGrant, its gift text, the economy view, `UnlockGrant`).
+  - Data: genes.json `bank` (levels: limit 3 / 4 / 5, slots sig / + front / + back; a splice `5 + 5 x` the Gene's
+    Stability cost in DNA; an egg keeps a Gene at 0.5), `field` on fins (Surf) and `bear_arm` (Rock Smash);
+    buildings.json `genebank` (DNA, 3 levels), unlocks `genebank_2` (30 DNA) and `genebank_3` (80). **Every number a
+    placeholder.** Schema, types, dataGenes (field ids exist, level 1's limit is the default, no level takes a slot or
+    limit back, as many levels as buildings.json sells).
+  - rules.js `geneLimit(s)`; `unstableTidy`, `spliceSet`, `graftTidy` take the limit; evolve, addBilly, saveFill
+    (team, box, nursery, the run's start team) and spliceReport use yours, the wild lists and stocking the default.
+  - logic/gene-bank.js: bankSequence (a Billie's own parts and its Genes into `meta.genes`, free), bankGenes,
+    bankPrice, bankTry, bankWhy, bankSplice (pays), bankUnsplice (free, the Gene stays), bankSettle.
+  - Copperleaf: build-copperleaf.mjs puts `gene_bank` on its plot (rebuilt: one prop added, rot 90, nothing else
+    moved); build-hub-rooms.py gives the Splice console act `genebank`; ROOM_BY_USE, buildings.json act, the Actions
+    sheet's hub marks, the camera's door interest, the Studio's act list, "Bought at the Gene Bank".
+  - game/js/gene-bank-screen.js: the sheet (DNA, level, limit, slots; your Billies; Sequence; the slots with the level
+    that opens a closed one; the Gene worn with Take off; the fitting Genes with trait, type and price; the picked
+    one's preview: drawn with it, kg, types, traits, the move when there is one, Stability against the limit,
+    Unstable or refused, stats before and after; Splice; the Bank's upgrades). The console, the keeper and the door's
+    fallback open it; a level bought there settles your Billies. Debug log 'genebank' lines (data ids only).
+  - Eggs: breeding.js breedGenes, drawn after every other roll and only for a spliced parent (an egg of unspliced
+    parents is what it was).
+  - Starter points: `run.points.perStability` 2 (rules.js billySpliceCost through pointCost).
+  - Field moves: genes.js geneOf's `field` and graftFields, rules.js billyFieldTypes for the obstacle, the map's gate
+    text and the run sim. The badge is still needed.
+  - The Studio's Genes section (studio/js/genes-editor.js): every genes.json number above, the traits' names and
+    text, kinds and parts, the starter-point cost, and "Try a splice" (bakes any kit Billie with a Gene on a slot,
+    kitBakeInStudio, with its Stability, traits, types and price); graft-art.js and genes.js now on the Studio page.
+    The economy view's DNA lines open it; the Bank's splice price is a DNA sink. tools/studio-shots.py: a genes view.
+  - The in-game full test: "Gene Bank: sequence, splice, see it in battle" (on a copy of the save). Debug menu: Open
+    the Gene Bank, Gene Bank level +1.
+- Verified: lint, typecheck, check:modules, unit tests after every commit (1032 quick, all pass; new:
+  tools/test/gene-bank.test.mjs, breeding's inherit test, starter points' splice cost, geneOf's field); check:data;
+  golden battles unchanged. Headless on the page (town fixture): the Gene Bank stands on its plot (117.8, 107.31, rot
+  90); walking in lays `int_gene_bank` (kind genebank); the sheet opens; the lead (musk2) sequenced, a shark's tail
+  previewed (drawn with it once its pictures load, about 3 s headless) and spliced for 15 DNA; Lv 2 bought from the
+  sheet (the title follows); Take off free. In-game steps alone: "Walk: Inside the Gene Bank", "Wild splice", "Gene
+  Bank: sequence, splice, see it in battle" (musk2 front=cat_arm@bezos0: 10 DNA, its Grip row in battle) all pass. The
+  Studio's Genes section at 1920 px: a Swiftlet with a shark's tail baked; the Studio's Check lists only older notes.
+  Slow tier: SLOW_RESULT. Full quick check: QUICK_RESULT
+- Risky: Unstable is now stored and trusted (billyUnstable reads it; every place a splice or the limit changes
+  settles it): a path that changes a splice without spliceSet, bankSplice or graftTidy would leave it stale until the
+  next load. Copperleaf has one more building (the hub pictures differ from the baseline). The preview bakes on the
+  main thread like SP-1's grafts. The Studio page now loads graft-art.js and genes.js (skeleton-rig.js imports
+  graftForm and graftParse directly instead of through hooks).
+- Next: the owner's answers (Ask me before): the Bank's prices and levels, the splice price, the egg's chance, the
+  starter-point cost; Gene moves (SP-2's open question): genes.json `parts.move` already shows on the sheet's preview,
+  but splicing doesn't teach the move yet (that needs the owner's answer and a "forget which move" choice).
+  Then tag `sp-4-done`; SP-5 waits for RL-14.
 ### Splicing track SP-3 - Wild splices: Grafts and Chimeras, the battle's line, DNA, Gene Samples (built, waiting on the owner's numbers) - 2026-10-25
 Branch `claude/sp-3-wild-splices`, **on top of SP-2's branch `claude/sp-2-rules`** (itself on SP-1's
 `ccr-dde1a5bd-nx5zdl`; none merged or tagged, `track/splicing` doesn't exist). It merges SP-2's branch when it moves
