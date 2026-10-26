@@ -114,6 +114,22 @@ export function battle3dAttach(o = {}) {
         });
   const cy = Math.cos(battle3d.yaw),
     sy = Math.sin(battle3d.yaw);
+  /* WA-7: the water in view and who stands in it, in battle space (battle-stage.js: glints on it, rings round them) */
+  const toBattle = (/** @type {number} */ x, /** @type {number} */ z) => {
+      const dx = x - battle3d.off[0] - actionCenter.x,
+        dz = z - battle3d.off[1] - actionCenter.z;
+      return { x: actionCenter.x + dx * cy - dz * sy, z: actionCenter.z + dx * sy + dz * cy };
+    },
+    wetSet = new Set((walkView.water || []).map(p => Math.floor(p[0]) + ',' + Math.floor(p[1])));
+  battleStage.wet = (walkView.water || [])
+    .map(p => toBattle(p[0], p[1]))
+    .filter(q => q.z > 3 && q.z < 30 && Math.abs(q.x) < q.z * 0.7)
+    .slice(0, 300);
+  battleStage.wetFeet = [];
+  for (let i = 0; i < battleStage.s.length; i++) {
+    const [x, z] = battleTurnPoint(spots[i + 1].x, spots[i + 1].z, battle3d.yaw, actionCenter, battle3d.off);
+    if (wetSet.has(Math.floor(x) + ',' + Math.floor(z))) battleStage.wetFeet.push(i);
+  }
   /* clear the lane between the camera and the two billionaires */
   const hide = new Set();
   for (const p of sc.props || []) {
