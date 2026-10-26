@@ -5,8 +5,9 @@
 //
 // The market faces you from the north rim (the walk camera looks north), between the lab and the library; planters
 // flank the three streets where they come in (east, north-west, south-west); lamps round the rim; benches facing the
-// fountain; a solar canopy on the south-east. Kept clear: the view toward the sky rail and the portal (VIEW), a walk
-// round the fountain (nothing nearer its middle than WALK_R), the hub spot.
+// fountain; a solar canopy on the south-east; after a won run, bunting and flags (HB-10d). Kept clear: the view
+// toward the sky rail and the portal (VIEW), a walk round the fountain (nothing nearer its middle than WALK_R), the
+// hub spot.
 
 const r2 = v => Math.round(v * 100) / 100;
 
@@ -76,20 +77,26 @@ export const SQUARE_EDGE = [
   ['bench_wood', -25, 1.0, 'in'],
   ['bench_wood', -122, 1.0, 'in'],
   ['bench_wood', 192, 1.1, 'in'],
+  /* HB-10d: the win bunting, up only after a won run (`when`: logic/run-history.js historyFacts), on grass just
+     outside the rim: pennant lines across the east street's mouth and behind the market, the town's flag on two poles
+     either side of the market; each 1.8 m or more from every edge prop and stop (logic/square-day.js) */
+  ['pennant_line', 6, -0.6, 'in', { when: 'last:won' }],
+  ['pennant_line', 100, -0.6, 'in', { when: 'last:won' }],
+  ['flag_pole', 70, -0.6, 'in', { when: 'last:won' }],
+  ['flag_pole', 160, -0.6, 'in', { when: 'last:won' }],
 ];
-
 
 /** the edge props for a map whose square's middle is the well plot: the map's props without the old ones, then the
  * new ones */
 export function squareEdgeProps(M) {
   const well = M.plots.find(L => L.k === 'well'),
     out = [];
-  for (const [k, deg, inset, face] of SQUARE_EDGE) {
+  for (const [k, deg, inset, face, more] of SQUARE_EDGE) {
     const a = (deg * Math.PI) / 180,
       r = squareRim(a) - inset,
       /* rot 0 faces south; facing the middle (degrees deg + 180) is rot deg + 270 (logic/prop-turn.js) */
       rot = face === 'in' ? ((((deg + 270) % 360) + 540) % 360) - 180 : face;
-    out.push({ k, x: r2(well.x + Math.cos(a) * r), z: r2(well.z + Math.sin(a) * r), ...(rot ? { rot } : {}), sq: 1 });
+    out.push({ k, x: r2(well.x + Math.cos(a) * r), z: r2(well.z + Math.sin(a) * r), ...(rot ? { rot } : {}), ...more, sq: 1 });
   }
   return [...M.props.filter(p => !p.sq), ...out];
 }
