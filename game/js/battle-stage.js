@@ -2061,7 +2061,7 @@ export function battleStagePlay(an, ev) {
           life: 1500,
           rot: 0,
           vr: side * 6,
-          k: 0.5,
+          k: 1,
         });
       }
       battleStageFlash('#FFE7A0', 0.35, 220);
