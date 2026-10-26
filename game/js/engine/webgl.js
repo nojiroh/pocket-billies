@@ -26,6 +26,7 @@ expose({
   beginGpuTimer: [() => beginGpuTimer, v => (beginGpuTimer = v)],
   bindGridQuad: [() => bindGridQuad, v => (bindGridQuad = v)],
   bindQuad: [() => bindQuad, v => (bindQuad = v)],
+  bleedEdges: [() => bleedEdges, v => (bleedEdges = v)],
   compileProgram: [() => compileProgram, v => ((compileProgram = v), provide({ compileProgram }))],
   cross3: [() => cross3],
   dropProgramCompile: [() => dropProgramCompile, v => (dropProgramCompile = v)],
@@ -1000,7 +1001,67 @@ export const SURFACE_MATERIALS = {
 /* v32: normal maps are worked out on a helper thread (a big picture took seconds and froze the game when a scene
    opened); only reading the pixels and uploading the result happen here. Without workers it falls back to here. */
 export const normalMapWorkerState = { w: null, bad: false, id: 0, jobs: new Map(), fly: 0 };
-const NORMAL_MAP_WORKER_SOURCE = `const clamp=(v,a,b)=>v<a?a:v>b?b:v;onmessage=ev=>{const {id,w,h,pillow,detail,bm}=ev.data;let d=ev.data.d;
+/* v32: a picture's colours bled into the see-through pixels round its outline, so far-off (smaller) copies keep their
+   colour at the edges instead of a dark fringe: four rings outward from the outline, the rest the picture's average.
+   Self-contained: the helper thread gets its source text as well */
+function bleedEdges(d, w, h) {
+  const col = new Uint8ClampedArray(d),
+    ok = new Uint8Array(w * h);
+  let ar = 0,
+    ag = 0,
+    ab = 0,
+    an = 0;
+  for (let i = 0; i < w * h; i++)
+    if (d[i * 4 + 3] > 0) {
+      ok[i] = 1;
+      ar += d[i * 4];
+      ag += d[i * 4 + 1];
+      ab += d[i * 4 + 2];
+      an++;
+    }
+  for (let pass = 0; pass < 4; pass++) {
+    const nk = ok.slice();
+    for (let y = 0; y < h; y++)
+      for (let X = 0; X < w; X++) {
+        const i = y * w + X;
+        if (ok[i]) continue;
+        let r2 = 0,
+          g2 = 0,
+          b2 = 0,
+          k = 0;
+        for (let dy = -1; dy <= 1; dy++)
+          for (let dx = -1; dx <= 1; dx++) {
+            const xx = X + dx,
+              yy = y + dy;
+            if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+            const j = yy * w + xx;
+            if (ok[j]) {
+              r2 += col[j * 4];
+              g2 += col[j * 4 + 1];
+              b2 += col[j * 4 + 2];
+              k++;
+            }
+          }
+        if (k) {
+          col[i * 4] = r2 / k;
+          col[i * 4 + 1] = g2 / k;
+          col[i * 4 + 2] = b2 / k;
+          nk[i] = 1;
+        }
+      }
+    ok.set(nk);
+  }
+  if (an)
+    for (let i = 0; i < w * h; i++)
+      if (!ok[i]) {
+        col[i * 4] = ar / an;
+        col[i * 4 + 1] = ag / an;
+        col[i * 4 + 2] = ab / an;
+      }
+  return col;
+}
+const NORMAL_MAP_WORKER_SOURCE = `${bleedEdges}
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;onmessage=ev=>{const {id,w,h,pillow,detail,bm}=ev.data;let d=ev.data.d;
 /* v33: the picture can come as a bitmap and be read here, so the main thread never waits for its pixels */
 if(!d&&bm){if(typeof OffscreenCanvas==='undefined'){postMessage({id,retry:1});return}try{const oc=new OffscreenCanvas(w,h),ox=oc.getContext('2d');ox.drawImage(bm,0,0);d=ox.getImageData(0,0,w,h).data;bm.close&&bm.close()}catch(e){postMessage({id,retry:1});return}}const A=new Float32Array(w*h),Lm=new Float32Array(w*h);for(let i=0;i<w*h;i++){A[i]=d[i*4+3]>127?1:0;Lm[i]=(d[i*4]*.3+d[i*4+1]*.59+d[i*4+2]*.11)/255}
 const blur=(src,r)=>{const t=new Float32Array(w*h),o=new Float32Array(w*h);for(let y=0;y<h;y++){let s=0;for(let k=-r;k<=r;k++)s+=src[y*w+clamp(k,0,w-1)];for(let X=0;X<w;X++){t[y*w+X]=s/(2*r+1);s+=src[y*w+clamp(X+r+1,0,w-1)]-src[y*w+clamp(X-r,0,w-1)]}}
@@ -1009,11 +1070,8 @@ const r=Math.max(2,Math.round(Math.min(w,h)/14)),B=blur(blur(A,r),r),out=new Uin
 for(let y=0;y<h;y++)for(let X=0;X<w;X++){const i=y*w+X,gx=(B[y*w+Math.min(w-1,X+1)]-B[y*w+Math.max(0,X-1)])*.5,gy=(B[Math.min(h-1,y+1)*w+X]-B[Math.max(0,y-1)*w+X])*.5;let lx=0,ly=0;
 if(A[i]&&detail){const L=(X2,Y2)=>{X2=clamp(X2,0,w-1);Y2=clamp(Y2,0,h-1);const k=Y2*w+X2;return A[k]?Lm[k]:Lm[i]};lx=(L(X+1,y)-L(X-1,y))*.5;ly=(L(X,y+1)-L(X,y-1))*.5}
 const nx=-gx*r*1.6*pillow-lx*detail*1.6,ny=(-gy*r*1.6+.18)*pillow-ly*detail*1.6,l=Math.hypot(nx,ny,1);out[i*4]=(nx/l*.5+.5)*255;out[i*4+1]=(ny/l*.5+.5)*255;out[i*4+2]=(1/l*.5+.5)*255;out[i*4+3]=255}
-/* v32: colours bled into the see-through pixels round the outline, so far-off (smaller) copies of the picture keep their colour at the edges instead of a dark fringe */
-const col=new Uint8ClampedArray(d),ok=new Uint8Array(w*h);let ar=0,ag=0,ab=0,an=0;for(let i=0;i<w*h;i++)if(d[i*4+3]>0){ok[i]=1;ar+=d[i*4];ag+=d[i*4+1];ab+=d[i*4+2];an++}
-for(let pass=0;pass<4;pass++){const nk=ok.slice();for(let y=0;y<h;y++)for(let X=0;X<w;X++){const i=y*w+X;if(ok[i])continue;let r2=0,g2=0,b2=0,k=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const xx=X+dx,yy=y+dy;if(xx<0||yy<0||xx>=w||yy>=h)continue;const j=yy*w+xx;if(ok[j]){r2+=col[j*4];g2+=col[j*4+1];b2+=col[j*4+2];k++}}
- if(k){col[i*4]=r2/k;col[i*4+1]=g2/k;col[i*4+2]=b2/k;nk[i]=1}}ok.set(nk)}
-if(an)for(let i=0;i<w*h;i++)if(!ok[i]){col[i*4]=ar/an;col[i*4+1]=ag/an;col[i*4+2]=ab/an}
+/* v32: colours bled into the see-through pixels round the outline (bleedEdges, below) */
+const col=bleedEdges(d,w,h);
 postMessage({id,out,col},[out.buffer,col.buffer])}`;
 function ensureNormalMapWorker() {
   if (normalMapWorkerState.w || normalMapWorkerState.bad) return normalMapWorkerState.w;
@@ -1118,7 +1176,8 @@ export function runNormalMapJobs(budget) {
         normalMapWorkerState.fly++;
         W.postMessage({ id, w, h, d, pillow: M.pillow, detail: M.detail }, [d.buffer]);
       } else {
-        e.n = makeNormalMap(e.src || e.im, e.sw || e.w, e.sh || e.h, e.n);
+        e.n = makeNormalMap(e.src || e.im, e.sw || e.w, e.sh || e.h, e.n, e.t);
+        if (e.t && engineSetting('quality', 'edgeBleed') !== false) e.bled = 1;
         e.nDone = true;
       }
     } catch (err) {
@@ -1126,7 +1185,7 @@ export function runNormalMapJobs(budget) {
     }
   }
 }
-export function makeNormalMap(im, w, h, old) {
+export function makeNormalMap(im, w, h, old, bleed = null) {
   const M = SURFACE_MATERIALS[im.__mat] || SURFACE_MATERIALS.plain,
     c = makeCanvas(w, h),
     x = c.getContext('2d', { willReadFrequently: true });
