@@ -331,15 +331,28 @@ vec3 snowOnF(vec3 c,vec3 p,float up,vec2 fol){if(uSeason.w<=0.||fol.y<=0.)return
 /* phase 20 E5: the same with the surface's foliage and snow as a parameter (the instanced sprites feed it per picture) */
 vec3 seasonal(vec3 c,vec3 p){return seasonalF(c,p,uFol);}
 vec3 snowOn(vec3 c,vec3 p,float up){return snowOnF(c,p,up,uFol);}
-vec3 fogit(vec3 c,vec3 p){float d=length(p-uEye);float f=1.-exp(-max(0.,d-uFogStart)/uFogD*1.6);
- float m=uMist*exp(-max(0.,p.y-uMistY)*1.4)*smoothstep(4.,22.,d)*(.55+.45*sin(p.x*.21+uTime*.00012)*sin(p.z*.17-uTime*.0001));f=clamp(f+m*(1.-f),0.,1.);
+/* air track AIR-1: the average of exp(-b*(y-r)) along a stretch of a ray from height y0 to y1 (Quilez: the exact
+   integral of an exponential height density), capped; 1 when b is 0. JS twin: tools/test/haze-twin.mjs */
+${SKY_GLSL}float airAvg(float y0,float y1,float r,float b,float cap){float k=clamp(b*(y1-y0),-30.,30.),a=exp(clamp(-b*(y0-r),-30.,30.));return min(cap,abs(k)<1e-3?a*(1.-k*.5):a*(1.-exp(-k))/k);}
+vec3 fogit(vec3 c,vec3 p){float d=length(p-uEye);vec3 vd=(p-uEye)/max(d,.001);
+ /* AIR-1: the haze thins with height (uHazeFall, from where you stand) and fades red a little faster than blue (uHazeTint) */
+ float tau=max(0.,d-uFogStart)/uFogD*1.6*airAvg(uEye.y+vd.y*min(uFogStart,d),p.y,uHazeY,uHazeFall,3.);
+ vec3 f=1.-exp(-tau*vec3(1.+.3*uHazeTint,1.,1.-.12*uHazeTint));
+ /* the low mist where the surface is, or (uMistRay) thickening along the view over low ground */
+ float mp=exp(-max(0.,p.y-uMistY)*1.4)*smoothstep(4.,22.,d),mr=min(1.,max(0.,d-4.)/18.*airAvg(uEye.y+vd.y*min(4.,d),p.y,uMistY,1.4,1.));
+ float m=uMist*mix(mp,mr,uMistRay)*(.55+.45*sin(p.x*.21+uTime*.00012)*sin(p.z*.17-uTime*.0001));f=clamp(f+m*(1.-f),0.,1.);
  /* v23: mist lying in a gorge or valley */
  if(uValley.y>0.){float v=uValley.y*smoothstep(0.,1.4,uValley.x-p.y)*smoothstep(1.5,9.,d)*(.62+.38*sin(p.x*.33+uTime*.00015)*sin(p.z*.27-uTime*.00011));f=clamp(f+v*.6*(1.-f),0.,1.);}
  c=mix(c,c*uTint,uTintAmt);
  /* v46: inside a building the town around the room is seen dimly (the room box, x0 z0 x1 z1) */
  if(uRoomDim>.001){float ob=max(max(uRoomB.x-p.x,p.x-uRoomB.z),max(uRoomB.y-p.z,p.z-uRoomB.w));float k=smoothstep(.05,.9,ob);float l=dot(c,vec3(.3,.59,.11));c=mix(c,mix(c,vec3(l)*vec3(.92,.95,1.08),.4*uRoomDim)*(1.-uRoomDim),k);}
- /* v43: the air takes the sun's colour where you look toward the sun (forward scattering), the sky's elsewhere */
- vec3 vd=(p-uEye)/max(d,.001);float toSun=pow(max(dot(vd,uSunDir),0.),6.);vec3 fc=mix(uFogCol,uFogCol*.45+uSunCol*.7,toSun*uFogSun);
+ /* AIR-1: the place's haze shaped by the sky's gradient in the view direction (uHazeSky): its own colour below the
+    horizon, leaning to the sky's middle and top above it */
+ vec3 fb=mix(uFogCol,max(uFogCol+skyGrad(uSkyTop,uSkyMid,uSkyLow,vd.y)-uSkyLow,vec3(0.)),uHazeSky);
+ /* v43: the air takes the sun's colour where you look toward the sun (forward scattering), the sky's elsewhere;
+    AIR-1: and a broad glow on the sun's whole side (uSkyGlow) */
+ float cs=max(dot(vd,uSunDir),0.);float toSun=pow(cs,6.);vec3 fc=mix(fb,fb*.45+uSunCol*.7,toSun*uFogSun);
+ fc=mix(fc,fc*.7+uSunCol*.4,pow(cs,1.5)*uSkyGlow*.35);
  return mix(c,fc,f);}
 `;
 /* v32: every thing's own look, on top of its picture: a colour variation (hue, saturation and value shifted only in
