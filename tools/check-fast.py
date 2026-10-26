@@ -351,7 +351,7 @@ def run_loop(pg, base):
     """RL-8: on the run fixture's landing, a wild battle begins and the save holds it (phase 'battle', stored at once);
     a reload (?fixture=stored) starts the same battle again from its seed; lost, the run ends: the payout screen with
     its rows and a keep-one card per Billie; a reload there opens it again (the run still on the save, nothing paid
-    yet); one card picked, "Fly home": back in Copperleaf by the mast, the hub's world in, the run's Research in meta"""
+    yet); one card picked, "Ride home": back in Copperleaf by the station, the hub's world in, the run's Research in meta"""
     drawing(pg)
     if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
     seed = pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();startWild(encountersHere()[0]);activeBattle&&activeBattle.seed")
@@ -371,7 +371,7 @@ def run_loop(pg, base):
     again = pg.evaluate("[document.querySelector('#ov pb-payout').rows.length,document.querySelectorAll('#ov pb-pick-card').length,saveData.run&&saveData.run.at.phase,saveData.meta.runs]")
     if again != [rows, cards, 'payout', 0]: raise Exception(f'after a reload at the payout: rows, cards, phase, runs {again}')
     pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
-    if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('picking a card didn’t enable Fly home')
+    if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('picking a card didn’t enable Ride home')
     pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
     if not until(pg, "!saveData.run&&LOCATIONS.length===1&&saveData.meta.runs===1", 30): raise Exception('Ride home didn’t end the run')
     # HB-8: the train comes home battered; the lost run's scene waits for it
@@ -1223,7 +1223,7 @@ def run_pack(pg, base):
     pg.evaluate("uiState.modal=null;uiState.mq=[];runOver(false);0")
     if not until(pg, "!!uiState.modal&&uiState.modal.cls==='run-payout'&&!!document.querySelector('#ov pb-pick-card')", 30): raise Exception('no payout after giving up')
     pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
-    if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('picking a card didn’t enable Fly home')
+    if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('picking a card didn’t enable Ride home')
     pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
     if not until(pg, "!saveData.run&&saveData.meta.runs===1", 30): raise Exception('Ride home didn’t end the run')
     if ride_home(pg) != [train, 2]: raise Exception(f'after the loss the train at the platform is {ride_home(pg)}, not the battered {train}')

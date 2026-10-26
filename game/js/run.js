@@ -236,7 +236,7 @@ export function runResume() {
   }
 }
 
-/* ---------- the start, at Copperleaf's airship mast ---------- */
+/* ---------- the start, at Skyline Station ---------- */
 /** may a run start now: a game under way, no run on, someone at home (the team or storage: the travellers leave
     healed), no battle */
 function runStartable() {
@@ -339,7 +339,7 @@ function runPackStep(kind, k, d) {
   uiState.runPack[kind][k] = next;
   runStartSheet();
 }
-/** the sheet before a run: who comes from home, what you pack from Copperleaf's bag, what the airship adds, how it
+/** the sheet before a run: who comes from home, what you pack from Copperleaf's bag, what the station adds, how it
  * ends. Opened again in place on every tap (the same sheet: no new scrim, the scroll kept) */
 export function runStartSheet() {
   if (!runStartable()) return;
@@ -399,7 +399,7 @@ export function runStartSheet() {
     trained = P.home.filter(trains);
   const E = MODIFIERS.expeditions[expedition - 1],
     chal = runChallengesOpen().filter(c => mods.includes(c.id));
-  const html = `<p>The airship flies you out to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p>${(saveData.meta.expedition || 1) > 1 ? `<h3>Expedition</h3><div class="fchips">${expChips}</div><p class="note">${escapeHtml(E ? E.d : '')}</p>` : ''}${chalChips ? `<h3>Challenges</h3><div class="fchips">${chalChips}</div>${monoChips}<p class="note">${chal.length ? escapeHtml(chal.map(c => c.C.d).join(' ')) : 'Harder runs pay more Research.'}</p>` : ''}<h3>Who comes from home</h3><p class="note">${P.spent} of ${P.budget} starter points spent${own ? '' : ' (a suggested party: tap a Billie to pick your own)'}. The rest stay at the ranch; on the run you catch wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>The airship adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Research.</p>`;
+  const html = `<p>A sky train flies you through the portal to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p>${(saveData.meta.expedition || 1) > 1 ? `<h3>Expedition</h3><div class="fchips">${expChips}</div><p class="note">${escapeHtml(E ? E.d : '')}</p>` : ''}${chalChips ? `<h3>Challenges</h3><div class="fchips">${chalChips}</div>${monoChips}<p class="note">${chal.length ? escapeHtml(chal.map(c => c.C.d).join(' ')) : 'Harder runs pay more Research.'}</p>` : ''}<h3>Who comes from home</h3><p class="note">${P.spent} of ${P.budget} starter points spent${own ? '' : ' (a suggested party: tap a Billie to pick your own)'}. The rest stay at the ranch; on the run you catch wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>Skyline Station adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Research.</p>`;
   const was = uiState.modal && uiState.modal.cls === 'fly-sheet run-start' ? uiState.modal : null,
     sheet = document.querySelector('#ov .sheet'),
     body = document.querySelector('#ov .sheet .body'),

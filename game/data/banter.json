@@ -96,7 +96,7 @@
   "who": "hazel",
   "when": "last:won",
   "priority": 4,
-  "script": ["You won and came home by airship. Good. The other way home makes my instruments hum. #l:df6c"]
+  "script": ["You won and came home by train. Good. The other way home makes my instruments hum. #l:df6c"]
  },
  "hazel_file": {
   "who": "hazel",
