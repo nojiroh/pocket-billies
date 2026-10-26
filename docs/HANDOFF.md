@@ -2,6 +2,33 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Residents track RS-1 - data and save: residents.json, meta.residents, run.invited, logic/residents.js - 2026-10-26
+Branch `ccr-65e11839-9p92dx` (the owner's answer: `track/residents` doesn't exist yet, build here as HB-1 and SP-1
+were). Plan Mode, plan approved. Owner's answers: the drafted names; the word "residents". Nothing visible changes
+in the game yet (no CHANGELOG line). Details: docs/phases/residents-track.md, "Done in RS-1".
+- Changed (one cause per commit): residents.json (8 residents), its schema, type, `RESIDENTS` and `dataResidents`
+  (check-data, the Studio's check; the check-data snapshot remade on purpose: 153 files and a planted case);
+  `meta.residents` and `run.invited` in the save, validators and types; `logic/residents.js` (candidate, invite,
+  settle) with `runEnd` moving the invited resident in, won or lost, loaded on both pages and in the Studio's logic
+  worker; the conditions `resident:<id>` and `residents` (+ docs/SCRIPTS.md) and unlocks.json's check of them; the
+  debug log's resident ids.
+- Risky or unfinished: nobody can meet a resident in the game yet (RS-2). `runEnd` doesn't say who moved in (RS-2's
+  payout line needs it). The store, inn and library aren't buildings.json rows, so RS-4 adds them before their levels
+  can be sold.
+- Verified (what ran, what passed): lint, typecheck, check:modules, check:data clean; `npm test` 1063 pass (new:
+  residents.test.mjs; meta-state, run-state, conditions and check-data cases). Smoke (`check-quick.py --smoke`):
+  6/6 pass (Start-Game on a phone, the debug log with no names, the in-game test's first step). The full quick check:
+  35/40, 5 problems; 4 of them fail the same way on main 2314da82 (re-run there): RL-8's "Take off didn't start a
+  run's flight", "props in the air: copperleaf: sky_portal@231.2,103.6", the room light check, and the song
+  fingerprints' "cave mid/late not in the baseline". The fifth, Sound effects' payout jingles, passes on this branch
+  run alone (100 s; 295 s in the full run). There is no validation/quick-baseline in this container, so no pictures
+  were compared. Python Playwright 1.63 was used (the browser installed here; tools/requirements-check.txt pins 1.56).
+- Decisions I made (and why): `meta.residents` keeps the run they moved in after (order and a "since" for banter);
+  the candidate is null once someone is invited (one a run); Dr. Helix has weight 0 until the splicing track.
+- Questions waiting for the owner: the residents' looks and lines (RS-3); pace (one invite per run, no cottage cap
+  recommended). Please make `track/residents` from main, merge this branch into it, and tag `rs-0-done` / `rs-1-done`.
+- Next session starts with: RS-2 (meeting them in a run), in Plan Mode.
+
 ### Residents track RS-0 - the plan: invite run NPCs to Copperleaf, upgradable services - 2026-10-26
 Branch `ccr-65e11839-9p92dx` (the session's own; `track/residents` doesn't exist yet). Plan Mode, online research,
 plan approved. Owner's answers: inviting is a quest for the NPC (the first one free); they move in win or lose;
