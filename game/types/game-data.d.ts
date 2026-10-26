@@ -81,6 +81,8 @@ export interface GameData {
   setPieces?: SetPiecesData;
   /** RL-13: a run's Expeditions and challenges */
   modifiers?: ModifiersData;
+  /** RL-14: the runs' enemy factions and their bots */
+  factions?: { about?: string; factions: Record<DataId, Faction> };
   /** TW-3: a run's quests */
   quests?: QuestsData;
   pools: Record<DataId, Pool>;
@@ -1862,6 +1864,29 @@ export interface ModifiersData {
   about?: string;
   expeditions: Modifier[];
   challenges: Partial<Record<ChallengeId, Modifier>>;
+}
+/** RL-14: factions.json: one of the runs' enemy factions (logic/factions.js) */
+export interface FactionBot {
+  name: string;
+  gem: string;
+  torso: string;
+  armL: string;
+  armR: string;
+  legs: string;
+  weight: number;
+}
+export interface Faction {
+  name: string;
+  short?: string;
+  bots: Record<DataId, FactionBot>;
+  /** wild bots: the chance a run route's wild one is a bot, from which map row, in which biomes */
+  wild: { chance: number; fromRow: number; biomes: string[] };
+  /** its agents' classes (events.json) and how many bots each fields [least, most] */
+  agents: { classes: string[]; bots: [number, number] };
+  /** a scrapyard place's agents [least, most] and their classes */
+  scrapyard: { trainers: [number, number]; classes: string[] };
+  /** a salvage pick: up to `parts` of the beaten bots' parts and Scrap (scrap + scrapPerBot a bot after the first) */
+  salvage: { parts: number; scrap: number; scrapPerBot: number };
 }
 /** TW-3: quests.json: a run's quests (logic/run-quests.js) */
 export type QuestKind = 'catch' | 'trainers' | 'parcel' | 'miniboss';

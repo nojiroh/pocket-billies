@@ -55,6 +55,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataEvents: [() => dataEvents, v => (dataEvents = v)],
   // @ts-expect-error -- replaced on purpose
+  dataFactions: [() => dataFactions, v => (dataFactions = v)],
+  // @ts-expect-error -- replaced on purpose
   dataFieldMoves: [() => dataFieldMoves, v => (dataFieldMoves = v)],
   // @ts-expect-error -- replaced on purpose
   dataHeldItems: [() => dataHeldItems, v => (dataHeldItems = v)],
@@ -928,6 +930,40 @@ export function dataSetPieces(D, valid = () => true) {
     });
   }
   if (S.perPlace[1] > 0 && !drawn) problem('no piece has a weight above 0, so no place gets one');
+  return out;
+}
+// RL-14: factions.json: the schema; each bot is a gem and the right kind of part in each slot (robots.json); its
+// agents' and scrapyard's classes are events.json classes; its wild biomes are biomes; [least, most] in order
+/** RL-14: factions.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataFactions(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['factions.json', what]),
+    F = D.factions;
+  if (!F) return [['factions.json', 'missing']];
+  if (!valid('factions.schema.json', F, 'factions.json')) return out;
+  const R = D.robots || { parts: {}, gems: {} },
+    fits = { torso: 'torso', armL: 'arm', armR: 'arm', legs: 'legs' },
+    classes = (D.events && D.events.classes) || {},
+    biomes = D.biomes || {};
+  for (const [k, C] of Object.entries(/** @type {Record<string, any>} */ (F.factions))) {
+    for (const [b, B] of Object.entries(/** @type {Record<string, any>} */ (C.bots))) {
+      if (!R.gems[B.gem]) problem(`${k}.bots.${b}.gem: no gem "${B.gem}" (robots.json)`);
+      for (const [slot, kind] of Object.entries(fits)) {
+        const P = R.parts[B[slot]];
+        if (!P) problem(`${k}.bots.${b}.${slot}: no part "${B[slot]}" (robots.json)`);
+        else if (P.slot !== kind) problem(`${k}.bots.${b}.${slot}: "${B[slot]}" is a ${P.slot}, not a ${kind}`);
+      }
+    }
+    if (!Object.values(/** @type {Record<string, any>} */ (C.bots)).some(B => B.weight > 0))
+      problem(`${k}.bots: none has a weight, so no bot can be drawn`);
+    for (const id of [...C.agents.classes, ...C.scrapyard.classes])
+      if (!classes[id]) problem(`${k}: no class "${id}" (events.json classes)`);
+    for (const id of C.wild.biomes) if (!biomes[id]) problem(`${k}.wild.biomes: no biome "${id}" (biomes.json)`);
+    if (C.agents.bots[0] > C.agents.bots[1]) problem(`${k}.agents.bots: the fewest is more than the most`);
+    if (C.scrapyard.trainers[0] > C.scrapyard.trainers[1])
+      problem(`${k}.scrapyard.trainers: the fewest is more than the most`);
+  }
   return out;
 }
 // RL-13: modifiers.json: the schema; each challenge's `when` reads as a condition; the Expeditions are no more than

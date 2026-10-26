@@ -35,6 +35,7 @@ import '../../game/js/logic/draft-record.js';
 import '../../game/js/logic/economy-view.js';
 import '../../game/js/logic/effects.js';
 import '../../game/js/logic/encounters.js';
+import '../../game/js/logic/factions.js';
 import '../../game/js/logic/fighters.js';
 import '../../game/js/logic/float-island.js';
 import '../../game/js/logic/forms.js';

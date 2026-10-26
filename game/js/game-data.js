@@ -28,6 +28,7 @@ expose({
   EGGS: [() => EGGS],
   EGG_TIERS: [() => EGG_TIERS],
   EVENTS: [() => EVENTS],
+  FACTIONS: [() => FACTIONS],
   FIELD_MOVES: [() => FIELD_MOVES],
   HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   HUB_LOCATIONS: [() => HUB_LOCATIONS],
@@ -415,6 +416,10 @@ export const MODIFIERS = /** @type {import('../types/game-data').ModifiersData} 
   gameData.modifiers || { expeditions: [{ name: 'Expedition I', d: '', fx: [] }], challenges: {} }
 );
 provide({ MODIFIERS }); /* to-module */
+/* roguelite track RL-14: the runs' enemy factions and their bots (factions.json; logic/factions.js) */
+export const FACTIONS = /** @type {Record<string, import('../types/game-data').Faction>} */ (
+  (gameData.factions && gameData.factions.factions) || {}
+);
 /* towns track TW-3: a run's quests (quests.json; logic/run-quests.js) */
 export const QUESTS = /** @type {import('../types/game-data').QuestsData} */ (gameData.quests);
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
