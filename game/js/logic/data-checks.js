@@ -586,12 +586,13 @@ export function dataRunLoop(D) {
         else only(f, ['up', 'reward'], `run.foes.${k}`);
       }
     }
-    /* RL-S2: Beans found on a run: the first badge of a type, a side area's leader beaten (whole, 0-9) */
+    /* RL-S2: Beans found on a run: the first badge of a type, a side area's leader beaten, Blake beaten the first
+       time in a run (whole, 0-9) */
     const BE = R.beans;
     if (!rec(BE)) problem('rules.json', 'run.beans missing');
     else {
-      only(BE, ['badge', 'side'], 'run.beans');
-      for (const k of ['badge', 'side'])
+      only(BE, ['badge', 'side', 'rival'], 'run.beans');
+      for (const k of ['badge', 'side', 'rival'])
         if (!whole(BE[k], 0, 9)) problem('rules.json', `run.beans.${k}: a whole number of Beans, 0-9`);
     }
     /* RL-S2: Blake's meetings and team (logic/run-map.js runMapRival, logic/rival.js) */

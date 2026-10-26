@@ -235,7 +235,7 @@
    "miniboss": {"up":2,"reward":300},
    "boss": {"up":3,"reward":600}
   },
-  "beans": {"badge":1,"side":1},
+  "beans": {"badge":1,"side":1,"rival":1},
   "rival": {
    "meet": [1,2,2,2,2],
    "on": ["route","event"],

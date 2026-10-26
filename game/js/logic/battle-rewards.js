@@ -109,7 +109,11 @@ export function battleSettle(b, s) {
   /* RL-S2: a meeting with Blake, and a win (run.rival; the history keeps both) */
   if (run && run.rival && b.T && b.T.runFoe === 'rival' && (o === 'win' || o === 'lose')) {
     run.rival.met = Math.min(9, run.rival.met + 1);
-    if (o === 'win') run.rival.won = Math.min(run.rival.met, run.rival.won + 1);
+    if (o === 'win') {
+      run.rival.won = Math.min(run.rival.met, run.rival.won + 1);
+      /* RL-S2 part B: the first win over him on a run finds Beans */
+      if (run.rival.won === 1) runBeans(s, (RULES.run.beans || {}).rival, run);
+    }
   }
   /* v36: the Hype counter */
   if (o === 'win') for (const m of s.team) if (m.hp > 0) m.wins = (m.wins || 0) + 1;

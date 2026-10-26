@@ -1010,7 +1010,7 @@ export interface Rules {
       beansWin: number;
     };
     /** RL-S2: Beans found on a run: the first badge of a type, a side area's leader beaten */
-    beans: { badge: number; side: number };
+    beans: { badge: number; side: number; rival: number };
     /** RL-6: the run's node map (logic/run-map.js) */
     map: RunMapRules;
     /** RL-6: the clock (owner, 8.10): the forecast keeps `ahead` days after today (RL-R2: no deadline) */

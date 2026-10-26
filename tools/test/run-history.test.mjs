@@ -187,8 +187,19 @@ test("RL-S2: Blake's meetings and wins are counted in the run, kept in the histo
   assert.deepEqual(s.run.rival, { lead: 'sparky0', past: 0, met: 0, won: 0 }, 'the lead and no meeting yet');
   const settle = modules['battle-rewards'].battleSettle,
     blake = { id: 'run_1_foe', from: 'blake', runFoe: 'rival', team: [] };
-  settle(battle(s, 'win', blake), s);
-  assert.deepEqual([s.run.rival.met, s.run.rival.won], [1, 1]);
+  /* RL-S2 part B: the first win over him on a run finds rules.json run.beans.rival Beans, the next none */
+  const RR = hooks.RULES.run || (hooks.RULES.run = {}),
+    hadBeans = RR.beans;
+  RR.beans = { badge: 0, side: 0, rival: 2 };
+  try {
+    settle(battle(s, 'win', blake), s);
+    assert.deepEqual([s.run.rival.met, s.run.rival.won, s.run.beans, s.meta.beans], [1, 1, 2, 2]);
+    settle(battle(s, 'win', { ...blake, id: 'run_3_foe' }), s);
+    assert.deepEqual([s.run.rival.met, s.run.rival.won, s.run.beans], [2, 2, 2], 'only the first win');
+  } finally {
+    RR.beans = hadBeans;
+  }
+  s.run.rival.met = s.run.rival.won = 1;
   for (const m of s.team) m.hp = 0;
   settle(battle(s, 'lose', { ...blake, id: 'run_2_foe' }), s);
   assert.deepEqual([s.run.rival.met, s.run.rival.won], [2, 1]);
