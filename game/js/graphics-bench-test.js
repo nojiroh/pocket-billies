@@ -79,6 +79,8 @@ const GRAPHICS_TEST_HIDDEN = [
   ['quality.lights', 'Lamps lit at once', { values: [8, 16], alone: true }],
   /* phase 20 R2: the models drawn one draw per mesh; the same look, so left out of "everything lowest / highest" */
   ['quality.modelInstances', 'Models in batches', { values: [false, true], alone: true }],
+  /* phase 20 E7-E10: the standing pictures (and the reflection's) drawn one draw per run of one picture; the same look */
+  ['quality.spriteInstances', 'Pictures in batches', { values: [false, true], alone: true }],
 ];
 /* the stations, in the order the test walks them; their spots are the map's `bench` ([x, z, camera turn, zoom]) */
 const GRAPHICS_TEST_STATIONS = [
@@ -89,7 +91,7 @@ const GRAPHICS_TEST_STATIONS = [
     sun: { angle: 30, height: 30 },
     dials: ['shadows.strength', 'quality.shadowMap', 'shadows.cascades', 'shadows.ao', 'shadows.contact'],
   },
-  { id: 'pond', name: 'Pond', dials: ['water.reflection', 'water.pixel'] },
+  { id: 'pond', name: 'Pond', dials: ['water.reflection', 'water.pixel', 'quality.spriteInstances'] },
   { id: 'sun', name: 'Sun gap', sun: { angle: -90, height: 18 }, dials: ['air.godRays'] },
   {
     id: 'lamps',
@@ -101,7 +103,7 @@ const GRAPHICS_TEST_STATIONS = [
   {
     id: 'depth',
     name: 'Depth corridor',
-    dials: ['lens.blur', 'world.farProps', 'quality.stableLights', 'quality.modelInstances'],
+    dials: ['lens.blur', 'world.farProps', 'quality.stableLights', 'quality.modelInstances', 'quality.spriteInstances'],
   },
   { id: 'sky', name: 'Open sky', dials: ['sun.clouds', 'sun.cloudShadows'] },
   { id: 'everything', name: 'Everything', all: true },
