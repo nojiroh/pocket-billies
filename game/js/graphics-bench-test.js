@@ -87,6 +87,8 @@ const GRAPHICS_TEST_HIDDEN = [
   ['quality.phoneLamps', 'Phone lamps', { values: [false, true], alone: true }],
   ['quality.rainBatch', 'Rain in one go', { values: [false, true], alone: true }],
   ['air.cheapShafts', 'Cheap light shafts', { values: [0, 0.6], alone: true }],
+  /* smart light shafts (logic/shaft-pick.js): the cheap shafts placed by the picker; a look change, on its own */
+  ['air.shaftPick', 'Smart light shafts', { values: [false, true], alone: true }],
   /* phase 20 E7-E10: the standing pictures (and the reflection's) drawn one draw per run of one picture; the same look */
   ['quality.spriteInstances', 'Pictures in batches', { values: [false, true], alone: true }],
   /* phase 20 R3 (shadows): the shadow maps' pictures and models in batches (the same look); models in the far shadow
@@ -131,6 +133,15 @@ const GRAPHICS_TEST_STATIONS = [
     sun: { angle: -90, height: 18 },
     fixed: { 'air.godRays': 0 },
     dials: ['air.cheapShafts'],
+  },
+  /* the same spot with the cheap shafts on: placed one at about every other tree, then by the picker */
+  {
+    id: 'shaftPick',
+    name: 'Sun gap, smart shafts',
+    spot: 'sun',
+    sun: { angle: -90, height: 18 },
+    fixed: { 'air.godRays': 0, 'air.cheapShafts': 0.6 },
+    dials: ['air.shaftPick'],
   },
   {
     id: 'lamps',
