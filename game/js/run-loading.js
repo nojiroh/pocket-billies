@@ -13,7 +13,6 @@
    The carriage goes in the screen's `view` slot (runLoadView) at a take-off. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide } from './hooks.js';
 import { RULES } from './game-data.js';
 import { runLoadNew, runLoadPart, runLoadShare, runLoadSummary, runLoadTick } from './logic/run-load.js';
 import { reducedMotion, saveData, uiState } from './game-state.js';
@@ -39,13 +38,12 @@ expose({
   runLoadModels: [() => runLoadModels, v => (runLoadModels = v)],
   runLoadPlaces: [() => runLoadPlaces, v => (runLoadPlaces = v)],
   runLoadScreen: [() => runLoadScreen, v => (runLoadScreen = v)],
-  runLoadShow: [() => runLoadShow, v => ((runLoadShow = v), provide({ runLoadShow }))],
+  runLoadShow: [() => runLoadShow, v => (runLoadShow = v)],
   runLoadStep: [() => runLoadStep, v => (runLoadStep = v)],
   runLoadView: [() => runLoadView, v => (runLoadView = v)],
   runLoadWalkReady: [() => runLoadWalkReady, v => (runLoadWalkReady = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ runLoadShow });
 /* to-module: end */
 /** HB-8: a take-off's first stage, the run's places made behind the screen (run-world.js runWorldMake) */
 const RUN_LOAD_PLACES = { id: 'places', label: 'The run’s places', w: 3, hard: true };
