@@ -556,6 +556,14 @@ debugLog.state = () => {
             : null,
           fresh: Object.assign({}, (GAME.saveData.story && GAME.saveData.story.fresh) || {}),
           pending: (GAME.saveData.story && GAME.saveData.story.pending) || null,
+          /* RL-S2 (numbers and ids only): Beans, points with each hub person, the gifts given since the last run, the
+             chapter, Blake's last result kept and this run's record of him (the lead's species, meetings, wins) */
+          beans: meta.beans || 0,
+          rel: Object.assign({}, meta.rel || {}),
+          gifted: Object.keys(meta.gifted || {}).filter(k => (meta.gifted || {})[k] === meta.runs),
+          chapter: meta.chapter || 1,
+          rival: (meta.history || []).length ? meta.history[meta.history.length - 1].rival || null : null,
+          runRival: GAME.saveData.run && GAME.saveData.run.rival ? Object.assign({}, GAME.saveData.run.rival) : null,
         }
       : null;
     /* RL-9: the ranch (numbers only): its level, how many train, how long since each started (hours), storage's size */
