@@ -162,6 +162,9 @@ export const ENGINE_DEFAULTS = {
     voxelChunky: false,
     voxelLowPoly: true,
     solidTrees: true,
+    /* a solid tree's dark core (the crown's own picture in the middle) takes 30% less light, as its shader meant to (the
+       darkening was worked out and never used); off: lit like its clumps */
+    treeCoreShade: false,
     treeDetail: 20,
     treeCount: 40,
     mini3d: true,
@@ -807,6 +810,12 @@ export const ENGINE_SPEC = [
         'Solid trees',
         'bool',
         'Trees and bushes with round trunks and crowns of separate leaf clumps that sway on their own. Off: their layered pictures.',
+      ],
+      [
+        'treeCoreShade',
+        'Shaded tree cores',
+        'bool',
+        'The dark middle of a solid tree’s crown takes less light than its clumps, so the crown looks deep (on). Off: lit like the clumps.',
       ],
       ['treeDetail', 'Solid trees within (m)', 8, 40, 1, 'Farther trees are drawn as pictures.'],
       ['treeCount', 'Most solid trees at once', 5, 120, 1],
