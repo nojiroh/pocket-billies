@@ -474,7 +474,7 @@ body.ld-on #app {
   gap: var(--s2);
   padding: 6px var(--s3) 6px 6px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: rgba(20, 14, 40, 0.55);
   color: #fff7e6;
   font: 600 13px var(--font-voice);

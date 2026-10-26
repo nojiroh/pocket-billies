@@ -346,7 +346,7 @@
   right: 0;
   bottom: 0;
   padding: 10px var(--s3) calc(var(--s3) + var(--sb));
-  border-radius: 16px 16px 0 0;
+  border-radius: var(--r-md) var(--r-md) 0 0;
   display: flex;
   flex-direction: column;
   gap: var(--s2);
@@ -790,7 +790,7 @@
   bottom: calc(12px + var(--sb));
   top: auto;
   width: clamp(300px, 31vw, 420px);
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   max-height: calc(100% - 48px - var(--st) - var(--sb));
 }
 .battle[data-layout='landscape'] .mk {
@@ -876,7 +876,7 @@
     right: auto;
     width: min(640px, 100%);
     transform: translateX(-50%);
-    border-radius: 16px 16px 0 0;
+    border-radius: var(--r-md) var(--r-md) 0 0;
   }
 }
 @media (max-width: 360px) {
@@ -1136,7 +1136,7 @@ body.battle-3d #camFg {
   align-items: center;
   gap: var(--s1);
   padding: 3px var(--s2);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: rgba(14, 20, 30, 0.62);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -1161,7 +1161,7 @@ body.battle-3d #camFg {
 }
 .bplates .turnbar .tb {
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 .bplates .turnbar .tb.me {
   background: rgba(70, 170, 255, 0.35);

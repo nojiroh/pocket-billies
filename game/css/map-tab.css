@@ -196,7 +196,7 @@ body.on-map #bgfx {
   overflow: auto;
   margin: 0;
   padding: var(--s3) 14px;
-  border-radius: 16px;
+  border-radius: var(--r-md);
   background: color-mix(in srgb, var(--panel-s) 92%, transparent);
 }
 .map-full .mapcard .racts {
@@ -265,7 +265,7 @@ body.map-gl #dioui {
   width: min(340px, calc(100% - 24px));
   display: flex;
   flex-direction: column;
-  border-radius: 16px;
+  border-radius: var(--r-md);
   background: color-mix(in srgb, var(--panel-s) 94%, transparent);
   box-shadow:
     0 0 0 2px var(--line),
@@ -362,7 +362,7 @@ body.map-gl #dioui {
   display: flex;
   gap: var(--s1);
   padding: var(--s1);
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   box-shadow: 0 0 0 2px var(--line);
 }
 .mapview .mbtn {

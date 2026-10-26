@@ -95,7 +95,7 @@
   gap: var(--s2);
   margin: 0 3px 6px;
   padding: 6px 6px 6px var(--s3);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: color-mix(in srgb, var(--panel-s) 78%, transparent);
   box-shadow:
     0 0 0 2px var(--line),
@@ -115,7 +115,7 @@
   align-items: center;
   gap: 5px;
   padding: 5px 9px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--panel2);
   font: 400 14px/1 var(--font-voice);
 }
@@ -170,7 +170,7 @@
   }
 }
 .toast {
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: color-mix(in srgb, var(--panel-s) 84%, transparent);
   -webkit-backdrop-filter: var(--blur-chip, blur(12px));
   backdrop-filter: var(--blur-chip, blur(12px));

@@ -19,7 +19,7 @@
   top: max(14vh, 90px);
   transform: translateX(-50%);
   padding: var(--s2) 14px;
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   font-size: 15px;
   max-width: min(92vw, 460px);
   text-align: center;

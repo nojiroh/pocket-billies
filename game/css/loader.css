@@ -257,7 +257,7 @@
     system-ui,
     sans-serif;
   padding: 10px;
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   border: 2px solid #2b1d33;
   background: #ffd36b;
   color: #2b1d33;
@@ -330,7 +330,7 @@ body.ld-on #dio {
 #nogl .nogl-card {
   max-width: 420px;
   padding: 20px;
-  border-radius: 16px;
+  border-radius: var(--r-md);
   background: rgba(20, 14, 40, 0.85);
   border: 2px solid rgba(255, 190, 150, 0.5);
 }
@@ -352,7 +352,7 @@ body.ld-on #dio {
     system-ui,
     sans-serif;
   padding: 10px;
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   border: 2px solid #2b1d33;
   background: #ffd36b;
   color: #2b1d33;

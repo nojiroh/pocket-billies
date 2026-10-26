@@ -62,13 +62,13 @@ body.dressing #nav {
   gap: 6px;
   align-items: center;
   padding: 6px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 .dr-tog {
   min-height: 34px;
   padding: 0 var(--s3);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: rgba(255, 255, 255, 0.14);
   color: inherit;
   font: 600 13px var(--font-voice);
@@ -91,7 +91,7 @@ body.dressing #nav {
   gap: 10px;
   align-items: center;
   padding: var(--s2) var(--s3);
-  border-radius: 16px;
+  border-radius: var(--r-md);
 }
 .dr-keeper p {
   margin: 2px 0 0;

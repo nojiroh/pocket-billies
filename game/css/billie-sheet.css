@@ -36,7 +36,7 @@
   height: 172px;
   margin: 0 0 var(--s3);
   padding-bottom: var(--s2);
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   overflow: hidden;
   box-shadow:
     0 0 0 2px var(--line),

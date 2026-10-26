@@ -734,7 +734,7 @@ section > h2,
   outline-offset: 3px;
 }
 .sheet {
-  border-radius: 16px 16px 0 0;
+  border-radius: var(--r-md) var(--r-md) 0 0;
   position: relative;
 }
 @media (min-width: 700px) {
@@ -871,7 +871,7 @@ section > h2::before,
 }
 .sec-h .count {
   padding: var(--s1) 9px 5px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--panel-s);
   color: var(--text);
   font-size: 14px;
@@ -1208,7 +1208,7 @@ section > h2::before,
   .dr-panel {
     border-left: 0;
     border-top: 2px solid var(--line);
-    border-radius: 16px 16px 0 0;
+    border-radius: var(--r-md) var(--r-md) 0 0;
     margin-top: -14px;
     position: relative;
   }
@@ -1234,7 +1234,7 @@ section > h2::before,
   flex-wrap: wrap;
   gap: var(--s1);
   padding: 3px;
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   background: color-mix(in srgb, var(--text) 7%, transparent);
 }
 .seg button {

@@ -346,7 +346,7 @@ body.on-walk .wh-foot > * {
 .wh-hint {
   margin: 0;
   padding: 6px var(--s3);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-size: 13px;
   background: color-mix(in srgb, var(--panel-s) 82%, transparent);
   box-shadow: 0 0 0 2px var(--line);
@@ -361,7 +361,7 @@ body.on-walk .wh-foot > * {
 .wh-row .pb.small {
   min-height: 38px;
   padding: 0 14px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   box-shadow: 0 0 0 2px var(--line);
   background: color-mix(in srgb, var(--panel-s) 86%, transparent);
 }
@@ -371,7 +371,7 @@ body.on-walk .wh-foot > * {
   align-items: center;
   gap: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   padding: 6px var(--s4) 7px;
   font: 400 13px/1 var(--font-voice);
   color: var(--text);
@@ -623,7 +623,7 @@ body.on-walk #dio {
   align-items: center;
   min-height: 32px;
   padding: 6px var(--s3);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font: 600 13px/1 var(--font-voice);
   color: var(--text2);
   cursor: pointer;

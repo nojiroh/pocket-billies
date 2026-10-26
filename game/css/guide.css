@@ -33,7 +33,7 @@
   background: var(--panel-s);
   color: var(--text);
   box-shadow: 0 0 0 2px var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   display: inline-flex;
   align-items: center;
   gap: 6px;

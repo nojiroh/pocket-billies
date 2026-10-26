@@ -110,7 +110,7 @@
   gap: var(--s3);
   align-items: end;
   padding: var(--s3) 14px 14px;
-  border-radius: 16px;
+  border-radius: var(--r-md);
   background: var(--panel-s);
   box-shadow: 0 10px 30px var(--shadow);
   animation: csUp 0.25s ease backwards;
