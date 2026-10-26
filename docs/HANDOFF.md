@@ -39,6 +39,13 @@ thrown pyramids instanced too; the setting `quality.modelInstances` ("Models in 
   | Run town | 609 -> 600 | 29 -> 20 | 7,454 -> 7,062 |
   | Battle | 688 -> 648 | 107 -> 75 | 9,784 -> 8,578 |
 
+  Your round 1 phone baseline (Android, Adreno 750, diagnostics 2026-10-26 15:33, setting off), the models pass:
+  Copperleaf 172 draws from 49 vertex arrays by day, 173 / 49 at night; jungle 28 / 8; run town 25 / 20; battle
+  97 / 72 (Copperleaf by day 17 fps at resolution 1, 12.5 at the game's own, CPU ~28 ms, 1,130 draws). With the
+  setting on, the models pass should come down to about those vertex-array counts (49, 8, 20, 72): about 123 fewer
+  draws a frame in Copperleaf. The shadow maps' model draws stay as they are this round (Copperleaf near 23 + far 11;
+  jungle 31 + 36; run town 39 + 37; battle far 48.5: round 3's).
+
   What it says: about 11% fewer draws in Copperleaf, little elsewhere. The rest is the sprites lane (642 model
   pictures in Copperleaf) and the shadow maps (round 3: over half the run places' draws). The reflection's model
   draws are instanced too (2 there). The "off" day stop was measured while its pictures loaded (623 draws, 17 models)
