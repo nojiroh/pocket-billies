@@ -23,7 +23,10 @@ import {
   LOOK_GLSL,
   bindQuad,
   ensurePrograms,
+  gpuBuffer,
+  gpuFree,
   gpuState,
+  gpuVao,
   imageTexture,
   normalize3,
 } from './engine/webgl.js';
@@ -379,14 +382,11 @@ function buildingMesh(it) {
   return E;
 }
 function freeBuildingMesh(E) {
-  const gl = gpuState.gl;
   for (const m of [E.walls, E.wins])
     if (m) {
-      try {
-        gl.deleteVertexArray(m.vao);
-        gl.deleteBuffer(m.vb);
-        gl.deleteBuffer(m.ib);
-      } catch (e) {}
+      gpuFree(m.vao);
+      gpuFree(m.vb);
+      gpuFree(m.ib);
     }
 }
 /* alpha 0.4: p.rot, a building turned a few degrees (along a curved street, toward its square): it turns about its
@@ -1468,12 +1468,12 @@ function makeBuildingModel(it) {
   const gl = gpuState.gl,
     mk = (Vs, Is, attrs, stride) => {
       if (!Is.length) return null;
-      const vao = gl.createVertexArray();
+      const vao = gpuVao('meshes');
       gl.bindVertexArray(vao);
-      const vb = gl.createBuffer();
+      const vb = gpuBuffer('meshes', Vs.length * 4);
       gl.bindBuffer(gl.ARRAY_BUFFER, vb);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(Vs), gl.STATIC_DRAW);
-      const ib = gl.createBuffer();
+      const ib = gpuBuffer('meshes', Is.length * 4);
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(Is), gl.STATIC_DRAW);
       let off = 0;

@@ -32,6 +32,8 @@ import {
   bindGridQuad,
   bindQuad,
   ensurePrograms,
+  gpuFree,
+  gpuMake,
   gpuState,
   imageTexture,
   normalize3,
@@ -670,7 +672,7 @@ function readHideQueries(gl) {
     while (Q.length && gl.getQueryParameter(Q[0], gl.QUERY_RESULT_AVAILABLE)) {
       const q = Q.shift();
       walkRenderer.hidT = gl.getQueryParameter(q, gl.QUERY_RESULT) ? 1 : 0;
-      gl.deleteQuery(q);
+      gpuFree(q);
     }
   } catch (e) {
     hideQuery.q = [];
@@ -730,7 +732,7 @@ export function drawPlayerSilhouette(C, items, X) {
   setSpriteUniforms(p, it);
   /* the query: every pixel of you, nothing drawn; one in flight at a time is plenty */
   if (hideQuery.q.length < 2) {
-    const q = gl.createQuery();
+    const q = gpuMake('query');
     gl.colorMask(false, false, false, false);
     gl.uniform4f(U.uGhost, 0, 0, 0, 1);
     gl.beginQuery(gl.ANY_SAMPLES_PASSED_CONSERVATIVE, q);

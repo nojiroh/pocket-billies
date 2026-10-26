@@ -62,6 +62,18 @@ only if the phone still says the rigs matter.
   G and, after your verdict, turn `rigReuse` on by default.
 - Next: the round 3 phone run covering every lane's switches.
 
+### Phase 20 R3, lane context (H1-H3, H5) - in progress, 2026-10-26: the resource registry's API, for the other lanes
+The full entry replaces this one at the end of the lane. Pushed now so the shadows and battle lanes can make their GPU
+objects through it (engine/webgl.js, "resources"):
+- `gpuBuffer(kind, bytes)`, `gpuTexture(kind, bytes)`, `gpuVao(kind)`, `gpuFramebuffer(kind)`, `gpuMake(type, kind,
+  bytes)` for the rest (renderbuffer, sampler, query, program); kinds: programs, pictures, targets, ground, ring,
+  meshes, instances, canvases, other. `gpuSized(h, bytes)` after a bufferData or texImage at a new size.
+- `gpuFree(h)` instead of `gl.deleteX(h)` (null-safe; a handle of an older context is only forgotten).
+  `gpuRetire(h)` frees it two frame ticks later (a replaced object the frames in flight may still read).
+- A cache checks `x.gen !== gpuState.gen` (with or instead of `x.gl !== gl`): a restored context is the same object.
+- `gpuOnRestore(name, fn)`: fn drops what that owner holds on a restore (it is made again on next use).
+- I moved the create line of the shadow maps' model record buffer (prop-models.js, `MODEL_SHADOW_INSTANCES`) onto it.
+
 ### Phase 20 R2, lane pixels (stage 6 without D2) - 2026-10-26
 Branch `track/renderer` (one of three R2 lanes: models, sprites, pixels). Plan approved in Plan Mode; the owner's
 answers: phones (Android, iPhone; not the iPad) get 1.2 MP and the automatic quality starts at 0.9; 8 lamps lit at
