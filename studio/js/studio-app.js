@@ -645,6 +645,7 @@ export const SECTION_LIST = [
   ['billionaires', 'Billies', 'The creatures: names, stats, moves, evolution, sprite art'],
   ['roster', 'Roster board', 'The Billies in the game and how far their art is'],
   ['parts', 'Part sizes', 'Part sizes, weight and Prime Billies'],
+  ['genes', 'Genes', 'Splicing: Stability, traits, wild splices, the Gene Bank and a splice preview'],
   ['coats', 'Coats', 'Recolours of a Billie’s art, and how often each turns up'],
   ['workbench', 'Art workbench', 'Cut sheets into parts (drop a PNG anywhere); parts, pixels and models next'],
   ['robots', 'Robots', 'Robot parts, gems, their pictures and the rules behind them'],
@@ -684,7 +685,7 @@ export const SECTION_LIST = [
 const SECTION_GROUPS = [
   [
     'Billies & battles',
-    ['billionaires', 'parts', 'workbench', 'coats', 'robots', 'roster', 'moves', 'preview', 'types'],
+    ['billionaires', 'parts', 'genes', 'workbench', 'coats', 'robots', 'roster', 'moves', 'preview', 'types'],
   ],
   ['World & places', ['scenes', 'hub', 'props', 'engine', 'world']],
   ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],

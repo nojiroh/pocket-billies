@@ -3,20 +3,10 @@
 /* ---- matrices ---- */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import {
-  COATS,
-  ROBOTS,
-  RULES,
-  SPECIES,
-  activeBattle,
-  gameData,
-  graftForm,
-  graftParse,
-  provide,
-  reducedMotion,
-} from './hooks.js';
+import { COATS, ROBOTS, RULES, SPECIES, activeBattle, gameData, provide, reducedMotion } from './hooks.js';
 import { clamp, random } from './util.js';
 import { kitBakeWhole } from './logic/kit-assemble.js';
+import { graftForm, graftParse } from './logic/graft-art.js';
 import { coatArt, coatColorMap, coatRecolor } from './logic/coats.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artImg, artLoad, artReady, artURL, makeCanvas } from './art.js';

@@ -13,7 +13,6 @@
 /** @typedef {Record<string, string>} Graft slot (rules.json parts.slots) -> Gene id, "part@donor" (SP-2) */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   BONE_OF_SLOT: [() => BONE_OF_SLOT],
@@ -23,19 +22,18 @@ expose({
   // @ts-expect-error -- replaced on purpose
   graftDonors: [() => graftDonors, v => (graftDonors = v)],
   // @ts-expect-error -- replaced on purpose
-  graftForm: [() => graftForm, v => ((graftForm = v), provide({ graftForm }))],
+  graftForm: [() => graftForm, v => (graftForm = v)],
   graftKey: [() => graftKey],
   // @ts-expect-error -- replaced on purpose
   graftKind: [() => graftKind, v => (graftKind = v)],
   graftOf: [() => graftOf],
   // @ts-expect-error -- replaced on purpose
-  graftParse: [() => graftParse, v => ((graftParse = v), provide({ graftParse }))],
+  graftParse: [() => graftParse, v => (graftParse = v)],
   graftRecipe: [() => graftRecipe],
   // @ts-expect-error -- replaced on purpose
   graftSet: [() => graftSet, v => (graftSet = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ graftForm, graftParse });
 /* to-module: end */
 /** the slots SP-1 grafts */
 export const GRAFT_SLOTS = ['front', 'back', 'sig'];
