@@ -171,16 +171,8 @@ function shears(on, rest) {
 }
 test('the far map’s still part draws them at rest, the rest of the time with the wind (both paths)', () => {
   for (const on of [false, true]) {
-    assert.deepEqual(
-      shears(on, true),
-      { grass: 0, bush: 0.02, flagPole: 0.09, rock: 0 },
-      `instances ${on}`
-    );
-    assert.deepEqual(
-      shears(on, false),
-      { grass: 0.07, bush: -0.05, flagPole: 0.09, rock: 0 },
-      `instances ${on}`
-    );
+    assert.deepEqual(shears(on, true), { grass: 0, bush: 0.02, flagPole: 0.09, rock: 0 }, `instances ${on}`);
+    assert.deepEqual(shears(on, false), { grass: 0.07, bush: -0.05, flagPole: 0.09, rock: 0 }, `instances ${on}`);
   }
 });
 test('a model’s leaf pictures at rest when the model stands still, none when it bobs', () => {
