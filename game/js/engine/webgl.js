@@ -596,7 +596,7 @@ export function initWebgl(cv) {
     gpuState.aniso = gl.getExtension('EXT_texture_filter_anisotropic');
     gpuState.anisoMax = gpuState.aniso ? gl.getParameter(gpuState.aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT) : 1;
     gl.getExtension('OES_texture_float_linear');
-    const q = gl.createBuffer();
+    const q = gpuBuffer('meshes', 48);
     gl.bindBuffer(gl.ARRAY_BUFFER, q);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]), gl.STATIC_DRAW);
     gpuState.quad = q;
@@ -605,19 +605,19 @@ export function initWebgl(cv) {
     /* one depth texture read two ways: compared (soft shadow taps) and raw (blocker search) */
     /* a 1x1 "lit everywhere" depth map stands in on every shadow unit while no real map exists (shadows off, the first
      frames): a shadow sampler must always see a depth texture, or the whole draw is refused (v44) */
-    gpuState.depthStub = gl.createTexture();
+    gpuState.depthStub = gpuTexture('targets', 2);
     gl.bindTexture(gl.TEXTURE_2D, gpuState.depthStub);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.DEPTH_COMPONENT16, 1, 1);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gpuState.samp.cmp = gl.createSampler();
+    gpuState.samp.cmp = gpuMake('sampler');
     gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_COMPARE_MODE, gl.COMPARE_REF_TO_TEXTURE);
     gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_COMPARE_FUNC, gl.LEQUAL);
     gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gpuState.samp.raw = gl.createSampler();
+    gpuState.samp.raw = gpuMake('sampler');
     gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -828,7 +828,7 @@ function gpuMemory() {
 /* ---------- textures ---------- */
 function textureFromData(w, h, data, o = {}) {
   const gl = gpuState.gl,
-    t = gl.createTexture();
+    t = gpuTexture('other', w * h * 4);
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
   setTextureParams(o);
@@ -858,7 +858,8 @@ export function imageTexture(im, o = {}) {
   /* a canvas redrawn every frame (a billionaire mid-animation) carries a counter in __v: re-uploaded when it changes, no mipmaps or normal map */
   if (dv !== undefined) {
     const gl = gpuState.gl,
-      t = e ? e.t : gl.createTexture();
+      t = e ? e.t : gpuTexture('canvases');
+    gpuSized(t, im.width * im.height * 4);
     gl.bindTexture(gl.TEXTURE_2D, t);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
@@ -871,8 +872,10 @@ export function imageTexture(im, o = {}) {
     w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height;
   const tU = performance.now(),
-    t = e ? e.t : gl.createTexture(),
+    t = e ? e.t : gpuTexture('pictures'),
     src = im;
+  /* with its mip levels */
+  gpuSized(t, Math.round(w * h * 4 * 1.34));
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
@@ -970,7 +973,8 @@ function ensureNormalMapWorker() {
       }
       /* no OffscreenCanvas in workers here: read the pixels on this side instead */ const tU = performance.now();
       try {
-        const t = e.n && e.n !== gpuState.flatN ? e.n : gl.createTexture();
+        const t = e.n && e.n !== gpuState.flatN ? e.n : gpuTexture('pictures');
+        gpuSized(t, j.w * j.h * 4);
         gl.bindTexture(gl.TEXTURE_2D, t);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, j.w, j.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, out);
         setTextureParams({ linear: true });
@@ -1121,7 +1125,8 @@ export function makeNormalMap(im, w, h, old) {
       out[i * 4 + 3] = 255;
     }
   const gl = gpuState.gl,
-    t = old && old !== gpuState.flatN ? old : gl.createTexture();
+    t = old && old !== gpuState.flatN ? old : gpuTexture('pictures');
+  gpuSized(t, w * h * 4);
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, out);
   setTextureParams({ linear: true });
@@ -1133,18 +1138,18 @@ export function renderTarget(name, w, h, o = {}) {
     F = gpuState.fb[name];
   if (F && F.w === w && F.h === h) return F;
   if (F) {
-    gl.deleteFramebuffer(F.f);
-    if (F.c) gl.deleteTexture(F.c);
-    if (F.d) gl.deleteTexture(F.d);
+    gpuFree(F.f);
+    gpuFree(F.c);
+    gpuFree(F.d);
   }
-  const f = gl.createFramebuffer();
+  const f = gpuFramebuffer('targets');
   gl.bindFramebuffer(gl.FRAMEBUFFER, f);
   let c = null,
     d = null;
   if (!o.depthOnly) {
-    c = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, c);
     const hdr = o.hdr && gpuState.hdr;
+    c = gpuTexture('targets', w * h * (hdr ? 8 : 4));
+    gl.bindTexture(gl.TEXTURE_2D, c);
     gl.texImage2D(
       gl.TEXTURE_2D,
       0,
@@ -1160,7 +1165,7 @@ export function renderTarget(name, w, h, o = {}) {
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, c, 0);
   }
   if (o.depth || o.depthOnly) {
-    d = gl.createTexture();
+    d = gpuTexture('targets', w * h * 4);
     gl.bindTexture(gl.TEXTURE_2D, d);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT24, w, h, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -1178,7 +1183,7 @@ export function renderTarget(name, w, h, o = {}) {
 /* v43: a quad split into a grid (for cloth that waves); the same aC attribute as the quad */
 export function bindGridQuad(nx = 16, ny = 4) {
   const gl = gpuState.gl;
-  if (!gpuState.grid || gpuState.gridGL !== gl) {
+  if (!gpuState.grid || gpuState.gridGen !== gpuState.gen) {
     const a = [];
     for (let j = 0; j < ny; j++)
       for (let i = 0; i < nx; i++) {
@@ -1188,11 +1193,11 @@ export function bindGridQuad(nx = 16, ny = 4) {
           y1 = (j + 1) / ny;
         a.push(x0, y0, x1, y0, x0, y1, x0, y1, x1, y0, x1, y1);
       }
-    gpuState.grid = gl.createBuffer();
+    gpuState.grid = gpuBuffer('meshes', a.length * 4);
     gl.bindBuffer(gl.ARRAY_BUFFER, gpuState.grid);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(a), gl.STATIC_DRAW);
     gpuState.gridN = nx * ny * 6;
-    gpuState.gridGL = gl;
+    gpuState.gridGen = gpuState.gen;
   }
   gl.bindVertexArray(null);
   gl.bindBuffer(gl.ARRAY_BUFFER, gpuState.grid);
@@ -1214,14 +1219,14 @@ export function bindQuad() {
     gl.vertexAttribDivisor(i, 0);
   }
 }
-export function uploadMesh(V, I, attrs, stride) {
+export function uploadMesh(V, I, attrs, stride, kind = 'meshes') {
   const gl = gpuState.gl,
-    vao = gl.createVertexArray();
+    vao = gpuVao(kind);
   gl.bindVertexArray(vao);
-  const vb = gl.createBuffer();
+  const vb = gpuBuffer(kind, V.byteLength);
   gl.bindBuffer(gl.ARRAY_BUFFER, vb);
   gl.bufferData(gl.ARRAY_BUFFER, V, gl.STATIC_DRAW);
-  const ib = gl.createBuffer();
+  const ib = gpuBuffer(kind, I.byteLength);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, I, gl.STATIC_DRAW);
   const locs = { aPos: 0, aNrm: 1, aShore: 1, aUV: 2, aDK: 3 };
@@ -1235,12 +1240,9 @@ export function uploadMesh(V, I, attrs, stride) {
 }
 export function freeMesh(m) {
   if (!m) return;
-  const gl = gpuState.gl;
-  try {
-    gl.deleteVertexArray(m.vao);
-    gl.deleteBuffer(m.vb);
-    if (m.ib) gl.deleteBuffer(m.ib);
-  } catch (e) {}
+  gpuFree(m.vao);
+  gpuFree(m.vb);
+  gpuFree(m.ib);
 }
 
 /* v34: how long the graphics card itself takes for a frame (EXT_disjoint_timer_query_webgl2, where the browser has
@@ -1261,7 +1263,7 @@ export function beginGpuTimer() {
   if (!X) return null;
   pollGpuTimers();
   if (gpuState.gpuQ.length >= 4 || gpuState.gpuOpen) return null;
-  const q = gl.createQuery();
+  const q = gpuMake('query');
   gl.beginQuery(X.TIME_ELAPSED_EXT, q);
   gpuState.gpuOpen = true;
   return q;
@@ -1287,7 +1289,7 @@ function pollGpuTimers() {
     if (!gl.getQueryParameter(q, gl.QUERY_RESULT_AVAILABLE)) break;
     Q.shift();
     const ns = gl.getQueryParameter(q, gl.QUERY_RESULT);
-    gl.deleteQuery(q);
+    gpuFree(q);
     if (dis) continue;
     const ms = ns / 1e6;
     gpuState.gpuLast = ms;
@@ -1319,8 +1321,8 @@ export function trimTextures(force) {
     if (gpuState.texB <= cap * 0.85) break;
     try {
       if (gpuState.tex.get(im) === e) {
-        gl.deleteTexture(e.t);
-        if (e.n && e.n !== gpuState.flatN) gl.deleteTexture(e.n);
+        gpuFree(e.t);
+        if (e.n && e.n !== gpuState.flatN) gpuFree(e.n);
         gpuState.tex.delete(im);
       }
     } catch (err) {}

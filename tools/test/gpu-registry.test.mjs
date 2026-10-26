@@ -128,3 +128,23 @@ test('a restore bumps the generation and runs every owner’s drop once (gpuOnRe
     G.gpuState.lost = 0;
   }
 });
+
+test("the engine's own objects go through it: a render target resized frees the old one, a mesh freed counts off", () =>
+  withGL(gl => {
+    const fb = G.gpuState.fb;
+    G.gpuState.fb = {};
+    try {
+      const A = G.renderTarget('t', 4, 2, { depth: true });
+      assert.equal(G.gpuRes.n.targets, 3, 'framebuffer, colour, depth');
+      assert.equal(G.gpuRes.bytes.targets, 4 * 2 * 4 * 2);
+      G.renderTarget('t', 8, 2, { depth: true });
+      assert.deepEqual(gl.deleted.sort(), [A.f.id, A.c.id, A.d.id].sort());
+      assert.equal(G.gpuRes.n.targets, 3);
+      const m = G.uploadMesh(new Float32Array(6), new Uint16Array(3), [['aPos', 3, 0]], 12, 'ground');
+      assert.deepEqual([G.gpuRes.n.ground, G.gpuRes.bytes.ground], [3, 24 + 6]);
+      G.freeMesh(m);
+      assert.deepEqual([G.gpuRes.n.ground, G.gpuRes.bytes.ground], [0, 0]);
+    } finally {
+      G.gpuState.fb = fb;
+    }
+  }));
