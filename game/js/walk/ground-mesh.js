@@ -608,7 +608,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           W,
           H,
           (i, j) => ter(i + 0.5, j + 0.5),
-          (i, j) => WATER_KIND_LOOKS[kindAt(i + 0.5, j + 0.5, false)].k === 'sea'
+          (i, j) => !!WATER_KIND_LOOKS[kindAt(i + 0.5, j + 0.5, false)].sea
         )
       : null;
   yield* shoreField(sc, isW, T, tide);
@@ -619,7 +619,10 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
     if (r) T.gaoTex = groundOcclusionTexture(r);
   }
   /* rocks standing in the water throw foam around themselves */
+  /* water track WA-5b: what a kind does read from its look's flags, not its index: `sea` (the sea's family: swell, tide,
+     surf, its shallows' share), `run` (running: leaves, a rock's full foam), `steam`, a rock's foam on `foam` 0.7 up */
   const SEA_KIND = WATER_KIND_LOOKS.findIndex(k => k.k === 'sea'),
+    isSea = WATER_KIND_LOOKS.map(k => !!k.sea),
     C1 = walkData().sc,
     rocks = [];
   for (const p of sc.props || []) {
@@ -647,7 +650,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
   const sea = !!(sc.flatFar && !bare),
     /* IS-3: a cove's calm rides in the kind (kind + calm * 0.4; the water shader takes it apart) */
     cove = sea && (sc.zones || []).some(zn => zn && zn.k === 'cove'),
-    calmK = (kd, x, z) => (cove && WATER_KIND_LOOKS[kd].k === 'sea' ? seaCalmAt(sc, x, z) * 0.4 : 0);
+    calmK = (kd, x, z) => (cove && isSea[kd] ? seaCalmAt(sc, x, z) * 0.4 : 0);
   /* WA-4: the sea's level, for the tide's skins and pools: the commonest level of its cells */
   let seaY = -0.12;
   /* the high tide's skin lies just over the sand; the sea's own corners beside it rise to meet it (no step between) */
@@ -669,7 +672,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
   if (tide && (tide.nCover || tide.nPool)) {
     const lv = new Map();
     let best = 0;
-    for (let q = 0; q < wk.length; q++) if (wd[q] !== -2 && wk[q] === SEA_KIND) lv.set(wy[q], (lv.get(wy[q]) || 0) + 1);
+    for (let q = 0; q < wk.length; q++) if (wd[q] !== -2 && isSea[wk[q]]) lv.set(wy[q], (lv.get(wy[q]) || 0) + 1);
     for (const [v, n] of lv)
       if (n > best) {
         best = n;
@@ -686,7 +689,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       if (!isW(cx, cz)) continue;
       const q = j * W2 + i,
         y = wy[q],
-        kd = wk[q];
+        kd = wk[q],
+        KL = WATER_KIND_LOOKS[kd];
       wn++;
       const key = Math.round(y * 10);
       {
@@ -701,8 +705,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       }
       const b0 = wv.length / 8,
         fw = flowAt(cx, cz);
-      if (kd === 1 && (i + j * 3) % 2 === 0) stream.push([cx, cz]);
-      if (kd === 3) spring.push([cx, cz, dep[q]]);
+      if (KL.run && (i + j * 3) % 2 === 0) stream.push([cx, cz]);
+      if (KL.steam) spring.push([cx, cz, dep[q] * KL.steam]);
       /* running water follows the slope of its bed (one smooth surface down a stream); still water lies level. WA-4: a
          tide pool is calm and brims at the level of the high tide's skin, so the two meet when the sea comes in */
       const pool = !!(tide && tide.pool[Math.floor(cz) * W + Math.floor(cx)]),
@@ -739,24 +743,24 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
         const calm = pool ? 0.4 : calmK(kd, vx, vz);
         const rf = !rocks.length
           ? 0
-          : kd === 1 || kd === 5 || kd === 0
+          : KL.foam >= 0.7 && !KL.sea
             ? rockFoam(vx, vz)
-            : kd === SEA_KIND
+            : KL.sea
               ? rockFoam(vx, vz, 1.4)
               : 0;
         wv.push(
           vx,
           run
             ? rawHeightAt(sc, vx, vz) + sc0 - 0.12
-            : pool || (kd === SEA_KIND && nearCover(vx, vz))
+            : pool || (KL.sea && nearCover(vx, vz))
               ? Math.max(y, tideY(vx, vz))
               : y,
           vz,
-          T.shoreF ? rf * (kd === 1 ? 1 : 0.6) : Math.max(Math.min(1, sh / 2), rf * (kd === 1 ? 1 : 0.6)),
+          T.shoreF ? rf * (KL.run ? 1 : 0.6) : Math.max(Math.min(1, sh / 2), rf * (KL.run ? 1 : 0.6)),
           fw[0],
           fw[1],
           dd / 4,
-          kd + (calm || (kd === SEA_KIND ? (-0.45 * rs) / 4 : 0))
+          kd + (calm || (KL.sea ? (-0.45 * rs) / 4 : 0))
         );
       }
       wi.push(b0, b0 + 2, b0 + 1, b0 + 1, b0 + 2, b0 + 3);
@@ -941,7 +945,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
         }
         return rs / 4;
       },
-      r0 = kd === SEA_KIND ? Array.from({ length: S.n }, (_, i) => edgeReef(S.x[i], S.z[i])) : null;
+      r0 = isSea[kd] ? Array.from({ length: S.n }, (_, i) => edgeReef(S.x[i], S.z[i])) : null;
     for (let q = 0; q < S.x.length; q++) {
       const cm = calmK(kd, S.x[q], S.z[q]),
         rf = r0 ? r0[q % S.n] * (1 - seaSmooth(S.o[q] / SEA_RAMP)) : 0;

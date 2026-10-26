@@ -49,6 +49,7 @@ export const WATER_KIND_LOOKS = [
   },
   {
     k: 'stream',
+    run: 1,
     r: 0.8,
     top: 0.7,
     deep: [0.86, 1.05, 1],
@@ -79,6 +80,7 @@ export const WATER_KIND_LOOKS = [
   },
   {
     k: 'spring',
+    steam: 1,
     r: 1.2,
     top: 0.85,
     deep: [0.36, 1.12, 1.18],
@@ -125,6 +127,7 @@ export const WATER_KIND_LOOKS = [
   /* v24: the open sea, molten lava (mode 1: glowing, crusted, no reflections) and ice (mode 2: frozen, cracked) */
   {
     k: 'sea',
+    sea: 1,
     r: 3.2,
     top: 1,
     deep: [0.58, 0.72, 1.06],

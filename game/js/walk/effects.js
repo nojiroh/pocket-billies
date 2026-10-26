@@ -24,6 +24,7 @@ import { environment, environmentWindowLit } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
 import { useWalkProgram, worldCurveDrop } from './draw-common.js';
+import { WATER_KIND_LOOKS } from './water-data.js';
 import { drawRoomEffects, roomSkyLight, windowLightShare } from './rooms.js';
 import { waterAt } from './water.js';
 import { lampLit } from './lighting.js';
@@ -433,7 +434,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
         L.z += (f[1] * L.sp + Math.cos(L.age * 1.1 + L.i) * 0.05) * dt;
       }
       const g = waterAt(L.x, L.z);
-      if (!g || (g.kind !== 1 && L.age > 2)) {
+      if (!g || (!WATER_KIND_LOOKS[g.kind].run && L.age > 2)) {
         L.ok = false;
         continue;
       }
