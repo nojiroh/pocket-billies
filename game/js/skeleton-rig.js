@@ -29,6 +29,7 @@ expose({
   GRAFT_BAKES: [() => GRAFT_BAKES],
   GRAFT_KEEP: [() => GRAFT_KEEP],
   GRAFT_PIXELS: [() => GRAFT_PIXELS],
+  GRAFT_PLAIN: [() => GRAFT_PLAIN],
   GROUNDED: [() => GROUNDED],
   RIG_BACK_VIEW: [() => RIG_BACK_VIEW],
   RIG_CANVAS_SIZE: [() => RIG_CANVAS_SIZE],
@@ -52,6 +53,7 @@ expose({
   graftBake: [() => graftBake, v => (graftBake = v)],
   graftBytes: [() => graftBytes],
   graftForget: [() => graftForget, v => (graftForget = v)],
+  graftOnPlaceholder: [() => graftOnPlaceholder, v => (graftOnPlaceholder = v)],
   graftPartPixels: [() => graftPartPixels, v => (graftPartPixels = v)],
   graftReport: [() => graftReport],
   graftRigParts: [() => graftRigParts, v => (graftRigParts = v)],
@@ -525,6 +527,7 @@ function coatAtlasURL(path, sp, view, coat) {
   return e.url || (e.url = e.c.toDataURL());
 }
 export function rigParts(sp, k = 1, coat, graft) {
+  if (graft && graftOnPlaceholder(sp, graft)) graft = null;
   const view = k === 1 ? 'front' : 'back',
     key = sp + view + (coat ? '#' + coat : '') + (graft ? '~' + graft : '');
   if (RIG_PARTS_CACHE[key]) return RIG_PARTS_CACHE[key];
@@ -599,7 +602,7 @@ export function rigPreload(list) {
   const D = robotRigData || (typeof ROBOTS !== 'undefined' ? ROBOTS : null);
   /* SP-1: a grafted Billie is baked (its parts' pictures loaded first), so a battle bakes while it loads */
   const bakes = list
-    .filter(([sp, , , graft]) => graft && !String(sp).startsWith('bot:'))
+    .filter(([sp, , , graft]) => graft && !String(sp).startsWith('bot:') && !graftOnPlaceholder(sp, graft))
     .map(([sp, , , graft]) => graftBake(sp, graft));
   return Promise.all([
     artLoad(
@@ -617,6 +620,18 @@ export function rigPreload(list) {
    draws the plain species. Each bake's times and sizes go to the debug log (graftReport) for the art spike's verdict:
    runtime baking on the phone, or grafts baked offline. */
 const GRAFT_KEEP = 12;
+/* RO-3b (the owner's call): a Billie on its placeholder (bodyPlans.json) is drawn plain with a graft, not baked from
+   its kit recipe, until RO-3c grafts placeholder art; the graft's data is untouched. Said once per graft in the log. */
+const GRAFT_PLAIN = new Set();
+function graftOnPlaceholder(sp, graft) {
+  if (!(RIGS[sp] && RIGS[sp].front && RIGS[sp].front.placeholder)) return false;
+  const id = sp + '~' + graft;
+  if (!GRAFT_PLAIN.has(id)) {
+    GRAFT_PLAIN.add(id);
+    if (typeof debugLog !== 'undefined') debugLog.add('graft', `graft not drawn: ${sp} ${graft} is a placeholder`);
+  }
+  return true;
+}
 const GRAFT_BAKES = new Map(); /* sp~graft -> { wait, rig, sheet, bytes, bad, keys: its rigParts cache keys } */
 const GRAFT_PIXELS = new Map(); /* a kit part's picture path -> its pixels */
 export const graftReport = () => {
