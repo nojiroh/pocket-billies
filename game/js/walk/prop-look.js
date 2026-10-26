@@ -14,7 +14,7 @@ import { engineSetting } from '../engine/settings.js';
 import { SURFACE_MATERIALS, gpuState, windBendAt } from '../engine/webgl.js';
 import { FIXED_RIGHT, walkRenderer } from './walk-state.js';
 import { groundHeightAt, standingHeightAt } from './heights.js';
-import { addRipple } from './water.js';
+import { addWakeRipple } from './water.js';
 /* eslint-disable no-func-assign */
 expose({
   ALTERNATE_PROPS: [() => ALTERNATE_PROPS],
@@ -184,7 +184,8 @@ export function rideMountItem(P, t) {
     y = (P.climb ? (P.yv ?? standingHeightAt(P.x, P.z)) : standingHeightAt(P.x, P.z)) + bob - 0.08;
   if (!reducedMotion && !P.climb && (!walkRenderer.wakeT || t - walkRenderer.wakeT > (P.walk ? 320 : 1800))) {
     walkRenderer.wakeT = t;
-    addRipple(P.x, P.z - 0.1, P.walk ? 0.9 : 0.5);
+    /* water track WA-5b: the wake's own rings (walk/water.js addWakeRipple), so riding never pushes out the scene's */
+    addWakeRipple(P.x, P.z - 0.1, P.walk ? 0.9 : 0.5);
   }
   walkRenderer.mountOn = true;
   return {

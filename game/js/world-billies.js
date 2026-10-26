@@ -33,7 +33,7 @@ import { walkData, walkView, walkablePointNear, worldToScreen } from './walk-vie
 import { environment } from './environment.js';
 import { standingHeightAt } from './walk/heights.js';
 import { addRipple } from './walk/water.js';
-import { wadeItem } from './walk/frame-items.js';
+import { wadeItem, wadeItemLift } from './walk/frame-items.js';
 /* eslint-disable no-func-assign */
 expose({
   BILLY_FRAME_CACHE_MAX: [() => BILLY_FRAME_CACHE_MAX],
@@ -186,6 +186,8 @@ export function worldBillyItem(k, sp, view, pose, t, seed, x, z, o = {}) {
     },
     o.extra || {}
   );
+  /* WA-5b: a wild one in shallows (o.wade, its hop and bob) is cut at the waterline too */
+  if (o.wade != null && typeof wadeItemLift === 'function') return wadeItemLift(it, o.wade) || it;
   return o.dy || typeof wadeItem !== 'function' ? it : wadeItem(it);
 }
 /* ---------- the buddy ---------- */
@@ -601,6 +603,7 @@ function wildBillyItem(out, e, s, t, dt) {
       flip: w.flip,
       big,
       dy: -H * sink + hop * 0.32 + bob,
+      wade: hop * 0.32 + bob,
       build: e.build,
       coat: e.coat,
       graft: graftOf(e),

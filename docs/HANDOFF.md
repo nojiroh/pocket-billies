@@ -328,6 +328,214 @@ walk/shadows.js's two picture loops (the light lane's file this round); the jung
 - **Ask me before** (once your numbers are in): whether the A8 budgets (400 draws a frame on phones, 60 fps in towns)
   still stand.
 - Next: the round 1 phone run covering every lane's switches; then round 2 (models, sprites, pixels).
+### Water track WA-10 (lane R) - Copperleaf's river, its mouth and its pond outflow - 2026-10-26
+Branch `track/water` (main was already in it: nothing to merge). Plan approved in Plan Mode; the owner had played the
+build: the hub's river looks weird, weird where it meets the sea, and the waterfall looks weird. The parent session's
+diagnosis was confirmed in the page (numbers along the river every 0.5 m). Tag to suggest: `wa-10-done` (the owner
+pushes tags).
+- The owner's answers: the four renderer fixes as planned; the outflow and (mid-plan) a smaller town square in
+  Copperleaf's data. **Found**: the town zone is locked, so a rebuild with new dials changes nothing, and an unlocked
+  rebuild makes the town again differently even with the original dials (19 plots of 22, three buildings lost, 114 of
+  155 height rows): the owner chose hand patches with the town still locked. The square's natural shape and 3D props
+  went to the hub track (hub-track.md HB-10). During the session the owner also asked for the river's meeting with
+  the sea to look better overall: the estuary blend and its shader commit.
+- Changed (one cause a commit, details and numbers in water-track.md, WA-10 notes):
+  - **Kinds by connectivity** (`water-flow.js waterOpenSea`, `water-data.js waterKindLookup`): on a sea-kind scene
+    only still water joined to the map's edge (or over wet sand, so WA-4's tide pools stay the sea's) is the sea; the
+    rest is pond, or lake over 600 m^2. Copperleaf's pond lost its surf rings.
+  - **A river runs only in its channel** (`waterFlowMap`'s new third argument, `flowChannels`): no flow in the body it
+    leaves nor past the coast (the pale square tongue at the mouth is gone); an **estuary**: the river's share in the
+    flow map's alpha, mixed by the shader (the stream's look into the sea's, the sea's motion calmed), a silty dithered
+    plume with a broken edge, a seam of foam at its front.
+  - **A smooth river surface**: a never-rising level along the line (smoothed, breaking at steps and drops, easing to
+    the body it ends in), carried onto each cell's own step of the land; cliffs in the ground keep the bed rule; edges
+    may rise 7 cm toward a bank.
+  - **Automatic sheets** only down a river's flow, none on its sides or into sea water under 0.25 m, lips merged.
+  - **Copperleaf's data** (`tools/patch-copperleaf-water.mjs`, rerunnable): `--river` ramps the outflow's bed over 6 m
+    from the pond's water level (rapids, no fall; `stream.fall` 0); `--square` paves the square to about 8 m with an
+    uneven rim, grass round it, the streets carried in; both lay the dressing again last.
+- Found on the way: the profile's first version raised test_water's sheets from 8 to 26 (dry line points lifted the
+  head, smoothing ramped a 6 m cliff, a line ending in a small pool ran on at its own level); fixed in the sheets
+  commit, test_water back to its 8 sheets. Fix 1's first version turned test_island's tide pools into ponds; fixed.
+  **My mistake**: the square commit (615bd50a) was pushed with one unit test failing (island-dress.test: the dressing
+  wasn't laid again); the next commit (3449a858) fixes it. Every other push had npm test and smoke green. The night
+  pictures showed the plume's first tint glowing (a fixed colour, not lit): it now tints the water's own lit colour.
+  The pale V-shaped shallows in the mouth (its deep hole ringed by `w` sea, WA-5b's turquoise and WA-4's surf) are
+  there with the estuary switched off too: not changed here.
+- Risky: the flow map's alpha now means the estuary's share (nothing read it before); `F.cls` / `F.lev` are new and
+  ground-mesh.js leans on them (a scene built without the third argument keeps the old rules). The water level of every
+  river changed (generated rivers are already non-rising: small changes; check a run's rivers and WA-2b's falls on the
+  phone). The channel pass costs about 60 ms on Copperleaf in Node at each build. The estuary's look was judged from
+  headless pictures only. The town's ground now differs from what its dials make (it did already: see HB-10).
+- Verified: lint, typecheck, check:modules, check:data, `npm test` (1072 pass after each commit but 615bd50a), smoke
+  before every game/ commit (all passed, Playwright 1.63.0). Unit tests: kinds by connectivity and tide pools, the
+  channel clip and the plume, a river level that never rises and keeps a terrace's drop. Numbers in the page:
+  Copperleaf's pond 202 pond cells (was 170 sea, 51 stream), fall sheets near the river 0 (were 18), the river's level
+  never rises (1.41 to -0.22); test_water 8 sheets at the same places as before, its kinds unchanged; test_island all
+  sea (22,804 cells), 95,000 water triangles as WA-4's. Pictures (scratchpad, not committed): Copperleaf's mouth
+  (above, low), the river's middle, the outflow, the pond, the square, noon and night, Pixel water on and off, before
+  (a clean worktree at the session's start) and after. `npm run test:slow` not run (no generation code changed). The
+  quick-check baseline not remade (WA-8).
+- For lane G: `waterRiverProfile` (water-flow.js) is a renderer profile on scene data; water-gen.js keeps its own on
+  the height grid. A generated coast with a river now gets an estuary; a river line that runs on into the sea is fine.
+- For the hub track: HB-10 (the square's shape and props, and why a town rebuild is not safe yet); the outflow patch
+  sets `stream.fall` 0, which matches what a future rebuild should make.
+- For WA-8: the estuary's extra fetches and the channel pass in the quality tiers; the baseline will show Copperleaf's
+  new river, mouth, outflow and square.
+- For the owner, on the phone: Copperleaf's river mouth from the beach and the bridge (the plume, the seam), the pond's
+  outflow (rapids, no slabs), the pond (no surf rings), the square; noon and night, Pixel water on and off.
+- Next for lane R: WA-8.
+
+### Water track WA-9 (lane G) - the Studio's water tools - 2026-10-26
+Branch `track/water` (main merged in at the start: #205, the hub's placing half; HANDOFF kept both sides). Plan
+approved in Plan Mode. The owner's answers: "survives a regenerate" means the Generate card's remakes, the hand water
+kept in the draft's dials (`params.hand`) and in a scene's `gen`; a brushed river is an **extra** river; the hub
+island refuses the whole Kinds of water tool. Tag to suggest: `wa-9-done` (the owner pushes tags).
+- Changed:
+  - `logic/water-gen.js` (no mapgen.js edit): `waterGenHand` (the dials' hand water, checked), `waterGenHandRivers`
+    (first in `waterGenRiver`: each drawn line shaped, painted and carved as WA-3a's rivers, no meanders; source and
+    mouth from its ends), `waterGenHandFalls` (last in `waterGenFalls`: `falls` entries with their pools, a generated
+    fall within 2 m replaced), hand kinds laid last in `waterGenKinds`, `waterGenClimbs` keeping a hand climb only
+    where WA-2b's rule passes. The scene's rivers are a list (`G.rivers`; carve, step with the land, river falls and
+    rapids loop over it). `waterGenSceneRiver`: a saved scene's bed carved from its line (the map editor).
+    **A scene without hand water is made exactly as before: MAPGEN_VERSION stays 17**; rng.test's hash, the
+    run-start snapshot and the golden scenes unchanged.
+  - `studio/js/water-tools.js` (new, after map-generate.js on the Studio page): the Generate card's river brush,
+    waterfall placer and kind painter over the From above map (overlay, the picked item's fields and what the draft
+    made of it, Look at it; the draft remade as you edit); the map editor's Kinds of water tool gains Rivers and Falls
+    modes and Carve the bed (one undo step each). Hooks: map-generate.js (the card's bar, the map's pointer),
+    map-editor.js (the water tool's modes, pointer, overlay; its kind list is now `WATER_KINDS`; the hub island's
+    refusal).
+  - Tests: water-gen.test.mjs (no hand water, the same scene; a hand river from the west side to a pool downhill,
+    kept to its line, after a new seed, a dial and a reroll; an extra river beside the scene's own; a hand fall with
+    its pool, replacing the generated one, climbed only where walked; hand kinds last, nonsense left out; the saved
+    scene's carve, again without sinking); the Studio check's `water_tools` step; the self-test's Water tools row.
+  - Docs: STUDIO.md "Water tools", water-track.md (row done, WA-9 notes), ROADMAP.
+- Found (where the brief or the docs were wrong):
+  - **MG-4 and TR-7 were never built**: no regenerate of a saved scene, no ground mask, no keep lock, so no hand edit
+    survived a regenerate to copy. The hand water rides in the dials instead; a later MG-4 regenerate reads it from
+    `gen.params.hand`.
+  - The map editor's water painter lacked `sea`, `lava` and `ice` (its own list); the hub island's water rectangles
+    were free (IS-6a locked only its ground).
+  - A tool bar redrawn on the pointer's press moved the map under a drag: the bars are drawn again on release.
+- Risky:
+  - `waterGenCarve`, `waterGenFalls` and `waterGenRapids` now loop over a list; with no hand water it holds the one
+    river as before (whole scenes compared in the tests, goldens unchanged), but any other track's change to those
+    functions must keep the loop.
+  - A hand river ending in another river counts as a `lake` mouth (the contract has no confluence); a hand fall on
+    flat ground drops under 0.3 m and is left to the automatic sheets (a note says so).
+  - Scenes added from the card carry `gen.params.hand`; nothing else reads it yet.
+- Verified: lint, typecheck, check:modules, check:data; `npm test` 1068/1068; `check:smoke` before each game/ commit
+  (all passed, Playwright 1.63.0); the Studio check: `water_tools`, `generate` and `studio_test` pass; the whole
+  chain stops at story's Play from here (waits for a second tab, the container stall the script's own note names),
+  so the other steps ran with `--only`: all pass but the music step in the chain (passes alone), run lab's "rows 7
+  typed: the map has 8 rows" and eight 404s in the last steps (**both the same on the commit before WA-9**), and run
+  lab's 100 ms redraw once at 109-167 ms (passed on a rerun: a timing threshold). A look at the Generate card (the
+  river carved with its bridge, the fall and the bog in the 3D preview and on the map). Not run: the quick-check
+  baseline (WA-8). `npm run test:slow` 86/86.
+- For lane R and the owner: nothing to change; hand rivers and falls use the contract's `streams` and `falls` as they
+  are. For a later MG-4: regenerate a saved scene from `gen.params` and its hand water comes back.
+- Next: WA-8 (alone: phone pass, sounds, baseline); the hub island's fall after HB-4b (the falls placer can then be
+  let onto it).
+
+### Water track WA-5b (lane R) - kinds as a texture, the six new kinds drawn, water life - 2026-10-26
+Branch `track/water` (main merged in at the start: only the #203 merge commit, #201 and #202 were already in; lane B's
+WA-7 and main's #194 merges came in before the pushes). Plan approved in Plan Mode. The owner's answers: the small
+hooks outside lane R allowed (prop-look.js, frame-items.js, sprites.js, and ambient-life.js, which no lane owns); the
+`reef` kind gets the full turquoise and coral, the sea's own `w` shallows a softer turquoise; water life fills the
+gaps, frogs as they are. Tag to suggest: `wa-5b-done` (the owner pushes tags).
+- Changed (one cause a commit; details in water-track.md, WA-5b notes; pixel water off keeps the old kinds' look):
+  - **The kinds' looks in a small texture** (`walk/water.js kindTexture`, unit 15, `texelFetch`): no cap at nine.
+    What a kind does reads flags on its look, not its index (`sea`, `run`, `steam`, `swim`, `white`, `bub`, `coral`,
+    `scum`, `glowC`); ground-mesh.js and the shaders' `K==6` tests read them, so a reef rides the sea's swell, surf
+    and tide.
+  - **The six drawn** (`WATER_KIND_LOOKS` now holds all fifteen in `WATER_KINDS`' order; `waterKindLookup` knows
+    them, so a reef or any new kind's rectangle is no longer drawn as the scene's default kind): rapids (white water
+    over the surface), hot spring (milky turquoise, bubbles, thicker steam), oasis (clear green), bog (dark olive with
+    rafts of brown scum, gas bubbles), reef (full turquoise, coral on its shallow bed, no kelp; the sea's `w` shallows
+    softened), cave (lit from below in cyan, its light thrown up the walls: ground shader `uWGlow`).
+  - **Rain rings** skip lava and ice. **Ducks** swim and frogs dive only where they could (not lava, ice, rapids, a hot
+    spring; ambient-life.js): the test scene's ducks sat on the ice pool.
+  - **A storm's flood** (WA-5a's ask): flooded cells used to join a pond's level (it rose into a raised slab), spill
+    as cascades at every bank and paint the grass as a stream bed. Now they keep out of both, meet the water they rose
+    from at its level, keep the dry shoreline, and draw as pixel-edged puddles over the grass (`waterWeatherDry`, read
+    only).
+  - **Water life**: diving birds (the fx `bird`, unused before) over fish water by day; spray on you while you climb
+    a waterfall (read from `P.climb`, no lane P edit); steam, splashes and birds on the 32 grid in `water.frames`
+    steps; lotus and duckweed bob like lily pads, in steps (sprites.js); reeds bend away as you pass (frame-items.js);
+    wild Billies in shallows cut at the waterline (`frame-items.js wadeItemLift`, world-billies.js); the Surf mount's
+    wake on the wake's own rings (`prop-look.js` calls `addWakeRipple`, now exported).
+- Found: the flood's look (above); ducks on lava and ice (above); the fx sheet's `bird` was loaded but never drawn.
+  The look-water numbers show the lookup fix: before, test_water's rapids, hot spring and bog (72 half-metre cells)
+  counted as pond; now as their own kinds (water triangles unchanged, 3,584).
+- Risky: every water pixel makes seven fetches from the 15 x 6 kind texture instead of uniform reads; the coral,
+  bubble and white-water passes run only on their kinds. Unit 15 is now the water's: a later draw that binds 15 must
+  rebind it. Anything reading `aDK.x` must know -1 marks a flood's skin (and `aDK.y`'s fraction stays WA-4's
+  shallows share). The flood's outer edge still follows the half-metre cells where its puddles reach it. A flooded
+  river is untested in a real run (test_water's stream and pond with a forced storm only). The `w` sea is paler than
+  in WA-4 (Copperleaf's shallows too).
+- Verified: lint, typecheck, check:modules, `npm test` (1060, 0 failures after the merges), `check:smoke` before every
+  game/ commit (all passed, Playwright 1.63.0; one run noted the phone timing over budget while picture runs shared
+  the machine). Pictures (validation/, not committed; no page errors): look-water before and after on test_water and
+  test_island at noon and 22.5 (before from a clean worktree at the session's start; test_water's night "before" has 8
+  of its 13 shots, the run was cut off by the time limit). Close-ups with the blur off
+  (scratch script, runtime kind swaps for the kinds test_water lacks): the six kinds by day and night, a forced storm's
+  flood (pond and stepped stream, three rounds until it read as puddles), a bird pinned in view, test_island's reef
+  shelf before and after and as a `reef` rectangle. Not checked in pictures: rain rings on ice and lava, the climb's
+  spray, a wild Billy wading, reeds bending (the code paths ran in smoke without errors). Not done: a picture set at
+  the texture commit alone (the claim "no look change" there rests on the code, not a picture).
+- For lane G (WA-9 or later; their files, not edited): test_water has no oasis, reef or cave to picture (add a pool of
+  each; the pictures here swapped kinds at runtime); `WATER_KIND_BASE` in logic/water-kinds.js now only says what a
+  kind fishes as (its comment and water-kinds.test's "until WA-5b" wording); look-water's numbers could count `falls`
+  entries (WA-2a's note, still open).
+- For lane B: `PIXEL_WATER_GLSL` unchanged.
+- For WA-8: the kind texture's fetches, the coral and bubble passes and the flood's puddles in the water quality tiers.
+- For the owner, on the phone: test_water's hot spring and rapids and the bog, Copperleaf's beach (the softer `w`
+  turquoise), a run's cave with cave water and a stormy day by a pond or river (a debug forecast), with Pixel water on
+  and off, comparing the frame time; whether the diving bird reads at play zoom.
+- Next for lane R: none in the plan before WA-8 (the phone pass, sounds, the baseline).
+
+### Water track WA-7 (lane B) - the world map's and battles' water - 2026-10-26
+Branch `track/water` (main already merged in at the start; main's HB-3 merged in mid-session on the parent session's
+heads-up, its lagoon and falls given the pixel look too). Plan approved in Plan Mode with the owner's answers: this
+lane exports `PIXEL_WATER_GLSL` (one word in walk-shaders.js); battles turn to face nearby water (battle-3d.js) plus
+water effects; the `lake` biome's stage only noted. Tag to suggest: `wa-7-done` (the owner pushes tags).
+- Changed (details in water-track.md, WA-7 notes):
+  - **World map** (world-bowl.js): `BOWL_PIXEL_GLSL` (the snippet plus the bowl's grid: 16 texels a metre close up,
+    coarser by powers of two so a texel stays ~2 screen pixels; `bwFix` steps a smooth value in whole texels). The sea
+    (`mwater`, new `bowlWaterPixel`), a place's own water tiles and the rivers' lines (`mground`), HB-3's lagoon (the
+    same program) and its falls (`mfallw`, new `fallPixel`): banded dithered tones, stepped waves and streaks, hard
+    foam lines, hard glints; the sky's mirror smooth. `setPixelWaterUniform(U)` on mground, mwater (the sea and the
+    lagoon) and mfallw. Pixel water off runs the old code unchanged (pictures: off vs before differs only in what
+    moves with the clock). No sea added round the hub's island. `BOWL_SEA_FAR` unchanged.
+  - **Battles**: new `logic/battle-facing.js` (on both pages and in the logic worker; unit tests) picks a turn that
+    puts the scene's water behind a battle (water within 12 m, not behind trees or houses, nobody in water or off the
+    map, never indoors); battle-3d.js turns the fighters, trainers, lights, particles, the pyramid and the camera with
+    it and finds the lane's hidden props in the turned battle; the debug log says when a battle faces the water.
+    battle-stage.js: glints on the water in view, rings round a fighter standing in water.
+  - bowl-map-test.js step 1 checks the water programs carry the pixel switch. New `tools/look-bowl-water.py`.
+- **For the hub track** (functions touched in world-bowl.js): the `mwater` and `mfallw` shader strings (a pixel path
+  each, before `main`, old code kept as the off path), the water and river parts of the `mground` fragment shader, a
+  new `BOWL_PIXEL_GLSL` constant before `WORLD_BOWL_SHADERS`, two imports, and one `setPixelWaterUniform(U)` line in
+  each of the ground, sea, lagoon and falls draw blocks of the draw function. Nothing in worldBowlThingsOfPlace,
+  worldBowlFloatIsland, the island's meshes or the prewarm. HB-3's lagoon foam (`fd`) and rim fade are carried into
+  the pixel path: a later lagoon change in the old path needs the same in `bowlWaterPixel`.
+- **For lane R**: `PIXEL_WATER_GLSL` is now `export const` (nothing else in walk-shaders.js or water-data.js touched).
+- **For whoever owns biomes.json**: the `lake` biome uses the `golf` battle stage though a `lake` stage exists.
+- **Found, not mine (please look)**: main's merge 904d6c4a (#194, PR #203's merge) committed `node_modules` as a
+  symlink to `/home/user/pocket-billies/node_modules` (itself). After pulling, node_modules is a broken self-link and
+  every npm tool fails (`npm run modules` printed nothing, exit 216) until `npm ci` replaces it; git then shows it as
+  deleted. I left it untouched (unstaged); the fix is `git rm --cached node_modules` in one commit on main.
+- Risky: the turned battle is new ground for the walk renderer's battle camera (only its yaw and place change; the
+  in-game full test and smoke pass); headless pictures can't judge how much water a turned battle shows: in the run's
+  pond scene it reads faintly (the pond 0.5 m under its banks, reeds, haze, the depth of field). On the hub zoom the
+  lagoon's dither between its first two tones shows as scattered dots. Phone cost: the sea's pixel path reads the
+  depth's derivatives (an inverse 2x2 a pixel); the ground's water reads 4 neighbours as before.
+- Verified: lint, typecheck, format, check:modules, check:data, `npm test` (1060 pass after the HB-3 merge),
+  `check:smoke` before every commit touching game/ (all passed); look-bowl-water before (a clean worktree at the
+  start) and after, Pixel water on and off. Not run: the full quick check and its baseline (WA-8), the bench.
+- Next: the owner's phone: the world map (a run's coast and rivers, the hub's lagoon) with Pixel water on and off,
+  and a battle by a pond or the coast (Settings > Debug log shows "facing the water"). Lane R's WA-5b, lane G's WA-9.
 
 ### Hub track - the placing half of HB-5 and HB-7: Skyline Station on its headland, the new buildings on their plots - 2026-10-25
 Branch `props/hub-placing` (the session's brief; from main aea7a48 after PR #201). Plan approved in Plan Mode. The
@@ -381,6 +589,7 @@ hub branch left for it). Details: docs/phases/hub-track.md, "Done in the placing
 - Next: the owner's look at the pictures and on the phone (HB-3, merged meanwhile in PR #202, merged in here); HB-8 (the departure on this rail: the
   train along `landmarks.rail`, the sea past the edge, `flyMenu`'s hub branch); a stock for the General store when
   the owner picks one; HB-9.
+
 ### Player visibility - you stay visible behind buildings and trees - 2026-10-25
 Branch `ccr-bdf253b3-4vm5w6` (the session's own: the owner chose to work here instead of `fix/player-visibility`,
 which didn't exist; one session's work, one PR). Not a phase: the owner asked for a system and approved the plan in

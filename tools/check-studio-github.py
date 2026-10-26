@@ -658,6 +658,126 @@ def generate_steps(pg, errs):
     else: print('generate: a canyon route drafted and drawn, dials, a plants reroll and a clinic at the hub, added as a scene in one undo step; a second draft joined to it (meets it, the pair drawn), added too', flush=True)
 
 
+
+# WA-9: pointer events on a map canvas at scene metres (x, z): a press at the first point, moves through the rest, a
+# release at the last; o adds to every event (altKey...)
+WT_STROKE = """((id,sc,pts,o)=>{const c=document.getElementById(id);c.setPointerCapture=()=>{};const r=c.getBoundingClientRect(),kx=r.width/sc.w,kz=r.height/sc.h,
+ ev=(t,p)=>c.dispatchEvent(new PointerEvent(t,Object.assign({clientX:r.left+p[0]*kx,clientY:r.top+(sc.h-p[1])*kz,pointerId:7,bubbles:true,button:0},o||{})));
+ pts.forEach((p,i)=>ev(i?'pointermove':'pointerdown',p));ev('pointerup',pts[pts.length-1])})"""
+
+
+def water_tools_steps(pg, errs):
+    """water track WA-9: the Studio's water tools. On the Generate card: a river drawn with the brush from the west side
+    to a pool, a waterfall placed on it (its pool) and a bog painted over it are made in the draft (the live preview),
+    survive a new seed (they are the draft's dials, params.hand), "Look at it" puts the walker on dry ground beside the
+    fall, and Add as a new scene keeps them in its gen (one undo step). In the map editor's Kinds of water tool on
+    test_water: a fall placed and a stream line drawn and its bed carved, each undone; on the hub island the tool
+    refuses and changes nothing."""
+    n = len(errs)
+    gen = lambda: pg.evaluate("mapGen.draft?JSON.stringify(mapGen.draft.gen.params.hand||null)+mapGen.draft.gen.seed:''")
+
+    def stroke(cid, pts, o=None):
+        sc = "mapGen.draft" if cid == 'genMap' else "currentMap()"
+        pg.evaluate(f"({WT_STROKE})({json.dumps(cid)},{sc},{json.dumps(pts)},{json.dumps(o or {})})")
+
+    def made(cond, sec=60):
+        return poll(pg, f"!!mapGen.draft&&walkView.id==='_gen'&&({cond})", sec)
+
+    pg.evaluate("mapGen.on=false;mapGen.params=mapgenParams({seed:7,land:{water:'none'}});mapGen.joins={};mapGen.pair=false;mapGen.draft=null;studioState.sel.scene='copperleaf';void openSection('scenes')")
+    pg.wait_for_selector('[data-act=genOpen]', timeout=20000)
+    pg.click('[data-act=genOpen]')
+    if not made("walkView.ready"):
+        errs.append('water tools: the draft never drew')
+        return
+    maps0, undo0 = pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]")
+    W, H = pg.evaluate("[mapGen.draft.w, mapGen.draft.h]")
+    a, m, b = [0.3, H - 14], [round(W * 0.4, 2), round(H * 0.5, 2)], [W - 24, 12]
+    pg.click('[data-act=wtTool][data-k=river]')
+    for p in (a, m, b): stroke('genMap', [p])
+    pg.click('[data-act=wtFinish]')
+    river = "(mapGen.draft.streams||[]).find(s=>s.pts[0][0]===0&&Math.abs(s.pts[0][1]-%s)<1&&Math.hypot(s.pts[s.pts.length-1][0]-%s,s.pts[s.pts.length-1][1]-%s)<1)" % (a[1], b[0], b[1])
+    if not made(f"(mapGen.params.hand||{{}}).rivers&&mapGen.params.hand.rivers.length===1&&!!{river}"):
+        errs.append(f"the river brush made no river: hand {pg.evaluate('JSON.stringify(mapGen.params.hand||null)')}, notes {pg.evaluate('mapGen.notes')}")
+        return
+    if pg.evaluate(f"{river}.src+'>'+{river}.mouth") != 'edge>pool': errs.append(f"the river's ends: {pg.evaluate(f'{river}.src+'+chr(39)+'>'+chr(39)+'+{river}.mouth')}")
+    # a fall on it, aimed down the river, with its pool
+    lip = pg.evaluate(f"(()=>{{const s={river};return s.pts[Math.floor(s.pts.length/2)].map(v=>Math.round(v*100)/100)}})()")
+    pg.click('[data-act=wtTool][data-k=fall]')
+    stroke('genMap', [lip, [lip[0] + 1.5, lip[1] - 1.5]])
+    fall = "(mapGen.draft.falls||[]).find(f=>Math.abs(f.x-%s)<0.05&&Math.abs(f.z-%s)<0.05)" % (lip[0], lip[1])
+    if not made(f"!!{fall}"): errs.append(f"the waterfall placer made no fall: notes {pg.evaluate('mapGen.notes')}")
+    elif not pg.evaluate(f"{fall}.pool===2&&{fall}.w===2"): errs.append(f"the hand fall: {pg.evaluate(f'JSON.stringify({fall})')} (notes {pg.evaluate('mapGen.notes')})")
+    # a bog over the river
+    pg.click('[data-act=wtTool][data-k=kind]')
+    pg.click('[data-act=wtKind][data-k=bog]')
+    stroke('genMap', [[m[0] - 3, m[1] - 3], [m[0] + 3, m[1] + 3]])
+    if not made("(mapGen.draft.waters||[]).length&&mapGen.draft.waters[mapGen.draft.waters.length-1].k==='bog'"): errs.append('the kind painter laid no bog last')
+    # a new seed: the hand water is made again
+    hand = pg.evaluate("JSON.stringify(mapGen.params.hand)")
+    pg.click('[data-act=genSeed]')
+    if not made(f"mapGen.draft.gen.seed!==7&&!!{river}&&!!{fall}&&mapGen.draft.waters[mapGen.draft.waters.length-1].k==='bog'"):
+        errs.append(f"the hand water did not survive a new seed (notes {pg.evaluate('mapGen.notes')})")
+    if pg.evaluate("JSON.stringify(mapGen.params.hand)") != hand: errs.append('a new seed changed the hand water')
+    # Look at it: the walker on dry ground by the fall
+    pg.click('[data-act=wtTool][data-k=fall]')
+    stroke('genMap', [lip])
+    pg.click('[data-act=wtLook]')
+    if not pg.evaluate("(()=>{const p=mapGen.pvPos,d=mapGen.draft;return !!p&&!'wd'.includes(d.tiles[d.h-1-Math.floor(p[1])][Math.floor(p[0])])})()"):
+        errs.append(f"Look at it: the walker at {pg.evaluate('mapGen.pvPos')}")
+    if pg.evaluate("[Object.keys(studioState.D.maps).length, studioState.undo.length]") != [maps0, undo0]: errs.append('the hand water reached the data or the undo history')
+    pg.click('[data-act=genAccept]')
+    pg.fill('#genName', 'Check Brook')
+    pg.click('#dlg [data-dlg="1"]'); time.sleep(0.5)
+    if not pg.evaluate("(()=>{const s=studioState.D.maps.checkbrook;return !!s&&s.gen.params.hand.rivers.length===1&&s.gen.params.hand.falls.length===1&&s.streams.length>=1})()"):
+        errs.append('Add as a new scene did not keep the hand water in gen')
+    elif pg.evaluate("studioState.undo.length") != undo0 + 1: errs.append('adding the scene is not one undo step')
+    pg.evaluate("delete mapGen.params.hand;ACTIONS.wtTool({k:''});void undo()"); time.sleep(0.3)
+    # the map editor on test_water: a fall placed, a stream drawn and carved; each undone
+    pg.evaluate("mapGen.on=false;studioState.sel.scene='test_water';void openSection('scenes')")
+    if not poll(pg, "!!document.getElementById('scMap')", 30):
+        errs.append('Walk scenes never showed test_water')
+        return
+    before = pg.evaluate("JSON.stringify([currentMap().tiles,currentMap().heights,currentMap().streams,currentMap().falls||null])")
+    u0 = pg.evaluate("studioState.undo.length")
+    pg.evaluate("ACTIONS.scTool({t:'water'})"); time.sleep(0.3)
+    pg.click('[data-act=scWMode][data-k=falls]'); time.sleep(0.3)
+    nf = pg.evaluate("(currentMap().falls||[]).length")
+    stroke('scMap', [[30.1, 20], [30.1, 18]])
+    time.sleep(0.3)
+    got = pg.evaluate("(()=>{const f=(currentMap().falls||[]).slice(-1)[0];return [(currentMap().falls||[]).length,f&&f.dir]})()")
+    if got[0] != nf + 1 or got[1] != [0, -1]: errs.append(f'map editor: a fall placed and aimed south gave {got}')
+    if pg.evaluate("studioState.undo.length") != u0 + 1: errs.append('map editor: placing a fall is not one undo step')
+    pg.click('[data-act=scWMode][data-k=rivers]'); time.sleep(0.3)
+    ns = pg.evaluate("(currentMap().streams||[]).length")
+    for p in ([0, 6], [8, 6.5], [20, 3.5]): stroke('scMap', [p])
+    pg.click('[data-act=wtsFinish]')
+    time.sleep(0.3)
+    if pg.evaluate("(currentMap().streams||[]).length") != ns + 1: errs.append('map editor: the stream line was not added')
+    elif not pg.evaluate("!!document.querySelector('[data-act=wtsCarve]')"): errs.append('map editor: the new stream is not picked')
+    else:
+        pg.click('[data-act=wtsCarve]'); time.sleep(0.5)
+        if not pg.evaluate("(()=>{const s=currentMap(),st=s.streams[s.streams.length-1];return 'wd'.includes(s.tiles[s.h-1-6][8])&&st.src==='edge'&&st.mouth==='pool'})()"):
+            errs.append(f"map editor: Carve the bed made no river: {pg.evaluate('JSON.stringify(currentMap().streams.slice(-1))')}")
+    for _ in range(pg.evaluate('studioState.undo.length') - u0): pg.evaluate('undo()')
+    time.sleep(0.3)
+    if pg.evaluate("JSON.stringify([currentMap().tiles,currentMap().heights,currentMap().streams,currentMap().falls||null])") != before:
+        errs.append('map editor: undo did not put test_water back')
+    # the hub island: the tool refuses, nothing changes
+    pg.evaluate("studioState.sel.scene='copperleaf';void openSection('scenes')")
+    poll(pg, "!!document.getElementById('scMap')", 30)
+    isle = pg.evaluate("JSON.stringify([currentMap().waters||null,currentMap().streams||null,currentMap().falls||null])")
+    u1 = pg.evaluate("studioState.undo.length")
+    pg.evaluate("ACTIONS.scTool({t:'water'})"); time.sleep(0.3)
+    if pg.evaluate("!!document.querySelector('[data-act=scWMode]')"): errs.append("the hub island's water tool shows its modes")
+    for mode in ('kinds', 'falls', 'rivers'):
+        pg.evaluate(f"mapEditor.wmode='{mode}'")
+        stroke('scMap', [[40, 40], [44, 44]])
+    if pg.evaluate("JSON.stringify([currentMap().waters||null,currentMap().streams||null,currentMap().falls||null])") != isle or pg.evaluate("studioState.undo.length") != u1:
+        errs.append("the water tools changed the hub island")
+    pg.evaluate("mapEditor.wmode='kinds';ACTIONS.scTool({t:'paint'})")
+    if len(errs) > n: errs[n:] = [f'water tools: {e}' for e in errs[n:]]
+    else: print('water tools: on the Generate card a hand river (edge to pool), a fall with its pool and a bog made live and again after a new seed, Look at it, kept in gen when added; in the map editor a fall placed and a stream drawn and carved, undone; the hub island refused', flush=True)
+
 def species_part_steps(pg, errs):
     """Studio track ST-6: the skeleton builder zooms by whole steps with the pixel canvas's keys; the Billies section
     opens the species in Part mode; the head's pivot dragged and nudged keeps the figure drawn where it was (the rig
@@ -2140,6 +2260,7 @@ STEPS = [
     ('part_mode', part_mode_steps),
     ('robot_joints', robot_joint_steps),
     ('generate', generate_steps),
+    ('water_tools', water_tools_steps),
     ('species_parts', species_part_steps),
     ('rig_preview', rig_preview_steps),
     ('library_swap', library_swap_steps),

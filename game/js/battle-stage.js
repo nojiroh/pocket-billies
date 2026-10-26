@@ -305,6 +305,10 @@ export const battleStage = {
   el: {},
   leafy: [],
   glint: [],
+  /* water track WA-7: the scene's water in view (battle space, set by battle-3d.js) and the fighters standing in it */
+  wet: /** @type {{x: number, z: number}[]} */ ([]),
+  wetFeet: /** @type {number[]} */ ([]),
+  wetT: 0,
   F: null,
   floorKey: '',
   q: { lvl: 0, since: 0, lowT: 0, highT: 0 },
@@ -406,6 +410,8 @@ export function battleStageStart(area) {
   battleStage.leafy = [];
   battleStage.glint = [];
   battleStage.clouds = [];
+  battleStage.wet = [];
+  battleStage.wetFeet = [];
   battleStage.small = makeCanvas(10, 10);
   battleStageFormat((typeof activeBattle !== 'undefined' && activeBattle && activeBattle.fmt) || 'single');
   battleStage.tr = [
@@ -736,6 +742,26 @@ function spawnAmbientParticles(dt) {
       glow: 1,
       twinkle: 1,
     });
+  }
+  /* WA-7: the water in view catches the light in hard pixels; a fighter standing in water sends out rings */
+  if (battleStage.wet.length && random() < dt / 260) {
+    const p = battleStage.wet[Math.floor(random() * battleStage.wet.length)];
+    addParticle({
+      x: p.x + random() - 0.5,
+      y: 0.04,
+      z: p.z + random() - 0.5,
+      life: 600,
+      spr: 'spark',
+      k: 0.45,
+      glow: 1,
+      twinkle: 1,
+    });
+  }
+  battleStage.wetT += dt;
+  if (battleStage.wetT > 900) {
+    battleStage.wetT = 0;
+    for (const i of battleStage.wetFeet)
+      if (battleStage.s[i] && battleStage.s[i].show) groundRing(i, undefined, 0.9, 800);
   }
   battleStage.stT += dt;
   if (battleStage.stT > 700) {
