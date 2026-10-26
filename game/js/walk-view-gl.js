@@ -12,6 +12,7 @@
 import { expose } from './test-globals.js';
 import {
   BUILDING_SHADERS,
+  MODEL_SHADOW_SHADERS,
   SOLID_PROP_SHADERS,
   WORLD_BOWL_SHADERS,
   buildingState,
@@ -313,8 +314,12 @@ export function ensureWalkGl(cv) {
       engineSetting('quality', 'spriteInstances') && SPRITE_INSTANCE_SHADERS,
       /* phase 20 R2: the weather in one draw, while Engine > Quality "Rain in one go" is on */
       engineSetting('quality', 'rainBatch') && WEATHER_FX_SHADERS,
-      /* phase 20 R3: the instanced shadow pictures' program, while Engine > Quality "Shadows in batches" is on */
+      /* phase 20 R3: the instanced shadow pictures' and shadow models' programs, while Engine > Quality "Shadows in
+         batches" is on */
       engineSetting('quality', 'shadowInstances') && SHADOW_INSTANCE_SHADERS,
+      engineSetting('quality', 'shadowInstances') &&
+        typeof MODEL_SHADOW_SHADERS !== 'undefined' &&
+        MODEL_SHADOW_SHADERS,
     ])
       if (d)
         precompilePrograms(
