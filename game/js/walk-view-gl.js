@@ -136,6 +136,7 @@ expose({
   screenToGround2d: [() => screenToGround2d],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
   walkViewGpuLost: [() => walkViewGpuLost, v => (walkViewGpuLost = v)],
+  walkWarmUp: [() => walkWarmUp, v => (walkWarmUp = v)],
   worldToScreen2d: [() => worldToScreen2d],
 });
 /* eslint-enable no-func-assign */
@@ -234,9 +235,9 @@ export function mountWalkView(cv, id, opt = {}) {
       if (walkView.id !== id) return;
       walkView.ready = true;
       frameTask('dio', drawWalkFrame, () => (walkView.opt.cap ? walkView.opt.cap() : userFps()));
-      cv.classList.add('in');
       /* the hub: the world map's slow parts done ahead, so it opens whole (world-bowl.js worldMapPrewarm) */
       if (typeof worldMapPrewarm === 'function' && !worldExtra.look) setTimeout(worldMapPrewarm, 1500);
+      return walkWarmUp(cv, id);
     })
     .catch(e => {
       walkView.err = e;
@@ -387,10 +388,29 @@ function walkViewGpuLost() {
   hideQueriesLost();
 }
 gpuOnRestore('walk view', walkViewGpuLost);
+/* phase 20 H5: the view is shown once two frames have drawn behind its fade (at most 1.5 s): their first draws compile
+   what the background compile hasn't finished and upload their pictures while nothing can be seen. A restore fades
+   out and back in the same way (Engine > Quality "Warm up before showing", on) */
+function walkWarmUp(cv, id) {
+  const f0 = walkRenderer.frames,
+    t0 = performance.now(),
+    n = engineSetting('quality', 'warmUp') === false ? 0 : 2;
+  return new Promise(done => {
+    const look = () => {
+      if (walkView.id !== id) return done();
+      if (walkRenderer.frames < f0 + n && performance.now() - t0 < 1500) return void requestAnimationFrame(look);
+      cv.classList.add('in');
+      if (n && typeof debugLog !== 'undefined') debugLog.mark('warming up a scene', t0, performance.now());
+      done();
+    };
+    look();
+  });
+}
 function onGlContextRestored(cv) {
   if (walkView.id && walkView.cv === cv) {
     const id = walkView.id;
     walkView.id = null;
+    if (engineSetting('quality', 'warmUp') !== false) cv.classList.remove('in');
     mountWalkView(cv, id, walkView.opt);
   }
 }

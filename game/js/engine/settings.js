@@ -298,6 +298,9 @@ export const ENGINE_DEFAULTS = {
     /* phase 20 R3 (E11, the owner's option a): the far shadow map draws what only the wind sways at rest and keeps it
        in its cache; within the near map (13 m) shadows sway as before */
     farShadowsStill: false,
+    /* phase 20 R3 (context, H5): a place is shown once two frames have drawn behind its fade (at most 1.5 s), so its
+       first draws compile and upload out of sight; a restored context fades back in the same way */
+    warmUp: true,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -1315,6 +1318,12 @@ export const ENGINE_SPEC = [
         'Far shadows hold still',
         'bool',
         'Past the sharp shadows round you (about 13 m) the shadows of grass, bushes and leaves stop swaying in the wind and are kept from frame to frame instead of drawn again each frame. Close by they sway as before.',
+      ],
+      [
+        'warmUp',
+        'Warm up before showing',
+        'bool',
+        'A place fades in only once its first two frames are drawn (never more than 1.5 s later), so the hitch of their first draws, getting shaders ready and pictures onto the graphics card, happens out of sight. After the graphics card is lost and comes back, the place fades back in the same way.',
       ],
       [
         'gpuTimer',
