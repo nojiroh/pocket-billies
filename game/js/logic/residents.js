@@ -9,7 +9,7 @@
    conditions `resident:<id>` and `residents` read who lives there (logic/conditions.js).
    The table is passed in (`R`: residents.json); logic only: no DOM, no Date, no Math.random
    (tools/test/residents.test.mjs). */
-/** @import { Meta, Run, SaveData } from '../../types/save-data' */
+/** @import { Meta, Run, RunMap, SaveData } from '../../types/save-data' */
 /** @import { Resident } from '../../types/game-data' */
 /** @typedef {Record<string, Resident>} ResidentsTable */
 /** @typedef {'town' | 'event'} MeetPlace */
@@ -20,6 +20,10 @@ import { rngFrom } from './rng.js';
 expose({
   // @ts-expect-error -- replaced on purpose
   residentCandidate: [() => residentCandidate, v => (residentCandidate = v)],
+  // @ts-expect-error -- replaced on purpose
+  residentDrawn: [() => residentDrawn, v => (residentDrawn = v)],
+  // @ts-expect-error -- replaced on purpose
+  residentFirstTowns: [() => residentFirstTowns, v => (residentFirstTowns = v)],
   // @ts-expect-error -- replaced on purpose
   residentInvite: [() => residentInvite, v => (residentInvite = v)],
   // @ts-expect-error -- replaced on purpose
@@ -34,21 +38,44 @@ export function residentsHere(s) {
   const here = (s.meta && s.meta.residents) || {};
   return Object.keys(here).sort((a, b) => here[a] - here[b] || (a < b ? -1 : 1));
 }
-/** this run's one candidate, or null: none while one is invited already, or with nobody left to meet. The same run
- * (its seed) and the same residents always give the same one. `where` is where they are met (a town, an event)
- * @param {SaveData} s @param {ResidentsTable} R @param {MeetPlace} [where] @returns {string | null} */
-export function residentCandidate(s, R, where = 'town') {
+/** RS-2: this run's one resident to meet, whatever has happened on it (invited or not): the free first one while
+ * nobody lives in Copperleaf, else one drawn from the run's own stream ('resident') among those left with a weight.
+ * Drawn once among everyone, wherever they are met, so a town and an event never offer two different people. Null
+ * with nobody left @param {SaveData} s @param {ResidentsTable} R @returns {string | null} */
+export function residentDrawn(s, R) {
   const run = s.run;
-  if (!run || run.invited) return null;
-  const here = (s.meta && s.meta.residents) || {},
-    left = Object.keys(R).filter(id => !here[id] && R[id].meet.weight > 0 && R[id].meet.where.includes(where));
+  if (!run) return null;
+  const here = (s.meta && s.meta.residents) || {};
+  if (run.invited && R[run.invited]) return run.invited;
   if (!Object.keys(here).length) {
     const first = Object.keys(R).find(id => R[id].first);
-    if (first) return R[first].meet.where.includes(where) ? first : null;
+    if (first) return first;
   }
+  const left = Object.keys(R).filter(id => !here[id] && R[id].meet.weight > 0);
   if (!left.length) return null;
   const g = rngFrom(run.seed, 'resident');
   return g.pick(Object.fromEntries(left.map(id => [id, R[id].meet.weight])));
+}
+/** this run's one candidate, or null: none while one is invited already, or with nobody left to meet. The same run
+ * (its seed) and the same residents always give the same one. With `where` (a town, an event): only if they are met
+ * there (RS-2: one candidate a run, so another place doesn't draw another)
+ * @param {SaveData} s @param {ResidentsTable} R @param {MeetPlace} [where] @returns {string | null} */
+export function residentCandidate(s, R, where) {
+  if (!s.run || s.run.invited) return null;
+  const id = residentDrawn(s, R);
+  return id && (!where || R[id].meet.where.includes(where)) ? id : null;
+}
+/** RS-2: the free first resident's towns: every town of the map's first row made of towns only, so every way through
+ * the map walks into one (rules.json run.map `rest`, the row before a mini-boss) @param {RunMap} map
+ * @returns {number[]} */
+export function residentFirstTowns(map) {
+  const rows = /** @type {Map<number, number[]>} */ (new Map());
+  map.nodes.forEach((n, i) => rows.set(n.row, (rows.get(n.row) || []).concat(i)));
+  for (const row of [...rows.keys()].sort((a, b) => a - b)) {
+    const at = /** @type {number[]} */ (rows.get(row));
+    if (at.every(i => map.nodes[i].type === 'town')) return at;
+  }
+  return [];
 }
 /** invite a resident on this run: refused for one who lives in Copperleaf already, one not in the table, or when
  * someone is invited already (one a run). Returns whether they were invited

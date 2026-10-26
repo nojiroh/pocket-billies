@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { modules } from './setup-fixture.mjs';
 
-const { residentCandidate, residentInvite, residentSettle, residentsHere } = modules.residents;
+const { residentCandidate, residentDrawn, residentFirstTowns, residentInvite, residentSettle, residentsHere } =
+  modules.residents;
 const { newMeta } = modules['meta-state'];
 const R = {
   ada: {
@@ -49,6 +50,12 @@ test('residents: the free first one comes first, then a seeded pick of those lef
   }
   assert.equal(seen.size, 2, 'both are drawn over many seeds');
   assert.equal(residentCandidate(onRun('S1', { ada: 1, bo: 2 }), R, 'event'), 'cy');
+  for (let i = 0; i < 60; i++) {
+    const s = onRun(`seed${i}`, { ada: 1 }),
+      c = residentCandidate(s, R);
+    assert.equal(residentCandidate(s, R, 'town'), c, 'RS-2: a town meets the run’s one candidate');
+    assert.equal(residentCandidate(s, R, 'event'), c === 'cy' ? 'cy' : null, 'an event the same one, or nobody');
+  }
   assert.equal(residentCandidate(onRun('S1', { ada: 1, bo: 2, cy: 3 }), R), null, 'nobody with a weight is left');
   assert.equal(residentCandidate({ meta: newMeta(), run: null }, R), null, 'no run, no candidate');
 });
@@ -73,4 +80,19 @@ test('residents: the invited one moves in at the run’s end, in the order they 
   assert.deepEqual(meta.residents, { ada: 2, cy: 4 });
   assert.deepEqual(residentsHere({ meta: { ...meta, residents: { cy: 4, bo: 1, ada: 2 } } }), ['bo', 'ada', 'cy']);
   assert.deepEqual(residentsHere({}), []);
+});
+
+test('residents: RS-2: the run’s one stays drawn once invited; the first one’s towns are the first all-town row', () => {
+  const s = onRun('S1', { ada: 1 }),
+    c = residentDrawn(s, R);
+  assert.ok(residentInvite(s, c, R));
+  assert.equal(residentDrawn(s, R), c, 'the invited one, so a reload still places them');
+  assert.equal(residentCandidate(s, R), null);
+  assert.equal(residentDrawn({ meta: newMeta(), run: null }, R), null);
+  const node = (/** @type {string} */ type, /** @type {number} */ row) => ({ type, row, lane: 0, to: [], seen: 0 });
+  const map = {
+    nodes: [node('landing', 0), node('town', 1), node('route', 1), node('town', 2), node('town', 2), node('town', 3)],
+  };
+  assert.deepEqual(residentFirstTowns(map), [3, 4], 'row 1 has a route, so row 2');
+  assert.deepEqual(residentFirstTowns({ nodes: [node('landing', 0), node('boss', 1)] }), []);
 });
