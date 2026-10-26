@@ -51,7 +51,9 @@ test('encounters: a place holds the same event for the same run, kept; a played 
   const E2 = structuredClone(E);
   for (const ev of Object.values(E2.events)) ev.biomes = ['lake'];
   assert.deepEqual(X.eventPool(b, E2, 'meadow'), []);
-  assert.equal(X.eventPool(b, E2, 'lake').length, Object.keys(E.events).length);
+  /* (SP-6: but the ones with a `when`, read with no holds given) */
+  assert.equal(X.eventPool(b, E2, 'lake').length, Object.values(E.events).filter(ev => !ev.when).length);
+  assert.equal(X.eventPool(b, E2, 'lake', () => true).length, Object.keys(E.events).length);
   /* SP-6: an event's `when`: in the pool only while it holds; with no holds given it is left out */
   const E3 = { ...E, events: { only: { ...E.events[id], when: 'genes >= 1' } } };
   assert.deepEqual(X.eventPool(b, E3, 'lake'), []);

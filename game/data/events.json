@@ -383,6 +383,95 @@
     {"text":"Leave","then":["The drone follows you for a bit, then gives up."]}
    ],
    "weight": 1
+  },
+  "back_alley_splicer": {
+   "title": "Back-Alley Splicer",
+   "intro": [
+    "Behind a noodle stand, a man in a stained lab coat sits beside a cooler and a dentist's chair.",
+    "Splicer: Genes. Cheap. No forms, no Bureau, no questions. Some answers."
+   ],
+   "options": [
+    {
+     "text": "Let him work",
+     "cost": 150,
+     "then": ["Splicer: Sit. Do not look at the cooler.","splice wild","Splicer: It will itch. That means it took."]
+    },
+    {
+     "text": "Pay him in DNA",
+     "dna": 8,
+     "then": [
+      "Splicer: DNA! A professional. I will even use the clean needle.",
+      "splice wild",
+      "heal 0.25",
+      "Splicer: Free nap included. Your team is fine. Mostly."
+     ]
+    },
+    {"text":"Walk on","then":["Splicer: Your loss. Probably also your gain."]}
+   ],
+   "weight": 1
+  },
+  "bureau_field_lab": {
+   "title": "Bureau Field Lab",
+   "intro": [
+    "A tent of grey canvas stands by the road, stamped FIELD LAB 4. Inside, a centrifuge hums next to a filing cabinet.",
+    "Clerk: Splicing services. By appointment. You have an appointment now."
+   ],
+   "when": "genes >= 1",
+   "options": [
+    {
+     "text": "Book a splice",
+     "then": ["Clerk: Bring your library. We charge the Gene Bank's rate, plus form 9-G.","splice lib","Clerk: Filed under Found."]
+    },
+    {
+     "text": "Swipe a sample",
+     "then": [
+      "You pocket a vial from the rack. The clerk saw that.",
+      "foe bureau_clerk 1",
+      "Clerk: Fine. Keep it. I will need that in writing.",
+      "gene"
+     ]
+    },
+    {"text":"Leave","then":["Clerk: We will keep your sequence on file. We always do."]}
+   ],
+   "weight": 1
+  },
+  "gene_auction": {
+   "title": "Gene Auction",
+   "intro": [
+    "A crowd stands round a cold box on a trestle table. A sign reads LOST SEQUENCES, FOUND BUYERS.",
+    "Auctioneer: Lot one! A Gene! Whose? Nobody remembers! Do I hear 250?"
+   ],
+   "options": [
+    {"text":"Bid 250 Moneys","cost":250,"then":["The hammer falls. A vial is yours.","gene"]},
+    {"text":"Bid in DNA","dna":15,"then":["Auctioneer: DNA! Real currency! Take the lot and the one after it.","gene 2"]},
+    {"text":"Leave","then":["Auctioneer: Going, going, gone, like your chance."]}
+   ],
+   "weight": 1
+  },
+  "gene_recall": {
+   "title": "Gene Recall",
+   "intro": [
+    "A Bureau drone hovers in your way. Its screen reads NOTICE OF RECALL: SEQUENCE NOT APPROVED FOR CLONE USE.",
+    "Drone: One of your Billies wears an unlicensed Gene. Please hand it in. A refund applies."
+   ],
+   "when": "spliced >= 1",
+   "options": [
+    {
+     "text": "Hand it in",
+     "then": ["The drone extends a very small claw.","unsplice 15","Drone: Thank you for your compliance. Your refund is in DNA."]
+    },
+    {
+     "text": "Refuse",
+     "then": [
+      "Drone: Escalating to a clerk.",
+      "foe bureau_clerk 2",
+      "Clerk: Fine. Keep it. Take this too, so the paperwork balances.",
+      "perk"
+     ]
+    },
+    {"text":"Walk round it","then":["The drone follows you for a while, then files a report."]}
+   ],
+   "weight": 1
   }
  }
 }
