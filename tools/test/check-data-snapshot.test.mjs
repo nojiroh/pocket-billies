@@ -190,3 +190,16 @@ test('check-data: planted quests (TW-3)', t => {
     })
   );
 });
+
+test('check-data: planted residents (RS-1)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'residents.json': R => {
+        R.mo.home = 'nosuchbuilding';
+        R.bertha.first = true;
+        R.gus.levels = ['nosuchunlock'];
+        R.rosa.levels = ['ranch_2'];
+      },
+    })
+  );
+});

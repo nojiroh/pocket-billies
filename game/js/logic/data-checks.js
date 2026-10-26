@@ -71,6 +71,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataRegions: [() => dataRegions, v => (dataRegions = v)],
   // @ts-expect-error -- replaced on purpose
+  dataResidents: [() => dataResidents, v => (dataResidents = v)],
+  // @ts-expect-error -- replaced on purpose
   dataRewards: [() => dataRewards, v => (dataRewards = v)],
   // @ts-expect-error -- replaced on purpose
   dataRigs: [() => dataRigs, v => (dataRigs = v)],
@@ -986,6 +988,31 @@ export function dataQuests(D, valid = () => true) {
     fills(`say.${k}`, /** @type {string} */ (line), k === 'done' || k === 'fail' ? ['{title}'] : []);
   return out;
 }
+// RS-1: residents.json: the schema; a home is a hub building (buildings.json) or one of Copperleaf's (a prop's k),
+// or a cottage; at most one free first resident; a level is an unlocks.json row sold at the resident's home
+/** RS-1: residents.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataResidents(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['residents.json', what]),
+    R = D.residents;
+  if (!R) return [['residents.json', 'missing']];
+  if (!valid('residents.schema.json', R, 'residents.json')) return out;
+  const hub = ((D.maps || {}).copperleaf || {}).props || [],
+    B = D.buildings || {},
+    U = D.unlocks || {},
+    firsts = Object.keys(R).filter(k => R[k].first);
+  if (firsts.length > 1) problem(`more than one first resident: ${firsts.join(', ')}`);
+  for (const [k, r] of Object.entries(R)) {
+    const at = /** @type {any} */ (r).home;
+    if (at !== 'house' && !B[at] && !hub.some((/** @type {any} */ p) => p.k === at))
+      problem(`${k}.home: no building "${at}" (buildings.json or Copperleaf)`);
+    for (const u of /** @type {any} */ (r).levels)
+      if (!U[u]) problem(`${k}.levels: no unlock "${u}" (unlocks.json)`);
+      else if (U[u].at !== at) problem(`${k}.levels: ${u} is sold at ${U[u].at || 'no building'}, not at ${at}`);
+  }
+  return out;
+}
 // RL-12b: events.json: the schema; every intro reads as lines only, every option's need as a condition and its `then`
 // as a script; what they name is there (items, pyramids, loot tables, classes, types, statuses, Perks, biomes, people)
 // and the event commands' arguments make sense
@@ -1383,9 +1410,14 @@ export function dataUnlocks(D, valid = () => true) {
       if (R.when) {
         const p = conditionProblem(R.when);
         if (p) problem('unlocks.json', `${k}.when: ${p.message}`);
-        else
-          for (const u of conditionNames(conditionTree(R.when)).unlock || [])
+        else {
+          const names = conditionNames(conditionTree(R.when));
+          for (const u of names.unlock || [])
             if (!U[u]) problem('unlocks.json', `${k}.when: unlock:${u}, no such unlock`);
+          /* RS-1: a resident it waits for is in residents.json */
+          for (const r of names.resident || [])
+            if (D.residents && !D.residents[r]) problem('unlocks.json', `${k}.when: resident:${r}, no such resident`);
+        }
       }
       for (const r of R.requires || [])
         if (!U[r] || r === k) problem('unlocks.json', `${k}.requires: no unlock "${r}"`);

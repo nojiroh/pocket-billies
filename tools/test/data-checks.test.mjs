@@ -38,6 +38,7 @@ const FAMILIES = [
   'dataBiomes',
   'dataNodeTypes',
   'dataQuests',
+  'dataResidents',
   'dataPerks',
   'dataEvents',
   'dataBanter',

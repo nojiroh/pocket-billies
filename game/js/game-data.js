@@ -48,6 +48,7 @@ expose({
   PYRAMIDS: [() => PYRAMIDS],
   QUESTS: [() => QUESTS],
   RARITY_STAT_TOTALS: [() => RARITY_STAT_TOTALS],
+  RESIDENTS: [() => RESIDENTS],
   REWARDS: [() => REWARDS],
   ROADS: [() => ROADS],
   ROADS_BY_NODE: [() => ROADS_BY_NODE],
@@ -417,6 +418,10 @@ export const MODIFIERS = /** @type {import('../types/game-data').ModifiersData} 
 provide({ MODIFIERS }); /* to-module */
 /* towns track TW-3: a run's quests (quests.json; logic/run-quests.js) */
 export const QUESTS = /** @type {import('../types/game-data').QuestsData} */ (gameData.quests);
+/* residents track RS-1: the people a run can invite to Copperleaf (residents.json; logic/residents.js) */
+export const RESIDENTS = /** @type {Record<string, import('../types/game-data').Resident>} */ (
+  gameData.residents || {}
+);
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
 /** RL-12b: the reward pick's cards */

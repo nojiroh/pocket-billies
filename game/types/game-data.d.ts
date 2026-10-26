@@ -83,6 +83,8 @@ export interface GameData {
   modifiers?: ModifiersData;
   /** TW-3: a run's quests */
   quests?: QuestsData;
+  /** residents track RS-1: the people a run can invite to Copperleaf (game/data/residents.json; logic/residents.js) */
+  residents?: Record<DataId, Resident>;
   pools: Record<DataId, Pool>;
   /** the egg tiers, keyed by the distance in km that hatches them ('2', '5', '10') */
   eggs: Record<string, EggTier>;
@@ -1885,6 +1887,20 @@ export interface QuestsData {
   kinds: Record<QuestKind, QuestKindRule>;
   texts: QuestText[];
   say: Record<'take' | 'yes' | 'no' | 'full' | 'taken' | 'none' | 'done' | 'empty' | 'fail', string>;
+}
+/** residents.json: someone a run can invite to Copperleaf (residents track RS-1) */
+export interface Resident {
+  name: string;
+  role: string;
+  /** a buildings.json key, a Copperleaf building's catalogue key, or 'house' (a free cottage) */
+  home: string;
+  /** the free first resident, offered while nobody lives in Copperleaf */
+  first?: true;
+  /** where a run can meet them, and their weight among those left (0: not yet) */
+  meet: { where: ('town' | 'event')[]; weight: number };
+  /** their service's levels: unlocks.json rows sold at their home (RS-4) */
+  levels: string[];
+  about: string;
 }
 /** events.json: a run's events, loot tables and trainer classes (roguelite track RL-12b; logic/encounters.js) */
 export interface EventsData {
