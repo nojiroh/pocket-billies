@@ -10,7 +10,7 @@
    Scrap) at the foot. The rules are logic/augments.js; every change is saved at once. A hub sheet only. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { buildingRowsHTML, closeModal, modal, render, renderOverlay, toast } from './hooks.js';
+import { buildingRowsHTML, closeModal, modal, provide, render, renderOverlay, toast } from './hooks.js';
 import { FIELD_MOVES, GENES, MOVES, ROBOTS, SPECIES, STAT_IDS, STAT_NAMES } from './game-data.js';
 import { graftLook } from './logic/graft-art.js';
 import {
@@ -49,8 +49,8 @@ expose({
   WORK_SLOT: [() => WORK_SLOT],
   WORK_WHY: [() => WORK_WHY],
   augmentsDo: [() => augmentsDo, v => (augmentsDo = v)],
-  augmentsLevelled: [() => augmentsLevelled, v => (augmentsLevelled = v)],
-  augmentsOpen: [() => augmentsOpen, v => (augmentsOpen = v)],
+  augmentsLevelled: [() => augmentsLevelled, v => ((augmentsLevelled = v), provide({ augmentsLevelled }))],
+  augmentsOpen: [() => augmentsOpen, v => ((augmentsOpen = v), provide({ augmentsOpen }))],
   workBillieHTML: [() => workBillieHTML, v => (workBillieHTML = v)],
   workLog: [() => workLog, v => (workLog = v)],
   workPartLine: [() => workPartLine, v => (workPartLine = v)],
@@ -60,6 +60,7 @@ expose({
   workUp: [() => workUp],
 });
 /* eslint-enable no-func-assign */
+provide({ augmentsLevelled, augmentsOpen });
 /* to-module: end */
 /** a refusal in words */
 const WORK_WHY = {
@@ -215,7 +216,7 @@ export function augmentsOpen() {
 }
 /** a button on the Workshop's sheet: pick a Billie, a slot or a part; fit, take off or upgrade; saved, then drawn
  * again @param {string} what @param {string} [arg] */
-function augmentsDo(what, arg) {
+export function augmentsDo(what, arg) {
   const s = saveData,
     D = geneData(),
     P = workPickNow(),

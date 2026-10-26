@@ -5,6 +5,8 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
+  augmentsLevelled,
+  augmentsOpen,
   closeModal,
   encounterOpen,
   geneBankLevelled,
@@ -49,8 +51,9 @@ import {
   gameData,
 } from './game-data.js';
 import { GRAFT_SLOTS, graftDonors, graftKey, graftParse } from './logic/graft-art.js';
+import { augChoices, augWords } from './logic/augments.js';
 import { wildSplice } from './logic/genes.js';
-import { speciesOf } from './logic/fighters.js';
+import { isRobot, speciesOf } from './logic/fighters.js';
 import {
   addBilly,
   encounterStock,
@@ -59,13 +62,16 @@ import {
   geneData,
   geneLimit,
   healAll,
+  limbKeys,
   makeBilly,
   maxLevel,
   newUid,
+  partMaxHp,
   plural,
   spawn,
   spliceSet,
   spliceWords,
+  unstableTidy,
   xpFor,
 } from './logic/rules.js';
 import { CHALLENGE_IDS, expeditionNumeral, modsMake } from './logic/modifiers.js';
@@ -207,7 +213,7 @@ function debugHTML() {
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
   <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels', 'gold')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide', 'gold')}</div>
   <div class="dbg-row">${debugButtonHTML('bots', 'Give the robot kit', 'gold')}</div><p class="note">Two robots and one of every robot part and gem. Battle Tinker Rho (under Places and test scenes) for a mixed team.</p>
-  <div class="dbg-row">${debugButtonHTML('graftlead', 'Graft the lead', 'gold')}${debugButtonHTML('graftenc', 'Add a grafted encounter')}${debugButtonHTML('graftwild', 'Battle a grafted one', 'red')}${debugButtonHTML('chimerawild', 'Battle a Chimera', 'red')}${debugButtonHTML('graftclear', 'Clear grafts')}</div><div class="dbg-row">${debugButtonHTML('bankopen', 'Open the Gene Bank', 'gold')}${debugButtonHTML('banklevel', 'Gene Bank level +1')}</div><p class="note">Splicing: a random other species’ arm, leg or tail, baked on this device (the species above for an encounter), saved with the Billie. Each bake’s time goes to the debug log: open the team and a battle, then export it.</p>`;
+  <div class="dbg-row">${debugButtonHTML('graftlead', 'Graft the lead', 'gold')}${debugButtonHTML('graftenc', 'Add a grafted encounter')}${debugButtonHTML('graftwild', 'Battle a grafted one', 'red')}${debugButtonHTML('chimerawild', 'Battle a Chimera', 'red')}${debugButtonHTML('graftclear', 'Clear grafts')}</div><div class="dbg-row">${debugButtonHTML('bankopen', 'Open the Gene Bank', 'gold')}${debugButtonHTML('banklevel', 'Gene Bank level +1')}</div><div class="dbg-row">${debugButtonHTML('augopen', 'Open the Workshop', 'gold')}${debugButtonHTML('worklevel', 'Workshop level +1')}${debugButtonHTML('auglead', 'Fit a random Augment on the lead')}${debugButtonHTML('augbreak', 'Break the lead’s Augments')}${debugButtonHTML('escwild', 'Battle an Escaped one', 'red')}</div><p class="note">Splicing: a random other species’ arm, leg or tail, baked on this device (the species above for an encounter), saved with the Billie. Each bake’s time goes to the debug log: open the team and a battle, then export it.</p>`;
   const battle = `<div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Catching works as normal' : 'Every throw catches')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div>`;
   const run = saveData.run
@@ -804,6 +810,56 @@ function debugAction(x) {
       geneBankLevelled();
       said = `Gene Bank Lv ${buildingLevel(s, 'genebank')}: Stability limit ${geneLimit(s)}.`;
       break;
+    }
+    /* SP-5: the Workshop's sheet, its next level for free, an Augment on the lead (free, from robots.json, not your
+       spares), its limbs broken, and an Escaped specimen (the species above) to battle */
+    case 'augopen':
+      closeModal();
+      augmentsOpen();
+      return;
+    case 'worklevel': {
+      const s = saveData,
+        id = `workshop_${buildingLevel(s, 'workshop') + 1}`,
+        R = UNLOCK_DATA.unlocks[id];
+      if (!R) return toast('The Workshop is at its top level.');
+      s.meta.unlocks[id] = 1;
+      unlockGrant(s, R);
+      augmentsLevelled();
+      said = `Workshop Lv ${buildingLevel(s, 'workshop')}.`;
+      break;
+    }
+    case 'auglead': {
+      const m = saveData.team[0],
+        L = m && !isRobot(m) ? augChoices(geneData(), m.sp) : [];
+      if (!L.length) return toast(m ? 'No bot part fits your lead.' : 'No lead.');
+      const [slot, id] = L[Math.floor(Math.random() * L.length)];
+      m.aug = { ...(m.aug || {}), [slot]: { uid: newUid(), id, up: 0 } };
+      if (m.graft) delete m.graft[slot];
+      unstableTidy(m, undefined, geneLimit());
+      if (typeof debugLog !== 'undefined') debugLog.add('augment', `debug: lead ${m.sp} ${slot}=${id}`);
+      said = `Your lead now has ${augWords(geneData(), id)}.`;
+      break;
+    }
+    case 'augbreak': {
+      const m = saveData.team[0],
+        L = m ? limbKeys(m) : [];
+      if (!L.length) return toast('Your lead wears no Augment.');
+      m.partDmg = Object.fromEntries(L.map(k => [k, partMaxHp(m, k)]));
+      said = `Your lead’s ${L.length === 1 ? 'Augment is' : 'Augments are'} broken. A clinic or a rest mends them.`;
+      break;
+    }
+    case 'escwild': {
+      if (activeBattle) return toast('Finish the current battle first.');
+      const L = augChoices(geneData(), sp);
+      if (!L.length) return toast(`No bot part fits ${SPECIES[sp].name}.`);
+      const [slot, id] = L[Math.floor(Math.random() * L.length)],
+        q = { id: newUid(), sp, lvl: lv, coat: $('#dbgCoat').value || undefined, no: ++saveData.serial };
+      q.aug = { [slot]: { uid: '', id, up: 0 } };
+      encountersHere().push(q);
+      if (typeof debugLog !== 'undefined') debugLog.add('augment', `debug: wild ${sp} ${slot}=${id}`);
+      closeModal();
+      startWild(q);
+      return;
     }
     case 'dna':
       saveData.meta.dna += 50;

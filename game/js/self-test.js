@@ -16,11 +16,13 @@ import {
   EVENTS,
   FACTIONS,
   FIELD_MOVES,
+  GENES,
   ITEMS,
   LOCATIONS,
   MOVES,
   PERKS,
   QUESTS,
+  ROBOTS,
   RULES,
   SET_PIECES,
   SHOPS,
@@ -33,6 +35,7 @@ import {
 } from './game-data.js';
 import { rngFn } from './logic/rng.js';
 import { graftDonors, graftRecipe } from './logic/graft-art.js';
+import { augFits } from './logic/augments.js';
 import { wildSplice } from './logic/genes.js';
 import { bankLevel, bankPrice, bankSlots } from './logic/gene-bank.js';
 import { geneEventSlots } from './logic/gene-events.js';
@@ -44,10 +47,15 @@ import {
   encountersHere,
   gateText,
   geneData,
+  healAll,
   makeBilly,
   maxHp,
+  moveUsable,
+  movesOf,
   newUid,
+  partBroken,
   partMaxHp,
+  partsDamaged,
   plural,
   spawn,
   spliceWords,
@@ -141,6 +149,7 @@ import { encounterOpen } from './encounter-screen.js';
 import { questData } from './quest-board.js';
 import { ranchOpen } from './ranch-screen.js';
 import { geneBankDo, geneBankOpen } from './gene-bank-screen.js';
+import { augmentsDo, augmentsOpen } from './augment-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
 import { storyPickTree } from './story-stage.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
@@ -2369,6 +2378,81 @@ async function runFullTest(mode) {
             if (m.graft) throw new Error('Take off left a Gene');
             if (s.meta.dna !== 200 - price) throw new Error('taking it off cost DNA');
             return `${m.sp} ${slot}=${id}: ${price} DNA, ${rows.length} Gene row(s) in battle (${rows.map(f => f.src).join(', ') || 'none'}), taken off free`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+            }
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* SP-5: the Workshop, on a copy of the save: a spare Hydrant Arm fitted on a Billie for Scrap (the sheet driven by
+       its own buttons), its Jet Blast in a wild battle, the arm broken (its move lost), then mended by the heal a
+       town's clinic gives (healAll), and taken off for free back to the spares */
+    if (typeof augmentsOpen === 'function' && !selfTest.stop)
+      await phase(
+        'Workshop: fit an arm, it breaks in battle, the clinic mends it',
+        'dio',
+        async () => {
+          const was = saveData;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              D = geneData(),
+              m = s.team.find(b => !isRobot(b) && augFits(D, b.sp, 'front', 'hydrant'));
+            if (!m) throw new Error('no Billie on the team can take an arm');
+            delete m.aug;
+            delete m.graft;
+            delete m.unstable;
+            delete m.partDmg;
+            s.meta.scrap = 100;
+            s.parts = [...(s.parts || []), { uid: 'selftest-arm', id: 'hydrant', up: 0 }];
+            s.meta.buildings.workshop = 1;
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            augmentsOpen();
+            if (!uiState.modal || !/Workshop/.test(uiState.modal.title)) throw new Error('the sheet didn’t open');
+            augmentsDo('pick', m.uid);
+            augmentsDo('slot', 'front');
+            augmentsDo('part', 'selftest-arm');
+            if (!document.querySelector('#ov .aug-sheet .gene-preview')) throw new Error('no preview for the part');
+            augmentsDo('fit');
+            if (!m.aug || !m.aug.front || m.aug.front.id !== 'hydrant')
+              throw new Error(`not fitted: ${JSON.stringify(m.aug || null)}`);
+            const price = GENES.augment.price.fit;
+            if (s.meta.scrap !== 100 - price)
+              throw new Error(`paid ${100 - s.meta.scrap} Scrap, the price is ${price}`);
+            if (s.parts.some(p => p.uid === 'selftest-arm')) throw new Error('the part is still a spare');
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = { id: newUid(), sp: m.sp, lvl: 3, no: ++s.serial };
+            encountersHere().push(q);
+            startWild(q);
+            if (!activeBattle) throw new Error('the battle didn’t start');
+            const me = activeBattle.sides[0].team.find(b => b.uid === m.uid),
+              jet = ROBOTS.parts.hydrant.move;
+            if (!me || !movesOf(me).includes(jet)) throw new Error('the arm’s move isn’t offered in battle');
+            me.partDmg = { armR: partMaxHp(me, 'armR') };
+            if (moveUsable(me, jet)) throw new Error('a broken arm still gives its move');
+            stopTimers();
+            setActiveBattle(null);
+            healAll();
+            if (partBroken(m, 'armR') || partsDamaged(m)) throw new Error('the heal didn’t mend the arm');
+            uiState.modal = null;
+            augmentsOpen();
+            augmentsDo('pick', m.uid);
+            augmentsDo('slot', 'front');
+            augmentsDo('off');
+            if (m.aug) throw new Error('Take off left an Augment');
+            if (!s.parts.some(p => p.uid === 'selftest-arm')) throw new Error('the part didn’t go back to the spares');
+            return `${m.sp} front=hydrant: ${price} Scrap, ${MOVES[jet].n} offered, broken and mended, taken off free`;
           } finally {
             if (activeBattle) {
               stopTimers();
