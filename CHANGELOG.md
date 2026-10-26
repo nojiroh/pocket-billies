@@ -32,6 +32,14 @@ kept aside in the browser).
   parts (Lv 3) and raise the Stability limit from 3 to 4 and 5 (your Billies only: wild ones stay at 3). Eggs can
   keep a parent's Gene. A spliced Billie costs a starter point more per 2 Stability. Fins count as Water for **Surf**
   and a bear's arm as Ground for **Rock Smash** (the badge is still needed).
+- **Splice events on runs** (splicing track SP-6; prices are placeholders): four new waystation events. A
+  **back-alley splicer** gives one of your Billies a Gene of his own choosing, any part, for Moneys or DNA. The
+  Bureau's **field lab** splices a Gene from your library at the Gene Bank's price (it only turns up once you have a
+  Gene). A **Gene auction** sells Genes you don't have, for Moneys or DNA. A Bureau **Gene recall** asks one of your
+  spliced Billies to hand its Gene back for DNA (it only turns up when you have a spliced Billie); refuse and a clerk
+  battles you for it. A Gene spliced on a run also goes into your library, so it isn't lost if that Billie doesn't
+  come home. Three new Perks: **Petri Dish** (Gene Samples pay 50% more DNA), **Gene Lure** (wild Billies of the next
+  places are spliced twice as often), **Stabilizer Gel** (your Unstable Billies lose half as much HP each turn).
 - **Held items** (roguelite track RL-12c): every Billie has one held-item slot. Eight to start with: Leftover
   Sandwich (heals a little each turn), Snack Pack (a quarter of its HP once a battle, when low), Lucky Coin (wins pay
   25% more), Study Notes (50% more XP), Iron Vest (15% less damage taken), Quick Laces (Speed up as it comes in), Brass

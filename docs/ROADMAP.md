@@ -68,8 +68,10 @@ town node needs it.
   Chimeras on run places, the battle's line, DNA, Gene Samples) built 2026-10-25 on `claude/sp-3-wild-splices` on top
   of SP-2's branch, waiting on the owner's odds and DNA amounts. SP-4 (the Gene Bank: the building on its plot, the
   library, sequencing, the splice sheet, its levels, eggs, starter points, field parts, the Studio's Genes section)
-  built 2026-10-26 on `claude/sp-4-gene-bank` on top of SP-3's branch (main merged in once), waiting on the owner's
-  prices and levels; SP-5 waits for RL-14. Tags `sp-N-done`. Branch `track/splicing`.
+  built 2026-10-26 on `claude/sp-4-gene-bank` on top of SP-3's branch (main merged in once), its numbers placeholders
+  until played. SP-6 (run events: the back-alley splicer, the Bureau field lab, the Gene auction, the Gene recall;
+  three Perks) built 2026-10-26 on `claude/sp-6-run-events` on top of SP-4's branch, waiting on the owner's prices;
+  SP-5 waits for RL-14. Tags `sp-N-done`. Branch `track/splicing`.
 - **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
   out of any room's doorway; "Go outside" stays with the card closed) done 2026-10-24; TW-1 (a town layout: street,
   square, houses with gardens, mapgen's `town` kind) done 2026-10-24; TW-2 (townsfolk, animals, chat) and TW-3 (run

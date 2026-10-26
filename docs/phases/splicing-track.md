@@ -109,6 +109,17 @@ genes.json. A milestone granting DNA was dropped (unlockGrant knew research, scr
 splice. Breeding never read `graft`. genes.json `parts` has no `move` yet (Gene moves are still with the owner).
 `meta.genes` is a set: a Gene is never used up. CLAUDE.md's gamedata.js note is stale (generated, not in git).
 
+**Corrections found by SP-6 (2026-10-26, on SP-4's branch):** SP-3's "the Bureau is a trainer and two event texts"
+undercounts: it is a trainer class (`events.json classes.bureau_clerk`, no trainers/ file) and its name is in four
+events (beans_crate, pyramid_cart, lost_property_auction, surveyor_hole). RL-12b already had a recall
+(`recall_notice`, the `recall` command: a Billie not from home swapped for one of the region) and an auction
+(`lost_property_auction`), so SP-6's are `gene_recall` and `gene_auction`. An option could only cost Moneys, and no
+condition read DNA, the library or a team's splices. Events are drawn only at waystations (nodeTypes `event`), once a
+run, by biome alone: nothing could place one by condition. No effect kind touched splicing, and the Unstable
+drawback (a per-Billie row) never read the run's rows. A splice made on a run lasts only on the Billie kept at the
+run's end (run-state.js runEnd brings the others back as they left). The Studio has no events editor (events.json is
+edited as JSON; its Check runs dataEvents).
+
 ## Sessions
 
 Each session: one cause per commit, lint, type-check and unit tests after each change, the smoke subset, the quick
@@ -170,7 +181,14 @@ battle and repair in towns, upgrades, the Augment art on the Billie's sockets, E
 (genes.json `wild.escaped` is in the data since SP-3, unused; "more near the Bureau" needs a Bureau tag on places).
 Depends on RL-14.
 
-**SP-6 Run events.** The splice events in `events.json` (back-alley splicer, Bureau field lab, Gene auction, recall)
+**SP-6 Run events.** Built 2026-10-26 on `claude/sp-6-run-events`, on top of SP-4's branch (HANDOFF): conditions
+`dna`, `genes`, `spliced`; an option's `dna` price; an event's `when` (read once, when a waystation's event is drawn);
+`logic/gene-events.js`; the commands `dna`, `gene`, `splice wild|lib`, `unsplice`; the events `back_alley_splicer`,
+`bureau_field_lab` (when `genes >= 1`), `gene_auction`, `gene_recall` (when `spliced >= 1`); effect kinds `dna`,
+`splice`, `unstable` and the Perks Petri Dish, Gene Lure, Stabilizer Gel; the Studio's Perks section; the full
+test's step. Every price and Perk number is a placeholder. The Bureau field lab is an ordinary waystation event (there
+are no Bureau nodes); a Bureau tag on places waits for SP-5. Waiting on the owner: the prices.
+ The splice events in `events.json` (back-alley splicer, Bureau field lab, Gene auction, recall)
 on RL-12b's event system, and relics that touch splicing.
 
 **SP-7 Late unlocks.** Head splices (once species passives exist), resizing with a rare XL and recolouring, the
@@ -184,6 +202,8 @@ Seedling line, custom species in ghost teams and daily seeds (with RL-15; names 
   has other sources; Tax as the existing catch.
 - The Gene Bank's look and where it stands in Copperleaf. (SP-4, the owner's go on its plan: HB-5's lab-vault on HB-4b's
   `genebank` plot.)
+- SP-6: the splice events' prices (the back alley 150 Moneys or 8 DNA, the lab at the Gene Bank's price, the auction
+  250 Moneys or 15 DNA for 2 Genes, the recall's 15 DNA) and the three Perks' numbers and rarities (placeholders).
 - The Seedling line's names and art.
 
 ## Done when
