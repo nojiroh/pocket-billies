@@ -62,6 +62,7 @@ import '../../game/js/logic/perks.js';
 import '../../game/js/logic/pixel-density.js';
 import '../../game/js/logic/pixel-ops.js';
 import '../../game/js/logic/pixel-snap.js';
+import '../../game/js/logic/placeholder-art.js';
 import '../../game/js/logic/prop-turn.js';
 import '../../game/js/logic/publish-plan.js';
 import '../../game/js/logic/quality-step.js';
