@@ -9,6 +9,31 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Graphics: Off** (Settings → Display): a third card next to Balanced and Beautiful that turns every effect off:
+  no shadows, grass blades, mist, clouds, sun rays, blur, glow, colour grading, water reflections, far trees and
+  hills, and no time-of-day or weather tint (a steady midday light). The picture stays at full sharpness; Expert
+  dials wait untouched and come back when you pick another card. Map clouds on Auto are off with it.
+- **More props on the routes** (route props track RP-1): the last drawn props in the routes' set pieces (firewood,
+  the scrap heap, the creature statue, tyres, the tollbooth) are 3D models, and 20 new 3D props: a stile, a
+  landing stage, broken columns, a ruined arch and wall corner, a milestone, a trail post, a wayside shrine with a
+  glowing seed, a haystack, a rain barrel, a water pump, beehives, a tool shed, a vegetable bed, a small wind
+  turbine, a solar path light, a seed library, and a Bureau barrier and crate (plus a footbridge, not placed yet).
+  The ruins, farm pen, rest stop, woodcutter's clearing, fishing jetty and Bureau checkpoint use them, and two new
+  set pieces appear on routes: a wayside shrine and a solar garden. A run's places change (generator version 18).
+- **Smart light shafts and the HD-2D fixes** (all off until tested on the phone): cheap sunbeams placed where they
+  show best (through gaps between trees and past houses, with shade behind them, looking into the light, never over
+  you, fading in and out); and switches that fix what the audit found: rays that follow the light's colour and fade
+  under the moon, window light that falls out of a turned house's front, shadow edges that stand still, lamp shadows
+  that hold, shaded tree cores, occlusion that leaves open ground alone, lamp light on water, outlines that follow the
+  camera, even bloom, half-float HDR, steady light on far props, fronts lit as their material, and Building bumpiness
+  (bricks, planks and roof tiles catching the light). Engine > Air, Sun, Lights, Shadows, Colour, World and Quality.
+- **Sturdier after the graphics card is lost** (phase 20): when the browser takes the graphics card away and gives it
+  back (a phone under memory pressure, a driver reset, the debug menu's "Lose the GPU context"), every part of the
+  walk view, the world map and a battle is made again, with none of the hundreds of warnings and the unlit things of
+  before, and the place fades back in once it is drawn. A place now fades in only once its first two frames are drawn
+  (at most 1.5 s later; Studio > Engine > Quality "Warm up before showing", on), so the first draws' hitch happens out
+  of sight. The debug log says how much of the graphics card's memory each kind of thing takes (pictures, render
+  targets, ground, the near ring, meshes, instances) and names any shader compiled after a place had settled.
 - **Battles: rigs reused** (phase 20, a test switch, off for now; Studio > Engine > Quality "Reuse battle rigs"): each
   Billie's picture in a battle is drawn and sent to the graphics card again only when its pose, face or tint changes
   (about 6 times a second) instead of on every frame. Same picture. The diagnostics test now counts a battle's whole
@@ -43,6 +68,13 @@ kept aside in the browser).
   many may light the scene (1-16). Both are in the graphics test.
 - **One light block per frame** is now the only way the renderer sends the frame's light (the old switch and path are
   gone); it looks the same.
+- **Residents live in Copperleaf** (residents track RS-3): whoever you bring home now lives in town. Each has their
+  own look and walks Copperleaf with the townsfolk: out of their door in the morning, at work, on the square around
+  noon, about the streets in the afternoon and indoors at night. Dottie keeps the library, Mo the General store,
+  Bertha the inn, Gus the Workshop, Hayden helps at the ranch, Rosa works at Skyline Station, Seamus sews from a
+  cottage of his own and Dr. Helix keeps the Gene Bank. Tap one for a word: the first time it's about moving in, then
+  about your last run. Walk into their building and its card says who lives there, with a Talk button and their
+  upgrades (the first ones come next). The station's and the ranch's sheets name theirs too.
 - **Residents** (residents track RS-2): runs can now bring people home to Copperleaf. On your first run, **Dottie
   Filewell**, a clerk who walked out of the Bureau with a cardigan full of files, waits in the first row of towns with
   a gold "!": say yes and she moves to Copperleaf. After her, one person a run waits in one town with a **favour**
@@ -100,6 +132,10 @@ kept aside in the browser).
   they leave **salvage**: pick one of two of their parts (kept for the Workshop) or a stack of **Scrap** sent home.
   About a third of runs now have a **Scrapyard**: a place where every wild one is a bot, Reclamation Agents stand guard
   and scrap heaps line the way.
+- **Three new Billies (roster RO-3f, placeholder art)**: Pseudonymph, a faceless mythical Steel blob whose move Fork
+  takes the foe's types for 5 turns; it stands in for a route's rarer one in 2% of routes, at most once a run, and is
+  in no pool or regional dex. Pilotbat evolves into Bingebat at 18 (Flying, then Flying/Psychic), the cave bat, in
+  the cave, thicket and jungle.
 - **You stay visible behind things**: when a building, a tree or anything else stands between the camera and you,
   your outline shows through it in the colour of your top, the thing in front thins out in a soft circle round you,
   and tall things covering you fade a little (now smoothly, and the modelled buildings too). Out in the open nothing

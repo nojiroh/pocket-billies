@@ -937,7 +937,8 @@ SECTIONS.rules = () => {
        numberField('Sandstorm boost', `${bt}.oilShockMult`, { unit: '×', min: 1, max: 3, step: 0.05 }),
        numberField('Sandstorm turns', `${bt}.shockTurns`, { min: 1, max: 20, step: 1 }),
        selectField('Soak turns the target into', `${bt}.spinType`, typeOptions()),
-       numberField('Soak turns', `${bt}.spinTurns`, { min: 1, max: 10, step: 1 })
+       numberField('Soak turns', `${bt}.spinTurns`, { min: 1, max: 10, step: 1 }),
+       numberField('Fork turns (copied types)', `${bt}.forkTurns`, { min: 1, max: 10, step: 1 })
      ) +
      '<h4>Alphas and team battles</h4>' +
      grid(

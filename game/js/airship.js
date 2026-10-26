@@ -16,6 +16,8 @@ import {
   modal,
   provide,
   render,
+  residentNoteHTML,
+  residentsAt,
   runGiveUp,
   runStartSheet,
   runStartable,
@@ -111,7 +113,11 @@ export function stationMenu(p) {
   modal({
     title: escapeHtml((p && p.label) || 'Skyline Station'),
     cls: 'fly-sheet station-sheet',
-    html: (runRow ? `<div class="list">${runRow}</div>` : '') + upHTML,
+    /* RS-3: a resident working at the station (the Cartographer) */
+    html:
+      (typeof residentNoteHTML === 'function' ? residentNoteHTML(residentsAt('station'), 'works here') : '') +
+      (runRow ? `<div class="list">${runRow}</div>` : '') +
+      upHTML,
     btns: [{ l: 'Not now', c: 'quiet', f: closeModal }],
   });
 }

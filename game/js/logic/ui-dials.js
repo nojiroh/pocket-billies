@@ -247,6 +247,36 @@ export const UI_DIALS = [
       dialEase('spring', 'Spring', 'Pops and bounces.'),
     ],
   },
+  {
+    id: 'minimap',
+    title: 'Minimap',
+    help: 'The bottom bar’s middle tile: the ground round you, north up. Walk a while and the bar goes compact.',
+    dials: [
+      {
+        k: 'span',
+        label: 'Metres across',
+        kind: 'range',
+        min: 16,
+        max: 160,
+        step: 1,
+        unit: 'm',
+        help: 'Less is closer.',
+      },
+      {
+        k: 'compactAfter',
+        label: 'Compact after walking',
+        kind: 'range',
+        min: 0,
+        max: 10000,
+        step: 100,
+        unit: 'ms',
+      },
+      { k: 'fullAfter', label: 'Full after stopping', kind: 'range', min: 0, max: 5000, step: 50, unit: 'ms' },
+      { k: 'facilities', label: 'Facility icons', kind: 'bool' },
+      { k: 'trainers', label: 'Trainers', kind: 'bool' },
+      { k: 'billies', label: 'Wild Billies', kind: 'bool' },
+    ],
+  },
   { id: 'layers', title: 'Layers', readOnly: true, help: 'What sits on what (tokens.css). Read only.' },
 ];
 
