@@ -292,6 +292,9 @@ export const ENGINE_DEFAULTS = {
     modelInstances: false,
     /* phase 20 R3 (shadows): the shadow maps' pictures one draw per picture, their models one draw per mesh */
     shadowInstances: false,
+    /* phase 20 R3 (F8): models whose mesh holds still (trees whose leaves sway too) in the far shadow map's cache, the
+       ones that bob or turn out of it */
+    modelShadowCache: false,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -1297,6 +1300,12 @@ export const ENGINE_SPEC = [
         'Shadows in batches',
         'bool',
         'The shadows of grass, bushes, leaves, people and models are drawn in batches, one draw for all the copies of a picture or a model, instead of one draw each. The same shadows; fewer calls to the graphics card.',
+      ],
+      [
+        'modelShadowCache',
+        'Models in the shadow cache',
+        'bool',
+        'The far shadows of trees and other models that stand still are kept from frame to frame instead of drawn again each frame (a tree whose leaves sway still counts: its trunk doesn’t move). Boats, the airship, windmill sails and propellers are drawn each frame, so their far shadows move again.',
       ],
       [
         'gpuTimer',

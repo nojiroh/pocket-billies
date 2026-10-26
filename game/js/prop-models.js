@@ -102,7 +102,7 @@ expose({
   propModelGuard: [() => propModelGuard, v => (propModelGuard = v)],
   propModelImageItems: [() => propModelImageItems, v => ((propModelImageItems = v), provide({ propModelImageItems }))],
   propModelInstanceValues: [() => propModelInstanceValues, v => (propModelInstanceValues = v)],
-  propModelMesh: [() => propModelMesh, v => (propModelMesh = v)],
+  propModelMesh: [() => propModelMesh, v => ((propModelMesh = v), provide({ propModelMesh }))],
   propModelShaders: [() => propModelShaders, v => ((propModelShaders = v), provide({ propModelShaders }))],
   propModelState: [() => propModelState],
   propModelsOn: [() => propModelsOn, v => (propModelsOn = v)],
@@ -127,6 +127,7 @@ provide({
   flushPropModelMeshes,
   propModelArtPaths,
   propModelImageItems,
+  propModelMesh,
   propModelShaders,
   tagPropModel,
 });

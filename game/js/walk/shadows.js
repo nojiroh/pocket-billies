@@ -14,6 +14,7 @@ import {
   drawPropModelShadows,
   drawSolidPropShadows,
   drawStructureShadows,
+  propModelMesh,
   provide,
   roomFloorOf,
 } from '../hooks.js';
@@ -49,6 +50,8 @@ expose({
   fittedShadowPass: [() => fittedShadowPass, v => (fittedShadowPass = v)],
   lampShadowMaps: [() => lampShadowMaps, v => (lampShadowMaps = v)],
   pickShadowLamps: [() => pickShadowLamps, v => (pickShadowLamps = v)],
+  shadowCasterSignature: [() => shadowCasterSignature, v => (shadowCasterSignature = v)],
+  shadowHoldsStill: [() => shadowHoldsStill, v => (shadowHoldsStill = v)],
   shadowInstanceState: [() => shadowInstanceState],
   shadowInstanceVertex: [() => shadowInstanceVertex, v => (shadowInstanceVertex = v)],
   shadowInstancesReady: [() => shadowInstancesReady, v => (shadowInstancesReady = v)],
@@ -299,7 +302,8 @@ function fittedShadowPass(items0, sun, C) {
     };
   const solid = engineSetting('shadows', 'buildings'),
     tr = sun.travel;
-  const still = it => it.k === 'prop' && it.still && !it.vol,
+  const mc = engineSetting('quality', 'modelShadowCache'),
+    still = mc ? shadowHoldsStill : it => it.k === 'prop' && it.still && !it.vol,
     stat = cache ? filterInto(items, still, SHADOW_LISTS.stat) : items,
     dyn = cache
       ? filterInto(items, it => !still(it), SHADOW_LISTS.dyn)
@@ -322,6 +326,7 @@ function fittedShadowPass(items0, sun, C) {
         sc.heights ? sc.heights.length : 0,
         typeof buildingsOn === 'function' && buildingsOn() ? 1 : 0,
         typeof buildingState !== 'undefined' ? buildingState.made || 0 : 0,
+        mc ? shadowCasterSignature(stat) : '',
       ].join('|')
     : '';
   const SF = gpuState.fb.shadow;
@@ -550,4 +555,27 @@ function drawShadowSpritesInstanced(SH, L, sun, ca, lamp) {
   gpuTag(0);
   gl.bindVertexArray(null);
   return miss;
+}
+/* ---------- phase 20 R3 (F8): models in the far map's cache (Engine > Quality "Models in the shadow cache") ----------
+   A model's shadow is its mesh, which never sways (only its leaf pictures do): a tree whose leaves sway is cached
+   like any still prop. A model that moves is not: one that bobs (moored, or rocking on the water), tumbles, has
+   turning parts (sails, propellers) or moves along a path; without the setting those were cached when the prop was
+   otherwise still, so their far shadows stood still. Everything else as before. */
+function shadowHoldsStill(it) {
+  if (it.k !== 'prop' || it.vol) return false;
+  if (!it.vox) return !!it.still;
+  if (it.bobs || it.spin || (it.p && it.p.moving) || (it.M && it.M.bob)) return false;
+  const m = typeof propModelMesh === 'function' ? propModelMesh(it.voxPath, it.vox) : null;
+  return !!m && !(m.spins && m.spins.length);
+}
+/* which items the cached map holds: a number from each one's place and whether it is a model, in order, so a model
+   that finished loading (it was its picture before) or an item gone or added draws the cache again */
+function shadowCasterSignature(L) {
+  let h = L.length | 0;
+  for (const it of L) {
+    h = Math.imul(h ^ Math.round(it.x * 64), 0x01000193) | 0;
+    h = Math.imul(h ^ Math.round(it.z * 64), 0x01000193) | 0;
+    h = Math.imul(h ^ (it.vox ? 7 : 3), 0x01000193) | 0;
+  }
+  return (h >>> 0).toString(36);
 }

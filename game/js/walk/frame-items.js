@@ -127,6 +127,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
     out.push({
       k: far ? 'farp' : 'prop',
       still: !far && !M.sway && !S.bob && !S.flag && !p.moving,
+      /* phase 20 R3: it rocks on the water (its model moves with it; walk/shadows.js keeps it out of the far cache) */
+      bobs: !far && !!S.bob,
       lk,
       p,
       M,
