@@ -32,8 +32,10 @@ import { rngFn } from './logic/rng.js';
 import { graftDonors, graftRecipe } from './logic/graft-art.js';
 import { wildSplice } from './logic/genes.js';
 import { bankLevel, bankPrice, bankSlots } from './logic/gene-bank.js';
+import { geneEventSlots } from './logic/gene-events.js';
 import { isRobot } from './logic/fighters.js';
 import {
+  billyName,
   canEnter,
   encountersHere,
   gateText,
@@ -1983,6 +1985,99 @@ async function runFullTest(mode) {
           }
         },
         3,
+        60
+      );
+    /* SP-6: a run's splice events, on a copy of the save on a run: the back-alley splicer splices the lead (paid in
+       Moneys, the event's sheet driven by its own buttons), the splice in a wild battle, then the Gene recall takes the
+       Gene off for its DNA (the Gene stays in the library) */
+    if (typeof encounterOpen === 'function' && typeof runStartOn === 'function' && !selfTest.stop)
+      await phase(
+        'Splice events: the back alley splices, the recall takes it back',
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            /* tap through an event: "Go on" and the like, the Billie `uid` when a pick lists it, the Gene when a
+               recall asks; until "Keep walking" */
+            drive = async (/** @type {string} */ uid, /** @type {number} */ opt) => {
+              let picked = false;
+              for (let i = 0; i < 80; i++) {
+                await selfTestSleep(60);
+                const M = uiState.modal;
+                if (!M || M.cls !== 'event-sheet') continue;
+                const B = M.btns || [];
+                if (B.length === 1 && /Keep walking/.test(B[0].l)) return M;
+                if (!picked && B.length > 1) {
+                  /* the event's options first, then a pick of Billies or Genes: the lead's (by its name) */
+                  picked = true;
+                  if (opt >= 0) {
+                    B[opt].f();
+                    opt = -1;
+                    picked = false;
+                    continue;
+                  }
+                  const m = saveData.team.find(b => b.uid === uid),
+                    k = B.findIndex(b => m && b.l.includes(escapeHtml(billyName(m))));
+                  if (k < 0) throw new Error(`the pick doesn’t list ${m ? billyName(m) : uid}`);
+                  B[k].f();
+                  continue;
+                }
+                B[0].f();
+              }
+              throw new Error('the event never ended');
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.modal = null;
+            uiState.mq = [];
+            if (s.run) runRestore(s);
+            runStartOn(s, runStartPlan('SELFTESTSPLICE', { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            const D = geneData(),
+              m = s.team.find(b => !isRobot(b) && geneEventSlots(D, b).length);
+            if (!m) throw new Error('no Billie on the run’s team can take a Gene');
+            delete m.graft;
+            delete m.unstable;
+            s.se = 1000;
+            Object.assign(s.meta, { dna: 0, genes: [] });
+            setSaveData(s);
+            encounterOpen(null, 'back_alley_splicer');
+            await drive(m.uid, 0);
+            const g = m.graft ? Object.entries(m.graft)[0] : null;
+            if (!g) throw new Error('the back alley spliced nothing');
+            if (s.se !== 1000 - EVENTS.events.back_alley_splicer.options[0].cost) throw new Error(`Moneys ${s.se}`);
+            if (!s.meta.genes.includes(g[1])) throw new Error('the Gene isn’t in the library');
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = { id: newUid(), sp: m.sp, lvl: 3, no: ++s.serial };
+            encountersHere().push(q);
+            startWild(q);
+            if (!activeBattle) throw new Error('the battle didn’t start');
+            const me = activeBattle.sides[0].team.find(b => b.uid === m.uid);
+            if (!me || !me.graft) throw new Error('the spliced Billie isn’t spliced in battle');
+            stopTimers();
+            setActiveBattle(null);
+            uiState.modal = null;
+            encounterOpen(null, 'gene_recall');
+            await drive(m.uid, 0);
+            if (m.graft) throw new Error(`the recall left ${JSON.stringify(m.graft)}`);
+            if (!s.meta.genes.includes(g[1])) throw new Error('the recall took the Gene out of the library');
+            return `${m.sp} ${g[0]}=${g[1]} for ${1000 - s.se} Moneys, spliced in battle; recalled for ${s.meta.dna} DNA`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+            }
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        4,
         60
       );
     /* v47: the opening's fall into the Hollow Earth (the bowl's own ground, past the Inner Sun), timed */
