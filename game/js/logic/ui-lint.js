@@ -81,7 +81,7 @@ export const UI_LINT_CEILING = {
   shadow: 178,
   keyframes: 77,
   duration: 255,
-  font: 18,
+  font: 10,
   colour: 669,
   important: 194,
   zindex: 60,
@@ -151,7 +151,8 @@ export function lintCssAll(text, file = '') {
   /** @type {[string, number][]} */
   const raw = [];
   const add = (rule, at) => raw.push([rule, at]);
-  for (const { prop, value, at } of declarations(css)) {
+  // UI-6b: an @font-face block names the family it defines, so its font-family is not a raw font
+  for (const { prop, value, at } of declarations(css.replace(/@font-face\s*\{[^{}]*\}/g, blank))) {
     // what's left once vars are taken out (each var as spaces, so places hold)
     const v = value.replace(/var\([^()]*(?:\([^()]*\)[^()]*)*\)/g, blank);
     const lengths = () => [...v.matchAll(LENGTH)].filter(m => parseFloat(m[0]) !== 0).map(m => at + m.index);
