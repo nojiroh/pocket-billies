@@ -152,7 +152,7 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
 | 3 | WA-4 | R | (**done** 2026-10-25, notes below) **The sea and the coast.** Surf as hard stepped bands breaking along the coast, foam round rocks, a slow tide (the waterline and wet sand move, tide pools), reef shallows (turquoise, see-through), kelp, sandbars, a sun and a moon path on the open sea, a storm sea from the forecast. | look-water --scene=test_island, island-shots, smoke |
 | 3 | WA-5a | G | (**done** 2026-10-25, notes below) **New kinds' play and weather on water.** Hot springs heal the party, oases, marsh and bog slow you (their encounter pools, hidden items in reeds), rapids block, floods in storms keep the main path open, ponds freeze in snow, rain rings (exist). | unit tests (a flooded path keeps the main path open; heal once a run), smoke |
 | 3 | WA-7 | B | (**done** 2026-10-26, notes below) **World map and battles.** The bowl's rivers and seas in the same tones and steps (the shared snippet); water backdrops on battle stages by a node's biome. | bowl map test, battle stage pictures, smoke |
-| 4 | WA-5b | R | **Kinds as a texture and water life.** Kind looks in a small texture (no cap at 9), the new kinds drawn (steam on hot springs, rapids' white water, bog's scum, reef, cave water lit by its own glow); lily pads that bob, reeds that sway, frogs, fish that jump (sprites), birds that dive. | look-water, smoke |
+| 4 | WA-5b | R | (**done** 2026-10-26, notes below) **Kinds as a texture and water life.** Kind looks in a small texture (no cap at 9), the new kinds drawn (steam on hot springs, rapids' white water, bog's scum, reef, cave water lit by its own glow); lily pads that bob, reeds that sway, frogs, fish that jump (sprites), birds that dive. | look-water, smoke |
 | 4 | WA-9 | G | **Studio tools.** A river brush (source to mouth, regenerates its bed), a waterfall placer (lip, width, pool, climb), a water-kind painter, a live preview; STUDIO.md. | Studio check, a hand-placed fall survives a regenerate |
 | 5 | WA-8 | (alone) | **Phone pass, sounds, baseline.** Quality tiers for water (bands, mist, reflections) measured at the bench; the owner's phone frame time; water sound beds (falls by height, rapids, surf, lapping, the plunge pool) with SND-6's mix; the quick-check baseline made again on purpose. | full quick check, the owner's phone |
 
@@ -440,3 +440,46 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
   island; `--battle`: a battle with water 7-11 m away in clear view and none ahead; each with Pixel water on and off),
   validation/look-water-bowl-before/ and -after/ (not committed). On the hub zoom the lagoon's dither between its
   first two tones reads as scattered dots: the phone should say if it wants fewer tones there.
+
+## WA-5b notes (2026-10-26)
+- The owner's answers: the small hooks outside lane R allowed (prop-look.js, frame-items.js, sprites.js, and
+  ambient-life.js, which no lane owns); the `reef` kind takes the full turquoise and the sea's own `w` shallows a softer,
+  paler one; water life fills the gaps (ducks, frogs that leap in, gulls, jumping fish and bobbing lily pads already
+  existed), frogs stay as they are.
+- **Kinds as a texture** (`walk/water.js kindTexture`): an RGBA16F texture, a column a kind (its index in
+  `WATER_KIND_LOOKS`), six rows (0 deep and scum, 1 shallow, 2 clarity caustics foam ripples, 3 glow murk weed mode,
+  4 sea white coral bubbles, 5 the glow's colour), read with `texelFetch` on unit 15 (units 0-14 are taken by the walk
+  draws). No cap: a new kind is a new entry in `WATER_KIND_LOOKS`. What a kind does is a flag on its look, not its
+  index: `sea` (the swell, the storm's heave, surf, whitecaps, kelp, the sun's path, the tide, the shallows' share),
+  `run` (leaves, a rock's full foam), `steam` (2.2 a hot spring), `swim: 0` (no ducks, no frog dives), `white`,
+  `bub`, `coral`, `scum`, `glowC`.
+- `waterKindLookup` knows the fifteen (it was the nine), so a `reef` or any new kind's rectangle draws as its own kind.
+  `WATER_KIND_BASE` (logic/water-kinds.js) is now only what a kind fishes as (fishing.js).
+- **The six**: rapids (white water over the whole surface, carried down the flow; WA-3a's `rapids` stretches keep the
+  flow map's white water); hot spring (milky turquoise, bubbles opening as one-texel rings, three steam puffs a cell
+  and thicker); oasis (clear green over the bed, fish); bog (dark olive water with drifting rafts of brown scum in
+  three tones and slow gas bubbles; the first try read as tilled mud); reef (the full turquoise, a clear bed, coral
+  clumps in pink, orange, violet and yellow on its shallow bed with their fans' edges swaying in steps, the sea's swell,
+  surf and tide, no kelp); cave (deep blue-black, lit from below in its own cyan, little sky in it, its light thrown up
+  the walls by it as the sun's shimmer is: `uWGlow`, the brightest glowing kind in the scene).
+- **Rain rings** skip lava and ice. **Ducks** swim and frogs dive only where a duck could (not lava, ice, rapids, a hot
+  spring): before, the test scene's ducks sat on the ice pool.
+- **A storm's flood** (WA-5a's ask: "banks above the water's level"): the flooded cells sat at their bank's ground less
+  0.12 m and joined a pond's one level, so the pond rose into a raised slab, each bank edge spilled as a cascade and
+  the grass under them was painted as a stream bed. Now they stay out of the pond's level and the cascades, meet the
+  water they rose from at its level, the shoreline (and so the grass and the wet rim) is the dry scene's, and they draw
+  as pixel-edged standing puddles over the grass: a muddy, see-through film with little sky (depth -1 in the mesh marks
+  them). Read from `logic/water-weather.js waterWeatherDry`, nothing changed there.
+- **Water life**: a bird (the fx sheet's `bird`, never used before) now and then circles over water deep enough for fish
+  near you by day (none indoors, at night or in a storm), dives in with a splash and flies off low; spray bursts round
+  you while you climb a waterfall (`P.climb.fall`); steam, splashes and the birds on the 32 grid in `water.frames`
+  steps; lotus and duckweed bob as lily pads do, in steps; reeds, cattails and bulrushes bend away as you pass;
+  wild Billies waiting in shallows are cut at the waterline (`frame-items.js wadeItemLift`); the Surf mount's wake uses
+  the wake's own rings (`addWakeRipple`).
+- **Cost** (the headless browser draws in software: no frame times): every water pixel does seven texture fetches for
+  its kind instead of uniform reads (a 15 x 6 texture, in the cache); the coral, bubble and white-water passes run
+  only on their kinds; the vertex shader's fetch only on a stormy sea. The ground shader adds one uniform to its wall
+  shimmer. Building a flooded scene: a mask the size of the water grid. The phone should compare the frame time at
+  test_water's hot spring and rapids and on Copperleaf's beach (the reef shallows) with Pixel water on and off, and in
+  a run's cave with cave water.
+
