@@ -17,6 +17,8 @@ import {
   JINGLES,
   coatRoll,
   environmentOdds,
+  factionBotSp,
+  factionWildChance,
   fieldMoveState,
   fieldMoveText,
   jingle,
@@ -40,6 +42,7 @@ import {
   COATS,
   EGGS,
   EGG_TIERS,
+  FACTIONS,
   FIELD_MOVES,
   ITEMS,
   LINE_BY_ID,
@@ -192,6 +195,8 @@ expose({
   setTrip: [() => setTrip, v => setSetTrip(v)],
   // @ts-expect-error -- replaced on purpose
   spawn: [() => spawn, v => (spawn = v)],
+  // @ts-expect-error -- replaced on purpose
+  spawnBot: [() => spawnBot, v => (spawnBot = v)],
   // @ts-expect-error -- replaced on purpose
   spawnRare: [() => spawnRare, v => (spawnRare = v)],
   speciesStep: [() => speciesStep],
@@ -861,6 +866,34 @@ export function spawnRare(node, rnd) {
   q.rare = 1;
   return q;
 }
+/** RL-14: a run place's wild bot (factions.json), or null: a draw against its faction's chance (none for a place that
+ * can't have one), then the bot by weight and its level, all from rnd; it waits in the tall grass, never an Alpha. The
+ * first faction (by id) that can field one here @param {number} where the place (a location) @param {() => number} rnd */
+export function spawnBot(where, rnd) {
+  const L = LOCATIONS[where],
+    run = saveData.run,
+    node = L && L.runNode != null && run && run.map ? run.map.nodes[L.runNode] : null;
+  if (!node) return null;
+  for (const id of Object.keys(FACTIONS).sort()) {
+    const F = FACTIONS[id],
+      chance = factionWildChance(F, node);
+    if (!(chance > 0) || rnd() >= chance) continue;
+    const bots = Object.keys(F.bots)
+        .sort()
+        .filter(k => F.bots[k].weight > 0),
+      B = F.bots[pickWeighted(/** @type {[string, number][]} */ (bots.map(k => [k, F.bots[k].weight])), rnd)],
+      P = encounterPoolHere(where),
+      q = {
+        id: newUid(),
+        sp: factionBotSp(B),
+        lvl: P.lv[0] + Math.floor(rnd() * (P.lv[1] - P.lv[0] + 1)),
+        no: ++saveData.serial,
+      };
+    wildList(where).push(q);
+    return q;
+  }
+  return null;
+}
 /* RL-2: every outcome draw (species, level, sizes, coat, Alpha) comes from rnd; a run passes its own stream */
 export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
   const P = encounterPoolHere(node),
@@ -884,6 +917,10 @@ export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
       g = list.filter(([id]) => !SPECIES[id].types.some(t => typeEffectiveness(t, my) > 1));
     if (g.length) list = g;
   }
+  /* RL-14: on a run place, now and then the Bureau's bot instead (factions.json wild; every one in a scrapyard). Only
+     a place that can have one draws for it, so the others' Billies stay as they were */
+  const bot = !force && !gentle ? spawnBot(node, rnd) : null;
+  if (bot) return bot;
   const sp = force || pickWeighted(list, rnd),
     lvl = P.lv[0] + Math.floor(rnd() * (P.lv[1] - P.lv[0] + 1));
   const q = {

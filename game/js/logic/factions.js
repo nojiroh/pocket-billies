@@ -11,6 +11,7 @@
 /** @import { Faction, FactionBot } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   factionBotEntry: [() => factionBotEntry],
@@ -22,12 +23,14 @@ expose({
   // @ts-expect-error -- replaced on purpose
   factionOfClass: [() => factionOfClass, v => (factionOfClass = v)],
   // @ts-expect-error -- replaced on purpose
-  factionWildChance: [() => factionWildChance, v => (factionWildChance = v)],
+  factionWildChance: [() => factionWildChance, v => ((factionWildChance = v), provide({ factionWildChance }))],
 });
 /* eslint-enable no-func-assign */
+provide({ factionWildChance });
 /* to-module: end */
 /** a bot's sp, as a robot's (fighters.js robotSp: 'bot:<gem>.<torso>.<armL>.<armR>.<legs>') @param {FactionBot} B */
 export const factionBotSp = B => 'bot:' + [B.gem, B.torso, B.armL, B.armR, B.legs].join('.');
+provide({ factionBotSp }); /* to-module */
 
 /** a bot as a trainer's team entry (game-data.js trainerTeam builds it with new parts; its name is its nickname)
  * @param {FactionBot} B @param {number} lvl */

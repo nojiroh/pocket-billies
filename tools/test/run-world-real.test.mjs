@@ -344,3 +344,54 @@ test("RT-4: a run route's first visit keeps the last of its stock for a rarer on
     data.worldHubBack();
   }
 });
+
+test("RL-14: a run place's wild ones are now and then the Bureau's bots: from their row on, in their biomes", () => {
+  const s = startedSave(GAME_DATA.rules.start.starters[0] + '0', 5),
+    run = runOf('RL14BOTS'),
+    made = runScenesMake(run, WORLD_DATA),
+    W = runWorldTables(run, data.LOCATIONS[0], WORLD_DATA),
+    B = GAME_DATA.factions.factions.bureau,
+    node = run.map.nodes[0],
+    was = { type: node.type, row: node.row, biome: node.biome };
+  s.run = run;
+  s.trip = { node: 0, plan: [] };
+  runArrive(s, 0, MAP_DATA);
+  data.worldPut({ ...W, maps: Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, made[i]])) });
+  try {
+    /* place 1 stands in for a route deep enough in a bot biome: many draws, about the chance of them bots */
+    Object.assign(node, { type: 'route', row: B.wild.fromRow, biome: B.wild.biomes[0] });
+    let n = 0,
+      bots = 0;
+    for (let k = 0; k < 400; k++) {
+      const rnd = modules.rng.rngFn('RL14BOTS', 'wild|' + k),
+        q = fn('spawn')(false, null, 1, rnd);
+      n++;
+      if (!q.sp.startsWith('bot:')) continue;
+      bots++;
+      const found = modules.factions.factionBotOf(GAME_DATA.factions.factions, q.sp);
+      assert.ok(found, `${q.sp} is a Bureau bot`);
+      assert.ok(q.lvl >= W.pools.run_0.lv[0] && q.lvl <= W.pools.run_0.lv[1], `level ${q.lvl}`);
+      assert.ok(!q.alpha && !q.hab && !q.coat, 'never an Alpha, in the grass, no coat');
+    }
+    assert.ok(bots / n > B.wild.chance / 2 && bots / n < B.wild.chance * 2, `${bots} bots of ${n}`);
+    /* the save keeps a wild bot (saves.js validSave and saveFill) */
+    const list = fn('wildList')(1),
+      keep = list.filter(q => q.sp.startsWith('bot:')).slice(0, 2);
+    list.splice(0, list.length, ...keep);
+    assert.equal(fn('validSave')(JSON.parse(JSON.stringify(s))), true);
+    const back = fn('saveFill')(JSON.parse(JSON.stringify(s)));
+    assert.deepEqual(back.wild.run_0.list, keep, 'kept on a reload');
+    /* a row too early, or a biome without bots: none */
+    for (const at of [
+      { row: B.wild.fromRow - 1, biome: B.wild.biomes[0] },
+      { row: 8, biome: Object.keys(GAME_DATA.biomes).find(b => !B.wild.biomes.includes(b)) },
+    ]) {
+      Object.assign(node, at);
+      for (let k = 0; k < 100; k++)
+        assert.ok(!fn('spawn')(false, null, 1, modules.rng.rngFn('RL14NONE', 'wild|' + k)).sp.startsWith('bot:'));
+    }
+  } finally {
+    Object.assign(node, was);
+    data.worldHubBack();
+  }
+});

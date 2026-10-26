@@ -14,6 +14,7 @@ import { provide, ranchOpen, soundEffect } from './hooks.js';
 import { clamp } from './util.js';
 import { RULES, SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
 import { graftOf } from './logic/graft-art.js';
+import { speciesById } from './logic/fighters.js';
 import { billyName, encountersHere, findBilly, maxHp } from './logic/rules.js';
 import {
   pastureBillies,
@@ -86,7 +87,8 @@ export const worldBillies = {
 provide({ worldBillies }); /* to-module */
 const BILLY_FRAME_CACHE_MAX = 320;
 function worldBillyRig(sp, view, coat, graft) {
-  if (!SPECIES[sp] || typeof rigParts !== 'function') return null;
+  /* RL-14: a wild bot is drawn from its parts (skeleton-rig.js robotRigParts) */
+  if (!speciesById(sp) || typeof rigParts !== 'function') return null;
   const k = view === 'back' ? RIG_BACK_VIEW : 1;
   let R = null;
   try {
@@ -156,7 +158,7 @@ function worldBillyFrame(sp, view, pose, t, seed, build, coat, graft) {
 /* metres per rig pixel: a billionaire stands about 0.9 of its listed height, between 0.6 and 2 m, on the art grid
    (v34); the maths is logic/pixel-density.js densityWorldMpp (Studio plan Phase 5, T5.7: the Studio reports it) */
 function worldBillyMetersPerPixel(sp, R, big = 1) {
-  return densityWorldMpp(SPECIES[sp].ht, R.geo, R.BH, big);
+  return densityWorldMpp(speciesById(sp).ht, R.geo, R.BH, big);
 }
 export function worldBillyItem(k, sp, view, pose, t, seed, x, z, o = {}) {
   const im = worldBillyFrame(sp, view, pose, t, seed, o.build, o.coat, o.graft);

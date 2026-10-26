@@ -26,6 +26,7 @@ import {
 import { clamp, random } from '../util.js';
 import {
   BATTLE_STAGES,
+  FACTIONS,
   ITEMS,
   MOVES,
   PASSIVE,
@@ -42,7 +43,18 @@ import {
   typeEffectiveness,
 } from '../game-data.js';
 import { graftOf, graftSet } from './graft-art.js';
-import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, moveSources, robotGemDef, robotRules, speciesOf } from './fighters.js';
+import {
+  ROBOT_LIMBS,
+  ROBOT_SLOT_NAMES,
+  fitFromIds,
+  isRobot,
+  isRobotSp,
+  moveSources,
+  robotGemDef,
+  robotIdsFromSp,
+  robotRules,
+  speciesOf,
+} from './fighters.js';
 import {
   addBilly,
   billyName,
@@ -54,6 +66,7 @@ import {
   gainXp,
   hereLocation,
   makeBilly,
+  makeRobot,
   maxHp,
   moveUsable,
   partBroken,
@@ -66,6 +79,7 @@ import {
   stat,
   xpFor,
 } from './rules.js';
+import { factionBotOf } from './factions.js';
 import { fxCatch, fxDamage, fxOfBillie, fxPinchHeal, fxStages, fxTurnHeal, fxXp } from './effects.js';
 import { makeBattle, newFieldState } from './battle-state.js';
 /* eslint-disable no-func-assign */
@@ -173,6 +187,8 @@ expose({
   startTrainer: [() => startTrainer, v => (startTrainer = v)],
   // @ts-expect-error -- replaced on purpose
   startWild: [() => startWild, v => (startWild = v)],
+  // @ts-expect-error -- replaced on purpose
+  startWildBot: [() => startWildBot, v => (startWildBot = v)],
   teamNeedsHp: [() => teamNeedsHp],
   // @ts-expect-error -- replaced on purpose
   turnCapCheck: [() => turnCapCheck, v => (turnCapCheck = v)],
@@ -1065,6 +1081,11 @@ export function bossAlpha(e, hpMult) {
 /** a wild Billie's battle. Studio plan T3.2: `o.host` and `o.extra` (a run battle's seed, weather and Perks:
  * logic/run-loop.js runBattleExtra) as for startTrainer, so the run's simulation starts it as the page does */
 export function startWild(q, o = {}) {
+  /* RL-14: a wild bot (its sp names its gem and parts) is built from new parts and goes by its faction's name */
+  if (isRobotSp(q.sp)) {
+    startWildBot(q, o);
+    return;
+  }
   const made = { build: encounterBuild(q), coat: q.coat },
     foe = q.alpha ? makeAlpha(q.sp, q.lvl, made) : makeBilly(q.sp, q.lvl, made);
   if (graftOf(q)) graftSet(foe, graftOf(q)); /* SP-1: a grafted wild Billie stays grafted in battle */
@@ -1089,6 +1110,37 @@ export function startWild(q, o = {}) {
   }
   if (CATCH_RULES.luxury.includes(SPECIES[q.sp].line))
     battleSay(`It looks too picky for ${PYRAMIDS.pyramid ? 'a ' + PYRAMIDS.pyramid.n : 'cheap pyramids'}.`);
+  const K = liveActors(0);
+  K.forEach((k, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
+  sayBattleFx();
+  battleHost().open();
+}
+/** RL-14: a wild bot's battle (startWild), single, never an Alpha; it can't be caught (catchable) @param {any} q
+ * @param {any} [o] */
+export function startWildBot(q, o = {}) {
+  const ids = /** @type {any} */ (robotIdsFromSp(q.sp)),
+    foe = makeRobot(ids.gem, fitFromIds(ids), q.lvl),
+    who = factionBotOf(FACTIONS, q.sp);
+  if (who) foe.nick = who.B.name;
+  if (
+    !newBattle('wild', [foe], {
+      qid: q.id,
+      area: battleStageKey(),
+      fmt: 'single',
+      ...(o.host && { host: o.host }),
+      ...o.extra,
+    })
+  )
+    return;
+  const nm = billyName(foe),
+    F = who && FACTIONS[who.faction];
+  battleSay(
+    `${F && F.short ? F.short[0].toUpperCase() + F.short.slice(1) + '’s ' : 'A '}${nm} rolled out of the grass!`,
+    {
+      k: 'wild',
+    }
+  );
+  battleSay(`“Bzzt. Item ${q.no || 0} located.”`, { k: 'cry', si: 1 });
   const K = liveActors(0);
   K.forEach((k, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
   sayBattleFx();
