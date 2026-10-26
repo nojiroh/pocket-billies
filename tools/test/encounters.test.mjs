@@ -52,7 +52,15 @@ test('encounters: a place holds the same event for the same run, kept; a played 
   for (const ev of Object.values(E2.events)) ev.biomes = ['lake'];
   assert.deepEqual(X.eventPool(b, E2, 'meadow'), []);
   /* RT-3: weight 0 is never drawn (the Bureau checkpoint's event, opened by its agent) */
-  assert.equal(X.eventPool(b, E2, 'lake').length, Object.values(E.events).filter(ev => ev.weight > 0).length);
+  assert.equal(
+    X.eventPool(b, E2, 'lake').length,
+    Object.values(E.events).filter(ev => ev.weight > 0 && !ev.resident).length
+  );
+  /* RS-2: a resident event only when the run's resident can be met at one */
+  const res = Object.keys(E.events).filter(k => E.events[k].resident);
+  assert.ok(res.length >= 1, 'a resident event');
+  assert.ok(!X.eventPool(b, E, undefined).some(k => res.includes(k)), 'not while nobody can be met');
+  assert.ok(res.every(k => X.eventPool(b, E, undefined, true).includes(k)), 'in the pool while someone can');
 });
 
 test('encounters: an option is open when its need holds and the Moneys are there; a closed one says why', () => {

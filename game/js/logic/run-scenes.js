@@ -72,6 +72,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runTownQuest: [() => runTownQuest, v => (runTownQuest = v)],
   // @ts-expect-error -- replaced on purpose
+  runTownResident: [() => runTownResident, v => (runTownResident = v)],
+  // @ts-expect-error -- replaced on purpose
   runWildLevels: [() => runWildLevels, v => (runWildLevels = v)],
   // @ts-expect-error -- replaced on purpose
   runWorldTables: [() => runWorldTables, v => (runWorldTables = v)],
@@ -410,6 +412,22 @@ export function runTownQuest(run, i, scene, data) {
   scene.people = (scene.people || []).concat([
     { id: 'quest', who: 'folk:' + rnd.int(1000, 99999), name, x: at.x, z: at.z, dir: 'down', lines: [], quest: 1 },
   ]);
+}
+/** RS-2: a run's resident standing in a town (scene.people id 'resident', `resident: <id>`: quest-board.js offers
+ * their favour or their invite), on the first of the town's local spots nobody stands on (mapgen.js: the square's
+ * first, then the houses' gates), else beside the square's. Their look is their own (seeded by their id), the same in
+ * every run @param {any} scene @param {string} id @param {string} name */
+export function runTownResident(scene, id, name) {
+  if (!scene) return;
+  const people = scene.people || [],
+    spots = (scene.spots || []).filter((/** @type {any} */ s) => s.kind === 'local'),
+    free = spots.find(
+      (/** @type {any} */ s) => !people.some((/** @type {any} */ p) => Math.hypot(p.x - s.x, p.z - s.z) < 1)
+    ),
+    at = free || (spots[0] ? { x: spots[0].x + 1.2, z: spots[0].z } : null);
+  if (!at) return;
+  const who = 'folk:' + rngFrom('resident|' + id, 'look').int(1000, 99999);
+  scene.people = people.concat([{ id: 'resident', who, name, x: at.x, z: at.z, dir: 'down', lines: [], resident: id }]);
 }
 /** every scene of a run's map, in order (each after its parents), by map node @param {Run} run
  * @param {RunWorldData} data @returns {any[]} */

@@ -88,6 +88,8 @@ export interface GameData {
   modifiers?: ModifiersData;
   /** TW-3: a run's quests */
   quests?: QuestsData;
+  /** residents track RS-1: the people a run can invite to Copperleaf (game/data/residents.json; logic/residents.js) */
+  residents?: Record<DataId, Resident>;
   pools: Record<DataId, Pool>;
   /** the egg tiers, keyed by the distance in km that hatches them ('2', '5', '10') */
   eggs: Record<string, EggTier>;
@@ -1898,6 +1900,33 @@ export interface QuestsData {
   kinds: Record<QuestKind, QuestKindRule>;
   texts: QuestText[];
   say: Record<'take' | 'yes' | 'no' | 'full' | 'taken' | 'none' | 'done' | 'empty' | 'fail', string>;
+  /** residents track RS-2: each resident's favour (no kind: the free first one, whose talk is the invite) */
+  favours: Record<string, QuestFavour>;
+  /** RS-2: a resident's lines in a run ({name}, {title}) */
+  invite: Record<
+    'come' | 'take' | 'yes' | 'taking' | 'no' | 'held' | 'thanks' | 'none' | 'done' | 'moving' | 'title',
+    string
+  >;
+}
+/** quests.json favours: what a resident asks before moving to Copperleaf (residents track RS-2) */
+export interface QuestFavour {
+  kind?: QuestKind;
+  /** their offer ({type}, {n}) */
+  ask: string;
+}
+/** residents.json: someone a run can invite to Copperleaf (residents track RS-1) */
+export interface Resident {
+  name: string;
+  role: string;
+  /** a buildings.json key, a Copperleaf building's catalogue key, or 'house' (a free cottage) */
+  home: string;
+  /** the free first resident, offered while nobody lives in Copperleaf */
+  first?: true;
+  /** where a run can meet them, and their weight among those left (0: not yet) */
+  meet: { where: ('town' | 'event')[]; weight: number };
+  /** their service's levels: unlocks.json rows sold at their home (RS-4) */
+  levels: string[];
+  about: string;
 }
 /** events.json: a run's events, loot tables and trainer classes (roguelite track RL-12b; logic/encounters.js) */
 export interface EventsData {
@@ -1943,6 +1972,8 @@ export interface RunEvent {
   repeat?: boolean;
   biomes?: DataId[];
   options: RunEventOption[];
+  /** residents track RS-2: only while the run's resident can be met at an event; `invite` invites them */
+  resident?: true;
 }
 export interface RunEventOption {
   text: string;

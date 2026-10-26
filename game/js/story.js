@@ -33,7 +33,7 @@ import { music } from './sound.js';
 import { talk, talkBox } from './talk.js';
 import { cutscene } from './cutscene/director.js';
 import { loreClue, loreData } from './lore.js';
-import { questGiverTalk } from './quest-board.js';
+import { questGiverTalk, residentTalk } from './quest-board.js';
 /* eslint-disable no-func-assign */
 expose({
   legendCheck: [() => legendCheck, v => (legendCheck = v)],
@@ -205,9 +205,11 @@ export async function personTalk(P) {
   /* RL-S2: a Bean first, when you have one; their thank-you, if they have one, is this talk */
   if (P.who && !P.quest && (await storyGiftOffer(P.who))) return;
   /* RL-S1: the first talk after a run: their line picked on the way home, once, in place of their own */
-  const fresh = !P.quest && P.who && storyFreshTake(P.who);
+  const fresh = !P.quest && !P.resident && P.who && storyFreshTake(P.who);
   /* TW-3: a run town's quest giver offers the town's quest (quest-board.js) */
   if (P.quest && typeof questGiverTalk === 'function') await questGiverTalk(P);
+  /* RS-2: the run's resident asks to come to Copperleaf, or offers their favour (quest-board.js) */
+  else if (P.resident && typeof residentTalk === 'function') await residentTalk(P);
   else if (fresh) await playStoryScript('banter:' + fresh);
   else if (P.script) await playStoryScript('person:' + P.id);
   else if (P.lines && P.lines.length)

@@ -112,6 +112,8 @@ export interface Meta {
   /** RL-S1: the newest runs, oldest first (logic/run-history.js, at most 20); the story's `last:`, `lastby:`,
       `history:` and `rematch` read it */
   history: HistoryEntry[];
+  /** RS-1: who lives in Copperleaf (residents.json id -> the run, by meta.runs, they moved in after) */
+  residents: Record<string, number>;
 }
 
 /** RL-S1: what ended a lost run (logic/run-history.js runLostTo): the battle's kind, its leader's or class's id, the
@@ -144,6 +146,8 @@ export interface HistoryEntry {
   leaders: { id: string; beat: 0 | 1 }[];
   /** RL-S2: the rival's result: meetings and wins (null: you never met him that run) */
   rival: { met: number; won: number } | null;
+  /** residents track RS-2: the resident invited on the run (they moved in after it) */
+  res?: string;
 }
 
 /** roguelite track RL-S2: what a run keeps of Blake (logic/rival.js) */
@@ -328,6 +332,8 @@ export interface Run {
   beat?: string[];
   /** TW-3: its quests (logic/run-quests.js); missing until the first is taken */
   quests?: RunQuests;
+  /** RS-1: the resident invited this run (residents.json); they move in when it ends, won or lost */
+  invited?: string;
 }
 
 /** TW-3: a quest held on a run (logic/run-quests.js) */
@@ -335,7 +341,7 @@ export interface RunQuest {
   /** 'q' + its number in the run */
   id: string;
   kind: import('./game-data').QuestKind;
-  /** its text's id (quests.json texts) */
+  /** its text's id (quests.json texts; RS-2: a favour's, the resident's id) */
   text: string;
   /** the map node of the town it came from */
   at: number;
@@ -345,6 +351,8 @@ export interface RunQuest {
   /** a catch quest's type */
   type?: string;
   done: 0 | 1;
+  /** residents track RS-2: a resident's favour (their id): held over the cap, handed in for their invite */
+  res?: string;
 }
 /** TW-3: a run's quests */
 export interface RunQuests {

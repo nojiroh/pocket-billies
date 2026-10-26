@@ -38,6 +38,7 @@ const FAMILIES = [
   'dataBiomes',
   'dataNodeTypes',
   'dataQuests',
+  'dataResidents',
   'dataPerks',
   'dataEvents',
   'dataBanter',
@@ -111,6 +112,12 @@ test('a planted fault is found by its family, in the file check-data names', () 
     [E => (E.events.form_27b.intro[0] = 'money 5'), 'lines only'],
     [E => (E.loot.common.nosuchitem = 1), 'loot.common: no item "nosuchitem"'],
     [E => (E.classes.intern.who = 'nobody'), 'no person "nobody"'],
+    /* RS-2: invite only in a resident event, and every resident event invites */
+    [E => (E.events.form_27b.options[0].then[0] = 'invite'), 'only a resident event'],
+    [
+      E => E.events.stranded_cart.options.forEach(o => (o.then = o.then.filter(l => l !== 'invite'))),
+      'no option that invites',
+    ],
   ]) {
     D = copy();
     plant(D.events);

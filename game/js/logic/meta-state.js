@@ -5,7 +5,8 @@
    unlock currency; Scrap, the building material; Crests, the rare boss currency), the unlocks, each hub
    building's level, how many runs were played and won, the highest Expedition (the difficulty) open, and (RL-R2) the
    badges kept for good, by type (`{ water: 1 }`: the first win over a leader of a type opens that type's field move,
-   logic/run-side.js), and (RL-S1) the newest runs' history (logic/run-history.js). Money ($,
+   logic/run-side.js), (RL-S1) the newest runs' history (logic/run-history.js), and (RS-1) who lives in Copperleaf
+   (residents.json: id -> the run they moved in after, logic/residents.js). Money ($,
    saveData.se) is not here: it is the run's working field. Logic only: no DOM, runs in Node
    (tools/test/meta-state.test.mjs). The sections that spend these (unlocks.json, buildings.json) come in RL-11. */
 /** @import { Meta } from '../../types/save-data' */
@@ -47,6 +48,7 @@ export function newMeta() {
     chapter: 1,
     badges: {},
     history: [],
+    residents: {},
   };
 }
 /** the currencies kept between runs (currencies.json's `kept: meta` rows; RL-S2: Beans, the gift currency) */
@@ -79,6 +81,7 @@ export function validMeta(o) {
     recordOf(o.badges, 32, v => v === 1) &&
     recordOf(o.rel, 32, v => wholeIn(v, 0, 9999)) &&
     recordOf(o.gifted, 32, v => wholeIn(v, 0, META_MAX)) &&
+    recordOf(o.residents, 64, v => wholeIn(v, 1, META_MAX)) &&
     validHistory(o.history)
   );
 }

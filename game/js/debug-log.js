@@ -551,6 +551,8 @@ debugLog.state = () => {
           /* RL-11: the unlock ids owned (game data ids, no names) and the buildings' levels */
           unlocks: Object.keys(meta.unlocks || {}).sort(),
           buildings: Object.assign({}, meta.buildings || {}),
+          /* RS-1: who lives in Copperleaf (residents.json ids, no names) */
+          residents: Object.keys(meta.residents || {}).sort(),
           /* RL-S1: the run history (game data ids and numbers, no names) and the story director's picks */
           history: (meta.history || []).length,
           last: (meta.history || []).length

@@ -619,6 +619,83 @@ the answers. Tag `rl-s2-done` is the owner's, after part B.
   relations.json, banter.json `who: "rival"`); then part B on `track/story`: Chapter 1's beats as scripts and `once`
   banter, the favours (a `once` line, a story quest, `rel who n` on the way home), Blake's and the folks' lines,
   `scripts.chapter1-end` for RL-14's Voltron.
+### Residents track RS-2 - meeting residents in a run: Dottie free, favours, the Stranded Cart, the payout's line - 2026-10-26
+Branch `ccr-65e11839-9p92dx` (the owner's word: `track/residents` doesn't exist yet; pushed there). Plan Mode, plan
+approved. Owner's answers: one invite a run; the event's favour done on the spot; a favour held over the quest cap;
+anyone after the first in one seeded town; Dottie in every town of the first all-town row. Details:
+docs/phases/residents-track.md, "Done in RS-2". CHANGELOG line added.
+- Where RS-1 and the code differed: `residentCandidate` drew among those met at that place, so a town and an event
+  could offer two different people in one run; now one draw a run (`residentDrawn`), `where` only filters. `runEnd`
+  needs no return for the payout's line: the payout screen is drawn before `runEnd` and reads `run.invited`.
+- Changed (one cause per commit): residents.js (`residentDrawn`, `residentFirstTowns`); quests.json `favours` and
+  `invite` + schema, type, check (check-data's planted residents snapshot now also reports the planted first one's
+  favour, on purpose); run-quests.js favours (`questCan` split out of `questOffer` with the same draws, `favourAt`,
+  `favourOffer`, `favourTake` over the cap, `questsHeld`, `questDataOf`, `residentPlan`) and `RunQuest.res` in
+  `validRunQuests`; the resident placed by `runWorldPutRun` (`runTownResident`); `residentTalk`, the "!", the board's
+  invite, the Map list (quest-board.js, story.js, sprites.js); the `stranded_cart` event (`resident: true`,
+  `eventPool`/`eventAt` `meet`, the `invite` command, docs/SCRIPTS.md); the payout's line and the history's `res`; the
+  Run Lab's residents line, the sim's log/stats and the Simulate card's share (`metResident` in SIM_METRICS; the
+  Studio sim worker loads residents.js and run-quests.js); the in-game full test's Dottie step.
+- Risky or unfinished: the favour, invite and event lines are Claude's drafts for the owner. Residents look like
+  seeded townsfolk (RS-3 picks looks). The Run Lab counts every town as having its notice board (it makes no scenes).
+  Nobody does anything in Copperleaf yet (RS-3/RS-4). Not played on a phone.
+- Verified (what ran, what passed): lint, typecheck, check:modules, check:data, `npm test` after each commit (1069 at
+  the end); `npm run test:slow` 87/87 (new resident-towns.test.mjs on real scenes). Smoke 6/6. The full quick check:
+  36/40, the 4 known main failures only, unchanged (RL-8's "Take off didn't start a run's flight", `sky_portal`
+  floating, the room light check, the song fingerprints' cave mid/late). The in-game full test's run phase ("A run:
+  airship, nodes, payout", with the new Dottie step) run alone headless through check-quick's in-game step (pointed
+  at it temporarily, not committed): passed, "Dottie invited and moved in". No quick-baseline pictures in this
+  container. Python Playwright 1.63.
+- Decisions I made (and why): the event names the traveller only when they agree (scripts stay static, any of the
+  three event residents fits); a mini-boss favour that fails is dropped like any quest and offered again if you walk
+  back; the sim's bot does no favour, so its win rates don't move.
+- Questions waiting for the owner: the drafted lines (quests.json `favours`, `invite`; events.json `stranded_cart`);
+  the cottage cap (still open). Please make `track/residents` from main, merge this branch in, tag `rs-2-done`.
+- Next session starts with: RS-3 (living in Copperleaf), in Plan Mode.
+
+### Residents track RS-1 - data and save: residents.json, meta.residents, run.invited, logic/residents.js - 2026-10-26
+Branch `ccr-65e11839-9p92dx` (the owner's answer: `track/residents` doesn't exist yet, build here as HB-1 and SP-1
+were). Plan Mode, plan approved. Owner's answers: the drafted names; the word "residents". Nothing visible changes
+in the game yet (no CHANGELOG line). Details: docs/phases/residents-track.md, "Done in RS-1".
+- Changed (one cause per commit): residents.json (8 residents), its schema, type, `RESIDENTS` and `dataResidents`
+  (check-data, the Studio's check; the check-data snapshot remade on purpose: 153 files and a planted case);
+  `meta.residents` and `run.invited` in the save, validators and types; `logic/residents.js` (candidate, invite,
+  settle) with `runEnd` moving the invited resident in, won or lost, loaded on both pages and in the Studio's logic
+  worker; the conditions `resident:<id>` and `residents` (+ docs/SCRIPTS.md) and unlocks.json's check of them; the
+  debug log's resident ids.
+- Risky or unfinished: nobody can meet a resident in the game yet (RS-2). `runEnd` doesn't say who moved in (RS-2's
+  payout line needs it). The store, inn and library aren't buildings.json rows, so RS-4 adds them before their levels
+  can be sold.
+- Verified (what ran, what passed): lint, typecheck, check:modules, check:data clean; `npm test` 1063 pass (new:
+  residents.test.mjs; meta-state, run-state, conditions and check-data cases). Smoke (`check-quick.py --smoke`):
+  6/6 pass (Start-Game on a phone, the debug log with no names, the in-game test's first step). The full quick check:
+  35/40, 5 problems; 4 of them fail the same way on main 2314da82 (re-run there): RL-8's "Take off didn't start a
+  run's flight", "props in the air: copperleaf: sky_portal@231.2,103.6", the room light check, and the song
+  fingerprints' "cave mid/late not in the baseline". The fifth, Sound effects' payout jingles, passes on this branch
+  run alone (100 s; 295 s in the full run). There is no validation/quick-baseline in this container, so no pictures
+  were compared. Python Playwright 1.63 was used (the browser installed here; tools/requirements-check.txt pins 1.56).
+- Decisions I made (and why): `meta.residents` keeps the run they moved in after (order and a "since" for banter);
+  the candidate is null once someone is invited (one a run); Dr. Helix has weight 0 until the splicing track.
+- Questions waiting for the owner: the residents' looks and lines (RS-3); pace (one invite per run, no cottage cap
+  recommended). Please make `track/residents` from main, merge this branch into it, and tag `rs-0-done` / `rs-1-done`.
+- Next session starts with: RS-2 (meeting them in a run), in Plan Mode.
+
+### Residents track RS-0 - the plan: invite run NPCs to Copperleaf, upgradable services - 2026-10-26
+Branch `ccr-65e11839-9p92dx` (the session's own; `track/residents` doesn't exist yet). Plan Mode, online research,
+plan approved. Owner's answers: inviting is a quest for the NPC (the first one free); they move in win or lose;
+half and half (one capped power level per resident, the rest options); the existing four currencies.
+- Changed: docs/phases/residents-track.md (new: decided, verified facts, research with sources, design, sessions
+  RS-1..RS-5, Ask me before, risks); ROADMAP (Tracks alongside), BRANCHES (`track/residents`), this entry. No code.
+- Risky or unfinished: nothing built. The roster is a draft (roles only). The Gene Bank's resident waits for the
+  splicing track, the Mechanic's power level for RL-14.
+- Verified (what ran, what passed): read on main 2314da82: copperleaf.json's acts (store `shop`; inn, library,
+  Workshop, Gene Bank `enter`; 10 cottages `house`; one named person, Juniper), buildings.json, unlocks.json,
+  currencies.json, events.json, banter.json, the file names the track cites. Docs only, so no quick check run.
+- Decisions I made (and why): residents' levels are ordinary unlocks.json rows `at` their building with a
+  `resident:` requirement, so RL-11's board, `meta.buildings` and `run.fx` are reused, not copied.
+- Questions waiting for the owner: the roster's names and looks; one invite per run and no cottage cap (rec); the
+  word "residents" (rec). Please make `track/residents` from main and push the tag `rs-0-done`.
+- Next session starts with: RS-1 (data and save) on `track/residents`, in Plan Mode.
 
 ### Hub track - the placing half of HB-5 and HB-7: Skyline Station on its headland, the new buildings on their plots - 2026-10-25
 Branch `props/hub-placing` (the session's brief; from main aea7a48 after PR #201). Plan approved in Plan Mode. The

@@ -55,6 +55,8 @@ export const SIM_METRICS = Object.freeze([
   'research',
   'perks',
   'topLevel',
+  /* RS-2: a share: the runs whose walk went through their resident's town */
+  'metResident',
 ]);
 /** a round to a tenth, or a thousandth for shares @param {number} x @param {number} [k] */
 export const round = (x, k = 10) => Math.round(x * k) / k;

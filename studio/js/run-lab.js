@@ -73,6 +73,7 @@ expose({
   runLabPlayUrl: [() => runLabPlayUrl, v => (runLabPlayUrl = v)],
   runLabReadLog: [() => runLabReadLog, v => (runLabReadLog = v)],
   runLabRedraw: [() => runLabRedraw, v => (runLabRedraw = v)],
+  runLabResidentsHTML: [() => runLabResidentsHTML, v => (runLabResidentsHTML = v)],
   runLabRulesHTML: [() => runLabRulesHTML, v => (runLabRulesHTML = v)],
   runLabSeedClean: [() => runLabSeedClean],
   runLabSoon: [() => runLabSoon],
@@ -334,7 +335,31 @@ function runLabLogicHTML(D, p, i) {
         `<li data-offer="${escapeHtml(ids.join(','))}">after mini-boss ${k + 1}: ${ids.map(id => runLabName(D.perks, id, 'name')).join(', ') || 'nothing left'}</li>`
     )
     .join('');
-  return `<h4>From the game’s logic</h4>${rows.length ? `<table class="tbl rl-logic-node" data-node="${i}">${rows.join('')}</table>` : ''}<p class="help">Perk picks, in order, with none held (a held one changes the later picks and the shelves):</p><ol class="rl-offers">${picks}</ol>`;
+  return `<h4>From the game’s logic</h4>${rows.length ? `<table class="tbl rl-logic-node" data-node="${i}">${rows.join('')}</table>` : ''}<p class="help">Perk picks, in order, with none held (a held one changes the later picks and the shelves):</p><ol class="rl-offers">${picks}</ol>${runLabResidentsHTML(D, p)}`;
+}
+/** RS-2: the run's resident (runPreview's residents): on a first run, and once the free first one lives in Copperleaf
+ * @param {any} D @param {any} p */
+function runLabResidentsHTML(D, p) {
+  const R = p.residents;
+  if (!R) return '';
+  const place = (/** @type {number} */ i) => {
+      const n = p.map.nodes[i];
+      return n
+        ? `row ${n.row + 1}${p.map.nodes.filter((/** @type {any} */ m) => m.row === n.row).length > 1 ? `, lane ${n.lane + 1}` : ''}`
+        : '?';
+    },
+    line = (/** @type {string} */ when, /** @type {any} */ r) => {
+      if (!r) return `<li>${when}: nobody left to meet</li>`;
+      const towns = r.towns.length
+          ? `in the town${r.towns.length > 1 ? 's' : ''} at ${r.towns.map(place).join('; ')}`
+          : 'in no town',
+        how = r.kind ? `, a ${escapeHtml(r.kind)} favour` : ', free (the first)',
+        ev = r.events.length
+          ? `; their event at the waystation${r.events.length > 1 ? 's' : ''} at ${r.events.map(place).join('; ')}`
+          : '';
+      return `<li data-resident="${escapeHtml(r.id)}" data-towns="${r.towns.join(',')}">${when}: ${runLabName(D.residents, r.id, 'name')}${how}, ${towns}${ev}</li>`;
+    };
+  return `<p class="help">The resident met on this run (towns counted as each having a notice board):</p><ul class="rl-residents">${line('First run', R.first)}${line('Later', R.next)}</ul>`;
 }
 /** the seed sweep's answer (data-checks.js runMapSweep) @param {any} D @param {any} S */
 function runLabSweepHTML(D, S) {

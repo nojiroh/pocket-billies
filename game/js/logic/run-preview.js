@@ -11,7 +11,10 @@
    - each place's wild table (run-scenes.js runWorldTables: its biome's pool at its row's levels), the side area's
      places too (RL-R2b: map.side, from the field moves as run-world.js passes them);
    - each waystation's event (RL-12b: encounters.js eventAt, with none played yet);
-   - the Perk picks after each mini-boss row, in order (perkOfferMake), with nothing held.
+   - the Perk picks after each mini-boss row, in order (perkOfferMake), with nothing held;
+   - RS-2: the run's resident on a first run (nobody in Copperleaf: the free first one) and on a later one (the first
+     one living there): who, the towns they stand in (run-quests.js residentPlan; every town counted as having its
+     notice board, which a town's square almost always fits) and the waystations whose event would be theirs.
    Held Perks change the shelves and the picks; the preview holds none. The Studio's Run Lab asks for it through its
    logic worker (studio/js/logic-worker.js), where GAMEDATA is the Studio's draft; it is on no page, since game-data.js
    would read the Studio's data as the game's (tools/test/run-preview.test.mjs compares it with the game's own path).
@@ -24,7 +27,10 @@ import {
   POOLS,
   NODE_TYPES,
   PERKS,
+  QUESTS,
+  RESIDENTS,
   RULES,
+  SPECIES,
   START_NODE,
   TRAINERS,
   UNLOCK_DATA,
@@ -40,6 +46,9 @@ import { runRegionData } from './run-region.js';
 import { copyOf, newRun } from './run-state.js';
 import { rivalRunStart } from './rival.js';
 import { unlockOpen } from './unlocks.js';
+import { runRouteTrainers } from './route-trainers.js';
+import { residentCandidate } from './residents.js';
+import { residentPlan } from './run-quests.js';
 
 /** RL-R2: the days a town's stock is shown past the shortest walk's last day (the deadline's old slack: the owner
  * dropped the deadline) */
@@ -117,5 +126,36 @@ export function runPreview(seed, o = {}) {
     forecast: run.forecast,
     nodes,
     relicOffers,
+    residents: runPreviewResidents(run),
   };
+}
+/** RS-2: the run's resident on a first run and on a later one (the free first one living in Copperleaf): who, their
+ * towns, and the waystations whose event would be theirs (encounters.js eventAt with them to meet, none played yet)
+ * @param {Run} run */
+function runPreviewResidents(run) {
+  const trainers = runRouteTrainers(run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run }),
+    at = /** @type {Record<number, number>} */ ({});
+  for (const T of Object.values(trainers)) at[T.runNode] = (at[T.runNode] || 0) + 1;
+  const nodes = /** @type {RunMap} */ (run.map).nodes,
+    data = {
+      quests: QUESTS,
+      species: SPECIES,
+      boards: nodes.flatMap((n, i) => (n.type === 'town' ? [i] : [])),
+      trainersAt: (/** @type {number} */ i) => at[i] || 0,
+    },
+    first = Object.keys(RESIDENTS).find(id => RESIDENTS[id].first);
+  /** @param {Record<string, number>} here */
+  const one = here => {
+    const s = /** @type {any} */ ({ meta: { residents: here, runs: 1 }, run: copyOf(run) }),
+      plan = residentPlan(s, RESIDENTS, data);
+    if (!plan) return null;
+    const meet = !!residentCandidate(s, RESIDENTS, 'event'),
+      events = nodes.flatMap((n, i) => {
+        const ev = n.type === 'event' ? eventAt(s.run, i, EVENTS, meet) : '';
+        return ev && EVENTS.events[ev].resident ? [i] : [];
+      }),
+      F = QUESTS.favours[plan.id];
+    return { id: plan.id, towns: plan.towns, kind: (F && F.kind) || '', events };
+  };
+  return { first: one({}), next: first ? one({ [first]: 1 }) : null };
 }

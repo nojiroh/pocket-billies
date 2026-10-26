@@ -18,6 +18,7 @@ import { rivalRunStart } from './rival.js';
 import { META_IDS, META_MAX, recordOf, wholeIn } from './meta-state.js';
 import { expeditionAfterWin } from './modifiers.js';
 import { heldAllOff } from './held.js';
+import { residentSettle } from './residents.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_DAYS: [() => RUN_DAYS],
@@ -262,6 +263,8 @@ export function validRun(o) {
   if (o.beat !== undefined && (!list(o.beat, 16) || !o.beat.every(id))) return false;
   /* TW-3: its quests (missing until the first is taken) */
   if (o.quests !== undefined && !validRunQuests(o.quests)) return false;
+  /* RS-1: the resident invited (logic/residents.js) */
+  if (o.invited !== undefined && !id(o.invited)) return false;
   /* the hub as the run started: shapes only (validSave checks its Billies like the team's) */
   const st = o.start,
     counts = v => recordOf(v, 500, n => wholeIn(n, 0, META_MAX));
@@ -348,14 +351,15 @@ export function validRunEnc(e) {
         e.reward.from.length <= 60))
   );
 }
-/** TW-3: a run's quests (logic/run-quests.js): shapes only @param {any} e @returns {boolean} */
+/** TW-3: a run's quests (logic/run-quests.js; RS-2: a favour's `res`): shapes only @param {any} e @returns {boolean} */
 export function validRunQuests(e) {
   const plain = (/** @type {any} */ v) =>
       !!v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__'),
     id = (/** @type {any} */ v) => typeof v === 'string' && /^[a-z0-9_]{1,40}$/.test(v),
     quest = (/** @type {any} */ q) =>
       plain(q) &&
-      Object.keys(q).every(k => ['id', 'kind', 'text', 'at', 'goal', 'n', 'type', 'done'].includes(k)) &&
+      Object.keys(q).every(k => ['id', 'kind', 'text', 'at', 'goal', 'n', 'type', 'done', 'res'].includes(k)) &&
+      (q.res === undefined || id(q.res)) &&
       id(q.id) &&
       ['catch', 'trainers', 'parcel', 'miniboss'].includes(q.kind) &&
       id(q.text) &&
@@ -544,6 +548,8 @@ export function runEnd(s, how, rates, itemPrice) {
   s.meta.beans = (s.meta.beans || 0) + pay.beans;
   s.meta.runs += 1;
   if (how.won) s.meta.wins += 1;
+  /* RS-1: the resident invited moves in, won or lost (logic/residents.js) */
+  residentSettle(s.meta, run);
   /* RL-13: winning the highest Expedition open opens the next (logic/modifiers.js) */
   s.meta.expedition = expeditionAfterWin(s.meta.expedition || 1, run.expedition || 1, how.won);
   s.meta.history = historyPush(s.meta.history, entry);

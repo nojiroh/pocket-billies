@@ -13,8 +13,9 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOverlay, rewardPickOpen, toast } from './hooks.js';
-import { EVENTS, ITEMS, PERKS, PYRAMIDS, RULES, SPECIES, worldAddTrainers } from './game-data.js';
+import { EVENTS, ITEMS, PERKS, PYRAMIDS, QUESTS, RESIDENTS, RULES, SPECIES, worldAddTrainers } from './game-data.js';
 import { billyName, feedLevels, healAll, makeBilly, maxHp, xpFor } from './logic/rules.js';
+import { residentCandidate, residentInvite } from './logic/residents.js';
 import { runHome } from './logic/run-state.js';
 import { runMapNode } from './logic/run-map.js';
 import { encBoon, encOf, fxRowOf } from './logic/run-enc.js';
@@ -108,7 +109,9 @@ const encHolds = (/** @type {string} */ cond) => storyHolds(cond);
 export function encounterOpen(i, id) {
   const run = saveData.run;
   if (!run || encPlaying || activeBattle) return;
-  const ev = id || (i != null && i >= 0 ? eventAt(run, i, EVENTS) : '');
+  /* RS-2: a resident event only while the run's resident can be met at one */
+  const meet = !!residentCandidate(saveData, RESIDENTS, 'event'),
+    ev = id || (i != null && i >= 0 ? eventAt(run, i, EVENTS, meet) : '');
   if (!ev || !EVENTS.events[ev]) {
     toast('Nothing happens here. Not today.');
     return;
@@ -285,6 +288,18 @@ function encounterStage(id, i) {
     },
     fx: ([n, ...row]) => {
       encBoon(saveData.run, [fxRowOf(row)], +n, id);
+    },
+    invite: () => {
+      /* RS-2: the run's resident, met at this event; a favour of theirs held from a town goes (it's done with) */
+      const run = saveData.run,
+        rid = residentCandidate(saveData, RESIDENTS, 'event'),
+        r = rid ? RESIDENTS[rid] : null;
+      if (!run || !r || !residentInvite(saveData, rid, RESIDENTS)) return;
+      if (run.quests) run.quests.held = run.quests.held.filter(q => !q.res);
+      saveNow();
+      if (typeof debugLog !== 'undefined') debugLog.add('run', `resident invited at an event: ${rid}`);
+      encNote(`The traveller is ${r.name}, ${/^[aeiou]/i.test(r.role) ? 'an' : 'a'} ${r.role.toLowerCase()}.`);
+      encNote(QUESTS.invite.moving.replace(/\{name\}/g, r.name));
     },
     wager: ([n]) => {
       (saveData.story || (saveData.story = {})).wager = encRng(saveData.run).chance(+n / 100) ? 'win' : 'lose';

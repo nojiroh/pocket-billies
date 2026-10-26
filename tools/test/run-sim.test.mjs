@@ -226,3 +226,15 @@ test('run sim: a stall sells without healing and a waystation notes its event (R
     }
   assert.ok(stands >= 2, `${stands} waystations`);
 });
+
+test('RS-2: a run’s log names its resident (Dottie on a fresh save) and whether the walk went through their town', () => {
+  for (let k = 0; k < 4; k++) {
+    const { log, stats } = runSim('SIMRES' + k, { ...B, team: 6, lvl: 20 }),
+      R = log.resident;
+    assert.ok(R && R.id === 'dottie' && R.towns.length >= 1, 'Dottie, nobody living in Copperleaf yet');
+    for (const i of R.towns) assert.ok(log.nodes[i].startsWith('town:'), 'in towns');
+    assert.equal(stats.resident, 'dottie');
+    assert.equal(stats.metResident, log.places.some(p => R.towns.includes(p.i)) ? 1 : 0);
+    for (const p of log.places) if (p.resident) assert.ok(R.towns.includes(p.i));
+  }
+});

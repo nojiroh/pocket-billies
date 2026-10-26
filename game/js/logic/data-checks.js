@@ -76,6 +76,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataRelations: [() => dataRelations, v => (dataRelations = v)],
   // @ts-expect-error -- replaced on purpose
+  dataResidents: [() => dataResidents, v => (dataResidents = v)],
+  // @ts-expect-error -- replaced on purpose
   dataRewards: [() => dataRewards, v => (dataRewards = v)],
   // @ts-expect-error -- replaced on purpose
   dataRigs: [() => dataRigs, v => (dataRigs = v)],
@@ -1017,7 +1019,7 @@ export function dataModifiers(D, valid = () => true) {
 }
 // TW-3: quests.json: the schema; every kind has a text; a goal's fewest is no more than its most; a line names only
 // what its kind fills in ({type} a catch's, {n} a goal of more than one, {title} the board's and a failure's lines);
-// no text id twice
+// no text id twice; RS-2: a favour for every resident (residents.json), with a kind but the free first one's
 /** TW-3: quests.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataQuests(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -1047,11 +1049,52 @@ export function dataQuests(D, valid = () => true) {
   });
   for (const [k, line] of Object.entries(Q.say))
     fills(`say.${k}`, /** @type {string} */ (line), k === 'done' || k === 'fail' ? ['{title}'] : []);
+  /* RS-2: every resident has a favour with a kind, but the free first one (whose talk is the invite) */
+  const R = D.residents || {};
+  for (const [k, f] of Object.entries(Q.favours)) {
+    const fav = /** @type {any} */ (f);
+    if (!R[k]) problem(`favours.${k}: no such resident (residents.json)`);
+    else if (!fav.kind && !R[k].first) problem(`favours.${k}: no kind (only the free first resident needs none)`);
+    else if (fav.kind && R[k].first) problem(`favours.${k}: the free first resident asks no favour`);
+    fills(`favours.${k}`, fav.ask, fav.kind ? mayOf(fav.kind) : []);
+  }
+  for (const k of Object.keys(R)) if (!Q.favours[k]) problem(`favours: none for the resident "${k}"`);
+  for (const [k, line] of Object.entries(Q.invite))
+    fills(
+      `invite.${k}`,
+      /** @type {string} */ (line),
+      k === 'done' || k === 'title' ? ['{title}', '{name}'] : k === 'moving' ? ['{name}'] : []
+    );
+  return out;
+}
+// RS-1: residents.json: the schema; a home is a hub building (buildings.json) or one of Copperleaf's (a prop's k),
+// or a cottage; at most one free first resident; a level is an unlocks.json row sold at the resident's home
+/** RS-1: residents.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataResidents(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['residents.json', what]),
+    R = D.residents;
+  if (!R) return [['residents.json', 'missing']];
+  if (!valid('residents.schema.json', R, 'residents.json')) return out;
+  const hub = ((D.maps || {}).copperleaf || {}).props || [],
+    B = D.buildings || {},
+    U = D.unlocks || {},
+    firsts = Object.keys(R).filter(k => R[k].first);
+  if (firsts.length > 1) problem(`more than one first resident: ${firsts.join(', ')}`);
+  for (const [k, r] of Object.entries(R)) {
+    const at = /** @type {any} */ (r).home;
+    if (at !== 'house' && !B[at] && !hub.some((/** @type {any} */ p) => p.k === at))
+      problem(`${k}.home: no building "${at}" (buildings.json or Copperleaf)`);
+    for (const u of /** @type {any} */ (r).levels)
+      if (!U[u]) problem(`${k}.levels: no unlock "${u}" (unlocks.json)`);
+      else if (U[u].at !== at) problem(`${k}.levels: ${u} is sold at ${U[u].at || 'no building'}, not at ${at}`);
+  }
   return out;
 }
 // RL-12b: events.json: the schema; every intro reads as lines only, every option's need as a condition and its `then`
 // as a script; what they name is there (items, pyramids, loot tables, classes, types, statuses, Perks, biomes, people)
-// and the event commands' arguments make sense
+// and the event commands' arguments make sense; RS-2: `invite` only in a resident event, and every one has one
 /** RL-12b: events.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataEvents(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -1097,6 +1140,9 @@ export function dataEvents(D, valid = () => true) {
     for (const id of [...(N.type || []), ...(N.badge || [])])
       if (types.size && !types.has(id)) problem(`${where}: no type "${id}" (types.json)`);
   };
+  /* RS-2: the event being checked is a resident one, and its invites so far */
+  let inviting = false,
+    invites = 0;
   /** @param {string} where @param {any} n a command */
   const command = (where, n) => {
     const [a, b] = n.args,
@@ -1141,6 +1187,10 @@ export function dataEvents(D, valid = () => true) {
       case 'money':
         if (!(Number.isInteger(num(a)) && num(a) !== 0)) problem(`${at}: a whole number of Moneys, not 0`);
         return;
+      case 'invite':
+        if (!inviting) problem(`${at}: only a resident event (resident: true) invites`);
+        invites++;
+        return;
       case 'reward':
         if (a != null && !['item', 'tutor', 'candy', 'evo'].includes(a))
           problem(`${at}: a kind (item, tutor, candy, evo)`);
@@ -1173,6 +1223,8 @@ export function dataEvents(D, valid = () => true) {
         parseScript(ev.intro),
         n => n.k !== 'say' && problem(`events.${k}.intro: lines only, no "${n.name || n.k}"`)
       );
+    inviting = !!ev.resident;
+    invites = 0;
     ev.options.forEach((/** @type {any} */ o, i) => {
       const where = `events.${k}.options[${i}]`;
       if (o.need) {
@@ -1190,6 +1242,7 @@ export function dataEvents(D, valid = () => true) {
         else if (n.k === 'if') n.clauses.forEach((/** @type {any} */ c) => c.cond && names(`${where}.then`, c.cond));
       });
     });
+    if (inviting && !invites) problem(`events.${k}: a resident event with no option that invites ("invite")`);
   }
   return out;
 }
@@ -1483,9 +1536,14 @@ export function dataUnlocks(D, valid = () => true) {
       if (R.when) {
         const p = conditionProblem(R.when);
         if (p) problem('unlocks.json', `${k}.when: ${p.message}`);
-        else
-          for (const u of conditionNames(conditionTree(R.when)).unlock || [])
+        else {
+          const names = conditionNames(conditionTree(R.when));
+          for (const u of names.unlock || [])
             if (!U[u]) problem('unlocks.json', `${k}.when: unlock:${u}, no such unlock`);
+          /* RS-1: a resident it waits for is in residents.json */
+          for (const r of names.resident || [])
+            if (D.residents && !D.residents[r]) problem('unlocks.json', `${k}.when: resident:${r}, no such resident`);
+        }
       }
       for (const r of R.requires || [])
         if (!U[r] || r === k) problem('unlocks.json', `${k}.requires: no unlock "${r}"`);
