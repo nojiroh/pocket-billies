@@ -32,6 +32,7 @@ expose({
   halfBits: [() => halfBits, v => (halfBits = v)],
   halfValue: [() => halfValue, v => (halfValue = v)],
   materialIndex: [() => materialIndex, v => (materialIndex = v)],
+  packShadowInstance: [() => packShadowInstance, v => (packShadowInstance = v)],
   packSpriteInstance: [() => packSpriteInstance, v => (packSpriteInstance = v)],
   packSpriteInstances: [() => packSpriteInstances, v => (packSpriteInstances = v)],
   spriteInstanceBuffer: [() => spriteInstanceBuffer, v => (spriteInstanceBuffer = v)],
@@ -178,6 +179,29 @@ export function packSpriteInstance(i, r, cam) {
   b[o + 89] = materialIndex(r.mt);
   b[o + 90] = 0;
   b[o + 91] = 0;
+}
+/* phase 20 R3 (E9): a shadow map's quad into instance i: only what the shadow program reads (the base, the offset
+   and size, its right along the ground as the axes' first half, the shear and the share shown, the flip flag); the
+   other bytes are left as they are. q: { x, y, z, ox, oy, w, h, rx, rz, shear, shown, flip } */
+export function packShadowInstance(i, q) {
+  const B = growSpriteInstances(i + 1),
+    f = B.f32,
+    h = B.u16,
+    o = i * SPRITE_INSTANCE_STRIDE,
+    o4 = o >> 2,
+    o2 = o >> 1;
+  f[o4] = q.x;
+  f[o4 + 1] = q.y;
+  f[o4 + 2] = q.z;
+  f[o4 + 3] = q.ox;
+  f[o4 + 4] = q.oy;
+  f[o4 + 5] = q.w;
+  f[o4 + 6] = q.h;
+  h[o2 + 14] = halfBits(q.rx);
+  h[o2 + 15] = halfBits(q.rz);
+  h[o2 + 19] = halfBits(q.shear);
+  h[o2 + 21] = halfBits(q.shown);
+  B.u8[o + 88] = q.flip < 0 ? SPRITE_FLAG.flip : 0;
 }
 /* records [from, to) into instances 0...; cam(r) says whether a record faces the camera. The byte count */
 function packSpriteInstances(records, from, to, cam) {

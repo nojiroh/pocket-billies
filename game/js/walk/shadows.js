@@ -22,23 +22,40 @@ import { gpuPass, gpuTag } from '../engine/gpu-counters.js';
 import { filterInto } from '../engine/frame-lists.js';
 import { walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
-import { bindQuad, gpuState, imageTexture, normalize3, renderTarget } from '../engine/webgl.js';
+import { bindQuad, ensurePrograms, gpuState, imageTexture, normalize3, renderTarget } from '../engine/webgl.js';
 import { beginLampShadow, beginSunShadow, endShadow, frameBlockStale } from '../engine/light.js';
 import { LIGHT_HOLD_M } from '../engine/light-pick.js';
+import {
+  SPRITE_INSTANCE_STRIDE,
+  bindSpriteInstances,
+  packShadowInstance,
+  uploadSpriteInstances,
+} from '../engine/sprite-instances.js';
 import { FIXED_RIGHT, walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
-import { setSpriteUniforms, worldCurveArgs } from './draw-common.js';
+import { WALK_SHADERS } from './walk-shaders.js';
+import { setSpriteUniforms, spriteGeometry, worldCurveArgs } from './draw-common.js';
 import { screenRay } from './camera.js';
 /* eslint-disable no-func-assign */
 expose({
   LAMP_SHADOWED: [() => LAMP_SHADOWED],
+  SHADOW_INSTANCE_DECLS: [() => SHADOW_INSTANCE_DECLS],
+  SHADOW_INSTANCE_IN: [() => SHADOW_INSTANCE_IN],
+  SHADOW_INSTANCE_SHADERS: [() => SHADOW_INSTANCE_SHADERS],
   SHADOW_LISTS: [() => SHADOW_LISTS],
+  SHADOW_QUADS: [() => SHADOW_QUADS],
   drawShadowSprites: [() => drawShadowSprites, v => (drawShadowSprites = v)],
+  drawShadowSpritesInstanced: [() => drawShadowSpritesInstanced, v => (drawShadowSpritesInstanced = v)],
   fittedShadowPass: [() => fittedShadowPass, v => (fittedShadowPass = v)],
   lampShadowMaps: [() => lampShadowMaps, v => (lampShadowMaps = v)],
   pickShadowLamps: [() => pickShadowLamps, v => (pickShadowLamps = v)],
+  shadowInstanceState: [() => shadowInstanceState],
+  shadowInstanceVertex: [() => shadowInstanceVertex, v => (shadowInstanceVertex = v)],
+  shadowInstancesReady: [() => shadowInstancesReady, v => (shadowInstancesReady = v)],
   shadowMapArea: [() => shadowMapArea, v => (shadowMapArea = v)],
   shadowPass: [() => shadowPass, v => setShadowPass(v)],
+  shadowQuad: [() => shadowQuad, v => (shadowQuad = v)],
+  shadowSpriteQuads: [() => shadowSpriteQuads, v => (shadowSpriteQuads = v)],
 });
 /* eslint-enable no-func-assign */
 export function setShadowPass(v) {
@@ -179,6 +196,7 @@ export function lampShadowMaps(items, X, dark) {
 }
 /* the sprites of a shadow pass, each turned to face the sun (fixed ones and buildings as they stand); for a lamp, each turned to face the lamp */
 function drawShadowSprites(SH, L, sun, ca, lamp) {
+  if (shadowInstancesReady()) return drawShadowSpritesInstanced(SH, L, sun, ca, lamp);
   const gl = gpuState.gl,
     p = gpuState.P.shadow,
     solid = engineSetting('shadows', 'buildings'),
@@ -197,6 +215,8 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
   for (const it of L) {
     if (it.flat || it.far || it.k === 'enc2' || it.vol || it.k === 'flag' || it.vox) continue;
     if (it.k === 'prop' && !(it.sh > 0)) continue;
+    /* a box building's layers cast none (its slices do): skipped before its picture is looked up or bound */
+    if (it.layer && it.M.box) continue;
     gpuTag(it.voxImg ? 'modelPic' : 0); /* R1 measure: a model's picture layer counted apart */
     const T = imageTexture(it.im);
     if (!T) {
@@ -204,7 +224,6 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
       continue;
     }
     gl.bindTexture(gl.TEXTURE_2D, T.t);
-    if (it.layer && it.M.box) continue;
     if (lamp) {
       const dx = it.x - lamp[0],
         dz = it.z - lamp[2],
@@ -279,9 +298,7 @@ function fittedShadowPass(items0, sun, C) {
       gl.uniform1f(P.U.uCurveD0, ca[3]);
     };
   const solid = engineSetting('shadows', 'buildings'),
-    tr = sun.travel,
-    h = normalize3([tr[0], 0, tr[2]]),
-    Rs = Math.hypot(tr[0], tr[2]) < 0.05 ? [1, 0, 0] : [-h[2], 0, h[0]];
+    tr = sun.travel;
   const still = it => it.k === 'prop' && it.still && !it.vol,
     stat = cache ? filterInto(items, still, SHADOW_LISTS.stat) : items,
     dyn = cache
@@ -318,71 +335,9 @@ function fittedShadowPass(items0, sun, C) {
     walkRenderer.shHit = (walkRenderer.shHit || 0) + 1;
   }
   let miss = 0;
+  /* phase 20 R3: the same pictures' loop as the near map's (sun set, no lamp) */
   const sprites = L => {
-    const p = gpuState.P.shadow;
-    gl.useProgram(p.p);
-    gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
-    curve(p);
-    bindQuad();
-    gl.activeTexture(gl.TEXTURE0);
-    gl.uniform1i(p.U.uTex, 0);
-    for (const it of L) {
-      if (it.flat || it.far || it.k === 'enc2' || it.vol || it.k === 'flag' || it.vox) continue;
-      if (it.k === 'prop' && !(it.sh > 0)) continue;
-      gpuTag(it.voxImg ? 'modelPic' : 0); /* R1 measure: a model's picture layer counted apart */
-      const T = imageTexture(it.im);
-      if (!T) {
-        miss++;
-        continue;
-      }
-      gl.bindTexture(gl.TEXTURE_2D, T.t);
-      if (it.layer && it.M.box) continue;
-      /* a 3D building: its front as a cut-out here, walls and roof as geometry below */
-      if (it.bld3) {
-        let F = null;
-        buildingGuard(() => {
-          F = imageTexture(buildingFrontPicture(it.im, it.M.build, it.M));
-        });
-        if (!F) miss++;
-        if (F) {
-          gl.bindTexture(gl.TEXTURE_2D, F.t);
-          gl.uniform3fv(p.U.uRight, FIXED_RIGHT);
-          setSpriteUniforms(p, it);
-          gl.drawArrays(gl.TRIANGLES, 0, 6);
-          gl.uniform3fv(p.U.uRight, Rs);
-        }
-        continue;
-      }
-      if (it.plane && !(solid && it.M && it.M.box)) {
-        gl.uniform3fv(p.U.uRight, it.fixed ? pictureRight(it, FIXED_RIGHT) : FIXED_RIGHT);
-        setSpriteUniforms(p, it);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-        gl.uniform3fv(p.U.uRight, Rs);
-        continue;
-      }
-      if (solid && it.M && it.M.box) {
-        /* a building: its front outline extruded through its depth, so the shadow has its true roof line */
-        /* phase 09 batch 9: a turned building's slices turn with it and step back the way it faces */
-        const ta = placedTurn(it.p),
-          tc = Math.cos(ta),
-          ts = Math.sin(ta);
-        gl.uniform3f(p.U.uRight, tc, 0, ts);
-        const d = it.M.box[1] * (it.p.s || 1),
-          n = 6;
-        for (let i = 0; i < n; i++) {
-          const k = (d * i) / (n - 1);
-          setSpriteUniforms(p, it, null, it.z + k * tc);
-          if (ta) gl.uniform3f(p.U.uBase, it.x - k * ts, it.y, it.z + k * tc);
-          gl.drawArrays(gl.TRIANGLES, 0, 6);
-        }
-        gl.uniform3fv(p.U.uRight, Rs);
-        continue;
-      }
-      gl.uniform3fv(p.U.uRight, Rs);
-      setSpriteUniforms(p, it);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-    }
-    gpuTag(0);
+    miss += drawShadowSprites(SH, L, sun, ca);
   };
   if (!hit) {
     let p = gpuState.P.shadowG;
@@ -413,4 +368,186 @@ function fittedShadowPass(items0, sun, C) {
   if (typeof drawSolidPropShadows === 'function') drawSolidPropShadows(SH, items);
   endShadow();
   return SH;
+}
+/* ---------- phase 20 R3 (E9): the shadow pictures as instances (Engine > Quality "Shadows in batches") ----------
+   A shadow map keeps depth only (no colour, no blending, one depth offset for all, LEQUAL), so the order its pictures
+   are drawn in can't change it: they are grouped by picture over the whole pass, one draw each. Each instance is a
+   quad as drawShadowSprites sets it (base, offset and size, the share shown, flip, shear, its right along the
+   ground), in the sprite instances' layout (engine/sprite-instances.js packShadowInstance; the other bytes unread).
+   The program is the shadow one with those uniforms read from the instance. If it does not build on this device the
+   maps keep one draw a picture (the debug log says so). */
+const SHADOW_INSTANCE_DECLS =
+    'in vec2 aC;uniform mat4 uVP;uniform vec3 uBase,uRight;uniform vec4 uOff,uUV;uniform float uFlip,uShear;',
+  SHADOW_INSTANCE_IN =
+    'layout(location=0) in vec2 aC;layout(location=1) in vec3 iBase;layout(location=2) in vec4 iOff;layout(location=3) in vec4 iAxes;layout(location=4) in vec4 iBend;layout(location=11) in uvec4 iFlags;uniform mat4 uVP;\n' +
+    '#define uBase iBase\n#define uRight vec3(iAxes.x,0.,iAxes.y)\n#define uOff iOff\n#define uUV vec4(0.,0.,1.,iBend.w)\n' +
+    '#define uFlip ((iFlags.x&8u)!=0u?-1.:1.)\n#define uShear iBend.y\n';
+function shadowInstanceVertex(vs) {
+  if (vs.split(SHADOW_INSTANCE_DECLS).length !== 2) throw new Error('shadowI: the shadow vertex shader changed');
+  return vs.replace(SHADOW_INSTANCE_DECLS, SHADOW_INSTANCE_IN);
+}
+export const SHADOW_INSTANCE_SHADERS = {
+  shadowI: [shadowInstanceVertex(WALK_SHADERS.shadow[0]), WALK_SHADERS.shadow[1]],
+};
+const shadowInstanceState = { bad: null };
+/* is the instanced program on and built (built on first use if the precompile list did not start it) */
+function shadowInstancesReady() {
+  if (!engineSetting('quality', 'shadowInstances')) return false;
+  const gl = gpuState.gl;
+  if (shadowInstanceState.bad === gl) return false;
+  if (!gpuState.P.shadowI)
+    try {
+      ensurePrograms(SHADOW_INSTANCE_SHADERS);
+    } catch (e) {
+      shadowInstanceState.bad = gl;
+      console.error(e);
+      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'shadows in batches off: ' + e.message);
+      return false;
+    }
+  return true;
+}
+/* a pass's quads, kept from frame to frame (C2: nothing made per frame once they have grown): each a texture, its
+   tag, the picture's group (its texture's first-met number) and the values packShadowInstance packs; a group's tag is
+   its first quad's (a picture is a model's layer or it isn't) */
+const SHADOW_QUADS = { list: [], n: 0, groups: new Map(), count: [], tags: [], order: [] };
+function shadowQuad(T, it, right, z, x) {
+  const Q = SHADOW_QUADS;
+  let q = Q.list[Q.n];
+  if (!q)
+    Q.list[Q.n] = q = {
+      T: null,
+      tag: 0,
+      g: 0,
+      x: 0,
+      y: 0,
+      z: 0,
+      ox: 0,
+      oy: 0,
+      w: 0,
+      h: 0,
+      rx: 0,
+      rz: 0,
+      shear: 0,
+      shown: 1,
+      flip: 1,
+      uv: [0, 0, 1, 1],
+      slope: 0,
+    };
+  Q.n++;
+  spriteGeometry(q, it, z);
+  if (x !== undefined) q.x = x;
+  q.shown = q.uv[3];
+  q.T = T;
+  q.tag = it.voxImg ? 'modelPic' : 0;
+  q.rx = right[0];
+  q.rz = right[2];
+  let g = Q.groups.get(T);
+  if (g === undefined) {
+    g = Q.groups.size;
+    Q.groups.set(T, g);
+    Q.count[g] = 0;
+    Q.tags[g] = q.tag;
+  }
+  q.g = g;
+  Q.count[g]++;
+}
+/* the quads drawShadowSprites would draw, the same items skipped and missed; the number missed */
+function shadowSpriteQuads(L, sun, lamp) {
+  const solid = engineSetting('shadows', 'buildings'),
+    tr = sun ? sun.travel : [0, -1, 0],
+    h = normalize3([tr[0], 0, tr[2]]),
+    Rs0 = Math.hypot(tr[0], tr[2]) < 0.05 ? [1, 0, 0] : [-h[2], 0, h[0]],
+    Q = SHADOW_QUADS,
+    R = [0, 0, 0];
+  Q.n = 0;
+  Q.groups.clear();
+  let miss = 0;
+  for (const it of L) {
+    if (it.flat || it.far || it.k === 'enc2' || it.vol || it.k === 'flag' || it.vox) continue;
+    if (it.k === 'prop' && !(it.sh > 0)) continue;
+    if (it.layer && it.M.box) continue;
+    const T = imageTexture(it.im);
+    if (!T) {
+      miss++;
+      continue;
+    }
+    let Rs = Rs0;
+    if (lamp) {
+      const dx = it.x - lamp[0],
+        dz = it.z - lamp[2],
+        l = Math.hypot(dx, dz);
+      if (l >= 0.3) {
+        R[0] = dz / l;
+        R[2] = -dx / l;
+        Rs = R;
+      }
+    }
+    if (it.bld3) {
+      let F = null;
+      buildingGuard(() => {
+        F = imageTexture(buildingFrontPicture(it.im, it.M.build, it.M));
+      });
+      if (F) shadowQuad(F.t, it, FIXED_RIGHT);
+      else miss++;
+      continue;
+    }
+    if (it.plane && !(solid && it.M && it.M.box)) {
+      shadowQuad(T.t, it, it.fixed ? pictureRight(it, FIXED_RIGHT) : FIXED_RIGHT);
+      continue;
+    }
+    if (solid && it.M && it.M.box) {
+      const ta = placedTurn(it.p),
+        tc = Math.cos(ta),
+        ts = Math.sin(ta),
+        d = it.M.box[1] * (it.p.s || 1),
+        n = 6;
+      R[0] = tc;
+      R[2] = ts;
+      for (let i = 0; i < n; i++) {
+        const k = (d * i) / (n - 1);
+        shadowQuad(T.t, it, R, it.z + k * tc, ta ? it.x - k * ts : undefined);
+      }
+      continue;
+    }
+    shadowQuad(T.t, it, Rs);
+  }
+  return miss;
+}
+function drawShadowSpritesInstanced(SH, L, sun, ca, lamp) {
+  const miss = shadowSpriteQuads(L, sun, lamp),
+    Q = SHADOW_QUADS,
+    G = Q.groups.size;
+  if (!Q.n) return miss;
+  /* the quads in group order (a counting sort: each group's first instance, then each quad's place) */
+  const first = Q.order;
+  let at = 0;
+  for (let g = 0; g < G; g++) {
+    first[g] = at;
+    at += Q.count[g];
+  }
+  for (let i = 0; i < Q.n; i++) {
+    const q = Q.list[i];
+    packShadowInstance(first[q.g]++, q);
+  }
+  uploadSpriteInstances(Q.n * SPRITE_INSTANCE_STRIDE);
+  const gl = gpuState.gl,
+    p = gpuState.P.shadowI;
+  gl.useProgram(p.p);
+  gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
+  gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
+  gl.uniform1f(p.U.uCurveD0, ca[3]);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.uniform1i(p.U.uTex, 0);
+  /* each group from its first instance (first[g] now points past it) */
+  for (const [T, g] of Q.groups) {
+    const n = Q.count[g],
+      f = first[g] - n;
+    gpuTag(Q.tags[g]);
+    gl.bindTexture(gl.TEXTURE_2D, T);
+    bindSpriteInstances(f);
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, n);
+  }
+  gpuTag(0);
+  gl.bindVertexArray(null);
+  return miss;
 }
