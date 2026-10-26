@@ -1229,11 +1229,11 @@ async function runFullTest(mode) {
           const was = saveData,
             s = JSON.parse(JSON.stringify(saveData)),
             data = runWorldData(),
-            /* tap the event sheet's button whose words start so; false when it never shows */
-            tap = async (/** @type {string} */ words) => {
+            /* tap the event sheet's button whose words start with one of these; false when none shows */
+            tap = async (/** @type {string[]} */ ...words) => {
               for (let i = 0; i < 80; i++) {
                 const b = [...document.querySelectorAll('#ov .event-sheet button')].find(x =>
-                  (x.textContent || '').trim().startsWith(words)
+                  words.some(w => (x.textContent || '').trim().startsWith(w))
                 );
                 if (b) {
                   /** @type {HTMLButtonElement} */ (b).click();
@@ -1243,9 +1243,10 @@ async function runFullTest(mode) {
               }
               return false;
             },
-            /* tap Go on until the sheet closes */
+            /* tap Go on, then Keep walking, until the sheet closes */
             finish = async () => {
-              for (let i = 0; i < 20 && document.querySelector('#ov .event-sheet'); i++) await tap('Go on');
+              for (let i = 0; i < 20 && document.querySelector('#ov .event-sheet'); i++)
+                if (!(await tap('Go on', 'Keep walking'))) break;
               for (let i = 0; i < 50 && encPlaying; i++) await selfTestSleep(100);
             },
             out = [];
@@ -1266,11 +1267,24 @@ async function runFullTest(mode) {
             const got = saveData.team.find(m => m.sp === 'carnegie0');
             if (!got) throw new Error('no Philanthrobite joined a party with room');
             out.push(`${billyName(got)} Lv ${got.lvl} joined`);
-            while (saveData.team.length < teamSize()) addBilly(makeBilly('knight0', 5, { wild: true }));
+            while (saveData.team.length < teamSize() - 1) addBilly(makeBilly('knight0', 5, { wild: true }));
+            /* the one left behind: the only one of its kind, so its button is the one tapped */
+            addBilly(makeBilly('cuban0', 5, { wild: true }));
             const last = saveData.team[saveData.team.length - 1];
             encounterOpen(null, 'dig_site');
             if (!(await tap('Revive the rail snake'))) throw new Error('the Dig Site never offered the rail snake');
-            if (!(await tap(billyName(last)))) throw new Error('a full party wasn’t asked who stays behind');
+            /* the revive's line first (Go on), then who stays behind */
+            let asked = false;
+            for (let i = 0; i < 5 && !asked; i++) {
+              const has = (/** @type {string} */ w) =>
+                [...document.querySelectorAll('#ov .event-sheet button')].some(x =>
+                  (x.textContent || '').trim().startsWith(w)
+                );
+              for (let k = 0; k < 50 && !has(billyName(last)) && !has('Go on'); k++) await selfTestSleep(100);
+              if (has(billyName(last))) asked = await tap(billyName(last));
+              else await tap('Go on');
+            }
+            if (!asked) throw new Error('a full party wasn’t asked who stays behind');
             await finish();
             if (saveData.team.includes(last)) throw new Error(`${billyName(last)} was left behind but is still here`);
             if (saveData.team.length !== teamSize() || !saveData.team.some(m => m.sp === 'vanderbilt0'))
