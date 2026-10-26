@@ -21,10 +21,23 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
-import { COATS, MOVES, STAT_IDS } from '../game-data.js';
+import { COATS, GENES, MOVES, STAT_IDS } from '../game-data.js';
 import { hashString, rngFrom } from './rng.js';
+import { graftFit, graftStability } from './genes.js';
 import { isRobot, speciesOf } from './fighters.js';
-import { cleanBuild, makeBilly, maxHp, moveSlotCount, movesAt, partSlots, teamSize } from './rules.js';
+import {
+  billyGraft,
+  cleanBuild,
+  geneData,
+  geneLimit,
+  makeBilly,
+  maxHp,
+  moveSlotCount,
+  movesAt,
+  partSlots,
+  teamSize,
+  unstableTidy,
+} from './rules.js';
 import { coatRoll } from './coats.js';
 import { ranchLevel } from './ranch.js';
 /* eslint-disable no-func-assign */
@@ -33,6 +46,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   breedCan: [() => breedCan, v => (breedCan = v)],
   breedCost: [() => breedCost],
+  // @ts-expect-error -- replaced on purpose
+  breedGenes: [() => breedGenes, v => (breedGenes = v)],
   // @ts-expect-error -- replaced on purpose
   breedHatch: [() => breedHatch, v => (breedHatch = v)],
   breedLine: [() => breedLine],
@@ -139,9 +154,27 @@ export function breedRoll(s, A, B, mode, BR) {
       down = ids[r.int(0, ids.length - 1)];
     m.mut = { k: 'abom', name: breedName(speciesOf(body).name, speciesOf(other).name), up, down };
   }
+  breedGenes(s, m, P, Q, r);
   delete m.met;
   m.hp = maxHp(m);
   return { m, out };
+}
+/** SP-4: an egg keeps each parent's spliced slot at genes.json bank.inherit (the first parent by uid first) when its
+ * Gene fits the egg's form; a splice that would be refused at your Gene Bank's limit is not kept, Unstable is settled at
+ * it. Drawn after every other roll, and only for a spliced parent, so an egg of unspliced parents is what it was
+ * @param {SaveData} s @param {Billy} m the egg @param {Billy} P @param {Billy} Q @param {any} r the egg's stream */
+export function breedGenes(s, m, P, Q, r) {
+  const keep = (GENES.bank && GENES.bank.inherit) || 0;
+  if (keep <= 0) return;
+  /** @type {Record<string, string>} */
+  const g = {};
+  for (const par of [P, Q])
+    for (const [slot, id] of Object.entries(billyGraft(par) || {})) if (!g[slot] && r.chance(keep)) g[slot] = id;
+  const D = geneData(),
+    fit = Object.keys(g).length ? graftFit(D, m.sp, g) : null;
+  if (!fit || graftStability(D, m.sp, fit, geneLimit(s)).refused) return;
+  m.graft = fit;
+  unstableTidy(m, r.next, geneLimit(s));
 }
 /** start breeding: pays the Scrap and puts the rolled egg in the nursery; why not, or '' when it started */
 /** @param {SaveData} s @param {string} a @param {string} b @param {'safe' | 'risky'} mode @param {number} now
