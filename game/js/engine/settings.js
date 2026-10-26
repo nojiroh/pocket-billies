@@ -277,8 +277,6 @@ export const ENGINE_DEFAULTS = {
     phonePixels: false,
     /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each) */
     spriteInstances: false,
-    /* phase 20 R3 (shadows): the shadow maps' pictures one draw per picture, their models one draw per mesh */
-    shadowInstances: true,
     /* phase 20 R3 (F8): models whose mesh holds still (trees whose leaves sway too) in the far shadow map's cache, the
        ones that bob or turn out of it */
     modelShadowCache: true,
@@ -1249,12 +1247,6 @@ export const ENGINE_SPEC = [
         'Pictures in batches',
         'bool',
         'Trees, leaves, people and the other standing pictures are drawn in batches, one draw for all the copies of a picture, instead of one draw each. The same look; fewer calls to the graphics card.',
-      ],
-      [
-        'shadowInstances',
-        'Shadows in batches',
-        'bool',
-        'The shadows of grass, bushes, leaves, people and models are drawn in batches, one draw for all the copies of a picture or a model, instead of one draw each. The same shadows; fewer calls to the graphics card.',
       ],
       [
         'modelShadowCache',

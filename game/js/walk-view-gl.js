@@ -317,12 +317,9 @@ export function ensureWalkGl(cv) {
       engineSetting('quality', 'spriteInstances') && SPRITE_INSTANCE_SHADERS,
       /* phase 20 R2: the weather in one draw */
       WEATHER_FX_SHADERS,
-      /* phase 20 R3: the instanced shadow pictures' and shadow models' programs, while Engine > Quality "Shadows in
-         batches" is on */
-      engineSetting('quality', 'shadowInstances') && SHADOW_INSTANCE_SHADERS,
-      engineSetting('quality', 'shadowInstances') &&
-        typeof MODEL_SHADOW_SHADERS !== 'undefined' &&
-        MODEL_SHADOW_SHADERS,
+      /* phase 20 R3: the instanced shadow pictures' and shadow models' programs */
+      SHADOW_INSTANCE_SHADERS,
+      typeof MODEL_SHADOW_SHADERS !== 'undefined' && MODEL_SHADOW_SHADERS,
     ])
       if (d)
         precompilePrograms(

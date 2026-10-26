@@ -4,9 +4,11 @@
 // a 3D building's front, a box building's slices (straight and turned), a box's layer (skipped), someone wading,
 // flip -1, a picture not loaded yet, and the kinds that cast no picture shadow (flat, far, vol, flag, a model, a prop
 // with no shadow). The ground, buildings, structures, solid props and models are stand-ins that note their turn.
+// Phase 20 R4: the pictures through the old one-at-a-time loop (shadow-loops-ref.mjs), so the snapshot stays the
+// old paths' record; shadow-instances.test.mjs shows the instanced pictures draw the same quads.
 //   node --test --test-update-snapshots tools/test/shadow-passes.test.mjs   remakes it (say why in the commit)
 import { test } from 'node:test';
-import { record, shadowFixture, shadowSetup } from './shadow-fixture.mjs';
+import { record, shadowFixture, shadowSetup, withOldShadowSprites } from './shadow-fixture.mjs';
 
 const G = globalThis;
 const { engineContext } = G;
@@ -20,8 +22,10 @@ const lamps = () => [
 test('the sun: near map, far map missed then hit; every call in order', t => {
   const gl = shadowSetup(),
     L = shadowFixture();
-  G.shadowPass(L, SUN, null);
-  G.shadowPass(L, SUN, null);
+  withOldShadowSprites(() => {
+    G.shadowPass(L, SUN, null);
+    G.shadowPass(L, SUN, null);
+  });
   t.assert.snapshot(record(gl));
 });
 
@@ -29,7 +33,9 @@ test('the sun straight overhead, no cache, one cascade', t => {
   const gl = shadowSetup();
   engineContext.look.quality.shadowCache = false;
   engineContext.look.shadows.cascades = false;
-  G.shadowPass(shadowFixture(), { travel: [0, -1, 0.01] }, null);
+  withOldShadowSprites(() => {
+    G.shadowPass(shadowFixture(), { travel: [0, -1, 0.01] }, null);
+  });
   t.assert.snapshot(record(gl));
 });
 
@@ -37,6 +43,8 @@ test("the lamps' maps: every call in order", t => {
   const gl = shadowSetup(),
     X = { lights: lamps() };
   G.LAMP_SHADOWED.length = 0;
-  G.lampShadowMaps(shadowFixture(), X, 1);
+  withOldShadowSprites(() => {
+    G.lampShadowMaps(shadowFixture(), X, 1);
+  });
   t.assert.snapshot(record(gl));
 });

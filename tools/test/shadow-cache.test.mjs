@@ -4,7 +4,7 @@
 // graphics.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { shadowSetup } from './shadow-fixture.mjs';
+import { shadowSetup, withOldShadowSprites } from './shadow-fixture.mjs';
 await import('../../game/js/prop-models.js');
 
 const G = globalThis;
@@ -131,8 +131,9 @@ function swayers() {
 function farLists(fs, on) {
   shadowSetup();
   engineContext.look.quality.farShadowsStill = fs;
-  engineContext.look.quality.shadowInstances = on;
-  G.fittedShadowPass(swayers(), SUN, null);
+  const run = () => G.fittedShadowPass(swayers(), SUN, null);
+  if (on) run();
+  else withOldShadowSprites(run);
   return {
     stat: G.SHADOW_LISTS.stat.map(it => it.id),
     dyn: G.SHADOW_LISTS.dyn.map(it => it.id),
@@ -152,9 +153,10 @@ test('far shadows hold still: what only the wind sways is cached; anything else 
 });
 // the shear each picture is drawn with, one at a time (the last uShear before its draw) and as instances
 function shears(on, rest) {
-  const gl = shadowSetup();
-  engineContext.look.quality.shadowInstances = on;
-  G.drawShadowSprites({ vp: ['x'] }, swayers(), SUN, [0, 0, 0, 1e9], null, rest);
+  const gl = shadowSetup(),
+    run = () => G.drawShadowSprites({ vp: ['x'] }, swayers(), SUN, [0, 0, 0, 1e9], null, rest);
+  if (on) run();
+  else withOldShadowSprites(run);
   const out = {};
   if (on) {
     for (let i = 0; i < G.SHADOW_QUADS.n; i++) out[G.SHADOW_QUADS.list[i].T] = G.SHADOW_QUADS.list[i].shear;

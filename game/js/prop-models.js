@@ -77,14 +77,12 @@ expose({
   drawModelInstances: [() => drawModelInstances, v => (drawModelInstances = v)],
   drawModelPart: [() => drawModelPart, v => (drawModelPart = v)],
   drawModelShadowPart: [() => drawModelShadowPart, v => (drawModelShadowPart = v)],
-  drawPropModelMesh: [() => drawPropModelMesh, v => (drawPropModelMesh = v)],
   drawPropModelShadows: [
     () => drawPropModelShadows,
     v => ((drawPropModelShadows = v), provide({ drawPropModelShadows })),
   ],
   drawPropModelShadowsInstanced: [() => drawPropModelShadowsInstanced, v => (drawPropModelShadowsInstanced = v)],
   drawPropModels: [() => drawPropModels, v => setDrawPropModels(v)],
-  drawSpinningParts: [() => drawSpinningParts, v => (drawSpinningParts = v)],
   flushPropModelMeshes: [
     () => flushPropModelMeshes,
     v => ((flushPropModelMeshes = v), provide({ flushPropModelMeshes })),
@@ -113,8 +111,6 @@ expose({
   propModelShaders: [() => propModelShaders, v => ((propModelShaders = v), provide({ propModelShaders }))],
   propModelState: [() => propModelState],
   propModelsOn: [() => propModelsOn, v => (propModelsOn = v)],
-  setItemSpin: [() => setItemSpin, v => (setItemSpin = v)],
-  setPropModelUniforms: [() => setPropModelUniforms, v => (setPropModelUniforms = v)],
   spinPartAngle: [() => spinPartAngle, v => (spinPartAngle = v)],
   swappedRecipe: [() => swappedRecipe, v => (swappedRecipe = v)],
   tagPropModel: [() => tagPropModel, v => ((tagPropModel = v), provide({ tagPropModel }))],
@@ -823,19 +819,6 @@ function spinPartAngle(s, t) {
   const ph = t * s.rps * Math.PI * 2;
   return s.sw ? Math.sin(ph) * s.sw : ph;
 }
-/* the turning parts of a voxel prop, drawn after its still mesh (p: the program, its uniforms set for the item) */
-function drawSpinningParts(p, m) {
-  if (!m.spins || !m.spins.length) return;
-  const gl = gpuState.gl,
-    t = (reducedMotion ? 0 : walkView.t || 0) / 1000;
-  for (const s of m.spins) {
-    gl.uniform4f(p.U.uSpin, s.a[0], s.a[1], s.a[2], spinPartAngle(s, t));
-    gl.uniform3fv(p.U.uSpinC, s.c);
-    drawPropModelMesh(s);
-  }
-  gl.uniform4f(p.U.uSpin, 1, 0, 0, 0);
-  gl.uniform3f(p.U.uSpinC, 0, 0, 0);
-}
 function flushPropModelMeshes() {
   for (const k of [...propModelState.meshes.keys()]) invalidatePropModel(k, true);
   /* phase 20 R2: the instanced models' record buffer too (a restored context may hand back the same context object) */
@@ -1384,12 +1367,6 @@ function lowPolyOn(rec) {
     !(rec.layers || []).some(l => l.k === 'raw' && !l.hide)
   );
 }
-function drawPropModelMesh(m) {
-  const gl = gpuState.gl;
-  gl.bindVertexArray(m.vao);
-  if (m.el) gl.drawElements(gl.TRIANGLES, m.n, m.u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT, 0);
-  else gl.drawArrays(gl.TRIANGLES, 0, m.n);
-}
 /* the model's program: its own vertex shader (placed, scaled, turned and spun like a voxel prop), the buildings' look */
 const lowPolyVertexShader = () => `#version 300 es
 precision highp float;layout(location=0) in vec3 mPos;layout(location=1) in vec3 mNrm;layout(location=2) in vec2 mUV;layout(location=3) in vec3 mTex;layout(location=4) in vec3 mCol;
@@ -1422,14 +1399,13 @@ function lowPolyFragmentShader() {
 }
 /* the models among the items, drawn after the voxel props: L is [item, mesh] */
 /* alpha 0.4: the props' programs, for compiling ahead when the 3D view starts (walk-view-gl.js ensureWalkGl). Phase 20
-   R4: the instanced pair (made from the plain vox and mdl texts, which are no longer compiled themselves) and the
-   shadows' voxS */
+   R4: the instanced pair (made from the plain vox and mdl texts, which are no longer compiled themselves); the shadows'
+   voxSI is MODEL_SHADOW_SHADERS */
 const PROP_MODEL_PROGRAMS = {};
 export function propModelShaders() {
   if (!PROP_MODEL_SHADERS.mdl && typeof BUILDING_SHADERS !== 'undefined')
     PROP_MODEL_SHADERS.mdl = [lowPolyVertexShader(), lowPolyFragmentShader()];
   const P = PROP_MODEL_PROGRAMS;
-  P.voxS = PROP_MODEL_SHADERS.voxS;
   if (!P.voxI) P.voxI = voxInstancedShaders();
   if (!P.mdlI && PROP_MODEL_SHADERS.mdl) P.mdlI = lowPolyInstancedShaders();
   return P;
@@ -1773,29 +1749,6 @@ function mooredBob(it) {
     Math.sin(t * 0.29 + ph) * 0.03 * (1 + w * 0.4),
   ];
 }
-/* RF-2: a whole model turned about any axis (a thrown pyramid tumbling, rocking on a base edge): it.spin {a: a unit
-   axis, up as y; an: radians; c: the pivot in the model's metres, up as y}; else not turned */
-function setItemSpin(p, it) {
-  const gl = gpuState.gl,
-    S = it.spin;
-  if (S) {
-    gl.uniform4f(p.U.uSpin, S.a[0], S.a[1], S.a[2], S.an);
-    gl.uniform3fv(p.U.uSpinC, S.c);
-  } else {
-    gl.uniform4f(p.U.uSpin, 1, 0, 0, 0);
-    gl.uniform3f(p.U.uSpinC, 0, 0, 0);
-  }
-}
-function setPropModelUniforms(p, it) {
-  const gl = gpuState.gl,
-    U = p.U,
-    s = (it.p.s || 1) * (it.lk ? it.lk.size : 1),
-    bo = mooredBob(it);
-  gl.uniform3f(U.uBase, it.x, it.y + (bo ? bo[0] : 0), it.z);
-  gl.uniform1f(U.uS, s);
-  gl.uniform1f(U.uRot, propTurn(it) + (bo ? bo[1] : 0)); /* phase 09 batch 9: and the placement's turn */
-  gl.uniform1f(U.uFlip, it.flip || 1);
-}
 export function drawPropModels(C, items, X, hits, labels, PPU) {
   propModelState.drawn = 0;
   propModelState.lowPoly = 0;
@@ -1833,7 +1786,9 @@ export function drawPropModels(C, items, X, hits, labels, PPU) {
    the same records, turning parts too (their turn, the same for every item, replacing the item's own: uPart). The
    one-at-a-time loops live on in tools/test/model-loops-ref.mjs as the tests' reference. */
 /* a voxel prop's or a low-poly model's values (kind 'vox' or 'mdl') into v (engine/model-instances.js
-   modelInstanceValues), exactly as the old one-at-a-time loops set them (tools/test/model-loops-ref.mjs) */
+   modelInstanceValues), exactly as the old one-at-a-time loops set them (tools/test/model-loops-ref.mjs). RF-2: a whole
+   model turned about any axis (a thrown pyramid tumbling, rocking on a base edge): it.spin {a: a unit axis, up as y;
+   an: radians; c: the pivot in the model's metres, up as y}; else not turned */
 const NEUTRAL_MODEL_LOOK = { wear: [0, 0, 0, 0], hsv: [0, 0, 0, 0], tint: [1, 1, 1, 0], mask: [0, 0] };
 function propModelInstanceValues(it, kind, v) {
   const bo = mooredBob(it),
@@ -1967,42 +1922,16 @@ function drawPropModelShadows(SH, items) {
   if (!propModelsOn()) return;
   gpuTag('model');
   propModelGuard(() => {
-    const gl = gpuState.gl;
-    ensurePrograms(propModelShaders());
-    if (modelShadowInstancesReady()) {
-      drawPropModelShadowsInstanced(SH, items);
-      return;
-    }
-    let p = null;
-    const ca = typeof worldCurveArgs === 'function' ? worldCurveArgs() : [0, 0, 0, 1e9];
-    for (const it of items) {
-      if (!it.vox) continue;
-      const m = propModelMesh(it.voxPath, it.vox);
-      if (!m) continue;
-      if (!p) {
-        p = gpuState.P.voxS;
-        gl.useProgram(p.p);
-        gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
-        gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
-        gl.uniform1f(p.U.uCurveD0, ca[3]);
-      }
-      setPropModelUniforms(p, it);
-      gl.uniform1f(p.U.uQ, m.q || 1);
-      setItemSpin(p, it);
-      drawPropModelMesh(m);
-      for (const q of m.more || []) drawPropModelMesh(q);
-      drawSpinningParts(p, m);
-    }
-    gl.bindVertexArray(null);
+    if (modelShadowInstancesReady()) drawPropModelShadowsInstanced(SH, items);
   });
   gpuTag(0);
 }
-/* ---------- phase 20 R3: the shadow maps' models instanced (Engine > Quality "Shadows in batches") ----------
+/* ---------- phase 20 R3: the shadow maps' models instanced (the only path since R4) ----------
    One draw per mesh part for every item with that mesh, as the main pass's "Models in batches" does: each item's
    record (the same values: its place with the bob, scale, turn, flip, its own spin) in a buffer of the shadows' own,
    drawn by voxSI (voxI's placing, depth only). Voxel props and low-poly models alike, each with its own mesh layout,
-   as voxS draws them; extra parts and turning parts over the same records. If voxSI does not build the maps keep
-   one draw an item (the debug log says so). */
+   as the old voxS loop drew them (tools/test/shadow-loops-ref.mjs); extra parts and turning parts over the same
+   records. If voxSI does not build the maps draw no model shadows (the debug log says so). */
 const MODEL_SHADOW_SHADERS = {
   voxSI: [
     `#version 300 es
@@ -2015,7 +1944,6 @@ provide({ MODEL_SHADOW_SHADERS }); /* to-module */
 const modelShadowState = { bad: null, list: [] },
   MODEL_SHADOW_INSTANCES = modelInstanceStore();
 function modelShadowInstancesReady() {
-  if (typeof engineSetting !== 'function' || !engineSetting('quality', 'shadowInstances')) return false;
   const gl = gpuState.gl;
   if (modelShadowState.bad === gl) return false;
   if (!gpuState.P.voxSI)
@@ -2024,7 +1952,7 @@ function modelShadowInstancesReady() {
     } catch (e) {
       modelShadowState.bad = gl;
       console.error(e);
-      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'model shadows in batches off: ' + e.message);
+      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'model shadows off: ' + e.message);
       return false;
     }
   return true;

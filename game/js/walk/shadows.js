@@ -23,7 +23,7 @@ import { gpuPass, gpuTag } from '../engine/gpu-counters.js';
 import { filterInto } from '../engine/frame-lists.js';
 import { walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
-import { bindQuad, ensurePrograms, gpuState, imageTexture, normalize3, renderTarget } from '../engine/webgl.js';
+import { ensurePrograms, gpuState, imageTexture, normalize3, renderTarget } from '../engine/webgl.js';
 import { beginLampShadow, beginSunShadow, endShadow, frameBlockStale } from '../engine/light.js';
 import { LIGHT_HOLD_M } from '../engine/light-pick.js';
 import {
@@ -35,7 +35,7 @@ import {
 import { FIXED_RIGHT, walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
 import { WALK_SHADERS } from './walk-shaders.js';
-import { setSpriteUniforms, spriteGeometry, worldCurveArgs } from './draw-common.js';
+import { spriteGeometry, worldCurveArgs } from './draw-common.js';
 import { screenRay } from './camera.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -197,90 +197,13 @@ export function lampShadowMaps(items, X, dark) {
     X.lampSh.push(SH);
   });
 }
-/* the sprites of a shadow pass, each turned to face the sun (fixed ones and buildings as they stand); for a lamp, each turned to face the lamp */
-/* phase 20 R3: rest, the far map's still part with "Far shadows hold still" on: a prop the wind sways at its rest */
+/* the sprites of a shadow pass, each turned to face the sun (fixed ones and buildings as they stand); for a lamp, each
+   turned to face the lamp. Phase 20 R3: rest, the far map's still part: a prop the wind sways at its rest. Phase 20 R4:
+   always as instances (below); the one-draw-a-picture loop lives on in tools/test/shadow-loops-ref.mjs as the tests'
+   reference. Returns how many pictures weren't loaded yet */
 function drawShadowSprites(SH, L, sun, ca, lamp, rest) {
-  if (shadowInstancesReady()) return drawShadowSpritesInstanced(SH, L, sun, ca, lamp, rest);
-  const gl = gpuState.gl,
-    p = gpuState.P.shadow,
-    solid = engineSetting('shadows', 'buildings'),
-    tr = sun ? sun.travel : [0, -1, 0],
-    h = normalize3([tr[0], 0, tr[2]]),
-    Rs0 = Math.hypot(tr[0], tr[2]) < 0.05 ? [1, 0, 0] : [-h[2], 0, h[0]];
-  let Rs = Rs0;
-  gl.useProgram(p.p);
-  gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
-  gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
-  gl.uniform1f(p.U.uCurveD0, ca[3]);
-  bindQuad();
-  gl.activeTexture(gl.TEXTURE0);
-  gl.uniform1i(p.U.uTex, 0);
-  let miss = 0;
-  for (const it of L) {
-    if (it.flat || it.far || it.k === 'enc2' || it.vol || it.k === 'flag' || it.vox) continue;
-    if (it.k === 'prop' && !(it.sh > 0)) continue;
-    /* a box building's layers cast none (its slices do): skipped before its picture is looked up or bound */
-    if (it.layer && it.M.box) continue;
-    gpuTag(it.voxImg ? 'modelPic' : 0); /* R1 measure: a model's picture layer counted apart */
-    const T = imageTexture(it.im);
-    if (!T) {
-      miss++;
-      continue;
-    }
-    gl.bindTexture(gl.TEXTURE_2D, T.t);
-    if (lamp) {
-      const dx = it.x - lamp[0],
-        dz = it.z - lamp[2],
-        l = Math.hypot(dx, dz);
-      Rs = l < 0.3 ? Rs0 : [dz / l, 0, -dx / l];
-    }
-    if (it.bld3) {
-      let F = null;
-      buildingGuard(() => {
-        F = imageTexture(buildingFrontPicture(it.im, it.M.build, it.M));
-      });
-      if (!F) miss++;
-      if (F) {
-        gl.bindTexture(gl.TEXTURE_2D, F.t);
-        gl.uniform3fv(p.U.uRight, FIXED_RIGHT);
-        setSpriteUniforms(p, it);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-        gl.uniform3fv(p.U.uRight, Rs);
-      }
-      continue;
-    }
-    if (it.plane && !(solid && it.M && it.M.box)) {
-      gl.uniform3fv(p.U.uRight, it.fixed ? pictureRight(it, FIXED_RIGHT) : FIXED_RIGHT);
-      setSpriteUniforms(p, it);
-      if (rest && it.rest !== undefined) gl.uniform1f(p.U.uShear, it.rest);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      gl.uniform3fv(p.U.uRight, Rs);
-      continue;
-    }
-    if (solid && it.M && it.M.box) {
-      /* phase 09 batch 9: a turned building's slices turn with it and step back the way it faces */
-      const ta = placedTurn(it.p),
-        tc = Math.cos(ta),
-        ts = Math.sin(ta);
-      gl.uniform3f(p.U.uRight, tc, 0, ts);
-      const d = it.M.box[1] * (it.p.s || 1),
-        n = 6;
-      for (let i = 0; i < n; i++) {
-        const k = (d * i) / (n - 1);
-        setSpriteUniforms(p, it, null, it.z + k * tc);
-        if (ta) gl.uniform3f(p.U.uBase, it.x - k * ts, it.y, it.z + k * tc);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-      }
-      gl.uniform3fv(p.U.uRight, Rs);
-      continue;
-    }
-    gl.uniform3fv(p.U.uRight, Rs);
-    setSpriteUniforms(p, it);
-    if (rest && it.rest !== undefined) gl.uniform1f(p.U.uShear, it.rest);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
-  }
-  gpuTag(0);
-  return miss;
+  if (!shadowInstancesReady()) return 0;
+  return drawShadowSpritesInstanced(SH, L, sun, ca, lamp, rest);
 }
 function fittedShadowPass(items0, sun, C) {
   const sc = walkView.sc,
@@ -379,13 +302,13 @@ function fittedShadowPass(items0, sun, C) {
   endShadow();
   return SH;
 }
-/* ---------- phase 20 R3 (E9): the shadow pictures as instances (Engine > Quality "Shadows in batches") ----------
+/* ---------- phase 20 R3 (E9): the shadow pictures as instances (the only path since R4) ----------
    A shadow map keeps depth only (no colour, no blending, one depth offset for all, LEQUAL), so the order its pictures
    are drawn in can't change it: they are grouped by picture over the whole pass, one draw each. Each instance is a
-   quad as drawShadowSprites sets it (base, offset and size, the share shown, flip, shear, its right along the
+   quad as the old one-at-a-time loop set it (base, offset and size, the share shown, flip, shear, its right along the
    ground), in the sprite instances' layout (engine/sprite-instances.js packShadowInstance; the other bytes unread).
    The program is the shadow one with those uniforms read from the instance. If it does not build on this device the
-   maps keep one draw a picture (the debug log says so). */
+   maps draw no picture shadows (the debug log says so). */
 const SHADOW_INSTANCE_DECLS =
     'in vec2 aC;uniform mat4 uVP;uniform vec3 uBase,uRight;uniform vec4 uOff,uUV;uniform float uFlip,uShear;',
   SHADOW_INSTANCE_IN =
@@ -400,9 +323,8 @@ export const SHADOW_INSTANCE_SHADERS = {
   shadowI: [shadowInstanceVertex(WALK_SHADERS.shadow[0]), WALK_SHADERS.shadow[1]],
 };
 const shadowInstanceState = { bad: null };
-/* is the instanced program on and built (built on first use if the precompile list did not start it) */
+/* is the instanced program built (built on first use if the precompile list did not start it) */
 function shadowInstancesReady() {
-  if (!engineSetting('quality', 'shadowInstances')) return false;
   const gl = gpuState.gl;
   if (shadowInstanceState.bad === gl) return false;
   if (!gpuState.P.shadowI)
@@ -411,7 +333,7 @@ function shadowInstancesReady() {
     } catch (e) {
       shadowInstanceState.bad = gl;
       console.error(e);
-      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'shadows in batches off: ' + e.message);
+      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'picture shadows off: ' + e.message);
       return false;
     }
   return true;
