@@ -18,6 +18,7 @@ expose({
   ENGINE_PRESETS: [() => ENGINE_PRESETS],
   ENGINE_SPEC: [() => ENGINE_SPEC],
   FRAME_SETTINGS: [() => FRAME_SETTINGS],
+  OFF_LOOK: [() => OFF_LOOK],
   PLAIN_LOOK: [() => PLAIN_LOOK],
   TOD_NAMES: [() => TOD_NAMES],
   beginFrameSettings: [() => beginFrameSettings, v => (beginFrameSettings = v)],
@@ -28,6 +29,7 @@ expose({
   engineSetting: [() => engineSetting, v => ((engineSetting = v), provide({ engineSetting }))],
   frameSettingsState: [() => frameSettingsState],
   gameDataDials: [() => gameDataDials, v => (gameDataDials = v)],
+  graphicsOff: [() => graphicsOff, v => (graphicsOff = v)],
   lookDials: [() => lookDials, v => (lookDials = v)],
   lookStop: [() => lookStop],
   playerBlur: [() => playerBlur, v => (playerBlur = v)],
@@ -1606,6 +1608,24 @@ export const PLAIN_LOOK = {
     hazeDistance: 900,
   },
 };
+/* the Graphics preset Off (Settings → Display): the plain look and also no shadows, grass, far things, water
+   reflections or lamp glow. It stands in for the player's dials (their expert dials wait untouched), and the walk view
+   leaves out the time of day, the weather and the blur while it is on */
+const OFF_LOOK = {
+  ...PLAIN_LOOK,
+  lens: { ...PLAIN_LOOK.lens, blurFar: 0, blurNear: 0, edgeBlur: 0, miniature: 0 },
+  sun: { ...PLAIN_LOOK.sun, shafts: 0, innerSun: 0 },
+  air: { ...PLAIN_LOOK.air, cheapShafts: 0 },
+  shadows: { strength: 0, selfShade: 0, contact: 0, ao: 0, groundAO: 0, lampShadows: 0 },
+  lights: { glow: 0, pools: 0, flicker: 0 },
+  grass: { density: 0 },
+  world: { farProps: 0, farHills: 0 },
+  water: { reflection: 0, caustics: 0, glints: 0, foam: 0 },
+};
+export function graphicsOff() {
+  const p = typeof saveData !== 'undefined' && saveData && saveData.preferences;
+  return !!p && p.aim === 'off';
+}
 /* CAM-4b: camera looks (the Studio's Camera section): presets of camera dials only, each setting the same dials so one
    swaps cleanly for another. Their stops stay on the straight line the default stops lie on (14 degrees of tilt a
    unit of zoom, the distance times the zoom), so the pull and the cycle feel the same; they differ in the tilt, the
@@ -1736,11 +1756,13 @@ function gameDataDials() {
 export function playerBlur() {
   const p = typeof saveData !== 'undefined' && saveData && saveData.preferences,
     v = p ? p.blur : null;
+  if (graphicsOff()) return 0;
   return typeof v === 'number' && isFinite(v) ? Math.max(0, Math.min(1.5, v)) : 1;
 }
 /* alpha 0.5: a player's own expert dials (Settings → Graphics → Expert) come first */
 function playerDials() {
   const p = typeof saveData !== 'undefined' && saveData && saveData.preferences;
+  if (graphicsOff()) return OFF_LOOK;
   return p && p.expert && p.eng ? p.eng : null;
 }
 /* phase 20 C1: while a walk frame draws, each dial is looked up once (beginFrameSettings, after the environment update)

@@ -9,6 +9,10 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Graphics: Off** (Settings → Display): a third card next to Balanced and Beautiful that turns every effect off:
+  no shadows, grass blades, mist, clouds, sun rays, blur, glow, colour grading, water reflections, far trees and
+  hills, and no time-of-day or weather tint (a steady midday light). The picture stays at full sharpness; Expert
+  dials wait untouched and come back when you pick another card. Map clouds on Auto are off with it.
 - **More props on the routes** (route props track RP-1): the last drawn props in the routes' set pieces (firewood,
   the scrap heap, the creature statue, tyres, the tollbooth) are 3D models, and 20 new 3D props: a stile, a
   landing stage, broken columns, a ruined arch and wall corner, a milestone, a trail post, a wayside shrine with a

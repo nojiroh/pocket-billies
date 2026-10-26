@@ -360,7 +360,7 @@ export function runSceneMake(run, i, scenes, data) {
  * @param {string} [aim] @returns {number} */
 export function runTownFolkCap(T, q, aim) {
   if (q >= 2) return T.cap.busy;
-  return aim === 'smooth' ? T.cap.balanced : T.cap.best;
+  return aim === 'smooth' || aim === 'off' ? T.cap.balanced : T.cap.best;
 }
 /** TW-2: a run town's own life, from its node's stream ('town|life'): its region's chat lines after its biome's
  * (rules.json run.town.chat by the region's theme), and its named locals (scene.people), run.town.locals of them on
