@@ -499,3 +499,32 @@ test('WA-9: hand kinds lie last in the waters; nonsense in the hand is left out'
   assert.deepEqual(sc.streams, MADE[0].scene.streams);
   assert.deepEqual(sc.falls, MADE[0].scene.falls);
 });
+
+test("WA-9: a saved scene's river bed carved from its line (the map editor), again without sinking it", () => {
+  const sc = structuredClone(GAME_DATA.maps.test_water),
+    line = [
+      [0, 6],
+      [8, 6.5],
+      [20, 3.5],
+    ],
+    r = WG.waterGenSceneRiver(sc, line, { w: 2 });
+  assert.equal(r.stream.src, 'edge');
+  assert.equal(r.stream.mouth, 'pool');
+  const out = { ...sc, tiles: r.tiles, heights: r.heights };
+  for (let i = 1; i < r.stream.pts.length; i++)
+    assert.ok(heightAt(out, ...r.stream.pts[i]) <= heightAt(out, ...r.stream.pts[i - 1]) + 0.02, `point ${i} higher`);
+  for (const p of r.stream.pts.slice(1)) assert.ok('wd'.includes(tileAt(out, ...p)), `${p} dry`);
+  assert.deepEqual(sc, GAME_DATA.maps.test_water, 'the scene itself is not changed');
+  const again = WG.waterGenSceneRiver(out, line, { w: 2 });
+  let most = 0;
+  r.heights.forEach((row, j) => row.forEach((v, i) => (most = Math.max(most, Math.abs(v - again.heights[j][i])))));
+  assert.ok(most <= 0.15, `carved again, its bed moves ${most} m`);
+  assert.equal(
+    WG.waterGenSceneRiver(sc, [
+      [3, 3],
+      [3.5, 3],
+    ]),
+    null,
+    'a line under 2 m'
+  );
+});

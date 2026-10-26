@@ -135,6 +135,8 @@ expose({
   waterGenRiverFalls: [() => waterGenRiverFalls, v => (waterGenRiverFalls = v)],
   waterGenSave: [() => waterGenSave],
   // @ts-expect-error -- replaced on purpose
+  waterGenSceneRiver: [() => waterGenSceneRiver, v => (waterGenSceneRiver = v)],
+  // @ts-expect-error -- replaced on purpose
   waterGenSeamCells: [() => waterGenSeamCells, v => (waterGenSeamCells = v)],
   // @ts-expect-error -- replaced on purpose
   waterGenSeamLevel: [() => waterGenSeamLevel, v => (waterGenSeamLevel = v)],
@@ -699,6 +701,120 @@ export function waterGenHandFalls(G, falls) {
 }
 
 /**
+ * a saved scene's river bed made again from its line (the Studio map editor's "Carve the bed"): the line shaped,
+ * painted and carved as a hand river is, on the scene's own tiles and heights. Its level is read from the banks: the
+ * corners under water now are first filled from the dry ground round them, so carving the same line again moves its
+ * bed a tenth of a metre at most (it does not sink it again). Water already there off the new line stays. Returns the new tiles, heights and the stream entry
+ * (the scene is not changed), or null for a line under 2 m.
+ * @param {any} sc the scene @param {number[][]} line the river's points from its source @param {{w?: number,
+ * bank?: string, roads?: string}} [o] its width at the mouth (default 2.4 m), the bank's ground letter (default 's')
+ * and the ground letters that are roads (no bank is painted on them; default the generator's surfaces)
+ */
+export function waterGenSceneRiver(sc, line, o = {}) {
+  const { w, h } = sc,
+    W = w + 1,
+    roads = o.roads || 'pvKq',
+    T = [],
+    F = new Uint8Array(w * h);
+  for (let j = 0; j < h; j++)
+    for (let i = 0; i < w; i++) {
+      const ch = sc.tiles[h - 1 - j][i] || 'g';
+      T.push(ch);
+      F[j * w + i] = (ch === 'w' || ch === 'd' ? 4 : 0) | (roads.includes(ch) ? 1 : 0);
+    }
+  const H = new Float32Array(W * (h + 1));
+  for (let j = 0; j <= h; j++) for (let i = 0; i <= w; i++) H[j * W + i] = +(sc.heights[h - j] || [])[i] || 0;
+  /* the banks' heights: a wet corner takes the mean of its dry neighbours, eight passes in */
+  const wetCorner = c => {
+      const i = c % W,
+        j = (c - i) / W;
+      for (const [a, b] of [
+        [i, j],
+        [i - 1, j],
+        [i, j - 1],
+        [i - 1, j - 1],
+      ])
+        if (a >= 0 && b >= 0 && a < w && b < h && F[b * w + a] & 4) return true;
+      return false;
+    },
+    Hb = Float32Array.from(H),
+    todo = new Uint8Array(W * (h + 1));
+  for (let c = 0; c < todo.length; c++) todo[c] = wetCorner(c) ? 1 : 0;
+  for (let pass = 0; pass < 8; pass++) {
+    const next = [];
+    for (let c = 0; c < todo.length; c++) {
+      if (!todo[c]) continue;
+      const i = c % W,
+        j = (c - i) / W;
+      let sum = 0,
+        n = 0;
+      for (const [a, b] of [
+        [i + 1, j],
+        [i - 1, j],
+        [i, j + 1],
+        [i, j - 1],
+      ])
+        if (a >= 0 && b >= 0 && a <= w && b <= h && !todo[b * W + a]) {
+          sum += Hb[b * W + a];
+          n++;
+        }
+      if (n) next.push([c, sum / n]);
+    }
+    for (const [c, v] of next) {
+      Hb[c] = v;
+      todo[c] = 0;
+    }
+  }
+  const G = {
+    w,
+    h,
+    T,
+    F,
+    H: Hb,
+    B: { ground: { bank: o.bank || 's' } },
+    P: { pin: '', road: { width: 2 }, feature: 'none', land: { water: 'none' } },
+    joined: [],
+    spans: [],
+    streams: [],
+    notes: [],
+    occ: new Map(),
+  };
+  const pts = mapgenResample(line, 1),
+    last = line[line.length - 1];
+  if (Math.hypot(pts[pts.length - 1][0] - last[0], pts[pts.length - 1][1] - last[1]) > 0.05) pts.push(last.slice());
+  if (pts.length < 3) return null;
+  const a = pts[0],
+    b = pts[pts.length - 1],
+    wide = o.w || 2.4,
+    wetAt = p => !!(F[mapgenCellAt(G, p[0], p[1])] & 4),
+    sideA = waterGenSideBy(G, a[0], a[1]),
+    sideB = waterGenSideBy(G, b[0], b[1]),
+    mouth = sideB ? 'edge' : wetAt(b) ? 'lake' : 'pool';
+  const river = waterGenShape(
+    G,
+    null,
+    {
+      src: { src: sideA ? 'edge' : wetAt(a) ? 'lake' : 'spring' },
+      mouth: { kind: mouth === 'pool' ? 'pool' : 'hand', mouth, at: b, pr: Math.max(2.5, wide * 0.8) },
+    },
+    { pts, flow: pts.map((_, i) => i + 1) },
+    wide,
+    false
+  );
+  river.srcSide = sideA || null;
+  river.mouthSide = sideB || null;
+  /* painted and carved on the scene's own heights */
+  G.H = H;
+  waterGenPaint(G, river);
+  waterGenCarveRiver(G, river);
+  const tiles = [],
+    heights = [];
+  for (let j = h - 1; j >= 0; j--) tiles.push(G.T.slice(j * w, (j + 1) * w).join(''));
+  for (let j = h; j >= 0; j--) heights.push(Array.from(H.subarray(j * W, (j + 1) * W), v => mapgenRound2(v) || 0));
+  return { tiles, heights, stream: G.streams[0] };
+}
+
+/**
  * the scene's river (mapgen's water stage, for the stream dial or the bridge feature): tried from several sources to
  * several mouths, the longest that keeps clear of the exits and the hub's place kept; painted, its line in G.streams
  * with its widths, source, mouth and rapids. Falls back to the old line across the map when nothing fits.
@@ -888,7 +1004,7 @@ export function waterGenShape(G, R, plan, got, width, bend = true) {
   }
   /* meanders where the ground is flat: a sideways swing by noise, gone at the ends */
   const raw = line.map(p => waterGenHeightAt(G.H, w, h, p[0], p[1])),
-    ns = G.salt('heights', 'meander'),
+    ns = bend ? G.salt('heights', 'meander') : 0,
     N = line.length,
     flat = new Float32Array(N);
   for (let i = 0; i < N; i++) {
