@@ -14,7 +14,7 @@
   {
    "who": "kappi",
    "expr": null,
-   "text": "He means: are you hurt? That was quite a landing."
+   "text": "He means: are you hurt? Take your time. Nothing down here is in a hurry. Except him."
   },
   {
    "who": "chosen",
@@ -34,7 +34,7 @@
   {
    "who": "kappi",
    "expr": null,
-   "text": "Fall-related amnesia. Very common down here. It usually comes back, a bit at a time."
+   "text": "Fall-related amnesia. Very common down here. It comes back slowly. Most good things do."
   },
   {
    "who": "chosen",
@@ -57,7 +57,7 @@
   {
    "who": "kappi",
    "expr": null,
-   "text": "I’m Kappi. I do the research. He does the… presence."
+   "text": "I’m Kappi. People add “the Wise”. I do the research. He does the… presence."
   },
   {
    "who": "chosen",
@@ -67,7 +67,7 @@
   {
    "who": "kappi",
    "expr": null,
-   "text": "Then dropped them down here. They went wild."
+   "text": "Then dropped them down here. They went wild. Most of them nap on me now."
   },
   {
    "who": "chosen",
@@ -105,7 +105,7 @@
   {
    "who": "kappi",
    "expr": null,
-   "text": "And come back in one piece. Falling once is plenty."
+   "text": "And come back in one piece. Falling once is plenty. There’s a hot bath in the lab. Yuzu in it."
   },
   {
    "who": "chosen",

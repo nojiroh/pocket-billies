@@ -183,7 +183,7 @@
   "who": "kappi",
   "when": "last:lost",
   "priority": 4,
-  "script": ["You came back through the same hole. I measured it. It’s getting rounder. #l:5be0"]
+  "script": ["You came back through the same hole. I measured it from the bath. It’s getting rounder. #l:5be0"]
  },
  "kappi_tidy": {
   "who": "kappi",
@@ -349,7 +349,9 @@
   "when": "rel:kappi >= 4",
   "priority": 5,
   "once": true,
-  "script": ["My spare lab coat. It has pockets for evidence. Please don’t put snacks in them. #l:fbdf"]
+  "script": [
+   "My spare lab coat. It never fit me; I have the wrong number of legs. It has pockets for evidence. Not snacks. #l:fbdf"
+  ]
  },
  "thanks_kappi_5": {
   "who": "thanks_kappi",
