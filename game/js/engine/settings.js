@@ -297,7 +297,7 @@ export const ENGINE_DEFAULTS = {
     modelShadowCache: true,
     /* phase 20 R3 (E11, the owner's option a): the far shadow map draws what only the wind sways at rest and keeps it
        in its cache; within the near map (13 m) shadows sway as before */
-    farShadowsStill: false,
+    farShadowsStill: true,
     /* phase 20 R3 (battle): a battle rig's canvas drawn and uploaded again only when its pose, face or tint changes */
     rigReuse: false,
     /* phase 20 R3 (context, H5): a place is shown once two frames have drawn behind its fade (at most 1.5 s), so its
