@@ -17,6 +17,7 @@ import {
   modal,
   perkPickOpen,
   provide,
+  questToasts,
   render,
   rewardPickOpen,
   runCatch,
@@ -939,8 +940,10 @@ export function endBattle() {
     /* RL-8: what it pays and costs (logic/battle-rewards.js); RL-4: a battle called off at the turn cap ends as if you
        walked away (wild) or lost (a trainer). Studio plan T3.2: battleSettle also does what it does to the save (a
        run battle's checkpoint, the Hype counter, the encounter, the lead's streak), as the run's simulation does */
-    { pay, run, gone } = battleSettle(activeBattle, saveData),
+    { pay, run, gone, quests } = battleSettle(activeBattle, saveData),
     o = pay.o;
+  /* TW-3: a run's quests done or failed in this battle (quest-board.js) */
+  if (run && typeof questToasts === 'function') questToasts(quests);
   if (o === 'win' && typeof jingle === 'function') jingle(JINGLES.victory);
   if (typeof battleTipHide === 'function') battleTipHide();
   /* v47: Blake's first battle, in the opening: no fee and no sheet, win or lose; the story picks it up (story.js) */

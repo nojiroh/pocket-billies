@@ -6,7 +6,7 @@
    "[happy] Nice to meet you!" (happy, surprised, sad, angry, blink, talk). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { mapChatLines, playStoryScript, provide } from './hooks.js';
+import { mapChatLines, playStoryScript, provide, storyFreshTake } from './hooks.js';
 import { PEOPLE, TRAINERS } from './game-data.js';
 import { reducedMotion } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
@@ -222,7 +222,7 @@ export function talkChoose(options) {
   });
 }
 /* a whole conversation: [[who,text,expr],…] or [{who,text,expr}] */
-async function talk(lines, o = {}) {
+export async function talk(lines, o = {}) {
   for (const l of lines) {
     const [who, text, expr] = Array.isArray(l) ? l : [l.who, l.text, l.expr];
     await talkLine(who, text, expr, o);
@@ -319,5 +319,7 @@ async function talkFolk(f) {
 /* Professor Chosen in his lab: his script (story.json scripts.chosen): your Index, your badges, where Blake went */
 export async function talkChosen() {
   if (talkBox.on) return;
-  await playStoryScript('story:chosen');
+  /* RL-S1: the first talk after a run: his line picked on the way home, once, in place of his own */
+  const fresh = storyFreshTake('chosen');
+  await playStoryScript(fresh ? 'banter:' + fresh : 'story:chosen');
 }

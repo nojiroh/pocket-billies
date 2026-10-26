@@ -17,10 +17,13 @@ import {
   modal,
   perkPickOpen,
   provide,
+  questArrived,
   render,
   renderOverlay,
   rewardPickOpen,
   runPayoutOpen,
+  storyHomeArrive,
+  storyPendingCheck,
   toast,
   typeBadgeHTML,
 } from './hooks.js';
@@ -203,6 +206,8 @@ export function runEndHome(won, keep, itemPrice) {
       if (stand()) render();
     });
   else stand();
+  /* RL-S1: the hub characters' lines for this return, and a lost run's scene (story-stage.js) */
+  storyHomeArrive(won);
   saveNow();
   closeModal();
   render();
@@ -216,6 +221,7 @@ export function runEndHome(won, keep, itemPrice) {
     toast(`${MODIFIERS.expeditions[saveData.meta.expedition - 1].name} is open. Pick it at Skyline Station.`);
   /* RL-11: milestones the run has met (ended runs, wins), each with its own toast after this one */
   if (typeof labMilestones === 'function') labMilestones();
+  if (typeof storyPendingCheck === 'function') storyPendingCheck();
 }
 
 /* ---------- a reload picks the run up ---------- */
@@ -651,6 +657,8 @@ export const runClinicEach = () => fxRunPrice(saveData.run, PERKS, 'heal', RULES
 export function runArrivedFx() {
   const gained = runArriveFx(saveData, PERKS);
   if (gained > 0) toast(`Your Perks paid out: your team healed ${formatNumber(gained)} HP.`);
+  /* TW-3: a parcel delivered (quest-board.js) */
+  if (typeof questArrived === 'function') questArrived();
 }
 
 /* ---------- hints, on a player's first run only ---------- */

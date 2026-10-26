@@ -57,7 +57,7 @@ function rewardSheet(M) {
 }
 
 /** the run's reward pick as a sheet (nothing when there is none) @param {() => void} [then] */
-function rewardPickOpen(then) {
+export function rewardPickOpen(then) {
   if (then) rewardThen = then;
   const run = saveData.run,
     R = run && run.enc && run.enc.reward;
@@ -71,7 +71,7 @@ function rewardPickOpen(then) {
     title: 'Pick a reward',
     cls: 'reward-pick',
     lock: true,
-    html: `<p>${R.from.startsWith('event:') ? 'Take one.' : 'Your opponent left a few things behind. Take one.'}</p><div class="relic-cards">${R.cards.map((c, k) => rewardCardHTML(c, k, k === sel)).join('')}</div>`,
+    html: `<p>${R.from.startsWith('event:') ? 'Take one.' : R.from.startsWith('quest:') ? 'A thank-you for the quest. Take one.' : 'Your opponent left a few things behind. Take one.'}</p><div class="relic-cards">${R.cards.map((c, k) => rewardCardHTML(c, k, k === sel)).join('')}</div>`,
     btns: [
       { l: 'Take it', c: 'gold', dis: sel == null, f: () => rewardTakeTap(/** @type {number} */ (sel)) },
       {
