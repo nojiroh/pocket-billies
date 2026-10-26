@@ -75,6 +75,7 @@ test("a restore drops the walk view's GPU caches, shown or not (walk-view-gl.js 
     lastShadow: dead,
   });
   propModelState.meshes.set('a.json', dead);
+  buildingState.fail = propModelState.fail = solidPropState.fail = 'x: null';
   solidPropState.live.set(dead, 1);
   Object.assign(structureState, { mesh: dead, key: 'k', parts: [dead] });
   try {
@@ -85,6 +86,7 @@ test("a restore drops the walk view's GPU caches, shown or not (walk-view-gl.js 
     assert.notEqual(solidPropState.meshes, smesh);
     assert.equal(propModelState.meshes.size, 0);
     assert.equal(solidPropState.live.size, 0);
+    assert.deepEqual([buildingState.fail, propModelState.fail, solidPropState.fail], ['', '', ''], 'they try again');
     assert.deepEqual([structureState.mesh, structureState.key, structureState.parts], [null, '', []]);
   } finally {
     walkView.id = id;

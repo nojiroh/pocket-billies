@@ -356,11 +356,20 @@ function dropWalkGpuCaches() {
   walkRenderer.shKey = '';
   for (const k of MAP_CACHE_FIELDS) walkRenderer[k] = null;
   walkView.gkey = '';
-  if (typeof buildingState !== 'undefined') buildingState.mesh = new WeakMap();
-  if (typeof propModelState !== 'undefined') propModelState.meshes.clear();
+  /* a real loss also comes a frame or more before its event, and a frame drawn on the dead context turns the buildings,
+     models and solid props off (their guards): on the new context they try again (a real fault turns them off again) */
+  if (typeof buildingState !== 'undefined') {
+    buildingState.mesh = new WeakMap();
+    buildingState.fail = '';
+  }
+  if (typeof propModelState !== 'undefined') {
+    propModelState.meshes.clear();
+    propModelState.fail = '';
+  }
   if (typeof solidPropState !== 'undefined') {
     solidPropState.meshes = new WeakMap();
     solidPropState.live.clear();
+    solidPropState.fail = '';
   }
   if (typeof structureState !== 'undefined') {
     structureState.mesh = null;
