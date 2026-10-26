@@ -167,25 +167,31 @@ export function selfTestSleep(ms) {
   return new Promise(r => setTimeout(r, ms * (selfTest.slow || 1)));
 }
 /* frame rate of one scheduler task between two moments of the debug log; whole: only the seconds that start after t0;
-   trim: drop the task's first and last second (it starts and stops partway through them, so they read low) */
+   trim: drop the task's first and last second (it starts and stops partway through them, so they read low); plus: a
+   task that runs in the same ticks, its time added to cpuMs (phase 20 R3: a battle's 3D frame is the walk view's 'dio'
+   task, while 'scene' only moves the tweens and draws the effects canvas; cpuTasks then has each task's own ms) */
 export function selfTestFrameStats(t0, t1, task, o) {
   const whole = o && o.whole,
     S = [];
   for (const s of debugLog.samples) {
     if (s.t < t0 || s.t > t1) continue;
     if (whole && s.t - (s.dt || 1000) < t0) continue;
-    if (s.tasks[task]) S.push(s.tasks[task]);
+    if (s.tasks[task]) S.push(o && o.plus ? { ...s.tasks[task], also: s.tasks[o.plus] } : s.tasks[task]);
   }
   if (o && o.trim && S.length >= 3) {
     S.pop();
     S.shift();
   }
   const f = S.map(v => v.fps),
-    m = S.map(v => v.ms),
+    own = S.map(v => v.ms),
+    also = S.map(v => (v.also ? v.also.ms : 0)),
+    m = own.map((v, i) => v + also[i]),
     slow = S.reduce((a, v) => a + v.long, 0);
   if (!f.length) return { fpsAvg: null, fpsWorst: null, cpuMs: null, slow: 0, seconds: 0 };
-  const avg = a => Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10;
-  return { fpsAvg: avg(f), fpsWorst: Math.min(...f), cpuMs: avg(m), slow, seconds: f.length };
+  const avg = a => Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10,
+    out = { fpsAvg: avg(f), fpsWorst: Math.min(...f), cpuMs: avg(m), slow, seconds: f.length };
+  if (o && o.plus) out.cpuTasks = { [task]: avg(own), [o.plus]: avg(also) };
+  return out;
 }
 /* v20: the test scenes, and their walking checks (from, to, reach) worked out from the scene data without drawing */
 function testMaps() {
@@ -400,7 +406,11 @@ async function runFullTest(mode) {
       const bg = hid !== h0; /* still interrupted after three tries: not measured */
       if (err && !bg) debugLog.error('test', name + ': ' + why, err && err.stack);
       const m0 = Math.max(t0, measureFrom),
-        st = selfTestFrameStats(m0, debugLog.now(), task, measureFrom ? { whole: true } : { trim: true }),
+        st = selfTestFrameStats(m0, debugLog.now(), task, {
+          ...(measureFrom ? { whole: true } : { trim: true }),
+          /* phase 20 R3: a battle step's CPU is its 3D frame too (the walk view's task) */
+          ...(task === 'scene' && { plus: 'dio' }),
+        }),
         ne = debugLog.err.slice(e0).filter(x => x.kind !== 'test');
       if (ne.length && !bg) {
         ok = false;
@@ -2709,13 +2719,14 @@ async function baselineMeasure(task, sec) {
   } finally {
     r = await diagnosticsTimersOff(T);
   }
-  const s = selfTestFrameStats(t0, debugLog.now(), task, { whole: true }),
+  const s = selfTestFrameStats(t0, debugLog.now(), task, { whole: true, ...(task === 'scene' && { plus: 'dio' }) }),
     c = r.calls;
   return {
     fps: s.fpsAvg,
     worstFps: s.fpsWorst,
     frameMs: s.fpsAvg ? Math.round((1000 / s.fpsAvg) * 10) / 10 : null,
     cpuMs: s.cpuMs,
+    cpuTasks: s.cpuTasks,
     gpuMs: r.gpu ? Math.round(Object.values(r.gpu).reduce((a, v) => a + v, 0) * 100) / 100 : null,
     slow: s.slow,
     draws: c ? c.dc[0] : null,
