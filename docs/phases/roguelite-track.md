@@ -1105,16 +1105,29 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
     `logic/placeholder-art.js` (paint, bake, both sheets and their cutting), `npm run bake:placeholders` (bake,
     export, import). Tests: every bone an animation names exists; a bake is the same twice; export then import gives
     the same pixels.
-  - **RO-3b** every existing Billie (40 and 11 forms) to placeholders on its plan: quad (muskox, goat, tiger, rat,
+  - **RO-3b** (done 2026-10-26; HANDOFF has what changed) every existing Billie (40 and 11 forms) to placeholders on its plan: quad (muskox, goat, tiger, rat,
     ferret), bird (goose, Swift, owl, peacock), fish (Pupfin, Sharktank), worm (Trump slug), octo (Zuckerberg),
     biped (otter, chameleon, gecko). Remakes the quick-check baseline and kit counts on purpose.
-  - **RO-3c** splicing by slot across plans (socket rules per plan pair, graft-art).
-  - **RO-3d** Ortega silkworm (insect, then shell, then flyer; the early bug) and the Bloomberg plant (plant).
+  - **RO-3c** splicing by slot across plans (socket rules per plan pair, graft-art). Done 2026-10-26 (HANDOFF): the
+    slot map works on the baked sheets and rigs, not per plan pair; the octopus and blob share one bone (`also`).
+  - **RO-3d** Ortega silkworm (insect, then shell, then flyer; the early bug) and the Bloomberg plant (plant). Done
+    2026-10-26 (HANDOFF): Threadling → Zaracoon → Ortegamoth (Grass → Grass/Steel → Grass/Flying, 7/10) and Tickerbud →
+    Bloomburst → Terminalia (Grass → Grass → Grass/Psychic, 14/30), both common, dex 41-46, placeholders only.
   - **RO-3e** the Knight frog (hopper) and the fossil pair: Carnegie trilobite (crab), Vanderbilt rail snake
     (serpent).
   - **RO-3f** Satoshi (blob, the mythical copycat) and the Hastings cave bat (flyer).
-  - **RO-3g** legendaries Mansa Musa (quad) and Rockefeller (biped), an Eevee-style line (draft "Pivotlet"), pools
-    and a balance pass.
+  - **RO-3g** legendaries Mansa Musa (quad) and Rockefeller (biped), the Eevee-style line, pools and a balance pass.
+    **The owner (2026-10-26): the Swift line is the Eevee-style line** (in place of the draft "Pivotlet"): Swiftlet
+    the base, branching into one era form per type (Erastar already "changes colour each era"); which eras, their
+    types and how a branch is picked are asked in RO-3g. It changes the Swift line RO-3b moves to the bird plan, so
+    RO-3g comes after RO-3b.
+  - **What can run side by side** (each session on its own branch, merged into track/roster one at a time):
+    RO-3b and RO-3c together (3c needs only 3a's slots, and tests on sample Billies); RO-3d, RO-3e and RO-3f together
+    once 3b is merged (or beside it). They share files that are rebuilt rather than merged by hand: rigs-next.js and
+    the baked sheets (`npm run bake:placeholders` again), the check-data and run-start snapshots, the sound
+    baseline; roster.json rows, index.json lines, bodyPlans.json forms and biome pools merge by hand. Dex numbers
+    given out ahead: RO-3d 41-46, RO-3e 47-50, RO-3f 51-53, RO-3g from 54. RO-3g last (it balances everything). The
+    quick-check baseline: remade by RO-3b, then by whichever session merges after another one's art.
 - **The region sessions (RL-R1, RL-R2)** live on one branch. Branch: track/regions
 - **RL-R1** (done 2026-10-23; HANDOFF has what changed and where this shape was wrong). Files: new `game/data/regions.json` + schema, type, check, export; new `logic/run-region.js`;
   `logic/run-map.js` (rows from zones); `logic/run-bowl.js` (zone bands); the Map tab's header. Tests: same seed same

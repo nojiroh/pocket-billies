@@ -14,6 +14,7 @@
 /** @typedef {'magenta' | 'clear' | { rgb: number[], tol?: number }} SheetKey what the background is */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   LIMB_KINDS: [() => LIMB_KINDS],
@@ -35,7 +36,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   premultiply: [() => premultiply, v => (premultiply = v)],
   // @ts-expect-error -- replaced on purpose
-  roundHalfEven: [() => roundHalfEven, v => (roundHalfEven = v)],
+  roundHalfEven: [() => roundHalfEven, v => ((roundHalfEven = v), provide({ roundHalfEven }))],
   // @ts-expect-error -- replaced on purpose
   roundThousandths: [() => roundThousandths, v => (roundThousandths = v)],
   // @ts-expect-error -- replaced on purpose
@@ -76,6 +77,7 @@ expose({
   unpremultiply: [() => unpremultiply, v => (unpremultiply = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ roundHalfEven });
 /* to-module: end */
 /** Python's round(): a half goes to the even neighbour */
 export function roundHalfEven(/** @type {number} */ x) {

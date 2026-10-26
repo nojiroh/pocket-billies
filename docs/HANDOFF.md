@@ -29,6 +29,206 @@ were merged here one by one (merge commits, no rebase) and go to main in one PR.
   no longer matches its dials. build-island.mjs would undo them. The owner chose to merge with it red; it belongs to
   HB-10 (hub-track.md: the square's shape and why a town rebuild is not safe yet).
 - Next: delete the merged one-session branches the owner no longer needs (BRANCHES.md); the `track/*` branches stay.
+### Roster track RO-3d - The early bug and the early Grass plant: Ortega silkworm, Bloomberg plant - 2026-10-26
+Branch `claude/ro-3d-silkworm-and-plant`, from `track/roster` at RO-3a (#213); pull request into `track/roster`. Plan
+approved in Plan Mode. RO-3b (#218) and RO-3c (#215) ran beside it; both merged into track/roster mid-session and
+were merged in here (bodyPlans.json forms by hand: RO-3b's 51 and these 6; rigs-next.js rebaked). Tag `ro-3d-done` for the owner. The owner's picks (all Claude's recommendations, asked one by one):
+- **Ortega silkworm**, dex 41-43, common: **Threadling → Zaracoon → Ortegamoth**, Grass → Grass/Steel → Grass/Flying,
+  evolves at **7 and 10** (Caterpie and Metapod's levels; a run's wilds go from about 3 to 17), totals 205/225/400.
+  Body plans insect → shell (the cocoon) → flyer (the moth). Signature move Fast Fashion.
+- **Bloomberg plant**, dex 44-46, common: **Tickerbud → Bloomburst → Terminalia** (the legacy names), Grass → Grass →
+  Grass/Psychic (Psychic stands in for Oddish's Poison: Lullaby, Unnerve, Bewilder), evolves at **14 and 30**, totals
+  260/380/490. The plant plan at every stage. Terminal Fee (Electric, a status move) kept as its signature.
+- Where the plan and the code differed (checked): the legacy Ortega line was a spider (Spoolspider, Zaraknid,
+  Ortegaweaver), not a silkworm; the rig ids ortega0-2 and bloomberg0-2 already sat in rigs-next.js for the legacy
+  sheets, and the bake replaced them in place. RO-3b's bake change (a form's `scale`) was needed for stage sizes and is
+  not on track/roster when the art was made: its commit 960ff899 was cherry-picked here (the owner's call), and RO-3b's
+  merge brought the same code.
+- Changed:
+  - `game/data/lines/ortega.json`, `lines/bloomberg.json` (learnsets of existing moves, bios, notes, draft cries:
+    insect for the silkworm, slime and machine for the plant); `index.json` lines; roster.json rows 41-46 (`line3`).
+  - `bodyPlans.json` forms: six placeholder Billies in the lines' colours, scales 0.9 / 1.0 / 1.3 and 0.95 / 1.15 /
+    1.42. Threadling drops the insect's wings and carries a spool; Zaracoon drops the shell plan's legs and keeps its
+    arms as stubs (RO-3b's test: every placeholder gives every slot to a graft), a cocoon in a black garment bag with a
+    price tag; Ortegamoth has feathery antennae and big dark wings; Tickerbud a
+    pale stripe and a ticker-tape leaf; Bloomburst a ring of petals; Terminalia black with orange screen petals, a
+    screen on its face and a keyboard on its pot. Baked with `npm run bake:placeholders`; `check-data --fix`.
+  - The legacy `tickerbud.json`, `bloomburst.json`, `terminalia.json` layouts dropped (their PNGs are the placeholders
+    now); the spider sheets stay as reference.
+  - `pools.json`: Threadling in the meadow (30), thicket (28), jungle (24), autumn (22); Tickerbud in the meadow (24),
+    thicket (22), jungle (22), autumn (14).
+  - Snapshots: check-data (155 files), run-start (the seeds' regional dex draws from 17 lines now; over 400 seeds
+    Ortega is in 144 regions and Bloomberg in 128); the sound baseline's cries (the six new cries and their low ones).
+- Verified: lint, typecheck, check:modules, format:check, check:data; every unit test, quick and slow (1165 after the
+  RO-3b and RO-3c merges); the smoke check (6 steps, no problems); every stage drawn by the game's own renderer (rigParts,
+  rigFrame, drawRig on the town fixture) in idle, walk, attack, hurt and faint, front and back, before and after the
+  RO-3c merge: all stand on the ground and move.
+- Risky / open:
+  - **The sound baseline is missing the cave song's `mid` and `late` fingerprints on track/roster already** (the check
+    fails there without this branch). Left out of this branch on purpose; one `check-sound.py --baseline` adds them.
+  - The quick check runs with Python Playwright 1.63 here (the pinned 1.56 wants a Chromium this container does not
+    have); tools/requirements-check.txt is unchanged.
+  - Some placeholder labels read mirrored in one view (SHELL on Zaracoon's front): the RO-3a painter's flipping, the
+    same on every plan, not these forms.
+  - Not tried on a phone; names, bios and cries are drafts.
+- Next: RO-3e (the Knight frog and the fossil pair) and RO-3f (Satoshi and the cave bat), then RO-3g.
+
+### Roster track RO-3b - Every Billie on its body plan as a placeholder - 2026-10-26
+Branch `claude/ro-3b-placeholder-billies` (from RO-3a's branch; pull request into `track/roster`; #213 and RO-3c's
+#215 merged there meanwhile, and track/roster is merged in). Plan approved in Plan Mode. The owner's answers: a spliced Billie draws as its plain placeholder until
+RO-3c; the starters keep today's colours, a size per stage from today's scales and their horns, crest and tail colour
+as added bones, nothing more; no player-facing name changes; I trigger the picture baseline (held back, see Risky).
+Tag `ro-3b-done` for the owner.
+- Where the plan and the code differed (checked): `bake:kits` and `bake:placeholders` write the same files (the sheet
+  and the rig), and so does the Studio's kit recipe card; kit-bake-parity compared every recipe with the committed art
+  (its header said 24 recipes, there are 51); a placeholder form had no whole-Billie size (kit recipes have `scale`);
+  kit colours are hue/saturation/value shifts, not RGB; runtime grafts (SP-1) bake from the kit recipe; the only "kit
+  count" was pixel-density's 51; the quick-check picture baseline is not committed but one CI release per version.
+- Changed:
+  - **How `bake:kits` leaves the placeholders alone**: tools/bake-kit-billies.mjs skips every recipe whose rig a
+    bodyPlans.json form owns ("kept: on its placeholder") and writes nothing for it (sheet, rig, line parts). The
+    Studio's kit recipe card shows such a recipe as **kept, not baked** (no fields, no Write Billie); Repack refuses a
+    placeholder Billie. To bring a kit look back: take the Billie out of bodyPlans.json `forms`, `npm run bake:kits`.
+    **tools/test/kit-bake.json** keeps every recipe's bake as fingerprints (`--fingerprints`, written from the committed
+    kit art while `bake:kits --check` was clean); kit-bake-parity compares every recipe with them.
+  - **bodyPlans.json forms `scale`** (schema, baker, test): the whole Billie's size, middles and sizes, on the same
+    ground.
+  - **The 51 forms**: quad (Musk muskox, Gates goat, Woods tiger, Kamprad rat, Yiming ferret), bird (Hughes goose,
+    Swift, Altmowl, Peacouture), fish (Cuban), worm (Trump slug), octo (Zuckerberg), biped (Bezos otter, Kardashian
+    chameleon, Huang gecko-dragon). Colours measured from the kit sheets (body main, tail/wings/crest accent); each
+    stage's scale is its kit scale x 1.5 (all fit); added bones keep horns, ears, crests, manes, beards, packs, wings,
+    growing by stage (Facelet drops its tentacle tips, Metapus adds a visor, Tremendoslug a tie, Altmowl swaps its crest
+    for ear tufts); regional forms: their own colours plus one add or drop (Harbour a cap, Meatball no ears and a
+    rounder body, Courtside a headband, Livestream a ring light, Hazard a cap). The Swift line is kept plain (colours
+    and sizes only) for RO-3g. Baked with `npm run bake:placeholders`: 51 sheets and rigs.
+  - **Grafts**: RO-3b first drew a grafted placeholder Billie plain (the owner's call until RO-3c); RO-3c (#215)
+    merged into track/roster meanwhile and grafts placeholder Billies by slot, so the merge keeps RO-3c's graft path
+    whole. After the merge `npm run bake:placeholders` rebaked the three Zuckerberg rigs (the octopus mantle is slot
+    body, also head), and graft-placeholder.test.mjs runs RO-3c's graft over the 51 real forms (765 grafts: every
+    slot from a Billie of each other plan, inside the box, the same bones; head refused to and from the octopus).
+  - Studio: the Roster board's silhouettes treat a placeholder rig like a kit rig (no piece layout: it asked for 50
+    missing `<name>.json`); the Pixel density report shows a placeholder Billie's plan and scale.
+- Remade on purpose: kit-bake.json (new); data-rigs' planted fault names musk0's first bone `body` (the quad's, was
+  `torso`); rig-swap tries its swaps on musk0 and trump0 baked from their kept recipes (in memory); pixel-density: kit
+  rows 51 -> 0, placeholder rows 0 -> 51; check-studio-github.py: the stand-in serves emberox (musk0) off its
+  placeholder as its recipe bakes (bodyPlans.json without it, its sheet and rig; nothing on disk changes), so kit
+  write, library swap, repack's refusal and density still run on a kit Billie, plus a kept recipe shown as kept and a
+  placeholder refused by Repack. The check-data snapshot, the UI gallery (no Billie in it), the run-start and sound
+  baselines did not change.
+- Verified: lint, typecheck, check:modules, format, check:data; unit tests (1071 pass); `bake:kits --check` and
+  `bake:placeholders --check` clean; all 51 drawn by the game's renderer (idle, walk, attack, back) on a contact sheet;
+  tools/look-grafts.py (team, details, walk, a battle with two grafted Billies: drawn plain, no bakes, no errors);
+  smoke (Start-Game on a phone, five screens, a battle, the in-game full test's step, the debug log: 112 KB, no
+  names); the Studio check up to density with the kit steps on the served kit Billie (IN PROGRESS: the rest).
+- Risky / open:
+  - **The picture baseline is not remade yet.** check.yml keeps one baseline per version (release
+    `baseline-0.1.0-alpha`) for every branch; remade from this branch before it reaches main, main's quick check
+    would show 51 Billies as changed. Run "Make the picture baseline" once this is on main.
+  - RO-3c's grafts on the real forms are tested for fit and bones, not judged by eye on each pair.
+  - The labels on a back view read mirrored (RO-3a's design: the back cell is drawn as it shows and flipped).
+  - The kit recipes' native parts (lines/*.json `parts`) stay the kit's: splicing's slot data is RO-3c's.
+  - Looks judged on a contact sheet and on a phone-sized page in this container, not on a phone.
+- Next: RO-3d, RO-3e, RO-3f (side by side), RO-3g last; the picture baseline once this is on main.
+
+### Roster track RO-3c - Splicing by slot across body plans - 2026-10-26
+Branch `claude/ro-3c-splice-by-slot`, made from RO-3a's `claude/happy-ramanujan-jiipux` (PR #213, not merged yet);
+pull request into `track/roster` stacked on #213. Plan approved in Plan Mode. RO-3b ran at the same time: this session
+stayed out of bodyPlans.json `forms`, rigs-next.js, the baked sheets, kitBuilds.json and the quick-check baseline, and
+tested on sample placeholder Billies. The owner's answer: the octopus and the blob **share one bone** between body and
+head. Tag `ro-3c-done` for the owner.
+- Where the plan and the code differed (checked): only SP-1 is built, so there are **no Stability costs** yet and
+  grafts are reachable only from the debug buttons; no graft rule a player sees changed (SP-2 asks). After RO-3b every
+  species keeps a kitBuilds.json recipe (unused), so the graft picks its path by the rig's `placeholder` mark, not by
+  whether a recipe exists. RO-3c's "socket rules per plan pair" became one slot map for all plans, on the baked art.
+- Changed:
+  - **bodyPlans.json plans** (+ schema, check-data, placeholder-art.js `also`): the octopus's mantle is `slot: body,
+    also: head` (it was `head`), the blob's body `also: head`. A shared bone takes the body's size roll and is never
+    grafted; check-data: every plan has a bone for every slot. The octopus rig's `slot` changes on its next bake.
+  - **logic/graft-art.js `graftPlaceholder`**: a placeholder Billie grafted by slot from its donors' baked sheets and
+    rigs (drawings come along; nothing else is loaded). A slot's groups (`graftGroups`: its own bones, a chain is one
+    group, mirrors follow their twin); the receiver's group i takes the donor's group i mod n; one bone takes the
+    donor's whole group put together at rest (a tentacle for an arm); a chain takes the donor's bones spread along
+    it, bone for bone when as long, so every bone draws (a serpent's neck holds its head); `graftFit` turns each
+    picture in quarter turns (exact) to point the bone's way, makes it as long as the bone (inside the bone's box,
+    held where it holds its own, when either is held at its middle: a pot, a round foot), never past 1.5 times the
+    bone's longest side; mirrored twins wear it flipped; the grafted pictures shrink (to half) until the rest pose fits
+    the stage box, else refused. `graftPlaceholderDonors`: another line with bones in the slot. kit-pixels.js
+    `kitTurnRight`.
+  - **skeleton-rig.js graftBake**: placeholder Billies go through graftPlaceholder (bodyPlans.json forms by rig);
+    kit Billies as before (the shared tail moved into `graftKeep`, same code); a kit Billie with a placeholder donor,
+    or the other way round, isn't grafted (the plain Billie draws, the debug log says why). Debug log graft entries
+    name the plans (`quad<octo`). **game/index.html** loads logic/placeholder-art.js (no name clashes; modules and
+    check:modules clean). **debug-menu.js**: a placeholder Billie's random graft comes from any plan.
+  - Tests: tools/test/graft-placeholder.test.mjs (the groups per plan; every plan gives every plan front, back and
+    sig, 588 grafts, inside the box, donor colours on, every other bone's pixels kept; the same twice and several
+    slots at once; mirrors flipped; chains; refusals; donors; graftFit's turn, length, box and cap);
+    placeholder-art.test.mjs checks every slot is filled and the shared bone.
+- Verified: lint, typecheck, check:modules, format:check, check:data, unit tests (1077, quick tier) after each change;
+  kit-bake-parity, graft-art and graft-art-sweep untouched; on the game page, 8 sample grafts (octopus tentacle onto
+  a biped's arm, biped arm onto a quad's front legs, bird wing onto plant leaves, biped arm onto an octopus, crab leg
+  onto a serpent's neck, insect legs onto a shell, quad tail onto a fish, octopus tentacle onto a hopper's legs) baked
+  by graftBake (4-15 ms each, headless) and drawn by the game's renderer in idle, walk and attack, front and back;
+  tools/look-grafts.py (SP-1's kit grafts) still bakes and draws both battle sides grafted; the smoke subset
+  (`npm run check:smoke`, 6 steps) passed. Not the full quick check: RO-3b remakes its baseline.
+- Risky / open:
+  - Judged on samples only: RO-3b's real Billies may have form `size`s, `add`s and `drop`s the samples don't; the
+    test sweep should be run over the real roster once RO-3b merges (swap the samples for `P.forms`).
+  - The fit is mechanical: a part keeps the donor's look but not its size on the donor (the stage box rules). SP-2's
+    weights still use the donor's weight, as designed.
+  - A drawn picture that faces one way (a claw) may point oddly after a quarter turn; a rule per part can come later.
+  - Not tried on a phone. The debug log's bake times are the number to look at (SP-1's exit question).
+- Next: RO-3b merges (then remake the graft sweep on the real roster), then RO-3d..f.
+
+### Roster track RO-3a - Every body plan, placeholder Billies and drawing sheets - 2026-10-26
+Branch `claude/happy-ramanujan-jiipux` (a cloud session pushes only to its own branch; the owner's word: work here,
+pull request into `track/roster`, which had nothing main lacks). Plan approved in Plan Mode. The owner's answers: every
+body plan in the roster even where no kit has parts; new, very obvious placeholder art **for every Billie** (kit art
+too) with sprite sheets to export, draw on in an outside tool and import, **both** one per Billie and one per plan;
+the muskox and goat starters to quad; splicing maps by slot across plans; scope "everything"; then (mid-session) the
+**Swift line becomes the Eevee-style line**. The plan for RO-3b..g is in roguelite-track.md ("RO-3.. plan"), with
+which sessions can run side by side. Tag `ro-3a-done` for the owner.
+- Where the plan and the code differed (checked): every one of the 40 species and 11 form sheets is baked `biped`
+  (kit-assemble.js writes `plan: 'biped'`), while body-plan-animation.js animates 14 plans; `worm` and `octo` have
+  no art anywhere, the other 11 only legacy hand-drawn sheets. Online research (Pokémon's recurring archetypes and
+  its 14 shapes; page fetches were blocked here, search summaries only) gave the missing archetypes in the plan.
+  The Studio loads its data through GitHub (a stand-in in the checks), not from game/data.
+- Changed:
+  - **game/data/bodyPlans.json** (+ schema, `GameData.bodyPlans`, index.json, check-data): `plans`, a template per
+    plan whose bones are the ones its animation moves (or ride on one), each with its parent, rest middle, size,
+    pivot, shape, tone, z/zb, slot, turn; mirrored bones copy a twin; `sheet` and `paint` settings; `forms`, the
+    placeholder Billies (empty: RO-3b fills it). Every plan fills the five slots, except octo (no body) and blob
+    (its head is its body).
+  - **game/js/logic/placeholder-art.js**: the painter (flat shape, hatch, double outline, the part's name in a
+    3 x 5 font, eyes and a blink on a face), cells (the part with room round it, its pivot at a fixed spot; a back
+    cell is drawn as it shows on screen and flipped at bake, since the renderer mirrors the back view), the bake
+    (sheet and both views' rigs like the kit baker's, marked `placeholder`), the drawing sheets (a Billie's: a column
+    per picture, a row per view; a plan's: two rows per Billie under a name strip; magenta cells, label strips, pivot
+    ticks, any whole scale) and their cutting back (magenta and near-magenta clear, hard alpha, a size check that says
+    why). On the Studio page and in the logic worker; not on the game page yet (RO-3c's runtime grafts need it).
+  - **tools/bake-placeholders.mjs** (`npm run bake:placeholders`): bake what changed, `--check`, `--export=<name>` /
+    `--export=plan:<plan>` (`--scale`, `--out`), `--import=<file>`. A drawing is stored as
+    `game/art/next/placeholders/<name>.png` and laid over the painted cells at bake.
+  - **Studio** (studio/js/placeholder-sheets.js, Part mode beside the kit recipe): a placeholder Billie's Download /
+    Upload drawing sheet and Write Billie; Body plan sheets (plan, scale, Download, Upload); one undo step per upload.
+    docs/STUDIO.md has the how-to.
+  - Tests: tools/test/placeholder-art.test.mjs (every animated plan has a template; every bone moved or riding on a
+    moved one; a sample on each plan bakes inside the box, the same twice, with a readable rig; the slots; both
+    sheets cut back to the same cells at 1x and 3x; a wrong-size sheet refused; a drawn cell wins, an empty one keeps
+    the placeholder; no paint near magenta; committed placeholders bake as committed). The check-data snapshot is
+    remade (153 files).
+- Verified: lint, typecheck, check:modules, format:check, check:data; unit tests (see the commit); every plan's sample
+  drawn by the game's own renderer (rigFromMeta, rigFrame, drawRig on the game page) in idle, walk, attack, hurt and
+  faint, front and back: all stand on the ground and move; in a headless Studio (the GitHub stand-in of
+  studio-shots.py) the quad plan sheet downloaded at 4x, uploaded back, stored and baked to a quad rig.
+- Risky / open:
+  - Not one Billie uses it yet; the look is judged on samples. RO-3b moves all 51 sheets onto it and remakes the
+    quick-check baseline and kit counts.
+  - A drawing only cuts back while the Billie's plan and part sizes are as exported (the error says so).
+  - The octopus has no body slot and the blob no head slot: RO-3c's slot map has to say what those take.
+  - Swift as the Eevee-style line changes RO-3b's Swift (to bird) again in RO-3g: the eras, types and how a branch is
+    picked are the owner's call there.
+  - Not tried on a phone (nothing a player sees changed yet).
+- Next: RO-3b (every existing Billie onto its plan as a placeholder) and RO-3c (splicing by slot) can run side by side.
 
 ### Hub track HB-8 - Departure and return: the sky train through the portal - 2026-10-26
 Branch `art/hub-departure` (the session's brief; from main 2314da8 after PR #205; the plan file's `Branch:` line says

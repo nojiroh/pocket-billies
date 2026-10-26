@@ -6,7 +6,7 @@ import { expose } from './test-globals.js';
 import { COATS, GENES, ROBOTS, RULES, SPECIES, activeBattle, gameData, provide, reducedMotion } from './hooks.js';
 import { clamp, random } from './util.js';
 import { kitBakeWhole } from './logic/kit-assemble.js';
-import { graftForm, graftLookSplit, graftParse } from './logic/graft-art.js';
+import { geneSplit, graftForm, graftLookSplit, graftParse, graftPlaceholder } from './logic/graft-art.js';
 import { robotJoint, robotSingleLegs } from './logic/robot-joints.js';
 import { coatArt, coatColorMap, coatRecolor } from './logic/coats.js';
 import { frameTask, userFps } from './frame-scheduler.js';
@@ -45,9 +45,13 @@ expose({
   drawDomRig: [() => drawDomRig, v => (drawDomRig = v)],
   drawRig: [() => drawRig, v => ((drawRig = v), provide({ drawRig }))],
   graftBake: [() => graftBake, v => (graftBake = v)],
+  graftBakePlaceholder: [() => graftBakePlaceholder, v => (graftBakePlaceholder = v)],
   graftBytes: [() => graftBytes],
   graftForget: [() => graftForget, v => (graftForget = v)],
+  graftKeep: [() => graftKeep, v => (graftKeep = v)],
   graftPartPixels: [() => graftPartPixels, v => (graftPartPixels = v)],
+  graftPlaceholderForm: [() => graftPlaceholderForm],
+  graftPlaceholderRig: [() => graftPlaceholderRig],
   graftReport: [() => graftReport],
   graftRigParts: [() => graftRigParts, v => (graftRigParts = v)],
   graftStats: [() => graftStats],
@@ -633,7 +637,8 @@ export function rigPreload(list) {
    part (kitBakeWhole, the baker `npm run bake:kits` and the Studio use), once per species and graft, kept for the
    last GRAFT_KEEP of them. Until its bake is done rigParts gives null (as for a sheet still loading); a bake that fails
    draws the plain species. Each bake's times and sizes go to the debug log (graftReport) for the art spike's verdict:
-   runtime baking on the phone, or grafts baked offline. */
+   runtime baking on the phone, or grafts baked offline. RO-3c: a placeholder Billie (bodyPlans.json) is grafted by
+   slot across body plans from its donors' baked sheets and rigs instead (graftPlaceholder). */
 const GRAFT_KEEP = 12;
 const GRAFT_BAKES = new Map(); /* sp~graft -> { wait, rig, sheet, bytes, bad, keys: its rigParts cache keys } */
 const GRAFT_PIXELS = new Map(); /* a kit part's picture path -> its pixels */
@@ -677,13 +682,19 @@ function graftBake(sp, graft) {
   const e = { wait: null, rig: null, sheet: null, bytes: 0, bad: false, keys: [] };
   GRAFT_BAKES.set(id, e);
   while (GRAFT_BAKES.size > GRAFT_KEEP) graftForget(GRAFT_BAKES.keys().next().value);
-  const K = gameData.partKits,
-    form = graftForm(gameData.kitBuilds, K, sp, graftParse(graft) || {}),
+  const g = graftParse(graft) || {},
     fail = err => {
       e.bad = true;
       graftStats.bad++;
       if (typeof debugLog !== 'undefined') debugLog.add('graft', `bake failed: ${sp} ${graft}: ${err}`);
     };
+  /* RO-3c: a placeholder Billie is grafted by slot from its donors' baked sheets (logic/graft-art.js); SP-2: a slot
+     holds a Gene id ("part@donor"), the donor its rig (a bare species id, as the debug menu sets, is the donor too) */
+  const donors = Object.fromEntries(Object.entries(g).map(([slot, v]) => [slot, (geneSplit(v) || { donor: v }).donor]));
+  if ([sp, ...Object.values(donors)].some(graftPlaceholderRig))
+    return (e.wait = graftBakePlaceholder(id, e, sp, graft, donors, fail));
+  const K = gameData.partKits,
+    form = graftForm(gameData.kitBuilds, K, sp, g);
   if (!form) {
     fail('no recipe or no fitting part');
     return (e.wait = Promise.resolve());
@@ -698,41 +709,83 @@ function graftBake(sp, graft) {
       const t1 = performance.now();
       try {
         const made = kitBakeWhole({ partKits: K, kitBuilds: gameData.kitBuilds, rules: RULES }, form, (pid, view) =>
-            graftPartPixels(K.parts[pid].views[view].file)
-          ),
-          c = makeCanvas(made.sheet.width, made.sheet.height);
-        c.getContext('2d').putImageData(new ImageData(made.sheet.data, made.sheet.width, made.sheet.height), 0, 0);
-        const ms = Math.round(performance.now() - t1),
-          loadMs = Math.round(t1 - t0);
-        /* the sheet, and the pieces rigFromMeta cuts from it for each view */
-        e.bytes =
-          c.width * c.height * 4 +
-          ['front', 'back'].reduce(
-            (n, v) =>
-              n +
-              made.rig[v].imgs.reduce(
-                (m, im) => m + Object.values(im.f).reduce((q, [, , w, h]) => q + w * h * 4, 0),
-                0
-              ),
-            0
-          );
-        Object.assign(e, { rig: made.rig, sheet: c });
-        graftStats.ms.push(ms);
-        graftStats.loadMs.push(loadMs);
-        graftStats.peak = Math.max(graftStats.peak, graftBytes());
-        graftStats.last.push({ sp, graft, ms, loadMs, w: c.width, h: c.height, kb: Math.round(e.bytes / 1024) });
-        if (graftStats.last.length > 24) graftStats.last.shift();
-        if (typeof debugLog !== 'undefined')
-          debugLog.add('graft', `baked ${sp} ${graft}: ${ms} ms (pictures ${loadMs} ms), ${c.width}x${c.height}`, {
-            ms,
-            loadMs,
-            kb: Math.round(e.bytes / 1024),
-          });
+          graftPartPixels(K.parts[pid].views[view].file)
+        );
+        graftKeep(e, sp, graft, made, t0, t1);
       } catch (err) {
         fail(err && err.message);
       }
     });
   return e.wait;
+}
+/* RO-3c: a species whose rig is a placeholder (bodyPlans.json), and its form there */
+const graftPlaceholderRig = sp =>
+  !!(typeof RIGS !== 'undefined' && RIGS[sp] && RIGS[sp].front && RIGS[sp].front.placeholder);
+const graftPlaceholderForm = sp => ((gameData.bodyPlans && gameData.bodyPlans.forms) || []).find(f => f.rig === sp);
+/* RO-3c: a placeholder Billie grafted from its donors' sheets and rigs; a kit Billie with a placeholder donor (or the
+   other way round) isn't grafted */
+function graftBakePlaceholder(id, e, sp, graft, g, fail) {
+  const all = [sp, ...Object.values(g)];
+  if (!all.every(s => graftPlaceholderRig(s) && graftPlaceholderForm(s))) {
+    fail('a kit Billie and a placeholder one, or no placeholder form');
+    return Promise.resolve();
+  }
+  const t0 = performance.now();
+  return artLoad([...new Set(all.map(s => RIGS[s].front.sheet))])
+    .then(() => new Promise(res => setTimeout(res, 0)))
+    .then(() => {
+      if (GRAFT_BAKES.get(id) !== e) return; /* forgotten while its pictures loaded */
+      const t1 = performance.now(),
+        baked = s => ({ form: graftPlaceholderForm(s), rig: RIGS[s], sheet: graftPartPixels(RIGS[s].front.sheet) });
+      try {
+        const made = graftPlaceholder(
+          gameData.bodyPlans,
+          gameData.kitBuilds.bake,
+          baked(sp),
+          Object.fromEntries(Object.entries(g).map(([slot, d]) => [slot, baked(d)]))
+        );
+        graftKeep(e, sp, graft, made, t0, t1, all.map(s => RIGS[s].front.plan).join('<'));
+      } catch (err) {
+        fail(err && err.message);
+      }
+    });
+}
+/* a bake done: its sheet as a canvas, its rig, and its times and sizes for the debug log */
+function graftKeep(e, sp, graft, made, t0, t1, plans) {
+  const c = makeCanvas(made.sheet.width, made.sheet.height);
+  c.getContext('2d').putImageData(new ImageData(made.sheet.data, made.sheet.width, made.sheet.height), 0, 0);
+  const ms = Math.round(performance.now() - t1),
+    loadMs = Math.round(t1 - t0);
+  /* the sheet, and the pieces rigFromMeta cuts from it for each view */
+  e.bytes =
+    c.width * c.height * 4 +
+    ['front', 'back'].reduce(
+      (n, v) =>
+        n + made.rig[v].imgs.reduce((m, im) => m + Object.values(im.f).reduce((q, [, , w, h]) => q + w * h * 4, 0), 0),
+      0
+    );
+  Object.assign(e, { rig: made.rig, sheet: c });
+  graftStats.ms.push(ms);
+  graftStats.loadMs.push(loadMs);
+  graftStats.peak = Math.max(graftStats.peak, graftBytes());
+  graftStats.last.push({
+    sp,
+    graft,
+    ms,
+    loadMs,
+    w: c.width,
+    h: c.height,
+    kb: Math.round(e.bytes / 1024),
+    ...(plans ? { plans } : {}),
+  });
+  if (graftStats.last.length > 24) graftStats.last.shift();
+  if (typeof debugLog !== 'undefined')
+    debugLog.add('graft', `baked ${sp} ${graft}: ${ms} ms (pictures ${loadMs} ms), ${c.width}x${c.height}`, {
+      ms,
+      loadMs,
+      kb: Math.round(e.bytes / 1024),
+      ...(plans ? { plans } : {}),
+    });
 }
 function graftForget(id) {
   for (const k of GRAFT_BAKES.get(id).keys) delete RIG_PARTS_CACHE[k];

@@ -306,24 +306,23 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "swift_folklore0",
           "swift_folklore1",
           "swift_folklore2",
-          "kamprad0",
-          "kamprad1",
-          "cuban_courtside0",
-          "cuban_courtside1",
-          "altman0"
+          "yiming_livestream0",
+          "yiming_livestream1",
+          "woods0",
+          "woods1"
         ],
         "swap": {
           "swift0": "swift_folklore0",
           "swift1": "swift_folklore1",
           "swift2": "swift_folklore2",
-          "kamprad_meatball0": "kamprad0",
-          "kamprad_meatball1": "kamprad1",
-          "cuban0": "cuban_courtside0",
-          "cuban1": "cuban_courtside1"
+          "yiming0": "yiming_livestream0",
+          "yiming1": "yiming_livestream1",
+          "woods_hazard0": "woods0",
+          "woods_hazard1": "woods1"
         },
         "forms": {
           "swift": "folklore",
-          "cuban": "courtside"
+          "yiming": "livestream"
         },
         "leaders": [
           "poppy",
@@ -643,27 +642,23 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "swift_folklore0",
           "swift_folklore1",
           "swift_folklore2",
-          "zuck_cloud0",
-          "zuck_cloud1",
-          "zuck_cloud2",
-          "hughes0",
-          "hughes1",
-          "hughes2"
+          "kamprad0",
+          "kamprad1",
+          "altman0",
+          "yiming0",
+          "yiming1"
         ],
         "swap": {
           "swift0": "swift_folklore0",
           "swift1": "swift_folklore1",
           "swift2": "swift_folklore2",
-          "zuck0": "zuck_cloud0",
-          "zuck1": "zuck_cloud1",
-          "zuck2": "zuck_cloud2",
-          "hughes_harbour0": "hughes0",
-          "hughes_harbour1": "hughes1",
-          "hughes_harbour2": "hughes2"
+          "kamprad_meatball0": "kamprad0",
+          "kamprad_meatball1": "kamprad1",
+          "yiming_livestream0": "yiming0",
+          "yiming_livestream1": "yiming1"
         },
         "forms": {
-          "swift": "folklore",
-          "zuck": "cloud"
+          "swift": "folklore"
         },
         "leaders": [
           "morel",
@@ -866,24 +861,23 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "swift_folklore0",
           "swift_folklore1",
           "swift_folklore2",
-          "kamprad0",
-          "kamprad1",
-          "cuban_courtside0",
-          "cuban_courtside1",
-          "altman0"
+          "yiming_livestream0",
+          "yiming_livestream1",
+          "woods0",
+          "woods1"
         ],
         "swap": {
           "swift0": "swift_folklore0",
           "swift1": "swift_folklore1",
           "swift2": "swift_folklore2",
-          "kamprad_meatball0": "kamprad0",
-          "kamprad_meatball1": "kamprad1",
-          "cuban0": "cuban_courtside0",
-          "cuban1": "cuban_courtside1"
+          "yiming0": "yiming_livestream0",
+          "yiming1": "yiming_livestream1",
+          "woods_hazard0": "woods0",
+          "woods_hazard1": "woods1"
         },
         "forms": {
           "swift": "folklore",
-          "cuban": "courtside"
+          "yiming": "livestream"
         },
         "leaders": [
           "poppy",
@@ -892,6 +886,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "c6964afc2abc084a0ef599b685f3847f779d19e7ed0a3d8466d54bfda3b73d42"
+  "all": "05447ae8ce05dea64f0fc2dd6196d1f01e5ca6c2a873fc1db2afca1d2d3be629"
 }
 `;
