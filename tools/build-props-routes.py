@@ -12,6 +12,8 @@ in the style of phase 09's batches (tools/build-props-batch1.py .. batch11b.py a
     farm       haystack, rain_barrel, water_pump, beehive_stand, tool_shed, veg_patch_frame
     solarpunk  wind_turbine_small, solar_post_light, seed_library_box
     Bureau     bureau_barrier, bureau_crate (no logo: the Bureau's look is the owner's call)
+  RP-3, the converter test (tools/glb-to-recipe.py from CC0 models in validation/cc0-src; showcase only):
+               wind_turbine_small_cc0, footbridge_wood_cc0, arch_ruin_cc0
 
     python3 tools/build-props-routes.py      (after batches 1-11 and the island's; rerunnable)
 
@@ -40,6 +42,7 @@ def load(name, file):
 B1 = load('batch1', 'build-props-batch1.py')
 B4 = load('batch4', 'build-props-batch4.py')
 BI = load('island', 'build-props-island.py')
+G2R = load('glb2recipe', 'glb-to-recipe.py')
 PPM, A = B1.PPM, B1.AIR
 box, limb, disc, sphere, cyl, img, r2 = B1.box, B1.limb, B1.disc, B1.sphere, B1.cyl, B1.img, B1.r2
 stone, plank, rec, ring = BI.stone, BI.plank, BI.rec, B4.ring
@@ -625,6 +628,34 @@ def swap(C):
             M.pop(f, None)
 
 
+# RP-3, the converter test: CC0 models (validation/cc0-src, LICENSES.md) turned into recipes by tools/glb-to-recipe.py,
+# each beside the recipe built by hand in RP-1 on the showcase map; the owner picks per prop. Set pieces keep RP-1's.
+# key: (source, RP-1's prop it is compared with, the converter's settings, collision)
+STONES = ['stone', 'stone dark', 'stone light', 'moss']
+CC0_SRC = ROOT / 'validation' / 'cc0-src'
+CONVERTED = {
+    'wind_turbine_small_cc0': ('windturbine_tall.gltf', 'wind_turbine_small', dict(height=4.6, tol=0.05, max_layers=60),
+                               {'solid': 0.35}),
+    'footbridge_wood_cc0': ('building_bridge_A.gltf', 'footbridge_wood',
+                            dict(scale=1.77, ground=-0.15, yaw=90, anchor='front', use=STONES, vox=0.14, max_layers=80),
+                            {'box': [3.4, 2.4]}),
+    'arch_ruin_cc0': ('arch.gltf', 'arch_ruin', dict(height=2.9, use=STONES, max_layers=60),
+                      {'posts': [{'x': -37, 'r': 0.2}, {'x': 37, 'r': 0.2}]}),
+}
+
+
+def add_converted(C):
+    for key, (src, base, kw, coll) in CONVERTED.items():
+        rep = {}
+        R = G2R.convert(CC0_SRC / src, CC0_PALETTE, report=rep, **kw)
+        B = C[base]
+        M = BI.new_prop(key, B['name'] + ' (converted)', R, group=B['group'], shadow=B['shadow'], tags=B['tags'],
+                        solid=coll.get('solid'), box_=coll.get('box'))
+        if 'posts' in coll: M['posts'] = coll['posts']
+        C[key] = M
+        print(f'{key}: {rep}')
+
+
 def add_new(C):
     for key, (fn, name, group, shadow, tags, coll, extra) in NEW.items():
         M = BI.new_prop(key, name, fn(), group=group, shadow=shadow, tags=tags, solid=coll.get('solid'), box_=coll.get('box'))
@@ -639,7 +670,9 @@ ROWS = [('wayside', ['milestone', 'waymarker_post', 'shrine_small', 'seed_librar
         ('farm-big', ['tool_shed', 'wind_turbine_small', 'footbridge_wood', 'pier_deck'], 4.4),
         ('ruins', ['pillar_broken', 'arch_ruin', 'wall_ruin_corner', 'statue'], 4.0),
         ('junk', ['firewood', 'firewood_b', 'tires', 'scrap'], 3.6),
-        ('bureau', ['tollbooth', 'bureau_barrier', 'bureau_crate', 'bollard'], 4.6)]
+        ('bureau', ['tollbooth', 'bureau_barrier', 'bureau_crate', 'bollard'], 4.6),
+        ('converter', ['wind_turbine_small', 'wind_turbine_small_cc0', 'arch_ruin', 'arch_ruin_cc0', 'footbridge_wood',
+                       'footbridge_wood_cc0'], 4.4)]  # RP-3: RP-1's recipe, then the converted model
 
 
 def showcase(C):
@@ -671,6 +704,7 @@ def main():
     C = D['scenery']['props']
     swap(C)
     add_new(C)
+    add_converted(C)
     D['maps']['test_props_routes'] = showcase(C)
     gamedata.save(D)
     print('swapped:', ', '.join(SWAP))
