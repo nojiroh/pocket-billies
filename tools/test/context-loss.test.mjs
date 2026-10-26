@@ -72,13 +72,15 @@ test("a restore drops the walk view's GPU caches, shown or not (walk-view-gl.js 
     ring: dead,
     basin: dead,
     prep: dead,
+    lastShadow: dead,
   });
   propModelState.meshes.set('a.json', dead);
   solidPropState.live.set(dead, 1);
   Object.assign(structureState, { mesh: dead, key: 'k', parts: [dead] });
   try {
     G.onGlContextRestored({});
-    for (const k of ['sceneCache', 'mesh', 'gtex', 'ring', 'basin', 'prep']) assert.equal(walkRenderer[k], null, k);
+    for (const k of ['sceneCache', 'mesh', 'gtex', 'ring', 'basin', 'prep', 'lastShadow'])
+      assert.equal(walkRenderer[k], null, k);
     assert.notEqual(buildingState.mesh, bmesh);
     assert.notEqual(solidPropState.meshes, smesh);
     assert.equal(propModelState.meshes.size, 0);

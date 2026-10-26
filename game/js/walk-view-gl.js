@@ -351,6 +351,9 @@ function dropWalkGpuCaches() {
   walkRenderer.prep = null;
   walkRenderer.basin = null;
   walkRenderer.basinKey = null;
+  /* the sun's shadow map of the last frame (drawn every other frame on a struggling phone) and its cache key */
+  walkRenderer.lastShadow = null;
+  walkRenderer.shKey = '';
   for (const k of MAP_CACHE_FIELDS) walkRenderer[k] = null;
   walkView.gkey = '';
   if (typeof buildingState !== 'undefined') buildingState.mesh = new WeakMap();
