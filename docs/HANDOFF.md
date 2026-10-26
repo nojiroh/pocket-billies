@@ -2,6 +2,67 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Phase 20 round 1, lane context (H-early): listeners once, the world map rebuilt on restore, a forced loss - 2026-10-26
+Branch `track/renderer` (from 33115c7). Plan approved in Plan Mode. The owner's answers: the Studio is tested through a
+URL flag; the button loses and restores by itself; the world map rebuilds only its GPU parts; the Frame block's stale
+buffer goes to the light lane (asked again once it turned out to be on in the game: the owner passes it to them).
+- Where the phase file and the code differed (checked):
+  - Lines moved: the listeners were at engine/webgl.js 633-643, the world map's `initWebgl` call is world-bowl.js
+    `worldMapCanvasGl`, the restore handler walk-view-gl.js `onGlContextRestored`.
+  - How the listeners piled up: the walk view and the map share `#dio`, and `initWebgl` runs only when `gpuState.cv`
+    changes; but the restore sets it to null, so every restore added one more pair (the second loss remounted twice).
+  - The main gap: a restored context is the **same object**, so every `x.gl === gl` cache check still passed with dead
+    handles (all of the world map's, light.js's Frame block, sprites.js's `hideQuery`).
+  - The world map broke after a restore: its loop drew on `gpuState.cv`, null by then.
+  - `buildingState.fac` holds canvases, not GPU objects (not tied to the context).
+  - **`quality.frameBlock` is on in the game**: game/data/engine.json sets it `true` (settings.js's code default is
+    false). The Restructure's "C3 off by default" holds for the code only.
+  - A loss starts before its event: a frame drawn in between turned the buildings, models and solid props off for the
+    rest of the session (their guards' fail flags). Found by the crash check below.
+- Changed (one cause per commit):
+  - Engine (webgl.js): `watchContextLoss(cv)`, the listeners once per canvas; a restore calls the walk view's and the
+    world map's handlers.
+  - Walk view (walk-view-gl.js `dropWalkGpuCaches`, every restore, shown or not): the ground caches, prepared views and
+    ground job, basin, buildings', models', solid props' and structures' meshes, the last sun shadow map and its key;
+    the three fail flags cleared so those try again. `npm run modules` added one generated `provide` line each to
+    prop-models.js, solid-props.js and structures.js (additions only).
+  - World map (world-bowl.js): `worldBowlDropGpu` drops every GPU copy (island, fine rock, falls, lagoon, mesh, sea,
+    shadow map, lines, terrain maps, things, atlas, wall, sky) and keeps the work behind them; `worldBowlContextRestored`
+    makes the programs again when the map is open.
+  - H4: the debug menu's "Lose the GPU context" (next to the quality buttons) and `?glLose=<seconds>` (default 8) on any
+    page, the Studio's too: `forceContextLoss()` marks the context lost at once, loses it and restores it 1.5 s later.
+    The debug log says "context loss forced", "context lost", "context restored".
+  - Tests: tools/test/context-loss.test.mjs (listeners once, restore order, the walk view's and the map's caches dropped
+    and the map's CPU work kept, the forced loss).
+- Verified: lint, typecheck, `npm test` (1061), check:modules, smoke on every commit. One headless crash check at low
+  graphics (browser_check's LOW_GRAPHICS, scratch script, no pictures compared): Copperleaf lost twice, the world map,
+  back to walk, a wild battle at its move menu, the Studio's battle preview with `?glLose=12`; each came back and drew
+  again, one "context restored" per loss, no page errors, models rebuilt. The same run with a raw `loseContext()` (no
+  early flag): the same.
+- Left, with what the crash check still shows after a restore:
+  - **Light lane (the owner passes it on):** engine/light.js's `frameBlock` cache keeps `gl` and `buf`, so after a
+    restore it never makes its buffer again and every lit draw has no light buffer bound (hundreds of "used but unbound"
+    warnings). Fix: on a restore, `frameBlock.gl = null` (for instance a `frameBlockLost()` export that the walk view's
+    `onGlContextRestored` calls). Verified in the page: clearing it removes every one of those warnings.
+  - Sprites lane (R2): sprites.js `hideQuery` keeps the old context's queries (`getQueryParameter` warnings, about 20
+    per loss); its `hideQuery.gl !== gl` check doesn't notice a restore. Fix: drop `hideQuery.q` on a restore.
+  - Round 3 (registry, H1-H3): nothing is deleted after a loss (the old handles are only dropped); the battle stage's
+    own parts beyond the walk view (none found that hold GPU objects); programs never deleted; the texture budget;
+    precompile jobs are reset by `initWebgl` already. A real loss's frames between the loss and its event still draw on
+    the dead context (harmless now that the flags retry; the registry could check `gl.isContextLost()`).
+- Risky: the fail flags now retry after every restore; a device whose buildings or models really fail tries once more
+  per loss (logged again in the debug log). The world map keeps its CPU work: a GPU part this list missed would show as
+  missing ground or things on the map after a loss.
+- To test on the phone (debug menu → "Lose the GPU context", then wait 2 s):
+  - The walk view in Copperleaf: the town comes back whole (buildings, trees, ground, water, shadows); tap it twice in
+    a row, a few seconds apart.
+  - The world map (Map tab), then back to the walk view.
+  - A battle (debug menu → Battle it now), at the move menu.
+  - The Studio: open it with `?glLose=12`, open the battle preview with a walk scene before 12 s pass.
+  - With `quality.frameBlock` on (the game's data), lit things may look wrong after a loss until the light lane's fix
+    lands; that is the known leftover, not this lane's regression. Send the debug log of each.
+- Next: the light lane's one-line fix; round 3 (H1-H3, H5).
+
 ### Hub track - the placing half of HB-5 and HB-7: Skyline Station on its headland, the new buildings on their plots - 2026-10-25
 Branch `props/hub-placing` (the session's brief; from main aea7a48 after PR #201). Plan approved in Plan Mode. The
 owner's answers: the station side-on, its rail straight out to sea (no new art); the Gene Bank's door opens its room
