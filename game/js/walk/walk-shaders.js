@@ -301,12 +301,17 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
  /* WA-5b: water with a glow of its own colour (cave water) is lit from below, brightest in its shallows, in stepped tones */
  {float g0=.6+.4*sin(ts*1.3+wp.x*1.7+wp.y);base+=glowC?kg*kb.x*pwQ(g0*(.4+.6*(1.-depC)),4.,pc)*1.05:shal*kb.x*g0;}
  vec3 refl=mix(uSkyR,rf.rgb,rf.a);vec3 c=mix(base,refl,clamp(fr,0.,1.));c=mix(c,kelpC,kelp*.45);
- float foam=(pwHard(.75,1.,vS2+(r1-.5)*.35)*(.6+.4*sin(ts*2.+wp.x*3.))+flowing*pwHard(.6,.9,r2)*.5)*uFoam*ka.z;
+ /* water track WA-10: the estuary (the river's share, gEst): fresh, silty water fanning out over the sea's, its edge broken up and drifting with the flow, in
+    dithered tones on the grid; where its front meets the swell a broken seam of foam, stepped; pixel water off: the same, smooth */
+ float eSeam=0.;if(gEst>.004&&K!=1){float en=lnoise(wp*.85-fv*ts*.35+vec2(3.1,1.7))-.5,ev=clamp(gEst*1.35+en*.45,0.,1.);float pe=pix>.5?pwQ(ev,3.,pc):ev;
+  c=mix(c,mix(c,vec3(.46,.56,.44),.55)*(.75+.25*sh)+uSunCol*.04*sh,pe*.42);
+  if(kc.x>.5){float ed=abs(gEst-.26+(lnoise(wp*1.6+vec2(ts*.15,-ts*.1))-.5)*.1);eSeam=(1.-pwHard(.012,.03,ed))*step(.42,lnoise(wp*2.4-fv*ts*.5+vec2(ts*.2,0.)))*(pix>.5?1.:.7);}}
+ float foam=(pwHard(.75,1.,vS2+(r1-.5)*.35)*(.6+.4*sin(ts*2.+wp.x*3.))+flowing*pwHard(.6,.9,r2)*.5*(1.-gEst*.85))*uFoam*ka.z;
  /* WA-2a: white water from the flow map: rapids, a river's churn into still water, a fall's foot; it boils in place, in steps */
  if(fm.z>.01){float bo=lnoise(wp*5.3+vec2(ts*1.7,-ts*1.3))*.55+lnoise(wp*11.-fv*ts*.6)*.45;foam=max(foam,pwHard(.62,.72,bo+fm.z*.55)*min(1.,fm.z*1.6)*uFoam*max(ka.z,.8));}
  /* WA-5b: rapids: white water over the whole surface, streaks carried down the flow */
  if(kc.y>0.){float wr=lnoise(w*vec2(4.1,2.3)+vec2(ts*.9,-ts*.7))*.6+lnoise(w*9.3-vec2(ts*1.3,ts*.4))*.4;foam=max(foam,pwHard(.52,.58,wr+(1.-dep)*.12)*kc.y*uFoam);}
- foam=pwQ(foam,3.,pc);c=mix(c,vec3(.95,.98,1.),clamp(foam,0.,1.));
+ foam=max(foam,eSeam*.6*uFoam*2.);foam=pwQ(foam,3.,pc);c=mix(c,vec3(.95,.98,1.),clamp(foam,0.,1.));
  /* WA-1: the shore's 1-pixel line, white on clear water, a pale scum on murky */
  float ek=edge*clamp(.35+ka.z*uFoam,0.,.9);c=mix(c,mix(vec3(.95,.98,1.),shal*1.5,kb.y*.6)*(.8+.2*sh),ek);foam=max(foam,ek);
  c=mix(c,vec3(.94,.97,1.),clamp(ring*.45,0.,.6));
