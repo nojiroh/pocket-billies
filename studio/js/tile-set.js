@@ -110,7 +110,7 @@ const TS_W = 8,
 /* ---------- the kinds and their pictures ---------- */
 const tsSet = () => (studioState.D.scenery || {}).tileSet || 'tiles47';
 /* the catalogue's kinds that have a 32 px set: [{ name, label, t (the catalogue entry) }], by name */
-function tileSetKinds() {
+export function tileSetKinds() {
   const T = (studioState.D.scenery || {}).terrains || {},
     have = new Set(artPictures()),
     seen = new Set(),

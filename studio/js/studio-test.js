@@ -473,6 +473,29 @@ async function tools(G, T, fail, stopped, step) {
       throw new Error(`art browser: ${ix.size} of ${all.length} pictures have a reference`);
     T.art = { files: all.length, named: ix.size, indexMs: r1(b - a), searchMs: r1(now() - b), unused: hits.length };
   });
+  /* Studio art track SA-2a: the ground tile set's Lite tiles made from every kind's first 32 px tile (and how many are
+     the committed ones: the kinds made from their set), and the frame strips the Art browser plays */
+  await run('tile set', async () => {
+    const kinds = G.tileSetKinds(),
+      tone = { toneAt: G.groundToneAt, applyTone: G.applyGroundTone };
+    if (kinds.length < 70) throw new Error(`tile set: ${kinds.length} kinds`);
+    const pairs = kinds.map(K => {
+      const p = G.liteTilePlan(K.t, G.bigTilePaths(K.t.tile, (S.D.scenery || {}).tileSet))[0];
+      return { K, from: 'art/' + p.from, to: 'art/' + p.to };
+    });
+    const l0 = now();
+    await Promise.all(pairs.flatMap(q => [G.atlasGet(q.from), G.atlasGet(q.to)]));
+    const a = now();
+    let made = 0;
+    for (const q of pairs) {
+      const got = G.liteTile(G.pictureImage(G.loadedAtlas(q.from)), 0, G.liteToneK(q.K.t), tone);
+      if (G.liteDiff(got, G.pictureImage(G.loadedAtlas(q.to))) <= G.LITE_SAME) made++;
+    }
+    if (!made) throw new Error('tile set: no kind’s Lite tile is made from its set');
+    const strips = G.artPictures().filter(p => G.artStripOf(p)).length;
+    if (strips < 20) throw new Error(`tile set: ${strips} frame strips`);
+    T.tiles = { kinds: kinds.length, made, loadMs: r1(a - l0), liteMs: r1(now() - a), strips };
+  });
   await run('slice', () => {
     const img = testSheet(512, 512),
       a = now(),
@@ -847,7 +870,7 @@ function showReport(G, r, changes, before) {
 <h3>Look here first</h3>${find}
 <h3>Since the last run</h3>${cmp}
 <h3>Sections (ms; frames p50 / p95; edit / undo)</h3><div class="st-scroll"><table class="tbl"><thead><tr><th>Section</th><th>Open</th><th>HTML</th><th>Page</th><th>After</th><th>Beside</th><th>Again</th><th>Frames</th><th>Draws</th><th>Elements</th><th>Links</th><th>Edit</th></tr></thead><tbody>${rows}</tbody></table></div>
-<h3>Tools, undo and loading</h3><table class="tbl"><tbody>${tool('Find', T.find)}${tool('Check', T.check)}${tool('Save (built)', T.save)}${tool('Propose (built)', T.propose)}${tool('Map generator', T.mapgen)}${tool('Water tools', T.water)}${tool('Art browser', T.art)}${tool('Sheet slicing', T.slice)}${tool('Pixel editor', T.pixel)}${tool('Skeleton builder', T.skeleton)}${tool('Undo', r.undo)}${tool('Loading', { dataMs: r.load.dataMs, readMs: r.load.readMs, assembleMs: r.load.assembleMs, firstDrawMs: r.load.firstDrawMs, resources: r.load.resources })}</tbody></table>
+<h3>Tools, undo and loading</h3><table class="tbl"><tbody>${tool('Find', T.find)}${tool('Check', T.check)}${tool('Save (built)', T.save)}${tool('Propose (built)', T.propose)}${tool('Map generator', T.mapgen)}${tool('Water tools', T.water)}${tool('Art browser', T.art)}${tool('Tile set', T.tiles)}${tool('Sheet slicing', T.slice)}${tool('Pixel editor', T.pixel)}${tool('Skeleton builder', T.skeleton)}${tool('Undo', r.undo)}${tool('Loading', { dataMs: r.load.dataMs, readMs: r.load.readMs, assembleMs: r.load.assembleMs, firstDrawMs: r.load.firstDrawMs, resources: r.load.resources })}</tbody></table>
 ${r.errors.length ? `<h3>Errors</h3><ul>${r.errors.map(e => `<li><b>${esc(e.where)}</b> ${esc(e.msg)}</li>`).join('')}</ul>` : ''}
 </div><div class="dlg-btns"><button class="btn" data-st="copy">Copy</button><button class="btn" data-st="save">Download the report</button><button class="btn primary" data-st="close">Close</button></div></div></div>`;
   const json = JSON.stringify(r, null, 1);

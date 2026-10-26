@@ -295,7 +295,8 @@ export function artRefs() {
 }
 const metaOf = (path, ix) => ({ ...(artSize(path) || {}), state: ix ? artRefState(ix.get(path)) : undefined });
 /* SA-2a: a picture's frames, when the game animates it (logic/frame-strips.js), and the builder that draws it */
-const artStripOf = path => stripOf(path, { effects: EFFECT_FRAMES, life: (studioState.D.scenery || {}).life || {} });
+export const artStripOf = path =>
+  stripOf(path, { effects: EFFECT_FRAMES, life: (studioState.D.scenery || {}).life || {} });
 function artMadeByHTML(path) {
   const t = artMadeBy(path);
   return t
