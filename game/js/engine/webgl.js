@@ -20,6 +20,7 @@ expose({
   LIGHT_GLSL: [() => LIGHT_GLSL],
   LOOK_GLSL: [() => LOOK_GLSL],
   NORMAL_MAP_WORKER_SOURCE: [() => NORMAL_MAP_WORKER_SOURCE],
+  SKY_GLSL: [() => SKY_GLSL],
   SURFACE_MATERIALS: [() => SURFACE_MATERIALS],
   applyAnisotropy: [() => applyAnisotropy, v => (applyAnisotropy = v)],
   attributeClashes: [() => attributeClashes, v => ((attributeClashes = v), provide({ attributeClashes }))],
@@ -260,6 +261,12 @@ export function windBendAt(x, z, t, g) {
     0.08 * windGustAt(x, z, t) * g
   );
 }
+/* air track AIR-1: the sky's three-colour gradient by view height e (the sine of the angle above the horizon), one
+   function for the sky shader (walk-shaders.js sky) and the haze (fogit), so they can't drift apart; JS twin:
+   tools/test/haze-twin.mjs skyGrad */
+export const SKY_GLSL = `
+vec3 skyGrad(vec3 s0,vec3 s1,vec3 s2,float e){return e<.18?mix(s2,s1,smoothstep(-.05,.18,e)):mix(s1,s0,smoothstep(.18,.75,e));}
+`;
 /* lighting shared by everything lit in the world: sun with soft contact-hardening shadows and cloud shadows, contact
    occlusion, point lights (window lights only light what is in front of them), sky and ground ambient, haze and mist */
 export const LIGHT_GLSL = `
