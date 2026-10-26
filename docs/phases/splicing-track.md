@@ -155,8 +155,9 @@ eggs keep a Gene at 0.5; all placeholders), buildings.json `genebank` and unlock
 (80), the Bank on its Copperleaf plot (act `genebank`, the room's console), `logic/gene-bank.js`, the sheet
 (`gene-bank-screen.js`), your Billies held to the Bank's limit (Unstable a stored fact; wild ones at the default),
 eggs inheriting Genes, starter points (`run.points.perStability` 2), field parts (fins: Surf, `bear_arm`: Rock
-Smash), the Studio's Genes section with a splice preview, the full test's step and debug buttons. Waiting on the
-owner: the prices and levels.
+Smash), the Studio's Genes section with a splice preview, the full test's step and debug buttons. The owner's answers
+(2026-10-26): the prices and levels stay placeholders until played; Gene moves wait for the owner's explanation; SP-6
+next, on top of SP-4's branch.
  The building in Copperleaf (`buildings.json`, a model and a door), the Gene library and
 sequencing, the splice screen with its preview (look, weight bar, stats, trait, move, type, Stability), undo, the
 building's levels (Stability limit, which slots open: extras and sig first, then front and back), eggs inheriting

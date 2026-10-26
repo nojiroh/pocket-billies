@@ -70,6 +70,9 @@ branch when it moves (a merge, never a rebase). Merge SP-1, SP-2, SP-3, then thi
   starter-point cost; Gene moves (SP-2's open question): genes.json `parts.move` already shows on the sheet's preview,
   but splicing doesn't teach the move yet (that needs the owner's answer and a "forget which move" choice).
   Then tag `sp-4-done`; SP-5 waits for RL-14.
+- The owner's answers (2026-10-26, after the entry above): the Gene Bank's numbers **stay placeholders** for now (to
+  tune after playing on the phone); Gene moves: the owner explains first (`parts.move` stays unused); next is **SP-6
+  (run events)**, in a new session **on top of this branch** (`claude/sp-4-gene-bank`), merging it when it moves.
 ### Splicing track SP-3 - Wild splices: Grafts and Chimeras, the battle's line, DNA, Gene Samples (built, waiting on the owner's numbers) - 2026-10-25
 Branch `claude/sp-3-wild-splices`, **on top of SP-2's branch `claude/sp-2-rules`** (itself on SP-1's
 `ccr-dde1a5bd-nx5zdl`; none merged or tagged, `track/splicing` doesn't exist). It merges SP-2's branch when it moves
