@@ -1,5 +1,69 @@
 # Phase 20 - Renderer: measure, fewer pixels, fewer calls, sturdier, a directable light
 
+Branch: track/renderer
+
+## Restructure (owner, 2026-10-26): read this first
+The stages below (A-I) were written on 2026-10-19 against the picture-prop renderer. Since then every standing prop the
+game flow shows became a low-poly model (phase 09 batches 10-11), the game flow loads only the hub and run places, the
+water track and the five times of day landed. This section is the plan now; the stage texts further down stay as the
+detailed task list (task ids A1...I3) and their "what the renderer does today" notes are history: verify every claim.
+
+### Status (checked in the code, 2026-10-26, at 2314da8)
+| Task | Status |
+|---|---|
+| A1-A7 | Done (gpu-counters.js, gpuPass marks, `dc` `dcp` `up` `lit` `pcl` `alloc`, the A6 timer fix). |
+| A8 | Budgets set (400 draws a frame on phones, 60 fps in towns); the baseline is stale (picture props, legacy towns). Redone in R1. |
+| B | Done (walk/, now 25 files with the water track's sea-tide.js and water-flow.js). |
+| C1, C2 | Done; C2's item pool, `matrix4` and basin key left on purpose (HANDOFF C-1). |
+| C3 | Built behind `quality.frameBlock`, **off by default**, waiting on the owner's phone verdict. |
+| C4 | Done. |
+| C5 | Built on `archive/phase-20-c3-lamp-shadows`, never merged. That branch has **no merge base** with today's history: port it, don't merge it. |
+| D1-D7 | Not done (the sky draws first, no `mediump`, no `invalidateFramebuffer`, pixel cap 1.75 DPR / 1.6 MP; the automatic quality can drop phones to 0.6 resolution since 2026-10-23). |
+| E1-E13 | Not started; the E3 bug (reflection never sets `uSelf` / `uFol`, walk/water.js) is still there. |
+| F1-F9 | Not started. Retargeted: the models (`vox`, `mdl`, `voxS` in prop-models.js) are now the solid geometry; `tagSolidProp` skips every model, so F3 (solid props instanced) is dropped unless R1's numbers show a real `solid` pass. |
+| G | Not done (battle-stage.js still draws each rig on a canvas). Only if R1's battle numbers ask for it. |
+| H | Not done. Restore re-mounts the walk view only; the world map is now world-bowl.js, which also calls `initWebgl`, so the listener pile-up holds. |
+| I1 | Done another way: five looks, logic/time-of-day.js. |
+| I2 | Partly done: model window glass glows by its own lamp (HANDOFF 2026-10-25). Left: lantern glass flicker with its lamp, unlit glass dimmed, a night fill for characters. Moved to a later look task (it changes the look). |
+
+What the claims above got wrong, now: "Picture layers on models are unused (0 of 76)": model leaf clumps and vines are
+picture layers drawn by the sprite pass (`propModelImageItems`), one draw each; trees of one kind share them, so
+sprite instancing pays off far more than "about 3 instances per picture". Phase 09 task 10 (instancing and a far
+version) is the same work as R2's models lane and is done here.
+
+### New stages
+1. **Close-out**: C3 decided (on by default and the old path deleted, after the owner's verdict), C5 ported, tags.
+2. **Measure again**: a baseline on what the game loads (Copperleaf by day and night, a jungle run place, a run town, a
+   battle); sprite draws split into model pictures and the rest. **Ask me before:** whether the A8 budgets still stand.
+3. **Models instanced** (F1, F2, F4, F5 retargeted, plus phase 09 task 10's far version of the jungle broadleaf trees).
+4. **Sprites instanced** (E1-E10, E12-E13; E3 asked first).
+5. **Shadows** (F6-F8 on models, E11 if approved, lamp shadows for the nearest lamps).
+6. **Pixels** (D1, D3-D7 and rain's cost; D2 `mediump` last and alone).
+7. **Context loss and warm-up** (H; early part in R1, registry and warm-up in R3).
+8. **Battle rigs** (G), by the numbers.
+
+### Lanes and rounds
+All lanes work on `track/renderer` (BRANCHES.md). Before every push: `git pull --no-rebase origin track/renderer` (a
+merge, never a rebase or force push). A lane never edits another lane's files; a change it needs there goes in its
+HANDOFF entry for the owning lane. Shared files take additions only and are merged by hand: engine/settings.js
+defaults, the precompile list in engine/webgl.js, graphics-bench-test.js steps, HANDOFF (yours at the top), CHANGELOG.
+Generated files (hooks.js, debug-log-names.js): after a merge run `npm run modules`, never edit by hand. Every new path
+ships behind its own setting, off by default, so lanes never change each other's look. Each round ends with one owner
+phone run (graphics test, diagnostics, debug log) covering every lane's switches.
+
+| Round | Lane | Session | Owns |
+|---|---|---|---|
+| R1 | light | Stage 1: C5 ported behind `quality.stableLights` / `quality.lights`; C3 default and old-path deletion once the owner says so; tags asked | engine/light.js, engine/frame-block.js, (new) engine/light-pick.js, walk/lighting.js, walk/shadows.js, the battle stage's light keys |
+| R1 | measure | Stage 2's code: the sprite pass's draws split (model pictures / the rest), stations or a diagnostics tour for the hub, a jungle run place, a run town and a battle | engine/gpu-counters.js, the gpuPass marks, self-test.js's diagnostics, debug-log.js's fields, the graphics test's stations and test maps |
+| R1 | context | H-early: lost/restored listeners added once per canvas, the world map (world-bowl.js) rebuilt on restore, H4's force-loss button | the listener block of engine/webgl.js `initWebgl`, world-bowl.js, walk-view-gl.js `onGlContextRestored`, debug-menu.js |
+| R2 | models | Stage 3 | prop-models.js, (new) engine/model-instances.js |
+| R2 | sprites | Stage 4 | walk/sprites.js, walk/draw-common.js, the sprite programs in walk/walk-shaders.js, walk/water.js's reflection pass, (new) engine/sprite-instances.js |
+| R2 | pixels | Stage 6 without D2 | walk-view-gl.js's frame, walk/sky.js, engine/post-effects.js, render targets, walk/effects.js (D7) |
+| R3 | shadows | Stage 5 | walk/shadows.js, the shadow half of prop-models.js |
+| R3 | context | H1-H3, H5 | engine/webgl.js's resources |
+| R3 | battle | Stage 8, if wanted | battle-stage.js, battle-3d.js |
+| R4 | - | D2 alone; old paths deleted after the owner's verdicts (one commit each); tag `phase-20-done` | every shader |
+
 ## Goal
 Keep the custom WebGL 2 renderer and its look, and make it fast and sturdy on phones:
 1. measure what a frame costs (draw calls, pixels, allocations) on the owner's own devices;
