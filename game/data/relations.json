@@ -10,8 +10,13 @@
       {"kind":"money","mult":1.05}
      ]
     },
-    {"at":4},
-    {"at":6},
+    {
+     "at": 4,
+     "fx": [
+      {"kind":"xp","mult":1.05}
+     ]
+    },
+    {"at":6,"wardrobe":"glasses_sun"},
     {"at":9}
    ]
   },
@@ -22,8 +27,11 @@
      "at": 2,
      "items": {"potion":1}
     },
-    {"at":4},
-    {"at":6},
+    {
+     "at": 4,
+     "items": {"hi_potion":1}
+    },
+    {"at":6,"wardrobe":"labcoat"},
     {"at":9}
    ]
   },
@@ -34,8 +42,13 @@
      "at": 2,
      "pyramids": {"pyramid":1}
     },
-    {"at":4},
-    {"at":6},
+    {
+     "at": 4,
+     "fx": [
+      {"kind":"catch","mult":1.1}
+     ]
+    },
+    {"at":6,"wardrobe":"hat_bucket"},
     {"at":9}
    ]
   }
