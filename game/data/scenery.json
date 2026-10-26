@@ -3236,7 +3236,11 @@
    "group": "fountain",
    "solid": 1.6,
    "fx": [
-    {"k":"spray","x":0,"y":-80}
+    {"k":"spray","x":0,"y":-80},
+    {"k":"glow","x":-32,"y":-19,"z":-0.5},
+    {"k":"glow","x":32,"y":-19,"z":-0.5},
+    {"k":"glow","x":0,"y":-19,"z":0.9},
+    {"k":"fireflies","x":0,"y":0,"n":7,"r":3.2}
    ],
    "model": "scene/next/models/fountain.json",
    "ppm": 32,
@@ -12113,6 +12117,35 @@
      "swap": {"#B27648":"#9C8F7E","#A06A42":"#8D8274"},
      "model": "scene/next/models/fence_rail_broken.json"
     }
+   ]
+  },
+  "string_lights": {
+   "name": "String lights",
+   "img": "scene/next/hub/string_lights.png",
+   "ox": -102,
+   "oy": -108,
+   "shadow": 0.3,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town"],
+   "group": "string_lights",
+   "model": "scene/next/models/string_lights.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "fx": [
+    {"k":"glow","x":-77,"y":-83},
+    {"k":"glow","x":-58,"y":-79},
+    {"k":"glow","x":-38,"y":-77},
+    {"k":"glow","x":-19,"y":-75},
+    {"k":"glow","x":0,"y":-74},
+    {"k":"glow","x":19,"y":-75},
+    {"k":"glow","x":38,"y":-77},
+    {"k":"glow","x":58,"y":-79},
+    {"k":"glow","x":77,"y":-83}
+   ],
+   "posts": [
+    {"x":-96,"r":0.1},
+    {"x":96,"r":0.1}
    ]
   }
  },

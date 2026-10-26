@@ -189,21 +189,22 @@ def fountain_recipe():
     L = [cyl(0, 0, 0, 1.75, 0.12, '#A8A4B4', 'stone', 'basin foot', 24),
          cyl(0, 0, 0.1, 1.68, 0.42, '#C4C0CE', 'stone', 'basin wall', 24),
          ring(0, 0, 0.53, 1.6, 0.1, '#DCD8E4', 'stone', 'basin rim', 24),
-         cyl(0, 0, 0.44, 1.52, 0.04, W_, 'plain', 'basin water', 24)]
+         cyl(0, 0, 0.5, 1.52, 0.04, W_, 'plain', 'basin water', 24)]
     L += [cyl(0, 0, 0.45, 0.32, 0.95, '#C4C0CE', 'stone', 'pedestal', 8, k='cone', r1=0.2),
           cyl(0, 0, 1.38, 0.2, 0.32, '#C4C0CE', 'stone', 'bowl', 16, k='cone', r1=0.8),
           ring(0, 0, 1.7, 0.78, 0.05, '#DCD8E4', 'stone', 'bowl rim', 20),
-          cyl(0, 0, 1.66, 0.72, 0.03, W_, 'plain', 'bowl water', 20),
+          cyl(0, 0, 1.69, 0.72, 0.03, W_, 'plain', 'bowl water', 20),
           cyl(0, 0, 1.68, 0.12, 0.45, '#C4C0CE', 'stone', 'upper pedestal', 8),
           cyl(0, 0, 2.1, 0.1, 0.14, '#C4C0CE', 'stone', 'top bowl', 12, k='cone', r1=0.32),
-          cyl(0, 0, 2.22, 0.29, 0.02, W_, 'plain', 'top water', 12),
+          cyl(0, 0, 2.23, 0.29, 0.02, W_, 'plain', 'top water', 12),
           sphere(0, 0, 2.22, 0.08, BRASS, 'metal', 'finial', 8, 4),
           limb((0, 0, 2.3), (0, 0, 2.48), 0.03, 0.015, BRASS, 'metal', 'spout', 6)]
+    # HB-10a: each water a little over its bowl's solid top (it was under it, hidden), under the rim
     # lily pads and a few flowers in the basin
     for i, a in enumerate((0.6, 2.2, 3.9, 5.2)):
-        L.append(cyl(math.cos(a) * 1.15, math.sin(a) * 1.0, 0.47, 0.14, 0.015, '#6EAE52', 'leaves', 'lily pad', 8))
+        L.append(cyl(math.cos(a) * 1.15, math.sin(a) * 1.0, 0.54, 0.14, 0.015, '#6EAE52', 'leaves', 'lily pad', 8))
         if i % 2 == 0:
-            L.append(sphere(math.cos(a) * 1.15, math.sin(a) * 1.0, 0.48, 0.045, '#F4B8D0', 'plain', 'lily', 6, 3))
+            L.append(sphere(math.cos(a) * 1.15, math.sin(a) * 1.0, 0.555, 0.045, '#F4B8D0', 'plain', 'lily', 6, 3))
     return rec(L, 0.75)
 
 
@@ -343,6 +344,14 @@ def clock_tower_fx():
     return [{'k': 'window', 'x': 0, 'y': -px(3.45)}, {'k': 'glow', 'x': 0, 'y': -px(CLOCK_Z)}]
 
 
+def fountain_fx():
+    """its spray; HB-10b: lit from below after dusk (three lamp glows round the basin) and fireflies round it"""
+    return [{'k': 'spray', 'x': 0, 'y': -px(2.5)},
+            {'k': 'glow', 'x': -px(1.0), 'y': -px(0.6), 'z': -0.5}, {'k': 'glow', 'x': px(1.0), 'y': -px(0.6), 'z': -0.5},
+            {'k': 'glow', 'x': 0, 'y': -px(0.6), 'z': 0.9},
+            {'k': 'fireflies', 'x': 0, 'y': 0, 'n': 7, 'r': 3.2}]
+
+
 # ---------------------------------------------------------------- the catalogue
 FIXED = {'rot': 0, 'lean': 0, 'size': 0}
 MADE = {
@@ -354,7 +363,7 @@ MADE = {
     'bike_rack': (bike_rack_recipe, None, FIXED),
     'bin': (bin_recipe, None, FIXED),
     'sign_shop': (sign_shop_recipe, None, FIXED),
-    'fountain': (fountain_recipe, lambda: [{'k': 'spray', 'x': 0, 'y': -px(2.5)}], FIXED),
+    'fountain': (fountain_recipe, fountain_fx, FIXED),
     'solar_canopy': (solar_canopy_recipe, lambda: [{'k': 'glow', 'x': 0, 'y': -px(2.3)}], FIXED),
     'solar_tree': (solar_tree_recipe, lambda: [{'k': 'glow', 'x': 0, 'y': -px(2.72)}], FIXED),
     'vertical_garden': (vertical_garden_recipe, None, FIXED),
