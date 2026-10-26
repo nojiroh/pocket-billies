@@ -53,7 +53,7 @@ export const POST_EFFECT_SHADERS = {
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDep;uniform vec2 uPx;uniform float uN,uF,uBand,uRampF,uRampN,uMaxR,uBokeh,uEdge;uniform vec4 uPlane;uniform int uTaps;
+precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDep,uNear;uniform vec2 uPx;uniform float uN,uF,uBand,uRampF,uRampN,uMaxR,uBokeh,uEdge,uNearOn;uniform vec4 uPlane;uniform int uTaps;
 float lin(float d){float z=d*2.-1.;return 2.*uN*uF/(uF+uN-z*(uF-uN));}
 /* CAM-3: the distance from the plane of focus at screen place q and view depth z (logic/lens-focus.js; tilt 0: z - focus) */
 float pd(vec2 q,float z){return z*dot(vec3(1.,q),uPlane.xyz)-uPlane.w;}
@@ -64,13 +64,43 @@ float coc(vec2 q,float z){return max(cocd(pd(q,z)),edge(q));}
 /* CAM-3: a sample counts where its own blur reaches this pixel (scatter as gather, after Dennis Gustafsson): a sharp
    thing in front keeps out of the blur behind it (no halo round it), a sample behind counts with its blur held to
    twice this pixel's (only behind the focus: in front of it, as before, everything behind counts), and a blurred thing in front spills over the sharp pixels beside it (four probes at the widest
-   reach find it, then the gather is as wide as its blur). The alpha is the spill only: the composite works out each pixel's own blur at full size. */
+   reach find it, then the gather is as wide as its blur). The alpha is the spill only: the composite works out each pixel's own blur at full size.
+   Spread blur in front (lens.nearSpread, uNearOn): the probes give way to uNear, the most blur in front of the focus
+   in the tiles round this pixel (the dofnear and dofgrow passes), and a sample more blurred than this pixel and in
+   front of it reaches as far as that: a blurred thing in front then softens over what is behind it (its own outline is
+   its least blurred part, so its spill reached a pixel or two and stopped there). What isn't in front counts only
+   within this pixel's own blur, so the wider gather doesn't blur the sharp ground beside it. */
 float cover(float s,float d){return clamp((s-d)*12.+.5,0.,1.);}
-void main(){float zc=lin(texture(uDep,vUV).r),dc=pd(vUV,zc),cc=max(cocd(dc),edge(vUV)),R=cc;bool far=dc>0.;vec3 acc=texture(uCol,vUV).rgb;float ws=1.,wn=0.;
- for(int k=0;k<4;k++){vec2 q=vUV+vec2(k<2?-.6:.6,k==0||k==2?-.6:.6)*uMaxR*uPx;float zs=lin(texture(uDep,q).r);if(zs<zc)R=max(R,coc(q,zs));}
- if(R>.02){float nt=float(uTaps);for(int i=0;i<28;i++){if(i>=uTaps)break;float a=float(i)*2.39996,r=sqrt((float(i)+.5)/nt);vec2 q=vUV+vec2(cos(a),sin(a))*r*uMaxR*R*uPx;
-  float zs=lin(texture(uDep,q).r),cs=coc(q,zs),d=r*R;bool fr=zs<zc;float w=fr?cover(cs,d):far?cover(min(cs,cc*2.),d):1.;vec3 s=texture(uCol,q).rgb;float l=dot(s,vec3(.3,.59,.11));w*=1.+smoothstep(.8,1.6,l)*2.5*uBokeh;acc+=s*w;ws+=w;if(fr)wn+=w;}}
- o=vec4(acc/ws,R>cc+.01?min(1.,wn/ws*2.)*R:0.);}`,
+void main(){float zc=lin(texture(uDep,vUV).r),dc=pd(vUV,zc),cc=max(cocd(dc),edge(vUV)),R=cc;bool far=dc>0.,ns=uNearOn>.5;vec3 acc=texture(uCol,vUV).rgb;float ws=1.,wn=0.,nf=0.,wf=0.,nc=0.;vec3 af=vec3(0.);
+ if(ns){nf=texture(uNear,vUV).r;R=max(R,nf);}else for(int k=0;k<4;k++){vec2 q=vUV+vec2(k<2?-.6:.6,k==0||k==2?-.6:.6)*uMaxR*uPx;float zs=lin(texture(uDep,q).r);if(zs<zc)R=max(R,coc(q,zs));}
+ if(R>.02){float nt=float(uTaps),jr=ns?6.2832*fract(52.9829*fract(dot(gl_FragCoord.xy,vec2(.06711,.00584)))):0.;/* (spread: the spiral turned per pixel, so its few wide taps make fine noise, not bands) */
+  for(int i=0;i<28;i++){if(i>=uTaps)break;float a=float(i)*2.39996+jr,r=sqrt((float(i)+.5)/nt);vec2 q=vUV+vec2(cos(a),sin(a))*r*uMaxR*R*uPx;
+  float zs=lin(texture(uDep,q).r),cs=coc(q,zs),d=r*R;bool fr=zs<zc;if(ns){fr=fr&&cs>cc+.02;if(fr)cs=max(cs,nf);}float w=fr?cover(cs,d):far?cover(min(cs,cc*2.),d):ns?cover(cc,d):1.;vec3 s=texture(uCol,q).rgb;float l=dot(s,vec3(.3,.59,.11)),w0=w;w*=1.+smoothstep(.8,1.6,l)*2.5*uBokeh;if(ns&&fr){af+=s*w;wf+=w;nc+=w0;}else{acc+=s*w;ws+=w;if(fr)wn+=w;}}}
+ /* (spread: the share of the taps that land on the blurred thing in front is how much of it covers this pixel, laid over
+    this pixel's own blur; its alpha is that cover, which the composite blends by) */
+ if(ns){float cv=min(1.,nc/float(uTaps));o=vec4(wf>0.?mix(acc/ws,af/wf,cv):acc/ws,R>cc+.01?cv:0.);}else o=vec4(acc/ws,R>cc+.01?min(1.,wn/ws*2.)*R:0.);}`,
+  ],
+  /* Spread blur in front: the most blur in front of the focus in each 16 x 16 tile of the full-size depth (every other
+     pixel each way), then grown uGrow tiles each way, so a pixel beside a blurred thing in front knows that thing's blur */
+  dofnear: [
+    `#version 300 es
+precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
+    `#version 300 es
+precision highp float;in vec2 vUV;out vec4 o;uniform highp sampler2D uDep;uniform float uN,uF,uBand,uRampN;uniform vec4 uPlane;
+float lin(float d){float z=d*2.-1.;return 2.*uN*uF/(uF+uN-z*(uF-uN));}
+void main(){ivec2 sz=textureSize(uDep,0),b=ivec2(gl_FragCoord.xy)*16;vec2 S=vec2(sz);float m=0.;
+ for(int j=0;j<16;j+=2)for(int i=0;i<16;i+=2){ivec2 p=min(b+ivec2(i,j),sz-1);float d=texelFetch(uDep,p,0).r;if(d>=1.)continue;
+  float dz=lin(d)*dot(vec3(1.,(vec2(p)+.5)/S),uPlane.xyz)-uPlane.w;if(dz<0.)m=max(m,smoothstep(uBand*.6,uBand*.6+uRampN,-dz));}
+ o=vec4(m,0.,0.,1.);}`,
+  ],
+  dofgrow: [
+    `#version 300 es
+precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
+    `#version 300 es
+precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uT;uniform int uGrow;
+void main(){ivec2 c=ivec2(gl_FragCoord.xy),s=textureSize(uT,0)-1;float m=0.;
+ for(int j=-4;j<=4;j++)for(int i=-4;i<=4;i++){if(abs(i)>uGrow||abs(j)>uGrow)continue;m=max(m,texelFetch(uT,clamp(c+ivec2(i,j),ivec2(0),s),0).r);}
+ o=vec4(m,0.,0.,1.);}`,
   ],
   bright: [
     `#version 300 es
@@ -308,6 +338,30 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
     gl.uniform1f(U.uR, Math.min(3, 0.5 + blur));
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   } else if (dofOn) {
+    /* Spread blur in front (lens.nearSpread): the tiles' blur in front, then grown as far as the widest blur reaches */
+    const maxR = Math.max(3, hh / (o.dofRef ? 50 : 70)) * blur,
+      near = !!engineSetting('lens', 'nearSpread');
+    let N = null;
+    if (near) {
+      const tw = Math.ceil(rw / 16),
+        th = Math.ceil(rh / 16),
+        T0 = renderTarget('dofnear0', tw, th),
+        T1 = renderTarget('dofnear1', tw, th);
+      let V = use('dofnear', T0, tw, th, true);
+      tex(V, 'uDep', 0, S.d);
+      gl.uniform1f(V.uN, C.near);
+      gl.uniform1f(V.uF, C.far);
+      gl.uniform4f(V.uPlane, pl[0], pl[1], pl[2], pl[3]);
+      gl.uniform1f(V.uBand, band[0]);
+      gl.uniform1f(V.uRampN, band[2]);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      V = use('dofgrow', T1, tw, th, true);
+      tex(V, 'uT', 0, T0.c);
+      /* (maxR is in half-size pixels, a tile is 8 of them) */
+      gl.uniform1i(V.uGrow, Math.min(4, Math.max(1, Math.ceil(maxR / 8))));
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      N = T1;
+    }
     const U = use('dof', D, hw, hh, true);
     tex(U, 'uCol', 0, S.c);
     tex(U, 'uDep', 1, S.d);
@@ -319,7 +373,9 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
     gl.uniform1f(U.uRampF, band[1]);
     gl.uniform1f(U.uRampN, band[2]);
     gl.uniform1f(U.uEdge, band[3]);
-    gl.uniform1f(U.uMaxR, Math.max(3, hh / (o.dofRef ? 50 : 70)) * blur); /* (the walk view's blur a little wider) */
+    gl.uniform1f(U.uMaxR, maxR); /* (the walk view's blur a little wider) */
+    tex(U, 'uNear', 2, N ? N.c : gpuState.white);
+    gl.uniform1f(U.uNearOn, N ? 1 : 0);
     gl.uniform1f(U.uBokeh, engineSetting('lens', 'bokeh'));
     gl.uniform1i(U.uTaps, o.fast ? 14 : 28);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -332,6 +388,7 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
     band,
     scale: dofOn ? Math.min(1.5, o.blur ?? 1) : 0,
     path: !dofOn ? 'off' : cheap ? 'cheap' : o.fast ? 'fast' : 'full',
+    nearSpread: dofOn && !cheap && !!engineSetting('lens', 'nearSpread'),
   };
 }
 /* the rest of the post chain: bloom, AO, shafts, light in the air, then the grade to the screen with the blur F

@@ -86,6 +86,158 @@ The owner's answer to the plan's AIR-1 question: **keep a place's own `haze`, sh
 - Next: AIR-2 (fog grid) runs in its own session on this branch (started 2026-10-26); AIR-3 needs both. Tag
   `air-1-done` for the owner.
 
+### Route props track RP-3 - the CC0 converter test - 2026-10-26
+Branch `track/route-props` (made by the owner from `ccr-5d98165a-i1ustq`; main merged in first, a merge commit).
+Plan approved in Plan Mode: KayKit's CC0 models from GitHub (no upload needed), the tall turbine, RP-1's and RP-2's
+tags made again.
+- What differed from the docs: github.com's pages and API answer 403 here, but `git clone` and
+  raw.githubusercontent.com work. Kenney's GitHub starter kits are MIT, not CC0, and have no turbine, bridge or arch.
+  KayKit's own repositories are CC0 (each pack's LICENSE.txt) and had all three: Space Base Bits `windturbine_tall`,
+  Halloween Bits `arch`, Medieval Hexagon `building_bridge_A`. They are .gltf with .bin and a palette texture, not GLB.
+  The tags `rp-1-done` and `rp-2-done` were gone; RP-3 made them again (e7954859, b9cb51f9), but the git proxy refuses
+  tag pushes from this session, so they and `rp-3-done` are local only: **please add the three tags on GitHub**.
+- Changed: tools/glb-to-recipe.py (new; reads glTF/GLB, colours from the texture snapped to the props' palette,
+  each piece fitted with the closest box, cyl, cone, dome, sphere or limb, else voxel boxes, else cut in two; cut at
+  the ground; `--selftest`, `--preview`); tools/build-props-routes.py (`CC0_PALETTE`, the `CONVERTED` table, a
+  "converter" row on test_props_routes); validation/cc0-src/ (the 3 models, their textures, LICENSES.md); new props
+  wind_turbine_small_cc0, arch_ruin_cc0, footbridge_wood_cc0 with baked pictures (test map only).
+- Measured (RP-1 recipe -> converted, triangles as the game builds them; one draw each either way): turbine 216 ->
+  1052, arch 572 -> 1196, footbridge 428 -> 796. The rerun of build-props-routes.py rewrites RP-1's files unchanged.
+- How they look (headless pictures of the row; the owner picks): the turbine is close to its source (blades as
+  limbs, the shroud ring as boxes; KayKit's sci-fi turbine, one blade tip lost its gold); the arch is a whole arch
+  in stepped stone blocks, not a ruin; the footbridge is wrong (the hex tile's stone bridge cut at the ground is a
+  low stone lump on stubby piers), so RP-1's stays. Set pieces still use RP-1's recipes for all three.
+- Verified: lint, type-check, check-data (161 files), check:modules, unit tests 1304 pass (after the merge and after
+  the props), the converter's self-test, headless pictures of the row (no page errors), the smoke check 6 of 6 (298 s; its unused-art note, detail-a04.png and airship_mast,
+  predates this). The full quick check was not run.
+- Local set-up: the checks pin Python Playwright 1.56 (chromium 1194); this container has chromium 1243, so this
+  session ran Python Playwright 1.63 (matching the container's Node Playwright), not committed.
+- Risky: the converted models are 2-2.5x RP-1's triangles; the converter's fits depend on per-model settings
+  (`tol`, `vox`, `use`, `ground`) found by eye; KayKit's art style (sci-fi turbine, intact graveyard arch) is not ours.
+- Phone check wanted: `test_props_routes`, the last props row ("converter": each RP-1 prop, then its conversion);
+  export the debug log.
+- Next: the owner's pick per prop ("Ask me before" 4 in the plan file), or the other "Ask me before" items.
+
+### Camera track, CAM-3 follow-up - Spread blur in front - 2026-10-26
+Branch `ccr-831c6196-cnlx4w` (a one-session fix; BRANCHES.md would name it `fix/blur-spill`, but a session pushes only
+to its own branch). The owner asked why the blur on 3D props looks weird ("like the blur stops at its edges"); plan
+approved: the fix behind a switch, off until the phone check.
+- **Found (measured, not guessed):** not the ink outlines (my first answer; turning ink and AO off changed nothing).
+  On the Workshop's roof in front of the focus the blur pass's probes found the roof, but its gather counted no roof
+  sample, so the spill alpha was 0 on the cobbles beside it and the full-size composite cut sharp at the depth edge. A
+  front sample reached only as far as its own blur, and an outline is a thing's least blurred part (0.12 at the roof's
+  edge, 0.33 in its middle, with tilt 0.7).
+- **Changed:** `lens.nearSpread` (Studio Engine > Lens "Spread blur in front", default **off**): two small passes
+  (`dofnear` per 16 x 16 tile, `dofgrow` 1-4 tiles) and the `dof` shader's spread path (engine/post-effects.js; the
+  details in camera-track.md under CAM-3). Off is the old shader path. `walkRenderer.lensInfo.spread` and the debug
+  log's `lens.spread`; the graphics test measures it on its own (Depth corridor); tools/look-blur.py `--only=10`.
+- **Risky:** the cost on a phone (two passes on a 1/256-size target; the blur's gather now runs wherever a blurred
+  thing in front is within reach); the look of the per-pixel noise in the spill (static, at half size) and how strong
+  the spill reads at the default blur (subtle) against Strong (clear). Battles get it too when on.
+- **Verified:** the spill measured on the roof: about 0.45 at its outline fading to 0 over about 12 half-size pixels,
+  both sides of the chimney even (a first try doubled the cover and left a ghost band; fixed). lint, typecheck,
+  format:check, check:modules, unit tests 1314 pass, smoke (no problems), the fast check 37 of 37. Here the checks ran
+  with Python playwright 1.63 (the container's browser build), not the pinned 1.56.
+- **Next:** turn it on in the Studio on the phone (Copperleaf, the Workshop near the bottom of the screen, Blur
+  Strong) and send a debug log with the graphics test's Depth corridor; if it looks right and costs little, make it
+  the default in engine.json.
+### Online track ON-1: the base (legality, block, report, Online play) - 2026-10-26
+Branch `ccr-0b8e3c38-gt7t6a` (`track/online` doesn't exist; the owner: build here). Tag to suggest: `on-1-done`.
+Details: docs/phases/online-track.md, "Done in ON-1". The owner's answers: hide after 3 reports, a placeholder
+moderator uid, Online play off by default.
+- Changed: `logic/online-legal.js` (onlineCopy, legalBilly/Egg/Part, legalMoves), `logic/online.js` (friendListFrom:
+  the friend re-add bug fixed; blocks, reports, onlinePlayOn), `Billy.ot` / `Billy.traded` (billiesOk checks shapes),
+  firestore.rules `blocks/<uid>` and `reports/<target>` (+ `/by/<uid>`), friends.js sheets (Remove / Block / Report,
+  Decline / Block / Report, the Blocked list, reported names as "Trainer"), Settings > Save "Online play" (signed in
+  only), Debug > Save shows your account id, the quick check's Safety step covers the sheets.
+- **For the owner**: paste your uid over `PASTE-YOUR-UID-HERE` in firestore.rules, then publish the rules
+  (SECURITY.md "ON-1 for the owner to do"). Until published, Block shows the "updated database rules" message and
+  Report says "You reported them already." (the rules' refusal, read as a repeat).
+- **Risky**: legalBilly is as strict as the game's own Billie paths I found (level-up, tutors, quirk eggs, splices,
+  Augments, abominations); a path I missed would make a fair Billie fail (it says why: a reason word). Nothing calls
+  it yet (ON-3 is the first). Blocking and reporting were only tried against the emulator's rules and with fake
+  friend data in the page; never with two real accounts.
+- Verified: lint, typecheck, format:check, check:modules, check:data, build, `npm test` 1320 pass, the rules emulator
+  tests 19 pass (5 new), smoke 6 of 6, headless pictures of the friends panel and the three sheets. Full quick check:
+  35 of 40 ok; the 5 problems (Terraces' sky_portal, RL-8's shop Perk, room light, Running's distances, two cave songs
+  missing from the sound baseline) fail the same on main da51c766, run here in a worktree. Python Playwright 1.63.0
+  (the pinned 1.56 wants a browser this container lacks).
+- Next: the owner publishes the rules and tries Block and Report between two accounts; then ON-2 (= RL-15) on
+  `track/online` (made from this branch).
+
+### Online track ON-0 planned: leaderboards, Showcase, trading, live battles - 2026-10-26
+Branch `ccr-0b8e3c38-gt7t6a` (a planning session; the owner: expand the friend system with trading, real-time
+battles, global trading, leaderboards for runs and shared Billies with votes, with online research). Docs only, no
+code. Tag to suggest: `on-0-done` (the owner pushes tags).
+- docs/phases/online-track.md: the owner's answers, the verified facts, the research (Pokémon SV, HOME, GO, Showdown,
+  Slay the Spire, PokeRogue, Mario Maker, Firebase), what the rules can do without a server, sessions ON-1..ON-7.
+- The owner's answers: stay on Spark (no Cloud Functions); boards first; trade ranch Billies, eggs and robot parts;
+  global trading on trust; friends-only leaderboards; names as typed; level 50 PvP with splices allowed; a few trade
+  evolutions with a solo route. No ranked ladder on Spark (my call, written in the track: it can't be verified).
+- VISION's Online line, ROADMAP (RL-15 is ON-2, phase 18 absorbed, the track listed), SECURITY (the phase 18 table
+  superseded, what stays open), BRANCHES (`track/online`).
+- Found: the battle field is uneven (`SIDE_ACTORS` three slots for side 0, two for side 1): ON-6 checks a fair mirror
+  match first. The friend re-add bug is still open (ON-1).
+- **Risky**: the friend-trade swap without a server relies on `getAfter`/`existsAfter` across two players' batches:
+  ON-4 proves it on the emulator before any screen is built. Spark's 50k reads a day for GTS and Showcase browsing.
+- Next: the owner makes `track/online` from main; ON-1 there (it can start before RL-14b; ON-2 replaces RL-15).
+### Route props track RP-2 - bridges, jetties, rails and arches in the props' style - 2026-10-26
+Branch `ccr-5d98165a-i1ustq` (as RP-1). The owner asked after RP-1 ("make it so bridges and similar things are in the
+current style") and chose: restyle in structures.js; bridges and jetties, rails, arches and tunnels (not escalators);
+a gentle hump on wood bridges; the ruins' cool grey stone. RP-3 (the converter) still waits for CC0 files.
+- What differed: the structures already shared the props' texture sheet and the buildings' shader; only their shapes
+  (half-metre deck slabs, posts without caps, smooth parapets) and colours differed. The walk height already follows
+  the drawn deck (walk-view.js `BRIDGE_ARCH`), so the hump is one number (wood 0.12 -> 0.35).
+- Changed: game/js/structures.js (the props' palette in STRUCTURE_MATERIALS; planks with gaps, edge beams, capped
+  posts and newels, braced trestles; a rope rail dipping between hangers; stone paving, a two-course staggered parapet
+  in three tones with coping and moss, a voussoir ring and the vault's underside; jetty mooring posts; wood, iron and
+  stone rails; arch piers in courses, voussoirs, keystone and coping; helpers `beam` and `cap`); walk-view.js
+  BRIDGE_ARCH; `test_props_routes` gained a structures row (stone and brick arches, three rails, props beside them).
+- Measured (headless, main -> RP-2): triangles of the structures a scene: Copperleaf 1040 -> 2296, test_bridges
+  1646 -> 3818, test_stairs 1130 -> 1904, test_hilltown 800 -> 1416; draws the same (one mesh, the same parts).
+- Verified: lint, type-check, prettier, check-data, check:modules, unit tests 1284 pass; pictures of test_bridges
+  (wood, stone, rope, low on the wood deck), the structures row and Copperleaf's jetty. Full quick check: 34 of 40.
+  Five failures are main's (the first four as listed before; run on main 2026-10-26 for the jingles): Terraces
+  (`sky_portal` in the air), RL-8 (the town's shop has no Perk), room light, song fingerprints (cave mid/late), Sound
+  effects and jingles (the payout jingles, fails on main b87b818d too). The sixth, Animals (a rabbit didn't bolt),
+  passed alone on this branch and on main: a timing flake under the full run's load.
+- Pictures change on purpose: remake the picture baseline (Actions -> Check -> Run workflow -> "Make the picture
+  baseline").
+- Risky: the hump changes the deck height you walk on over every wood bridge (Copperleaf's two, generated stream
+  crossings): up to 0.35 m in the middle of a 6 m bridge; trainers standing at a bridge's end are off the deck.
+  Stone arches and parapets read dark on their shaded sides, as the ruin props do.
+- Phone check wanted: Copperleaf's bridges and jetty, `test_bridges`, `test_props_routes` (the last row); walk over
+  a wood bridge; export the debug log.
+- Next: RP-3 once CC0 files are uploaded (`validation/cc0-src/`), or the "Ask me before" items in
+  docs/phases/route-props-track.md.
+
+### Route props track RP-1 - more 3D props for the routes - 2026-10-26
+Branch `ccr-5d98165a-i1ustq` (the session's own: `track/route-props` didn't exist; the owner makes it from this
+branch, docs/BRANCHES.md). Plan in docs/phases/route-props-track.md, approved in Plan Mode with the owner's answers.
+- What differed from the plan: 6 set-piece props were still pictures, not 16 (the rest were models or batch 1's
+  colour swaps; `fence` is a battle prop). No route stream crossing lacks a bridge, so the footbridge is in the
+  catalogue and the showcase only. The CC0 pack sites (kenney.nl, opengameart.org, quaternius.com, itch.io) are
+  unreachable from the container, so the converter test (RP-2) needs the files uploaded.
+- Changed: tools/build-props-routes.py (rerunnable) swaps in firewood, firewood_b, scrap, statue, tires and tollbooth
+  as models and adds 20 props with baked pictures (scene/next/routes); setPieces.json uses them (ruins round an arch,
+  a stile in the farm pen, a solar path light and a seed library at the rest stop, a tool shed, a landing stage at
+  the fishing jetty, a Bureau barrier and crate) and adds `wayside_shrine` and `solar_garden`. MAPGEN_VERSION 18.
+- Measured on 66 generated routes (2-4 pieces asked each, the same seeds): pieces placed 188 -> 193, the fishing
+  jetty 4 -> 4 (its landing stage first cut it to 1: the rowboat moved to the other side, r 5 -> 5.5), props a
+  route 802.7 -> 804.1, model parts a route 5815 -> 5932 (+2%). Draws at a piece, headless, phone size (each piece
+  alone on a test map, neighbours partly in view, so +-7): most the same; Bureau checkpoint 22 -> 31, farm pen
+  48 -> 54; the new pieces 39 (solar garden) and 53 (wayside shrine), as the old ones. Not quite "the same draws":
+  the Bureau's two new models cost the most.
+- Snapshots remade on purpose: check-data's (161 data files), rng's scene hash (only gen.v), run-start's (mapgenV 18).
+- Verified: lint, type-check, check-data, unit tests (1284 pass), headless pictures of every new prop on
+  `test_props_routes` (no page errors) and the baked pictures, the smoke check (6 of 6; its unused-art note,
+  detail-a04.png and airship_mast, predates this). The full quick check was not run.
+- Risky: the turbine's blades stand still; the statue's face reads oddly from the side; a set piece's props may
+  overlap each other (mapgen doesn't check a piece against itself, as before).
+- Phone check wanted: `test_props_routes`, and a meadow or lake run for the solar garden, the fishing jetty and the
+  rest stop at dusk (the solar light, the shrine's seed and the seed library glow); export the debug log.
+- Next: the bridges, rails and arches in the props' style (the owner asked 2026-10-26), then RP-2 (the converter)
+  once CC0 files are uploaded.
 ### Air track AIR-0 - the plan: volumetric low fog and better haze - 2026-10-26
 Branch `ccr-c0505a05-bzef90` (`track/air` doesn't exist yet: the owner makes it, and AIR-1 on starts there). Plan Mode;
 the owner asked whether the low fog could be volumetric with simple voxels, then for the same research on haze, then
@@ -99,6 +251,21 @@ answered: soft volumetric (no visible cubes), its own track, all four parts in s
   the plan keeps `fogit` as the fallback.
 - Next: the owner makes `track/air`; AIR-1 (haze) and AIR-2 (fog grid) can run at the same time. Tag `air-0-done`
   for the owner.
+### Graphics preset Off - 2026-10-26
+Branch `ccr-5d6955bf-muk1fs`. Asked: "Add a Graphics option that turns everything off". Not a phase; plan and a
+question round first (name Off, full sharpness, time of day and weather off too, Expert dials ignored while on).
+- **Changed:** Settings → Display gets a third card, Off (`preferences.aim = 'off'`; saves.js keeps it).
+  engine/settings.js: `OFF_LOOK` (PLAIN_LOOK plus no shadows, AO, grass, far props/hills, water reflections, lamp
+  glow) answers in place of the player's dials while `graphicsOff()`; `playerBlur()` is 0. walk-view-gl.js leaves out
+  the environment (time of day, weather, season) and the scene blur while Off. Map clouds on Auto → off; run towns
+  draw Balanced's folk count. The preset grid is three columns.
+- **Risky:** Off only zeroes dials; the post pass still runs (it also does tone mapping and the ink outlines, so the
+  `noPost` blit would change the art), so the saving on a phone is whatever the zeroed dials buy. Untested on a phone.
+  No grass blades also means tall grass reads only from the ground texture.
+- **Verified:** lint, typecheck, unit tests (1314 pass; new cases for map clouds and folk cap), check:modules, the
+  smoke check (6/6). Headless: Copperleaf on Beautiful vs Off (engine dials read 0, env off, no page errors) and the
+  cards at 420 px; tapping Beautiful then Off sets `aim` sharp then off. Full quick check not run (not a phase).
+- **Next:** try Off on the phone; if it isn't fast enough, a lighter post pass (tone map and ink only) is the step.
 
 ### UI track UI-8 - The bottom bar with the minimap; merge batch 3 - 2026-10-26
 Branch `ccr-30c007a6-eol40p` (`track/ui` didn't exist; a session pushes only to its own branch). Plan approved after a

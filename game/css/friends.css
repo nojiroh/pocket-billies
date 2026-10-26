@@ -83,3 +83,14 @@
   background: var(--g-solid);
   color: var(--text);
 }
+
+/* ---------- ON-1: the players you blocked, folded under the list ---------- */
+.fr-blocked {
+  margin: var(--s3) 0 var(--s1);
+}
+.fr-blocked summary {
+  cursor: pointer;
+  color: var(--text2);
+  font-size: var(--fs-caption);
+  padding: var(--s1) 0;
+}
