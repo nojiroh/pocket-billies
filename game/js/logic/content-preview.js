@@ -6,7 +6,7 @@
    Studio's data as the game's.
    - perkPreview (T4.1): what some Perks do to a sample Billie (made by rules.js makeBilly at a level) and to the
      numbers of a run: fxRows, then fxStages with the battle's stageFactor on its stats, fxMoney on a wild prize and a
-     mini-boss's reward, fxPrice on a shop ware and the clinic, fxCatch, fxDamage, fxHealShare and fxPayoutRates. Where
+     mini-boss's reward, fxPrice on a shop ware and the clinic, fxCatch, fxDamage, fxHealShare, fxPayoutRates and (SP-6) fxSplice. Where
      a kind's product passes FX_LIMIT, the product before and after the clamp.
    - leaderRunValues (T4.3): what a run makes of each mini-boss leader (trainers with miniboss: true) on each mini-boss
      row and the boss's row: run-loop.js runFoes on that row alone, so its reward and its team's levels are the game's.
@@ -22,6 +22,7 @@ import {
   fxPayoutRates,
   fxPrice,
   fxRows,
+  fxSplice,
   fxStages,
 } from './effects.js';
 import { stageFactor } from './battle-engine.js';
@@ -88,6 +89,8 @@ export function perkPreview(ids, sample) {
     },
     heal: { share: fxHealShare(fx), hp: Math.floor(hp * fxHealShare(fx)) },
     payout: { itemShare: [R.payout.itemShare, pay.itemShare], research: pay.research },
+    /* SP-6: the splice kinds */
+    splice: { dna: fxSplice(fx, 'dna'), odds: fxSplice(fx, 'splice'), unstable: fxSplice(fx, 'unstable') },
     limited,
   };
 }
