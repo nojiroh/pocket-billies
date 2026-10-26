@@ -58,7 +58,20 @@
    "houses": {"house_red":3,"house_blue":2,"house_green":2,"house_cottage":3,"cottage_solar":2},
    "centre": "well",
    "fence": "picket_fence",
-   "square": "c"
+   "square": "c",
+   "life": [
+    {"k":"chicken","n":3},
+    {"k":"cat","n":1},
+    {"k":"pigeon","n":3,"houses":5,"square":1}
+   ],
+   "chat": [
+    "The wind out here has never once been late.",
+    "Rabbits ate my lettuce again. I’ve started growing two lettuces.",
+    "You can see the next town from the hill. It’s further than it looks.",
+    "A Billie tried to buy the meadow last spring. The meadow said no.",
+    "Mind the tall grass by the road. Something in there owns a lot of shares.",
+    "Best picnic spot in the region, and I’ve checked every one."
+   ]
   },
   "life": [
    {"k":"rabbit","n":4}
@@ -124,7 +137,19 @@
    "houses": {"cottage_moss":4,"house_cottage":3,"house_green":2},
    "centre": "well",
    "fence": "fence_wood",
-   "square": "u"
+   "square": "u",
+   "life": [
+    {"k":"chicken","n":2},
+    {"k":"cat","n":1}
+   ],
+   "chat": [
+    "Stay on the path. The thicket keeps whatever wanders off it.",
+    "The squirrels here hoard acorns like it’s a pension plan.",
+    "I cut the hedge back on Monday. By Wednesday it had a hedge of its own.",
+    "Something rustled at my window last night. It left a business card.",
+    "Moss on the north side of the trees. Moss on the south side too, sadly.",
+    "We don’t get many visitors. The brambles see to that."
+   ]
   },
   "life": [
    {"k":"squirrel","n":3},
@@ -192,7 +217,20 @@
    "houses": {"house_blue":3,"cottage_solar":3,"house_cottage":2,"townhouse_yellow":1},
    "centre": "fountain",
    "fence": "picket_fence",
-   "square": "c"
+   "square": "c",
+   "life": [
+    {"k":"chicken","n":2},
+    {"k":"cat","n":1},
+    {"k":"pigeon","n":3,"houses":5,"square":1}
+   ],
+   "chat": [
+    "The ducks run this town. We just live here.",
+    "Caught a fish this big once. It caught me back.",
+    "Skimming stones? My record is four. The lake’s record is all of them.",
+    "Don’t feed the frogs bread. They expect a dividend.",
+    "The water’s calm today. Too calm, if you ask the ducks.",
+    "On a clear morning you can see your face in the lake. I try not to."
+   ]
   },
   "life": [
    {"k":"duck","n":6},
@@ -239,7 +277,19 @@
    "houses": {"townhouse_red":3,"house_red":2,"cottage_solar":2},
    "centre": "well",
    "fence": "fence_wood",
-   "square": "Y"
+   "square": "Y",
+   "life": [
+    {"k":"chicken","n":2},
+    {"k":"cat","n":1}
+   ],
+   "chat": [
+    "Shout your name off the edge and the canyon shouts it back, slightly wrong.",
+    "The lizards sunbathe on the rocks all day. Nice work if you can get it.",
+    "Our well goes down a long way. Nobody’s sure how far. We’ve stopped asking.",
+    "The walls glow orange at sunset. Free show, every night.",
+    "Watch for falling rocks. And falling Billies. Mostly rocks.",
+    "Dad says the river carved all this. Must’ve been a busy river."
+   ]
   },
   "life": [
    {"k":"lizard","n":4}
@@ -294,7 +344,19 @@
    "houses": {"townhouse_red":3,"house_large":2,"house_red":1},
    "centre": "well",
    "fence": "fence_wood",
-   "square": "j"
+   "square": "j",
+   "life": [
+    {"k":"cat","n":1},
+    {"k":"crow","n":2}
+   ],
+   "chat": [
+    "The ground’s warm here all year round. My slippers are retired.",
+    "Rumble last night. Just the mountain clearing its throat.",
+    "We bake bread on the rocks. Comes out a bit crunchy.",
+    "Ash on the washing again. Grey is a colour too.",
+    "Fire-type Billies love it here. The rent is cheap and the floors are heated.",
+    "If the mountain smokes, go indoors. If it hums, go further indoors."
+   ]
   },
   "life": [
    {"k":"lizard","n":4}
@@ -350,7 +412,18 @@
    "houses": {"cottage_juniper":3,"house_large":2,"house_blue":2},
    "centre": "well",
    "fence": "fence_wood",
-   "square": "K"
+   "square": "K",
+   "life": [
+    {"k":"cat","n":1}
+   ],
+   "chat": [
+    "Cold enough for you? It’s cold enough for me.",
+    "My nose froze in the shape of a sneeze once.",
+    "Snow again. We’ll dig the shop out by lunch.",
+    "The rabbits turn white in winter. I turn blue.",
+    "Keep moving and you stay warm. That’s the whole plan.",
+    "A Billie came through selling ice. Didn’t stay long."
+   ]
   },
   "life": [
    {"k":"rabbit","n":2}
@@ -394,7 +467,19 @@
    "houses": {"house_blue":3,"townhouse_yellow":3,"cottage_solar":2},
    "centre": "fountain",
    "fence": "picket_fence",
-   "square": "c"
+   "square": "c",
+   "life": [
+    {"k":"cat","n":2},
+    {"k":"chicken","n":1}
+   ],
+   "chat": [
+    "The gulls will take anything. Hold on to your hat, and your lunch.",
+    "Tide’s out. You can walk to the rocks, but the crabs have opinions.",
+    "Salt in the air, sand in the boots. That’s home.",
+    "A message in a bottle washed up yesterday. It was a receipt.",
+    "The lighthouse keeper waves at every boat. Even the ones going away.",
+    "Crabs walk sideways so they can keep an eye on you."
+   ]
   },
   "life": [
    {"k":"gull","n":4},
@@ -460,7 +545,19 @@
    "houses": {"house_large":2,"cottage_juniper":3,"cottage_moss":2},
    "centre": "well",
    "fence": "fence_wood",
-   "square": "K"
+   "square": "K",
+   "life": [
+    {"k":"chicken","n":2},
+    {"k":"cat","n":1}
+   ],
+   "chat": [
+    "The goats know every path up here. Follow them, not the signs.",
+    "Thin air. Makes your laugh go further.",
+    "You can see three biomes from the top. Bring a coat for all of them.",
+    "The wind up here has never met a door it couldn’t open.",
+    "My legs are strong, my patience is short. Ridge life.",
+    "The view’s free. The climb back down is extra."
+   ]
   },
   "life": [
    {"k":"goat","n":3},
@@ -527,7 +624,20 @@
    "houses": {"house_red":3,"cottage_juniper":2,"house_cottage":3,"house_green":1},
    "centre": "well",
    "fence": "picket_fence",
-   "square": "c"
+   "square": "c",
+   "life": [
+    {"k":"chicken","n":2},
+    {"k":"cat","n":1},
+    {"k":"pigeon","n":3,"houses":5,"square":1}
+   ],
+   "chat": [
+    "Every leaf in this town has been raked twice. They keep coming back.",
+    "Squirrels are busy. They know something we don’t.",
+    "Smell that? Woodsmoke and wet leaves. Best smell there is.",
+    "The trees here go red, then gold, then they lose interest.",
+    "I’m drying mushrooms for the winter. Don’t ask which ones.",
+    "A Billie bought every pumpkin in town. Then left them on our doorsteps."
+   ]
   },
   "life": [
    {"k":"squirrel","n":4},
@@ -582,7 +692,19 @@
    "houses": {"townhouse_red":3,"house_red":2,"cottage_solar":2},
    "centre": "well",
    "fence": "fence_wood",
-   "square": "Y"
+   "square": "Y",
+   "life": [
+    {"k":"chicken","n":1},
+    {"k":"crow","n":2}
+   ],
+   "chat": [
+    "Nothing grows here, and it grows a lot of it.",
+    "Drink water. Then drink some more. Then a bit more.",
+    "The lizards run fast because the ground is hot. So do I.",
+    "We had rain once. Everyone came out to look.",
+    "The rocks out there look like faces if you stare long enough. Don’t.",
+    "A tumbleweed rolled through the square this morning. Biggest news all week."
+   ]
   },
   "life": [
    {"k":"lizard","n":4}
@@ -648,7 +770,19 @@
    "houses": {"cottage_moss":3,"house_green":3,"cottage_solar":2},
    "centre": "fountain",
    "fence": "fence_wood",
-   "square": "c"
+   "square": "c",
+   "life": [
+    {"k":"chicken","n":2},
+    {"k":"cat","n":1}
+   ],
+   "chat": [
+    "It rained twice before breakfast. Normal day.",
+    "The frogs sing all night. You get used to it. Then you need it.",
+    "Don’t lean on the vines. Some of them lean back.",
+    "Everything here is green, damp, or both.",
+    "I lost my hat in the canopy. A monkey wears it better.",
+    "The trees grow so fast, we give the houses new addresses every spring."
+   ]
   },
   "life": [
    {"k":"frog","n":4}
@@ -692,7 +826,15 @@
    "houses": {"cave_house":1},
    "centre": "well",
    "fence": "fence_wood",
-   "square": "k"
+   "square": "k",
+   "chat": [
+    "Your eyes get used to the dark. Mine got used to it before I was born.",
+    "The well water comes up cold and tastes of stone. Lovely.",
+    "We tell the time by the drips. It’s about three drips past noon.",
+    "Mind your head. Everyone who lives here has a dent.",
+    "Echoes are just the cave agreeing with you.",
+    "Someone saw daylight once. We don’t talk about it."
+   ]
   },
   "from": "glimmershaft"
  }

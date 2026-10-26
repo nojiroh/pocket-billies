@@ -20,6 +20,7 @@ import { escapeHtml } from './game-stand-ins.js';
 import { UI_ROLE_LABELS } from '../../game/js/logic/ui-dials.js';
 import { RIG_NEUTRAL_POSE, rigGeo } from '../../game/js/logic/rig-joints.js';
 import {
+  dataBanter,
   dataBattleRules,
   dataBiomes,
   dataBuildings,
@@ -30,6 +31,7 @@ import {
   dataModifiers,
   dataNodeTypes,
   dataPerks,
+  dataQuests,
   dataRanchRules,
   dataRegions,
   dataRewards,
@@ -43,6 +45,7 @@ import {
   dataRunPayout,
   dataRunScene,
   dataSceneFindings,
+  dataSetPieces,
   dataSpeciesKind,
   dataUnlocks,
 } from '../../game/js/logic/data-checks.js';
@@ -412,11 +415,14 @@ const STUDIO_DATA_FAMILIES = /** @type {[string, (D: any) => [string, string][]]
   ['biome', dataBiomes],
   ['region', dataRegions],
   ['field move', dataFieldMoves],
+  ['set piece', dataSetPieces],
   ['modifier', dataModifiers],
   ['held item', dataHeldItems],
+  ['quest', dataQuests],
   ['node type', dataNodeTypes],
   ['relic', dataPerks],
   ['event', dataEvents],
+  ['banter', dataBanter],
   ['reward', dataRewards],
   ['currency', dataCurrencies],
   ['building', dataBuildings],

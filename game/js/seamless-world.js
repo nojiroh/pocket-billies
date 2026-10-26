@@ -836,6 +836,9 @@ function seamlessCompose(id, F) {
   if (F.base.grassPatches) sc.grassPatches = F.base.grassPatches.map(g => ({ ...g, x: g.x + BO[0], z: g.z + BO[1] }));
   /* IS-5: the hub island's coast and zones (the sea reads them: logic/sea.js seaCentre, a cove's calm) */
   const sh = q => [q[0] + BO[0], q[1] + BO[1]];
+  /* RT-4: its habitats' points, where the water's and the woods' wild Billies wait (walk-view.js encounterSpot) */
+  if (F.base.habitats)
+    sc.habitats = Object.fromEntries(Object.entries(F.base.habitats).map(([k, L]) => [k, L.map(sh)]));
   if (F.base.island) sc.island = { ...F.base.island, c: sh(F.base.island.c), coast: F.base.island.coast.map(sh) };
   if (F.base.zones) sc.zones = F.base.zones.map(Z => ({ ...Z, poly: Z.poly.map(sh) }));
   /* steps (cliffs, terraces, stairs) on the half-metre grid, copied in place (alpha 0.2: the eased ones; the countryside

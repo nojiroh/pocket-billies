@@ -882,6 +882,8 @@ export function checkFaints() {
     any = true;
     p.status = null;
     p.sTurns = 0;
+    /* TW-3: how many of yours fainted in this battle (a mini-boss quest wants none) */
+    battleNow().fainted = (battleNow().fainted || 0) + 1;
     battleSay(`${billyName(p)} fainted.`, { k: 'faint', si: k });
     inherit(k);
     const pend = (battleNow().needSwitch || []).length;
@@ -1120,7 +1122,8 @@ export function startTrainer(id, o = {}) {
     T.alpha
       ? `${T.name} sends out an Alpha! It acts twice a turn. Your team steps up together.`
       : dbl
-        ? `${T.name} wants a double battle!`
+        ? /* RT-2: a route pair is two trainers */
+          `${T.name} ${T.mate ? 'want' : 'wants'} a double battle!`
         : `${T.name} wants to battle.`,
     { k: 'trainerIn', who: T.who }
   );

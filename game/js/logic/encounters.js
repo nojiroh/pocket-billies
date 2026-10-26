@@ -262,6 +262,8 @@ export function encClassFoe(run, i, id, cls, o) {
     win: `“${C.lose}”`,
     lose: '',
     sight: C.sight,
+    /* RL-S1: the Bureau's agents (logic/run-history.js, banter's `bureau` lines) */
+    ...(C.bureau ? { bureau: 1 } : {}),
     reward: o.reward,
     team,
     node: runWorldNode(i),

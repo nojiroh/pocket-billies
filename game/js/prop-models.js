@@ -1345,11 +1345,11 @@ function lowPolyFragmentShader() {
   const f = BUILDING_SHADERS.bld[1],
     a = 'shade(c,n,vW,sh,ao,vec4(.1,30.,0.,.3),0.)';
   if (!f.includes(a)) return f;
-  /* terrain TR-3: a model between the camera and you (a tree's trunk on a mountain's shelf) thins out like the rock */
+  /* terrain TR-3: a model between the camera and you (a tree's trunk on a mountain's shelf) thins out like the rock
+     (the buildings' shader has ROCK_GLSL since player visibility) */
   return f
     .replace(a, 'glassLit(shade(c,n,vW,sh,ao,vec4(.06,20.,0.,.22),uCel),n,v,sh)')
-    .replace('uniform vec3 uBP;', 'uniform vec3 uBP;uniform float uCel;' + ROCK_GLSL + GLASS_GLSL)
-    .replace('void main(){', 'void main(){if(rockHides(vW))discard;');
+    .replace('uniform vec3 uBP;', 'uniform vec3 uBP;uniform float uCel;' + GLASS_GLSL);
 }
 /* the models among the items, drawn after the voxel props: L is [item, mesh] */
 /* alpha 0.4: the props' shaders with the low-poly model's, for compiling ahead when the 3D view starts (walk-view-gl.js ensureWalkGl) */

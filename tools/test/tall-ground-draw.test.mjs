@@ -1,13 +1,17 @@
 // Terrain TR-3: what the walk renderer sends for tall ground, with a stand-in WebGL context (no graphics): the rock
 // fade's uniforms (draw-common.js rockUniformsFor) are off on flat ground, in battle and for another camera (the water's
 // reflection), and on with the player's feet and a circle when ground cuts the camera's line; the player's silhouette
-// (sprites.js drawPlayerSilhouette) is one draw with depth GREATER and no depth writes, put back afterwards, and none
-// on flat ground, in battle, indoors or with its setting off.
+// (sprites.js drawPlayerSilhouette, since player visibility drawn wherever anything hides you) is an invisible
+// occlusion-query draw and then the tint, both with depth GREATER and no depth writes, put back afterwards, and none in
+// battle, indoors or with its setting off.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { recordingGL } from './walk-renderer.mjs';
 
 const G = globalThis;
+// the conversation box stands in for talk.js (which needs the game data)
+const talkBox = { on: false };
+(await import('../../game/js/hooks.js')).provide({ talkBox });
 const { gpuState, walkView, walkRenderer, rockUniformsFor, drawPlayerSilhouette } = G;
 
 // a camera 20 m back and 15 m up from a player at (10, 0, 30), looking along +z: a plain perspective matrix
@@ -103,32 +107,92 @@ test('rock fade: off on flat ground, on (feet, circle) when ground cuts the line
   walkRenderer.bt = null;
 });
 
-test('silhouette: one draw with depth GREATER and no depth writes, put back after; the ghost uniforms cleared', () => {
-  const C = camera({ rockK: 1 });
+test('see-through circle: on flat ground while something hides you, as strong as it is hidden; off with its setting', () => {
+  let C = camera();
+  setup(C);
+  walkRenderer.hidK = 1;
+  let R = rockUniformsFor(C);
+  assert.equal(R.rock[0], 0, "the player's feet");
+  assert.ok(Math.abs(R.rock[1] - 0.3) < 1e-6, `the circle's size: ${R.rock[1]}`);
+  assert.ok(Math.abs(R.rock[2] - 0.7) < 1e-6, `most of it goes, not all: ${R.rock[2]}`);
+  walkRenderer.hidK = 0.5;
+  C = camera();
+  walkView.C = C;
+  assert.ok(Math.abs(rockUniformsFor(C).rock[2] - 0.35) < 1e-6, 'half hidden, half as strong');
+  G.setEngineDataSource(() => ({ defaults: { camera: { hideFade: false } } }));
+  C = camera();
+  walkView.C = C;
+  assert.deepEqual(Array.from(rockUniformsFor(C).rock), [0, 0, 0, 0], 'setting off');
+  G.setEngineDataSource(() => null);
+  walkRenderer.hidK = 0;
+});
+
+test('silhouette: a hidden query draw, then the tint; depth GREATER and no depth writes, put back after', () => {
+  const C = camera();
   const calls = setup(C);
-  assert.equal(drawPlayerSilhouette(C, [me], {}), 1);
+  assert.equal(drawPlayerSilhouette(C, [me], {}), 0, 'no answer from the query yet: not hidden');
   const names = calls.map(c => c[0]);
-  const draw = names.indexOf('drawArrays');
-  assert.ok(draw > 0 && names.lastIndexOf('drawArrays') === draw, 'one draw');
-  const before = calls.slice(0, draw),
-    after = calls.slice(draw + 1);
+  const draws = names.flatMap((n, i) => (n === 'drawArrays' ? [i] : []));
+  assert.equal(draws.length, 2, 'the query draw and the tint');
+  const [q, tint] = draws;
+  assert.deepEqual(calls[names.lastIndexOf('beginQuery', q)].slice(0, 2), [
+    'beginQuery',
+    'ANY_SAMPLES_PASSED_CONSERVATIVE',
+  ]);
+  assert.deepEqual(
+    calls[names.lastIndexOf('colorMask', q)],
+    ['colorMask', false, false, false, false],
+    'nothing drawn'
+  );
+  assert.ok(names.indexOf('endQuery', q) < tint, 'ended before the tint');
+  assert.deepEqual(calls[names.lastIndexOf('colorMask', tint)], ['colorMask', true, true, true, true]);
+  const before = calls.slice(0, q),
+    after = calls.slice(tint + 1);
   assert.deepEqual(before.filter(c => c[0] === 'depthFunc').at(-1), ['depthFunc', 'GREATER']);
   assert.deepEqual(before.filter(c => c[0] === 'depthMask').at(-1), ['depthMask', false]);
   assert.deepEqual(after.filter(c => c[0] === 'depthFunc').at(-1), ['depthFunc', 'LEQUAL']);
   assert.deepEqual(after.filter(c => c[0] === 'depthMask').at(-1), ['depthMask', true]);
-  const ghost = uniform(before, 'uGhost').at(-1);
-  assert.ok(ghost[3] > 0 && ghost[3] <= 1, 'a tint over part of the pixels');
-  assert.deepEqual(uniform(before, 'uGhostV').at(-1), [...C.eye, 0.6], 'pulled toward the eye');
+  const ghost = uniform(calls.slice(q + 1, tint), 'uGhost').at(-1);
+  assert.ok(ghost[3] > 0 && ghost[3] < 1, 'a tint over part of the pixels');
+  assert.deepEqual(uniform(before, 'uGhostV').at(-1), [...C.eye, 0.8], 'pulled toward the eye');
   assert.deepEqual(uniform(after, 'uGhost').at(-1), [0, 0, 0, 0]);
   assert.deepEqual(uniform(after, 'uGhostV').at(-1), [0, 0, 0, 0]);
 });
 
-test('no silhouette on flat ground, in battle, indoors or without the player', () => {
-  let C = camera();
+test('silhouette: once the query says something covers you, you are hidden', () => {
+  const C = camera();
+  setup(C);
+  gpuState.gl.getQueryParameter = () => true;
+  drawPlayerSilhouette(C, [me], {});
+  assert.equal(drawPlayerSilhouette(C, [me], {}), 1);
+  assert.equal(walkRenderer.hidT, 1);
+  assert.ok(walkRenderer.hidK > 0, 'the hidden amount comes on');
+  walkRenderer.bt = {};
+  drawPlayerSilhouette(C, [me], {});
+  assert.equal(walkRenderer.hidT, 0, 'in battle it is dropped');
+  walkRenderer.bt = null;
+});
+
+test('silhouette: while you talk, the one you talk to shows too; not once the talk is over', () => {
+  const C = camera();
+  const npc = { ...me, k: 'npc', x: 11, z: 31, n: { who: 'hazel' } };
   let calls = setup(C);
-  assert.equal(drawPlayerSilhouette(C, [me], {}), 0, 'flat ground');
-  C = camera({ rockK: 1 });
+  talkBox.on = true;
+  walkRenderer.talkAt = { x: 11, z: 31, t: 0 };
+  drawPlayerSilhouette(C, [me, npc], {});
+  assert.equal(calls.filter(c => c[0] === 'drawArrays').length, 3, 'the query, you, them');
+  const bases = uniform(calls, 'uBase');
+  assert.deepEqual(bases.at(-1), [11, 0, 31], 'the last tint is drawn where they stand');
+  talkBox.on = false;
   calls = setup(C);
+  drawPlayerSilhouette(C, [me, npc], {});
+  assert.equal(calls.filter(c => c[0] === 'drawArrays').length, 2, 'the query and you');
+  walkRenderer.talkAt = null;
+});
+
+test('no silhouette in battle, indoors or without the player', () => {
+  const C = camera({ rockK: 1 });
+  const calls = setup(C);
   walkRenderer.bt = {};
   assert.equal(drawPlayerSilhouette(C, [me], {}), 0, 'battle');
   walkRenderer.bt = null;

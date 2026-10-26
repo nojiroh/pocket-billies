@@ -1,6 +1,7 @@
 // Routes track RT-1: route layouts (game/js/logic/mapgen.js mapgenStageLayout) on the game's own scenery and biomes.
 // For each plan over a sweep of seeds and biomes: the same dials give the same scene; the walkable share from the
-// hub is 55-65%; every exit is reached, nothing traps you, every spot stands where you can walk; no blocker on the
+// hub is 55-65%; every exit is reached, nothing traps you, every spot stands where you can walk (RT-2: and faces a
+// way, with roadside spots on every place); no blocker on the
 // road, in an exit's straight run-in or on the east and west seams; a forest mass can't be walked into; a scene
 // without the dial is the one it always was.
 import assert from 'node:assert/strict';
@@ -50,8 +51,12 @@ test('RT-1: every plan lands 55-65% walkable, reaches every exit and spot, traps
         kinds.add(s.kind);
         if (s.kind === 'summit') continue;
         assert.ok(G.mapgenReached(R, s.x, s.z), `${where}: ${s.kind} at ${s.x}, ${s.z} can't be walked to`);
+        /* RT-2: where a trainer stands and the way it looks */
+        if (s.stand) assert.ok(G.mapgenReached(R, ...s.stand), `${where}: ${s.kind}'s stand can't be walked to`);
+        if (s.kind !== 'pinch' || s.stand) assert.ok(Number.isFinite(s.face), `${where}: ${s.kind} faces nowhere`);
       }
       assert.ok(kinds.has('clearing') || kinds.has('deadend'), `${where}: no spots`);
+      assert.ok(kinds.has('roadside'), `${where}: no roadside spot`);
     }
 });
 

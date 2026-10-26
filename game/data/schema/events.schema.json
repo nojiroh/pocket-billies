@@ -31,7 +31,9 @@
      "who": {"description": "their look (people/<who>.json)", "type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
      "team": {"description": "how many Billies, fewest and most", "type": "array", "items": {"type": "integer", "minimum": 1, "maximum": 6}, "minItems": 2, "maxItems": 2},
      "sight": {"description": "what they say when they spot you", "type": "string", "minLength": 1, "maxLength": 120},
-     "lose": {"description": "what they say when they lose", "type": "string", "minLength": 1, "maxLength": 120}
+     "lose": {"description": "what they say when they lose", "type": "string", "minLength": 1, "maxLength": 120},
+     "bureau": {"description": "RL-S1: one of the Bureau's agents (the story's lastby:bureau, history:bureau; banter's `bureau` lines are their sight line)", "const": 1},
+     "likes": {"description": "RT-2: the spot kinds a route trainer of the class stands on first (logic/route-trainers.js ROUTE_SPOTS)", "type": "array", "items": {"enum": ["roadside", "pinch", "bridge", "pocket", "clearing", "deadend"]}, "uniqueItems": true, "maxItems": 6}
     }
    }
   },

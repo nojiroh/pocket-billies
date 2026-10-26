@@ -2,6 +2,134 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Player visibility - you stay visible behind buildings and trees - 2026-10-25
+Branch `ccr-bdf253b3-4vm5w6` (the session's own: the owner chose to work here instead of `fix/player-visibility`,
+which didn't exist; one session's work, one PR). Not a phase: the owner asked for a system and approved the plan in
+Plan Mode with these answers: all three layers (silhouette, see-through circle, a better whole-object fade); the
+silhouette an outline in the colour of your top (lifted if dark); you and the one you talk to; the setting renamed
+"Your outline when hidden". No tag (not a phase).
+- What was there (TR-3, checked in the code): the silhouette and the rock's see-through circle only while ground cuts
+  the camera's line (`rockK`); behind a house or tree on flat ground neither showed. A 0.4 fade written out twice
+  (walk/sprites.js, solid-props.js): one test point, instant, props over 1.6 m, and **never the low-poly models**,
+  which are Copperleaf's buildings (lab, shop, cottages: `M.model` with a door, not `M.build`).
+- Changed (one cause per commit):
+  - **logic/occlude.js** (new, tests occlude.test.mjs): `pictureCovers` (the cover test, moved first with no change),
+    `hiddenEase`, `outlineColour`, `coverTarget`, `fadeEase`.
+  - **Silhouette for anything that hides you** (sprites.js `drawPlayerSilhouette`): no `rockK` gate; an invisible first
+    draw is an occlusion query (`ANY_SAMPLES_PASSED_CONSERVATIVE`), its answer `walkRenderer.hidT`, eased into `hidK`;
+    pull toward the eye 0.8 m (was 0.6). Debug log: the camera line's `hidden`.
+  - **Outline** (sprite shader `uGhostE`): the picture's edge whole, the inside dotted (`outlineFill`), in the top's
+    colour (`lookOf`, the worn top's first colour, else the wardrobe's; looked up once a second). Engine > Camera
+    `outline` (1 art pixel; 0 = the old dark blue tint), `outlineFill` (0.25).
+  - **Talk partner**: while `talkBox.on`, the person or townsperson within 1.5 m of `walkRenderer.talkAt` gets the same
+    outline in their own top's colour; not counted toward your `hidK`.
+  - **See-through circle when hidden** (draw-common.js `rockUniformsFor`): on with `hidK` as well as `rockK`; the
+    buildings' three shaders got ROCK_GLSL (the models, built on them, no longer add it). Engine > Camera `hideFade`,
+    `hideSize` (0.3), `hideAmount` (0.7, capped at 0.85).
+  - **Circle dither moved by (2, 1)** (walk-shaders.js `rockHides`): with the fades' own pattern, a picture both faded
+    and in the circle lost every pixel, the query saw nothing and the circle flickered off (found in the pictures:
+    lab, shop, a tree). Now at least 2 cells in 16 stay for any fade from 0.1 and circle up to 0.85.
+  - **Whole-object fade** (walk/quality-cull.js `coverItems`, after culling): your feet, middle and head; to
+    `coverFade` (0.4), halfway back while the circle is on; eased per placement (out about 0.25 s, back about 0.5 s);
+    models and voxel props fade now (they read `it.fade`).
+  - **Rename**: "Your silhouette through rock" is "Your outline when hidden" (label and help text only).
+  - **Checks**: fast check "Behind things" (Copperleaf: hidden behind at least half of three buildings and three trees,
+    four samples in a row, circle on; not in the open); "Tall ground" no longer expects no silhouette on flat ground (the
+    mountains landing's bushes really cover you there; it checks no rise and no rock fade); tall-ground-draw tests for
+    the query, the talk partner and the circle; `tools/look-behind.py` (pictures, validation/behind/, ignored).
+- Where the plan was wrong: an occlusion query that says "how much" needs `SAMPLES_PASSED`, which WebGL2 doesn't have;
+  `ANY_SAMPLES` is yes or no, so the "minimum amount hidden" filter is the 0.8 m pull alone (a lamp post in front of
+  you turns the circle on; it only cuts what is in front of you inside it). No `?fixture=behind`: the spots are found
+  in the town fixture (check-fast.py `BEHIND_SPOTS`), so no game code was added for it. "Buildings fade as a whole"
+  was mostly the old `M.build` pictures; the real buildings are models and never faded before.
+- Verified: unit tests 927; lint, typecheck, modules, format, check-data; smoke 6 of 6 after every step; check-fast
+  "Behind things" and "Tall ground"; pictures behind the lab, shop, two cottages and three trees (hidden 1, circle 0.7;
+  in the open 0). Debug log check (camera line).
+  Full quick check (1316 s): 33 of 37. Postcards and Actions sheet passed alone (the full run's load, as RT-1 saw).
+  Song fingerprints fails on main too (cave mid and cave late aren't in validation/sound-baseline). RL-8 failed at
+  "Take off" in the full run and once more paired with another page; alone it gets past it and fails where main does
+  (run alone in a worktree of origin/main 2cfef57): "the town's shop has no Perk (RL-12)", RT-1's open item.
+- **Not verified**: on a phone (cost, how the outline reads at real resolution); the talk partner's outline in a
+  browser (unit test only).
+- Risky / open:
+  - Phone cost: one extra quad draw and one query every frame outdoors (the silhouette used to draw only on tall
+    ground), one more quad while talking, three screen points per tall item a frame (was one, in two places), the
+    circle's shader maths while hidden. Old drivers can answer queries late: `hidK` eases, so that is a slower fade-in,
+    not a flicker.
+  - The outline is 1 art pixel; at the checks' low graphics it is thin. `outline` 2 if it reads weakly on the phone.
+  - Copperleaf's buildings now fade as a whole (0.7 while hidden) and in the circle: it reads as busy dithering on the
+    shop. `coverFade` 1 keeps only the circle.
+- **Main merged in** (f779581: RL-12c held items, window glass on the models): one conflict, prop-models.js
+  `lowPolyFragmentShader`: main's glass (`glassLit`, GLASS_GLSL) kept, its ROCK_GLSL and rockHides left out (the
+  buildings' shader has them now). After the merge: unit tests 947, lint, typecheck, modules, format, check-data,
+  smoke 6 of 6 (shaders compile), check-fast Behind things, Tall ground and the debug log.
+- Next: the owner plays Copperleaf on the phone and sends a debug log (`hidden` on the camera line is how hidden you
+  were). Then a PR from this branch to main if it reads well.
+### Roguelite track RL-S1 - Story director - 2026-10-25
+Branch `track/story` (new, made from main 2cfef57 in this session at the owner's word; BRANCHES.md and roguelite-track
+9.4 name it). Plan approved in Plan Mode with the owner's answers: the table is **`banter.json`**, **`rel:` and
+`chapter:` move to RL-S2**, a fresh line **replaces the first talk after a run**, and the 28 drafted lines plus the loss
+scene as written. Main moved during the session (RL-12c held items, the splicing plan, window glass): merged in at the
+end (conflicts in CHANGELOG, ROADMAP, check-fast's list; both sides kept). **PR #188 (TW-2, TW-3) was still open**:
+once it lands, merge main into track/story. TW-3 also edits `validRun` (`run.quests`) and `battleSettle` (returns
+`quests`), which RL-S1 also touches (`run.lostTo`, `run.beat`). Tag `rl-s1-done`.
+- Where the docs were wrong (checked in the code):
+  - **`lines.json` was impossible**: `gameData.lines` / `LINES` / `game/data/lines/*.json` is the Billie evolution lines'
+    section, and `billie:` reads it.
+  - **"Hazel's mast lines" (RL-8) never existed**: no code, no data, no `logic/hazel.js` or `talkHazel` (the opening's
+    table is `logic/chosen.js`).
+  - **Nothing recorded what beat you**: `battleSettle` resets `run.at` and drops `run.at.foe` before `runOver(false)`.
+  - **`runEnd` → `runRestore` puts the hub's `flags` back**, wiping the run's record of the leaders beaten (and they are
+    keyed by the run foe's id, not the leader's). So the entry is built in `runEnd` before the restore, from
+    `run.beat`, a new list.
+  - There is no rival yet: an entry's `rival` is `null` until RL-S2.
+- Changed (one cause per commit):
+  - **Run history** (new `logic/run-history.js`, pure, no imports): `historyEntry` (seed, region theme and name,
+    Expedition, end won/lost/quit, `by`, furthest row, days, team species, Perks, the region's and a side area's leaders,
+    each beaten or not, `rival: null`), `historyPush` (the newest 20), `validHistory`, `historyFacts`,
+    `historyRematch`, `runLostTo`. `battleSettle` sets `run.lostTo` on a lost run battle and adds to `run.beat` on a
+    leader win. Both are checked in `validRun`. `runEnd` pushes the entry, so the run sim records it too. `meta.history`
+    is in `newMeta` and `validMeta`, and `metaFill` drops a broken history on its own instead of resetting the meta.
+    The `bureau_clerk` class is marked `"bureau": 1` (events.json, schema, type; `encClassFoe` carries it).
+  - **Conditions**: `last:<fact>`, `lastby:<what>`, `history:<fact>`, `rematch` (conditions.js; `storyStateOf` takes
+    `foe`). The story checks refuse unknown facts and `lastby:` names.
+  - **banter.json** (schema, `BANTER`, types, `dataBanter` in CI and the Studio's Check, the Studio's JSON list,
+    story:ids, the story checks as `banter:<id>` scripts plus their `when`s). A leader and a Bureau agent always have a
+    line with no `when`, and a `once` line has no cooldown.
+  - **The pick** (new `logic/story-pick.js`): `storyPick`, `storyPickSaid`. The script command `pick <who>`
+    (script-parse, the runner's `pick` option). story-stage.js: `storyPickTree`, `storyHomeArrive`, `storyFreshTake`,
+    `storyPendingCheck`. story.json `kept` gains `said`, `fresh`, `pending`, and there is a new flag `firstLoss`.
+  - **Home**: run.js `runEndHome` → `storyHomeArrive`. `talkChosen` and `personTalk` play the fresh line once. The
+    scene story.json `scripts.back-lost` plays by the mast once nothing is open, and also from walk-control's story
+    timer, so a reload plays it too. It never plays during the in-game test.
+  - **In runs**: a leader's script is `pick leader` then its battle (run-loop.js `runFoes`). A Bureau route trainer
+    says `pick bureau` instead of its sight line. Leader and agent lines are quoted like trainers'.
+  - **Debug log**: the meta line has the history count, the last run's end, its foe's kind and id, and its row, plus the
+    fresh line ids and a waiting scene (ids and numbers only).
+  - Docs: SCRIPTS.md (the story director, `pick`, the conditions), NAMING.md, roguelite-track 9.4 "as built", ROADMAP,
+    BRANCHES, CHANGELOG.
+- Verified (after merging main):
+  - Fast checks clean: lint, typecheck, check:modules, format:check, check:data.
+  - Unit tests: 948 quick and 57 slow, all passing. New: run-history, story-pick, conditions' RL-S1 test, and the
+    data-checks plants. check-data's snapshot was remade on purpose (142 files, a planted banter case).
+  - **check-fast: 29 of 29** (727 s). Its "run" step (run_loop) passes with the new steps: the history after a lost run, the picks, the scene (it waits
+    for an open evolution sheet, as it should) and Chosen's fresh line.
+  - **Full quick check: 35 of 37.**
+    - **Song fingerprints** "cave mid / cave late not in the baseline": on main.
+    - **RL-8** "never landed on the landing" in the full run. Re-run alone it reaches main's known "the town's shop has
+      no Perk", so this was the full run's load timing, as RT-1 found.
+    - Postcards passed this time.
+  - The in-game test's new run-phase checks (the leader's picked line, the won run in the history) sit after RL-8's
+    shop step in the same phase, so they only run once that is fixed on main.
+- Risky / open:
+  - **Not tried on the phone.** The scene plays over the payout toasts. A fresh line is picked at the return and its
+    cooldown starts then, not when it is said.
+  - A save taken mid-scene stores the story from before it, and the scene plays again on Continue (the safe-run rule).
+  - The Studio has no banter editor yet (RL-16), only the JSON list. "Show me" on a banter finding opens the story section.
+  - Juniper's lines need `met_juniper`, and Juniper is out in Copperleaf, not in the lab.
+  - The writing is placeholder-free but untested in play: the owner should read it in the game.
+- Next: RL-S2 (rival and relationships: Blake's `rival` node, `meta.rel`, the `rel:` and `chapter:` conditions,
+  Chapter 1's beats) on `track/story`, beside RL-14. Merge main in first (PR #188).
 ### Water track WA-4 (lane R) - the sea and the coast - 2026-10-25
 Branch `track/water` (main merged in at the start: #195, HB-2 #196, the self-test fix #197; HANDOFF kept both sides;
 lanes G's WA-5a and B's WA-7 and the hub's merges merged in before each push). Plan approved in Plan Mode; the
@@ -978,6 +1106,384 @@ files), the owner's answers: held items last one run, foes hold none, the eight 
 - Questions waiting for the owner: the eight items' names, numbers and icons; whether shops sell held items; whether
   RL-14's leaders hold some.
 - Next session starts with: RL-S1 (story director), or RT-2 / TW-2 alongside.
+### Towns track TW-3 - Run quests - 2026-10-25
+Branch `track/towns` (TW-3 of docs/phases/towns-track.md, the track's last session). main (2cfef57) had not moved
+since TW-2: nothing to merge, no conflict markers; the local branch was only fast-forwarded to TW-2's push. Plan
+approved in Plan Mode with the owner's answers: hand-in at a **notice board** (ask-me-before 2), the board a **new
+low-poly prop**, the quest list on the **Map tab**, and the 16 drafted quest texts as written (ask-me-before 3). Tag
+`tw-3-done`.
+- Where the notes and the plan file were wrong (checked in the code):
+  - The act name `board` is the Lab's unlock board (walk-control.js): the town's board uses act `notice`.
+  - `validRun` never rejected unknown top-level keys (only sub-records check theirs): `validRunQuests` checks its own.
+  - Nothing recorded who fainted in a battle (the team is `saveData.team`, so end HP misses a revived Billie):
+    `checkFaints` now counts `b.fainted`.
+  - perRoute is 1-2 route trainers a route, so "beat 2-3" could be impossible between two towns: a trainers quest is
+    offered only when that many stand on some way ahead to a town with a board, and its goal is capped by it.
+  - A town whose square doesn't fit has no board and no giver; none turned up in mapgen-town's seeds (every town
+    there has its square).
+- Changed (one cause per commit):
+  - **Data:** `game/data/quests.json` (held 3; kinds catch, trainers [2,3], parcel, miniboss with weights and list
+    titles; 16 texts; the giver's and the board's lines) + schema, types, `QUESTS`, `dataQuests` in check-data and
+    the Studio's Check, a planted-fault snapshot.
+  - **Logic:** `logic/run-quests.js` (pure): `questOffer` (the node's own stream `quest`; only a kind that can be
+    finished and handed in on this run: a board town reachable ahead, after a mini-boss for that kind, enough route
+    trainers on the way for that kind, a type from the region's dex for a catch), `questTake` (the cap; a town's
+    offer once), `questCatch`, `questWin` (route trainers count; the mini-boss: done with nobody fainted, else
+    dropped), `questArrive` (a parcel to a town on a later row), `questPayable` (any town but its own), `questPay`
+    (gone before its pick is made, so a reload never pays twice). `run.quests = { held, took, n, paid }`.
+  - **Hooks:** `battleSettle` (a catch, a win: page and sim share it; returns `quests`), `checkFaints`; the page's
+    `runArrivedFx` (a parcel delivered).
+  - **Art:** `tools/build-notice-board.py`: `notice_board` (posts, planked board, roof, four pinned papers; 30 mesh
+    layers, 32 px/m, a fallback picture).
+  - **mapgen** (MAPGEN_VERSION 10): the board on the square's `board` spot (act `notice`, label "Notice board"), a
+    `giver` spot in front of it to the west. **run-scenes:** `runTownQuest` (stream `town|quest`, so the locals'
+    draws didn't move): `scene.people` id `quest`, `quest: 1`, a townsfolk look, a name none of the locals has.
+  - **Page:** new `quest-board.js` (the giver's talk with Yes/No, the board's hand-in with a reward pick each, toasts,
+    the Map tab list `questListHTML`); a gold "!" over the giver while the offer is open (sprites.js, `LABEL_GOLD`);
+    the reward sheet says "A thank-you for the quest".
+  - **Tests:** run-quests.test.mjs (same offers; nothing unfinishable; each kind; a faint fails the mini-boss quest;
+    the cap; a parcel only to a later town; no hand-in at its own town; once only; validRun round trip and bad
+    shapes; the run's end clears them); mapgen-town (board, giver spot, giver reachable, name); check-fast step "A
+    run town's quest"; the in-game full test's run phase checks the town's board, giver and a quest taken. Remade on
+    purpose: rng's scene hash and run-start (version only).
+- Verified: lint, typecheck, check:modules, format:check, check:data; unit tests 982 of 982 (all tiers); check-fast
+  30 of 30 (838 s); headless look at Thicket Town (board, pill, giver's "!") and the Map tab list. Full quick check
+  34 of 37: **RL-8** "the town's shop has no Perk" and **Song fingerprints** "cave mid / cave late" (both on main,
+  noted under TW-2 and RT-1) and **Postcards** "the picture didn't load", which passed alone (57 s): the full run's
+  load, as RT-1 found.
+- Risky / open:
+  - **Not tried on the phone.** One more person and prop a town.
+  - The giver's "!" sits close to the board's "Notice board" pill from the default camera (looked at headless).
+  - The in-game full test's quest check sits before RL-8's shop-Perk check in the same phase, so it runs, but the
+    phase still fails at the shop until RL-8's problem is fixed on main.
+  - Done but unpaid quests are lost at the run's end (as planned: no payout row). Quests count only from when taken.
+  - The run sim takes no quests (its results are unchanged).
+- Next: the towns track is done. Ask-me-before 4 (a quest kind needing a side area or a field move) is later.
+
+### Towns track TW-2 - Life: townsfolk, animals, chat, named locals - 2026-10-25
+Branch `track/towns` (TW-2 of docs/phases/towns-track.md); main (2cfef57) fast-forwarded in first: the conflict markers
+the branch carried in HANDOFF.md and BRANCHES.md were already resolved on main. Plan approved with the owner's answers: at
+most 6 folk (2 + 1 per two houses), the graphics cap 3/5/6 (3 while the game has stepped quality down, `walkRenderer.q`
+2 or more; 5 on Balanced; 6 on Beautiful), 1-2 standing named locals, chat lines drafted by Claude and approved as
+written. Tag `tw-2-done` for the owner (this session's git proxy refuses tag pushes).
+- Where the plan's notes were wrong (checked in the code):
+  - There is no three-level graphics setting: Settings has two presets (Balanced, Beautiful: `preferences.aim`
+    smooth/sharp) and the automatic quality ladder (0-4). The cap maps onto those (above).
+  - "2 + 1 per two houses" gives 2-5, not up to 6 (a town has 0-7 houses; under 4 only when its square didn't fit, which
+    gets the base 2). So only the busy cap (3) ever bites today.
+  - Named people only talked through a story script (`story.js personTalk`) and `walk-control.js` took only people with
+    a portrait (`PEOPLE`). A person with `lines` and a townsfolk look (`who: 'folk:<n>'`) now talks by their own name.
+  - Chat needed no new runtime code: `mapChatLines` already prefers the scene's own `sc.chat`, and the seamless world
+    carries `chat` (a look key). Towns no longer fall back to FOLK_CHAT, whose "the clinic patches up your team for free"
+    is wrong in a run.
+- Changed:
+  - **Data:** biomes.json `town.life` (chickens and cats; pigeons on the square of a 5-house town in meadow, lake and
+    autumn; crows in volcano and badlands; none in the cave) and `town.chat` (6 lines a biome); rules.json `run.town`
+    (`cap`, `locals` [1, 2], 16 `names`, `chat` 2 lines per region theme). Schema, types, check-data (`RUN_RULE_KEYS`
+    gained `town`).
+  - **mapgen.js** (MAPGEN_VERSION 9): `mapgenTownFolk` (`MAPGEN_TOWN.folk`), `mapgenSceneLife` (the biome's wild animals
+    plus the town's, kept to `G.town.area`: the houses' and the square's width, from the vegetable plots to the square's
+    back), the biome's chat on a town, `spots` kind `local` (the square's west half first, then one by each house's gate,
+    in front of its fence). Routes: `folk: 0`, no chat, no locals, as before.
+  - **run-scenes.js:** `runTownLife` (stream `town|life`): the region's lines after the biome's, the named locals on the
+    local spots (`scene.people`, ids `local0/1`); `runTownFolkCap`.
+  - **Game:** walk-view `updateFolk` draws only the first `cap` folk of a generated town (the rest keep their day, so a
+    tier change never restarts them); walk-control and story.js for the locals; talk.js exports `talk`.
+  - **Tests:** mapgen-town.test.mjs: folk by houses, town animals and their ground, chat (biome then region), 1-2 locals
+    on the square first, reachable, named once, two biome lines each; the cap; a route has none. Remade on purpose: the
+    rng scene hash and run-start (version only: a route scene is the same). New check-fast step "A run town's life".
+- Verified: lint, typecheck, check:modules, format:check, check:data; unit tests 976 of 976 (all tiers); check-fast 29
+  of 29 (569 s); looked at Thicket Town in the game (folk on the square by the benches, chickens and a cat, a local).
+  Full quick check 35 of 37: the two problems are on main too (2cfef57): **RL-8**'s "the town's shop has no Perk"
+  (already noted under RT-1) and **Song fingerprints** "cave mid / cave late: not in the baseline" (RL-R2b's cave songs
+  never made it into validation/sound-baseline; run alone on a main worktree, same result). Neither is TW-2's.
+- Risky / open:
+  - **Not tried on the phone.** Up to 5 walkers and 2-6 animals in a town that ran at 27-28 fps (phase 09); the busy
+    cap (3) only kicks in after the quality ladder has stepped down. Check a run town's line in the debug log.
+  - A local by a gate stands in front of the fence beside the path: fine in the sweep, but a person's sprite can overlap
+    the fence from some camera angles.
+  - Locals' names can repeat across towns in a run (each town draws from its own stream).
+  - The talk two-shot with a local by a house: not looked at on the phone.
+- Next: TW-3 (run quests). The board's spot (`spots` kind `board`) is clear; a quest giver can reuse the locals' path
+  (`scene.people` with lines, a townsfolk look) plus a marker. Ask-me-before items 2 and 3 are TW-3's.
+### Phase 09 batch 11 part 2 - The run biomes' trees, rocks and cave things as models - 2026-10-25
+Branch `ccr-abb116a0-en5q2d` (part 1's). Plan approved in Plan Mode (relayed from the owner's session: "continue the
+remaining props"; the vines as cut strips, the palm fronds modelled, no `phase-09-done` tag).
+- Changed (tools/build-props-batch11b.py, swapped in under their own keys like batches 1-11 part 1; rerunnable):
+  - **Trees (8)**: tree_pine_snow, _b, _small (batch 10's conifers: the drawn snowy tiers as bands on a modelled mast);
+    tree_olive (batch 1's broadleaf: a gnarled trunk splitting in two, six clumps cut from the picture); tree_jungle
+    (a pale trunk on brown buttress roots, the front leaf layer laid over the crown before it is cut into six clumps,
+    the back leaf layer behind, the vines as two cut sheets: every other vine in front of the trunk, the rest behind);
+    tree_dead (every limb modelled, bent in depth); palm_tree and palm_small (a ringed trunk following the drawing's
+    curve, eight modelled fronds with leaflet pairs, young fronds, coconuts).
+  - **Rocks (8)**: boulder, boulder_b, boulder_mossy (a moss cap, drips, grass, a toadstool), boulder_snow (snow caps),
+    boulder_basalt, rocks_basalt (column stubs), lava_rock (orange cracks all round, its glow), basalt_columns (eleven
+    hexagonal prisms with pale tops and joints) as IS-4's faceted stones.
+  - **Cave (7)**: stalagmite, stalagmite_b (stacked tapering cones), crystal, crystal_purple, crystal_cluster,
+    crystal_spire (hexagonal prisms with pointed tips; their sparkles and glows moved to the same place in metres),
+    cave_house (a rock mound, a moss top, a stone porch round an arched door at its door point, a round lit window, a
+    lantern, a chimney with its smoke; moved back so its 4 x 2.4 m footprint is behind its base point, as drawn).
+  - Base points, `solid` and footprints unchanged. The rocks, crystals and cave house keep their size in metres; the
+    trees cut from their pictures come out at 32 px/m like batch 10's (about 6% taller, as the pines beside them).
+    The crystals, columns and cave house stand square (`vary` rot/lean 0); trees, rocks and stalagmites still turn.
+  - Showcase map `test_props_biomes` (six rows). Snapshots remade on purpose: check-data's (143 data files, was 142)
+    and the map generator's golden scene "feature" (mapgenPutProp gives a model its size range and never scales a
+    picture, so the glade's mossy boulders, now a model, carry a size s 0.94; nothing else in the scene moved).
+- Draws a frame at phone size (390 x 760, the game's defaults, 20 frames; pictures = 3D props off), in the run
+  fixture with its nodes' biomes set and its world rebuilt (names as the game gave them):
+  Tundra Waystation 266 -> 299, Jungle Mini-boss 352 -> 596, Volcano Mini-boss 650 -> 559, Coast Waystation (with
+  volcano rocks) 109 -> 116, Bramble Grove Route (a cave side area) 649 -> 523, Bramble Grove Mini-boss (cave)
+  795 -> 556, Bramble Grove Town (cave houses) 556 -> 531. The jungle's first model drew 642: each picture inside a
+  model costs a draw and a jungle place has twenty-odd jungle trees, so the tree went from 19 pictures to 10. What is
+  left in the jungle: leaf pictures +134, the models themselves +48, the models in the water's reflection +35.
+- Risky: the jungle costs about 70% more draws than with pictures (broadleaf trees in batch 1's style: modelled
+  limbs and cut leaf clumps; the oak has eight clumps). Task 10 (a cheap far version, instancing) is where to win
+  it back; fewer clumps would flatten the crown. The palms are the heaviest models in vertices (128 parts: the fronds'
+  leaflets), and modelled fronds don't sway (only pictures sway). The crystals can't glow on their own (solid parts
+  have no emissive light): they are brighter colours plus their sparkle and glow effects.
+- Verified: lint, type-check, unit tests (917 pass), check-data, the smoke check (6 of 6); headless pictures of each
+  `test_props_biomes` row (game camera and turned), and the seven run places above with models and with pictures (no
+  page errors). Full quick check: running when this was written; its result follows in the next commit.
+- Phone check wanted: a tundra, a jungle, a volcano and a cave run (a cave town for the cave houses and a crystal
+  spire); turn the camera round the palms, the jungle trees and the crystals; export the debug log.
+- Next: batch 11 is done. Phase 09 task 10 (far versions and instancing, the jungle's draws first), or the owner's pick.
+
+### Phase 09 batch 11 part 1 - The rooms' furniture and the generator's made things as models - 2026-10-25
+Branch `ccr-abb116a0-en5q2d`: the session's own; BRANCHES.md would name it `props/batch11-rooms`, but a cloud
+session can push only to the branch it was started on. Plan approved in Plan Mode. The owner's ask: of the 47
+standing pictures the game still shows (hub, its rooms, the run biomes, the generator; legacy maps left out), convert
+the first half. Flat on purpose: the 11 ground decals and the flat plants (sunflowers, crops, molehill and roots
+counted as flat).
+- Changed (tools/build-props-batch11.py, swapped in under their own keys like batches 1-10; rerunnable):
+  - **Rooms (20)**: plant_tall (an aloe), bookshelf, shop_shelf (bottles, boxes, jars), sack (three), crate_goods,
+    shop_counter (panelled, a till, a bag, a bell), sofa, fireplace, barrel (a blue steel drum, as its picture; not
+    batch 4's wooden one), clinic_bed (head to the wall), counter_white (the red cross, a screen, a plant),
+    fridge_drinks, haybale_stack (three round bales, twine), lab_desk (a box monitor), lab_machine, privacy_screen;
+    on the back wall wall_clock, wall_painting, wall_window, blackboard as shallow reliefs.
+  - **Generator (4)**: campfire (stones, logs, embers), lookout_tower (trestle, ladder, railed deck, glazed cabin,
+    tiled hip roof), tent (the waystation: a striped pyramid marquee with scallops, a counter of goods),
+    mine_entrance (a rock hump round a timber frame, the shaft, rails, a lantern).
+  - Sizes, base points and footprints (`box`) unchanged, so room layouts and walking round things are the same.
+    `fx` (fire, glow, window, sparkle) moved onto the models. Kept as cuts of the old pictures
+    (scene/next/decals): the painting's canvas, the window's view, the chalk, the fridge's bottles, the desk's screen,
+    the lab's glass tube (it faces the camera, as a round tube looks the same from every side) and the campfire's
+    flames. Plant, sacks, drum and campfire still turn at random; the rest stand square (`vary` rot/lean 0).
+  - Every room's back wall is at z 8.5 (measured, `roomBoxOf`); wall pieces are placed at 8.45, so their backs sit
+    on it, and wall-side furniture is no deeper than its gap (fireplace 0.35 m, fridge 0.5 m, lab machine 0.9 m:
+    their footprints stay as they were).
+  - Showcase map `test_props_rooms` (five rows). check-data's snapshot remade on purpose (142 data files, was 141).
+- Not changed: wind_sail_flower is placed nowhere now, so it was dropped from the list. The old pictures stay as
+  the fallback with 3D props off (with `ppm` 32 they draw about 6% bigger there, as batch 4's did).
+- Draws a frame at phone size (390 x 760, the game's defaults, 20 frames; with 3D props off for the pictures):
+  house 61 -> 48, lab 106 -> 58, shop 73 -> 42, clinic 64 -> 40, barn 38 -> 37. The models cost fewer draws.
+  Headless milliseconds (software drawing) say nothing for a phone.
+- Risky: the lab machine's tube and
+  the campfire's flames are camera-facing pictures: from straight above they look flat. The mine's rock is dark and
+  lumpy; check it in a cave run on your phone.
+- Verified: lint, type-check, unit tests (917 pass), check-data, the smoke check (6 of 6); headless pictures of
+  `test_props_rooms` (each row, the outdoor row turned), the five rooms (game camera and a turned view: nothing
+  through a wall), int_lab with 3D props off (the pictures draw), and a laid-out run place with the lookout (drawn,
+  no page errors). The waystation tent and the mine were seen only on the showcase map.
+- Full quick check (1341 s): every step passes but two, both found on main before this batch: RL-8's "the town's
+  shop has no Perk (RL-12)" (RT-1's entry) and the song fingerprints' "cave mid" and "cave late" missing from
+  validation/sound-baseline (RL-R2b's cave song, no baseline made). No picture baseline here (CI keeps it); the
+  rooms' pictures will differ from it on purpose.
+- Phone check wanted: the house, lab, shop, clinic and barn (turn the camera); a waystation (the tent); a run with a
+  glade (campfire) and a lookout; a cave run's mine entrance; export the debug log.
+- Next: part 2 in a new session: the 23 standing pictures the run biomes still place (docs/phases/09, status).
+### Routes track RT-4a - Wild Billies: the stock, habitats, a rarer one - 2026-10-25
+Branch `track/routes` (fast-forwarded to origin's RT-3 head first: the checkout was 27 commits behind; main had nothing
+new). Plan approved in Plan Mode with the owner's answers: **stock 10 less a place's trainers, 4 at least**; **RT-4 in
+two sessions** (RT-4a here; RT-4b: finds, Cut brambles, animals); items: **the reward pick's small items, a rare find
+about 1 in 12, no Bean**; a find shown as **the pyramid's icon**; **brambles plug a pocket's mouth** (the last three for
+RT-4b). Tag `rt-4a-done` for the owner to push.
+- Where the plan file and notes were wrong (checked in the code):
+  - "6-8 counting trainers" already held (8 less them, 2 at least: 8 visible), but with 4-6 trainers a place kept only
+    2-4 wild Billies, fewer than the 4 before RT-2. Hence the owner's 10 / 4.
+  - A place's pool is only **4-6 species** after the region's dex cut (22 places measured), so three habitats can't each
+    get a share of it. A habitat is a species' types instead (`rules.json run.wild.habitats`), and the draw is unchanged.
+  - Where a wild Billie stands was the view's alone (`walk-view.js encounterSpot` hashes its id onto tall grass), and the
+    walk state dropped every field but id, level, species, Alpha and sizes. mapgen now marks habitat points.
+  - SPECIES has no rarity field: the rarer one is drawn from the pool's lowest weight (3-5 against 14-34).
+  - Ambient animals already reach every generated place (`biomes.json life` copied by mapgen, drawn by
+    `ambient-life.js`); `chicken`, `sheep`, `crow` and `cat` have art but no route uses them (RT-4b).
+  - Cut works only on the run's one side area (`fieldMoveOpen` reads `run.map.side`). There is no find prop, no `find`
+    act and no Bean item (RT-4b).
+- Changed (one cause per commit):
+  - **Stock**: `run.wild.route` 10, `routeMin` 4. A route place with 4-6 trainers keeps 4-6 wild Billies.
+  - **mapgen** (MAPGEN_VERSION 11): `mapgenHabitats` after the set pieces, on its own stream (no other draw moves):
+    `water` (dry ground you walk to within a metre of water) and `woods` (the same beside a forest mass), off the road,
+    hub, exits, spots and pieces, clear of props, up to 12 a habitat 3 m apart: `sc.habitats`. Golden, rng and run-start
+    snapshots remade on purpose. Cheap tests first: a run's world ~35 ms slower than RT-3's (608-625 -> ~652 ms here).
+  - **Habitats**: `run.wild.habitats` water: Water; woods: Grass, Psychic, Dragon; the rest the tall grass
+    (`wild-pool.js wildHabitat`, an Encounter's `hab`). check-data checks them; a type rename rewrites them. The walk
+    stands a water or woods Billie on its habitat's points (the seamless world carries `sc.habitats`), else in the grass.
+  - **The rarer one**: a route's first visit keeps the last of its stock for one of the rarest (`wildRareList`),
+    `run.wild.rare.up` 2 levels above, never an Alpha (`rules.js spawnRare`, `rare: 1`). It waits on a free pocket, else
+    a dead end, else a clearing, 6 m from the trainers, 4 m from the pieces, where no canopy piece hides it
+    (`route-trainers.js routeRareSpots`, `routeUnderCanopy`; the place's `rareAt`, put by run-world); none free: the grass.
+  - **Debug log**: `run.habitats` (points by habitat), `run.wild` (sp:lvl:habitat, the rarer one `rare`; read, never
+    stocked), `run.rareAt`.
+  - **Checks**: slow tests mapgen-habitats (12 places: same dials same points; reached, off grass and jetties, clear of
+    props, spaced; water by water, woods by the forest; lakeside always has water; no layout none), route-trainer-spots
+    (the rarer one's spot), run-world-real (the rarer one: last of the stock, of the rarest, levels up, none on a return);
+    saves-real (each Billie in its own habitat); in-game step "A route's wild Billies: in their habitats, the rarer one
+    in its pocket"; check-quick step RT-4a runs it.
+- Measured:
+  - Habitat points (5 seeds, 29 laid-out places): woods 12 on every place; water 12 on each of the 12 places with water.
+  - The rarer one's spot: 8 of 9 route places over 5 seeds (dead end 5, pocket 2, clearing 1). Headless, a dead end
+    hemmed in by canopy showed only the Billie's label over the leaves; the canopy rule came from that.
+  - **Run sim** (200 runs, balance mode, six at home at level 20, five Potions; before = c736048): the default policy
+    identical (67% won, 19.7 battles, 15.7 min); fighting up to 8 wild a place 68.5% -> 67%, 27.4 -> 28.4 battles,
+    18.5 -> 19.0 min.
+  - Draws a frame not re-measured: route-perf's fixture is no run place (no stock, no habitats); a run route shows up
+    to 2 more wild Billies (a grass tuft and a sprite each), no new props.
+- Verified: lint, typecheck, check:modules, check:data, format:check, build; unit tests 921 quick and 68 slow;
+  check-quick RT-4a alone (SELFTESTWH1: Meadow Route, 5 wild with 5 trainers: woods 2, grass 1, water 1, the rarer one
+  bezos0 lv 10 in its dead end). **Full quick check**: running when this was written; the result follows in the next commit.
+- Risky / open:
+  - **Not seen on a phone**: up to 2 more wild Billies a route place; a woods or water Billie still hides in a tall
+    grass tuft (the tuft is the encounter's own picture; a reed or a bush tuft would read better by habitat, art).
+  - With Psychic in woods a place can have no Billie left in its tall grass (SELFTESTWH0's Meadow Route: all three in
+    the woods). Moving Psychic out of `woods` is the knob if the grass looks empty.
+  - Dead ends under canopy also hide RT-2's optional trainers there (not changed here).
+  - RL-8's shop Perk and the Song fingerprints fail on main too (earlier entries).
+  - **MAPGEN_VERSION clash with track/towns** (the merge-coordination session, 2026-10-25): towns uses 9 (TW-2) and 10
+    (TW-3); routes uses 9 (RT-2), 10 (RT-3) and now **11 (RT-4a: habitat points, `mapgenHabitats`; its only change)**.
+    The plan the owner approved for the merge: towns keeps 9-10, routes takes the numbers after (RT-2 + RT-3 -> 11,
+    RT-4a -> 12). In the merge, keep both RunWorldData fields (`town?`, `setPieces?`), give rng.test.mjs a fresh pinned
+    hash and regenerate the snapshots (check-data, mapgen-golden, run-start, rng), never hand-merge them.
+- Next: RT-4b (finds at dead ends and pockets, Cut brambles at a pocket's mouth guarding the rarer one or a find,
+  animals by layout and set piece). routes-track.md has its shape.
+
+### Routes track RT-3 - Set pieces - 2026-10-25
+Branch `track/routes` (fast-forwarded to origin's RT-2 head first: the local checkout was 14 commits behind; main had
+nothing new, so the merge was a no-op). Plan approved in Plan Mode with the owner's answers: **all seven pieces**
+(ruins of broken stone walls), **pieces on spare roadside spots and clearings** (pockets and dead ends left for RT-4),
+and the **Bureau checkpoint carries an agent with an event**. Tag `rt-3-done` for the owner to push; `rt-1-done` and
+`rt-2-done` are not on the remote either.
+- Where the plan file and notes were wrong (checked in the code):
+  - Spots exist only on the finished scene (`mapgenLayoutSpots`), so pieces go after them (after plants) and clear the
+    small plants under them; the walkable share is measured after the pieces.
+  - The roadmap's `lamp` and `bench_*` are `lantern` and `bench_wood` / `bench_metal`. There is no camp tent: `tent` is
+    a striped market tent and read as a stall in the game, so the campsite is a fireside one. No ruin art, no jetty deck
+    prop (a jetty is ground tiles `b`, built only by the jetty feature), no Bureau prop or logo.
+  - An exit's signpost was already placed (one per exit) but had no `act`; walk-control already says "You're in
+    <place>." for a sign with no words, so the route-name sign needed no new UI.
+  - TW-1 built nothing reusable (hand-written placement). `mapgenStagePieces` and setPieces.json are written so a town
+    can call them later.
+- Changed (one cause per commit):
+  - **Signposts** (MAPGEN_VERSION 10): every generated scene's exit signposts have `act: 'sign'` (golden, run-start and
+    rng snapshots remade on purpose).
+  - **events.json `bureau_checkpoint`** (weight 0: never drawn for an event node): Declare everything (a common find),
+    Let them inspect your team (a Bureau Clerk battle, a reward pick), Walk on. My wording; change freely.
+  - **setPieces.json** + schema, type, `SET_PIECES`, `dataSetPieces` (check-data, the Studio's Check, a planted
+    snapshot): `perPlace` [2, 4]; seven pieces of existing props, each with `on` (spot kinds), `r`, biome weights,
+    plan multipliers, props in the piece's own metres (`rot`, a sign's `say`, `water` for a boat) and `people`.
+  - **mapgen**: `mapgenJetty` moved out of the jetty feature (no change), then the `pieces` dial (0-6, kept only when
+    given) and `mapgenStagePieces`: drawn by biome x plan weight on its own stream, no piece twice; a piece goes on a
+    roadside spot, a clearing or (fishing jetty) a jetty, its front turned to the road, tried as drawn then mirrored
+    (a piece with people first the way round that has them nearer the camera); all or none: every cell it covers
+    on ground walked to past everything but small plants, off the road, verge and tall grass, 1.5 m from every
+    other spot's stand and out of its sight strip (6.5 x 2.2 m); it leaves 4 spots by the road and 4 aside for the
+    trainers. Then the last piece comes out while an exit, a spot or a person is cut off or a ledge traps you
+    (`mapgenTraps`). `scene.pieces` = [{ id, x, z, rot, spot, f, people }]. A laid-out place with a pond builds a
+    jetty before the layout when a piece wants one (its path from the road kept clear); its land end is a `jetty`
+    spot (trainers don't use it; left for RT-4/TR-8). Ledge tops are still not spots.
+  - **Runs**: `runPiecesOf` (perPlace on the node's `scene|pieces` stream) for laid-out places; setPieces passed by
+    run-world, the run preview, the run sim and the real-run tests.
+  - **The agent**: walk-control puts a piece's people in the view, facing the road; tapping opens their event until
+    the run has played it (`run.enc.seen`), then toasts their line. The run sim ignores them (an optional event).
+  - **Studio**: Set pieces dial (0-6) and reroll on the Generate card. **Debug log**: `run.pieces` (id:spot).
+  - **Checks**: slow test mapgen-pieces (15 places: whole, turned and mirrored as recorded, off the road, clear of
+    spots, 55-65% walkable, reached, no traps, spots left, fishing jetty only on a jetty, a misfit leaves the scene
+    as it was); in-game step "A route's set pieces..." (pieces whole, an exit signpost says the place's name, the
+    agent opens bureau_checkpoint once); check-quick step RT-3 runs it.
+- Measured:
+  - 40 mapgen places asked 2-4: 2.85 placed of 3 asked; 8 real runs: **2.8 pieces a laid-out place** (campsite 29,
+    rest stop 22, woodcutter 19, farm pen 18, Bureau 15, ruins 11, fishing jetty 6), props a place 625 -> 639,
+    walkable 56-64%, the same 50 trainers with none off their pool.
+  - The fishing jetty fits about one lakeside jetty in three (shores near the road leave no room).
+  - **Draws a frame** (route-perf, low graphics, 6 spots west, before = 2e54cea): forest 562 -> 576 (+2.5%),
+    farmland 526 -> 519, lakeside 497 -> 539 (+8.5%: its jetty also changes the layout). Frame time within noise.
+  - **Making a run's world**: 638 -> 791 ms on this machine (two more walk floods a place).
+- Verified: lint, typecheck, check:modules, check:data, format:check, build; unit tests 921 quick and 64 slow;
+  check-quick RT-3 alone (56 s). **Full quick check** (1308 s): 37 of 39. Song fingerprints (cave mid, cave late not in
+  the baseline) fails on main too. RL-8 timed out at "Take off" under the paired load (60 s; the take-off makes the
+  run's world, a little slower now); alone it passes the take-off and stops at main's own "the town's shop has no
+  Perk". Not seen on a phone. CI not run (no PR).
+- Risky / open:
+  - **Not seen on a phone**: about 14 more props a place; the agent's sprite beside the tollbooth picture (headless
+    showed the booth hiding it before the mirror rule).
+  - RL-8's take-off wait (60 s) is close under the full check's load; raise it if it keeps timing out there.
+  - Sprite props (the tollbooth, statue, firewood) never turn, so a piece reads slightly differently by road angle.
+  - A camp tent model would make the campsite read better (art, the owner's call).
+- Next: RT-4 (more Billies, habitats, a rare one in a hard pocket, items at dead ends, Cut bramble shortcuts, animals).
+  Pockets, dead ends and unused jetty spots are free for it.
+
+### Routes track RT-2 - Battle spots and route trainers - 2026-10-25
+Branch `track/routes` (fast-forwarded to main 2cfef57 first; plan approved in Plan Mode with the owner's answers:
+**trainers replace some wild Billies** (a route's wild stock is 8 less its trainers, at least 2) and **pairs now and
+then** (about one route place in three)). Tag `rt-2-done` for the owner to push.
+- Where the plan file was wrong (checked in the code):
+  - The run sim had **no route trainers** (only `runFoes`) and **no measure of minutes**. Both added.
+  - A double is **one trainer entry with 2+ Billies** (`startTrainer`'s `T.double`); there is no two-trainer battle. A
+    pair is one entry (both teams, at most two Billies each, `double`, `mate`, both rewards, both lines) drawn as two
+    people sharing one flag.
+  - Bridges, jetties and ledge tops were not spots. RT-2 adds `roadside` and `bridge`; jetties (only a grid flag) and
+    ledge tops stay for TR-8 / RT-3.
+  - Only `pinch` had a direction, and the scene keeps no road polyline (`edgeExits[].path`) or reach grid, so facings
+    are worked out in mapgen.
+  - Trainers counting toward the wild stock is `rules.js encounterStock` (an RT-4 file), needed now.
+- Changed (one cause per commit):
+  - **mapgen** (MAPGEN_VERSION 9): RT-1's room kept for the straight-line trainers is gone. On laid-out places:
+    `roadside` spots (every ~12 m along each hub-to-exit road, 2-3.5 m off its edge, alternating sides, standable,
+    reached, `face` toward the road), `bridge` spots (a step back from each end, facing along it), a `stand` at a
+    pinch's side facing across, and a `face` on pockets (TR-2c's too), clearings and dead ends: the way in, 2 m down
+    the walk from the hub (6 m faced a wall at a dead end's bend).
+  - **Route trainers** (`logic/route-trainers.js`): `run.trainers.perRoute` by row `[[4,4],[4,5],[5,6]]`, `required`
+    0.5 (the first half stand by the road: roadside, pinch, bridge; the rest optional: pocket, clearing, dead end),
+    `pair` 0.33. `routeTrainersPlace` puts them on the scene's spots (the kinds `events.json classes.<c>.likes` first,
+    6 m apart; the other pool, then a point by the way west, when a place runs out), `route.at/look/spot/mate`.
+    `routeTrainerSpot` (the straight line) went. run-world places them after the scenes; walk-control stands them
+    there and a pair's second beside the first (`<id>~b`, tapping it talks to the pair); story-stage names each of a
+    pair by its class; a pair's opening line says "want".
+  - **Wild stock**: `run.wild.route` 8 and `routeMin` 2; a run place carries `trainerCount` (routeTrainerTally).
+  - **Run sim**: route trainers fought (required always, optional while above `fightAbove`), the pick taking its first
+    non-tutor card; `trainers` and `minutes` in the report (`SIM_CLOCK`: 60 s a place, 15 s a battle, 6 s a turn, a
+    guess to compare before and after). The Studio's sim worker loads route-trainers and rewards.
+  - **Debug**: the debug log's `run.routeTrainers` (id:spot:r|o[:pair][:beaten]); the debug menu's "Walk into a route
+    trainer's sight" (lists this place's trainers, walks 3 m in front of the nearest unbeaten one). A spot-marker
+    overlay was planned but the menu has no map markers: the list and the walk stand in.
+  - **Checks**: in-game test step "A route's trainers: on their spots, a pair as a double"; check-quick step RT-2 (that
+    step, then outside the self-test a pair that sees you walks up, both say their lines, a double starts).
+- Measured:
+  - Spots a route place (5 seeds, 14 places): roadside 8.6, clearing 3.0, dead end 2.9, pocket 1.5, pinch 0.7,
+    bridge 0.1. Trainers over 8 seeds (75 entries): required on roadside 35 (5 of them pairs) and pinch 2; optional on
+    clearings 20, dead ends 13, pockets 5; no fallbacks; every pair's second on walkable ground.
+  - **Run sim**, 200 runs, balance mode, six at home at level 20, five Potions: before 66% won, 17.1 battles, ~14.2
+    min (SIM_CLOCK on the old numbers); after 67%, 19.7 battles (3.4 route trainers), 15.7 min. Fighting up to 8 wild
+    a place: 69% / 26.1 battles / 17.7 min before, 68.5% / 27.4 / 18.5 after. Well under the ~35 minutes of
+    ask-me-before item 3. A fresh save (one Billie, level 5) wins none either way, but now loses on a route 31 times in
+    200 (was 13): the required trainers stand at the place's top wild level.
+- Verified: lint, typecheck, check:modules, check:data, format:check; unit tests 919 quick and 58 slow (new:
+  route-trainers rewritten, route-trainer-spots (slow, real runs), battle-formats a pair's double incl. 1 vs 2,
+  rewards a pair's one pick, saves-real the wild stock, run-sim route trainers fought); smoke 6 of 6; check-quick
+  RT-2 alone. **Full quick check** (1244 s): 35 of 38. Song fingerprints ("cave mid", "cave late" not in the
+  baseline) fails on main too (main at 2cfef57, same steps alone): not RT-2's; the baseline needs the RL-R2b cave songs.
+  RL-8 ("Take off didn't start a run's flight" in 60 s) and the Actions sheet ("a run's sheet has no day chip" in 5 s)
+  timed out under the full check's paired load; alone, the Actions sheet passes and RL-8 runs past the take-off, the
+  battle and the seam to main's own failure, "the town's shop has no Perk" (twice). CI not run (no PR).
+- Risky / open:
+  - **Not seen on a phone**: 4-6 more people on a route place (sprites and their pets) on top of RT-1's forests.
+  - Required trainers make the first route harder for a weak party (the fresh-save number above). If it bites,
+    `run.trainers.up` below 0 for the first row, or fewer required, is the knob.
+  - Sight still passes through hedges and forest (it is a strip, 6 m by 1.8 m); a pocket trainer can see you through
+    its fence. Emerald's sight is about 3 tiles: worth a look once it has been played.
+  - Spots are made only on laid-out places; an old or Studio scene without them gets the way-west fallback.
+  - RL-8's "the town's shop has no Perk" fails on main (not RT-2's; RT-1's entry).
+- Next: RT-3 (set pieces) or RT-4 (more Billies, items in pockets, Cut shortcuts; it re-tunes the wild stock with
+  trainers counted).
 
 ### Routes track RT-1 - Route layouts - 2026-10-24
 Branch `track/routes` (plan approved in Plan Mode; the owner's answers: all five plans, and **every non-town place**
@@ -5896,7 +6402,7 @@ lines send you to the mast. The plan's decisions 1-13 were taken as written.
     places, 92 bridges) after the bridge fixes: every exit reachable, every bridge crossable.
   - Node sweeps: 200 runs, 2,500 scenes with the buildings: all placed, every seam joined, no new generator note;
     100 runs after the bridge fix: 421 bridges, none ending in water, all at 65 degrees or more to the stream.
-  - End of the phase: FULLCHECK
+  - End of the phase: **Full quick check**: running when this was written; the result follows in the next commit.
 - Run simulation (report only; the bounds are the owner's): on the placeholders a lone level-5 starter loses 50 of 50
   runs (31 on the landing, about 1.6 places); three level-5 starters lose 50 of 50 too (20 at the first mini-boss,
   levels 9-11 in doubles). No run reaches the boss.

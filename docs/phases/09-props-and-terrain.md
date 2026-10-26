@@ -26,6 +26,17 @@ My firm art commitments: terrain textures and the airship style (low-poly models
 - Island track IS-4 (2026-10-22): batch 11's barn is a model (tools/build-props-island.py), with scree, log_mossy and
   stump_mossy, and the island's new props (see HANDOFF.md). Batch 11 left: boulder_mossy, campfire, lookout_tower,
   wind_sail_flower and the six live rooms' 20 furniture props.
+- Batch 11 part 1 (2026-10-25): the rooms' 20 furniture props and the generator's campfire, lookout_tower, tent and
+  mine_entrance are models (tools/build-props-batch11.py; showcase `test_props_rooms`). wind_sail_flower is placed
+  nowhere now. Part 2, the 23 standing pictures the run biomes still place: boulder_mossy; the trees tree_pine_snow
+  (and _b, _small), tree_jungle, tree_olive, tree_dead, palm_tree, palm_small; the rocks boulder, boulder_b,
+  boulder_snow, boulder_basalt, rocks_basalt, lava_rock, basalt_columns; the cave's stalagmite, stalagmite_b, crystal,
+  crystal_purple, crystal_cluster, crystal_spire, cave_house. Flat on purpose (the owner): the 11 ground decals and the
+  flat plants, with sunflowers, crops, molehill and roots counted as flat.
+- Batch 11 part 2 (2026-10-25): those 23 are models (tools/build-props-batch11b.py; showcase `test_props_biomes`).
+  Every standing prop the game flow shows is now a model; what stays a picture is flat on purpose. Batch 11 is done,
+  waiting for the owner's phone check. Next in this phase: task 10 (a cheap far version and instancing: the jungle's
+  broadleaf trees cost the most draws, see HANDOFF.md), then tasks 3, 5-7, 9 and 11.
 
 ## Tasks: scope first
 1. List which props the maps, rooms, the opening, the ranch and the world map still use. Delete the unused ones.
