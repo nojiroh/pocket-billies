@@ -23,6 +23,15 @@ kept aside in the browser).
   it keeps its parts; knock it out and you take a **Gene Sample** of what it wore and some **DNA**, a new currency
   banked at once (kept even if the run is lost). Copperleaf's Gene Bank, coming later, will splice your samples into
   your own Billies.
+- **The Gene Bank** (splicing track SP-4; prices and levels are placeholders): Copperleaf's new lab-vault stands on
+  its plot by the square. Walk in and use the Splice console: **sequence** any of your Billies (free) to read its
+  parts into the Gene library, next to the Gene Samples your runs bring home, then **splice** a Gene from the library
+  onto a Billie for DNA (5, 10 or 15 by how foreign the part is). A preview shows the Billie wearing it, its weight,
+  stats, trait, types and Stability first. **Take off** is free and the Gene stays in the library, so a splice can
+  always be undone. The Bank splices tails at first; its upgrades, bought with DNA, open front parts (Lv 2) and back
+  parts (Lv 3) and raise the Stability limit from 3 to 4 and 5 (your Billies only: wild ones stay at 3). Eggs can
+  keep a parent's Gene. A spliced Billie costs a starter point more per 2 Stability. Fins count as Water for **Surf**
+  and a bear's arm as Ground for **Rock Smash** (the badge is still needed).
 - **Held items** (roguelite track RL-12c): every Billie has one held-item slot. Eight to start with: Leftover
   Sandwich (heals a little each turn), Snack Pack (a quarter of its HP once a battle, when low), Lucky Coin (wins pay
   25% more), Study Notes (50% more XP), Iron Vest (15% less damage taken), Quick Laces (Speed up as it comes in), Brass

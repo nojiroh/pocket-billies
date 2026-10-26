@@ -96,6 +96,19 @@ through `spawn` (no fished splices). A run place's stock comes from one seeded s
 change every later Billie of the place, so splices roll from a stream of their own. The run-start snapshots hold no
 wild stock (unchanged).
 
+**Corrections found by SP-4 (2026-10-26, on SP-3's branch with main merged in):** main already had most of the Gene
+Bank's building (the hub track: HB-5's `gene_bank` model, a solarpunk lab-vault, its room `int_gene_bank` with a
+Splice console, the door act `enter`; HB-4b's bare `genebank` plot), none of it on SP-3's branch. Building levels are
+unlocks.json rows (`grant {building, level}`), not a buildings.json field, and `dataBuildings` refuses an act no
+Copperleaf prop has. The Stability limit was read at the default in five places (rules.js billyUnstable, unstableTidy,
+spliceReport; saves.js graftTidy; genes.js wildSplice), not graftTidy alone. "Extras and sig first" can't be built:
+only front, back and sig are spliceable (extras are anchors on a form, not slots), so the levels open sig, then front,
+then back. There is no Dig: the Ground field move is Rock Smash; a horn for Cut can't be spliced (an extra) and the
+Hydrant and Auger arms are SP-5's. The Studio's "Parts" section edits rules.json `parts`, and no Studio file read
+genes.json. A milestone granting DNA was dropped (unlockGrant knew research, scrap and crests only). `pointCost` saw no
+splice. Breeding never read `graft`. genes.json `parts` has no `move` yet (Gene moves are still with the owner).
+`meta.genes` is a set: a Gene is never used up. CLAUDE.md's gamedata.js note is stale (generated, not in git).
+
 ## Sessions
 
 Each session: one cause per commit, lint, type-check and unit tests after each change, the smoke subset, the quick
@@ -136,7 +149,15 @@ the battle intro line ("This Swiftlet has a shark's tail!"); Tax or Sample after
 (banked when it drops, like Scrap); Gene Samples. The run sim learns the odds. Could break: wild battles, the run sim's
 numbers, the run-start snapshots.
 
-**SP-4 The Gene Bank.** The building in Copperleaf (`buildings.json`, a model and a door), the Gene library and
+**SP-4 The Gene Bank.** Built 2026-10-26 on `claude/sp-4-gene-bank`, on top of SP-3's branch with main merged in
+once (HANDOFF): genes.json `bank` (levels: limit 3/4/5, slots sig, + front, + back; a splice 5 + 5 x Stability DNA;
+eggs keep a Gene at 0.5; all placeholders), buildings.json `genebank` and unlocks `genebank_2` (30 DNA), `genebank_3`
+(80), the Bank on its Copperleaf plot (act `genebank`, the room's console), `logic/gene-bank.js`, the sheet
+(`gene-bank-screen.js`), your Billies held to the Bank's limit (Unstable a stored fact; wild ones at the default),
+eggs inheriting Genes, starter points (`run.points.perStability` 2), field parts (fins: Surf, `bear_arm`: Rock
+Smash), the Studio's Genes section with a splice preview, the full test's step and debug buttons. Waiting on the
+owner: the prices and levels.
+ The building in Copperleaf (`buildings.json`, a model and a door), the Gene library and
 sequencing, the splice screen with its preview (look, weight bar, stats, trait, move, type, Stability), undo, the
 building's levels (Stability limit, which slots open: extras and sig first, then front and back), eggs inheriting
 Genes (`breeding.js`), starter-point cost (+1 per 2 Stability spent), field moves counting a fitting part. The Studio's
@@ -160,7 +181,8 @@ Seedling line, custom species in ghost teams and daily seeds (with RL-15; names 
 - The trait list and numbers, the dominant Genes, the DNA prices and the Gene Bank's levels (all placeholders).
 - SP-3: the wild splice odds (Graft 12 %, Chimera 2.5 %), the DNA a Graft and a Chimera pay (5, 12), and whether DNA
   has other sources; Tax as the existing catch.
-- The Gene Bank's look and where it stands in Copperleaf.
+- The Gene Bank's look and where it stands in Copperleaf. (SP-4, the owner's go on its plan: HB-5's lab-vault on HB-4b's
+  `genebank` plot.)
 - The Seedling line's names and art.
 
 ## Done when
