@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Sturdier after the graphics card is lost** (phase 20): when the browser takes the graphics card away and gives it
+  back (a phone under memory pressure, a driver reset, the debug menu's "Lose the GPU context"), every part of the
+  walk view, the world map and a battle is made again, with none of the hundreds of warnings and the unlit things of
+  before, and the place fades back in once it is drawn. A place now fades in only once its first two frames are drawn
+  (at most 1.5 s later; Studio > Engine > Quality "Warm up before showing", on), so the first draws' hitch happens out
+  of sight. The debug log says how much of the graphics card's memory each kind of thing takes (pictures, render
+  targets, ground, the near ring, meshes, instances) and names any shader compiled after a place had settled.
 - **Battles: rigs reused** (phase 20, a test switch, off for now; Studio > Engine > Quality "Reuse battle rigs"): each
   Billie's picture in a battle is drawn and sent to the graphics card again only when its pose, face or tint changes
   (about 6 times a second) instead of on every frame. Same picture. The diagnostics test now counts a battle's whole
