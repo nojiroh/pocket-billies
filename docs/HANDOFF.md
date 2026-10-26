@@ -57,7 +57,10 @@ branch when it moves (a merge, never a rebase). Merge SP-1, SP-2, SP-3, then thi
   sheet (the title follows); Take off free. In-game steps alone: "Walk: Inside the Gene Bank", "Wild splice", "Gene
   Bank: sequence, splice, see it in battle" (musk2 front=cat_arm@bezos0: 10 DNA, its Grip row in battle) all pass. The
   Studio's Genes section at 1920 px: a Swiftlet with a shark's tail baked; the Studio's Check lists only older notes.
-  Slow tier 73 of 73 (the island-generator test after the Copperleaf rebuild included). Full quick check: QUICK_RESULT
+  Slow tier 73 of 73 (the island-generator test after the Copperleaf rebuild included). Full quick check: 34 of 37, none SP-4's: song fingerprints (cave mid/late not in the sound baseline) and RL-8 "Take
+  off didn't start a run's flight" (both known since SP-1); the Actions sheet ("a run's sheet has no day chip": a 5 s
+  wait in a step that took 245 s under the full run's load) passes alone (`--steps=Actions`, 120 s: the hub marker,
+  a run's day, type and weather), as SP-1 found it does.
 - Risky: Unstable is now stored and trusted (billyUnstable reads it; every place a splice or the limit changes
   settles it): a path that changes a splice without spliceSet, bankSplice or graftTidy would leave it stale until the
   next load. Copperleaf has one more building (the hub pictures differ from the baseline). The preview bakes on the
