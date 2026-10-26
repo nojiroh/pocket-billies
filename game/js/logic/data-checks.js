@@ -15,6 +15,7 @@ import { lineSpeciesIds } from './forms.js';
 import { CLIMATE_WEATHER_ODDS } from './weather.js';
 import { uiThemeContrast } from './ui-theme.js';
 import { RUN_MARK_TYPES } from './run-marks.js';
+import { waterKindKnown } from './water-kinds.js';
 import { wadeWalkable } from './wading.js';
 import { runRegionData, runRegionMake } from './run-region.js';
 import { runMapMake, runMapRows, runMapRowsFit } from './run-map.js';
@@ -41,6 +42,8 @@ expose({
   RUN_RULE_KEYS: [() => RUN_RULE_KEYS],
   base64Bytes: [() => base64Bytes],
   // @ts-expect-error -- replaced on purpose
+  dataBanter: [() => dataBanter, v => (dataBanter = v)],
+  // @ts-expect-error -- replaced on purpose
   dataBattleRules: [() => dataBattleRules, v => (dataBattleRules = v)],
   // @ts-expect-error -- replaced on purpose
   dataBiomes: [() => dataBiomes, v => (dataBiomes = v)],
@@ -53,6 +56,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataEvents: [() => dataEvents, v => (dataEvents = v)],
   // @ts-expect-error -- replaced on purpose
+  dataFactions: [() => dataFactions, v => (dataFactions = v)],
+  // @ts-expect-error -- replaced on purpose
   dataFieldMoves: [() => dataFieldMoves, v => (dataFieldMoves = v)],
   // @ts-expect-error -- replaced on purpose
   dataGenes: [() => dataGenes, v => (dataGenes = v)],
@@ -64,6 +69,8 @@ expose({
   dataNodeTypes: [() => dataNodeTypes, v => (dataNodeTypes = v)],
   // @ts-expect-error -- replaced on purpose
   dataPerks: [() => dataPerks, v => (dataPerks = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataQuests: [() => dataQuests, v => (dataQuests = v)],
   // @ts-expect-error -- replaced on purpose
   dataRanchRules: [() => dataRanchRules, v => (dataRanchRules = v)],
   // @ts-expect-error -- replaced on purpose
@@ -90,6 +97,8 @@ expose({
   dataRunScene: [() => dataRunScene, v => (dataRunScene = v)],
   // @ts-expect-error -- replaced on purpose
   dataSceneFindings: [() => dataSceneFindings, v => (dataSceneFindings = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataSetPieces: [() => dataSetPieces, v => (dataSetPieces = v)],
   // @ts-expect-error -- replaced on purpose
   dataSpeciesKind: [() => dataSpeciesKind, v => (dataSpeciesKind = v)],
   // @ts-expect-error -- replaced on purpose
@@ -331,6 +340,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'side',
   'trainers',
   'rewards',
+  'town',
 ]);
 /** RL-6: rules.json run.clock, run.reveal and the run keys @param {any} D @returns {DataProblem[]} */
 export function dataRunClock(D) {
@@ -440,15 +450,45 @@ export function dataRunScene(D) {
       !whole(W.lv[1], W.lv[0], 100) ||
       !whole(W.perRow, 0, 20) ||
       !whole(W.back, 0, 20) ||
-      !whole(W.waystation, 0, 20)
+      !whole(W.waystation, 0, 20) ||
+      !whole(W.route, 0, 20) ||
+      !whole(W.routeMin, 0, W.route)
     )
       problem(
         'rules.json',
-        'run.wild: lv [low, high] (1-100), perRow (0-20), back (0-20) and waystation (0-20) are not whole numbers'
+        'run.wild: lv [low, high] (1-100), perRow (0-20), back (0-20), waystation (0-20), route (0-20) and routeMin (0-route) are not whole numbers'
       );
     else
       for (const k of Object.keys(W))
-        if (!['lv', 'perRow', 'back', 'waystation'].includes(k)) problem('rules.json', `run.wild.${k}: no such rule`);
+        if (!['lv', 'perRow', 'back', 'waystation', 'route', 'routeMin', 'habitats', 'rare'].includes(k))
+          problem('rules.json', `run.wild.${k}: no such rule`);
+    /* RT-4: a run route's rarer one, levels up */
+    if (
+      W &&
+      W.rare !== undefined &&
+      !(W.rare && typeof W.rare === 'object' && whole(W.rare.up, 0, 20) && Object.keys(W.rare).length === 1)
+    )
+      problem('rules.json', 'run.wild.rare is not { up } (whole levels, 0-20)');
+    /* RT-4: the habitats (logic/mapgen.js mapgenHabitats makes their points), each a list of types, no type twice */
+    const H = W && W.habitats;
+    if (H !== undefined) {
+      const had = new Set(),
+        types = (D.types || []).map((/** @type {any} */ t) => t.id);
+      if (!H || typeof H !== 'object' || Array.isArray(H)) problem('rules.json', 'run.wild.habitats is not a record');
+      else
+        for (const [k, T] of Object.entries(H)) {
+          if (!['water', 'woods'].includes(k))
+            problem('rules.json', `run.wild.habitats.${k}: no such habitat (water, woods)`);
+          if (!Array.isArray(T) || !T.length) problem('rules.json', `run.wild.habitats.${k} is not a list of types`);
+          else
+            for (const t of T) {
+              if (types.length && !types.includes(t))
+                problem('rules.json', `run.wild.habitats.${k}: no type "${t}" (types.json)`);
+              else if (had.has(t)) problem('rules.json', `run.wild.habitats.${k}: "${t}" is in another habitat too`);
+              had.add(t);
+            }
+        }
+    }
     if (!whole(R.seamIn, 1, 30)) problem('rules.json', 'run.seamIn is not a whole number of metres from 1 to 30');
     /* HB-2: the loading screen's cap (logic/run-load.js), 1-120 s */
     const Ld = R.load;
@@ -556,14 +596,17 @@ export function dataRunLoop(D) {
       RW = R.rewards;
     if (!rec(TR)) problem('rules.json', 'run.trainers missing');
     else {
-      only(TR, ['perRoute', 'up', 'reward', 'sight'], 'run.trainers');
+      only(TR, ['perRoute', 'required', 'pair', 'up', 'reward', 'sight'], 'run.trainers');
       if (
         !Array.isArray(TR.perRoute) ||
-        TR.perRoute.length !== 2 ||
-        !whole(TR.perRoute[0], 0, 4) ||
-        !whole(TR.perRoute[1], TR.perRoute[0], 4)
+        !TR.perRoute.length ||
+        !TR.perRoute.every(r => Array.isArray(r) && r.length === 2 && whole(r[0], 0, 7) && whole(r[1], r[0], 7))
       )
-        problem('rules.json', 'run.trainers.perRoute: [fewest, most], whole, 0-4');
+        problem('rules.json', 'run.trainers.perRoute: [fewest, most] by row, whole, 0-7 (the classes)');
+      if (!(typeof TR.required === 'number' && TR.required >= 0 && TR.required <= 1))
+        problem('rules.json', 'run.trainers.required: a share, 0-1');
+      if (!(typeof TR.pair === 'number' && TR.pair >= 0 && TR.pair <= 1))
+        problem('rules.json', 'run.trainers.pair: a chance, 0-1');
       if (!whole(TR.up, -20, 20)) problem('rules.json', 'run.trainers.up: whole, -20-20');
       if (!whole(TR.reward, 0, 1e6)) problem('rules.json', 'run.trainers.reward: whole Moneys, 0-1,000,000');
       if (!(typeof TR.sight === 'number' && TR.sight >= 1 && TR.sight <= 20))
@@ -576,6 +619,30 @@ export function dataRunLoop(D) {
       if (!whole(RW.reroll, 0, 1e5)) problem('rules.json', 'run.rewards.reroll: whole Moneys, 0-100,000');
       if (!(typeof RW.grow === 'number' && RW.grow >= 1 && RW.grow <= 10))
         problem('rules.json', 'run.rewards.grow: 1-10');
+    }
+    /* TW-2: a run town's life: the folk drawn at most by graphics, the named locals (fewest, most) and their names,
+       the region themes' chat lines */
+    const TN = R.town;
+    if (!rec(TN)) problem('rules.json', 'run.town missing');
+    else {
+      only(TN, ['cap', 'locals', 'names', 'chat'], 'run.town');
+      if (!rec(TN.cap) || !['busy', 'balanced', 'best'].every(k => whole(TN.cap[k], 0, 12)))
+        problem('rules.json', 'run.town.cap: busy, balanced and best, whole, 0-12 folk');
+      else only(TN.cap, ['busy', 'balanced', 'best'], 'run.town.cap');
+      const L = TN.locals;
+      if (!Array.isArray(L) || L.length !== 2 || !whole(L[0], 0, 4) || !whole(L[1], L[0], 4))
+        problem('rules.json', 'run.town.locals: [fewest, most], whole, 0-4');
+      if (!Array.isArray(TN.names) || !TN.names.length || TN.names.some(n => typeof n !== 'string' || !n))
+        problem('rules.json', 'run.town.names: a list of names');
+      else if (new Set(TN.names).size !== TN.names.length) problem('rules.json', 'run.town.names: a name twice');
+      if (!rec(TN.chat)) problem('rules.json', 'run.town.chat: region theme to lines');
+      else
+        for (const [k, C] of Object.entries(TN.chat)) {
+          if (!((D.regions && D.regions.themes) || {})[k])
+            problem('rules.json', `run.town.chat.${k}: no region theme "${k}" (regions.json)`);
+          if (!Array.isArray(C) || !C.length || C.some(c => typeof c !== 'string' || !c || c.length > 120))
+            problem('rules.json', `run.town.chat.${k}: lines of 1-120 characters`);
+        }
     }
   }
   return out;
@@ -670,6 +737,8 @@ export function dataBiomes(D, valid = () => true) {
           if (B.town[f] && !props[B.town[f]]) problem('biomes.json', `${b}.town.${f}: no prop ${B.town[f]}`);
         if (B.town.square && !terr[B.town.square])
           problem('biomes.json', `${b}.town.square: no terrain "${B.town.square}" (scenery.json terrains)`);
+        /* TW-2: its animals are real */
+        for (const L of B.town.life || []) if (!life[L.k]) problem('biomes.json', `${b}.town.life: no animal ${L.k}`);
       }
     }
   }
@@ -827,6 +896,83 @@ export function dataFieldMoves(D, valid = () => true) {
     problem('rules.json', 'run.side.moves: no move has a weight, so no side area can be made');
   return out;
 }
+// RT-3: set pieces (setPieces.json): the schema, perPlace [fewest, most], every prop a scenery.json prop and within the
+// piece's r of its origin, a boat (water) only on a jetty's piece, biomes and plans that exist, people a person sprite
+// and an event that exists, and one piece at least that some biome draws
+/** RT-3: setPieces.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataSetPieces(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    F = 'setPieces.json',
+    problem = (/** @type {string} */ what) => out.push([F, what]),
+    S = D.setPieces;
+  if (!S || !valid('setPieces.schema.json', S, F)) return out;
+  const props = (D.scenery && D.scenery.props) || {},
+    biomes = D.biomes || {},
+    people = new Set(
+      Array.isArray(D.people) ? D.people.map((/** @type {any} */ x) => x.id) : Object.keys(D.people || {})
+    ),
+    events = (D.events && D.events.events) || {};
+  if (!(S.perPlace[0] <= S.perPlace[1])) problem('perPlace is not [fewest, most]');
+  let drawn = false;
+  for (const [k, P] of Object.entries(/** @type {Record<string, any>} */ (S.pieces || {}))) {
+    for (const b of Object.keys(P.biomes))
+      if (b !== 'default' && !biomes[b]) problem(`pieces.${k}.biomes: no biome "${b}" (biomes.json)`);
+    for (const l of Object.keys(P.plans || {}))
+      if (!MAPGEN_LAYOUTS[l]) problem(`pieces.${k}.plans: no layout plan "${l}"`);
+    if (Object.values(P.biomes).some(w => +w > 0)) drawn = true;
+    P.props.forEach((/** @type {any} */ q, /** @type {number} */ i) => {
+      if (!props[q.k]) problem(`pieces.${k}.props[${i}]: no prop "${q.k}" (scenery.json)`);
+      if (Math.hypot(q.x, q.z) > P.r)
+        problem(`pieces.${k}.props[${i}]: ${q.k} is further than r (${P.r} m) from the piece's origin`);
+      if (q.water && !P.on.includes('jetty'))
+        problem(`pieces.${k}.props[${i}]: ${q.k} stands on water, but the piece never takes a jetty`);
+    });
+    (P.people || []).forEach((/** @type {any} */ q, /** @type {number} */ i) => {
+      if (people.size && !people.has(q.who)) problem(`pieces.${k}.people[${i}]: no person "${q.who}" (people)`);
+      if (q.event && !events[q.event]) problem(`pieces.${k}.people[${i}]: no event "${q.event}" (events.json)`);
+      if (!q.event && !q.say) problem(`pieces.${k}.people[${i}]: neither an event nor words to say`);
+      if (Math.hypot(q.x, q.z) > P.r)
+        problem(`pieces.${k}.people[${i}]: further than r (${P.r} m) from the piece's origin`);
+    });
+  }
+  if (S.perPlace[1] > 0 && !drawn) problem('no piece has a weight above 0, so no place gets one');
+  return out;
+}
+// RL-14: factions.json: the schema; each bot is a gem and the right kind of part in each slot (robots.json); its
+// agents' and scrapyard's classes are events.json classes; its wild biomes are biomes; [least, most] in order
+/** RL-14: factions.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataFactions(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['factions.json', what]),
+    F = D.factions;
+  if (!F) return [['factions.json', 'missing']];
+  if (!valid('factions.schema.json', F, 'factions.json')) return out;
+  const R = D.robots || { parts: {}, gems: {} },
+    fits = { torso: 'torso', armL: 'arm', armR: 'arm', legs: 'legs' },
+    classes = (D.events && D.events.classes) || {},
+    biomes = D.biomes || {};
+  for (const [k, C] of Object.entries(/** @type {Record<string, any>} */ (F.factions))) {
+    for (const [b, B] of Object.entries(/** @type {Record<string, any>} */ (C.bots))) {
+      if (!R.gems[B.gem]) problem(`${k}.bots.${b}.gem: no gem "${B.gem}" (robots.json)`);
+      for (const [slot, kind] of Object.entries(fits)) {
+        const P = R.parts[B[slot]];
+        if (!P) problem(`${k}.bots.${b}.${slot}: no part "${B[slot]}" (robots.json)`);
+        else if (P.slot !== kind) problem(`${k}.bots.${b}.${slot}: "${B[slot]}" is a ${P.slot}, not a ${kind}`);
+      }
+    }
+    if (!Object.values(/** @type {Record<string, any>} */ (C.bots)).some(B => B.weight > 0))
+      problem(`${k}.bots: none has a weight, so no bot can be drawn`);
+    for (const id of [...C.agents.classes, ...C.scrapyard.classes])
+      if (!classes[id]) problem(`${k}: no class "${id}" (events.json classes)`);
+    for (const id of C.wild.biomes) if (!biomes[id]) problem(`${k}.wild.biomes: no biome "${id}" (biomes.json)`);
+    if (C.agents.bots[0] > C.agents.bots[1]) problem(`${k}.agents.bots: the fewest is more than the most`);
+    if (C.scrapyard.trainers[0] > C.scrapyard.trainers[1])
+      problem(`${k}.scrapyard.trainers: the fewest is more than the most`);
+  }
+  return out;
+}
 // RL-13: modifiers.json: the schema; each challenge's `when` reads as a condition; the Expeditions are no more than
 // regions.json has zone counts for (past its last, a region keeps its last count) and their foe level rows never go down
 /** RL-13: modifiers.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
@@ -847,6 +993,40 @@ export function dataModifiers(D, valid = () => true) {
     if (up < last) problem(`expeditions[${i}]: foes' levels go down from the Expedition before (${last} to ${up})`);
     last = up;
   });
+  return out;
+}
+// TW-3: quests.json: the schema; every kind has a text; a goal's fewest is no more than its most; a line names only
+// what its kind fills in ({type} a catch's, {n} a goal of more than one, {title} the board's and a failure's lines);
+// no text id twice
+/** TW-3: quests.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataQuests(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['quests.json', what]),
+    Q = D.quests;
+  if (!Q) return [['quests.json', 'missing']];
+  if (!valid('quests.schema.json', Q, 'quests.json')) return out;
+  /** what a line may fill in @param {string} where @param {string} line @param {string[]} may */
+  const fills = (where, line, may) => {
+    for (const m of line.match(/\{[^}]*\}/g) || [])
+      if (!may.includes(m)) problem(`${where}: "${m}" isn't filled in here`);
+  };
+  /** @param {string} kind */
+  const mayOf = kind => (kind === 'catch' ? ['{type}'] : Q.kinds[kind].goal[1] > 1 ? ['{n}'] : []);
+  for (const [k, R] of Object.entries(Q.kinds)) {
+    const r = /** @type {any} */ (R);
+    if (r.goal[0] > r.goal[1]) problem(`kinds.${k}.goal: the fewest is more than the most`);
+    fills(`kinds.${k}.title`, r.title, mayOf(k));
+    if (!Q.texts.some((/** @type {any} */ t) => t.kind === k)) problem(`kinds.${k}: no text offers it`);
+  }
+  const ids = new Set();
+  Q.texts.forEach((/** @type {any} */ t, /** @type {number} */ i) => {
+    if (ids.has(t.id)) problem(`texts[${i}]: the id "${t.id}" twice`);
+    ids.add(t.id);
+    fills(`texts[${i}] (${t.id})`, t.ask, mayOf(t.kind));
+  });
+  for (const [k, line] of Object.entries(Q.say))
+    fills(`say.${k}`, /** @type {string} */ (line), k === 'done' || k === 'fail' ? ['{title}'] : []);
   return out;
 }
 // RL-12b: events.json: the schema; every intro reads as lines only, every option's need as a condition and its `then`
@@ -1046,6 +1226,24 @@ export function dataRewards(D, valid = () => true) {
   }
   if (!Object.values(R).some((/** @type {any} */ r) => r.kind === 'item' && r.weight > 0))
     problem('no item card with a weight above 0: a pick could be empty');
+  return out;
+}
+
+// RL-S1: the story director's lines: the schema; a leader and a Bureau agent always have a line to say (one with no
+// `when`); a line said once has no cooldown (its conditions and scripts are the story checks')
+/** RL-S1: banter.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataBanter(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['banter.json', what]),
+    B = D.banter;
+  if (!B) return [['banter.json', 'missing']];
+  if (!valid('banter.schema.json', B, 'banter.json')) return out;
+  for (const [k, b] of Object.entries(B))
+    if (/** @type {any} */ (b).once && /** @type {any} */ (b).cooldown) problem(`${k}: said once, so no cooldown`);
+  for (const who of ['leader', 'bureau'])
+    if (!Object.values(B).some((/** @type {any} */ b) => b.who === who && !b.when))
+      problem(`no ${who} line without a when: a ${who} could have nothing to say`);
   return out;
 }
 
@@ -1618,6 +1816,8 @@ export function dataSceneFindings(D, roadOf) {
       if (a.x < 0 || a.z < 0 || a.x > s.w || a.z > s.h)
         warn(`Scene ${s.name || k}: arch ${n + 1} is off the map.`, 'scenes', g);
     });
+    if (s.waterKind && !waterKindKnown(s.waterKind))
+      warn(`Scene ${s.name || k}: its water kind “${s.waterKind}” is unknown (logic/water-kinds.js).`, 'scenes', g);
     (s.waters || []).forEach((r, n) => {
       let wet = false;
       for (let z = Math.floor(r.z); z < r.z + r.h && !wet; z++)
@@ -1629,9 +1829,22 @@ export function dataSceneFindings(D, roadOf) {
           }
         }
       if (!wet) warn(`Scene ${s.name || k}: water rectangle ${n + 1} (${r.k}) covers no water.`, 'scenes', g);
-      /* the kinds walk/water-data.js WATER_KIND_LOOKS draws (water track WA-0: sea, lava and ice were missing) */
-      if (!['pond', 'stream', 'canal', 'spring', 'swamp', 'lake', 'sea', 'lava', 'ice'].includes(r.k))
+      /* the water kinds (logic/water-kinds.js; WA-0: sea, lava and ice were missing; WA-5a: six appended) */
+      if (!waterKindKnown(r.k))
         warn(`Scene ${s.name || k}: water rectangle ${n + 1} has an unknown kind “${r.k}”.`, 'scenes', g);
+    });
+    /* water track WA-2b: a waterfall's entry (water-track.md's contract): on the map, falling a unit way, its lip on water */
+    (s.falls || []).forEach((f, n) => {
+      const at = `Scene ${s.name || k}: waterfall ${n + 1}`,
+        d = f.dir || [];
+      if (!(f.x >= 0 && f.z >= 0 && f.x <= s.w && f.z <= s.h)) warn(`${at} is off the map.`, 'scenes', g);
+      else if (!(Math.abs(Math.hypot(d[0], d[1]) - 1) < 0.05)) warn(`${at} has no direction (dir).`, 'scenes', g);
+      else if (!(f.w > 0) || (f.h != null && !(f.h > 0)) || (f.pool != null && !(f.pool >= 0)))
+        warn(`${at} needs a width, a drop and a pool of 0 or more.`, 'scenes', g);
+      else {
+        const ch = ((s.tiles || [])[s.h - 1 - Math.floor(f.z - d[1] * 0.3)] || '')[Math.floor(f.x - d[0] * 0.3)];
+        if (ch !== 'w' && ch !== 'd') warn(`${at}'s lip is not on water.`, 'scenes', g);
+      }
     });
     const users = locations.map((r, i) => [r, i]).filter(([r]) => r.mapId === k);
     users.forEach(([r, i]) => {

@@ -26,6 +26,7 @@ import {
 import { clamp, random } from '../util.js';
 import {
   BATTLE_STAGES,
+  FACTIONS,
   ITEMS,
   MOVES,
   PASSIVE,
@@ -42,7 +43,18 @@ import {
   typeEffectiveness,
 } from '../game-data.js';
 import { graftOf, graftSet } from './graft-art.js';
-import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, moveSources, robotGemDef, robotRules, speciesOf } from './fighters.js';
+import {
+  ROBOT_LIMBS,
+  ROBOT_SLOT_NAMES,
+  fitFromIds,
+  isRobot,
+  isRobotSp,
+  moveSources,
+  robotGemDef,
+  robotIdsFromSp,
+  robotRules,
+  speciesOf,
+} from './fighters.js';
 import {
   addBilly,
   billyName,
@@ -55,6 +67,7 @@ import {
   gainXp,
   hereLocation,
   makeBilly,
+  makeRobot,
   maxHp,
   moveUsable,
   partBroken,
@@ -69,6 +82,7 @@ import {
   unstableTidy,
   xpFor,
 } from './rules.js';
+import { factionBotOf } from './factions.js';
 import {
   fxCatch,
   fxDamage,
@@ -137,6 +151,7 @@ expose({
   catchOdds: [() => catchOdds, v => (catchOdds = v)],
   // @ts-expect-error -- replaced on purpose
   catchRoll: [() => catchRoll, v => (catchRoll = v)],
+  catchable: [() => catchable],
   // @ts-expect-error -- replaced on purpose
   checkFaints: [() => checkFaints, v => (checkFaints = v)],
   // @ts-expect-error -- replaced on purpose
@@ -185,6 +200,8 @@ expose({
   startTrainer: [() => startTrainer, v => (startTrainer = v)],
   // @ts-expect-error -- replaced on purpose
   startWild: [() => startWild, v => (startWild = v)],
+  // @ts-expect-error -- replaced on purpose
+  startWildBot: [() => startWildBot, v => (startWildBot = v)],
   teamNeedsHp: [() => teamNeedsHp],
   // @ts-expect-error -- replaced on purpose
   turnCapCheck: [() => turnCapCheck, v => (turnCapCheck = v)],
@@ -903,6 +920,8 @@ export function checkFaints() {
     any = true;
     p.status = null;
     p.sTurns = 0;
+    /* TW-3: how many of yours fainted in this battle (a mini-boss quest wants none) */
+    battleNow().fainted = (battleNow().fainted || 0) + 1;
     battleSay(`${billyName(p)} fainted.`, { k: 'faint', si: k });
     inherit(k);
     const pend = (battleNow().needSwitch || []).length;
@@ -1083,6 +1102,11 @@ export function bossAlpha(e, hpMult) {
 /** a wild Billie's battle. Studio plan T3.2: `o.host` and `o.extra` (a run battle's seed, weather and Perks:
  * logic/run-loop.js runBattleExtra) as for startTrainer, so the run's simulation starts it as the page does */
 export function startWild(q, o = {}) {
+  /* RL-14: a wild bot (its sp names its gem and parts) is built from new parts and goes by its faction's name */
+  if (isRobotSp(q.sp)) {
+    startWildBot(q, o);
+    return;
+  }
   const made = { build: encounterBuild(q), coat: q.coat },
     foe = q.alpha ? makeAlpha(q.sp, q.lvl, made) : makeBilly(q.sp, q.lvl, made);
   /* SP-1: a grafted wild Billie stays grafted in battle; SP-2: with its Unstable roll */
@@ -1122,6 +1146,37 @@ export function startWild(q, o = {}) {
   sayBattleFx();
   battleHost().open();
 }
+/** RL-14: a wild bot's battle (startWild), single, never an Alpha; it can't be caught (catchable) @param {any} q
+ * @param {any} [o] */
+export function startWildBot(q, o = {}) {
+  const ids = /** @type {any} */ (robotIdsFromSp(q.sp)),
+    foe = makeRobot(ids.gem, fitFromIds(ids), q.lvl),
+    who = factionBotOf(FACTIONS, q.sp);
+  if (who) foe.nick = who.B.name;
+  if (
+    !newBattle('wild', [foe], {
+      qid: q.id,
+      area: battleStageKey(),
+      fmt: 'single',
+      ...(o.host && { host: o.host }),
+      ...o.extra,
+    })
+  )
+    return;
+  const nm = billyName(foe),
+    F = who && FACTIONS[who.faction];
+  battleSay(
+    `${F && F.short ? F.short[0].toUpperCase() + F.short.slice(1) + '’s ' : 'A '}${nm} rolled out of the grass!`,
+    {
+      k: 'wild',
+    }
+  );
+  battleSay(`“Bzzt. Item ${q.no || 0} located.”`, { k: 'cry', si: 1 });
+  const K = liveActors(0);
+  K.forEach((k, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
+  sayBattleFx();
+  battleHost().open();
+}
 export function startTrainer(id, o = {}) {
   const T = TRAINERS[id];
   if (!T) return;
@@ -1151,7 +1206,8 @@ export function startTrainer(id, o = {}) {
     T.alpha
       ? `${T.name} sends out an Alpha! It acts twice a turn. Your team steps up together.`
       : dbl
-        ? `${T.name} wants a double battle!`
+        ? /* RT-2: a route pair is two trainers */
+          `${T.name} ${T.mate ? 'want' : 'wants'} a double battle!`
         : `${T.name} wants to battle.`,
     { k: 'trainerIn', who: T.who }
   );
@@ -1284,9 +1340,12 @@ export function enemyOnly(b) {
     }
   });
 }
+/** RL-14: whether a foe can be caught: a bot (a robot, the Bureau's) never is, whatever the pyramid @param {any} e */
+export const catchable = e => !!e && !isRobot(e);
 export function catchOdds(id, T, spin, b) {
   return withBattle(b, () => {
     const e = fighter(1);
+    if (!catchable(e)) return 0;
     if (PYRAMIDS[id] && PYRAMIDS[id].m === 0) return 1;
     let C = PYRAMIDS[id].m;
     if (id === 'pyramid' && CATCH_RULES.luxury.includes(speciesOf(e).line)) C *= CATCH_RULES.luxuryPyramid;
@@ -1307,6 +1366,7 @@ export function catchOdds(id, T, spin, b) {
 }
 export function catchRoll(id, T, spin, b) {
   return withBattle(b, () => {
+    if (!catchable(fighter(1))) return { caught: false, w: 0, edge: false, P: 0 };
     if (battleHost().sureCatch()) return { caught: true, w: 3, edge: false, P: 1 };
     if (PYRAMIDS[id].m === 0) return { caught: true, w: 3, edge: false, P: 1 };
     if (battleRoll() < CATCH_RULES.edge) return { caught: true, w: 1, edge: true, P: 1 };

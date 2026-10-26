@@ -743,7 +743,8 @@ function seamlessCompose(id, F) {
     for (const p of S.props || []) {
       const x = +(p.x + O[0]).toFixed(2),
         z = +(p.z + O[1]).toFixed(2);
-      if (band ? !inq(x, z) : !(x >= -2 && z >= -2 && x <= w + 2 && z <= h + 2)) continue;
+      /* hub placing: a placement at its own height (y: the sky rail out over the sea) stands past the box too */
+      if (band ? !inq(x, z) : typeof p.y !== 'number' && !(x >= -2 && z >= -2 && x <= w + 2 && z <= h + 2)) continue;
       const c = Object.assign({}, p);
       c.x = x;
       c.z = z;
@@ -836,6 +837,9 @@ function seamlessCompose(id, F) {
   if (F.base.grassPatches) sc.grassPatches = F.base.grassPatches.map(g => ({ ...g, x: g.x + BO[0], z: g.z + BO[1] }));
   /* IS-5: the hub island's coast and zones (the sea reads them: logic/sea.js seaCentre, a cove's calm) */
   const sh = q => [q[0] + BO[0], q[1] + BO[1]];
+  /* RT-4: its habitats' points, where the water's and the woods' wild Billies wait (walk-view.js encounterSpot) */
+  if (F.base.habitats)
+    sc.habitats = Object.fromEntries(Object.entries(F.base.habitats).map(([k, L]) => [k, L.map(sh)]));
   if (F.base.island) sc.island = { ...F.base.island, c: sh(F.base.island.c), coast: F.base.island.coast.map(sh) };
   if (F.base.zones) sc.zones = F.base.zones.map(Z => ({ ...Z, poly: Z.poly.map(sh) }));
   /* steps (cliffs, terraces, stairs) on the half-metre grid, copied in place (alpha 0.2: the eased ones; the countryside

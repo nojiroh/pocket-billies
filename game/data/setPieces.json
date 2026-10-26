@@ -1,0 +1,129 @@
+{
+ "about": "RT-3: set pieces, small groups of existing props placed as a unit on a laid-out place's spots (logic/mapgen.js mapgenStagePieces). A piece's own metres: x across its front, z back from its front (away from the road); its front faces the road (a clearing's way in, a jetty's land). Every prop lies within r of the piece's origin (the middle of its front). on: the spot kinds it may take. biomes: draw weights (default for a biome not listed); plans multiply them on a layout plan. A prop's say makes it a sign; water puts it on water; people stand in it (the Bureau's agent opens an event).",
+ "perPlace": [2,4],
+ "pieces": {
+  "campsite": {
+   "name": "Campsite",
+   "on": ["clearing","roadside"],
+   "r": 4.5,
+   "biomes": {"meadow":3,"thicket":3,"autumn":3,"lake":2,"ridge":2,"tundra":2,"jungle":2,"default":1},
+   "props": [
+    {"k":"campfire","x":0,"z":1.6},
+    {"k":"log","x":-1.9,"z":1.2,"rot":70},
+    {"k":"log","x":1.7,"z":2.6,"rot":-60},
+    {"k":"stump","x":1,"z":0.6},
+    {"k":"laundry_line","x":0,"z":3.8},
+    {"k":"firewood_b","x":-2.4,"z":3.2},
+    {"k":"crate","x":2.6,"z":0.8}
+   ]
+  },
+  "farm_pen": {
+   "name": "Farm pen and scarecrow",
+   "on": ["clearing","roadside"],
+   "r": 6,
+   "biomes": {"meadow":3,"autumn":2,"lake":1,"default":0},
+   "plans": {"farmland":2},
+   "props": [
+    {"k":"fence_gate","x":-1.1,"z":1},
+    {"k":"fence_wood","x":1.1,"z":1},
+    {"k":"fence_wood","x":-1.1,"z":5.2},
+    {"k":"fence_wood","x":1.1,"z":5.2},
+    {"k":"fence_wood","x":-2.2,"z":2.1,"rot":90},
+    {"k":"fence_wood","x":-2.2,"z":4.2,"rot":90},
+    {"k":"fence_wood","x":2.45,"z":2.1,"rot":90},
+    {"k":"fence_wood","x":2.45,"z":4.2,"rot":90},
+    {"k":"hay_round","x":-0.7,"z":3.8},
+    {"k":"water_trough","x":0.9,"z":2.6},
+    {"k":"scarecrow","x":-3.2,"z":1.6},
+    {"k":"haybale","x":3.4,"z":1.4}
+   ]
+  },
+  "rest_stop": {
+   "name": "Rest stop",
+   "on": ["roadside","clearing"],
+   "r": 3,
+   "biomes": {"default":2},
+   "props": [
+    {"k":"bench_wood","x":0,"z":1.2},
+    {"k":"lantern","x":-1.6,"z":1},
+    {"k":"mailbox_red","x":1.5,"z":0.8},
+    {"k":"barrel_wood","x":1.6,"z":2.4}
+   ]
+  },
+  "woodcutter": {
+   "name": "Woodcutter's clearing",
+   "on": ["clearing","roadside"],
+   "r": 5,
+   "biomes": {"thicket":3,"autumn":3,"jungle":2,"tundra":2,"meadow":1,"default":0},
+   "plans": {"forest":2},
+   "props": [
+    {"k":"stump","x":0,"z":1.4},
+    {"k":"stump","x":-1.8,"z":2.6},
+    {"k":"stump","x":1.9,"z":3.1},
+    {"k":"log","x":-0.6,"z":4.2,"rot":15},
+    {"k":"firewood_b","x":2.3,"z":1},
+    {"k":"firewood","x":-2.6,"z":0.6},
+    {"k":"wheelbarrow","x":1.2,"z":4.6}
+   ]
+  },
+  "fishing_jetty": {
+   "name": "Fishing jetty",
+   "on": ["jetty"],
+   "r": 5,
+   "biomes": {"lake":4,"sea":3,"meadow":2,"default":1},
+   "props": [
+    {"k":"net_rack","x":-2.8,"z":0},
+    {"k":"barrels","x":2.8,"z":-0.2},
+    {"k":"rowboat","x":2.4,"z":4.2,"water":true}
+   ]
+  },
+  "ruins": {
+   "name": "Ruins",
+   "on": ["clearing","roadside"],
+   "r": 5,
+   "biomes": {"ridge":3,"canyon":3,"badlands":3,"volcano":2,"thicket":1,"default":1},
+   "props": [
+    {"k":"stone_wall","x":-1.3,"z":2.8},
+    {"k":"stone_wall","x":1.2,"z":3.1,"rot":14},
+    {"k":"stone_wall","x":-2.8,"z":1,"rot":78},
+    {"k":"statue","x":0.6,"z":1.3},
+    {"k":"cairn","x":2.8,"z":1},
+    {"k":"rocks_mossy","x":-2.2,"z":4},
+    {"k":"rocks_mossy","x":2.4,"z":4.2}
+   ]
+  },
+  "scrap_heap": {
+   "name": "Scrap heap",
+   "on": ["clearing","roadside"],
+   "r": 4.2,
+   "biomes": {"default":0},
+   "sites": {"scrapyard":6},
+   "props": [
+    {"k":"scrap","x":-1.6,"z":2.4},
+    {"k":"scrap","x":1.8,"z":3.2},
+    {"k":"tires","x":-3.2,"z":1},
+    {"k":"barrels","x":3.1,"z":1.2},
+    {"k":"crate","x":0.2,"z":4.1},
+    {"k":"signpost","x":0.4,"z":0.4,"say":"Bureau of Lost, Found and Beans. Unclaimed property. Claims in triplicate."}
+   ]
+  },
+  "bureau_checkpoint": {
+   "name": "Bureau checkpoint",
+   "on": ["roadside"],
+   "r": 3.8,
+   "biomes": {"default":1},
+   "sites": {"scrapyard":2},
+   "props": [
+    {"k":"tollbooth","x":-2.5,"z":1.2},
+    {"k":"bollard","x":-0.9,"z":0.3},
+    {"k":"bollard","x":1.7,"z":0.3},
+    {"k":"flag_pole","x":2.6,"z":2.2},
+    {"k":"crates","x":-1.2,"z":3},
+    {"k":"signpost","x":2.9,"z":0.6,"say":"Bureau of Lost, Found and Beans. Checkpoint. Have your forms ready."}
+   ],
+   "people": [
+    {"who":"clerk","x":0.4,"z":0.9,"event":"bureau_checkpoint","say":"Agent: You've been processed. Move along."}
+   ]
+  }
+ }
+}

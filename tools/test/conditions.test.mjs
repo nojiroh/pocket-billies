@@ -208,3 +208,47 @@ test("RL-12b: the game reads a team Billie's types from its species, and the lea
   assert.ok(Object.values(L.badgeTypes).includes('Water'));
   assert.deepEqual(L.typesOf({ sp: 'zuck1' }), ['Electric', 'Water']);
 });
+
+test('RL-S1: last:, lastby:, history: and rematch read the runs kept (meta.history)', () => {
+  const run = (end, by = null, o = {}) => ({
+    seed: 'S',
+    theme: '',
+    region: '',
+    exp: 1,
+    end,
+    by,
+    row: 3,
+    days: 9,
+    team: ['musk0'],
+    perks: [],
+    leaders: [],
+    rival: null,
+    ...o,
+  });
+  const history = [
+    run('won'),
+    run('lost', { kind: 'miniboss', id: 'marina' }),
+    run('lost', { kind: 'route', id: 'bureau_clerk', sp: 'musk0', bureau: 1 }, { row: 2 }),
+  ];
+  const S = storyStateOf({ meta: { history } }, { foe: 'marina' });
+  for (const [c, want] of [
+    ['last:lost', true],
+    ['last:won', false],
+    ['last:row <= 2', true],
+    ['last:days = 9', true],
+    ['lastby:bureau', true],
+    ['lastby:route and lastby:musk0', true],
+    ['lastby:boss', false],
+    ['history:losses >= 2', true],
+    ['history:lstreak = 2', true],
+    ['history:streak', false],
+    ['history:bureau = 1', true],
+    ['rematch = 1', true],
+  ])
+    assert.equal(conditionHolds(c, S), want, c);
+  const none = storyStateOf({ meta: {} });
+  assert.equal(conditionHolds('last:won or last:lost or history:runs or rematch', none), false, 'no runs yet');
+  assert.match(conditionProblem('lastby:boss >= 1').message, /yes or no/);
+  assert.match(conditionProblem('rematch:marina').message, /takes no name/);
+  assert.equal(conditionProblem('history:runs >= 5'), null);
+});

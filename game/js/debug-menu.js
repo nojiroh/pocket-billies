@@ -83,7 +83,7 @@ import { frameCount, frameScheduler, frameTask, userFps } from './frame-schedule
 import { uiIconHTML } from './art.js';
 import { applyPreferences, exportSave, settingsReset } from './settings-screen.js';
 import { battleStage, battleStageResize } from './battle-stage.js';
-import { mapById } from './walk-view.js';
+import { mapById, walkTo, walkView } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
 import { paintBoxes, playTurnEvents } from './battle.js';
 import { worldMap } from './world-bowl.js';
@@ -219,7 +219,7 @@ function debugHTML() {
         'dbgEvent',
         Object.keys(EVENTS.events).map(k => [k, EVENTS.events[k].title]),
         uiState.dbgEvent || Object.keys(EVENTS.events)[0] || ''
-      )}${debugButtonHTML('eventplay', 'Play this event', 'gold')}${debugButtonHTML('rewardpick', 'A trainer’s reward pick')}${debugButtonHTML('heldpick', 'A held item’s pick')}${debugButtonHTML('heldall', 'Every held item into the bag')}</div><p class="note">An event here, as a waystation would hold it (played events: ${escapeHtml(((saveData.run.enc && saveData.run.enc.seen) || []).join(', ') || 'none')}). The reward pick is a route trainer’s.</p>`
+      )}${debugButtonHTML('eventplay', 'Play this event', 'gold')}${debugButtonHTML('rewardpick', 'A trainer’s reward pick')}${debugButtonHTML('routetrainer', 'Walk into a route trainer’s sight')}${debugButtonHTML('heldpick', 'A held item’s pick')}${debugButtonHTML('heldall', 'Every held item into the bag')}</div><p class="note">An event here, as a waystation would hold it (played events: ${escapeHtml(((saveData.run.enc && saveData.run.enc.seen) || []).join(', ') || 'none')}). The reward pick is a route trainer’s.</p>`
     : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><div class="dbg-row">${debugSelectHTML(
         'dbgRunSide',
         [['', 'Side area: as the seed rolls'], ...debugSideOptions()],
@@ -714,6 +714,32 @@ function debugAction(x) {
       for (const k of heldIds(ITEMS)) saveData.items[k] = (saveData.items[k] || 0) + 1;
       saveNow();
       return refreshDebugMenu('One of each held item is in the bag: give them from a Billie’s details.');
+    /* RT-2: this place's route trainers (spot kind, required or optional, a pair), and a walk into the nearest
+       unbeaten one's line of sight, 3 m in front of it */
+    case 'routetrainer': {
+      if (!saveData.run || activeBattle || !walkView.pl) return refreshDebugMenu('No run, or a battle is on.');
+      const here = Object.values(TRAINERS).filter(T => T.route && T.runNode === saveData.trip.node - 1),
+        list = here
+          .map(
+            T =>
+              `${T.name} (${T.route.spot || '?'}, ${T.route.opt ? 'optional' : 'by the road'}${saveData.flags[T.id] ? ', beaten' : ''})`
+          )
+          .join('; '),
+        P = walkView.pl,
+        near = here
+          .filter(T => !saveData.flags[T.id] && walkView.npcAt[T.id] && walkView.npcLook[T.id])
+          .map(T => ({ T, at: walkView.npcAt[T.id], look: walkView.npcLook[T.id] }))
+          .sort((a, b) => Math.hypot(a.at[0] - P.x, a.at[1] - P.z) - Math.hypot(b.at[0] - P.x, b.at[1] - P.z))[0];
+      if (!near) return refreshDebugMenu(here.length ? `None left unbeaten here: ${list}.` : 'No route trainer here.');
+      const fx = near.look[0] - near.at[0],
+        fz = near.look[1] - near.at[1],
+        l = Math.hypot(fx, fz) || 1;
+      uiState.modal = null;
+      render();
+      walkTo([near.at[0] + (fx / l) * 3, near.at[1] + (fz / l) * 3]);
+      toast(`Route trainers here: ${list}.`);
+      return;
+    }
     case 'rewardpick':
       if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
       if (!rewardOfferMake(saveData.run, 'debug', rewardDataGame(saveData.team)))

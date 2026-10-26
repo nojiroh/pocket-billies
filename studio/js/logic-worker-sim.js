@@ -13,7 +13,9 @@ import * as effects from '../../game/js/logic/effects.js';
 import * as encounters from '../../game/js/logic/encounters.js';
 import * as fighters from '../../game/js/logic/fighters.js';
 import * as perks from '../../game/js/logic/perks.js';
+import * as rewards from '../../game/js/logic/rewards.js';
 import * as rng from '../../game/js/logic/rng.js';
+import * as routeTrainers from '../../game/js/logic/route-trainers.js';
 import * as rules from '../../game/js/logic/rules.js';
 import * as runLoop from '../../game/js/logic/run-loop.js';
 import * as runMap from '../../game/js/logic/run-map.js';
@@ -38,7 +40,9 @@ export function simWorkerEnv() {
       encounters,
       fighters,
       perks,
+      rewards,
       rng,
+      'route-trainers': routeTrainers,
       rules,
       'run-loop': runLoop,
       'run-map': runMap,

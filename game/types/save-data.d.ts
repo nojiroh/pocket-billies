@@ -107,6 +107,41 @@ export interface Meta {
   expedition: number;
   /** RL-R2: badges kept for good, by type id in lower case (`water`): the first win over a leader of the type */
   badges: Record<string, 1>;
+  /** RL-S1: the newest runs, oldest first (logic/run-history.js, at most 20); the story's `last:`, `lastby:`,
+      `history:` and `rematch` read it */
+  history: HistoryEntry[];
+}
+
+/** RL-S1: what ended a lost run (logic/run-history.js runLostTo): the battle's kind, its leader's or class's id, the
+    Billie standing, and whether it was the Bureau's */
+export interface RunLostTo {
+  kind: 'wild' | 'route' | 'event' | 'miniboss' | 'boss' | 'trainer';
+  id?: string;
+  sp?: SpeciesId;
+  bureau?: 1;
+}
+
+/** RL-S1: one past run (logic/run-history.js historyEntry) */
+export interface HistoryEntry {
+  seed: string;
+  /** its region's theme and name ('' on a run without one) */
+  theme: string;
+  region: string;
+  /** its Expedition */
+  exp: number;
+  end: 'won' | 'lost' | 'quit';
+  /** what beat you (a loss only) */
+  by: RunLostTo | null;
+  /** the furthest row reached, the days it took */
+  row: number;
+  days: number;
+  /** the team's species as it ended, the Perks held */
+  team: SpeciesId[];
+  perks: string[];
+  /** the region's leaders (and a side area's), each beaten or not */
+  leaders: { id: string; beat: 0 | 1 }[];
+  /** RL-S2: the rival's result (none yet) */
+  rival: null;
 }
 
 /** roguelite track RL-3: the ranch, a hub building (logic/ranch-state.js; filled in RL-9 and RL-10) */
@@ -269,6 +304,38 @@ export interface Run {
   pack?: { items: Record<DataId, number>; pyramids: Record<DataId, number> };
   /** RL-12b: its events and reward picks (logic/run-enc.js); missing on a run from before */
   enc?: RunEnc;
+  /** RL-S1: what beat you, kept from the lost battle to the payout (logic/run-history.js runLostTo) */
+  lostTo?: RunLostTo;
+  /** RL-S1: the leaders (trainer ids) beaten this run */
+  beat?: string[];
+  /** TW-3: its quests (logic/run-quests.js); missing until the first is taken */
+  quests?: RunQuests;
+}
+
+/** TW-3: a quest held on a run (logic/run-quests.js) */
+export interface RunQuest {
+  /** 'q' + its number in the run */
+  id: string;
+  kind: import('./game-data').QuestKind;
+  /** its text's id (quests.json texts) */
+  text: string;
+  /** the map node of the town it came from */
+  at: number;
+  /** how many to do, and done so far */
+  goal: number;
+  n: number;
+  /** a catch quest's type */
+  type?: string;
+  done: 0 | 1;
+}
+/** TW-3: a run's quests */
+export interface RunQuests {
+  held: RunQuest[];
+  /** the towns (map nodes) whose offer was taken */
+  took: number[];
+  /** quests taken so far (the next id) and handed in */
+  n: number;
+  paid: number;
 }
 
 /** RL-12b: a run's events and reward picks (logic/run-enc.js, logic/encounters.js, logic/rewards.js) */
@@ -294,7 +361,8 @@ export interface RunReward {
   cards: RewardCard[];
   rolls: number;
   from: string;
-  /** an event's pick of one kind, and of how many cards (a reroll keeps them) */
+  /** an event's pick of one kind, and of how many cards (a reroll keeps them); RL-14: 'salvage', a bot's parts and
+   * Scrap (never rerolled) */
   kind?: string;
   n?: number;
 }
@@ -302,7 +370,8 @@ export interface RunReward {
  * too), or a move a Billie of the team may learn */
 export interface RewardCard {
   id: string;
-  kind: 'item' | 'candy' | 'evo' | 'tutor' | 'held';
+  /** RL-14: a salvage pick's `part` (item: a robots.json part, into saveData.parts) and `scrap` (n: Scrap) */
+  kind: 'item' | 'candy' | 'evo' | 'tutor' | 'held' | 'part' | 'scrap';
   item?: string;
   n?: number;
   move?: string;
@@ -441,6 +510,10 @@ export interface Encounter {
   /** its encounter number (serial) */
   no: number;
   alpha?: boolean;
+  /** RT-4: a run place's habitat it waits in (rules.json run.wild.habitats: water, woods); none is the tall grass */
+  hab?: string;
+  /** RT-4: a run route's rarer one (rules.js spawnRare), waiting in a hard pocket */
+  rare?: number;
   /** phase 16: its part sizes, rolled when it appears (rules.js encounterBuild) */
   build?: Build;
   /** SP-2: its splice, as a Billie's (Billy.graft) */

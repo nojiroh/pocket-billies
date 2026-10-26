@@ -17,10 +17,13 @@ import {
   modal,
   perkPickOpen,
   provide,
+  questArrived,
   render,
   renderOverlay,
   rewardPickOpen,
   runPayoutOpen,
+  storyHomeArrive,
+  storyPendingCheck,
   toast,
   typeBadgeHTML,
 } from './hooks.js';
@@ -203,6 +206,8 @@ export function runEndHome(won, keep, itemPrice) {
       if (stand()) render();
     });
   else stand();
+  /* RL-S1: the hub characters' lines for this return, and a lost run's scene (story-stage.js) */
+  storyHomeArrive(won);
   saveNow();
   closeModal();
   render();
@@ -216,6 +221,7 @@ export function runEndHome(won, keep, itemPrice) {
     toast(`${MODIFIERS.expeditions[saveData.meta.expedition - 1].name} is open. Pick it at Skyline Station.`);
   /* RL-11: milestones the run has met (ended runs, wins), each with its own toast after this one */
   if (typeof labMilestones === 'function') labMilestones();
+  if (typeof storyPendingCheck === 'function') storyPendingCheck();
 }
 
 /* ---------- a reload picks the run up ---------- */
@@ -651,6 +657,8 @@ export const runClinicEach = () => fxRunPrice(saveData.run, PERKS, 'heal', RULES
 export function runArrivedFx() {
   const gained = runArriveFx(saveData, PERKS);
   if (gained > 0) toast(`Your Perks paid out: your team healed ${formatNumber(gained)} HP.`);
+  /* TW-3: a parcel delivered (quest-board.js) */
+  if (typeof questArrived === 'function') questArrived();
 }
 
 /* ---------- hints, on a player's first run only ---------- */
@@ -664,6 +672,7 @@ const RUN_HINTS = {
   event: () => 'A waystation: someone at the stand wants a word. Tap it to see what they offer.',
   stall: () => 'A stall: a shop with new stock every day, but no clinic.',
   miniboss: () => 'A mini-boss blocks the way north. Beat them to go on.',
+  scrapyard: () => 'A Bureau scrapyard. Every wild one here is a bot, and bots leave salvage.',
   boss: () => 'The boss. Beat it and the run is won.',
   relic: () =>
     `Perks last the run: hold up to ${RULES.run.perks.cap}. The Perks tab shows what each one does; town shops sell them too.`,
@@ -679,6 +688,6 @@ export function runHint(id) {
 export function runArrivedHint() {
   const run = saveData.run,
     node = run && run.map && run.map.nodes[runMapNode(saveData.trip.node)];
-  if (node && ['town', 'event', 'stall', 'miniboss', 'boss'].includes(node.type))
+  if (node && ['town', 'event', 'stall', 'miniboss', 'boss', 'scrapyard'].includes(node.type))
     runHint(/** @type {any} */ (node.type));
 }

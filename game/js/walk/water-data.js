@@ -6,24 +6,29 @@
 import { expose } from '../test-globals.js';
 import { clamp } from '../util.js';
 import { seaCentre } from '../logic/sea.js';
-import { valueNoise2d } from '../walk-view.js';
+import { valueNoise2d, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { gpuState } from '../engine/webgl.js';
+import { environment } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
+import { tideLevel } from './sea-tide.js';
 /* eslint-disable no-func-assign */
 expose({
+  FALL_A: [() => FALL_A],
+  FALL_B: [() => FALL_B],
   WATER_KIND_INDEX: [() => WATER_KIND_INDEX],
   WATER_KIND_LOOKS: [() => WATER_KIND_LOOKS],
+  flowTexture: [() => flowTexture, v => (flowTexture = v)],
+  setFallUniforms: [() => setFallUniforms, v => (setFallUniforms = v)],
+  setFlowUniforms: [() => setFlowUniforms, v => (setFlowUniforms = v)],
   setPixelWaterUniform: [() => setPixelWaterUniform, v => (setPixelWaterUniform = v)],
   setShoreUniforms: [() => setShoreUniforms, v => (setShoreUniforms = v)],
   shoreAt: [() => shoreAt, v => (shoreAt = v)],
   shoreField: [() => shoreField, v => (shoreField = v)],
-  waterFlowField: [() => waterFlowField, v => (waterFlowField = v)],
   waterKindLookup: [() => waterKindLookup, v => (waterKindLookup = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/* which way water flows: along the scene's streams (sc.streams: [{pts:[[x,z],…]}]), still everywhere else */
 /* v22: kinds of water. r = how quickly it deepens away from the shore (m), top = how deep the middle gets; colours multiply
    the Look's water colours; clarity = how much bed shows in the shallows; caus = light patterns on the bed */
 export const WATER_KIND_LOOKS = [
@@ -169,7 +174,10 @@ export const WATER_KIND_LOOKS = [
 const WATER_KIND_INDEX = Object.fromEntries(WATER_KIND_LOOKS.map((w, i) => [w.k, i]));
 /* 0.1.0 alpha: in steps (a generator, drained with yield*), so building a place's ground a slice at a time (map-cache.js
    prepareMapGround) doesn't stop here: a big place's field is millions of samples, about 0.4 s in one go */
-export function* shoreField(sc, isW, T = walkRenderer) {
+/* water track WA-4: `tide` (walk/sea-tide.js tideCells: per tile, the land the high tide covers and the water the low
+   tide leaves) adds two more shorelines in the texture's green (high water) and blue (low water); the shaders move the
+   waterline between them (setShoreUniforms' uTide) */
+export function* shoreField(sc, isW, T = walkRenderer, tide = null) {
   const gl = gpuState.gl,
     W = sc.w,
     H = sc.h,
@@ -209,14 +217,27 @@ export function* shoreField(sc, isW, T = walkRenderer) {
         }
       }
     };
+  /* the tide's masks: the water plus the land it covers, the water less what it leaves */
+  const tw = tide && (tide.nCover || tide.nDry) ? [new Float32Array(m), new Float32Array(m)] : null;
+  if (tw)
+    for (let tj = 0; tj < H; tj++)
+      for (let ti = 0; ti < W; ti++) {
+        const q = tj * W + ti;
+        if (!tide.cover[q] && !tide.dry[q]) continue;
+        const M = tide.cover[q] ? tw[0] : tw[1],
+          v = tide.cover[q] ? 1 : 0;
+        for (let j = tj * R; j < tj * R + R; j++) M.fill(v, j * FW + ti * R, j * FW + ti * R + R);
+      }
   yield;
-  for (let n = 0; n < 2; n++) {
-    blur(m, tmp, 1);
-    yield;
-    blur(tmp, m, 0);
-    yield;
-  }
-  const d = new Uint8Array(FW * FH);
+  for (const M of tw ? [m, ...tw] : [m])
+    for (let n = 0; n < 2; n++) {
+      blur(M, tmp, 1);
+      yield;
+      blur(tmp, M, 0);
+      yield;
+    }
+  const d = new Uint8Array(FW * FH),
+    dt = tw ? new Uint8Array(FW * FH * 4) : null;
   for (let j = 0; j < FH; j++) {
     if (j % 64 === 63) yield;
     for (let i = 0; i < FW; i++) {
@@ -228,18 +249,27 @@ export function* shoreField(sc, isW, T = walkRenderer) {
       const e = f * (1 - f) * 4,
         nz = (valueNoise2d(x * 1.1 + 3.7, z * 1.1) - 0.5) * 0.34 + (valueNoise2d(x * 3.3, z * 3.3 + 9.1) - 0.5) * 0.12;
       d[q] = Math.round(clamp(f + nz * e, 0, 1) * 255);
+      if (dt) {
+        dt[q * 4] = d[q];
+        for (let c = 0; c < 2; c++) {
+          const g = tw[c][q];
+          dt[q * 4 + 1 + c] = Math.round(clamp(g + nz * g * (1 - g) * 4, 0, 1) * 255);
+        }
+        dt[q * 4 + 3] = 255;
+      }
     }
   }
   if (!T.shoreTex) T.shoreTex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, T.shoreTex);
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, FW, FH, 0, gl.RED, gl.UNSIGNED_BYTE, d);
+  if (dt) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, FW, FH, 0, gl.RGBA, gl.UNSIGNED_BYTE, dt);
+  else gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, FW, FH, 0, gl.RED, gl.UNSIGNED_BYTE, d);
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  T.shoreF = { W, H, d, FW, FH };
+  T.shoreF = { W, H, d, FW, FH, tide: !!dt };
 }
 /* water track WA-1: the pixel water's switch, tones and steps (walk-shaders.js PIXEL_WATER_GLSL) */
 export function setPixelWaterUniform(U) {
@@ -254,6 +284,7 @@ export function setPixelWaterUniform(U) {
 /* the shoreline value at a spot (0 dry ... 0.5 the water's edge ... 1 open water); 1 where there is no field */
 export function setShoreUniforms(U, sc) {
   setPixelWaterUniform(U);
+  setFallUniforms(U);
   if (!U.uShoreR) return;
   const gl = gpuState.gl,
     on = !!(walkRenderer.shoreF && walkRenderer.shoreTex);
@@ -266,6 +297,23 @@ export function setShoreUniforms(U, sc) {
   if (U.uSea) {
     const c = seaCentre(sc);
     gl.uniform4f(U.uSea, c[0], c[1], sc.flatFar ? 1 : 0, 0);
+  }
+  /* water track WA-4: the tide (1 high ... -1 low; 0 where the shore texture has no tide's lines or it is switched off)
+     and the storm on the sea (0-1, the weather's, eased). walkRenderer.tideForce / stormForce pin them (pictures) */
+  if (U.uTide) {
+    const F = walkRenderer.shoreF,
+      on = !!(sc.flatFar && F && F.tide && engineSetting('water', 'tide') !== false),
+      td = walkRenderer.tideForce ?? tideLevel(environment.tod),
+      st = walkRenderer.stormForce ?? environment.storm;
+    /* w: the storm's heave's clock, the frame's (uTime) seconds wrapped on whole turns of the swell, so the two keep step */
+    const turn = ((2 * Math.PI) / 1.3) * 64;
+    gl.uniform4f(
+      U.uTide,
+      on ? clamp(td, -1, 1) : 0,
+      sc.flatFar ? clamp(st, 0, 1) : 0,
+      on ? 1 : 0,
+      ((walkView.t || 0) / 1000) % turn
+    );
   }
 }
 function shoreAt(x, z) {
@@ -287,29 +335,55 @@ export function waterKindLookup(sc) {
     return run && def !== 2 && !WATER_KIND_LOOKS[def].mode ? 1 : def;
   };
 }
-export function waterFlowField(sc) {
-  const S = sc.streams || [];
-  if (!S.length) return () => [0, 0];
-  return (x, z) => {
-    let best = null,
-      bd = 2.5;
-    for (const st of S) {
-      const p = st.pts || [];
-      for (let k = 0; k < p.length - 1; k++) {
-        const a = p[k],
-          b = p[k + 1],
-          vx = b[0] - a[0],
-          vz = b[1] - a[1],
-          l2 = vx * vx + vz * vz || 1e-9,
-          t = clamp(((x - a[0]) * vx + (z - a[1]) * vz) / l2, 0, 1),
-          d = Math.hypot(a[0] + vx * t - x, a[1] + vz * t - z);
-        if (d < bd) {
-          bd = d;
-          const l = Math.sqrt(l2);
-          best = [(vx / l) * (st.speed || 1), (vz / l) * (st.speed || 1)];
-        }
-      }
-    }
-    return best || [0, 0];
-  };
+/* water track WA-2a: the nearest four waterfalls (walk-shaders.js FALL_GLSL), for the ground's wet rock and thrown
+   light and the plunge pools' churn and rings */
+const FALL_A = new Float32Array(16),
+  FALL_B = new Float32Array(16);
+function setFallUniforms(U) {
+  if (!U.uFallN) return;
+  const F = walkRenderer.fallSets || [],
+    P = walkView.pl,
+    near =
+      F.length > 4 && P
+        ? [...F].sort((a, b) => Math.hypot(a.fx - P.x, a.fz - P.z) - Math.hypot(b.fx - P.x, b.fz - P.z))
+        : F,
+    n = Math.min(4, near.length),
+    gl = gpuState.gl;
+  for (let i = 0; i < n; i++) {
+    const f = near[i];
+    FALL_A.set([f.x, f.z, f.dx, f.dz], i * 4);
+    FALL_B.set([f.w, f.h, f.pool, f.lipY], i * 4);
+  }
+  gl.uniform1i(U.uFallN, n);
+  if (n) {
+    gl.uniform4fv(U.uFallA, FALL_A);
+    gl.uniform4fv(U.uFallB, FALL_B);
+  }
+}
+/* water track WA-2a: the flow map on the card (walk/water-flow.js): flow in red and green, foam in blue, how far into
+   its stream in alpha, one texel a half metre, half floats so still water reads exactly 0 */
+export function flowTexture(T, F) {
+  const gl = gpuState.gl;
+  if (T.flowTex) gl.deleteTexture(T.flowTex);
+  T.flowTex = null;
+  if (!F || !F.d.some(v => v !== 0)) return;
+  T.flowTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, T.flowTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, F.W2, F.H2, 0, gl.RGBA, gl.FLOAT, F.d);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+}
+/* the water shader's flow map (texture unit 7); off where the scene has none, and for the basins (on = false) */
+export function setFlowUniforms(U, sc, on = true) {
+  if (!U.uFlowR) return;
+  const gl = gpuState.gl,
+    t = on && walkRenderer.flowTex;
+  gl.activeTexture(gl.TEXTURE7);
+  gl.bindTexture(gl.TEXTURE_2D, t || gpuState.white);
+  gl.bindSampler(7, null);
+  gl.uniform1i(U.uFlowTex, 7);
+  gl.uniform3f(U.uFlowR, 1 / sc.w, 1 / sc.h, t ? 1 : 0);
+  gl.activeTexture(gl.TEXTURE0);
 }

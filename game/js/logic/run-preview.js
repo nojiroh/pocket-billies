@@ -19,6 +19,7 @@
 import {
   EVENTS,
   FIELD_MOVES,
+  SET_PIECES,
   POOLS,
   NODE_TYPES,
   PERKS,
@@ -51,6 +52,8 @@ const runPreviewData = () => ({
   region: runRegionData(gameData, TRAINERS),
   /* RL-R2b: the field moves, so a preview has the run's side area as the game does */
   fieldMoves: FIELD_MOVES,
+  /* RT-3: and the set pieces, so a preview's places are the game's */
+  setPieces: SET_PIECES,
 });
 
 /**

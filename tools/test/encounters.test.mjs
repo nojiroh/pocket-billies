@@ -51,9 +51,16 @@ test('encounters: a place holds the same event for the same run, kept; a played 
   const E2 = structuredClone(E);
   for (const ev of Object.values(E2.events)) ev.biomes = ['lake'];
   assert.deepEqual(X.eventPool(b, E2, 'meadow'), []);
-  /* (SP-6: but the ones with a `when`, read with no holds given) */
-  assert.equal(X.eventPool(b, E2, 'lake').length, Object.values(E.events).filter(ev => !ev.when).length);
-  assert.equal(X.eventPool(b, E2, 'lake', () => true).length, Object.keys(E.events).length);
+  /* RT-3: weight 0 is never drawn (the Bureau checkpoint's event, opened by its agent); SP-6: nor, with no holds
+     given, one with a `when` */
+  assert.equal(
+    X.eventPool(b, E2, 'lake').length,
+    Object.values(E.events).filter(ev => ev.weight > 0 && !ev.when).length
+  );
+  assert.equal(
+    X.eventPool(b, E2, 'lake', () => true).length,
+    Object.values(E.events).filter(ev => ev.weight > 0).length
+  );
   /* SP-6: an event's `when`: in the pool only while it holds; with no holds given it is left out */
   const E3 = { ...E, events: { only: { ...E.events[id], when: 'genes >= 1' } } };
   assert.deepEqual(X.eventPool(b, E3, 'lake'), []);
@@ -174,6 +181,30 @@ test('encounters: a class foe and a wild one are the region’s Billies at the p
   assert.equal(w.lvl, X.encPlaceLevel(run, i, RUN) + 2);
   assert.ok(run.region.dex.includes(w.sp));
   assert.equal(SPECIES[w.sp].stage, 0, 'a first stage under level 16');
+});
+
+test("encounters: RL-14: a Bureau agent fields its bots after its Billies, at the place's level, named", () => {
+  const s = onRun(),
+    run = s.run,
+    i = run.map.nodes.findIndex(n => n.row === 2),
+    FA = GAME_DATA.factions.factions,
+    o = { classes: E.classes, species: SPECIES, rules: RUN, up: 1, salt: 'route|0', reward: 300, foe: 'route' },
+    F = X.encClassFoe(run, i, 'run_x', 'bureau_clerk', o),
+    [lo, hi] = FA.bureau.agents.bots,
+    bots = F.team.filter(b => b.sp === 'robot');
+  assert.deepEqual(F, X.encClassFoe(onRun().run, i, 'run_x', 'bureau_clerk', o));
+  assert.ok(bots.length >= lo && bots.length <= hi, `${bots.length} bots`);
+  assert.deepEqual(F.team.slice(-bots.length), bots, 'last');
+  for (const b of bots) {
+    assert.equal(b.lvl, X.encPlaceLevel(run, i, RUN) + 1);
+    assert.ok(Object.values(FA.bureau.bots).some(B => B.name === b.nick && B.gem === b.robot.gem));
+    const m = fn('trainerTeam')({ team: [b] })[0];
+    assert.equal(m.kind, 'robot');
+    assert.equal(fn('billyName')(m), b.nick);
+  }
+  /* its Billies are the ones it had before it had bots: a faction of none fields none */
+  const none = X.encClassFoe(run, i, 'run_x', 'bureau_clerk', { ...o, factions: {} });
+  assert.deepEqual(none.team, F.team.slice(0, F.team.length - bots.length));
 });
 
 test('encounters: the summary of what changed', () => {

@@ -11,16 +11,19 @@
    - every chance an event takes (a wager, a loot draw, which Billie, which Perk) comes from the run's events stream,
      rngFrom(run.seed, 'event|' + run.enc.n), one draw a step (encRng), so a run made again plays the same;
    - foes: a trainer of a class (events.json classes) with Billies of the region's dex, its levels the place's top wild
-     level plus `up` (encClassFoe; route trainers use it too), or a wild Billie of the dex (encWildFoe).
+     level plus `up` (encClassFoe; route trainers use it too), or a wild Billie of the dex (encWildFoe). RL-14: a
+     faction's agent (factions.json agents) fields its bots after its Billies.
    Logic only: no DOM, no Date, no Math.random (tools/test/encounters.test.mjs). */
 /** @import { Run, Billy } from '../../types/save-data' */
 /** @import { EventsData, RunEventOption, Perk, Item } from '../../types/game-data' */
 /** @typedef {{ cap: number, pick: number, rarity: Record<string, number>, price: Record<string, number> }} PerkRules */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { FACTIONS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { speciesStep } from './rules.js';
 import { modFoeLevels } from './modifiers.js';
+import { factionBotEntry, factionBotPick, factionOfClass } from './factions.js';
 import { runNodeSeed, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
 import { encOf } from './run-enc.js';
@@ -258,7 +261,9 @@ export const encPlaceLevel = (run, i, rules) =>
  * `up`; the reward its class pays. The id is given (route trainers: run_<i>_t<k>; an event's foe: run_<i>_ev).
  * @param {Run} run @param {number} i @param {string} id @param {string} cls
  * @param {{ classes: EventsData['classes'], species: Record<string, any>, rules: any, up?: number, salt: string,
- *   reward: number, foe: string }} o rules: rules.json run (its `wild`); foe: the entry's runFoe ('route', 'event')
+ *   reward: number, foe: string, factions?: Record<string, import('../../types/game-data').Faction> }} o rules:
+ *   rules.json run (its `wild`); foe: the entry's runFoe ('route', 'event'); factions (RL-14): factions.json's (the
+ *   game's when left out)
  */
 export function encClassFoe(run, i, id, cls, o) {
   const C = o.classes[cls],
@@ -268,7 +273,16 @@ export function encClassFoe(run, i, id, cls, o) {
     dex = encDexAt(run, o.species, lvl),
     team = [];
   for (let k = 0; k < n && dex.length; k++)
-    team.push({ sp: dex[g.int(0, dex.length - 1)], lvl: Math.max(1, lvl - (n - 1 - k)) });
+    team.push(/** @type {any} */ ({ sp: dex[g.int(0, dex.length - 1)], lvl: Math.max(1, lvl - (n - 1 - k)) }));
+  /* RL-14: a faction's agent fields its bots after its Billies, at the place's level, from a stream of their own (so
+     the Billies stay what they were) */
+  const fa = factionOfClass(o.factions || FACTIONS, cls);
+  if (fa) {
+    const b = rngFrom(runNodeSeed(run.seed, i), o.salt + '|bots'),
+      F = fa.F,
+      nb = b.int(F.agents.bots[0], F.agents.bots[1]);
+    for (let k = 0; k < nb && team.length < 6; k++) team.push(factionBotEntry(F.bots[factionBotPick(b, F)], lvl));
+  }
   return {
     id,
     name: C.name,
@@ -277,6 +291,8 @@ export function encClassFoe(run, i, id, cls, o) {
     win: `“${C.lose}”`,
     lose: '',
     sight: C.sight,
+    /* RL-S1: the Bureau's agents (logic/run-history.js, banter's `bureau` lines) */
+    ...(C.bureau ? { bureau: 1 } : {}),
     reward: o.reward,
     team,
     node: runWorldNode(i),

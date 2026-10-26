@@ -99,7 +99,7 @@ round (the owner, 2026-10-25, after WA-0).
 Nothing here is built in WA-0; this is what the lanes agree on so they can work at once.
 - **Waterfalls**: a scene's `falls: [{x, z, dir, w, h, pool, k, climb}]`. `x, z` the lip's middle (metres);
   `dir` the way it falls, a unit `[dx, dz]`; `w` its width (m); `h` the drop (m; when missing, from the ground);
-  `pool` the plunge pool's radius (m, 0 none); `k` the water kind at the lip (default `stream`); `climb: 1` when the
+  `pool` the plunge pool's radius (m, 0 none; WA-2b: its middle lies `pool + 0.25` m past the lip along `dir`); `k` the water kind at the lip (default `stream`); `climb: 1` when the
   Waterfall field move climbs it. An entry replaces the automatic sheets across its width; steps without one keep
   the automatic sheets (the small cascades).
 - **Rivers**: no new key. `streams` stays `[{pts, speed}]` and gains optional `w` (a width per point, m), `src`
@@ -109,8 +109,13 @@ Nothing here is built in WA-0; this is what the lanes agree on so they can work 
 - **Tiles**: `w` (shallow) becomes wadeable (WA-6a); `d` (deep) becomes surfable (WA-6b). A scene's `ride` stays as a
   whole-scene "surf anywhere" for the existing side areas.
 - **Kinds**: appended, never reordered (the index is built into a scene's water mesh each time it is built; maps
-  name kinds by their key): `rapids`, `hotspring`, `oasis`, `bog`, `reef`, `cave` (WA-5). `swamp` stays the marsh.
-  Lava is never entered; ice is walked on (WA-5a, the slip with TR-10's cracking ice).
+  name kinds by their key): `rapids`, `hotspring`, `oasis`, `bog`, `reef`, `cave` (WA-5; the owner confirmed the six in
+  WA-5a). `swamp` stays the marsh. The list and each kind's play live in `logic/water-kinds.js` (`WATER_KINDS`,
+  `WATER_KIND_PLAY`; WA-5a): lava and rapids are never entered (neither waded nor surfed); ice is walked on, its `d`
+  too (the slip waits for TR-10's cracking ice); the marsh (0.8) and the bog (0.6) slow wading; a hot spring heals.
+  Until WA-5b draws them, a new kind borrows an old look (`WATER_KIND_BASE`: rapids stream, hotspring spring, oasis
+  pond, bog swamp, reef sea, cave spring); generated scenes keep their `waterKind` and lay the new kinds as `waters`
+  rectangles, so the renderer (an unknown rectangle draws as the scene's kind) shows the right old look meanwhile.
 - **Settings** (engine.json `water`): `pixel` (on/off, default on after WA-1), `bands` (tones a kind, 2-8, default
   5), `frames` (animation steps a second, 0 = smooth, default 10). The names follow the old patch's.
 - **Shared shader code**: WA-1 puts the pixel water's colour bands, dither and stepped time in one GLSL snippet in
@@ -141,22 +146,23 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
 | 1 | WA-1 | R | (**done** 2026-10-25, notes below) **Pixel water.** Water, shore and falls on the 32 texels a metre grid; `bands` (a kind's tones, dithered between shallow and deep on the world grid), `frames` (stepped time for ripples, foam, caustics, glints); hard 1-pixel foam lines at the shore; reflections offset by whole pixels; the shared snippet; models in the reflection (check); the `pixel` switch. | look-water before and after (every shot, noon and night), bench Pond station cost, smoke |
 | 1 | WA-3a | G | (**done** 2026-10-25, notes below) **Rivers that run downhill.** In `water-gen.js`: fill the dips, flow and its sum on the height grid, a source (spring, edge, lake) to a mouth (sea, lake, edge, a plunge pool), carved banks, wider downstream, meanders on flat ground, rapids on steep stretches; seams match the neighbour's river; joins mapgen's existing water stage and bridges. | unit tests (same seed same river; every cell of a river lower than the one before; mouths reached), the mapgenUnreachable sweep, golden water scene remade on purpose |
 | 1 | WA-6a | P | **Wading.** `w` tiles walkable, slower; the player and Billies cut at the waterline; splashes and a wake (`addRipple`); deep `d` still blocks; Studio and quick-check walking checks updated. | unit tests (the walk grid), a walking check in test_water, smoke |
-| 2 | WA-2a | R | **Waterfalls drawn.** Each `falls` entry: a curled lip, a sheet of streaks in pixel columns over a slower large pattern, white water at the foot, a churning foam ring and rings on the plunge pool, mist that rises and drifts, wet dark rock beside it, the light it throws; the small automatic sheets the same style; the flow map (a texture of flow and foam) replacing the per-vertex segment search. | look-water (tall-fall, stream-and-falls), bench cost, smoke |
-| 2 | WA-2b | G | **Waterfalls placed.** Off terrace and cliff edges where a river meets a drop, in caves (rooms), as a route's set piece; `climb` on some (the Waterfall move's way up); the hub island's fall only with the owner's yes. | unit tests (a fall's lip and foot on its river; its pool reached), sweep |
+| 2 | WA-2a | R | (**done** 2026-10-25, notes below) **Waterfalls drawn.** Each `falls` entry: a curled lip, a sheet of streaks in pixel columns over a slower large pattern, white water at the foot, a churning foam ring and rings on the plunge pool, mist that rises and drifts, wet dark rock beside it, the light it throws; the small automatic sheets the same style; the flow map (a texture of flow and foam) replacing the per-vertex segment search. | look-water (tall-fall, stream-and-falls), bench cost, smoke |
+| 2 | WA-2b | G | (**done** 2026-10-25, notes below) **Waterfalls placed.** Off terrace and cliff edges where a river meets a drop, in caves (rooms), as a route's set piece; `climb` on some (the Waterfall move's way up); the hub island's fall only with the owner's yes. | unit tests (a fall's lip and foot on its river; its pool reached), sweep |
 | 2 | WA-6b | P | **Surf and Waterfall climb.** Riding per cell: walk into `d` with a rider (`rules.ride`) and the Water badge, mount and leave at the shore; the mount's bob, wake and rings; encounters on water (the region's water pool); the Waterfall field move (badge: ask) climbing a `climb` fall. Builds on the contract while WA-2b lands. | unit tests (riding rules, badge), a surf walk check, smoke |
-| 3 | WA-4 | R | **The sea and the coast.** Surf as hard stepped bands breaking along the coast, foam round rocks, a slow tide (the waterline and wet sand move, tide pools), reef shallows (turquoise, see-through), kelp, sandbars, a sun and a moon path on the open sea, a storm sea from the forecast. | look-water --scene=test_island, island-shots, smoke |
-| 3 | WA-5a | G | **New kinds' play and weather on water.** Hot springs heal the party, oases, marsh and bog slow you (their encounter pools, hidden items in reeds), rapids block, floods in storms keep the main path open, ponds freeze in snow, rain rings (exist). | unit tests (a flooded path keeps the main path open; heal once a run), smoke |
+| 3 | WA-4 | R | (**done** 2026-10-25, notes below) **The sea and the coast.** Surf as hard stepped bands breaking along the coast, foam round rocks, a slow tide (the waterline and wet sand move, tide pools), reef shallows (turquoise, see-through), kelp, sandbars, a sun and a moon path on the open sea, a storm sea from the forecast. | look-water --scene=test_island, island-shots, smoke |
+| 3 | WA-5a | G | (**done** 2026-10-25, notes below) **New kinds' play and weather on water.** Hot springs heal the party, oases, marsh and bog slow you (their encounter pools, hidden items in reeds), rapids block, floods in storms keep the main path open, ponds freeze in snow, rain rings (exist). | unit tests (a flooded path keeps the main path open; heal once a run), smoke |
 | 3 | WA-7 | B | **World map and battles.** The bowl's rivers and seas in the same tones and steps (the shared snippet); water backdrops on battle stages by a node's biome. | bowl map test, battle stage pictures, smoke |
 | 4 | WA-5b | R | **Kinds as a texture and water life.** Kind looks in a small texture (no cap at 9), the new kinds drawn (steam on hot springs, rapids' white water, bog's scum, reef, cave water lit by its own glow); lily pads that bob, reeds that sway, frogs, fish that jump (sprites), birds that dive. | look-water, smoke |
 | 4 | WA-9 | G | **Studio tools.** A river brush (source to mouth, regenerates its bed), a waterfall placer (lip, width, pool, climb), a water-kind painter, a live preview; STUDIO.md. | Studio check, a hand-placed fall survives a regenerate |
 | 5 | WA-8 | (alone) | **Phone pass, sounds, baseline.** Quality tiers for water (bands, mist, reflections) measured at the bench; the owner's phone frame time; water sound beds (falls by height, rapids, surf, lapping, the plunge pool) with SND-6's mix; the quick-check baseline made again on purpose. | full quick check, the owner's phone |
 
 ## Ask me before
-- The hub island's waterfall (WA-2b): the island is locked once right.
+- The hub island's waterfall (WA-2b): the island is locked once right. (Answered in WA-2b: after HB-4b rebuilds the
+  island, from the same `falls` contract.)
 - Surf's details (WA-6b): which badge (the Water badge, as VISION's side areas), encounters while surfing, whether
   the existing "1.5 m tall Water Billie" rule stays.
 - The Waterfall climb's badge (WA-6b).
-- The new kinds list before WA-5a (the six above are a proposal).
+- The new kinds list before WA-5a (the six above are a proposal). (Answered in WA-5a: all six, in that order.)
 - Water sounds after SND-6 merges (WA-8).
 
 ## WA-0 notes (2026-10-25)
@@ -234,4 +240,173 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
   sheen patches with dithered edges and its outline steps at 32 instead of 16. In test_water's haze the pond's tones
   between shallow and deep read faintly: the sky's reflection mixes over them (unchanged, the hybrid answer).
 - Not in WA-1: spray and mist (`effects.js`) and the falls' shape (WA-2a), the surf's hard bands (WA-4).
+
+## WA-2b notes (2026-10-25)
+- The owner's answers: the hub island's fall waits for HB-4b's rebuild (then from the same contract); WA-6a's
+  "shallows for others" goes to a later lane G session; the river steps with the land; "caves" are the generated
+  cave biome (Rock Smash's side area), not rooms; the run dials stay as they are (below).
+- `logic/water-gen.js` `waterGenFalls` (one call after mapgen's land stage) and `waterGenClimbs` (one call on the
+  finished scene); `sc.falls` written beside `sc.streams`. MAPGEN_VERSION 16.
+- **Found**: the terraces and a massif's shelves leave the ground under water at 0 (`mapgenTerraces`, "water lies at
+  the bottom"; the mountain field fades to nothing within 1-4 m of water), so a river crossing them ran in a trench and
+  never met a drop. Now its water is lifted to the step raise of its lower bank (the lowest over 1.5 m either way, 0
+  by a pinned or joined side, by a road or a bridge's deck, at a sea or lake mouth), never higher than the point
+  before; dry ground right beside it lower than it comes up to it. A drop of 0.6 m or more (`WATERGEN_FALL_MIN`) is a
+  fall; smaller ones stay the automatic cascades.
+- **Why river falls are rare**: the level can only go down from the source, and WA-3a's rivers follow the smooth
+  ground, which the terraces (made later) don't know: a river often runs toward higher terraces (they rise toward the
+  back) and stays in its trench. Falls come where a river runs from the back terraces to the front. In a sweep of 60
+  stream scenes with terraces, 4 rivers had a fall (0.7-1.3 m). Making the water stage see the terraces' levels (or
+  turning a river round when its banks rise downstream) is a later lane G job in mapgen.js's busy water stage.
+- **Runs have no terraces or mountains** (rules.json `run.scene` sets hills, cliffs and water only; mountains come
+  from Rock Smash's cave land or the debug mod): in a run, falls show only in the Rock Smash cave. The owner's call:
+  the dials stay; the roguelite and routes tracks may add an occasional terraces or massif dial to run nodes.
+- **Set pieces** (4-15 m, `WATERGEN_SET_PIECE`): a spring on a massif's shelf spilling off its edge, on a route or a
+  cave with mountains (chance 0.4, a cave 0.7; never a town). The massif makes staircases of 0.8-2 m shelves, not
+  sheer cliffs (a 4 m drop within 1.5 m almost never), so the set piece cuts a notch down the shelves (up to 6 m) to
+  the lowest one and a pool there. Most places are refused because the notch would split a shelf that is only walked
+  along its length (more than 25 half-metre cells cut off from the road, `WATERGEN_LOST_MAX`): about 1 cave in 8 gets
+  one (6 of 80 mountain scenes, 4.1-7.6 m). The spring's run is a stream (`src: 'spring'`, `mouth: 'pool'`).
+- **Plunge pools**: whole cells round a point `pool + 0.25` m past the lip, 1.4-3 m, on dry ground at the foot's raise
+  (within 0.4 m; a set piece cuts higher ground down), clear of roads, bridges, jetties, a town's square, the hub and
+  the map's last 6 m; painted like a river (deep more than 1.1 m from the edge), its bed carved. Only where its rim is
+  walked to and it cuts off no more than 25 half-metre cells; else the fall has `pool: 0`.
+- **`climb: 1`**: a fall of 2 m or more with a pool whose top (4 m back from the lip) and foot the game's own reach
+  (`mapgenReach`, with props and slopes) walks to, so the Waterfall move is a short cut, never the only way. Decided
+  on the finished scene: a reach worked out before the props were placed said yes where the game said no. River
+  falls are under 2 m so far; set pieces are climbable about a third of the time.
+- test_water: the 6 m fall is a `falls` entry (`{x 50, z 17, dir [0,-1], w 1.6, h 6, pool 2.2, climb 1}`); its pond
+  moved 1.9 m north to the cliff's foot, so its middle lies where the contract says. The data check warns on a fall
+  off the map, with no direction, no width or drop, or its lip off water.
+- Numbers (a sweep of 120 terrace, mountain and cave scenes): 11 falls, 5 set pieces, 6 pools, 1 climbable; every
+  exit reached, no generator note; every pool walked to. Cost: about 15% more on a mountain scene in Node (224 to
+  258 ms), 13 ms on a river over terraces.
+
+## WA-2a notes (2026-10-25)
+- **The flow map** (`walk/water-flow.js`, new, Node-testable): flow (x, z), foam and how far into its stream, on the
+  water mesh's half-metre grid, built once with the mesh. Each stream segment visits only the cells within its reach
+  (2.5 m, or `w/2 + 1` on a wide river), the nearest segment winning as before: a plain `{pts, speed}` stream gives
+  exactly the old flow at every cell (tools/test/water-flow.test.mjs). It reads WA-3a's `w` (reach), `rapids` (1.6
+  times faster, white water along the middle), `mouth` (churn into a `pool`, `lake` or `sea`), `src` (`spring`
+  bubbles) and each fall's foot (churn). `waterFlowField` (water-data.js) is gone; `flowAt` and the leaves read the
+  map. Build cost in Node, flow map against the old search over every water cell three times (as the mesh asks):
+  58 x 28 m 3 against 6 ms, 120 x 80 m 6 against 37 ms, 180 x 90 m with a 120-point river 3 against 124 ms.
+- On the card: a half-float RGBA texture (unit 7, `water-data.js flowTexture` / `setFlowUniforms`), off for the
+  basins. With pixel water the surface pattern is carried down the flow in two phases half a loop (2 s) apart and
+  blended, so it never drifts without end (it did before; pixel off keeps that old drift); the foam channel boils in
+  place in steps.
+- **Falls entries** (`ground-mesh.js placeFalls`, `fallSheet`): the lip at the water's level 0.3 m upstream; `h`, or
+  the drop to the lowest water or ground 0.5-2 m past the lip (an entry under 0.3 m is left to the automatic sheets);
+  the sheet lands `min(1.8, 0.25 + 0.45 sqrt(h))` m out (the water leaves the lip moving); a quarter-turn curl over
+  the lip, rows leaning out with the square root of the drop, 6% narrower at the lip and 10% wider at the foot, sunk
+  0.1 m into the pool; columns every 0.25 m, rows every 0.5 m. An automatic sheet whose edge lies within the entry's
+  width (+0.35 m) from 1 m behind the lip to 1 m past its landing is left out. `T.fallSets` holds the placed entries
+  (kept by map-cache.js with the fall mesh).
+- **The fall shader** with pixel water: the 32 grid's texels across the sheet in metres and down it along the water;
+  each pixel column its own streaks stepping down at its own speed (1.4-2.7 m/s) over a slow large pattern; four
+  tones (the shallow colour to white); a glassy lip with one highlight row; white water at the foot with a broken top
+  edge (0.3 m + 9% of the length, at most 1.1 m; a cascade's 0.18 m); a pale veil over the last 1.6 m of a big one;
+  the outer columns ragged. Lit mostly grey (the warm sun turned it tan) and kept bright in a cliff's shade. The
+  automatic sheets (cascades) use the same code at 0.5 m wide. Pixel water off: the sheet of before.
+- **Pool, rock and light** (`walk-shaders.js FALL_GLSL`, `water-data.js setFallUniforms`: the four entries nearest
+  you): the water churns white round the foot (a line as wide as the fall) and rings one texel wide spread across the
+  plunge pool (every 0.67 m, outward, stepped); the rock beside and under the lip is dark, cool and shiny with
+  trickles stepping down in pixel columns; the ground round the foot is wet; the white water's light is a stepped
+  shimmer on rock and ground (faint by day, stronger at night). Not a real light (the owner's choice).
+- **Spray and mist** (`effects.js`): with pixel water on the 32 grid and in `water.frames` steps. A cascade's mist
+  sits out from its step (the automatic sheets carry their direction now), so the cliff no longer cuts it into the
+  half-disc WA-6b saw. An entry: spray along its width at the foot (6-24 droplets), droplets off the lip, 3-8 mist
+  puffs rising from the pool and drifting with the wind.
+- **Wading** (WA-6a's asks): splashes (`walkView.parts` kind `splash`) are the spray's droplets; the wake's rings
+  have their own pool (`addWakeRipple`, 4 kept; the shader's 8 slots take up to 3 of them first), so wading no longer
+  pushes out the scene's rings. The one call in walk-view.js switched (lane P's file, the owner's yes).
+- **Cost**: per frame, the ground and water shaders loop over up to 4 falls (a box test first; nothing when a scene
+  has none, `uFallN` 0), the water shader reads the flow map once and its ripple and glint noise twice on running
+  water (the two phases); an entry's sheet is (w/0.25) x (h/0.5 + 3) quads (test_water's 6 m: 210 triangles) and
+  9-40 effect quads. The headless browser draws in software (0.4-2 s a frame, swinging more between runs than
+  between settings): no numbers here. The phone should compare the frame time standing at test_water's tall fall
+  with Pixel water on and off, and by a river (the flow map's two phases).
+- Not in WA-2a: the Surf mount's wake (`prop-look.js rideMountItem`, lane P) still uses `addRipple`; the climb's
+  spray on the rider (WA-6b's ask); look-water's numbers count only the automatic sheets (`fallSheets`), not entries.
+
+## WA-5a notes (2026-10-25)
+- The owner's answers: all six kinds; WA-6a's "shallows for others" taken here; small hooks in lane P's files allowed
+  (lane P has no round-3 session; the rules live in lane G modules); hot springs about one run in two.
+- **Kinds and their play** (`logic/water-kinds.js`): the list above; `wading.js` and `surf.js` read the play table
+  (`WADE_SHUT_KINDS` is now lava, rapids and ice for wading; ice is walked on instead); `wadeSpeed(depth, kind)`
+  takes the marsh's and the bog's slow (`walk-view.js wadeSpeedHere`); fishing fishes a new kind as its look; the data
+  check, the map and biome schemas and the Studio's water painter know the six.
+- **Placed** (`water-gen.js waterGenKinds`, one call after `waterGenFalls`; `waterGenReeds` on the finished scene;
+  MAPGEN_VERSION 17): rapids rectangles over a river's steep stretches (WA-3a's `rapids`), clear of roads, bridges
+  and jetties by 2 m; a hot spring on 8% of routes (never a town), a round pool of shallows 1.2-1.7 m in radius
+  2-7 m off the road's middle, 3 m from other water, placed as a plunge pool (it cuts nothing off); a marsh biome's
+  pond a bog 40% of the time; a dry place's pond an oasis (badlands, canyon: no run biome is dry, so not in runs yet);
+  a cave's water cave water (a whole-map rectangle under the rest); a reed or two in a marsh hides an item (`hide`:
+  potion, trail mix, pretzel, hi-potion, burn salve, nerve tonic, revive).
+- **Play** (`logic/water-play.js`): stepping into a hot spring with someone hurt heals the whole team, once a run
+  (`saveData.flags.hotspring`, a run's own copy); passing within 0.9 m of a hiding reed gives its item once a run (its
+  flag in world metres, so a reed seen across a seam is one find); a run place with marsh or bog water weights its
+  wild odds by type (marsh Water and Grass 1.8; bog Ground 2, Water 1.5, Grass 1.3: the game has no Bug or Poison),
+  through the place's row (`marsh`, set by `run-world.js`) in `rules.js spawn`.
+- **Shallows for others**: boulders, rocks and flat stones (`WATERGEN_SHALLOW_PROP`) and folk spots may stand in
+  shallows you wade (`waterGenShallows`: not lava, rapids, ice or a hot spring), never in deep water; wild Billies
+  may wait in shallows inside a grass patch (2 m further in a marsh), never in a hot spring (`walk-view.js
+  encounterCandidates`). Route trainers stand where `route-trainers.js` puts them (unchanged: it never checks water).
+- **Weather on water** (`logic/water-weather.js`, run places only): snow lays `ice` rectangles over still water (a
+  stream's line keeps flowing); a storm floods the cells beside floodable water and runs a river's middle deep, never
+  a road surface or the cells beside it, a door, the hub, an exit or a bridge's end, checked with `mapgenUnreachable`
+  (dry water) and held back 4 m from the road, then left out, when it would cut an exit off; a kept dry copy so the
+  next day starts from the scene as made. `run-world.js runWaterWeatherSync` lays it when the world is put in and on
+  each new run day (the walk frame asks; nothing to do on the same day), then remakes the views and the walk view.
+- Numbers: 200 run-like routes over eight biomes: 18 hot springs (9%), rapids on 32, 10 bogs, 10 oases, 20 cave
+  scenes, finds in 40; every exit reached, no generator note; about 45 ms a scene in Node (unchanged within noise). A
+  storm on 93 wet routes: 90 flood (135 more water cells on average), none cuts an exit off, 6 ms a place; snow
+  freezes 28 (the ponds). In the page (the run fixture, a forced forecast, a seam walked): the debug log's `water by
+  the weather` line, flooded and frozen places, 239 of 240 ice cells walkable in a frozen town (a prop on the last).
+- Not done here: the new kinds' looks (WA-5b), reef shallows on a coast (WA-4's coast; the kind and its rules are in),
+  the slip on ice (TR-10), rain rings that skip ice and lava (lane R), the flood's look on raised banks (lane R).
+
+## WA-4 notes (2026-10-25)
+- The owner's answers: test_island gets a coast to picture (two sea rocks, a sandbar, a reef shelf, a wet flat with two
+  tide pools, all north and west of the town; `tools/build-test-island.py`); a subtle tide; reef shallows by depth
+  until the `reef` kind is drawn (WA-5b); the tide on Copperleaf too (its look only, its data untouched).
+- Everything new is drawn with pixel water on; pixel water off keeps the look of before (the tide has its own switch).
+- **The tide** (`walk/sea-tide.js`, new, Node-tested): read from the tiles on a scene with the sea all round
+  (`flatFar`). Wet sand (`S`) joined to the sea is covered at high tide (sandbars and flats too); the open sea's
+  shallows (`w`) touching dry land go dry at low tide; sea water joined neither to the map's edge nor to deep water is
+  a tide pool (kept at low tide, calm, brimming at the high tide's skin). Two highs a day at 9:00 and 21:00 (a 12-hour
+  cycle, so a day repeats and midnight never jumps). The shore texture carries the high and low water's lines in
+  green and blue (RGBA when the scene has a tide, R8 as before otherwise); `TIDE_GLSL tideSF` moves the waterline
+  between them. The covered sand gets a skin of sea 3 cm over the ground, reaching half a metre past it so the rounded
+  line never stops at a tile's edge; the sea's own corners beside it rise to meet it. The shallows the low tide leaves
+  draw as wet sand on the water's own surface (the bed under water lies low between steep banks: shown, it read as a
+  trench); the sand below the high water's line stays darker, drying as the tide goes out. Setting `water.tide` (on).
+  Not moved: the water's level (only the line moves, so the skirt and the scene's sea stay level with each other).
+- **Surf** in hard stepped bands: a white crest on each wave's shore side, a broken lace trailing out to sea, the
+  crest thickening as the water shallows, white water washing at the waterline (it follows the tide's line); nothing
+  depth-driven over the flooded sand (the skin's depth is 0: it drew triangles).
+- **Foam round sea rocks**: the rock foam the ponds had (`rockFoam`), reaching 1.4 m in the sea, drawn as a white
+  collar that swells and shrinks with the swell and rings stepping out from it.
+- **Reef shallows** (by depth): the mesh carries the sea's wadeable shallows below the kind's index (`kind - 0.45 *
+  share`; a cove's calm and a tide pool ride above it), matched on the skirt's first ring and fading over its ramp.
+  The shader turns those and the sea near the shore a clear turquoise, the bed's light stronger. The depth itself is
+  unchanged (the surf's phase and the walk read it). Coral patches wait for the `reef` kind (WA-5b): today a `reef`
+  rectangle draws as the scene's default kind (`waterKindLookup` knows only the nine looks).
+- **Kelp**: dark fronds just under the surface at middle depth, out of the reef's shallows, in about 45% of 2.6 m
+  cells, three fronds swaying in steps; laid partly over the reflection (else the sky's mirror hid them).
+- **The sun's path** (by night the moon's: the light's direction then is the moon's): the swell's facets that mirror
+  the light, a soft smooth glow under hard sparkling pixels that come and go in steps, kept bright enough at night.
+- **The storm sea**: the weather's storm (`environment.storm`, eased; a run's forecast drives it) in `uTide.y`: a
+  swell 3.5 times as strong, a heave of up to 0.2 m out where it is deep (only up: dipping, the ground at the scene's
+  border showed through; fading past the scene's edge, so the skirt's widening rings never show it; its clock in
+  `uTide.w`, the frame's seconds wrapped on whole turns of the swell), more whitecaps further in, more and wider
+  surf bands, a darker and greyer sea.
+- The skirt (IS-3, `logic/sea.js` untouched) still meets the scene's sea without a seam: the tide moves only the
+  line, the shallows' share is matched on the first ring, the heave is the same formula on both.
+- **Cost**: building a scene, the tide's cells 5 ms and the two extra shoreline fields about 88 ms on Copperleaf (190
+  x 154 m; Node, in the existing slices); its shore texture 7.5 MB instead of 1.9 (RGBA). Per sea pixel: the shore
+  texel read once more for the line (four more for the foam line near the edge, as before), the surf bands, three
+  kelp fronds (skipped past 140 m and outside their depth), the path's two noises, the rock foam where a rock is near.
+  The headless browser draws in software: no frame times. The phone should compare the frame time on Copperleaf's
+  beach with Pixel water on and off, and Tide on and off.
 

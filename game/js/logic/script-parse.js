@@ -68,6 +68,11 @@ export const SCRIPT_COMMANDS = {
   fade: { args: ['dir?', 'colour?'], about: 'fade the screen out (to a colour, #0B0912), or back in' },
   go: { args: ['place', 'entrance?'], checkpoint: true, about: 'go to a place' },
   call: { args: ['script'], about: 'play another script, then go on' },
+  pick: {
+    args: ['who'],
+    about:
+      'say the story director’s line for who (banter.json, picked by the run history: RL-S1): chosen, hazel, juniper, back_lost, leader, bureau; nothing if none fits',
+  },
   end: { args: [], about: 'stop the script here' },
   /* a cutscene's own (game/data/cutscenes, docs/CUTSCENES.md: logic/cutscene-set.js reads them) */
   actor: {

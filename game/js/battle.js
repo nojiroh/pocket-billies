@@ -17,6 +17,7 @@ import {
   modal,
   perkPickOpen,
   provide,
+  questToasts,
   render,
   rewardPickOpen,
   runCatch,
@@ -57,6 +58,7 @@ import {
   catchKeep,
   catchOdds,
   catchRoll,
+  catchable,
   effectiveStat,
   enemyOnly,
   fighter,
@@ -764,8 +766,10 @@ export function paintActions() {
         .reduce((a, k) => a + saveData.items[k], 0),
       crew = saveData.team,
       alive = crew.filter(x => x.hp > 0).length;
+    /* RL-14: a bot is never caught */
+    const bot = wild && !catchable(fighter(1));
     h = `<div class="c-choose">${moveTilesHTML(m)}
-  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('pyramid', 18)}<b>Catch it</b><small>${wild ? (first ? pyramids + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
+  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first && !bot ? '' : 'disabled'}>${uiIconHTML('pyramid', 18)}<b>Catch it</b><small>${bot ? 'Not a Billie' : wild ? (first ? pyramids + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
   <button class="bt items" data-a="bitems">${uiIconHTML('bag', 18)}<b>Bag</b><small>${items}</small><kbd>I</kbd></button>
   <button class="bt team" data-a="bteam">${uiIconHTML('team', 18)}<b>Team</b><small>${alive}/${crew.length}</small><kbd>T</kbd></button>
   <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${escapeHtml(billyName(fighter(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
@@ -899,6 +903,11 @@ function runCatchFits() {
 }
 export function doThrow(spin) {
   if (uiState.throwing || !activeBattle || activeBattle.phase !== 'aim') return;
+  /* RL-14: a bot is never caught (logic/battle-engine.js catchable) */
+  if (!catchable(fighter(1))) {
+    toast('Bots can’t be caught. Pyramids are for Billies.');
+    return;
+  }
   /* RL-13: a mono-type run never catches another type (logic/modifiers.js) */
   if (!runCatchFits()) {
     toast(`Only ${modMonoType(saveData.run, TYPES)} Billies can join this run.`);
@@ -950,8 +959,10 @@ export function endBattle() {
     /* RL-8: what it pays and costs (logic/battle-rewards.js); RL-4: a battle called off at the turn cap ends as if you
        walked away (wild) or lost (a trainer). Studio plan T3.2: battleSettle also does what it does to the save (a
        run battle's checkpoint, the Hype counter, the encounter, the lead's streak), as the run's simulation does */
-    { pay, run, gone } = battleSettle(activeBattle, saveData),
+    { pay, run, gone, quests } = battleSettle(activeBattle, saveData),
     o = pay.o;
+  /* TW-3: a run's quests done or failed in this battle (quest-board.js) */
+  if (run && typeof questToasts === 'function') questToasts(quests);
   if (o === 'win' && typeof jingle === 'function') jingle(JINGLES.victory);
   if (typeof battleTipHide === 'function') battleTipHide();
   /* v47: Blake's first battle, in the opening: no fee and no sheet, win or lose; the story picks it up (story.js) */
@@ -1033,7 +1044,9 @@ export function endBattle() {
                 : run && run.offer
                   ? 'Pick a Perk'
                   : run && run.enc && run.enc.reward
-                    ? 'Pick a reward'
+                    ? run.enc.reward.kind === 'salvage'
+                      ? 'Look at the salvage'
+                      : 'Pick a reward'
                     : 'Keep walking',
             f:
               /* RL-8: the run's boss beaten: the run is won */
@@ -1075,6 +1088,8 @@ export function endBattle() {
     after.forEach(m => modal(m));
     /* RL-8: the run's party fainted: the run is over */
     if (run && o === 'lose') runOver(false);
+    /* RL-14: a wild bot beaten leaves its salvage pick (logic/battle-rewards.js battleSalvage) */
+    else if (kind === 'wild' && o === 'win' && run && run.enc && run.enc.reward) rewardPickOpen();
     else if (!after.length) showPendingWindows();
   });
 }

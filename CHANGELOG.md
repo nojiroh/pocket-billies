@@ -40,6 +40,26 @@ kept aside in the browser).
   battles you for it. A Gene spliced on a run also goes into your library, so it isn't lost if that Billie doesn't
   come home. Three new Perks: **Petri Dish** (Gene Samples pay 50% more DNA), **Gene Lure** (wild Billies of the next
   places are spliced twice as often), **Stabilizer Gel** (your Unstable Billies lose half as much HP each turn).
+- **The Bureau's bots** (roguelite track RL-14, first half): the Bureau of Lost, Found and Beans now fields an army
+  of bots built from robot parts (Courier Units, Repossession Units, Shredders, Stamp Presses, Filing Drones, Audit
+  Units). Deeper into a run (from the fourth row on) about one wild encounter in ten on rocky, hot or cold ground is
+  a bot instead of a Billie; the Bureau's clerks and its new **Reclamation Agents** bring one or two bots along. Bots
+  **can't be caught**. Their limbs break in battle and now **drop off**, and every bot has a beeping cry. Beat bots and
+  they leave **salvage**: pick one of two of their parts (kept for the Workshop) or a stack of **Scrap** sent home.
+  About a third of runs now have a **Scrapyard**: a place where every wild one is a bot, Reclamation Agents stand guard
+  and scrap heaps line the way.
+- **You stay visible behind things**: when a building, a tree or anything else stands between the camera and you,
+  your outline shows through it in the colour of your top, the thing in front thins out in a soft circle round you,
+  and tall things covering you fade a little (now smoothly, and the modelled buildings too). Out in the open nothing
+  changes. The one you are talking to shows through the same way. Engine > Camera has the dials: "Your outline when
+  hidden" (was "Your silhouette through rock"), the outline's width and fill, the circle's switch, size and strength,
+  and how far things covering you fade.
+- **The story reacts to your runs** (roguelite track RL-S1, the story director): the game remembers your last 20
+  runs (where, how far, what beat you, who you brought, the Perks and leaders). Back in Copperleaf, **Professor
+  Chosen, Hazel and Granny Juniper** each have a fresh word about your last run the first time you talk to them. After
+  a **lost run** Chosen loudly takes the credit for bringing you back, and Hazel isn't so sure it was him. On a run,
+  **leaders** say something before the battle (they remember beating you), and the **Bureau's clerks** have started
+  keeping a file on you.
 - **Held items** (roguelite track RL-12c): every Billie has one held-item slot. Eight to start with: Leftover
   Sandwich (heals a little each turn), Snack Pack (a quarter of its HP once a battle, when low), Lucky Coin (wins pay
   25% more), Study Notes (50% more XP), Iron Vest (15% less damage taken), Quick Laces (Speed up as it comes in), Brass
@@ -64,6 +84,15 @@ kept aside in the browser).
 - Run towns look like towns (towns track TW-1): a short street leads off the road to a little square with a well or a
   fountain, benches and lamps, the clinic and the shop facing it, and a row of houses with gardens and fences along
   the road. The houses are for show; only the clinic and the shop open. Each biome builds with its own houses.
+- Run towns have people in them (towns track TW-2): 2 to 5 townsfolk by the town's size go to work, sit on the
+  square, wander the street and go home at dusk; chickens and cats (pigeons on a bigger town's square, crows in the
+  volcano and the badlands) keep to the town. Folk talk about their biome and the run's region, and one or two named
+  locals stand about with something to say. Beautiful draws up to 6 folk, Balanced 5, and 3 while the game is
+  softening the picture to keep up.
+- Run towns give quests (towns track TW-3): a townsperson with a gold "!" by the notice board on each town's square
+  offers one quest (catch a Billie of a type, beat route trainers, carry a parcel to the next town, or beat the next
+  mini-boss with nobody fainting), only ever one you can finish on this run. Hold up to three; the Map tab lists them.
+  Hand a finished quest in at another town's notice board for a reward pick. Quests end with the run.
 - Three new Billies and five regional forms (roster track RO-2c): **Siliclet**, a black gecko with one glowing scale,
   evolving at level 20 into **Jenzard** and at 40 into **Gigajenzard**, a rare Electric/Dragon data-centre dragon
   whose keynote dims the lights. Five Billies you already know now have a regional form, met in the biomes it suits:

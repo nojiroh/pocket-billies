@@ -16,10 +16,14 @@
      team >= 2             Billies in the team (RL-12b)
      badge:Water           a badge of that type is won (RL-12b: meta.badges, or a leader's seat)
      opened:cut            a run's field move obstacle is open (RL-R2)
+     last:lost, last:row <= 3      the last run (RL-S1: logic/run-history.js LAST_FACTS)
+     lastby:boss, lastby:bureau    what ended the last run: its kind, a leader's or class's id, a Billie, the Bureau
+     history:losses >= 2   over the runs kept (HISTORY_FACTS)   rematch >= 1   runs this foe ended (a leader's lines)
    combined with `and`, `or`, `not` / `!` and parentheses (`and` binds tighter than `or`). A bare count term
    (`item:honey`, `visits:juniper`, `badges`) means more than 0. Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { historyFacts, historyRematch } from './run-history.js';
 /* eslint-disable no-func-assign */
 expose({
   CONDITION_KINDS: [() => CONDITION_KINDS],
@@ -65,7 +69,9 @@ expose({
  *   visited: Record<string, any>, lines: Record<string, any>, robots: number, badges: number, caught: number,
  *   unlocks: Record<string, any>, runs: number, wins: number, expedition?: number, questStages?: Record<string, string[]>,
  *   types?: Record<string, number>, money?: number, team?: number, badgeTypes?: Record<string, number>,
- *   opened?: Record<string, number>, dna?: number, genes?: number, spliced?: number }} StoryState */
+ *   opened?: Record<string, number>, dna?: number, genes?: number, spliced?: number,
+ *   last?: Record<string, number>, lastby?: Record<string, number>,
+ *   history?: Record<string, number>, rematch?: number }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
  * reads, for the Studio's reference (Project Story S3) */
@@ -92,6 +98,24 @@ export const CONDITION_KINDS = {
   dna: { id: false, count: true, about: 'DNA on hand (SP-6): dna >= 10' },
   genes: { id: false, count: true, about: 'Genes in the Gene Bank’s library (SP-6): genes >= 1' },
   spliced: { id: false, count: true, about: 'spliced Billies in your team (SP-6): spliced >= 1' },
+  last: {
+    id: true,
+    count: true,
+    about:
+      'the last run (RL-S1): last:won, last:lost, last:quit, last:row <= 3, last:days, last:perks, last:team, last:leaders, last:expedition',
+  },
+  lastby: {
+    id: true,
+    count: false,
+    about:
+      'what ended the last run: lastby:wild, route, event, miniboss, boss, bureau, a leader’s or class’s id, a Billie',
+  },
+  history: {
+    id: true,
+    count: true,
+    about: 'over the runs kept (the last 20): history:runs, wins, losses, quits, streak, lstreak, bureau',
+  },
+  rematch: { id: false, count: true, about: 'in a leader’s or agent’s lines: runs this foe has ended: rematch >= 1' },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
 export const WORDS = new Set(['and', 'or', 'not']);
@@ -346,6 +370,14 @@ export function termValue(c, S) {
       return S.genes || 0;
     case 'spliced':
       return S.spliced || 0;
+    case 'last':
+      return (S.last || {})[c.id] || 0;
+    case 'lastby':
+      return !!(S.lastby || {})[c.id];
+    case 'history':
+      return (S.history || {})[c.id] || 0;
+    case 'rematch':
+      return S.rematch || 0;
   }
 }
 /** whether a condition holds for the state @param {Cond | string} c @param {StoryState} S @returns {boolean} */
@@ -371,9 +403,9 @@ export function conditionHolds(c, S) {
 /** the story state a save gives, for conditionHolds: the save's own objects where they fit (so a script's changes to
  * story flags, items and pyramids show at once), counts and lookups made fresh. RL-12b: `typesOf` gives a team
  * Billie's types (else its own `types`), `badgeTypes` a seat's, a leader's or a badge's type (meta.badges may hold
- * types, leader ids or seat ids, as a list or as keys)
+ * types, leader ids or seat ids, as a list or as keys). RL-S1: `foe` the leader's or class's id a `rematch` reads
  * @param {any} save @param {{ locations?: { id: string }[], questStages?: Record<string, string[]>,
- *   typesOf?: (m: any) => string[], badgeTypes?: Record<string, string> }} [o] */
+ *   typesOf?: (m: any) => string[], badgeTypes?: Record<string, string>, foe?: string }} [o] */
 export function storyStateOf(save, o = {}) {
   const story = save.story || (save.story = {}),
     visited = /** @type {Record<string, number>} */ ({}),
@@ -389,7 +421,9 @@ export function storyStateOf(save, o = {}) {
   }
   const all = [...(save.team || []), ...(save.box || [])],
     /* RL-11: what lasts between runs (the same in a run and in the hub) */
-    meta = save.meta || {};
+    meta = save.meta || {},
+    /* RL-S1: the runs kept (logic/run-history.js) */
+    facts = historyFacts(meta.history);
   return {
     flags: story,
     beaten: save.flags || {},
@@ -418,6 +452,10 @@ export function storyStateOf(save, o = {}) {
     dna: meta.dna || 0,
     genes: (meta.genes || []).length,
     spliced: (save.team || []).filter(m => m && m.graft && Object.keys(m.graft).length).length,
+    last: facts.last,
+    lastby: facts.lastby,
+    history: facts.history,
+    rematch: historyRematch(meta.history, o.foe),
   };
 }
 

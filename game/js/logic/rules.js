@@ -18,6 +18,8 @@ import {
   breedName,
   coatRoll,
   environmentOdds,
+  factionBotSp,
+  factionWildChance,
   fieldMoveState,
   fieldMoveText,
   fxOfRun,
@@ -34,12 +36,16 @@ import {
   storyHolds,
   toast,
   uiState,
+  waterWildOdds,
+  wildHabitat,
+  wildRareList,
 } from '../hooks.js';
 import { random } from '../util.js';
 import {
   COATS,
   EGGS,
   EGG_TIERS,
+  FACTIONS,
   FIELD_MOVES,
   GENES,
   ITEMS,
@@ -79,6 +85,7 @@ import {
   ROBOT_LIMBS,
   ROBOT_SLOTS,
   isRobot,
+  isRobotSp,
   moveSources,
   newPart,
   partFits,
@@ -176,7 +183,7 @@ expose({
   hatchEgg: [() => hatchEgg, v => (hatchEgg = v)],
   hatchable: [() => hatchable],
   // @ts-expect-error -- replaced on purpose
-  healAll: [() => healAll, v => (healAll = v)],
+  healAll: [() => healAll, v => ((healAll = v), provide({ healAll }))],
   hereLocation: [() => hereLocation],
   isPrime: [() => isPrime],
   // @ts-expect-error -- replaced on purpose
@@ -221,6 +228,10 @@ expose({
   setTrip: [() => setTrip, v => setSetTrip(v)],
   // @ts-expect-error -- replaced on purpose
   spawn: [() => spawn, v => (spawn = v)],
+  // @ts-expect-error -- replaced on purpose
+  spawnBot: [() => spawnBot, v => (spawnBot = v)],
+  // @ts-expect-error -- replaced on purpose
+  spawnRare: [() => spawnRare, v => (spawnRare = v)],
   speciesStep: [() => speciesStep],
   // @ts-expect-error -- replaced on purpose
   spliceReport: [() => spliceReport, v => (spliceReport = v)],
@@ -255,7 +266,7 @@ expose({
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
-provide({ addWalked, billyGeneFx, billySpliceCost, geneLimit, makeBilly, makeRobot, riderOf, unstableTidy });
+provide({ addWalked, billyGeneFx, billySpliceCost, geneLimit, healAll, makeBilly, makeRobot, riderOf, unstableTidy });
 export function setSetTrip(v) {
   // @ts-expect-error -- replaced on purpose
   setTrip = v; // eslint-disable-line no-func-assign
@@ -965,6 +976,8 @@ export function encounterStock(node) {
   if (encounterRunVisits(node) > 1) return RULES.run.wild.back;
   /* RL-12b: a waystation (an event's or a stall's place) holds fewer */
   if (L.waystation) return RULES.run.wild.waystation;
+  /* RT-2: a run route's trainers stand in for some of its wild Billies */
+  if (L.trainerCount) return Math.max(RULES.run.wild.routeMin, RULES.run.wild.route - L.trainerCount);
   if (!isTown(node)) return R.route;
   const sc = L.mapId && gameData.maps ? gameData.maps[L.mapId] : null,
     tiles = sc ? (sc._lite ? sc._lite.tiles : (sc.tiles || []).join('')) : '';
@@ -1002,13 +1015,19 @@ export function encountersHere(node = saveData.trip.node) {
         /* SP-6: a run's splice rows (Perks) on the odds */
         odds = fxSplice(fxOfRun(saveData.run, PERKS), 'splice');
       W[L.id] = { at: now, list: [], v: visit };
-      while (W[L.id].list.length < cap) {
-        const q = spawn(false, null, node, rnd),
-          g = wildSplice(geneData(), q.sp, pool, spl, odds);
+      /* RT-4: a run route's first visit keeps the last of its stock for a rarer one (rules.json run.wild.rare) */
+      /* RL-14: none in a scrapyard, where every wild one is a bot */
+      const yard = !!saveData.run.map && saveData.run.map.nodes[/** @type {number} */ (L.runNode)].type === 'scrapyard',
+        rare = visit === 1 && !!L.trainerCount && !!RULES.run.wild.rare && cap > 0 && !yard;
+      while (W[L.id].list.length < cap - (rare ? 1 : 0)) {
+        const q = spawn(false, null, node, rnd);
+        /* SP-3: a bot (RL-14) is never spliced and draws nothing from the splice stream */
+        const g = isRobotSp(q.sp) ? null : wildSplice(geneData(), q.sp, pool, spl, odds);
         if (!g) continue;
         q.graft = g;
         unstableTidy(q, spl); /* SP-2: past the limit, its Unstable roll, from the same stream (the same on a reload) */
       }
+      if (rare) spawnRare(node, rnd);
     }
     return W[L.id].list;
   }
@@ -1037,6 +1056,44 @@ export function dropEncounter(id) {
     if (full) w.at = saveData.playMs || 0;
   }
 }
+/** RT-4: a run route's rarer one: of the rarest of its list (wild-pool.js wildRareList), `up` levels above the rest,
+ * never an Alpha; it waits in a hard pocket (route-trainers.js routeRareSpots, the place's rareAt)
+ * @param {number} node @param {() => number} rnd */
+export function spawnRare(node, rnd) {
+  const P = encounterPoolHere(node),
+    q = spawn(false, pickWeighted(wildRareList(P.list), rnd), node, rnd);
+  q.lvl = Math.min(100, q.lvl + (RULES.run.wild.rare ? RULES.run.wild.rare.up : 0));
+  q.rare = 1;
+  return q;
+}
+/** RL-14: a run place's wild bot (factions.json), or null: a draw against its faction's chance (none for a place that
+ * can't have one), then the bot by weight and its level, all from rnd; it waits in the tall grass, never an Alpha. The
+ * first faction (by id) that can field one here @param {number} where the place (a location) @param {() => number} rnd */
+export function spawnBot(where, rnd) {
+  const L = LOCATIONS[where],
+    run = saveData.run,
+    node = L && L.runNode != null && run && run.map ? run.map.nodes[L.runNode] : null;
+  if (!node) return null;
+  for (const id of Object.keys(FACTIONS).sort()) {
+    const F = FACTIONS[id],
+      chance = factionWildChance(F, node);
+    if (!(chance > 0) || rnd() >= chance) continue;
+    const bots = Object.keys(F.bots)
+        .sort()
+        .filter(k => F.bots[k].weight > 0),
+      B = F.bots[pickWeighted(/** @type {[string, number][]} */ (bots.map(k => [k, F.bots[k].weight])), rnd)],
+      P = encounterPoolHere(where),
+      q = {
+        id: newUid(),
+        sp: factionBotSp(B),
+        lvl: P.lv[0] + Math.floor(rnd() * (P.lv[1] - P.lv[0] + 1)),
+        no: ++saveData.serial,
+      };
+    wildList(where).push(q);
+    return q;
+  }
+  return null;
+}
 /* RL-2: every outcome draw (species, level, sizes, coat, Alpha) comes from rnd; a run passes its own stream */
 export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
   const P = encounterPoolHere(node),
@@ -1053,11 +1110,17 @@ export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
       : typeof environmentOdds === 'function'
         ? environmentOdds(P.list)
         : P.list;
+  /* WA-5a: a place with marsh or bog water draws more of the Billies that like it (logic/water-play.js) */
+  if (L && L.marsh) list = waterWildOdds(list, L.marsh, typesOf);
   if (gentle) {
     const my = SPECIES[saveData.starter + '0'].types,
       g = list.filter(([id]) => !SPECIES[id].types.some(t => typeEffectiveness(t, my) > 1));
     if (g.length) list = g;
   }
+  /* RL-14: on a run place, now and then the Bureau's bot instead (factions.json wild; every one in a scrapyard). Only
+     a place that can have one draws for it, so the others' Billies stay as they were */
+  const bot = !force && !gentle ? spawnBot(node, rnd) : null;
+  if (bot) return bot;
   const sp = force || pickWeighted(list, rnd),
     lvl = P.lv[0] + Math.floor(rnd() * (P.lv[1] - P.lv[0] + 1));
   const q = {
@@ -1067,6 +1130,11 @@ export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
     no: ++saveData.serial,
     build: rollBuild(rnd),
   };
+  /* RT-4: a run place's Billie waits in its habitat (by its types): by the water, in the woods, else the tall grass */
+  if (L && L.runNode != null) {
+    const hab = wildHabitat(SPECIES[sp].types, RULES.run.wild.habitats);
+    if (hab !== 'grass') q.hab = hab;
+  }
   /* studio track ST-0: a coat, once in its odds (none: never) */
   const coat = coatRoll(COATS, 'wild', rnd) || SPECIES[sp].coat;
   if (coat) q.coat = coat;

@@ -172,6 +172,8 @@ export const ENGINE_DEFAULTS = {
     pixel: true,
     bands: 5,
     frames: 10,
+    /* water track WA-4: the sea's slow tide (the waterline and the wet sand move with the day's clock) */
+    tide: true,
   },
   /* HB-3: the hub's world map (the floating island): its lagoon and falls, and how much of the island's own detail it
      draws; the phone's fallbacks */
@@ -236,6 +238,12 @@ export const ENGINE_DEFAULTS = {
     rise: 18,
     rockFade: true,
     silhouette: true,
+    outline: 1,
+    outlineFill: 0.25,
+    hideFade: true,
+    hideSize: 0.3,
+    hideAmount: 0.7,
+    coverFade: 0.4,
     /* island track IS-1: an island map's camera turns round its middle (cam.orbit); the sun turns with the camera
        (off: the sun stays put in the world, the owner's pick) */
     orbit: true,
@@ -824,6 +832,12 @@ export const ENGINE_SPEC = [
         1,
         'How often ripples, foam and sparkles step (pixel water; 0 moves smoothly).',
       ],
+      [
+        'tide',
+        'Tide',
+        'bool',
+        'On a sea coast the water comes in and goes out twice a day, covering the wet sand and leaving tide pools.',
+      ],
     ],
   ],
   [
@@ -1065,9 +1079,55 @@ export const ENGINE_SPEC = [
       ],
       [
         'silhouette',
-        'Your silhouette through rock',
+        'Your outline when hidden',
         'bool',
-        'Terrain TR-3: where rock still hides you, your shape shows through it as a tint.',
+        'Terrain TR-3, player visibility: where rock, a building, a tree or anything else nearer the camera hides you, your outline shows through it.',
+      ],
+      [
+        'outline',
+        'Silhouette outline (art pixels)',
+        0,
+        3,
+        1,
+        "Player visibility: where something hides you, your outline shows in the colour of your top (lifted if dark); this wide in the picture's own pixels. 0: the plain dark blue tint instead.",
+      ],
+      [
+        'outlineFill',
+        'Silhouette fill inside the outline',
+        0,
+        1,
+        0.05,
+        "Player visibility: how much of the inside of your hidden shape is dotted in, in the outline's colour.",
+      ],
+      [
+        'hideFade',
+        'See-through circle when hidden',
+        'bool',
+        'Player visibility: while a building, tree or anything else nearer the camera hides you, it thins out in a soft circle round you (as rock does on tall ground).',
+      ],
+      [
+        'hideSize',
+        'See-through circle size',
+        0.1,
+        0.8,
+        0.02,
+        "Player visibility: its radius on screen (1 is half the screen's height).",
+      ],
+      [
+        'hideAmount',
+        'See-through circle strength',
+        0,
+        0.85,
+        0.05,
+        'Player visibility: how much of what hides you goes in the middle of the circle (never all: some stays, so the game still knows you are behind it).',
+      ],
+      [
+        'coverFade',
+        'Things covering you fade to',
+        0.1,
+        1,
+        0.05,
+        'Player visibility: a tree, building or other tall thing nearer the camera that covers you thins out to this much (1: not at all); halfway back while the see-through circle is on.',
       ],
       [
         'orbit',

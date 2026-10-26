@@ -28,7 +28,10 @@
   "locations",
   "regions",
   "fieldMoves",
+  "setPieces",
   "modifiers",
+  "factions",
+  "quests",
   "pools",
   "eggs",
   "pyramids",
@@ -49,6 +52,7 @@
   "moods",
   "lore",
   "story",
+  "banter",
   "cutscenes"
  ],
  "split": {
@@ -148,6 +152,8 @@
     "test_props_wild",
     "test_island",
     "test_props_island",
+    "test_props_rooms",
+    "test_props_biomes",
     "test_station_trains",
     "test_hub_buildings",
     "int_inn",

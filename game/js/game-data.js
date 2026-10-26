@@ -16,6 +16,7 @@ import { makeBilly, makeRobot, provide, saveData, storyAllows } from './hooks.js
 import { formSpeciesOf } from './logic/forms.js';
 /* eslint-disable no-func-assign */
 expose({
+  BANTER: [() => BANTER],
   BATTLE_STAGES: [() => BATTLE_STAGES],
   BUILDINGS: [() => BUILDINGS],
   COATS: [() => COATS],
@@ -27,6 +28,7 @@ expose({
   EGGS: [() => EGGS],
   EGG_TIERS: [() => EGG_TIERS],
   EVENTS: [() => EVENTS],
+  FACTIONS: [() => FACTIONS],
   FIELD_MOVES: [() => FIELD_MOVES],
   GENES: [() => GENES],
   HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
@@ -46,6 +48,7 @@ expose({
   PERKS: [() => PERKS],
   POOLS: [() => POOLS],
   PYRAMIDS: [() => PYRAMIDS],
+  QUESTS: [() => QUESTS],
   RARITY_STAT_TOTALS: [() => RARITY_STAT_TOTALS],
   REWARDS: [() => REWARDS],
   ROADS: [() => ROADS],
@@ -53,6 +56,7 @@ expose({
   ROBOTS: [() => ROBOTS],
   RULES: [() => RULES],
   SEATS: [() => SEATS],
+  SET_PIECES: [() => SET_PIECES],
   SHOPS: [() => SHOPS],
   SPECIES: [() => SPECIES],
   SPECIES_FORMS: [() => SPECIES_FORMS],
@@ -308,6 +312,7 @@ if (RULES.eggs && RULES.eggs.mythSpecies) RULES.eggs.mythSpecies = standInSpecie
    fills these tables in place, so every module that imports them sees the new rows: here once from the game data,
    the hub; a run puts its own world in (RL-7) and the hub back after */
 export const LOCATIONS = /** @type {LocationEntry[]} */ ([]);
+provide({ LOCATIONS }); /* to-module */
 export const POOLS = /** @type {Record<string, Pool>} */ ({});
 for (const k in gameData.pools) {
   const P = gameData.pools[k];
@@ -394,6 +399,7 @@ provide({ PYRAMIDS }); /* to-module */
 export const COATS = gameData.coats || {};
 provide({ COATS }); /* to-module */
 export const ITEMS = gameData.items;
+provide({ ITEMS }); /* to-module */
 export const PEOPLE = gameData.people;
 provide({ PEOPLE }); /* to-module */
 export const SHOPS = gameData.shops || {};
@@ -416,11 +422,19 @@ export const GENES = /** @type {import('../types/game-data').Genes} */ (
     unstable: { up: 1.3, down: 0.75, name: 'Unstable', d: '', fx: [] },
   }
 );
+/* RT-3: set pieces, prop groups placed as a unit on a laid-out place (setPieces.json; logic/mapgen.js) */
+export const SET_PIECES = /** @type {import('../types/game-data').SetPiecesData | null} */ (gameData.setPieces || null);
 /* roguelite track RL-13: a run's Expeditions and challenges (modifiers.json; logic/modifiers.js) */
 export const MODIFIERS = /** @type {import('../types/game-data').ModifiersData} */ (
   gameData.modifiers || { expeditions: [{ name: 'Expedition I', d: '', fx: [] }], challenges: {} }
 );
 provide({ MODIFIERS }); /* to-module */
+/* roguelite track RL-14: the runs' enemy factions and their bots (factions.json; logic/factions.js) */
+export const FACTIONS = /** @type {Record<string, import('../types/game-data').Faction>} */ (
+  (gameData.factions && gameData.factions.factions) || {}
+);
+/* towns track TW-3: a run's quests (quests.json; logic/run-quests.js) */
+export const QUESTS = /** @type {import('../types/game-data').QuestsData} */ (gameData.quests);
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
 /** RL-12b: the reward pick's cards */
@@ -429,6 +443,8 @@ export const REWARDS = /** @type {Record<string, import('../types/game-data').Re
 export const EVENTS = /** @type {import('../types/game-data').EventsData} */ (
   gameData.events || { loot: {}, classes: {}, events: {} }
 );
+/** RL-S1: the story director's lines (banter.json; logic/story-pick.js) */
+export const BANTER = /** @type {Record<string, import('../types/game-data').BanterLine>} */ (gameData.banter || {});
 /* roguelite track RL-11: the four currencies (currencies.json) */
 export const CURRENCIES = gameData.currencies || {};
 /* RL-11: the hub's buildings, each upgraded with one currency (buildings.json; levels are unlocks.json rows) */
@@ -611,7 +627,10 @@ export function trainerTeam(T) {
     if (e.sp === 'robot' && e.robot) {
       const R = e.robot,
         fit = Object.fromEntries(['torso', 'armL', 'armR', 'legs'].map(k => [k, { uid: '', id: R[k], up: 0 }]));
-      return makeRobot(R.gem, fit, e.lvl);
+      const m = makeRobot(R.gem, fit, e.lvl);
+      /* RL-14: a faction's bot goes by its name (factions.json) */
+      if (e.nick) m.nick = e.nick;
+      return m;
     }
     const m = makeBilly(/^@rival\d?$/.test(e.sp) ? rivalSpecies(e.sp) : e.sp, e.lvl),
       mv = Array.isArray(e.moves) ? e.moves.filter(k => MOVES[k]) : [];

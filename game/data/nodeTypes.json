@@ -5,5 +5,6 @@
  "event": {"name":"Waystation","engine":"scene","weight":2,"mark":"event"},
  "stall": {"name":"Stall","engine":"scene","weight":1,"mark":"shop","shop":true},
  "miniboss": {"name":"Mini-boss","engine":"scene","layout":true},
- "boss": {"name":"Boss","engine":"scene","layout":true}
+ "boss": {"name":"Boss","engine":"scene","layout":true},
+ "scrapyard": {"name":"Scrapyard","engine":"scene","layout":true,"chance":0.12,"fromRow":3}
 }

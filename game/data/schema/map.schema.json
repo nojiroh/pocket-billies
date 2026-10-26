@@ -24,7 +24,7 @@
   "people": {"description": "people who only talk (Project Story: their script; when / unless: there only while the story allows)", "type": "array", "items": {"type": "object", "required": ["id", "who"], "properties": {"id": {"type": "string"}, "who": {"type": "string"}, "script": {"type": "array", "items": {"type": "string"}}, "when": {"type": "string"}, "unless": {"type": "string"}}}},
   "props": {
    "type": "array",
-   "items": {"type": "object", "required": ["k", "x", "z"], "properties": {"k": {"type": "string", "minLength": 1}, "x": {"type": "number"}, "z": {"type": "number"}, "s": {"type": "number"}, "rot": {"description": "degrees it is turned about its base point (the middle of its front): positive turns its right-hand end away from you; -180 to 180", "type": "number", "minimum": -180, "maximum": 180}, "tilt": {"description": "HB-6: a model's lean about its base point: degrees its top leans toward its own right-hand end (+x) and toward its back (+z); a few degrees at most", "type": "array", "items": {"type": "number", "minimum": -8, "maximum": 8}, "minItems": 2, "maxItems": 2}}}
+   "items": {"type": "object", "required": ["k", "x", "z"], "properties": {"k": {"type": "string", "minLength": 1}, "x": {"type": "number"}, "z": {"type": "number"}, "s": {"type": "number"}, "rot": {"description": "degrees it is turned about its base point (the middle of its front): positive turns its right-hand end away from you; -180 to 180", "type": "number", "minimum": -180, "maximum": 180}, "tilt": {"description": "HB-6: a model's lean about its base point: degrees its top leans toward its own right-hand end (+x) and toward its back (+z); a few degrees at most", "type": "array", "items": {"type": "number", "minimum": -8, "maximum": 8}, "minItems": 2, "maxItems": 2}, "y": {"description": "hub placing: the height its base stands at (metres), not the ground's (the sky rail out over the sea, level with its station)", "type": "number"}}}
   },
   "chat": {"type": "array", "items": {"type": "string"}},
   "cam": {
@@ -70,7 +70,7 @@
    "required": ["v", "seed"],
    "properties": {"v": {"type": "integer", "minimum": 0}, "seed": {"type": "string"}, "dials": {"type": "object"}, "lock": {"description": "the ground is frozen: a change to it fails the data check (props stay free)", "type": "boolean"}, "hash": {"description": "the frozen ground's fingerprint (logic/island.js islandGroundHash)", "type": "string"}}
   },
-  "waterKind": {"description": "the kind of the map's water (walk/water-data.js WATER_KIND_LOOKS)", "enum": ["pond", "stream", "canal", "spring", "swamp", "lake", "sea", "lava", "ice"]},
+  "waterKind": {"description": "the kind of the map's water (logic/water-kinds.js WATER_KINDS)", "enum": ["pond", "stream", "canal", "spring", "swamp", "lake", "sea", "lava", "ice", "rapids", "hotspring", "oasis", "bog", "reef", "cave"]},
   "camZones": {"description": "CAM-2: camera zones (walk/camera.js): standing in one, the camera takes its zoom, tilt and aim offset; the highest priority wins. rect: x, z (corner), w, h; circle: x, z (centre), r. Metres.", "type": "array", "items": {"type": "object", "required": ["shape", "x", "z"], "additionalProperties": false, "properties": {
     "shape": {"enum": ["rect", "circle"]}, "x": {"type": "number"}, "z": {"type": "number"},
     "w": {"type": "number", "exclusiveMinimum": 0}, "h": {"type": "number", "exclusiveMinimum": 0}, "r": {"type": "number", "exclusiveMinimum": 0},

@@ -46,6 +46,16 @@ test('surf: deep water surfed, shallows waded, lava, ice and terrain flags as th
   assert.equal(s(0.5, 0.5), false, 'grass');
   assert.equal(s(6.5, 2.5), false, 'deep lava');
   assert.equal(s(2.5, 2.5, null, Object.assign(pond(), { waterKind: 'ice', waters: [] })), false, 'ice');
+  assert.equal(
+    s(2.5, 2.5, null, Object.assign(pond(), { waters: [{ x: 1, z: 1, w: 4, h: 3, k: 'rapids' }] })),
+    false,
+    'WA-5a: rapids'
+  );
+  assert.equal(
+    s(2.5, 2.5, null, Object.assign(pond(), { waterKind: 'bog', waters: [] })),
+    true,
+    "WA-5a: the bog's deep water"
+  );
   assert.equal(s(2.5, 2.5, { walk: 0 }), false, 'a terrain that says it is not walked');
   assert.equal(s(2.5, 2.5, { walk: 1 }), false, 'a terrain walked on: walkable already, not surfed');
   assert.equal(s(2.5, 2.5, null, Object.assign(pond(), { ride: 1 })), false, 'a riding scene: all walkable already');

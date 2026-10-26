@@ -163,7 +163,16 @@
    "ridge": {"ledges":3,"forest":2,"lanes":1},
    "autumn": {"forest":3,"farmland":2,"lanes":2,"lakeside":1}
   },
-  "wild": {"lv":[3,5],"perRow":1,"back":2,"waystation":2},
+  "wild": {
+   "lv": [3,5],
+   "perRow": 1,
+   "back": 2,
+   "waystation": 2,
+   "route": 10,
+   "routeMin": 4,
+   "habitats": {"water":["Water"],"woods":["Grass","Psychic","Dragon"]},
+   "rare": {"up":2}
+  },
   "seamIn": 6,
   "load": {"capMs":20000},
   "start": {
@@ -182,6 +191,41 @@
    "team": 6
   },
   "pack": [5],
+  "town": {
+   "cap": {"busy":3,"balanced":5,"best":6},
+   "locals": [1,2],
+   "names": [
+    "Old Tam",
+    "Auntie Rue",
+    "Farmer Bryn",
+    "Nell the Baker",
+    "Pip",
+    "Grandpa Oak",
+    "Mo",
+    "Widow Ash",
+    "Little Fen",
+    "Captain Rook",
+    "Dot",
+    "Uncle Hal",
+    "Bee",
+    "Sister Wren",
+    "Kip",
+    "Mags"
+   ],
+   "chat": {
+    "lakeland": ["Lakeland has more water than land. The ducks voted for it.","Every town in Lakeland has a jetty, even the dry ones."],
+    "greenbelt": [
+     "Greenbelt grows the best hedges in the land. We have the trophies.",
+     "They say the whole Greenbelt was a golf course once. A Billie lost a ball."
+    ],
+    "wildwood": ["Wildwood doesn’t do straight roads. Ask anyone who’s tried.","In Wildwood we don’t get lost. We get found later."],
+    "highland": ["In the Highland, every walk is uphill. Both ways.","Highland folk are tough. We have to be, the sheep are tougher."],
+    "harvest": [
+     "Harvest Country feeds half the land and the Billies eat the other half.",
+     "Ask a farmer in Harvest Country for the time and they’ll tell you the season."
+    ]
+   }
+  },
   "healCost": 60,
   "shop": {
    "always": ["coin:pyramid","potion"],
@@ -192,7 +236,14 @@
    "miniboss": {"up":2,"reward":300},
    "boss": {"up":3,"reward":600}
   },
-  "trainers": {"perRoute":[1,2],"up":0,"reward":150,"sight":6},
+  "trainers": {
+   "perRoute": [[4,4],[4,5],[5,6]],
+   "required": 0.5,
+   "pair": 0.33,
+   "up": 0,
+   "reward": 150,
+   "sight": 6
+  },
   "rewards": {"pick":3,"reroll":50,"grow":2},
   "perks": {
    "cap": 6,

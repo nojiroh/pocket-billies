@@ -5,7 +5,8 @@
    kinds (music.json cries.bases: beast, bird, slime, machine, fish, insect, ghost, suit), each its own few notes. A
    species sets base, pitch and length per stage (lines/*.json `cry`); what it leaves out comes from its id (a hash
    picks the kind and a pitch from 48 to 71). The low-HP cry is the same cry faster and a third down. sound.js plays
-   cryVoices; the Studio's Billies page plays the same. Logic only: no sound; runs in Node (tools/test/cries.test.mjs). */
+   cryVoices; the Studio's Billies page plays the same. RL-14: a bot's cry is the machine base, pitched by its build
+   (cryOfBot). Logic only: no sound; runs in Node (tools/test/cries.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
@@ -15,6 +16,8 @@ expose({
   cryHash: [() => cryHash, v => (cryHash = v)],
   // @ts-expect-error -- replaced on purpose
   cryLowHealth: [() => cryLowHealth, v => (cryLowHealth = v)],
+  // @ts-expect-error -- replaced on purpose
+  cryOfBot: [() => cryOfBot, v => (cryOfBot = v)],
   // @ts-expect-error -- replaced on purpose
   cryRecipe: [() => cryRecipe, v => (cryRecipe = v)],
   // @ts-expect-error -- replaced on purpose
@@ -83,4 +86,22 @@ export const CRY_LOW = { down: 3, speed: 0.75 };
  */
 export function cryLowHealth(C) {
   return { ...C, pitch: C.pitch - CRY_LOW.down, length: C.length * CRY_LOW.speed };
+}
+
+/** RL-14: a bot's cry (what a species' `cry` sets): the machine base, a heavier torso lower (5 kg a semitone below 64),
+ * a few semitones more from its sp's hash so two builds differ, the gem's length (a Volt gem quicker)
+ * @param {string} sp a robot's sp ('bot:<gem>.<torso>.<armL>.<armR>.<legs>')
+ * @param {{ parts: Record<string, { wt?: number }> }} robots robots.json
+ * @returns {{ base: string, pitch: number, length: number }} */
+export function cryOfBot(sp, robots) {
+  const ids = String(sp || '')
+      .slice(4)
+      .split('.'),
+    T = robots && robots.parts[ids[1]],
+    wt = T && typeof T.wt === 'number' ? T.wt : 40;
+  return {
+    base: 'machine',
+    pitch: Math.max(36, Math.min(76, 64 - Math.round(wt / 5) + (cryHash(sp) % 5))),
+    length: ids[0] === 'volt' ? 0.8 : ids[0] === 'tide' ? 1.15 : 1,
+  };
 }

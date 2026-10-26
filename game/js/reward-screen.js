@@ -8,11 +8,12 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOverlay, toast, typeBadgeHTML } from './hooks.js';
-import { ITEMS, MOVES, PYRAMIDS, RULES } from './game-data.js';
+import { CURRENCIES, ITEMS, MOVES, PYRAMIDS, RULES } from './game-data.js';
+import { ROBOT_SLOT_NAMES, robotPartDef } from './logic/fighters.js';
 import { billyName } from './logic/rules.js';
 import { rewardDataGame, rewardReroll, rewardRerollCost, rewardTake, tutorWho } from './logic/rewards.js';
 import { escapeHtml, saveData, saveNow, uiState } from './game-state.js';
-import { moneyHTML, pyramidHTML } from './art.js';
+import { artURL, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { bustHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
 /* eslint-disable no-func-assign */
@@ -36,6 +37,17 @@ let rewardThen = /** @type {(() => void) | null} */ (null);
 /** a card as a pick card @param {import('../types/save-data').RewardCard} c @param {number} k @param {boolean} on */
 function rewardCardHTML(c, k, on) {
   const n = c.n && c.n > 1 ? `${c.n} × ` : '';
+  /* RL-14: a salvage pick's cards: a bot's part (into your parts) and a stack of Scrap */
+  if (c.kind === 'part') {
+    const P = robotPartDef(/** @type {string} */ (c.item)) || { name: c.item, d: '', type: 'None' },
+      M = P.move && MOVES[P.move],
+      img = P.art && P.art.img;
+    return `<pb-pick-card data-k="${k}" heading="${escapeHtml(P.name)}" sub="Bot part · ${escapeHtml(ROBOT_SLOT_NAMES[P.slot === 'arm' ? 'armL' : P.slot] || P.slot || '')}"${on ? ' selected' : ''}><span slot="art">${img ? `<img class="part-pic" src="${escapeHtml(artURL(img))}" width="40" height="40" alt="">` : typeBadgeHTML(P.type)}</span>${escapeHtml(P.d || '')}${M ? ` Gives ${escapeHtml(M.n)}.` : ''} Kept for the Workshop.</pb-pick-card>`;
+  }
+  if (c.kind === 'scrap') {
+    const C = CURRENCIES.scrap || { name: 'Scrap' };
+    return `<pb-pick-card data-k="${k}" heading="${escapeHtml(`${c.n || 1} ${C.name}`)}" sub="Salvage"${on ? ' selected' : ''}><span slot="art">${uiIconHTML('scrap', 40)}</span>Melted down and sent home: ${escapeHtml(C.name)} builds up the ranch and the Workshop.</pb-pick-card>`;
+  }
   if (c.kind === 'tutor') {
     const M = MOVES[/** @type {string} */ (c.move)] || { n: c.move, t: 'None', d: '' };
     return `<pb-pick-card data-k="${k}" heading="${escapeHtml(M.n)}" sub="Move tutor"${on ? ' selected' : ''}><span slot="art">${typeBadgeHTML(M.t)}</span>${escapeHtml(M.d || '')}${M.p ? ` Power ${M.p}.` : ''}</pb-pick-card>`;
@@ -57,7 +69,7 @@ function rewardSheet(M) {
 }
 
 /** the run's reward pick as a sheet (nothing when there is none) @param {() => void} [then] */
-function rewardPickOpen(then) {
+export function rewardPickOpen(then) {
   if (then) rewardThen = then;
   const run = saveData.run,
     R = run && run.enc && run.enc.reward;
@@ -66,26 +78,32 @@ function rewardPickOpen(then) {
     return;
   }
   const sel = typeof uiState.rewardSel === 'number' && R.cards[uiState.rewardSel] ? uiState.rewardSel : null,
-    cost = rewardRerollCost(R, RULES.run.rewards);
+    cost = rewardRerollCost(R, RULES.run.rewards),
+    /* RL-14: what the bots left (logic/rewards.js salvageOfferMake): never rerolled */
+    salvage = R.kind === 'salvage';
   rewardSheet({
-    title: 'Pick a reward',
+    title: salvage ? 'Salvage' : 'Pick a reward',
     cls: 'reward-pick',
     lock: true,
-    html: `<p>${R.from.startsWith('event:') ? 'Take one.' : 'Your opponent left a few things behind. Take one.'}</p><div class="relic-cards">${R.cards.map((c, k) => rewardCardHTML(c, k, k === sel)).join('')}</div>`,
+    html: `<p>${salvage ? 'The bots came apart. Take one piece of what is left.' : R.from.startsWith('event:') ? 'Take one.' : R.from.startsWith('quest:') ? 'A thank-you for the quest. Take one.' : 'Your opponent left a few things behind. Take one.'}</p><div class="relic-cards">${R.cards.map((c, k) => rewardCardHTML(c, k, k === sel)).join('')}</div>`,
     btns: [
       { l: 'Take it', c: 'gold', dis: sel == null, f: () => rewardTakeTap(/** @type {number} */ (sel)) },
-      {
-        l: `Reroll ${moneyHTML(cost, 12)}`,
-        c: 'dark',
-        dis: saveData.se < cost,
-        f: () => {
-          if (rewardReroll(run, saveData, rewardDataGame(saveData.team))) return;
-          uiState.rewardSel = null;
-          saveNow();
-          if (typeof debugLog !== 'undefined') debugLog.add('scene', `reward reroll ${R.rolls}`);
-          rewardPickOpen();
-        },
-      },
+      ...(salvage
+        ? []
+        : [
+            {
+              l: `Reroll ${moneyHTML(cost, 12)}`,
+              c: 'dark',
+              dis: saveData.se < cost,
+              f: () => {
+                if (rewardReroll(run, saveData, rewardDataGame(saveData.team))) return;
+                uiState.rewardSel = null;
+                saveNow();
+                if (typeof debugLog !== 'undefined') debugLog.add('scene', `reward reroll ${R.rolls}`);
+                rewardPickOpen();
+              },
+            },
+          ]),
       { l: 'Take none', c: 'quiet', f: () => rewardAnswer(null) },
     ],
     after: () => {
@@ -191,7 +209,9 @@ function rewardAnswer(k, o) {
   } else if (c && c.kind === 'held' && o && o.uid) {
     const m = saveData.team.find(b => b.uid === o.uid);
     if (m && m.held === c.item) toast(`${billyName(m)} is holding the ${ITEMS[/** @type {string} */ (c.item)].n}.`);
-  } else if (c && c.item) toast(`Into the bag.`);
+  } else if (c && c.kind === 'part') toast(`Into your parts, for the Workshop.`);
+  else if (c && c.kind === 'scrap') toast(`${c.n || 1} Scrap sent home.`);
+  else if (c && c.item) toast(`Into the bag.`);
   rewardDone();
 }
 /** an event waiting on the pick goes on */

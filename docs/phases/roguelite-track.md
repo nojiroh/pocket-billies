@@ -1034,7 +1034,7 @@ reflavour-track.md section 4).
 | RL-R1 | Region generator | `regions.json` themes (zones, biome graph, type leanings, name parts); `runRegionMake(seed)` → name, zones, regional dex (15-25 species and forms), leader picks by type; `run.map` rows follow the zones; the bowl shows zone bands and the region's name | RO-1 | 1-2 |
 | RL-R2 | Side areas and field moves | `run.map` side branches (detours on most runs, rare alternate paths with their own mini-boss/boss); field links (dock, cave mouth, overgrown arch) with a travel moment; `meta.badges`; Surf, Dig, Cut checks (type + badge); a cave scene type and a cove scene from the island kit | RL-R1 | 2 |
 | RL-12b | Encounters (was "events and waystations") | `events.json` PokeRogue-style: 2-3 options with requirements (a type in the team, an item, money, a badge, a relationship) and outcomes as effect rows and script commands (`relic`, `wager`, `give`, `battle`); waystation places; **reward picks after trainer battles** (`rewards.json`: items, move tutors, candy levels, evolution items; a paid reroll); route trainers who battle on sight; the no-two-shops rule; first 15-20 events drafted by Claude, approved by the owner | RL-R1 | 2 |
-| RL-S1 | Story director | `meta.history` (the last 20 runs: seed, region, result, what beat you, team, Loopholes, leaders, rival result); `lines.json` (who, text, `when`, priority, `once`, cooldown, `must`) on the story layer's conditions plus new kinds (`last:`, `history:`, `rel:`, `chapter:`); `storyPick(who)` on each return to the hub; leaders and agents' in-run lines from the same table; the return-from-a-loss scene (Chosen's credit, Hazel's doubt) | RL-12b | 1-2 |
+| RL-S1 | Story director (**done 2026-10-25**, branch `track/story`; `banter.json`, not `lines.json`) | `meta.history` (the last 20 runs: seed, region, result, what beat you, team, Loopholes, leaders, rival result); `lines.json` (who, text, `when`, priority, `once`, cooldown, `must`) on the story layer's conditions plus new kinds (`last:`, `history:`, `rel:`, `chapter:`); `storyPick(who)` on each return to the hub; leaders and agents' in-run lines from the same table; the return-from-a-loss scene (Chosen's credit, Hazel's doubt) | RL-12b | 1-2 |
 | RL-S2 | Rival and relationships | Blake as a `rival` node (shared with RL-15's ghost node): `rivalTeam(starter, history, row)` counters your starter and grows over runs; `meta.rel` per hub character, gifts and favours, what each level unlocks; Chapter 1's beats | RL-S1 | 1-2 |
 | RL-13 | Expeditions, challenges, starter points (**done 2026-10-24**; HANDOFF has what changed and where this shape was wrong) | `modifiers.json` brackets I-V (as section 3), challenge modes as modifiers (mono-type, no healing, ...); **starter points**: species unlocked by catching, a cost per species and stage, a budget by bracket, the mast's pick reworked; the region's leaders as the mini-boss pool | RL-R2 | 1-2 |
 | RL-14 | The organization's bots, salvage, the Voltron | as section 4, with the bots as the organization's army: its agents as trainers and events, the Voltron as Chapter 1's boss | RL-13, RL-S1 | 2 |
@@ -1142,6 +1142,39 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   preview gives a stall's shop by day and each waystation's first-drawn event.
 - **RL-12b, RL-S1, RL-S2, RL-13:** files and tests as their rows say; each adds a fast-check page and an in-game test
   step, as earlier RL sessions did.
+- **The story sessions (RL-S1, RL-S2)** live on one branch (made from main 2026-10-25 at the owner's word).
+  Branch: track/story
+- **RL-S1 as built (2026-10-25; HANDOFF has the detail).** The table is **`banter.json`**, not `lines.json` (`lines`
+  is the Billie evolution lines' section; the owner chose the name). `logic/run-history.js` (`meta.history`, the newest
+  20; what beat you is caught in `battleSettle` as `run.lostTo`, the leaders beaten as `run.beat`; the entry is made in
+  `runEnd`, so the sim records it too), condition kinds `last:`, `lastby:`, `history:`, `rematch` (**`rel:` and
+  `chapter:` moved to RL-S2**, the owner: `rel:` reads RL-S2's `meta.rel`; `chapter:` would duplicate `expedition`
+  until Chapter 1's beats say more), `logic/story-pick.js storyPick` and the script command `pick <who>`, the hub's
+  fresh lines (replacing the first talk after a run, the owner's choice), story.json `scripts.back-lost`, and the
+  leaders' and Bureau agents' words in runs. "Hazel's mast lines" (RL-8) never existed in the code.
+
+- **The bots sessions (RL-14a, RL-14b)** were meant for a branch of their own (`track/bots`); RL-14a was built on its
+  session's branch, `ccr-15fdd30c-5nfh0d`, at the owner's word (2026-10-26). RL-14b starts on `track/bots` once the
+  owner makes it from main.
+  Branch: track/bots
+- **RL-14 split (the owner, 2026-10-26).** RL-14a: the Bureau's bots, salvage, the scrapyard; RL-14b: the Voltron
+  (`bosses.json`, `alphaPhase` from data, the join intro, the story scene last, beside RL-S2). The owner's answers: the
+  build may start on the session branch; salvage is 2 parts + 1 Scrap stack (parts kept in `saveData.parts` for SP-5
+  and the Workshop); the Voltron is Expedition I's boss only (leaders stay the boss from II up); wild bots yes, rare;
+  the scrapyard built in RL-14a; the Voltron's four boss parts placeholders drawn by robot-art.js; phase 17's numbers
+  kept, tuned by the sim, the gem's story role left open.
+- **RL-14a as built (2026-10-26; HANDOFF has the detail).** `factions.json` (the Bureau: six bots, `wild` 10% from row
+  3 in six biomes, `agents` the Bureau Clerk and a new Reclamation Agent with 1-2 bots, `scrapyard`, `salvage`),
+  `logic/factions.js`; `rules.js spawnBot` (a wild bot is a wild entry with a robot's sp), `battle-engine.js
+  startWildBot` and `catchable`; `encounters.js encClassFoe` fields an agent's bots from a stream of their own;
+  `battle-rewards.js battleSalvage` and `rewards.js salvageOfferMake` (salvage in place of a reward pick, never
+  rerolled; a part into `saveData.parts`, Scrap into `meta.scrap`); a `scrapyard` node type by its own `chance` (12%)
+  from `fromRow` 3, not a weight (a weight moved every free node's draw), with its agents (`scrapyardAgents`) and set
+  pieces by a scene `site` dial (setPieces.json `sites`, the Scrap heap); bots' cries (`cries.js cryOfBot`); a broken
+  part drops off the battle stage. Where the plan was wrong: the robot prototype was already in main (not only on
+  `archive/phase-17-robots`), robots have no head slot, `trainerTeam` already took robot entries, the Bureau's agents
+  already existed (`bureau_clerk`, RL-S1), so "Collectors" are Bureau agents; wild bots are full builds, not
+  `'bot:<torso>'`.
 
 ### 9.5 The organization: three name options (superseded 2026-10-23: finance names; see reflavour-track.md section 4)
 

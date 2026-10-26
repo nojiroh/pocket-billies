@@ -25,7 +25,7 @@ import {
   hubRoadCost,
 } from '../game-data.js';
 import { graftStability } from './genes.js';
-import { isRobot, robotGemDef, robotPartDef, robotRules, speciesOf } from './fighters.js';
+import { isRobot, robotGemDef, robotPartDef, robotRules, speciesById, speciesOf } from './fighters.js';
 import { billyGraft, cleanName, geneData, geneLimit, movesAt, refreshRobot, teamSize, unstableTidy } from './rules.js';
 import { metaFill, newMeta, validMeta } from './meta-state.js';
 import { newRanch, ranchFill, validRanch } from './ranch-state.js';
@@ -173,8 +173,9 @@ export function saveFill(o) {
   for (const key of ['seen', 'caught'])
     if (s[key] && typeof s[key] === 'object') for (const id of Object.keys(s[key])) if (!SPECIES[id]) delete s[key][id];
   if (!s.wild || typeof s.wild !== 'object') s.wild = {};
+  /* RL-14: a wild one may be a bot (a robot's sp, built from parts the data still has) */
   for (const w of Object.values(s.wild)) {
-    w.list = (w.list || []).filter(q => SPECIES[q.sp]);
+    w.list = (w.list || []).filter(q => speciesById(q.sp));
     w.list.forEach(q => graftTidy(q));
   }
   s.eggs = s.eggs.filter(e => EGGS[e.tier]);
@@ -270,7 +271,7 @@ export function validSave(o) {
         !num(w.at, 0, 1e13) ||
         !Array.isArray(w.list) ||
         w.list.length > 12 ||
-        w.list.some(q => !q || !SPECIES[q.sp] || !num(q.lvl, 1, 100) || !graftShapeOk(q.graft))
+        w.list.some(q => !q || !speciesById(q.sp) || !num(q.lvl, 1, 100) || !graftShapeOk(q.graft))
     )
   )
     return false;

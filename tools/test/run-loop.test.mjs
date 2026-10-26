@@ -115,8 +115,10 @@ test("the run's foes: a leader on every mini-boss node and the boss's, none twic
       assert.equal(F.node, i + 1);
       assert.equal(Math.max(...F.team.map(e => e.lvl)), top);
       assert.ok(F.team.every(e => e.lvl >= 1 && e.lvl <= 100));
-      for (const k of ['script', 'seat', 'egg', 'runsUp', 'after', 'when', 'unless', 'hint', 'miniboss'])
+      for (const k of ['seat', 'egg', 'runsUp', 'after', 'when', 'unless', 'hint', 'miniboss'])
         assert.ok(!(k in F), `a run foe has no ${k}`);
+      /* RL-S1: not its file's script: a word the story director picks, then the battle */
+      assert.deepEqual(F.script, ['pick leader', `battle ${F.id}`]);
       assert.ok(!/Badge/.test(F.win), F.win);
       if (node.type === 'miniboss') {
         assert.deepEqual([F.blocks, F.double, F.alpha], [true, true, undefined]);

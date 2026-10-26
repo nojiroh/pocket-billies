@@ -4,13 +4,16 @@
    items, the title's town rise and tap targets, moved from walk-view-gl.js as they were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { loadingScreen, provide, reducedMotion } from '../hooks.js';
+import { loadingScreen, provide, questMarked, reducedMotion, talkBox } from '../hooks.js';
 import { clamp } from '../util.js';
 import { pictureFacing } from '../logic/prop-turn.js';
+import { hiddenEase, outlineColour } from '../logic/occlude.js';
 import { INTEREST_DEFAULTS } from '../logic/camera-interest.js';
 import { filterInto } from '../engine/frame-lists.js';
 import { makeCanvas } from '../art.js';
+import { lookOf, wardrobeData } from '../person-art.js';
 import {
+  LABEL_GOLD,
   actionLabel,
   actionSpot,
   approachPoint,
@@ -34,6 +37,7 @@ expose({
   BOX_INFO_CACHE: [() => BOX_INFO_CACHE],
   DOOR_INTEREST: [() => DOOR_INTEREST],
   IMAGE_IDS: [() => IMAGE_IDS],
+  OUTLINE_COLOURS: [() => OUTLINE_COLOURS],
   SILHOUETTE_AMOUNT: [() => SILHOUETTE_AMOUNT],
   SILHOUETTE_PULL: [() => SILHOUETTE_PULL],
   SILHOUETTE_TINT: [() => SILHOUETTE_TINT],
@@ -49,12 +53,18 @@ expose({
   drawPlayerSilhouette: [() => drawPlayerSilhouette, v => setDrawPlayerSilhouette(v)],
   drawRotatingBlades: [() => drawRotatingBlades, v => (drawRotatingBlades = v)],
   drawSprites: [() => drawSprites, v => setDrawSprites(v)],
+  easeHidden: [() => easeHidden, v => (easeHidden = v)],
+  hideQuery: [() => hideQuery],
   imageId: [() => imageId, v => (imageId = v)],
   imageIdCount: [() => imageIdCount, v => (imageIdCount = v)],
   interestPoints: [() => interestPoints, v => (interestPoints = v)],
   landmarkTilt: [() => landmarkTilt, v => (landmarkTilt = v)],
+  outlineColourOf: [() => outlineColourOf, v => (outlineColourOf = v)],
+  personWho: [() => personWho, v => (personWho = v)],
+  readHideQueries: [() => readHideQueries, v => (readHideQueries = v)],
   spriteDrawn: [() => spriteDrawn],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
+  talkPartner: [() => talkPartner, v => (talkPartner = v)],
   townRiseAmount: [() => townRiseAmount, v => (townRiseAmount = v)],
   useFxProgram: [() => useFxProgram, v => (useFxProgram = v)],
 });
@@ -131,7 +141,6 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   const gl = gpuState.gl,
     p = useWalkProgram('sprite', C, X),
     U = p.U,
-    P = walkView.pl,
     sc = walkView.sc,
     sun = X.sun;
   bindQuad();
@@ -150,7 +159,6 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   gl.uniform1f(U.uEmit, 0);
   gl.uniform1f(U.uFlipN, 1);
   gl.uniform1f(U.uFixed, 0);
-  const me = worldToScreen(C, P.x, 0.9, P.z);
   if (walkRenderer.bfade) walkRenderer.bfade.clear();
   else walkRenderer.bfade = new Map();
   const sd = sun.dir,
@@ -177,15 +185,8 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     if (!T) continue;
     const s = it.mpp,
       hM = -it.oy * s;
-    let fade = it.fade ?? 1;
-    if (me && !walkRenderer.bt && !it.person && it.k === 'prop' && hM > 1.6) {
-      const q = worldToScreen(C, it.x, 0, it.z);
-      if (q && q.d < me.d - 0.3) {
-        const half = it.w * s * 0.5 * q.s,
-          top = q.y - hM * q.s;
-        if (me.x > q.x - half && me.x < q.x + half && me.y > top && me.y < q.y) fade = 0.4;
-      }
-    }
+    /* player visibility: a picture covering you is thinned out already (walk/quality-cull.js coverItems) */
+    const fade = it.fade ?? 1;
     const rk = walkRenderer.rise ? townRiseAmount(it) : 1;
     if (rk < 0.002 && !it.person) continue;
     if (it.bld3) {
@@ -298,24 +299,86 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
    Worked out once per picture: where the walls stand at the base, which rows reach each wall (so a gable or an
    awning shapes the side), the wall colour just inside each edge and the roof colour at the eaves. */
 const BOX_INFO_CACHE = new WeakMap();
-/* terrain TR-3: your silhouette through rock. Where ground cuts the camera's line to you (walk/camera.js rockK), you
-   are drawn again as a flat dithered tint wherever something clearly nearer the camera hides you (depth GREATER, the
-   picture pulled 0.6 m toward the eye so the ground at your feet doesn't count); nothing is written to depth. Off on
-   flat ground, indoors, in battle and with Engine > Camera > "Your silhouette through rock" off */
+/* terrain TR-3, then player visibility: your silhouette wherever something hides you (rock, a building, a tree, a
+   model). You are drawn again as a flat dithered tint wherever something clearly nearer the camera hides you (depth
+   GREATER, the picture pulled 0.8 m toward the eye so the ground at your feet, grass and low things right by you don't
+   count); nothing is written to depth. A first, invisible draw of the whole picture is an occlusion query: its answer
+   (a frame or two late) says whether anything hides you at all, eased into walkRenderer.hidK (0-1), which turns on
+   the see-through circle (draw-common.js rockUniformsFor). Off indoors, in battle and with Engine > Camera >
+   "Your outline when hidden" off */
 const SILHOUETTE_TINT = [0.16, 0.27, 0.55],
   SILHOUETTE_AMOUNT = 0.55,
-  SILHOUETTE_PULL = 0.6;
+  SILHOUETTE_PULL = 0.8;
+/* player visibility: the outline's colour is the colour of the top someone wears (logic/occlude.js outlineColour
+   lifts a dark one), looked up at most once a second for each person ('me', a person's id, 'folk:<seed>') */
+const OUTLINE_COLOURS = new Map();
+function outlineColourOf(who) {
+  const now = performance.now(),
+    e = OUTLINE_COLOURS.get(who);
+  if (e && now - e.t < 1000) return e.c;
+  let hex = null;
+  try {
+    const L = lookOf(who),
+      top = L && L.wear && L.wear.top,
+      I = top && wardrobeData() && wardrobeData().items[top];
+    hex = (top && L.colors[top] && L.colors[top][0]) || (I && I.colors && I.colors[0] && I.colors[0][1]) || null;
+  } catch (err) {
+    hex = null;
+  }
+  const c = outlineColour(hex) || SILHOUETTE_TINT;
+  OUTLINE_COLOURS.set(who, { t: now, c });
+  return c;
+}
+/* the occlusion queries in flight, oldest first (made on gpuState.gl; a lost context drops them) */
+const hideQuery = { gl: null, q: /** @type {WebGLQuery[]} */ ([]), at: 0 };
+function readHideQueries(gl) {
+  if (hideQuery.gl !== gl) ((hideQuery.gl = gl), (hideQuery.q = []));
+  const Q = hideQuery.q;
+  try {
+    while (Q.length && gl.getQueryParameter(Q[0], gl.QUERY_RESULT_AVAILABLE)) {
+      const q = Q.shift();
+      walkRenderer.hidT = gl.getQueryParameter(q, gl.QUERY_RESULT) ? 1 : 0;
+      gl.deleteQuery(q);
+    }
+  } catch (e) {
+    hideQuery.q = [];
+  }
+}
+function easeHidden(on) {
+  const now = performance.now(),
+    dt = Math.min(0.1, Math.max(0, (now - (hideQuery.at || now)) / 1000));
+  hideQuery.at = now;
+  if (!on) walkRenderer.hidT = 0;
+  walkRenderer.hidK = hiddenEase(walkRenderer.hidK || 0, on ? walkRenderer.hidT || 0 : 0, dt);
+}
+/* player visibility: the one you are talking to (walkRenderer.talkAt marks where) shows the same way, in their top's
+   colour, while the conversation is open; it doesn't count toward your hidden amount */
+function talkPartner(items) {
+  const ta = walkRenderer.talkAt;
+  if (!talkBox || !talkBox.on || !ta) return null;
+  let best = null,
+    bd = 1.5;
+  for (const it of items)
+    if ((it.k === 'npc' || it.k === 'folk') && it.im) {
+      const d = Math.hypot(it.x - ta.x, it.z - ta.z);
+      if (d < bd) ((bd = d), (best = it));
+    }
+  return best;
+}
+function personWho(it) {
+  return it.k === 'me' ? 'me' : it.n ? it.n.who : it.f ? 'folk:' + it.f.seed : null;
+}
 export function drawPlayerSilhouette(C, items, X) {
-  const sc = walkView.sc,
-    k = C.rockK || 0;
-  if (walkRenderer.bt || !sc || sc.indoor || sc.room || k < 0.01 || !engineSetting('camera', 'silhouette')) return 0;
+  const sc = walkView.sc;
+  if (walkRenderer.bt || !sc || sc.indoor || sc.room || !engineSetting('camera', 'silhouette'))
+    return (easeHidden(false), 0);
   const it = items.find(i => i.k === 'me');
-  if (!it || !it.im) return 0;
-  const T = imageTexture(it.im);
-  if (!T) return 0;
+  const T = it && it.im && imageTexture(it.im);
+  if (!T) return (easeHidden(false), 0);
   const gl = gpuState.gl,
     p = useWalkProgram('sprite', C, X),
     U = p.U;
+  readHideQueries(gl);
   bindQuad();
   gl.uniform3fv(U.uRight, C.right);
   gl.uniform3fv(U.uBack, C.back);
@@ -325,21 +388,48 @@ export function drawPlayerSilhouette(C, items, X) {
   gl.uniform1f(U.uAlpha, 1);
   gl.uniform1f(U.uFade, 1);
   if (U.uWave) gl.uniform3f(U.uWave, 0, 0, 0);
-  gl.uniform4f(U.uGhost, SILHOUETTE_TINT[0], SILHOUETTE_TINT[1], SILHOUETTE_TINT[2], SILHOUETTE_AMOUNT * k);
   gl.uniform4f(U.uGhostV, C.eye[0], C.eye[1], C.eye[2], SILHOUETTE_PULL);
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, T.t);
-  setSpriteUniforms(p, it);
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.GREATER);
   gl.depthMask(false);
   gl.disable(gl.BLEND);
-  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  gl.bindTexture(gl.TEXTURE_2D, T.t);
+  setSpriteUniforms(p, it);
+  /* the query: every pixel of you, nothing drawn; one in flight at a time is plenty */
+  if (hideQuery.q.length < 2) {
+    const q = gl.createQuery();
+    gl.colorMask(false, false, false, false);
+    gl.uniform4f(U.uGhost, 0, 0, 0, 1);
+    gl.beginQuery(gl.ANY_SAMPLES_PASSED_CONSERVATIVE, q);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    gl.endQuery(gl.ANY_SAMPLES_PASSED_CONSERVATIVE);
+    gl.colorMask(true, true, true, true);
+    hideQuery.q.push(q);
+  }
+  const ow = +(engineSetting('camera', 'outline') ?? 1) || 0,
+    fill = Math.max(0.001, +(engineSetting('camera', 'outlineFill') ?? 0.25));
+  if (U.uGhostE) gl.uniform1f(U.uGhostE, ow);
+  const ghost = who => {
+    const tint = ow > 0 ? outlineColourOf(who) : SILHOUETTE_TINT;
+    gl.uniform4f(U.uGhost, tint[0], tint[1], tint[2], ow > 0 ? fill : SILHOUETTE_AMOUNT);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  };
+  ghost('me');
+  const pt = talkPartner(items),
+    PT = pt && imageTexture(pt.im);
+  if (PT) {
+    gl.bindTexture(gl.TEXTURE_2D, PT.t);
+    setSpriteUniforms(p, pt);
+    ghost(personWho(pt));
+  }
+  if (U.uGhostE) gl.uniform1f(U.uGhostE, 0);
   gl.depthFunc(gl.LEQUAL);
   gl.depthMask(true);
   gl.uniform4f(U.uGhost, 0, 0, 0, 0);
   gl.uniform4f(U.uGhostV, 0, 0, 0, 0);
-  return 1;
+  easeHidden(true);
+  return walkRenderer.hidT ? 1 : 0;
 }
 function boxInfo(im) {
   let B = BOX_INFO_CACHE.get(im);
@@ -704,6 +794,13 @@ export function addHitTarget(it, C, hits, labels, PPU) {
     /* RL-12b: a route trainer's "!" only once it has spotted you */
     if (!it.n.done && (!it.n.route || walkView.spotted[it.n.id]))
       labels.push({ k: 'bang', x: q.x, y: box.y0, col: it.n.col || '#D9434B' });
+    /* TW-3: a quest giver's gold "!" while their town's offer is open */ else if (
+      it.n.talk &&
+      it.n.talk.quest &&
+      typeof questMarked === 'function' &&
+      questMarked(it.n.talk)
+    )
+      labels.push({ k: 'bang', x: q.x, y: box.y0, col: LABEL_GOLD });
   } else if (it.k === 'folk') {
     hits.push({ k: 'folk', f: it.f, ...box, x0: q.x - 16 * k, x1: q.x + 16 * k, z: q.d });
     if (it.f.sayT > 0) labels.push({ k: 'say', x: q.x, y: box.y0 - 2, t: it.f.say, a: Math.min(1, it.f.sayT * 3) });

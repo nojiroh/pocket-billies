@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { cryHash, cryLowHealth, cryRecipe, cryVoices } from '../../game/js/logic/cries.js';
+import { cryHash, cryLowHealth, cryOfBot, cryRecipe, cryVoices } from '../../game/js/logic/cries.js';
 
 const BASES = JSON.parse(readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8')).cries.bases;
 
@@ -51,4 +51,15 @@ test("the voices: the base's notes over the species' pitch; length stretches whe
   const C = cryRecipe('x', { base: 'k', pitch: 60, length: 1 }, { k: B }),
     L = cryLowHealth(C);
   assert.deepEqual([L.pitch, L.length, L.base], [57, 0.75, 'k']);
+});
+
+test('RL-14: a bot cries with the machine base, a heavier torso lower, the same build the same cry', () => {
+  const R = JSON.parse(readFileSync(new URL('../../game/data/robots.json', import.meta.url), 'utf8')),
+    heavy = cryOfBot('bot:ember.bulwark.clamp.cinder.treads', R),
+    light = cryOfBot('bot:ember.vane.clamp.cinder.treads', R);
+  assert.equal(heavy.base, 'machine');
+  assert.ok(heavy.pitch < light.pitch, `${heavy.pitch} < ${light.pitch}`);
+  assert.deepEqual(cryOfBot('bot:ember.vane.clamp.cinder.treads', R), light);
+  assert.ok(cryOfBot('bot:volt.vane.clamp.cinder.treads', R).length < 1, 'a Volt gem quicker');
+  assert.equal(cryRecipe('bot:x', heavy, BASES).base, 'machine');
 });
