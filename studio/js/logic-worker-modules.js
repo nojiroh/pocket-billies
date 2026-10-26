@@ -8,6 +8,8 @@
    bundles this file into one (vite.config.js), with the one hooks.js its modules share. */
 import './logic-worker-page.js';
 import '../../game/js/game-data.js';
+import '../../game/js/logic/art-refs.js';
+import '../../game/js/logic/art-search.js';
 import '../../game/js/logic/augments.js';
 import '../../game/js/logic/battle-engine.js';
 import '../../game/js/logic/battle-facing.js';
@@ -43,6 +45,7 @@ import '../../game/js/logic/fighters.js';
 import '../../game/js/logic/float-island.js';
 import '../../game/js/logic/fog-grid.js';
 import '../../game/js/logic/forms.js';
+import '../../game/js/logic/frame-strips.js';
 import '../../game/js/logic/free-camera.js';
 import '../../game/js/logic/gene-bank.js';
 import '../../game/js/logic/gene-events.js';
@@ -56,6 +59,7 @@ import '../../game/js/logic/island.js';
 import '../../game/js/logic/kit-assemble.js';
 import '../../game/js/logic/kit-pixels.js';
 import '../../game/js/logic/lens-focus.js';
+import '../../game/js/logic/lite-tile.js';
 import '../../game/js/logic/mapgen.js';
 import '../../game/js/logic/messages.js';
 import '../../game/js/logic/meta-state.js';
