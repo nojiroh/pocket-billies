@@ -335,6 +335,26 @@ D2. **`mediump` where it is safe.** Colour, fog, grade, bloom and look maths in 
 D3. **`invalidateFramebuffer`** after each pass whose depth (or colour) is not read again: the scene depth after the
     post passes that read it, each bloom level after use, the shadow maps' unused parts. A table of every render target,
     who reads it and when it can be dropped.
+    **The table (R2 pixels, 2026-10-26, checked in the code).** Every render target (engine/webgl.js `renderTarget`;
+    sizes from the scene's rw x rh), who writes and reads it, and what `quality.invalidate` drops. A tiled chip
+    (the phones') loads a target's old content into its tiles unless it was cleared or dropped, and stores what it
+    drew unless dropped; dropping something read later would break the picture.
+
+    | Target | Size, kind | Written by | Read by | Dropped |
+    |---|---|---|---|---|
+    | `scene` | rw x rh, colour (16F) + depth | the walk frame (cleared first) | colour: bloom's bright pass, blur, shafts, grade; depth: blur, AO, shafts, vol, grade | nothing: it is cleared at the start (as good as a drop) and both halves are read after; once the grade has read it the data is already stored, so a drop then saves nothing |
+    | `refl` | rw/2 x rh/2, colour + depth | reflectionPass (cleared first) | colour: the water; depth: nobody | its depth, right after the pass (not stored) |
+    | `shadow`, the far map, `lamp0`, `lamp1` | square, depth only | the shadow passes (cleared first) | every lit program | nothing (read after); unused parts of a map are never drawn |
+    | `shadowS` | square, depth only | a blit of the far map (the still-shadows cache) | blitted back each frame | nothing |
+    | `dof` | rw/2 x rh/2, colour | the blur (full or cheap 'up') | grade | its old colour, before the pass |
+    | `dofk0`, `dofk1` | 1/2, 1/4, colour | the cheap blur's 'down' passes | the next step | old colour, before each |
+    | `b0` ... `b4` | 1/2 down to 1/32, colour | bright pass, then 'down' passes; then the 'up' passes blend into b3...b0 | the next level; grade reads b0 | old colour before the bright and 'down' passes only (the 'up' passes add to what is there) |
+    | `ao` | 1/2, colour (8 bit) | AO pass | grade | old colour, before |
+    | `rays` | 1/4, colour | shafts pass | grade | old colour, before |
+    | `vol0`, `vol1` | 1/4, colour | vol pass, then its softening | vol1: grade | old colour, before each |
+    | the screen | the canvas | grade | the page | colour, depth and stencil, before the grade (the canvas's depth is never used) |
+    | `snap` | up to 480 px, colour | screenSnapshot (a blit, rare) | the debug log's picture | nothing (rare) |
+
 D4. **Phone pixel budget.** A separate budget for phones (proposal: 1.2 MP instead of 1.6 MP) and the adaptive scale
     starting one step lower on phones. **Ask me before:** the number.
 D5. **Overdraw in groves.** Cut-out sprites (`discard`) stop the GPU from skipping hidden pixels early. Options, to be

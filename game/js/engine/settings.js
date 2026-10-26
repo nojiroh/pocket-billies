@@ -279,6 +279,9 @@ export const ENGINE_DEFAULTS = {
     phonePixels: false,
     /* a phone's lamps: at most 8 lit at once, 4 of them in the air (D6) */
     phoneLamps: false,
+    /* render targets' old content dropped before a pass that draws over all of it, the reflection's depth after it
+       (D3) */
+    invalidate: false,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -1240,6 +1243,12 @@ export const ENGINE_SPEC = [
         'Phone lamps',
         'bool',
         'On a phone (Android, iPhone) at most 8 lamps, windows and fires light the scene at once (fewer if Lamps lit at once says so), and 4 of them glow in the air. Tablets and computers are unchanged.',
+      ],
+      [
+        'invalidate',
+        'Drop spent pictures',
+        'bool',
+        'Tells the graphics card which in-between pictures (blur, glow, shading, the reflection’s depth) need not be kept or read back. Same picture; it saves memory traffic on phones.',
       ],
       [
         'solidFirst',

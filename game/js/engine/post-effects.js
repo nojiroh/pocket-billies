@@ -17,6 +17,8 @@ import { setLightUniforms } from './light.js';
 /* eslint-disable no-func-assign */
 expose({
   COLOR_GRADES: [() => COLOR_GRADES],
+  DROP_COLOR: [() => DROP_COLOR],
+  DROP_SCREEN: [() => DROP_SCREEN],
   POST_EFFECT_SHADERS: [() => POST_EFFECT_SHADERS],
   colorGrade: [() => colorGrade, v => (colorGrade = v)],
   drawDepthOfField: [() => drawDepthOfField, v => setDrawDepthOfField(v)],
@@ -197,11 +199,18 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
   ],
 };
 provide({ POST_EFFECT_SHADERS }); /* to-module */
-/* a post pass: its program on target F (null: the screen) at w x h; returns the uniforms */
-function postUse(name, F, w, h) {
+/* phase 20 R2 (D3): what a pass that draws over all of its target may drop first, so a tiled graphics chip (the
+   phones') doesn't load the old picture: a target's colour, or the screen's colour, depth and stencil */
+const DROP_COLOR = [0x8ce0 /* COLOR_ATTACHMENT0 */],
+  DROP_SCREEN = [0x1800, 0x1801, 0x1802 /* COLOR, DEPTH, STENCIL */];
+/* a post pass: its program on target F (null: the screen) at w x h; returns the uniforms. fresh: the pass draws every
+   pixel of F with no blending, so with quality.invalidate its old content is dropped */
+function postUse(name, F, w, h, fresh) {
   const gl = gpuState.gl,
     p = gpuState.P[name];
   gl.bindFramebuffer(gl.FRAMEBUFFER, F ? F.f : null);
+  if (fresh && engineSetting('quality', 'invalidate'))
+    gl.invalidateFramebuffer(gl.FRAMEBUFFER, F ? DROP_COLOR : DROP_SCREEN);
   gl.viewport(0, 0, w, h);
   gl.useProgram(p.p);
   return p.U;
@@ -252,21 +261,21 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
       qh = Math.max(8, hh >> 1),
       K0 = renderTarget('dofk0', hw, hh, { hdr: true }),
       K1 = renderTarget('dofk1', qw, qh, { hdr: true });
-    let U = use('down', K0, hw, hh);
+    let U = use('down', K0, hw, hh, true);
     tex(U, 'uCol', 0, S.c);
     gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-    U = use('down', K1, qw, qh);
+    U = use('down', K1, qw, qh, true);
     tex(U, 'uCol', 0, K0.c);
     gl.uniform2f(U.uPx, 1 / hw, 1 / hh);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-    U = use('up', D, hw, hh);
+    U = use('up', D, hw, hh, true);
     tex(U, 'uCol', 0, K1.c);
     gl.uniform2f(U.uPx, 1 / qw, 1 / qh);
     gl.uniform1f(U.uR, Math.min(3, 0.5 + blur));
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   } else if (dofOn) {
-    const U = use('dof', D, hw, hh);
+    const U = use('dof', D, hw, hh, true);
     tex(U, 'uCol', 0, S.c);
     tex(U, 'uDep', 1, S.d);
     gl.uniform2f(U.uPx, 1 / hw, 1 / hh);
@@ -308,7 +317,7 @@ export function drawPostRest(S, C, rw, rh, o, F) {
     w = hw,
     h = hh;
   if (bk > 0.01) {
-    let U = use('bright', renderTarget('b0', w, h, { hdr: true }), w, h);
+    let U = use('bright', renderTarget('b0', w, h, { hdr: true }), w, h, true);
     tex(U, 'uCol', 0, S.c);
     gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
     gl.uniform1f(U.uT, engineSetting('color', 'bloomThreshold'));
@@ -320,7 +329,7 @@ export function drawPostRest(S, C, rw, rh, o, F) {
       w = Math.max(4, w >> 1);
       h = Math.max(4, h >> 1);
       const F = renderTarget('b' + i, w, h, { hdr: true });
-      U = use('down', F, w, h);
+      U = use('down', F, w, h, true);
       tex(U, 'uCol', 0, chain[i - 1].c);
       gl.uniform2f(U.uPx, 1 / pw, 1 / ph);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -343,7 +352,7 @@ export function drawPostRest(S, C, rw, rh, o, F) {
   let AO = null;
   if (aoK > 0.01) {
     AO = renderTarget('ao', hw, hh);
-    const U = use('ao', AO, hw, hh);
+    const U = use('ao', AO, hw, hh, true);
     tex(U, 'uDep', 0, S.d);
     gl.uniform2f(U.uPx, 1 / hw, 1 / hh);
     gl.uniform1f(U.uN, C.near);
@@ -361,7 +370,7 @@ export function drawPostRest(S, C, rw, rh, o, F) {
     const qw = Math.max(16, hw >> 1),
       qh = Math.max(16, hh >> 1);
     RY = renderTarget('rays', qw, qh, { hdr: true });
-    const U = use('rays', RY, qw, qh);
+    const U = use('rays', RY, qw, qh, true);
     tex(U, 'uCol', 0, S.c);
     tex(U, 'uDep', 1, S.d);
     gl.uniform2f(U.uSun, o.sun[0], o.sun[1]);
@@ -379,7 +388,7 @@ export function drawPostRest(S, C, rw, rh, o, F) {
     const qw = Math.max(16, hw >> 1),
       qh = Math.max(16, hh >> 1),
       V0 = renderTarget('vol0', qw, qh, { hdr: true });
-    const U = use('vol', V0, qw, qh);
+    const U = use('vol', V0, qw, qh, true);
     const p = gpuState.P.vol;
     setLightUniforms(p, X);
     tex(U, 'uDep', 0, S.d);
@@ -395,13 +404,13 @@ export function drawPostRest(S, C, rw, rh, o, F) {
     gl.uniform1f(U.uAirN, o.airLamps ?? 6);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     VO = renderTarget('vol1', qw, qh, { hdr: true });
-    const U2 = use('down', VO, qw, qh);
+    const U2 = use('down', VO, qw, qh, true);
     tex(U2, 'uCol', 0, V0.c);
     gl.uniform2f(U2.uPx, 1 / qw, 1 / qh);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   /* grade to the screen */
-  const U = use('grade', null, rw, rh);
+  const U = use('grade', null, rw, rh, true);
   tex(U, 'uCol', 0, S.c);
   tex(U, 'uDof', 1, D.c);
   tex(U, 'uBloom', 2, bk > 0.01 ? chain[0].c : gpuState.white);
