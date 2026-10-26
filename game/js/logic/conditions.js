@@ -466,7 +466,9 @@ export function storyStateOf(save, o = {}) {
     rel: RELATIONS && meta.rel ? relLevels(meta, RELATIONS) : {},
     beans: meta.beans || 0,
     chapter: meta.chapter || 1,
-    gifted: Object.fromEntries(Object.entries(meta.gifted || {}).filter(([, n]) => n === (meta.runs || 0))),
+    gifted: Object.fromEntries(
+      Object.entries(meta.gifted || {}).flatMap(([who, n]) => (n === (meta.runs || 0) ? [[who, 1]] : []))
+    ),
   };
 }
 

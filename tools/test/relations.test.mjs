@@ -91,6 +91,10 @@ test('the story reads rel:, beans and gifted:; the commands give Beans, a gift a
   assert.equal(holds('gifted:hazel and rel:hazel = 1 and beans = 1'), true);
   save.meta.runs = 3;
   assert.equal(holds('gifted:hazel'), false, 'a new run: a gift can be given again');
+  // before the first run (meta.runs 0) too
+  const fresh = /** @type {any} */ ({ story: {}, meta: { ...newMeta(), beans: 1 } });
+  R.relGift(fresh.meta, 'hazel', GAME_DATA.relations);
+  assert.equal(conditionHolds('gifted:hazel', storyStateOf(fresh)), true, 'a gift before any run');
 });
 
 /** a run as runBegin starts it (the load check takes it) */
