@@ -26,6 +26,10 @@ expose({
   graftKey: [() => graftKey],
   // @ts-expect-error -- replaced on purpose
   graftKind: [() => graftKind, v => (graftKind = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftLook: [() => graftLook, v => (graftLook = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftLookSplit: [() => graftLookSplit, v => (graftLookSplit = v)],
   graftOf: [() => graftOf],
   // @ts-expect-error -- replaced on purpose
   graftParse: [() => graftParse, v => (graftParse = v)],
@@ -74,6 +78,36 @@ export function graftParse(key) {
 /* SP-2: a Billie's (or wild encounter's) splice is its `graft` field (Billy.graft, kept by the save's validators) */
 /** a Billie's graft code, '' for none @param {{ graft?: Graft } | null | undefined} m */
 export const graftOf = m => (m && typeof m === 'object' ? graftKey(m.graft) : '');
+/** SP-5: how a Billie (or an encounter, a snapshot) looks: its graft code and, after it, each Augment as "+slot=part"
+ * ("sig=shark_tailfin@zuck2,+front=hydrant"); its graft code alone when it has none, so nothing else changes. Only the
+ * drawing reads it (skeleton-rig.js rigParts); the splice's own code stays graftOf @param {any} m */
+export function graftLook(m) {
+  const g = graftOf(m),
+    a = m && typeof m === 'object' && m.aug && typeof m.aug === 'object' ? m.aug : null,
+    more = a
+      ? Object.keys(a)
+          .sort()
+          .filter(s => a[s] && typeof a[s].id === 'string')
+          .map(s => `+${s}=${a[s].id}`)
+      : [];
+  return more.length ? [g, ...more].filter(Boolean).join(',') : g;
+}
+/** a look code (graftLook) as its graft code and its Augments ({ slot: robots.json part id }, null for none)
+ * @param {string | null | undefined} code @returns {{ graft: string, aug: Record<string, string> | null }} */
+export function graftLookSplit(code) {
+  if (!code || !code.includes('+')) return { graft: code || '', aug: null };
+  /** @type {Record<string, string>} */
+  const aug = {};
+  const own = [];
+  for (const pair of code.split(',')) {
+    if (pair[0] !== '+') own.push(pair);
+    else {
+      const [slot, id] = pair.slice(1).split('=');
+      if (slot && id) aug[slot] = id;
+    }
+  }
+  return { graft: own.join(','), aug: Object.keys(aug).length ? aug : null };
+}
 /** give a Billie (or an encounter) a graft code; '' takes it off @param {object} m @param {string} key */
 export function graftSet(m, key) {
   const g = graftParse(key),

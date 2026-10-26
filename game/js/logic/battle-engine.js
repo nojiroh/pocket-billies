@@ -42,7 +42,7 @@ import {
   trainerTeam,
   typeEffectiveness,
 } from '../game-data.js';
-import { graftOf, graftSet } from './graft-art.js';
+import { graftLook, graftOf, graftSet } from './graft-art.js';
 import {
   ROBOT_SLOT_NAMES,
   fitFromIds,
@@ -339,7 +339,7 @@ export function actorSnapshot(k) {
     build: m.build,
     coat: m.coat,
     /* SP-1: a grafted Billie's graft code, only when it has one (the snapshot of an ungrafted one is unchanged) */
-    ...(graftOf(m) ? { graft: graftOf(m) } : {}),
+    ...(graftLook(m) ? { graft: graftLook(m) } : {}),
     alpha: !!(m.boss || m.alpha),
     boss: !!m.boss,
     ty: actorTypes(k).slice(),

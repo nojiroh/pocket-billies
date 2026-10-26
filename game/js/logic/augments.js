@@ -128,7 +128,8 @@ export function augGenes(D, sp, a) {
       up: Math.max(0, p.up || 0),
       uid: p.uid,
       wt: P.wt ?? 0,
-      name: P.short || P.name,
+      /* the word an Unstable name merges with: "Hydrant", "Crawler" */
+      name: P.short || String(P.name).split(' ')[0],
     };
   });
 }
@@ -174,11 +175,12 @@ export function augMoves(D, sp, a) {
     ),
   ];
 }
-/** an Augment in words, for the battle's lines and the sheets: "a Hydrant Arm" @param {GeneData} D @param {string} id
- * a robots.json part id */
+/** an Augment in words, for the battle's lines and the sheets: "a Hydrant Arm", "Crawler Treads" (a plural name
+ * takes no article) @param {GeneData} D @param {string} id a robots.json part id */
 export function augWords(D, id) {
   const P = D.robots && D.robots.parts[id];
   if (!P) return '';
+  if (/s$/.test(P.name)) return P.name;
   return `${/^[AEIOU]/.test(P.name) ? 'an' : 'a'} ${P.name}`;
 }
 /** Augments as a short, stable code for caches and the battle's snapshot ("back=treads+0,front=hydrant+1"); '' for

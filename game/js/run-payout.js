@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { provide, renderOverlay } from './hooks.js';
 import { PERKS, RULES } from './game-data.js';
-import { graftOf } from './logic/graft-art.js';
+import { graftLook } from './logic/graft-art.js';
 import { billyName } from './logic/rules.js';
 import { payoutOf } from './logic/run-state.js';
 import { runItemPrice, runKept, runPayoutRows, runReleasePays } from './logic/run-loop.js';
@@ -52,7 +52,7 @@ function runPayoutOpen() {
       : `<p class="note">Pick one Billie to bring its run home. One from Copperleaf keeps what it learned; one caught on the run comes home with you. Everyone else from Copperleaf comes back as they left.</p><div class="bx-grid">${saveData.team
           .map(
             m =>
-              `<pb-pick-card data-u="${m.uid}" heading="${escapeHtml(billyName(m))}" sub="${`Lv ${m.lvl} · ${runReleasePays(run, m) ? 'caught on the run' : 'from Copperleaf'}`}"${keep === m.uid ? ' selected' : ''}><span slot="art">${rigCanvasHTML(m.sp, 64, { build: m.build, coat: m.coat, graft: graftOf(m) })}</span></pb-pick-card>`
+              `<pb-pick-card data-u="${m.uid}" heading="${escapeHtml(billyName(m))}" sub="${`Lv ${m.lvl} · ${runReleasePays(run, m) ? 'caught on the run' : 'from Copperleaf'}`}"${keep === m.uid ? ' selected' : ''}><span slot="art">${rigCanvasHTML(m.sp, 64, { build: m.build, coat: m.coat, graft: graftLook(m) })}</span></pb-pick-card>`
           )
           .join('')}</div>`;
   const M = {

@@ -33,6 +33,7 @@ import {
   soundEffect,
 } from './hooks.js';
 import { $, clamp, random } from './util.js';
+import { graftLookSplit } from './logic/graft-art.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
 import { ROBOT_PART_BONES } from './robot-art.js';
@@ -2042,9 +2043,11 @@ export function battleStagePlay(an, ev) {
       }
       /* RL-14: the broken part drops off: its picture falls from the bot, tumbles and bounces on the ground as it
          fades (the rig keeps the limb faint) */
+      /* SP-5: a Billie's broken Augment drops off the same way (its part from the look code) */
       const S = battleStage.s[an.si],
         ids = S && robotIdsFromSp(S.sp),
-        P = ids && robotPartDef(ids[an.part]),
+        aug = S && !ids ? graftLookSplit(S.graft).aug : null,
+        P = ids ? robotPartDef(ids[an.part]) : aug ? robotPartDef(aug[an.part === 'legs' ? 'back' : 'front']) : null,
         im = P && P.art && P.art.img ? artImg(P.art.img) : null;
       if (im && im.complete && im.naturalWidth && !reducedMotion) {
         const side = an.part === 'armL' ? -1 : an.part === 'armR' ? 1 : random() < 0.5 ? -1 : 1;

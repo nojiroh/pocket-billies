@@ -74,6 +74,7 @@ exports[`golden: a Billie with a Hydrant Arm against a robot (SP-5: the Augmentâ
                 "back": "M",
                 "sig": "M"
               },
+              "graft": "+front=hydrant",
               "alpha": false,
               "boss": false,
               "ty": [
@@ -157,6 +158,7 @@ exports[`golden: a Billie with a Hydrant Arm against a robot (SP-5: the Augmentâ
                 "back": "M",
                 "sig": "M"
               },
+              "graft": "+front=hydrant",
               "alpha": false,
               "boss": false,
               "ty": [
@@ -239,6 +241,7 @@ exports[`golden: a Billie with a Hydrant Arm against a robot (SP-5: the Augmentâ
                 "back": "M",
                 "sig": "M"
               },
+              "graft": "+front=hydrant",
               "alpha": false,
               "boss": false,
               "ty": [
@@ -318,6 +321,7 @@ exports[`golden: a Billie with a Hydrant Arm against a robot (SP-5: the Augmentâ
                 "back": "M",
                 "sig": "M"
               },
+              "graft": "+front=hydrant",
               "alpha": false,
               "boss": false,
               "ty": [
@@ -400,6 +404,7 @@ exports[`golden: a Billie with a Hydrant Arm against a robot (SP-5: the Augmentâ
                 "back": "M",
                 "sig": "M"
               },
+              "graft": "+front=hydrant",
               "alpha": false,
               "boss": false,
               "ty": [
@@ -485,6 +490,7 @@ exports[`golden: a Billie with a Hydrant Arm against a robot (SP-5: the Augmentâ
                 "back": "M",
                 "sig": "M"
               },
+              "graft": "+front=hydrant",
               "alpha": false,
               "boss": false,
               "ty": [
@@ -564,6 +570,7 @@ exports[`golden: a Billie with a Hydrant Arm against a robot (SP-5: the Augmentâ
                 "back": "M",
                 "sig": "M"
               },
+              "graft": "+front=hydrant",
               "alpha": false,
               "boss": false,
               "ty": [
@@ -656,6 +663,7 @@ exports[`golden: a Billie with a Hydrant Arm against a robot (SP-5: the Augmentâ
                 "back": "M",
                 "sig": "M"
               },
+              "graft": "+front=hydrant",
               "alpha": false,
               "boss": false,
               "ty": [
@@ -735,6 +743,7 @@ exports[`golden: a Billie with a Hydrant Arm against a robot (SP-5: the Augmentâ
                 "back": "M",
                 "sig": "M"
               },
+              "graft": "+front=hydrant",
               "alpha": false,
               "boss": false,
               "ty": [
@@ -817,6 +826,7 @@ exports[`golden: a Billie with a Hydrant Arm against a robot (SP-5: the Augmentâ
                 "back": "M",
                 "sig": "M"
               },
+              "graft": "+front=hydrant",
               "alpha": false,
               "boss": false,
               "ty": [
@@ -899,6 +909,7 @@ exports[`golden: a Billie with a Hydrant Arm against a robot (SP-5: the Augmentâ
                 "back": "M",
                 "sig": "M"
               },
+              "graft": "+front=hydrant",
               "alpha": false,
               "boss": false,
               "ty": [

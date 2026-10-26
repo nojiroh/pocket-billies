@@ -13,7 +13,7 @@ import { expose } from './test-globals.js';
 import { provide, ranchOpen, soundEffect } from './hooks.js';
 import { clamp } from './util.js';
 import { RULES, SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
-import { graftOf } from './logic/graft-art.js';
+import { graftLook } from './logic/graft-art.js';
 import { speciesById } from './logic/fighters.js';
 import { billyName, encountersHere, findBilly, maxHp } from './logic/rules.js';
 import {
@@ -332,7 +332,15 @@ function buddyItems(out, t, dt) {
       b.seed,
       b.x,
       b.z,
-      { flip: b.flip, dy, big: m.alpha ? 1.12 : 1, build: m.build, coat: m.coat, graft: graftOf(m), extra: { mon: m } }
+      {
+        flip: b.flip,
+        dy,
+        big: m.alpha ? 1.12 : 1,
+        build: m.build,
+        coat: m.coat,
+        graft: graftLook(m),
+        extra: { mon: m },
+      }
     );
   if (it) out.push(it);
   /* WA-6a: your buddy leaves rings behind it as it wades (walk/water.js addRipple) */
@@ -493,7 +501,7 @@ function pastureItems(out, t, dt) {
           big: m.alpha ? 1.12 : 1,
           build: m.build,
           coat: m.coat,
-          graft: graftOf(m),
+          graft: graftLook(m),
           extra: { mon: m, uid: m.uid },
         }
       );
@@ -580,7 +588,7 @@ function wildBillyItem(out, e, s, t, dt) {
     w.seed,
     e.build,
     e.coat,
-    graftOf(e)
+    graftLook(e)
   );
   if (!im) return;
   const R = im.__R,
@@ -605,7 +613,7 @@ function wildBillyItem(out, e, s, t, dt) {
       dy: -H * sink + hop * 0.32 + bob,
       build: e.build,
       coat: e.coat,
-      graft: graftOf(e),
+      graft: graftLook(e),
       extra: { e },
     }
   );
@@ -650,11 +658,11 @@ function worldBillyLabels(C, labels) {
 function warmWorldBillies() {
   try {
     const L = [];
-    for (const q of encountersHere()) L.push([q.sp, 1, q.coat, graftOf(q)]);
+    for (const q of encountersHere()) L.push([q.sp, 1, q.coat, graftLook(q)]);
     const m = buddyBilly();
     if (m) {
-      L.push([m.sp, 1, m.coat, graftOf(m)]);
-      L.push([m.sp, RIG_BACK_VIEW, m.coat, graftOf(m)]);
+      L.push([m.sp, 1, m.coat, graftLook(m)]);
+      L.push([m.sp, RIG_BACK_VIEW, m.coat, graftLook(m)]);
     }
     if (typeof trainersAt === 'function')
       for (const T of trainersAt(saveData.trip.node)) {
@@ -671,7 +679,7 @@ function warmWorldBillies() {
         }
       }
     /* v34: what a battle here would need, loaded now while you walk (a battle used to start by loading it: 4 fps at worst) */
-    for (const m of saveData.team.slice(0, 3)) L.push([m.sp, RIG_BACK_VIEW, m.coat, graftOf(m)]);
+    for (const m of saveData.team.slice(0, 3)) L.push([m.sp, RIG_BACK_VIEW, m.coat, graftLook(m)]);
     if (L.length && typeof rigPreload === 'function')
       setTimeout(
         () =>

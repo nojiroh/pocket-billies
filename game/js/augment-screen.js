@@ -12,12 +12,10 @@
 import { expose } from './test-globals.js';
 import { buildingRowsHTML, closeModal, modal, render, renderOverlay, toast } from './hooks.js';
 import { FIELD_MOVES, GENES, MOVES, ROBOTS, SPECIES, STAT_IDS, STAT_NAMES } from './game-data.js';
-import { graftKey, graftOf } from './logic/graft-art.js';
+import { graftLook } from './logic/graft-art.js';
 import {
   AUG_SLOTS,
   augChoices,
-  augKey,
-  augOf,
   augWords,
   workFit,
   workLevel,
@@ -121,7 +119,7 @@ function workPreviewHTML(D, s, m, slot, p) {
       : st.unstable
         ? `Stability ${st.cost} of ${st.limit}: past the limit, so it turns Unstable (one stat ×${GENES.unstable.up}, one ×${GENES.unstable.down}, ${GENES.unstable.d.replace(/\.$/, '').toLowerCase()})`
         : `Stability ${st.cost} of ${st.limit}`;
-  return `<div class="bx k-card ranch-card gene-preview"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftKey(graft), aug: augKey(aug) })}</span><b>${escapeHtml(augWords(D, p.id))}${workUp(p.up)}</b><span class="bx-sub tnum">${billyWeight(m)} kg → ${billyWeight(q)} kg · ${escapeHtml(billyTypes(q).join(' / '))}</span><span class="bx-sub">${escapeHtml(workPartLine(D, p.id))}</span>${gene ? `<span class="bx-sub">Takes off ${escapeHtml(geneWords(D, slot, gene))} (it stays in the Gene library)</span>` : ''}<span class="bx-sub">${escapeHtml(stLine)}</span>${bars}</div><button class="qk k-btn" data-w="fit"${why ? ' disabled' : ''}>Fit · ${price} Scrap</button></div>${why ? `<p class="note">${WORK_WHY[why]}.</p>` : ''}`;
+  return `<div class="bx k-card ranch-card gene-preview"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftLook(q) })}</span><b>${escapeHtml(augWords(D, p.id))}${workUp(p.up)}</b><span class="bx-sub tnum">${billyWeight(m)} kg → ${billyWeight(q)} kg · ${escapeHtml(billyTypes(q).join(' / '))}</span><span class="bx-sub">${escapeHtml(workPartLine(D, p.id))}</span>${gene ? `<span class="bx-sub">Takes off ${escapeHtml(geneWords(D, slot, gene))} (it stays in the Gene library)</span>` : ''}<span class="bx-sub">${escapeHtml(stLine)}</span>${bars}</div><button class="qk k-btn" data-w="fit"${why ? ' disabled' : ''}>Fit · ${price} Scrap</button></div>${why ? `<p class="note">${WORK_WHY[why]}.</p>` : ''}`;
 }
 /** the picked Billie's part of the sheet @param {any} D @param {any} s @param {any} m */
 function workBillieHTML(D, s, m) {
@@ -176,7 +174,7 @@ export function augmentsOpen() {
     cards = home
       .map(
         b =>
-          `<pb-pick-card data-u="${b.uid}" heading="${escapeHtml(billyName(b))}" sub="Lv ${b.lvl} · ${escapeHtml(SPECIES[b.sp].name)}${billyAug(b) ? ' · augmented' : ''}"${P.uid === b.uid ? ' selected' : ''}><span slot="art">${rigCanvasHTML(b.sp, 56, { build: b.build, coat: b.coat, graft: graftOf(b), aug: augOf(b) })}</span></pb-pick-card>`
+          `<pb-pick-card data-u="${b.uid}" heading="${escapeHtml(billyName(b))}" sub="Lv ${b.lvl} · ${escapeHtml(SPECIES[b.sp].name)}${billyAug(b) ? ' · augmented' : ''}"${P.uid === b.uid ? ' selected' : ''}><span slot="art">${rigCanvasHTML(b.sp, 56, { build: b.build, coat: b.coat, graft: graftLook(b) })}</span></pb-pick-card>`
       )
       .join(''),
     rowsHTML = typeof buildingRowsHTML === 'function' ? buildingRowsHTML('workshop', 'workshop') : '';

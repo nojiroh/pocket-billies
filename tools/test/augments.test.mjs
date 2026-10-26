@@ -70,6 +70,7 @@ test('augments: Stability 3 each; weight, type, field move and stats from the pa
   for (const [k, v] of Object.entries(R.parts.hydrant.stats)) assert.ok(Math.abs(base[k] - v * f) < 1e-9, k);
   assert.equal(A.augWords(D, 'hydrant'), 'a Hydrant Arm');
   assert.equal(A.augWords(D, 'auger'), 'an Auger Arm');
+  assert.equal(A.augWords(D, 'treads'), 'Crawler Treads');
 });
 
 test('augments: on a Billie: its stats, types, field types and Stability; never Prime; Unstable past the limit', () => {
@@ -206,4 +207,26 @@ test('augments: the Workshop fits a spare for Scrap, takes it off for free, upgr
   assert.equal(m.aug, undefined);
   assert.ok(s.parts.some(p => p.uid === 'a1' && p.up === max1));
   assert.equal(A.workOff(GD, s, m, 'front'), 'none');
+});
+
+test('augments: the look code carries the Augments after the graft; split back; a Billie without one looks as before', () => {
+  const G = modules['graft-art'];
+  assert.equal(G.graftLook({ graft: { sig: 'shark_tailfin@zuck2' } }), 'sig=shark_tailfin@zuck2');
+  assert.equal(G.graftLook({}), '');
+  const code = G.graftLook({
+    graft: { sig: 'shark_tailfin@zuck2' },
+    aug: { front: part('hydrant'), back: part('treads') },
+  });
+  assert.equal(code, 'sig=shark_tailfin@zuck2,+back=treads,+front=hydrant');
+  assert.deepEqual(G.graftLookSplit(code), {
+    graft: 'sig=shark_tailfin@zuck2',
+    aug: { back: 'treads', front: 'hydrant' },
+  });
+  assert.deepEqual(G.graftLookSplit('+front=auger'), { graft: '', aug: { front: 'auger' } });
+  assert.deepEqual(G.graftLookSplit('front=bear_arm@musk3'), { graft: 'front=bear_arm@musk3', aug: null });
+  assert.equal(
+    G.graftOf({ graft: { sig: 'shark_tailfin@zuck2' }, aug: { front: part('hydrant') } }),
+    'sig=shark_tailfin@zuck2',
+    'the splice code stays'
+  );
 });

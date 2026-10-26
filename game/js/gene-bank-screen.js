@@ -12,7 +12,7 @@
 import { expose } from './test-globals.js';
 import { buildingRowsHTML, closeModal, modal, provide, render, renderOverlay, toast } from './hooks.js';
 import { GENES, MOVES, SPECIES, STAT_IDS, STAT_NAMES } from './game-data.js';
-import { GRAFT_SLOTS, graftKey, graftOf } from './logic/graft-art.js';
+import { GRAFT_SLOTS, graftLook } from './logic/graft-art.js';
 import { geneOf, geneWords, graftStability, graftTraits } from './logic/genes.js';
 import {
   bankGenes,
@@ -116,7 +116,7 @@ function bankPreviewHTML(D, s, m, slot, id) {
       : st.unstable
         ? `Stability ${st.cost} of ${st.limit}: past the limit, so it turns Unstable (one stat ×${GENES.unstable.up}, one ×${GENES.unstable.down}, ${GENES.unstable.d.replace(/\.$/, '').toLowerCase()})`
         : `Stability ${st.cost} of ${st.limit}`;
-  return `<div class="bx k-card ranch-card gene-preview"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftKey(graft) })}</span><b>${escapeHtml(geneWords(D, slot, id))}</b><span class="bx-sub tnum">${billyWeight(m)} kg → ${billyWeight(q)} kg · ${escapeHtml(types.join(' / '))}</span><span class="bx-sub">${traits.length ? `Traits: ${traits.map(t => `<b>${escapeHtml(GENES.traits[t].name)}</b> (${escapeHtml(GENES.traits[t].d)})`).join(', ')}` : 'No trait'}</span>${move ? `<span class="bx-sub">Teaches ${escapeHtml(move.name)}</span>` : ''}<span class="bx-sub">${escapeHtml(stLine)}</span>${bars}</div><button class="qk k-btn" data-g="splice"${why ? ' disabled' : ''}>Splice · ${price} DNA</button></div>${why && why !== 'same' ? `<p class="note">${BANK_WHY[why]}.</p>` : ''}`;
+  return `<div class="bx k-card ranch-card gene-preview"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftLook(q) })}</span><b>${escapeHtml(geneWords(D, slot, id))}</b><span class="bx-sub tnum">${billyWeight(m)} kg → ${billyWeight(q)} kg · ${escapeHtml(types.join(' / '))}</span><span class="bx-sub">${traits.length ? `Traits: ${traits.map(t => `<b>${escapeHtml(GENES.traits[t].name)}</b> (${escapeHtml(GENES.traits[t].d)})`).join(', ')}` : 'No trait'}</span>${move ? `<span class="bx-sub">Teaches ${escapeHtml(move.name)}</span>` : ''}<span class="bx-sub">${escapeHtml(stLine)}</span>${bars}</div><button class="qk k-btn" data-g="splice"${why ? ' disabled' : ''}>Splice · ${price} DNA</button></div>${why && why !== 'same' ? `<p class="note">${BANK_WHY[why]}.</p>` : ''}`;
 }
 /** the picked Billie's part of the sheet @param {any} D @param {any} s @param {any} m */
 function bankBillieHTML(D, s, m) {
@@ -151,7 +151,7 @@ function bankBillieHTML(D, s, m) {
       P.slot && !open.includes(P.slot)
         ? `<p class="note">The Bank splices this slot from Lv ${bankOpensAt(D, P.slot)}. You can still take a Gene off it.</p>`
         : '';
-  return `<section class="tpanel gene-billie"><div class="sec-h"><h2>${escapeHtml(billyName(m))}</h2><span class="count tnum">Stability ${graftStability(D, m.sp, billyGraft(m), geneLimit(s), billyAug(m)).cost} of ${geneLimit(s)}</span></div><div class="bx k-card ranch-card"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftOf(m) })}</span><b>${fresh ? `${fresh} new Gene${fresh === 1 ? '' : 's'} to read` : 'Sequenced'}</b><span class="bx-sub">${escapeHtml(spliceWords(m).join(', ')) || 'All its own parts'}${billyUnstable(m) ? ' · Unstable' : ''}</span></div><button class="qk k-btn" data-g="seq"${fresh ? '' : ' disabled'}>Sequence · free</button></div>${slots.length ? `<div class="seg" role="radiogroup" aria-label="Slot">${seg}</div>${worn}${shutNote}<div class="list">${rows || '<p class="note">No Gene in the library fits this slot. Sequence other Billies, or knock out spliced wild Billies on runs for Gene Samples.</p>'}</div>${P.gene ? bankPreviewHTML(D, s, m, P.slot, P.gene) : ''}` : '<p class="note">This Billie’s form can’t be spliced yet.</p>'}</section>`;
+  return `<section class="tpanel gene-billie"><div class="sec-h"><h2>${escapeHtml(billyName(m))}</h2><span class="count tnum">Stability ${graftStability(D, m.sp, billyGraft(m), geneLimit(s), billyAug(m)).cost} of ${geneLimit(s)}</span></div><div class="bx k-card ranch-card"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftLook(m) })}</span><b>${fresh ? `${fresh} new Gene${fresh === 1 ? '' : 's'} to read` : 'Sequenced'}</b><span class="bx-sub">${escapeHtml(spliceWords(m).join(', ')) || 'All its own parts'}${billyUnstable(m) ? ' · Unstable' : ''}</span></div><button class="qk k-btn" data-g="seq"${fresh ? '' : ' disabled'}>Sequence · free</button></div>${slots.length ? `<div class="seg" role="radiogroup" aria-label="Slot">${seg}</div>${worn}${shutNote}<div class="list">${rows || '<p class="note">No Gene in the library fits this slot. Sequence other Billies, or knock out spliced wild Billies on runs for Gene Samples.</p>'}</div>${P.gene ? bankPreviewHTML(D, s, m, P.slot, P.gene) : ''}` : '<p class="note">This Billie’s form can’t be spliced yet.</p>'}</section>`;
 }
 /** the Gene Bank's sheet, opened (or drawn again in place after a button) */
 export function geneBankOpen() {
@@ -169,7 +169,7 @@ export function geneBankOpen() {
     cards = home
       .map(
         b =>
-          `<pb-pick-card data-u="${b.uid}" heading="${escapeHtml(billyName(b))}" sub="Lv ${b.lvl} · ${escapeHtml(SPECIES[b.sp].name)}${billyGraft(b) ? ' · spliced' : ''}"${P.uid === b.uid ? ' selected' : ''}><span slot="art">${rigCanvasHTML(b.sp, 56, { build: b.build, coat: b.coat, graft: graftOf(b) })}</span></pb-pick-card>`
+          `<pb-pick-card data-u="${b.uid}" heading="${escapeHtml(billyName(b))}" sub="Lv ${b.lvl} · ${escapeHtml(SPECIES[b.sp].name)}${billyGraft(b) ? ' · spliced' : ''}"${P.uid === b.uid ? ' selected' : ''}><span slot="art">${rigCanvasHTML(b.sp, 56, { build: b.build, coat: b.coat, graft: graftLook(b) })}</span></pb-pick-card>`
       )
       .join(''),
     rowsHTML = typeof buildingRowsHTML === 'function' ? buildingRowsHTML('genebank', 'genebank') : '';

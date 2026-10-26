@@ -432,6 +432,7 @@ export const GENES = /** @type {import('../types/game-data').Genes} */ (
     },
   }
 );
+provide({ GENES }); /* to-module */
 /* RT-3: set pieces, prop groups placed as a unit on a laid-out place (setPieces.json; logic/mapgen.js) */
 export const SET_PIECES = /** @type {import('../types/game-data').SetPiecesData | null} */ (gameData.setPieces || null);
 /* roguelite track RL-13: a run's Expeditions and challenges (modifiers.json; logic/modifiers.js) */
