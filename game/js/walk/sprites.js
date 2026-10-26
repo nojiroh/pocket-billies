@@ -794,9 +794,9 @@ export function addHitTarget(it, C, hits, labels, PPU) {
     /* RL-12b: a route trainer's "!" only once it has spotted you */
     if (!it.n.done && (!it.n.route || walkView.spotted[it.n.id]))
       labels.push({ k: 'bang', x: q.x, y: box.y0, col: it.n.col || '#D9434B' });
-    /* TW-3: a quest giver's gold "!" while their town's offer is open */ else if (
+    /* TW-3: a quest giver's gold "!" while their town's offer is open (RS-2: and the run's resident's) */ else if (
       it.n.talk &&
-      it.n.talk.quest &&
+      (it.n.talk.quest || it.n.talk.resident) &&
       typeof questMarked === 'function' &&
       questMarked(it.n.talk)
     )
