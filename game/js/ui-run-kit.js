@@ -53,7 +53,7 @@ const unsafeCSS = /** @type {any} */ (self).PB_LIT.unsafeCSS;
 
 /* a UI icon (game/art/ui/<key>.svg), fixed-colour pixel art shown as an image, found as art.js finds it (the bundled
    build inlines them in NW_ART; a page outside game/ sets NW_ARTDIR) */
-const runIconURL = (/** @type {string} */ k) => {
+export const runIconURL = (/** @type {string} */ k) => {
   const w = /** @type {any} */ (self);
   return (w.NW_ART && w.NW_ART[`ui/${k}.svg`]) || new URL(`${w.NW_ARTDIR || 'art/'}ui/${k}.svg`, document.baseURI).href;
 };
