@@ -467,8 +467,14 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;c.rgb=lookOn(c.rgb,floor(
 precision highp float;in vec2 aC;uniform mat4 uVP;uniform vec3 uP,uRight,uUp;uniform vec2 uS;uniform vec4 uUV;out vec2 vUV;out vec3 vW;
 void main(){vec2 c=aC-.5;vec3 p=uP+uRight*c.x*uS.x+uUp*(-c.y)*uS.y;vW=p;vUV=vec2(uUV.x+aC.x*uUV.z,uUV.y+aC.y*uUV.w);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex;uniform vec4 uCol;uniform float uGlow,uLitFx;${LIGHT_GLSL}
-void main(){vec4 c;if(uGlow>.5){vec2 q=vUV*2.-1.;float d=dot(q,q);if(d>1.)discard;float f=(1.-d);c=vec4(uCol.rgb*f*f*f*uCol.a,1.);}else{c=texture(uTex,vUV)*uCol;if(c.a<.02)discard;if(uLitFx>.5)c.rgb*=mix(uAmbTop,vec3(1.),.5)+uSunCol*.4;c.rgb=fogit(c.rgb,vW);}o=c;}`,
+precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex,uGround;uniform vec4 uCol,uGRect,uGTint;uniform float uGlow,uLitFx;${LIGHT_GLSL}
+/* 0.1.0 alpha: a flat grass prop (moss, clover) on grass takes the grass's colour, as the blades do: the ground picture
+   round its middle (uGTint.xy, five taps), its own pixels' lightness over the picture's mean (uGTint.w) keeping its tones, a tenth lighter (as the blades' tips are) so it still reads, lit as the blades and the ground are */
+vec3 groundTap(vec2 w){return textureLod(uGround,vec2((w.x-uGRect.x)*uGRect.z,(uGRect.y-w.y)*uGRect.w),0.).rgb;}
+vec3 groundTone(vec2 w){return (groundTap(w)+groundTap(w+vec2(.25,0.))+groundTap(w-vec2(.25,0.))+groundTap(w+vec2(0.,.25))+groundTap(w-vec2(0.,.25)))*.2;}
+void main(){vec4 c;if(uGlow>.5){vec2 q=vUV*2.-1.;float d=dot(q,q);if(d>1.)discard;float f=(1.-d);c=vec4(uCol.rgb*f*f*f*uCol.a,1.);}else{c=texture(uTex,vUV)*uCol;if(c.a<.02)discard;
+ if(uGTint.z>.5){float sh=shadowAt(vW,.002),ao=contactAO(vW),occ=min(sh,ao);c.rgb=seasonalF(groundTone(uGTint.xy)*dot(c.rgb,vec3(.299,.587,.114))/max(uGTint.w,.02)*1.1,vW,vec2(.75,1.))*
+  (ambient(vec3(0,1,0),ao,occ)+uSunCol*max(uSunDir.y,0.)*occ+points(vW,vec3(0,1,0)));}else if(uLitFx>.5)c.rgb*=mix(uAmbTop,vec3(1.),.5)+uSunCol*.4;c.rgb=fogit(c.rgb,vW);}o=c;}`,
   ],
 };
 provide({ WALK_SHADERS }); /* to-module */
