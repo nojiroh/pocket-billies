@@ -1010,6 +1010,37 @@ def held_items(pg, base):
     return f'{item} held by the lead ({rows} effect rows), shown on its sheet, taken off into the bag'
 
 
+def salvage(pg, base):
+    """RL-14: beating the Bureau's bots leaves a salvage pick: two of their parts and a stack of Scrap, no reroll; a part
+    taken goes into your parts and is stored; Scrap taken goes home with the meta's"""
+    sheet = "!!uiState.modal&&uiState.modal.cls==='reward-pick'&&uiState.modal.title==='Salvage'&&document.querySelectorAll('#ov pb-pick-card').length===3"
+    make = ("uiState.modal=null;uiState.mq=[];renderOverlay();"
+            "salvageOfferMake(saveData.run,'check',trainerTeam({team:[factionBotEntry(FACTIONS.bureau.bots.repo,10),"
+            "factionBotEntry(FACTIONS.bureau.bots.courier,10)]}),FACTIONS.bureau.salvage);saveNow();rewardPickOpen();0")
+    pg.evaluate(make)
+    if not until(pg, sheet, 10):
+        raise Exception('no salvage sheet with three cards: ' + str(pg.evaluate(
+            "JSON.stringify([uiState.modal&&uiState.modal.title,saveData.run.enc&&saveData.run.enc.reward])")))
+    kinds = pg.evaluate("saveData.run.enc.reward.cards.map(c=>c.kind).join(',')")
+    if kinds != 'part,part,scrap': raise Exception(f'the cards are {kinds}')
+    if pg.evaluate("[...document.querySelectorAll('#ov button')].some(b=>/Reroll/.test(b.textContent))"):
+        raise Exception('a salvage pick offers a reroll')
+    part, n = pg.evaluate("[saveData.run.enc.reward.cards[0].item,saveData.parts.length]")
+    pg.evaluate("document.querySelectorAll('#ov pb-pick-card')[0].shadowRoot.querySelector('button').click();0")
+    if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('a card didn’t enable Take it')
+    pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
+    if not until(pg, f"saveData.parts.length==={n}+1&&saveData.parts.at(-1).id==='{part}'&&!saveData.run.enc.reward", 10):
+        raise Exception(f'the {part} didn’t go into your parts')
+    if pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).parts.length") != n + 1: raise Exception('the part wasn’t stored')
+    pg.evaluate(make)
+    if not until(pg, sheet, 10): raise Exception('no second salvage sheet')
+    scrap = pg.evaluate("[saveData.meta.scrap,saveData.run.enc.reward.cards[2].n]")
+    pg.evaluate("rewardAnswer(2);0")
+    if not until(pg, f"saveData.meta.scrap==={scrap[0] + scrap[1]}&&!saveData.run.enc.reward", 10): raise Exception('the Scrap didn’t go home')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
+    return f'a {part} into your parts (stored), {scrap[1]} Scrap home, no reroll'
+
+
 def run_town_life(pg, base):
     """TW-2: the run fixture's first town (a jump): its folk are there, as many as its houses give (2-6), drawn no more
     than the graphics cap; they walk, and sent home (their hour moved to the evening) at least one goes indoors; its
@@ -1365,6 +1396,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
              ("A run town's shop opens (UI-5)", run_shop),
              ("Held items: a pick of them, who holds it, the sheet, Take off (RL-12c)", held_items),
+             ("Salvage: two of the bots' parts and Scrap, no reroll; a part into your parts, Scrap home (RL-14)", salvage),
              ("A run town's life: folk walk and go indoors, the graphics cap, a named local talks (TW-2)", run_town_life),
              ("A run town's quest: the giver's \"!\", Yes takes it, the Map tab lists it, another town's board pays it (TW-3)", run_town_quests)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home; the history, the lost run's scene, a fresh line (RL-S1)", run_loop)]),
