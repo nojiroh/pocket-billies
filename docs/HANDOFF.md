@@ -45,6 +45,14 @@ thrown pyramids instanced too; the setting `quality.modelInstances` ("Models in 
   setting on, the models pass should come down to about those vertex-array counts (49, 8, 20, 72): about 123 fewer
   draws a frame in Copperleaf. The shadow maps' model draws stay as they are this round (Copperleaf near 23 + far 11;
   jungle 31 + 36; run town 39 + 37; battle far 48.5: round 3's).
+  The iPad (Apple GPU, 1366 x 886 landscape at DPR 2, diagnostics 15:41; GPU-bound, CPU ~5 ms, Copperleaf by day
+  30 fps): models pass 82 draws from 76 vertex arrays in Copperleaf, jungle 53 / 17, run town 48 / 25, battle
+  152 / 124. Landscape sees fewer copies of each model, so the setting saves little there (82 -> ~76) and most on the
+  upright phone; it can't help a GPU-bound frame much anyway.
+  **Ask the owner** (the far version, from these numbers): the upright Android phone draws ~650 model leaf pictures in
+  Copperleaf against the iPad's ~44, so a cheap far version of models' picture layers (leaf clumps past some distance
+  on phones, e.g. merged into fewer cards or dropped into the trunk's model) may be worth far more than the jungle
+  broadleaf's, which no run shows. It touches the sprite pass (the sprites lane's files) and the leaf art.
 
   What it says: about 11% fewer draws in Copperleaf, little elsewhere. The rest is the sprites lane (642 model
   pictures in Copperleaf) and the shadow maps (round 3: over half the run places' draws). The reflection's model
