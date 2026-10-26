@@ -26,6 +26,7 @@ import {
 import { clamp, random } from '../util.js';
 import {
   BATTLE_STAGES,
+  FACTIONS,
   ITEMS,
   MOVES,
   PASSIVE,
@@ -41,11 +42,21 @@ import {
   trainerTeam,
   typeEffectiveness,
 } from '../game-data.js';
-import { graftOf, graftSet } from './graft-art.js';
-import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, moveSources, robotGemDef, robotRules, speciesOf } from './fighters.js';
+import { graftLook, graftOf, graftSet } from './graft-art.js';
+import {
+  ROBOT_SLOT_NAMES,
+  fitFromIds,
+  isRobot,
+  isRobotSp,
+  robotGemDef,
+  robotIdsFromSp,
+  robotRules,
+  speciesOf,
+} from './fighters.js';
 import {
   addBilly,
   billyName,
+  billyTypes,
   brokenParts,
   coatPrefix,
   encounterBuild,
@@ -53,9 +64,14 @@ import {
   formatNumber,
   gainXp,
   hereLocation,
+  limbKeys,
   makeBilly,
+  makeRobot,
   maxHp,
+  moveSourceLimbs,
   moveUsable,
+  movesOf,
+  newUid,
   partBroken,
   partHpLeft,
   partMaxHp,
@@ -63,10 +79,23 @@ import {
   pickWeighted,
   plural,
   repairParts,
+  spliceWords,
   stat,
+  unstableTidy,
   xpFor,
 } from './rules.js';
-import { fxCatch, fxDamage, fxOfBillie, fxPinchHeal, fxStages, fxTurnHeal, fxXp } from './effects.js';
+import { factionBotOf } from './factions.js';
+import {
+  fxCatch,
+  fxDamage,
+  fxOfBillie,
+  fxPinchHeal,
+  fxSplice,
+  fxStages,
+  fxTurnHeal,
+  fxTurnHurt,
+  fxXp,
+} from './effects.js';
 import { makeBattle, newFieldState } from './battle-state.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -124,6 +153,7 @@ expose({
   catchOdds: [() => catchOdds, v => (catchOdds = v)],
   // @ts-expect-error -- replaced on purpose
   catchRoll: [() => catchRoll, v => (catchRoll = v)],
+  catchable: [() => catchable],
   // @ts-expect-error -- replaced on purpose
   checkFaints: [() => checkFaints, v => (checkFaints = v)],
   // @ts-expect-error -- replaced on purpose
@@ -172,6 +202,8 @@ expose({
   startTrainer: [() => startTrainer, v => (startTrainer = v)],
   // @ts-expect-error -- replaced on purpose
   startWild: [() => startWild, v => (startWild = v)],
+  // @ts-expect-error -- replaced on purpose
+  startWildBot: [() => startWildBot, v => (startWildBot = v)],
   teamNeedsHp: [() => teamNeedsHp],
   // @ts-expect-error -- replaced on purpose
   turnCapCheck: [() => turnCapCheck, v => (turnCapCheck = v)],
@@ -267,7 +299,7 @@ export const allActors = () => {
 export const liveActors = si =>
   allActors().filter(k => (si == null || ACTOR_SIDE[k] === si) && fighter(k) && fighter(k).hp > 0);
 export const foeSide = k => 1 - ACTOR_SIDE[k];
-export const actorTypes = k => fieldState(k).ov || speciesOf(fighter(k)).types;
+export const actorTypes = k => fieldState(k).ov || billyTypes(fighter(k));
 export const shockName = () => BATTLE_RULES.shockName || `${BATTLE_RULES.shockType} storm`;
 export const isMulti = () => !!battleNow() && (battleNow().sides[0].f.length > 1 || battleNow().sides[1].f.length > 1);
 /** what a stat's stages multiply it by in battle: +1 is x1.5, -1 is x2/3 (Studio plan T4.1: the Perk preview
@@ -308,17 +340,18 @@ export function actorSnapshot(k) {
     build: m.build,
     coat: m.coat,
     /* SP-1: a grafted Billie's graft code, only when it has one (the snapshot of an ungrafted one is unchanged) */
-    ...(graftOf(m) ? { graft: graftOf(m) } : {}),
+    ...(graftLook(m) ? { graft: graftLook(m) } : {}),
     alpha: !!(m.boss || m.alpha),
     boss: !!m.boss,
     ty: actorTypes(k).slice(),
     xp: clamp((m.xp - a) / (b - a), 0, 1),
     stg: { ...f.v.st },
-    /* phase 17: a robot's limbs: which are broken (the stage dims them) and how much HP each has left (0 to 1) */
-    bot: isRobot(m)
+    /* phase 17: a robot's limbs: which are broken (the stage dims them) and how much HP each has left (0 to 1);
+       SP-5: a Billie's Augments the same way */
+    bot: limbKeys(m).length
       ? {
           brk: brokenParts(m),
-          ph: Object.fromEntries(ROBOT_LIMBS.map(q => [q, partHpLeft(m, q) / partMaxHp(m, q)])),
+          ph: Object.fromEntries(limbKeys(m).map(q => [q, partHpLeft(m, q) / partMaxHp(m, q)])),
         }
       : null,
   };
@@ -372,7 +405,7 @@ export function calcDamage(k, tk, mid, src) {
       eco =
         1 +
         BATTLE_RULES.alloyBoost *
-          sd.team.filter(m => m !== me && m.hp > 0 && speciesOf(m).types.some(t => syn.includes(t))).length;
+          sd.team.filter(m => m !== me && m.hp > 0 && billyTypes(m).some(t => syn.includes(t))).length;
     }
   }
   /* RF-3 Undertow (Water): its moves of a type with Undertow hit harder at a third of its HP or less */
@@ -467,7 +500,7 @@ export function useMove(k, mid, tk0, part) {
     fx = M.fx || {};
   /* phase 17: the part that gives the move broke earlier this turn (or before): the move fails */
   if (!moveUsable(u, mid)) {
-    const src = moveSources(u.gem, u.fit, mid)[0];
+    const src = moveSourceLimbs(u, mid)[0];
     battleSay(`${billyName(u)}’s ${ROBOT_SLOT_NAMES[src] || 'part'} is broken. It can’t use ${M.n}.`, {
       k: 'status',
       si: k,
@@ -578,8 +611,9 @@ export function useMove(k, mid, tk0, part) {
       const held = bedrockHolds(tk2, r);
       t2.hp = Math.max(0, t2.hp - r.dmg);
       alphaPhase(tk2);
-      /* phase 17: a hit on a robot also lands on one of its parts (an aimed move on the one picked) */
-      const hit = isRobot(t2) && t2.hp > 0 ? hitPart(tk2, r.dmg, M, tk2 === tk ? part : null) : null;
+      /* phase 17: a hit on a robot also lands on one of its parts (an aimed move on the one picked); SP-5: and on a
+         Billie's Augments */
+      const hit = limbKeys(t2).length && t2.hp > 0 ? hitPart(tk2, r.dmg, M, tk2 === tk ? part : null) : null;
       if (tk2 === tk) Object.assign(ev.an, { dmg: r.dmg, te: r.te, crit: r.crit, part: hit || undefined });
       else
         battleSay(`${billyName(t2)} was hit too.`, { k: 'hurt', si: tk2, dmg: r.dmg, te: r.te, fx: 'spread', t: M.t });
@@ -721,6 +755,14 @@ export function endTurn() {
         m.hp += g;
         battleSay(`${billyName(m)} ate its ${name} and restored HP.`, { k: 'heal', si: k, amt: g });
       }
+      /* SP-2: an Unstable splice's drawback: a share of its HP at each turn's end (SP-6: on your side, times the run's
+         unstable rows, Perks) */
+      const hurt = fxTurnHurt(hx) * (ACTOR_SIDE[k] === 0 && battleNow().fx ? fxSplice(battleNow().fx, 'unstable') : 1);
+      if (hurt > 0 && m.hp > 0) {
+        const d = Math.min(m.hp, Math.max(1, Math.floor(mx * hurt)));
+        m.hp -= d;
+        battleSay(`${billyName(m)}’s unstable cells hurt it.`, { k: 'hurt', si: k, dmg: d });
+      }
     }
     f.v.turnsIn++;
     f.v.protect = false;
@@ -805,7 +847,7 @@ export function heldStages(k) {
 /** RF-3 Parting Roar (Dragon, id `inherit`): when it faints, the next teammate in gets +1 Attack and +1 Sp. Atk
  * (before RF-3 it passed on its own boosts, if it had any) */
 export function inherit(k) {
-  const ty = speciesOf(fighter(k)).types;
+  const ty = billyTypes(fighter(k));
   if (!hasPassive(ty, 'partingroar')) return;
   battleNow().sides[ACTOR_SIDE[k]].roar = {
     lev: 1,
@@ -849,7 +891,7 @@ export function doSwitch(k, idx, b) {
     );
     if (!isRobot(m)) battleSeen()[m.sp] = 1;
     heldStages(k);
-    if (sd.stones && !hasPassive(speciesOf(m).types, 'bedrock')) {
+    if (sd.stones && !hasPassive(billyTypes(m), 'bedrock')) {
       const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, BATTLE_RULES.stonesFraction)));
       m.hp = Math.max(0, m.hp - d);
       battleSay(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'stones', dmg: d });
@@ -967,7 +1009,7 @@ export function chooseAI(k = 1, b) {
     const T = liveActors(foeSide(k));
     if (!T.length) return null;
     const opts = [];
-    for (const id of m.moves.filter(id => MOVES[id] && moveUsable(m, id)))
+    for (const id of movesOf(m).filter(id => MOVES[id] && moveUsable(m, id)))
       for (const tk of T) opts.push([{ mid: id, tk, part: aiAimPart(id, tk) }, aiScore(k, id, tk)]);
     if (!opts.length) return null;
     /* v34: in a double the second foe knows what its partner is about to do: no piling onto a fighter that's already
@@ -1004,8 +1046,8 @@ export function chooseAI(k = 1, b) {
 export function aiAimPart(mid, tk) {
   const t = fighter(tk),
     M = MOVES[mid];
-  if (!t || !isRobot(t) || !(M.fx && M.fx.aim)) return undefined;
-  const L = ROBOT_LIMBS.filter(q => !partBroken(t, q));
+  if (!t || !limbKeys(t).length || !(M.fx && M.fx.aim)) return undefined;
+  const L = limbKeys(t).filter(q => !partBroken(t, q));
   if (!L.length) return undefined;
   return L.reduce((a, b) => (partHpLeft(t, b) < partHpLeft(t, a) ? b : a));
 }
@@ -1016,10 +1058,11 @@ export function hitPart(tk, dmg, M, aim) {
   const t = fighter(tk),
     R = robotRules(),
     fx = M.fx || {};
-  let slot = aim && fx.aim && ROBOT_LIMBS.includes(aim) && !partBroken(t, aim) ? aim : null;
+  let slot = aim && fx.aim && limbKeys(t).includes(aim) && !partBroken(t, aim) ? aim : null;
   if (!slot) {
     const W = /** @type {[string, number][]} */ ([['torso', R.hitWeights.torso ?? 0.25]]);
-    for (const q of ROBOT_LIMBS) if (!partBroken(t, q)) W.push([q, R.hitWeights[q] ?? 0.25]);
+    /* SP-5: a Billie's body is its torso, its Augments its limbs */
+    for (const q of limbKeys(t)) if (!partBroken(t, q)) W.push([q, R.hitWeights[q] ?? 0.25]);
     slot = pickWeighted(W, battleRoll);
   }
   if (slot === 'torso') return slot;
@@ -1068,9 +1111,28 @@ export function bossAlpha(e, hpMult) {
 /** a wild Billie's battle. Studio plan T3.2: `o.host` and `o.extra` (a run battle's seed, weather and Perks:
  * logic/run-loop.js runBattleExtra) as for startTrainer, so the run's simulation starts it as the page does */
 export function startWild(q, o = {}) {
+  /* RL-14: a wild bot (its sp names its gem and parts) is built from new parts and goes by its faction's name */
+  if (isRobotSp(q.sp)) {
+    startWildBot(q, o);
+    return;
+  }
   const made = { build: encounterBuild(q), coat: q.coat },
     foe = q.alpha ? makeAlpha(q.sp, q.lvl, made) : makeBilly(q.sp, q.lvl, made);
-  if (graftOf(q)) graftSet(foe, graftOf(q)); /* SP-1: a grafted wild Billie stays grafted in battle */
+  /* SP-1: a grafted wild Billie stays grafted in battle; SP-2: with its Unstable roll */
+  if (graftOf(q)) {
+    graftSet(foe, graftOf(q));
+    if (q.unstable) foe.unstable = { ...q.unstable };
+    unstableTidy(foe);
+  }
+  /* SP-5: an Escaped specimen wears its Augment (a part of its own from now on: caught, it keeps it) */
+  if (q.aug && typeof q.aug === 'object') {
+    foe.aug = Object.fromEntries(
+      Object.entries(q.aug).map(([slot, p]) => [slot, { uid: newUid(), id: p.id, up: p.up || 0 }])
+    );
+    if (q.unstable) foe.unstable = { ...q.unstable };
+    unstableTidy(foe);
+    foe.hp = maxHp(foe);
+  }
   if (
     !newBattle('wild', [foe], {
       qid: q.id,
@@ -1090,8 +1152,46 @@ export function startWild(q, o = {}) {
     battleSay(`A wild ${coatPrefix(q.coat)}${nm} appeared.`, { k: 'wild' });
     battleSay(`“${nm}!”`, { k: 'cry', si: 1 });
   }
+  /* SP-3: a spliced wild Billie shows what it wears */
+  const parts = spliceWords(foe);
+  if (parts.length === 1) battleSay(`This ${nm} has ${parts[0]}!`);
+  else if (parts.length)
+    battleSay(`This ${nm} is a patchwork: ${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}!`);
+  /* SP-5: an Escaped specimen */
+  if (foe.aug) battleSay('It must have escaped from a Bureau lab.');
   if (CATCH_RULES.luxury.includes(SPECIES[q.sp].line))
     battleSay(`It looks too picky for ${PYRAMIDS.pyramid ? 'a ' + PYRAMIDS.pyramid.n : 'cheap pyramids'}.`);
+  const K = liveActors(0);
+  K.forEach((k, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
+  sayBattleFx();
+  battleHost().open();
+}
+/** RL-14: a wild bot's battle (startWild), single, never an Alpha; it can't be caught (catchable) @param {any} q
+ * @param {any} [o] */
+export function startWildBot(q, o = {}) {
+  const ids = /** @type {any} */ (robotIdsFromSp(q.sp)),
+    foe = makeRobot(ids.gem, fitFromIds(ids), q.lvl),
+    who = factionBotOf(FACTIONS, q.sp);
+  if (who) foe.nick = who.B.name;
+  if (
+    !newBattle('wild', [foe], {
+      qid: q.id,
+      area: battleStageKey(),
+      fmt: 'single',
+      ...(o.host && { host: o.host }),
+      ...o.extra,
+    })
+  )
+    return;
+  const nm = billyName(foe),
+    F = who && FACTIONS[who.faction];
+  battleSay(
+    `${F && F.short ? F.short[0].toUpperCase() + F.short.slice(1) + '’s ' : 'A '}${nm} rolled out of the grass!`,
+    {
+      k: 'wild',
+    }
+  );
+  battleSay(`“Bzzt. Item ${q.no || 0} located.”`, { k: 'cry', si: 1 });
   const K = liveActors(0);
   K.forEach((k, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
   sayBattleFx();
@@ -1260,9 +1360,12 @@ export function enemyOnly(b) {
     }
   });
 }
+/** RL-14: whether a foe can be caught: a bot (a robot, the Bureau's) never is, whatever the pyramid @param {any} e */
+export const catchable = e => !!e && !isRobot(e);
 export function catchOdds(id, T, spin, b) {
   return withBattle(b, () => {
     const e = fighter(1);
+    if (!catchable(e)) return 0;
     if (PYRAMIDS[id] && PYRAMIDS[id].m === 0) return 1;
     let C = PYRAMIDS[id].m;
     if (id === 'pyramid' && CATCH_RULES.luxury.includes(speciesOf(e).line)) C *= CATCH_RULES.luxuryPyramid;
@@ -1283,6 +1386,7 @@ export function catchOdds(id, T, spin, b) {
 }
 export function catchRoll(id, T, spin, b) {
   return withBattle(b, () => {
+    if (!catchable(fighter(1))) return { caught: false, w: 0, edge: false, P: 0 };
     if (battleHost().sureCatch()) return { caught: true, w: 3, edge: false, P: 1 };
     if (PYRAMIDS[id].m === 0) return { caught: true, w: 3, edge: false, P: 1 };
     if (battleRoll() < CATCH_RULES.edge) return { caught: true, w: 1, edge: true, P: 1 };

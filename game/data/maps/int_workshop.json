@@ -50,7 +50,7 @@
   {"k":"wall_clock","x":6,"z":8.45},
   {"k":"wall_window","x":3.6,"z":8.45},
   {"k":"wall_window","x":8.4,"z":8.45},
-  {"k":"lab_machine","x":6,"z":7.55,"label":"Upgrade bench"},
+  {"k":"lab_machine","x":6,"z":7.55,"act":"workshop","label":"Upgrade bench"},
   {"k":"shop_shelf","x":1.99,"z":7.72,"label":"Parts"},
   {"k":"shop_shelf","x":10.01,"z":7.72,"label":"Parts"},
   {"k":"lab_desk","x":2.49,"z":5.6,"label":"Workbench"},

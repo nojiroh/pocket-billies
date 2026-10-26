@@ -24,7 +24,7 @@ The single source of truth for what the game is becoming. Phase files implement 
 - The story reacts to your runs, as in Hades: hub characters pick lines from your run history, relationships unlock lines and small bonuses, Blake returns as a rival whose team counters yours, and each bracket is a chapter of the organization's mystery. After a loss Professor Chosen takes credit for bringing you back; Hazel finds the organization's portal did it.
 - Losing a run: you keep one Billy of your choice and lose the rest with your money and items; money and items convert to unlock currency. Winning pays the unlock currency plus the rare boss currency and opens the next tier.
 - The ranch, a hub building: stores Billies, trains them between runs (ranch-trained levels persist), hatches eggs and breeds (a safe mode and a risky mode with "abominations"), and earns passive income on real-time timers (capped, safe against clock rollback, working offline).
-- Hub upgrades are paid with four currencies in all (run money, unlock currency, a building material, a rare boss currency), one per building.
+- Hub upgrades are paid with five currencies in all (run money, unlock currency, a building material, a rare boss currency, and DNA for splicing: splicing track SP-3), one per building.
 - Bots (robots) are an enemy faction first and playable much later.
 - Modular: nodes, relics, modifiers, currencies, factions, buildings, unlocks and bosses are data sections with schemas, so new systems and, later, content packs by others are added without editing core files.
 - Online: friends' ghost teams (a friend's last run as a rival fight) and daily shared seeds. Nothing else.

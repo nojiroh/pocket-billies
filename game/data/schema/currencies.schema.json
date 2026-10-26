@@ -1,7 +1,7 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "$id": "currencies.schema.json",
- "title": "game/data/currencies.json: the game's five currencies (roguelite track RL-11; RL-S2 added Beans, the gift currency; check-data refuses a sixth)",
+ "title": "game/data/currencies.json: the game's six currencies (roguelite track RL-11; DNA: splicing track SP-3; RL-S2 added Beans, the gift currency; check-data refuses a seventh)",
  "type": "object",
  "propertyNames": {
   "enum": [
@@ -9,11 +9,12 @@
    "research",
    "scrap",
    "crests",
-   "beans"
+   "beans",
+   "dna"
   ]
  },
- "minProperties": 5,
- "maxProperties": 5,
+ "minProperties": 6,
+ "maxProperties": 6,
  "additionalProperties": {
   "type": "object",
   "required": [

@@ -51,7 +51,7 @@ test('unlock graph: a circle a requires edit would close is named by its path', 
 test('unlock graph: a new save has nothing earned; runs and wins earn what unlockAuto grants', () => {
   const fresh = G.unlockSaveAfter(D);
   assert.deepEqual(fresh.owned, []);
-  assert.deepEqual(fresh.currencies, { research: 0, scrap: 0, crests: 0 });
+  assert.deepEqual(fresh.currencies, { research: 0, scrap: 0, crests: 0, dna: 0 });
   assert.equal(fresh.buildings.ranch, 1);
   assert.equal(fresh.why.shop_revive, 'cost');
   assert.equal(fresh.why.ranch_3, 'requires');

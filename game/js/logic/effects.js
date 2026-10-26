@@ -12,6 +12,8 @@
                                                              modBossHp)
      xp      the holder's XP   turnHeal  a share of HP at each turn's end   pinchHeal  once a battle, low on HP
                                                              (RL-12c, held items only)
+     dna     a Gene Sample's DNA (battle-rewards.js spliceSample)    splice  the wild splice odds (rules.js, a run
+     unstable  an Unstable splice's turn-end hurt (battle-engine.js)          place's stocking)   (SP-6, Perks)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -24,7 +26,7 @@
 /** @typedef {FxRow & { src: string }} Fx */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { RELATIONS, provide } from '../hooks.js';
+import { RELATIONS, billyGeneFx, provide } from '../hooks.js';
 import { relFxRows } from './relations.js';
 import { modFxRows } from './modifiers.js';
 import { encBoonRows } from './run-enc.js';
@@ -48,9 +50,11 @@ expose({
   fxPrice: [() => fxPrice],
   fxRows: [() => fxRows],
   fxRunPrice: [() => fxRunPrice],
+  fxSplice: [() => fxSplice],
   // @ts-expect-error -- replaced on purpose
   fxStages: [() => fxStages, v => (fxStages = v)],
   fxTurnHeal: [() => fxTurnHeal],
+  fxTurnHurt: [() => fxTurnHurt],
   fxXp: [() => fxXp],
 });
 /* eslint-enable no-func-assign */
@@ -68,6 +72,10 @@ export const FX_KINDS = /** @type {const} */ ([
   'xp',
   'turnHeal',
   'pinchHeal',
+  'turnHurt',
+  'dna',
+  'splice',
+  'unstable',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -98,13 +106,17 @@ export const fxOfRun = (run, perks) => {
 };
 provide({ fxOfRun }); /* to-module */
 
-/** RL-12c: a Billie's own effect rows: its held item's (items.json `hold`), tagged `held:<id>`; null with none or an
- * item that holds nothing. Later sources of a Billie's own rows (its parts) join here
- * @param {{ held?: string } | null | undefined} m @param {Record<string, { hold?: import('../../types/game-data').FxRow[] }>} items
- * @returns {Fx[] | null} */
+/** RL-12c: a Billie's own effect rows: its held item's (items.json `hold`), tagged `held:<id>`, then (SP-2) its
+ * splice's (rules.js billyGeneFx: its traits', tagged `gene:<trait>`, and an Unstable splice's drawback, `unstable`);
+ * null with none (SP-5: an Augment's Unstable splice too)
+ * @param {{ held?: string, sp?: string, graft?: Record<string, string>, aug?: any } | null | undefined} m
+ * @param {Record<string, { hold?: import('../../types/game-data').FxRow[] }>} items @returns {Fx[] | null} */
 export const fxOfBillie = (m, items) => {
-  const I = m && m.held ? items[m.held] : null;
-  return I && I.hold && I.hold.length ? I.hold.map(f => /** @type {Fx} */ ({ ...f, src: 'held:' + m?.held })) : null;
+  const I = m && m.held ? items[m.held] : null,
+    held = I && I.hold && I.hold.length ? I.hold.map(f => /** @type {Fx} */ ({ ...f, src: 'held:' + m?.held })) : null;
+  if (!m || (!m.graft && !m.aug)) return held;
+  const gene = /** @type {Fx[]} */ (billyGeneFx(m));
+  return held || gene.length ? [...(held || []), ...gene] : null;
 };
 
 /** the product of the multipliers of the rows that pass `test`, smallest first, within FX_LIMIT (1 when none)
@@ -207,6 +219,19 @@ export const fxTurnHeal = fx =>
     1,
     (fx || []).reduce((a, f) => a + (f.kind === 'turnHeal' ? f.share : 0), 0)
   );
+
+/** SP-2: the share of its HP a Billie loses at each turn's end (an Unstable splice's drawback), at most a half
+ * @param {Fx[] | null | undefined} fx */
+export const fxTurnHurt = fx =>
+  Math.min(
+    0.5,
+    (fx || []).reduce((a, f) => a + (f.kind === 'turnHurt' ? f.share : 0), 0)
+  );
+
+/** SP-6: what multiplies a Gene Sample's DNA, the wild splice odds and an Unstable splice's turn-end hurt: the run's
+ * rows of that kind (1 when none) @param {Fx[] | null | undefined} fx @param {'dna' | 'splice' | 'unstable'} kind */
+export const fxSplice = (fx, kind) => fxMult(fx, f => f.kind === kind);
+provide({ fxSplice }); /* to-module */
 
 /** RL-12c: a holder's once-a-battle heal when low: the first pinchHeal row, or null
  * @param {Fx[] | null | undefined} fx @returns {{ at: number, share: number } | null} */

@@ -101,6 +101,7 @@ An entry of `cycle` or `seq` starts after `- `; its other lines go under it, two
 | `money >= 200` | Moneys on hand (RL-12b) |
 | `team >= 2` | Billies in the team (RL-12b) |
 | `badge:Water` | a badge of that type is won: `meta.badges` (RL-R2) or a leader's seat (RL-12b) |
+| `dna >= 10`, `genes >= 1`, `spliced >= 1` | DNA on hand; Genes in the Gene Bank's library; spliced Billies in the team (SP-6) |
 | `last:lost`, `last:row <= 3` | the last run (RL-S1, `meta.history`): `won`, `lost`, `quit` (1 or 0), `row` (the furthest reached), `days`, `perks`, `team`, `leaders` (beaten), `expedition`, RL-S2 `rival` (meetings with Blake) and `rivalwon`; all 0 before the first run |
 | `lastby:bureau`, `lastby:boss`, `lastby:marina` | what ended the last run: its kind (`wild`, `route`, `event`, `miniboss`, `boss`, `rival`, `trainer`), a leader's or class's id (Blake's is `blake`), the Billie standing, or `bureau` (a Bureau agent) |
 | `history:losses >= 2` | over the runs kept (the last 20): `runs`, `wins`, `losses`, `quits`, `streak` (wins in a row, newest back), `lstreak` (losses in a row), `bureau` (runs a Bureau agent ended), RL-S2 `rivalmet`, `rivalwon` (meetings with Blake, and wins), `rivallost` (runs he ended) |
@@ -141,13 +142,13 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 | `go place [entrance]` | a checkpoint; from S2 |
 | `actor`, `act`, `caption`, `blink`, `screen`, `effect`, `hide`, `sound`, `walk who spot`, `camera shot`, `wait who` | a cutscene's: docs/CUTSCENES.md (only in a cutscene) |
 | `dressing-room`, `throw-coins`, `pick-starter`, `staged-fight`, `rival-battle`, `fall` | the opening's: docs/CUTSCENES.md |
-| `perk [rarity or id]`, `money n`, `hurt share`, `heal [share]`, `status id`, `fx n kind key=value...`, `wager percent`, `loot table [n]`, `level n`, `recall [up]`, `foe class [up]`, `wild [up]`, `reward [kind] [n]`, `invite` | an event's (events.json, on a run; RL-12b): below |
+| `perk [rarity or id]`, `money n`, `hurt share`, `heal [share]`, `status id`, `fx n kind key=value...`, `wager percent`, `loot table [n]`, `level n`, `recall [up]`, `foe class [up]`, `wild [up]`, `reward [kind] [n]`, `invite`, `dna n`, `gene [n]`, `splice how`, `unsplice [n]` | an event's (events.json, on a run; RL-12b, SP-6): below |
 
 ### Event commands (RL-12b)
 
 An event (game/data/events.json) has an intro (lines only) and 2-3 options; an option's `need` is a condition (the
-option shows greyed out with what it needs until it holds), its `cost` Moneys paid when it is picked, and its `then` a
-script with these commands besides the usual ones. Every chance comes from the run's own stream, so a run made again
+option shows greyed out with what it needs until it holds), its `cost` Moneys (SP-6: and its `dna`, DNA) paid when it is picked, and its `then` a
+script with these commands besides the usual ones. An event's optional `when` (SP-6) is a condition read once, when a waystation's event is drawn: only while it holds may the stand hold this one (the run sim and the Studio's preview read none, so they leave such an event out). Every chance comes from the run's own stream, so a run made again
 plays the same.
 
 | Command | Does |
@@ -165,6 +166,10 @@ plays the same.
 | `wild 2` | a wild battle with a Billie of the region, 2 levels over the place |
 | `reward`, `reward tutor 2` | a reward pick (rewards.json): of every kind, or of one (item, candy, evo, tutor), n cards |
 | `invite` | RS-2: the run's resident is invited to Copperleaf (only in an event with `resident: true`, drawn only while they can be met at an event); they move in when the run ends |
+| `dna 10`, `dna -5` | DNA gained or lost, never below 0 (SP-6) |
+| `gene`, `gene 2` | Genes not yet in the Gene Bank's library, of the region's lines, into it (SP-6) |
+| `splice wild`, `splice lib` | you pick a Billie and it gets a Gene: `wild`, one the back alley draws for it (any slot its form has, held to your Stability limit; you can't back out, the option was paid); `lib`, one of your library on a slot the Gene Bank's level opens, for the Bank's DNA price ("Not now" leaves). The Gene goes into the library too (SP-6) |
+| `unsplice`, `unsplice 15` | you pick a spliced Billie's Gene to hand in (it comes off and stays in the library), for that much DNA ("Not now" keeps it) (SP-6) |
 
 Speakers in an event are one word (`Clerk: ...`): the parser reads a single word before the colon as the speaker.
 

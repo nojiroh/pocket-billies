@@ -111,3 +111,47 @@ test('the Build tab balance: all M leans nowhere; big parts lean to attack, smal
   assert.ok(Math.abs(1 + lean(b).attack - fn('buildStatFactor')(b, 'lev')) < 1e-9);
   assert.ok(Math.abs(1 + lean(b).speed - fn('buildStatFactor')(b, 'hus')) < 1e-9);
 });
+
+test('SP-2: a spliced slot weighs its donor part; no splice gives the same numbers as before; a splice is never Prime', () => {
+  const M = allSize('M'),
+    L = { ...M, front: 'L' };
+  /* no rel (or null) is exactly today's arithmetic */
+  for (const b of [M, L, allSize('S')]) {
+    assert.equal(fn('buildWeightRatio')(b, null), fn('buildWeightRatio')(b));
+    for (const k of ['hp', 'lev', 'hus']) assert.equal(fn('buildStatFactor')(b, k, null), fn('buildStatFactor')(b, k));
+  }
+  /* a front part four times as heavy: the slot's share counts four times */
+  const w = fn('buildWeightRatio')(M, { front: 4 });
+  assert.ok(Math.abs(w - (1 + 3 * P.share.front)) < 1e-9, `${w}`);
+  /* heavier: more attack, less speed, inside the cap, and no Prime bonus on HP */
+  assert.ok(fn('buildStatFactor')(M, 'lev', { front: 4 }) > 1);
+  assert.ok(fn('buildStatFactor')(M, 'hus', { front: 4 }) < 1);
+  assert.equal(fn('buildStatFactor')(M, 'lev', { front: 400 }), 1 + P.cap);
+  assert.equal(fn('buildStatFactor')(M, 'hp', { front: 1 }), 1, 'an all-M splice loses Prime');
+  assert.equal(fn('isPrime')(M, true), false);
+  assert.equal(fn('buildLean')(M, { front: 1 }).prime, false);
+});
+
+test('SP-2: a spliced Billie: its weight, its stats and its Prime tag follow its foreign parts', () => {
+  const s = startedSave('swift0', 30),
+    m = s.team[0];
+  m.build = allSize('M');
+  const kg = fn('billyWeight')(m),
+    lev = fn('stat')(m, 'lev'),
+    hus = fn('stat')(m, 'hus');
+  assert.equal(fn('billyPrime')(m), true);
+  m.graft = { front: 'bear_arm@musk3' };
+  assert.equal(fn('billyPrime')(m), false);
+  assert.ok(fn('billyWeight')(m) > kg * 50, 'a bear arm on a Swiftlet');
+  assert.ok(fn('stat')(m, 'lev') > lev / (1 + P.primeBonus), 'heavier: more attack than an un-Prime twin');
+  assert.ok(fn('stat')(m, 'hus') < hus, 'and slower');
+});
+
+test('SP-2: a Billie with no build and a splice that no longer fits gets no build factor (and no Prime bonus)', () => {
+  const s = startedSave('swift0', 30),
+    m = s.team[0];
+  delete m.build;
+  const plain = fn('stat')(m, 'hp');
+  m.graft = { back: 'reptile_tail@trump0' };
+  assert.equal(fn('stat')(m, 'hp'), plain);
+});

@@ -35,7 +35,7 @@ are sessions of Claude's working time, not calendar time, and exclude the owner'
 | RL-S1 | Story director (done 2026-10-25, branch `track/story`) | `meta.history`, `banter.json` (was `lines.json`), the hub's line pick, the return-from-a-loss scene | RL-12b | 1-2 | yes |
 | RL-S2 | Rival and relationships (done 2026-10-26, branch `track/story`: part A the systems, part B the owner's answers, Chapter 1's beats, the favours and every line) | Blake as a rival node countering your lead, `meta.rel` with gifts of Beans, the `rel:` and `chapter` conditions; Chapter 1's beats and the favours are part B | RL-S1 | 1-2 | yes |
 | RL-13 | Expeditions, challenges, starter points (done 2026-10-24, branch `track/expeditions`) | `modifiers.json` Expeditions I-V, four challenges, starter points at the mast, leaders of their own type, the sim tuned to its first wins | RL-R2 | 1-2 | yes |
-| RL-14 | The organization's bots, salvage, the Voltron | `factions.json`, `bosses.json`, data-driven `alphaPhase`, the bots as the organization's army | RL-13, RL-S1 | 2 | yes |
+| RL-14 | The organization's bots, salvage, the Voltron (RL-14a done 2026-10-26 on `ccr-15fdd30c-5nfh0d`: `factions.json`, wild bots, the Bureau's agents with bots, salvage, the scrapyard, bots' cries, limbs dropping off; RL-14b the Voltron next, on `track/bots`) | `factions.json`, `bosses.json`, data-driven `alphaPhase`, the bots as the organization's army | RL-13, RL-S1 | 2 | yes |
 | RL-15 | Online | the run record, friend ghosts, daily seeds, rules and emulator tests | RL-14 | 2 | yes |
 | RL-16 | Content packs and Studio editors | pack merge and checks, editors for the new sections | RL-11 | 1-2 | yes |
 | RO-2.. | Roster: new lines (**done** 2026-10-24, branch `track/roster`: RO-2a Hughes, Kamprad, Cuban, Altman; RO-2b Yiming, Woods, Arnault; RO-2c Huang, five regional forms and a balance pass, 40 species) | from 24 to 40 species through the Studio's kit bake; plan in roguelite-track.md (RO-2.. plan) | RO-1 | 3 | done |
@@ -64,7 +64,17 @@ town node needs it.
   with readable traits, wild Billies with mixed parts (Graft, Chimera), a Gene Bank building paid in DNA, a Stability
   budget with Unstable abominations past it, Augments from the bots' salvage. SP-1 (an art spike on the phone) built
   2026-10-25 on `ccr-dde1a5bd-nx5zdl` (the owner's word: `track/splicing` didn't exist yet), waiting on the phone's
-  bake times for its exit; SP-5 waits for RL-14. Tags `sp-N-done`. Branch `track/splicing`.
+  bake times for its exit. SP-2 (rules: Genes, Stability, Unstable, the balance sim) built 2026-10-25 on
+  `claude/sp-2-rules` on top of SP-1's branch, waiting on the owner's numbers. SP-3 (wild splices: Grafts and
+  Chimeras on run places, the battle's line, DNA, Gene Samples) built 2026-10-25 on `claude/sp-3-wild-splices` on top
+  of SP-2's branch, waiting on the owner's odds and DNA amounts. SP-4 (the Gene Bank: the building on its plot, the
+  library, sequencing, the splice sheet, its levels, eggs, starter points, field parts, the Studio's Genes section)
+  built 2026-10-26 on `claude/sp-4-gene-bank` on top of SP-3's branch (main merged in once), its numbers placeholders
+  until played. SP-6 (run events: the back-alley splicer, the Bureau field lab, the Gene auction, the Gene recall;
+  three Perks) built 2026-10-26 on `claude/sp-6-run-events` on top of SP-4's branch, waiting on the owner's prices;
+  SP-5 (Augments: bot arms and legs on Billies at the Workshop for Scrap, breaking in battle and mended at clinics, upgrades,
+  drawn on the Billie, Escaped specimens near scrapyards) built 2026-10-26 on `claude/sp-5-augments`, on SP-6's branch with
+  RL-14a's merged in, its numbers placeholders until played. Tags `sp-N-done`. Branch `track/splicing`.
 - **Residents track** (docs/phases/residents-track.md, the owner's brief and answers 2026-10-26): invite run NPCs to
   Copperleaf with a favour (a run quest); they move in win or lose and open a service at an empty building (store,
   inn, library, Workshop, station, ranch, a cottage) with up to 3 levels in the existing currencies, one capped power
@@ -223,7 +233,8 @@ counting 6 m in, a run kept across a new generator version, places named biome +
 sessions); pushing the tags; the opening (answered in RL-8: the fall only). New from the owner's first play (2026-10-21,
 roguelite-track.md section 5): rooms too bright; routes wider than long (an HD-2D diorama); Copperleaf's world map its
 island alone; a run's own world map generated from its seed. Still open from the old phases: phase 17's prototype
-approval and ask list (RL-14), phase 16's breeding mode (answered in RL-10a: both, you pick the parents, the ranch the parts),
+approval and ask list (RL-14; answered in RL-14a: the numbers kept and tuned by the sim, wild bots yes, the gem's role
+open), phase 16's breeding mode (answered in RL-10a: both, you pick the parents, the ranch the parts),
 phase 10's phone look, phase 06's 06-5.
 
 ## Where the old brief went

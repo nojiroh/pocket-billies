@@ -15,6 +15,8 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
     beans: 0,
     rel: {},
     gifted: {},
+    dna: 0,
+    genes: [],
     unlocks: {},
     buildings: {},
     runs: 0,

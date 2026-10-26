@@ -49,6 +49,8 @@ export interface GameData {
   /** roster track RO-3a: the body plans and the placeholder Billies, baked by logic/placeholder-art.js
    * (game/data/bodyPlans.json; its shapes are typed there as BodyPlans) */
   bodyPlans?: import('../js/logic/placeholder-art.js').BodyPlans;
+  /** splicing track SP-2: Genes (game/data/genes.json; logic/genes.js) */
+  genes?: Genes;
   /** phase 10: the world map's look: the sea, the relief, each region's ground and trees (game/data/worldmap.json) */
   worldmap?: WorldMapLook;
   /** map generator MG-1: the generator's recipe per biome (game/data/biomes.json) */
@@ -86,6 +88,8 @@ export interface GameData {
   setPieces?: SetPiecesData;
   /** RL-13: a run's Expeditions and challenges */
   modifiers?: ModifiersData;
+  /** RL-14: the runs' enemy factions and their bots */
+  factions?: { about?: string; factions: Record<DataId, Faction> };
   /** TW-3: a run's quests */
   quests?: QuestsData;
   /** residents track RS-1: the people a run can invite to Copperleaf (game/data/residents.json; logic/residents.js) */
@@ -1114,6 +1118,8 @@ export interface StarterPointRules {
   levelsFrom: number;
   /** one point more per this many levels above levelsFrom */
   perLevels: number;
+  /** SP-4: one point more per this much Stability a Billie's splice spends (none when left out) */
+  perStability?: number;
   /** the most Billies a run can start with */
   team: number;
 }
@@ -1786,6 +1792,9 @@ export interface NodeType {
   shop?: boolean;
   /** RT-1: its place is laid out as a route (a plan from rules.json run.layouts by biome) */
   layout?: boolean;
+  /** RL-14: instead of a weight, the chance a free node becomes it (on its own stream), from map row fromRow on */
+  chance?: number;
+  fromRow?: number;
 }
 
 /** music.json: a song's recipe, composed into notes by the tracker (game/js/audio/tracker.js; sound track SND-2) */
@@ -1863,7 +1872,73 @@ export type FxRow =
       a share of its HP at `at` of its HP or below */
   | { kind: 'xp'; mult: number }
   | { kind: 'turnHeal'; share: number }
-  | { kind: 'pinchHeal'; at: number; share: number };
+  | { kind: 'pinchHeal'; at: number; share: number }
+  /** SP-2 (genes.json unstable only): the Billie loses a share of its HP at each turn's end */
+  | { kind: 'turnHurt'; share: number }
+  /** SP-6: a Gene Sample's DNA, the wild splice odds, an Unstable splice's turn-end hurt (Perks), times mult */
+  | { kind: 'dna'; mult: number }
+  | { kind: 'splice'; mult: number }
+  | { kind: 'unstable'; mult: number };
+/** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
+export interface Genes {
+  about?: string;
+  /** a part kind (partKits.json parts.kind) and the trait it brings */
+  kinds: Record<string, { trait: string; word?: string; field?: string }>;
+  traits: Record<string, GeneTrait>;
+  /** per part id: its dominant type (the Billie's second type) and the move it teaches (SP-4) */
+  parts: Record<string, { type?: string; move?: string; field?: string }>;
+  /** the most traits a Billie has */
+  maxTraits: number;
+  /** SP-3: the share of a run place's wild Billies spliced at spawn (a Graft, a Chimera; escaped waits for SP-5's
+   * Augments), a Chimera's fewest and most foreign parts, and the DNA a beaten one pays */
+  wild: {
+    graft: number;
+    chimera: number;
+    escaped: number;
+    chimeraParts: [number, number];
+    /** SP-5: escaped, an Escaped specimen's (the Graft's when missing) */
+    dna: { graft: number; chimera: number; escaped?: number };
+  };
+  /** SP-4: the Gene Bank: per level its Stability limit and the slots it splices, a splice's DNA price (base + perCost x
+   * the Gene's Stability cost), the chance an egg keeps each parent's spliced slot */
+  bank: GeneBank;
+  /** a foreign part's cost (same line, same kit, another kit, an Augment), the limit, how far past it is refused */
+  stability: { line: number; kit: number; other: number; augment: number; limit: number; refuse: number };
+  /** a splice past the limit: one stat times up, another times down, and the drawback */
+  unstable: GeneTrait & { up: number; down: number };
+  /** SP-5: Augments, robots.json arms and legs fitted on a Billie at the Workshop (logic/augments.js) */
+  augment: GeneAugment;
+}
+/** SP-5: genes.json augment (every number a placeholder) */
+export interface GeneAugment {
+  about?: string;
+  /** per slot the robot part it takes, the side an arm goes on, and that side's share of the slot */
+  slots: Partial<Record<'front' | 'back', { part: 'arm' | 'legs'; side?: 'L' | 'R'; share: number }>>;
+  /** the share of the part's stats (robots.json stats, upgrades included) added to the Billie's base stats */
+  statShare: number;
+  /** per robot part id, the field move (fieldMoves.json) it counts for */
+  field: Record<string, string>;
+  /** the part's move: extra (beside the learned ones while fitted) or none */
+  move: 'extra' | 'none';
+  /** the escaped odds' multiplier at a place one step from a scrapyard */
+  escapedNear: number;
+  /** what a knocked-out Escaped specimen leaves beside its DNA: its part, or nothing more */
+  knockout: 'part' | 'none';
+  /** the Workshop's levels: the slots it fits and the highest upgrade */
+  levels: { slots: ('front' | 'back')[]; maxUp: number }[];
+  /** prices in Scrap: a fit, and each upgrade (the first to +1, then +2...) */
+  price: { fit: number; up: number[] };
+}
+export interface GeneBank {
+  levels: { limit: number; slots: ('front' | 'back' | 'sig')[] }[];
+  price: { base: number; perCost: number };
+  inherit: number;
+}
+export interface GeneTrait {
+  name: string;
+  d: string;
+  fx: FxRow[];
+}
 /** RL-13: modifiers.json: a run's Expedition (one row each, I first) and its challenges (logic/modifiers.js) */
 export interface Modifier {
   name: string;
@@ -1877,6 +1952,29 @@ export interface ModifiersData {
   about?: string;
   expeditions: Modifier[];
   challenges: Partial<Record<ChallengeId, Modifier>>;
+}
+/** RL-14: factions.json: one of the runs' enemy factions (logic/factions.js) */
+export interface FactionBot {
+  name: string;
+  gem: string;
+  torso: string;
+  armL: string;
+  armR: string;
+  legs: string;
+  weight: number;
+}
+export interface Faction {
+  name: string;
+  short?: string;
+  bots: Record<DataId, FactionBot>;
+  /** wild bots: the chance a run route's wild one is a bot, from which map row, in which biomes */
+  wild: { chance: number; fromRow: number; biomes: string[] };
+  /** its agents' classes (events.json) and how many bots each fields [least, most] */
+  agents: { classes: string[]; bots: [number, number] };
+  /** a scrapyard place's agents [least, most] and their classes */
+  scrapyard: { trainers: [number, number]; classes: string[] };
+  /** a salvage pick: up to `parts` of the beaten bots' parts and Scrap (scrap + scrapPerBot a bot after the first) */
+  salvage: { parts: number; scrap: number; scrapPerBot: number };
 }
 /** TW-3: quests.json: a run's quests (logic/run-quests.js) */
 export type QuestKind = 'catch' | 'trainers' | 'parcel' | 'miniboss';
@@ -1971,6 +2069,8 @@ export interface RunEvent {
   weight: number;
   repeat?: boolean;
   biomes?: DataId[];
+  /** SP-6: a condition read when a waystation's event is drawn: only then may it be this one */
+  when?: string;
   options: RunEventOption[];
   /** residents track RS-2: only while the run's resident can be met at an event; `invite` invites them */
   resident?: true;
@@ -1980,6 +2080,8 @@ export interface RunEventOption {
   need?: string;
   needText?: string;
   cost?: number;
+  /** SP-6: DNA paid when it is picked */
+  dna?: number;
   then: string[];
 }
 /** perks.json: a Perk (roguelite track RL-12): held for one run, its effect rows apply while it is held */
@@ -1992,8 +2094,8 @@ export interface Perk {
   fx: FxRow[];
 }
 
-/** currencies.json: one of the game's five currencies (roguelite track RL-11; RL-S2: Beans) */
-export type CurrencyId = 'money' | 'research' | 'scrap' | 'crests' | 'beans';
+/** currencies.json: one of the game's six currencies (roguelite track RL-11; RL-S2: Beans; SP-3: DNA) */
+export type CurrencyId = 'money' | 'research' | 'scrap' | 'crests' | 'beans' | 'dna';
 export interface Currency {
   /** what the player reads; `long` where the short name is a sign ($); `one` for a count of one */
   name: string;
@@ -2027,7 +2129,8 @@ export type UnlockGrant =
   | { research: number }
   | { scrap: number }
   | { crests: number }
-  | { beans: number };
+  | { beans: number }
+  | { dna: number };
 /** unlocks.json: one row of the unlock table (roguelite track RL-11): sold at a building (at + cost, in its currency;
  * the Lab's rows are its board) or earned when a condition holds (when) */
 export interface Unlock {
@@ -2158,6 +2261,8 @@ export interface SetPiece {
   /** draw weights by biome, `default` for one not listed */
   biomes: Record<string, number>;
   /** a layout plan's multiplier on its weight */
+  /** RL-14: draw weights on a place of a kind (the scene's site dial: a run's scrapyard), in place of its biome's */
+  sites?: Record<string, number>;
   plans?: Record<string, number>;
   props: SetPieceProp[];
   people?: SetPiecePerson[];

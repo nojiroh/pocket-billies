@@ -11,16 +11,19 @@
    - every chance an event takes (a wager, a loot draw, which Billie, which Perk) comes from the run's events stream,
      rngFrom(run.seed, 'event|' + run.enc.n), one draw a step (encRng), so a run made again plays the same;
    - foes: a trainer of a class (events.json classes) with Billies of the region's dex, its levels the place's top wild
-     level plus `up` (encClassFoe; route trainers use it too), or a wild Billie of the dex (encWildFoe).
+     level plus `up` (encClassFoe; route trainers use it too), or a wild Billie of the dex (encWildFoe). RL-14: a
+     faction's agent (factions.json agents) fields its bots after its Billies.
    Logic only: no DOM, no Date, no Math.random (tools/test/encounters.test.mjs). */
 /** @import { Run, Billy } from '../../types/save-data' */
 /** @import { EventsData, RunEventOption, Perk, Item } from '../../types/game-data' */
 /** @typedef {{ cap: number, pick: number, rarity: Record<string, number>, price: Record<string, number> }} PerkRules */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { FACTIONS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { speciesStep } from './rules.js';
 import { modFoeLevels } from './modifiers.js';
+import { factionBotEntry, factionBotPick, factionOfClass } from './factions.js';
 import { runNodeSeed, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
 import { encOf } from './run-enc.js';
@@ -73,9 +76,11 @@ export function encRng(run) {
 }
 
 /** the events a place may hold: weight above 0, its biome's (or every biome's), not played this run unless `repeat`,
- * by id; RS-2: a `resident` event only when `meet` (the run's resident can be met at an event, logic/residents.js)
- * @param {Run} run @param {EventsData} E @param {string | undefined} biome @param {boolean} [meet] */
-export function eventPool(run, E, biome, meet = false) {
+ * (SP-6) its `when` holding, by id. With no `holds` (the run sim, the Studio's preview) an event with a `when` is
+ * left out, as for a new save @param {Run} run @param {EventsData} E @param {string | undefined} biome
+ * @param {(cond: string) => boolean} [holds] @param {boolean} [meet] RS-2: a `resident` event only when the run's
+ * resident can be met at an event (logic/residents.js) */
+export function eventPool(run, E, biome, holds, meet = false) {
   const seen = new Set(run.enc ? run.enc.seen : []);
   return Object.keys(E.events)
     .filter(id => {
@@ -84,6 +89,7 @@ export function eventPool(run, E, biome, meet = false) {
         ev.weight > 0 &&
         (!ev.biomes || !biome || ev.biomes.includes(biome)) &&
         (ev.repeat || !seen.has(id)) &&
+        (!ev.when || (!!holds && holds(ev.when))) &&
         (!ev.resident || meet)
       );
     })
@@ -91,14 +97,14 @@ export function eventPool(run, E, biome, meet = false) {
 }
 
 /** the event at a map node: the one kept, else drawn now from the node's stream and kept ('' when none is left);
- * `meet`: RS-2, the run's resident can be met at an event (eventPool)
- * @param {Run} run @param {number} i the map node @param {EventsData} E @param {boolean} [meet] */
-export function eventAt(run, i, E, meet = false) {
+ * SP-6: an event's `when` is read then, once (holds: the game's conditions)
+ * @param {Run} run @param {number} i the map node @param {EventsData} E @param {(cond: string) => boolean} [holds] @param {boolean} [meet] RS-2 (eventPool) */
+export function eventAt(run, i, E, holds, meet = false) {
   const e = encOf(run),
     k = String(i);
   if (Object.hasOwn(e.node, k)) return e.node[k];
   const node = run.map && run.map.nodes[i],
-    pool = eventPool(run, E, (node && node.biome) || undefined, meet),
+    pool = eventPool(run, E, (node && node.biome) || undefined, holds, meet),
     id = pool.length
       ? rngFrom(runNodeSeed(run.seed, i), 'event').pick(Object.fromEntries(pool.map(p => [p, E.events[p].weight])))
       : '';
@@ -128,15 +134,22 @@ export function needWords(need, items) {
   if (/^badges(\s*>=\s*1)?$/.test(need)) return 'Needs a badge';
   if ((m = /^team\s*>=\s*(\d+)$/.exec(need))) return `Needs ${m[1]} Billies`;
   if ((m = /^money\s*>=\s*(\d+)$/.exec(need))) return `Needs ${m[1]} Moneys`;
+  /* SP-6: DNA, the Gene library, a spliced Billie */
+  if ((m = /^dna\s*>=\s*(\d+)$/.exec(need))) return `Needs ${m[1]} DNA`;
+  if (/^genes(\s*>=\s*1)?$/.test(need)) return 'Needs a Gene';
+  if ((m = /^genes\s*>=\s*(\d+)$/.exec(need))) return `Needs ${m[1]} Genes`;
+  if (/^spliced(\s*>=\s*1)?$/.test(need)) return 'Needs a spliced Billie';
+  if ((m = /^spliced\s*>=\s*(\d+)$/.exec(need))) return `Needs ${m[1]} spliced Billies`;
   return 'Not now';
 }
 
-/** whether an option can be picked: its need holds (holds(need)) and the Moneys are there; why not, in words
- * @param {RunEventOption} o @param {(cond: string) => boolean} holds @param {number} money
- * @param {Record<string, Item>} items @returns {{ ok: boolean, why: string }} */
-export function eventOptionState(o, holds, money, items) {
+/** whether an option can be picked: its need holds (holds(need)) and the Moneys (SP-6: and the DNA) are there; why
+ * not, in words @param {RunEventOption} o @param {(cond: string) => boolean} holds @param {number} money
+ * @param {Record<string, Item>} items @param {number} [dna] meta.dna @returns {{ ok: boolean, why: string }} */
+export function eventOptionState(o, holds, money, items, dna = 0) {
   if (o.need && !holds(o.need)) return { ok: false, why: o.needText || needWords(o.need, items) };
   if (o.cost && money < o.cost) return { ok: false, why: `Needs ${o.cost} Moneys` };
+  if (o.dna && dna < o.dna) return { ok: false, why: `Needs ${o.dna} DNA` };
   return { ok: true, why: '' };
 }
 
@@ -250,7 +263,9 @@ export const encPlaceLevel = (run, i, rules) =>
  * `up`; the reward its class pays. The id is given (route trainers: run_<i>_t<k>; an event's foe: run_<i>_ev).
  * @param {Run} run @param {number} i @param {string} id @param {string} cls
  * @param {{ classes: EventsData['classes'], species: Record<string, any>, rules: any, up?: number, salt: string,
- *   reward: number, foe: string }} o rules: rules.json run (its `wild`); foe: the entry's runFoe ('route', 'event')
+ *   reward: number, foe: string, factions?: Record<string, import('../../types/game-data').Faction> }} o rules:
+ *   rules.json run (its `wild`); foe: the entry's runFoe ('route', 'event'); factions (RL-14): factions.json's (the
+ *   game's when left out)
  */
 export function encClassFoe(run, i, id, cls, o) {
   const C = o.classes[cls],
@@ -260,7 +275,16 @@ export function encClassFoe(run, i, id, cls, o) {
     dex = encDexAt(run, o.species, lvl),
     team = [];
   for (let k = 0; k < n && dex.length; k++)
-    team.push({ sp: dex[g.int(0, dex.length - 1)], lvl: Math.max(1, lvl - (n - 1 - k)) });
+    team.push(/** @type {any} */ ({ sp: dex[g.int(0, dex.length - 1)], lvl: Math.max(1, lvl - (n - 1 - k)) }));
+  /* RL-14: a faction's agent fields its bots after its Billies, at the place's level, from a stream of their own (so
+     the Billies stay what they were) */
+  const fa = factionOfClass(o.factions || FACTIONS, cls);
+  if (fa) {
+    const b = rngFrom(runNodeSeed(run.seed, i), o.salt + '|bots'),
+      F = fa.F,
+      nb = b.int(F.agents.bots[0], F.agents.bots[1]);
+    for (let k = 0; k < nb && team.length < 6; k++) team.push(factionBotEntry(F.bots[factionBotPick(b, F)], lvl));
+  }
   return {
     id,
     name: C.name,
@@ -301,13 +325,15 @@ export function encWildFoe(run, i, species, rules, up) {
   return dex.length ? { sp: dex[encRng(run).int(0, dex.length - 1)], lvl } : null;
 }
 
-/** what an option's script changed, for the sheet's summary: Moneys, items and pyramids gained (+) or lost (−), as
- * [what, n] in order @param {{ se: number, items: Record<string, number>, pyramids: Record<string, number> }} a
- * before @param {{ se: number, items: Record<string, number>, pyramids: Record<string, number> }} b after */
+/** what an option's script changed, for the sheet's summary: Moneys, (SP-6) DNA, items and pyramids gained (+) or
+ * lost (−), as [what, n] in order
+ * @param {{ se: number, dna?: number, items: Record<string, number>, pyramids: Record<string, number> }} a before
+ * @param {{ se: number, dna?: number, items: Record<string, number>, pyramids: Record<string, number> }} b after */
 export function encChanges(a, b) {
   /** @type {[string, number][]} */
   const out = [];
   if (b.se !== a.se) out.push(['money', b.se - a.se]);
+  if ((b.dna || 0) !== (a.dna || 0)) out.push(['dna', (b.dna || 0) - (a.dna || 0)]);
   for (const [pre, A, B] of /** @type {const} */ ([
     ['', a.items, b.items],
     ['coin:', a.pyramids, b.pyramids],

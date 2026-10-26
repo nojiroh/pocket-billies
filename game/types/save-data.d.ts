@@ -98,6 +98,11 @@ export interface Meta {
   /** RL-S2: points with each hub person (relations.json), and meta.runs when each last had a gift */
   rel: Record<string, number>;
   gifted: Record<string, number>;
+  /** SP-3: splicing's currency, banked when a spliced wild Billie is beaten (logic/battle-rewards.js) */
+  dna: number;
+  /** SP-3: the Genes sampled from beaten wild splices, by Gene id ("shark_tailfin@zuck2"), the Gene Bank's library
+   * (SP-4) */
+  genes: string[];
   /** unlock ids: 1 (unlocks.json, RL-11) */
   unlocks: Record<string, 1>;
   /** hub building id -> level (buildings.json, RL-11) */
@@ -387,7 +392,8 @@ export interface RunReward {
   cards: RewardCard[];
   rolls: number;
   from: string;
-  /** an event's pick of one kind, and of how many cards (a reroll keeps them) */
+  /** an event's pick of one kind, and of how many cards (a reroll keeps them); RL-14: 'salvage', a bot's parts and
+   * Scrap (never rerolled) */
   kind?: string;
   n?: number;
 }
@@ -395,7 +401,8 @@ export interface RunReward {
  * too), or a move a Billie of the team may learn */
 export interface RewardCard {
   id: string;
-  kind: 'item' | 'candy' | 'evo' | 'tutor' | 'held';
+  /** RL-14: a salvage pick's `part` (item: a robots.json part, into saveData.parts) and `scrap` (n: Scrap) */
+  kind: 'item' | 'candy' | 'evo' | 'tutor' | 'held' | 'part' | 'scrap';
   item?: string;
   n?: number;
   move?: string;
@@ -476,6 +483,15 @@ export interface Billy {
   mut?: BillieMut;
   /** RL-12c: the item it holds (an items.json id with `hold`), or none; a run's held items go back to the bag at its end */
   held?: string;
+  /** SP-2: its splice, slot (rules.json parts.slots) -> Gene id, "part@donor" (a partKits.json part, a kitBuilds.json
+      rig); missing for a Billie with none */
+  graft?: Record<string, string>;
+  /** SP-2: a splice past Stability's limit: the stat it raises and the one it lowers (rolled once, kept while it stays
+      past the limit) and its merged name */
+  unstable?: { up: string; down: string; name: string };
+  /** SP-5: Augments: a robots.json arm (front, on one side) or legs (back) fitted at the Workshop (logic/augments.js);
+      a slot with one has no Gene */
+  aug?: Partial<Record<'front' | 'back', PartInstance>>;
   /** phase 17: 'robot' for a robot (sp is then made from its parts: logic/fighters.js robotSp); missing for a Billie */
   kind?: 'robot';
   /** phase 17: a robot's gem (a key of robots.json gems): the gem is the robot, its level and XP */
@@ -534,6 +550,12 @@ export interface Encounter {
   rare?: number;
   /** phase 16: its part sizes, rolled when it appears (rules.js encounterBuild) */
   build?: Build;
+  /** SP-2: its splice, as a Billie's (Billy.graft) */
+  graft?: Record<string, string>;
+  /** SP-2: its Unstable roll, as a Billie's (Billy.unstable) */
+  unstable?: { up: string; down: string; name: string };
+  /** SP-5: an Escaped specimen's Augment, as a Billie's (Billy.aug) */
+  aug?: Partial<Record<'front' | 'back', PartInstance>>;
 }
 
 /** an egg (game-state.js addEgg) */

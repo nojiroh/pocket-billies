@@ -10,10 +10,10 @@
    Every number is a placeholder for the run sim (9.6, 23).
    Logic only: no DOM, no Date, no Math.random (tools/test/starter-points.test.mjs). */
 /** @import { Species, StarterPointRules } from '../../types/game-data' */
-/** @typedef {{ sp: string, lvl?: number, uid?: string }} PointBilly */
+/** @typedef {{ sp: string, lvl?: number, uid?: string, graft?: Record<string, string> }} PointBilly */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { runByExpedition, speciesStep } from '../hooks.js';
+import { billySpliceCost, runByExpedition, speciesStep } from '../hooks.js';
 import { modTypeFits } from './modifiers.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -33,7 +33,8 @@ export const pointBudget = (R, expedition) => runByExpedition(R.budget, expediti
 
 /**
  * What one Billie costs: its line's rarity, `stage` more per step along its line (rules.js speciesStep; together at most
- * `most`), and one more per `perLevels` levels above `levelsFrom`. An unknown species costs the commonest rarity.
+ * `most`), and one more per `perLevels` levels above `levelsFrom`; SP-4: one more per `perStability` of Stability its
+ * splice spends (rules.js billySpliceCost). An unknown species costs the commonest rarity.
  * @param {PointBilly} m @param {Record<string, Species>} species @param {StarterPointRules} R @returns {number}
  */
 export function pointCost(m, species, R) {
@@ -41,7 +42,7 @@ export function pointCost(m, species, R) {
     rarity = Math.min(...Object.values(R.rarity)),
     base = Math.min(R.most, (S ? (R.rarity[S.rar] ?? rarity) : rarity) + speciesStep(S) * R.stage),
     over = Math.max(0, (m.lvl || 1) - R.levelsFrom);
-  return base + Math.floor(over / R.perLevels);
+  return base + Math.floor(over / R.perLevels) + (R.perStability ? Math.floor(billySpliceCost(m) / R.perStability) : 0);
 }
 
 /** what a pick costs in all @param {PointBilly[]} team @param {Record<string, Species>} species

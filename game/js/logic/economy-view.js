@@ -168,6 +168,29 @@ export function economyLines(D) {
         path: `rules.ranch.breed.${k}`,
         section: 'unlocks',
       });
+  /* SP-3: a beaten wild splice banks DNA */
+  const GW = (D.genes && D.genes.wild && D.genes.wild.dna) || {};
+  for (const k of ['graft', 'chimera'])
+    if (typeof GW[k] === 'number')
+      add({
+        currency: 'dna',
+        side: 'in',
+        what: `Wild ${k === 'graft' ? 'Graft' : 'Chimera'} beaten`,
+        value: GW[k],
+        path: `genes.wild.dna.${k}`,
+        section: 'genes',
+      });
+  /* SP-4: the Gene Bank spends it: a splice's price (its levels are unlocks.json rows, listed with the buildings) */
+  const GB = D.genes && D.genes.bank && D.genes.bank.price;
+  if (GB && typeof GB.base === 'number')
+    add({
+      currency: 'dna',
+      side: 'out',
+      what: `Gene Bank: a splice (${GB.base} + ${GB.perCost} per Stability)`,
+      value: GB.base,
+      path: 'genes.bank.price.base',
+      section: 'genes',
+    });
   const order = Object.keys(D.currencies || {}),
     side = { in: 0, turn: 1, out: 2 };
   return out

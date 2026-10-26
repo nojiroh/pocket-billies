@@ -18,6 +18,8 @@ import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { stationMenu } from './airship.js';
 import { ranchOpen } from './ranch-screen.js';
+import { geneBankLevelled, geneBankOpen } from './gene-bank-screen.js';
+import { augmentsLevelled, augmentsOpen } from './augment-screen.js';
 /* eslint-disable no-func-assign */
 expose({
   LAB_WHERE: [() => LAB_WHERE],
@@ -72,7 +74,12 @@ const LAB_WHY = {
   unknown: 'Gone',
 };
 /** where a building's rows are bought, for its section */
-const LAB_WHERE = { station: 'at Skyline Station', ranch: 'at the ranch' };
+const LAB_WHERE = {
+  station: 'at Skyline Station',
+  ranch: 'at the ranch',
+  genebank: 'at the Gene Bank',
+  workshop: 'at the Workshop',
+};
 /** a price: "60 Research", "1 Crest" @param {number} n @param {string | null} c */
 function labPrice(n, c) {
   const C = (c && CURRENCIES[c]) || { name: c || '', one: c || '' };
@@ -115,9 +122,12 @@ export function renderLabBoard() {
   const s = saveData,
     M = s.meta,
     rows = unlockRows(s, UNLOCK_DATA),
-    chips = META_CURRENCIES.map(
-      c => `<pb-coin kind="${c}" value="${M[c]}" label="${escapeHtml((CURRENCIES[c] || { name: c }).name)}"></pb-coin>`
-    ).join(' '),
+    chips = META_CURRENCIES.filter(c => c !== 'dna' || M.dna)
+      .map(
+        c =>
+          `<pb-coin kind="${c}" value="${M[c]}" label="${escapeHtml((CURRENCIES[c] || { name: c }).name)}"></pb-coin>`
+      )
+      .join(' '),
     owned = rows.filter(r => r.owned).length;
   const sections = Object.entries(UNLOCK_DATA.buildings).map(([b, B]) => {
     const mine = rows.filter(r => r.R.at === b),
@@ -178,7 +188,15 @@ export function labAction(a, d) {
   if (a !== 'lab-buy' || !d.k || !labBuy(d.k)) return;
   /* bought on a building's sheet: that sheet again, with its new level */
   if (d.then === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
-  else if (d.then === 'station' && typeof stationMenu === 'function') {
+  else if (d.then === 'genebank' && typeof geneBankOpen === 'function') {
+    /* SP-4: your Billies held to the new level's limit, then the sheet again */
+    geneBankLevelled();
+    geneBankOpen();
+  } else if (d.then === 'workshop' && typeof augmentsOpen === 'function') {
+    /* SP-5: the Workshop's sheet again, at its new level */
+    if (typeof augmentsLevelled === 'function') augmentsLevelled();
+    augmentsOpen();
+  } else if (d.then === 'station' && typeof stationMenu === 'function') {
     /* in place of the open sheet (a second one would wait behind it) */
     uiState.modal = null;
     stationMenu(uiState.stationAt);

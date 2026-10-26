@@ -242,3 +242,18 @@ test('check-data: planted favours (RS-2)', t => {
     })
   );
 });
+
+test('check-data: planted factions (RL-14)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'factions.json': F => {
+        const B = F.factions.bureau;
+        B.bots.repo.armL = 'treads';
+        B.bots.courier.gem = 'opal';
+        B.agents.classes.push('auditor');
+        B.wild.biomes.push('moon');
+        B.agents.bots = [2, 1];
+      },
+    })
+  );
+});

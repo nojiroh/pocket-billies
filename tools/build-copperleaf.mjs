@@ -157,17 +157,18 @@ const pairs = [
   /* HB-4b: the inn and the library (the archive) on their plots; hub placing: HB-5's Workshop and Gene Bank on theirs,
      the lighthouse on the cove, the windmill by the farm. The inn's, the library's, the Workshop's and the Gene Bank's
      doors open their rooms (HB-5's act enter: the room named on the model; the Gene Bank's machines wait for the
-     splicing track); the lighthouse and the windmill are scenery */
+     splicing track); the lighthouse and the windmill are scenery. SP-4: the Gene Bank's door (and its console) open the
+     splice screen (act genebank); SP-5: the Workshop's (and its Upgrade bench) the Augment screen (act workshop) */
   ...[
     ['inn', 'inn', 'Inn'],
     ['library', 'library', 'Library'],
-    ['workshop', 'workshop', 'Workshop'],
-    ['genebank', 'gene_bank', 'Gene Bank'],
+    ['workshop', 'workshop', 'Workshop', 'workshop'],
+    ['genebank', 'gene_bank', 'Gene Bank', 'genebank'],
     ['lighthouse', 'lighthouse'],
     ['windmill', 'windmill'],
   ]
     .filter(([L]) => plotOf(L))
-    .map(([L, k, label]) => [{ k, x: 0, z: 0, ...(label ? { act: 'enter', label } : {}) }, plotOf(L)]),
+    .map(([L, k, label, act]) => [{ k, x: 0, z: 0, ...(label ? { act: act || 'enter', label } : {}) }, plotOf(L)]),
   ...oldCottages.map((B, i) => [B, townHouses[i]]),
   /* the new cottages: the two kinds and their looks taken in turn */
   ...[...townHouses.slice(oldCottages.length), ...otherHouses].map((L, i) => [

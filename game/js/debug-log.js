@@ -452,6 +452,8 @@ debugLog.state = () => {
     s.scene = typeof GAME.walkView !== 'undefined' ? GAME.walkView.id : null;
     s.team = GAME.saveData.team ? GAME.saveData.team.length : 0;
     s.encounters = GAME.encountersHere ? GAME.encountersHere().length : 0;
+    /* SP-2: the team's splices (species and data ids, no names): Stability, traits, types */
+    if (typeof GAME.spliceReport === 'function') s.splices = GAME.spliceReport();
     s.badges = (GAME.saveData.seats || []).length;
     s.visited = Object.keys(GAME.saveData.visited || {}).length;
     /* RL-7: on a run, where it stands (no names): its seed (to make the same run again), the day, the
@@ -548,6 +550,9 @@ debugLog.state = () => {
           capital: meta.research,
           seals: meta.crests,
           scrap: meta.scrap,
+          dna: meta.dna,
+          /* SP-3: how many Genes are sampled (the codes are data ids, but a count is enough) */
+          genes: (meta.genes || []).length,
           /* RL-11: the unlock ids owned (game data ids, no names) and the buildings' levels */
           unlocks: Object.keys(meta.unlocks || {}).sort(),
           buildings: Object.assign({}, meta.buildings || {}),

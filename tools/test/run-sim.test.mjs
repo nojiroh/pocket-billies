@@ -25,7 +25,19 @@ test('run sim: a seed played twice is the same run, whatever util.js random draw
 test('run sim: the report has its numbers', () => {
   const R = runStats(3, B);
   assert.equal(R.runs, 3);
-  for (const k of ['days', 'places', 'battles', 'trainers', 'minutes', 'turnsPerBattle', 'research'])
+  for (const k of [
+    'days',
+    'places',
+    'battles',
+    'trainers',
+    'minutes',
+    'turnsPerBattle',
+    'research',
+    'splices',
+    'dna',
+    'genes',
+    'escaped',
+  ])
     assert.ok(R[k] >= 0, k);
   assert.deepEqual(R.clock, { placeS: 60, battleS: 15, turnS: 6 }, 'RT-2: what the minutes are guessed from');
   assert.ok(R.won >= 0 && R.won <= 3);

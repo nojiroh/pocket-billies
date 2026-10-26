@@ -41,10 +41,11 @@ test('meetings by Expedition, each in its band, on a main-path place, one a row'
       }
       met += rivals.length;
     }
-    // a band without a route or a waystation has no meeting (Expedition II's maps often have only two free rows), so
-    // the test asks only that nearly every run meets him at least once
+    // a band without a route or a waystation has no meeting (Expedition II's maps often have only two free rows; RL-14's
+    // scrapyards take some free nodes before he is placed), so the test asks only that nearly every run meets him at
+    // least once
     assert.ok(
-      met / SEEDS.length > Math.min(want, 1) * 0.85,
+      met / SEEDS.length > Math.min(want, 1) * 0.8,
       `Expedition ${expedition}: ${met} meetings in ${SEEDS.length} runs`
     );
   }

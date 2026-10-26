@@ -1,0 +1,209 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "factions.schema.json",
+ "title": "game/data/factions.json: the runs' enemy factions and their bots (roguelite track RL-14; logic/factions.js)",
+ "type": "object",
+ "required": [
+  "factions"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "about": {
+   "type": "string"
+  },
+  "factions": {
+   "type": "object",
+   "propertyNames": {
+    "pattern": "^[a-z][a-z0-9_]*$"
+   },
+   "minProperties": 1,
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "name",
+     "bots",
+     "wild",
+     "agents",
+     "scrapyard",
+     "salvage"
+    ],
+    "properties": {
+     "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60
+     },
+     "short": {
+      "description": "how a line names it ('the Bureau')",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 30
+     },
+     "bots": {
+      "description": "its bots: a gem and a part for each slot (robots.json), drawn by weight",
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+       "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "name",
+        "gem",
+        "torso",
+        "armL",
+        "armR",
+        "legs",
+        "weight"
+       ],
+       "properties": {
+        "name": {
+         "description": "what the player reads in battle (its nickname)",
+         "type": "string",
+         "minLength": 1,
+         "maxLength": 24
+        },
+        "gem": {
+         "type": "string"
+        },
+        "torso": {
+         "type": "string"
+        },
+        "armL": {
+         "type": "string"
+        },
+        "armR": {
+         "type": "string"
+        },
+        "legs": {
+         "type": "string"
+        },
+        "weight": {
+         "type": "number",
+         "minimum": 0
+        }
+       }
+      }
+     },
+     "wild": {
+      "description": "wild bots on a run's routes: the chance a wild one is a bot, from which map row, in which biomes",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "chance",
+       "fromRow",
+       "biomes"
+      ],
+      "properties": {
+       "chance": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+       },
+       "fromRow": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 20
+       },
+       "biomes": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        },
+        "uniqueItems": true
+       }
+      }
+     },
+     "agents": {
+      "description": "the trainer classes (events.json classes) that are its agents, and how many bots each fields beside its Billies [least, most]",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "classes",
+       "bots"
+      ],
+      "properties": {
+       "classes": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+         "type": "string"
+        },
+        "uniqueItems": true
+       },
+       "bots": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 4
+        }
+       }
+      }
+     },
+     "scrapyard": {
+      "description": "a scrapyard place (nodeTypes.json scrapyard): every wild one a bot, and [least, most] agents of these classes",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "trainers",
+       "classes"
+      ],
+      "properties": {
+       "trainers": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 6
+        }
+       },
+       "classes": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+         "type": "string"
+        },
+        "uniqueItems": true
+       }
+      }
+     },
+     "salvage": {
+      "description": "what beating its bots leaves: a pick of up to `parts` of their parts and a stack of Scrap (scrap + scrapPerBot for each bot after the first)",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "parts",
+       "scrap",
+       "scrapPerBot"
+      ],
+      "properties": {
+       "parts": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 4
+       },
+       "scrap": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 50
+       },
+       "scrapPerBot": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 20
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

@@ -74,7 +74,8 @@ expose({
  *   visited: Record<string, any>, lines: Record<string, any>, robots: number, badges: number, caught: number,
  *   unlocks: Record<string, any>, runs: number, wins: number, expedition?: number, questStages?: Record<string, string[]>,
  *   types?: Record<string, number>, money?: number, team?: number, badgeTypes?: Record<string, number>,
- *   opened?: Record<string, number>, last?: Record<string, number>, lastby?: Record<string, number>,
+ *   opened?: Record<string, number>, dna?: number, genes?: number, spliced?: number,
+ *   last?: Record<string, number>, lastby?: Record<string, number>,
  *   history?: Record<string, number>, rematch?: number, rel?: Record<string, number>, beans?: number,
  *   gifted?: Record<string, number>, chapter?: number, lastteam?: Record<string, number>, rival?: number,
  *   residents?: Record<string, number> }} StoryState */
@@ -101,6 +102,9 @@ export const CONDITION_KINDS = {
   team: { id: false, count: true, about: 'Billies in your team: team >= 2' },
   badge: { id: true, count: false, about: 'a badge of that type is won: badge:Water' },
   opened: { id: true, count: false, about: 'a run’s field move obstacle is open (RL-R2): opened:cut' },
+  dna: { id: false, count: true, about: 'DNA on hand (SP-6): dna >= 10' },
+  genes: { id: false, count: true, about: 'Genes in the Gene Bank’s library (SP-6): genes >= 1' },
+  spliced: { id: false, count: true, about: 'spliced Billies in your team (SP-6): spliced >= 1' },
   last: {
     id: true,
     count: true,
@@ -392,6 +396,12 @@ export function termValue(c, S) {
       return Object.keys(S.residents || {}).length;
     case 'opened':
       return !!(S.opened || {})[c.id];
+    case 'dna':
+      return S.dna || 0;
+    case 'genes':
+      return S.genes || 0;
+    case 'spliced':
+      return S.spliced || 0;
     case 'last':
       return (S.last || {})[c.id] || 0;
     case 'lastby':
@@ -482,6 +492,10 @@ export function storyStateOf(save, o = {}) {
     /* RL-R2: the run's side area's move, once its obstacle is open (logic/run-side.js) */
     opened:
       save.run && save.run.map && save.run.map.side && save.run.map.side.open ? { [save.run.map.side.move]: 1 } : {},
+    /* SP-6: DNA, the Gene library and the team's splices (a Billie with a graft) */
+    dna: meta.dna || 0,
+    genes: (meta.genes || []).length,
+    spliced: (save.team || []).filter(m => m && m.graft && Object.keys(m.graft).length).length,
     last: facts.last,
     lastby: facts.lastby,
     history: facts.history,

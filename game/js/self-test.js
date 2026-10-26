@@ -14,7 +14,9 @@ import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import {
   EVENTS,
+  FACTIONS,
   FIELD_MOVES,
+  GENES,
   ITEMS,
   LOCATIONS,
   MOVES,
@@ -22,6 +24,7 @@ import {
   QUESTS,
   RELATIONS,
   RESIDENTS,
+  ROBOTS,
   RULES,
   SET_PIECES,
   SHOPS,
@@ -34,10 +37,37 @@ import {
   trainersAt,
   typeEffectiveness,
 } from './game-data.js';
-import { canEnter, encounterStock, encountersHere, gateText, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
+import { rngFn } from './logic/rng.js';
+import { graftDonors, graftRecipe } from './logic/graft-art.js';
+import { augFits } from './logic/augments.js';
+import { wildSplice } from './logic/genes.js';
+import { bankLevel, bankPrice, bankSlots } from './logic/gene-bank.js';
+import { geneEventSlots } from './logic/gene-events.js';
+import { isRobot, robotRules } from './logic/fighters.js';
+import {
+  billyName,
+  canEnter,
+  encounterStock,
+  encountersHere,
+  gateText,
+  geneData,
+  healAll,
+  makeBilly,
+  maxHp,
+  moveUsable,
+  movesOf,
+  newUid,
+  partBroken,
+  partMaxHp,
+  partsDamaged,
+  plural,
+  spawn,
+  spliceWords,
+} from './logic/rules.js';
 import { rivalSize } from './logic/rival.js';
 import { relFavoursPay, relGift } from './logic/relations.js';
 import { modBossHp, modFoeLevels, modsMake } from './logic/modifiers.js';
+import { factionBotSp } from './logic/factions.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
 import { incomeRate } from './logic/ranch-income.js';
@@ -50,6 +80,7 @@ import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
 import { wildHabitat } from './logic/wild-pool.js';
 import { runScenesMake, runWorldTables } from './logic/run-scenes.js';
 import { runClinic, runFoes, runHealCost, runShopOpen, runWareHeals } from './logic/run-loop.js';
+import { fxOfBillie } from './logic/effects.js';
 import { perkOfferMake } from './logic/perks.js';
 import { eventAt } from './logic/encounters.js';
 import { routeRareSpots, routeTrainersPlace, runRouteTrainers } from './logic/route-trainers.js';
@@ -65,6 +96,7 @@ import {
   activeBattle,
   escapeHtml,
   pauseSaving,
+  reducedMotion,
   resumeSaving,
   save,
   saveData,
@@ -128,6 +160,8 @@ import { perkPickOpen } from './perk-screen.js';
 import { encounterOpen } from './encounter-screen.js';
 import { questData, questMarked, residentTalk } from './quest-board.js';
 import { ranchOpen } from './ranch-screen.js';
+import { geneBankDo, geneBankOpen } from './gene-bank-screen.js';
+import { augmentsDo, augmentsOpen } from './augment-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
 import { storyPickTree } from './story-stage.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
@@ -937,6 +971,76 @@ async function runFullTest(mode) {
       render();
       await selfTestSleep(600);
       return `${mine} against ${theirs} (${fmt}); ${plates} nameplates; ${picks} picks, ${aimed} aimed; the turn played ${lines} lines in ${(turnMs / 1000).toFixed(1)} s`;
+    };
+    /* RL-14: a wild bot of the Bureau's: "Catch it" greyed out, its limbs one hit from breaking, a turn played; a part
+       that breaks drops off the stage as a falling picture */
+    const fighterLead = () => saveData.team.find(m => m.hp > 0) || saveData.team[0];
+    const botBattle = async () => {
+      uiState.bench = null;
+      uiState.tab = 'walk';
+      saveData.trip.node = back.node;
+      render();
+      await selfTestSleep(1200);
+      saveData.team.forEach(m => {
+        m.hp = maxHp(m);
+        m.status = null;
+      });
+      const B = FACTIONS.bureau.bots[Object.keys(FACTIONS.bureau.bots).sort()[0]],
+        /* above your lead's level, so a hit leaves it standing (a fainted bot's parts take no hit) */
+        q = { id: 'selftest-bot', sp: factionBotSp(B), lvl: Math.min(100, fighterLead().lvl + 10), no: 1 };
+      encountersHere().unshift(q);
+      startWild(q);
+      const g0 = selfTest.gen || 0;
+      const want = async (ph, ms) => {
+        const end = performance.now() + ms * (selfTest.slow || 1);
+        while (performance.now() < end) {
+          if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
+          if (ph.includes(activeBattle.phase)) return true;
+          if (activeBattle.phase === 'playing') tapMessage();
+          await selfTestSleep(120);
+        }
+        return false;
+      };
+      if (!(await want(['choose'], 45000)))
+        throw new Error(`never got to the menu (${activeBattle ? activeBattle.phase : 'no battle'})`);
+      const foe = fighter(1);
+      if (!foe || foe.kind !== 'robot') throw new Error('the wild one is no robot');
+      if (billyName(foe) !== B.name) throw new Error(`it goes by ${billyName(foe)}, not ${B.name}`);
+      const coin = document.querySelector('[data-a=bcoins]');
+      if (!coin || !(/** @type {HTMLButtonElement} */ (coin).disabled)) throw new Error('"Catch it" is open on a bot');
+      /* every limb one point from breaking, and (for this turn) every hit on a limb, so one breaks and drops off */
+      const R = robotRules(),
+        hw = R.hitWeights;
+      R.hitWeights = { torso: 0, armL: 1, armR: 1, legs: 1 };
+      foe.partDmg = foe.partDmg || {};
+      for (const k of ['armL', 'armR', 'legs']) foe.partDmg[k] = partMaxHp(foe, k) - 1;
+      foe.hp = maxHp(foe);
+      let dropped = 0;
+      const watch = setInterval(() => {
+        dropped = Math.max(dropped, battleStage.parts.filter(p => p.img).length);
+      }, 50);
+      const m = fighter(activeBattle.cur),
+        mid = m.moves.find(id => MOVES[id] && MOVES[id].c !== 'X') || m.moves[0];
+      pickMove(mid);
+      if (activeBattle.phase === 'target') pickTarget(1);
+      const tt = performance.now();
+      let done = false;
+      try {
+        done = await want(['choose', 'end', 'switch'], 60000);
+      } finally {
+        R.hitWeights = hw;
+        clearInterval(watch);
+      }
+      if (!done) throw new Error(`the turn never finished (${activeBattle ? activeBattle.phase : 'no battle'})`);
+      const broke = activeBattle.events.filter(e => e.an && e.an.k === 'break').length,
+        turnMs = Math.round(performance.now() - tt);
+      stopTimers();
+      setActiveBattle(null);
+      battleStageStop();
+      render();
+      await selfTestSleep(600);
+      if (broke && !dropped && !reducedMotion) throw new Error('a part broke but nothing dropped off the stage');
+      return `${B.name}, not catchable; ${broke ? `${broke} part(s) broke, ${dropped} dropped` : 'the hit landed on its torso'}; the turn in ${(turnMs / 1000).toFixed(1)} s`;
     };
     /* RL-5: the Road phase (v43, phase 08: out of Marigold Town over its edge and into Tallgrass Meadow on foot) went
        with those places to game/data/legacy: the hub has no road. RL-7: back on a run's road. A run is put on a copy
@@ -2326,6 +2430,304 @@ async function runFullTest(mode) {
     await phase('Battle on the 3D stage', 'scene', () => battle(), 7, 120);
     await phase('Double battle with a trainer', 'scene', () => teamBattle('double'), 8, 150);
     await phase('Alpha battle: your team against one', 'scene', () => teamBattle('alpha'), 8, 150);
+    /* SP-3: a spliced wild Billie: the battle says what it wears; knocked out, it banks DNA and samples its Gene (on
+       a copy of the save) */
+    if (!selfTest.stop)
+      await phase(
+        'Wild splice: its line, DNA and a Gene Sample',
+        'dio',
+        async () => {
+          const was = saveData,
+            wait = async (/** @type {() => any} */ f, /** @type {number} */ ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                if (activeBattle && activeBattle.phase === 'playing') tapMessage();
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              D = geneData(),
+              one = { ...D, genes: { ...D.genes, wild: { ...D.genes.wild, graft: 1, chimera: 0 } } },
+              rnd = rngFn('self-test', 'splice'),
+              sp = Object.keys(SPECIES).find(id => wildSplice(one, id, Object.keys(SPECIES), rngFn(id, 'splice')));
+            if (!sp) throw new Error('no species can be spliced');
+            const graft = /** @type {Record<string, string>} */ (wildSplice(one, sp, Object.keys(SPECIES), rnd)),
+              gene = Object.values(graft)[0];
+            Object.assign(s.meta, { dna: 0, genes: [] });
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = { id: newUid(), sp, lvl: 3, no: ++s.serial, graft };
+            encountersHere().push(q);
+            startWild(q);
+            if (!activeBattle) throw new Error('the battle didn’t start');
+            const words = spliceWords(q);
+            if (!JSON.stringify(activeBattle.events).includes(`has ${words[0]}!`))
+              throw new Error(`the opening doesn’t say it has ${words[0]}`);
+            stopTimers();
+            activeBattle.over = 'win';
+            endBattle();
+            if (!(await wait(() => !activeBattle, 15000))) throw new Error('the battle never ended');
+            if (s.meta.dna !== D.genes.wild.dna.graft || !s.meta.genes.includes(gene))
+              throw new Error(`after the win: ${s.meta.dna} DNA, Genes ${s.meta.genes.join()}`);
+            if (!(await wait(() => uiState.modal && uiState.modal.title === 'Gene Sample', 5000)))
+              throw new Error('no Gene Sample sheet');
+            return `${SPECIES[sp].name} with ${words.join(', ')}: +${s.meta.dna} DNA, Gene ${gene} sampled`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* SP-4: the Gene Bank on a copy of the save: its sheet, sequencing the lead, a Gene spliced for its DNA (the sheet's
+       own buttons), the splice in a wild battle (its effect rows), then taken off for free */
+    if (typeof geneBankOpen === 'function' && !selfTest.stop)
+      await phase(
+        'Gene Bank: sequence, splice, see it in battle',
+        'dio',
+        async () => {
+          const was = saveData;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              D = geneData(),
+              m = s.team.find(b => !isRobot(b) && graftRecipe(D.kitBuilds, b.sp));
+            if (!m) throw new Error('no Billie on the team has a kit recipe');
+            delete m.graft;
+            delete m.unstable;
+            Object.assign(s.meta, { dna: 200, genes: [] });
+            s.meta.buildings.genebank = 3;
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            geneBankOpen();
+            if (!uiState.modal || !/Gene Bank/.test(uiState.modal.title)) throw new Error('the sheet didn’t open');
+            geneBankDo('pick', m.uid);
+            geneBankDo('seq');
+            if (!s.meta.genes.length) throw new Error('sequencing read nothing');
+            const slot = bankSlots(D, bankLevel(s)).find(k => graftDonors(D.kitBuilds, D.partKits, m.sp, k).length);
+            if (!slot) throw new Error(`no Gene fits ${m.sp}`);
+            const id = graftDonors(D.kitBuilds, D.partKits, m.sp, slot)[0],
+              price = bankPrice(D, m.sp, slot, id);
+            s.meta.genes.push(id);
+            geneBankDo('slot', slot);
+            geneBankDo('gene', id);
+            if (!document.querySelector('#ov .gene-preview')) throw new Error('no preview for the Gene');
+            geneBankDo('splice');
+            if (!m.graft || m.graft[slot] !== id) throw new Error(`not spliced: ${JSON.stringify(m.graft || null)}`);
+            if (s.meta.dna !== 200 - price) throw new Error(`paid ${200 - s.meta.dna} DNA, the price is ${price}`);
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = { id: newUid(), sp: m.sp, lvl: 3, no: ++s.serial };
+            encountersHere().push(q);
+            startWild(q);
+            if (!activeBattle) throw new Error('the battle didn’t start');
+            const me = activeBattle.sides[0].team.find(b => b.uid === m.uid),
+              rows = me ? fxOfBillie(me, ITEMS).filter(f => /^gene:/.test(f.src)) : [];
+            if (!me || !me.graft) throw new Error('the spliced Billie isn’t spliced in battle');
+            stopTimers();
+            setActiveBattle(null);
+            uiState.modal = null;
+            geneBankOpen();
+            geneBankDo('pick', m.uid);
+            geneBankDo('slot', slot);
+            geneBankDo('off');
+            if (m.graft) throw new Error('Take off left a Gene');
+            if (s.meta.dna !== 200 - price) throw new Error('taking it off cost DNA');
+            return `${m.sp} ${slot}=${id}: ${price} DNA, ${rows.length} Gene row(s) in battle (${rows.map(f => f.src).join(', ') || 'none'}), taken off free`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+            }
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* SP-5: the Workshop, on a copy of the save: a spare Hydrant Arm fitted on a Billie for Scrap (the sheet driven by
+       its own buttons), its Jet Blast in a wild battle, the arm broken (its move lost), then mended by the heal a
+       town's clinic gives (healAll), and taken off for free back to the spares */
+    if (typeof augmentsOpen === 'function' && !selfTest.stop)
+      await phase(
+        'Workshop: fit an arm, it breaks in battle, the clinic mends it',
+        'dio',
+        async () => {
+          const was = saveData;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              D = geneData(),
+              m = s.team.find(b => !isRobot(b) && augFits(D, b.sp, 'front', 'hydrant'));
+            if (!m) throw new Error('no Billie on the team can take an arm');
+            delete m.aug;
+            delete m.graft;
+            delete m.unstable;
+            delete m.partDmg;
+            s.meta.scrap = 100;
+            s.parts = [...(s.parts || []), { uid: 'selftest-arm', id: 'hydrant', up: 0 }];
+            s.meta.buildings.workshop = 1;
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            augmentsOpen();
+            if (!uiState.modal || !/Workshop/.test(uiState.modal.title)) throw new Error('the sheet didn’t open');
+            augmentsDo('pick', m.uid);
+            augmentsDo('slot', 'front');
+            augmentsDo('part', 'selftest-arm');
+            if (!document.querySelector('#ov .aug-sheet .gene-preview')) throw new Error('no preview for the part');
+            augmentsDo('fit');
+            if (!m.aug || !m.aug.front || m.aug.front.id !== 'hydrant')
+              throw new Error(`not fitted: ${JSON.stringify(m.aug || null)}`);
+            const price = GENES.augment.price.fit;
+            if (s.meta.scrap !== 100 - price)
+              throw new Error(`paid ${100 - s.meta.scrap} Scrap, the price is ${price}`);
+            if (s.parts.some(p => p.uid === 'selftest-arm')) throw new Error('the part is still a spare');
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = { id: newUid(), sp: m.sp, lvl: 3, no: ++s.serial };
+            encountersHere().push(q);
+            startWild(q);
+            if (!activeBattle) throw new Error('the battle didn’t start');
+            const me = activeBattle.sides[0].team.find(b => b.uid === m.uid),
+              jet = ROBOTS.parts.hydrant.move;
+            if (!me || !movesOf(me).includes(jet)) throw new Error('the arm’s move isn’t offered in battle');
+            me.partDmg = { armR: partMaxHp(me, 'armR') };
+            if (moveUsable(me, jet)) throw new Error('a broken arm still gives its move');
+            stopTimers();
+            setActiveBattle(null);
+            healAll();
+            if (partBroken(m, 'armR') || partsDamaged(m)) throw new Error('the heal didn’t mend the arm');
+            uiState.modal = null;
+            augmentsOpen();
+            augmentsDo('pick', m.uid);
+            augmentsDo('slot', 'front');
+            augmentsDo('off');
+            if (m.aug) throw new Error('Take off left an Augment');
+            if (!s.parts.some(p => p.uid === 'selftest-arm')) throw new Error('the part didn’t go back to the spares');
+            return `${m.sp} front=hydrant: ${price} Scrap, ${MOVES[jet].n} offered, broken and mended, taken off free`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+            }
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* SP-6: a run's splice events, on a copy of the save on a run: the back-alley splicer splices the lead (paid in
+       Moneys, the event's sheet driven by its own buttons), the splice in a wild battle, then the Gene recall takes the
+       Gene off for its DNA (the Gene stays in the library) */
+    if (typeof encounterOpen === 'function' && typeof runStartOn === 'function' && !selfTest.stop)
+      await phase(
+        'Splice events: the back alley splices, the recall takes it back',
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            /* tap through an event: "Go on" and the like, the Billie `uid` when a pick lists it, the Gene when a
+               recall asks; until "Keep walking" */
+            drive = async (/** @type {string} */ uid, /** @type {number} */ opt) => {
+              let picked = false;
+              for (let i = 0; i < 80; i++) {
+                await selfTestSleep(60);
+                const M = uiState.modal;
+                if (!M || M.cls !== 'event-sheet') continue;
+                const B = M.btns || [];
+                if (B.length === 1 && /Keep walking/.test(B[0].l)) return M;
+                if (!picked && B.length > 1) {
+                  /* the event's options first, then a pick of Billies or Genes: the lead's (by its name) */
+                  picked = true;
+                  if (opt >= 0) {
+                    B[opt].f();
+                    opt = -1;
+                    picked = false;
+                    continue;
+                  }
+                  const m = saveData.team.find(b => b.uid === uid),
+                    k = B.findIndex(b => m && b.l.includes(escapeHtml(billyName(m))));
+                  if (k < 0) throw new Error(`the pick doesn’t list ${m ? billyName(m) : uid}`);
+                  B[k].f();
+                  continue;
+                }
+                B[0].f();
+              }
+              throw new Error('the event never ended');
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.modal = null;
+            uiState.mq = [];
+            if (s.run) runRestore(s);
+            runStartOn(s, runStartPlan('SELFTESTSPLICE', { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            const D = geneData(),
+              m = s.team.find(b => !isRobot(b) && geneEventSlots(D, b).length);
+            if (!m) throw new Error('no Billie on the run’s team can take a Gene');
+            delete m.graft;
+            delete m.unstable;
+            s.se = 1000;
+            Object.assign(s.meta, { dna: 0, genes: [] });
+            setSaveData(s);
+            encounterOpen(null, 'back_alley_splicer');
+            await drive(m.uid, 0);
+            const g = m.graft ? Object.entries(m.graft)[0] : null;
+            if (!g) throw new Error('the back alley spliced nothing');
+            if (s.se !== 1000 - EVENTS.events.back_alley_splicer.options[0].cost) throw new Error(`Moneys ${s.se}`);
+            if (!s.meta.genes.includes(g[1])) throw new Error('the Gene isn’t in the library');
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = { id: newUid(), sp: m.sp, lvl: 3, no: ++s.serial };
+            encountersHere().push(q);
+            startWild(q);
+            if (!activeBattle) throw new Error('the battle didn’t start');
+            const me = activeBattle.sides[0].team.find(b => b.uid === m.uid);
+            if (!me || !me.graft) throw new Error('the spliced Billie isn’t spliced in battle');
+            stopTimers();
+            setActiveBattle(null);
+            uiState.modal = null;
+            encounterOpen(null, 'gene_recall');
+            await drive(m.uid, 0);
+            if (m.graft) throw new Error(`the recall left ${JSON.stringify(m.graft)}`);
+            if (!s.meta.genes.includes(g[1])) throw new Error('the recall took the Gene out of the library');
+            return `${m.sp} ${g[0]}=${g[1]} for ${1000 - s.se} Moneys, spliced in battle; recalled for ${s.meta.dna} DNA`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+            }
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        4,
+        60
+      );
+    /* RL-14: the Bureau's bot in the grass: it can't be caught, its limbs break and drop off, it cries */
+    if (typeof FACTIONS !== 'undefined' && FACTIONS.bureau)
+      await phase('A wild bot: never caught, its parts break off', 'scene', () => botBattle(), 8, 150);
     /* v47: the opening's fall into the Hollow Earth (the bowl's own ground, past the Inner Sun), timed */
     if (typeof fallOverWorldMap === 'function' && !selfTest.stop)
       await phase(

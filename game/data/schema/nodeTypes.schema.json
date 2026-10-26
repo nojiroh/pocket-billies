@@ -47,6 +47,18 @@
     "description": "RL-12b: it sells things (a town, a stall): never two of them one after the other on a run's map",
     "type": "boolean"
    },
+   "chance": {
+    "description": "RL-14: instead of a weight: the chance a free node becomes this type (a scrapyard), drawn on a stream of its own so every other node keeps its type",
+    "type": "number",
+    "minimum": 0,
+    "maximum": 1
+   },
+   "fromRow": {
+    "description": "RL-14: with a chance, only from this map row on (a scrapyard waits for the middle rows); left out: any row",
+    "type": "integer",
+    "minimum": 0,
+    "maximum": 20
+   },
    "weight": {
     "description": "how often it fills a free row (rows rules.json run.map gives no role); 0 or left out: never",
     "type": "number",

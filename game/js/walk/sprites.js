@@ -696,7 +696,7 @@ export function landmarkTilt(P, sc, yaw = 0) {
    ({weight, radius, zoom, pull}, any of them), else a landmark's default, else a door that counts; props not
    shown now (propShown) are left out when asked */
 /* the doors that count: where you buy, heal or work (a run town's shop and clinic, the hub's lab and ranch) */
-const DOOR_INTEREST = ['shop', 'clinic', 'lab', 'ranch'];
+const DOOR_INTEREST = ['shop', 'clinic', 'lab', 'ranch', 'genebank', 'workshop'];
 export function interestPoints(sc) {
   if (!sc) return [];
   const C0 = walkData().sc;

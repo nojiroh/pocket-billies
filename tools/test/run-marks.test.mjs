@@ -26,6 +26,7 @@ test("the plan's shapes: diamond boss, hexagon town, chevron route, slanted even
     'event',
     'shop',
     'rival',
+    'scrapyard',
     'unknown',
   ]);
   assert.equal(RUN_MARK_SHAPES.boss.length, 4, 'a diamond');

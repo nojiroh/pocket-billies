@@ -107,7 +107,7 @@
   "attackExp": 0.5,
   "speedExp": -0.6,
   "cap": 0.2,
-  "primeBonus": 0.1
+  "primeBonus": 0.05
  },
  "robots": {
   "slots": ["torso","armL","armR","legs"],
@@ -187,6 +187,7 @@
    "most": 5,
    "levelsFrom": 5,
    "perLevels": 5,
+   "perStability": 2,
    "team": 6
   },
   "pack": [5],

@@ -697,6 +697,493 @@ half and half (one capped power level per resident, the rest options); the exist
   word "residents" (rec). Please make `track/residents` from main and push the tag `rs-0-done`.
 - Next session starts with: RS-1 (data and save) on `track/residents`, in Plan Mode.
 
+### Splicing track SP-5 - Augments: the Workshop, bot arms and legs on Billies, breaking and mending, Escaped specimens (built, waiting on the owner's prices) - 2026-10-26
+Branch `claude/sp-5-augments`, **made from SP-6's branch `claude/sp-6-run-events` (1c59e9e) with RL-14a's branch
+`ccr-15fdd30c-5nfh0d` (1d4c58f) merged in once** (the owner's answer: a merge, never a rebase). That merge brought main
+up to 2314da8 (PR #205 included). None of SP-2..SP-6 is merged or tagged, and `track/splicing` doesn't exist. This
+branch merges SP-6's and RL-14a's branches (never rebases) when they move. Merge order: SP-1, SP-2, SP-3, SP-4, SP-6
+and RL-14a, then this. Plan approved in Plan Mode. Tag `sp-5-done` for the owner.
+- **Where the track was wrong:** written into the track file's "Corrections found by SP-5". The ones that changed the
+  plan:
+  - `aug` existed in no code. `stability.augment` and `wild.escaped` were data only.
+  - Every limb rule was gated on `isRobot` and read `m.fit`.
+  - The phase-17 Workshop sheet fitted and upgraded robot parts for nothing.
+  - The Workshop's model, room and door were on main (the hub placing session), not on SP-6's branch.
+  - Robot arms are per side, while a Billie's front slot is both arms.
+  - There are no Bureau places.
+  - Out of date in the older facts and corrections: the buildings and currencies lists; "the game never bakes";
+    Prime +10 %; the Bureau's event count; SP-4's list (all fixed since); `wild` in RUN_FIELDS; CLAUDE.md's
+    gamedata.js note (it is generated and gitignored).
+- **The owner's answers in Plan Mode:**
+  - An arm Augment is **one arm, the right**; the front slot's share is split in half.
+  - Its move is an **extra move while fitted**, lost while the limb is broken.
+  - A knocked-out Escaped specimen leaves **its part** in your spares.
+  - "Near the Bureau" is **one step from a scrapyard**.
+- **The merge** (b6f77bf), 23 conflicts:
+  - rules.js stocking: RL-14a's scrapyard and rare draw kept; the stocked Billies still spliced from SP-3's stream; a
+    bot never spliced.
+  - saves.js: wild bots kept, grafts tidied.
+  - Copperleaf: rebuilt with RL-14a's placements, and the Gene Bank keeps its act `genebank`.
+  - Both sides kept in conditions.js and the rest.
+  - hooks.js and the module headers regenerated; the check-data snapshot remade (one more file); the hub-doors test
+    knows the Gene Bank's act.
+  - After the merge: lint, typecheck, check:modules, check:data, 1112 unit tests and smoke 6 of 6 all pass.
+- **Changed** (one cause per commit):
+  - **genes.json `augment`** (schema, type, dataGenes checks):
+    - slots: an arm on the front's right side (half the slot), legs on the back;
+    - `statShare` 0.5;
+    - `field` Hydrant Arm: Surf, Auger Arm: Rock Smash;
+    - `move` 'extra', `escapedNear` 4, `knockout` 'part';
+    - the Workshop's levels (Lv 1 arms to +1, Lv 2 legs and +2, Lv 3 +3) and its prices (a fit 10 Scrap, upgrades
+      10 / 20 / 40);
+    - `wild.dna.escaped` 8.
+    - **Placeholders.**
+  - **The saved `Billy.aug`** (slot -> part instance) and **logic/augments.js** (on the page, in the Studio and in the
+    logic worker):
+    - Stability: 3 each, held to your Bank's limit, so a Billie can turn Unstable; the merged name uses the part's
+      first word.
+    - Weight: the part's kg.
+    - Type: its type joins the dominant-type pick.
+    - Stats: statShare of its stats (upgrades included) added to the base.
+    - Field moves count it; the badge is still needed.
+    - Starter points count it.
+    - Never Prime.
+    - A slot with an Augment has no Gene (the Bank refuses it, 'aug'; the back alley skips it).
+    - saves.js validates it, tidies it (fit, known part, upgrade range), and lets a part be worn once and never also
+      be a spare.
+  - **Limbs in battle:**
+    - rules.js `limbsOf` / `limbKeys`: a robot's fit, or a Billie's Augments as armR and legs.
+    - partMaxHp, partBroken, moveUsable, repairParts and partsDamaged read them, as do the engine's hit, aim and
+      snapshot.
+    - `movesOf` (the Augment's move after the learned ones; the AI and the move tiles use it).
+    - A broken arm's move fails and broken legs are slow.
+    - The clinic's heal, a rest and a repair kit mend them (the clinic already priced partDmg).
+  - **The Workshop opens:**
+    - buildings.json `workshop` (3 levels, act `workshop`), unlocks `workshop_2` (40 Scrap) and `workshop_3` (100).
+    - The door and the room's Upgrade bench take act `workshop`. Also wired: ROOM_BY_USE, the door's camera
+      interest, the Actions sheet's hub mark, the Lab board ("at the Workshop"), the Studio's act list.
+    - The rules: `work*` in augments.js.
+    - The sheet, `augment-screen.js`: your Billies, their slots, the part worn with Upgrade and Take off, your spares
+      that fit, and the picked part's preview (drawn, kg, types, move, field, Stability, stats before and after);
+      Fit pays Scrap; the Workshop's upgrades at the foot.
+    - Debug log: 'augment' lines, data ids only.
+  - **The art:**
+    - graft-art.js `graftLook`: the graft code plus "+slot=part"; it is the plain graft code for a Billie without an
+      Augment, so nothing else changes.
+    - skeleton-rig.js `augRigParts`: the Billie's own rig, the right arm's bone (or the legs') given the part's
+      picture, scaled to the limb it replaces and hung from its joint; treads and a hover skirt as one piece.
+    - The battle dims a broken Augment and drops its picture.
+    - The limb pips show only the limbs it has.
+  - **Escaped specimens:**
+    - genes.js `wildRoll`: the Graft and Chimera draws unchanged; the escaped band after them, times 4 one step from
+      a scrapyard (rules.js `runNearYard`).
+    - In battle it wears a part of its own: "This Swiftlet has a Hydrant Arm!" and "It must have escaped from a
+      Bureau lab."
+    - Caught, it keeps the part. Knocked out, it gives DNA and the part; the sheet says so (and no longer says the
+      Gene Bank is "coming later").
+    - The run sim counts them.
+  - **The Studio's Genes section:** an Augments card (every number above, the Workshop's levels, and a bot part
+    tried on the picked Billie). studio-shots' genes view tries the Hydrant Arm.
+  - **Debug menu:** Open the Workshop, Workshop level +1, Fit a random Augment on the lead, Break the lead's Augments,
+    Battle an Escaped one.
+  - **The in-game full test:** "Workshop: fit an arm, it breaks in battle, the clinic mends it".
+  - **Text:** currencies.json's Scrap (salvage, the Workshop) and DNA (the Gene Bank spends it now).
+- **Verified:**
+  - **After every commit:** lint, typecheck, check:modules and the unit tests (1124 quick, all pass). New:
+    tools/test/augments.test.mjs (11: the data checks, fit, Stability, weight, type, field, stats, moves, the save,
+    limbs, breaking and repair, the Workshop's fit, take off and upgrade, the look code, the escaped band and the
+    scrapyard rule, the battle's lines and the knock-out).
+  - **Golden battles:** the six old ones unchanged. A seventh: a Billie with a Hydrant Arm against a robot (Jet Blast
+    used; its foe's arm broke).
+  - check:data passes.
+  - **Headless on the page** (town fixture, 400 px):
+    - The Workshop sheet: pick, preview, fit the arm and then the treads (Stability 6 of 3: Unstable).
+    - The Billie drawn with the blue Hydrant Arm on its right shoulder and treads under it.
+    - In battle: Jet Blast shown, then "Part broken" when the arm is broken, the arm dimmed.
+  - **In-game steps alone:** "Workshop" (musk2 front=hydrant, 10 Scrap, Jet Blast offered, broken and mended, taken
+    off free), "Gene Bank", "Wild splice", "Walk: Inside the Workshop", "Walk: Inside the Gene Bank" all pass.
+  - The Studio's Augments card at 1920 px.
+  - **Full quick check: 35 of 40** (1535 s). None of the five is SP-5's:
+    - Main's (2314da8, PR #205; RL-14a found them failing too): terraces ("sky_portal" in the air) and room light.
+    - RL-8 "a run from the mast" fails at "the town's shop has no Perk (RL-12)". It fails the same way run alone on
+      RL-14a's branch `ccr-15fdd30c-5nfh0d` (checked in a worktree). RL-14a saw "Take off didn't start a flight":
+      the step now gets further, to the shop.
+    - Song fingerprints (cave mid/late not in the sound baseline): known since SP-1.
+    - RT-2 "route trainers" failed under the full run's load; alone it passes (`--steps=RT-2`, 29 s).
+    - Two notes for load timing: Running and the Actions sheet took longer than expected.
+- **Risky:**
+  - **Not tried on the phone.**
+  - The Augment's picture is scaled to the Billie's own limb, a first guess. Treads under a small Billie hide its feet.
+  - The escaped band takes 0.5 % (2 % next to a scrapyard) of what were plain wild Billies: a seed's splice stream
+    gives a few different stocks. Species and levels are unchanged (their own stream).
+  - A Billie's Augment move is a fifth move tile (the keys 1-9 reach it).
+  - The workshop.js robot refit (a Team-screen panel, free upgrades) stays as phase 17 left it.
+  - An Augment's weight is its real kg (a 30 kg tread on a 0.4 kg Swiftlet shows in kg; the stats stay inside the
+    +/-20 % cap).
+- **Next:**
+  - The owner's answers (Ask me before): every Scrap price, statShare, escapedNear and the Escaped DNA; the Gene-move
+    rule (the Augment's move follows it).
+  - Then tag `sp-5-done`.
+  - SP-7 is next to plan. RL-14b (the Voltron) is beside it on `track/bots`.
+### Splicing track SP-6 - Run events: the back alley, the Bureau's field lab, the Gene auction, the recall; three Perks (built, waiting on the owner's prices) - 2026-10-26
+Branch `claude/sp-6-run-events`, **on top of SP-4's branch `claude/sp-4-gene-bank`** (itself on SP-3's, SP-2's and
+SP-1's; none merged or tagged, `track/splicing` doesn't exist), started from its d560baf. It merges SP-4's branch when
+it moves (a merge, never a rebase). Merge SP-1, SP-2, SP-3, SP-4, then this. Plan approved in Plan Mode. Tag
+`sp-6-done` for the owner.
+- Where the track was wrong: written into the track file's "Corrections found by SP-6". The ones that changed the
+  plan: RL-12b already had a recall (`recall_notice`) and an auction (`lost_property_auction`), so SP-6's are
+  `gene_recall` and `gene_auction`; an option could only cost Moneys and no condition read DNA, Genes or splices;
+  events could not be placed by condition; no effect kind touched splicing and the run's rows never reached the
+  Unstable drawback; a run's splice lasts only on the Billie kept at the end. SP-3's "a trainer and two event texts"
+  for the Bureau: a trainer class and four events.
+- Decided in the plan (the owner's go): A the **Bureau field lab is an ordinary waystation event** placed by a new
+  event field `when` (`genes >= 1`; the recall `spliced >= 1`), not a node type; B the back alley splices any slot,
+  the lab only the Bank's open slots; C both held to your Bank's Stability limit (Unstable past it, a refused splice
+  never offered); D a Gene spliced on a run joins the library; E every price and Perk number a placeholder.
+- Changed (one cause per commit):
+  - Conditions `dna`, `genes`, `spliced` (conditions.js, needWords, SCRIPTS.md).
+  - An option's `dna` price (schema, type, eventOptionState, paid when picked, the sheet's DNA chip, the summary's
+    DNA change).
+  - An event's `when`: a condition read once, when a waystation's event is drawn (eventPool/eventAt take the game's
+    conditions; the run sim and the Studio's preview read none and leave such an event out, as for a new save).
+  - gene-bank.js `bankWhyAt` (bankWhy's rules without "a run is on"; no change in behaviour).
+  - logic/gene-events.js (on the page and in the Studio's logic worker): geneEventSlots, geneEventWildList and
+    geneEventWild (the back alley's Gene: the region's lines first, any slot the form has, never worn or refused),
+    geneEventLab (library Genes on the Bank's open slots at bankPrice), geneEventSplice (DNA, the splice, Unstable at
+    your limit, the Gene into the library), geneEventLearn, geneEventDraw (the auction's Gene), geneEventRecall.
+  - Event commands `dna n`, `gene [n]`, `splice wild|lib` (checkpoint), `unsplice [n]` (checkpoint), with
+    data-checks' argument checks and SCRIPTS.md. Their draws come from a stream of the event and the place
+    (`event|gene|<id>|<node>`), so a reload in the middle draws the same Gene. The back alley's pick has no "Not now"
+    (the option was paid); the lab's and the recall's have one.
+  - events.json: `back_alley_splicer` (150 Moneys or 8 DNA), `bureau_field_lab` (the Bank's price; or swipe a sample:
+    a Bureau Clerk battle, then a Gene), `gene_auction` (250 Moneys for a Gene, 15 DNA for two), `gene_recall` (hand a
+    Gene in for 15 DNA, or refuse: a Bureau Clerk battle and a Perk). **Placeholders.**
+  - Effect kinds `dna` (spliceSample, from the battle's run rows), `splice` (wildSplice's new `odds`: the same
+    draws, both chances times it, together at most 1; rules.js stocking passes the run's rows) and `unstable` (the
+    drawback on your side, times the battle's run rows). With no rows every number is as before.
+  - The Studio's Perks section: the three kinds' fields and the preview's rows (content-preview.js perkPreview).
+  - perks.json: Petri Dish (common, Samples x1.5 DNA), Gene Lure (uncommon, splice odds x2), Stabilizer Gel (rare,
+    the Unstable hurt x0.5: FX_LIMIT keeps a product at 0.1 or more, so "none" isn't possible with a mult).
+    **Placeholders.**
+  - The in-game full test: "Splice events: the back alley splices, the recall takes it back" (on a copy of the save
+    on a run). The debug menu's event list already lists every event (no change). Debug log: 'event' lines with data
+    ids only (`splice musk2 back=cat_leg@bezos1`, `gene ...`, `unsplice ...`).
+- Verified: lint, typecheck, check:modules, unit tests after every commit (1038 quick, all pass; new:
+  tools/test/gene-events.test.mjs, the conditions, needWords, the DNA price, `when`, the commands' data checks, the
+  Unstable hurt with a run row); check:data; golden battles unchanged (snapshot not remade); smoke 6 of 6. Headless on
+  the page (town fixture, a run on a copy of the save): the full test's new step passes (musk2 back=cat_leg@bezos1
+  for 150 Moneys, spliced in battle, recalled for 15 DNA); the field lab (Lv 2 Bank: an eagle's wings and a shark's
+  tail offered at 15 DNA, Stability 2 of 4; the tail spliced, 15 DNA paid), the auction in DNA (two Genes, 15 DNA) and
+  the back alley in DNA (8 DNA) all play through their sheets with no errors; the lab's pick read well at 400 px. The
+  in-game steps "A run's waystation and stall", "Wild splice", "Gene Bank" pass alone.
+  Full quick check (1351 s): 35 of 37. The two problems are the known ones, not SP-6's: RL-8 "Take off didn't start
+  a run's flight" and song fingerprints (cave mid/late not in the sound baseline), both known since SP-1. The Actions
+  sheet passed this time (160 s).
+- Risky: adding four events and three Perks changes which event a waystation holds and which Perks are offered for
+  a given seed (no test pinned one). A splice made on a run bakes at runtime (SP-1's path), like the Bank's preview: if
+  the owner takes SP-1's offline fallback, events still need the runtime bake. `when` is read when the event is drawn
+  (the first time a waystation's stand is opened), not when it is played: the option's own `need` is what guards the
+  play. battle.js's Gene Sample sheet still says the Gene Bank is "Coming later" (SP-3's text, older than SP-4).
+- Next: the owner's answers (Ask me before): the events' prices and the Perks' numbers and rarities; Gene moves
+  (still with the owner); SP-3's odds and DNA. Then tag `sp-6-done`. SP-5 waits for RL-14; SP-7 is next to plan.
+- The owner's answers (2026-10-26, after the entry above): the events' prices and the three Perks' numbers and
+  rarities **stay placeholders** for now (to tune after playing on the phone); the back alley's pick keeps **no "Not
+  now"** (it was paid for); the back alley stays **unlicensed** (any slot its form has, whatever the Bank's level).
+- Later the same day: **RL-14a is done** (bots, salvage into `saveData.parts`, the scrapyard) on its branch
+  `ccr-15fdd30c-5nfh0d`, not merged into main; RL-14b (the Voltron) is still to do. SP-5 needs only RL-14a's salvage,
+  so it is unblocked. The owner's answers: **SP-5 runs in a new session**, on a branch made from this one
+  (`claude/sp-6-run-events`) with **RL-14a's branch merged in once** (which also brings main up to 2314da8, PR #205
+  included: the checks RL-14a found failing on main, the hub's doors and RL-8's take-off, will fail there too). Also
+  found: SP-1's branch was merged into main (PR #198); SP-2, SP-3, SP-4 and SP-6 are not. The Workshop is still
+  `soon` on RL-14a's branch, and its scrapyards are where "more Escaped specimens near the Bureau" could go.
+### Splicing track SP-4 - The Gene Bank: the building, the library, splicing for DNA, its levels (built, waiting on the owner's numbers) - 2026-10-26
+Branch `claude/sp-4-gene-bank`, **on top of SP-3's branch `claude/sp-3-wild-splices`** (itself on SP-2's and SP-1's;
+none merged or tagged, `track/splicing` doesn't exist), started from its e24e882, with **main merged in once** (the
+owner's go on the plan, decision A: the hub track's Gene Bank model, room and `enter` act are on main). It merges SP-3's
+branch when it moves (a merge, never a rebase). Merge SP-1, SP-2, SP-3, then this. Plan approved in Plan Mode. Tag
+`sp-4-done` for the owner.
+- Where the track was wrong: written into the track file's "Corrections found by SP-4". The ones that changed the plan:
+  main already had the Gene Bank's model, room and a bare plot (HB-4b, HB-5); levels are unlocks.json rows; the limit
+  was read at the default in five places, not graftTidy alone; extras can't be spliced, so the levels open sig, front,
+  back; there is no Dig (Rock Smash), and a horn for Cut can't be spliced; no Studio file read genes.json; a DNA grant
+  was dropped.
+- Decided in the plan (the owner's go on all four): A main merged in once; B HB-5's lab-vault on HB-4b's `genebank`
+  plot, act `genebank` (door and Splice console); C the placeholder numbers below; D **your Billies are held to your
+  Bank's limit, wild ones to the default**: Unstable is a stored fact settled with the owner's limit (a splice at the
+  Bank, a level up, evolving, catching, loading), and billyUnstable no longer works it out again.
+- Changed (one cause per commit):
+  - Merge of main (BRANCHES rows from both sides, rules.js billyName with main's provide, game-data.js GENES with
+    main's provide(FIELD_MOVES), hooks.js through `npm run modules`, the check-data snapshot's file count).
+  - A milestone that grants DNA pays it (unlockGrant, its gift text, the economy view, `UnlockGrant`).
+  - Data: genes.json `bank` (levels: limit 3 / 4 / 5, slots sig / + front / + back; a splice `5 + 5 x` the Gene's
+    Stability cost in DNA; an egg keeps a Gene at 0.5), `field` on fins (Surf) and `bear_arm` (Rock Smash);
+    buildings.json `genebank` (DNA, 3 levels), unlocks `genebank_2` (30 DNA) and `genebank_3` (80). **Every number a
+    placeholder.** Schema, types, dataGenes (field ids exist, level 1's limit is the default, no level takes a slot or
+    limit back, as many levels as buildings.json sells).
+  - rules.js `geneLimit(s)`; `unstableTidy`, `spliceSet`, `graftTidy` take the limit; evolve, addBilly, saveFill
+    (team, box, nursery, the run's start team) and spliceReport use yours, the wild lists and stocking the default.
+  - logic/gene-bank.js: bankSequence (a Billie's own parts and its Genes into `meta.genes`, free), bankGenes,
+    bankPrice, bankTry, bankWhy, bankSplice (pays), bankUnsplice (free, the Gene stays), bankSettle.
+  - Copperleaf: build-copperleaf.mjs puts `gene_bank` on its plot (rebuilt: one prop added, rot 90, nothing else
+    moved); build-hub-rooms.py gives the Splice console act `genebank`; ROOM_BY_USE, buildings.json act, the Actions
+    sheet's hub marks, the camera's door interest, the Studio's act list, "Bought at the Gene Bank".
+  - game/js/gene-bank-screen.js: the sheet (DNA, level, limit, slots; your Billies; Sequence; the slots with the level
+    that opens a closed one; the Gene worn with Take off; the fitting Genes with trait, type and price; the picked
+    one's preview: drawn with it, kg, types, traits, the move when there is one, Stability against the limit,
+    Unstable or refused, stats before and after; Splice; the Bank's upgrades). The console, the keeper and the door's
+    fallback open it; a level bought there settles your Billies. Debug log 'genebank' lines (data ids only).
+  - Eggs: breeding.js breedGenes, drawn after every other roll and only for a spliced parent (an egg of unspliced
+    parents is what it was).
+  - Starter points: `run.points.perStability` 2 (rules.js billySpliceCost through pointCost).
+  - Field moves: genes.js geneOf's `field` and graftFields, rules.js billyFieldTypes for the obstacle, the map's gate
+    text and the run sim. The badge is still needed.
+  - The Studio's Genes section (studio/js/genes-editor.js): every genes.json number above, the traits' names and
+    text, kinds and parts, the starter-point cost, and "Try a splice" (bakes any kit Billie with a Gene on a slot,
+    kitBakeInStudio, with its Stability, traits, types and price); graft-art.js and genes.js now on the Studio page.
+    The economy view's DNA lines open it; the Bank's splice price is a DNA sink. tools/studio-shots.py: a genes view.
+  - The in-game full test: "Gene Bank: sequence, splice, see it in battle" (on a copy of the save). Debug menu: Open
+    the Gene Bank, Gene Bank level +1.
+- Verified: lint, typecheck, check:modules, unit tests after every commit (1032 quick, all pass; new:
+  tools/test/gene-bank.test.mjs, breeding's inherit test, starter points' splice cost, geneOf's field); check:data;
+  golden battles unchanged. Headless on the page (town fixture): the Gene Bank stands on its plot (117.8, 107.31, rot
+  90); walking in lays `int_gene_bank` (kind genebank); the sheet opens; the lead (musk2) sequenced, a shark's tail
+  previewed (drawn with it once its pictures load, about 3 s headless) and spliced for 15 DNA; Lv 2 bought from the
+  sheet (the title follows); Take off free. In-game steps alone: "Walk: Inside the Gene Bank", "Wild splice", "Gene
+  Bank: sequence, splice, see it in battle" (musk2 front=cat_arm@bezos0: 10 DNA, its Grip row in battle) all pass. The
+  Studio's Genes section at 1920 px: a Swiftlet with a shark's tail baked; the Studio's Check lists only older notes.
+  Slow tier 73 of 73 (the island-generator test after the Copperleaf rebuild included). Full quick check: 34 of 37, none SP-4's: song fingerprints (cave mid/late not in the sound baseline) and RL-8 "Take
+  off didn't start a run's flight" (both known since SP-1); the Actions sheet ("a run's sheet has no day chip": a 5 s
+  wait in a step that took 245 s under the full run's load) passes alone (`--steps=Actions`, 120 s: the hub marker,
+  a run's day, type and weather), as SP-1 found it does.
+- Risky: Unstable is now stored and trusted (billyUnstable reads it; every place a splice or the limit changes
+  settles it): a path that changes a splice without spliceSet, bankSplice or graftTidy would leave it stale until the
+  next load. Copperleaf has one more building (the hub pictures differ from the baseline). The preview bakes on the
+  main thread like SP-1's grafts. The Studio page now loads graft-art.js and genes.js (skeleton-rig.js imports
+  graftForm and graftParse directly instead of through hooks).
+- Next: the owner's answers (Ask me before): the Bank's prices and levels, the splice price, the egg's chance, the
+  starter-point cost; Gene moves (SP-2's open question): genes.json `parts.move` already shows on the sheet's preview,
+  but splicing doesn't teach the move yet (that needs the owner's answer and a "forget which move" choice).
+  Then tag `sp-4-done`; SP-5 waits for RL-14.
+- The owner's answers (2026-10-26, after the entry above): the Gene Bank's numbers **stay placeholders** for now (to
+  tune after playing on the phone); Gene moves: the owner explains first (`parts.move` stays unused); next is **SP-6
+  (run events)**, in a new session **on top of this branch** (`claude/sp-4-gene-bank`), merging it when it moves.
+### Splicing track SP-3 - Wild splices: Grafts and Chimeras, the battle's line, DNA, Gene Samples (built, waiting on the owner's numbers) - 2026-10-25
+Branch `claude/sp-3-wild-splices`, **on top of SP-2's branch `claude/sp-2-rules`** (itself on SP-1's
+`ccr-dde1a5bd-nx5zdl`; none merged or tagged, `track/splicing` doesn't exist). It merges SP-2's branch when it moves
+(a merge, never a rebase; done once this session, for the owner's answers: Gene ids `part@donor`, Unstable kept on
+the Billie). Merge SP-1, then SP-2, then this. Plan approved in Plan Mode. Tag `sp-3-done` for the owner.
+- Where the track was wrong: written into the track file's "Corrections found by SP-3". The ones that changed the
+  plan: Scrap is paid at a run's end, not when it drops (DNA is the first currency banked mid-run); the currencies
+  schema allowed exactly four; "Tax" is no longer the catch word and catching happens in battle, so a win means the
+  foe fainted; there are no Bureau nodes and Escaped specimens need SP-5's Augments; one more roll in `spawn` would
+  have changed every later Billie of a run place.
+- Decided in the plan (push-backs the owner can still undo, each a line of data or one function): **Tax = the
+  existing catch** (pyramids; it keeps its parts) and **Sample = knocking it out** (no new post-battle choice);
+  Escaped specimens wait for SP-5 (`wild.escaped` is in the data, unused); wild splices on run places only (not the
+  hub's grass, the gentle starter encounters or fishing); Gene Samples are a set of Gene ids on `meta.genes`.
+- Changed (one cause per commit):
+  - genes.json `wild` (Graft 0.12, Chimera 0.025, escaped 0.005 unused, a Chimera's 2-3 parts, DNA 5 for a Graft and
+    12 for a Chimera: **placeholders**) and a `word` per spliceable kind (arms, wings, fins, legs, feet, tail); schema,
+    type, dataGenes (odds leave some Billies plain, every spliceable kind has a word).
+  - logic/genes.js `wildSplice` (none / Graft / Chimera by the odds; Genes whose donors are of the lines the place's
+    pool holds, never the Billie's own; never refused, past the limit Unstable) and `geneWords` ("an eagle's wings").
+  - rules.js `encountersHere`: a run place's new encounters roll their splice from a stream of their own
+    (`splice|visit` off the node's seed), after `spawn`, so species, levels, sizes and coats are what they were; an
+    Unstable one gets its roll there too (the same on a reload). `spliceWords`.
+  - battle-engine.js `startWild`: "This Swiftlet has an eagle's wings!" or "This X is a patchwork: ...!" after "A wild
+    X appeared." (the species' own name: an Unstable foe's merged name is on its plate).
+  - DNA, the fifth currency: currencies.json (schema to five), `CurrencyId`, `Meta.dna`, newMeta/validMeta, a helix
+    icon (tools/build-ui-icons.py, 50 icons), the chip's tone, the Lab board and map chips once you have some, the
+    debug log's meta, the unlock graph, the economy view (genes.json wild.dna as its sources; its link goes to the
+    Studio's Parts section until SP-4 gives the Genes one). VISION.md: five currencies.
+  - battle-rewards.js `spliceSample` from `battleSettleWin` (so the run sim does it too): a spliced wild foe knocked
+    out banks DNA on `meta` at once and adds each Gene not yet sampled to `meta.genes` (at most 1000; validMeta checks
+    the ids' shape and no repeats). Caught, it leaves no sample. endBattle: a "Gene Sample" sheet for a new Gene, else
+    a DNA toast. Debug log: `meta.dna` and `meta.genes` as a count.
+  - run-sim.js: `splices`, `caughtSpliced`, `dna`, `genes` per run and in the report.
+  - Debug menu: +50 DNA, Battle a Chimera (wildSplice with every species as its pool); the graft buttons' words are
+    the battle's. In-game full test: "Wild splice: its line, DNA and a Gene Sample" (on a copy of the save).
+- The run sim (balance mode, 500 seeds, against SP-2's head): the default bot (one starter, loses within ~2 places)
+  fights 0.3 splices a run, banks 0.9 DNA and 0.2 new Genes; paired compare: battles -0.06, research +0.1, no run
+  won or lost differently. A stronger bot (`--team=3 --fights=4 --pack=5 --lvl=20 --unlocks=all`, 7.2 places a run):
+  2.6 splices fought, 16 DNA, 3.1 new Genes a run; wins 235 -> 233 of 500 (2 won, 4 lost: inside the noise), research
+  616 -> 614, healed +1.5. The bot never catches a splice when its party is full (caughtSpliced ~0).
+- Verified: lint, typecheck, check:modules, unit tests after every commit (976 quick, all pass; new: dataGenes'
+  wild rules, wildSplice over every pool and 200 streams a species, geneWords, a run place's stock unchanged with
+  splices on or off and the same on a reload, Unstable rolled at stocking, the opening line, DNA and samples once,
+  caught leaves none, validMeta); check:data; golden battles unchanged; smoke 6 of 6. Headless on the page (town
+  fixture): the full test's new step passes (Emberox with a fox's arms: +5 DNA, its Gene sampled); a Chimera
+  Versewift (back, front and tail from three donors, Unstable "Verseprat") opens with its line, the win shows the
+  Gene Sample sheet (+12 DNA, three Genes), the debug log's meta has `dna: 12, genes: 3`, no console errors.
+  Full quick check (1568 s): 35 of 37. The two problems are the known ones, not SP-3's: RL-8 "Take off didn't start
+  a run's flight" (fails on main too) and song fingerprints (cave mid/late not in the sound baseline). The Actions
+  sheet passed this time (it took 158 s, 150 expected, a note).
+- Risky: every run place's wild Billies can now be spliced (about 15 %), so run battles differ from before (the
+  stock's species and levels don't). DNA is banked mid-run, the first currency that is. `meta.genes` is checked
+  strictly like the rest of meta: a tampered entry restarts meta (as for any meta field). The economy view's DNA link
+  opens the Studio's Parts section, which has no Gene fields yet.
+- Next: the owner's answers (Ask me before): the wild odds, DNA per Graft and Chimera, whether DNA has other sources,
+  and Tax as the existing catch. Then SP-4 (the Gene Bank: spends DNA, opens `meta.genes`).
+### Splicing track SP-2 - Rules: Genes, Stability, Unstable, the balance sim (built, waiting on the owner's numbers) - 2026-10-25
+Branch `claude/sp-2-rules`, **on top of SP-1's branch `ccr-dde1a5bd-nx5zdl`** (the owner's word: SP-2 started before
+SP-1 was merged or tagged, and `track/splicing` didn't exist). It merges SP-1's branch when it moves (a merge, never a
+rebase): merge SP-1 first, then this. Plan approved in Plan Mode. Tag `sp-2-done` for the owner once the numbers are set.
+- Where the track was wrong: written into the track file's "Corrections found by SP-2". The ones that changed the
+  plan: the spliceable parts are only the slot bones (arm, wing, frontfin; leg, foot, backfin; tail, tailfin), so the
+  track's trait list mostly named extras that can't be spliced yet and arm, leg and foot had no trait; Prime's +10 %
+  sits outside the +/-20 % cap and lifts HP too; the per-Billie path is `fxOfBillie`; abominations have no drawback
+  passive; the effect kinds have no on-hit or immunity kind; regional forms without a rig of their own can't be spliced.
+- Decided in the plan (push-back the owner can still undo): a Gene is a slot's part from a donor's recipe, so
+  `Billy.graft` stays `{ slot: donor rig }` (no separate Gene id); `aug` moves to SP-5 (nothing reads it before);
+  Unstable is worked out from the Billie's uid and splice, never stored or rolled again; Gene moves are data only until
+  SP-4's splice screen (learning one needs a "forget which move" choice).
+- Changed (one cause per commit):
+  - game/data/genes.json + schema: a trait per part kind, the traits as effect rows, dominant types per part,
+    Stability (line 0, kit 1, other kit 2, Augment 3; limit 3; refused past limit + 3), Unstable (x1.3, x0.75, a
+    turnHurt drawback). **Every number is a placeholder.** data-checks `dataGenes` (check-data and the Studio's Check;
+    the held items' row check is shared with it); a type renamed or deleted in the Studio reaches the Genes.
+  - logic/genes.js (pure, on the game page after graft-art.js and in the Studio's logic worker): geneOf, graftFit,
+    graftGenes, geneCost, graftStability, graftRel, graftHeaviest, graftTypes, graftTraits, graftUnstable.
+  - Save: optional `graft` on Billy and on a wild Encounter; billiesOk and the wild lists refuse a bad shape, saveFill
+    keeps the slots that still fit and drops a splice with none left or past what Stability allows. No SAVE_VERSION bump.
+  - graft-art.js graftOf/graftSet read and write `m.graft` (SP-1's WeakMap is gone): a grafted Billie stays grafted
+    through a reload, and a caught grafted foe keeps its splice. A splice survives evolving.
+  - parts.js: an optional per-slot relative weight (donor `wt` over the Billie's) and a spliced flag; with neither
+    every number is as before. rules.js billyRel, billyPrime, billyTypes, billyGraft, billyUnstable, billyGeneFx,
+    unstableName, spliceReport. stat() applies the donor weight and Unstable's two stats; billyName merges an
+    Unstable Billie's name with its heaviest donor's (unless nicknamed); the Prime tag goes on a spliced Billie.
+  - Types: the heaviest dominant Gene gives the second type (never a third) in battle (types, matchups, passives, the
+    stones, the bench's type count), the switch list, the mono-type catch rule, field moves, the Team tab and cards.
+  - fxOfBillie adds the splice's rows after the held item's (`gene:<trait>`, `unstable`); a new kind `turnHurt` (the
+    drawback, its own battle line "X's unstable cells hurt it").
+  - debugLog.state `splices`: per spliced team member its place, species, splice code, Stability, traits, types (data
+    ids only, no names). The debug menu's graft buttons now say the graft is saved.
+  - tools/test/genes.test.mjs, battle-genes.test.mjs, parts.test.mjs additions; tools/test/sim/splice-sim.mjs.
+- The balance sim (`node tools/test/sim/splice-sim.mjs`, 51 species with a kit rig, 1176 splices of 1-3 random Genes,
+  every part at M, against the Prime twin, each side first once on one seed; control 0.5; 42.5 % of splices Unstable
+  at limit 3). The spliced side's share of wins:
+
+  | Prime bonus | all | 1 Gene | 2 Genes | 3 Genes | stable | Unstable |
+  |---|---|---|---|---|---|---|
+  | +10 % (now) | 0.31 | 0.27 | 0.31 | 0.35 | 0.32 | 0.30 |
+  | +5 % | 0.42 | 0.42 | 0.43 | 0.41 | 0.46 | 0.37 |
+  | 0 | 0.55 | 0.61 | 0.54 | 0.49 | 0.61 | 0.47 |
+
+  At +10 % a splice loses about 2 fights in 3 to its Prime twin; at +5 % a little under even; with no bonus a single
+  Gene wins 61 % (the trait plus the donor weight). Unstable splices do worse than stable ones at every bonus.
+- Verified: lint, typecheck, check:modules, unit tests after every commit (968 quick, all pass); the golden battles
+  unchanged (snapshot not remade); check-data's snapshot remade for its file count only (141 to 142); slow tier 58 of
+  58 (SP-1's graft sweep included); smoke 6 of 6. Headless on the page (town fixture): the lead (Memeox) grafted
+  sig=bezos0, saved; the stored save passes validSave and saveFill keeps the graft; no Prime ribbon on its sheet; in a
+  wild battle it starts with Defense +1 (Counterweight); kg 420 to 358.8; the debug state lists the splice.
+  Full quick check: 34 of 37, none SP-2's. Song fingerprints (cave mid/late not in the sound baseline, as SP-1
+  found); Sound settings (a mute row in the full run; passes alone); the RL-8 run from the mast (in the full run "the
+  battle's end didn't let saving go on", alone "the town's shop has no Perk"; the same step fails the same way alone on
+  SP-1's branch, and SP-1 saw it fail on main 501b286 at take-off, so it is older than the splicing track).
+- Risky: every stat, type and effect-row read for a Billie now checks for a splice (unspliced ones return the same
+  values, the same list objects included). The Unstable drawback can knock a Billie out at a turn's end, like a burn.
+  saveFill drops a splice on a regional form with no rig of its own (such a splice can't be drawn or ruled).
+  graftTidy uses the default Stability limit: SP-4 must pass the Gene Bank's limit there.
+- The owner's answers (2026-10-25, after the entry above): Prime's bonus **+5 %** (rules.json; the golden battles'
+  snapshot remade for it alone); traits and numbers kept as placeholders, Grip and Stride included; three more dominant
+  Genes (koi_frontfin Electric, piranha_backfin Steel, rabbit_tail Grass: 9 of 36, every type); `aug` to SP-5
+  accepted. Rejected and changed: a splice names each Gene as **"part@donor"** (`Billy.graft = { front:
+  'eagle_wing@hughes2' }`; graft-art.js geneSplit, graftForm puts the named part on the slot's bone, graftDonors lists
+  Gene ids), and Unstable is **rolled once and stored** (`Billy.unstable = { up, down, name }`, rules.js unstableTidy and
+  spliceSet; kept through a new splice past the limit, dropped when stable; an encounter's roll goes to its foe). The
+  points above that say "derived from uid and splice" and "{ slot: donor rig }" are replaced by these. The sim at +5 %
+  after the changes: spliced 0.42 against the Prime twin (1 Gene 0.42, stable 0.45, Unstable 0.39). Checks after them:
+  971 quick tests, the slow graft sweep (1597 bakes, median 17 ms).
+- Next: Gene moves (the owner wants to explain what they want first), then tag `sp-2-done`; SP-3 (wild splices) is
+  being planned in its own session on top of this branch.
+### Roguelite track RL-14a - The Bureau's bots, salvage, the scrapyard - 2026-10-26
+Branch `ccr-15fdd30c-5nfh0d` (the session's own; `track/bots` didn't exist and the owner said to build here), from
+main 2314da8. Plan approved in Plan Mode with the owner's answers: RL-14 split in two (RL-14a bots, salvage, the
+scrapyard; RL-14b the Voltron); salvage is **2 parts + 1 Scrap stack**; the Voltron is **Expedition I's boss only**;
+**wild bots yes, rare**; the **scrapyard built now**; the Voltron's boss parts **placeholders** (RL-14b); phase 17's
+numbers **kept, tuned by the sim**, the gem's story role open. Tag `rl-14a-done` for the owner. RL-14b starts on
+`track/bots` (the owner makes it from main), beside RL-S2 (the Voltron's story scene last).
+- Where the plan was wrong (checked in the code):
+  - **Phase 17's prototype is in main**, not only on `archive/phase-17-robots`: `makeRobot`, `buildRobot`, part hits
+    and breaks, aimed moves, repair, the Workshop sheet (`workshop.js`), `robots.test.mjs`, the robot sim and the
+    Studio's robots editor. RL-14 builds on it.
+  - Robots have **no head slot** (the head is torso art): 3 torsos, 6 arms, 3 legs, 3 gems, as findings C said.
+  - `trainerTeam` already took robot entries (`sp: 'robot'`, Tinker Rho). The Bureau's agents already existed
+    (`bureau_clerk`, `bureau: 1`, RL-S1's `pick bureau` lines), so the plan's "Collectors" are Bureau agents.
+  - A wild bot is a full build (`bot:<gem>.<torso>.<armL>.<armR>.<legs>`, a robot's own sp), not `'bot:<torso>'`.
+  - The run's boss is the region's last leader's top Billie (`bossAlpha` takes a species only): RL-14b's work.
+  - The foe side holds 2 fighters at most (`SIDE_ACTORS`): the Voltron stays one robot with `m.boss`.
+  - A scrapyard as a node-type **weight** moved every free node's draw (two seeds' scenes then hit a river note in the
+    generator), so it is a **chance on its own stream** instead.
+- Changed (one cause per commit, 13 commits):
+  - **events.json**: a second Bureau agent class, the **Reclamation Agent** (1-2 Billies, dead ends and pockets).
+  - **factions.json** (schema, types, `FACTIONS`, check-data and the Studio's Check `dataFactions`, the module on both
+    pages and the logic worker): the Bureau's six bots (Courier Unit, Repossession Unit, Shredder Unit, Stamp Press,
+    Filing Drone, Audit Unit; gem + four parts, a name, a weight), `wild` (10% from map row 3 in canyon, volcano,
+    ridge, badlands, tundra, cave), `agents` (both classes, 1-2 bots), `scrapyard`, `salvage` (2 parts, 3 Scrap +1 a
+    bot after the first). New `logic/factions.js`.
+  - **Never caught**: `battle-engine.js catchable` (a robot never is; catchOdds 0, catchRoll misses even with the
+    Capstone, the one pyramid that could take a bot before). "Catch it" greyed out with "Not a Billie".
+  - **Agents field bots**: `encClassFoe` adds 1-2 bots after an agent's Billies from a stream of their own (the
+    Billies stay what they were); a bot's name is its nickname (`trainerTeam`). The walk view loads their parts.
+  - **Wild bots**: `rules.js spawnBot` (only a place that can have one draws for it, so every other place's Billies
+    are as before); `startWildBot` (single, never an Alpha, its Bureau name); the walk view draws one from its parts
+    (`world-billies.js` reads `speciesById`); the save keeps it (`saves.js`).
+  - **Salvage**: `battle-rewards.js battleSalvage` + `rewards.js salvageOfferMake`: beating bots on a run leaves a
+    salvage pick (kind `salvage`) **in place of a route trainer's reward pick**; two of their parts and a Scrap stack;
+    never rerolled. A part goes into `saveData.parts` (uid from the run's counter), Scrap into `meta.scrap`: both kept
+    whatever the run's end. The sheet "Salvage" shows the parts' pictures; a wild bot's opens after the battle.
+  - **Scrapyard** (nodeTypes.json `scrapyard`, new `chance` 0.12 and `fromRow` 3; a cog marker, danger tone; a
+    first-run hint): every wild one a bot, no rarer one; 1-2 Reclamation Agents by the road (`scrapyardAgents`); its
+    scene gets a `site` dial and draws only set pieces made for it (setPieces.json `sites`: a new **Scrap heap**, now
+    and then the Bureau checkpoint). About a third of runs get one (0.33 of 1000 seeds; 0.40 a run).
+  - **Cries**: `cries.js cryOfBot` (the machine base, a heavier torso lower, the gem's length); robots were silent.
+  - **The stage**: a broken part's picture drops off the bot, tumbles, bounces and fades (the limb stays faint).
+  - **Checks**: check-fast "Salvage" (run page); the in-game full test's "A wild bot" phase (not catchable, a part
+    breaks and drops off).
+  - Docs: roguelite-track 9.4 (the split, the answers, as built, `Branch: track/bots`), ROADMAP, BRANCHES, NAMING,
+    sound-track, CHANGELOG.
+- Snapshots remade on purpose: check-data's (one more file, a planted factions case, the marker list), run-start's (a
+  scrapyard in the short map's row 7, where a town was). run-preview's stall test looks at 24 seeds.
+- **The run sim** (200 seeds, balance mode, 6 at the ranch, 4 fights, 5 Potions; paired against main's data):
+
+  | party | Expedition | wins before | wins after | paired difference |
+  |---|---|---|---|---|
+  | level 20 | I | 68.5% | 64.5% | -4.0 points [-8.4, +0.4] |
+  | level 15 | I | 31.0% | 30.0% | -1.0 [-3.8, +1.8] |
+  | level 20 | II | 26.5% | 25.5% | -1.0 [-4.1, +2.1] |
+
+  Research a run falls 5-8% (727 to 697 at level 20): fewer Moneys left (a scrapyard can stand where a town was;
+  salvage replaces an agent's item pick). Runs lost at a scrapyard: 4, 8 and 5 of 200. The bot policy is a floor on a
+  player; no bound is asserted.
+- Verified: after every change lint, typecheck, check:modules, format:check, check:data and `npm test`; `test:all`
+  1155/1155 before the checks commits. New tests: factions (4), robots (+2), encounters (+1), route-trainers (+1,
+  and the agents' bots in the old one), run-world-real (+2: wild bots' share, a scrapyard's scene), rewards (+2), cries
+  (+1). check:smoke 6/6 (322 s). Headless pictures at 390x760 (not committed): the salvage sheet, a wild bot's battle
+  with "Catch it" greyed out, a part falling off and lying on the ground. The in-game phase alone: "Audit Unit, not
+  catchable; 1 part(s) broke, 1 dropped".
+  - **check-fast: 28 of 33** (1407 s, slow here). The new "Salvage" step passed. Failing **on main too** (checked
+    alone in a copy of main 2314da8; main's own CI went red with PR #205): "A room opens and draws (the lab)",
+    "Breeding" and "Income" (all "not in the room/ranch": the hub's doors since #205). "A battle plays to the end"
+    (91.6 s alone here, 89.7 s on main, against a 120 s limit) and "Packing for a run" passed alone: load timing.
+  - **Full quick check: 35 of 40** (2169 s). Failing on main too: "RL-8: a run from the mast" ("Take off" didn't start
+    a flight: the station since #205), song fingerprints (cave mid/late, known since RL-S1), terraces ("sky_portal" in
+    the air: #205's portal past the map's edge), room light (rooms, as above). "Actions sheet" (no day chip) passed
+    alone on this branch: load timing.
+- Risky / open:
+  - **Not tried on the phone.** The dropped part's size and the cry are first guesses.
+  - An agent who fields bots now leaves salvage **instead of** its item reward pick: Bureau agents give parts and
+    Scrap, never items. Say if both should come.
+  - Salvaged parts have no use until the Workshop opens (it is "soon") or SP-5's Augments: they pile up in
+    `saveData.parts` (validSave caps it at 5000).
+  - A run in progress when this lands keeps its map (no scrapyard), but its route trainers are made again from the
+    seed: its Bureau agents gain bots. Wild stocks already rolled stay.
+  - Places in a bot biome from row 3 draw one more number, so their wild Billies differ from before on the same seed.
+  - A scrapyard on a farmland or lake layout plan still carries that plan's own props (crops, scarecrows) beside its
+    scrap heaps. A layout of its own would be RL-14b's or a routes-track session's.
+  - No song for a scrapyard yet (music.json `where` can add one by node type).
+- Next: RL-14b (the Voltron: `bosses.json`, `makeBossRobot`, `alphaPhase` from data, the join intro, its boss parts
+  as placeholders, Expedition I's boss) on `track/bots`, beside RL-S2; SP-5 (Augments) can start from RL-14a's parts.
 ### Hub track - the placing half of HB-5 and HB-7: Skyline Station on its headland, the new buildings on their plots - 2026-10-25
 Branch `props/hub-placing` (the session's brief; from main aea7a48 after PR #201). Plan approved in Plan Mode. The
 owner's answers: the station side-on, its rail straight out to sea (no new art); the Gene Bank's door opens its room

@@ -8,6 +8,7 @@
    bundles this file into one (vite.config.js), with the one hooks.js its modules share. */
 import './logic-worker-page.js';
 import '../../game/js/game-data.js';
+import '../../game/js/logic/augments.js';
 import '../../game/js/logic/battle-engine.js';
 import '../../game/js/logic/battle-facing.js';
 import '../../game/js/logic/battle-rewards.js';
@@ -37,10 +38,14 @@ import '../../game/js/logic/draft-record.js';
 import '../../game/js/logic/economy-view.js';
 import '../../game/js/logic/effects.js';
 import '../../game/js/logic/encounters.js';
+import '../../game/js/logic/factions.js';
 import '../../game/js/logic/fighters.js';
 import '../../game/js/logic/float-island.js';
 import '../../game/js/logic/forms.js';
 import '../../game/js/logic/free-camera.js';
+import '../../game/js/logic/gene-bank.js';
+import '../../game/js/logic/gene-events.js';
+import '../../game/js/logic/genes.js';
 import '../../game/js/logic/graft-art.js';
 import '../../game/js/logic/held.js';
 import '../../game/js/logic/history.js';

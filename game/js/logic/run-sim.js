@@ -327,6 +327,13 @@ export function runSimOn(env) {
         /** each run foe fought: its leader, its node's type, won or not @type {any[]} */
         foes: [],
         /** @type {any} */ days: 0,
+        /** SP-3: wild splices fought, caught, and what beating them banked (DNA, Genes sampled for the first time) */
+        splices: 0,
+        caughtSpliced: 0,
+        dna: 0,
+        genes: 0,
+        /** SP-5: Escaped specimens fought */
+        escaped: 0,
       };
     try {
       runArrive(s, 0, MAP_DATA);
@@ -341,7 +348,7 @@ export function runSimOn(env) {
         log.places.push(at);
         /* RL-12b: a waystation: the event its stand holds, noted (the bot walks past it: no option is played) */
         if (node.type === 'event')
-          at.event = eventAt(run, i, data.EVENTS, !!residentCandidate(s, data.RESIDENTS, 'event')) || null;
+          at.event = eventAt(run, i, data.EVENTS, undefined, !!residentCandidate(s, data.RESIDENTS, 'event')) || null;
         /* RS-2: walked into the resident's town */
         if (log.resident && log.resident.towns.includes(i)) at.resident = log.resident.id;
         /* a town: heal when hurt; a town or a stall (RL-12b, nodeTypes.json shop): the day's shop (Pyramids up to
@@ -453,12 +460,16 @@ export function runSimOn(env) {
           run.battleN = k + 1;
           const foe = hooks.activeBattle.sides[1].team[0];
           const B = hooks.activeBattle;
+          if (q.graft) stats.splices++;
+          if (q.aug) stats.escaped++;
           let res;
           /* catch it while the party is small and there are pyramids: one throw, then fight on */
           if (
             s.team.length < P.catchWhileBelow &&
             (s.pyramids.pyramid || 0) > 0 &&
             !q.alpha &&
+            /* RL-14: a bot is never caught */
+            fn('catchable')(foe) &&
             /* RL-13: a mono-type run takes only its own type (logic/modifiers.js) */
             modTypeFits(run, data.SPECIES[q.sp] ? data.SPECIES[q.sp].types : [])
           ) {
@@ -467,6 +478,7 @@ export function runSimOn(env) {
             if (c.caught) {
               fn('catchKeep')(foe);
               stats.caught++;
+              if (q.graft) stats.caughtSpliced++;
               res = { over: 'caught', turns: B.turn };
             } else {
               /* a miss: the foe's turn */
@@ -479,6 +491,12 @@ export function runSimOn(env) {
           const { pay } = fn('battleSettle')(B, s);
           fn('battleSettleWin')(B, s, pay, run);
           if (pay.o === 'win' && pay.prize > 0) stats.moneyIn.prize += pay.prize;
+          const sampled = /** @type {{ dna?: number, sampled?: unknown[] }} */ (pay);
+          stats.dna += sampled.dna || 0;
+          stats.genes += (sampled.sampled || []).length;
+          /* RL-14: a wild bot's salvage, answered as a trainer's pick is */
+          const salvage = run.enc && run.enc.reward;
+          if (salvage) rewardTake(run, s, P.rewards === 'first-item' ? 0 : null, rewardDataGame(s.team));
           hooks.provide({ activeBattle: null });
           hooks.uiState.learnQ.length = 0;
           stats.battles++;
@@ -554,7 +572,7 @@ export function runSimOn(env) {
     function simTypes() {
       return s.team
         .filter((/** @type {any} */ m) => m.hp > 0 && fn('speciesOf')(m))
-        .map((/** @type {any} */ m) => ({ name: m.uid, types: fn('speciesOf')(m).types }));
+        .map((/** @type {any} */ m) => ({ name: m.uid, types: fn('billyFieldTypes')(m) }));
     }
     /** the run lost at this node @param {any} node */
     function lose(node) {
@@ -635,6 +653,13 @@ export function runSimOn(env) {
       topLevel: avg(x => x.top),
       /* RS-2: the runs whose walk went through their resident's town */
       metResident: all.filter(x => x.metResident).length,
+      /* SP-3: wild splices fought and caught a run, the DNA and new Genes beating them banked */
+      splices: avg(x => x.splices || 0),
+      caughtSpliced: avg(x => x.caughtSpliced || 0),
+      dna: avg(x => x.dna || 0),
+      genes: avg(x => x.genes || 0),
+      /* SP-5: Escaped specimens fought a run */
+      escaped: avg(x => x.escaped || 0),
     };
   }
 
