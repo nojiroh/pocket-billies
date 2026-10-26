@@ -203,16 +203,17 @@ test('breeding: SP-4 an egg keeps a parent’s spliced slot at genes.json bank.i
     was = Bk.inherit,
     tail = 'shark_tailfin@zuck2';
   try {
-    const plain = breedSave(),
-      want = K.breedRoll(plain.s, plain.a, plain.mate, 'safe', B).m;
-    const { s, a, mate } = breedSave();
+    const { s, a, mate } = breedSave(),
+      want = K.breedRoll(s, a, mate, 'safe', B).m;
     fn('spliceSet')(a, { sig: tail });
     assert.ok(a.graft, 'the parent wears the Gene');
     Bk.inherit = 1;
     const { m } = K.breedRoll(s, a, mate, 'safe', B);
     assert.deepEqual(m.graft, { sig: tail }, 'kept');
-    const { graft, unstable, ...rest } = m;
-    assert.deepEqual(rest, want, 'every other part of the egg as from unspliced parents');
+    const { graft, unstable, hp, ...rest } = m,
+      { hp: wantHp, ...was } = want;
+    assert.deepEqual(rest, was, 'every other part of the egg as from unspliced parents (HP follows the Gene’s weight)');
+    assert.ok(hp > 0 && wantHp > 0);
     assert.equal(unstable, undefined);
     Bk.inherit = 0;
     assert.equal('graft' in K.breedRoll(s, a, mate, 'safe', B).m, false, 'inherit 0: never');
