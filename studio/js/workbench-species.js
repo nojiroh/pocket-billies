@@ -55,6 +55,7 @@ import { neutralPose, openSkeleton } from './skeleton.js';
 import { WB_VIEWS, workbench } from './workbench.js';
 import { wbPart, wbpColor, wbpN, wbpRefreshSide, wbpRoot } from './workbench-part.js';
 import { kitFormOf, kitRecipeHTML } from './kit-recipe.js';
+import { placeholderPanelHTML } from './placeholder-sheets.js';
 /* eslint-disable no-func-assign */
 expose({
   WBS_CROPS: [() => WBS_CROPS],
@@ -354,7 +355,12 @@ function wbsSideHTML() {
     K = wbsKit(),
     Pt = K.parts[id],
     sp = wbsSp();
-  if (!Pt) return '<div class="px-sec"><p class="help">Pick a part on the left.</p></div>' + kitRecipeHTML(sp);
+  if (!Pt)
+    return (
+      '<div class="px-sec"><p class="help">Pick a part on the left.</p></div>' +
+      kitRecipeHTML(sp) +
+      placeholderPanelHTML(sp)
+    );
   const fb = wbsBone('front') || wbsBone('back'),
     frames = [...new Set(WB_VIEWS.flatMap(v => Pt.rig[v]?.frames || []))];
   const head = `<div class="px-sec"><h4 class="mono">${escapeHtml(id)}</h4><p class="help">${escapeHtml(speciesName(sp))} (<span class="mono">${escapeHtml(sp)}</span>) · hangs from <b class="mono">${escapeHtml(fb.par || 'root')}</b>${fb.a && fb.a !== id ? ` · moves as ${escapeHtml(fb.a)}` : ''}. rigs-next.js; the back view is drawn mirrored in the game.</p><div class="seg-row"><button class="btn sm" data-act="wbsSkeleton">Skeleton builder</button><button class="btn sm" data-act="wbsPaint">Paint pixels</button><button class="btn sm" data-act="wbsRepack" title="Pack the sheet again without the pixels no frame shows (the Billie is drawn the same)">Repack sheet</button></div></div>`;
@@ -382,6 +388,7 @@ function wbsSideHTML() {
   return (
     head +
     kitRecipeHTML(sp) +
+    placeholderPanelHTML(sp) +
     wbsLibrary.html() +
     frame +
     views +

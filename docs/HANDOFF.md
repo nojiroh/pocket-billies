@@ -2,6 +2,57 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roster track RO-3a - Every body plan, placeholder Billies and drawing sheets - 2026-10-26
+Branch `claude/happy-ramanujan-jiipux` (a cloud session pushes only to its own branch; the owner's word: work here,
+pull request into `track/roster`, which had nothing main lacks). Plan approved in Plan Mode. The owner's answers: every
+body plan in the roster even where no kit has parts; new, very obvious placeholder art **for every Billie** (kit art
+too) with sprite sheets to export, draw on in an outside tool and import, **both** one per Billie and one per plan;
+the muskox and goat starters to quad; splicing maps by slot across plans; scope "everything"; then (mid-session) the
+**Swift line becomes the Eevee-style line**. The plan for RO-3b..g is in roguelite-track.md ("RO-3.. plan"), with
+which sessions can run side by side. Tag `ro-3a-done` for the owner.
+- Where the plan and the code differed (checked): every one of the 40 species and 11 form sheets is baked `biped`
+  (kit-assemble.js writes `plan: 'biped'`), while body-plan-animation.js animates 14 plans; `worm` and `octo` have
+  no art anywhere, the other 11 only legacy hand-drawn sheets. Online research (Pokémon's recurring archetypes and
+  its 14 shapes; page fetches were blocked here, search summaries only) gave the missing archetypes in the plan.
+  The Studio loads its data through GitHub (a stand-in in the checks), not from game/data.
+- Changed:
+  - **game/data/bodyPlans.json** (+ schema, `GameData.bodyPlans`, index.json, check-data): `plans`, a template per
+    plan whose bones are the ones its animation moves (or ride on one), each with its parent, rest middle, size,
+    pivot, shape, tone, z/zb, slot, turn; mirrored bones copy a twin; `sheet` and `paint` settings; `forms`, the
+    placeholder Billies (empty: RO-3b fills it). Every plan fills the five slots, except octo (no body) and blob
+    (its head is its body).
+  - **game/js/logic/placeholder-art.js**: the painter (flat shape, hatch, double outline, the part's name in a
+    3 x 5 font, eyes and a blink on a face), cells (the part with room round it, its pivot at a fixed spot; a back
+    cell is drawn as it shows on screen and flipped at bake, since the renderer mirrors the back view), the bake
+    (sheet and both views' rigs like the kit baker's, marked `placeholder`), the drawing sheets (a Billie's: a column
+    per picture, a row per view; a plan's: two rows per Billie under a name strip; magenta cells, label strips, pivot
+    ticks, any whole scale) and their cutting back (magenta and near-magenta clear, hard alpha, a size check that says
+    why). On the Studio page and in the logic worker; not on the game page yet (RO-3c's runtime grafts need it).
+  - **tools/bake-placeholders.mjs** (`npm run bake:placeholders`): bake what changed, `--check`, `--export=<name>` /
+    `--export=plan:<plan>` (`--scale`, `--out`), `--import=<file>`. A drawing is stored as
+    `game/art/next/placeholders/<name>.png` and laid over the painted cells at bake.
+  - **Studio** (studio/js/placeholder-sheets.js, Part mode beside the kit recipe): a placeholder Billie's Download /
+    Upload drawing sheet and Write Billie; Body plan sheets (plan, scale, Download, Upload); one undo step per upload.
+    docs/STUDIO.md has the how-to.
+  - Tests: tools/test/placeholder-art.test.mjs (every animated plan has a template; every bone moved or riding on a
+    moved one; a sample on each plan bakes inside the box, the same twice, with a readable rig; the slots; both
+    sheets cut back to the same cells at 1x and 3x; a wrong-size sheet refused; a drawn cell wins, an empty one keeps
+    the placeholder; no paint near magenta; committed placeholders bake as committed). The check-data snapshot is
+    remade (153 files).
+- Verified: lint, typecheck, check:modules, format:check, check:data; unit tests (see the commit); every plan's sample
+  drawn by the game's own renderer (rigFromMeta, rigFrame, drawRig on the game page) in idle, walk, attack, hurt and
+  faint, front and back: all stand on the ground and move; in a headless Studio (the GitHub stand-in of
+  studio-shots.py) the quad plan sheet downloaded at 4x, uploaded back, stored and baked to a quad rig.
+- Risky / open:
+  - Not one Billie uses it yet; the look is judged on samples. RO-3b moves all 51 sheets onto it and remakes the
+    quick-check baseline and kit counts.
+  - A drawing only cuts back while the Billie's plan and part sizes are as exported (the error says so).
+  - The octopus has no body slot and the blob no head slot: RO-3c's slot map has to say what those take.
+  - Swift as the Eevee-style line changes RO-3b's Swift (to bird) again in RO-3g: the eras, types and how a branch is
+    picked are the owner's call there.
+  - Not tried on a phone (nothing a player sees changed yet).
+- Next: RO-3b (every existing Billie onto its plan as a placeholder) and RO-3c (splicing by slot) can run side by side.
+
 ### Hub track HB-8 - Departure and return: the sky train through the portal - 2026-10-26
 Branch `art/hub-departure` (the session's brief; from main 2314da8 after PR #205; the plan file's `Branch:` line says
 `track/hub`, and earlier HB sessions worked on their own branches the same way). Plan approved in Plan Mode. The owner's
