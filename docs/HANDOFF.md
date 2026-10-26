@@ -2,6 +2,63 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Water track WA-5b (lane R) - kinds as a texture, the six new kinds drawn, water life - 2026-10-26
+Branch `track/water` (main merged in at the start: only the #203 merge commit, #201 and #202 were already in; lane B's
+WA-7 and main's #194 merges came in before the pushes). Plan approved in Plan Mode. The owner's answers: the small
+hooks outside lane R allowed (prop-look.js, frame-items.js, sprites.js, and ambient-life.js, which no lane owns); the
+`reef` kind gets the full turquoise and coral, the sea's own `w` shallows a softer turquoise; water life fills the
+gaps, frogs as they are. Tag to suggest: `wa-5b-done` (the owner pushes tags).
+- Changed (one cause a commit; details in water-track.md, WA-5b notes; pixel water off keeps the old kinds' look):
+  - **The kinds' looks in a small texture** (`walk/water.js kindTexture`, unit 15, `texelFetch`): no cap at nine.
+    What a kind does reads flags on its look, not its index (`sea`, `run`, `steam`, `swim`, `white`, `bub`, `coral`,
+    `scum`, `glowC`); ground-mesh.js and the shaders' `K==6` tests read them, so a reef rides the sea's swell, surf
+    and tide.
+  - **The six drawn** (`WATER_KIND_LOOKS` now holds all fifteen in `WATER_KINDS`' order; `waterKindLookup` knows
+    them, so a reef or any new kind's rectangle is no longer drawn as the scene's default kind): rapids (white water
+    over the surface), hot spring (milky turquoise, bubbles, thicker steam), oasis (clear green), bog (dark olive with
+    rafts of brown scum, gas bubbles), reef (full turquoise, coral on its shallow bed, no kelp; the sea's `w` shallows
+    softened), cave (lit from below in cyan, its light thrown up the walls: ground shader `uWGlow`).
+  - **Rain rings** skip lava and ice. **Ducks** swim and frogs dive only where they could (not lava, ice, rapids, a hot
+    spring; ambient-life.js): the test scene's ducks sat on the ice pool.
+  - **A storm's flood** (WA-5a's ask): flooded cells used to join a pond's level (it rose into a raised slab), spill
+    as cascades at every bank and paint the grass as a stream bed. Now they keep out of both, meet the water they rose
+    from at its level, keep the dry shoreline, and draw as pixel-edged puddles over the grass (`waterWeatherDry`, read
+    only).
+  - **Water life**: diving birds (the fx `bird`, unused before) over fish water by day; spray on you while you climb
+    a waterfall (read from `P.climb`, no lane P edit); steam, splashes and birds on the 32 grid in `water.frames`
+    steps; lotus and duckweed bob like lily pads, in steps (sprites.js); reeds bend away as you pass (frame-items.js);
+    wild Billies in shallows cut at the waterline (`frame-items.js wadeItemLift`, world-billies.js); the Surf mount's
+    wake on the wake's own rings (`prop-look.js` calls `addWakeRipple`, now exported).
+- Found: the flood's look (above); ducks on lava and ice (above); the fx sheet's `bird` was loaded but never drawn.
+  The look-water numbers show the lookup fix: before, test_water's rapids, hot spring and bog (72 half-metre cells)
+  counted as pond; now as their own kinds (water triangles unchanged, 3,584).
+- Risky: every water pixel makes seven fetches from the 15 x 6 kind texture instead of uniform reads; the coral,
+  bubble and white-water passes run only on their kinds. Unit 15 is now the water's: a later draw that binds 15 must
+  rebind it. Anything reading `aDK.x` must know -1 marks a flood's skin (and `aDK.y`'s fraction stays WA-4's
+  shallows share). The flood's outer edge still follows the half-metre cells where its puddles reach it. A flooded
+  river is untested in a real run (test_water's stream and pond with a forced storm only). The `w` sea is paler than
+  in WA-4 (Copperleaf's shallows too).
+- Verified: lint, typecheck, check:modules, `npm test` (1060, 0 failures after the merges), `check:smoke` before every
+  game/ commit (all passed, Playwright 1.63.0; one run noted the phone timing over budget while picture runs shared
+  the machine). Pictures (validation/, not committed; no page errors): look-water before and after on test_water and
+  test_island at noon and 22.5 (before from a clean worktree at the session's start; test_water's night "before" has 8
+  of its 13 shots, the run was cut off by the time limit). Close-ups with the blur off
+  (scratch script, runtime kind swaps for the kinds test_water lacks): the six kinds by day and night, a forced storm's
+  flood (pond and stepped stream, three rounds until it read as puddles), a bird pinned in view, test_island's reef
+  shelf before and after and as a `reef` rectangle. Not checked in pictures: rain rings on ice and lava, the climb's
+  spray, a wild Billy wading, reeds bending (the code paths ran in smoke without errors). Not done: a picture set at
+  the texture commit alone (the claim "no look change" there rests on the code, not a picture).
+- For lane G (WA-9 or later; their files, not edited): test_water has no oasis, reef or cave to picture (add a pool of
+  each; the pictures here swapped kinds at runtime); `WATER_KIND_BASE` in logic/water-kinds.js now only says what a
+  kind fishes as (its comment and water-kinds.test's "until WA-5b" wording); look-water's numbers could count `falls`
+  entries (WA-2a's note, still open).
+- For lane B: `PIXEL_WATER_GLSL` unchanged.
+- For WA-8: the kind texture's fetches, the coral and bubble passes and the flood's puddles in the water quality tiers.
+- For the owner, on the phone: test_water's hot spring and rapids and the bog, Copperleaf's beach (the softer `w`
+  turquoise), a run's cave with cave water and a stormy day by a pond or river (a debug forecast), with Pixel water on
+  and off, comparing the frame time; whether the diving bird reads at play zoom.
+- Next for lane R: none in the plan before WA-8 (the phone pass, sounds, the baseline).
+
 ### Water track WA-7 (lane B) - the world map's and battles' water - 2026-10-26
 Branch `track/water` (main already merged in at the start; main's HB-3 merged in mid-session on the parent session's
 heads-up, its lagoon and falls given the pixel look too). Plan approved in Plan Mode with the owner's answers: this
