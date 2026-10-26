@@ -2533,7 +2533,8 @@ def publish_checks(b, url, errs):
     pg.route('https://api.github.com/**', api)
     pg.add_init_script("localStorage.setItem('pb-studio-gh-token','ghp_stand-in')")
     t0 = time.time()
-    pg.goto(url)
+    # the loop below waits for the Studio; the page's load event (every picture) can take over 30 s in a container
+    pg.goto(url, wait_until='domcontentloaded', timeout=120000)
     while time.time() - t0 < 120 and not pg.evaluate("typeof studioState!=='undefined'&&!!studioState.D&&!document.querySelector('#main .loading')"):
         time.sleep(0.5)
     # T0.2: everything is read at the commit the Studio loaded, rigs-next.js included (not the page's own copy)
@@ -2541,15 +2542,16 @@ def publish_checks(b, url, errs):
     if at != ['base1']: errs.append(f'publish: the Studio read at {at}, not only at the loaded commit base1')
     if not any(f == 'game/art/next/rigs-next.js' for f, _ in st['reads']): errs.append('publish: rigs-next.js was not read from the repository')
     ART = 'art/next/parts/front/publish_check.png'
-    pending = "({data: studioState.dirty, rigs: studioState.rigsDirty, art: studioState.artDirty.has(%s)})" % json.dumps(ART)
+    TEXT = 'art/ui/publish_check.svg'  # SA-2b: a text file rides along
+    pending = "({data: studioState.dirty, rigs: studioState.rigsDirty, art: studioState.artDirty.has(%s), text: studioState.textDirty.has(%s)})" % (json.dumps(ART), json.dumps(TEXT))
 
     def make_edits(tag):
         pg.evaluate("""tag => { const c = document.createElement('canvas'); c.width = c.height = 4;
           const x = c.getContext('2d'); x.fillStyle = '#c03'; x.fillRect(0, 0, 4, 4);
-          markArt(%s, c);
+          markArt(%s, c); markText(%s, '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><!--' + tag + '--></svg>\\n');
           const k = Object.keys(studioState.rigs).find(k => String((studioState.rigs[k].front || {}).sheet || '').startsWith('next/'));
           studioState.rigs[k].publishCheck = tag; studioState.rigsDirty = true;
-          studioState.D.meta.publishCheck = tag; studioState.dirty = true; }""" % json.dumps(ART), tag)
+          studioState.D.meta.publishCheck = tag; studioState.dirty = true; }""" % (json.dumps(ART), json.dumps(TEXT)), tag)
 
     def idle():
         return pg.evaluate("document.querySelector('#saveBtn').textContent === 'Propose changes' && !document.querySelector('#saveBtn').disabled && !document.querySelector('#ghSum')")
@@ -2576,7 +2578,7 @@ def publish_checks(b, url, errs):
         trees = [json.loads(bd) for k, bd in st['log'] if k == 'trees']
         return [t['path'] for t in trees[-1]['tree']] if trees else []
 
-    want = {'game/' + ART, 'game/art/rigs.js', 'game/art/next/rigs-next.js', 'game/data/meta.json'}
+    want = {'game/' + ART, 'game/' + TEXT, 'game/art/rigs.js', 'game/art/next/rigs-next.js', 'game/data/meta.json'}
     # 1. a failure at each step: everything stays pending, and the retry carries all of it
     for step in ['blobs', 'trees', 'commits', 'refs', 'pulls']:
         st['log'].clear(); st['fail'] = {step: [502]}
@@ -2598,6 +2600,8 @@ def publish_checks(b, url, errs):
         if not any(k == 'pulls' for k, _ in st['log']): errs.append(f'publish: the retry after a {step} failure opened no pull request')
         missing = sorted(want - set(sent))
         if missing: errs.append(f'publish: the retry after a {step} failure left out {missing}')
+        texts = [base64.b64decode(json.loads(bd)['content']).decode('utf8', 'replace') for k, bd in st['log'] if k == 'blobs']
+        if not any(t.startswith('<svg') and ('<!--fail-' + step + '-->') in t for t in texts): errs.append(f'publish: the retry after a {step} failure did not send the SVG as its text')
         left = pg.evaluate(pending)
         if any(left.values()): errs.append(f'publish: after a successful retry ({step}), something still shows as pending: {left}')
     # 2. an error while building the proposal sends nothing

@@ -78,6 +78,7 @@ export async function runStudioTest(G, opts = {}) {
     dirty: S.dirty,
     rigsDirty: S.rigsDirty,
     artDirty: new Map(S.artDirty),
+    textDirty: new Map(S.textDirty),
     sel: cloneSel(S.sel),
     sec: S.sec,
     sec2: S.sec2,
@@ -275,6 +276,7 @@ export async function runStudioTest(G, opts = {}) {
       S.dirty = keep.dirty;
       S.rigsDirty = keep.rigsDirty;
       S.artDirty = keep.artDirty;
+      S.textDirty = keep.textDirty;
       S.sel = keep.sel;
       if (G.ACTIONS.paneClose) G.ACTIONS.paneClose();
       G.openSection(keep.sec);

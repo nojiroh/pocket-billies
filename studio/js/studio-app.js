@@ -14,6 +14,7 @@ import {
   runCheck,
   scheduleCheck,
   spriteCacheClear,
+  textSaved,
 } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ICON_ATLAS, artLoad } from '../../game/js/art.js';
@@ -107,6 +108,7 @@ expose({
   statOptions: [() => statOptions],
   statusOptions: [() => statusOptions],
   studioBroadcast: [() => studioBroadcast, v => (studioBroadcast = v)],
+  studioPending: [() => studioPending],
   studioProbe: [() => studioProbe],
   studioState: [() => studioState],
   textField: [() => textField, v => (textField = v)],
@@ -132,6 +134,8 @@ export const studioState = {
   dirty: false,
   rigsDirty: false,
   artDirty: new Map(),
+  /** SA-2b: unsaved text files (an SVG icon, art/manifest.js) by path: { text, _ver } @type {Map<string, { text: string, _ver: number }>} */
+  textDirty: new Map(),
   undo: [],
   redo: [],
   snapT: null,
@@ -402,8 +406,11 @@ function restoreParts(put) {
   scheduleCheck();
   if (P) P('restore', { parseMs: b - a, parts: Object.keys(put).length, ms: performance.now() - a });
 }
+/** anything not saved yet: data, rigs, pictures or (SA-2b) text files */
+export const studioPending = () =>
+  !!(studioState.dirty || studioState.rigsDirty || studioState.artDirty.size || studioState.textDirty.size);
 export function updateTopBar() {
-  $('#dirty').hidden = !(studioState.dirty || studioState.rigsDirty || studioState.artDirty.size);
+  $('#dirty').hidden = !studioPending();
   /* an edit whose commit is pending can be undone too */
   $('#undoBtn').disabled = !studioState.undo.length && studioState.snapT == null;
   $('#redoBtn').disabled = !studioState.redo.length;
@@ -436,14 +443,16 @@ export async function checkBeforeSave() {
   if (go === 'show') openSection('check');
   return false;
 }
-/** what a save will send, without marking anything saved: each unsaved picture with its version, the rigs' text, the
+/** what a save will send, without marking anything saved: each unsaved picture and text file with its version, the rigs' text, the
  * data's text (with meta.artVersion one up when pictures go too; the data itself changes only on confirm) */
 export function stageChanges() {
   const S = studioState,
     art = [...S.artDirty].map(([path, c]) => ({ path, c, ver: c._ver || 0 })),
-    artVersion = art.length ? (S.D.meta.artVersion || 0) + 1 : null;
+    texts = [...S.textDirty].map(([path, t]) => ({ path, text: t.text, ver: t._ver })),
+    /* SA-2b: a text file under art/ sits in the game's art cache too */
+    artVersion = art.length || texts.length ? (S.D.meta.artVersion || 0) + 1 : null;
   let dataText = null;
-  if (S.dirty || art.length) {
+  if (S.dirty || art.length || texts.length) {
     const meta = S.D.meta;
     if (artVersion != null) S.D.meta = { ...meta, artVersion };
     try {
@@ -452,7 +461,7 @@ export function stageChanges() {
       S.D.meta = meta;
     }
   }
-  return { art, artVersion, dataText, rigsText: S.rigsDirty ? JSON.stringify(S.rigs) : null };
+  return { art, texts, artVersion, dataText, rigsText: S.rigsDirty ? JSON.stringify(S.rigs) : null };
 }
 /** sends a stage through api(): pictures, rigs, data. Throws on the first failure (on GitHub nothing has left yet) */
 export async function writeStaged(staged) {
@@ -461,6 +470,8 @@ export async function writeStaged(staged) {
     if (!blob) throw new Error(`${a.path} could not be turned into a picture.`);
     await api('file?path=' + encodeURIComponent(a.path), { method: 'POST', body: blob });
   }
+  for (const t of staged.texts || [])
+    await api('file?path=' + encodeURIComponent(t.path), { method: 'POST', body: t.text });
   if (staged.rigsText != null) await api('rigs', { method: 'POST', body: staged.rigsText });
   if (staged.dataText != null) await api('gamedata', { method: 'POST', body: staged.dataText });
 }
@@ -472,10 +483,17 @@ export function confirmStaged(staged) {
     dataText: staged.dataText != null ? JSON.stringify(S.D, SAVE_REPLACER) : null,
     rigsText: staged.rigsText != null ? JSON.stringify(S.rigs) : null,
     art: Object.fromEntries(staged.art.map(a => [a.path, S.artDirty.get(a.path) === a.c ? a.c._ver || 0 : null])),
+    texts: Object.fromEntries(
+      (staged.texts || []).map(t => [t.path, S.textDirty.has(t.path) ? S.textDirty.get(t.path)._ver : null])
+    ),
   });
   if (ok.data) S.dirty = false;
   if (ok.rigs) S.rigsDirty = false;
   for (const p of ok.art) S.artDirty.delete(p);
+  for (const p of ok.texts) {
+    textSaved(p, S.textDirty.get(p).text);
+    S.textDirty.delete(p);
+  }
   updateTopBar();
   draftNow(); /* T1.1: the draft goes (or keeps only what is still unsaved) at once, not 2 s later */
   return ok;
@@ -904,7 +922,7 @@ document.addEventListener('keydown', ev => {
   }
 });
 addEventListener('beforeunload', e => {
-  if (studioState.dirty || studioState.rigsDirty || studioState.artDirty.size) {
+  if (studioPending()) {
     e.preventDefault();
     e.returnValue = '';
   }

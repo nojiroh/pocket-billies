@@ -24,10 +24,18 @@
      drawn(P)     the canvas was drawn (zoom and grid may have changed) */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { forgetArt, loadedAtlas, markArt, openShortcutSheet, provide } from '../../game/js/hooks.js';
+import {
+  forgetArt,
+  forgetText,
+  loadedAtlas,
+  markArt,
+  markText,
+  openShortcutSheet,
+  provide,
+} from '../../game/js/hooks.js';
 import { clamp } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
-import { historyArt, historyArtGroup } from '../../game/js/logic/history.js';
+import { historyArt, historyArtGroup, historyTextStep } from '../../game/js/logic/history.js';
 import {
   PIXEL_GRID_FROM,
   offPalette,
@@ -92,6 +100,7 @@ expose({
   strokeStart: [() => strokeStart, v => (strokeStart = v)],
   symmetryAt: [() => symmetryAt, v => (symmetryAt = v)],
   symmetryLines: [() => symmetryLines],
+  textStep: [() => textStep, v => (textStep = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ artStepPut });
@@ -264,6 +273,15 @@ export function artSteps(list, parts) {
   historyArtGroup(studioState, steps, parts);
   updateTopBar();
 }
+/* SA-2b: a text file changed (from `before`, null when new, to `after`): marked unsaved and a step of the undo */
+function textStep(path, before, after) {
+  const step = historyTextStep(path, before, after);
+  if (!step) return;
+  markText(path, after);
+  commit(true);
+  historyArt(studioState, step);
+  updateTopBar();
+}
 function artStepOf(path, before, after) {
   if (!path || !after) return null;
   if (!before)
@@ -291,6 +309,12 @@ function artStepPut(step, put) {
   if (step.group) {
     const back = put === step.before;
     for (const s of back ? [...step.group].reverse() : step.group) artStepPut(s, back ? s.before : s.after);
+    return;
+  }
+  if (step.text) {
+    const t = put === step.before ? step.text.before : step.text.after;
+    if (t == null) forgetText(step.art);
+    else markText(step.art, t);
     return;
   }
   if (!put.width) {
