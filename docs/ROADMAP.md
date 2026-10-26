@@ -168,8 +168,11 @@ town node needs it.
   plots, the store's, inn's, library's, Workshop's and Gene Bank's doors open their rooms. HB-8 (departure and return:
   the run's sky train glides into Skyline Station, climbs the sky rail into the tear, a white-out into the carriage's
   loading screen while the run's places are made; home out of the tear, gold after a win, battered after a loss; no
-  airship flight for runs) done 2026-10-26 on `art/hub-departure`, waiting on the owner's phone test. HB-9 next. Tags
-  `hb-N-done`. Branch `track/hub`.
+  airship flight for runs) done 2026-10-26 on `art/hub-departure`, waiting on the owner's phone test. HB-9 next. HB-10
+  (the square alive: a lobed 10 m market square round a fountain, edges, people by time of day, reactions,
+  festivals, then a reproducible town rebuild) planned 2026-10-26 as HB-10a-f; HB-10a (the 10 m lobed square, the fountain) done 2026-10-26 on
+  `ccr-144f3c08-vf09lo`; HB-10b (the edges and market, string lights, fireflies, the lit fountain) done 2026-10-26 on
+  `track/hub`; HB-10c next. Tags `hb-N-done`. Branch `track/hub`.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all
