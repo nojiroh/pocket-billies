@@ -1,5 +1,5 @@
 {
- "about": "The opening as the owner approved it on 2026-10-23 (Professor Chosen, with Hazel as his assistant): every line, its speaker (a look id) and expression, and the opening’s own commands, in order, played on a stub with Pat and Starterbill. opening-script.test.mjs compares the opening with it; a change to the opening’s words changes this file on purpose.",
+ "about": "The opening as the owner approved it on 2026-10-23 (Professor Chosen, with Kappi as his assistant): every line, its speaker (a look id) and expression, and the opening’s own commands, in order, played on a stub with Pat and Starterbill. opening-script.test.mjs compares the opening with it; a change to the opening’s words changes this file on purpose.",
  "said": [
   {
    "who": "chosen",
@@ -57,7 +57,7 @@
   {
    "who": "kappi",
    "expr": null,
-   "text": "I’m Hazel. I do the research. He does the… presence."
+   "text": "I’m Kappi. I do the research. He does the… presence."
   },
   {
    "who": "chosen",

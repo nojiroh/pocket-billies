@@ -1,6 +1,6 @@
 'use strict';
 /* ================= CONVERSATIONS =================
-   One dialogue box for everyone who talks: Professor Chosen and Hazel, your rival Blake, townsfolk, trainers and the opening cutscene.
+   One dialogue box for everyone who talks: Professor Chosen and Kappi, your rival Blake, townsfolk, trainers and the opening cutscene.
    A portrait that blinks and moves its mouth while the line types out, the speaker's name, a voice blip per few
    letters (sound.js), tap or Enter to finish the line or go on. Lines may start with an expression in brackets:
    "[happy] Nice to meet you!" (happy, surprised, sad, angry, blink, talk). */

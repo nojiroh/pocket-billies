@@ -5,7 +5,7 @@
    and never reaches an account (game-state.js FIXTURE), so a player's save is never touched.
      title   a new game on the title screen (the boot a new player sees)
      town    Copperleaf Town, the hub (RL-5: the route and the cave were parked with their places)
-     room    inside Professor Chosen's lab in Copperleaf (Hazel works there too)
+     room    inside Professor Chosen's lab in Copperleaf (Kappi works there too)
      battle  a trainer battle (Leader Rocco) in Copperleaf that the team wins
      stored  whatever the fixture saved last in this browser (the save round trip)
      run     on a run (RL-7): standing on its landing on day 1, its world made from the seed RL7FIXTURE
@@ -169,7 +169,7 @@ export function fixtureStart() {
   if (FIXTURE === 'island') uiState.bench = { id: 'test_island', test: 1 };
   renderOverlay();
   render();
-  /* phase 08b: into a room through its door, as soon as the town is on screen (RL-5: Hazel's lab in Copperleaf) */
+  /* phase 08b: into a room through its door, as soon as the town is on screen (RL-5: Kappi's lab in Copperleaf) */
   if (FIXTURE === 'room' || FIXTURE === 'ranch') {
     const act = FIXTURE === 'ranch' ? 'ranch' : 'lab';
     const go = (n = 0) => {

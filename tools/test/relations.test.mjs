@@ -81,7 +81,7 @@ test('the story reads rel:, beans and gifted:; the commands give Beans, a gift a
       'gift kappi',
       'rel juniper 2',
       'if rel:kappi >= 1',
-      '  Hazel: Thanks.',
+      '  Kappi: Thanks.',
     ]),
     { say: l => said.push(l.text), choose: () => 0 },
     { save, id: 'test' }
@@ -215,7 +215,7 @@ test("RL-S2 part B: Chapter 1's beats come one a return, in order, each once; ch
     }
     return said.filter(k => k.startsWith('ch1_'));
   };
-  assert.deepEqual(await home(entry(), {}, ['kappi']), [], 'Hazel not talked to: her beat waits');
+  assert.deepEqual(await home(entry(), {}, ['kappi']), [], 'Kappi not talked to: their beat waits');
   assert.deepEqual(await home(entry()), ['ch1_drop'], 'and is said the next time');
   assert.deepEqual(await home(entry()), [], 'Blake not met yet');
   assert.deepEqual(await home(entry({ rival: { met: 1, won: 0 } }), { beans: 1 }), ['ch1_blake']);
@@ -232,7 +232,7 @@ test("RL-S2 part B: Chapter 1's beats come one a return, in order, each once; ch
   assert.equal(save.meta.chapter, 2);
 });
 
-test("RL-S2 part B: the game's favours: Hazel asks, a run reaches row six, home pays her points and her thanks is next", async () => {
+test("RL-S2 part B: the game's favours: Kappi asks, a run reaches row six, home pays their points and their thanks is next", async () => {
   const B = GAME_DATA.banter,
     RLG = GAME_DATA.relations,
     { storyPick } = modules['story-pick'];

@@ -4,11 +4,11 @@
   "rival0": "how Blake's first battle went: win, lose or skip (story.js storyAfterRival; read by scripts.blake-first-battle)",
   "firstLoss": "RL-S1: the first lost run's scene has played (story.json scripts.back-lost); later losses get a picked pair (banter.json back_lost)",
   "ending": "the last clue: the story's last stage (story.js storyEnding, lore.js loreStage)",
-  "ch1_drop": "RL-S2: Chapter 1's first beat said (banter.json ch1_drop, Hazel: you keep falling, on a schedule)",
+  "ch1_drop": "RL-S2: Chapter 1's first beat said (banter.json ch1_drop, Kappi: you keep falling, on a schedule)",
   "ch1_blake": "RL-S2: Chapter 1's second beat said (banter.json ch1_blake, Chosen on Blake)",
-  "ch1_beans": "RL-S2: Chapter 1's third beat said (banter.json ch1_beans, Hazel on the Bureau's Beans)",
-  "ch1_number": "RL-S2: Chapter 1's fourth beat said (banter.json ch1_number, Hazel found your number on their forms)",
-  "ch1_signal": "RL-S2: Chapter 1's fifth beat said (banter.json ch1_signal, Chosen: something big on Hazel's instruments); the sixth is scripts.chapter1-end, after the Voltron (RL-14)",
+  "ch1_beans": "RL-S2: Chapter 1's third beat said (banter.json ch1_beans, Kappi on the Bureau's Beans)",
+  "ch1_number": "RL-S2: Chapter 1's fourth beat said (banter.json ch1_number, Kappi found your number on their forms)",
+  "ch1_signal": "RL-S2: Chapter 1's fifth beat said (banter.json ch1_signal, Chosen: something big on Kappi's instruments); the sixth is scripts.chapter1-end, after the Voltron (RL-14)",
   "flights": "airship flights taken, a count (airship.js)",
   "clueLanyard": "the lanyard clue found (lore.json clues: lanyard)",
   "clueVoice": "the voicemail clue found (lore.json clues: voicemail)",
@@ -38,7 +38,7 @@
  },
  "speakers": {
   "Chosen": "chosen",
-  "Hazel": "kappi",
+  "Kappi": "kappi",
   "Blake": "chad",
   "Juniper": "juniper",
   "Nacre": "nacre",
@@ -51,14 +51,14 @@
    "about": "RL-S2: Chapter 1's last beat, after the Voltron is beaten (RL-14 calls it: saveData.story.pending = 'chapter1-end' after storyHomeArrive, as back-lost); it moves the story on to chapter 2",
    "who": "kappi",
    "script": [
-    "Hazel: That thing was retrieving. It was built to bring things back. #l:6616",
+    "Kappi: That thing was retrieving. It was built to bring things back. #l:6616",
     "Chosen: Like me. With you. Constantly. #l:85a4",
-    "Hazel: ...Yes. Exactly like that. Which is the problem. #l:af32",
+    "Kappi: ...Yes. Exactly like that. Which is the problem. #l:af32",
     "chapter 2"
    ]
   },
   "back-lost": {
-   "about": "RL-S1: home after a lost run, by the mast (run.js runEndHome, story-stage.js storyPendingCheck): the first time Chosen takes the credit and Hazel has her doubts; later a pair picked by the run history (banter.json back_lost)",
+   "about": "RL-S1: home after a lost run, by the mast (run.js runEndHome, story-stage.js storyPendingCheck): the first time Chosen takes the credit and Kappi has their doubts; later a pair picked by the run history (banter.json back_lost)",
    "who": "chosen",
    "script": [
     "if firstLoss",
@@ -67,11 +67,11 @@
     "  set firstLoss",
     "  [happy] Chosen: There you are! Face-down by the mast. You’re welcome. #l:4571",
     "  Chosen: I sensed you were in danger and pulled you back. Professor powers. Don’t ask how. I don’t know either. #l:bd04",
-    "  Hazel: He was asleep in the lab when you landed. #l:d779",
-    "  Hazel: You came through a little hole in the sky over the dock. Like the first time, only smaller. #l:b000",
-    "  Hazel: It closed behind you. Neatly. Like someone shutting a drawer. #l:7301",
+    "  Kappi: He was asleep in the lab when you landed. #l:d779",
+    "  Kappi: You came through a little hole in the sky over the dock. Like the first time, only smaller. #l:b000",
+    "  Kappi: It closed behind you. Neatly. Like someone shutting a drawer. #l:7301",
     "  [happy] Chosen: A drawer. My drawer. Professor powers. #l:978e",
-    "  Hazel: ...Get some rest. I’d like to look at that hole again before it forgets where it was. #l:03eb"
+    "  Kappi: ...Get some rest. I’d like to look at that hole again before it forgets where it was. #l:03eb"
    ]
   },
   "chosen": {
@@ -80,7 +80,7 @@
    "script": [
     "[happy] {name}! My sidekick returns. How’s the Index? {caught} caught so far. #l:2c0a",
     "if caught >= 15",
-    "  [happy] That’s a proper collection. Hazel says she might cite you in her paper. I said put me first. #l:5e16",
+    "  [happy] That’s a proper collection. Kappi says they might cite you in their paper. I said put me first. #l:5e16",
     "elif caught >= 5",
     "  [surprised] You’re getting good at this. Not chosen good. But good. Some of them only show up in caves or in the malls. #l:251a",
     "if badges = 1",
@@ -102,7 +102,7 @@
     "if rival0 = win or rival0 = lose",
     "  Blake: I’m off to train on the golf course. Next time I’ll have a whole team. Try to keep up! #l:2d35",
     "heal",
-    "[happy] There. Good as new. I have healing hands. Hazel has a first-aid kit. Same thing. #l:256f",
+    "[happy] There. Good as new. I have healing hands. Kappi has a first-aid kit. Same thing. #l:256f",
     "Granny Juniper made up a room for you in her cottage, by the hives. Every hero needs a base. #l:68e0",
     "Now go and explore! The road teaches more than any book. I’ve read zero books, and look at me. #l:36c7"
    ]
@@ -127,7 +127,7 @@
    "stages": ["asked","done"]
   },
   "fav_kappi": {
-   "about": "RL-S2: Hazel's favour: reach row six on a run, for her readings (relations.json kappi.favour)",
+   "about": "RL-S2: Kappi's favour: reach row six on a run, for their readings (relations.json kappi.favour)",
    "stages": ["asked","done"]
   },
   "fav_juniper": {

@@ -2,7 +2,7 @@
 /* ================= STORY STAGE (Project Story S1) =================
    Plays a story script (logic/script.js) in the game: the lines in the dialogue box (talk.js), choices as buttons over
    it, battles, healing. Scripts live in the data: a person's `script` (a map's people), a trainer's `script`; ids are
-   person:<id> and trainer:<id>. A name before a line is a speaker from story.json (Hazel, Blake ...) or a person id.
+   person:<id> and trainer:<id>. A name before a line is a speaker from story.json (Kappi, Blake ...) or a person id.
    - Safe runs: while a script plays, a save writes the state from before it (or from its last checkpoint, a battle)
      and where to carry on (logic/script.js saveDuringRun); Continue plays it again from there (storyResumeCheck).
    - Hold the dialogue box (0.6 s) to skip: the rest runs at once and still makes every change; a battle stops it.

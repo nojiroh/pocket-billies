@@ -124,7 +124,7 @@ test('the lost run scene: the first time in full (and marked), later a picked pa
   const later = await play(story);
   assert.equal(later.length, 2);
   assert.match(later[0], /^Chosen: /);
-  assert.match(later[1], /^Hazel: /);
+  assert.match(later[1], /^Kappi: /);
 });
 
 test('RL-S2 part B: a thank-you is its hub person’s line; a leader’s, an agent’s and Blake’s name their speakers', () => {

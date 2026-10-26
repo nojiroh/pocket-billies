@@ -4,7 +4,7 @@
   "priority": 1,
   "script": [
    "Chosen: Rescued you again. Don’t thank me. Actually, do. #l:0caf",
-   "Hazel: Same spot over the dock. To the metre. #l:11db"
+   "Kappi: Same spot over the dock. To the metre. #l:11db"
   ]
  },
  "lost_reflexes": {
@@ -12,7 +12,7 @@
   "priority": 1,
   "script": [
    "Chosen: Yanked you out just in time. Professor reflexes. #l:bd0a",
-   "Hazel: You landed exactly in the mast’s shadow. Exactly. #l:abb6"
+   "Kappi: You landed exactly in the mast’s shadow. Exactly. #l:abb6"
   ]
  },
  "lost_charge": {
@@ -21,7 +21,7 @@
   "priority": 3,
   "script": [
    "Chosen: At this point I should charge for rescues. #l:fefa",
-   "Hazel: Something out there keeps sending you back. Folded. Like a returned parcel. #l:af04"
+   "Kappi: Something out there keeps sending you back. Folded. Like a returned parcel. #l:af04"
   ]
  },
  "lost_stamp": {
@@ -31,7 +31,7 @@
   "once": true,
   "script": [
    "Chosen: You lost to a clerk and I still saved you. Generous of me. #l:ba8e",
-   "Hazel: There was a stamp on your sleeve. “Returned to sender.” It wasn’t there when you left. #l:0df7"
+   "Kappi: There was a stamp on your sleeve. “Returned to sender.” It wasn’t there when you left. #l:0df7"
   ]
  },
  "lost_postcard": {
@@ -40,7 +40,7 @@
   "priority": 6,
   "script": [
    "Chosen: Blake sent a postcard. It just says “Ha.” #l:3c86",
-   "Hazel: Same spot over the dock. He didn’t even ruffle you. #l:5ea5"
+   "Kappi: Same spot over the dock. He didn’t even ruffle you. #l:5ea5"
   ]
  },
  "ch1_drop": {
@@ -84,7 +84,7 @@
   "priority": 10,
   "once": true,
   "must": true,
-  "script": ["Something big walked across Hazel’s instruments. I’m claiming it was me. Emotionally. #l:1dd7","set ch1_signal"]
+  "script": ["Something big walked across Kappi’s instruments. I’m claiming it was me. Emotionally. #l:1dd7","set ch1_signal"]
  },
  "fav_chosen_ask": {
   "who": "chosen",
@@ -312,7 +312,7 @@
   "when": "rel:chosen >= 5",
   "priority": 6,
   "once": true,
-  "script": ["Can I tell you something? I didn’t rescue you. Not once. ...Don’t tell Hazel I said that. She knows. #l:608e"]
+  "script": ["Can I tell you something? I didn’t rescue you. Not once. ...Don’t tell Kappi I said that. They know. #l:608e"]
  },
  "thanks_kappi": {
   "who": "thanks_kappi",

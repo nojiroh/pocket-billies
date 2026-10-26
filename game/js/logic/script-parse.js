@@ -55,7 +55,7 @@ export const SCRIPT_COMMANDS = {
   walk: {
     args: ['who', '...'],
     about:
-      'walk someone: in a cutscene "walk Hazel door 1.5 [nowait]" (waits till they arrive unless nowait); in the walk scene "walk Blake beside me" (after camera run-up)',
+      'walk someone: in a cutscene "walk Kappi door 1.5 [nowait]" (waits till they arrive unless nowait); in the walk scene "walk Blake beside me" (after camera run-up)',
   },
   face: { args: ['who', 'dir'], about: 'turn someone (up, down, side, sideR, or toward someone)' },
   camera: {
@@ -90,7 +90,7 @@ export const SCRIPT_COMMANDS = {
   actor: {
     args: ['who', 'at', 'spot', '...'],
     group: 'cutscene',
-    about: 'put someone in the scene: "actor Hazel at door down"; "actor you at street up silhouette" (a dark figure)',
+    about: 'put someone in the scene: "actor Kappi at door down"; "actor you at street up silhouette" (a dark figure)',
   },
   act: {
     args: ['who', 'pose', 's?'],
