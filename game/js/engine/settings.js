@@ -285,7 +285,7 @@ export const ENGINE_DEFAULTS = {
        (D3) */
     invalidate: false,
     /* rain, snow, ash and their splashes in one draw */
-    rainBatch: false,
+    rainBatch: true,
     /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each) */
     spriteInstances: false,
     /* phase 20 R2: the solid models (voxel props, low-poly models) drawn one draw per mesh for every item with it */
