@@ -280,7 +280,7 @@ export const ENGINE_DEFAULTS = {
     /* a phone's pixel budget 1.2 MP instead of 1.6, its automatic resolution starting at 0.9 (D4) */
     phonePixels: false,
     /* a phone's lamps: at most 8 lit at once, 4 of them in the air (D6) */
-    phoneLamps: false,
+    phoneLamps: true,
     /* render targets' old content dropped before a pass that draws over all of it, the reflection's depth after it
        (D3) */
     invalidate: false,
