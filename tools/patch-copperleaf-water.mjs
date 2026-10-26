@@ -16,7 +16,9 @@
 // Written through tools/write-data.mjs, as every build tool writes the data.
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { readGameData, ROOT } from './data-files.mjs';
+import { islandDress } from './island-dress.mjs';
 
 const RIVER_RAMP = 6; /* metres of the river's line the ramp takes */
 const RIVER_HALF = 1.5; /* the river's half width (island-gen.js ISLAND_RIVER_W / 2) */
@@ -166,6 +168,15 @@ if (args.includes('--square')) {
   notes.push(`the square: ${grass} tiles to grass, ${street} to street (${ends.length} street tiles met the old rim)`);
 }
 
+/* the dressing reads the ground (a street, the square), so it is laid again as build-copperleaf.mjs lays it, last */
+{
+  const town = M.props.filter(p => !p.dress),
+    O = JSON.parse(readFileSync(join(ROOT, 'tools/data/copperleaf-town.json'), 'utf8')).dress || {},
+    before = M.props.length - town.length,
+    dressed = islandDress({ ...M, props: town }, D.scenery, O);
+  M.props = [...town, ...dressed.props];
+  notes.push(`the dressing laid again: ${dressed.props.length} props (${before} before)`);
+}
 execFileSync('node', [join(ROOT, 'tools/write-data.mjs')], {
   input: JSON.stringify(D),
   stdio: ['pipe', 'inherit', 'inherit'],
