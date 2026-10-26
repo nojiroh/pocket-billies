@@ -98,7 +98,7 @@ void main(){vec2 d=uPx*uR;vec3 c=texture(uCol,vUV+vec2(-d.x,0)).rgb+texture(uCol
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uDep;uniform vec2 uPx;uniform float uN,uF,uR,uFoc,uRange;
+precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uDep;uniform vec2 uPx,uFade;uniform float uN,uF,uR,uFoc,uRange,uPlane;
 float lin(float d){float z=d*2.-1.;return 2.*uN*uF/(uF+uN-z*(uF-uN));}
 float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
 uniform float uKind;
@@ -106,15 +106,24 @@ uniform float uKind;
    rise above its own depth: the higher the horizon all round, the less of the sky it sees. Falls off with distance so
    only nearby things count, and fades out far from the camera where a pixel is many metres. */
 float horizonAO(float z,float r,float a0){float occ=0.;float mpp=z/uFoc;/* metres per screen pixel at this depth */
+ /* Occlusion follows the slope (uPlane): along two lines through the pixel, the rise seen both ways at once (their
+    mean): any plane, flat or seen at a slant, rises one way as much as it falls the other and gives nothing; a crease
+    rises both ways. On screen a plane's 1/depth runs straight, so the two are met in their harmonic mean. (A one-pixel
+    slope estimate was all depth steps out here: about 20 cm at 40 m) */
+ if(uPlane>.5){for(int d=0;d<2;d++){float a=a0+float(d)*1.5708;vec2 dir=vec2(cos(a),sin(a))*uPx;float hz=0.;
+  for(int i=1;i<=5;i++){float k=(float(i)-.3)/5.;vec2 q=dir*r*k*k*5.;float zp=lin(texture(uDep,vUV+q).r),zm=lin(texture(uDep,vUV-q).r);
+   float dist=max(.05,r*k*k*5.*mpp),w=1.-smoothstep(uRange*.6,uRange*2.,max(z-zp,z-zm));hz=max(hz,(z-2./(1./zp+1./zm)-.03)/dist*w);}
+  occ+=2.*clamp(hz,0.,1.)*clamp(hz*1.4,0.,1.);}
+  return occ/4.;}
  for(int d=0;d<4;d++){float a=a0+float(d)*1.5708;vec2 dir=vec2(cos(a),sin(a))*uPx;float hz=-1.;
   for(int i=1;i<=5;i++){float k=(float(i)-.3)/5.;vec2 q=vUV+dir*r*k*k*5.;float zs=lin(texture(uDep,q).r);float dz=z-zs-.03;float dist=max(.05,r*k*k*5.*mpp);float sl=dz/dist;float w=1.-smoothstep(uRange*.6,uRange*2.,dz);hz=max(hz,sl*w*step(0.,dz));}
   occ+=clamp(hz,0.,1.)*clamp(hz*1.4,0.,1.);}
  return occ/4.;}
 void main(){float d0=texture(uDep,vUV).r;if(d0>.9999){o=vec4(0.);return;}float z=lin(d0),r=clamp(uR*uFoc/z,2.,40.),a0=h(gl_FragCoord.xy)*6.28,occ=0.,bias=.04+z*.015;
- if(uKind>.5){o=vec4(horizonAO(z,r,a0)*(1.-smoothstep(18.,36.,z)),0.,0.,1.);return;}
+ if(uKind>.5){o=vec4(horizonAO(z,r,a0)*(1.-smoothstep(uFade.x,uFade.y,z)),0.,0.,1.);return;}
  for(int i=0;i<10;i++){float a=a0+float(i)*2.39996,k=sqrt((float(i)+.5)/10.);vec2 q=vUV+vec2(cos(a),sin(a))*k*r*uPx;float zs=lin(texture(uDep,q).r),dz=z-zs;
   occ+=step(bias,dz)*(1.-smoothstep(uRange*.4,uRange,dz));}
- o=vec4(occ/10.*(1.-smoothstep(18.,36.,z)),0.,0.,1.);}`,
+ o=vec4(occ/10.*(1.-smoothstep(uFade.x,uFade.y,z)),0.,0.,1.);}`,
   ],
   rays: [
     `#version 300 es
@@ -361,6 +370,10 @@ export function drawPostRest(S, C, rw, rh, o, F) {
     gl.uniform1f(U.uFoc, (C.F || hh) * 0.5);
     gl.uniform1f(U.uRange, Math.max(0.3, engineSetting('shadows', 'aoRadius') * 1.6));
     gl.uniform1f(U.uKind, (engineSetting('shadows', 'aoKind') || 'horizon') === 'horizon' ? 1 : 0);
+    /* Occlusion follows the slope (shadows.aoPlane): measured so a plane, flat or at a slant, gives none. It still fades
+       out by 36 m (reaching to where you stand, 36-58 m back, it darkened every grass blade's foot) */
+    gl.uniform1f(U.uPlane, engineSetting('shadows', 'aoPlane') ? 1 : 0);
+    gl.uniform2f(U.uFade, 18, 36);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   /* light shafts: the sky and the brightest spots smeared toward the sun's place on screen */
