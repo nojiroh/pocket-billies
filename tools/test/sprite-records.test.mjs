@@ -6,6 +6,7 @@
 // the same record, so the order of everything the pass does is frozen. No graphics.
 //   node --test --test-update-snapshots tools/test/sprite-records.test.mjs   remakes it (say why in the commit)
 import { test } from 'node:test';
+import assert from 'node:assert/strict';
 import { recordingGL } from './walk-renderer.mjs';
 
 const G = globalThis;
@@ -209,4 +210,126 @@ test('spriteDrawList and spriteRecord: the list grouped by picture, and each rec
     F = G.spriteFrame(C, X.sun),
     L = G.spriteDrawList(fixture());
   t.assert.snapshot(L.map((it, i) => plainRecord((G.spriteRecord(it, F, G.spriteRecordAt(i)), G.spriteRecordAt(i)))));
+});
+
+// ---------- phase 20 E7-E8: the same pass as instances ----------
+const iNames = new Set();
+for (const s of G.SPRITE_INSTANCE_SHADERS.spriteI)
+  for (const m of s.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/uniform\s+(?:highp\s+)?\w+\s+([^;{]+);/g))
+    for (const part of m[1].split(',')) iNames.add(part.trim().replace(/\[.*$/, ''));
+function setupInstanced() {
+  const gl = setup();
+  gpuState.P.spriteI = { p: 'spriteI', U: Object.fromEntries([...iNames].map(n => [n, n])) };
+  engineContext.look.quality.spriteInstances = true;
+  return gl;
+}
+// the pictures' draws of a record: [texture, instances], with the blades and hands where they come; and the hits
+function draws(calls) {
+  const out = [],
+    hits = [];
+  let tex = null;
+  for (const c of calls) {
+    if (c[0] === 'bindTexture' && c[2] && String(c[2]).startsWith('tex')) tex = c[2];
+    else if (c[0] === 'drawArrays' && c[3] === 6) out.push([tex, 1]);
+    else if (c[0] === 'drawArrays') out.push([tex, 'grid']);
+    else if (c[0] === 'drawArraysInstanced') out.push([tex, c[4]]);
+    else if (c[0] === 'blades' || c[0] === 'hands') out.push([c[0], c[1]]);
+    else if (c[0] === 'hit') hits.push(c[1]);
+  }
+  return { out, hits };
+}
+// consecutive draws of one texture as one run (a grid draw and the blades or hands stand alone)
+function runs(list) {
+  const out = [];
+  for (const d of list) {
+    const last = out[out.length - 1];
+    if (d[1] === 1 && last && last[0] === d[0] && typeof last[1] === 'number' && !last.closed) last[1]++;
+    else out.push([...d]);
+    if (d[0] === 'blades' || d[0] === 'hands') if (out.length > 1) out[out.length - 2].closed = true;
+  }
+  return out.map(d => d.slice(0, 2));
+}
+
+for (const rise of [false, true])
+  test(`as instances${rise ? ' while the town rises' : ''}: the runs are the old draws grouped by picture, in order; the same hits`, t => {
+    let gl = setup();
+    if (rise) walkRenderer.rise = { t0: 0 };
+    G.drawSprites(camera(), fixture(), X, [], [], 32);
+    const old = draws(gl.calls);
+    gl = setupInstanced();
+    if (rise) walkRenderer.rise = { t0: 0 };
+    G.drawSprites(camera(), fixture(), X, [], [], 32);
+    const now = draws(gl.calls);
+    assert.deepEqual(now.out, runs(old.out));
+    assert.deepEqual(now.hits, old.hits);
+    assert.ok(now.out.length < old.out.length);
+    if (!rise) t.assert.snapshot(record(gl));
+  });
+
+test("as instances: each instance holds its record, a tree's crossing picture right after it", () => {
+  setupInstanced();
+  const C = camera(),
+    items = fixture();
+  G.drawSprites(C, items, X, [], [], 32);
+  const F = G.spriteFrame(C, X.sun),
+    L = G.spriteDrawList(items);
+  let k = 0;
+  const H = 2 ** -10;
+  L.forEach((it, i) => {
+    const r = G.spriteRecordAt(i);
+    G.spriteRecord(it, F, r);
+    if (r.mode !== 'quad') return;
+    for (const q of r.crossOn ? [r, r.cr] : [r]) {
+      const u = G.unpackSpriteInstance(k++);
+      assert.deepEqual([u.x, u.y, u.z, u.ox, u.oy, u.w, u.h], [q.x, q.y, q.z, q.ox, q.oy, q.w, q.h].map(Math.fround));
+      assert.equal(u.cam, q === r && !it.fixed, `${it.id} faces the camera`);
+      if (!u.cam)
+        for (const j of [0, 2])
+          assert.ok(Math.abs(u.right[j] - q.right[j]) <= H && Math.abs(u.back[j] - q.back[j]) <= H);
+      for (const [a, b] of [
+        [u.fade, q.fade],
+        [u.emit, q.emit],
+        [u.lit, q.lit],
+        [u.rim, q.rim],
+        [u.shade, q.shade],
+        [u.shear, q.shear],
+        [u.slope, q.slope],
+        [u.dz, q.dz],
+        [u.shown, q.uv[3]],
+        [u.self[0], q.self[0]],
+        [u.fol[0], q.fol[0]],
+      ])
+        assert.ok(Math.abs(a - b) <= Math.abs(b) * H + 1e-6, `${it.id}: ${a} against ${b}`);
+      assert.equal(G.SURFACE_MATERIALS[u.mat], q.mt);
+      assert.equal(u.flip, q.flip < 0 ? -1 : 1);
+      assert.equal(u.fixed, q.fixed);
+    }
+  });
+});
+
+test('the instanced fragment shader: every per-picture uniform read from a varying, within 15 varying rows', () => {
+  const [vs, fs] = G.SPRITE_INSTANCE_SHADERS.spriteI,
+    main = fs.slice(fs.indexOf('\nvoid main(){'));
+  for (const u of [
+    'uRight',
+    'uBack',
+    'uBaseP',
+    'uFade',
+    'uRim',
+    'uLit',
+    'uShade',
+    'uEmit',
+    'uMat',
+    'uSelf',
+    'uUV',
+    'uFlipN',
+    'uFixed',
+    'uNoRecv',
+  ])
+    assert.match(fs, new RegExp(`#define ${u} `), u);
+  for (const f of ['lookOn(', 'seasonal(', 'snowOn(']) assert.ok(main.includes(f), f);
+  // the vertex shader's outputs: one row each at worst (no packing)
+  const outs = [...vs.matchAll(/(?:flat )?out\s+(\w+)\s+([^;]+);/g)].flatMap(m => m[2].split(','));
+  assert.ok(outs.length <= 15, `${outs.length} varyings`);
+  for (const v of ['vUV', 'vW', 'vH', 'vPx', 'vRip']) assert.ok(outs.includes(v), v);
 });
