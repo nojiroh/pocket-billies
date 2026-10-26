@@ -10,10 +10,10 @@
    a hub action (never during a run). `D` is rules.js geneData(). Logic only: no DOM (tools/test/gene-bank.test.mjs). */
 /** @import { Genes } from '../../types/game-data' */
 /** @typedef {{ kitBuilds: any, partKits: any, genes: Genes, species: any, parts: any }} BankData */
-/** @typedef {'' | 'run' | 'slot' | 'unknown' | 'fit' | 'same' | 'refused' | 'dna' | 'none'} BankWhy */
+/** @typedef {'' | 'run' | 'slot' | 'unknown' | 'fit' | 'same' | 'refused' | 'dna' | 'none' | 'aug'} BankWhy */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { META_GENES, billyGraft, geneLimit, unstableTidy } from '../hooks.js';
+import { META_GENES, billyAug, billyGraft, geneLimit, unstableTidy } from '../hooks.js';
 import { random } from '../util.js';
 import { GRAFT_SLOTS, graftForm, graftKey, graftKind, graftRecipe, graftSet } from './graft-art.js';
 import { geneCost, geneOf, graftStability } from './genes.js';
@@ -119,7 +119,8 @@ export function bankTry(D, m, slot, id, limit) {
   if (id) g[slot] = id;
   else delete g[slot];
   const graft = Object.keys(g).length ? g : null;
-  return { graft, st: graftStability(D, m.sp, graft, limit) };
+  /* SP-5: the Augments count too */
+  return { graft, st: graftStability(D, m.sp, graft, limit, billyAug(m)) };
 }
 /** why this Gene can't be spliced onto this slot now ('' when it can): a run is on, the slot isn't open at this
  * level, the Gene isn't in the library, it doesn't fit, it is the Billie's own part or already there, the splice
@@ -132,6 +133,8 @@ export function bankWhy(D, s, m, slot, id) {
  * @param {BankData} D @param {any} s @param {any} m @param {string} slot @param {string} id @returns {BankWhy} */
 export function bankWhyAt(D, s, m, slot, id) {
   if (!bankSlots(D, bankLevel(s)).includes(slot)) return 'slot';
+  /* SP-5: a slot an Augment holds takes no Gene (the Workshop takes the Augment off) */
+  if (billyAug(m) && /** @type {any} */ (billyAug(m))[slot]) return 'aug';
   if (!s.meta.genes.includes(id)) return 'unknown';
   if (!bankGenes(D, s, m, slot).includes(id)) return 'fit';
   if ((billyGraft(m) || {})[slot] === id) return 'same';
@@ -168,5 +171,5 @@ export function bankUnsplice(D, s, m, slot) {
 export function bankSettle(s) {
   const limit = geneLimit(s);
   for (const m of [...s.team, ...s.box, ...((s.ranch && s.ranch.nursery) || []).map((/** @type {any} */ n) => n.egg)])
-    if (m && m.graft) unstableTidy(m, random, limit);
+    if (m && (m.graft || m.aug)) unstableTidy(m, random, limit);
 }

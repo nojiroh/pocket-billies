@@ -70,6 +70,7 @@ const BANK_WHY = {
   refused: 'Too much for one body: Stability is far past the limit',
   dna: 'Not enough DNA',
   none: 'Nothing is spliced there',
+  aug: 'An Augment is fitted there: the Workshop takes it off',
 };
 /** a slot's name on the sheet */
 const BANK_SLOT = { front: 'Front', back: 'Back', sig: 'Tail' };

@@ -56,6 +56,7 @@ import {
   PERKS,
   POOLS,
   ROADS_BY_NODE,
+  ROBOTS,
   RULES,
   SPECIES,
   SPECIES_FORMS,
@@ -70,6 +71,7 @@ import { rngFn } from './rng.js';
 import { wildOddsBy } from './weather.js';
 import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
 import { graftKey, graftSet } from './graft-art.js';
+import { augBase, augFit } from './augments.js';
 import {
   geneWords,
   graftFields,
@@ -110,6 +112,7 @@ expose({
   allBillies: [() => allBillies],
   // @ts-expect-error -- replaced on purpose
   autoSlot: [() => autoSlot, v => (autoSlot = v)],
+  billyAug: [() => billyAug],
   billyBuild: [() => billyBuild],
   // @ts-expect-error -- replaced on purpose
   billyFieldTypes: [() => billyFieldTypes, v => (billyFieldTypes = v)],
@@ -121,6 +124,7 @@ expose({
   billyRel: [() => billyRel],
   // @ts-expect-error -- replaced on purpose
   billySpliceCost: [() => billySpliceCost, v => ((billySpliceCost = v), provide({ billySpliceCost }))],
+  billySpliced: [() => billySpliced],
   billyTypes: [() => billyTypes],
   // @ts-expect-error -- replaced on purpose
   billyUnstable: [() => billyUnstable, v => (billyUnstable = v)],
@@ -375,30 +379,45 @@ export const geneData = () => ({
   genes: GENES,
   species: SPECIES,
   parts: RULES.parts,
+  /* SP-5: Augments are robots.json parts (logic/augments.js) */
+  robots: ROBOTS,
+  robotRules: robotRules(),
 });
-/** SP-2: a Billie's (or an encounter's) splice, the slots that still fit it; null for none or a robot
- * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m */
-export const billyGraft = m => (m && m.graft && m.kind !== 'robot' ? graftFit(geneData(), m.sp, m.graft) : null);
+/** SP-2: a Billie's (or an encounter's) splice, the slots that still fit it; null for none or a robot. SP-5: but
+ * not a slot an Augment holds @param {{ sp: string, kind?: string, graft?: Record<string, string>, aug?: any } | null | undefined} m */
+export const billyGraft = m => {
+  if (!m || !m.graft || m.kind === 'robot') return null;
+  const g = graftFit(geneData(), m.sp, m.graft),
+    a = g && m.aug ? billyAug(m) : null;
+  /* SP-5: a slot an Augment holds has no Gene */
+  if (g && a) for (const slot of Object.keys(a)) delete g[slot];
+  return g && Object.keys(g).length ? g : null;
+};
 provide({ billyGraft }); /* to-module */
+/** SP-5: a Billie's (or an encounter's) Augments, the slots that still fit it; null for none or a robot
+ * @param {{ sp: string, kind?: string, aug?: any } | null | undefined} m @returns {import('./augments.js').Aug | null} */
+export const billyAug = m => (m && m.aug && m.kind !== 'robot' ? augFit(geneData(), m.sp, m.aug) : null);
+provide({ billyAug }); /* to-module */
+/** SP-5: spliced at all: a Gene or an Augment (never Prime; Unstable can come with either) @param {any} m */
+export const billySpliced = m => !!(billyGraft(m) || billyAug(m));
 /** SP-4: the Stability a Billie's splice spends (0 with none; starter points charge for it)
  * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m */
 export function billySpliceCost(m) {
-  const g = billyGraft(m);
-  return g && m ? graftStability(geneData(), m.sp, g).cost : 0;
+  return m && billySpliced(m) ? graftStability(geneData(), m.sp, billyGraft(m), undefined, billyAug(m)).cost : 0;
 }
 /** SP-2: per spliced slot, its part's weight over the Billie's own part's; null with no splice
  * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m */
-export const billyRel = m => (m && billyGraft(m) ? graftRel(geneData(), m.sp, m.graft) : null);
+export const billyRel = m => (m && billySpliced(m) ? graftRel(geneData(), m.sp, billyGraft(m), billyAug(m)) : null);
 /** SP-2: a Billie's types: its species', the second replaced by its heaviest dominant Gene's (logic/genes.js
  * graftTypes); a robot's or an unspliced Billie's are its species' own @param {any} m @returns {string[]} */
-export const billyTypes = m => (billyGraft(m) ? graftTypes(geneData(), m.sp, m.graft, m.build) : speciesOf(m).types);
+export const billyTypes = m =>
+  billySpliced(m) ? graftTypes(geneData(), m.sp, billyGraft(m), m.build, billyAug(m)) : speciesOf(m).types;
 /** SP-4: a Billie's types for the field moves: its own (billyTypes) and, for each part that counts for a field move
  * (genes.json field: fins for Surf), that move's type @param {any} m @returns {string[]} */
 export function billyFieldTypes(m) {
-  const own = billyTypes(m),
-    g = billyGraft(m);
-  if (!g) return own;
-  const more = graftFields(geneData(), m.sp, g)
+  const own = billyTypes(m);
+  if (!billySpliced(m)) return own;
+  const more = graftFields(geneData(), m.sp, billyGraft(m), billyAug(m))
     .map(f => FIELD_MOVES[f] && FIELD_MOVES[f].type)
     .filter(t => t && !own.includes(t));
   return more.length ? [...own, ...new Set(more)] : own;
@@ -418,18 +437,27 @@ export function spliceWords(m) {
 export function spliceReport() {
   return (saveData.team || [])
     .map((m, i) => ({ m, i }))
-    .filter(({ m }) => billyGraft(m))
+    .filter(({ m }) => billySpliced(m))
     .map(({ m, i }) => {
-      const g = /** @type {Record<string, string>} */ (billyGraft(m)),
-        st = graftStability(geneData(), m.sp, g, geneLimit());
+      const g = billyGraft(m),
+        a = billyAug(m),
+        st = graftStability(geneData(), m.sp, g, geneLimit(), a);
       return {
         at: i,
         sp: m.sp,
         graft: graftKey(g),
+        /* SP-5: its Augments, slot=part+upgrade (data ids only) */
+        ...(a
+          ? {
+              aug: Object.entries(a)
+                .map(([s, p]) => `${s}=${p.id}+${p.up || 0}`)
+                .join(','),
+            }
+          : {}),
         cost: st.cost,
         limit: st.limit,
         unstable: st.unstable,
-        traits: graftTraits(geneData(), m.sp, g),
+        traits: g ? graftTraits(geneData(), m.sp, g) : [],
         types: billyTypes(m),
       };
     });
@@ -439,7 +467,7 @@ export function spliceReport() {
  * default), so it is never worked out again here @param {any} m
  * @returns {{ up: string, down: string, name: string } | null} */
 export function billyUnstable(m) {
-  return m && m.unstable && billyGraft(m) ? m.unstable : null;
+  return m && m.unstable && billySpliced(m) ? m.unstable : null;
 }
 /** SP-4: the Stability limit your Billies are held to: the Gene Bank's level's (genes.json bank.levels; buildings.json
  * genebank, a level raised by its unlock rows), the default (stability.limit) with no Bank data @param {any} [s] */
@@ -453,16 +481,22 @@ export function geneLimit(s = saveData) {
  * is the owner's (geneLimit() for yours; the default for a wild one)
  * @param {any} m @param {() => number} [rnd] @param {number} [limit] */
 export function unstableTidy(m, rnd = random, limit) {
-  const g = billyGraft(m);
-  if (!g || !graftStability(geneData(), m.sp, g, limit).unstable) {
+  const g = billyGraft(m),
+    a = billyAug(m);
+  if ((!g && !a) || !graftStability(geneData(), m.sp, g, limit, a).unstable) {
     delete m.unstable;
     return;
   }
   if (m.unstable) return;
   const D = geneData(),
-    r = graftUnstable(D, { sp: m.sp, graft: g, build: m.build }, STAT_IDS, rnd),
+    r = graftUnstable(D, { sp: m.sp, graft: g || undefined, build: m.build, aug: a || undefined }, STAT_IDS, rnd),
     donor = SPECIES[r.donor];
-  m.unstable = { up: r.up, down: r.down, name: breedName(speciesOf(m).name, donor ? donor.name : speciesOf(m).name) };
+  /* SP-5: an Augment's name merges as a donor's would */
+  m.unstable = {
+    up: r.up,
+    down: r.down,
+    name: breedName(speciesOf(m).name, donor ? donor.name : r.name || speciesOf(m).name),
+  };
 }
 /** SP-2: give a Billie (or an encounter) a splice ('' or null takes it off), then settle Unstable (SP-4: with the
  * owner's limit; the default when not given, as for a wild one)
@@ -475,15 +509,16 @@ export function spliceSet(m, graft, limit) {
  * Unstable splice's drawback, tagged unstable @param {any} m @returns {(import('../../types/game-data').FxRow & { src: string })[]} */
 export function billyGeneFx(m) {
   const g = billyGraft(m);
-  if (!g) return [];
+  if (!g && !billyAug(m)) return [];
   const out = [];
-  for (const t of graftTraits(geneData(), m.sp, g))
-    for (const f of GENES.traits[t].fx) out.push({ ...f, src: 'gene:' + t });
+  if (g)
+    for (const t of graftTraits(geneData(), m.sp, g))
+      for (const f of GENES.traits[t].fx) out.push({ ...f, src: 'gene:' + t });
   if (billyUnstable(m)) for (const f of GENES.unstable.fx) out.push({ ...f, src: 'unstable' });
   return out;
 }
 /** SP-2: Prime: every part its own and at M @param {any} m */
-export const billyPrime = m => isPrime(billyBuild(m), !!billyGraft(m));
+export const billyPrime = m => isPrime(billyBuild(m), billySpliced(m));
 /** @param {Build} b @param {string} k a stat id @param {Record<string, number> | null} [rel] SP-2 (billyRel)
  * @returns {number} what the build does to that stat (1 = nothing) */
 export const buildStatFactor = (b, k, rel) => partsStatFactor(RULES.parts, b, k, rel);
@@ -493,18 +528,23 @@ export const buildLean = (b, rel) => partsLean(RULES.parts, b, rel);
 
 /* ---------- billionaires ---------- */
 export function stat(m, k) {
-  const b = speciesOf(m).base[STAT_IDS.indexOf(k)];
+  let b = speciesOf(m).base[STAT_IDS.indexOf(k)];
+  /* SP-5: an Augment's share of its part's stats joins the base */
+  if (m.aug) {
+    const add = augBase(geneData(), m.sp, billyAug(m))[k];
+    if (add) b += add;
+  }
   let v = k === 'hp' ? Math.floor((2 * b * m.lvl) / 100) + m.lvl + 10 : Math.floor((2 * b * m.lvl) / 100) + 5;
   /* phase 16: its parts (weight and Prime) */
   /* SP-2: and its foreign parts' weight (a splice is never Prime) */
-  const rel = m.graft ? billyRel(m) : null;
+  const rel = m.graft || m.aug ? billyRel(m) : null;
   if (m.build || rel) v = Math.max(1, Math.round(v * buildStatFactor(m.build, k, rel)));
   /* RL-10: an abomination's spike and drawback (rules.json ranch.breed) */
   const mu = m.mut,
     B = mu && mu.k === 'abom' && RULES.ranch && RULES.ranch.breed;
   if (B && (k === mu.up || k === mu.down)) v = Math.max(1, Math.round(v * (k === mu.up ? B.abomUp : B.abomDown)));
   /* SP-2: an Unstable splice's spike and drawback (genes.json unstable), picked from the Billie and its splice */
-  const un = m.graft ? billyUnstable(m) : null;
+  const un = m.graft || m.aug ? billyUnstable(m) : null;
   if (un && (k === un.up || k === un.down))
     v = Math.max(1, Math.round(v * (k === un.up ? GENES.unstable.up : GENES.unstable.down)));
   /* v33: an Alpha in battle is much tougher (m.boss); one you caught keeps a little of it (m.alpha) */
@@ -690,7 +730,7 @@ export const billyName = m => m.nick || (m.mut && m.mut.name) || unstableName(m)
 provide({ billyName }); /* to-module */
 /** SP-2: an Unstable Billie's merged name ('' when it isn't one) @param {any} m */
 export function unstableName(m) {
-  const un = m.graft ? billyUnstable(m) : null;
+  const un = m.graft || m.aug ? billyUnstable(m) : null;
   return un ? un.name : '';
 }
 /* RL-8: during a run storage stays in Copperleaf (the box isn't a run field): only the party counts, so nothing in a run

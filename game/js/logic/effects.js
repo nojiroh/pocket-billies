@@ -100,12 +100,13 @@ provide({ fxOfRun }); /* to-module */
 
 /** RL-12c: a Billie's own effect rows: its held item's (items.json `hold`), tagged `held:<id>`, then (SP-2) its
  * splice's (rules.js billyGeneFx: its traits', tagged `gene:<trait>`, and an Unstable splice's drawback, `unstable`);
- * null with none @param {{ held?: string, sp?: string, graft?: Record<string, string> } | null | undefined} m
+ * null with none (SP-5: an Augment's Unstable splice too)
+ * @param {{ held?: string, sp?: string, graft?: Record<string, string>, aug?: any } | null | undefined} m
  * @param {Record<string, { hold?: import('../../types/game-data').FxRow[] }>} items @returns {Fx[] | null} */
 export const fxOfBillie = (m, items) => {
   const I = m && m.held ? items[m.held] : null,
     held = I && I.hold && I.hold.length ? I.hold.map(f => /** @type {Fx} */ ({ ...f, src: 'held:' + m?.held })) : null;
-  if (!m || !m.graft) return held;
+  if (!m || (!m.graft && !m.aug)) return held;
   const gene = /** @type {Fx[]} */ (billyGeneFx(m));
   return held || gene.length ? [...(held || []), ...gene] : null;
 };

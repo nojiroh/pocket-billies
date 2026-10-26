@@ -2,7 +2,7 @@
 // data-checks' rules for it.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { GAME_DATA, modules } from './setup-real.mjs';
+import { data, fn, GAME_DATA, modules, startedSave } from './setup-real.mjs';
 
 const C = modules['data-checks'];
 
@@ -18,4 +18,95 @@ test('augments: the game data passes dataGenes; planted Augment mistakes are nam
   assert.ok(got.includes('augment.field.hydrant'));
   assert.ok(got.includes('augment.levels[1]'));
   assert.ok(got.includes('augment.price.up'));
+});
+
+const A = modules.augments,
+  N = modules.genes,
+  R = GAME_DATA.robots,
+  D = {
+    kitBuilds: GAME_DATA.kitBuilds,
+    partKits: GAME_DATA.partKits,
+    genes: GAME_DATA.genes,
+    species: data.SPECIES,
+    parts: GAME_DATA.rules.parts,
+    robots: R,
+    robotRules: GAME_DATA.rules.robots,
+  },
+  part = (id, up = 0, uid = 'p-' + id) => ({ uid, id, up }),
+  STATS = GAME_DATA.stats.map(s => s.id);
+
+test('augments: an arm goes on the front, legs on the back; anything else is dropped', () => {
+  assert.equal(A.augFits(D, 'swift0', 'front', 'hydrant'), true);
+  assert.equal(A.augFits(D, 'swift0', 'back', 'treads'), true);
+  assert.equal(A.augFits(D, 'swift0', 'front', 'treads'), false, 'legs are not an arm');
+  assert.equal(A.augFits(D, 'swift0', 'sig', 'hydrant'), false, 'no Augment on a tail');
+  assert.equal(A.augFits(D, 'swift0', 'front', 'bulwark'), false, 'a torso is no Augment');
+  assert.deepEqual(A.augFit(D, 'swift0', { front: part('hydrant'), back: part('piston'), sig: part('treads') }), {
+    front: part('hydrant'),
+  });
+  assert.equal(A.augFit(D, 'swift0', { front: { id: 'hydrant' } }), null, 'a part instance has a uid');
+  assert.equal(A.augLimb(D, 'front'), 'armR', 'one arm, the right (the owner, 2026-10-26)');
+  assert.equal(A.augLimb(D, 'back'), 'legs');
+});
+
+test('augments: Stability 3 each; weight, type, field move and stats from the part', () => {
+  const S = D.genes.stability,
+    a = { front: part('hydrant') };
+  assert.equal(N.graftStability(D, 'swift0', null, undefined, a).cost, S.augment);
+  assert.equal(
+    N.graftStability(D, 'swift0', { sig: 'shark_tailfin@zuck2' }, undefined, a).cost,
+    S.augment + S.other,
+    'with a Gene'
+  );
+  /* the right arm's half of the front slot is the part's kg */
+  const own = data.SPECIES.swift0.wt * GAME_DATA.rules.parts.share.front;
+  assert.deepEqual(N.graftRel(D, 'swift0', null, a), { front: 0.5 + R.parts.hydrant.wt / own });
+  assert.deepEqual(N.graftTypes(D, 'swift0', null, undefined, a), [data.SPECIES.swift0.types[0], 'Water']);
+  assert.deepEqual(N.graftFields(D, 'swift0', null, a), ['surf']);
+  assert.deepEqual(N.graftFields(D, 'swift0', null, { front: part('auger') }), ['smash']);
+  assert.deepEqual(A.augMoves(D, 'swift0', a), [R.parts.hydrant.move]);
+  const base = A.augBase(D, 'swift0', { front: part('hydrant', 2) }),
+    f = D.genes.augment.statShare * (1 + D.robotRules.upgradeStat * 2);
+  for (const [k, v] of Object.entries(R.parts.hydrant.stats)) assert.ok(Math.abs(base[k] - v * f) < 1e-9, k);
+  assert.equal(A.augWords(D, 'hydrant'), 'a Hydrant Arm');
+  assert.equal(A.augWords(D, 'auger'), 'an Auger Arm');
+});
+
+test('augments: on a Billie: its stats, types, field types and Stability; never Prime; Unstable past the limit', () => {
+  const m = startedSave('swift0', 30).team[0],
+    before = Object.fromEntries(STATS.map(k => [k, fn('stat')(m, k)]));
+  m.aug = { front: part('hydrant') };
+  assert.ok(fn('billyAug')(m));
+  assert.equal(fn('billySpliceCost')(m), D.genes.stability.augment);
+  assert.ok(fn('billyTypes')(m).includes('Water'));
+  assert.ok(fn('billyFieldTypes')(m).includes('Water'));
+  assert.equal(fn('billyPrime')(m), false);
+  assert.ok(fn('stat')(m, 'lob') > before.lob, 'the arm adds its SpA');
+  /* an Augment and a Gene past the limit: Unstable, named with the part's short name when it is the heaviest */
+  fn('spliceSet')(m, { sig: 'shark_tailfin@zuck2' }, D.genes.stability.limit);
+  assert.ok(m.unstable, 'Augment 3 + another kit 2 is past 3');
+  assert.ok(m.unstable.name);
+  /* a Gene on a slot the Augment holds doesn't count */
+  m.graft = { front: 'bear_arm@musk3', sig: 'shark_tailfin@zuck2' };
+  assert.deepEqual(fn('billyGraft')(m), { sig: 'shark_tailfin@zuck2' });
+});
+
+test('augments: kept through a save and load; saveFill trims and dedupes; billiesOk refuses a bad shape', () => {
+  const { billiesOk } = modules.saves,
+    fill = s => fn('saveFill')(JSON.parse(JSON.stringify(s))),
+    s = startedSave('swift0', 10);
+  s.parts = [part('hydrant', 0, 'u1'), part('treads', 0, 'u2')];
+  s.team[0].aug = { front: part('hydrant', 9, 'u1'), back: part('nope', 0, 'u3') };
+  const t = fill(s);
+  assert.deepEqual(t.team[0].aug, { front: part('hydrant', GAME_DATA.rules.robots.maxUpgrade, 'u1') });
+  assert.deepEqual(
+    t.parts.map(p => p.uid),
+    ['u2'],
+    'a worn part is not a spare too'
+  );
+  s.team[0].aug = { front: part('treads', 0, 'u2') };
+  assert.equal('aug' in fill(s).team[0], false, 'legs on the front: none left');
+  assert.equal(billiesOk([{ ...s.team[0], aug: { front: 'hydrant' } }]), false);
+  assert.equal(billiesOk([{ ...s.team[0], aug: { sig: part('hydrant') } }]), false);
+  assert.equal(billiesOk([{ ...s.team[0], aug: { front: part('hydrant') } }]), true);
 });

@@ -17,7 +17,7 @@
 /** @typedef {import('./gene-bank.js').BankData} BankData */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { META_GENES, billyGraft, geneLimit, unstableTidy } from '../hooks.js';
+import { META_GENES, billyAug, billyGraft, geneLimit, unstableTidy } from '../hooks.js';
 import {
   GRAFT_SLOTS,
   geneSplit,
@@ -52,9 +52,10 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** the slots a Billie's form can wear a Gene on (a recipe with a bone there), in GRAFT_SLOTS' order
- * @param {BankData} D @param {any} m */
-export const geneEventSlots = (D, m) => GRAFT_SLOTS.filter(slot => !!bankNative(D, m.sp, slot));
+/** the slots a Billie's form can wear a Gene on (a recipe with a bone there), in GRAFT_SLOTS' order; SP-5: not one
+ * an Augment holds @param {BankData} D @param {any} m */
+export const geneEventSlots = (D, m) =>
+  GRAFT_SLOTS.filter(slot => !!bankNative(D, m.sp, slot) && !(/** @type {any} */ (billyAug(m) || {})[slot]));
 
 /** the lines a list of species ids holds (the region's dex) @param {BankData} D @param {string[]} pool */
 export const linesOf = (D, pool) => new Set(pool.map(id => D.species[id] && D.species[id].line).filter(Boolean));
