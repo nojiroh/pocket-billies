@@ -73,25 +73,33 @@ export function encRng(run) {
 }
 
 /** the events a place may hold: weight above 0, its biome's (or every biome's), not played this run unless `repeat`,
- * by id @param {Run} run @param {EventsData} E @param {string | undefined} biome */
-export function eventPool(run, E, biome) {
+ * (SP-6) its `when` holding, by id. With no `holds` (the run sim, the Studio's preview) an event with a `when` is
+ * left out, as for a new save @param {Run} run @param {EventsData} E @param {string | undefined} biome
+ * @param {(cond: string) => boolean} [holds] */
+export function eventPool(run, E, biome, holds) {
   const seen = new Set(run.enc ? run.enc.seen : []);
   return Object.keys(E.events)
     .filter(id => {
       const ev = E.events[id];
-      return ev.weight > 0 && (!ev.biomes || !biome || ev.biomes.includes(biome)) && (ev.repeat || !seen.has(id));
+      return (
+        ev.weight > 0 &&
+        (!ev.biomes || !biome || ev.biomes.includes(biome)) &&
+        (ev.repeat || !seen.has(id)) &&
+        (!ev.when || (!!holds && holds(ev.when)))
+      );
     })
     .sort();
 }
 
-/** the event at a map node: the one kept, else drawn now from the node's stream and kept ('' when none is left)
- * @param {Run} run @param {number} i the map node @param {EventsData} E */
-export function eventAt(run, i, E) {
+/** the event at a map node: the one kept, else drawn now from the node's stream and kept ('' when none is left);
+ * SP-6: an event's `when` is read then, once (holds: the game's conditions)
+ * @param {Run} run @param {number} i the map node @param {EventsData} E @param {(cond: string) => boolean} [holds] */
+export function eventAt(run, i, E, holds) {
   const e = encOf(run),
     k = String(i);
   if (Object.hasOwn(e.node, k)) return e.node[k];
   const node = run.map && run.map.nodes[i],
-    pool = eventPool(run, E, (node && node.biome) || undefined),
+    pool = eventPool(run, E, (node && node.biome) || undefined, holds),
     id = pool.length
       ? rngFrom(runNodeSeed(run.seed, i), 'event').pick(Object.fromEntries(pool.map(p => [p, E.events[p].weight])))
       : '';

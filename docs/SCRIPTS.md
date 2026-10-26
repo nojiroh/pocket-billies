@@ -130,7 +130,7 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 
 An event (game/data/events.json) has an intro (lines only) and 2-3 options; an option's `need` is a condition (the
 option shows greyed out with what it needs until it holds), its `cost` Moneys (SP-6: and its `dna`, DNA) paid when it is picked, and its `then` a
-script with these commands besides the usual ones. Every chance comes from the run's own stream, so a run made again
+script with these commands besides the usual ones. An event's optional `when` (SP-6) is a condition read once, when a waystation's event is drawn: only while it holds may the stand hold this one (the run sim and the Studio's preview read none, so they leave such an event out). Every chance comes from the run's own stream, so a run made again
 plays the same.
 
 | Command | Does |

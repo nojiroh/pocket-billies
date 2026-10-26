@@ -966,6 +966,12 @@ export function dataEvents(D, valid = () => true) {
   for (const [k, V] of Object.entries(E.events)) {
     const ev = /** @type {any} */ (V);
     for (const b of ev.biomes || []) if (biomes.size && !biomes.has(b)) problem(`events.${k}.biomes: no biome "${b}"`);
+    /* SP-6: when it may be drawn, a condition like an option's need */
+    if (ev.when) {
+      const cp = conditionProblem(ev.when);
+      if (cp) problem(`events.${k}.when: ${cp.message}`);
+      else names(`events.${k}.when`, ev.when);
+    }
     const ip = scriptProblem(ev.intro);
     if (ip) problem(`events.${k}.intro, line ${(ip.line || 0) + 1}: ${ip.message}`);
     else

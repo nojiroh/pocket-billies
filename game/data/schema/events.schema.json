@@ -49,6 +49,7 @@
      "weight": {"description": "how often it is drawn against the others (0: never)", "type": "number", "minimum": 0, "maximum": 100},
      "repeat": {"description": "true: may come again in the same run (else once a run)", "type": "boolean"},
      "biomes": {"description": "only in these biomes (biomes.json); every biome when left out", "type": "array", "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}, "minItems": 1},
+     "when": {"description": "SP-6: a condition (docs/SCRIPTS.md) read once, when a waystation's event is drawn: only then may it be this one", "type": "string", "minLength": 1, "maxLength": 120},
      "options": {
       "type": "array",
       "minItems": 2,

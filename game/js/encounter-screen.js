@@ -111,7 +111,7 @@ const encDna = () => (saveData.meta && saveData.meta.dna) || 0;
 export function encounterOpen(i, id) {
   const run = saveData.run;
   if (!run || encPlaying || activeBattle) return;
-  const ev = id || (i != null && i >= 0 ? eventAt(run, i, EVENTS) : '');
+  const ev = id || (i != null && i >= 0 ? eventAt(run, i, EVENTS, encHolds) : '');
   if (!ev || !EVENTS.events[ev]) {
     toast('Nothing happens here. Not today.');
     return;

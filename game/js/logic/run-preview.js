@@ -95,7 +95,7 @@ export function runPreview(seed, o = {}) {
       foe: Object.values(foes).find(F => F.runNode === i) || null,
       shop,
       /* RL-12b: a waystation's event as drawn with none played yet (an event played earlier in the run leaves the
-         pool, so a later stand may hold another) */
+         pool, so a later stand may hold another; SP-6: an event with a `when` is left out, as for a new save) */
       event: n.type === 'event' ? eventAt(run, i, EVENTS) || null : null,
     };
   });

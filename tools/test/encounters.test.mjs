@@ -52,6 +52,17 @@ test('encounters: a place holds the same event for the same run, kept; a played 
   for (const ev of Object.values(E2.events)) ev.biomes = ['lake'];
   assert.deepEqual(X.eventPool(b, E2, 'meadow'), []);
   assert.equal(X.eventPool(b, E2, 'lake').length, Object.keys(E.events).length);
+  /* SP-6: an event's `when`: in the pool only while it holds; with no holds given it is left out */
+  const E3 = { ...E, events: { only: { ...E.events[id], when: 'genes >= 1' } } };
+  assert.deepEqual(X.eventPool(b, E3, 'lake'), []);
+  assert.deepEqual(
+    X.eventPool(b, E3, 'lake', () => false),
+    []
+  );
+  assert.deepEqual(
+    X.eventPool(b, E3, 'lake', c => c === 'genes >= 1'),
+    ['only']
+  );
 });
 
 test('encounters: an option is open when its need holds and the Moneys are there; a closed one says why', () => {

@@ -1883,6 +1883,8 @@ export interface RunEvent {
   weight: number;
   repeat?: boolean;
   biomes?: DataId[];
+  /** SP-6: a condition read when a waystation's event is drawn: only then may it be this one */
+  when?: string;
   options: RunEventOption[];
 }
 export interface RunEventOption {
