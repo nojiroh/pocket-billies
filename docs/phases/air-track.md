@@ -14,6 +14,7 @@ main, and every later session starts on it). Tags `air-N-done` (the owner pushes
 | Where it lives | **Its own track**, `track/air` |
 | Scope | **All four**: haze upgrades, the fog grid and a lit march, a depth-aware blur, shadowed haze |
 | Phones | **On, with a coarser grid** and fewer steps, inside the current frame budget |
+| AIR-1: a place's own `haze` (asked in AIR-1, 2026-10-26) | **Keep it, the sky shapes it**: the haze is the place's colour below the horizon and leans to the sky's gradient above it (`uFogCol + skyGrad(view) - uSkyLow`) |
 
 ## Verified facts (branch `ccr-c0505a05-bzef90` on main b87b818d, 2026-10-26)
 - **Haze and low mist are one function**, `fogit(c,p)` in the shared GLSL (`engine/webgl.js:327-336`), called by every
@@ -90,7 +91,7 @@ changes and renames never share a commit. New settings default to today's look u
 | # | Session | What | Done when |
 |---|---|---|---|
 | AIR-0 | Plan (done 2026-10-26) | this file, the research, the ROADMAP and BRANCHES rows | the owner approves |
-| AIR-1 | Haze | `fogit`: the haze colour follows the sky gradient in the view direction (one shared GLSL sky function for the sky shader and `fogit`, so they can't drift apart); RGB extinction (`air.hazeTint`, red lost a little faster); height falloff with the analytic integral (`air.hazeFalloff`), also used for the low mist; separate dials for the broad sky glow and the sun glow (the `toSun` lobe softened) | unit tests for the shared JS twin of the haze maths; screenshots at dawn, noon, dusk and in fog weather before and after; the baseline changes only where intended |
+| AIR-1 | Haze (done 2026-10-26: new dials at 0 keep today's look; HANDOFF has the proposed values) | `fogit`: the haze colour follows the sky gradient in the view direction (one shared GLSL sky function for the sky shader and `fogit`, so they can't drift apart); RGB extinction (`air.hazeTint`, red lost a little faster); height falloff with the analytic integral (`air.hazeFalloff`), also used for the low mist; separate dials for the broad sky glow and the sun glow (the `toSun` lobe softened) | unit tests for the shared JS twin of the haze maths; screenshots at dawn, noon, dusk and in fog weather before and after; the baseline changes only where intended |
 | AIR-2 | Fog grid | new `walk/fog-grid.js`: a density grid round the player, 48x12x48 cells of about 1 m (32x8x32 on phones), from `groundHeightAt`, the water level, the weather's fog, the dawn mist, valley mist and a drifting noise; low ground and water fill first. An R8 3D texture, updated with `texSubImage3D` only when the player crosses a cell or the weather moves (a rolling origin, so a step uploads one slab); not built indoors. A debug view of the grid as blocks (debug menu only) | unit tests on the density (a hollow fills, a hilltop stays clear, no fog indoors); upload time in the debug log |
 | AIR-3 | Lit march | the march reads the grid: fog density x sun visibility (shadow maps) x phase + sky ambient + lamps; outputs the fog's colour and how much it hides (premultiplied), composited in the grade pass. The march starts nearer the camera inside the grid's box (not only the last 14 m). Phones: 10 steps. When the march runs, `fogit`'s low mist is off (`uMist` 0, one flag), so fog isn't counted twice; when it drops (quality step 3, lit rooms), `fogit` takes over | fog banks, sun shafts in fog and lamp glow at night in a fixture; the owner's phone frame times from the debug log within budget |
 | AIR-4 | Edges and shadowed haze | a depth-aware blur and upscale replace `down` (nearest depth when shrinking); blue-noise jitter; the near haze (14-40 m) dims in shade from the march; Studio dials for every new `air` setting; a fog step in the in-game full test; the clean prop turntable zeroes the new settings; the baseline regenerated | the full quick check passes; no fog bleeding round the player, trees or roofs in screenshots |
@@ -99,7 +100,10 @@ About 4 sessions after AIR-0. AIR-1 and AIR-2 don't touch the same files and can
 both; AIR-4 needs AIR-3.
 
 ## Ask the owner before
-- AIR-1: whether the haze colour should keep the scene's `haze` field where a place has one, or always follow the sky.
+- ~~AIR-1: whether the haze colour should keep the scene's `haze` field where a place has one, or always follow the sky.~~
+  Answered: keep it, shaped by the sky.
+- After AIR-1: whether the proposed haze values (HANDOFF, AIR-1) become the game's defaults (engine.json `air`); that
+  moves the quick-check baseline.
 - AIR-3: battles. They use the same march (`noVol` only at quality step 3); fog in battles is in scope only if the
   owner says so.
 - AIR-3: if the phone frame times go over budget, which goes first: fewer steps, a smaller grid, or no lamps in fog.
