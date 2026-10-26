@@ -11,7 +11,16 @@
 import { expose } from '../../game/js/test-globals.js';
 import { kitBakeInStudio } from '../../game/js/hooks.js';
 import { graftDonors, graftForm } from '../../game/js/logic/graft-art.js';
-import { geneCost, geneOf, geneWords, graftStability, graftTraits, graftTypes } from '../../game/js/logic/genes.js';
+import { augBase, augChoices, augMoves, augWords } from '../../game/js/logic/augments.js';
+import {
+  geneCost,
+  geneOf,
+  geneWords,
+  graftFields,
+  graftStability,
+  graftTraits,
+  graftTypes,
+} from '../../game/js/logic/genes.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { drawRig, rigFrame, rigFromMeta } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
@@ -19,6 +28,7 @@ import { SECTIONS, card, grid, numberField, render, selectField, studioState, te
 /* eslint-disable no-func-assign */
 expose({
   GENE_SLOTS: [() => GENE_SLOTS],
+  genesAugText: [() => genesAugText, v => (genesAugText = v)],
   genesBake: [() => genesBake, v => (genesBake = v)],
   genesData: [() => genesData, v => (genesData = v)],
   genesPreview: [() => genesPreview],
@@ -45,13 +55,39 @@ function genesData() {
         wt: Array.isArray(L.wt) ? L.wt[Math.min(i, L.wt.length - 1)] : L.wt,
       };
     });
-  return { kitBuilds: D.kitBuilds, partKits: D.partKits, genes: D.genes, species, parts: D.rules && D.rules.parts };
+  return {
+    kitBuilds: D.kitBuilds,
+    partKits: D.partKits,
+    genes: D.genes,
+    species,
+    parts: D.rules && D.rules.parts,
+    /* SP-5: Augments are robots.json parts */
+    robots: D.robots,
+    robotRules: D.rules && D.rules.robots,
+  };
 }
 const genesSel = () => {
   const s = studioState.sel;
-  if (!s.genes) s.genes = { sp: '', slot: 'front', gene: '' };
+  if (!s.genes) s.genes = { sp: '', slot: 'front', gene: '', aug: '' };
   return s.genes;
 };
+/** SP-5: an Augment tried on the picked Billie: its slot, Stability, types, move, field move and stats, from the game's
+ * logic @param {any} G @param {any} S */
+function genesAugText(G, S) {
+  if (!S.aug) return '<p class="help">Pick a bot part.</p>';
+  const [slot, id] = S.aug.split(':'),
+    a = { [slot]: { uid: 'studio', id, up: 0 } },
+    st = graftStability(G, S.sp, null, undefined, a),
+    types = graftTypes(G, S.sp, null, null, a),
+    fields = graftFields(G, S.sp, null, a),
+    base = augBase(G, S.sp, a),
+    moves = augMoves(G, S.sp, a);
+  return `<p><b>${escapeHtml(augWords(G, id))}</b> on the ${slot === 'back' ? 'legs' : 'right arm'} · Stability ${st.cost} of ${st.limit}${st.refused ? ' · <b>refused</b>' : st.unstable ? ' · <b>Unstable</b>' : ''} · ${G.genes.augment.price.fit} Scrap at the Workshop</p><p>Types ${escapeHtml(types.join(' / '))}${moves.length ? ` · move ${escapeHtml(moves.join(', '))}` : ''}${fields.length ? ` · counts for ${escapeHtml(fields.join(', '))}` : ''} · base stats ${escapeHtml(
+    Object.entries(base)
+      .map(([k, v]) => `+${Math.round(v * 10) / 10} ${k}`)
+      .join(', ') || 'none'
+  )}</p>`;
+}
 /** the splice preview's words: the Gene's Stability, traits, types and price, from the game's logic */
 function genesPreviewText(G, S) {
   if (!S.gene) return '<p class="help">Pick a Gene.</p>';
@@ -167,6 +203,35 @@ SECTIONS.genes = () => {
     n('DNA a Graft pays', 'genes.wild.dna.graft', { min: 0 }),
     n('DNA a Chimera pays', 'genes.wild.dna.chimera', { min: 0 })
   );
+  /* SP-5: Augments (genes.json augment): the Workshop's numbers and the Escaped specimens' */
+  const A = GN.augment,
+    augCard = A
+      ? `${grid(
+          numberField('Share of the part’s stats', 'genes.augment.statShare', { min: 0, max: 2, step: 0.05 }),
+          n('Fit: Scrap', 'genes.augment.price.fit', { min: 0 }),
+          ...A.price.up.map((_, i) => n(`Upgrade to +${i + 1}: Scrap`, `genes.augment.price.up.${i}`, { min: 0 })),
+          numberField('Escaped chance', 'genes.wild.escaped', { min: 0, max: 1, step: 0.001 }),
+          numberField('… times next to a scrapyard', 'genes.augment.escapedNear', { min: 0, max: 100, step: 0.5 }),
+          n('DNA an Escaped one pays', 'genes.wild.dna.escaped', { min: 0, opt: 1 })
+        )}${A.levels
+          .map(
+            (L, i) =>
+              `<div class="parts-size"><b>Workshop level ${i + 1}</b>${grid(
+                n('Upgrades to +', `genes.augment.levels.${i}.maxUp`, { min: 0, max: 9 })
+              )}<small class="help">Fits: ${escapeHtml(L.slots.join(', '))} (level prices are unlocks.json rows, in Unlocks &amp; hub)</small></div>`
+          )
+          .join(
+            ''
+          )}<div class="grid"><label class="fld"><span>Try a bot part on ${escapeHtml(S.sp)}</span><select id="genesAug"><option value="">Pick one</option>${augChoices(
+          G,
+          S.sp
+        )
+          .map(
+            ([slot, id]) =>
+              `<option value="${slot}:${escapeHtml(id)}" ${S.aug === `${slot}:${id}` ? 'selected' : ''}>${escapeHtml(augWords(G, id))} (${slot})</option>`
+          )
+          .join('')}</select></label></div><div id="genesAugRead">${genesAugText(G, S)}</div>`
+      : '';
   const levels = GN.bank.levels
     .map(
       (L, i) =>
@@ -195,6 +260,7 @@ SECTIONS.genes = () => {
   ${card('Unstable', unstable)}
   ${card('Gene Bank', levels + bank, { sub: 'Its levels’ limits, a splice’s price, eggs, and the starter-point cost of a splice.' })}
   ${card('Wild splices', wild, { sub: 'The share of a run place’s wild Billies spliced, and the DNA a beaten one pays.' })}
+  ${augCard ? card('Augments', augCard, { sub: 'Bot arms and legs on Billies (the Workshop), and Escaped specimens wearing them. Placeholders.' }) : ''}
   ${card('Part kinds', kinds, { sub: 'The trait each kind brings, its word in battle text, and the field move it counts for.' })}
   ${card('Parts', parts, { sub: 'Parts with a dominant type (the second type) or a field move of their own.' })}
   ${card('Traits', traits, { sub: 'Names and text; their effect rows are in genes.json.' })}
@@ -203,11 +269,19 @@ SECTIONS.genes = () => {
 studioState.hooks.genes = () => {
   const r = document.getElementById('genesRead');
   if (r) r.innerHTML = genesPreviewText(genesData(), genesSel());
+  const a = document.getElementById('genesAugRead');
+  if (a) a.innerHTML = genesAugText(genesData(), genesSel());
 };
 document.addEventListener('change', ev => {
   const id = ev.target && ev.target.id,
     S = genesSel();
+  if (id === 'genesAug') {
+    S.aug = ev.target.value;
+    render();
+    return;
+  }
   if (id === 'genesSp' || id === 'genesSlot' || id === 'genesGene') {
+    if (id === 'genesSp') S.aug = '';
     if (id === 'genesSp') S.sp = ev.target.value;
     if (id === 'genesSlot') S.slot = ev.target.value;
     if (id === 'genesGene') S.gene = ev.target.value;
