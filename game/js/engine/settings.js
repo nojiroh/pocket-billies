@@ -86,6 +86,9 @@ export const ENGINE_DEFAULTS = {
     shaftLength: 0.85,
     glare: 0.6,
     shAmbient: 1,
+    /* the shafts, the glare and the god rays take the light's own colour (warm at golden hour, the moon's at night) and
+       its strength (dim under the moon); off: always the sun's colour at full strength, as before */
+    followLight: false,
   },
   shadows: {
     selfShade: 0.7,
@@ -525,6 +528,12 @@ export const ENGINE_SPEC = [
         'A soft halo and lens ghosts when the sun is in view and nothing blocks it.',
       ],
       ['shaftLength', 'Shaft length', 0.2, 1.5, 0.05],
+      [
+        'followLight',
+        'Rays follow the light',
+        'bool',
+        'Light shafts, glare and god rays take the colour of the light (warm at golden hour, the moon at night) and fade with it at night (on). Off: always the sun’s colour at full strength.',
+      ],
     ],
   ],
   [
