@@ -280,9 +280,7 @@ function fittedShadowPass(items0, sun, C) {
       gl.uniform1f(P.U.uCurveD0, ca[3]);
     };
   const solid = engineSetting('shadows', 'buildings'),
-    tr = sun.travel,
-    h = normalize3([tr[0], 0, tr[2]]),
-    Rs = Math.hypot(tr[0], tr[2]) < 0.05 ? [1, 0, 0] : [-h[2], 0, h[0]];
+    tr = sun.travel;
   const still = it => it.k === 'prop' && it.still && !it.vol,
     stat = cache ? filterInto(items, still, SHADOW_LISTS.stat) : items,
     dyn = cache
@@ -319,72 +317,9 @@ function fittedShadowPass(items0, sun, C) {
     walkRenderer.shHit = (walkRenderer.shHit || 0) + 1;
   }
   let miss = 0;
+  /* phase 20 R3: the same pictures' loop as the near map's (sun set, no lamp) */
   const sprites = L => {
-    const p = gpuState.P.shadow;
-    gl.useProgram(p.p);
-    gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
-    curve(p);
-    bindQuad();
-    gl.activeTexture(gl.TEXTURE0);
-    gl.uniform1i(p.U.uTex, 0);
-    for (const it of L) {
-      if (it.flat || it.far || it.k === 'enc2' || it.vol || it.k === 'flag' || it.vox) continue;
-      if (it.k === 'prop' && !(it.sh > 0)) continue;
-      /* a box building's layers cast none (its slices do): skipped before its picture is looked up or bound */
-      if (it.layer && it.M.box) continue;
-      gpuTag(it.voxImg ? 'modelPic' : 0); /* R1 measure: a model's picture layer counted apart */
-      const T = imageTexture(it.im);
-      if (!T) {
-        miss++;
-        continue;
-      }
-      gl.bindTexture(gl.TEXTURE_2D, T.t);
-      /* a 3D building: its front as a cut-out here, walls and roof as geometry below */
-      if (it.bld3) {
-        let F = null;
-        buildingGuard(() => {
-          F = imageTexture(buildingFrontPicture(it.im, it.M.build, it.M));
-        });
-        if (!F) miss++;
-        if (F) {
-          gl.bindTexture(gl.TEXTURE_2D, F.t);
-          gl.uniform3fv(p.U.uRight, FIXED_RIGHT);
-          setSpriteUniforms(p, it);
-          gl.drawArrays(gl.TRIANGLES, 0, 6);
-          gl.uniform3fv(p.U.uRight, Rs);
-        }
-        continue;
-      }
-      if (it.plane && !(solid && it.M && it.M.box)) {
-        gl.uniform3fv(p.U.uRight, it.fixed ? pictureRight(it, FIXED_RIGHT) : FIXED_RIGHT);
-        setSpriteUniforms(p, it);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-        gl.uniform3fv(p.U.uRight, Rs);
-        continue;
-      }
-      if (solid && it.M && it.M.box) {
-        /* a building: its front outline extruded through its depth, so the shadow has its true roof line */
-        /* phase 09 batch 9: a turned building's slices turn with it and step back the way it faces */
-        const ta = placedTurn(it.p),
-          tc = Math.cos(ta),
-          ts = Math.sin(ta);
-        gl.uniform3f(p.U.uRight, tc, 0, ts);
-        const d = it.M.box[1] * (it.p.s || 1),
-          n = 6;
-        for (let i = 0; i < n; i++) {
-          const k = (d * i) / (n - 1);
-          setSpriteUniforms(p, it, null, it.z + k * tc);
-          if (ta) gl.uniform3f(p.U.uBase, it.x - k * ts, it.y, it.z + k * tc);
-          gl.drawArrays(gl.TRIANGLES, 0, 6);
-        }
-        gl.uniform3fv(p.U.uRight, Rs);
-        continue;
-      }
-      gl.uniform3fv(p.U.uRight, Rs);
-      setSpriteUniforms(p, it);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-    }
-    gpuTag(0);
+    miss += drawShadowSprites(SH, L, sun, ca);
   };
   if (!hit) {
     let p = gpuState.P.shadowG;
